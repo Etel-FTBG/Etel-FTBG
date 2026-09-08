@@ -1,0 +1,143 @@
+═══════════════════════════════════════════════════════════════
+  ETEL OS - SETUP ON YOUR DOMAIN (ethelmarket.com)
+  Quick Start Guide - Do This Now!
+═══════════════════════════════════════════════════════════════
+
+✅ STEP 1: INSTALL OLLAMA (5 minutes)
+
+Open Command Prompt and run:
+
+    winget install Ollama.Ollama
+
+Then:
+
+    ollama pull llama3
+
+Then start server (keep window open):
+
+    ollama serve
+
+✅ Done? Continue to Step 2
+
+═══════════════════════════════════════════════════════════════
+
+✅ STEP 2: UPDATE INDEX.HTML (2 minutes)
+
+1. Open: index.html
+2. Find: </body> (near end of file)
+3. Add BEFORE </body>:
+
+<!-- ETEL Configuration -->
+<script src="config.js"></script>
+
+<!-- ETEL Engine -->
+<script src="etel-engine.js"></script>
+
+<!-- ETEL Initialization -->
+<script>
+// Copy the full initialization code from DEPLOY-TO-YOUR-DOMAIN.md
+// (It's too long to fit here, see the guide)
+</script>
+
+4. Save file
+
+✅ Done? Continue to Step 3
+
+═══════════════════════════════════════════════════════════════
+
+✅ STEP 3: UPLOAD TO YOUR SERVER (5 minutes)
+
+Upload these files to: ethelmarket.com/etel/
+
+Files to upload:
+  ✓ index.html (updated)
+  ✓ etel-engine.js
+  ✓ config.js (NEW)
+  ✓ manifest.json
+  ✓ sw.js
+  ✓ skills/registry.json
+  ✓ icons/icon-192.png
+  ✓ icons/icon-512.png
+
+Your api/api.php is already there, so skip that.
+
+✅ Done? Continue to Step 4
+
+═══════════════════════════════════════════════════════════════
+
+✅ STEP 4: TEST IT! (2 minutes)
+
+1. Make sure Ollama is running:
+   
+   ollama serve
+
+2. Open browser:
+   
+   https://ethelmarket.com/etel/
+
+3. Press F12 → Console tab
+
+4. Should see:
+   
+   ✅ ETEL Engine initialized
+   📊 Skills loaded: [27 skills]
+
+5. Type in chat:
+   
+   Write Python code to print hello world
+
+6. Should get real AI response!
+
+✅ Working? YOU'RE DONE! 🎉
+
+═══════════════════════════════════════════════════════════════
+
+🐛 TROUBLESHOOTING
+
+Problem: "Ollama connection failed"
+Fix: Make sure ollama serve is running
+
+Problem: "Skills not loading"
+Fix: Check skills/registry.json is uploaded
+
+Problem: "ETEL not initializing"
+Fix: Check Console (F12) for errors
+
+Problem: "Database not saving"
+Fix: Test https://ethelmarket.com/etel/api/api.php?path=health
+
+═══════════════════════════════════════════════════════════════
+
+📚 DETAILED GUIDES
+
+For complete instructions, see:
+  • DEPLOY-TO-YOUR-DOMAIN.md (full deployment guide)
+  • INTEGRATION-GUIDE.md (integration details)
+  • QUICK-START.md (general setup)
+
+═══════════════════════════════════════════════════════════════
+
+🎯 WHAT YOU'LL HAVE
+
+✅ ETEL running on: ethelmarket.com/etel/
+✅ Your coin logo everywhere
+✅ 27 AI skills working
+✅ Real AI responses (via Ollama)
+✅ Memory system saving to your database
+✅ 100% FREE
+✅ 100% YOURS
+
+═══════════════════════════════════════════════════════════════
+
+💡 LATER: CLOUD SERVER (24/7 Access)
+
+When ready for 24/7:
+  1. Get GPU server (Hetzner ~$50/month)
+  2. Install Ollama on server
+  3. Set up ai.ethelmarket.com
+  4. Update config.js → ollamaUrl
+  5. Done! Works 24/7 for everyone
+
+═══════════════════════════════════════════════════════════════
+
+START WITH STEP 1 NOW! ⬆️

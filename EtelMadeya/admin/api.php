@@ -1,0 +1,442 @@
+<?php
+// ═══════════════════════════════════════════════════════════════════
+// ETEL MADEYA - ADMIN API
+// ═══════════════════════════════════════════════════════════════════
+
+require_once __DIR__ . '/../includes/config.php';
+
+header('Content-Type: application/json; charset=utf-8');
+
+$action = $_GET['action'] ?? $_POST['action'] ?? '';
+
+// Helper function to check admin authentication
+function requireAdmin() {
+    if (!isset($_SESSION['admin_id'])) {
+        jsonResponse(['success' => false, 'message' => 'Not authenticated'], 401);
+    }
+}
+
+try {
+    switch ($action) {
+        
+        // ─── AUTHENTICATION ─────────────────────────────────────────
+        
+        case 'login':
+            $username = sanitize($_POST['username'] ?? '');
+            $password = $_POST['password'] ?? '';
+            
+            if (empty($username) || empty($password)) {
+                jsonResponse(['success' => false, 'message' => 'Username and password required'], 400);
+            }
+            
+            $admin = db()->fetchOne(
+                "SELECT * FROM admin_users WHERE username = ? AND is_active = 1",
+                [$username]
+            );
+            
+            if (!$admin || !password_verify($password, $admin['password'])) {
+                jsonResponse(['success' => false, 'message' => 'Invalid credentials']);
+            }
+            
+            // Update last login
+            db()->update('admin_users', ['last_login' => date('Y-m-d H:i:s')], 'id = ?', [$admin['id']]);
+            
+            // Log activity
+            db()->insert('activity_log', [
+                'admin_id' => $admin['id'],
+                'action' => 'login',
+                'details' => 'Admin logged in',
+                'ip_address' => getClientIP()
+            ]);
+            
+            // Set session
+            $_SESSION['admin_id'] = $admin['id'];
+            $_SESSION['admin_username'] = $admin['username'];
+            $_SESSION['admin_name'] = $admin['full_name'];
+            $_SESSION['admin_role'] = $admin['role'];
+            
+            unset($admin['password']);
+            jsonResponse(['success' => true, 'admin' => $admin]);
+            break;
+            
+        case 'logout':
+            requireAdmin();
+            
+            db()->insert('activity_log', [
+                'admin_id' => $_SESSION['admin_id'],
+                'action' => 'logout',
+                'details' => 'Admin logged out',
+                'ip_address' => getClientIP()
+            ]);
+            
+            session_destroy();
+            jsonResponse(['success' => true, 'message' => 'Logged out successfully']);
+            break;
+            
+        case 'check_session':
+            if (isset($_SESSION['admin_id'])) {
+                $admin = db()->fetchOne(
+                    "SELECT id, username, full_name, email, role FROM admin_users WHERE id = ?",
+                    [$_SESSION['admin_id']]
+                );
+                jsonResponse(['success' => true, 'logged_in' => true, 'admin' => $admin]);
+            } else {
+                jsonResponse(['success' => false, 'logged_in' => false]);
+            }
+            break;
+            
+        // ─── DASHBOARD ──────────────────────────────────────────────
+        
+        case 'get_dashboard_stats':
+            requireAdmin();
+            
+            $stats = [
+                'controllers' => db()->count('controllers', 'is_active = 1'),
+                'total_queued' => db()->count('queue', 'status = ?', ['queued']),
+                'served_today' => db()->count('report', 'report_date = ?', [date('Y-m-d')]),
+                'vehicle_types' => db()->count('vehicle_types', 'is_active = 1')
+            ];
+            
+            // Recent activity
+            $activity = db()->fetchAll(
+                "SELECT al.*, au.username, au.full_name 
+                 FROM activity_log al
+                 JOIN admin_users au ON al.admin_id = au.id
+                 ORDER BY al.created_at DESC LIMIT 10"
+            );
+            
+            // Controller status
+            $controllers = db()->fetchAll(
+                "SELECT c.*, 
+                        (SELECT COUNT(*) FROM queue WHERE controller_id = c.id AND status = 'queued') as queued_count
+                 FROM controllers c
+                 WHERE c.is_active = 1
+                 ORDER BY c.station_name"
+            );
+            
+            jsonResponse([
+                'success' => true,
+                'stats' => $stats,
+                'activity' => $activity,
+                'controllers' => $controllers
+            ]);
+            break;
+            
+        // ─── CONTROLLERS ────────────────────────────────────────────
+        
+        case 'get_controllers':
+            requireAdmin();
+            
+            $controllers = db()->fetchAll(
+                "SELECT * FROM controllers ORDER BY created_at DESC"
+            );
+            
+            jsonResponse(['success' => true, 'controllers' => $controllers]);
+            break;
+            
+        case 'create_controller':
+            requireAdmin();
+            
+            $username = sanitize($_POST['username'] ?? '');
+            $password = $_POST['password'] ?? '';
+            $fullName = sanitize($_POST['full_name'] ?? '');
+            $phone = sanitize($_POST['phone'] ?? '');
+            $stationName = sanitize($_POST['station_name'] ?? '');
+            
+            if (empty($username) || empty($password) || empty($fullName)) {
+                jsonResponse(['success' => false, 'message' => 'Missing required fields'], 400);
+            }
+            
+            // Check if username exists
+            $existing = db()->fetchOne("SELECT id FROM controllers WHERE username = ?", [$username]);
+            if ($existing) {
+                jsonResponse(['success' => false, 'message' => 'Username already exists']);
+            }
+            
+            $id = db()->insert('controllers', [
+                'username' => $username,
+                'password' => password_hash($password, PASSWORD_DEFAULT),
+                'full_name' => $fullName,
+                'phone' => $phone,
+                'station_name' => $stationName ?: 'Etel Madeya Gas Station'
+            ]);
+            
+            // Log activity
+            db()->insert('activity_log', [
+                'admin_id' => $_SESSION['admin_id'],
+                'action' => 'create_controller',
+                'details' => "Created controller: $username",
+                'ip_address' => getClientIP()
+            ]);
+            
+            jsonResponse(['success' => true, 'message' => 'Controller created successfully', 'id' => $id]);
+            break;
+            
+        case 'update_controller':
+            requireAdmin();
+            
+            $id = (int)($_POST['id'] ?? 0);
+            $fullName = sanitize($_POST['full_name'] ?? '');
+            $phone = sanitize($_POST['phone'] ?? '');
+            $stationName = sanitize($_POST['station_name'] ?? '');
+            $isActive = (int)($_POST['is_active'] ?? 1);
+            
+            if (!$id || empty($fullName)) {
+                jsonResponse(['success' => false, 'message' => 'Missing required fields'], 400);
+            }
+            
+            $data = [
+                'full_name' => $fullName,
+                'phone' => $phone,
+                'station_name' => $stationName,
+                'is_active' => $isActive
+            ];
+            
+            // Update password if provided
+            if (!empty($_POST['password'])) {
+                $data['password'] = password_hash($_POST['password'], PASSWORD_DEFAULT);
+            }
+            
+            db()->update('controllers', $data, 'id = ?', [$id]);
+            
+            // Log activity
+            db()->insert('activity_log', [
+                'admin_id' => $_SESSION['admin_id'],
+                'action' => 'update_controller',
+                'details' => "Updated controller ID: $id",
+                'ip_address' => getClientIP()
+            ]);
+            
+            jsonResponse(['success' => true, 'message' => 'Controller updated successfully']);
+            break;
+            
+        case 'delete_controller':
+            requireAdmin();
+            
+            $id = (int)($_POST['id'] ?? 0);
+            
+            if (!$id) {
+                jsonResponse(['success' => false, 'message' => 'Controller ID required'], 400);
+            }
+            
+            db()->delete('controllers', 'id = ?', [$id]);
+            
+            // Log activity
+            db()->insert('activity_log', [
+                'admin_id' => $_SESSION['admin_id'],
+                'action' => 'delete_controller',
+                'details' => "Deleted controller ID: $id",
+                'ip_address' => getClientIP()
+            ]);
+            
+            jsonResponse(['success' => true, 'message' => 'Controller deleted successfully']);
+            break;
+            
+        // ─── VEHICLE TYPES ──────────────────────────────────────────
+        
+        case 'get_vehicle_types':
+            requireAdmin();
+            
+            $types = db()->fetchAll(
+                "SELECT * FROM vehicle_types ORDER BY sort_order, name"
+            );
+            
+            jsonResponse(['success' => true, 'types' => $types]);
+            break;
+            
+        case 'create_vehicle_type':
+            requireAdmin();
+            
+            $name = sanitize($_POST['name'] ?? '');
+            $nameAm = sanitize($_POST['name_am'] ?? '');
+            $icon = sanitize($_POST['icon'] ?? '');
+            $sortOrder = (int)($_POST['sort_order'] ?? 0);
+            
+            if (empty($name)) {
+                jsonResponse(['success' => false, 'message' => 'Name required'], 400);
+            }
+            
+            $id = db()->insert('vehicle_types', [
+                'name' => $name,
+                'name_am' => $nameAm,
+                'icon' => $icon,
+                'sort_order' => $sortOrder
+            ]);
+            
+            // Log activity
+            db()->insert('activity_log', [
+                'admin_id' => $_SESSION['admin_id'],
+                'action' => 'create_vehicle_type',
+                'details' => "Created vehicle type: $name",
+                'ip_address' => getClientIP()
+            ]);
+            
+            jsonResponse(['success' => true, 'message' => 'Vehicle type created successfully', 'id' => $id]);
+            break;
+            
+        case 'update_vehicle_type':
+            requireAdmin();
+            
+            $id = (int)($_POST['id'] ?? 0);
+            $name = sanitize($_POST['name'] ?? '');
+            $nameAm = sanitize($_POST['name_am'] ?? '');
+            $icon = sanitize($_POST['icon'] ?? '');
+            $sortOrder = (int)($_POST['sort_order'] ?? 0);
+            $isActive = (int)($_POST['is_active'] ?? 1);
+            
+            if (!$id || empty($name)) {
+                jsonResponse(['success' => false, 'message' => 'Missing required fields'], 400);
+            }
+            
+            db()->update('vehicle_types', [
+                'name' => $name,
+                'name_am' => $nameAm,
+                'icon' => $icon,
+                'sort_order' => $sortOrder,
+                'is_active' => $isActive
+            ], 'id = ?', [$id]);
+            
+            // Log activity
+            db()->insert('activity_log', [
+                'admin_id' => $_SESSION['admin_id'],
+                'action' => 'update_vehicle_type',
+                'details' => "Updated vehicle type ID: $id",
+                'ip_address' => getClientIP()
+            ]);
+            
+            jsonResponse(['success' => true, 'message' => 'Vehicle type updated successfully']);
+            break;
+            
+        case 'delete_vehicle_type':
+            requireAdmin();
+            
+            $id = (int)($_POST['id'] ?? 0);
+            
+            if (!$id) {
+                jsonResponse(['success' => false, 'message' => 'Vehicle type ID required'], 400);
+            }
+            
+            db()->delete('vehicle_types', 'id = ?', [$id]);
+            
+            // Log activity
+            db()->insert('activity_log', [
+                'admin_id' => $_SESSION['admin_id'],
+                'action' => 'delete_vehicle_type',
+                'details' => "Deleted vehicle type ID: $id",
+                'ip_address' => getClientIP()
+            ]);
+            
+            jsonResponse(['success' => true, 'message' => 'Vehicle type deleted successfully']);
+            break;
+            
+        // ─── QUEUE MONITOR ──────────────────────────────────────────
+        
+        case 'get_queue_monitor':
+            requireAdmin();
+            
+            $sql = "SELECT q.*, vt.name as vehicle_type_name, vt.icon, 
+                           c.station_name, c.full_name as controller_name
+                    FROM queue q
+                    JOIN vehicle_types vt ON q.vehicle_type_id = vt.id
+                    JOIN controllers c ON q.controller_id = c.id
+                    WHERE q.status = 'queued'
+                    ORDER BY c.station_name, q.priority_tier, q.position";
+            
+            $queue = db()->fetchAll($sql);
+            
+            // Group by controller
+            $grouped = [];
+            foreach ($queue as $item) {
+                $controllerId = $item['controller_id'];
+                if (!isset($grouped[$controllerId])) {
+                    $grouped[$controllerId] = [
+                        'controller_name' => $item['controller_name'],
+                        'station_name' => $item['station_name'],
+                        'vehicles' => []
+                    ];
+                }
+                $grouped[$controllerId]['vehicles'][] = $item;
+            }
+            
+            jsonResponse(['success' => true, 'queue' => array_values($grouped)]);
+            break;
+            
+        // ─── REPORTS ────────────────────────────────────────────────
+        
+        case 'get_reports':
+            requireAdmin();
+            
+            $date = $_GET['date'] ?? date('Y-m-d');
+            
+            $sql = "SELECT r.*, vt.name as vehicle_type_name, c.station_name
+                    FROM report r
+                    JOIN vehicle_types vt ON r.vehicle_type_id = vt.id
+                    JOIN controllers c ON r.controller_id = c.id
+                    WHERE r.report_date = ?
+                    ORDER BY r.served_at DESC";
+            
+            $reports = db()->fetchAll($sql, [$date]);
+            
+            // Summary stats
+            $stats = [
+                'total_served' => count($reports),
+                'total_fuel_gallons' => array_sum(array_column($reports, 'fuel_amount_gallons')),
+                'total_fuel_liters' => array_sum(array_column($reports, 'fuel_amount_liters'))
+            ];
+            
+            jsonResponse(['success' => true, 'reports' => $reports, 'stats' => $stats]);
+            break;
+            
+        // ─── SETTINGS ───────────────────────────────────────────────
+        
+        case 'get_settings':
+            requireAdmin();
+            
+            $settings = db()->fetchAll("SELECT * FROM settings");
+            
+            $settingsArray = [];
+            foreach ($settings as $setting) {
+                $settingsArray[$setting['setting_key']] = $setting['setting_value'];
+            }
+            
+            jsonResponse(['success' => true, 'settings' => $settingsArray]);
+            break;
+            
+        case 'update_settings':
+            requireAdmin();
+            
+            $settings = $_POST['settings'] ?? [];
+            
+            if (empty($settings)) {
+                jsonResponse(['success' => false, 'message' => 'No settings provided'], 400);
+            }
+            
+            foreach ($settings as $key => $value) {
+                $existing = db()->fetchOne("SELECT id FROM settings WHERE setting_key = ?", [$key]);
+                
+                if ($existing) {
+                    db()->update('settings', ['setting_value' => $value], 'setting_key = ?', [$key]);
+                } else {
+                    db()->insert('settings', ['setting_key' => $key, 'setting_value' => $value]);
+                }
+            }
+            
+            // Log activity
+            db()->insert('activity_log', [
+                'admin_id' => $_SESSION['admin_id'],
+                'action' => 'update_settings',
+                'details' => 'Updated system settings',
+                'ip_address' => getClientIP()
+            ]);
+            
+            jsonResponse(['success' => true, 'message' => 'Settings updated successfully']);
+            break;
+            
+        default:
+            jsonResponse(['success' => false, 'message' => 'Invalid action'], 400);
+    }
+    
+} catch (Exception $e) {
+    error_log("Admin API Error: " . $e->getMessage());
+    jsonResponse(['success' => false, 'message' => 'Server error: ' . $e->getMessage()], 500);
+}

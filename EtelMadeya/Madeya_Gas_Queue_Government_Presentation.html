@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Madeya Gas Queue - Government Presentation</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;600&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--gold:#F5A623;--gold-light:#FFD166;--dark:rgba(10,7,2,0.95);--dark-soft:rgba(18,13,4,0.90);--panel:rgba(22,16,5,0.88);--card:rgba(30,21,6,0.85);--border:rgba(180,130,30,0.35);--text:#f5e6c0;--text-muted:#c9a96e;--green:#27AE60;--red:#C0392B;--blue:#2980B9}
+body{font-family:'Barlow Condensed',sans-serif;background:var(--dark);color:var(--text)}
+.slide-container{width:100vw;height:100vh;overflow:hidden;scroll-snap-type:y mandatory;overflow-y:scroll}
+.slide{width:100vw;height:100vh;display:flex;flex-direction:column;justify-content:flex-start;align-items:center;padding:40px 60px 60px 60px;scroll-snap-align:start;position:relative;overflow-y:auto}
+.slide-1{background:linear-gradient(135deg,rgba(10,7,2,0.98) 0%,rgba(30,21,6,0.95) 100%)}
+.slide-2{background:linear-gradient(135deg,rgba(192,57,43,0.15) 0%,rgba(10,7,2,0.98) 100%)}
+.slide-3{background:linear-gradient(135deg,rgba(39,174,96,0.15) 0%,rgba(10,7,2,0.98) 100%)}
+.slide-4{background:linear-gradient(135deg,rgba(245,166,35,0.15) 0%,rgba(10,7,2,0.98) 100%)}
+.slide-5{background:linear-gradient(135deg,rgba(41,128,185,0.15) 0%,rgba(10,7,2,0.98) 100%)}
+.slide-6{background:linear-gradient(135deg,rgba(245,166,35,0.2) 0%,rgba(10,7,2,0.98) 100%)}
+.slide-7{background:linear-gradient(135deg,rgba(39,174,96,0.2) 0%,rgba(10,7,2,0.98) 100%)}
+.slide-8{background:linear-gradient(135deg,rgba(245,166,35,0.25) 0%,rgba(10,7,2,0.98) 100%)}
+.slide-9{background:linear-gradient(135deg,rgba(41,128,185,0.15) 0%,rgba(10,7,2,0.98) 100%)}
+.slide-10{background:linear-gradient(135deg,rgba(192,57,43,0.1) 0%,rgba(10,7,2,0.98) 100%)}
+.slide-11{background:linear-gradient(135deg,rgba(245,166,35,0.3) 0%,rgba(10,7,2,0.98) 100%)}
+.slide h1{font-size:64px;font-weight:900;color:var(--gold);text-align:center;margin-bottom:20px;text-shadow:0 0 40px rgba(245,166,35,0.5),2px 2px 20px rgba(0,0,0,0.8);animation:fadeInUp 1s ease;letter-spacing:4px;text-transform:uppercase;line-height:1.1}
+.slide h2{font-size:48px;font-weight:800;color:var(--gold);text-align:center;margin-bottom:30px;text-shadow:0 0 30px rgba(245,166,35,0.4),2px 2px 15px rgba(0,0,0,0.6);letter-spacing:3px;line-height:1.2}
+.slide h3{font-size:32px;font-weight:700;color:var(--gold);margin-bottom:15px;line-height:1.2}
+.subtitle{font-size:24px;color:var(--text);text-align:center;font-weight:400;margin-bottom:15px;letter-spacing:1px;line-height:1.3}
+.content-box{background:var(--dark-soft);border:2px solid var(--border);border-radius:20px;padding:35px 40px;max-width:1200px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.6),0 0 100px rgba(245,166,35,0.1);animation:fadeIn 1.2s ease;margin-top:20px}
+.feature-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:20px;margin-top:25px}
+.feature-card{background:var(--card);border:1px solid var(--border);border-radius:15px;padding:20px;box-shadow:0 10px 30px rgba(0,0,0,0.4);transition:all 0.3s ease}
+.feature-card:hover{transform:translateY(-10px);box-shadow:0 20px 50px rgba(245,166,35,0.3);border-color:var(--gold)}
+.feature-icon{font-size:40px;margin-bottom:12px}
+.feature-title{font-size:20px;font-weight:700;color:var(--gold);margin-bottom:10px;letter-spacing:1px}
+.feature-desc{font-size:14px;color:var(--text-muted);line-height:1.5}
+.benefits-list{list-style:none;margin-top:20px}
+.benefits-list li{font-size:18px;color:var(--text);padding:15px 20px;margin-bottom:12px;background:linear-gradient(135deg,rgba(245,166,35,0.15) 0%,rgba(245,166,35,0.05) 100%);border-left:4px solid var(--gold);border-radius:10px;display:flex;align-items:center;box-shadow:0 5px 15px rgba(0,0,0,0.3);transition:all 0.3s ease;line-height:1.4}
+.benefits-list li:hover{background:linear-gradient(135deg,rgba(245,166,35,0.25) 0%,rgba(245,166,35,0.1) 100%);transform:translateX(10px)}
+.benefits-list li::before{content:"✓";font-size:28px;font-weight:bold;margin-right:15px;color:var(--green);flex-shrink:0}
+.stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:25px}
+.stat-card{background:var(--card);border:2px solid var(--border);border-radius:15px;padding:30px 20px;text-align:center;box-shadow:0 10px 30px rgba(0,0,0,0.4);transition:all 0.3s ease}
+.stat-card:hover{border-color:var(--gold);box-shadow:0 15px 40px rgba(245,166,35,0.3);transform:translateY(-5px)}
+.stat-number{font-size:56px;font-weight:800;color:var(--gold);margin-bottom:8px;font-family:'JetBrains Mono',monospace;text-shadow:0 0 20px rgba(245,166,35,0.5);line-height:1}
+.stat-label{font-size:16px;color:var(--text-muted);font-weight:600;letter-spacing:1px;line-height:1.3}
+.cta-button{background:linear-gradient(135deg,var(--gold) 0%,#c47f10 100%);color:#000;font-size:28px;font-weight:800;padding:25px 60px;border:none;border-radius:50px;cursor:pointer;box-shadow:0 10px 30px rgba(245,166,35,0.5);transition:all 0.3s ease;margin-top:40px;letter-spacing:2px;text-transform:uppercase}
+.cta-button:hover{transform:translateY(-5px);box-shadow:0 15px 40px rgba(245,166,35,0.7)}
+.logo{font-size:96px;margin-bottom:30px;filter:drop-shadow(0 0 30px rgba(245,166,35,0.6))}
+.footer-text{position:absolute;bottom:30px;font-size:16px;color:var(--text-muted);letter-spacing:1px}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes fadeInUp{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
+.problem-box{background:rgba(192,57,43,0.1);border-left:5px solid var(--red);padding:20px 25px;margin:15px 0;border-radius:10px;transition:all 0.3s ease}
+.problem-box:hover{background:rgba(192,57,43,0.15);transform:translateX(10px)}
+.solution-box{background:rgba(39,174,96,0.1);border-left:5px solid var(--green);padding:20px 25px;margin:15px 0;border-radius:10px;transition:all 0.3s ease}
+.solution-box:hover{background:rgba(39,174,96,0.15);transform:translateX(10px)}
+.problem-box h3,.solution-box h3{font-size:22px;margin-bottom:8px}
+.problem-box p,.solution-box p{font-size:16px;line-height:1.5}
+.screenshot-container{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:25px}
+.screenshot-box{background:var(--card);border:2px solid var(--border);border-radius:15px;padding:15px;text-align:center;box-shadow:0 10px 30px rgba(0,0,0,0.4);transition:all 0.3s ease}
+.screenshot-box:hover{border-color:var(--gold);transform:scale(1.05);box-shadow:0 15px 40px rgba(245,166,35,0.4)}
+.screenshot-placeholder{width:100%;height:200px;background:linear-gradient(135deg,rgba(245,166,35,0.1) 0%,rgba(245,166,35,0.05) 100%);border:2px dashed var(--border);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:56px;margin-bottom:12px}
+.screenshot-label{font-size:18px;font-weight:700;color:var(--gold);margin-top:8px;letter-spacing:1px}
+.testimonial-box{background:var(--card);border-left:5px solid var(--gold);border-radius:15px;padding:25px 30px;margin:20px 0;box-shadow:0 10px 30px rgba(0,0,0,0.4);position:relative;transition:all 0.3s ease}
+.testimonial-box:hover{box-shadow:0 15px 40px rgba(245,166,35,0.3);transform:translateX(10px)}
+.testimonial-quote{font-size:20px;color:var(--text);line-height:1.5;font-style:italic;margin-bottom:15px;padding-left:30px}
+.testimonial-quote::before{content:'"';font-size:40px;color:var(--gold);opacity:0.3;position:absolute;left:15px;top:15px}
+.testimonial-author{font-size:16px;color:var(--gold);font-weight:700;margin-bottom:4px;padding-left:30px}
+.testimonial-role{font-size:14px;color:var(--text-muted);padding-left:30px}
+.success-badge{display:inline-block;background:linear-gradient(135deg,var(--green) 0%,#1e8449 100%);color:white;padding:10px 25px;border-radius:50px;font-size:18px;font-weight:800;letter-spacing:2px;text-transform:uppercase;box-shadow:0 5px 20px rgba(39,174,96,0.4);margin:15px 0}
+.logo{font-size:80px;margin-bottom:20px;filter:drop-shadow(0 0 30px rgba(245,166,35,0.6))}
+.cta-button{background:linear-gradient(135deg,var(--gold) 0%,#c47f10 100%);color:#000;font-size:24px;font-weight:800;padding:20px 50px;border:none;border-radius:50px;cursor:pointer;box-shadow:0 10px 30px rgba(245,166,35,0.5);transition:all 0.3s ease;margin-top:30px;letter-spacing:2px;text-transform:uppercase}
+.cta-button:hover{transform:translateY(-5px);box-shadow:0 15px 40px rgba(245,166,35,0.7)}
+.footer-text{position:absolute;bottom:20px;font-size:14px;color:var(--text-muted);letter-spacing:1px}
+.lang-toggle{position:fixed;top:20px;right:20px;z-index:1000;background:linear-gradient(135deg,var(--gold) 0%,#c47f10 100%);color:#000;border:none;padding:12px 24px;border-radius:30px;font-size:16px;font-weight:700;cursor:pointer;box-shadow:0 5px 20px rgba(245,166,35,0.4);transition:all 0.3s ease;font-family:'Barlow Condensed',sans-serif;letter-spacing:1px}
+.lang-toggle:hover{transform:translateY(-3px);box-shadow:0 8px 25px rgba(245,166,35,0.6)}
+.lang-toggle:active{transform:translateY(-1px)}
+@media print{.slide{page-break-after:always;height:100vh}.lang-toggle{display:none}}
+</style>
+</head>
+<body>
+<button class="lang-toggle" onclick="toggleLanguage()" id="langBtn">🇪🇹 አማርኛ</button>
+<div class="slide-container">
+
+<!-- SLIDE 1: Title -->
+<div class="slide slide-1">
+<div class="logo">⛽</div>
+<h1 data-lang="slide1.title1">MADEYA GAS QUEUE</h1>
+<h1 data-lang="slide1.title2">MANAGEMENT SYSTEM</h1>
+<p class="subtitle" data-lang="slide1.subtitle">Digital Solution for Efficient Fuel Distribution in Hawassa</p>
+<div class="success-badge" style="margin-top:40px" data-lang="slide1.badge">✓ ALREADY TESTED & PROVEN</div>
+<p class="subtitle" style="margin-top:30px;font-size:24px" data-lang="slide1.presented">Presented to: Hawassa City Administration</p>
+<p class="footer-text" data-lang="slide1.footer">ETEL Development Team | 2026 | ethelmarket.com/etel.madeya</p>
+</div>
+
+<!-- SLIDE 2: Problem -->
+<div class="slide slide-2">
+<h2 data-lang="slide2.title">Current Challenges in Fuel Distribution</h2>
+<div class="content-box">
+<div class="problem-box">
+<h3 style="color:var(--red)" data-lang="slide2.prob1">❌ Long Waiting Times</h3>
+<p style="color:var(--text);font-size:18px;margin-top:10px" data-lang="slide2.prob1desc">Drivers wait hours in unorganized queues, wasting time and fuel</p>
+</div>
+<div class="problem-box">
+<h3 style="color:var(--red)" data-lang="slide2.prob2">❌ Queue Jumping & Conflicts</h3>
+<p style="color:var(--text);font-size:18px;margin-top:10px" data-lang="slide2.prob2desc">No fair system leads to disputes and frustration among drivers</p>
+</div>
+<div class="problem-box">
+<h3 style="color:var(--red)" data-lang="slide2.prob3">❌ No Visibility</h3>
+<p style="color:var(--text);font-size:18px;margin-top:10px" data-lang="slide2.prob3desc">Drivers don't know their position or when they'll be served</p>
+</div>
+<div class="problem-box">
+<h3 style="color:var(--red)" data-lang="slide2.prob4">❌ Manual Management</h3>
+<p style="color:var(--text);font-size:18px;margin-top:10px" data-lang="slide2.prob4desc">Paper-based tracking is inefficient and error-prone</p>
+</div>
+</div>
+</div>
+
+<!-- SLIDE 3: Solution -->
+<div class="slide slide-3">
+<h2 data-lang="slide3.title">Madeya: The Digital Solution</h2>
+<div class="content-box">
+<div class="solution-box">
+<h3 style="color:var(--green)" data-lang="slide3.sol1">✅ Automated Queue Management</h3>
+<p style="color:var(--text);font-size:18px;margin-top:10px" data-lang="slide3.sol1desc">Digital registration with automatic token assignment and position tracking</p>
+</div>
+<div class="solution-box">
+<h3 style="color:var(--green)" data-lang="slide3.sol2">✅ Real-Time Driver Portal</h3>
+<p style="color:var(--text);font-size:18px;margin-top:10px" data-lang="slide3.sol2desc">Drivers check their position online - no need to wait at the station</p>
+</div>
+<div class="solution-box">
+<h3 style="color:var(--green)" data-lang="slide3.sol3">✅ Fair & Transparent</h3>
+<p style="color:var(--text);font-size:18px;margin-top:10px" data-lang="slide3.sol3desc">Priority-based system with odd/even plate rules (ሙሉ / ጎዶሎ)</p>
+</div>
+<div class="solution-box">
+<h3 style="color:var(--green)" data-lang="slide3.sol4">✅ Complete Control</h3>
+<p style="color:var(--text);font-size:18px;margin-top:10px" data-lang="slide3.sol4desc">Government dashboard for monitoring all stations in real-time</p>
+</div>
+</div>
+</div>
+
+<!-- SLIDE 4: Features -->
+<div class="slide slide-4">
+<h2>System Features</h2>
+<div class="content-box">
+<div class="feature-grid">
+<div class="feature-card">
+<div class="feature-icon">🎫</div>
+<div class="feature-title">Token System</div>
+<div class="feature-desc">Automatic token generation with unique 6-digit numbers for each vehicle</div>
+</div>
+<div class="feature-card">
+<div class="feature-icon">📱</div>
+<div class="feature-title">Mobile-Friendly</div>
+<div class="feature-desc">Works on any device - phones, tablets, computers. Progressive Web App (PWA) support</div>
+</div>
+<div class="feature-card">
+<div class="feature-icon">🚗</div>
+<div class="feature-title">Vehicle Type Management</div>
+<div class="feature-desc">Separate queues for Bajaj, Private Cars, Minibus, Diesel, Government vehicles</div>
+</div>
+<div class="feature-card">
+<div class="feature-icon">⚖️</div>
+<div class="feature-title">Priority Tiers (1-7)</div>
+<div class="feature-desc">Emergency services, government, public transport get priority access</div>
+</div>
+<div class="feature-card">
+<div class="feature-icon">📊</div>
+<div class="feature-title">Real-Time Reports</div>
+<div class="feature-desc">Daily statistics, fuel consumption tracking, served vehicle logs</div>
+</div>
+<div class="feature-card">
+<div class="feature-icon">⛽</div>
+<div class="feature-title">Fuel Stock Management</div>
+<div class="feature-desc">Track fuel inventory, allocations, and controller quotas in real-time</div>
+</div>
+<div class="feature-card">
+<div class="feature-icon">📥</div>
+<div class="feature-title">Bulk Import</div>
+<div class="feature-desc">Import hundreds of plate numbers from TXT/CSV files instantly</div>
+</div>
+<div class="feature-card">
+<div class="feature-icon">🔐</div>
+<div class="feature-title">Secure Access</div>
+<div class="feature-desc">Role-based access: Admin, Controller, and Driver portals with authentication</div>
+</div>
+</div>
+</div>
+</div>
+
+<!-- SLIDE 5: How It Works -->
+<div class="slide slide-5">
+<h2>How The System Works</h2>
+<div class="content-box">
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:20px;margin-top:30px">
+<div style="text-align:center">
+<div style="font-size:64px;margin-bottom:20px">1️⃣</div>
+<h3 style="color:var(--gold);font-size:20px;margin-bottom:10px">Registration</h3>
+<p style="color:var(--text-muted);font-size:16px">Driver arrives at station. Controller enters plate number into system</p>
+</div>
+<div style="text-align:center">
+<div style="font-size:64px;margin-bottom:20px">2️⃣</div>
+<h3 style="color:var(--gold);font-size:20px;margin-bottom:10px">Token Assigned</h3>
+<p style="color:var(--text-muted);font-size:16px">System generates unique token and assigns queue position automatically</p>
+</div>
+<div style="text-align:center">
+<div style="font-size:64px;margin-bottom:20px">3️⃣</div>
+<h3 style="color:var(--gold);font-size:20px;margin-bottom:10px">Driver Checks</h3>
+<p style="color:var(--text-muted);font-size:16px">Driver uses phone to check position online. Gets notified when close</p>
+</div>
+<div style="text-align:center">
+<div style="font-size:64px;margin-bottom:20px">4️⃣</div>
+<h3 style="color:var(--gold);font-size:20px;margin-bottom:10px">Service Complete</h3>
+<p style="color:var(--text-muted);font-size:16px">Controller marks as served. Data logged for government reports</p>
+</div>
+</div>
+</div>
+</div>
+
+<!-- SLIDE 6: Screenshots -->
+<div class="slide slide-6">
+<h2>Live System Interface</h2>
+<div class="content-box">
+<p style="text-align:center;font-size:22px;color:var(--text);margin-bottom:30px">Currently deployed at <strong style="color:var(--gold)">ethelmarket.com/etel.madeya</strong></p>
+<div class="screenshot-container">
+<div class="screenshot-box">
+<div class="screenshot-placeholder">📱</div>
+<div class="screenshot-label">Driver Portal</div>
+<p style="color:var(--text-muted);font-size:14px;margin-top:10px">Check queue position<br>Real-time updates</p>
+</div>
+<div class="screenshot-box">
+<div class="screenshot-placeholder">🎛️</div>
+<div class="screenshot-label">Controller Panel</div>
+<p style="color:var(--text-muted);font-size:14px;margin-top:10px">Register vehicles<br>Manage queue</p>
+</div>
+<div class="screenshot-box">
+<div class="screenshot-placeholder">📊</div>
+<div class="screenshot-label">Admin Dashboard</div>
+<p style="color:var(--text-muted);font-size:14px;margin-top:10px">Statistics & reports<br>Full oversight</p>
+</div>
+</div>
+<div style="margin-top:40px;padding:25px;background:rgba(245,166,35,0.1);border:2px solid var(--border);border-radius:15px;text-align:center">
+<p style="font-size:20px;color:var(--gold);font-weight:700;margin-bottom:10px">💻 Live Demo Available During Presentation</p>
+<p style="font-size:16px;color:var(--text-muted)">We can show you the actual working system right now</p>
+</div>
+</div>
+</div>
+
+<!-- SLIDE 7: Pilot Success -->
+<div class="slide slide-7">
+<h2>Pilot Program: Proven Success</h2>
+<div class="content-box">
+<div class="success-badge" style="font-size:24px;margin-bottom:30px">✓ ALREADY WORKING AT GAS STATIONS IN HAWASSA</div>
+<div class="testimonial-box">
+<div class="testimonial-quote">"This system has completely transformed how we manage our queue. No more disputes, no more confusion. Everything is organized and fair. Our customers love it!"</div>
+<div class="testimonial-author">Gas Station Controllers</div>
+<div class="testimonial-role">Pilot Program Participants</div>
+</div>
+<div class="testimonial-box">
+<div class="testimonial-quote">"The drivers are very happy with this system. They can check their position from home and arrive exactly when needed. It saves them hours of waiting time."</div>
+<div class="testimonial-author">Government-Assigned Controllers</div>
+<div class="testimonial-role">Recommended for Official Approval</div>
+</div>
+<div style="margin-top:40px;display:grid;grid-template-columns:repeat(3,1fr);gap:20px">
+<div class="stat-card">
+<div class="stat-number">✓</div>
+<div class="stat-label">Controllers Love It</div>
+</div>
+<div class="stat-card">
+<div class="stat-number">✓</div>
+<div class="stat-label">Drivers Love It</div>
+</div>
+<div class="stat-card">
+<div class="stat-number">✓</div>
+<div class="stat-label">Station Owners Love It</div>
+</div>
+</div>
+</div>
+</div>
+
+<!-- SLIDE 8: Government Benefits -->
+<div class="slide slide-8">
+<h2>Benefits for Hawassa City Administration</h2>
+<div class="content-box">
+<ul class="benefits-list">
+<li>Complete oversight of all fuel distribution across the city</li>
+<li>Real-time data on fuel consumption and vehicle patterns</li>
+<li>Reduced traffic congestion around gas stations</li>
+<li>Fair and transparent system builds public trust</li>
+<li>Digital records for auditing and policy planning</li>
+<li>Ability to enforce odd/even day rules (ሙሉ / ጎዶሎ)</li>
+<li>Emergency vehicle priority management</li>
+<li>Reduced disputes and improved public order</li>
+</ul>
+</div>
+</div>
+
+<!-- SLIDE 9: Citizen Benefits -->
+<div class="slide slide-9">
+<h2>Benefits for Hawassa Citizens</h2>
+<div class="content-box">
+<div class="stats-grid">
+<div class="stat-card">
+<div class="stat-number">70%</div>
+<div class="stat-label">Less Waiting Time</div>
+</div>
+<div class="stat-card">
+<div class="stat-number">100%</div>
+<div class="stat-label">Fair Queue System</div>
+</div>
+<div class="stat-card">
+<div class="stat-number">24/7</div>
+<div class="stat-label">Online Access</div>
+</div>
+</div>
+<ul class="benefits-list" style="margin-top:40px">
+<li>No more hours wasted waiting in line</li>
+<li>Check queue position from home or work</li>
+<li>Know exactly when to arrive at the station</li>
+<li>Fair system - no queue jumping</li>
+<li>Save fuel by not idling in long queues</li>
+</ul>
+</div>
+</div>
+
+<!-- SLIDE 10: Implementation -->
+<div class="slide slide-10">
+<h2>Implementation Roadmap</h2>
+<div class="content-box">
+<div style="display:grid;grid-template-columns:1fr;gap:25px">
+<div style="background:linear-gradient(135deg,rgba(245,166,35,0.2) 0%,rgba(245,166,35,0.05) 100%);padding:30px;border-radius:15px;border-left:5px solid var(--gold)">
+<h3 style="color:var(--gold);margin-bottom:15px">Phase 1: Expand Pilot Program (Month 1-2)</h3>
+<p style="font-size:18px;line-height:1.6;color:var(--text)">Add 3-5 more major gas stations. Train additional controllers. Gather comprehensive feedback.</p>
+</div>
+<div style="background:linear-gradient(135deg,rgba(39,174,96,0.2) 0%,rgba(39,174,96,0.05) 100%);padding:30px;border-radius:15px;border-left:5px solid var(--green)">
+<h3 style="color:var(--green);margin-bottom:15px">Phase 2: City-Wide Rollout (Month 3-4)</h3>
+<p style="font-size:18px;line-height:1.6;color:var(--text)">Deploy to all gas stations in Hawassa. Launch public awareness campaign via radio, TV, and social media.</p>
+</div>
+<div style="background:linear-gradient(135deg,rgba(41,128,185,0.2) 0%,rgba(41,128,185,0.05) 100%);padding:30px;border-radius:15px;border-left:5px solid var(--blue)">
+<h3 style="color:var(--blue);margin-bottom:15px">Phase 3: Optimization (Month 5-6)</h3>
+<p style="font-size:18px;line-height:1.6;color:var(--text)">Analyze usage data, optimize queue rules, add features based on real-world patterns.</p>
+</div>
+<div style="background:linear-gradient(135deg,rgba(192,57,43,0.15) 0%,rgba(192,57,43,0.05) 100%);padding:30px;border-radius:15px;border-left:5px solid var(--red)">
+<h3 style="color:var(--red);margin-bottom:15px">Phase 4: Regional Expansion (Month 7+)</h3>
+<p style="font-size:18px;line-height:1.6;color:var(--text)">Scale to other cities in SNNPR region based on Hawassa's proven success.</p>
+</div>
+</div>
+</div>
+</div>
+
+<!-- SLIDE 11: Call to Action -->
+<div class="slide slide-11">
+<div class="logo">⛽</div>
+<h1>Let's Modernize Hawassa Together</h1>
+<p class="subtitle">A smarter, fairer, more efficient fuel distribution system</p>
+<div class="success-badge" style="font-size:22px;margin-top:30px">ALREADY PROVEN • READY TO SCALE • WAITING FOR YOUR APPROVAL</div>
+<div style="margin-top:60px;text-align:center">
+<div style="background:var(--card);border:2px solid var(--border);padding:40px;border-radius:20px;display:inline-block;box-shadow:0 20px 60px rgba(0,0,0,0.5)">
+<h3 style="color:var(--gold);margin-bottom:20px;font-size:32px">Contact Information</h3>
+<p style="color:var(--text);font-size:22px;line-height:2">
+📧 Email: info@ethelmarket.com<br>
+🌐 Website: ethelmarket.com/etel.madeya<br>
+📱 Live Demo: Available Now<br>
+🏢 ETEL Development Team
+</p>
+</div>
+</div>
+<button class="cta-button">Request Official Approval & City-Wide Deployment</button>
+<p class="footer-text">Thank you for your time and consideration • Let's make Hawassa a model city</p>
+</div>
+
+</div>
+<script>
+var currentLang='en';
+var translations={
+en:{
+slide1:{title1:'MADEYA GAS QUEUE',title2:'MANAGEMENT SYSTEM',subtitle:'Digital Solution for Efficient Fuel Distribution in Hawassa',badge:'✓ ALREADY TESTED & PROVEN',presented:'Presented to: Hawassa City Administration',footer:'ETEL Development Team | 2026 | ethelmarket.com/etel.madeya'},
+slide2:{title:'Current Challenges in Fuel Distribution',prob1:'❌ Long Waiting Times',prob1desc:'Drivers wait hours in unorganized queues, wasting time and fuel',prob2:'❌ Queue Jumping & Conflicts',prob2desc:'No fair system leads to disputes and frustration among drivers',prob3:'❌ No Visibility',prob3desc:"Drivers don't know their position or when they'll be served",prob4:'❌ Manual Management',prob4desc:'Paper-based tracking is inefficient and error-prone'},
+slide3:{title:'Madeya: The Digital Solution',sol1:'✅ Automated Queue Management',sol1desc:'Digital registration with automatic token assignment and position tracking',sol2:'✅ Real-Time Driver Portal',sol2desc:'Drivers check their position online - no need to wait at the station',sol3:'✅ Fair & Transparent',sol3desc:'Priority-based system with odd/even plate rules (ሙሉ / ጎዶሎ)',sol4:'✅ Complete Control',sol4desc:'Government dashboard for monitoring all stations in real-time'},
+slide4:{title:'System Features'},
+slide5:{title:'How The System Works',step1:'Registration',step1desc:'Driver arrives at station. Controller enters plate number into system',step2:'Token Assigned',step2desc:'System generates unique token and assigns queue position automatically',step3:'Driver Checks',step3desc:'Driver uses phone to check position online. Gets notified when close',step4:'Service Complete',step4desc:'Controller marks as served. Data logged for government reports'},
+slide6:{title:'Live System Interface',deployed:'Currently deployed at',demo:'💻 Live Demo Available During Presentation',demodesc:'We can show you the actual working system right now',driver:'Driver Portal',driverdesc:'Check queue position<br>Real-time updates',controller:'Controller Panel',controllerdesc:'Register vehicles<br>Manage queue',admin:'Admin Dashboard',admindesc:'Statistics & reports<br>Full oversight'},
+slide7:{title:'Pilot Program: Proven Success',badge:'✓ ALREADY WORKING AT GAS STATIONS IN HAWASSA',quote1:'"This system has completely transformed how we manage our queue. No more disputes, no more confusion. Everything is organized and fair. Our customers love it!"',author1:'Gas Station Controllers',role1:'Pilot Program Participants',quote2:'"The drivers are very happy with this system. They can check their position from home and arrive exactly when needed. It saves them hours of waiting time."',author2:'Government-Assigned Controllers',role2:'Recommended for Official Approval',love1:'Controllers Love It',love2:'Drivers Love It',love3:'Station Owners Love It'},
+slide8:{title:'Benefits for Hawassa City Administration',b1:'Complete oversight of all fuel distribution across the city',b2:'Real-time data on fuel consumption and vehicle patterns',b3:'Reduced traffic congestion around gas stations',b4:'Fair and transparent system builds public trust',b5:'Digital records for auditing and policy planning',b6:'Ability to enforce odd/even day rules (ሙሉ / ጎዶሎ)',b7:'Emergency vehicle priority management',b8:'Reduced disputes and improved public order'},
+slide9:{title:'Benefits for Hawassa Citizens',stat1:'70%',stat1label:'Less Waiting Time',stat2:'100%',stat2label:'Fair Queue System',stat3:'24/7',stat3label:'Online Access',b1:'No more hours wasted waiting in line',b2:'Check queue position from home or work',b3:'Know exactly when to arrive at the station',b4:'Fair system - no queue jumping',b5:'Save fuel by not idling in long queues'},
+slide10:{title:'Implementation Roadmap',phase1:'Phase 1: Expand Pilot Program (Month 1-2)',phase1desc:'Add 3-5 more major gas stations. Train additional controllers. Gather comprehensive feedback.',phase2:'Phase 2: City-Wide Rollout (Month 3-4)',phase2desc:'Deploy to all gas stations in Hawassa. Launch public awareness campaign via radio, TV, and social media.',phase3:'Phase 3: Optimization (Month 5-6)',phase3desc:'Analyze usage data, optimize queue rules, add features based on real-world patterns.',phase4:'Phase 4: Regional Expansion (Month 7+)',phase4desc:"Scale to other cities in SNNPR region based on Hawassa's proven success."},
+slide11:{title:"Let's Modernize Hawassa Together",subtitle:'A smarter, fairer, more efficient fuel distribution system',badge:'ALREADY PROVEN • READY TO SCALE • WAITING FOR YOUR APPROVAL',contact:'Contact Information',email:'📧 Email: info@ethelmarket.com',website:'🌐 Website: ethelmarket.com/etel.madeya',demo:'📱 Live Demo: Available Now',team:'🏢 ETEL Development Team',cta:'Request Official Approval & City-Wide Deployment',footer:"Thank you for your time and consideration • Let's make Hawassa a model city"}
+},
+am:{
+slide1:{title1:'ማደያ ነዳጅ ወረፋ',title2:'አስተዳደር ስርዓት',subtitle:'በሐዋሳ ውስጥ ቀልጣፋ የነዳጅ ስርጭት ዲጂታል መፍትሄ',badge:'✓ ቀድሞውኑ ተሞክሮ እና የተረጋገጠ',presented:'የቀረበው፡ ለሐዋሳ ከተማ አስተዳደር',footer:'ETEL የልማት ቡድን | 2026 | ethelmarket.com/etel.madeya'},
+slide2:{title:'በነዳጅ ስርጭት ውስጥ ያሉ ችግሮች',prob1:'❌ ረጅም የመጠበቂያ ጊዜ',prob1desc:'ሹፌሮች በማይደራጁ ወረፋዎች ውስጥ ሰዓታት ይጠብቃሉ፣ ጊዜና ነዳጅ ያባክናሉ',prob2:'❌ ወረፋ መዝለል እና ግጭቶች',prob2desc:'ፍትሃዊ ስርዓት አለመኖሩ በሹፌሮች መካከል ግጭት እና ብስጭት ያስከትላል',prob3:'❌ ግልጽነት የለም',prob3desc:'ሹፌሮች የራሳቸውን ቦታ ወይም መቼ እንደሚያገለግሉ አያውቁም',prob4:'❌ በእጅ አስተዳደር',prob4desc:'በወረቀት ላይ የተመሰረተ መከታተል ቀልጣፋ አይደለም እና ስህተት ያለበት ነው'},
+slide3:{title:'ማደያ፡ ዲጂታል መፍትሄ',sol1:'✅ ራስ-ሰር የወረፋ አስተዳደር',sol1desc:'ራስ-ሰር የቶከን መመደብ እና የቦታ መከታተል ጋር ዲጂታል ምዝገባ',sol2:'✅ በእውነተኛ ጊዜ የሹፌር መግቢያ',sol2desc:'ሹፌሮች በመስመር ላይ ቦታቸውን ያረጋግጣሉ - በጣቢያው መጠበቅ አያስፈልግም',sol3:'✅ ፍትሃዊ እና ግልጽ',sol3desc:'በቅድሚያ ላይ የተመሰረተ ስርዓት ከሙሉ / ጎዶሎ ህጎች ጋር',sol4:'✅ ሙሉ ቁጥጥር',sol4desc:'ሁሉንም ጣቢያዎች በእውነተኛ ጊዜ ለመከታተል የመንግስት ዳሽቦርድ'},
+slide4:{title:'የስርዓት ባህሪያት'},
+slide5:{title:'ስርዓቱ እንዴት ይሰራል',step1:'ምዝገባ',step1desc:'ሹፌር ወደ ጣቢያ ይመጣል። ተቆጣጣሪው የታርጋ ቁጥሩን ወደ ስርዓቱ ያስገባል',step2:'ቶከን ተመድቧል',step2desc:'ስርዓቱ ልዩ ቶከን ያመነጫል እና የወረፋ ቦታን በራስ-ሰር ይመድባል',step3:'ሹፌር ያረጋግጣል',step3desc:'ሹፌር ስልኩን በመጠቀም በመስመር ላይ ቦታውን ያረጋግጣል። ሲቀርብ ማሳወቂያ ይደርሰዋል',step4:'አገልግሎት ተጠናቋል',step4desc:'ተቆጣጣሪው እንደተገለገለ ምልክት ያደርጋል። መረጃው ለመንግስት ሪፖርቶች ተመዝግቧል'},
+slide6:{title:'የቀጥታ ስርዓት በይነገጽ',deployed:'በአሁኑ ጊዜ ተዘርግቷል በ',demo:'💻 የቀጥታ ማሳያ በአቀራረብ ጊዜ ይገኛል',demodesc:'ትክክለኛውን የሚሰራ ስርዓት አሁን ልናሳይዎ እንችላለን',driver:'የሹፌር መግቢያ',driverdesc:'የወረፋ ቦታን ያረጋግጡ<br>በእውነተኛ ጊዜ ማሻሻያዎች',controller:'የተቆጣጣሪ ፓነል',controllerdesc:'ተሽከርካሪዎችን ያስመዝግቡ<br>ወረፋን ያስተዳድሩ',admin:'የአስተዳዳሪ ዳሽቦርድ',admindesc:'ስታቲስቲክስ እና ሪፖርቶች<br>ሙሉ ቁጥጥር'},
+slide7:{title:'የሙከራ ፕሮግራም፡ የተረጋገጠ ስኬት',badge:'✓ ቀድሞውኑ በሐዋሳ የነዳጅ ጣቢያዎች ላይ እየሰራ ነው',quote1:'"ይህ ስርዓት የእኛን ወረፋ እንዴት እንደምናስተዳድር ሙሉ በሙሉ ቀይሮታል። ምንም ግጭት የለም፣ ምንም ግራ መጋባት የለም። ሁሉም ነገር የተደራጀ እና ፍትሃዊ ነው። ደንበኞቻችን ይወዱታል!"',author1:'የነዳጅ ጣቢያ ተቆጣጣሪዎች',role1:'የሙከራ ፕሮግራም ተሳታፊዎች',quote2:'"ሹፌሮቹ በዚህ ስርዓት በጣም ደስተኞች ናቸው። ከቤት ቦታቸውን ማረጋገጥ እና በትክክል በሚያስፈልግበት ጊዜ መድረስ ይችላሉ። ሰዓታት የመጠበቂያ ጊዜን ይቆጥባል።"',author2:'በመንግስት የተመደቡ ተቆጣጣሪዎች',role2:'ለይፋዊ ፈቃድ ተመክሯል',love1:'ተቆጣጣሪዎች ይወዱታል',love2:'ሹፌሮች ይወዱታል',love3:'የጣቢያ ባለቤቶች ይወዱታል'},
+slide8:{title:'ለሐዋሳ ከተማ አስተዳደር ጥቅሞች',b1:'በከተማው ውስጥ ያለውን ሁሉንም የነዳጅ ስርጭት ሙሉ ቁጥጥር',b2:'በነዳጅ ፍጆታ እና በተሽከርካሪ ቅጦች ላይ በእውነተኛ ጊዜ መረጃ',b3:'በነዳጅ ጣቢያዎች አካባቢ የትራፊክ መጨናነቅ መቀነስ',b4:'ፍትሃዊ እና ግልጽ ስርዓት የህዝብ እምነት ይገነባል',b5:'ለኦዲት እና ለፖሊሲ እቅድ ዲጂታል መዝገቦች',b6:'የሙሉ / ጎዶሎ ህጎችን የማስከበር ችሎታ',b7:'የአደጋ ጊዜ ተሽከርካሪ ቅድሚያ አስተዳደር',b8:'ግጭቶች መቀነስ እና የህዝብ ስርዓት መሻሻል'},
+slide9:{title:'ለሐዋሳ ዜጎች ጥቅሞች',stat1:'70%',stat1label:'ያነሰ የመጠበቂያ ጊዜ',stat2:'100%',stat2label:'ፍትሃዊ የወረፋ ስርዓት',stat3:'24/7',stat3label:'የመስመር ላይ መዳረሻ',b1:'በመስመር ላይ በመጠበቅ የሚባክኑ ሰዓታት የሉም',b2:'ከቤት ወይም ከስራ የወረፋ ቦታን ያረጋግጡ',b3:'ወደ ጣቢያው መቼ መድረስ እንዳለብዎ በትክክል ያውቃሉ',b4:'ፍትሃዊ ስርዓት - ወረፋ መዝለል የለም',b5:'በረጅም ወረፋዎች ውስጥ ሳይሰራ ነዳጅ ይቆጥቡ'},
+slide10:{title:'የትግበራ የመንገድ ካርታ',phase1:'ደረጃ 1፡ የሙከራ ፕሮግራምን ማስፋፋት (ወር 1-2)',phase1desc:'3-5 ተጨማሪ ዋና የነዳጅ ጣቢያዎችን ያክሉ። ተጨማሪ ተቆጣጣሪዎችን ያሰልጥኑ። አጠቃላይ ግብረመልስ ይሰብስቡ።',phase2:'ደረጃ 2፡ በከተማ ደረጃ ማሰማራት (ወር 3-4)',phase2desc:'በሐዋሳ ውስጥ ወደ ሁሉም የነዳጅ ጣቢያዎች ያሰማሩ። በሬዲዮ፣ ቴሌቪዥን እና ማህበራዊ ሚዲያ የህዝብ ግንዛቤ ዘመቻ ያስጀምሩ።',phase3:'ደረጃ 3፡ ማመቻቸት (ወር 5-6)',phase3desc:'የአጠቃቀም መረጃን ይተንትኑ፣ የወረፋ ህጎችን ያመቻቹ፣ በእውነተኛ-ዓለም ቅጦች ላይ በመመስረት ባህሪያትን ያክሉ።',phase4:'ደረጃ 4፡ የክልል መስፋፋት (ወር 7+)',phase4desc:'በሐዋሳ የተረጋገጠ ስኬት ላይ በመመስረት ወደ ሌሎች የደቡብ ክልል ከተሞች ያስፋፉ።'},
+slide11:{title:'ሐዋሳን አብረን እናዘምን',subtitle:'የበለጠ ብልህ፣ ፍትሃዊ፣ ቀልጣፋ የነዳጅ ስርጭት ስርዓት',badge:'ቀድሞውኑ የተረጋገጠ • ለመስፋፋት ዝግጁ • ለእርስዎ ፈቃድ እየጠበቀ',contact:'የመገኛ መረጃ',email:'📧 ኢሜይል: info@ethelmarket.com',website:'🌐 ድረ-ገጽ: ethelmarket.com/etel.madeya',demo:'📱 የቀጥታ ማሳያ፡ አሁን ይገኛል',team:'🏢 ETEL የልማት ቡድን',cta:'ይፋዊ ፈቃድ እና በከተማ ደረጃ ማሰማራትን ይጠይቁ',footer:'ለጊዜዎ እና ለግምትዎ እናመሰግናለን • ሐዋሳን ምሳሌ ከተማ እናድርግ'}
+}
+};
+
+function toggleLanguage(){
+currentLang=currentLang==='en'?'am':'en';
+var btn=document.getElementById('langBtn');
+btn.textContent=currentLang==='en'?'🇪🇹 አማርኛ':'🇬🇧 English';
+updateContent();
+}
+
+function updateContent(){
+var t=translations[currentLang];
+document.querySelectorAll('[data-lang]').forEach(function(el){
+var keys=el.getAttribute('data-lang').split('.');
+var value=t;
+keys.forEach(function(key){value=value[key];});
+if(el.tagName==='INPUT'||el.tagName==='TEXTAREA'){el.value=value;}
+else{el.innerHTML=value;}
+});
+}
+
+document.addEventListener('keydown',function(e){
+const c=document.querySelector('.slide-container');
+const h=window.innerHeight;
+if(e.key==='ArrowDown'||e.key==='PageDown'||e.key===' '){e.preventDefault();c.scrollBy({top:h,behavior:'smooth'})}
+else if(e.key==='ArrowUp'||e.key==='PageUp'){e.preventDefault();c.scrollBy({top:-h,behavior:'smooth'})}
+});
+document.addEventListener('keydown',function(e){if(e.ctrlKey&&e.key==='p'){window.print()}});
+</script>
+</body>
+</html>

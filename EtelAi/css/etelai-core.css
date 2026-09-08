@@ -1,0 +1,166 @@
+/* ============================================================
+   ETEL AI — shared core styles
+   Used by: customer.html, admin.html
+   Keep this file to design tokens + base elements only - each
+   page's own CSS handles its own layout.
+
+   Theme system: html[data-theme="dark"|"light"] drives every color
+   below via CSS custom properties. Gold stays the constant brand
+   accent in both themes - only the background/text pair flips
+   between pure black+white and pure white+black. Toggle with
+   toggleEtelTheme() (see js/core.js) or window._setEtelTheme(name).
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800;900&family=DM+Sans:wght@400;500;700;800&family=JetBrains+Mono:wght@500;700&display=swap');
+
+html[data-theme="dark"]{
+  --bg:#000000;
+  --bg2:#0d0d0d;
+  --bg3:#161616;
+  --line:rgba(212,175,55,.18);
+  --line2:rgba(212,175,55,.32);
+  --text:#FFFFFF;
+  --text-dim:#c9c9c9;
+  --text-faint:#7a7a7a;
+  --card-glow:rgba(212,175,55,.4);
+}
+html[data-theme="light"]{
+  --bg:#FFFFFF;
+  --bg2:#f7f7f7;
+  --bg3:#efefef;
+  --line:rgba(154,112,12,.16);
+  --line2:rgba(154,112,12,.3);
+  --text:#000000;
+  --text-dim:#3a3a3a;
+  --text-faint:#7a7a7a;
+  --card-glow:rgba(154,112,12,.3);
+}
+
+:root{
+  /* Gold is the constant brand accent - identical in both themes on
+     purpose, so switching theme never makes the brand itself look
+     like a different company. */
+  --gold:#D4AF37;
+  --gold-dim:#8B6914;
+  --gold-deep:#C8960C;
+  --gold-light:#F7D774;
+  --green:#2ECC71;
+  --red:#E74C3C;
+  --f-display:'Syne',sans-serif;
+  --f-body:'DM Sans',system-ui,sans-serif;
+  --f-mono:'JetBrains Mono',monospace;
+  --radius:12px;
+}
+
+*{box-sizing:border-box;margin:0;padding:0;}
+
+html{background:var(--bg);}
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-weight:700;
+  font-family:var(--f-body);
+  min-height:100vh;
+  transition:background .3s ease, color .3s ease;
+}
+
+a{color:inherit;text-decoration:none;}
+
+.gold-text{color:var(--gold);}
+.dim-text{color:var(--text-dim);font-weight:500;}
+
+button{font-family:inherit;}
+
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:6px;
+  padding:10px 18px;border-radius:9px;border:none;font-weight:800;font-size:13px;
+  cursor:pointer;transition:opacity .15s, transform .1s;
+}
+.btn:active{transform:scale(.98);}
+.btn-primary{background:linear-gradient(135deg,var(--gold-deep),var(--gold));color:#0d0d0d;}
+.btn-primary:hover{opacity:.9;}
+.btn-outline{background:rgba(212,175,55,.06);color:var(--gold);border:1px solid var(--line2);}
+.btn-outline:hover{background:rgba(212,175,55,.12);}
+
+input[type=text], input[type=password], textarea{
+  background:var(--bg3);border:1px solid var(--line2);border-radius:8px;
+  color:var(--text);font-size:13px;font-weight:700;padding:10px 12px;font-family:inherit;outline:none;
+  transition:border-color .15s;
+}
+input[type=text]:focus, input[type=password]:focus, textarea:focus{border-color:var(--gold);}
+input[type=text]::placeholder, textarea::placeholder{color:var(--text-faint);font-weight:500;}
+
+.card{
+  background:var(--bg2);border:1px solid var(--line);border-radius:var(--radius);
+  transition:background .3s ease, border-color .3s ease;
+}
+
+/* Premium 3D gold card - use for featured/decorative spots (a plan
+   upgrade card, a highlighted stat, the logo showcase), NOT blanket-
+   applied to every settings row or table - that would hurt
+   readability of ordinary functional UI. Same embossed-edge +
+   specular-sweep technique as the Etel Group card preview. */
+.card-premium{
+  position:relative;border-radius:18px;overflow:hidden;
+  background:
+    radial-gradient(120% 140% at 15% 0%, rgba(255,255,255,.5) 0%, transparent 42%),
+    linear-gradient(155deg,var(--gold-light) 0%,var(--gold) 45%,var(--gold-deep) 75%,#7A5710 100%);
+  box-shadow:
+    0 2px 0 rgba(255,255,255,.5) inset,
+    0 -6px 14px rgba(0,0,0,.25) inset,
+    0 0 50px -10px var(--card-glow),
+    0 16px 34px rgba(0,0,0,.35);
+  color:#1a1206;
+}
+.card-premium .shine{
+  position:absolute;top:0;bottom:0;width:55%;
+  background:linear-gradient(75deg,transparent 0%,rgba(255,255,255,.5) 45%,transparent 100%);
+  transform:translateX(-160%) skewX(-18deg);
+  animation:etel-sweep 6s ease-in-out infinite;pointer-events:none;
+}
+@keyframes etel-sweep{
+  0%,40%{transform:translateX(-160%) skewX(-18deg);}
+  60%,100%{transform:translateX(220%) skewX(-18deg);}
+}
+
+.brand-medallion{
+  display:inline-flex;align-items:center;justify-content:center;
+  border-radius:50%;overflow:hidden;flex-shrink:0;
+  border:2.5px solid var(--gold);
+  box-shadow:0 6px 16px rgba(0,0,0,.3), inset 0 1px 0 rgba(255,255,255,.5);
+}
+.brand-medallion img{width:100%;height:100%;object-fit:cover;display:block;}
+
+.toggle{
+  position:relative;width:44px;height:24px;border-radius:12px;
+  background:rgba(212,175,55,.12);border:1px solid var(--line2);cursor:pointer;
+  transition:background .15s;flex-shrink:0;
+}
+.toggle.on{background:linear-gradient(135deg,var(--gold-deep),var(--gold));border-color:transparent;}
+.toggle .knob{
+  position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;
+  background:var(--bg);transition:transform .15s;box-shadow:0 1px 3px rgba(0,0,0,.3);
+}
+.toggle.on .knob{transform:translateX(20px);background:#0d0d0d;}
+
+.theme-toggle-btn{
+  display:inline-flex;align-items:center;gap:7px;
+  background:var(--text);color:var(--bg);
+  border:none;border-radius:30px;padding:9px 16px;
+  font-family:var(--f-body);font-weight:800;font-size:12px;letter-spacing:.3px;
+  cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.25);
+  transition:background .3s ease, color .3s ease;
+}
+
+.toast{
+  position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
+  background:var(--bg3);border:1px solid var(--line2);border-radius:10px;
+  padding:10px 18px;font-size:12.5px;font-weight:700;color:var(--text);z-index:9999;
+  box-shadow:0 8px 30px rgba(0,0,0,.5);opacity:0;transition:opacity .2s;pointer-events:none;
+}
+.toast.show{opacity:1;}
+.toast.err{border-color:rgba(231,76,60,.4);color:#ff8a7a;}
+.toast.ok{border-color:rgba(46,204,113,.4);color:#7ee8a8;}
+
+::-webkit-scrollbar{width:6px;}
+::-webkit-scrollbar-thumb{background:rgba(212,175,55,.25);border-radius:3px;}

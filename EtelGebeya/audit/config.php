@@ -1,0 +1,5 @@
+<?php
+define('GEMINI_API_KEY', 'CHANGE_ME');
+define('CLAUDE_API_KEY', 'CHANGE_ME');
+define('KIMI_API_KEY',   'YOUR_KIMI_KEY_HERE');
+define('OPENAI_API_KEY', 'YOUR_OPENAI_KEY_HERE');

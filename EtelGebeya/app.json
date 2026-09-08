@@ -1,0 +1,8 @@
+{
+  "save": true,
+  "version": "0.1.0",
+  "requires_php": ">=8.0",
+  "requires_ext": ["pdo_mysql", "mbstring", "gd", "json"],
+  "entry": "public/index.php",
+  "dev_run": "php -S localhost:8080 -t public public/index.php"
+}
