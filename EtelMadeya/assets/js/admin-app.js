@@ -3,6 +3,7 @@
 // ═══════════════════════════════════════════════════════════════════
 
 let refreshInterval = null;
+let controllersCache = [];
 
 // ─── INITIALIZATION ─────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
@@ -190,6 +191,7 @@ async function loadControllers() {
 }
 
 function displayControllers(controllers) {
+    controllersCache = controllers;
     const tbody = document.getElementById('controllersTableBody');
     
     if (controllers.length === 0) {
@@ -285,6 +287,91 @@ async function handleAddController(event) {
         }
     } catch (error) {
         showNotification('❌ Error adding controller', 'error');
+    }
+}
+
+function editController(id) {
+    const c = controllersCache.find(x => x.id == id);
+    if (!c) { showNotification('❌ Controller not found - refresh and try again', 'error'); return; }
+
+    const modal = `
+        <div class="modal" style="display:block">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Edit Controller</h2>
+                    <button onclick="closeModal()" class="close-btn">✕</button>
+                </div>
+                <form onsubmit="handleEditController(event, ${c.id})">
+                    <div style="padding: 30px;">
+                        <div class="form-group">
+                            <label>Username</label>
+                            <input type="text" value="${c.username}" class="form-control" disabled>
+                        </div>
+                        <div class="form-group">
+                            <label>New Password (leave blank to keep current)</label>
+                            <input type="password" id="editCtrlPassword" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label>Full Name *</label>
+                            <input type="text" id="editCtrlFullName" class="form-control" value="${c.full_name}" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Phone</label>
+                            <input type="tel" id="editCtrlPhone" class="form-control" value="${c.phone || ''}">
+                        </div>
+                        <div class="form-group">
+                            <label>Station Name</label>
+                            <input type="text" id="editCtrlStation" class="form-control" value="${c.station_name || ''}">
+                        </div>
+                        <div class="form-group">
+                            <label>
+                                <input type="checkbox" id="editCtrlActive" ${c.is_active ? 'checked' : ''}>
+                                Active
+                            </label>
+                        </div>
+                        <div class="modal-actions">
+                            <button type="button" onclick="closeModal()" class="btn-secondary">Cancel</button>
+                            <button type="submit" class="btn-primary">Save Changes</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    `;
+
+    document.getElementById('modalContainer').innerHTML = modal;
+    document.getElementById('modalOverlay').style.display = 'block';
+}
+
+async function handleEditController(event, id) {
+    event.preventDefault();
+
+    const formData = new FormData();
+    formData.append('action', 'update_controller');
+    formData.append('id', id);
+    formData.append('full_name', document.getElementById('editCtrlFullName').value);
+    formData.append('phone', document.getElementById('editCtrlPhone').value);
+    formData.append('station_name', document.getElementById('editCtrlStation').value);
+    formData.append('is_active', document.getElementById('editCtrlActive').checked ? 1 : 0);
+    const newPassword = document.getElementById('editCtrlPassword').value;
+    if (newPassword) formData.append('password', newPassword);
+
+    try {
+        const response = await fetch(API, {
+            method: 'POST',
+            body: formData
+        });
+        const data = await response.json();
+
+        if (data.success) {
+            showNotification('✅ Controller updated', 'success');
+            closeModal();
+            loadControllers();
+        } else {
+            showNotification('❌ ' + (data.message || 'Failed to update controller'), 'error');
+        }
+    } catch (error) {
+        showNotification('❌ Error updating controller', 'error');
     }
 }
 

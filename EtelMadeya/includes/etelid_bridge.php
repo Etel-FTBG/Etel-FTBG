@@ -88,6 +88,21 @@ function etelid_bridge_authenticate($identifier, $password) {
 }
 
 /**
+ * Normalize a phone number for matching purposes only (never for
+ * display or storage) - strips everything but digits, then keeps the
+ * last 9, so '0936533606', '+251936533606', '251936533606' and
+ * '936533606' all normalize the same way. Ethiopian mobile numbers
+ * are 9 digits after the leading 0 (local) or 251 (country code) is
+ * dropped, so comparing on the last 9 digits treats both formats as
+ * the same subscriber without needing the admin to re-type anyone's
+ * phone number in a specific format.
+ */
+function etelid_bridge_normalize_phone($phone) {
+    $digits = preg_replace('/\D+/', '', (string)$phone);
+    return substr($digits, -9);
+}
+
+/**
  * Any active EtelGroup-assigned role for this phone at company_slug
  * (set from the EtelGroup admin's Employees panel). Returns
  * { ok, phone, full_name, etel_id, role_at } or null if none/unreachable.
