@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>ኢE Pay — Analytics</title>
+<link rel="manifest" href="manifest.php">
+<link rel="stylesheet" href="css/pay.css">
+<style>
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
+.stat-card{background:var(--glass);border:1px solid var(--gold-brd);border-radius:14px;padding:16px}
+.stat-card.full{grid-column:1/-1}
+.stat-val{font-family:var(--fm);font-size:22px;font-weight:700;color:var(--gold);margin:4px 0}
+.stat-lbl{font-size:11px;color:var(--text-3);text-transform:uppercase;letter-spacing:.5px}
+.stat-sub{font-size:12px;color:var(--text-2);margin-top:2px}
+.chart-wrap{height:120px;display:flex;align-items:flex-end;gap:3px;margin-top:12px}
+.chart-bar{flex:1;background:var(--gold-brd);border-radius:3px 3px 0 0;transition:.4s;position:relative;min-height:4px;cursor:pointer}
+.chart-bar.active{background:linear-gradient(180deg,var(--gold-lt),var(--gold))}
+.chart-bar:hover::after{content:attr(data-tip);position:absolute;bottom:100%;left:50%;transform:translateX(-50%);
+  background:#1a1a24;color:#e2e2e2;font-size:10px;padding:3px 6px;border-radius:4px;white-space:nowrap;z-index:10;margin-bottom:4px}
+.period-tabs{display:flex;gap:6px;margin-bottom:16px}
+.period-tab{padding:6px 14px;border-radius:20px;border:1px solid var(--gold-brd);background:none;
+  color:var(--text-3);font-size:12px;cursor:pointer;font-family:inherit;transition:.2s}
+.period-tab.active{background:var(--gold);color:#000;border-color:var(--gold);font-weight:700}
+.tx-type-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--gold-brd)}
+.tx-type-row:last-child{border-bottom:none}
+.tx-type-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.tx-type-name{flex:1;font-size:13px;color:var(--text-2)}
+.tx-type-vals{text-align:right;font-size:12px}
+.type-colors{send:"#f87171",receive:"#4ade80",deposit:"#60a5fa",payment:"#fbbf24",refund:"#a78bfa",fee:"#888"}
+</style>
+    <link rel="stylesheet" href="css/etel-design-v4.css?v=4.0">
+</head>
+<body>
+<div id="app">
+  <div class="ep-body safe-top" style="padding-top:max(28px,env(safe-area-inset-top,28px))">
+
+    <div style="display:flex;align-items:center;gap:12px;padding:0 20px 16px">
+      <button class="ep-icon-btn" onclick="EP_CORE.back()">←</button>
+      <div>
+        <h2 style="font-family:var(--fd);font-size:20px;color:var(--text);margin:0">Analytics</h2>
+        <p style="font-size:12px;color:var(--text-3);margin:0" id="an-subtitle">Loading…</p>
+      </div>
+    </div>
+
+    <div style="padding:0 20px 80px">
+
+      <div class="period-tabs" id="period-tabs">
+        <button class="period-tab active" onclick="setPeriod('7d')">7D</button>
+        <button class="period-tab" onclick="setPeriod('30d')">30D</button>
+        <button class="period-tab" onclick="setPeriod('90d')">90D</button>
+        <button class="period-tab" onclick="setPeriod('all')">All</button>
+      </div>
+
+      <div id="an-body">
+        <div class="ep-empty"><div class="ep-dots"><span></span><span></span><span></span></div></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+<div id="ep-toast"></div>
+<script src="js/config.js?v=2.0"></script>
+<script src="js/api.js"></script>
+<script src="js/core.js"></script>
+<script src="js/devpanel.js"></script>
+<script>
+var _period='30d', _isAdmin=false;
+
+EP_CORE.onReady(async function(){
+  if(!EP_CORE.requireAuth()) return;
+  // Check if admin
+  try{ var b=await EP_API.getBalance(); _isAdmin=b.success&&b.data.is_admin; }catch(e){}
+  await load();
+});
+
+function setPeriod(p){
+  _period=p;
+  document.querySelectorAll('.period-tab').forEach(function(t,i){
+    t.classList.toggle('active',['7d','30d','90d','all'][i]===p);
+  });
+  load();
+}
+
+var typeColors={send:'#f87171',receive:'#4ade80',deposit:'#60a5fa',payment:'#fbbf24',refund:'#a78bfa',fee:'#94a3b8',withdraw:'#fb923c'};
+
+async function load(){
+  document.getElementById('an-body').innerHTML='<div class="ep-empty"><div class="ep-dots"><span></span><span></span><span></span></div></div>';
+  try{
+    var action=_isAdmin?'ep_analytics':'ep_my_analytics';
+    var j=await EP_API.call(action,{period:_period});
+    if(!j.success){document.getElementById('an-body').innerHTML='<div class="ep-empty">Failed to load</div>';return;}
+    var d=j.data;
+    document.getElementById('an-subtitle').textContent=(_isAdmin?'Admin · ':'My activity · ')+(d.period||_period);
+    renderStats(d);
+  }catch(e){document.getElementById('an-body').innerHTML='<div class="ep-empty">Error loading analytics</div>';}
+}
+
+function renderStats(d){
+  var html='';
+  if(_isAdmin && d.users){
+    html+='<div class="stat-grid">'+
+      '<div class="stat-card"><div class="stat-lbl">Total Users</div><div class="stat-val">'+d.users.total.toLocaleString()+'</div><div class="stat-sub">+'+d.users.new_in_period+' this period</div></div>'+
+      '<div class="stat-card"><div class="stat-lbl">KYC Verified</div><div class="stat-val">'+d.users.kyc_verified+'</div><div class="stat-sub">of '+d.users.total+' users</div></div>'+
+      '<div class="stat-card"><div class="stat-lbl">TX Volume (ETB)</div><div class="stat-val">'+EP_CORE.numFmt(d.transactions.volume_etb)+'</div><div class="stat-sub">'+d.transactions.count+' transactions</div></div>'+
+      '<div class="stat-card"><div class="stat-lbl">Total Balance</div><div class="stat-val">'+EP_CORE.numFmt(d.total_wallet_balance_etb)+'</div><div class="stat-sub">Across all wallets</div></div>'+
+    '</div>';
+    // By type
+    if(d.transactions.by_type&&d.transactions.by_type.length){
+      html+='<div class="ep-card mb-16"><div class="ep-label mb-8">By Type</div>';
+      d.transactions.by_type.forEach(function(t){
+        var col=typeColors[t.type]||'#888';
+        html+='<div class="tx-type-row">'+
+          '<div class="tx-type-dot" style="background:'+col+'"></div>'+
+          '<div class="tx-type-name">'+t.type+'</div>'+
+          '<div class="tx-type-vals"><div style="color:var(--gold)">ETB '+EP_CORE.numFmt(t.vol)+'</div><div style="color:var(--text-3)">'+t.cnt+' txs</div></div>'+
+        '</div>';
+      });
+      html+='</div>';
+    }
+  } else {
+    html+='<div class="stat-grid">'+
+      '<div class="stat-card"><div class="stat-lbl">Sent</div><div class="stat-val">'+EP_CORE.numFmt(d.sent.amount)+'</div><div class="stat-sub">'+d.sent.count+' transactions</div></div>'+
+      '<div class="stat-card"><div class="stat-lbl">Received</div><div class="stat-val">'+EP_CORE.numFmt(d.received.amount)+'</div><div class="stat-sub">'+d.received.count+' transactions</div></div>'+
+    '</div>';
+  }
+  // Daily chart
+  if(d.daily&&d.daily.length){
+    var maxVol=Math.max.apply(null,d.daily.map(function(r){return parseFloat(r.vol)||0;}))||1;
+    html+='<div class="ep-card"><div class="ep-label mb-8">Daily Volume (last 14 days)</div>'+
+      '<div class="chart-wrap">';
+    d.daily.forEach(function(r){
+      var pct=Math.max(4,Math.round((parseFloat(r.vol)/maxVol)*100));
+      var date=r.d.slice(5);
+      html+='<div class="chart-bar active" style="height:'+pct+'%" data-tip="'+date+' · ETB '+EP_CORE.numFmt(r.vol)+'"></div>';
+    });
+    html+='</div></div>';
+  }
+  document.getElementById('an-body').innerHTML=html;
+}
+</script>
+<script src="js/desktop-shell.js"></script>
+</body>
+</html>

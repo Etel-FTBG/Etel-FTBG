@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>ኢE Pay — Identity Verification</title>
+<link rel="manifest" href="manifest.php">
+<link rel="stylesheet" href="css/pay.css">
+<style>
+.kyc-step{display:flex;gap:14px;padding:16px;background:var(--glass);border:1px solid var(--gold-brd);border-radius:14px;margin-bottom:12px;cursor:pointer;transition:.2s}
+.kyc-step:hover{border-color:var(--gold)}
+.kyc-step.done{border-color:#4ade80}
+.kyc-step-icon{font-size:28px;flex-shrink:0;width:40px;text-align:center}
+.kyc-step-info h4{font-size:14px;font-weight:600;color:var(--text);margin:0 0 4px}
+.kyc-step-info p{font-size:12px;color:var(--text-3);margin:0}
+.kyc-badge{display:inline-block;padding:3px 8px;border-radius:10px;font-size:10px;font-weight:700;margin-top:4px}
+.kyc-badge.done{background:rgba(74,222,128,.15);color:#4ade80}
+.kyc-badge.todo{background:rgba(212,168,67,.1);color:var(--gold)}
+.upload-zone{border:2px dashed var(--gold-brd);border-radius:12px;padding:24px 16px;text-align:center;cursor:pointer;margin:8px 0;position:relative}
+.upload-zone:hover{border-color:var(--gold);background:rgba(212,168,67,.04)}
+.upload-zone input{position:absolute;inset:0;opacity:0;cursor:pointer}
+.upload-zone img{max-height:120px;max-width:100%;border-radius:8px;margin-top:8px}
+.kyc-status{text-align:center;padding:40px 20px}
+.kyc-status .big-icon{font-size:64px;margin-bottom:16px}
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="ep-body safe-top" style="padding-top:max(28px,env(safe-area-inset-top,28px))">
+
+    <div style="display:flex;align-items:center;gap:12px;padding:0 20px 16px">
+      <button class="ep-icon-btn" onclick="EP_CORE.back()">←</button>
+      <div>
+        <h2 style="font-family:var(--fd);font-size:20px;color:var(--text);margin:0">Verify Identity</h2>
+        <p style="font-size:12px;color:var(--text-3);margin:0">ማንነት ማረጋገጫ · KYC</p>
+      </div>
+    </div>
+
+    <div style="padding:0 20px 80px">
+
+      <div id="kyc-already-done" style="display:none">
+        <div class="kyc-status">
+          <div class="big-icon">✅</div>
+          <h3 style="font-family:var(--fd);font-size:22px;color:#4ade80;margin-bottom:8px">Identity Verified</h3>
+          <p style="color:var(--text-3)">Your account is fully verified. All transaction limits are lifted.</p>
+          <button class="ep-btn ep-btn-ghost" onclick="EP_CORE.back()" style="margin-top:20px">Go Back</button>
+        </div>
+      </div>
+
+      <div id="kyc-pending" style="display:none">
+        <div class="kyc-status">
+          <div class="big-icon">⏳</div>
+          <h3 style="font-family:var(--fd);font-size:20px;color:var(--gold)">Under Review</h3>
+          <p style="color:var(--text-3)">Your documents are being reviewed. This takes up to 24 hours.</p>
+        </div>
+      </div>
+
+      <div id="kyc-form">
+        <div class="ep-card mb-16" style="background:rgba(212,168,67,.06);border-color:var(--gold)">
+          <p style="font-size:13px;color:var(--text-2);margin:0;line-height:1.7">
+            🔐 Verify your identity to unlock <strong style="color:var(--gold)">higher transaction limits</strong>, access all features, and build trust with recipients.
+          </p>
+        </div>
+
+        <!-- Doc type -->
+        <div class="ep-label mb-8">Document Type</div>
+        <select class="ep-input mb-16" id="kyc-doc-type">
+          <option value="national_id">Ethiopian National ID</option>
+          <option value="passport">Passport</option>
+          <option value="driving_license">Driving License</option>
+        </select>
+
+        <!-- Front -->
+        <div class="ep-label mb-4">Document Front <span style="color:var(--gold)">*</span></div>
+        <div class="upload-zone" id="zone-front">
+          <input type="file" accept="image/*" capture="environment" onchange="previewImg(event,'zone-front','img-front','front')">
+          <div id="img-front"><div style="font-size:28px">📄</div><p style="font-size:12px;color:var(--text-3);margin:4px 0">Tap to take photo or upload</p></div>
+        </div>
+
+        <!-- Back -->
+        <div class="ep-label mb-4" style="margin-top:12px">Document Back <span style="color:var(--text-3)">(optional)</span></div>
+        <div class="upload-zone" id="zone-back">
+          <input type="file" accept="image/*" capture="environment" onchange="previewImg(event,'zone-back','img-back','back')">
+          <div id="img-back"><div style="font-size:28px">🔄</div><p style="font-size:12px;color:var(--text-3);margin:4px 0">Back side (if applicable)</p></div>
+        </div>
+
+        <!-- Selfie -->
+        <div class="ep-label mb-4" style="margin-top:12px">Selfie with Document <span style="color:var(--text-3)">(optional)</span></div>
+        <div class="upload-zone" id="zone-selfie">
+          <input type="file" accept="image/*" capture="user" onchange="previewImg(event,'zone-selfie','img-selfie','selfie')">
+          <div id="img-selfie"><div style="font-size:28px">🤳</div><p style="font-size:12px;color:var(--text-3);margin:4px 0">Hold document next to your face</p></div>
+        </div>
+
+        <div class="ep-err-msg" id="kyc-err" style="margin-top:12px"></div>
+        <button class="ep-btn ep-btn-gold" onclick="submitKYC()" id="kyc-btn" style="margin-top:16px">Submit for Review</button>
+      </div>
+
+    </div>
+  </div>
+</div>
+<div id="ep-toast"></div>
+<script src="js/config.js"></script>
+<script src="js/api.js"></script>
+<script src="js/core.js"></script>
+<script src="js/devpanel.js"></script>
+<script>
+var _imgs = {front:'', back:'', selfie:''};
+
+EP_CORE.onReady(async function(){
+  if(!EP_CORE.requireAuth()) return;
+  var j = await EP_API.getBalance();
+  if(j.success){
+    if(j.data.kyc_status==='verified'){
+      document.getElementById('kyc-form').style.display='none';
+      document.getElementById('kyc-already-done').style.display='block';
+    } else if(j.data.kyc_status==='pending'){
+      document.getElementById('kyc-form').style.display='none';
+      document.getElementById('kyc-pending').style.display='block';
+    }
+  }
+});
+
+function previewImg(evt, zoneId, previewId, key){
+  var file = evt.target.files[0];
+  if(!file) return;
+  if(file.size > 3145728){EP_CORE.toast('Max 3MB per image','err'); return;}
+  var reader = new FileReader();
+  reader.onload = function(e){
+    _imgs[key] = e.target.result.split(',')[1];
+    document.getElementById(previewId).innerHTML = '<img src="'+e.target.result+'">';
+  };
+  reader.readAsDataURL(file);
+}
+
+async function submitKYC(){
+  if(!_imgs.front){document.getElementById('kyc-err').textContent='Front document image required'; return;}
+  var btn=document.getElementById('kyc-btn');
+  var restore=EP_CORE.btnLoading(btn);
+  try{
+    var j=await EP_API.call('ep_kyc_submit',{
+      doc_type: document.getElementById('kyc-doc-type').value,
+      doc_front_b64: _imgs.front,
+      doc_back_b64: _imgs.back||null,
+      selfie_b64: _imgs.selfie||null,
+    });
+    restore();
+    if(j.success){
+      document.getElementById('kyc-form').style.display='none';
+      document.getElementById('kyc-pending').style.display='block';
+      EP_CORE.toast('Submitted!','ok');
+    }else{document.getElementById('kyc-err').textContent=(j.data&&j.data.message)||'Failed';}
+  }catch(e){restore();document.getElementById('kyc-err').textContent='Error';}
+}
+</script>
+<script src="js/desktop-shell.js"></script>
+</body>
+</html>

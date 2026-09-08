@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#D4A843">
+<title>ኢE Pay — Create Wallet</title>
+<link rel="manifest" href="manifest.php">
+<link rel="stylesheet" href="css/pay.css">
+<style>
+html,body{overflow-y:auto}
+.reg-wrap{
+  min-height:100vh;display:flex;align-items:center;justify-content:center;
+  padding:max(40px,env(safe-area-inset-top,40px)) 28px max(40px,env(safe-area-inset-bottom,40px));
+}
+.reg-inner{width:100%;max-width:400px}
+.reg-logo{text-align:center;margin-bottom:28px}
+.reg-mark{font-family:var(--fe);font-size:44px;font-weight:700;
+  background:linear-gradient(135deg,var(--gold-lt),var(--gold),var(--gold-deep));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.reg-sub{font-size:11px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:var(--text-3);margin-top:4px}
+.reg-card{background:var(--s1);border:1px solid var(--gold-brd);border-radius:var(--r-xl);padding:28px 24px}
+</style>
+</head>
+<body>
+<div class="reg-wrap">
+  <div class="reg-inner">
+    <div class="reg-logo">
+      <div class="reg-mark">ኢE Pay</div>
+      <div class="reg-sub">Create your wallet</div>
+    </div>
+    <div class="reg-card">
+      <div class="ep-field">
+        <label class="ep-label" data-t="full_name">Full name</label>
+        <div class="ep-input-wrap">
+          <span class="ep-input-icon">👤</span>
+          <input class="ep-input" id="r-name" type="text" placeholder="Abebe Girma" autocomplete="name">
+        </div>
+      </div>
+      <div class="ep-field">
+        <label class="ep-label" data-t="phone">Phone number</label>
+        <div class="ep-input-wrap">
+          <span class="ep-input-icon">📞</span>
+          <input class="ep-input" id="r-phone" type="tel" placeholder="0911 234 567" autocomplete="tel" inputmode="tel">
+        </div>
+      </div>
+      <div class="ep-field">
+        <label class="ep-label" data-t="email">Email (optional)</label>
+        <div class="ep-input-wrap">
+          <span class="ep-input-icon">✉️</span>
+          <input class="ep-input" id="r-email" type="email" placeholder="you@email.com" autocomplete="email">
+        </div>
+      </div>
+      <div class="ep-field">
+        <label class="ep-label" data-t="create_pin">Create PIN (min 4 digits)</label>
+        <div class="ep-input-wrap">
+          <span class="ep-input-icon">🔑</span>
+          <input class="ep-input" id="r-pin" type="password" placeholder="••••" maxlength="8" inputmode="numeric">
+        </div>
+      </div>
+      <div class="ep-field">
+        <label class="ep-label" data-t="confirm_pin">Confirm PIN</label>
+        <div class="ep-input-wrap">
+          <span class="ep-input-icon">🔑</span>
+          <input class="ep-input" id="r-pin2" type="password" placeholder="••••" maxlength="8" inputmode="numeric">
+        </div>
+      </div>
+      <div class="ep-err-msg" id="r-err"></div>
+      <button class="ep-btn ep-btn-primary" id="r-btn" onclick="doRegister()" style="margin-top:16px" data-t="create_wallet">Create wallet</button>
+      <div class="ep-divider">already have one?</div>
+      <button class="ep-btn ep-btn-ghost" onclick="EP_CORE.nav('login')">Sign in instead</button>
+    </div>
+  </div>
+</div>
+
+<!-- Success overlay -->
+<div id="success" style="display:none;position:fixed;inset:0;background:var(--bg);z-index:200;display:none;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:40px;text-align:center">
+  <div style="font-size:72px">🎉</div>
+  <div style="font-family:var(--fd);font-size:24px;font-weight:700;color:var(--gold-lt)">Wallet created!</div>
+  <div class="text-dim" style="font-size:14px;line-height:1.6">Your ኢE Pay wallet is ready.<br>Sign in to get started.</div>
+  <button class="ep-btn ep-btn-primary" onclick="EP_CORE.nav('login')" style="max-width:280px">Sign in</button>
+</div>
+
+<div id="ep-toast"></div>
+
+<script src="js/config.js?v=2.0"></script>
+<script src="js/api.js?v=2.0"></script>
+<script src="js/core.js?v=2.0"></script>
+<script>
+EP_CORE.onReady(function(){
+  EP_CORE.redirectIfLoggedIn('wallet');
+});
+
+async function doRegister(){
+  const name  = document.getElementById('r-name').value.trim();
+  let phone = document.getElementById('r-phone').value.trim().replace(/\s+/g,'');
+  if(/^09/.test(phone))        phone = '+251' + phone.slice(1);
+  else if(/^2519/.test(phone)) phone = '+' + phone;
+  const email = document.getElementById('r-email').value.trim();
+  const pin   = document.getElementById('r-pin').value;
+  const pin2  = document.getElementById('r-pin2').value;
+  const err   = document.getElementById('r-err');
+  const btn   = document.getElementById('r-btn');
+  err.textContent='';
+
+  if(!phone)       { err.textContent='Phone number required.'; return; }
+  if(!pin)         { err.textContent='PIN required.'; return; }
+  if(pin.length<4) { err.textContent='PIN must be at least 4 digits.'; return; }
+  if(pin!==pin2)   { err.textContent='PINs do not match.'; return; }
+
+  const restore=EP_CORE.btnLoading(btn,'ep-spin-w');
+  await EP_API.refreshNonce();
+  try{
+    // Note: etel_pay_register_wallet may not exist — adapt to actual WP action name
+    const j = await EP_API.call('etel_pay_register_wallet',{phone,pin,email,full_name:name});
+    if(j.success){
+      document.getElementById('success').style.display='flex';
+    }else{
+      err.textContent=(j.data&&j.data.message)||'Registration failed. Contact support.';
+      restore();
+    }
+  }catch(e){
+    err.textContent='Connection error. Check internet.';
+    restore();
+  }
+}
+
+// Make api.js call accessible for register
+EP_API.call = async function(action,extra={}){
+  const {default:cfg}={default:EP_CONFIG};
+  const nonce=await EP_API.refreshNonce().then?.(()=>'') || '';
+  const body=Object.assign({action,nonce:'',token:''},extra);
+  const r=await fetch(EP_CONFIG.ACTION,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  return r.json();
+};
+</script>
+<script src="js/desktop-shell.js"></script>
+</body>
+</html>

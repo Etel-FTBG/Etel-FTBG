@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ኢE Pay — Diagnostic Console</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0a0a0a;color:#e0d6c4;font-family:'SF Mono',Consolas,'JetBrains Mono',monospace;font-size:13px;min-height:100vh;padding:16px}
+.header{display:flex;align-items:center;gap:10px;padding:12px 0 16px;border-bottom:1px solid rgba(212,175,55,.2);margin-bottom:16px}
+.brand{font-size:18px;font-weight:700;color:#D4AF37}
+.brand small{color:#888;font-size:12px;font-weight:400;display:block;margin-top:2px}
+.version{margin-left:auto;font-size:11px;color:#555;background:#111;padding:3px 8px;border-radius:4px;border:1px solid #222}
+
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+button{padding:7px 14px;border-radius:6px;border:1px solid #333;background:#111;color:#D4AF37;font-size:11px;font-family:inherit;cursor:pointer;transition:all .15s}
+button:hover{background:#1a1206;border-color:#D4AF37}
+button.running{opacity:.6;pointer-events:none}
+.btn-red{color:#E24B4A;border-color:#3a1a1a}
+.btn-green{color:#639922;border-color:#1a2a0a}
+.btn-blue{color:#378ADD;border-color:#0a1a2a}
+
+.console{background:#060606;border:1px solid #1a1a1a;border-radius:8px;padding:12px;height:420px;overflow-y:auto;scroll-behavior:smooth}
+.log-entry{padding:4px 0;border-bottom:1px solid #0f0f0f;display:flex;gap:10px;align-items:flex-start}
+.log-entry:last-child{border-bottom:none}
+.ts{color:#333;min-width:72px;flex-shrink:0;font-size:11px;padding-top:1px}
+.tag{min-width:56px;flex-shrink:0;font-size:10px;padding:1px 6px;border-radius:3px;text-align:center;margin-top:1px}
+.tag-ok{background:rgba(99,153,34,.2);color:#639922}
+.tag-err{background:rgba(226,75,74,.2);color:#E24B4A}
+.tag-warn{background:rgba(212,175,55,.15);color:#D4AF37}
+.tag-info{background:rgba(55,138,221,.15);color:#378ADD}
+.tag-run{background:rgba(100,100,100,.2);color:#888}
+.msg{flex:1;line-height:1.6;word-break:break-all;color:#c8bfa8}
+.msg .key{color:#D4AF37}
+.msg .val-ok{color:#639922}
+.msg .val-err{color:#E24B4A}
+.msg .val-warn{color:#D4AF37}
+.msg .val-num{color:#60B4FF}
+.msg pre{background:#0f0f0f;padding:8px;border-radius:4px;margin-top:4px;white-space:pre-wrap;word-break:break-all;font-size:11px;color:#888;border:1px solid #1a1a1a}
+
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:8px;margin-bottom:14px}
+.stat{background:#0f0f0f;border:1px solid #1a1a1a;border-radius:6px;padding:10px;text-align:center}
+.stat-num{font-size:22px;font-weight:700;color:#D4AF37;line-height:1}
+.stat-label{font-size:10px;color:#555;margin-top:3px}
+.stat.ok .stat-num{color:#639922}
+.stat.err .stat-num{color:#E24B4A}
+.stat.warn .stat-num{color:#D4AF37}
+
+.section-title{font-size:11px;color:#555;margin:12px 0 6px;text-transform:uppercase;letter-spacing:.08em}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <div class="brand">ኢE Pay — Diagnostic Console</div>
+    <small id="hdr-sub">Loading...</small>
+  </div>
+  <div class="version" id="hdr-ver">v—</div>
+</div>
+
+<div class="stats">
+  <div class="stat" id="s-api"><div class="stat-num">—</div><div class="stat-label">API</div></div>
+  <div class="stat" id="s-db"><div class="stat-num">—</div><div class="stat-label">Database</div></div>
+  <div class="stat" id="s-users"><div class="stat-num">—</div><div class="stat-label">Users</div></div>
+  <div class="stat" id="s-tx"><div class="stat-num">—</div><div class="stat-label">Transactions</div></div>
+  <div class="stat" id="s-ms"><div class="stat-num">—</div><div class="stat-label">Latency</div></div>
+</div>
+
+<div class="toolbar">
+  <button onclick="runAll()">▶ Run All Tests</button>
+  <button onclick="testPing()" class="btn-green">⚡ Ping</button>
+  <button onclick="testDB()" class="btn-blue">🗄 DB Health</button>
+  <button onclick="testAuth()" class="btn-blue">🔐 Auth Flow</button>
+  <button onclick="testWallet()" class="btn-blue">💰 Wallet</button>
+  <button onclick="testSessions()" class="btn-blue">🔑 Sessions</button>
+  <button onclick="testTelebirr()" class="btn-warn">📱 Telebirr</button>
+  <button onclick="clearLog()" class="btn-red">✕ Clear</button>
+</div>
+
+<div class="section-title">Console Output</div>
+<div class="console" id="con"></div>
+
+<script>
+const API = 'api/v2_verify.php';
+let testPhone = '', testToken = '';
+const stats = { ok:0, err:0, warn:0 };
+
+function now() {
+  return new Date().toLocaleTimeString('en-GB',{hour12:false,hour:'2-digit',minute:'2-digit',second:'2-digit'});
+}
+
+function log(tag, msg, raw) {
+  const con = document.getElementById('con');
+  const el = document.createElement('div');
+  el.className = 'log-entry';
+  const rawHtml = raw ? `<pre>${JSON.stringify(raw,null,2)}</pre>` : '';
+  el.innerHTML = `<span class="ts">${now()}</span><span class="tag tag-${tag}">${tag.toUpperCase()}</span><span class="msg">${msg}${rawHtml}</span>`;
+  con.appendChild(el);
+  con.scrollTop = con.scrollHeight;
+}
+
+function setStat(id, val, cls) {
+  const el = document.getElementById(id);
+  el.className = 'stat ' + (cls||'');
+  el.querySelector('.stat-num').textContent = val;
+}
+
+function clearLog() {
+  document.getElementById('con').innerHTML = '';
+  stats.ok = stats.err = stats.warn = 0;
+}
+
+async function call(action, body={}) {
+  const t0 = performance.now();
+  try {
+    const r = await fetch(API, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({action, ...body})
+    });
+    const ms = Math.round(performance.now()-t0);
+    const data = await r.json();
+    return {ok: r.ok, status: r.status, ms, data};
+  } catch(e) {
+    const ms = Math.round(performance.now()-t0);
+    return {ok:false, status:0, ms, data:null, err: e.message};
+  }
+}
+
+async function callAuth(action, body={}) {
+  const t0 = performance.now();
+  try {
+    const r = await fetch(API, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json','Authorization':'Bearer '+testToken},
+      body: JSON.stringify({action, ...body})
+    });
+    const ms = Math.round(performance.now()-t0);
+    const data = await r.json();
+    return {ok: r.ok, status: r.status, ms, data};
+  } catch(e) {
+    const ms = Math.round(performance.now()-t0);
+    return {ok:false, status:0, ms, data:null, err: e.message};
+  }
+}
+
+async function testPing() {
+  log('run','Testing API ping...');
+  const r = await call('ep_ping');
+  if (r.err) { log('err','Network error: '+r.err); stats.err++; return; }
+  if (r.data && r.data.success) {
+    const d = r.data.data || {};
+    log('ok',`API online · <span class="val-num">${r.ms}ms</span> · version <span class="val-ok">${r.data.v||'?'}</span>`);
+    log('info',`Server time: <span class="key">${d.time||'?'}</span>`);
+    document.getElementById('hdr-ver').textContent = 'v'+(r.data.v||'?');
+    document.getElementById('hdr-sub').textContent = 'ethelmarket.com · '+new Date().toLocaleDateString();
+    setStat('s-api','OK','ok');
+    setStat('s-ms', r.ms+'ms', r.ms<500?'ok':r.ms<1500?'warn':'err');
+    stats.ok++;
+  } else {
+    log('err','Ping failed', r.data);
+    setStat('s-api','ERR','err');
+    stats.err++;
+  }
+}
+
+async function testDB() {
+  log('run','Testing database health...');
+  const r = await call('ep_diag_db');
+  if (r.data && r.data.success) {
+    const d = r.data.data || {};
+    log('ok',`DB connected · <span class="val-num">${r.ms}ms</span>`);
+    if (d.tables) {
+      d.tables.forEach(t => {
+        const ok = t.exists;
+        log(ok?'ok':'err', `Table <span class="key">${t.name}</span>: <span class="${ok?'val-ok':'val-err'}">${ok?'EXISTS ('+t.rows+' rows)':'MISSING'}</span>`);
+      });
+    }
+    if (d.users !== undefined) {
+      setStat('s-users', d.users, d.users>0?'ok':'warn');
+      setStat('s-tx', d.transactions||0, 'ok');
+    }
+    setStat('s-db','OK','ok');
+    stats.ok++;
+  } else {
+    log('err','DB health check failed', r.data);
+    setStat('s-db','ERR','err');
+    stats.err++;
+  }
+}
+
+async function testAuth() {
+  log('run','Testing authentication flow...');
+  // Use a diagnostic-only test — just check the login endpoint responds correctly
+  const r = await call('ep_login', {phone:'__diag_test__', password:'__diag_test__'});
+  // We expect a 400/401 "wrong credentials" — that means auth is working
+  if (r.status === 400 || r.status === 401 || (r.data && !r.data.success)) {
+    log('ok',`Auth endpoint responding · <span class="val-num">${r.ms}ms</span> · returns correct error for invalid credentials`);
+    stats.ok++;
+  } else if (r.err) {
+    log('err','Auth endpoint unreachable: '+r.err);
+    stats.err++;
+  } else {
+    log('warn','Unexpected auth response (HTTP '+r.status+')', r.data);
+    stats.warn++;
+  }
+
+  // If we have a stored test token, validate it
+  if (testToken) {
+    log('run','Validating stored session token...');
+    const r2 = await callAuth('ep_profile');
+    if (r2.data && r2.data.success) {
+      log('ok',`Session valid · User: <span class="val-ok">${r2.data.data.full_name||'?'}</span> · Balance: <span class="val-num">${r2.data.data.balance_etb||0} ETB</span>`);
+      stats.ok++;
+    } else {
+      log('warn','Stored token expired or invalid — re-login needed');
+      testToken = '';
+      stats.warn++;
+    }
+  } else {
+    log('info','No active session token — login via the wallet to test full auth flow');
+  }
+}
+
+async function testWallet() {
+  log('run','Testing wallet endpoints...');
+  if (!testToken) {
+    log('warn','No session token — some tests skipped. Login to wallet first then re-run.');
+    stats.warn++;
+    return;
+  }
+  const tests = [
+    {action:'ep_balance', label:'Balance'},
+    {action:'ep_history', label:'Transaction History'},
+    {action:'ep_profile', label:'Profile'},
+  ];
+  for (const t of tests) {
+    const r = await callAuth(t.action);
+    if (r.data && r.data.success) {
+      log('ok',`<span class="key">${t.label}</span>: <span class="val-ok">OK</span> · <span class="val-num">${r.ms}ms</span>`);
+      stats.ok++;
+    } else {
+      log('err',`<span class="key">${t.label}</span> failed (HTTP ${r.status})`, r.data);
+      stats.err++;
+    }
+  }
+}
+
+async function testSessions() {
+  log('run','Testing session table...');
+  const r = await call('ep_diag_sessions');
+  if (r.data && r.data.success) {
+    const d = r.data.data || {};
+    log('ok',`Sessions table OK · <span class="val-num">${d.active||0}</span> active · <span class="val-warn">${d.expired||0}</span> expired (pending cleanup)`);
+    if (d.expired > 100) log('warn',`${d.expired} expired sessions accumulating — add cron cleanup`);
+    stats.ok++;
+  } else {
+    log('err','Session check failed', r.data);
+    stats.err++;
+  }
+}
+
+async function testTelebirr() {
+  log('run','Testing Telebirr config presence...');
+  const r = await call('ep_diag_telebirr');
+  if (r.data && r.data.success) {
+    const d = r.data.data || {};
+    log(d.configured?'ok':'warn',
+      `Telebirr: <span class="${d.configured?'val-ok':'val-warn'}">${d.configured?'Configured':'NOT configured'}</span>` +
+      (d.app_id_set ? ' · App ID ✓' : ' · App ID missing') +
+      (d.app_key_set ? ' · App Key ✓' : ' · App Key missing'));
+    d.configured ? stats.ok++ : stats.warn++;
+  } else {
+    log('info','Telebirr diagnostic not available in current API version');
+  }
+}
+
+async function runAll() {
+  clearLog();
+  log('info','=== ኢE Pay Full Diagnostic Run ===');
+  await testPing();
+  await testDB();
+  await testAuth();
+  await testSessions();
+  await testTelebirr();
+  log('info',`=== Complete: <span class="val-ok">${stats.ok} passed</span> · <span class="val-warn">${stats.warn} warnings</span> · <span class="val-err">${stats.err} errors</span> ===`);
+}
+
+// Intercept console errors and show in diag
+window.onerror = (msg,src,line) => {
+  log('err',`JS: ${msg} (${src}:${line})`);
+};
+
+// Auto-run ping on load
+window.onload = () => {
+  log('info','ኢE Pay Diagnostic Console ready');
+  log('info','Server: <span class="key">ethelmarket.com/Etel.Pay/wallet/</span>');
+  testPing();
+};
+
+// Token capture: listen for postMessage from wallet iframe or localStorage
+try {
+  const t = localStorage.getItem('ep_token') || localStorage.getItem('etel_pay_token');
+  if (t) { testToken = t; log('info','Session token found in localStorage'); }
+} catch(e) {}
+</script>
+</body>
+</html>

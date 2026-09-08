@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#D4A843">
+<title>ኢE Pay — Profile</title>
+<link rel="manifest" href="manifest.php">
+<link rel="stylesheet" href="css/pay.css">
+<style>
+/* ── Profile Hero ─────────────────────────────────────────── */
+.pf-hero {
+  position:relative; overflow:hidden;
+  padding:max(24px,env(safe-area-inset-top,24px)) 0 0;
+}
+.pf-hero-bg {
+  position:absolute; inset:0; pointer-events:none;
+  background:
+    radial-gradient(ellipse 80% 60% at 50% 0%, rgba(212,168,67,.14) 0%, transparent 70%);
+}
+.pf-hero-top {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:0 18px 16px; position:relative; z-index:1;
+}
+.pf-back {
+  width:38px; height:38px; border-radius:10px;
+  background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.08);
+  display:flex; align-items:center; justify-content:center;
+  font-size:18px; cursor:pointer; color:var(--t2);
+}
+.pf-lang {
+  background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.08);
+  border-radius:10px; padding:6px 12px; font-size:12px;
+  font-weight:600; color:var(--gold); cursor:pointer;
+}
+
+/* ── Avatar section ────────────────────────────────────────── */
+.pf-avatar-wrap {
+  display:flex; flex-direction:column; align-items:center;
+  padding:8px 20px 24px; position:relative; z-index:1;
+}
+.pf-avatar-ring {
+  position:relative; width:96px; height:96px; margin-bottom:14px;
+}
+.pf-avatar-ring::before {
+  content:''; position:absolute; inset:-3px;
+  border-radius:50%;
+  background:conic-gradient(from 0deg, var(--gold-lt), var(--gold), var(--gold-deep), var(--gold-lt));
+  animation:ringRotate 4s linear infinite;
+}
+@keyframes ringRotate { to { transform:rotate(360deg); } }
+.pf-avatar-ring::after {
+  content:''; position:absolute; inset:-3px;
+  border-radius:50%; background:var(--bg-0);
+  margin:3px;
+}
+.pf-avatar-img {
+  position:relative; z-index:2;
+  width:100%; height:100%; border-radius:50%;
+  background:var(--bg-3); border:3px solid var(--bg-0);
+  display:flex; align-items:center; justify-content:center;
+  font-size:36px; overflow:hidden; cursor:pointer;
+}
+.pf-avatar-img img { width:100%; height:100%; object-fit:cover; }
+.pf-avatar-edit {
+  position:absolute; bottom:2px; right:2px; z-index:3;
+  width:26px; height:26px; border-radius:50%;
+  background:var(--gold); border:2px solid var(--bg-0);
+  display:flex; align-items:center; justify-content:center;
+  font-size:11px; cursor:pointer;
+}
+.pf-name  { font-family:var(--fd); font-size:22px; font-weight:700; color:var(--t1); margin-bottom:4px; text-align:center; }
+.pf-phone { font-family:var(--fm); font-size:13px; color:var(--t3); margin-bottom:10px; }
+.pf-badges { display:flex; gap:8px; align-items:center; }
+
+/* ── Stats bar ─────────────────────────────────────────────── */
+.pf-stats {
+  display:flex; margin:0 16px 16px;
+  background:var(--bg-2); border:1px solid var(--glass-brd);
+  border-radius:16px; overflow:hidden;
+}
+.pf-stat {
+  flex:1; padding:14px 8px; text-align:center;
+  border-right:1px solid var(--glass-brd);
+}
+.pf-stat:last-child { border-right:none; }
+.pf-stat-val { font-family:var(--fm); font-size:18px; font-weight:700; color:var(--gold-lt); }
+.pf-stat-lbl { font-size:10px; font-weight:600; color:var(--t3); letter-spacing:.8px; text-transform:uppercase; margin-top:3px; }
+
+/* ── Menu groups ───────────────────────────────────────────── */
+.pf-group { margin:0 16px 10px; }
+.pf-group-label {
+  font-size:10px; font-weight:700; letter-spacing:1.5px;
+  text-transform:uppercase; color:var(--t4);
+  padding:14px 4px 6px;
+}
+.pf-menu {
+  background:var(--bg-2); border:1px solid var(--glass-brd);
+  border-radius:16px; overflow:hidden;
+}
+.pf-menu-item {
+  display:flex; align-items:center; gap:14px;
+  padding:15px 16px; border-bottom:1px solid var(--glass-brd);
+  cursor:pointer; transition:background 130ms;
+  text-decoration:none; color:inherit;
+}
+.pf-menu-item:last-child { border-bottom:none; }
+.pf-menu-item:hover { background:var(--glass); }
+.pf-menu-item:active { background:var(--glass-h); }
+.pf-menu-icon {
+  width:40px; height:40px; border-radius:12px; flex-shrink:0;
+  display:flex; align-items:center; justify-content:center;
+  font-size:18px;
+}
+.pf-menu-icon.gold { background:rgba(212,168,67,.12); border:1px solid rgba(212,168,67,.18); }
+.pf-menu-icon.blue { background:rgba(59,130,246,.12); border:1px solid rgba(59,130,246,.18); }
+.pf-menu-icon.green{ background:rgba(16,185,129,.12); border:1px solid rgba(16,185,129,.18); }
+.pf-menu-icon.red  { background:rgba(239,68,68,.10);  border:1px solid rgba(239,68,68,.18); }
+.pf-menu-icon.purp { background:rgba(139,92,246,.12); border:1px solid rgba(139,92,246,.18); }
+.pf-menu-text  { flex:1; }
+.pf-menu-label { font-size:14px; font-weight:500; color:var(--t1); }
+.pf-menu-sub   { font-size:12px; color:var(--t3); margin-top:2px; }
+.pf-menu-right { color:var(--t3); font-size:18px; flex-shrink:0; }
+.pf-menu-badge {
+  background:var(--gold-bg); border:1px solid var(--gold-brd);
+  color:var(--gold-lt); font-size:10px; font-weight:700;
+  padding:2px 8px; border-radius:10px; margin-left:auto; margin-right:8px;
+}
+
+/* ── Sign out button ──────────────────────────────────────── */
+.pf-signout {
+  margin:4px 16px 0;
+  background:rgba(239,68,68,.08); border:1px solid rgba(239,68,68,.18);
+  color:var(--err); border-radius:14px; padding:14px;
+  font-family:var(--fb); font-size:15px; font-weight:600;
+  cursor:pointer; width:calc(100% - 32px); display:block;
+  transition:background 130ms;
+}
+.pf-signout:hover { background:rgba(239,68,68,.14); }
+
+/* ── Version ──────────────────────────────────────────────── */
+.pf-version {
+  text-align:center; padding:16px 0 24px;
+  font-size:11px; color:var(--t4); font-family:var(--fm);
+}
+</style>
+    <link rel="stylesheet" href="css/etel-design-v4.css?v=4.1">
+</head>
+<body>
+<div id="app">
+
+  <!-- Header -->
+  <div class="pf-hero">
+    <div class="pf-hero-bg"></div>
+    <div class="pf-hero-top">
+      <button class="pf-back" onclick="EP_CORE.nav('wallet')">←</button>
+      <span style="font-family:var(--fd);font-size:17px;font-weight:700;color:var(--t1)">Profile</span>
+      <button class="pf-lang" id="ep-lang-btn">አማ</button>
+    </div>
+
+    <!-- Avatar -->
+    <div class="pf-avatar-wrap">
+      <div class="pf-avatar-ring">
+        <div class="pf-avatar-img" id="av-btn" onclick="triggerAvatarUpload()">
+          <span id="av-icon">👤</span>
+        </div>
+        <div class="pf-avatar-edit" onclick="triggerAvatarUpload()">✏️</div>
+      </div>
+      <input type="file" id="av-file" accept="image/*" style="display:none" onchange="uploadAvatar(event)">
+      <div class="pf-name" id="p-name">—</div>
+      <div class="pf-phone" id="p-phone">—</div>
+      <div class="pf-badges" id="p-kyc"></div>
+    </div>
+  </div>
+
+  <!-- Stats bar -->
+  <div class="pf-stats">
+    <div class="pf-stat">
+      <div class="pf-stat-val" id="stat-bal">0.00</div>
+      <div class="pf-stat-lbl">Balance ETB</div>
+    </div>
+    <div class="pf-stat">
+      <div class="pf-stat-val" id="stat-sent">—</div>
+      <div class="pf-stat-lbl">Sent</div>
+    </div>
+    <div class="pf-stat">
+      <div class="pf-stat-val" id="stat-recv">—</div>
+      <div class="pf-stat-lbl">Received</div>
+    </div>
+  </div>
+
+  <div class="ep-body" id="pf-body">
+
+    <!-- Account info -->
+    <div class="pf-group">
+      <div class="pf-group-label">Account Information</div>
+      <div class="pf-menu">
+        <div class="pf-menu-item" onclick="openEditName()">
+          <div class="pf-menu-icon gold">👤</div>
+          <div class="pf-menu-text">
+            <div class="pf-menu-label">Full name</div>
+            <div class="pf-menu-sub" id="row-name">—</div>
+          </div>
+          <span class="pf-menu-right">›</span>
+        </div>
+        <div class="pf-menu-item" onclick="openEditEmail()">
+          <div class="pf-menu-icon blue">✉️</div>
+          <div class="pf-menu-text">
+            <div class="pf-menu-label">Email address</div>
+            <div class="pf-menu-sub" id="row-email">Not set</div>
+          </div>
+          <span class="pf-menu-right">›</span>
+        </div>
+        <div class="pf-menu-item" style="cursor:default">
+          <div class="pf-menu-icon green">📱</div>
+          <div class="pf-menu-text">
+            <div class="pf-menu-label">Phone number</div>
+            <div class="pf-menu-sub" id="row-phone">—</div>
+          </div>
+          <span class="ep-badge ep-badge-ok" style="font-size:10px">✓ Verified</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Security -->
+    <div class="pf-group">
+      <div class="pf-group-label">Security</div>
+      <div class="pf-menu">
+        <div class="pf-menu-item" onclick="EP_CORE.openSheet('sheet-pin')">
+          <div class="pf-menu-icon gold">🔑</div>
+          <div class="pf-menu-text">
+            <div class="pf-menu-label">Change PIN</div>
+            <div class="pf-menu-sub">Update your wallet PIN</div>
+          </div>
+          <span class="pf-menu-right">›</span>
+        </div>
+        <div class="pf-menu-item" onclick="EP_CORE.nav('kyc')">
+          <div class="pf-menu-icon blue">🪪</div>
+          <div class="pf-menu-text">
+            <div class="pf-menu-label">Verify Identity</div>
+            <div class="pf-menu-sub">Upload ID · Unlock full limits</div>
+          </div>
+          <span class="pf-menu-badge" id="kyc-badge" style="display:none">Pending</span>
+          <span class="pf-menu-right">›</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Services -->
+    <div class="pf-group">
+      <div class="pf-group-label">Services</div>
+      <div class="pf-menu">
+        <div class="pf-menu-item" onclick="EP_CORE.nav('topup')">
+          <div class="pf-menu-icon green">💳</div>
+          <div class="pf-menu-text">
+            <div class="pf-menu-label">Top Up Wallet</div>
+            <div class="pf-menu-sub">Add funds via Telebirr or bank</div>
+          </div>
+          <span class="pf-menu-right">›</span>
+        </div>
+        <div class="pf-menu-item" onclick="EP_CORE.nav('pay-links')">
+          <div class="pf-menu-icon purp">🔗</div>
+          <div class="pf-menu-text">
+            <div class="pf-menu-label">Payment Links</div>
+            <div class="pf-menu-sub">Create & share pay links</div>
+          </div>
+          <span class="pf-menu-right">›</span>
+        </div>
+        <div class="pf-menu-item" onclick="EP_CORE.nav('analytics')">
+          <div class="pf-menu-icon blue">📊</div>
+          <div class="pf-menu-text">
+            <div class="pf-menu-label">Analytics</div>
+            <div class="pf-menu-sub">View your payment statistics</div>
+          </div>
+          <span class="pf-menu-right">›</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Preferences -->
+    <div class="pf-group">
+      <div class="pf-group-label">Preferences</div>
+      <div class="pf-menu">
+        <div class="pf-menu-item" onclick="toggleLang()">
+          <div class="pf-menu-icon blue">🌐</div>
+          <div class="pf-menu-text">
+            <div class="pf-menu-label">Language</div>
+            <div class="pf-menu-sub" id="lang-sub">English</div>
+          </div>
+          <span class="pf-menu-right">›</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Admin (shown only for admin users) -->
+    <div class="pf-group" id="admin-group" style="display:none">
+      <div class="pf-group-label">Administration</div>
+      <div class="pf-menu">
+        <div class="pf-menu-item" onclick="EP_CORE.nav('admin')">
+          <div class="pf-menu-icon gold">⚙️</div>
+          <div class="pf-menu-text">
+            <div class="pf-menu-label">Admin Panel</div>
+            <div class="pf-menu-sub">Manage users, KYC, disputes</div>
+          </div>
+          <span class="ep-badge ep-badge-gold" style="font-size:10px;margin-right:8px">ADMIN</span>
+          <span class="pf-menu-right">›</span>
+        </div>
+        <div class="pf-menu-item" onclick="EP_CORE.nav('updater')">
+          <div class="pf-menu-icon purp">⬆</div>
+          <div class="pf-menu-text">
+            <div class="pf-menu-label">System Updater</div>
+            <div class="pf-menu-sub">Deploy files · run migrations</div>
+          </div>
+          <span class="pf-menu-right">›</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sign out -->
+    <button class="pf-signout" onclick="doSignOut()">Sign out</button>
+
+    <div class="pf-version">ኢE Pay v2.0 · ethelmarket.com · Etel Group</div>
+
+  </div><!-- /ep-body -->
+
+  <!-- Bottom nav -->
+  <nav class="ep-nav">
+    <button class="ep-nav-btn" data-page="wallet" onclick="EP_CORE.nav('wallet')">
+      <span class="ep-nav-icon">🏠</span><span class="ep-nav-label">Home</span>
+    </button>
+    <button class="ep-nav-btn" data-page="history" onclick="EP_CORE.nav('history')">
+      <span class="ep-nav-icon">📋</span><span class="ep-nav-label">History</span>
+    </button>
+    <button class="ep-nav-btn" data-page="qr" onclick="EP_CORE.nav('qr')">
+      <span class="ep-nav-icon">⬛</span><span class="ep-nav-label">QR</span>
+    </button>
+    <button class="ep-nav-btn active" data-page="profile">
+      <span class="ep-nav-icon">👤</span><span class="ep-nav-label">Profile</span>
+    </button>
+  </nav>
+
+</div><!-- /app -->
+
+<!-- ── SHEETS ─────────────────────────────────────────────── -->
+<div id="sheet-pin" class="ep-overlay">
+  <div class="ep-sheet">
+    <div class="ep-sheet-handle"></div>
+    <div class="ep-sheet-title">Change PIN</div>
+    <div class="ep-field"><label class="ep-label">Current PIN</label>
+      <input class="ep-input" id="pin-old" type="password" placeholder="••••" maxlength="8" inputmode="numeric"></div>
+    <div class="ep-field"><label class="ep-label">New PIN</label>
+      <input class="ep-input" id="pin-new" type="password" placeholder="••••" maxlength="8" inputmode="numeric"></div>
+    <div class="ep-field"><label class="ep-label">Confirm new PIN</label>
+      <input class="ep-input" id="pin-con" type="password" placeholder="••••" maxlength="8" inputmode="numeric"></div>
+    <div class="ep-err-msg" id="pin-err"></div>
+    <button class="ep-btn ep-btn-primary" id="pin-btn" onclick="doChangePin()" style="margin-top:14px">Update PIN</button>
+    <button class="ep-btn ep-btn-ghost" onclick="EP_CORE.closeSheet('sheet-pin')" style="margin-top:10px">Cancel</button>
+  </div>
+</div>
+
+<div id="sheet-name" class="ep-overlay">
+  <div class="ep-sheet">
+    <div class="ep-sheet-handle"></div>
+    <div class="ep-sheet-title">Edit Name</div>
+    <div class="ep-field"><label class="ep-label">Full name</label>
+      <input class="ep-input" id="edit-name" type="text" placeholder="Abebe Girma"></div>
+    <div class="ep-err-msg" id="name-err"></div>
+    <button class="ep-btn ep-btn-primary" id="name-btn" onclick="saveName()" style="margin-top:14px">Save</button>
+    <button class="ep-btn ep-btn-ghost" onclick="EP_CORE.closeSheet('sheet-name')" style="margin-top:10px">Cancel</button>
+  </div>
+</div>
+
+<div id="sheet-email" class="ep-overlay">
+  <div class="ep-sheet">
+    <div class="ep-sheet-handle"></div>
+    <div class="ep-sheet-title">Edit Email</div>
+    <div class="ep-field"><label class="ep-label">Email</label>
+      <input class="ep-input" id="edit-email" type="email" placeholder="you@email.com"></div>
+    <div class="ep-err-msg" id="email-err"></div>
+    <button class="ep-btn ep-btn-primary" id="email-btn" onclick="saveEmail()" style="margin-top:14px">Save</button>
+    <button class="ep-btn ep-btn-ghost" onclick="EP_CORE.closeSheet('sheet-email')" style="margin-top:10px">Cancel</button>
+  </div>
+</div>
+
+<div id="ep-toast"></div>
+
+<script src="js/config.js?v=4.1"></script>
+<script src="js/api.js?v=4.1"></script>
+<script src="js/core.js?v=4.1"></script>
+<script src="js/devpanel.js"></script>
+<script>
+EP_CORE.onReady(async function(){
+  if(!EP_CORE.requireAuth()) return;
+  EP_CORE.initSheets();
+  EP_CORE.initLangToggle();
+  await loadProfile();
+});
+
+async function loadProfile(){
+  try{
+    var j = await EP_API.getProfile();
+    if(!j.success) return;
+    var d = j.data;
+
+    // Avatar
+    if(d.avatar_url){
+      document.getElementById('av-btn').innerHTML = '<img src="'+d.avatar_url+'" alt="">';
+    }
+    document.getElementById('p-name').textContent  = d.full_name  || '—';
+    document.getElementById('p-phone').textContent = d.phone      || '—';
+    document.getElementById('row-name').textContent  = d.full_name  || '—';
+    document.getElementById('row-email').textContent = d.email      || 'Not set';
+    document.getElementById('row-phone').textContent = d.phone      || '—';
+
+    // KYC badge
+    var kycEl = document.getElementById('p-kyc');
+    if(d.kyc_status === 'verified'){
+      kycEl.innerHTML = '<span class="ep-badge ep-badge-ok">✓ Verified</span>';
+    } else if(d.kyc_status === 'pending'){
+      kycEl.innerHTML = '<span class="ep-badge ep-badge-warn">⏳ Under Review</span>';
+      document.getElementById('kyc-badge').style.display = 'inline-flex';
+    } else {
+      kycEl.innerHTML = '<span class="ep-badge" style="background:rgba(255,255,255,.06);color:var(--t3);border:1px solid var(--glass-brd)">Not Verified</span>';
+    }
+
+    // Balance
+    var b = await EP_API.getBalance();
+    if(b.success){
+      var bal = parseFloat(b.data.etb||0);
+      document.getElementById('stat-bal').textContent = EP_CORE.numFmt(bal);
+      // Show admin group
+      if(b.data.is_admin){
+        document.getElementById('admin-group').style.display = 'block';
+      }
+    }
+
+    // My analytics (sent/received)
+    try{
+      var an = await EP_API.call('ep_my_analytics',{period:'30d'});
+      if(an.success){
+        document.getElementById('stat-sent').textContent = EP_CORE.numFmt(an.data.sent.amount||0);
+        document.getElementById('stat-recv').textContent = EP_CORE.numFmt(an.data.received.amount||0);
+      }
+    }catch(e){ document.getElementById('stat-sent').textContent='0'; document.getElementById('stat-recv').textContent='0'; }
+
+    // Update desktop sidebar if present
+    if(window.EP_DESKTOP) EP_DESKTOP.updateUser(d.full_name, d.phone, d.avatar_url);
+
+  }catch(e){ console.error(e); }
+}
+
+function triggerAvatarUpload(){ document.getElementById('av-file').click(); }
+
+async function uploadAvatar(e){
+  var file = e.target.files[0]; if(!file) return;
+  if(file.size > 2097152){ EP_CORE.toast('Max 2MB','err'); return; }
+  var reader = new FileReader();
+  reader.onload = async function(ev){
+    var b64 = ev.target.result.split(',')[1];
+    try{
+      var j = await EP_API.call('ep_update_avatar',{avatar_b64:b64});
+      if(j.success){
+        document.getElementById('av-btn').innerHTML = '<img src="data:image/jpeg;base64,'+b64+'">';
+        EP_CORE.toast('Photo updated','ok');
+      }else EP_CORE.toast('Upload failed','err');
+    }catch(ex){ EP_CORE.toast('Error','err'); }
+  };
+  reader.readAsDataURL(file);
+}
+
+function openEditName(){
+  var cur = document.getElementById('row-name').textContent;
+  document.getElementById('edit-name').value = cur !== '—' ? cur : '';
+  EP_CORE.openSheet('sheet-name');
+}
+async function saveName(){
+  var val = document.getElementById('edit-name').value.trim();
+  if(!val){ document.getElementById('name-err').textContent='Name required'; return; }
+  var btn = document.getElementById('name-btn');
+  var restore = EP_CORE.btnLoading(btn);
+  try{
+    var j = await EP_API.call('ep_update_profile',{full_name:val});
+    restore();
+    if(j.success){
+      document.getElementById('row-name').textContent = val;
+      document.getElementById('p-name').textContent   = val;
+      EP_CORE.closeSheet('sheet-name'); EP_CORE.toast('Name updated','ok');
+    }else document.getElementById('name-err').textContent=(j.data&&j.data.message)||'Failed';
+  }catch(e){ restore(); }
+}
+
+function openEditEmail(){
+  var cur = document.getElementById('row-email').textContent;
+  document.getElementById('edit-email').value = cur !== 'Not set' ? cur : '';
+  EP_CORE.openSheet('sheet-email');
+}
+async function saveEmail(){
+  var val = document.getElementById('edit-email').value.trim();
+  var btn = document.getElementById('email-btn');
+  var restore = EP_CORE.btnLoading(btn);
+  try{
+    var j = await EP_API.call('ep_update_profile',{email:val});
+    restore();
+    if(j.success){
+      document.getElementById('row-email').textContent = val||'Not set';
+      EP_CORE.closeSheet('sheet-email'); EP_CORE.toast('Email updated','ok');
+    }
+  }catch(e){ restore(); }
+}
+
+async function doChangePin(){
+  var old=document.getElementById('pin-old').value;
+  var nw=document.getElementById('pin-new').value;
+  var cn=document.getElementById('pin-con').value;
+  if(!old||!nw){ document.getElementById('pin-err').textContent='All fields required'; return; }
+  if(nw!==cn){ document.getElementById('pin-err').textContent='PINs do not match'; return; }
+  var btn=document.getElementById('pin-btn');
+  var restore=EP_CORE.btnLoading(btn);
+  try{
+    var j=await EP_API.call('ep_change_pin',{old_pin:old,new_pin:nw,confirm_pin:cn});
+    restore();
+    if(j.success){ EP_CORE.closeSheet('sheet-pin'); EP_CORE.toast('PIN updated','ok'); }
+    else document.getElementById('pin-err').textContent=(j.data&&j.data.message)||'Failed';
+  }catch(e){ restore(); }
+}
+
+function toggleLang(){
+  var isAm = EP_CORE.getLang()==='am';
+  EP_CORE.setLang(isAm?'en':'am');
+  document.getElementById('lang-sub').textContent = isAm?'English':'አማርኛ';
+}
+
+function doSignOut(){
+  if(!confirm('Sign out of ኢE Pay?')) return;
+  EP_CORE.signOut();
+}
+</script>
+<script src="js/desktop-shell.js"></script>
+</body>
+</html>
