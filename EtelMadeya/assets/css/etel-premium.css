@@ -1,0 +1,223 @@
+/* ═══════════════════════════════════════════════════════════════════
+   ETEL MADEYA — PREMIUM DESIGN LAYER
+   Depth/glass effects on top of the existing golden theme. Loaded
+   AFTER driver-style.css / controller-style.css / admin-style.css on
+   every page so these rules win the cascade without needing !important.
+   Token values sourced from Etel Group's premium WordPress theme
+   (etel-theme-premium) so the standalone apps match that design system.
+   ═══════════════════════════════════════════════════════════════════ */
+
+:root {
+    /* ── Gold spectrum (aligned to the premium theme's palette) ── */
+    --ep-gold:        #D4AF37;
+    --ep-gold-light:  #F5CC44;
+    --ep-gold-pale:   #FFE99A;
+    --ep-gold-dim:    #B8941E;
+    --ep-gold-deep:   #8B6914;
+    --ep-gold-glow:   rgba(244,210,80,0.55);
+    --ep-gold-subtle: rgba(244,210,80,0.12);
+    --ep-gold-border: rgba(244,210,80,0.35);
+
+    /* ── Carbon/void backgrounds ── */
+    --ep-void:        #14100a;
+    --ep-carbon:      #221a0e;
+
+    /* ── Gradients ── */
+    --ep-grad-gold:   linear-gradient(135deg, #B8820A 0%, #D4AF37 25%, #F5CC44 55%, #D4AF37 80%, #8B6914 100%);
+    --ep-grad-glass:  linear-gradient(135deg, rgba(244,210,80,0.16) 0%, rgba(255,248,232,0.04) 100%);
+    --ep-grad-shimmer:linear-gradient(105deg, transparent 40%, rgba(255,248,232,0.35) 50%, transparent 60%);
+
+    /* ── Shadows & depth ── */
+    --ep-shadow-sm:   0 2px 8px rgba(0,0,0,0.35);
+    --ep-shadow-md:   0 8px 28px rgba(0,0,0,0.45);
+    --ep-shadow-lg:   0 20px 56px rgba(0,0,0,0.55);
+    --ep-shadow-gold: 0 0 32px rgba(212,175,55,0.18), 0 0 64px rgba(212,175,55,0.07);
+    --ep-shadow-card: 0 8px 28px rgba(0,0,0,0.5), 0 1px 0 rgba(212,175,55,0.12) inset;
+    --ep-shadow-inset:inset 0 1px 0 rgba(212,175,55,0.14), inset 0 -1px 0 rgba(0,0,0,0.3);
+
+    /* ── Glass / blur ── */
+    --ep-border-glass: 1px solid rgba(212,175,55,0.16);
+    --ep-blur-sm:  blur(8px);
+    --ep-blur-md:  blur(16px);
+
+    /* ── Motion ── */
+    --ep-ease-io:     cubic-bezier(0.4, 0.0, 0.2, 1.0);
+    --ep-ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1.0);
+    --ep-dur-fast: 150ms;
+    --ep-dur-base: 250ms;
+    --ep-dur-slow: 450ms;
+
+    /* ── Radii ── */
+    --ep-r-sm: 8px;
+    --ep-r-md: 12px;
+    --ep-r-lg: 18px;
+
+    /* ── Typography ── */
+    --ep-font-display: 'Cormorant Garamond', Georgia, serif;
+    --ep-font-ui:      'Rajdhani', 'Noto Sans Ethiopic', sans-serif;
+    --ep-font-mono:    'JetBrains Mono', 'Courier New', monospace;
+}
+
+/* ═══ TYPOGRAPHY ═══════════════════════════════════════════════════ */
+/* Latin text renders in Rajdhani/Cormorant; Ethiopic glyphs (not in
+   those fonts) fall through the stack to Noto Sans Ethiopic automatically. */
+body {
+    font-family: var(--ep-font-ui), 'Noto Sans Ethiopic', sans-serif;
+}
+
+h1, h2, .logo-name, .page-title, .login-box h1, .header-title,
+.sidebar-header h2, .stat-value, .imp-card-num, .position-number {
+    font-family: var(--ep-font-display), 'Noto Sans Ethiopic', serif;
+    letter-spacing: 0.3px;
+}
+
+.report-plate, .imp-dup-plate, .imp-clean-chip, code, .header-subtitle,
+#reportTableBody td:nth-child(5), .queue-table td:nth-child(6) {
+    font-family: var(--ep-font-mono);
+}
+
+/* ═══ GLASS SURFACE UTILITY ════════════════════════════════════════ */
+.card, .login-box, .modal-content, .dashboard-card, .settings-card,
+.stat-card, .queue-container, .report-panel, .imp-panel, .imp-card,
+.vehicle-card, .controller-item, .queue-monitor-item, .table-container {
+    background-image: var(--ep-grad-glass);
+    background-blend-mode: overlay;
+    border: var(--ep-border-glass);
+    box-shadow: var(--ep-shadow-card);
+    backdrop-filter: var(--ep-blur-sm);
+    -webkit-backdrop-filter: var(--ep-blur-sm);
+    transition: transform var(--ep-dur-base) var(--ep-ease-io),
+                box-shadow var(--ep-dur-base) var(--ep-ease-io);
+}
+
+/* Header/sidebar/topbar carry their own directional accent borders
+   (border-bottom/border-right); the drop zone relies on its dashed
+   border as a drag-target affordance. Add only blur/shadow here, never
+   a shorthand `border` that would reset those. */
+.header, .sidebar, .topbar, .imp-dropzone {
+    background-image: var(--ep-grad-glass);
+    background-blend-mode: overlay;
+    backdrop-filter: var(--ep-blur-md);
+    -webkit-backdrop-filter: var(--ep-blur-md);
+}
+
+/* ═══ HOVER-LIFT ═══════════════════════════════════════════════════ */
+.stat-card:hover, .dashboard-card:hover, .settings-card:hover,
+.vehicle-card:hover, .controller-item:hover, .imp-card:hover,
+.card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--ep-shadow-lg), var(--ep-shadow-gold);
+}
+
+/* ═══ BUTTONS ══════════════════════════════════════════════════════ */
+.btn, .btn-primary, .btn-secondary, .btn-success, .btn-logout,
+.btn-refresh, .action-btn, .imp-check-btn, .imp-browse-btn,
+.imp-import-btn, .lang-btn, .admin-link {
+    position: relative;
+    overflow: hidden;
+    border-radius: var(--ep-r-sm);
+    transition: transform var(--ep-dur-fast) var(--ep-ease-spring),
+                box-shadow var(--ep-dur-base) var(--ep-ease-io),
+                filter var(--ep-dur-fast) ease;
+}
+
+.btn-primary, .btn-success, .imp-check-btn, .imp-import-btn {
+    background: var(--ep-grad-gold);
+    box-shadow: var(--ep-shadow-sm), var(--ep-shadow-inset);
+}
+
+.btn-primary::before, .btn-success::before, .imp-check-btn::before,
+.imp-import-btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--ep-grad-shimmer);
+    transform: translateX(-120%);
+}
+
+.btn-primary:hover::before, .btn-success:hover::before,
+.imp-check-btn:hover::before, .imp-import-btn:hover::before {
+    transform: translateX(120%);
+    transition: transform var(--ep-dur-slow) var(--ep-ease-io);
+}
+
+.btn:hover, .btn-primary:hover, .btn-secondary:hover, .btn-success:hover,
+.btn-logout:hover, .btn-refresh:hover, .action-btn:hover,
+.imp-check-btn:hover, .imp-browse-btn:hover, .imp-import-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--ep-shadow-md), var(--ep-shadow-gold);
+    filter: brightness(1.06);
+}
+
+.btn:active, .btn-primary:active, .btn-secondary:active,
+.btn-success:active, .action-btn:active {
+    transform: translateY(0);
+}
+
+/* ═══ INPUTS / SELECTS — focus glow ═══════════════════════════════ */
+.form-control, .form-group input, .form-group select, .form-group textarea,
+input[type="text"], input[type="password"], input[type="email"],
+input[type="tel"], input[type="number"], input[type="date"], select,
+textarea, #reportSearch, #impVehicleType {
+    transition: box-shadow var(--ep-dur-base) var(--ep-ease-io),
+                border-color var(--ep-dur-base) var(--ep-ease-io);
+}
+
+.form-control:focus, .form-group input:focus, .form-group select:focus,
+.form-group textarea:focus, input:focus, select:focus, textarea:focus {
+    outline: none;
+    border-color: var(--ep-gold) !important;
+    box-shadow: 0 0 0 3px var(--ep-gold-subtle), var(--ep-shadow-sm);
+}
+
+/* ═══ TABLES — subtle depth ═══════════════════════════════════════ */
+.queue-table thead, .report-table thead, .data-table thead,
+.imp-dup-table thead {
+    box-shadow: var(--ep-shadow-inset);
+}
+
+.queue-table tbody tr, .report-table tbody tr, .data-table tbody tr,
+.imp-dup-table tbody tr {
+    transition: background var(--ep-dur-fast) ease;
+}
+
+/* ═══ BADGES — glow pill ══════════════════════════════════════════ */
+.badge, .status-badge, .imp-badge {
+    box-shadow: var(--ep-shadow-sm);
+}
+
+/* ═══ MODALS — elevated glass panel ═══════════════════════════════ */
+.modal-content {
+    box-shadow: var(--ep-shadow-lg), var(--ep-shadow-gold);
+    animation: ep-modal-in var(--ep-dur-base) var(--ep-ease-spring);
+}
+
+@keyframes ep-modal-in {
+    from { opacity: 0; transform: translateY(12px) scale(0.98); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* ═══ NOTIFICATION toast — glass + glow ═══════════════════════════ */
+.notification {
+    backdrop-filter: var(--ep-blur-md);
+    -webkit-backdrop-filter: var(--ep-blur-md);
+    box-shadow: var(--ep-shadow-lg);
+}
+
+/* ═══ ENTRANCE ANIMATION for stat/dashboard cards ═════════════════ */
+.stat-card, .dashboard-card, .settings-card {
+    animation: ep-fade-up var(--ep-dur-slow) var(--ep-ease-io) both;
+}
+
+@keyframes ep-fade-up {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ═══ REDUCED MOTION — respect user preference ════════════════════ */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.001ms !important;
+        transition-duration: 0.001ms !important;
+    }
+}
