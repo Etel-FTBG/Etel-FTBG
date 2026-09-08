@@ -47,7 +47,8 @@ function showMainPanel() {
     loadVehicleTypes();
     loadStats();
     loadQueue();
-    
+    initReport();
+
     // Auto-refresh every 30 seconds
     refreshInterval = setInterval(() => {
         loadStats();
@@ -567,6 +568,329 @@ async function moveToWaiting(queueId) {
         showNotification('❌ Error moving vehicle', 'error');
     }
 }
+
+// ─── TAB SWITCHING ──────────────────────────────────────────────────
+function switchTab(tab, btn) {
+    document.querySelectorAll('.ctrl-tab-panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.ctrl-tab').forEach(b => b.classList.remove('active'));
+    document.getElementById('tab-' + tab).classList.add('active');
+    if (btn) btn.classList.add('active');
+    if (tab === 'report') loadReport();
+    if (tab === 'import') initImportVehicleTypes();
+}
+
+// ─── QUEUE REPORT ───────────────────────────────────────────────────
+let reportRows = [];
+
+function initReport() {
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('reportDate').value = today;
+}
+
+async function loadReport() {
+    const date = document.getElementById('reportDate').value || new Date().toISOString().split('T')[0];
+    const tbody = document.getElementById('reportTableBody');
+    tbody.innerHTML = '<tr><td colspan="6" class="empty-state">Loading...</td></tr>';
+    document.getElementById('reportMatchAlert').style.display = 'none';
+
+    try {
+        const res = await fetch(`${API}&action=get_report&date=${date}`);
+        const data = await res.json();
+        if (!data.success) { tbody.innerHTML = '<tr><td colspan="6" class="empty-state">Failed to load report.</td></tr>'; return; }
+        reportRows = data.report || [];
+        document.getElementById('reportCount').textContent = reportRows.length + ' served';
+        renderReport(reportRows);
+    } catch(e) {
+        tbody.innerHTML = '<tr><td colspan="6" class="empty-state">Error loading report.</td></tr>';
+    }
+}
+
+function renderReport(rows) {
+    const tbody = document.getElementById('reportTableBody');
+    if (!rows.length) {
+        tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No served vehicles for this date.</td></tr>';
+        return;
+    }
+    tbody.innerHTML = rows.map((r, i) => {
+        const time = r.served_at ? new Date(r.served_at.replace(' ', 'T')).toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit'}) : '--';
+        const typeName = (r.vehicle_type_icon ? r.vehicle_type_icon + ' ' : '') + (r.vehicle_type_name || r.vehicle_type_id || '--');
+        const parity = r.plate_parity === 'even' ? '🔵 Even' : r.plate_parity === 'odd' ? '🟠 Odd' : '--';
+        return `<tr data-plate="${(r.plate_number||'').toUpperCase()}">
+            <td style="color:#888;font-size:12px;">${i+1}</td>
+            <td><span class="report-plate">${r.plate_number||'--'}</span></td>
+            <td style="font-size:13px;color:#ccc;">${typeName}</td>
+            <td style="font-size:13px;">${parity}</td>
+            <td style="font-family:monospace;color:var(--gold);font-size:13px;">${r.token||'--'}</td>
+            <td style="font-size:13px;color:#aaa;">${time}</td>
+        </tr>`;
+    }).join('');
+}
+
+function filterReport() {
+    const q = (document.getElementById('reportSearch').value || '').toUpperCase().trim();
+    if (!q) { renderReport(reportRows); document.getElementById('reportMatchAlert').style.display = 'none'; return; }
+    const filtered = reportRows.filter(r => (r.plate_number || '').toUpperCase().includes(q));
+    renderReport(filtered);
+    const alert = document.getElementById('reportMatchAlert');
+    if (filtered.length) {
+        alert.style.display = 'block';
+        document.getElementById('reportMatchText').textContent = filtered.length + ' match(es) found — this plate was already served today!';
+    } else {
+        alert.style.display = 'none';
+    }
+}
+
+function clearReportSearch() {
+    document.getElementById('reportSearch').value = '';
+    document.getElementById('reportMatchAlert').style.display = 'none';
+    renderReport(reportRows);
+}
+
+// ─── IMPORT & CHECK TAB ─────────────────────────────────────────────
+let impParsedPlates = [];   // all plates extracted from files
+let impCleanPlates  = [];   // clean plates after server check
+let impFilesData    = [];   // { name, plates[] } per file
+
+function initImportVehicleTypes() {
+    const sel = document.getElementById('impVehicleType');
+    if (sel.options.length > 1) return; // already populated
+    sel.innerHTML = '<option value="">Select vehicle type...</option>';
+    vehicleTypes.forEach(t => {
+        const o = document.createElement('option');
+        o.value = t.id;
+        o.textContent = `${t.icon} ${t.name}`;
+        sel.appendChild(o);
+    });
+}
+
+// ── Drag & drop handlers ──
+function impDragOver(e) {
+    e.preventDefault();
+    document.getElementById('impDropzone').classList.add('drag-over');
+}
+function impDragLeave(e) {
+    document.getElementById('impDropzone').classList.remove('drag-over');
+}
+function impDrop(e) {
+    e.preventDefault();
+    document.getElementById('impDropzone').classList.remove('drag-over');
+    impFilesChosen(e.dataTransfer.files);
+}
+
+// ── File parsing entry point ──
+async function impFilesChosen(fileList) {
+    if (!fileList || !fileList.length) return;
+    impFilesData = [];
+    impParsedPlates = [];
+    impCleanPlates  = [];
+    document.getElementById('impResults').style.display = 'none';
+    document.getElementById('impImportFb').style.display = 'none';
+
+    const fileListEl = document.getElementById('impFileList');
+    fileListEl.style.display = 'block';
+    fileListEl.innerHTML = '<div style="font-size:11px;color:#888;margin-bottom:8px;letter-spacing:1px;text-transform:uppercase;">Reading files…</div>';
+
+    for (const file of fileList) {
+        if (file.name.toLowerCase().endsWith('.zip')) {
+            await parseZip(file);
+        } else if (file.name.toLowerCase().endsWith('.txt')) {
+            await parseTxt(file, file.name);
+        }
+    }
+
+    // Build combined plate list
+    impFilesData.forEach(f => { impParsedPlates.push(...f.plates); });
+
+    renderFileList();
+    if (impParsedPlates.length) {
+        document.getElementById('impControls').style.display = 'block';
+    }
+}
+
+async function parseTxt(file, name) {
+    const text = await file.text();
+    const plates = extractPlates(text);
+    impFilesData.push({ name, plates });
+}
+
+async function parseZip(file) {
+    try {
+        const zip = await JSZip.loadAsync(file);
+        const txtFiles = Object.values(zip.files).filter(f => !f.dir && f.name.toLowerCase().endsWith('.txt'));
+        for (const zf of txtFiles) {
+            const text = await zf.async('text');
+            const plates = extractPlates(text);
+            impFilesData.push({ name: zf.name, plates });
+        }
+    } catch(e) {
+        console.error('ZIP parse error', e);
+    }
+}
+
+function extractPlates(text) {
+    return text.split(/[\r\n,;]+/)
+        .map(l => l.replace(/[^A-Z0-9\-]/gi, '').toUpperCase().trim())
+        .filter(p => p.length >= 2);
+}
+
+function renderFileList() {
+    const el = document.getElementById('impFileList');
+    if (!impFilesData.length) { el.style.display = 'none'; return; }
+    el.innerHTML = impFilesData.map(f => `
+        <div class="imp-file-item">
+            <span class="imp-file-icon">${f.name.endsWith('.txt') || !f.name.includes('.') ? '📄' : '📂'}</span>
+            <span class="imp-file-name">${f.name}</span>
+            <span class="imp-file-count">${f.plates.length} plates</span>
+        </div>`).join('') +
+        `<div style="font-size:12px;color:var(--gold);margin-top:8px;font-weight:700;">
+            Total: ${impParsedPlates.length} plate numbers found
+        </div>`;
+}
+
+// ── Run duplicate check via API ──
+async function runImportCheck() {
+    const vtype = document.getElementById('impVehicleType').value;
+    if (!vtype) { showNotification('❌ Please select a vehicle type first', 'error'); return; }
+    if (!impParsedPlates.length) { showNotification('❌ No plates loaded yet', 'error'); return; }
+
+    const btn = document.querySelector('.imp-check-btn');
+    btn.textContent = '⏳ Checking…'; btn.disabled = true;
+
+    try {
+        const fd = new FormData();
+        fd.append('action', 'check_import');
+        fd.append('plates', impParsedPlates.join('\n'));
+
+        const res = await fetch(API, { method: 'POST', body: fd });
+        const data = await res.json();
+
+        if (!data.success) { showNotification('❌ ' + data.message, 'error'); return; }
+        impCleanPlates = data.clean || [];
+        renderCheckResults(data);
+    } catch(e) {
+        showNotification('❌ Error checking duplicates', 'error');
+    } finally {
+        btn.textContent = '🔍 Check for Duplicates'; btn.disabled = false;
+    }
+}
+
+function renderCheckResults(data) {
+    // Summary cards
+    document.getElementById('impTotal').textContent   = data.total;
+    document.getElementById('impClean').textContent   = data.clean.length;
+    document.getElementById('impInFile').textContent  = data.in_file.length;
+    document.getElementById('impInQueue').textContent = data.in_queue.length;
+    document.getElementById('impServed').textContent  = data.in_report.length;
+
+    // Build duplicate rows
+    const dups = [];
+    const inFileSet  = new Set(data.in_file.map(p => p.toUpperCase()));
+    const inQueueSet = new Set(data.in_queue.map(p => p.toUpperCase()));
+    const inRepSet   = new Set(data.in_report.map(p => p.toUpperCase()));
+
+    // Collect all flagged plates once each
+    const flagged = new Map();
+    data.in_file.forEach(p  => { const u = p.toUpperCase(); if(!flagged.has(u)) flagged.set(u, []); flagged.get(u).push('infile'); });
+    data.in_queue.forEach(p => { const u = p.toUpperCase(); if(!flagged.has(u)) flagged.set(u, []); flagged.get(u).push('inqueue'); });
+    data.in_report.forEach(p=> { const u = p.toUpperCase(); if(!flagged.has(u)) flagged.set(u, []); flagged.get(u).push('served'); });
+
+    const dupSection = document.getElementById('impDupSection');
+    if (flagged.size) {
+        dupSection.style.display = 'block';
+        let i = 1;
+        const rows = Array.from(flagged.entries()).map(([plate, reasons]) => {
+            const badges = reasons.map(r => {
+                if (r === 'infile')  return '<span class="imp-badge imp-badge-infile">Dup in File</span>';
+                if (r === 'inqueue') return '<span class="imp-badge imp-badge-inqueue">In Queue</span>';
+                return '<span class="imp-badge imp-badge-served">Served Today</span>';
+            }).join(' ');
+            const detail = reasons.map(r => {
+                if (r === 'infile')  return 'Appears more than once in the uploaded file(s)';
+                if (r === 'inqueue') return 'Already registered in the active queue';
+                return 'Already served today';
+            }).join('; ');
+            return `<tr>
+                <td style="color:#888;font-size:12px;">${i++}</td>
+                <td><span class="imp-dup-plate" style="color:${reasons.includes('served') ? '#ef4444' : reasons.includes('inqueue') ? '#facc15' : '#fb923c'}">${plate}</span></td>
+                <td>${badges}</td>
+                <td style="font-size:12px;color:#aaa;">${detail}</td>
+            </tr>`;
+        });
+        document.getElementById('impDupBody').innerHTML = rows.join('');
+    } else {
+        dupSection.style.display = 'none';
+    }
+
+    // Clean plates
+    const cleanSection = document.getElementById('impCleanSection');
+    if (impCleanPlates.length) {
+        cleanSection.style.display = 'block';
+        document.getElementById('impImportCount').textContent = impCleanPlates.length;
+        document.getElementById('impCleanList').innerHTML =
+            impCleanPlates.map(p => `<span class="imp-clean-chip">${p}</span>`).join('');
+    } else {
+        cleanSection.style.display = 'none';
+    }
+
+    document.getElementById('impResults').style.display = 'block';
+}
+
+// ── Do the actual import of clean plates ──
+async function doImportClean() {
+    if (!impCleanPlates.length) return;
+    const vtype = document.getElementById('impVehicleType').value;
+    if (!vtype) { showNotification('❌ Select a vehicle type first', 'error'); return; }
+
+    const btn = document.getElementById('impImportBtn');
+    btn.disabled = true; btn.textContent = '⏳ Importing…';
+    const fb = document.getElementById('impImportFb');
+    fb.style.display = 'none';
+
+    try {
+        const fd = new FormData();
+        fd.append('action', 'bulk_import');
+        fd.append('plates', impCleanPlates.join('\n'));
+        fd.append('vehicle_type_id', vtype);
+
+        const res = await fetch(API, { method: 'POST', body: fd });
+        const data = await res.json();
+
+        if (data.success) {
+            fb.className = 'imp-import-fb ok';
+            fb.textContent = `✅ Import complete — ${data.imported} added, ${data.skipped} skipped.`;
+            fb.style.display = 'block';
+            showNotification(`✅ Imported ${data.imported} vehicles`, 'success');
+            loadStats();
+            loadQueue();
+            impCleanPlates = [];
+            document.getElementById('impImportCount').textContent = '0';
+            document.getElementById('impCleanList').innerHTML = '';
+            document.getElementById('impCleanSection').style.display = 'none';
+        } else {
+            fb.className = 'imp-import-fb err';
+            fb.textContent = '❌ ' + (data.message || 'Import failed');
+            fb.style.display = 'block';
+        }
+    } catch(e) {
+        fb.className = 'imp-import-fb err';
+        fb.textContent = '❌ Connection error';
+        fb.style.display = 'block';
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = `⬆️ Import <span id="impImportCount">${impCleanPlates.length}</span> Plates into Queue`;
+    }
+}
+
+function clearImport() {
+    impParsedPlates = []; impCleanPlates = []; impFilesData = [];
+    document.getElementById('impFileList').style.display = 'none';
+    document.getElementById('impFileList').innerHTML = '';
+    document.getElementById('impControls').style.display = 'none';
+    document.getElementById('impResults').style.display = 'none';
+    document.getElementById('impImportFb').style.display = 'none';
+    document.getElementById('impFileInput').value = '';
+}
+
 
 // ─── NOTIFICATION ───────────────────────────────────────────────────
 function showNotification(message, type = 'success') {

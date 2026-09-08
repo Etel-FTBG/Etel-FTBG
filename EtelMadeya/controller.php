@@ -9,6 +9,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Ethiopic:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="assets/css/controller-style.css">
     <link rel="icon" href="assets/img/etel-logo.png">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 </head>
 <body>
     <div id="app">
@@ -132,7 +133,15 @@
                 </div>
             </div>
 
+            <!-- Tab Navigation -->
+            <div class="ctrl-tab-nav">
+                <button class="ctrl-tab active" onclick="switchTab('queue', this)">📋 Queue</button>
+                <button class="ctrl-tab" onclick="switchTab('report', this)">📑 Queue Report</button>
+                <button class="ctrl-tab" onclick="switchTab('import', this)">📂 Import & Check</button>
+            </div>
+
             <!-- Queue Table -->
+            <div id="tab-queue" class="ctrl-tab-panel active">
             <div class="queue-container">
                 <table class="queue-table">
                     <thead>
@@ -160,6 +169,132 @@
                     <div class="pagination-controls" id="paginationControls"></div>
                 </div>
             </div>
+            </div><!-- end tab-queue -->
+
+            <!-- Queue Report Panel -->
+            <div id="tab-report" class="ctrl-tab-panel">
+                <div class="report-panel">
+                    <div class="report-toolbar">
+                        <div class="report-toolbar-left">
+                            <span class="report-title">🔴 Served Vehicles</span>
+                            <span class="report-count" id="reportCount"></span>
+                        </div>
+                        <div class="report-toolbar-right">
+                            <input type="date" id="reportDate" onchange="loadReport()">
+                        </div>
+                    </div>
+                    <div class="report-search-bar">
+                        <input type="text" id="reportSearch" placeholder="🔍 Search plate number..." oninput="filterReport()">
+                        <button onclick="clearReportSearch()">✕ Clear</button>
+                    </div>
+                    <div id="reportMatchAlert" class="report-match-alert" style="display:none">
+                        ⚠️ <span id="reportMatchText"></span>
+                    </div>
+                    <div class="report-table-wrap">
+                        <table class="report-table">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Plate Number</th>
+                                    <th>Vehicle Type</th>
+                                    <th>Parity</th>
+                                    <th>Token</th>
+                                    <th>Served At</th>
+                                </tr>
+                            </thead>
+                            <tbody id="reportTableBody">
+                                <tr><td colspan="6" class="empty-state">Select a date to load report</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div><!-- end tab-report -->
+
+            <!-- Import & Check Panel -->
+            <div id="tab-import" class="ctrl-tab-panel">
+                <div class="imp-panel">
+
+                    <!-- Drop Zone -->
+                    <div class="imp-dropzone" id="impDropzone"
+                         ondragover="impDragOver(event)" ondragleave="impDragLeave(event)" ondrop="impDrop(event)">
+                        <div class="imp-drop-icon">📂</div>
+                        <div class="imp-drop-title">Drop TXT or ZIP files here</div>
+                        <div class="imp-drop-sub">or click to browse</div>
+                        <input type="file" id="impFileInput" accept=".txt,.zip" multiple style="display:none" onchange="impFilesChosen(this.files)">
+                        <button type="button" class="imp-browse-btn" onclick="document.getElementById('impFileInput').click()">Browse Files</button>
+                    </div>
+
+                    <!-- File List -->
+                    <div id="impFileList" class="imp-file-list" style="display:none"></div>
+
+                    <!-- Vehicle Type + Check Button -->
+                    <div class="imp-controls" id="impControls" style="display:none">
+                        <div class="imp-controls-row">
+                            <div class="imp-ctrl-group">
+                                <label>Vehicle Type</label>
+                                <select id="impVehicleType"></select>
+                            </div>
+                            <button type="button" class="imp-check-btn" onclick="runImportCheck()">🔍 Check for Duplicates</button>
+                            <button type="button" class="imp-clear-btn" onclick="clearImport()">✕ Clear</button>
+                        </div>
+                    </div>
+
+                    <!-- Results -->
+                    <div id="impResults" style="display:none">
+
+                        <!-- Summary Cards -->
+                        <div class="imp-summary">
+                            <div class="imp-card imp-card-total">
+                                <div class="imp-card-num" id="impTotal">0</div>
+                                <div class="imp-card-label">Total Plates</div>
+                            </div>
+                            <div class="imp-card imp-card-clean">
+                                <div class="imp-card-num" id="impClean">0</div>
+                                <div class="imp-card-label">Ready to Import</div>
+                            </div>
+                            <div class="imp-card imp-card-infile">
+                                <div class="imp-card-num" id="impInFile">0</div>
+                                <div class="imp-card-label">Duplicates in File</div>
+                            </div>
+                            <div class="imp-card imp-card-inqueue">
+                                <div class="imp-card-num" id="impInQueue">0</div>
+                                <div class="imp-card-label">Already in Queue</div>
+                            </div>
+                            <div class="imp-card imp-card-served">
+                                <div class="imp-card-num" id="impServed">0</div>
+                                <div class="imp-card-label">Already Served Today</div>
+                            </div>
+                        </div>
+
+                        <!-- Duplicate List -->
+                        <div id="impDupSection" style="display:none">
+                            <div class="imp-section-title">⚠️ Duplicate & Conflict List</div>
+                            <div class="imp-legend">
+                                <span class="imp-badge imp-badge-infile">Dup in File</span>
+                                <span class="imp-badge imp-badge-inqueue">In Queue</span>
+                                <span class="imp-badge imp-badge-served">Served Today</span>
+                            </div>
+                            <div class="imp-dup-table-wrap">
+                                <table class="imp-dup-table">
+                                    <thead><tr><th>#</th><th>Plate Number</th><th>Status</th><th>Detail</th></tr></thead>
+                                    <tbody id="impDupBody"></tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Clean Plates Preview -->
+                        <div id="impCleanSection" style="display:none">
+                            <div class="imp-section-title">✅ Clean Plates Ready to Import</div>
+                            <div class="imp-clean-wrap" id="impCleanList"></div>
+                            <button type="button" class="imp-import-btn" id="impImportBtn" onclick="doImportClean()">
+                                ⬆️ Import <span id="impImportCount">0</span> Plates into Queue
+                            </button>
+                            <div id="impImportFb" class="imp-import-fb" style="display:none"></div>
+                        </div>
+
+                    </div>
+                </div>
+            </div><!-- end tab-import -->
         </div>
 
         <!-- Modals -->
