@@ -611,7 +611,27 @@ if(window.innerWidth>600){document.getElementById('p-member-chip').style.display
  *    Etel Pay requires kyc_level >= 2. */
 $etelid_must_change = ! empty( $member->must_change_password );
 $etelid_kyc_level   = isset( $member->kyc_level ) ? (int) $member->kyc_level : 0;
+/* Quick Register (see class-etelid-auth-ajax.php::quick_register()) only
+ * ever collects full name, photo, Fayda ID, email, and phone - dob is
+ * always required by every other entry point (the full registration
+ * wizard, admin-created accounts, the Fayda quick-register admin tool),
+ * so an empty dob reliably means this account still needs the rest of
+ * its profile filled in, regardless of which flow created it. */
+$etelid_profile_incomplete = empty( $member->dob );
 ?>
+<?php if ( $etelid_profile_incomplete ): ?>
+<div id="etelid-complete-profile-banner" style="position:relative;z-index:40;max-width:1100px;margin:14px auto 0;padding:12px 18px;border-radius:12px;background:rgba(212,175,55,.12);border:1px solid rgba(212,175,55,.35);display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;font-family:'JetBrains Mono',monospace;">
+  <div style="display:flex;align-items:center;gap:10px;color:#FFFEF8;font-size:13px;">
+    <i class="ti ti-user-exclamation" style="color:#D4AF37;font-size:18px;"></i>
+    <span>Your profile is missing a few details (date of birth, address, and a password of your own). Add them any time.</span>
+  </div>
+  <div style="display:flex;gap:8px;">
+    <a href="<?php echo esc_url( home_url('/profile/') ); ?>" style="background:linear-gradient(135deg,#E8C84A,#C8922A);color:#1A0E00;font-weight:700;font-size:12px;padding:8px 14px;border-radius:8px;text-decoration:none;">Complete Now</a>
+    <button type="button" onclick="document.getElementById('etelid-complete-profile-banner').style.display='none';" style="background:transparent;border:1px solid rgba(212,175,55,.35);color:#D4AF37;border-radius:8px;font-size:12px;padding:8px 12px;cursor:pointer;">Later</button>
+  </div>
+</div>
+<?php endif; ?>
+
 <?php if ( $etelid_kyc_level < 2 && ! $etelid_must_change ): ?>
 <div id="etelid-pass2-banner" style="position:relative;z-index:40;max-width:1100px;margin:14px auto 0;padding:12px 18px;border-radius:12px;background:rgba(212,175,55,.12);border:1px solid rgba(212,175,55,.35);display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;font-family:'JetBrains Mono',monospace;">
   <div style="display:flex;align-items:center;gap:10px;color:#FFFEF8;font-size:13px;">
