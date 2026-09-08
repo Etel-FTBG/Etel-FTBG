@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192" width="192" height="192">
+  <rect width="192" height="192" fill="#0d0820"/>
+  <circle cx="96" cy="96" r="88" fill="none" stroke="#e8b020" stroke-width="1.5" stroke-dasharray="6 4" opacity=".6"/>
+  <circle cx="96" cy="96" r="72" fill="none" stroke="#7c5fc7" stroke-width="1" opacity=".4"/>
+  <circle cx="96" cy="96" r="36" fill="none" stroke="#f5cc55" stroke-width="2" opacity=".9"/>
+  <circle cx="96" cy="96" r="6" fill="#f5cc55"/>
+  <polygon points="96,10 100,20 96,17 92,20" fill="#f5cc55" opacity=".9"/>
+  <polygon points="182,96 172,100 175,96 172,92" fill="#f5cc55" opacity=".9"/>
+  <polygon points="96,182 92,172 96,175 100,172" fill="#f5cc55" opacity=".9"/>
+  <polygon points="10,96 20,92 17,96 20,100" fill="#f5cc55" opacity=".9"/>
+  <text x="96" y="88" font-family="serif" font-size="28" font-weight="bold" fill="#f5cc55" text-anchor="middle" letter-spacing="4">ETEL</text>
+  <text x="96" y="112" font-family="serif" font-size="10" fill="#b8a4e8" text-anchor="middle" letter-spacing="3">AGENT OS</text>
+</svg>

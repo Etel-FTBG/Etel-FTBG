@@ -1,0 +1,83 @@
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                                                                              ║
+║                         🔑 FIX "INVALID CREDENTIALS" 🔑                      ║
+║                                                                              ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+
+✅ GOOD NEWS: Your database connection is working!
+❌ PROBLEM: Password hashes don't match
+
+
+🚀 QUICK FIX (2 MINUTES)
+═══════════════════════════════════════════════════════════════════════════════
+
+STEP 1: Run Password Reset Script
+   
+   Visit this URL in your browser:
+   https://ethelmarket.com/Etel-Madeya/reset-passwords.php
+   
+   You should see:
+   ✅ Connected to database
+   ✅ Admin password updated
+   ✅ Controller password updated
+   ✅ Password verification: SUCCESS
+
+
+STEP 2: Try Login Again
+
+   Controller Panel:
+   URL: https://ethelmarket.com/Etel-Madeya/controller.php
+   Username: madeya
+   Password: CHANGE_ME
+
+   Admin Panel:
+   URL: https://ethelmarket.com/Etel-Madeya/admin/
+   Username: admin
+   Password: CHANGE_ME
+
+
+STEP 3: Delete Security Files (CRITICAL!)
+
+   Delete these files IMMEDIATELY after successful login:
+   1. reset-passwords.php
+   2. test-db-connection.php
+   
+   Via cPanel File Manager or FTP
+
+
+═══════════════════════════════════════════════════════════════════════════════
+
+📖 DETAILED INSTRUCTIONS
+═══════════════════════════════════════════════════════════════════════════════
+
+See: FIX_INVALID_CREDENTIALS.md
+
+
+⚠️ SECURITY WARNING
+═══════════════════════════════════════════════════════════════════════════════
+
+The reset-passwords.php file can reset passwords!
+DELETE IT IMMEDIATELY after login works!
+
+
+✅ AFTER SUCCESSFUL LOGIN
+═══════════════════════════════════════════════════════════════════════════════
+
+1. Delete reset-passwords.php
+2. Delete test-db-connection.php
+3. Change admin password
+4. Change controller password
+5. Start using the system!
+
+
+📞 NEED HELP?
+═══════════════════════════════════════════════════════════════════════════════
+
+Email: ethelmarket@gmail.com
+Phone: +251-467-34-64-41
+
+
+═══════════════════════════════════════════════════════════════════════════════
+Last Updated: April 16, 2026
+═══════════════════════════════════════════════════════════════════════════════

@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ETEL AI · Sign In</title>
+<link rel="stylesheet" href="css/etelai-core.css">
+<style>
+  body{display:flex;align-items:center;justify-content:center;padding:24px;}
+  #login-card{width:100%;max-width:360px;padding:28px 26px;text-align:center;}
+  #login-logo{width:64px;height:64px;margin:0 auto 14px;}
+  #login-title{font-family:var(--f-display);font-size:20px;font-weight:800;margin-bottom:4px;}
+  #login-sub{font-size:12.5px;color:var(--text-dim);font-weight:500;margin-bottom:22px;}
+  #login-form{display:flex;flex-direction:column;gap:12px;text-align:left;}
+  #login-form label{font-size:11.5px;color:var(--text-dim);font-weight:700;margin-bottom:-6px;}
+  #login-form input{width:100%;}
+  #login-error{display:none;background:rgba(231,76,60,.1);border:1px solid rgba(231,76,60,.3);
+    color:var(--red);border-radius:8px;padding:9px 11px;font-size:12px;font-weight:700;text-align:left;}
+  #login-submit{width:100%;margin-top:6px;padding:12px;font-size:13.5px;}
+  #login-submit:disabled{opacity:.55;cursor:default;}
+  #login-back{display:block;margin-top:16px;font-size:12px;color:var(--text-dim);font-weight:700;}
+  #login-back:hover{color:var(--gold);}
+</style>
+</head>
+<body>
+
+<div id="login-card" class="card">
+  <span id="login-logo" class="brand-medallion"><img src="icons/icon-192.png" alt="Etel AI"></span>
+  <div id="login-title">Sign in to ETEL AI</div>
+  <div id="login-sub">Use your Etel-ID phone number and password - the same account used across Delivery, Ride, and every other Etel company.</div>
+
+  <div id="login-error"></div>
+
+  <form id="login-form">
+    <label for="phone">Phone number</label>
+    <input type="text" id="phone" name="phone" placeholder="e.g. 0912345678" autocomplete="tel" required>
+
+    <label for="password">Password</label>
+    <input type="password" id="password" name="password" placeholder="Your Etel-ID password" autocomplete="current-password" required>
+
+    <button type="submit" id="login-submit" class="btn btn-primary">Sign In</button>
+  </form>
+
+  <a href="index.html" id="login-back">&larr; Back to Etel AI</a>
+</div>
+
+<script src="js/core.js"></script>
+<script src="js/login.js"></script>
+</body>
+</html>

@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ETEL AI · Admin</title>
+<link rel="stylesheet" href="css/etelai-core.css">
+<link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+
+<div id="shell">
+  <nav id="sidebar">
+    <div id="side-brand">
+      <span id="side-logo" class="brand-medallion"><img src="icons/icon-192.png" alt="Etel AI"></span>
+      <div>
+        <div id="side-title">ETEL AI</div>
+        <div id="side-sub">Admin</div>
+      </div>
+    </div>
+    <button class="side-link active" data-panel="panel-providers">AI Providers</button>
+    <button class="side-link" data-panel="panel-memory">Memory</button>
+    <button class="side-link" data-panel="panel-about">About</button>
+    <button id="theme-toggle-btn" class="theme-toggle-btn" style="margin:16px 8px 0;" onclick="etelaiToggleTheme()">☀️ Light</button>
+  </nav>
+
+  <main id="content">
+    <section id="panel-providers" class="panel">
+      <h1>AI Providers</h1>
+      <p class="panel-sub">Switch a provider on and it answers chat. API keys live only in <code>api/secrets.php</code> - never entered here.</p>
+      <div id="provider-list" class="card" style="padding:8px;"></div>
+      <div id="provider-msg" class="panel-msg"></div>
+    </section>
+
+    <section id="panel-memory" class="panel" style="display:none">
+      <h1>Memory</h1>
+      <p class="panel-sub">What ETEL AI has learned across every member, across every Etel company page.</p>
+      <div id="stats-grid" class="stats-grid"></div>
+    </section>
+
+    <section id="panel-about" class="panel" style="display:none">
+      <h1>About</h1>
+      <p class="panel-sub">ETEL AI - the assistant that runs across every Etel Group company.</p>
+      <div class="card" style="padding:16px;font-size:12.5px;color:var(--text-dim);line-height:1.7;">
+        <div><strong class="gold-text">Customer page:</strong> <a href="customer.html">customer.html</a></div>
+        <div><strong class="gold-text">Embeddable widget:</strong> etel-ai-widget.js (used on Delivery, Ride, etc.)</div>
+        <div><strong class="gold-text">Memory:</strong> per-member facts + conversation history, keyed to Etel-ID, not browser storage</div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script src="js/core.js"></script>
+<script src="js/admin-dashboard.js"></script>
+</body>
+</html>
