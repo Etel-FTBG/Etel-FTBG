@@ -267,11 +267,15 @@ h1, h2, .logo-name, .page-title, .login-box h1, .header-title,
     inset: 0;
     z-index: 0;
     pointer-events: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 900 900'%3E%3Cg fill='none' stroke='%23D4AF37' stroke-width='2'%3E%3Cpath d='M80 800 C 180 760, 220 620, 320 560 C 420 500, 460 460, 540 400' stroke-opacity='0.35'/%3E%3Crect x='520' y='330' width='80' height='140' rx='18' transform='rotate(-24 560 400)' stroke-opacity='0.45'/%3E%3Ccircle cx='560' cy='470' r='26' stroke-opacity='0.4'/%3E%3Cpath d='M585 320 L 640 260' stroke-opacity='0.5' stroke-width='3'/%3E%3Ccircle cx='650' cy='250' r='55' stroke-opacity='0.28' stroke-dasharray='4 10'/%3E%3Ccircle cx='650' cy='250' r='95' stroke-opacity='0.18' stroke-dasharray='3 14'/%3E%3Ccircle cx='650' cy='250' r='140' stroke-opacity='0.1' stroke-dasharray='2 18'/%3E%3C/g%3E%3Cg fill='%23F5CC44'%3E%3Ccircle cx='660' cy='232' r='3' fill-opacity='0.8'/%3E%3Ccircle cx='690' cy='210' r='2' fill-opacity='0.6'/%3E%3Ccircle cx='620' cy='190' r='2.5' fill-opacity='0.7'/%3E%3Ccircle cx='150' cy='700' r='2' fill-opacity='0.5'/%3E%3Ccircle cx='250' cy='630' r='2.5' fill-opacity='0.55'/%3E%3C/g%3E%3C/svg%3E");
+    /* The real Etel Madeya medallion artwork (already shipped in
+       assets/images/), not a drawn substitute - root-relative path so
+       it resolves the same from both / (index.php, controller.php)
+       and /admin/ (admin/index.php). */
+    background-image: url('/Etel-Madeya/assets/images/etel-madeya-logo.webp');
     background-repeat: no-repeat;
-    background-position: right -60px top -40px;
-    background-size: min(640px, 85vw);
-    opacity: 0.8;
+    background-position: center 42%;
+    background-size: min(720px, 88vw);
+    opacity: 0.22;
 }
 
 /* Floating ambient glow orbs behind the card, for depth/parallax feel */
@@ -439,6 +443,43 @@ button, .btn, .btn-primary, .btn-secondary, .btn-success, a {
         width: 220px;
         height: 220px;
     }
+}
+
+/* ═══ MEDALLION WATERMARK — Controller/Admin main panel + Driver page ═
+   Same real artwork as the login screen, applied as a large faint
+   watermark behind the working content (queue table, dashboard,
+   position-check UI) - matching how the WordPress build always kept
+   the brand medallion visible in the background of every screen. */
+/* z-index:0 (not just position:relative) is deliberate - it makes
+   each of these its own stacking context, so the ::before's
+   z-index:-1 resolves against IT specifically. Per the CSS stacking
+   spec that means the watermark paints above this element's own
+   background but below its normal-flow children (the queue table,
+   stat cards, etc.) - not swallowed by admin's #mainPanel or
+   .main-content, both of which set their own background here.
+
+   #mainPanel is shared markup between controller.php and
+   admin/index.php, but only admin nests a further .main-content
+   inside it - :not(:has(.main-content)) keeps the watermark from
+   double-rendering there (once on #mainPanel, once on .main-content
+   inside it); on controller.php, which has no .main-content, it's a
+   no-op and #mainPanel gets it directly as intended. */
+#mainPanel:not(:has(.main-content)), #mainContent, .main-content {
+    position: relative;
+    z-index: 0;
+}
+
+#mainPanel:not(:has(.main-content))::before, #mainContent::before, .main-content::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background-image: url('/Etel-Madeya/assets/images/etel-madeya-logo.webp');
+    background-repeat: no-repeat;
+    background-position: center 45%;
+    background-size: min(520px, 60%);
+    opacity: 0.07;
 }
 
 /* ═══ REDUCED MOTION — respect user preference ════════════════════ */
