@@ -1,0 +1,971 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#D4A843">
+<title>ኢE Pay — Admin</title>
+<link rel="manifest" href="manifest.php">
+<link rel="stylesheet" href="css/pay.css">
+<style>
+/* ── Layout ─────────────────────────────────────────────────── */
+.admin-tabs{display:flex;gap:0;overflow-x:auto;border-bottom:1px solid var(--gold-brd);flex-shrink:0;padding:0 4px}
+.admin-tabs::-webkit-scrollbar{display:none}
+.admin-tab{flex-shrink:0;padding:12px 14px;font-size:12px;font-weight:600;color:var(--text-3);
+  background:none;border:none;cursor:pointer;border-bottom:2px solid transparent;
+  white-space:nowrap;transition:color var(--fast),border-color var(--fast)}
+.admin-tab.active{color:var(--gold);border-bottom-color:var(--gold)}
+.admin-panel{display:none;padding:16px 20px 80px}
+.admin-panel.active{display:block}
+/* ── Live badge ─────────────────────────────────────────────── */
+.live-badge{display:flex;align-items:center;gap:5px;font-size:11px;font-weight:700;color:var(--ok);letter-spacing:.5px}
+.live-badge::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--ok);animation:lp 2s ease-in-out infinite}
+@keyframes lp{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(1.4)}}
+/* ── Users ──────────────────────────────────────────────────── */
+.user-row{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid rgba(212,168,67,.07);cursor:pointer}
+.user-row:last-child{border-bottom:none}.user-row:active{background:var(--glass)}
+.u-av{width:36px;height:36px;border-radius:50%;background:var(--glass-b);border:1px solid var(--gold-brd);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;overflow:hidden}
+.u-av img{width:100%;height:100%;object-fit:cover}
+.u-meta{flex:1;min-width:0}.u-name{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.u-phone{font-size:11px;color:var(--text-3);font-family:var(--fm);margin-top:2px}
+.u-right{text-align:right;flex-shrink:0}.u-bal{font-family:var(--fm);font-size:12px;font-weight:700;color:var(--gold-lt)}
+/* ── Rates ──────────────────────────────────────────────────── */
+.rate-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--gold-brd)}
+.rate-row:last-child{border-bottom:none}
+.rate-badge{width:40px;height:40px;border-radius:var(--r-sm);background:var(--glass-b);border:1px solid var(--gold-brd);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:var(--gold-lt);flex-shrink:0}
+.rate-inp{flex:1;background:var(--glass);border:1px solid var(--gold-brd);border-radius:var(--r-sm);color:var(--text);font-family:var(--fm);font-size:14px;padding:10px 12px;outline:none;transition:border-color var(--fast);-webkit-appearance:none}
+.rate-inp:focus{border-color:var(--gold-brd-b)}
+
+/* ═══════════════════════════════════════════════════
+   UPDATER STYLES
+   ═══════════════════════════════════════════════════ */
+.upd-tabs{display:flex;gap:8px;margin-bottom:16px}
+.upd-tab{padding:8px 16px;border-radius:var(--r-sm);font-size:12px;font-weight:600;
+  background:var(--glass);border:1px solid var(--gold-brd);color:var(--text-3);cursor:pointer;transition:all var(--fast)}
+.upd-tab.active{background:rgba(212,168,67,.14);border-color:var(--gold-brd-b);color:var(--gold-lt)}
+.upd-pane{display:none}.upd-pane.active{display:block}
+/* Drop zone */
+.upd-drop{
+  border:2px dashed var(--gold-brd);border-radius:var(--r-lg);padding:32px 20px;
+  text-align:center;cursor:pointer;transition:all var(--fast);background:var(--glass);
+}
+.upd-drop:hover,.upd-drop.over{border-color:var(--gold-brd-b);background:rgba(212,168,67,.06)}
+.upd-drop-icon{font-size:40px;margin-bottom:10px}
+.upd-drop-title{font-size:15px;font-weight:600;margin-bottom:4px}
+.upd-drop-sub{font-size:12px;color:var(--text-3)}
+/* Deploy log */
+.upd-log{background:var(--bg);border:1px solid var(--gold-brd);border-radius:var(--r-sm);
+  padding:12px;font-family:var(--fm);font-size:11px;max-height:200px;overflow-y:auto;
+  margin-top:14px;line-height:1.8}
+.upd-log:empty{display:none}
+.log-ok{color:var(--ok)}.log-err{color:var(--err)}.log-info{color:var(--text-3)}
+/* File tree */
+.upd-file{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:var(--r-sm);
+  cursor:pointer;transition:background var(--fast);font-size:13px}
+.upd-file:hover{background:var(--glass-b)}
+.upd-file-icon{width:20px;text-align:center;font-size:14px;flex-shrink:0}
+.upd-file-name{flex:1;font-family:var(--fm);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.upd-file-size{font-size:10px;color:var(--text-3);flex-shrink:0}
+.upd-file-mod{font-size:10px;color:var(--text-3);flex-shrink:0}
+/* Editor */
+#upd-editor{
+  width:100%;min-height:320px;resize:vertical;
+  background:var(--bg);border:1px solid var(--gold-brd);border-radius:var(--r-sm);
+  color:var(--text);font-family:var(--fm);font-size:12px;padding:12px;
+  outline:none;line-height:1.6;transition:border-color var(--fast);
+  -webkit-overflow-scrolling:touch;
+}
+#upd-editor:focus{border-color:var(--gold-brd-b)}
+.upd-editor-bar{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap;gap:8px}
+.upd-editor-path{font-family:var(--fm);font-size:12px;color:var(--gold-lt)}
+/* Backups */
+.backup-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid rgba(212,168,67,.07)}
+.backup-row:last-child{border-bottom:none}
+.backup-name{flex:1;font-family:var(--fm);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.backup-size{font-size:11px;color:var(--text-3);flex-shrink:0}
+.backup-actions{display:flex;gap:6px;flex-shrink:0}
+/* Upload mode toggle */
+.upd-mode{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+.upd-mode-btn{padding:7px 14px;border-radius:20px;font-size:12px;font-weight:600;
+  background:var(--glass);border:1px solid var(--gold-brd);color:var(--text-3);cursor:pointer;transition:all var(--fast)}
+.upd-mode-btn.active{background:rgba(212,168,67,.14);border-color:var(--gold-brd-b);color:var(--gold-lt)}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- Header -->
+  <div class="ep-header safe-top">
+    <button class="ep-header-back" onclick="EP_CORE.nav('profile')">←</button>
+    <span class="ep-header-title">Admin Panel</span>
+    <div class="live-badge">LIVE</div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="admin-tabs">
+    <button class="admin-tab active" onclick="switchTab('dashboard')">📊 Dashboard</button>
+    <button class="admin-tab"        onclick="switchTab('users')">👥 Users</button>
+    <button class="admin-tab"        onclick="switchTab('transactions')">💸 Txs</button>
+    <button class="admin-tab"        onclick="switchTab('topups')">💳 Top-ups</button>
+    <button class="admin-tab"        onclick="switchTab('kyc')">🪪 KYC</button>
+    <button class="admin-tab"        onclick="switchTab('disputes')">⚖️ Disputes</button>
+    <button class="admin-tab"        onclick="switchTab('analytics')">📈 Analytics</button>
+    <button class="admin-tab"        onclick="switchTab('rates')">💱 Rates</button>
+    <button class="admin-tab"        onclick="switchTab('settings')">⚙️ Settings</button>
+    <button class="admin-tab"        onclick="switchTab('updater')">⬆️ Updater</button>
+  </div>
+
+  <div class="ep-body">
+
+    <!-- ══ DASHBOARD ══ -->
+    <div class="admin-panel active" id="panel-dashboard">
+      <div class="ep-stat-grid mb-16">
+        <div class="ep-stat"><div class="ep-stat-label">Total Users</div>   <div class="ep-stat-value gold" id="st-users">—</div></div>
+        <div class="ep-stat"><div class="ep-stat-label">Active</div>         <div class="ep-stat-value ok"   id="st-active">—</div></div>
+        <div class="ep-stat"><div class="ep-stat-label">Transactions</div>  <div class="ep-stat-value gold" id="st-txs">—</div></div>
+        <div class="ep-stat"><div class="ep-stat-label">Volume (ETB)</div>  <div class="ep-stat-value gold" id="st-vol">—</div></div>
+      </div>
+      <div class="ep-section"><span class="ep-section-title">Recent transactions</span><button class="ep-section-link" onclick="switchTab('transactions')">See all</button></div>
+      <div id="dash-tx" class="ep-tx-list"><div class="ep-empty"><div class="ep-dots"><span></span><span></span><span></span></div></div></div>
+    </div>
+
+    <!-- ══ USERS ══ -->
+    <div class="admin-panel" id="panel-users">
+      <div class="ep-search mb-16"><span class="ep-search-icon">🔍</span><input type="text" id="user-search" placeholder="Search phone or name…" oninput="searchUsers()"></div>
+      <div id="users-list"><div class="ep-empty"><div class="ep-dots"><span></span><span></span><span></span></div></div></div>
+      <button class="ep-btn ep-btn-ghost" id="users-more" onclick="loadMoreUsers()" style="margin-top:14px;display:none">Load more</button>
+    </div>
+
+    <!-- ══ TRANSACTIONS ══ -->
+    <div class="admin-panel" id="panel-transactions">
+      <div class="ep-pills mb-16">
+        <button class="ep-pill active" onclick="setTxFilter('all')">All</button>
+        <button class="ep-pill" onclick="setTxFilter('send')">Sends</button>
+        <button class="ep-pill" onclick="setTxFilter('receive')">Receives</button>
+        <button class="ep-pill" onclick="setTxFilter('deposit')">Deposits</button>
+      </div>
+      <div id="admin-tx" class="ep-tx-list"><div class="ep-empty"><div class="ep-dots"><span></span><span></span><span></span></div></div></div>
+      <button class="ep-btn ep-btn-ghost" id="tx-more" onclick="loadMoreTx()" style="margin-top:14px;display:none">Load more</button>
+    </div>
+
+    <!-- ══ RATES ══ -->
+    <div class="admin-panel" id="panel-rates">
+      <p class="text-dim mb-20" style="font-size:13px;line-height:1.6">Set ETB equivalent for each currency. Affects all wallet conversions instantly.</p>
+      <div id="rates-list"><div class="ep-empty"><div class="ep-dots"><span></span><span></span><span></span></div></div></div>
+    </div>
+
+    <!-- ══ SETTINGS ══ -->
+    <div class="admin-panel" id="panel-settings">
+      <div id="settings-body"><div class="ep-empty"><div class="ep-dots"><span></span><span></span><span></span></div></div></div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════
+         UPDATER TAB
+         ══════════════════════════════════════════════════════════ -->
+    <div class="admin-panel" id="panel-updater">
+
+      <!-- Updater login (if not authenticated) -->
+      <div id="upd-login-wrap" style="display:none">
+        <div class="ep-card mb-16">
+          <div style="font-size:15px;font-weight:600;margin-bottom:4px">⬆️ Updater</div>
+          <p class="text-dim mb-16" style="font-size:13px">Enter your updater password to deploy files.</p>
+          <div class="ep-field">
+            <label class="ep-label">Updater password</label>
+            <input class="ep-input" id="upd-pass" type="password" placeholder="••••••••">
+          </div>
+          <div class="ep-err-msg" id="upd-login-err"></div>
+          <button class="ep-btn ep-btn-primary" id="upd-login-btn" onclick="updLogin()" style="margin-top:12px">Authenticate</button>
+        </div>
+      </div>
+
+      <!-- Updater main (after auth) -->
+      <div id="upd-main" style="display:none">
+
+        <!-- Sub-tabs -->
+        <div class="upd-tabs">
+          <button class="upd-tab active" onclick="updSwitchTab('upload')">📤 Upload</button>
+          <button class="upd-tab"        onclick="updSwitchTab('editor')">✏️ Editor</button>
+          <button class="upd-tab"        onclick="updSwitchTab('files')">📁 Files</button>
+          <button class="upd-tab"        onclick="updSwitchTab('backups')">🗄️ Backups</button>
+        </div>
+
+        <!-- ── Upload pane ── -->
+        <div class="upd-pane active" id="upd-pane-upload">
+          <div class="upd-mode mb-12">
+            <button class="upd-mode-btn active" onclick="setUploadMode('single')">Single file</button>
+            <button class="upd-mode-btn"        onclick="setUploadMode('multiple')">Multiple files</button>
+            <button class="upd-mode-btn"        onclick="setUploadMode('zip')">ZIP deploy</button>
+          </div>
+
+          <!-- Drop zone -->
+          <div class="upd-drop" id="upd-drop" onclick="document.getElementById('upd-file-input').click()"
+               ondrop="updHandleDrop(event)" ondragover="updHandleDragOver(event)" ondragleave="updHandleDragLeave(event)">
+            <div class="upd-drop-icon" id="upd-drop-icon">📂</div>
+            <div class="upd-drop-title" id="upd-drop-title">Click or drag files here</div>
+            <div class="upd-drop-sub" id="upd-drop-sub">HTML, JS, CSS, PHP, JSON, ZIP accepted</div>
+          </div>
+          <input type="file" id="upd-file-input" style="display:none" onchange="updHandleFileSelect(event)">
+
+          <!-- Target path (single mode only) -->
+          <div id="upd-target-wrap" style="margin-top:12px">
+            <div class="ep-field">
+              <label class="ep-label">Target path (auto-detected)</label>
+              <input class="ep-input" id="upd-target" type="text" placeholder="e.g. js/core.js  or  api/api.php">
+            </div>
+          </div>
+
+          <!-- Upload button -->
+          <button class="ep-btn ep-btn-primary" id="upd-upload-btn" onclick="updDoUpload()" style="margin-top:4px">
+            ⬆️ Deploy live
+          </button>
+
+          <!-- Deploy log -->
+          <div class="upd-log" id="upd-log"></div>
+        </div>
+
+        <!-- ── Editor pane ── -->
+        <div class="upd-pane" id="upd-pane-editor">
+          <p class="text-dim mb-12" style="font-size:13px">Click any file in the Files tab to open it here for editing.</p>
+          <div class="upd-editor-bar">
+            <span class="upd-editor-path" id="editor-path">No file open</span>
+            <button class="ep-btn ep-btn-primary ep-btn-sm" id="editor-save-btn" onclick="updSaveFile()" style="display:none">💾 Save &amp; Deploy</button>
+          </div>
+          <textarea id="upd-editor" placeholder="Open a file from the Files tab to edit it here…" spellcheck="false" autocorrect="off" autocapitalize="off"></textarea>
+        </div>
+
+        <!-- ── Files pane ── -->
+        <div class="upd-pane" id="upd-pane-files">
+          <div class="ep-search mb-12"><span class="ep-search-icon">🔍</span><input type="text" id="file-search" placeholder="Filter files…" oninput="filterFiles()"></div>
+          <div id="upd-file-list"><div class="ep-empty"><div class="ep-dots"><span></span><span></span><span></span></div></div></div>
+        </div>
+
+        <!-- ── Backups pane ── -->
+        <div class="upd-pane" id="upd-pane-backups">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+            <span class="ep-section-title">Auto-backups</span>
+            <button class="ep-btn ep-btn-ghost ep-btn-sm" onclick="loadBackups()">↻ Refresh</button>
+          </div>
+          <p class="text-dim mb-14" style="font-size:12px">Original files are backed up automatically before every deploy. Click Restore to roll back.</p>
+          <div id="upd-backup-list"><div class="ep-empty"><div class="ep-dots"><span></span><span></span><span></span></div></div></div>
+        </div>
+
+      </div><!-- /upd-main -->
+    </div><!-- /panel-updater -->
+
+    <!-- ══ TOP-UPS PANEL ════════════════════════════════════════ -->
+    <div class="admin-panel" id="panel-topups">
+      <div class="ep-section mb-16">
+        <span class="ep-section-title">Pending Top-up Requests</span>
+        <div style="display:flex;gap:8px">
+          <button class="ep-btn ep-btn-ghost ep-btn-sm" onclick="loadTopups('processing')" id="tu-tab-processing" style="background:rgba(212,168,67,.1)">⏳ Pending</button>
+          <button class="ep-btn ep-btn-ghost ep-btn-sm" onclick="loadTopups('completed')" id="tu-tab-completed">✅ Done</button>
+        </div>
+      </div>
+      <div id="topup-list"><div class="ep-empty"><div class="ep-dots"><span></span><span></span><span></span></div></div></div>
+    </div>
+
+    <!-- ══ KYC PANEL ═════════════════════════════════════════════ -->
+    <div class="admin-panel" id="panel-kyc">
+      <div class="ep-section mb-16">
+        <span class="ep-section-title">KYC Submissions</span>
+        <div style="display:flex;gap:8px">
+          <button class="ep-btn ep-btn-ghost ep-btn-sm" onclick="loadKYC('submitted')" style="background:rgba(212,168,67,.1)">📥 New</button>
+          <button class="ep-btn ep-btn-ghost ep-btn-sm" onclick="loadKYC('reviewing')">🔍 Reviewing</button>
+          <button class="ep-btn ep-btn-ghost ep-btn-sm" onclick="loadKYC('approved')">✅ Done</button>
+        </div>
+      </div>
+      <div id="kyc-list"><div class="ep-empty"><div class="ep-dots"><span></span><span></span><span></span></div></div></div>
+    </div>
+
+    <!-- ══ DISPUTES PANEL ════════════════════════════════════════ -->
+    <div class="admin-panel" id="panel-disputes">
+      <div class="ep-section mb-16">
+        <span class="ep-section-title">Disputes & Refunds</span>
+        <div style="display:flex;gap:8px">
+          <button class="ep-btn ep-btn-ghost ep-btn-sm" onclick="loadDisputes('open')" style="background:rgba(212,168,67,.1)">🆕 Open</button>
+          <button class="ep-btn ep-btn-ghost ep-btn-sm" onclick="loadDisputes('investigating')">🔍 Investigating</button>
+          <button class="ep-btn ep-btn-ghost ep-btn-sm" onclick="loadDisputes('resolved')">✅ Resolved</button>
+        </div>
+      </div>
+      <div id="disputes-list"><div class="ep-empty"><div class="ep-dots"><span></span><span></span><span></span></div></div></div>
+    </div>
+
+    <!-- ══ ANALYTICS PANEL ═══════════════════════════════════════ -->
+    <div class="admin-panel" id="panel-analytics">
+      <div class="ep-section mb-16">
+        <span class="ep-section-title">Platform Analytics</span>
+        <div style="display:flex;gap:6px">
+          <button class="ep-btn ep-btn-ghost ep-btn-sm" onclick="loadAnalytics('7d')"  id="an-7d">7D</button>
+          <button class="ep-btn ep-btn-ghost ep-btn-sm" onclick="loadAnalytics('30d')" id="an-30d" style="background:rgba(212,168,67,.1)">30D</button>
+          <button class="ep-btn ep-btn-ghost ep-btn-sm" onclick="loadAnalytics('90d')" id="an-90d">90D</button>
+          <button class="ep-btn ep-btn-ghost ep-btn-sm" onclick="loadAnalytics('all')" id="an-all">All</button>
+        </div>
+      </div>
+      <div id="analytics-body"><div class="ep-empty"><div class="ep-dots"><span></span><span></span><span></span></div></div></div>
+    </div>
+
+  </div><!-- /ep-body -->
+</div><!-- /app -->
+
+<!-- ── Sheets ── -->
+<!-- User detail -->
+<div id="sheet-user" class="ep-overlay">
+  <div class="ep-sheet">
+    <div class="ep-sheet-handle"></div>
+    <div class="ep-sheet-title" id="ud-title">User</div>
+    <div id="ud-body"></div>
+    <div style="display:flex;gap:8px;margin-top:16px">
+      <button class="ep-btn ep-btn-ghost ep-btn-sm" id="ud-toggle-btn" style="flex:1" onclick="toggleUser()">Suspend</button>
+      <button class="ep-btn ep-btn-ghost ep-btn-sm" id="ud-credit-btn" style="flex:1;color:var(--ok)" onclick="EP_CORE.openSheet('sheet-credit')">Credit</button>
+      <button class="ep-btn ep-btn-ghost ep-btn-sm" id="ud-debit-btn"  style="flex:1;color:var(--err)" onclick="EP_CORE.openSheet('sheet-debit')">Debit</button>
+    </div>
+    <button class="ep-btn ep-btn-ghost" onclick="EP_CORE.closeSheet('sheet-user')" style="margin-top:10px">Close</button>
+  </div>
+</div>
+<!-- Credit -->
+<div id="sheet-credit" class="ep-overlay">
+  <div class="ep-sheet">
+    <div class="ep-sheet-handle"></div>
+    <div class="ep-sheet-title">Credit wallet</div>
+    <div class="ep-field"><label class="ep-label">Amount (ETB)</label><input class="ep-input" id="credit-amt" type="number" placeholder="0.00" min="1" inputmode="decimal"></div>
+    <div class="ep-field"><label class="ep-label">Note</label><input class="ep-input" id="credit-note" type="text" placeholder="Top-up, refund…"></div>
+    <div class="ep-err-msg" id="credit-err"></div>
+    <button class="ep-btn ep-btn-primary" id="credit-btn" onclick="doCredit()" style="margin-top:14px">Credit</button>
+    <button class="ep-btn ep-btn-ghost" onclick="EP_CORE.closeSheet('sheet-credit')" style="margin-top:10px">Cancel</button>
+  </div>
+</div>
+<!-- Debit -->
+<div id="sheet-debit" class="ep-overlay">
+  <div class="ep-sheet">
+    <div class="ep-sheet-handle"></div>
+    <div class="ep-sheet-title">Debit wallet</div>
+    <div class="ep-field"><label class="ep-label">Amount (ETB)</label><input class="ep-input" id="debit-amt" type="number" placeholder="0.00" min="1" inputmode="decimal"></div>
+    <div class="ep-field"><label class="ep-label">Note</label><input class="ep-input" id="debit-note" type="text" placeholder="Fee, correction…"></div>
+    <div class="ep-err-msg" id="debit-err"></div>
+    <button class="ep-btn ep-btn-danger" id="debit-btn" onclick="doDebit()" style="margin-top:14px">Debit</button>
+    <button class="ep-btn ep-btn-ghost" onclick="EP_CORE.closeSheet('sheet-debit')" style="margin-top:10px">Cancel</button>
+  </div>
+</div>
+<!-- TX Reverse -->
+<div id="sheet-reverse" class="ep-overlay">
+  <div class="ep-sheet">
+    <div class="ep-sheet-handle"></div>
+    <div class="ep-sheet-title">Reverse transaction</div>
+    <p class="text-dim mb-20" style="font-size:14px">Refunds sender. Cannot be undone.</p>
+    <div class="ep-err-msg" id="rev-err"></div>
+    <button class="ep-btn ep-btn-danger" id="rev-btn" onclick="doReverse()">Confirm reverse</button>
+    <button class="ep-btn ep-btn-ghost" onclick="EP_CORE.closeSheet('sheet-reverse')" style="margin-top:10px">Cancel</button>
+  </div>
+</div>
+
+<div id="ep-toast"></div>
+
+<script src="js/config.js"></script>
+<script src="js/api.js"></script>
+<script src="js/core.js"></script>
+<script>
+// ── Config ────────────────────────────────────────────────────
+const UPD_API = 'api/updater-api.php';
+
+// ── State ─────────────────────────────────────────────────────
+let _updToken  = null;
+let _selectedUID=null, _selectedTXID=null;
+let _allUsers=[], _usersPage=0;
+let _allTx=[], _txPage=0, _txFilter='all';
+let _allFiles=[], _editingPath=null;
+let _uploadMode='single', _selectedFiles=[];
+const _tabLoaded={};
+
+// ── Init ──────────────────────────────────────────────────────
+EP_CORE.onReady(async function(){
+  EP_CORE.initSheets();
+  if(!EP_CORE.requireAuth()) return;
+  // Check wallet admin access via main API
+  try{
+    const j = await EP_API.adminStats();
+    if(!j.success){ EP_CORE.toast('Admin access required','err'); EP_CORE.nav('profile'); return; }
+    renderStats(j.data);
+    loadDashTx();
+  }catch(e){ EP_CORE.toast('Failed to load dashboard','err'); }
+});
+
+// ══ MAIN TABS ═════════════════════════════════════════════════
+function switchTab(name){
+  const n=['dashboard','users','transactions','topups','kyc','disputes','analytics','rates','settings','updater'];
+  document.querySelectorAll('.admin-tab').forEach((t,i)=>{
+    t.classList.toggle('active', n[i]===name);
+  });
+  document.querySelectorAll('.admin-panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('panel-'+name).classList.add('active');
+  if(_tabLoaded[name]) return;
+  _tabLoaded[name]=true;
+  if(name==='users')        loadUsers();
+  if(name==='transactions') loadAdminTx();
+  if(name==='topups')       loadTopups('processing');
+  if(name==='kyc')          loadKYC('submitted');
+  if(name==='disputes')     loadDisputes('open');
+  if(name==='analytics')    loadAnalytics('30d');
+  if(name==='rates')        loadRates();
+  if(name==='settings')     loadSettings();
+  if(name==='updater')      initUpdater();
+}
+
+// ══ DASHBOARD ═════════════════════════════════════════════════
+function renderStats(d){
+  document.getElementById('st-users').textContent  = d.total_users||'—';
+  document.getElementById('st-active').textContent = d.active_users||'—';
+  document.getElementById('st-txs').textContent    = d.total_transactions||'—';
+  document.getElementById('st-vol').textContent    = EP_CORE.numFmt(parseFloat(d.total_volume||0));
+}
+
+// ══ TOP-UPS ═══════════════════════════════════════════════════
+async function loadTopups(status='processing'){
+  document.getElementById('topup-list').innerHTML='<div class="ep-empty"><div class="ep-dots"><span></span><span></span><span></span></div></div>';
+  ['processing','completed'].forEach(s=>{ const el=document.getElementById('tu-tab-'+s); if(el) el.style.background=s===status?'rgba(212,168,67,.1)':''; });
+  try{
+    const j=await EP_API.call('ep_admin_topup_list',{status});
+    const reqs=j.success?(j.data.requests||[]):[];
+    if(!reqs.length){ document.getElementById('topup-list').innerHTML='<div class="ep-empty">No '+status+' top-up requests</div>'; return; }
+    document.getElementById('topup-list').innerHTML=reqs.map(r=>`
+      <div class="ep-card mb-10" style="border-color:${r.status==='processing'?'var(--gold-brd)':'var(--ok)'}">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
+          <div>
+            <div style="font-weight:700;color:var(--text)">${EP_CORE.esc(r.full_name||r.phone)}</div>
+            <div style="font-size:12px;color:var(--text-3)">${r.phone} · ${(r.method ? r.method.toUpperCase() : 'N/A')}</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-family:var(--fm);font-size:18px;color:var(--gold)">ETB ${EP_CORE.numFmt(r.amount)}</div>
+            <div style="font-size:11px;color:var(--text-3)">${EP_CORE.dateFmt(r.created_at)}</div>
+          </div>
+        </div>
+        <div style="font-family:var(--fm);font-size:11px;color:var(--text-3);margin-bottom:10px">Ref: <strong style="color:var(--gold)">${r.ref}</strong></div>
+        ${r.status==='processing'?`
+        <div style="display:flex;gap:8px">
+          <button class="ep-btn ep-btn-gold ep-btn-sm" style="flex:1" onclick="approveTopup('${r.ref}')">✅ Approve & Credit</button>
+          <button class="ep-btn ep-btn-ghost ep-btn-sm" onclick="rejectTopup('${r.ref}')">✕ Reject</button>
+        </div>`:`<span class="ep-badge ep-badge-ok">Completed</span>`}
+      </div>`).join('');
+  }catch(e){ document.getElementById('topup-list').innerHTML='<div class="ep-empty">Error loading</div>'; }
+}
+async function approveTopup(ref){
+  if(!confirm('Approve and credit ETB for ref '+ref+'?')) return;
+  try{
+    const j=await EP_API.call('ep_admin_topup_approve',{ref});
+    if(j.success){ EP_CORE.toast('✅ Credited — '+j.data.credited+' ETB','ok'); loadTopups('processing'); }
+    else EP_CORE.toast((j.data && j.data.message ? j.data.message : '')||'Failed','err');
+  }catch(e){ EP_CORE.toast('Error','err'); }
+}
+async function rejectTopup(ref){
+  try{
+    const j=await EP_API.call('ep_admin_topup_approve',{ref,action:'reject'});
+    EP_CORE.toast('Rejected','ok'); loadTopups('processing');
+  }catch(e){}
+}
+
+// ══ KYC ═══════════════════════════════════════════════════════
+async function loadKYC(status='submitted'){
+  document.getElementById('kyc-list').innerHTML='<div class="ep-empty"><div class="ep-dots"><span></span><span></span><span></span></div></div>';
+  try{
+    const j=await EP_API.call('ep_admin_kyc_list',{status});
+    const subs=j.success?(j.data.submissions||[]):[];
+    if(!subs.length){ document.getElementById('kyc-list').innerHTML='<div class="ep-empty">No '+status+' KYC submissions</div>'; return; }
+    document.getElementById('kyc-list').innerHTML=subs.map(s=>`
+      <div class="ep-card mb-10">
+        <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+          <div>
+            <div style="font-weight:700">${EP_CORE.esc(s.full_name||'—')}</div>
+            <div style="font-size:12px;color:var(--text-3)">${s.phone} · ${s.doc_type?.replace('_',' ')}</div>
+          </div>
+          <div style="font-size:11px;color:var(--text-3)">${EP_CORE.dateFmt(s.submitted_at)}</div>
+        </div>
+        <span class="ep-badge" style="background:rgba(212,168,67,.1);color:var(--gold)">${s.status}</span>
+        ${s.status==='submitted'||s.status==='reviewing'?`
+        <div style="display:flex;gap:8px;margin-top:10px">
+          <button class="ep-btn ep-btn-gold ep-btn-sm" style="flex:1" onclick="reviewKYC(${s.id},'approve')">✅ Approve</button>
+          <button class="ep-btn ep-btn-ghost ep-btn-sm" style="flex:1;color:var(--err)" onclick="reviewKYC(${s.id},'reject')">✕ Reject</button>
+        </div>`:''}
+      </div>`).join('');
+  }catch(e){ document.getElementById('kyc-list').innerHTML='<div class="ep-empty">Error</div>'; }
+}
+async function reviewKYC(id,action){
+  const note=action==='reject'?prompt('Rejection reason:'):'';
+  try{
+    const j=await EP_API.call('ep_admin_kyc_review',{kyc_id:id,action,note:note||''});
+    if(j.success){ EP_CORE.toast(action==='approve'?'✅ KYC Approved':'KYC Rejected','ok'); _tabLoaded.kyc=false; loadKYC('submitted'); }
+    else EP_CORE.toast((j.data && j.data.message ? j.data.message : '')||'Failed','err');
+  }catch(e){ EP_CORE.toast('Error','err'); }
+}
+
+// ══ DISPUTES ══════════════════════════════════════════════════
+async function loadDisputes(status='open'){
+  document.getElementById('disputes-list').innerHTML='<div class="ep-empty"><div class="ep-dots"><span></span><span></span><span></span></div></div>';
+  try{
+    const j=await EP_API.call('ep_admin_dispute_list',{status});
+    const disps=j.success?(j.data.disputes||[]):[];
+    if(!disps.length){ document.getElementById('disputes-list').innerHTML='<div class="ep-empty">No '+status+' disputes</div>'; return; }
+    document.getElementById('disputes-list').innerHTML=disps.map(d=>`
+      <div class="ep-card mb-10">
+        <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+          <div style="font-weight:700">${EP_CORE.esc(d.full_name||d.phone)}</div>
+          <div style="font-size:11px;color:var(--text-3)">${EP_CORE.dateFmt(d.created_at)}</div>
+        </div>
+        <div style="font-size:12px;color:var(--text-3);margin-bottom:4px">TX: <strong style="color:var(--gold);font-family:var(--fm)">${d.tx_ref}</strong></div>
+        <div style="font-size:13px;color:var(--text-2);margin-bottom:10px">${EP_CORE.esc(d.reason)}</div>
+        ${d.status==='open'?`
+        <div style="display:flex;gap:8px">
+          <button class="ep-btn ep-btn-ghost ep-btn-sm" style="flex:1;color:var(--ok)" onclick="resolveDispute(${d.id},'refund')">💸 Refund</button>
+          <button class="ep-btn ep-btn-ghost ep-btn-sm" style="flex:1" onclick="resolveDispute(${d.id},'resolve')">✅ Resolve</button>
+          <button class="ep-btn ep-btn-ghost ep-btn-sm" style="flex:1;color:var(--err)" onclick="resolveDispute(${d.id},'reject')">✕ Reject</button>
+        </div>`:`<span class="ep-badge ep-badge-ok">${d.status}</span>${d.resolution?'<div style="font-size:12px;margin-top:6px;color:var(--text-3)">'+EP_CORE.esc(d.resolution)+'</div>':''}`}
+      </div>`).join('');
+  }catch(e){ document.getElementById('disputes-list').innerHTML='<div class="ep-empty">Error</div>'; }
+}
+async function resolveDispute(id,action){
+  const res=prompt(action==='refund'?'Refund note:':action==='reject'?'Rejection reason:':'Resolution note:');
+  if(res===null) return;
+  try{
+    const j=await EP_API.call('ep_admin_dispute_resolve',{dispute_id:id,action,resolution:res});
+    if(j.success){ EP_CORE.toast(action==='refund'?'💸 Refund processed':'✅ Dispute '+action+'d','ok'); _tabLoaded.disputes=false; loadDisputes('open'); }
+    else EP_CORE.toast((j.data && j.data.message ? j.data.message : '')||'Failed','err');
+  }catch(e){ EP_CORE.toast('Error','err'); }
+}
+
+// ══ ANALYTICS ═════════════════════════════════════════════════
+const _typeColors={send:'#f87171',receive:'#4ade80',deposit:'#60a5fa',payment:'#fbbf24',refund:'#a78bfa',fee:'#94a3b8',withdraw:'#fb923c'};
+async function loadAnalytics(period='30d'){
+  ['7d','30d','90d','all'].forEach(p=>{
+    const el=document.getElementById('an-'+p);
+    if(el) el.style.background=p===period?'rgba(212,168,67,.1)':'';
+  });
+  document.getElementById('analytics-body').innerHTML='<div class="ep-empty"><div class="ep-dots"><span></span><span></span><span></span></div></div>';
+  try{
+    const j=await EP_API.call('ep_analytics',{period});
+    if(!j.success){ document.getElementById('analytics-body').innerHTML='<div class="ep-empty">Failed</div>'; return; }
+    const d=j.data;
+    let html=`
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+      <div class="ep-card"><div class="ep-bal-label">Total Users</div><div class="ep-bal-amount" style="font-size:24px">${d.users.total.toLocaleString()}</div><div style="font-size:11px;color:var(--ok)">+${d.users.new_in_period} this period</div></div>
+      <div class="ep-card"><div class="ep-bal-label">KYC Verified</div><div class="ep-bal-amount" style="font-size:24px">${d.users.kyc_verified}</div><div style="font-size:11px;color:var(--text-3)">of ${d.users.total}</div></div>
+      <div class="ep-card"><div class="ep-bal-label">TX Volume</div><div class="ep-bal-amount" style="font-size:20px">ETB ${EP_CORE.numFmt(d.transactions.volume_etb)}</div><div style="font-size:11px;color:var(--text-3)">${d.transactions.count} transactions</div></div>
+      <div class="ep-card"><div class="ep-bal-label">Total Balance</div><div class="ep-bal-amount" style="font-size:20px">ETB ${EP_CORE.numFmt(d.total_wallet_balance_etb)}</div><div style="font-size:11px;color:var(--text-3)">All wallets</div></div>
+    </div>`;
+    if((d.transactions && d.transactions.by_type && d.transactions.by_type.length)){
+      html+='<div class="ep-card mb-10"><div class="ep-section-title mb-8">By Type</div>';
+      d.transactions.by_type.forEach(t=>{
+        const col=_typeColors[t.type]||'#888';
+        html+=`<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--gold-brd)">
+          <div style="width:10px;height:10px;border-radius:50%;background:${col};flex-shrink:0"></div>
+          <div style="flex:1;font-size:13px;color:var(--text-2)">${t.type}</div>
+          <div style="text-align:right"><div style="color:var(--gold);font-size:13px">ETB ${EP_CORE.numFmt(t.vol)}</div><div style="font-size:11px;color:var(--text-3)">${t.cnt} txs</div></div>
+        </div>`;
+      });
+      html+='</div>';
+    }
+    if((d.daily && d.daily.length)){
+      const maxV=Math.max.apply(null,d.daily.map(function(r){return parseFloat(r.vol)||0;}))||1;
+      html+='<div class="ep-card"><div class="ep-section-title mb-8">Daily Volume</div><div style="display:flex;align-items:flex-end;gap:3px;height:90px">';
+      d.daily.forEach(r=>{
+        const pct=Math.max(4,Math.round((parseFloat(r.vol)/maxV)*100));
+        html+=`<div title="${r.d}: ETB ${EP_CORE.numFmt(r.vol)}" style="flex:1;height:${pct}%;background:linear-gradient(180deg,var(--gold-lt),var(--gold));border-radius:3px 3px 0 0;min-height:4px;cursor:pointer"></div>`;
+      });
+      html+='</div></div>';
+    }
+    document.getElementById('analytics-body').innerHTML=html;
+  }catch(e){ document.getElementById('analytics-body').innerHTML='<div class="ep-empty">Error loading analytics</div>'; }
+}
+async function loadDashTx(){
+  try{ const j=await EP_API.adminTxs(1,5); renderTxList('dash-tx',j.success?(j.data.transactions||j.data||[]):[],false); }catch(e){}
+}
+
+// ══ USERS ═════════════════════════════════════════════════════
+async function loadUsers(){
+  _usersPage=0;
+  try{
+    const j=await EP_API.adminUsers(1,20);
+    _allUsers=j.success?(j.data.users||j.data||[]):[];
+    renderUsers(_allUsers);
+    document.getElementById('users-more').style.display=_allUsers.length===20?'flex':'none';
+  }catch(e){ document.getElementById('users-list').innerHTML='<div class="ep-empty">Failed to load users.</div>'; }
+}
+async function loadMoreUsers(){
+  _usersPage++;
+  try{
+    const j=await EP_API.adminUsers(_usersPage+1,20);
+    const more=j.success?(j.data.users||j.data||[]):[];
+    _allUsers=_allUsers.concat(more);
+    renderUsers(_allUsers);
+    document.getElementById('users-more').style.display=more.length===20?'flex':'none';
+  }catch(e){}
+}
+async function searchUsers(){
+  const q=document.getElementById('user-search').value.trim();
+  if(q.length<2){ renderUsers(_allUsers); return; }
+  try{ const j=await EP_API.adminSearch(q); renderUsers(j.success?(j.data.users||j.data||[]):[]);
+  }catch(e){}
+}
+function renderUsers(users){
+  const c=document.getElementById('users-list');
+  if(!users.length){ c.innerHTML='<div class="ep-empty">No users found.</div>'; return; }
+  c.innerHTML=users.map(u=>`
+    <div class="user-row" onclick="openUserDetail(${u.id||u.user_id})">
+      <div class="u-av">${u.avatar_url?`<img src="${u.avatar_url}">`:'👤'}</div>
+      <div class="u-meta">
+        <div class="u-name">${EP_CORE.esc(u.full_name||u.phone||'—')}</div>
+        <div class="u-phone">${EP_CORE.esc(u.phone||'')}</div>
+      </div>
+      <div class="u-right">
+        <div class="u-bal">${EP_CORE.numFmt(parseFloat(u.balance_etb||0))} ETB</div>
+        <span class="ep-badge ep-badge-${u.status==='active'?'ok':'err'}" style="margin-top:4px">${u.status||'active'}</span>
+      </div>
+    </div>`).join('');
+}
+async function openUserDetail(uid){
+  _selectedUID=uid;
+  try{
+    const j=await EP_API.adminGetUser(uid);
+    if(!j.success){ EP_CORE.toast('User not found','err'); return; }
+    const u=j.data;
+    document.getElementById('ud-title').textContent=u.full_name||u.phone||'User';
+    document.getElementById('ud-body').innerHTML=[
+      row('Phone',   u.phone||'—'),row('Name',u.full_name||'—'),row('Email',u.email||'—'),
+      row('Balance ETB',EP_CORE.numFmt(u.balance_etb||0)+' ETB'),row('Balance USD',EP_CORE.numFmt(u.balance_usd||0)+' USD'),
+      row('KYC',u.kyc_status||'pending'),row('Status',u.status||'active'),row('Joined',EP_CORE.dateFmtFull(u.created_at))
+    ].join('');
+    document.getElementById('ud-toggle-btn').textContent=u.status==='active'?'Suspend':'Activate';
+    EP_CORE.openSheet('sheet-user');
+  }catch(e){ EP_CORE.toast('Error','err'); }
+}
+function row(label,val){ return `<div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--gold-brd)"><span style="font-size:13px;color:var(--text-3)">${label}</span><span style="font-size:13px;font-weight:600;font-family:var(--fm)">${EP_CORE.esc(String(val))}</span></div>`; }
+async function toggleUser(){ try{ const j=await EP_API.adminToggleUser(_selectedUID); if(j.success){EP_CORE.closeSheet('sheet-user');EP_CORE.toast('Status updated','ok');loadUsers();} }catch(e){} }
+async function doCredit(){
+  const amt=parseFloat(document.getElementById('credit-amt').value)||0,note=document.getElementById('credit-note').value.trim(),err=document.getElementById('credit-err'),btn=document.getElementById('credit-btn');
+  err.textContent=''; if(amt<=0){err.textContent='Enter amount.';return;}
+  const restore=EP_CORE.btnLoading(btn,'ep-spin-w');
+  try{ const j=await EP_API.adminCredit(_selectedUID,amt,note); if(j.success){EP_CORE.closeSheet('sheet-credit');EP_CORE.closeSheet('sheet-user');EP_CORE.toast('Credited','ok');loadUsers();}else{err.textContent=(j.data&&j.data.message)||'Failed.';restore();}}catch(e){err.textContent='Error.';restore();}
+}
+async function doDebit(){
+  const amt=parseFloat(document.getElementById('debit-amt').value)||0,note=document.getElementById('debit-note').value.trim(),err=document.getElementById('debit-err'),btn=document.getElementById('debit-btn');
+  err.textContent=''; if(amt<=0){err.textContent='Enter amount.';return;}
+  const restore=EP_CORE.btnLoading(btn,'ep-spin-w');
+  try{ const j=await EP_API.adminDebit(_selectedUID,amt,note); if(j.success){EP_CORE.closeSheet('sheet-debit');EP_CORE.closeSheet('sheet-user');EP_CORE.toast('Debited','ok');loadUsers();}else{err.textContent=(j.data&&j.data.message)||'Failed.';restore();}}catch(e){err.textContent='Error.';restore();}
+}
+
+// ══ TRANSACTIONS ══════════════════════════════════════════════
+async function loadAdminTx(){
+  _txPage=0;
+  try{ const j=await EP_API.adminTxs(1,25); _allTx=j.success?(j.data.transactions||j.data||[]):[];renderTxList('admin-tx',filteredTx(),true);document.getElementById('tx-more').style.display=_allTx.length===25?'flex':'none';
+  }catch(e){ document.getElementById('admin-tx').innerHTML='<div class="ep-empty">Failed to load.</div>'; }
+}
+async function loadMoreTx(){ _txPage++; try{const j=await EP_API.adminTxs(_txPage+1,25);const more=j.success?(j.data.transactions||j.data||[]):[];_allTx=_allTx.concat(more);renderTxList('admin-tx',filteredTx(),true);document.getElementById('tx-more').style.display=more.length===25?'flex':'none';}catch(e){} }
+function setTxFilter(f){_txFilter=f;document.querySelectorAll('#panel-transactions .ep-pill').forEach((p,i)=>{const n=['all','send','receive','deposit'];p.classList.toggle('active',n[i]===f);});renderTxList('admin-tx',filteredTx(),true);}
+function filteredTx(){return _txFilter==='all'?_allTx:_allTx.filter(tx=>tx.type===_txFilter);}
+function renderTxList(id,txs,canRev){
+  const c=document.getElementById(id);
+  if(!txs||!txs.length){c.innerHTML='<div class="ep-empty">No transactions.</div>';return;}
+  c.innerHTML=txs.map(tx=>{
+    const dir=EP_CORE.txDirection(tx),sign=dir==='in'?'+':'-';
+    const rev=canRev&&tx.status==='completed'?`<button onclick="event.stopPropagation();openReverse('${tx.id||tx.tx_ref}')" style="background:none;border:none;cursor:pointer;color:var(--err);font-size:11px">↩Reverse</button>`:'';
+    return `<div class="ep-tx"><div class="ep-tx-dot ${dir}">${EP_CORE.txIcon(tx)}</div><div class="ep-tx-meta"><div class="ep-tx-who">${EP_CORE.esc(EP_CORE.txLabel(tx))}</div><div class="ep-tx-sub">${EP_CORE.esc((tx.sender_phone||'')+'→'+(tx.receiver_phone||''))} ${rev}</div></div><div class="ep-tx-right"><div class="ep-tx-amt ${dir}">${sign}${EP_CORE.numFmt(tx.amount||0)} ${tx.currency||'ETB'}</div><div class="ep-tx-date">${EP_CORE.dateFmt(tx.created_at)}</div></div></div>`;
+  }).join('');
+}
+function openReverse(txId){_selectedTXID=txId;EP_CORE.openSheet('sheet-reverse');}
+async function doReverse(){
+  const btn=document.getElementById('rev-btn'),err=document.getElementById('rev-err'); err.textContent='';
+  const restore=EP_CORE.btnLoading(btn,'ep-spin-w');
+  try{const j=await EP_API.adminReverseT(_selectedTXID);if(j.success){EP_CORE.closeSheet('sheet-reverse');EP_CORE.toast('Reversed','ok');loadAdminTx();}else{err.textContent=(j.data&&j.data.message)||'Failed.';restore();}}catch(e){err.textContent='Error.';restore();}
+}
+
+// ══ RATES ═════════════════════════════════════════════════════
+async function loadRates(){
+  try{
+    const j=await EP_API.adminRates();
+    if(!j.success){document.getElementById('rates-list').innerHTML='<div class="ep-empty">Failed.</div>';return;}
+    const rates=Array.isArray(j.data)?j.data:(j.data.rates||[]);
+    if(!rates.length){document.getElementById('rates-list').innerHTML='<div class="ep-empty">No rates configured.</div>';return;}
+    document.getElementById('rates-list').innerHTML=rates.map(r=>`
+      <div class="rate-row">
+        <div class="rate-badge">${EP_CORE.esc(r.currency||r.code||'?')}</div>
+        <input class="rate-inp" id="rate-${EP_CORE.esc(r.currency||r.code)}" type="number" value="${r.rate||r.rate_etb||0}" step="0.01" min="0">
+        <span style="font-size:11px;color:var(--text-3)">ETB</span>
+        <button class="ep-btn ep-btn-ghost ep-btn-sm" onclick="saveRate('${EP_CORE.esc(r.currency||r.code)}')">Save</button>
+      </div>`).join('');
+  }catch(e){}
+}
+async function saveRate(cur){
+  const v=parseFloat(document.getElementById('rate-'+cur).value)||0;
+  try{const j=await EP_API.adminUpdateRate(cur,v);if(j.success)EP_CORE.toast(cur+' updated','ok');else EP_CORE.toast('Failed','err');}catch(e){EP_CORE.toast('Error','err');}
+}
+
+// ══ SETTINGS ══════════════════════════════════════════════════
+async function loadSettings(){
+  try{
+    const j=await EP_API.adminSettings();
+    if(!j.success){document.getElementById('settings-body').innerHTML='<div class="ep-empty">Failed.</div>';return;}
+    const s=j.data||{};
+    document.getElementById('settings-body').innerHTML=`
+      <div class="ep-card">
+        <div class="ep-field"><label class="ep-label">Platform name</label><input class="ep-input" id="s-name"  type="text"  value="${EP_CORE.esc(s.platform_name||'ኢE Pay')}"></div>
+        <div class="ep-field"><label class="ep-label">Support phone</label><input class="ep-input" id="s-phone" type="tel"   value="${EP_CORE.esc(s.support_phone||'')}"></div>
+        <div class="ep-field"><label class="ep-label">Support email</label><input class="ep-input" id="s-email" type="email" value="${EP_CORE.esc(s.support_email||'')}"></div>
+        <div class="ep-field"><label class="ep-label">Admin phones (comma-separated)</label><input class="ep-input" id="s-admins" type="text" value="${EP_CORE.esc(s.admin_phones||'')}"></div>
+        <div class="ep-field"><label class="ep-label">Daily send limit (ETB, 0=unlimited)</label><input class="ep-input" id="s-limit" type="number" value="${EP_CORE.esc(s.daily_limit||'0')}"></div>
+        <div class="ep-field" style="margin-bottom:0"><label class="ep-label">Platform fee (%)</label><input class="ep-input" id="s-fee" type="number" step="0.1" value="${EP_CORE.esc(s.platform_fee||'0')}"></div>
+      </div>
+      <button class="ep-btn ep-btn-primary" id="save-settings-btn" onclick="saveSettings()" style="margin-top:16px">Save settings</button>`;
+  }catch(e){}
+}
+async function saveSettings(){
+  const btn=document.getElementById('save-settings-btn'),restore=EP_CORE.btnLoading(btn,'ep-spin-w');
+  try{
+    const j=await EP_API.adminSaveSettings({platform_name:document.getElementById('s-name').value.trim(),support_phone:document.getElementById('s-phone').value.trim(),support_email:document.getElementById('s-email').value.trim(),admin_phones:document.getElementById('s-admins').value.trim(),daily_limit:parseFloat(document.getElementById('s-limit').value)||0,platform_fee:parseFloat(document.getElementById('s-fee').value)||0});
+    if(j.success)EP_CORE.toast('Settings saved','ok');else EP_CORE.toast('Failed','err');
+  }catch(e){EP_CORE.toast('Error','err');}
+  restore();
+}
+
+// ══════════════════════════════════════════════════════════════
+// UPDATER ENGINE
+// ══════════════════════════════════════════════════════════════
+function initUpdater(){
+  // Check if already authenticated (session token stored)
+  try{ _updToken=sessionStorage.getItem('ep_upd_token'); }catch(e){}
+  if(_updToken){ showUpdaterMain(); }
+  else { document.getElementById('upd-login-wrap').style.display='block'; }
+  document.getElementById('upd-pass').addEventListener('keydown',e=>{ if(e.key==='Enter') updLogin(); });
+}
+
+async function updLogin(){
+  const pass=document.getElementById('upd-pass').value;
+  const err=document.getElementById('upd-login-err');
+  const btn=document.getElementById('upd-login-btn');
+  err.textContent='';
+  if(!pass){err.textContent='Password required.';return;}
+  const restore=EP_CORE.btnLoading(btn,'ep-spin-w');
+  try{
+    const r=await fetch(UPD_API+'?action=login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'login',password:pass})});
+    const j=await r.json();
+    if(j.success){
+      _updToken=j.data.token;
+      try{sessionStorage.setItem('ep_upd_token',_updToken);}catch(e){}
+      showUpdaterMain();
+    }else{ err.textContent=j.message||'Wrong password.'; }
+  }catch(e){ err.textContent='Connection error.'; }
+  restore();
+}
+
+function showUpdaterMain(){
+  document.getElementById('upd-login-wrap').style.display='none';
+  document.getElementById('upd-main').style.display='block';
+  loadFileList();
+}
+
+async function updCall(action, body={}, isFormData=false){
+  const opts={ method:'POST', headers:{'Authorization':'Bearer '+_updToken} };
+  if(isFormData){ opts.body=body; }
+  else{ opts.headers['Content-Type']='application/json'; opts.body=JSON.stringify(Object.assign({action},body)); }
+  const r=await fetch(UPD_API+'?action='+action, opts);
+  return r.json();
+}
+
+// ── Subtabs ───────────────────────────────────────────────────
+function updSwitchTab(name){
+  document.querySelectorAll('.upd-tab').forEach((t,i)=>{const n=['upload','editor','files','backups'];t.classList.toggle('active',n[i]===name);});
+  document.querySelectorAll('.upd-pane').forEach(p=>p.classList.remove('active'));
+  document.getElementById('upd-pane-'+name).classList.add('active');
+  if(name==='files') renderFileList();
+  if(name==='backups') loadBackups();
+}
+
+// ── Upload mode ───────────────────────────────────────────────
+function setUploadMode(mode){
+  _uploadMode=mode;
+  document.querySelectorAll('.upd-mode-btn').forEach((b,i)=>{b.classList.toggle('active',['single','multiple','zip'][i]===mode);});
+  const fi=document.getElementById('upd-file-input');
+  if(mode==='multiple'){fi.multiple=true;fi.accept='.html,.js,.css,.php,.json,.md,.txt,.sql,.svg';}
+  else if(mode==='zip'){fi.multiple=false;fi.accept='.zip';}
+  else{fi.multiple=false;fi.accept='.html,.js,.css,.php,.json,.md,.txt,.sql,.svg,.zip';}
+  document.getElementById('upd-target-wrap').style.display=mode==='single'?'block':'none';
+  document.getElementById('upd-drop-sub').textContent=mode==='zip'?'Drop ZIP to deploy all files':mode==='multiple'?'Drop multiple files':'HTML, JS, CSS, PHP, JSON, ZIP accepted';
+}
+
+// ── Drag & Drop ───────────────────────────────────────────────
+function updHandleDragOver(e){e.preventDefault();document.getElementById('upd-drop').classList.add('over');}
+function updHandleDragLeave(e){document.getElementById('upd-drop').classList.remove('over');}
+function updHandleDrop(e){
+  e.preventDefault();document.getElementById('upd-drop').classList.remove('over');
+  const files=e.dataTransfer.files;
+  if(!files.length) return;
+  _selectedFiles=Array.from(files);
+  const names=_selectedFiles.map(f=>f.name).join(', ');
+  document.getElementById('upd-drop-title').textContent=names.length>50?names.slice(0,50)+'…':names;
+  if(_selectedFiles.length===1&&_uploadMode==='single'){
+    document.getElementById('upd-target').value=guessPath(_selectedFiles[0].name);
+  }
+}
+function updHandleFileSelect(e){
+  _selectedFiles=Array.from(e.target.files);
+  if(!_selectedFiles.length) return;
+  const names=_selectedFiles.map(f=>f.name).join(', ');
+  document.getElementById('upd-drop-title').textContent=names.length>50?names.slice(0,50)+'…':names;
+  if(_selectedFiles.length===1&&_uploadMode==='single'){
+    document.getElementById('upd-target').value=guessPath(_selectedFiles[0].name);
+  }
+}
+function guessPath(name){
+  const b=name.replace(/^.*[/\\]/,'');
+  const known={
+    'api.php':'api/api.php','updater-api.php':'api/updater-api.php','config.php':'api/config.php',
+    'core.js':'js/core.js','api.js':'js/api.js','config.js':'js/config.js',
+    'pay.css':'css/pay.css','sw.js':'sw.js','manifest.json':'manifest.json','.htaccess':'.htaccess'
+  };
+  if(known[b]) return known[b];
+  const ext=b.split('.').pop().toLowerCase();
+  const dirs={js:'js/',css:'css/',php:'api/',sql:'api/'};
+  return (dirs[ext]||'')+b;
+}
+
+// ── Upload ────────────────────────────────────────────────────
+async function updDoUpload(){
+  if(!_selectedFiles.length){updLog('No files selected','err');return;}
+  const btn=document.getElementById('upd-upload-btn'),restore=EP_CORE.btnLoading(btn,'ep-spin-w');
+  try{
+    let j;
+    const fd=new FormData();
+    if(_uploadMode==='zip'){
+      fd.append('action','upload_zip');
+      fd.append('file',_selectedFiles[0]);
+      const r=await fetch(UPD_API+'?action=upload_zip',{method:'POST',headers:{'Authorization':'Bearer '+_updToken},body:fd});
+      j=await r.json();
+    }else if(_uploadMode==='multiple'||_selectedFiles.length>1){
+      fd.append('action','upload_multiple');
+      _selectedFiles.forEach(f=>fd.append('files[]',f));
+      const r=await fetch(UPD_API+'?action=upload_multiple',{method:'POST',headers:{'Authorization':'Bearer '+_updToken},body:fd});
+      j=await r.json();
+    }else{
+      fd.append('action','upload_file');
+      fd.append('file',_selectedFiles[0]);
+      const tp=document.getElementById('upd-target').value.trim()||guessPath(_selectedFiles[0].name);
+      fd.append('target_path',tp);
+      const r=await fetch(UPD_API+'?action=upload_file',{method:'POST',headers:{'Authorization':'Bearer '+_updToken},body:fd});
+      j=await r.json();
+    }
+    if(j.success){
+      updLog('✅ '+j.message,'ok');
+      if(j.data&&j.data.files){ j.data.files.forEach(f=>updLog('  → '+(f.file||f),'ok')); }
+      if(j.data&&j.data.errors&&j.data.errors.length){ j.data.errors.forEach(e=>updLog('  ✗ '+e,'err')); }
+      EP_CORE.toast(j.message||'Deployed','ok');
+      _selectedFiles=[];
+      document.getElementById('upd-drop-title').textContent='Click or drag files here';
+      document.getElementById('upd-file-input').value='';
+      loadFileList();
+    }else{
+      updLog('✗ '+(j.message||'Deploy failed'),'err');
+      EP_CORE.toast(j.message||'Failed','err');
+    }
+  }catch(e){ updLog('✗ Connection error: '+e.message,'err'); EP_CORE.toast('Error','err'); }
+  restore();
+}
+
+// ── Deploy log ────────────────────────────────────────────────
+function updLog(msg,type='info'){
+  const el=document.getElementById('upd-log');
+  const line=document.createElement('div');
+  line.className='log-'+type;
+  line.textContent='['+new Date().toLocaleTimeString()+'] '+msg;
+  el.appendChild(line);
+  el.scrollTop=el.scrollHeight;
+}
+
+// ── File list ─────────────────────────────────────────────────
+async function loadFileList(){
+  try{
+    const j=await updCall('list_files');
+    if(j.success) _allFiles=j.data.files||[];
+    else _allFiles=[];
+  }catch(e){ _allFiles=[]; }
+}
+function renderFileList(){
+  const q=(document.getElementById('file-search').value||'').toLowerCase();
+  const c=document.getElementById('upd-file-list');
+  const files=_allFiles.filter(f=>!q||f.path.toLowerCase().includes(q));
+  if(!files.length){c.innerHTML='<div class="ep-empty">No files found.</div>';return;}
+  const icons={html:'📄',js:'📜',css:'🎨',php:'⚙️',json:'📋',md:'📝',sql:'🗄️',svg:'🖼️',htaccess:'🔒'};
+  c.innerHTML=files.map(f=>{
+    const ext=f.path.split('.').pop().toLowerCase();
+    return `<div class="upd-file" onclick="openFileInEditor('${f.path.replace(/'/g,"\\'")}')">
+      <span class="upd-file-icon">${icons[ext]||'📄'}</span>
+      <span class="upd-file-name">${EP_CORE.esc(f.path)}</span>
+      <span class="upd-file-size">${f.size_kb}KB</span>
+      <span class="upd-file-mod">${(f.modified||'').slice(5,16)}</span>
+    </div>`;
+  }).join('');
+}
+function filterFiles(){ renderFileList(); }
+
+// ── Editor ────────────────────────────────────────────────────
+async function openFileInEditor(path){
+  updSwitchTab('editor');
+  document.getElementById('editor-path').textContent='Loading…';
+  document.getElementById('editor-save-btn').style.display='none';
+  try{
+    const j=await updCall('read_file',{path});
+    if(j.success){
+      _editingPath=path;
+      document.getElementById('upd-editor').value=j.data.content||'';
+      document.getElementById('editor-path').textContent=path;
+      document.getElementById('editor-save-btn').style.display='flex';
+    }else{
+      document.getElementById('editor-path').textContent='Error: '+(j.message||'Failed to read');
+    }
+  }catch(e){ document.getElementById('editor-path').textContent='Connection error'; }
+}
+async function updSaveFile(){
+  if(!_editingPath){ EP_CORE.toast('No file open','err'); return; }
+  const content=document.getElementById('upd-editor').value;
+  const btn=document.getElementById('editor-save-btn'),restore=EP_CORE.btnLoading(btn,'ep-spin-w');
+  try{
+    const j=await updCall('update_file',{path:_editingPath,content});
+    if(j.success){ EP_CORE.toast(_editingPath+' saved','ok'); updLog('✅ '+_editingPath+' saved & deployed','ok'); }
+    else{ EP_CORE.toast(j.message||'Save failed','err'); }
+  }catch(e){ EP_CORE.toast('Error','err'); }
+  restore();
+}
+
+// ── Backups ───────────────────────────────────────────────────
+async function loadBackups(){
+  try{
+    const j=await updCall('list_backups');
+    const bk=j.success?(j.data.backups||[]):[];
+    const c=document.getElementById('upd-backup-list');
+    if(!bk.length){c.innerHTML='<div class="ep-empty">No backups yet.</div>';return;}
+    c.innerHTML=bk.map(b=>`
+      <div class="backup-row">
+        <span class="backup-name">${EP_CORE.esc(b.name)}</span>
+        <span class="backup-size">${b.size_kb}KB</span>
+        <div class="backup-actions">
+          <button class="ep-btn ep-btn-ghost ep-btn-sm" onclick="restoreBackup('${b.name.replace(/'/g,"\\'")}')">Restore</button>
+          <button class="ep-btn ep-btn-ghost ep-btn-sm" style="color:var(--err)" onclick="deleteBackup('${b.name.replace(/'/g,"\\'")}')">Del</button>
+        </div>
+      </div>`).join('');
+  }catch(e){}
+}
+async function restoreBackup(name){
+  if(!confirm('Restore '+name+'? This overwrites the current file.')) return;
+  try{
+    const j=await updCall('restore_backup',{name});
+    if(j.success){EP_CORE.toast('Restored: '+j.message,'ok');loadFileList();}
+    else EP_CORE.toast(j.message||'Failed','err');
+  }catch(e){EP_CORE.toast('Error','err');}
+}
+async function deleteBackup(name){
+  try{
+    const j=await updCall('delete_backup',{name});
+    if(j.success){EP_CORE.toast('Backup deleted','ok');loadBackups();}
+    else EP_CORE.toast(j.message||'Failed','err');
+  }catch(e){EP_CORE.toast('Error','err');}
+}
+</script>
+<script src="js/devpanel.js"></script>
+<script src="js/desktop.js"></script>
+</body>
+</html>

@@ -1,0 +1,862 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#D4AF37">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="ኢE Pay">
+<title>ኢE Pay — Sign In</title>
+<link rel="manifest" href="manifest.php">
+<link rel="icon" type="image/x-icon" href="icons/logo.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="stylesheet" href="css/pay.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=JetBrains+Mono:wght@400;500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=Noto+Sans+Ethiopic:wght@400;600;700&display=swap" rel="stylesheet">
+
+<style>
+/* ════════════════════════════════════════════════════════
+   ኢE PAY — Premium Login v4.0
+   EtelId Design DNA: Split-screen · Gold orbs · Guilloché
+   ════════════════════════════════════════════════════════ */
+
+/* GOLD TOKEN RAMP */
+:root {
+  --g1:#FDF6D8; --g2:#F5E6A3; --g3:#E8C84A; --g4:#D4AF37;
+  --g5:#C8922A; --g6:#A07020; --g7:#7A5518; --g8:#4A3210; --g9:#2A1A06;
+  --ink:#1A0E00; --ink2:#3A2200; --ink3:#7A5520;
+  --card-bg:#FFFEF8; --card-bg2:#FDF8EE;
+  --ab:rgba(212,175,55,.25); --ab2:rgba(212,175,55,.07);
+  --ff-display:'Syne',sans-serif;
+  --ff-body:'Cormorant Garamond',serif;
+  --ff-mono:'JetBrains Mono',monospace;
+  --ff-am:'Noto Sans Ethiopic',sans-serif;
+}
+
+/* ANIMATIONS */
+@keyframes holo        { 0%{background-position:0 0}100%{background-position:300% 0} }
+@keyframes slide-up    { from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)} }
+@keyframes slide-right { from{opacity:0;transform:translateX(-24px)}to{opacity:1;transform:translateX(0)} }
+@keyframes orb-drift-1 { 0%,100%{transform:translate(0,0)}33%{transform:translate(30px,-25px)}66%{transform:translate(-20px,18px)} }
+@keyframes orb-drift-2 { 0%,100%{transform:translate(0,0)}33%{transform:translate(-25px,18px)}66%{transform:translate(22px,-28px)} }
+@keyframes shimmer     { 0%{background-position:-400px 0}100%{background-position:400px 0} }
+@keyframes float-card  { 0%,100%{transform:translateY(0) rotate(-1deg)}50%{transform:translateY(-10px) rotate(1deg)} }
+@keyframes spin-coin   { from{transform:rotateY(0)}to{transform:rotateY(360deg)} }
+@keyframes pulse-ring  { 0%,100%{opacity:.15;transform:scale(1)}50%{opacity:.05;transform:scale(1.08)} }
+@keyframes check-pop   { 0%{transform:scale(0) rotate(-12deg);opacity:0}70%{transform:scale(1.15) rotate(2deg)}100%{transform:scale(1) rotate(0);opacity:1} }
+
+/* RESET */
+*,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
+html,body { height:100%; overflow:hidden; }
+body { font-family:var(--ff-body); background:#0a0a14; }
+
+/* ── SPLIT PAGE LAYOUT ── */
+.ep-auth-page {
+  min-height: 100vh; min-height: 100dvh;
+  display: flex;
+  font-family: var(--ff-body);
+}
+
+/* ════════════════════
+   LEFT — Gold Brand Panel
+   ════════════════════ */
+.ep-auth-left {
+  flex: 0 0 42%;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 40px 32px;
+  background: linear-gradient(155deg,
+    #1A0A00 0%, #3A2008 15%, #6A4010 28%,
+    #9A6820 40%, #C8922A 52%, #D4AF37 58%,
+    #C8922A 64%, #9A6820 76%, #5A3808 90%, #1A0A00 100%);
+}
+
+/* Guilloché banknote pattern */
+.ep-auth-left::before {
+  content:'';
+  position:absolute; inset:0; pointer-events:none;
+  background-image:
+    repeating-linear-gradient(30deg, transparent 0,transparent 22px,rgba(255,255,255,.025) 22px,rgba(255,255,255,.025) 23px),
+    repeating-linear-gradient(-30deg,transparent 0,transparent 22px,rgba(255,255,255,.025) 22px,rgba(255,255,255,.025) 23px);
+}
+
+/* Animated orbs */
+.ep-auth-orb {
+  position:absolute; border-radius:50%;
+  pointer-events:none; filter:blur(60px);
+}
+.ep-auth-orb-1 {
+  width:400px; height:400px; top:-120px; left:-120px;
+  background:radial-gradient(circle,rgba(255,220,80,.22) 0%,transparent 70%);
+  animation:orb-drift-1 14s ease-in-out infinite;
+}
+.ep-auth-orb-2 {
+  width:350px; height:350px; bottom:-80px; right:-80px;
+  background:radial-gradient(circle,rgba(80,40,0,.28) 0%,transparent 70%);
+  animation:orb-drift-2 18s ease-in-out infinite;
+}
+
+/* Brand content */
+.ep-auth-brand {
+  position:relative; z-index:1;
+  display:flex; flex-direction:column;
+  align-items:center; text-align:center; gap:18px;
+  animation:slide-right .6s ease both;
+}
+
+.ep-auth-logo {
+  width:80px; height:80px; border-radius:20px;
+  object-fit:cover;
+  border:1.5px solid rgba(212,175,55,.4);
+  box-shadow:0 8px 32px rgba(0,0,0,.5), 0 0 0 6px rgba(212,175,55,.08);
+  filter:brightness(1.1) drop-shadow(0 4px 20px rgba(0,0,0,.5));
+}
+
+.ep-auth-brand-mark {
+  font-family:var(--ff-am);
+  font-size:42px; font-weight:700;
+  color:var(--g3); line-height:1;
+  text-shadow:0 2px 16px rgba(0,0,0,.4);
+}
+.ep-auth-brand-name {
+  font-family:var(--ff-display);
+  font-size:22px; font-weight:800;
+  color:var(--g1); letter-spacing:.3px;
+  text-shadow:0 2px 10px rgba(0,0,0,.4);
+}
+.ep-auth-brand-sub {
+  font-family:var(--ff-mono);
+  font-size:9px; color:var(--g4);
+  letter-spacing:2.5px; text-transform:uppercase;
+}
+.ep-auth-brand-desc {
+  font-size:14px; color:rgba(253,246,216,.7);
+  line-height:1.7; max-width:260px;
+}
+
+/* Animated mock wallet card */
+.ep-auth-mock {
+  width:220px; height:140px;
+  border-radius:14px; position:relative;
+  background:linear-gradient(135deg,rgba(253,246,216,.15),rgba(212,175,55,.1));
+  border:1.5px solid rgba(212,175,55,.3);
+  backdrop-filter:blur(8px);
+  box-shadow:0 20px 60px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.15);
+  animation:float-card 5s ease-in-out infinite;
+  overflow:hidden;
+}
+.ep-auth-mock::before {
+  content:'';
+  position:absolute; top:0; left:0; right:0; height:3px;
+  background:linear-gradient(90deg,#ff6b6b,#ffd93d,#6bcb77,#4d96ff,#ff6b6b,#ffd93d);
+  background-size:300% 100%; animation:holo 3s linear infinite;
+}
+.ep-mock-inner {
+  position:absolute; top:16px; left:14px; right:14px; bottom:14px;
+  display:flex; flex-direction:column; gap:8px;
+}
+.ep-mock-label {
+  font-family:var(--ff-mono); font-size:7px; letter-spacing:1.5px;
+  text-transform:uppercase; color:rgba(253,246,216,.5);
+}
+.ep-mock-balance {
+  font-family:var(--ff-display); font-size:22px; font-weight:800;
+  color:var(--g3); line-height:1;
+}
+.ep-mock-phone {
+  font-family:var(--ff-mono); font-size:9px; color:rgba(253,246,216,.4);
+  margin-top:auto;
+}
+
+/* Feature pills */
+.ep-auth-features {
+  display:flex; flex-direction:column; gap:8px;
+  width:100%; max-width:260px;
+}
+.ep-auth-feature {
+  display:flex; align-items:center; gap:10px;
+  padding:9px 14px;
+  background:rgba(255,255,255,.07);
+  border:1px solid rgba(212,175,55,.2);
+  border-radius:10px;
+  font-size:12px; color:rgba(253,246,216,.8);
+  backdrop-filter:blur(6px);
+}
+.ep-auth-feature-icon { font-size:15px; flex-shrink:0; }
+
+/* ════════════════════
+   RIGHT — Cream Auth Card
+   ════════════════════ */
+.ep-auth-right {
+  flex:1;
+  display:flex; align-items:center; justify-content:center;
+  padding:28px 20px;
+  background:linear-gradient(170deg,#FFFEF8 0%,#FDF8EE 50%,#F8F0DC 100%);
+  position:relative; overflow:hidden;
+}
+.ep-auth-right::before {
+  content:'';
+  position:absolute; inset:0; pointer-events:none;
+  background-image:
+    repeating-linear-gradient(45deg, transparent 0,transparent 32px,rgba(212,175,55,.03) 32px,rgba(212,175,55,.03) 33px),
+    repeating-linear-gradient(-45deg,transparent 0,transparent 32px,rgba(212,175,55,.03) 32px,rgba(212,175,55,.03) 33px);
+}
+
+/* ── Card ── */
+.ep-auth-card {
+  width:100%; max-width:400px;
+  background:var(--card-bg);
+  border-radius:20px;
+  border:1.5px solid var(--ab);
+  box-shadow:
+    0 20px 60px rgba(80,40,0,.18),
+    0 4px 16px rgba(80,40,0,.1),
+    inset 0 1px 0 rgba(255,255,255,.9);
+  overflow:hidden;
+  position:relative; z-index:1;
+  animation:slide-up .5s ease both;
+}
+
+/* Holographic strip */
+.ep-auth-holo {
+  height:3px;
+  background:linear-gradient(90deg,
+    #ff6b6b,#ffd93d,#6bcb77,#4d96ff,#ff6b6b,#ffd93d,#6bcb77,#4d96ff);
+  background-size:300% 100%;
+  animation:holo 3s linear infinite;
+}
+
+/* Card header */
+.ep-auth-head {
+  padding:24px 24px 18px;
+  background:linear-gradient(170deg,var(--card-bg),var(--card-bg2));
+  border-bottom:1px solid var(--ab);
+  text-align:center;
+}
+.ep-auth-logo-wrap {
+  display:flex; flex-direction:column; align-items:center; gap:5px;
+  margin-bottom:12px;
+}
+.ep-auth-logo-img {
+  height:48px; width:auto; object-fit:contain;
+  filter:drop-shadow(0 3px 12px rgba(100,60,0,.2));
+}
+.ep-auth-org {
+  font-family:var(--ff-am);
+  font-size:10px; color:var(--g5); letter-spacing:.5px;
+}
+.ep-auth-title {
+  font-family:var(--ff-display);
+  font-size:22px; font-weight:800;
+  color:var(--ink); line-height:1.2;
+}
+.ep-auth-subtitle {
+  font-size:12.5px; color:var(--ink3); margin-top:4px; line-height:1.5;
+}
+
+/* Tabs */
+.ep-auth-tabs {
+  display:flex; border-bottom:1px solid var(--ab);
+}
+.ep-auth-tab {
+  flex:1; padding:13px 8px;
+  background:none; border:none;
+  font-family:var(--ff-display); font-size:13px; font-weight:800;
+  color:var(--ink3); cursor:pointer;
+  position:relative; transition:color .2s;
+  letter-spacing:.3px;
+}
+.ep-auth-tab::after {
+  content:'';
+  position:absolute; bottom:-1px; left:15%; right:15%;
+  height:2.5px; border-radius:2px;
+  background:linear-gradient(90deg,var(--g5),var(--g4));
+  transform:scaleX(0); transition:transform .25s cubic-bezier(.22,.68,0,1.2);
+}
+.ep-auth-tab.active { color:var(--g5); }
+.ep-auth-tab.active::after { transform:scaleX(1); }
+
+/* Body */
+.ep-auth-body { padding:22px 24px 8px; }
+
+/* Notice */
+.ep-auth-notice {
+  display:flex; align-items:center; gap:10px;
+  padding:11px 14px; border-radius:9px;
+  font-size:13px; margin-bottom:12px;
+  max-height:0; opacity:0; overflow:hidden;
+  transition:opacity .25s, max-height .25s;
+}
+.ep-auth-notice.show { opacity:1; max-height:80px; }
+.ep-notice-err {
+  background:rgba(239,68,68,.08); border:1px solid rgba(239,68,68,.25); color:#991b1b;
+}
+.ep-notice-ok {
+  background:rgba(34,197,94,.08); border:1px solid rgba(34,197,94,.25); color:#166534;
+}
+
+/* Fields */
+.ep-af-field { margin-bottom:14px; }
+.ep-af-label {
+  font-family:var(--ff-mono);
+  font-size:9.5px; font-weight:700;
+  color:var(--g5); text-transform:uppercase;
+  letter-spacing:1.5px; display:block; margin-bottom:6px;
+}
+.ep-af-wrap { position:relative; display:flex; align-items:center; }
+.ep-af-icon {
+  position:absolute; left:12px;
+  color:var(--g5); font-size:14px; pointer-events:none; opacity:.7;
+}
+.ep-af-input {
+  width:100%; padding:11px 14px 11px 38px;
+  background:rgba(212,175,55,.06);
+  border:1.5px solid rgba(212,175,55,.22);
+  border-radius:9px;
+  font-size:15px; font-family:var(--ff-body);
+  color:var(--ink);
+  transition:border-color .2s, box-shadow .2s, background .2s;
+  -webkit-appearance:none; appearance:none;
+}
+.ep-af-input:focus {
+  border-color:var(--g4);
+  background:rgba(212,175,55,.09);
+  box-shadow:0 0 0 3px rgba(212,175,55,.14);
+  outline:none;
+}
+.ep-af-input::placeholder { color:rgba(100,60,0,.3); }
+.ep-pw-toggle {
+  position:absolute; right:10px;
+  background:none; border:none;
+  color:var(--g5); cursor:pointer; font-size:15px;
+  padding:4px; border-radius:4px; transition:color .15s;
+}
+.ep-pw-toggle:hover { color:var(--g4); }
+
+/* Submit button */
+.ep-auth-submit {
+  width:100%; padding:14px;
+  background:linear-gradient(135deg,
+    var(--g9) 0%,var(--g7) 25%,var(--g5) 50%,
+    var(--g4) 65%,var(--g3) 78%,var(--g4) 90%,var(--g5) 100%);
+  background-size:200% 100%;
+  color:var(--g1);
+  border:none; border-radius:10px;
+  font-family:var(--ff-display);
+  font-size:15px; font-weight:800;
+  cursor:pointer; letter-spacing:.5px;
+  box-shadow:0 5px 0 var(--g9), 0 8px 22px rgba(80,40,0,.3);
+  transition:transform .15s, box-shadow .15s;
+  position:relative; overflow:hidden;
+  margin-top:6px; margin-bottom:14px;
+}
+.ep-auth-submit::before {
+  content:'';
+  position:absolute; top:0; left:-100%; width:50%; height:100%;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.12),transparent);
+  animation:shimmer 2.5s infinite;
+}
+.ep-auth-submit:hover:not(:disabled) {
+  transform:translateY(-1px);
+  box-shadow:0 6px 0 var(--g9), 0 10px 26px rgba(80,40,0,.35);
+}
+.ep-auth-submit:active:not(:disabled) {
+  transform:translateY(1px);
+  box-shadow:0 3px 0 var(--g9), 0 5px 14px rgba(80,40,0,.25);
+}
+.ep-auth-submit:disabled { opacity:.65; cursor:not-allowed; transform:none; }
+
+/* Divider */
+.ep-auth-divider {
+  display:flex; align-items:center; gap:12px;
+  margin:2px 0 10px; color:rgba(120,80,20,.35);
+  font-family:var(--ff-mono); font-size:10px;
+  letter-spacing:1.5px; text-transform:uppercase;
+}
+.ep-auth-divider::before,.ep-auth-divider::after {
+  content:''; flex:1; height:1px;
+  background:rgba(212,175,55,.2);
+}
+
+/* Ghost button */
+.ep-auth-ghost {
+  width:100%; padding:12px;
+  background:rgba(212,175,55,.06);
+  border:1.5px solid rgba(212,175,55,.25);
+  border-radius:10px;
+  font-family:var(--ff-display); font-size:13px; font-weight:800;
+  color:var(--g5); cursor:pointer; letter-spacing:.3px;
+  transition:all .2s;
+  margin-bottom:8px;
+}
+.ep-auth-ghost:hover {
+  background:rgba(212,175,55,.12);
+  border-color:rgba(212,175,55,.45);
+  color:var(--g4);
+}
+
+/* Forgot link */
+.ep-forgot-link {
+  display:block; text-align:center; margin-bottom:10px;
+  font-family:var(--ff-mono); font-size:10px; letter-spacing:.5px;
+  color:var(--g5); text-decoration:none;
+  cursor:pointer; transition:color .2s;
+}
+.ep-forgot-link:hover { color:var(--g4); }
+
+/* Card footer */
+.ep-auth-foot {
+  padding:10px 24px 18px; text-align:center;
+  border-top:1px solid var(--ab);
+  font-family:var(--ff-mono);
+  font-size:9px; color:var(--ink3); letter-spacing:1px;
+}
+
+/* Loading spinner */
+.ep-spin {
+  display:inline-block; width:16px; height:16px;
+  border:2px solid rgba(253,246,216,.3);
+  border-top-color:var(--g1);
+  border-radius:50%; animation:spin .7s linear infinite;
+  vertical-align:middle; margin-right:6px;
+}
+@keyframes spin { to{transform:rotate(360deg)} }
+
+/* Lang button */
+.ep-lang-btn {
+  position:absolute; top:14px; right:14px; z-index:10;
+  background:rgba(212,175,55,.12); border:1px solid rgba(212,175,55,.3);
+  border-radius:20px; padding:5px 14px;
+  font-family:var(--ff-mono); font-size:11px; font-weight:600;
+  color:var(--g4); cursor:pointer; transition:all .2s;
+}
+.ep-lang-btn:hover { background:rgba(212,175,55,.2); }
+
+/* EtelID SSO button */
+.ep-auth-etelid {
+  width:100%; padding:12px;
+  display:flex; align-items:center; justify-content:center; gap:10px;
+  background:linear-gradient(135deg,#1A0A00,#3A2008,#6A4010,#9A6820,#C8922A,#D4AF37);
+  background-size:200% 100%;
+  border:1.5px solid rgba(212,175,55,.4); border-radius:10px;
+  font-family:var(--ff-display); font-size:13px; font-weight:800;
+  color:var(--g1); cursor:pointer; letter-spacing:.3px;
+  box-shadow:0 4px 0 var(--g9),0 6px 16px rgba(80,40,0,.25);
+  transition:transform .15s,box-shadow .15s; position:relative; overflow:hidden;
+  margin-bottom:8px;
+}
+.ep-auth-etelid::before {
+  content:''; position:absolute; top:0; left:-100%; width:50%; height:100%;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.15),transparent);
+  animation:shimmer 2.5s infinite; pointer-events:none;
+}
+.ep-auth-etelid:hover:not(:disabled) { transform:translateY(-1px); box-shadow:0 5px 0 var(--g9),0 8px 20px rgba(80,40,0,.3); }
+.ep-auth-etelid:active:not(:disabled) { transform:translateY(1px); box-shadow:0 2px 0 var(--g9); }
+.ep-auth-etelid:disabled { opacity:.65; cursor:not-allowed; }
+.ep-etelid-mark {
+  font-family:var(--ff-am); font-size:16px; font-weight:700;
+  background:linear-gradient(135deg,#FDF6D8,#E8C84A);
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+}
+
+/* ════════════════════
+   MOBILE — stack vertically (< 820px)
+   ════════════════════ */
+@media (max-width:820px) {
+  .ep-auth-page { flex-direction:column; overflow-y:auto; overflow-x:hidden; }
+  html,body { overflow:auto; height:auto; }
+  .ep-auth-left {
+    flex:0 0 auto; padding:28px 20px 24px; min-height:auto;
+  }
+  .ep-auth-mock { display:none; }
+  .ep-auth-features { display:none; }
+  .ep-auth-brand-desc { display:none; }
+  .ep-auth-brand { gap:8px; }
+  .ep-auth-brand-mark { font-size:30px; }
+  .ep-auth-brand-name { font-size:17px; }
+  .ep-auth-right { padding:20px 16px 40px; }
+  .ep-auth-card { max-width:480px; }
+  .ep-auth-head { padding:18px 20px 14px; }
+  .ep-auth-body { padding:18px 20px 6px; }
+}
+@media (max-width:400px) {
+  .ep-auth-foot { padding:8px 16px 14px; }
+}
+</style>
+    <link rel="stylesheet" href="css/etel-design-v4.css?v=4.1">
+</head>
+<body>
+
+<div class="ep-auth-page">
+
+  <!-- ── LEFT PANEL ── -->
+  <div class="ep-auth-left">
+    <div class="ep-auth-orb ep-auth-orb-1"></div>
+    <div class="ep-auth-orb ep-auth-orb-2"></div>
+
+    <div class="ep-auth-brand">
+      <img src="icons/logo.png" alt="ኢE Pay" class="ep-auth-logo">
+      <div class="ep-auth-brand-mark">ኢE</div>
+      <div class="ep-auth-brand-name">ETEL PAY</div>
+      <div class="ep-auth-brand-sub">ኢትኤል ክፍያ · Hawassa · Ethiopia</div>
+      <div class="ep-auth-brand-desc" id="brand-desc">Ethiopia's trusted digital payment wallet — send, receive and top up instantly.</div>
+
+      <!-- Floating mock wallet card -->
+      <div class="ep-auth-mock">
+        <div class="ep-mock-inner">
+          <div class="ep-mock-label">Wallet Balance</div>
+          <div class="ep-mock-balance">0.00 <span style="font-size:13px;opacity:.7;">ETB</span></div>
+          <div style="height:3px;background:rgba(212,175,55,.2);border-radius:2px;margin-top:4px;">
+            <div style="width:0%;height:100%;background:linear-gradient(90deg,var(--g5),var(--g4));border-radius:2px;"></div>
+          </div>
+          <div class="ep-mock-phone">+251 924 445 205</div>
+        </div>
+      </div>
+
+      <!-- Feature pills -->
+      <div class="ep-auth-features">
+        <div class="ep-auth-feature">
+          <span class="ep-auth-feature-icon">⚡</span>
+          <span id="feat1">Instant transfers across Ethiopia</span>
+        </div>
+        <div class="ep-auth-feature">
+          <span class="ep-auth-feature-icon">🔒</span>
+          <span id="feat2">PIN-secured, KYC-verified</span>
+        </div>
+        <div class="ep-auth-feature">
+          <span class="ep-auth-feature-icon">💳</span>
+          <span id="feat3">Telebirr & bank top-up</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── RIGHT PANEL ── -->
+  <div class="ep-auth-right">
+    <button class="ep-lang-btn" id="ep-lang-btn">አማ</button>
+
+    <div class="ep-auth-card">
+      <div class="ep-auth-holo"></div>
+
+      <div class="ep-auth-head">
+        <div class="ep-auth-logo-wrap">
+          <img src="icons/logo.png" alt="ኢE Pay" class="ep-auth-logo-img">
+          <div class="ep-auth-org" id="auth-org">ኢE · Etel Group · Hawassa</div>
+        </div>
+        <div class="ep-auth-title" id="auth-title">ኢE Pay</div>
+        <div class="ep-auth-subtitle" id="auth-subtitle">Sign in to your digital wallet</div>
+      </div>
+
+      <div class="ep-auth-tabs">
+        <button class="ep-auth-tab active" id="tab-login" onclick="switchTab('login')">
+          <span id="tab-login-txt">Sign In</span>
+        </button>
+        <button class="ep-auth-tab" id="tab-register" onclick="switchTab('register')">
+          <span id="tab-reg-txt">Create Wallet</span>
+        </button>
+      </div>
+
+      <div class="ep-auth-body">
+        <!-- Alert -->
+        <div class="ep-auth-notice ep-notice-err" id="l-err"></div>
+        <div class="ep-auth-notice ep-notice-ok" id="l-ok"></div>
+
+        <!-- Login form -->
+        <div id="form-login">
+          <div class="ep-af-field">
+            <label class="ep-af-label" id="lbl-phone">Phone Number</label>
+            <div class="ep-af-wrap">
+              <span class="ep-af-icon">📞</span>
+              <input class="ep-af-input" id="l-phone" type="tel"
+                placeholder="+251 9__ ___ ___"
+                autocomplete="tel" inputmode="tel">
+            </div>
+          </div>
+          <div class="ep-af-field">
+            <label class="ep-af-label" id="lbl-pin">Wallet PIN</label>
+            <div class="ep-af-wrap">
+              <span class="ep-af-icon">🔑</span>
+              <input class="ep-af-input" id="l-pin" type="password"
+                placeholder="••••" maxlength="8"
+                autocomplete="current-password" inputmode="numeric">
+              <button class="ep-pw-toggle" id="l-eye" tabindex="-1" type="button">👁</button>
+            </div>
+          </div>
+
+          <span class="ep-forgot-link" id="forgot-link" onclick="switchTab('forgot')">Forgot PIN?</span>
+
+          <button class="ep-auth-submit" id="l-btn" type="button">
+            <span id="l-btn-txt">Sign In</span>
+          </button>
+
+          <div class="ep-auth-divider"><span id="div-or">or</span></div>
+
+          <button class="ep-auth-etelid" id="etelid-btn" type="button" onclick="doEtelIdLogin()">
+            <span class="ep-etelid-mark">ኢE</span>
+            <span id="etelid-btn-txt">Sign in with EtelID</span>
+          </button>
+
+          <button class="ep-auth-ghost" onclick="switchTab('register')" id="create-btn">
+            Create Wallet
+          </button>
+        </div>
+
+        <!-- Forgot PIN form -->
+        <div id="form-forgot" style="display:none;">
+          <p style="font-size:13px;color:var(--ink3);margin-bottom:16px;line-height:1.6;" id="forgot-desc">Enter your phone number and we'll send a reset code via Telegram or SMS.</p>
+          <div class="ep-af-field">
+            <label class="ep-af-label" id="lbl-forgot-phone">Phone Number</label>
+            <div class="ep-af-wrap">
+              <span class="ep-af-icon">📞</span>
+              <input class="ep-af-input" id="f-phone" type="tel"
+                placeholder="+251 9__ ___ ___"
+                autocomplete="tel" inputmode="tel">
+            </div>
+          </div>
+          <button class="ep-auth-submit" id="f-btn" type="button">
+            <span id="f-btn-txt">Send Reset Code</span>
+          </button>
+          <button class="ep-auth-ghost" onclick="switchTab('login')" style="margin-top:4px;" id="back-login-btn">
+            ← Back to Sign In
+          </button>
+        </div>
+      </div>
+
+      <div class="ep-auth-foot">
+        ኢE Pay v2.0 · ethelmarket.com · Etel Group · <span id="foot-year">2026</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="ep-toast"></div>
+
+<!-- Scripts -->
+<script src="js/config.js?v=4.1"></script>
+<script src="js/api.js?v=4.1"></script>
+<script src="js/core.js?v=4.1"></script>
+<script src="js/desktop-shell.js"></script>
+
+<script>
+/* ── Tab switching ── */
+var _tab = 'login';
+function switchTab(t) {
+  _tab = t;
+  document.getElementById('form-login').style.display   = t==='login'   ? '' : 'none';
+  document.getElementById('form-forgot').style.display  = t==='forgot'  ? '' : 'none';
+  document.getElementById('tab-login').classList.toggle('active',    t==='login');
+  document.getElementById('tab-register').classList.toggle('active', t==='register');
+  clearNotices();
+  if (t === 'register') {
+    EP_CORE.nav('register');
+    setTimeout(function(){ document.getElementById('tab-register').classList.remove('active'); _tab='login'; }, 100);
+  }
+}
+
+/* ── Clear notices ── */
+function clearNotices() {
+  var e = document.getElementById('l-err');
+  var o = document.getElementById('l-ok');
+  if(e) { e.classList.remove('show'); e.textContent=''; }
+  if(o) { o.classList.remove('show'); o.textContent=''; }
+}
+function showErr(msg) {
+  var el = document.getElementById('l-err');
+  el.textContent = msg; el.classList.add('show');
+}
+function showOk(msg) {
+  var el = document.getElementById('l-ok');
+  el.textContent = msg; el.classList.add('show');
+}
+
+/* ── Bilingual strings ── */
+var STRINGS = {
+  en: {
+    feat1:'Instant transfers across Ethiopia', feat2:'PIN-secured, KYC-verified', feat3:'Telebirr & bank top-up',
+    org:'ኢE · Etel Group · Hawassa', title:'ኢE Pay', subtitle:'Sign in to your digital wallet',
+    tabLogin:'Sign In', tabReg:'Create Wallet',
+    lblPhone:'Phone Number', lblPin:'Wallet PIN',
+    forgot:'Forgot PIN?', forgotDesc:"Enter your phone number and we'll send a reset code via Telegram or SMS.",
+    lblForgotPhone:'Phone Number',
+    btnLogin:'Sign In', btnForgot:'Send Reset Code', btnCreate:'Create Wallet', btnBackLogin:'← Back to Sign In', btnEtelId:'Sign in with EtelID',
+    divOr:'or', brandDesc:"Ethiopia's trusted digital payment wallet — send, receive and top up instantly.",
+    required:'Phone & PIN required.',
+    connErr:'Connection error. Check internet.',
+    sendOk:'Reset code sent! Check your Telegram or SMS.',
+    sendFail:'Could not send reset code. Try again.'
+  },
+  am: {
+    feat1:'ፈጣን ዝውውር በኢትዮጵያ', feat2:'PIN ጥበቃ፣ KYC የተረጋገጠ', feat3:'ቴሌብር እና ባንክ ቅድሚያ ክፍያ',
+    org:'ኢE · ኢትኤል ቡድን · ሃዋሳ', title:'ኢE ክፍያ', subtitle:'ወደ ዲጂታል ቦርሳዎ ይግቡ',
+    tabLogin:'ግባ', tabReg:'ቦርሳ ፍጠር',
+    lblPhone:'ስልክ ቁጥር', lblPin:'ቦርሳ PIN',
+    forgot:'PIN ረሱ?', forgotDesc:'ስልክ ቁጥርዎን ያስገቡ — ዳግም ማስጀመሪያ ኮድ በቴሌግራም ወይም SMS እንልካለን።',
+    lblForgotPhone:'ስልክ ቁጥር',
+    btnLogin:'ግባ', btnForgot:'ዳግም ማስጀመሪያ ኮድ ላክ', btnCreate:'ቦርሳ ፍጠር', btnBackLogin:'← ወደ ግቤት ተመለስ', btnEtelId:'በEtelID ግባ',
+    divOr:'ወይም', brandDesc:'የኢትዮጵያ ዲጂታል ክፍያ ቦርሳ — ቅጽበታዊ ዝውውር፣ ቅድሚያ ክፍያ።',
+    required:'ስልክ ቁጥር እና PIN ያስፈልጋሉ።',
+    connErr:'የግንኙነት ስህተት። ኢንተርኔት ያረጋግጡ።',
+    sendOk:'ኮድ ተልኳል! ቴሌግራም ወይም SMS ይፈትሹ።',
+    sendFail:'ዳግም ማስጀመሪያ ኮድ ላክ አልተቻለም። እንደገና ይሞክሩ።'
+  }
+};
+
+var _lang = 'en';
+function applyLang(l) {
+  _lang = l;
+  var s = STRINGS[l];
+  document.getElementById('feat1').textContent     = s.feat1;
+  document.getElementById('feat2').textContent     = s.feat2;
+  document.getElementById('feat3').textContent     = s.feat3;
+  document.getElementById('brand-desc').textContent= s.brandDesc;
+  document.getElementById('auth-org').textContent  = s.org;
+  document.getElementById('auth-title').textContent= s.title;
+  document.getElementById('auth-subtitle').textContent= s.subtitle;
+  document.getElementById('tab-login-txt').textContent = s.tabLogin;
+  document.getElementById('tab-reg-txt').textContent   = s.tabReg;
+  document.getElementById('lbl-phone').textContent = s.lblPhone;
+  document.getElementById('lbl-pin').textContent   = s.lblPin;
+  document.getElementById('forgot-link').textContent   = s.forgot;
+  document.getElementById('forgot-desc').textContent   = s.forgotDesc;
+  document.getElementById('lbl-forgot-phone').textContent = s.lblForgotPhone;
+  document.getElementById('l-btn-txt').textContent = s.btnLogin;
+  document.getElementById('f-btn-txt').textContent = s.btnForgot;
+  document.getElementById('create-btn').textContent= s.btnCreate;
+  var etlTxt = document.getElementById('etelid-btn-txt'); if(etlTxt) etlTxt.textContent = s.btnEtelId;
+  document.getElementById('back-login-btn').textContent = s.btnBackLogin;
+  document.getElementById('div-or').textContent    = s.divOr;
+  document.getElementById('ep-lang-btn').textContent = l==='am' ? 'EN' : 'አማ';
+  document.getElementById('foot-year').textContent = new Date().getFullYear();
+}
+
+/* ── PIN visibility toggle ── */
+document.getElementById('l-eye').addEventListener('click', function() {
+  var p = document.getElementById('l-pin');
+  p.type = p.type === 'password' ? 'text' : 'password';
+});
+
+/* ── Normalize phone ── */
+function normalizePhone(p) {
+  p = p.replace(/\s+/g,'');
+  if (/^09/.test(p))   return '+251' + p.slice(1);
+  if (/^2519/.test(p)) return '+' + p;
+  return p;
+}
+
+/* ── Login ── */
+async function doLogin() {
+  var s = STRINGS[_lang];
+  var phone = document.getElementById('l-phone').value.trim();
+  var pin   = document.getElementById('l-pin').value.trim();
+  clearNotices();
+  if (!phone || !pin) { showErr(s.required); return; }
+  phone = normalizePhone(phone);
+  var btn = document.getElementById('l-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="ep-spin"></span>' + s.btnLogin;
+  try {
+    await EP_API.refreshNonce();
+    var j = await EP_API.login(phone, pin);
+    if (j.success) {
+      EP_CORE.saveToken(j.data.token, phone);
+      EP_CORE.nav('wallet');
+    } else {
+      showErr((j.data && j.data.message) || 'Login failed.');
+      btn.disabled = false; btn.innerHTML = '<span id="l-btn-txt">'+s.btnLogin+'</span>';
+    }
+  } catch(e) {
+    showErr(s.connErr);
+    btn.disabled = false; btn.innerHTML = '<span id="l-btn-txt">'+s.btnLogin+'</span>';
+  }
+}
+
+/* ── Forgot PIN ── */
+async function doForgot() {
+  var s = STRINGS[_lang];
+  var phone = document.getElementById('f-phone').value.trim();
+  clearNotices();
+  if (!phone) { showErr(s.required.split('&')[0] + 'required.'); return; }
+  phone = normalizePhone(phone);
+  var btn = document.getElementById('f-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="ep-spin"></span>' + s.btnForgot;
+  try {
+    var j = await EP_API.call('ep_forgot_pin', { phone: phone });
+    if (j && j.success) {
+      showOk(s.sendOk);
+    } else {
+      showErr((j && j.data && j.data.message) || s.sendFail);
+    }
+  } catch(e) {
+    showErr(s.connErr);
+  }
+  btn.disabled = false; btn.innerHTML = '<span id="f-btn-txt">'+s.btnForgot+'</span>';
+}
+
+document.getElementById('l-btn').addEventListener('click', doLogin);
+document.getElementById('f-btn').addEventListener('click', doForgot);
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') {
+    if (_tab === 'login') doLogin();
+    else if (_tab === 'forgot') doForgot();
+  }
+});
+
+/* ── Lang toggle ── */
+document.getElementById('ep-lang-btn').addEventListener('click', function() {
+  applyLang(_lang === 'en' ? 'am' : 'en');
+  try { EP_CORE.setLang(_lang); } catch(e) {}
+});
+
+/* ── EtelID SSO login ── */
+async function doEtelIdLogin() {
+  var s = STRINGS[_lang];
+  var phone = document.getElementById('l-phone').value.trim();
+  var pin   = document.getElementById('l-pin').value.trim();
+  clearNotices();
+  if (!phone || !pin) {
+    showErr(_lang==='am' ? 'EtelID መለያ እና የይለፍ ቃል ያስገቡ።' : 'Enter your EtelID phone/ID and password.');
+    return;
+  }
+  phone = normalizePhone(phone);
+  var btn = document.getElementById('etelid-btn');
+  btn.disabled = true;
+  var label = document.getElementById('etelid-btn-txt');
+  var orig = label ? label.textContent : 'Sign in with EtelID';
+  btn.innerHTML = '<span class="ep-spin"></span>' + orig;
+  try {
+    var j = await EP_API.call('ep_login_etelid', { phone: phone, pin: pin });
+    if (j && j.success && j.data && j.data.token) {
+      EP_CORE.saveToken(j.data.token, phone);
+      EP_CORE.nav('wallet');
+    } else {
+      showErr((j && j.data && j.data.message) ||
+        (_lang==='am' ? 'EtelID ማረጋገጥ አልተሳካም።' : 'EtelID authentication failed.'));
+      btn.disabled = false;
+      btn.innerHTML = '<span class="ep-etelid-mark">ኢE</span><span id="etelid-btn-txt">'+orig+'</span>';
+    }
+  } catch(e) {
+    showErr(s.connErr);
+    btn.disabled = false;
+    btn.innerHTML = '<span class="ep-etelid-mark">ኢE</span><span id="etelid-btn-txt">'+orig+'</span>';
+  }
+}
+
+/* ── Init ── */
+EP_CORE.onReady(async function() {
+  EP_CORE.registerSW();
+  if (EP_CORE.redirectIfLoggedIn('wallet')) return;
+  var savedLang = 'en';
+  try { savedLang = EP_CORE.getLang() || 'en'; } catch(e) {}
+  applyLang(savedLang);
+});
+</script>
+</body>
+</html>

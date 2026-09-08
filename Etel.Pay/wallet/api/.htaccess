@@ -1,0 +1,9 @@
+# ── ኢE Pay API — protect secrets only ───────────────────────
+<Files "config.php">
+  Order Allow,Deny
+  Deny from all
+</Files>
+<Files ".env">
+  Order Allow,Deny
+  Deny from all
+</Files>

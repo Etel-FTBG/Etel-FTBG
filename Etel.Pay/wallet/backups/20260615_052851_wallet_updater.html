@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>ኢE Pay — Updater</title>
+<link rel="stylesheet" href="css/pay.css">
+<style>
+.upd-wrap{max-width:640px;margin:0 auto;padding:0 20px 40px}
+.upd-head{display:flex;align-items:center;gap:12px;padding:max(20px,env(safe-area-inset-top,20px)) 0 20px}
+.upd-head h1{font-family:var(--fd);font-size:20px;color:var(--gold);margin:0;flex:1}
+.upd-ver{font-size:11px;color:var(--text-3);font-family:var(--fm)}
+.ep-card{margin-bottom:16px}
+.ep-card h3{font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.8px;margin:0 0 14px}
+.upd-drop{border:2px dashed var(--gold-brd);border-radius:12px;padding:28px 16px;text-align:center;cursor:pointer;transition:.2s;position:relative;overflow:hidden}
+.upd-drop:hover,.upd-drop.drag{border-color:var(--gold);background:rgba(212,168,67,.05)}
+.upd-drop input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.upd-drop-icon{font-size:28px;margin-bottom:6px}
+.upd-drop p{font-size:13px;color:var(--text-3);margin:4px 0}
+.upd-flist{display:flex;flex-direction:column;gap:6px;margin-top:10px}
+.upd-fi{display:flex;align-items:center;gap:8px;padding:7px 12px;background:var(--surface);border-radius:8px;font-size:12px}
+.upd-fi-name{flex:1;color:var(--text-2);font-family:var(--fm);word-break:break-all}
+.upd-fi-sz{color:var(--text-3);white-space:nowrap}
+.upd-fi-rm{background:none;border:none;color:#f87171;cursor:pointer;font-size:15px;padding:0 2px;line-height:1}
+.upd-prog{height:3px;background:#1a1a24;border-radius:2px;margin:10px 0;overflow:hidden;display:none}
+.upd-prog-bar{height:100%;background:linear-gradient(90deg,var(--gold),#f5d990);border-radius:2px;width:0;transition:width .25s}
+.upd-log{background:#050508;border:1px solid #1a1a24;border-radius:10px;padding:12px 14px;font-family:var(--fm);font-size:11px;line-height:1.9;max-height:260px;overflow-y:auto}
+.upd-log .ok{color:#4ade80}.upd-log .err{color:#f87171}.upd-log .info{color:#60a5fa}.upd-log .warn{color:#fbbf24}
+.gap{margin-top:8px}
+</style>
+</head>
+<body>
+<div id="app">
+<div class="upd-wrap">
+  <div class="upd-head safe-top">
+    <button class="ep-icon-btn" onclick="EP_CORE.back()">←</button>
+    <div style="flex:1">
+      <h1>⬆ ኢE Pay Updater</h1>
+      <div class="upd-ver">Version: <span id="upd-ver">—</span></div>
+    </div>
+  </div>
+
+  <!-- Auth card -->
+  <div class="ep-card" id="auth-card">
+    <h3>Updater Password</h3>
+    <div class="ep-input-wrap" style="margin-bottom:10px">
+      <input class="ep-input" type="password" id="upd-pass" placeholder="Enter updater password"
+        onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <button class="ep-btn ep-btn-gold" onclick="doLogin()" id="login-btn">Unlock</button>
+  </div>
+
+  <!-- Main (hidden until auth) -->
+  <div id="upd-main" style="display:none">
+
+    <!-- Upload Files -->
+    <div class="ep-card">
+      <h3>Deploy Files</h3>
+      <div class="upd-drop" id="drop-zone">
+        <input type="file" id="file-input" multiple
+          accept=".php,.html,.js,.css,.json,.htaccess,.txt,.svg,.png,.jpg,.ico,.zip,.sql">
+        <div class="upd-drop-icon">📂</div>
+        <p>Drop files or tap to select</p>
+        <p style="font-size:11px">.php .html .js .css .json .zip + more</p>
+      </div>
+      <div class="upd-flist" id="file-list"></div>
+      <div class="upd-prog" id="prog"><div class="upd-prog-bar" id="prog-bar"></div></div>
+      <button class="ep-btn ep-btn-gold gap" onclick="doDeploy()" id="deploy-btn">⬆ Deploy</button>
+    </div>
+
+    <!-- Run SQL -->
+    <div class="ep-card">
+      <h3>Run SQL</h3>
+      <textarea class="ep-input" id="sql-input" rows="4"
+        placeholder="ALTER TABLE …&#10;UPDATE …&#10;INSERT INTO …"
+        style="resize:vertical;font-family:var(--fm);font-size:12px;line-height:1.6"></textarea>
+      <button class="ep-btn ep-btn-ghost gap" onclick="doSQL()">⚙ Run SQL</button>
+    </div>
+
+    <!-- Log -->
+    <div class="ep-card">
+      <h3>Log <span id="log-count" style="font-weight:400;color:var(--text-3)"></span></h3>
+      <div class="upd-log" id="upd-log"><span class="info">Ready — awaiting commands.</span></div>
+      <button class="ep-btn ep-btn-ghost gap" onclick="clearLog()">Clear log</button>
+    </div>
+
+  </div>
+</div>
+</div>
+
+<div id="ep-toast"></div>
+<script src="js/config.js"></script>
+<script src="js/api.js"></script>
+<script src="js/core.js"></script>
+<script src="js/devpanel.js"></script>
+<script src="js/desktop.js"></script>
+<script>
+var _token = '';
+var _files = [];
+var _logLines = 0;
+
+EP_CORE.onReady(function() {
+  if (!EP_CORE.requireAuth()) return;
+
+  // Drag & drop
+  var dz = document.getElementById('drop-zone');
+  dz.addEventListener('dragover', function(e){ e.preventDefault(); dz.classList.add('drag'); });
+  dz.addEventListener('dragleave', function(){ dz.classList.remove('drag'); });
+  dz.addEventListener('drop', function(e){
+    e.preventDefault(); dz.classList.remove('drag');
+    addFiles(e.dataTransfer.files);
+  });
+  document.getElementById('file-input').addEventListener('change', function(e){
+    addFiles(e.target.files);
+    this.value = '';
+  });
+});
+
+function addFiles(list) {
+  for (var i = 0; i < list.length; i++) _files.push(list[i]);
+  renderFiles();
+}
+
+function renderFiles() {
+  var el = document.getElementById('file-list');
+  if (!_files.length) { el.innerHTML = ''; return; }
+  el.innerHTML = _files.map(function(f, i) {
+    var sz = f.size > 1048576 ? (f.size/1048576).toFixed(1)+'MB' : Math.ceil(f.size/1024)+'KB';
+    return '<div class="upd-fi">' +
+      '<span>📄</span><span class="upd-fi-name">'+ esc(f.name) +'</span>' +
+      '<span class="upd-fi-sz">'+ sz +'</span>' +
+      '<button class="upd-fi-rm" onclick="rmFile('+ i +')">✕</button></div>';
+  }).join('');
+}
+
+function rmFile(i) { _files.splice(i,1); renderFiles(); }
+
+function esc(s) { var d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
+
+function log(msg, cls) {
+  var el = document.getElementById('upd-log');
+  var d = document.createElement('div');
+  d.className = cls || '';
+  var t = new Date().toTimeString().slice(0,8);
+  d.textContent = '['+t+'] '+msg;
+  el.appendChild(d);
+  el.scrollTop = el.scrollHeight;
+  _logLines++;
+  document.getElementById('log-count').textContent = '('+_logLines+')';
+}
+
+function clearLog() {
+  document.getElementById('upd-log').innerHTML = '';
+  _logLines = 0;
+  document.getElementById('log-count').textContent = '';
+}
+
+/* ── Login ─────────────────────────────────────────────────── */
+function doLogin() {
+  var pass = document.getElementById('upd-pass').value.trim();
+  if (!pass) { EP_CORE.toast('Enter password', 'err'); return; }
+  var btn = document.getElementById('login-btn');
+  var restore = EP_CORE.btnLoading(btn);
+  
+  fetch(EP_CONFIG.BASE + 'api/updater-api.php', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({action:'login', password: pass})
+  })
+  .then(function(resp) {
+    var status = resp.status;
+    return resp.text().then(function(txt) {
+      var j;
+      try { j = JSON.parse(txt); } catch(e) {
+        // Server returned non-JSON (PHP error, HTML page etc.)
+        return { success: false, message: 'Server error ('+status+'): ' + txt.substring(0,120) };
+      }
+      j._status = status;
+      return j;
+    });
+  })
+  .then(function(j) {
+    restore();
+    if (j.success) {
+      _token = j.data && j.data.token ? j.data.token : '';
+      document.getElementById('auth-card').style.display = 'none';
+      document.getElementById('upd-main').style.display = 'block';
+      log('✅ Authenticated — session active for 24h', 'ok');
+      loadVersion();
+    } else {
+      var msg = j.message || ('HTTP ' + j._status);
+      log('❌ ' + msg, 'err');
+      EP_CORE.toast(msg, 'err');
+    }
+  })
+  .catch(function(e) { restore(); log('❌ Network: ' + e.message, 'err'); EP_CORE.toast('Network error', 'err'); });
+}
+
+function loadVersion() {
+  fetch(EP_CONFIG.BASE + 'api/updater-api.php', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({action:'ping', token: _token})
+  })
+  .then(function(r){ return r.text(); })
+  .then(function(txt){
+    try {
+      var j = JSON.parse(txt);
+      if(j.success && j.data && j.data.version) document.getElementById('upd-ver').textContent = j.data.version;
+      if(j.success) log('🔍 Server: PHP '+j.data.php+' · '+j.data.time, 'info');
+    } catch(e) { log('⚠ Ping parse error: '+txt.substring(0,80), 'warn'); }
+  })
+  .catch(function(e){ log('⚠ Ping failed: '+e.message,'warn'); });
+}
+
+/* ── Deploy ─────────────────────────────────────────────────── */
+function doDeploy() {
+  if (!_files.length) { EP_CORE.toast('Select files first', 'err'); return; }
+  
+  var btn = document.getElementById('deploy-btn');
+  var prog = document.getElementById('prog');
+  var bar = document.getElementById('prog-bar');
+  btn.disabled = true;
+  prog.style.display = 'block';
+
+  var done = 0, total = _files.length;
+
+  function next(i) {
+    if (i >= total) {
+      btn.disabled = false;
+      bar.style.width = '100%';
+      setTimeout(function(){ prog.style.display='none'; bar.style.width='0'; }, 2000);
+      log('✅ Done — '+done+'/'+total+' deployed', 'ok');
+      EP_CORE.toast('Deploy complete!');
+      _files = []; renderFiles();
+      return;
+    }
+    var file = _files[i];
+    var fd = new FormData();
+    fd.append('action', 'upload_file');
+    fd.append('token', _token);
+    fd.append('file', file, file.name);
+
+    log('⬆ ' + file.name + '…', 'info');
+
+    fetch(EP_CONFIG.BASE + 'api/updater-api.php', { method:'POST', body: fd })
+    .then(function(r){ return r.text(); })
+    .then(function(txt){
+      var j; try{ j=JSON.parse(txt); }catch(e){ j={success:false,message:'Parse error: '+txt.substring(0,80)}; }
+      return j;
+    })
+    .then(function(j) {
+      done++;
+      bar.style.width = Math.round(done/total*100)+'%';
+      if (j.success) log('✅ '+file.name+' → '+j.data.written, 'ok');
+      else log('❌ '+file.name+': '+(j.message||'failed'), 'err');
+      next(i+1);
+    })
+    .catch(function(){
+      done++; bar.style.width = Math.round(done/total*100)+'%';
+      log('❌ '+file.name+': network error', 'err');
+      next(i+1);
+    });
+  }
+  next(0);
+}
+
+/* ── SQL ────────────────────────────────────────────────────── */
+function doSQL() {
+  var sql = document.getElementById('sql-input').value.trim();
+  if (!sql) { EP_CORE.toast('Enter SQL', 'err'); return; }
+  if (!_token) { EP_CORE.toast('Unlock updater first', 'err'); return; }
+  log('⚙ Running SQL…', 'info');
+  var btn = document.querySelector('[onclick="doSQL()"]');
+  if (btn) btn.disabled = true;
+
+  fetch(EP_CONFIG.BASE + 'api/updater-api.php', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({action: 'run_sql', token: _token, sql: sql})
+  })
+  .then(function(r){ return r.text(); })
+  .then(function(txt){
+    var j; try{ j=JSON.parse(txt); }catch(e){ j={success:false,message:'Parse error: '+txt.substring(0,120)}; }
+    return j;
+  })
+  .then(function(j) {
+    if (btn) btn.disabled = false;
+    if (j.success) {
+      var d = j.data || {};
+      log('✅ SQL OK — ' + (d.statements||1) + ' statement(s), ' + (d.affected||0) + ' rows affected', 'ok');
+      // Show SELECT results
+      if (d.results) {
+        d.results.forEach(function(r) {
+          if (r.rows && r.rows.length) {
+            log('  ↳ ' + r.sql + '… → ' + r.rows.length + ' row(s)', 'info');
+            r.rows.slice(0,5).forEach(function(row) {
+              log('    ' + JSON.stringify(row), 'info');
+            });
+          }
+        });
+      }
+      EP_CORE.toast('SQL executed');
+    } else {
+      log('❌ SQL Error: ' + (j.message || 'unknown'), 'err');
+      EP_CORE.toast('SQL failed', 'err');
+    }
+  })
+  .catch(function(e) {
+    if (btn) btn.disabled = false;
+    log('❌ Network error: ' + e.message, 'err');
+  });
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,813 @@
+/**
+ * ████████████████████████████████████████████████████████████████
+ *   ኢE  ETEL GROUP — Unified Design System v4.0
+ *   "EtelId DNA applied to all products"
+ *
+ *   Load LAST on every page, after all other CSS:
+ *     EtelPay:  <link rel="stylesheet" href="css/etel-design-v4.css?v=4.0">
+ *     Delivery: <link rel="stylesheet" href="css/etel-design-v4.css?v=4.0">
+ *
+ *   Pure additive CSS — never breaks existing layout or JS.
+ *   PHP 5.6 compatible (static file, no processing needed).
+ * ████████████████████████████████████████████████████████████████
+ */
+
+/* ════════════════════════════════════════════════════════════════
+   §1  GOLD TOKEN RAMP  (EtelId canonical palette)
+       Replaces: --gold #D4A843 (Pay) · --etl-gold #D4AF37 (Delivery)
+   ════════════════════════════════════════════════════════════════ */
+:root {
+  /* 9-stop gold ramp — identical to etelid-auth.css */
+  --g1: #FDF6D8;   /* Lightest cream — text on gold */
+  --g2: #F5E6A3;   /* Pale gold */
+  --g3: #E8C84A;   /* Brand mark, icons */
+  --g4: #D4AF37;   /* ★ Primary accent — THE gold */
+  --g5: #C8922A;   /* Hover states, labels */
+  --g6: #A07020;   /* Muted gold */
+  --g7: #7A5518;   /* Deep gold, gradient midtone */
+  --g8: #4A3210;   /* Very dark gold */
+  --g9: #2A1A06;   /* Darkest — button floor shadow */
+
+  /* Ink (light-mode text on cream) */
+  --g-ink:  #1A0E00;
+  --g-ink2: #3A2200;
+  --g-ink3: #7A5520;
+
+  /* Semantic (shared across all products) */
+  --g-ok:   #10B981;
+  --g-err:  #EF4444;
+  --g-warn: #F59E0B;
+  --g-info: #3B82F6;
+
+  /* Cream surfaces (EtelId / login pages) */
+  --g-cream:  #FFFEF8;
+  --g-cream2: #FDF8EE;
+  --g-cream3: #F8F0DC;
+  --g-border: rgba(212,175,55,.25);
+
+  /* Typography */
+  --g-fd: 'Syne',           'Noto Sans Ethiopic', sans-serif;
+  --g-fb: 'Cormorant Garamond', serif;
+  --g-fm: 'JetBrains Mono', monospace;
+  --g-fa: 'Noto Sans Ethiopic', sans-serif;
+
+  /* Shared easing */
+  --g-ease:   cubic-bezier(.22,1,.36,1);
+  --g-ease-b: cubic-bezier(.34,1.56,.64,1);
+}
+
+/* ════════════════════════════════════════════════════════════════
+   §2  GOOGLE FONTS  (load once, shared)
+   ════════════════════════════════════════════════════════════════ */
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=JetBrains+Mono:wght@400;500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=Noto+Sans+Ethiopic:wght@400;600;700&display=swap');
+
+/* ════════════════════════════════════════════════════════════════
+   §3  KEYFRAMES
+   ════════════════════════════════════════════════════════════════ */
+@keyframes g-holo {
+  0%   { background-position: 0 0 }
+  100% { background-position: 300% 0 }
+}
+@keyframes g-shimmer {
+  0%   { background-position: -400px 0 }
+  100% { background-position:  400px 0 }
+}
+@keyframes g-slide-up {
+  from { opacity:0; transform:translateY(20px) }
+  to   { opacity:1; transform:translateY(0) }
+}
+@keyframes g-float {
+  0%,100% { transform:translateY(0) }
+  50%      { transform:translateY(-6px) }
+}
+@keyframes g-pulse-ring {
+  0%,100% { opacity:.18; transform:scale(1) }
+  50%      { opacity:.06; transform:scale(1.08) }
+}
+@keyframes g-orb-1 {
+  0%,100% { transform:translate(0,0) }
+  33%      { transform:translate(30px,-25px) }
+  66%      { transform:translate(-20px,18px) }
+}
+@keyframes g-orb-2 {
+  0%,100% { transform:translate(0,0) }
+  33%      { transform:translate(-25px,18px) }
+  66%      { transform:translate(22px,-28px) }
+}
+
+/* ════════════════════════════════════════════════════════════════
+   §4  HOLOGRAPHIC STRIP
+       Add class .g-holo-strip to any card/header top edge.
+   ════════════════════════════════════════════════════════════════ */
+.g-holo-strip,
+.ep-card-glow::before,
+[class*="balance-card"]::before,
+[class*="order-card"]::before {
+  height: 3px !important;
+  background: linear-gradient(90deg,
+    #ff6b6b, #ffd93d, #6bcb77, #4d96ff,
+    #ff6b6b, #ffd93d, #6bcb77, #4d96ff) !important;
+  background-size: 300% 100% !important;
+  animation: g-holo 3s linear infinite !important;
+  border-radius: 0 !important;
+}
+
+/* Auto-inject holo strip on EtelPay balance card */
+.ep-card-glow {
+  position: relative !important;
+  overflow: hidden !important;
+}
+.ep-card-glow::before {
+  content: '' !important;
+  position: absolute !important;
+  top: 0 !important; left: 0 !important; right: 0 !important;
+  display: block !important;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   §5  GUILLOCHÉ SECURITY PATTERN
+       Apply .g-guilloche to any dark panel/hero/left-panel.
+       Also auto-applied to EtelPay #app body and delivery .header.
+   ════════════════════════════════════════════════════════════════ */
+.g-guilloche::after,
+.ep-card-glow::after {
+  content: '' !important;
+  position: absolute !important;
+  inset: 0 !important;
+  pointer-events: none !important;
+  background-image:
+    repeating-linear-gradient(30deg,
+      transparent 0, transparent 22px,
+      rgba(255,255,255,.022) 22px, rgba(255,255,255,.022) 23px),
+    repeating-linear-gradient(-30deg,
+      transparent 0, transparent 22px,
+      rgba(255,255,255,.022) 22px, rgba(255,255,255,.022) 23px) !important;
+  z-index: 0 !important;
+  border-radius: inherit !important;
+}
+/* Ensure card content stays above guilloché */
+.ep-card-glow > * { position: relative; z-index: 1; }
+
+/* ════════════════════════════════════════════════════════════════
+   §6  TYPOGRAPHY UPGRADES
+       Syne 800 for all headings/buttons.
+       Cormorant Garamond for all body/input text.
+       JetBrains Mono for all codes/amounts/labels.
+       Noto Sans Ethiopic for all Amharic text.
+   ════════════════════════════════════════════════════════════════ */
+
+/* ── Display: Syne 800 ── */
+h1, h2, h3, h4,
+.ep-bal-amount,
+.ep-section-title,
+.ep-sheet-title,
+.ep-btn, .ep-btn-gold, .ep-btn-primary, .ep-btn-ghost,
+.ep-nav-label,
+.ep-action-label,
+button.etel-btn-gold,
+button.btn-primary,
+.btn.btn-primary,
+.form-card button[type="submit"],
+.auth-title,
+.page-title,
+.sidebar-brand-main,
+.header-info .header-title,
+.del-auth-title,
+.section-title span,
+.g-display {
+  font-family: var(--g-fd) !important;
+  letter-spacing: -.01em;
+}
+
+/* ── Mono: JetBrains Mono ── */
+.ep-label,
+.ep-bal-label,
+.ep-bal-cur,
+.ep-bal-usd,
+.ep-tx-date,
+.ep-tx-meta,
+.ep-nav-label,
+.ep-badge,
+code, pre,
+.demo-lbl, .demo-val,
+.afeat-lbl,
+.header-info .header-subtitle,
+.fc-sub,
+time, .time, [class*="-time"], [class*="-code"],
+.g-mono {
+  font-family: var(--g-fm) !important;
+}
+
+/* ── Amounts get mono ── */
+.ep-tx-amt,
+.ep-bal-amount,
+[class*="-amount"],
+[class*="-price"],
+[class*="-balance"],
+[class*="-total"] {
+  font-family: var(--g-fm) !important;
+}
+
+/* ── Body: Cormorant Garamond for inputs/descriptions ── */
+.ep-input, input, textarea,
+[class*="-desc"], [class*="-description"],
+.g-body {
+  font-family: var(--g-fb) !important;
+}
+
+/* ── Ethiopic text ── */
+[lang="am"], [class*="-am"], [class*="-amharic"],
+.auth-am, .ep-auth-org, .del-auth-org,
+.g-ethiopic {
+  font-family: var(--g-fa) !important;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   §7  3D RAISED GOLD BUTTON SYSTEM
+       Replaces flat buttons with the EtelId 3D lift + shimmer.
+   ════════════════════════════════════════════════════════════════ */
+.ep-btn-gold,
+.ep-btn-primary,
+.etel-btn-gold,
+button.btn-primary,
+.btn.btn-primary,
+.place-order-btn,
+.pickup-btn,
+.deliver-btn,
+.g-btn-gold {
+  background: linear-gradient(135deg,
+    var(--g9) 0%, var(--g7) 20%, var(--g5) 48%,
+    var(--g4) 65%, var(--g3) 80%, var(--g4) 92%, var(--g5) 100%
+  ) !important;
+  background-size: 200% 100% !important;
+  color: var(--g1) !important;
+  border: none !important;
+  border-radius: 10px !important;
+  font-family: var(--g-fd) !important;
+  font-weight: 800 !important;
+  letter-spacing: .4px !important;
+  box-shadow: 0 5px 0 var(--g9), 0 8px 22px rgba(80,40,0,.3) !important;
+  position: relative !important;
+  overflow: hidden !important;
+  transition: transform .15s var(--g-ease), box-shadow .15s var(--g-ease) !important;
+  cursor: pointer !important;
+}
+
+/* Shimmer sweep on gold buttons */
+.ep-btn-gold::before,
+.ep-btn-primary::before,
+.etel-btn-gold::before,
+button.btn-primary::before,
+.btn.btn-primary::before,
+.g-btn-gold::before {
+  content: '' !important;
+  position: absolute !important;
+  top: 0 !important; left: -100% !important;
+  width: 50% !important; height: 100% !important;
+  background: linear-gradient(90deg,
+    transparent, rgba(255,255,255,.13), transparent) !important;
+  animation: g-shimmer 2.5s infinite !important;
+  pointer-events: none !important;
+}
+
+.ep-btn-gold:hover:not(:disabled),
+.ep-btn-primary:hover:not(:disabled),
+.etel-btn-gold:hover:not(:disabled),
+button.btn-primary:hover:not(:disabled),
+.btn.btn-primary:hover:not(:disabled),
+.g-btn-gold:hover:not(:disabled) {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 7px 0 var(--g9), 0 12px 28px rgba(80,40,0,.38) !important;
+}
+
+.ep-btn-gold:active:not(:disabled),
+.ep-btn-primary:active:not(:disabled),
+.etel-btn-gold:active:not(:disabled),
+button.btn-primary:active:not(:disabled),
+.btn.btn-primary:active:not(:disabled),
+.g-btn-gold:active:not(:disabled) {
+  transform: translateY(2px) !important;
+  box-shadow: 0 2px 0 var(--g9), 0 4px 12px rgba(80,40,0,.2) !important;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   §8  GHOST / SECONDARY BUTTON
+   ════════════════════════════════════════════════════════════════ */
+.ep-btn-ghost,
+.btn.btn-secondary,
+.g-btn-ghost {
+  background: rgba(212,175,55,.07) !important;
+  border: 1.5px solid rgba(212,175,55,.25) !important;
+  color: var(--g5) !important;
+  font-family: var(--g-fd) !important;
+  font-weight: 800 !important;
+  border-radius: 10px !important;
+  transition: all .2s var(--g-ease) !important;
+}
+.ep-btn-ghost:hover,
+.btn.btn-secondary:hover,
+.g-btn-ghost:hover {
+  background: rgba(212,175,55,.14) !important;
+  border-color: rgba(212,175,55,.45) !important;
+  color: var(--g4) !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   §9  ETELPAY BALANCE CARD UPGRADES
+   ════════════════════════════════════════════════════════════════ */
+.ep-bal-amount {
+  font-size: 52px !important;
+  font-family: var(--g-fd) !important;
+  font-weight: 800 !important;
+  background: linear-gradient(135deg, var(--g2), var(--g3), var(--g4)) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  background-clip: text !important;
+  line-height: 1 !important;
+  letter-spacing: -.02em !important;
+}
+
+.ep-bal-label {
+  font-family: var(--g-fm) !important;
+  font-size: 9px !important;
+  letter-spacing: 2px !important;
+  text-transform: uppercase !important;
+  color: rgba(212,175,55,.55) !important;
+}
+
+.ep-bal-usd {
+  font-family: var(--g-fm) !important;
+  font-size: 12px !important;
+  color: rgba(212,175,55,.45) !important;
+}
+
+/* Balance card glow pulse on hover */
+.ep-card-glow:hover {
+  box-shadow:
+    0 0 0 1px rgba(212,175,55,.2),
+    0 20px 60px rgba(212,175,55,.12),
+    0 8px 24px rgba(0,0,0,.4) !important;
+  transition: box-shadow .35s var(--g-ease) !important;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   §10  ETELPAY ACTION BUTTONS (Send/Receive/Top Up/Scan)
+   ════════════════════════════════════════════════════════════════ */
+.ep-action {
+  background: rgba(212,175,55,.06) !important;
+  border: 1.5px solid rgba(212,175,55,.12) !important;
+  border-radius: 14px !important;
+  transition: all .2s var(--g-ease) !important;
+  position: relative !important;
+  overflow: hidden !important;
+}
+.ep-action:hover {
+  background: rgba(212,175,55,.13) !important;
+  border-color: rgba(212,175,55,.35) !important;
+  transform: translateY(-3px) !important;
+  box-shadow: 0 10px 28px -8px rgba(212,175,55,.3) !important;
+}
+.ep-action:active {
+  transform: scale(.93) translateY(0) !important;
+  box-shadow: none !important;
+}
+.ep-action-icon {
+  font-size: 22px !important;
+  margin-bottom: 5px !important;
+}
+.ep-action-label {
+  font-family: var(--g-fm) !important;
+  font-size: 9px !important;
+  letter-spacing: 1px !important;
+  text-transform: uppercase !important;
+  color: rgba(212,175,55,.65) !important;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   §11  ETELPAY TRANSACTION LIST
+   ════════════════════════════════════════════════════════════════ */
+.ep-tx {
+  border-radius: 10px !important;
+  transition: background .15s var(--g-ease) !important;
+  padding: 12px 14px !important;
+}
+.ep-tx:hover {
+  background: rgba(212,175,55,.05) !important;
+}
+.ep-tx-amt {
+  font-family: var(--g-fm) !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  letter-spacing: -.01em !important;
+}
+.ep-tx-date {
+  font-family: var(--g-fm) !important;
+  font-size: 9.5px !important;
+  letter-spacing: .5px !important;
+  opacity: .6 !important;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   §12  ETELPAY BOTTOM NAV
+   ════════════════════════════════════════════════════════════════ */
+.ep-nav {
+  border-top: 1px solid rgba(212,175,55,.1) !important;
+  background: rgba(6,8,16,.95) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+}
+.ep-nav-btn.active {
+  color: var(--g4) !important;
+}
+.ep-nav-btn.active .ep-nav-icon::after {
+  background: linear-gradient(90deg, var(--g5), var(--g4)) !important;
+}
+.ep-nav-label {
+  font-family: var(--g-fm) !important;
+  font-size: 9px !important;
+  letter-spacing: 1.2px !important;
+  text-transform: uppercase !important;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   §13  ETELPAY INPUT FIELDS
+   ════════════════════════════════════════════════════════════════ */
+.ep-input {
+  font-family: var(--g-fb) !important;
+  font-size: 16px !important;
+  border: 1.5px solid rgba(212,175,55,.18) !important;
+  background: rgba(212,175,55,.05) !important;
+  border-radius: 10px !important;
+  transition: border-color .2s, box-shadow .2s, background .2s !important;
+}
+.ep-input:focus {
+  border-color: var(--g4) !important;
+  background: rgba(212,175,55,.09) !important;
+  box-shadow: 0 0 0 3px rgba(212,175,55,.14) !important;
+  outline: none !important;
+}
+.ep-label {
+  font-family: var(--g-fm) !important;
+  font-size: 9.5px !important;
+  font-weight: 700 !important;
+  letter-spacing: 1.5px !important;
+  text-transform: uppercase !important;
+  color: var(--g5) !important;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   §14  ETELPAY SHEET (bottom drawer)
+   ════════════════════════════════════════════════════════════════ */
+.ep-sheet {
+  border-top: 1px solid rgba(212,175,55,.12) !important;
+  border-radius: 24px 24px 0 0 !important;
+  background: #0F1421 !important;
+}
+.ep-sheet-title {
+  font-family: var(--g-fd) !important;
+  font-size: 16px !important;
+  font-weight: 800 !important;
+  color: var(--g2) !important;
+  letter-spacing: .2px !important;
+}
+.ep-sheet::before {
+  content: '' !important;
+  display: block !important;
+  width: 36px !important;
+  height: 4px !important;
+  border-radius: 2px !important;
+  background: rgba(212,175,55,.25) !important;
+  margin: 10px auto 0 !important;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   §15  DELIVERY HEADER UPGRADE
+   ════════════════════════════════════════════════════════════════ */
+
+/* Add holo strip to delivery header bottom edge */
+.header::after {
+  content: '' !important;
+  position: absolute !important;
+  bottom: 0 !important; left: 0 !important; right: 0 !important;
+  height: 2px !important;
+  background: linear-gradient(90deg,
+    transparent, var(--g5), var(--g4), var(--g3),
+    var(--g4), var(--g5), transparent) !important;
+  background-size: 300% 100% !important;
+  animation: g-holo 3s linear infinite !important;
+  pointer-events: none !important;
+}
+.header {
+  position: relative !important;
+}
+
+/* Header brand title → Syne */
+.header-info .header-title,
+.sidebar-brand-main,
+.auth-title {
+  font-family: var(--g-fd) !important;
+  font-weight: 800 !important;
+  letter-spacing: -.01em !important;
+}
+.header-info .header-subtitle {
+  font-family: var(--g-fm) !important;
+  font-size: 9px !important;
+  letter-spacing: 1.5px !important;
+  text-transform: uppercase !important;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   §16  DELIVERY FILTER PILLS & CATEGORY TABS
+   ════════════════════════════════════════════════════════════════ */
+.filter-pill.active,
+.category-tab.active {
+  background: linear-gradient(135deg, var(--g2), var(--g3)) !important;
+  color: var(--g9) !important;
+  border-color: transparent !important;
+  font-family: var(--g-fd) !important;
+  font-weight: 800 !important;
+  box-shadow: 0 8px 20px -8px rgba(212,175,55,.55) !important;
+}
+.filter-pill,
+.category-tab {
+  transition: all .18s var(--g-ease) !important;
+}
+.filter-pill:hover,
+.category-tab:hover {
+  transform: translateY(-2px) !important;
+}
+.category-tab:hover .category-tab-icon {
+  transform: scale(1.15) rotate(-5deg) !important;
+  display: inline-block !important;
+}
+/* Add gold accent bar to section titles */
+.section-title > span:first-child {
+  position: relative !important;
+  padding-left: 14px !important;
+}
+.section-title > span:first-child::before {
+  content: '' !important;
+  position: absolute !important;
+  left: 0 !important; top: 50% !important;
+  transform: translateY(-50%) !important;
+  width: 4px !important; height: 18px !important;
+  border-radius: 3px !important;
+  background: linear-gradient(180deg, var(--g3), var(--g5)) !important;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   §17  DELIVERY ORDER / JOB CARDS
+   ════════════════════════════════════════════════════════════════ */
+.job-card,
+.order-card,
+.restaurant-card,
+[class*="order-item"],
+[class*="job-item"] {
+  transition:
+    transform .22s var(--g-ease),
+    box-shadow .22s var(--g-ease),
+    border-color .2s !important;
+  position: relative !important;
+  overflow: hidden !important;
+}
+.job-card:hover,
+.order-card:hover,
+.restaurant-card:hover {
+  transform: translateY(-5px) !important;
+  border-color: rgba(212,175,55,.35) !important;
+}
+
+/* Holo strip on order cards when active/accepted */
+.job-card.accepted::after,
+.order-card.active::after {
+  content: '' !important;
+  position: absolute !important;
+  top: 0 !important; left: 0 !important; right: 0 !important;
+  height: 3px !important;
+  background: linear-gradient(90deg,
+    #ff6b6b, #ffd93d, #6bcb77, #4d96ff,
+    #ff6b6b, #ffd93d) !important;
+  background-size: 300% !important;
+  animation: g-holo 3s linear infinite !important;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   §18  DELIVERY SEARCH BOX
+   ════════════════════════════════════════════════════════════════ */
+.search-box:focus-within {
+  border-color: var(--g4) !important;
+  box-shadow: 0 0 0 3px rgba(212,175,55,.14) !important;
+}
+.search-box {
+  transition: box-shadow .25s var(--g-ease), border-color .2s !important;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   §19  PROMO BANNERS — sheen sweep
+   ════════════════════════════════════════════════════════════════ */
+.promo-banner {
+  position: relative !important;
+  overflow: hidden !important;
+}
+.promo-banner::before {
+  content: '' !important;
+  position: absolute !important;
+  top: 0 !important; left: 0 !important;
+  width: 40% !important; height: 100% !important;
+  background: linear-gradient(90deg,
+    transparent, rgba(255,255,255,.18), transparent) !important;
+  transform: translateX(-160%) skewX(-18deg) !important;
+  animation: g-promo-sheen 4s ease-in-out infinite !important;
+  pointer-events: none !important;
+  z-index: 2 !important;
+}
+@keyframes g-promo-sheen {
+  0%   { transform: translateX(-160%) skewX(-18deg) }
+  55%,100% { transform: translateX(300%) skewX(-18deg) }
+}
+
+/* ════════════════════════════════════════════════════════════════
+   §20  ኢE BRAND MARK  (shared across all products)
+   ════════════════════════════════════════════════════════════════ */
+.etel-mark-box {
+  border: 1.5px solid rgba(212,175,55,.4) !important;
+  box-shadow: 0 4px 14px -4px rgba(212,175,55,.45) !important;
+  border-radius: 12px !important;
+}
+.etel-mark-title {
+  font-family: var(--g-fd) !important;
+  font-weight: 800 !important;
+  color: var(--g2) !important;
+}
+.etel-mark-sub {
+  font-family: var(--g-fm) !important;
+  font-size: 9px !important;
+  letter-spacing: .08em !important;
+  text-transform: uppercase !important;
+  color: rgba(154,154,174,.7) !important;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   §21  BADGE SYSTEM
+   ════════════════════════════════════════════════════════════════ */
+.ep-badge,
+[class*="-badge"],
+[class*="-status"],
+[class*="-chip"] {
+  font-family: var(--g-fm) !important;
+  font-size: 9px !important;
+  letter-spacing: 1px !important;
+  text-transform: uppercase !important;
+}
+.ep-badge-ok {
+  background: rgba(16,185,129,.14) !important;
+  color: var(--g-ok) !important;
+  border-color: rgba(16,185,129,.3) !important;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   §22  SCROLLBAR  (gold, thin, universal)
+   ════════════════════════════════════════════════════════════════ */
+* {
+  scrollbar-width: thin !important;
+  scrollbar-color: rgba(212,175,55,.28) transparent !important;
+}
+*::-webkit-scrollbar { width: 4px; height: 4px; }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-thumb {
+  background: rgba(212,175,55,.28);
+  border-radius: 4px;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: rgba(212,175,55,.5);
+}
+
+/* ════════════════════════════════════════════════════════════════
+   §23  FOCUS RINGS  (gold, accessible)
+   ════════════════════════════════════════════════════════════════ */
+:focus-visible {
+  outline: 2px solid rgba(212,175,55,.6) !important;
+  outline-offset: 2px !important;
+  border-radius: 6px !important;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   §24  DARK PAGE INPUT FIX
+       Prevents white-on-white on dark pages after etel.css overrides
+   ════════════════════════════════════════════════════════════════ */
+body.dark-page input:not([type=radio]):not([type=checkbox]),
+body.dark-page select,
+body.dark-page textarea,
+#app input:not([type=radio]):not([type=checkbox]),
+#app select,
+#app textarea {
+  background: rgba(255,255,255,.06) !important;
+  color: #EDEDF5 !important;
+  border-color: rgba(255,255,255,.1) !important;
+  font-family: var(--g-fb) !important;
+}
+body.dark-page input:focus,
+body.dark-page select:focus,
+body.dark-page textarea:focus,
+#app input:focus,
+#app select:focus,
+#app textarea:focus {
+  border-color: rgba(212,175,55,.5) !important;
+  box-shadow: 0 0 0 3px rgba(212,175,55,.14) !important;
+  outline: none !important;
+  background: rgba(255,255,255,.09) !important;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   §25  UTILITY CLASSES
+       Use directly in HTML for one-off EtelId elements.
+   ════════════════════════════════════════════════════════════════ */
+
+/* Holo strip */
+.g-holo-strip {
+  display: block;
+  height: 3px;
+  background: linear-gradient(90deg,
+    #ff6b6b, #ffd93d, #6bcb77, #4d96ff,
+    #ff6b6b, #ffd93d, #6bcb77, #4d96ff);
+  background-size: 300% 100%;
+  animation: g-holo 3s linear infinite;
+}
+
+/* Gold ambient orbs */
+.g-orb {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  filter: blur(55px);
+}
+.g-orb-1 {
+  width: 320px; height: 320px; top: -100px; left: -100px;
+  background: radial-gradient(circle, rgba(255,220,80,.18) 0%, transparent 70%);
+  animation: g-orb-1 14s ease-in-out infinite;
+}
+.g-orb-2 {
+  width: 280px; height: 280px; bottom: -70px; right: -70px;
+  background: radial-gradient(circle, rgba(80,40,0,.22) 0%, transparent 70%);
+  animation: g-orb-2 18s ease-in-out infinite;
+}
+
+/* Guilloché panel */
+.g-guilloche {
+  position: relative;
+  overflow: hidden;
+}
+.g-guilloche::before {
+  content: '';
+  position: absolute; inset: 0; pointer-events: none; z-index: 0;
+  background-image:
+    repeating-linear-gradient(30deg,
+      transparent 0, transparent 22px,
+      rgba(255,255,255,.022) 22px, rgba(255,255,255,.022) 23px),
+    repeating-linear-gradient(-30deg,
+      transparent 0, transparent 22px,
+      rgba(255,255,255,.022) 22px, rgba(255,255,255,.022) 23px);
+}
+
+/* Gold text gradient */
+.g-text-gold {
+  background: linear-gradient(135deg, var(--g2), var(--g3), var(--g4)) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  background-clip: text !important;
+}
+
+/* Float animation */
+.g-float { animation: g-float 5s ease-in-out infinite; }
+.g-float-delay-1 { animation-delay: 1.2s; }
+.g-float-delay-2 { animation-delay: 2.4s; }
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+}
+
+/* ════════════════════════════════════════════════════════════════
+   §26  GOLD SCROLLBAR (delivery horizontal scrollers)
+   ════════════════════════════════════════════════════════════════ */
+.promos-scroll, .restaurants-scroll,
+.category-tabs, .filter-pills,
+.ep-tx-list {
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+.promos-scroll::-webkit-scrollbar,
+.restaurants-scroll::-webkit-scrollbar,
+.category-tabs::-webkit-scrollbar,
+.filter-pills::-webkit-scrollbar { height: 0; }
+
+/* ════════════════════════════════════════════════════════════════
+   EOF  ኢE Etel Group Design System v4.0
+        ethelmarket.com · Hawassa, Ethiopia
+   ════════════════════════════════════════════════════════════════ */
