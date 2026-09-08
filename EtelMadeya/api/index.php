@@ -243,10 +243,21 @@ try {
             }
             $member = $auth['member'];
 
-            $controller = db()->fetchOne(
-                "SELECT * FROM controllers WHERE phone = ? AND is_active = 1",
-                [$member['phone']]
-            );
+            // Match on the last 9 digits, not an exact string - a
+            // controller phone saved locally as '0936533606' must
+            // still match an EtelID phone of '+251936533606' (both
+            // valid, interchangeable ways to write the same Ethiopian
+            // mobile number), not be treated as a different person.
+            $normalizedTarget = etelid_bridge_normalize_phone($member['phone']);
+            $controller = null;
+            if ($normalizedTarget !== '') {
+                foreach (db()->fetchAll("SELECT * FROM controllers WHERE is_active = 1") as $cand) {
+                    if (etelid_bridge_normalize_phone($cand['phone']) === $normalizedTarget) {
+                        $controller = $cand;
+                        break;
+                    }
+                }
+            }
 
             // Always check Etel Group's CURRENT role assignment, not just at
             // first-time creation - a role renamed or removed in the
