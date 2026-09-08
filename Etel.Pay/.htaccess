@@ -1,0 +1,10 @@
+# ── ኢE Pay — Root .htaccess (Etel.Pay folder) ───────────────
+Options -Indexes
+DirectoryIndex wallet/login.html
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  # Redirect bare /Etel.Pay and /Etel.Pay/ to the wallet dashboard
+  RewriteRule ^$ wallet/wallet.html [L,R=302]
+  RewriteRule ^wallet/?$ wallet/wallet.html [L,R=302]
+</IfModule>

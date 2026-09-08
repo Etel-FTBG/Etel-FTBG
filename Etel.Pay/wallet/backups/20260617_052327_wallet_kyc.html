@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>ኢE Pay — Verify Identity</title>
+<link rel="manifest" href="manifest.php">
+<link rel="stylesheet" href="css/pay.css">
+<style>
+/* EtelID path */
+.eid-hero{text-align:center;padding:28px 24px 20px;position:relative}
+.eid-logo{width:72px;height:72px;border-radius:18px;object-fit:cover;margin:0 auto 12px;display:block;box-shadow:0 8px 28px rgba(212,168,67,.35)}
+.eid-title{font-family:var(--fd);font-size:20px;font-weight:700;color:var(--t1);margin-bottom:6px}
+.eid-sub{font-size:13px;color:var(--t3);line-height:1.6}
+.eid-path-card{margin:0 16px 12px;padding:20px;border-radius:18px;border:2px solid var(--gold-brd);background:rgba(212,168,67,.04);cursor:pointer;transition:.18s;position:relative;overflow:hidden}
+.eid-path-card::before{content:'';position:absolute;top:-30px;right:-30px;width:120px;height:120px;border-radius:50%;background:radial-gradient(circle,rgba(212,168,67,.12),transparent 70%);pointer-events:none}
+.eid-path-card:hover{border-color:var(--gold);background:rgba(212,168,67,.08)}
+.eid-path-card.secondary{border-color:var(--glass-brd);background:var(--bg-2)}
+.eid-path-icon{font-size:28px;margin-bottom:8px}
+.eid-path-title{font-family:var(--fd);font-size:15px;font-weight:700;color:var(--t1);margin-bottom:4px}
+.eid-path-desc{font-size:12px;color:var(--t3);line-height:1.5}
+.eid-path-badge{display:inline-block;background:var(--gold-bg);border:1px solid var(--gold-brd);color:var(--gold-lt);font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;margin-top:8px}
+.eid-fin-result{margin:0 16px;padding:18px 20px;background:var(--bg-2);border:1px solid var(--gold-brd);border-radius:16px;display:none}
+.eid-fin-row{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.eid-fin-av{width:52px;height:52px;border-radius:50%;background:var(--bg-3);border:2px solid var(--gold-brd);overflow:hidden;flex-shrink:0;font-size:24px;display:flex;align-items:center;justify-content:center}
+.eid-fin-av img{width:100%;height:100%;object-fit:cover}
+.eid-fin-name{font-size:16px;font-weight:700;color:var(--t1)}
+.eid-fin-fin{font-size:12px;color:var(--gold-lt);font-family:var(--fm);margin-top:2px}
+.step-badge{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:700;color:var(--t3);letter-spacing:.8px;text-transform:uppercase;margin-bottom:16px}
+.step-num{width:20px;height:20px;border-radius:50%;background:var(--gold-bg);border:1px solid var(--gold-brd);color:var(--gold-lt);font-size:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+</style>
+    <link rel="stylesheet" href="css/etel-design-v4.css?v=4.0">
+</head>
+<body>
+<div id="app">
+  <div class="ep-header safe-top">
+    <button class="ep-header-back" onclick="EP_CORE.nav('profile')">←</button>
+    <span class="ep-header-title">Verify Identity</span>
+  </div>
+
+  <div class="ep-body">
+
+    <!-- Already verified -->
+    <div id="kyc-verified" style="display:none;text-align:center;padding:48px 24px">
+      <div style="font-size:64px;margin-bottom:16px">✅</div>
+      <div style="font-family:var(--fd);font-size:22px;font-weight:700;color:var(--ok);margin-bottom:8px">Identity Verified</div>
+      <div id="kyc-fin-display" style="font-family:var(--fm);font-size:13px;color:var(--t3);margin-bottom:6px"></div>
+      <p style="color:var(--t3);font-size:13px;line-height:1.7">Your identity is verified. All transaction limits are unlocked.</p>
+      <button class="ep-btn ep-btn-ghost" onclick="EP_CORE.nav('profile')" style="margin-top:20px;width:auto;padding:10px 24px">Back to Profile</button>
+    </div>
+
+    <!-- Verification flow -->
+    <div id="kyc-flow">
+
+      <!-- Hero -->
+      <div class="eid-hero">
+        <img src="icons/logo.png" alt="ኢE" class="eid-logo">
+        <div class="eid-title">Verify Your Identity</div>
+        <div class="eid-sub">Choose your verification method.<br>EtelID gives you instant verification.</div>
+      </div>
+
+      <!-- Path 1: EtelID (recommended) -->
+      <div class="eid-path-card" onclick="showEtelIDPath()">
+        <div class="eid-path-icon">🪪</div>
+        <div class="eid-path-title">Verify with EtelID <span style="color:var(--gold-lt)">⚡</span></div>
+        <div class="eid-path-desc">You already have an EtelID account? Connect it instantly — no document upload needed.</div>
+        <div class="eid-path-badge">RECOMMENDED · INSTANT</div>
+      </div>
+
+      <!-- Path 2: Manual doc upload -->
+      <div class="eid-path-card secondary" onclick="showManualPath()">
+        <div class="eid-path-icon">📄</div>
+        <div class="eid-path-title">Upload Documents</div>
+        <div class="eid-path-desc">Upload your national ID, passport, or driving license for manual review (24–48hrs).</div>
+      </div>
+
+      <!-- ── EtelID path ── -->
+      <div id="path-etelid" style="display:none;padding:0 16px 20px">
+        <div style="height:1px;background:var(--glass-brd);margin:4px 0 20px"></div>
+        <div class="step-badge"><div class="step-num">1</div>Connect your EtelID account</div>
+
+        <div class="ep-card" style="margin-bottom:12px">
+          <div class="ep-label mb-8">Your EtelID phone (if different)</div>
+          <input class="ep-input" id="eid-phone" type="tel" placeholder="+251 9__ ______" inputmode="tel">
+          <p style="font-size:11px;color:var(--t3);margin-top:8px;line-height:1.6">
+            Leave blank to use your wallet phone number.<br>
+            Don't have EtelID? <a href="https://ethelmarket.com/EtelId/register" target="_blank" style="color:var(--gold-lt)">Register here →</a>
+          </p>
+        </div>
+
+        <button class="ep-btn ep-btn-gold" onclick="syncEtelID()" id="eid-sync-btn">Connect EtelID & Verify</button>
+        <div class="ep-err-msg" id="eid-err" style="margin-top:10px"></div>
+
+        <!-- Result card -->
+        <div class="eid-fin-result" id="eid-result">
+          <div class="eid-fin-row">
+            <div class="eid-fin-av" id="eid-photo">👤</div>
+            <div>
+              <div class="eid-fin-name" id="eid-name">—</div>
+              <div class="eid-fin-fin" id="eid-fin">—</div>
+            </div>
+          </div>
+          <div id="eid-status-msg" style="font-size:13px;color:var(--t2);margin-bottom:14px;line-height:1.6"></div>
+          <button class="ep-btn ep-btn-gold" onclick="EP_CORE.nav('profile')" id="eid-done-btn" style="display:none">Done — View Profile</button>
+        </div>
+      </div>
+
+      <!-- ── Manual path ── -->
+      <div id="path-manual" style="display:none;padding:0 16px 20px">
+        <div style="height:1px;background:var(--glass-brd);margin:4px 0 20px"></div>
+        <div class="step-badge"><div class="step-num">1</div>Document type</div>
+        <select class="ep-input mb-16" id="kyc-doc-type">
+          <option value="national_id">Ethiopian National ID</option>
+          <option value="passport">Passport</option>
+          <option value="driving_license">Driving License</option>
+        </select>
+        <div class="step-badge"><div class="step-num">2</div>Upload document front</div>
+        <div id="drop-front" style="border:2px dashed var(--gold-brd);border-radius:12px;padding:24px;text-align:center;cursor:pointer;margin-bottom:12px;position:relative">
+          <input type="file" accept="image/*" capture="environment" onchange="previewDoc(event,'front')" style="position:absolute;inset:0;opacity:0;cursor:pointer">
+          <div style="font-size:28px">📄</div>
+          <div style="font-size:12px;color:var(--t3);margin-top:6px">Tap to take photo or upload</div>
+          <img id="prev-front" style="max-height:100px;max-width:100%;border-radius:8px;margin-top:8px;display:none">
+        </div>
+        <div class="step-badge"><div class="step-num">3</div>Selfie with document (optional)</div>
+        <div style="border:2px dashed var(--glass-brd);border-radius:12px;padding:18px;text-align:center;cursor:pointer;margin-bottom:16px;position:relative">
+          <input type="file" accept="image/*" capture="user" onchange="previewDoc(event,'selfie')" style="position:absolute;inset:0;opacity:0;cursor:pointer">
+          <div style="font-size:24px">🤳</div>
+          <div style="font-size:12px;color:var(--t3);margin-top:6px">Hold document next to your face</div>
+          <img id="prev-selfie" style="max-height:80px;max-width:100%;border-radius:8px;margin-top:8px;display:none">
+        </div>
+        <div class="ep-err-msg" id="manual-err"></div>
+        <button class="ep-btn ep-btn-gold" onclick="submitManual()" id="manual-btn">Submit for Review</button>
+      </div>
+
+    </div><!-- /kyc-flow -->
+  </div>
+
+</div>
+<div id="ep-toast"></div>
+<script src="js/config.js?v=2.0"></script>
+<script src="js/api.js?v=2.0"></script>
+<script src="js/core.js?v=2.0"></script>
+<script src="js/devpanel.js"></script>
+<script>
+var _docs = {front:'', selfie:''};
+
+EP_CORE.onReady(async function(){
+  if(!EP_CORE.requireAuth()) return;
+  // Check current KYC status
+  try {
+    var b = await EP_API.getBalance();
+    if(b.success && b.data.kyc_status === 'verified') {
+      var fin = b.data.etelid_fin || '';
+      document.getElementById('kyc-verified').style.display = 'block';
+      document.getElementById('kyc-flow').style.display     = 'none';
+      if(fin) document.getElementById('kyc-fin-display').textContent = 'EtelID: ' + fin;
+    }
+  } catch(e){}
+});
+
+function showEtelIDPath() {
+  document.getElementById('path-etelid').style.display = 'block';
+  document.getElementById('path-manual').style.display = 'none';
+  document.getElementById('path-etelid').scrollIntoView({behavior:'smooth',block:'start'});
+}
+function showManualPath() {
+  document.getElementById('path-manual').style.display = 'block';
+  document.getElementById('path-etelid').style.display = 'none';
+  document.getElementById('path-manual').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+async function syncEtelID(){
+  var btn = document.getElementById('eid-sync-btn');
+  var err = document.getElementById('eid-err');
+  err.textContent = '';
+  var restore = EP_CORE.btnLoading(btn);
+  try {
+    var j = await EP_API.call('ep_etelid_kyc_sync', {});
+    restore();
+    var res = document.getElementById('eid-result');
+    res.style.display = 'block';
+    document.getElementById('eid-name').textContent = j.data && j.data.full_name ? j.data.full_name : '—';
+    document.getElementById('eid-fin').textContent  = j.data && j.data.etelid_fin ? 'EtelID: '+j.data.etelid_fin : '';
+    document.getElementById('eid-status-msg').textContent = j.data ? j.data.message : (j.message || '');
+    if(j.data && j.data.photo_url){
+      document.getElementById('eid-photo').innerHTML = '<img src="'+j.data.photo_url+'" alt="">';
+    }
+    if(j.success && j.data && j.data.kyc_status === 'verified') {
+      document.getElementById('eid-done-btn').style.display = 'block';
+      EP_CORE.toast('Identity verified via EtelID!', 'ok');
+    } else if(!j.success) {
+      err.textContent = j.data && j.data.message ? j.data.message : (j.message || 'Verification failed');
+      if(j.data && j.data.register_url) {
+        err.innerHTML += ' <a href="'+j.data.register_url+'" target="_blank" style="color:var(--gold-lt)">Register →</a>';
+      }
+    }
+  } catch(e){ restore(); err.textContent = 'Network error'; }
+}
+
+function previewDoc(e, key){
+  var file = e.target.files[0]; if(!file) return;
+  var r = new FileReader();
+  r.onload = function(ev){
+    _docs[key] = ev.target.result.split(',')[1];
+    var prev = document.getElementById('prev-'+key);
+    prev.src = ev.target.result; prev.style.display='block';
+  };
+  r.readAsDataURL(file);
+}
+
+async function submitManual(){
+  if(!_docs.front){ document.getElementById('manual-err').textContent='Front document required'; return; }
+  var btn = document.getElementById('manual-btn');
+  var restore = EP_CORE.btnLoading(btn);
+  try {
+    var j = await EP_API.call('ep_kyc_submit',{
+      doc_type:document.getElementById('kyc-doc-type').value,
+      doc_front_b64:_docs.front,
+      selfie_b64:_docs.selfie||null
+    });
+    restore();
+    if(j.success){ EP_CORE.toast('Submitted — review within 24hrs','ok'); EP_CORE.nav('profile'); }
+    else document.getElementById('manual-err').textContent=(j.data&&j.data.message)||'Failed';
+  } catch(e){ restore(); document.getElementById('manual-err').textContent='Error'; }
+}
+</script>
+<script src="js/desktop-shell.js"></script>
+</body>
+</html>
