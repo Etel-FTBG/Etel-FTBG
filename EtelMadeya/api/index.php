@@ -598,7 +598,80 @@ try {
             
             jsonResponse(['success' => true, 'stats' => $stats]);
             break;
-            
+
+        case 'check_import':
+            if (!isset($_SESSION['controller_id'])) {
+                jsonResponse(['success' => false, 'message' => 'Not authenticated'], 401);
+            }
+            $controllerId = $_SESSION['controller_id'];
+            $rawPlates = $_POST['plates'] ?? '';
+            if (!$rawPlates) jsonResponse(['success' => false, 'message' => 'No plates provided'], 400);
+
+            // Parse and normalise
+            $lines = preg_split('/[\r\n,;]+/', $rawPlates);
+            $allPlates = [];
+            foreach ($lines as $line) {
+                $p = strtoupper(trim(preg_replace('/[^A-Z0-9\-]/', '', strtoupper(trim($line)))));
+                if (strlen($p) >= 2) $allPlates[] = $p;
+            }
+
+            // Duplicates within the file
+            $counts = array_count_values($allPlates);
+            $inFileDups = array_keys(array_filter($counts, fn($c) => $c > 1));
+
+            // Unique set to check against DB
+            $unique = array_values(array_unique($allPlates));
+            if (empty($unique)) jsonResponse(['success' => false, 'message' => 'No valid plates found'], 400);
+
+            // Build placeholders
+            $ph = implode(',', array_fill(0, count($unique), '?'));
+
+            // Already in queue
+            $qRows = db()->fetchAll(
+                "SELECT plate_number FROM queue WHERE controller_id = ? AND status = 'queued' AND UPPER(plate_number) IN ($ph)",
+                array_merge([$controllerId], $unique)
+            );
+            $inQueue = array_column($qRows, 'plate_number');
+
+            // Already served today
+            $rRows = db()->fetchAll(
+                "SELECT plate_number FROM report WHERE controller_id = ? AND report_date = ? AND UPPER(plate_number) IN ($ph)",
+                array_merge([$controllerId, date('Y-m-d')], $unique)
+            );
+            $inReport = array_column($rRows, 'plate_number');
+
+            // Clean = unique, not in queue, not in report
+            $blocked = array_unique(array_merge(array_map('strtoupper', $inQueue), array_map('strtoupper', $inReport), $inFileDups));
+            $clean = array_values(array_filter($unique, fn($p) => !in_array(strtoupper($p), $blocked)));
+
+            jsonResponse([
+                'success'    => true,
+                'total'      => count($unique),
+                'in_file'    => array_values($inFileDups),
+                'in_queue'   => array_values($inQueue),
+                'in_report'  => array_values($inReport),
+                'clean'      => $clean,
+            ]);
+            break;
+
+        case 'get_report':
+            if (!isset($_SESSION['controller_id'])) {
+                jsonResponse(['success' => false, 'message' => 'Not authenticated'], 401);
+            }
+            $controllerId = $_SESSION['controller_id'];
+            $date = $_GET['date'] ?? $_POST['date'] ?? date('Y-m-d');
+            $date = preg_match('/^\d{4}-\d{2}-\d{2}$/', $date) ? $date : date('Y-m-d');
+            $rows = db()->fetchAll(
+                "SELECT r.*, vt.name as vehicle_type_name, vt.icon as vehicle_type_icon
+                 FROM report r
+                 LEFT JOIN vehicle_types vt ON vt.id = r.vehicle_type_id
+                 WHERE r.controller_id = ? AND r.report_date = ?
+                 ORDER BY r.served_at ASC",
+                [$controllerId, $date]
+            );
+            jsonResponse(['success' => true, 'report' => $rows ?: [], 'total' => count($rows ?: [])]);
+            break;
+
         default:
             jsonResponse(['success' => false, 'message' => 'Invalid action'], 400);
     }
