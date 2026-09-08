@@ -1,0 +1,29 @@
+/**
+ * Etel-ID Premium — Main Frontend CSS (4K Gold Theme) v3.1.1
+ */
+@import url('etelid-card.css');
+
+/* Shared gold button utility */
+.eid-btn-gold {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 10px 20px;
+  background: linear-gradient(135deg, #4A3210, #7A5518, #C8922A, #D4AF37);
+  color: #FDF6D8;
+  border: none;
+  border-radius: 8px;
+  font-family: 'Syne', sans-serif;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  text-decoration: none;
+  box-shadow: 0 3px 0 #4A3210, 0 5px 14px rgba(100,60,0,.25);
+  transition: all .15s;
+}
+.eid-btn-gold:hover { transform: translateY(-1px); color: #FDF6D8; text-decoration: none; }
+
+/* Shared notice utilities */
+.eid-notice { padding: 14px 18px; border-radius: 8px; margin: 12px 0; font-size: 14px; }
+.eid-notice-ok  { background: #dcfce7; border: 1px solid rgba(22,101,52,.3); color: #166534; }
+.eid-notice-err { background: #fee2e2; border: 1px solid rgba(153,27,27,.3); color: #991b1b; }

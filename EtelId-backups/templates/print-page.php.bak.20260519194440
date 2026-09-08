@@ -1,0 +1,127 @@
+<?php
+/**
+ * Etel-ID Premium — Standalone Print Page (v3.0.1)
+ * Self-contained: all CSS inlined. No wp_head() needed.
+ */
+if ( ! defined( 'ABSPATH' ) ) exit;
+
+$companies = EtelID_DB::get_companies( $member->id );
+$org_name  = get_option( 'etelid_org_name',    'Etel Group' );
+$org_site  = get_option( 'etelid_org_website', 'etelgroup.com' );
+
+/* Read CSS files directly and inline them */
+$card_css  = file_get_contents( ETELID_PATH . 'public/css/etelid-card.css' );
+$print_css = file_get_contents( ETELID_PATH . 'public/css/etelid-print.css' );
+?><!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Print · <?php echo esc_html( $member->etel_id ); ?> · <?php echo esc_html( $org_name ); ?></title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Syne:wght@700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Serif+Ethiopic:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
+<style>
+/* ── Reset ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: #1a1d26; }
+
+<?php echo $card_css; ?>
+<?php echo $print_css; ?>
+</style>
+</head>
+<body>
+
+<div class="eid-print-page-wrap" id="eid-print-root">
+
+  <!-- Controls bar (hidden on print) -->
+  <div class="eid-print-controls no-print">
+    <button onclick="window.print()" class="eid-print-btn eid-print-btn-gold">
+      <i class="ti ti-printer"></i> Print Both Sides
+    </button>
+    <button onclick="etelIDFlip()" class="eid-print-btn eid-print-btn-ghost">
+      <i class="ti ti-refresh"></i> Flip Preview
+    </button>
+    <a href="<?php echo esc_url( admin_url('admin.php?page=etel-id-print&etel_id=' . urlencode($member->etel_id)) ); ?>"
+       class="eid-print-btn eid-print-btn-ghost">
+      <i class="ti ti-arrow-left"></i> Back to Admin
+    </a>
+  </div>
+
+  <div class="eid-print-sheet">
+    <div class="eid-print-sheet-label no-print">
+      A4 · Print preview — <?php echo esc_html( $member->etel_id ); ?>
+    </div>
+
+    <!-- ══ FRONT ══ -->
+    <div class="eid-card-slot">
+      <div class="eid-bleed-box"></div>
+      <div class="eid-crop-mark eid-cm-tl-h"></div>
+      <div class="eid-crop-mark eid-cm-tl-v"></div>
+      <div class="eid-crop-mark eid-cm-tr-h"></div>
+      <div class="eid-crop-mark eid-cm-tr-v"></div>
+      <div class="eid-crop-mark eid-cm-bl-h"></div>
+      <div class="eid-crop-mark eid-cm-bl-v"></div>
+      <div class="eid-crop-mark eid-cm-br-h"></div>
+      <div class="eid-crop-mark eid-cm-br-v"></div>
+      <div class="eid-print-spec no-print">
+        CR80 · ISO/IEC 7810 ID-1<br>
+        85.60 × 53.98 mm<br>
+        Trim: 2mm bleed<br>
+        Corner: 3.18 mm r<br>
+        <?php echo esc_html( $org_name ); ?>
+      </div>
+      <div class="eid-slot-label no-print">FRONT</div>
+      <div class="eid-trim-box">
+        <?php include ETELID_PATH . 'templates/card-front.php'; ?>
+      </div>
+    </div>
+
+    <!-- ══ BACK ══ -->
+    <div class="eid-card-slot">
+      <div class="eid-bleed-box"></div>
+      <div class="eid-crop-mark eid-cm-tl-h"></div>
+      <div class="eid-crop-mark eid-cm-tl-v"></div>
+      <div class="eid-crop-mark eid-cm-tr-h"></div>
+      <div class="eid-crop-mark eid-cm-tr-v"></div>
+      <div class="eid-crop-mark eid-cm-bl-h"></div>
+      <div class="eid-crop-mark eid-cm-bl-v"></div>
+      <div class="eid-crop-mark eid-cm-br-h"></div>
+      <div class="eid-crop-mark eid-cm-br-v"></div>
+      <div class="eid-slot-label no-print">BACK</div>
+      <div class="eid-trim-box">
+        <?php include ETELID_PATH . 'templates/card-back.php'; ?>
+      </div>
+    </div>
+
+    <div class="no-print" style="margin-top:6mm;font-family:'JetBrains Mono',monospace;font-size:7px;color:#aaa;letter-spacing:1px;text-align:center;">
+      <?php echo esc_html( $org_name ); ?> &nbsp;·&nbsp;
+      <?php echo esc_html( $org_site ); ?> &nbsp;·&nbsp;
+      <?php echo esc_html( $member->etel_id ); ?> &nbsp;·&nbsp;
+      SN: <?php echo esc_html( $member->serial_number ); ?>
+    </div>
+  </div>
+
+  <div class="eid-print-tip no-print">
+    For best results: Margins = None · Background graphics = ON · Paper = A4
+  </div>
+
+</div>
+
+<script>
+var _flipped = false;
+function etelIDFlip() {
+  _flipped = !_flipped;
+  document.querySelectorAll('.eid-card-wrap').forEach(function(w) {
+    w.classList.toggle('flipped', _flipped);
+  });
+}
+/* Enter key triggers print */
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'p' && (e.ctrlKey || e.metaKey)) { /* handled by browser */ }
+});
+</script>
+
+</body>
+</html>

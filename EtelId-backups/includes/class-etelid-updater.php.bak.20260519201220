@@ -1,0 +1,237 @@
+<?php
+/**
+ * Etel-ID Premium — Patch Updater v2.0
+ *
+ * Uses WordPress built-in unzip_file() + WP_Filesystem
+ * instead of ZipArchive — works on ALL PHP hosts including
+ * cPanel shared hosting without ZipArchive extension.
+ *
+ * Falls back to PclZip (bundled with WordPress) if needed.
+ *
+ * PHP 5.6+ compatible.
+ *
+ * @package Etel-ID Premium
+ * @since   3.6.3
+ */
+if ( ! defined( 'ABSPATH' ) ) exit;
+
+class EtelID_Updater {
+
+    const PATCH_LOG_OPTION = 'etelid_patch_log';
+
+    public static function init() {
+        add_action( 'wp_ajax_etelid_apply_patch', array( __CLASS__, 'handle_patch_upload' ) );
+    }
+
+    /* ── Apply uploaded patch ZIP using WP built-in unzip ── */
+    public static function handle_patch_upload() {
+        check_ajax_referer( 'etelid_patch_upload', 'nonce' );
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_send_json_error( array( 'message' => 'Forbidden.' ) );
+        }
+
+        if ( empty( $_FILES['patch_zip'] ) || $_FILES['patch_zip']['error'] !== UPLOAD_ERR_OK ) {
+            wp_send_json_error( array( 'message' => 'No file uploaded or upload error.' ) );
+        }
+
+        $file    = $_FILES['patch_zip'];
+        $tmpfile = $file['tmp_name'];
+
+        /* Basic validation — must be a zip by extension */
+        $filename = sanitize_file_name( $file['name'] );
+        if ( strtolower( pathinfo( $filename, PATHINFO_EXTENSION ) ) !== 'zip' ) {
+            wp_send_json_error( array( 'message' => 'Please upload a .zip file.' ) );
+        }
+
+        /* Move uploaded file to WP temp dir so WP_Filesystem can read it */
+        $wp_temp   = get_temp_dir();
+        $temp_zip  = $wp_temp . 'etelid-patch-' . time() . '.zip';
+        if ( ! move_uploaded_file( $tmpfile, $temp_zip ) ) {
+            wp_send_json_error( array( 'message' => 'Could not move uploaded file. Check temp directory permissions.' ) );
+        }
+
+        /* Set up WP Filesystem */
+        require_once ABSPATH . 'wp-admin/includes/file.php';
+        WP_Filesystem();
+        global $wp_filesystem;
+
+        if ( ! $wp_filesystem ) {
+            @unlink( $temp_zip );
+            wp_send_json_error( array( 'message' => 'WordPress Filesystem not available.' ) );
+        }
+
+        /* Extract to a temp folder */
+        $extract_dir = $wp_temp . 'etelid-patch-extract-' . time() . '/';
+        $wp_filesystem->mkdir( $extract_dir );
+
+        $result = unzip_file( $temp_zip, $extract_dir );
+        @unlink( $temp_zip );
+
+        if ( is_wp_error( $result ) ) {
+            wp_send_json_error( array( 'message' => 'Could not extract ZIP: ' . $result->get_error_message() ) );
+        }
+
+        /* Read manifest */
+        $manifest_file = $extract_dir . 'patch-manifest.json';
+        if ( ! file_exists( $manifest_file ) ) {
+            self::cleanup( $extract_dir );
+            wp_send_json_error( array( 'message' => 'Invalid patch: missing patch-manifest.json.' ) );
+        }
+
+        $manifest = json_decode( file_get_contents( $manifest_file ), true );
+        if ( ! $manifest || empty( $manifest['patch_for'] ) || $manifest['patch_for'] !== 'etel-id-premium' ) {
+            self::cleanup( $extract_dir );
+            wp_send_json_error( array( 'message' => 'Invalid patch: manifest is not for this plugin.' ) );
+        }
+
+        $patch_version = isset( $manifest['patch_version'] ) ? sanitize_text_field( $manifest['patch_version'] ) : 'unknown';
+        $new_version   = isset( $manifest['new_version'] )   ? sanitize_text_field( $manifest['new_version'] )   : '';
+        $description   = isset( $manifest['description'] )   ? sanitize_text_field( $manifest['description'] )   : '';
+        $files_list    = isset( $manifest['files'] )          ? (array) $manifest['files']                        : array();
+
+        if ( empty( $files_list ) ) {
+            self::cleanup( $extract_dir );
+            wp_send_json_error( array( 'message' => 'Patch contains no files.' ) );
+        }
+
+        /* Apply files */
+        $plugin_dir = ETELID_PATH;
+        $applied    = array();
+        $failed     = array();
+
+        foreach ( $files_list as $relative_path ) {
+            $relative_path = ltrim( sanitize_text_field( $relative_path ), '/' );
+
+            /* Block path traversal */
+            if ( strpos( $relative_path, '..' ) !== false || strpos( $relative_path, '//' ) !== false ) {
+                $failed[] = $relative_path . ' (blocked: path traversal)';
+                continue;
+            }
+
+            $source = $extract_dir . 'files/' . $relative_path;
+            $dest   = $plugin_dir  . $relative_path;
+
+            if ( ! file_exists( $source ) ) {
+                $failed[] = $relative_path . ' (not found in ZIP)';
+                continue;
+            }
+
+            /* Create destination directory if needed */
+            $dest_dir = dirname( $dest );
+            if ( ! is_dir( $dest_dir ) ) {
+                wp_mkdir_p( $dest_dir );
+            }
+
+            /* Backup original */
+            if ( file_exists( $dest ) ) {
+                @copy( $dest, $dest . '.bak.' . date('YmdHis') );
+            }
+
+            /* Copy new file */
+            if ( @copy( $source, $dest ) ) {
+                $applied[] = $relative_path;
+            } else {
+                $failed[] = $relative_path . ' (copy failed — check file permissions)';
+            }
+        }
+
+        /* Cleanup extract dir */
+        self::cleanup( $extract_dir );
+
+        /* Update BOTH version locations if new version provided */
+        if ( $new_version ) {
+            self::update_version( $new_version );
+        }
+
+        /* Log */
+        $log   = get_option( self::PATCH_LOG_OPTION, array() );
+        $log[] = array(
+            'patch_version' => $patch_version,
+            'new_version'   => $new_version ? $new_version : ETELID_VERSION,
+            'description'   => $description,
+            'files_applied' => $applied,
+            'files_failed'  => $failed,
+            'applied_by'    => wp_get_current_user()->display_name,
+            'applied_at'    => current_time( 'mysql' ),
+        );
+        if ( count( $log ) > 20 ) {
+            $log = array_slice( $log, -20 );
+        }
+        update_option( self::PATCH_LOG_OPTION, $log );
+
+        /* Flush rewrite rules */
+        flush_rewrite_rules();
+
+        if ( empty( $failed ) ) {
+            wp_send_json_success( array(
+                'message' => 'Patch ' . $patch_version . ' applied! ' . count($applied) . ' file(s) updated.',
+                'applied' => $applied,
+                'failed'  => array(),
+                'version' => $new_version ? $new_version : ETELID_VERSION,
+            ) );
+        } else {
+            wp_send_json_success( array(
+                'message' => 'Patch partially applied. ' . count($applied) . ' succeeded, ' . count($failed) . ' failed.',
+                'applied' => $applied,
+                'failed'  => $failed,
+                'version' => $new_version ? $new_version : ETELID_VERSION,
+            ) );
+        }
+    }
+
+    /* ── Update version in BOTH the header and the constant ── */
+    public static function update_version( $new_version ) {
+        $main_file = ETELID_PATH . 'etel-id.php';
+        if ( ! file_exists( $main_file ) ) return;
+
+        $content = file_get_contents( $main_file );
+
+        /* Fix 1: Plugin header — "Version: X.X.X" */
+        $content = preg_replace(
+            '/(\*\s*Version:\s*)[\d\.]+/',
+            '${1}' . $new_version,
+            $content
+        );
+
+        /* Fix 2: PHP constant — define( 'ETELID_VERSION', 'X.X.X' ) */
+        $content = preg_replace(
+            "/define\(\s*'ETELID_VERSION',\s*'[^']+'\s*\)/",
+            "define( 'ETELID_VERSION', '" . $new_version . "' )",
+            $content
+        );
+
+        file_put_contents( $main_file, $content );
+
+        /* Clear WordPress plugin cache so the new version shows in Plugins list */
+        if ( function_exists( 'get_plugin_data' ) ) {
+            wp_cache_delete( 'etel-id-v3/etel-id.php', 'plugins' );
+        }
+        delete_transient( 'plugins_info' );
+        delete_site_transient( 'update_plugins' );
+    }
+
+    /* ── Recursively delete extract directory ── */
+    private static function cleanup( $dir ) {
+        if ( ! is_dir( $dir ) ) return;
+        $files = array_diff( scandir( $dir ), array( '.', '..' ) );
+        foreach ( $files as $file ) {
+            $path = $dir . $file;
+            if ( is_dir( $path ) ) {
+                self::cleanup( $path . '/' );
+            } else {
+                @unlink( $path );
+            }
+        }
+        @rmdir( $dir );
+    }
+
+    /* ── Get patch history ── */
+    public static function get_log() {
+        return array_reverse( (array) get_option( self::PATCH_LOG_OPTION, array() ) );
+    }
+
+    /* ── Clear patch log ── */
+    public static function clear_log() {
+        delete_option( self::PATCH_LOG_OPTION );
+    }
+}

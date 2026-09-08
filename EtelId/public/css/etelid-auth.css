@@ -1,0 +1,547 @@
+/**
+ * Etel-ID Premium — Auth Page CSS v4.0.0
+ * Login + Sign-up — Premium split-screen design
+ * Left: animated brand panel | Right: glass login card
+ */
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=JetBrains+Mono:wght@400;500;600;700&family=Cormorant+Garamond:wght@400;600;700&family=Noto+Sans+Ethiopic:wght@400;600;700&display=swap');
+
+/* ════════════════════════════════════════════════
+   ROOT
+════════════════════════════════════════════════ */
+:root {
+  --g1:#FDF6D8; --g2:#F5E6A3; --g3:#E8C84A; --g4:#D4AF37;
+  --g5:#C8922A; --g6:#A07020; --g7:#7A5518; --g8:#4A3210; --g9:#2A1A06;
+  --ink:#1A0E00; --ink2:#3A2200; --ink3:#7A5520;
+  /* Auth-specific */
+  --card-bg:#FFFEF8;
+  --card-bg2:#FDF8EE;
+  --ab:rgba(212,175,55,.25);
+  --ac2:rgba(212,175,55,.07);
+  --at2:var(--ink2);
+  --at3:var(--ink3);
+  --ag:var(--g4);
+  --ag-lt:var(--g5);
+}
+
+/* ════════════════════════════════════════════════
+   ANIMATIONS
+════════════════════════════════════════════════ */
+@keyframes holo        { 0%{background-position:0 0} 100%{background-position:300% 0} }
+@keyframes slide-up    { from{opacity:0;transform:translateY(24px)} to{opacity:1;transform:translateY(0)} }
+@keyframes slide-right { from{opacity:0;transform:translateX(-24px)} to{opacity:1;transform:translateX(0)} }
+@keyframes orb-drift-1 { 0%,100%{transform:translate(0,0)} 33%{transform:translate(30px,-25px)} 66%{transform:translate(-20px,18px)} }
+@keyframes orb-drift-2 { 0%,100%{transform:translate(0,0)} 33%{transform:translate(-25px,18px)} 66%{transform:translate(22px,-28px)} }
+@keyframes shimmer     { 0%{background-position:-400px 0} 100%{background-position:400px 0} }
+@keyframes spin-slow   { from{transform:rotate(0)} to{transform:rotate(360deg)} }
+@keyframes pulse-ring  { 0%,100%{opacity:.15;transform:scale(1)} 50%{opacity:.05;transform:scale(1.08)} }
+@keyframes float-card  { 0%,100%{transform:translateY(0) rotate(-1deg)} 50%{transform:translateY(-10px) rotate(1deg)} }
+@keyframes check-pop   { 0%{transform:scale(0) rotate(-12deg);opacity:0} 70%{transform:scale(1.15) rotate(2deg)} 100%{transform:scale(1) rotate(0);opacity:1} }
+@keyframes bar-fill    { from{width:0} to{width:var(--pw-strength,0%)} }
+
+/* ════════════════════════════════════════════════
+   PAGE — SPLIT SCREEN
+════════════════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+.eid-auth-page {
+  min-height: 100vh;
+  display: flex;
+  font-family: 'Cormorant Garamond', serif;
+}
+
+/* ════════════════════════════════════════════════
+   LEFT PANEL — Brand showcase
+════════════════════════════════════════════════ */
+.eid-auth-left {
+  flex: 0 0 42%;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 40px 32px;
+  background: linear-gradient(155deg,
+    #1A0A00 0%, #3A2008 15%, #6A4010 28%,
+    #9A6820 40%, #C8922A 52%, #D4AF37 58%,
+    #C8922A 64%, #9A6820 76%, #5A3808 90%, #1A0A00 100%);
+}
+/* Guilloché */
+.eid-auth-left::before {
+  content: '';
+  position: absolute; inset: 0; pointer-events: none;
+  background-image:
+    repeating-linear-gradient(30deg,  transparent 0,transparent 22px,rgba(255,255,255,.03) 22px,rgba(255,255,255,.03) 23px),
+    repeating-linear-gradient(-30deg, transparent 0,transparent 22px,rgba(255,255,255,.03) 22px,rgba(255,255,255,.03) 23px);
+}
+/* Animated orbs */
+.eid-auth-orb {
+  position: absolute; border-radius: 50%;
+  pointer-events: none; filter: blur(60px);
+}
+.eid-auth-orb-1 {
+  width: 400px; height: 400px; top: -120px; left: -120px;
+  background: radial-gradient(circle, rgba(255,220,80,.22) 0%, transparent 70%);
+  animation: orb-drift-1 14s ease-in-out infinite;
+}
+.eid-auth-orb-2 {
+  width: 350px; height: 350px; bottom: -80px; right: -80px;
+  background: radial-gradient(circle, rgba(80,40,0,.28) 0%, transparent 70%);
+  animation: orb-drift-2 18s ease-in-out infinite;
+}
+
+/* Brand content */
+.eid-auth-brand {
+  position: relative; z-index: 1;
+  display: flex; flex-direction: column;
+  align-items: center; text-align: center; gap: 20px;
+  animation: slide-right .6s ease both;
+}
+.eid-auth-brand-logo {
+  height: 80px; width: auto; object-fit: contain;
+  filter: brightness(1.2) drop-shadow(0 4px 20px rgba(0,0,0,.5));
+}
+.eid-auth-brand-sig {
+  font-family: 'Noto Sans Ethiopic', sans-serif;
+  font-size: 40px; font-weight: 700;
+  color: var(--g3);
+  line-height: 1;
+  text-shadow: 0 2px 16px rgba(0,0,0,.4);
+}
+.eid-auth-brand-name {
+  font-family: 'Syne', sans-serif;
+  font-size: 22px; font-weight: 800;
+  color: var(--g1); letter-spacing: .3px;
+  text-shadow: 0 2px 10px rgba(0,0,0,.4);
+}
+.eid-auth-brand-sub {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px; color: var(--g4);
+  letter-spacing: 2px; text-transform: uppercase;
+}
+.eid-auth-brand-desc {
+  font-size: 15px; color: rgba(253,246,216,.75);
+  line-height: 1.7; max-width: 280px;
+}
+/* Animated mock card */
+.eid-auth-mock-card {
+  width: 240px; height: 152px;
+  border-radius: 12px; position: relative;
+  background: linear-gradient(135deg,
+    rgba(253,246,216,.15), rgba(212,175,55,.1));
+  border: 1.5px solid rgba(212,175,55,.3);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 20px 60px rgba(0,0,0,.4),
+              inset 0 1px 0 rgba(255,255,255,.15);
+  animation: float-card 5s ease-in-out infinite;
+  overflow: hidden;
+}
+.eid-auth-mock-card::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 32px;
+  background: linear-gradient(90deg,
+    var(--g9),var(--g7),var(--g5),var(--g4),var(--g5),var(--g7),var(--g9));
+}
+.eid-auth-mock-card::after {
+  content: '';
+  position: absolute; top: 30px; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg,
+    #ff6b6b,#ffd93d,#6bcb77,#4d96ff,#ff6b6b,#ffd93d);
+  background-size: 300% 100%; animation: holo 3s linear infinite;
+}
+/* Mock card inner details */
+.eid-auth-mock-inner {
+  position: absolute;
+  top: 42px; left: 12px; right: 12px; bottom: 20px;
+  display: flex; gap: 10px;
+}
+.eid-auth-mock-photo {
+  width: 58px; height: 72px;
+  border: 1.5px solid rgba(212,175,55,.4);
+  border-radius: 2px;
+  background: linear-gradient(135deg,
+    rgba(212,175,55,.15), rgba(212,175,55,.06));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 24px; flex-shrink: 0;
+}
+.eid-auth-mock-lines {
+  flex: 1;
+  display: flex; flex-direction: column; gap: 5px;
+  padding-top: 4px;
+}
+.eid-auth-mock-line {
+  height: 6px; border-radius: 3px;
+  background: rgba(212,175,55,.25);
+}
+.eid-auth-mock-line.short { width: 55%; }
+.eid-auth-mock-line.med   { width: 75%; }
+.eid-auth-mock-line.long  { width: 90%; }
+.eid-auth-mock-line.gold  {
+  background: linear-gradient(90deg,var(--g5),var(--g4));
+  height: 8px; width: 80%;
+}
+.eid-auth-mock-footer {
+  position: absolute; bottom: 0; left: 0; right: 0; height: 20px;
+  background: linear-gradient(90deg,var(--g9),var(--g6),var(--g4),var(--g6),var(--g9));
+}
+/* Feature pills */
+.eid-auth-features {
+  display: flex; flex-direction: column; gap: 8px;
+  width: 100%; max-width: 280px;
+}
+.eid-auth-feature {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 14px;
+  background: rgba(255,255,255,.07);
+  border: 1px solid rgba(212,175,55,.2);
+  border-radius: 10px;
+  font-size: 12px; color: rgba(253,246,216,.8);
+  backdrop-filter: blur(6px);
+}
+.eid-auth-feature span:first-child { font-size: 16px; flex-shrink: 0; }
+
+/* ════════════════════════════════════════════════
+   RIGHT PANEL — Auth card
+════════════════════════════════════════════════ */
+.eid-auth-right {
+  flex: 1;
+  display: flex; align-items: center; justify-content: center;
+  padding: 32px 20px;
+  background: linear-gradient(170deg, #FFFEF8 0%, #FDF8EE 50%, #F8F0DC 100%);
+  position: relative; overflow: hidden;
+}
+/* Subtle pattern on right side */
+.eid-auth-right::before {
+  content: '';
+  position: absolute; inset: 0; pointer-events: none;
+  background-image:
+    repeating-linear-gradient(45deg,  transparent 0,transparent 32px,rgba(212,175,55,.03) 32px,rgba(212,175,55,.03) 33px),
+    repeating-linear-gradient(-45deg, transparent 0,transparent 32px,rgba(212,175,55,.03) 32px,rgba(212,175,55,.03) 33px);
+}
+
+/* ════════════════════════════════════════════════
+   CARD
+════════════════════════════════════════════════ */
+.eid-auth-card {
+  width: 100%; max-width: 420px;
+  background: var(--card-bg);
+  border-radius: 20px;
+  border: 1.5px solid var(--ab);
+  box-shadow:
+    0 20px 60px rgba(80,40,0,.18),
+    0 4px 16px rgba(80,40,0,.1),
+    inset 0 1px 0 rgba(255,255,255,.9);
+  overflow: hidden;
+  position: relative; z-index: 1;
+  animation: slide-up .5s ease both;
+}
+
+/* Holographic top strip */
+.eid-auth-holo {
+  height: 3px;
+  background: linear-gradient(90deg,
+    #ff6b6b,#ffd93d,#6bcb77,#4d96ff,#ff6b6b,#ffd93d,#6bcb77,#4d96ff);
+  background-size: 300% 100%;
+  animation: holo 3s linear infinite;
+}
+
+/* Card header */
+.eid-auth-head {
+  padding: 28px 28px 20px;
+  background: linear-gradient(170deg, var(--card-bg) 0%, var(--card-bg2) 100%);
+  border-bottom: 1px solid var(--ab);
+  text-align: center;
+}
+.eid-auth-logo {
+  display: flex; flex-direction: column;
+  align-items: center; gap: 6px; margin-bottom: 14px;
+}
+.eid-auth-logo-img {
+  height: 52px; width: auto; object-fit: contain;
+  filter: drop-shadow(0 3px 12px rgba(100,60,0,.2));
+}
+.eid-auth-org {
+  font-family: 'Noto Sans Ethiopic', sans-serif;
+  font-size: 11px; color: var(--g5); letter-spacing: .5px;
+}
+.eid-auth-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 22px; font-weight: 800;
+  color: var(--ink); line-height: 1.2;
+}
+.eid-auth-subtitle {
+  font-size: 13px; color: var(--ink3);
+  margin-top: 5px; line-height: 1.5;
+}
+
+/* Tabs */
+.eid-auth-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--ab);
+}
+.eid-auth-tab {
+  flex: 1; padding: 13px 8px;
+  background: none; border: none;
+  font-family: 'Syne', sans-serif;
+  font-size: 13px; font-weight: 800;
+  color: var(--ink3); cursor: pointer;
+  position: relative; transition: color .2s;
+  letter-spacing: .3px;
+}
+.eid-auth-tab::after {
+  content: '';
+  position: absolute; bottom: -1px; left: 15%; right: 15%;
+  height: 2.5px; border-radius: 2px;
+  background: linear-gradient(90deg,var(--g5),var(--g4));
+  transform: scaleX(0); transition: transform .25s cubic-bezier(.22,.68,0,1.2);
+}
+.eid-auth-tab.active { color: var(--g5); }
+.eid-auth-tab.active::after { transform: scaleX(1); }
+
+/* Body */
+.eid-auth-body { padding: 24px 28px 8px; }
+
+/* Notices */
+.eid-auth-notice {
+  display: flex; align-items: center; gap: 10px;
+  padding: 11px 14px; border-radius: 9px;
+  font-size: 13px; margin-bottom: 14px;
+  opacity: 0; max-height: 0; overflow: hidden;
+  transition: opacity .25s, max-height .25s;
+}
+.eid-auth-notice.show { opacity: 1; max-height: 80px; }
+.eid-auth-notice-err {
+  background: rgba(239,68,68,.08);
+  border: 1px solid rgba(239,68,68,.25);
+  color: #991b1b;
+}
+.eid-auth-notice-ok {
+  background: rgba(34,197,94,.08);
+  border: 1px solid rgba(34,197,94,.25);
+  color: #166534;
+}
+
+/* ════════════════════════════════════════════════
+   FORM FIELDS
+════════════════════════════════════════════════ */
+.eid-af-field { margin-bottom: 14px; }
+.eid-af-row   {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 12px; margin-bottom: 0;
+}
+.eid-af-row-1 { margin-bottom: 0; }
+.eid-af-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9.5px; font-weight: 700;
+  color: var(--g5); text-transform: uppercase;
+  letter-spacing: 1.5px; display: block;
+  margin-bottom: 6px;
+}
+.eid-af-input-wrap {
+  position: relative; display: flex; align-items: center;
+}
+.eid-af-input-icon {
+  position: absolute; left: 12px;
+  color: var(--g5); font-size: 15px;
+  pointer-events: none; opacity: .7;
+}
+.eid-af-input,
+.eid-af-select {
+  width: 100%; padding: 11px 14px 11px 38px;
+  background: rgba(212,175,55,.06);
+  border: 1.5px solid rgba(212,175,55,.22);
+  border-radius: 9px;
+  font-size: 15px; font-family: 'Cormorant Garamond', serif;
+  color: var(--ink);
+  transition: border-color .2s, box-shadow .2s, background .2s;
+  -webkit-appearance: none; appearance: none;
+}
+.eid-af-input.no-icon,
+.eid-af-select.no-icon { padding-left: 14px; }
+.eid-af-input:focus,
+.eid-af-select:focus {
+  border-color: var(--g4);
+  background: rgba(212,175,55,.09);
+  box-shadow: 0 0 0 3px rgba(212,175,55,.14);
+  outline: none;
+}
+.eid-af-input.has-error { border-color: #ef4444; }
+.eid-af-input::placeholder { color: rgba(100,60,0,.3); }
+/* Password toggle */
+.eid-pw-toggle {
+  position: absolute; right: 10px;
+  background: none; border: none;
+  color: var(--g5); cursor: pointer; font-size: 16px;
+  padding: 4px; border-radius: 4px;
+  transition: color .15s;
+}
+.eid-pw-toggle:hover { color: var(--g4); }
+.eid-af-err {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px; color: #ef4444;
+  max-height: 0; overflow: hidden; opacity: 0;
+  transition: max-height .2s, opacity .2s;
+  margin-top: 3px;
+}
+.eid-af-err.show { max-height: 24px; opacity: 1; }
+
+/* ════════════════════════════════════════════════
+   PASSWORD STRENGTH METER
+════════════════════════════════════════════════ */
+.eid-pw-strength {
+  margin-top: 6px; margin-bottom: 2px;
+}
+.eid-pw-strength-bar {
+  height: 4px; border-radius: 2px;
+  background: rgba(212,175,55,.12);
+  overflow: hidden; margin-bottom: 3px;
+}
+.eid-pw-strength-fill {
+  height: 100%; border-radius: 2px;
+  width: 0; transition: width .3s, background .3s;
+}
+.eid-pw-strength-lbl {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px; letter-spacing: 1px;
+  text-transform: uppercase; transition: color .3s;
+}
+
+/* ════════════════════════════════════════════════
+   SUBMIT BUTTON
+════════════════════════════════════════════════ */
+.eid-auth-submit {
+  width: 100%; padding: 14px;
+  background: linear-gradient(135deg,
+    var(--g9) 0%, var(--g7) 25%, var(--g5) 50%,
+    var(--g4) 65%, var(--g3) 78%, var(--g4) 90%, var(--g5) 100%);
+  background-size: 200% 100%;
+  color: var(--g1);
+  border: none; border-radius: 10px;
+  font-family: 'Syne', sans-serif;
+  font-size: 15px; font-weight: 800;
+  cursor: pointer; letter-spacing: .5px;
+  box-shadow: 0 5px 0 var(--g9), 0 8px 22px rgba(80,40,0,.3);
+  transition: transform .15s, box-shadow .15s;
+  position: relative; overflow: hidden;
+  margin-top: 6px; margin-bottom: 16px;
+}
+.eid-auth-submit::before {
+  content: '';
+  position: absolute; top: 0; left: -100%; width: 50%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.12), transparent);
+  animation: shimmer 2.5s infinite;
+}
+.eid-auth-submit:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 0 var(--g9), 0 10px 26px rgba(80,40,0,.35);
+}
+.eid-auth-submit:disabled { opacity: .7; cursor: not-allowed; transform: none; }
+
+/* Divider */
+.eid-auth-divider {
+  display: flex; align-items: center; gap: 12px;
+  margin: 4px 0 12px; color: rgba(120,80,20,.35);
+  font-family: 'JetBrains Mono', monospace; font-size: 10px;
+  letter-spacing: 1.5px; text-transform: uppercase;
+}
+.eid-auth-divider::before, .eid-auth-divider::after {
+  content: ''; flex: 1; height: 1px;
+  background: rgba(212,175,55,.2);
+}
+
+/* ════════════════════════════════════════════════
+   SIGNUP STEP DOTS
+════════════════════════════════════════════════ */
+.eid-reg-dots {
+  display: flex; align-items: center; justify-content: center;
+  gap: 0; margin-bottom: 22px; position: relative;
+}
+.eid-reg-dots::before {
+  content: '';
+  position: absolute; top: 50%; left: 25%; right: 25%;
+  height: 2px; background: rgba(212,175,55,.15); z-index: 0;
+  transform: translateY(-50%);
+}
+.eid-reg-dot {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: rgba(212,175,55,.08);
+  border: 2px solid rgba(212,175,55,.2);
+  flex: 1; position: relative; z-index: 1;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px; font-weight: 700;
+  color: rgba(212,175,55,.4);
+  transition: all .3s;
+  box-shadow: 0 0 0 4px var(--card-bg);
+}
+.eid-reg-dot::before {
+  counter-increment: step;
+  content: attr(data-step);
+}
+.eid-reg-dot.active {
+  background: linear-gradient(135deg,var(--g5),var(--g4));
+  border-color: var(--g4); color: var(--g9);
+  box-shadow: 0 0 0 4px var(--card-bg), 0 0 0 6px rgba(212,175,55,.2),
+              0 4px 12px rgba(100,60,0,.25);
+}
+.eid-reg-dot.done {
+  background: linear-gradient(135deg,#166534,#22c55e);
+  border-color: #22c55e; color: #fff;
+  box-shadow: 0 0 0 4px var(--card-bg), 0 4px 10px rgba(22,101,52,.2);
+}
+
+/* Step nav */
+.eid-step-nav {
+  display: flex; align-items: center; gap: 10px;
+  margin-top: 16px; padding-top: 14px;
+  border-top: 1px solid var(--ab);
+}
+.eid-step-next {
+  flex: 1; padding: 12px 20px;
+  background: linear-gradient(135deg,var(--g9),var(--g7),var(--g5),var(--g4));
+  color: var(--g1); border: none; border-radius: 9px;
+  font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 800;
+  cursor: pointer; transition: all .15s;
+  box-shadow: 0 4px 0 var(--g9), 0 6px 16px rgba(80,40,0,.25);
+}
+.eid-step-next:hover { transform: translateY(-1px); box-shadow: 0 5px 0 var(--g9), 0 8px 20px rgba(80,40,0,.3); }
+.eid-step-back {
+  width: 42px; height: 42px; display: flex; align-items: center; justify-content: center;
+  background: rgba(212,175,55,.08); border: 1.5px solid rgba(212,175,55,.25);
+  border-radius: 9px; color: var(--g5); cursor: pointer; font-size: 18px;
+  transition: all .15s; flex-shrink: 0;
+}
+.eid-step-back:hover { background: rgba(212,175,55,.15); border-color: rgba(212,175,55,.45); color: var(--g4); }
+
+/* ════════════════════════════════════════════════
+   CARD FOOTER
+════════════════════════════════════════════════ */
+.eid-auth-card-footer {
+  padding: 12px 28px 20px;
+  text-align: center;
+  border-top: 1px solid var(--ab);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px; color: var(--ink3); letter-spacing: 1px;
+}
+
+/* ════════════════════════════════════════════════
+   MOBILE — stack vertically
+════════════════════════════════════════════════ */
+@media (max-width: 820px) {
+  .eid-auth-page  { flex-direction: column; }
+  .eid-auth-left  { flex: 0 0 auto; padding: 28px 20px; min-height: auto; }
+  .eid-auth-mock-card  { display: none; }
+  .eid-auth-features   { display: none; }
+  .eid-auth-brand-desc { display: none; }
+  .eid-auth-brand      { gap: 10px; }
+  .eid-auth-brand-sig  { font-size: 28px; }
+  .eid-auth-brand-name { font-size: 16px; }
+  .eid-auth-right { padding: 20px 16px 40px; }
+  .eid-auth-card  { max-width: 480px; }
+  .eid-auth-head  { padding: 20px 20px 16px; }
+  .eid-auth-body  { padding: 18px 20px 6px; }
+  .eid-af-row     { grid-template-columns: 1fr; }
+}
+@media (max-width: 400px) {
+  .eid-auth-card-footer { padding: 10px 16px 16px; }
+}

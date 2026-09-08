@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Etel Printer — Bluetooth Test Page</title>
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Ethiopic:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  body{font-family:'JetBrains Mono',monospace;background:#0c0700;color:#FFFEF8;max-width:520px;margin:40px auto;padding:0 16px;}
+  h1{font-size:18px;color:#E8C84A;margin-bottom:4px;}
+  p.sub{color:#A07020;font-size:12px;margin-bottom:24px;}
+  button{display:block;width:100%;padding:12px;margin-bottom:10px;border:none;border-radius:8px;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit;}
+  .gold{background:linear-gradient(135deg,#E8C84A,#C8922A);color:#1A0E00;}
+  .ghost{background:rgba(255,255,255,.08);color:#fff;border:1px solid rgba(212,175,55,.3);}
+  #log{margin-top:20px;background:rgba(255,255,255,.04);border:1px solid rgba(212,175,55,.2);border-radius:8px;padding:12px;font-size:12px;color:#cbbf9a;white-space:pre-wrap;min-height:60px;}
+  .status{font-size:12px;margin-bottom:16px;}
+  .status.ok{color:#86efac;}
+  .status.err{color:#fca5a5;}
+</style>
+</head>
+<body>
+  <h1>🖨️ Etel Printer — Bluetooth Test</h1>
+  <p class="sub">Works in Chrome / Edge on a desktop computer only (Web Serial API). Pair the printer in Windows Bluetooth settings first.</p>
+
+  <div class="status" id="status">Not connected.</div>
+
+  <button class="gold" id="btnConnect">1. Connect to Printer</button>
+  <button class="ghost" id="btnTestReceipt" disabled>2. Print Test Receipt (English)</button>
+  <button class="ghost" id="btnTestAmharic" disabled>3. Print Amharic Line (as image)</button>
+  <button class="ghost" id="btnDisconnect" disabled>Disconnect</button>
+
+  <div id="log">Log output will appear here…</div>
+
+  <script src="etel-printer-web.js"></script>
+  <script>
+    const printer = new EtelPrinter();
+    const $ = (id) => document.getElementById(id);
+    const log = (msg) => { $('log').textContent += '\n' + msg; };
+
+    function setStatus(text, kind) {
+      $('status').textContent = text;
+      $('status').className = 'status ' + (kind || '');
+    }
+
+    if (!printer.isSupported()) {
+      setStatus('⚠️ Web Serial not supported in this browser. Use Chrome or Edge on desktop.', 'err');
+      $('btnConnect').disabled = true;
+    }
+
+    $('btnConnect').addEventListener('click', async () => {
+      try {
+        await printer.connect();
+        setStatus('✓ Connected.', 'ok');
+        $('btnTestReceipt').disabled = false;
+        $('btnTestAmharic').disabled = false;
+        $('btnDisconnect').disabled = false;
+        $('btnConnect').disabled = true;
+        log('Connected to printer port.');
+      } catch (e) {
+        setStatus('✗ ' + e.message, 'err');
+        log('Connect error: ' + e.message);
+      }
+    });
+
+    $('btnTestReceipt').addEventListener('click', async () => {
+      try {
+        await printer.printReceipt({
+          header: ['ETEL MARKET', 'Hawassa Branch'],
+          items: [
+            { name: 'Bread',   qty: 2, price: 25 },
+            { name: 'Milk 1L', qty: 1, price: 60 },
+            { name: 'Eggs(12)',qty: 1, price: 90 },
+          ],
+          total: 200,
+          footer: ['Thank you for shopping!', 'Etel Group'],
+        });
+        log('Receipt sent.');
+      } catch (e) { log('Print error: ' + e.message); }
+    });
+
+    $('btnTestAmharic').addEventListener('click', async () => {
+      try {
+        await printer.printTextAsImage('እናመስግናለን — አመሰግናለሁ', { font: '26px "Noto Sans Ethiopic", sans-serif' });
+        log('Amharic line sent (as image).');
+      } catch (e) { log('Print error: ' + e.message); }
+    });
+
+    $('btnDisconnect').addEventListener('click', async () => {
+      await printer.disconnect();
+      setStatus('Disconnected.');
+      $('btnTestReceipt').disabled = true;
+      $('btnTestAmharic').disabled = true;
+      $('btnDisconnect').disabled = true;
+      $('btnConnect').disabled = false;
+      log('Disconnected.');
+    });
+  </script>
+</body>
+</html>

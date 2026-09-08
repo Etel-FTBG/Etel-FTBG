@@ -1,0 +1,51 @@
+ETELID SERVICE API - SETUP (one time, 2 minutes)
+=================================================
+
+REDACTED FOR GIT: the real generated shared secret and the real
+verification example (member name/EtelID) that were in this file have
+been removed before committing to the repo. Generate your own secret
+value and keep it OUT of git - set it as an environment variable on
+each server instead (see STEP 1 / STEP 2 below).
+
+Your generated shared secret (use this exact value on BOTH sides):
+
+  <GENERATE_A_NEW_RANDOM_SECRET_AND_KEEP_IT_OUT_OF_GIT>
+
+STEP 1 - EtelID side (cPanel File Manager):
+  Edit  public_html/EtelId/wp-config.php
+  Add this line ABOVE  /* That's all, stop editing! */ :
+
+  define('ETELID_SERVICE_KEY', '<your-secret-here>');
+
+STEP 2 - Delivery side:
+  Edit  public_html/delivery/api/.env   (create if missing)
+  Add this line:
+
+  ETELID_SERVICE_KEY=<your-secret-here>
+
+  (Alternative: add to api/config.php instead:
+   define('CFG_ETELID_SERVICE_KEY', '...same value...'); )
+
+STEP 3 - Deploy:
+  - EtelID:   upload  etel-id.php  and  includes/class-etelid-service-api.php
+              into  wp-content/plugins/etel-id-v3/
+  - Delivery: deploy the v3.5.1 delivery patch ZIP as usual.
+
+STEP 4 - Verify:
+  curl -X POST https://ethelmarket.com/EtelId/wp-json/etelid/v1/service/resolve \
+       -H "Content-Type: application/json" \
+       -H "X-Etel-Service-Key: <your-secret-here>" \
+       -d '{"identifier":"<a real member EtelID>"}'
+
+  Expected: {"ok":true,"member":{"etel_id":"<their EtelID>","full_name":"<their name>",...}}
+
+  Then log into /delivery/login with the EtelID button using
+  that member's EtelID + their EtelID password.
+
+NOTES:
+  - Without the key configured, the Service API refuses everything
+    (fail closed) and the delivery bridge automatically falls back
+    to direct database access - so nothing breaks if you deploy the
+    code before the key.
+  - The same key + endpoint is what Madeya / Laundry / Market will
+    use when we roll SSO out to them.

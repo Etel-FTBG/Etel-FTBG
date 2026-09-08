@@ -1,0 +1,222 @@
+<?php
+/**
+ * Etel-ID Premium — Login Interceptor v3.6.0
+ *
+ * Complete wp-admin protection + smart admin bridge:
+ *
+ * FLOW FOR ADMINS:
+ *   1. Admin visits /wp-admin/
+ *   2. Redirected to /etel-id/login/?redirect=wpadmin
+ *   3. Logs in with Etel-ID credentials
+ *   4. System detects they are the admin member
+ *   5. Auto-logs them into WordPress + redirects to /wp-admin/
+ *
+ * FLOW FOR MEMBERS:
+ *   1. Member visits any URL
+ *   2. Normal Etel-ID login → portal
+ *
+ * PHP 5.6+ compatible — no arrow functions.
+ *
+ * @package Etel-ID Premium
+ * @since   3.6.0
+ */
+if ( ! defined( 'ABSPATH' ) ) exit;
+
+class EtelID_Login_Interceptor {
+
+    const BACKDOOR_PARAM  = 'etelid_admin_access';
+    const BACKDOOR_COOKIE = 'etelid_admin_bypass';
+    const BACKDOOR_SECRET = 'etelid_bypass_v3';
+    const WPADMIN_INTENT  = 'etelid_wpadmin_intent'; /* cookie: user wants wp-admin */
+
+    public static function init() {
+        add_action( 'init', array( __CLASS__, 'block_wp_login' ), 1 );
+        add_action( 'init', array( __CLASS__, 'block_wp_admin' ), 1 );
+        add_action( 'init', array( __CLASS__, 'maybe_auto_wp_login' ), 2 );
+        add_filter( 'login_url',      array( __CLASS__, 'filter_login_url' ),      999, 3 );
+        add_filter( 'logout_url',     array( __CLASS__, 'filter_logout_url' ),     999, 2 );
+        add_filter( 'login_redirect', array( __CLASS__, 'filter_login_redirect' ), 999, 3 );
+        add_filter( 'nav_menu_link_attributes', array( __CLASS__, 'fix_menu_link' ), 10, 4 );
+        add_filter( 'walker_nav_menu_start_el', array( __CLASS__, 'fix_menu_el' ),  10, 4 );
+    }
+
+    /* ════════════════════════════════════════════
+       1. BLOCK wp-login.php
+    ════════════════════════════════════════════ */
+    public static function block_wp_login() {
+        $uri = isset( $_SERVER['REQUEST_URI'] ) ? $_SERVER['REQUEST_URI'] : '';
+        if ( strpos( $uri, 'wp-login.php' ) === false ) return;
+
+        $action = isset( $_REQUEST['action'] ) ? $_REQUEST['action'] : 'login';
+
+        /* Emergency backdoor: /wp-login.php?etelid_admin_access=1 */
+        if ( isset( $_GET[ self::BACKDOOR_PARAM ] ) ) {
+            setcookie( self::BACKDOOR_COOKIE, self::BACKDOOR_SECRET, time() + 1800, COOKIEPATH, COOKIE_DOMAIN, is_ssl(), true );
+            return;
+        }
+
+        /* Bypass cookie active */
+        if ( isset( $_COOKIE[ self::BACKDOOR_COOKIE ] ) && $_COOKIE[ self::BACKDOOR_COOKIE ] === self::BACKDOOR_SECRET ) {
+            return;
+        }
+
+        /* Safe actions */
+        $safe = array( 'logout', 'rp', 'resetpass', 'lostpassword', 'retrievepassword', 'postpass' );
+        if ( in_array( $action, $safe, true ) ) return;
+
+        wp_redirect( home_url( '/etel-id/login/' ), 302 );
+        exit;
+    }
+
+    /* ════════════════════════════════════════════
+       2. BLOCK /wp-admin/ — redirect to Etel login
+          but remember they wanted wp-admin
+    ════════════════════════════════════════════ */
+    public static function block_wp_admin() {
+        if ( ! is_admin() ) return;
+        if ( defined( 'DOING_AJAX' ) && DOING_AJAX ) return;
+        if ( defined( 'DOING_CRON' ) && DOING_CRON ) return;
+        if ( defined( 'REST_REQUEST' ) && REST_REQUEST ) return;
+
+        /* Already a logged-in WP admin — let through */
+        if ( is_user_logged_in() && current_user_can( 'manage_options' ) ) return;
+
+        /* Bypass cookie — let through */
+        if ( isset( $_COOKIE[ self::BACKDOOR_COOKIE ] ) &&
+             $_COOKIE[ self::BACKDOOR_COOKIE ] === self::BACKDOOR_SECRET ) {
+            return;
+        }
+
+        /* Set intent cookie: they wanted /wp-admin/ */
+        setcookie(
+            self::WPADMIN_INTENT,
+            '1',
+            time() + 600, /* 10 minutes */
+            COOKIEPATH,
+            COOKIE_DOMAIN,
+            is_ssl(),
+            true
+        );
+
+        /* Send to Etel-ID login with a flag */
+        wp_redirect( home_url( '/etel-id/login/?redirect=wpadmin' ), 302 );
+        exit;
+    }
+
+    /* ════════════════════════════════════════════
+       3. AFTER ETEL-ID LOGIN — check if admin,
+          if so auto-login to WP + go to wp-admin
+    ════════════════════════════════════════════ */
+    public static function maybe_auto_wp_login() {
+        /* Only run on non-admin pages, non-AJAX */
+        if ( is_admin() ) return;
+        if ( defined( 'DOING_AJAX' ) && DOING_AJAX ) return;
+
+        /* Etel-ID session must be active */
+        if ( ! class_exists( 'EtelID_Auth' ) ) return;
+        $member = EtelID_Auth::get_current_member();
+        if ( ! $member ) return;
+
+        /* Check if this member is the site admin */
+        if ( ! self::member_is_wp_admin( $member ) ) return;
+
+        /* wp-admin intent cookie must be set */
+        $has_intent = isset( $_COOKIE[ self::WPADMIN_INTENT ] ) &&
+                      $_COOKIE[ self::WPADMIN_INTENT ] === '1';
+
+        /* Also trigger if URL has ?redirect=wpadmin (just arrived at login) */
+        $has_redirect = isset( $_GET['redirect'] ) && $_GET['redirect'] === 'wpadmin';
+
+        if ( ! $has_intent && ! $has_redirect ) return;
+
+        /* Clear the intent cookie */
+        setcookie( self::WPADMIN_INTENT, '', time() - 3600, COOKIEPATH, COOKIE_DOMAIN );
+
+        /* Already logged into WordPress — just redirect */
+        if ( is_user_logged_in() && current_user_can( 'manage_options' ) ) {
+            wp_redirect( admin_url(), 302 );
+            exit;
+        }
+
+        /* Find the WP user that matches this member */
+        $wp_user = self::get_wp_user_for_member( $member );
+        if ( ! $wp_user || ! user_can( $wp_user, 'manage_options' ) ) {
+            /* No matching WP admin found — try the site admin */
+            $wp_user = get_user_by( 'email', get_option( 'admin_email' ) );
+        }
+        if ( ! $wp_user ) return;
+
+        /* Log them into WordPress */
+        wp_set_current_user( $wp_user->ID, $wp_user->user_login );
+        wp_set_auth_cookie( $wp_user->ID, true );
+
+        /* Redirect to wp-admin */
+        wp_redirect( admin_url(), 302 );
+        exit;
+    }
+
+    /* ════════════════════════════════════════════
+       HELPERS
+    ════════════════════════════════════════════ */
+
+    /**
+     * Check if an Etel-ID member is the WP site admin.
+     * Multiple detection methods for reliability.
+     */
+    private static function member_is_wp_admin( $member ) {
+        /* Delegate to the single source of truth */
+        return EtelID_Auth::is_site_admin( $member );
+    }
+
+    /**
+     * Find the WordPress user account for an Etel-ID member.
+     */
+    private static function get_wp_user_for_member( $member ) {
+        /* Try by email first */
+        if ( $member->email ) {
+            $user = get_user_by( 'email', $member->email );
+            if ( $user ) return $user;
+        }
+        /* Fall back to site admin */
+        return get_user_by( 'email', get_option( 'admin_email' ) );
+    }
+
+    /* ════════════════════════════════════════════
+       FILTERS
+    ════════════════════════════════════════════ */
+
+    public static function filter_login_url( $login_url, $redirect, $force_reauth ) {
+        if ( $redirect && strpos( $redirect, 'wp-admin' ) !== false ) return $login_url;
+        return home_url( '/etel-id/login/' );
+    }
+
+    public static function filter_logout_url( $logout_url, $redirect ) {
+        if ( is_user_logged_in() && current_user_can( 'edit_posts' ) ) return $logout_url;
+        return home_url( '/etel-id/logout/' );
+    }
+
+    public static function filter_login_redirect( $redirect_to, $requested, $user ) {
+        if ( is_wp_error( $user ) ) return $redirect_to;
+        if ( $user && user_can( $user, 'edit_posts' ) ) return $redirect_to;
+        return home_url( '/etel-id/portal/' );
+    }
+
+    public static function fix_menu_link( $atts, $item, $args, $depth ) {
+        if ( ! isset( $atts['href'] ) ) return $atts;
+        if ( strpos( $atts['href'], 'wp-login.php' ) !== false ) {
+            $atts['href'] = home_url( '/etel-id/login/' );
+        }
+        if ( strpos( $atts['href'], 'wp-admin' ) !== false && ! current_user_can( 'edit_posts' ) ) {
+            $atts['href'] = home_url( '/etel-id/portal/' );
+        }
+        return $atts;
+    }
+
+    public static function fix_menu_el( $item_output, $item, $depth, $args ) {
+        return str_replace(
+            array( site_url( 'wp-login.php' ), site_url( '/wp-login.php' ) ),
+            home_url( '/etel-id/login/' ),
+            $item_output
+        );
+    }
+}
