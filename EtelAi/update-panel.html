@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ETEL Updater · Admin Panel</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#080808;--bg2:#0f0f0f;--bg3:#161616;--bg4:#1f1f1f;
+  --line:rgba(255,255,255,0.06);--line2:rgba(255,255,255,0.1);
+  --gold:#C9A227;--gold-l:#D4AF37;--gold-glow:rgba(201,162,39,0.1);
+  --tx:#FFFAF5;--tx2:#A39A90;--tx3:#554E44;
+  --green:#2D9E6B;--green-bg:rgba(45,158,107,0.12);
+  --red:#C96940;--red-bg:rgba(201,105,64,0.12);
+  --blue:#4A8FD4;--blue-bg:rgba(74,143,212,0.1);
+}
+body{background:var(--bg);color:var(--tx);font-family:'DM Sans',system-ui,sans-serif;font-size:14px;min-height:100vh;}
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&family=Cinzel:wght@600;700&display=swap');
+
+/* ── HEADER ── */
+.header{background:var(--bg2);border-bottom:1px solid var(--line);padding:16px 24px;display:flex;align-items:center;gap:14px;}
+.header-logo{width:38px;height:38px;border-radius:50%;border:1.5px solid var(--gold);overflow:hidden;background:var(--gold-glow);}
+.header-logo img{width:100%;height:100%;object-fit:cover;}
+.header-title{font-family:'Cinzel',serif;font-size:15px;font-weight:700;letter-spacing:0.1em;color:var(--gold-l);}
+.header-sub{font-size:11px;color:var(--tx3);margin-top:2px;}
+.header-badge{margin-left:auto;font-size:10px;padding:3px 10px;border-radius:10px;background:var(--red-bg);border:1px solid rgba(201,105,64,0.3);color:var(--red);font-family:'Cinzel',serif;letter-spacing:0.06em;}
+.header-badge.authed{background:var(--green-bg);border-color:rgba(45,158,107,0.3);color:var(--green);}
+
+/* ── LAYOUT ── */
+.shell{max-width:900px;margin:0 auto;padding:24px 20px;}
+
+/* ── LOGIN CARD ── */
+.login-card{background:var(--bg2);border:1px solid var(--line2);border-radius:12px;padding:32px;max-width:400px;margin:60px auto;text-align:center;}
+.login-title{font-family:'Cinzel',serif;font-size:18px;color:var(--gold-l);margin-bottom:8px;}
+.login-sub{font-size:12px;color:var(--tx3);margin-bottom:24px;}
+.login-input{width:100%;background:var(--bg3);border:1px solid var(--line2);border-radius:8px;padding:12px 14px;color:var(--tx);font-size:14px;outline:none;transition:border 0.2s;}
+.login-input:focus{border-color:var(--gold);}
+.login-btn{width:100%;margin-top:12px;padding:12px;background:var(--gold);border:none;border-radius:8px;color:#080808;font-weight:700;font-size:14px;cursor:pointer;font-family:'Cinzel',serif;letter-spacing:0.06em;transition:opacity 0.2s;}
+.login-btn:hover{opacity:0.85;}
+
+/* ── SECTION ── */
+.section{background:var(--bg2);border:1px solid var(--line);border-radius:12px;margin-bottom:16px;overflow:hidden;}
+.section-head{padding:14px 18px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none;}
+.section-icon{font-size:16px;}
+.section-title{font-family:'Cinzel',serif;font-size:12px;font-weight:700;letter-spacing:0.1em;color:var(--tx);}
+.section-desc{font-size:11px;color:var(--tx3);margin-left:auto;}
+.section-body{padding:18px;}
+
+/* ── STATUS GRID ── */
+.status-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;margin-bottom:14px;}
+.stat-card{background:var(--bg3);border:1px solid var(--line);border-radius:8px;padding:12px 14px;}
+.stat-label{font-size:10px;color:var(--tx3);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:4px;}
+.stat-value{font-size:18px;font-weight:700;color:var(--gold-l);font-family:'Cinzel',serif;}
+.stat-sub{font-size:11px;color:var(--tx3);margin-top:2px;}
+
+/* ── FILE TABLE ── */
+.file-table{width:100%;border-collapse:collapse;font-size:12px;}
+.file-table th{text-align:left;padding:6px 10px;color:var(--tx3);font-weight:500;border-bottom:1px solid var(--line);font-family:'Cinzel',serif;font-size:10px;letter-spacing:0.08em;}
+.file-table td{padding:8px 10px;border-bottom:1px solid var(--line);color:var(--tx2);}
+.file-table tr:last-child td{border-bottom:none;}
+.file-table td:first-child{color:var(--tx);font-family:monospace;font-size:11px;}
+.dot{display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:6px;}
+.dot.green{background:var(--green);}
+.dot.red{background:var(--red);}
+
+/* ── BUTTONS ── */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:9px 16px;border-radius:7px;border:none;cursor:pointer;font-size:12px;font-weight:600;transition:all 0.15s;font-family:'Cinzel',serif;letter-spacing:0.05em;}
+.btn-gold{background:var(--gold);color:#080808;}
+.btn-gold:hover{background:var(--gold-l);}
+.btn-outline{background:transparent;color:var(--tx2);border:1px solid var(--line2);}
+.btn-outline:hover{border-color:var(--gold);color:var(--gold-l);}
+.btn-red{background:var(--red-bg);color:var(--red);border:1px solid rgba(201,105,64,0.25);}
+.btn-red:hover{background:rgba(201,105,64,0.2);}
+.btn-green{background:var(--green-bg);color:var(--green);border:1px solid rgba(45,158,107,0.25);}
+.btn-green:hover{background:rgba(45,158,107,0.2);}
+.btn:disabled{opacity:0.4;cursor:not-allowed;}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;}
+
+/* ── DROP ZONE ── */
+.drop-zone{border:2px dashed var(--line2);border-radius:10px;padding:32px 20px;text-align:center;cursor:pointer;transition:all 0.2s;position:relative;}
+.drop-zone:hover,.drop-zone.drag{border-color:var(--gold);background:var(--gold-glow);}
+.drop-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
+.drop-icon{font-size:28px;margin-bottom:10px;}
+.drop-title{font-size:14px;color:var(--tx);font-weight:500;margin-bottom:4px;}
+.drop-sub{font-size:11px;color:var(--tx3);}
+.drop-filename{font-size:12px;color:var(--gold-l);margin-top:8px;font-family:monospace;}
+
+/* ── PROGRESS ── */
+.progress-wrap{margin-top:12px;display:none;}
+.progress-wrap.show{display:block;}
+.progress-bar{height:4px;background:var(--bg4);border-radius:2px;overflow:hidden;}
+.progress-fill{height:100%;background:var(--gold);border-radius:2px;transition:width 0.3s;width:0%;}
+.progress-text{font-size:11px;color:var(--tx3);margin-top:6px;}
+
+/* ── LOG ── */
+.log{background:var(--bg3);border:1px solid var(--line);border-radius:8px;padding:12px 14px;font-family:monospace;font-size:11px;max-height:200px;overflow-y:auto;margin-top:12px;}
+.log-line{padding:2px 0;border-bottom:1px solid var(--line);}
+.log-line:last-child{border:none;}
+.log-line.ok{color:var(--green);}
+.log-line.err{color:var(--red);}
+.log-line.info{color:var(--blue);}
+.log-line.warn{color:var(--gold);}
+
+/* ── BACKUP LIST ── */
+.backup-list{display:flex;flex-direction:column;gap:8px;}
+.backup-item{background:var(--bg3);border:1px solid var(--line);border-radius:8px;padding:10px 14px;display:flex;align-items:center;gap:10px;}
+.backup-id{font-family:monospace;font-size:12px;color:var(--tx);flex:1;}
+.backup-date{font-size:11px;color:var(--tx3);}
+
+/* ── ALERTS ── */
+.alert{padding:10px 14px;border-radius:8px;font-size:12px;margin-bottom:12px;display:none;}
+.alert.show{display:block;}
+.alert.ok{background:var(--green-bg);border:1px solid rgba(45,158,107,0.3);color:var(--green);}
+.alert.err{background:var(--red-bg);border:1px solid rgba(201,105,64,0.3);color:var(--red);}
+
+/* ── SPINNER ── */
+.spinner{display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,0.2);border-top-color:var(--gold);border-radius:50%;animation:spin 0.6s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-logo">
+    <img src="icons/icon-192.png" alt="ETEL" onerror="this.parentElement.innerHTML='E'">
+  </div>
+  <div>
+    <div class="header-title">ETEL UPDATER</div>
+    <div class="header-sub">Admin Update Panel · ethelmarket.com/etel/</div>
+  </div>
+  <div class="header-badge" id="auth-badge">NOT LOGGED IN</div>
+</div>
+
+<!-- LOGIN -->
+<div class="shell" id="login-view">
+  <div class="login-card">
+    <div class="login-title">🔐 Admin Login</div>
+    <div class="login-sub">Enter your updater password to continue</div>
+    <input type="password" class="login-input" id="pwd-input" placeholder="Enter password..." onkeydown="if(event.key==='Enter')login()">
+    <button class="login-btn" onclick="login()">LOGIN →</button>
+    <div class="alert err" id="login-err" style="margin-top:12px;"></div>
+  </div>
+</div>
+
+<!-- MAIN PANEL -->
+<div class="shell" id="main-view" style="display:none;">
+
+  <!-- SYSTEM STATUS -->
+  <div class="section">
+    <div class="section-head" onclick="toggleSection('status-body')">
+      <span class="section-icon">📊</span>
+      <span class="section-title">SYSTEM STATUS</span>
+      <span class="section-desc" id="status-summary">Loading...</span>
+    </div>
+    <div class="section-body" id="status-body">
+      <div class="status-grid" id="stat-cards">
+        <div class="stat-card"><div class="stat-label">Skills</div><div class="stat-value" id="stat-skills">—</div><div class="stat-sub">installed</div></div>
+        <div class="stat-card"><div class="stat-label">PHP</div><div class="stat-value" id="stat-php" style="font-size:14px;margin-top:4px;">—</div><div class="stat-sub">version</div></div>
+        <div class="stat-card"><div class="stat-label">Disk Free</div><div class="stat-value" id="stat-disk">—</div><div class="stat-sub">available</div></div>
+        <div class="stat-card"><div class="stat-label">Backups</div><div class="stat-value" id="stat-backups">—</div><div class="stat-sub">saved</div></div>
+      </div>
+      <table class="file-table" id="file-table">
+        <thead><tr><th>File</th><th>Size</th><th>Last Modified</th><th>Status</th></tr></thead>
+        <tbody id="file-tbody"></tbody>
+      </table>
+      <div class="btn-row">
+        <button class="btn btn-outline" onclick="loadStatus()">⟳ Refresh</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- BACKUP -->
+  <div class="section">
+    <div class="section-head" onclick="toggleSection('backup-body')">
+      <span class="section-icon">💾</span>
+      <span class="section-title">BACKUP</span>
+      <span class="section-desc">Save current files before upgrading</span>
+    </div>
+    <div class="section-body" id="backup-body">
+      <div class="alert ok" id="backup-alert"></div>
+      <div class="alert err" id="backup-err"></div>
+      <p style="font-size:12px;color:var(--tx2);margin-bottom:14px;">
+        Always create a backup before uploading updates. You can restore in one click if something goes wrong.
+      </p>
+      <div class="backup-list" id="backup-list"></div>
+      <div class="btn-row">
+        <button class="btn btn-gold" onclick="createBackup()" id="backup-btn">💾 Create Backup Now</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- UPLOAD FILES -->
+  <div class="section">
+    <div class="section-head" onclick="toggleSection('upload-body')">
+      <span class="section-icon">📤</span>
+      <span class="section-title">UPLOAD FILES</span>
+      <span class="section-desc">Update individual files</span>
+    </div>
+    <div class="section-body" id="upload-body">
+      <div class="alert ok" id="upload-alert"></div>
+      <div class="alert err" id="upload-err"></div>
+      <div class="drop-zone" id="file-drop" ondragover="onDrag(event,true)" ondragleave="onDrag(event,false)" ondrop="onDrop(event)">
+        <input type="file" id="file-input" accept=".html,.js,.json,.php" onchange="fileSelected(this)">
+        <div class="drop-icon">📁</div>
+        <div class="drop-title">Drop file here or click to browse</div>
+        <div class="drop-sub">Allowed: index.html · config.js · etel-engine.js · registry.json · sw.js</div>
+        <div class="drop-filename" id="drop-filename"></div>
+      </div>
+      <div class="progress-wrap" id="file-progress">
+        <div class="progress-bar"><div class="progress-fill" id="file-progress-fill"></div></div>
+        <div class="progress-text" id="file-progress-text">Uploading...</div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-gold" onclick="uploadFile()" id="upload-file-btn" disabled>⬆ Upload File</button>
+        <button class="btn btn-outline" onclick="clearFileInput()">✕ Clear</button>
+      </div>
+      <div class="log" id="upload-log" style="display:none;"></div>
+    </div>
+  </div>
+
+  <!-- UPLOAD ZIP -->
+  <div class="section">
+    <div class="section-head" onclick="toggleSection('zip-body')">
+      <span class="section-icon">📦</span>
+      <span class="section-title">UPLOAD ZIP UPDATE</span>
+      <span class="section-desc">Upload etel-os-v3.zip to update everything</span>
+    </div>
+    <div class="section-body" id="zip-body">
+      <div class="alert ok" id="zip-alert"></div>
+      <div class="alert err" id="zip-err"></div>
+      <p style="font-size:12px;color:var(--tx2);margin-bottom:14px;">
+        Upload the full <code style="background:var(--bg4);padding:1px 5px;border-radius:3px;color:var(--blue);">etel-os-v3.zip</code> file. The updater will automatically extract and apply only the allowed files (index.html, config.js, etel-engine.js, skills/registry.json, sw.js).
+      </p>
+      <div class="drop-zone" id="zip-drop" ondragover="onDragZip(event,true)" ondragleave="onDragZip(event,false)" ondrop="onDropZip(event)">
+        <input type="file" id="zip-input" accept=".zip" onchange="zipSelected(this)">
+        <div class="drop-icon">📦</div>
+        <div class="drop-title">Drop etel-os-v3.zip here or click to browse</div>
+        <div class="drop-sub">Max 20MB · .zip files only</div>
+        <div class="drop-filename" id="zip-filename"></div>
+      </div>
+      <div class="progress-wrap" id="zip-progress">
+        <div class="progress-bar"><div class="progress-fill" id="zip-progress-fill"></div></div>
+        <div class="progress-text" id="zip-progress-text">Uploading...</div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-gold" onclick="uploadZip()" id="upload-zip-btn" disabled>📦 Upload & Apply Zip</button>
+        <button class="btn btn-outline" onclick="clearZipInput()">✕ Clear</button>
+      </div>
+      <div class="log" id="zip-log" style="display:none;"></div>
+    </div>
+  </div>
+
+  <!-- RESTORE -->
+  <div class="section">
+    <div class="section-head" onclick="toggleSection('restore-body')">
+      <span class="section-icon">🔄</span>
+      <span class="section-title">RESTORE BACKUP</span>
+      <span class="section-desc">Roll back to a previous version</span>
+    </div>
+    <div class="section-body" id="restore-body">
+      <div class="alert ok" id="restore-alert"></div>
+      <div class="alert err" id="restore-err"></div>
+      <div class="backup-list" id="restore-list">
+        <div style="font-size:12px;color:var(--tx3);">No backups yet. Create one first.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- LOG OUT -->
+  <div style="text-align:center;padding:20px 0;">
+    <button class="btn btn-outline" onclick="logout()">🚪 Logout</button>
+    <div style="font-size:10px;color:var(--tx3);margin-top:10px;">ETEL Updater · ethelmarket.com/etel/ · Keep this URL private</div>
+  </div>
+
+</div>
+
+<script>
+// ── CONFIG ──
+const UPDATER_URL = 'updater.php'; // Same folder
+let AUTH = '';
+let statusData = null;
+
+// ── LOGIN ──
+function login() {
+  const pwd = document.getElementById('pwd-input').value.trim();
+  if (!pwd) return;
+  AUTH = pwd;
+  // Test auth by calling status
+  fetch(`${UPDATER_URL}?action=status&auth=${encodeURIComponent(AUTH)}`)
+    .then(r => r.json())
+    .then(d => {
+      if (d.ok) {
+        document.getElementById('login-view').style.display = 'none';
+        document.getElementById('main-view').style.display = 'block';
+        document.getElementById('auth-badge').textContent = 'LOGGED IN';
+        document.getElementById('auth-badge').classList.add('authed');
+        processStatus(d.data);
+      } else {
+        showAlert('login-err', 'err', '❌ Wrong password. Try again.');
+        AUTH = '';
+      }
+    })
+    .catch(() => showAlert('login-err', 'err', '❌ Cannot reach updater.php — is it uploaded?'));
+}
+
+function logout() {
+  AUTH = '';
+  document.getElementById('login-view').style.display = 'block';
+  document.getElementById('main-view').style.display = 'none';
+  document.getElementById('auth-badge').textContent = 'NOT LOGGED IN';
+  document.getElementById('auth-badge').classList.remove('authed');
+  document.getElementById('pwd-input').value = '';
+}
+
+// ── STATUS ──
+function loadStatus() {
+  document.getElementById('status-summary').textContent = 'Loading...';
+  fetch(`${UPDATER_URL}?action=status&auth=${encodeURIComponent(AUTH)}`)
+    .then(r => r.json())
+    .then(d => { if (d.ok) processStatus(d.data); else showAlert('',  'err', d.error); })
+    .catch(e => console.error(e));
+}
+
+function processStatus(data) {
+  statusData = data;
+  document.getElementById('stat-skills').textContent = data.skill_count;
+  document.getElementById('stat-php').textContent = data.php_version;
+  document.getElementById('stat-disk').textContent = data.disk_free;
+  document.getElementById('stat-backups').textContent = data.backups.length;
+  document.getElementById('status-summary').textContent = `${data.skill_count} skills · ${data.disk_free} free`;
+
+  // File table
+  const tbody = document.getElementById('file-tbody');
+  tbody.innerHTML = '';
+  for (const [name, info] of Object.entries(data.files)) {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${name}</td>
+      <td>${info.size}</td>
+      <td>${info.modified}</td>
+      <td><span class="dot ${info.exists ? 'green' : 'red'}"></span>${info.exists ? 'OK' : 'Missing'}</td>`;
+    tbody.appendChild(tr);
+  }
+
+  // Backup lists
+  renderBackupLists(data.backups);
+}
+
+function renderBackupLists(backups) {
+  const listEl = document.getElementById('backup-list');
+  const restoreEl = document.getElementById('restore-list');
+
+  if (!backups.length) {
+    listEl.innerHTML = '<div style="font-size:12px;color:var(--tx3);">No backups yet.</div>';
+    restoreEl.innerHTML = '<div style="font-size:12px;color:var(--tx3);">No backups yet. Create one first.</div>';
+    return;
+  }
+
+  listEl.innerHTML = backups.map(b => `
+    <div class="backup-item">
+      <span class="backup-id">📁 ${b}</span>
+      <button class="btn btn-red" style="padding:5px 10px;font-size:10px;" onclick="deleteBackup('${b}')">Delete</button>
+    </div>`).join('');
+
+  restoreEl.innerHTML = backups.map(b => `
+    <div class="backup-item">
+      <span class="backup-id">📁 ${b}</span>
+      <span class="backup-date">${b.replace(/_/g,' ')}</span>
+      <button class="btn btn-green" style="padding:5px 10px;font-size:10px;" onclick="restoreBackup('${b}')">↩ Restore</button>
+    </div>`).join('');
+}
+
+// ── BACKUP ──
+function createBackup() {
+  const btn = document.getElementById('backup-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Creating...';
+
+  fetch(`${UPDATER_URL}?action=backup&auth=${encodeURIComponent(AUTH)}`)
+    .then(r => r.json())
+    .then(d => {
+      btn.disabled = false;
+      btn.innerHTML = '💾 Create Backup Now';
+      if (d.ok) {
+        showAlert('backup-alert', 'ok', `✅ Backup created: ${d.data.backup_id} (${d.data.files.length} files)`);
+        loadStatus();
+      } else {
+        showAlert('backup-err', 'err', '❌ ' + d.error);
+      }
+    })
+    .catch(e => { btn.disabled=false; btn.innerHTML='💾 Create Backup Now'; showAlert('backup-err','err','❌ Network error'); });
+}
+
+function deleteBackup(id) {
+  if (!confirm(`Delete backup ${id}?`)) return;
+  const fd = new FormData();
+  fd.append('action', 'delete_backup');
+  fd.append('auth', AUTH);
+  fd.append('backup_id', id);
+  fetch(UPDATER_URL, {method:'POST', body:fd})
+    .then(r=>r.json())
+    .then(d=>{ if(d.ok) loadStatus(); else alert('Error: '+d.error); });
+}
+
+function restoreBackup(id) {
+  if (!confirm(`Restore from backup ${id}?\n\nThis will overwrite your current files!`)) return;
+  const fd = new FormData();
+  fd.append('action', 'restore');
+  fd.append('auth', AUTH);
+  fd.append('backup_id', id);
+  fetch(UPDATER_URL, {method:'POST', body:fd})
+    .then(r=>r.json())
+    .then(d=>{
+      if(d.ok) {
+        showAlert('restore-alert','ok',`✅ Restored ${d.data.restored.length} files from ${id}`);
+        loadStatus();
+      } else showAlert('restore-err','err','❌ '+d.error);
+    });
+}
+
+// ── FILE UPLOAD ──
+let selectedFile = null;
+let selectedZip = null;
+
+function fileSelected(input) {
+  selectedFile = input.files[0];
+  document.getElementById('drop-filename').textContent = selectedFile ? `Selected: ${selectedFile.name}` : '';
+  document.getElementById('upload-file-btn').disabled = !selectedFile;
+}
+
+function onDrag(e, on) { e.preventDefault(); document.getElementById('file-drop').classList.toggle('drag', on); }
+function onDrop(e) {
+  e.preventDefault();
+  document.getElementById('file-drop').classList.remove('drag');
+  const f = e.dataTransfer.files[0];
+  if (f) { selectedFile = f; document.getElementById('drop-filename').textContent = `Selected: ${f.name}`; document.getElementById('upload-file-btn').disabled = false; }
+}
+function clearFileInput() { selectedFile = null; document.getElementById('file-input').value=''; document.getElementById('drop-filename').textContent=''; document.getElementById('upload-file-btn').disabled=true; hideLog('upload-log'); }
+
+function uploadFile() {
+  if (!selectedFile) return;
+  const btn = document.getElementById('upload-file-btn');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Uploading...';
+  const prog = document.getElementById('file-progress');
+  prog.classList.add('show');
+
+  const fd = new FormData();
+  fd.append('action', 'upload');
+  fd.append('auth', AUTH);
+  fd.append('file', selectedFile);
+
+  const xhr = new XMLHttpRequest();
+  xhr.upload.onprogress = e => {
+    const pct = e.total ? Math.round(e.loaded/e.total*100) : 50;
+    document.getElementById('file-progress-fill').style.width = pct+'%';
+    document.getElementById('file-progress-text').textContent = `Uploading... ${pct}%`;
+  };
+  xhr.onload = () => {
+    btn.disabled=false; btn.innerHTML='⬆ Upload File';
+    try {
+      const d = JSON.parse(xhr.responseText);
+      if (d.ok) {
+        showAlert('upload-alert','ok',`✅ ${d.data.file} updated! (${d.data.size}) — ${d.message}`);
+        addLog('upload-log', `✅ ${d.data.file} → ${d.data.dest}`, 'ok');
+        loadStatus();
+        clearFileInput();
+      } else {
+        showAlert('upload-err','err','❌ '+d.error);
+        addLog('upload-log', '❌ '+d.error, 'err');
+      }
+    } catch(e) { showAlert('upload-err','err','❌ Server error'); }
+    document.getElementById('file-progress-fill').style.width='100%';
+  };
+  xhr.onerror = () => { btn.disabled=false; btn.innerHTML='⬆ Upload File'; showAlert('upload-err','err','❌ Network error'); };
+  xhr.open('POST', UPDATER_URL);
+  xhr.send(fd);
+}
+
+// ── ZIP UPLOAD ──
+function zipSelected(input) {
+  selectedZip = input.files[0];
+  document.getElementById('zip-filename').textContent = selectedZip ? `Selected: ${selectedZip.name} (${(selectedZip.size/1024/1024).toFixed(1)} MB)` : '';
+  document.getElementById('upload-zip-btn').disabled = !selectedZip;
+}
+function onDragZip(e,on){e.preventDefault();document.getElementById('zip-drop').classList.toggle('drag',on);}
+function onDropZip(e){e.preventDefault();document.getElementById('zip-drop').classList.remove('drag');const f=e.dataTransfer.files[0];if(f&&f.name.endsWith('.zip')){selectedZip=f;document.getElementById('zip-filename').textContent=`Selected: ${f.name}`;document.getElementById('upload-zip-btn').disabled=false;}}
+function clearZipInput(){selectedZip=null;document.getElementById('zip-input').value='';document.getElementById('zip-filename').textContent='';document.getElementById('upload-zip-btn').disabled=true;hideLog('zip-log');}
+
+function uploadZip() {
+  if (!selectedZip) return;
+  if (!confirm(`Upload and apply ${selectedZip.name}?\n\nMake sure you have created a backup first!`)) return;
+
+  const btn = document.getElementById('upload-zip-btn');
+  btn.disabled=true; btn.innerHTML='<span class="spinner"></span> Uploading...';
+  document.getElementById('zip-progress').classList.add('show');
+
+  const fd = new FormData();
+  fd.append('action', 'upload_zip');
+  fd.append('auth', AUTH);
+  fd.append('zipfile', selectedZip);
+
+  const xhr = new XMLHttpRequest();
+  xhr.upload.onprogress = e => {
+    const pct = e.total ? Math.round(e.loaded/e.total*100) : 50;
+    document.getElementById('zip-progress-fill').style.width=pct+'%';
+    document.getElementById('zip-progress-text').textContent=`Uploading zip... ${pct}%`;
+  };
+  xhr.onload = () => {
+    btn.disabled=false; btn.innerHTML='📦 Upload & Apply Zip';
+    try {
+      const d = JSON.parse(xhr.responseText);
+      if (d.ok) {
+        showAlert('zip-alert','ok',`✅ ${d.message}: ${d.data.updated.join(', ')}`);
+        d.data.updated.forEach(f => addLog('zip-log', `✅ Updated: ${f}`, 'ok'));
+        loadStatus();
+        clearZipInput();
+      } else {
+        showAlert('zip-err','err','❌ '+d.error);
+        addLog('zip-log','❌ '+d.error,'err');
+      }
+    } catch(e) { showAlert('zip-err','err','❌ Server error'); }
+  };
+  xhr.onerror = () => { btn.disabled=false; btn.innerHTML='📦 Upload & Apply Zip'; showAlert('zip-err','err','❌ Network error'); };
+  xhr.open('POST', UPDATER_URL);
+  xhr.send(fd);
+}
+
+// ── HELPERS ──
+function toggleSection(id) {
+  const el = document.getElementById(id);
+  el.style.display = el.style.display === 'none' ? 'block' : '';
+}
+function showAlert(id, type, msg) {
+  if (!id) return;
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.className = `alert ${type} show`;
+  el.textContent = msg;
+  setTimeout(() => el.classList.remove('show'), 6000);
+}
+function addLog(logId, msg, type='info') {
+  const log = document.getElementById(logId);
+  log.style.display = 'block';
+  const line = document.createElement('div');
+  line.className = `log-line ${type}`;
+  line.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+  log.appendChild(line);
+  log.scrollTop = log.scrollHeight;
+}
+function hideLog(id) { const el = document.getElementById(id); el.style.display='none'; el.innerHTML=''; }
+
+// ── INIT ──
+document.getElementById('pwd-input').addEventListener('keydown', e => { if(e.key==='Enter') login(); });
+</script>
+</body>
+</html>

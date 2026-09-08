@@ -1,0 +1,73 @@
+{
+  "_comment": "Edit this file to add/remove/reorder models in the widget's picker - no code changes needed. provider must be one of: ollama, gemini. effort_levels maps a picker label to a provider-specific setting (see chat.php applyEffort()).",
+
+  "models": [
+    {
+      "id": "tinyllama",
+      "provider": "ollama",
+      "label": "TinyLlama",
+      "group": "Local (Ollama)",
+      "desc": "Fastest · runs on this server · free",
+      "default": true,
+      "effort_levels": {
+        "Low":    { "num_predict": 150 },
+        "Medium": { "num_predict": 300 },
+        "High":   { "num_predict": 600 }
+      }
+    },
+    {
+      "id": "mistral",
+      "provider": "ollama",
+      "label": "Mistral 7B",
+      "group": "Local (Ollama)",
+      "desc": "Better quality · slower · needs `ollama pull mistral`",
+      "effort_levels": {
+        "Low":    { "num_predict": 200 },
+        "Medium": { "num_predict": 500 },
+        "High":   { "num_predict": 900 }
+      }
+    },
+    {
+      "id": "gemini-1.5-flash",
+      "provider": "gemini",
+      "label": "Gemini 1.5 Flash",
+      "group": "Google Gemini",
+      "desc": "Fast, capable cloud model · needs GEMINI_API_KEY",
+      "effort_levels": {
+        "Low":    { "maxOutputTokens": 256,  "temperature": 0.4 },
+        "Medium": { "maxOutputTokens": 768,  "temperature": 0.6 },
+        "High":   { "maxOutputTokens": 1536, "temperature": 0.7 },
+        "Extra":  { "maxOutputTokens": 2560, "temperature": 0.8 }
+      }
+    },
+    {
+      "id": "gemini-1.5-pro",
+      "provider": "gemini",
+      "label": "Gemini 1.5 Pro",
+      "group": "Google Gemini",
+      "desc": "Most capable Gemini model · slower · needs GEMINI_API_KEY",
+      "effort_levels": {
+        "Low":    { "maxOutputTokens": 256,  "temperature": 0.4 },
+        "Medium": { "maxOutputTokens": 768,  "temperature": 0.6 },
+        "High":   { "maxOutputTokens": 1536, "temperature": 0.7 },
+        "Extra":  { "maxOutputTokens": 2560, "temperature": 0.8 },
+        "Max":    { "maxOutputTokens": 4096, "temperature": 0.85 }
+      }
+    },
+    {
+      "id": "kimi-k2-0711-preview",
+      "provider": "kimi",
+      "label": "Kimi K2",
+      "group": "Moonshot AI",
+      "desc": "Strong general reasoning · needs KIMI_API_KEY · auto-picked for advice/general chat when Gemini is also on",
+      "effort_levels": {
+        "Low":    { "max_tokens": 256,  "temperature": 0.4 },
+        "Medium": { "max_tokens": 768,  "temperature": 0.6 },
+        "High":   { "max_tokens": 1536, "temperature": 0.7 },
+        "Extra":  { "max_tokens": 2560, "temperature": 0.8 }
+      }
+    }
+  ],
+
+  "default_effort": "Medium"
+}

@@ -1,0 +1,9 @@
+# EtelAudit Pro -- real files here (proxy.php, api.php, index.html, etc.)
+# are already served directly by the parent .htaccess's
+# "RewriteCond %{REQUEST_FILENAME} -f" rule, so no rewrite override is
+# needed here. A previous "RewriteEngine Off" in this file caused
+# LiteSpeed to instead funnel these requests into the parent app's
+# router (which has no route for them), producing 404s on proxy.php
+# and api.php even though the files existed and were readable.
+DirectoryIndex index.html
+Options -Indexes

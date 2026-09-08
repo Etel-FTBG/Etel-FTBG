@@ -1,0 +1,51 @@
+/* ============================================================
+   ETEL AI — admin.html layout
+   ============================================================ */
+
+#shell{display:flex;min-height:100vh;}
+
+#sidebar{
+  width:210px;flex-shrink:0;background:var(--bg2);border-right:1px solid var(--line);
+  padding:18px 12px;display:flex;flex-direction:column;gap:4px;
+}
+#side-brand{display:flex;align-items:center;gap:10px;padding:6px 8px 20px;}
+#side-logo{
+  width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(135deg,var(--gold-deep),var(--gold));color:#0d0d0d;font-weight:800;font-size:13px;
+  flex-shrink:0;
+}
+#side-title{font-family:var(--f-display);font-weight:800;font-size:14px;}
+#side-sub{font-size:10.5px;color:var(--text-dim);}
+
+.side-link{
+  display:block;width:100%;text-align:left;background:none;border:none;color:var(--text-dim);
+  font-size:13px;padding:10px 12px;border-radius:8px;cursor:pointer;font-family:inherit;
+}
+.side-link:hover{background:rgba(212,175,55,.06);}
+.side-link.active{background:rgba(212,175,55,.1);color:var(--gold);font-weight:700;}
+
+#content{flex:1;padding:32px 36px;max-width:760px;}
+#content h1{font-family:var(--f-display);font-size:20px;margin-bottom:6px;}
+.panel-sub{font-size:12.5px;color:var(--text-dim);margin-bottom:20px;line-height:1.6;}
+.panel-msg{font-size:12px;margin-top:10px;min-height:16px;}
+.panel-msg.ok{color:var(--green);}
+.panel-msg.err{color:var(--red);}
+
+.provider-row{
+  display:flex;align-items:center;justify-content:space-between;padding:12px 14px;
+  border-radius:9px;
+}
+.provider-row + .provider-row{border-top:1px solid var(--line);}
+.provider-name{font-size:13.5px;font-weight:600;}
+
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;}
+.stat-card{padding:16px;}
+.stat-value{font-family:var(--f-display);font-size:26px;color:var(--gold);}
+.stat-label{font-size:11px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.4px;margin-top:4px;}
+
+@media (max-width:640px){
+  #shell{flex-direction:column;}
+  #sidebar{width:100%;flex-direction:row;overflow-x:auto;padding:10px;}
+  #side-brand{display:none;}
+  #content{padding:20px 16px;}
+}
