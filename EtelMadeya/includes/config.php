@@ -20,6 +20,14 @@ define('DB_USER', 'root');  // CHANGE THIS to your cPanel database username
 define('DB_PASS', '');  // CHANGE THIS to your cPanel database password
 define('DB_CHARSET', 'utf8mb4');
 
+// ─── ETELID SSO ──────────────────────────────────────────────────────
+// Shared secret for the EtelID Service API (see includes/etelid_bridge.php).
+// MUST be the exact same value as ETELID_SERVICE_KEY in EtelID's own
+// wp-config.php. CHANGE THIS on the live server - can also be set via
+// an ETELID_SERVICE_KEY environment variable instead of editing this file.
+define('ETELID_SERVICE_KEY', 'CHANGE_ME');
+define('ETELID_HOST', 'ethelmarket.com');
+
 // ─── SITE CONFIGURATION ─────────────────────────────────────────────
 define('SITE_URL', 'https://ethelmarket.com/Etel-Madeya');
 define('SITE_NAME', 'Etel Madeya');
