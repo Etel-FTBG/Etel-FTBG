@@ -154,17 +154,38 @@ h1, h2, .logo-name, .page-title, .login-box h1, .header-title,
     transform: translateY(0);
 }
 
-/* ═══ INPUTS / SELECTS — focus glow ═══════════════════════════════ */
-.form-control, .form-group input, .form-group select, .form-group textarea,
-input[type="text"], input[type="password"], input[type="email"],
-input[type="tel"], input[type="number"], input[type="date"], select,
-textarea, #reportSearch, #impVehicleType {
+/* ═══ INPUTS / SELECTS — themed appearance + focus glow ═══════════
+   .form-group inputs across the app (login, Add Vehicle, Add
+   Controller, Settings, etc.) are bare <input>/<select>/<textarea>
+   with no .form-control class, so they fell back to unstyled white
+   browser-default boxes that broke the dark/gold theme. This gives
+   every one of them the same themed look, .form-control included.
+   Scoped to .form-group / .form-control only - deliberately NOT a
+   bare input[type=...] catch-all, since several standalone inputs
+   elsewhere (.report-search-bar input, the toolbar date picker) have
+   their own intentional styling (e.g. a red accent border, flex:1
+   sizing) that a wide catch-all would have silently overridden. */
+.form-control, .form-group input:not([type="checkbox"]):not([type="radio"]),
+.form-group select, .form-group textarea {
+    width: 100%;
+    padding: 12px 15px;
+    border: 1px solid var(--ep-gold-border);
+    border-radius: var(--ep-r-sm);
+    background: rgba(20,14,4,0.55);
+    color: #fff8e8;
+    font-size: 16px; /* >=16px prevents iOS Safari auto-zoom-on-focus */
+    font-family: inherit;
     transition: box-shadow var(--ep-dur-base) var(--ep-ease-io),
                 border-color var(--ep-dur-base) var(--ep-ease-io);
 }
 
+.form-control::placeholder, .form-group input::placeholder,
+.form-group textarea::placeholder {
+    color: rgba(255,248,232,0.4);
+}
+
 .form-control:focus, .form-group input:focus, .form-group select:focus,
-.form-group textarea:focus, input:focus, select:focus, textarea:focus {
+.form-group textarea:focus, #reportSearch:focus, #impVehicleType:focus {
     outline: none;
     border-color: var(--ep-gold) !important;
     box-shadow: 0 0 0 3px var(--ep-gold-subtle), var(--ep-shadow-sm);
@@ -220,8 +241,18 @@ textarea, #reportSearch, #impVehicleType {
    impression" surface — worth its own dedicated depth/3D treatment. */
 
 .login-screen {
-    overflow: hidden;
-    perspective: 1400px;
+    overflow-x: hidden;
+    overflow-y: auto;
+    /* Not overflow:hidden - on mobile, when the on-screen keyboard
+       opens (or the address bar shrinks the viewport), a hidden
+       overflow can trap the form/submit button off-screen with no
+       way to scroll to it. Real perspective/3D-rotate transforms were
+       deliberately dropped from this screen too (see .login-box-etelid
+       below) for the same mobile-safety reason - some mobile WebKit
+       builds mishandle touch hit-testing inside an active 3D
+       transform/perspective context. */
+    padding: 24px 16px;
+    box-sizing: border-box;
 }
 
 /* Floating ambient glow orbs behind the card, for depth/parallax feel */
@@ -262,7 +293,6 @@ textarea, #reportSearch, #impVehicleType {
     z-index: 1;
     overflow: visible;
     animation: ep-card-rise 0.6s var(--ep-ease-spring) both;
-    transform-style: preserve-3d;
 }
 
 .login-box-etelid::before {
@@ -285,12 +315,12 @@ textarea, #reportSearch, #impVehicleType {
 }
 
 @keyframes ep-card-rise {
-    from { opacity: 0; transform: translateY(24px) rotateX(6deg); }
-    to   { opacity: 1; transform: translateY(0) rotateX(0); }
+    from { opacity: 0; transform: translateY(24px); }
+    to   { opacity: 1; transform: translateY(0); }
 }
 
 .login-box-etelid:hover {
-    transform: translateY(-2px) rotateX(1deg);
+    transform: translateY(-2px);
 }
 
 /* Pulsing glow ring around the logo */
@@ -368,6 +398,29 @@ textarea, #reportSearch, #impVehicleType {
 }
 
 .login-footer-note a:hover { text-decoration: underline; }
+
+/* Snappier mobile taps on every clickable control, plus a smaller
+   login card and logo on narrow screens so the whole form - button
+   included - comfortably fits without the surrounding orbs/blur
+   pushing it off-viewport. */
+button, .btn, .btn-primary, .btn-secondary, .btn-success, a {
+    touch-action: manipulation;
+}
+
+@media (max-width: 480px) {
+    .login-box-etelid {
+        padding: 28px 22px;
+        max-width: 100%;
+    }
+    .login-logo-ring {
+        width: 90px;
+        height: 90px;
+    }
+    .login-orb-1, .login-orb-2 {
+        width: 220px;
+        height: 220px;
+    }
+}
 
 /* ═══ REDUCED MOTION — respect user preference ════════════════════ */
 @media (prefers-reduced-motion: reduce) {
