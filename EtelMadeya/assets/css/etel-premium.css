@@ -273,9 +273,9 @@ h1, h2, .logo-name, .page-title, .login-box h1, .header-title,
        and /admin/ (admin/index.php). */
     background-image: url('/Etel-Madeya/assets/images/etel-madeya-logo.webp');
     background-repeat: no-repeat;
-    background-position: center 42%;
-    background-size: min(720px, 88vw);
-    opacity: 0.22;
+    background-position: center 45%;
+    background-size: min(1300px, 115vw);
+    opacity: 0.32;
 }
 
 /* Floating ambient glow orbs behind the card, for depth/parallax feel */
@@ -316,25 +316,6 @@ h1, h2, .logo-name, .page-title, .login-box h1, .header-title,
     z-index: 1;
     overflow: visible;
     animation: ep-card-rise 0.6s var(--ep-ease-spring) both;
-}
-
-.login-box-etelid::before {
-    content: '';
-    position: absolute;
-    inset: -2px;
-    z-index: -1;
-    border-radius: 20px;
-    background: conic-gradient(from 0deg,
-        var(--ep-gold-deep), var(--ep-gold), var(--ep-gold-light),
-        var(--ep-gold-pale), var(--ep-gold-light), var(--ep-gold),
-        var(--ep-gold-deep));
-    filter: blur(14px);
-    opacity: 0.65;
-    animation: ep-ring-spin 6s linear infinite;
-}
-
-@keyframes ep-ring-spin {
-    to { transform: rotate(360deg); }
 }
 
 @keyframes ep-card-rise {
