@@ -18,6 +18,7 @@ class EtelID_Auth_Ajax {
         /* Explicit action → method map to avoid str_replace bugs */
         $map = array(
             'etelid_auth_register'        => 'register',
+            'etelid_quick_register'       => 'quick_register',
             'etelid_auth_login'           => 'login',
             'etelid_auth_logout'          => 'logout',
             'etelid_auth_portal_data'     => 'portal_data',
@@ -106,6 +107,102 @@ class EtelID_Auth_Ajax {
             'verify_url' => $member ? EtelID_QR::verify_url( $member->etel_id ) : '',
             'redirect'   => home_url( '/portal/' ),
         ));
+    }
+
+    /* -- Quick Register (public, self-service fast track) --------
+     * A deliberately minimal alternative to register() above: full
+     * name, profile photo, Fayda front/back, email, phone - no
+     * password, no address, no DOB. Reuses the same temp-password +
+     * must_change_password mechanism EtelID_Fayda::quick_register()
+     * already established for the admin-driven Fayda capture flow
+     * (same portal overlay picks it up automatically - see
+     * templates/portal.php's $etelid_must_change block), but this one
+     * is public (wp_ajax_nopriv) and auto-logs the member in directly
+     * instead of delivering the temp password out-of-band, since the
+     * person filling this in IS the one sitting in the browser right
+     * now, unlike an admin registering someone else. The account is
+     * genuinely usable immediately; empty( $member->dob ) is what the
+     * portal's "complete your profile" banner keys off of afterward
+     * to nudge them back to /profile/ - no new DB columns needed since
+     * dob is already required by the full form and never left empty
+     * by any other entry point. */
+    public static function quick_register() {
+        check_ajax_referer( 'etelid_auth', 'nonce' );
+
+        $ip = EtelID_Security::get_ip();
+        if ( ! EtelID_Security::rate_limit( 'quick_register_' . $ip, 5, 3600 ) ) {
+            wp_send_json_error( array( 'message' => 'Too many attempts. Please wait an hour and try again.' ) );
+        }
+
+        $data = array(
+            'full_name' => isset( $_POST['full_name'] ) ? sanitize_text_field( wp_unslash( $_POST['full_name'] ) ) : '',
+            'phone'     => isset( $_POST['phone'] )     ? sanitize_text_field( wp_unslash( $_POST['phone'] ) )     : '',
+            'email'     => isset( $_POST['email'] )     ? sanitize_text_field( wp_unslash( $_POST['email'] ) )     : '',
+        );
+        /* Base64 image fields - not sanitize_text_field, same reasoning as register() above. */
+        $data['photo_url']         = isset( $_POST['photo_url'] )         ? wp_unslash( $_POST['photo_url'] )         : '';
+        $data['fayda_front_image'] = isset( $_POST['fayda_front_image'] ) ? wp_unslash( $_POST['fayda_front_image'] ) : '';
+        $data['fayda_back_image']  = isset( $_POST['fayda_back_image'] )  ? wp_unslash( $_POST['fayda_back_image'] )  : '';
+
+        if ( empty( $data['full_name'] ) ) {
+            wp_send_json_error( array( 'field' => 'full_name', 'message' => 'Full name is required.' ) );
+        }
+        if ( empty( $data['phone'] ) ) {
+            wp_send_json_error( array( 'field' => 'phone', 'message' => 'Phone number is required.' ) );
+        }
+        if ( empty( $data['fayda_front_image'] ) || strpos( $data['fayda_front_image'], 'data:image' ) !== 0 ) {
+            wp_send_json_error( array( 'message' => 'Please add a photo of the front of your Fayda ID.' ) );
+        }
+        if ( empty( $data['fayda_back_image'] ) || strpos( $data['fayda_back_image'], 'data:image' ) !== 0 ) {
+            wp_send_json_error( array( 'message' => 'Please add a photo of the back of your Fayda ID.' ) );
+        }
+        if ( ! empty( $data['email'] ) && ! is_email( $data['email'] ) ) {
+            wp_send_json_error( array( 'field' => 'email', 'message' => 'Invalid email address.' ) );
+        }
+
+        if ( ! class_exists( 'EtelID_Fayda' ) ) {
+            wp_send_json_error( array( 'message' => 'Server setup error: EtelID_Fayda class is not loaded. Re-deploy includes/class-etelid-fayda.php and confirm etel-id.php requires it.' ) );
+        }
+
+        $phone = preg_replace( '/\s+/', '', $data['phone'] );
+        $existing = EtelID_DB::find_by_phone( $phone );
+        if ( $existing ) {
+            wp_send_json_error( array( 'message' => 'An account with this phone number already exists. Please sign in instead.' ) );
+        }
+        $data['phone'] = $phone;
+
+        $member_id = EtelID_Generator::create( $data );
+        if ( is_wp_error( $member_id ) ) {
+            wp_send_json_error( array( 'message' => $member_id->get_error_message() ) );
+        }
+
+        /* Same temp-password mechanism as EtelID_Fayda::quick_register() -
+         * the must_change_password portal overlay expects exactly this
+         * shape (pin_hash set, must_change_password=1). */
+        $temp_password = EtelID_Fayda::generate_temp_password();
+        EtelID_DB::update_member( $member_id, array(
+            'pin_hash'             => EtelID_Auth::hash_password( $temp_password ),
+            'must_change_password' => 1,
+            'kyc_level'            => 1,
+        ) );
+
+        $member = EtelID_DB::get_member( $member_id );
+        EtelID_DB::log( $member_id, $member ? $member->etel_id : '', 'issued',
+            'Self-service quick registration (fast form) - remaining profile fields to be completed later' );
+
+        /* Auto login - unlike the admin-driven quick-register flow, the
+         * registrant is present in this browser right now. */
+        EtelID_Auth::create_session( $member_id );
+        if ( $member ) EtelID_Mailer::send_welcome( $member );
+
+        wp_send_json_success( array(
+            'message'       => 'Account created! Finish the rest of your profile any time from the portal.',
+            'etel_id'       => $member ? $member->etel_id : '',
+            'fin'           => $member ? $member->fin : '',
+            'temp_password' => $temp_password,
+            'verify_url'    => $member ? EtelID_QR::verify_url( $member->etel_id ) : '',
+            'redirect'      => home_url( '/portal/' ),
+        ) );
     }
 
     /* ── Login ──────────────────────────────────────────── */
