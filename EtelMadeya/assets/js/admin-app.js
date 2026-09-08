@@ -4,6 +4,7 @@
 
 let refreshInterval = null;
 let controllersCache = [];
+let vehicleTypesCache = [];
 
 // ─── INITIALIZATION ─────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
@@ -415,6 +416,7 @@ async function loadVehicleTypes() {
 }
 
 function displayVehicleTypes(types) {
+    vehicleTypesCache = types;
     const tbody = document.getElementById('vehiclesTableBody');
     
     if (types.length === 0) {
@@ -436,6 +438,86 @@ function displayVehicleTypes(types) {
             </td>
         </tr>
     `).join('');
+}
+
+function editVehicleType(id) {
+    const t = vehicleTypesCache.find(x => x.id == id);
+    if (!t) { showNotification('❌ Vehicle type not found - refresh and try again', 'error'); return; }
+
+    const modal = `
+        <div class="modal" style="display:block">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Edit Vehicle Type</h2>
+                    <button onclick="closeModal()" class="close-btn">✕</button>
+                </div>
+                <form onsubmit="handleEditVehicleType(event, ${t.id})">
+                    <div style="padding: 30px;">
+                        <div class="form-group">
+                            <label>Icon (emoji) *</label>
+                            <input type="text" id="editVtIcon" class="form-control" value="${t.icon}" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Name *</label>
+                            <input type="text" id="editVtName" class="form-control" value="${t.name}" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Name (Amharic)</label>
+                            <input type="text" id="editVtNameAm" class="form-control" value="${t.name_am || ''}">
+                        </div>
+                        <div class="form-group">
+                            <label>Sort Order</label>
+                            <input type="number" id="editVtSortOrder" class="form-control" value="${t.sort_order}">
+                        </div>
+                        <div class="form-group">
+                            <label>
+                                <input type="checkbox" id="editVtActive" ${t.is_active ? 'checked' : ''}>
+                                Active
+                            </label>
+                        </div>
+                        <div class="modal-actions">
+                            <button type="button" onclick="closeModal()" class="btn-secondary">Cancel</button>
+                            <button type="submit" class="btn-primary">Save Changes</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    `;
+
+    document.getElementById('modalContainer').innerHTML = modal;
+    document.getElementById('modalOverlay').style.display = 'block';
+}
+
+async function handleEditVehicleType(event, id) {
+    event.preventDefault();
+
+    const formData = new FormData();
+    formData.append('action', 'update_vehicle_type');
+    formData.append('id', id);
+    formData.append('icon', document.getElementById('editVtIcon').value);
+    formData.append('name', document.getElementById('editVtName').value);
+    formData.append('name_am', document.getElementById('editVtNameAm').value);
+    formData.append('sort_order', document.getElementById('editVtSortOrder').value);
+    formData.append('is_active', document.getElementById('editVtActive').checked ? 1 : 0);
+
+    try {
+        const response = await fetch(API, {
+            method: 'POST',
+            body: formData
+        });
+        const data = await response.json();
+
+        if (data.success) {
+            showNotification('✅ Vehicle type updated', 'success');
+            closeModal();
+            loadVehicleTypes();
+        } else {
+            showNotification('❌ ' + (data.message || 'Failed to update vehicle type'), 'error');
+        }
+    } catch (error) {
+        showNotification('❌ Error updating vehicle type', 'error');
+    }
 }
 
 function showAddVehicleType() {
