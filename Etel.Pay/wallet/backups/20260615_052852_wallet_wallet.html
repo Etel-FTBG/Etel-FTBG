@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#D4A843">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>ኢE Pay — Wallet</title>
+<link rel="manifest" href="manifest.php">
+<link rel="stylesheet" href="css/pay.css">
+<style>
+.balance-wrap{padding:20px 20px 0}
+.balance-card{padding:24px;margin-bottom:0}
+.balance-card .ep-card-glow::after{display:none}
+.wallet-id{font-family:var(--fm);font-size:11px;color:var(--text-3);margin-top:10px;letter-spacing:.5px}
+.actions-wrap{padding:20px}
+.recent-wrap{padding:0 20px 20px}
+/* Greeting */
+.greeting{padding:16px 20px 0;display:flex;align-items:center;justify-content:space-between}
+.greeting-text h2{font-family:var(--fd);font-size:20px;font-weight:600;color:var(--text)}
+.greeting-text p{font-size:13px;color:var(--text-3);margin-top:2px}
+/* Live dot */
+.live-dot{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:600;color:var(--ok);letter-spacing:.5px}
+.live-dot::before{content:'';width:7px;height:7px;border-radius:50%;background:var(--ok);animation:livePulse 2s ease-in-out infinite}
+@keyframes livePulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(1.4)}}
+/* Rate ticker */
+.rate-bar{
+  padding:8px 20px;
+  background:var(--glass);border-top:1px solid var(--gold-brd);border-bottom:1px solid var(--gold-brd);
+  display:flex;align-items:center;gap:16px;overflow-x:auto;
+}
+.rate-bar::-webkit-scrollbar{display:none}
+.rate-item{display:flex;align-items:center;gap:6px;white-space:nowrap;flex-shrink:0}
+.rate-cur{font-size:11px;font-weight:700;letter-spacing:.5px;color:var(--text-3)}
+.rate-val{font-family:var(--fm);font-size:12px;color:var(--gold-lt)}
+</style>
+</head>
+<body>
+<!-- Desktop layout wrapper (injected by JS on 1024px+) -->
+<div id="ep-desktop-wrap" style="display:none">
+  <aside id="ep-sidebar"></aside>
+  <div id="ep-desktop-main">
+    <div id="app-placeholder"></div>
+    <div id="ep-desktop-info"></div>
+  </div>
+</div>
+<div id="app">
+
+  <!-- Greeting -->
+  <div class="greeting safe-top" style="padding-top:max(18px,env(safe-area-inset-top,18px))">
+    <div style="display:flex;align-items:center;gap:10px">
+      <img src="icons/logo.png" alt="ኢE" style="width:38px;height:38px;border-radius:10px;box-shadow:0 2px 10px rgba(212,168,67,.3)">
+      <div class="greeting-text">
+        <h2 id="greet-name">Good day 👋</h2>
+        <p id="greet-sub">ሀዋሳ · Hawassa</p>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px">
+      <div class="live-dot" id="live-dot" style="display:none">LIVE</div>
+      <button class="ep-icon-btn" id="upd-btn" onclick="EP_CORE.nav('updater')" style="display:none;font-size:16px" title="Updater">⬆</button>
+      <button class="ep-avatar" id="avatar-btn" onclick="EP_CORE.nav('profile')">👤</button>
+    </div>
+  </div>
+
+  <!-- Rate bar -->
+  <div class="rate-bar" id="rate-bar" style="display:none">
+    <div class="rate-item"><span class="rate-cur">USD</span><span class="rate-val" id="r-usd">—</span></div>
+    <div class="rate-item"><span class="rate-cur">EUR</span><span class="rate-val" id="r-eur">—</span></div>
+    <div class="rate-item"><span class="rate-cur">GBP</span><span class="rate-val" id="r-gbp">—</span></div>
+    <div class="rate-item"><span class="rate-cur">SAR</span><span class="rate-val" id="r-sar">—</span></div>
+  </div>
+
+  <!-- Body -->
+  <div class="ep-body">
+
+    <!-- Balance card -->
+    <div class="balance-wrap">
+      <div class="ep-card-glow balance-card">
+        <div class="ep-bal-label" data-t="balance">Wallet Balance</div>
+        <div style="display:flex;align-items:baseline;gap:2px;margin:8px 0 4px">
+          <span class="ep-bal-amount ep-bal-xl" id="bal-etb">—</span>
+          <span class="ep-bal-cur"> ETB</span>
+        </div>
+        <div class="ep-bal-usd" id="bal-usd">≈ — USD</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-top:14px">
+          <div class="wallet-id" id="wallet-phone">—</div>
+          <span class="ep-badge ep-badge-ok" id="wallet-status" style="display:none">Active</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick actions -->
+    <div class="actions-wrap">
+      <div class="ep-actions">
+        <a class="ep-action" href="send">
+          <div class="ep-action-icon">↗</div>
+          <span class="ep-action-label" data-t="send">Send</span>
+        </a>
+        <a class="ep-action" href="qr">
+          <div class="ep-action-icon">⬛</div>
+          <span class="ep-action-label" data-t="receive">Receive</span>
+        </a>
+        <button class="ep-action" onclick="EP_CORE.nav('topup')">
+          <div class="ep-action-icon">＋</div>
+          <span class="ep-action-label" data-t="top_up">Top up</span>
+        </button>
+        <a class="ep-action" href="qr#scan">
+          <div class="ep-action-icon">⊙</div>
+          <span class="ep-action-label" data-t="scan_qr">Scan</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- Recent transactions -->
+    <div class="recent-wrap">
+      <div class="ep-section">
+        <span class="ep-section-title" data-t="history">Recent</span>
+        <a class="ep-section-link" href="history">See all →</a>
+      </div>
+      <div id="tx-list" class="ep-tx-list">
+        <div class="ep-empty"><div class="ep-dots"><span></span><span></span><span></span></div></div>
+      </div>
+    </div>
+
+  </div><!-- /ep-body -->
+
+  <!-- Bottom nav -->
+  <nav class="ep-nav">
+    <button class="ep-nav-btn active" data-page="wallet" onclick="EP_CORE.nav('wallet')">
+      <span class="ep-nav-icon">🏠</span>
+      <span class="ep-nav-label" data-t="home">Home</span>
+    </button>
+    <button class="ep-nav-btn" data-page="history" onclick="EP_CORE.nav('history')">
+      <span class="ep-nav-icon">📋</span>
+      <span class="ep-nav-label" data-t="history">History</span>
+    </button>
+    <button class="ep-nav-btn" data-page="qr" onclick="EP_CORE.nav('qr')">
+      <span class="ep-nav-icon">⬛</span>
+      <span class="ep-nav-label" data-t="qr">QR</span>
+    </button>
+    <button class="ep-nav-btn" data-page="profile" onclick="EP_CORE.nav('profile')">
+      <span class="ep-nav-icon">👤</span>
+      <span class="ep-nav-label" data-t="profile">Profile</span>
+    </button>
+  </nav>
+
+</div><!-- /app -->
+
+<!-- Top-up sheet -->
+<div id="sheet-topup" class="ep-overlay">
+  <div class="ep-sheet">
+    <div class="ep-sheet-handle"></div>
+    <div class="ep-sheet-title" data-t="top_up">Top up wallet</div>
+    <p class="text-dim mb-20" style="font-size:14px;line-height:1.6">Send money to your wallet number via Telebirr or bank transfer. Contact support after sending to credit your account.</p>
+    <div class="ep-card mb-16">
+      <div class="ep-label">Your wallet number</div>
+      <div style="font-family:var(--fm);font-size:22px;color:var(--gold);margin-top:6px" id="tu-phone">—</div>
+    </div>
+    <div class="ep-card mb-20">
+      <div class="ep-label">Support contacts</div>
+      <div style="font-size:14px;color:var(--text-2);margin-top:8px;line-height:2">
+        WhatsApp: <span class="text-gold">+251 911 000 001</span><br>
+        Telegram: <span class="text-gold">@etelpay</span><br>
+        Email: <span class="text-gold">pay@ethelmarket.com</span>
+      </div>
+    </div>
+
+    <!-- Admin instant top-up (admin only) -->
+    <div class="ep-card mb-20" id="admin-topup-box" style="display:none;border-color:var(--gold)">
+      <div class="ep-label" style="color:var(--gold)">⚡ Admin instant top-up</div>
+      <input class="ep-input" type="number" id="admin-topup-amt" placeholder="Amount (ETB)" min="1" inputmode="decimal" style="margin-top:10px">
+      <button class="ep-btn ep-btn-gold" id="admin-topup-btn" onclick="adminTopup()" style="margin-top:10px">Add to my wallet</button>
+    </div>
+
+    <button class="ep-btn ep-btn-ghost" onclick="EP_CORE.closeSheet('sheet-topup')">Close</button>
+  </div>
+</div>
+
+<div id="ep-toast"></div>
+
+<script src="js/config.js"></script>
+<script>
+/* ── Desktop layout init ──────────────────────────── */
+(function() {
+  function initDesktop() {
+    if (window.innerWidth < 1024) return;
+    var wrap = document.getElementById('ep-desktop-wrap');
+    var app  = document.getElementById('app');
+    var main = document.getElementById('ep-desktop-main');
+    var placeholder = document.getElementById('app-placeholder');
+    if (!wrap || !app) return;
+
+    // Move app into desktop main
+    main.insertBefore(app, placeholder);
+    placeholder.remove();
+    wrap.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+
+    buildSidebar();
+    buildInfoPanel();
+  }
+
+  function buildSidebar() {
+    var sb = document.getElementById('ep-sidebar');
+    sb.innerHTML = [
+      '<div class="sidebar-logo">',
+      '  <img src="icons/logo.png" alt="ኢE Pay" onerror="this.style.display='none'">',
+      '  <div class="sidebar-logo-text">',
+      '    <div class="sidebar-logo-name">ኢE Pay</div>',
+      '    <div class="sidebar-logo-sub">Ethiopia's Digital Wallet</div>',
+      '  </div>',
+      '</div>',
+      '<div class="sidebar-section-label">Navigation</div>',
+      navItem('🏠', 'Dashboard',     'wallet',    true),
+      navItem('💸', 'Send Money',    'send',      false),
+      navItem('📋', 'History',       'history',   false),
+      navItem('⬛', 'QR Code',       'qr',        false),
+      navItem('💳', 'Top Up',        'topup',     false),
+      navItem('🔗', 'Payment Links', 'pay-links', false),
+      navItem('📊', 'Analytics',     'analytics', false),
+      '<div class="sidebar-section-label">Account</div>',
+      navItem('👤', 'Profile',       'profile',   false),
+      navItem('🪪', 'Verify ID',     'kyc',       false),
+      '<div id="sb-admin-links" style="display:none">',
+      '  <div class="sidebar-section-label">Admin</div>',
+      navItem('⚙️', 'Admin Panel', 'admin',   false),
+      navItem('⬆',  'Updater',     'updater', false),
+      '</div>',
+      '<div class="sidebar-user" id="sb-user">',
+      '  <div class="sidebar-user-card">',
+      '    <div class="sidebar-user-avatar" id="sb-avatar">👤</div>',
+      '    <div>',
+      '      <div class="sidebar-user-name" id="sb-name">Loading…</div>',
+      '      <div class="sidebar-user-phone" id="sb-phone"></div>',
+      '    </div>',
+      '  </div>',
+      '</div>',
+    ].join('');
+
+    // Load user info into sidebar
+    setTimeout(function() {
+      try {
+        var phone = localStorage.getItem('ep_phone') || '';
+        document.getElementById('sb-phone').textContent = phone;
+      } catch(e) {}
+    }, 500);
+  }
+
+  function navItem(icon, label, page, active) {
+    return '<button class="sidebar-nav-item' + (active?' active':'') + '" onclick="EP_CORE.nav('' + page + '')">' +
+      '<span class="sidebar-nav-icon">' + icon + '</span>' + label + '</button>';
+  }
+
+  function buildInfoPanel() {
+    var panel = document.getElementById('ep-desktop-info');
+    panel.innerHTML = [
+      '<!-- Quick Actions -->',
+      '<div class="desk-info-card">',
+      '  <div class="desk-info-label">Quick Actions</div>',
+      '  <div style="display:flex;flex-direction:column;gap:8px">',
+      quickAction('↗', 'Send Money', 'Transfer to any wallet', 'send'),
+      quickAction('💳', 'Top Up', 'Add funds via Telebirr', 'topup'),
+      quickAction('🔗', 'Payment Links', 'Create & share pay links', 'pay-links'),
+      quickAction('📊', 'Analytics', 'View your statistics', 'analytics'),
+      '  </div>',
+      '</div>',
+      '<!-- Exchange Rates -->',
+      '<div class="desk-info-card" id="desk-rates">',
+      '  <div class="desk-info-label">Live Rates · ETB</div>',
+      '  <div id="desk-rates-body">',
+      '    <div style="color:rgba(241,245,255,.3);font-size:13px">Loading…</div>',
+      '  </div>',
+      '</div>',
+      '<!-- Brand -->',
+      '<div style="text-align:center;padding:8px 0">',
+      '  <div style="font-family:'Noto Sans Ethiopic',sans-serif;font-size:32px;font-weight:700;background:linear-gradient(135deg,#F0C84A,#D4A843);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">ኢE</div>',
+      '  <div style="font-size:11px;color:rgba(241,245,255,.25);letter-spacing:2px;text-transform:uppercase;margin-top:4px">Etel Pay · Ethiopia</div>',
+      '</div>',
+    ].join('');
+
+    // Load rates into desktop panel
+    setTimeout(function() {
+      var rateEl = document.getElementById('desk-rates-body');
+      if (!rateEl) return;
+      var rates = [
+        {cur:'USD', id:'r-usd'}, {cur:'EUR', id:'r-eur'},
+        {cur:'GBP', id:'r-gbp'}, {cur:'SAR', id:'r-sar'}
+      ];
+      rateEl.innerHTML = rates.map(function(r) {
+        return '<div class="desk-rate-item">' +
+          '<span class="desk-rate-cur">' + r.cur + ' / ETB</span>' +
+          '<span class="desk-rate-val" id="desk-' + r.id + '">—</span>' +
+          '</div>';
+      }).join('');
+      // Sync rates from main app rate bar
+      setTimeout(function() {
+        rates.forEach(function(r) {
+          var src = document.getElementById(r.id);
+          var dst = document.getElementById('desk-' + r.id);
+          if (src && dst) dst.textContent = src.textContent;
+        });
+      }, 2000);
+    }, 300);
+  }
+
+  function quickAction(icon, label, sub, page) {
+    return '<a class="desk-quick-action" onclick="EP_CORE.nav('' + page + '')" href="#">' +
+      '<div class="desk-quick-icon">' + icon + '</div>' +
+      '<div><div class="desk-quick-text">' + label + '</div>' +
+      '<div class="desk-quick-sub">' + sub + '</div></div>' +
+      '</a>';
+  }
+
+  // Show admin sidebar items if admin
+  window._showAdminSidebar = function() {
+    var el = document.getElementById('sb-admin-links');
+    if (el) el.style.display = 'block';
+  };
+
+  // Update sidebar user info
+  window._updateSidebarUser = function(name, phone, avatarUrl) {
+    var n = document.getElementById('sb-name');
+    var p = document.getElementById('sb-phone');
+    var a = document.getElementById('sb-avatar');
+    if (n) n.textContent = name || '';
+    if (p) p.textContent = phone || '';
+    if (a && avatarUrl) a.innerHTML = '<img src="' + avatarUrl + '" alt="">';
+  };
+
+  // Highlight active sidebar item on navigation
+  window._setSidebarActive = function(page) {
+    document.querySelectorAll('.sidebar-nav-item').forEach(function(btn) {
+      btn.classList.remove('active');
+    });
+  };
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initDesktop);
+  } else {
+    initDesktop();
+  }
+  window.addEventListener('resize', function() {
+    // Re-init on resize (e.g. browser window resized)
+    if (window.innerWidth >= 1024) initDesktop();
+  });
+})();
+</script>
+<script src="js/api.js"></script>
+<script src="js/core.js"></script>
+<script>
+EP_CORE.onReady(async function(){
+  EP_CORE.registerSW();
+  EP_CORE.initSheets();
+  if(!EP_CORE.requireAuth()) return;
+
+  const phone = EP_CORE.getPhone();
+  document.getElementById('wallet-phone').textContent = phone;
+  document.getElementById('tu-phone').textContent      = phone;
+
+  // Greeting
+  const hr = new Date().getHours();
+  const greetKeys = hr<12?'morning':hr<17?'afternoon':'evening';
+  const greets = {morning:{en:'Good morning 🌅',am:'እንደምን አደሩ 🌅'},afternoon:{en:'Good afternoon ☀️',am:'ጤና ይሁንልዎ ☀️'},evening:{en:'Good evening 🌙',am:'ጤና ይሁንልዎ 🌙'}};
+  const gk = greets[greetKeys];
+  document.getElementById('greet-name').textContent = gk[EP_CORE.getLang()]||gk.en;
+
+  EP_CORE.initLangToggle();
+
+  await loadBalance();
+  await loadRecent();
+  await loadRates();
+
+  // SSE live balance (optional — if server supports it)
+  startSSE();
+});
+
+async function loadBalance(){
+  try{
+    const j = await EP_API.getBalance();
+    if(j.success){
+      document.getElementById('bal-etb').textContent = EP_CORE.numFmt(j.data.etb||j.data.balance_etb||0);
+      document.getElementById('bal-usd').textContent = '≈ '+EP_CORE.numFmt(j.data.usd||j.data.balance_usd||0)+' USD';
+      document.getElementById('wallet-status').style.display='inline-flex';
+      document.getElementById('live-dot').style.display='flex';
+      if(j.data.is_admin){
+        document.getElementById('upd-btn').style.display='flex';
+        document.getElementById('admin-topup-box').style.display='block';
+        if(window._showAdminSidebar) window._showAdminSidebar();
+      }
+    }
+  }catch(e){}
+}
+
+async function loadRecent(){
+  try{
+    const j = await EP_API.getHistory(5,0);
+    const txs = j.success ? (j.data.transactions||j.data||[]) : [];
+    renderTx(txs);
+  }catch(e){
+    document.getElementById('tx-list').innerHTML='<div class="ep-empty">Could not load transactions.</div>';
+  }
+}
+
+async function loadRates(){
+  try{
+    const j = await EP_API.getRates();
+    if(!j.success) return;
+    const rates = Array.isArray(j.data) ? j.data : (j.data.rates||[]);
+    const map = {};
+    rates.forEach(r=>{ map[r.currency||r.code]= r.rate||r.rate_etb||0; });
+    if(map.USD||map.usd){ document.getElementById('r-usd').textContent=EP_CORE.numFmt(map.USD||map.usd,2)+' ETB'; }
+    if(map.EUR||map.eur){ document.getElementById('r-eur').textContent=EP_CORE.numFmt(map.EUR||map.eur,2)+' ETB'; }
+    if(map.GBP||map.gbp){ document.getElementById('r-gbp').textContent=EP_CORE.numFmt(map.GBP||map.gbp,2)+' ETB'; }
+    if(map.SAR||map.sar){ document.getElementById('r-sar').textContent=EP_CORE.numFmt(map.SAR||map.sar,2)+' ETB'; }
+    document.getElementById('rate-bar').style.display='flex';
+  }catch(e){}
+}
+
+function renderTx(txs){
+  const c=document.getElementById('tx-list');
+  if(!txs.length){
+    c.innerHTML='<div class="ep-empty"><div class="ep-empty-icon">💸</div>'+EP_CORE.t('no_tx')+'</div>';
+    return;
+  }
+  c.innerHTML=txs.map(tx=>{
+    const dir=EP_CORE.txDirection(tx);
+    const sign=dir==='in'?'+':'-';
+    return `<div class="ep-tx" onclick="EP_CORE.nav('history')">
+      <div class="ep-tx-dot ${dir}">${EP_CORE.txIcon(tx)}</div>
+      <div class="ep-tx-meta">
+        <div class="ep-tx-who">${EP_CORE.esc(EP_CORE.txLabel(tx))}</div>
+        <div class="ep-tx-sub">${EP_CORE.esc(tx.note||tx.type||'')}</div>
+      </div>
+      <div class="ep-tx-right">
+        <div class="ep-tx-amt ${dir}">${sign}${EP_CORE.numFmt(tx.amount||0)} ${tx.currency||'ETB'}</div>
+        <div class="ep-tx-date">${EP_CORE.dateFmt(tx.created_at)}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// SSE — soft live balance refresh
+function startSSE(){
+  try{
+    const apiBase = EP_CONFIG.REST.replace('/wp-json/etel-pay/v1','');
+    // Only connect if delivery SSE exists; otherwise fall back to polling
+    const token = EP_CORE.getToken();
+    setInterval(loadBalance, 30000); // fallback: refresh balance every 30s
+  }catch(e){}
+}
+
+// Profile avatar
+async function loadAvatar(){
+  try{
+    const j = await EP_API.getProfile();
+    if(j.success){
+      const btn=document.getElementById('avatar-btn');
+      if(j.data.avatar_url) btn.innerHTML=`<img src="${j.data.avatar_url}" alt="avatar">`;
+      if(window._updateSidebarUser) window._updateSidebarUser(j.data.full_name, j.data.phone, j.data.avatar_url);
+    }
+  }catch(e){}
+}
+setTimeout(loadAvatar,800);
+
+async function adminTopup(){
+  const amt = parseFloat(document.getElementById('admin-topup-amt').value)||0;
+  if(amt<=0){ EP_CORE.toast('Enter amount','err'); return; }
+  const btn = document.getElementById('admin-topup-btn');
+  const restore = EP_CORE.btnLoading(btn);
+  try{
+    const j = await EP_API.adminSelfTopup(amt,'Admin self top-up');
+    restore();
+    if(j.success){
+      EP_CORE.toast('ETB '+amt.toLocaleString()+' added!','ok');
+      EP_CORE.closeSheet('sheet-topup');
+      document.getElementById('admin-topup-amt').value='';
+      await loadBalance();
+    } else {
+      EP_CORE.toast((j.data&&j.data.message)||'Failed','err');
+    }
+  }catch(e){ restore(); EP_CORE.toast('Error','err'); }
+}
+</script>
+<script src="js/devpanel.js"></script>
+<script src="js/desktop.js"></script>
+</body>
+</html>
