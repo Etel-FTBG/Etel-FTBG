@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#D4A843">
+<title>ኢE Pay — QR</title>
+<link rel="manifest" href="manifest.php">
+<link rel="stylesheet" href="css/pay.css">
+<style>
+/* Tabs */
+.qr-tabs{display:flex;border-bottom:1px solid var(--gold-brd);flex-shrink:0}
+.qr-tab{flex:1;padding:14px 4px;font-size:13px;font-weight:600;color:var(--text-3);
+  background:none;border:none;cursor:pointer;
+  border-bottom:2px solid transparent;transition:color var(--fast),border-color var(--fast)}
+.qr-tab.active{color:var(--gold);border-bottom-color:var(--gold)}
+.qr-panel{display:none;padding:20px}
+.qr-panel.active{display:block}
+/* QR display */
+.qr-center{display:flex;flex-direction:column;align-items:center;gap:20px}
+#qr-render{display:flex;align-items:center;justify-content:center;min-height:220px}
+.qr-box{background:#fff;border-radius:var(--r-lg);padding:20px;box-shadow:0 0 0 1px var(--gold-brd),var(--sh)}
+.qr-info-card{width:100%;background:var(--s1);border:1px solid var(--gold-brd);border-radius:var(--r-lg);padding:16px;text-align:center}
+.qr-phone{font-family:var(--fm);font-size:18px;color:var(--gold-lt);margin-bottom:4px}
+.qr-hint{font-size:13px;color:var(--text-3)}
+/* Dynamic QR form */
+.dyn-section{margin-top:24px;border-top:1px solid var(--gold-brd);padding-top:20px}
+.dyn-title{font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-3);margin-bottom:14px}
+/* Share button */
+.share-row{display:flex;gap:10px;width:100%}
+/* Scan tab */
+.scan-hero{text-align:center;padding:20px 0}
+.scan-icon{font-size:64px;margin-bottom:12px}
+.scan-title{font-size:17px;font-weight:600;margin-bottom:6px}
+.scan-sub{font-size:13px;color:var(--text-2);line-height:1.5}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <div class="ep-header safe-top">
+    <button class="ep-header-back" onclick="EP_CORE.nav('wallet')">←</button>
+    <span class="ep-header-title" data-t="qr">QR Code</span>
+    <div style="width:36px"></div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="qr-tabs">
+    <button class="qr-tab active" onclick="switchTab('receive')">Receive</button>
+    <button class="qr-tab"       onclick="switchTab('request')">Request</button>
+    <button class="qr-tab"       onclick="switchTab('scan')">Scan / Pay</button>
+  </div>
+
+  <div class="ep-body">
+
+    <!-- ── Receive (static QR) ── -->
+    <div class="qr-panel active" id="tab-receive">
+      <div class="qr-center">
+        <div id="qr-render">
+          <div class="ep-dots"><span></span><span></span><span></span></div>
+        </div>
+        <div class="qr-info-card">
+          <div class="qr-phone" id="qr-phone-disp">—</div>
+          <div class="qr-hint" id="qr-hint">Scan to send money to this wallet</div>
+        </div>
+        <div class="share-row">
+          <button class="ep-btn ep-btn-ghost ep-btn-sm" onclick="shareQR()" style="flex:1">Share QR</button>
+          <button class="ep-btn ep-btn-ghost ep-btn-sm" onclick="downloadQR()" style="flex:1">Download</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Payment request (dynamic QR) ── -->
+    <div class="qr-panel" id="tab-request">
+      <p class="text-dim mb-20" style="font-size:14px;line-height:1.6">Generate a QR code with a specific amount. Anyone who scans it will be prompted to pay exactly that amount.</p>
+      <div class="ep-field">
+        <label class="ep-label">Amount (ETB)</label>
+        <input class="ep-input" id="dyn-amount" type="number" placeholder="e.g. 150.00" min="1" inputmode="decimal">
+      </div>
+      <div class="ep-field">
+        <label class="ep-label" data-t="label">Label / Description</label>
+        <input class="ep-input" id="dyn-label" type="text" placeholder="Rent, invoice #001…" maxlength="80">
+      </div>
+      <div class="ep-err-msg" id="dyn-err"></div>
+      <button class="ep-btn ep-btn-primary" id="dyn-btn" onclick="genDynQR()">Generate QR</button>
+
+      <div id="dyn-result" style="display:none;margin-top:24px">
+        <div class="qr-center">
+          <div id="dyn-qr-render" class="qr-box"></div>
+          <div class="qr-info-card">
+            <div class="qr-phone" id="dyn-amt-disp">—</div>
+            <div class="qr-hint" id="dyn-label-disp">Payment request</div>
+          </div>
+          <div class="share-row">
+            <button class="ep-btn ep-btn-ghost ep-btn-sm" onclick="shareDynQR()" style="flex:1">Share</button>
+            <button class="ep-btn ep-btn-ghost ep-btn-sm" onclick="document.getElementById('dyn-result').style.display='none'" style="flex:1">New</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Scan / Paste ── -->
+    <div class="qr-panel" id="tab-scan">
+      <div class="scan-hero">
+        <div class="scan-icon">⊙</div>
+        <div class="scan-title">Pay by QR</div>
+        <div class="scan-sub">Paste a QR token below or enter the payment code you received.</div>
+      </div>
+      <div class="ep-field">
+        <label class="ep-label">QR token / payment code</label>
+        <input class="ep-input" id="scan-token" type="text" placeholder="Paste token here…">
+      </div>
+      <div class="ep-field">
+        <label class="ep-label">Amount (ETB) — leave blank if preset</label>
+        <input class="ep-input" id="scan-amount" type="number" placeholder="Optional" min="1" inputmode="decimal">
+      </div>
+      <div class="ep-err-msg" id="scan-err"></div>
+      <button class="ep-btn ep-btn-primary" id="scan-btn" onclick="doScan()">Pay</button>
+    </div>
+
+  </div><!-- /ep-body -->
+
+  <!-- Bottom nav -->
+  <nav class="ep-nav">
+    <button class="ep-nav-btn" data-page="wallet" onclick="EP_CORE.nav('wallet')">
+      <span class="ep-nav-icon">🏠</span><span class="ep-nav-label">Home</span>
+    </button>
+    <button class="ep-nav-btn" data-page="history" onclick="EP_CORE.nav('history')">
+      <span class="ep-nav-icon">📋</span><span class="ep-nav-label">History</span>
+    </button>
+    <button class="ep-nav-btn active" data-page="qr">
+      <span class="ep-nav-icon">⬛</span><span class="ep-nav-label">QR</span>
+    </button>
+    <button class="ep-nav-btn" data-page="profile" onclick="EP_CORE.nav('profile')">
+      <span class="ep-nav-icon">👤</span><span class="ep-nav-label">Profile</span>
+    </button>
+  </nav>
+
+</div>
+
+<!-- Success sheet -->
+<div id="sheet-scan-ok" class="ep-overlay">
+  <div class="ep-sheet" style="text-align:center">
+    <div class="ep-sheet-handle"></div>
+    <div style="font-size:56px;margin:8px 0 12px">✅</div>
+    <div class="ep-sheet-title" style="text-align:center">Payment sent!</div>
+    <div class="text-dim mb-20" id="scan-ok-sub" style="font-size:14px">—</div>
+    <button class="ep-btn ep-btn-primary" onclick="EP_CORE.nav('wallet')">Back to wallet</button>
+    <button class="ep-btn ep-btn-ghost" onclick="EP_CORE.closeSheet('sheet-scan-ok')" style="margin-top:10px">Done</button>
+  </div>
+</div>
+
+<div id="ep-toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="js/config.js"></script>
+<script src="js/api.js"></script>
+<script src="js/core.js"></script>
+<script>
+let _staticQRDone = false;
+let _dynQRData    = null;
+
+EP_CORE.onReady(async function(){
+  EP_CORE.initSheets();
+  if(!EP_CORE.requireAuth()) return;
+  // Jump to scan tab if #scan in URL
+  if(location.hash==='#scan') switchTab('scan');
+  else loadStaticQR();
+});
+
+// ── Tabs ─────────────────────────────────────────────────────
+function switchTab(name){
+  ['receive','request','scan'].forEach(t=>{
+    document.getElementById('tab-'+t).classList.toggle('active',t===name);
+    document.querySelectorAll('.qr-tab').forEach((btn,i)=>{
+      const names=['receive','request','scan'];
+      btn.classList.toggle('active',names[i]===name);
+    });
+  });
+  if(name==='receive'&&!_staticQRDone) loadStaticQR();
+}
+
+// ── Static QR ────────────────────────────────────────────────
+async function loadStaticQR(){
+  const phone = EP_CORE.getPhone();
+  document.getElementById('qr-phone-disp').textContent = phone;
+  document.getElementById('qr-hint').textContent       = EP_CORE.getLang()==='am'?'ይህን QR ቃኝ ገንዘብ ለኔ ላክ':'Scan to send money to this wallet';
+  try{
+    const j = await EP_API.qrGenerate('static');
+    if(j.success){
+      const data = j.data.qr_data||('etel-pay://pay?token='+j.data.token);
+      renderQR('qr-render', data);
+      _staticQRDone = true;
+    }
+  }catch(e){
+    // Fallback: encode phone as QR
+    renderQR('qr-render','etel-pay://pay?phone='+encodeURIComponent(phone));
+    _staticQRDone=true;
+  }
+}
+
+// ── Dynamic QR ────────────────────────────────────────────────
+async function genDynQR(){
+  const amt   = parseFloat(document.getElementById('dyn-amount').value)||0;
+  const label = document.getElementById('dyn-label').value.trim();
+  const errEl = document.getElementById('dyn-err');
+  const btn   = document.getElementById('dyn-btn');
+  errEl.textContent='';
+  if(amt<=0){ errEl.textContent='Enter an amount.'; return; }
+
+  const restore = EP_CORE.btnLoading(btn,'ep-spin-w');
+  try{
+    const j = await EP_API.qrGenerate('dynamic', amt, 'ETB', label);
+    if(j.success){
+      _dynQRData = j.data.qr_data||('etel-pay://pay?token='+j.data.token);
+      document.getElementById('dyn-result').style.display='block';
+      document.getElementById('dyn-amt-disp').textContent   = EP_CORE.numFmt(amt)+' ETB';
+      document.getElementById('dyn-label-disp').textContent = label||'Payment request';
+      document.getElementById('dyn-qr-render').innerHTML='';
+      drawQR('dyn-qr-render', _dynQRData);
+      EP_CORE.toast('QR generated','ok');
+    } else {
+      errEl.textContent=(j.data&&j.data.message)||'Failed to generate QR.';
+    }
+  }catch(e){ errEl.textContent='Error generating QR.'; }
+  restore();
+}
+
+// ── Scan / Pay ────────────────────────────────────────────────
+async function doScan(){
+  let token  = document.getElementById('scan-token').value.trim();
+  const amt  = parseFloat(document.getElementById('scan-amount').value)||null;
+  const err  = document.getElementById('scan-err');
+  const btn  = document.getElementById('scan-btn');
+  err.textContent='';
+  if(!token){ err.textContent='Paste a QR token.'; return; }
+  // Extract token from URI
+  if(token.startsWith('etel-pay://')){
+    const m=token.match(/token=([^&]+)/);
+    if(m) token=decodeURIComponent(m[1]);
+  }
+  const restore=EP_CORE.btnLoading(btn,'ep-spin-w');
+  try{
+    const j=await EP_API.qrProcess(token,amt,'ETB');
+    if(j.success){
+      document.getElementById('scan-ok-sub').textContent='ETB '+EP_CORE.numFmt(j.data.amount||amt||0)+' paid successfully.';
+      EP_CORE.openSheet('sheet-scan-ok');
+      document.getElementById('scan-token').value='';
+      document.getElementById('scan-amount').value='';
+    }else{
+      err.textContent=(j.data&&j.data.message)||'Payment failed.';
+      restore();
+    }
+  }catch(e){ err.textContent='Connection error.'; restore(); }
+}
+
+// ── QR render ────────────────────────────────────────────────
+function renderQR(containerId, data){
+  const wrap = document.getElementById(containerId);
+  wrap.innerHTML='<div class="qr-box" id="qrc-'+containerId+'"></div>';
+  drawQR('qrc-'+containerId, data);
+}
+function drawQR(id, data){
+  try{
+    new QRCode(document.getElementById(id),{
+      text:data, width:200, height:200,
+      colorDark:'#1a0e00', colorLight:'#ffffff',
+      correctLevel:QRCode.CorrectLevel.M
+    });
+  }catch(e){}
+}
+
+// ── Share ────────────────────────────────────────────────────
+function shareQR(){
+  const phone=EP_CORE.getPhone();
+  if(navigator.share){
+    navigator.share({title:'ኢE Pay',text:'Send money to '+phone+' via ኢE Pay',url:'https://ethelmarket.com/Etel.Pay/wallet/qr.html'}).catch(()=>{});
+  }else{
+    navigator.clipboard&&navigator.clipboard.writeText(phone).then(()=>EP_CORE.toast('Phone copied','ok'));
+  }
+}
+function shareDynQR(){
+  if(navigator.share&&_dynQRData){
+    navigator.share({title:'Payment request',text:_dynQRData}).catch(()=>{});
+  }else if(_dynQRData){
+    navigator.clipboard&&navigator.clipboard.writeText(_dynQRData).then(()=>EP_CORE.toast('QR data copied','ok'));
+  }
+}
+function downloadQR(){
+  const canvas=document.querySelector('#qr-render canvas');
+  if(!canvas){ EP_CORE.toast('QR not ready','err'); return; }
+  const a=document.createElement('a');
+  a.download='etelpay-qr.png';
+  a.href=canvas.toDataURL();
+  a.click();
+}
+</script>
+<script src="js/devpanel.js"></script>
+</body>
+</html>
