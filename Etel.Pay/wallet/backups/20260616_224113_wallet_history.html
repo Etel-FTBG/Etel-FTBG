@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#D4A843">
+<title>ኢE Pay — History</title>
+<link rel="manifest" href="manifest.php">
+<link rel="stylesheet" href="css/pay.css">
+<style>
+.hist-wrap{padding:16px 20px 20px}
+/* Summary row */
+.hist-summary{
+  display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px;
+}
+.hs-card{background:var(--s1);border:1px solid var(--gold-brd);border-radius:var(--r);padding:14px}
+.hs-label{font-size:11px;color:var(--text-3);font-weight:600;text-transform:uppercase;letter-spacing:1px}
+.hs-val{font-family:var(--fm);font-size:20px;font-weight:700;margin-top:4px}
+/* Date separator */
+.ep-date-sep{
+  padding:8px 0 4px;font-size:11px;font-weight:700;
+  letter-spacing:1.5px;text-transform:uppercase;color:var(--text-3);
+}
+/* Load more */
+#load-more-btn{margin-top:16px;display:none}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- Header -->
+  <div class="ep-header safe-top">
+    <button class="ep-header-back" onclick="EP_CORE.nav('wallet')">←</button>
+    <span class="ep-header-title" data-t="history">History</span>
+    <div style="width:36px"></div>
+  </div>
+
+  <div class="ep-body">
+    <div class="hist-wrap">
+
+      <!-- Summary cards -->
+      <div class="hist-summary">
+        <div class="hs-card">
+          <div class="hs-label">Total In</div>
+          <div class="hs-val text-ok" id="sum-in">—</div>
+        </div>
+        <div class="hs-card">
+          <div class="hs-label">Total Out</div>
+          <div class="hs-val text-err" id="sum-out">—</div>
+        </div>
+      </div>
+
+      <!-- Search -->
+      <div class="ep-search">
+        <span class="ep-search-icon">🔍</span>
+        <input type="text" id="search-inp" placeholder="Search by phone, note…" oninput="onSearch()">
+      </div>
+
+      <!-- Filter pills -->
+      <div class="ep-pills mb-16">
+        <button class="ep-pill active" data-filter="all"      onclick="setFilter('all')">All</button>
+        <button class="ep-pill"        data-filter="receive"  onclick="setFilter('receive')">Incoming</button>
+        <button class="ep-pill"        data-filter="send"     onclick="setFilter('send')">Outgoing</button>
+        <button class="ep-pill"        data-filter="pending"  onclick="setFilter('pending')">Pending</button>
+        <button class="ep-pill"        data-filter="deposit"  onclick="setFilter('deposit')">Deposits</button>
+      </div>
+
+      <!-- Transaction list -->
+      <div id="tx-list" class="ep-tx-list">
+        <div class="ep-empty"><div class="ep-dots"><span></span><span></span><span></span></div></div>
+      </div>
+
+      <button class="ep-btn ep-btn-ghost" id="load-more-btn" onclick="loadMore()">Load more</button>
+
+    </div>
+  </div>
+
+  <!-- Bottom nav -->
+  <nav class="ep-nav">
+    <button class="ep-nav-btn" data-page="wallet" onclick="EP_CORE.nav('wallet')">
+      <span class="ep-nav-icon">🏠</span><span class="ep-nav-label">Home</span>
+    </button>
+    <button class="ep-nav-btn active" data-page="history">
+      <span class="ep-nav-icon">📋</span><span class="ep-nav-label">History</span>
+    </button>
+    <button class="ep-nav-btn" data-page="qr" onclick="EP_CORE.nav('qr')">
+      <span class="ep-nav-icon">⬛</span><span class="ep-nav-label">QR</span>
+    </button>
+    <button class="ep-nav-btn" data-page="profile" onclick="EP_CORE.nav('profile')">
+      <span class="ep-nav-icon">👤</span><span class="ep-nav-label">Profile</span>
+    </button>
+  </nav>
+
+</div>
+
+<!-- TX detail sheet -->
+<div id="sheet-tx" class="ep-overlay">
+  <div class="ep-sheet">
+    <div class="ep-sheet-handle"></div>
+    <div class="ep-sheet-title">Transaction details</div>
+    <div id="tx-detail-body"></div>
+    <button class="ep-btn ep-btn-ghost" onclick="EP_CORE.closeSheet('sheet-tx')" style="margin-top:16px">Close</button>
+  </div>
+</div>
+
+<div id="ep-toast"></div>
+
+<script src="js/config.js?v=2.0"></script>
+<script src="js/api.js?v=2.0"></script>
+<script src="js/core.js?v=2.0"></script>
+<script>
+let _allTx    = [];
+let _filter   = 'all';
+let _page     = 0;
+let _hasMore  = false;
+
+EP_CORE.onReady(async function(){
+  EP_CORE.initSheets();
+  if(!EP_CORE.requireAuth()) return;
+  await loadHistory();
+});
+
+async function loadHistory(){
+  _page=0; _allTx=[];
+  document.getElementById('tx-list').innerHTML='<div class="ep-empty"><div class="ep-dots"><span></span><span></span><span></span></div></div>';
+  try{
+    const j = await EP_API.getHistory(30,0);
+    if(j.success){
+      _allTx = j.data.transactions||j.data||[];
+      _hasMore = _allTx.length===30;
+      calcSummary(_allTx);
+      renderTx();
+      document.getElementById('load-more-btn').style.display = _hasMore?'flex':'none';
+    }
+  }catch(e){
+    document.getElementById('tx-list').innerHTML='<div class="ep-empty">Failed to load. Pull to retry.</div>';
+  }
+}
+
+async function loadMore(){
+  _page++;
+  try{
+    const j = await EP_API.getHistory(30,_page*30);
+    if(j.success){
+      const more = j.data.transactions||j.data||[];
+      _allTx = _allTx.concat(more);
+      _hasMore = more.length===30;
+      calcSummary(_allTx);
+      renderTx();
+      document.getElementById('load-more-btn').style.display = _hasMore?'flex':'none';
+    }
+  }catch(e){}
+}
+
+function calcSummary(txs){
+  let totalIn=0, totalOut=0;
+  txs.forEach(tx=>{
+    const dir = EP_CORE.txDirection(tx);
+    if(dir==='in')  totalIn  += parseFloat(tx.amount)||0;
+    else            totalOut += parseFloat(tx.amount)||0;
+  });
+  document.getElementById('sum-in').textContent  = '+'+EP_CORE.numFmt(totalIn);
+  document.getElementById('sum-out').textContent = '-'+EP_CORE.numFmt(totalOut);
+}
+
+function setFilter(f){
+  _filter = f;
+  document.querySelectorAll('.ep-pill').forEach(p=>{
+    p.classList.toggle('active', p.dataset.filter===f);
+  });
+  renderTx();
+}
+
+let _searchQ='';
+function onSearch(){
+  _searchQ = document.getElementById('search-inp').value.toLowerCase();
+  renderTx();
+}
+
+function filtered(){
+  return _allTx.filter(tx=>{
+    const matchFilter = _filter==='all' || tx.type===_filter || (_filter==='pending'&&tx.status==='pending');
+    if(!matchFilter) return false;
+    if(!_searchQ) return true;
+    const hay = [(tx.sender_phone||''),(tx.receiver_phone||''),(tx.note||''),(tx.ref||'')].join(' ').toLowerCase();
+    return hay.includes(_searchQ);
+  });
+}
+
+function renderTx(){
+  const txs = filtered();
+  const c = document.getElementById('tx-list');
+  if(!txs.length){
+    c.innerHTML='<div class="ep-empty"><div class="ep-empty-icon">🔍</div>'+EP_CORE.t('no_tx')+'</div>';
+    return;
+  }
+
+  // Group by date
+  const groups={};
+  txs.forEach(tx=>{
+    const d=tx.created_at?new Date(tx.created_at).toDateString():'Unknown';
+    if(!groups[d]) groups[d]=[];
+    groups[d].push(tx);
+  });
+
+  let html='';
+  Object.keys(groups).forEach(date=>{
+    const label = date===new Date().toDateString()?'Today':
+                  date===new Date(Date.now()-86400000).toDateString()?'Yesterday':date;
+    html+=`<div class="ep-date-sep">${label}</div>`;
+    groups[date].forEach(tx=>{
+      const dir=EP_CORE.txDirection(tx);
+      const sign=dir==='in'?'+':'-';
+      const status=tx.status&&tx.status!=='completed'?`<span class="ep-badge ep-badge-warn" style="margin-left:auto">${tx.status}</span>`:'';
+      html+=`<div class="ep-tx" onclick="showDetail(${JSON.stringify(tx).replace(/"/g,'&quot;')})">
+        <div class="ep-tx-dot ${dir}">${EP_CORE.txIcon(tx)}</div>
+        <div class="ep-tx-meta">
+          <div class="ep-tx-who">${EP_CORE.esc(EP_CORE.txLabel(tx))}</div>
+          <div class="ep-tx-sub">${EP_CORE.esc(tx.note||tx.type||'')}${status}</div>
+        </div>
+        <div class="ep-tx-right">
+          <div class="ep-tx-amt ${dir}">${sign}${EP_CORE.numFmt(tx.amount||0)} ${tx.currency||'ETB'}</div>
+          <div class="ep-tx-date">${EP_CORE.dateFmt(tx.created_at)}</div>
+        </div>
+      </div>`;
+    });
+  });
+  c.innerHTML=html;
+}
+
+function showDetail(tx){
+  const dir=EP_CORE.txDirection(tx);
+  const sign=dir==='in'?'+':'-';
+  const statusBadge=`<span class="ep-badge ep-badge-${tx.status==='completed'?'ok':tx.status==='pending'?'warn':'err'}">${tx.status||'completed'}</span>`;
+  document.getElementById('tx-detail-body').innerHTML=`
+    <div style="text-align:center;padding:12px 0 24px">
+      <div style="font-size:48px;margin-bottom:8px">${EP_CORE.txIcon(tx)}</div>
+      <div style="font-family:var(--fm);font-size:28px;font-weight:700;color:${dir==='in'?'var(--ok)':'var(--err)'}">${sign}${EP_CORE.numFmt(tx.amount||0)} ${tx.currency||'ETB'}</div>
+      <div style="margin-top:8px">${statusBadge}</div>
+    </div>
+    ${row('Type',     tx.type||'—')}
+    ${row('From',     tx.sender_phone||'—')}
+    ${row('To',       tx.receiver_phone||'—')}
+    ${row('Note',     tx.note||'—')}
+    ${row('Reference',tx.ref||tx.id||'—')}
+    ${row('Date',     EP_CORE.dateFmtFull(tx.created_at))}
+  `;
+  EP_CORE.openSheet('sheet-tx');
+}
+function row(label,val){
+  return `<div style="display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid var(--gold-brd)">
+    <span style="font-size:13px;color:var(--text-3)">${label}</span>
+    <span style="font-size:13px;font-weight:600;font-family:var(--fm);max-width:200px;text-align:right;word-break:break-all">${EP_CORE.esc(String(val))}</span>
+  </div>`;
+}
+</script>
+<script src="js/devpanel.js"></script>
+<script src="js/desktop-shell.js"></script>
+</body>
+</html>

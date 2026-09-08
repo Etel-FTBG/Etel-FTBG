@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>ኢE Pay — Payment Links</title>
+<link rel="manifest" href="manifest.php">
+<link rel="stylesheet" href="css/pay.css">
+<style>
+.pl-item{background:var(--glass);border:1px solid var(--gold-brd);border-radius:14px;padding:16px;margin-bottom:12px}
+.pl-item-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.pl-code{font-family:var(--fm);font-size:11px;color:var(--text-3);background:var(--surface);padding:2px 8px;border-radius:6px}
+.pl-url{font-size:12px;color:var(--gold);word-break:break-all;margin:6px 0}
+.pl-meta{display:flex;gap:10px;font-size:11px;color:var(--text-3)}
+.pl-actions{display:flex;gap:8px;margin-top:10px}
+.pl-actions button{flex:1;padding:7px;font-size:12px}
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="ep-body safe-top" style="padding-top:max(28px,env(safe-area-inset-top,28px))">
+
+    <div style="display:flex;align-items:center;gap:12px;padding:0 20px 16px">
+      <button class="ep-icon-btn" onclick="EP_CORE.back()">←</button>
+      <div style="flex:1">
+        <h2 style="font-family:var(--fd);font-size:20px;color:var(--text);margin:0">Payment Links</h2>
+        <p style="font-size:12px;color:var(--text-3);margin:0">Share a link · anyone can pay you instantly</p>
+      </div>
+      <button class="ep-btn ep-btn-gold" style="padding:8px 14px;font-size:13px" onclick="EP_CORE.openSheet('sheet-create')">+ New</button>
+    </div>
+
+    <div style="padding:0 20px 80px" id="links-list">
+      <div class="ep-empty"><div class="ep-dots"><span></span><span></span><span></span></div></div>
+    </div>
+
+  </div>
+
+  <!-- Create sheet -->
+  <div id="sheet-create" class="ep-overlay">
+    <div class="ep-sheet">
+      <div class="ep-sheet-handle"></div>
+      <div class="ep-sheet-title">Create Payment Link</div>
+      <div class="ep-field"><label class="ep-label">Label / Purpose</label>
+        <input class="ep-input" id="pl-label" placeholder="e.g. Freelance payment, Service fee…"></div>
+      <div class="ep-field"><label class="ep-label">Amount (leave blank for open amount)</label>
+        <input class="ep-input" id="pl-amount" type="number" placeholder="0.00 = any amount" inputmode="decimal" min="0"></div>
+      <div class="ep-field"><label class="ep-label">Note (optional)</label>
+        <input class="ep-input" id="pl-note" placeholder="Add a note…"></div>
+      <div class="ep-field"><label class="ep-label">Expires in</label>
+        <select class="ep-input" id="pl-expires">
+          <option value="24">24 hours</option>
+          <option value="72" selected>3 days</option>
+          <option value="168">1 week</option>
+          <option value="720">30 days</option>
+          <option value="0">Never</option>
+        </select>
+      </div>
+      <div class="ep-err-msg" id="pl-err"></div>
+      <button class="ep-btn ep-btn-gold" onclick="createLink()" id="pl-create-btn" style="margin-top:14px">Create Link</button>
+      <button class="ep-btn ep-btn-ghost" onclick="EP_CORE.closeSheet('sheet-create')" style="margin-top:8px">Cancel</button>
+    </div>
+  </div>
+
+</div>
+<div id="ep-toast"></div>
+<script src="js/config.js"></script>
+<script src="js/api.js"></script>
+<script src="js/core.js"></script>
+<script src="js/devpanel.js"></script>
+<script src="js/desktop.js"></script>
+<script>
+EP_CORE.onReady(async function(){
+  if(!EP_CORE.requireAuth()) return;
+  EP_CORE.initSheets();
+  await loadLinks();
+});
+
+async function loadLinks(){
+  try{
+    var j = await EP_API.call('ep_paylink_list');
+    var c = document.getElementById('links-list');
+    if(!j.success||!j.data.links.length){
+      c.innerHTML='<div class="ep-empty"><div class="ep-empty-icon">🔗</div>No payment links yet.<br>Create one to start accepting payments.</div>';
+      return;
+    }
+    c.innerHTML=j.data.links.map(function(l){
+      var url=EP_CONFIG.BASE.replace('/Etel.Pay/wallet/','/Etel.Pay/pay/')+l.code;
+      return '<div class="pl-item">'+
+        '<div class="pl-item-head"><strong style="font-size:14px;color:var(--text)">'+EP_CORE.esc(l.label)+'</strong>'+
+        '<span class="pl-code">'+l.code+'</span></div>'+
+        (l.amount?'<div style="font-size:18px;font-family:var(--fm);color:var(--gold)">ETB '+EP_CORE.numFmt(l.amount)+'</div>':
+          '<div style="font-size:12px;color:var(--text-3)">Open amount</div>')+
+        '<div class="pl-url">'+url+'</div>'+
+        '<div class="pl-meta">'+
+          '<span>Used: '+l.times_used+'×</span>'+
+          '<span>'+l.status+'</span>'+
+          (l.expires_at?'<span>Expires: '+EP_CORE.dateFmt(l.expires_at)+'</span>':'<span>No expiry</span>')+
+        '</div>'+
+        '<div class="pl-actions">'+
+          '<button class="ep-btn ep-btn-ghost" onclick="copyLink(\''+url+'\')">📋 Copy</button>'+
+          '<button class="ep-btn ep-btn-ghost" onclick="shareLink(\''+url+'\',\''+EP_CORE.esc(l.label)+'\')">↗ Share</button>'+
+        '</div>'+
+      '</div>';
+    }).join('');
+  }catch(e){document.getElementById('links-list').innerHTML='<div class="ep-empty">Could not load links</div>';}
+}
+
+async function createLink(){
+  var label=document.getElementById('pl-label').value.trim();
+  if(!label){document.getElementById('pl-err').textContent='Label required';return;}
+  var amt=parseFloat(document.getElementById('pl-amount').value)||0;
+  var note=document.getElementById('pl-note').value.trim();
+  var exp=parseInt(document.getElementById('pl-expires').value);
+  var btn=document.getElementById('pl-create-btn');
+  var restore=EP_CORE.btnLoading(btn);
+  try{
+    var j=await EP_API.call('ep_paylink_create',{label,amount:amt||null,note,expires_hours:exp});
+    restore();
+    if(j.success){
+      EP_CORE.closeSheet('sheet-create');
+      EP_CORE.toast('Link created!','ok');
+      shareLink(j.data.pay_url, label);
+      await loadLinks();
+    }else{document.getElementById('pl-err').textContent=(j.data&&j.data.message)||'Error';}
+  }catch(e){restore();document.getElementById('pl-err').textContent='Error';}
+}
+
+function copyLink(url){navigator.clipboard?navigator.clipboard.writeText(url).then(function(){EP_CORE.toast('Copied!','ok')}):EP_CORE.toast(url);}
+function shareLink(url,label){if(navigator.share){navigator.share({title:'Pay me via ኢE Pay',text:'Pay '+label,url});}else{copyLink(url);}}
+</script>
+</body>
+</html>

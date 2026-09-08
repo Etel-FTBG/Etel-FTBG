@@ -1,0 +1,388 @@
+/**
+ * ████████████████████████████████████████████████████████████████
+ *   ኢE  ETEL GROUP — Unified Design System v4.0 (BOLD)
+ *   "True EtelId aesthetic — gold gradient page + dark glass cards"
+ *
+ *   Load LAST on every page, after all other CSS.
+ *   Pure additive · PHP 5.6 compatible · no JS/HTML changes needed.
+ * ████████████████████████████████████████████████████████████████
+ */
+
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=JetBrains+Mono:wght@400;500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=Noto+Sans+Ethiopic:wght@400;600;700&display=swap');
+
+/* ════════════════════════════════════════════════════════════════
+   §1  CANONICAL ETELID TOKENS
+   ════════════════════════════════════════════════════════════════ */
+:root {
+  --g1:#FDF6D8; --g2:#F5E6A3; --g3:#E8C84A; --g4:#D4AF37;
+  --g5:#C8922A; --g6:#A07020; --g7:#7A5518; --g8:#4A3210; --g9:#2A1A06;
+  --g-ink:#1A0E00; --g-ink2:#3A2200; --g-ink3:#7A5520;
+
+  /* Glass surfaces — dark translucent that float on the gold page */
+  --g-glass:        rgba(20,10,0,.55);
+  --g-glass-2:      rgba(26,14,0,.62);
+  --g-glass-border: rgba(212,175,55,.28);
+  --g-glass-head:   linear-gradient(135deg,rgba(74,50,16,.95),rgba(26,14,0,.88));
+
+  --g-ok:#10B981; --g-err:#EF4444; --g-warn:#F59E0B; --g-info:#3B82F6;
+
+  --g-fd:'Syne','Noto Sans Ethiopic',sans-serif;
+  --g-fb:'Cormorant Garamond','Noto Sans Ethiopic',serif;
+  --g-fm:'JetBrains Mono',monospace;
+  --g-fa:'Noto Sans Ethiopic',sans-serif;
+  --g-ease:cubic-bezier(.22,1,.36,1);
+}
+
+/* ════════════════════════════════════════════════════════════════
+   §2  KEYFRAMES
+   ════════════════════════════════════════════════════════════════ */
+@keyframes g-holo    { 0%{background-position:0 0}100%{background-position:300% 0} }
+@keyframes g-shimmer { 0%{background-position:-400px 0}100%{background-position:400px 0} }
+@keyframes g-slide-up{ from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none} }
+@keyframes g-orb1    { 0%,100%{transform:translate(0,0)}33%{transform:translate(40px,-30px)}66%{transform:translate(-25px,20px)} }
+@keyframes g-orb2    { 0%,100%{transform:translate(0,0)}33%{transform:translate(-35px,20px)}66%{transform:translate(30px,-30px)} }
+@keyframes g-float   { 0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)} }
+
+/* ════════════════════════════════════════════════════════════════
+   §3  THE SIGNATURE GOLD PAGE BACKGROUND
+       This is what makes it EtelId. Applied to body of EVERY page.
+       Radial gold orbs + diagonal gradient + guilloché overlay.
+   ════════════════════════════════════════════════════════════════ */
+body {
+  background:
+    radial-gradient(ellipse at 18% 8%,  rgba(255,230,80,.20) 0%, transparent 42%),
+    radial-gradient(ellipse at 82% 92%, rgba(60,30,0,.34)   0%, transparent 42%),
+    radial-gradient(ellipse at 50% 50%, rgba(200,146,42,.12) 0%, transparent 58%),
+    linear-gradient(155deg,
+      #2A1600 0%, #5A3A08 14%, #9A6818 28%, #C8922A 42%,
+      #D4AF37 50%, #C8922A 58%, #9A6818 72%, #5A3A08 86%, #2A1600 100%
+    ) !important;
+  background-attachment: fixed !important;
+  position: relative !important;
+}
+
+/* Guilloché banknote overlay on the whole page */
+body::after {
+  content:'' !important;
+  position:fixed !important; inset:0 !important;
+  pointer-events:none !important; z-index:0 !important;
+  background-image:
+    repeating-linear-gradient(30deg,  transparent 0,transparent 24px,rgba(255,255,255,.02) 24px,rgba(255,255,255,.02) 25px),
+    repeating-linear-gradient(-30deg, transparent 0,transparent 24px,rgba(255,255,255,.02) 24px,rgba(255,255,255,.02) 25px) !important;
+}
+
+/* EtelPay: convert the dark app shell to transparent so the gold shows */
+#app, #ep-desktop-wrap, #ep-desktop-main, .ep-body,
+.content-area, .content-wrapper, .main-container {
+  background: transparent !important;
+}
+
+/* Keep content above the guilloché */
+#app, .header, .content-area, .ep-body, [class*="-card"], .p-card {
+  position: relative;
+  z-index: 1;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   §4  DARK GLASS CARDS  (the EtelId card look)
+       Every card becomes dark-translucent with gold border.
+   ════════════════════════════════════════════════════════════════ */
+.ep-card, .ep-card-glow,
+.balance-card, .order-card, .job-card, .restaurant-card,
+.stat-card, [class*="stat-card"], [class*="metric-card"],
+.dashboard-card, .info-card, .detail-card,
+.ep-section, .ep-sheet,
+.modal, .modal-content, .sheet-content {
+  background: var(--g-glass) !important;
+  border: 1.5px solid var(--g-glass-border) !important;
+  border-radius: 18px !important;
+  backdrop-filter: blur(14px) !important;
+  -webkit-backdrop-filter: blur(14px) !important;
+  box-shadow:
+    0 8px 36px rgba(10,5,0,.35),
+    inset 0 1px 0 rgba(255,255,255,.07) !important;
+  position: relative !important;
+  overflow: hidden !important;
+}
+
+.ep-card:hover, .balance-card:hover, .order-card:hover,
+.job-card:hover, .restaurant-card:hover, .stat-card:hover {
+  border-color: rgba(212,175,55,.5) !important;
+  transform: translateY(-3px) !important;
+  box-shadow:
+    0 14px 44px rgba(10,5,0,.45),
+    0 0 0 1px rgba(212,175,55,.25),
+    inset 0 1px 0 rgba(255,255,255,.09) !important;
+  transition: all .28s var(--g-ease) !important;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   §5  HOLOGRAPHIC STRIP on cards + headers
+   ════════════════════════════════════════════════════════════════ */
+.ep-card-glow::before,
+.balance-card::before,
+.stat-card::before,
+.p-card::before {
+  content:'' !important;
+  position:absolute !important; top:0 !important; left:0 !important; right:0 !important;
+  height:3px !important; z-index:2 !important;
+  background:linear-gradient(90deg,
+    #ff6b6b,#ffd93d,#6bcb77,#4d96ff,#ff6b6b,#ffd93d,#6bcb77,#4d96ff) !important;
+  background-size:300% 100% !important;
+  animation:g-holo 3s linear infinite !important;
+}
+
+/* Guilloché inside cards */
+.ep-card-glow::after,
+.balance-card::after {
+  content:'' !important;
+  position:absolute !important; inset:0 !important;
+  pointer-events:none !important; z-index:0 !important;
+  background-image:
+    repeating-linear-gradient(30deg, transparent 0,transparent 20px,rgba(212,175,55,.04) 20px,rgba(212,175,55,.04) 21px),
+    repeating-linear-gradient(-30deg,transparent 0,transparent 20px,rgba(212,175,55,.04) 20px,rgba(212,175,55,.04) 21px) !important;
+}
+.ep-card-glow > *, .balance-card > * { position:relative; z-index:1; }
+
+/* ════════════════════════════════════════════════════════════════
+   §6  HEADERS — gold gradient bar (EtelId nav style)
+   ════════════════════════════════════════════════════════════════ */
+.header, .ep-header, .topbar, .navbar, [class*="page-header"] {
+  background: linear-gradient(135deg, var(--g9), var(--g8) 40%, var(--g9)) !important;
+  border-bottom: 2px solid var(--g4) !important;
+  position: relative !important;
+}
+.header::after, .ep-header::after {
+  content:'' !important;
+  position:absolute !important; bottom:0 !important; left:0 !important; right:0 !important;
+  height:2px !important;
+  background:linear-gradient(90deg,transparent,var(--g5),var(--g2),var(--g1),var(--g2),var(--g5),transparent) !important;
+  background-size:300% 100% !important;
+  animation:g-holo 4s linear infinite !important;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   §7  ACTION TILES (Send/Receive/Topup/Scan + admin tools)
+       Gold-gradient icon tiles like the EtelId portal.
+   ════════════════════════════════════════════════════════════════ */
+.ep-action, [class*="quick-action"], [class*="tool-tile"] {
+  background: rgba(255,255,255,.07) !important;
+  border: 1.5px solid rgba(212,175,55,.25) !important;
+  border-radius: 14px !important;
+  backdrop-filter: blur(8px) !important;
+  transition: all .25s cubic-bezier(.22,.68,0,1.2) !important;
+  position: relative !important;
+  overflow: hidden !important;
+}
+.ep-action:hover, [class*="quick-action"]:hover {
+  transform: translateY(-4px) scale(1.03) !important;
+  border-color: rgba(212,175,55,.55) !important;
+  background: rgba(255,255,255,.12) !important;
+  box-shadow: 0 8px 28px rgba(80,40,0,.3), 0 0 0 1px rgba(212,175,55,.2) !important;
+}
+.ep-action-icon {
+  width: 46px !important; height: 46px !important;
+  border-radius: 13px !important;
+  background: linear-gradient(135deg, var(--g8), var(--g6)) !important;
+  box-shadow: 0 4px 12px rgba(0,0,0,.3), inset 0 1px 0 rgba(255,255,255,.12) !important;
+  font-size: 20px !important;
+  transition: transform .2s !important;
+}
+.ep-action:hover .ep-action-icon { transform: scale(1.1) rotate(4deg) !important; }
+.ep-action-label {
+  font-family: var(--g-fd) !important;
+  font-size: 10px !important; font-weight: 800 !important;
+  color: var(--g2) !important;
+  letter-spacing: 1px !important; text-transform: uppercase !important;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   §8  TYPOGRAPHY
+   ════════════════════════════════════════════════════════════════ */
+h1,h2,h3,h4,
+.ep-section-title, .ep-sheet-title, .auth-title, .page-title,
+.header-info .header-title, .section-title span,
+.ep-nav-label {
+  font-family: var(--g-fd) !important;
+  letter-spacing: -.01em !important;
+}
+.ep-label, .ep-bal-label, .ep-bal-usd, .ep-tx-date,
+.ep-badge, code, pre, time,
+.header-info .header-subtitle,
+[class*="-label"], [class*="-code"] {
+  font-family: var(--g-fm) !important;
+}
+.ep-tx-amt, .ep-bal-amount,
+[class*="-amount"], [class*="-price"], [class*="-balance"], [class*="-total"] {
+  font-family: var(--g-fm) !important;
+}
+.ep-input, input, textarea, select,
+[class*="-desc"] {
+  font-family: var(--g-fb) !important;
+}
+[lang="am"], [class*="-am"], .auth-am {
+  font-family: var(--g-fa) !important;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   §9  BALANCE — big gold gradient number
+   ════════════════════════════════════════════════════════════════ */
+.ep-bal-amount {
+  font-family: var(--g-fd) !important;
+  font-size: 52px !important; font-weight: 800 !important;
+  background: linear-gradient(135deg, var(--g2), var(--g3), var(--g4)) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  background-clip: text !important;
+  letter-spacing: -.02em !important;
+}
+.ep-bal-label, .ep-bal-usd {
+  font-family: var(--g-fm) !important;
+  color: rgba(253,246,216,.6) !important;
+  letter-spacing: 2px !important; text-transform: uppercase !important;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   §10  3D RAISED GOLD BUTTON + shimmer
+   ════════════════════════════════════════════════════════════════ */
+.ep-btn-gold, .ep-btn-primary, .etel-btn-gold,
+button.btn-primary, .btn.btn-primary,
+.place-order-btn, .pickup-btn, .deliver-btn, .g-btn-gold {
+  background: linear-gradient(135deg,
+    var(--g9) 0%, var(--g7) 22%, var(--g5) 48%,
+    var(--g4) 65%, var(--g3) 80%, var(--g4) 92%, var(--g5) 100%) !important;
+  background-size: 200% 100% !important;
+  color: var(--g1) !important;
+  border: none !important; border-radius: 10px !important;
+  font-family: var(--g-fd) !important; font-weight: 800 !important;
+  letter-spacing: .4px !important;
+  box-shadow: 0 5px 0 var(--g9), 0 8px 22px rgba(80,40,0,.3) !important;
+  position: relative !important; overflow: hidden !important;
+  transition: transform .15s var(--g-ease), box-shadow .15s var(--g-ease) !important;
+}
+.ep-btn-gold::before, .ep-btn-primary::before, .etel-btn-gold::before,
+button.btn-primary::before, .btn.btn-primary::before, .g-btn-gold::before {
+  content:'' !important;
+  position:absolute !important; top:0 !important; left:-100% !important;
+  width:50% !important; height:100% !important;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.13),transparent) !important;
+  animation:g-shimmer 2.5s infinite !important; pointer-events:none !important;
+}
+.ep-btn-gold:hover:not(:disabled), .ep-btn-primary:hover:not(:disabled),
+.etel-btn-gold:hover:not(:disabled), button.btn-primary:hover:not(:disabled),
+.btn.btn-primary:hover:not(:disabled), .g-btn-gold:hover:not(:disabled) {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 7px 0 var(--g9), 0 12px 28px rgba(80,40,0,.38) !important;
+}
+.ep-btn-gold:active:not(:disabled), .ep-btn-primary:active:not(:disabled),
+.btn.btn-primary:active:not(:disabled) {
+  transform: translateY(2px) !important;
+  box-shadow: 0 2px 0 var(--g9), 0 4px 12px rgba(80,40,0,.2) !important;
+}
+
+/* Ghost button */
+.ep-btn-ghost, .btn.btn-secondary, .g-btn-ghost {
+  background: rgba(212,175,55,.08) !important;
+  border: 1.5px solid rgba(212,175,55,.3) !important;
+  color: var(--g2) !important;
+  font-family: var(--g-fd) !important; font-weight: 800 !important;
+  border-radius: 10px !important;
+}
+.ep-btn-ghost:hover, .btn.btn-secondary:hover {
+  background: rgba(212,175,55,.16) !important;
+  border-color: rgba(212,175,55,.5) !important;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   §11  TEXT COLOR on gold page — light cream text everywhere
+   ════════════════════════════════════════════════════════════════ */
+body, .ep-body, #app {
+  color: #F7EFD9 !important;
+}
+.ep-section-title, .ep-sheet-title,
+h1, h2, h3, h4 {
+  color: var(--g2) !important;
+}
+.ep-tx-amt, .ep-tx-date, .ep-tx-meta { color: #F7EFD9 !important; }
+
+/* Bottom nav on gold */
+.ep-nav, .bottom-nav {
+  background: linear-gradient(135deg, rgba(42,22,6,.96), rgba(26,14,0,.96)) !important;
+  border-top: 1.5px solid var(--g4) !important;
+  backdrop-filter: blur(20px) !important;
+}
+.ep-nav-btn.active, .nav-item.active { color: var(--g3) !important; }
+.ep-nav-label, .nav-item-label {
+  font-family: var(--g-fm) !important;
+  font-size: 9px !important; letter-spacing: 1px !important; text-transform: uppercase !important;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   §12  INPUTS on gold page
+   ════════════════════════════════════════════════════════════════ */
+.ep-input, input:not([type=radio]):not([type=checkbox]), select, textarea {
+  background: rgba(20,10,0,.5) !important;
+  border: 1.5px solid rgba(212,175,55,.3) !important;
+  color: #F7EFD9 !important;
+  font-family: var(--g-fb) !important;
+  border-radius: 10px !important;
+}
+.ep-input:focus, input:focus, select:focus, textarea:focus {
+  border-color: var(--g4) !important;
+  box-shadow: 0 0 0 3px rgba(212,175,55,.18) !important;
+  background: rgba(20,10,0,.65) !important;
+  outline: none !important;
+}
+.ep-input::placeholder, input::placeholder { color: rgba(247,239,217,.4) !important; }
+.ep-label, label {
+  font-family: var(--g-fm) !important;
+  color: var(--g3) !important;
+  letter-spacing: 1.5px !important; text-transform: uppercase !important;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   §13  STATUS / VERIFIED BADGES
+   ════════════════════════════════════════════════════════════════ */
+.ep-badge, [class*="-badge"], [class*="-status"] {
+  font-family: var(--g-fm) !important;
+  letter-spacing: 1px !important; text-transform: uppercase !important;
+}
+.ep-badge-ok, [class*="verified"] {
+  background: rgba(16,185,129,.16) !important;
+  color: var(--g-ok) !important;
+  border: 1px solid rgba(16,185,129,.35) !important;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   §14  EXCHANGE RATE TICKER (wallet)
+   ════════════════════════════════════════════════════════════════ */
+[class*="rate-ticker"], [class*="exchange"], .ticker {
+  background: rgba(20,10,0,.45) !important;
+  border-bottom: 1px solid rgba(212,175,55,.2) !important;
+  font-family: var(--g-fm) !important;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   §15  GOLD SCROLLBAR
+   ════════════════════════════════════════════════════════════════ */
+* { scrollbar-width: thin !important; scrollbar-color: rgba(212,175,55,.35) transparent !important; }
+*::-webkit-scrollbar { width:4px; height:4px; }
+*::-webkit-scrollbar-thumb { background: rgba(212,175,55,.35); border-radius:4px; }
+*::-webkit-scrollbar-thumb:hover { background: rgba(212,175,55,.6); }
+
+/* Focus ring */
+:focus-visible { outline:2px solid rgba(212,175,55,.6) !important; outline-offset:2px !important; }
+
+/* ════════════════════════════════════════════════════════════════
+   §16  UTILITY CLASSES
+   ════════════════════════════════════════════════════════════════ */
+.g-holo-strip { display:block; height:3px; background:linear-gradient(90deg,#ff6b6b,#ffd93d,#6bcb77,#4d96ff,#ff6b6b,#ffd93d); background-size:300%; animation:g-holo 3s linear infinite; }
+.g-text-gold { background:linear-gradient(135deg,var(--g2),var(--g3),var(--g4)) !important; -webkit-background-clip:text !important; -webkit-text-fill-color:transparent !important; background-clip:text !important; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration:.01ms !important; animation-iteration-count:1 !important; transition-duration:.01ms !important; }
+}
+
+/* ════════════════════════════════════════════════════════════════
+   EOF  ኢE Etel Group Design System v4.0 (BOLD) · Hawassa
+   ════════════════════════════════════════════════════════════════ */
