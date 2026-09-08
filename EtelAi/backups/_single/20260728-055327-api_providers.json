@@ -1,0 +1,28 @@
+{
+    "_comment": "Which AI providers are live. Toggle via Settings in the app (admin-key protected) or edit directly. API keys are NEVER stored here - they live only in secrets.php. When both gemini and kimi are enabled, chat.php automatically routes transactional requests (booking/ordering/status/cancel) to gemini and everything else to kimi - see etelai_pick_provider().",
+    "providers": [
+        {
+            "id": "gemini",
+            "name": "Google Gemini",
+            "model": "gemini-flash-latest",
+            "enabled": true
+        },
+        {
+            "id": "kimi",
+            "name": "Kimi K2 (Moonshot AI)",
+            "model": "kimi-k2-0711-preview",
+            "enabled": false
+        },
+        {
+            "id": "ollama",
+            "name": "Ollama (local)",
+            "model": "tinyllama",
+            "enabled": false
+        }
+    ],
+    "priority": [
+        "gemini",
+        "kimi",
+        "ollama"
+    ]
+}

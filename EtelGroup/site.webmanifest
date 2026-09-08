@@ -1,0 +1,21 @@
+{
+  "name": "Etel Group",
+  "short_name": "Etel Group",
+  "description": "Ethiopia's most ambitious holding group — uniting commerce, logistics, finance, and culture under a single sovereign identity.",
+  "start_url": "https://ethelmarket.com/",
+  "display": "standalone",
+  "background_color": "#0d0a00",
+  "theme_color": "#D4AF37",
+  "icons": [
+    {
+      "src": "https://ethelmarket.com/EtelAi/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "https://ethelmarket.com/EtelAi/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+# Etel Group super-page — Apache config
+
+Options -Indexes
+
+# Security headers
+Header set X-Content-Type-Options "nosniff"
+Header set X-Frame-Options "DENY"
+Header set Referrer-Policy "strict-origin-when-cross-origin"
+
+# Block direct access to the .env file
+<Files ".env">
+    Order allow,deny
+    Deny from all
+</Files>
+
+# Block any direct access under database/ (schema files, no reason to be web-servable)
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteRule ^database/ - [F,L]
+</IfModule>

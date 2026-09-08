@@ -1,0 +1,44 @@
+═══════════════════════════════════════════════════════════════════
+ETEL MADEYA - LOGO PLACEMENT INSTRUCTIONS
+═══════════════════════════════════════════════════════════════════
+
+📸 COPY YOUR LOGO HERE!
+
+Please copy your beautiful golden Etel Madeya logo to this folder:
+
+📁 Location: C:\Users\dagianan\Desktop\Etel Super App Projects\Etel-Madeya\assets\img\
+
+📄 Filename: etel-logo.png
+
+Your logo should be the one with:
+✨ Golden/bronze circular design
+✨ "ኢትል ማደያ" text
+✨ Gas pump icon in the center
+✨ Sparkling background effect
+
+═══════════════════════════════════════════════════════════════════
+
+STEPS TO ADD YOUR LOGO:
+
+1. Find your logo file (the golden circular one)
+2. Copy it to this folder: assets\img\
+3. Rename it to: etel-logo.png
+4. Refresh your browser
+
+That's it! Your logo will appear everywhere:
+✅ Driver interface
+✅ Controller panel
+✅ Admin panel
+✅ Login screens
+
+═══════════════════════════════════════════════════════════════════
+
+The design is now GOLDEN THEMED to match your beautiful logo! 🌟
+
+Colors used:
+🟡 Gold: #ffd700
+🟤 Bronze: #cd7f32  
+🟠 Primary: #d4a017
+⚫ Dark background with sparkling effect
+
+═══════════════════════════════════════════════════════════════════

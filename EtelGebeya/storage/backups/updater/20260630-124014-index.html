@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#080604">
+<title>Etel Audit Pro</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+<style>
+:root{--g:#D4AF37;--g1:#FFE066;--g2:#B8902E;--bg:#080604;--bg2:#0d0a06;--bg3:#130d05;--card:#160f06;--bd:rgba(212,175,55,.2);--bd2:rgba(212,175,55,.1);--tx:#F7EFD9;--t2:#C9B88A;--t3:#7A6840;--green:#2ecc71;--red:#e74c3c;--orange:#e67e22;--blue:#3498db;--yellow:#f1c40f}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--tx);overflow-x:hidden}
+a{color:var(--g1);text-decoration:none}
+.hidden{display:none!important}
+
+/* HEADER */
+.hdr{position:sticky;top:0;z-index:100;background:var(--bg2);border-bottom:1px solid var(--bd);display:flex;align-items:center;gap:10px;padding:12px 16px;min-height:56px}
+.hdr-logo{width:34px;height:34px;background:var(--g);border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:13px;color:var(--bg);flex-shrink:0;letter-spacing:-1px}
+.hdr-title{flex:1}
+.hdr-name{font-size:14px;font-weight:700;color:var(--g1);line-height:1.2}
+.hdr-ver{font-size:10px;color:var(--t3);margin-top:1px}
+.hdr-back{background:none;border:none;color:var(--t3);font-size:20px;cursor:pointer;padding:4px;display:flex;align-items:center}
+
+/* SCREENS */
+.screen{min-height:calc(100vh - 56px);padding:16px}
+
+/* SETUP SCREEN */
+.setup-card{background:var(--bg3);border:1px solid var(--bd);border-radius:12px;padding:20px;margin-bottom:16px}
+.setup-icon{font-size:40px;color:var(--g);margin-bottom:14px;display:block}
+.setup-h{font-size:17px;font-weight:700;color:var(--tx);margin-bottom:8px}
+.setup-p{font-size:13px;color:var(--t2);line-height:1.6;margin-bottom:14px}
+.code-block{background:#000;border:1px solid var(--bd2);border-radius:8px;padding:12px;font-family:monospace;font-size:11.5px;color:var(--g1);overflow-x:auto;margin:10px 0;white-space:pre;line-height:1.7}
+.step-row{display:flex;gap:10px;margin-bottom:12px;align-items:flex-start}
+.step-num{width:24px;height:24px;border-radius:50%;background:var(--g);color:var(--bg);font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+.step-text{font-size:12.5px;color:var(--t2);line-height:1.5}
+.step-text strong{color:var(--tx)}
+.test-btn{width:100%;padding:12px;border-radius:8px;background:var(--g);color:var(--bg);border:none;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px}
+.test-btn:active{opacity:.85}
+
+/* AI SWITCHER */
+.ai-switcher{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+.ai-pill{flex:1;min-width:70px;display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 8px;border-radius:10px;background:rgba(255,255,255,.04);border:1.5px solid rgba(255,255,255,.08);cursor:pointer;transition:all .2s;position:relative;user-select:none}
+.ai-pill:hover{border-color:rgba(255,255,255,.2);background:rgba(255,255,255,.07)}
+.ai-pill.active{border-color:var(--ai-color,var(--g));background:rgba(from var(--ai-color,#D4AF37) r g b/.12);box-shadow:0 0 0 2px rgba(from var(--ai-color,#D4AF37) r g b/.2)}
+.ai-pill-icon{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;background:rgba(255,255,255,.06);flex-shrink:0}
+.ai-pill.active .ai-pill-icon{background:rgba(from var(--ai-color,#D4AF37) r g b/.2)}
+.ai-pill-name{font-size:10px;font-weight:700;letter-spacing:.04em;color:var(--t2);text-transform:uppercase}
+.ai-pill.active .ai-pill-name{color:var(--ai-color,var(--g))}
+.ai-pill-sub{font-size:9px;color:var(--t3);text-align:center;line-height:1.3}
+.ai-pill-dot{position:absolute;top:7px;right:8px;width:6px;height:6px;border-radius:50%;background:var(--ai-color,var(--g));opacity:0;transition:opacity .2s}
+.ai-pill.active .ai-pill-dot{opacity:1}
+.ai-label{font-size:10.5px;color:var(--t3);margin-bottom:7px;text-transform:uppercase;letter-spacing:.07em}
+
+/* UPLOAD SCREEN */
+.drop-zone{border:2px dashed rgba(212,175,55,.3);border-radius:12px;padding:28px 16px;text-align:center;cursor:pointer;transition:border-color .2s,background .2s;margin-bottom:14px;background:rgba(212,175,55,.02)}
+.drop-zone.over{border-color:var(--g);background:rgba(212,175,55,.07)}
+.drop-ico{font-size:36px;color:var(--t3);margin-bottom:10px;display:block}
+.drop-main{font-size:14px;font-weight:600;color:var(--t2);margin-bottom:4px}
+.drop-sub{font-size:11.5px;color:var(--t3);line-height:1.5}
+.file-list{margin-bottom:14px;max-height:200px;overflow-y:auto}
+.file-item{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:7px;background:rgba(212,175,55,.05);margin-bottom:5px;border:1px solid var(--bd2)}
+.file-ico{font-size:14px;color:var(--g);flex-shrink:0;width:16px;text-align:center}
+.file-name{flex:1;font-size:12px;color:var(--t2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.file-sz{font-size:10.5px;color:var(--t3);flex-shrink:0}
+.file-rm{background:none;border:none;color:var(--t3);cursor:pointer;font-size:15px;padding:2px;line-height:1;flex-shrink:0}
+.file-rm:hover{color:var(--red)}
+.btn-gold{width:100%;padding:13px;border-radius:9px;background:var(--g);color:var(--bg);border:none;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:opacity .15s}
+.btn-gold:disabled{opacity:.35;cursor:not-allowed}
+.btn-ghost{width:100%;padding:11px;border-radius:9px;background:rgba(212,175,55,.08);color:var(--g);border:1px solid var(--bd);font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;margin-top:9px;transition:opacity .15s}
+.btn-ghost:active,.btn-gold:active{opacity:.8}
+.upload-tip{font-size:11px;color:var(--t3);text-align:center;margin-top:12px;line-height:1.6}
+.err-box{background:rgba(231,76,60,.1);border:1px solid rgba(231,76,60,.25);border-radius:8px;padding:12px 14px;font-size:12.5px;color:var(--red);margin-bottom:14px;line-height:1.55}
+
+/* LOADING SCREEN */
+.load-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:calc(100vh - 80px);padding:20px;text-align:center}
+.spinner{width:52px;height:52px;border:3.5px solid rgba(212,175,55,.15);border-top-color:var(--g);border-radius:50%;animation:spin .75s linear infinite;margin-bottom:20px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.load-msg{font-size:14px;color:var(--t2);min-height:22px;margin-bottom:12px;font-weight:500}
+.progress-wrap{width:100%;max-width:280px;height:3px;background:rgba(212,175,55,.1);border-radius:2px;overflow:hidden;margin:0 auto 8px}
+.progress-bar{height:100%;background:var(--g);border-radius:2px;transition:width .6s ease}
+.load-step{font-size:10.5px;color:var(--t3)}
+
+/* REPORT SCREEN */
+.report-body{padding:0 0 80px}
+.score-hero{text-align:center;padding:20px 16px 16px;background:linear-gradient(180deg,var(--bg3),var(--bg));border-bottom:1px solid var(--bd2);margin-bottom:16px}
+.score-ring{width:100px;height:100px;position:relative;margin:0 auto 12px}
+.score-ring svg{transform:rotate(-90deg)}
+.score-inner{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.score-num{font-size:26px;font-weight:700;line-height:1}
+.score-grade{font-size:13px;font-weight:600;margin-top:3px}
+.proj-name{font-size:15px;font-weight:700;color:var(--g1);margin-bottom:6px}
+.exec-summary{font-size:12.5px;color:var(--t2);line-height:1.6;max-width:400px;margin:0 auto}
+
+.rpt-section{padding:0 16px;margin-bottom:20px}
+.rpt-section-title{font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:10px;display:flex;align-items:center;gap:6px}
+
+.stats-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:4px}
+.stat-card{background:var(--bg3);border:1px solid var(--bd2);border-radius:9px;padding:10px 12px}
+.stat-val{font-size:22px;font-weight:700;color:var(--g1);line-height:1}
+.stat-lbl{font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.7px;margin-top:2px}
+
+.stack-wrap{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:4px}
+.stack-pill{background:rgba(212,175,55,.08);color:var(--t2);font-size:11px;padding:3px 10px;border-radius:12px;border:1px solid var(--bd2)}
+
+.cat-item{margin-bottom:11px}
+.cat-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
+.cat-name{font-size:12.5px;color:var(--t2)}
+.cat-grade{font-size:11px;font-weight:600;padding:2px 8px;border-radius:4px}
+.cat-bar{height:5px;border-radius:3px;background:rgba(255,255,255,.06)}
+.cat-fill{height:100%;border-radius:3px;transition:width 1.2s cubic-bezier(.4,0,.2,1)}
+
+.strengths-list,.critical-list{display:flex;flex-direction:column;gap:6px}
+.str-item,.crit-item{display:flex;align-items:flex-start;gap:8px;font-size:12.5px;line-height:1.5;color:var(--t2)}
+.str-item i{color:var(--green);margin-top:1px;flex-shrink:0}
+.crit-item i{color:var(--red);margin-top:1px;flex-shrink:0}
+
+.filter-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.flt-btn{font-size:11px;padding:5px 12px;border-radius:6px;border:1px solid var(--bd2);background:rgba(212,175,55,.04);color:var(--t2);cursor:pointer;font-family:inherit;transition:background .12s}
+.flt-btn.active{background:var(--g);color:var(--bg);border-color:var(--g);font-weight:700}
+
+.bug-card{background:var(--bg3);border:1px solid var(--bd2);border-radius:9px;padding:12px;margin-bottom:8px}
+.bug-head{display:flex;align-items:flex-start;gap:7px;margin-bottom:6px;flex-wrap:wrap}
+.bug-title{font-size:13px;font-weight:600;color:var(--tx);flex:1;line-height:1.4}
+.bug-file{font-size:10.5px;color:var(--t3);font-family:monospace;margin-bottom:6px}
+.bug-desc{font-size:12px;color:var(--t2);line-height:1.55;margin-bottom:6px}
+.bug-fix{background:rgba(46,204,113,.06);border-left:2px solid rgba(46,204,113,.4);border-radius:0 5px 5px 0;padding:7px 10px;font-size:11.5px;color:var(--green);line-height:1.55}
+
+.rec-card{border-left:3px solid var(--g);background:rgba(212,175,55,.03);border-radius:0 8px 8px 0;padding:10px 12px;margin-bottom:8px}
+.rec-head{display:flex;align-items:center;gap:7px;margin-bottom:5px;flex-wrap:wrap}
+.rec-title{font-size:13px;font-weight:600;color:var(--g1);flex:1;line-height:1.3}
+.rec-desc{font-size:12px;color:var(--t2);line-height:1.55}
+
+.sev-badge,.pri-badge,.cat-badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;flex-shrink:0}
+.sev-critical{background:rgba(231,76,60,.15);color:var(--red);border:1px solid rgba(231,76,60,.2)}
+.sev-high{background:rgba(230,126,34,.15);color:var(--orange);border:1px solid rgba(230,126,34,.2)}
+.sev-medium{background:rgba(241,196,15,.12);color:var(--yellow);border:1px solid rgba(241,196,15,.2)}
+.sev-low{background:rgba(52,152,219,.12);color:var(--blue);border:1px solid rgba(52,152,219,.2)}
+.pri-immediate{background:rgba(231,76,60,.15);color:var(--red)}
+.pri-high{background:rgba(230,126,34,.15);color:var(--orange)}
+.pri-medium{background:rgba(52,152,219,.12);color:var(--blue)}
+.pri-low{background:rgba(46,204,113,.12);color:var(--green)}
+.effort-badge{font-size:10px;color:var(--t3);padding:2px 7px;border-radius:4px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07)}
+
+.passed-list{display:flex;flex-direction:column;gap:4px}
+.passed-item{font-size:12px;color:var(--green);display:flex;align-items:center;gap:6px}
+
+.divider{height:1px;background:var(--bd2);margin:16px 0}
+
+.no-items{font-size:12.5px;color:var(--t3);padding:8px 0}
+
+.report-actions{position:fixed;bottom:0;left:0;right:0;background:var(--bg2);border-top:1px solid var(--bd2);padding:10px 16px;display:flex;gap:8px;z-index:100}
+.ra-btn{flex:1;padding:11px 8px;border-radius:8px;border:none;font-size:12.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;font-family:inherit}
+.ra-new{background:rgba(212,175,55,.1);color:var(--g);border:1px solid var(--bd)}
+.ra-dl{background:var(--g);color:var(--bg)}
+</style>
+</head>
+<body>
+
+<!-- SETUP SCREEN -->
+<div id="s-setup">
+  <div class="hdr">
+    <div class="hdr-logo">&#12234;E</div>
+    <div class="hdr-title">
+      <div class="hdr-name">Etel Audit Pro</div>
+      <div class="hdr-ver">Setup required</div>
+    </div>
+    <i class="bi bi-gear" style="color:var(--g);font-size:20px"></i>
+  </div>
+  <div class="screen">
+    <div class="setup-card">
+      <span class="setup-icon"><i class="bi bi-key"></i></span>
+      <div class="setup-h">Configure Your API Key</div>
+      <div class="setup-p">EtelAudit Pro uses Claude AI to analyze your projects. You need a free Anthropic API key to activate it. Setup takes 2 minutes.</div>
+      <div class="step-row"><div class="step-num">1</div><div class="step-text">Visit <a href="https://aistudio.google.com/app/apikey" target="_blank"><strong>aistudio.google.com/app/apikey</strong></a> and sign in with your Google account (completely free, no credit card).</div></div>
+      <div class="step-row"><div class="step-num">2</div><div class="step-text">Open <strong>EtelGebeya/audit/proxy.php</strong> in cPanel File Manager &rarr; right-click &rarr; Edit.</div></div>
+      <div class="step-row"><div class="step-num">3</div><div class="step-text">Find this line and replace the placeholder with your Gemini key:</div></div>
+      <div class="code-block">define('GEMINI_API_KEY', 'PASTE_YOUR_GEMINI_KEY_HERE');</div>
+      <div class="step-row"><div class="step-num">4</div><div class="step-text">Save the file, then tap Test Connection below. Analysis is 100% free.</div></div>
+      <button class="test-btn" onclick="testSetup()">
+        <i class="bi bi-wifi"></i> Test Connection
+      </button>
+      <div id="setup-result" style="margin-top:12px;font-size:12.5px;line-height:1.5"></div>
+    </div>
+  </div>
+</div>
+
+<!-- UPLOAD SCREEN -->
+<div id="s-upload" class="hidden">
+  <div class="hdr">
+    <div class="hdr-logo">&#12234;E</div>
+    <div class="hdr-title">
+      <div class="hdr-name">Etel Audit Pro</div>
+      <div class="hdr-ver">Free AI project review</div>
+    </div>
+    <i class="bi bi-shield-check" style="color:var(--g);font-size:20px"></i>
+  </div>
+  <div class="screen">
+    <div id="err-display"></div>
+
+    <!-- AI PROVIDER SWITCHER -->
+    <p class="ai-label"><i class="bi bi-cpu"></i> &nbsp;Choose AI Engine</p>
+    <div class="ai-switcher" id="ai-switcher">
+
+      <div class="ai-pill active" data-provider="gemini" style="--ai-color:#4285F4" onclick="selectAI(this)">
+        <span class="ai-pill-dot"></span>
+        <div class="ai-pill-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z" fill="#4285F4"/><path d="M12 2a10 10 0 1 0 0 20A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 0-16 8 8 0 0 1 0 16z" fill="#34A853"/></svg>
+        </div>
+        <span class="ai-pill-name">Gemini</span>
+        <span class="ai-pill-sub">Google · Free</span>
+      </div>
+
+      <div class="ai-pill" data-provider="claude" style="--ai-color:#D97757" onclick="selectAI(this)">
+        <span class="ai-pill-dot"></span>
+        <div class="ai-pill-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 3C7.03 3 3 7.03 3 12s4.03 9 9 9 9-4.03 9-9-4.03-9-9-9z" fill="#D97757"/><path d="M8 12c0-2.21 1.79-4 4-4s4 1.79 4 4-1.79 4-4 4-4-1.79-4-4z" fill="#fff" opacity=".8"/></svg>
+        </div>
+        <span class="ai-pill-name">Claude</span>
+        <span class="ai-pill-sub">Anthropic · Best</span>
+      </div>
+
+      <div class="ai-pill" data-provider="kimi" style="--ai-color:#00C9A7" onclick="selectAI(this)">
+        <span class="ai-pill-dot"></span>
+        <div class="ai-pill-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" fill="#00C9A7" opacity=".15"/><path d="M8 8l4 4-4 4M12 12h4" stroke="#00C9A7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <span class="ai-pill-name">Kimi</span>
+        <span class="ai-pill-sub">Moonshot · Fast</span>
+      </div>
+
+      <div class="ai-pill" data-provider="openai" style="--ai-color:#10A37F" onclick="selectAI(this)">
+        <span class="ai-pill-dot"></span>
+        <div class="ai-pill-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M20.4 8.6a5.5 5.5 0 00-7.2-7.1A5.5 5.5 0 006 3.8a5.5 5.5 0 00-2.4 9.6A5.5 5.5 0 0010.8 21a5.5 5.5 0 007.2-2.3 5.5 5.5 0 002.4-10.1z" fill="#10A37F" opacity=".2" stroke="#10A37F" stroke-width="1.5"/><circle cx="12" cy="12" r="2.5" fill="#10A37F"/></svg>
+        </div>
+        <span class="ai-pill-name">GPT-4o</span>
+        <span class="ai-pill-sub">OpenAI · Codex</span>
+      </div>
+
+    </div>
+    <!-- /AI SWITCHER -->
+
+    <div class="drop-zone" id="dropzone" onclick="document.getElementById('file-input').click()">
+      <span class="drop-ico"><i class="bi bi-cloud-upload"></i></span>
+      <div class="drop-main">Drop project files here or tap to upload</div>
+      <div class="drop-sub">PHP &bull; JS &bull; CSS &bull; HTML &bull; SQL &bull; JSON &bull; ZIP<br>Select all your project files at once</div>
+    </div>
+    <input type="file" id="file-input" multiple accept="*/*" style="display:none">
+    <div class="file-list" id="file-list"></div>
+    <button class="btn-gold" id="analyze-btn" disabled onclick="startAnalysis()">
+      <i class="bi bi-cpu"></i>
+      <span id="analyze-lbl">Upload files to analyze</span>
+    </button>
+    <button class="btn-ghost" onclick="document.getElementById('file-input').click()">
+      <i class="bi bi-plus-circle"></i> Add more files
+    </button>
+    <div class="upload-tip">
+      Best results: upload a ZIP of your whole project folder<br>
+      Supports ZIP archives &mdash; extracts automatically
+    </div>
+  </div>
+</div>
+
+<!-- LOADING SCREEN -->
+<div id="s-loading" class="hidden">
+  <div class="hdr">
+    <div class="hdr-logo">&#12234;E</div>
+    <div class="hdr-title">
+      <div class="hdr-name">Etel Audit Pro</div>
+      <div class="hdr-ver" id="load-proj-hint">Analyzing...</div>
+    </div>
+  </div>
+  <div class="load-wrap">
+    <div class="spinner"></div>
+    <div class="load-msg" id="load-msg">Reading project files...</div>
+    <div class="progress-wrap"><div class="progress-bar" id="progress-bar" style="width:5%"></div></div>
+    <div class="load-step" id="load-step">Step 1 of 12</div>
+  </div>
+</div>
+
+<!-- REPORT SCREEN -->
+<div id="s-report" class="hidden">
+  <div class="hdr">
+    <button class="hdr-back" onclick="newAudit()" aria-label="New audit"><i class="bi bi-arrow-left"></i></button>
+    <div class="hdr-title">
+      <div class="hdr-name" id="rpt-hdr-name">Audit Report</div>
+      <div class="hdr-ver" id="rpt-hdr-time"></div>
+    </div>
+    <button onclick="downloadReport()" style="background:none;border:none;color:var(--g);font-size:20px;cursor:pointer" aria-label="Download report"><i class="bi bi-download"></i></button>
+  </div>
+  <div class="report-body" id="report-body">
+    <!-- dynamically filled -->
+  </div>
+  <div class="report-actions">
+    <button class="ra-btn ra-new" onclick="newAudit()"><i class="bi bi-plus"></i> New Audit</button>
+    <button class="ra-btn ra-dl" onclick="downloadReport()"><i class="bi bi-download"></i> Export Report</button>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script>
+const PROXY_URL = './proxy.php';
+const PROXY_SECRET = 'ROTATED-SECRET-REDACTED';
+
+const TEXT_EXTS = new Set(['php','js','ts','jsx','tsx','css','scss','sass','less','html','htm','xml','json','sql','md','txt','env','htaccess','yaml','yml','ini','conf','sh','py','rb','java','cs','go','rs','toml','vue','svelte','config','gitignore','lock']);
+
+const EXT_ICO = {php:'bi-filetype-php',js:'bi-filetype-js',ts:'bi-filetype-tsx',css:'bi-filetype-css',scss:'bi-filetype-css',html:'bi-filetype-html',htm:'bi-filetype-html',sql:'bi-database',json:'bi-braces',md:'bi-markdown',py:'bi-filetype-py',zip:'bi-file-zip',txt:'bi-file-text'};
+
+const LOAD_MSGS = [
+  'Reading project files...','Building file tree analysis...','Scanning security vulnerabilities...','Analyzing code quality patterns...','Evaluating UI/UX design standards...','Checking backend architecture...','Auditing performance patterns...','Assessing Ethiopian market fit...','Comparing to global 2026 standards...','Detecting bugs and errors...','Calculating premium levelness score...','Generating comprehensive report...'
+];
+
+const CAT_LABELS = {
+  security:'Security',code_quality:'Code Quality',
+  frontend_design:'Frontend / Design',backend_architecture:'Backend Architecture',
+  performance:'Performance',ethiopian_market:'Ethiopian Market Fit',
+  premium_levelness:'Premium Levelness',deployment_readiness:'Deployment Readiness'
+};
+
+const SYSTEM_PROMPT = `You are EtelAudit Pro, the world's most advanced code review AI for Etel Group, Hawassa, Ethiopia. You analyze projects against global 2026 standards while understanding the Ethiopian context: mobile-first users, Telebirr/CBE Birr payments, Amharic/bilingual requirements, low bandwidth conditions, shared cPanel hosting with ModSecurity WAF constraints.
+
+== CRITICAL PHP SECURITY ANALYSIS RULES (read carefully before scoring) ==
+
+RULE 1 - SQL INJECTION (PDO parameterized queries are SAFE):
+The following patterns are SAFE and must NOT be flagged as SQL injection:
+  SAFE: $db->fetch("SELECT ... WHERE email = ?", [$email])
+  SAFE: $db->prepare("SELECT ... WHERE id = ?")->execute([$id])
+  SAFE: $where = '1=1'; $where .= ' AND status=?'; $params[] = $filter; $db->query("SELECT ... WHERE $where", $params)
+  -- The last pattern (dynamic $where with separate $params array) is standard PDO safe pattern. $where only contains SQL fragments (column names, operators), ALL user values go through $params as bound parameters.
+  SAFE: LIMIT {$this->perPage} OFFSET {$this->offset($page)} when perPage is typed int and offset() returns int
+UNSAFE (real injection): "SELECT ... WHERE email = '$email'" or "SELECT ... WHERE id = " . $id . " AND" (user value directly in string, no ? placeholder)
+Only flag SQL injection if you can quote the EXACT line showing user input concatenated into the query string WITHOUT a ? placeholder.
+
+RULE 2 - HTTPS ENFORCEMENT:
+If .htaccess contains: RewriteCond %{HTTPS} off + RewriteRule ^ https:// this IS valid HTTPS enforcement. Do NOT flag as missing.
+If .htaccess contains: Header always set Strict-Transport-Security this IS HSTS. Do NOT flag as missing.
+Only flag HTTPS as missing if NEITHER of these patterns exist in the .htaccess file provided.
+
+RULE 3 - NON-ASCII IN PHP FILES:
+Only flag non-ASCII as WAF risk if the bytes appear in PHP code paths (string literals, variable values, output). Non-ASCII in PHP comments (// ... or /* ... */) is safe and must NOT be flagged. Count only files where non-ASCII appears outside comments. Report the exact count you verify -- do not guess "57 files" if you cannot confirm it.
+
+RULE 4 - SESSION SECURITY:
+session_set_cookie_params(['httponly'=>true,'secure'=>true,'samesite'=>'Lax']) is CORRECT and secure. Flag as passed, not as issue.
+
+RULE 5 - RATE LIMITING:
+If you see a login_attempts table query that blocks after N failed attempts, this IS brute force protection. Credit it as a security strength.
+
+== WAF RULE (still applies to runtime code) ==
+PHP files containing non-ASCII bytes IN CODE (not comments) get corrupted by ModSecurity WAF on shared cPanel hosting. Flag these as CRITICAL only if found in actual code paths.
+
+Respond ONLY with a single valid JSON object. No markdown, no code fences, no explanation. Just raw JSON starting with { and ending with }.
+
+Required JSON structure (ALL fields required):
+{
+  "project_name": "Detected project name",
+  "tech_stack": ["PHP 8","MySQL","JavaScript","CSS"],
+  "overall_score": 82,
+  "overall_grade": "B",
+  "executive_summary": "Professional 2-3 sentence overview of the project quality, what it does, and top concerns.",
+  "categories": {
+    "security": {
+      "score": 75,
+      "grade": "C+",
+      "highlights": ["bcrypt password hashing implemented","CSRF tokens with hash_equals() timing-safe check"],
+      "issues": [
+        {"severity": "critical", "title": "Real SQL Injection", "detail": "file.php line N: $db->query(\"SELECT ... WHERE id = \" . $userId) -- user value directly concatenated, no ? placeholder"}
+      ],
+      "passed": ["password_hash() with bcrypt","Session cookies httponly + secure + samesite","CSRF token on every form","session_regenerate_id() on login","Rate limiting on login attempts"]
+    },
+    "code_quality": {"score": 80,"grade": "B","highlights": [],"issues": [{"severity": "medium","title": "Issue title","detail": "Specific details with file and line"}],"passed": []},
+    "frontend_design": {"score": 85,"grade": "B+","highlights": [],"issues": [],"passed": []},
+    "backend_architecture": {"score": 78,"grade": "C+","highlights": [],"issues": [],"passed": []},
+    "performance": {"score": 70,"grade": "C","highlights": [],"issues": [],"passed": []},
+    "ethiopian_market": {"score": 90,"grade": "A-","highlights": [],"issues": [],"passed": []},
+    "premium_levelness": {"score": 75,"grade": "C+","highlights": [],"issues": [],"passed": []},
+    "deployment_readiness": {"score": 80,"grade": "B","highlights": [],"issues": [],"passed": []}
+  },
+  "bugs": [
+    {
+      "file": "exact/file/path.php",
+      "line": "45",
+      "severity": "critical",
+      "title": "Exact bug title",
+      "description": "Quote the exact problematic code. Explain why it is a bug.",
+      "fix": "Show the corrected code."
+    }
+  ],
+  "recommendations": [
+    {
+      "priority": "immediate",
+      "category": "security",
+      "title": "Recommendation title",
+      "description": "Specific actionable description referencing actual files.",
+      "effort": "medium"
+    }
+  ],
+  "stats": {
+    "total_files": 0,
+    "total_lines": 0,
+    "php_files": 0,
+    "js_files": 0,
+    "css_files": 0,
+    "html_files": 0,
+    "sql_files": 0
+  },
+  "strengths": ["List only things confirmed present in the uploaded code"],
+  "critical_issues": ["List only REAL verified issues with file:line references"]
+}
+
+Severity: critical (site-breaking or severe security hole), high (significant issue needing urgent fix), medium (should be improved), low (minor/cosmetic).
+Priority: immediate (fix before any deploy), high (fix within 1 week), medium (fix this sprint), low (backlog).
+Effort: small (under 2 hours), medium (half day), large (multiple days).
+Grades: S (95-100), A+ (92-94), A (88-91), A- (85-87), B+ (82-84), B (78-81), B- (75-77), C+ (72-74), C (68-71), C- (65-67), D (50-64), F (under 50).
+ACCURACY RULE: Only report bugs and issues you can directly quote from the uploaded code with exact file path and line number. If you cannot find the exact line, do not report it. Do not hallucinate issues based on patterns -- verify each finding in the actual uploaded content.`;
+
+let fileMap = {};
+let lastReport = null;
+let loadTimer = null;
+let selectedAI = 'gemini';
+
+function selectAI(el) {
+  document.querySelectorAll('.ai-pill').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  selectedAI = el.dataset.provider;
+  // Update analyze button label hint
+  const names = {'gemini':'Gemini','claude':'Claude','kimi':'Kimi','openai':'GPT-4o'};
+  const lbl = document.getElementById('analyze-lbl');
+  if (lbl && Object.keys(fileMap).length) {
+    lbl.textContent = 'Analyze ' + Object.keys(fileMap).length + ' file' + (Object.keys(fileMap).length > 1 ? 's' : '') + ' with ' + (names[selectedAI] || selectedAI);
+  }
+}
+
+function ext(name) { return (name.split('.').pop() || '').toLowerCase(); }
+function fmtSz(b) { return b > 1048576 ? (b/1048576).toFixed(1)+'MB' : b > 1024 ? Math.round(b/1024)+'KB' : b+'B'; }
+
+function gradeColor(g) {
+  if (!g) return 'var(--t3)';
+  const c = g[0];
+  return c === 'S' ? 'var(--g1)' : c === 'A' ? 'var(--green)' : c === 'B' ? 'var(--blue)' : c === 'C' ? 'var(--orange)' : 'var(--red)';
+}
+function scoreColor(s) {
+  return s >= 90 ? 'var(--g1)' : s >= 80 ? 'var(--green)' : s >= 65 ? 'var(--blue)' : s >= 50 ? 'var(--orange)' : 'var(--red)';
+}
+function esc(s) {
+  const d = document.createElement('div'); d.textContent = String(s || ''); return d.innerHTML;
+}
+
+function show(id) {
+  ['s-setup','s-upload','s-loading','s-report'].forEach(s => {
+    document.getElementById(s).classList.toggle('hidden', s !== id);
+  });
+}
+
+// File reading
+async function readText(file) {
+  return new Promise(res => {
+    const r = new FileReader();
+    r.onload = e => res(e.target.result || '');
+    r.onerror = () => res('');
+    r.readAsText(file);
+  });
+}
+
+async function processFiles(fileList) {
+  for (const f of fileList) {
+    const e = ext(f.name);
+    if (e === 'zip' && window.JSZip) {
+      try {
+        const zip = await window.JSZip.loadAsync(f);
+        for (const [path, entry] of Object.entries(zip.files)) {
+          if (entry.dir) continue;
+          const pe = ext(path);
+          if (!TEXT_EXTS.has(pe)) continue;
+          try { fileMap[path] = await entry.async('string'); } catch(err) {}
+        }
+        continue;
+      } catch(err) {}
+    }
+    if (TEXT_EXTS.has(e) || e === '') {
+      fileMap[f.name] = await readText(f);
+    } else {
+      fileMap[f.name] = '[binary: ' + f.name + ' ' + fmtSz(f.size) + ']';
+    }
+  }
+  renderFileList();
+}
+
+function renderFileList() {
+  const fl = document.getElementById('file-list');
+  const btn = document.getElementById('analyze-btn');
+  const lbl = document.getElementById('analyze-lbl');
+  const names = Object.keys(fileMap);
+  if (!names.length) { fl.innerHTML = ''; btn.disabled = true; lbl.textContent = 'Upload files to analyze'; return; }
+  btn.disabled = false;
+  const aiNames = {'gemini':'Gemini','claude':'Claude','kimi':'Kimi','openai':'GPT-4o'};
+  lbl.textContent = 'Analyze ' + names.length + ' file' + (names.length > 1 ? 's' : '') + ' with ' + (aiNames[selectedAI] || selectedAI);
+  fl.innerHTML = names.slice(0, 40).map(n => {
+    const e = ext(n); const ic = EXT_ICO[e] || 'bi-file-earmark';
+    return `<div class="file-item"><i class="bi ${ic} file-ico"></i><span class="file-name" title="${esc(n)}">${esc(n.split('/').pop())}</span><span class="file-sz">${fmtSz((fileMap[n] || '').length)}</span><button class="file-rm" onclick="rmFile('${n.replace(/'/g,'\\\'')}')" aria-label="Remove"><i class="bi bi-x"></i></button></div>`;
+  }).join('') + (names.length > 40 ? `<div style="font-size:11px;color:var(--t3);padding:6px 10px">...and ${names.length - 40} more files</div>` : '');
+}
+
+function rmFile(name) { delete fileMap[name]; renderFileList(); }
+
+// Drag & drop
+const dz = document.getElementById('dropzone');
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('over'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('over'));
+dz.addEventListener('drop', e => { e.preventDefault(); dz.classList.remove('over'); if (e.dataTransfer.files.length) processFiles(e.dataTransfer.files); });
+document.getElementById('file-input').addEventListener('change', function() { if (this.files.length) processFiles(this.files); this.value = ''; });
+
+// Loading UI
+function startLoader() {
+  show('s-loading');
+  let step = 0, pct = 5;
+  document.getElementById('progress-bar').style.width = '5%';
+  document.getElementById('load-msg').textContent = LOAD_MSGS[0];
+  loadTimer = setInterval(() => {
+    step = (step + 1) % LOAD_MSGS.length;
+    pct = Math.min(pct + (Math.random() * 6 + 4), 90);
+    document.getElementById('load-msg').textContent = LOAD_MSGS[step];
+    document.getElementById('progress-bar').style.width = pct + '%';
+    document.getElementById('load-step').textContent = 'Step ' + (step + 1) + ' of ' + LOAD_MSGS.length;
+  }, 2200);
+}
+
+function stopLoader() {
+  clearInterval(loadTimer);
+  document.getElementById('progress-bar').style.width = '100%';
+}
+
+// Build prompt
+function buildPayload() {
+  const names = Object.keys(fileMap);
+  const PRIORITY = ['php','sql','js','ts','json','css','html','md','txt','conf','yaml','ini'];
+  const sorted = [...names].sort((a, b) => {
+    const pa = PRIORITY.indexOf(ext(a)), pb = PRIORITY.indexOf(ext(b));
+    return (pa < 0 ? 99 : pa) - (pb < 0 ? 99 : pb);
+  });
+
+  const stats = { total: names.length, php: 0, js: 0, css: 0, html: 0, sql: 0, lines: 0 };
+  names.forEach(n => {
+    const e = ext(n);
+    if (e === 'php') stats.php++;
+    else if (e === 'js' || e === 'ts') stats.js++;
+    else if (e === 'css' || e === 'scss') stats.css++;
+    else if (e === 'html' || e === 'htm') stats.html++;
+    else if (e === 'sql') stats.sql++;
+    stats.lines += (fileMap[n] || '').split('\n').length;
+  });
+
+  const tree = sorted.map(n => '  ' + n + ' (' + fmtSz((fileMap[n]||'').length) + ')').join('\n');
+  let content = '', totalLen = 0, MAX = 58000;
+
+  for (const name of sorted) {
+    const body = fileMap[name] || '';
+    const chunk = '\n\n=== FILE: ' + name + ' ===\n' + body.slice(0, 4500) + (body.length > 4500 ? '\n[...truncated]' : '');
+    if (totalLen + chunk.length > MAX) {
+      content += '\n\n[' + (sorted.indexOf(name)) + ' remaining files omitted - size limit reached]';
+      break;
+    }
+    content += chunk;
+    totalLen += chunk.length;
+  }
+
+  const userMsg = 'Analyze this project:\n\n=== FILE TREE ===\n' + tree + '\n\n=== PROJECT STATS ===\nTotal Files: ' + stats.total + ' | PHP: ' + stats.php + ' | JS: ' + stats.js + ' | CSS: ' + stats.css + ' | SQL: ' + stats.sql + ' | Est. Lines: ' + stats.lines.toLocaleString() + '\n\n=== FILE CONTENTS ===' + content;
+
+  return { userMsg, stats };
+}
+
+async function startAnalysis() {
+  if (!Object.keys(fileMap).length) return;
+  const names = Object.keys(fileMap);
+  document.getElementById('load-proj-hint').textContent = names.length + ' files ready';
+  startLoader();
+
+  try {
+    const { userMsg, stats } = buildPayload();
+    const resp = await fetch(PROXY_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ secret: PROXY_SECRET, system: SYSTEM_PROMPT, content: userMsg, provider: selectedAI })
+    });
+
+    const raw = await resp.json();
+
+    if (raw.error === 'setup_required') {
+      stopLoader();
+      show('s-setup');
+      return;
+    }
+    if (raw.error) throw new Error(raw.error + (raw.message ? ': ' + raw.message : ''));
+    if (!raw.content) throw new Error('Empty response from AI');
+
+    const text = (raw.content || []).filter(c => c.type === 'text').map(c => c.text).join('');
+    const clean = text.replace(/```json|```/g, '').trim();
+    let report;
+    try { report = JSON.parse(clean); }
+    catch(e) {
+      const m = clean.match(/\{[\s\S]*\}/);
+      if (m) { try { report = JSON.parse(m[0]); } catch(e2) { throw new Error('AI response could not be parsed. Try again.'); } }
+      else throw new Error('Unexpected AI response format. Try again.');
+    }
+
+    // Merge stats
+    report._file_count = Object.keys(fileMap).length;
+    lastReport = report;
+    stopLoader();
+    renderReport(report);
+    show('s-report');
+    window.scrollTo(0, 0);
+
+  } catch (err) {
+    stopLoader();
+    show('s-upload');
+    const ed = document.getElementById('err-display');
+    ed.innerHTML = '<div class="err-box"><i class="bi bi-exclamation-circle"></i> <strong>Analysis failed:</strong> ' + esc(err.message) + '<br><small>Check your internet connection and try again. If the error persists, the project files may be too large.</small></div>';
+  }
+}
+
+// Report rendering
+function renderReport(r) {
+  document.getElementById('rpt-hdr-name').textContent = r.project_name || 'Audit Report';
+  document.getElementById('rpt-hdr-time').textContent = new Date().toLocaleDateString('en-ET', { day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
+
+  const score = Math.round(r.overall_score || 0);
+  const grade = r.overall_grade || '--';
+  const sc = scoreColor(score);
+  const gc = gradeColor(grade);
+  const circumf = 2 * Math.PI * 42;
+  const offset = circumf * (1 - score / 100);
+
+  const st = r.stats || {};
+
+  const bugs = r.bugs || [];
+  const sevs = [...new Set(bugs.map(b => b.severity).filter(Boolean))];
+  const sevOrder = ['critical','high','medium','low'];
+  bugs.sort((a, b) => sevOrder.indexOf(a.severity) - sevOrder.indexOf(b.severity));
+
+  const cats = r.categories || {};
+  const allPassed = Object.values(cats).flatMap(c => c.passed || []);
+  const allHighlights = Object.values(cats).flatMap(c => c.highlights || []);
+
+  document.getElementById('report-body').innerHTML = `
+<div class="score-hero">
+  <div class="score-ring">
+    <svg width="100" height="100" viewBox="0 0 100 100" role="img" aria-label="${score}/100 overall score">
+      <circle cx="50" cy="50" r="42" fill="none" stroke="rgba(212,175,55,.1)" stroke-width="8"/>
+      <circle cx="50" cy="50" r="42" fill="none" stroke="${sc.replace('var(--','#').replace(')','')}" stroke-width="8" stroke-linecap="round"
+        stroke-dasharray="${circumf.toFixed(1)}" stroke-dashoffset="${offset.toFixed(1)}"
+        style="stroke:${sc};transition:stroke-dashoffset 1.2s ease"/>
+    </svg>
+    <div class="score-inner">
+      <div class="score-num" style="color:${sc}">${score}</div>
+      <div class="score-grade" style="color:${gc}">${grade}</div>
+    </div>
+  </div>
+  <div class="proj-name">${esc(r.project_name || 'Your Project')}</div>
+  <div class="exec-summary">${esc(r.executive_summary || '')}</div>
+</div>
+
+<div class="rpt-section">
+  <div class="stats-grid">
+    <div class="stat-card"><div class="stat-val">${st.total_files || r._file_count || '--'}</div><div class="stat-lbl">Files analyzed</div></div>
+    <div class="stat-card"><div class="stat-val">${st.total_lines ? st.total_lines.toLocaleString() : '--'}</div><div class="stat-lbl">Lines of code</div></div>
+    <div class="stat-card"><div class="stat-val">${st.php_files || 0}</div><div class="stat-lbl">PHP files</div></div>
+    <div class="stat-card"><div class="stat-val">${bugs.length}</div><div class="stat-lbl" style="color:${bugs.length > 0 ? 'var(--orange)' : 'var(--t3)'}">Bugs found</div></div>
+  </div>
+</div>
+
+<div class="rpt-section">
+  <div class="rpt-section-title"><i class="bi bi-stack"></i> Tech stack</div>
+  <div class="stack-wrap">${(r.tech_stack || []).map(t => '<span class="stack-pill">' + esc(t) + '</span>').join('')}</div>
+</div>
+
+<div class="divider" style="margin:0 16px"></div>
+
+<div class="rpt-section" style="margin-top:16px">
+  <div class="rpt-section-title"><i class="bi bi-bar-chart-fill"></i> Category scores</div>
+  ${Object.entries(CAT_LABELS).map(([k, label]) => {
+    const c = cats[k] || {}; const sc2 = c.score || 0; const gc2 = c.grade || '?';
+    const col = scoreColor(sc2); const gcol = gradeColor(gc2);
+    const issues = (c.issues || []).length;
+    return `<div class="cat-item" onclick="toggleCatDetail('${k}')" style="cursor:pointer">
+      <div class="cat-row">
+        <span class="cat-name">${label}${issues > 0 ? ' <small style="color:var(--t3);font-size:10px">('+issues+' issue'+( issues>1?'s':'')+')</small>' : ''}</span>
+        <span class="cat-grade" style="color:${gcol};background:${gcol.replace('var(--','rgba(').replace(')','')}18">${gc2} &mdash; ${sc2}</span>
+      </div>
+      <div class="cat-bar"><div class="cat-fill" style="width:${sc2}%;background:${col}"></div></div>
+      <div id="cd-${k}" class="hidden" style="margin-top:8px;padding:8px 10px;background:rgba(0,0,0,.2);border-radius:6px;font-size:12px">
+        ${(c.highlights || []).length ? '<div style="color:var(--green);margin-bottom:5px">' + (c.highlights || []).map(h => '<div style="margin-bottom:3px"><i class="bi bi-check-circle" style="margin-right:5px"></i>' + esc(h) + '</div>').join('') + '</div>' : ''}
+        ${(c.issues || []).map(i => '<div style="color:' + (i.severity==='critical'?'var(--red)':i.severity==='high'?'var(--orange)':'var(--yellow)') + ';margin-bottom:4px"><span class="sev-badge sev-' + esc(i.severity) + '" style="margin-right:5px">' + esc(i.severity) + '</span>' + esc(i.title) + '<div style="color:var(--t2);font-size:11px;margin-top:2px;margin-left:5px">' + esc(i.detail) + '</div></div>').join('')}
+        ${(c.passed || []).length ? '<div style="color:var(--t3);margin-top:4px">' + (c.passed || []).map(p => '<div><i class="bi bi-check" style="color:var(--green);margin-right:4px"></i>' + esc(p) + '</div>').join('') + '</div>' : ''}
+      </div>
+    </div>`;
+  }).join('')}
+</div>
+
+<div class="divider" style="margin:0 16px"></div>
+
+<div class="rpt-section" style="margin-top:16px">
+  <div class="rpt-section-title"><i class="bi bi-stars" style="color:var(--green)"></i> Strengths</div>
+  <div class="strengths-list">${(r.strengths || []).length ? (r.strengths || []).map(s => '<div class="str-item"><i class="bi bi-check-circle"></i><span>' + esc(s) + '</span></div>').join('') : '<div class="no-items">No specific strengths identified</div>'}</div>
+</div>
+
+<div class="rpt-section" style="margin-top:12px">
+  <div class="rpt-section-title"><i class="bi bi-exclamation-triangle" style="color:var(--red)"></i> Critical issues</div>
+  <div class="critical-list">${(r.critical_issues || []).length ? (r.critical_issues || []).map(s => '<div class="crit-item"><i class="bi bi-x-circle"></i><span>' + esc(s) + '</span></div>').join('') : '<div class="no-items" style="color:var(--green)">No critical issues found!</div>'}</div>
+</div>
+
+<div class="divider" style="margin:0 16px"></div>
+
+<div class="rpt-section" style="margin-top:16px">
+  <div class="rpt-section-title" style="margin-bottom:6px"><i class="bi bi-bug" style="color:var(--orange)"></i> Bugs found <span style="color:var(--t3);text-transform:none;font-size:11px;letter-spacing:0;font-weight:400;margin-left:4px">${bugs.length} total</span></div>
+  ${bugs.length > 1 ? `<div class="filter-row">${['all',...sevs].map(s => '<button class="flt-btn' + (s==='all'?' active':'') + '" onclick="filterBugs(\'' + s + '\',this)">' + (s==='all' ? 'All' : s.charAt(0).toUpperCase()+s.slice(1)) + '</button>').join('')}</div>` : ''}
+  <div id="bug-list">${renderBugCards(bugs, 'all')}</div>
+</div>
+
+<div class="divider" style="margin:0 16px"></div>
+
+<div class="rpt-section" style="margin-top:16px">
+  <div class="rpt-section-title"><i class="bi bi-lightbulb" style="color:var(--g)"></i> Recommendations</div>
+  ${(r.recommendations || []).length ? (r.recommendations || []).map(rec => {
+    const pc = rec.priority === 'immediate' ? 'pri-immediate' : rec.priority === 'high' ? 'pri-high' : rec.priority === 'medium' ? 'pri-medium' : 'pri-low';
+    return `<div class="rec-card"><div class="rec-head"><span class="pri-badge ${pc}">${esc(rec.priority||'medium')}</span><span class="rec-title">${esc(rec.title||'')}</span>${rec.effort ? '<span class="effort-badge">' + esc(rec.effort) + '</span>' : ''}</div><div class="rec-desc">${esc(rec.description||'')}</div></div>`;
+  }).join('') : '<div class="no-items">No recommendations</div>'}
+</div>
+`;
+
+  window._bugs = bugs;
+}
+
+function renderBugCards(bugs, sev) {
+  const filtered = sev === 'all' ? bugs : bugs.filter(b => b.severity === sev);
+  if (!filtered.length) return '<div class="no-items">No ' + (sev === 'all' ? '' : sev + ' ') + 'bugs found</div>';
+  return filtered.map(b => `<div class="bug-card">
+    <div class="bug-head"><span class="sev-badge sev-${esc(b.severity||'low')}">${esc(b.severity||'?')}</span><span class="bug-title">${esc(b.title||'')}</span></div>
+    <div class="bug-file"><i class="bi bi-file-earmark-code" style="margin-right:4px"></i>${esc(b.file||'unknown')}${b.line ? ':' + esc(b.line) : ''}</div>
+    <div class="bug-desc">${esc(b.description||'')}</div>
+    ${b.fix ? '<div class="bug-fix"><i class="bi bi-wrench" style="margin-right:6px"></i>' + esc(b.fix) + '</div>' : ''}
+  </div>`).join('');
+}
+
+function filterBugs(sev, btn) {
+  document.querySelectorAll('.flt-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('bug-list').innerHTML = renderBugCards(window._bugs || [], sev);
+}
+
+function toggleCatDetail(k) {
+  const el = document.getElementById('cd-' + k);
+  if (el) el.classList.toggle('hidden');
+}
+
+function newAudit() {
+  fileMap = {};
+  lastReport = null;
+  window._bugs = [];
+  const ed = document.getElementById('err-display');
+  if (ed) ed.innerHTML = '';
+  renderFileList();
+  show('s-upload');
+  window.scrollTo(0, 0);
+}
+
+function downloadReport() {
+  if (!lastReport) return;
+  const content = JSON.stringify(lastReport, null, 2);
+  const a = document.createElement('a');
+  a.href = 'data:application/json;charset=utf-8,' + encodeURIComponent(content);
+  a.download = 'etel-audit-' + (lastReport.project_name || 'report').toLowerCase().replace(/[^a-z0-9]+/g,'-') + '-' + new Date().toISOString().slice(0,10) + '.json';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+}
+
+// Setup test
+async function testSetup() {
+  const btn = document.querySelector('.test-btn');
+  const result = document.getElementById('setup-result');
+  btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Testing...';
+  btn.disabled = true;
+  result.innerHTML = '';
+  try {
+    const resp = await fetch(PROXY_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ secret: PROXY_SECRET, system: 'Reply with just the word CONNECTED.', content: 'ping', test: true })
+    });
+    const data = await resp.json();
+    if (data.error === 'setup_required') {
+      result.innerHTML = '<div style="color:var(--orange)"><i class="bi bi-exclamation-circle"></i> API key not set yet. Edit proxy.php and paste your key, then test again.</div>';
+    } else if (data.error) {
+      result.innerHTML = '<div style="color:var(--red)"><i class="bi bi-x-circle"></i> Error: ' + esc(data.error) + '</div>';
+    } else {
+      // Check for CONNECTED in response text (test ping response)
+      const respText = (data.content && data.content[0]) ? data.content[0].text : '';
+      if (!data.error || respText.includes('CONNECTED')) {
+        result.innerHTML = '<div style="color:var(--green)"><i class="bi bi-check-circle-fill"></i> Connection successful! Gemini API is working. Opening audit tool...</div>';
+        setTimeout(() => show('s-upload'), 1600);
+      } else {
+        result.innerHTML = '<div style="color:var(--red)"><i class="bi bi-x-circle"></i> ' + esc(data.error) + '</div>';
+      }
+    }
+  } catch(e) {
+    result.innerHTML = '<div style="color:var(--red)"><i class="bi bi-x-circle"></i> Could not reach proxy.php. Check the file exists at audit/proxy.php.</div>';
+  }
+  btn.innerHTML = '<i class="bi bi-wifi"></i> Test Connection';
+  btn.disabled = false;
+}
+
+// Init: check if setup is needed or go straight to upload
+(async function init() {
+  try {
+    const r = await fetch(PROXY_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ secret: PROXY_SECRET, system: '', content: '' })
+    });
+    const d = await r.json();
+    if (d.error === 'setup_required') { show('s-setup'); return; }
+  } catch(e) {}
+  show('s-upload');
+}());
+</script>
+</body>
+</html>

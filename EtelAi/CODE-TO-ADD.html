@@ -1,0 +1,389 @@
+<!-- ═══════════════════════════════════════════════════════════════
+     COPY THIS CODE AND ADD IT TO YOUR index.html
+     Add it BEFORE the closing </body> tag
+     ═══════════════════════════════════════════════════════════════ -->
+
+<!-- ETEL Configuration -->
+<script src="config.js"></script>
+
+<!-- ETEL Engine -->
+<script src="etel-engine.js"></script>
+
+<!-- ETEL Initialization -->
+<script>
+let etelAI;
+let conversationHistory = [];
+
+async function initEtel() {
+  // Use config from config.js
+  const config = {
+    engine: ETEL_CONFIG.ai.engine,
+    ollamaUrl: ETEL_CONFIG.ai.ollamaUrl,
+    ollamaModel: ETEL_CONFIG.ai.ollamaModel,
+    agentName: ETEL_CONFIG.agent.name,
+    agentPersona: ETEL_CONFIG.agent.persona,
+    memoryMode: ETEL_CONFIG.memory.mode,
+    saveToDatabase: ETEL_CONFIG.memory.saveToDatabase,
+    apiUrl: ETEL_CONFIG.apiUrl
+  };
+  
+  etelAI = new EtelAI(config);
+  await etelAI.init();
+  
+  console.log('✅ ETEL Engine initialized');
+  console.log('📊 Skills loaded:', (await etelAI.db.getSkills()).length);
+  
+  // Update UI
+  updateSkillCount();
+  loadMemoryEntries();
+  updateLogo();
+}
+
+// Update logo everywhere
+function updateLogo() {
+  const logoUrl = ETEL_CONFIG.branding.logo;
+  const logoImgEl = document.getElementById('logo-img-el');
+  const aboutLogoImg = document.getElementById('about-logo-img');
+  
+  if (logoImgEl) logoImgEl.src = logoUrl;
+  if (aboutLogoImg) aboutLogoImg.src = logoUrl;
+  
+  // Update welcome logo if exists
+  const welcomeLogo = document.querySelector('.welcome-logo img');
+  if (welcomeLogo) welcomeLogo.src = logoUrl;
+}
+
+// Update skill count
+async function updateSkillCount() {
+  const skills = await etelAI.db.getSkills({ installed: true });
+  const skillCountEl = document.getElementById('skill-count');
+  if (skillCountEl) skillCountEl.textContent = skills.length;
+  
+  // Update skills grid
+  const grid = document.getElementById('installed-skills-grid');
+  if (grid) {
+    grid.innerHTML = skills.map(skill => `
+      <div class="skill-card installed">
+        <div class="skill-card-status on">✓</div>
+        <div class="skill-card-name">${skill.name}</div>
+        <div class="skill-card-cat">${skill.category}</div>
+        <div class="skill-card-desc">${skill.description}</div>
+      </div>
+    `).join('');
+  }
+}
+
+// Load memory entries
+async function loadMemoryEntries() {
+  const memories = await etelAI.db.getMemories(50);
+  const container = document.getElementById('memory-entries');
+  
+  if (!container) return;
+  
+  if (memories.length === 0) {
+    container.innerHTML = '<div class="mem-entry">No memories yet. Start chatting!</div>';
+    return;
+  }
+  
+  container.innerHTML = memories.map(mem => `
+    <div class="mem-entry">
+      <div class="mem-date">${new Date(mem.timestamp).toLocaleString()}</div>
+      <div class="mem-text">${mem.content.substring(0, 200)}...</div>
+      <div class="mem-tags">
+        ${mem.tags.map(tag => `<span class="mem-tag">${tag}</span>`).join('')}
+      </div>
+    </div>
+  `).join('');
+  
+  // Update stats
+  const dbMem = document.getElementById('db-mem');
+  if (dbMem) dbMem.textContent = memories.length;
+}
+
+// Send message function
+async function sendMsg() {
+  const input = document.getElementById('msg-input');
+  const text = input.value.trim();
+  if (!text) return;
+  
+  // Add user message to UI
+  addMessage('user', text);
+  input.value = '';
+  
+  // Auto-resize textarea
+  input.style.height = 'auto';
+  
+  // Show thinking indicator
+  showThinking();
+  
+  try {
+    // Get AI response
+    const response = await etelAI.generate(text, conversationHistory);
+    
+    // Add AI message to UI
+    hideThinking();
+    addMessage('agent', response);
+    
+    // Save to memory
+    const skill = await etelAI.matchSkill(text);
+    await etelAI.saveToMemory(text, response, skill);
+    
+    // Update conversation history
+    conversationHistory.push(
+      { role: 'user', content: text },
+      { role: 'assistant', content: response }
+    );
+    
+    // Update memory view if visible
+    loadMemoryEntries();
+    
+  } catch (error) {
+    hideThinking();
+    addMessage('agent', '⚠️ Error: ' + error.message);
+    console.error('ETEL Error:', error);
+  }
+}
+
+// Show thinking indicator
+function showThinking() {
+  const container = document.getElementById('msgs-container');
+  if (!container) return;
+  
+  const thinking = document.createElement('div');
+  thinking.id = 'thinking-indicator';
+  thinking.className = 'msg agent';
+  thinking.innerHTML = `
+    <div class="msg-avatar agent">
+      <img src="${ETEL_CONFIG.branding.logo}" alt="ETEL">
+    </div>
+    <div class="msg-body">
+      <div class="thinking-bubble">
+        <div class="dot-pulse">
+          <span></span><span></span><span></span>
+        </div>
+        <span class="thinking-text">Thinking...</span>
+      </div>
+    </div>
+  `;
+  container.appendChild(thinking);
+  container.scrollTop = container.scrollHeight;
+}
+
+// Hide thinking indicator
+function hideThinking() {
+  const thinking = document.getElementById('thinking-indicator');
+  if (thinking) thinking.remove();
+}
+
+// Add message to UI
+function addMessage(role, content) {
+  const container = document.getElementById('msgs-container');
+  if (!container) return;
+  
+  const msg = document.createElement('div');
+  msg.className = `msg ${role}`;
+  
+  const avatar = role === 'agent' 
+    ? `<img src="${ETEL_CONFIG.branding.logo}" alt="ETEL">`
+    : 'U';
+  
+  msg.innerHTML = `
+    <div class="msg-avatar ${role}">${avatar}</div>
+    <div class="msg-body">
+      <div class="msg-content">${formatMessage(content)}</div>
+    </div>
+  `;
+  
+  container.appendChild(msg);
+  container.scrollTop = container.scrollHeight;
+}
+
+// Format message (markdown-style)
+function formatMessage(text) {
+  return text
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g, '<em>$1</em>')
+    .replace(/`(.+?)`/g, '<code>$1</code>')
+    .replace(/```(\w+)?\n([\s\S]+?)```/g, '<pre>$2</pre>')
+    .replace(/\n/g, '<br>');
+}
+
+// Clear chat
+function clearChat() {
+  if (!confirm('Clear all messages?')) return;
+  const container = document.getElementById('msgs-container');
+  if (container) container.innerHTML = '';
+  conversationHistory = [];
+}
+
+// Export chat
+function exportChat() {
+  const messages = conversationHistory.map(msg => 
+    `${msg.role.toUpperCase()}: ${msg.content}`
+  ).join('\n\n');
+  
+  const blob = new Blob([messages], { type: 'text/plain' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `etel-chat-${Date.now()}.txt`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// Clear memory
+async function clearMemory() {
+  if (!confirm('Clear all memories? This cannot be undone.')) return;
+  
+  const tx = etelAI.db.db.transaction('memory', 'readwrite');
+  const store = tx.objectStore('memory');
+  await store.clear();
+  
+  await loadMemoryEntries();
+  alert('✅ Memory cleared');
+}
+
+// Quick prompt
+function quickPrompt(text) {
+  const input = document.getElementById('msg-input');
+  if (input) {
+    input.value = text;
+    input.focus();
+  }
+}
+
+// Switch view
+function switchView(view, navItem) {
+  // Hide all views
+  const views = ['chat-view', 'skills-view', 'memory-view', 'database-view'];
+  views.forEach(v => {
+    const el = document.getElementById(v);
+    if (el) el.style.display = 'none';
+  });
+  
+  // Show selected view
+  const selectedView = document.getElementById(view + '-view');
+  if (selectedView) selectedView.style.display = view === 'chat' ? 'flex' : 'block';
+  
+  // Update nav items
+  document.querySelectorAll('.nav-item').forEach(item => {
+    item.classList.remove('active');
+  });
+  if (navItem) navItem.classList.add('active');
+  
+  // Update header title
+  const titleEl = document.getElementById('view-title');
+  if (titleEl) titleEl.textContent = view.toUpperCase();
+  
+  // Load data for view
+  if (view === 'memory') loadMemoryEntries();
+  if (view === 'skills') updateSkillCount();
+}
+
+// Open settings modal
+function openSettings() {
+  const modal = document.getElementById('settings-modal');
+  if (modal) modal.classList.add('show');
+}
+
+// Open about modal
+function openAbout() {
+  const modal = document.getElementById('about-modal');
+  if (modal) modal.classList.add('show');
+}
+
+// Close modal
+function closeModal(modalId) {
+  const modal = document.getElementById(modalId);
+  if (modal) modal.classList.remove('show');
+}
+
+// Save settings
+function saveSettings() {
+  // Get values from form
+  const engine = document.getElementById('engine-select')?.value;
+  const ollamaUrl = document.getElementById('ollama-url')?.value;
+  const ollamaModel = document.getElementById('ollama-model')?.value;
+  const agentName = document.getElementById('agent-name')?.value;
+  const agentPersona = document.getElementById('agent-persona')?.value;
+  const memoryMode = document.getElementById('memory-mode')?.value;
+  
+  // Save to localStorage
+  if (engine) localStorage.setItem('etel_engine', engine);
+  if (ollamaUrl) localStorage.setItem('etel_ollama_url', ollamaUrl);
+  if (ollamaModel) localStorage.setItem('etel_ollama_model', ollamaModel);
+  if (agentName) localStorage.setItem('etel_agent_name', agentName);
+  if (agentPersona) localStorage.setItem('etel_persona', agentPersona);
+  if (memoryMode) localStorage.setItem('etel_memory', memoryMode);
+  
+  // Update config
+  if (etelAI) {
+    etelAI.config.engine = engine || etelAI.config.engine;
+    etelAI.config.ollamaUrl = ollamaUrl || etelAI.config.ollamaUrl;
+    etelAI.config.ollamaModel = ollamaModel || etelAI.config.ollamaModel;
+    etelAI.config.agentName = agentName || etelAI.config.agentName;
+    etelAI.config.agentPersona = agentPersona || etelAI.config.agentPersona;
+    etelAI.config.memoryMode = memoryMode || etelAI.config.memoryMode;
+  }
+  
+  // Update UI badge
+  const engineBadge = document.getElementById('engine-badge');
+  if (engineBadge) {
+    engineBadge.textContent = 
+      engine === 'ollama' ? 'OLLAMA' : 
+      engine === 'openai-compat' ? 'LOCAL' : 'HERMES';
+  }
+  
+  alert('✅ Settings saved!');
+}
+
+// Engine change handler
+function onEngineChange() {
+  const engine = document.getElementById('engine-select')?.value;
+  const ollamaSection = document.getElementById('ollama-section');
+  const compatSection = document.getElementById('compat-section');
+  const engineInfo = document.getElementById('engine-info');
+  
+  if (ollamaSection) ollamaSection.style.display = engine === 'ollama' ? 'block' : 'none';
+  if (compatSection) compatSection.style.display = engine === 'openai-compat' ? 'block' : 'none';
+  
+  if (engineInfo) {
+    if (engine === 'ollama') {
+      engineInfo.innerHTML = '<strong>Ollama</strong> runs AI models locally on your computer. Fast, private, and free. Install from ollama.com';
+    } else if (engine === 'openai-compat') {
+      engineInfo.innerHTML = '<strong>OpenAI-Compatible</strong> works with LM Studio, Jan.ai, and other local AI servers.';
+    } else {
+      engineInfo.innerHTML = '<strong>HERMES</strong> is ETEL\'s built-in rule-based engine. Works fully offline, no install. For real AI responses, switch to Ollama or LM Studio.';
+    }
+  }
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', initEtel);
+
+// Make functions available globally
+window.sendMsg = sendMsg;
+window.clearChat = clearChat;
+window.exportChat = exportChat;
+window.clearMemory = clearMemory;
+window.quickPrompt = quickPrompt;
+window.switchView = switchView;
+window.openSettings = openSettings;
+window.openAbout = openAbout;
+window.closeModal = closeModal;
+window.saveSettings = saveSettings;
+window.onEngineChange = onEngineChange;
+
+// Handle Enter key in textarea
+document.addEventListener('DOMContentLoaded', () => {
+  const msgInput = document.getElementById('msg-input');
+  if (msgInput) {
+    msgInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendMsg();
+      }
+    });
+  }
+});
+</script>

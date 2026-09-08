@@ -1,0 +1,27 @@
+{
+  "name": "Etel Madeya",
+  "short_name": "Etel Madeya",
+  "description": "ኢትኤል ማደያ — Fuel Queue Management System",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0a0702",
+  "theme_color": "#F5A623",
+  "icons": [
+    {
+      "src": "/wp-content/plugins/madeya-gas-queue/assets/images/etel-madeya-logo.webp",
+      "sizes": "192x192",
+      "type": "image/webp",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/wp-content/plugins/madeya-gas-queue/assets/images/etel-madeya-logo.webp",
+      "sizes": "512x512",
+      "type": "image/webp",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["utilities", "productivity"],
+  "lang": "am"
+}

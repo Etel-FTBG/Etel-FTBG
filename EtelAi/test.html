@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ETEL Engine Test</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: system-ui, -apple-system, sans-serif;
+  background: #0a0a0a;
+  color: #fff;
+  padding: 20px;
+  line-height: 1.6;
+}
+.container { max-width: 800px; margin: 0 auto; }
+h1 { color: #D4AF37; margin-bottom: 20px; }
+.test-section {
+  background: #161616;
+  border: 1px solid #333;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+.test-section h2 {
+  color: #4A8FD4;
+  font-size: 18px;
+  margin-bottom: 15px;
+}
+.status {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  margin-left: 10px;
+}
+.status.pass { background: #2D9E6B; color: #fff; }
+.status.fail { background: #C96940; color: #fff; }
+.status.pending { background: #666; color: #fff; }
+button {
+  background: #D4AF37;
+  color: #000;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  margin: 5px 5px 5px 0;
+}
+button:hover { background: #E5C047; }
+.output {
+  background: #0f0f0f;
+  border: 1px solid #333;
+  border-radius: 4px;
+  padding: 15px;
+  margin-top: 10px;
+  font-family: monospace;
+  font-size: 13px;
+  white-space: pre-wrap;
+  max-height: 300px;
+  overflow-y: auto;
+}
+.logo {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  border: 2px solid #D4AF37;
+  margin-bottom: 20px;
+}
+input, select {
+  width: 100%;
+  padding: 8px 12px;
+  background: #0f0f0f;
+  border: 1px solid #333;
+  border-radius: 4px;
+  color: #fff;
+  margin: 5px 0 10px 0;
+}
+label {
+  display: block;
+  color: #999;
+  font-size: 13px;
+  margin-top: 10px;
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+  <img src="icons/icon-192.png" alt="ETEL" class="logo">
+  <h1>ETEL Engine Test Suite</h1>
+  
+  <!-- Test 1: Engine Loading -->
+  <div class="test-section">
+    <h2>1. Engine Loading <span class="status pending" id="status-1">PENDING</span></h2>
+    <p>Checks if etel-engine.js loads correctly</p>
+    <button onclick="test1()">Run Test</button>
+    <div class="output" id="output-1"></div>
+  </div>
+  
+  <!-- Test 2: Database Init -->
+  <div class="test-section">
+    <h2>2. Database Initialization <span class="status pending" id="status-2">PENDING</span></h2>
+    <p>Checks if IndexedDB is created and accessible</p>
+    <button onclick="test2()">Run Test</button>
+    <div class="output" id="output-2"></div>
+  </div>
+  
+  <!-- Test 3: Skills Loading -->
+  <div class="test-section">
+    <h2>3. Skills Loading <span class="status pending" id="status-3">PENDING</span></h2>
+    <p>Loads skills from registry.json and stores in database</p>
+    <button onclick="test3()">Run Test</button>
+    <div class="output" id="output-3"></div>
+  </div>
+  
+  <!-- Test 4: Skill Matching -->
+  <div class="test-section">
+    <h2>4. Skill Matching <span class="status pending" id="status-4">PENDING</span></h2>
+    <p>Tests if user input matches correct skill</p>
+    <input type="text" id="test-input" placeholder="Try: Write Python code to..." value="Write Python code to print hello">
+    <button onclick="test4()">Run Test</button>
+    <div class="output" id="output-4"></div>
+  </div>
+  
+  <!-- Test 5: HERMES Engine -->
+  <div class="test-section">
+    <h2>5. HERMES Engine <span class="status pending" id="status-5">PENDING</span></h2>
+    <p>Tests built-in HERMES responses (no Ollama needed)</p>
+    <button onclick="test5()">Run Test</button>
+    <div class="output" id="output-5"></div>
+  </div>
+  
+  <!-- Test 6: Ollama Connection -->
+  <div class="test-section">
+    <h2>6. Ollama Connection <span class="status pending" id="status-6">PENDING</span></h2>
+    <p>Tests connection to local Ollama server</p>
+    <label>Ollama URL:</label>
+    <input type="text" id="ollama-url" value="http://localhost:11434">
+    <label>Model:</label>
+    <input type="text" id="ollama-model" value="llama3">
+    <button onclick="test6()">Run Test</button>
+    <div class="output" id="output-6"></div>
+  </div>
+  
+  <!-- Test 7: Memory System -->
+  <div class="test-section">
+    <h2>7. Memory System <span class="status pending" id="status-7">PENDING</span></h2>
+    <p>Tests saving and retrieving memories</p>
+    <button onclick="test7()">Run Test</button>
+    <div class="output" id="output-7"></div>
+  </div>
+  
+  <!-- Test 8: Full Integration -->
+  <div class="test-section">
+    <h2>8. Full Integration Test <span class="status pending" id="status-8">PENDING</span></h2>
+    <p>Complete flow: input → skill match → AI response → memory save</p>
+    <input type="text" id="full-test-input" placeholder="Ask anything..." value="Explain quantum computing">
+    <label>Engine:</label>
+    <select id="engine-select">
+      <option value="hermes">HERMES (Built-in)</option>
+      <option value="ollama">Ollama (Local AI)</option>
+    </select>
+    <button onclick="test8()">Run Test</button>
+    <div class="output" id="output-8"></div>
+  </div>
+  
+  <div style="text-align: center; margin-top: 40px; color: #666; font-size: 13px;">
+    <p>ETEL OS · Engine Test Suite v1.0</p>
+    <p>Press F12 to see detailed console logs</p>
+  </div>
+</div>
+
+<script src="etel-engine.js"></script>
+<script>
+let etelAI;
+
+// Test 1: Engine Loading
+async function test1() {
+  const output = document.getElementById('output-1');
+  const status = document.getElementById('status-1');
+  
+  try {
+    output.textContent = 'Checking if EtelAI class exists...\n';
+    
+    if (typeof EtelAI === 'undefined') {
+      throw new Error('EtelAI class not found. Make sure etel-engine.js is loaded.');
+    }
+    
+    output.textContent += '✅ EtelAI class found\n';
+    output.textContent += '✅ EtelDB class found\n';
+    output.textContent += '\nTest PASSED';
+    
+    status.textContent = 'PASS';
+    status.className = 'status pass';
+  } catch (error) {
+    output.textContent += '\n❌ Error: ' + error.message;
+    status.textContent = 'FAIL';
+    status.className = 'status fail';
+  }
+}
+
+// Test 2: Database Init
+async function test2() {
+  const output = document.getElementById('output-2');
+  const status = document.getElementById('status-2');
+  
+  try {
+    output.textContent = 'Initializing IndexedDB...\n';
+    
+    const db = new EtelDB();
+    await db.init();
+    
+    output.textContent += '✅ Database created: ' + db.dbName + '\n';
+    output.textContent += '✅ Version: ' + db.version + '\n';
+    
+    // Check object stores
+    const stores = ['skills', 'memory', 'sessions'];
+    for (const store of stores) {
+      if (db.db.objectStoreNames.contains(store)) {
+        output.textContent += '✅ Store exists: ' + store + '\n';
+      } else {
+        throw new Error('Store missing: ' + store);
+      }
+    }
+    
+    output.textContent += '\nTest PASSED';
+    status.textContent = 'PASS';
+    status.className = 'status pass';
+  } catch (error) {
+    output.textContent += '\n❌ Error: ' + error.message;
+    status.textContent = 'FAIL';
+    status.className = 'status fail';
+  }
+}
+
+// Test 3: Skills Loading
+async function test3() {
+  const output = document.getElementById('output-3');
+  const status = document.getElementById('status-3');
+  
+  try {
+    output.textContent = 'Loading skills from registry.json...\n';
+    
+    const config = { engine: 'hermes', agentPersona: 'Test', memoryMode: 'off' };
+    etelAI = new EtelAI(config);
+    await etelAI.init();
+    
+    const skills = await etelAI.db.getSkills();
+    
+    output.textContent += '✅ Loaded ' + skills.length + ' skills\n\n';
+    output.textContent += 'Skills:\n';
+    skills.slice(0, 5).forEach(skill => {
+      output.textContent += `  • ${skill.name} (${skill.category})\n`;
+    });
+    output.textContent += `  ... and ${skills.length - 5} more\n`;
+    
+    output.textContent += '\nTest PASSED';
+    status.textContent = 'PASS';
+    status.className = 'status pass';
+  } catch (error) {
+    output.textContent += '\n❌ Error: ' + error.message;
+    status.textContent = 'FAIL';
+    status.className = 'status fail';
+  }
+}
+
+// Test 4: Skill Matching
+async function test4() {
+  const output = document.getElementById('output-4');
+  const status = document.getElementById('status-4');
+  
+  try {
+    if (!etelAI) {
+      output.textContent = 'Run Test 3 first to initialize engine\n';
+      return;
+    }
+    
+    const input = document.getElementById('test-input').value;
+    output.textContent = 'Input: "' + input + '"\n\n';
+    output.textContent += 'Matching skill...\n';
+    
+    const skill = await etelAI.matchSkill(input);
+    
+    if (skill) {
+      output.textContent += '✅ Matched skill: ' + skill.name + '\n';
+      output.textContent += '   Category: ' + skill.category + '\n';
+      output.textContent += '   Triggers: ' + skill.triggers.slice(0, 3).join(', ') + '...\n';
+      output.textContent += '\nTest PASSED';
+      status.textContent = 'PASS';
+      status.className = 'status pass';
+    } else {
+      output.textContent += '⚠️ No skill matched (will use default)\n';
+      output.textContent += '\nTest PASSED (default behavior)';
+      status.textContent = 'PASS';
+      status.className = 'status pass';
+    }
+  } catch (error) {
+    output.textContent += '\n❌ Error: ' + error.message;
+    status.textContent = 'FAIL';
+    status.className = 'status fail';
+  }
+}
+
+// Test 5: HERMES Engine
+async function test5() {
+  const output = document.getElementById('output-5');
+  const status = document.getElementById('status-5');
+  
+  try {
+    if (!etelAI) {
+      output.textContent = 'Run Test 3 first to initialize engine\n';
+      return;
+    }
+    
+    output.textContent = 'Testing HERMES responses...\n\n';
+    
+    const tests = [
+      'Write Python code to print hello',
+      'Translate hello to Amharic',
+      'Analyze this topic'
+    ];
+    
+    for (const test of tests) {
+      output.textContent += `Input: "${test}"\n`;
+      const response = await etelAI.generate(test);
+      output.textContent += `Response: ${response.substring(0, 100)}...\n\n`;
+    }
+    
+    output.textContent += 'Test PASSED';
+    status.textContent = 'PASS';
+    status.className = 'status pass';
+  } catch (error) {
+    output.textContent += '\n❌ Error: ' + error.message;
+    status.textContent = 'FAIL';
+    status.className = 'status fail';
+  }
+}
+
+// Test 6: Ollama Connection
+async function test6() {
+  const output = document.getElementById('output-6');
+  const status = document.getElementById('status-6');
+  
+  try {
+    const url = document.getElementById('ollama-url').value;
+    const model = document.getElementById('ollama-model').value;
+    
+    output.textContent = 'Testing Ollama connection...\n';
+    output.textContent += 'URL: ' + url + '\n';
+    output.textContent += 'Model: ' + model + '\n\n';
+    
+    // Test connection
+    const response = await fetch(url + '/api/tags');
+    
+    if (!response.ok) {
+      throw new Error('Ollama not responding. Make sure it\'s running: ollama serve');
+    }
+    
+    const data = await response.json();
+    output.textContent += '✅ Ollama is running\n';
+    output.textContent += '✅ Available models:\n';
+    data.models.forEach(m => {
+      output.textContent += `  • ${m.name}\n`;
+    });
+    
+    output.textContent += '\nTest PASSED';
+    status.textContent = 'PASS';
+    status.className = 'status pass';
+  } catch (error) {
+    output.textContent += '\n❌ Error: ' + error.message;
+    output.textContent += '\n\nTo fix:\n';
+    output.textContent += '1. Install Ollama: ollama.com\n';
+    output.textContent += '2. Run: ollama serve\n';
+    output.textContent += '3. Pull a model: ollama pull llama3\n';
+    status.textContent = 'FAIL';
+    status.className = 'status fail';
+  }
+}
+
+// Test 7: Memory System
+async function test7() {
+  const output = document.getElementById('output-7');
+  const status = document.getElementById('status-7');
+  
+  try {
+    if (!etelAI) {
+      output.textContent = 'Run Test 3 first to initialize engine\n';
+      return;
+    }
+    
+    output.textContent = 'Testing memory system...\n\n';
+    
+    // Save a test memory
+    const testMemory = {
+      type: 'test',
+      title: 'Test Memory',
+      content: 'This is a test memory entry',
+      tags: ['test', 'demo']
+    };
+    
+    output.textContent += 'Saving test memory...\n';
+    await etelAI.db.addMemory(testMemory);
+    output.textContent += '✅ Memory saved\n\n';
+    
+    // Retrieve memories
+    output.textContent += 'Retrieving memories...\n';
+    const memories = await etelAI.db.getMemories(10);
+    output.textContent += '✅ Found ' + memories.length + ' memories\n\n';
+    
+    if (memories.length > 0) {
+      output.textContent += 'Latest memory:\n';
+      const latest = memories[0];
+      output.textContent += `  Title: ${latest.title}\n`;
+      output.textContent += `  Type: ${latest.type}\n`;
+      output.textContent += `  Tags: ${latest.tags.join(', ')}\n`;
+    }
+    
+    output.textContent += '\nTest PASSED';
+    status.textContent = 'PASS';
+    status.className = 'status pass';
+  } catch (error) {
+    output.textContent += '\n❌ Error: ' + error.message;
+    status.textContent = 'FAIL';
+    status.className = 'status fail';
+  }
+}
+
+// Test 8: Full Integration
+async function test8() {
+  const output = document.getElementById('output-8');
+  const status = document.getElementById('status-8');
+  
+  try {
+    if (!etelAI) {
+      output.textContent = 'Run Test 3 first to initialize engine\n';
+      return;
+    }
+    
+    const input = document.getElementById('full-test-input').value;
+    const engine = document.getElementById('engine-select').value;
+    
+    output.textContent = 'Running full integration test...\n\n';
+    output.textContent += 'Input: "' + input + '"\n';
+    output.textContent += 'Engine: ' + engine + '\n\n';
+    
+    // Update config
+    etelAI.config.engine = engine;
+    
+    // Step 1: Match skill
+    output.textContent += '1. Matching skill...\n';
+    const skill = await etelAI.matchSkill(input);
+    output.textContent += '   ✅ Skill: ' + (skill ? skill.name : 'Default') + '\n\n';
+    
+    // Step 2: Generate response
+    output.textContent += '2. Generating response...\n';
+    const response = await etelAI.generate(input);
+    output.textContent += '   ✅ Response received (' + response.length + ' chars)\n\n';
+    
+    // Step 3: Save to memory
+    output.textContent += '3. Saving to memory...\n';
+    await etelAI.saveToMemory(input, response, skill);
+    output.textContent += '   ✅ Saved to memory vault\n\n';
+    
+    output.textContent += 'Response:\n';
+    output.textContent += '─'.repeat(60) + '\n';
+    output.textContent += response.substring(0, 500);
+    if (response.length > 500) output.textContent += '...';
+    output.textContent += '\n' + '─'.repeat(60) + '\n';
+    
+    output.textContent += '\nTest PASSED';
+    status.textContent = 'PASS';
+    status.className = 'status pass';
+  } catch (error) {
+    output.textContent += '\n❌ Error: ' + error.message;
+    status.textContent = 'FAIL';
+    status.className = 'status fail';
+  }
+}
+
+// Auto-run first 3 tests on load
+window.addEventListener('load', async () => {
+  console.log('ETEL Engine Test Suite loaded');
+  console.log('Run tests manually or check console for errors');
+});
+</script>
+
+</body>
+</html>

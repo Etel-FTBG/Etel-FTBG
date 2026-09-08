@@ -1,0 +1,30 @@
+# ETEL AI API — Apache config
+# Upload this to ethelmarket.com/etel/api/.htaccess
+
+Options -Indexes
+Options -ExecCGI
+
+# Clean URL routing — all requests go to api.php
+RewriteEngine On
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteRule ^(.*)$ api.php?path=$1 [QSA,L]
+
+# Security headers
+Header set X-Content-Type-Options "nosniff"
+Header set X-Frame-Options "DENY"
+Header set Referrer-Policy "strict-origin"
+
+# Block direct access to sensitive files
+<FilesMatch "\.(sql|env|log|json)$">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+# Block direct access to the secrets file (still loaded fine via require_once)
+<Files "secrets.php">
+    Order allow,deny
+    Deny from all
+</Files>
+
+# Allow JSON content type
+AddType application/json .json
