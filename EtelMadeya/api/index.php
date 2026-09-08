@@ -234,7 +234,91 @@ try {
             unset($controller['password']);
             jsonResponse(['success' => true, 'controller' => $controller]);
             break;
-            
+
+        // ─── ETELID SINGLE SIGN-ON ──────────────────────────────────
+        // Sign in with an EtelID (phone/EtelID/FIN + EtelID password)
+        // instead of a locally-issued controller username/password.
+        // Same pattern as Delivery & Ride's own etelid_login: verifies
+        // server-to-server against the EtelID system, then finds-or-
+        // creates the local controller account. Only ever grants
+        // controller access, and only when either an existing
+        // controllers row already matches this phone, or Etel Group's
+        // central Employees panel has assigned this phone a role at
+        // 'etel-madeya' - that assignment IS the deliberate-creation
+        // act, so a random EtelID holder can't self-provision a
+        // controller account just by signing in.
+        case 'controller_etelid_login':
+            require_once __DIR__ . '/../includes/etelid_bridge.php';
+
+            $identifier = sanitize($_POST['identifier'] ?? '');
+            $password   = $_POST['password'] ?? '';
+            if (empty($identifier) || empty($password)) {
+                jsonResponse(['success' => false, 'message' => 'Enter your EtelID and password'], 400);
+            }
+
+            if (!checkRateLimit('madeya_ctrl_etelid_' . getClientIP(), 5, 900)) {
+                jsonResponse(['success' => false, 'message' => 'Too many attempts. Try again in 15 minutes.'], 429);
+            }
+
+            $auth = etelid_bridge_authenticate($identifier, $password);
+            if (isset($auth['error'])) {
+                jsonResponse(['success' => false, 'message' => $auth['error']], 401);
+            }
+            $member = $auth['member'];
+
+            $controller = db()->fetchOne(
+                "SELECT * FROM controllers WHERE phone = ? AND is_active = 1",
+                [$member['phone']]
+            );
+
+            // Always check Etel Group's CURRENT role assignment, not just at
+            // first-time creation - a role renamed or removed in the
+            // Employees panel takes effect on the very next login here.
+            $egRole = etelid_bridge_check_role('etel-madeya', $member['phone']);
+
+            if (!$controller) {
+                if (!$egRole) {
+                    jsonResponse(['success' => false, 'message' => 'No controller account found for this EtelID. Ask an admin to add you first.'], 403);
+                }
+                $placeholderHash = password_hash(bin2hex(random_bytes(32)), PASSWORD_DEFAULT);
+                $controllerId = db()->insert('controllers', [
+                    'username'             => 'eid_' . preg_replace('/[^0-9]/', '', $member['phone']),
+                    'password'             => $placeholderHash,
+                    'full_name'            => $member['full_name'],
+                    'phone'                => $member['phone'],
+                    'staff_role'           => $egRole['role_at'],
+                    'is_etelgroup_managed' => 1,
+                    'is_active'            => 1,
+                ]);
+                $controller = db()->fetchOne("SELECT * FROM controllers WHERE id = ?", [$controllerId]);
+            } else {
+                $wasManaged = !empty($controller['is_etelgroup_managed']);
+                if ($wasManaged && !$egRole) {
+                    jsonResponse(['success' => false, 'message' => 'Your Etel Group role at Etel Madeya has been removed. Ask an admin to reassign it.'], 403);
+                }
+                if ($egRole) {
+                    $updates = [];
+                    if ($egRole['role_at'] !== $controller['staff_role']) $updates['staff_role'] = $egRole['role_at'];
+                    if (!$wasManaged) $updates['is_etelgroup_managed'] = 1;
+                    if ($updates) {
+                        db()->update('controllers', $updates, 'id = ?', [$controller['id']]);
+                        $controller = db()->fetchOne("SELECT * FROM controllers WHERE id = ?", [$controller['id']]);
+                    }
+                }
+                // No egRole and never managed: true legacy controller - left untouched.
+            }
+
+            db()->update('controllers', ['last_login' => date('Y-m-d H:i:s')], 'id = ?', [$controller['id']]);
+
+            if (session_status() === PHP_SESSION_ACTIVE) session_regenerate_id(true);
+            $_SESSION['controller_id']       = $controller['id'];
+            $_SESSION['controller_username'] = $controller['username'];
+            $_SESSION['controller_name']     = $controller['full_name'];
+
+            unset($controller['password']);
+            jsonResponse(['success' => true, 'controller' => $controller, 'sso' => true]);
+            break;
+
         case 'controller_logout':
             session_destroy();
             jsonResponse(['success' => true, 'message' => 'Logged out successfully']);
