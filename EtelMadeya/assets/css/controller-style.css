@@ -74,6 +74,31 @@
     border: 1px solid var(--danger);
 }
 
+.login-divider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 18px 0;
+    color: var(--primary);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.login-divider::before,
+.login-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: rgba(212, 160, 23, 0.3);
+}
+
+.login-box #showEtelIDLoginBtn,
+.login-box #etelidLoginForm button {
+    width: 100%;
+    margin-top: 10px;
+}
+
 /* ─── HEADER ──────────────────────────────────────────────────────── */
 .header {
     background: linear-gradient(135deg, rgba(26, 26, 26, 0.95) 0%, rgba(45, 36, 22, 0.95) 100%);
