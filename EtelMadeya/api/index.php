@@ -207,32 +207,9 @@ try {
         // ─── CONTROLLER ENDPOINTS ───────────────────────────────────
         
         case 'controller_login':
-            $username = sanitize($_POST['username'] ?? '');
-            $password = $_POST['password'] ?? '';
-            
-            if (empty($username) || empty($password)) {
-                jsonResponse(['success' => false, 'message' => 'Username and password required'], 400);
-            }
-            
-            $controller = db()->fetchOne(
-                "SELECT * FROM controllers WHERE username = ? AND is_active = 1",
-                [$username]
-            );
-            
-            if (!$controller || !password_verify($password, $controller['password'])) {
-                jsonResponse(['success' => false, 'message' => 'Invalid credentials']);
-            }
-            
-            // Update last login
-            db()->update('controllers', ['last_login' => date('Y-m-d H:i:s')], 'id = ?', [$controller['id']]);
-            
-            // Set session
-            $_SESSION['controller_id'] = $controller['id'];
-            $_SESSION['controller_username'] = $controller['username'];
-            $_SESSION['controller_name'] = $controller['full_name'];
-            
-            unset($controller['password']);
-            jsonResponse(['success' => true, 'controller' => $controller]);
+            // Local username/password login has been retired - EtelID SSO
+            // (controller_etelid_login below) is the only supported sign-in method.
+            jsonResponse(['success' => false, 'message' => 'Local login has been disabled. Please sign in with EtelID.'], 403);
             break;
 
         // ─── ETELID SINGLE SIGN-ON ──────────────────────────────────

@@ -22,41 +22,9 @@ try {
         // ─── AUTHENTICATION ─────────────────────────────────────────
         
         case 'login':
-            $username = sanitize($_POST['username'] ?? '');
-            $password = $_POST['password'] ?? '';
-            
-            if (empty($username) || empty($password)) {
-                jsonResponse(['success' => false, 'message' => 'Username and password required'], 400);
-            }
-            
-            $admin = db()->fetchOne(
-                "SELECT * FROM admin_users WHERE username = ? AND is_active = 1",
-                [$username]
-            );
-            
-            if (!$admin || !password_verify($password, $admin['password'])) {
-                jsonResponse(['success' => false, 'message' => 'Invalid credentials']);
-            }
-            
-            // Update last login
-            db()->update('admin_users', ['last_login' => date('Y-m-d H:i:s')], 'id = ?', [$admin['id']]);
-            
-            // Log activity
-            db()->insert('activity_log', [
-                'admin_id' => $admin['id'],
-                'action' => 'login',
-                'details' => 'Admin logged in',
-                'ip_address' => getClientIP()
-            ]);
-            
-            // Set session
-            $_SESSION['admin_id'] = $admin['id'];
-            $_SESSION['admin_username'] = $admin['username'];
-            $_SESSION['admin_name'] = $admin['full_name'];
-            $_SESSION['admin_role'] = $admin['role'];
-            
-            unset($admin['password']);
-            jsonResponse(['success' => true, 'admin' => $admin]);
+            // Local username/password login has been retired - EtelID SSO
+            // (admin_etelid_login below) is the only supported sign-in method.
+            jsonResponse(['success' => false, 'message' => 'Local login has been disabled. Please sign in with EtelID.'], 403);
             break;
 
         // ─── ETELID SINGLE SIGN-ON (ADMIN) ──────────────────────────
