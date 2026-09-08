@@ -1,0 +1,472 @@
+<?php
+/**
+ * Etel-ID Premium — Auth AJAX Handlers
+ *
+ * @package    Etel-ID Premium
+ * @version    2.1.0
+ * @author     Etel Group · ኢትኤል ቡድን
+ * @since      2.1.0
+ *
+ * Handles: etelid_auth_register, etelid_auth_login,
+ *          etelid_auth_logout, etelid_auth_portal_data
+ */
+if ( ! defined( 'ABSPATH' ) ) exit;
+
+class EtelID_Auth_Ajax {
+
+    public static function init() {
+        /* Explicit action → method map to avoid str_replace bugs */
+        $map = array(
+            'etelid_auth_register'        => 'register',
+            'etelid_auth_login'           => 'login',
+            'etelid_auth_logout'          => 'logout',
+            'etelid_auth_portal_data'     => 'portal_data',
+            'etelid_auth_change_password' => 'change_password',
+            'etelid_profile_update'       => 'profile_update',
+            'etelid_pass2_submit'         => 'pass2_submit',
+            'etelid_fayda_id_submit'      => 'fayda_id_submit',
+            'etelid_fayda_quick_register' => 'fayda_quick_register',
+        );
+        foreach ( $map as $action => $method ) {
+            add_action( 'wp_ajax_'        . $action, array( __CLASS__, $method ) );
+            add_action( 'wp_ajax_nopriv_' . $action, array( __CLASS__, $method ) );
+        }
+    }
+
+    /* ── Register ───────────────────────────────────────── */
+    public static function register() {
+        check_ajax_referer( 'etelid_auth', 'nonce' );
+
+        $ip = EtelID_Security::get_ip();
+        if ( ! EtelID_Security::rate_limit( 'register_' . $ip, 5, 3600 ) ) {
+            wp_send_json_error( array( 'message' => 'Too many attempts. Please wait an hour and try again.' ) );
+        }
+
+        $fields = array(
+            'full_name','full_name_am','phone','password','password_confirm',
+            'dob','sex','blood_type','nationality','region','zone','woreda',
+            'primary_company_slug','role','department','email',
+        );
+        $data = array();
+        foreach ( $fields as $f ) {
+            $data[ $f ] = isset( $_POST[ $f ] ) ? sanitize_text_field( wp_unslash( $_POST[ $f ] ) ) : '';
+        }
+
+        /* Basic validation */
+        if ( empty( $data['full_name'] ) ) {
+            wp_send_json_error( array( 'field' => 'full_name', 'message' => 'Full name is required.' ) );
+        }
+        if ( empty( $data['phone'] ) ) {
+            wp_send_json_error( array( 'field' => 'phone', 'message' => 'Phone number is required.' ) );
+        }
+        if ( strlen( $data['password'] ) < 6 ) {
+            wp_send_json_error( array( 'field' => 'password', 'message' => 'Password must be at least 6 characters.' ) );
+        }
+        if ( $data['password'] !== $data['password_confirm'] ) {
+            wp_send_json_error( array( 'field' => 'password_confirm', 'message' => 'Passwords do not match.' ) );
+        }
+        if ( empty( $data['dob'] ) ) {
+            wp_send_json_error( array( 'field' => 'dob', 'message' => 'Date of birth is required.' ) );
+        }
+        if ( ! empty( $data['email'] ) && ! is_email( $data['email'] ) ) {
+            wp_send_json_error( array( 'field' => 'email', 'message' => 'Invalid email address.' ) );
+        }
+
+        $result = EtelID_Auth::register( $data );
+        if ( is_wp_error( $result ) ) {
+            wp_send_json_error( array( 'message' => $result->get_error_message() ) );
+        }
+
+        $member = EtelID_DB::get_member( $result );
+        /* Auto login after register */
+        EtelID_Auth::create_session( $result );
+        if ( $member ) EtelID_Mailer::send_welcome( $member );
+
+        wp_send_json_success( array(
+            'message'  => 'Account created! Welcome to Etel Group.',
+            'etel_id'  => $member ? $member->etel_id : '',
+            'redirect' => home_url( '/etel-id/portal/' ),
+        ));
+    }
+
+    /* ── Login ──────────────────────────────────────────── */
+    public static function login() {
+        check_ajax_referer( 'etelid_auth', 'nonce' );
+
+        $ip = EtelID_Security::get_ip();
+        if ( ! EtelID_Security::rate_limit( 'login_' . $ip, 10, 600 ) ) {
+            wp_send_json_error( array( 'message' => 'Too many login attempts. Please wait 10 minutes.' ) );
+        }
+
+        $phone    = isset( $_POST['phone'] )    ? sanitize_text_field( wp_unslash( $_POST['phone'] ) )    : '';
+        $password = isset( $_POST['password'] ) ? wp_unslash( $_POST['password'] ) : '';
+
+        if ( ! $phone || ! $password ) {
+            wp_send_json_error( array( 'message' => 'Phone number and password are required.' ) );
+        }
+
+        EtelID_Auth::purge_expired();
+        $result = EtelID_Auth::login( $phone, $password );
+
+        if ( is_wp_error( $result ) ) {
+            wp_send_json_error( array( 'message' => $result->get_error_message() ) );
+        }
+
+        $member          = $result['member'];
+        $redirect        = home_url( '/etel-id/portal/' );
+        $is_admin_member = EtelID_Auth::is_site_admin( $member );
+
+        /* If member tried to access wp-admin but is NOT admin → portal only */
+        $wanted_admin = ( isset( $_COOKIE['etelid_wants_wpadmin'] ) &&
+                          $_COOKIE['etelid_wants_wpadmin'] === '1' ) ||
+                        ( isset( $_POST['redirect'] ) && $_POST['redirect'] === 'wpadmin' );
+        if ( $wanted_admin && ! $is_admin_member ) {
+            /* Clear intent cookie */
+            setcookie( 'etelid_wants_wpadmin', '', time() - 3600, COOKIEPATH, COOKIE_DOMAIN );
+            /* Redirect to portal — non-admins never see wp-admin */
+            $redirect = home_url( '/etel-id/portal/' );
+        }
+
+        if ( $is_admin_member ) {
+            /* Find the WP admin user */
+            $wp_user = null;
+            if ( $member->email ) {
+                $wp_user = get_user_by( 'email', $member->email );
+            }
+            if ( ! $wp_user ) {
+                $wp_user = get_user_by( 'email', get_option('admin_email') );
+            }
+
+            if ( $wp_user && user_can( $wp_user, 'manage_options' ) ) {
+                /* Log them into WordPress */
+                wp_set_current_user( $wp_user->ID );
+                wp_set_auth_cookie( $wp_user->ID, true );
+
+                /* Check if they came from wp-admin */
+                $wanted_admin = ( isset( $_COOKIE['etelid_wpadmin_intent'] ) && $_COOKIE['etelid_wpadmin_intent'] === '1' )
+                             || ( isset( $_POST['redirect'] ) && $_POST['redirect'] === 'wpadmin' );
+
+                if ( $wanted_admin ) {
+                    /* Clear intent cookie */
+                    setcookie( 'etelid_wpadmin_intent', '', time() - 3600, COOKIEPATH, COOKIE_DOMAIN );
+                    $redirect = admin_url();
+                }
+            }
+        }
+
+        wp_send_json_success( array(
+            'message'        => 'Welcome back, ' . $member->full_name . '.',
+            'etel_id'        => $member->etel_id,
+            'redirect'       => $redirect,
+            'is_admin'       => $is_admin_member,
+            'remember'       => isset( $_POST['remember'] ) && $_POST['remember'] === '1',
+            'phone'          => $phone,
+        ));
+    }
+
+    /* ── Logout ─────────────────────────────────────────── */
+    public static function logout() {
+        check_ajax_referer( 'etelid_auth', 'nonce' );
+        EtelID_Auth::logout();
+        wp_send_json_success( array( 'redirect' => home_url( '/etel-id/login/' ) ) );
+    }
+
+    /* ── Portal data (member dashboard) ─────────────────── */
+    public static function portal_data() {
+        check_ajax_referer( 'etelid_auth', 'nonce' );
+        $member = EtelID_Auth::get_current_member();
+        if ( ! $member ) {
+            wp_send_json_error( array( 'redirect' => home_url( '/etel-id/login/' ) ) );
+        }
+        $companies = EtelID_DB::get_companies( $member->id );
+        $log       = EtelID_DB::get_log( $member->id, 10 );
+        wp_send_json_success( array(
+            'member'    => array(
+                'id'           => $member->id,
+                'etel_id'      => $member->etel_id,
+                'fin'          => $member->fin,
+                'full_name'    => $member->full_name,
+                'full_name_am' => $member->full_name_am,
+                'phone'        => $member->phone,
+                'email'        => $member->email,
+                'dob'          => $member->dob,
+                'dob_eth'      => $member->dob_eth,
+                'sex'          => $member->sex,
+                'blood_type'   => $member->blood_type,
+                'nationality'  => $member->nationality,
+                'region'       => $member->region,
+                'zone'         => $member->zone,
+                'primary_company' => $member->primary_company,
+                'role'         => $member->role,
+                'tier'         => $member->tier,
+                'status'       => $member->status,
+                'issue_date'   => $member->issue_date,
+                'issue_date_eth' => $member->issue_date_eth,
+                'expiry_date'  => $member->expiry_date,
+                'expiry_date_eth' => $member->expiry_date_eth,
+                'card_number'  => $member->card_number,
+                'serial_number'=> $member->serial_number,
+                'qr_scan_count'=> $member->qr_scan_count,
+                'last_verified'=> $member->last_verified,
+                'photo_url'    => $member->photo_url,
+                'kyc_level'           => isset( $member->kyc_level ) ? (int) $member->kyc_level : 0,
+                'must_change_password'=> isset( $member->must_change_password ) ? (int) $member->must_change_password : 0,
+                'pass2_completed_at'  => isset( $member->pass2_completed_at ) ? $member->pass2_completed_at : null,
+            ),
+            'companies'    => $companies,
+            'recent_log'   => $log,
+            'verify_url'   => EtelID_QR::verify_url( $member->etel_id ),
+            'print_url'    => home_url( '/etel-id/print/' . $member->etel_id ),
+            'card_qr_src'  => 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' . urlencode( EtelID_QR::verify_url( $member->etel_id ) ) . '&color=1a0a00&bgcolor=f5f0e0&margin=4&ecc=H',
+        ));
+    }
+
+    /* ── Change password ─────────────────────────────────── */
+    public static function change_password() {
+        check_ajax_referer( 'etelid_auth', 'nonce' );
+        $member = EtelID_Auth::get_current_member();
+        if ( ! $member ) wp_send_json_error( array( 'message' => 'Not logged in.' ) );
+
+        $old = isset( $_POST['old_password'] ) ? wp_unslash( $_POST['old_password'] ) : '';
+        $new = isset( $_POST['new_password'] ) ? wp_unslash( $_POST['new_password'] ) : '';
+        $cfm = isset( $_POST['confirm_password'] ) ? wp_unslash( $_POST['confirm_password'] ) : '';
+
+        if ( ! EtelID_Auth::verify_password( $old, $member->pin_hash ) ) {
+            wp_send_json_error( array( 'message' => 'Current password is incorrect.' ) );
+        }
+        if ( strlen( $new ) < 6 ) {
+            wp_send_json_error( array( 'message' => 'New password must be at least 6 characters.' ) );
+        }
+        if ( $new !== $cfm ) {
+            wp_send_json_error( array( 'message' => 'New passwords do not match.' ) );
+        }
+
+        EtelID_DB::update_member( $member->id, array(
+            'pin_hash'             => EtelID_Auth::hash_password( $new ),
+            'must_change_password' => 0,
+        ));
+        EtelID_DB::log( $member->id, $member->etel_id, 'updated', 'Password changed via portal' );
+        wp_send_json_success( array( 'message' => 'Password changed successfully.' ) );
+    }
+
+    /* ── Pass 2: biometric + additional KYC info (unlocks EtelPay) ──
+     * Self-service version of EtelID_Biometric::enroll() — authenticated
+     * by the member's own session cookie, not an admin/scanner-app token. */
+    public static function pass2_submit() {
+        check_ajax_referer( 'etelid_auth', 'nonce' );
+        $member = EtelID_Auth::get_current_member();
+        if ( ! $member ) wp_send_json_error( array( 'message' => 'Not logged in.' ) );
+
+        $face_image = isset( $_POST['face_image'] ) ? wp_unslash( $_POST['face_image'] ) : '';
+        if ( ! $face_image || strpos( $face_image, 'data:image' ) !== 0 ) {
+            wp_send_json_error( array( 'message' => 'A face photo is required to complete verification.' ) );
+        }
+
+        $occupation       = isset( $_POST['occupation'] )        ? sanitize_text_field( wp_unslash( $_POST['occupation'] ) )        : '';
+        $income_range     = isset( $_POST['income_range'] )      ? sanitize_text_field( wp_unslash( $_POST['income_range'] ) )      : '';
+        $source_of_funds  = isset( $_POST['source_of_funds'] )   ? sanitize_text_field( wp_unslash( $_POST['source_of_funds'] ) )   : '';
+        $kin_name         = isset( $_POST['next_of_kin_name'] )  ? sanitize_text_field( wp_unslash( $_POST['next_of_kin_name'] ) )  : '';
+        $kin_phone        = isset( $_POST['next_of_kin_phone'] ) ? sanitize_text_field( wp_unslash( $_POST['next_of_kin_phone'] ) ) : '';
+
+        if ( ! $occupation || ! $income_range || ! $source_of_funds || ! $kin_name || ! $kin_phone ) {
+            wp_send_json_error( array( 'message' => 'Please fill in all the additional information fields.' ) );
+        }
+
+        /* 1. Enroll face biometric (reuses the existing biometric engine). */
+        $result = EtelID_Biometric::enroll( $member->id, $member->etel_id, 'face', $face_image, 85, 'Self-Service Pass 2' );
+        if ( is_wp_error( $result ) ) {
+            wp_send_json_error( array( 'message' => $result->get_error_message() ) );
+        }
+
+        /* 2. Save additional KYC info + bump to kyc_level 2 (EtelPay unlocked). */
+        EtelID_DB::update_member( $member->id, array(
+            'kyc_level'          => 2,
+            'pass2_completed_at' => current_time( 'mysql' ),
+            'occupation'         => $occupation,
+            'income_range'       => $income_range,
+            'source_of_funds'    => $source_of_funds,
+            'next_of_kin_name'   => $kin_name,
+            'next_of_kin_phone'  => $kin_phone,
+        ));
+
+        EtelID_DB::log( $member->id, $member->etel_id, 'pass2_completed', 'Second verification pass completed — EtelPay unlocked' );
+
+        wp_send_json_success( array( 'message' => 'Verification complete. Etel Pay is now unlocked.' ) );
+    }
+
+    /** Member self-service: upload Fayda ID front+back from their own profile page.
+     *  Unlike pass2_submit() above (face+info, instant), this goes into a pending
+     *  review queue — an admin must approve it from the Members Controller before
+     *  kyc_level is bumped to 2. Trust boundary: this is the member attesting to
+     *  their own documents, so it needs a human check before it unlocks anything. */
+    public static function fayda_id_submit() {
+        check_ajax_referer( 'etelid_auth', 'nonce' );
+        $member = EtelID_Auth::get_current_member();
+        if ( ! $member ) wp_send_json_error( array( 'message' => 'Not logged in.' ) );
+
+        $front = isset( $_POST['front_image'] ) ? wp_unslash( $_POST['front_image'] ) : '';
+        $back  = isset( $_POST['back_image'] )  ? wp_unslash( $_POST['back_image'] )  : '';
+
+        if ( ! $front || strpos( $front, 'data:image' ) !== 0 ) wp_send_json_error( array( 'message' => 'Please add a photo of the front of your Fayda ID.' ) );
+        if ( ! $back  || strpos( $back,  'data:image' ) !== 0 ) wp_send_json_error( array( 'message' => 'Please add a photo of the back of your Fayda ID.' ) );
+
+        EtelID_DB::update_member( $member->id, array(
+            'fayda_front_image'  => $front,
+            'fayda_back_image'   => $back,
+            'fayda_captured_at'  => current_time( 'mysql' ),
+            'pass2_status'       => 'pending',
+            'pass2_submitted_at' => current_time( 'mysql' ),
+            'pass2_review_note'  => '',
+        ) );
+
+        EtelID_DB::log( $member->id, $member->etel_id, 'updated', 'Member submitted Fayda ID photos for Pass 2 review.' );
+
+        wp_send_json_success( array( 'message' => 'Submitted! An admin will review your Fayda ID shortly.' ) );
+    }
+
+    /* ── Fayda Quick Register — portal version ───────────────
+     * Same logic as EtelID_Admin::page_fayda_register(), but callable
+     * from the member portal itself (authenticated by the Etel-ID
+     * session, not a WordPress login) so the admin never has to leave
+     * the portal / touch wp-admin to register a new member. */
+    public static function fayda_quick_register() {
+        /* Passing $die=false converts a nonce failure into a normal
+         * return value instead of a silent wp_die(-1) — without this,
+         * an expired/stale nonce produces a bare "-1" response body
+         * that the front-end can't show a useful message for. */
+        if ( ! check_ajax_referer( 'etelid_auth', 'nonce', false ) ) {
+            wp_send_json_error( array( 'message' => 'Your session has expired. Please refresh the page (pull down to reload) and try again.' ) );
+        }
+
+        /* Swallow any stray PHP notice/warning output from here on so
+         * it can never corrupt the JSON response body. */
+        ob_start();
+
+        try {
+            $member = EtelID_Auth::get_current_member();
+            if ( ! $member || ! EtelID_Auth::is_site_admin( $member ) ) {
+                ob_end_clean();
+                wp_send_json_error( array( 'message' => 'Not authorized.' ) );
+            }
+
+            $fields = array(
+                'full_name','full_name_am','dob','sex','nationality',
+                'region','zone','woreda','phone','email','fayda_fin',
+                'primary_company_slug','role','department','employee_number','notes',
+            );
+            $data = array();
+            foreach ( $fields as $f ) {
+                $data[ $f ] = isset( $_POST[ $f ] ) ? sanitize_text_field( wp_unslash( $_POST[ $f ] ) ) : '';
+            }
+            /* Large base64 image fields — not sanitize_text_field (would mangle base64). */
+            $data['fayda_front_image'] = isset( $_POST['fayda_front_image'] ) ? wp_unslash( $_POST['fayda_front_image'] ) : '';
+            $data['fayda_back_image']  = isset( $_POST['fayda_back_image']  ) ? wp_unslash( $_POST['fayda_back_image']  ) : '';
+            $data['fayda_ocr_raw']     = isset( $_POST['fayda_ocr_raw']     ) ? sanitize_textarea_field( wp_unslash( $_POST['fayda_ocr_raw'] ) ) : '';
+            $data['photo_url']         = $data['fayda_front_image'];
+            $data['_registered_by_label'] = $member->full_name . ' (' . $member->etel_id . ')';
+
+            if ( ! $data['full_name'] || ! $data['dob'] || ! $data['phone'] ) {
+                ob_end_clean();
+                wp_send_json_error( array( 'message' => 'Full name, date of birth, and phone are required.' ) );
+            }
+
+            if ( ! class_exists( 'EtelID_Fayda' ) ) {
+                ob_end_clean();
+                wp_send_json_error( array( 'message' => 'Server setup error: EtelID_Fayda class is not loaded. Re-deploy includes/class-etelid-fayda.php and confirm etel-id.php requires it.' ) );
+            }
+
+            $outcome = EtelID_Fayda::quick_register( $data );
+            if ( is_wp_error( $outcome ) ) {
+                ob_end_clean();
+                wp_send_json_error( array( 'message' => $outcome->get_error_message() ?: ( 'Registration failed (code: ' . $outcome->get_error_code() . ').' ) ) );
+            }
+
+            $preferred_channel = isset( $_POST['notify_channel'] ) ? sanitize_key( wp_unslash( $_POST['notify_channel'] ) ) : 'auto';
+            $notify = class_exists( 'EtelID_Notify' )
+                ? EtelID_Notify::deliver( $outcome['member'], $outcome['temp_password'], $preferred_channel )
+                : array( 'auto_sent' => false, 'auto_error' => 'EtelID_Notify class not loaded.', 'whatsapp_link' => '', 'telegram_link' => '', 'message_text' => '' );
+
+            ob_end_clean();
+            wp_send_json_success( array(
+                'etel_id'       => $outcome['member']->etel_id,
+                'phone'         => $outcome['member']->phone,
+                'temp_password' => $outcome['temp_password'],
+                'notify'        => $notify,
+            ) );
+
+        } catch ( Exception $e ) {
+            ob_end_clean();
+            wp_send_json_error( array( 'message' => 'Server error: ' . $e->getMessage() ) );
+        }
+    }
+
+    /* ── Profile Update v3.3.1 ─────────────────────────────── */
+    public static function profile_update() {
+        check_ajax_referer( 'etelid_profile_update', 'nonce' );
+
+        $member = EtelID_Auth::get_current_member();
+        if ( ! $member ) {
+            wp_send_json_error( array( 'message' => 'Not logged in.' ) );
+            return; /* Ensure execution stops */
+        }
+
+        /* Fields the member is allowed to update */
+        $fields = array(
+            'full_name', 'full_name_am', 'dob', 'sex', 'blood_type',
+            'nationality', 'phone', 'email', 'region', 'zone', 'woreda',
+            'role', 'department', 'photo_url',
+        );
+
+        $data = array();
+        foreach ( $fields as $f ) {
+            if ( ! isset( $_POST[ $f ] ) ) continue;
+            $raw = wp_unslash( $_POST[ $f ] );
+            if ( $f === 'email' ) {
+                $data[ $f ] = sanitize_email( $raw );
+            } elseif ( $f === 'photo_url' ) {
+                /* Photo can be a base64 data URL (data:image/...) from FileReader
+                 * or a regular URL. esc_url_raw strips data: so handle both. */
+                if ( substr( $raw, 0, 5 ) === 'data:' ) {
+                    /* Validate it's actually an image data URL */
+                    if ( preg_match( '/^data:image\/(jpeg|jpg|png|webp|gif);base64,/', $raw ) ) {
+                        $data[ $f ] = $raw; /* Store full base64 */
+                    }
+                } else {
+                    $data[ $f ] = esc_url_raw( $raw );
+                }
+            } else {
+                $data[ $f ] = sanitize_text_field( $raw );
+            }
+        }
+
+        /* Resolve company slug to name */
+        if ( isset( $_POST['primary_company_slug'] ) ) {
+            $companies = EtelID_Generator::companies();
+            $slug = sanitize_key( $_POST['primary_company_slug'] );
+            if ( isset( $companies[ $slug ] ) ) {
+                $data['primary_company'] = $companies[ $slug ]['name'];
+            }
+        }
+
+        /* Validation */
+        if ( empty( $data['full_name'] ) ) {
+            wp_send_json_error( array( 'message' => 'Full name is required.' ) );
+            return;
+        }
+        if ( ! empty( $data['email'] ) && ! is_email( $data['email'] ) ) {
+            wp_send_json_error( array( 'message' => 'Invalid email address.' ) );
+            return;
+        }
+
+        /* Recalculate Ethiopian DOB if changed */
+        if ( ! empty( $data['dob'] ) && class_exists( 'EtelID_EthCalendar' ) ) {
+            $data['dob_eth'] = EtelID_EthCalendar::to_ethiopian( $data['dob'] );
+        }
+
+        /* Save */
+        EtelID_DB::update_member( $member->id, $data );
+        EtelID_DB::log( $member->id, $member->etel_id, 'updated', 'Profile updated by member via portal' );
+
+        wp_send_json_success( array( 'message' => 'Profile updated successfully! Your card now reflects the changes.' ) );
+    }
+}

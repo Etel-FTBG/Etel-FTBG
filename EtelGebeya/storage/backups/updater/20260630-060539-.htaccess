@@ -1,0 +1,67 @@
+
+# ---- EtelGebeya Security Headers ----
+<IfModule mod_headers.c>
+  Header always set X-Frame-Options "SAMEORIGIN"
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set X-XSS-Protection "1; mode=block"
+  Header always set Referrer-Policy "strict-origin-when-cross-origin"
+  Header always set Permissions-Policy "camera=(), microphone=(), geolocation=()"
+</IfModule>
+
+# ---- Force HTTPS ----
+<IfModule mod_rewrite.c>
+  RewriteCond %{HTTPS} off
+  RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+</IfModule>
+
+# ---- Block sensitive files ----
+<FilesMatch "\.(log|sql|env|bak|backup|sh|json)$">
+  Order Allow,Deny
+  Deny from all
+</FilesMatch>
+<Files ".env">
+  Order Allow,Deny
+  Deny from all
+</Files>
+# ---- End EtelGebeya Security ----
+
+# Etel Gebeya — LiteSpeed/Apache URL rewriting
+# Site lives at /EtelGebeya/ (subdirectory install)
+
+# Tell the server to use public/index.php as the default file
+DirectoryIndex public/index.php index.php
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /EtelGebeya/
+
+  # Clean URL for admin SPA: /admin -> admin.html (no .html in browser)
+  RewriteRule ^admin$ admin.html [L]
+
+  # Serve real FILES directly (admin.html, updater.php, admin-panel.js, api/*.php, etc.)
+  RewriteCond %{REQUEST_FILENAME} -f
+  RewriteRule ^ - [L]
+
+  # Route everything else (directories, unknown paths, /) through the front controller
+  RewriteRule ^ public/index.php [QSA,L]
+</IfModule>
+
+# Disable LiteSpeed/proxy page cache for PHP responses
+<IfModule mod_headers.c>
+  <FilesMatch "\.php$">
+    Header set Cache-Control "no-store, no-cache, must-revalidate"
+    Header set Pragma "no-cache"
+  </FilesMatch>
+</IfModule>
+<IfModule LiteSpeed>
+  CacheLookup off
+</IfModule>
+
+# Prevent directory listing
+Options -Indexes
+
+# Protect sensitive files from direct browser access
+<FilesMatch "\.(env|log|sql|lock|md)$">
+  Order allow,deny
+  Deny from all
+</FilesMatch>

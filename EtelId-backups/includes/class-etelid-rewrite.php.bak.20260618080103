@@ -1,0 +1,166 @@
+<?php
+/**
+ * Etel-ID Premium — Rewrite Rules v3.8.0
+ *
+ * URL map:
+ *   /etel-id/apply/          → apply form
+ *   /etel-id/login/          → login
+ *   /etel-id/signup/         → signup
+ *   /etel-id/portal/         → member portal
+ *   /etel-id/profile/        → edit profile
+ *   /etel-id/logout/         → logout
+ *   /etel-id/verify/{ID}     → public verify page
+ *   /etel-id/print/{ID}      → print page
+ *
+ * IMPORTANT: verify and print use [^/]+ to support Ethiopic characters
+ * in the ID prefix (e.g. ኤ.E-2026-00002). DO NOT use [A-Z0-9\-]+.
+ *
+ * PHP 5.6 compatible.
+ */
+if ( ! defined( 'ABSPATH' ) ) exit;
+
+class EtelID_Rewrite {
+
+    public static function init() {
+        add_action( 'init',                   array( __CLASS__, 'add_rules'       ) );
+        add_filter( 'query_vars',             array( __CLASS__, 'add_vars'        ) );
+        add_action( 'template_include',       array( __CLASS__, 'route'           ), 999 );
+        add_action( 'template_redirect',      array( __CLASS__, 'redirect_wp_pages' ) );
+        add_action( 'wp_loaded',              array( __CLASS__, 'maybe_flush'     ) );
+    }
+
+    /* ── Add rewrite rules ── */
+    public static function add_rules() {
+        /* Static pages */
+        add_rewrite_rule( '^etel-id/apply/?$',   'index.php?etelid_page=apply',   'top' );
+        add_rewrite_rule( '^etel-id/login/?$',   'index.php?etelid_page=login',   'top' );
+        add_rewrite_rule( '^etel-id/signup/?$',  'index.php?etelid_page=signup',  'top' );
+        add_rewrite_rule( '^etel-id/portal/?$',  'index.php?etelid_page=portal',  'top' );
+        add_rewrite_rule( '^etel-id/profile/?$', 'index.php?etelid_page=profile', 'top' );
+        add_rewrite_rule( '^etel-id/logout/?$',  'index.php?etelid_page=logout',  'top' );
+
+        /* Dynamic pages — [^/]+ supports Ethiopic characters in ID prefix */
+        add_rewrite_rule( '^etel-id/verify/([^/]+)/?$', 'index.php?etelid_verify=$matches[1]', 'top' );
+        add_rewrite_rule( '^etel-id/print/([^/]+)/?$',  'index.php?etelid_print=$matches[1]',  'top' );
+    }
+
+    /* ── Register query vars ── */
+    public static function add_vars( $vars ) {
+        $vars[] = 'etelid_page';
+        $vars[] = 'etelid_verify';
+        $vars[] = 'etelid_print';
+        return $vars;
+    }
+
+    /* ── Route requests to templates ── */
+    public static function route( $template ) {
+        $page   = get_query_var( 'etelid_page' );
+        $verify = get_query_var( 'etelid_verify' );
+        $print  = get_query_var( 'etelid_print' );
+
+        /* ── Verify page ── */
+        if ( $verify ) {
+            $tpl = ETELID_PATH . 'templates/verify.php';
+            return file_exists( $tpl ) ? $tpl : $template;
+        }
+
+        /* ── Print page ── */
+        if ( $print ) {
+            $etel_id = sanitize_text_field( urldecode( $print ) );
+            $member  = EtelID_DB::get_by_etel_id( $etel_id );
+            if ( ! $member ) {
+                /* Try URL-decoded version */
+                $member = EtelID_DB::get_by_etel_id( rawurldecode( $print ) );
+            }
+            if ( $member ) {
+                /* Make member available to template */
+                $GLOBALS['etelid_print_member'] = $member;
+                $tpl = ETELID_PATH . 'templates/print-page.php';
+                return file_exists( $tpl ) ? $tpl : $template;
+            }
+            return $template;
+        }
+
+        /* ── Named pages ── */
+        if ( ! $page ) return $template;
+
+        switch ( $page ) {
+            case 'apply':
+                $tpl = ETELID_PATH . 'templates/apply-form.php';
+                return file_exists( $tpl ) ? $tpl : $template;
+
+            case 'login':
+            case 'signup':
+                $tpl = ETELID_PATH . 'templates/auth-page.php';
+                return file_exists( $tpl ) ? $tpl : $template;
+
+            case 'portal':
+                if ( ! EtelID_Auth::is_logged_in() ) {
+                    wp_redirect( home_url( '/etel-id/login/' ) );
+                    exit;
+                }
+                $tpl = ETELID_PATH . 'templates/portal.php';
+                return file_exists( $tpl ) ? $tpl : $template;
+
+            case 'profile':
+                if ( ! EtelID_Auth::is_logged_in() ) {
+                    wp_redirect( home_url( '/etel-id/login/' ) );
+                    exit;
+                }
+                $tpl = ETELID_PATH . 'templates/profile-update.php';
+                return file_exists( $tpl ) ? $tpl : $template;
+
+            case 'logout':
+                EtelID_Auth::logout();
+                wp_redirect( home_url( '/etel-id/login/' ) );
+                exit;
+        }
+
+        return $template;
+    }
+
+    /* ── Redirect WP pages with matching slugs ── */
+    public static function redirect_wp_pages() {
+        if ( ! is_page() && ! is_singular() ) return;
+
+        global $post;
+        if ( ! $post ) return;
+
+        /* CRITICAL: Never intercept real Etel-ID routes */
+        $uri = isset( $_SERVER['REQUEST_URI'] ) ? $_SERVER['REQUEST_URI'] : '';
+        if ( preg_match( '#/etel-id/(profile|portal|login|signup|apply|logout|verify|print)#i', $uri ) ) {
+            return;
+        }
+
+        $slug = strtolower( $post->post_name );
+
+        $map = array(
+            'etelid'         => '/etel-id/apply/',
+            'etel-id-apply'  => '/etel-id/apply/',
+            'apply-for-id'   => '/etel-id/apply/',
+            'etelid-login'   => '/etel-id/login/',
+            'etel-id-signin' => '/etel-id/login/',
+            'member-login'   => '/etel-id/login/',
+            'etelid-portal'  => '/etel-id/portal/',
+            'member-portal'  => '/etel-id/portal/',
+        );
+
+        if ( isset( $map[ $slug ] ) ) {
+            wp_redirect( home_url( $map[ $slug ] ), 301 );
+            exit;
+        }
+    }
+
+    /* ── Flush rewrite rules once after plugin update ── */
+    public static function maybe_flush() {
+        if ( get_option( 'etelid_flush_needed' ) ) {
+            flush_rewrite_rules();
+            delete_option( 'etelid_flush_needed' );
+        }
+    }
+
+    /* ── Called from admin to force flush ── */
+    public static function flush() {
+        flush_rewrite_rules();
+    }
+}

@@ -1,0 +1,576 @@
+<?php
+/**
+ * Etel-ID Premium - In-Portal Admin Panels
+ *
+ * @package    Etel-ID Premium
+ * @version    3.11.0
+ * @author     Etel Group
+ * @since      3.11.0
+ *
+ * Backs the "Members", "Pages", "Media", "Menus", "Branding" and
+ * "Reset PW" tiles on the member portal Admin Tools grid so admins
+ * never have to leave ethelmarket.com/EtelId/ for wp-admin.
+ *
+ * Cross-system member data (EtelPay / Delivery & Ride):
+ *   These are separate codebases this plugin cannot query directly.
+ *   Rather than guess at table names, this class calls OUT to each
+ *   system's own REST API using the same etelid_service_key bearer
+ *   pattern already used by class-etelid-service-api.php for SSO.
+ *   Until etelid_pay_api_base / etelid_delivery_api_base are filled
+ *   in under Settings (and the two systems expose a matching
+ *   /service/members-list endpoint), those two tabs simply report
+ *   "not configured" instead of failing or fabricating data.
+ *
+ * PHP 5.6+ compatible - no arrow functions.
+ */
+if ( ! defined( 'ABSPATH' ) ) exit;
+
+class EtelID_Admin_Panels {
+
+    public static function init() {
+        $map = array(
+            /* Members controller */
+            'etelid_panel_members_list'    => 'members_list',
+            'etelid_panel_members_get'     => 'members_get',
+            'etelid_panel_members_update'  => 'members_update',
+            'etelid_panel_members_status'  => 'members_status',
+            'etelid_panel_members_delete'  => 'members_delete',
+            'etelid_panel_reset_password'  => 'reset_password',
+            'etelid_panel_fayda_id_upload' => 'fayda_id_upload',
+            'etelid_panel_fayda_id_review' => 'fayda_id_review',
+
+            /* Pages */
+            'etelid_panel_pages_list'      => 'pages_list',
+            'etelid_panel_pages_get'       => 'pages_get',
+            'etelid_panel_pages_save'      => 'pages_save',
+            'etelid_panel_pages_delete'    => 'pages_delete',
+
+            /* Media */
+            'etelid_panel_media_list'      => 'media_list',
+            'etelid_panel_media_upload'    => 'media_upload',
+            'etelid_panel_media_delete'    => 'media_delete',
+
+            /* Menus */
+            'etelid_panel_menus_list'      => 'menus_list',
+            'etelid_panel_menu_items'      => 'menu_items',
+            'etelid_panel_menu_save'       => 'menu_save',
+
+            /* Branding (scoped-down "Theme" panel - see class doc) */
+            'etelid_panel_branding_get'    => 'branding_get',
+            'etelid_panel_branding_save'   => 'branding_save',
+        );
+        foreach ( $map as $action => $method ) {
+            add_action( 'wp_ajax_'        . $action, array( __CLASS__, $method ) );
+            add_action( 'wp_ajax_nopriv_' . $action, array( __CLASS__, $method ) );
+        }
+    }
+
+    /* -- Shared guard: every endpoint here is admin-only -------- */
+    private static function guard() {
+        if ( ! check_ajax_referer( 'etelid_auth', 'nonce', false ) ) {
+            wp_send_json_error( array( 'message' => 'Your session has expired. Please refresh the page and try again.' ) );
+        }
+        $member = EtelID_Auth::get_current_member();
+        if ( ! $member || ! EtelID_Auth::is_site_admin( $member ) ) {
+            wp_send_json_error( array( 'message' => 'Not authorized.' ) );
+        }
+        return $member;
+    }
+
+    /* ================================================================
+     *  MEMBERS CONTROLLER (cross-system)
+     * ================================================================ */
+
+    public static function members_list() {
+        $admin = self::guard();
+        $source = isset( $_POST['source'] ) ? sanitize_key( wp_unslash( $_POST['source'] ) ) : 'etelid';
+
+        if ( $source === 'pay' || $source === 'delivery' ) {
+            wp_send_json_success( self::external_members_list( $source ) );
+        }
+
+        $page    = max( 1, (int) ( isset( $_POST['page'] ) ? $_POST['page'] : 1 ) );
+        $limit   = 20;
+        $args    = array(
+            'limit'   => $limit,
+            'offset'  => ( $page - 1 ) * $limit,
+            'search'  => isset( $_POST['search'] )  ? sanitize_text_field( wp_unslash( $_POST['search'] ) )  : '',
+            'status'  => isset( $_POST['status'] )  ? sanitize_key( wp_unslash( $_POST['status'] ) )         : '',
+            'company' => isset( $_POST['company'] ) ? sanitize_text_field( wp_unslash( $_POST['company'] ) ) : '',
+            'orderby' => 'id',
+            'order'   => 'DESC',
+        );
+
+        $rows  = EtelID_DB::get_all( $args );
+        $total = EtelID_DB::count_all( $args );
+        $stats = EtelID_DB::count_by_status();
+
+        $out = array();
+        foreach ( $rows as $m ) {
+            $out[] = array(
+                'id'       => (int) $m->id,
+                'etel_id'  => $m->etel_id,
+                'name'     => $m->full_name,
+                'name_am'  => $m->full_name_am,
+                'phone'    => $m->phone,
+                'email'    => $m->email,
+                'company'  => $m->primary_company,
+                'role'     => $m->role,
+                'status'   => $m->status,
+                'tier'     => $m->tier,
+                'fayda_fin'   => isset( $m->fayda_fin ) ? $m->fayda_fin : '',
+                'kyc_level'   => isset( $m->kyc_level ) ? (int) $m->kyc_level : 0,
+                'pass2_status' => isset( $m->pass2_status ) ? $m->pass2_status : '',
+                'has_fayda_photos' => ! empty( $m->fayda_front_image ) && ! empty( $m->fayda_back_image ),
+                'created'  => $m->created_at,
+            );
+        }
+
+        wp_send_json_success( array(
+            'source'   => 'etelid',
+            'members'  => $out,
+            'total'    => $total,
+            'page'     => $page,
+            'pages'    => max( 1, (int) ceil( $total / $limit ) ),
+            'stats'    => $stats,
+            'configured' => true,
+        ) );
+    }
+
+    public static function members_get() {
+        self::guard();
+        $id = absint( isset( $_POST['id'] ) ? $_POST['id'] : 0 );
+        $m  = $id ? EtelID_DB::get_member( $id ) : null;
+        if ( ! $m ) wp_send_json_error( array( 'message' => 'Member not found.' ) );
+        wp_send_json_success( array( 'member' => $m ) );
+    }
+
+    public static function members_update() {
+        $admin = self::guard();
+        $id = absint( isset( $_POST['id'] ) ? $_POST['id'] : 0 );
+        if ( ! $id || ! EtelID_DB::get_member( $id ) ) {
+            wp_send_json_error( array( 'message' => 'Member not found.' ) );
+        }
+        $fields = array( 'full_name','full_name_am','phone','email','primary_company','role','department','tier','notes' );
+        $data = array();
+        foreach ( $fields as $f ) {
+            if ( isset( $_POST[ $f ] ) ) {
+                $data[ $f ] = $f === 'notes'
+                    ? sanitize_textarea_field( wp_unslash( $_POST[ $f ] ) )
+                    : sanitize_text_field( wp_unslash( $_POST[ $f ] ) );
+            }
+        }
+        if ( empty( $data ) ) wp_send_json_error( array( 'message' => 'Nothing to update.' ) );
+
+        EtelID_DB::update_member( $id, $data );
+        EtelID_DB::log( $id, '', 'updated', 'Profile edited via Members Controller by ' . $admin->full_name );
+        wp_send_json_success( array( 'message' => 'Member updated.' ) );
+    }
+
+    public static function members_status() {
+        $admin = self::guard();
+        $id     = absint( isset( $_POST['id'] ) ? $_POST['id'] : 0 );
+        $status = isset( $_POST['status'] ) ? sanitize_key( wp_unslash( $_POST['status'] ) ) : '';
+        $allowed = array( 'active', 'suspended', 'expired', 'revoked' );
+        if ( ! $id || ! in_array( $status, $allowed, true ) ) {
+            wp_send_json_error( array( 'message' => 'Invalid request.' ) );
+        }
+        $member = EtelID_DB::get_member( $id );
+        if ( ! $member ) wp_send_json_error( array( 'message' => 'Member not found.' ) );
+
+        EtelID_DB::set_status( $id, $status );
+        EtelID_DB::log( $id, $member->etel_id, 'status_changed', 'Status set to ' . $status . ' by ' . $admin->full_name );
+        wp_send_json_success( array( 'message' => 'Status updated to ' . $status . '.' ) );
+    }
+
+    public static function members_delete() {
+        $admin = self::guard();
+        $id = absint( isset( $_POST['id'] ) ? $_POST['id'] : 0 );
+        $member = $id ? EtelID_DB::get_member( $id ) : null;
+        if ( ! $member ) wp_send_json_error( array( 'message' => 'Member not found.' ) );
+
+        EtelID_DB::delete_member( $id );
+        wp_send_json_success( array( 'message' => $member->full_name . ' was permanently deleted.' ) );
+    }
+
+    /** Reuses the same logic as admin/views/password-reset.php, exposed as AJAX. */
+    public static function reset_password() {
+        $admin = self::guard();
+        $id       = absint( isset( $_POST['id'] ) ? $_POST['id'] : 0 );
+        $new_pass = isset( $_POST['new_password'] ) ? wp_unslash( $_POST['new_password'] ) : '';
+        $confirm  = isset( $_POST['confirm_password'] ) ? wp_unslash( $_POST['confirm_password'] ) : '';
+        $member   = $id ? EtelID_DB::get_member( $id ) : null;
+
+        if ( ! $member ) wp_send_json_error( array( 'message' => 'Member not found.' ) );
+        if ( strlen( $new_pass ) < 6 ) wp_send_json_error( array( 'message' => 'Password must be at least 6 characters.' ) );
+        if ( $new_pass !== $confirm ) wp_send_json_error( array( 'message' => 'Passwords do not match.' ) );
+
+        EtelID_DB::update_member( $id, array( 'pin_hash' => EtelID_Auth::hash_password( $new_pass ) ) );
+        EtelID_DB::log( $id, $member->etel_id, 'updated', 'Password reset by admin: ' . $admin->full_name );
+        wp_send_json_success( array( 'message' => 'Password reset for ' . $member->full_name . ' (' . $member->etel_id . ').' ) );
+    }
+
+    /** Admin captures/uploads a member's Fayda ID front+back photos directly from the
+     *  Members Controller. Admin is trusted, so this is an INSTANT Pass 2 approval -
+     *  no review queue, unlike the member self-service submit endpoint below. */
+    public static function fayda_id_upload() {
+        $admin = self::guard();
+        $id     = absint( isset( $_POST['id'] ) ? $_POST['id'] : 0 );
+        $front  = isset( $_POST['front_image'] ) ? wp_unslash( $_POST['front_image'] ) : '';
+        $back   = isset( $_POST['back_image'] )  ? wp_unslash( $_POST['back_image'] )  : '';
+        $member = $id ? EtelID_DB::get_member( $id ) : null;
+
+        if ( ! $member ) wp_send_json_error( array( 'message' => 'Member not found.' ) );
+        if ( ! $front || strpos( $front, 'data:image' ) !== 0 ) wp_send_json_error( array( 'message' => 'Front photo of the Fayda ID is required.' ) );
+        if ( ! $back  || strpos( $back,  'data:image' ) !== 0 ) wp_send_json_error( array( 'message' => 'Back photo of the Fayda ID is required.' ) );
+
+        EtelID_DB::update_member( $id, array(
+            'fayda_front_image'  => $front,
+            'fayda_back_image'   => $back,
+            'fayda_captured_at'  => current_time( 'mysql' ),
+            'kyc_level'          => 2,
+            'pass2_completed_at' => current_time( 'mysql' ),
+            'pass2_status'       => 'approved',
+            'pass2_reviewed_by'  => $admin->id,
+            'pass2_review_note'  => 'Captured directly by admin via Members Controller.',
+        ) );
+        EtelID_DB::log( $id, $member->etel_id, 'pass2_completed', 'Fayda ID photo captured by admin (' . $admin->full_name . ') - Pass 2 approved instantly.' );
+        wp_send_json_success( array( 'message' => 'Fayda ID saved - ' . $member->full_name . ' is now Pass 2 verified.' ) );
+    }
+
+    /** Admin approves or rejects a member's own self-submitted Fayda ID photos (pass2_status='pending'). */
+    public static function fayda_id_review() {
+        $admin  = self::guard();
+        $id     = absint( isset( $_POST['id'] ) ? $_POST['id'] : 0 );
+        $action = isset( $_POST['decision'] ) ? sanitize_key( wp_unslash( $_POST['decision'] ) ) : '';
+        $note   = isset( $_POST['note'] ) ? sanitize_text_field( wp_unslash( $_POST['note'] ) ) : '';
+        $member = $id ? EtelID_DB::get_member( $id ) : null;
+
+        if ( ! $member ) wp_send_json_error( array( 'message' => 'Member not found.' ) );
+        if ( ! in_array( $action, array( 'approve', 'reject' ), true ) ) wp_send_json_error( array( 'message' => 'Invalid decision.' ) );
+
+        if ( $action === 'approve' ) {
+            EtelID_DB::update_member( $id, array(
+                'kyc_level'          => 2,
+                'pass2_completed_at' => current_time( 'mysql' ),
+                'pass2_status'       => 'approved',
+                'pass2_reviewed_by'  => $admin->id,
+                'pass2_review_note'  => $note,
+            ) );
+            EtelID_DB::log( $id, $member->etel_id, 'pass2_completed', 'Self-submitted Fayda ID approved by admin (' . $admin->full_name . ').' );
+            wp_send_json_success( array( 'message' => $member->full_name . ' approved - Pass 2 complete.' ) );
+        } else {
+            EtelID_DB::update_member( $id, array(
+                'pass2_status'      => 'rejected',
+                'pass2_reviewed_by' => $admin->id,
+                'pass2_review_note' => $note ? $note : 'Photos unclear or did not match - please resubmit.',
+            ) );
+            EtelID_DB::log( $id, $member->etel_id, 'updated', 'Self-submitted Fayda ID rejected by admin (' . $admin->full_name . '): ' . $note );
+            wp_send_json_success( array( 'message' => $member->full_name . '\'s submission was rejected.' ) );
+        }
+    }
+
+    /** Cross-system fetch via the actual plain-PHP endpoints in EtelPay / Delivery (neither is WordPress).
+     *  EtelPay:   GET  {base}/api/etelid_members_list.php          + header X-Etel-Service-Key
+     *  Delivery:  POST {base}/api/api.php  body {"action":"etelid_members_list"} + same header
+     *  Base URLs default to the live paths but can be overridden in Settings if ever moved. */
+    private static function external_members_list( $source ) {
+        $key = defined( 'ETELID_SERVICE_KEY' ) ? ETELID_SERVICE_KEY : get_option( 'etelid_service_key', '' );
+        if ( ! $key ) {
+            return array(
+                'source' => $source, 'configured' => false, 'members' => array(), 'total' => 0,
+                'message' => 'etelid_service_key is not set in Settings.',
+            );
+        }
+
+        /* home_url() is wrong for this: EtelID itself is installed at
+         * ethelmarket.com/EtelId/, so home_url('/Etel.Pay/wallet') would
+         * resolve to ethelmarket.com/EtelId/Etel.Pay/wallet (404). Pay and
+         * Delivery live as siblings at the actual domain root, so build
+         * the default from scheme+host only, not the WP install path. */
+        $home_parts = wp_parse_url( home_url() );
+        $site_root  = ( isset( $home_parts['scheme'] ) ? $home_parts['scheme'] : 'https' ) . '://'
+                    . ( isset( $home_parts['host'] ) ? $home_parts['host'] : $_SERVER['HTTP_HOST'] );
+
+        if ( $source === 'pay' ) {
+            $base = get_option( 'etelid_pay_api_base', $site_root . '/Etel.Pay/wallet' );
+            $url  = trailingslashit( $base ) . 'api/etelid_members_list.php';
+            $resp = wp_remote_get( $url, array(
+                'timeout' => 12,
+                'headers' => array( 'X-Etel-Service-Key' => $key ),
+            ) );
+        } else {
+            $base = get_option( 'etelid_delivery_api_base', $site_root . '/delivery' );
+            $url  = trailingslashit( $base ) . 'api/api.php';
+            $resp = wp_remote_post( $url, array(
+                'timeout' => 12,
+                'headers' => array(
+                    'X-Etel-Service-Key' => $key,
+                    'Content-Type'       => 'application/json',
+                ),
+                'body' => wp_json_encode( array( 'action' => 'etelid_members_list' ) ),
+            ) );
+        }
+
+        if ( is_wp_error( $resp ) ) {
+            return array( 'source' => $source, 'configured' => true, 'members' => array(), 'total' => 0, 'message' => 'Connection failed: ' . $resp->get_error_message() );
+        }
+        $code = wp_remote_retrieve_response_code( $resp );
+        $body = json_decode( wp_remote_retrieve_body( $resp ), true );
+
+        if ( $code < 200 || $code >= 300 ) {
+            $msg = is_array( $body ) && ! empty( $body['message'] ) ? $body['message'] : ( 'HTTP ' . $code );
+            if ( is_array( $body ) && ! empty( $body['fatal'] ) ) {
+                $msg .= ': ' . $body['fatal'] . ( ! empty( $body['file'] ) ? ' (' . $body['file'] . ')' : '' );
+            }
+            return array( 'source' => $source, 'configured' => true, 'members' => array(), 'total' => 0, 'message' => $msg );
+        }
+
+        /* Delivery wraps payload as {success,data:{members,total}}; EtelPay returns {success,members,total} flat. */
+        $list = array();
+        if ( is_array( $body ) ) {
+            if ( isset( $body['members'] ) ) {
+                $list = $body['members'];
+            } elseif ( isset( $body['data']['members'] ) ) {
+                $list = $body['data']['members'];
+            }
+        }
+        return array( 'source' => $source, 'configured' => true, 'members' => $list, 'total' => count( $list ) );
+    }
+
+    /* ================================================================
+     *  PAGES  (native - wp_insert_post / WP_Query, no wp-admin)
+     * ================================================================ */
+
+    public static function pages_list() {
+        self::guard();
+        $q = new WP_Query( array(
+            'post_type'      => 'page',
+            'post_status'    => array( 'publish', 'draft', 'pending' ),
+            'posts_per_page' => 200,
+            'orderby'        => 'modified',
+            'order'          => 'DESC',
+        ) );
+        $out = array();
+        foreach ( $q->posts as $p ) {
+            $out[] = array(
+                'id'       => $p->ID,
+                'title'    => get_the_title( $p ),
+                'status'   => $p->post_status,
+                'modified' => $p->post_modified,
+                'url'      => get_permalink( $p ),
+            );
+        }
+        wp_send_json_success( array( 'pages' => $out ) );
+    }
+
+    public static function pages_get() {
+        self::guard();
+        $id = absint( isset( $_POST['id'] ) ? $_POST['id'] : 0 );
+        $p  = $id ? get_post( $id ) : null;
+        if ( ! $p || $p->post_type !== 'page' ) wp_send_json_error( array( 'message' => 'Page not found.' ) );
+        wp_send_json_success( array(
+            'id'      => $p->ID,
+            'title'   => $p->post_title,
+            'content' => $p->post_content,
+            'status'  => $p->post_status,
+        ) );
+    }
+
+    public static function pages_save() {
+        $admin = self::guard();
+        $id      = absint( isset( $_POST['id'] ) ? $_POST['id'] : 0 );
+        $title   = isset( $_POST['title'] )   ? sanitize_text_field( wp_unslash( $_POST['title'] ) ) : '';
+        $content = isset( $_POST['content'] ) ? wp_kses_post( wp_unslash( $_POST['content'] ) )       : '';
+        $status  = isset( $_POST['status'] )  ? sanitize_key( wp_unslash( $_POST['status'] ) )        : 'publish';
+        if ( ! in_array( $status, array( 'publish', 'draft', 'pending' ), true ) ) $status = 'draft';
+        if ( ! $title ) wp_send_json_error( array( 'message' => 'Title is required.' ) );
+
+        $postarr = array(
+            'post_type'    => 'page',
+            'post_title'   => $title,
+            'post_content' => $content,
+            'post_status'  => $status,
+        );
+        if ( $id ) $postarr['ID'] = $id;
+
+        $new_id = wp_insert_post( $postarr, true );
+        if ( is_wp_error( $new_id ) ) wp_send_json_error( array( 'message' => $new_id->get_error_message() ) );
+
+        wp_send_json_success( array( 'id' => $new_id, 'message' => $id ? 'Page updated.' : 'Page created.', 'url' => get_permalink( $new_id ) ) );
+    }
+
+    public static function pages_delete() {
+        self::guard();
+        $id = absint( isset( $_POST['id'] ) ? $_POST['id'] : 0 );
+        $p  = $id ? get_post( $id ) : null;
+        if ( ! $p || $p->post_type !== 'page' ) wp_send_json_error( array( 'message' => 'Page not found.' ) );
+        wp_trash_post( $id );
+        wp_send_json_success( array( 'message' => 'Page moved to trash.' ) );
+    }
+
+    /* ================================================================
+     *  MEDIA  (native - WP attachments)
+     * ================================================================ */
+
+    public static function media_list() {
+        self::guard();
+        $q = new WP_Query( array(
+            'post_type'      => 'attachment',
+            'post_status'    => 'inherit',
+            'posts_per_page' => 60,
+            'orderby'        => 'date',
+            'order'          => 'DESC',
+        ) );
+        $out = array();
+        foreach ( $q->posts as $a ) {
+            $out[] = array(
+                'id'    => $a->ID,
+                'title' => get_the_title( $a ),
+                'url'   => wp_get_attachment_url( $a->ID ),
+                'thumb' => wp_get_attachment_image_url( $a->ID, 'thumbnail' ) ?: wp_get_attachment_url( $a->ID ),
+                'date'  => $a->post_date,
+                'mime'  => $a->post_mime_type,
+            );
+        }
+        wp_send_json_success( array( 'media' => $out ) );
+    }
+
+    public static function media_upload() {
+        self::guard();
+        if ( empty( $_FILES['file'] ) ) wp_send_json_error( array( 'message' => 'No file received.' ) );
+
+        require_once ABSPATH . 'wp-admin/includes/file.php';
+        require_once ABSPATH . 'wp-admin/includes/media.php';
+        require_once ABSPATH . 'wp-admin/includes/image.php';
+
+        $id = media_handle_upload( 'file', 0 );
+        if ( is_wp_error( $id ) ) wp_send_json_error( array( 'message' => $id->get_error_message() ) );
+
+        wp_send_json_success( array(
+            'id'  => $id,
+            'url' => wp_get_attachment_url( $id ),
+            'message' => 'Uploaded.',
+        ) );
+    }
+
+    public static function media_delete() {
+        self::guard();
+        $id = absint( isset( $_POST['id'] ) ? $_POST['id'] : 0 );
+        if ( ! $id || get_post_type( $id ) !== 'attachment' ) wp_send_json_error( array( 'message' => 'File not found.' ) );
+        wp_delete_attachment( $id, true );
+        wp_send_json_success( array( 'message' => 'File deleted.' ) );
+    }
+
+    /* ================================================================
+     *  MENUS  (native - simplified nav-menu management)
+     * ================================================================ */
+
+    public static function menus_list() {
+        self::guard();
+        $menus = wp_get_nav_menus();
+        $out = array();
+        foreach ( $menus as $m ) {
+            $out[] = array( 'id' => $m->term_id, 'name' => $m->name, 'count' => $m->count );
+        }
+        wp_send_json_success( array( 'menus' => $out ) );
+    }
+
+    public static function menu_items() {
+        self::guard();
+        $menu_id = absint( isset( $_POST['menu_id'] ) ? $_POST['menu_id'] : 0 );
+        if ( ! $menu_id ) wp_send_json_error( array( 'message' => 'Menu not found.' ) );
+        $items = wp_get_nav_menu_items( $menu_id );
+        $out = array();
+        if ( $items ) {
+            foreach ( $items as $i ) {
+                $out[] = array(
+                    'id'     => $i->ID,
+                    'title'  => $i->title,
+                    'url'    => $i->url,
+                    'order'  => (int) $i->menu_order,
+                    'parent' => (int) $i->menu_item_parent,
+                );
+            }
+        }
+        usort( $out, function( $a, $b ) { return $a['order'] - $b['order']; } );
+        wp_send_json_success( array( 'items' => $out ) );
+    }
+
+    /** Accepts a JSON array of {id?,title,url,order} and rebuilds the menu (id omitted = new item). */
+    public static function menu_save() {
+        $admin = self::guard();
+        $menu_id = absint( isset( $_POST['menu_id'] ) ? $_POST['menu_id'] : 0 );
+        $raw     = isset( $_POST['items'] ) ? wp_unslash( $_POST['items'] ) : '[]';
+        $items   = json_decode( $raw, true );
+        if ( ! $menu_id || ! is_array( $items ) ) wp_send_json_error( array( 'message' => 'Invalid request.' ) );
+
+        $existing = wp_get_nav_menu_items( $menu_id );
+        $keep_ids = array();
+        $order    = 1;
+        foreach ( $items as $it ) {
+            $title = isset( $it['title'] ) ? sanitize_text_field( $it['title'] ) : '';
+            $url   = isset( $it['url'] )   ? esc_url_raw( $it['url'] )           : '';
+            $id    = isset( $it['id'] )    ? absint( $it['id'] )                 : 0;
+            if ( ! $title || ! $url ) continue;
+
+            $item_id = wp_update_nav_menu_item( $menu_id, $id, array(
+                'menu-item-title'     => $title,
+                'menu-item-url'       => $url,
+                'menu-item-status'    => 'publish',
+                'menu-item-position'  => $order,
+            ) );
+            if ( ! is_wp_error( $item_id ) ) {
+                $keep_ids[] = (int) $item_id;
+                $order++;
+            }
+        }
+        /* Remove any existing items not present in the saved set. */
+        if ( $existing ) {
+            foreach ( $existing as $ex ) {
+                if ( ! in_array( (int) $ex->ID, $keep_ids, true ) ) {
+                    wp_delete_post( $ex->ID, true );
+                }
+            }
+        }
+        wp_send_json_success( array( 'message' => 'Menu saved.' ) );
+    }
+
+    /* ================================================================
+     *  BRANDING  (scoped-down "Theme" panel)
+     *
+     *  This is intentionally NOT a rebuild of the full WP Customizer
+     *  (widgets, live preview, per-theme panels, etc.) - that surface
+     *  is too broad to reproduce natively. It covers the settings
+     *  Etel actually edits day to day: site identity + the gold/dark
+     *  design-system accents already used across every product.
+     * ================================================================ */
+
+    public static function branding_get() {
+        self::guard();
+        wp_send_json_success( array(
+            'site_title'   => get_bloginfo( 'name' ),
+            'tagline'      => get_bloginfo( 'description' ),
+            'org_name'     => get_option( 'etelid_org_name', 'Etel Group' ),
+            'org_website'  => get_option( 'etelid_org_website', 'ethelmarket.com' ),
+            'org_email'    => get_option( 'etelid_org_email', 'security@etelgroup.com' ),
+            'gold_accent'  => get_option( 'etelid_brand_gold', '#D4AF37' ),
+            'custom_css'   => get_option( 'etelid_brand_custom_css', '' ),
+            'logo_id'      => (int) get_option( 'etelid_brand_logo_id', 0 ),
+            'logo_url'     => wp_get_attachment_url( (int) get_option( 'etelid_brand_logo_id', 0 ) ),
+        ) );
+    }
+
+    public static function branding_save() {
+        self::guard();
+        if ( isset( $_POST['site_title'] ) ) update_option( 'blogname', sanitize_text_field( wp_unslash( $_POST['site_title'] ) ) );
+        if ( isset( $_POST['tagline'] ) )    update_option( 'blogdescription', sanitize_text_field( wp_unslash( $_POST['tagline'] ) ) );
+        if ( isset( $_POST['org_name'] ) )    update_option( 'etelid_org_name', sanitize_text_field( wp_unslash( $_POST['org_name'] ) ) );
+        if ( isset( $_POST['org_website'] ) ) update_option( 'etelid_org_website', sanitize_text_field( wp_unslash( $_POST['org_website'] ) ) );
+        if ( isset( $_POST['org_email'] ) )   update_option( 'etelid_org_email', sanitize_email( wp_unslash( $_POST['org_email'] ) ) );
+        if ( isset( $_POST['gold_accent'] ) ) update_option( 'etelid_brand_gold', sanitize_hex_color( wp_unslash( $_POST['gold_accent'] ) ) );
+        if ( isset( $_POST['custom_css'] ) )  update_option( 'etelid_brand_custom_css', wp_strip_all_tags( wp_unslash( $_POST['custom_css'] ) ) );
+        if ( isset( $_POST['logo_id'] ) )     update_option( 'etelid_brand_logo_id', absint( $_POST['logo_id'] ) );
+        wp_send_json_success( array( 'message' => 'Branding saved.' ) );
+    }
+}

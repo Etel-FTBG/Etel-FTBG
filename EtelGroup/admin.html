@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#D4AF37">
+<title>Etel Group — Admin</title>
+<link rel="apple-touch-icon" href="https://ethelmarket.com/EtelGroup/icons/icon-192.png" sizes="180x180">
+<link rel="manifest" href="EtelGroup/site.webmanifest">
+<link rel="stylesheet" href="EtelGroup/css/admin.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/EtelGroup/sw.js', { scope: '/' }).catch(() => {});
+    });
+  }
+</script>
+</head>
+
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-mark">ኢE</div>
+    <h1>Etel Group Admin</h1>
+    <div class="sub">Sign in with your EtelID</div>
+    <div class="login-err" id="login-err"></div>
+    <input type="text" id="login-identifier" placeholder="Phone or EtelID" autofocus>
+    <input type="password" id="login-password" placeholder="EtelID Password">
+    <button class="btn btn-primary" id="login-btn" onclick="doLogin()">Sign In with EtelID</button>
+    <p style="font-size:11px;color:var(--text-faint);margin-top:12px">Only works if your EtelID is registered as the admin/owner for Etel Group.</p>
+  </div>
+</div>
+
+<!-- SHELL -->
+<div id="shell">
+  <header class="topbar">
+    <div class="mark">ኢE</div>
+    <div>
+      <h1>Etel Group</h1>
+      <div class="sub">Admin Dashboard</div>
+    </div>
+    <div class="spacer"></div>
+    <div class="tabs" style="margin-right:8px">
+      <button class="tab active" id="tab-nav-dashboard" onclick="switchTab('dashboard')">Dashboard</button>
+      <button class="tab" id="tab-nav-companies" onclick="switchTab('companies')">Companies</button>
+    </div>
+    <button class="btn btn-danger" onclick="doLogout()">Sign Out</button>
+  </header>
+
+  <main>
+    <!-- DASHBOARD TAB -->
+    <section id="panel-dashboard">
+      <div class="stat-grid">
+        <div class="stat-card premium">
+          <div class="label">Total Messages</div>
+          <div class="val" id="stat-total">—</div>
+        </div>
+        <div class="stat-card">
+          <div class="label">New</div>
+          <div class="val" id="stat-new">—</div>
+        </div>
+        <div class="stat-card">
+          <div class="label">Replied</div>
+          <div class="val" id="stat-replied">—</div>
+        </div>
+        <div class="stat-card">
+          <div class="label">This Week</div>
+          <div class="val" id="stat-week">—</div>
+        </div>
+      </div>
+
+      <div class="chart-card">
+        <h2>Messages · Last 14 Days</h2>
+        <canvas id="trend-chart" height="70"></canvas>
+      </div>
+
+      <div class="toolbar">
+        <div class="tabs">
+          <button class="tab active" onclick="setStatusFilter('all', this)">All</button>
+          <button class="tab" onclick="setStatusFilter('new', this)">New</button>
+          <button class="tab" onclick="setStatusFilter('read', this)">Read</button>
+          <button class="tab" onclick="setStatusFilter('replied', this)">Replied</button>
+        </div>
+        <input type="text" id="search-input" placeholder="Search name, email, subject, message..." oninput="onSearchInput()">
+        <button class="btn btn-outline" onclick="exportCsv()">⬇ Export CSV</button>
+      </div>
+
+      <div class="msg-table">
+        <table>
+          <thead>
+            <tr><th>From</th><th>Subject</th><th>Preview</th><th>Status</th></tr>
+          </thead>
+          <tbody id="msg-tbody">
+            <tr><td colspan="4" class="empty-row">Loading...</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="pagination" id="pagination"></div>
+    </section>
+
+    <!-- COMPANIES TAB -->
+    <section id="panel-companies" style="display:none">
+      <div class="toolbar">
+        <h2 style="font-size:15px;color:var(--gold-light)">Manage Companies</h2>
+        <div style="flex:1"></div>
+        <button class="btn btn-primary" style="width:auto" onclick="openCompanyForm(null)">+ Add Company</button>
+      </div>
+      <div class="msg-table">
+        <table>
+          <thead>
+            <tr><th>Order</th><th>Company</th><th>URL</th><th>Status</th><th></th></tr>
+          </thead>
+          <tbody id="company-tbody">
+            <tr><td colspan="5" class="empty-row">Loading...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- MESSAGE DETAIL MODAL -->
+<div class="modal-bg" id="modal-bg">
+  <div class="modal" style="position:relative">
+    <button class="btn btn-outline modal-close" onclick="closeModal()">✕</button>
+    <h2 id="modal-name"></h2>
+    <div class="meta" id="modal-meta"></div>
+    <div class="field-label">Subject</div>
+    <div class="field-val" id="modal-subject"></div>
+    <div class="field-label">Company</div>
+    <div class="field-val" id="modal-company"></div>
+    <div class="field-label">Message</div>
+    <div class="msg-body" id="modal-body"></div>
+    <div class="modal-actions">
+      <button class="btn btn-primary" style="width:auto;flex:1" onclick="markReplied()">✓ Mark Replied</button>
+      <button class="btn btn-danger" onclick="deleteMessage()">🗑 Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- COMPANY FORM MODAL -->
+<div class="modal-bg" id="company-modal-bg">
+  <div class="modal" style="position:relative;max-width:560px">
+    <button class="btn btn-outline modal-close" onclick="closeCompanyForm()">✕</button>
+    <h2 id="company-form-title">Add Company</h2>
+    <input type="hidden" id="cf-id">
+    <div class="cf-grid">
+      <div class="cf-field"><label>Name</label><input type="text" id="cf-name" placeholder="Etel Example"></div>
+      <div class="cf-field"><label>Slug</label><input type="text" id="cf-slug" placeholder="etel-example"></div>
+      <div class="cf-field"><label>URL</label><input type="text" id="cf-url" placeholder="https://ethelmarket.com/EtelExample/"></div>
+      <div class="cf-field"><label>Tagline (EN)</label><input type="text" id="cf-tagline" placeholder="Short category"></div>
+      <div class="cf-field"><label>Tagline (Amharic)</label><input type="text" id="cf-tagline-am" placeholder="አጭር መግለጫ"></div>
+      <div class="cf-field"><label>Accent Color</label><input type="color" id="cf-color" value="#D4AF37" style="height:42px;padding:4px"></div>
+      <div class="cf-field"><label>Icon</label>
+        <select id="cf-icon">
+          <option value="generic">Generic</option>
+          <option value="fuel">Fuel</option>
+          <option value="cart">Cart</option>
+          <option value="truck">Truck</option>
+          <option value="wallet">Wallet</option>
+          <option value="ai">AI</option>
+          <option value="id">ID Card</option>
+          <option value="taxi">Taxi</option>
+          <option value="laundry">Laundry</option>
+          <option value="media">Media</option>
+          <option value="luxline">LuxLine Star</option>
+        </select>
+      </div>
+      <div class="cf-field"><label>Status</label>
+        <select id="cf-status">
+          <option value="live">Live</option>
+          <option value="coming_soon">Coming Soon</option>
+        </select>
+      </div>
+      <div class="cf-field"><label>Sort Order</label><input type="number" id="cf-sort" value="0"></div>
+      <div class="cf-field"><label>Tags (comma separated)</label><input type="text" id="cf-tags" placeholder="Delivery,Tracking"></div>
+    </div>
+    <div class="cf-field" style="margin-top:10px"><label>Short Description (grid card)</label><textarea id="cf-desc-short" rows="2"></textarea></div>
+    <div class="cf-field" style="margin-top:10px"><label>Long Description (launcher card)</label><textarea id="cf-desc-long" rows="3"></textarea></div>
+    <div class="cf-field" style="margin-top:10px">
+      <label>Logo path (optional, overrides icon)</label>
+      <input type="text" id="cf-logo" placeholder="EtelGroup/icons/example-logo.png" oninput="renderLogoPreview(this.value)">
+      <div style="display:flex;align-items:center;gap:10px;margin-top:8px">
+        <input type="file" id="cf-logo-file" accept="image/png,image/jpeg,image/webp" style="display:none" onchange="uploadCompanyLogo(this)">
+        <button type="button" class="btn" style="width:auto;padding:8px 14px;font-size:13px" onclick="document.getElementById('cf-logo-file').click()">📁 Upload from PC</button>
+        <span id="cf-logo-upload-status" style="font-size:12px;color:#999"></span>
+      </div>
+      <div id="cf-logo-preview" style="margin-top:8px"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-primary" style="width:auto;flex:1" onclick="saveCompany()">Save Company</button>
+    </div>
+  </div>
+</div>
+
+<script src="EtelGroup/js/admin.js"></script>
+</body>
+</html>

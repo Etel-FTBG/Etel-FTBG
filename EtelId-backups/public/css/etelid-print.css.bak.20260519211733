@@ -1,0 +1,303 @@
+/**
+ * Etel-ID Premium — Print CSS v4.0.0
+ * CR80 / ISO 7810 ID-1 card print layout
+ * Screen: premium dark preview | Print: clean white A4
+ */
+
+/* ════════════════════════════════════════
+   SCREEN — Premium dark preview
+════════════════════════════════════════ */
+.eid-print-page {
+  min-height: 100vh;
+  background:
+    radial-gradient(ellipse at 18% 8%,  rgba(255,230,80,.18) 0%,transparent 40%),
+    radial-gradient(ellipse at 82% 92%, rgba(60,30,0,.28)    0%,transparent 40%),
+    linear-gradient(155deg,#1A0A00 0%,#3A2008 15%,#6A4010 28%,
+                    #9A6818 42%,#C8922A 50%,#9A6818 58%,
+                    #6A4010 72%,#3A2008 88%,#1A0A00 100%);
+  font-family: 'Cormorant Garamond', serif;
+  position: relative;
+  overflow-x: hidden;
+}
+.eid-print-page::before {
+  content: '';
+  position: fixed; inset: 0; pointer-events: none; z-index: 0;
+  background-image:
+    repeating-linear-gradient(30deg,  transparent 0,transparent 24px,rgba(255,255,255,.02) 24px,rgba(255,255,255,.02) 25px),
+    repeating-linear-gradient(-30deg, transparent 0,transparent 24px,rgba(255,255,255,.02) 24px,rgba(255,255,255,.02) 25px);
+}
+
+/* Orbs */
+.eid-print-orb {
+  position: fixed; border-radius: 50%;
+  pointer-events: none; z-index: 0; filter: blur(70px);
+}
+.eid-print-orb-1 {
+  width: 500px; height: 500px; top: -140px; left: -140px;
+  background: radial-gradient(circle,rgba(255,215,60,.15) 0%,transparent 70%);
+  animation: porb1 14s ease-in-out infinite;
+}
+.eid-print-orb-2 {
+  width: 400px; height: 400px; bottom: -80px; right: -80px;
+  background: radial-gradient(circle,rgba(70,35,0,.2) 0%,transparent 70%);
+  animation: porb2 18s ease-in-out infinite;
+}
+@keyframes porb1{0%,100%{transform:translate(0,0)}50%{transform:translate(30px,-20px)}}
+@keyframes porb2{0%,100%{transform:translate(0,0)}50%{transform:translate(-22px,16px)}}
+@keyframes holo{0%{background-position:0 0}100%{background-position:300% 0}}
+@keyframes shimmer{0%{background-position:-400px 0}100%{background-position:400px 0}}
+@keyframes slide-up{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── TOP NAV ── */
+.eid-print-nav {
+  position: sticky; top: 0; z-index: 200;
+  background: linear-gradient(135deg,#2A1A06,#4A3210 40%,#2A1A06);
+  border-bottom: 2px solid #D4AF37;
+  height: 60px; padding: 0 20px;
+  display: flex; align-items: center; gap: 12px;
+  box-shadow: 0 4px 28px rgba(10,5,0,.55);
+}
+.eid-print-nav::after {
+  content: ''; position: absolute; bottom: -2px; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg,transparent,#C8922A,#F5E6A3,#D4AF37,#C8922A,transparent);
+  background-size: 300% 100%; animation: holo 4s linear infinite;
+}
+.eid-print-nav-logo {
+  height: 36px; width: auto; object-fit: contain;
+  filter: brightness(1.2) drop-shadow(0 2px 8px rgba(0,0,0,.5)); flex-shrink: 0;
+}
+.eid-print-nav-text { flex: 1; }
+.eid-print-nav-title {
+  font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 800; color: #FDF6D8;
+}
+.eid-print-nav-id {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px; color: #D4AF37; letter-spacing: 1.5px; display: block;
+}
+.eid-print-nav-actions { display: flex; align-items: center; gap: 8px; }
+
+/* ── CONTROL BUTTONS ── */
+.eid-print-btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 9px 18px; border-radius: 9px; cursor: pointer;
+  font-family: 'Syne', sans-serif; font-size: 12px; font-weight: 800;
+  border: none; transition: all .15s; text-decoration: none;
+  letter-spacing: .3px; white-space: nowrap;
+}
+.eid-print-btn-gold {
+  background: linear-gradient(135deg,#2A1A06,#7A5518,#C8922A,#D4AF37);
+  color: #FDF6D8;
+  box-shadow: 0 4px 0 #1A0E00, 0 6px 16px rgba(80,40,0,.3);
+  position: relative; overflow: hidden;
+}
+.eid-print-btn-gold::before {
+  content: ''; position: absolute; top: 0; left: -100%; width: 50%; height: 100%;
+  background: linear-gradient(90deg,transparent,rgba(255,255,255,.12),transparent);
+  animation: shimmer 2.5s infinite;
+}
+.eid-print-btn-gold:hover { transform: translateY(-1px); box-shadow: 0 5px 0 #1A0E00,0 8px 20px rgba(80,40,0,.35); }
+.eid-print-btn-ghost {
+  background: rgba(212,175,55,.1);
+  border: 1.5px solid rgba(212,175,55,.28);
+  color: #F5E6A3;
+}
+.eid-print-btn-ghost:hover { background: rgba(212,175,55,.18); border-color: rgba(212,175,55,.5); color: #FDF6D8; }
+.eid-print-btn-red {
+  background: rgba(239,68,68,.1);
+  border: 1.5px solid rgba(239,68,68,.28);
+  color: #fca5a5;
+}
+.eid-print-btn-red:hover { background: rgba(239,68,68,.2); }
+
+/* ── CONTENT WRAP ── */
+.eid-print-content {
+  max-width: 780px; margin: 0 auto;
+  padding: 24px 16px 60px; position: relative; z-index: 1;
+}
+
+/* ── TIPS BAR ── */
+.eid-print-tips {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  padding: 11px 16px;
+  background: rgba(212,175,55,.08);
+  border: 1px solid rgba(212,175,55,.2);
+  border-radius: 10px; margin-bottom: 22px;
+  font-family: 'JetBrains Mono', monospace; font-size: 10px;
+  color: rgba(212,175,55,.7); letter-spacing: .5px;
+  animation: slide-up .4s ease both;
+}
+.eid-print-tips i { font-size: 14px; color: #D4AF37; flex-shrink: 0; }
+.eid-print-tips strong { color: #D4AF37; }
+
+/* ── MEMBER INFO STRIP ── */
+.eid-print-member-strip {
+  display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+  padding: 14px 18px;
+  background: rgba(20,10,0,.5);
+  border: 1.5px solid rgba(212,175,55,.25);
+  border-radius: 14px; margin-bottom: 24px;
+  backdrop-filter: blur(12px);
+  box-shadow: 0 4px 20px rgba(0,0,0,.25);
+  animation: slide-up .4s .1s ease both;
+}
+.eid-print-member-av {
+  width: 52px; height: 52px; border-radius: 50%;
+  background: linear-gradient(135deg,#C8922A,#7A5518);
+  border: 2px solid #D4AF37;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 800; color: #FDF6D8;
+  overflow: hidden; flex-shrink: 0;
+  box-shadow: 0 0 0 4px rgba(212,175,55,.15);
+}
+.eid-print-member-av img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+.eid-print-member-info { flex: 1; min-width: 0; }
+.eid-print-member-name {
+  font-family: 'Syne', sans-serif; font-size: 16px; font-weight: 800;
+  color: #FDF6D8; line-height: 1.2;
+}
+.eid-print-member-id {
+  font-family: 'JetBrains Mono', monospace; font-size: 11px;
+  color: #D4AF37; letter-spacing: 1.5px; margin-top: 2px; display: block;
+}
+.eid-print-status {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 5px 12px; border-radius: 20px;
+  font-family: 'JetBrains Mono', monospace; font-size: 10px;
+  font-weight: 700; text-transform: uppercase; letter-spacing: 1px;
+}
+.eid-print-status-active   { background: rgba(34,197,94,.15); color: #86efac; border: 1px solid rgba(34,197,94,.28); }
+.eid-print-status-suspended{ background: rgba(245,158,11,.15); color: #fcd34d; border: 1px solid rgba(245,158,11,.28); }
+
+/* ── A4 PREVIEW SHEET ── */
+.eid-print-sheet-wrap {
+  background: rgba(20,10,0,.45);
+  border: 1.5px solid rgba(212,175,55,.22);
+  border-radius: 18px; padding: 20px;
+  backdrop-filter: blur(14px);
+  box-shadow: 0 8px 36px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.07);
+  animation: slide-up .4s .2s ease both;
+}
+.eid-print-sheet-head {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 16px;
+}
+.eid-print-sheet-icon {
+  width: 32px; height: 32px; border-radius: 8px;
+  background: linear-gradient(135deg,#A07020,#4A3210);
+  display: flex; align-items: center; justify-content: center; font-size: 14px;
+}
+.eid-print-sheet-title {
+  font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 800; color: #FDF6D8;
+}
+.eid-print-sheet-sub {
+  font-family: 'JetBrains Mono', monospace; font-size: 9px;
+  color: rgba(212,175,55,.5); letter-spacing: 1px; display: block; margin-top: 1px;
+}
+/* The A4 paper simulation */
+.eid-print-sheet {
+  background: #FAFAF8;
+  border-radius: 4px;
+  width: 100%;
+  /* A4 ratio approx */
+  padding: 10mm;
+  display: flex; flex-direction: column; align-items: center; gap: 8mm;
+  box-shadow: 0 8px 40px rgba(0,0,0,.5), 0 2px 8px rgba(0,0,0,.3);
+  position: relative;
+}
+/* A4 label */
+.eid-sheet-label {
+  position: absolute; top: 4px; left: 8px;
+  font-family: 'JetBrains Mono', monospace; font-size: 7px;
+  color: #aaa; letter-spacing: 1px; text-transform: uppercase;
+}
+
+/* ── CARD SLOT ── */
+.eid-card-slot {
+  position: relative;
+  /* CR80: 85.60 × 53.98mm — screen equivalent */
+  width: 326px; height: 206px;
+}
+/* Crop marks */
+.eid-crop { position: absolute; background: #999; }
+.eid-crop-tl-h{ top: -6px; left: -12px;  width: 8px;  height: .5px; }
+.eid-crop-tl-v{ top: -12px; left: -6px;  width: .5px; height: 8px;  }
+.eid-crop-tr-h{ top: -6px;  right: -12px;width: 8px;  height: .5px; }
+.eid-crop-tr-v{ top: -12px; right: -6px; width: .5px; height: 8px;  }
+.eid-crop-bl-h{ bottom: -6px;left: -12px;width: 8px;  height: .5px; }
+.eid-crop-bl-v{ bottom: -12px;left: -6px;width: .5px; height: 8px;  }
+.eid-crop-br-h{ bottom: -6px;right: -12px;width: 8px; height: .5px; }
+.eid-crop-br-v{ bottom: -12px;right: -6px;width: .5px;height: 8px;  }
+/* Slot labels */
+.eid-slot-lbl {
+  position: absolute; top: -16px; left: 0;
+  font-family: 'JetBrains Mono', monospace; font-size: 7px;
+  color: #aaa; letter-spacing: 2px; text-transform: uppercase;
+}
+.eid-slot-spec {
+  position: absolute; bottom: -20px; right: 0;
+  font-family: 'JetBrains Mono', monospace; font-size: 6.5px;
+  color: #bbb; letter-spacing: .5px; text-align: right; line-height: 1.6;
+}
+/* Trim box — the actual card area */
+.eid-trim-box {
+  position: absolute; inset: 0; border-radius: 10px; overflow: hidden;
+}
+.eid-trim-box .eid-card-front,
+.eid-trim-box .eid-card-back {
+  position: absolute!important; inset: 0;
+}
+
+/* ── PRINT ORIENTATION TOGGLE ── */
+.eid-orientation-toggle {
+  display: flex; gap: 8px; margin-bottom: 12px;
+}
+.eid-orient-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 7px 14px; border-radius: 8px; cursor: pointer;
+  font-family: 'JetBrains Mono', monospace; font-size: 10px;
+  color: rgba(212,175,55,.6); letter-spacing: 1px; text-transform: uppercase;
+  background: rgba(212,175,55,.06); border: 1px solid rgba(212,175,55,.18);
+  transition: all .15s;
+}
+.eid-orient-btn.active,
+.eid-orient-btn:hover {
+  background: rgba(212,175,55,.15); border-color: rgba(212,175,55,.45);
+  color: #D4AF37;
+}
+
+/* ════════════════════════════════════════
+   PRINT MEDIA — exactly what goes to paper
+════════════════════════════════════════ */
+@media print {
+  * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+  body { background: white !important; }
+
+  .eid-print-page::before,
+  .eid-print-orb,
+  .eid-print-nav,
+  .eid-print-tips,
+  .eid-print-member-strip,
+  .eid-print-sheet-wrap > .eid-print-sheet-head,
+  .eid-print-sheet-wrap > .eid-orientation-toggle,
+  .eid-sheet-label,
+  .eid-slot-lbl,
+  .eid-slot-spec,
+  .eid-print-footer { display: none !important; }
+
+  .eid-print-page,
+  .eid-print-content { padding: 0 !important; margin: 0 !important; background: none !important; }
+  .eid-print-sheet-wrap { background: none !important; border: none !important;
+    box-shadow: none !important; padding: 0 !important; }
+  .eid-print-sheet {
+    background: white !important;
+    box-shadow: none !important;
+    padding: 8mm !important;
+    gap: 6mm !important;
+    width: 210mm !important;
+    min-height: 297mm !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+  .eid-card-slot { width: 85.6mm !important; height: 53.98mm !important; }
+  .eid-crop { background: #000 !important; }
+  .eid-trim-box { border-radius: 3.18mm !important; }
+}

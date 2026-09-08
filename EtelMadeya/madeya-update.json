@@ -1,0 +1,9 @@
+{
+  "version"      : "3.1",
+  "download_url" : "https://ethelmarket.com/updates/madeya-gas-queue.zip",
+  "requires"     : "5.5",
+  "tested"       : "6.6",
+  "requires_php" : "7.4",
+  "last_updated" : "2026-04-16",
+  "changelog"    : "<h4>Version 3.1 — Controller Pagination</h4><ul><li>Added pagination to the controller queue table (default 50 per page)</li><li>Per-page selector: 25 / 50 / 100 / 200 / All</li><li>Smart page navigation: « First, ‹ Prev, page numbers with ellipsis, Next ›, Last »</li><li>'Showing 1–50 of 234 vehicles' indicator</li><li>Auto-refresh preserves the active page</li><li>Filter changes and bulk import jump to page 1</li><li>Position numbers reflect true queue order across pages</li><li>Mobile-responsive pagination bar</li></ul><h4>Version 3.0 — Initial Release</h4><ul><li>Full queue management with Normal, VIP, and Waiting queues</li><li>Government 7-tier priority ordering (ሙሉ/ጎዶሎ parity)</li><li>Per-controller private fuel quotas in Liters</li><li>Driver map with station directions</li><li>Forgot password flow with email verification</li><li>Self-hosted auto-update system</li></ul>"
+}

@@ -1,0 +1,372 @@
+<?php
+/**
+ * Etel-ID Premium — Public QR Verification Page v3.3.1
+ * Standalone — no WP theme. All CSS inlined.
+ */
+if ( ! defined( 'ABSPATH' ) ) exit;
+
+$etel_id = strtoupper( sanitize_text_field( get_query_var('etelid_verify') ) );
+$member  = $etel_id ? EtelID_DB::get_by_etel_id( $etel_id ) : null;
+
+if ( $member && $member->status === 'active' ) {
+    EtelID_DB::increment_scan( $member->id );
+    EtelID_DB::log( $member->id, $member->etel_id, 'verified', 'QR scan' );
+}
+
+$org_name    = get_option('etelid_org_name',    'Etel Group');
+$org_website = get_option('etelid_org_website', 'ethelmarket.com');
+$org_email   = get_option('etelid_org_email',   'info@ethelmarket.com');
+$logo_src    = defined('ETELID_LOGO_B64') ? ETELID_LOGO_B64 : ETELID_URL.'public/images/etel-logo.png';
+
+$companies     = $member ? EtelID_DB::get_companies($member->id) : array();
+$card_css      = file_get_contents(ETELID_PATH.'public/css/etelid-card.css');
+$is_valid      = $member && $member->status === 'active' && strtotime($member->expiry_date) >= time();
+$is_suspended  = $member && $member->status === 'suspended';
+?><!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Etel-ID Verification · <?php echo esc_html($etel_id); ?></title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=JetBrains+Mono:wght@400;600&family=Cormorant+Garamond:wght@400;600;700&family=Noto+Sans+Ethiopic:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+<?php echo $card_css; ?>
+
+:root{
+  --g1:#FDF6D8;--g2:#F5E6A3;--g3:#E8C84A;--g4:#D4AF37;
+  --g5:#C8922A;--g6:#A07020;--g7:#7A5518;--g8:#4A3210;--g9:#2A1A06;
+  --surface:#FFFEF8;--surface2:#FDF8EE;--surface3:#F5EDD5;
+  --ink:#1A0E00;--ink2:#3A2200;--ink3:#7A5520;
+}
+@keyframes holo{0%{background-position:0 0}100%{background-position:300% 0}}
+@keyframes slide-up{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+@keyframes badge-pop{0%{transform:scale(0.5);opacity:0}70%{transform:scale(1.1)}100%{transform:scale(1);opacity:1}}
+
+body{
+  background:
+    radial-gradient(ellipse at 20% 10%,rgba(255,230,80,.28) 0%,transparent 40%),
+    radial-gradient(ellipse at 80% 90%,rgba(60,30,0,.3) 0%,transparent 40%),
+    linear-gradient(150deg,#3A2000 0%,#6A4A08 15%,#C8922A 38%,#D4AF37 50%,#C8922A 62%,#6A4A08 85%,#3A2000 100%);
+  min-height:100vh;font-family:'Cormorant Garamond',serif;
+  position:relative;overflow-x:hidden;
+}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background-image:repeating-linear-gradient(30deg,transparent 0,transparent 22px,rgba(255,255,255,.025) 22px,rgba(255,255,255,.025) 23px),
+  repeating-linear-gradient(-30deg,transparent 0,transparent 22px,rgba(255,255,255,.025) 22px,rgba(255,255,255,.025) 23px);}
+
+/* Nav */
+.vp-nav{
+  background:linear-gradient(135deg,var(--g9),var(--g8),var(--g9));
+  border-bottom:2px solid var(--g4);padding:0 20px;height:60px;
+  display:flex;align-items:center;gap:14px;position:sticky;top:0;z-index:100;
+  box-shadow:0 4px 24px rgba(20,10,0,.5);
+}
+.vp-nav::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,transparent,var(--g4),var(--g1),var(--g4),transparent);
+  background-size:300% 100%;animation:holo 3s linear infinite;}
+.vp-nav-logo{height:36px;width:auto;object-fit:contain;filter:brightness(1.2) drop-shadow(0 2px 6px rgba(0,0,0,.5));}
+.vp-nav-title{font-family:'Syne',sans-serif;font-size:16px;font-weight:800;color:var(--g1);}
+.vp-nav-sub{font-family:'Noto Sans Ethiopic',sans-serif;font-size:10px;color:var(--g4);display:block;}
+
+/* Wrap */
+.vp-wrap{max-width:640px;margin:0 auto;padding:28px 16px 60px;position:relative;z-index:1;}
+
+/* Status badge */
+.vp-badge{
+  display:inline-flex;align-items:center;gap:10px;
+  padding:12px 24px;border-radius:30px;
+  font-family:'Syne',sans-serif;font-size:14px;font-weight:800;
+  margin-bottom:20px;letter-spacing:.5px;
+  animation:badge-pop .5s cubic-bezier(.22,.68,0,1.2) both;
+}
+.vp-badge-valid     {background:rgba(34,197,94,.2);border:1.5px solid rgba(34,197,94,.5);color:#86efac;}
+.vp-badge-suspended {background:rgba(245,158,11,.2);border:1.5px solid rgba(245,158,11,.5);color:#fcd34d;}
+.vp-badge-invalid   {background:rgba(239,68,68,.2); border:1.5px solid rgba(239,68,68,.5); color:#fca5a5;}
+.vp-badge-dot{width:10px;height:10px;border-radius:50%;}
+.vp-badge-valid .vp-badge-dot    {background:#22c55e;box-shadow:0 0 8px #22c55e;}
+.vp-badge-suspended .vp-badge-dot{background:#f59e0b;box-shadow:0 0 8px #f59e0b;}
+.vp-badge-invalid .vp-badge-dot  {background:#ef4444;box-shadow:0 0 8px #ef4444;}
+
+/* Card viewer */
+.vp-card-viewer{display:flex;flex-direction:column;align-items:center;gap:12px;margin-bottom:24px;}
+.vp-card-scene{width:100%;max-width:480px;perspective:1200px;cursor:pointer;position:relative;}
+.vp-card-wrap{
+  width:100%;height:0;padding-bottom:63.06%;
+  position:relative;transform-style:preserve-3d;
+  transition:transform .8s cubic-bezier(.4,.2,.2,1);
+  filter:drop-shadow(0 16px 40px rgba(0,0,0,.5)) drop-shadow(0 4px 10px rgba(80,40,0,.4));
+}
+.vp-card-wrap.flipped{transform:rotateY(180deg);}
+.vp-face{
+  position:absolute !important;top:0;left:0;right:0;bottom:0;
+  border-radius:10px;overflow:hidden;
+  backface-visibility:hidden;-webkit-backface-visibility:hidden;
+}
+.vp-face-back{transform:rotateY(180deg);}
+.vp-face .eid-card-front,.vp-face .eid-card-back{position:absolute !important;inset:0;border-radius:10px;}
+.vp-flip-btn{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:9px 22px;background:rgba(212,175,55,.1);
+  border:1.5px solid rgba(212,175,55,.35);border-radius:24px;
+  font-family:'JetBrains Mono',monospace;font-size:10px;
+  color:var(--g2);letter-spacing:1.5px;text-transform:uppercase;
+  cursor:pointer;transition:all .2s;
+}
+.vp-flip-btn:hover{background:rgba(212,175,55,.2);color:var(--g1);border-color:rgba(212,175,55,.6);}
+
+/* Details card */
+.vp-details{
+  background:rgba(20,10,0,.5);
+  border:1.5px solid rgba(212,175,55,.3);
+  border-radius:16px;overflow:hidden;
+  backdrop-filter:blur(10px);
+  animation:slide-up .5s .2s ease both;
+}
+.vp-details-head{
+  padding:14px 20px;
+  background:linear-gradient(135deg,var(--g9),var(--g8));
+  border-bottom:1px solid rgba(212,175,55,.3);
+  display:flex;align-items:center;justify-content:space-between;
+}
+.vp-details-head h3{font-family:'Syne',sans-serif;font-size:14px;font-weight:800;color:var(--g2);}
+.vp-details-head span{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--g5);letter-spacing:1.5px;}
+.vp-details-body{padding:18px 20px;}
+.vp-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+@media(max-width:400px){.vp-grid{grid-template-columns:1fr;}}
+.vp-field{
+  padding:10px 14px;
+  background:rgba(212,175,55,.06);
+  border:1px solid rgba(212,175,55,.18);
+  border-radius:10px;transition:background .15s;
+}
+.vp-field:hover{background:rgba(212,175,55,.12);}
+.vp-field-lbl{font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--g5);letter-spacing:2px;text-transform:uppercase;margin-bottom:3px;}
+.vp-field-val{font-size:14px;font-weight:700;color:var(--g1);}
+.vp-field-val.mono{font-family:'JetBrains Mono',monospace;font-size:13px;letter-spacing:1px;}
+.vp-field-val.large{font-size:16px;color:var(--g2);}
+
+/* Card number highlight */
+.vp-card-num{
+  margin-top:14px;padding:12px 16px;
+  background:linear-gradient(90deg,rgba(212,175,55,.12),rgba(212,175,55,.06));
+  border-left:3px solid var(--g4);border-radius:0 8px 8px 0;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.vp-card-num-lbl{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--g5);text-transform:uppercase;letter-spacing:2px;}
+.vp-card-num-val{font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:700;color:var(--g1);letter-spacing:3px;}
+
+/* Company chips */
+.vp-chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:14px;}
+.vp-chip{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:6px 12px;border-radius:8px;
+  background:rgba(212,175,55,.08);border:1px solid rgba(212,175,55,.2);
+  font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--g2);
+}
+.vp-chip-dot{width:7px;height:7px;border-radius:50%;}
+
+/* Scan counter */
+.vp-scan-count{
+  margin-top:14px;padding:12px 16px;
+  background:rgba(212,175,55,.05);border:1px solid rgba(212,175,55,.15);
+  border-radius:8px;
+  font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--g4);
+  display:flex;align-items:center;gap:8px;
+}
+
+/* Print button */
+.vp-print-btn{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:12px 24px;margin:16px 0;
+  background:linear-gradient(135deg,var(--g9),var(--g7),var(--g5),var(--g4));
+  color:var(--g1);border:none;border-radius:10px;
+  font-family:'Syne',sans-serif;font-size:14px;font-weight:800;
+  cursor:pointer;text-decoration:none;
+  box-shadow:0 4px 0 var(--g9),0 6px 20px rgba(80,40,0,.3);
+  transition:all .15s;
+}
+.vp-print-btn:hover{transform:translateY(-2px);color:var(--g1);text-decoration:none;}
+
+/* Not found */
+.vp-not-found{text-align:center;padding:60px 20px;animation:slide-up .4s ease both;}
+.vp-not-found-icon{font-size:64px;margin-bottom:16px;}
+.vp-not-found-title{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:var(--g1);margin-bottom:8px;}
+.vp-not-found-sub{font-size:14px;color:var(--g4);}
+
+/* Footer */
+.vp-footer{text-align:center;padding:24px 16px 0;
+  font-family:'JetBrains Mono',monospace;font-size:8px;
+  color:rgba(212,175,55,.3);letter-spacing:2px;text-transform:uppercase;}
+</style>
+</head>
+<body>
+
+<!-- Nav -->
+<nav class="vp-nav">
+  <img src="<?php echo esc_attr($logo_src); ?>" alt="" class="vp-nav-logo">
+  <div>
+    <div class="vp-nav-title">Etel-ID Verification</div>
+    <span class="vp-nav-sub">Official <?php echo esc_html($org_name); ?> Corporate Identity System · ኢትኤል ቡድን</span>
+  </div>
+</nav>
+
+<div class="vp-wrap">
+
+<?php if ( ! $member ) : ?>
+  <!-- Not Found -->
+  <div class="vp-not-found">
+    <div class="vp-not-found-icon">❌</div>
+    <div class="vp-not-found-title">ID Not Found</div>
+    <div class="vp-not-found-sub">The Etel-ID <strong style="color:var(--g2);"><?php echo esc_html($etel_id); ?></strong> does not exist in our records.</div>
+  </div>
+
+<?php else : ?>
+
+  <!-- Status badge -->
+  <?php
+  if ($is_valid) {
+    $badge_class = 'vp-badge-valid';
+    $badge_text  = '✓ Verified — Valid Etel-ID · ተረጋግጧል';
+  } elseif ($is_suspended) {
+    $badge_class = 'vp-badge-suspended';
+    $badge_text  = '⚠ Suspended — ID Invalid';
+  } else {
+    $badge_class = 'vp-badge-invalid';
+    $badge_text  = '✗ Expired or Revoked';
+  }
+  ?>
+  <div class="vp-badge <?php echo $badge_class; ?>">
+    <div class="vp-badge-dot"></div>
+    <?php echo $badge_text; ?>
+  </div>
+
+  <!-- 3D Card viewer -->
+  <div class="vp-card-viewer">
+    <div class="vp-card-scene" onclick="vpFlip()">
+      <div class="vp-card-wrap" id="vp-card">
+        <!-- FRONT -->
+        <div class="vp-face">
+          <?php include ETELID_PATH . 'templates/card-front.php'; ?>
+        </div>
+        <!-- BACK -->
+        <div class="vp-face vp-face-back">
+          <?php include ETELID_PATH . 'templates/card-back.php'; ?>
+        </div>
+      </div>
+    </div>
+    <button class="vp-flip-btn" onclick="vpFlip()">
+      <i class="ti ti-refresh"></i> Flip Card
+    </button>
+    <a href="<?php echo esc_url(home_url('/etel-id/print/'.$member->etel_id)); ?>"
+       target="_blank" class="vp-print-btn">
+      <i class="ti ti-printer"></i> Print Card
+    </a>
+  </div>
+
+  <!-- Identity details -->
+  <div class="vp-details">
+    <div class="vp-details-head">
+      <h3>Identity Details</h3>
+      <span>OFFICIAL RECORD</span>
+    </div>
+    <div class="vp-details-body">
+
+      <div class="vp-grid">
+        <div class="vp-field">
+          <div class="vp-field-lbl">Etel-ID</div>
+          <div class="vp-field-val mono large"><?php echo esc_html($member->etel_id); ?></div>
+        </div>
+        <div class="vp-field">
+          <div class="vp-field-lbl">Full Name</div>
+          <div class="vp-field-val"><?php echo esc_html($member->full_name); ?>
+            <?php if ($member->full_name_am): ?><span style="font-family:'Noto Sans Ethiopic',sans-serif;font-size:12px;color:var(--g3);display:block;"><?php echo esc_html($member->full_name_am); ?></span><?php endif; ?>
+          </div>
+        </div>
+        <div class="vp-field">
+          <div class="vp-field-lbl">Company</div>
+          <div class="vp-field-val"><?php echo esc_html($member->primary_company); ?></div>
+        </div>
+        <div class="vp-field">
+          <div class="vp-field-lbl">Role</div>
+          <div class="vp-field-val"><?php echo esc_html($member->role ?: '—'); ?></div>
+        </div>
+        <div class="vp-field">
+          <div class="vp-field-lbl">Status</div>
+          <div class="vp-field-val"><?php echo esc_html(ucfirst($member->status)); ?></div>
+        </div>
+        <div class="vp-field">
+          <div class="vp-field-lbl">Issue Date</div>
+          <div class="vp-field-val mono" style="font-size:12px;"><?php echo esc_html($member->issue_date); ?><?php if ($member->issue_date_eth): ?><span style="font-family:'Noto Sans Ethiopic',sans-serif;color:var(--g3);display:block;font-size:11px;"><?php echo esc_html($member->issue_date_eth); ?></span><?php endif; ?></div>
+        </div>
+        <div class="vp-field">
+          <div class="vp-field-lbl">Expiry Date</div>
+          <div class="vp-field-val mono" style="font-size:12px;"><?php echo esc_html($member->expiry_date); ?><?php if ($member->expiry_date_eth): ?><span style="font-family:'Noto Sans Ethiopic',sans-serif;color:var(--g3);display:block;font-size:11px;"><?php echo esc_html($member->expiry_date_eth); ?></span><?php endif; ?></div>
+        </div>
+        <div class="vp-field">
+          <div class="vp-field-lbl">Verification Count</div>
+          <div class="vp-field-val mono"><?php echo number_format($member->qr_scan_count); ?> times</div>
+        </div>
+      </div>
+
+      <!-- 12-digit card number -->
+      <div class="vp-card-num">
+        <div>
+          <div class="vp-card-num-lbl">Card Number (16-digit)</div>
+          <div class="vp-card-num-val"><?php echo esc_html($member->card_number); ?></div>
+        </div>
+        <div>
+          <div class="vp-card-num-lbl">FIN Number</div>
+          <div class="vp-card-num-val" style="font-size:13px;"><?php echo esc_html($member->fin); ?></div>
+        </div>
+      </div>
+
+      <?php if ($companies): ?>
+      <div style="margin-top:14px;">
+        <div class="vp-field-lbl" style="margin-bottom:8px;">Linked Companies</div>
+        <div class="vp-chips">
+          <?php
+          $chip_colors = array('#C8922A','#3b82f6','#22c55e','#a855f7','#ef4444','#f59e0b','#06b6d4');
+          $ci = 0;
+          foreach ($companies as $co):
+            $cc = $chip_colors[$ci % count($chip_colors)]; $ci++;
+          ?>
+          <div class="vp-chip">
+            <div class="vp-chip-dot" style="background:<?php echo $cc; ?>;box-shadow:0 0 5px <?php echo $cc; ?>;"></div>
+            <?php echo esc_html($co->company_name); ?>
+            <?php if ($co->role_at && $co->role_at !== 'Member'): ?>
+            <span style="color:var(--g5);">· <?php echo esc_html($co->role_at); ?></span>
+            <?php endif; ?>
+          </div>
+          <?php endforeach; ?>
+        </div>
+      </div>
+      <?php endif; ?>
+
+      <div class="vp-scan-count">
+        <i class="ti ti-qrcode" style="font-size:16px;"></i>
+        This ID has been verified <strong style="color:var(--g2);margin:0 4px;"><?php echo number_format($member->qr_scan_count); ?></strong> times.
+        <?php if ($member->last_verified): ?> &nbsp;·&nbsp; Last: <?php echo esc_html($member->last_verified); ?><?php endif; ?>
+      </div>
+
+    </div>
+  </div>
+
+<?php endif; ?>
+
+  <div class="vp-footer">
+    <?php echo esc_html($org_name); ?> · ኢትኤል ቡድን · <?php echo esc_html($org_website); ?> · <?php echo esc_html($org_email); ?> · v<?php echo ETELID_VERSION; ?>
+  </div>
+</div>
+
+<script>
+var _vpFlipped = false;
+function vpFlip() {
+  _vpFlipped = !_vpFlipped;
+  document.getElementById('vp-card').classList.toggle('flipped', _vpFlipped);
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,432 @@
+<?php
+/**
+ * Etel-ID Premium — Public Application Form (Standalone) v3.1.3
+ * Full standalone HTML page — no WP theme header/footer.
+ */
+if ( ! defined( 'ABSPATH' ) ) exit;
+
+/* Redirect if already logged in */
+if ( class_exists('EtelID_Auth') && EtelID_Auth::is_logged_in() ) {
+    wp_redirect( home_url( '/etel-id/portal/' ) );
+    exit;
+}
+
+$companies = EtelID_Generator::companies();
+$regions   = EtelID_Generator::regions();
+$blood     = EtelID_Generator::blood_types();
+$logo_src  = defined('ETELID_LOGO_B64') ? ETELID_LOGO_B64 : ETELID_URL . 'public/images/etel-logo.png';
+$org_name  = get_option( 'etelid_org_name', 'Etel Group' );
+
+/* Inline CSS files so no wp_head() needed */
+$pub_css  = file_get_contents( ETELID_PATH . 'public/css/etelid-public.css' );
+$card_css = file_get_contents( ETELID_PATH . 'public/css/etelid-card.css' );
+
+$nonce = wp_create_nonce( 'etelid_apply' );
+$ajax  = admin_url( 'admin-ajax.php' );
+?><!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Apply for Your Etel-ID · <?php echo esc_html($org_name); ?></title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=JetBrains+Mono:wght@400;500;600&family=Cormorant+Garamond:wght@400;600;700&family=Noto+Sans+Ethiopic:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+<?php echo $pub_css; ?>
+<?php echo $card_css; ?>
+</style>
+</head>
+<body>
+
+<div class="eid-pub-page" id="eid-apply-page">
+
+  <!-- ── HERO HEADER ── -->
+  <div class="eid-pub-hero">
+    <div class="eid-pub-hero-inner">
+      <img src="<?php echo esc_attr($logo_src); ?>" alt="<?php echo esc_attr($org_name); ?>" class="eid-pub-hero-logo">
+      <div class="eid-pub-hero-text">
+        <h1>Apply for Your Etel-ID</h1>
+        <p>Official Etel Group Corporate Identity — linked across all 8 companies · ኢትኤል ቡድን</p>
+      </div>
+      <a href="<?php echo esc_url(home_url('/etel-id/login/')); ?>" class="eid-pub-login-link">
+        <i class="ti ti-login" aria-hidden="true"></i> Sign In
+      </a>
+    </div>
+  </div>
+
+  <div class="eid-pub-wrap">
+
+    <!-- Step progress bar -->
+    <div class="eid-steps-bar">
+      <div class="eid-step-item active" id="step-dot-1">
+        <div class="eid-step-dot">1</div>
+        <span class="eid-step-label">Personal</span>
+      </div>
+      <div class="eid-step-item" id="step-dot-2">
+        <div class="eid-step-dot">2</div>
+        <span class="eid-step-label">Address</span>
+      </div>
+      <div class="eid-step-item" id="step-dot-3">
+        <div class="eid-step-dot">3</div>
+        <span class="eid-step-label">Company</span>
+      </div>
+      <div class="eid-step-item" id="step-dot-4">
+        <div class="eid-step-dot">4</div>
+        <span class="eid-step-label">Review</span>
+      </div>
+    </div>
+
+    <!-- Error notice -->
+    <div class="eid-pub-notice eid-pub-notice-err" id="eid-form-error" style="display:none">
+      <i class="ti ti-alert-circle" aria-hidden="true"></i>
+      <span id="eid-error-text">Please fill in all required fields.</span>
+    </div>
+
+    <!-- ── STEP 1: Personal ── -->
+    <div class="eid-form-panel" id="eid-step-1">
+      <div class="eid-form-panel-head">
+        <div class="eid-form-panel-icon"><i class="ti ti-user" aria-hidden="true"></i></div>
+        <div>
+          <div class="eid-form-panel-title">Personal Information</div>
+          <div class="eid-form-panel-sub">Your full name, date of birth, and contact details</div>
+        </div>
+      </div>
+      <div class="eid-form-panel-body">
+        <div class="eid-pub-grid">
+          <div class="eid-pub-field">
+            <label class="eid-pub-label">Full Name (Latin) <span class="req">*</span></label>
+            <input type="text" class="eid-pub-input" id="f-full_name" name="full_name" placeholder="e.g. Dagmawi Bekele" autocomplete="name">
+          </div>
+          <div class="eid-pub-field">
+            <label class="eid-pub-label">Full Name (Amharic)</label>
+            <input type="text" class="eid-pub-input" id="f-full_name_am" name="full_name_am" placeholder="e.g. ዳግማዊ በቀለ">
+          </div>
+          <div class="eid-pub-field">
+            <label class="eid-pub-label">Date of Birth <span class="req">*</span></label>
+            <input type="date" class="eid-pub-input" id="f-dob" name="dob">
+            <span class="eid-pub-hint">Gregorian calendar</span>
+          </div>
+          <div class="eid-pub-field">
+            <label class="eid-pub-label">Sex</label>
+            <select class="eid-pub-select" id="f-sex" name="sex">
+              <option value="Male">Male | ወንድ</option>
+              <option value="Female">Female | ሴት</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div class="eid-pub-field">
+            <label class="eid-pub-label">Blood Type</label>
+            <select class="eid-pub-select" id="f-blood_type" name="blood_type">
+              <option value="">— Optional —</option>
+              <?php foreach ($blood as $bt): ?>
+              <option value="<?php echo esc_attr($bt); ?>"><?php echo esc_html($bt); ?></option>
+              <?php endforeach; ?>
+            </select>
+          </div>
+          <div class="eid-pub-field">
+            <label class="eid-pub-label">Nationality</label>
+            <input type="text" class="eid-pub-input" id="f-nationality" name="nationality" value="Ethiopian" placeholder="Ethiopian">
+          </div>
+          <div class="eid-pub-field">
+            <label class="eid-pub-label">Phone Number <span class="req">*</span></label>
+            <input type="tel" class="eid-pub-input" id="f-phone" name="phone" placeholder="+251 9XX XXX XXX" autocomplete="tel">
+          </div>
+          <div class="eid-pub-field">
+            <label class="eid-pub-label">Email Address</label>
+            <input type="email" class="eid-pub-input" id="f-email" name="email" placeholder="you@example.com" autocomplete="email">
+            <span class="eid-pub-hint">We'll send your Etel-ID confirmation here</span>
+          </div>
+        </div>
+        <div class="eid-step-nav">
+          <span class="eid-step-of">Step 1 of 4</span>
+          <button type="button" class="eid-pub-btn eid-btn-primary" onclick="etelIDNext(1)">
+            Next <i class="ti ti-arrow-right" aria-hidden="true"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── STEP 2: Address ── -->
+    <div class="eid-form-panel" id="eid-step-2" style="display:none">
+      <div class="eid-form-panel-head">
+        <div class="eid-form-panel-icon"><i class="ti ti-map-pin" aria-hidden="true"></i></div>
+        <div>
+          <div class="eid-form-panel-title">Address Information</div>
+          <div class="eid-form-panel-sub">Your location within Ethiopia</div>
+        </div>
+      </div>
+      <div class="eid-form-panel-body">
+        <div class="eid-pub-grid">
+          <div class="eid-pub-field">
+            <label class="eid-pub-label">Region</label>
+            <select class="eid-pub-select" id="f-region" name="region">
+              <option value="">— Select Region —</option>
+              <?php foreach ($regions as $r): ?>
+              <option value="<?php echo esc_attr($r); ?>"><?php echo esc_html($r); ?></option>
+              <?php endforeach; ?>
+            </select>
+          </div>
+          <div class="eid-pub-field">
+            <label class="eid-pub-label">Zone / City</label>
+            <input type="text" class="eid-pub-input" id="f-zone" name="zone" placeholder="e.g. Addis Ababa">
+          </div>
+          <div class="eid-pub-field">
+            <label class="eid-pub-label">Woreda / Sub-city</label>
+            <input type="text" class="eid-pub-input" id="f-woreda" name="woreda" placeholder="e.g. Bole">
+          </div>
+        </div>
+        <div class="eid-step-nav">
+          <span class="eid-step-of">Step 2 of 4</span>
+          <div style="display:flex;gap:10px;">
+            <button type="button" class="eid-pub-btn eid-btn-secondary" onclick="etelIDBack(2)">
+              <i class="ti ti-arrow-left" aria-hidden="true"></i> Back
+            </button>
+            <button type="button" class="eid-pub-btn eid-btn-primary" onclick="etelIDNext(2)">
+              Next <i class="ti ti-arrow-right" aria-hidden="true"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── STEP 3: Company ── -->
+    <div class="eid-form-panel" id="eid-step-3" style="display:none">
+      <div class="eid-form-panel-head">
+        <div class="eid-form-panel-icon"><i class="ti ti-building" aria-hidden="true"></i></div>
+        <div>
+          <div class="eid-form-panel-title">Company Affiliation</div>
+          <div class="eid-form-panel-sub">Select which Etel Group companies to link your ID to</div>
+        </div>
+      </div>
+      <div class="eid-form-panel-body">
+        <div class="eid-pub-grid">
+          <div class="eid-pub-field">
+            <label class="eid-pub-label">Primary Company <span class="req">*</span></label>
+            <select class="eid-pub-select" id="f-primary_company_slug" name="primary_company_slug">
+              <?php foreach ($companies as $slug => $co): ?>
+              <option value="<?php echo esc_attr($slug); ?>"><?php echo esc_html($co['name']); ?></option>
+              <?php endforeach; ?>
+            </select>
+          </div>
+          <div class="eid-pub-field">
+            <label class="eid-pub-label">Role / Position</label>
+            <input type="text" class="eid-pub-input" id="f-role" name="role" placeholder="e.g. Customer, Staff">
+          </div>
+          <div class="eid-pub-field">
+            <label class="eid-pub-label">Department</label>
+            <input type="text" class="eid-pub-input" id="f-department" name="department" placeholder="e.g. Operations">
+          </div>
+          <div class="eid-pub-field">
+            <label class="eid-pub-label">Employee / Member Number</label>
+            <input type="text" class="eid-pub-input" id="f-employee_number" name="employee_number" placeholder="If assigned (optional)">
+          </div>
+        </div>
+        <div class="eid-pub-field eid-pub-full" style="margin-top:20px">
+          <label class="eid-pub-label">Also link to these companies</label>
+          <span class="eid-pub-hint" style="margin-bottom:10px;display:block">Your Etel-ID will work across all selected companies</span>
+          <div class="eid-co-chips-wrap">
+            <?php foreach ($companies as $slug => $co):
+              $color = isset($co['color']) ? $co['color'] : '#c8922a'; ?>
+            <input type="checkbox" class="eid-co-chk" name="extra_companies[]"
+              id="ecc_<?php echo esc_attr($slug); ?>" value="<?php echo esc_attr($slug); ?>">
+            <label for="ecc_<?php echo esc_attr($slug); ?>" class="eid-co-lbl" style="--co-color:<?php echo esc_attr($color); ?>">
+              <span class="dot" style="background:<?php echo esc_attr($color); ?>"></span>
+              <?php echo esc_html($co['name']); ?>
+            </label>
+            <?php endforeach; ?>
+          </div>
+        </div>
+        <div class="eid-step-nav">
+          <span class="eid-step-of">Step 3 of 4</span>
+          <div style="display:flex;gap:10px;">
+            <button type="button" class="eid-pub-btn eid-btn-secondary" onclick="etelIDBack(3)">
+              <i class="ti ti-arrow-left" aria-hidden="true"></i> Back
+            </button>
+            <button type="button" class="eid-pub-btn eid-btn-primary" onclick="etelIDNext(3)">
+              Review <i class="ti ti-arrow-right" aria-hidden="true"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── STEP 4: Review ── -->
+    <div class="eid-form-panel" id="eid-step-4" style="display:none">
+      <div class="eid-form-panel-head">
+        <div class="eid-form-panel-icon"><i class="ti ti-check" aria-hidden="true"></i></div>
+        <div>
+          <div class="eid-form-panel-title">Review &amp; Submit</div>
+          <div class="eid-form-panel-sub">Confirm your details before issuing your Etel-ID</div>
+        </div>
+      </div>
+      <div class="eid-form-panel-body">
+        <div id="eid-review-summary" style="margin-bottom:24px"></div>
+        <div style="background:rgba(212,175,55,.08);border:1px solid rgba(212,175,55,.3);border-radius:8px;padding:14px 18px;margin-bottom:20px;">
+          <p style="font-size:12px;color:#7A5520;margin:0;line-height:1.7;font-family:'Cormorant Garamond',serif;">
+            By submitting, you confirm all information is accurate. Your Etel-ID will be issued immediately
+            and linked to the selected companies. This card is the property of <?php echo esc_html($org_name); ?> · ኢትኤል ቡድን.
+          </p>
+        </div>
+        <div class="eid-step-nav">
+          <span class="eid-step-of">Step 4 of 4</span>
+          <div style="display:flex;gap:10px;">
+            <button type="button" class="eid-pub-btn eid-btn-secondary" onclick="etelIDBack(4)">
+              <i class="ti ti-arrow-left" aria-hidden="true"></i> Back
+            </button>
+            <button type="button" class="eid-pub-btn eid-btn-primary eid-btn-lg"
+              id="eid-submit-btn" onclick="etelIDSubmit()">
+              <i class="ti ti-id" aria-hidden="true"></i>
+              <span id="eid-btn-label">Issue My Etel-ID</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── SUCCESS ── -->
+    <div id="eid-success-state" style="display:none">
+      <div class="eid-success-wrap">
+        <div class="eid-success-check"><i class="ti ti-check" aria-hidden="true"></i></div>
+        <div class="eid-success-title">Your Etel-ID Has Been Issued!</div>
+        <div class="eid-success-sub">Save your ID numbers below. Your card is ready to view and print.</div>
+        <div class="eid-success-ids">
+          <div class="eid-success-id-card">
+            <span class="eid-success-id-lbl">Etel-ID</span>
+            <span class="eid-success-id-val" id="res-etel-id">—</span>
+          </div>
+          <div class="eid-success-id-card">
+            <span class="eid-success-id-lbl">FIN Number</span>
+            <span class="eid-success-id-val" id="res-fin">—</span>
+          </div>
+        </div>
+        <div class="eid-success-actions">
+          <a id="res-verify-link" href="#" class="eid-pub-btn eid-btn-primary">
+            <i class="ti ti-id" aria-hidden="true"></i> View My Card
+          </a>
+          <a href="<?php echo esc_url(home_url('/etel-id/login/')); ?>" class="eid-pub-btn eid-btn-secondary">
+            <i class="ti ti-login" aria-hidden="true"></i> Sign In to Portal
+          </a>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /.eid-pub-wrap -->
+
+  <!-- Footer -->
+  <div style="text-align:center;padding:24px;font-family:'JetBrains Mono',monospace;font-size:9px;color:rgba(100,60,0,.5);letter-spacing:1px;">
+    <?php echo esc_html($org_name); ?> · ኢትኤል ቡድን · <?php echo esc_html(get_option('etelid_org_website','ethelmarket.com')); ?> · v<?php echo ETELID_VERSION; ?>
+  </div>
+
+</div><!-- /.eid-pub-page -->
+
+<script>
+var EtelIDConfig = { nonce: '<?php echo esc_js($nonce); ?>', ajax: '<?php echo esc_js($ajax); ?>' };
+var _eidCurrent  = 1;
+var _eidData     = {};
+
+function etelIDNext(from) {
+  if (!etelIDValidate(from)) return;
+  etelIDCollect();
+  etelIDGoto(from + 1);
+  if (from + 1 === 4) etelIDRenderReview();
+}
+function etelIDBack(from) { etelIDGoto(from - 1); }
+function etelIDGoto(n) {
+  document.getElementById('eid-step-' + _eidCurrent).style.display = 'none';
+  document.getElementById('eid-form-error').style.display = 'none';
+  _eidCurrent = n;
+  document.getElementById('eid-step-' + n).style.display = 'block';
+  [1,2,3,4].forEach(function(i) {
+    document.getElementById('step-dot-' + i).className =
+      'eid-step-item' + (i < n ? ' done' : (i === n ? ' active' : ''));
+  });
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+function etelIDValidate(step) {
+  var ok = true;
+  if (step === 1) {
+    if (!document.getElementById('f-full_name').value.trim()) ok = false;
+    if (!document.getElementById('f-dob').value)              ok = false;
+    if (!document.getElementById('f-phone').value.trim())     ok = false;
+  }
+  if (!ok) {
+    var err = document.getElementById('eid-form-error');
+    document.getElementById('eid-error-text').textContent = 'Please fill in all required fields (marked with *).';
+    err.style.display = 'flex';
+    err.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+  return ok;
+}
+function etelIDCollect() {
+  var fields = ['full_name','full_name_am','dob','sex','blood_type','nationality',
+    'phone','email','region','zone','woreda','primary_company_slug','role','department','employee_number'];
+  fields.forEach(function(f) {
+    var el = document.getElementById('f-' + f);
+    if (el) _eidData[f] = el.value;
+  });
+  var extras = document.querySelectorAll('input[name="extra_companies[]"]:checked');
+  _eidData.extra_companies = Array.from(extras).map(function(c){ return c.value; });
+}
+function etelIDRenderReview() {
+  etelIDCollect();
+  var d = _eidData;
+  var rows = [
+    ['Full Name', d.full_name], ['Amharic Name', d.full_name_am || '—'],
+    ['Date of Birth', d.dob], ['Sex', d.sex], ['Blood Type', d.blood_type || '—'],
+    ['Nationality', d.nationality], ['Phone', d.phone], ['Email', d.email || '—'],
+    ['Region', d.region || '—'], ['Zone', d.zone || '—'], ['Woreda', d.woreda || '—'],
+    ['Company', d.primary_company_slug], ['Role', d.role || '—'],
+    ['Also linked to', (d.extra_companies && d.extra_companies.length ? d.extra_companies.join(', ') : '—')],
+  ];
+  var html = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">';
+  rows.forEach(function(r) {
+    html += '<div style="background:rgba(212,175,55,.08);border:.5px solid rgba(212,175,55,.3);border-radius:6px;padding:10px 14px;">'
+          + '<div style="font-family:\'JetBrains Mono\',monospace;font-size:8px;color:#A07020;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:3px;">' + r[0] + '</div>'
+          + '<div style="font-size:14px;font-weight:600;color:#1A0E00;">' + (r[1] || '—') + '</div>'
+          + '</div>';
+  });
+  html += '</div>';
+  document.getElementById('eid-review-summary').innerHTML = html;
+}
+function etelIDSubmit() {
+  etelIDCollect();
+  var btn = document.getElementById('eid-submit-btn');
+  var lbl = document.getElementById('eid-btn-label');
+  btn.disabled = true;
+  lbl.textContent = 'Issuing your ID…';
+  var body = 'action=etelid_apply&nonce=' + EtelIDConfig.nonce;
+  var d = _eidData;
+  ['full_name','full_name_am','dob','sex','blood_type','nationality',
+   'phone','email','region','zone','woreda','primary_company_slug','role','department','employee_number'].forEach(function(k) {
+    if (d[k]) body += '&' + encodeURIComponent(k) + '=' + encodeURIComponent(d[k]);
+  });
+  if (d.extra_companies) {
+    d.extra_companies.forEach(function(v) { body += '&extra_companies[]=' + encodeURIComponent(v); });
+  }
+  fetch(EtelIDConfig.ajax, { method: 'POST', headers: {'Content-Type':'application/x-www-form-urlencoded'}, body: body })
+    .then(function(r){ return r.json(); })
+    .then(function(res) {
+      if (res.success) {
+        document.getElementById('eid-step-4').style.display = 'none';
+        document.getElementById('eid-success-state').style.display = 'block';
+        document.getElementById('res-etel-id').textContent = res.data.etel_id;
+        document.getElementById('res-fin').textContent     = res.data.fin;
+        document.getElementById('res-verify-link').href    = res.data.verify_url;
+        [1,2,3,4].forEach(function(i){ document.getElementById('step-dot-'+i).className = 'eid-step-item done'; });
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      } else {
+        document.getElementById('eid-error-text').textContent = (res.data && res.data.message) ? res.data.message : 'Submission failed. Please try again.';
+        document.getElementById('eid-form-error').style.display = 'flex';
+        btn.disabled = false;
+        lbl.textContent = 'Issue My Etel-ID';
+      }
+    })
+    .catch(function() { btn.disabled = false; lbl.textContent = 'Issue My Etel-ID'; });
+}
+</script>
+
+</body>
+</html>
