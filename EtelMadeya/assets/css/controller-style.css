@@ -552,3 +552,347 @@
         font-size: 13px;
     }
 }
+
+.ctrl-tab-nav {
+    display: flex;
+    background: linear-gradient(135deg, rgba(26,26,26,0.97) 0%, rgba(45,36,22,0.97) 100%);
+    border-bottom: 2px solid var(--primary);
+    padding: 0 30px;
+    gap: 4px;
+}
+
+.ctrl-tab {
+    padding: 14px 28px;
+    background: none;
+    border: none;
+    border-bottom: 3px solid transparent;
+    color: var(--primary);
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-bottom: -2px;
+}
+
+.ctrl-tab:hover { color: var(--gold); }
+
+.ctrl-tab.active {
+    color: var(--gold);
+    border-bottom-color: var(--gold);
+}
+
+.ctrl-tab-panel { display: none; }
+.ctrl-tab-panel.active { display: block; }
+
+/* ─── QUEUE REPORT PANEL ──────────────────────────────────────────── */
+.report-panel {
+    padding: 24px 30px;
+}
+
+.report-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.report-toolbar-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.report-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: #ef4444;
+}
+
+.report-count {
+    background: rgba(239,68,68,0.15);
+    border: 1px solid rgba(239,68,68,0.4);
+    color: #ef4444;
+    padding: 3px 12px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.report-toolbar-right input[type="date"] {
+    padding: 8px 12px;
+    background: rgba(26,26,26,0.9);
+    border: 1px solid var(--primary);
+    border-radius: 8px;
+    color: var(--gold);
+    font-size: 14px;
+    outline: none;
+}
+
+.report-search-bar {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.report-search-bar input {
+    flex: 1;
+    padding: 10px 14px;
+    background: rgba(26,26,26,0.9);
+    border: 1.5px solid rgba(239,68,68,0.4);
+    border-radius: 8px;
+    color: #f5f5f5;
+    font-size: 14px;
+    outline: none;
+}
+
+.report-search-bar input:focus {
+    border-color: rgba(239,68,68,0.8);
+    box-shadow: 0 0 0 3px rgba(239,68,68,0.1);
+}
+
+.report-search-bar button {
+    padding: 10px 18px;
+    background: rgba(239,68,68,0.12);
+    border: 1px solid rgba(239,68,68,0.35);
+    border-radius: 8px;
+    color: #ef4444;
+    font-weight: 700;
+    font-size: 13px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.2s;
+}
+
+.report-search-bar button:hover { background: rgba(239,68,68,0.22); }
+
+.report-match-alert {
+    padding: 10px 14px;
+    background: rgba(239,68,68,0.12);
+    border: 1px solid rgba(239,68,68,0.4);
+    border-radius: 8px;
+    color: #ef4444;
+    font-weight: 700;
+    font-size: 13px;
+    margin-bottom: 10px;
+}
+
+.report-table-wrap {
+    overflow-y: auto;
+    max-height: calc(100vh - 380px);
+    border-radius: 10px;
+    border: 1px solid rgba(239,68,68,0.25);
+}
+
+.report-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.report-table thead th {
+    padding: 12px 16px;
+    background: rgba(239,68,68,0.08);
+    color: #ef4444;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    border-bottom: 1px solid rgba(239,68,68,0.25);
+    text-align: left;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
+
+.report-table tbody tr {
+    background: rgba(239,68,68,0.03);
+    border-bottom: 1px solid rgba(239,68,68,0.1);
+    transition: background 0.15s;
+}
+
+.report-table tbody tr:hover { background: rgba(239,68,68,0.09); }
+
+.report-table tbody td {
+    padding: 11px 16px;
+    font-size: 14px;
+}
+
+.report-plate {
+    font-family: monospace;
+    font-weight: 700;
+    color: #ef4444;
+    font-size: 15px;
+    letter-spacing: 1px;
+}
+
+.report-highlight {
+    animation: reportFlash 0.7s ease;
+}
+
+@keyframes reportFlash {
+    0%, 100% { background: rgba(239,68,68,0.09); }
+    50%       { background: rgba(239,68,68,0.28); }
+}
+
+/* ─── IMPORT & CHECK TAB ──────────────────────────────────────────── */
+.imp-panel { padding: 24px 30px; }
+
+.imp-dropzone {
+    border: 2px dashed var(--primary);
+    border-radius: 14px;
+    background: rgba(212,160,23,0.04);
+    padding: 40px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-bottom: 18px;
+}
+.imp-dropzone.drag-over {
+    border-color: var(--gold);
+    background: rgba(212,160,23,0.10);
+    transform: scale(1.01);
+}
+.imp-drop-icon { font-size: 42px; margin-bottom: 10px; }
+.imp-drop-title { font-size: 18px; font-weight: 700; color: var(--gold); margin-bottom: 6px; }
+.imp-drop-sub   { font-size: 13px; color: var(--primary); margin-bottom: 16px; }
+.imp-browse-btn {
+    padding: 10px 28px;
+    background: linear-gradient(135deg, var(--primary), #a07010);
+    border: none; border-radius: 8px;
+    color: #000; font-weight: 700; font-size: 14px; cursor: pointer;
+    transition: opacity 0.2s;
+}
+.imp-browse-btn:hover { opacity: 0.85; }
+
+.imp-file-list {
+    background: rgba(26,26,26,0.9);
+    border: 1px solid var(--primary);
+    border-radius: 10px;
+    padding: 12px 16px;
+    margin-bottom: 16px;
+}
+.imp-file-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.06);
+    font-size: 13px; color: #ccc;
+}
+.imp-file-item:last-child { border-bottom: none; }
+.imp-file-item .imp-file-icon { font-size: 18px; }
+.imp-file-item .imp-file-name { flex: 1; font-family: monospace; }
+.imp-file-item .imp-file-count { color: var(--gold); font-weight: 700; font-size: 12px; }
+
+.imp-controls { margin-bottom: 20px; }
+.imp-controls-row {
+    display: flex; align-items: flex-end; gap: 14px; flex-wrap: wrap;
+}
+.imp-ctrl-group { display: flex; flex-direction: column; gap: 5px; }
+.imp-ctrl-group label { font-size: 11px; font-weight: 700; color: var(--primary); letter-spacing: 1px; text-transform: uppercase; }
+.imp-ctrl-group select {
+    padding: 9px 12px; background: rgba(26,26,26,0.9);
+    border: 1px solid var(--primary); border-radius: 8px;
+    color: var(--gold); font-size: 14px; outline: none;
+}
+.imp-check-btn {
+    padding: 10px 24px;
+    background: linear-gradient(135deg, #2563eb, #1e40af);
+    border: none; border-radius: 8px;
+    color: #fff; font-weight: 700; font-size: 14px; cursor: pointer;
+    transition: opacity 0.2s;
+}
+.imp-check-btn:hover { opacity: 0.85; }
+.imp-clear-btn {
+    padding: 10px 18px;
+    background: rgba(239,68,68,0.12);
+    border: 1px solid rgba(239,68,68,0.35);
+    border-radius: 8px; color: #ef4444;
+    font-weight: 700; font-size: 14px; cursor: pointer;
+}
+
+/* Summary cards */
+.imp-summary {
+    display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 24px;
+}
+.imp-card {
+    flex: 1; min-width: 110px;
+    border-radius: 10px; padding: 16px 14px; text-align: center;
+    border: 1px solid; transition: transform 0.15s;
+}
+.imp-card:hover { transform: translateY(-2px); }
+.imp-card-num   { font-size: 30px; font-weight: 900; margin-bottom: 4px; }
+.imp-card-label { font-size: 11px; font-weight: 600; letter-spacing: 0.5px; opacity: 0.8; }
+
+.imp-card-total   { background: rgba(100,116,139,0.12); border-color: rgba(100,116,139,0.35); color: #94a3b8; }
+.imp-card-clean   { background: rgba(34,197,94,0.10);  border-color: rgba(34,197,94,0.35);  color: #22c55e; }
+.imp-card-infile  { background: rgba(251,146,60,0.10); border-color: rgba(251,146,60,0.35); color: #fb923c; }
+.imp-card-inqueue { background: rgba(250,204,21,0.10); border-color: rgba(250,204,21,0.35); color: #facc15; }
+.imp-card-served  { background: rgba(239,68,68,0.10);  border-color: rgba(239,68,68,0.35);  color: #ef4444; }
+
+.imp-section-title {
+    font-size: 15px; font-weight: 700; color: var(--gold);
+    margin-bottom: 10px; padding-bottom: 8px;
+    border-bottom: 1px solid rgba(212,160,23,0.2);
+}
+.imp-legend {
+    display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 12px;
+}
+.imp-badge {
+    padding: 3px 10px; border-radius: 20px;
+    font-size: 11px; font-weight: 700; letter-spacing: 0.5px;
+}
+.imp-badge-infile  { background: rgba(251,146,60,0.18); color: #fb923c; border: 1px solid rgba(251,146,60,0.4); }
+.imp-badge-inqueue { background: rgba(250,204,21,0.18); color: #facc15; border: 1px solid rgba(250,204,21,0.4); }
+.imp-badge-served  { background: rgba(239,68,68,0.18);  color: #ef4444; border: 1px solid rgba(239,68,68,0.4); }
+
+.imp-dup-table-wrap {
+    overflow-y: auto; max-height: 280px;
+    border-radius: 10px; border: 1px solid rgba(251,146,60,0.25);
+    margin-bottom: 24px;
+}
+.imp-dup-table { width: 100%; border-collapse: collapse; }
+.imp-dup-table thead th {
+    padding: 10px 14px; background: rgba(251,146,60,0.08);
+    color: #fb923c; font-size: 11px; font-weight: 700;
+    letter-spacing: 1.5px; text-transform: uppercase;
+    border-bottom: 1px solid rgba(251,146,60,0.2);
+    text-align: left; position: sticky; top: 0; z-index: 1;
+}
+.imp-dup-table tbody tr { border-bottom: 1px solid rgba(255,255,255,0.05); transition: background 0.15s; }
+.imp-dup-table tbody tr:hover { background: rgba(255,255,255,0.04); }
+.imp-dup-table tbody td { padding: 9px 14px; font-size: 13px; }
+.imp-dup-plate { font-family: monospace; font-weight: 700; font-size: 14px; letter-spacing: 1px; }
+
+/* Clean section */
+.imp-clean-wrap {
+    background: rgba(34,197,94,0.05);
+    border: 1px solid rgba(34,197,94,0.2);
+    border-radius: 10px; padding: 14px 16px;
+    max-height: 200px; overflow-y: auto;
+    margin-bottom: 14px;
+    display: flex; flex-wrap: wrap; gap: 8px;
+    scrollbar-width: thin;
+}
+.imp-clean-chip {
+    background: rgba(34,197,94,0.12);
+    border: 1px solid rgba(34,197,94,0.3);
+    border-radius: 6px; padding: 4px 10px;
+    font-family: monospace; font-size: 13px;
+    color: #22c55e; font-weight: 600;
+}
+.imp-import-btn {
+    width: 100%; padding: 13px;
+    background: linear-gradient(135deg, #16a34a, #166534);
+    border: none; border-radius: 9px;
+    color: #fff; font-weight: 800; font-size: 15px;
+    letter-spacing: 1px; cursor: pointer;
+    transition: opacity 0.2s;
+}
+.imp-import-btn:hover  { opacity: 0.88; }
+.imp-import-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.imp-import-fb {
+    margin-top: 10px; padding: 12px 14px;
+    border-radius: 8px; font-size: 13px; font-weight: 600;
+}
+.imp-import-fb.ok  { background: rgba(34,197,94,0.12);  color: #22c55e; border: 1px solid rgba(34,197,94,0.3); }
+.imp-import-fb.err { background: rgba(239,68,68,0.12);  color: #ef4444; border: 1px solid rgba(239,68,68,0.3); }
