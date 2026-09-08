@@ -87,6 +87,52 @@ async function handleLogin(event) {
     }
 }
 
+function toggleEtelIDLogin() {
+    const loginForm = document.getElementById('loginForm');
+    const etelidForm = document.getElementById('etelidLoginForm');
+    const showBtn = document.getElementById('showEtelIDLoginBtn');
+    const divider = document.querySelector('.login-divider');
+    const isShowingEtelID = etelidForm.style.display !== 'none';
+
+    etelidForm.style.display = isShowingEtelID ? 'none' : 'block';
+    loginForm.style.display  = isShowingEtelID ? 'block' : 'none';
+    showBtn.style.display    = isShowingEtelID ? 'block' : 'none';
+    if (divider) divider.style.display = isShowingEtelID ? 'flex' : 'none';
+    document.getElementById('loginError').style.display = 'none';
+}
+
+async function handleEtelIDLogin(event) {
+    event.preventDefault();
+
+    const identifier = document.getElementById('etelidIdentifier').value;
+    const password    = document.getElementById('etelidPassword').value;
+    const errorDiv    = document.getElementById('loginError');
+
+    const formData = new FormData();
+    formData.append('action', 'controller_etelid_login');
+    formData.append('identifier', identifier);
+    formData.append('password', password);
+
+    try {
+        const response = await fetch(API, {
+            method: 'POST',
+            body: formData
+        });
+        const data = await response.json();
+
+        if (data.success) {
+            currentController = data.controller;
+            showMainPanel();
+        } else {
+            errorDiv.textContent = data.message || 'EtelID sign-in failed';
+            errorDiv.style.display = 'block';
+        }
+    } catch (error) {
+        errorDiv.textContent = 'Connection error. Please try again.';
+        errorDiv.style.display = 'block';
+    }
+}
+
 async function handleLogout() {
     if (!confirm('Are you sure you want to logout?')) return;
     
