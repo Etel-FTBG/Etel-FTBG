@@ -255,6 +255,25 @@ h1, h2, .logo-name, .page-title, .login-box h1, .header-title,
     box-sizing: border-box;
 }
 
+/* Abstract branded motif - a fuel-nozzle silhouette with radiating
+   "energy" rings and sparks, drawn as inline gold linework (no photo,
+   no external asset, nothing to host or swap out later if a real
+   generated hero image gets added). Sits low-opacity in the top-right,
+   behind the orbs and the card, purely decorative (pointer-events:none,
+   aria-hidden via presentation-only background-image). */
+.login-screen::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 900 900'%3E%3Cg fill='none' stroke='%23D4AF37' stroke-width='2'%3E%3Cpath d='M80 800 C 180 760, 220 620, 320 560 C 420 500, 460 460, 540 400' stroke-opacity='0.35'/%3E%3Crect x='520' y='330' width='80' height='140' rx='18' transform='rotate(-24 560 400)' stroke-opacity='0.45'/%3E%3Ccircle cx='560' cy='470' r='26' stroke-opacity='0.4'/%3E%3Cpath d='M585 320 L 640 260' stroke-opacity='0.5' stroke-width='3'/%3E%3Ccircle cx='650' cy='250' r='55' stroke-opacity='0.28' stroke-dasharray='4 10'/%3E%3Ccircle cx='650' cy='250' r='95' stroke-opacity='0.18' stroke-dasharray='3 14'/%3E%3Ccircle cx='650' cy='250' r='140' stroke-opacity='0.1' stroke-dasharray='2 18'/%3E%3C/g%3E%3Cg fill='%23F5CC44'%3E%3Ccircle cx='660' cy='232' r='3' fill-opacity='0.8'/%3E%3Ccircle cx='690' cy='210' r='2' fill-opacity='0.6'/%3E%3Ccircle cx='620' cy='190' r='2.5' fill-opacity='0.7'/%3E%3Ccircle cx='150' cy='700' r='2' fill-opacity='0.5'/%3E%3Ccircle cx='250' cy='630' r='2.5' fill-opacity='0.55'/%3E%3C/g%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right -60px top -40px;
+    background-size: min(640px, 85vw);
+    opacity: 0.8;
+}
+
 /* Floating ambient glow orbs behind the card, for depth/parallax feel */
 .login-orb {
     position: absolute;
