@@ -58,7 +58,91 @@ try {
             unset($admin['password']);
             jsonResponse(['success' => true, 'admin' => $admin]);
             break;
-            
+
+        // ─── ETELID SINGLE SIGN-ON (ADMIN) ──────────────────────────
+        // Separate from the controller_etelid_login in api/index.php on
+        // purpose - this one only ever grants the admin dashboard, and
+        // only when either an existing admin_users row already matches
+        // this phone, or Etel Group's Employees panel has assigned this
+        // phone a role at 'etel-madeya'. Same trust boundary as before,
+        // just performed centrally instead of in this app's own tools.
+        case 'admin_etelid_login':
+            require_once __DIR__ . '/../includes/etelid_bridge.php';
+
+            $identifier = sanitize($_POST['identifier'] ?? '');
+            $password   = $_POST['password'] ?? '';
+            if (empty($identifier) || empty($password)) {
+                jsonResponse(['success' => false, 'message' => 'Enter your EtelID and password'], 400);
+            }
+
+            if (!checkRateLimit('madeya_admin_etelid_' . getClientIP(), 5, 900)) {
+                jsonResponse(['success' => false, 'message' => 'Too many attempts. Try again in 15 minutes.'], 429);
+            }
+
+            $auth = etelid_bridge_authenticate($identifier, $password);
+            if (isset($auth['error'])) {
+                jsonResponse(['success' => false, 'message' => $auth['error']], 401);
+            }
+            $member = $auth['member'];
+
+            $admin = db()->fetchOne(
+                "SELECT * FROM admin_users WHERE phone = ? AND is_active = 1",
+                [$member['phone']]
+            );
+
+            $egRole = etelid_bridge_check_role('etel-madeya', $member['phone']);
+
+            if (!$admin) {
+                if (!$egRole) {
+                    jsonResponse(['success' => false, 'message' => 'No admin account found for this EtelID. Ask a super admin to add you first.'], 403);
+                }
+                $placeholderHash = password_hash(bin2hex(random_bytes(32)), PASSWORD_DEFAULT);
+                $adminId = db()->insert('admin_users', [
+                    'username'             => 'eid_' . preg_replace('/[^0-9]/', '', $member['phone']),
+                    'password'             => $placeholderHash,
+                    'full_name'            => $member['full_name'],
+                    'phone'                => $member['phone'],
+                    'role'                 => 'admin',
+                    'staff_role'           => $egRole['role_at'],
+                    'is_etelgroup_managed' => 1,
+                    'is_active'            => 1,
+                ]);
+                $admin = db()->fetchOne("SELECT * FROM admin_users WHERE id = ?", [$adminId]);
+            } else {
+                $wasManaged = !empty($admin['is_etelgroup_managed']);
+                if ($wasManaged && !$egRole) {
+                    jsonResponse(['success' => false, 'message' => 'Your Etel Group role at Etel Madeya has been removed. Ask a super admin to reassign it.'], 403);
+                }
+                if ($egRole) {
+                    $updates = [];
+                    if ($egRole['role_at'] !== $admin['staff_role']) $updates['staff_role'] = $egRole['role_at'];
+                    if (!$wasManaged) $updates['is_etelgroup_managed'] = 1;
+                    if ($updates) {
+                        db()->update('admin_users', $updates, 'id = ?', [$admin['id']]);
+                        $admin = db()->fetchOne("SELECT * FROM admin_users WHERE id = ?", [$admin['id']]);
+                    }
+                }
+                // No egRole and never managed: true legacy admin - left untouched.
+            }
+
+            db()->update('admin_users', ['last_login' => date('Y-m-d H:i:s')], 'id = ?', [$admin['id']]);
+            db()->insert('activity_log', [
+                'admin_id'   => $admin['id'],
+                'action'     => 'login',
+                'details'    => 'Admin logged in via EtelID SSO',
+                'ip_address' => getClientIP()
+            ]);
+
+            if (session_status() === PHP_SESSION_ACTIVE) session_regenerate_id(true);
+            $_SESSION['admin_id']       = $admin['id'];
+            $_SESSION['admin_username'] = $admin['username'];
+            $_SESSION['admin_name']     = $admin['full_name'];
+            $_SESSION['admin_role']     = $admin['role'];
+
+            unset($admin['password']);
+            jsonResponse(['success' => true, 'admin' => $admin, 'sso' => true]);
+            break;
+
         case 'logout':
             requireAdmin();
             
