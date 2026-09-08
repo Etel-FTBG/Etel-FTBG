@@ -391,6 +391,168 @@ body::before{
 
 <div class="af-wrap">
 
+  <!-- ══ MODE CHOICE ══ -->
+  <div id="af-mode-choice">
+    <div class="af-panel">
+      <div class="af-panel-head">
+        <div class="af-panel-icon">🪪</div>
+        <div>
+          <span class="af-panel-title">How would you like to register?</span>
+          <span class="af-panel-sub">Pick one - you can always finish the rest later either way</span>
+        </div>
+      </div>
+      <div class="af-panel-body" style="display:flex;flex-direction:column;gap:14px;">
+        <button type="button" class="af-mode-card" onclick="etelIDChooseMode('quick')"
+          style="text-align:left;cursor:pointer;background:rgba(212,175,55,.08);border:1.5px solid rgba(212,175,55,.28);border-radius:12px;padding:18px 20px;display:flex;align-items:center;gap:16px;transition:all .15s;">
+          <div style="font-size:28px;flex-shrink:0;">⚡</div>
+          <div>
+            <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:16px;color:var(--g1);">Quick Register</div>
+            <div style="font-size:13px;color:var(--g4);margin-top:2px;">Full name, photo, Fayda ID, email &amp; phone - about a minute. Fill in the rest from your portal whenever you like.</div>
+          </div>
+        </button>
+        <button type="button" class="af-mode-card" onclick="etelIDChooseMode('full')"
+          style="text-align:left;cursor:pointer;background:rgba(212,175,55,.08);border:1.5px solid rgba(212,175,55,.28);border-radius:12px;padding:18px 20px;display:flex;align-items:center;gap:16px;transition:all .15s;">
+          <div style="font-size:28px;flex-shrink:0;">📋</div>
+          <div>
+            <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:16px;color:var(--g1);">Full Registration</div>
+            <div style="font-size:13px;color:var(--g4);margin-top:2px;">Personal details, address, a password, and ID verification in one go - about 5 minutes.</div>
+          </div>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ QUICK REGISTER ══ -->
+  <div id="af-mode-quick" style="display:none;">
+    <div class="af-error" id="qr-form-error">
+      <i class="ti ti-alert-circle" style="font-size:16px;flex-shrink:0;"></i>
+      <span id="qr-error-text">Please fill in all required fields.</span>
+    </div>
+    <div class="af-panel">
+      <div class="af-panel-head">
+        <div class="af-panel-icon">⚡</div>
+        <div>
+          <span class="af-panel-title">Quick Register</span>
+          <span class="af-panel-sub">Just the essentials - add the rest from your portal any time</span>
+        </div>
+      </div>
+      <div class="af-panel-body">
+        <div class="af-grid">
+          <div class="af-field af-full">
+            <label class="af-label">Full Name <span class="req">*</span></label>
+            <input type="text" class="af-input" id="q-full_name" placeholder="e.g. Dagmawi Bekele" autocomplete="name">
+          </div>
+          <div class="af-field">
+            <label class="af-label">Phone Number <span class="req">*</span></label>
+            <input type="tel" class="af-input" id="q-phone" placeholder="+251 9XX XXX XXX" autocomplete="tel">
+          </div>
+          <div class="af-field">
+            <label class="af-label">Email Address</label>
+            <input type="email" class="af-input" id="q-email" placeholder="you@example.com (optional)" autocomplete="email">
+          </div>
+        </div>
+
+        <!-- Profile photo -->
+        <div class="af-field" style="margin:20px 0;">
+          <label class="af-label">Profile Photo <span class="req">*</span></label>
+          <div style="display:flex;align-items:center;gap:14px;border:1.5px dashed rgba(212,175,55,.35);border-radius:10px;padding:14px;">
+            <div id="q-photo-preview" style="width:56px;height:56px;border-radius:50%;background:rgba(212,175,55,.12);display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;font-size:22px;">📷</div>
+            <div style="font-size:11px;color:var(--g4);">Use the camera directly, or choose one from your gallery</div>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;">
+            <label style="cursor:pointer;background:rgba(255,255,255,.06);border:1px solid rgba(212,175,55,.3);border-radius:8px;padding:10px 14px;font-size:12px;color:#fff;">
+              <input type="file" accept="image/*" capture="user" style="display:none" onchange="etelIDQuickPhotoFile(this)">🤳 Take Selfie
+            </label>
+            <label style="cursor:pointer;background:rgba(255,255,255,.06);border:1px solid rgba(212,175,55,.3);border-radius:8px;padding:10px 14px;font-size:12px;color:#fff;">
+              <input type="file" accept="image/*" style="display:none" onchange="etelIDQuickPhotoFile(this)">🖼️ Choose from Gallery
+            </label>
+          </div>
+        </div>
+
+        <!-- Fayda ID front/back -->
+        <div class="af-field">
+          <label class="af-label">Fayda National ID <span class="req">*</span></label>
+          <div style="font-size:11px;color:var(--g4);margin-bottom:10px;">Both sides are needed to verify your identity.</div>
+          <div style="margin-bottom:12px;">
+            <div style="font-size:11px;color:var(--g4);margin-bottom:6px;">Front of Fayda ID</div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+              <label style="cursor:pointer;background:rgba(255,255,255,.06);border:1px solid rgba(212,175,55,.3);border-radius:8px;padding:10px 14px;font-size:12px;color:#fff;">
+                <input type="file" accept="image/*" capture="environment" style="display:none" onchange="etelIDQuickFaydaFile('front', this)">📷 Take Photo
+              </label>
+              <label style="cursor:pointer;background:rgba(255,255,255,.06);border:1px solid rgba(212,175,55,.3);border-radius:8px;padding:10px 14px;font-size:12px;color:#fff;">
+                <input type="file" accept="image/*" style="display:none" onchange="etelIDQuickFaydaFile('front', this)">🖼️ Choose from Gallery
+              </label>
+            </div>
+          </div>
+          <div style="margin-bottom:10px;">
+            <div style="font-size:11px;color:var(--g4);margin-bottom:6px;">Back of Fayda ID</div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+              <label style="cursor:pointer;background:rgba(255,255,255,.06);border:1px solid rgba(212,175,55,.3);border-radius:8px;padding:10px 14px;font-size:12px;color:#fff;">
+                <input type="file" accept="image/*" capture="environment" style="display:none" onchange="etelIDQuickFaydaFile('back', this)">📷 Take Photo
+              </label>
+              <label style="cursor:pointer;background:rgba(255,255,255,.06);border:1px solid rgba(212,175,55,.3);border-radius:8px;padding:10px 14px;font-size:12px;color:#fff;">
+                <input type="file" accept="image/*" style="display:none" onchange="etelIDQuickFaydaFile('back', this)">🖼️ Choose from Gallery
+              </label>
+            </div>
+          </div>
+          <div id="q-fayda-preview" style="display:flex;gap:8px;margin-bottom:6px;"></div>
+        </div>
+
+        <div class="af-terms" style="margin-top:20px;">
+          By submitting, you confirm all information is accurate. Your Etel-ID will be issued
+          immediately with a temporary password - you'll be asked to set your own right after,
+          and you can add your date of birth, address, and other details from your portal any time.
+        </div>
+
+        <div class="af-nav-row">
+          <button type="button" class="af-btn-back" onclick="etelIDChooseMode(null)">
+            <i class="ti ti-arrow-left"></i> Back
+          </button>
+          <button type="button" class="af-btn-next" id="qr-submit-btn" onclick="etelIDQuickSubmit()" style="padding:12px 28px;font-size:15px;">
+            <i class="ti ti-bolt"></i>
+            <span id="qr-btn-label">Quick Register</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ QUICK REGISTER SUCCESS ══ -->
+  <div id="qr-success-state" style="display:none;">
+    <div class="af-panel">
+      <div class="af-panel-body">
+        <div class="af-success">
+          <div class="af-success-check">✓</div>
+          <div class="af-success-title">Your Etel-ID Has Been Issued!</div>
+          <div class="af-success-sub">Save your temporary password below - you'll need it to sign in and set a real one.</div>
+          <div class="af-success-ids">
+            <div class="af-id-card">
+              <span class="af-id-lbl">Etel-ID</span>
+              <span class="af-id-val" id="qr-res-etel-id">—</span>
+            </div>
+            <div class="af-id-card">
+              <span class="af-id-lbl">Temporary Password</span>
+              <span class="af-id-val" id="qr-res-temp-password">—</span>
+            </div>
+          </div>
+          <div class="af-terms" style="text-align:left;">
+            <i class="ti ti-info-circle"></i> Your name, photo, Fayda ID, email, and phone are saved. Date of birth,
+            address, and a few other details are still missing - the portal will remind you to add them, whenever
+            you're ready, from Edit Profile.
+          </div>
+          <div class="af-success-actions" style="margin-top:20px;">
+            <a id="qr-res-portal-link" href="<?php echo esc_url(home_url('/portal/')); ?>" class="af-btn-primary-lg">
+              <i class="ti ti-layout-dashboard"></i> Go to My Portal
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ FULL REGISTRATION (existing 5-step wizard) ══ -->
+  <div id="af-mode-full" style="display:none;">
+
   <!-- STEP PROGRESS -->
   <div class="af-steps" id="af-steps-bar">
     <div class="af-step active" id="step-dot-1">
@@ -728,6 +890,8 @@ body::before{
     </div>
   </div>
 
+  </div><!-- /af-mode-full -->
+
   <div class="af-footer">
     <?php echo esc_html($org_name); ?> · ኢትኤል ቡድን ·
     <?php echo esc_html(get_option('etelid_org_website','ethelmarket.com')); ?> ·
@@ -740,6 +904,117 @@ body::before{
 var EtelIDConfig = { nonce:'<?php echo esc_js($nonce); ?>', nonceAuth:'<?php echo esc_js($nonce_auth); ?>', ajax:'<?php echo esc_js($ajax); ?>' };
 var _eidCurrent  = 1;
 var _eidData     = {};
+
+/* ── Mode choice (Quick Register vs Full Registration) ──────────
+   Both flows live on this same page/URL rather than a separate route,
+   so switching between them is just toggling which panel is visible -
+   no new rewrite rule needed, and "Back" from either flow returns
+   here instead of leaving the page. */
+function etelIDChooseMode(mode) {
+  document.getElementById('af-mode-choice').style.display = (mode === null) ? 'block' : 'none';
+  document.getElementById('af-mode-quick').style.display  = (mode === 'quick') ? 'block' : 'none';
+  document.getElementById('af-mode-full').style.display   = (mode === 'full')  ? 'block' : 'none';
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+/* ── Quick Register ───────────────────────────────────────────
+   Same canvas-resize-to-base64 technique as the full form's
+   etelIDPhotoFile()/etelIDFaydaFile(), just against this panel's own
+   element IDs (q-*) so the two forms' file inputs never collide. */
+var _qrData = {};
+function etelIDQuickPhotoFile(input) {
+  if (!input.files || !input.files[0]) return;
+  var file = input.files[0];
+  if (!file.type.match(/^image\//)) { qrShowErr('Please select an image file (JPG, PNG, WebP).'); return; }
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    var img = new Image();
+    img.onload = function() {
+      var MAX = 400;
+      var w = img.width, h = img.height;
+      if (w > MAX || h > MAX) {
+        if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
+        else       { w = Math.round(w * MAX / h); h = MAX; }
+      }
+      var canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      var compressed = canvas.toDataURL('image/jpeg', 0.80);
+      _qrData.photo_url = compressed;
+      document.getElementById('q-photo-preview').innerHTML =
+        '<img src="' + compressed + '" style="width:100%;height:100%;object-fit:cover;">';
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function etelIDQuickFaydaFile(side, input) {
+  var f = input.files[0];
+  if (!f) return;
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    _qrData['fayda_' + side + '_image'] = e.target.result;
+    var prev = document.getElementById('q-fayda-preview');
+    var existing = document.getElementById('q-fayda-prev-' + side);
+    var imgHtml = '<img id="q-fayda-prev-' + side + '" src="' + e.target.result + '" style="max-width:120px;max-height:80px;border-radius:6px;border:1px solid rgba(212,175,55,.3);">';
+    if (existing) { existing.outerHTML = imgHtml; } else { prev.insertAdjacentHTML('beforeend', imgHtml); }
+  };
+  reader.readAsDataURL(f);
+}
+
+function qrShowErr(msg) {
+  var err = document.getElementById('qr-form-error');
+  document.getElementById('qr-error-text').textContent = msg;
+  err.classList.add('show');
+  err.scrollIntoView({behavior:'smooth', block:'center'});
+}
+
+function etelIDQuickSubmit() {
+  var fullName = document.getElementById('q-full_name').value.trim();
+  var phone    = document.getElementById('q-phone').value.trim();
+  var email    = document.getElementById('q-email').value.trim();
+
+  if (!fullName || !phone) { qrShowErr('Full name and phone number are required.'); return; }
+  if (!_qrData.photo_url) { qrShowErr('Please add a profile photo.'); return; }
+  if (!_qrData.fayda_front_image || !_qrData.fayda_back_image) { qrShowErr('Please add both sides of your Fayda ID.'); return; }
+
+  var btn = document.getElementById('qr-submit-btn');
+  var lbl = document.getElementById('qr-btn-label');
+  btn.disabled = true;
+  lbl.textContent = 'Registering…';
+
+  var body = 'action=etelid_quick_register&nonce=' + EtelIDConfig.nonceAuth
+    + '&full_name=' + encodeURIComponent(fullName)
+    + '&phone=' + encodeURIComponent(phone)
+    + '&email=' + encodeURIComponent(email)
+    + '&photo_url=' + encodeURIComponent(_qrData.photo_url)
+    + '&fayda_front_image=' + encodeURIComponent(_qrData.fayda_front_image)
+    + '&fayda_back_image=' + encodeURIComponent(_qrData.fayda_back_image);
+
+  fetch(EtelIDConfig.ajax, {
+    method:'POST',
+    headers:{'Content-Type':'application/x-www-form-urlencoded'},
+    body: body
+  }).then(function(r){ return r.json(); }).then(function(res) {
+    if (res.success) {
+      document.getElementById('af-mode-quick').style.display = 'none';
+      document.getElementById('qr-success-state').style.display = 'block';
+      document.getElementById('qr-res-etel-id').textContent = res.data.etel_id;
+      document.getElementById('qr-res-temp-password').textContent = res.data.temp_password;
+      document.getElementById('qr-res-portal-link').href = res.data.redirect || '<?php echo esc_js(home_url('/portal/')); ?>';
+      window.scrollTo({top:0, behavior:'smooth'});
+    } else {
+      qrShowErr((res.data && res.data.message) ? res.data.message : 'Registration failed. Please try again.');
+      btn.disabled = false;
+      lbl.textContent = 'Quick Register';
+    }
+  }).catch(function() {
+    btn.disabled = false;
+    lbl.textContent = 'Quick Register';
+    qrShowErr('Network error. Please try again.');
+  });
+}
 
 function etelIDNext(from) {
   if (!etelIDValidate(from)) return;
