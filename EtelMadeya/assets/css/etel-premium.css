@@ -459,8 +459,13 @@ button, .btn, .btn-primary, .btn-secondary, .btn-success, a {
     background-image: url('/Etel-Madeya/assets/images/etel-madeya-logo.webp');
     background-repeat: no-repeat;
     background-position: center 45%;
-    background-size: min(520px, 60%);
-    opacity: 0.07;
+    /* Full width of its container, not a small centered badge - same
+       "fill the display" treatment the login screen got, just kept
+       fainter here since this sits directly behind working content
+       (the queue table, dashboard cards) rather than a mostly-empty
+       login screen. */
+    background-size: 100% auto;
+    opacity: 0.08;
 }
 
 /* ═══ REDUCED MOTION — respect user preference ════════════════════ */
