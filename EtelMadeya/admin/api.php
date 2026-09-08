@@ -71,6 +71,18 @@ try {
 
             $egRole = etelid_bridge_check_role('etel-madeya', $member['phone']);
 
+            // check_role() only confirms SOME role at etel-madeya - a
+            // controller's role qualifies just as much as an admin's.
+            // The Admin Panel must only auto-provision/keep access for
+            // people whose EtelGroup role_at is specifically "admin",
+            // never on the mere presence of any etel-madeya role -
+            // otherwise any controller signing in here by mistake (or
+            // on purpose) gets full admin access. Treat anything else
+            // the same as no role at all.
+            if ($egRole && strcasecmp(trim($egRole['role_at']), 'admin') !== 0) {
+                $egRole = null;
+            }
+
             if (!$admin) {
                 if (!$egRole) {
                     jsonResponse(['success' => false, 'message' => 'No admin account found for this EtelID. Ask a super admin to add you first.'], 403);
