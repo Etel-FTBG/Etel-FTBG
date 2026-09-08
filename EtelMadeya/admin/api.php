@@ -53,10 +53,21 @@ try {
             }
             $member = $auth['member'];
 
-            $admin = db()->fetchOne(
-                "SELECT * FROM admin_users WHERE phone = ? AND is_active = 1",
-                [$member['phone']]
-            );
+            // Match on the last 9 digits, not an exact string - an
+            // admin phone saved locally as '0924445206' must still
+            // match an EtelID phone of '+251924445206' (both valid,
+            // interchangeable ways to write the same Ethiopian mobile
+            // number), not be treated as a different person.
+            $normalizedTarget = etelid_bridge_normalize_phone($member['phone']);
+            $admin = null;
+            if ($normalizedTarget !== '') {
+                foreach (db()->fetchAll("SELECT * FROM admin_users WHERE is_active = 1") as $cand) {
+                    if (etelid_bridge_normalize_phone($cand['phone']) === $normalizedTarget) {
+                        $admin = $cand;
+                        break;
+                    }
+                }
+            }
 
             $egRole = etelid_bridge_check_role('etel-madeya', $member['phone']);
 
