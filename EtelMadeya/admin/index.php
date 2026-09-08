@@ -15,38 +15,37 @@
     <div id="app">
         <!-- Login Screen -->
         <div id="loginScreen" class="login-screen">
-            <div class="login-box">
-                <img src="../assets/img/etel-logo.png" alt="Etel Madeya" class="login-logo">
+            <div class="login-orb login-orb-1"></div>
+            <div class="login-orb login-orb-2"></div>
+            <div class="login-box login-box-etelid">
+                <div class="login-logo-ring">
+                    <img src="../assets/img/etel-logo.png" alt="Etel Madeya" class="login-logo">
+                </div>
                 <h1>Admin Panel</h1>
                 <p class="login-subtitle">የኢትል ማደያ አስተዳደር ፓነል</p>
-                <form id="loginForm" onsubmit="handleLogin(event)">
-                    <div class="form-group">
-                        <label>Username</label>
-                        <input type="text" id="username" required autocomplete="username">
+                <div class="login-badge">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l8 4v6c0 5-3.4 8.4-8 10-4.6-1.6-8-5-8-10V6l8-4z"/></svg>
+                    <span>Secured by EtelID</span>
+                </div>
+
+                <form id="etelidLoginForm" onsubmit="handleEtelIDLogin(event)">
+                    <div class="form-group form-group-icon">
+                        <label>EtelID, FIN, or Phone</label>
+                        <svg class="input-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>
+                        <input type="text" id="etelidIdentifier" required placeholder="EG-... or +251 9XX XXX XXX" autocomplete="username">
                     </div>
-                    <div class="form-group">
-                        <label>Password</label>
-                        <input type="password" id="password" required autocomplete="current-password">
+                    <div class="form-group form-group-icon">
+                        <label>EtelID Password</label>
+                        <svg class="input-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="11" width="16" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+                        <input type="password" id="etelidPassword" required autocomplete="current-password">
                     </div>
-                    <button type="submit" class="btn-primary">Login</button>
+                    <button type="submit" class="btn-primary btn-block">Sign in with EtelID</button>
                 </form>
                 <div id="loginError" class="error-message" style="display:none"></div>
 
-                <div class="login-divider"><span>or</span></div>
-                <button type="button" class="btn-secondary" id="showEtelIDLoginBtn" onclick="toggleEtelIDLogin()">Sign in with EtelID</button>
-
-                <form id="etelidLoginForm" style="display:none" onsubmit="handleEtelIDLogin(event)">
-                    <div class="form-group">
-                        <label>EtelID, FIN, or Phone</label>
-                        <input type="text" id="etelidIdentifier" placeholder="EG-... or +251 9XX XXX XXX" autocomplete="username">
-                    </div>
-                    <div class="form-group">
-                        <label>EtelID Password</label>
-                        <input type="password" id="etelidPassword" autocomplete="current-password">
-                    </div>
-                    <button type="submit" class="btn-primary">Sign in with EtelID</button>
-                    <button type="button" class="btn-secondary" onclick="toggleEtelIDLogin()">Back</button>
-                </form>
+                <p class="login-footer-note">
+                    Don't have an EtelID? <a href="https://ethelmarket.com/EtelId/" target="_blank" rel="noopener">Register at the EtelID portal</a>
+                </p>
             </div>
         </div>
 
