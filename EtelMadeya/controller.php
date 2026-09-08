@@ -30,6 +30,22 @@
                     <button type="submit" class="btn-primary">Login</button>
                 </form>
                 <div id="loginError" class="error-message" style="display:none"></div>
+
+                <div class="login-divider"><span>or</span></div>
+                <button type="button" class="btn-secondary" id="showEtelIDLoginBtn" onclick="toggleEtelIDLogin()">Sign in with EtelID</button>
+
+                <form id="etelidLoginForm" style="display:none" onsubmit="handleEtelIDLogin(event)">
+                    <div class="form-group">
+                        <label>EtelID, FIN, or Phone</label>
+                        <input type="text" id="etelidIdentifier" placeholder="EG-... or +251 9XX XXX XXX" autocomplete="username">
+                    </div>
+                    <div class="form-group">
+                        <label>EtelID Password</label>
+                        <input type="password" id="etelidPassword" autocomplete="current-password">
+                    </div>
+                    <button type="submit" class="btn-primary">Sign in with EtelID</button>
+                    <button type="button" class="btn-secondary" onclick="toggleEtelIDLogin()">Back</button>
+                </form>
             </div>
         </div>
 
