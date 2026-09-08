@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#D4A843">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="ኢE Pay">
+<title>ኢE Pay — Sign In</title>
+<link rel="manifest" href="manifest.php">
+<link rel="stylesheet" href="css/pay.css">
+<style>
+html,body{overflow:hidden}
+/* ── Full-page login layout ── */
+#login-wrap{position:relative;width:100%;height:100vh;display:flex;align-items:center;justify-content:center;overflow:hidden}
+#c3d{position:fixed;inset:0;z-index:0;pointer-events:none}
+.scrim{position:fixed;inset:0;z-index:1;pointer-events:none;
+  background:
+    radial-gradient(ellipse 90% 90% at 70% 50%,rgba(3,2,5,.85) 20%,transparent 75%),
+    linear-gradient(180deg,rgba(3,2,5,.6) 0%,transparent 30%,transparent 70%,rgba(3,2,5,.8) 100%)}
+.login-panel{
+  position:relative;z-index:2;
+  width:100%;max-width:400px;
+  display:flex;flex-direction:column;align-items:center;
+  padding:40px 28px max(40px,env(safe-area-inset-bottom,40px));
+}
+/* Brand */
+.lp-mark{font-family:var(--fe);font-size:58px;font-weight:700;
+  background:linear-gradient(135deg,var(--gold-lt),var(--gold),var(--gold-deep));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  margin-bottom:4px;line-height:1}
+.lp-logo{width:120px;height:120px;border-radius:24px;margin-bottom:10px;
+  box-shadow:0 8px 32px rgba(212,168,67,.35);object-fit:cover}
+.lp-name{font-family:var(--fd);font-size:11px;font-weight:600;letter-spacing:4px;
+  text-transform:uppercase;color:var(--text-3);margin-bottom:6px}
+.lp-tag{font-size:13px;color:var(--text-3);margin-bottom:36px;text-align:center}
+/* Card */
+.lp-card{
+  width:100%;background:var(--s1);
+  border:1px solid var(--gold-brd);border-radius:var(--r-xl);
+  padding:28px 24px 24px;
+  box-shadow:var(--sh),0 0 0 1px var(--gold-brd);
+  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+}
+/* Lang toggle */
+.lp-lang{position:fixed;top:max(16px,env(safe-area-inset-top,16px));right:16px;z-index:10;
+  background:var(--glass-b);border:1px solid var(--gold-brd);
+  border-radius:20px;padding:6px 14px;
+  font-size:12px;font-weight:700;color:var(--gold-lt);cursor:pointer}
+/* Float cards (feature hints) */
+.float-row{display:flex;gap:10px;margin-bottom:28px;width:100%}
+.fc{
+  flex:1;display:flex;align-items:center;gap:10px;
+  padding:10px 12px;border-radius:14px;
+  background:var(--glass);border:1px solid rgba(212,168,67,.15);
+  backdrop-filter:blur(12px);
+  animation:fcFloat 6s ease-in-out infinite;
+}
+.fc:nth-child(2){animation-delay:1.5s}
+.fc-icon{font-size:20px}
+.fc-text{font-size:11px;font-weight:600;color:var(--text-2);line-height:1.3}
+@keyframes fcFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+</style>
+</head>
+<body>
+<div id="login-wrap">
+  <canvas id="c3d"></canvas>
+  <div class="scrim"></div>
+
+  <button class="lp-lang" id="ep-lang-btn">አማ</button>
+
+  <div class="login-panel">
+    <img src="icons/logo.png" alt="ኢE Pay" class="lp-logo">
+    <div class="lp-name">ETEL Pay · ኢትኤል ክፍያ</div>
+    <div class="lp-tag" id="lp-tag">Ethiopia's Digital Payment Layer</div>
+
+    <div class="float-row">
+      <div class="fc">
+        <span class="fc-icon">⚡</span>
+        <div class="fc-text" id="fc1">Instant transfers</div>
+      </div>
+      <div class="fc">
+        <span class="fc-icon">🔒</span>
+        <div class="fc-text" id="fc2">PIN secured</div>
+      </div>
+    </div>
+
+    <div class="lp-card">
+      <div class="ep-field">
+        <label class="ep-label" data-t="phone">Phone number</label>
+        <div class="ep-input-wrap">
+          <span class="ep-input-icon">📞</span>
+          <input class="ep-input" id="l-phone" type="tel" data-t-ph="phone" placeholder="Phone number" autocomplete="tel" inputmode="tel">
+        </div>
+      </div>
+      <div class="ep-field" style="margin-bottom:8px">
+        <label class="ep-label" data-t="pin">Wallet PIN</label>
+        <div class="ep-input-wrap">
+          <span class="ep-input-icon">🔑</span>
+          <input class="ep-input" id="l-pin" type="password" placeholder="••••" maxlength="8" autocomplete="current-password" inputmode="numeric">
+          <button class="ep-input-action" id="l-eye" tabindex="-1">👁</button>
+        </div>
+      </div>
+      <div class="ep-err-msg" id="l-err"></div>
+      <button class="ep-btn ep-btn-primary" id="l-btn" data-t="login" style="margin-top:16px">Sign in</button>
+      <div class="ep-divider">or</div>
+      <button class="ep-btn ep-btn-ghost" onclick="EP_CORE.nav('register')" data-t="create_wallet">Create wallet</button>
+    </div>
+
+  </div>
+</div>
+
+<div id="ep-toast"></div>
+
+<!-- Three.js: spinning gold coin bg -->
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.164.1/build/three.module.js"}}</script>
+<script type="module">
+import * as THREE from 'three';
+const canvas = document.getElementById('c3d');
+const renderer = new THREE.WebGLRenderer({canvas, alpha:true, antialias:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.setSize(innerWidth,innerHeight);
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(45,innerWidth/innerHeight,.1,100);
+camera.position.set(0,0,5);
+
+// Gold coin geometry
+const geo  = new THREE.CylinderGeometry(1.8,1.8,.18,80);
+const mat  = new THREE.MeshStandardMaterial({color:0xD4A843,metalness:.95,roughness:.12});
+const coin = new THREE.Mesh(geo,mat);
+coin.rotation.x = Math.PI/2;
+scene.add(coin);
+
+// Edge ring
+const edgeGeo = new THREE.TorusGeometry(1.8,.04,16,80);
+const edgeMat = new THREE.MeshStandardMaterial({color:0xF2CC6B,metalness:1,roughness:.05});
+scene.add(new THREE.Mesh(edgeGeo,edgeMat));
+
+// Lights
+const amb = new THREE.AmbientLight(0xffffff,.4);
+scene.add(amb);
+const dir = new THREE.DirectionalLight(0xFFE9A0,2.4);
+dir.position.set(4,6,5); scene.add(dir);
+const fill = new THREE.PointLight(0x2563EB,1.2,20);
+fill.position.set(-6,-2,-3); scene.add(fill);
+const rim  = new THREE.PointLight(0xF2CC6B,1.5,15);
+rim.position.set(0,5,2); scene.add(rim);
+
+let t=0;
+(function animate(){
+  requestAnimationFrame(animate);
+  t+=.008;
+  coin.rotation.z = t;
+  coin.position.y = Math.sin(t*.6)*.08;
+  renderer.render(scene,camera);
+})();
+window.addEventListener('resize',()=>{
+  camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth,innerHeight);
+});
+</script>
+
+<script src="js/config.js?v=2.0"></script>
+<script src="js/api.js?v=2.0"></script>
+<script src="js/core.js?v=2.0"></script>
+<script>
+EP_CORE.onReady(async function(){
+  EP_CORE.registerSW();
+  EP_CORE.initLangToggle();
+
+  // Already logged in → go straight to wallet
+  if(EP_CORE.redirectIfLoggedIn('wallet')) return;
+
+  // PIN toggle
+  const pinEl  = document.getElementById('l-pin');
+  const eyeBtn = document.getElementById('l-eye');
+  eyeBtn.addEventListener('click', ()=>{
+    pinEl.type = pinEl.type==='password' ? 'text' : 'password';
+  });
+
+  // Enter key
+  document.addEventListener('keydown', e=>{
+    if(e.key==='Enter') doLogin();
+  });
+
+  // Bilingual float cards
+  const isAm = EP_CORE.getLang()==='am';
+  document.getElementById('fc1').textContent = isAm ? 'ፈጣን ዝውውር' : 'Instant transfers';
+  document.getElementById('fc2').textContent = isAm ? 'PIN ጥበቃ'    : 'PIN secured';
+  document.getElementById('lp-tag').textContent = isAm ? 'የኢትዮጵያ ዲጂታል ክፍያ' : "Ethiopia's Digital Payment Layer";
+});
+
+async function doLogin(){
+  let phone = document.getElementById('l-phone').value.trim();
+  const pin   = document.getElementById('l-pin').value.trim();
+  const errEl = document.getElementById('l-err');
+  const btn   = document.getElementById('l-btn');
+  errEl.textContent='';
+  if(!phone||!pin){ errEl.textContent = EP_CORE.t('phone')+' & '+EP_CORE.t('pin')+' required.'; return; }
+  // Normalize Ethiopian phone: 09... → +2519..., 2519... → +2519...
+  phone = phone.replace(/\s+/g,'');
+  if(/^09/.test(phone))       phone = '+251' + phone.slice(1);
+  else if(/^2519/.test(phone)) phone = '+' + phone;
+
+  const restore = EP_CORE.btnLoading(btn,'ep-spin-w');
+  await EP_API.refreshNonce();
+  try{
+    const j = await EP_API.login(phone, pin);
+    if(j.success){
+      EP_CORE.saveToken(j.data.token, phone);
+      EP_CORE.nav('wallet');
+    } else {
+      errEl.textContent = (j.data&&j.data.message)||'Login failed.';
+      restore();
+    }
+  }catch(e){
+    errEl.textContent='Connection error. Check internet.';
+    restore();
+  }
+}
+
+document.getElementById('l-btn').addEventListener('click', doLogin);
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="js/logo-anim.js"></script>
+<script src="js/desktop-shell.js"></script>
+</body>
+</html>

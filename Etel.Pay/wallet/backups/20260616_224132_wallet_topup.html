@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>ኢE Pay — Top Up</title>
+<link rel="manifest" href="manifest.php">
+<link rel="stylesheet" href="css/pay.css">
+<style>
+.tu-method{display:flex;flex-direction:column;gap:10px;margin:16px 0}
+.tu-opt{display:flex;align-items:center;gap:14px;padding:16px;border:2px solid var(--gold-brd);
+  border-radius:14px;cursor:pointer;transition:.2s;background:var(--glass)}
+.tu-opt.active,.tu-opt:hover{border-color:var(--gold);background:rgba(212,168,67,.08)}
+.tu-opt-icon{font-size:28px;width:44px;text-align:center;flex-shrink:0}
+.tu-opt-info h4{font-size:14px;font-weight:600;color:var(--text);margin:0 0 2px}
+.tu-opt-info p{font-size:12px;color:var(--text-3);margin:0}
+.tu-badge{margin-left:auto;font-size:10px;padding:3px 8px;border-radius:20px;
+  background:rgba(212,168,67,.15);color:var(--gold);font-weight:700}
+.tu-steps{background:var(--surface);border-radius:12px;padding:16px;margin:16px 0}
+.tu-steps h4{font-size:12px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.6px;margin:0 0 12px}
+.tu-step{display:flex;gap:10px;margin-bottom:10px;align-items:flex-start}
+.tu-step-num{width:22px;height:22px;border-radius:50%;background:var(--gold);color:#000;
+  font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.tu-step p{font-size:13px;color:var(--text-2);margin:0;line-height:1.5}
+.ref-box{background:#0a0a10;border:1px solid var(--gold-brd);border-radius:10px;
+  padding:14px 16px;font-family:var(--fm);font-size:15px;color:var(--gold);
+  letter-spacing:1px;text-align:center;cursor:pointer;margin:12px 0;
+  display:flex;align-items:center;justify-content:center;gap:8px}
+.ref-box:active{opacity:.7}
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="ep-body" style="padding-top:max(28px,env(safe-area-inset-top,28px))">
+
+    <div style="display:flex;align-items:center;gap:12px;padding:0 20px 20px">
+      <button class="ep-icon-btn" onclick="EP_CORE.back()">←</button>
+      <div>
+        <h2 style="font-family:var(--fd);font-size:20px;color:var(--text);margin:0">Top Up Wallet</h2>
+        <p style="font-size:12px;color:var(--text-3);margin:0">ሂሳብ ሙሌ · Fund your wallet</p>
+      </div>
+    </div>
+
+    <div style="padding:0 20px 20px">
+
+      <!-- Amount -->
+      <div class="ep-card mb-16">
+        <div class="ep-label">Amount (ETB)</div>
+        <input class="ep-input" type="number" id="tu-amount" placeholder="Enter amount" min="10" inputmode="decimal" style="margin-top:8px;font-size:22px">
+        <div style="display:flex;gap:8px;margin-top:10px">
+          <button class="ep-btn ep-btn-ghost" style="flex:1;padding:8px" onclick="setAmt(50)">50</button>
+          <button class="ep-btn ep-btn-ghost" style="flex:1;padding:8px" onclick="setAmt(100)">100</button>
+          <button class="ep-btn ep-btn-ghost" style="flex:1;padding:8px" onclick="setAmt(500)">500</button>
+          <button class="ep-btn ep-btn-ghost" style="flex:1;padding:8px" onclick="setAmt(1000)">1,000</button>
+        </div>
+      </div>
+
+      <!-- Method -->
+      <div class="ep-label mb-8">Payment Method</div>
+      <div class="tu-method">
+        <div class="tu-opt active" id="m-telebirr" onclick="selectMethod('telebirr')">
+          <div class="tu-opt-icon">📱</div>
+          <div class="tu-opt-info"><h4>Telebirr</h4><p>*127*6*2# or Telebirr app</p></div>
+          <span class="tu-badge">POPULAR</span>
+        </div>
+        <div class="tu-opt" id="m-cbe" onclick="selectMethod('cbe')">
+          <div class="tu-opt-icon">🏦</div>
+          <div class="tu-opt-info"><h4>CBE Birr</h4><p>Commercial Bank transfer</p></div>
+        </div>
+        <div class="tu-opt" id="m-bank" onclick="selectMethod('bank')">
+          <div class="tu-opt-icon">🏛️</div>
+          <div class="tu-opt-info"><h4>Bank Transfer</h4><p>Any Ethiopian bank</p></div>
+        </div>
+      </div>
+
+      <button class="ep-btn ep-btn-gold" onclick="initTopup()" id="tu-btn">Get Payment Instructions</button>
+
+      <!-- Instructions (shown after initiate) -->
+      <div id="tu-instructions" style="display:none">
+        <div class="tu-steps" id="tu-steps"></div>
+        <div class="ep-label">Your Reference Number</div>
+        <div class="ref-box" id="tu-ref" onclick="copyRef()">
+          <span id="ref-text">—</span>
+          <span style="font-size:14px;color:var(--text-3)">📋</span>
+        </div>
+        <p style="font-size:12px;color:var(--text-3);text-align:center">Tap to copy · Use this exact reference when paying</p>
+        <button class="ep-btn ep-btn-gold" onclick="confirmTopup()" id="confirm-btn" style="margin-top:16px">
+          ✅ I've Sent the Money
+        </button>
+        <button class="ep-btn ep-btn-ghost" onclick="resetForm()" style="margin-top:8px">Start Over</button>
+      </div>
+
+      <!-- Success -->
+      <div id="tu-success" style="display:none;text-align:center;padding:30px 0">
+        <div style="font-size:60px;margin-bottom:16px">✅</div>
+        <h3 style="font-family:var(--fd);font-size:20px;color:var(--gold);margin-bottom:8px">Confirmation Sent!</h3>
+        <p style="color:var(--text-3);font-size:14px;line-height:1.6">We received your confirmation and will credit your wallet within minutes. You'll see the balance update automatically.</p>
+        <button class="ep-btn ep-btn-gold" onclick="EP_CORE.nav('wallet')" style="margin-top:24px">Go to Wallet</button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div id="ep-toast"></div>
+<script src="js/config.js?v=2.0"></script>
+<script src="js/api.js?v=2.0"></script>
+<script src="js/core.js?v=2.0"></script>
+<script src="js/devpanel.js"></script>
+<script>
+var _method = 'telebirr';
+var _ref    = '';
+var _lang   = 'en';
+
+EP_CORE.onReady(function() {
+  if (!EP_CORE.requireAuth()) return;
+  _lang = EP_CORE.getLang();
+  EP_CORE.initLangToggle();
+});
+
+function setAmt(v) { document.getElementById('tu-amount').value = v; }
+
+function selectMethod(m) {
+  _method = m;
+  ['telebirr','cbe','bank'].forEach(function(x){
+    document.getElementById('m-'+x).classList.toggle('active', x===m);
+  });
+}
+
+async function initTopup() {
+  var amt = parseFloat(document.getElementById('tu-amount').value)||0;
+  if (amt < 10) { EP_CORE.toast('Minimum is 10 ETB','err'); return; }
+  var btn = document.getElementById('tu-btn');
+  var restore = EP_CORE.btnLoading(btn);
+  try {
+    var j = await EP_API.call('ep_topup_initiate', {amount: amt, method: _method});
+    restore();
+    if (!j.success) { EP_CORE.toast((j.data&&j.data.message)||'Error','err'); return; }
+    _ref = j.data.ref;
+    document.getElementById('ref-text').textContent = _ref;
+    var ins = j.data.instructions && j.data.instructions[_method];
+    var steps = getSteps(amt);
+    document.getElementById('tu-steps').innerHTML = '<h4>How to pay</h4>' +
+      steps.map(function(s,i){ return '<div class="tu-step"><div class="tu-step-num">'+(i+1)+'</div><p>'+s+'</p></div>'; }).join('');
+    document.getElementById('tu-btn').style.display='none';
+    document.getElementById('tu-instructions').style.display='block';
+  } catch(e) { restore(); EP_CORE.toast('Network error','err'); }
+}
+
+function getSteps(amt) {
+  var ref = _ref;
+  if (_method==='telebirr') return [
+    'Open Telebirr app or dial <strong>*127*6*2#</strong>',
+    'Choose <strong>Send Money</strong> or <strong>Pay Merchant</strong>',
+    'Enter merchant short code: <strong>'+(window.TELEBIRR_SHORT_CODE||'XXXX')+'</strong>',
+    'Enter amount: <strong>ETB '+amt.toLocaleString()+'</strong>',
+    'When asked for reference/note enter: <strong>'+ref+'</strong>',
+    'Complete the payment then tap "I\'ve Sent the Money" below',
+  ];
+  if (_method==='cbe') return [
+    'Open CBE Birr app or visit any CBE branch',
+    'Transfer <strong>ETB '+amt.toLocaleString()+'</strong> to account: <strong>1000123456789</strong>',
+    'Account name: <strong>ETEL GROUP PLC</strong>',
+    'In the description/reference field enter: <strong>'+ref+'</strong>',
+    'Save your receipt and tap "I\'ve Sent the Money" below',
+  ];
+  return [
+    'Transfer <strong>ETB '+amt.toLocaleString()+'</strong> to our bank account',
+    'Bank: <strong>Commercial Bank of Ethiopia</strong>',
+    'Account: <strong>1000123456789</strong> · Name: <strong>ETEL GROUP PLC</strong>',
+    'Reference/narration: <strong>'+ref+'</strong>',
+    'Tap "I\'ve Sent the Money" after transfer',
+  ];
+}
+
+function copyRef() {
+  var r = document.getElementById('ref-text').textContent;
+  navigator.clipboard ? navigator.clipboard.writeText(r).then(function(){EP_CORE.toast('Copied!');}) : EP_CORE.toast(r);
+}
+
+async function confirmTopup() {
+  if (!_ref) return;
+  var btn = document.getElementById('confirm-btn');
+  var restore = EP_CORE.btnLoading(btn);
+  try {
+    var j = await EP_API.call('ep_topup_confirm', {ref: _ref});
+    restore();
+    if (j.success) {
+      document.getElementById('tu-instructions').style.display='none';
+      document.getElementById('tu-success').style.display='block';
+    } else {
+      EP_CORE.toast((j.data&&j.data.message)||'Error','err');
+    }
+  } catch(e) { restore(); EP_CORE.toast('Error','err'); }
+}
+
+function resetForm() {
+  _ref = '';
+  document.getElementById('tu-amount').value='';
+  document.getElementById('tu-instructions').style.display='none';
+  document.getElementById('tu-btn').style.display='block';
+}
+</script>
+<script src="js/desktop-shell.js"></script>
+</body>
+</html>

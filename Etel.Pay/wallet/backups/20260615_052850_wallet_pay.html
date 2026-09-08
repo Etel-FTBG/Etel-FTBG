@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>ኢE Pay — Payment</title>
+<link rel="manifest" href="manifest.php">
+<link rel="stylesheet" href="css/pay.css">
+<style>
+.pay-hero{text-align:center;padding:40px 20px 24px}
+.pay-avatar{width:80px;height:80px;border-radius:50%;background:var(--glass);border:2px solid var(--gold-brd);
+  display:flex;align-items:center;justify-content:center;font-size:36px;margin:0 auto 12px;overflow:hidden}
+.pay-avatar img{width:100%;height:100%;object-fit:cover}
+.pay-name{font-family:var(--fd);font-size:22px;font-weight:700;color:var(--text);margin-bottom:4px}
+.pay-phone{font-size:13px;color:var(--text-3);font-family:var(--fm)}
+.pay-label{font-size:15px;color:var(--text-2);margin:12px 0 4px}
+.pay-amount-fixed{font-family:var(--fm);font-size:36px;font-weight:700;color:var(--gold);text-align:center;margin:8px 0}
+.pay-note{font-size:13px;color:var(--text-3);text-align:center;margin-bottom:20px}
+.pay-result{text-align:center;padding:40px 20px}
+.pay-result .big{font-size:64px;margin-bottom:16px}
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="ep-body" id="pay-loading" style="padding:60px 20px;text-align:center">
+    <div class="ep-dots"><span></span><span></span><span></span></div>
+    <p style="margin-top:16px;color:var(--text-3);font-size:14px">Loading payment…</p>
+  </div>
+
+  <div id="pay-body" style="display:none">
+    <div class="pay-hero">
+      <div class="pay-avatar" id="pay-av">💳</div>
+      <div class="pay-name" id="pay-name">—</div>
+      <div class="pay-phone" id="pay-phone">—</div>
+      <div class="pay-label" id="pay-lbl"></div>
+      <div class="pay-note" id="pay-note"></div>
+    </div>
+
+    <div style="padding:0 20px 40px">
+      <!-- Fixed amount -->
+      <div id="pay-fixed-wrap" style="display:none">
+        <div class="pay-amount-fixed" id="pay-amount-display">—</div>
+      </div>
+
+      <!-- Open amount -->
+      <div id="pay-open-wrap" style="display:none">
+        <div class="ep-label mb-4">Amount (ETB)</div>
+        <input class="ep-input" type="number" id="pay-amount-input"
+          placeholder="Enter amount" min="1" inputmode="decimal"
+          style="font-size:22px;margin-bottom:16px">
+      </div>
+
+      <!-- Logged in: pay directly -->
+      <div id="pay-action-loggedin" style="display:none">
+        <div class="ep-card mb-12" style="background:rgba(212,168,67,.06)">
+          <div style="font-size:12px;color:var(--text-3)">Paying from</div>
+          <div style="font-size:15px;font-weight:600;color:var(--text);margin-top:2px" id="pay-from-phone">—</div>
+          <div style="font-size:13px;color:var(--gold);font-family:var(--fm)" id="pay-from-bal">Balance: —</div>
+        </div>
+        <button class="ep-btn ep-btn-gold" onclick="doPayNow()" id="pay-now-btn">Pay Now</button>
+        <p style="font-size:11px;color:var(--text-3);text-align:center;margin-top:8px">
+          Secured by ኢE Pay · Instant transfer
+        </p>
+      </div>
+
+      <!-- Not logged in: prompt to login -->
+      <div id="pay-action-guest" style="display:none">
+        <div class="ep-card mb-12" style="border-color:var(--gold)">
+          <p style="font-size:14px;color:var(--text-2);margin:0;line-height:1.6">
+            💡 You need an ኢE Pay account to send this payment.<br>It's free and takes 30 seconds.
+          </p>
+        </div>
+        <button class="ep-btn ep-btn-gold" onclick="EP_CORE.nav('register')">Create Free Account</button>
+        <button class="ep-btn ep-btn-ghost" onclick="EP_CORE.nav('login')" style="margin-top:8px">I already have an account</button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Result -->
+  <div id="pay-result" style="display:none">
+    <div class="pay-result">
+      <div class="big" id="result-icon">✅</div>
+      <h2 style="font-family:var(--fd);font-size:22px;color:var(--gold);margin-bottom:8px" id="result-title">Payment Sent!</h2>
+      <p style="color:var(--text-3);font-size:14px;line-height:1.6" id="result-msg"></p>
+      <button class="ep-btn ep-btn-gold" onclick="EP_CORE.nav('wallet')" style="margin-top:24px">View Wallet</button>
+    </div>
+  </div>
+
+  <!-- Error -->
+  <div id="pay-error" style="display:none">
+    <div class="pay-result">
+      <div class="big">❌</div>
+      <h2 style="font-family:var(--fd);font-size:20px;color:var(--err);margin-bottom:8px">Link Not Found</h2>
+      <p style="color:var(--text-3);font-size:14px">This payment link is invalid, expired, or has already been used.</p>
+      <button class="ep-btn ep-btn-ghost" onclick="EP_CORE.nav('wallet')" style="margin-top:20px">Go to Wallet</button>
+    </div>
+  </div>
+
+</div>
+<div id="ep-toast"></div>
+<script src="js/config.js"></script>
+<script src="js/api.js"></script>
+<script src="js/core.js"></script>
+<script src="js/devpanel.js"></script>
+<script src="js/desktop.js"></script>
+<script>
+var _link = null;
+var _code  = '';
+
+EP_CORE.onReady(async function() {
+  // Get code from URL: /Etel.Pay/pay/CODE or ?code=CODE
+  var path  = window.location.pathname;
+  var parts = path.split('/');
+  _code = parts[parts.length - 1] || '';
+  if (!_code || _code === 'pay.html' || _code === 'pay') {
+    var params = new URLSearchParams(window.location.search);
+    _code = params.get('code') || '';
+  }
+
+  if (!_code) { show('error'); return; }
+
+  // Load link info (no auth needed)
+  try {
+    var j = await EP_API.call('ep_paylink_info', {code: _code});
+    if (!j.success) { show('error'); return; }
+    _link = j.data;
+    renderLink(_link);
+  } catch(e) { show('error'); }
+});
+
+function renderLink(l) {
+  // Avatar
+  var av = document.getElementById('pay-av');
+  if (l.recipient && l.recipient.avatar) {
+    av.innerHTML = '<img src="'+l.recipient.avatar+'" alt="">';
+  }
+  document.getElementById('pay-name').textContent  = l.recipient ? (l.recipient.name || l.recipient.phone) : '—';
+  document.getElementById('pay-phone').textContent = l.recipient ? l.recipient.phone : '';
+  document.getElementById('pay-lbl').textContent   = l.label || 'Payment Request';
+  if (l.note) document.getElementById('pay-note').textContent = l.note;
+
+  if (l.amount) {
+    document.getElementById('pay-fixed-wrap').style.display = 'block';
+    document.getElementById('pay-amount-display').textContent = 'ETB ' + EP_CORE.numFmt(l.amount);
+  } else {
+    document.getElementById('pay-open-wrap').style.display = 'block';
+  }
+
+  // Check auth
+  var loggedIn = EP_CORE.loadSaved();
+  if (loggedIn) {
+    document.getElementById('pay-from-phone').textContent = EP_CORE.getPhone();
+    document.getElementById('pay-action-loggedin').style.display = 'block';
+    // Load balance
+    EP_API.getBalance().then(function(b) {
+      if (b.success) {
+        document.getElementById('pay-from-bal').textContent = 'Balance: ETB ' + EP_CORE.numFmt(b.data.etb);
+      }
+    }).catch(function(){});
+  } else {
+    document.getElementById('pay-action-guest').style.display = 'block';
+  }
+
+  show('body');
+}
+
+async function doPayNow() {
+  var amount = _link.amount || parseFloat(document.getElementById('pay-amount-input').value) || 0;
+  if (amount <= 0) { EP_CORE.toast('Enter amount', 'err'); return; }
+
+  var btn = document.getElementById('pay-now-btn');
+  var restore = EP_CORE.btnLoading(btn);
+  try {
+    var j = await EP_API.call('ep_paylink_pay', {code: _code, amount: amount});
+    restore();
+    if (j.success) {
+      document.getElementById('result-title').textContent = 'Payment Sent! ✅';
+      document.getElementById('result-msg').textContent =
+        'ETB ' + EP_CORE.numFmt(j.data.amount) + ' sent to ' +
+        (_link.recipient ? (_link.recipient.name || _link.recipient.phone) : 'recipient') +
+        '. Reference: ' + j.data.ref;
+      show('result');
+    } else {
+      EP_CORE.toast((j.data && j.data.message) || 'Payment failed', 'err');
+    }
+  } catch(e) { restore(); EP_CORE.toast('Network error', 'err'); }
+}
+
+function show(which) {
+  ['loading','body','result','error'].forEach(function(s) {
+    var el = document.getElementById('pay-'+s);
+    if (el) el.style.display = s===which ? 'block' : 'none';
+  });
+}
+</script>
+</body>
+</html>
