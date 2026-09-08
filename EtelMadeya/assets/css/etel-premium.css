@@ -214,6 +214,161 @@ textarea, #reportSearch, #impVehicleType {
     to   { opacity: 1; transform: translateY(0); }
 }
 
+/* ═══ ETELID-ONLY PREMIUM LOGIN SCREEN ════════════════════════════
+   Controller Panel + Admin Panel login screens: EtelID SSO is now the
+   only sign-in method, so this is the single most-seen "first
+   impression" surface — worth its own dedicated depth/3D treatment. */
+
+.login-screen {
+    overflow: hidden;
+    perspective: 1400px;
+}
+
+/* Floating ambient glow orbs behind the card, for depth/parallax feel */
+.login-orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(60px);
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.55;
+    animation: ep-orb-float 14s ease-in-out infinite;
+}
+
+.login-orb-1 {
+    width: 360px; height: 360px;
+    top: -120px; left: -100px;
+    background: radial-gradient(circle, var(--ep-gold-glow) 0%, transparent 70%);
+    animation-delay: 0s;
+}
+
+.login-orb-2 {
+    width: 420px; height: 420px;
+    bottom: -160px; right: -120px;
+    background: radial-gradient(circle, rgba(139,105,20,0.5) 0%, transparent 70%);
+    animation-delay: -7s;
+}
+
+@keyframes ep-orb-float {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    50%      { transform: translate(30px, -20px) scale(1.08); }
+}
+
+/* The card itself: glass surface + a slowly-rotating conic-gradient
+   "aura" ring behind it, achieved with a blurred ::before so no extra
+   markup is needed. */
+.login-box-etelid {
+    position: relative;
+    z-index: 1;
+    overflow: visible;
+    animation: ep-card-rise 0.6s var(--ep-ease-spring) both;
+    transform-style: preserve-3d;
+}
+
+.login-box-etelid::before {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    z-index: -1;
+    border-radius: 20px;
+    background: conic-gradient(from 0deg,
+        var(--ep-gold-deep), var(--ep-gold), var(--ep-gold-light),
+        var(--ep-gold-pale), var(--ep-gold-light), var(--ep-gold),
+        var(--ep-gold-deep));
+    filter: blur(14px);
+    opacity: 0.65;
+    animation: ep-ring-spin 6s linear infinite;
+}
+
+@keyframes ep-ring-spin {
+    to { transform: rotate(360deg); }
+}
+
+@keyframes ep-card-rise {
+    from { opacity: 0; transform: translateY(24px) rotateX(6deg); }
+    to   { opacity: 1; transform: translateY(0) rotateX(0); }
+}
+
+.login-box-etelid:hover {
+    transform: translateY(-2px) rotateX(1deg);
+}
+
+/* Pulsing glow ring around the logo */
+.login-logo-ring {
+    position: relative;
+    width: 120px;
+    height: 120px;
+    margin: 0 auto 20px;
+}
+
+.login-logo-ring::before {
+    content: '';
+    position: absolute;
+    inset: -10px;
+    border-radius: 50%;
+    background: radial-gradient(circle, var(--ep-gold-glow) 0%, transparent 68%);
+    animation: ep-logo-pulse 2.6s ease-in-out infinite;
+}
+
+@keyframes ep-logo-pulse {
+    0%, 100% { transform: scale(0.94); opacity: 0.7; }
+    50%      { transform: scale(1.08); opacity: 1; }
+}
+
+.login-logo-ring .login-logo {
+    position: relative;
+    z-index: 1;
+}
+
+/* "Secured by EtelID" trust badge */
+.login-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin: 0 auto 22px;
+    padding: 5px 14px;
+    border-radius: var(--ep-r-md);
+    background: var(--ep-gold-subtle);
+    border: 1px solid var(--ep-gold-border);
+    color: var(--ep-gold-light);
+    font-family: var(--ep-font-ui);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+}
+
+.login-badge svg { flex-shrink: 0; }
+
+/* Icon-prefixed inputs */
+.form-group-icon { position: relative; text-align: left; }
+
+.form-group-icon .input-icon {
+    position: absolute;
+    left: 12px;
+    top: 38px;
+    color: var(--ep-gold-dim);
+    pointer-events: none;
+}
+
+.form-group-icon input {
+    padding-left: 40px !important;
+}
+
+.login-footer-note {
+    margin-top: 20px;
+    font-size: 12.5px;
+    color: rgba(255,255,255,0.55);
+}
+
+.login-footer-note a {
+    color: var(--ep-gold-light);
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.login-footer-note a:hover { text-decoration: underline; }
+
 /* ═══ REDUCED MOTION — respect user preference ════════════════════ */
 @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after {
