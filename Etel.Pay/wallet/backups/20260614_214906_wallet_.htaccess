@@ -1,0 +1,68 @@
+# ── ኢE Pay Wallet — LiteSpeed v4 ────────────────────────────
+Options -Indexes
+DirectoryIndex login index
+
+# ── Clean URLs (no .html extension) ──────────────────────────
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+
+  # If the exact file exists, serve it
+  RewriteCond %{REQUEST_FILENAME} -f [OR]
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^ - [L]
+
+  # /wallet → login.html (root of wallet folder)
+  RewriteRule ^$ login.html [L]
+
+  # Clean URLs: /wallet/dashboard → wallet.html, /wallet/send → send.html etc
+  RewriteRule ^login$    login.html    [L]
+  RewriteRule ^wallet$   wallet.html   [L]
+  RewriteRule ^send$     send.html     [L]
+  RewriteRule ^history$  history.html  [L]
+  RewriteRule ^qr$       qr.html       [L]
+  RewriteRule ^profile$  profile.html  [L]
+  RewriteRule ^admin$    admin.html    [L]
+  RewriteRule ^register$ register.html [L]
+  RewriteRule ^updater$    updater.html   [L]
+  RewriteRule ^topup$      topup.html     [L]
+  RewriteRule ^pay-links$  pay-links.html [L]
+  RewriteRule ^analytics$  analytics.html [L]
+  RewriteRule ^kyc$        kyc.html       [L]
+
+  # Favicon
+  RewriteRule ^favicon\.ico$ icons/icon-96.png [L,R=301]
+</IfModule>
+
+# ── MIME types ────────────────────────────────────────────────
+<IfModule mod_mime.c>
+  AddType application/json    .json
+  AddType text/javascript     .js
+  AddType image/x-icon        .ico
+</IfModule>
+
+# ── Gzip ─────────────────────────────────────────────────────
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/css application/javascript application/json
+</IfModule>
+
+# ── Cache ────────────────────────────────────────────────────
+<IfModule mod_expires.c>
+  ExpiresActive On
+  ExpiresByType text/css               "access plus 7 days"
+  ExpiresByType application/javascript "access plus 7 days"
+  ExpiresByType image/png              "access plus 30 days"
+  ExpiresByType application/json       "access plus 0 seconds"
+</IfModule>
+
+# ── Security headers ─────────────────────────────────────────
+<IfModule mod_headers.c>
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set X-Frame-Options "SAMEORIGIN"
+  Header always set Service-Worker-Allowed "/"
+</IfModule>
+
+# ── Block .env ────────────────────────────────────────────────
+<Files ".env">
+  Order Allow,Deny
+  Deny from all
+</Files>
