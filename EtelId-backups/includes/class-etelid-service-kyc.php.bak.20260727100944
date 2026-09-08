@@ -1,0 +1,111 @@
+<?php
+/**
+ * EtelID Service API — KYC endpoint extension
+ * Add this file to: EtelId/wp-content/plugins/etel-id-v3/includes/
+ * Then add to the plugin bootstrap: require_once 'includes/class-etelid-service-kyc.php';
+ *
+ * Adds route: POST /etelid/v1/service/kyc
+ * Returns full KYC data for cross-system use (EtelPay, Delivery, Madeya, etc.)
+ */
+if (!defined('ABSPATH')) exit;
+
+class EtelID_Service_KYC {
+
+    public static function init() {
+        add_action('rest_api_init', array(__CLASS__, 'register'));
+    }
+
+    public static function register() {
+        register_rest_route('etelid/v1', '/service/kyc', array(
+            'methods'             => 'POST',
+            'callback'            => array(__CLASS__, 'handle'),
+            'permission_callback' => array('EtelID_Service_API', 'check_service_key'),
+        ));
+    }
+
+    public static function handle(WP_REST_Request $req) {
+        global $wpdb;
+        $identifier = sanitize_text_field($req->get_param('identifier') ?: '');
+        $type       = sanitize_text_field($req->get_param('type') ?: 'phone');
+        if (!$identifier) return new WP_Error('missing_param', 'identifier required', array('status'=>400));
+
+        $prefix = $wpdb->prefix . 'etelid_';
+
+        /* Resolve member — kyc_level/fayda_fin/pass2_completed_at live
+         * directly on the members table (see class-etelid-db.php
+         * upgrade_schema "Upgrade 4"). There is no separate kyc table. */
+        if ($type === 'fin') {
+            $member = $wpdb->get_row($wpdb->prepare(
+                "SELECT * FROM {$prefix}members WHERE fin = %s LIMIT 1", $identifier), ARRAY_A);
+        } else {
+            // phone
+            $clean = preg_replace('/[^0-9+]/', '', $identifier);
+            $member = $wpdb->get_row($wpdb->prepare(
+                "SELECT * FROM {$prefix}members WHERE phone = %s OR phone = %s LIMIT 1",
+                $clean, '0'.ltrim($clean, '+251')), ARRAY_A);
+        }
+
+        if (!$member) {
+            return new WP_Error('not_found', 'Member not found', array('status'=>404));
+        }
+
+        $kyc_level = (int)(isset($member['kyc_level']) ? $member['kyc_level'] : 0);
+
+        /* Build response — never expose sensitive raw fields (no Fayda
+         * images, no OCR text, no password hash). */
+        $response = array(
+            'member' => array(
+                'etel_id'    => $member['etel_id'],
+                'fin'        => $member['fin'],
+                'full_name'  => $member['full_name'],
+                'phone'      => $member['phone'],
+                'email'      => $member['email'],
+                'status'     => $member['status'],
+                'kyc_level'  => $kyc_level,
+                'dob'        => $member['dob'],
+                'sex'        => isset($member['sex']) ? $member['sex'] : null,
+                'photo_url'  => !empty($member['photo_url']) ? esc_url($member['photo_url']) : null,
+                'nationality'=> isset($member['nationality']) ? $member['nationality'] : 'Ethiopian',
+                'registered_at'=> $member['created_at'],
+            ),
+            'kyc' => array(
+                'level'        => $kyc_level,
+                'level_label'  => self::level_label($kyc_level),
+                'fayda_fin'    => $kyc_level >= 1 ? (isset($member['fayda_fin']) ? $member['fayda_fin'] : '') : null,
+                'verified_at'  => $kyc_level >= 2 ? (isset($member['pass2_completed_at']) ? $member['pass2_completed_at'] : null) : null,
+                'is_verified'  => $kyc_level >= 2,
+            ),
+            /* Business rule (Etel, June 2026): Etel Pay requires the
+             * SECOND verification pass (biometric + additional info),
+             * not just the Fayda quick-register. Delivery/Ride only need
+             * Pass 1. */
+            'cross_system' => array(
+                'etelpay_allowed'   => $kyc_level >= 2 && $member['status'] === 'active',
+                'delivery_allowed'  => $kyc_level >= 1 && $member['status'] === 'active',
+                'ride_allowed'      => $kyc_level >= 1 && $member['status'] === 'active',
+                'high_value_txn'    => $kyc_level >= 2,
+            ),
+        );
+
+        /* Log this cross-system KYC access (best-effort — table may not
+         * exist on older installs; fail silently rather than fatal). */
+        $headers = function_exists('getallheaders') ? getallheaders() : array();
+        $app     = isset($headers['X-Etel-App']) ? sanitize_text_field($headers['X-Etel-App']) : 'unknown';
+        $wpdb->suppress_errors(true);
+        $wpdb->insert($prefix.'kyc_access_log', array(
+            'member_id'   => (int)$member['id'],
+            'accessor_app'=> $app,
+            'accessor_ip' => isset($_SERVER['REMOTE_ADDR']) ? sanitize_text_field($_SERVER['REMOTE_ADDR']) : '',
+            'accessed_at' => current_time('mysql'),
+        ));
+        $wpdb->suppress_errors(false);
+
+        return rest_ensure_response(array('member' => $response['member'], 'kyc' => $response['kyc'], 'cross_system' => $response['cross_system']));
+    }
+
+    private static function level_label($level) {
+        $labels = array(0=>'None',1=>'Fayda Quick-Registered',2=>'Biometric + Info Verified (EtelPay unlocked)');
+        return isset($labels[$level]) ? $labels[$level] : 'Unknown';
+    }
+}
+EtelID_Service_KYC::init();

@@ -1,0 +1,215 @@
+<?php
+/**
+ * Etel-ID Premium — Member Authentication System
+ *
+ * @package    Etel-ID Premium
+ * @version    2.1.0
+ * @author     Etel Group · ኢትኤል ቡድን
+ * @link       https://etelgroup.com
+ * @since      2.1.0
+ *
+ * Standalone auth: no WordPress user accounts needed.
+ * Members sign up / log in with phone + password.
+ * Sessions stored in {prefix}etelid_sessions table.
+ * All passwords hashed with password_hash (bcrypt, PHP 5.5+).
+ * Falls back to SHA-256 on PHP < 5.5 shared hosts.
+ */
+if ( ! defined( 'ABSPATH' ) ) exit;
+
+class EtelID_Auth {
+
+    const SESSION_COOKIE  = 'etelid_session';
+    const SESSION_SECONDS = 2592000; /* 30 days */
+    const TABLE_SESSIONS  = 'etelid_sessions';
+
+    /* ─── Install session table ──────────────────────────── */
+    public static function install() {
+        global $wpdb;
+        $table = $wpdb->prefix . self::TABLE_SESSIONS;
+        $c     = $wpdb->get_charset_collate();
+        $sql   = "CREATE TABLE IF NOT EXISTS {$table} (
+            id         BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+            member_id  BIGINT UNSIGNED NOT NULL,
+            token      VARCHAR(64)     NOT NULL,
+            ip         VARCHAR(45)     NOT NULL DEFAULT '',
+            ua         VARCHAR(255)    NOT NULL DEFAULT '',
+            created_at DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            expires_at DATETIME        NOT NULL,
+            PRIMARY KEY (id),
+            UNIQUE KEY uk_token (token),
+            KEY idx_member (member_id),
+            KEY idx_expires (expires_at)
+        ) {$c};";
+        require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+        dbDelta( $sql );
+    }
+
+    /* ─── Password helpers ───────────────────────────────── */
+    public static function hash_password( $plain ) {
+        if ( function_exists( 'password_hash' ) ) {
+            return password_hash( $plain, PASSWORD_BCRYPT );
+        }
+        return hash( 'sha256', 'etelid_v2_' . $plain . '_salt_9x' );
+    }
+
+    public static function verify_password( $plain, $hash ) {
+        if ( function_exists( 'password_verify' ) ) {
+            /* Also handle legacy sha256 hashes */
+            if ( strlen( $hash ) === 64 ) {
+                return hash_equals( $hash, hash( 'sha256', 'etelid_v2_' . $plain . '_salt_9x' ) );
+            }
+            return password_verify( $plain, $hash );
+        }
+        return hash_equals( $hash, hash( 'sha256', 'etelid_v2_' . $plain . '_salt_9x' ) );
+    }
+
+    /* ─── Registration ───────────────────────────────────── */
+    /**
+     * Register a new member account.
+     * @param  array          $data  Keys: phone, password, full_name, full_name_am, dob, sex,
+     *                               blood_type, nationality, region, zone, woreda,
+     *                               primary_company_slug, role, department, email
+     * @return int|WP_Error   member row id on success
+     */
+    public static function register( $data ) {
+        /* Validate phone */
+        $phone = isset( $data['phone'] ) ? preg_replace( '/\s+/', '', $data['phone'] ) : '';
+        if ( ! $phone ) return new WP_Error( 'phone_required', 'Phone number is required.' );
+
+        /* Check duplicate */
+        $existing = EtelID_DB::find_by_phone( $phone );
+        if ( $existing ) {
+            return new WP_Error( 'phone_exists', 'An account with this phone number already exists. Please sign in.' );
+        }
+
+        /* Validate password */
+        $password = isset( $data['password'] ) ? $data['password'] : '';
+        if ( strlen( $password ) < 6 ) {
+            return new WP_Error( 'weak_password', 'Password must be at least 6 characters.' );
+        }
+
+        /* Hash password and store in data */
+        $data['phone']         = $phone;
+        $data['password_hash'] = self::hash_password( $password );
+        unset( $data['password'] );
+        unset( $data['password_confirm'] );
+
+        /* Create the member record (generates Etel-ID, FIN, card number etc.) */
+        $member_id = EtelID_Generator::create( $data );
+        if ( is_wp_error( $member_id ) ) return $member_id;
+
+        /* Save password hash */
+        EtelID_DB::update_member( $member_id, array( 'pin_hash' => $data['password_hash'] ) );
+
+        /* Log */
+        EtelID_DB::log( $member_id, '', 'registered', 'Self-registration via portal' );
+
+        return $member_id;
+    }
+
+    /* ─── Login ──────────────────────────────────────────── */
+    /**
+     * Authenticate with phone + password. Returns member object or WP_Error.
+     */
+    public static function login( $phone, $password ) {
+        $phone  = preg_replace( '/\s+/', '', $phone );
+        $member = EtelID_DB::find_by_phone( $phone );
+
+        if ( ! $member ) {
+            return new WP_Error( 'not_found', 'No account found with this phone number.' );
+        }
+        if ( $member->status === 'suspended' ) {
+            return new WP_Error( 'suspended', 'This account has been suspended. Contact security@etelgroup.com.' );
+        }
+        if ( $member->status === 'revoked' ) {
+            return new WP_Error( 'revoked', 'This account has been revoked.' );
+        }
+        if ( empty( $member->pin_hash ) ) {
+            return new WP_Error( 'no_password', 'No password set. Please reset your password or contact support.' );
+        }
+        if ( ! self::verify_password( $password, $member->pin_hash ) ) {
+            EtelID_DB::log( $member->id, $member->etel_id, 'login_failed', 'Wrong password' );
+            return new WP_Error( 'wrong_password', 'Incorrect password. Please try again.' );
+        }
+
+        /* Start session */
+        $token = self::create_session( $member->id );
+        EtelID_DB::log( $member->id, $member->etel_id, 'login', 'Member portal login' );
+
+        return array( 'member' => $member, 'token' => $token );
+    }
+
+    /* ─── Session management ─────────────────────────────── */
+    public static function create_session( $member_id ) {
+        global $wpdb;
+        $table   = $wpdb->prefix . self::TABLE_SESSIONS;
+        $token   = bin2hex( function_exists('random_bytes') ? random_bytes(32) : openssl_random_pseudo_bytes(32) );
+        $expires = date( 'Y-m-d H:i:s', time() + self::SESSION_SECONDS );
+        $ip      = EtelID_Security::get_ip();
+        $ua      = isset( $_SERVER['HTTP_USER_AGENT'] ) ? substr( sanitize_text_field( wp_unslash( $_SERVER['HTTP_USER_AGENT'] ) ), 0, 255 ) : '';
+
+        $wpdb->insert( $table, array(
+            'member_id'  => (int) $member_id,
+            'token'      => $token,
+            'ip'         => $ip,
+            'ua'         => $ua,
+            'expires_at' => $expires,
+        ));
+
+        /* Set secure cookie */
+        $secure = is_ssl();
+        setcookie(
+            self::SESSION_COOKIE,
+            $token,
+            time() + self::SESSION_SECONDS,
+            COOKIEPATH,
+            COOKIE_DOMAIN,
+            $secure,
+            true /* httponly */
+        );
+
+        return $token;
+    }
+
+    public static function get_current_member() {
+        if ( ! isset( $_COOKIE[ self::SESSION_COOKIE ] ) ) return null;
+        $token = sanitize_text_field( wp_unslash( $_COOKIE[ self::SESSION_COOKIE ] ) );
+        return self::member_from_token( $token );
+    }
+
+    public static function member_from_token( $token ) {
+        global $wpdb;
+        $table  = $wpdb->prefix . self::TABLE_SESSIONS;
+        $now    = date( 'Y-m-d H:i:s' );
+        $row    = $wpdb->get_row( $wpdb->prepare(
+            "SELECT member_id FROM {$table} WHERE token = %s AND expires_at > %s LIMIT 1",
+            $token, $now
+        ));
+        if ( ! $row ) return null;
+        return EtelID_DB::get_member( $row->member_id );
+    }
+
+    public static function logout() {
+        if ( isset( $_COOKIE[ self::SESSION_COOKIE ] ) ) {
+            global $wpdb;
+            $token = sanitize_text_field( wp_unslash( $_COOKIE[ self::SESSION_COOKIE ] ) );
+            $table = $wpdb->prefix . self::TABLE_SESSIONS;
+            $wpdb->delete( $table, array( 'token' => $token ) );
+        }
+        setcookie( self::SESSION_COOKIE, '', time() - 3600, COOKIEPATH, COOKIE_DOMAIN );
+    }
+
+    public static function is_logged_in() {
+        return (bool) self::get_current_member();
+    }
+
+    /* ─── Purge expired sessions (run on login) ──────────── */
+    public static function purge_expired() {
+        global $wpdb;
+        $table = $wpdb->prefix . self::TABLE_SESSIONS;
+        $wpdb->query( $wpdb->prepare(
+            "DELETE FROM {$table} WHERE expires_at < %s",
+            date( 'Y-m-d H:i:s' )
+        ));
+    }
+}

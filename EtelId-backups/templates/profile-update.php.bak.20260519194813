@@ -1,0 +1,509 @@
+<?php
+/**
+ * Etel-ID Premium — Member Profile Updater v3.3.1
+ * Accessible at /etel-id/profile/
+ * Standalone page — member must be logged in.
+ */
+if ( ! defined( 'ABSPATH' ) ) exit;
+
+$member = EtelID_Auth::get_current_member();
+if ( ! $member ) { wp_redirect( home_url('/etel-id/login/') ); exit; }
+
+$logo_src  = defined('ETELID_LOGO_B64') ? ETELID_LOGO_B64 : ETELID_URL.'public/images/etel-logo.png';
+$org_name  = get_option('etelid_org_name','Etel Group');
+$companies = EtelID_Generator::companies();
+$regions   = EtelID_Generator::regions();
+$blood     = EtelID_Generator::blood_types();
+$nonce     = wp_create_nonce('etelid_profile_update');
+$ajax      = admin_url('admin-ajax.php');
+
+$pub_css  = file_get_contents(ETELID_PATH.'public/css/etelid-public.css');
+$card_css = file_get_contents(ETELID_PATH.'public/css/etelid-card.css');
+?><!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Update Profile · <?php echo esc_html($member->full_name); ?></title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=JetBrains+Mono:wght@400;600&family=Cormorant+Garamond:wght@400;600;700&family=Noto+Sans+Ethiopic:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+<?php echo $pub_css; ?>
+<?php echo $card_css; ?>
+
+:root{
+  --g1:#FDF6D8;--g2:#F5E6A3;--g3:#E8C84A;--g4:#D4AF37;
+  --g5:#C8922A;--g6:#A07020;--g7:#7A5518;--g8:#4A3210;--g9:#2A1A06;
+  --surface:#FFFEF8;--surface2:#FDF8EE;--surface3:#F5EDD5;
+  --ink:#1A0E00;--ink2:#3A2200;--ink3:#7A5520;
+}
+@keyframes holo{0%{background-position:0 0}100%{background-position:300% 0}}
+@keyframes slide-up{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+@keyframes shimmer{0%{background-position:-400px 0}100%{background-position:400px 0}}
+
+body{
+  background:
+    radial-gradient(ellipse at 20% 10%,rgba(255,230,80,.28) 0%,transparent 40%),
+    radial-gradient(ellipse at 80% 90%,rgba(60,30,0,.3) 0%,transparent 40%),
+    linear-gradient(150deg,#3A2000 0%,#6A4A08 15%,#C8922A 38%,#D4AF37 50%,#C8922A 62%,#6A4A08 85%,#3A2000 100%);
+  min-height:100vh;font-family:'Cormorant Garamond',serif;position:relative;
+}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background-image:repeating-linear-gradient(30deg,transparent 0,transparent 22px,rgba(255,255,255,.025) 22px,rgba(255,255,255,.025) 23px),
+  repeating-linear-gradient(-30deg,transparent 0,transparent 22px,rgba(255,255,255,.025) 22px,rgba(255,255,255,.025) 23px);}
+
+/* Nav */
+.pf-nav{background:linear-gradient(135deg,var(--g9),var(--g8),var(--g9));border-bottom:2px solid var(--g4);
+  padding:0 20px;height:60px;display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:0;z-index:100;box-shadow:0 4px 24px rgba(20,10,0,.5);gap:12px;}
+.pf-nav::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,transparent,var(--g4),var(--g1),var(--g4),transparent);
+  background-size:300% 100%;animation:holo 3s linear infinite;}
+.pf-nav-logo{height:36px;width:auto;object-fit:contain;filter:brightness(1.2) drop-shadow(0 2px 6px rgba(0,0,0,.5));flex-shrink:0;}
+.pf-nav-title{font-family:'Syne',sans-serif;font-size:15px;font-weight:800;color:var(--g1);flex:1;}
+.pf-nav-sub{font-family:'Noto Sans Ethiopic',sans-serif;font-size:9px;color:var(--g4);display:block;}
+.pf-back-btn{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;
+  background:rgba(212,175,55,.12);color:var(--g2);border:1px solid rgba(212,175,55,.3);
+  border-radius:8px;font-family:'Syne',sans-serif;font-size:11px;font-weight:800;
+  cursor:pointer;text-decoration:none;transition:all .2s;flex-shrink:0;}
+.pf-back-btn:hover{background:rgba(212,175,55,.2);color:var(--g1);text-decoration:none;}
+
+/* Content */
+.pf-wrap{max-width:720px;margin:0 auto;padding:28px 16px 60px;position:relative;z-index:1;}
+
+/* Member badge at top */
+.pf-member-badge{
+  display:flex;align-items:center;gap:14px;
+  padding:16px 20px;
+  background:rgba(20,10,0,.45);
+  border:1.5px solid rgba(212,175,55,.3);
+  border-radius:14px;margin-bottom:24px;
+  backdrop-filter:blur(8px);
+  animation:slide-up .4s ease both;
+}
+.pf-avatar{
+  width:52px;height:52px;border-radius:50%;
+  background:linear-gradient(135deg,var(--g5),var(--g7));
+  border:2px solid var(--g4);
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Syne',sans-serif;font-size:18px;font-weight:800;color:var(--g1);
+  overflow:hidden;flex-shrink:0;
+}
+.pf-avatar img{width:100%;height:100%;object-fit:cover;border-radius:50%;}
+.pf-member-info-name{font-family:'Syne',sans-serif;font-size:16px;font-weight:800;color:var(--g1);}
+.pf-member-info-id{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--g4);margin-top:2px;}
+.pf-member-info-card{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--g5);margin-top:1px;}
+
+/* Section card */
+.pf-section{
+  background:rgba(20,10,0,.45);
+  border:1.5px solid rgba(212,175,55,.28);
+  border-radius:16px;overflow:hidden;
+  backdrop-filter:blur(10px);
+  margin-bottom:20px;
+  animation:slide-up .4s ease both;
+}
+.pf-section-head{
+  padding:14px 20px;
+  background:linear-gradient(135deg,var(--g9),var(--g8));
+  border-bottom:1px solid rgba(212,175,55,.3);
+  display:flex;align-items:center;gap:10px;
+}
+.pf-section-icon{width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,var(--g6),var(--g8));
+  display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;}
+.pf-section-head h3{font-family:'Syne',sans-serif;font-size:13px;font-weight:800;color:var(--g2);}
+.pf-section-body{padding:20px;}
+
+/* Form grid */
+.pf-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+@media(max-width:500px){.pf-grid{grid-template-columns:1fr;}}
+.pf-field{display:flex;flex-direction:column;gap:5px;}
+.pf-field.full{grid-column:1/-1;}
+.pf-label{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--g5);
+  text-transform:uppercase;letter-spacing:1.5px;display:flex;align-items:center;gap:4px;}
+.pf-label .req{color:#f87171;}
+.pf-input,.pf-select,.pf-textarea{
+  width:100%;padding:11px 14px;
+  background:rgba(212,175,55,.07);
+  border:1.5px solid rgba(212,175,55,.25);
+  border-radius:8px;
+  font-size:15px;font-family:'Cormorant Garamond',serif;
+  color:var(--g1);transition:border-color .2s,box-shadow .2s;
+}
+.pf-input:focus,.pf-select:focus,.pf-textarea:focus{
+  border-color:var(--g4);outline:none;
+  box-shadow:0 0 0 3px rgba(212,175,55,.18);
+  background:rgba(212,175,55,.1);
+}
+.pf-input::placeholder{color:rgba(212,175,55,.35);}
+.pf-input[readonly]{opacity:.6;cursor:default;}
+.pf-textarea{resize:vertical;min-height:80px;}
+.pf-hint{font-size:11px;color:var(--g6);font-family:'JetBrains Mono',monospace;}
+
+/* Photo upload */
+.pf-photo-area{
+  display:flex;flex-direction:column;align-items:center;gap:12px;
+  padding:20px;
+  background:rgba(212,175,55,.05);
+  border:2px dashed rgba(212,175,55,.3);
+  border-radius:12px;cursor:pointer;transition:all .2s;
+}
+.pf-photo-area:hover{background:rgba(212,175,55,.1);border-color:rgba(212,175,55,.5);}
+.pf-photo-preview{
+  width:80px;height:80px;border-radius:50%;
+  border:3px solid var(--g4);overflow:hidden;
+  background:linear-gradient(135deg,var(--g6),var(--g8));
+  display:flex;align-items:center;justify-content:center;
+  font-size:32px;color:var(--g1);position:relative;
+}
+.pf-photo-preview img{width:100%;height:100%;object-fit:cover;border-radius:50%;}
+.pf-photo-lbl{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--g4);text-transform:uppercase;letter-spacing:1.5px;}
+.pf-photo-sub{font-size:11px;color:var(--g6);}
+input[type=file]{display:none;}
+
+/* Submit */
+.pf-submit-wrap{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-top:6px;}
+.pf-submit-btn{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:13px 28px;
+  background:linear-gradient(135deg,var(--g9),var(--g7),var(--g5),var(--g4));
+  color:var(--g1);border:none;border-radius:10px;
+  font-family:'Syne',sans-serif;font-size:14px;font-weight:800;
+  cursor:pointer;letter-spacing:.5px;
+  box-shadow:0 4px 0 var(--g9),0 6px 20px rgba(80,40,0,.3);
+  transition:all .15s;position:relative;overflow:hidden;
+}
+.pf-submit-btn::before{content:'';position:absolute;top:0;left:-100%;width:50%;height:100%;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.12),transparent);
+  animation:shimmer 2.5s infinite;}
+.pf-submit-btn:hover{transform:translateY(-1px);box-shadow:0 5px 0 var(--g9),0 8px 24px rgba(80,40,0,.35);}
+.pf-submit-btn:disabled{opacity:.7;cursor:not-allowed;transform:none;}
+.pf-msg{font-family:'JetBrains Mono',monospace;font-size:11px;padding:10px 14px;border-radius:8px;display:none;}
+.pf-msg-ok {background:rgba(34,197,94,.12);color:#86efac;border:1px solid rgba(34,197,94,.25);}
+.pf-msg-err{background:rgba(239,68,68,.12);color:#fca5a5;border:1px solid rgba(239,68,68,.25);}
+
+/* Read-only ID info */
+.pf-id-row{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:4px;}
+.pf-id-badge{
+  padding:8px 14px;background:rgba(212,175,55,.08);
+  border:1px solid rgba(212,175,55,.2);border-radius:8px;
+}
+.pf-id-badge-lbl{font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--g5);text-transform:uppercase;letter-spacing:1.5px;}
+.pf-id-badge-val{font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--g1);font-weight:700;letter-spacing:1px;margin-top:2px;}
+</style>
+</head>
+<body>
+
+<nav class="pf-nav">
+  <img src="<?php echo esc_attr($logo_src); ?>" alt="" class="pf-nav-logo">
+  <div style="flex:1;">
+    <div class="pf-nav-title">Update Profile</div>
+    <span class="pf-nav-sub">ኢትኤል ቡድን · <?php echo esc_html($org_name); ?></span>
+  </div>
+  <a href="<?php echo esc_url(home_url('/etel-id/portal/')); ?>" class="pf-back-btn">
+    <i class="ti ti-arrow-left"></i> Portal
+  </a>
+</nav>
+
+<div class="pf-wrap">
+
+  <!-- Member identity badge (read-only) -->
+  <div class="pf-member-badge">
+    <div class="pf-avatar">
+      <?php if ($member->photo_url): ?>
+      <img src="<?php echo esc_url($member->photo_url); ?>" alt="" id="pf-avatar-img">
+      <?php else: ?>
+      <span id="pf-avatar-init"><?php
+        $p = explode(' ', trim($member->full_name));
+        $i = '';
+        foreach ($p as $x) { if ($x) $i .= strtoupper(substr($x,0,1)); }
+        echo esc_html(substr($i,0,2));
+      ?></span>
+      <?php endif; ?>
+    </div>
+    <div style="flex:1;min-width:0;">
+      <div class="pf-member-info-name"><?php echo esc_html($member->full_name); ?></div>
+      <div class="pf-member-info-id"><?php echo esc_html($member->etel_id); ?> · <?php echo esc_html($member->fin); ?></div>
+      <div class="pf-member-info-card"><?php echo esc_html($member->card_number); ?></div>
+    </div>
+  </div>
+
+  <!-- Read-only identity numbers -->
+  <div class="pf-section">
+    <div class="pf-section-head">
+      <div class="pf-section-icon">🔒</div>
+      <h3>Identity Numbers (Read-only)</h3>
+    </div>
+    <div class="pf-section-body">
+      <div class="pf-id-row">
+        <div class="pf-id-badge">
+          <div class="pf-id-badge-lbl">Etel-ID</div>
+          <div class="pf-id-badge-val"><?php echo esc_html($member->etel_id); ?></div>
+        </div>
+        <div class="pf-id-badge">
+          <div class="pf-id-badge-lbl">FIN Number</div>
+          <div class="pf-id-badge-val"><?php echo esc_html($member->fin); ?></div>
+        </div>
+        <div class="pf-id-badge">
+          <div class="pf-id-badge-lbl">Card Number (16-digit)</div>
+          <div class="pf-id-badge-val" style="font-size:11px;letter-spacing:2px;"><?php echo esc_html($member->card_number); ?></div>
+        </div>
+        <div class="pf-id-badge">
+          <div class="pf-id-badge-lbl">Serial Number</div>
+          <div class="pf-id-badge-val" style="font-size:11px;"><?php echo esc_html($member->serial_number); ?></div>
+        </div>
+      </div>
+      <p class="pf-hint">These numbers are system-generated and cannot be changed.</p>
+    </div>
+  </div>
+
+  <form id="pf-form">
+
+    <!-- Photo -->
+    <div class="pf-section">
+      <div class="pf-section-head">
+        <div class="pf-section-icon">📸</div>
+        <h3>Profile Photo</h3>
+      </div>
+      <div class="pf-section-body">
+        <div class="pf-photo-area" onclick="document.getElementById('pf-photo-file').click()">
+          <div class="pf-photo-preview" id="pf-photo-preview">
+            <?php if ($member->photo_url): ?>
+            <img src="<?php echo esc_url($member->photo_url); ?>" id="pf-photo-img" alt="">
+            <?php else: ?>
+            <span style="font-size:32px;">📷</span>
+            <?php endif; ?>
+          </div>
+          <div class="pf-photo-lbl">Click to change photo</div>
+          <div class="pf-photo-sub">Paste a photo URL below or upload (JPG, PNG — passport-style recommended)</div>
+        </div>
+        <input type="file" id="pf-photo-file" accept="image/*" onchange="handlePhotoFile(this)">
+        <div class="pf-field" style="margin-top:12px;">
+          <label class="pf-label">Photo URL</label>
+          <input type="url" class="pf-input" name="photo_url" id="pf-photo-url"
+            value="<?php echo esc_attr($member->photo_url); ?>"
+            placeholder="https://example.com/photo.jpg"
+            oninput="updatePhotoPreview(this.value)">
+        </div>
+      </div>
+    </div>
+
+    <!-- Personal -->
+    <div class="pf-section">
+      <div class="pf-section-head">
+        <div class="pf-section-icon">👤</div>
+        <h3>Personal Information</h3>
+      </div>
+      <div class="pf-section-body">
+        <div class="pf-grid">
+          <div class="pf-field">
+            <label class="pf-label">Full Name (Latin) <span class="req">*</span></label>
+            <input type="text" class="pf-input" name="full_name" value="<?php echo esc_attr($member->full_name); ?>" required>
+          </div>
+          <div class="pf-field">
+            <label class="pf-label">Full Name (Amharic)</label>
+            <input type="text" class="pf-input" name="full_name_am" value="<?php echo esc_attr($member->full_name_am); ?>" placeholder="ሙሉ ስም">
+          </div>
+          <div class="pf-field">
+            <label class="pf-label">Date of Birth</label>
+            <input type="date" class="pf-input" name="dob" value="<?php echo esc_attr($member->dob); ?>">
+          </div>
+          <div class="pf-field">
+            <label class="pf-label">Sex</label>
+            <select class="pf-select" name="sex">
+              <option value="Male"   <?php selected($member->sex,'Male'); ?>>Male | ወንድ</option>
+              <option value="Female" <?php selected($member->sex,'Female'); ?>>Female | ሴት</option>
+              <option value="Other"  <?php selected($member->sex,'Other'); ?>>Other</option>
+            </select>
+          </div>
+          <div class="pf-field">
+            <label class="pf-label">Blood Type</label>
+            <select class="pf-select" name="blood_type">
+              <option value="">— Optional —</option>
+              <?php foreach ($blood as $bt): ?>
+              <option value="<?php echo esc_attr($bt); ?>" <?php selected($member->blood_type,$bt); ?>><?php echo esc_html($bt); ?></option>
+              <?php endforeach; ?>
+            </select>
+          </div>
+          <div class="pf-field">
+            <label class="pf-label">Nationality</label>
+            <input type="text" class="pf-input" name="nationality" value="<?php echo esc_attr($member->nationality ?: 'Ethiopian'); ?>">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Contact -->
+    <div class="pf-section">
+      <div class="pf-section-head">
+        <div class="pf-section-icon">📞</div>
+        <h3>Contact Information</h3>
+      </div>
+      <div class="pf-section-body">
+        <div class="pf-grid">
+          <div class="pf-field">
+            <label class="pf-label">Phone <span class="req">*</span></label>
+            <input type="tel" class="pf-input" name="phone" value="<?php echo esc_attr($member->phone); ?>" placeholder="+251 9XX XXX XXX" required>
+          </div>
+          <div class="pf-field">
+            <label class="pf-label">Email</label>
+            <input type="email" class="pf-input" name="email" value="<?php echo esc_attr($member->email); ?>" placeholder="you@example.com">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Address -->
+    <div class="pf-section">
+      <div class="pf-section-head">
+        <div class="pf-section-icon">📍</div>
+        <h3>Address</h3>
+      </div>
+      <div class="pf-section-body">
+        <div class="pf-grid">
+          <div class="pf-field">
+            <label class="pf-label">Region</label>
+            <select class="pf-select" name="region">
+              <option value="">— Select Region —</option>
+              <?php foreach ($regions as $r): ?>
+              <option value="<?php echo esc_attr($r); ?>" <?php selected($member->region,$r); ?>><?php echo esc_html($r); ?></option>
+              <?php endforeach; ?>
+            </select>
+          </div>
+          <div class="pf-field">
+            <label class="pf-label">Zone / City</label>
+            <input type="text" class="pf-input" name="zone" value="<?php echo esc_attr($member->zone); ?>" placeholder="e.g. Addis Ababa">
+          </div>
+          <div class="pf-field full">
+            <label class="pf-label">Woreda / Sub-city</label>
+            <input type="text" class="pf-input" name="woreda" value="<?php echo esc_attr(isset($member->woreda) ? $member->woreda : ''); ?>" placeholder="e.g. Bole">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Company -->
+    <div class="pf-section">
+      <div class="pf-section-head">
+        <div class="pf-section-icon">🏢</div>
+        <h3>Company & Role</h3>
+      </div>
+      <div class="pf-section-body">
+        <div class="pf-grid">
+          <div class="pf-field">
+            <label class="pf-label">Primary Company</label>
+            <select class="pf-select" name="primary_company_slug">
+              <?php foreach ($companies as $slug => $co): ?>
+              <option value="<?php echo esc_attr($slug); ?>" <?php selected(strtolower(str_replace(' ','-',$member->primary_company)), $slug); ?>><?php echo esc_html($co['name']); ?></option>
+              <?php endforeach; ?>
+            </select>
+          </div>
+          <div class="pf-field">
+            <label class="pf-label">Role / Position</label>
+            <input type="text" class="pf-input" name="role" value="<?php echo esc_attr($member->role); ?>" placeholder="e.g. Staff, Customer">
+          </div>
+          <div class="pf-field">
+            <label class="pf-label">Department</label>
+            <input type="text" class="pf-input" name="department" value="<?php echo esc_attr(isset($member->department) ? $member->department : ''); ?>" placeholder="e.g. Operations">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Submit -->
+    <div class="pf-section">
+      <div class="pf-section-body">
+        <div class="pf-submit-wrap">
+          <button type="submit" class="pf-submit-btn" id="pf-submit-btn">
+            <i class="ti ti-device-floppy"></i>
+            <span id="pf-submit-lbl">Save Profile</span>
+          </button>
+          <a href="<?php echo esc_url(home_url('/etel-id/portal/')); ?>" class="pf-back-btn">
+            <i class="ti ti-x"></i> Cancel
+          </a>
+        </div>
+        <div class="pf-msg" id="pf-msg"></div>
+      </div>
+    </div>
+
+  </form>
+
+  <div style="text-align:center;margin-top:24px;font-family:'JetBrains Mono',monospace;font-size:8px;color:rgba(212,175,55,.3);letter-spacing:2px;text-transform:uppercase;">
+    <?php echo esc_html($org_name); ?> · ኢትኤል ቡድን · v<?php echo ETELID_VERSION; ?>
+  </div>
+</div>
+
+<script>
+var _PF = { ajax:'<?php echo esc_js($ajax); ?>', nonce:'<?php echo esc_js($nonce); ?>' };
+
+/* Photo preview */
+function updatePhotoPreview(url) {
+  var p = document.getElementById('pf-photo-preview');
+  if (url) {
+    p.innerHTML = '<img src="'+url+'" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">';
+  }
+}
+function handlePhotoFile(input) {
+  var file = input.files[0];
+  if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    document.getElementById('pf-photo-url').value = e.target.result;
+    updatePhotoPreview(e.target.result);
+  };
+  reader.readAsDataURL(file);
+}
+
+/* Form submit */
+document.getElementById('pf-form').addEventListener('submit', function(e) {
+  e.preventDefault();
+  var btn = document.getElementById('pf-submit-btn');
+  var lbl = document.getElementById('pf-submit-lbl');
+  var msg = document.getElementById('pf-msg');
+  btn.disabled = true;
+  lbl.textContent = 'Saving…';
+  msg.style.display = 'none';
+
+  var data = new FormData(this);
+  var body = 'action=etelid_profile_update&nonce=' + _PF.nonce;
+  data.forEach(function(v, k) {
+    body += '&' + encodeURIComponent(k) + '=' + encodeURIComponent(v);
+  });
+
+  fetch(_PF.ajax, {
+    method:'POST',
+    headers:{'Content-Type':'application/x-www-form-urlencoded'},
+    body:body
+  }).then(function(r){return r.json();}).then(function(res) {
+    if (res.success) {
+      msg.className = 'pf-msg pf-msg-ok';
+      msg.textContent = '✓ ' + (res.data.message || 'Profile updated successfully!');
+      msg.style.display = 'block';
+      /* Update avatar if photo changed */
+      var photoUrl = document.querySelector('[name=photo_url]').value;
+      if (photoUrl) updatePhotoPreview(photoUrl);
+      /* Update name display */
+      var name = document.querySelector('[name=full_name]').value;
+      var nameEl = document.querySelector('.pf-member-info-name');
+      if (nameEl) nameEl.textContent = name;
+    } else {
+      msg.className = 'pf-msg pf-msg-err';
+      msg.textContent = '✗ ' + (res.data && res.data.message ? res.data.message : 'Update failed. Please try again.');
+      msg.style.display = 'block';
+    }
+    btn.disabled = false;
+    lbl.textContent = 'Save Profile';
+    msg.scrollIntoView({behavior:'smooth',block:'center'});
+  }).catch(function() {
+    btn.disabled = false;
+    lbl.textContent = 'Save Profile';
+    msg.className = 'pf-msg pf-msg-err';
+    msg.textContent = '✗ Network error. Please try again.';
+    msg.style.display = 'block';
+  });
+});
+</script>
+</body>
+</html>

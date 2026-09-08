@@ -1,0 +1,968 @@
+<?php
+/**
+ * Etel-ID Premium — Member Portal v4.0.0
+ * Premium standalone page. No WP theme.
+ */
+if ( ! defined( 'ABSPATH' ) ) exit;
+
+$member = EtelID_Auth::get_current_member();
+if ( ! $member ) { wp_redirect( home_url('/etel-id/login/') ); exit; }
+
+$companies    = EtelID_DB::get_companies( $member->id );
+$log          = EtelID_DB::get_log( $member->id, 6 );
+$verify_url   = EtelID_QR::verify_url( $member->etel_id );
+/* rawurlencode handles Ethiopic characters in ID prefix (e.g. ኤ.E-2026-00002) */
+$print_url    = home_url('/etel-id/print/'  . rawurlencode($member->etel_id));
+$qr_src       = 'https://api.qrserver.com/v1/create-qr-code/?size=220x220&data='
+              . urlencode($verify_url) . '&color=2A1A06&bgcolor=FFFEF8&margin=6&ecc=H';
+$org_name     = get_option('etelid_org_name','Etel Group');
+$logo_src     = defined('ETELID_LOGO_B64') ? ETELID_LOGO_B64 : ETELID_URL.'public/images/etel-logo.png';
+$nonce        = wp_create_nonce('etelid_auth');
+$ajax         = admin_url('admin-ajax.php');
+$card_css     = file_get_contents(ETELID_PATH.'public/css/etelid-card.css');
+
+/* Member helpers */
+$parts = explode(' ', trim($member->full_name));
+$init  = '';
+foreach ($parts as $p) { if ($p) $init .= strtoupper(substr($p,0,1)); }
+$init  = substr($init,0,2);
+
+$status_color = $member->status==='active' ? '#22c55e' : ($member->status==='suspended' ? '#ef4444' : '#f59e0b');
+$expiry_ts    = $member->expiry_date ? strtotime($member->expiry_date) : 0;
+$days_left    = $expiry_ts ? max(0, round(($expiry_ts - time()) / 86400)) : 0;
+$expiry_warn  = $days_left > 0 && $days_left < 90;
+
+/* Admin check */
+/* Strict admin check — only the member whose ID matches
+ * etelid_admin_member_id in Settings sees admin tools.
+ * Uses EtelID_Auth::is_site_admin() as single source of truth. */
+$is_admin = EtelID_Auth::is_site_admin( $member );
+?><!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0">
+<title>My Etel-ID · <?php echo esc_html($member->full_name); ?></title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=JetBrains+Mono:wght@400;500;600;700&family=Cormorant+Garamond:wght@400;600;700&family=Noto+Sans+Ethiopic:wght@400;600;700&family=Noto+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+<?php echo $card_css; ?>
+
+/* ════════════════════════════════════════════════
+   PORTAL v4.0 — ROOT VARIABLES
+════════════════════════════════════════════════ */
+:root{
+  --g1:#FDF6D8;--g2:#F5E6A3;--g3:#E8C84A;--g4:#D4AF37;
+  --g5:#C8922A;--g6:#A07020;--g7:#7A5518;--g8:#4A3210;--g9:#2A1A06;
+  --ink:#1A0E00;--ink2:#3A2200;--ink3:#7A5520;
+  --glass:rgba(20,10,0,.55);
+  --glass-border:rgba(212,175,55,.28);
+  --glass-head:linear-gradient(135deg,rgba(74,50,16,.95),rgba(26,14,0,.88));
+}
+
+/* ════════════════════════════════════════════════
+   ANIMATIONS
+════════════════════════════════════════════════ */
+@keyframes holo{0%{background-position:0 0}100%{background-position:300% 0}}
+@keyframes orb1{0%,100%{transform:translate(0,0)}33%{transform:translate(40px,-30px)}66%{transform:translate(-25px,20px)}}
+@keyframes orb2{0%,100%{transform:translate(0,0)}33%{transform:translate(-35px,20px)}66%{transform:translate(30px,-30px)}}
+@keyframes slide-up{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+@keyframes card-in{from{opacity:0;transform:translateY(16px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes shimmer{0%{background-position:-400px 0}100%{background-position:400px 0}}
+@keyframes pulse-dot{0%,100%{box-shadow:0 0 0 0 currentColor}50%{box-shadow:0 0 0 5px transparent}}
+@keyframes badge-in{0%{transform:scale(.5);opacity:0}70%{transform:scale(1.08)}100%{transform:scale(1);opacity:1}}
+
+/* ════════════════════════════════════════════════
+   PAGE
+════════════════════════════════════════════════ */
+body{margin:0;font-family:'Cormorant Garamond',serif;overflow-x:hidden;}
+.p-page{
+  min-height:100vh;
+  background:
+    radial-gradient(ellipse at 18% 8%,  rgba(255,230,80,.22) 0%,transparent 40%),
+    radial-gradient(ellipse at 82% 92%, rgba(60,30,0,.32)   0%,transparent 40%),
+    radial-gradient(ellipse at 50% 50%, rgba(200,146,42,.1)  0%,transparent 55%),
+    linear-gradient(155deg,#2A1600 0%,#5A3A08 15%,#9A6818 30%,#C8922A 44%,#D4AF37 50%,#C8922A 56%,#9A6818 70%,#5A3A08 85%,#2A1600 100%);
+  position:relative;
+}
+/* Guilloché overlay */
+.p-page::before{
+  content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background-image:
+    repeating-linear-gradient(30deg, transparent 0,transparent 24px,rgba(255,255,255,.022) 24px,rgba(255,255,255,.022) 25px),
+    repeating-linear-gradient(-30deg,transparent 0,transparent 24px,rgba(255,255,255,.022) 24px,rgba(255,255,255,.022) 25px);
+}
+/* Animated orbs */
+.p-orb{position:fixed;border-radius:50%;pointer-events:none;z-index:0;filter:blur(70px);}
+.p-orb-1{width:600px;height:600px;top:-180px;left:-180px;background:radial-gradient(circle,rgba(255,215,60,.18) 0%,transparent 70%);animation:orb1 14s ease-in-out infinite;}
+.p-orb-2{width:500px;height:500px;bottom:-120px;right:-120px;background:radial-gradient(circle,rgba(100,50,0,.22) 0%,transparent 70%);animation:orb2 18s ease-in-out infinite;}
+
+/* ════════════════════════════════════════════════
+   NAVIGATION
+════════════════════════════════════════════════ */
+.p-nav{
+  position:sticky;top:0;z-index:200;
+  background:linear-gradient(135deg,var(--g9),var(--g8) 40%,var(--g9));
+  border-bottom:2px solid var(--g4);
+  height:64px;padding:0 20px;
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  box-shadow:0 4px 32px rgba(15,8,0,.6);
+  backdrop-filter:blur(20px);
+}
+/* Holographic nav bottom line */
+.p-nav::after{
+  content:'';position:absolute;bottom:-2px;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,transparent,var(--g5),var(--g2),var(--g1),var(--g2),var(--g5),transparent);
+  background-size:300% 100%;animation:holo 4s linear infinite;
+}
+.p-nav-brand{display:flex;align-items:center;gap:12px;flex-shrink:0;}
+.p-nav-logo{height:42px;width:auto;object-fit:contain;filter:brightness(1.2) drop-shadow(0 2px 10px rgba(0,0,0,.5));}
+.p-nav-text{display:flex;flex-direction:column;gap:1px;}
+.p-nav-main{font-family:'Syne',sans-serif;font-size:16px;font-weight:800;color:var(--g1);line-height:1;}
+.p-nav-sub{font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--g4);letter-spacing:2px;text-transform:uppercase;}
+.p-nav-right{display:flex;align-items:center;gap:10px;}
+/* Member chip in nav */
+.p-nav-chip{
+  display:flex;align-items:center;gap:9px;
+  padding:6px 14px 6px 6px;
+  background:rgba(255,255,255,.07);
+  border:1px solid rgba(212,175,55,.3);
+  border-radius:30px;
+  backdrop-filter:blur(8px);
+}
+.p-nav-av{
+  width:38px;height:38px;border-radius:50%;
+  background:linear-gradient(135deg,var(--g5),var(--g7));
+  border:2px solid var(--g4);
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Syne',sans-serif;font-size:13px;font-weight:800;color:var(--g1);
+  overflow:hidden;flex-shrink:0;
+  box-shadow:0 0 0 3px rgba(212,175,55,.18);
+}
+.p-nav-av img{width:100%;height:100%;object-fit:cover;border-radius:50%;}
+.p-nav-name{font-family:'Syne',sans-serif;font-size:13px;font-weight:800;color:var(--g1);line-height:1.2;}
+.p-nav-id{font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--g3);letter-spacing:.5px;}
+.p-signout{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:8px 14px;background:rgba(220,38,38,.12);
+  color:#fca5a5;border:1px solid rgba(220,38,38,.28);border-radius:8px;
+  font-family:'Syne',sans-serif;font-size:11px;font-weight:800;cursor:pointer;
+  transition:all .2s;
+}
+.p-signout:hover{background:rgba(220,38,38,.22);color:#fecaca;}
+
+/* ════════════════════════════════════════════════
+   CONTENT WRAPPER
+════════════════════════════════════════════════ */
+.p-wrap{max-width:1020px;margin:0 auto;padding:24px 16px 60px;position:relative;z-index:1;}
+
+/* ════════════════════════════════════════════════
+   STATUS BAR
+════════════════════════════════════════════════ */
+.p-status{
+  display:flex;align-items:center;gap:12px;flex-wrap:wrap;
+  padding:13px 18px;
+  background:rgba(255,255,255,.06);
+  border:1px solid rgba(212,175,55,.22);
+  border-radius:12px;margin-bottom:22px;
+  backdrop-filter:blur(8px);
+  animation:slide-up .4s ease both;
+}
+.p-status-dot{
+  width:10px;height:10px;border-radius:50%;
+  background:<?php echo $status_color; ?>;
+  box-shadow:0 0 0 3px <?php echo $status_color; ?>33;
+  animation:pulse-dot 2s ease infinite;
+  color:<?php echo $status_color; ?>;
+  flex-shrink:0;
+}
+.p-status-lbl{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--g3);letter-spacing:1.5px;text-transform:uppercase;}
+.p-status-val{font-family:'JetBrains Mono',monospace;font-size:13px;color:#fff;font-weight:700;letter-spacing:.5px;}
+.p-status-sep{color:rgba(212,175,55,.25);font-size:18px;}
+.p-tier{
+  display:inline-flex;align-items:center;gap:5px;
+  padding:4px 12px;border-radius:20px;
+  background:rgba(212,175,55,.15);border:1px solid rgba(212,175,55,.3);
+  font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--g3);
+  text-transform:uppercase;letter-spacing:1px;
+}
+<?php if($expiry_warn): ?>
+.p-expiry-warn{
+  display:flex;align-items:center;gap:10px;
+  padding:12px 16px;
+  background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);
+  border-radius:10px;margin-bottom:16px;
+  font-family:'JetBrains Mono',monospace;font-size:11px;color:#fcd34d;
+}
+<?php endif; ?>
+
+/* ════════════════════════════════════════════════
+   ACTION BUTTONS GRID
+════════════════════════════════════════════════ */
+.p-actions{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(110px,1fr));
+  gap:10px;margin-bottom:24px;
+}
+.p-action{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:9px;padding:18px 10px;
+  background:rgba(255,255,255,.07);
+  border:1.5px solid rgba(212,175,55,.25);
+  border-radius:14px;cursor:pointer;text-decoration:none;
+  transition:all .25s cubic-bezier(.22,.68,0,1.2);
+  backdrop-filter:blur(8px);
+  position:relative;overflow:hidden;
+}
+.p-action::before{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(135deg,transparent,rgba(212,175,55,.07));
+  opacity:0;transition:opacity .2s;
+}
+.p-action:hover{
+  transform:translateY(-4px) scale(1.03);
+  border-color:rgba(212,175,55,.55);
+  background:rgba(255,255,255,.12);
+  box-shadow:0 8px 28px rgba(80,40,0,.28),0 0 0 1px rgba(212,175,55,.2);
+  text-decoration:none;
+}
+.p-action:hover::before{opacity:1;}
+.p-action:active{transform:translateY(-1px) scale(1.00);}
+.p-action-icon{
+  width:46px;height:46px;border-radius:13px;
+  background:linear-gradient(135deg,var(--g8),var(--g6));
+  display:flex;align-items:center;justify-content:center;
+  font-size:20px;
+  box-shadow:0 4px 12px rgba(0,0,0,.3),inset 0 1px 0 rgba(255,255,255,.12);
+  transition:transform .2s;
+}
+.p-action:hover .p-action-icon{transform:scale(1.1) rotate(4deg);}
+.p-action-lbl{
+  font-family:'Syne',sans-serif;font-size:11px;font-weight:800;
+  color:var(--g2);letter-spacing:.3px;text-align:center;line-height:1.2;
+}
+/* Admin tools divider */
+.p-admin-divider{
+  grid-column:1/-1;
+  padding-top:10px;margin-top:2px;
+  border-top:1px solid rgba(212,175,55,.18);
+}
+.p-admin-label{
+  font-family:'JetBrains Mono',monospace;font-size:8px;
+  color:rgba(212,175,55,.4);letter-spacing:2.5px;text-transform:uppercase;
+  margin-bottom:10px;display:block;
+}
+.p-admin-grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:10px;
+}
+.p-action.admin{border-color:rgba(34,197,94,.22);background:rgba(34,197,94,.06);}
+.p-action.admin:hover{border-color:rgba(34,197,94,.45);background:rgba(34,197,94,.1);}
+.p-action.admin .p-action-icon{background:linear-gradient(135deg,#166534,#15803d);}
+
+/* ════════════════════════════════════════════════
+   MAIN GRID
+════════════════════════════════════════════════ */
+.p-grid{display:grid;grid-template-columns:1fr 320px;gap:20px;margin-bottom:20px;}
+@media(max-width:800px){.p-grid{grid-template-columns:1fr;}}
+
+/* ════════════════════════════════════════════════
+   GLASS CARD
+════════════════════════════════════════════════ */
+.p-card{
+  background:var(--glass);
+  border:1.5px solid var(--glass-border);
+  border-radius:18px;overflow:hidden;
+  backdrop-filter:blur(14px);
+  box-shadow:0 8px 36px rgba(10,5,0,.35),inset 0 1px 0 rgba(255,255,255,.07);
+  animation:slide-up .4s ease both;
+}
+.p-card-head{
+  padding:15px 20px;
+  background:var(--glass-head);
+  border-bottom:1.5px solid rgba(212,175,55,.28);
+  display:flex;align-items:center;gap:10px;
+  position:relative;overflow:hidden;
+}
+/* Gold shimmer line at bottom of card head */
+.p-card-head::after{
+  content:'';position:absolute;bottom:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,var(--g4),transparent);
+}
+.p-card-head-icon{
+  width:34px;height:34px;border-radius:10px;
+  background:linear-gradient(135deg,var(--g6),var(--g8));
+  display:flex;align-items:center;justify-content:center;
+  font-size:16px;flex-shrink:0;
+  box-shadow:0 2px 8px rgba(0,0,0,.3);
+}
+.p-card-head h3{
+  font-family:'Syne',sans-serif;font-size:13px;font-weight:800;
+  color:var(--g1);flex:1;margin:0;letter-spacing:.3px;
+}
+.p-card-body{padding:20px;}
+
+/* ════════════════════════════════════════════════
+   3D ID CARD VIEWER
+════════════════════════════════════════════════ */
+.p-card-scene{
+  width:100%;max-width:440px;
+  margin:0 auto;perspective:1200px;
+  cursor:pointer;position:relative;
+}
+.p-card-wrap{
+  width:100%;height:0;padding-bottom:63.06%;
+  position:relative;
+  transform-style:preserve-3d;
+  -webkit-transform-style:preserve-3d;
+  transition:transform .85s cubic-bezier(.4,.2,.2,1);
+  filter:drop-shadow(0 18px 40px rgba(0,0,0,.55)) drop-shadow(0 5px 10px rgba(80,40,0,.4));
+  animation:card-in .7s ease both;
+}
+.p-card-wrap.flipped{transform:rotateY(180deg)!important;}
+.p-card-face{
+  position:absolute!important;top:0!important;left:0!important;
+  right:0!important;bottom:0!important;
+  border-radius:10px;overflow:hidden;
+  backface-visibility:hidden;-webkit-backface-visibility:hidden;
+  -webkit-transform-style:preserve-3d;
+  transform-style:preserve-3d;
+}
+.p-card-face-back{transform:rotateY(180deg);}
+/* Ensure front face is on top when not flipped */
+.p-card-wrap:not(.flipped) .p-card-face:first-child { z-index:2; }
+.p-card-wrap.flipped .p-card-face-back { z-index:2; }
+.p-card-face .eid-card-front,
+.p-card-face .eid-card-back{position:absolute!important;inset:0;border-radius:10px;}
+/* Scan line */
+.p-card-scan{
+  position:absolute;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,transparent,rgba(212,175,55,.7) 50%,transparent);
+  pointer-events:none;opacity:0;animation:scan-line 2.5s linear infinite;
+}
+@keyframes scan-line{0%{top:0;opacity:.8}80%{opacity:.8}100%{top:100%;opacity:0}}
+.p-card-scene:hover .p-card-scan{opacity:1;}
+/* Card controls row */
+.p-card-controls{
+  display:flex;align-items:center;justify-content:center;gap:12px;
+  margin-top:14px;flex-wrap:wrap;
+}
+.p-card-side{
+  font-family:'JetBrains Mono',monospace;font-size:9px;
+  color:rgba(212,175,55,.45);letter-spacing:2px;text-transform:uppercase;
+}
+.p-flip-btn{
+  display:inline-flex;align-items:center;gap:7px;
+  padding:9px 20px;background:rgba(212,175,55,.1);
+  border:1.5px solid rgba(212,175,55,.3);border-radius:24px;
+  font-family:'JetBrains Mono',monospace;font-size:10px;
+  color:var(--g2);letter-spacing:1.5px;text-transform:uppercase;
+  cursor:pointer;transition:all .2s;
+}
+.p-flip-btn:hover{background:rgba(212,175,55,.2);border-color:rgba(212,175,55,.6);color:var(--g1);}
+
+/* ════════════════════════════════════════════════
+   CHANGE PASSWORD PANEL
+════════════════════════════════════════════════ */
+.p-pw-panel{
+  display:none;margin-top:16px;padding:18px;
+  background:rgba(212,175,55,.05);
+  border:1px solid rgba(212,175,55,.2);border-radius:12px;
+}
+.p-pw-panel.open{display:block;animation:slide-up .3s ease both;}
+.p-pw-label{
+  font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--g5);
+  letter-spacing:2px;text-transform:uppercase;display:block;margin-bottom:6px;
+}
+.p-pw-input{
+  width:100%;padding:11px 14px;
+  background:rgba(212,175,55,.07);
+  border:1.5px solid rgba(212,175,55,.25);
+  border-radius:8px;font-size:15px;font-family:'Cormorant Garamond',serif;
+  color:var(--g1);margin-bottom:12px;
+  transition:border-color .2s,box-shadow .2s;
+}
+.p-pw-input:focus{border-color:var(--g4);outline:none;box-shadow:0 0 0 3px rgba(212,175,55,.15);}
+.p-pw-input::placeholder{color:rgba(212,175,55,.3);}
+.p-pw-btn{
+  display:inline-flex;align-items:center;gap:7px;
+  padding:11px 22px;border:none;border-radius:9px;
+  background:linear-gradient(135deg,var(--g9),var(--g7),var(--g5),var(--g4));
+  color:var(--g1);font-family:'Syne',sans-serif;font-size:13px;font-weight:800;
+  cursor:pointer;letter-spacing:.3px;
+  box-shadow:0 4px 0 var(--g9),0 6px 18px rgba(80,40,0,.3);
+  transition:all .15s;position:relative;overflow:hidden;
+}
+.p-pw-btn::before{
+  content:'';position:absolute;top:0;left:-100%;width:50%;height:100%;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.1),transparent);
+  animation:shimmer 2.5s infinite;
+}
+.p-pw-btn:hover{transform:translateY(-1px);box-shadow:0 5px 0 var(--g9),0 8px 22px rgba(80,40,0,.35);}
+.p-pw-msg{font-family:'JetBrains Mono',monospace;font-size:11px;margin-top:10px;padding:8px 12px;border-radius:6px;}
+.p-pw-ok {background:rgba(34,197,94,.1);color:#86efac;border:1px solid rgba(34,197,94,.22);}
+.p-pw-err{background:rgba(239,68,68,.1);color:#fca5a5;border:1px solid rgba(239,68,68,.22);}
+
+/* ════════════════════════════════════════════════
+   PERSONAL DETAILS GRID
+════════════════════════════════════════════════ */
+.p-details{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+@media(max-width:500px){.p-details{grid-template-columns:1fr;}}
+.p-detail{
+  padding:11px 14px;
+  background:rgba(212,175,55,.05);
+  border:1px solid rgba(212,175,55,.15);
+  border-radius:10px;transition:all .15s;
+}
+.p-detail:hover{background:rgba(212,175,55,.1);border-color:rgba(212,175,55,.3);}
+.p-detail-lbl{
+  font-family:'JetBrains Mono',monospace;font-size:8px;
+  color:var(--g5);letter-spacing:2px;text-transform:uppercase;margin-bottom:4px;
+}
+.p-detail-val{font-size:14px;font-weight:700;color:var(--g1);line-height:1.3;}
+.p-detail-val-am{
+  font-family:'Noto Sans Ethiopic',sans-serif;
+  font-size:12px;color:var(--g3);display:block;margin-top:2px;
+}
+/* Company chips */
+.p-chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:14px;}
+.p-chip{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:7px 12px;border-radius:8px;
+  background:rgba(212,175,55,.07);border:1px solid rgba(212,175,55,.2);
+  font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--g2);
+  transition:all .15s;
+}
+.p-chip:hover{background:rgba(212,175,55,.13);border-color:rgba(212,175,55,.4);}
+.p-chip-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+
+/* ════════════════════════════════════════════════
+   RIGHT COLUMN — QR + IDENTITY
+════════════════════════════════════════════════ */
+.p-qr-wrap{display:flex;flex-direction:column;align-items:center;gap:8px;margin-bottom:18px;}
+.p-qr-frame{
+  background:var(--g1);padding:8px;border-radius:10px;
+  border:2px solid var(--g4);
+  box-shadow:4px 4px 0 var(--g5),6px 6px 0 var(--g6),8px 8px 0 var(--g8),
+             0 20px 40px rgba(0,0,0,.3);
+  line-height:0;transition:transform .3s;
+}
+.p-qr-frame:hover{transform:translateY(-4px) scale(1.02);}
+.p-qr-frame img{display:block;border-radius:6px;}
+.p-qr-lbl{
+  font-family:'JetBrains Mono',monospace;font-size:8px;
+  color:var(--g5);letter-spacing:2px;text-transform:uppercase;
+}
+/* ID fields */
+.p-id-fields{display:flex;flex-direction:column;gap:9px;}
+.p-id-field{
+  padding:10px 14px;
+  background:rgba(212,175,55,.06);
+  border:1px solid rgba(212,175,55,.18);
+  border-radius:10px;transition:background .15s;
+}
+.p-id-field:hover{background:rgba(212,175,55,.1);}
+.p-id-lbl{font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--g5);letter-spacing:2px;text-transform:uppercase;margin-bottom:3px;}
+.p-id-val{font-family:'JetBrains Mono',monospace;font-size:14px;color:var(--g1);font-weight:700;letter-spacing:1px;display:flex;align-items:center;gap:6px;}
+.p-id-val.lg{font-size:18px;color:var(--g2);}
+/* Copy button */
+.p-copy{background:none;border:none;color:var(--g5);cursor:pointer;font-size:14px;padding:2px 6px;border-radius:4px;transition:all .15s;}
+.p-copy:hover{color:var(--g3);background:rgba(212,175,55,.1);}
+/* Status badge */
+.p-badge{
+  display:inline-flex;align-items:center;gap:5px;
+  padding:5px 14px;border-radius:20px;
+  font-family:'JetBrains Mono',monospace;font-size:11px;
+  font-weight:700;text-transform:uppercase;letter-spacing:1px;
+}
+.p-badge-active   {background:rgba(34,197,94,.15);color:#86efac;border:1px solid rgba(34,197,94,.28);}
+.p-badge-suspended{background:rgba(239,68,68,.15);color:#fca5a5;border:1px solid rgba(239,68,68,.28);}
+.p-badge-pending  {background:rgba(245,158,11,.15);color:#fcd34d;border:1px solid rgba(245,158,11,.28);}
+
+/* ════════════════════════════════════════════════
+   ACTIVITY LOG
+════════════════════════════════════════════════ */
+.p-activity{display:flex;flex-direction:column;gap:5px;}
+.p-act-item{
+  display:flex;align-items:center;gap:11px;
+  padding:9px 13px;
+  background:rgba(212,175,55,.04);
+  border:1px solid rgba(212,175,55,.12);
+  border-radius:8px;transition:background .15s;
+}
+.p-act-item:hover{background:rgba(212,175,55,.09);}
+.p-act-icon{
+  width:30px;height:30px;border-radius:8px;
+  background:linear-gradient(135deg,var(--g7),var(--g8));
+  display:flex;align-items:center;justify-content:center;
+  font-size:13px;flex-shrink:0;
+}
+.p-act-name{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--g2);font-weight:700;}
+.p-act-detail{font-size:11px;color:var(--g5);margin-top:1px;}
+.p-act-time{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--g6);margin-top:1px;}
+
+/* ════════════════════════════════════════════════
+   FOOTER
+════════════════════════════════════════════════ */
+.p-footer{
+  text-align:center;padding:20px 0 0;
+  font-family:'JetBrains Mono',monospace;font-size:8px;
+  color:rgba(212,175,55,.28);letter-spacing:2px;text-transform:uppercase;
+}
+</style>
+</head>
+<body>
+<div class="p-page">
+<div class="p-orb p-orb-1"></div>
+<div class="p-orb p-orb-2"></div>
+
+<!-- ════ NAV ════ -->
+<nav class="p-nav">
+  <div class="p-nav-brand">
+    <img src="<?php echo esc_attr($logo_src); ?>" alt="" class="p-nav-logo">
+    <div class="p-nav-text">
+      <span class="p-nav-main"><?php echo esc_html($org_name); ?></span>
+      <span class="p-nav-sub">ኢትኤል ቡድን · Member Portal</span>
+    </div>
+  </div>
+  <div class="p-nav-right">
+    <div class="p-nav-chip" style="display:none;" id="p-member-chip">
+      <div class="p-nav-av">
+        <?php if ($member->photo_url): ?>
+        <img src="<?php echo esc_url($member->photo_url); ?>" alt="">
+        <?php else: echo esc_html($init); endif; ?>
+      </div>
+      <div>
+        <div class="p-nav-name"><?php echo esc_html($member->full_name); ?></div>
+        <div class="p-nav-id"><?php echo esc_html($member->etel_id); ?></div>
+      </div>
+    </div>
+    <button class="p-signout" onclick="doSignOut()">
+      <i class="ti ti-logout"></i> Sign Out
+    </button>
+  </div>
+</nav>
+<script>
+/* Show member chip only on wider screens */
+if(window.innerWidth>600){document.getElementById('p-member-chip').style.display='flex';}
+</script>
+
+<!-- ════ CONTENT ════ -->
+<div class="p-wrap">
+
+  <!-- Status bar -->
+  <div class="p-status">
+    <div class="p-status-dot"></div>
+    <span class="p-status-lbl">STATUS</span>
+    <span class="p-status-val"><?php echo esc_html(strtoupper($member->status)); ?></span>
+    <span class="p-status-sep">|</span>
+    <span class="p-status-val"><?php echo esc_html($member->etel_id); ?></span>
+    <span class="p-status-sep">|</span>
+    <span class="p-tier">⭐ <?php echo esc_html(strtoupper($member->tier ?: 'Standard')); ?></span>
+    <?php if ($expiry_warn): ?>
+    <span style="margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:10px;color:#fcd34d;">
+      ⚠ Expires in <?php echo (int)$days_left; ?> days
+    </span>
+    <?php endif; ?>
+  </div>
+
+  <?php if ($expiry_warn): ?>
+  <div class="p-expiry-warn">
+    <i class="ti ti-alert-triangle" style="font-size:18px;color:#fbbf24;"></i>
+    Your Etel-ID expires on <strong><?php echo esc_html($member->expiry_date); ?></strong>
+    — <?php echo (int)$days_left; ?> days remaining. Contact admin to renew.
+  </div>
+  <?php endif; ?>
+
+  <!-- ════ ACTION BUTTONS ════ -->
+  <div class="p-actions">
+    <a href="<?php echo esc_url($print_url); ?>" target="_blank" class="p-action">
+      <div class="p-action-icon">🖨</div>
+      <span class="p-action-lbl">Print Card</span>
+    </a>
+    <a href="<?php echo esc_url($verify_url); ?>" target="_blank" class="p-action">
+      <div class="p-action-icon">🔗</div>
+      <span class="p-action-lbl">Verify Page</span>
+    </a>
+    <div class="p-action" onclick="togglePw()">
+      <div class="p-action-icon" id="pw-icon">🔐</div>
+      <span class="p-action-lbl">Change Password</span>
+    </div>
+    <div class="p-action" onclick="flipCard()">
+      <div class="p-action-icon">🔄</div>
+      <span class="p-action-lbl">Flip Card</span>
+    </div>
+    <a href="<?php echo esc_url(home_url('/etel-id/profile/')); ?>" class="p-action">
+      <div class="p-action-icon">✏️</div>
+      <span class="p-action-lbl">Edit Profile</span>
+    </a>
+
+    <?php if ($is_admin): ?>
+    <div class="p-admin-divider">
+      <span class="p-admin-label">Admin Tools</span>
+      <div class="p-admin-grid">
+        <a href="<?php echo esc_url(admin_url('admin.php?page=etel-id-updater')); ?>" class="p-action admin" target="_blank">
+          <div class="p-action-icon">🔄</div>
+          <span class="p-action-lbl">Updater</span>
+        </a>
+        <a href="<?php echo esc_url(admin_url('customize.php')); ?>" class="p-action" target="_blank">
+          <div class="p-action-icon">🎨</div>
+          <span class="p-action-lbl">Theme</span>
+        </a>
+        <a href="<?php echo esc_url(admin_url('post-new.php?post_type=page')); ?>" class="p-action" target="_blank">
+          <div class="p-action-icon">📄</div>
+          <span class="p-action-lbl">New Page</span>
+        </a>
+        <a href="<?php echo esc_url(admin_url('nav-menus.php')); ?>" class="p-action" target="_blank">
+          <div class="p-action-icon">📋</div>
+          <span class="p-action-lbl">Menus</span>
+        </a>
+        <a href="<?php echo esc_url(admin_url('upload.php')); ?>" class="p-action" target="_blank">
+          <div class="p-action-icon">🖼</div>
+          <span class="p-action-lbl">Media</span>
+        </a>
+        <a href="<?php echo esc_url(admin_url('edit.php?post_type=page')); ?>" class="p-action" target="_blank">
+          <div class="p-action-icon">📑</div>
+          <span class="p-action-lbl">Pages</span>
+        </a>
+        <a href="<?php echo esc_url(admin_url('admin.php?page=etel-id-password-reset')); ?>" class="p-action" target="_blank">
+          <div class="p-action-icon">🔑</div>
+          <span class="p-action-lbl">Reset PW</span>
+        </a>
+        <a href="<?php echo esc_url(admin_url()); ?>" class="p-action" target="_blank">
+          <div class="p-action-icon">⚙️</div>
+          <span class="p-action-lbl">WP Admin</span>
+        </a>
+      </div>
+    </div>
+    <?php endif; ?>
+  </div>
+
+  <!-- ════ MAIN GRID ════ -->
+  <div class="p-grid">
+
+    <!-- LEFT: ID Card + Details -->
+    <div style="display:flex;flex-direction:column;gap:20px;">
+
+      <!-- 3D ID Card -->
+      <div class="p-card">
+        <div class="p-card-head">
+          <div class="p-card-head-icon">🪪</div>
+          <h3>Your Etel-ID Card</h3>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--g5);letter-spacing:1px;">CLICK TO FLIP</span>
+        </div>
+        <div class="p-card-body">
+          <div class="p-card-scene" onclick="flipCard()">
+            <div class="p-card-wrap" id="p-card-3d">
+              <div class="p-card-face">
+                <?php include ETELID_PATH.'templates/card-front.php'; ?>
+              </div>
+              <div class="p-card-face p-card-face-back">
+                <?php include ETELID_PATH.'templates/card-back.php'; ?>
+              </div>
+            </div>
+            <div class="p-card-scan"></div>
+          </div>
+          <div class="p-card-controls">
+            <span class="p-card-side" id="p-card-side-lbl">FRONT SIDE</span>
+            <button class="p-flip-btn" onclick="event.stopPropagation();flipCard()">
+              <i class="ti ti-refresh"></i> Flip Card
+            </button>
+          </div>
+
+          <!-- Change password -->
+          <div class="p-pw-panel" id="p-pw-panel">
+            <div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:800;color:var(--g2);margin-bottom:14px;">🔐 Change Password</div>
+            <label class="p-pw-label">Current Password</label>
+            <input type="password" class="p-pw-input" id="pw-old" placeholder="Your current password">
+            <label class="p-pw-label">New Password</label>
+            <input type="password" class="p-pw-input" id="pw-new" placeholder="Min 6 characters">
+            <label class="p-pw-label">Confirm New Password</label>
+            <input type="password" class="p-pw-input" id="pw-cfm" placeholder="Repeat new password">
+            <button class="p-pw-btn" onclick="doChangePw()">
+              <i class="ti ti-lock-check"></i> Update Password
+            </button>
+            <div id="p-pw-msg" style="display:none;" class="p-pw-msg"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Personal Details -->
+      <div class="p-card">
+        <div class="p-card-head">
+          <div class="p-card-head-icon">👤</div>
+          <h3>Personal Details</h3>
+        </div>
+        <div class="p-card-body">
+          <div class="p-details">
+            <div class="p-detail">
+              <div class="p-detail-lbl">Full Name</div>
+              <div class="p-detail-val"><?php echo esc_html($member->full_name); ?>
+                <?php if ($member->full_name_am): ?><span class="p-detail-val-am"><?php echo esc_html($member->full_name_am); ?></span><?php endif; ?>
+              </div>
+            </div>
+            <div class="p-detail">
+              <div class="p-detail-lbl">Date of Birth</div>
+              <div class="p-detail-val"><?php echo esc_html($member->dob); ?>
+                <?php if (!empty($member->dob_eth)): ?><span class="p-detail-val-am"><?php echo esc_html($member->dob_eth); ?></span><?php endif; ?>
+              </div>
+            </div>
+            <div class="p-detail">
+              <div class="p-detail-lbl">Sex</div>
+              <div class="p-detail-val"><?php echo esc_html($member->sex); ?></div>
+            </div>
+            <div class="p-detail">
+              <div class="p-detail-lbl">Blood Type</div>
+              <div class="p-detail-val"><?php echo esc_html($member->blood_type ?: '—'); ?></div>
+            </div>
+            <div class="p-detail">
+              <div class="p-detail-lbl">Nationality</div>
+              <div class="p-detail-val"><?php echo esc_html($member->nationality); ?></div>
+            </div>
+            <div class="p-detail">
+              <div class="p-detail-lbl">Phone</div>
+              <div class="p-detail-val"><?php echo esc_html($member->phone); ?></div>
+            </div>
+            <?php if ($member->email): ?>
+            <div class="p-detail" style="grid-column:1/-1;">
+              <div class="p-detail-lbl">Email</div>
+              <div class="p-detail-val" style="font-size:13px;"><?php echo esc_html($member->email); ?></div>
+            </div>
+            <?php endif; ?>
+            <?php if ($member->region): ?>
+            <div class="p-detail">
+              <div class="p-detail-lbl">Region / Zone</div>
+              <div class="p-detail-val" style="font-size:13px;"><?php echo esc_html($member->region); ?><?php if($member->zone) echo ' · '.esc_html($member->zone); ?></div>
+            </div>
+            <?php endif; ?>
+            <div class="p-detail">
+              <div class="p-detail-lbl">Issue Date</div>
+              <div class="p-detail-val" style="font-size:13px;"><?php echo esc_html($member->issue_date); ?>
+                <?php if (!empty($member->issue_date_eth)): ?><span class="p-detail-val-am"><?php echo esc_html($member->issue_date_eth); ?></span><?php endif; ?>
+              </div>
+            </div>
+            <div class="p-detail">
+              <div class="p-detail-lbl">Expiry Date</div>
+              <div class="p-detail-val" style="font-size:13px;<?php echo $expiry_warn?'color:#fcd34d;':'' ?>"><?php echo esc_html($member->expiry_date); ?></div>
+            </div>
+          </div>
+          <?php if ($member->primary_company || $member->role): ?>
+          <div style="margin-top:13px;padding:11px 14px;background:rgba(212,175,55,.07);border:1px solid rgba(212,175,55,.18);border-radius:10px;">
+            <div class="p-detail-lbl" style="margin-bottom:5px;">Company & Role</div>
+            <div class="p-detail-val"><?php echo esc_html($member->primary_company); ?>
+              <?php if($member->role): ?> <span style="color:var(--g4);">·</span> <?php echo esc_html($member->role); ?><?php endif; ?>
+            </div>
+          </div>
+          <?php endif; ?>
+          <?php if ($companies): ?>
+          <div class="p-chips">
+            <?php
+            $chip_colors = array('#C8922A','#3b82f6','#22c55e','#a855f7','#ef4444','#f59e0b','#06b6d4','#ec4899');
+            $ci = 0;
+            foreach ($companies as $co):
+              $cc = $chip_colors[$ci % count($chip_colors)]; $ci++;
+            ?>
+            <div class="p-chip">
+              <div class="p-chip-dot" style="background:<?php echo $cc; ?>;box-shadow:0 0 5px <?php echo $cc; ?>;"></div>
+              <?php echo esc_html($co->company_name); ?>
+              <?php if (!empty($co->role_at) && $co->role_at !== 'Member'): ?>
+              <span style="color:var(--g5);font-size:9px;">· <?php echo esc_html($co->role_at); ?></span>
+              <?php endif; ?>
+            </div>
+            <?php endforeach; ?>
+          </div>
+          <?php endif; ?>
+        </div>
+      </div>
+
+    </div><!-- /left col -->
+
+    <!-- RIGHT: QR + Identity + Activity -->
+    <div style="display:flex;flex-direction:column;gap:20px;">
+
+      <!-- Identity Numbers + QR -->
+      <div class="p-card">
+        <div class="p-card-head">
+          <div class="p-card-head-icon">📲</div>
+          <h3>Identity Numbers</h3>
+        </div>
+        <div class="p-card-body">
+          <div class="p-qr-wrap">
+            <div class="p-qr-frame">
+              <img src="<?php echo esc_url($qr_src); ?>" width="160" height="160" alt="QR" loading="lazy">
+            </div>
+            <div class="p-qr-lbl">Scan to verify identity</div>
+          </div>
+          <div class="p-id-fields">
+            <div class="p-id-field">
+              <div class="p-id-lbl">Etel-ID</div>
+              <div class="p-id-val lg"><?php echo esc_html($member->etel_id); ?>
+                <button class="p-copy" onclick="pCopy('<?php echo esc_js($member->etel_id); ?>',this)" title="Copy"><i class="ti ti-copy"></i></button>
+              </div>
+            </div>
+            <div class="p-id-field">
+              <div class="p-id-lbl">FIN Number</div>
+              <div class="p-id-val"><?php echo esc_html($member->fin); ?>
+                <button class="p-copy" onclick="pCopy('<?php echo esc_js($member->fin); ?>',this)" title="Copy"><i class="ti ti-copy"></i></button>
+              </div>
+            </div>
+            <div class="p-id-field">
+              <div class="p-id-lbl">Card Number</div>
+              <div class="p-id-val" style="font-size:11px;letter-spacing:2px;"><?php echo esc_html($member->card_number); ?></div>
+            </div>
+            <div class="p-id-field">
+              <div class="p-id-lbl">Status</div>
+              <div class="p-badge p-badge-<?php echo esc_attr($member->status); ?>"><?php echo esc_html(ucfirst($member->status)); ?></div>
+            </div>
+            <div class="p-id-field">
+              <div class="p-id-lbl">QR Scan Count</div>
+              <div class="p-id-val"><?php echo (int)$member->qr_scan_count; ?> times</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Activity -->
+      <?php if ($log): ?>
+      <div class="p-card">
+        <div class="p-card-head">
+          <div class="p-card-head-icon">📋</div>
+          <h3>Recent Activity</h3>
+        </div>
+        <div class="p-card-body" style="padding:14px;">
+          <div class="p-activity">
+            <?php
+            $icons = array('login'=>'🔑','verified'=>'✅','printed'=>'🖨','updated'=>'✏️','registered'=>'🎉','issued'=>'🪪','login_failed'=>'❌','checkin'=>'📡','suspended'=>'🔒');
+            foreach ($log as $entry):
+              $ev   = isset($entry->event)  ? $entry->event  : (isset($entry->action) ? $entry->action : '');
+              $det  = isset($entry->detail) ? $entry->detail : '';
+              $icon = isset($icons[$ev]) ? $icons[$ev] : '📌';
+              $time = $entry->created_at ? human_time_diff(strtotime($entry->created_at),time()).' ago' : '';
+            ?>
+            <div class="p-act-item">
+              <div class="p-act-icon"><?php echo $icon; ?></div>
+              <div style="flex:1;min-width:0;">
+                <div class="p-act-name"><?php echo esc_html(str_replace('_',' ',ucfirst($ev))); ?></div>
+                <?php if ($det): ?><div class="p-act-detail"><?php echo esc_html($det); ?></div><?php endif; ?>
+                <div class="p-act-time"><?php echo esc_html($time); ?></div>
+              </div>
+            </div>
+            <?php endforeach; ?>
+          </div>
+        </div>
+      </div>
+      <?php endif; ?>
+
+    </div><!-- /right col -->
+
+  </div><!-- /grid -->
+
+  <div class="p-footer">
+    <?php echo esc_html($org_name); ?> · ኢትኤል ቡድን · v<?php echo ETELID_VERSION; ?>
+  </div>
+</div><!-- /p-wrap -->
+</div><!-- /p-page -->
+
+<script>
+var _P = {
+  ajax:  '<?php echo esc_js($ajax); ?>',
+  nonce: '<?php echo esc_js($nonce); ?>',
+  flip:  false
+};
+
+/* ── Flip card ── */
+function flipCard() {
+  _P.flip = !_P.flip;
+  var el = document.getElementById('p-card-3d');
+  if (el) el.classList.toggle('flipped', _P.flip);
+  var lbl = document.getElementById('p-card-side-lbl');
+  if (lbl) lbl.textContent = _P.flip ? 'BACK SIDE' : 'FRONT SIDE';
+}
+
+/* ── Toggle password panel ── */
+function togglePw() {
+  var panel = document.getElementById('p-pw-panel');
+  var icon  = document.getElementById('pw-icon');
+  if (!panel) return;
+  panel.classList.toggle('open');
+  if (icon) icon.textContent = panel.classList.contains('open') ? '✕' : '🔐';
+}
+
+/* ── Copy to clipboard ── */
+function pCopy(text, btn) {
+  navigator.clipboard.writeText(text).then(function() {
+    var orig = btn.innerHTML;
+    btn.innerHTML = '<i class="ti ti-check"></i>';
+    btn.style.color = '#86efac';
+    setTimeout(function() { btn.innerHTML = orig; btn.style.color = ''; }, 1800);
+  });
+}
+
+/* ── Change password ── */
+function doChangePw() {
+  var old = document.getElementById('pw-old').value;
+  var nw  = document.getElementById('pw-new').value;
+  var cfm = document.getElementById('pw-cfm').value;
+  var msg = document.getElementById('p-pw-msg');
+  if (!old || !nw || !cfm) { showPwMsg('Please fill in all fields.', false); return; }
+  if (nw.length < 6)        { showPwMsg('Password must be at least 6 characters.', false); return; }
+  if (nw !== cfm)           { showPwMsg('Passwords do not match.', false); return; }
+  var btn = document.querySelector('.p-pw-btn');
+  btn.disabled = true; btn.innerHTML = '⏳ Updating…';
+  fetch(_P.ajax, {
+    method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'},
+    body:'action=etelid_auth_change_password&nonce='+_P.nonce+'&old_password='+encodeURIComponent(old)+'&new_password='+encodeURIComponent(nw)+'&confirm_password='+encodeURIComponent(cfm)
+  }).then(function(r){return r.json();}).then(function(res) {
+    if (res.success) {
+      showPwMsg('✓ Password updated!', true);
+      document.getElementById('pw-old').value='';
+      document.getElementById('pw-new').value='';
+      document.getElementById('pw-cfm').value='';
+    } else {
+      showPwMsg((res.data && res.data.message) ? res.data.message : 'Error. Try again.', false);
+    }
+    btn.disabled = false;
+    btn.innerHTML = '<i class="ti ti-lock-check"></i> Update Password';
+  });
+}
+function showPwMsg(text, ok) {
+  var el = document.getElementById('p-pw-msg');
+  el.textContent = text;
+  el.className = 'p-pw-msg ' + (ok ? 'p-pw-ok' : 'p-pw-err');
+  el.style.display = 'block';
+  if (ok) setTimeout(function(){ el.style.display='none'; }, 3500);
+}
+
+/* ── Sign out ── */
+function doSignOut() {
+  fetch(_P.ajax, {
+    method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'},
+    body:'action=etelid_auth_logout&nonce='+_P.nonce
+  }).then(function(r){return r.json();}).then(function(res){
+    location.href = (res.success && res.data.redirect)
+      ? res.data.redirect
+      : '<?php echo esc_js(home_url("/etel-id/login/")); ?>';
+  });
+}
+
+/* ── 3D tilt (desktop only) ── */
+var _scene = document.querySelector('.p-card-scene');
+var _card  = document.getElementById('p-card-3d');
+if (_scene && _card && window.matchMedia('(hover:hover)').matches) {
+  _scene.addEventListener('mousemove', function(e) {
+    if (_P.flip) return;
+    var r = _scene.getBoundingClientRect();
+    var x = (e.clientX - r.left) / r.width  - 0.5;
+    var y = (e.clientY - r.top)  / r.height - 0.5;
+    _card.style.transform = 'perspective(1000px) rotateY('+(x*12)+'deg) rotateX('+(-y*7)+'deg) scale(1.02)';
+  });
+  _scene.addEventListener('mouseleave', function() {
+    if (_P.flip) return;
+    _card.style.transform = '';
+  });
+}
+</script>
+</body>
+</html>

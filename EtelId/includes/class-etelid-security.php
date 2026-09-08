@@ -1,0 +1,68 @@
+<?php
+/**
+ * Etel-ID Premium — Security Utilities
+ *
+ * @package    Etel-ID Premium
+ * @version    2.1.0
+ * @author     Etel Group · ኢትኤል ቡድን
+ * @link       https://etelgroup.com
+ * @since      2.0.0
+ *
+ * PIN hashing, rate limiting via WP transients, and IP resolution.
+ * Compatible with PHP 5.6+ and shared/proxy hosting environments.
+ *
+ * v2.1.0 — Upgraded hash_pin() from static-salted SHA-256 to bcrypt
+ *           (password_hash PASSWORD_BCRYPT, cost 10).
+ *           verify_pin() transparently accepts both old SHA-256 hashes
+ *           (len=64) and new bcrypt hashes, upgrading on first successful
+ *           verify so no forced migration run is needed.
+ */
+if ( ! defined( 'ABSPATH' ) ) exit;
+
+class EtelID_Security {
+
+    /**
+     * Hash a PIN/password with bcrypt (cost 10).
+     * Returns a 60-char bcrypt hash string.
+     * PHP 5.5+ required — met by our PHP 5.6+ baseline.
+     */
+    public static function hash_pin( $pin ) {
+        return password_hash( (string) $pin, PASSWORD_BCRYPT, array( 'cost' => 10 ) );
+    }
+
+    /**
+     * Verify a PIN against a stored hash.
+     *
+     * Handles two hash formats transparently:
+     *   - bcrypt  (len != 64)  : uses password_verify()
+     *   - legacy SHA-256 (len == 64) : uses hash_equals() with old salt
+     *     Returns true so existing users are not locked out.
+     *     Caller should re-hash and save immediately after a legacy match
+     *     (see upgrade note in class-etelid-auth.php::login()).
+     */
+    public static function verify_pin( $pin, $hash ) {
+        if ( strlen( $hash ) === 64 ) {
+            /* Legacy SHA-256 — accept but mark for upgrade */
+            return hash_equals( $hash, hash( 'sha256', 'etelid_' . $pin . '_salt_v2' ) );
+        }
+        return password_verify( (string) $pin, $hash );
+    }
+
+    public static function rate_limit( $key, $max = 10, $window = 3600 ) {
+        $transient = 'etelid_rl_' . md5( $key );
+        $count     = (int) get_transient( $transient );
+        if ( $count >= $max ) return false;
+        set_transient( $transient, $count + 1, $window );
+        return true;
+    }
+
+    public static function get_ip() {
+        $keys = array( 'HTTP_CF_CONNECTING_IP', 'HTTP_X_FORWARDED_FOR', 'REMOTE_ADDR' );
+        foreach ( $keys as $k ) {
+            if ( ! empty( $_SERVER[ $k ] ) ) {
+                return sanitize_text_field( wp_unslash( explode( ',', $_SERVER[ $k ] )[0] ) );
+            }
+        }
+        return '';
+    }
+}

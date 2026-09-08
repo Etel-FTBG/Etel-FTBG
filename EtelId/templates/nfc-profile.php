@@ -1,0 +1,182 @@
+<?php
+/**
+ * Public NFC profile template.
+ * Rendered by Etelid_Nfc::maybe_render_profile() - $member and $card are
+ * already in scope (may be null if the token was invalid/revoked).
+ */
+
+if (!defined('ABSPATH')) {
+    exit;
+}
+
+$has_member = !empty($member);
+$name = $has_member ? esc_html($member->full_name) : '';
+$etelid_number = $has_member ? esc_html($member->etelid_number) : '';
+$tier = $has_member ? esc_html($member->tier) : '';
+$photo = $has_member && !empty($member->photo_url) ? esc_url($member->photo_url) : '';
+?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title><?php echo $has_member ? $name . ' - EtelID' : 'EtelID'; ?></title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --carbon-1: #030205;
+    --carbon-2: #0d0d0d;
+    --carbon-3: #0a0703;
+    --carbon-4: #130d05;
+    --gold-1: #C8960C;
+    --gold-2: #D4AF37;
+    --gold-3: #F2CC6B;
+    --gold-deep-1: #A07820;
+    --gold-deep-2: #C9A227;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    min-height: 100%;
+    background: linear-gradient(155deg,#2A1600 0%,#5A3A08 15%,#9A6818 30%,#C8922A 44%,#D4AF37 50%,#C8922A 56%,#9A6818 70%,#5A3A08 85%,#2A1600 100%);
+    font-family: 'JetBrains Mono', monospace;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+  .card {
+    position: relative;
+    width: 100%;
+    max-width: 380px;
+    background: linear-gradient(165deg, var(--carbon-4) 0%, var(--carbon-3) 100%);
+    border: 1px solid rgba(212,175,55,0.35);
+    border-radius: 18px;
+    overflow: hidden;
+    padding: 32px 28px 28px;
+    color: #f2e8d0;
+    text-align: center;
+  }
+  .card::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--gold-deep-1), var(--gold-2), var(--gold-3), var(--gold-2), var(--gold-deep-1));
+  }
+  .card::after {
+    content: "";
+    position: absolute;
+    top: 0; bottom: 0; right: 28px;
+    width: 6px;
+    background: linear-gradient(180deg, transparent, rgba(212,175,55,0.5), transparent);
+    opacity: 0.5;
+  }
+  .mark {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 20px;
+    letter-spacing: 1px;
+    color: var(--gold-3);
+    margin-bottom: 18px;
+  }
+  .mark span { color: #fff; }
+  .photo {
+    width: 96px;
+    height: 96px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid var(--gold-2);
+    margin-bottom: 16px;
+    background: var(--carbon-2);
+  }
+  .photo-placeholder {
+    width: 96px;
+    height: 96px;
+    border-radius: 50%;
+    border: 2px solid rgba(212,175,55,0.4);
+    margin: 0 auto 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Syne', sans-serif;
+    font-size: 28px;
+    font-weight: 800;
+    color: var(--gold-2);
+    background: var(--carbon-2);
+  }
+  .name {
+    font-family: 'Cormorant Garamond', serif;
+    font-weight: 600;
+    font-size: 26px;
+    color: #fff;
+    margin: 0 0 4px;
+  }
+  .etelid {
+    font-size: 13px;
+    letter-spacing: 1px;
+    color: var(--gold-2);
+    margin-bottom: 14px;
+  }
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    letter-spacing: 0.5px;
+    padding: 6px 14px;
+    border-radius: 999px;
+    border: 1px solid rgba(212,175,55,0.4);
+    background: rgba(212,175,55,0.08);
+    color: var(--gold-3);
+    margin-bottom: 18px;
+  }
+  .tier {
+    font-size: 12px;
+    color: rgba(242,232,208,0.65);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+  .invalid {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 22px;
+    color: rgba(242,232,208,0.8);
+    padding: 20px 0;
+  }
+  .footer {
+    margin-top: 24px;
+    font-size: 10px;
+    color: rgba(242,232,208,0.35);
+    letter-spacing: 1px;
+  }
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="mark">&#4773;<span>E</span> ETELID</div>
+
+    <?php if ($has_member) : ?>
+      <?php if ($photo) : ?>
+        <img class="photo" src="<?php echo $photo; ?>" alt="<?php echo $name; ?>">
+      <?php else : ?>
+        <div class="photo-placeholder"><?php echo strtoupper(substr($name, 0, 1)); ?></div>
+      <?php endif; ?>
+
+      <p class="name"><?php echo $name; ?></p>
+      <p class="etelid"><?php echo $etelid_number; ?></p>
+      <div class="badge">&#10003; Verified Member</div>
+      <?php if ($tier) : ?>
+        <p class="tier"><?php echo $tier; ?> Tier</p>
+      <?php endif; ?>
+    <?php else : ?>
+      <p class="invalid">This card is not active.</p>
+    <?php endif; ?>
+
+    <div class="footer">ethelmarket.com / EtelId</div>
+  </div>
+<!-- ETEL AI -- cross-company assistant widget -->
+<script src="https://ethelmarket.com/EtelAi/etel-ai-widget.js" data-project="etel-id"></script>
+</body>
+</html>
