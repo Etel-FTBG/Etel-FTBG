@@ -79,7 +79,11 @@ final class Product
         if (!empty($this->images)) {
             $img = $this->images[0];
             if (str_starts_with($img, 'http')) return $img;
-            return '/EtelGebeya/storage/uploads/' . ltrim($img, '/');
+            // Uploads are saved with an already-site-absolute path
+            // (see VendorController's $uploadDir) -- don't re-prefix those,
+            // only bare filenames that never got a path stored.
+            if (str_starts_with($img, '/')) return $img;
+            return '/EtelGebeya/public/uploads/products/' . $img;
         }
         return "https://picsum.photos/seed/{$this->id}/400/400";
     }
