@@ -15,13 +15,13 @@ $cur = $cfg['db'];
   <main class="install">
     <header>
       <h1>Etel Gebeya -- Install</h1>
-      <p class="muted">??? ??? * v0.1</p>
+      <p class="muted">Installation wizard * v0.1</p>
     </header>
 
     <section class="checks">
       <h2>System checks</h2>
       <ul>
-        <?php foreach ($checks as [$name, $ok, $extra]): ?>
+        <?php foreach ($checks as $check): [$name, $ok, $extra] = $check + [null, null, null]; ?>
           <li class="<?= $ok ? 'ok' : 'fail' ?>">
             <span class="dot"></span>
             <span class="lbl"><?= htmlspecialchars($name) ?></span>
