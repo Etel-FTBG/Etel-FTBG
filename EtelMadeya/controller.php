@@ -124,7 +124,7 @@
                         <div class="pnl-h"><h3>Register Vehicle</h3></div>
                         <div class="pnl-b">
                             <div class="plate-wrap">
-                                <input type="text" id="regPlate" class="mc-plate-inp" placeholder="PLATE NUMBER" maxlength="20" autocomplete="off">
+                                <input type="text" id="regPlate" class="mc-plate-inp" placeholder="PLATE NUMBER" maxlength="20" autocomplete="off" oninput="updateRegParityHint()">
                                 <div class="pc tl"></div><div class="pc tr"></div><div class="pc bl"></div><div class="pc br"></div>
                             </div>
                             <div class="parity-hint" id="regParHint">&nbsp;</div>
