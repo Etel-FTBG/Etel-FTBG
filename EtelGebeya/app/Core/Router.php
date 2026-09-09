@@ -45,11 +45,25 @@ final class Router
         $list   = $this->routes[$method === 'HEAD' ? 'GET' : $method] ?? [];
         foreach ($list as $r) {
             if (preg_match($r['pattern'], $path, $m)) {
-                // $m[0] = full match; $m[1], $m[2]... = captured params in order
+                // $m[0] = full match; $m[1], $m[2]... = captured params in order.
+                // A route segment named {id} is, across this whole app, always a
+                // numeric database ID matched against an `int $id`-typed handler
+                // parameter (other segment names -- {slug}/{code}/{locale} -- stay
+                // strings). Regex captures are always strings though, and with
+                // strict_types=1 in this file PHP refuses to coerce a string onto
+                // an `int` parameter when the call happens here -- so an `{id}`
+                // capture must be cast before the call, or every such route
+                // (edit/delete a product, approve/suspend a vendor, etc.) throws
+                // a TypeError on every request instead of ever reaching the
+                // controller.
                 $args = [];
                 $i = 1;
-                foreach ($r['params'] as $_) {
-                    $args[] = $m[$i++] ?? null;
+                foreach ($r['params'] as $name => $_) {
+                    $val = $m[$i++] ?? null;
+                    if ($name === 'id' && $val !== null && ctype_digit($val)) {
+                        $val = (int)$val;
+                    }
+                    $args[] = $val;
                 }
                 [$class, $action] = $r['handler'];
                 $ctrl = new $class();
