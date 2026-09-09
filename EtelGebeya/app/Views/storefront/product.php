@@ -180,13 +180,13 @@ ob_start();
   <!-- Breadcrumb -->
   <div class="product-breadcrumb">
     <a href="<?= View::url('/') ?>"><?= t('nav.home') ?></a>
-    <span>?</span>
+    <span><i class="bi bi-chevron-right" style="font-size:.7rem"></i></span>
     <a href="<?= View::url('/search') ?>"><?= t('nav.categories') ?></a>
     <?php if ($vendor): ?>
-      <span>?</span>
+      <span><i class="bi bi-chevron-right" style="font-size:.7rem"></i></span>
       <a href="<?= View::url('/vendor/' . htmlspecialchars($vendor['shop_slug'] ?? '', ENT_QUOTES)) ?>"><?= htmlspecialchars($vendor['shop_name'] ?? '', ENT_QUOTES) ?></a>
     <?php endif; ?>
-    <span>?</span>
+    <span><i class="bi bi-chevron-right" style="font-size:.7rem"></i></span>
     <span><?= $name ?></span>
   </div>
 
@@ -201,7 +201,7 @@ ob_start();
         <div class="gallery-badge">
           <?php if ($product->hasDiscount()): ?><span class="badge" style="background:#DC2626;color:#fff">-<?= $product->discountPct() ?>%</span><?php endif; ?>
           <?php if ((time() - strtotime($product->createdAt)) < 7 * 86400): ?><span class="badge" style="background:var(--eg-blue);color:#fff">NEW</span><?php endif; ?>
-          <?php if ($product->isFeatured): ?><span class="badge" style="background:var(--eg-gold);color:#1a0e00">? FEATURED</span><?php endif; ?>
+          <?php if ($product->isFeatured): ?><span class="badge" style="background:var(--eg-gold);color:#1a0e00"><i class="bi bi-star-fill"></i> FEATURED</span><?php endif; ?>
         </div>
       </div>
       <?php if (count($images) > 1): ?>
@@ -220,7 +220,7 @@ ob_start();
     <div class="product-info-panel">
       <?php if ($vendor): ?>
         <a href="<?= View::url('/vendor/' . htmlspecialchars($vendor['shop_slug']??'',ENT_QUOTES)) ?>" class="product-vendor-tag">
-          /* U+1F3EA */ <?= htmlspecialchars($vendor['shop_name']??'',ENT_QUOTES) ?>
+          <i class="bi bi-shop"></i> <?= htmlspecialchars($vendor['shop_name']??'',ENT_QUOTES) ?>
         </a>
       <?php endif; ?>
 
@@ -229,7 +229,7 @@ ob_start();
       <!-- Rating row -->
       <div class="product-rating-row" style="display:flex;align-items:center;gap:.5rem;">
         <span class="stars-gold" style="font-size:1.1rem;">
-          <?= str_repeat('?', (int)round($product->ratingAvg)) . str_repeat('?', 5 - (int)round($product->ratingAvg)) ?>
+          <?= str_repeat('&#9733;', (int)round($product->ratingAvg)) . str_repeat('&#9734;', 5 - (int)round($product->ratingAvg)) ?>
         </span>
         <span class="rating-val"><?= number_format($product->ratingAvg, 1) ?></span>
         <span class="rating-cnt">(<?= number_format($product->ratingCount) ?> <?= t('product.reviews', ['count'=>'']) ?>)</span>
@@ -252,11 +252,11 @@ ob_start();
       <!-- Stock status -->
       <div class="stock-row">
         <?php if (!$product->inStock()): ?>
-          <span class="out-stock">? <?= t('product.out_of_stock') ?></span>
+          <span class="out-stock"><i class="bi bi-x-circle-fill"></i> <?= t('product.out_of_stock') ?></span>
         <?php elseif ($product->lowStock()): ?>
-          <span class="low-stock">?? Only <?= $product->stockQty ?> left!</span>
+          <span class="low-stock"><i class="bi bi-exclamation-triangle-fill"></i> Only <?= $product->stockQty ?> left!</span>
         <?php else: ?>
-          <span class="in-stock">? <?= t('product.in_stock') ?></span>
+          <span class="in-stock"><i class="bi bi-check-circle-fill"></i> <?= t('product.in_stock') ?></span>
           <?php if ($product->trackStock): ?><span style="font-size:.8rem;color:var(--eg-text-dim)"><?= number_format($product->stockQty) ?> available</span><?php endif; ?>
         <?php endif; ?>
       </div>
@@ -264,15 +264,15 @@ ob_start();
       <!-- Add to cart -->
       <div class="cart-row">
         <div class="qty-ctrl">
-          <button class="qty-btn" onclick="changeQty(-1)">?</button>
+          <button class="qty-btn" onclick="changeQty(-1)"><i class="bi bi-dash-lg"></i></button>
           <input type="number" class="qty-input" id="qty" value="1" min="1" max="<?= $product->stockQty ?: 99 ?>">
-          <button class="qty-btn" onclick="changeQty(1)">+</button>
+          <button class="qty-btn" onclick="changeQty(1)"><i class="bi bi-plus-lg"></i></button>
         </div>
         <button class="add-cart-btn" id="add-cart-btn" onclick="addToCart(<?= $product->id ?>)"
           <?= !$product->inStock() ? 'disabled' : '' ?>>
-          /* U+1F6D2 */ <?= t('product.add_to_cart') ?>
+          <i class="bi bi-cart-plus"></i> <?= t('product.add_to_cart') ?>
         </button>
-        <button class="wishlist-btn" onclick="addWishlist(<?= $product->id ?>)" title="Add to wishlist">?</button>
+        <button class="wishlist-btn" onclick="addWishlist(<?= $product->id ?>)" title="Add to wishlist"><i class="bi bi-heart"></i></button>
       </div>
 
       <!-- Meta -->
@@ -288,10 +288,10 @@ ob_start();
       <!-- Vendor card -->
       <?php if ($vendor): ?>
       <div class="vendor-card">
-        <div class="vendor-logo">/* U+1F3EA */</div>
+        <div class="vendor-logo"><i class="bi bi-shop"></i></div>
         <div style="flex:1">
           <div class="vendor-name"><?= htmlspecialchars($vendor['shop_name']??'', ENT_QUOTES) ?></div>
-          <div class="vendor-rating">? <?= number_format((float)($vendor['rating_avg']??0),1) ?> * <?= $vendor['rating_count']??0 ?> reviews</div>
+          <div class="vendor-rating"><i class="bi bi-star-fill"></i> <?= number_format((float)($vendor['rating_avg']??0),1) ?> &middot; <?= $vendor['rating_count']??0 ?> reviews</div>
         </div>
         <a href="<?= View::url('/vendor/'.htmlspecialchars($vendor['shop_slug']??'',ENT_QUOTES)) ?>" class="btn btn-sm btn-secondary" style="text-decoration:none;padding:.4rem .9rem;border-radius:10px;border:1px solid var(--eg-border);font-size:.8rem;font-weight:700">Visit Shop</a>
       </div>
@@ -302,8 +302,8 @@ ob_start();
   <!-- Detail Tabs -->
   <div style="margin-top:3rem;">
     <div class="detail-tabs">
-      <div class="detail-tab active" onclick="showTab('desc',this)">/* U+1F4DD */ Description</div>
-      <div class="detail-tab" onclick="showTab('reviews',this)">? Reviews (<?= count($reviews) ?>)</div>
+      <div class="detail-tab active" onclick="showTab('desc',this)"><i class="bi bi-file-text"></i> Description</div>
+      <div class="detail-tab" onclick="showTab('reviews',this)"><i class="bi bi-chat-square-text"></i> Reviews (<?= count($reviews) ?>)</div>
     </div>
 
     <!-- Description -->
@@ -325,7 +325,7 @@ ob_start();
           <div class="review-header">
             <div>
               <div class="reviewer-name"><?= htmlspecialchars($rv['reviewer']??'Anonymous', ENT_QUOTES) ?></div>
-              <span class="stars-gold"><?= str_repeat('?',(int)($rv['rating']??0)).str_repeat('?',5-(int)($rv['rating']??0)) ?></span>
+              <span class="stars-gold"><?= str_repeat('&#9733;',(int)($rv['rating']??0)).str_repeat('&#9734;',5-(int)($rv['rating']??0)) ?></span>
             </div>
             <div class="review-date"><?= date('M d, Y', strtotime($rv['created_at'])) ?></div>
           </div>
@@ -398,19 +398,21 @@ function showTab(name, el) {
 function addToCart(id) {
   const qty = parseInt(document.getElementById('qty').value)||1;
   const btn = document.getElementById('add-cart-btn');
-  btn.textContent = '? Adding...'; btn.disabled = true;
+  btn.textContent = 'Adding...'; btn.disabled = true;
   fetch('<?= View::url('/cart/add') ?>', {
     method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'},
     body:'product_id='+id+'&qty='+qty+'&_token=<?= $_SESSION['_token'] ?? '' ?>'
   }).then(r=>r.json()).then(d=>{
-    btn.textContent = d.ok ? '? Added to Cart!' : '? Error';
-    setTimeout(()=>{ btn.textContent = '/* U+1F6D2 */ <?= t('product.add_to_cart') ?>'; btn.disabled = false; }, 2000);
-  }).catch(()=>{ btn.textContent = '/* U+1F6D2 */ Add to Cart'; btn.disabled=false; });
+    btn.textContent = d.ok ? 'Added to Cart!' : 'Error';
+    setTimeout(()=>{ btn.innerHTML = '<i class="bi bi-cart-plus"></i> <?= t('product.add_to_cart') ?>'; btn.disabled = false; }, 2000);
+  }).catch(()=>{ btn.innerHTML = '<i class="bi bi-cart-plus"></i> Add to Cart'; btn.disabled=false; });
 }
 function addWishlist(id) {
-  const btn = event.target;
-  btn.textContent = '?'; btn.style.color='#DC2626';
-  setTimeout(()=>{ btn.style.color=''; }, 300);
+  const btn = event.target.closest('.wishlist-btn');
+  const icon = btn.querySelector('i');
+  icon.className = 'bi bi-heart-fill';
+  btn.style.color='#DC2626';
+  setTimeout(()=>{ btn.style.color=''; icon.className='bi bi-heart'; }, 300);
 }
 </script>
 <?php
