@@ -59,7 +59,7 @@ ob_start();
       </div>
       <div>
         <label style="font-size:11px;color:var(--dark-muted);display:block;margin-bottom:4px">Name (AM)</label>
-        <input type="text" name="name_am" class="ag-inp" placeholder="e.g. ????????" style="max-width:none;width:100%">
+        <input type="text" name="name_am" class="ag-inp" placeholder="Amharic name (optional)" style="max-width:none;width:100%">
       </div>
       <div>
         <label style="font-size:11px;color:var(--dark-muted);display:block;margin-bottom:4px">Slug (auto-generated)</label>
