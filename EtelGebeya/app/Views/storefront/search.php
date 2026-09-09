@@ -28,44 +28,46 @@ $totalPages = $total > 0 ? max(1, (int)ceil($total / ($per ?? 20))) : 1;
 ob_start();
 ?>
 <style>
-.search-page { padding: 2rem 0; }
+.search-page { padding: 20px 0; }
 .search-hero {
-  background: linear-gradient(135deg, var(--eg-gold-dim), rgba(37,99,235,.05));
-  border: 1.5px solid var(--eg-gold-glow); border-radius: var(--eg-radius);
-  padding: 2rem; margin-bottom: 2rem;
+  background: linear-gradient(135deg,#0d0900 0%,#1c1208 40%,#2a1c0a 70%,#100c06 100%);
+  border: 1px solid var(--border); border-radius: var(--r2);
+  padding: 28px 24px; margin-bottom: 20px;
 }
-.search-hero-form { display: flex; gap: .75rem; max-width: 640px; margin: .75rem auto 0; }
+.search-hero-form { display: flex; gap: 10px; max-width: 640px; margin: 14px auto 0; }
 .search-hero-form input {
-  flex: 1; padding: .85rem 1.2rem; border: 1.5px solid var(--eg-border); border-radius: 14px;
-  font-size: 1rem; background: var(--eg-surface); color: var(--eg-text); outline: none;
+  flex: 1; padding: 13px 18px; border: 1.5px solid var(--border); border-radius: var(--r);
+  font-size: 14px; background: var(--card); color: var(--text); outline: none;
 }
-.search-hero-form input:focus { border-color: var(--eg-gold); }
+.search-hero-form input:focus { border-color: var(--g2); }
 .search-hero-form button {
-  padding: .85rem 1.5rem; background: linear-gradient(135deg,var(--eg-blue-deep),var(--eg-blue));
-  color: #fff; border: none; border-radius: 14px; font-weight: 800; cursor: pointer; font-size:.95rem;
+  padding: 13px 22px; background: var(--grad);
+  color: #080604; border: none; border-radius: var(--r); font-weight: 800; cursor: pointer; font-size: 13.5px;
+  display: inline-flex; align-items: center; gap: 6px;
 }
-.search-layout { display: grid; grid-template-columns: 220px 1fr; gap: 2rem; }
+.search-layout { display: grid; grid-template-columns: 220px 1fr; gap: 20px; }
 @media(max-width:768px){ .search-layout { grid-template-columns: 1fr; } }
-.search-sidebar { position: sticky; top: 1rem; }
-.filter-card { background: var(--eg-glass); border: 1.5px solid var(--eg-border); border-radius: 18px; padding: 1.2rem; margin-bottom: 1rem; }
-.filter-title { font-weight: 800; color: var(--eg-blue-deep); margin-bottom: .75rem; font-size: .9rem; }
-.cat-filter-link { display: flex; align-items: center; gap: .5rem; padding: .3rem .5rem; border-radius: 8px; font-size: .82rem; text-decoration: none; color: var(--eg-text-dim); transition: all .2s; }
-.cat-filter-link:hover { background: var(--eg-blue-dim); color: var(--eg-blue); }
-.sort-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem; flex-wrap: wrap; gap: .5rem; }
-.sort-bar select { background: var(--eg-glass); border: 1.5px solid var(--eg-border); border-radius: 10px; padding: .45rem .9rem; font-size: .85rem; color: var(--eg-text); outline: none; }
-.results-count { font-size: .85rem; color: var(--eg-text-dim); }
-.highlight { background: var(--eg-gold-dim); color: var(--eg-gold-deep); padding: 0 3px; border-radius: 3px; }
-.no-results { text-align: center; padding: 4rem 2rem; }
-.pag-row { display: flex; justify-content: center; gap: .5rem; margin-top: 2rem; flex-wrap: wrap; }
-.pag-a { display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 10px; border: 1.5px solid var(--eg-border); background: var(--eg-glass); color: var(--eg-text-dim); text-decoration: none; font-size: .88rem; transition: all .2s; }
-.pag-a:hover, .pag-a.active { background: var(--eg-blue); color: #fff; border-color: var(--eg-blue); }
+.search-sidebar { position: sticky; top: calc(var(--header-h) + 8px); }
+.filter-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--r2); padding: 16px; margin-bottom: 12px; }
+.filter-title { font-weight: 700; color: var(--text); margin-bottom: 10px; font-size: 12.5px; text-transform: uppercase; letter-spacing: .8px; }
+.cat-filter-link { display: flex; align-items: center; gap: 8px; padding: 7px 8px; border-radius: 8px; font-size: 12.5px; text-decoration: none; color: var(--text2); transition: all .15s; }
+.cat-filter-link:hover { background: rgba(212,175,55,.08); color: var(--g1); }
+.sort-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 10px; }
+.sort-bar select { background: var(--card); border: 1.5px solid var(--border); border-radius: 8px; padding: 8px 12px; font-size: 12.5px; color: var(--text); outline: none; }
+.results-count { font-size: 12.5px; color: var(--text2); }
+.results-count strong { color: var(--text); }
+.highlight { background: rgba(212,175,55,.15); color: var(--g1); padding: 0 3px; border-radius: 3px; }
+.no-results { text-align: center; padding: 60px 20px; color: var(--text3); }
+.pag-row { display: flex; justify-content: center; gap: 8px; margin-top: 24px; flex-wrap: wrap; }
+.pag-a { display: inline-flex; align-items: center; justify-content: center; min-width: 40px; height: 40px; padding: 0 6px; border-radius: 10px; border: 1.5px solid var(--border); background: var(--card); color: var(--text2); text-decoration: none; font-size: 13px; font-weight: 600; transition: all .15s; }
+.pag-a:hover, .pag-a.active { background: var(--grad); color: #080604; border-color: transparent; }
 </style>
 
-<div class="container search-page">
+<div class="search-page">
   <!-- Search Hero -->
   <div class="search-hero">
-    <h2 style="text-align:center;font-size:1.4rem;font-weight:800;color:var(--eg-blue-deep)">
-      <?= $q ? 'Results for <em style="color:var(--eg-gold-deep)">'.e($q).'</em>' : 'Search Etel Gebeya' ?>
+    <h2 style="text-align:center;font-size:1.4rem;font-weight:800;color:var(--text)">
+      <?= $q ? 'Results for <em style="color:var(--g1)">'.e($q).'</em>' : 'Search Etel Gebeya' ?>
     </h2>
     <div class="search-hero-form">
       <form action="<?= View::url('/search') ?>" method="GET" style="display:flex;gap:.75rem;width:100%">
@@ -80,7 +82,7 @@ ob_start();
     <aside class="search-sidebar">
       <div class="filter-card">
         <div class="filter-title"><i class="bi bi-folder2"></i> Categories</div>
-        <a href="<?= View::url('/search?q='.urlencode($q)) ?>" class="cat-filter-link" style="font-weight:700;color:var(--eg-blue)">All categories</a>
+        <a href="<?= View::url('/search?q='.urlencode($q)) ?>" class="cat-filter-link" style="font-weight:700;color:var(--g1)">All categories</a>
         <?php foreach ($allCats as $cat): ?>
           <a href="<?= View::url('/category/'.$cat->slug) ?>" class="cat-filter-link">
             <?= e(html_entity_decode($cat->name($locale), ENT_QUOTES | ENT_HTML5, 'UTF-8')) ?>
@@ -91,7 +93,7 @@ ob_start();
       <div class="filter-card">
         <div class="filter-title"><i class="bi bi-cash-stack"></i> Price Range</div>
         <?php foreach ([['All',''],['Under Br 500','0-500'],['Br 500-2,000','500-2000'],['Br 2,000-10,000','2000-10000'],['Br 10,000+','10000+']] as [$label,$val]): ?>
-          <label style="display:flex;align-items:center;gap:.5rem;font-size:.82rem;color:var(--eg-text-dim);padding:.2rem 0;cursor:pointer">
+          <label style="display:flex;align-items:center;gap:.5rem;font-size:.82rem;color:var(--text2);padding:.2rem 0;cursor:pointer">
             <input type="radio" name="price" value="<?= $val ?>" <?= (($_GET['price']??'')===$val||(empty($_GET['price'])&&$val==='')?'checked':'') ?>>
             <?= $label ?>
           </label>
@@ -101,7 +103,7 @@ ob_start();
       <div class="filter-card">
         <div class="filter-title"><i class="bi bi-star-fill"></i> Rating</div>
         <?php foreach ([['Any rating',''],['4&#9733; & up','4'],['3&#9733; & up','3']] as [$label,$val]): ?>
-          <label style="display:flex;align-items:center;gap:.5rem;font-size:.82rem;color:var(--eg-text-dim);padding:.2rem 0;cursor:pointer">
+          <label style="display:flex;align-items:center;gap:.5rem;font-size:.82rem;color:var(--text2);padding:.2rem 0;cursor:pointer">
             <input type="radio" name="rating" value="<?= $val ?>" <?= (($_GET['rating']??'')===$val?'checked':'') ?>>
             <?= $label ?>
           </label>
@@ -120,7 +122,7 @@ ob_start();
           <?php endif; ?>
         </div>
         <div style="display:flex;align-items:center;gap:.5rem;">
-          <span style="font-size:.8rem;color:var(--eg-text-dim)">Sort:</span>
+          <span style="font-size:.8rem;color:var(--text2)">Sort:</span>
           <select onchange="applySort(this.value)">
             <option value="relevant" <?= ($_GET['sort']??'')==='relevant'?'selected':'' ?>>Most Relevant</option>
             <option value="newest" <?= ($_GET['sort']??'')==='newest'?'selected':'' ?>>Newest</option>
@@ -134,19 +136,19 @@ ob_start();
 
       <?php if (empty($products)): ?>
         <div class="no-results">
-          <div style="font-size:4rem;margin-bottom:1rem"><i class="bi bi-search"></i></div>
-          <h3 style="color:var(--eg-text-dim)"><?= htmlspecialchars(t('search.no_results'), ENT_QUOTES) ?></h3>
-          <p style="color:var(--eg-text-muted);margin-top:.5rem;margin-bottom:1.5rem">Try different keywords or browse by category</p>
+          <div style="font-size:4rem;margin-bottom:1rem;color:var(--g2);opacity:.5"><i class="bi bi-search"></i></div>
+          <h3 style="color:var(--text)"><?= htmlspecialchars(t('search.no_results'), ENT_QUOTES) ?></h3>
+          <p style="margin-top:.5rem;margin-bottom:1.5rem">Try different keywords or browse by category</p>
           <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap">
             <?php foreach (array_slice($allCats,0,4) as $cat): ?>
-              <a href="<?= View::url('/category/'.$cat->slug) ?>" style="padding:.5rem 1.1rem;border-radius:20px;border:1.5px solid var(--eg-border);color:var(--eg-blue);text-decoration:none;font-size:.85rem;background:var(--eg-glass)">
+              <a href="<?= View::url('/category/'.$cat->slug) ?>" style="padding:.5rem 1.1rem;border-radius:20px;border:1.5px solid var(--border);color:var(--g1);text-decoration:none;font-size:.85rem;background:var(--card)">
                 <?= e(html_entity_decode($cat->name($locale), ENT_QUOTES | ENT_HTML5, 'UTF-8')) ?>
               </a>
             <?php endforeach; ?>
           </div>
         </div>
       <?php else: ?>
-        <div class="product-grid">
+        <div class="eg-product-grid">
           <?php foreach ($products as $p): ?>
             <?= product_card($p, $locale) ?>
           <?php endforeach; ?>
