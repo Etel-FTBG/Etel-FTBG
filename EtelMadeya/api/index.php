@@ -576,14 +576,26 @@ try {
             }
             
             $controllerId = $_SESSION['controller_id'];
-            
+
             $stats = [
                 'total_queued' => db()->count('queue', 'controller_id = ? AND status = ?', [$controllerId, 'queued']),
                 'total_served_today' => db()->count('report', 'controller_id = ? AND report_date = ?', [$controllerId, date('Y-m-d')]),
                 'vip_count' => db()->count('queue', 'controller_id = ? AND queue_type = ? AND status = ?', [$controllerId, 'vip', 'queued']),
                 'waiting_count' => db()->count('queue', 'controller_id = ? AND queue_type = ? AND status = ?', [$controllerId, 'waiting', 'queued'])
             ];
-            
+
+            $controllerRow = db()->fetchOne(
+                "SELECT odd_even_rule, fuel_allocated, fuel_used, liters_allocated, liters_used FROM controllers WHERE id = ?",
+                [$controllerId]
+            );
+            if ($controllerRow) {
+                $stats['odd_even_rule'] = $controllerRow['odd_even_rule'];
+                $stats['fuel_allocated'] = (float)$controllerRow['fuel_allocated'];
+                $stats['fuel_used'] = (float)$controllerRow['fuel_used'];
+                $stats['liters_allocated'] = (float)$controllerRow['liters_allocated'];
+                $stats['liters_used'] = (float)$controllerRow['liters_used'];
+            }
+
             jsonResponse(['success' => true, 'stats' => $stats]);
             break;
 
