@@ -66,11 +66,13 @@ ob_start();
               <?php else: ?>
                 <div style="display:flex;gap:.3rem;margin-top:.35rem;flex-wrap:wrap">
                   <form method="POST" action="<?= View::url('/vendor-panel/orders/mark-forwarded') ?>" style="display:inline">
+                    <?= csrf() ?>
                     <input type="hidden" name="item_id" value="<?= (int)$it['item_id'] ?>">
                     <button type="submit" class="dash-btn-sm" style="background:rgba(255,255,255,.08);color:var(--eg-text-dim,#ddd)" title="I forwarded this to my supplier myself">Mark Forwarded</button>
                   </form>
                   <?php if (!empty($it['supplier_email'])): ?>
                     <form method="POST" action="<?= View::url('/vendor-panel/orders/email-supplier') ?>" style="display:inline" onsubmit="return confirm('Email the order details to <?= e(addslashes($it['supplier_name'] ?? 'this supplier')) ?>?')">
+                      <?= csrf() ?>
                       <input type="hidden" name="item_id" value="<?= (int)$it['item_id'] ?>">
                       <button type="submit" class="dash-btn-sm"><i class="bi bi-envelope"></i> Email Supplier</button>
                     </form>
@@ -83,6 +85,7 @@ ob_start();
           <td>
             <?php if (isset($nextStatus[$it['item_status']])): $ns = $nextStatus[$it['item_status']]; ?>
               <form method="POST" action="<?= View::url('/vendor-panel/orders/item-status') ?>" style="display:inline">
+                <?= csrf() ?>
                 <input type="hidden" name="item_id" value="<?= (int)$it['item_id'] ?>">
                 <input type="hidden" name="status" value="<?= e($ns) ?>">
                 <button type="submit" class="dash-btn-sm"><?= $nextLabel[$ns] ?></button>
