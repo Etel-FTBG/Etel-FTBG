@@ -7,7 +7,7 @@ ob_start();
 ?>
 <style>
 .pl-toolbar{display:flex;align-items:center;gap:.75rem;margin-bottom:1.25rem;flex-wrap:wrap}
-.pl-search{display:flex;align-items:center;gap:.5rem;background:rgba(255,255,255,.05);border:1.5px solid rgba(255,255,255,.08);border-radius:12px;padding:.5rem .9rem;flex:1;min-width:200px}
+.pl-search{display:flex;align-items:center;gap:.5rem;background:var(--dark-card);border:1.5px solid var(--dark-border);border-radius:12px;padding:.5rem .9rem;flex:1;min-width:200px}
 .pl-search i{color:var(--dark-muted);font-size:.95rem;flex-shrink:0}
 .pl-search input{border:none;background:transparent;color:#f0f0f0;font-size:.88rem;font-family:'Outfit',sans-serif;outline:none;width:100%}
 .pl-search input::placeholder{color:var(--dark-muted)}
