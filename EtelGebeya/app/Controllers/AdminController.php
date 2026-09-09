@@ -384,6 +384,135 @@ final class AdminController
     }
 
     // -------------------------------------------------------
+    // Supplier Catalog (platform-run dropship catalog, phase 2)
+    // -------------------------------------------------------
+
+    public function catalog(): void
+    {
+        \App\Models\Supplier::ensureSchema($this->db);
+        $page   = $this->page();
+        $items  = \App\Models\CatalogItem::forAdmin($this->db, $this->perPage, $this->offset($page));
+        $total  = \App\Models\CatalogItem::countAll($this->db);
+        $pages  = max(1, (int)ceil($total / $this->perPage));
+        $suppliers  = \App\Models\Supplier::platformSuppliers($this->db);
+        $categories = $this->db->fetchAll("SELECT id, name_en FROM categories ORDER BY name_en");
+        $flash  = $this->auth->takeFlash();
+
+        $this->render('admin-panel/catalog', compact('items', 'total', 'page', 'pages', 'suppliers', 'categories', 'flash'));
+    }
+
+    public function saveCatalogItem(): void
+    {
+        \App\Models\Supplier::ensureSchema($this->db);
+
+        $id          = (int)($_POST['id'] ?? 0);
+        $supplierId  = (int)($_POST['supplier_id'] ?? 0);
+        $nameEn      = trim($_POST['name_en'] ?? '');
+        $nameAm      = trim($_POST['name_am'] ?? '');
+        $descEn      = trim($_POST['description_en'] ?? '');
+        $sku         = trim($_POST['sku'] ?? '');
+        $costPrice   = (float)($_POST['cost_price'] ?? 0);
+        $markupPct   = (float)($_POST['suggested_markup_pct'] ?? 30);
+        $categoryId  = (int)($_POST['category_id'] ?? 0) ?: null;
+        $imageUrl    = trim($_POST['image_url'] ?? '');
+        $galleryUrls = trim($_POST['gallery_urls'] ?? '');
+        $leadMin     = (int)($_POST['dropship_lead_days_min'] ?? 0) ?: null;
+        $leadMax     = (int)($_POST['dropship_lead_days_max'] ?? 0) ?: null;
+        $status      = in_array($_POST['status'] ?? '', ['active', 'archived'], true) ? $_POST['status'] : 'active';
+
+        if ($nameEn === '' || $costPrice <= 0 || $supplierId <= 0) {
+            $this->auth->flash('error', 'Name, a positive cost price, and a supplier are required.');
+            redirect('/admin/catalog');
+        }
+        if (!\App\Models\Supplier::findPlatform($this->db, $supplierId)) {
+            $this->auth->flash('error', 'Choose a valid platform supplier (or add one below first).');
+            redirect('/admin/catalog');
+        }
+
+        $data = [
+            'supplier_id'            => $supplierId,
+            'category_id'            => $categoryId,
+            'name_en'                => $nameEn,
+            'name_am'                => $nameAm ?: null,
+            'description_en'         => $descEn ?: null,
+            'sku'                    => $sku ?: null,
+            'cost_price'             => $costPrice,
+            'suggested_markup_pct'   => $markupPct,
+            'image_url'              => $imageUrl ?: null,
+            'gallery_urls'           => $galleryUrls ?: null,
+            'dropship_lead_days_min' => $leadMin,
+            'dropship_lead_days_max' => $leadMax,
+            'status'                 => $status,
+            'updated_at'             => date('Y-m-d H:i:s'),
+        ];
+
+        if ($id > 0) {
+            $this->db->update('catalog_items', $data, 'id = ?', [$id]);
+            $this->auth->flash('success', 'Catalog item updated.');
+        } else {
+            $data['created_at'] = date('Y-m-d H:i:s');
+            $this->db->insert('catalog_items', $data);
+            $this->auth->flash('success', 'Catalog item added.');
+        }
+        redirect('/admin/catalog');
+    }
+
+    public function deleteCatalogItem($id): void
+    {
+        \App\Models\Supplier::ensureSchema($this->db);
+        $this->db->delete('catalog_items', 'id = ?', [(int)$id]);
+        // Vendor products already imported from this item stay untouched --
+        // they're independent rows by design (see CatalogItem::importForSeller).
+        $this->auth->flash('success', 'Catalog item removed.');
+        redirect('/admin/catalog');
+    }
+
+    /** Quick-add a platform supplier (seller_id NULL) from the catalog page. */
+    public function saveCatalogSupplier(): void
+    {
+        \App\Models\Supplier::ensureSchema($this->db);
+        $name = trim($_POST['name'] ?? '');
+        if ($name === '') {
+            $this->auth->flash('error', 'Supplier name is required.');
+            redirect('/admin/catalog');
+        }
+        $this->db->insert('suppliers', [
+            'seller_id'     => null,
+            'name'          => $name,
+            'contact_email' => trim($_POST['contact_email'] ?? '') ?: null,
+            'contact_phone' => trim($_POST['contact_phone'] ?? '') ?: null,
+            'website'       => trim($_POST['website'] ?? '') ?: null,
+            'notes'         => trim($_POST['notes'] ?? '') ?: null,
+            'created_at'    => date('Y-m-d H:i:s'),
+            'updated_at'    => date('Y-m-d H:i:s'),
+        ]);
+        $this->auth->flash('success', 'Platform supplier added.');
+        redirect('/admin/catalog');
+    }
+
+    public function importCatalogCsv(): void
+    {
+        \App\Models\Supplier::ensureSchema($this->db);
+        $supplierId = (int)($_POST['supplier_id'] ?? 0);
+        if ($supplierId <= 0 || !\App\Models\Supplier::findPlatform($this->db, $supplierId)) {
+            $this->auth->flash('error', 'Choose a valid platform supplier for this import.');
+            redirect('/admin/catalog');
+        }
+        if (empty($_FILES['csv']['tmp_name']) || $_FILES['csv']['error'] !== UPLOAD_ERR_OK) {
+            $this->auth->flash('error', 'Choose a CSV file to upload.');
+            redirect('/admin/catalog');
+        }
+
+        $result = \App\Models\CatalogItem::importCsv($this->db, $supplierId, $_FILES['csv']['tmp_name']);
+        $msg = $result['inserted'] . ' item(s) imported.';
+        if ($result['errors']) {
+            $msg .= ' ' . count($result['errors']) . ' row(s) skipped: ' . implode(' ', array_slice($result['errors'], 0, 5));
+        }
+        $this->auth->flash($result['inserted'] > 0 ? 'success' : 'error', $msg);
+        redirect('/admin/catalog');
+    }
+
+    // -------------------------------------------------------
     // Settings
     // -------------------------------------------------------
 
