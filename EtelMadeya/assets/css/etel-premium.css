@@ -468,6 +468,20 @@ button, .btn, .btn-primary, .btn-secondary, .btn-success, a {
     opacity: 0.08;
 }
 
+/* ═══ ADMIN DASHBOARD — stat-icon color consistency ═══════════════
+   Ran the admin dashboard through the ui-ux-pro-max skill. Its top
+   finding: the 4 stat-card icons (blue/green/orange/purple) don't map
+   to anything semantic - Active Controllers, Total Queued, Served
+   Today, and Vehicle Types are all neutral count metrics, none of
+   them an error/warning/success state, so the color variety was pure
+   decoration clashing with the gold/carbon brand used everywhere else.
+   Unified to the brand gold gradient; the 4 cards stay distinguishable
+   via their icon + label, matching the skill's visual-hierarchy
+   guidance (hierarchy via icon/label, not arbitrary color). */
+.stat-icon.blue, .stat-icon.green, .stat-icon.orange, .stat-icon.purple {
+    background: linear-gradient(135deg, var(--ep-gold-light) 0%, var(--ep-gold-deep) 100%);
+}
+
 /* ═══ REDUCED MOTION — respect user preference ════════════════════ */
 @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after {
