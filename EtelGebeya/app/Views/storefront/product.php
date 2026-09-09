@@ -78,7 +78,11 @@ ob_start();
 ?>
 <style>
 .product-page { padding: 20px 0; }
-.product-breadcrumb { padding: 10px 0; margin-bottom: 20px; font-size: 12.5px; color: var(--text2); display: flex; align-items: center; flex-wrap: wrap; }
+.product-breadcrumb {
+  padding: 9px 16px; margin-bottom: 20px; font-size: 12.5px; color: var(--text2);
+  display: flex; align-items: center; flex-wrap: wrap;
+  background: var(--card); border: 1px solid var(--border); border-radius: var(--r);
+}
 .product-breadcrumb a { color: var(--text2); transition: color .15s; }
 .product-breadcrumb a:hover { color: var(--g1); }
 .product-breadcrumb span { margin: 0 8px; color: var(--text3); display: inline-flex; }
@@ -105,7 +109,11 @@ ob_start();
 .gallery-thumb img { width: 100%; height: 100%; object-fit: cover; }
 
 /* Product Info */
-.product-info-panel { display: flex; flex-direction: column; gap: 18px; }
+.product-info-panel {
+  display: flex; flex-direction: column; gap: 18px;
+  background: var(--card); border: 1px solid var(--border); border-radius: var(--r2);
+  padding: 22px;
+}
 .product-vendor-tag {
   display: inline-flex; align-items: center; gap: 8px; align-self: flex-start;
   background: rgba(212,175,55,.1); border: 1px solid var(--border);
@@ -165,6 +173,10 @@ ob_start();
 .vendor-rating { font-size: 12px; color: var(--text2); }
 
 /* Tabs */
+.detail-panel {
+  background: var(--card); border: 1px solid var(--border); border-radius: var(--r2);
+  padding: 22px;
+}
 .detail-tabs { border-bottom: 2px solid var(--border); display: flex; gap: 0; margin-bottom: 20px; }
 .detail-tab { padding: 11px 20px; font-weight: 700; font-size: 13px; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px; color: var(--text2); transition: all .15s; display: inline-flex; align-items: center; gap: 6px; }
 .detail-tab.active { border-bottom-color: var(--g2); color: var(--g1); }
@@ -310,7 +322,7 @@ ob_start();
   </div>
 
   <!-- Detail Tabs -->
-  <div style="margin-top:3rem;">
+  <div class="detail-panel" style="margin-top:3rem;">
     <div class="detail-tabs">
       <div class="detail-tab active" onclick="showTab('desc',this)"><i class="bi bi-file-text"></i> Description</div>
       <div class="detail-tab" onclick="showTab('reviews',this)"><i class="bi bi-chat-square-text"></i> Reviews (<?= count($reviews) ?>)</div>
