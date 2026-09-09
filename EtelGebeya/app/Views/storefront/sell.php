@@ -9,7 +9,7 @@ ob_start();
     <div style="text-align:center;margin-bottom:2rem">
       <div style="font-size:2.5rem;margin-bottom:.5rem"><i class="bi bi-shop"></i></div>
       <h1 style="font-size:1.8rem;font-weight:900;background:linear-gradient(135deg,#FFE066,#D4AF37);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">Become a Vendor</h1>
-      <p style="color:var(--eg-text-dim);margin-top:.5rem">Join thousands of Ethiopian sellers on Etel Gebeya</p>
+      <p style="color:var(--text2);margin-top:.5rem">Join thousands of Ethiopian sellers on Etel Gebeya</p>
     </div>
 
     <?php if (!empty($flash)): ?>
@@ -18,11 +18,11 @@ ob_start();
       </div>
     <?php endif; ?>
 
-    <form method="POST" action="<?= View::url('/sell') ?>" style="background:var(--eg-glass,rgba(255,255,255,.04));border:1.5px solid var(--eg-border,rgba(255,255,255,.08));border-radius:20px;padding:2rem">
+    <form method="POST" action="<?= View::url('/sell') ?>" style="background:var(--card);border:1.5px solid var(--border);border-radius:20px;padding:2rem">
 
       <?php
       $inp = 'width:100%;padding:.7rem 1rem;background:rgba(255,255,255,.05);border:1.5px solid rgba(255,255,255,.1);border-radius:12px;color:#f0f0f0;font-size:.95rem;outline:none;box-sizing:border-box';
-      $lbl = 'display:block;font-size:.82rem;color:var(--eg-text-dim);margin-bottom:.4rem;font-weight:600';
+      $lbl = 'display:block;font-size:.82rem;color:var(--text2);margin-bottom:.4rem;font-weight:600';
       $grp = 'margin-bottom:1rem';
       ?>
 
@@ -43,7 +43,7 @@ ob_start();
         <input type="text" name="store_name" required placeholder="e.g. Addis Fashion House" style="<?= $inp ?>">
       </div>
       <div style="margin-bottom:1.5rem">
-        <label style="<?= $lbl ?>">Password * <span style="color:var(--eg-text-dim);font-weight:400">(min. 8 characters)</span></label>
+        <label style="<?= $lbl ?>">Password * <span style="color:var(--text2);font-weight:400">(min. 8 characters)</span></label>
         <input type="password" name="password" required minlength="8" placeholder="Choose a strong password" style="<?= $inp ?>">
       </div>
 
@@ -51,16 +51,16 @@ ob_start();
         <i class="bi bi-shop"></i> Create My Store
       </button>
 
-      <p style="text-align:center;margin-top:1.2rem;font-size:.85rem;color:var(--eg-text-dim)">
-        Already have an account? <a href="<?= View::url('/login') ?>" style="color:var(--eg-gold,#D4AF37)">Log in</a>
+      <p style="text-align:center;margin-top:1.2rem;font-size:.85rem;color:var(--text2)">
+        Already have an account? <a href="<?= View::url('/login') ?>" style="color:var(--g1)">Log in</a>
       </p>
     </form>
 
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-top:2rem;text-align:center">
       <?php foreach ([['bi-check-circle','Free to join'],['bi-box-seam','List unlimited products'],['bi-credit-card','Get paid fast']] as [$icon,$text]): ?>
-        <div style="background:var(--eg-glass,rgba(255,255,255,.04));border:1px solid var(--eg-border,rgba(255,255,255,.08));border-radius:12px;padding:1rem .75rem">
+        <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1rem .75rem">
           <div style="font-size:1.5rem;margin-bottom:.4rem"><i class="bi <?= $icon ?>"></i></div>
-          <div style="font-size:.8rem;color:var(--eg-text-dim)"><?= $text ?></div>
+          <div style="font-size:.8rem;color:var(--text2)"><?= $text ?></div>
         </div>
       <?php endforeach; ?>
     </div>
