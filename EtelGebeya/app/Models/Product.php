@@ -205,6 +205,20 @@ final class Product
         }, $rows)));
     }
 
+    public static function bySeller(int $sellerId, int $limit = 24): array
+    {
+        $limit = max(1, $limit);
+        try {
+            $rows = $GLOBALS['__db']->fetchAll(
+                "SELECT * FROM products WHERE " . self::statusClause() . " AND seller_id = ? ORDER BY created_at DESC LIMIT $limit",
+                [$sellerId]
+            );
+        } catch (\Throwable $_) { $rows = []; }
+        return array_values(array_filter(array_map(function($r) {
+            try { return self::fromRow($r); } catch (\Throwable $_) { return null; }
+        }, $rows)));
+    }
+
     public static function bySlug(string $slug): ?self
     {
         try {
