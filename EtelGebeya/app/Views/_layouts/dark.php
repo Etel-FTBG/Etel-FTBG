@@ -34,11 +34,11 @@ $roleLabel = $role ?? ($user['roles'][0] ?? 'user');
 
 <div class="dash-wrapper">
 
-  <!-- ??? SIDEBAR ??? -->
+  <!-- SIDEBAR -->
   <aside class="dash-sidebar">
 
     <div class="sidebar-brand">
-      <div class="sidebar-logo">?</div>
+      <div class="sidebar-logo">E</div>
       <div class="sidebar-brand-text">
         <div class="sidebar-brand-name">Etel Gebeya</div>
         <div class="sidebar-brand-role"><?= e(ucfirst($roleLabel)) ?> Panel</div>
@@ -97,7 +97,7 @@ $roleLabel = $role ?? ($user['roles'][0] ?? 'user');
     </nav>
   </aside>
 
-  <!-- ??? MAIN ??? -->
+  <!-- MAIN -->
   <main class="dash-main">
 
     <header class="dash-topbar">
@@ -119,7 +119,7 @@ $roleLabel = $role ?? ($user['roles'][0] ?? 'user');
           <i class="bi bi-globe2"></i>
         </a>
         <a href="/lang/<?= $locale === 'am' ? 'en' : 'am' ?>" class="topbar-btn" title="Toggle language">
-          <?= $locale === 'am' ? 'EN' : '??' ?>
+          <?= $locale === 'am' ? 'EN' : 'AM' ?>
         </a>
         <div class="user-avatar" title="<?= e($user['full_name'] ?? 'User') ?>">
           <?= e(mb_substr($user['full_name'] ?? 'U', 0, 1, 'UTF-8')) ?>
