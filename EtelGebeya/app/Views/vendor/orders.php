@@ -35,6 +35,7 @@ ob_start();
           <th>Qty</th>
           <th>My Revenue</th>
           <th>Status</th>
+          <th>Fulfilment</th>
           <th>Date</th>
           <th>Action</th>
         </tr>
@@ -52,6 +53,32 @@ ob_start();
           <td><?= (int)$it['quantity'] ?></td>
           <td>Br <?= number_format((float)$it['total_price'], 2) ?></td>
           <td><span class="badge-status badge-<?= e($it['item_status']) ?>"><?= e($it['item_status']) ?></span></td>
+          <td>
+            <?php if (empty($it['is_dropship'])): ?>
+              <span style="color:var(--eg-text-dim);font-size:.78rem">In-house</span>
+            <?php else: ?>
+              <span class="badge-status" style="background:rgba(155,89,182,.15);color:#9b59b6"><i class="bi bi-truck"></i> Dropship</span>
+              <?php if (!empty($it['supplier_name'])): ?>
+                <div style="font-size:.75rem;color:var(--eg-text-dim);margin-top:.25rem"><?= e($it['supplier_name']) ?></div>
+              <?php endif; ?>
+              <?php if (!empty($it['forwarded_at'])): ?>
+                <div style="font-size:.72rem;color:#10b981;margin-top:.2rem"><i class="bi bi-check2"></i> Forwarded <?= e($it['forward_method'] === 'email' ? '(emailed)' : '') ?> <?= date('M j', strtotime($it['forwarded_at'])) ?></div>
+              <?php else: ?>
+                <div style="display:flex;gap:.3rem;margin-top:.35rem;flex-wrap:wrap">
+                  <form method="POST" action="<?= View::url('/vendor-panel/orders/mark-forwarded') ?>" style="display:inline">
+                    <input type="hidden" name="item_id" value="<?= (int)$it['item_id'] ?>">
+                    <button type="submit" class="dash-btn-sm" style="background:rgba(255,255,255,.08);color:var(--eg-text-dim,#ddd)" title="I forwarded this to my supplier myself">Mark Forwarded</button>
+                  </form>
+                  <?php if (!empty($it['supplier_email'])): ?>
+                    <form method="POST" action="<?= View::url('/vendor-panel/orders/email-supplier') ?>" style="display:inline" onsubmit="return confirm('Email the order details to <?= e(addslashes($it['supplier_name'] ?? 'this supplier')) ?>?')">
+                      <input type="hidden" name="item_id" value="<?= (int)$it['item_id'] ?>">
+                      <button type="submit" class="dash-btn-sm"><i class="bi bi-envelope"></i> Email Supplier</button>
+                    </form>
+                  <?php endif; ?>
+                </div>
+              <?php endif; ?>
+            <?php endif; ?>
+          </td>
           <td style="font-size:.82rem;color:var(--eg-text-dim)"><?= date('M j, Y', strtotime($it['created_at'])) ?></td>
           <td>
             <?php if (isset($nextStatus[$it['item_status']])): $ns = $nextStatus[$it['item_status']]; ?>

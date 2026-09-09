@@ -341,19 +341,24 @@ final class CheckoutController
                 $code = (string)$storedRef;
             }
 
-            // Pre-fetch seller_ids for all cart products
+            // Pre-fetch seller_ids (+ dropship info, snapshotted onto the
+            // order_item so a later change to the product's dropship setup
+            // never rewrites history on an already-placed order) for all
+            // cart products.
+            \App\Models\Supplier::ensureSchema($this->db);
             $pids      = array_unique(array_column(array_values($cart), 'id'));
             $plist     = implode(',', array_map('intval', $pids));
             $sellerMap = [];
             if ($plist !== '') {
-                foreach ($this->db->fetchAll("SELECT id, seller_id FROM products WHERE id IN ($plist)") as $row) {
-                    $sellerMap[(int)$row['id']] = (int)$row['seller_id'];
+                foreach ($this->db->fetchAll("SELECT id, seller_id, is_dropship, supplier_id FROM products WHERE id IN ($plist)") as $row) {
+                    $sellerMap[(int)$row['id']] = $row;
                 }
             }
 
             foreach ($cart as $item) {
                 $pid       = (int)$item['id'];
-                $sellerId  = $sellerMap[$pid] ?? null;
+                $prow      = $sellerMap[$pid] ?? null;
+                $sellerId  = $prow ? (int)$prow['seller_id'] : null;
                 if (!$sellerId) continue; // skip if product has no seller
                 $lineTotal = round((float)$item['price'] * (int)$item['qty'], 2);
                 $this->db->insert('order_items', [
@@ -366,6 +371,8 @@ final class CheckoutController
                     'total_price'   => $lineTotal,
                     'platform_fee'  => 0,
                     'seller_payout' => $lineTotal,
+                    'is_dropship'   => !empty($prow['is_dropship']) ? 1 : 0,
+                    'supplier_id'   => !empty($prow['is_dropship']) ? ($prow['supplier_id'] ?: null) : null,
                     'created_at'    => $now,
                 ]);
             }

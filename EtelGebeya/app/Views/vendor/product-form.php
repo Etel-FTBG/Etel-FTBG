@@ -311,6 +311,60 @@ ob_start();
       </div>
     </div>
 
+    <!-- DROPSHIPPING -->
+    <?php $isDropship = !empty($p['is_dropship']); ?>
+    <div class="pf-section">
+      <div class="pf-section-head">
+        <div class="pf-section-icon icon-purple"><i class="bi bi-truck"></i></div>
+        <div>
+          <div class="pf-section-title">Dropshipping</div>
+          <div class="pf-section-sub">List this without holding stock -- your supplier ships it directly</div>
+        </div>
+      </div>
+      <div class="pf-body">
+        <div class="toggle-wrap" style="padding:0 0 .9rem">
+          <label class="toggle">
+            <input type="checkbox" name="is_dropship" id="dsToggle" value="1" <?= $isDropship?'checked':'' ?> onchange="document.getElementById('dsFields').style.display=this.checked?'block':'none'">
+            <span class="toggle-slider"></span>
+          </label>
+          <span class="toggle-label">This is a dropshipped product</span>
+        </div>
+        <div id="dsFields" style="display:<?= $isDropship?'block':'none' ?>">
+          <div class="fg">
+            <label>Supplier</label>
+            <select name="supplier_id">
+              <option value="">-- No supplier --</option>
+              <?php foreach (($suppliers ?? []) as $sup): ?>
+                <option value="<?= (int)$sup['id'] ?>" <?= ((int)($p['supplier_id']??0)===(int)$sup['id'])?'selected':'' ?>><?= e($sup['name']) ?></option>
+              <?php endforeach; ?>
+            </select>
+            <div class="hint"><a href="<?= View::url('/vendor-panel/suppliers') ?>" target="_blank" style="color:var(--gold)">+ Add a new supplier</a> (opens in a new tab)</div>
+          </div>
+          <div class="fg-row col2">
+            <div class="fg">
+              <label>Supplier SKU / Reference</label>
+              <input type="text" name="supplier_sku" value="<?= e($p['supplier_sku']??'') ?>" placeholder="e.g. SUP-4521">
+            </div>
+            <div class="fg">
+              <label>Supplier Product Link</label>
+              <input type="url" name="supplier_product_url" value="<?= e($p['supplier_product_url']??'') ?>" placeholder="https://...">
+            </div>
+          </div>
+          <div class="fg-row col2">
+            <div class="fg">
+              <label>Ships In -- Min Days</label>
+              <input type="number" name="dropship_lead_days_min" min="1" value="<?= (int)($p['dropship_lead_days_min']??0) ?: '' ?>" placeholder="e.g. 7">
+            </div>
+            <div class="fg">
+              <label>Ships In -- Max Days</label>
+              <input type="number" name="dropship_lead_days_max" min="1" value="<?= (int)($p['dropship_lead_days_max']??0) ?: '' ?>" placeholder="e.g. 14">
+              <div class="hint">Shown to customers as an honest delivery estimate</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
   </div><!-- /left column -->
 
   <!-- RIGHT SIDEBAR -->
