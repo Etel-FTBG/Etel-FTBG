@@ -194,6 +194,7 @@ final class VendorController
         }
 
         $categories = $this->db->fetchAll("SELECT id, name_en FROM categories WHERE is_active = 1 ORDER BY name_en");
+        $suppliers  = \App\Models\Supplier::forSeller($this->db, $sid);
 
         $this->render('vendor/product-form', [
             'pageTitle'     => $product ? 'Edit Product' : 'Add Product',
@@ -201,6 +202,7 @@ final class VendorController
             'product'       => $product,
             'productImages' => $productImages,
             'categories'    => $categories,
+            'suppliers'     => $suppliers,
             'flash'         => $this->auth->takeFlash(),
         ]);
     }
@@ -225,6 +227,19 @@ final class VendorController
         $weightGrams  = (int)($_POST['weight_grams'] ?? 0) ?: null;
         $status       = in_array($_POST['status'] ?? '', ['active','draft'], true) ? $_POST['status'] : 'draft';
         $isFeatured   = !empty($_POST['is_featured']) ? 1 : 0;
+
+        $isDropship   = !empty($_POST['is_dropship']) ? 1 : 0;
+        $supplierId   = (int)($_POST['supplier_id'] ?? 0) ?: null;
+        if ($isDropship && $supplierId) {
+            // A supplier picked from the dropdown must actually belong to this seller.
+            $ok = \App\Models\Supplier::find($this->db, $supplierId, $sid);
+            if (!$ok) $supplierId = null;
+        }
+        $supplierSku  = trim($_POST['supplier_sku'] ?? '');
+        $supplierUrl  = trim($_POST['supplier_product_url'] ?? '');
+        $leadMin      = (int)($_POST['dropship_lead_days_min'] ?? 0) ?: null;
+        $leadMax      = (int)($_POST['dropship_lead_days_max'] ?? 0) ?: null;
+        if ($leadMin && $leadMax && $leadMax < $leadMin) $leadMax = $leadMin;
 
         if ($nameEn === '' || $price <= 0) {
             $this->auth->flash('error', 'Product name and price are required.');
@@ -252,6 +267,14 @@ final class VendorController
         if ($lowStock > 0)       $data['low_stock_alert']  = $lowStock;
         if ($descAm !== '')      { try { $data['description_am'] = $descAm; } catch (\Throwable $_) {} }
         if ($comparePrice)       { try { $data['compare_price']  = $comparePrice; } catch (\Throwable $_) {} }
+
+        \App\Models\Supplier::ensureSchema($this->db);
+        $data['is_dropship']            = $isDropship;
+        $data['supplier_id']            = $isDropship ? $supplierId : null;
+        $data['supplier_sku']           = $isDropship && $supplierSku !== '' ? $supplierSku : null;
+        $data['supplier_product_url']   = $isDropship && $supplierUrl !== '' ? $supplierUrl : null;
+        $data['dropship_lead_days_min'] = $isDropship ? $leadMin : null;
+        $data['dropship_lead_days_max'] = $isDropship ? $leadMax : null;
 
         if ($id > 0) {
             $existing = $this->db->fetch("SELECT id FROM products WHERE id = ? AND seller_id = ?", [$id, $sid]);
@@ -291,18 +314,28 @@ final class VendorController
         $sid    = (int)$seller['id'];
         $items  = [];
 
+        \App\Models\Supplier::ensureSchema($this->db);
+
         try {
             // One row per order_item (not aggregated) -- each item is this
             // seller's own portion of a possibly multi-vendor order, and
             // each has its own status independent of other sellers' items
-            // in the same order.
+            // in the same order. Supplier fields come from the order_item's
+            // own snapshot (is_dropship/supplier_id), not the live product --
+            // a product's dropship setup can change after an order was placed.
             $items = $this->db->fetchAll(
                 "SELECT oi.id AS item_id, oi.product_name, oi.quantity, oi.total_price, oi.status AS item_status,
+                        oi.is_dropship, oi.forwarded_at, oi.forward_method,
+                        s.id AS supplier_id, s.name AS supplier_name, s.contact_email AS supplier_email,
+                        s.contact_phone AS supplier_phone, s.website AS supplier_website,
+                        p.supplier_sku, p.supplier_product_url,
                         o.order_ref AS code, o.created_at, o.delivery_city AS city,
                         u.full_name as customer_name, u.phone as customer_phone
                    FROM order_items oi
                    JOIN orders o ON o.id = oi.order_id
                    JOIN users u ON u.id = o.user_id
+                   LEFT JOIN suppliers s ON s.id = oi.supplier_id
+                   LEFT JOIN products p ON p.id = oi.product_id
                   WHERE oi.seller_id = ?
                   ORDER BY o.created_at DESC LIMIT 100",
                 [$sid]
@@ -315,6 +348,158 @@ final class VendorController
             'items'     => $items,
             'flash'     => $this->auth->takeFlash(),
         ]);
+    }
+
+    /* -- POST /vendor-panel/orders/mark-forwarded -- */
+    public function markOrderItemForwarded(): void
+    {
+        $seller = $this->requireVendor();
+        $sid    = (int)$seller['id'];
+        $itemId = (int)($_POST['item_id'] ?? 0);
+
+        $item = $this->db->fetch("SELECT id FROM order_items WHERE id = ? AND seller_id = ? AND is_dropship = 1", [$itemId, $sid]);
+        if (!$item) {
+            $this->auth->flash('error', 'Order item not found.');
+            redirect('/vendor-panel/orders');
+        }
+
+        $this->db->update('order_items', [
+            'forwarded_at'   => date('Y-m-d H:i:s'),
+            'forwarded_by'   => $this->auth->id(),
+            'forward_method' => 'manual',
+        ], 'id = ?', [$itemId]);
+
+        $this->auth->flash('success', 'Marked as forwarded to your supplier.');
+        redirect('/vendor-panel/orders');
+    }
+
+    /* -- POST /vendor-panel/orders/email-supplier -- */
+    public function emailSupplier(): void
+    {
+        $seller = $this->requireVendor();
+        $sid    = (int)$seller['id'];
+        $itemId = (int)($_POST['item_id'] ?? 0);
+
+        $item = $this->db->fetch(
+            "SELECT oi.*, s.name AS supplier_name, s.contact_email AS supplier_email,
+                    p.supplier_sku, p.supplier_product_url, o.order_ref, o.delivery_city, o.delivery_address
+               FROM order_items oi
+               JOIN orders o ON o.id = oi.order_id
+               LEFT JOIN suppliers s ON s.id = oi.supplier_id
+               LEFT JOIN products p ON p.id = oi.product_id
+              WHERE oi.id = ? AND oi.seller_id = ? AND oi.is_dropship = 1",
+            [$itemId, $sid]
+        );
+        if (!$item) {
+            $this->auth->flash('error', 'Order item not found.');
+            redirect('/vendor-panel/orders');
+        }
+        if (empty($item['supplier_email'])) {
+            $this->auth->flash('error', 'This item\'s supplier has no email on file -- add one in Suppliers, or use "Mark as Forwarded" instead.');
+            redirect('/vendor-panel/orders');
+        }
+
+        $subject = 'New order to fulfil -- ' . $item['order_ref'];
+        $body = "Please ship the following item directly to the customer below.\n\n"
+              . "Order: " . $item['order_ref'] . "\n"
+              . "Product: " . $item['product_name'] . "\n"
+              . (!empty($item['supplier_sku']) ? "Supplier SKU: " . $item['supplier_sku'] . "\n" : '')
+              . (!empty($item['supplier_product_url']) ? "Product link: " . $item['supplier_product_url'] . "\n" : '')
+              . "Quantity: " . (int)$item['quantity'] . "\n\n"
+              . "Ship to:\n" . ($item['delivery_address'] ?? '') . "\n" . ($item['delivery_city'] ?? '') . "\n\n"
+              . "-- Sent via " . ($seller['store_name'] ?? 'Etel Gebeya vendor') . " on Etel Gebeya";
+
+        $sent = \App\Core\Mailer::send($item['supplier_email'], $subject, $body, $seller['store_name'] ?? 'Etel Gebeya');
+
+        $this->db->update('order_items', [
+            'forwarded_at'   => date('Y-m-d H:i:s'),
+            'forwarded_by'   => $this->auth->id(),
+            'forward_method' => 'email',
+        ], 'id = ?', [$itemId]);
+
+        $this->auth->flash($sent ? 'success' : 'error', $sent
+            ? 'Order sheet emailed to ' . $item['supplier_name'] . '.'
+            : 'Marked as forwarded, but the email could not be sent -- double-check the supplier\'s address.');
+        redirect('/vendor-panel/orders');
+    }
+
+    /* -- GET /vendor-panel/suppliers -- */
+    public function suppliers(): void
+    {
+        $seller = $this->requireVendor();
+        $sid    = (int)$seller['id'];
+        $rows   = \App\Models\Supplier::forSeller($this->db, $sid);
+
+        $this->render('vendor/suppliers', [
+            'pageTitle' => 'Suppliers',
+            'seller'    => $seller,
+            'suppliers' => $rows,
+            'flash'     => $this->auth->takeFlash(),
+        ]);
+    }
+
+    /* -- POST /vendor-panel/suppliers/save -- */
+    public function supplierSave(): void
+    {
+        $seller = $this->requireVendor();
+        $sid    = (int)$seller['id'];
+        \App\Models\Supplier::ensureSchema($this->db);
+
+        $id    = (int)($_POST['id'] ?? 0);
+        $name  = trim($_POST['name'] ?? '');
+        $email = trim($_POST['contact_email'] ?? '');
+        $phone = trim($_POST['contact_phone'] ?? '');
+        $site  = trim($_POST['website'] ?? '');
+        $notes = trim($_POST['notes'] ?? '');
+
+        if ($name === '') {
+            $this->auth->flash('error', 'Supplier name is required.');
+            redirect('/vendor-panel/suppliers');
+        }
+        if ($email !== '' && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            $this->auth->flash('error', 'That email address doesn\'t look valid.');
+            redirect('/vendor-panel/suppliers');
+        }
+
+        $data = [
+            'name'          => $name,
+            'contact_email' => $email ?: null,
+            'contact_phone' => $phone ?: null,
+            'website'       => $site ?: null,
+            'notes'         => $notes ?: null,
+            'updated_at'    => date('Y-m-d H:i:s'),
+        ];
+
+        if ($id > 0) {
+            $existing = \App\Models\Supplier::find($this->db, $id, $sid);
+            if (!$existing) { http_response_code(403); redirect('/vendor-panel/suppliers'); }
+            $this->db->update('suppliers', $data, 'id = ?', [$id]);
+            $this->auth->flash('success', 'Supplier updated.');
+        } else {
+            $data['seller_id']  = $sid;
+            $data['created_at'] = date('Y-m-d H:i:s');
+            $this->db->insert('suppliers', $data);
+            $this->auth->flash('success', 'Supplier added.');
+        }
+
+        redirect('/vendor-panel/suppliers');
+    }
+
+    /* -- POST /vendor-panel/suppliers/{id}/delete -- */
+    public function supplierDelete(int $id): void
+    {
+        $seller = $this->requireVendor();
+        $sid    = (int)$seller['id'];
+        $existing = \App\Models\Supplier::find($this->db, $id, $sid);
+        if ($existing) {
+            // Detach rather than block deletion -- a vendor should be able to
+            // remove a supplier they no longer use without it silently
+            // failing because old products/orders still reference it.
+            $this->db->query("UPDATE products SET supplier_id = NULL WHERE supplier_id = ? AND seller_id = ?", [$id, $sid]);
+            $this->db->delete('suppliers', 'id = ?', [$id]);
+            $this->auth->flash('success', 'Supplier removed.');
+        }
+        redirect('/vendor-panel/suppliers');
     }
 
     /* ?? POST /vendor-panel/orders/item-status ?????????????? */
