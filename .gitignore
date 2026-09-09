@@ -1,2 +1,5 @@
-# Local Claude Code skill/tooling files - not part of the application
-.claude/
+# Local Claude Code tooling files - not part of the application
+.claude/*
+# ...except skills, which are shared project capabilities meant to be
+# available to any session/contributor working on this repo.
+!.claude/skills/
