@@ -211,26 +211,30 @@ try {
             
         case 'create_controller':
             requireAdmin();
-            
+
             $username = sanitize($_POST['username'] ?? '');
-            $password = $_POST['password'] ?? '';
             $fullName = sanitize($_POST['full_name'] ?? '');
             $phone = sanitize($_POST['phone'] ?? '');
             $stationName = sanitize($_POST['station_name'] ?? '');
-            
-            if (empty($username) || empty($password) || empty($fullName)) {
+
+            if (empty($username) || empty($fullName) || empty($phone)) {
                 jsonResponse(['success' => false, 'message' => 'Missing required fields'], 400);
             }
-            
+
             // Check if username exists
             $existing = db()->fetchOne("SELECT id FROM controllers WHERE username = ?", [$username]);
             if ($existing) {
                 jsonResponse(['success' => false, 'message' => 'Username already exists']);
             }
-            
+
+            // Sign-in is EtelID-only (see controller_etelid_login in
+            // api/index.php, matched on the phone number above) - the
+            // local password column is legacy/NOT NULL schema and is
+            // never checked against on login, so it's filled with an
+            // unusable random value rather than collected from the admin.
             $id = db()->insert('controllers', [
                 'username' => $username,
-                'password' => password_hash($password, PASSWORD_DEFAULT),
+                'password' => password_hash(bin2hex(random_bytes(24)), PASSWORD_DEFAULT),
                 'full_name' => $fullName,
                 'phone' => $phone,
                 'station_name' => $stationName ?: 'Etel Madeya Gas Station'
@@ -266,12 +270,9 @@ try {
                 'station_name' => $stationName,
                 'is_active' => $isActive
             ];
-            
-            // Update password if provided
-            if (!empty($_POST['password'])) {
-                $data['password'] = password_hash($_POST['password'], PASSWORD_DEFAULT);
-            }
-            
+
+            // Local password is never checked at sign-in (EtelID-only,
+            // matched on phone) - nothing to update here.
             db()->update('controllers', $data, 'id = ?', [$id]);
             
             // Log activity

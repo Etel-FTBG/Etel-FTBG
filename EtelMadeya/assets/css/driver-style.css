@@ -3,9 +3,15 @@
    ═══════════════════════════════════════════════════════════════════ */
 
 :root {
-    --primary: #d4a017;
-    --primary-dark: #b8860b;
-    --gold: #ffd700;
+    /* Aligned to etel-premium.css's --ep-gold family (loaded last on
+       every page) via var() with a matching fallback, so this legacy
+       token namespace and the premium layer's --ep-* tokens always
+       resolve to the same gold - not two different hex values rendered
+       simultaneously depending on which selector happened to use which
+       namespace. */
+    --primary: var(--ep-gold, #D4AF37);
+    --primary-dark: var(--ep-gold-dim, #B8941E);
+    --gold: var(--ep-gold-light, #F5CC44);
     --bronze: #cd7f32;
     --success: #16a34a;
     --warning: #ea580c;
@@ -14,7 +20,7 @@
     --dark-brown: #2d2416;
     --gray: #6b7280;
     --light-gray: #f3f4f6;
-    --border: #d4a017;
+    --border: var(--ep-gold, #D4AF37);
     --white: #ffffff;
 }
 
@@ -93,6 +99,7 @@ body::before {
     border: 1px solid var(--gold);
     color: var(--white);
     padding: 4px 12px;
+    min-height: 28px;
     border-radius: 4px;
     cursor: pointer;
     font-size: 13px;

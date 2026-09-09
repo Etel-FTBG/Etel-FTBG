@@ -55,11 +55,16 @@ async function handleEtelIDLogin(event) {
     const identifier = document.getElementById('etelidIdentifier').value;
     const password    = document.getElementById('etelidPassword').value;
     const errorDiv    = document.getElementById('loginError');
+    const submitBtn   = event.target.querySelector('button[type="submit"]');
+    const originalLabel = submitBtn.textContent;
 
     const formData = new FormData();
     formData.append('action', 'admin_etelid_login');
     formData.append('identifier', identifier);
     formData.append('password', password);
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Signing in…';
 
     try {
         const response = await fetch(API, {
@@ -78,6 +83,9 @@ async function handleEtelIDLogin(event) {
     } catch (error) {
         errorDiv.textContent = 'Connection error. Please try again.';
         errorDiv.style.display = 'block';
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = originalLabel;
     }
 }
 
@@ -212,7 +220,7 @@ function displayControllers(controllers) {
             <td>${c.last_login ? new Date(c.last_login).toLocaleString() : 'Never'}</td>
             <td>
                 <button onclick="editController(${c.id})" class="action-btn action-btn-serve">✏️ Edit</button>
-                <button onclick="deleteController(${c.id})" class="action-btn action-btn-wait">🗑️ Delete</button>
+                <button onclick="deleteController(${c.id}, this)" class="action-btn action-btn-wait">🗑️ Delete</button>
             </td>
         </tr>
     `).join('');
@@ -228,24 +236,24 @@ function showAddController() {
                 </div>
                 <form onsubmit="handleAddController(event)">
                     <div style="padding: 30px;">
+                        <p style="margin: 0 0 20px; font-size: 13px; color: rgba(255,248,232,0.65);">
+                            Sign-in uses EtelID, not a local password. This controller can access the
+                            Controller Panel once their EtelID phone number matches the Phone field below.
+                        </p>
                         <div class="form-group">
-                            <label>Username *</label>
+                            <label for="ctrlUsername">Username *</label>
                             <input type="text" id="ctrlUsername" class="form-control" required>
                         </div>
                         <div class="form-group">
-                            <label>Password *</label>
-                            <input type="password" id="ctrlPassword" class="form-control" required>
-                        </div>
-                        <div class="form-group">
-                            <label>Full Name *</label>
+                            <label for="ctrlFullName">Full Name *</label>
                             <input type="text" id="ctrlFullName" class="form-control" required>
                         </div>
                         <div class="form-group">
-                            <label>Phone</label>
-                            <input type="tel" id="ctrlPhone" class="form-control">
+                            <label for="ctrlPhone">Phone (must match their EtelID) *</label>
+                            <input type="tel" id="ctrlPhone" class="form-control" required>
                         </div>
                         <div class="form-group">
-                            <label>Station Name</label>
+                            <label for="ctrlStation">Station Name</label>
                             <input type="text" id="ctrlStation" class="form-control" value="Etel Madeya Gas Station">
                         </div>
                         <div class="modal-actions">
@@ -264,22 +272,27 @@ function showAddController() {
 
 async function handleAddController(event) {
     event.preventDefault();
-    
+
+    const submitBtn = event.target.querySelector('button[type="submit"]');
+    const originalLabel = submitBtn.textContent;
+
     const formData = new FormData();
     formData.append('action', 'create_controller');
     formData.append('username', document.getElementById('ctrlUsername').value);
-    formData.append('password', document.getElementById('ctrlPassword').value);
     formData.append('full_name', document.getElementById('ctrlFullName').value);
     formData.append('phone', document.getElementById('ctrlPhone').value);
     formData.append('station_name', document.getElementById('ctrlStation').value);
-    
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Adding…';
+
     try {
         const response = await fetch(API, {
             method: 'POST',
             body: formData
         });
         const data = await response.json();
-        
+
         if (data.success) {
             showNotification('✅ Controller added successfully', 'success');
             closeModal();
@@ -289,6 +302,9 @@ async function handleAddController(event) {
         }
     } catch (error) {
         showNotification('❌ Error adding controller', 'error');
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = originalLabel;
     }
 }
 
@@ -305,28 +321,28 @@ function editController(id) {
                 </div>
                 <form onsubmit="handleEditController(event, ${c.id})">
                     <div style="padding: 30px;">
+                        <p style="margin: 0 0 20px; font-size: 13px; color: rgba(255,248,232,0.65);">
+                            Sign-in uses EtelID, not a local password. Access depends on the Phone field below
+                            matching their EtelID phone number.
+                        </p>
                         <div class="form-group">
-                            <label>Username</label>
-                            <input type="text" value="${c.username}" class="form-control" disabled>
+                            <label for="editCtrlUsername">Username</label>
+                            <input type="text" id="editCtrlUsername" value="${c.username}" class="form-control" disabled>
                         </div>
                         <div class="form-group">
-                            <label>New Password (leave blank to keep current)</label>
-                            <input type="password" id="editCtrlPassword" class="form-control">
-                        </div>
-                        <div class="form-group">
-                            <label>Full Name *</label>
+                            <label for="editCtrlFullName">Full Name *</label>
                             <input type="text" id="editCtrlFullName" class="form-control" value="${c.full_name}" required>
                         </div>
                         <div class="form-group">
-                            <label>Phone</label>
-                            <input type="tel" id="editCtrlPhone" class="form-control" value="${c.phone || ''}">
+                            <label for="editCtrlPhone">Phone (must match their EtelID) *</label>
+                            <input type="tel" id="editCtrlPhone" class="form-control" value="${c.phone || ''}" required>
                         </div>
                         <div class="form-group">
-                            <label>Station Name</label>
+                            <label for="editCtrlStation">Station Name</label>
                             <input type="text" id="editCtrlStation" class="form-control" value="${c.station_name || ''}">
                         </div>
                         <div class="form-group">
-                            <label>
+                            <label for="editCtrlActive">
                                 <input type="checkbox" id="editCtrlActive" ${c.is_active ? 'checked' : ''}>
                                 Active
                             </label>
@@ -348,6 +364,9 @@ function editController(id) {
 async function handleEditController(event, id) {
     event.preventDefault();
 
+    const submitBtn = event.target.querySelector('button[type="submit"]');
+    const originalLabel = submitBtn.textContent;
+
     const formData = new FormData();
     formData.append('action', 'update_controller');
     formData.append('id', id);
@@ -355,8 +374,9 @@ async function handleEditController(event, id) {
     formData.append('phone', document.getElementById('editCtrlPhone').value);
     formData.append('station_name', document.getElementById('editCtrlStation').value);
     formData.append('is_active', document.getElementById('editCtrlActive').checked ? 1 : 0);
-    const newPassword = document.getElementById('editCtrlPassword').value;
-    if (newPassword) formData.append('password', newPassword);
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Saving…';
 
     try {
         const response = await fetch(API, {
@@ -374,23 +394,29 @@ async function handleEditController(event, id) {
         }
     } catch (error) {
         showNotification('❌ Error updating controller', 'error');
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = originalLabel;
     }
 }
 
-async function deleteController(id) {
-    if (!confirm('Are you sure you want to delete this controller?')) return;
-    
+async function deleteController(id, btn) {
+    if (!confirm('Are you sure you want to delete this controller? Their queue will not be reassigned automatically.')) return;
+
+    const originalLabel = btn ? btn.textContent : null;
+    if (btn) { btn.disabled = true; btn.textContent = '🗑️ Deleting…'; }
+
     const formData = new FormData();
     formData.append('action', 'delete_controller');
     formData.append('id', id);
-    
+
     try {
         const response = await fetch(API, {
             method: 'POST',
             body: formData
         });
         const data = await response.json();
-        
+
         if (data.success) {
             showNotification('✅ Controller deleted', 'success');
             loadControllers();
@@ -399,6 +425,8 @@ async function deleteController(id) {
         }
     } catch (error) {
         showNotification('❌ Error deleting controller', 'error');
+    } finally {
+        if (btn) { btn.disabled = false; btn.textContent = originalLabel; }
     }
 }
 
@@ -435,7 +463,7 @@ function displayVehicleTypes(types) {
             <td><span class="status-badge status-${t.is_active ? 'active' : 'inactive'}">${t.is_active ? 'Active' : 'Inactive'}</span></td>
             <td>
                 <button onclick="editVehicleType(${t.id})" class="action-btn action-btn-serve">✏️ Edit</button>
-                <button onclick="deleteVehicleType(${t.id})" class="action-btn action-btn-wait">🗑️ Delete</button>
+                <button onclick="deleteVehicleType(${t.id}, this)" class="action-btn action-btn-wait">🗑️ Delete</button>
             </td>
         </tr>
     `).join('');
@@ -455,19 +483,19 @@ function editVehicleType(id) {
                 <form onsubmit="handleEditVehicleType(event, ${t.id})">
                     <div style="padding: 30px;">
                         <div class="form-group">
-                            <label>Icon (emoji) *</label>
+                            <label for="editVtIcon">Icon (emoji) *</label>
                             <input type="text" id="editVtIcon" class="form-control" value="${t.icon}" required>
                         </div>
                         <div class="form-group">
-                            <label>Name *</label>
+                            <label for="editVtName">Name *</label>
                             <input type="text" id="editVtName" class="form-control" value="${t.name}" required>
                         </div>
                         <div class="form-group">
-                            <label>Name (Amharic)</label>
+                            <label for="editVtNameAm">Name (Amharic)</label>
                             <input type="text" id="editVtNameAm" class="form-control" value="${t.name_am || ''}">
                         </div>
                         <div class="form-group">
-                            <label>Sort Order</label>
+                            <label for="editVtSortOrder">Sort Order</label>
                             <input type="number" id="editVtSortOrder" class="form-control" value="${t.sort_order}">
                         </div>
                         <div class="form-group">
@@ -493,6 +521,9 @@ function editVehicleType(id) {
 async function handleEditVehicleType(event, id) {
     event.preventDefault();
 
+    const submitBtn = event.target.querySelector('button[type="submit"]');
+    const originalLabel = submitBtn.textContent;
+
     const formData = new FormData();
     formData.append('action', 'update_vehicle_type');
     formData.append('id', id);
@@ -501,6 +532,9 @@ async function handleEditVehicleType(event, id) {
     formData.append('name_am', document.getElementById('editVtNameAm').value);
     formData.append('sort_order', document.getElementById('editVtSortOrder').value);
     formData.append('is_active', document.getElementById('editVtActive').checked ? 1 : 0);
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Saving…';
 
     try {
         const response = await fetch(API, {
@@ -518,6 +552,39 @@ async function handleEditVehicleType(event, id) {
         }
     } catch (error) {
         showNotification('❌ Error updating vehicle type', 'error');
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = originalLabel;
+    }
+}
+
+async function deleteVehicleType(id, btn) {
+    if (!confirm('Are you sure you want to delete this vehicle type? Vehicles already queued under it are not affected.')) return;
+
+    const originalLabel = btn ? btn.textContent : null;
+    if (btn) { btn.disabled = true; btn.textContent = '🗑️ Deleting…'; }
+
+    const formData = new FormData();
+    formData.append('action', 'delete_vehicle_type');
+    formData.append('id', id);
+
+    try {
+        const response = await fetch(API, {
+            method: 'POST',
+            body: formData
+        });
+        const data = await response.json();
+
+        if (data.success) {
+            showNotification('✅ Vehicle type deleted', 'success');
+            loadVehicleTypes();
+        } else {
+            showNotification('❌ ' + (data.message || 'Failed to delete vehicle type'), 'error');
+        }
+    } catch (error) {
+        showNotification('❌ Error deleting vehicle type', 'error');
+    } finally {
+        if (btn) { btn.disabled = false; btn.textContent = originalLabel; }
     }
 }
 
@@ -660,10 +727,13 @@ async function loadSettings() {
 
 async function saveSettings(event, type) {
     event.preventDefault();
-    
+
+    const submitBtn = event.target.querySelector('button[type="submit"]');
+    const originalLabel = submitBtn.textContent;
+
     const formData = new FormData();
     formData.append('action', 'update_settings');
-    
+
     if (type === 'general') {
         formData.append('settings[station_name]', document.getElementById('settingStationName').value);
         formData.append('settings[station_name_am]', document.getElementById('settingStationNameAm').value);
@@ -676,13 +746,16 @@ async function saveSettings(event, type) {
         formData.append('settings[enable_waiting_queue]', document.getElementById('settingEnableWaiting').checked ? '1' : '0');
     }
     
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Saving…';
+
     try {
         const response = await fetch(API, {
             method: 'POST',
             body: formData
         });
         const data = await response.json();
-        
+
         if (data.success) {
             showNotification('✅ Settings saved successfully', 'success');
         } else {
@@ -690,6 +763,9 @@ async function saveSettings(event, type) {
         }
     } catch (error) {
         showNotification('❌ Error saving settings', 'error');
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = originalLabel;
     }
 }
 
