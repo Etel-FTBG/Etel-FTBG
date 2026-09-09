@@ -70,28 +70,28 @@
             <!-- Stats Bar -->
             <div class="stats-bar">
                 <div class="stat-card">
-                    <div class="stat-icon">📊</div>
+                    <div class="stat-icon"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10"/><path d="M12 20V4"/><path d="M20 20v-7"/><path d="M2 20h20"/></svg></div>
                     <div class="stat-info">
                         <div class="stat-label">Total Queued</div>
                         <div class="stat-value" id="statQueued">0</div>
                     </div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-icon">✅</div>
+                    <div class="stat-icon"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m8.5 12.5 2.5 2.5 4.5-5"/></svg></div>
                     <div class="stat-info">
                         <div class="stat-label">Served Today</div>
                         <div class="stat-value" id="statServed">0</div>
                     </div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-icon">⭐</div>
+                    <div class="stat-icon"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 2 3.1 6.3 6.9 1-5 4.9 1.2 6.8L12 17.8 5.8 21l1.2-6.8-5-4.9 6.9-1Z"/></svg></div>
                     <div class="stat-info">
                         <div class="stat-label">VIP Queue</div>
                         <div class="stat-value" id="statVip">0</div>
                     </div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-icon">⏳</div>
+                    <div class="stat-icon"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg></div>
                     <div class="stat-info">
                         <div class="stat-label">Waiting</div>
                         <div class="stat-value" id="statWaiting">0</div>
@@ -127,17 +127,17 @@
                     </select>
                 </div>
                 <div class="control-actions">
-                    <button onclick="showBulkImport()" class="btn-secondary">📥 Bulk Import</button>
-                    <button onclick="showAddVehicle()" class="btn-primary">➕ Add Vehicle</button>
-                    <button onclick="loadQueue()" class="btn-refresh">🔄 Refresh</button>
+                    <button onclick="showBulkImport()" class="btn-secondary"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M4 19h16"/></svg> Bulk Import</button>
+                    <button onclick="showAddVehicle()" class="btn-primary"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg> Add Vehicle</button>
+                    <button onclick="loadQueue()" class="btn-refresh"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 3v6h-6"/></svg> Refresh</button>
                 </div>
             </div>
 
             <!-- Tab Navigation -->
             <div class="ctrl-tab-nav">
-                <button class="ctrl-tab active" onclick="switchTab('queue', this)">📋 Queue</button>
-                <button class="ctrl-tab" onclick="switchTab('report', this)">📑 Queue Report</button>
-                <button class="ctrl-tab" onclick="switchTab('import', this)">📂 Import & Check</button>
+                <button class="ctrl-tab active" onclick="switchTab('queue', this)"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/></svg> Queue</button>
+                <button class="ctrl-tab" onclick="switchTab('report', this)"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M9 13h6"/><path d="M9 17h6"/></svg> Queue Report</button>
+                <button class="ctrl-tab" onclick="switchTab('import', this)"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/></svg> Import & Check</button>
             </div>
 
             <!-- Queue Table -->
@@ -217,7 +217,7 @@
                     <!-- Drop Zone -->
                     <div class="imp-dropzone" id="impDropzone"
                          ondragover="impDragOver(event)" ondragleave="impDragLeave(event)" ondrop="impDrop(event)">
-                        <div class="imp-drop-icon">📂</div>
+                        <div class="imp-drop-icon"><svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/></svg></div>
                         <div class="imp-drop-title">Drop TXT or ZIP files here</div>
                         <div class="imp-drop-sub">or click to browse</div>
                         <input type="file" id="impFileInput" accept=".txt,.zip" multiple style="display:none" onchange="impFilesChosen(this.files)">
@@ -234,7 +234,7 @@
                                 <label for="impVehicleType">Vehicle Type</label>
                                 <select id="impVehicleType"></select>
                             </div>
-                            <button type="button" class="imp-check-btn" onclick="runImportCheck()">🔍 Check for Duplicates</button>
+                            <button type="button" class="imp-check-btn" onclick="runImportCheck()"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.35-4.35"/></svg> Check for Duplicates</button>
                             <button type="button" class="imp-clear-btn" onclick="clearImport()">✕ Clear</button>
                         </div>
                     </div>
@@ -284,10 +284,10 @@
 
                         <!-- Clean Plates Preview -->
                         <div id="impCleanSection" style="display:none">
-                            <div class="imp-section-title">✅ Clean Plates Ready to Import</div>
+                            <div class="imp-section-title"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m8.5 12.5 2.5 2.5 4.5-5"/></svg> Clean Plates Ready to Import</div>
                             <div class="imp-clean-wrap" id="impCleanList"></div>
                             <button type="button" class="imp-import-btn" id="impImportBtn" onclick="doImportClean()">
-                                ⬆️ Import <span id="impImportCount">0</span> Plates into Queue
+                                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M4 21h16"/></svg> Import <span id="impImportCount">0</span> Plates into Queue
                             </button>
                             <div id="impImportFb" class="imp-import-fb" style="display:none"></div>
                         </div>
@@ -379,7 +379,7 @@
                     </div>
                     <div class="modal-actions">
                         <button type="button" onclick="closeModal()" class="btn-secondary">Cancel</button>
-                        <button type="submit" class="btn-success">✅ Serve</button>
+                        <button type="submit" class="btn-success"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Serve</button>
                     </div>
                 </form>
             </div>
