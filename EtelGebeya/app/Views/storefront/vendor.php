@@ -49,17 +49,20 @@ ob_start();
 }
 .vendor-profile-row {
   display: flex; align-items: flex-end; gap: 24px;
-  padding: 0 24px; transform: translateY(-40px); margin-bottom: -20px;
+  margin: 0 24px -20px; transform: translateY(-40px);
+  background: var(--card); border: 1px solid var(--border); border-radius: var(--r2);
+  padding: 20px 24px; position: relative; overflow: hidden;
 }
+@media(max-width:640px){ .vendor-profile-row { margin: 0 16px -20px; padding: 18px; flex-wrap: wrap; } }
 .vendor-avatar {
   width: 90px; height: 90px; border-radius: var(--r2);
-  border: 3px solid var(--bg); box-shadow: var(--shadow);
+  border: 3px solid var(--card); box-shadow: var(--shadow);
   background: linear-gradient(135deg, rgba(212,175,55,.2), rgba(212,175,55,.08));
   color: var(--g2);
   display: flex; align-items: center; justify-content: center;
   font-size: 40px; flex-shrink: 0;
 }
-.vendor-head { flex: 1; padding-bottom: 8px; }
+.vendor-head { flex: 1; padding-bottom: 8px; min-width: 0; }
 .vendor-head h1 { font-size: 26px; font-weight: 900; line-height: 1.2; color: var(--text); }
 .vendor-head p { font-size: 13.5px; color: var(--text2); margin-top: 5px; }
 .vendor-badges { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
@@ -69,6 +72,12 @@ ob_start();
 }
 .badge-verified { background: rgba(46,204,113,.12); color: var(--green); border: 1px solid rgba(46,204,113,.3); }
 .badge-rating   { background: rgba(212,175,55,.1); color: var(--g1); border: 1px solid var(--border); }
+.vendor-seal {
+  width: 64px; height: 64px; flex-shrink: 0; opacity: .9;
+  align-self: center; margin-left: auto;
+  filter: drop-shadow(0 2px 6px rgba(212,175,55,.25));
+}
+@media(max-width:640px){ .vendor-seal { display: none; } }
 .vendor-stats-row { display: grid; grid-template-columns: repeat(4,1fr); gap: 16px; margin: 20px 24px; }
 @media(max-width:640px){ .vendor-stats-row { grid-template-columns: repeat(2,1fr); margin: 20px 16px; } }
 .vendor-stat { background: var(--card); border: 1px solid var(--border); border-radius: var(--r2); padding: 16px; text-align: center; }
@@ -107,6 +116,7 @@ ob_start();
           <?php endif; ?>
         </div>
       </div>
+      <img class="vendor-seal" src="<?= View::asset('img/etel-master-seal.webp') ?>" alt="Etel Family Technology and Business Group seal">
     </div>
 
     <!-- Stats -->
