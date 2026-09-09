@@ -135,6 +135,15 @@
 @media (max-width: 880px) { #mainPanel .am-grid-2 { grid-template-columns: 1fr !important; } }
 #mainPanel .am-grid-2 .pnl { margin: 0; }
 
+#mainPanel .fuel-card { margin-bottom: 14px; }
+#mainPanel .fuel-card:last-child { margin-bottom: 0; }
+#mainPanel .fuel-card-hdr { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; }
+#mainPanel .fuel-card-hdr b { font-size: 14px; text-transform: capitalize; color: var(--tx); }
+#mainPanel .fuel-card-hdr span { font-size: 12px; color: var(--mt); font-family: 'JetBrains Mono', monospace; }
+#mainPanel .fuel-bar { height: 8px; border-radius: 99px; background: var(--cd); border: 1px solid var(--bd); overflow: hidden; }
+#mainPanel .fuel-bar-fill { height: 100%; border-radius: 99px; background: linear-gradient(90deg, var(--f), var(--f2)); }
+#mainPanel .fuel-bar-fill.low { background: linear-gradient(90deg, var(--rd), var(--or)); }
+
 /* ── Form fields ──────────────────────────────────────────────────
    Premium pass: labels were 10-11px in --mt (technically ~8:1 contrast
    against the dark panel, but small+thin enough to read as noise), and
