@@ -151,7 +151,7 @@
                 <div id="controllersTab" class="tab-content">
                     <div class="page-header">
                         <h1>Controllers</h1>
-                        <button onclick="showAddController()" class="btn-primary">➕ Add Controller</button>
+                        <button onclick="showAddController()" class="btn-primary"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg> Add Controller</button>
                     </div>
                     <div class="table-container">
                         <table class="data-table">
@@ -178,7 +178,7 @@
                 <div id="vehiclesTab" class="tab-content">
                     <div class="page-header">
                         <h1>Vehicle Types</h1>
-                        <button onclick="showAddVehicleType()" class="btn-primary">➕ Add Vehicle Type</button>
+                        <button onclick="showAddVehicleType()" class="btn-primary"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg> Add Vehicle Type</button>
                     </div>
                     <div class="table-container">
                         <table class="data-table">
@@ -204,7 +204,7 @@
                 <div id="queueTab" class="tab-content">
                     <div class="page-header">
                         <h1>Queue Monitor</h1>
-                        <button onclick="loadQueueMonitor()" class="btn-refresh">🔄 Refresh</button>
+                        <button onclick="loadQueueMonitor()" class="btn-refresh"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 3v6h-6"/></svg> Refresh</button>
                     </div>
                     <div id="queueMonitor">
                         <p class="empty-state">Loading...</p>

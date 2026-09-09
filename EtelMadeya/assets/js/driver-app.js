@@ -49,7 +49,7 @@ function getHomePage() {
                     <h2 class="card-title" data-t="Quick Actions|ፈጣን እርምጃዎች">Quick Actions</h2>
                     <div style="display: grid; grid-template-columns: 1fr; gap: 20px;">
                         <button onclick="navigate('check')" class="btn btn-primary btn-block">
-                            🔍 <span data-t="Check Position|ቦታ ፈልግ">Check Position</span>
+                            ${ICONS.search} <span data-t="Check Position|ቦታ ፈልግ">Check Position</span>
                         </button>
                     </div>
                 </div>
@@ -91,7 +91,7 @@ function getCheckPage() {
                             <input type="text" id="checkPlate" class="form-control" placeholder="AA-3-12345" required>
                         </div>
                         <button type="submit" class="btn btn-primary btn-block">
-                            🔍 <span data-t="Check Position|ቦታ ፈልግ">Check Position</span>
+                            ${ICONS.search} <span data-t="Check Position|ቦታ ፈልግ">Check Position</span>
                         </button>
                     </form>
                 </div>
@@ -126,9 +126,9 @@ function getAboutPage() {
                 
                 <div class="card">
                     <h2 class="card-title">Contact Us</h2>
-                    <p>📍 Addis Ababa, Ethiopia</p>
-                    <p>☎ +251-911-000-000</p>
-                    <p>✉ info@etelmadeya.com</p>
+                    <p>${ICONS.location} Addis Ababa, Ethiopia</p>
+                    <p>${ICONS.phone} +251-911-000-000</p>
+                    <p>${ICONS.mail} info@etelmadeya.com</p>
                 </div>
             </div>
         </div>
@@ -167,7 +167,7 @@ async function checkPosition(event) {
                             <p><strong>Station:</strong> ${v.station_name}</p>
                         </div>
                         
-                        <button onclick="checkPosition(event)" class="btn btn-primary">🔄 Refresh</button>
+                        <button onclick="checkPosition(event)" class="btn btn-primary">${ICONS.refresh} Refresh</button>
                     </div>
                 </div>
             `;
@@ -179,7 +179,7 @@ async function checkPosition(event) {
             resultDiv.innerHTML = `
                 <div class="card">
                     <div class="alert alert-warning">
-                        ❌ ${data.message || 'Vehicle not found in queue'}
+                        ${ICONS.error} ${escHtml(data.message || 'Vehicle not found in queue')}
                     </div>
                 </div>
             `;
@@ -188,7 +188,7 @@ async function checkPosition(event) {
         resultDiv.innerHTML = `
             <div class="card">
                 <div class="alert alert-warning">
-                    ❌ Error checking position. Please try again.
+                    ${ICONS.error} Error checking position. Please try again.
                 </div>
             </div>
         `;
@@ -324,9 +324,13 @@ function toggleLang() {
 }
 
 // ─── NOTIFICATION ───────────────────────────────────────────────────
+function escHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
 function showNotification(message, type = 'success') {
     const notification = document.getElementById('notification');
-    notification.textContent = message;
+    notification.innerHTML = message;
     notification.className = `notification ${type}`;
     notification.style.display = 'block';
     
