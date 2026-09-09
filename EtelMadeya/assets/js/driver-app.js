@@ -3,13 +3,9 @@
 // ═══════════════════════════════════════════════════════════════════
 
 let currentLang = 'en';
-let vehicleTypes = [];
-let controllers = [];
 
 // ─── INITIALIZATION ─────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
-    loadVehicleTypes();
-    loadControllers();
     navigate('home');
 });
 
@@ -91,7 +87,7 @@ function getCheckPage() {
                 <div class="card">
                     <form onsubmit="checkPosition(event)">
                         <div class="form-group">
-                            <label data-t="Plate Number|የታርጋ ቁጥር">Plate Number</label>
+                            <label for="checkPlate" data-t="Plate Number|የታርጋ ቁጥር">Plate Number</label>
                             <input type="text" id="checkPlate" class="form-control" placeholder="AA-3-12345" required>
                         </div>
                         <button type="submit" class="btn btn-primary btn-block">
@@ -101,54 +97,6 @@ function getCheckPage() {
                 </div>
                 
                 <div id="positionResult"></div>
-            </div>
-        </div>
-    `;
-}
-
-function getRegisterPage() {
-    return `
-        <div class="container">
-            <h1 class="page-title" data-t="Register in Queue|በወረፋ ተመዝገብ">Register in Queue</h1>
-            <p class="page-subtitle" data-t="Fill in your details to join the queue|ዝርዝሮችዎን ይሙሉ">Fill in your details to join the queue</p>
-            
-            <div style="max-width: 600px; margin: 0 auto;">
-                <div class="card">
-                    <form onsubmit="registerVehicle(event)">
-                        <div class="form-group">
-                            <label data-t="Plate Number *|የታርጋ ቁጥር *">Plate Number *</label>
-                            <input type="text" id="regPlate" class="form-control" placeholder="AA-3-12345" required>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label data-t="Vehicle Type *|የተሽከርካሪ ዓይነት *">Vehicle Type *</label>
-                            <select id="regVehicleType" class="form-control" required>
-                                <option value="">Select vehicle type...</option>
-                            </select>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label data-t="Station|ጣቢያ">Station</label>
-                            <select id="regController" class="form-control">
-                                <option value="1">Default Station</option>
-                            </select>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label data-t="Driver Name (Optional)|የአሽከርካሪ ስም (አማራጭ)">Driver Name (Optional)</label>
-                            <input type="text" id="regDriverName" class="form-control" placeholder="Optional">
-                        </div>
-                        
-                        <div class="form-group">
-                            <label data-t="Driver Phone (Optional)|የአሽከርካሪ ስልክ (አማራጭ)">Driver Phone (Optional)</label>
-                            <input type="tel" id="regDriverPhone" class="form-control" placeholder="Optional">
-                        </div>
-                        
-                        <button type="submit" class="btn btn-success btn-block">
-                            ✅ <span data-t="Register|ተመዝገብ">Register</span>
-                        </button>
-                    </form>
-                </div>
             </div>
         </div>
     `;
@@ -188,56 +136,6 @@ function getAboutPage() {
 }
 
 // ─── API FUNCTIONS ──────────────────────────────────────────────────
-async function loadVehicleTypes() {
-    try {
-        const response = await fetch(`${API}&action=get_vehicle_types`);
-        const data = await response.json();
-        if (data.success) {
-            vehicleTypes = data.types;
-        }
-    } catch (error) {
-        console.error('Error loading vehicle types:', error);
-    }
-}
-
-async function loadControllers() {
-    try {
-        const response = await fetch(`${API}&action=get_controllers`);
-        const data = await response.json();
-        if (data.success) {
-            controllers = data.controllers;
-        }
-    } catch (error) {
-        console.error('Error loading controllers:', error);
-    }
-}
-
-function loadVehicleTypesSelect() {
-    const select = document.getElementById('regVehicleType');
-    if (!select) return;
-    
-    select.innerHTML = '<option value="">Select vehicle type...</option>';
-    vehicleTypes.forEach(type => {
-        const option = document.createElement('option');
-        option.value = type.id;
-        option.textContent = `${type.icon} ${type.name} (${type.name_am})`;
-        select.appendChild(option);
-    });
-}
-
-function loadControllersSelect() {
-    const select = document.getElementById('regController');
-    if (!select) return;
-    
-    select.innerHTML = '';
-    controllers.forEach(ctrl => {
-        const option = document.createElement('option');
-        option.value = ctrl.id;
-        option.textContent = ctrl.station_name;
-        select.appendChild(option);
-    });
-}
-
 async function checkPosition(event) {
     event.preventDefault();
     
@@ -406,39 +304,6 @@ function goDriverPage(page, myPlate) {
     driverQueuePage = page;
     // Re-read station from the existing section context
     renderDriverQueue(myPlate, null);
-}
-
-async function registerVehicle(event) {
-    event.preventDefault();
-    
-    const formData = new FormData();
-    formData.append('action', 'register');
-    formData.append('plate_number', document.getElementById('regPlate').value.trim());
-    formData.append('vehicle_type_id', document.getElementById('regVehicleType').value);
-    formData.append('controller_id', document.getElementById('regController').value);
-    formData.append('driver_name', document.getElementById('regDriverName').value.trim());
-    formData.append('driver_phone', document.getElementById('regDriverPhone').value.trim());
-    
-    try {
-        const response = await fetch(API, {
-            method: 'POST',
-            body: formData
-        });
-        const data = await response.json();
-        
-        if (data.success) {
-            showNotification('✅ Successfully registered! Your token: ' + data.data.token, 'success');
-            setTimeout(() => {
-                document.getElementById('checkPlate').value = data.data.plate_number;
-                navigate('check');
-                checkPosition(event);
-            }, 2000);
-        } else {
-            showNotification('❌ ' + (data.message || 'Registration failed'), 'error');
-        }
-    } catch (error) {
-        showNotification('❌ Error registering vehicle', 'error');
-    }
 }
 
 // ─── LANGUAGE TOGGLE ────────────────────────────────────────────────
