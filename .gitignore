@@ -3,3 +3,6 @@
 # ...except skills, which are shared project capabilities meant to be
 # available to any session/contributor working on this repo.
 !.claude/skills/
+.claude/skills/**/__pycache__/
+.claude/skills/**/.coverage
+.claude/skills/**/*.pyc
