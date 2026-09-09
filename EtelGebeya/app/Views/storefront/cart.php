@@ -154,7 +154,7 @@ ob_start();
 
   <?php if (empty($cart)): ?>
     <div class="cart-empty">
-      <div class="icon">/* U+1F6D2 */</div>
+      <div class="icon"><i class="bi bi-cart-x"></i></div>
       <h2>Your cart is empty</h2>
       <p>Add some products to get started!</p>
       <a href="<?= View::url('/') ?>" class="shop-btn"><i class="bi bi-shop"></i> Start Shopping</a>
@@ -187,7 +187,7 @@ ob_start();
             </div>
             <div class="cart-controls">
               <div class="qty-ctrl">
-                <button class="qty-btn" onclick="updateQty(<?= $id ?>, -1)">?</button>
+                <button class="qty-btn" onclick="updateQty(<?= $id ?>, -1)"><i class="bi bi-dash-lg"></i></button>
                 <input type="number" class="qty-val" id="qty-<?= $id ?>" value="<?= (int)$item['qty'] ?>" min="1" max="<?= (int)$item['stock'] ?>" onchange="setQty(<?= $id ?>, this.value)">
                 <button class="qty-btn" onclick="updateQty(<?= $id ?>, 1)">+</button>
               </div>
