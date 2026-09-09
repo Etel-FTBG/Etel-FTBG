@@ -121,6 +121,7 @@ ob_start();
 <?php endif; ?>
 
 <form method="POST" action="<?= View::url('/vendor-panel/products/save') ?>" enctype="multipart/form-data" id="pf">
+<?= csrf() ?>
 <input type="hidden" name="id" value="<?= (int)($p['id'] ?? 0) ?>">
 
 <div class="pf-grid">
@@ -455,6 +456,7 @@ ob_start();
       <div class="pub-body">
         <form method="POST" action="<?= View::url('/vendor-panel/products/'.(int)($p['id'])  .'/delete') ?>"
               onsubmit="return confirm('Permanently delete this product? This cannot be undone.')">
+          <?= csrf() ?>
           <button type="submit" class="btn btn-danger" style="width:100%;justify-content:center">
             <i class="bi bi-trash3"></i> Delete Product
           </button>
