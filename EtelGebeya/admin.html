@@ -57,7 +57,7 @@ body {
   opacity:.22;
 }
 .login-card {
-  position:relative; z-index:1;
+  position:relative; z-index:1; overflow:hidden;
   background:rgba(8,5,2,.88);
   border-radius:22px;padding:2.5rem 2.25rem;width:380px;max-width:100%;
   backdrop-filter:blur(20px);
@@ -68,6 +68,17 @@ body {
     inset 0 0 0 1px rgba(212,175,55,.22);
   animation:loginCardIn .45s cubic-bezier(.22,1,.36,1) both;
 }
+/* Master seal bled through the card itself so it reads "above" the card,
+   not just in the empty space around it -- same artwork, sized to bleed
+   past the card edges (clipped by overflow:hidden above). */
+.login-card::before {
+  content:''; position:absolute; inset:0; z-index:0; pointer-events:none;
+  background-image:url('public/assets/img/etel-master-seal.webp');
+  background-repeat:no-repeat; background-position:center;
+  background-size:140%;
+  opacity:.14;
+}
+.login-card > * { position:relative; z-index:1; }
 @media (prefers-reduced-motion: reduce) { .login-card { animation:none; } }
 @keyframes loginCardIn { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:none} }
 
