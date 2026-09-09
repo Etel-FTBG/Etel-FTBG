@@ -80,7 +80,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
 <style>
 .btn-gold{display:inline-flex;align-items:center;gap:.4rem;background:linear-gradient(135deg,#FFE066,#D4AF37);color:#080604;font-weight:800;padding:.6rem 1.3rem;border-radius:10px;text-decoration:none;font-size:.9rem;border:none;cursor:pointer}
-.form-card{background:var(--eg-glass,rgba(255,255,255,.04));border:1.5px solid var(--eg-border,rgba(255,255,255,.08));border-radius:16px;padding:1.5rem}
+.form-card{background:var(--dark-card);border:1.5px solid var(--dark-border);border-radius:16px;padding:1.5rem}
 .form-card-title{font-size:.95rem;font-weight:800;margin:0 0 1.2rem;color:var(--eg-gold,#D4AF37)}
 .form-group{margin-bottom:1rem}
 .form-group label{display:block;font-size:.82rem;color:var(--eg-text-dim,#aaa);margin-bottom:.4rem;font-weight:600}

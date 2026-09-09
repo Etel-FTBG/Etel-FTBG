@@ -100,7 +100,7 @@ ob_start();
 </div>
 
 <style>
-.dash-card{background:var(--eg-glass,rgba(255,255,255,.04));border:1.5px solid var(--eg-border,rgba(255,255,255,.08));border-radius:16px;padding:1.25rem}
+.dash-card{background:var(--dark-card);border:1.5px solid var(--dark-border);border-radius:16px;padding:1.25rem}
 .badge-status{display:inline-block;padding:.2rem .6rem;border-radius:6px;font-size:.75rem;font-weight:700;text-transform:uppercase}
 .badge-confirmed,.badge-delivered{background:rgba(16,185,129,.15);color:#10b981}
 .badge-pending{background:rgba(212,175,55,.15);color:#D4AF37}
