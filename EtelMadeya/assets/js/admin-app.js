@@ -208,10 +208,18 @@ async function loadDashboard() {
 
 let servedTrendChart = null;
 async function loadServedTrend() {
+    const wrap = document.getElementById('chartServedTrend').parentElement;
     try {
         const response = await fetch(`${API}?action=get_served_trend`);
         const data = await response.json();
-        if (!data.success) return;
+        if (!data.success || !data.trend || !data.trend.length) {
+            if (servedTrendChart) { servedTrendChart.destroy(); servedTrendChart = null; }
+            wrap.innerHTML = '<p class="empty-state">No served-vehicle data yet</p>';
+            return;
+        }
+        if (!document.getElementById('chartServedTrend')) {
+            wrap.innerHTML = '<canvas id="chartServedTrend"></canvas>';
+        }
 
         const labels = data.trend.map(r => new Date(r.report_date).toLocaleDateString('en-US', {month:'short', day:'numeric'}));
         const served = data.trend.map(r => Number(r.served));
@@ -222,8 +230,8 @@ async function loadServedTrend() {
             type: 'line',
             data: { labels, datasets: [{
                 label: 'Vehicles Served', data: served, fill: true,
-                borderColor: '#F5A623', backgroundColor: 'rgba(245,166,35,.12)',
-                tension: .4, pointRadius: 3, pointBackgroundColor: '#F5A623'
+                borderColor: '#E67E22', backgroundColor: 'rgba(230,126,34,.12)',
+                tension: .4, pointRadius: 3, pointBackgroundColor: '#E67E22'
             }]},
             options: { responsive: true, maintainAspectRatio: false,
                 plugins: { legend: { labels: { color: '#f5e6c0' } } },
@@ -251,7 +259,17 @@ async function loadFuelSnapshot() {
         }
         wrap.innerHTML = data.fuel.map(f => {
             const stock = Number(f.stock_liters), quota = Number(f.quota_liters);
-            const pct = quota > 0 ? Math.min(100, Math.round((stock / quota) * 100)) : 0;
+            if (quota <= 0) {
+                return `
+                    <div class="fuel-card">
+                        <div class="fuel-card-hdr">
+                            <b>${escHtml(f.fuel_type)}</b>
+                            <span>${stock.toLocaleString()} L -- no quota set</span>
+                        </div>
+                        <div class="fuel-bar"></div>
+                    </div>`;
+            }
+            const pct = Math.min(100, Math.round((stock / quota) * 100));
             const low = pct < 20;
             return `
                 <div class="fuel-card">
