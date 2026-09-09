@@ -82,6 +82,97 @@ function db(): ?PDO {
     return $pdo ?: null;
 }
 
+// ?? ADMIN SCHEMA SELF-HEAL ????????????????????????????????????
+// gebeya_admins / gebeya_admin_sessions / gebeya_role_permissions were
+// created by hand on the live DB when per-admin login was first built,
+// with no CREATE-TABLE migration checked into this repo -- so a fresh
+// or restored database never gets them, and every query against them
+// here was unguarded (unlike auth()'s own query, which already wraps
+// this same lookup in try/catch for exactly this reason). With
+// display_errors off, that uncaught PDOException reaches the browser
+// as a completely empty response body -- which the login page's own
+// JS can't tell apart from "never reached the server at all". Call
+// this once before touching any of these tables so login self-heals
+// the same way the rest of this app's schema already does (see
+// App\Core\SchemaGuard / EscrowService on the app/ MVC side).
+function eg_ensure_admin_schema(PDO $pdo): void {
+    static $checked = false;
+    if ($checked) return;
+    $checked = true;
+
+    try {
+        $pdo->exec(
+            "CREATE TABLE IF NOT EXISTS gebeya_admins (
+                id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+                full_name VARCHAR(190) NOT NULL,
+                phone VARCHAR(32) DEFAULT NULL,
+                password_hash VARCHAR(255) DEFAULT NULL,
+                role VARCHAR(100) DEFAULT NULL,
+                is_etelgroup_managed TINYINT(1) NOT NULL DEFAULT 0,
+                etel_id VARCHAR(64) DEFAULT NULL,
+                created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (id),
+                KEY idx_phone (phone),
+                KEY idx_etel_id (etel_id)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
+        );
+        $pdo->exec(
+            "CREATE TABLE IF NOT EXISTS gebeya_admin_sessions (
+                id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+                admin_id INT UNSIGNED NOT NULL,
+                token VARCHAR(64) NOT NULL,
+                expires_at DATETIME NOT NULL,
+                created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (id),
+                UNIQUE KEY uq_token (token),
+                KEY idx_admin (admin_id)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
+        );
+        $pdo->exec(
+            "CREATE TABLE IF NOT EXISTS gebeya_role_permissions (
+                id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+                role_name VARCHAR(100) NOT NULL,
+                capabilities TEXT NOT NULL,
+                created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                PRIMARY KEY (id),
+                UNIQUE KEY uq_gebeya_role_name (role_name)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
+        );
+    } catch (\Throwable $e) { return; }
+
+    // A gebeya_admins table created before is_etelgroup_managed/etel_id
+    // existed (or before this self-heal existed at all) won't have them.
+    $existing = [];
+    try {
+        foreach ($pdo->query("SHOW COLUMNS FROM gebeya_admins") as $row) {
+            $existing[$row['Field']] = true;
+        }
+    } catch (\Throwable $e) { return; }
+    $want = [
+        'is_etelgroup_managed' => "ALTER TABLE gebeya_admins ADD COLUMN is_etelgroup_managed TINYINT(1) NOT NULL DEFAULT 0",
+        'etel_id'              => "ALTER TABLE gebeya_admins ADD COLUMN etel_id VARCHAR(64) DEFAULT NULL",
+    ];
+    foreach ($want as $col => $sql) {
+        if (!isset($existing[$col])) {
+            try { $pdo->exec($sql); } catch (\Throwable $e) {}
+        }
+    }
+
+    try {
+        $pdo->exec(
+            "INSERT IGNORE INTO gebeya_role_permissions (role_name, capabilities) VALUES
+                ('Owner',         '[\"*\"]'),
+                ('Admin',         '[\"*\"]'),
+                ('Manager',       '[\"*\"]'),
+                ('Dispatcher',    '[\"orders.view\",\"orders.manage\",\"vendors.view\"]'),
+                ('Support',       '[\"orders.view\",\"support.view\",\"support.manage\",\"users.view\"]'),
+                ('Finance',       '[\"finance.view\",\"finance.manage\",\"analytics.view\"]'),
+                ('Driver Support','[\"vendors.view\",\"vendors.manage\"]')"
+        );
+    } catch (\Throwable $e) {}
+}
+
 // ?? AUTH CHECK ??????????????????????????????????????????????
 // AUTH CHECK - accepts EITHER the master ADMIN_SECRET (kept for
 // backward compatibility) OR a real per-admin session token issued by
@@ -104,6 +195,7 @@ function auth(?string $capability = null): void {
 
     $pdo = db();
     if ($pdo) {
+        eg_ensure_admin_schema($pdo);
         try {
             $s = $pdo->prepare(
                 'SELECT a.* FROM gebeya_admin_sessions s
