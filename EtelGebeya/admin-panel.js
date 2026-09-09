@@ -11,14 +11,27 @@ let   currentPanel = 'dashboard';
 const pageState = {};
 
 // ── AUTH ────────────────────────────────────────────────────
+function toggleAdminPw(btn) {
+  const inp = document.getElementById('etelid-password');
+  const isText = inp.type === 'text';
+  inp.type = isText ? 'password' : 'text';
+  btn.setAttribute('aria-label', isText ? 'Show password' : 'Hide password');
+  btn.innerHTML = isText
+    ? '<svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z"/><circle cx="12" cy="12" r="3"/></svg>'
+    : '<svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="M3 3l18 18M10.6 10.6a3 3 0 0 0 4.24 4.24M9.9 4.24A11 11 0 0 1 23 12s-1.5 2.6-4.1 4.6M6.1 6.1C3.9 7.6 2 12 2 12s3.5 6 10 6c1.2 0 2.3-.2 3.3-.5"/></svg>';
+}
+function loginErr(msg) {
+  const errEl = document.getElementById('login-err');
+  if (!msg) { errEl.innerHTML = ''; return; }
+  errEl.innerHTML = '<svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.4" viewBox="0 0 24 24" style="vertical-align:-2px;margin-right:5px"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>' + escH(msg);
+}
 async function doUnifiedLogin() {
   const identifier = document.getElementById('etelid-identifier').value.trim();
   const password = document.getElementById('etelid-password').value;
-  const errEl = document.getElementById('login-err');
-  errEl.textContent = '';
-  if (!password) { errEl.textContent = '❌ Enter a password.'; return; }
+  loginErr('');
+  if (!password) { loginErr('Enter a password.'); return; }
   const btn = document.getElementById('etelid-btn');
-  btn.disabled = true; btn.textContent = 'Signing in…';
+  btn.disabled = true; btn.classList.add('is-loading');
   let raw = '';
   try {
     // Blank identifier = master password (single shared key). Anything
@@ -30,7 +43,7 @@ async function doUnifiedLogin() {
     const r = await fetch(API + '?action=' + action, { method: 'POST', body: new URLSearchParams(body) });
     raw = await r.text();
     const d = JSON.parse(raw);
-    btn.disabled = false; btn.textContent = '🔐 Sign In';
+    btn.disabled = false; btn.classList.remove('is-loading');
     if (d.ok) {
       TOKEN = d.data.token;
       localStorage.setItem('eg_admin_token', TOKEN);
@@ -38,19 +51,19 @@ async function doUnifiedLogin() {
       document.getElementById('app').style.display = 'flex';
       init();
     } else {
-      errEl.textContent = '❌ ' + (d.error || 'Sign-in failed');
+      loginErr(d.error || 'Sign-in failed');
     }
   } catch (e) {
-    btn.disabled = false; btn.textContent = '🔐 Sign In';
+    btn.disabled = false; btn.classList.remove('is-loading');
     // A parse failure here almost always means the server returned an
     // error page/fatal error instead of JSON - show the actual response
     // (trimmed) rather than a misleading generic "network error", since
     // the fetch itself usually succeeded and the real problem is server-side.
     if (raw) {
       console.error('Login - server did not return JSON:', raw);
-      errEl.textContent = '❌ Server error: ' + raw.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 200);
+      loginErr('Server error: ' + raw.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 200));
     } else {
-      errEl.textContent = '❌ Could not reach the server - check your connection';
+      loginErr('Could not reach the server - check your connection');
     }
   }
 }
