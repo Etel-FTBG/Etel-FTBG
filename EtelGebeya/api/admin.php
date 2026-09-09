@@ -323,6 +323,30 @@ case 'chart_categories':
     } catch(PDOException $e) { $rows = []; }
     ok($rows);
 
+// ?? TOP PRODUCTS (by units sold) ????????????????????????????
+case 'top_products':
+    auth('analytics.view');
+    try {
+        $rows = db()->query("SELECT p.id, p.name_en name, p.price, p.sold_count sold,
+                (p.price * p.sold_count) revenue,
+                (SELECT path FROM `".t('product_images')."` WHERE product_id=p.id ORDER BY sort_order LIMIT 1) thumb
+            FROM `".t('products')."` p
+            ORDER BY p.sold_count DESC LIMIT 5")->fetchAll();
+    } catch(PDOException $e) { $rows = []; }
+    ok($rows);
+
+// ?? INVENTORY SNAPSHOT ??????????????????????????????????????
+case 'inventory_snapshot':
+    auth('analytics.view');
+    try {
+        $r = db()->query("SELECT COUNT(*) total,
+                COALESCE(SUM(stock_qty<=0),0) out_of_stock,
+                COALESCE(SUM(stock_qty>0 AND stock_qty<=COALESCE(low_stock_alert,5)),0) low_stock,
+                COALESCE(SUM(stock_qty>COALESCE(low_stock_alert,5)),0) in_stock
+            FROM `".t('products')."`")->fetch();
+    } catch(PDOException $e) { $r = []; }
+    ok($r ?: ['total'=>0,'out_of_stock'=>0,'low_stock'=>0,'in_stock'=>0]);
+
 // ?? PRODUCTS ????????????????????????????????????????????????
 case 'products':
     auth('products.view');
