@@ -354,9 +354,9 @@ function displayQueue(queue) {
             <td>${v.token}</td>
             <td>${new Date(v.registered_at).toLocaleTimeString()}</td>
             <td>
-                <button onclick="showServeModal(${v.id}, '${v.plate_number}', '${v.vehicle_type_name}')" class="action-btn action-btn-serve">✅ Serve</button>
-                ${v.queue_type !== 'vip' ? `<button onclick="moveToVip(${v.id}, this)" class="action-btn action-btn-vip">⭐ VIP</button>` : ''}
-                ${v.queue_type !== 'waiting' ? `<button onclick="moveToWaiting(${v.id}, this)" class="action-btn action-btn-wait">⏳ Wait</button>` : ''}
+                <button onclick="showServeModal(${v.id}, '${v.plate_number}', '${v.vehicle_type_name}')" class="action-btn action-btn-serve">${ICONS.serve} Serve</button>
+                ${v.queue_type !== 'vip' ? `<button onclick="moveToVip(${v.id}, this)" class="action-btn action-btn-vip">${ICONS.vip} VIP</button>` : ''}
+                ${v.queue_type !== 'waiting' ? `<button onclick="moveToWaiting(${v.id}, this)" class="action-btn action-btn-wait">${ICONS.wait} Wait</button>` : ''}
             </td>
         </tr>
     `).join('');
@@ -413,16 +413,16 @@ async function handleAddVehicle(event) {
         const data = await response.json();
 
         if (data.success) {
-            showNotification('✅ Vehicle added successfully', 'success');
+            showNotification(ICONS.success + ' Vehicle added successfully', 'success');
             closeModal();
             document.getElementById('addVehicleForm').reset();
             loadStats();
             loadQueue();
         } else {
-            showNotification('❌ ' + (data.message || 'Failed to add vehicle'), 'error');
+            showNotification(ICONS.error + ' ' + escHtml(data.message || 'Failed to add vehicle'), 'error');
         }
     } catch (error) {
-        showNotification('❌ Error adding vehicle', 'error');
+        showNotification(ICONS.error + ' Error adding vehicle', 'error');
     } finally {
         submitBtn.disabled = false;
         submitBtn.textContent = originalLabel;
@@ -451,16 +451,16 @@ async function handleBulkImport(event) {
         const data = await response.json();
 
         if (data.success) {
-            showNotification(`✅ Imported: ${data.imported}, Skipped: ${data.skipped}`, 'success');
+            showNotification(ICONS.success + ` Imported: ${data.imported}, Skipped: ${data.skipped}`, 'success');
             closeModal();
             document.getElementById('bulkImportForm').reset();
             loadStats();
             loadQueue(true);
         } else {
-            showNotification('❌ ' + (data.message || 'Import failed'), 'error');
+            showNotification(ICONS.error + ' ' + escHtml(data.message || 'Import failed'), 'error');
         }
     } catch (error) {
-        showNotification('❌ Error importing vehicles', 'error');
+        showNotification(ICONS.error + ' Error importing vehicles', 'error');
     } finally {
         submitBtn.disabled = false;
         submitBtn.textContent = originalLabel;
@@ -476,7 +476,7 @@ async function handleServe(event) {
     const liters = parseFloat(document.getElementById('serveFuelLiters').value) || 0;
 
     if (gallons <= 0 && liters <= 0) {
-        showNotification('❌ Enter the fuel amount served (gallons or liters)', 'error');
+        showNotification(ICONS.error + ' Enter the fuel amount served (gallons or liters)', 'error');
         return;
     }
 
@@ -497,16 +497,16 @@ async function handleServe(event) {
         const data = await response.json();
 
         if (data.success) {
-            showNotification('✅ Vehicle served successfully', 'success');
+            showNotification(ICONS.success + ' Vehicle served successfully', 'success');
             closeModal();
             document.getElementById('serveForm').reset();
             loadStats();
             loadQueue();
         } else {
-            showNotification('❌ ' + (data.message || 'Failed to serve vehicle'), 'error');
+            showNotification(ICONS.error + ' ' + escHtml(data.message || 'Failed to serve vehicle'), 'error');
         }
     } catch (error) {
-        showNotification('❌ Error serving vehicle', 'error');
+        showNotification(ICONS.error + ' Error serving vehicle', 'error');
     } finally {
         submitBtn.disabled = false;
         submitBtn.textContent = originalLabel;
@@ -517,7 +517,7 @@ async function moveToVip(queueId, btn) {
     if (!confirm('Move this vehicle to VIP queue?')) return;
 
     const originalLabel = btn ? btn.textContent : null;
-    if (btn) { btn.disabled = true; btn.textContent = '⏳ Moving…'; }
+    if (btn) { btn.disabled = true; btn.textContent = ICONS.wait + ' Moving…'; }
 
     const formData = new FormData();
     formData.append('action', 'move_to_vip');
@@ -531,14 +531,14 @@ async function moveToVip(queueId, btn) {
         const data = await response.json();
 
         if (data.success) {
-            showNotification('✅ Moved to VIP queue', 'success');
+            showNotification(ICONS.success + ' Moved to VIP queue', 'success');
             loadStats();
             loadQueue();
         } else {
-            showNotification('❌ ' + (data.message || 'Failed to move vehicle'), 'error');
+            showNotification(ICONS.error + ' ' + escHtml(data.message || 'Failed to move vehicle'), 'error');
         }
     } catch (error) {
-        showNotification('❌ Error moving vehicle', 'error');
+        showNotification(ICONS.error + ' Error moving vehicle', 'error');
     } finally {
         if (btn) { btn.disabled = false; btn.textContent = originalLabel; }
     }
@@ -548,7 +548,7 @@ async function moveToWaiting(queueId, btn) {
     if (!confirm('Move this vehicle to waiting queue?')) return;
 
     const originalLabel = btn ? btn.textContent : null;
-    if (btn) { btn.disabled = true; btn.textContent = '⏳ Moving…'; }
+    if (btn) { btn.disabled = true; btn.textContent = ICONS.wait + ' Moving…'; }
 
     const formData = new FormData();
     formData.append('action', 'move_to_waiting');
@@ -562,14 +562,14 @@ async function moveToWaiting(queueId, btn) {
         const data = await response.json();
 
         if (data.success) {
-            showNotification('✅ Moved to waiting queue', 'success');
+            showNotification(ICONS.success + ' Moved to waiting queue', 'success');
             loadStats();
             loadQueue();
         } else {
-            showNotification('❌ ' + (data.message || 'Failed to move vehicle'), 'error');
+            showNotification(ICONS.error + ' ' + escHtml(data.message || 'Failed to move vehicle'), 'error');
         }
     } catch (error) {
-        showNotification('❌ Error moving vehicle', 'error');
+        showNotification(ICONS.error + ' Error moving vehicle', 'error');
     } finally {
         if (btn) { btn.disabled = false; btn.textContent = originalLabel; }
     }
@@ -744,7 +744,7 @@ function renderFileList() {
     if (!impFilesData.length) { el.style.display = 'none'; return; }
     el.innerHTML = impFilesData.map(f => `
         <div class="imp-file-item">
-            <span class="imp-file-icon">${f.name.endsWith('.txt') || !f.name.includes('.') ? '📄' : '📂'}</span>
+            <span class="imp-file-icon">${f.name.endsWith('.txt') || !f.name.includes('.') ? ICONS.doc : ICONS.folder}</span>
             <span class="imp-file-name">${f.name}</span>
             <span class="imp-file-count">${f.plates.length} plates</span>
         </div>`).join('') +
@@ -756,11 +756,11 @@ function renderFileList() {
 // ── Run duplicate check via API ──
 async function runImportCheck() {
     const vtype = document.getElementById('impVehicleType').value;
-    if (!vtype) { showNotification('❌ Please select a vehicle type first', 'error'); return; }
-    if (!impParsedPlates.length) { showNotification('❌ No plates loaded yet', 'error'); return; }
+    if (!vtype) { showNotification(ICONS.error + ' Please select a vehicle type first', 'error'); return; }
+    if (!impParsedPlates.length) { showNotification(ICONS.error + ' No plates loaded yet', 'error'); return; }
 
     const btn = document.querySelector('.imp-check-btn');
-    btn.textContent = '⏳ Checking…'; btn.disabled = true;
+    btn.textContent = ICONS.wait + ' Checking…'; btn.disabled = true;
 
     try {
         const fd = new FormData();
@@ -770,13 +770,13 @@ async function runImportCheck() {
         const res = await fetch(API, { method: 'POST', body: fd });
         const data = await res.json();
 
-        if (!data.success) { showNotification('❌ ' + data.message, 'error'); return; }
+        if (!data.success) { showNotification(ICONS.error + ' ' + escHtml(data.message), 'error'); return; }
         impCleanPlates = data.clean || [];
         renderCheckResults(data);
     } catch(e) {
-        showNotification('❌ Error checking duplicates', 'error');
+        showNotification(ICONS.error + ' Error checking duplicates', 'error');
     } finally {
-        btn.textContent = '🔍 Check for Duplicates'; btn.disabled = false;
+        btn.textContent = ICONS.search + ' Check for Duplicates'; btn.disabled = false;
     }
 }
 
@@ -845,10 +845,10 @@ function renderCheckResults(data) {
 async function doImportClean() {
     if (!impCleanPlates.length) return;
     const vtype = document.getElementById('impVehicleType').value;
-    if (!vtype) { showNotification('❌ Select a vehicle type first', 'error'); return; }
+    if (!vtype) { showNotification(ICONS.error + ' Select a vehicle type first', 'error'); return; }
 
     const btn = document.getElementById('impImportBtn');
-    btn.disabled = true; btn.textContent = '⏳ Importing…';
+    btn.disabled = true; btn.textContent = ICONS.wait + ' Importing…';
     const fb = document.getElementById('impImportFb');
     fb.style.display = 'none';
 
@@ -863,9 +863,9 @@ async function doImportClean() {
 
         if (data.success) {
             fb.className = 'imp-import-fb ok';
-            fb.textContent = `✅ Import complete — ${data.imported} added, ${data.skipped} skipped.`;
+            fb.textContent = ICONS.success + ` Import complete — ${data.imported} added, ${data.skipped} skipped.`;
             fb.style.display = 'block';
-            showNotification(`✅ Imported ${data.imported} vehicles`, 'success');
+            showNotification(ICONS.success + ` Imported ${data.imported} vehicles`, 'success');
             loadStats();
             loadQueue();
             impCleanPlates = [];
@@ -874,16 +874,16 @@ async function doImportClean() {
             document.getElementById('impCleanSection').style.display = 'none';
         } else {
             fb.className = 'imp-import-fb err';
-            fb.textContent = '❌ ' + (data.message || 'Import failed');
+            fb.textContent = ICONS.error + ' ' + (data.message || 'Import failed');
             fb.style.display = 'block';
         }
     } catch(e) {
         fb.className = 'imp-import-fb err';
-        fb.textContent = '❌ Connection error';
+        fb.textContent = ICONS.error + ' Connection error';
         fb.style.display = 'block';
     } finally {
         btn.disabled = false;
-        btn.innerHTML = `⬆️ Import <span id="impImportCount">${impCleanPlates.length}</span> Plates into Queue`;
+        btn.innerHTML = `${ICONS.upload} Import <span id="impImportCount">${impCleanPlates.length}</span> Plates into Queue`;
     }
 }
 
@@ -899,9 +899,13 @@ function clearImport() {
 
 
 // ─── NOTIFICATION ───────────────────────────────────────────────────
+function escHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
 function showNotification(message, type = 'success') {
     const notification = document.getElementById('notification');
-    notification.textContent = message;
+    notification.innerHTML = message;
     notification.className = `notification ${type}`;
     notification.style.display = 'block';
     
