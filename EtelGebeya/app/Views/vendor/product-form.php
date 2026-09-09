@@ -14,7 +14,7 @@ ob_start();
 <style>
 /* PRODUCT FORM */
 .pf-grid{display:grid;grid-template-columns:1fr 340px;gap:1.5rem;align-items:start}
-.pf-section{background:rgba(255,255,255,.04);border:1.5px solid rgba(255,255,255,.07);border-radius:20px;overflow:hidden;margin-bottom:1.25rem}
+.pf-section{background:var(--dark-card);border:1.5px solid var(--dark-border);border-radius:20px;overflow:hidden;margin-bottom:1.25rem}
 .pf-section-head{display:flex;align-items:center;gap:.75rem;padding:1.1rem 1.4rem;border-bottom:1px solid rgba(255,255,255,.07);background:rgba(255,255,255,.02)}
 .pf-section-icon{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0}
 .pf-section-title{font-size:.95rem;font-weight:800;color:#fff}
@@ -68,7 +68,7 @@ ob_start();
 .tag-input-inner{border:none;outline:none;background:transparent;color:#f0f0f0;font-size:.88rem;font-family:'Outfit',sans-serif;min-width:80px;flex:1}
 
 /* Publish sidebar */
-.pub-card{background:rgba(255,255,255,.04);border:1.5px solid rgba(255,255,255,.07);border-radius:20px;overflow:hidden;margin-bottom:1.1rem}
+.pub-card{background:var(--dark-card);border:1.5px solid var(--dark-border);border-radius:20px;overflow:hidden;margin-bottom:1.1rem}
 .pub-head{padding:.9rem 1.2rem;border-bottom:1px solid rgba(255,255,255,.07);font-size:.88rem;font-weight:800;color:#fff;display:flex;align-items:center;gap:.5rem}
 .pub-body{padding:1.1rem 1.2rem}
 .pub-row{display:flex;align-items:center;justify-content:space-between;padding:.55rem 0;border-bottom:1px solid rgba(255,255,255,.04)}
