@@ -58,6 +58,47 @@ final class Supplier
             'forwarded_by'   => "forwarded_by INT UNSIGNED DEFAULT NULL",
             'forward_method' => "forward_method VARCHAR(20) DEFAULT NULL",
         ]);
+
+        // Phase 2: platform-run supplier catalog. catalog_items is admin-curated
+        // stock (via suppliers.seller_id IS NULL) that any vendor can import as
+        // their own dropship product -- see CatalogItem for the import flow.
+        try {
+            $db->pdo()->exec(
+                "CREATE TABLE IF NOT EXISTS catalog_items (
+                    id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+                    supplier_id INT UNSIGNED NOT NULL,
+                    category_id INT UNSIGNED DEFAULT NULL,
+                    name_en VARCHAR(255) NOT NULL,
+                    name_am VARCHAR(255) DEFAULT NULL,
+                    description_en TEXT,
+                    sku VARCHAR(120) DEFAULT NULL,
+                    cost_price DECIMAL(12,2) NOT NULL,
+                    suggested_markup_pct DECIMAL(5,2) NOT NULL DEFAULT 30.00,
+                    image_url VARCHAR(500) DEFAULT NULL,
+                    gallery_urls TEXT,
+                    dropship_lead_days_min SMALLINT UNSIGNED DEFAULT NULL,
+                    dropship_lead_days_max SMALLINT UNSIGNED DEFAULT NULL,
+                    status VARCHAR(20) NOT NULL DEFAULT 'active',
+                    created_at DATETIME NOT NULL,
+                    updated_at DATETIME NOT NULL,
+                    PRIMARY KEY (id),
+                    KEY idx_supplier (supplier_id),
+                    KEY idx_status (status)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
+            );
+            $db->pdo()->exec(
+                "CREATE TABLE IF NOT EXISTS catalog_item_imports (
+                    id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+                    catalog_item_id INT UNSIGNED NOT NULL,
+                    seller_id INT UNSIGNED NOT NULL,
+                    product_id INT UNSIGNED NOT NULL,
+                    imported_at DATETIME NOT NULL,
+                    PRIMARY KEY (id),
+                    UNIQUE KEY uq_item_seller (catalog_item_id, seller_id),
+                    KEY idx_seller (seller_id)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
+            );
+        } catch (\Throwable $e) {}
     }
 
     /** @return array<int,array<string,mixed>> */
@@ -80,6 +121,24 @@ final class Supplier
                 "SELECT * FROM suppliers WHERE id = ? AND seller_id = ?",
                 [$id, $sellerId]
             );
+        } catch (\Throwable $_) { $row = null; }
+        return $row ?: null;
+    }
+
+    /** Platform-level suppliers (seller_id IS NULL) -- the source list for the admin catalog. */
+    public static function platformSuppliers(Database $db): array
+    {
+        self::ensureSchema($db);
+        try {
+            return $db->fetchAll("SELECT * FROM suppliers WHERE seller_id IS NULL ORDER BY name ASC");
+        } catch (\Throwable $_) { return []; }
+    }
+
+    public static function findPlatform(Database $db, int $id): ?array
+    {
+        self::ensureSchema($db);
+        try {
+            $row = $db->fetch("SELECT * FROM suppliers WHERE id = ? AND seller_id IS NULL", [$id]);
         } catch (\Throwable $_) { $row = null; }
         return $row ?: null;
     }

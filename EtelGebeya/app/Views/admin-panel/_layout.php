@@ -65,6 +65,12 @@ $navItems = [
         'active' => str_contains($current, '/admin/categories'),
     ],
     [
+        'icon'   => 'bi-truck',
+        'label'  => 'Supplier Catalog',
+        'url'    => View::url('/admin/catalog'),
+        'active' => str_contains($current, '/admin/catalog'),
+    ],
+    [
         'icon'   => 'bi-gear',
         'label'  => 'Settings',
         'url'    => View::url('/admin/settings'),
