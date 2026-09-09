@@ -65,10 +65,7 @@ ob_start();
   <!-- Hero -->
   <div class="cat-hero">
     <div class="cat-hero-icon">
-      <?php
-        $icons = ['bi-laptop'=>'/* U+1F4BB */','bi-bag-heart'=>'/* U+1F6CD */','bi-house-heart'=>'/* U+1F3E0 */','bi-droplet-half'=>'/* U+1F484 */','bi-basket3'=>'/* U+1F9FA */','bi-truck'=>'/* U+1F697 */','bi-trophy'=>'/* U+1F3C6 */','bi-book'=>'/* U+1F4DA */','bi-flower1'=>'/* U+1F331 */','bi-tools'=>'/* U+1F527 */','bi-phone'=>'/* U+1F4F1 */','bi-cup-hot'=>'?'];
-        echo $icons[$category->icon ?? ''] ?? '/* U+1F4E6 */';
-      ?>
+      <i class="bi <?= e($category->icon ?: 'bi-box-seam') ?>"></i>
     </div>
     <div>
       <h1><?= $catName ?></h1>
@@ -84,7 +81,7 @@ ob_start();
         <div class="filter-title">Sub-categories</div>
         <?php foreach ($subCats as $sc): ?>
           <a href="<?= View::url('/category/' . $sc->slug) ?>" class="sub-cat-link">
-            <span>?</span> <?= htmlspecialchars($sc->name($locale), ENT_QUOTES) ?>
+            <i class="bi bi-chevron-right" style="font-size:.7rem"></i> <?= htmlspecialchars($sc->name($locale), ENT_QUOTES) ?>
           </a>
         <?php endforeach; ?>
       </div>
@@ -105,8 +102,8 @@ ob_start();
         <div class="filter-title">Rating</div>
         <div class="filter-group">
           <label><input type="radio" name="rating" value="any" checked> Any rating</label>
-          <label><input type="radio" name="rating" value="4"> ???? & above</label>
-          <label><input type="radio" name="rating" value="3"> ??? & above</label>
+          <label><input type="radio" name="rating" value="4"> &#9733;&#9733;&#9733;&#9733; &amp; above</label>
+          <label><input type="radio" name="rating" value="3"> &#9733;&#9733;&#9733; &amp; above</label>
         </div>
       </div>
     </aside>
@@ -132,7 +129,7 @@ ob_start();
 
       <?php if (empty($products)): ?>
         <div class="no-products">
-          <div class="icon">/* U+1F4E6 */</div>
+          <div class="icon"><i class="bi bi-box-seam"></i></div>
           <h3 style="color:var(--eg-text-dim)"><?= t('category.no_products') ?></h3>
           <p style="margin-top:.5rem;color:var(--eg-text-muted)">Be the first to sell in this category!</p>
           <a href="<?= View::url('/sell') ?>" class="btn btn-primary" style="display:inline-block;margin-top:1rem;text-decoration:none;padding:.7rem 1.5rem;border-radius:12px;background:var(--eg-blue);color:#fff;font-weight:700">Open a Shop</a>
@@ -148,7 +145,7 @@ ob_start();
         <?php if ($totalPages > 1): ?>
         <div class="pag-row">
           <?php if ($page > 1): ?>
-            <a href="?page=<?= $page-1 ?>" class="pag-a">?</a>
+            <a href="?page=<?= $page-1 ?>" class="pag-a"><i class="bi bi-chevron-left"></i></a>
           <?php endif; ?>
           <?php
             $from = max(1, $page-2); $to = min($totalPages, $page+2);
@@ -157,7 +154,7 @@ ob_start();
             <a href="?page=<?= $p2 ?>" class="pag-a <?= $p2===$page?'active':'' ?>"><?= $p2 ?></a>
           <?php endfor; ?>
           <?php if ($page < $totalPages): ?>
-            <a href="?page=<?= $page+1 ?>" class="pag-a">?</a>
+            <a href="?page=<?= $page+1 ?>" class="pag-a"><i class="bi bi-chevron-right"></i></a>
           <?php endif; ?>
         </div>
         <?php endif; ?>

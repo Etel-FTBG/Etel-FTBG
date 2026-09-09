@@ -91,16 +91,16 @@ ob_start();
   <div class="container">
     <!-- Profile row -->
     <div class="vendor-profile-row">
-      <div class="vendor-avatar">/* U+1F3EA */</div>
+      <div class="vendor-avatar"><i class="bi bi-shop"></i></div>
       <div class="vendor-head">
         <h1><?= $shopName ?></h1>
         <?php if ($tagline): ?><p><?= $tagline ?></p><?php endif; ?>
         <div class="vendor-badges">
-          <span class="vendor-badge badge-verified">? Verified Seller</span>
-          <span class="vendor-badge badge-rating">? <?= $stats['rating'] ?> / 5.0</span>
+          <span class="vendor-badge badge-verified"><i class="bi bi-patch-check-fill"></i> Verified Seller</span>
+          <span class="vendor-badge badge-rating"><i class="bi bi-star-fill"></i> <?= $stats['rating'] ?> / 5.0</span>
           <?php if (!empty($vendor['business_type'])): ?>
             <span class="vendor-badge" style="background:var(--eg-blue-dim);color:var(--eg-blue);border:1px solid var(--eg-blue-light)">
-              /* U+1F3E2 */ <?= htmlspecialchars(ucfirst($vendor['business_type']), ENT_QUOTES) ?>
+              <i class="bi bi-building"></i> <?= htmlspecialchars(ucfirst($vendor['business_type']), ENT_QUOTES) ?>
             </span>
           <?php endif; ?>
         </div>
@@ -112,7 +112,7 @@ ob_start();
       <div class="vendor-stat"><div class="vendor-stat-num"><?= number_format($stats['products']) ?></div><div class="vendor-stat-lbl">Products</div></div>
       <div class="vendor-stat"><div class="vendor-stat-num"><?= number_format($stats['sold']) ?></div><div class="vendor-stat-lbl">Items Sold</div></div>
       <div class="vendor-stat"><div class="vendor-stat-num"><?= number_format($stats['reviews']) ?></div><div class="vendor-stat-lbl">Reviews</div></div>
-      <div class="vendor-stat"><div class="vendor-stat-num"><?= $stats['rating'] ?>?</div><div class="vendor-stat-lbl">Rating</div></div>
+      <div class="vendor-stat"><div class="vendor-stat-num"><?= $stats['rating'] ?> <i class="bi bi-star-fill" style="font-size:.7em"></i></div><div class="vendor-stat-lbl">Rating</div></div>
     </div>
 
     <!-- Content layout -->
@@ -124,7 +124,7 @@ ob_start();
         </div>
         <?php if (empty($products)): ?>
           <div style="text-align:center;padding:3rem;color:var(--eg-text-muted)">
-            <div style="font-size:3rem;margin-bottom:.75rem">/* U+1F4E6 */</div>
+            <div style="font-size:3rem;margin-bottom:.75rem"><i class="bi bi-box-seam"></i></div>
             <p>This vendor has no published products yet.</p>
           </div>
         <?php else: ?>
@@ -140,7 +140,7 @@ ob_start();
       <aside>
         <!-- About -->
         <div class="vendor-sidebar-card">
-          <h4>?? About This Shop</h4>
+          <h4><i class="bi bi-info-circle"></i> About This Shop</h4>
           <?php
             $about = $locale==='am' ? ($vendor['description_am']??$vendor['description_en']??'') : ($vendor['description_en']??'');
             $about = strip_tags($about ?? '');
@@ -154,30 +154,30 @@ ob_start();
 
         <!-- Contact -->
         <div class="vendor-sidebar-card">
-          <h4>/* U+1F4DE */ Contact & Location</h4>
+          <h4><i class="bi bi-telephone"></i> Contact & Location</h4>
           <?php if (!empty($vendor['phone'])): ?>
-            <div class="vendor-info-row">/* U+1F4F1 */ <?= htmlspecialchars($vendor['phone'],ENT_QUOTES) ?></div>
+            <div class="vendor-info-row"><i class="bi bi-phone"></i> <?= htmlspecialchars($vendor['phone'],ENT_QUOTES) ?></div>
           <?php endif; ?>
           <?php if (!empty($vendor['email'])): ?>
-            <div class="vendor-info-row">/* U+1F4E7 */ <?= htmlspecialchars($vendor['email'],ENT_QUOTES) ?></div>
+            <div class="vendor-info-row"><i class="bi bi-envelope"></i> <?= htmlspecialchars($vendor['email'],ENT_QUOTES) ?></div>
           <?php endif; ?>
           <?php if (!empty($vendor['city'])): ?>
-            <div class="vendor-info-row">/* U+1F4CD */ <?= htmlspecialchars($vendor['city'],ENT_QUOTES) ?><?= !empty($vendor['region'])?', '.htmlspecialchars($vendor['region'],ENT_QUOTES):'' ?></div>
+            <div class="vendor-info-row"><i class="bi bi-geo-alt"></i> <?= htmlspecialchars($vendor['city'],ENT_QUOTES) ?><?= !empty($vendor['region'])?', '.htmlspecialchars($vendor['region'],ENT_QUOTES):'' ?></div>
           <?php endif; ?>
           <?php if (!empty($vendor['approved_at'])): ?>
-            <div class="vendor-info-row">/* U+1F4C5 */ Member since <?= date('M Y', strtotime($vendor['approved_at'])) ?></div>
+            <div class="vendor-info-row"><i class="bi bi-calendar3"></i> Member since <?= date('M Y', strtotime($vendor['approved_at'])) ?></div>
           <?php endif; ?>
         </div>
 
         <!-- Recent reviews -->
         <?php if (!empty($recent_reviews)): ?>
         <div class="vendor-sidebar-card">
-          <h4>? Recent Reviews</h4>
+          <h4><i class="bi bi-chat-square-text"></i> Recent Reviews</h4>
           <?php foreach ($recent_reviews as $rv): ?>
             <div class="mini-review">
               <div style="display:flex;align-items:center;justify-content:space-between;">
                 <span class="mini-reviewer"><?= htmlspecialchars($rv['reviewer']??'',ENT_QUOTES) ?></span>
-                <span style="color:#D4AF37;font-size:.8rem"><?= str_repeat('?',(int)($rv['rating']??0)) ?></span>
+                <span style="color:#D4AF37;font-size:.8rem"><?= str_repeat('&#9733;',(int)($rv['rating']??0)) ?></span>
               </div>
               <div class="mini-review-body"><?= htmlspecialchars(mb_substr($rv['body']??'',0,80,'UTF-8'),ENT_QUOTES) ?><?= mb_strlen($rv['body']??'','UTF-8')>80?'...':'' ?></div>
               <div style="font-size:.7rem;color:var(--eg-text-muted);margin-top:.2rem">on <?= htmlspecialchars($rv['product_name']??'',ENT_QUOTES) ?></div>
