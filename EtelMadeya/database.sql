@@ -41,6 +41,20 @@ CREATE TABLE IF NOT EXISTS vehicle_types (
     INDEX idx_sort (sort_order)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- ─── CONTROLLER VEHICLE TYPES (per-station assignment) ──────────────
+-- Which vehicle types a station is allowed to register/serve today.
+-- No rows for a controller_id = unrestricted (all active types allowed) -
+-- this is the backward-compatible default for every controller that
+-- existed before this table, so nothing breaks until an admin actively
+-- assigns a restricted set via the Admin Panel.
+CREATE TABLE IF NOT EXISTS controller_vehicle_types (
+    controller_id INT UNSIGNED NOT NULL,
+    vehicle_type_id INT UNSIGNED NOT NULL,
+    PRIMARY KEY (controller_id, vehicle_type_id),
+    FOREIGN KEY (controller_id) REFERENCES controllers(id) ON DELETE CASCADE,
+    FOREIGN KEY (vehicle_type_id) REFERENCES vehicle_types(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- ─── QUEUE TABLE ────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS queue (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,

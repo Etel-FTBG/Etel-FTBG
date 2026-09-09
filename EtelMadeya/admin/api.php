@@ -201,11 +201,24 @@ try {
         
         case 'get_controllers':
             requireAdmin();
-            
+
             $controllers = db()->fetchAll(
                 "SELECT * FROM controllers ORDER BY created_at DESC"
             );
-            
+
+            // Attach each controller's assigned vehicle types (empty array =
+            // unrestricted / all types allowed, per controller_vehicle_types'
+            // no-rows-means-unrestricted convention).
+            $assignments = db()->fetchAll("SELECT controller_id, vehicle_type_id FROM controller_vehicle_types");
+            $byController = [];
+            foreach ($assignments as $a) {
+                $byController[(int)$a['controller_id']][] = (int)$a['vehicle_type_id'];
+            }
+            foreach ($controllers as &$c) {
+                $c['vehicle_type_ids'] = $byController[(int)$c['id']] ?? [];
+            }
+            unset($c);
+
             jsonResponse(['success' => true, 'controllers' => $controllers]);
             break;
             
@@ -216,6 +229,9 @@ try {
             $fullName = sanitize($_POST['full_name'] ?? '');
             $phone = sanitize($_POST['phone'] ?? '');
             $stationName = sanitize($_POST['station_name'] ?? '');
+            $oddEvenRule = sanitize($_POST['odd_even_rule'] ?? 'all');
+            if (!in_array($oddEvenRule, ['all', 'odd', 'even'], true)) $oddEvenRule = 'all';
+            $vehicleTypeIds = array_map('intval', (array)($_POST['vehicle_type_ids'] ?? []));
 
             if (empty($username) || empty($fullName) || empty($phone)) {
                 jsonResponse(['success' => false, 'message' => 'Missing required fields'], 400);
@@ -237,9 +253,16 @@ try {
                 'password' => password_hash(bin2hex(random_bytes(24)), PASSWORD_DEFAULT),
                 'full_name' => $fullName,
                 'phone' => $phone,
-                'station_name' => $stationName ?: 'Etel Madeya Gas Station'
+                'station_name' => $stationName ?: 'Etel Madeya Gas Station',
+                'odd_even_rule' => $oddEvenRule
             ]);
-            
+
+            foreach ($vehicleTypeIds as $vtId) {
+                if ($vtId > 0) {
+                    db()->insert('controller_vehicle_types', ['controller_id' => $id, 'vehicle_type_id' => $vtId]);
+                }
+            }
+
             // Log activity
             db()->insert('activity_log', [
                 'admin_id' => $_SESSION['admin_id'],
@@ -247,7 +270,7 @@ try {
                 'details' => "Created controller: $username",
                 'ip_address' => getClientIP()
             ]);
-            
+
             jsonResponse(['success' => true, 'message' => 'Controller created successfully', 'id' => $id]);
             break;
             
@@ -259,22 +282,36 @@ try {
             $phone = sanitize($_POST['phone'] ?? '');
             $stationName = sanitize($_POST['station_name'] ?? '');
             $isActive = (int)($_POST['is_active'] ?? 1);
-            
+            $oddEvenRule = sanitize($_POST['odd_even_rule'] ?? 'all');
+            if (!in_array($oddEvenRule, ['all', 'odd', 'even'], true)) $oddEvenRule = 'all';
+            $vehicleTypeIds = array_map('intval', (array)($_POST['vehicle_type_ids'] ?? []));
+
             if (!$id || empty($fullName)) {
                 jsonResponse(['success' => false, 'message' => 'Missing required fields'], 400);
             }
-            
+
             $data = [
                 'full_name' => $fullName,
                 'phone' => $phone,
                 'station_name' => $stationName,
-                'is_active' => $isActive
+                'is_active' => $isActive,
+                'odd_even_rule' => $oddEvenRule
             ];
 
             // Local password is never checked at sign-in (EtelID-only,
             // matched on phone) - nothing to update here.
             db()->update('controllers', $data, 'id = ?', [$id]);
-            
+
+            // Replace the vehicle-type assignment wholesale rather than
+            // diffing - the checkbox grid always submits the complete
+            // current selection, so delete+reinsert is simplest and correct.
+            db()->query("DELETE FROM controller_vehicle_types WHERE controller_id = ?", [$id]);
+            foreach ($vehicleTypeIds as $vtId) {
+                if ($vtId > 0) {
+                    db()->insert('controller_vehicle_types', ['controller_id' => $id, 'vehicle_type_id' => $vtId]);
+                }
+            }
+
             // Log activity
             db()->insert('activity_log', [
                 'admin_id' => $_SESSION['admin_id'],
