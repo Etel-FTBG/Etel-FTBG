@@ -278,6 +278,22 @@ ul{list-style:none}
 .eg-cat-card-name{font-size:11.5px;font-weight:700;color:var(--text);line-height:1.3}
 .eg-cat-card-count{font-size:10px;color:var(--text3);margin-top:2px}
 
+/* ---- TRUST BAR ---- */
+.eg-trust-bar{
+  display:flex;flex-wrap:wrap;gap:10px 24px;align-items:center;justify-content:center;
+  padding:12px 20px;margin-bottom:20px;
+  background:var(--card2);border:1px solid var(--border2);border-radius:var(--r);
+}
+.eg-trust-item{
+  display:flex;align-items:center;gap:7px;
+  font-size:12px;font-weight:600;color:var(--text2);white-space:nowrap
+}
+.eg-trust-item i{color:var(--g2);font-size:14px}
+
+/* ---- HOT DEALS heading accent ---- */
+.eg-sec-title-hot{display:flex;align-items:center;gap:7px;color:var(--text)}
+.eg-sec-title-hot i{color:#ff5b3c}
+
 /* ---- PROMO BANNERS (Alibaba-style horizontal strip) ---- */
 .eg-promo-strip{
   display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:24px
@@ -453,6 +469,8 @@ ul{list-style:none}
   .eg-sidebar{display:none}
   .eg-page{padding:14px 0}
   .eg-promo-strip{grid-template-columns:1fr}
+  .eg-trust-bar{gap:8px 14px;padding:10px 14px}
+  .eg-trust-item{font-size:11px}
   .eg-product-grid{grid-template-columns:repeat(2,1fr);gap:10px}
   .eg-cat-grid{grid-template-columns:repeat(3,1fr);gap:9px}
   .eg-vendor-banner{padding:24px 20px}
