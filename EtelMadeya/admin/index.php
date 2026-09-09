@@ -59,27 +59,27 @@
                 </div>
                 <nav class="sidebar-nav">
                     <a href="#" onclick="showTab('dashboard')" class="nav-item active" data-tab="dashboard">
-                        <span class="nav-icon">📊</span>
+                        <span class="nav-icon"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10"/><path d="M12 20V4"/><path d="M20 20v-7"/><path d="M2 20h20"/></svg></span>
                         <span>Dashboard</span>
                     </a>
                     <a href="#" onclick="showTab('controllers')" class="nav-item" data-tab="controllers">
-                        <span class="nav-icon">👥</span>
+                        <span class="nav-icon"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 20v-1.5a3.5 3.5 0 0 0-3.5-3.5h-5A3.5 3.5 0 0 0 5 18.5V20"/><circle cx="9.5" cy="8" r="3.5"/><path d="M19 20v-1.5a3.5 3.5 0 0 0-2.5-3.35"/><path d="M15 4.6a3.5 3.5 0 0 1 0 6.8"/></svg></span>
                         <span>Controllers</span>
                     </a>
                     <a href="#" onclick="showTab('vehicles')" class="nav-item" data-tab="vehicles">
-                        <span class="nav-icon">🚗</span>
+                        <span class="nav-icon"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="7" width="13" height="10" rx="1"/><path d="M14 10h4l3 3v4h-7z"/><circle cx="6" cy="19" r="1.6"/><circle cx="17.5" cy="19" r="1.6"/></svg></span>
                         <span>Vehicle Types</span>
                     </a>
                     <a href="#" onclick="showTab('queue')" class="nav-item" data-tab="queue">
-                        <span class="nav-icon">📋</span>
+                        <span class="nav-icon"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/></svg></span>
                         <span>Queue Monitor</span>
                     </a>
                     <a href="#" onclick="showTab('reports')" class="nav-item" data-tab="reports">
-                        <span class="nav-icon">📈</span>
+                        <span class="nav-icon"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 17 6-6 4 4 8-8"/><path d="M17 7h4v4"/></svg></span>
                         <span>Reports</span>
                     </a>
                     <a href="#" onclick="showTab('settings')" class="nav-item" data-tab="settings">
-                        <span class="nav-icon">⚙️</span>
+                        <span class="nav-icon"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z"/></svg></span>
                         <span>Settings</span>
                     </a>
                 </nav>
@@ -97,33 +97,33 @@
                 <div id="dashboardTab" class="tab-content active">
                     <div class="page-header">
                         <h1>Dashboard</h1>
-                        <button onclick="loadDashboard()" class="btn-refresh">🔄 Refresh</button>
+                        <button onclick="loadDashboard()" class="btn-refresh"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 3v6h-6"/></svg> Refresh</button>
                     </div>
                     
                     <div class="stats-grid">
                         <div class="stat-card">
-                            <div class="stat-icon blue">👥</div>
+                            <div class="stat-icon blue"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 20v-1.5a3.5 3.5 0 0 0-3.5-3.5h-5A3.5 3.5 0 0 0 5 18.5V20"/><circle cx="9.5" cy="8" r="3.5"/><path d="M19 20v-1.5a3.5 3.5 0 0 0-2.5-3.35"/><path d="M15 4.6a3.5 3.5 0 0 1 0 6.8"/></svg></div>
                             <div class="stat-info">
                                 <div class="stat-value" id="statControllers">0</div>
                                 <div class="stat-label">Active Controllers</div>
                             </div>
                         </div>
                         <div class="stat-card">
-                            <div class="stat-icon green">📊</div>
+                            <div class="stat-icon green"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10"/><path d="M12 20V4"/><path d="M20 20v-7"/><path d="M2 20h20"/></svg></div>
                             <div class="stat-info">
                                 <div class="stat-value" id="statQueued">0</div>
                                 <div class="stat-label">Total Queued</div>
                             </div>
                         </div>
                         <div class="stat-card">
-                            <div class="stat-icon orange">✅</div>
+                            <div class="stat-icon orange"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m8.5 12.5 2.5 2.5 4.5-5"/></svg></div>
                             <div class="stat-info">
                                 <div class="stat-value" id="statServedToday">0</div>
                                 <div class="stat-label">Served Today</div>
                             </div>
                         </div>
                         <div class="stat-card">
-                            <div class="stat-icon purple">🚗</div>
+                            <div class="stat-icon purple"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="7" width="13" height="10" rx="1"/><path d="M14 10h4l3 3v4h-7z"/><circle cx="6" cy="19" r="1.6"/><circle cx="17.5" cy="19" r="1.6"/></svg></div>
                             <div class="stat-info">
                                 <div class="stat-value" id="statVehicleTypes">0</div>
                                 <div class="stat-label">Vehicle Types</div>
@@ -296,6 +296,7 @@
     const API = 'api.php';
     let currentAdmin = null;
     </script>
+    <script src="../assets/js/icons.js"></script>
     <script src="../assets/js/admin-app.js"></script>
 </body>
 </html>
