@@ -196,7 +196,36 @@ try {
                 'controllers' => $controllers
             ]);
             break;
-            
+
+        case 'get_served_trend':
+            requireAdmin();
+
+            $days = db()->fetchAll(
+                "SELECT report_date, COUNT(*) served
+                 FROM report
+                 WHERE report_date >= DATE_SUB(CURDATE(), INTERVAL 13 DAY)
+                 GROUP BY report_date
+                 ORDER BY report_date ASC"
+            );
+
+            jsonResponse(['success' => true, 'trend' => $days]);
+            break;
+
+        case 'get_fuel_snapshot':
+            requireAdmin();
+
+            $rows = db()->fetchAll(
+                "SELECT fuel_type,
+                        SUM(current_stock_liters) stock_liters,
+                        SUM(allocated_quota_liters) quota_liters,
+                        SUM(used_today_liters) used_today_liters
+                 FROM fuel_stock
+                 GROUP BY fuel_type"
+            );
+
+            jsonResponse(['success' => true, 'fuel' => $rows]);
+            break;
+
         // ─── CONTROLLERS ────────────────────────────────────────────
         
         case 'get_controllers':
