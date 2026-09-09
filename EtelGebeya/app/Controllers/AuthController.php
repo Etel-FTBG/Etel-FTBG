@@ -168,7 +168,11 @@ final class AuthController
         $member = $client->authenticate($identifier, $password);
 
         if (!$member) {
-            $this->auth->flash('error', 'Etel-ID sign-in failed. Check your phone number and password.');
+            // lastError() distinguishes a real config/connectivity problem
+            // from an actually-wrong password -- don't collapse both into
+            // the same generic message, or a misconfigured service key
+            // looks exactly like a typo'd password.
+            $this->auth->flash('error', $client->lastError() ?? 'Etel-ID sign-in failed. Check your phone number and password.');
             redirect('/login');
         }
 
