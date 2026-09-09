@@ -30,8 +30,8 @@ if ($db) {
         'users'      => ['id','full_name','email','phone','status'],
         'user_roles' => ['user_id','role'],
         'products'   => ['id','name_en','status','price'],
-        'orders'     => ['id','status'],   // code and customer_id/user_id are checked below
-        'sellers'    => ['id','user_id','shop_name','status'],
+        'orders'     => ['id','status'],   // order_ref and customer_id/user_id are checked below
+        'sellers'    => ['id','user_id','store_name','status'],
     ];
     // Optional tables -- warn if missing, don't fail
     $optional = ['transactions','payments','disputes','couriers','order_items','vendor_payouts','seller_payouts'];
@@ -55,9 +55,9 @@ if ($db) {
         }
         // Special check for orders FK column
         $oLiveCols = $db->query("SHOW COLUMNS FROM `".t('orders')."`")->fetchAll(PDO::FETCH_COLUMN);
-        $hasCode   = in_array('code', $oLiveCols);
+        $hasCode   = in_array('order_ref', $oLiveCols);
         $hasFk     = in_array('customer_id', $oLiveCols) || in_array('user_id', $oLiveCols);
-        if (!$hasCode) $checks[] = chk('orders.code', 'warn', 'column missing -- order search will use ID fallback');
+        if (!$hasCode) $checks[] = chk('orders.order_ref', 'warn', 'column missing -- order search will use ID fallback');
         if (!$hasFk)   $checks[] = chk('orders FK',   'fail', 'neither customer_id nor user_id found');
         // Optional tables -- check existence AND critical columns
         $optional = [
