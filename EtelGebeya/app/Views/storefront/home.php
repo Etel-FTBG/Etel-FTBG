@@ -26,51 +26,9 @@ View::render('_layouts/public', [
     usort($deals, fn($a, $b) => $b->discountPct() <=> $a->discountPct());
     $deals = array_slice($deals, 0, 6);
 
-    // Map Bootstrap Icon by category name keyword
-    function eg_cat_icon(string $name): string {
-        $lower = strtolower($name);
-        $map = [
-            'electronic' => 'bi-phone',
-            'phone'      => 'bi-phone',
-            'laptop'     => 'bi-laptop',
-            'computer'   => 'bi-pc-display',
-            'fashion'    => 'bi-bag-heart',
-            'cloth'      => 'bi-person-standing',
-            'wear'       => 'bi-person-standing',
-            'shoe'       => 'bi-boot',
-            'home'       => 'bi-house-door',
-            'furniture'  => 'bi-lamp',
-            'food'       => 'bi-egg-fried',
-            'grocer'     => 'bi-cart',
-            'coffee'     => 'bi-cup-hot',
-            'health'     => 'bi-heart-pulse',
-            'beauty'     => 'bi-stars',
-            'baby'       => 'bi-emoji-smile',
-            'toy'        => 'bi-controller',
-            'sport'      => 'bi-bicycle',
-            'auto'       => 'bi-car-front',
-            'vehicle'    => 'bi-car-front',
-            'book'       => 'bi-book',
-            'office'     => 'bi-briefcase',
-            'stationer'  => 'bi-pen',
-            'tool'       => 'bi-tools',
-            'garden'     => 'bi-flower1',
-            'pet'        => 'bi-heart',
-            'travel'     => 'bi-airplane',
-            'luggage'    => 'bi-luggage',
-            'clean'      => 'bi-droplet',
-            'detergent'  => 'bi-bucket',
-            'laundry'    => 'bi-water',
-            'floor'      => 'bi-house',
-            'care'       => 'bi-shield-heart',
-            'oil'        => 'bi-droplet',
-            'teleco'     => 'bi-wifi',
-        ];
-        foreach ($map as $kw => $ico) {
-            if (str_contains($lower, $kw)) return $ico;
-        }
-        return 'bi-grid';
-    }
+    // eg_cat_icon() is a shared global helper (bootstrap.php) so the
+    // homepage grid, search sidebar, and category pages all agree on
+    // which icon a category gets.
 ?>
 
 <div class="eg-page">
