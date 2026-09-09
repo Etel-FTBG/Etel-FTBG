@@ -94,7 +94,13 @@ $token  = Auth::getInstance()->csrfToken();
 .auth-formcol {
   display: flex; align-items: center; justify-content: center;
   padding: 3rem 1.5rem;
-  background: var(--bg);
+  background:
+    radial-gradient(ellipse at 18% 8%, rgba(255,230,80,.18) 0%,transparent 42%),
+    radial-gradient(ellipse at 82% 92%, rgba(60,30,0,.36) 0%,transparent 42%),
+    linear-gradient(155deg,
+      #2A1600 0%,#5A3A08 14%,#9A6818 28%,#C8922A 42%,
+      #D4AF37 50%,#C8922A 58%,#9A6818 72%,#5A3A08 86%,#2A1600 100%
+    );
   position: relative;
 }
 /* Etel Family master seal -- kept subtle enough not to affect input
@@ -115,6 +121,14 @@ $token  = Auth::getInstance()->csrfToken();
   position: relative; z-index: 1; overflow: hidden; border-radius: 20px;
   width: 100%;
   max-width: 400px;
+  padding: 2.25rem 2rem;
+  background: rgba(8,5,2,.88);
+  backdrop-filter: blur(20px);
+  box-shadow:
+    0 14px 24px -12px rgba(0,0,0,.65),
+    0 3px 8px -2px rgba(0,0,0,.45),
+    inset 0 1px 0 rgba(255,230,80,.12),
+    inset 0 0 0 1px rgba(212,175,55,.22);
   animation: authRise .45s cubic-bezier(.22,1,.36,1) both;
 }
 /* Master seal bled through the card itself, matching the admin login's
