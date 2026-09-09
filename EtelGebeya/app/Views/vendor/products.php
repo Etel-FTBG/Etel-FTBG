@@ -147,7 +147,7 @@ ob_start();
               <i class="bi bi-pencil"></i> Edit
             </a>
             <form method="POST" action="<?= View::url('/vendor-panel/products/'.$pr['id'].'/delete') ?>"
-                  onsubmit="return confirm('Delete ?<?= e(addslashes(html_entity_decode($pr['name_en'],ENT_QUOTES,'UTF-8'))) ?>??')">
+                  onsubmit="return confirm('Delete \'<?= e(addslashes(html_entity_decode($pr['name_en'],ENT_QUOTES,'UTF-8'))) ?>\'?')">
               <button type="submit" class="act-btn act-del"><i class="bi bi-trash3"></i></button>
             </form>
           </div>
