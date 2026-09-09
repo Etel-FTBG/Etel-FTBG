@@ -1,7 +1,12 @@
 <?php
 use App\Core\View;
 $locale = $locale ?? 'en';
-function wl_img(string $p): string { return str_starts_with($p,'http')?$p:'/EtelGebeya/public/uploads/products/'.ltrim($p,'/'); }
+function wl_img(string $p): string {
+    // product_images.path is already saved as a site-absolute path
+    // (see VendorController's $uploadDir) -- don't re-prefix those.
+    if (str_starts_with($p,'http') || str_starts_with($p,'/')) return $p;
+    return '/EtelGebeya/public/uploads/products/'.$p;
+}
 ob_start();
 ?>
 <style>
