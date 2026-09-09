@@ -30,12 +30,12 @@
 
                 <form id="etelidLoginForm" onsubmit="handleEtelIDLogin(event)">
                     <div class="form-group form-group-icon">
-                        <label>EtelID, FIN, or Phone</label>
+                        <label for="etelidIdentifier">EtelID, FIN, or Phone</label>
                         <svg class="input-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>
                         <input type="text" id="etelidIdentifier" required placeholder="EG-... or +251 9XX XXX XXX" autocomplete="username">
                     </div>
                     <div class="form-group form-group-icon">
-                        <label>EtelID Password</label>
+                        <label for="etelidPassword">EtelID Password</label>
                         <svg class="input-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="11" width="16" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
                         <input type="password" id="etelidPassword" required autocomplete="current-password">
                     </div>
@@ -235,19 +235,19 @@
                             <h3>General Settings</h3>
                             <form id="generalSettingsForm" onsubmit="saveSettings(event, 'general')">
                                 <div class="form-group">
-                                    <label>Station Name</label>
+                                    <label for="settingStationName">Station Name</label>
                                     <input type="text" id="settingStationName" required>
                                 </div>
                                 <div class="form-group">
-                                    <label>Station Name (Amharic)</label>
+                                    <label for="settingStationNameAm">Station Name (Amharic)</label>
                                     <input type="text" id="settingStationNameAm" required>
                                 </div>
                                 <div class="form-group">
-                                    <label>Phone</label>
+                                    <label for="settingPhone">Phone</label>
                                     <input type="tel" id="settingPhone" required>
                                 </div>
                                 <div class="form-group">
-                                    <label>Email</label>
+                                    <label for="settingEmail">Email</label>
                                     <input type="email" id="settingEmail" required>
                                 </div>
                                 <button type="submit" class="btn-primary">Save Changes</button>
@@ -257,11 +257,11 @@
                             <h3>Queue Settings</h3>
                             <form id="queueSettingsForm" onsubmit="saveSettings(event, 'queue')">
                                 <div class="form-group">
-                                    <label>Alert Threshold</label>
+                                    <label for="settingAlertThreshold">Alert Threshold (minutes)</label>
                                     <input type="number" id="settingAlertThreshold" required>
                                 </div>
                                 <div class="form-group">
-                                    <label>Max Queue Size</label>
+                                    <label for="settingMaxQueueSize">Max Queue Size (vehicles)</label>
                                     <input type="number" id="settingMaxQueueSize" required>
                                 </div>
                                 <div class="form-group">

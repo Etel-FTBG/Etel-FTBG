@@ -398,6 +398,11 @@
     font-size: 24px;
     cursor: pointer;
     color: var(--primary);
+    min-width: 44px;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .close-btn:hover {
