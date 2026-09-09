@@ -110,6 +110,8 @@ $router->post('/vendor-panel/settings',                [\App\Controllers\VendorC
 $router->get('/vendor-panel/suppliers',                [\App\Controllers\VendorController::class, 'suppliers']);
 $router->post('/vendor-panel/suppliers/save',           [\App\Controllers\VendorController::class, 'supplierSave']);
 $router->post('/vendor-panel/suppliers/{id}/delete',    [\App\Controllers\VendorController::class, 'supplierDelete']);
+$router->get('/vendor-panel/catalog',                   [\App\Controllers\VendorController::class, 'catalog']);
+$router->post('/vendor-panel/catalog/import',            [\App\Controllers\VendorController::class, 'catalogImport']);
 $router->get('/sell',                                  [\App\Controllers\VendorController::class, 'signup']);  // public vendor signup
 $router->post('/sell',                                 [\App\Controllers\VendorController::class, 'signup']);
 
@@ -126,6 +128,11 @@ $router->get('/admin/payments',                 [\App\Controllers\AdminControlle
 $router->get('/admin/users',                    [\App\Controllers\AdminController::class, 'users']);
 $router->get('/admin/categories',               [\App\Controllers\AdminController::class, 'categories']);
 $router->post('/admin/categories',              [\App\Controllers\AdminController::class, 'saveCategory']);
+$router->get('/admin/catalog',                   [\App\Controllers\AdminController::class, 'catalog']);
+$router->post('/admin/catalog/save',             [\App\Controllers\AdminController::class, 'saveCatalogItem']);
+$router->post('/admin/catalog/{id}/delete',      [\App\Controllers\AdminController::class, 'deleteCatalogItem']);
+$router->post('/admin/catalog/supplier',         [\App\Controllers\AdminController::class, 'saveCatalogSupplier']);
+$router->post('/admin/catalog/import-csv',       [\App\Controllers\AdminController::class, 'importCatalogCsv']);
 $router->get('/admin/settings',                  [\App\Controllers\AdminController::class, 'settings']);
 $router->post('/admin/settings',                 [\App\Controllers\AdminController::class, 'saveSettings']);
 $router->post('/admin/audit/run',                [\App\Controllers\AdminController::class, 'runAudit']);
