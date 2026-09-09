@@ -44,6 +44,15 @@ final class AdminController
         View::render($view, array_merge(['auth' => $this->auth], $data));
     }
 
+    /** Verifies the POSTed _token CSRF value, redirecting back with a flash error if it's missing or stale. */
+    private function requireCsrf(string $redirectTo): void
+    {
+        if (!$this->auth->csrfCheck($_POST['_token'] ?? null)) {
+            $this->auth->flash('error', 'Your session expired -- please try again.');
+            redirect($redirectTo);
+        }
+    }
+
     private function page(): int
     {
         return max(1, (int)($_GET['page'] ?? 1));
@@ -139,6 +148,7 @@ final class AdminController
 
     public function approveVendor($id): void
     {
+        $this->requireCsrf('/admin/vendors');
         $id = (int)$id;
         if ($id > 0) {
             $this->db->update('sellers', ['status' => 'active'], 'id=?', [$id]);
@@ -149,6 +159,7 @@ final class AdminController
 
     public function suspendVendor($id): void
     {
+        $this->requireCsrf('/admin/vendors');
         $id = (int)$id;
         if ($id > 0) {
             $this->db->update('sellers', ['status' => 'suspended'], 'id=?', [$id]);
@@ -201,6 +212,7 @@ final class AdminController
 
     public function approveProduct($id): void
     {
+        $this->requireCsrf('/admin/products');
         $id = (int)$id;
         if ($id > 0) {
             $this->db->update('products', ['status' => 'active'], 'id=?', [$id]);
@@ -211,6 +223,7 @@ final class AdminController
 
     public function rejectProduct($id): void
     {
+        $this->requireCsrf('/admin/products');
         $id = (int)$id;
         if ($id > 0) {
             $this->db->update('products', ['status' => 'flagged'], 'id=?', [$id]);
@@ -351,6 +364,7 @@ final class AdminController
 
     public function saveCategory(): void
     {
+        $this->requireCsrf('/admin/categories');
         $id       = (int)($_POST['id'] ?? 0);
         $name_en  = trim($_POST['name_en'] ?? '');
         $name_am  = trim($_POST['name_am'] ?? '');
@@ -403,6 +417,7 @@ final class AdminController
 
     public function saveCatalogItem(): void
     {
+        $this->requireCsrf('/admin/catalog');
         \App\Models\Supplier::ensureSchema($this->db);
 
         $id          = (int)($_POST['id'] ?? 0);
@@ -459,6 +474,7 @@ final class AdminController
 
     public function deleteCatalogItem($id): void
     {
+        $this->requireCsrf('/admin/catalog');
         \App\Models\Supplier::ensureSchema($this->db);
         $this->db->delete('catalog_items', 'id = ?', [(int)$id]);
         // Vendor products already imported from this item stay untouched --
@@ -470,6 +486,7 @@ final class AdminController
     /** Quick-add a platform supplier (seller_id NULL) from the catalog page. */
     public function saveCatalogSupplier(): void
     {
+        $this->requireCsrf('/admin/catalog');
         \App\Models\Supplier::ensureSchema($this->db);
         $name = trim($_POST['name'] ?? '');
         if ($name === '') {
@@ -492,6 +509,7 @@ final class AdminController
 
     public function importCatalogCsv(): void
     {
+        $this->requireCsrf('/admin/catalog');
         \App\Models\Supplier::ensureSchema($this->db);
         $supplierId = (int)($_POST['supplier_id'] ?? 0);
         if ($supplierId <= 0 || !\App\Models\Supplier::findPlatform($this->db, $supplierId)) {
@@ -525,6 +543,7 @@ final class AdminController
 
     public function saveSettings(): void
     {
+        $this->requireCsrf('/admin/settings');
         // Placeholder -- settings are stored in config/app.php (file-based).
         // Extend this to write to a DB-backed settings table as needed.
         $this->auth->flash('success', 'Settings saved (restart may be required).');

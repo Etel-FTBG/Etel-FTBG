@@ -15,6 +15,7 @@ ob_start();
   <?php endif; ?>
 
   <form method="POST" action="<?= View::url('/vendor-panel/settings') ?>">
+    <?= csrf() ?>
     <div class="form-card" style="max-width:600px">
       <h3 class="form-card-title">Store Information</h3>
 

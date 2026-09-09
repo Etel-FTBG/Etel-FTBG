@@ -42,6 +42,7 @@ ob_start();
 
 <div class="sp-form" id="sp-form">
   <form method="POST" action="<?= View::url('/vendor-panel/suppliers/save') ?>">
+    <?= csrf() ?>
     <input type="hidden" name="id" value="0">
     <div class="fg-row">
       <div class="fg">
@@ -95,6 +96,7 @@ ob_start();
           <td class="sp-muted" style="max-width:220px"><?= e(mb_substr($s['notes'] ?? '', 0, 80, 'UTF-8')) ?></td>
           <td class="act-btns">
             <form method="POST" action="<?= View::url('/vendor-panel/suppliers/'.(int)$s['id'].'/delete') ?>" onsubmit="return confirm('Remove this supplier? Products using it will keep working but lose the supplier assignment.')">
+              <?= csrf() ?>
               <button type="submit" class="act-btn act-del"><i class="bi bi-trash3"></i> Remove</button>
             </form>
           </td>
