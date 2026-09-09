@@ -51,6 +51,15 @@ final class VendorController
         View::render($view, array_merge(['auth' => $this->auth], $data));
     }
 
+    /** Verifies the POSTed _token CSRF value, redirecting back with a flash error if it's missing or stale. */
+    private function requireCsrf(string $redirectTo): void
+    {
+        if (!$this->auth->csrfCheck($_POST['_token'] ?? null)) {
+            $this->auth->flash('error', 'Your session expired -- please try again.');
+            redirect($redirectTo);
+        }
+    }
+
     private function handleImageUploads(int $productId): void
     {
         $uploadDir = dirname(__DIR__, 2) . '/public/uploads/products/';
@@ -211,6 +220,7 @@ final class VendorController
     public function productSave(): void
     {
         $seller = $this->requireVendor();
+        $this->requireCsrf('/vendor-panel/products');
         $sid    = (int)$seller['id'];
 
         $id           = (int)($_POST['id'] ?? 0);
@@ -297,6 +307,7 @@ final class VendorController
     public function productDelete(int $id): void
     {
         $seller = $this->requireVendor();
+        $this->requireCsrf('/vendor-panel/products');
         $sid    = (int)$seller['id'];
         $existing = $this->db->fetch("SELECT id FROM products WHERE id = ? AND seller_id = ?", [$id, $sid]);
         if ($existing) {
@@ -354,6 +365,7 @@ final class VendorController
     public function markOrderItemForwarded(): void
     {
         $seller = $this->requireVendor();
+        $this->requireCsrf('/vendor-panel/orders');
         $sid    = (int)$seller['id'];
         $itemId = (int)($_POST['item_id'] ?? 0);
 
@@ -377,6 +389,7 @@ final class VendorController
     public function emailSupplier(): void
     {
         $seller = $this->requireVendor();
+        $this->requireCsrf('/vendor-panel/orders');
         $sid    = (int)$seller['id'];
         $itemId = (int)($_POST['item_id'] ?? 0);
 
@@ -442,6 +455,7 @@ final class VendorController
     public function supplierSave(): void
     {
         $seller = $this->requireVendor();
+        $this->requireCsrf('/vendor-panel/suppliers');
         $sid    = (int)$seller['id'];
         \App\Models\Supplier::ensureSchema($this->db);
 
@@ -489,6 +503,7 @@ final class VendorController
     public function supplierDelete(int $id): void
     {
         $seller = $this->requireVendor();
+        $this->requireCsrf('/vendor-panel/suppliers');
         $sid    = (int)$seller['id'];
         $existing = \App\Models\Supplier::find($this->db, $id, $sid);
         if ($existing) {
@@ -534,6 +549,7 @@ final class VendorController
     public function catalogImport(): void
     {
         $seller = $this->requireVendor();
+        $this->requireCsrf('/vendor-panel/catalog');
         $sid    = (int)$seller['id'];
         $itemId = (int)($_POST['catalog_item_id'] ?? 0);
         $price  = (float)($_POST['sale_price'] ?? 0);
@@ -558,6 +574,7 @@ final class VendorController
     public function updateOrderItemStatus(): void
     {
         $seller = $this->requireVendor();
+        $this->requireCsrf('/vendor-panel/orders');
         $sid    = (int)$seller['id'];
         $itemId = (int)($_POST['item_id'] ?? 0);
         $status = $_POST['status'] ?? '';
@@ -678,6 +695,7 @@ final class VendorController
     public function requestPayout(): void
     {
         $seller = $this->requireVendor();
+        $this->requireCsrf('/vendor-panel/payouts');
         $sid    = (int)$seller['id'];
         $amount = (float)($_POST['amount'] ?? 0);
 
@@ -743,6 +761,7 @@ final class VendorController
     public function saveSettings(): void
     {
         $seller = $this->requireVendor();
+        $this->requireCsrf('/vendor-panel/settings');
         $sid    = (int)$seller['id'];
 
         $storeName   = trim($_POST['store_name'] ?? '');

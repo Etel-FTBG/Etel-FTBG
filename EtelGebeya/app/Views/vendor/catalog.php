@@ -91,6 +91,7 @@ ob_start();
           <a href="<?= View::url('/vendor-panel/products/'.$productId.'/edit') ?>" class="cg-imported"><i class="bi bi-check-circle"></i> Imported -- Edit Product</a>
         <?php else: ?>
           <form method="POST" action="<?= View::url('/vendor-panel/catalog/import') ?>" class="cg-import-form">
+            <?= csrf() ?>
             <input type="hidden" name="catalog_item_id" value="<?= (int)$it['id'] ?>">
             <div>
               <label>Your Sale Price (ETB)</label>

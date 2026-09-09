@@ -31,6 +31,7 @@ ob_start();
   </div>
 
   <form method="POST" action="<?= View::url('/vendor-panel/payouts/request') ?>">
+    <?= csrf() ?>
     <div class="form-card" style="max-width:500px;margin-bottom:1.5rem">
       <h3 class="form-card-title">Request a Payout</h3>
       <div class="form-group">
