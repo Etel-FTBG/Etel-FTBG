@@ -48,10 +48,38 @@ ob_start();
 .search-layout { display: grid; grid-template-columns: 220px 1fr; gap: 20px; }
 @media(max-width:768px){ .search-layout { grid-template-columns: 1fr; } }
 .search-sidebar { position: sticky; top: calc(var(--header-h) + 8px); }
-.filter-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--r2); padding: 16px; margin-bottom: 12px; }
-.filter-title { font-weight: 700; color: var(--text); margin-bottom: 10px; font-size: 12.5px; text-transform: uppercase; letter-spacing: .8px; }
-.cat-filter-link { display: flex; align-items: center; gap: 8px; padding: 7px 8px; border-radius: 8px; font-size: 12.5px; text-decoration: none; color: var(--text2); transition: all .15s; }
-.cat-filter-link:hover { background: rgba(212,175,55,.08); color: var(--g1); }
+.filter-card {
+  position: relative; overflow: hidden;
+  background: var(--card); border: 1px solid var(--border); border-radius: var(--r2);
+  padding: 16px; margin-bottom: 12px;
+}
+.filter-card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, transparent, var(--g2), transparent);
+}
+.filter-title {
+  display: flex; align-items: center; gap: 7px;
+  font-weight: 700; color: var(--text); margin-bottom: 10px; font-size: 12.5px;
+  text-transform: uppercase; letter-spacing: .8px;
+}
+.filter-title i { color: var(--g2); font-size: 13px; }
+.cat-filter-link {
+  display: flex; align-items: center; gap: 9px; padding: 8px 9px; border-radius: 9px;
+  font-size: 12.5px; text-decoration: none; color: var(--text2);
+  transition: background .18s, color .18s, transform .18s;
+}
+.cat-filter-link i { font-size: 13px; width: 16px; text-align: center; color: var(--g3); flex-shrink: 0; transition: color .18s; }
+.cat-filter-link:hover { background: rgba(212,175,55,.08); color: var(--g1); transform: translateX(2px); }
+.cat-filter-link:hover i { color: var(--g1); }
+.cat-filter-link:focus-visible { outline: 2px solid var(--g2); outline-offset: -2px; }
+.cat-filter-link.active { background: rgba(212,175,55,.1); color: var(--g1); font-weight: 700; }
+.cat-filter-link.active i { color: var(--g1); }
+.filter-radio {
+  display: flex; align-items: center; gap: 9px; font-size: 12.5px; color: var(--text2);
+  padding: 6px 9px; border-radius: 9px; cursor: pointer; transition: background .18s, color .18s;
+}
+.filter-radio:hover { background: rgba(212,175,55,.06); color: var(--text); }
+.filter-radio input[type="radio"] { accent-color: var(--g2); width: 15px; height: 15px; flex-shrink: 0; }
 .sort-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 10px; }
 .sort-bar select { background: var(--card); border: 1.5px solid var(--border); border-radius: 8px; padding: 8px 12px; font-size: 12.5px; color: var(--text); outline: none; }
 .results-count { font-size: 12.5px; color: var(--text2); }
@@ -82,9 +110,10 @@ ob_start();
     <aside class="search-sidebar">
       <div class="filter-card">
         <div class="filter-title"><i class="bi bi-folder2"></i> Categories</div>
-        <a href="<?= View::url('/search?q='.urlencode($q)) ?>" class="cat-filter-link" style="font-weight:700;color:var(--g1)">All categories</a>
+        <a href="<?= View::url('/search?q='.urlencode($q)) ?>" class="cat-filter-link active"><i class="bi bi-grid-3x3-gap"></i> All categories</a>
         <?php foreach ($allCats as $cat): ?>
           <a href="<?= View::url('/category/'.$cat->slug) ?>" class="cat-filter-link">
+            <i class="bi <?= eg_cat_icon($cat->nameEn) ?>"></i>
             <?= e(html_entity_decode($cat->name($locale), ENT_QUOTES | ENT_HTML5, 'UTF-8')) ?>
           </a>
         <?php endforeach; ?>
@@ -93,7 +122,7 @@ ob_start();
       <div class="filter-card">
         <div class="filter-title"><i class="bi bi-cash-stack"></i> Price Range</div>
         <?php foreach ([['All',''],['Under Br 500','0-500'],['Br 500-2,000','500-2000'],['Br 2,000-10,000','2000-10000'],['Br 10,000+','10000+']] as [$label,$val]): ?>
-          <label style="display:flex;align-items:center;gap:.5rem;font-size:.82rem;color:var(--text2);padding:.2rem 0;cursor:pointer">
+          <label class="filter-radio">
             <input type="radio" name="price" value="<?= $val ?>" <?= (($_GET['price']??'')===$val||(empty($_GET['price'])&&$val==='')?'checked':'') ?>>
             <?= $label ?>
           </label>
@@ -103,7 +132,7 @@ ob_start();
       <div class="filter-card">
         <div class="filter-title"><i class="bi bi-star-fill"></i> Rating</div>
         <?php foreach ([['Any rating',''],['4&#9733; & up','4'],['3&#9733; & up','3']] as [$label,$val]): ?>
-          <label style="display:flex;align-items:center;gap:.5rem;font-size:.82rem;color:var(--text2);padding:.2rem 0;cursor:pointer">
+          <label class="filter-radio">
             <input type="radio" name="rating" value="<?= $val ?>" <?= (($_GET['rating']??'')===$val?'checked':'') ?>>
             <?= $label ?>
           </label>
