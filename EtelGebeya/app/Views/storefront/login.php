@@ -42,6 +42,18 @@ $token  = Auth::getInstance()->csrfToken();
   opacity: .06;
   pointer-events: none;
 }
+/* Etel Family master seal -- same "first impression" watermark treatment
+   used across the Etel Group family (see EtelMadeya's EtelID login screen). */
+.auth-brand::before {
+  content: '';
+  position: absolute; inset: 0;
+  background-image: url('/EtelGebeya/public/assets/img/etel-master-seal.webp');
+  background-repeat: no-repeat;
+  background-position: center 55%;
+  background-size: min(640px, 85%);
+  opacity: .16;
+  pointer-events: none;
+}
 .auth-brand-top { position: relative; z-index: 1; }
 .auth-brand-word {
   font-family: 'Cormorant Garamond', 'Sora', serif;
@@ -83,8 +95,25 @@ $token  = Auth::getInstance()->csrfToken();
   display: flex; align-items: center; justify-content: center;
   padding: 3rem 1.5rem;
   background: var(--bg);
+  position: relative;
+}
+/* Etel Family master seal -- faint on this side since real form fields
+   sit on top of it (kept subtle enough not to affect input contrast);
+   the bolder version lives on .auth-brand for the desktop hero moment.
+   Only shown on its own when .auth-brand is hidden (mobile), so the
+   watermark is never lost entirely on small screens. */
+.auth-formcol::before {
+  content: '';
+  position: absolute; inset: 0;
+  background-image: url('/EtelGebeya/public/assets/img/etel-master-seal.webp');
+  background-repeat: no-repeat;
+  background-position: center 12%;
+  background-size: min(420px, 70vw);
+  opacity: .05;
+  pointer-events: none;
 }
 .auth-card {
+  position: relative; z-index: 1;
   width: 100%;
   max-width: 400px;
   animation: authRise .45s cubic-bezier(.22,1,.36,1) both;
