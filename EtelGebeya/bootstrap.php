@@ -101,7 +101,7 @@ if (!function_exists('eg_cat_icon')) {
             'electronic' => 'bi-phone',      'phone'     => 'bi-phone',
             'laptop'     => 'bi-laptop',      'computer'  => 'bi-pc-display',
             'fashion'    => 'bi-bag-heart',   'cloth'     => 'bi-person-standing',
-            'wear'       => 'bi-person-standing', 'shoe'  => 'bi-boot',
+            'wear'       => 'bi-person-standing', 'shoe'  => 'bi-bag',
             'home'       => 'bi-house-door',  'furniture' => 'bi-lamp',
             'food'       => 'bi-egg-fried',   'grocer'    => 'bi-cart',
             'coffee'     => 'bi-cup-hot',     'health'    => 'bi-heart-pulse',
@@ -114,7 +114,7 @@ if (!function_exists('eg_cat_icon')) {
             'travel'     => 'bi-airplane',    'luggage'   => 'bi-luggage',
             'clean'      => 'bi-droplet',     'detergent' => 'bi-bucket',
             'laundry'    => 'bi-water',       'floor'     => 'bi-house',
-            'care'       => 'bi-shield-heart','oil'       => 'bi-droplet',
+            'care'       => 'bi-bandaid',     'oil'       => 'bi-droplet',
             'teleco'     => 'bi-wifi',
         ];
         $lower = strtolower($name);
