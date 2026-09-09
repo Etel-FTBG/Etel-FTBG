@@ -67,7 +67,6 @@
                 <div>
                     <h4 data-t="QUICK LINKS|ፈጣን ማገናኛዎች">QUICK LINKS</h4>
                     <a href="#" onclick="navigate('check')">🔍 <span data-t="Check Position|ቦታ ፈልግ">Check Position</span></a>
-                    <a href="#" onclick="navigate('register')">📝 <span data-t="Register|ተመዝገብ">Register</span></a>
                     <a href="#" onclick="navigate('about')">ℹ️ <span data-t="About|ስለ እኛ">About</span></a>
                 </div>
                 <div>
