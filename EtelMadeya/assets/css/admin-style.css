@@ -231,7 +231,12 @@
     background: linear-gradient(135deg, rgba(26, 26, 26, 0.9) 0%, rgba(45, 36, 22, 0.9) 100%);
     border-radius: 12px;
     box-shadow: 0 4px 20px rgba(212, 160, 23, 0.2);
-    overflow: hidden;
+    /* overflow-x:auto, not overflow:hidden - the Controllers/Vehicle
+       Types tables have 7-8 columns and were being silently clipped
+       on narrow screens instead of scrolling (ui-ux-pro-max flagged
+       this as the standard "wide tables breaking layout" anti-pattern). */
+    overflow-x: auto;
+    overflow-y: hidden;
     border: 1px solid var(--primary);
 }
 
