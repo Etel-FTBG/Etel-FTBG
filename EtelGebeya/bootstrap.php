@@ -91,6 +91,39 @@ if (!function_exists('redirect')) {
         exit;
     }
 }
+if (!function_exists('eg_cat_icon')) {
+    /** Map a category name to a Bootstrap Icon class by keyword. Shared
+     *  across every view that lists categories (homepage grid, search
+     *  sidebar, category pages) so the same category always gets the
+     *  same icon everywhere. */
+    function eg_cat_icon(string $name): string {
+        static $map = [
+            'electronic' => 'bi-phone',      'phone'     => 'bi-phone',
+            'laptop'     => 'bi-laptop',      'computer'  => 'bi-pc-display',
+            'fashion'    => 'bi-bag-heart',   'cloth'     => 'bi-person-standing',
+            'wear'       => 'bi-person-standing', 'shoe'  => 'bi-boot',
+            'home'       => 'bi-house-door',  'furniture' => 'bi-lamp',
+            'food'       => 'bi-egg-fried',   'grocer'    => 'bi-cart',
+            'coffee'     => 'bi-cup-hot',     'health'    => 'bi-heart-pulse',
+            'beauty'     => 'bi-stars',       'baby'      => 'bi-emoji-smile',
+            'toy'        => 'bi-controller',  'sport'     => 'bi-bicycle',
+            'auto'       => 'bi-car-front',   'vehicle'   => 'bi-car-front',
+            'book'       => 'bi-book',        'office'    => 'bi-briefcase',
+            'stationer'  => 'bi-pen',         'tool'      => 'bi-tools',
+            'garden'     => 'bi-flower1',     'pet'       => 'bi-heart',
+            'travel'     => 'bi-airplane',    'luggage'   => 'bi-luggage',
+            'clean'      => 'bi-droplet',     'detergent' => 'bi-bucket',
+            'laundry'    => 'bi-water',       'floor'     => 'bi-house',
+            'care'       => 'bi-shield-heart','oil'       => 'bi-droplet',
+            'teleco'     => 'bi-wifi',
+        ];
+        $lower = strtolower($name);
+        foreach ($map as $kw => $ico) {
+            if (str_contains($lower, $kw)) return $ico;
+        }
+        return 'bi-grid';
+    }
+}
 
 // --- Globals shared with views ---
 $GLOBALS['__config'] = $config;
