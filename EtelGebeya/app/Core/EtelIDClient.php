@@ -18,6 +18,7 @@ final class EtelIDClient
 {
     private string $url;
     private string $key;
+    private ?string $lastError = null;
 
     public function __construct()
     {
@@ -26,10 +27,19 @@ final class EtelIDClient
         $this->key = $cfg['key'] ?? 'CHANGE_ME';
     }
 
+    /** The real reason the last call failed (config/network/EtelID's own
+     *  message), or null if the last call succeeded. Callers should show
+     *  this instead of a generic message so a misconfiguration doesn't
+     *  look identical to a genuinely wrong password. */
+    public function lastError(): ?string
+    {
+        return $this->lastError;
+    }
+
     /**
      * Authenticate by phone/EtelID + password.
      * Returns the full member array (includes role, is_admin, phone, full_name, etc.)
-     * or null on failure.
+     * or null on failure -- check lastError() for the reason.
      */
     public function authenticate(string $identifier, string $password): ?array
     {
@@ -62,7 +72,12 @@ final class EtelIDClient
 
     private function post(string $endpoint, array $payload): ?array
     {
-        if (!$this->url || !$this->key) return null;
+        $this->lastError = null;
+
+        if (!$this->url || !$this->key || $this->key === 'CHANGE_ME') {
+            $this->lastError = 'EtelID is not configured on this server (missing service URL/key).';
+            return null;
+        }
 
         $ch = curl_init($this->url . '/' . ltrim($endpoint, '/'));
         curl_setopt_array($ch, [
@@ -79,10 +94,22 @@ final class EtelIDClient
         ]);
 
         $resp = curl_exec($ch);
+        $curlErr = curl_error($ch);
         curl_close($ch);
 
-        if (!$resp) return null;
+        if ($resp === false) {
+            $this->lastError = 'Could not reach EtelID' . ($curlErr ? ": $curlErr" : '');
+            return null;
+        }
         $data = json_decode($resp, true);
-        return (is_array($data) && ($data['ok'] ?? false)) ? ($data['data'] ?? $data) : null;
+        if (!is_array($data)) {
+            $this->lastError = 'EtelID returned an unexpected response.';
+            return null;
+        }
+        if (!($data['ok'] ?? false)) {
+            $this->lastError = $data['message'] ?? 'EtelID rejected the request.';
+            return null;
+        }
+        return $data['data'] ?? $data;
     }
 }
