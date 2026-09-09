@@ -69,6 +69,11 @@ h1, h2, .logo-name, .page-title, .login-box h1, .header-title,
 .sidebar-header h2, .stat-value, .imp-card-num, .position-number {
     font-family: var(--ep-font-display), 'Noto Sans Ethiopic', serif;
     letter-spacing: 0.3px;
+    /* Solid fallback color, set before the gradient-clip rules below win
+       the cascade - guarantees a legible flat gold on any engine that
+       doesn't support background-clip:text (or for a11y tooling reading
+       computed `color`), instead of default/invisible text. */
+    color: var(--ep-gold);
 }
 
 .report-plate, .imp-dup-plate, .imp-clean-chip, code, .header-subtitle,
@@ -392,7 +397,7 @@ h1, h2, .logo-name, .page-title, .login-box h1, .header-title,
 .login-footer-note {
     margin-top: 20px;
     font-size: 12.5px;
-    color: rgba(255,255,255,0.55);
+    color: rgba(255,255,255,0.78);
 }
 
 .login-footer-note a {

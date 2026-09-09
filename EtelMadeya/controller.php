@@ -31,12 +31,12 @@
 
                 <form id="etelidLoginForm" onsubmit="handleEtelIDLogin(event)">
                     <div class="form-group form-group-icon">
-                        <label>EtelID, FIN, or Phone</label>
+                        <label for="etelidIdentifier">EtelID, FIN, or Phone</label>
                         <svg class="input-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>
                         <input type="text" id="etelidIdentifier" required placeholder="EG-... or +251 9XX XXX XXX" autocomplete="username">
                     </div>
                     <div class="form-group form-group-icon">
-                        <label>EtelID Password</label>
+                        <label for="etelidPassword">EtelID Password</label>
                         <svg class="input-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="11" width="16" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
                         <input type="password" id="etelidPassword" required autocomplete="current-password">
                     </div>
@@ -102,13 +102,13 @@
             <!-- Controls -->
             <div class="controls-bar">
                 <div class="control-group">
-                    <label>Vehicle Type:</label>
+                    <label for="vehicleTypeFilter">Vehicle Type:</label>
                     <select id="vehicleTypeFilter" onchange="loadQueue(true)">
                         <option value="0">All Types</option>
                     </select>
                 </div>
                 <div class="control-group">
-                    <label>Queue Type:</label>
+                    <label for="queueTypeFilter">Queue Type:</label>
                     <select id="queueTypeFilter" onchange="loadQueue(true)">
                         <option value="all">All Queues</option>
                         <option value="normal">Normal</option>
@@ -117,7 +117,7 @@
                     </select>
                 </div>
                 <div class="control-group">
-                    <label>Per Page:</label>
+                    <label for="pageSizeSelect">Per Page:</label>
                     <select id="pageSizeSelect" onchange="changePageSize()">
                         <option value="25">25</option>
                         <option value="50" selected>50</option>
@@ -231,7 +231,7 @@
                     <div class="imp-controls" id="impControls" style="display:none">
                         <div class="imp-controls-row">
                             <div class="imp-ctrl-group">
-                                <label>Vehicle Type</label>
+                                <label for="impVehicleType">Vehicle Type</label>
                                 <select id="impVehicleType"></select>
                             </div>
                             <button type="button" class="imp-check-btn" onclick="runImportCheck()">🔍 Check for Duplicates</button>
@@ -309,19 +309,19 @@
                 </div>
                 <form id="addVehicleForm" onsubmit="handleAddVehicle(event)">
                     <div class="form-group">
-                        <label>Plate Number *</label>
+                        <label for="addPlate">Plate Number *</label>
                         <input type="text" id="addPlate" required placeholder="AA-3-12345">
                     </div>
                     <div class="form-group">
-                        <label>Vehicle Type *</label>
+                        <label for="addVehicleType">Vehicle Type *</label>
                         <select id="addVehicleType" required></select>
                     </div>
                     <div class="form-group">
-                        <label>Driver Name</label>
+                        <label for="addDriverName">Driver Name</label>
                         <input type="text" id="addDriverName" placeholder="Optional">
                     </div>
                     <div class="form-group">
-                        <label>Driver Phone</label>
+                        <label for="addDriverPhone">Driver Phone</label>
                         <input type="tel" id="addDriverPhone" placeholder="Optional">
                     </div>
                     <div class="modal-actions">
@@ -341,11 +341,11 @@
                 </div>
                 <form id="bulkImportForm" onsubmit="handleBulkImport(event)">
                     <div class="form-group">
-                        <label>Vehicle Type *</label>
+                        <label for="bulkVehicleType">Vehicle Type *</label>
                         <select id="bulkVehicleType" required></select>
                     </div>
                     <div class="form-group">
-                        <label>Plate Numbers (one per line) *</label>
+                        <label for="bulkPlates">Plate Numbers (one per line) *</label>
                         <textarea id="bulkPlates" rows="10" required placeholder="AA-3-12345&#10;AA-3-12346&#10;AA-3-12347"></textarea>
                     </div>
                     <div class="modal-actions">
@@ -370,11 +370,11 @@
                         <p><strong>Type:</strong> <span id="serveType"></span></p>
                     </div>
                     <div class="form-group">
-                        <label>Fuel Amount (Gallons)</label>
+                        <label for="serveFuelGallons">Fuel Amount (Gallons)</label>
                         <input type="number" id="serveFuelGallons" step="0.01" min="0" placeholder="0.00">
                     </div>
                     <div class="form-group">
-                        <label>Fuel Amount (Liters)</label>
+                        <label for="serveFuelLiters">Fuel Amount (Liters)</label>
                         <input type="number" id="serveFuelLiters" step="0.01" min="0" placeholder="0.00">
                     </div>
                     <div class="modal-actions">
