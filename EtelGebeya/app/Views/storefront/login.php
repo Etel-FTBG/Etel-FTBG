@@ -51,7 +51,7 @@ $token  = Auth::getInstance()->csrfToken();
   background-repeat: no-repeat;
   background-position: center 55%;
   background-size: min(640px, 85%);
-  opacity: .16;
+  opacity: .34;
   pointer-events: none;
 }
 .auth-brand-top { position: relative; z-index: 1; }
@@ -97,11 +97,10 @@ $token  = Auth::getInstance()->csrfToken();
   background: var(--bg);
   position: relative;
 }
-/* Etel Family master seal -- faint on this side since real form fields
-   sit on top of it (kept subtle enough not to affect input contrast);
-   the bolder version lives on .auth-brand for the desktop hero moment.
-   Only shown on its own when .auth-brand is hidden (mobile), so the
-   watermark is never lost entirely on small screens. */
+/* Etel Family master seal -- kept subtle enough not to affect input
+   contrast on this side; the bolder version lives on .auth-brand for the
+   desktop hero moment. Only shown on its own when .auth-brand is hidden
+   (mobile), so the watermark is never lost entirely on small screens. */
 .auth-formcol::before {
   content: '';
   position: absolute; inset: 0;
@@ -109,15 +108,27 @@ $token  = Auth::getInstance()->csrfToken();
   background-repeat: no-repeat;
   background-position: center 12%;
   background-size: min(420px, 70vw);
-  opacity: .05;
+  opacity: .1;
   pointer-events: none;
 }
 .auth-card {
-  position: relative; z-index: 1;
+  position: relative; z-index: 1; overflow: hidden; border-radius: 20px;
   width: 100%;
   max-width: 400px;
   animation: authRise .45s cubic-bezier(.22,1,.36,1) both;
 }
+/* Master seal bled through the card itself, matching the admin login's
+   treatment, so it reads "above" the card rather than only around it. */
+.auth-card::before {
+  content: '';
+  position: absolute; inset: 0; z-index: 0; pointer-events: none;
+  background-image: url('/EtelGebeya/public/assets/img/etel-master-seal.webp');
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 150%;
+  opacity: .09;
+}
+.auth-card > * { position: relative; z-index: 1; }
 @media (prefers-reduced-motion: reduce) { .auth-card { animation: none; } }
 @keyframes authRise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
 
