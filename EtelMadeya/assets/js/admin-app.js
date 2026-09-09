@@ -139,11 +139,12 @@ async function loadDashboard() {
         const data = await response.json();
         
         if (data.success) {
-            // Update stats
-            document.getElementById('statControllers').textContent = data.stats.controllers;
-            document.getElementById('statQueued').textContent = data.stats.total_queued;
-            document.getElementById('statServedToday').textContent = data.stats.served_today;
-            document.getElementById('statVehicleTypes').textContent = data.stats.vehicle_types;
+            // Update stats (thousand separators - a queue can realistically
+            // hit 4+ digits and "5624" is harder to scan at a glance than "5,624")
+            document.getElementById('statControllers').textContent = Number(data.stats.controllers).toLocaleString();
+            document.getElementById('statQueued').textContent = Number(data.stats.total_queued).toLocaleString();
+            document.getElementById('statServedToday').textContent = Number(data.stats.served_today).toLocaleString();
+            document.getElementById('statVehicleTypes').textContent = Number(data.stats.vehicle_types).toLocaleString();
             
             // Display recent activity
             const activityDiv = document.getElementById('recentActivity');
