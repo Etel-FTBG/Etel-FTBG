@@ -44,8 +44,7 @@ ob_start();
 }
 .vendor-banner::before {
   content:''; position: absolute; inset: 0;
-  background: url("https://picsum.photos/seed/vendor<?= $vendor['id'] ?? 1 ?>/1200/200") center/cover;
-  opacity: .3;
+  background: radial-gradient(circle at 30% 20%, rgba(255,255,255,.18), transparent 60%);
 }
 .vendor-profile-row {
   display: flex; align-items: flex-end; gap: 1.5rem;
