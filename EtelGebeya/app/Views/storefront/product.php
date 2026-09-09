@@ -72,7 +72,7 @@ function eg_img_url(string $path): string {
     return '/EtelGebeya/public/uploads/products/' . $path;
 }
 $mainImage = !empty($images) ? eg_img_url($images[0]['path'])
-    : "https://picsum.photos/seed/{$product->id}/600/600";
+    : View::asset('img/no-image.svg');
 
 ob_start();
 ?>
@@ -197,7 +197,7 @@ ob_start();
     <div class="gallery">
       <div class="gallery-main" id="gallery-main">
         <img src="<?= htmlspecialchars($mainImage, ENT_QUOTES) ?>" alt="<?= $name ?>" id="gallery-img"
-             onerror="this.onerror=null;this.src='https://picsum.photos/seed/<?= $product->id ?>/600/600'">
+             onerror="this.onerror=null;this.src='<?= View::asset('img/no-image.svg') ?>'">
         <div class="gallery-badge">
           <?php if ($product->hasDiscount()): ?><span class="badge" style="background:#DC2626;color:#fff">-<?= $product->discountPct() ?>%</span><?php endif; ?>
           <?php if ((time() - strtotime($product->createdAt)) < 7 * 86400): ?><span class="badge" style="background:var(--eg-blue);color:#fff">NEW</span><?php endif; ?>
@@ -209,7 +209,7 @@ ob_start();
         <?php foreach ($images as $i => $img): $imgUrl = eg_img_url($img['path']); ?>
           <div class="gallery-thumb <?= $i===0?'active':'' ?>" onclick="setImage('<?= htmlspecialchars($imgUrl,ENT_QUOTES) ?>',this)">
             <img src="<?= htmlspecialchars($imgUrl,ENT_QUOTES) ?>" alt=""
-                 onerror="this.onerror=null;this.src='https://picsum.photos/seed/<?= $product->id ?>-<?= $i ?>/200/200'">
+                 onerror="this.onerror=null;this.src='<?= View::asset('img/no-image.svg') ?>'">
           </div>
         <?php endforeach; ?>
       </div>
