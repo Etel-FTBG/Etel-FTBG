@@ -7,7 +7,7 @@ ob_start();
 <section style="min-height:80vh;display:flex;align-items:center;justify-content:center;padding:2rem 1rem">
   <div style="width:100%;max-width:460px">
     <div style="text-align:center;margin-bottom:2rem">
-      <div style="font-size:2.5rem;margin-bottom:.5rem">/* U+1F3EA */</div>
+      <div style="font-size:2.5rem;margin-bottom:.5rem"><i class="bi bi-shop"></i></div>
       <h1 style="font-size:1.8rem;font-weight:900;background:linear-gradient(135deg,#FFE066,#D4AF37);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">Become a Vendor</h1>
       <p style="color:var(--eg-text-dim);margin-top:.5rem">Join thousands of Ethiopian sellers on Etel Gebeya</p>
     </div>
@@ -57,9 +57,9 @@ ob_start();
     </form>
 
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-top:2rem;text-align:center">
-      <?php foreach ([['/* U+1F193 */','Free to join'],['/* U+1F4E6 */','List unlimited products'],['/* U+1F4B3 */','Get paid fast']] as [$icon,$text]): ?>
+      <?php foreach ([['bi-check-circle','Free to join'],['bi-box-seam','List unlimited products'],['bi-credit-card','Get paid fast']] as [$icon,$text]): ?>
         <div style="background:var(--eg-glass,rgba(255,255,255,.04));border:1px solid var(--eg-border,rgba(255,255,255,.08));border-radius:12px;padding:1rem .75rem">
-          <div style="font-size:1.5rem;margin-bottom:.4rem"><?= $icon ?></div>
+          <div style="font-size:1.5rem;margin-bottom:.4rem"><i class="bi <?= $icon ?>"></i></div>
           <div style="font-size:.8rem;color:var(--eg-text-dim)"><?= $text ?></div>
         </div>
       <?php endforeach; ?>

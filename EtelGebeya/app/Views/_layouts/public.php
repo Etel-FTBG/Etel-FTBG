@@ -25,6 +25,12 @@ $cartCount = (int)($_SESSION['cart_count'] ?? array_sum(array_column($_SESSION['
   <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800;900&family=Noto+Sans+Ethiopic:wght@400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="<?= View::asset('vendor/bootstrap-icons/bootstrap-icons.min.css') ?>">
   <link rel="stylesheet" href="<?= View::asset('css/etel-v2.css') ?>">
+  <!-- etel.css supplies classes several storefront pages (category, product,
+       search, sell, vendor) still use, plus a --eg-* variable compat layer
+       aliased onto etel-v2.css's tokens -- see its own backwards-compat
+       block. It was written to be loaded alongside etel-v2.css but the
+       <link> was never added, leaving those pages unstyled. -->
+  <link rel="stylesheet" href="<?= View::asset('css/etel.css') ?>">
   <script>
   // Defined in <head> (not the footer) so it exists before any product image's
   // onerror can fire during initial parsing -- broken photo -> neutral placeholder.
