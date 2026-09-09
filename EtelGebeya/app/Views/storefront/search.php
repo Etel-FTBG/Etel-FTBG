@@ -70,7 +70,7 @@ ob_start();
     <div class="search-hero-form">
       <form action="<?= View::url('/search') ?>" method="GET" style="display:flex;gap:.75rem;width:100%">
         <input type="search" name="q" value="<?= htmlspecialchars($q, ENT_QUOTES) ?>" placeholder="<?= t('site.search.placeholder') ?>" autofocus>
-        <button type="submit">/* U+1F50D */ <?= $locale === 'am' ? '???' : 'Search' ?></button>
+        <button type="submit"><i class="bi bi-search"></i> <?= $locale === 'am' ? '&#4936;&#4621;&#4877;' : 'Search' ?></button>
       </form>
     </div>
   </div>
@@ -79,7 +79,7 @@ ob_start();
     <!-- Filters -->
     <aside class="search-sidebar">
       <div class="filter-card">
-        <div class="filter-title">/* U+1F4C2 */ Categories</div>
+        <div class="filter-title"><i class="bi bi-folder2"></i> Categories</div>
         <a href="<?= View::url('/search?q='.urlencode($q)) ?>" class="cat-filter-link" style="font-weight:700;color:var(--eg-blue)">All categories</a>
         <?php foreach ($allCats as $cat): ?>
           <a href="<?= View::url('/category/'.$cat->slug) ?>" class="cat-filter-link">
@@ -89,7 +89,7 @@ ob_start();
       </div>
 
       <div class="filter-card">
-        <div class="filter-title">/* U+1F4B0 */ Price Range</div>
+        <div class="filter-title"><i class="bi bi-cash-stack"></i> Price Range</div>
         <?php foreach ([['All',''],['Under Br 500','0-500'],['Br 500-2,000','500-2000'],['Br 2,000-10,000','2000-10000'],['Br 10,000+','10000+']] as [$label,$val]): ?>
           <label style="display:flex;align-items:center;gap:.5rem;font-size:.82rem;color:var(--eg-text-dim);padding:.2rem 0;cursor:pointer">
             <input type="radio" name="price" value="<?= $val ?>" <?= (($_GET['price']??'')===$val||(empty($_GET['price'])&&$val==='')?'checked':'') ?>>
@@ -99,8 +99,8 @@ ob_start();
       </div>
 
       <div class="filter-card">
-        <div class="filter-title">? Rating</div>
-        <?php foreach ([['Any rating',''],['4? & up','4'],['3? & up','3']] as [$label,$val]): ?>
+        <div class="filter-title"><i class="bi bi-star-fill"></i> Rating</div>
+        <?php foreach ([['Any rating',''],['4&#9733; & up','4'],['3&#9733; & up','3']] as [$label,$val]): ?>
           <label style="display:flex;align-items:center;gap:.5rem;font-size:.82rem;color:var(--eg-text-dim);padding:.2rem 0;cursor:pointer">
             <input type="radio" name="rating" value="<?= $val ?>" <?= (($_GET['rating']??'')===$val?'checked':'') ?>>
             <?= $label ?>
@@ -134,7 +134,7 @@ ob_start();
 
       <?php if (empty($products)): ?>
         <div class="no-results">
-          <div style="font-size:4rem;margin-bottom:1rem">/* U+1F50D */</div>
+          <div style="font-size:4rem;margin-bottom:1rem"><i class="bi bi-search"></i></div>
           <h3 style="color:var(--eg-text-dim)"><?= htmlspecialchars(t('search.no_results'), ENT_QUOTES) ?></h3>
           <p style="color:var(--eg-text-muted);margin-top:.5rem;margin-bottom:1.5rem">Try different keywords or browse by category</p>
           <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap">
@@ -156,7 +156,7 @@ ob_start();
         <?php if ($totalPages > 1): ?>
         <div class="pag-row">
           <?php if ($page > 1): ?>
-            <a href="?<?= http_build_query(array_merge($_GET,['page'=>$page-1])) ?>" class="pag-a">?</a>
+            <a href="?<?= http_build_query(array_merge($_GET,['page'=>$page-1])) ?>" class="pag-a"><i class="bi bi-chevron-left"></i></a>
           <?php endif; ?>
           <?php
             $from = max(1,$page-2); $to = min($totalPages,$page+2);
@@ -165,7 +165,7 @@ ob_start();
             <a href="?<?= http_build_query(array_merge($_GET,['page'=>$p2])) ?>" class="pag-a <?= $p2===$page?'active':'' ?>"><?= $p2 ?></a>
           <?php endfor; ?>
           <?php if ($page < $totalPages): ?>
-            <a href="?<?= http_build_query(array_merge($_GET,['page'=>$page+1])) ?>" class="pag-a">?</a>
+            <a href="?<?= http_build_query(array_merge($_GET,['page'=>$page+1])) ?>" class="pag-a"><i class="bi bi-chevron-right"></i></a>
           <?php endif; ?>
         </div>
         <?php endif; ?>

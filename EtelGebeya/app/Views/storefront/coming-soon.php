@@ -43,12 +43,12 @@
     .btn:hover { background: #0a3391; color: #fff; transform: translateY(-1px); }
     .steps { text-align: left; margin: 1.5rem 0; background: #F8F9FA; border-radius: 12px; padding: 1.25rem; }
     .steps li { padding: .4rem 0; color: #374151; font-size: .9rem; list-style: none; display: flex; gap: .75rem; }
-    .steps li::before { content: '?'; color: #078930; font-weight: 700; flex-shrink: 0; }
+    .steps li::before { content: '\2713'; color: #078930; font-weight: 700; flex-shrink: 0; }
   </style>
 </head>
 <body>
   <div class="card">
-    <div class="logo">???</div>
+    <div class="logo">&#128722;</div>
     <h1><?= t('site.name') ?></h1>
     <p>Ethiopia's online marketplace. Running on <?= $_SERVER['HTTP_HOST'] ?? '' ?>.</p>
 
@@ -59,7 +59,7 @@
     </div>
 
     <a href="/install" class="btn">
-      <span>/* U+1F680 */</span> Run Setup Wizard
+      <span>&#128640;</span> Run Setup Wizard
     </a>
 
     <p style="margin-top:1.5rem;font-size:.8rem;">
