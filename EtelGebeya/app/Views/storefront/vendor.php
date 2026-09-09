@@ -37,19 +37,10 @@ if ($db && $db->isConnected()) {
 ob_start();
 ?>
 <style>
-.vendor-page { padding: 0 0 48px; }
-.vendor-banner {
-  height: 200px; background: linear-gradient(135deg,#0d0900 0%,#1c1208 40%,#2a1c0a 70%,#100c06 100%);
-  border-radius: 0 0 var(--r2) var(--r2); position: relative; overflow: hidden;
-  border-bottom: 1px solid var(--border);
-}
-.vendor-banner::before {
-  content:''; position: absolute; inset: 0;
-  background: radial-gradient(ellipse 60% 80% at 80% 20%, rgba(212,175,55,.12), transparent 70%);
-}
+.vendor-page { padding: 24px 0 48px; }
 .vendor-profile-row {
-  display: flex; align-items: flex-end; gap: 24px;
-  margin: 0 24px -20px; transform: translateY(-40px);
+  display: flex; align-items: center; gap: 24px;
+  margin: 0 24px 20px;
   background: var(--card); border: 1px solid var(--border); border-radius: var(--r2);
   padding: 20px 24px; position: relative; overflow: hidden;
 }
@@ -62,7 +53,7 @@ ob_start();
   display: flex; align-items: center; justify-content: center;
   font-size: 40px; flex-shrink: 0;
 }
-.vendor-head { flex: 1; padding-bottom: 8px; min-width: 0; }
+.vendor-head { flex: 1; min-width: 0; }
 .vendor-head h1 { font-size: 26px; font-weight: 900; line-height: 1.2; color: var(--text); }
 .vendor-head p { font-size: 13.5px; color: var(--text2); margin-top: 5px; }
 .vendor-badges { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
@@ -96,9 +87,6 @@ ob_start();
 </style>
 
 <div class="vendor-page">
-  <!-- Banner -->
-  <div class="vendor-banner"></div>
-
   <div>
     <!-- Profile row -->
     <div class="vendor-profile-row">
