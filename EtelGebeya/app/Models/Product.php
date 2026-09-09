@@ -30,6 +30,9 @@ final class Product
     public readonly int $soldCount;
     public readonly int $viewCount;
     public readonly string $createdAt;
+    public readonly bool $isDropship;
+    public readonly ?int $dropshipLeadDaysMin;
+    public readonly ?int $dropshipLeadDaysMax;
 
     /** @var string[] */
     private array $images = [];
@@ -59,6 +62,19 @@ final class Product
         $this->soldCount    = (int)($row['sales_count'] ?? $row['sold_count'] ?? 0);
         $this->viewCount    = (int)($row['view_count'] ?? 0);
         $this->createdAt    = (string)($row['created_at'] ?? '');
+        $this->isDropship   = !empty($row['is_dropship']);
+        $this->dropshipLeadDaysMin = isset($row['dropship_lead_days_min']) && $row['dropship_lead_days_min'] !== null ? (int)$row['dropship_lead_days_min'] : null;
+        $this->dropshipLeadDaysMax = isset($row['dropship_lead_days_max']) && $row['dropship_lead_days_max'] !== null ? (int)$row['dropship_lead_days_max'] : null;
+    }
+
+    /** "Ships in 7-14 days" style note for dropshipped items with lead time set -- null when not applicable. */
+    public function shippingEstimate(): ?string
+    {
+        if (!$this->isDropship || !$this->dropshipLeadDaysMin) return null;
+        if ($this->dropshipLeadDaysMax && $this->dropshipLeadDaysMax > $this->dropshipLeadDaysMin) {
+            return $this->dropshipLeadDaysMin . '-' . $this->dropshipLeadDaysMax . ' days';
+        }
+        return $this->dropshipLeadDaysMin . '+ days';
     }
 
     public function name(string $locale = 'en'): string

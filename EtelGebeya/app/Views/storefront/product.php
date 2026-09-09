@@ -126,6 +126,8 @@ ob_start();
 .in-stock { color: var(--green); font-weight: 700; }
 .out-stock { color: var(--red); font-weight: 700; }
 .low-stock { color: #D97706; font-weight: 700; }
+.ship-estimate { display: flex; align-items: center; gap: 7px; font-size: 12.5px; color: var(--text2); margin-top: 8px; }
+.ship-estimate i { color: var(--g2); }
 
 /* Qty + Cart */
 .cart-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
@@ -262,6 +264,12 @@ ob_start();
           <?php if ($product->trackStock): ?><span style="font-size:.8rem;color:var(--text2)"><?= number_format($product->stockQty) ?> available</span><?php endif; ?>
         <?php endif; ?>
       </div>
+
+      <?php if ($product->shippingEstimate()): ?>
+      <div class="ship-estimate">
+        <i class="bi bi-truck"></i> Ships in <?= e($product->shippingEstimate()) ?> -- shipped directly by the supplier
+      </div>
+      <?php endif; ?>
 
       <!-- Add to cart -->
       <div class="cart-row">
