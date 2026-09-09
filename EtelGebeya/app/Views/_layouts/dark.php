@@ -28,7 +28,7 @@ $roleLabel = $role ?? ($user['roles'][0] ?? 'user');
   <title><?= e($pageTitle) ?> -- Etel Gebeya</title>
   <meta name="theme-color" content="#0A0A1A">
   <link rel="stylesheet" href="<?= View::asset('css/admin.css') ?>">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="<?= View::asset('vendor/bootstrap-icons/bootstrap-icons.min.css') ?>">
 </head>
 <body>
 
