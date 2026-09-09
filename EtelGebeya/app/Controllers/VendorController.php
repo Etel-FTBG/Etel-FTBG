@@ -502,6 +502,58 @@ final class VendorController
         redirect('/vendor-panel/suppliers');
     }
 
+    /* -- GET /vendor-panel/catalog (platform supplier catalog, phase 2) -- */
+    public function catalog(): void
+    {
+        $seller = $this->requireVendor();
+        $sid    = (int)$seller['id'];
+        $q      = trim($_GET['q'] ?? '');
+        $page   = max(1, (int)($_GET['page'] ?? 1));
+        $per    = 24;
+        $offset = ($page - 1) * $per;
+
+        $items    = \App\Models\CatalogItem::browse($this->db, $q, $per, $offset);
+        $total    = \App\Models\CatalogItem::countActive($this->db, $q);
+        $pages    = max(1, (int)ceil($total / $per));
+        $imported = \App\Models\CatalogItem::importedMapForSeller($this->db, $sid);
+
+        $this->render('vendor/catalog', [
+            'pageTitle' => 'Supplier Catalog',
+            'seller'    => $seller,
+            'items'     => $items,
+            'total'     => $total,
+            'page'      => $page,
+            'pages'     => $pages,
+            'q'         => $q,
+            'imported'  => $imported,
+            'flash'     => $this->auth->takeFlash(),
+        ]);
+    }
+
+    /* -- POST /vendor-panel/catalog/import -- */
+    public function catalogImport(): void
+    {
+        $seller = $this->requireVendor();
+        $sid    = (int)$seller['id'];
+        $itemId = (int)($_POST['catalog_item_id'] ?? 0);
+        $price  = (float)($_POST['sale_price'] ?? 0);
+        $stock  = (int)($_POST['stock_qty'] ?? 100);
+
+        if ($itemId <= 0 || $price <= 0) {
+            $this->auth->flash('error', 'Choose a sale price greater than zero.');
+            redirect('/vendor-panel/catalog');
+        }
+
+        $productId = \App\Models\CatalogItem::importForSeller($this->db, $itemId, $sid, $price, max(1, $stock));
+        if (!$productId) {
+            $this->auth->flash('error', 'Could not import this item -- it may no longer be available.');
+            redirect('/vendor-panel/catalog');
+        }
+
+        $this->auth->flash('success', 'Imported to your store as a dropship product.');
+        redirect('/vendor-panel/products/' . $productId . '/edit');
+    }
+
     /* ?? POST /vendor-panel/orders/item-status ?????????????? */
     public function updateOrderItemStatus(): void
     {
