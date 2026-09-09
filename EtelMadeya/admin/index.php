@@ -11,6 +11,7 @@
     <link rel="stylesheet" href="../assets/css/etel-premium.css">
     <link rel="stylesheet" href="../assets/css/admin-mainpanel.css">
     <link rel="icon" href="../assets/img/etel-logo.png">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
     <div id="app">
@@ -110,6 +111,23 @@
                         <div class="am-sc green"><b id="statQueued">0</b><span>Total Queued</span></div>
                         <div class="am-sc orange"><b id="statServedToday">0</b><span>Served Today</span></div>
                         <div class="am-sc purple"><b id="statVehicleTypes">0</b><span>Vehicle Types</span></div>
+                    </div>
+
+                    <div class="am-grid-2">
+                        <div class="pnl">
+                            <div class="pnl-h"><h3>Vehicles Served -- Last 14 Days</h3></div>
+                            <div class="pnl-b">
+                                <div style="height:220px;"><canvas id="chartServedTrend"></canvas></div>
+                            </div>
+                        </div>
+                        <div class="pnl">
+                            <div class="pnl-h"><h3>Fuel Stock Snapshot</h3></div>
+                            <div class="pnl-b">
+                                <div id="fuelSnapshot" class="am-stats" style="grid-template-columns:1fr;padding:0;">
+                                    <p class="empty-state">Loading...</p>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="am-grid-2">
