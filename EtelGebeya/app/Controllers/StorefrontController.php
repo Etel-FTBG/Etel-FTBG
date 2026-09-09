@@ -178,17 +178,21 @@ final class StorefrontController
         $locale = $GLOBALS['__i18n']->locale();
         $db     = $GLOBALS['__db'];
 
-        // Try by store_slug first, then by store_slug-{id} suffix pattern
+        // Try by store_slug first, then by store_slug-{id} suffix pattern.
+        // Sellers are activated to 'active' (see AdminController::approveVendor),
+        // not 'approved' -- that status value is never actually written to
+        // sellers.status, so matching on it made every approved vendor's
+        // storefront 404.
         $seller = $db->fetch(
             "SELECT s.*, u.full_name FROM sellers s JOIN users u ON u.id = s.user_id
-              WHERE s.store_slug = ? AND s.status = 'approved' LIMIT 1",
+              WHERE s.store_slug = ? AND s.status = 'active' LIMIT 1",
             [$slug]
         );
         // Fallback: slug may have a -hex suffix added at registration time
         if (!$seller) {
             $seller = $db->fetch(
                 "SELECT s.*, u.full_name FROM sellers s JOIN users u ON u.id = s.user_id
-                  WHERE s.status = 'approved'
+                  WHERE s.status = 'active'
                     AND (s.store_slug = ? OR CONCAT(s.store_slug,'-',LOWER(HEX(s.id))) = ?) LIMIT 1",
                 [$slug, $slug]
             );
