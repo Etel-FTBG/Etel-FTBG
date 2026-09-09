@@ -15,6 +15,11 @@ View::render('_layouts/public', [
     $recent     = $recent     ?? [];
     $categories = $categories ?? [];
 
+    // Hot Deals -- steepest discounts first, pulled from what's already loaded
+    $deals = array_filter(array_merge($featured, $recent), fn($p) => $p->hasDiscount());
+    usort($deals, fn($a, $b) => $b->discountPct() <=> $a->discountPct());
+    $deals = array_slice($deals, 0, 6);
+
     // Map Bootstrap Icon by category name keyword
     function eg_cat_icon(string $name): string {
         $lower = strtolower($name);
@@ -107,9 +112,9 @@ View::render('_layouts/public', [
     <!-- HERO -->
     <div class="eg-hero">
       <div class="eg-hero-left">
-        <div class="eg-hero-tag"><i class="bi bi-stars"></i> Ethiopia's #1 Marketplace</div>
-        <h1>Shop Ethiopia,<br>Delivered to You</h1>
-        <p>Buy in Birr, pay with Telebirr, CBE Birr or cards. Fast delivery across Ethiopia.</p>
+        <div class="eg-hero-tag"><i class="bi bi-geo-alt"></i> Proudly Built in Hawassa, Ethiopia</div>
+        <h1>Ethiopia's Marketplace,<br>Delivered to You</h1>
+        <p>Buy in Birr, pay with Telebirr, CBE Birr or cards. Thousands of products from verified Ethiopian vendors, delivered nationwide.</p>
         <div class="eg-hero-actions">
           <a href="<?= View::url('/search') ?>" class="eg-btn eg-btn-gold">
             <i class="bi bi-bag-check"></i> Shop Now
@@ -148,6 +153,15 @@ View::render('_layouts/public', [
       </div>
     </div>
 
+    <!-- TRUST BAR -->
+    <div class="eg-trust-bar">
+      <div class="eg-trust-item"><i class="bi bi-shield-check"></i> Buyer Protection</div>
+      <div class="eg-trust-item"><i class="bi bi-patch-check"></i> Verified Vendors</div>
+      <div class="eg-trust-item"><i class="bi bi-lock"></i> Secure Payments</div>
+      <div class="eg-trust-item"><i class="bi bi-truck"></i> Nationwide Delivery</div>
+      <div class="eg-trust-item"><i class="bi bi-geo-alt"></i> Based in Hawassa</div>
+    </div>
+
     <!-- PROMO STRIP -->
     <div class="eg-promo-strip">
       <div class="eg-promo-card">
@@ -172,6 +186,22 @@ View::render('_layouts/public', [
         <a href="<?= View::url('/sell') ?>" class="eg-promo-card-link">Sell With Us <i class="bi bi-arrow-right"></i></a>
       </div>
     </div>
+
+    <!-- HOT DEALS -->
+    <?php if (!empty($deals)): ?>
+    <div class="mb-20">
+      <div class="eg-sec-head">
+        <div>
+          <div class="eg-sec-title eg-sec-title-hot"><i class="bi bi-fire"></i> Hot Deals</div>
+          <div class="eg-sec-sub">Biggest discounts right now</div>
+        </div>
+        <a href="<?= View::url('/search') ?>" class="eg-sec-more">See All Deals <i class="bi bi-arrow-right"></i></a>
+      </div>
+      <div class="eg-product-grid">
+        <?php foreach ($deals as $p): echo eg_product_card($p, $locale); endforeach; ?>
+      </div>
+    </div>
+    <?php endif; ?>
 
     <!-- SHOP BY CATEGORY -->
     <?php if (!empty($categories)): ?>
