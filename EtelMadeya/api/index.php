@@ -9,6 +9,52 @@ header('Content-Type: application/json; charset=utf-8');
 
 $action = $_GET['action'] ?? $_POST['action'] ?? '';
 
+// ─── DUPLICATE / RATIONING PROTECTION ────────────────────────────────
+// Ported from the EtelMadeya WordPress plugin's madeya_ajax_register()
+// (ajax/queue.php) - same three guards, same order: is this vehicle
+// type served at this station today, does the plate's parity match
+// this station's odd/even rule, and has this exact plate+type already
+// received fuel today at ANY station (cross-station on purpose - the
+// whole point is stopping a vehicle from double-dipping the daily fuel
+// ration by visiting a second station after already being served).
+
+// No rows in controller_vehicle_types for this controller = unrestricted.
+function madeyaVehicleTypeAllowed($controllerId, $vehicleTypeId) {
+    $rows = db()->fetchAll(
+        "SELECT vehicle_type_id FROM controller_vehicle_types WHERE controller_id = ?",
+        [$controllerId]
+    );
+    if (empty($rows)) return true;
+    foreach ($rows as $r) {
+        if ((int)$r['vehicle_type_id'] === (int)$vehicleTypeId) return true;
+    }
+    return false;
+}
+
+// Returns the required parity ('odd'/'even') if the plate violates the
+// controller's odd_even_rule, or null if it's fine (rule is 'all', or
+// the plate has no trailing digit to determine parity from).
+function madeyaParityViolation($controllerId, $plate) {
+    $controller = db()->fetchOne("SELECT odd_even_rule FROM controllers WHERE id = ?", [$controllerId]);
+    $rule = $controller['odd_even_rule'] ?? 'all';
+    if (empty($rule) || $rule === 'all') return null;
+    $isOdd = isOddPlate($plate);
+    if ($isOdd === null) return null;
+    $plateParity = $isOdd ? 'odd' : 'even';
+    return $plateParity !== $rule ? $rule : null;
+}
+
+// Cross-station: no controller_id filter, by design.
+function madeyaServedTodayConflict($plate, $vehicleTypeId) {
+    return db()->fetchOne(
+        "SELECT r.served_at, c.station_name FROM report r
+         JOIN controllers c ON c.id = r.controller_id
+         WHERE r.plate_number = ? AND r.vehicle_type_id = ? AND r.report_date = ?
+         ORDER BY r.served_at DESC LIMIT 1",
+        [$plate, $vehicleTypeId, date('Y-m-d')]
+    );
+}
+
 try {
     switch ($action) {
         
@@ -62,17 +108,41 @@ try {
             if (empty($plate) || !$vehicleTypeId) {
                 jsonResponse(['success' => false, 'message' => 'Missing required fields'], 400);
             }
-            
+
+            if (!madeyaVehicleTypeAllowed($controllerId, $vehicleTypeId)) {
+                jsonResponse(['success' => false, 'message' => 'This vehicle type is not served at this station today.', 'code' => 'TYPE_NOT_ALLOWED'], 400);
+            }
+
+            $requiredParity = madeyaParityViolation($controllerId, $plate);
+            if ($requiredParity) {
+                $need = $requiredParity === 'odd' ? 'odd-numbered' : 'even-numbered';
+                jsonResponse(['success' => false, 'message' => "This station only accepts {$need} plates today.", 'code' => 'WRONG_PARITY'], 400);
+            }
+
             // Check if already in queue
             $existing = db()->fetchOne(
                 "SELECT id FROM queue WHERE plate_number = ? AND status = 'queued'",
                 [$plate]
             );
-            
+
             if ($existing) {
                 jsonResponse(['success' => false, 'message' => 'Vehicle already in queue']);
             }
-            
+
+            // Already served today, at this station or any other - stops a
+            // vehicle from getting fuel twice in one day by hopping stations.
+            $servedToday = madeyaServedTodayConflict($plate, $vehicleTypeId);
+            if ($servedToday) {
+                $t = date('H:i', strtotime($servedToday['served_at']));
+                jsonResponse([
+                    'success' => false,
+                    'message' => "This vehicle already received fuel today at {$t} ({$servedToday['station_name']}).",
+                    'code' => 'SERVED_TODAY',
+                    'served_at' => $t,
+                    'station_name' => $servedToday['station_name'],
+                ], 400);
+            }
+
             // Get next position
             $maxPos = db()->fetchOne(
                 "SELECT COALESCE(MAX(position), 0) as max_pos FROM queue 
@@ -127,6 +197,28 @@ try {
             $types = db()->fetchAll(
                 "SELECT * FROM vehicle_types WHERE is_active = 1 ORDER BY sort_order"
             );
+
+            // When a controller is logged in, flag which types their
+            // station is actually allowed to register today - no
+            // assignment rows means unrestricted (every type allowed).
+            if (isset($_SESSION['controller_id'])) {
+                $allowedRows = db()->fetchAll(
+                    "SELECT vehicle_type_id FROM controller_vehicle_types WHERE controller_id = ?",
+                    [$_SESSION['controller_id']]
+                );
+                if ($allowedRows) {
+                    $allowedIds = [];
+                    foreach ($allowedRows as $r) { $allowedIds[(int)$r['vehicle_type_id']] = true; }
+                    foreach ($types as &$t) {
+                        $t['allowed'] = isset($allowedIds[(int)$t['id']]);
+                    }
+                    unset($t);
+                } else {
+                    foreach ($types as &$t) { $t['allowed'] = true; }
+                    unset($t);
+                }
+            }
+
             jsonResponse(['success' => true, 'types' => $types]);
             break;
             
@@ -315,7 +407,7 @@ try {
         case 'check_session':
             if (isset($_SESSION['controller_id'])) {
                 $controller = db()->fetchOne(
-                    "SELECT id, username, full_name, station_name FROM controllers WHERE id = ?",
+                    "SELECT id, username, full_name, station_name, odd_even_rule FROM controllers WHERE id = ?",
                     [$_SESSION['controller_id']]
                 );
                 jsonResponse(['success' => true, 'logged_in' => true, 'controller' => $controller]);
@@ -469,7 +561,11 @@ try {
             if (empty($plates) || !$vehicleTypeId) {
                 jsonResponse(['success' => false, 'message' => 'Missing required fields'], 400);
             }
-            
+
+            if (!madeyaVehicleTypeAllowed($controllerId, $vehicleTypeId)) {
+                jsonResponse(['success' => false, 'message' => 'This vehicle type is not served at this station today.', 'code' => 'TYPE_NOT_ALLOWED'], 400);
+            }
+
             $plateArray = array_filter(array_map('trim', explode("\n", $plates)));
             
             if (empty($plateArray)) {
@@ -494,25 +590,49 @@ try {
             
             $imported = 0;
             $skipped = 0;
-            
+            $skippedServed = 0;
+            $skippedParity = 0;
+
+            // Fetched once here rather than per-plate inside the loop below.
+            $controllerParityRow = db()->fetchOne("SELECT odd_even_rule FROM controllers WHERE id = ?", [$controllerId]);
+            $stationRule = $controllerParityRow['odd_even_rule'] ?? 'all';
+
             db()->beginTransaction();
-            
+
             try {
                 foreach ($plateArray as $plate) {
                     $plate = trim($plate);
                     if (empty($plate)) continue;
-                    
+
                     // Check if already in queue
                     $existing = db()->fetchOne(
                         "SELECT id FROM queue WHERE plate_number = ? AND status = 'queued'",
                         [$plate]
                     );
-                    
+
                     if ($existing) {
                         $skipped++;
                         continue;
                     }
-                    
+
+                    if (!empty($stationRule) && $stationRule !== 'all') {
+                        $isOdd = isOddPlate($plate);
+                        if ($isOdd !== null) {
+                            $plateParity = $isOdd ? 'odd' : 'even';
+                            if ($plateParity !== $stationRule) {
+                                $skipped++;
+                                $skippedParity++;
+                                continue;
+                            }
+                        }
+                    }
+
+                    if (madeyaServedTodayConflict($plate, $vehicleTypeId)) {
+                        $skipped++;
+                        $skippedServed++;
+                        continue;
+                    }
+
                     $nextPosition++;
                     $token = strtoupper(substr(md5(uniqid() . $plate), 0, 8));
                     $parity = isOddPlate($plate);
@@ -534,12 +654,19 @@ try {
                 }
                 
                 db()->commit();
-                
+
+                $skipDetail = [];
+                if ($skippedServed) $skipDetail[] = "$skippedServed already served today";
+                if ($skippedParity) $skipDetail[] = "$skippedParity wrong parity";
+                $skipMsg = $skipDetail ? ' (' . implode(', ', $skipDetail) . ')' : '';
+
                 jsonResponse([
                     'success' => true,
-                    'message' => "Imported: $imported, Skipped: $skipped",
+                    'message' => "Imported: $imported, Skipped: $skipped{$skipMsg}",
                     'imported' => $imported,
                     'skipped' => $skipped,
+                    'skipped_served_today' => $skippedServed,
+                    'skipped_parity' => $skippedParity,
                     'batch_id' => $batchId
                 ]);
                 

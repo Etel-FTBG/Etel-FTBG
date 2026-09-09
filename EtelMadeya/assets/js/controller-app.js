@@ -178,14 +178,28 @@ function renderVtypeGrid() {
         grid.innerHTML = '<div style="grid-column:1/-1;color:var(--mt);font-size:12px;">No vehicle types configured.</div>';
         return;
     }
-    grid.innerHTML = vehicleTypes.map(t => `
-        <button type="button" class="vt-btn" data-id="${t.id}" onclick="selectVehicleType(${t.id}, this)">
+    // .allowed comes from get_vehicle_types when a controller is logged
+    // in (undefined = not restricted, treat as allowed) - types this
+    // station isn't assigned today are shown greyed-out rather than
+    // hidden, so the controller can see what's unavailable and why.
+    grid.innerHTML = vehicleTypes.map(t => {
+        const allowed = t.allowed !== false;
+        const cls = 'vt-btn' + (allowed ? '' : ' disabled-type');
+        const click = allowed ? `onclick="selectVehicleType(${t.id}, this)"` : '';
+        const title = allowed ? '' : 'title="Not served at this station today"';
+        return `
+        <button type="button" class="${cls}" data-id="${t.id}" ${click} ${title}>
             <span class="vt-ic">${escHtml(t.icon || '')}</span>${escHtml(t.name || '')}
         </button>
-    `).join('');
-    // Auto-select the first type so registration always has a valid type
-    if (!selectedVehicleTypeId && vehicleTypes[0]) {
-        selectVehicleType(vehicleTypes[0].id, grid.querySelector('.vt-btn'));
+    `;
+    }).join('');
+    // Auto-select the first ALLOWED type so registration starts on a
+    // usable type rather than one that will just get rejected server-side.
+    if (!selectedVehicleTypeId) {
+        const firstAllowed = vehicleTypes.find(t => t.allowed !== false);
+        if (firstAllowed) {
+            selectVehicleType(firstAllowed.id, grid.querySelector(`.vt-btn[data-id="${firstAllowed.id}"]`));
+        }
     }
 }
 
@@ -193,6 +207,35 @@ function selectVehicleType(id, btn) {
     selectedVehicleTypeId = id;
     document.querySelectorAll('#vtypeGrid .vt-btn').forEach(b => b.classList.remove('sel'));
     if (btn) btn.classList.add('sel');
+}
+
+// Client-side mirror of the server's isOddPlate() - last digit odd/even.
+// Purely a UX hint; the server re-checks this on submit regardless.
+function platePartyFromString(plate) {
+    const m = String(plate || '').match(/(\d)(?!.*\d)/);
+    if (!m) return null;
+    return (parseInt(m[1], 10) % 2 !== 0) ? 'odd' : 'even';
+}
+
+function updateRegParityHint() {
+    const hintEl = document.getElementById('regParHint');
+    if (!hintEl) return;
+
+    const rule = (currentController && currentController.odd_even_rule) || 'all';
+    const plate = document.getElementById('regPlate').value;
+    const parity = platePartyFromString(plate);
+
+    if (rule === 'all' || !plate || parity === null) {
+        hintEl.innerHTML = '&nbsp;';
+        return;
+    }
+    const needLabel = rule === 'odd' ? 'Odd' : 'Even';
+    const plateLabel = parity === 'odd' ? 'Odd' : 'Even';
+    if (parity === rule) {
+        hintEl.innerHTML = `<b style="color:var(--gn)">${plateLabel} plate</b> - accepted today (${needLabel} only)`;
+    } else {
+        hintEl.innerHTML = `<b style="color:var(--rd)">${plateLabel} plate</b> - this station only accepts ${needLabel} plates today`;
+    }
 }
 
 function populateVehicleTypeSelects() {
