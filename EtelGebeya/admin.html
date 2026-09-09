@@ -44,45 +44,99 @@ body {
   position:fixed;inset:0;z-index:9999;
   display:flex;align-items:center;justify-content:center;
   background:inherit;
+  padding:1.25rem;
 }
 .login-card {
-  background:var(--glass);border:1.5px solid var(--glass-brd);
-  border-radius:24px;padding:2.5rem 2rem;width:360px;
+  background:rgba(8,5,2,.88);
+  border-radius:22px;padding:2.5rem 2.25rem;width:380px;max-width:100%;
   backdrop-filter:blur(20px);
-  box-shadow:0 20px 60px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,230,80,.1);
+  box-shadow:
+    0 14px 24px -12px rgba(0,0,0,.65),
+    0 3px 8px -2px rgba(0,0,0,.45),
+    inset 0 1px 0 rgba(255,230,80,.12),
+    inset 0 0 0 1px rgba(212,175,55,.22);
+  animation:loginCardIn .45s cubic-bezier(.22,1,.36,1) both;
 }
-.login-logo {
-  text-align:center;margin-bottom:1.5rem;
-}
+@media (prefers-reduced-motion: reduce) { .login-card { animation:none; } }
+@keyframes loginCardIn { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:none} }
+
+.login-logo { text-align:center;margin-bottom:1.75rem; }
 .login-logo-mark {
-  width:72px;height:72px;border-radius:20px;margin:0 auto 12px;
+  width:64px;height:64px;border-radius:18px;margin:0 auto 14px;
   background:linear-gradient(135deg,var(--g5),var(--g4));
   display:flex;align-items:center;justify-content:center;
-  font-size:2rem;font-weight:900;color:#1a0e00;
+  font-size:1.7rem;font-weight:900;color:#1a0e00;
   font-family:var(--fs);
-  box-shadow:0 10px 30px rgba(212,175,55,.4);
+  box-shadow:0 10px 28px rgba(212,175,55,.38);
 }
 .login-logo h1 {
-  font-family:var(--fs);font-size:1.4rem;font-weight:800;
-  background:linear-gradient(90deg,var(--g5),var(--g2));
-  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
+  font-family:var(--fs);font-size:1.3rem;font-weight:800;color:var(--text);
 }
-.login-logo p { font-size:.75rem;color:var(--text-dim);margin-top:4px;font-family:var(--fm); }
-.login-card label { display:block;font-size:.72rem;font-family:var(--fm);color:var(--text-dim);letter-spacing:.08em;text-transform:uppercase;margin-bottom:6px;margin-top:1.2rem; }
+.login-logo p {
+  font-size:.75rem;color:var(--g4);margin-top:6px;font-family:var(--fm);
+  letter-spacing:.12em;text-transform:uppercase;font-weight:600;
+}
+
+.login-field { margin-top:1.15rem; }
+.login-card label {
+  display:block;font-size:.7rem;font-family:var(--fm);color:var(--text-dim);
+  letter-spacing:.08em;text-transform:uppercase;margin-bottom:7px;font-weight:500;
+}
+.login-field-hint { text-transform:none;font-weight:400;letter-spacing:0;color:var(--text-dim); }
+.login-input-wrap { position:relative; }
+.login-input-wrap svg {
+  position:absolute;left:12px;top:50%;transform:translateY(-50%);
+  color:var(--text-dim);pointer-events:none;
+}
+.login-card input[type=text],
 .login-card input[type=password] {
-  width:100%;background:rgba(255,255,255,.06);border:1px solid var(--glass-brd);
-  border-radius:10px;padding:.7rem 1rem;color:var(--text);font-size:.95rem;outline:none;
-  transition:border-color .2s;
+  width:100%;background:rgba(255,255,255,.045);border:1.5px solid var(--glass-brd);
+  border-radius:11px;padding:.72rem .9rem .72rem 2.4rem;color:var(--text);font-size:.92rem;
+  font-family:var(--fd);outline:none;transition:border-color .18s,box-shadow .18s,background .18s;
 }
-.login-card input[type=password]:focus { border-color:var(--g4); }
+.login-card input::placeholder { color:var(--text-dim); }
+.login-card input[type=password] { padding-right:2.4rem; }
+.login-card input:hover { border-color:rgba(212,175,55,.4); }
+.login-card input:focus {
+  border-color:var(--g4);background:rgba(212,175,55,.06);
+  box-shadow:0 0 0 3px rgba(212,175,55,.15);
+}
+.login-pw-toggle {
+  position:absolute;right:6px;top:50%;transform:translateY(-50%);
+  width:30px;height:30px;display:flex;align-items:center;justify-content:center;
+  background:none;border:none;border-radius:7px;color:var(--text-dim);cursor:pointer;
+  transition:color .15s,background .15s;
+}
+.login-pw-toggle:hover { color:var(--g3);background:rgba(212,175,55,.08); }
+
 .login-btn {
-  width:100%;margin-top:1.5rem;padding:.8rem;border:none;border-radius:12px;
+  width:100%;margin-top:1.6rem;padding:.8rem;border:none;border-radius:12px;
   background:linear-gradient(135deg,var(--g5),var(--g4));
-  color:#1a0e00;font-weight:800;font-size:1rem;font-family:var(--fs);cursor:pointer;
-  box-shadow:0 8px 24px rgba(212,175,55,.4);transition:all .3s;
+  color:#1a0e00;font-weight:800;font-size:.95rem;font-family:var(--fs);cursor:pointer;
+  box-shadow:0 8px 24px rgba(212,175,55,.4);transition:transform .2s,box-shadow .2s,opacity .15s;
+  display:flex;align-items:center;justify-content:center;gap:.55rem;
 }
 .login-btn:hover{transform:translateY(-2px);box-shadow:0 12px 32px rgba(212,175,55,.5);}
+.login-btn:active{transform:translateY(0);}
+.login-btn:disabled{opacity:.7;cursor:default;transform:none;}
+.login-btn .login-spin {
+  width:15px;height:15px;border-radius:50%;
+  border:2px solid rgba(26,14,0,.3);border-top-color:#1a0e00;
+  animation:loginSpin .7s linear infinite;display:none;
+}
+.login-btn.is-loading .login-spin { display:inline-block; }
+.login-btn.is-loading .login-btn-label { display:none; }
+@keyframes loginSpin { to{transform:rotate(360deg)} }
+
+.login-hint { text-align:center;font-size:.78rem;color:var(--text-dim);margin:.9rem 0 0;line-height:1.5; }
 .login-err{color:#ff6b6b;font-size:.8rem;text-align:center;margin-top:.8rem;min-height:1rem;}
+
+#login-screen ::selection { background:rgba(212,175,55,.32);color:#fff; }
+#login-screen input { caret-color:var(--g4); }
+#login-screen button:focus-visible,
+#login-screen input:focus-visible {
+  outline:2px solid var(--g4);outline-offset:2px;border-radius:8px;
+}
 
 /* ── APP SHELL ── */
 #app{display:flex;flex-direction:column;height:100%;display:none;}
@@ -381,15 +435,34 @@ tbody tr:last-child td{border-bottom:none;}
     <div class="login-logo">
       <div class="login-logo-mark">ኤ</div>
       <h1>Etel Gebeya</h1>
-      <p>ADMIN COMMAND CENTER</p>
+      <p>Admin Command Center</p>
     </div>
 
-    <label>Phone or EtelID <span style="text-transform:none;font-weight:400">(leave blank for master password)</span></label>
-    <input type="text" id="etelid-identifier" placeholder="+2519... or EG-2026-00001" style="margin-bottom:10px">
-    <label>Password</label>
-    <input type="password" id="etelid-password" placeholder="Enter password…" style="margin-bottom:14px" onkeydown="if(event.key==='Enter')doUnifiedLogin()">
-    <button class="login-btn" type="button" id="etelid-btn" onclick="doUnifiedLogin()">🔐 Sign In</button>
-    <p style="text-align:center;font-size:11px;color:#9a9aae;margin:10px 0 0">Leave the phone field blank to sign in with the master password, or fill it in to sign in with your EtelID</p>
+    <div class="login-field">
+      <label for="etelid-identifier">Phone or EtelID <span class="login-field-hint">(leave blank for master password)</span></label>
+      <div class="login-input-wrap">
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+        <input type="text" id="etelid-identifier" placeholder="+2519... or EG-2026-00001" autocomplete="username">
+      </div>
+    </div>
+
+    <div class="login-field">
+      <label for="etelid-password">Password</label>
+      <div class="login-input-wrap">
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+        <input type="password" id="etelid-password" placeholder="Enter password…" autocomplete="current-password" onkeydown="if(event.key==='Enter')doUnifiedLogin()">
+        <button type="button" class="login-pw-toggle" onclick="toggleAdminPw(this)" tabindex="-1" aria-label="Show password">
+          <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <button class="login-btn" type="button" id="etelid-btn" onclick="doUnifiedLogin()">
+      <span class="login-spin"></span>
+      <svg class="login-btn-label" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4" viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+      <span class="login-btn-label">Sign In</span>
+    </button>
+    <p class="login-hint">Leave the phone field blank to sign in with the master password, or fill it in to sign in with your EtelID</p>
     <div class="login-err" id="login-err"></div>
   </div>
 </div>
