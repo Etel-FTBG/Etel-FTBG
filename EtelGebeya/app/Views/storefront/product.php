@@ -65,7 +65,11 @@ if ($db && $db->isConnected()) {
 }
 function eg_img_url(string $path): string {
     if (str_starts_with($path, 'http')) return $path;
-    return '/EtelGebeya/public/uploads/products/' . ltrim($path, '/');
+    // product_images.path is already saved as a site-absolute path
+    // (see VendorController's $uploadDir) -- don't re-prefix those,
+    // only bare filenames that never got a path stored.
+    if (str_starts_with($path, '/')) return $path;
+    return '/EtelGebeya/public/uploads/products/' . $path;
 }
 $mainImage = !empty($images) ? eg_img_url($images[0]['path'])
     : "https://picsum.photos/seed/{$product->id}/600/600";
