@@ -83,14 +83,7 @@ $roleLabel = $role ?? ($user['roles'][0] ?? 'user');
 
       <div class="nav-section-label" style="margin-top:1rem;">Account</div>
 
-      <?php if ($role === 'admin' || $role === 'vendor'): ?>
-        <a href="/<?= $role === 'admin' ? 'admin/settings' : 'vendor-panel/settings' ?>" class="nav-item">
-          <i class="bi bi-gear nav-icon"></i>
-          <span>Settings</span>
-        </a>
-      <?php endif; ?>
-
-      <a href="/logout" class="nav-item" style="margin-top:.5rem;">
+      <a href="<?= View::url('/logout') ?>" class="nav-item" style="margin-top:.5rem;">
         <i class="bi bi-box-arrow-right nav-icon"></i>
         <span>Logout</span>
       </a>
