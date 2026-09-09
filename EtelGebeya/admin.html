@@ -46,7 +46,18 @@ body {
   background:inherit;
   padding:1.25rem;
 }
+/* Etel Family master seal -- the same "first impression" watermark
+   treatment EtelMadeya's own EtelID login screen uses: the real
+   medallion artwork, low-opacity, centered behind the login card. */
+#login-screen::before {
+  content:''; position:absolute; inset:0; z-index:0; pointer-events:none;
+  background-image:url('public/assets/img/etel-master-seal.webp');
+  background-repeat:no-repeat; background-position:center 45%;
+  background-size:min(640px,90vw);
+  opacity:.22;
+}
 .login-card {
+  position:relative; z-index:1;
   background:rgba(8,5,2,.88);
   border-radius:22px;padding:2.5rem 2.25rem;width:380px;max-width:100%;
   backdrop-filter:blur(20px);
@@ -230,10 +241,20 @@ body {
 }
 .ct-title{font-family:var(--fs);font-size:1.25rem;font-weight:800;color:var(--g1);}
 .ct-sub{font-size:.75rem;color:var(--text-dim);font-family:var(--fm);}
-.content-scroll{flex:1;overflow-y:auto;padding:1.25rem 1.5rem;
+.content-scroll{flex:1;overflow-y:auto;padding:1.25rem 1.5rem;position:relative;
   scrollbar-width:thin;scrollbar-color:rgba(212,175,55,.2) transparent;}
 .content-scroll::-webkit-scrollbar{width:6px;}
 .content-scroll::-webkit-scrollbar-thumb{background:rgba(212,175,55,.25);border-radius:6px;}
+/* Etel Family master seal -- faint watermark behind the dashboard panels,
+   same treatment as the MVC admin/vendor dashboards (.dash-content). */
+.content-scroll::before{
+  content:'';position:absolute;inset:0;z-index:0;pointer-events:none;
+  background-image:url('public/assets/img/etel-master-seal.webp');
+  background-repeat:no-repeat;background-position:center 35%;
+  background-size:min(700px,80%);
+  opacity:.06;
+}
+.content-scroll > *{position:relative;z-index:1;}
 
 /* ── PANELS ── */
 .panel{display:none;animation:fadeUp .3s var(--ease);}
