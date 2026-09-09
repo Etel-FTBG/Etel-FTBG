@@ -9,8 +9,8 @@
 :root {
   --dark-bg:      #0A0A1A;
   --dark-surface: #11112A;
-  --dark-card:    rgba(255,255,255,.05);
-  --dark-border:  rgba(255,255,255,.08);
+  --dark-card:    rgba(9,7,3,.88);
+  --dark-border:  rgba(212,175,55,.22);
   --dark-text:    #E8E8F0;
   --dark-muted:  #8888A8;
 
