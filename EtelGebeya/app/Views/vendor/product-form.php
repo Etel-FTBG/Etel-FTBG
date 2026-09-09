@@ -12,7 +12,7 @@ $imgUrls = array_column($imgs, 'path');
 ob_start();
 ?>
 <style>
-/* ?? PRODUCT FORM ???????????????????????????????????????? */
+/* PRODUCT FORM */
 .pf-grid{display:grid;grid-template-columns:1fr 340px;gap:1.5rem;align-items:start}
 .pf-section{background:rgba(255,255,255,.04);border:1.5px solid rgba(255,255,255,.07);border-radius:20px;overflow:hidden;margin-bottom:1.25rem}
 .pf-section-head{display:flex;align-items:center;gap:.75rem;padding:1.1rem 1.4rem;border-bottom:1px solid rgba(255,255,255,.07);background:rgba(255,255,255,.02)}
@@ -125,7 +125,7 @@ ob_start();
 
 <div class="pf-grid">
 
-  <!-- ?? LEFT COLUMN ?? -->
+  <!-- LEFT COLUMN -->
   <div>
 
     <!-- MEDIA -->
@@ -167,7 +167,7 @@ ob_start();
         <?php for ($slot = 0; $slot < 6; $slot++): ?>
           <div style="margin-bottom:.6rem;background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:.55rem .75rem">
             <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.4rem">
-              <span style="font-size:.7rem;color:var(--gold);font-weight:800;min-width:18px"><?= $slot===0?'?':$slot+1 ?></span>
+              <span style="font-size:.7rem;color:var(--gold);font-weight:800;min-width:18px"><?= $slot===0?'<i class="bi bi-star-fill"></i>':$slot+1 ?></span>
               <span style="font-size:.72rem;color:var(--dark-muted);font-weight:600"><?= $slot===0?'Primary Image':'Gallery '.($slot+1) ?></span>
             </div>
             <div style="display:flex;gap:.5rem;align-items:center">
@@ -210,10 +210,10 @@ ob_start();
                    id="nameEnInput" oninput="updateSlugPreview(this.value)">
           </div>
           <div class="fg">
-            <label>Product Name (????)</label>
+            <label>Product Name (Amharic) <span style="text-transform:none;letter-spacing:0;font-weight:500">optional</span></label>
             <input type="text" name="name_am"
                    value="<?= e(html_entity_decode($p['name_am']??'',ENT_QUOTES,'UTF-8')) ?>"
-                   placeholder="e.g. ????? ??">
+                   placeholder="Amharic name (optional)">
           </div>
         </div>
         <div class="fg-row col2">
@@ -235,8 +235,8 @@ ob_start();
           <textarea name="description_en" rows="5" placeholder="Describe your product in detail -- quality, origin, usage, dimensions..."><?= e(html_entity_decode($p['description_en']??'',ENT_QUOTES,'UTF-8')) ?></textarea>
         </div>
         <div class="fg">
-          <label>Description (????)</label>
-          <textarea name="description_am" rows="4" placeholder="???? ????? ????..."><?= e(html_entity_decode($p['description_am']??'',ENT_QUOTES,'UTF-8')) ?></textarea>
+          <label>Description (Amharic) <span style="text-transform:none;letter-spacing:0;font-weight:500">optional</span></label>
+          <textarea name="description_am" rows="4" placeholder="Amharic description (optional)"><?= e(html_entity_decode($p['description_am']??'',ENT_QUOTES,'UTF-8')) ?></textarea>
         </div>
       </div>
     </div>
@@ -313,7 +313,7 @@ ob_start();
 
   </div><!-- /left column -->
 
-  <!-- ?? RIGHT SIDEBAR ?? -->
+  <!-- RIGHT SIDEBAR -->
   <div>
 
     <!-- PUBLISH -->
@@ -389,7 +389,7 @@ ob_start();
         </div>
         <div class="pub-row">
           <span class="pub-label">URL</span>
-          <a href="<?= View::url('/vendor/'.e($seller['store_slug']??'')) ?>" target="_blank" style="color:var(--gold);font-size:.8rem;text-decoration:none">View storefront ?</a>
+          <a href="<?= View::url('/vendor/'.e($seller['store_slug']??'')) ?>" target="_blank" style="color:var(--gold);font-size:.8rem;text-decoration:none">View storefront <i class="bi bi-box-arrow-up-right"></i></a>
         </div>
       </div>
     </div>
@@ -414,11 +414,11 @@ ob_start();
 </form>
 
 <script>
-// ?? Slug preview ??
+// Slug preview
 function slugify(s){return s.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')}
 function updateSlugPreview(v){document.getElementById('slugPreview').value=slugify(v).substring(0,80)}
 
-// ?? Price preview ??
+// Price preview
 function updatePricePreview(){
   const p=parseFloat(document.getElementById('priceInput').value)||0;
   const c=parseFloat(document.getElementById('compareInput').value)||0;
@@ -438,7 +438,7 @@ function updatePricePreview(){
   }
 }
 
-// ?? Stock bar ??
+// Stock bar
 function updateStockBar(){
   const v=parseInt(document.getElementById('stockInput').value)||0;
   const fill=document.getElementById('stockFill');
@@ -446,11 +446,11 @@ function updateStockBar(){
   const pct=Math.min(100,Math.round(v/100*100));
   fill.style.width=Math.max(2,pct)+'%';
   fill.className='stock-fill'+(v<=5?' low':v<=20?' medium':'');
-  label.textContent=v===0?'?? Out of stock':v<=5?`?? Very low stock (${v} left)`:v<=20?`📦 Low stock (${v} units)`:`? In stock -- ${v} units available`;
+  label.textContent=v===0?'Out of stock':v<=5?`Very low stock (${v} left)`:v<=20?`Low stock (${v} units)`:`In stock -- ${v} units available`;
   label.style.color=v===0?'#e74c3c':v<=5?'#e67e22':v<=20?'#f39c12':'#2ecc71';
 }
 
-// ?? Image file preview ??
+// Image file preview
 function previewFromFile(slot, input){
   if(!input.files||!input.files[0]) return;
   const reader=new FileReader();
@@ -467,7 +467,7 @@ function previewFromFile(slot, input){
   reader.readAsDataURL(input.files[0]);
 }
 
-// ?? Image URL preview ??
+// Image URL preview
 function previewFromUrl(slot,url){
   const pre=document.getElementById('preview'+slot);
   const add=document.getElementById('slotAdd'+slot);
@@ -483,7 +483,7 @@ function previewFromUrl(slot,url){
   }
 }
 
-// ?? Tag chips ??
+// Tag chips
 let tags=[];
 function handleTagKey(e){
   if(e.key==='Enter'||e.key===','){e.preventDefault();addTag(e.target.value);}

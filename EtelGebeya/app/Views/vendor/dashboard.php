@@ -132,7 +132,7 @@ ob_start();
   <div class="vd-card">
     <div class="vd-card-head">
       <div class="vd-card-title"><i class="bi bi-box-seam" style="color:var(--gold)"></i> Recent Products</div>
-      <a href="<?= View::url('/vendor-panel/products') ?>" class="vd-card-link">View all ?</a>
+      <a href="<?= View::url('/vendor-panel/products') ?>" class="vd-card-link">View all <i class="bi bi-arrow-right"></i></a>
     </div>
     <?php if (empty($recentProducts)): ?>
       <div class="empty-state">
@@ -175,7 +175,7 @@ ob_start();
     <div class="vd-card">
       <div class="vd-card-head">
         <div class="vd-card-title"><i class="bi bi-receipt" style="color:#60b4ff"></i> Recent Orders</div>
-        <a href="<?= View::url('/vendor-panel/orders') ?>" class="vd-card-link">View all ?</a>
+        <a href="<?= View::url('/vendor-panel/orders') ?>" class="vd-card-link">View all <i class="bi bi-arrow-right"></i></a>
       </div>
       <?php if (empty($recentOrders)): ?>
         <div class="empty-state">
