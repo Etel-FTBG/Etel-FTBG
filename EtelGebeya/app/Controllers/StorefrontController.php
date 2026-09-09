@@ -209,14 +209,10 @@ final class StorefrontController
         ]);
 
         $sid      = (int)$seller['id'];
-        $products = $db->fetchAll(
-            "SELECT p.*,
-                    (SELECT pi.path FROM product_images pi WHERE pi.product_id=p.id ORDER BY pi.sort_order LIMIT 1) AS image
-               FROM products p
-              WHERE p.seller_id = ? AND p.status IN ('published','publish','active')
-              ORDER BY p.created_at DESC LIMIT 24",
-            [$sid]
-        );
+        // product_card() (used by the vendor view) expects Product objects,
+        // not raw DB rows -- fetch through the model like every other
+        // storefront listing does, instead of querying products directly.
+        $products = Product::bySeller($sid);
 
         View::render('storefront/vendor', [
             'locale'   => $locale,
