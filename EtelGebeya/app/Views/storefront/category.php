@@ -27,41 +27,76 @@ $totalPages = max(1, (int)ceil($total / ($per ?? 20)));
 ob_start();
 ?>
 <style>
-.cat-page { padding: 2rem 0; }
+.cat-page { padding: 20px 0; }
+.cat-breadcrumb { display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--text3); margin-bottom: 16px; }
+.cat-breadcrumb a { color: var(--text2); transition: color .15s; }
+.cat-breadcrumb a:hover { color: var(--g1); }
+.cat-breadcrumb i { font-size: 10px; }
+.cat-breadcrumb .current { color: var(--text); font-weight: 600; }
+
 .cat-hero {
-  background: linear-gradient(135deg, var(--eg-blue-deep), var(--eg-blue));
-  border-radius: var(--eg-radius); padding: 2.5rem 2rem; margin-bottom: 2rem; color: #fff;
-  display: flex; align-items: center; gap: 1.5rem;
+  background: linear-gradient(135deg,#0d0900 0%,#1c1208 40%,#2a1c0a 70%,#100c06 100%);
+  border: 1px solid var(--border); border-radius: var(--r2);
+  padding: 28px 32px; margin-bottom: 20px;
+  display: flex; align-items: center; gap: 22px; position: relative; overflow: hidden;
 }
-.cat-hero-icon { font-size: 3.5rem; filter: drop-shadow(0 4px 12px rgba(0,0,0,.2)); }
-.cat-hero h1 { font-size: clamp(1.4rem,3vw,2.2rem); font-weight: 900; margin-bottom: .3rem; }
-.cat-hero p  { opacity: .85; font-size: .9rem; }
-.cat-page-layout { display: grid; grid-template-columns: 220px 1fr; gap: 2rem; }
+.cat-hero::before {
+  content: ''; position: absolute; inset: 0;
+  background: radial-gradient(ellipse 60% 80% at 80% 50%, rgba(212,175,55,.08), transparent 70%);
+  pointer-events: none;
+}
+.cat-hero-icon {
+  width: 72px; height: 72px; border-radius: var(--r2); flex-shrink: 0;
+  background: linear-gradient(135deg, rgba(212,175,55,.18), rgba(212,175,55,.06));
+  border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 32px; color: var(--g2); position: relative;
+}
+.cat-hero h1 {
+  font-size: clamp(20px,3vw,28px); font-weight: 900; line-height: 1.2; margin-bottom: 4px;
+  background: var(--grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+}
+.cat-hero p { color: var(--text2); font-size: 13px; position: relative; }
+
+.cat-page-layout { display: grid; grid-template-columns: 220px 1fr; gap: 20px; }
 @media(max-width:768px){ .cat-page-layout { grid-template-columns:1fr; } }
-.filter-sidebar { position: sticky; top: 1rem; }
-.filter-card { background: var(--eg-glass); border: 1.5px solid var(--eg-border); border-radius: var(--eg-radius); padding: 1.2rem; margin-bottom: 1rem; }
-.filter-title { font-weight: 800; color: var(--eg-blue-deep); margin-bottom: .75rem; font-size: .95rem; }
-.filter-group { margin-bottom: .5rem; }
-.filter-group label { display: flex; align-items: center; gap: .5rem; font-size: .83rem; color: var(--eg-text-dim); cursor: pointer; padding: .25rem 0; }
-.filter-group label:hover { color: var(--eg-blue); }
-.sub-cat-link { display: flex; align-items: center; gap: .5rem; padding: .4rem .6rem; border-radius: 8px; font-size: .83rem; text-decoration: none; color: var(--eg-text-dim); transition: all .2s; }
-.sub-cat-link:hover, .sub-cat-link.active { background: var(--eg-blue-dim); color: var(--eg-blue); font-weight: 700; }
-.sort-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem; flex-wrap: wrap; gap: .75rem; }
-.sort-bar select { background: var(--eg-glass); border: 1.5px solid var(--eg-border); border-radius: 10px; padding: .45rem .9rem; font-size: .85rem; color: var(--eg-text); outline: none; }
-.results-info { font-size: .82rem; color: var(--eg-text-dim); }
-.no-products { text-align: center; padding: 4rem 2rem; }
-.no-products .icon { font-size: 4rem; margin-bottom: 1rem; }
-.pag-row { display: flex; justify-content: center; gap: .5rem; margin-top: 2rem; flex-wrap: wrap; }
+
+.filter-sidebar { position: sticky; top: calc(var(--header-h) + 8px); }
+.filter-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--r2); padding: 16px; margin-bottom: 12px; }
+.filter-title { font-weight: 700; color: var(--text); margin-bottom: 10px; font-size: 12.5px; text-transform: uppercase; letter-spacing: .8px; }
+.filter-group { margin-bottom: 4px; }
+.filter-group label { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--text2); cursor: pointer; padding: 6px 0; min-height: 24px; }
+.filter-group label:hover { color: var(--g1); }
+.sub-cat-link { display: flex; align-items: center; gap: 8px; padding: 8px 6px; border-radius: 8px; font-size: 12.5px; text-decoration: none; color: var(--text2); transition: all .15s; }
+.sub-cat-link:hover, .sub-cat-link.active { background: rgba(212,175,55,.08); color: var(--g1); font-weight: 700; }
+
+.sort-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 10px; }
+.sort-bar select { background: var(--card2,var(--card)); border: 1.5px solid var(--border); border-radius: 8px; padding: 8px 12px; font-size: 12.5px; color: var(--text); outline: none; }
+.results-info { font-size: 12.5px; color: var(--text2); }
+.results-info strong { color: var(--text); }
+
+.no-products { text-align: center; padding: 60px 20px; color: var(--text3); }
+.no-products .icon { font-size: 48px; margin-bottom: 14px; color: var(--g2); opacity: .5; }
+.no-products h3 { color: var(--text); font-weight: 700; }
+
+.pag-row { display: flex; justify-content: center; gap: 8px; margin-top: 24px; flex-wrap: wrap; }
 .pag-a {
   display: inline-flex; align-items: center; justify-content: center;
-  width: 36px; height: 36px; border-radius: 10px; border: 1.5px solid var(--eg-border);
-  background: var(--eg-glass); color: var(--eg-text-dim); text-decoration: none; font-size: .88rem;
-  transition: all .2s;
+  min-width: 40px; height: 40px; padding: 0 6px; border-radius: 10px;
+  border: 1.5px solid var(--border); background: var(--card); color: var(--text2);
+  text-decoration: none; font-size: 13px; font-weight: 600; transition: all .15s;
 }
-.pag-a:hover, .pag-a.active { background: var(--eg-blue); color: #fff; border-color: var(--eg-blue); }
+.pag-a:hover, .pag-a.active { background: var(--grad); color: #080604; border-color: transparent; }
 </style>
 
-<div class="container cat-page">
+<div class="cat-page">
+  <!-- Breadcrumb -->
+  <div class="cat-breadcrumb">
+    <a href="<?= View::url('/') ?>">Home</a>
+    <i class="bi bi-chevron-right"></i>
+    <span class="current"><?= $catName ?></span>
+  </div>
+
   <!-- Hero -->
   <div class="cat-hero">
     <div class="cat-hero-icon">
@@ -115,8 +150,8 @@ ob_start();
         <div class="results-info">
           Showing <strong><?= count($products) ?></strong> of <strong><?= number_format($total) ?></strong> products in <strong><?= $catName ?></strong>
         </div>
-        <div style="display:flex;align-items:center;gap:.5rem;">
-          <span style="font-size:.8rem;color:var(--eg-text-dim)">Sort:</span>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span style="font-size:12px;color:var(--text3)">Sort:</span>
           <select onchange="applySort(this.value)">
             <option value="newest">Newest First</option>
             <option value="price_asc">Price: Low to High</option>
@@ -130,12 +165,14 @@ ob_start();
       <?php if (empty($products)): ?>
         <div class="no-products">
           <div class="icon"><i class="bi bi-box-seam"></i></div>
-          <h3 style="color:var(--eg-text-dim)"><?= t('category.no_products') ?></h3>
-          <p style="margin-top:.5rem;color:var(--eg-text-muted)">Be the first to sell in this category!</p>
-          <a href="<?= View::url('/sell') ?>" class="btn btn-primary" style="display:inline-block;margin-top:1rem;text-decoration:none;padding:.7rem 1.5rem;border-radius:12px;background:var(--eg-blue);color:#fff;font-weight:700">Open a Shop</a>
+          <h3><?= t('category.no_products') ?></h3>
+          <p style="margin-top:.5rem">Be the first to sell in this category!</p>
+          <a href="<?= View::url('/sell') ?>" class="eg-btn eg-btn-gold" style="display:inline-flex;margin-top:1rem;text-decoration:none">
+            <i class="bi bi-shop"></i> Open a Shop
+          </a>
         </div>
       <?php else: ?>
-        <div class="product-grid">
+        <div class="eg-product-grid">
           <?php foreach ($products as $p): ?>
             <?= product_card($p, $locale) ?>
           <?php endforeach; ?>
