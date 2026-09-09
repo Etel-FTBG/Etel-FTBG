@@ -85,7 +85,7 @@ final class Product
             if (str_starts_with($img, '/')) return $img;
             return '/EtelGebeya/public/uploads/products/' . $img;
         }
-        return "https://picsum.photos/seed/{$this->id}/400/400";
+        return '/EtelGebeya/public/assets/img/no-image.svg';
     }
 
     public function hasDiscount(): bool
