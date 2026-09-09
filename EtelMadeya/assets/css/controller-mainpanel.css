@@ -153,11 +153,11 @@
 #mainPanel .pc.tr { top: 5px; right: 5px; border-width: 2px 2px 0 0; }
 #mainPanel .pc.bl { bottom: 5px; left: 5px; border-width: 0 0 2px 2px; }
 #mainPanel .pc.br { bottom: 5px; right: 5px; border-width: 0 2px 2px 0; }
-#mainPanel .parity-hint { text-align: center; font-size: 13px; color: var(--mt); margin: 8px 0 14px; min-height: 18px; }
+#mainPanel .parity-hint { text-align: center; font-size: 14px; font-weight: 600; color: var(--tx); margin: 8px 0 14px; min-height: 18px; }
 #mainPanel .parity-hint b { font-weight: 700; }
 
 /* ── Vehicle type grid ── */
-#mainPanel .vtype-label { font-size: 12px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--mt); margin-bottom: 9px; }
+#mainPanel .vtype-label { font-size: 13px; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase; color: var(--f); margin-bottom: 10px; text-shadow: 0 0 12px rgba(245,166,35,.18); }
 #mainPanel .vtypes { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 14px; }
 #mainPanel .vt-btn {
     padding: 11px 9px; background: var(--cd); border: 1px solid var(--bd); border-radius: 8px; color: var(--mt);
@@ -171,13 +171,15 @@
 @media (min-width: 600px) { #mainPanel .vtypes { grid-template-columns: repeat(3,1fr); } }
 
 /* ── Small text inputs (driver name/phone, vip liters) ── */
-#mainPanel .mc-field { margin-bottom: 12px; }
-#mainPanel .mc-field label { display: block; font-size: 10px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--mt); margin-bottom: 5px; }
+#mainPanel .mc-field { margin-bottom: 16px; }
+#mainPanel .mc-field label { display: block; font-size: 13px; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase; color: var(--f); margin-bottom: 7px; text-shadow: 0 0 12px rgba(245,166,35,.18); }
 #mainPanel .mc-field input, #mainPanel .mc-field select {
-    width: 100%; padding: 10px 12px; background: var(--cd); border: 1px solid var(--bd); border-radius: 7px;
-    color: var(--tx); font-family: 'Barlow Condensed', sans-serif; font-size: 14px; outline: none; transition: all .2s;
+    width: 100%; padding: 13px 15px; background: var(--cd); border: 1.5px solid var(--bd); border-radius: 9px;
+    color: var(--tx); font-family: 'Barlow Condensed', sans-serif; font-size: 16px; font-weight: 600; outline: none;
+    transition: border-color .2s, box-shadow .2s; box-shadow: inset 0 1px 3px rgba(0,0,0,.25);
 }
-#mainPanel .mc-field input:focus, #mainPanel .mc-field select:focus { border-color: var(--f); box-shadow: 0 0 0 3px rgba(245,166,35,.1); }
+#mainPanel .mc-field input:focus, #mainPanel .mc-field select:focus { border-color: var(--f); box-shadow: 0 0 0 4px rgba(245,166,35,.16), inset 0 1px 3px rgba(0,0,0,.25); }
+#mainPanel .mc-field input::placeholder { color: var(--mt); opacity: .8; }
 
 /* ── Register button ── */
 #mainPanel .mc-reg-btn {
@@ -407,37 +409,55 @@
 #mainPanel .imp-import-fb.ok  { background: rgba(39,174,96,.12); color: var(--gn); border: 1px solid rgba(39,174,96,.3); }
 #mainPanel .imp-import-fb.err { background: rgba(192,57,43,.12); color: var(--rd); border: 1px solid rgba(192,57,43,.3); }
 
-/* ── Modals (Bulk Import / Serve) restyled ── */
-#mainPanel ~ .modal-overlay { background: rgba(0,0,0,.8); }
+/* ── Modals (Bulk Import / Serve) restyled ───────────────────────────
+   Premium pass: same treatment as the Admin Panel's modals - bigger
+   gradient header, larger labels in --f instead of the low-visibility
+   --mt, taller inputs with a real focus ring. Inputs keep JetBrains
+   Mono (plates/fuel amounts read better in a monospace numeric font)
+   rather than switching to Barlow Condensed like the Admin forms. */
+#mainPanel ~ .modal-overlay { background: rgba(0,0,0,.82); backdrop-filter: blur(2px); }
 #mainPanel ~ .modal .modal-content,
 .modal-content.mc-modal {
-    background: var(--sf); border: 1px solid var(--bd); border-radius: 14px; box-shadow: 0 24px 64px rgba(0,0,0,.8);
-    font-family: 'Barlow Condensed', sans-serif; color: var(--tx);
+    background: var(--sf); border: 1px solid var(--bd); border-radius: 16px; box-shadow: 0 28px 72px rgba(0,0,0,.85);
+    font-family: 'Barlow Condensed', sans-serif; color: var(--tx); max-width: 520px;
 }
-.modal-content.mc-modal .modal-header { border-bottom: 1px solid var(--bd); padding: 16px 22px; }
-.modal-content.mc-modal .modal-header h2 { color: var(--f); font-size: 19px; font-weight: 900; letter-spacing: 1.5px; }
-.modal-content.mc-modal .close-btn { color: var(--mt); }
+.modal-content.mc-modal .modal-header {
+    border-bottom: 1px solid var(--bd); padding: 20px 26px;
+    background: linear-gradient(135deg, rgba(245,166,35,.1), rgba(245,166,35,.02));
+    border-radius: 16px 16px 0 0;
+}
+.modal-content.mc-modal .modal-header h2 { color: var(--f); font-size: 22px; font-weight: 900; letter-spacing: 1.5px; text-shadow: 0 0 20px rgba(245,166,35,.25); }
+.modal-content.mc-modal .close-btn { color: var(--mt); font-size: 20px; padding: 4px; }
 .modal-content.mc-modal .close-btn:hover { color: var(--f); }
-.modal-content.mc-modal form { padding: 22px; }
-.modal-content.mc-modal .form-group label { color: var(--mt); font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; display: block; margin-bottom: 6px; }
-.modal-content.mc-modal .form-group input,
-.modal-content.mc-modal .form-group select,
-.modal-content.mc-modal .form-group textarea {
-    width: 100%; padding: 10px 12px; background: var(--cd); border: 1px solid var(--bd); border-radius: 7px;
-    color: var(--tx); font-family: 'JetBrains Mono', monospace; font-size: 14px; outline: none;
+.modal-content.mc-modal form { padding: 26px; }
+#mainPanel .modal-content.mc-modal .form-group label {
+    color: var(--f); font-size: 13px; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase;
+    display: block; margin-bottom: 7px; text-shadow: 0 0 12px rgba(245,166,35,.18);
 }
-.modal-content.mc-modal .form-group { margin-bottom: 14px; }
-.modal-content.mc-modal .serve-info { background: rgba(245,166,35,.08); border: 1px solid var(--bd); border-radius: 8px; padding: 12px 14px; margin-bottom: 16px; }
-.modal-content.mc-modal .serve-info p { margin: 4px 0; color: var(--tx); }
+#mainPanel .modal-content.mc-modal .form-group input,
+#mainPanel .modal-content.mc-modal .form-group select,
+#mainPanel .modal-content.mc-modal .form-group textarea {
+    width: 100%; padding: 13px 15px; background: var(--cd); border: 1.5px solid var(--bd); border-radius: 9px;
+    color: var(--tx); font-family: 'JetBrains Mono', monospace; font-size: 16px; font-weight: 600; outline: none;
+    transition: border-color .2s, box-shadow .2s; box-shadow: inset 0 1px 3px rgba(0,0,0,.25);
+}
+#mainPanel .modal-content.mc-modal .form-group input:focus,
+#mainPanel .modal-content.mc-modal .form-group select:focus {
+    border-color: var(--f); box-shadow: 0 0 0 4px rgba(245,166,35,.16), inset 0 1px 3px rgba(0,0,0,.25);
+}
+.modal-content.mc-modal .form-group { margin-bottom: 16px; }
+.modal-content.mc-modal .serve-info { background: rgba(245,166,35,.08); border: 1px solid var(--bd); border-radius: 9px; padding: 14px 16px; margin-bottom: 18px; }
+.modal-content.mc-modal .serve-info p { margin: 5px 0; color: var(--tx); font-size: 15px; }
 .modal-content.mc-modal .btn-primary,
 .modal-content.mc-modal .btn-success {
-    background: linear-gradient(135deg, var(--f), #c47f10); color: #000; border: none; border-radius: 8px;
-    padding: 10px 18px; font-weight: 800; letter-spacing: 1px; cursor: pointer; min-height: 40px;
+    background: linear-gradient(135deg, var(--f), #c47f10); color: #000; border: none; border-radius: 9px;
+    padding: 12px 24px; font-size: 15px; font-weight: 800; letter-spacing: 1.2px; cursor: pointer; min-height: 46px;
+    box-shadow: 0 4px 16px rgba(245,166,35,.25);
 }
-.modal-content.mc-modal .btn-success { background: linear-gradient(135deg, var(--gn), #1e8449); color: #fff; }
+.modal-content.mc-modal .btn-success { background: linear-gradient(135deg, var(--gn), #1e8449); color: #fff; box-shadow: 0 4px 16px rgba(39,174,96,.25); }
 .modal-content.mc-modal .btn-secondary {
-    background: rgba(255,255,255,.06); color: var(--tx); border: 1px solid var(--bd); border-radius: 8px;
-    padding: 10px 18px; font-weight: 700; cursor: pointer; min-height: 40px;
+    background: rgba(255,255,255,.06); color: var(--tx); border: 1.5px solid var(--bd); border-radius: 9px;
+    padding: 12px 22px; font-size: 15px; font-weight: 700; cursor: pointer; min-height: 46px;
 }
 .modal-content.mc-modal .btn-primary:disabled,
 .modal-content.mc-modal .btn-success:disabled { opacity: .5; cursor: not-allowed; }
