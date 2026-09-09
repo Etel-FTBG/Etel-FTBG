@@ -243,7 +243,34 @@ function displayControllers(controllers) {
     `).join('');
 }
 
-function showAddController() {
+// Shared by Add/Edit Controller modals - a checkbox per active vehicle
+// type, plus a leading note explaining the empty-selection default.
+function renderVehicleTypeCheckboxes(idPrefix, selectedIds) {
+    if (!vehicleTypesCache.length) {
+        return '<p class="am-note">No vehicle types configured yet - add some under Vehicle Types first.</p>';
+    }
+    const selected = new Set((selectedIds || []).map(Number));
+    return `
+        <p class="am-hint">Leave all unchecked to allow every vehicle type at this station.</p>
+        <div class="am-vtype-checks">
+            ${vehicleTypesCache.map(t => `
+                <label class="am-check-label" for="${idPrefix}Vt${t.id}">
+                    <input type="checkbox" id="${idPrefix}Vt${t.id}" value="${t.id}" class="${idPrefix}-vtype-cb" ${selected.has(Number(t.id)) ? 'checked' : ''}>
+                    ${escHtml(t.icon || '')} ${escHtml(t.name)}
+                </label>
+            `).join('')}
+        </div>
+    `;
+}
+
+function parityOptionsHtml(selected) {
+    const opts = [['all', 'All plates (no restriction)'], ['odd', 'Odd-numbered only'], ['even', 'Even-numbered only']];
+    return opts.map(([value, label]) => `<option value="${value}" ${selected === value ? 'selected' : ''}>${label}</option>`).join('');
+}
+
+async function showAddController() {
+    if (!vehicleTypesCache.length) await loadVehicleTypes();
+
     const modal = `
         <div class="modal" style="display:block">
             <div class="modal-content am-modal">
@@ -272,6 +299,14 @@ function showAddController() {
                         <label for="ctrlStation">Station Name</label>
                         <input type="text" id="ctrlStation" class="form-control" value="Etel Madeya Gas Station">
                     </div>
+                    <div class="form-group">
+                        <label for="ctrlParity">Plate Parity Rule (odd/even day)</label>
+                        <select id="ctrlParity" class="form-control">${parityOptionsHtml('all')}</select>
+                    </div>
+                    <div class="form-group">
+                        <label>Vehicle Types Served at This Station</label>
+                        ${renderVehicleTypeCheckboxes('ctrl', [])}
+                    </div>
                     <div class="modal-actions">
                         <button type="button" onclick="closeModal()" class="btn-secondary">Cancel</button>
                         <button type="submit" class="btn-primary">Add Controller</button>
@@ -297,6 +332,8 @@ async function handleAddController(event) {
     formData.append('full_name', document.getElementById('ctrlFullName').value);
     formData.append('phone', document.getElementById('ctrlPhone').value);
     formData.append('station_name', document.getElementById('ctrlStation').value);
+    formData.append('odd_even_rule', document.getElementById('ctrlParity').value);
+    document.querySelectorAll('.ctrl-vtype-cb:checked').forEach(cb => formData.append('vehicle_type_ids[]', cb.value));
 
     submitBtn.disabled = true;
     submitBtn.textContent = 'Adding…';
@@ -323,9 +360,10 @@ async function handleAddController(event) {
     }
 }
 
-function editController(id) {
+async function editController(id) {
     const c = controllersCache.find(x => x.id == id);
     if (!c) { showNotification(ICONS.error + ' Controller not found - refresh and try again', 'error'); return; }
+    if (!vehicleTypesCache.length) await loadVehicleTypes();
 
     const modal = `
         <div class="modal" style="display:block">
@@ -354,6 +392,14 @@ function editController(id) {
                     <div class="form-group">
                         <label for="editCtrlStation">Station Name</label>
                         <input type="text" id="editCtrlStation" class="form-control" value="${escHtml(c.station_name || '')}">
+                    </div>
+                    <div class="form-group">
+                        <label for="editCtrlParity">Plate Parity Rule (odd/even day)</label>
+                        <select id="editCtrlParity" class="form-control">${parityOptionsHtml(c.odd_even_rule || 'all')}</select>
+                    </div>
+                    <div class="form-group">
+                        <label>Vehicle Types Served at This Station</label>
+                        ${renderVehicleTypeCheckboxes('editCtrl', c.vehicle_type_ids || [])}
                     </div>
                     <div class="form-group">
                         <label class="am-check-label" for="editCtrlActive">
@@ -387,6 +433,8 @@ async function handleEditController(event, id) {
     formData.append('phone', document.getElementById('editCtrlPhone').value);
     formData.append('station_name', document.getElementById('editCtrlStation').value);
     formData.append('is_active', document.getElementById('editCtrlActive').checked ? 1 : 0);
+    formData.append('odd_even_rule', document.getElementById('editCtrlParity').value);
+    document.querySelectorAll('.editCtrl-vtype-cb:checked').forEach(cb => formData.append('vehicle_type_ids[]', cb.value));
 
     submitBtn.disabled = true;
     submitBtn.textContent = 'Saving…';
