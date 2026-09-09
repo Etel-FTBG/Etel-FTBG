@@ -219,8 +219,8 @@ function displayControllers(controllers) {
             <td><span class="status-badge status-${c.is_active ? 'active' : 'inactive'}">${c.is_active ? 'Active' : 'Inactive'}</span></td>
             <td>${c.last_login ? new Date(c.last_login).toLocaleString() : 'Never'}</td>
             <td>
-                <button onclick="editController(${c.id})" class="action-btn action-btn-serve">✏️ Edit</button>
-                <button onclick="deleteController(${c.id}, this)" class="action-btn action-btn-wait">🗑️ Delete</button>
+                <button onclick="editController(${c.id})" class="action-btn action-btn-serve">${ICONS.edit} Edit</button>
+                <button onclick="deleteController(${c.id}, this)" class="action-btn action-btn-wait">${ICONS.delete} Delete</button>
             </td>
         </tr>
     `).join('');
@@ -294,14 +294,14 @@ async function handleAddController(event) {
         const data = await response.json();
 
         if (data.success) {
-            showNotification('✅ Controller added successfully', 'success');
+            showNotification(ICONS.success + ' Controller added successfully', 'success');
             closeModal();
             loadControllers();
         } else {
-            showNotification('❌ ' + (data.message || 'Failed to add controller'), 'error');
+            showNotification(ICONS.error + ' ' + escHtml(data.message || 'Failed to add controller'), 'error');
         }
     } catch (error) {
-        showNotification('❌ Error adding controller', 'error');
+        showNotification(ICONS.error + ' Error adding controller', 'error');
     } finally {
         submitBtn.disabled = false;
         submitBtn.textContent = originalLabel;
@@ -310,7 +310,7 @@ async function handleAddController(event) {
 
 function editController(id) {
     const c = controllersCache.find(x => x.id == id);
-    if (!c) { showNotification('❌ Controller not found - refresh and try again', 'error'); return; }
+    if (!c) { showNotification(ICONS.error + ' Controller not found - refresh and try again', 'error'); return; }
 
     const modal = `
         <div class="modal" style="display:block">
@@ -386,14 +386,14 @@ async function handleEditController(event, id) {
         const data = await response.json();
 
         if (data.success) {
-            showNotification('✅ Controller updated', 'success');
+            showNotification(ICONS.success + ' Controller updated', 'success');
             closeModal();
             loadControllers();
         } else {
-            showNotification('❌ ' + (data.message || 'Failed to update controller'), 'error');
+            showNotification(ICONS.error + ' ' + escHtml(data.message || 'Failed to update controller'), 'error');
         }
     } catch (error) {
-        showNotification('❌ Error updating controller', 'error');
+        showNotification(ICONS.error + ' Error updating controller', 'error');
     } finally {
         submitBtn.disabled = false;
         submitBtn.textContent = originalLabel;
@@ -404,7 +404,7 @@ async function deleteController(id, btn) {
     if (!confirm('Are you sure you want to delete this controller? Their queue will not be reassigned automatically.')) return;
 
     const originalLabel = btn ? btn.textContent : null;
-    if (btn) { btn.disabled = true; btn.textContent = '🗑️ Deleting…'; }
+    if (btn) { btn.disabled = true; btn.textContent = ICONS.delete + ' Deleting…'; }
 
     const formData = new FormData();
     formData.append('action', 'delete_controller');
@@ -418,13 +418,13 @@ async function deleteController(id, btn) {
         const data = await response.json();
 
         if (data.success) {
-            showNotification('✅ Controller deleted', 'success');
+            showNotification(ICONS.success + ' Controller deleted', 'success');
             loadControllers();
         } else {
-            showNotification('❌ ' + (data.message || 'Failed to delete'), 'error');
+            showNotification(ICONS.error + ' ' + escHtml(data.message || 'Failed to delete'), 'error');
         }
     } catch (error) {
-        showNotification('❌ Error deleting controller', 'error');
+        showNotification(ICONS.error + ' Error deleting controller', 'error');
     } finally {
         if (btn) { btn.disabled = false; btn.textContent = originalLabel; }
     }
@@ -462,8 +462,8 @@ function displayVehicleTypes(types) {
             <td>${t.sort_order}</td>
             <td><span class="status-badge status-${t.is_active ? 'active' : 'inactive'}">${t.is_active ? 'Active' : 'Inactive'}</span></td>
             <td>
-                <button onclick="editVehicleType(${t.id})" class="action-btn action-btn-serve">✏️ Edit</button>
-                <button onclick="deleteVehicleType(${t.id}, this)" class="action-btn action-btn-wait">🗑️ Delete</button>
+                <button onclick="editVehicleType(${t.id})" class="action-btn action-btn-serve">${ICONS.edit} Edit</button>
+                <button onclick="deleteVehicleType(${t.id}, this)" class="action-btn action-btn-wait">${ICONS.delete} Delete</button>
             </td>
         </tr>
     `).join('');
@@ -471,7 +471,7 @@ function displayVehicleTypes(types) {
 
 function editVehicleType(id) {
     const t = vehicleTypesCache.find(x => x.id == id);
-    if (!t) { showNotification('❌ Vehicle type not found - refresh and try again', 'error'); return; }
+    if (!t) { showNotification(ICONS.error + ' Vehicle type not found - refresh and try again', 'error'); return; }
 
     const modal = `
         <div class="modal" style="display:block">
@@ -544,14 +544,14 @@ async function handleEditVehicleType(event, id) {
         const data = await response.json();
 
         if (data.success) {
-            showNotification('✅ Vehicle type updated', 'success');
+            showNotification(ICONS.success + ' Vehicle type updated', 'success');
             closeModal();
             loadVehicleTypes();
         } else {
-            showNotification('❌ ' + (data.message || 'Failed to update vehicle type'), 'error');
+            showNotification(ICONS.error + ' ' + escHtml(data.message || 'Failed to update vehicle type'), 'error');
         }
     } catch (error) {
-        showNotification('❌ Error updating vehicle type', 'error');
+        showNotification(ICONS.error + ' Error updating vehicle type', 'error');
     } finally {
         submitBtn.disabled = false;
         submitBtn.textContent = originalLabel;
@@ -562,7 +562,7 @@ async function deleteVehicleType(id, btn) {
     if (!confirm('Are you sure you want to delete this vehicle type? Vehicles already queued under it are not affected.')) return;
 
     const originalLabel = btn ? btn.textContent : null;
-    if (btn) { btn.disabled = true; btn.textContent = '🗑️ Deleting…'; }
+    if (btn) { btn.disabled = true; btn.textContent = ICONS.delete + ' Deleting…'; }
 
     const formData = new FormData();
     formData.append('action', 'delete_vehicle_type');
@@ -576,13 +576,13 @@ async function deleteVehicleType(id, btn) {
         const data = await response.json();
 
         if (data.success) {
-            showNotification('✅ Vehicle type deleted', 'success');
+            showNotification(ICONS.success + ' Vehicle type deleted', 'success');
             loadVehicleTypes();
         } else {
-            showNotification('❌ ' + (data.message || 'Failed to delete vehicle type'), 'error');
+            showNotification(ICONS.error + ' ' + escHtml(data.message || 'Failed to delete vehicle type'), 'error');
         }
     } catch (error) {
-        showNotification('❌ Error deleting vehicle type', 'error');
+        showNotification(ICONS.error + ' Error deleting vehicle type', 'error');
     } finally {
         if (btn) { btn.disabled = false; btn.textContent = originalLabel; }
     }
@@ -757,12 +757,12 @@ async function saveSettings(event, type) {
         const data = await response.json();
 
         if (data.success) {
-            showNotification('✅ Settings saved successfully', 'success');
+            showNotification(ICONS.success + ' Settings saved successfully', 'success');
         } else {
-            showNotification('❌ ' + (data.message || 'Failed to save settings'), 'error');
+            showNotification(ICONS.error + ' ' + escHtml(data.message || 'Failed to save settings'), 'error');
         }
     } catch (error) {
-        showNotification('❌ Error saving settings', 'error');
+        showNotification(ICONS.error + ' Error saving settings', 'error');
     } finally {
         submitBtn.disabled = false;
         submitBtn.textContent = originalLabel;
@@ -775,9 +775,13 @@ function closeModal() {
     document.getElementById('modalContainer').innerHTML = '';
 }
 
+function escHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
 function showNotification(message, type = 'success') {
     const notification = document.getElementById('notification');
-    notification.textContent = message;
+    notification.innerHTML = message;
     notification.className = `notification ${type}`;
     notification.style.display = 'block';
     
