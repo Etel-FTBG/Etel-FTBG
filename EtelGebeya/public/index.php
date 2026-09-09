@@ -101,10 +101,15 @@ $router->post('/vendor-panel/products/save',           [\App\Controllers\VendorC
 $router->post('/vendor-panel/products/{id}/delete',    [\App\Controllers\VendorController::class, 'productDelete']);
 $router->get('/vendor-panel/orders',                   [\App\Controllers\VendorController::class, 'orders']);
 $router->post('/vendor-panel/orders/item-status',      [\App\Controllers\VendorController::class, 'updateOrderItemStatus']);
+$router->post('/vendor-panel/orders/mark-forwarded',   [\App\Controllers\VendorController::class, 'markOrderItemForwarded']);
+$router->post('/vendor-panel/orders/email-supplier',   [\App\Controllers\VendorController::class, 'emailSupplier']);
 $router->get('/vendor-panel/payouts',                  [\App\Controllers\VendorController::class, 'payouts']);
 $router->post('/vendor-panel/payouts/request',         [\App\Controllers\VendorController::class, 'requestPayout']);
 $router->get('/vendor-panel/settings',                 [\App\Controllers\VendorController::class, 'settings']);
 $router->post('/vendor-panel/settings',                [\App\Controllers\VendorController::class, 'saveSettings']);
+$router->get('/vendor-panel/suppliers',                [\App\Controllers\VendorController::class, 'suppliers']);
+$router->post('/vendor-panel/suppliers/save',           [\App\Controllers\VendorController::class, 'supplierSave']);
+$router->post('/vendor-panel/suppliers/{id}/delete',    [\App\Controllers\VendorController::class, 'supplierDelete']);
 $router->get('/sell',                                  [\App\Controllers\VendorController::class, 'signup']);  // public vendor signup
 $router->post('/sell',                                 [\App\Controllers\VendorController::class, 'signup']);
 

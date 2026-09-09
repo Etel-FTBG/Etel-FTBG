@@ -163,8 +163,8 @@ textarea.form-input { min-height: 80px; resize: vertical; padding-top: .65rem; }
 .ap-hint { font-size: .72rem; color: #7A6840; margin-top: .4rem; }
 </style>
 
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<link rel="stylesheet" href="<?= View::asset('vendor/leaflet/leaflet.css') ?>">
+<script src="<?= View::asset('vendor/leaflet/leaflet.js') ?>"></script>
 <script>const EG_BASE_URL = <?= json_encode(rtrim($GLOBALS['__config']['app']['url'] ?? '', '/')) ?>;</script>
 <script src="<?= View::asset('js/address-picker.js') ?>"></script>
 
