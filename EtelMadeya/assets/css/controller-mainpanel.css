@@ -167,6 +167,7 @@
 #mainPanel .vt-btn:hover { border-color: var(--f); color: var(--f); }
 #mainPanel .vt-btn.sel { background: rgba(245,166,35,.1); border-color: var(--f); color: var(--f2); }
 #mainPanel .vt-btn .vt-ic { display: block; font-size: 19px; margin-bottom: 3px; }
+#mainPanel .vt-btn.disabled-type { opacity: .35; cursor: not-allowed; pointer-events: none; }
 @media (min-width: 600px) { #mainPanel .vtypes { grid-template-columns: repeat(3,1fr); } }
 
 /* ── Small text inputs (driver name/phone, vip liters) ── */
