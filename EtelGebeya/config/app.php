@@ -127,9 +127,12 @@ return [
         'fee_flat_etb'   => 30,            // base fee
     ],
 
+    // .env actually sets ETELID_SERVICE_URL / ETELID_SERVICE_KEY (matching
+    // api/etelid_service_bridge.php's own names) -- ETELID_URL / ETELID_KEY
+    // are kept as an override for anyone who set those instead.
     'etelid' => [
-        'url' => getenv('ETELID_URL') ?: 'https://ethelmarket.com/EtelId/wp-json/etelid/v1',
-        'key' => getenv('ETELID_KEY') ?: 'CHANGE_ME',
+        'url' => getenv('ETELID_URL') ?: (getenv('ETELID_SERVICE_URL') ?: 'https://ethelmarket.com/EtelId/wp-json/etelid/v1'),
+        'key' => getenv('ETELID_KEY') ?: (getenv('ETELID_SERVICE_KEY') ?: 'CHANGE_ME'),
     ],
 
     // ኢE Pay wallet checkout -- server-to-server verification only, the
