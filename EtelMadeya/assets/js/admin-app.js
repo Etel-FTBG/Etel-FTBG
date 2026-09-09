@@ -201,6 +201,70 @@ async function loadDashboard() {
     } catch (error) {
         console.error('Error loading dashboard:', error);
     }
+
+    loadServedTrend();
+    loadFuelSnapshot();
+}
+
+let servedTrendChart = null;
+async function loadServedTrend() {
+    try {
+        const response = await fetch(`${API}?action=get_served_trend`);
+        const data = await response.json();
+        if (!data.success) return;
+
+        const labels = data.trend.map(r => new Date(r.report_date).toLocaleDateString('en-US', {month:'short', day:'numeric'}));
+        const served = data.trend.map(r => Number(r.served));
+
+        const ctx = document.getElementById('chartServedTrend').getContext('2d');
+        if (servedTrendChart) servedTrendChart.destroy();
+        servedTrendChart = new Chart(ctx, {
+            type: 'line',
+            data: { labels, datasets: [{
+                label: 'Vehicles Served', data: served, fill: true,
+                borderColor: '#F5A623', backgroundColor: 'rgba(245,166,35,.12)',
+                tension: .4, pointRadius: 3, pointBackgroundColor: '#F5A623'
+            }]},
+            options: { responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { labels: { color: '#f5e6c0' } } },
+                scales: {
+                    x: { ticks: { color: '#c9a96e', maxTicksLimit: 8 }, grid: { color: 'rgba(180,130,30,.15)' } },
+                    y: { ticks: { color: '#c9a96e', precision: 0 }, grid: { color: 'rgba(180,130,30,.15)' } }
+                }
+            }
+        });
+    } catch (error) {
+        console.error('Error loading served trend:', error);
+    }
+}
+
+async function loadFuelSnapshot() {
+    try {
+        const response = await fetch(`${API}?action=get_fuel_snapshot`);
+        const data = await response.json();
+        const wrap = document.getElementById('fuelSnapshot');
+        if (!data.success) return;
+
+        if (data.fuel.length === 0) {
+            wrap.innerHTML = '<p class="empty-state">No fuel stock recorded</p>';
+            return;
+        }
+        wrap.innerHTML = data.fuel.map(f => {
+            const stock = Number(f.stock_liters), quota = Number(f.quota_liters);
+            const pct = quota > 0 ? Math.min(100, Math.round((stock / quota) * 100)) : 0;
+            const low = pct < 20;
+            return `
+                <div class="fuel-card">
+                    <div class="fuel-card-hdr">
+                        <b>${escHtml(f.fuel_type)}</b>
+                        <span>${stock.toLocaleString()} / ${quota.toLocaleString()} L</span>
+                    </div>
+                    <div class="fuel-bar"><div class="fuel-bar-fill${low ? ' low' : ''}" style="width:${pct}%"></div></div>
+                </div>`;
+        }).join('');
+    } catch (error) {
+        console.error('Error loading fuel snapshot:', error);
+    }
 }
 
 // ─── CONTROLLERS ────────────────────────────────────────────────────
