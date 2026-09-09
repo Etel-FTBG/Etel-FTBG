@@ -25,6 +25,17 @@ $cartCount = (int)($_SESSION['cart_count'] ?? array_sum(array_column($_SESSION['
   <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800;900&family=Noto+Sans+Ethiopic:wght@400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
   <link rel="stylesheet" href="<?= View::asset('css/etel-v2.css') ?>">
+  <script>
+  // Defined in <head> (not the footer) so it exists before any product image's
+  // onerror can fire during initial parsing -- broken photo -> neutral placeholder.
+  function egImgFallback(img) {
+    img.onerror = null;
+    var ph = document.createElement('div');
+    ph.className = 'eg-card-img-placeholder';
+    ph.innerHTML = '<i class="bi bi-image"></i>';
+    img.replaceWith(ph);
+  }
+  </script>
 </head>
 <body>
 
@@ -210,16 +221,6 @@ $cartCount = (int)($_SESSION['cart_count'] ?? array_sum(array_column($_SESSION['
 </footer>
 
 <script>
-// Broken product photo -> neutral placeholder (several products still
-// reference images from a since-removed host and 404)
-function egImgFallback(img) {
-  img.onerror = null;
-  var ph = document.createElement('div');
-  ph.className = 'eg-card-img-placeholder';
-  ph.innerHTML = '<i class="bi bi-image"></i>';
-  img.replaceWith(ph);
-}
-
 // Cart AJAX
 function egAddToCart(id, qty, btn) {
   var orig = btn.innerHTML;
