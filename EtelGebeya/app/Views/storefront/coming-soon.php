@@ -58,7 +58,7 @@
       <li>Create your admin account</li>
     </div>
 
-    <a href="/install" class="btn">
+    <a href="<?= e(url('/install')) ?>" class="btn">
       <span>&#128640;</span> Run Setup Wizard
     </a>
 
