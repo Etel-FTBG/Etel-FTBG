@@ -20,7 +20,7 @@ ob_start();
 
   <?php if (empty($items)): ?>
     <div style="text-align:center;padding:4rem 2rem;color:var(--eg-text-dim)">
-      <div style="font-size:3rem;margin-bottom:1rem">🛒</div>
+      <div style="font-size:3rem;margin-bottom:1rem;color:var(--gold,#D4AF37)"><i class="bi bi-cart-x"></i></div>
       <h3>No orders yet</h3>
       <p>Orders will appear here when customers buy your products.</p>
     </div>
@@ -42,7 +42,7 @@ ob_start();
       <tbody>
       <?php
         $nextStatus = ['pending' => 'confirmed', 'confirmed' => 'shipped', 'shipped' => 'delivered'];
-        $nextLabel  = ['confirmed' => '✅ Confirm', 'shipped' => '📦 Mark Shipped', 'delivered' => '🏠 Mark Delivered'];
+        $nextLabel  = ['confirmed' => '<i class="bi bi-check-circle"></i> Confirm', 'shipped' => '<i class="bi bi-box-seam"></i> Mark Shipped', 'delivered' => '<i class="bi bi-house-check"></i> Mark Delivered'];
       ?>
       <?php foreach ($items as $it): ?>
         <tr>
@@ -58,7 +58,7 @@ ob_start();
               <form method="POST" action="<?= View::url('/vendor-panel/orders/item-status') ?>" style="display:inline">
                 <input type="hidden" name="item_id" value="<?= (int)$it['item_id'] ?>">
                 <input type="hidden" name="status" value="<?= e($ns) ?>">
-                <button type="submit" class="dash-btn-sm"><?= e($nextLabel[$ns]) ?></button>
+                <button type="submit" class="dash-btn-sm"><?= $nextLabel[$ns] ?></button>
               </form>
             <?php elseif (!in_array($it['item_status'], ['delivered','cancelled'], true)): ?>
               <span style="color:var(--eg-text-dim);font-size:.78rem">—</span>
