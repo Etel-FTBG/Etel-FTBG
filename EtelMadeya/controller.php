@@ -394,6 +394,7 @@
     let currentController = null;
     let vehicleTypes = [];
     </script>
+    <script src="assets/js/icons.js"></script>
     <script src="assets/js/controller-app.js"></script>
 </body>
 </html>
