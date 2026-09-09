@@ -282,6 +282,8 @@ body {
   padding:1.1rem 1.2rem;transition:transform .3s var(--ease);
 }
 .stat-card:hover{transform:translateY(-4px);}
+.stat-card-mini{padding:.85rem 1rem;}
+.stat-card-mini:hover{transform:none;}
 .stat-card::before{
   content:'';position:absolute;top:0;left:0;right:0;height:2px;
   background:linear-gradient(90deg,transparent,var(--g4),transparent);
@@ -603,7 +605,7 @@ tbody tr:last-child td{border-bottom:none;}
               </div>
             </div>
             <div class="data-section" style="margin-bottom:0;">
-              <div class="section-title">📦 Inventory Snapshot</div>
+              <div class="section-title">📊 Inventory Snapshot</div>
               <div class="stats-grid" id="dash-inventory-stats" style="grid-template-columns:repeat(2,1fr);margin-bottom:0;">
                 <!-- filled by JS -->
               </div>
@@ -1333,7 +1335,7 @@ async function loadTopProducts() {
       <td style="font-weight:700;color:var(--g3)">${i+1}</td>
       <td>
         <div style="display:flex;align-items:center;gap:10px;">
-          <img src="${e(p.thumb||'')}" onerror="this.style.display='none'" style="width:34px;height:34px;border-radius:8px;object-fit:cover;background:rgba(212,175,55,.08);flex-shrink:0;">
+          ${p.thumb ? `<img src="${e(p.thumb)}" onerror="this.style.display='none'" style="width:34px;height:34px;border-radius:8px;object-fit:cover;background:rgba(212,175,55,.08);flex-shrink:0;">` : `<div style="width:34px;height:34px;border-radius:8px;background:rgba(212,175,55,.08);flex-shrink:0;"></div>`}
           <span>${e(p.name||'—')}</span>
         </div>
       </td>
@@ -1349,16 +1351,16 @@ async function loadInventorySnapshot() {
   if (!r.ok) return;
   const d = r.data || {};
   wrap.innerHTML = `
-    ${sc('🚫','Out of Stock', fmt(d.out_of_stock), '', 'warn')}
-    ${sc('⚠️','Low Stock',    fmt(d.low_stock),    '', 'warn')}
-    ${sc('✅','In Stock',     fmt(d.in_stock),     '', 'ok')}
-    ${sc('🗂️','Total Products',fmt(d.total),       '')}
+    ${sc('🚫','Out of Stock', fmt(d.out_of_stock), 'Needs restock', 'warn', true)}
+    ${sc('⚠️','Low Stock',    fmt(d.low_stock),    'Below threshold', 'warn', true)}
+    ${sc('✅','In Stock',     fmt(d.in_stock),     'Available', 'ok', true)}
+    ${sc('📋','Total Products',fmt(d.total),       'In catalog', '', true)}
   `;
 }
 
-function sc(icon, label, value, sub='', type='') {
+function sc(icon, label, value, sub='', type='', mini=false) {
   const subCol = type==='ok'?'var(--ok)':type==='warn'?'var(--warn)':'var(--text-muted)';
-  return `<div class="stat-card">
+  return `<div class="stat-card${mini ? ' stat-card-mini' : ''}">
     <div class="sc-icon">${icon}</div>
     <div class="sc-label">${label}</div>
     <div class="sc-value">${value}</div>
