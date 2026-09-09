@@ -25,8 +25,8 @@ ob_start();
 
 /* Quick actions */
 .qa-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:.75rem;margin-bottom:1.5rem}
-.qa-btn{display:flex;flex-direction:column;align-items:center;gap:.5rem;padding:1rem .75rem;border-radius:16px;border:1.5px solid rgba(255,255,255,.07);background:rgba(255,255,255,.03);text-decoration:none;transition:all .2s;cursor:pointer}
-.qa-btn:hover{background:rgba(255,255,255,.07);transform:translateY(-2px)}
+.qa-btn{display:flex;flex-direction:column;align-items:center;gap:.5rem;padding:1rem .75rem;border-radius:16px;border:1.5px solid var(--dark-border);background:var(--dark-card);text-decoration:none;transition:all .2s;cursor:pointer}
+.qa-btn:hover{background:rgba(212,175,55,.1);transform:translateY(-2px)}
 .qa-btn i{font-size:1.4rem}
 .qa-btn span{font-size:.75rem;font-weight:700;color:var(--dark-muted);text-align:center}
 
@@ -59,8 +59,8 @@ ob_start();
 
 /* Onboarding checklist */
 .checklist{display:flex;flex-direction:column;gap:.5rem}
-.check-item{display:flex;align-items:center;gap:.75rem;padding:.7rem 1rem;border-radius:12px;border:1.5px solid rgba(255,255,255,.06);text-decoration:none;transition:background .2s}
-.check-item:hover{background:rgba(255,255,255,.04)}
+.check-item{display:flex;align-items:center;gap:.75rem;padding:.7rem 1rem;border-radius:12px;border:1.5px solid var(--dark-border);background:var(--dark-card);text-decoration:none;transition:background .2s}
+.check-item:hover{background:rgba(212,175,55,.1)}
 .check-item.done{opacity:.55}
 .check-icon{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.85rem;flex-shrink:0}
 .check-icon.done{background:rgba(46,204,113,.15);color:#2ecc71}
