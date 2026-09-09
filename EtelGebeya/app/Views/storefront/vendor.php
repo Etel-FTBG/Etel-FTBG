@@ -37,58 +37,60 @@ if ($db && $db->isConnected()) {
 ob_start();
 ?>
 <style>
-.vendor-page { padding: 0 0 3rem; }
+.vendor-page { padding: 0 0 48px; }
 .vendor-banner {
-  height: 200px; background: linear-gradient(135deg, var(--eg-blue-deep) 0%, var(--eg-blue) 50%, #0ea5e9 100%);
-  border-radius: 0 0 var(--eg-radius) var(--eg-radius); position: relative; overflow: hidden;
+  height: 200px; background: linear-gradient(135deg,#0d0900 0%,#1c1208 40%,#2a1c0a 70%,#100c06 100%);
+  border-radius: 0 0 var(--r2) var(--r2); position: relative; overflow: hidden;
+  border-bottom: 1px solid var(--border);
 }
 .vendor-banner::before {
   content:''; position: absolute; inset: 0;
-  background: radial-gradient(circle at 30% 20%, rgba(255,255,255,.18), transparent 60%);
+  background: radial-gradient(ellipse 60% 80% at 80% 20%, rgba(212,175,55,.12), transparent 70%);
 }
 .vendor-profile-row {
-  display: flex; align-items: flex-end; gap: 1.5rem;
-  padding: 0 2rem; transform: translateY(-40px); margin-bottom: -20px;
+  display: flex; align-items: flex-end; gap: 24px;
+  padding: 0 24px; transform: translateY(-40px); margin-bottom: -20px;
 }
 .vendor-avatar {
-  width: 90px; height: 90px; border-radius: 20px;
-  border: 3px solid var(--eg-surface); box-shadow: var(--eg-shadow);
-  background: linear-gradient(135deg, var(--eg-gold-dim), var(--eg-gold-glow));
+  width: 90px; height: 90px; border-radius: var(--r2);
+  border: 3px solid var(--bg); box-shadow: var(--shadow);
+  background: linear-gradient(135deg, rgba(212,175,55,.2), rgba(212,175,55,.08));
+  color: var(--g2);
   display: flex; align-items: center; justify-content: center;
-  font-size: 2.5rem; flex-shrink: 0;
+  font-size: 40px; flex-shrink: 0;
 }
-.vendor-head { flex: 1; padding-bottom: .5rem; }
-.vendor-head h1 { font-size: 1.6rem; font-weight: 900; line-height: 1.2; }
-.vendor-head p { font-size: .85rem; color: var(--eg-text-dim); margin-top: .3rem; }
-.vendor-badges { display: flex; gap: .5rem; flex-wrap: wrap; margin-top: .5rem; }
+.vendor-head { flex: 1; padding-bottom: 8px; }
+.vendor-head h1 { font-size: 26px; font-weight: 900; line-height: 1.2; color: var(--text); }
+.vendor-head p { font-size: 13.5px; color: var(--text2); margin-top: 5px; }
+.vendor-badges { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
 .vendor-badge {
-  display: inline-flex; align-items: center; gap: .3rem;
-  padding: .25rem .7rem; border-radius: 20px; font-size: .72rem; font-weight: 700;
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 4px 11px; border-radius: 20px; font-size: 11.5px; font-weight: 700;
 }
-.badge-verified { background: rgba(5,150,105,.12); color: #059669; border: 1px solid rgba(5,150,105,.3); }
-.badge-rating   { background: var(--eg-gold-dim); color: var(--eg-gold-deep); border: 1px solid var(--eg-gold-glow); }
-.vendor-stats-row { display: grid; grid-template-columns: repeat(4,1fr); gap: 1rem; margin: 1.25rem 0; }
-@media(max-width:640px){ .vendor-stats-row { grid-template-columns: repeat(2,1fr); } }
-.vendor-stat { background: var(--eg-glass); border: 1.5px solid var(--eg-border); border-radius: 14px; padding: 1rem; text-align: center; }
-.vendor-stat-num { font-size: 1.6rem; font-weight: 900; color: var(--eg-blue-deep); }
-.vendor-stat-lbl { font-size: .75rem; color: var(--eg-text-muted); margin-top: .2rem; }
-.vendor-layout { display: grid; grid-template-columns: 1fr 280px; gap: 2rem; }
-@media(max-width:900px){ .vendor-layout { grid-template-columns: 1fr; } }
-.vendor-sidebar-card { background: var(--eg-glass); border: 1.5px solid var(--eg-border); border-radius: var(--eg-radius); padding: 1.3rem; margin-bottom: 1rem; }
-.vendor-sidebar-card h4 { font-size: .9rem; font-weight: 800; color: var(--eg-blue-deep); margin-bottom: .75rem; }
-.vendor-info-row { display: flex; align-items: center; gap: .5rem; font-size: .83rem; color: var(--eg-text-dim); padding: .3rem 0; }
-.vendor-info-row i { color: var(--eg-gold-deep); font-size: 1rem; }
-.mini-review { padding: .75rem 0; border-bottom: 1px solid var(--eg-border); }
+.badge-verified { background: rgba(46,204,113,.12); color: var(--green); border: 1px solid rgba(46,204,113,.3); }
+.badge-rating   { background: rgba(212,175,55,.1); color: var(--g1); border: 1px solid var(--border); }
+.vendor-stats-row { display: grid; grid-template-columns: repeat(4,1fr); gap: 16px; margin: 20px 24px; }
+@media(max-width:640px){ .vendor-stats-row { grid-template-columns: repeat(2,1fr); margin: 20px 16px; } }
+.vendor-stat { background: var(--card); border: 1px solid var(--border); border-radius: var(--r2); padding: 16px; text-align: center; }
+.vendor-stat-num { font-size: 26px; font-weight: 900; color: var(--g1); }
+.vendor-stat-lbl { font-size: 12px; color: var(--text3); margin-top: 3px; }
+.vendor-layout { display: grid; grid-template-columns: 1fr 280px; gap: 20px; padding: 0 24px; }
+@media(max-width:900px){ .vendor-layout { grid-template-columns: 1fr; padding: 0 16px; } }
+.vendor-sidebar-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--r2); padding: 20px; margin-bottom: 16px; }
+.vendor-sidebar-card h4 { font-size: 14px; font-weight: 800; color: var(--text); margin-bottom: 12px; }
+.vendor-info-row { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text2); padding: 5px 0; }
+.vendor-info-row i { color: var(--g2); font-size: 15px; }
+.mini-review { padding: 12px 0; border-bottom: 1px solid var(--border2); }
 .mini-review:last-child { border-bottom: none; }
-.mini-reviewer { font-size: .8rem; font-weight: 700; }
-.mini-review-body { font-size: .78rem; color: var(--eg-text-dim); margin-top: .3rem; line-height: 1.5; }
+.mini-reviewer { font-size: 12.5px; font-weight: 700; color: var(--text); }
+.mini-review-body { font-size: 12px; color: var(--text2); margin-top: 5px; line-height: 1.5; }
 </style>
 
 <div class="vendor-page">
   <!-- Banner -->
   <div class="vendor-banner"></div>
 
-  <div class="container">
+  <div>
     <!-- Profile row -->
     <div class="vendor-profile-row">
       <div class="vendor-avatar"><i class="bi bi-shop"></i></div>
@@ -99,7 +101,7 @@ ob_start();
           <span class="vendor-badge badge-verified"><i class="bi bi-patch-check-fill"></i> Verified Seller</span>
           <span class="vendor-badge badge-rating"><i class="bi bi-star-fill"></i> <?= $stats['rating'] ?> / 5.0</span>
           <?php if (!empty($vendor['business_type'])): ?>
-            <span class="vendor-badge" style="background:var(--eg-blue-dim);color:var(--eg-blue);border:1px solid var(--eg-blue-light)">
+            <span class="vendor-badge" style="background:rgba(212,175,55,.1);color:var(--g1);border:1px solid var(--border)">
               <i class="bi bi-building"></i> <?= htmlspecialchars(ucfirst($vendor['business_type']), ENT_QUOTES) ?>
             </span>
           <?php endif; ?>
@@ -119,16 +121,19 @@ ob_start();
     <div class="vendor-layout">
       <!-- Products -->
       <div>
-        <div class="section-header" style="margin-bottom:1.25rem;">
-          <div><h2 class="section-title">Products by <?= $shopName ?></h2><p class="section-sub"><?= number_format($stats['products']) ?> items available</p></div>
+        <div class="eg-sec-head" style="margin-bottom:20px;">
+          <div>
+            <div class="eg-sec-title">Products by <?= $shopName ?></div>
+            <div class="eg-sec-sub"><?= number_format($stats['products']) ?> items available</div>
+          </div>
         </div>
         <?php if (empty($products)): ?>
-          <div style="text-align:center;padding:3rem;color:var(--eg-text-muted)">
-            <div style="font-size:3rem;margin-bottom:.75rem"><i class="bi bi-box-seam"></i></div>
+          <div style="text-align:center;padding:48px 20px;color:var(--text3)">
+            <div style="font-size:48px;margin-bottom:12px;color:var(--g2);opacity:.5"><i class="bi bi-box-seam"></i></div>
             <p>This vendor has no published products yet.</p>
           </div>
         <?php else: ?>
-          <div class="product-grid">
+          <div class="eg-product-grid">
             <?php foreach ($products as $p): ?>
               <?= product_card($p, $locale) ?>
             <?php endforeach; ?>
@@ -146,9 +151,9 @@ ob_start();
             $about = strip_tags($about ?? '');
           ?>
           <?php if ($about): ?>
-            <p style="font-size:.83rem;color:var(--eg-text-dim);line-height:1.7"><?= htmlspecialchars(mb_substr($about,0,200,'UTF-8'),ENT_QUOTES) ?><?= mb_strlen($about,'UTF-8')>200?'...':'' ?></p>
+            <p style="font-size:.83rem;color:var(--text2);line-height:1.7"><?= htmlspecialchars(mb_substr($about,0,200,'UTF-8'),ENT_QUOTES) ?><?= mb_strlen($about,'UTF-8')>200?'...':'' ?></p>
           <?php else: ?>
-            <p style="font-size:.82rem;color:var(--eg-text-muted)">No description provided.</p>
+            <p style="font-size:.82rem;color:var(--text3)">No description provided.</p>
           <?php endif; ?>
         </div>
 
@@ -180,7 +185,7 @@ ob_start();
                 <span style="color:#D4AF37;font-size:.8rem"><?= str_repeat('&#9733;',(int)($rv['rating']??0)) ?></span>
               </div>
               <div class="mini-review-body"><?= htmlspecialchars(mb_substr($rv['body']??'',0,80,'UTF-8'),ENT_QUOTES) ?><?= mb_strlen($rv['body']??'','UTF-8')>80?'...':'' ?></div>
-              <div style="font-size:.7rem;color:var(--eg-text-muted);margin-top:.2rem">on <?= htmlspecialchars($rv['product_name']??'',ENT_QUOTES) ?></div>
+              <div style="font-size:.7rem;color:var(--text3);margin-top:.2rem">on <?= htmlspecialchars($rv['product_name']??'',ENT_QUOTES) ?></div>
             </div>
           <?php endforeach; ?>
         </div>
