@@ -72,7 +72,7 @@ ob_start();
 <!-- Hero -->
 <div class="vd-hero">
   <div class="vd-hero-left">
-    <h1>Welcome back, <?= e(explode(' ', $seller['store_name'] ?? 'Vendor')[0]) ?> /* U+1F44B */</h1>
+    <h1>Welcome back, <?= e(explode(' ', $seller['store_name'] ?? 'Vendor')[0]) ?> &#128075;</h1>
     <p>Here's what's happening with your store today</p>
     <div class="vd-hero-store">
       <i class="bi bi-shop"></i> <?= e($seller['store_name'] ?? '') ?>
