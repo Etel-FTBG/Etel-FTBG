@@ -15,8 +15,14 @@ View::render('_layouts/public', [
     $recent     = $recent     ?? [];
     $categories = $categories ?? [];
 
-    // Hot Deals -- steepest discounts first, pulled from what's already loaded
-    $deals = array_filter(array_merge($featured, $recent), fn($p) => $p->hasDiscount());
+    // Hot Deals -- steepest discounts first, pulled from what's already loaded.
+    // A product can appear in both $featured and $recent (e.g. a small
+    // catalog where everything is "recent"); dedupe by id or it shows twice.
+    $dealsById = [];
+    foreach (array_merge($featured, $recent) as $p) {
+        if ($p->hasDiscount()) $dealsById[$p->id] = $p;
+    }
+    $deals = array_values($dealsById);
     usort($deals, fn($a, $b) => $b->discountPct() <=> $a->discountPct());
     $deals = array_slice($deals, 0, 6);
 
