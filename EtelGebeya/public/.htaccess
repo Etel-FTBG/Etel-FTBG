@@ -7,6 +7,19 @@
 </IfModule>
 # ---- End EtelGebeya Security ----
 
+# ---- Force correct MIME types for self-hosted fonts/assets ----
+# X-Content-Type-Options: nosniff above makes browsers refuse to use a font
+# whose Content-Type isn't a real font MIME type. Some shared-hosting Apache
+# configs lack these by default, silently serving .woff2/.woff as
+# application/octet-stream -- which nosniff then blocks outright, so the
+# icon font never loads even though the file itself is present and reachable.
+<IfModule mod_mime.c>
+  AddType font/woff2 .woff2
+  AddType font/woff .woff
+  AddType font/ttf .ttf
+  AddType image/svg+xml .svg
+</IfModule>
+
 <IfModule mod_rewrite.c>
   RewriteEngine On
   RewriteCond %{REQUEST_FILENAME} !-f
