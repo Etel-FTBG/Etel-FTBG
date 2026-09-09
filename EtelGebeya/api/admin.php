@@ -33,6 +33,7 @@ case 'login':
         $pass  = (string)$_POST['password'];
         $pdo = db();
         if (!$pdo) err('Database unavailable', 500);
+        eg_ensure_admin_schema($pdo);
         $s = $pdo->prepare('SELECT * FROM gebeya_admins WHERE phone = ? LIMIT 1');
         $s->execute(array($phone));
         $admin = $s->fetch();
@@ -67,6 +68,7 @@ case 'admin_etelid_login': {
 
     $pdo = db();
     if (!$pdo) err('Database unavailable', 500);
+    eg_ensure_admin_schema($pdo);
     $s = $pdo->prepare('SELECT * FROM gebeya_admins WHERE etel_id = ? OR phone = ? LIMIT 1');
     $s->execute(array($member['etel_id'], $member['phone']));
     $admin = $s->fetch();
