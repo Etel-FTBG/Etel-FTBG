@@ -58,6 +58,7 @@ ob_start();
 <div id="supplier-panel" class="form-panel">
   <h3>New Platform Supplier</h3>
   <form method="POST" action="<?= View::url('/admin/catalog/supplier') ?>">
+    <?= csrf() ?>
     <div class="fg-row">
       <div class="fg"><label>Name *</label><input class="ag-inp" type="text" name="name" required placeholder="e.g. Addis Import Co."></div>
       <div class="fg"><label>Contact Email</label><input class="ag-inp" type="email" name="contact_email"></div>
@@ -78,6 +79,7 @@ ob_start();
     Header row required. Columns: <code>name_en,sku,cost_price,suggested_markup_pct,category_id,image_url,gallery_urls,description_en,lead_days_min,lead_days_max</code> -- any subset works.
   </p>
   <form method="POST" action="<?= View::url('/admin/catalog/import-csv') ?>" enctype="multipart/form-data">
+    <?= csrf() ?>
     <div class="fg-row col2">
       <div class="fg">
         <label>Supplier *</label>
@@ -98,6 +100,7 @@ ob_start();
 <div id="item-panel" class="form-panel">
   <h3 id="item-panel-title">New Catalog Item</h3>
   <form method="POST" action="<?= View::url('/admin/catalog/save') ?>" id="item-form">
+    <?= csrf() ?>
     <input type="hidden" name="id" id="ci-id" value="0">
     <div class="fg-row">
       <div class="fg"><label>Name (EN) *</label><input class="ag-inp" type="text" name="name_en" id="ci-name_en" required></div>
@@ -193,6 +196,7 @@ ob_start();
           <td style="white-space:nowrap">
             <button type="button" class="btn-xs btn-ghost-xs" onclick='editItem(<?= json_encode($it, JSON_HEX_TAG|JSON_HEX_APOS|JSON_HEX_QUOT|JSON_HEX_AMP) ?>)'>Edit</button>
             <form method="POST" action="<?= View::url('/admin/catalog/'.(int)$it['id'].'/delete') ?>" style="display:inline" onsubmit="return confirm('Remove this catalog item? Products vendors already imported from it are not affected.')">
+              <?= csrf() ?>
               <button type="submit" class="btn-xs btn-danger-xs">Delete</button>
             </form>
           </td>
