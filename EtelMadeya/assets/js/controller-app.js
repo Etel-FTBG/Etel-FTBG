@@ -62,11 +62,16 @@ async function handleEtelIDLogin(event) {
     const identifier = document.getElementById('etelidIdentifier').value;
     const password    = document.getElementById('etelidPassword').value;
     const errorDiv    = document.getElementById('loginError');
+    const submitBtn   = event.target.querySelector('button[type="submit"]');
+    const originalLabel = submitBtn.textContent;
 
     const formData = new FormData();
     formData.append('action', 'controller_etelid_login');
     formData.append('identifier', identifier);
     formData.append('password', password);
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Signing in…';
 
     try {
         const response = await fetch(API, {
@@ -85,6 +90,9 @@ async function handleEtelIDLogin(event) {
     } catch (error) {
         errorDiv.textContent = 'Connection error. Please try again.';
         errorDiv.style.display = 'block';
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = originalLabel;
     }
 }
 
@@ -347,8 +355,8 @@ function displayQueue(queue) {
             <td>${new Date(v.registered_at).toLocaleTimeString()}</td>
             <td>
                 <button onclick="showServeModal(${v.id}, '${v.plate_number}', '${v.vehicle_type_name}')" class="action-btn action-btn-serve">✅ Serve</button>
-                ${v.queue_type !== 'vip' ? `<button onclick="moveToVip(${v.id})" class="action-btn action-btn-vip">⭐ VIP</button>` : ''}
-                ${v.queue_type !== 'waiting' ? `<button onclick="moveToWaiting(${v.id})" class="action-btn action-btn-wait">⏳ Wait</button>` : ''}
+                ${v.queue_type !== 'vip' ? `<button onclick="moveToVip(${v.id}, this)" class="action-btn action-btn-vip">⭐ VIP</button>` : ''}
+                ${v.queue_type !== 'waiting' ? `<button onclick="moveToWaiting(${v.id}, this)" class="action-btn action-btn-wait">⏳ Wait</button>` : ''}
             </td>
         </tr>
     `).join('');
@@ -382,7 +390,10 @@ function closeModal() {
 
 async function handleAddVehicle(event) {
     event.preventDefault();
-    
+
+    const submitBtn = event.target.querySelector('button[type="submit"]');
+    const originalLabel = submitBtn.textContent;
+
     const formData = new FormData();
     formData.append('action', 'register');
     formData.append('plate_number', document.getElementById('addPlate').value.trim());
@@ -390,14 +401,17 @@ async function handleAddVehicle(event) {
     formData.append('driver_name', document.getElementById('addDriverName').value.trim());
     formData.append('driver_phone', document.getElementById('addDriverPhone').value.trim());
     formData.append('controller_id', currentController.id);
-    
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Adding…';
+
     try {
         const response = await fetch(API, {
             method: 'POST',
             body: formData
         });
         const data = await response.json();
-        
+
         if (data.success) {
             showNotification('✅ Vehicle added successfully', 'success');
             closeModal();
@@ -409,24 +423,33 @@ async function handleAddVehicle(event) {
         }
     } catch (error) {
         showNotification('❌ Error adding vehicle', 'error');
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = originalLabel;
     }
 }
 
 async function handleBulkImport(event) {
     event.preventDefault();
-    
+
+    const submitBtn = event.target.querySelector('button[type="submit"]');
+    const originalLabel = submitBtn.textContent;
+
     const formData = new FormData();
     formData.append('action', 'bulk_import');
     formData.append('plates', document.getElementById('bulkPlates').value);
     formData.append('vehicle_type_id', document.getElementById('bulkVehicleType').value);
-    
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Importing…';
+
     try {
         const response = await fetch(API, {
             method: 'POST',
             body: formData
         });
         const data = await response.json();
-        
+
         if (data.success) {
             showNotification(`✅ Imported: ${data.imported}, Skipped: ${data.skipped}`, 'success');
             closeModal();
@@ -438,25 +461,41 @@ async function handleBulkImport(event) {
         }
     } catch (error) {
         showNotification('❌ Error importing vehicles', 'error');
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = originalLabel;
     }
 }
 
 async function handleServe(event) {
     event.preventDefault();
-    
+
+    const submitBtn = event.target.querySelector('button[type="submit"]');
+    const originalLabel = submitBtn.textContent;
+    const gallons = parseFloat(document.getElementById('serveFuelGallons').value) || 0;
+    const liters = parseFloat(document.getElementById('serveFuelLiters').value) || 0;
+
+    if (gallons <= 0 && liters <= 0) {
+        showNotification('❌ Enter the fuel amount served (gallons or liters)', 'error');
+        return;
+    }
+
     const formData = new FormData();
     formData.append('action', 'serve_vehicle');
     formData.append('queue_id', document.getElementById('serveQueueId').value);
-    formData.append('fuel_gallons', document.getElementById('serveFuelGallons').value || 0);
-    formData.append('fuel_liters', document.getElementById('serveFuelLiters').value || 0);
-    
+    formData.append('fuel_gallons', gallons);
+    formData.append('fuel_liters', liters);
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Serving…';
+
     try {
         const response = await fetch(API, {
             method: 'POST',
             body: formData
         });
         const data = await response.json();
-        
+
         if (data.success) {
             showNotification('✅ Vehicle served successfully', 'success');
             closeModal();
@@ -468,23 +507,29 @@ async function handleServe(event) {
         }
     } catch (error) {
         showNotification('❌ Error serving vehicle', 'error');
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = originalLabel;
     }
 }
 
-async function moveToVip(queueId) {
+async function moveToVip(queueId, btn) {
     if (!confirm('Move this vehicle to VIP queue?')) return;
-    
+
+    const originalLabel = btn ? btn.textContent : null;
+    if (btn) { btn.disabled = true; btn.textContent = '⏳ Moving…'; }
+
     const formData = new FormData();
     formData.append('action', 'move_to_vip');
     formData.append('queue_id', queueId);
-    
+
     try {
         const response = await fetch(API, {
             method: 'POST',
             body: formData
         });
         const data = await response.json();
-        
+
         if (data.success) {
             showNotification('✅ Moved to VIP queue', 'success');
             loadStats();
@@ -494,23 +539,28 @@ async function moveToVip(queueId) {
         }
     } catch (error) {
         showNotification('❌ Error moving vehicle', 'error');
+    } finally {
+        if (btn) { btn.disabled = false; btn.textContent = originalLabel; }
     }
 }
 
-async function moveToWaiting(queueId) {
+async function moveToWaiting(queueId, btn) {
     if (!confirm('Move this vehicle to waiting queue?')) return;
-    
+
+    const originalLabel = btn ? btn.textContent : null;
+    if (btn) { btn.disabled = true; btn.textContent = '⏳ Moving…'; }
+
     const formData = new FormData();
     formData.append('action', 'move_to_waiting');
     formData.append('queue_id', queueId);
-    
+
     try {
         const response = await fetch(API, {
             method: 'POST',
             body: formData
         });
         const data = await response.json();
-        
+
         if (data.success) {
             showNotification('✅ Moved to waiting queue', 'success');
             loadStats();
@@ -520,6 +570,8 @@ async function moveToWaiting(queueId) {
         }
     } catch (error) {
         showNotification('❌ Error moving vehicle', 'error');
+    } finally {
+        if (btn) { btn.disabled = false; btn.textContent = originalLabel; }
     }
 }
 
