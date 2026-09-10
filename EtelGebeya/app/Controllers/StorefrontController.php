@@ -49,7 +49,10 @@ final class StorefrontController
         $q      = trim($_GET['q'] ?? '');
         $locale = $GLOBALS['__i18n']->locale();
         $page   = max(1, (int)($_GET['page'] ?? 1));
-        $sort   = $_GET['sort'] ?? 'newest';
+        // Matches the sort dropdown's own default (its first/unselected
+        // option is "Most Relevant") -- the controller previously defaulted
+        // to 'newest' instead, silently disagreeing with what the UI showed.
+        $sort   = $_GET['sort'] ?? 'relevant';
         $per    = 20;
         $offset = ($page - 1) * $per;
 
@@ -62,7 +65,10 @@ final class StorefrontController
             'price_desc' => 'price DESC',
             'rating'     => 'avg_rating DESC',
             'popular'    => 'sales_count DESC',
-            'relevant'   => 'created_at DESC',
+            // Relevance ranking (see Product::search()) -- only meaningful
+            // for an actual keyword query; falls back to newest-first when
+            // browsing without a search term (nothing to rank against).
+            'relevant'   => 'relevance DESC',
         ];
         $orderBy = $orderMap[$sort] ?? 'created_at DESC';
 

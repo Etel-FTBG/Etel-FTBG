@@ -83,6 +83,34 @@ final class Product
         return $n ?: $this->nameEn;
     }
 
+    /** Selling vendor's shop name + rating, for surfacing real seller
+     *  identity/trust on product cards instead of the platform's own name.
+     *  Memoized per vendor id for the request -- a listing grid of many
+     *  products from a handful of vendors makes at most one query per
+     *  distinct vendor, not one per card. Returns null fields (never a
+     *  fatal error) if the vendor row or its rating column isn't there. */
+    public function vendorInfo(): array
+    {
+        static $cache = [];
+        if ($this->vendorId <= 0) return ['name' => null, 'rating' => 0.0, 'ratingCount' => 0];
+        if (array_key_exists($this->vendorId, $cache)) return $cache[$this->vendorId];
+
+        $info = ['name' => null, 'rating' => 0.0, 'ratingCount' => 0];
+        try {
+            $row = $GLOBALS['__db']->fetch(
+                'SELECT * FROM sellers WHERE id = ? LIMIT 1', [$this->vendorId]
+            );
+            if ($row) {
+                $info['name']        = $row['store_name'] ?? $row['shop_name'] ?? null;
+                $info['rating']      = (float)($row['rating_avg'] ?? 0);
+                $info['ratingCount'] = (int)($row['rating_count'] ?? 0);
+            }
+        } catch (\Throwable $_) {
+            // Leave defaults -- card falls back to the platform name.
+        }
+        return $cache[$this->vendorId] = $info;
+    }
+
     public function shortDesc(string $locale = 'en', int $len = 100): string
     {
         $d = $locale === 'am' ? ($this->descriptionAm ?: $this->descriptionEn) : ($this->descriptionEn ?: $this->descriptionAm);
@@ -143,6 +171,11 @@ final class Product
         $limit  = max(1, $limit);
         $offset = max(0, $offset);
         $order  = self::safeOrder($orderBy);
+        // This plain listing has no MATCH()-derived `relevance` column
+        // (that only exists inside search()'s query) -- there's nothing to
+        // rank against without a keyword, so fall back to newest-first
+        // instead of referencing a column that doesn't exist here.
+        if ($order === 'relevance DESC') $order = 'created_at DESC';
         [$filterSql, $params] = self::filterClause($minPrice, $maxPrice, $minRating);
         try {
             $rows = $GLOBALS['__db']->fetchAll(
@@ -193,6 +226,8 @@ final class Product
     {
         $limit = max(1, $limit); $offset = max(0, $offset);
         $order = self::safeOrder($orderBy);
+        // No `relevance` column here either -- see the same guard in all().
+        if ($order === 'relevance DESC') $order = 'created_at DESC';
         [$filterSql, $filterParams] = self::filterClause($minPrice, $maxPrice, $minRating);
         try {
             $rows = $GLOBALS['__db']->fetchAll(
@@ -236,11 +271,44 @@ final class Product
         $order  = self::safeOrder($orderBy);
         $like   = '%' . $q . '%';
         [$filterSql, $filterParams] = self::filterClause($minPrice, $maxPrice, $minRating);
+
+        // Relevance-ranked full-text search, when a FULLTEXT index is
+        // available -- the LIKE clause is KEPT as the actual WHERE filter
+        // (so results are identical to the old behavior, nothing that used
+        // to match can stop matching), MATCH()/AGAINST only supplies a
+        // relevance score to order by instead of always "newest first".
+        // Falls back to the plain LIKE query below if the index doesn't
+        // exist yet (self-heals it once, then this path just works), or on
+        // any other error (e.g. insufficient privileges on this host).
+        // Only overrides the ORDER BY when the caller actually asked for
+        // relevance ordering -- an explicit newest/price/rating/popularity
+        // sort is respected as-is, relevance never overrides a sort the
+        // shopper picked themselves.
+        $relevanceOrder = $order === 'relevance DESC' ? 'relevance DESC' : $order;
+        try {
+            $rows = $GLOBALS['__db']->fetchAll(
+                "SELECT *, MATCH(name_en, name_am, description_en, description_am)
+                        AGAINST (? IN NATURAL LANGUAGE MODE) AS relevance
+                 FROM products WHERE " . self::statusClause() .
+                " AND (name_en LIKE ? OR name_am LIKE ? OR description_en LIKE ? OR description_am LIKE ?)" . $filterSql . "
+                 ORDER BY $relevanceOrder LIMIT $limit OFFSET $offset",
+                array_merge([$q, $like, $like, $like, $like], $filterParams)
+            );
+            return array_values(array_filter(array_map(function($r) {
+                try { return self::fromRow($r); } catch (\Throwable $_) { return null; }
+            }, $rows)));
+        } catch (\Throwable $_) {
+            self::ensureFulltextIndex();
+        }
+
+        // Plain query has no `relevance` column to order by -- fall back
+        // to newest-first rather than passing through an invalid ORDER BY.
+        $fallbackOrder = $order === 'relevance DESC' ? 'created_at DESC' : $order;
         try {
             $rows = $GLOBALS['__db']->fetchAll(
                 "SELECT * FROM products WHERE " . self::statusClause() .
                 " AND (name_en LIKE ? OR name_am LIKE ? OR description_en LIKE ? OR description_am LIKE ?)" . $filterSql . "
-                 ORDER BY $order LIMIT $limit OFFSET $offset",
+                 ORDER BY $fallbackOrder LIMIT $limit OFFSET $offset",
                 array_merge([$like, $like, $like, $like], $filterParams)
             );
         } catch (\Throwable $_) { $rows = []; }
@@ -249,12 +317,43 @@ final class Product
         }, $rows)));
     }
 
+    /** Creates the FULLTEXT index products.search() needs, if it's not
+     *  already there. Safe to call repeatedly -- checked once per
+     *  process via a static flag, and both the check and the CREATE are
+     *  wrapped so a host with insufficient privileges just leaves search()
+     *  on its LIKE fallback rather than erroring. */
+    private static function ensureFulltextIndex(): void
+    {
+        static $checked = false;
+        if ($checked) return;
+        $checked = true;
+        $db = $GLOBALS['__db'] ?? null;
+        if (!$db || !$db->isConnected()) return;
+        try {
+            $exists = $db->fetchColumn(
+                "SELECT COUNT(*) FROM information_schema.statistics
+                  WHERE table_schema = DATABASE() AND table_name = 'products'
+                    AND index_name = 'ft_products_search'"
+            );
+            if (!$exists) {
+                $db->query(
+                    "ALTER TABLE products ADD FULLTEXT INDEX ft_products_search
+                     (name_en, name_am, description_en, description_am)"
+                );
+            }
+        } catch (\Throwable $_) {
+            // No privilege to ALTER, or another process already created it
+            // concurrently -- either way, search() keeps working via LIKE.
+        }
+    }
+
     private static function safeOrder(string $orderBy): string
     {
         $allowed = [
             'created_at DESC', 'created_at ASC',
             'price ASC', 'price DESC',
             'avg_rating DESC', 'sales_count DESC',
+            'relevance DESC',
         ];
         return in_array($orderBy, $allowed, true) ? $orderBy : 'created_at DESC';
     }
