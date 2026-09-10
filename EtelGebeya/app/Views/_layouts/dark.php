@@ -108,10 +108,10 @@ $roleLabel = $role ?? ($user['roles'][0] ?? 'user');
             <span class="nav-badge" style="margin-left:.25rem;"><?= $notifCount ?></span>
           <?php endif; ?>
         </div>
-        <a href="/" class="topbar-btn" title="View storefront">
+        <a href="<?= View::url('/') ?>" class="topbar-btn" title="View storefront">
           <i class="bi bi-globe2"></i>
         </a>
-        <a href="/lang/<?= $locale === 'am' ? 'en' : 'am' ?>" class="topbar-btn" title="Toggle language">
+        <a href="<?= View::url('/lang/' . ($locale === 'am' ? 'en' : 'am')) ?>" class="topbar-btn" title="Toggle language">
           <?= $locale === 'am' ? 'EN' : 'AM' ?>
         </a>
         <div class="user-avatar" title="<?= e($user['full_name'] ?? 'User') ?>">

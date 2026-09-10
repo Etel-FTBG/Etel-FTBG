@@ -5,11 +5,11 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Installed * Etel Gebeya</title>
-  <link rel="stylesheet" href="/public/assets/css/install.css">
+  <link rel="stylesheet" href="<?= url('/public/assets/css/install.css') ?>">
 </head>
 <body>
   <main class="install done">
-    <h1>? Etel Gebeya is ready</h1>
+    <h1>Etel Gebeya is ready</h1>
     <?php if ($already): ?>
       <p>The system is already installed. You can access it below.</p>
     <?php else: ?>
@@ -18,10 +18,10 @@
     <?php endif; ?>
 
     <ul class="links">
-      <li><a class="btn" href="/">Homepage</a></li>
-      <li><a class="btn" href="/login">Login</a></li>
-      <li><a class="btn" href="/admin">Admin</a></li>
-      <li><a class="btn ghost" href="/sell">Become a vendor</a></li>
+      <li><a class="btn" href="<?= url('/') ?>">Homepage</a></li>
+      <li><a class="btn" href="<?= url('/login') ?>">Login</a></li>
+      <li><a class="btn" href="<?= url('/admin') ?>">Admin</a></li>
+      <li><a class="btn ghost" href="<?= url('/sell') ?>">Become a vendor</a></li>
     </ul>
 
     <p class="muted small">Site URL: <?= htmlspecialchars($site_url ?? '') ?></p>
