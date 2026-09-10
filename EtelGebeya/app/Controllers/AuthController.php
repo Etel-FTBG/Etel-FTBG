@@ -274,9 +274,8 @@ final class AuthController
     }
 
     /* ?? GET /lang/{locale} ???????????????????????????????? */
-    public function setLanguage(array $params): void
+    public function setLanguage(string $locale): void
     {
-        $locale = $params['locale'] ?? 'en';
         $supported = $GLOBALS['__config']['app']['locales'] ?? ['en', 'am'];
         if (!in_array($locale, $supported, true)) {
             $locale = 'en';
