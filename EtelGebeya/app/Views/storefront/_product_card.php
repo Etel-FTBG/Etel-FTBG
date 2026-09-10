@@ -26,6 +26,14 @@ if (!function_exists('eg_product_card')) {
         $rCount = (int)$p->ratingCount;
         $isNew  = $p->createdAt && (time() - strtotime($p->createdAt)) < 7 * 86400;
 
+        // Real selling-vendor identity + trust signal instead of always
+        // showing the platform's own name twice on every card.
+        $vendor     = $p->vendorInfo();
+        $vendorName = $vendor['name'] ? e($vendor['name']) : 'Etel Gebeya';
+        $vendorRatingHtml = $vendor['rating'] > 0
+            ? ' <span class="eg-card-vendor-rating"><i class="bi bi-star-fill"></i> ' . number_format($vendor['rating'], 1) . '</span>'
+            : '';
+
         // Stars HTML
         $stars = '';
         $full = (int)round($rAvg);
@@ -76,7 +84,7 @@ if (!function_exists('eg_product_card')) {
              .     '<i class="bi bi-heart"></i></button>'
              . '</div>'
              . '<div class="eg-card-body">'
-             .   '<div class="eg-card-cat">Etel Gebeya</div>'
+             .   '<div class="eg-card-cat">' . $vendorName . $vendorRatingHtml . '</div>'
              .   '<div class="eg-card-name">' . $name . '</div>'
              .   $starHtml
              .   '<div class="eg-card-price-row">'
@@ -85,7 +93,7 @@ if (!function_exists('eg_product_card')) {
              .   '</div>'
              . '</div>'
              . '<div class="eg-card-footer">'
-             .   '<span>Etel Gebeya</span>'
+             .   '<span>' . $vendorName . '</span>'
              .   '<span>' . ($sold > 0 ? $sold . ' sold' : 'In stock') . '</span>'
              . '</div>'
              . $addBtn

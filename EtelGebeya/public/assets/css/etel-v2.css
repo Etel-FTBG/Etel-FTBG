@@ -416,6 +416,8 @@ ul{list-style:none}
 .eg-card-wish.active{opacity:1;color:#e74c3c}
 .eg-card-body{padding:10px 12px;flex:1;display:flex;flex-direction:column;gap:4px}
 .eg-card-cat{font-size:9.5px;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;font-weight:700}
+.eg-card-vendor-rating{color:var(--g2);text-transform:none;letter-spacing:0;margin-left:2px}
+.eg-card-vendor-rating i{font-size:8px}
 .eg-card-name{
   font-size:12.5px;font-weight:600;color:var(--text);
   line-height:1.35;
