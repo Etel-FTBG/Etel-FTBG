@@ -178,23 +178,22 @@ View::render('_layouts/public', [
         <a href="<?= View::url('/search') ?>" class="eg-sec-more">See All <i class="bi bi-arrow-right"></i></a>
       </div>
       <div class="eg-cat-grid">
-        <?php foreach ($categories as $cat): ?>
-          <a href="<?= View::url('/category/' . e($cat->slug)) ?>" class="eg-cat-card">
+        <?php foreach ($categories as $cat): [$ca, $cb] = eg_cat_color($cat->id); ?>
+          <a href="<?= View::url('/category/' . e($cat->slug)) ?>" class="eg-cat-card"
+             style="--cat-a:<?= $ca ?>;--cat-b:<?= $cb ?>">
             <div class="eg-cat-card-ico">
-              <?php if (!empty($cat->icon)): ?>
-                <i class="bi <?= e($cat->icon) ?>" style="font-size:22px;color:#FFE066"></i>
-              <?php else: ?>
-                <i class="bi <?= eg_cat_icon($cat->nameEn) ?>" style="font-size:22px;color:#FFE066"></i>
-              <?php endif; ?>
+              <i class="bi <?= eg_cat_icon($cat->nameEn) ?>"></i>
             </div>
             <div class="eg-cat-card-name"><?= e(html_entity_decode($cat->name($locale), ENT_QUOTES | ENT_HTML5, 'UTF-8')) ?></div>
+            <div class="eg-cat-card-cta">Shop now <i class="bi bi-arrow-right"></i></div>
           </a>
         <?php endforeach; ?>
-        <a href="<?= View::url('/search') ?>" class="eg-cat-card" style="border-style:dashed">
-          <div class="eg-cat-card-ico" style="background:none;border:none">
-            <i class="bi bi-plus-circle" style="font-size:24px;color:var(--g2)"></i>
+        <a href="<?= View::url('/search') ?>" class="eg-cat-card eg-cat-card-more">
+          <div class="eg-cat-card-ico">
+            <i class="bi bi-grid-3x3-gap-fill"></i>
           </div>
-          <div class="eg-cat-card-name" style="color:var(--g2)">All Categories</div>
+          <div class="eg-cat-card-name">All Categories</div>
+          <div class="eg-cat-card-cta">Browse all <i class="bi bi-arrow-right"></i></div>
         </a>
       </div>
     </div>

@@ -124,6 +124,25 @@ if (!function_exists('eg_cat_icon')) {
         return 'bi-grid';
     }
 }
+if (!function_exists('eg_cat_color')) {
+    /** Deterministic accent pair for a category id -- gives each tile a
+     *  distinct color the way Alibaba/Amazon category grids do, instead
+     *  of every icon sharing one flat gold. Stays inside the site's own
+     *  jewel-tone family rather than introducing arbitrary hues. */
+    function eg_cat_color(int $id): array {
+        static $palette = [
+            ['#FFE066', '#D4AF37'], // gold (default/first)
+            ['#7EE0C4', '#1E9E7C'], // emerald
+            ['#8AB6FF', '#3B6FD4'], // sapphire
+            ['#FF9E9E', '#D6483F'], // ruby
+            ['#D9A9FF', '#8B4FC9'], // amethyst
+            ['#7FD8DD', '#2A9199'], // teal
+            ['#FFB27E', '#C96A2E'], // copper
+            ['#F5A6C9', '#C94D80'], // rose
+        ];
+        return $palette[$id % count($palette)];
+    }
+}
 
 // --- Globals shared with views ---
 $GLOBALS['__config'] = $config;
