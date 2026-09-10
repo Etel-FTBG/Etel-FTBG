@@ -64,22 +64,37 @@ ob_start();
 }
 .filter-title i { color: var(--g2); font-size: 13px; }
 .cat-filter-link {
+  --cat-a: var(--g2);
   display: flex; align-items: center; gap: 9px; padding: 8px 9px; border-radius: 9px;
   font-size: 12.5px; text-decoration: none; color: var(--text2);
   transition: background .18s, color .18s, transform .18s;
 }
-.cat-filter-link i { font-size: 13px; width: 16px; text-align: center; color: var(--g3); flex-shrink: 0; transition: color .18s; }
+.cat-filter-link i { font-size: 13px; width: 16px; text-align: center; color: var(--cat-a); flex-shrink: 0; transition: color .18s; opacity: .8; }
 .cat-filter-link:hover { background: rgba(212,175,55,.08); color: var(--g1); transform: translateX(2px); }
-.cat-filter-link:hover i { color: var(--g1); }
+.cat-filter-link:hover i { opacity: 1; }
 .cat-filter-link:focus-visible { outline: 2px solid var(--g2); outline-offset: -2px; }
 .cat-filter-link.active { background: rgba(212,175,55,.1); color: var(--g1); font-weight: 700; }
-.cat-filter-link.active i { color: var(--g1); }
-.filter-radio {
-  display: flex; align-items: center; gap: 9px; font-size: 12.5px; color: var(--text2);
-  padding: 6px 9px; border-radius: 9px; cursor: pointer; transition: background .18s, color .18s;
+.cat-filter-link.active i { color: var(--g1); opacity: 1; }
+.cat-filter-more {
+  display: flex; align-items: center; gap: 6px; width: 100%; margin-top: 4px; padding: 7px 9px;
+  background: none; border: none; border-top: 1px dashed var(--border);
+  font-size: 11.5px; font-weight: 700; color: var(--g3); cursor: pointer; transition: color .18s;
 }
-.filter-radio:hover { background: rgba(212,175,55,.06); color: var(--text); }
-.filter-radio input[type="radio"] { accent-color: var(--g2); width: 15px; height: 15px; flex-shrink: 0; }
+.cat-filter-more:hover { color: var(--g1); }
+.cat-filter-more i { font-size: 10px; transition: transform .2s; }
+.cat-filter-more[aria-expanded="true"] i { transform: rotate(180deg); }
+.cat-filter-extra[hidden] { display: none; }
+.chip-row { display: flex; flex-wrap: wrap; gap: 7px; }
+.filter-chip {
+  position: relative; font-size: 12px; font-weight: 600; color: var(--text2);
+  padding: 7px 13px; border-radius: 20px; border: 1.5px solid var(--border);
+  cursor: pointer; transition: all .18s; user-select: none;
+}
+.filter-chip:hover { border-color: var(--g3); color: var(--text); }
+.filter-chip input { position: absolute; opacity: 0; pointer-events: none; }
+.filter-chip input:checked + span { color: #080604; }
+.filter-chip:has(input:checked) { background: var(--grad); border-color: transparent; color: #080604; box-shadow: 0 4px 14px -6px rgba(212,175,55,.5); }
+.filter-chip input:focus-visible ~ * { outline: 2px solid var(--g2); }
 .sort-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 10px; }
 .sort-bar select { background: var(--card); border: 1.5px solid var(--border); border-radius: 8px; padding: 8px 12px; font-size: 12.5px; color: var(--text); outline: none; }
 .results-count { font-size: 12.5px; color: var(--text2); }
@@ -111,32 +126,42 @@ ob_start();
       <div class="filter-card">
         <div class="filter-title"><i class="bi bi-folder2"></i> Categories</div>
         <a href="<?= View::url('/search?q='.urlencode($q)) ?>" class="cat-filter-link active"><i class="bi bi-grid-3x3-gap"></i> All categories</a>
-        <?php foreach ($allCats as $cat): ?>
-          <a href="<?= View::url('/category/'.$cat->slug) ?>" class="cat-filter-link">
+        <?php $catShowFirst = 8; foreach ($allCats as $i => $cat): [$ca] = eg_cat_color($cat->id); ?>
+          <a href="<?= View::url('/category/'.$cat->slug) ?>" class="cat-filter-link<?= $i >= $catShowFirst ? ' cat-filter-extra' : '' ?>"
+             style="--cat-a:<?= $ca ?>" <?= $i >= $catShowFirst ? 'hidden' : '' ?>>
             <i class="bi <?= eg_cat_icon($cat->nameEn) ?>"></i>
             <?= e(html_entity_decode($cat->name($locale), ENT_QUOTES | ENT_HTML5, 'UTF-8')) ?>
           </a>
         <?php endforeach; ?>
+        <?php if (count($allCats) > $catShowFirst): ?>
+          <button type="button" class="cat-filter-more" aria-expanded="false" onclick="egToggleCats(this)">
+            <span>Show <?= count($allCats) - $catShowFirst ?> more</span> <i class="bi bi-chevron-down"></i>
+          </button>
+        <?php endif; ?>
       </div>
 
       <div class="filter-card">
         <div class="filter-title"><i class="bi bi-cash-stack"></i> Price Range</div>
-        <?php foreach ([['All',''],['Under Br 500','0-500'],['Br 500-2,000','500-2000'],['Br 2,000-10,000','2000-10000'],['Br 10,000+','10000+']] as [$label,$val]): ?>
-          <label class="filter-radio">
-            <input type="radio" name="price" value="<?= $val ?>" <?= (($_GET['price']??'')===$val||(empty($_GET['price'])&&$val==='')?'checked':'') ?>>
-            <?= $label ?>
-          </label>
-        <?php endforeach; ?>
+        <div class="chip-row">
+          <?php foreach ([['All',''],['Under Br 500','0-500'],['Br 500-2,000','500-2000'],['Br 2,000-10,000','2000-10000'],['Br 10,000+','10000+']] as [$label,$val]): ?>
+            <label class="filter-chip">
+              <input type="radio" name="price" value="<?= $val ?>" <?= (($_GET['price']??'')===$val||(empty($_GET['price'])&&$val==='')?'checked':'') ?>>
+              <span><?= $label ?></span>
+            </label>
+          <?php endforeach; ?>
+        </div>
       </div>
 
       <div class="filter-card">
         <div class="filter-title"><i class="bi bi-star-fill"></i> Rating</div>
-        <?php foreach ([['Any rating',''],['4&#9733; & up','4'],['3&#9733; & up','3']] as [$label,$val]): ?>
-          <label class="filter-radio">
-            <input type="radio" name="rating" value="<?= $val ?>" <?= (($_GET['rating']??'')===$val?'checked':'') ?>>
-            <?= $label ?>
-          </label>
-        <?php endforeach; ?>
+        <div class="chip-row">
+          <?php foreach ([['Any rating',''],['4&#9733; & up','4'],['3&#9733; & up','3']] as [$label,$val]): ?>
+            <label class="filter-chip">
+              <input type="radio" name="rating" value="<?= $val ?>" <?= (($_GET['rating']??'')===$val?'checked':'') ?>>
+              <span><?= $label ?></span>
+            </label>
+          <?php endforeach; ?>
+        </div>
       </div>
     </aside>
 
@@ -206,6 +231,15 @@ ob_start();
 </div>
 
 <script>
+function egToggleCats(btn) {
+  const card = btn.closest('.filter-card');
+  const expanded = btn.getAttribute('aria-expanded') === 'true';
+  card.querySelectorAll('.cat-filter-extra').forEach(a => { a.hidden = expanded; });
+  btn.setAttribute('aria-expanded', String(!expanded));
+  btn.querySelector('span').textContent = expanded
+    ? 'Show ' + card.querySelectorAll('.cat-filter-extra').length + ' more'
+    : 'Show less';
+}
 (function(){
   const input   = document.querySelector('.search-hero-form input[name=q]');
   const grid    = document.querySelector('.search-layout > div');   // results column
