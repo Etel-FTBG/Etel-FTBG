@@ -6,3 +6,11 @@
 .claude/skills/**/__pycache__/
 .claude/skills/**/.coverage
 .claude/skills/**/*.pyc
+
+# Real secrets belong on the live server only, never in git -- a committed
+# .env is what an earlier session's zip upload overwrote a working live
+# .env with (real DB password + service keys clobbered by this file's
+# committed CHANGE_ME placeholders). Each system keeps a .env.example
+# instead, documenting which keys it needs without ever risking a real
+# deploy overwriting live secrets with placeholders again.
+**/.env
