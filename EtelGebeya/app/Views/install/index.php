@@ -9,7 +9,7 @@ $cur = $cfg['db'];
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Install * Etel Gebeya</title>
-  <link rel="stylesheet" href="/public/assets/css/install.css">
+  <link rel="stylesheet" href="<?= url('/public/assets/css/install.css') ?>">
 </head>
 <body>
   <main class="install">
@@ -41,7 +41,7 @@ $cur = $cfg['db'];
       </section>
     <?php endif; ?>
 
-    <form method="post" action="/install" class="form">
+    <form method="post" action="<?= url('/install') ?>" class="form">
       <h2>Database</h2>
       <label>Host
         <input name="db_host" value="<?= htmlspecialchars($old['db_host'] ?? $cur['host']) ?>" required>
