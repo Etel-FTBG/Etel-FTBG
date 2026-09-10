@@ -37,6 +37,23 @@ if ($db && $db->isConnected() && $product->vendorId) {
             // Normalise column names
             $vendor['shop_name'] = $vendor['store_name'] ?? $vendor['shop_name'] ?? '';
             $vendor['shop_slug'] = $vendor['store_slug'] ?? $vendor['shop_slug'] ?? '';
+            // Total units sold across this vendor's whole catalog -- a real
+            // trust signal ("est. 1990s Amazon" style seller reputation),
+            // cheap here since it's one aggregate query on a single page
+            // load, not something repeated per card in a listing grid.
+            // Column is named sales_count on some installs, sold_count on
+            // others (see Product's own dual fallback in fromRow()) --
+            // try both rather than assuming one.
+            $vendor['total_sold'] = 0;
+            foreach (['sales_count', 'sold_count'] as $col) {
+                try {
+                    $vendor['total_sold'] = (int)$db->fetchColumn(
+                        "SELECT COALESCE(SUM($col),0) FROM products WHERE seller_id = ?",
+                        [$product->vendorId]
+                    );
+                    break;
+                } catch (\Throwable $_) { continue; }
+            }
         }
     } catch (\Throwable $_) {}
 }
@@ -313,7 +330,10 @@ ob_start();
         <div class="vendor-logo"><i class="bi bi-shop"></i></div>
         <div style="flex:1">
           <div class="vendor-name"><?= htmlspecialchars($vendor['shop_name']??'', ENT_QUOTES) ?></div>
-          <div class="vendor-rating"><i class="bi bi-star-fill"></i> <?= number_format((float)($vendor['rating_avg']??0),1) ?> &middot; <?= $vendor['rating_count']??0 ?> reviews</div>
+          <div class="vendor-rating">
+            <i class="bi bi-star-fill"></i> <?= number_format((float)($vendor['rating_avg']??0),1) ?> &middot; <?= $vendor['rating_count']??0 ?> reviews
+            <?php if (($vendor['total_sold'] ?? 0) > 0): ?>&middot; <?= number_format($vendor['total_sold']) ?> sold<?php endif; ?>
+          </div>
         </div>
         <a href="<?= View::url('/vendor/'.htmlspecialchars($vendor['shop_slug']??'',ENT_QUOTES)) ?>" style="text-decoration:none;color:var(--text);display:inline-block;padding:8px 16px;border-radius:var(--r);border:1.5px solid var(--border);font-size:12.5px;font-weight:700;transition:border-color .15s" onmouseover="this.style.borderColor='var(--g2)'" onmouseout="this.style.borderColor='var(--border)'">Visit Shop</a>
       </div>
