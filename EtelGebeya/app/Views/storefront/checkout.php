@@ -163,9 +163,11 @@ textarea.form-input { min-height: 80px; resize: vertical; padding-top: .65rem; }
 .ap-hint { font-size: .72rem; color: #7A6840; margin-top: .4rem; }
 </style>
 
-<link rel="stylesheet" href="<?= View::asset('vendor/leaflet/leaflet.css') ?>">
-<script src="<?= View::asset('vendor/leaflet/leaflet.js') ?>"></script>
-<script>const EG_BASE_URL = <?= json_encode(rtrim($GLOBALS['__config']['app']['url'] ?? '', '/')) ?>;</script>
+<script>
+window.EG_BASE_URL = <?= json_encode(rtrim($GLOBALS['__config']['app']['url'] ?? '', '/')) ?>;
+window.EG_GOOGLE_MAPS_KEY = <?= json_encode($GLOBALS['__config']['maps']['google_api_key'] ?? '') ?>;
+const EG_BASE_URL = window.EG_BASE_URL;
+</script>
 <script src="<?= View::asset('js/address-picker.js') ?>"></script>
 
 <div class="container checkout-page">

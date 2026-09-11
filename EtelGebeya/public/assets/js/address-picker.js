@@ -1,10 +1,12 @@
 /**
  * Reusable map + search + "use my location" address picker.
- * Uses Leaflet (CSS+JS) for the visual map when it's available, but
- * search and "use my location" work independently of it -- neither
- * needs the map to actually be drawn. Talks to this app's own
- * /geocode/search and /geocode/reverse routes (which proxy
- * OpenStreetMap's free Nominatim geocoder server-side).
+ * Renders a real Google Map (matching the look of Delivery & Ride's own
+ * map screens) via window.EG_GOOGLE_MAPS_KEY, but search and "use my
+ * location" work independently of it -- neither needs the map to
+ * actually be drawn. Talks to this app's own /geocode/search and
+ * /geocode/reverse routes (which proxy OpenStreetMap's free Nominatim
+ * geocoder server-side), so no Places/Geocoding billing is required --
+ * only "Maps JavaScript API" needs to be enabled on the key.
  *
  * Usage:
  *   EGAddressPicker({
@@ -32,6 +34,37 @@
   }
 })();
 
+// Loads the Google Maps JS API script exactly once even if multiple
+// EGAddressPicker() instances are created on the same page (e.g. two
+// address fields on one form) -- every caller after the first just
+// waits on this shared promise instead of injecting its own <script>
+// tag, which would trigger Google's "included the Maps API multiple
+// times" warning and race two competing callbacks.
+let _egMapsLoading = null;
+function _egLoadGoogleMaps() {
+  if (window.google && window.google.maps) return Promise.resolve();
+  if (_egMapsLoading) return _egMapsLoading;
+  _egMapsLoading = new Promise(function (resolve, reject) {
+    if (!window.EG_GOOGLE_MAPS_KEY) {
+      reject(new Error('EG_GOOGLE_MAPS_KEY is not set on the page.'));
+      return;
+    }
+    window.gm_authFailure = function () {
+      console.error('EGAddressPicker: Google Maps auth failed -- check the API key and its referrer restrictions (https://ethelmarket.com/*) in Google Cloud Console.');
+      reject(new Error('gm_authFailure'));
+    };
+    window._egInitGoogleMaps = function () { resolve(); };
+    const script = document.createElement('script');
+    script.src = 'https://maps.googleapis.com/maps/api/js?key=' + encodeURIComponent(window.EG_GOOGLE_MAPS_KEY)
+      + '&loading=async&callback=_egInitGoogleMaps';
+    script.async = true;
+    script.defer = true;
+    script.onerror = function () { reject(new Error('Google Maps script failed to load (network/CSP).')); };
+    document.head.appendChild(script);
+  });
+  return _egMapsLoading;
+}
+
 function EGAddressPicker(opts) {
   const mapEl    = document.getElementById(opts.mapEl);
   const searchEl = document.getElementById(opts.searchInput);
@@ -46,6 +79,7 @@ function EGAddressPicker(opts) {
   const startLng = opts.initialLng || 38.4700;
 
   let map = null, marker = null;
+  const picker = { map: null, marker: null, setPoint: setPoint };
 
   function showMapError(reason) {
     console.error('EGAddressPicker: map unavailable -- ' + reason);
@@ -58,37 +92,37 @@ function EGAddressPicker(opts) {
 
   if (!mapEl) {
     console.error('EGAddressPicker: element #' + opts.mapEl + ' not found in the page.');
-  } else if (!window.L) {
-    // The single most common cause: leaflet.js either 404'd, or was
-    // blocked by the browser (e.g. served with a non-JS Content-Type
-    // under X-Content-Type-Options: nosniff) -- check the Network tab
-    // for the actual status of that request if this shows up.
-    showMapError('window.L is undefined, meaning leaflet.js did not load or did not run.');
   } else {
-    try {
-      map = L.map(mapEl).setView([startLat, startLng], opts.initialLat ? 15 : 13);
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; OpenStreetMap contributors', maxZoom: 19,
-      }).addTo(map);
-      marker = L.marker([startLat, startLng], { draggable: true }).addTo(map);
-      marker.on('dragend', function () {
-        const p = marker.getLatLng();
-        reverseLookup(p.lat, p.lng);
-      });
-      map.on('click', function (e) {
-        setPoint(e.latlng.lat, e.latlng.lng, null);
-        reverseLookup(e.latlng.lat, e.latlng.lng);
-      });
-      setTimeout(function () { map.invalidateSize(); }, 200);
-    } catch (err) {
-      map = null; marker = null;
-      showMapError('Leaflet threw while initializing: ' + (err && err.message ? err.message : err));
-    }
+    _egLoadGoogleMaps().then(function () {
+      try {
+        map = new google.maps.Map(mapEl, {
+          center: { lat: startLat, lng: startLng },
+          zoom: opts.initialLat ? 15 : 13,
+          mapTypeControl: false, streetViewControl: false, fullscreenControl: false,
+        });
+        marker = new google.maps.Marker({ position: { lat: startLat, lng: startLng }, map, draggable: true });
+        picker.map = map; picker.marker = marker;
+        marker.addListener('dragend', function () {
+          const p = marker.getPosition();
+          reverseLookup(p.lat(), p.lng());
+        });
+        map.addListener('click', function (e) {
+          setPoint(e.latLng.lat(), e.latLng.lng(), null);
+          reverseLookup(e.latLng.lat(), e.latLng.lng());
+        });
+      } catch (err) {
+        map = null; marker = null;
+        showMapError('Google Maps threw while initializing: ' + (err && err.message ? err.message : err));
+      }
+    }).catch(function (err) {
+      showMapError((err && err.message ? err.message : err));
+    });
   }
 
   function setPoint(lat, lng, label) {
-    if (marker) marker.setLatLng([lat, lng]);
-    if (map) map.setView([lat, lng], Math.max(map.getZoom(), 15));
+    if (marker) marker.setPosition({ lat, lng });
+    if (map) map.setCenter({ lat, lng });
+    if (map && map.getZoom() < 15) map.setZoom(15);
     if (latEl) latEl.value = lat.toFixed(7);
     if (lngEl) lngEl.value = lng.toFixed(7);
     if (label && addrEl) addrEl.value = label;
@@ -104,7 +138,7 @@ function EGAddressPicker(opts) {
   }
 
   // Search and "Use My Location" only need the lat/lng/address fields
-  // and the fetch endpoints -- neither depends on Leaflet, so both are
+  // and the fetch endpoints -- neither depends on the map, so both are
   // wired up unconditionally below, even if the map above failed.
 
   let searchTimer = null;
@@ -164,5 +198,5 @@ function EGAddressPicker(opts) {
     console.error('EGAddressPicker: locate button (#' + opts.locateBtn + ') not found.');
   }
 
-  return { map, marker, setPoint };
+  return picker;
 }
