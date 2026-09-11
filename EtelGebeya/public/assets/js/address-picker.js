@@ -14,6 +14,24 @@
  *     onChange: function(lat, lng, label) {}
  *   });
  */
+// Self-correcting fallback for window.EG_BASE_URL: if the page didn't
+// define it (or a cache served a stale copy of the page's HTML from
+// before it existed), derive it from this very script's own src --
+// the browser only runs this file because it just fetched it from a
+// real, correct URL, so that URL is trustworthy even when the page
+// around it might not be. Without this, a missing EG_BASE_URL sends
+// every geocode request to the domain root instead of the app's own
+// subdirectory, 404ing silently.
+(function () {
+  if (window.EG_BASE_URL) return;
+  var s = document.currentScript
+    || Array.prototype.find.call(document.querySelectorAll('script[src*="address-picker.js"]'), function () { return true; });
+  if (s && s.src) {
+    var idx = s.src.indexOf('/public/assets/js/address-picker.js');
+    if (idx > -1) window.EG_BASE_URL = s.src.slice(0, idx);
+  }
+})();
+
 function EGAddressPicker(opts) {
   const mapEl    = document.getElementById(opts.mapEl);
   const searchEl = document.getElementById(opts.searchInput);
