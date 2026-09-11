@@ -750,6 +750,16 @@ final class VendorController
     public function settings(): void
     {
         $seller = $this->requireVendor();
+        // saveSettings() below already self-heals these columns on save;
+        // ensure them here too so a first-ever page view (before any save
+        // has happened) doesn't render with them silently missing from
+        // $seller -- the view itself is also null-safe as a second layer,
+        // but keeping schema in sync here avoids the gap existing at all.
+        \App\Core\SchemaGuard::ensureColumns($this->db, 'sellers', [
+            'pickup_lat'     => 'pickup_lat DECIMAL(10,7) DEFAULT NULL',
+            'pickup_lng'     => 'pickup_lng DECIMAL(10,7) DEFAULT NULL',
+            'pickup_address' => 'pickup_address VARCHAR(255) DEFAULT NULL',
+        ]);
         $this->render('vendor/settings', [
             'pageTitle' => 'Store Settings',
             'seller'    => $seller,
