@@ -135,6 +135,16 @@ return [
         'key' => getenv('ETELID_KEY') ?: (getenv('ETELID_SERVICE_KEY') ?: 'CHANGE_ME'),
     ],
 
+    // Google Maps JS API key for the vendor-panel address picker (map
+    // rendering only -- search/reverse-geocode still goes through this
+    // app's own free Nominatim proxy in GeocodeController, so no Places/
+    // Geocoding billing is needed, just "Maps JavaScript API" enabled on
+    // the key). Safe to reuse the same key already deployed for Delivery
+    // & Ride (same ethelmarket.com referrer restriction).
+    'maps' => [
+        'google_api_key' => getenv('GOOGLE_MAPS_API_KEY') ?: '',
+    ],
+
     // ኢE Pay wallet checkout -- server-to-server verification only, the
     // browser talks to Etel Pay's own API directly (login + send), this
     // secret is only used to independently verify the resulting tx_ref
