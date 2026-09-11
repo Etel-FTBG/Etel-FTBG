@@ -73,8 +73,8 @@ document.addEventListener('DOMContentLoaded', function () {
     mapEl: 'addr-map', searchInput: 'addr-search', resultsEl: 'addr-results',
     latField: 'pickup_lat', lngField: 'pickup_lng', addressField: 'pickup_address',
     locateBtn: 'addr-locate',
-    initialLat: <?= json_encode($seller['pickup_lat'] ? (float)$seller['pickup_lat'] : null) ?>,
-    initialLng: <?= json_encode($seller['pickup_lng'] ? (float)$seller['pickup_lng'] : null) ?>,
+    initialLat: <?= json_encode(!empty($seller['pickup_lat']) ? (float)$seller['pickup_lat'] : null) ?>,
+    initialLng: <?= json_encode(!empty($seller['pickup_lng']) ? (float)$seller['pickup_lng'] : null) ?>,
   });
 });
 </script>
