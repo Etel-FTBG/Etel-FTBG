@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ETEL Printer Bluetooth Test</title>
+<style>
+  body { font-family: -apple-system, Segoe UI, Roboto, sans-serif; background:#111; color:#eee; padding:24px; max-width:480px; margin:0 auto; }
+  h1 { font-size:18px; }
+  button { display:block; width:100%; padding:14px; margin:10px 0; font-size:15px; font-weight:700;
+           background:#C9A961; color:#111; border:none; border-radius:10px; cursor:pointer; }
+  #log { white-space:pre-wrap; background:#000; border:1px solid #333; border-radius:8px; padding:12px;
+         font-family:monospace; font-size:12px; margin-top:16px; min-height:120px; }
+  .ok { color:#4ecdc4; } .err { color:#e63946; } .warn { color:#f4a941; }
+</style>
+</head>
+<body>
+<h1>ETEL Printer Bluetooth Diagnostic</h1>
+<p>This page checks whether your phone's Chrome browser can talk to the P58E printer directly
+over Bluetooth Low Energy (BLE), which is required to print without a third-party app like RawBT.</p>
+
+<button onclick="checkSupport()">1. Check Web Bluetooth support</button>
+<button onclick="scanPrinter()">2. Scan for P58E (BLE)</button>
+<button onclick="tryConnect()">3. Connect + list services</button>
+<select id="charPicker" style="display:block;width:100%;padding:12px;margin:10px 0;font-size:14px;background:#222;color:#eee;border:1px solid #444;border-radius:8px;"></select>
+<button onclick="sendTestPrint()" style="background:#4ecdc4;">4. Send Test Print</button>
+
+<div id="log">Ready.</div>
+
+<script>
+const logEl = document.getElementById('log');
+function log(msg, cls) {
+  const line = document.createElement('div');
+  if (cls) line.className = cls;
+  line.textContent = msg;
+  logEl.appendChild(line);
+  logEl.scrollTop = logEl.scrollHeight;
+}
+function clearLog() { logEl.innerHTML = ''; }
+
+let device = null;
+let writableChars = []; // { label, char }
+
+function checkSupport() {
+  clearLog();
+  if (!navigator.bluetooth) {
+    log('navigator.bluetooth is NOT available.', 'err');
+    log('This means: not Chrome, or Chrome version too old, or page not served over HTTPS.', 'err');
+    return;
+  }
+  log('navigator.bluetooth is available.', 'ok');
+  navigator.bluetooth.getAvailability().then(avail => {
+    log('Bluetooth adapter available: ' + avail, avail ? 'ok' : 'err');
+  });
+}
+
+async function scanPrinter() {
+  clearLog();
+  if (!navigator.bluetooth) { log('Web Bluetooth not supported on this browser.', 'err'); return; }
+  log('Opening device picker... look for "P58E" in the list.');
+  log('If P58E does NOT appear in the picker at all, it is almost certainly');
+  log('a classic Bluetooth (SPP) printer, not BLE -- direct browser printing');
+  log('will not be possible without a native app.', 'warn');
+  try {
+    device = await navigator.bluetooth.requestDevice({
+      acceptAllDevices: true,
+      optionalServices: [
+        '000018f0-0000-1000-8000-00805f9b34fb', // common thermal printer service
+        '0000ff00-0000-1000-8000-00805f9b34fb', // common thermal printer service (alt)
+        '49535343-fe7d-4ae5-8fa9-9fafd205e455', // common ISSC/serial-over-BLE service
+        'e7810a71-73ae-499d-8c15-faa9aef0c3f2'  // another common vendor UUID seen on clone printers
+      ]
+    });
+    log('Selected device: ' + device.name + ' (id: ' + device.id + ')', 'ok');
+  } catch (e) {
+    log('Picker cancelled or no BLE devices found: ' + e.message, 'err');
+  }
+}
+
+function propsToString(p) {
+  if (!p) return '(unknown)';
+  const flags = ['write', 'writeWithoutResponse', 'notify', 'indicate', 'read'];
+  return flags.filter(f => p[f]).join(',') || '(none)';
+}
+
+async function tryConnect() {
+  if (!device) { log('Run step 2 first and pick the P58E device.', 'err'); return; }
+  writableChars = [];
+  const picker = document.getElementById('charPicker');
+  picker.innerHTML = '';
+  try {
+    log('Connecting to GATT server...');
+    const server = await device.gatt.connect();
+    log('Connected. Discovering services...', 'ok');
+    const services = await server.getPrimaryServices();
+    if (!services.length) { log('No BLE services exposed.', 'warn'); return; }
+    for (const svc of services) {
+      log('Service: ' + svc.uuid, 'ok');
+      const chars = await svc.getCharacteristics();
+      for (const ch of chars) {
+        const propStr = propsToString(ch.properties);
+        log('  Characteristic: ' + ch.uuid + '  props=' + propStr);
+        if (ch.properties && (ch.properties.write || ch.properties.writeWithoutResponse)) {
+          const label = svc.uuid.slice(0, 8) + '.../' + ch.uuid.slice(0, 8) + '... [' + propStr + ']';
+          writableChars.push({ label, char: ch });
+        }
+      }
+    }
+    if (!writableChars.length) {
+      log('No writable characteristics found -- cannot send print data this way.', 'err');
+    } else {
+      writableChars.forEach((wc, i) => {
+        const opt = document.createElement('option');
+        opt.value = i;
+        opt.textContent = wc.label;
+        picker.appendChild(opt);
+      });
+      log(writableChars.length + ' writable characteristic(s) found. Pick one and hit "Send Test Print".', 'ok');
+    }
+    log('DONE. Copy/screenshot this log and send it back.', 'ok');
+  } catch (e) {
+    log('Connect/service discovery failed: ' + e.message, 'err');
+  }
+}
+
+async function sendTestPrint() {
+  if (!writableChars.length) { log('Run step 3 first (need a writable characteristic).', 'err'); return; }
+  const idx = parseInt(document.getElementById('charPicker').value, 10) || 0;
+  const target = writableChars[idx];
+  log('Sending test print bytes to ' + target.label + ' ...');
+  try {
+    const enc = new TextEncoder();
+    const bytes = [];
+    bytes.push(0x1B, 0x40); // ESC @  initialize
+    bytes.push(...enc.encode('ETEL TEST PRINT\n'));
+    bytes.push(0x1B, 0x45, 0x01); // ESC E 1  bold on
+    bytes.push(...enc.encode('BOLD LINE\n'));
+    bytes.push(0x1B, 0x45, 0x00); // ESC E 0  bold off
+    bytes.push(...enc.encode('normal line\n\n\n'));
+    bytes.push(0x1D, 0x56, 0x00); // GS V 0  full cut (may be ignored if no cutter)
+    const data = new Uint8Array(bytes);
+
+    // BLE has a ~20 byte default MTU on many stacks -- send in chunks.
+    const chunkSize = 20;
+    for (let i = 0; i < data.length; i += chunkSize) {
+      const chunk = data.slice(i, i + chunkSize);
+      if (target.char.properties.writeWithoutResponse) {
+        await target.char.writeValueWithoutResponse(chunk);
+      } else {
+        await target.char.writeValue(chunk);
+      }
+    }
+    log('Bytes sent. Check the printer -- did it print anything?', 'ok');
+  } catch (e) {
+    log('Write failed: ' + e.message, 'err');
+  }
+}
+</script>
+</body>
+</html>

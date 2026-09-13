@@ -1,0 +1,45 @@
+# ── Secrets ──────────────────────────────────────────────────
+api/.env
+.env
+
+# ── Backups & generated files ─────────────────────────────────
+*.backup
+admin.html.backup
+
+# ── Dev / OS clutter ─────────────────────────────────────────
+.DS_Store
+Thumbs.db
+.vscode/settings.json
+*.log
+
+# ── Temp fix files (keep in history, exclude from new deploys) ─
+ALL_ERRORS_FIXED.txt
+ALL_FIXES_COMPLETE.md
+BUGS_FIXED_AND_FEATURES.md
+CUSTOMER_PAGE_FIX.md
+ERROR_FIX_CHECKLIST.txt
+FILE_UPDATER_GUIDE.md
+FINAL_FIXES_AND_ACCOUNTS.md
+FIXES_APPLIED.md
+HOW_TO_FIX_PASSWORDS.txt
+ORDER_FLOW_COMPLETE_FIX.md
+ORDER_FLOW_FIXES.md
+PASSWORD_AND_FAVICON_FIX.md
+QUICK_FIX_SUMMARY.txt
+QUICK_START_ITEMS.md
+README_PASSWORD_FIX.md
+SERVICEGIVER_LOGIN_FIX.md
+SERVICE_GIVER_API_FIXES.md
+UPDATER_COMPLETE.txt
+UPDATER_QUICK_START.txt
+UPDATER_README.md
+UPDATER_TEST_CHECKLIST.md
+UPDATER_WORKFLOW.txt
+UPGRADE_TO_100_PERCENT.md
+fix_passwords.php
+generate_hashes.php
+
+# ── Runtime-generated, not source ──────────────────────────────
+error_log
+__pycache__/
+*.pyc

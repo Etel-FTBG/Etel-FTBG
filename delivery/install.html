@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta name="referrer" content="no-referrer-when-downgrade">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Install ETEL Delivery App</title>
+<meta name="theme-color" content="#C9A961">
+<meta name="description" content="Install ETEL Delivery — fast food, groceries & package delivery in Hawassa, Ethiopia">
+<meta property="og:title" content="ETEL Delivery App">
+<meta property="og:description" content="Order food & groceries in Hawassa. Courier & Service Giver portals included.">
+<meta property="og:image" content="icons/icon-512.png">
+<link rel="manifest" href="/delivery/manifest.php">
+<link rel="icon" href="icons/icon-96.png" type="image/png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-font-smoothing:antialiased}
+:root{
+  --gold:#C9A961;--gold-dark:#8B6E3A;--gold-light:#E8D5A0;
+  --white:#FFFFFF;--text:#1A1A2E;--muted:#666;
+  --r:18px;
+}
+html,body{min-height:100%;font-family:'Poppins',sans-serif;color:var(--text);overflow-x:hidden}
+
+/* ── Background ─────────────────────────────────────────────── */
+body{background:linear-gradient(160deg,#1A1206 0%,#2C1F08 35%,#1E1508 65%,#120E03 100%);position:relative}
+body::before{content:'';position:fixed;inset:0;background:
+  radial-gradient(ellipse 80% 60% at 15% 10%,rgba(201,169,97,.18),transparent 60%),
+  radial-gradient(ellipse 60% 50% at 85% 80%,rgba(201,169,97,.12),transparent 60%);pointer-events:none}
+
+/* ── Hero ────────────────────────────────────────────────────── */
+.hero{text-align:center;padding:60px 24px 40px;position:relative}
+.app-icon-wrap{display:inline-block;position:relative;margin-bottom:28px}
+.app-icon{width:140px;height:140px;border-radius:50%;background:transparent;
+  display:flex;align-items:center;justify-content:center;font-size:60px;
+  box-shadow:0 0 0 3px rgba(201,169,97,.5),0 20px 60px rgba(201,169,97,.35),0 8px 32px rgba(0,0,0,.4);
+  animation:float 4s ease-in-out infinite}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+.app-icon img{width:100%;height:100%;border-radius:50%;object-fit:cover}
+.badge-new{position:absolute;top:-8px;right:-8px;background:#2ECC71;color:#fff;
+  font-size:10px;font-weight:700;padding:3px 8px;border-radius:20px;border:2px solid #1A1206}
+
+.hero h1{font-size:clamp(28px,7vw,42px);font-weight:900;color:var(--white);
+  line-height:1.15;margin-bottom:8px;letter-spacing:-0.5px}
+.hero h1 span{color:var(--gold)}
+.hero .tagline{font-size:15px;color:rgba(255,255,255,.6);margin-bottom:8px}
+.hero .city{font-size:13px;color:var(--gold);font-weight:600;letter-spacing:2px;text-transform:uppercase}
+
+/* ── Install Button ─────────────────────────────────────────── */
+.install-section{padding:0 24px 40px;text-align:center}
+#install-btn{display:none;align-items:center;justify-content:center;gap:10px;
+  width:100%;max-width:380px;padding:18px 28px;
+  background:linear-gradient(135deg,var(--gold),var(--gold-dark));
+  color:white;border:none;border-radius:16px;font-size:17px;font-weight:700;
+  cursor:pointer;font-family:'Poppins',sans-serif;
+  box-shadow:0 8px 32px rgba(201,169,97,.4);
+  transition:all .2s;animation:glow 2s ease-in-out infinite}
+@keyframes glow{0%,100%{box-shadow:0 8px 32px rgba(201,169,97,.4)}50%{box-shadow:0 8px 48px rgba(201,169,97,.7)}}
+#install-btn:hover{transform:translateY(-2px);box-shadow:0 12px 40px rgba(201,169,97,.5)}
+#install-btn.show{display:inline-flex}
+.open-btn{display:inline-flex;align-items:center;gap:8px;
+  padding:16px 32px;background:rgba(255,255,255,.08);border:1.5px solid rgba(201,169,97,.4);
+  color:var(--gold-light);border-radius:14px;font-size:15px;font-weight:600;
+  text-decoration:none;transition:all .2s;margin-top:12px}
+.open-btn:hover{background:rgba(201,169,97,.12);border-color:var(--gold)}
+
+/* ── Install Instructions (iOS) ─────────────────────────────── */
+.ios-guide{display:none;background:rgba(255,255,255,.06);border:1px solid rgba(201,169,97,.25);
+  border-radius:var(--r);padding:24px;margin:0 24px 32px;max-width:480px;margin-left:auto;margin-right:auto}
+.ios-guide h3{color:var(--gold);font-size:15px;font-weight:700;margin-bottom:16px}
+.step{display:flex;align-items:flex-start;gap:12px;margin-bottom:14px}
+.step-num{min-width:28px;height:28px;background:var(--gold);border-radius:50%;
+  display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#1A1206}
+.step p{font-size:13px;color:rgba(255,255,255,.75);line-height:1.5}
+.step p strong{color:var(--white)}
+.share-icon{display:inline-block;width:18px;height:18px;background:#007AFF;color:white;
+  border-radius:4px;font-size:11px;text-align:center;line-height:18px;margin:0 2px;vertical-align:middle}
+
+/* ── Roles / Features ───────────────────────────────────────── */
+.section{padding:0 24px;margin-bottom:36px;max-width:520px;margin-left:auto;margin-right:auto}
+.section-label{font-size:11px;font-weight:700;color:var(--gold);letter-spacing:2px;
+  text-transform:uppercase;margin-bottom:16px}
+.roles{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.role-card{background:rgba(255,255,255,.06);border:1px solid rgba(201,169,97,.2);
+  border-radius:14px;padding:18px 12px;text-align:center;text-decoration:none;
+  transition:all .25s;cursor:pointer;display:block}
+.role-card:hover{background:rgba(201,169,97,.12);border-color:rgba(201,169,97,.5);transform:translateY(-3px)}
+.role-icon{font-size:32px;margin-bottom:10px}
+.role-name{font-size:13px;font-weight:700;color:var(--white);margin-bottom:4px}
+.role-desc{font-size:11px;color:rgba(255,255,255,.5)}
+
+/* ── Feature pills ──────────────────────────────────────────── */
+.features{display:flex;flex-wrap:wrap;gap:10px;justify-content:center}
+.feat{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);
+  border-radius:30px;padding:8px 16px;font-size:12px;color:rgba(255,255,255,.7);
+  display:flex;align-items:center;gap:6px}
+.feat span{font-size:16px}
+
+/* ── QR section ─────────────────────────────────────────────── */
+.qr-section{text-align:center;padding:0 24px 40px;max-width:520px;margin:0 auto}
+.qr-wrap{display:inline-block;background:white;padding:16px;border-radius:20px;
+  box-shadow:0 8px 40px rgba(0,0,0,.4);margin-bottom:16px}
+#qr-canvas{display:block}
+.qr-label{font-size:13px;color:rgba(255,255,255,.5)}
+.qr-url{font-size:12px;color:var(--gold);margin-top:4px;word-break:break-all}
+.share-row{display:flex;gap:10px;justify-content:center;margin-top:16px;flex-wrap:wrap}
+.share-btn{padding:10px 20px;border-radius:10px;font-size:13px;font-weight:600;
+  cursor:pointer;border:none;transition:all .2s;display:flex;align-items:center;gap:6px}
+.share-btn:hover{transform:translateY(-1px)}
+.btn-copy{background:rgba(255,255,255,.1);color:var(--white);border:1px solid rgba(255,255,255,.15)}
+.btn-share{background:var(--gold);color:#1A1206}
+.btn-whatsapp{background:#25D366;color:white}
+
+/* ── Footer ─────────────────────────────────────────────────── */
+footer{text-align:center;padding:24px;font-size:12px;color:rgba(255,255,255,.3)}
+footer a{color:var(--gold);text-decoration:none}
+
+/* ── Divider ─────────────────────────────────────────────────── */
+.divider{height:1px;background:linear-gradient(90deg,transparent,rgba(201,169,97,.3),transparent);margin:0 24px 32px}
+
+/* ── Installed banner ───────────────────────────────────────── */
+.installed-notice{display:none;background:rgba(46,204,113,.15);border:1px solid rgba(46,204,113,.3);
+  border-radius:12px;padding:14px 20px;margin:0 24px 24px;max-width:480px;
+  margin-left:auto;margin-right:auto;text-align:center;font-size:14px;color:#2ECC71;font-weight:600}
+</style>
+    <link rel="stylesheet" href="css/premium.css?v=3.2.7">
+    <link rel="stylesheet" href="css/etel-responsive.css?v=1.0">
+</head>
+<body>
+
+<!-- ── Hero ───────────────────────────────────────────────────── -->
+<div class="hero">
+    <div class="app-icon-wrap">
+        <div class="app-icon">
+            <picture><source srcset="assets/images/logo.webp" type="image/webp"/><img src="assets/images/logo.png" alt="ETEL" onerror="this.style.display=" loading="lazy"/></picture>
+        </div>
+        <div class="badge-new">FREE</div>
+    </div>
+    <h1>ETEL <span>Delivery</span></h1>
+    <div class="tagline">Food · Groceries · Packages · Pharmacy</div>
+    <div class="city">📍 Hawassa, Ethiopia</div>
+</div>
+
+<!-- ── Install ─────────────────────────────────────────────────── -->
+<div class="install-section">
+    <div class="installed-notice" id="installed-notice">✅ App is already installed on your device!</div>
+    <button id="install-btn" onclick="doInstall()">
+        <span style="font-size:22px">⬇️</span> Install App — It's Free
+    </button>
+    <br>
+    <a href="login.html" class="open-btn">▶️ Open App</a>
+    <div style="margin-top:14px;font-size:12px;color:rgba(255,255,255,.35)">No app store needed · Works on Android & iOS</div>
+</div>
+
+<!-- ── iOS Guide ───────────────────────────────────────────────── -->
+<div class="ios-guide" id="ios-guide">
+    <h3>📱 Install on iPhone / iPad</h3>
+    <div class="step">
+        <div class="step-num">1</div>
+        <p>Tap the <strong>Share</strong> button <span class="share-icon">↑</span> at the bottom of Safari</p>
+    </div>
+    <div class="step">
+        <div class="step-num">2</div>
+        <p>Scroll down and tap <strong>"Add to Home Screen"</strong></p>
+    </div>
+    <div class="step">
+        <div class="step-num">3</div>
+        <p>Tap <strong>"Add"</strong> in the top right — the ETEL icon will appear on your home screen</p>
+    </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- ── Role cards ─────────────────────────────────────────────── -->
+<div class="section">
+    <div class="section-label">Choose your role</div>
+    <div class="roles">
+        <a href="login.html" class="role-card">
+            <div class="role-icon">🛒</div>
+            <div class="role-name">Customer</div>
+            <div class="role-desc">Order food & goods</div>
+        </a>
+        <a href="login.html" class="role-card">
+            <div class="role-icon">🚗</div>
+            <div class="role-name">Courier</div>
+            <div class="role-desc">Deliver & earn</div>
+        </a>
+        <a href="login.html" class="role-card">
+            <div class="role-icon">🏪</div>
+            <div class="role-name">Shop Owner</div>
+            <div class="role-desc">Sell your products</div>
+        </a>
+    </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- ── Features ───────────────────────────────────────────────── -->
+<div class="section">
+    <div class="section-label">Why ETEL?</div>
+    <div class="features">
+        <div class="feat"><span>⚡</span> Fast Delivery</div>
+        <div class="feat"><span>🗺️</span> Live Tracking</div>
+        <div class="feat"><span>📲</span> Works Offline</div>
+        <div class="feat"><span>🔒</span> Secure Login</div>
+        <div class="feat"><span>⭐</span> Rated Shops</div>
+        <div class="feat"><span>💰</span> Cash & Transfer</div>
+        <div class="feat"><span>🌍</span> All Hawassa Zones</div>
+        <div class="feat"><span>📦</span> Any Package</div>
+    </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- ── QR Code ────────────────────────────────────────────────── -->
+<div class="qr-section">
+    <div class="section-label" style="margin-bottom:20px">Share with friends</div>
+    <div class="qr-wrap">
+        <div id="qr-container" style="width:180px;height:180px;display:flex;align-items:center;justify-content:center"></div>
+    </div>
+    <div class="qr-label">Scan to install ETEL</div>
+    <div class="qr-url" id="app-url"></div>
+    <div class="share-row">
+        <button class="share-btn btn-copy" onclick="copyLink()">📋 Copy Link</button>
+        <button class="share-btn btn-share" onclick="shareApp()" id="share-btn" style="display:none">🔗 Share</button>
+        <a class="share-btn btn-whatsapp" id="whatsapp-btn" target="_blank">💬 WhatsApp</a>
+    </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- ── APK Download ───────────────────────────────────────────── -->
+<div class="section" style="margin-bottom:48px">
+    <div class="section-label">Android APK — Choose Your Role</div>
+    <div style="background:rgba(255,255,255,.06);border:1px solid rgba(201,169,97,.25);border-radius:18px;padding:24px 20px">
+        <div style="font-size:13px;color:rgba(255,255,255,.55);line-height:1.7;margin-bottom:20px;text-align:center">
+            Download the native Android app (.apk) directly — no Play Store, no PWA install step needed.
+        </div>
+        <div id="apk-grid" style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px">
+            <a href="apk/ኢE_Delivery.apk" class="apk-role-btn"><span>🛒</span> Delivery</a>
+            <a href="apk/ኢE_Driver.apk" class="apk-role-btn"><span>🚕</span> Driver</a>
+            <a href="apk/ኢE_Courier.apk" class="apk-role-btn"><span>🚗</span> Courier</a>
+            <a href="apk/ኢE_Service.apk" class="apk-role-btn"><span>🏪</span> Service Giver</a>
+            <a href="apk/ኢE_Ride.apk" class="apk-role-btn"><span>🚖</span> Ride</a>
+        </div>
+        <div style="margin-top:18px;font-size:11px;color:rgba(255,255,255,.4);text-align:center">
+            After downloading, open the file and allow <strong style="color:rgba(255,255,255,.65)">"Install unknown apps"</strong> if prompted.
+        </div>
+    </div>
+</div>
+<style>
+.apk-role-btn{display:flex;align-items:center;justify-content:center;gap:8px;
+  padding:14px 10px;background:linear-gradient(135deg,#3DDC84,#00C853);color:#06210f;
+  border-radius:12px;font-size:13px;font-weight:700;text-decoration:none;
+  box-shadow:0 4px 16px rgba(61,220,132,.25);transition:transform .15s}
+.apk-role-btn:hover{transform:translateY(-2px)}
+.apk-role-btn span{font-size:17px}
+</style>
+
+<footer>
+    ETEL Delivery · Hawassa, Ethiopia<br>
+    <a href="login.html">Open App</a> · <a href="admin.html">Admin</a>
+</footer>
+
+<!-- QR Library (qrcodejs — proven, works in browser) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+// ── Compute app URL correctly (handles /install, /install.html, etc.) ──
+const _u = new URL(window.location.href);
+_u.search = ''; _u.hash = '';
+const _cleanPath = _u.pathname.replace(/\/?(install(\.html)?)?\s*$/, '');
+const appURL = _u.origin + _cleanPath + '/install.html';
+
+// ── Display URL ─────────────────────────────────────────────────
+document.getElementById('app-url').textContent = appURL;
+
+// ── WhatsApp ────────────────────────────────────────────────────
+const waMsg = encodeURIComponent('Install ETEL Delivery App — fast delivery in Hawassa!\n' + appURL);
+document.getElementById('whatsapp-btn').href = 'https://wa.me/?text=' + waMsg;
+
+// ── PWA Install Prompt ─────────────────────────────────────────
+let deferredPrompt = null;
+const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+const isInStandalone = window.matchMedia('(display-mode: standalone)').matches
+                     || window.navigator.standalone === true;
+
+window.addEventListener('beforeinstallprompt', e => {
+    e.preventDefault();
+    deferredPrompt = e;
+    document.getElementById('install-btn').classList.add('show');
+});
+window.addEventListener('appinstalled', () => {
+    deferredPrompt = null;
+    document.getElementById('install-btn').classList.remove('show');
+    document.getElementById('installed-notice').style.display = 'block';
+});
+async function doInstall() {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === 'accepted') {
+        document.getElementById('installed-notice').style.display = 'block';
+        document.getElementById('install-btn').classList.remove('show');
+    }
+    deferredPrompt = null;
+}
+
+// ── iOS detection ──────────────────────────────────────────────
+if (isIOS && !isInStandalone) document.getElementById('ios-guide').style.display = 'block';
+if (isInStandalone) document.getElementById('installed-notice').style.display = 'block';
+
+// ── Share ──────────────────────────────────────────────────────
+if (navigator.share) document.getElementById('share-btn').style.display = 'flex';
+function shareApp() {
+    navigator.share({ title:'ETEL Delivery — Hawassa', text:'Install ETEL Delivery! Fast food, groceries & packages.', url:appURL }).catch(()=>{});
+}
+function copyLink() {
+    navigator.clipboard.writeText(appURL).then(() => {
+        const b = document.querySelector('.btn-copy');
+        b.textContent = '✅ Copied!';
+        setTimeout(() => b.textContent = '📋 Copy Link', 2000);
+    }).catch(() => prompt('Copy this link:', appURL));
+}
+
+// ── QR Code (generated after DOM + lib ready) ──────────────────
+window.addEventListener('load', () => {
+    if (typeof QRCode !== 'undefined') {
+        new QRCode(document.getElementById('qr-container'), {
+            text: appURL,
+            width: 180,
+            height: 180,
+            colorDark: '#1A1206',
+            colorLight: '#FFFFFF',
+            correctLevel: QRCode.CorrectLevel.M
+        });
+    } else {
+        // Fallback: Google Charts QR API
+        const img = document.createElement('img');
+        img.src = 'https://chart.googleapis.com/chart?chs=180x180&cht=qr&chl=' + encodeURIComponent(appURL);
+        img.style.cssText = 'width:180px;height:180px;border-radius:4px';
+        document.getElementById('qr-container').appendChild(img);
+    }
+    // Register service worker
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('./sw.js').catch(()=>{});
+    }
+});
+</script>
+</body>
+</html>

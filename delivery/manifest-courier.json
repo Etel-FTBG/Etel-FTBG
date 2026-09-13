@@ -1,0 +1,113 @@
+{
+  "id": "./courier/",
+  "name": "ETEL Courier \u2014 Hawassa",
+  "short_name": "\u12a2E_Courier",
+  "description": "Go online and deliver for ETEL Delivery across Hawassa, Ethiopia.",
+  "start_url": "/delivery/courier/?source=pwa",
+  "scope": "/delivery/courier/",
+  "display": "standalone",
+  "background_color": "#0a0703",
+  "theme_color": "#D4AF37",
+  "orientation": "portrait-primary",
+  "lang": "en",
+  "dir": "ltr",
+  "categories": [
+    "business",
+    "productivity",
+    "navigation"
+  ],
+  "icons": [
+    {
+      "src": "icons/courier-icon-72.png",
+      "sizes": "72x72",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/courier-icon-96.png",
+      "sizes": "96x96",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/courier-icon-128.png",
+      "sizes": "128x128",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/courier-icon-144.png",
+      "sizes": "144x144",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/courier-icon-152.png",
+      "sizes": "152x152",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/courier-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/courier-icon-192-maskable.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "icons/courier-icon-384.png",
+      "sizes": "384x384",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/courier-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/courier-icon-512-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "icons/courier-apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Go Online",
+      "short_name": "Jobs",
+      "description": "Go online and accept delivery jobs",
+      "url": "courier/",
+      "icons": [
+        {
+          "src": "assets/images/etel-courier-coin.png",
+          "sizes": "512x512"
+        }
+      ]
+    },
+    {
+      "name": "Order Something (Customer)",
+      "short_name": "Order",
+      "description": "Switch to the customer app",
+      "url": "customer.html",
+      "icons": [
+        {
+          "src": "assets/images/etel-delivery-coin.png",
+          "sizes": "512x512"
+        }
+      ]
+    }
+  ],
+  "prefer_related_applications": false,
+  "related_applications": [
+    {
+      "platform": "webapp",
+      "url": "https://ethelmarket.com/delivery/manifest-courier.json"
+    }
+  ]
+}

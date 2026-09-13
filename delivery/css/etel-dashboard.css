@@ -1,0 +1,129 @@
+/* ============================================================
+   ETEL ADMIN — Dashboard Overview restyle  v1.0
+   File: css/etel-dashboard.css
+
+   Targets the EXISTING classes/ids already used by admin.html's
+   Dashboard Overview panel (#panel-dashboard) and its JS (admin.js) -
+   no new class names introduced, so nothing in the JS that queries
+   .stat-card / .stat-value / etc. needs to change.
+
+   Built on top of css/etel-system.css tokens. Load this AFTER
+   etel-system.css.
+
+   WHY !important IS USED HERE (unlike etel-system.css): admin.css's
+   own base rules hardcode `!important` on some properties (.stat-card
+   border, .chart-card border/transform) - real leftovers from a light
+   theme, still present despite <body class="dark-page"> being
+   hardcoded on with no toggle (confirmed: .data-section's own base
+   background is rgba(255,255,255,.95), i.e. white-on-dark). Beating
+   an existing !important requires a later !important of equal or
+   higher specificity - this file is deliberately scoped to just the
+   handful of properties that actually need it, not applied blanket.
+   ============================================================ */
+
+/* ── Stat cards ── */
+#panel-dashboard .stat-card {
+  background: var(--etel-carbon-2);
+  border: 1px solid var(--etel-gold-line) !important;
+  border-radius: var(--etel-radius-lg);
+  padding: var(--etel-space-5);
+  box-shadow: var(--etel-shadow-sm);
+}
+#panel-dashboard .stat-card:hover {
+  border-color: var(--etel-gold-3) !important;
+  box-shadow: var(--etel-shadow-gold) !important;
+}
+#panel-dashboard .stat-card::before {
+  background: linear-gradient(90deg, var(--etel-gold-2), var(--etel-gold-4));
+}
+#panel-dashboard .stat-icon {
+  opacity: 0.18;
+  filter: grayscale(0.3) sepia(0.4) saturate(2) hue-rotate(-10deg);
+}
+#panel-dashboard .stat-label {
+  color: var(--etel-ink-dim);
+  font-family: var(--etel-font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
+}
+#panel-dashboard .stat-value {
+  font-family: var(--etel-font-display);
+  color: var(--etel-ink);
+  font-weight: 800;
+}
+
+/* ── Chart cards ── */
+#panel-dashboard .chart-card {
+  background: var(--etel-carbon-2);
+  border: 1px solid var(--etel-gold-line) !important;
+  border-radius: var(--etel-radius-lg);
+  padding: var(--etel-space-5);
+  box-shadow: var(--etel-shadow-sm);
+}
+#panel-dashboard .chart-card:hover {
+  border-color: var(--etel-gold-3) !important;
+  box-shadow: var(--etel-shadow-gold) !important;
+}
+#panel-dashboard .chart-title {
+  color: var(--etel-ink);
+  font-family: var(--etel-font-body);
+  font-weight: 700;
+  font-size: 13px;
+  margin-bottom: var(--etel-space-3);
+}
+
+/* ── Recent Orders section (was a near-white card on a dark page) ── */
+#panel-dashboard .data-section {
+  background: var(--etel-carbon-2) !important;
+  border: 1px solid var(--etel-gold-line) !important;
+  border-radius: var(--etel-radius-lg);
+  box-shadow: var(--etel-shadow-sm);
+  backdrop-filter: none;
+}
+#panel-dashboard .section-title {
+  color: var(--etel-ink);
+  font-family: var(--etel-font-display);
+  font-weight: 700;
+}
+
+/* ── Recent Orders table ── */
+#panel-dashboard .table-wrapper table { width: 100%; border-collapse: collapse; }
+#panel-dashboard .table-wrapper th {
+  text-align: left;
+  font-family: var(--etel-font-mono);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--etel-ink-dim);
+  padding: var(--etel-space-3);
+  border-bottom: 1px solid var(--etel-gold-line);
+}
+#panel-dashboard .table-wrapper td {
+  padding: var(--etel-space-3);
+  color: var(--etel-ink);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  font-size: 13px;
+}
+#panel-dashboard .table-wrapper tbody tr {
+  transition: background var(--etel-duration-fast) var(--etel-ease);
+}
+#panel-dashboard .table-wrapper tbody tr:hover {
+  background: var(--etel-gold-wash);
+}
+
+/* ── Content header + action buttons (shared chrome above the panel) ── */
+.content-title {
+  color: var(--etel-ink);
+  font-family: var(--etel-font-display);
+  font-weight: 800;
+}
+.btn-primary {
+  background: linear-gradient(135deg, var(--etel-gold-4), var(--etel-gold-2)) !important;
+  color: var(--etel-carbon-0) !important;
+  border: none !important;
+}
+.btn-secondary {
+  background: var(--etel-gold-wash) !important;
+  color: var(--etel-gold-4) !important;
+  border: 1px solid var(--etel-gold-line) !important;
+}
