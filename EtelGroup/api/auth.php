@@ -319,3 +319,33 @@ function egid_member_count(): int {
     @file_put_contents($cacheFile, json_encode(array('count' => $count)));
     return $count;
 }
+
+// EtelID's canonical company registry (slug/name/status) - the same list
+// its role/auth routes match company_slug against. EtelGroup's own
+// companies table is a separate CMS entity (name/tagline/logo/etc for
+// the public site) with its own slug column; the two are never
+// cross-checked anywhere, so a typo'd or drifted slug in EtelGroup's
+// table silently breaks employee-role assignment for that company with
+// no error surfaced. Exposing this list lets the admin Companies form
+// pick a slug EtelID actually recognizes instead of typing one blind.
+// Cached like member_count - this registry changes only on a code
+// deploy to EtelID, not worth a live call per admin page load.
+function egid_list_id_companies(): array {
+    $cacheFile = sys_get_temp_dir() . '/etelgroup_id_companies.json';
+    $ttl = 300;
+    if (is_file($cacheFile) && (time() - filemtime($cacheFile)) < $ttl) {
+        $cached = json_decode((string)file_get_contents($cacheFile), true);
+        if (is_array($cached) && isset($cached['companies'])) return $cached['companies'];
+    }
+    $res = egid_post('/service/list_companies', array());
+    if ($res['status'] !== 200 || empty($res['body']['ok'])) {
+        if (is_file($cacheFile)) {
+            $cached = json_decode((string)file_get_contents($cacheFile), true);
+            if (is_array($cached) && isset($cached['companies'])) return $cached['companies'];
+        }
+        throw new Exception($res['body']['message'] ?? 'Could not reach EtelID for the company registry');
+    }
+    $companies = $res['body']['companies'] ?? array();
+    @file_put_contents($cacheFile, json_encode(array('companies' => $companies)));
+    return $companies;
+}

@@ -77,6 +77,11 @@ class EtelID_Service_API {
             'callback'            => array( __CLASS__, 'member_count' ),
             'permission_callback' => array( __CLASS__, 'check_service_key' ),
         ));
+        register_rest_route( 'etelid/v1', '/service/list_companies', array(
+            'methods'             => 'POST',
+            'callback'            => array( __CLASS__, 'list_companies' ),
+            'permission_callback' => array( __CLASS__, 'check_service_key' ),
+        ));
     }
 
     /* ---- Shared-secret check (fail closed) ---------------------- */
@@ -387,6 +392,26 @@ class EtelID_Service_API {
         $t = EtelID_DB::t_members();
         $count = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$t} WHERE status != 'revoked'" );
         return rest_ensure_response( array( 'ok' => true, 'count' => $count ) );
+    }
+
+    /* ---- POST /service/list_companies -----------------------------
+       The canonical slug/name/status registry from EtelID_Generator -
+       the single source of truth every other role/auth route above
+       matches company_slug against by exact string, with no error on a
+       typo. Exposed here so sibling admin panels (EtelGroup's Companies
+       CMS in particular) can populate their own slug picker from this
+       list instead of letting an admin type an arbitrary slug that
+       looks right but silently never matches a real role here. */
+    public static function list_companies( $request ) {
+        $out = array();
+        foreach ( EtelID_Generator::companies() as $slug => $c ) {
+            $out[] = array(
+                'slug'   => $slug,
+                'name'   => $c['name'],
+                'status' => $c['status'],
+            );
+        }
+        return rest_ensure_response( array( 'ok' => true, 'companies' => $out ) );
     }
 }
 
