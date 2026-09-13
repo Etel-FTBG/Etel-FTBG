@@ -257,12 +257,47 @@ async function loadCompanies() {
   `).join('');
 }
 
-function openCompanyForm(id) {
+let EGA_ID_COMPANIES = null; // EtelID's canonical slug registry, loaded once and cached
+
+async function loadIdCompanies() {
+  if (EGA_ID_COMPANIES) return EGA_ID_COMPANIES;
+  const res = await egaApi('admin_list_id_companies');
+  EGA_ID_COMPANIES = res.ok ? res.data.companies : [];
+  return EGA_ID_COMPANIES;
+}
+
+function renderSlugOptions(currentSlug) {
+  const select = document.getElementById('cf-slug');
+  const hint = document.getElementById('cf-slug-hint');
+  const known = EGA_ID_COMPANIES || [];
+  const opts = known.map(c => `<option value="${egaEsc(c.slug)}">${egaEsc(c.name)} (${egaEsc(c.slug)})</option>`);
+  const isKnown = currentSlug && known.some(c => c.slug === currentSlug);
+  if (currentSlug && !isKnown) {
+    opts.unshift(`<option value="${egaEsc(currentSlug)}">${egaEsc(currentSlug)} (not recognized by EtelID)</option>`);
+  }
+  select.innerHTML = '<option value="">Select a company…</option>' + opts.join('');
+  select.value = currentSlug || '';
+  hint.textContent = !currentSlug
+    ? ''
+    : isKnown
+      ? ''
+      : '⚠ This slug isn\'t in EtelID\'s registry - employee role assignment for it will silently fail. Pick a recognized slug, or have EtelID add this company first.';
+  select.onchange = () => {
+    const v = select.value;
+    const known2 = EGA_ID_COMPANIES || [];
+    hint.textContent = (v && !known2.some(c => c.slug === v))
+      ? '⚠ Not in EtelID\'s registry - employee roles for this company will silently fail to save.'
+      : '';
+  };
+}
+
+async function openCompanyForm(id) {
   const c = id ? EGA_COMPANIES.find(x => x.id === id) : null;
   document.getElementById('company-form-title').textContent = c ? 'Edit Company' : 'Add Company';
   document.getElementById('cf-id').value = c ? c.id : '';
   document.getElementById('cf-name').value = c ? c.name : '';
-  document.getElementById('cf-slug').value = c ? c.slug : '';
+  await loadIdCompanies();
+  renderSlugOptions(c ? c.slug : '');
   document.getElementById('cf-url').value = c ? c.url : '';
   document.getElementById('cf-tagline').value = c ? c.tagline : '';
   document.getElementById('cf-tagline-am').value = c ? c.tagline_am : '';
