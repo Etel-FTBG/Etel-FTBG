@@ -1,0 +1,276 @@
+/* ============================================================
+   ETEL DESIGN SYSTEM  v1.0
+   File: css/etel-system.css
+
+   ONE canonical set of design tokens and core components for the
+   whole ETEL Group web surface (admin, index, login - customer/ride/
+   driver/courier apps already have their own consolidated bundles
+   and are Phase 2, see note at the bottom).
+
+   This REPLACES, for any page that loads it instead:
+     - premium.css        (conflicting light-blue/glass theme - dropped)
+     - admin-premium.css
+     - etel-design-v4.css
+     - etel-gold-theme.css
+     - etel-phase5.css
+     - etel-responsive.css
+
+   Those five files had each independently reinvented the same gold/
+   carbon palette under a different variable prefix (--gold-*, --etl-*,
+   --g-*, --p5-*), then fought each other with !important overrides to
+   win the cascade (etel-phase5.css's own comment: "strong override
+   wins over premium.css"). All four agreed on one thing without
+   coordinating - the same cubic-bezier(.22,1,.36,1) ease curve - which
+   is why that's kept here as the one motion signature.
+
+   No !important anywhere in this file. Normal specificity is enough
+   when there's only one source of truth.
+   ============================================================ */
+
+:root {
+  /* ---- Carbon (backgrounds, dark surfaces) ---- */
+  --etel-carbon-0: #030205;   /* deepest background */
+  --etel-carbon-1: #0a0703;
+  --etel-carbon-2: #130d05;   /* card/panel surface */
+  --etel-carbon-3: #1a1206;   /* elevated surface (modals, popovers) */
+  --etel-carbon-4: #241a0c;   /* hover state on elevated surface */
+
+  /* ---- Gold (brand accent, full tonal range) ---- */
+  --etel-gold-1: #8a6418;    /* deepest, for text-on-gold or borders */
+  --etel-gold-2: #c8960c;
+  --etel-gold-3: #d4af37;    /* THE brand gold - primary accent */
+  --etel-gold-4: #e8c84a;    /* lighter, for hover/highlight */
+  --etel-gold-5: #f2cc6b;    /* lightest, for glow/shine effects */
+  --etel-gold-line: rgba(212, 175, 55, 0.22);   /* hairline borders */
+  --etel-gold-wash: rgba(212, 175, 55, 0.08);   /* subtle fill/tint */
+
+  /* ---- Text ---- */
+  --etel-ink: #ededf5;        /* primary text on dark */
+  --etel-ink-dim: #9a9aae;    /* secondary text */
+  --etel-ink-faint: #6b6e82;  /* tertiary/disabled text */
+
+  /* ---- Semantic ---- */
+  --etel-ok: #2ecc71;
+  --etel-ok-wash: rgba(46, 204, 113, 0.12);
+  --etel-err: #e74c3c;
+  --etel-err-wash: rgba(231, 76, 60, 0.12);
+  --etel-warn: #f59e0b;
+  --etel-warn-wash: rgba(245, 158, 11, 0.12);
+  --etel-info: #60b4ff;
+  --etel-info-wash: rgba(96, 180, 255, 0.12);
+
+  /* ---- Typography ---- */
+  --etel-font-display: 'Syne', 'Noto Sans Ethiopic', sans-serif;
+  --etel-font-body: 'Outfit', 'Noto Sans Ethiopic', system-ui, sans-serif;
+  --etel-font-mono: 'JetBrains Mono', monospace;
+
+  /* ---- Spacing scale (4px base) ---- */
+  --etel-space-1: 4px;
+  --etel-space-2: 8px;
+  --etel-space-3: 12px;
+  --etel-space-4: 16px;
+  --etel-space-5: 20px;
+  --etel-space-6: 24px;
+  --etel-space-8: 32px;
+  --etel-space-10: 40px;
+  --etel-space-12: 48px;
+
+  /* ---- Radius scale ---- */
+  --etel-radius-sm: 8px;
+  --etel-radius-md: 12px;
+  --etel-radius-lg: 16px;
+  --etel-radius-xl: 24px;
+  --etel-radius-pill: 999px;
+
+  /* ---- Elevation (shadows) ---- */
+  --etel-shadow-sm: 0 2px 8px -2px rgba(0, 0, 0, 0.4);
+  --etel-shadow-md: 0 8px 24px -8px rgba(0, 0, 0, 0.5);
+  --etel-shadow-lg: 0 20px 60px -16px rgba(0, 0, 0, 0.6);
+  --etel-shadow-gold: 0 8px 24px -8px rgba(212, 175, 55, 0.35);
+
+  /* ---- Motion ---- */
+  --etel-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --etel-duration-fast: 0.15s;
+  --etel-duration-base: 0.25s;
+  --etel-duration-slow: 0.4s;
+}
+
+/* ── Base ── */
+body.etel-system {
+  background: var(--etel-carbon-0);
+  color: var(--etel-ink);
+  font-family: var(--etel-font-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Buttons (bespoke chrome: each intent is its own visual identity,
+   not one shared .btn class reused everywhere) ── */
+.etel-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--etel-space-2);
+  font-family: var(--etel-font-body);
+  font-weight: 700;
+  font-size: 13px;
+  border: none;
+  cursor: pointer;
+  border-radius: var(--etel-radius-pill);
+  padding: 11px 22px;
+  transition: transform var(--etel-duration-fast) var(--etel-ease),
+              box-shadow var(--etel-duration-fast) var(--etel-ease),
+              background var(--etel-duration-fast) var(--etel-ease);
+}
+.etel-btn:active { transform: scale(0.97); }
+
+.etel-btn-primary {
+  background: linear-gradient(135deg, var(--etel-gold-4), var(--etel-gold-2));
+  color: var(--etel-carbon-0);
+  box-shadow: var(--etel-shadow-gold);
+}
+.etel-btn-primary:hover { box-shadow: 0 10px 30px -8px rgba(212, 175, 55, 0.5); }
+
+.etel-btn-secondary {
+  background: transparent;
+  color: var(--etel-ink);
+  border: 1px solid var(--etel-gold-line);
+}
+.etel-btn-secondary:hover { background: var(--etel-gold-wash); }
+
+.etel-btn-ghost {
+  background: var(--etel-gold-wash);
+  color: var(--etel-gold-4);
+  border: 1px solid var(--etel-gold-line);
+}
+
+.etel-btn-danger {
+  background: var(--etel-err-wash);
+  color: var(--etel-err);
+  border: 1px solid rgba(231, 76, 60, 0.3);
+}
+
+/* ── Cards / panels ── */
+.etel-card {
+  background: var(--etel-carbon-2);
+  border: 1px solid var(--etel-gold-line);
+  border-radius: var(--etel-radius-lg);
+  padding: var(--etel-space-6);
+  box-shadow: var(--etel-shadow-sm);
+}
+.etel-card-elevated {
+  background: var(--etel-carbon-3);
+  box-shadow: var(--etel-shadow-md);
+}
+
+/* ── Badges / pills / status chips ── */
+.etel-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-family: var(--etel-font-mono);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 4px 11px;
+  border-radius: var(--etel-radius-pill);
+  text-transform: uppercase;
+}
+.etel-badge-gold { background: var(--etel-gold-wash); color: var(--etel-gold-4); border: 1px solid var(--etel-gold-line); }
+.etel-badge-ok { background: var(--etel-ok-wash); color: var(--etel-ok); }
+.etel-badge-err { background: var(--etel-err-wash); color: var(--etel-err); }
+.etel-badge-warn { background: var(--etel-warn-wash); color: var(--etel-warn); }
+.etel-badge-info { background: var(--etel-info-wash); color: var(--etel-info); }
+
+/* ── Inputs ── */
+.etel-input {
+  width: 100%;
+  background: var(--etel-carbon-1);
+  border: 1px solid var(--etel-gold-line);
+  border-radius: var(--etel-radius-md);
+  padding: 11px 14px;
+  color: var(--etel-ink);
+  font-family: var(--etel-font-body);
+  font-size: 13.5px;
+  transition: border-color var(--etel-duration-fast) var(--etel-ease);
+}
+.etel-input:focus {
+  outline: none;
+  border-color: var(--etel-gold-3);
+  box-shadow: 0 0 0 3px var(--etel-gold-wash);
+}
+.etel-input::placeholder { color: var(--etel-ink-faint); }
+
+/* ── Header / nav baseline (page-specific CSS can still override layout) ── */
+.etel-header {
+  background: linear-gradient(165deg, var(--etel-carbon-2), var(--etel-carbon-1));
+  border-bottom: 1px solid var(--etel-gold-line);
+}
+.etel-header-title {
+  font-family: var(--etel-font-display);
+  font-weight: 800;
+  background: linear-gradient(90deg, var(--etel-gold-2), var(--etel-gold-4));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* ── Stat chip (dashboard numbers) ── */
+.etel-stat {
+  background: var(--etel-gold-wash);
+  border: 1px solid var(--etel-gold-line);
+  border-radius: var(--etel-radius-md);
+  padding: var(--etel-space-3) var(--etel-space-4);
+}
+.etel-stat-value {
+  font-family: var(--etel-font-display);
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--etel-gold-4);
+}
+.etel-stat-label {
+  font-family: var(--etel-font-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.06em;
+  color: var(--etel-ink-dim);
+  text-transform: uppercase;
+}
+
+/* ── Table (admin lists) ── */
+.etel-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.etel-table th {
+  text-align: left;
+  font-family: var(--etel-font-mono);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--etel-ink-dim);
+  padding: var(--etel-space-3) var(--etel-space-3);
+  border-bottom: 1px solid var(--etel-gold-line);
+}
+.etel-table td {
+  padding: var(--etel-space-3);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  color: var(--etel-ink);
+}
+.etel-table tbody tr {
+  transition: background var(--etel-duration-fast) var(--etel-ease);
+}
+.etel-table tbody tr:hover { background: var(--etel-gold-wash); }
+
+/* ── Responsive helpers (replaces etel-responsive.css) ── */
+@media (max-width: 768px) {
+  .etel-card { padding: var(--etel-space-4); }
+  .etel-header-title { font-size: 18px; }
+}
+
+/*
+  ── PHASE 2 (not yet applied) ──
+  customer.html / ride / driver / courier apps already load their own
+  consolidated bundles (customer-v5.css, ride-bundle.css, driver-
+  bundle.css, courier-bundle.css) with colors partly inlined directly
+  in the JS bundles (js/*-bundle.js), not just these CSS files. Wiring
+  them onto this same token system is a real, separate follow-up pass:
+  it means auditing inline styles inside the JS bundles too, not just
+  swapping a <link> tag, and deserves its own dedicated session rather
+  than a rushed pass here.
+*/

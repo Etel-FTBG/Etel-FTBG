@@ -224,11 +224,14 @@ function switchTab(name) {
   document.getElementById('panel-dashboard').style.display = name === 'dashboard' ? 'block' : 'none';
   document.getElementById('panel-companies').style.display = name === 'companies' ? 'block' : 'none';
   document.getElementById('panel-employees').style.display = name === 'employees' ? 'block' : 'none';
+  document.getElementById('panel-activity').style.display = name === 'activity' ? 'block' : 'none';
   document.getElementById('tab-nav-dashboard').classList.toggle('active', name === 'dashboard');
   document.getElementById('tab-nav-companies').classList.toggle('active', name === 'companies');
   document.getElementById('tab-nav-employees').classList.toggle('active', name === 'employees');
+  document.getElementById('tab-nav-activity').classList.toggle('active', name === 'activity');
   if (name === 'companies') loadCompanies();
   if (name === 'employees') loadEmployeesTab();
+  if (name === 'activity') loadActivityTab(1);
 }
 
 // ---------- companies CRUD ----------
@@ -429,4 +432,52 @@ async function removeEmployeeRole(id) {
   if (!confirm('Remove this role? They will lose this access immediately.')) return;
   await egaApi('admin_remove_employee_role', { id });
   loadEmployeeRoles();
+}
+
+// ---------- activity log ----------
+let EGA_ACTIVITY_PAGE = 1;
+
+const EGA_ACTIVITY_LABELS = {
+  login: 'Signed in',
+  message_status_updated: 'Updated message status',
+  message_deleted: 'Deleted message',
+  company_created: 'Added company',
+  company_updated: 'Updated company',
+  company_deleted: 'Deleted company',
+  companies_reordered: 'Reordered companies',
+  employee_role_set: 'Assigned employee role',
+  employee_role_removed: 'Removed employee role',
+};
+
+async function loadActivityTab(page) {
+  EGA_ACTIVITY_PAGE = page || EGA_ACTIVITY_PAGE;
+  const tbody = document.getElementById('activity-tbody');
+  tbody.innerHTML = '<tr><td colspan="4" class="empty-row">Loading...</td></tr>';
+  const res = await egaApi('admin_list_activity', { page: EGA_ACTIVITY_PAGE });
+  if (!res.ok) { tbody.innerHTML = `<tr><td colspan="4" class="empty-row">${egaEsc(res.error)}</td></tr>`; return; }
+  const entries = res.data.entries;
+  if (!entries.length) {
+    tbody.innerHTML = '<tr><td colspan="4" class="empty-row">No activity recorded yet.</td></tr>';
+  } else {
+    tbody.innerHTML = entries.map(e => `
+      <tr>
+        <td style="color:var(--text-faint);font-size:11.5px;white-space:nowrap">${egaEsc(e.created_at)}</td>
+        <td><strong>${egaEsc(e.actor_name) || '<span style=\"color:var(--text-faint)\">Unknown</span>'}</strong>${e.actor_etel_id ? '<br><span style="color:var(--text-dim);font-size:11.5px">' + egaEsc(e.actor_etel_id) + '</span>' : ''}</td>
+        <td><span class="pill replied">${egaEsc(EGA_ACTIVITY_LABELS[e.action] || e.action)}</span></td>
+        <td style="color:var(--text-dim)">${egaEsc(e.detail)}</td>
+      </tr>
+    `).join('');
+  }
+  renderActivityPagination(res.data.page, res.data.total_pages);
+}
+
+function renderActivityPagination(page, totalPages) {
+  const el = document.getElementById('activity-pagination');
+  if (totalPages <= 1) { el.innerHTML = ''; return; }
+  let html = `<button ${page <= 1 ? 'disabled' : ''} onclick="loadActivityTab(${page - 1})">‹ Prev</button>`;
+  for (let p = 1; p <= totalPages; p++) {
+    html += `<button class="${p === page ? 'active' : ''}" onclick="loadActivityTab(${p})">${p}</button>`;
+  }
+  html += `<button ${page >= totalPages ? 'disabled' : ''} onclick="loadActivityTab(${page + 1})">Next ›</button>`;
+  el.innerHTML = html;
 }

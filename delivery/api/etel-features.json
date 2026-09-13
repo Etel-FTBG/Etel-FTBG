@@ -1,0 +1,6 @@
+{
+    "_comment": "Central feature flags shared across Etel Group products. etelpay_live controls whether the Etel Pay wallet payment option is shown as usable or as 'Coming Soon' everywhere it appears (Delivery checkout, Ride, etc). Toggle via admin-toggle-feature.php - do not hand-edit unless you know what you're doing, since other projects may cache this.",
+    "etelpay_live": false,
+    "etelpay_live_updated_at": "2026-08-01 05:24:02",
+    "etelpay_live_updated_by": "Etel Admin"
+}

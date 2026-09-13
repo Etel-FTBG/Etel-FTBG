@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Your Investment — Etel Group</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=JetBrains+Mono:wght@400;500;700&display=swap');
+  *{box-sizing:border-box}
+  body{margin:0;min-height:100vh;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+    background:#08050a;color:#EDEDF5;
+    background-image:radial-gradient(ellipse 1100px 700px at 12% -10%, rgba(212,175,55,.14), transparent 60%),
+                      radial-gradient(ellipse 800px 600px at 105% 5%, rgba(90,169,255,.05), transparent 55%);}
+  .topbar{position:sticky;top:0;z-index:50;display:flex;align-items:center;justify-content:space-between;
+    padding:12px 18px;background:rgba(8,5,10,.85);backdrop-filter:blur(10px);border-bottom:1px solid rgba(212,175,55,.2)}
+  .topbar-btn{background:rgba(255,255,255,.06);border:1px solid rgba(212,175,55,.3);color:#F2CC6B;
+    font-weight:700;font-size:12.5px;padding:8px 14px;border-radius:10px;cursor:pointer}
+  .topbar-btn:active{transform:scale(.96)}
+  .topbar-updated{font-size:11px;color:#6a6156}
+  .ring-wrap{position:relative;width:64px;height:64px;flex:none;filter:drop-shadow(0 8px 14px rgba(0,0,0,.4))}
+  .ring-outer{position:absolute;inset:0;border-radius:50%;animation:invRingSpin 9s linear infinite}
+  @keyframes invRingSpin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+  .ring-inner{position:absolute;inset:6px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#1c1608,#0a0703 75%);
+    box-shadow:inset 0 3px 8px rgba(0,0,0,.6),0 0 0 1px rgba(255,255,255,.05);
+    display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:800;color:#F2CC6B}
+  .ring-wrap{position:relative;width:64px;height:64px;flex:none;filter:drop-shadow(0 8px 14px rgba(0,0,0,.4))}
+  .ring-outer{position:absolute;inset:0;border-radius:50%;animation:invRingSpin 9s linear infinite}
+  @keyframes invRingSpin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+  .ring-inner{position:absolute;inset:6px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#1c1608,#0a0703 75%);
+    box-shadow:inset 0 3px 8px rgba(0,0,0,.6),0 0 0 1px rgba(255,255,255,.05);
+    display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:800;color:#F2CC6B}
+  .wrap{max-width:760px;margin:0 auto;padding:28px 18px 60px}
+  .hdr{display:flex;align-items:center;gap:14px;margin-bottom:24px}
+  .hdr-badge{width:46px;height:46px;border-radius:14px;background:linear-gradient(135deg,#C8960C,#F2CC6B 45%,#8a5e14 100%);
+    display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-weight:800;font-size:19px;color:#100b02;
+    box-shadow:0 10px 22px rgba(0,0,0,.4),0 2px 0 rgba(255,255,255,.5) inset;flex:none}
+  .hdr h1{font-family:'Syne',sans-serif;font-size:19px;margin:0;color:#F2CC6B}
+  .hdr p{margin:2px 0 0;font-size:12.5px;color:#8a7f66}
+  .card{position:relative;background:linear-gradient(165deg, rgba(24,17,8,.94) 0%, rgba(8,5,2,.97) 100%);
+    border:1px solid rgba(212,175,55,.35);border-radius:20px;padding:22px;margin-bottom:18px;
+    box-shadow:0 24px 50px -12px rgba(0,0,0,.55), 0 1px 0 rgba(255,255,255,.06) inset;overflow:hidden}
+  .card::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;
+    background:linear-gradient(90deg, transparent, #D4AF37, #F2CC6B, #D4AF37, transparent);
+    box-shadow:0 0 14px rgba(242,204,107,.55)}
+  .card h2{font-size:15px;color:#F2CC6B;margin:0 0 14px;font-family:'Syne',sans-serif}
+  .grid{display:grid;gap:14px;grid-template-columns:repeat(2,1fr)}
+  @media(max-width:520px){.grid{grid-template-columns:1fr}}
+  .kpi-label{font-size:10.5px;text-transform:uppercase;letter-spacing:.07em;color:#8a7f66;font-weight:700}
+  .kpi-value{font-family:'JetBrains Mono',monospace;font-size:22px;font-weight:700;margin-top:6px;
+    background:linear-gradient(135deg,#F2CC6B,#C8960C);-webkit-background-clip:text;background-clip:text;color:transparent}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th{text-align:left;padding:9px;font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:#8a7f66;border-bottom:1px solid rgba(212,175,55,.25)}
+  td{padding:10px 9px;border-bottom:1px solid rgba(255,255,255,.04);color:#cabf9f}
+  td.hi{color:#f8f1e2;font-weight:700}
+  .badge{padding:4px 11px;border-radius:20px;font-size:10px;font-weight:800;text-transform:uppercase}
+  .badge.paid,.badge.signed{background:rgba(63,206,122,.15);color:#3fce7a}
+  .badge.pending,.badge.sent{background:rgba(255,196,0,.15);color:#ffce54}
+  .badge.unpaid{background:rgba(255,93,108,.15);color:#ff5d6c}
+  .badge.draft{background:rgba(255,255,255,.08);color:#cabf9f}
+  .empty{text-align:center;padding:40px 18px;color:#8a7f66}
+  .locked{text-align:center;padding:30px 18px;color:#8a7f66;font-size:13px}
+  #app{display:none}
+  #loading, #error{text-align:center;padding:80px 20px;color:#8a7f66}
+  #error{color:#ff9aa4;display:none}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <button class="topbar-btn" onclick="goBack()">← Back</button>
+  <span id="last-updated" class="topbar-updated"></span>
+  <button class="topbar-btn" id="refresh-btn" onclick="manualRefresh()">⟳ Refresh</button>
+</div>
+<div class="wrap">
+  <div class="hdr">
+    <div class="hdr-badge">E</div>
+    <div><h1>Your Investment</h1><p>Etel Group · Hawassa, Ethiopia</p></div>
+  </div>
+  <div id="loading">Loading your investment view…</div>
+  <div id="error"></div>
+  <div id="app"></div>
+</div>
+
+<script>
+function goBack() {
+  // Opened as its own tab/window from the app's Profile section - the
+  // natural "back" is closing this tab and returning to the app that
+  // opened it. window.close() only works on script-opened windows
+  // (true here), but some browsers still block it - history.back() is
+  // the fallback for the rare case this got opened as a normal link.
+  window.close();
+  setTimeout(function () { if (!window.closed) history.back(); }, 150);
+}
+
+// Same path-resolution approach as core.js's ETEL.api - anchors on
+// the /delivery/ marker so this works regardless of exactly how deep
+// investor/index.html is served from, rather than a hardcoded guess.
+const API = (function() {
+  const loc = window.location.pathname;
+  const marker = '/delivery/';
+  const markerIdx = loc.indexOf(marker);
+  const dir = markerIdx >= 0 ? loc.substring(0, markerIdx + marker.length) : loc.substring(0, loc.lastIndexOf('/') + 1);
+  return window.location.protocol + '//' + window.location.host + dir + 'api/boot.php';
+})();
+
+function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function fmt(n) { return 'ETB ' + Math.round(Number(n) || 0).toLocaleString(); }
+function pct(n) { return (Math.round((Number(n) || 0) * 100) / 100).toFixed(2) + '%'; }
+function ringHtml(pctValue, label) {
+  const deg = Math.max(0, Math.min(100, pctValue)) * 3.6;
+  return `<div class="ring-wrap">
+    <div class="ring-outer" style="background:conic-gradient(#F2CC6B ${deg}deg, rgba(255,255,255,.08) ${deg}deg)"></div>
+    <div class="ring-inner">${esc(label)}</div>
+  </div>`;
+}
+
+function ringHtml(pctValue, label) {
+  const deg = Math.max(0, Math.min(100, pctValue)) * 3.6;
+  return `<div class="ring-wrap">
+    <div class="ring-outer" style="background:conic-gradient(#F2CC6B ${deg}deg, rgba(255,255,255,.08) ${deg}deg)"></div>
+    <div class="ring-inner">${label}</div>
+  </div>`;
+}
+
+function getToken() {
+  const params = new URLSearchParams(window.location.search);
+  return params.get('token') || '';
+}
+
+async function apiCall(action, body) {
+  const res = await fetch(API, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action, ...(body || {}) }),
+  });
+  return res.json();
+}
+
+async function apiCallAuthed(action, token, body) {
+  const res = await fetch(API, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+    body: JSON.stringify({ action, ...(body || {}) }),
+  });
+  return res.json();
+}
+
+function getStoredToken() {
+  try { return localStorage.getItem('etel_token') || ''; } catch (e) { return ''; }
+}
+
+async function loadPortal() {
+  const linkToken = getToken();
+  const sessionToken = getStoredToken();
+  const loadingEl = document.getElementById('loading');
+  const errorEl = document.getElementById('error');
+  const appEl = document.getElementById('app');
+
+  // Prefer the person's own EtelID session if one exists on this
+  // device - that's the whole point of this upgrade (open any time by
+  // just being logged in, no link to keep track of). Only fall back
+  // to the older ?token= link mode if there's no session, or the
+  // session isn't linked to an investor record.
+  let res, usingSession = false;
+  if (sessionToken) {
+    res = await apiCallAuthed('investor_portal_get_my_view', sessionToken);
+    if (res.success) usingSession = true;
+  }
+  if (!usingSession) {
+    if (!linkToken) {
+      loadingEl.style.display = 'none';
+      errorEl.style.display = 'block';
+      errorEl.textContent = sessionToken
+        ? 'Your EtelID isn\'t linked to an investor record yet. Contact the founder.'
+        : 'No access link provided, and you\'re not logged in. Ask the founder for your personal investment link, or log into any Etel app first.';
+      return;
+    }
+    res = await apiCall('investor_portal_get_view', { token: linkToken });
+  }
+  loadingEl.style.display = 'none';
+  if (!res.success) {
+    errorEl.style.display = 'block';
+    errorEl.textContent = res.message || 'Could not load your investment view.';
+    return;
+  }
+  appEl.style.display = 'block';
+  const d = res.data;
+  const inv = d.investor;
+
+  let html = `
+    <div class="card">
+      <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px">
+        ${ringHtml(inv.ownership_pct, pct(inv.ownership_pct))}
+        <h2 style="margin:0">👋 ${esc(inv.name)}</h2>
+      </div>
+      <div class="grid" style="margin-bottom:14px">
+        <div><div class="kpi-label">Your Investment${inv.investment_count > 1 ? ' (' + inv.investment_count + ' entries)' : ''}</div><div class="kpi-value">${fmt(inv.amount_invested)}</div></div>
+        <div><div class="kpi-label">Ownership</div><div class="kpi-value">${pct(inv.ownership_pct)}</div></div>
+        <div><div class="kpi-label">Shares</div><div class="kpi-value" style="font-size:18px">${inv.shares.toFixed(2)}</div></div>
+        <div><div class="kpi-label">Invested On</div><div class="kpi-value" style="font-size:16px">${esc(inv.invested_at || '—')}</div></div>
+      </div>
+      <div style="display:flex;gap:10px">
+        <span class="badge ${esc(inv.payment_status)}">${esc(inv.payment_status)}</span>
+        <span class="badge ${esc(inv.agreement_status)}">${esc(inv.agreement_status)}</span>
+      </div>
+    </div>`;
+
+  if (d.permissions.can_view_distributions) {
+    html += `
+    <div class="card">
+      <h2>💸 Your Profit Distributions</h2>
+      <div class="grid" style="margin-bottom:14px;grid-template-columns:1fr">
+        <div><div class="kpi-label">Total Received To Date</div><div class="kpi-value">${fmt(d.total_received)}</div></div>
+      </div>
+      ${d.my_distributions.length ? `
+      <table><thead><tr><th>Date</th><th>Ownership at the time</th><th>Your Share</th></tr></thead><tbody>
+        ${d.my_distributions.map(r => `<tr><td>${esc((r.created_at||'').slice(0,10))}</td><td class="mono">${pct(r.ownership_pct)}</td><td class="hi">${fmt(r.profit_share)}</td></tr>`).join('')}
+      </tbody></table>` : '<div class="empty">No distributions recorded yet.</div>'}
+    </div>`;
+  }
+
+  if (d.permissions.can_view_captable) {
+    html += `
+    <div class="card">
+      <h2>📊 Full Cap Table</h2>
+      <table><thead><tr><th>Investor</th><th>Ownership %</th></tr></thead><tbody>
+        <tr><td class="hi">Founder</td><td class="mono">${(100 - d.cap_table.reduce((s,r)=>s+r.ownership_pct,0)).toFixed(2)}%</td></tr>
+        ${d.cap_table.map(r => `<tr><td>${esc(r.name)}</td><td class="mono">${pct(r.ownership_pct)}</td></tr>`).join('')}
+      </tbody></table>
+    </div>`;
+  }
+
+  if (d.permissions.can_view_growth_planner) {
+    const gpRes = usingSession
+      ? await apiCallAuthed('investor_portal_get_my_growth_planner_data', sessionToken)
+      : await apiCall('investor_portal_get_growth_planner_data', { token: linkToken });
+    if (gpRes.success) {
+      const gp = gpRes.data;
+      html += `
+      <div class="card">
+        <h2>🚀 Company Growth Assumptions</h2>
+        <div style="font-size:12px;color:#8a7f66;margin-bottom:14px;line-height:1.5">
+          Current round settings and cost structure the founder is planning against. This reflects
+          assumptions and current configuration, not guaranteed results.
+        </div>
+        <div class="grid">
+          <div><div class="kpi-label">Target Raise</div><div class="kpi-value" style="font-size:18px">${fmt(gp.settings.target_amount)}</div></div>
+          <div><div class="kpi-label">Investor Pool</div><div class="kpi-value" style="font-size:18px">${pct(gp.settings.investor_equity_pct)}</div></div>
+          <div><div class="kpi-label">Payment Processing</div><div class="kpi-value" style="font-size:18px">${pct(gp.costs.payment_processing_pct)}</div></div>
+          <div><div class="kpi-label">Monthly Fixed Costs</div><div class="kpi-value" style="font-size:18px">${fmt(Number(gp.costs.monthly_customer_acquisition) + Number(gp.costs.monthly_hosting_cost) + Number(gp.costs.monthly_support_cost) + Number(gp.costs.monthly_incentive_budget) + Number(gp.costs.monthly_refunds_estimate) + Number(gp.costs.monthly_admin_overhead))}</div></div>
+        </div>
+      </div>`;
+    } else {
+      html += `<div class="card"><div class="locked">Could not load growth data: ${esc(gpRes.message || 'unknown error')}</div></div>`;
+    }
+  } else {
+    html += `<div class="card"><div class="locked">🔒 Additional views (e.g. growth projections) are shown here if the founder enables them for your account.</div></div>`;
+  }
+
+  appEl.innerHTML = html;
+  const tsEl = document.getElementById('last-updated');
+  if (tsEl) tsEl.textContent = 'Updated ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+
+async function manualRefresh() {
+  const btn = document.getElementById('refresh-btn');
+  if (btn) { btn.disabled = true; btn.textContent = '⟳ …'; }
+  document.getElementById('error').style.display = 'none';
+  await loadPortal();
+  if (btn) { btn.disabled = false; btn.textContent = '⟳ Refresh'; }
+}
+
+loadPortal();
+</script>
+</body>
+</html>

@@ -1,0 +1,143 @@
+# ETEL Delivery v3.7.4 - Clean URLs + PWA + Hardened Security
+# --- LiteSpeed Cache Control ------------------------------------
+# Directory-wide: LSCache must never full-page-cache this app. The old
+# rule scoped this to FilesMatch "\.(php|html|htm)$", but this app serves
+# clean URLs (e.g. /delivery/admin with no extension) that only become
+# admin.html *after* mod_rewrite runs - by then LiteSpeed's cache layer
+# has already checked/served the URL, so that rule never actually fired.
+# This caused a real incident: header/content changes (like a CSP fix)
+# went live in .htaccess but a stale cached page kept serving old headers
+# for hours until manually purged. Applying CacheLookup off directory-wide
+# closes that gap - static assets still get browser caching via
+# mod_expires below, this only disables LiteSpeed's own page cache.
+<IfModule LiteSpeed>
+    CacheLookup off
+    # Tag static assets so they can still be purged as a group if needed
+    <FilesMatch "\.(css|js)$">
+        Header append X-LiteSpeed-Tag "etel-static"
+    </FilesMatch>
+    <FilesMatch "\.(html|htm|php)$">
+        Header append X-LiteSpeed-Tag "etel-html"
+    </FilesMatch>
+</IfModule>
+# Belt-and-suspenders: CacheLookup off alone did not stop a stale response
+# from continuing to be served (confirmed live - old Permissions-Policy
+# value kept coming back after this file was updated). This explicit
+# per-response header is LiteSpeed's own documented cache-control signal
+# and doesn't rely on the same directive/module-detection path as
+# CacheLookup, so it should force a fresh response even if something
+# about this server's cache layer isn't honoring CacheLookup as expected.
+<FilesMatch "\.(html|htm|php)$">
+    Header set X-LiteSpeed-Cache-Control "no-cache"
+</FilesMatch>
+# ---------------------------------------------------------------
+AddDefaultCharset UTF-8
+
+<FilesMatch "\.(env|bak|bak_[0-9]+|sql|log|sh|py|json\.bak|txt|md)$">
+    Require all denied
+</FilesMatch>
+<Files ".env">
+    Require all denied
+</Files>
+<Files "config.php">
+    Require all denied
+</Files>
+
+<IfModule mod_headers.c>
+    Header always set X-Frame-Options "SAMEORIGIN"
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set X-XSS-Protection "1; mode=block"
+    Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+    Header always set Permissions-Policy "geolocation=(self), camera=(), microphone=(self), payment=(self)"
+    Header always set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://unpkg.com https://esm.sh https://maps.googleapis.com https://maps.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://ethelmarket.com https://maps.googleapis.com https://maps.gstatic.com https://lh3.googleusercontent.com; connect-src 'self' https://ethelmarket.com https://www.ethelmarket.com https://api.telebirr.com https://maps.googleapis.com https://maps.gstatic.com https://fcm.googleapis.com https://cdn.jsdelivr.net; worker-src 'self'; manifest-src 'self'; frame-ancestors 'none';"
+    Header always unset Server
+    Header always unset X-Powered-By
+</IfModule>
+
+ServerSignature Off
+Options -Indexes -MultiViews
+
+RewriteEngine On
+RewriteCond %{HTTPS} off
+RewriteCond %{HTTP_HOST} !^(localhost|127\.0\.0\.1)(:\d+)?$ [NC]
+RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [R=301,L]
+# NOTE: the ride/ -> ride-live/ redirect that used to live here was a
+# workaround for a stale LiteSpeed cache issue at the time. ride-live/
+# has since been deleted and ride/ is now the canonical folder, so that
+# redirect was removed - it was actively sending every Ride app visit to
+# a folder that no longer exists. If the original LiteSpeed caching bug
+# resurfaces on ride/ itself, Purge All in cPanel first before adding
+# any redirect back.
+RewriteRule ^manifest\.json$ manifest.php [L]
+RewriteRule ^manifest\.php$ - [L]
+RewriteRule ^sw\.js$ - [L]
+RewriteRule ^favicon\.ico$ icons/icon-96.png [L]
+RewriteRule ^patch\.json$ - [L]
+RewriteRule ^robots\.txt$ - [L]
+RewriteRule ^api/ - [L]
+RewriteRule ^assets/ - [L]
+RewriteRule ^css/ - [L]
+RewriteRule ^js/ - [L]
+RewriteRule ^icons/ - [L]
+RewriteRule ^uploads/ - [L]
+# courier/ has no index.html on disk (its real file is courier-index.html),
+# so the bare folder 403'd (no index found, directory listing off) and
+# courier/index.html 404'd after the .html-strip rule below turned it into
+# courier/index. Map both forms straight to the real file. Using [END]
+# instead of [L] here matters: mod_rewrite restarts rule matching against
+# the internally-rewritten URI, so a plain [L] let the .html-strip rule
+# below re-match our own rewritten "...courier-index.html" target and
+# visibly 301-redirect the browser to /courier/courier-index. An
+# ENV-var flag intended to suppress that re-match didn't survive
+# LiteSpeed's rewrite-loop implementation the same way it does on stock
+# Apache. [END] fully stops all further rewrite processing for this
+# request (not just the current pass), which does survive it.
+RewriteRule ^courier(/index)?/?$ courier/courier-index.html [END]
+RewriteCond %{ENV:REDIRECT_SKIP_HTML_STRIP} !=1
+RewriteCond %{REQUEST_URI} ^([^?]+)\.html$ [NC]
+RewriteRule ^ /%1 [NC,R=301,L]
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_FILENAME} !-f
+# BUG FIX (confirmed via curl trace against the live server, not just
+# reasoning about the regex - an earlier attempted fix here that only
+# changed the capture group was NOT enough, see below):
+#
+# Requesting a flat-file page with a trailing slash (e.g. /customer/
+# instead of /customer) 403'd. The actual chain, confirmed with curl -I
+# on each hop separately:
+#   /customer.html -> 301 -> /customer -> 301 -> /customer/ -> 403 (dead end)
+#
+# That middle hop (/customer -> /customer/) is NOT produced by any rule
+# in this file with an explicit R= flag - it is the exact same LiteSpeed
+# rewrite-loop quirk already documented and solved once above for the
+# courier/ rule: LiteSpeed restarts rule matching from the top against
+# the internally-rewritten URI even after [L] ("last rule THIS PASS"
+# only, not "stop rewriting entirely", unlike stock Apache). So once
+# this rule rewrote "customer" -> "customer.html", LiteSpeed re-matched
+# that against the html-strip rule above (which exists to turn .html
+# URLs into extension-less ones), bouncing the request back and forth
+# until it dead-ended. The non-greedy capture / optional-slash change
+# (still needed, so a trailing slash does not get captured into $1
+# alongside the page name) was a real but incomplete fix on its own -
+# [END] instead of [L] is what actually stops the loop, exactly like
+# the courier/ rule already relies on for the same reason.
+RewriteRule ^([a-zA-Z0-9_/-]+?)/?$ $1.html [NC,END]
+
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/html text/css text/javascript application/javascript application/json text/plain
+</IfModule>
+
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresByType text/css                  "access plus 7 days"
+    ExpiresByType application/javascript    "access plus 7 days"
+    ExpiresByType image/png                 "access plus 30 days"
+    ExpiresByType image/jpeg                "access plus 30 days"
+    ExpiresByType image/webp                "access plus 30 days"
+    ExpiresByType image/svg+xml             "access plus 30 days"
+    ExpiresByType image/x-icon              "access plus 1 year"
+    ExpiresByType font/woff2                "access plus 1 year"
+    ExpiresByType application/manifest+json "access plus 1 day"
+</IfModule>
+AddType application/vnd.android.package-archive .apk

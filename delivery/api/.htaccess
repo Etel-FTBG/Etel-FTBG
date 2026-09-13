@@ -1,0 +1,28 @@
+# ETEL Delivery API
+Options -Indexes
+AddDefaultCharset UTF-8
+
+# CRITICAL: every response from this API is dynamic, per-request JSON -
+# fare quotes, ride status, driver location, account data. The main
+# delivery/.htaccess already had to add this same directive once before,
+# after a stale-page-cache incident where an HTML fix didn't take effect
+# for hours until manually purged. This folder never got the same fix,
+# and it's arguably a worse place to be missing it: caching a dynamic
+# JSON endpoint doesn't just show stale content, it can silently return
+# WRONG data for a *different* request that happens to share a cache key
+# LiteSpeed considers equivalent (e.g. two ride_estimate_fare calls for
+# the same distance_km but different vehicle_type, if the cache layer's
+# key doesn't fully account for the query string) - exactly the kind of
+# bug that looks like an application logic error but is actually a
+# caching layer serving the wrong response entirely.
+<IfModule LiteSpeed>
+    CacheLookup off
+</IfModule>
+Header always set X-LiteSpeed-Cache-Control "no-cache"
+
+Header always set X-Frame-Options "SAMEORIGIN"
+Header always set X-Content-Type-Options "nosniff"
+Header always set X-XSS-Protection "1; mode=block"
+Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains"
+Header always set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'"
+
