@@ -26,7 +26,7 @@ if (!function_exists('etel_run_self_audit')) {
 // './proxy.php'. If you ever move EtelGebeya, update this one URL
 // across every project's copy of this file.
 define('ETEL_AUDIT_PROXY_URL', 'https://ethelmarket.com/EtelGebeya/public/proxy.php');
-define('ETEL_AUDIT_SECRET',    'EtelAudit-2026-Dagi');
+define('ETEL_AUDIT_SECRET',    getenv('ETEL_AUDIT_SECRET') ?: ''); // set in .env - must match public/proxy.php's AUDIT_SECRET
 
 // Same extension allowlist as the browser tool's TEXT_EXTS, so results
 // are consistent whether a project is audited via upload or via this

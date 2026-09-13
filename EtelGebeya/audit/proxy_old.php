@@ -10,7 +10,7 @@ define('CLAUDE_API_KEY', 'CHANGE_ME');
 define('KIMI_API_KEY',   'YOUR_KIMI_KEY_HERE');
 define('OPENAI_API_KEY', 'YOUR_OPENAI_KEY_HERE');
 
-define('AUDIT_SECRET',   'EtelAudit-2026-Dagi');
+define('AUDIT_SECRET',   'CHANGE_ME'); // unused file - not referenced anywhere; left in place, not restructured
 define('GEMINI_MODELS',  'gemini-3.5-flash,gemini-3.1-flash-lite,gemini-3.1-pro');
 define('CLAUDE_MODEL',   'claude-sonnet-4-6');
 define('KIMI_MODEL',     'moonshot-v1-32k');

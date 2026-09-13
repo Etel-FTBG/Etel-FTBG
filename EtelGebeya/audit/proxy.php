@@ -16,9 +16,13 @@ if (file_exists(__DIR__ . '/config.php')) {
     define('CLAUDE_API_KEY', 'YOUR_CLAUDE_KEY_HERE');
     define('KIMI_API_KEY',   'YOUR_KIMI_KEY_HERE');
     define('OPENAI_API_KEY', 'YOUR_OPENAI_KEY_HERE');
+    define('AUDIT_SECRET',   'YOUR_AUDIT_SECRET_HERE');
 }
 
-define('AUDIT_SECRET',   'EtelAudit-2026-Dagi');
+// AUDIT_SECRET used to be hardcoded directly here (the same literal
+// duplicated in delivery/api/audit_agent.php's ETEL_AUDIT_SECRET) -
+// moved into config.php with everything else this file already
+// documents as living there, never in git.
 define('GEMINI_MODELS',  'gemini-3.5-flash,gemini-3.1-flash-lite,gemini-3.1-pro');
 define('CLAUDE_MODEL',   'claude-sonnet-4-6');
 define('KIMI_MODEL',     'moonshot-v1-32k');
