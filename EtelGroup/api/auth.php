@@ -286,8 +286,8 @@ function egid_set_company_role(string $identifier, string $slug, string $role): 
     return $res['body'];
 }
 
-function egid_remove_company_role(int $linkId): void {
-    $res = egid_post('/service/remove_company_role', array('id' => $linkId));
+function egid_remove_company_role(int $linkId, string $slug): void {
+    $res = egid_post('/service/remove_company_role', array('id' => $linkId, 'company_slug' => $slug));
     if ($res['status'] !== 200 || empty($res['body']['ok'])) {
         throw new Exception($res['body']['message'] ?? 'Could not remove role in EtelID');
     }
