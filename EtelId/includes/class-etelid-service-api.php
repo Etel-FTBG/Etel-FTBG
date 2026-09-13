@@ -72,6 +72,11 @@ class EtelID_Service_API {
             'callback'            => array( __CLASS__, 'remove_company_role' ),
             'permission_callback' => array( __CLASS__, 'check_service_key' ),
         ));
+        register_rest_route( 'etelid/v1', '/service/member_count', array(
+            'methods'             => 'POST',
+            'callback'            => array( __CLASS__, 'member_count' ),
+            'permission_callback' => array( __CLASS__, 'check_service_key' ),
+        ));
     }
 
     /* ---- Shared-secret check (fail closed) ---------------------- */
@@ -369,6 +374,19 @@ class EtelID_Service_API {
         if ( ! $id ) return new WP_Error( 'bad_request', 'id is required.', array( 'status' => 400 ) );
         EtelID_DB::remove_company_link( $id );
         return rest_ensure_response( array( 'ok' => true, 'message' => 'Role removed.' ) );
+    }
+
+    /* ---- GET /service/member_count ------------------------------------
+       Real registered-member count (revoked accounts excluded) - so
+       EtelGroup's public homepage can show a true number instead of a
+       client-side fake. No PII in the response, just a count, but still
+       gated behind the same service key as every other route here rather
+       than opening a new unauthenticated surface for one extra field. */
+    public static function member_count( $request ) {
+        global $wpdb;
+        $t = EtelID_DB::t_members();
+        $count = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$t} WHERE status != 'revoked'" );
+        return rest_ensure_response( array( 'ok' => true, 'count' => $count ) );
     }
 }
 

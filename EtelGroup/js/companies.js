@@ -149,6 +149,23 @@
     }
   }
 
+  // Was a 5th hand-maintained copy of the company list living directly in
+  // index.html, separate from the API-driven nav/grid/launcher above - it
+  // could silently disagree with reality the moment a company was added,
+  // renamed, or reordered in the admin panel. Now renders from the same
+  // fetch everything else on the page already uses.
+  function renderFooterCompanies(companies) {
+    var el = document.getElementById('footer-companies-list');
+    if (!el) return;
+    el.innerHTML = companies.map(function (c) {
+      var disabled = c.status !== 'live';
+      return '<a href="' + (disabled ? '#' : esc(c.url)) + '" ' +
+        (disabled ? 'style="opacity:0.45;pointer-events:none;"' : 'target="_blank" rel="noopener"') +
+        ' class="footer-link"><span class="footer-link-dot" style="color:' + esc(c.dot_color) + '"></span>' +
+        esc(c.name) + '</a>';
+    }).join('');
+  }
+
   async function init() {
     var res;
     try {
@@ -160,6 +177,7 @@
       renderMobileNav(companies);
       renderCoCardGrid(companies);
       renderLauncherGrid(companies);
+      renderFooterCompanies(companies);
       // The scroll-reveal IntersectionObserver and 3D tilt binding (see
       // main.js) already ran once by the time this async fetch resolves,
       // so newly-injected cards were never observed/bound - they'd sit
