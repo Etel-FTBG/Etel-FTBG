@@ -825,6 +825,18 @@ function etelai_is_quota_error($msg) {
 // admin dashboard shows real, current status. Returns the reply on the
 // first key that works; throws if every key for this provider failed
 // (letting the caller fall through to the next provider entirely).
+// The generic OpenAI-compatible caller (etelai_call_kimi) defaults an
+// empty base URL to Moonshot's endpoint - correct for Kimi, wrong for
+// any other provider sharing that same caller if an admin ever leaves
+// the base field blank when adding a key. Known providers get their
+// real default here instead of silently inheriting Kimi's; anything
+// else (a genuinely custom OpenAI-compatible endpoint, e.g. OmniRoute)
+// has no safe default and must have its base URL set explicitly.
+function etelai_provider_default_base($providerId) {
+    if ($providerId === 'openrouter') return 'https://openrouter.ai/api/v1';
+    return '';
+}
+
 function etelai_try_provider_keys(&$providersCfg, $providerId, $messages, $tools, $toolExtra) {
     $now = time();
     $lastError = null;
@@ -838,9 +850,10 @@ function etelai_try_provider_keys(&$providersCfg, $providerId, $messages, $tools
             $anyTried = true;
             $keyId = $k['id'];
             try {
+                $keyBase = !empty($k['base']) ? $k['base'] : etelai_provider_default_base($providerId);
                 $reply = ($providerId === 'gemini')
                     ? etelai_call_gemini($k['model'], $k['key'], $messages, $tools, $toolExtra)
-                    : etelai_call_kimi($k['model'], $k['key'], isset($k['base']) ? $k['base'] : '', $messages, $tools, $toolExtra, $prov['name']);
+                    : etelai_call_kimi($k['model'], $k['key'], $keyBase, $messages, $tools, $toolExtra, $prov['name']);
                 // Success - clear any past trouble on this key. Targeted
                 // update against a FRESH read of the file (see
                 // etelai_update_key_status below) so this can never
@@ -926,6 +939,15 @@ if ($activeProvider['id'] === 'gemini' || $activeProvider['id'] === 'kimi') {
     $byId = array();
     foreach ($providersCfg['providers'] as $p) $byId[$p['id']] = $p;
     if (isset($byId[$otherId]) && !empty($byId[$otherId]['enabled'])) $tryOrder[] = $otherId;
+
+    // Last-resort fallback only - OpenRouter is deliberately not part of
+    // the transactional gemini/kimi routing split above, and only enters
+    // the chain here, after both of those have already been tried and
+    // failed. Uses the same generic OpenAI-compatible caller (see
+    // etelai_try_provider_keys) - no code path is OpenRouter-specific.
+    if (isset($byId['openrouter']) && !empty($byId['openrouter']['enabled']) && !in_array('openrouter', $tryOrder, true)) {
+        $tryOrder[] = 'openrouter';
+    }
 
     $reply = null;
     $lastError = null;
