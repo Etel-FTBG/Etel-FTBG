@@ -1,0 +1,78 @@
+{
+  "id": "./",
+  "name": "ETEL Delivery — Hawassa",
+  "short_name": "ኢE_Delivery",
+  "description": "Fast delivery of food, groceries and packages across Hawassa, Ethiopia",
+  "start_url": "login.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#C9A961",
+  "theme_color": "#C9A961",
+  "orientation": "portrait-primary",
+  "lang": "en",
+  "dir": "ltr",
+  "categories": ["food", "shopping", "lifestyle"],
+  "icons": [
+    { "src": "icons/icon-72.png",          "sizes": "72x72",   "type": "image/png" },
+    { "src": "icons/icon-96.png",          "sizes": "96x96",   "type": "image/png" },
+    { "src": "icons/icon-128.png",         "sizes": "128x128", "type": "image/png" },
+    { "src": "icons/icon-144.png",         "sizes": "144x144", "type": "image/png" },
+    { "src": "icons/icon-152.png",         "sizes": "152x152", "type": "image/png" },
+    { "src": "icons/icon-192.png",         "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-192-maskable.png","sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "icons/icon-384.png",         "sizes": "384x384", "type": "image/png" },
+    { "src": "icons/icon-512.png",         "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512-maskable.png","sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "icons/apple-touch-icon.png", "sizes": "180x180", "type": "image/png" }
+  ],
+  "screenshots": [
+    {
+      "src": "icons/splash-1080x1920.png",
+      "sizes": "1080x1920",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "ETEL Delivery loading screen"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Order Food & Groceries",
+      "short_name": "Order",
+      "description": "Browse shops and place a delivery order",
+      "url": "customer.html",
+      "icons": [{ "src": "assets/images/etel-delivery-coin.png", "sizes": "512x512" }]
+    },
+    {
+      "name": "Courier Dashboard",
+      "short_name": "Deliver",
+      "description": "Pick up and deliver orders",
+      "url": "courier/",
+      "icons": [{ "src": "assets/images/etel-delivery-coin.png", "sizes": "512x512" }]
+    },
+    {
+      "name": "Service Giver Portal",
+      "short_name": "My Shop",
+      "description": "Manage your shop and orders",
+      "url": "servicegiver.html",
+      "icons": [{ "src": "assets/images/etel-delivery-coin.png", "sizes": "512x512" }]
+    },
+    {
+      "name": "Book a Ride",
+      "short_name": "Ride",
+      "description": "Request a ride and get matched with a nearby driver",
+      "url": "ride/",
+      "icons": [{ "src": "assets/images/etel-ride-coin.png", "sizes": "512x512" }]
+    },
+    {
+      "name": "Driver Dashboard",
+      "short_name": "Drive",
+      "description": "Go online and accept ride requests",
+      "url": "driver/",
+      "icons": [{ "src": "assets/images/etel-ride-coin.png", "sizes": "512x512" }]
+    }
+  ],
+  "prefer_related_applications": false,
+  "related_applications": [
+    { "platform": "webapp", "url": "https://ethelmarket.com/delivery/manifest.json" }
+  ]
+}

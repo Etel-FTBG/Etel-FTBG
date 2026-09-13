@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Equb — Etel Group</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=JetBrains+Mono:wght@400;500;700&display=swap');
+  *{box-sizing:border-box}
+  body{margin:0;min-height:100vh;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+    background:#08050a;color:#EDEDF5;
+    background-image:radial-gradient(ellipse 1200px 800px at 10% -15%, rgba(90,169,255,.10), transparent 60%),
+                      radial-gradient(ellipse 1000px 700px at 105% 10%, rgba(212,175,55,.12), transparent 55%);}
+  .wrap{max-width:820px;margin:0 auto;padding:28px 18px 90px}
+  .hdr{display:flex;align-items:center;gap:14px;margin-bottom:24px}
+  .hdr-badge{width:50px;height:50px;border-radius:16px;background:linear-gradient(135deg,#5aa9ff,#1f6fd1 55%,#0d2f4d);
+    display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-weight:800;font-size:24px;color:#fff;
+    box-shadow:0 12px 26px rgba(31,111,209,.4),0 2px 0 rgba(255,255,255,.4) inset;flex:none}
+  .hdr h1{font-family:'Syne',sans-serif;font-size:21px;margin:0;
+    background:linear-gradient(135deg,#8ec5ff,#5aa9ff);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+  .hdr p{margin:2px 0 0;font-size:12.5px;color:#8a95a8}
+  .card{position:relative;background:linear-gradient(165deg, rgba(18,22,32,.95) 0%, rgba(6,7,12,.98) 100%);
+    border:1px solid rgba(90,169,255,.25);border-radius:22px;padding:22px;margin-bottom:18px;
+    box-shadow:0 26px 54px -14px rgba(0,0,0,.6), 0 1px 0 rgba(255,255,255,.06) inset;overflow:hidden;
+    transition:box-shadow .25s ease}
+  .card:hover{box-shadow:0 32px 64px -14px rgba(0,0,0,.7), 0 0 40px -14px rgba(90,169,255,.3)}
+  .card::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;
+    background:linear-gradient(90deg, transparent, #5aa9ff, #8ec5ff, #5aa9ff, transparent);
+    box-shadow:0 0 16px rgba(90,169,255,.6)}
+  .card h2{font-size:15.5px;margin:0 0 14px;font-family:'Syne',sans-serif;color:#8ec5ff}
+  .card-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;gap:10px;flex-wrap:wrap}
+  .card-head h2{margin:0}
+  .tabs{display:flex;gap:8px;margin-bottom:20px}
+  .tab-btn{flex:1;padding:12px;border-radius:14px;border:1px solid rgba(90,169,255,.25);background:rgba(255,255,255,.03);
+    color:#8a95a8;font-weight:700;font-size:13px;cursor:pointer;transition:all .2s}
+  .tab-btn.active{background:linear-gradient(135deg,#5aa9ff,#1f6fd1);color:#fff;border:none;box-shadow:0 8px 20px -4px rgba(31,111,209,.5)}
+  .grid{display:grid;gap:14px;grid-template-columns:repeat(2,1fr)}
+  @media(max-width:520px){.grid{grid-template-columns:1fr}}
+  .kpi-label{font-size:10.5px;text-transform:uppercase;letter-spacing:.07em;color:#8a95a8;font-weight:700}
+  .kpi-value{font-family:'JetBrains Mono',monospace;font-size:19px;font-weight:700;margin-top:6px;
+    background:linear-gradient(135deg,#8ec5ff,#5aa9ff);-webkit-background-clip:text;background-clip:text;color:transparent}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th{text-align:left;padding:9px;font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:#8a95a8;border-bottom:1px solid rgba(90,169,255,.2)}
+  td{padding:10px 9px;border-bottom:1px solid rgba(255,255,255,.04);color:#c8d0dc}
+  td.hi{color:#f8f1e2;font-weight:700}
+  .badge{padding:4px 11px;border-radius:20px;font-size:10px;font-weight:800;text-transform:uppercase}
+  .badge.active,.badge.paid{background:rgba(63,206,122,.15);color:#3fce7a}
+  .badge.forming,.badge.pending{background:rgba(255,196,0,.15);color:#ffce54}
+  .badge.at_risk,.badge.missed{background:rgba(255,93,108,.15);color:#ff5d6c}
+  .badge.completed{background:rgba(255,255,255,.08);color:#c8d0dc}
+  .empty{text-align:center;padding:36px 18px;color:#8a95a8}
+  #app{display:none}
+  #loading, #error{text-align:center;padding:80px 20px;color:#8a95a8}
+  #error{color:#ff9aa4;display:none}
+  label{display:block;font-size:11px;color:#8a95a8;text-transform:uppercase;letter-spacing:.06em;font-weight:700;margin-bottom:6px}
+  input,select{width:100%;padding:11px 13px;border-radius:12px;background:rgba(255,255,255,.04);
+    border:1px solid rgba(90,169,255,.25);color:#f8f1e2;font-size:13.5px;margin-bottom:13px;box-sizing:border-box}
+  .btn{width:100%;padding:13px;border:none;border-radius:14px;background:linear-gradient(135deg,#8ec5ff,#5aa9ff);
+    color:#0a1a2e;font-weight:800;font-size:14px;cursor:pointer;box-shadow:0 10px 24px -6px rgba(90,169,255,.5)}
+  .btn.secondary{background:rgba(255,255,255,.06);color:#EDEDF5;border:1px solid rgba(255,255,255,.14);box-shadow:none}
+  .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,#5aa9ff,#1f6fd1);
+    color:#fff;padding:12px 20px;border-radius:14px;font-weight:700;font-size:13px;box-shadow:0 14px 30px rgba(0,0,0,.5);
+    opacity:0;transition:opacity .3s;pointer-events:none;z-index:999}
+  .toast.show{opacity:1}
+
+  /* Package tier cards */
+  .pkg-grid{display:grid;gap:16px;grid-template-columns:repeat(auto-fill,minmax(240px,1fr))}
+  .pkg-card{position:relative;border-radius:20px;padding:20px;overflow:hidden;
+    background:linear-gradient(165deg, rgba(18,22,32,.95), rgba(6,7,12,.98));
+    border:1px solid rgba(255,255,255,.1);box-shadow:0 20px 44px -14px rgba(0,0,0,.6);
+    transition:transform .2s ease}
+  .pkg-card:active{transform:scale(.98)}
+  .pkg-tier-badge{display:inline-flex;align-items:center;gap:5px;padding:5px 13px;border-radius:20px;
+    font-size:10px;font-weight:800;letter-spacing:.07em;color:#0d0d0d;margin-bottom:12px;
+    box-shadow:0 6px 16px -2px rgba(0,0,0,.3)}
+  .pkg-tier-bronze{background:linear-gradient(135deg,#E8A868,#B87333)}
+  .pkg-tier-silver{background:linear-gradient(135deg,#F0F0F0,#B8B8C0)}
+  .pkg-tier-gold{background:linear-gradient(135deg,#FFE9A8,#D4AF37)}
+  .pkg-tier-platinum{background:linear-gradient(135deg,#E0F7FF,#89CFF0)}
+  .pkg-name{font-family:'Syne',sans-serif;font-size:17px;font-weight:800;color:#f8f1e2;margin-bottom:4px}
+  .pkg-desc{font-size:12px;color:#8a95a8;margin-bottom:14px;min-height:32px}
+  .pkg-amount{font-family:'JetBrains Mono',monospace;font-size:24px;font-weight:800;margin-bottom:2px}
+  .pkg-freq{font-size:11px;color:#8a95a8;margin-bottom:14px}
+  .pkg-meta{font-size:11px;color:#6a7585;margin-bottom:14px}
+
+  /* 3D progress ring, reused per-group */
+  .ring-wrap{position:relative;width:64px;height:64px;flex:none;filter:drop-shadow(0 8px 14px rgba(0,0,0,.4))}
+  .ring-outer{position:absolute;inset:0;border-radius:50%;animation:eqbRingSpin 9s linear infinite}
+  @keyframes eqbRingSpin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+  .ring-inner{position:absolute;inset:6px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#1a2230,#080a0e 75%);
+    box-shadow:inset 0 3px 8px rgba(0,0,0,.6),0 0 0 1px rgba(255,255,255,.05);
+    display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:800;color:#8ec5ff}
+
+  .topbar{position:sticky;top:0;z-index:50;display:flex;align-items:center;justify-content:space-between;
+    padding:12px 18px;background:rgba(6,8,14,.85);backdrop-filter:blur(10px);border-bottom:1px solid rgba(90,169,255,.2)}
+  .topbar-btn{background:rgba(255,255,255,.06);border:1px solid rgba(90,169,255,.3);color:#8ec5ff;
+    font-weight:700;font-size:12.5px;padding:8px 14px;border-radius:10px;cursor:pointer}
+  .topbar-btn:active{transform:scale(.96)}
+  .topbar-updated{font-size:11px;color:#5a6472}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <button class="topbar-btn" onclick="goBack()">← Back</button>
+  <span id="last-updated" class="topbar-updated"></span>
+  <button class="topbar-btn" id="refresh-btn" onclick="manualRefresh()">⟳ Refresh</button>
+</div>
+<div class="wrap">
+  <div class="hdr">
+    <div class="hdr-badge">🤝</div>
+    <div><h1>Equb</h1><p>Etel Group · Rotating Savings</p></div>
+  </div>
+  <div id="loading">Loading…</div>
+  <div id="error"></div>
+  <div id="app"></div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const API = (function() {
+  const loc = window.location.pathname;
+  const marker = '/delivery/';
+  const markerIdx = loc.indexOf(marker);
+  const dir = markerIdx >= 0 ? loc.substring(0, markerIdx + marker.length) : loc.substring(0, loc.lastIndexOf('/') + 1);
+  return window.location.protocol + '//' + window.location.host + dir + 'api/boot.php';
+})();
+
+function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function fmt(n) { return 'ETB ' + Math.round(Number(n) || 0).toLocaleString(); }
+function getToken() { try { return localStorage.getItem('etel_token') || ''; } catch (e) { return ''; } }
+
+async function api(action, body) {
+  const token = getToken();
+  const res = await fetch(API, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+    body: JSON.stringify({ action, ...(body || {}) }),
+  });
+  return res.json();
+}
+
+function toast(msg, isErr) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.background = isErr ? 'linear-gradient(135deg,#ff5d6c,#ff9aa4)' : 'linear-gradient(135deg,#C8960C,#F2CC6B)';
+  t.classList.add('show');
+  clearTimeout(t._h);
+  t._h = setTimeout(() => t.classList.remove('show'), 2600);
+}
+
+let CURRENT_TAB = 'packages';
+let CURRENT_GROUP_DETAIL_ID = null;
+let MY_GROUPS = [];
+
+function goBack() {
+  window.close();
+  setTimeout(function () { if (!window.closed) history.back(); }, 150);
+}
+
+async function manualRefresh() {
+  const btn = document.getElementById('refresh-btn');
+  if (btn) { btn.disabled = true; btn.textContent = '⟳ …'; }
+  const appVisible = document.getElementById('app').style.display === 'block';
+  if (!appVisible) {
+    await init();
+  } else if (CURRENT_GROUP_DETAIL_ID) {
+    await openGroupDetail(CURRENT_GROUP_DETAIL_ID);
+  } else {
+    switchTab(CURRENT_TAB);
+  }
+  const tsEl = document.getElementById('last-updated');
+  if (tsEl) tsEl.textContent = 'Updated ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  if (btn) { btn.disabled = false; btn.textContent = '⟳ Refresh'; }
+}
+
+function ringHtml(pct, label) {
+  const deg = Math.max(0, Math.min(100, pct)) * 3.6;
+  return `<div class="ring-wrap">
+    <div class="ring-outer" style="background:conic-gradient(#5aa9ff ${deg}deg, rgba(255,255,255,.08) ${deg}deg)"></div>
+    <div class="ring-inner">${esc(label)}</div>
+  </div>`;
+}
+
+async function init() {
+  const loadingEl = document.getElementById('loading');
+  const errorEl = document.getElementById('error');
+  const appEl = document.getElementById('app');
+  const token = getToken();
+  if (!token) {
+    loadingEl.style.display = 'none';
+    errorEl.style.display = 'block';
+    errorEl.textContent = 'You need to be logged into an Etel app first.';
+    return;
+  }
+  const permRes = await api('equb_am_i_permitted');
+  loadingEl.style.display = 'none';
+  if (!permRes.success) {
+    errorEl.style.display = 'block';
+    errorEl.textContent = permRes.message || 'Could not check access.';
+    return;
+  }
+  if (!permRes.data.is_permitted) {
+    errorEl.style.display = 'block';
+    errorEl.textContent = '🔒 You need admin approval to use Equb. Contact the founder to get access.';
+    return;
+  }
+  appEl.style.display = 'block';
+  renderTabs();
+  loadPackages();
+}
+
+function renderTabs() {
+  document.getElementById('app').innerHTML = `
+    <div class="tabs">
+      <button class="tab-btn ${CURRENT_TAB==='packages'?'active':''}" onclick="switchTab('packages')">📦 Packages</button>
+      <button class="tab-btn ${CURRENT_TAB==='mine'?'active':''}" onclick="switchTab('mine')">My Groups</button>
+      <button class="tab-btn ${CURRENT_TAB==='browse'?'active':''}" onclick="switchTab('browse')">Browse</button>
+    </div>
+    <div id="tab-content"></div>
+  `;
+}
+
+function switchTab(tab) {
+  CURRENT_TAB = tab;
+  CURRENT_GROUP_DETAIL_ID = null;
+  renderTabs();
+  if (tab === 'mine') loadMyGroups();
+  else if (tab === 'browse') loadOpenGroups();
+  else loadPackages();
+}
+
+const TIER_LABEL = { bronze: '🥉 BRONZE', silver: '🥈 SILVER', gold: '🥇 GOLD', platinum: '💎 PLATINUM' };
+
+async function loadPackages() {
+  const el = document.getElementById('tab-content');
+  el.innerHTML = '<div class="empty">Loading…</div>';
+  const res = await api('equb_list_packages');
+  if (!res.success) { el.innerHTML = `<div class="card" style="color:#ff9aa4">${esc(res.message)}</div>`; return; }
+  const packages = res.data.packages;
+  if (!packages.length) { el.innerHTML = '<div class="card empty">No packages available yet. Check back soon.</div>'; return; }
+  el.innerHTML = `
+    <div style="font-size:12.5px;color:#8a95a8;margin-bottom:16px;line-height:1.5">
+      Pick the tier that fits what you can afford right now. Selecting one either joins an open group
+      at that level or starts a fresh one for you — either way, the terms are fixed by the founder.
+    </div>
+    <div class="pkg-grid">
+      ${packages.map(p => `
+        <div class="pkg-card">
+          <div class="pkg-tier-badge pkg-tier-${esc(p.tier)}">${TIER_LABEL[p.tier] || p.tier.toUpperCase()}</div>
+          <div class="pkg-name">${esc(p.name)}</div>
+          <div class="pkg-desc">${esc(p.description || '')}</div>
+          <div class="pkg-amount" style="color:#8ec5ff">${fmt(p.contribution_amount)}</div>
+          <div class="pkg-freq">per ${esc(p.frequency)}</div>
+          <div class="pkg-meta">Up to ${p.max_members} members · ${p.open_groups_waiting > 0 ? p.open_groups_waiting + ' group(s) waiting to fill' : 'starts a new group'}</div>
+          <button class="btn" onclick="selectPackage(${p.id}, this)">Select This Package</button>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+async function selectPackage(packageId, btnEl) {
+  if (btnEl) { btnEl.disabled = true; btnEl.textContent = 'Joining…'; }
+  const res = await api('equb_select_package', { package_id: packageId });
+  if (!res.success) { toast(res.message || 'Could not join', true); if (btnEl) { btnEl.disabled = false; btnEl.textContent = 'Select This Package'; } return; }
+  toast('✓ ' + res.message);
+  switchTab('mine');
+}
+
+async function loadMyGroups() {
+  const el = document.getElementById('tab-content');
+  el.innerHTML = '<div class="empty">Loading…</div>';
+  const res = await api('equb_get_my_groups');
+  if (!res.success) { el.innerHTML = `<div class="card" style="color:#ff9aa4">${esc(res.message)}</div>`; return; }
+  MY_GROUPS = res.data.groups;
+  if (!MY_GROUPS.length) {
+    el.innerHTML = '<div class="card empty">You\'re not in any Equb groups yet. Browse groups the founder has set up and join one, or ask to be added to a specific group.</div>';
+    return;
+  }
+  el.innerHTML = MY_GROUPS.map(g => {
+    const pct = g.total_rounds > 0 ? (g.current_round / g.total_rounds) * 100 : 0;
+    return `
+    <div class="card" style="cursor:pointer" onclick="openGroupDetail(${g.id})">
+      <div class="card-head">
+        <div style="display:flex;align-items:center;gap:14px">
+          ${ringHtml(pct, (g.current_round||0) + '/' + (g.total_rounds||0))}
+          <div><h2 style="margin-bottom:4px">${esc(g.name)}</h2><span class="badge ${esc(g.status)}">${esc(g.status).replace('_',' ')}</span></div>
+        </div>
+      </div>
+      <div class="grid">
+        <div><div class="kpi-label">Contribution</div><div class="kpi-value">${fmt(g.contribution_amount)} / ${esc(g.frequency)}</div></div>
+        <div><div class="kpi-label">Members</div><div class="kpi-value">${g.members_count} / ${g.max_members}</div></div>
+        <div><div class="kpi-label">Your Payout Round</div><div class="kpi-value">${g.my_payout_round || 'TBD'}</div></div>
+      </div>
+      ${g.status === 'forming' ? '<div style="margin-top:10px;font-size:12px;color:#8a95a8">Waiting for the founder to start this group.</div>' : ''}
+    </div>
+  `;
+  }).join('');
+}
+
+async function loadOpenGroups() {
+  const el = document.getElementById('tab-content');
+  el.innerHTML = '<div class="empty">Loading…</div>';
+  const res = await api('equb_list_open_groups');
+  if (!res.success) { el.innerHTML = `<div class="card" style="color:#ff9aa4">${esc(res.message)}</div>`; return; }
+  const groups = res.data.groups;
+  if (!groups.length) { el.innerHTML = '<div class="card empty">No open groups to join right now. Ask the founder to set one up.</div>'; return; }
+  el.innerHTML = groups.map(g => `
+    <div class="card">
+      <div class="card-head"><h2>${esc(g.name)}</h2></div>
+      <div style="font-size:12.5px;color:#8a7f66;margin-bottom:12px">Set up by the founder</div>
+      <div class="grid">
+        <div><div class="kpi-label">Contribution</div><div class="kpi-value" style="font-size:16px">${fmt(g.contribution_amount)} / ${esc(g.frequency)}</div></div>
+        <div><div class="kpi-label">Members</div><div class="kpi-value" style="font-size:16px">${g.members_count} / ${g.max_members}</div></div>
+      </div>
+      <button class="btn" style="margin-top:10px" onclick="joinGroup(${g.id})">Join Group</button>
+    </div>
+  `).join('');
+}
+
+async function joinGroup(groupId) {
+  const res = await api('equb_join_group', { group_id: groupId });
+  if (!res.success) { toast(res.message || 'Could not join', true); return; }
+  toast('✓ Joined the group');
+  switchTab('mine');
+}
+
+async function openGroupDetail(groupId) {
+  CURRENT_GROUP_DETAIL_ID = groupId;
+  const el = document.getElementById('tab-content');
+  el.innerHTML = '<div class="empty">Loading…</div>';
+  const res = await api('equb_get_group_detail', { group_id: groupId });
+  if (!res.success) { el.innerHTML = `<div class="card" style="color:#ff9aa4">${esc(res.message)}</div>`; return; }
+  const g = res.data.group, members = res.data.members, payouts = res.data.payouts;
+  el.innerHTML = `
+    <button class="btn secondary" style="margin-bottom:16px" onclick="switchTab('mine')">← Back to My Groups</button>
+    <div class="card">
+      <div class="card-head"><h2>${esc(g.name)}</h2><span class="badge ${esc(g.status)}">${esc(g.status).replace('_',' ')}</span></div>
+      <div class="grid">
+        <div><div class="kpi-label">Contribution</div><div class="kpi-value" style="font-size:16px">${fmt(g.contribution_amount)}</div></div>
+        <div><div class="kpi-label">Next Due</div><div class="kpi-value" style="font-size:16px">${esc(g.next_contribution_date || '—')}</div></div>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Members</h2>
+      <table><thead><tr><th>Name</th><th>Payout Round</th><th>This Round</th></tr></thead><tbody>
+        ${members.map(m => `<tr><td class="hi">${esc(m.name)}</td><td>${m.payout_round || '—'}</td><td><span class="badge ${esc(m.current_round_status || 'pending')}">${esc(m.current_round_status || 'pending')}</span></td></tr>`).join('')}
+      </tbody></table>
+    </div>
+    ${payouts.length ? `<div class="card"><h2>Payout History</h2><table><thead><tr><th>Round</th><th>Recipient</th><th>Amount</th><th>Date</th></tr></thead><tbody>
+      ${payouts.map(p => `<tr><td>${p.round_number}</td><td>${esc(p.recipient_name)}</td><td class="hi">${fmt(p.amount)}</td><td>${esc((p.paid_at||'').slice(0,10))}</td></tr>`).join('')}
+    </tbody></table></div>` : ''}
+  `;
+}
+
+init();
+</script>
+</body>
+</html>

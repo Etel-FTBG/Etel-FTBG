@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Live Trip - ETEL Ride</title>
+<meta name="robots" content="noindex, nofollow">
+<style>
+  :root{--gold:#D4AF37;--gold-lt:#E8C84A;--bg:#0b0b13;--sheet:#14141f;--dim:#9A9AAE;--text:#EDEDF5;--line:rgba(255,255,255,.1)}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:'Outfit',-apple-system,Segoe UI,Roboto,sans-serif;min-height:100vh;display:flex;flex-direction:column}
+  #map{width:100%;height:46vh;background:#10101c}
+  .panel{flex:1;padding:20px 18px 28px;background:linear-gradient(180deg,#14141f 0%,#0b0b13 100%);border-top:1px solid var(--line)}
+  .brand{font-weight:800;letter-spacing:.06em;font-size:12px;color:var(--gold-lt);text-transform:uppercase;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+  .status-pill{display:inline-flex;align-items:center;gap:6px;background:rgba(212,175,55,.1);border:1px solid rgba(212,175,55,.3);color:var(--gold-lt);font-size:12px;font-weight:700;padding:6px 12px;border-radius:999px;margin-bottom:16px}
+  .dot{width:7px;height:7px;border-radius:50%;background:#4ECDC4;box-shadow:0 0 0 3px rgba(78,205,196,.18)}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+  .dot.live{animation:pulse 1.8s ease-in-out infinite}
+  .driver-card{display:flex;gap:14px;align-items:center;background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:16px}
+  .avatar{width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#C8960C,#D4AF37);flex-shrink:0;overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:22px}
+  .avatar img{width:100%;height:100%;object-fit:cover}
+  .drv-name{font-weight:700;font-size:15px}
+  .drv-sub{font-size:12.5px;color:var(--dim);margin-top:3px}
+  .info-row{display:flex;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)}
+  .info-row:last-child{border-bottom:none}
+  .info-icon{font-size:14px;width:18px;text-align:center;padding-top:2px}
+  .info-label{font-size:10.5px;color:var(--dim);text-transform:uppercase;letter-spacing:.04em}
+  .info-val{font-size:13.5px;margin-top:2px}
+  .empty,.err{text-align:center;padding:60px 20px;color:var(--dim)}
+  .err{color:#FF8A80}
+  .foot{text-align:center;font-size:11px;color:var(--dim);margin-top:18px}
+</style>
+</head>
+<body>
+  <div id="map"></div>
+  <div class="panel">
+    <div class="brand">🚗 ETEL Ride &middot; Live Trip Share</div>
+    <div id="content"><div class="empty">Loading trip status…</div></div>
+    <div class="foot">This link only works while the trip is active, and shows no phone numbers or payment details.</div>
+  </div>
+
+<script>
+(function(){
+  "use strict";
+  var params = new URLSearchParams(location.search);
+  var token = params.get('t') || '';
+  // FIX: previously stripped the literal substring "ride/share.html" from
+  // location.pathname to compute apiBase - but some in-app browsers
+  // (e.g. Telegram's built-in browser) rewrite/normalize the URL before
+  // exposing it to page JavaScript, so location.pathname didn't actually
+  // contain ".html" on at least one real device. The regex then matched
+  // nothing, left "share" dangling with no extension, and blindly
+  // concatenated "api/trip_share.php" straight onto it - producing the
+  // broken path ".../ride/shareapi/trip_share.php" (a real, genuinely
+  // nonexistent file, hence the 404-with-HTML-body). Anchoring on the
+  // stable "/ride/" FOLDER marker instead of the exact filename is
+  // robust regardless of how any given browser represents the filename.
+  var pathname = location.pathname;
+  var rideIdx = pathname.indexOf('/ride/');
+  var apiBase = rideIdx >= 0
+    ? pathname.substring(0, rideIdx + 1)
+    : pathname.substring(0, pathname.lastIndexOf('/') + 1);
+  var shareUrl = apiBase + 'api/trip_share.php?t=' + encodeURIComponent(token);
+  var bootUrl = apiBase + 'api/boot.php';
+  var map = null, marker = null, mapsKey = null, pollId = null;
+
+  function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+  function renderEmpty(msg){
+    document.getElementById('content').innerHTML = '<div class="empty">' + esc(msg) + '</div>';
+  }
+  function renderError(msg){
+    document.getElementById('content').innerHTML = '<div class="err">⚠ ' + esc(msg) + '</div>';
+    if (pollId) { clearInterval(pollId); pollId = null; }
+  }
+
+  function statusLabel(s){
+    return { searching: 'Finding a driver…', accepted: 'Driver on the way to pickup',
+             in_progress: 'Trip in progress', arrived: 'Arrived — trip wrapping up' }[s] || s;
+  }
+
+  function render(d){
+    var html = '';
+    html += '<div class="status-pill"><span class="dot live"></span>' + esc(statusLabel(d.status)) + '</div>';
+    if (d.driver_name) {
+      html += '<div class="driver-card">';
+      html += '<div class="avatar">' + (d.driver_photo ? '<img src="'+esc(d.driver_photo)+'" alt="">' : '🧑') + '</div>';
+      html += '<div><div class="drv-name">' + esc(d.driver_name) + '</div>';
+      var veh = [d.vehicle_color, d.vehicle_make, d.vehicle_type].filter(Boolean).join(' ');
+      html += '<div class="drv-sub">' + esc(veh || 'Vehicle') + (d.vehicle_plate ? ' &middot; ' + esc(d.vehicle_plate) : '') + '</div>';
+      if (d.driver_rating) html += '<div class="drv-sub">⭐ ' + parseFloat(d.driver_rating).toFixed(1) + '</div>';
+      html += '</div></div>';
+    }
+    html += '<div class="info-row"><div class="info-icon">📍</div><div><div class="info-label">Pickup</div><div class="info-val">' + esc(d.pickup_address || '—') + '</div></div></div>';
+    html += '<div class="info-row"><div class="info-icon">🏁</div><div><div class="info-label">Destination</div><div class="info-val">' + esc(d.dropoff_address || '—') + '</div></div></div>';
+    document.getElementById('content').innerHTML = html;
+
+    if (d.driver_lat && d.driver_lng && window.google && window.google.maps) {
+      var pos = { lat: parseFloat(d.driver_lat), lng: parseFloat(d.driver_lng) };
+      if (!map) {
+        map = new google.maps.Map(document.getElementById('map'), { center: pos, zoom: 15, disableDefaultUI: true, zoomControl: true });
+      }
+      if (!marker) {
+        marker = new google.maps.Marker({ position: pos, map: map, icon: { path: google.maps.SymbolPath.CIRCLE, scale: 10, fillColor: '#D4AF37', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 2 } });
+      } else {
+        marker.setPosition(pos);
+      }
+      map.panTo(pos);
+    }
+  }
+
+  function poll(){
+    fetch(shareUrl).then(function(r){ return r.json(); }).then(function(res){
+      if (res && res.success && res.data) { render(res.data); }
+      else { renderError((res && res.message) || 'This trip link is no longer active'); }
+    }).catch(function(err){
+      var detail = (err && err.message) ? err.message : 'unknown error';
+      renderError('Could not reach ETEL servers — check your connection (' + detail + ')');
+    });
+  }
+
+  function loadMapsThenPoll(){
+    fetch(bootUrl + '?action=get_config').then(function(r){ return r.json(); }).then(function(res){
+      if (res && res.success && res.data && res.data.google_maps_api_key) {
+        mapsKey = res.data.google_maps_api_key;
+        var s = document.createElement('script');
+        s.src = 'https://maps.googleapis.com/maps/api/js?key=' + mapsKey;
+        s.onload = poll;
+        s.onerror = poll;
+        document.head.appendChild(s);
+      } else { poll(); }
+    }).catch(poll);
+  }
+
+  if (!token) {
+    renderEmpty('No trip link token found.');
+  } else {
+    loadMapsThenPoll();
+    pollId = setInterval(poll, 5000);
+  }
+})();
+</script>
+</body>
+</html>

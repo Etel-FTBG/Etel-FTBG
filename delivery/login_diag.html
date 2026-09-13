@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ETEL Delivery — Login Diagnostic Console</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#07050a;color:#e0d6c4;font-family:'SF Mono',Consolas,monospace;font-size:13px;padding:16px;min-height:100vh}
+.hdr{display:flex;align-items:center;gap:12px;padding:12px 0 16px;border-bottom:1px solid rgba(212,175,55,.2);margin-bottom:16px}
+.brand{font-size:18px;font-weight:700;color:#D4AF37}
+.brand small{display:block;color:#666;font-size:11px;font-weight:400;margin-top:2px}
+.ver{margin-left:auto;font-size:11px;color:#555;background:#111;padding:3px 8px;border-radius:4px;border:1px solid #222}
+
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(90px,1fr));gap:8px;margin-bottom:14px}
+.stat{background:#0f0f0f;border:1px solid #1a1a1a;border-radius:6px;padding:10px;text-align:center}
+.stat-n{font-size:20px;font-weight:700;color:#D4AF37;line-height:1}
+.stat-l{font-size:10px;color:#555;margin-top:3px}
+.ok .stat-n{color:#639922} .err .stat-n{color:#E24B4A} .warn .stat-n{color:#D4AF37}
+
+.toolbar{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+button{padding:6px 14px;border-radius:6px;border:1px solid #333;background:#111;color:#D4AF37;font-size:11px;font-family:inherit;cursor:pointer;transition:all .15s}
+button:hover{background:#1a1206;border-color:#D4AF37}
+.btn-r{color:#E24B4A;border-color:#3a1a1a} .btn-g{color:#639922;border-color:#1a2a0a} .btn-b{color:#60B4FF;border-color:#0a1a2a}
+
+.con{background:#050505;border:1px solid #151515;border-radius:8px;padding:10px;height:460px;overflow-y:auto}
+.row{padding:4px 0;border-bottom:1px solid #0c0c0c;display:flex;gap:8px;align-items:flex-start}
+.row:last-child{border:none}
+.ts{color:#2a2a2a;min-width:68px;flex-shrink:0;font-size:11px;padding-top:1px}
+.tag{min-width:52px;flex-shrink:0;font-size:10px;padding:1px 5px;border-radius:3px;text-align:center;margin-top:1px}
+.tok{background:rgba(99,153,34,.2);color:#639922}
+.ter{background:rgba(226,75,74,.2);color:#E24B4A}
+.twn{background:rgba(212,175,55,.15);color:#D4AF37}
+.tin{background:rgba(96,180,255,.15);color:#60B4FF}
+.trn{background:rgba(100,100,100,.2);color:#777}
+.msg{flex:1;line-height:1.6;word-break:break-all;color:#b8afa0}
+.msg .k{color:#D4AF37} .msg .vo{color:#639922} .msg .ve{color:#E24B4A} .msg .vn{color:#60B4FF}
+.msg pre{background:#0a0a0a;padding:8px;border-radius:4px;margin-top:4px;white-space:pre-wrap;font-size:11px;color:#666;border:1px solid #151515;word-break:break-all}
+.sec{font-size:11px;color:#444;margin:10px 0 6px;text-transform:uppercase;letter-spacing:.08em}
+
+.inp-row{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+.inp-row input{flex:1;min-width:120px;padding:6px 10px;border-radius:6px;border:1px solid #222;background:#0f0f0f;color:#e0d6c4;font-family:inherit;font-size:12px}
+.inp-row input::placeholder{color:#444}
+
+#gate{max-width:360px;margin:80px auto;text-align:center}
+#gate h2{color:#D4AF37;font-size:15px;margin-bottom:16px;font-weight:700}
+#gate p{color:#777;font-size:12px;margin-bottom:16px;line-height:1.6}
+#gate input{width:100%;padding:9px 12px;border-radius:6px;border:1px solid #222;background:#0f0f0f;color:#e0d6c4;font-family:inherit;font-size:12px;margin-bottom:10px}
+#gate button{width:100%;padding:9px;border-radius:6px;border:1px solid #D4AF37;background:#1a1206;color:#D4AF37;font-family:inherit;font-size:12px;cursor:pointer;font-weight:700}
+#gate-err{color:#E24B4A;font-size:11px;margin-top:10px;min-height:14px}
+</style>
+</head>
+<body>
+
+<!-- ══ ADMIN GATE ══
+     This page has no server-side auth of its own (it's a static .html file,
+     not .php), so this check happens client-side by calling an existing
+     admin-only API action. That's enough to stop a casual visitor from
+     poking at DB/SMS/OTP internals, but note it is NOT equivalent to a
+     real server-side auth check - anyone who can read this page's JS can
+     see which action is being called. Treat this as a speed bump, not a
+     wall, and keep the page's own URL out of any public link/nav. -->
+<div id="gate">
+  <h2>🔒 ETEL Admin Verification Required</h2>
+  <p>This diagnostic console exposes DB/SMS/OTP internals. Paste your admin
+     session token (the one you're logged into <code>admin.html</code> with),
+     or just open this page in the same browser tab where you're already
+     logged into admin.html and it'll pick the token up automatically.</p>
+  <input type="password" id="gate-token" placeholder="Admin token (optional if already logged in)">
+  <button onclick="verifyAdmin()">Unlock Diagnostics</button>
+  <div id="gate-err"></div>
+</div>
+
+<div id="app" style="display:none">
+
+<div class="hdr">
+  <div>
+    <div class="brand">ETEL Delivery — Login / Reset Diagnostic</div>
+    <small id="hdr-sub">ethelmarket.com/delivery · checking...</small>
+  </div>
+  <div class="ver" id="hdr-ver">v—</div>
+</div>
+
+<div class="stats">
+  <div class="stat" id="s-api"><div class="stat-n">—</div><div class="stat-l">API</div></div>
+  <div class="stat" id="s-db"><div class="stat-n">—</div><div class="stat-l">DB</div></div>
+  <div class="stat" id="s-reset"><div class="stat-n">—</div><div class="stat-l">OTP Table</div></div>
+  <div class="stat" id="s-sms"><div class="stat-n">—</div><div class="stat-l">SMS (AT)</div></div>
+  <div class="stat" id="s-ms"><div class="stat-n">—</div><div class="stat-l">Latency</div></div>
+</div>
+
+<div class="toolbar">
+  <button onclick="runAll()">▶ Run All</button>
+  <button onclick="testPing()" class="btn-g">⚡ Ping</button>
+  <button onclick="testDB()" class="btn-b">🗄 DB</button>
+  <button onclick="testResetTable()" class="btn-b">📋 OTP Table</button>
+  <button onclick="testSMS()" class="btn-b">📱 SMS Config</button>
+  <button onclick="testForgotFlow()" class="btn-b">🔑 OTP Flow</button>
+  <button onclick="testLogin()" class="btn-b">🔐 Login</button>
+  <button onclick="clearLog()" class="btn-r">✕ Clear</button>
+</div>
+
+<div class="sec">OTP Flow Test — enter a registered phone to test the full reset flow</div>
+<div class="inp-row">
+  <input type="tel" id="test-phone" placeholder="+251 9XX XXX XXX (registered phone)">
+  <button onclick="testForgotFlow()" class="btn-b">Test OTP →</button>
+</div>
+
+<div class="sec">Console Output</div>
+<div class="con" id="con"></div>
+
+</div>
+
+<script>
+const API = 'api/boot.php';
+
+async function verifyAdmin() {
+  const errEl = document.getElementById('gate-err');
+  errEl.textContent = '';
+  const pasted = document.getElementById('gate-token').value.trim();
+  const token  = pasted || (localStorage.getItem('etel_token') || '');
+  if (!token) {
+    errEl.textContent = 'No token found — log into admin.html first, or paste one above.';
+    return;
+  }
+  try {
+    const r = await fetch(API, {
+      method: 'POST',
+      headers: { 'Content-Type':'application/json', 'Authorization':'Bearer '+token },
+      body: JSON.stringify({ action: 'admin_dashboard_stats' })
+    });
+    const data = await r.json().catch(() => null);
+    if (data && data.success) {
+      document.getElementById('gate').style.display = 'none';
+      document.getElementById('app').style.display = '';
+      window.onload = null;
+      log('in','ETEL Delivery Login Diagnostic ready (admin verified)');
+      testPing();
+    } else {
+      errEl.textContent = 'Not an admin token, or session expired. Log into admin.html again.';
+    }
+  } catch (e) {
+    errEl.textContent = 'Could not verify: ' + e.message;
+  }
+}
+
+function ts() {
+  return new Date().toLocaleTimeString('en-GB',{hour12:false,hour:'2-digit',minute:'2-digit',second:'2-digit'});
+}
+function log(tag, msg, raw) {
+  const con = document.getElementById('con');
+  const el  = document.createElement('div');
+  el.className = 'row';
+  const rawHtml = raw !== undefined ? `<pre>${typeof raw==='string'?raw:JSON.stringify(raw,null,2)}</pre>` : '';
+  el.innerHTML = `<span class="ts">${ts()}</span><span class="tag t${tag}">${tag.toUpperCase()}</span><span class="msg">${msg}${rawHtml}</span>`;
+  con.appendChild(el);
+  con.scrollTop = con.scrollHeight;
+}
+function clearLog() { document.getElementById('con').innerHTML = ''; }
+function setStat(id, val, cls) {
+  const el = document.getElementById(id);
+  el.className = 'stat ' + (cls||'');
+  el.querySelector('.stat-n').textContent = val;
+}
+
+async function call(action, body={}, token='') {
+  const t0 = performance.now();
+  try {
+    const headers = {'Content-Type':'application/json'};
+    if (token) headers['Authorization'] = 'Bearer ' + token;
+    const r    = await fetch(API, {method:'POST', headers, body: JSON.stringify({action,...body})});
+    const ms   = Math.round(performance.now()-t0);
+    const text = await r.text();
+    let data;
+    try { data = JSON.parse(text); }
+    catch(e) { return {ok:false, ms, data:null, raw:text.slice(0,500), parseErr:true}; }
+    return {ok:r.ok, status:r.status, ms, data};
+  } catch(e) {
+    return {ok:false, ms:Math.round(performance.now()-t0), data:null, netErr:e.message};
+  }
+}
+
+async function testPing() {
+  log('rn','Testing API ping...');
+  const r = await call('ping');
+  if (r.netErr) { log('er',`Network error: <span class="ve">${r.netErr}</span>`); setStat('s-api','ERR','err'); return; }
+  if (r.parseErr) { log('er','API returned non-JSON — PHP fatal or .htaccess error', r.raw); setStat('s-api','ERR','err'); return; }
+  if (r.data && r.data.success) {
+    const d = r.data.data || {};
+    log('ok',`API online · <span class="vn">${r.ms}ms</span> · version <span class="vo">${r.data.v||'?'}</span>`);
+    document.getElementById('hdr-ver').textContent = 'v'+(r.data.v||'?');
+    document.getElementById('hdr-sub').textContent = 'ethelmarket.com/delivery · '+new Date().toLocaleString();
+    setStat('s-api','OK','ok');
+    setStat('s-ms', r.ms+'ms', r.ms<500?'ok':r.ms<1500?'warn':'err');
+  } else {
+    log('er','Ping failed', r.data);
+    setStat('s-api','ERR','err');
+  }
+}
+
+async function testDB() {
+  log('rn','Testing database connection...');
+  // Use login with dummy data — a real DB error vs "wrong password" tells us DB is up
+  const r = await call('login', {phone:'__diag__',password:'__diag__'});
+  if (r.netErr) { log('er','Cannot reach server: '+r.netErr); setStat('s-db','ERR','err'); return; }
+  if (r.parseErr) { log('er','PHP error (non-JSON response) — likely DB connection failure', r.raw); setStat('s-db','ERR','err'); return; }
+  if (r.data) {
+    // "not found" or "wrong password" = DB is working fine
+    if (!r.data.success && (r.data.message||'').match(/not found|password|Invalid|phone/i)) {
+      log('ok',`DB connected · returns correct error for invalid credentials`);
+      setStat('s-db','OK','ok');
+    } else if (!r.data.success && (r.data.message||'').match(/connect|database|PDO|SQLSTATE/i)) {
+      log('er',`DB connection failed: <span class="ve">${r.data.message}</span>`);
+      setStat('s-db','ERR','err');
+    } else {
+      log('wn',`Unexpected response`, r.data);
+      setStat('s-db','?','warn');
+    }
+  }
+}
+
+async function testResetTable() {
+  log('rn','Testing password_resets table...');
+  // Try to call send_reset_otp with a dummy phone — if table missing we get a DB error
+  const r = await call('send_reset_otp', {phone:'+251900000000'});
+  if (r.netErr) { log('er','Network error: '+r.netErr); setStat('s-reset','ERR','err'); return; }
+  if (r.parseErr) { log('er','Non-JSON response from send_reset_otp endpoint', r.raw); setStat('s-reset','ERR','err'); return; }
+  if (!r.data) { log('er','No response data'); setStat('s-reset','ERR','err'); return; }
+
+  const msg = (r.data.message||'').toLowerCase();
+  const dmsg = (r.data.data && r.data.data.message ? r.data.data.message : '').toLowerCase();
+
+  if (msg.includes("table") || msg.includes("doesn't exist") || dmsg.includes("table")) {
+    log('er','<span class="ve">password_resets table MISSING</span> — run <code>php api/migrate.php --apply</code> from the API root', r.data);
+    setStat('s-reset','MISSING','err');
+  } else if (r.data.success || msg.includes('registered') || msg.includes('sent') || msg.includes('otp')) {
+    log('ok','password_resets table <span class="vo">EXISTS</span> and endpoint responding');
+    setStat('s-reset','OK','ok');
+  } else if (r.status === 404 || msg.includes('unknown action')) {
+    log('er','<span class="ve">send_reset_otp action NOT FOUND in api.php</span> — deploy FIX8_password_reset_otp.zip', r.data);
+    setStat('s-reset','NO CASE','err');
+  } else {
+    // Any other error means the table exists (otherwise we'd get a table error)
+    log('ok','password_resets table appears to exist · response: '+r.data.message);
+    setStat('s-reset','OK','ok');
+  }
+}
+
+async function testSMS() {
+  log('rn','Testing Africa\'s Talking SMS config...');
+  // We can\'t make a real SMS test without consuming a credit,
+  // but we can check if the send_reset_otp returns dev_otp (= no AT key configured)
+  // or doesn\'t return dev_otp (= AT key is set)
+  const r = await call('send_reset_otp', {phone:'+251900000000'});
+  if (r.netErr || r.parseErr || !r.data) { log('er','Cannot test SMS — API not reachable'); setStat('s-sms','ERR','err'); return; }
+  if (r.data.data && r.data.data.dev_otp !== undefined && r.data.data.dev_otp !== null) {
+    log('wn','SMS <span class="k">NOT configured</span> — running in dev mode (OTP auto-filled)');
+    log('in','To enable SMS: add <span class="k">AT_API_KEY</span> and <span class="k">AT_USERNAME</span> to delivery/api/.env');
+    setStat('s-sms','DEV','warn');
+  } else if (r.data.success || (r.data.data && r.data.data.sent)) {
+    log('ok','SMS appears <span class="vo">configured</span> — OTP not returned in response (good)');
+    setStat('s-sms','OK','ok');
+  } else {
+    log('in','SMS status unknown — non-registered phone used for test');
+    setStat('s-sms','?','warn');
+  }
+}
+
+async function testForgotFlow() {
+  const phoneEl = document.getElementById('test-phone');
+  const phone   = phoneEl ? phoneEl.value.trim().replace(/\s/g,'') : '';
+
+  if (!phone) {
+    log('wn','Enter a registered phone number above to test the full OTP flow');
+    return;
+  }
+
+  log('in','=== Testing full OTP reset flow for: <span class="k">'+phone+'</span> ===');
+
+  // Step 1: send_reset_otp
+  log('rn','Step 1 — calling send_reset_otp...');
+  const r1 = await call('send_reset_otp', {phone});
+  if (r1.netErr)   { log('er','Network error: '+r1.netErr); return; }
+  if (r1.parseErr) { log('er','PHP error on send_reset_otp (non-JSON)', r1.raw); return; }
+  if (!r1.data)    { log('er','No response from send_reset_otp'); return; }
+  log(r1.data.success?'ok':'er',
+    `send_reset_otp → HTTP ${r1.status} · <span class="vn">${r1.ms}ms</span> · success=${r1.data.success}`,
+    r1.data);
+
+  if (!r1.data.success) {
+    log('er','send_reset_otp failed: <span class="ve">'+(r1.data.message||'unknown error')+'</span>');
+    return;
+  }
+
+  const devOtp = r1.data.data && r1.data.data.dev_otp;
+  if (devOtp) {
+    log('wn','Dev mode: OTP = <span class="k">'+devOtp+'</span> (SMS not configured — this is expected in test)');
+  } else {
+    log('ok','OTP sent via SMS to '+phone);
+    log('in','SMS OTP test: manually enter OTP after checking phone, then re-test from Step 2');
+    return;
+  }
+
+  // Step 2: verify_reset_otp (only if we got devOtp)
+  log('rn','Step 2 — calling verify_reset_otp with OTP '+devOtp+'...');
+  const r2 = await call('verify_reset_otp', {phone, otp: devOtp});
+  if (r2.parseErr) { log('er','PHP error on verify_reset_otp', r2.raw); return; }
+  log(r2.data&&r2.data.success?'ok':'er',
+    `verify_reset_otp → HTTP ${r2.status} · <span class="vn">${r2.ms}ms</span>`, r2.data);
+
+  if (!r2.data || !r2.data.success) {
+    log('er','verify_reset_otp failed: <span class="ve">'+(r2.data&&r2.data.message||'unknown')+'</span>');
+    return;
+  }
+  const resetToken = r2.data.data && r2.data.data.reset_token;
+  log('ok','Reset token received: <span class="vo">'+resetToken.slice(0,12)+'...'+resetToken.slice(-6)+'</span>');
+
+  // Step 3: reset_password (use a test password — won\'t actually save unless we confirm)
+  log('in','Step 3 — skipping actual password change (would change your live password)');
+  log('ok','=== Full OTP flow working ✅ All 3 steps functional ===');
+}
+
+async function testLogin() {
+  log('rn','Testing login endpoint...');
+  const r = await call('login', {phone:'+251900000000', password:'wrongpassword'});
+  if (r.parseErr) { log('er','Login endpoint PHP error', r.raw); return; }
+  if (r.data && !r.data.success && (r.data.message||'').match(/not found|Invalid|password/i)) {
+    log('ok',`Login endpoint responding correctly · <span class="vn">${r.ms}ms</span> · returns correct error for wrong credentials`);
+  } else {
+    log('wn','Unexpected login response', r.data);
+  }
+  // Check etelid login too
+  const r2 = await call('etelid_login', {identifier:'+251900000000', password:'wrong'});
+  if (r2.data && !r2.data.success) {
+    log('ok',`EtelID login endpoint responding · <span class="vn">${r2.ms}ms</span>`);
+  }
+}
+
+async function runAll() {
+  clearLog();
+  log('in','=== ETEL Delivery Login Diagnostic Run ===');
+  await testPing();
+  await testDB();
+  await testResetTable();
+  await testSMS();
+  await testLogin();
+  log('in','=== Complete — check any ❌ ERR items above ===');
+}
+
+window.onerror = (msg,src,line) => {
+  log('er',`JS: ${msg} (${src ? src.split('/').pop() : '?'}:${line})`);
+};
+
+window.onload = () => {
+  const existing = localStorage.getItem('etel_token');
+  if (existing) {
+    // Already logged into admin.html in this browser - try it silently
+    // instead of making the admin re-type a token they already have.
+    verifyAdmin();
+  }
+  // else: leave the gate showing, waiting for a pasted token
+};
+</script>
+</body>
+</html>

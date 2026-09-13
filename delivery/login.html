@@ -1,0 +1,1263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script>
+/* Must run before anything else, including core.js. Statically establish
+   the correct manifest/icon BEFORE the browser evaluates installability,
+   rather than swapping them later - a late swap isn't reliably picked up
+   by beforeinstallprompt. Same "declare it upfront" pattern already used
+   successfully on ride.html/driver.html, just computed here from the URL
+   since login.html serves both contexts from one file. */
+(function () {
+  var params = new URLSearchParams(location.search);
+  var redirect = params.get('redirect') || '';
+  var role = params.get('role') || '';
+  var isDriver = role === 'driver';
+  var isRide = !isDriver && redirect.indexOf('ride/') === 0;
+  var isCourier = !isDriver && !isRide && role === 'courier';
+  var isService = !isDriver && !isRide && !isCourier && role === 'service_giver';
+  var isAdmin = !isDriver && !isRide && !isCourier && !isService && role === 'admin';
+  /* 'customer' was never an explicit branch here either - fell into the
+   * same generic else as anything unrecognized, same bug class as the
+   * one this file's own comment already documents for courier/service/
+   * admin above. Not the main fix (customer.html now has its own
+   * static tag directly, which is what actually matters since users
+   * mostly land there straight from the EtelID portal without passing
+   * through login.html at all) - added here too for consistency, in
+   * case a customer-role login flow ever does pass through this file. */
+  var isCustomer = !isDriver && !isRide && !isCourier && !isService && !isAdmin && role === 'customer';
+  // Driver now has its own distinct branded manifest/icon set (previously
+  // shared the Ride icon entirely - role==='driver' fell into the same
+  // branch as a ride/ redirect, and both got manifest-ride.json/ride-icon-*).
+  // Now genuinely six separate identities, matching the six apps. Courier,
+  // Service, and Admin previously had NO branch here at all and silently
+  // fell into the final else, meaning "Install App" on those tabs always
+  // installed Delivery's manifest/icon regardless of which tab was active
+  // - the exact bug this fixes.
+  if (isDriver) {
+    document.write('<link rel="manifest" href="manifest-driver.json">');
+    document.write('<link rel="icon" type="image/png" href="icons/driver-icon-96.png">');
+    document.write('<link rel="apple-touch-icon" href="icons/driver-apple-touch-icon.png">');
+  } else if (isRide) {
+    document.write('<link rel="manifest" href="manifest-ride.json">');
+    document.write('<link rel="icon" type="image/png" href="icons/ride-icon-96.png">');
+    document.write('<link rel="apple-touch-icon" href="icons/ride-apple-touch-icon.png">');
+  } else if (isCourier) {
+    document.write('<link rel="manifest" href="manifest-courier.json">');
+    document.write('<link rel="icon" type="image/png" href="icons/courier-icon-96.png">');
+    document.write('<link rel="apple-touch-icon" href="icons/courier-apple-touch-icon.png">');
+  } else if (isService) {
+    document.write('<link rel="manifest" href="manifest-service.json">');
+    document.write('<link rel="icon" type="image/png" href="icons/service-icon-96.png">');
+    document.write('<link rel="apple-touch-icon" href="icons/service-apple-touch-icon.png">');
+  } else if (isAdmin) {
+    document.write('<link rel="manifest" href="manifest-admin.json">');
+    document.write('<link rel="icon" type="image/png" href="icons/admin-icon-96.png">');
+    document.write('<link rel="apple-touch-icon" href="icons/admin-apple-touch-icon.png">');
+  } else if (isCustomer) {
+    document.write('<link rel="manifest" href="manifest.json">');
+    document.write('<link rel="icon" type="image/png" href="icons/icon-96.png">');
+    document.write('<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">');
+  } else {
+    // Previously this branch did nothing, and a second, unconditional
+    // <link rel="manifest" href="manifest.php"> further down in <head>
+    // always ran regardless of which branch fired above. Since browsers
+    // use the LAST <link rel="manifest"> tag when more than one exists,
+    // that static tag silently won every single time - the ride/driver
+    // manifest above was written into the page correctly, but never
+    // actually took effect, which is exactly what a PWA installability
+    // crawler (or a real "Add to Home Screen") would have picked up:
+    // always manifest.php, never manifest-ride.json, no matter the URL.
+    document.write('<link rel="manifest" href="manifest.php">');
+    document.write('<link rel="icon" type="image/png" href="icons/icon-96.png">');
+    document.write('<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">');
+  }
+})();
+</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#D4AF37">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="ETEL Delivery">
+<title>ETEL Delivery — Sign In</title>
+<link rel="stylesheet" href="css/etel.css?v=4.1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=JetBrains+Mono:wght@400;500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=Noto+Sans+Ethiopic:wght@400;600;700&display=swap" rel="stylesheet">
+
+<style>
+/* ════════════════════════════════════════════════════════
+   ETEL DELIVERY — Premium Login v4.0
+   EtelId Design DNA: Split-screen · Gold orbs · Guilloché
+   ════════════════════════════════════════════════════════ */
+
+:root {
+  --g1:#FDF6D8; --g2:#F5E6A3; --g3:#E8C84A; --g4:#D4AF37;
+  --g5:#C8922A; --g6:#A07020; --g7:#7A5518; --g8:#4A3210; --g9:#2A1A06;
+  --ink:#1A0E00; --ink2:#3A2200; --ink3:#7A5520;
+  /* Was only 40%/32% opaque - fine against the old, much lighter
+     background image, but the new darker hero backgrounds bled through
+     enough to make the card read as gray instead of cream. Raised so the
+     login form stays legible regardless of which role's background is
+     showing behind it. */
+  --card-bg:rgba(255,254,248,.06); --card-bg2:rgba(253,248,238,.04);
+  --ab:rgba(212,175,55,.25);
+  --ff-d:'Syne',sans-serif;
+  --ff-b:'Cormorant Garamond',serif;
+  --ff-m:'JetBrains Mono',monospace;
+  --ff-a:'Noto Sans Ethiopic',sans-serif;
+  --ease:cubic-bezier(.22,1,.36,1);
+}
+
+@keyframes holo        { 0%{background-position:0 0}100%{background-position:300% 0} }
+@keyframes slide-up    { from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:none} }
+@keyframes slide-right { from{opacity:0;transform:translateX(-24px)}to{opacity:1;transform:none} }
+@keyframes orb-drift-1 { 0%,100%{transform:translate(0,0)}33%{transform:translate(30px,-25px)}66%{transform:translate(-20px,18px)} }
+@keyframes orb-drift-2 { 0%,100%{transform:translate(0,0)}33%{transform:translate(-25px,18px)}66%{transform:translate(22px,-28px)} }
+@keyframes shimmer     { 0%{background-position:-400px 0}100%{background-position:400px 0} }
+@keyframes float-mock  { 0%,100%{transform:translateY(0) rotate(-1deg)}50%{transform:translateY(-10px) rotate(1deg)} }
+@keyframes pulse-dot   { 0%{box-shadow:0 0 0 0 rgba(46,204,113,.6)}70%{box-shadow:0 0 0 10px rgba(46,204,113,0)}100%{box-shadow:0 0 0 0 rgba(46,204,113,0)} }
+
+*,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
+html,body { height:100%; }
+body { font-family:var(--ff-b); background:#0a0a14; overflow:hidden; }
+
+/* ── SPLIT LAYOUT ── */
+.del-auth-page { min-height:100vh; min-height:100dvh; display:flex; }
+
+/* ══════════════════════
+   LEFT — Gold Brand Panel
+   ══════════════════════ */
+.del-auth-left {
+  flex:0 0 42%;
+  position:relative; overflow:hidden;
+  display:flex; flex-direction:column;
+  justify-content:center; align-items:center;
+  padding:40px 30px;
+  background:linear-gradient(155deg,
+    #1A0A00 0%,#3A2008 15%,#6A4010 28%,
+    #9A6820 40%,#C8922A 52%,#D4AF37 58%,
+    #C8922A 64%,#9A6820 76%,#5A3808 90%,#1A0A00 100%);
+}
+.del-auth-left::before {
+  content:''; position:absolute; inset:0; pointer-events:none;
+  background-image:
+    repeating-linear-gradient(30deg, transparent 0,transparent 22px,rgba(255,255,255,.025) 22px,rgba(255,255,255,.025) 23px),
+    repeating-linear-gradient(-30deg,transparent 0,transparent 22px,rgba(255,255,255,.025) 22px,rgba(255,255,255,.025) 23px);
+}
+.del-auth-orb {
+  position:absolute; border-radius:50%; pointer-events:none; filter:blur(60px);
+}
+.del-auth-orb-1 {
+  width:400px; height:400px; top:-120px; left:-120px;
+  background:radial-gradient(circle,rgba(255,220,80,.22) 0%,transparent 70%);
+  animation:orb-drift-1 14s ease-in-out infinite;
+}
+.del-auth-orb-2 {
+  width:350px; height:350px; bottom:-80px; right:-80px;
+  background:radial-gradient(circle,rgba(80,40,0,.28) 0%,transparent 70%);
+  animation:orb-drift-2 18s ease-in-out infinite;
+}
+
+.del-auth-brand {
+  position:relative; z-index:1;
+  display:flex; flex-direction:column;
+  align-items:center; text-align:center; gap:16px;
+  animation:slide-right .6s ease both;
+}
+.del-auth-logo {
+  width:76px; height:76px; border-radius:18px; object-fit:cover;
+  border:1.5px solid rgba(212,175,55,.4);
+  box-shadow:0 8px 32px rgba(0,0,0,.5),0 0 0 6px rgba(212,175,55,.08);
+}
+.del-auth-mark  { font-family:var(--ff-a); font-size:38px; font-weight:700; color:var(--g3); line-height:1; text-shadow:0 2px 16px rgba(0,0,0,.4); }
+.del-auth-name  { font-family:var(--ff-d); font-size:20px; font-weight:800; color:var(--g1); letter-spacing:.3px; text-shadow:0 2px 10px rgba(0,0,0,.4); }
+.del-auth-sub   { font-family:var(--ff-m); font-size:9px; color:var(--g4); letter-spacing:2.5px; text-transform:uppercase; }
+.del-auth-desc  { font-size:13px; color:rgba(253,246,216,.72); line-height:1.7; max-width:250px; }
+
+/* Floating order card */
+.del-mock-card {
+  width:220px; height:130px; border-radius:14px; position:relative;
+  background:rgba(212,175,55,.08);
+  border:1.5px solid rgba(212,175,55,.25);
+  backdrop-filter:blur(8px);
+  box-shadow:0 20px 60px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.12);
+  animation:float-mock 5s ease-in-out infinite; overflow:hidden;
+}
+.del-mock-card::before {
+  content:''; position:absolute; top:0; left:0; right:0; height:3px;
+  background:linear-gradient(90deg,#ff6b6b,#ffd93d,#6bcb77,#4d96ff,#ff6b6b,#ffd93d);
+  background-size:300%; animation:holo 3s linear infinite;
+}
+.del-mock-inner { position:absolute; top:16px; left:14px; right:14px; }
+.del-mock-label { font-family:var(--ff-m); font-size:7px; letter-spacing:1.5px; text-transform:uppercase; color:rgba(253,246,216,.45); }
+.del-mock-id    { font-family:var(--ff-d); font-size:15px; font-weight:800; color:var(--g3); margin:3px 0; }
+.del-mock-route { display:flex; flex-direction:column; gap:6px; margin-top:8px; }
+.del-mock-stop  { display:flex; align-items:center; gap:7px; }
+.del-mock-dot   { width:7px; height:7px; border-radius:50%; flex-shrink:0; }
+.del-mock-addr  { font-size:10px; color:rgba(253,246,216,.6); }
+
+/* Feature pills */
+.del-auth-feats { display:flex; flex-direction:column; gap:7px; width:100%; max-width:250px; }
+.del-auth-feat  {
+  display:flex; align-items:center; gap:10px;
+  padding:8px 13px;
+  background:rgba(255,255,255,.07); border:1px solid rgba(212,175,55,.2);
+  border-radius:10px; font-size:12px; color:rgba(253,246,216,.8);
+  backdrop-filter:blur(6px);
+}
+.del-feat-dot { width:6px; height:6px; border-radius:50%; background:#22c55e; flex-shrink:0; animation:pulse-dot 2.4s ease-out infinite; }
+
+/* ══════════════════════
+   RIGHT — Cream Auth Card
+   ══════════════════════ */
+.del-auth-right {
+  flex:1; display:flex; align-items:center; justify-content:center;
+  padding:24px 20px;
+  background-color:#0a0703;
+  background-image:url('assets/images/etel-delivery-coin.webp');
+  /* Show the WHOLE clean coin (full medallion + name text), centered, like
+     the reference. Uses the high-res square coin art (etel-*-coin.webp,
+     ~1024px) NOT the old login-bg-*.jpg crops, which were a different,
+     tall, zoomed-in image. "contain" fits the entire square coin inside
+     the panel; the login card sits over it as translucent glass. */
+  background-size:contain; background-position:center; background-repeat:no-repeat;
+  position:relative; overflow:hidden;
+}
+.del-auth-right::before {
+  content:''; position:absolute; inset:0; pointer-events:none; z-index:0;
+  background-image:
+    repeating-linear-gradient(45deg, transparent 0,transparent 32px,rgba(212,175,55,.04) 32px,rgba(212,175,55,.04) 33px),
+    repeating-linear-gradient(-45deg,transparent 0,transparent 32px,rgba(212,175,55,.04) 32px,rgba(212,175,55,.04) 33px);
+}
+
+/* Card */
+.del-auth-card {
+  width:100%; max-width:400px;
+  background:var(--card-bg); border-radius:20px;
+  /* No backdrop blur - blurring the backdrop is what hides the coin's
+     name and artwork behind the card. True clear glass = tint only,
+     no blur, so the coin reads through sharply. */
+  border:1.5px solid rgba(255,255,255,.5);
+  box-shadow:0 20px 60px rgba(0,0,0,.4),0 4px 16px rgba(0,0,0,.25),inset 0 1px 0 rgba(255,255,255,.6);
+  overflow:hidden; position:relative; z-index:1;
+  animation:slide-up .5s ease both;
+}
+.del-auth-holo {
+  height:3px;
+  background:linear-gradient(90deg,#ff6b6b,#ffd93d,#6bcb77,#4d96ff,#ff6b6b,#ffd93d,#6bcb77,#4d96ff);
+  background-size:300%; animation:holo 3s linear infinite;
+}
+.del-auth-head {
+  padding:20px 22px 16px;
+  /* No extra fill here - this sits ON TOP of the card's own translucent
+     background, so tinting it again double-stacks the opacity and makes
+     the header read milky-white while the body below looks like glass.
+     Keeping it transparent gives one uniform glass panel. */
+  background:transparent;
+  border-bottom:1px solid rgba(255,255,255,.25); text-align:center;
+}
+.del-auth-logo-wrap { display:flex; flex-direction:column; align-items:center; gap:4px; margin-bottom:10px; }
+.del-auth-logo-img  { height:44px; width:auto; object-fit:contain; filter:drop-shadow(0 3px 12px rgba(100,60,0,.2)); }
+.del-auth-org   { font-family:var(--ff-a); font-size:10px; color:#FFF3D0; letter-spacing:.5px; text-shadow:0 1px 4px rgba(0,0,0,.95),0 0 10px rgba(0,0,0,.8); }
+.del-auth-title { font-family:var(--ff-d); font-size:20px; font-weight:800; color:#FFFFFF; text-shadow:0 2px 5px rgba(0,0,0,.95),0 0 14px rgba(0,0,0,.85),0 0 3px rgba(0,0,0,.9); }
+.del-auth-subtitle { font-size:12px; color:#F5E6C0; margin-top:3px; line-height:1.5; text-shadow:0 1px 4px rgba(0,0,0,.95),0 0 8px rgba(0,0,0,.8); }
+
+/* Role tabs */
+.del-role-tabs { display:flex; gap:4px; flex-wrap:wrap; padding:14px 22px 0; }
+.del-rtab {
+  /* Was sized for 5 tabs (56px min-width) - adding the 6th (Ride) tipped
+     the row over its available width by a few pixels, stranding the
+     last tab (Admin) alone on its own line. Trimmed down proportionally
+     so all six fit on one row instead of wrapping. */
+  flex:1 1 48px; min-width:48px;
+  display:flex; flex-direction:column; align-items:center; gap:2px;
+  padding:7px 2px; border-radius:9px; cursor:pointer;
+  font-family:var(--ff-m); font-size:8px; font-weight:600;
+  color:rgba(45,26,0,.9); background:rgba(255,253,245,.6);
+  border:1.5px solid rgba(212,175,55,.4);
+  text-shadow:0 1px 2px rgba(255,255,255,.7);
+  transition:all .2s var(--ease);
+}
+.del-rtab-icon { font-size:14px; text-shadow:none; }
+.del-rtab:hover { color:var(--ink); background:rgba(255,255,255,.78); border-color:rgba(212,175,55,.6); transform:translateY(-2px); }
+.del-rtab.on {
+  color:var(--g9); font-weight:700;
+  background:linear-gradient(135deg,var(--g2),var(--g3));
+  border-color:transparent;
+  box-shadow:0 6px 18px -6px rgba(212,175,55,.5);
+}
+
+/* Staff role preview row - only shown under the Admin tab. Deliberately
+   styled smaller/secondary compared to .del-rtab so it reads as "a
+   sub-choice within Admin," not a seventh top-level role. Purely
+   informational (see the HTML comment above #staff-role-tabs) - never
+   wire this into anything that grants access. */
+.del-staff-tabs { display:flex; gap:4px; flex-wrap:wrap; padding:8px 22px 0; }
+.del-staff-tab {
+  flex:1 1 auto; min-width:0;
+  padding:5px 8px; border-radius:7px; cursor:pointer;
+  font-family:var(--ff-m); font-size:9.5px; font-weight:600; white-space:nowrap;
+  color:rgba(253,246,216,.65); background:rgba(255,255,255,.06);
+  border:1px solid rgba(212,175,55,.28);
+  transition:all .2s var(--ease);
+}
+.del-staff-tab:hover { color:rgba(253,246,216,.9); background:rgba(255,255,255,.1); border-color:rgba(212,175,55,.5); }
+.del-staff-tab.on {
+  color:var(--g9); font-weight:700;
+  background:linear-gradient(135deg,var(--g2),var(--g3));
+  border-color:transparent;
+}
+
+/* Body */
+.del-auth-body { padding:16px 22px 10px; }
+
+/* Alerts */
+.del-falert { display:none; padding:10px 13px; border-radius:9px; font-size:12px; margin-bottom:12px; }
+.del-falert.on { display:block; }
+.del-falert.err { background:rgba(239,68,68,.08); border:1px solid rgba(239,68,68,.25); color:#991b1b; }
+.del-falert.ok  { background:rgba(34,197,94,.08);  border:1px solid rgba(34,197,94,.25);  color:#166534; }
+
+/* Fields */
+.del-af-field { margin-bottom:12px; }
+.del-af-label { font-family:var(--ff-m); font-size:9px; font-weight:700; color:#FFE9A8; text-transform:uppercase; letter-spacing:1.5px; display:block; margin-bottom:5px; text-shadow:0 1px 4px rgba(0,0,0,.95),0 0 8px rgba(0,0,0,.85); }
+.del-af-wrap  { position:relative; display:flex; align-items:center; }
+.del-af-icon  { position:absolute; left:12px; color:var(--g5); font-size:14px; pointer-events:none; opacity:.7; }
+.del-af-input {
+  width:100%; padding:10px 14px 10px 38px;
+  background:rgba(255,253,245,.82); border:1.5px solid rgba(212,175,55,.4);
+  border-radius:9px; font-size:14px; font-family:var(--ff-b);
+  color:var(--ink); transition:border-color .2s,box-shadow .2s,background .2s;
+  -webkit-appearance:none; appearance:none;
+}
+.del-af-input:focus {
+  border-color:var(--g4); background:rgba(255,255,255,.94);
+  box-shadow:0 0 0 3px rgba(212,175,55,.2); outline:none;
+}
+.del-af-input::placeholder { color:rgba(100,60,0,.3); }
+.del-pw-toggle { position:absolute; right:10px; background:none; border:none; color:var(--g5); cursor:pointer; font-size:14px; padding:4px; border-radius:4px; transition:color .15s; }
+.del-pw-toggle:hover { color:var(--g4); }
+
+/* Submit */
+.del-auth-submit {
+  width:100%; padding:13px;
+  background:linear-gradient(135deg,var(--g9) 0%,var(--g7) 25%,var(--g5) 50%,var(--g4) 65%,var(--g3) 78%,var(--g4) 90%,var(--g5) 100%);
+  background-size:200%;
+  color:var(--g1); border:none; border-radius:10px;
+  font-family:var(--ff-d); font-size:15px; font-weight:800;
+  cursor:pointer; letter-spacing:.5px;
+  box-shadow:0 5px 0 var(--g9),0 8px 22px rgba(80,40,0,.3);
+  transition:transform .15s,box-shadow .15s;
+  position:relative; overflow:hidden;
+  margin-top:4px; margin-bottom:10px;
+}
+.del-auth-submit::before {
+  content:''; position:absolute; top:0; left:-100%; width:50%; height:100%;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.12),transparent);
+  animation:shimmer 2.5s infinite;
+}
+.del-auth-submit:hover:not(:disabled) { transform:translateY(-1px); box-shadow:0 6px 0 var(--g9),0 10px 26px rgba(80,40,0,.35); }
+.del-auth-submit:active:not(:disabled){ transform:translateY(1px); box-shadow:0 3px 0 var(--g9),0 5px 14px rgba(80,40,0,.2); }
+.del-auth-submit:disabled { opacity:.65; cursor:not-allowed; transform:none; }
+
+/* Divider + ghost */
+.del-auth-divider {
+  display:flex; align-items:center; gap:12px; margin:2px 0 8px;
+  color:rgba(120,80,20,.35); font-family:var(--ff-m); font-size:10px;
+  letter-spacing:1.5px; text-transform:uppercase;
+}
+.del-auth-divider::before,.del-auth-divider::after { content:''; flex:1; height:1px; background:rgba(212,175,55,.2); }
+.del-auth-ghost {
+  width:100%; padding:11px; background:rgba(255,253,245,.7);
+  border:1.5px solid rgba(212,175,55,.5); border-radius:10px;
+  font-family:var(--ff-d); font-size:13px; font-weight:800;
+  color:#6A4010; cursor:pointer; letter-spacing:.3px; transition:all .2s;
+  margin-bottom:6px;
+}
+.del-auth-ghost:hover { background:rgba(255,255,255,.85); border-color:rgba(212,175,55,.7); color:#3A2200; }
+
+/* Forgot link */
+.del-forgot-wrap { text-align:right; margin-bottom:16px; }
+.del-forgot-link {
+  display:inline-block;
+  padding:6px 14px; border-radius:20px;
+  background:linear-gradient(135deg,var(--g9) 0%,var(--g7) 25%,var(--g5) 50%,var(--g4) 65%,var(--g3) 78%,var(--g4) 90%,var(--g5) 100%);
+  background-size:200%;
+  font-family:var(--ff-d); font-size:12px; font-weight:800; letter-spacing:.3px;
+  color:#000; text-shadow:0 1px 0 rgba(255,255,255,.25);
+  box-shadow:0 3px 0 var(--g9),0 5px 14px rgba(80,40,0,.3);
+  cursor:pointer; transition:transform .15s,box-shadow .15s;
+}
+.del-forgot-link:hover { transform:translateY(-1px); box-shadow:0 4px 0 var(--g9),0 7px 18px rgba(80,40,0,.4); color:#fff; text-shadow:0 1px 2px rgba(0,0,0,.5); }
+
+/* Spinner */
+.del-spin { display:inline-block; width:14px; height:14px; border:2px solid rgba(253,246,216,.3); border-top-color:var(--g1); border-radius:50%; animation:_spin .7s linear infinite; vertical-align:middle; margin-right:5px; }
+@keyframes _spin { to{transform:rotate(360deg)} }
+
+/* Footer */
+.del-auth-foot { padding:8px 22px 16px; text-align:center; border-top:1px solid rgba(255,255,255,.25); font-family:var(--ff-m); font-size:9px; color:#EBDCB4; letter-spacing:1px; text-shadow:0 1px 4px rgba(0,0,0,.95); }
+
+/* View switching */
+.del-fview { display:none; }
+.del-fview.on { display:block; }
+
+/* EtelID SSO button */
+.del-auth-etelid {
+  width:100%; padding:11px;
+  display:flex; align-items:center; justify-content:center; gap:9px;
+  background:linear-gradient(135deg,#1A0A00,#3A2008,#6A4010,#9A6820,#C8922A,#D4AF37);
+  background-size:200%; border:1.5px solid rgba(212,175,55,.4); border-radius:10px;
+  font-family:var(--ff-d); font-size:13px; font-weight:800; color:var(--g1);
+  cursor:pointer; letter-spacing:.3px;
+  box-shadow:0 4px 0 var(--g9),0 6px 16px rgba(80,40,0,.25);
+  transition:transform .15s,box-shadow .15s; position:relative; overflow:hidden; margin-bottom:6px;
+}
+.del-auth-etelid::before { content:''; position:absolute; top:0; left:-100%; width:50%; height:100%; background:linear-gradient(90deg,transparent,rgba(255,255,255,.15),transparent); animation:shimmer 2.5s infinite; pointer-events:none; }
+.del-auth-etelid:hover:not(:disabled) { transform:translateY(-1px); box-shadow:0 5px 0 var(--g9),0 8px 20px rgba(80,40,0,.3); }
+.del-auth-etelid:active:not(:disabled) { transform:translateY(1px); }
+.del-auth-etelid:disabled { opacity:.65; cursor:not-allowed; }
+.del-etelid-mark { font-family:var(--ff-a); font-size:16px; font-weight:700; background:linear-gradient(135deg,#FDF6D8,#E8C84A); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+
+/* MOBILE */
+@media (max-width:820px) {
+  .del-auth-page { flex-direction:column; }
+  html,body { overflow:auto; height:auto; }
+  .del-auth-left { flex:0 0 auto; padding:14px 20px 10px; min-height:auto; }
+  .del-mock-card,.del-auth-feats,.del-auth-desc { display:none; }
+  .del-auth-brand { gap:7px; }
+  .del-auth-mark { font-size:28px; }
+  .del-auth-name { font-size:16px; }
+  .del-auth-right { padding:8px 16px 28px; }
+  .del-auth-org, .del-auth-mark+* { display:none; }
+}
+</style>
+    <link rel="stylesheet" href="css/etel-design-v4.css?v=4.4">
+    <link rel="stylesheet" href="css/etel-responsive.css?v=1.0">
+    <link rel="stylesheet" href="css/etel-system.css?v=1.0">
+</head>
+<body>
+
+<div class="del-auth-page">
+
+  <!-- ── LEFT PANEL ── -->
+  <div class="del-auth-left">
+    <div class="del-auth-orb del-auth-orb-1"></div>
+    <div class="del-auth-orb del-auth-orb-2"></div>
+
+    <div class="del-auth-brand">
+      <picture><source id="auth-logo-left-src" srcset="assets/images/logo.webp" type="image/webp"><img id="auth-logo-left" src="assets/images/logo.png" alt="ETEL" class="del-auth-logo" onerror="this.style.display='none'"></picture>
+      <div class="del-auth-mark" id="auth-mark">ኢE</div>
+      <div class="del-auth-name" id="auth-name">ETEL DELIVERY</div>
+      <div class="del-auth-sub" id="auth-sub">ኢትኤል ድሊቨሪ · Hawassa</div>
+      <div class="del-auth-desc" id="auth-desc">Fast food, groceries & packages across all 12 Hawassa zones.</div>
+
+      <!-- Floating order card -->
+      <div class="del-mock-card">
+        <div class="del-mock-inner">
+          <div class="del-mock-label">Active Order</div>
+          <div class="del-mock-id">ET-2847</div>
+          <div class="del-mock-route">
+            <div class="del-mock-stop">
+              <div class="del-mock-dot" style="background:var(--g4);"></div>
+              <div class="del-mock-addr">Eshetu Restaurant</div>
+            </div>
+            <div class="del-mock-stop">
+              <div class="del-mock-dot" style="background:#22c55e;"></div>
+              <div class="del-mock-addr">HU Gate 3 · ~8 min</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Features -->
+      <div class="del-auth-feats">
+        <div class="del-auth-feat"><div class="del-feat-dot"></div><span>12 Hawassa zones covered</span></div>
+        <div class="del-auth-feat"><div class="del-feat-dot"></div><span>Real-time GPS tracking</span></div>
+        <div class="del-auth-feat"><div class="del-feat-dot"></div><span>ኢE Pay · Telebirr · Cash</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── RIGHT PANEL ── -->
+  <div class="del-auth-right">
+
+    <div class="del-auth-card">
+      <div class="del-auth-holo"></div>
+
+      <div class="del-auth-head">
+        <div class="del-auth-logo-wrap">
+          <picture><source id="auth-logo-card-src" srcset="assets/images/logo.webp" type="image/webp"><img id="auth-logo-card" src="assets/images/logo.png" alt="ETEL" class="del-auth-logo-img" onerror="this.style.display='none'"></picture>
+          <div class="del-auth-org">ኢE · Etel Group · Hawassa</div>
+        </div>
+        <div class="del-auth-title" id="del-card-title">ETEL Delivery</div>
+        <div class="del-auth-subtitle" id="del-card-sub">Sign in to continue</div>
+      </div>
+
+      <!-- Role tabs -->
+      <div class="del-role-tabs">
+        <button class="del-rtab on" id="tab-c" onclick="setRole('customer')">
+          <span class="del-rtab-icon">📦</span>Customer
+        </button>
+        <button class="del-rtab" id="tab-ride" onclick="setRole('ride')">
+          <span class="del-rtab-icon">🚕</span>Ride
+        </button>
+        <button class="del-rtab" id="tab-d" onclick="setRole('courier')">
+          <span class="del-rtab-icon">🛵</span>Courier
+        </button>
+        <button class="del-rtab" id="tab-r" onclick="setRole('driver')">
+          <span class="del-rtab-icon">🚗</span>Driver
+        </button>
+        <button class="del-rtab" id="tab-s" onclick="setRole('service_giver')">
+          <span class="del-rtab-icon">🏪</span>Service
+        </button>
+        <button class="del-rtab" id="tab-a" onclick="setRole('admin')">
+          <span class="del-rtab-icon">⚙️</span>Admin
+        </button>
+      </div>
+
+      <!-- Staff role preview (Admin tab only) - purely informational.
+           Actual access and landing page are always decided server-side
+           by EtelGroup's Employees panel via admin_etelid_login, never
+           by which of these buttons was clicked - a person who taps
+           "Finance" here but whose real EtelGroup role is Dispatcher
+           still signs in (and lands) as a Dispatcher. This only updates
+           the caption below to preview where that role type typically
+           lands, before anyone has even entered credentials. -->
+      <div class="del-staff-tabs" id="staff-role-tabs" style="display:none">
+        <button class="del-staff-tab on" onclick="setStaffPreview('dispatcher', this)">🚦 Dispatcher</button>
+        <button class="del-staff-tab" onclick="setStaffPreview('finance', this)">💰 Finance</button>
+        <button class="del-staff-tab" onclick="setStaffPreview('traffic officer', this)">🚓 Traffic</button>
+        <button class="del-staff-tab" onclick="setStaffPreview('manager', this)">🧑‍💼 Manager</button>
+        <button class="del-staff-tab" onclick="setStaffPreview('admin', this)">⚙️ Admin</button>
+      </div>
+      <div id="staff-landing-caption" style="display:none;text-align:center;font-size:10px;color:rgba(253,246,216,.5);padding:6px 22px 0"></div>
+
+      <div class="del-auth-body">
+        <!-- Main alert -->
+        <div class="del-falert" id="falert"></div>
+
+        <!-- LOGIN view -->
+        <div class="del-fview on" id="fv-login">
+
+          <div class="del-af-field">
+            <label class="del-af-label">Phone Number or EtelID</label>
+            <div class="del-af-wrap">
+              <span class="del-af-icon">📱</span>
+              <input class="del-af-input" id="inp-phone" type="tel"
+                placeholder="+251 9XX XXX XXX"
+                autocomplete="tel" inputmode="tel">
+            </div>
+          </div>
+          <div class="del-af-field">
+            <label class="del-af-label">Password</label>
+            <div class="del-af-wrap">
+              <span class="del-af-icon">🔒</span>
+              <input class="del-af-input" id="inp-pw" type="password"
+                placeholder="Enter password" autocomplete="current-password">
+              <button class="del-pw-toggle" type="button" onclick="togglePw()">👁</button>
+            </div>
+          </div>
+          <div class="del-forgot-wrap"><a class="del-forgot-link" href="https://ethelmarket.com/EtelId/reset-password/" target="_blank" rel="noopener">Forgot password?</a></div>
+
+          <!-- ✦ EtelID PRIMARY HERO ✦ -->
+          <div style="background:linear-gradient(135deg,rgba(42,26,6,.88),rgba(74,50,16,.78));border:1.5px solid rgba(212,175,55,.45);border-radius:14px;padding:16px;margin-top:14px;margin-bottom:16px;text-align:center">
+            <div style="font-size:11px;font-weight:700;color:rgba(253,246,216,.5);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px">✦ Recommended — One ID for all ETEL services ✦</div>
+            <button class="del-auth-etelid" id="del-etelid-btn" type="button" onclick="doEtelIdLogin()" style="margin-bottom:4px;width:100%">
+              <span class="del-etelid-mark">ኢE</span>
+              <span>Sign in with EtelID</span>
+            </button>
+            <p style="font-size:11px;color:rgba(253,246,216,.38);margin-top:6px">Delivery · Ride · Pay — one identity</p>
+          </div>
+
+          <!-- The plain (non-EtelID) "Sign In" button that used to sit here
+               was the actually-redundant piece and stays removed - it
+               called doLogin(), a second, separate backend path
+               (login/register) that's genuinely unused when everyone signs
+               in via EtelID. doLogin() is left in place further down this
+               file as inert, unreferenced code in case it's needed again,
+               but nothing calls it anymore.
+
+               IMPORTANT: doEtelIdLogin() (kept above) is NOT a redirect to
+               a separate SSO page - it reads the phone+password fields
+               above and posts them to the etelid_login/admin_etelid_login
+               backend action right from this page. Removing those input
+               fields (as an earlier pass here mistakenly did) breaks
+               EtelID sign-in entirely, not just the old plain login. -->
+
+          <button class="del-auth-ghost" onclick="switchMode('register')" style="margin-top:4px">Create EtelID Account →</button>
+        </div>
+
+        <!-- REGISTER view -->
+                <div class="del-fview" id="fv-register">
+          <!-- ✦ EtelId Registration Gate ✦ -->
+          <div style="text-align:center;padding:10px 0 18px">
+            <div style="font-size:48px;margin-bottom:10px">🪪</div>
+            <div style="font-size:20px;font-weight:800;font-family:var(--ff-d);color:var(--ink1);margin-bottom:6px">Get your EtelID First</div>
+            <div style="font-size:13px;color:var(--ink3);line-height:1.7;margin-bottom:20px">
+              To use ETEL Delivery, Ride, Pay and all ETEL services,<br>
+              you need one <strong>ኢE EtelID</strong> — your single identity<br>
+              across the entire Etel Group ecosystem.
+            </div>
+            <!-- EtelId benefits -->
+            <div style="background:rgba(212,175,55,.08);border:1.5px solid rgba(212,175,55,.25);border-radius:16px;padding:16px;text-align:left;margin-bottom:18px">
+              <div style="font-size:12px;font-weight:700;color:var(--g5);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px">One ID. All Services.</div>
+              <div style="font-size:13px;color:var(--ink2);line-height:2">
+                🛵 &nbsp;<strong>ETEL Delivery</strong> — Order food &amp; packages<br>
+                🚗 &nbsp;<strong>ETEL Ride</strong> — Book rides across Hawassa<br>
+                💳 &nbsp;<strong>ኢE Pay</strong> — Digital wallet &amp; payments<br>
+                🪪 &nbsp;<strong>One login</strong> — Use your EtelID everywhere
+              </div>
+            </div>
+            <a href="https://ethelmarket.com/EtelId/" target="_blank" style="display:block;text-decoration:none;margin-bottom:10px">
+              <button class="del-auth-submit" style="width:100%;font-size:15px" type="button">
+                🪪 &nbsp;Register at EtelID Portal →
+              </button>
+            </a>
+            <p style="font-size:11px;color:var(--ink3);margin-top:8px">
+              Already have an EtelID? 
+              <button onclick="switchMode('login')" style="background:none;border:none;color:var(--g5);font-weight:700;font-size:11px;cursor:pointer;padding:0">Sign in here ←</button>
+            </p>
+          </div>
+        </div>
+
+        <!-- DEAD as of this fix - "Forgot password?" above now links
+             straight to https://ethelmarket.com/EtelId/reset-password/
+             instead of opening this panel. Left in place rather than
+             deleted, same policy as login.js's own already-documented
+             dead forgot-password block: this 3-step local OTP flow
+             (doForgotStep() below, reset_request/reset_verify/
+             reset_password on Delivery's own boot.php) resets a password
+             in Delivery's local `users` table - but per the comment on
+             the old plain Sign In button above, NOBODY signs in with a
+             local Delivery password anymore; every login on this page
+             goes through doEtelIdLogin() against the real EtelID
+             credential. Resetting the local password here fixed nothing
+             for any actual user, which is exactly the bug this replaces.
+             Restoring this (if a genuinely local, non-EtelID account
+             type is ever reintroduced) would work without further
+             backend changes - reset_request/verify/password on
+             boot.php were left untouched. -->
+        <div class="del-fview" id="fv-forgot">
+          <div class="del-falert" id="falert-forgot"></div>
+          <p style="font-size:13px;color:var(--ink3);margin-bottom:14px;line-height:1.6;">Enter your phone number to receive an OTP via Telegram or SMS.</p>
+          <div class="del-af-field">
+            <label class="del-af-label">Phone Number</label>
+            <div class="del-af-wrap">
+              <span class="del-af-icon">📱</span>
+              <input class="del-af-input" id="frst-phone" type="tel" placeholder="+251 9XX XXX XXX">
+            </div>
+          </div>
+          <div id="frst-otp-wrap" style="display:none;">
+            <div class="del-af-field">
+              <label class="del-af-label">OTP Code</label>
+              <div class="del-af-wrap">
+                <span class="del-af-icon">🔢</span>
+                <input class="del-af-input" id="frst-otp" type="text" placeholder="6-digit code" inputmode="numeric" maxlength="6">
+              </div>
+            </div>
+          </div>
+          <div id="frst-newpw-wrap" style="display:none;">
+            <div class="del-af-field">
+              <label class="del-af-label">New Password</label>
+              <div class="del-af-wrap">
+                <span class="del-af-icon">🔒</span>
+                <input class="del-af-input" id="frst-newpw" type="password" placeholder="New password (min 8)" minlength="8">
+              </div>
+            </div>
+            <div class="del-af-field">
+              <label class="del-af-label">Confirm Password</label>
+              <div class="del-af-wrap">
+                <span class="del-af-icon">🔒</span>
+                <input class="del-af-input" id="frst-confirmpw" type="password" placeholder="Repeat new password">
+              </div>
+            </div>
+          </div>
+          <button class="del-auth-submit" id="frst-btn" type="button" onclick="doForgotStep()">
+            <span id="frst-btn-txt">Send OTP →</span>
+          </button>
+          <button class="del-auth-ghost" onclick="showForgot(null,'back')">← Back to Sign In</button>
+        </div>
+      </div>
+
+      <div class="del-auth-foot">
+        ETEL Delivery v5.3 · ethelmarket.com · Etel Group · 2026
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Core scripts (same as original login.html) -->
+<script src="js/core.js?v=5.11"></script>
+<script src="js/login.js?v=4.3"></script>
+
+<script>
+/* ── Mode/view switching ── */
+var _mode = 'login';
+function switchMode(m) {
+  _mode = m;
+  document.getElementById('fv-login').classList.toggle('on', m==='login');
+  document.getElementById('fv-register').classList.toggle('on', m==='register');
+  document.getElementById('fv-forgot').classList.remove('on');
+  clearAlert();
+  var courierFields = document.getElementById('courier-fields');
+  if (courierFields) courierFields.style.display = (_role==='courier' && m==='register') ? 'block' : 'none';
+  updateCardHeader();
+}
+
+function showForgot(e, back) {
+  if (e && e.preventDefault) e.preventDefault();
+  if (back === 'back') {
+    document.getElementById('fv-forgot').classList.remove('on');
+    document.getElementById('fv-login').classList.add('on');
+    clearAlert();
+    updateCardHeader();
+    return;
+  }
+  document.getElementById('fv-login').classList.remove('on');
+  document.getElementById('fv-register').classList.remove('on');
+  document.getElementById('fv-forgot').classList.add('on');
+  document.getElementById('del-card-title').textContent = 'Reset Password';
+  document.getElementById('del-card-sub').textContent   = 'Step 1 of 3 — Phone';
+  clearAlert();
+}
+
+var _role = 'customer';
+
+/* Where to send the user after a successful login, if they arrived here
+   wanting to go somewhere specific (e.g. tapped "Ride" while logged out).
+   Whitelisted against a fixed list of known local pages only - never
+   trust an arbitrary ?redirect= value directly, that's an open-redirect
+   hole. Falls back to null so callers use their normal role-based default. */
+function safeRedirectTarget() {
+  var allowed = ['ride/', 'customer.html', 'courier/', 'driver/', 'servicegiver.html', 'admin.html'];
+  if (_forceRideRedirect) return 'ride/';
+  var r = new URLSearchParams(location.search).get('redirect');
+  return (r && allowed.indexOf(r) !== -1) ? r : null;
+}
+var ROLE_TITLES = {
+  customer:'Customer Login', courier:'Courier Login', driver:'Driver Login',
+  service_giver:'Service Login', admin:'Admin Login'
+};
+var ROLE_IDS = { customer:'tab-c', courier:'tab-d', driver:'tab-r', service_giver:'tab-s', admin:'tab-a', ride:'tab-ride' };
+// Ride isn't a real backend role - Ride passengers are just customers,
+// distinguished only by where they land after login (ride/ instead of
+// customer.html). Previously the ONLY way to reach that context was
+// arriving with ?redirect=ride/... already in the URL (e.g. clicking
+// the Ride card elsewhere in the app) - there was no way to pick it
+// from the tab row itself. _forceRideRedirect covers that gap: the tab
+// sets it, safeRedirectTarget() honors it the same way it would honor
+// a real ?redirect= param, so every downstream consumer (isRideContext,
+// the post-login navigation, applyBrandTheme) keeps working unchanged.
+var _forceRideRedirect = false;
+
+function setRole(r) {
+  _forceRideRedirect = (r === 'ride');
+  _role = _forceRideRedirect ? 'customer' : r; // backend only knows 5 roles - map Ride's tab to the real one underneath
+  Object.keys(ROLE_IDS).forEach(function(k) {
+    var el = document.getElementById(ROLE_IDS[k]);
+    if (el) el.classList.toggle('on', k === r);
+  });
+  var cf = document.getElementById('courier-fields');
+  if (cf) cf.style.display = (r==='courier' && _mode==='register') ? 'block' : 'none';
+  var staffTabs = document.getElementById('staff-role-tabs');
+  var staffCap  = document.getElementById('staff-landing-caption');
+  if (r === 'admin') {
+    if (staffTabs) staffTabs.style.display = 'flex';
+    // Default to the first sub-tab's preview rather than leaving the
+    // caption blank until someone clicks one.
+    setStaffPreview('dispatcher', staffTabs ? staffTabs.querySelector('.del-staff-tab') : null);
+  } else {
+    if (staffTabs) staffTabs.style.display = 'none';
+    if (staffCap)  staffCap.style.display = 'none';
+  }
+  clearAlert();
+  updateCardHeader();
+  syncManifestForRole(r);
+}
+/* The staff sub-tabs are a preview for a real staff account (their
+   landing always comes from the server's actual staff_role - clicking
+   a different sub-tab never changes what a genuine Dispatcher/Finance/
+   etc. account is granted). But for an account with NO staff_role at
+   all (a true full admin/owner, not EtelGroup-managed), there's nothing
+   for the server to base a landing on - in that specific case only,
+   _staffPreview below is used as a convenience so an admin can preview
+   each role's dashboard, since a full admin already has access to
+   every page regardless of which one they land on first. See the
+   fallback in doLogin()/doEtelIdLogin() further down. */
+var _staffPreview = 'dispatcher';
+var STAFF_LANDING_PREVIEW = { dispatcher: 'rides', finance: 'pricing', 'traffic officer': 'rides', manager: 'dashboard' };
+var STAFF_LANDING_LABELS  = { rides: 'Rides Management', pricing: 'Pricing (Fares & Zones)', dashboard: 'Dashboard Overview' };
+function setStaffPreview(staffRole, el) {
+  _staffPreview = staffRole;
+  document.querySelectorAll('.del-staff-tab').forEach(function (b) { b.classList.remove('on'); });
+  if (el) el.classList.add('on');
+  var cap = document.getElementById('staff-landing-caption');
+  if (!cap) return;
+  cap.style.display = 'block';
+  if (staffRole === 'admin') {
+    cap.textContent = 'Full admin access — every panel';
+  } else {
+    var landing = STAFF_LANDING_PREVIEW[staffRole];
+    var label = landing ? STAFF_LANDING_LABELS[landing] : null;
+    cap.textContent = label ? ('Typically lands on: ' + label) : 'Landing page depends on your EtelGroup role';
+  }
+}
+/* The manifest/icon <link> tags are only decided once, at initial page
+   load, from whatever the URL happened to carry (see the inline script
+   at the very top of <head>). Clicking a tab never touched them or the
+   URL, so "click Courier, then tap Install App" always installed
+   Delivery's manifest regardless of the tab shown on screen. This keeps
+   the <link> tags AND the URL itself in sync with whichever tab is
+   actually selected, so Install App - and reloading, sharing, or
+   bookmarking the page - all capture the real current identity. */
+function syncManifestForRole(tabId) {
+  var manifestMap = {
+    driver: 'manifest-driver.json', ride: 'manifest-ride.json',
+    courier: 'manifest-courier.json', service_giver: 'manifest-service.json',
+    admin: 'manifest-admin.json'
+  };
+  var iconMap = {
+    driver: 'icons/driver-icon-96.png', ride: 'icons/ride-icon-96.png',
+    courier: 'icons/courier-icon-96.png', service_giver: 'icons/service-icon-96.png',
+    admin: 'icons/admin-icon-96.png'
+  };
+  var appleMap = {
+    driver: 'icons/driver-apple-touch-icon.png', ride: 'icons/ride-apple-touch-icon.png',
+    courier: 'icons/courier-apple-touch-icon.png', service_giver: 'icons/service-apple-touch-icon.png',
+    admin: 'icons/admin-apple-touch-icon.png'
+  };
+  var manifestHref = manifestMap[tabId] || 'manifest.php';
+  var iconHref = iconMap[tabId] || 'icons/icon-96.png';
+  var appleHref = appleMap[tabId] || 'icons/apple-touch-icon.png';
+
+  var manifestLink = document.querySelector('link[rel="manifest"]');
+  if (manifestLink && manifestLink.getAttribute('href') !== manifestHref) manifestLink.setAttribute('href', manifestHref);
+  var iconLink = document.querySelector('link[rel="icon"]');
+  if (iconLink && iconLink.getAttribute('href') !== iconHref) iconLink.setAttribute('href', iconHref);
+  var appleLink = document.querySelector('link[rel="apple-touch-icon"]');
+  if (appleLink && appleLink.getAttribute('href') !== appleHref) appleLink.setAttribute('href', appleHref);
+
+  try {
+    var url = new URL(location.href);
+    url.searchParams.delete('role');
+    url.searchParams.delete('redirect');
+    if (tabId === 'driver') url.searchParams.set('role', 'driver');
+    else if (tabId === 'ride') url.searchParams.set('redirect', 'ride/');
+    else if (tabId === 'courier') url.searchParams.set('role', 'courier');
+    else if (tabId === 'service_giver') url.searchParams.set('role', 'service_giver');
+    else if (tabId === 'admin') url.searchParams.set('role', 'admin');
+    history.replaceState(null, '', url.toString());
+  } catch (e) { /* URL API unsupported - non-fatal, the <link> tags above still updated correctly */ }
+}
+/* Is this a Ride-context login? Two signals, either is enough:
+     1. Arrived via ?redirect=ride/... (the Ride card on the homepage sets
+        this, and it's already whitelist-validated by safeRedirectTarget)
+     2. The visitor picked the Driver tab themselves - Driver is part of
+        the Ride system, not Delivery, regardless of how they arrived. */
+function isRideContext() {
+  var r = safeRedirectTarget();
+  if (r && r.indexOf('ride/') === 0) return true;
+  return _role === 'driver';
+}
+
+/* Full app name shown on the login card - matches the four real,
+   separately-installable PWA identities (ኢE_Delivery, ኢE_Ride,
+   ኢE_Courier, ኢE_Drive), not just a generic role label. "customer" role
+   alone is ambiguous - it's shared between Delivery customers and Ride
+   passengers - so that one still needs the ride-context check too. */
+function appNameForContext() {
+  if (_role === 'driver') return 'ETEL Drive';
+  if (_role === 'courier') return 'ETEL Courier';
+  if (_role === 'customer') return isRideContext() ? 'ETEL Ride' : 'ETEL Delivery';
+  if (_role === 'admin') return 'ETEL Group';
+  if (_role === 'service_giver') return 'ETEL Service';
+  return 'ETEL Delivery';
+}
+
+function roleLabelForContext() {
+  if (_role === 'customer' && isRideContext()) return 'Passenger Login';
+  return ROLE_TITLES[_role] || 'Login';
+}
+
+function updateCardHeader() {
+  var t = document.getElementById('del-card-title');
+  var s = document.getElementById('del-card-sub');
+  var appName = appNameForContext();
+  if (_mode === 'login') {
+    if(t) t.textContent = appName + ' — ' + roleLabelForContext();
+    if(s) s.textContent = 'Sign in to continue';
+  } else if (_mode === 'register') {
+    if(t) t.textContent = 'Create Account';
+    if(s) s.textContent = 'Join ' + appName;
+  }
+  applyBrandTheme();
+}
+
+function applyBrandTheme() {
+  var driver = _role === 'driver';
+  // Only 'customer' is genuinely ambiguous between Delivery and Ride
+  // (Ride passengers authenticate as customer underneath). Courier,
+  // Service, and Admin have no Ride identity and must never inherit
+  // Ride branding just because the page arrived via ?redirect=ride/.
+  var ride = !driver && _role === 'customer' && isRideContext();
+  var courier = !driver && !ride && _role === 'courier';
+  var serviceGiver = !driver && !ride && _role === 'service_giver';
+  var admin = !driver && !ride && _role === 'admin';
+  // Driver previously shared every Ride-context asset (logo, background,
+  // even the accent color) - now genuinely distinct, matching the same
+  // three-way split already done for manifests and PWA icons tonight.
+  // Courier, Service, and Admin now each get their own coin/logo too.
+  var logoPng, logoWebp, bannerUrl, accentColor;
+  if (driver) {
+    logoPng = 'assets/images/logo-driver.png'; logoWebp = 'assets/images/logo-driver.webp';
+    bannerUrl = "url('assets/images/etel-driver-coin.webp')";
+    accentColor = '#3395FF';
+  } else if (ride) {
+    logoPng = 'assets/images/logo-ride.png'; logoWebp = 'assets/images/logo-ride.webp';
+    bannerUrl = "url('assets/images/etel-ride-coin.webp')";
+    accentColor = '#3395FF';
+  } else if (courier) {
+    logoPng = 'assets/images/logo-courier.png'; logoWebp = 'assets/images/logo-courier.webp';
+    bannerUrl = "url('assets/images/etel-courier-coin.webp')";
+    accentColor = '#E5A83A';
+  } else if (serviceGiver) {
+    logoPng = 'assets/images/logo-service.png'; logoWebp = 'assets/images/logo-service.webp';
+    bannerUrl = "url('assets/images/etel-service-coin.webp')";
+    accentColor = '#E5A83A';
+  } else if (admin) {
+    logoPng = 'assets/images/logo-admin.png'; logoWebp = 'assets/images/logo-admin.webp';
+    bannerUrl = "url('assets/images/etel-admin-coin.webp')";
+    accentColor = '#D4AF37';
+  } else {
+    logoPng = 'assets/images/logo.png'; logoWebp = 'assets/images/logo.webp';
+    bannerUrl = "url('assets/images/etel-delivery-coin.webp')";
+    accentColor = '';
+  }
+  ['auth-logo-left', 'auth-logo-card'].forEach(function (id) {
+    var img = document.getElementById(id);
+    var src = document.getElementById(id + '-src');
+    if (img && img.getAttribute('src') !== logoPng) img.setAttribute('src', logoPng);
+    if (src && src.getAttribute('srcset') !== logoWebp) src.setAttribute('srcset', logoWebp);
+  });
+  var name = document.getElementById('auth-name');
+  var sub  = document.getElementById('auth-sub');
+  var desc = document.getElementById('auth-desc');
+  var mark = document.getElementById('auth-mark');
+  if (name) name.textContent = driver ? 'ETEL DRIVER' : ride ? 'ETEL RIDE' : courier ? 'ETEL COURIER' : serviceGiver ? 'ETEL SERVICE' : admin ? 'ETEL ADMIN' : 'ETEL DELIVERY';
+  if (sub)  sub.textContent  = driver ? 'ኢትኤል ሹፌር · Hawassa' : ride ? 'ኢትኤል ጉዞ · Hawassa' : courier ? 'ኢትኤል ተላላኪ · Hawassa' : serviceGiver ? 'ኢትኤል አገልግሎት · Hawassa' : admin ? 'ኢትኤል ቡድን · Hawassa' : 'ኢትኤል ድሊቨሪ · Hawassa';
+  if (desc) desc.textContent = driver
+    ? 'Go online and start earning across all Hawassa zones.'
+    : ride
+    ? 'Safe, affordable rides across all Hawassa zones.'
+    : courier
+    ? 'Pick up and deliver orders across all Hawassa zones.'
+    : serviceGiver
+    ? 'Manage your shop and orders across all Hawassa zones.'
+    : admin
+    ? 'Manage Etel Group staff, roles, and operations.'
+    : 'Fast food, groceries & packages across all 12 Hawassa zones.';
+  if (mark) mark.style.color = accentColor;
+
+  var authRight = document.querySelector('.del-auth-right');
+  if (authRight && authRight.style.backgroundImage !== bannerUrl) authRight.style.backgroundImage = bannerUrl;
+}
+
+function clearAlert() {
+  ['falert','falert-forgot'].forEach(function(id) {
+    var a = document.getElementById(id);
+    if (a) { a.className = 'del-falert'; a.textContent = ''; }
+  });
+}
+function _activeAlertId() {
+  var fv = document.getElementById('fv-forgot');
+  return (fv && fv.classList.contains('on')) ? 'falert-forgot' : 'falert';
+}
+function showAlert(msg, type) {
+  var a = document.getElementById(_activeAlertId());
+  if (a) { a.textContent = msg; a.className = 'del-falert on ' + (type||'err'); }
+}
+
+function togglePw()  { var i = document.getElementById('inp-pw');  if(i) i.type = i.type==='password'?'text':'password'; }
+function togglePw2() { var i = document.getElementById('reg-pw');  if(i) i.type = i.type==='password'?'text':'password'; }
+
+/* ── EtelID SSO login ── */
+async function doEtelIdLogin() {
+  var ident = (document.getElementById('inp-phone').value||'').trim();
+  var pw    = (document.getElementById('inp-pw').value||'');
+  if (!ident || !pw) { showAlert('Enter your EtelID (EG-..., FIN, card no. or phone) and password.'); return; }
+  var btn = document.getElementById('del-etelid-btn');
+  if(btn) { btn.disabled = true; btn.innerHTML = '<span class="del-spin"></span>EtelID...'; }
+  clearAlert();
+  try {
+    // The Admin tab needs a different check than every other role: it
+    // must never auto-provision a plain customer account, and it
+    // additionally recognizes Etel-Group-assigned staff roles (see
+    // EtelGroup admin's Employees panel) - see admin_etelid_login.
+    var action = (_role === 'admin') ? 'admin_etelid_login' : 'etelid_login';
+    var res = await api(action, { identifier: ident.replace(/\s/g,''), password: pw, role: _role });
+    if (btn) { btn.disabled = false; btn.innerHTML = '<span class="del-etelid-mark">ኢE</span><span>Sign in with EtelID</span>'; }
+    if (!res.success) { showAlert(res.message || 'EtelID authentication failed.'); return; }
+    Auth.save(res.data);
+    var u  = Auth.getUser();
+    var ur = u ? u.role : null;
+    var map = { customer:'customer.html', courier:'courier/', driver:'driver/', service_giver:'servicegiver.html', admin:'admin.html' };
+    // If the Customer tab was the one actually used to sign in, always
+    // land there regardless of the account's real role - the backend
+    // now allows any EtelID through the Customer tab (see the matching
+    // change in etelid_login/login), so the redirect must honor that
+    // choice instead of bouncing a driver/courier/service_giver account
+    // straight back to their own app, which would silently undo the
+    // whole point of allowing the login through in the first place.
+    var target = (_role === 'customer') ? 'customer.html' : ((ur === 'admin' && map[_role]) ? map[_role] : (map[ur] || 'customer.html'));
+    // Staff signing in via admin_etelid_login carry a staff_role from
+    // EtelGroup's Employees panel (Dispatcher, Finance, Traffic Officer,
+    // Manager, etc.) - land them on the admin page most relevant to that
+    // role instead of always starting at the full Dashboard. Only
+    // applies when the Admin tab was actually selected - if an admin
+    // deliberately picked Driver/Courier/etc to sign into that
+    // interface, respect that choice instead of redirecting to Rides.
+    //
+    // A genuine staff account's real staff_role always wins - clicking a
+    // different sub-tab pre-login never changes what they're granted.
+    // Only when there's NO real staff_role at all (a true full admin,
+    // not EtelGroup-managed) does the sub-tab preview (_staffPreview)
+    // get used, purely as a "preview this role's dashboard" convenience
+    // - safe because a full admin already has access to every page
+    // regardless of which one they land on first.
+    if (_role === 'admin' && ur === 'admin') {
+        var effectiveStaffRole = (u && u.staff_role) ? String(u.staff_role).trim().toLowerCase() : _staffPreview;
+        var landing = STAFF_LANDING_PREVIEW[effectiveStaffRole];
+        if (landing) target += '?landing=' + encodeURIComponent(landing);
+    }
+    showAlert('Welcome! Signing in via EtelID...', 'ok');
+    setTimeout(function() { location.href = safeRedirectTarget() || target; }, 600);
+  } catch(err) {
+    if (btn) { btn.disabled = false; btn.innerHTML = '<span class="del-etelid-mark">ኢE</span><span>Sign in with EtelID</span>'; }
+    showAlert('Server connection error. Please try again.');
+  }
+}
+
+/* ── Login ── */
+async function doLogin() {
+  var phone = (document.getElementById('inp-phone').value||'').trim().replace(/\s/g,'');
+  var pw    = (document.getElementById('inp-pw').value||'');
+  if (!phone || !pw) { showAlert('Please fill in all fields.'); return; }
+  var btn = document.getElementById('sbtn'), txt = document.getElementById('sbtn-txt');
+  if(btn) btn.disabled = true;
+  if(txt) txt.innerHTML = '<span class="del-spin"></span>';
+  clearAlert();
+  var action = _role==='service_giver' ? 'sg_login' : 'login';
+  try {
+    var res = await api(action, { phone: phone, password: pw, role: _role });
+    if(btn) btn.disabled = false; if(txt) txt.textContent = 'Sign In →';
+    if (!res.success) { showAlert(res.message || 'Invalid phone or password.'); return; }
+    Auth.save(res.data);
+    var u  = Auth.getUser();
+    var ur = u ? u.role : null;
+    if (!ur) { showAlert('Login error: role not found. Try again.'); return; }
+    var map = { customer:'customer.html', courier:'courier/', driver:'driver/', service_giver:'servicegiver.html', admin:'admin.html' };
+    // Admin accounts land on whichever tab they picked (Customer/Courier/
+    // Driver/Service/Admin), not always admin.html - they're testing/
+    // supporting that specific interface, and requireRole() on every page
+    // now lets an admin account stay there regardless of the page's own
+    // role gate. A non-admin account always goes to their real role's
+    // app (ur), same as before.
+    // If the Customer tab was the one actually used to sign in, always
+    // land there regardless of the account's real role - the backend
+    // now allows any EtelID through the Customer tab (see the matching
+    // change in etelid_login/login), so the redirect must honor that
+    // choice instead of bouncing a driver/courier/service_giver account
+    // straight back to their own app, which would silently undo the
+    // whole point of allowing the login through in the first place.
+    var target = (_role === 'customer') ? 'customer.html' : ((ur === 'admin' && map[_role]) ? map[_role] : (map[ur] || 'index.html'));
+    // Same staff-role landing as the EtelID path (doEtelIdLogin above) -
+    // now that the backend also returns staff_role for a plain
+    // phone+password login, not just admin_etelid_login, this needs the
+    // same redirect logic or a staff account signing in this way still
+    // always falls through to the generic admin.html default. Only
+    // applies when the Admin tab itself was selected - if an admin
+    // deliberately picked Driver/Courier/etc to test that interface,
+    // respect that choice and don't redirect them to their staff page.
+    //
+    // A genuine staff account's real staff_role always wins here too;
+    // the sub-tab preview (_staffPreview) is only used as a fallback
+    // when there's no real staff_role at all (a true full admin) - see
+    // the matching comment in doEtelIdLogin above.
+    if (_role === 'admin' && ur === 'admin') {
+        var effectiveStaffRole2 = (u && u.staff_role) ? String(u.staff_role).trim().toLowerCase() : _staffPreview;
+        var landing2 = STAFF_LANDING_PREVIEW[effectiveStaffRole2];
+        if (landing2) target += '?landing=' + encodeURIComponent(landing2);
+    }
+    showAlert('Welcome! Redirecting...', 'ok');
+    setTimeout(function() { location.href = safeRedirectTarget() || target; }, 600);
+  } catch(err) {
+    if(btn) btn.disabled = false; if(txt) txt.textContent = 'Sign In →';
+    showAlert('Server connection error. Please try again.');
+  }
+}
+
+/* ── Register ── */
+async function doRegister() {
+  if (_role==='service_giver'||_role==='admin') { showAlert('This account type must be created by an administrator.'); return; }
+  var name  = (document.getElementById('reg-name').value||'').trim();
+  var phone = (document.getElementById('reg-phone').value||'').trim().replace(/\s/g,'');
+  var pw    = (document.getElementById('reg-pw').value||'');
+  if (!name||!phone||!pw) { showAlert('Please fill all required fields.'); return; }
+  var btn=document.getElementById('rbtn'),txt=document.getElementById('rbtn-txt');
+  if(btn) btn.disabled=true; if(txt) txt.innerHTML='<span class="del-spin"></span>';
+  clearAlert();
+  var body = { name:name, phone:phone, password:pw, role:_role, lang:'en' };
+  if (_role==='courier') {
+    var v=document.getElementById('reg-vehicle'), z=document.getElementById('reg-zone');
+    if(v) body.vehicle=v.value; if(z) body.zone=z.value;
+  }
+  try {
+    var res=await api('register',body);
+    if(btn) btn.disabled=false; if(txt) txt.textContent='Create Account →';
+    if (!res.success) { showAlert(res.message||'Registration failed.'); return; }
+    showAlert('Account created! Signing in...','ok');
+    setTimeout(async function() {
+      var lr=await api('login',{phone:phone,password:pw});
+      if(lr.success) { Auth.save(lr.data); var u=Auth.getUser(); var map={customer:'customer.html',courier:'courier/',driver:'driver/',service_giver:'servicegiver.html',admin:'admin.html'}; location.href=safeRedirectTarget()||map[u&&u.role]||'index.html'; }
+    }, 800);
+  } catch(err) {
+    if(btn) btn.disabled=false; if(txt) txt.textContent='Create Account →';
+    showAlert('Server connection error. Please try again.');
+  }
+}
+
+/* ── Forgot password steps ── */
+var _forgotStep = 1;
+async function doForgotStep() {
+  var btn=document.getElementById('frst-btn'), txt=document.getElementById('frst-btn-txt');
+  if (_forgotStep===1) {
+    var phone=(document.getElementById('frst-phone').value||'').trim().replace(/\s/g,'');
+    if(!phone){showAlert('Phone number required.');return;}
+    if(btn) btn.disabled=true; if(txt) txt.innerHTML='<span class="del-spin"></span>';
+    try {
+      var r=await api('reset_request',{phone:phone});
+      if(btn) btn.disabled=false;
+      if(!r.success){showAlert(r.message||'Could not send OTP.');if(txt) txt.textContent='Send OTP →';return;}
+      document.getElementById('frst-otp-wrap').style.display='block';
+      document.getElementById('frst-phone').readOnly=true;
+      if(txt) txt.textContent='Verify OTP →';
+      document.getElementById('del-card-sub').textContent='Step 2 of 3 — Verify OTP';
+      showAlert('OTP sent! Check your Telegram or SMS.','ok');
+      _forgotStep=2;
+    } catch(e){if(btn)btn.disabled=false;if(txt)txt.textContent='Send OTP →';showAlert('Connection error.');}
+  } else if (_forgotStep===2) {
+    var otp=(document.getElementById('frst-otp').value||'').trim();
+    if(!otp){showAlert('Enter the OTP code.');return;}
+    if(btn)btn.disabled=true;if(txt)txt.innerHTML='<span class="del-spin"></span>';
+    try {
+      var phone2=(document.getElementById('frst-phone').value||'').trim().replace(/\s/g,'');
+      var r2=await api('reset_verify',{phone:phone2,otp:otp});
+      if(btn)btn.disabled=false;
+      if(!r2.success){showAlert(r2.message||'Invalid OTP.');if(txt)txt.textContent='Verify OTP →';return;}
+      document.getElementById('frst-otp-wrap').querySelector('input').readOnly=true;
+      document.getElementById('frst-newpw-wrap').style.display='block';
+      if(txt) txt.textContent='Set New Password →';
+      document.getElementById('del-card-sub').textContent='Step 3 of 3 — New Password';
+      clearAlert();
+      _forgotStep=3;
+    } catch(e){if(btn)btn.disabled=false;if(txt)txt.textContent='Verify OTP →';showAlert('Connection error.');}
+  } else if (_forgotStep===3) {
+    var np=(document.getElementById('frst-newpw').value||'');
+    var cp=(document.getElementById('frst-confirmpw').value||'');
+    if(!np||!cp){showAlert('Please fill both password fields.');return;}
+    if(np!==cp){showAlert('Passwords do not match.');return;}
+    if(np.length<8){showAlert('Password must be at least 8 characters.');return;}
+    if(btn)btn.disabled=true;if(txt)txt.innerHTML='<span class="del-spin"></span>';
+    try {
+      var phone3=(document.getElementById('frst-phone').value||'').trim().replace(/\s/g,'');
+      var otp3=(document.getElementById('frst-otp').value||'').trim();
+      var r3=await api('reset_password',{phone:phone3,otp:otp3,new_password:np});
+      if(btn)btn.disabled=false;
+      if(!r3.success){showAlert(r3.message||'Password reset failed.');if(txt)txt.textContent='Set New Password →';return;}
+      showAlert('Password reset! Signing in...','ok');
+      _forgotStep=1;
+      setTimeout(function(){ showForgot(null,'back'); document.getElementById('inp-phone').value=phone3; }, 1200);
+    } catch(e){if(btn)btn.disabled=false;if(txt)txt.textContent='Set New Password →';showAlert('Connection error.');}
+  }
+}
+
+/* ── Init ── */
+document.addEventListener('DOMContentLoaded', function() {
+  if (typeof Auth !== 'undefined' && Auth.isLoggedIn()) {
+    var u = Auth.getUser();
+    var map={admin:'admin.html',service_giver:'servicegiver.html',courier:'courier/',driver:'driver/'};
+    location.href = safeRedirectTarget() || map[u&&u.role] || 'customer.html';
+    return;
+  }
+  var params = new URLSearchParams(location.search);
+  if (params.get('role')) setRole(params.get('role'));
+  if (params.get('mode')==='register') switchMode('register');
+
+  /* Lock the role picker when launched as one of the dedicated installed
+     apps (Ride / Driver / Courier / Service), so opening e.g. the Courier
+     PWA drops straight into Courier, with no other tabs to pick from.
+     Gated on actual standalone display mode (not just the URL params) so
+     a normal browser deep-link with the same params still shows the full
+     picker as before; only the installed app itself gets locked.
+
+     Courier and Service previously had NO auth gate at all (fixed
+     separately in courier/index.html and servicegiver.html), and now
+     redirect with an explicit ?role=... param the same way Driver
+     already did - so they're genuine, reliable signals here, not a
+     guess.
+
+     Admin deliberately does NOT get locked, even though its own app
+     (admin.html) now also carries role=admin - Admin is meant to reach
+     every role from its own app, matching "only Admin sees all tabs".
+
+     The shared "ETEL Delivery" app (com.etel.delivery / manifest.php)
+     still has no manifest of its own - its start_url is verified plain
+     "login.html" with zero query params, which is what an ordinary
+     customer's home-screen launch always looks like, so that bare case
+     locks to Customer. */
+  var launchedStandalone =
+    window.matchMedia('(display-mode: standalone)').matches ||
+    window.navigator.standalone === true;
+  var launchedAsRideApp = _forceRideRedirect || safeRedirectTarget() === 'ride/';
+  var launchedAsDriverApp = params.get('role') === 'driver';
+  var launchedAsCourierApp = params.get('role') === 'courier';
+  var launchedAsServiceApp = params.get('role') === 'service_giver';
+  var launchedBareWithNoRoleHint = !params.get('role') && !params.get('redirect');
+  /* BUG FIX: this whole block used to be gated behind `if (launchedStandalone)`
+   * below - meaning the focused single-role view (hide the tab switcher,
+   * show only the relevant role's login) only ever worked once the page
+   * was ALREADY running as an installed, standalone PWA. A plain browser
+   * visit with an explicit ?role=driver hint - exactly what the EtelID
+   * portal's "Driver App" button produces (a normal target="_blank" tab,
+   * never standalone) - still correctly pre-selected the Driver tab via
+   * the earlier setRole() call at page load, but never got the tab
+   * switcher hidden, so the user saw every tab instead of a focused,
+   * Driver-only screen. An explicit role hint in the URL is just as
+   * strong a signal of intent as already being installed, so that
+   * branch no longer requires standalone mode - only the "no hint at
+   * all, default to customer" branch stays standalone-gated, since a
+   * bare browser visit to plain login.html with no role and no redirect
+   * is the normal general-purpose login page and should keep showing
+   * every tab, same as before. */
+  if (launchedAsRideApp || launchedAsDriverApp || launchedAsCourierApp || launchedAsServiceApp) {
+    if (launchedAsRideApp) setRole('ride');
+    else if (launchedAsDriverApp) setRole('driver');
+    else if (launchedAsCourierApp) setRole('courier');
+    else setRole('service_giver');
+    var tabs = document.querySelector('.del-role-tabs');
+    if (tabs) tabs.style.display = 'none';
+  } else if (launchedStandalone && launchedBareWithNoRoleHint) {
+    setRole('customer');
+    var tabs2 = document.querySelector('.del-role-tabs');
+    if (tabs2) tabs2.style.display = 'none';
+  }
+
+  updateCardHeader();
+});
+</script>
+<!-- ETEL AI -- cross-company assistant widget -->
+<script src="https://ethelmarket.com/EtelAi/etel-ai-widget.js" data-project="delivery"></script>
+</body>
+</html>

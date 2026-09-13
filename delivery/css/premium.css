@@ -1,0 +1,351 @@
+/* ════════════════════════════════════════════════════════════════
+   ETEL · PREMIUM DESIGN LAYER  v2.0
+   Light Glassmorphism · Cinematic 3D · White, Blue & Gold
+   Loaded LAST on every page — additive, never breaks existing JS/IDs.
+   ════════════════════════════════════════════════════════════════ */
+
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=Outfit:wght@300;400;500;600;700;800;900&family=Noto+Sans+Ethiopic:wght@400;600;700&display=swap');
+
+/* ── DESIGN TOKENS ─────────────────────────────────────────── */
+:root {
+    --etl-gold:        #D4AF37;
+    --etl-gold-deep:   #B8902E;
+    --etl-gold-bright: #FDE047;
+    
+    --etl-blue:        #2563EB;
+    --etl-blue-deep:   #1E3A8A;
+    --etl-blue-light:  #93C5FD;
+    
+    --etl-white:       #FFFFFF;
+    --etl-bg:          #F1F5F9;
+    
+    --etl-glass:       rgba(255, 255, 255, 0.65);
+    --etl-glass-dark:  rgba(255, 255, 255, 0.4);
+    --etl-glass-brd:   rgba(255, 255, 255, 0.9);
+    
+    --etl-text:        #0F172A;
+    --etl-text-dim:    #64748B;
+    
+    --etl-radius:      24px;
+    --etl-shadow:      0 12px 36px -12px rgba(30, 58, 138, 0.15);
+    --etl-glow:        0 0 0 1px rgba(255,255,255,0.8), 0 16px 40px -8px rgba(37, 99, 235, 0.2);
+    --etl-ease:        cubic-bezier(.22,1,.36,1);
+}
+
+/* ── GLOBAL ────────────────────────────────────────────────── */
+* { scroll-behavior: smooth; }
+
+/* Premium body base — NO background override.
+   Each page's own CSS sets the background.
+   premium.css only adds typography and component polish. */
+body:not(.dark-page):not([data-dark]) {
+    color: var(--etl-text);
+    font-family: 'Outfit', 'Noto Sans Ethiopic', system-ui, sans-serif;
+    position: relative;
+}
+
+/* ── CINEMATIC 3D BACKGROUND (Light Mesh) ───────────────────────── */
+/* Layer 1 — Soft flowing pastel gradients */
+/* body::before mesh animation removed - interferes with dark pages */
+
+/* Layer 2 — Floating Orbs & Glass Particles */
+body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -2;
+    pointer-events: none;
+    background-image:
+        radial-gradient(circle 120px at 15% 75%, rgba(37, 99, 235, 0.15) 0%, transparent 60%),
+        radial-gradient(circle 90px at 85% 25%, rgba(212, 175, 55, 0.12) 0%, transparent 60%),
+        radial-gradient(circle 150px at 60% 65%, rgba(255, 255, 255, 0.4) 0%, transparent 60%);
+    animation: etlOrbFloat 15s ease-in-out infinite alternate;
+}
+
+/* ── KEYFRAMES ─────────────────────────────────────────────── */
+
+@keyframes etlMeshSpin {
+    0%   { transform: rotate(0deg) scale(1); }
+    100% { transform: rotate(15deg) scale(1.1); }
+}
+
+@keyframes etlOrbFloat {
+    0%   { background-position: 0px 0px, 0px 0px, 0px 0px; }
+    100% { background-position: 100px -100px, -50px 80px, 40px 40px; }
+}
+
+/* ── TYPOGRAPHY ────────────────────────────────────────────── */
+h1, h2, h3, .page-title, .sidebar-brand-main {
+    font-family: 'Sora', 'Outfit', sans-serif !important;
+    letter-spacing: -.02em;
+    color: var(--etl-blue-deep);
+}
+h1, .page-title {
+    background: linear-gradient(120deg, var(--etl-blue-deep), var(--etl-blue));
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-shadow: 0 4px 20px rgba(37, 99, 235, 0.15);
+}
+
+/* ── 3D GLASS CARDS (iPhone Style) ─────────────────────────── */
+.card, .kpi-card, .job-card, .stat-card, .modal, .modal-content,
+.glass, .panel, .dashboard-card, .order-card, .item-card,
+body:not(.dark-page) [class*="-card"],
+body:not(.dark-page) .sidebar,
+body:not(.dark-page) .topbar,
+body:not(.dark-page) .header,
+body:not(.dark-page) .navbar {
+    background: var(--etl-glass);
+    backdrop-filter: blur(28px) saturate(160%);
+    -webkit-backdrop-filter: blur(28px) saturate(160%);
+    border: 1px solid var(--etl-glass-brd) !important;
+    border-radius: var(--etl-radius) !important;
+    box-shadow: var(--etl-shadow), inset 0 2px 4px rgba(255,255,255,1) !important;
+    color: var(--etl-text);
+    transform-style: preserve-3d;
+    transition: transform .5s var(--etl-ease), box-shadow .5s var(--etl-ease), border-color .4s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Remove border-radius on elements that span full width/height */
+.sidebar, aside.sidebar, .nav, nav.sidebar-menu { border-radius: 0 24px 24px 0 !important; }
+body:not(.dark-page) .topbar,
+body:not(.dark-page) .header,
+body:not(.dark-page) .navbar { border-radius: 0 0 24px 24px; }
+
+/* Cinematic Glossy Sheen */
+.card::before, .kpi-card::before, .job-card::before, [class*="-card"]::before {
+    content: '';
+    position: absolute;
+    top: 0; left: -150%;
+    width: 100%; height: 100%;
+    background: linear-gradient(105deg, transparent, rgba(255,255,255,.8), transparent);
+    transform: skewX(-20deg);
+    transition: left .8s var(--etl-ease);
+    pointer-events: none;
+    z-index: 10;
+}
+.card:hover, .kpi-card:hover, .job-card:hover, .stat-card:hover, [class*="-card"]:hover {
+    transform: translateY(-6px) perspective(1200px) rotateX(4deg) rotateY(-2deg) scale(1.02);
+    box-shadow: 0 24px 48px -12px rgba(30, 58, 138, 0.2), var(--etl-glow) !important;
+    border-color: var(--etl-white) !important;
+    background: rgba(255, 255, 255, 0.85) !important;
+}
+.card:hover::before, .kpi-card:hover::before, .job-card:hover::before, [class*="-card"]:hover::before {
+    left: 150%;
+}
+
+/* KPI values pop in Gold/Blue gradient */
+.kpi-value, .stat-value, [class*="kpi-value"] {
+    background: linear-gradient(120deg, var(--etl-gold), var(--etl-blue));
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-family: 'Sora', sans-serif !important;
+    font-weight: 800 !important;
+    text-shadow: 0 4px 12px rgba(212, 175, 55, 0.2);
+}
+
+/* ── PREMIUM BUTTONS ───────────────────────────────────────── */
+button, .btn, .btn-primary, .modal-submit, .nav-btn,
+input[type="submit"], .submit-btn {
+    font-family: 'Outfit', sans-serif;
+    font-weight: 700;
+    border-radius: 16px;
+    letter-spacing: .02em;
+    transition: all .4s var(--etl-ease);
+    position: relative;
+    overflow: hidden;
+    isolation: isolate;
+}
+.btn-primary, .modal-submit, input[type="submit"], .submit-btn,
+button.primary, .btn.gold {
+    background: linear-gradient(135deg, var(--etl-gold), var(--etl-gold-bright)) !important;
+    color: var(--etl-blue-deep) !important;
+    border: none !important;
+    box-shadow: 0 10px 24px -6px rgba(212, 175, 55, 0.4), inset 0 2px 4px rgba(255,255,255,.6) !important;
+    text-shadow: 0 1px 2px rgba(255,255,255,0.8);
+}
+button:hover, .btn:hover, .btn-primary:hover, .modal-submit:hover, .nav-btn:hover {
+    transform: translateY(-3px) scale(1.03);
+    box-shadow: 0 16px 32px -8px rgba(212, 175, 55, 0.5) !important;
+}
+button:active, .btn:active { transform: translateY(0) scale(.97); }
+
+/* Shine sweep on buttons */
+.btn-primary::after, .modal-submit::after, .nav-btn::after, .submit-btn::after {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(105deg, transparent 30%, rgba(255,255,255,.6) 50%, transparent 70%);
+    transform: translateX(-120%);
+    transition: transform .6s var(--etl-ease);
+    z-index: -1;
+}
+.btn-primary:hover::after, .modal-submit:hover::after, .nav-btn:hover::after { transform: translateX(120%); }
+
+/* Secondary/Alternative Buttons (Blue) */
+.btn-secondary {
+    background: linear-gradient(135deg, var(--etl-blue), var(--etl-blue-light)) !important;
+    color: var(--etl-white) !important;
+    box-shadow: 0 10px 24px -6px rgba(37, 99, 235, 0.4), inset 0 2px 4px rgba(255,255,255,.4) !important;
+}
+
+/* ── INPUTS ────────────────────────────────────────────────── */
+input, select, textarea {
+    background: rgba(255, 255, 255, 0.8) !important;
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(37, 99, 235, 0.1) !important;
+    border-radius: 14px !important;
+    color: var(--etl-text) !important;
+    font-family: 'Outfit', sans-serif;
+    transition: all .3s var(--etl-ease);
+    box-shadow: inset 0 2px 6px rgba(0,0,0,0.02);
+}
+input::placeholder, textarea::placeholder { color: var(--etl-text-dim); }
+input:focus, select:focus, textarea:focus {
+    outline: none;
+    border-color: var(--etl-blue-light) !important;
+    box-shadow: 0 0 0 4px rgba(147, 197, 253, 0.3), 0 8px 24px -8px rgba(37, 99, 235, 0.15) !important;
+    background: var(--etl-white) !important;
+    transform: translateY(-1px);
+}
+select option { background: var(--etl-white); color: var(--etl-text); }
+
+/* ── SIDEBAR / NAV ITEMS ───────────────────────────────────── */
+.nav-item, .sidebar-item, .menu-item, .sidebar-menu a {
+    border-radius: 14px;
+    transition: all .3s var(--etl-ease);
+    color: var(--etl-text-dim) !important;
+    font-weight: 500;
+}
+.nav-item:hover, .sidebar-item:hover, .menu-item:hover, .sidebar-menu a:hover {
+    background: rgba(37, 99, 235, 0.08) !important;
+    transform: translateX(6px);
+    color: var(--etl-blue) !important;
+}
+.nav-item.active, .sidebar-item.active, .menu-item.active, .sidebar-menu a.active {
+    background: linear-gradient(135deg, rgba(37, 99, 235, 0.1), rgba(37, 99, 235, 0.03)) !important;
+    box-shadow: inset 4px 0 0 var(--etl-blue), 0 8px 16px -8px rgba(37, 99, 235, 0.2) !important;
+    color: var(--etl-blue-deep) !important;
+    font-weight: 600;
+}
+
+/* ── BADGES / PILLS ────────────────────────────────────────── */
+.badge, .status-badge, .pill, .tag, .chip {
+    border-radius: 999px !important;
+    backdrop-filter: blur(12px);
+    box-shadow: 0 4px 12px -4px rgba(0,0,0,0.1), inset 0 2px 2px rgba(255,255,255,.8);
+    font-weight: 600;
+}
+.status-dot {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4);
+    animation: etlPulseLight 2s infinite;
+}
+@keyframes etlPulseLight {
+    0%   { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
+    70%  { box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+}
+
+/* ── ENTRANCE ANIMATIONS ───────────────────────────────────── */
+.card, .kpi-card, .job-card, [class*="-card"], .page-title, .modal {
+    animation: etlRise .8s var(--etl-ease) both;
+}
+.kpi-card:nth-child(1){animation-delay:.05s}
+.kpi-card:nth-child(2){animation-delay:.12s}
+.kpi-card:nth-child(3){animation-delay:.19s}
+.kpi-card:nth-child(4){animation-delay:.26s}
+.job-card:nth-child(odd){animation-delay:.08s}
+.job-card:nth-child(even){animation-delay:.16s}
+@keyframes etlRise {
+    from { opacity: 0; transform: translateY(30px) scale(.95); filter: blur(8px); }
+    to   { opacity: 1; transform: translateY(0)    scale(1);   filter: blur(0); }
+}
+
+/* ── MODALS / OVERLAYS ─────────────────────────────────────── */
+.modal-overlay, .overlay, [class*="overlay"] {
+    background: rgba(241, 245, 249, 0.6) !important;
+    backdrop-filter: blur(16px) saturate(180%);
+    animation: etlFade .4s ease both;
+}
+@keyframes etlFade { from {opacity:0} to {opacity:1} }
+.modal, .modal-content {
+    animation: etlPop .6s var(--etl-ease) both;
+    background: rgba(255,255,255,0.8) !important;
+    border: 1px solid rgba(255,255,255,1) !important;
+}
+@keyframes etlPop {
+    from { opacity:0; transform: translateY(30px) scale(.9); filter: blur(10px); }
+    to   { opacity:1; transform: translateY(0) scale(1); filter: blur(0); }
+}
+
+/* ── FLOATING ACTION / BRAND ICON ──────────────────────────── */
+.sidebar-brand-icon, .brand-icon, .logo-icon, .fab {
+    background: linear-gradient(135deg, var(--etl-blue), var(--etl-blue-light)) !important;
+    box-shadow: 0 12px 30px -8px rgba(37, 99, 235, 0.5), inset 0 2px 4px rgba(255,255,255,.5) !important;
+    animation: etlFloat 5s ease-in-out infinite;
+    color: white !important;
+}
+@keyframes etlFloat {
+    0%,100% { transform: translateY(0) rotate(0deg); }
+    50%     { transform: translateY(-8px) rotate(4deg); }
+}
+
+/* ── TABLES ────────────────────────────────────────────────── */
+table { border-collapse: separate; border-spacing: 0; }
+th {
+    background: rgba(241, 245, 249, 0.8) !important;
+    color: var(--etl-blue-deep) !important;
+    font-family: 'Sora', sans-serif;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+    font-size: 11px;
+    font-weight: 700;
+}
+td, th { border-bottom: 1px solid rgba(0,0,0,.04) !important; }
+tbody tr { transition: background .3s ease; }
+tbody tr:hover { background: rgba(37, 99, 235, 0.04) !important; }
+
+/* ── SCROLLBAR ─────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 12px; height: 12px; }
+::-webkit-scrollbar-track { background: rgba(0,0,0,.02); }
+::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, var(--etl-blue-light), var(--etl-blue));
+    border-radius: 12px;
+    border: 3px solid transparent;
+    background-clip: padding-box;
+}
+::-webkit-scrollbar-thumb:hover { background: var(--etl-blue-deep); }
+
+/* ── LINKS & TEXT ACCENTS ──────────────────────────────────── */
+a { color: var(--etl-blue); transition: all .3s ease; font-weight: 500; }
+a:hover { color: var(--etl-gold); text-shadow: 0 2px 8px rgba(212, 175, 55, 0.3); }
+.text-dim, .subtitle, .page-subtitle, .muted { color: var(--etl-text-dim) !important; }
+
+/* ── MAP CONTAINERS (Glass frame) ───────────────────────── */
+/* Applied to the CONTAINER only — never to #map itself.
+   Applying border-radius + overflow:hidden directly on the Google Maps
+   canvas div breaks tile rendering on mobile (clips before paint). */
+.map-container {
+    border-radius: var(--etl-radius);
+    box-shadow: 0 16px 40px -12px rgba(30, 58, 138, 0.15);
+    overflow: hidden;
+}
+/* The actual map div must have clean overflow so tiles render fully */
+#map, #sg-map {
+    border-radius: 0 !important;
+    border: none !important;
+    overflow: visible !important;
+    box-shadow: none !important;
+}
+
+/* ── OVERRIDING SPECIFIC DARK THEME ARTIFACTS ──────────────── */
+.bg-dark, .dark-mode {
+    background: var(--etl-glass) !important;
+    color: var(--etl-text) !important;
+}
+
+/* ── REDUCED MOTION RESPECT ────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; }
+}
