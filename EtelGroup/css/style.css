@@ -1,3 +1,10 @@
+/* Shared brand tokens (gold/carbon palette + type system) - the single
+   source of truth for values every Etel Group subsystem used to
+   re-declare independently. See /design-system/README.md. Must stay
+   the first rule in this file (an @import has to precede everything
+   except @charset). */
+@import url('/design-system/etel-tokens.css');
+
 /* ══════════════════════════════════════════
    STEP 9 — PERFORMANCE CSS
    GPU promotion, paint containment, CLS fix
@@ -68,15 +75,11 @@ img.lazy.loaded { opacity: 1; }
 ══════════════════════════════════════════ */
 *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
 
+/* --gold, --gold-light, --gold-dim, --carbon, --font-head, --font-body,
+   and --font-eth now come from the shared /design-system/etel-tokens.css
+   import above - only EtelGroup-local tokens are declared here. */
 :root {
-  --gold:       #D4AF37;
-  --gold-light: #F5E6A3;
-  --gold-dim:   #8B6914;
-  --carbon:     #1A0E00;
   --deep-brown: #2A1A06;
-  --font-head:  'Syne', sans-serif;
-  --font-body:  'Cormorant Garamond', serif;
-  --font-eth:   'Noto Sans Ethiopic', sans-serif;
   --nav-h:      72px;
 }
 
