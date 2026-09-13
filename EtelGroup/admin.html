@@ -216,7 +216,11 @@
     <input type="hidden" id="cf-id">
     <div class="cf-grid">
       <div class="cf-field"><label>Name</label><input type="text" id="cf-name" placeholder="Etel Example"></div>
-      <div class="cf-field"><label>Slug</label><input type="text" id="cf-slug" placeholder="etel-example"></div>
+      <div class="cf-field">
+        <label>Slug</label>
+        <select id="cf-slug"><option value="">Loading EtelID registry…</option></select>
+        <div id="cf-slug-hint" style="font-size:11.5px;color:var(--text-dim);margin-top:4px"></div>
+      </div>
       <div class="cf-field"><label>URL</label><input type="text" id="cf-url" placeholder="https://ethelmarket.com/EtelExample/"></div>
       <div class="cf-field"><label>Tagline (EN)</label><input type="text" id="cf-tagline" placeholder="Short category"></div>
       <div class="cf-field"><label>Tagline (Amharic)</label><input type="text" id="cf-tagline-am" placeholder="አጭር መግለጫ"></div>
