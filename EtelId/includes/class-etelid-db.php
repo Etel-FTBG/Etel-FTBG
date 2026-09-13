@@ -547,6 +547,16 @@ class EtelID_DB {
         return $wpdb->update( self::t_companies(), array( 'active' => 0 ), array( 'id' => (int) $link_id ) );
     }
 
+    /** Look up a single company-role link row by its id (for verifying a
+     *  caller's company_slug actually matches before removing it, and for
+     *  logging what was removed). */
+    public static function get_company_link( $link_id ) {
+        global $wpdb;
+        return $wpdb->get_row( $wpdb->prepare(
+            "SELECT * FROM " . self::t_companies() . " WHERE id = %d LIMIT 1", (int) $link_id
+        ));
+    }
+
     public static function get_log( $member_id, $limit = 20 ) {
         global $wpdb;
         return $wpdb->get_results( $wpdb->prepare(
