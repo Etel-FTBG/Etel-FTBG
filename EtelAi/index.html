@@ -1634,6 +1634,10 @@ async function callAI(userText, skill, onChunk, searchSources, recalledMemories)
         message: userText, project: 'etel-os', history: history.slice(-10),
         token: _agentToken, conversation_id: _activeConversationId,
         pickup_lat: window._etelaiLastPos?.lat, pickup_lng: window._etelaiLastPos?.lng,
+        // Lets the server prefer an OpenRouter key tagged for this kind of
+        // task (see providers.json key "tag" field) - purely a soft
+        // preference server-side, never trusted for anything beyond that.
+        skill_category: skill?.cat === 'Coding' ? 'coding' : 'general',
       }),
     });
     const data = await res.json();
@@ -3245,12 +3249,13 @@ function renderProviderToggles(providers) {
         ${(p.keys || []).map(k => `
           <div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-top:1px solid var(--line);font-size:11.5px;">
             <div style="flex:1;min-width:0;">
-              <div style="font-weight:600;color:var(--tx);">${k.label} <span style="color:var(--tx3);font-weight:400;">· ${k.model || ''}</span></div>
+              <div style="font-weight:600;color:var(--tx);">${k.label} <span style="color:var(--tx3);font-weight:400;">· ${k.model || ''}</span>${k.tag ? ` <span style="background:rgba(212,175,55,.15);color:var(--gold);border-radius:10px;padding:1px 7px;font-size:9.5px;font-weight:700;text-transform:uppercase;">${k.tag}</span>` : ''}</div>
               <div style="color:var(--tx3);font-family:monospace;margin-top:2px;">${k.masked_key || ''}${k.last_error ? ' — ' + k.last_error.slice(0, 50) : ''}</div>
             </div>
             <span style="font-size:9.5px;font-weight:700;padding:2px 7px;border-radius:20px;text-transform:uppercase;color:${_keyStatusColor(k)};background:rgba(255,255,255,.06);white-space:nowrap;">${_keyStatusLabel(k)}</span>
             <button onclick="editProviderKeyModel('${p.id}','${k.id}')" style="background:none;border:none;color:var(--gold);cursor:pointer;font-size:13px;padding:2px 4px;" title="Edit model">✎</button>
             <button onclick="editProviderKeyBase('${p.id}','${k.id}','${(k.base||'').replace(/'/g,"\\'")}')" style="background:none;border:none;color:var(--gold);cursor:pointer;font-size:13px;padding:2px 4px;" title="Edit base URL (e.g. OmniRoute's tunnel URL)">🔗</button>
+            <button onclick="editProviderKeyTag('${p.id}','${k.id}','${(k.tag||'').replace(/'/g,"\\'")}')" style="background:none;border:none;color:var(--gold);cursor:pointer;font-size:13px;padding:2px 4px;" title="Edit task tag (e.g. 'coding' or 'general') - lets this key be preferred for matching tasks">🏷</button>
             <input type="checkbox" ${k.enabled ? 'checked' : ''} onchange="toggleProviderKey('${p.id}','${k.id}',this.checked)"
                    style="width:16px;height:16px;accent-color:var(--gold);cursor:pointer;">
             <button onclick="removeProviderKey('${p.id}','${k.id}')" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:14px;padding:2px 4px;">✕</button>
@@ -3265,6 +3270,8 @@ function renderProviderToggles(providers) {
                  style="grid-column:span 2;padding:7px 9px;border-radius:6px;border:1px solid var(--line);background:var(--bg2,#1a1a1a);color:var(--tx);font-size:11.5px;font-family:monospace;">
           ${p.id !== 'gemini' && p.id !== 'ollama' ? `<input type="text" id="pk-base-${p.id}" placeholder="${p.id === 'openrouter' ? 'Base URL (defaults to https://openrouter.ai/api/v1)' : 'Base URL (optional)'}"
                  style="grid-column:span 2;padding:7px 9px;border-radius:6px;border:1px solid var(--line);background:var(--bg2,#1a1a1a);color:var(--tx);font-size:11.5px;font-family:monospace;">` : ''}
+          <input type="text" id="pk-tag-${p.id}" placeholder="Task tag (optional, e.g. coding or general)"
+                 style="grid-column:span 2;padding:7px 9px;border-radius:6px;border:1px solid var(--line);background:var(--bg2,#1a1a1a);color:var(--tx);font-size:11.5px;">
           <button id="pk-btn-${p.id}" onclick="addProviderKey('${p.id}')"
                   style="grid-column:span 2;background:var(--gold);color:#1a1400;border:none;border-radius:6px;padding:8px;font-size:11.5px;font-weight:700;cursor:pointer;">+ Add Key</button>
         </div>
@@ -3323,6 +3330,25 @@ async function editProviderKeyBase(providerId, keyId, currentBase) {
   loadProviderToggles();
 }
 
+async function editProviderKeyTag(providerId, keyId, currentTag) {
+  const newTag = prompt('Task tag for this key (e.g. "coding" or "general") - leave blank to clear:', currentTag || '');
+  if (newTag === null) return; // cancelled
+  const token = (typeof EtelIDAuth !== 'undefined' && EtelIDAuth.getToken) ? EtelIDAuth.getToken() : null;
+  if (!token) { _providerMsg('Please sign in again.', false); return; }
+  try {
+    const res = await fetch(PROVIDERS_API, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token, action: 'update_key', provider_id: providerId, key_id: keyId, tag: newTag.trim() }),
+    });
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error || 'Update failed');
+    _providerMsg(newTag.trim() ? 'Tag updated.' : 'Tag cleared.', true);
+  } catch (e) {
+    _providerMsg('Could not update: ' + (e.message || 'unknown error'), false);
+  }
+  loadProviderToggles();
+}
+
 async function toggleProviderKey(providerId, keyId, enabled) {
   const token = (typeof EtelIDAuth !== 'undefined' && EtelIDAuth.getToken) ? EtelIDAuth.getToken() : null;
   if (!token) { _providerMsg('Please sign in again.', false); loadProviderToggles(); return; }
@@ -3363,6 +3389,7 @@ async function addProviderKey(providerId) {
   const model = (document.getElementById('pk-model-' + providerId)?.value || '').trim();
   const key   = (document.getElementById('pk-key-'   + providerId)?.value || '').trim();
   const base  = (document.getElementById('pk-base-'  + providerId)?.value || '').trim();
+  const tag   = (document.getElementById('pk-tag-'   + providerId)?.value || '').trim();
   if (!label || !model || !key) { _providerMsg('Label, model, and key are all required.', false); return; }
 
   const token = (typeof EtelIDAuth !== 'undefined' && EtelIDAuth.getToken) ? EtelIDAuth.getToken() : null;
@@ -3373,7 +3400,7 @@ async function addProviderKey(providerId) {
   try {
     const res = await fetch(PROVIDERS_API, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ token, action: 'add_key', provider_id: providerId, label, model, key, base }),
+      body: JSON.stringify({ token, action: 'add_key', provider_id: providerId, label, model, key, base, tag }),
     });
     const data = await res.json();
     if (!data.ok) throw new Error(data.error || 'Add failed');
