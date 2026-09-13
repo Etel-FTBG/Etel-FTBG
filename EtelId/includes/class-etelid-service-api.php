@@ -373,11 +373,34 @@ class EtelID_Service_API {
         ) );
     }
 
-    /* ---- POST /service/remove_company_role --------------------------- */
+    /* ---- POST /service/remove_company_role ---------------------------
+       Requires company_slug alongside id, and verifies the link row
+       actually belongs to that company, before removing it - previously
+       any caller holding the shared service key could deactivate ANY
+       company's role link by guessing/incrementing id, since nothing
+       scoped the removal to the company the caller claimed to manage.
+       Also logs the removal now, matching set_company_role's existing
+       audit trail (this route was the one exception before). */
     public static function remove_company_role( $request ) {
-        $id = (int) $request->get_param( 'id' );
-        if ( ! $id ) return new WP_Error( 'bad_request', 'id is required.', array( 'status' => 400 ) );
+        $id   = (int) $request->get_param( 'id' );
+        $slug = sanitize_key( (string) $request->get_param( 'company_slug' ) );
+        if ( ! $id )   return new WP_Error( 'bad_request', 'id is required.', array( 'status' => 400 ) );
+        if ( ! $slug ) return new WP_Error( 'bad_request', 'company_slug is required.', array( 'status' => 400 ) );
+
+        $link = EtelID_DB::get_company_link( $id );
+        if ( ! $link ) return new WP_Error( 'not_found', 'No such role link.', array( 'status' => 404 ) );
+        if ( $link->company_slug !== $slug ) {
+            return new WP_Error( 'forbidden', 'That role link does not belong to company_slug "' . $slug . '".', array( 'status' => 403 ) );
+        }
+
         EtelID_DB::remove_company_link( $id );
+
+        $member = EtelID_DB::get_member( $link->member_id );
+        if ( $member ) {
+            EtelID_DB::log( $member->id, $member->etel_id, 'company_role_removed',
+                "Removed role '{$link->role_at}' for company '{$slug}' via EtelGroup admin" );
+        }
+
         return rest_ensure_response( array( 'ok' => true, 'message' => 'Role removed.' ) );
     }
 

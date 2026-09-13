@@ -465,7 +465,7 @@ async function addEmployeeRole() {
 
 async function removeEmployeeRole(id) {
   if (!confirm('Remove this role? They will lose this access immediately.')) return;
-  await egaApi('admin_remove_employee_role', { id });
+  await egaApi('admin_remove_employee_role', { id, company_slug: EGA_EMP_SELECTED_SLUG });
   loadEmployeeRoles();
 }
 
