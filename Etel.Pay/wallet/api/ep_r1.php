@@ -268,6 +268,14 @@ case 'etel_pay_send': {
         // Debit sender
         $pdo->prepare('UPDATE ' . EP_TBL_USERS . ' SET balance_etb = balance_etb - ? WHERE id = ? AND balance_etb >= ?')
             ->execute(array($amount, $sender_uid, $amount));
+        // Two concurrent sends can both pass the balance check above and
+        // both reach this UPDATE - the WHERE guard makes the loser affect
+        // zero rows instead of erroring, so it must be checked explicitly
+        // or the receiver still gets credited from a debit that never
+        // happened. Same guard ep_escrow_send already uses correctly.
+        if ($pdo->query('SELECT ROW_COUNT()')->fetchColumn() == 0) {
+            throw new Exception('Insufficient balance (concurrent change)');
+        }
 
         // Credit receiver
         $pdo->prepare('UPDATE ' . EP_TBL_USERS . ' SET balance_etb = balance_etb + ? WHERE id = ?')
@@ -782,6 +790,13 @@ case 'etel_pay_qr_process': {
     try {
         $pdo->prepare('UPDATE ' . EP_TBL_USERS . ' SET balance_etb = balance_etb - ? WHERE id = ? AND balance_etb >= ?')
             ->execute(array($pay_amount, $payer_uid, $pay_amount));
+        // Same concurrent-debit guard as ep_send/ep_escrow_send - without
+        // it, two simultaneous scans of the same QR could both pass the
+        // balance pre-check, and the loser's debit silently affects zero
+        // rows while the payee still gets credited.
+        if ($pdo->query('SELECT ROW_COUNT()')->fetchColumn() == 0) {
+            throw new Exception('Insufficient balance (concurrent change)');
+        }
         $pdo->prepare('UPDATE ' . EP_TBL_USERS . ' SET balance_etb = balance_etb + ? WHERE id = ?')
             ->execute(array($pay_amount, $owner_uid));
         $pdo->prepare(
