@@ -9,25 +9,36 @@ declare(strict_types=1);
 // Root path -- index.php lives in public/, go up 2 levels to project root
 define('EG_ROOT', dirname(__DIR__));
 
-// Debug: dump any PHP startup errors to a visible file
-@file_put_contents(EG_ROOT . '/storage/debug.log', date('c') . " - index.php loaded\n", FILE_APPEND);
+// Config loaded first (before anything else) specifically so app.debug can
+// gate both error display and the debug.log writes below - this used to
+// force E_ALL/display_errors and write to storage/debug.log unconditionally,
+// regardless of the config's own debug flag, so a real shopper hitting an
+// error on production saw a full stack trace, and every request appended to
+// a world-readable log file.
+$config = require EG_ROOT . '/config/app.php';
+$egDebug = !empty($config['app']['debug']);
 
-// Enable ALL errors immediately so blank pages reveal their cause
-error_reporting(E_ALL);
-ini_set('display_errors', '1');
-ini_set('display_startup_errors', '1');
+if ($egDebug) {
+    error_reporting(E_ALL);
+    ini_set('display_errors', '1');
+    ini_set('display_startup_errors', '1');
+    @file_put_contents(EG_ROOT . '/storage/debug.log', date('c') . " - index.php loaded\n", FILE_APPEND);
+} else {
+    error_reporting(E_ALL);
+    ini_set('display_errors', '0');
+    ini_set('display_startup_errors', '0');
+}
 
 $path = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?? '/';
-@file_put_contents(EG_ROOT . '/storage/debug.log', date('c') . " - path: $path\n", FILE_APPEND);
+if ($egDebug) @file_put_contents(EG_ROOT . '/storage/debug.log', date('c') . " - path: $path\n", FILE_APPEND);
 
 // If we're on the install route, skip DB init -- install handles its own connection
 if (strpos($path, '/install') === 0) {
     define('EG_SKIP_DB', true);
-    @file_put_contents(EG_ROOT . '/storage/debug.log', date('c') . " - EG_SKIP_DB defined\n", FILE_APPEND);
+    if ($egDebug) @file_put_contents(EG_ROOT . '/storage/debug.log', date('c') . " - EG_SKIP_DB defined\n", FILE_APPEND);
 }
 
-$config = require EG_ROOT . '/config/app.php';
-@file_put_contents(EG_ROOT . '/storage/debug.log', date('c') . " - config loaded\n", FILE_APPEND);
+if ($egDebug) @file_put_contents(EG_ROOT . '/storage/debug.log', date('c') . " - config loaded\n", FILE_APPEND);
 
 require EG_ROOT . '/bootstrap.php';
 
