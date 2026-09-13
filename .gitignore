@@ -17,3 +17,11 @@
 # instead, documenting which keys it needs without ever risking a real
 # deploy overwriting live secrets with placeholders again.
 **/.env
+
+# Runtime debug logs - EtelGebeya's storage/debug.log was found committed
+# (12KB+ of accumulated request paths/timestamps) during the company-wide
+# audit; a log file is generated data, not source, and shouldn't ship in
+# a deploy zip or sit in a public repo regardless of what it happens to
+# contain today.
+**/storage/debug.log
+**/storage/*.log
