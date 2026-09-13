@@ -3259,11 +3259,11 @@ function renderProviderToggles(providers) {
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px;">
           <input type="text" id="pk-label-${p.id}" placeholder="Label (e.g. Free key #2)"
                  style="grid-column:span 1;padding:7px 9px;border-radius:6px;border:1px solid var(--line);background:var(--bg2,#1a1a1a);color:var(--tx);font-size:11.5px;">
-          <input type="text" id="pk-model-${p.id}" placeholder="${p.id === 'gemini' ? 'e.g. gemini-flash-latest' : p.id === 'kimi' ? 'e.g. kimi-k2-0711-preview' : 'e.g. tinyllama'}"
+          <input type="text" id="pk-model-${p.id}" placeholder="${p.id === 'gemini' ? 'e.g. gemini-flash-latest' : p.id === 'kimi' ? 'e.g. kimi-k2-0711-preview' : p.id === 'openrouter' ? 'e.g. openai/gpt-4o-mini' : 'e.g. tinyllama'}"
                  style="grid-column:span 1;padding:7px 9px;border-radius:6px;border:1px solid var(--line);background:var(--bg2,#1a1a1a);color:var(--tx);font-size:11.5px;">
           <input type="text" id="pk-key-${p.id}" placeholder="Paste API key here"
                  style="grid-column:span 2;padding:7px 9px;border-radius:6px;border:1px solid var(--line);background:var(--bg2,#1a1a1a);color:var(--tx);font-size:11.5px;font-family:monospace;">
-          ${p.id === 'kimi' ? `<input type="text" id="pk-base-${p.id}" placeholder="Base URL (optional)"
+          ${p.id !== 'gemini' && p.id !== 'ollama' ? `<input type="text" id="pk-base-${p.id}" placeholder="${p.id === 'openrouter' ? 'Base URL (defaults to https://openrouter.ai/api/v1)' : 'Base URL (optional)'}"
                  style="grid-column:span 2;padding:7px 9px;border-radius:6px;border:1px solid var(--line);background:var(--bg2,#1a1a1a);color:var(--tx);font-size:11.5px;font-family:monospace;">` : ''}
           <button id="pk-btn-${p.id}" onclick="addProviderKey('${p.id}')"
                   style="grid-column:span 2;background:var(--gold);color:#1a1400;border:none;border-radius:6px;padding:8px;font-size:11.5px;font-weight:700;cursor:pointer;">+ Add Key</button>

@@ -1,5 +1,5 @@
 {
-    "_comment": "Each provider can now hold MULTIPLE keys, managed from the admin dashboard (Settings > AI Providers) instead of editing secrets.php on cPanel. When a key hits a quota\/rate-limit error, chat.php automatically puts it in cooldown and moves to the next key - and if every key for a provider is exhausted, it falls through to the next enabled provider entirely (see etelai_pick_provider \/ etelai_try_provider_keys in chat.php). cooldown_until is a UTC timestamp string or null.",
+    "_comment": "Each provider can now hold MULTIPLE keys, managed from the admin dashboard (Settings > AI Providers) instead of editing secrets.php on cPanel. When a key hits a quota/rate-limit error, chat.php automatically puts it in cooldown and moves to the next key - and if every key for a provider is exhausted, it falls through to the next enabled provider entirely (see etelai_pick_provider / etelai_try_provider_keys in chat.php). cooldown_until is a UTC timestamp string or null.",
     "providers": [
         {
             "id": "gemini",
@@ -23,7 +23,7 @@
                     "model": "gemini-flash-lite-latest",
                     "enabled": true,
                     "cooldown_until": null,
-                    "last_error": "You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https:\/\/ai.google.dev\/gemini-api\/docs\/rate-limits. To monitor your current usage, head to: https:\/\/ai.dev\/rate-limit. \n* Quota exceeded for metric: generativelanguage.googleapis.com\/generate_content_free_tier_requests, limit: 20, model: gemini-3.6-flash\nPlease retry in 25.289385463s.",
+                    "last_error": "You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-3.6-flash\nPlease retry in 25.289385463s.",
                     "last_used": null
                 },
                 {
@@ -33,7 +33,7 @@
                     "model": "gemini-flash-lite-latest",
                     "enabled": true,
                     "cooldown_until": null,
-                    "last_error": "You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https:\/\/ai.google.dev\/gemini-api\/docs\/rate-limits. To monitor your current usage, head to: https:\/\/ai.dev\/rate-limit. \n* Quota exceeded for metric: generativelanguage.googleapis.com\/generate_content_free_tier_requests, limit: 20, model: gemini-3.6-flash\nPlease retry in 25.206604612s.",
+                    "last_error": "You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-3.6-flash\nPlease retry in 25.206604612s.",
                     "last_used": null
                 },
                 {
@@ -43,7 +43,7 @@
                     "model": "gemini-flash-lite-latest",
                     "enabled": true,
                     "cooldown_until": null,
-                    "last_error": "You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https:\/\/ai.google.dev\/gemini-api\/docs\/rate-limits. To monitor your current usage, head to: https:\/\/ai.dev\/rate-limit. \n* Quota exceeded for metric: generativelanguage.googleapis.com\/generate_content_free_tier_requests, limit: 20, model: gemini-3.6-flash\nPlease retry in 19.673943178s.",
+                    "last_error": "You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-3.6-flash\nPlease retry in 19.673943178s.",
                     "last_used": null
                 },
                 {
@@ -53,7 +53,7 @@
                     "model": "gemini-flash-lite-latest",
                     "enabled": true,
                     "cooldown_until": null,
-                    "last_error": "You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https:\/\/ai.google.dev\/gemini-api\/docs\/rate-limits. To monitor your current usage, head to: https:\/\/ai.dev\/rate-limit. \n* Quota exceeded for metric: generativelanguage.googleapis.com\/generate_content_free_tier_requests, limit: 20, model: gemini-3.6-flash\nPlease retry in 19.574313065s.",
+                    "last_error": "You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-3.6-flash\nPlease retry in 19.574313065s.",
                     "last_used": null
                 },
                 {
@@ -63,7 +63,7 @@
                     "model": "gemini-flash-lite-latest",
                     "enabled": true,
                     "cooldown_until": null,
-                    "last_error": "You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https:\/\/ai.google.dev\/gemini-api\/docs\/rate-limits. To monitor your current usage, head to: https:\/\/ai.dev\/rate-limit. \n* Quota exceeded for metric: generativelanguage.googleapis.com\/generate_content_free_tier_requests, limit: 5, model: gemini-3.6-flash\nPlease retry in 33.210666739s.",
+                    "last_error": "You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 5, model: gemini-3.6-flash\nPlease retry in 33.210666739s.",
                     "last_used": "2026-07-29 07:57:00"
                 }
             ]
@@ -78,10 +78,10 @@
                     "label": "Local PC - etelai-fallback combo (OpenRouter -> Gemini)",
                     "key": "CHANGE_ME",
                     "model": "etelai-fallback",
-                    "base": "https:\/\/prepare-fellowship-requests-got.trycloudflare.com\/v1",
+                    "base": "https://prepare-fellowship-requests-got.trycloudflare.com/v1",
                     "enabled": true,
                     "cooldown_until": "2026-08-05 18:27:17",
-                    "last_error": "Could not reach OmniRoute (local PC via Cloudflare Tunnel) API (tried: https:\/\/prepare-fellowship-requests-got.trycloudflare.com\/v1).",
+                    "last_error": "Could not reach OmniRoute (local PC via Cloudflare Tunnel) API (tried: https://prepare-fellowship-requests-got.trycloudflare.com/v1).",
                     "last_used": "2026-08-03 22:55:50"
                 }
             ]
@@ -96,7 +96,7 @@
                     "label": "Moonshot (unfunded)",
                     "key": "CHANGE_ME",
                     "model": "kimi-k2-0711-preview",
-                    "base": "https:\/\/api.moonshot.ai\/v1",
+                    "base": "https://api.moonshot.ai/v1",
                     "enabled": false,
                     "cooldown_until": null,
                     "last_error": null,
@@ -109,12 +109,19 @@
             "name": "Ollama (local)",
             "enabled": false,
             "keys": []
+        },
+        {
+            "id": "openrouter",
+            "name": "OpenRouter (fallback)",
+            "enabled": true,
+            "keys": []
         }
     ],
     "priority": [
         "omniroute",
         "gemini",
         "kimi",
-        "ollama"
+        "ollama",
+        "openrouter"
     ]
 }
