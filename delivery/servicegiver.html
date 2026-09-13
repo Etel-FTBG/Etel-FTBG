@@ -1,0 +1,1037 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta name="referrer" content="no-referrer-when-downgrade">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#D4AF37">
+    <title>ETEL Service Giver Pro — Enterprise Dashboard v12.1</title>
+    <link rel="icon" type="image/png" href="assets/images/etel-delivery-coin.png">
+    <link rel="apple-touch-icon" href="assets/images/etel-delivery-coin.png">
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Poppins:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="js/jsQR.js?v=1.4.0"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="js/core.js?v=5.12"></script>
+    <script>
+      /* Auth gate - previously missing entirely, meaning unauthenticated
+         visitors saw service-giver page content with no redirect. Also
+         carries role=service_giver so the login page can identify this
+         app specifically (same pattern driver/index.html already used)
+         rather than falling through to the generic bare-launch case. */
+      document.addEventListener('DOMContentLoaded', function () {
+        if (typeof Auth === 'undefined' || !Auth.isLoggedIn()) {
+          var base = (typeof ETEL !== 'undefined' && ETEL.api) ? ETEL.api.replace('api/boot.php', '') : '';
+          window.location.href = base + 'login.html?redirect=servicegiver.html&role=service_giver';
+        }
+      });
+    </script>
+
+<style>
+/* ═══════════════════════════════════════════════════════════════
+   ETEL SERVICE GIVER PRO — v12.1
+   Single, self-contained stylesheet. Replaces the previous 6-file
+   external CSS cascade, which had a real bug: the markup uses
+   class="content" but every external file only ever styled
+   ".content-area" (a class that appeared nowhere in the HTML) --
+   that mismatch collapsed the entire dashboard body to nothing.
+   One file, correct class names, no cross-file conflicts.
+   ═══════════════════════════════════════════════════════════════ */
+
+* { margin:0; padding:0; box-sizing:border-box; -webkit-font-smoothing:antialiased; }
+
+:root {
+  --gold:        #D4AF37;
+  --gold-lt:     #FFE9A8;
+  --gold-dk:     #8B6E3A;
+  --page-bg:     linear-gradient(155deg,#2A1600 0%,#5A3A08 16%,#9A6818 32%,#C8922A 48%,#D4AF37 54%,#C8922A 60%,#9A6818 76%,#5A3A08 90%,#2A1600 100%);
+  --surface:     linear-gradient(160deg, rgba(22,14,3,.86), rgba(10,6,0,.9));
+  --surface-lt:  rgba(255,255,255,.05);
+  --border:      rgba(212,175,55,.16);
+  --border-lt:   rgba(212,175,55,.28);
+  --text:        #F5EAC8;
+  --text-dim:    rgba(245,230,163,.6);
+  --text-faint:  rgba(245,230,163,.4);
+  --success:     #2ECC71;
+  --danger:      #E63946;
+  --warning:     #F39C12;
+  --info:        #4ECDC4;
+  --sidebar-w:   250px;
+  --header-h:    64px;
+  --r:           16px;
+  --r-sm:        10px;
+  --r-full:      9999px;
+  --shadow:      0 8px 28px rgba(0,0,0,.35);
+  --shadow-gold: 0 4px 20px rgba(212,175,55,.18);
+  --ease:        cubic-bezier(.22,1,.36,1);
+  --t:           .18s;
+}
+
+html, body { width:100%; height:100%; font-family:'Poppins',sans-serif; color:var(--text); }
+body {
+  background: var(--page-bg);
+  background-attachment: fixed;
+}
+::-webkit-scrollbar { width:6px; height:6px; }
+::-webkit-scrollbar-thumb { background:rgba(212,175,55,.3); border-radius:3px; }
+
+a { color:inherit; text-decoration:none; }
+button { font-family:inherit; }
+
+/* ── App shell ─────────────────────────────────────────── */
+.app-container { min-height:100vh; }
+
+.sidebar-overlay {
+  display:none; position:fixed; inset:0; background:rgba(0,0,0,.5);
+  backdrop-filter:blur(3px); z-index:99;
+}
+.sidebar-overlay.open { display:block; }
+
+.sidebar {
+  position:fixed; top:0; left:0; bottom:0; width:var(--sidebar-w);
+  background:var(--surface); border-right:1px solid var(--border);
+  display:flex; flex-direction:column; box-shadow:4px 0 24px rgba(0,0,0,.3);
+  z-index:100; transition:transform var(--t) var(--ease);
+}
+@media (max-width:900px) {
+  .sidebar { transform:translateX(-100%); }
+  .sidebar.open { transform:none; }
+}
+.sidebar-header { padding:22px 20px 18px; border-bottom:1px solid var(--border); }
+.sidebar-brand { display:flex; align-items:center; gap:10px; }
+.sidebar-brand-icon {
+  width:38px; height:38px; border-radius:11px; display:flex; align-items:center; justify-content:center;
+  background:linear-gradient(135deg,#C9A227,#FFD700); font-size:18px;
+}
+.sidebar-brand-main { font-family:'Syne',sans-serif; font-weight:800; font-size:15px; letter-spacing:.03em; color:var(--gold-lt); }
+.sidebar-brand-sub { font-size:10px; color:var(--text-faint); letter-spacing:.08em; text-transform:uppercase; }
+
+.sidebar-menu { flex:1; padding:14px 10px; overflow-y:auto; }
+.menu-item {
+  display:flex; align-items:center; gap:12px; padding:12px 14px; border-radius:12px;
+  margin-bottom:2px; cursor:pointer; transition:background var(--t), color var(--t);
+  position:relative; color:var(--text-dim); font-size:13.5px; font-weight:600;
+}
+.menu-item:hover { background:rgba(212,175,55,.08); color:var(--text); }
+.menu-item.active {
+  background:linear-gradient(135deg,rgba(212,175,55,.2),rgba(212,175,55,.06));
+  color:var(--gold-lt); box-shadow:inset 3px 0 0 var(--gold);
+}
+.menu-icon { font-size:16px; width:20px; text-align:center; flex-shrink:0; }
+.menu-label { flex:1; }
+.menu-badge {
+  background:linear-gradient(135deg,#C9A227,#FFD700); color:#1a1206; font-weight:800;
+  font-size:10px; padding:2px 7px; border-radius:var(--r-full); min-width:18px; text-align:center;
+}
+
+.sidebar-footer { padding:14px; border-top:1px solid var(--border); }
+.user-card {
+  display:flex; align-items:center; gap:10px; padding:10px; border-radius:12px;
+  margin-bottom:10px; transition:background var(--t);
+}
+.user-card:hover { background:rgba(212,175,55,.06); }
+.user-avatar-small {
+  width:36px; height:36px; border-radius:50%; flex-shrink:0;
+  background:linear-gradient(135deg,#C9A227,#FFD700); color:#1a1206;
+  display:flex; align-items:center; justify-content:center; font-weight:800; font-size:14px;
+}
+.user-card-name { font-size:12.5px; font-weight:700; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:150px; }
+.user-card-role { font-size:10px; color:var(--text-faint); }
+
+.btn {
+  padding:11px 18px; border-radius:var(--r-sm); border:none; font-size:13px; font-weight:700;
+  cursor:pointer; transition:transform .12s, box-shadow .12s; display:inline-flex; align-items:center; gap:6px;
+}
+.btn:active { transform:scale(.97); }
+.btn-primary { background:linear-gradient(135deg,#C9A227,#FFD700); color:#1a1206; box-shadow:var(--shadow-gold); }
+.btn-secondary { background:rgba(212,175,55,.1); color:var(--gold-lt); border:1px solid var(--border-lt); }
+.btn-ghost { background:rgba(255,255,255,.06); color:var(--text-dim); border:1px solid var(--border); }
+.btn-small { padding:7px 14px; font-size:11.5px; }
+
+/* ── Main content ──────────────────────────────────────── */
+.main-content { margin-left:var(--sidebar-w); display:flex; flex-direction:column; min-height:100vh; }
+@media (max-width:900px) { .main-content { margin-left:0; } }
+
+.header {
+  height:var(--header-h); background:var(--surface); border-bottom:1px solid var(--border);
+  display:flex; align-items:center; justify-content:space-between; padding:0 24px;
+  position:sticky; top:0; z-index:50; backdrop-filter:blur(10px); flex-shrink:0;
+}
+.header-left { display:flex; align-items:center; gap:14px; }
+.hamburger {
+  width:38px; height:38px; border-radius:10px; border:1px solid var(--border); background:rgba(255,255,255,.04);
+  display:none; flex-direction:column; align-items:center; justify-content:center; gap:4px; cursor:pointer;
+}
+.hamburger span { width:16px; height:2px; background:var(--gold-lt); border-radius:2px; }
+@media (max-width:900px) { .hamburger { display:flex; } }
+.logo-section { display:flex; align-items:center; gap:10px; }
+.logo-icon { font-size:20px; }
+.logo-main { font-family:'Syne',sans-serif; font-weight:800; font-size:14px; color:var(--gold-lt); }
+.logo-sub { font-size:10.5px; color:var(--text-faint); }
+.header-right { display:flex; align-items:center; gap:14px; }
+.user-profile { display:flex; align-items:center; gap:10px; }
+.user-avatar {
+  width:36px; height:36px; border-radius:50%; background:linear-gradient(135deg,#C9A227,#FFD700);
+  color:#1a1206; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:14px;
+}
+.user-name { font-size:12.5px; font-weight:700; }
+.user-status { font-size:10.5px; color:var(--success); }
+
+.content {
+  flex:1 1 auto; overflow-y:auto; overflow-x:hidden; padding:28px; width:100%; box-sizing:border-box;
+}
+@media (max-width:768px) { .content { padding:16px; } }
+
+.page-title { font-family:'Syne',sans-serif; font-size:22px; font-weight:800; letter-spacing:-0.01em; margin-bottom:4px; }
+.page-subtitle { font-size:13px; color:var(--text-dim); margin-bottom:22px; }
+@media (max-width:768px) { .page-title { font-size:19px; } }
+
+/* ── KPI cards ─────────────────────────────────────────── */
+.kpi-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:16px; margin-bottom:28px; }
+@media (max-width:1024px) { .kpi-grid { grid-template-columns:repeat(2,1fr); } }
+@media (max-width:480px)  { .kpi-grid { grid-template-columns:1fr; } }
+
+.kpi-card {
+  background:var(--surface); border:1px solid var(--border); border-radius:var(--r);
+  padding:22px 20px; box-shadow:var(--shadow); position:relative; overflow:hidden;
+  transition:transform var(--t), box-shadow var(--t), border-color var(--t);
+}
+.kpi-card:hover { transform:translateY(-4px); box-shadow:0 10px 32px rgba(212,175,55,.16); border-color:var(--border-lt); }
+.kpi-card::before {
+  content:''; position:absolute; bottom:-24px; right:-24px; width:90px; height:90px; border-radius:50%;
+  background:linear-gradient(135deg,var(--gold),var(--gold-dk)); opacity:.08;
+}
+.kpi-label { font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:.1em; color:var(--text-faint); margin-bottom:10px; }
+.kpi-value {
+  font-size:30px; font-weight:800; line-height:1;
+  background:linear-gradient(135deg,#FFE9A8,#D4AF37); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
+}
+.kpi-change { font-size:11.5px; color:var(--success); margin-top:8px; font-weight:600; opacity:.9; }
+.kpi-change.down { color:var(--danger); }
+
+/* ── Cards ─────────────────────────────────────────────── */
+.card { background:var(--surface); border:1px solid var(--border); border-radius:var(--r); margin-bottom:20px; box-shadow:var(--shadow); overflow:hidden; }
+.card-header { padding:18px 22px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; }
+.card-title { font-size:15px; font-weight:700; }
+.card-body { padding:22px; }
+@media (max-width:768px) { .card-body { padding:16px; } }
+
+/* ── Tables ────────────────────────────────────────────── */
+table { width:100%; border-collapse:separate; border-spacing:0; font-size:13px; }
+table th { font-size:10.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--text-faint); text-align:left; padding:10px 8px; font-weight:700; }
+table td { padding:14px 8px; border-top:1px solid var(--border); }
+table tr:hover td { background:rgba(212,175,55,.04); }
+
+/* ── Status badges ─────────────────────────────────────── */
+.status-badge { display:inline-flex; padding:4px 10px; border-radius:var(--r-full); font-size:11px; font-weight:700; text-transform:capitalize; }
+.status-pending   { background:rgba(243,156,18,.15); color:#F39C12; }
+.status-preparing { background:rgba(78,205,196,.15); color:#4ECDC4; }
+.status-ready      { background:rgba(155,89,182,.15); color:#9B59B6; }
+.status-delivered { background:rgba(46,204,113,.15); color:#2ECC71; }
+.status-cancelled { background:rgba(230,57,70,.15); color:#E63946; }
+
+/* ── Forms ─────────────────────────────────────────────── */
+.field-label { display:block; font-size:11px; font-weight:700; color:var(--text-dim); margin-bottom:7px; text-transform:uppercase; letter-spacing:.05em; }
+.field-input, select.field-input, textarea.field-input {
+  width:100%; padding:11px 13px; background:rgba(255,255,255,.04); border:1.5px solid var(--border);
+  border-radius:var(--r-sm); font-size:13px; font-family:inherit; color:var(--text); outline:none;
+  transition:border-color var(--t); box-sizing:border-box;
+}
+.field-input:focus { border-color:var(--gold); }
+.field-input::placeholder { color:var(--text-faint); }
+
+/* ── Modal ─────────────────────────────────────────────── */
+.modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.6); backdrop-filter:blur(3px); z-index:9000; align-items:center; justify-content:center; padding:20px; }
+.modal-overlay.show { display:flex; }
+.modal-box { background:#161011; border:1px solid var(--border-lt); border-radius:18px; padding:26px; width:100%; max-width:500px; max-height:90vh; overflow-y:auto; position:relative; box-shadow:0 24px 70px rgba(0,0,0,.5); }
+.modal-close { position:absolute; top:16px; right:18px; background:rgba(255,255,255,.06); border:1px solid var(--border); width:30px; height:30px; border-radius:50%; font-size:16px; cursor:pointer; color:var(--text-dim); }
+.modal-title { font-size:18px; font-weight:800; color:var(--gold-lt); margin-bottom:20px; }
+
+/* ── Empty / loading state ─────────────────────────────── */
+.empty-msg { color:var(--text-faint); text-align:center; padding:40px 20px; font-size:13px; }
+
+/* ── QR Scanner ────────────────────────────────────────── */
+.qr-frame { max-width:420px; margin:0 auto; }
+#qr-video { width:100%; border-radius:14px; border:2px solid var(--border-lt); margin-bottom:14px; background:#000; }
+.qr-result { padding:12px 16px; border-radius:10px; font-size:13px; margin-top:10px; display:none; }
+.qr-result.ok  { display:block; background:rgba(46,204,113,.12); border:1px solid rgba(46,204,113,.3); color:#6ee7a0; }
+.qr-result.err { display:block; background:rgba(230,57,70,.12); border:1px solid rgba(230,57,70,.3); color:#ff8a93; }
+
+/* ── Footer ────────────────────────────────────────────── */
+.etel-footer { border-top:1px solid var(--border); padding:32px 24px; margin-top:20px; }
+.etel-footer-inner { max-width:1100px; margin:0 auto; }
+.etel-footer-brand { display:flex; align-items:center; gap:12px; margin-bottom:20px; }
+.etel-footer-logo img { width:36px; height:36px; border-radius:10px; }
+.etel-footer-brand-name { font-family:'Syne',sans-serif; font-weight:800; font-size:14px; color:var(--gold-lt); }
+.etel-footer-tagline { font-size:11px; color:var(--text-faint); margin-top:2px; }
+.etel-footer-grid { display:flex; gap:48px; flex-wrap:wrap; margin-bottom:18px; }
+.etel-footer-col-title { font-size:11px; text-transform:uppercase; letter-spacing:.08em; color:var(--text-faint); margin-bottom:10px; font-weight:700; }
+.etel-footer-col ul { list-style:none; display:flex; flex-direction:column; gap:8px; }
+.etel-footer-col a { font-size:12.5px; color:var(--text-dim); }
+.etel-footer-col a:hover { color:var(--gold-lt); }
+.etel-footer-subs { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:18px; }
+.etel-footer-sub-chip { font-size:11px; padding:5px 12px; border-radius:var(--r-full); background:rgba(212,175,55,.08); border:1px solid var(--border); color:var(--text-dim); }
+.etel-footer-bottom { display:flex; justify-content:space-between; flex-wrap:wrap; gap:10px; font-size:11px; color:var(--text-faint); padding-top:14px; border-top:1px solid var(--border); }
+.etel-footer-bottom-right a { margin-right:14px; color:var(--text-faint); }
+
+/* Cashier role gating - owner-only settings cards and action buttons
+   (reprint) are hidden here; the backend enforces the actual restriction,
+   this just keeps the UI from showing controls that would 403 anyway. */
+body.role-cashier [data-owner-only] { display: none !important; }
+body.role-cashier .owner-only-btn { display: none !important; }
+</style>
+</head>
+<body>
+<!-- Custom splash overlay - shows the group master logo briefly on
+     open. Deliberately separate from the manifest icons/ files (which
+     stay each app's own distinct branding for the home-screen icon) -
+     this only affects what's shown in-page while the app loads,
+     nothing about how it appears on the home screen or in "Add to
+     Home Screen"/APK builds. Removes itself automatically; if this
+     script fails to run for any reason the page underneath is
+     completely unaffected, it just won't have a splash. -->
+<div id="etel-master-splash" style="position:fixed;inset:0;z-index:999999;display:flex;align-items:center;justify-content:center;background:#0a0703;transition:opacity .35s ease;">
+  <img src="/delivery/assets/images/master-logo-splash.png" alt="ETEL" style="width:120px;height:120px;object-fit:contain;border-radius:50%;box-shadow:0 8px 32px rgba(0,0,0,.4);animation:etelSplashPulse 1.4s ease-in-out infinite;">
+</div>
+<style>@keyframes etelSplashPulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.05);opacity:.88}}</style>
+
+<!-- Floating refresh button - re-fetches whatever page is currently
+     open. For when live/polled data stalls and the person has no
+     other obvious way to force a re-fetch. -->
+<button id="sg-refresh-btn" onclick="refreshCurrentPage()" aria-label="Refresh"
+  style="position:fixed;left:16px;bottom:16px;z-index:9998;width:48px;height:48px;border-radius:50%;
+  background:linear-gradient(135deg,#E9C767,#D4AF37);border:none;box-shadow:0 4px 14px rgba(212,175,55,.5);
+  font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;">
+  <span id="sg-refresh-icon" style="display:inline-block;">🔄</span>
+</button>
+<style>
+#sg-refresh-btn.spinning #sg-refresh-icon{animation:sgRefreshSpin .6s linear infinite;}
+@keyframes sgRefreshSpin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+</style>
+
+<script>
+(function(){
+  setTimeout(function(){
+    var el = document.getElementById('etel-master-splash');
+    if (!el) return;
+    el.style.opacity = '0';
+    setTimeout(function(){ if (el.parentNode) el.parentNode.removeChild(el); }, 400);
+  }, 900);
+})();
+</script>
+
+
+    <!-- Mobile sidebar overlay -->
+    <div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
+
+    <div class="app-container">
+        <!-- SIDEBAR -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-brand">
+                    <div class="sidebar-brand-icon">✨</div>
+                    <div>
+                        <div class="sidebar-brand-main">ETEL</div>
+                        <div class="sidebar-brand-sub">Service</div>
+                    </div>
+                </div>
+            </div>
+
+            <nav class="sidebar-menu">
+                <div class="menu-item active" data-page="dashboard" onclick="switchPage('dashboard')">
+                    <div class="menu-icon">📊</div>
+                    <div class="menu-label">Dashboard</div>
+                </div>
+                <div class="menu-item" data-page="orders" data-sg-cap="orders.view" onclick="switchPage('orders')" style="display:none">
+                    <div class="menu-icon">📦</div>
+                    <div class="menu-label">Orders</div>
+                    <div class="menu-badge" id="orders-badge">0</div>
+                </div>
+                <div class="menu-item" data-page="services" data-sg-cap="menu.view" onclick="switchPage('services')" style="display:none">
+                    <div class="menu-icon">🛍️</div>
+                    <div class="menu-label">My Services</div>
+                </div>
+                <div class="menu-item" data-page="qr-scanner" data-sg-cap="orders.manage" onclick="switchPage('qr-scanner')" style="display:none">
+                    <div class="menu-icon">📷</div>
+                    <div class="menu-label">QR Scanner</div>
+                </div>
+                <div class="menu-item" data-page="analytics" data-sg-cap="reports.view" onclick="switchPage('analytics')" style="display:none">
+                    <div class="menu-icon">📈</div>
+                    <div class="menu-label">Analytics</div>
+                </div>
+                <div class="menu-item" data-page="payments" data-sg-cap="payments.view" onclick="switchPage('payments')" style="display:none">
+                    <div class="menu-icon">💰</div>
+                    <div class="menu-label">Payments</div>
+                </div>
+                <div class="menu-item" data-page="settings" onclick="switchPage('settings')">
+                    <div class="menu-icon">⚙️</div>
+                    <div class="menu-label">Settings</div>
+                </div>
+                <div class="menu-item" data-page="staff" data-sg-cap="staff.manage" onclick="switchPage('staff')" style="display:none">
+                    <div class="menu-icon">👥</div>
+                    <div class="menu-label">Staff &amp; Roles</div>
+                </div>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="user-card">
+                    <div class="user-avatar-small" id="user-avatar">A</div>
+                    <div>
+                        <div class="user-card-name" id="user-card-name">Loading...</div>
+                        <div class="user-card-role">Service Provider</div>
+                    </div>
+                </div>
+                <button class="btn btn-ghost" style="width: 100%; justify-content: center;" onclick="logout()">Logout</button>
+            </div>
+        </aside>
+
+        <!-- MAIN CONTENT -->
+        <div class="main-content">
+            <!-- HEADER -->
+            <header class="header">
+                <div class="header-left">
+                    <button class="hamburger" onclick="toggleSidebar()" aria-label="Menu">
+                        <span></span><span></span><span></span>
+                    </button>
+                    <div class="logo-section">
+                        <div class="logo-icon">🎯</div>
+                        <div>
+                            <div class="logo-main">ETEL Pro</div>
+                            <div class="logo-sub">Service Dashboard</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="header-right">
+                    <div class="user-profile" onclick="toggleSgProfile()" style="cursor:pointer">
+                        <div class="user-avatar" id="profile-avatar">A</div>
+                        <div>
+                            <div class="user-name" id="profile-name">Loading...</div>
+                            <div class="user-status" id="profile-status" onclick="toggleSgOnline(event)" style="cursor:pointer" title="Tap to go online/offline">● Online</div>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- CONTENT -->
+            <div class="content">
+                <!-- GLOBAL PICKUP ALERT -->
+                <div id="sg-pickup-banner" style="display:none;position:sticky;top:0;z-index:999;margin-bottom:12px"></div>
+
+                <!-- DASHBOARD -->
+                <div id="page-dashboard">
+                    <div class="page-title">Welcome Back</div>
+                    <div class="page-subtitle">Here's what's happening with your business today</div>
+
+                    <div id="sg-my-role-card" style="display:none;background:linear-gradient(135deg,rgba(212,175,55,.10),rgba(212,175,55,.03));border:1px solid rgba(212,175,55,.25);border-radius:14px;padding:18px 20px;margin-bottom:20px">
+                        <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+                            <div style="width:40px;height:40px;border-radius:10px;background:rgba(212,175,55,.15);border:1px solid rgba(212,175,55,.3);display:flex;align-items:center;justify-content:center;font-size:18px">🪪</div>
+                            <div>
+                                <div style="font-weight:800;font-size:15px" id="sg-my-role-name">—</div>
+                                <div style="font-size:12px;color:var(--text-faint,#9A9AAE)" id="sg-my-role-sub">Loading your access…</div>
+                            </div>
+                        </div>
+                        <div id="sg-my-role-caps" style="display:flex;flex-wrap:wrap;gap:6px"></div>
+                    </div>
+
+                    <div class="kpi-grid">
+                        <div class="kpi-card">
+                            <div class="kpi-label">📦 Today's Orders</div>
+                            <div class="kpi-value" id="kpi-today-orders">0</div>
+                            <div class="kpi-change">↑ 12% from yesterday</div>
+                        </div>
+                        <div class="kpi-card">
+                            <div class="kpi-label">✅ Completed</div>
+                            <div class="kpi-value" id="kpi-completed">0</div>
+                            <div class="kpi-change">↑ 8% this week</div>
+                        </div>
+                        <div class="kpi-card">
+                            <div class="kpi-label">💰 Total Earnings</div>
+                            <div class="kpi-value" id="kpi-earnings" style="font-size: 24px;">Br 0</div>
+                            <div class="kpi-change">↑ 24% this month</div>
+                        </div>
+                        <div class="kpi-card">
+                            <div class="kpi-label">⭐ Rating</div>
+                            <div class="kpi-value" id="kpi-rating">0.0</div>
+                            <div class="kpi-change">Based on <span id="kpi-reviews">0</span> reviews</div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">📋 Recent Orders</div>
+                            <button class="btn btn-secondary btn-small" onclick="switchPage('orders')">View All</button>
+                        </div>
+                        <div class="card-body" id="recent-orders-container">
+                            <p class="empty-msg">No orders yet</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ORDERS -->
+                <div id="page-orders" style="display: none;">
+                    <div class="page-title">Orders Management</div>
+                    <div class="page-subtitle">Track and manage all your orders</div>
+                    <div class="card">
+                        <div class="card-body" id="orders-container">
+                            <p class="empty-msg">Loading orders...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- QR SCANNER -->
+                <div id="page-qr-scanner" style="display: none;">
+                    <div class="page-title">QR Code Scanner</div>
+                    <div class="page-subtitle">Scan pickup and delivery QR codes</div>
+                    <div class="card">
+                        <div class="card-body" style="text-align: center;">
+                            <div class="qr-frame">
+                                <video id="qr-video" playsinline muted></video>
+                                <canvas id="qr-canvas" style="display:none"></canvas>
+                                <div style="display:flex;gap:10px;margin-bottom:14px">
+                                    <button class="btn btn-secondary" style="flex:1;justify-content:center" id="qr-type-pickup" onclick="setQrType('pickup')">📥 Pickup</button>
+                                    <button class="btn btn-secondary" style="flex:1;justify-content:center" id="qr-type-delivery" onclick="setQrType('delivery')">📤 Delivery</button>
+                                </div>
+                                <button class="btn btn-primary" onclick="startQRScanner()" style="width: 100%; justify-content:center;">📷 Start Camera &amp; Scan</button>
+                                <div class="qr-result" id="qr-result"></div>
+                                <p style="font-size:11px;color:var(--text-faint);margin-top:14px">Point the camera at the customer's or courier's QR code. Expects the order ID encoded as plain text or JSON (<code>{"order_id":123}</code>).</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ANALYTICS -->
+                <div id="page-analytics" style="display: none;">
+                    <div class="page-title">Analytics &amp; Reports</div>
+                    <div class="page-subtitle">Detailed performance metrics and insights</div>
+                    <div class="kpi-grid">
+                        <div class="kpi-card">
+                            <div class="kpi-label">🎯 Accuracy Rate</div>
+                            <div class="kpi-value" id="analytics-accuracy">0%</div>
+                        </div>
+                        <div class="kpi-card">
+                            <div class="kpi-label">⏱️ Avg Delivery Time</div>
+                            <div class="kpi-value" id="analytics-delivery-time">0 min</div>
+                        </div>
+                        <div class="kpi-card">
+                            <div class="kpi-label">📊 Monthly Growth</div>
+                            <div class="kpi-value" id="analytics-growth">0%</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PAYMENTS -->
+                <div id="page-payments" style="display: none;">
+                    <div class="page-title">Payment Management</div>
+                    <div class="page-subtitle">View earnings, commissions, and payment history</div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">📊 Financial Report</div>
+                        </div>
+                        <div class="card-body">
+                            <div style="display:flex;gap:10px;align-items:center;margin-bottom:16px;flex-wrap:wrap">
+                                <select id="sg-fr-range" class="field-input" style="width:auto" onchange="loadSGFinancialReport()">
+                                    <option value="7">Last 7 days</option>
+                                    <option value="30" selected>Last 30 days</option>
+                                    <option value="90">Last 90 days</option>
+                                    <option value="all">All time</option>
+                                </select>
+                                <button class="btn btn-secondary btn-small" onclick="loadSGFinancialReport()">🔄 Refresh</button>
+                            </div>
+                            <div id="sg-financial-report-body">Loading…</div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">💳 Payment Method</div>
+                        </div>
+                        <div class="card-body">
+                            <div style="padding: 20px; background: rgba(255,255,255,.04); border-radius: 12px;">
+                                <p style="color: var(--text-faint); margin-bottom: 12px;">Bank Account</p>
+                                <p id="payment-bank-account" style="font-size: 18px; font-weight: 700; color: var(--text);">Not configured</p>
+                                <button class="btn btn-secondary btn-small" data-sg-cap="settings.manage" style="margin-top: 16px;display:none" onclick="switchPage('settings')">Update Payment Method</button>
+                                <p data-sg-cap-inverse="settings.manage" style="margin-top:14px;font-size:12.5px;color:var(--text-faint,#9A9AAE)">
+                                    You can see this business's payment details, but only someone with the settings.manage capability can change them.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SERVICES / MENU ITEMS -->
+                <div id="page-services" style="display: none;">
+                    <div class="page-title">My Services &amp; Items</div>
+                    <div class="page-subtitle">Add and manage the products or services you offer</div>
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">📋 Item List</div>
+                            <button class="btn btn-primary btn-small" data-sg-cap="menu.manage" style="display:none" onclick="openAddItemModal()">+ Add New Item</button>
+                        </div>
+                        <div class="card-body" id="services-container">
+                            <p class="empty-msg">Loading items…</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SETTINGS -->
+                <div id="page-settings" style="display: none;">
+                    <div class="page-title">Settings &amp; Configuration</div>
+                    <div class="page-subtitle">Manage your business profile and preferences</div>
+
+                    <div class="card" data-owner-only="1" style="overflow:hidden">
+                        <div style="background:linear-gradient(135deg,rgba(212,175,55,.14),rgba(212,175,55,.02));padding:24px 20px;display:flex;align-items:center;gap:18px;flex-wrap:wrap;border-bottom:1px solid rgba(212,175,55,.15)">
+                            <div style="position:relative;flex-shrink:0">
+                                <img id="settings-logo-preview" style="width:84px;height:84px;border-radius:18px;object-fit:cover;border:2px solid rgba(212,175,55,.4);background:#fff;box-shadow:0 6px 18px rgba(0,0,0,.35)" src="" onerror="this.style.display='none'">
+                                <div id="settings-logo-fallback" style="width:84px;height:84px;border-radius:18px;background:rgba(212,175,55,.12);border:2px solid rgba(212,175,55,.4);display:flex;align-items:center;justify-content:center;font-size:32px">🏪</div>
+                                <label for="settings-logo-file" style="position:absolute;bottom:-4px;right:-4px;width:30px;height:30px;border-radius:50%;background:#D4AF37;display:flex;align-items:center;justify-content:center;font-size:14px;cursor:pointer;border:2px solid var(--bg-card,#1a1410);box-shadow:0 2px 8px rgba(0,0,0,.4)">📷</label>
+                                <input type="file" id="settings-logo-file" accept="image/*" style="display:none" onchange="previewSettingsLogo(this)">
+                            </div>
+                            <div style="min-width:0;flex:1">
+                                <div id="settings-header-name" style="font-size:19px;font-weight:800;color:var(--text,#f0e6cc);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Loading…</div>
+                                <div style="display:flex;gap:8px;align-items:center;margin-top:6px;flex-wrap:wrap">
+                                    <span id="settings-header-type" style="background:rgba(212,175,55,.15);border:1px solid rgba(212,175,55,.3);color:#D4AF37;padding:3px 11px;border-radius:20px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px">—</span>
+                                    <span id="settings-header-status" style="padding:3px 11px;border-radius:20px;font-size:11px;font-weight:700"></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <p style="font-size:11px;color:var(--text-faint,#9A9AAE);margin:0 0 16px;text-transform:uppercase;letter-spacing:.5px;font-weight:700">Business Information</p>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px;">
+                                <div>
+                                    <label class="field-label">🏷️ Business Name</label>
+                                    <input type="text" id="settings-business-name" class="field-input" placeholder="Your business name">
+                                </div>
+                                <div>
+                                    <label class="field-label">🗂️ Business Type</label>
+                                    <select id="settings-business-type" class="field-input">
+                                        <option value="restaurant">Restaurant</option>
+                                        <option value="pharmacy">Pharmacy</option>
+                                        <option value="grocery">Grocery</option>
+                                        <option value="electronics">Electronics</option>
+                                        <option value="retail">Retail Store</option>
+                                        <option value="cafe">Cafe</option>
+                                        <option value="fastfood">Fast Food</option>
+                                        <option value="laundry">Laundry</option>
+                                        <option value="fuel">Fuel Station</option>
+                                        <option value="custom">Custom / Other</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div style="margin-top: 20px;">
+                                <label class="field-label">📍 Zone / Address</label>
+                                <input type="text" id="settings-zone" class="field-input" placeholder="Your service zone">
+                            </div>
+                            <p style="font-size:11.5px;color:var(--text-faint,#9A9AAE);margin:14px 0 0;">Square logo images print best on kitchen tickets — tap the camera icon above to change it.</p>
+                            <button class="btn btn-primary" style="margin-top: 22px;" onclick="saveBusinessSettings()">💾 Save Changes</button>
+                        </div>
+                    </div>
+
+                    <div class="card" data-owner-only="1">
+                        <div class="card-header">
+                            <div class="card-title">💰 Payment Details</div>
+                        </div>
+                        <div class="card-body">
+                            <p style="font-size:12.5px;color:var(--text-faint,#9A9AAE);margin:0 0 18px">How this business gets paid out. Fill in whichever methods you actually use — you don't need all of them.</p>
+
+                            <div id="settings-payout-pending-banner" style="display:none;background:rgba(212,175,55,.1);border:1px solid rgba(212,175,55,.3);border-radius:10px;padding:12px 14px;margin-bottom:16px;font-size:12.5px;color:#D4AF37"></div>
+
+                            <div style="border:1px solid rgba(46,204,113,.3);border-radius:14px;padding:16px;margin-bottom:14px;background:rgba(46,204,113,.05)">
+                                <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
+                                    <div id="pm-logo-cbe" style="width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,#4fd17a,#1a8a45);box-shadow:0 3px 8px rgba(26,138,69,.4);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;overflow:hidden">🏛️</div>
+                                    <div>
+                                        <div style="font-weight:700;font-size:14px">Commercial Bank (CBE)</div>
+                                        <div style="font-size:11px;color:#2ecc71;font-weight:600" id="settings-cbe-status">● Active</div>
+                                    </div>
+                                </div>
+                                <label class="field-label">Account Holder Name</label>
+                                <input type="text" id="settings-cbe-account-name" class="field-input" placeholder="Name as it appears on the account" style="margin-bottom:10px">
+                                <label class="field-label">Account Number</label>
+                                <input type="text" id="settings-cbe-account" class="field-input" placeholder="e.g. 1000123456789" inputmode="numeric">
+                                <button class="btn btn-primary" style="margin-top: 14px; width: 100%; justify-content:center;" onclick="saveCbeAccount()">💾 Save CBE Account</button>
+                            </div>
+
+                            <div style="border:1px solid rgba(52,152,219,.3);border-radius:14px;padding:16px;margin-bottom:14px;background:rgba(52,152,219,.05)">
+                                <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
+                                    <div id="pm-logo-abysinia" style="width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,#5dade2,#1f618d);box-shadow:0 3px 8px rgba(31,97,141,.4);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;overflow:hidden">🏦</div>
+                                    <div>
+                                        <div style="font-weight:700;font-size:14px">Abysinia Bank</div>
+                                        <div style="font-size:11px;color:#2ecc71;font-weight:600" id="settings-abysinia-status">● Active</div>
+                                    </div>
+                                </div>
+                                <label class="field-label">Account Holder Name</label>
+                                <input type="text" id="settings-abysinia-account-name" class="field-input" placeholder="Name as it appears on the account" style="margin-bottom:10px">
+                                <label class="field-label">Account Number</label>
+                                <input type="text" id="settings-abysinia-account" class="field-input" placeholder="e.g. 1000123456789" inputmode="numeric">
+                                <button class="btn btn-primary" style="margin-top: 14px; width: 100%; justify-content:center;" onclick="saveAbysiniaAccount()">💾 Save Abysinia Account</button>
+                            </div>
+
+                            <div style="border:1px solid rgba(230,126,34,.35);border-radius:14px;padding:16px;margin-bottom:14px;background:rgba(230,126,34,.06)">
+                                <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
+                                    <div id="pm-logo-telebirr" style="width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,#f5a742,#d9670f);box-shadow:0 3px 8px rgba(217,103,15,.4);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;overflow:hidden">📱</div>
+                                    <div>
+                                        <div style="font-weight:700;font-size:14px">Telebirr</div>
+                                        <div style="font-size:11px;color:#2ecc71;font-weight:600" id="settings-telebirr-status">● Active</div>
+                                    </div>
+                                </div>
+                                <label class="field-label">Account Holder Name</label>
+                                <input type="text" id="settings-telebirr-account-name" class="field-input" placeholder="Name as it appears on the Telebirr account" style="margin-bottom:10px">
+                                <label class="field-label">Telebirr Phone Number</label>
+                                <input type="tel" id="settings-telebirr-number" class="field-input" placeholder="e.g. 0912345678" inputmode="tel">
+                                <div id="settings-telebirr-err" style="display:none;color:#e74c3c;font-size:11.5px;margin-top:6px"></div>
+                                <button class="btn btn-primary" style="margin-top: 14px; width: 100%; justify-content:center;" onclick="saveTelebirrNumber()">💾 Save Telebirr Number</button>
+                            </div>
+
+                            <div style="border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:14px;text-align:center;opacity:.55;max-width:200px">
+                                <div id="pm-logo-wallet" style="width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,#b98cd6,#6a3f94);margin:0 auto 8px;display:flex;align-items:center;justify-content:center;font-size:18px;overflow:hidden">👛</div>
+                                <div style="font-size:12px;font-weight:700">ETel Pay Wallet</div>
+                                <div style="font-size:10px;color:var(--text-faint,#9A9AAE);margin-top:2px">Coming soon</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">🖨️ Kitchen Printer</div>
+                        </div>
+                        <div class="card-body">
+                            <p style="font-size: 13px; color: var(--text-faint, #9A9AAE); margin: 0 0 14px;">
+                                Connect your Bluetooth kitchen printer once here. After that, "Start Preparing"
+                                and "Reprint Kitchen Ticket" print directly to it - branded with your own
+                                business name, no third-party app or ads.
+                            </p>
+                            <div id="printer-status" style="font-size: 13px; font-weight: 700; margin-bottom: 14px; color: var(--text-faint, #9A9AAE);">
+                                ○ Not connected
+                            </div>
+                            <button class="btn btn-primary" style="width: 100%; justify-content:center;" onclick="connectPrinterUI()">🔗 Connect Printer</button>
+                            <button class="btn" style="margin-top: 10px; width: 100%; justify-content:center; background:none; border:1px solid var(--border-light); color: var(--text-faint, #9A9AAE);" onclick="forgetPrinterUI()">Forget Printer</button>
+                        </div>
+                    </div>
+                </div><!-- /page-settings -->
+
+                <div id="page-staff" style="display:none">
+                    <div class="page-title">Staff &amp; Roles</div>
+                    <div class="page-subtitle">Define your own roles, then add staff logins under them</div>
+
+                    <div class="card" data-owner-only="1">
+                        <div class="card-header">
+                            <div class="card-title">🎭 Your Roles</div>
+                        </div>
+                        <div class="card-body">
+                            <p style="font-size:13px;color:var(--text-faint,#9A9AAE);margin:0 0 14px;">
+                                Name your own roles - "Kitchen", "Pharmacist", "Delivery Coordinator", whatever fits
+                                your business - and pick exactly what each one can do. You (the owner) always have
+                                full access regardless of any role.
+                            </p>
+                            <div id="sg-roles-list" style="margin-bottom:16px;">Loading…</div>
+                            <div style="border-top:1px solid var(--border-light);padding-top:16px;margin-top:6px">
+                                <input type="hidden" id="role-edit-id" value="">
+                                <div style="margin-bottom:10px">
+                                    <input type="text" id="role-name" class="field-input" placeholder="Role name (e.g. Kitchen)" style="max-width:280px">
+                                </div>
+                                <div id="role-cap-checkboxes" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px;margin-bottom:14px"></div>
+                                <button class="btn btn-primary" onclick="saveRoleUI()">💾 Save Role</button>
+                                <button class="btn" id="role-cancel-btn" style="display:none;background:none;border:1px solid var(--border-light)" onclick="cancelEditRoleUI()">Cancel edit</button>
+                                <div id="role-msg" style="margin-top:10px;font-size:13px;"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card" data-owner-only="1">
+                        <div class="card-header">
+                            <div class="card-title">👥 Staff</div>
+                        </div>
+                        <div class="card-body">
+                            <p style="font-size:13px;color:var(--text-faint,#9A9AAE);margin:0 0 14px;">
+                                Enter their phone number - if they already have an EtelID (most people on the
+                                platform do), it links automatically as staff here, no new password needed.
+                                Only genuinely new phone numbers need a password.
+                            </p>
+                            <div id="sg-staff-list" style="margin-bottom:16px;">Loading…</div>
+                            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:10px;">
+                                <input type="text" id="staff-name" class="field-input" placeholder="Staff name">
+                                <input type="text" id="staff-phone" class="field-input" placeholder="Phone number (EtelID)">
+                                <input type="password" id="staff-password" class="field-input" placeholder="Password (only if new EtelID)">
+                                <select id="staff-role-select" class="field-input"><option value="">No role (view-only defaults)</option></select>
+                            </div>
+                            <button class="btn btn-primary" onclick="addCashierUI()">➕ Add Staff</button>
+                            <div id="staff-msg" style="margin-top:10px;font-size:13px;"></div>
+                        </div>
+                    </div>
+                </div><!-- /page-staff -->
+            </div>
+
+            <!-- ETEL Footer -->
+            <footer class="etel-footer">
+              <div class="etel-footer-inner">
+                <div class="etel-footer-brand">
+                  <div class="etel-footer-logo"><picture><source srcset="assets/images/etel-delivery-coin.webp" type="image/webp"/><img src="assets/images/etel-delivery-coin.png" alt="ETEL" loading="lazy"/></picture></div>
+                  <div>
+                    <div class="etel-footer-brand-name">ETEL Group · ኢትኤል ቡድን</div>
+                    <div class="etel-footer-tagline">Premium delivery across Hawassa · ሐዋሳ, ሲዳማ ክልል, ኢትዮጵያ</div>
+                  </div>
+                </div>
+                <div class="etel-footer-grid">
+                  <div class="etel-footer-col">
+                    <div class="etel-footer-col-title">Services</div>
+                    <ul>
+                      <li><a href="index.html">ETEL Delivery</a></li>
+                      <li><a href="ride/">ETEL Ride · ኢትኤል ጉዞ</a></li>
+                      <li><a href="/EtelMadeya/">ETEL Madeya · ጋዝ</a></li>
+                    </ul>
+                  </div>
+                  <div class="etel-footer-col">
+                    <div class="etel-footer-col-title">Partners</div>
+                    <ul>
+                      <li><a href="courier/">Become a Courier</a></li>
+                      <li><a href="driver/">Become a Driver</a></li>
+                      <li><a href="/EtelId/">EtelID</a></li>
+                      <li><a href="admin.html">Admin Portal</a></li>
+                    </ul>
+                  </div>
+                </div>
+                <div class="etel-footer-subs">
+                  <span class="etel-footer-sub-chip">🚚 Delivery</span>
+                  <span class="etel-footer-sub-chip">🚖 Ride</span>
+                  <span class="etel-footer-sub-chip">🔥 Madeya</span>
+                  <span class="etel-footer-sub-chip">🛒 Market</span>
+                  <span class="etel-footer-sub-chip">💳 Pay</span>
+                  <span class="etel-footer-sub-chip">📺 Media</span>
+                  <span class="etel-footer-sub-chip">💎 LuxLine</span>
+                </div>
+                <div class="etel-footer-bottom">
+                  <span>© 2026 Etel Group · ኢትኤል ቡድን</span>
+                  <div class="etel-footer-bottom-right"><a href="#">Privacy</a> <a href="#">Terms</a> <span>v3.7.4</span></div>
+                </div>
+              </div>
+            </footer>
+        </div>
+    </div>
+
+    <!-- ── ITEM MODAL ─────────────────────────────────────────── -->
+    <div id="item-modal-overlay" class="modal-overlay">
+        <div class="modal-box">
+            <button class="modal-close" onclick="closeItemModal()">✕</button>
+            <div id="item-modal-title" class="modal-title">Add New Item</div>
+            <input type="hidden" id="item-edit-id" value="">
+            <div style="margin-bottom:14px">
+                <label class="field-label">Item Name *</label>
+                <input type="text" id="item-name" class="field-input" placeholder="e.g. Injera Fitfit">
+            </div>
+            <div style="margin-bottom:14px">
+                <label class="field-label">Description</label>
+                <textarea id="item-desc" class="field-input" rows="2" placeholder="Short description"></textarea>
+            </div>
+            <div style="margin-bottom:14px;padding:12px;background:rgba(212,175,55,.06);border:1px dashed rgba(212,175,55,.3);border-radius:10px">
+                <label class="field-label">Amharic Name <span style="font-weight:400;opacity:.7">(optional — shown to customers who switch the app to Amharic)</span></label>
+                <input type="text" id="item-name-am" class="field-input" placeholder="ለምሳሌ: እንጀራ ፍትፍት" style="margin-bottom:10px">
+                <label class="field-label">Amharic Description <span style="font-weight:400;opacity:.7">(optional)</span></label>
+                <textarea id="item-desc-am" class="field-input" rows="2" placeholder="አጭር መግለጫ"></textarea>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
+                <div>
+                    <label class="field-label">Category *</label>
+                    <select id="item-category" class="field-input">
+                        <option value="food">Food</option>
+                        <option value="grocery">Grocery</option>
+                        <option value="pharmacy">Pharmacy</option>
+                        <option value="package">Package</option>
+                        <option value="flower">Flower</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="field-label">Stock Qty</label>
+                    <input type="number" id="item-stock" class="field-input" value="100" min="0">
+                </div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
+                <div>
+                    <label class="field-label">Price (ETB) *</label>
+                    <input type="number" id="item-price" class="field-input" placeholder="0.00" min="0" step="0.01">
+                </div>
+                <div>
+                    <label class="field-label">Original Price</label>
+                    <input type="number" id="item-orig-price" class="field-input" placeholder="(if discounted)" min="0" step="0.01">
+                </div>
+            </div>
+            <div style="margin-bottom:14px">
+                <label class="field-label">Prep Time (min)</label>
+                <input type="number" id="item-prep" class="field-input" value="30" min="0">
+            </div>
+            <div style="margin-bottom:20px">
+                <label class="field-label">Item Image</label>
+                <input type="file" id="item-image-file" accept="image/*" style="display:none" onchange="previewItemImage(this)">
+                <div style="display:flex;gap:10px;align-items:center">
+                    <button type="button" class="btn btn-secondary btn-small" onclick="document.getElementById('item-image-file').click()">📷 Choose Image</button>
+                    <input type="text" id="item-image-url" class="field-input" placeholder="or paste image URL">
+                </div>
+                <img id="item-image-preview" src="" alt="" style="margin-top:10px;max-height:100px;border-radius:8px;display:none">
+            </div>
+            <div id="item-modal-msg" style="font-size:13px;margin-bottom:10px;padding:8px 12px;border-radius:8px;display:none"></div>
+            <button class="btn btn-primary" style="width:100%;justify-content:center;padding:13px" onclick="submitItem()">💾 Save Item</button>
+        </div>
+    </div>
+
+    <!-- PROFILE PANEL -->
+    <div id="sg-profile-overlay" onclick="if(event.target===this)toggleSgProfile()" style="display:none;position:fixed;inset:0;z-index:900;background:rgba(10,6,0,.55);backdrop-filter:blur(3px)">
+        <div id="sg-profile-panel" style="position:absolute;top:0;right:0;bottom:0;width:min(380px,100vw);background:linear-gradient(180deg,#1c1204 0%,#100a02 100%);border-left:1px solid var(--border-lt);box-shadow:-20px 0 60px -20px rgba(0,0,0,.6);transform:translateX(100%);transition:transform .34s var(--ease);overflow-y:auto">
+            <div style="display:flex;justify-content:flex-end;padding:14px 14px 0">
+                <button onclick="toggleSgProfile()" aria-label="Close" style="width:32px;height:32px;border-radius:50%;border:1px solid var(--border-lt);background:rgba(255,255,255,.06);color:var(--text-dim);font-size:15px;cursor:pointer">✕</button>
+            </div>
+
+            <div style="display:flex;flex-direction:column;align-items:center;padding:6px 24px 22px;text-align:center">
+                <div style="position:relative;margin-bottom:14px">
+                    <div id="sgp-avatar" style="width:74px;height:74px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-size:26px;font-weight:800;color:#1a1206;background:linear-gradient(135deg,var(--gold-lt),var(--gold));border:3px solid var(--border-lt);box-shadow:var(--shadow-gold)">--</div>
+                    <div id="sgp-dot" style="position:absolute;bottom:2px;right:2px;width:16px;height:16px;border-radius:50%;background:var(--success);border:3px solid #140d02"></div>
+                </div>
+                <div id="sgp-name" style="font-family:'Syne',sans-serif;font-size:19px;font-weight:800;color:var(--text)">Loading…</div>
+                <div id="sgp-owner" style="font-size:12px;color:var(--text-dim);margin-top:3px"></div>
+                <div style="display:inline-flex;align-items:center;gap:6px;margin-top:10px;padding:5px 13px;border-radius:999px;background:rgba(212,175,55,.12);border:1px solid var(--border-lt)">
+                    <span id="sgp-type-badge" style="font-size:11px;font-weight:700;color:var(--gold-lt);letter-spacing:.02em">🏪 VERIFIED BUSINESS</span>
+                </div>
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;padding:0 20px 20px">
+                <div style="background:var(--surface-lt);border:1px solid var(--border);border-radius:14px;padding:12px 8px;text-align:center">
+                    <div id="sgp-stat-orders" style="font-size:17px;font-weight:800;color:var(--text)">0</div>
+                    <div style="font-size:9.5px;color:var(--text-faint);text-transform:uppercase;letter-spacing:.05em;margin-top:2px">Orders</div>
+                </div>
+                <div style="background:var(--surface-lt);border:1px solid var(--border);border-radius:14px;padding:12px 8px;text-align:center">
+                    <div id="sgp-stat-rating" style="font-size:17px;font-weight:800;color:var(--text)">—</div>
+                    <div style="font-size:9.5px;color:var(--text-faint);text-transform:uppercase;letter-spacing:.05em;margin-top:2px">Rating</div>
+                </div>
+                <div style="background:var(--surface-lt);border:1px solid var(--border);border-radius:14px;padding:12px 8px;text-align:center">
+                    <div id="sgp-stat-revenue" style="font-size:13px;font-weight:800;color:var(--success)">ETB 0</div>
+                    <div style="font-size:9.5px;color:var(--text-faint);text-transform:uppercase;letter-spacing:.05em;margin-top:2px">Revenue</div>
+                </div>
+            </div>
+
+            <div style="margin:0 20px 14px;background:var(--surface-lt);border:1px solid var(--border);border-radius:16px;overflow:hidden">
+                <div style="display:flex;align-items:center;gap:12px;padding:13px 16px;border-bottom:1px solid var(--border)">
+                    <div style="width:34px;height:34px;border-radius:10px;background:rgba(212,175,55,.12);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0">🏷️</div>
+                    <div style="min-width:0"><div style="font-size:12.5px;font-weight:700;color:var(--text)">Business Type</div><div id="sgp-type" style="font-size:11px;color:var(--text-dim);margin-top:1px">—</div></div>
+                </div>
+                <div style="display:flex;align-items:center;gap:12px;padding:13px 16px;border-bottom:1px solid var(--border)">
+                    <div style="width:34px;height:34px;border-radius:10px;background:rgba(78,205,196,.12);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0">📍</div>
+                    <div style="min-width:0"><div style="font-size:12.5px;font-weight:700;color:var(--text)">Zone</div><div id="sgp-zone" style="font-size:11px;color:var(--text-dim);margin-top:1px">—</div></div>
+                </div>
+                <div style="display:flex;align-items:center;gap:12px;padding:13px 16px">
+                    <div style="width:34px;height:34px;border-radius:10px;background:rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0">🆔</div>
+                    <div style="min-width:0"><div style="font-size:12.5px;font-weight:700;color:var(--text)">Business ID</div><div id="sgp-code" style="font-size:11px;color:var(--text-dim);margin-top:1px">—</div></div>
+                </div>
+            </div>
+
+            <div style="margin:0 20px 14px;background:var(--surface-lt);border:1px solid var(--border);border-radius:16px;overflow:hidden">
+                <div onclick="toggleSgProfile();switchPage('orders')" style="display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid var(--border);cursor:pointer">
+                    <div style="width:34px;height:34px;border-radius:10px;background:rgba(212,175,55,.12);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0">📦</div>
+                    <div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:700;color:var(--text)">Orders</div><div style="font-size:11px;color:var(--text-dim);margin-top:1px">Track and manage orders</div></div>
+                    <div style="color:var(--text-faint);font-size:15px">›</div>
+                </div>
+                <div onclick="toggleSgProfile();switchPage('services')" style="display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid var(--border);cursor:pointer">
+                    <div style="width:34px;height:34px;border-radius:10px;background:rgba(96,180,255,.12);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0">🍽️</div>
+                    <div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:700;color:var(--text)">My Services &amp; Items</div><div style="font-size:11px;color:var(--text-dim);margin-top:1px">Manage your catalog</div></div>
+                    <div style="color:var(--text-faint);font-size:15px">›</div>
+                </div>
+                <div onclick="toggleSgProfile();switchPage('settings')" style="display:flex;align-items:center;gap:12px;padding:14px 16px;cursor:pointer">
+                    <div style="width:34px;height:34px;border-radius:10px;background:rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0">⚙️</div>
+                    <div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:700;color:var(--text)">Settings &amp; Payment</div><div style="font-size:11px;color:var(--text-dim);margin-top:1px">Business info, bank account</div></div>
+                    <div style="color:var(--text-faint);font-size:15px">›</div>
+                </div>
+            </div>
+
+            <div style="padding:0 20px 10px">
+                <button onclick="if(confirm('This clears everything cached on THIS device - app data, cached files - then reloads. You will be logged out and need to sign in again. Continue?')) etelForceClearCacheAndReload()" style="width:100%;padding:13px;background:rgba(142,68,173,.12);border:1px solid rgba(142,68,173,.35);color:#a569bd;border-radius:12px;font-size:13.5px;font-weight:700;cursor:pointer;margin-bottom:10px">🧹 Fix app not updating</button>
+                <button onclick="logout()" style="width:100%;padding:13px;background:rgba(230,57,70,.12);border:1px solid rgba(230,57,70,.35);color:var(--danger);border-radius:12px;font-size:13.5px;font-weight:700;cursor:pointer">🚪 Logout</button>
+            </div>
+            <div style="text-align:center;font-size:10.5px;color:var(--text-faint);padding:6px 0 22px">ETEL Pro · Service Dashboard</div>
+        </div>
+    </div>
+
+    <script src="js/servicegiver.js?v=3.3"></script>
+    <script src="js/servicegiver-premium.js?v=1.9"></script>
+    <script src="js/servicegiver-3d-premium.js?v=1.1"></script><!-- 3D visual upgrade: glass depth, glowing sweep borders, rating ring -->
+    <script>
+    /* ── Real QR decode loop (was camera-preview-only before) ──
+       Draws each video frame to a canvas, runs jsQR against the pixel
+       data, and on a decoded result calls the real sg_scan_qr backend
+       action -- this used to just show a live camera feed and do
+       nothing else. */
+    var _qrType = 'pickup';
+    var _qrScanning = false;
+    function setQrType(type) {
+        _qrType = type;
+        document.getElementById('qr-type-pickup').style.opacity = type === 'pickup' ? 1 : .5;
+        document.getElementById('qr-type-delivery').style.opacity = type === 'delivery' ? 1 : .5;
+    }
+    setQrType('pickup');
+
+    function _qrExtractOrderId(text) {
+        try {
+            var obj = JSON.parse(text);
+            if (obj && obj.order_id) return parseInt(obj.order_id);
+        } catch (e) {}
+        var m = String(text).match(/order_id=(\d+)/) || String(text).match(/(\d{2,})/);
+        return m ? parseInt(m[1]) : null;
+    }
+
+    async function startQRScanner() {
+        var video = document.getElementById('qr-video');
+        var canvas = document.getElementById('qr-canvas');
+        var ctx = canvas.getContext('2d', { willReadFrequently: true });
+        var resultEl = document.getElementById('qr-result');
+        resultEl.className = 'qr-result'; resultEl.style.display = 'none';
+
+        try {
+            var stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+            video.srcObject = stream;
+            await video.play();
+        } catch (error) {
+            showNotification(cameraAccessMessage(error), 'error');
+            return;
+        }
+
+        _qrScanning = true;
+        requestAnimationFrame(_qrTick);
+
+        function _qrTick() {
+            if (!_qrScanning) return;
+            if (video.readyState === video.HAVE_ENOUGH_DATA) {
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                var img = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                var code = window.jsQR ? jsQR(img.data, img.width, img.height) : null;
+                if (code && code.data) {
+                    _qrScanning = false;
+                    (video.srcObject.getTracks() || []).forEach(function (t) { t.stop(); });
+                    _qrHandleDecoded(code.data);
+                    return;
+                }
+            }
+            requestAnimationFrame(_qrTick);
+        }
+    }
+
+    async function _qrHandleDecoded(text) {
+        var resultEl = document.getElementById('qr-result');
+        var orderId = _qrExtractOrderId(text);
+        if (!orderId) {
+            resultEl.className = 'qr-result err'; resultEl.textContent = '❌ Could not read an order ID from that QR code.';
+            return;
+        }
+        resultEl.className = 'qr-result'; resultEl.style.display = 'block'; resultEl.textContent = 'Confirming…';
+        var data = await apiCall('sg_scan_qr', { order_id: orderId, qr_type: _qrType });
+        if (data) {
+            resultEl.className = 'qr-result ok';
+            resultEl.textContent = '✅ Order #' + orderId + ' ' + _qrType + ' confirmed!';
+            if (typeof loadDashboardData === 'function') loadDashboardData();
+        } else {
+            resultEl.className = 'qr-result err';
+            resultEl.textContent = '❌ Could not confirm order #' + orderId + '.';
+        }
+    }
+    </script>
+<script src="js/apk-download-badge.js" data-role="service"></script>
+<script src="js/investor-nav-check.js"></script>
+</body>
+</html>

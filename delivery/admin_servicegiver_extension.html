@@ -1,0 +1,1025 @@
+<!-- 
+    ETEL Delivery Admin Extensions for Service Giver Management
+    Add these sections to admin.html
+    
+    Key Features:
+    1. Register new service givers
+    2. View all service givers with status
+    3. Assign pending orders to service givers
+    4. Verify/suspend service giver accounts
+    5. View service giver performance stats
+-->
+
+<style>
+    /* Service Giver Panel Styles */
+    .admin-panel {
+        background: white;
+        border-radius: 12px;
+        padding: 16px;
+        margin-bottom: 16px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    }
+
+    .admin-panel-title {
+        font-size: 16px;
+        font-weight: 700;
+        margin-bottom: 16px;
+        color: #1A1A1A;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .panel-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 12px;
+        margin-bottom: 16px;
+    }
+
+    .panel-form {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+    }
+
+    .form-row.full {
+        grid-template-columns: 1fr;
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .form-label {
+        font-size: 12px;
+        font-weight: 600;
+        color: #333;
+    }
+
+    .form-input,
+    .form-select {
+        padding: 10px;
+        border: 1px solid #E8E8E8;
+        border-radius: 6px;
+        font-size: 13px;
+        font-family: inherit;
+    }
+
+    .form-input:focus,
+    .form-select:focus {
+        outline: none;
+        border-color: #C9A961;
+        box-shadow: 0 0 0 3px rgba(201, 169, 97, 0.1);
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #C9A961 0%, #A68847 100%);
+        color: white;
+        padding: 10px 16px;
+        border: none;
+        border-radius: 6px;
+        font-weight: 600;
+        font-size: 13px;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(201, 169, 97, 0.3);
+    }
+
+    .btn-secondary {
+        background: white;
+        color: #333;
+        padding: 8px 12px;
+        border: 1px solid #E8E8E8;
+        border-radius: 6px;
+        font-weight: 600;
+        font-size: 12px;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+    .btn-secondary:hover {
+        background: #F5F5F5;
+    }
+
+    .btn-danger {
+        background: #E74C3C;
+        color: white;
+        padding: 8px 12px;
+        border: none;
+        border-radius: 6px;
+        font-weight: 600;
+        font-size: 12px;
+        cursor: pointer;
+    }
+
+    .btn-danger:hover {
+        background: #C0392B;
+    }
+
+    .btn-success {
+        background: #4CAF50;
+        color: white;
+        padding: 8px 12px;
+        border: none;
+        border-radius: 6px;
+        font-weight: 600;
+        font-size: 12px;
+        cursor: pointer;
+    }
+
+    .table-container {
+        overflow-x: auto;
+        border-radius: 8px;
+        border: 1px solid #E8E8E8;
+    }
+
+    .admin-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+    }
+
+    .admin-table thead {
+        background: #F5F5F5;
+        border-bottom: 2px solid #E8E8E8;
+    }
+
+    .admin-table th {
+        padding: 12px;
+        text-align: left;
+        font-weight: 600;
+        color: #333;
+    }
+
+    .admin-table td {
+        padding: 12px;
+        border-bottom: 1px solid #E8E8E8;
+    }
+
+    .admin-table tbody tr:hover {
+        background: #FAFAFA;
+    }
+
+    .status-badge {
+        display: inline-block;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-weight: 600;
+        font-size: 11px;
+        text-transform: uppercase;
+    }
+
+    .status-pending {
+        background: #FFF3CD;
+        color: #856404;
+    }
+
+    .status-verified {
+        background: #D4EDDA;
+        color: #155724;
+    }
+
+    .status-suspended {
+        background: #FFE5E5;
+        color: #E74C3C;
+    }
+
+    .status-inactive {
+        background: #F5F5F5;
+        color: #666;
+    }
+
+    .table-actions {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+    }
+
+    .modal-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 100;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .modal-overlay.active {
+        display: flex;
+    }
+
+    .modal-box {
+        background: white;
+        border-radius: 12px;
+        padding: 24px;
+        width: 90%;
+        max-width: 600px;
+        max-height: 90vh;
+        overflow-y: auto;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    }
+
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 16px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid #E8E8E8;
+    }
+
+    .modal-title {
+        font-size: 18px;
+        font-weight: 700;
+        color: #1A1A1A;
+    }
+
+    .modal-close {
+        background: none;
+        border: none;
+        font-size: 24px;
+        color: #999;
+        cursor: pointer;
+    }
+
+    .tab-buttons {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 16px;
+        border-bottom: 2px solid #E8E8E8;
+    }
+
+    .tab-btn {
+        padding: 10px 16px;
+        background: none;
+        border: none;
+        font-weight: 600;
+        font-size: 13px;
+        color: #999;
+        cursor: pointer;
+        border-bottom: 3px solid transparent;
+        transition: all 0.3s;
+    }
+
+    .tab-btn.active {
+        color: #C9A961;
+        border-bottom-color: #C9A961;
+    }
+
+    .alert {
+        padding: 12px;
+        border-radius: 6px;
+        margin-bottom: 16px;
+        font-size: 13px;
+    }
+
+    .alert-success {
+        background: #D4EDDA;
+        color: #155724;
+        border-left: 4px solid #4CAF50;
+    }
+
+    .alert-error {
+        background: #FFE5E5;
+        color: #E74C3C;
+        border-left: 4px solid #E74C3C;
+    }
+
+    .alert-info {
+        background: #D1ECF1;
+        color: #0C5460;
+        border-left: 4px solid #3498DB;
+    }
+
+    .stats-overview {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 12px;
+        margin-bottom: 16px;
+    }
+
+    .stat-item {
+        background: linear-gradient(135deg, #C9A961 0%, #A68847 100%);
+        color: white;
+        padding: 16px;
+        border-radius: 8px;
+        text-align: center;
+    }
+
+    .stat-label {
+        font-size: 12px;
+        opacity: 0.9;
+        margin-bottom: 8px;
+    }
+
+    .stat-value {
+        font-size: 24px;
+        font-weight: 700;
+    }
+</style>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- SERVICE GIVER MANAGEMENT SECTION -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+
+<div class="admin-panel">
+    <div class="admin-panel-title">
+        🏪 Service Giver Management
+    </div>
+
+    <!-- Tabs -->
+    <div class="tab-buttons">
+        <button class="tab-btn active" onclick="switchAdminTab('sg-list')">
+            All Service Givers
+        </button>
+        <button class="tab-btn" onclick="switchAdminTab('sg-register')">
+            Register New
+        </button>
+        <button class="tab-btn" onclick="switchAdminTab('sg-assign')">
+            Assign Orders
+        </button>
+    </div>
+
+    <!-- TAB 1: SERVICE GIVER LIST -->
+    <div id="tab-sg-list" class="admin-tab active">
+        <div class="stats-overview">
+            <div class="stat-item">
+                <div class="stat-label">Total Service Givers</div>
+                <div class="stat-value" id="sgTotalCount">0</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">Verified</div>
+                <div class="stat-value" id="sgVerifiedCount">0</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">Online Now</div>
+                <div class="stat-value" id="sgOnlineCount">0</div>
+            </div>
+        </div>
+
+        <button class="btn-primary" onclick="loadServiceGiverList()" style="margin-bottom: 12px;">
+            🔄 Refresh List
+        </button>
+
+        <div class="table-container">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>Code</th>
+                        <th>Business Name</th>
+                        <th>Phone</th>
+                        <th>Service Type</th>
+                        <th>Zone</th>
+                        <th>Status</th>
+                        <th>Rating</th>
+                        <th>Deliveries</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="sgTableBody">
+                    <tr><td colspan="9" style="text-align: center; color: #999;">Loading...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- TAB 2: REGISTER NEW SERVICE GIVER -->
+    <div id="tab-sg-register" class="admin-tab" style="display: none;">
+        <form id="registerServiceGiverForm" class="panel-form" onsubmit="handleRegisterServiceGiver(event)">
+            <div id="sgRegisterAlert"></div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Business Name *</label>
+                    <input 
+                        type="text" 
+                        class="form-input" 
+                        name="business_name" 
+                        placeholder="e.g., Abebe Cafe"
+                        required
+                    />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Phone Number *</label>
+                    <input 
+                        type="tel" 
+                        class="form-input" 
+                        name="phone" 
+                        placeholder="+251922000000"
+                        required
+                    />
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Service Type *</label>
+                    <select class="form-select" name="service_type" required>
+                        <option value="">-- Select --</option>
+                        <option value="restaurant">Restaurant</option>
+                        <option value="pharmacy">Pharmacy</option>
+                        <option value="grocery">Grocery</option>
+                        <option value="electronics">Electronics</option>
+                        <option value="retail">Retail</option>
+                        <option value="custom">Custom</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Zone *</label>
+                    <select class="form-select" name="zone" required id="sgZoneSelect">
+                        <option value="">-- Select --</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-row form-row.full">
+                <div class="form-group">
+                    <label class="form-label">Business Address *</label>
+                    <input 
+                        type="text" 
+                        class="form-input" 
+                        name="address" 
+                        placeholder="Street address"
+                        required
+                    />
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">ID Number *</label>
+                    <input 
+                        type="text" 
+                        class="form-input" 
+                        name="identification_number" 
+                        placeholder="National ID / Passport"
+                        required
+                    />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Password *</label>
+                    <input 
+                        type="password" 
+                        class="form-input" 
+                        name="password" 
+                        placeholder="Set initial password"
+                        required
+                    />
+                </div>
+            </div>
+
+            <button type="submit" class="btn-primary">✅ Register Service Giver</button>
+        </form>
+    </div>
+
+    <!-- TAB 3: ASSIGN ORDERS -->
+    <div id="tab-sg-assign" class="admin-tab" style="display: none;">
+        <form id="assignOrderForm" class="panel-form" onsubmit="handleAssignOrder(event)">
+            <div id="sgAssignAlert"></div>
+
+            <div class="form-row form-row.full">
+                <div class="form-group">
+                    <label class="form-label">Pending Orders *</label>
+                    <select class="form-select" name="order_id" required id="pendingOrderSelect">
+                        <option value="">Loading orders...</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-row form-row.full">
+                <div class="form-group">
+                    <label class="form-label">Service Giver *</label>
+                    <select class="form-select" name="service_giver_id" required id="serviceGiverSelect">
+                        <option value="">Loading service givers...</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Order preview -->
+            <div id="orderPreview" style="
+                background: #F5F5F5;
+                padding: 12px;
+                border-radius: 6px;
+                font-size: 12px;
+                margin-bottom: 12px;
+                display: none;
+            ">
+                <strong>Order Details:</strong>
+                <div id="orderPreviewContent"></div>
+            </div>
+
+            <button type="submit" class="btn-primary">📦 Assign Order</button>
+        </form>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- SERVICE GIVER DETAIL MODAL -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+
+<div class="modal-overlay" id="sgDetailModal">
+    <div class="modal-box">
+        <div class="modal-header">
+            <div class="modal-title" id="sgDetailTitle">Service Giver Details</div>
+            <button class="modal-close" onclick="closeSGModal()">×</button>
+        </div>
+
+        <div id="sgDetailContent"></div>
+
+        <div style="display: flex; gap: 8px; margin-top: 16px; padding-top: 12px; border-top: 1px solid #E8E8E8;">
+            <button class="btn-secondary" id="sgVerifyBtn" onclick="verifySG()" style="flex: 1; display: none;">
+                ✅ Verify
+            </button>
+            <button class="btn-danger" id="sgSuspendBtn" onclick="suspendSG()" style="flex: 1;">
+                🔒 Suspend
+            </button>
+            <button class="btn-secondary" onclick="closeSGModal()" style="flex: 1;">
+                Close
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ═════════════════════════════════════════════════════════════════
+    // ADMIN SERVICE GIVER MANAGEMENT JAVASCRIPT
+    // ═════════════════════════════════════════════════════════════════
+
+    let adminZones = [];
+    let currentSGId = null;
+
+    // ─── INITIALIZATION ───────────────────────────────────────────
+    function initServiceGiverAdmin() {
+        // Load zones for dropdowns
+        loadZonesForAdmin();
+        // Load initial service giver list
+        loadServiceGiverList();
+        // Load pending orders for assignment
+        loadPendingOrders();
+        // Load verified service givers for assignment
+        loadVerifiedServiceGivers();
+    }
+
+    async function loadZonesForAdmin() {
+        try {
+            const res = await fetch('api/boot.php?action=get_zones', {
+                headers: { 'Authorization': 'Bearer ' + adminToken }
+            });
+            const data = await res.json();
+            adminZones = data.data || [];
+
+            // Populate zone selects
+            const selects = document.querySelectorAll('#sgZoneSelect');
+            selects.forEach(select => {
+                select.innerHTML = '<option value="">-- Select Zone --</option>';
+                adminZones.forEach(zone => {
+                    const opt = document.createElement('option');
+                    opt.value = zone.name;
+                    opt.textContent = zone.name;
+                    select.appendChild(opt);
+                });
+            });
+        } catch (err) {
+            console.error('Load zones error:', err);
+        }
+    }
+
+    // ─── TAB SWITCHING ────────────────────────────────────────────
+    function switchAdminTab(tabName) {
+        // Hide all tabs
+        document.querySelectorAll('.admin-tab').forEach(t => t.style.display = 'none');
+        // Hide active buttons
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        // Show target tab
+        document.getElementById('tab-' + tabName).style.display = 'block';
+        // Mark button active
+        event.target.classList.add('active');
+
+        // Load data for tab
+        if (tabName === 'sg-list') loadServiceGiverList();
+        if (tabName === 'sg-assign') {
+            loadPendingOrders();
+            loadVerifiedServiceGivers();
+        }
+    }
+
+    // ─── LIST SERVICE GIVERS ────────────────────────────────────
+    async function loadServiceGiverList() {
+        try {
+            const res = await fetch('api/boot.php?action=get_service_givers&limit=100', {
+                headers: { 'Authorization': 'Bearer ' + adminToken }
+            });
+            const data = await res.json();
+
+            if (!data.success) {
+                showAlert('sgTableBody', data.error || 'Failed to load', 'error');
+                return;
+            }
+
+            const sgs = data.data || [];
+            const tbody = document.getElementById('sgTableBody');
+            tbody.innerHTML = '';
+
+            // Update stats
+            document.getElementById('sgTotalCount').textContent = sgs.length;
+            document.getElementById('sgVerifiedCount').textContent = 
+                sgs.filter(s => s.status === 'verified').length;
+            document.getElementById('sgOnlineCount').textContent = 
+                sgs.filter(s => s.is_online === 1).length;
+
+            if (!sgs.length) {
+                tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; color: #999;">No service givers registered</td></tr>';
+                return;
+            }
+
+            sgs.forEach(sg => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${sg.service_giver_id || '-'}</td>
+                    <td>${sg.first_name} ${sg.last_name}</td>
+                    <td>${sg.phone}</td>
+                    <td>${sg.service_type || '-'}</td>
+                    <td>${sg.vehicle_type || '-'}</td>
+                    <td><span class="status-badge status-${sg.status}">${sg.status}</span></td>
+                    <td>${(parseFloat(sg.average_rating) || 0).toFixed(2)} ⭐</td>
+                    <td>${sg.completed_deliveries || 0}</td>
+                    <td>
+                        <div class="table-actions">
+                            <button class="btn-secondary" onclick="viewSGDetail(${sg.id})">
+                                View
+                            </button>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        } catch (err) {
+            console.error('List SG error:', err);
+            showAlert('sgTableBody', 'Network error', 'error');
+        }
+    }
+
+    // ─── VIEW DETAILS MODAL ──────────────────────────────────────
+    async function viewSGDetail(sgId) {
+        try {
+            const res = await fetch(`api/boot.php?action=admin_get_service_giver&id=${sgId}`, {
+                headers: { 'Authorization': 'Bearer ' + adminToken }
+            });
+            const data = await res.json();
+
+            if (!data.success) {
+                alert('Failed to load details');
+                return;
+            }
+
+            const sg = data.data;
+            currentSGId = sgId;
+
+            const content = document.getElementById('sgDetailContent');
+            content.innerHTML = `
+                <div style="display: flex; flex-direction: column; gap: 12px;">
+                    <div>
+                        <strong>ID:</strong> ${sg.id}
+                    </div>
+                    <div>
+                        <strong>Code:</strong> ${sg.service_giver_id}
+                    </div>
+                    <div>
+                        <strong>Name:</strong> ${sg.first_name} ${sg.last_name}
+                    </div>
+                    <div>
+                        <strong>Phone:</strong> ${sg.phone}
+                    </div>
+                    <div>
+                        <strong>Email:</strong> ${sg.email}
+                    </div>
+                    <div>
+                        <strong>Service Type:</strong> ${sg.service_type}
+                    </div>
+                    <div>
+                        <strong>Vehicle:</strong> ${sg.vehicle_type} ${sg.vehicle_plate ? '- ' + sg.vehicle_plate : ''}
+                    </div>
+                    <div>
+                        <strong>Status:</strong> <span class="status-badge status-${sg.status}">${sg.status}</span>
+                    </div>
+                    <div>
+                        <strong>Rating:</strong> ${(parseFloat(sg.average_rating) || 0).toFixed(2)} ⭐
+                    </div>
+                    <div>
+                        <strong>Deliveries:</strong> ${sg.completed_deliveries}
+                    </div>
+                    <div>
+                        <strong>Earnings:</strong> ETB ${(parseFloat(sg.total_earnings) || 0).toFixed(2)}
+                    </div>
+                    <div>
+                        <strong>Registered:</strong> ${sg.created_at}
+                    </div>
+                </div>
+            `;
+
+            // Show/hide buttons based on status
+            const verifyBtn = document.getElementById('sgVerifyBtn');
+            const suspendBtn = document.getElementById('sgSuspendBtn');
+
+            if (sg.status === 'pending') {
+                verifyBtn.style.display = 'block';
+                suspendBtn.textContent = '❌ Reject';
+            } else if (sg.status === 'verified') {
+                verifyBtn.style.display = 'none';
+                suspendBtn.textContent = '🔒 Suspend';
+            } else if (sg.status === 'suspended') {
+                verifyBtn.textContent = '✅ Unsuspend';
+                verifyBtn.style.display = 'block';
+                suspendBtn.style.display = 'none';
+            }
+
+            document.getElementById('sgDetailTitle').textContent = sg.first_name + ' ' + sg.last_name;
+            document.getElementById('sgDetailModal').classList.add('active');
+        } catch (err) {
+            console.error('View SG error:', err);
+            alert('Error loading details');
+        }
+    }
+
+    function closeSGModal() {
+        document.getElementById('sgDetailModal').classList.remove('active');
+        currentSGId = null;
+    }
+
+    // ─── VERIFY SERVICE GIVER ──────────────────────────────────
+    async function verifySG() {
+        if (!confirm('Verify this service giver account?')) return;
+
+        try {
+            const res = await fetch(`api/boot.php?action=admin_update_service_giver_status&id=${currentSGId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + adminToken
+                },
+                body: JSON.stringify({ status: 'verified' })
+            });
+
+            const data = await res.json();
+            if (data.success) {
+                alert('Service giver verified!');
+                closeSGModal();
+                loadServiceGiverList();
+            } else {
+                alert('Error: ' + data.error);
+            }
+        } catch (err) {
+            console.error('Verify error:', err);
+            alert('Network error');
+        }
+    }
+
+    // ─── SUSPEND SERVICE GIVER ──────────────────────────────────
+    async function suspendSG() {
+        if (!confirm('Suspend this service giver?')) return;
+
+        try {
+            const res = await fetch(`api/boot.php?action=admin_update_service_giver_status&id=${currentSGId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + adminToken
+                },
+                body: JSON.stringify({ status: 'suspended' })
+            });
+
+            const data = await res.json();
+            if (data.success) {
+                alert('Service giver suspended!');
+                closeSGModal();
+                loadServiceGiverList();
+            } else {
+                alert('Error: ' + data.error);
+            }
+        } catch (err) {
+            console.error('Suspend error:', err);
+            alert('Network error');
+        }
+    }
+
+    // ─── REGISTER NEW SERVICE GIVER ────────────────────────────
+    async function handleRegisterServiceGiver(e) {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const phone = formData.get('phone').replace(/[^0-9+]/g, '');
+
+        const alertDiv = document.getElementById('sgRegisterAlert');
+        alertDiv.innerHTML = '';
+
+        try {
+            // Step 1: Create user
+            const userRes = await fetch('api/boot.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + adminToken
+                },
+                body: JSON.stringify({
+                    action: 'admin_create_user',
+                    phone: phone,
+                    password: formData.get('password'),
+                    role: 'service_giver',
+                    name: formData.get('business_name')
+                })
+            });
+
+            const userData = await userRes.json();
+            if (!userData.success) {
+                showAlert('sgRegisterAlert', userData.message || 'User creation failed', 'error');
+                return;
+            }
+
+            const userId = userData.data.user_id;
+
+            // Step 2: Create service giver profile
+            const sgRes = await fetch('api/boot.php?action=admin_create_service_giver', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + adminToken
+                },
+                body: JSON.stringify({
+                    first_name: formData.get('business_name'),
+                    last_name: '',
+                    email: phone + '@etel.local',
+                    phone: phone,
+                    service_type: formData.get('service_type'),
+                    vehicle_type: 'on_foot',
+                    identification_number: formData.get('identification_number'),
+                    address: formData.get('address'),
+                    city: 'Addis Ababa',
+                    status: 'pending'
+                })
+            });
+
+            const sgData = await sgRes.json();
+            if (!sgData.success) {
+                showAlert('sgRegisterAlert', sgData.error || 'Profile creation failed', 'error');
+                return;
+            }
+
+            showAlert('sgRegisterAlert', 'Service giver registered successfully! Status: Pending Verification', 'success');
+            e.target.reset();
+            loadServiceGiverList();
+
+            // Auto-switch to list tab
+            setTimeout(() => {
+                document.getElementById('tab-sg-list').style.display = 'block';
+                document.getElementById('tab-sg-register').style.display = 'none';
+                document.querySelectorAll('.tab-btn')[0].classList.add('active');
+                document.querySelectorAll('.tab-btn')[1].classList.remove('active');
+            }, 2000);
+        } catch (err) {
+            console.error('Register error:', err);
+            showAlert('sgRegisterAlert', 'Network error: ' + err.message, 'error');
+        }
+    }
+
+    // ─── ASSIGN ORDERS ────────────────────────────────────────
+    async function loadPendingOrders() {
+        try {
+            const res = await fetch('api/boot.php?action=get_orders&status=pending', {
+                headers: { 'Authorization': 'Bearer ' + adminToken }
+            });
+            const data = await res.json();
+
+            if (!data.success) return;
+
+            const orders = data.data || [];
+            const select = document.getElementById('pendingOrderSelect');
+            select.innerHTML = '<option value="">-- Select Order --</option>';
+
+            orders.forEach(order => {
+                const opt = document.createElement('option');
+                opt.value = order.id;
+                opt.dataset.order = JSON.stringify(order);
+                opt.textContent = `${order.order_code} - ${order.from_zone} → ${order.to_zone}`;
+                select.appendChild(opt);
+            });
+
+            // Add change listener for preview
+            select.addEventListener('change', showOrderPreview);
+        } catch (err) {
+            console.error('Load pending orders error:', err);
+        }
+    }
+
+    async function loadVerifiedServiceGivers() {
+        try {
+            const res = await fetch('api/boot.php?action=get_service_givers&status=verified', {
+                headers: { 'Authorization': 'Bearer ' + adminToken }
+            });
+            const data = await res.json();
+
+            if (!data.success) return;
+
+            const sgs = data.data || [];
+            const select = document.getElementById('serviceGiverSelect');
+            select.innerHTML = '<option value="">-- Select Service Giver --</option>';
+
+            sgs.forEach(sg => {
+                const opt = document.createElement('option');
+                opt.value = sg.id;
+                opt.textContent = `${sg.first_name} ${sg.last_name} (${sg.phone})`;
+                select.appendChild(opt);
+            });
+        } catch (err) {
+            console.error('Load SGs error:', err);
+        }
+    }
+
+    function showOrderPreview() {
+        const select = document.getElementById('pendingOrderSelect');
+        const preview = document.getElementById('orderPreview');
+        const content = document.getElementById('orderPreviewContent');
+
+        if (!select.value) {
+            preview.style.display = 'none';
+            return;
+        }
+
+        const order = JSON.parse(select.options[select.selectedIndex].dataset.order);
+        content.innerHTML = `
+            <div>Code: ${order.order_code}</div>
+            <div>From: ${order.from_zone} → To: ${order.to_zone}</div>
+            <div>Type: ${order.package_type} | Fare: ETB ${order.fare_total}</div>
+            <div>Recipient: ${order.recipient_name} · ${order.recipient_phone}</div>
+        `;
+        preview.style.display = 'block';
+    }
+
+    async function handleAssignOrder(e) {
+        e.preventDefault();
+        const orderId = document.getElementById('pendingOrderSelect').value;
+        const sgId = document.getElementById('serviceGiverSelect').value;
+
+        if (!orderId || !sgId) {
+            showAlert('sgAssignAlert', 'Please select order and service giver', 'error');
+            return;
+        }
+
+        try {
+            const res = await fetch('api/boot.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + adminToken
+                },
+                body: JSON.stringify({
+                    action: 'admin_assign_service_giver',
+                    order_id: parseInt(orderId),
+                    service_giver_id: parseInt(sgId)
+                })
+            });
+
+            const data = await res.json();
+            if (!data.success) {
+                showAlert('sgAssignAlert', data.message || 'Assignment failed', 'error');
+                return;
+            }
+
+            showAlert('sgAssignAlert', 'Order assigned successfully!', 'success');
+            e.target.reset();
+            document.getElementById('orderPreview').style.display = 'none';
+            loadPendingOrders();
+        } catch (err) {
+            console.error('Assign error:', err);
+            showAlert('sgAssignAlert', 'Network error', 'error');
+        }
+    }
+
+    // ─── UTILITIES ────────────────────────────────────────────
+    function showAlert(elementId, message, type) {
+        const el = document.getElementById(elementId);
+        el.innerHTML = `<div class="alert alert-${type}">${message}</div>`;
+    }
+
+    // Initialize on page load
+    window.addEventListener('load', () => {
+        if (document.getElementById('tab-sg-list')) {
+            initServiceGiverAdmin();
+        }
+    });
+</script>

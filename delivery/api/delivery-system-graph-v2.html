@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ETEL — Full System Graph</title>
+<style>
+  :root{
+    --bg:#0a0d10; --panel:#11161b; --panel2:#161d24; --border:#232c34;
+    --text:#e7edf2; --muted:#7d8b96;
+    --mono:'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    --sans:'IBM Plex Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    --page:#7ea2ff; --js:#5fe0c0; --ctrl:#ffcf5f; --inline:#c98bff; --lib:#ffb454; --risk:#ff6b6b; --ok:#5fe0c0;
+    --edge:#2c3640; --edge-active:#5fe0c0;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;background:var(--bg);color:var(--text);font-family:var(--sans);}
+  body{padding:26px 18px 60px;}
+  .wrap{max-width:1320px;margin:0 auto;}
+  .eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--js);margin:0 0 8px;}
+  h1{font-family:var(--mono);font-size:clamp(19px,2.8vw,28px);margin:0 0 6px;font-weight:600;letter-spacing:-.01em;}
+  .sub{color:var(--muted);font-size:13.5px;max-width:820px;line-height:1.6;margin:0 0 6px;}
+  .warn{font-size:12.5px;line-height:1.6;color:var(--risk);background:#1c1315;border:1px solid #3a2226;border-radius:8px;padding:9px 12px;max-width:820px;margin:12px 0 0;}
+  .okbanner{font-size:12.5px;line-height:1.6;color:var(--ok);background:#0f1c19;border:1px solid #1f3a34;border-radius:8px;padding:9px 12px;max-width:820px;margin:12px 0 0;}
+
+  .stats{display:flex;gap:10px;flex-wrap:wrap;margin:18px 0 22px;}
+  .stat{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:9px 13px;min-width:104px;}
+  .stat b{display:block;font-family:var(--mono);font-size:18px;color:var(--js);}
+  .stat span{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;}
+
+  .layout{display:grid;grid-template-columns:1fr;gap:16px;}
+  @media(min-width:1000px){.layout{grid-template-columns:minmax(0,1.6fr) minmax(300px,1fr);align-items:start;}}
+
+  .graph-card{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:14px;}
+  .graph-card h2{font-family:var(--mono);font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:0 0 8px;font-weight:600;}
+  .graph-wrap{position:relative;width:100%;aspect-ratio:1200/700;}
+  svg{width:100%;height:100%;display:block;}
+
+  .node-rect{fill:var(--panel2);stroke:var(--border);stroke-width:1.4;transition:stroke .15s,fill .15s;cursor:pointer;}
+  .node-rect:hover{stroke:var(--js);}
+  .node.selected .node-rect{stroke:var(--js);stroke-width:2.4;fill:#182420;}
+  .node-title{font-family:var(--mono);font-weight:600;pointer-events:none;}
+  .node-sub{font-family:var(--mono);pointer-events:none;fill:var(--muted);}
+  .node.page .node-title{fill:var(--page);}
+  .node.js .node-title{fill:var(--js);}
+  .node.ctrl .node-title{fill:var(--ctrl);}
+  .node.inline .node-title{fill:var(--inline);}
+  .node.lib .node-title{fill:var(--lib);}
+  .node.lib.risk .node-rect{stroke:var(--risk);stroke-dasharray:3 2;}
+  .node.new .node-rect{stroke:var(--js);stroke-width:1.6;}
+  .risk-badge{fill:var(--risk);font-family:var(--mono);font-size:12px;font-weight:700;pointer-events:none;}
+  .new-badge{fill:var(--js);font-family:var(--mono);font-size:9px;font-weight:700;pointer-events:none;}
+
+  .edge{fill:none;stroke:var(--edge);transition:stroke .15s,opacity .15s,stroke-width .15s;}
+  .edge.dim{opacity:.06;}
+  .edge.active{stroke:var(--edge-active);opacity:1;}
+  .rowlabel{font-family:var(--mono);font-size:10.5px;fill:var(--muted);letter-spacing:.08em;text-transform:uppercase;}
+
+  .legend{display:flex;flex-wrap:wrap;gap:12px;margin-top:12px;font-family:var(--mono);font-size:10.5px;color:var(--muted);}
+  .legend span{display:inline-flex;align-items:center;gap:6px;}
+  .dot{width:9px;height:9px;border-radius:2px;display:inline-block;}
+
+  .panel{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:18px;min-height:220px;}
+  .panel-empty{color:var(--muted);font-size:13px;line-height:1.6;}
+  .panel h3{font-family:var(--mono);font-size:15px;margin:0 0 4px;word-break:break-word;}
+  .panel .kind{font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:12px;display:block;}
+  .kv{display:flex;justify-content:space-between;gap:10px;font-size:12px;padding:6px 0;border-bottom:1px solid var(--border);}
+  .kv span:first-child{color:var(--muted);flex-shrink:0;}
+  .kv span:last-child{font-family:var(--mono);text-align:right;}
+  .block{margin-top:13px;}
+  .block h4{font-size:10.5px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin:0 0 7px;}
+  .pill-list{display:flex;flex-wrap:wrap;gap:6px;}
+  .pill{background:var(--panel2);border:1px solid var(--border);border-radius:5px;padding:3px 8px;font-family:var(--mono);font-size:10.5px;}
+  .note{font-size:12px;line-height:1.6;color:var(--text);background:var(--panel2);border-left:3px solid var(--risk);padding:9px 11px;border-radius:6px;margin-top:12px;}
+  .note.ok{border-left-color:var(--js);}
+
+  footer{margin-top:24px;}
+  .foot-card{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:14px 16px;}
+  .foot-card h4{font-family:var(--mono);font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:0 0 8px;}
+  .foot-card ul{margin:0;padding-left:18px;font-size:12.5px;line-height:1.7;color:var(--text);}
+  .foot-card code{font-family:var(--mono);color:var(--muted);}
+  .foot-grid{display:grid;grid-template-columns:1fr;gap:12px;margin-top:12px;}
+  @media(min-width:800px){.foot-grid{grid-template-columns:1fr 1fr;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <p class="eyebrow">delivery / ride — full system reference · v2, major rewrite</p>
+  <h1>Page → JS bundle → controller → lib</h1>
+  <p class="sub">Updated from a fresh full upload of the codebase: 7 controllers → 14, 223 actions → 311, 4 shared <code style="font-family:var(--mono)">lib/</code> files → 8, and five entirely new subsystems (Equb, Investor Portal, Platform Economics, Planning, System Reset) that didn't exist in the original pass. Click any node.</p>
+  <p class="okbanner">✓ Two real bugs found and fixed this session while tracing this graph: customer.html had no PWA manifest link at all, and login.html's role-detection had no 'customer' branch - both are why the Customer app was showing Service Giver's icon on "Add to Home Screen". See the ⚠ System Reset node and the footer for more.</p>
+</header>
+
+<div class="stats" id="stats"></div>
+
+<div class="layout">
+  <div class="graph-card">
+    <h2>13 pages → JS → 14 controllers + inline → 8 shared files</h2>
+    <div class="graph-wrap"><svg viewBox="0 0 1200 920" id="svg"></svg></div>
+    <div class="legend">
+      <span><i class="dot" style="background:var(--page)"></i>HTML page</span>
+      <span><i class="dot" style="background:var(--js)"></i>JS bundle/file</span>
+      <span><i class="dot" style="background:var(--ctrl)"></i>controller</span>
+      <span><i class="dot" style="background:var(--inline)"></i>boot.php inline (~13 actions)</span>
+      <span><i class="dot" style="background:var(--lib)"></i>shared lib</span>
+      <span><i class="dot" style="background:var(--risk)"></i>⚠ multi-caller risk / danger zone</span>
+      <span>edge width ≈ number of actions called</span>
+    </div>
+  </div>
+
+  <div class="panel" id="panel">
+    <div class="panel-empty">Click a page, JS file, controller, or lib node to see its assets, the actual API actions it calls (or is called by), and dependency notes.</div>
+  </div>
+</div>
+
+<footer>
+  <div class="foot-grid">
+    <div class="foot-card">
+      <h4>⚠ Two real bugs found and fixed this session</h4>
+      <ul>
+        <li><code>customer.html</code> had NO PWA manifest link at all - "Add to Home Screen" fell back to whatever the browser had cached from elsewhere in the origin, which is why it showed Service Giver's icon. Fixed with the same static tag pattern driver/ride already used correctly.</li>
+        <li><code>login.html</code>'s role-detection had explicit branches for driver/ride/courier/service/admin but none for customer - added <code>isCustomer</code> for consistency (customer.html's own fix above is what mattered in practice).</li>
+        <li>If Driver still shows the wrong icon on a specific phone: that's a stale, already-installed home-screen shortcut, not a code bug - the manifest link itself is already correct.</li>
+      </ul>
+    </div>
+    <div class="foot-card">
+      <h4>Not traced deeper this pass</h4>
+      <ul>
+        <li>Line counts for RideController, AdminController, OrderController, ServiceGiverController, AuthController, PushController (only action counts were re-measured)</li>
+        <li><code>equb/index.html</code> and <code>investor/index.html</code>'s own JS/CSS asset loading (script tags didn't match the simple grep pattern used elsewhere)</li>
+        <li><code>equb_cron.php</code> - mentioned in EqubController's own comment as sharing its processing logic, not yet located/read</li>
+        <li>Dead-file hunting wasn't re-run this pass - worth doing given how much has grown since the original trace</li>
+      </ul>
+    </div>
+  </div>
+</footer>
+
+</div>
+
+<script>
+
+const NODES = [
+  // Row 1 - Pages (13 real pages, some grouped)
+  {id:'p_index', kind:'page', x:10, y:20, w:140, h:56, title:'index.html', sub:'core.js',
+    detail:{heading:'index.html', meta:'page', kvs:[['JS','core.js, gsap/ScrollTrigger (CDN), external EtelAi widget, apk-download-badge.js']]}},
+  {id:'p_login', kind:'page', x:160, y:20, w:140, h:56, title:'login.html', sub:'core.js, login.js',
+    detail:{heading:'login.html', meta:'page - role-detection sets manifest/icon before anything else runs', kvs:[
+      ['JS','core.js, login.js, external EtelAi widget'],
+      ['Fixed this session','Had explicit branches for driver/ride/courier/service/admin but none for customer - added isCustomer branch for consistency, though customer.html\'s own static tag (see below) is what actually matters in practice.']]}},
+  {id:'p_admin', kind:'page risk', x:310, y:20, w:150, h:56, title:'admin.html ⚠', sub:'30 JS files (was ~15)',
+    detail:{heading:'admin.html', meta:'largest frontend surface by far - real, measured growth', kvs:[
+      ['JS count','30 separate files loaded - core.js + chart.js (loaded twice, jsdelivr AND cdnjs - still worth trimming) + admin-api/charts/growth-charts/ui/printer + admin-pricing/roles/equity/platform-economics/equb/payroll/business-plan/pdf-report/finance-hub/danger-zone/etelpay/support/admin.js/confirmations-premium/couriers-premium/premium/updater-ext/rides/sos/servicegiver-ext/audit/migrations/announcements/launch-checklist/releases + apk-download-badge.js'],
+      ['Verdict','This is a full back-office ERP now, not a delivery-ops dashboard - worth its own multi-session scope split (see GRAPH_REPORT.md §7), not "the admin panel" as one unit.']],
+      note:{ok:true,text:'CORRECTED this pass: the Chart.js "double load" flagged in the original report is actually a deliberate CDN-fallback pattern (jsdelivr first, cdnjs only if that failed) - not wasteful, not a bug. Checked the real code this time rather than carrying the old claim forward unverified.'}}},
+  {id:'p_customer', kind:'page risk', x:470, y:20, w:140, h:56, title:'customer.html ⚠', sub:'FIXED: manifest link',
+    detail:{heading:'customer.html', meta:'JS: customer-bundle.js, customer-bundle-extra.js, customer.js, investor-nav-check.js, external EtelAi widget', kvs:[
+      ['BUG FIXED THIS SESSION','Had zero <link rel="manifest"> tag at all. "Add to Home Screen" fell back to whatever the browser had cached from elsewhere in the delivery/ origin - which is why it showed Service Giver\'s icon instead of its own.'],
+      ['Fix','Added the same static manifest.json link driver/index.html and ride/index.html already used correctly - manifest.json is the genuine "ETEL Delivery" customer-facing brand, not a generic fallback.']],
+      note:{ok:true,text:'Fixed and verified this session - customer.html now has its own correct manifest link.'}}},
+  {id:'p_driver', kind:'page', x:620, y:20, w:140, h:56, title:'driver/index.html', sub:'driver-bundle.js',
+    detail:{heading:'driver/index.html', meta:'JS: driver-bundle.js, driver-bundle-extra.js, driver-rate-rider.js, driver-announcements-v2.js, sos-button.js', kvs:[
+      ['Manifest','Already correctly points to manifest-driver.json in the current code'],
+      ['If still showing wrong icon on a phone','Very likely a stale, already-installed home-screen shortcut predating this fix - Android does not retroactively refresh an installed PWA icon when the manifest changes server-side. Remove + re-add the shortcut, not a code fix.']]}},
+  {id:'p_ride', kind:'page', x:770, y:20, w:140, h:56, title:'ride/index.html', sub:'ride-bundle.js',
+    detail:{heading:'ride/index.html', meta:'JS: ride-bundle.js, ride-bundle-extra.js, ride-extra-features.js, ride-fare-self-heal.js, ride-hex-search-overlay.js, sos-button.js'}},
+  {id:'p_svc', kind:'page', x:920, y:20, w:135, h:56, title:'courier + servicegiver', sub:'2 pages, own bundles',
+    detail:{heading:'courier/*.html + servicegiver.html', meta:'grouped for space - both are real, separate pages', kvs:[
+      ['courier','courier-bundle.js'],
+      ['servicegiver','jsQR.js, servicegiver.js, servicegiver-premium.js, servicegiver-3d-premium.js, investor-nav-check.js']]}},
+  {id:'p_new', kind:'page new', x:1065, y:20, w:125, h:56, title:'equb + investor', sub:'2 NEW pages',
+    detail:{heading:'equb/index.html + investor/index.html', meta:'both new since the original pass - not deeply traced (script tags didn\'t match the simple grep pattern used for the other 13 pages, likely a different quoting style or inline scripts)', kvs:[
+      ['Backs','EqubController.php + InvestorPortalController.php below']]}},
+
+  // Row 2 - Key JS files/bundles
+  {id:'js_driver', kind:'js', x:10, y:180, w:200, h:66, title:'driver-bundle.js + driver.js', sub:'31 actions each - biggest JS surface',
+    detail:{heading:'driver-bundle.js / driver.js', meta:'31 real action references each (counted via literal string match against all 311 known action names, not assumed)', kvs:[['Calls into','RideController (primarily), PushController']]}},
+  {id:'js_admin_core', kind:'js', x:230, y:180, w:190, h:66, title:'admin.js + core admin suite', sub:'23 actions (admin.js alone)',
+    detail:{heading:'admin.js + admin-rides/pricing/roles/sos/etc.', meta:'admin.js: 23 actions · admin-pricing.js: 18 · admin-rides.js: 11', kvs:[['Calls into','AdminController, AuthController, RideController']]}},
+  {id:'js_finance', kind:'js new', x:440, y:180, w:210, h:66, title:'admin-equity/equb/platform-econ/danger-zone.js', sub:'4 NEW admin files',
+    detail:{heading:'The new finance/ownership admin JS cluster', meta:'admin-equity.js: 13 actions · admin-equb.js: 12 · admin-platform-economics.js: 6 · admin-business-plan.js: 9 · admin-danger-zone.js: 2', kvs:[
+      ['Calls into','EquityController, EqubController, PlatformEconomicsController, PlanningController, SystemResetController']],
+      note:{ok:false,text:'admin-danger-zone.js only references 2 actions - consistent with SystemResetController itself only exposing 3. Small surface, large blast radius if either is ever touched carelessly.'}}},
+  {id:'js_customer', kind:'js risk', x:670, y:180, w:170, h:66, title:'customer.js + bundle', sub:'23 actions (customer.js)',
+    detail:{heading:'customer.js / customer-bundle.js', meta:'customer.js: 23 actions · customer-bundle.js: 4', kvs:[['Calls into','OrderController (primarily)'],
+      ['Also loads','investor-nav-check.js - a small script checking investor-related nav state, present even for regular customers. Not traced deeper this pass; slightly unusual place for investor-relations code to live.']]}},
+  {id:'js_ride', kind:'js', x:860, y:180, w:150, h:66, title:'ride-bundle.js + ride.js', sub:'10 / 6 actions',
+    detail:{heading:'ride-bundle.js / ride.js', meta:'ride-bundle.js: 10 actions · ride.js: 6', kvs:[['Calls into','RideController']]}},
+  {id:'js_svc', kind:'js', x:1030, y:180, w:160, h:66, title:'courier + servicegiver bundles', sub:'12 / 15 actions',
+    detail:{heading:'courier-bundle.js + servicegiver-bundle.js', meta:'courier-bundle.js: 12 actions · servicegiver-bundle.js: 15', kvs:[['Calls into','OrderController, ServiceGiverController']]}},
+
+  // Row 3a - "Original" controllers
+  {id:'RideController', kind:'ctrl risk', x:10, y:360, w:170, h:64, title:'RideController', sub:'67 actions (was 55)',
+    detail:{heading:'controllers/RideController.php', meta:'67 actions - grew from 55 in the original pass, still the single biggest backend surface', kvs:[['Requires lib/','schema_helpers.php, ride_fare.php']]}},
+  {id:'AdminController', kind:'ctrl risk', x:200, y:360, w:170, h:64, title:'AdminController', sub:'84 actions (was 64)',
+    detail:{heading:'controllers/AdminController.php', meta:'84 actions - grew from 64, matches admin.html\'s 30-JS-file growth', kvs:[['Requires lib/','app_releases.php, schema_helpers.php, ride_fare.php']]}},
+  {id:'OrderController', kind:'ctrl', x:390, y:360, w:150, h:64, title:'OrderController', sub:'36 actions (was 31)',
+    detail:{heading:'controllers/OrderController.php', meta:'36 actions - grew from 31', kvs:[['Requires lib/','delivery_order_core.php']]}},
+  {id:'ServiceGiverController', kind:'ctrl', x:560, y:360, w:150, h:64, title:'ServiceGiverController', sub:'19 actions',
+    detail:{heading:'controllers/ServiceGiverController.php', meta:'19 actions', kvs:[['Requires lib/','none found this pass']]}},
+  {id:'AuthController', kind:'ctrl', x:730, y:360, w:130, h:64, title:'AuthController', sub:'19 actions',
+    detail:{heading:'controllers/AuthController.php', meta:'19 actions', kvs:[['Requires lib/','schema_helpers.php - new caller since the original pass']]}},
+  {id:'AgentController', kind:'ctrl', x:880, y:360, w:130, h:64, title:'AgentController', sub:'9 actions',
+    detail:{heading:'controllers/AgentController.php', meta:'9 actions, API-only, no frontend page', kvs:[['Requires lib/','ride_fare.php, delivery_pricing.php, delivery_order_core.php']]}},
+  {id:'PushController', kind:'ctrl', x:1030, y:360, w:160, h:64, title:'PushController + inline', sub:'4 actions + ~13 inline',
+    detail:{heading:'controllers/PushController.php + boot.php inline', meta:'PushController: 4 actions. boot.php inline: ~13 actions handled directly in the switch, never touch a controller file (get_zones, get_config, ping, sse streaming, etc.)'}},
+
+  // Row 3b - Five NEW subsystems
+  {id:'EquityController', kind:'ctrl new', x:10, y:460, w:150, h:64, title:'EquityController', sub:'18 actions',
+    detail:{heading:'controllers/EquityController.php', meta:'504 lines, 18 actions', kvs:[['Requires lib/','none found this pass']]}},
+  {id:'EqubController', kind:'ctrl new risk', x:180, y:460, w:180, h:64, title:'EqubController ⚠', sub:'19 actions - real money, automated',
+    detail:{heading:'controllers/EqubController.php', meta:'500 lines, 19 actions - digitizes the traditional Ethiopian rotating-savings model (Equb)', kvs:[
+      ['Access model','Admin-gated by design - a person must be explicitly marked "permitted" before creating/joining any group, mirroring the investor-access model below'],
+      ['Requires lib/','wallet_ops.php, equb_processing.php'],
+      ['Real money, automated','Per-round debits/payouts run automatically via wallet_ops.php, shared with a separate equb_cron.php scheduled job - not just bookkeeping.']],
+      note:{ok:false,text:'Automatic + financial + cron-triggered is exactly the bug shape that\'s expensive when wrong. Worth extra scrutiny/testing versus a typical CRUD controller.'}}},
+  {id:'InvestorPortalController', kind:'ctrl new risk', x:390, y:460, w:190, h:64, title:'InvestorPortalController ⚠', sub:'Different auth model entirely',
+    detail:{heading:'controllers/InvestorPortalController.php', meta:'104 lines, 2 case labels found (likely more internal branching within those 2 - not traced deeper)', kvs:[
+      ['NOT gated by require_admin()','Investors aren\'t staff and have no admin login - every action instead requires the investor\'s own long random access_token'],
+      ['Access control','can_view_captable / can_view_distributions / can_view_growth_planner flags, set by the founder in the admin Equity tab. This controller only ever READS those flags, never grants access itself - clean separation worth preserving.']]}},
+  {id:'SystemResetController', kind:'ctrl new risk', x:610, y:460, w:200, h:64, title:'⚠ SystemResetController — DANGER ZONE', sub:'3 actions, most destructive in the system',
+    detail:{heading:'controllers/SystemResetController.php', meta:'226 lines, 3 actions. Its own header comment calls this "the single most destructive action in the entire admin system" - can permanently delete real orders, rides, ratings, and user accounts.', kvs:[
+      ['Real positive security finding','Gated by a system.reset capability that is explicitly EXCLUDED from a generic Owner grant by default - must be added separately in the Roles panel. A deliberate extra step, not an oversight.']],
+      note:{ok:true,text:'Good, deliberate design - the blast radius requires an explicit extra step, same philosophy as this project\'s other hardening work (rate limiting, session hashing, capability gating).'}}},
+  {id:'PlatformEconomicsController', kind:'ctrl new', x:830, y:460, w:170, h:64, title:'PlatformEconomics + Planning', sub:'3 + 7 actions',
+    detail:{heading:'controllers/PlatformEconomicsController.php + PlanningController.php', meta:'116 + 169 lines, 3 + 7 actions - back the existing Platform Economics/Business Plan/Payroll admin tools from earlier sessions. Not deeply re-traced this pass.'}},
+  {id:'FuelControllers', kind:'ctrl new', x:1020, y:460, w:170, h:64, title:'Driver/Courier Fuel', sub:'4 + 4 actions, likely parallel',
+    detail:{heading:'controllers/DriverFuelController.php + CourierFuelController.php', meta:'113 + 91 lines, 4 actions each - near-identical structure suggests one was built by copying the other.', kvs:[]
+      ,note:{ok:false,text:'Parallel-file drift risk - same pattern already seen elsewhere in this project (e.g. EtelID\'s driver/up login-interceptor finding). Worth diffing the two whenever either is modified.'}}},
+
+  // Row 4 - Shared lib/
+  {id:'hexgrid', kind:'lib risk', x:10, y:600, w:150, h:66, title:'hexgrid.php ⚠', sub:'now loaded UNCONDITIONALLY',
+    detail:{heading:'lib/hexgrid.php', meta:'Required directly in boot.php - now loaded on EVERY request regardless of action, not lazily like every other lib file here.', kvs:[],
+      note:{ok:true,text:'Small/cheap math, so a reasonable deliberate exception - but it is the one file that no longer follows this project\'s "never pre-load" discipline. Worth remembering if that discipline is ever enforced via linter/review.'}}},
+  {id:'schema_helpers', kind:'lib risk', x:180, y:600, w:160, h:66, title:'schema_helpers.php', sub:'3 callers (+1 new)',
+    detail:{heading:'lib/schema_helpers.php', meta:'Required by AdminController, RideController, and now AuthController (new caller since the original pass)'}},
+  {id:'ride_fare', kind:'lib risk', x:360, y:600, w:150, h:66, title:'ride_fare.php', sub:'3 callers + boot.php',
+    detail:{heading:'lib/ride_fare.php', meta:'Required by AdminController, AgentController, RideController, and boot.php directly - unchanged wide-blast-radius file'}},
+  {id:'delivery_order_core', kind:'lib', x:530, y:600, w:170, h:66, title:'delivery_order_core.php', sub:'2 callers + boot.php',
+    detail:{heading:'lib/delivery_order_core.php', meta:'Required by AgentController, OrderController, boot.php - unchanged core delivery-flow file'}},
+  {id:'delivery_pricing', kind:'lib', x:720, y:600, w:150, h:66, title:'delivery_pricing.php', sub:'1 caller',
+    detail:{heading:'lib/delivery_pricing.php', meta:'Required by AgentController only - unchanged'}},
+  {id:'app_releases', kind:'lib', x:890, y:600, w:150, h:66, title:'app_releases.php', sub:'1 caller + boot.php',
+    detail:{heading:'lib/app_releases.php', meta:'Required by AdminController + boot.php - powers the canary/staged-rollout release system'}},
+  {id:'equb_lib', kind:'lib new', x:1060, y:600, w:130, h:66, title:'equb_processing.php + wallet_ops.php', sub:'2 NEW lib files',
+    detail:{heading:'lib/equb_processing.php + lib/wallet_ops.php', meta:'Both new, both required only by EqubController - the actual per-round debit/payout logic and shared wallet debit/credit primitives, shared with the separate equb_cron.php scheduled job (not located/read this pass).'}},
+];
+
+const EDGES = [];
+
+const svg = document.getElementById('svg');
+const NS = 'http://www.w3.org/2000/svg';
+function elS(tag, attrs){ const e=document.createElementNS(NS,tag); for(const k in attrs) e.setAttribute(k,attrs[k]); return e; }
+function byId(id){ return NODES.find(n=>n.id===id); }
+function cx(n){ return n.x+n.w/2; }
+
+const edgeEls = {};
+function addEdge(aId,bId,weight,riskFlag){
+  const a=byId(aId), b=byId(bId);
+  const x1=cx(a), y1=a.y+a.h, x2=cx(b), y2=b.y;
+  const midY=(y1+y2)/2;
+  const d = `M ${x1} ${y1} C ${x1} ${midY}, ${x2} ${midY}, ${x2} ${y2}`;
+  const sw = Math.min(1+weight*0.15, 6);
+  const cls = 'edge' + (riskFlag? ' risk':'');
+  const path = elS('path',{d, class:cls, style:`stroke-width:${sw};opacity:${riskFlag?0.55:0.4}`, 'data-a':aId,'data-b':bId});
+  svg.appendChild(path);
+  (edgeEls[aId]=edgeEls[aId]||[]).push(path);
+  (edgeEls[bId]=edgeEls[bId]||[]).push(path);
+}
+
+// Row 1 -> Row 2 (pages -> their JS)
+addEdge('p_driver','js_driver',31,false);
+addEdge('p_admin','js_admin_core',23,false);
+addEdge('p_admin','js_finance',30,true);
+addEdge('p_customer','js_customer',23,true);
+addEdge('p_ride','js_ride',10,false);
+addEdge('p_svc','js_svc',20,false);
+
+// Row 2 -> Row 3a/3b (JS -> controllers, weighted by real action-reference counts)
+addEdge('js_driver','RideController',31,false);
+addEdge('js_driver','PushController',2,false);
+addEdge('js_admin_core','AdminController',23,false);
+addEdge('js_admin_core','AuthController',4,false);
+addEdge('js_admin_core','RideController',11,false);
+addEdge('js_finance','EquityController',13,true);
+addEdge('js_finance','EqubController',12,true);
+addEdge('js_finance','PlatformEconomicsController',6,false);
+addEdge('js_finance','SystemResetController',2,true);
+addEdge('js_customer','OrderController',23,false);
+addEdge('js_ride','RideController',10,false);
+addEdge('js_svc','OrderController',12,false);
+addEdge('js_svc','ServiceGiverController',15,false);
+
+// Row 3 -> Row 4 (controllers -> lib, real requires only)
+addEdge('hexgrid','RideController',1,false); // unconditional at boot.php, drawn to Ride as its primary consumer
+addEdge('schema_helpers','AdminController',1,true);
+addEdge('schema_helpers','RideController',1,true);
+addEdge('schema_helpers','AuthController',1,true);
+addEdge('ride_fare','AdminController',1,true);
+addEdge('ride_fare','AgentController',1,true);
+addEdge('ride_fare','RideController',1,true);
+addEdge('delivery_order_core','AgentController',1,false);
+addEdge('delivery_order_core','OrderController',1,false);
+addEdge('delivery_pricing','AgentController',1,false);
+addEdge('app_releases','AdminController',1,false);
+addEdge('equb_lib','EqubController',1,true);
+
+// row labels
+[['PAGES (13 real pages)',10],['KEY JS BUNDLES',170],['CONTROLLERS — original 7',350],['CONTROLLERS — 5 new subsystems',450],['SHARED LIB/ (8 files)',590]].forEach(([label,y])=>{
+  const t = elS('text',{class:'rowlabel', x:6, y:y, 'font-size':10});
+  t.textContent = label;
+  svg.appendChild(t);
+});
+
+// nodes
+NODES.forEach(n=>{
+  const g = elS('g',{class:`node ${n.kind}`, 'data-id':n.id, tabindex:'0'});
+  g.appendChild(elS('rect',{class:'node-rect', x:n.x, y:n.y, width:n.w, height:n.h, rx:8}));
+  const lines = n.title.split('\n');
+  lines.forEach((line,i)=>{
+    const t = elS('text',{class:'node-title', x:n.x+11, y:n.y+ (lines.length>1? 24+i*15 : 24), 'font-size': 11.5});
+    t.textContent = line;
+    g.appendChild(t);
+  });
+  const sub = elS('text',{class:'node-sub', x:n.x+11, y:n.y+n.h-11, 'font-size':9});
+  sub.textContent = n.sub;
+  g.appendChild(sub);
+  if(n.kind.includes('risk')){
+    const badge = elS('text',{class:'risk-badge', x:n.x+n.w-20, y:n.y+18});
+    badge.textContent = '⚠';
+    g.appendChild(badge);
+  }
+  g.addEventListener('click', ()=>selectNode(n.id));
+  g.addEventListener('keypress',(ev)=>{ if(ev.key==='Enter') selectNode(n.id); });
+  svg.appendChild(g);
+});
+
+function selectNode(id){
+  document.querySelectorAll('.node').forEach(g=>g.classList.toggle('selected', g.dataset.id===id));
+  document.querySelectorAll('.edge').forEach(p=>{
+    const rel = (edgeEls[id]||[]).includes(p);
+    p.classList.toggle('active', rel);
+    p.classList.toggle('dim', !rel);
+  });
+  renderPanel(byId(id));
+}
+
+function renderPanel(n){
+  const p = document.getElementById('panel');
+  const d = n.detail;
+  let html = `<h3>${d.heading}</h3><span class="kind">${d.meta}</span>`;
+  (d.kvs||[]).forEach(([k,v])=>{ html += `<div class="kv"><span>${k}</span><span style="text-align:right;max-width:62%">${v}</span></div>`; });
+  if(d.note){
+    html += `<div class="note${d.note.ok?' ok':''}">${d.note.text}</div>`;
+  }
+  p.innerHTML = html;
+}
+
+const stats = [
+  ['13','pages'], ['14','controllers (was 7)'], ['311','actions (was 223)'],
+  ['8','shared lib files (was 4)'], ['5','new subsystems'], ['2','bugs fixed this session'],
+];
+document.getElementById('stats').innerHTML = stats.map(([n,l])=>`<div class="stat"><b>${n}</b><span>${l}</span></div>`).join('');
+
+selectNode('p_customer');
+</script>
+</body>
+</html>
