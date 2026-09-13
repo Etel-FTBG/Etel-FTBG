@@ -30,7 +30,11 @@ return [
         'name_am' => '???? ???',
         'tagline' => 'Ethiopia\'s Marketplace',
         'env'     => getenv('APP_ENV') ?: 'production',
-        'debug'   => filter_var(getenv('APP_DEBUG') ?: 'true', FILTER_VALIDATE_BOOL),  // set to 'false' after storefront works
+        // Defaults to OFF - an unset APP_DEBUG must mean production-safe
+        // behavior (no error display, no debug.log writes), not "debug on
+        // by default." Set APP_DEBUG=true in .env only while actively
+        // troubleshooting, never leave it on in production.
+        'debug'   => filter_var(getenv('APP_DEBUG') ?: 'false', FILTER_VALIDATE_BOOL),
         'url'     => getenv('APP_URL') ?: 'https://ethelmarket.com/EtelGebeya',
         'timezone'=> 'Africa/Addis_Ababa',
         'locale'  => 'en',
