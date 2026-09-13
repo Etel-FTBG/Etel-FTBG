@@ -107,6 +107,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
                 'masked_key'     => isset($k['key']) ? providers_mask_key($k['key']) : null,
                 'model'          => isset($k['model']) ? $k['model'] : null,
                 'base'           => isset($k['base']) ? $k['base'] : null,
+                'tag'            => isset($k['tag']) ? $k['tag'] : null,
                 'enabled'        => !empty($k['enabled']),
                 'status'         => providers_key_status($k),
                 'cooldown_until' => isset($k['cooldown_until']) ? $k['cooldown_until'] : null,
@@ -156,6 +157,11 @@ if ($action === 'add_key') {
     $key        = isset($body['key']) ? trim($body['key']) : '';
     $model      = isset($body['model']) ? trim($body['model']) : '';
     $base       = isset($body['base']) ? trim($body['base']) : '';
+    // Optional free-text task tag ('coding', 'general', etc.) - lets a
+    // provider with several keys (e.g. OpenRouter with a few free models)
+    // have one preferred for a given kind of task. See chat.php's
+    // etelai_try_provider_keys $preferredTag param.
+    $tag        = isset($body['tag']) ? trim($body['tag']) : '';
     if ($label === '' || $key === '' || $model === '') {
         http_response_code(400);
         echo json_encode(array('ok' => false, 'error' => 'label, key, and model are all required.'));
@@ -183,6 +189,7 @@ if ($action === 'add_key') {
             'enabled' => true, 'cooldown_until' => null, 'last_error' => null, 'last_used' => null,
         );
         if ($base !== '') $newKey['base'] = $base;
+        if ($tag !== '') $newKey['tag'] = $tag;
         $p['keys'][] = $newKey;
         break;
     }
@@ -206,6 +213,8 @@ if ($action === 'update_key') {
     $base    = $hasBase ? trim((string)$body['base']) : null;
     $hasRawKey = array_key_exists('key', $body) && trim((string)$body['key']) !== '';
     $rawKey    = $hasRawKey ? trim((string)$body['key']) : null;
+    $hasTag  = array_key_exists('tag', $body);
+    $tag     = $hasTag ? trim((string)$body['tag']) : null;
     $found = false;
     foreach ($cfg['providers'] as &$p) {
         if ($p['id'] !== $providerId) continue;
@@ -215,6 +224,7 @@ if ($action === 'update_key') {
                 if ($label !== '') $k['label'] = $label;
                 if ($hasBase) { if ($base === '') unset($k['base']); else $k['base'] = $base; }
                 if ($hasRawKey) $k['key'] = $rawKey;
+                if ($hasTag) { if ($tag === '') unset($k['tag']); else $k['tag'] = $tag; }
                 // Give it a fresh shot rather than waiting out any old
                 // cooldown, since the edit is presumably meant to fix
                 // exactly the problem that caused it (e.g. a stale
