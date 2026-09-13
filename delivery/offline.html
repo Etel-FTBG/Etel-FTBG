@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta name="referrer" content="no-referrer-when-downgrade">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ETEL — No Connection</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#C9A961,#8B6E3A);color:white;text-align:center;padding:24px}
+.card{background:rgba(255,255,255,.12);backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,.2);border-radius:24px;padding:48px 36px;max-width:380px;width:100%}
+.icon{font-size:72px;margin-bottom:20px;animation:pulse 2s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+h1{font-size:26px;font-weight:700;margin-bottom:12px}
+p{font-size:15px;opacity:.85;line-height:1.6;margin-bottom:28px}
+.btn{display:inline-block;padding:14px 32px;background:white;color:#8B6E3A;border-radius:12px;font-weight:700;font-size:15px;cursor:pointer;border:none;text-decoration:none;transition:all .2s}
+.btn:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.2)}
+.hint{margin-top:20px;font-size:12px;opacity:.6}
+</style>
+</head>
+<body>
+<div class="card">
+    <div class="icon">📡</div>
+    <h1>You're Offline</h1>
+    <p>No internet connection detected. Please check your network and try again. Your data is safe.</p>
+    <button class="btn" onclick="window.location.reload()">🔄 Try Again</button>
+    <div class="hint">ETEL Delivery · Hawassa, Ethiopia</div>
+</div>
+</body>
+</html>

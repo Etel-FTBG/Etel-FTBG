@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta name="referrer" content="no-referrer-when-downgrade">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ETEL Courier — Navigation</title>
+    <meta name="theme-color" content="#D4AF37">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="ETEL Courier">
+    <link rel="manifest" href="../manifest-courier.json">
+    <link rel="icon" type="image/png" href="../icons/icon-96.png">
+    <link rel="apple-touch-icon" href="../icons/apple-touch-icon.png">
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="../js/core.js?v=5.9"></script>
+    <script>
+      /* Auth gate - previously missing entirely, meaning unauthenticated
+         visitors saw courier page content with no redirect. Also carries
+         role=courier so the login page can identify this app specifically
+         (same pattern driver/index.html already used) rather than falling
+         through to the generic bare-launch case. */
+      document.addEventListener('DOMContentLoaded', function () {
+        if (typeof Auth === 'undefined' || !Auth.isLoggedIn()) {
+          var base = (typeof ETEL !== 'undefined' && ETEL.api) ? ETEL.api.replace('api/boot.php', '') : '../';
+          window.location.href = base + 'login.html?redirect=courier/&role=courier';
+        }
+      });
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../css/courier-bundle.css?v=1.1">
+    <style>
+    .driver-mode-btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:999px;
+      background:rgba(78,205,196,.14);border:1px solid rgba(78,205,196,.35);color:#4ECDC4;
+      font-family:Poppins,sans-serif;font-size:11px;font-weight:700;text-decoration:none;letter-spacing:.04em;
+      transition:all .2s cubic-bezier(.22,1,.36,1)}
+    .driver-mode-btn:hover{background:rgba(78,205,196,.25);transform:translateY(-2px)}
+    .driver-mode-btn:active{transform:scale(.95)}
+
+    /* ── Slide-to-go-online (matches the Driver app's control) ── */
+    .slide-online-wrap{padding:16px 16px 4px;max-width:280px;margin:0 auto}
+    .slide-online-track{
+      position:relative;height:58px;border-radius:29px;
+      background:rgba(46,204,113,.08);border:1.5px solid rgba(46,204,113,.28);
+      overflow:hidden;user-select:none;cursor:pointer;
+      box-shadow:0 4px 24px -8px rgba(46,204,113,.18);
+    }
+    .slide-online-label{
+      position:absolute;top:0;bottom:0;left:0;right:58px;display:flex;align-items:center;justify-content:center;
+      font-family:Poppins,sans-serif;font-size:12px;font-weight:700;color:#2ECC71;
+      letter-spacing:.01em;pointer-events:none;gap:5px;
+    }
+    .slide-online-arrow{opacity:.5;font-size:15px;animation:c-slide-arrow-left 1.4s infinite}
+    @keyframes c-slide-arrow-left{0%,100%{transform:translateX(0);opacity:.3}60%{transform:translateX(-6px);opacity:.9}}
+    .slide-online-thumb{
+      position:absolute;top:5px;right:5px;left:auto;
+      width:46px;height:46px;border-radius:50%;
+      background:linear-gradient(135deg,#2ECC71,#27AE60);
+      display:flex;align-items:center;justify-content:center;
+      font-size:20px;color:#fff;
+      box-shadow:0 4px 16px -4px rgba(46,204,113,.7);
+      transition:transform .08s;touch-action:none;
+    }
+    .slide-online-fill{
+      position:absolute;inset:0;border-radius:29px;
+      background:rgba(46,204,113,.15);transform-origin:right;
+      transform:scaleX(0);transition:transform .05s;pointer-events:none;
+      left:auto;right:0;
+    }
+    body.is-offline .courier-online-pill{display:none}
+    .courier-online-pill{display:flex;align-items:center;gap:8px;padding:10px 16px;margin:0 16px 8px;
+      border-radius:14px;background:rgba(46,204,113,.1);border:1px solid rgba(46,204,113,.3);
+      font-family:Poppins,sans-serif;font-size:12.5px;font-weight:700;color:#2ECC71}
+    .courier-online-pill .dot{width:8px;height:8px;border-radius:50%;background:#2ECC71;box-shadow:0 0 8px #2ECC71}
+    .courier-online-pill{position:relative;overflow:hidden}
+    .courier-online-pill::after{
+      content:'';position:absolute;inset:0;transform:scaleX(0);transform-origin:left;
+      background:rgba(231,76,60,.28);pointer-events:none;
+    }
+    .courier-online-pill.holding::after{animation:courier-hold-fill .9s linear forwards}
+    @keyframes courier-hold-fill{ from{transform:scaleX(0)} to{transform:scaleX(1)} }
+
+    /* Full-map expand/collapse button */
+    #courier-map-expand-btn{
+      position:absolute;top:10px;right:10px;z-index:11;
+      width:42px;height:42px;border-radius:50%;border:1.5px solid rgba(212,175,55,.5);
+      background:radial-gradient(circle,rgba(212,175,55,.28) 0%,rgba(168,134,10,.12) 100%);
+      color:#FFD700;font-size:18px;display:flex;align-items:center;justify-content:center;
+      cursor:pointer;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+      box-shadow:0 4px 16px -4px rgba(212,175,55,.35);
+      transition:transform .2s,box-shadow .2s;
+    }
+    #courier-map-expand-btn:hover{transform:scale(1.08);box-shadow:0 4px 22px -4px rgba(212,175,55,.55)}
+    #courier-map-expand-btn:active{transform:scale(.94)}
+    #courier-map-container{transition:height .3s ease,max-height .3s ease}
+    .header,.sidebar{transition:opacity .3s ease}
+    </style>
+    <!-- Google Maps auth failure handler — must be defined before Maps loads -->
+    <script>
+    window.gm_authFailure = function() {
+        var el = document.getElementById('map');
+        if (!el) return;
+        el.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:#FF7A45;font-family:Poppins,sans-serif;padding:24px;text-align:center">'
+            + '<div style="font-size:52px;margin-bottom:14px">⚠️</div>'
+            + '<div style="font-size:15px;font-weight:700;margin-bottom:8px">Maps API Error</div>'
+            + '<div style="font-size:12px;opacity:.75;line-height:1.6">Go to <b>Google Cloud Console</b><br>'
+            + 'Enable: Maps JavaScript API + Directions API + Places API<br>'
+            + 'Add <b>ethelmarket.com</b> to allowed HTTP referrers</div>'
+            + '<button onclick="location.reload()" style="margin-top:16px;padding:8px 20px;background:#D4AF37;color:#1a1a2e;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-family:inherit">Retry</button>'
+            + '</div>';
+    };
+    </script>
+    <!-- premium.css, etel-phase5.css, etel-design-v4.css, etel-responsive.css now folded into css/courier-bundle.css above -->
+</head>
+<body class="dark-page" style="background:#09090f">
+<!-- Custom splash overlay - shows the group master logo briefly on
+     open. Deliberately separate from the manifest icons/ files (which
+     stay each app's own distinct branding for the home-screen icon) -
+     this only affects what's shown in-page while the app loads,
+     nothing about how it appears on the home screen or in "Add to
+     Home Screen"/APK builds. Removes itself automatically; if this
+     script fails to run for any reason the page underneath is
+     completely unaffected, it just won't have a splash. -->
+<div id="etel-master-splash" style="position:fixed;inset:0;z-index:999999;display:flex;align-items:center;justify-content:center;background:#0a0703;transition:opacity .35s ease;">
+  <img src="/delivery/assets/images/master-logo-splash.png" alt="ETEL" style="width:120px;height:120px;object-fit:contain;border-radius:50%;box-shadow:0 8px 32px rgba(0,0,0,.4);animation:etelSplashPulse 1.4s ease-in-out infinite;">
+</div>
+<style>@keyframes etelSplashPulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.05);opacity:.88}}</style>
+<script>
+(function(){
+  setTimeout(function(){
+    var el = document.getElementById('etel-master-splash');
+    if (!el) return;
+    el.style.opacity = '0';
+    setTimeout(function(){ if (el.parentNode) el.parentNode.removeChild(el); }, 400);
+  }, 900);
+})();
+</script>
+
+    <!-- Update-available banner - see driver/index.html for the fuller
+         explanation. Deliberately does NOT auto-reload - opt-in only. -->
+    <div id="update-banner" style="display:none;position:fixed;top:0;left:0;right:0;z-index:9999;
+      background:linear-gradient(135deg,#2a2110,#1a1206);border-bottom:1px solid rgba(212,175,55,.4);
+      padding:10px 14px;align-items:center;gap:10px;font-size:13px;color:#F5E7B8">
+      <span style="font-size:16px">🔄</span>
+      <span style="flex:1">A new version (<span class="upd-ver">—</span>) is available.</span>
+      <button onclick="location.reload(true)" style="background:linear-gradient(135deg,#FFE9A8,#D4AF37);
+        color:#1a1a2e;border:none;border-radius:8px;padding:7px 14px;font-weight:800;font-size:12.5px;cursor:pointer">
+        Update Now
+      </button>
+      <button onclick="document.getElementById('update-banner').style.display='none'" aria-label="Dismiss"
+        style="background:transparent;border:none;color:#F5E7B8;opacity:.7;font-size:18px;cursor:pointer;padding:0 4px">
+        ×
+      </button>
+    </div>
+    <!-- HEADER -->
+    <div class="header">
+        <div class="header-left">
+            <img src="../assets/images/etel-delivery-coin.png" alt="ETEL" style="width:40px;height:40px;border-radius:10px;object-fit:cover;border:1px solid rgba(212,175,55,.3);box-shadow:0 4px 14px -4px rgba(212,175,55,.5)"/>
+            <div class="header-info">
+                <div class="header-title" style="font-family:Sora,sans-serif;font-weight:800;color:#E5C76B">ETEL Courier</div>
+                <div class="header-subtitle">Professional Delivery</div>
+            </div>
+        </div>
+        <div class="header-right">
+            <a href="../driver/" class="driver-mode-btn" title="Switch to Driver Dashboard">🚗 Driver Mode</a>
+            <div class="gps-indicator">
+                <div class="gps-dot"></div>
+                <span>LIVE</span>
+            </div>
+            <button class="profile-btn" onclick="toggleProfile()">👤</button>
+        </div>
+    </div>
+
+    <!-- Slide-to-go-online (shown when offline) -->
+    <div class="slide-online-wrap" id="c-slide-online-wrap">
+        <div class="slide-online-track" id="c-slide-online-track">
+            <div class="slide-online-fill" id="c-slide-online-fill"></div>
+            <div class="slide-online-label">
+                <span class="slide-online-arrow">‹</span>
+                <span>Slide to go online</span>
+            </div>
+            <div class="slide-online-thumb" id="c-slide-online-thumb">◀</div>
+        </div>
+    </div>
+    <!-- Online status pill (shown when online) -->
+    <div class="courier-online-pill" id="c-online-pill" style="display:none">
+        <div class="dot"></div>Online &mdash; Ready for deliveries
+    </div>
+
+    <!-- MAIN CONTAINER -->
+    <div class="container">
+        <!-- MAP AREA -->
+        <div class="map-container" id="courier-map-container">
+            <!-- Full-map toggle: expands map-container to fill the screen, hiding header + sidebar -->
+            <button id="courier-map-expand-btn" onclick="toggleCourierMap()" title="Full map">⤢</button>
+            <div id="map">
+                <!-- Loading placeholder — replaced once Google Maps initialises -->
+                <div id="map-loading" style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:#A8A8B8;font-family:Poppins,sans-serif">
+                    <div style="font-size:40px;margin-bottom:12px;animation:spin 1.5s linear infinite">🗺️</div>
+                    <div style="font-size:13px">Loading map…</div>
+                </div>
+            </div>
+
+            <!-- Route info bar — shown when navigation is active -->
+            <div id="map-nav-bar" style="display:none;position:absolute;top:10px;left:10px;right:10px;z-index:200">
+                <div style="display:flex;gap:8px;background:rgba(10,10,22,.92);backdrop-filter:blur(8px);border-radius:14px;padding:8px 10px 8px 14px;border:1px solid rgba(78,205,196,.35);box-shadow:0 4px 20px rgba(0,0,0,.5)">
+                    <span style="font-size:18px;line-height:1;margin-top:2px">🔍</span>
+                    <input id="map-nav-input" type="text" placeholder="Search destination…" autocomplete="off"
+                        style="flex:1;background:none;border:none;color:#F5F5F7;font-size:13px;outline:none;font-family:inherit">
+                    <button onclick="clearRoute()"
+                        style="background:rgba(230,57,70,.2);border:1px solid rgba(230,57,70,.4);color:#E63946;border-radius:9px;padding:5px 12px;font-size:12px;cursor:pointer;font-family:inherit;font-weight:700">✕</button>
+                </div>
+            </div>
+
+            <!-- Route info panel — shown when route is calculated -->
+            <div id="map-route-panel" style="display:none;position:absolute;bottom:10px;left:10px;right:10px;z-index:200">
+                <div style="background:rgba(10,10,22,.94);backdrop-filter:blur(12px);border-radius:16px;padding:14px 16px;border:1px solid rgba(78,205,196,.3);box-shadow:0 4px 24px rgba(0,0,0,.5)">
+                    <div style="display:flex;align-items:center;gap:14px">
+                        <div>
+                            <div id="map-route-time" style="font-size:26px;font-weight:800;color:#4ECDC4;line-height:1">—</div>
+                            <div id="map-route-dist" style="font-size:12px;color:#A8A8B8;margin-top:2px">Calculating…</div>
+                        </div>
+                        <div style="width:1px;height:40px;background:rgba(255,255,255,.1)"></div>
+                        <div style="flex:1">
+                            <div id="map-route-label" style="font-size:13px;font-weight:700;color:#F5F5F7"></div>
+                            <div style="font-size:11px;color:#A8A8B8;margin-top:3px">Fastest driving route · Hawassa</div>
+                        </div>
+                        <div style="font-size:32px">🛵</div>
+                    </div>
+                    <button onclick="clearRoute()" style="margin-top:10px;width:100%;padding:7px;background:rgba(230,57,70,.12);border:1px solid rgba(230,57,70,.35);color:#E63946;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">✕ Clear Route</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- SIDEBAR -->
+        <div class="sidebar">
+            <div class="tabs">
+                <button class="tab-btn active" onclick="switchTab('jobs')">📦 JOBS</button>
+                <button class="tab-btn" onclick="switchTab('active')">🚗 ACTIVE</button>
+                <button class="tab-btn" onclick="switchTab('history')">📋 HISTORY</button>
+            </div>
+
+            <div id="jobs" class="tab-content active">
+                <div class="filter-section">
+                    <button class="filter-btn active" onclick="filterJobs('')">All</button>
+                    <button class="filter-btn" onclick="filterJobs('high')">💰 High Pay</button>
+                    <button class="filter-btn" onclick="loadAvailableJobs()">🔄 Refresh</button>
+                </div>
+                <div id="jobs-content">
+                    <div style="text-align:center;padding:40px;color:#A8A8B8;font-size:14px">Loading available jobs…</div>
+                </div>
+            </div>
+
+            <div id="active" class="tab-content">
+                <div id="active-content">
+                    <div style="text-align:center;padding:40px;color:#A8A8B8;font-size:14px">Loading active deliveries…</div>
+                </div>
+            </div>
+
+            <div id="history" class="tab-content">
+                <div id="history-content">
+                    <div style="text-align:center;padding:40px;color:#A8A8B8;font-size:14px">Loading history…</div>
+                </div>
+            </div>
+
+            <div class="action-bar">
+                <button class="btn btn-primary" style="flex:1" onclick="loadAvailableJobs()">🔄 Refresh Jobs</button>
+                <button class="btn btn-secondary" style="flex:1" onclick="showEarnings()">💰 Earnings</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- PROFILE PANEL -->
+    <div id="profile-drop" onclick="if(event.target===this)closeProfile()" style="display:none;position:fixed;inset:0;z-index:300;background:rgba(8,4,0,.55);backdrop-filter:blur(3px)">
+        <div id="cp-profile-panel" style="position:absolute;top:0;right:0;bottom:0;width:min(380px,100vw);background:linear-gradient(180deg,#221407 0%,#150c02 100%);border-left:1px solid rgba(212,175,55,.22);box-shadow:-20px 0 60px -20px rgba(0,0,0,.6);transform:translateX(100%);transition:transform .34s cubic-bezier(.22,1,.36,1);overflow-y:auto;font-family:'Poppins',sans-serif">
+            <div style="display:flex;justify-content:flex-end;padding:14px 14px 0">
+                <button onclick="closeProfile()" aria-label="Close" style="width:32px;height:32px;border-radius:50%;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);color:#A8A8B8;font-size:15px;cursor:pointer">✕</button>
+            </div>
+
+            <div style="display:flex;flex-direction:column;align-items:center;padding:6px 24px 22px;text-align:center">
+                <div style="position:relative;margin-bottom:14px">
+                    <div id="cp-avatar" style="width:74px;height:74px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'DM Serif Display',serif;font-size:26px;font-weight:700;color:#1a1206;background:linear-gradient(135deg,#FFE9A8,#D4AF37);border:3px solid rgba(212,175,55,.35);box-shadow:0 10px 26px -8px rgba(212,175,55,.55)">--</div>
+                    <div style="position:absolute;bottom:2px;right:2px;width:16px;height:16px;border-radius:50%;background:#2ECC71;border:3px solid #1c1006"></div>
+                </div>
+                <div id="cp-name" style="font-family:'DM Serif Display',serif;font-size:20px;font-weight:700;color:#F5F5F7">Loading…</div>
+                <div id="cp-phone" style="font-size:12.5px;color:#A8A8B8;margin-top:3px"></div>
+                <div style="display:inline-flex;align-items:center;gap:6px;margin-top:10px;padding:5px 13px;border-radius:999px;background:rgba(212,175,55,.12);border:1px solid rgba(212,175,55,.3)">
+                    <span style="font-size:11px;font-weight:700;color:#E5C76B;letter-spacing:.02em">🛵 VERIFIED COURIER</span>
+                </div>
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;padding:0 20px 20px">
+                <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:12px 8px;text-align:center">
+                    <div id="cp-stat-deliveries" style="font-size:18px;font-weight:800;color:#F5F5F7">0</div>
+                    <div style="font-size:9.5px;color:#A8A8B8;text-transform:uppercase;letter-spacing:.05em;margin-top:2px">Deliveries</div>
+                </div>
+                <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:12px 8px;text-align:center">
+                    <div id="cp-stat-rating" style="font-size:18px;font-weight:800;color:#F5F5F7">—</div>
+                    <div style="font-size:9.5px;color:#A8A8B8;text-transform:uppercase;letter-spacing:.05em;margin-top:2px">Rating</div>
+                </div>
+                <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:12px 8px;text-align:center">
+                    <div id="cp-stat-earnings" style="font-size:14px;font-weight:800;color:#2ECC71">ETB 0</div>
+                    <div style="font-size:9.5px;color:#A8A8B8;text-transform:uppercase;letter-spacing:.05em;margin-top:2px">All-time</div>
+                </div>
+            </div>
+
+            <div style="margin:0 20px 14px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:16px;overflow:hidden">
+                <div style="display:flex;align-items:center;gap:12px;padding:13px 16px;border-bottom:1px solid rgba(255,255,255,.06)">
+                    <div style="width:34px;height:34px;border-radius:10px;background:rgba(212,175,55,.12);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0">🛵</div>
+                    <div style="min-width:0"><div style="font-size:12.5px;font-weight:700;color:#F5F5F7">Vehicle</div><div id="cp-vehicle" style="font-size:11px;color:#A8A8B8;margin-top:1px">—</div></div>
+                </div>
+                <div style="display:flex;align-items:center;gap:12px;padding:13px 16px;border-bottom:1px solid rgba(255,255,255,.06)">
+                    <div style="width:34px;height:34px;border-radius:10px;background:rgba(78,205,196,.12);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0">📍</div>
+                    <div style="min-width:0"><div style="font-size:12.5px;font-weight:700;color:#F5F5F7">Zone</div><div id="cp-zone" style="font-size:11px;color:#A8A8B8;margin-top:1px">—</div></div>
+                </div>
+                <div style="display:flex;align-items:center;gap:12px;padding:13px 16px">
+                    <div style="width:34px;height:34px;border-radius:10px;background:rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0">🆔</div>
+                    <div style="min-width:0"><div style="font-size:12.5px;font-weight:700;color:#F5F5F7">Courier ID</div><div id="cp-code" style="font-size:11px;color:#A8A8B8;margin-top:1px">—</div></div>
+                </div>
+            </div>
+
+            <div style="margin:0 20px 14px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:16px;padding:14px 16px">
+                <div style="font-size:12.5px;font-weight:700;color:#F5F5F7;margin-bottom:10px">📊 Your Performance</div>
+                <div style="display:flex;gap:6px;margin-bottom:10px">
+                    <button class="cp-kpi-period-btn" data-period="today" onclick="loadCourierKpiSummary('today')" style="flex:1;padding:7px;border-radius:8px;border:1px solid rgba(212,175,55,.3);background:rgba(212,175,55,.1);color:#F2CC6B;font-size:11px;font-weight:700">Today</button>
+                    <button class="cp-kpi-period-btn" data-period="week" onclick="loadCourierKpiSummary('week')" style="flex:1;padding:7px;border-radius:8px;border:1px solid rgba(255,255,255,.1);background:transparent;color:#A8A8B8;font-size:11px;font-weight:700">Week</button>
+                    <button class="cp-kpi-period-btn" data-period="month" onclick="loadCourierKpiSummary('month')" style="flex:1;padding:7px;border-radius:8px;border:1px solid rgba(255,255,255,.1);background:transparent;color:#A8A8B8;font-size:11px;font-weight:700">Month</button>
+                </div>
+                <div id="cp-kpi-body" style="font-size:13px;color:#F5F5F7">Loading…</div>
+            </div>
+
+            <div style="margin:0 20px 14px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:16px;overflow:hidden">
+                <div onclick="closeProfile();showEarnings()" style="display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid rgba(255,255,255,.06);cursor:pointer">
+                    <div style="width:34px;height:34px;border-radius:10px;background:rgba(46,204,113,.12);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0">💰</div>
+                    <div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:700;color:#F5F5F7">Earnings</div><div style="font-size:11px;color:#A8A8B8;margin-top:1px">View delivery totals</div></div>
+                    <div style="color:#A8A8B8;font-size:15px">›</div>
+                </div>
+                <div onclick="closeProfile();switchTab('history')" style="display:flex;align-items:center;gap:12px;padding:14px 16px;cursor:pointer">
+                    <div style="width:34px;height:34px;border-radius:10px;background:rgba(96,180,255,.12);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0">📋</div>
+                    <div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:700;color:#F5F5F7">Delivery History</div><div style="font-size:11px;color:#A8A8B8;margin-top:1px">All your past deliveries</div></div>
+                    <div style="color:#A8A8B8;font-size:15px">›</div>
+                </div>
+                <div onclick="openCourierReferral()" style="display:flex;align-items:center;gap:12px;padding:14px 16px;cursor:pointer">
+                    <div style="width:34px;height:34px;border-radius:10px;background:rgba(212,175,55,.12);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0">👥</div>
+                    <div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:700;color:#F5F5F7">Invite Friends</div><div style="font-size:11px;color:#A8A8B8;margin-top:1px">Earn together with ETEL Delivery</div></div>
+                    <div style="color:#A8A8B8;font-size:15px">›</div>
+                </div>
+            </div>
+
+            <div style="padding:0 20px 10px">
+                <button onclick="if(confirm('This clears everything cached on THIS device - app data, cached files - then reloads. You will be logged out and need to sign in again. Continue?')) etelForceClearCacheAndReload()" style="width:100%;padding:13px;background:rgba(142,68,173,.12);border:1px solid rgba(142,68,173,.35);color:#a569bd;border-radius:12px;font-size:13.5px;font-weight:700;cursor:pointer;margin-bottom:10px">🧹 Fix app not updating</button>
+                <button onclick="doLogout()" style="width:100%;padding:13px;background:rgba(230,57,70,.12);border:1px solid rgba(230,57,70,.35);color:#E63946;border-radius:12px;font-size:13.5px;font-weight:700;cursor:pointer">🚪 Logout</button>
+            </div>
+            <div style="text-align:center;font-size:10.5px;color:rgba(255,255,255,.3);padding:6px 0 22px">ETEL Courier v3.7.9</div>
+        </div>
+    </div>
+
+    <!-- ORDER QR MODAL — courier shows this to the service giver to scan for instant pickup/delivery confirmation -->
+    <div id="order-qr-overlay" onclick="if(event.target===this)closeOrderQR()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);backdrop-filter:blur(3px);z-index:500;align-items:center;justify-content:center;padding:20px">
+        <div style="background:#1c1c2e;border:1px solid rgba(212,175,55,.3);border-radius:18px;padding:26px;max-width:340px;width:100%;text-align:center;box-shadow:0 24px 70px rgba(0,0,0,.5)">
+            <div id="order-qr-title" style="font-size:15px;font-weight:700;color:#F5EAC8;margin-bottom:6px">Show this to the Service Giver</div>
+            <div id="order-qr-sub" style="font-size:12px;color:#A8A8B8;margin-bottom:16px">They'll scan it to confirm instantly</div>
+            <div id="order-qr-code" style="display:inline-block;padding:14px;background:#fff;border-radius:12px"></div>
+            <button onclick="closeOrderQR()" style="width:100%;margin-top:18px;padding:11px;background:rgba(255,255,255,.06);color:#A8A8B8;border:1px solid rgba(255,255,255,.12);border-radius:10px;font-size:13px;font-weight:600;cursor:pointer">Close</button>
+        </div>
+    </div>
+
+    <!-- Canary release loader - resolves and injects the right version
+         of courier-bundle.js for THIS user (stable vs canary, see
+         api/lib/app_releases.php). This tag itself should not need to
+         change again after this one-time migration - new releases go
+         into a new js/releases/courier/{version}/ folder and get
+         pointed to from the admin Releases panel instead. -->
+    <script>window.ETEL_APP = 'courier';</script>
+    <script src="../js/release-loader.js"></script>
+    <!-- Google Maps used to load right after courier-bundle.js's
+         synchronous <script> tag, relying on that guaranteed ordering
+         for initMap to already be defined. Now that the bundle loads
+         asynchronously, this must wait for the loader's completion
+         event instead. -->
+    <script>
+      window.addEventListener('etel:bundle-ready', function () {
+        loadGoogleMaps('geometry,places,marker', 'initMap');
+      }, { once: true });
+    </script>
+<!-- ETEL AI -- cross-company assistant widget -->
+<script src="https://ethelmarket.com/EtelAi/etel-ai-widget.js" data-project="delivery"></script>
+<script src="../js/apk-download-badge.js" data-role="courier"></script>
+<script src="../js/investor-nav-check.js"></script>
+</body>
+</html>

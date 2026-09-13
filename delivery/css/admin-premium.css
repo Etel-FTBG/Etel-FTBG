@@ -1,0 +1,85 @@
+/* ════════════════════════════════════════════════════════════════
+   ETEL ADMIN — premium polish layer (ADD-ON, optional)
+   Load LAST, after admin.css AND premium.css:
+     <link rel="stylesheet" href="css/admin-premium.css">
+   Pure CSS · enhances the light champagne-gold dashboard with depth
+   and motion. Safe over Chart.js. No HTML or JS changes.
+   ════════════════════════════════════════════════════════════════ */
+:root{
+  --ap-gold:#D4AF37; --ap-gold-dk:#8B7230; --ap-gold-lt:#E8D5B5; --ap-gold-br:#F0D879;
+  --ap-ink:#1A1A2E; --ap-soft:0 10px 30px -14px rgba(26,26,46,.20);
+  --ap-card:0 18px 44px -22px rgba(26,26,46,.32);
+  --ap-ease:cubic-bezier(.22,1,.36,1); --ap-spring:cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes ap-rise{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+@keyframes ap-dot{0%{box-shadow:0 0 0 0 rgba(46,204,113,.5)}70%{box-shadow:0 0 0 7px rgba(46,204,113,0)}100%{box-shadow:0 0 0 0 rgba(46,204,113,0)}}
+@keyframes ap-sheen{0%{transform:translateX(-130%) skewX(-18deg)}60%,100%{transform:translateX(320%) skewX(-18deg)}}
+
+/* ── header ── */
+.header{box-shadow:0 1px 0 rgba(26,26,46,.05),0 10px 28px -22px rgba(26,26,46,.5)}
+.header-stat-dot{animation:ap-dot 2.2s ease-out infinite}
+.header-title{letter-spacing:-.01em}
+
+/* ── sidebar nav ── */
+.nav-item{position:relative;transition:transform .16s var(--ap-ease),background .2s,color .2s!important;overflow:hidden}
+.nav-item::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;border-radius:3px;
+  background:linear-gradient(180deg,var(--ap-gold-br),var(--ap-gold-dk));transform:scaleY(0);transition:transform .25s var(--ap-ease)}
+.nav-item:hover{transform:translateX(3px)}
+.nav-item.active::before{transform:scaleY(1)}
+.nav-item.active{background:linear-gradient(90deg,rgba(212,175,55,.16),transparent)!important}
+.nav-icon{transition:transform .25s var(--ap-spring)}
+.nav-item:hover .nav-icon{transform:scale(1.18)}
+
+/* ── stat cards ── */
+.stat-card{box-shadow:var(--ap-soft)!important;position:relative;overflow:hidden;
+  animation:ap-rise .5s var(--ap-ease) both;transition:transform .25s var(--ap-ease),box-shadow .25s var(--ap-ease)!important}
+.stat-card:nth-child(1){animation-delay:.03s}.stat-card:nth-child(2){animation-delay:.09s}
+.stat-card:nth-child(3){animation-delay:.15s}.stat-card:nth-child(4){animation-delay:.21s}
+.stat-card:nth-child(5){animation-delay:.27s}.stat-card:nth-child(6){animation-delay:.33s}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;
+  background:linear-gradient(90deg,var(--ap-gold-br),var(--ap-gold),var(--ap-gold-dk))}
+.stat-card:hover{transform:translateY(-5px)!important;box-shadow:var(--ap-card)!important}
+.stat-icon{transition:transform .3s var(--ap-spring)}
+.stat-card:hover .stat-icon{transform:scale(1.12) rotate(-5deg)}
+.stat-value{font-feature-settings:"tnum";letter-spacing:-.01em}
+.stat-value.ap-bump{animation:ap-rise .4s var(--ap-ease)}
+
+/* ── chart cards ── */
+.chart-card{box-shadow:var(--ap-soft)!important;animation:ap-rise .5s var(--ap-ease) both;
+  transition:transform .25s var(--ap-ease),box-shadow .25s var(--ap-ease)!important}
+.chart-card:hover{transform:translateY(-3px)!important;box-shadow:var(--ap-card)!important}
+.chart-title{position:relative;padding-left:14px}
+.chart-title::before{content:'';position:absolute;left:0;top:50%;transform:translateY(-50%);
+  width:4px;height:16px;border-radius:3px;background:linear-gradient(180deg,var(--ap-gold-br),var(--ap-gold-dk))}
+
+/* ── data section + tables ── */
+.data-section{box-shadow:var(--ap-soft)!important;animation:ap-rise .5s var(--ap-ease) both}
+.data-section table tbody tr{transition:background .18s var(--ap-ease)}
+.data-section table tbody tr:hover{background:rgba(212,175,55,.07)!important}
+.data-section table th{letter-spacing:.04em}
+
+/* ── panels switch in ── */
+.panel{animation:ap-rise .4s var(--ap-ease)}
+
+/* ── buttons / action buttons ── */
+.btn,.act-btn,.modal-submit{transition:transform .15s var(--ap-spring),box-shadow .2s,filter .2s!important}
+.btn:active,.act-btn:active,.modal-submit:active{transform:scale(.96)}
+.btn-primary,.act-gold,.modal-submit{box-shadow:0 8px 20px -8px rgba(212,175,55,.5)!important}
+.btn-primary:hover,.act-gold:hover,.modal-submit:hover{transform:translateY(-2px);filter:brightness(1.04)}
+.act-btn:hover{filter:brightness(1.06)}
+
+/* ── modal entrance ── */
+.modal-overlay,[class*="modal"]{}
+.modal,.modal-card,.modal-box{animation:ap-rise .3s var(--ap-ease)}
+.modal-field{transition:border-color .2s,box-shadow .2s}
+.modal-field:focus{box-shadow:0 0 0 3px rgba(212,175,55,.16)}
+
+/* ── scrollbars ── */
+*::-webkit-scrollbar{width:8px;height:8px}
+*::-webkit-scrollbar-thumb{background:rgba(212,175,55,.35);border-radius:5px}
+*::-webkit-scrollbar-thumb:hover{background:rgba(212,175,55,.55)}
+
+/* ── reduced motion ── */
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}
+}

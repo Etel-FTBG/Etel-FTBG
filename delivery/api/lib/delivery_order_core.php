@@ -1,0 +1,392 @@
+<?php
+// Shared order-creation logic - used by BOTH the real customer_create_order
+// HTTP action (OrderController.php) and agent_place_order (AgentController.php,
+// called directly in-process, no HTTP round-trip). This file contains ONLY this
+// function, deliberately - it must be safe to require_once from either controller
+// without executing any switch/dispatch logic as a side effect.
+
+// Extracted so agent_place_order (AgentController.php) can call this
+// DIRECTLY in-process instead of making a fragile self-HTTP-call back
+// into this same server (that self-call was found to be an unreliable
+// point of failure - see AgentController.php's comments). Throws an
+// Exception on any validation/creation failure instead of echo+exit,
+// so both the real HTTP action below and the AI's tool can each wrap
+// it in their own try/catch and respond however is right for them.
+function delivery_execute_order_creation($pdo, $auth_user, $body) {
+    // POST: (requires customer auth)  items (array of {item_id, quantity}), to_zone, recipient_name, recipient_phone, notes
+    // Create a new order with items and assign to the service giver who owns those items
+    if ($auth_user['role'] !== 'customer' && $auth_user['role'] !== 'admin') throw new Exception('Customer access required');
+    
+    require_once __DIR__ . '/../config-etb.php';
+    global $HAWASSA_DELIVERY_FEES, $DELIVERY_TIERS;
+
+    // Get order details
+    $items           = isset($body['items'])           ? $body['items']                    : array();
+    $to_zone         = isset($body['to_zone'])         ? trim($body['to_zone'])            : '';
+    $recipient_name  = isset($body['recipient_name'])  ? trim($body['recipient_name'])     : '';
+    $recipient_phone = isset($body['recipient_phone']) ? trim($body['recipient_phone'])    : '';
+    $notes           = isset($body['notes'])           ? trim($body['notes'])              : '';
+    $payment_method  = isset($body['payment_method'])  ? trim($body['payment_method'])     : 'cash';
+    $delivery_tier   = isset($body['delivery_tier'])   ? trim($body['delivery_tier'])      : 'moto';
+    $delivery_lat    = isset($body['delivery_lat'])    && is_numeric($body['delivery_lat'])  ? floatval($body['delivery_lat'])  : null;
+    $delivery_lng    = isset($body['delivery_lng'])    && is_numeric($body['delivery_lng'])  ? floatval($body['delivery_lng'])  : null;
+    // Optional photo of the gate/entrance/landmark, uploaded separately via
+    // api/upload.php - only accept a URL that actually points at our own
+    // uploads path, never an arbitrary string a client could pass, since
+    // this gets rendered as an <img src> for the courier later.
+    $delivery_photo_url = isset($body['delivery_photo_url']) ? trim($body['delivery_photo_url']) : '';
+    if ($delivery_photo_url && !preg_match('#^https?://[a-zA-Z0-9.\-]+/.*uploads/items/[a-zA-Z0-9_\.\-]+\.(jpg|jpeg|png|gif|webp)$#i', $delivery_photo_url)) {
+        $delivery_photo_url = '';
+    }
+    if (!in_array($payment_method, array('cash','telebirr','abysinia','cbe','wallet'))) $payment_method = 'cash';
+    
+    // Validate required fields
+    if (empty($items) || !is_array($items)) throw new Exception('items array is required');
+    // A client sending a single item as a bare object (e.g. {"item_id":12,
+    // "quantity":1} instead of [{"item_id":12,"quantity":1}]) decodes to a
+    // non-empty associative array, which passes the check above but has no
+    // numeric key 0 -- $items[0]['item_id'] below would be undefined.
+    // Detect that shape (an 'item_id' key present at the top level) and
+    // wrap it into a proper single-element list instead of erroring on
+    // what's actually valid, just differently-shaped, input.
+    if (isset($items['item_id'])) $items = array($items);
+
+    // Combine duplicate item_ids into one line with a summed quantity.
+    // Not a pricing fix - the total was already mathematically correct
+    // either way (splitting one item across two cart entries vs. one
+    // combined entry contributes the same total) - this is purely so the
+    // resulting order shows one "item x5" line instead of two identical
+    // "item x2" / "item x3" lines on the receipt.
+    $aggregated = array();
+    foreach ($items as $cart_item) {
+        if (!is_array($cart_item) || !isset($cart_item['item_id'])) continue;
+        $iid = intval($cart_item['item_id']);
+        $qty = isset($cart_item['quantity']) ? intval($cart_item['quantity']) : 1;
+        if (isset($aggregated[$iid])) {
+            $aggregated[$iid]['quantity'] += $qty;
+        } else {
+            $aggregated[$iid] = array('item_id' => $iid, 'quantity' => $qty);
+        }
+    }
+    $items = array_values($aggregated);
+    if (empty($items)) throw new Exception('No valid items selected - each item needs an item_id');
+    if (!$to_zone && !(isset($body['customer_lat']) && isset($body['customer_lng']) && $body['customer_lat'] && $body['customer_lng'])) {
+        throw new Exception('to_zone is required (or send customer_lat/customer_lng for GPS-based pricing)');
+    }
+    if (!$recipient_name) throw new Exception('recipient_name is required');
+    if (!$recipient_phone) throw new Exception('recipient_phone is required');
+    $validated_recipient_phone = etel_validate_phone($recipient_phone);
+    if (!$validated_recipient_phone) throw new Exception('Enter a valid Ethiopian mobile number for the recipient');
+    $recipient_phone = $validated_recipient_phone;
+    
+    try {
+        // Get first item to determine service giver and from_zone
+        $first_item_id = intval($items[0]['item_id']);
+        $item_query = $pdo->prepare("
+            SELECT i.*, sg.zone as from_zone, sg.id as service_giver_id
+            FROM items i
+            JOIN service_givers sg ON i.service_giver_id = sg.id
+            WHERE i.id = ?
+        ");
+        $item_query->execute(array($first_item_id));
+        $first_item = $item_query->fetch();
+        
+        if (!$first_item) throw new Exception('Item not found');
+        
+        $from_zone = $first_item['from_zone'];
+        $service_giver_id = $first_item['service_giver_id'];
+        $package_type = $first_item['category'];
+        
+        // Calculate total
+        $fare_total = 0;
+        $item_details = array();
+
+        // Batch-fetch every item in one query instead of one query per
+        // cart line (N+1 pattern) - collect the IDs first, look them all
+        // up at once, then just iterate the in-memory results below.
+        $cart_item_ids = array();
+        foreach ($items as $cart_item) {
+            $cart_item_ids[] = intval($cart_item['item_id']);
+        }
+        $cart_item_ids = array_values(array_unique(array_filter($cart_item_ids)));
+        $items_by_id = array();
+        if ($cart_item_ids) {
+            $placeholders = implode(',', array_fill(0, count($cart_item_ids), '?'));
+            $batch_q = $pdo->prepare("SELECT id, name, price, service_giver_id FROM items WHERE id IN ($placeholders)");
+            $batch_q->execute($cart_item_ids);
+            foreach ($batch_q->fetchAll() as $row) { $items_by_id[$row['id']] = $row; }
+        }
+
+        foreach ($items as $cart_item) {
+            $item_id  = intval($cart_item['item_id']);
+            $quantity = isset($cart_item['quantity']) ? intval($cart_item['quantity']) : 1;
+            // Without this, a cart mixing a large positive quantity on one
+            // item with a negative quantity on another could keep the
+            // overall total positive (passing the total>0 check below)
+            // while still shipping more items than were actually paid for.
+            if ($quantity < 1) throw new Exception('Quantity must be at least 1 for every item');
+
+            $item = isset($items_by_id[$item_id]) ? $items_by_id[$item_id] : null;
+
+            if (!$item) throw new Exception('Item with ID ' . $item_id . ' not found');
+
+            // Verify all items belong to same service giver
+            if ($item['service_giver_id'] != $service_giver_id) {
+                throw new Exception('All items must be from the same service giver');
+            }
+
+            $subtotal = $item['price'] * $quantity;
+            $fare_total += $subtotal;
+
+            $item_details[] = array(
+                'item_id' => $item_id,
+                'name' => $item['name'],
+                'quantity' => $quantity,
+                'unit_price' => $item['price'],
+                'subtotal' => $subtotal
+            );
+        }
+        
+        $items_subtotal = $fare_total;
+        if ($items_subtotal <= 0) throw new Exception('Order total must be greater than 0');
+
+        // Delivery fee (zone + tier) - shared with AgentController.php's
+        // order-quote tool via api/lib/delivery_pricing.php so a quote
+        // shown in chat can never drift from what checkout actually
+        // charges. See that file for the zone/tier DB-first, hardcoded-
+        // fallback lookup this wraps.
+        require_once __DIR__ . '/../lib/delivery_pricing.php';
+
+        // GPS-based distance pricing (opt-in): if the caller sends real
+        // coordinates, use those directly instead of requiring to_zone
+        // to match a real named zone. Named zones remain fully
+        // supported and unaffected for any caller that doesn't send
+        // coordinates - this is purely additive.
+        $customerLat = isset($body['customer_lat']) ? floatval($body['customer_lat']) : 0;
+        $customerLng = isset($body['customer_lng']) ? floatval($body['customer_lng']) : 0;
+        if ($customerLat && $customerLng) {
+            $distanceKm = delivery_distance_from_center($customerLat, $customerLng);
+            $priced = delivery_calc_fee_by_distance($pdo, $distanceKm);
+            $priced['tier_used'] = $delivery_tier;
+            if (strpos($to_zone, 'GPS location') === false) {
+                $to_zone = 'GPS location (' . $priced['distance_km'] . ' km from Hawassa center)';
+            }
+        } else {
+            $priced = delivery_calc_fee($pdo, $to_zone, $delivery_tier);
+            if ($priced === null) {
+                // Unknown zone and no hardcoded fallback either - same
+                // behavior as before this extraction (was: default to 50).
+                $priced = array('delivery_fee' => 50, 'tier_used' => $delivery_tier);
+            }
+        }
+        $delivery_tier  = $priced['tier_used'];
+        $delivery_fee   = $priced['delivery_fee'];
+        $service_charge = delivery_calc_service_charge($items_subtotal);
+        $fare_total     = $items_subtotal + $delivery_fee + $service_charge;
+
+        // Generate order code
+        $order_code = 'ETD-' . strtoupper(bin2hex(random_bytes(3)));
+
+        // Try full INSERT with all columns; fall back to legacy schema
+        $inserted = false;
+        try {
+            $ins = $pdo->prepare("
+                INSERT INTO orders (
+                    order_code, customer_id, from_zone, to_zone, package_type, delivery_tier,
+                    recipient_name, recipient_phone, notes,
+                    subtotal, delivery_fee, service_charge, fare_total,
+                    payment_method, payment_status, status,
+                    delivery_lat, delivery_lng, delivery_photo_url, placed_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'unpaid', 'pending', ?, ?, ?, NOW())
+            ");
+            $ins->execute(array(
+                $order_code, $auth_user['id'], $from_zone, $to_zone, $package_type, $delivery_tier,
+                $recipient_name, $recipient_phone, $notes,
+                $items_subtotal, $delivery_fee, $service_charge, $fare_total,
+                $payment_method, $delivery_lat, $delivery_lng, $delivery_photo_url ?: null
+            ));
+            $inserted = true;
+        } catch (Exception $e) {}
+
+        if (!$inserted) {
+            $ins = $pdo->prepare("
+                INSERT INTO orders (
+                    order_code, customer_id, from_zone, to_zone, package_type,
+                    recipient_name, recipient_phone, notes, fare_total, status, placed_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', NOW())
+            ");
+            $ins->execute(array(
+                $order_code, $auth_user['id'], $from_zone, $to_zone, $package_type,
+                $recipient_name, $recipient_phone, $notes, $fare_total
+            ));
+        }
+        
+        $order_id = $pdo->lastInsertId();
+        
+        // Insert order items
+        $item_ins = $pdo->prepare("
+            INSERT INTO order_items (order_id, item_id, item_name, quantity, unit_price, subtotal)
+            VALUES (?, ?, ?, ?, ?, ?)
+        ");
+        
+        foreach ($item_details as $detail) {
+            $item_ins->execute(array(
+                $order_id,
+                $detail['item_id'],
+                $detail['name'],
+                $detail['quantity'],
+                $detail['unit_price'],
+                $detail['subtotal']
+            ));
+        }
+        
+        // Assign order to the service giver who owns the items
+        $assign = $pdo->prepare("
+            INSERT INTO order_assignments (
+                order_id, service_giver_id, status, assigned_at
+            ) VALUES (?, ?, 'pending', NOW())
+        ");
+        $assign->execute(array($order_id, $service_giver_id));
+
+        //  Auto-dispatch: find nearest online courier 
+        // Prefer the shop's real registered coordinates over the
+        // hardcoded zone-centroid table below - a real pin is more
+        // accurate than a per-zone approximation. The zone table only
+        // kicks in when service_givers.lat/lng genuinely isn't set.
+        $zone_coords = array(
+            'Stadium'              => array(7.0606, 38.4775),
+            'Mehal Ketema'         => array(7.0559, 38.4762),
+            'Tabor'                => array(7.0400, 38.4900),
+            'Liqe Mender'          => array(7.0700, 38.4800),
+            'Referral'             => array(7.0490, 38.4680),
+            'Addis Ketema'         => array(7.0450, 38.4750),
+            'University'           => array(7.0620, 38.5110),
+            'Misrak'               => array(7.0800, 38.4850),
+            'Haik Dar'             => array(7.0350, 38.5000),
+            'Tulu Dimtu'           => array(7.1000, 38.5000),
+            'Hawela Teklehaimanot' => array(7.0650, 38.4900),
+            'Dore Bafana'          => array(7.1200, 38.4700),
+        );
+        $pickup_coord = isset($zone_coords[$from_zone]) ? $zone_coords[$from_zone] : array(7.0559, 38.4762);
+        try {
+            $sgCoordStmt = $pdo->prepare('SELECT lat, lng FROM service_givers WHERE id=? AND lat IS NOT NULL AND lng IS NOT NULL');
+            $sgCoordStmt->execute(array($service_giver_id));
+            $sgCoordRow = $sgCoordStmt->fetch();
+            if ($sgCoordRow) {
+                $pickup_coord = array(floatval($sgCoordRow['lat']), floatval($sgCoordRow['lng']));
+            }
+        } catch (Exception $eCoord) {}
+
+        try {
+            // Hex-grid pre-filter instead of "20 most recently seen" -
+            // that recency cap was a real correctness bug: the truly
+            // nearest online courier could easily not be among the 20
+            // most recently active ones, especially as courier count
+            // grows. This narrows by actual proximity (indexed hex
+            // cell range) instead, with no arbitrary recency cutoff.
+            $searchRadiusKm = 15; // generous - exact Haversine below still finds the true nearest within whatever this returns
+            $hexWhere = '1=1'; $hexParams = array();
+            if (function_exists('hexgrid_radius_where')) {
+                list($hexWhere, $hexParams) = hexgrid_radius_where($pickup_coord[0], $pickup_coord[1], $searchRadiusKm);
+            }
+            $cs = $pdo->prepare("
+                SELECT c.id, c.user_id, c.last_lat, c.last_lng, c.zone
+                FROM couriers c
+                WHERE c.status = 'online' AND c.active = 1
+                  AND $hexWhere
+                  AND c.id NOT IN (
+                    SELECT courier_id FROM orders
+                    WHERE status IN ('assigned','picked_up','in_transit')
+                    AND courier_id IS NOT NULL
+                  )
+            ");
+            $cs->execute($hexParams);
+            $candidates = $cs->fetchAll();
+            $best_id = null; $best_dist = PHP_INT_MAX;
+            foreach ($candidates as $c) {
+                if ($c['last_lat'] && $c['last_lng']) {
+                    // Haversine distance in km
+                    $dlat = deg2rad($c['last_lat'] - $pickup_coord[0]);
+                    $dlng = deg2rad($c['last_lng'] - $pickup_coord[1]);
+                    $a = sin($dlat/2)*sin($dlat/2) + cos(deg2rad($pickup_coord[0]))*cos(deg2rad($c['last_lat']))*sin($dlng/2)*sin($dlng/2);
+                    $dist = 6371 * 2 * atan2(sqrt($a), sqrt(1-$a));
+                } else {
+                    // No GPS  rank by zone match
+                    $dist = ($c['zone'] === $from_zone) ? 0.5 : 5.0;
+                }
+                if ($dist < $best_dist) { $best_dist = $dist; $best_id = $c; }
+            }
+            // If the hex-filtered search found nobody (e.g. every
+            // online courier is currently outside the search radius),
+            // fall back to the old unfiltered zone-match behavior
+            // rather than leaving the order completely unassigned -
+            // matches this function's original behavior when no GPS
+            // data was available at all.
+            if (!$best_id) {
+                $csFallback = $pdo->prepare("
+                    SELECT c.id, c.user_id, c.last_lat, c.last_lng, c.zone
+                    FROM couriers c
+                    WHERE c.status = 'online' AND c.active = 1
+                      AND c.id NOT IN (
+                        SELECT courier_id FROM orders
+                        WHERE status IN ('assigned','picked_up','in_transit')
+                        AND courier_id IS NOT NULL
+                      )
+                    ORDER BY (c.zone = ?) DESC, c.last_seen DESC
+                    LIMIT 1
+                ");
+                $csFallback->execute(array($from_zone));
+                $best_id = $csFallback->fetch();
+            }
+            if ($best_id) {
+                // Auto-assign this courier
+                $pdo->prepare("UPDATE orders SET courier_id=?, status='assigned' WHERE id=?")
+                    ->execute(array($best_id['user_id'], $order_id));
+                $pdo->prepare("UPDATE couriers SET status='busy' WHERE user_id=?")
+                    ->execute(array($best_id['user_id']));
+                // Notify courier via notifications table
+                try {
+                    $notifTitle = 'New Delivery Job!';
+                    $notifBody  = 'Order ' . $order_code . ' from ' . $from_zone . ' to ' . $to_zone . '  ETB ' . number_format($fare_total, 2);
+                    $pdo->prepare("INSERT INTO notifications (user_id, title, body, type, data) VALUES (?,?,?,?,?)")
+                        ->execute(array(
+                            $best_id['user_id'],
+                            $notifTitle,
+                            $notifBody,
+                            'new_order',
+                            json_encode(array('order_id' => $order_id, 'order_code' => $order_code))
+                        ));
+                    // Real push too - this is what wakes the courier up even
+                    // if their app is backgrounded, unlike the notifications
+                    // table above, which only shows up the next time they
+                    // open the app and it happens to poll for it.
+                    require_once __DIR__ . '/../push.php';
+                    etel_push_send($pdo, intval($best_id['user_id']), $notifTitle, $notifBody,
+                        array('type' => 'new_order', 'order_id' => $order_id, 'url' => '/delivery/courier/'));
+                } catch (Exception $ne) {}
+            }
+        } catch (Exception $de) {}
+        //  End auto-dispatch 
+
+        // Return order details
+        return array(
+            'order_id'         => $order_id,
+            'order_code'       => $order_code,
+            'status'           => 'pending',
+            'service_giver_id' => $service_giver_id,
+            'subtotal'         => $items_subtotal,
+            'delivery_tier'    => $delivery_tier,
+            'delivery_photo_url' => $delivery_photo_url ?: null,
+            'delivery_fee'     => $delivery_fee,
+            'service_charge'   => $service_charge,
+            'total'            => $fare_total,
+            'payment_method'   => $payment_method,
+            'items_count'      => count($item_details),
+            'message'          => 'Order created and assigned to service giver',
+        );
+        
+    } catch (Exception $e) {
+        error_log('[ETEL] Order creation failed: ' . $e->getMessage());
+        throw new Exception('Order creation failed - please try again or contact support');
+    }
+}

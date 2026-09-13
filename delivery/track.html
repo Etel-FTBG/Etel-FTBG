@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta name="referrer" content="no-referrer-when-downgrade">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Track Order — ETEL Delivery</title>
+    <meta name="theme-color" content="#D4AF37">
+    <link rel="icon" type="image/png" href="assets/images/etel-delivery-coin.png">
+    <link rel="apple-touch-icon" href="assets/images/etel-delivery-coin.png">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=DM+Serif+Display:ital@0;1&family=Noto+Sans+Ethiopic:wght@400;600&display=swap" rel="stylesheet">
+    <script src="js/core.js?v=4.8"></script>
+    <style>
+    :root{
+        --bg:#08080f; --card:#13131f; --card2:#1a1a2b; --ink:#0d0d1a;
+        --gold:#D4AF37; --gold-lt:#E5C76B; --gold-br:#FFE9A8;
+        --teal:#4ECDC4; --green:#2ECC71; --red:#E63946; --orange:#FFAA00;
+        --text:#F5F5F7; --muted:#A8A8B8; --line:rgba(255,255,255,.08);
+        --ease:cubic-bezier(.22,1,.36,1);
+    }
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{background:radial-gradient(ellipse 90% 60% at 50% 0%,#161226 0%,var(--bg) 60%);
+        color:var(--text);font-family:Poppins,sans-serif;min-height:100vh;
+        display:flex;flex-direction:column;align-items:center;padding:0 16px 48px}
+
+    @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(212,175,55,.45)}50%{box-shadow:0 0 0 9px rgba(212,175,55,0)}}
+    @keyframes rise{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+    @keyframes dashFlow{to{stroke-dashoffset:-24}}
+    @keyframes popDone{0%{transform:scale(.4);opacity:0}70%{transform:scale(1.15)}100%{transform:scale(1);opacity:1}}
+
+    .hdr{width:100%;max-width:500px;padding:24px 0 6px;display:flex;align-items:center;gap:12px}
+    .logo{width:44px;height:44px;background:linear-gradient(135deg,var(--gold-br),var(--gold));border-radius:12px;
+        display:flex;align-items:center;justify-content:center;font-size:21px;color:#1a1206;
+        box-shadow:0 8px 22px -8px rgba(212,175,55,.7)}
+    .hdr-text{font-family:'DM Serif Display',serif;font-size:20px;font-weight:800;color:var(--gold-lt)}
+    .hdr-sub{font-size:11px;color:var(--muted);letter-spacing:.04em}
+
+    .card{background:linear-gradient(165deg,rgba(26,26,43,.92),rgba(15,15,28,.95));
+        border:1px solid rgba(212,175,55,.2);border-radius:22px;padding:24px;width:100%;max-width:500px;
+        margin-top:16px;position:relative;overflow:hidden;animation:rise .5s var(--ease)}
+    .card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;
+        background:linear-gradient(90deg,transparent,var(--gold-lt),transparent)}
+
+    .search-lbl{font-size:13px;color:var(--muted);margin-bottom:10px}
+    .search-row{display:flex;gap:10px}
+    input{flex:1;background:var(--ink);border:1px solid var(--line);border-radius:12px;padding:13px 16px;
+        color:var(--text);font-size:15px;font-family:inherit;outline:none;transition:border-color .2s,box-shadow .2s;letter-spacing:.05em}
+    input:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(212,175,55,.16)}
+    input::placeholder{color:var(--muted);letter-spacing:normal}
+    .btn{padding:13px 22px;background:linear-gradient(135deg,var(--gold-br),var(--gold-lt),var(--gold));
+        color:#1a1206;border:none;border-radius:12px;font-weight:800;font-size:14px;cursor:pointer;
+        font-family:inherit;white-space:nowrap;transition:transform .15s var(--ease),box-shadow .2s;
+        box-shadow:0 10px 24px -10px rgba(212,175,55,.6)}
+    .btn:hover{transform:translateY(-2px);box-shadow:0 16px 32px -10px rgba(212,175,55,.8)}
+    .btn:active{transform:scale(.97)}
+
+    #res-code{font-family:'DM Serif Display',serif}
+
+    /* ── CINEMATIC JOURNEY ── */
+    .journey{position:relative;margin:6px 0 4px;border-radius:18px;padding:8px 4px 2px;
+        background:radial-gradient(ellipse 80% 80% at 50% 30%,rgba(212,175,55,.06),transparent 70%)}
+    .journey svg{display:block;width:100%;height:auto;overflow:visible}
+    .j-base{fill:none;stroke:rgba(255,255,255,.1);stroke-width:4;stroke-linecap:round}
+    .j-prog{fill:none;stroke:url(#jgrad);stroke-width:5;stroke-linecap:round;transition:stroke-dashoffset .9s var(--ease)}
+    .j-flow{fill:none;stroke:var(--gold-br);stroke-width:5;stroke-linecap:round;stroke-dasharray:2 22;opacity:.9;animation:dashFlow 1s linear infinite}
+    .j-node{fill:var(--card2);stroke:#3a3a52;stroke-width:2;transition:all .4s var(--ease)}
+    .j-node.done{fill:rgba(46,204,113,.25);stroke:var(--green)}
+    .j-node.active{fill:rgba(212,175,55,.25);stroke:var(--gold)}
+    .j-courier{transition:transform .9s var(--ease)}
+    .j-courier .disc{filter:drop-shadow(0 4px 10px rgba(212,175,55,.7))}
+    .j-endpoint{font-size:19px}
+    .j-pin-label{font-size:9px;fill:var(--muted);font-family:Poppins,sans-serif;font-weight:600;letter-spacing:.06em}
+
+    .divider{height:1px;background:var(--line);margin:18px 0}
+    .order-info{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:4px}
+    .info-item{background:var(--ink);border:1px solid var(--line);border-radius:12px;padding:13px}
+    .info-item .k{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em}
+    .info-item .v{font-size:14px;font-weight:700;margin-top:5px;color:var(--text)}
+
+    .badge{display:inline-flex;align-items:center;gap:6px;padding:6px 13px;border-radius:999px;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.04em}
+    .badge::before{content:'';width:6px;height:6px;border-radius:50%;background:currentColor}
+    .badge-pending{background:rgba(255,170,0,.14);color:var(--orange)}
+    .badge-assigned{background:rgba(78,205,196,.14);color:var(--teal)}
+    .badge-transit{background:rgba(212,175,55,.14);color:var(--gold-lt)}
+    .badge-delivered{background:rgba(46,204,113,.14);color:var(--green)}
+    .badge-cancelled{background:rgba(230,57,70,.14);color:var(--red)}
+
+    /* ── TIMELINE ── */
+    .status-timeline{margin-top:20px;position:relative;padding-left:4px}
+    .step{display:flex;align-items:flex-start;gap:15px;padding-bottom:20px;position:relative;opacity:.4;transition:opacity .4s var(--ease)}
+    .step:last-child{padding-bottom:0}
+    .step::before{content:'';position:absolute;left:17px;top:34px;bottom:2px;width:2px;background:#2a2a40;transition:background .5s var(--ease)}
+    .step:last-child::before{display:none}
+    .step.done,.step.active{opacity:1}
+    .step.done::before{background:linear-gradient(180deg,var(--green),var(--gold))}
+    .step-icon{width:36px;height:36px;border-radius:50%;background:var(--card2);display:flex;align-items:center;justify-content:center;
+        font-size:17px;flex-shrink:0;border:2px solid #3a3a52;z-index:1;transition:all .4s var(--ease)}
+    .step.done .step-icon{background:rgba(46,204,113,.15);border-color:var(--green);animation:popDone .4s var(--ease)}
+    .step.active .step-icon{background:rgba(212,175,55,.15);border-color:var(--gold);animation:pulse 1.6s ease-in-out infinite}
+    .step-text .label{font-size:14.5px;font-weight:700;color:var(--text)}
+    .step-text .sub{font-size:11.5px;color:var(--muted);margin-top:3px}
+    .step-reveal{animation:rise .45s var(--ease) both}
+
+    #result{display:none}
+    #error-msg{color:var(--red);font-size:13px;margin-top:12px;display:none}
+    .loading-spin{display:inline-block;animation:spin 1s linear infinite}
+
+    @media (prefers-reduced-motion:reduce){
+        *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}
+    }
+    </style>
+    <link rel="stylesheet" href="css/premium.css?v=3.2.7">
+    <link rel="stylesheet" href="css/etel-design-v4.css?v=4.0">
+    <link rel="stylesheet" href="css/etel-responsive.css?v=1.0">
+</head>
+<body>
+    <div class="hdr">
+        <div class="logo">✦</div>
+        <div>
+            <div class="hdr-text">ETEL Delivery</div>
+            <div class="hdr-sub">Order Tracker · Hawassa · ሀዋሳ</div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="search-lbl">Enter your order code (e.g. ETD-2255)</div>
+        <div class="search-row">
+            <input id="code-input" type="text" placeholder="ETD-XXXX" autocomplete="off" style="text-transform:uppercase">
+            <button class="btn" onclick="trackOrder()">Track</button>
+        </div>
+        <div id="error-msg"></div>
+    </div>
+
+    <div class="card" id="result">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px">
+            <div>
+                <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em">Order</div>
+                <div id="res-code" style="font-size:24px;font-weight:800;color:var(--gold-lt);margin-top:3px"></div>
+            </div>
+            <div id="res-badge"></div>
+        </div>
+
+        <!-- Cinematic journey -->
+        <div class="journey">
+            <svg viewBox="0 0 460 150" id="journey-svg" aria-hidden="true">
+                <defs>
+                    <linearGradient id="jgrad" x1="0" y1="0" x2="1" y2="0">
+                        <stop offset="0" stop-color="#2ECC71"/>
+                        <stop offset=".55" stop-color="#E5C76B"/>
+                        <stop offset="1" stop-color="#FFE9A8"/>
+                    </linearGradient>
+                </defs>
+                <path class="j-base" id="j-path" d="M 40 110 C 130 110 120 40 215 40 S 320 112 420 56"/>
+                <path class="j-prog" id="j-prog" d="M 40 110 C 130 110 120 40 215 40 S 320 112 420 56"/>
+                <path class="j-flow" id="j-flow" d="M 40 110 C 130 110 120 40 215 40 S 320 112 420 56"/>
+                <g id="j-nodes"></g>
+                <text class="j-endpoint" x="40" y="128" text-anchor="middle">🏪</text>
+                <text class="j-pin-label" x="40" y="142" text-anchor="middle">SHOP</text>
+                <text class="j-endpoint" x="420" y="44" text-anchor="middle">🏠</text>
+                <text class="j-pin-label" x="420" y="74" text-anchor="middle">YOU</text>
+                <g class="j-courier" id="j-courier" transform="translate(40,110)">
+                    <circle class="disc" r="15" fill="url(#jgrad)" stroke="#fff" stroke-width="2"/>
+                    <text x="0" y="6" text-anchor="middle" font-size="16">🛵</text>
+                </g>
+            </svg>
+        </div>
+
+        <div class="divider"></div>
+        <div class="order-info">
+            <div class="info-item"><div class="k">From</div><div class="v" id="res-from"></div></div>
+            <div class="info-item"><div class="k">To</div><div class="v" id="res-to"></div></div>
+            <div class="info-item"><div class="k">Package</div><div class="v" id="res-pkg"></div></div>
+            <div class="info-item"><div class="k">Total</div><div class="v" id="res-fare"></div></div>
+        </div>
+        <div class="status-timeline" id="timeline"></div>
+    </div>
+
+    <script>
+    var ETEL_STEPS = [
+        { key: 'pending',    icon: '📋', label: 'Order Placed',         sub: 'Your order has been received' },
+        { key: 'assigned',   icon: '🛵', label: 'Courier Assigned',     sub: 'A courier is heading to the shop' },
+        { key: 'picked_up',  icon: '📦', label: 'Order Picked Up',      sub: 'Courier has collected your order' },
+        { key: 'in_transit', icon: '🚗', label: 'On the Way',           sub: 'Your order is en route to you' },
+        { key: 'delivered',  icon: '✅', label: 'Delivered',            sub: 'Order successfully delivered' },
+    ];
+    var STATUS_ORDER = ['pending','assigned','picked_up','in_transit','delivered'];
+    var reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    function statusBadge(s) {
+        var map = { pending:'badge-pending', assigned:'badge-assigned', picked_up:'badge-transit',
+                    in_transit:'badge-transit', delivered:'badge-delivered', cancelled:'badge-cancelled' };
+        var lbl = { pending:'Pending', assigned:'Assigned', picked_up:'Picked Up',
+                    in_transit:'In Transit', delivered:'Delivered', cancelled:'Cancelled' };
+        return '<span class="badge ' + (map[s]||'') + '">' + (lbl[s]||s) + '</span>';
+    }
+
+    /* ── Build journey milestone nodes once ── */
+    function buildJourneyNodes() {
+        var path = document.getElementById('j-path');
+        var nodesG = document.getElementById('j-nodes');
+        if (!path || !nodesG || nodesG.childNodes.length) return;
+        var L = path.getTotalLength();
+        for (var i = 0; i < ETEL_STEPS.length; i++) {
+            var pt = path.getPointAtLength((i / (ETEL_STEPS.length - 1)) * L);
+            var c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            c.setAttribute('class', 'j-node'); c.setAttribute('r', '5');
+            c.setAttribute('cx', pt.x); c.setAttribute('cy', pt.y);
+            c.setAttribute('data-i', i);
+            nodesG.appendChild(c);
+        }
+    }
+
+    /* ── Animate journey to a status index ── */
+    function updateJourney(curIdx, status) {
+        var path = document.getElementById('j-path');
+        if (!path) return;
+        buildJourneyNodes();
+        var L = path.getTotalLength();
+        var n = ETEL_STEPS.length - 1;
+        var frac = curIdx < 0 ? 0 : Math.min(curIdx / n, 1);
+
+        // progress path draw
+        var prog = document.getElementById('j-prog');
+        var flow = document.getElementById('j-flow');
+        prog.style.strokeDasharray = L;
+        flow.style.strokeDasharray = L; // base; flow dash handled via its own class except offset clip
+        // reveal only the travelled portion by offsetting the rest
+        var offset = L * (1 - frac);
+        prog.style.strokeDashoffset = offset;
+        // flow visible only along travelled portion: clip by setting dashoffset region
+        flow.style.strokeDasharray = (frac * L) + ' ' + L;
+        flow.style.strokeDashoffset = (status === 'delivered' || reduced) ? L : 0;
+        flow.style.opacity = (status === 'delivered' || curIdx < 0) ? 0 : .9;
+
+        // nodes lit state
+        var nodes = document.querySelectorAll('.j-node');
+        nodes.forEach(function (nd) {
+            var i = parseInt(nd.getAttribute('data-i'), 10);
+            nd.classList.toggle('done', i < curIdx || (status === 'delivered'));
+            nd.classList.toggle('active', i === curIdx && status !== 'delivered');
+        });
+
+        // courier position
+        var courier = document.getElementById('j-courier');
+        var pt = path.getPointAtLength(frac * L);
+        courier.setAttribute('transform', 'translate(' + pt.x + ',' + pt.y + ')');
+        courier.style.display = (status === 'cancelled') ? 'none' : '';
+    }
+
+    function trackOrder() {
+        var code = document.getElementById('code-input').value.trim().toUpperCase();
+        if (!code) return;
+        document.getElementById('error-msg').style.display = 'none';
+        fetch(ETEL.api + '?action=track_order&code=' + encodeURIComponent(code))
+            .then(function(r){ return r.json(); })
+            .then(function(res) {
+                if (!res.success || !res.data) {
+                    var em = document.getElementById('error-msg');
+                    em.textContent = res.message || 'Order not found. Check the code and try again.';
+                    em.style.display = 'block';
+                    return;
+                }
+                var o = res.data;
+                document.getElementById('res-code').textContent = o.order_code;
+                document.getElementById('res-badge').innerHTML = statusBadge(o.status);
+                document.getElementById('res-from').textContent = o.from_zone || '—';
+                document.getElementById('res-to').textContent = o.to_zone || '—';
+                document.getElementById('res-pkg').textContent = (o.package_type || 'parcel').replace('_',' ');
+                document.getElementById('res-fare').textContent = 'ETB ' + parseFloat(o.fare_total||0).toFixed(2);
+
+                var curIdx = STATUS_ORDER.indexOf(o.status);
+                var html = '';
+                ETEL_STEPS.forEach(function(step, i) {
+                    var isDone   = i < curIdx;
+                    var isActive = i === curIdx;
+                    var cls = isDone ? 'step done' : (isActive ? 'step active' : 'step');
+                    var delay = reduced ? 0 : (i * 0.07);
+                    html += '<div class="' + cls + ' step-reveal" style="animation-delay:' + delay + 's">'
+                          + '<div class="step-icon">' + step.icon + '</div>'
+                          + '<div class="step-text"><div class="label">' + step.label + '</div>'
+                          + '<div class="sub">' + step.sub + '</div></div></div>';
+                });
+                document.getElementById('timeline').innerHTML = html;
+
+                var firstShow = document.getElementById('result').style.display !== 'block';
+                document.getElementById('result').style.display = 'block';
+
+                // animate journey (wait a frame so layout/getTotalLength is ready on first show)
+                if (firstShow) requestAnimationFrame(function(){ requestAnimationFrame(function(){ updateJourney(curIdx, o.status); }); });
+                else updateJourney(curIdx, o.status);
+
+                // Auto-refresh if active
+                if (o.status !== 'delivered' && o.status !== 'cancelled') {
+                    setTimeout(trackOrder, 30000);
+                }
+            })
+            .catch(function() {
+                var em = document.getElementById('error-msg');
+                em.textContent = 'Cannot reach server. Check your connection.';
+                em.style.display = 'block';
+            });
+    }
+
+    // Auto-track if code in URL e.g. track?code=ETD-2255
+    var urlCode = new URLSearchParams(location.search).get('code');
+    if (urlCode) {
+        document.getElementById('code-input').value = urlCode;
+        trackOrder();
+    }
+
+    document.getElementById('code-input').addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') trackOrder();
+    });
+    </script>
+</body>
+</html>

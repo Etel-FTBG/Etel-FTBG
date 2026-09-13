@@ -1,0 +1,166 @@
+/* ═══════════════════════════════════════════════════════
+   ETEL SERVICE GIVER — Modern Polish Pass  v1.0
+   Loaded LAST (after servicegiver.css / premium.css /
+   servicegiver-premium.css / etel-phase5.css / etel-design-v4.css /
+   etel-responsive.css). Purely additive refinements to spacing,
+   typography hierarchy, and card visual weight -- does not change
+   structure/classes, so it can't break anything those files depend on.
+   ═══════════════════════════════════════════════════════ */
+
+/* ── Page header rhythm ──────────────────────────────────── */
+.page-title {
+  font-size: 22px !important;
+  font-weight: 800 !important;
+  letter-spacing: -0.01em;
+  margin-bottom: 4px !important;
+}
+.page-subtitle {
+  font-size: 13px !important;
+  color: rgba(245, 230, 163, .55) !important;
+  margin-bottom: 22px !important;
+}
+
+/* ── KPI cards: more visual weight, clearer hierarchy ────── */
+.kpi-grid {
+  gap: 16px !important;
+  margin-bottom: 28px !important;
+}
+.kpi-card {
+  padding: 22px 20px !important;
+  border-radius: 16px !important;
+  border: 1px solid rgba(212, 175, 55, .18) !important;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, .28), 0 1px 0 rgba(255, 255, 255, .03) inset !important;
+  background: linear-gradient(160deg, rgba(24, 14, 2, .78), rgba(12, 7, 0, .82)) !important;
+}
+.kpi-card:hover {
+  transform: translateY(-4px) !important;
+  box-shadow: 0 10px 32px rgba(212, 175, 55, .16), 0 1px 0 rgba(255, 255, 255, .05) inset !important;
+  border-color: rgba(212, 175, 55, .32) !important;
+}
+.kpi-label {
+  font-size: 10.5px !important;
+  letter-spacing: .12em !important;
+  color: rgba(245, 230, 163, .5) !important;
+  margin-bottom: 10px !important;
+}
+.kpi-value {
+  font-size: 30px !important;
+  font-weight: 800 !important;
+  background: linear-gradient(135deg, #FFE9A8, #D4AF37);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.kpi-change {
+  font-size: 11.5px !important;
+  margin-top: 8px !important;
+  opacity: .85;
+}
+
+/* ── Cards (Recent Orders etc.) ───────────────────────────── */
+.card {
+  border-radius: 16px !important;
+  border: 1px solid rgba(212, 175, 55, .14) !important;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, .24) !important;
+  background: linear-gradient(160deg, rgba(20, 12, 2, .74), rgba(10, 6, 0, .8)) !important;
+  margin-bottom: 20px !important;
+}
+.card-header {
+  padding: 18px 22px !important;
+  border-bottom: 1px solid rgba(212, 175, 55, .12) !important;
+}
+.card-title {
+  font-size: 15px !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.005em;
+}
+.card-body { padding: 22px !important; }
+
+/* ── Sidebar: clearer active state, tighter spacing ──────── */
+.menu-item {
+  border-radius: 12px !important;
+  margin: 2px 10px !important;
+  padding: 11px 14px !important;
+  transition: background .15s ease, color .15s ease !important;
+}
+.menu-item:hover {
+  background: rgba(212, 175, 55, .08) !important;
+}
+.menu-item.active {
+  background: linear-gradient(135deg, rgba(212, 175, 55, .18), rgba(212, 175, 55, .06)) !important;
+  box-shadow: inset 3px 0 0 #D4AF37;
+  color: #FFE9A8 !important;
+}
+.menu-badge {
+  background: linear-gradient(135deg, #C9A227, #FFD700) !important;
+  color: #1a1206 !important;
+  font-weight: 800 !important;
+}
+
+/* ── Header ───────────────────────────────────────────────── */
+.header {
+  border-bottom: 1px solid rgba(212, 175, 55, .12) !important;
+  backdrop-filter: blur(8px);
+}
+.user-avatar, .user-avatar-small {
+  background: linear-gradient(135deg, #C9A227, #FFD700) !important;
+  color: #1a1206 !important;
+  font-weight: 800 !important;
+}
+
+/* ── Content area: THE core fix ───────────────────────────────
+   servicegiver.html actually uses <div class="content">, but every
+   other CSS file in this page (servicegiver.css, etel-responsive.css)
+   only ever styles ".content-area" -- a class that appears nowhere in
+   the markup. That mismatch meant the entire dashboard body had zero
+   real layout CSS applied (no flex-grow, no scrolling, no padding),
+   which inside a `.main-content{display:flex;flex-direction:column;
+   height:100vh;overflow:hidden}` parent collapsed the whole content
+   area to nothing -- this is why the dashboard rendered as pure gold
+   background with no KPI cards, on every screen size. */
+.content {
+  flex: 1 1 auto !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  padding: 28px !important;
+  min-height: 0 !important; /* flex children need this to allow overflow-y:auto to work */
+  width: 100%;
+  box-sizing: border-box;
+}
+.content::-webkit-scrollbar { width: 4px; }
+.content::-webkit-scrollbar-thumb { background: rgba(212, 175, 55, .3); border-radius: 2px; }
+
+/* ── Responsive: phone / tablet / desktop ─────────────────────
+   The sidebar's mobile drawer (.sidebar.open, toggleSidebar()) was
+   already correctly built -- it just had nothing to show next to it.
+   These breakpoints target the real .content class. */
+@media (max-width: 1024px) {
+  .kpi-grid { grid-template-columns: repeat(2, 1fr) !important; }
+}
+@media (max-width: 768px) {
+  .content { padding: 16px !important; }
+  .kpi-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 10px !important; }
+  .kpi-card { padding: 16px 14px !important; }
+  .kpi-value { font-size: 24px !important; }
+  .card-body { padding: 16px !important; }
+  .page-title { font-size: 19px !important; }
+}
+@media (max-width: 480px) {
+  .kpi-grid { grid-template-columns: 1fr !important; }
+  .content { padding: 12px !important; }
+}
+
+/* ── Tables (orders list etc.) — consistent row rhythm ──── */
+table { border-collapse: separate !important; border-spacing: 0 !important; }
+table th {
+  font-size: 10.5px !important;
+  letter-spacing: .08em !important;
+  text-transform: uppercase;
+  color: rgba(245, 230, 163, .45) !important;
+  padding: 10px 14px !important;
+}
+table td {
+  padding: 14px !important;
+  border-top: 1px solid rgba(212, 175, 55, .08) !important;
+}
+table tr:hover td { background: rgba(212, 175, 55, .04) !important; }

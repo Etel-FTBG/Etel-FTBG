@@ -1,0 +1,1282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta name="referrer" content="no-referrer-when-downgrade">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Without this, Android Chrome's automatic dark-theme feature can
+         silently generate its own color adjustments for the whole page
+         when the device has "dark theme for web contents" enabled - this
+         clashes badly with this page's hardcoded light-background modals
+         (like New Service Giver), washing out placeholder text, typed
+         text, and dropdown text all at once, inconsistently, in ways that
+         look like a real color bug but aren't anything in this file's own
+         CSS. Declaring the scheme explicitly opts the whole page out of
+         that automatic adjustment. -->
+    <meta name="color-scheme" content="light only">
+    <title>ETEL Delivery - Admin Dashboard Premium v9.0</title>
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <script src="js/core.js?v=5.13"></script>
+    <script>
+      /* Auth gate - previously missing entirely, meaning unauthenticated
+         visitors saw the admin dashboard with no redirect. Carries
+         role=admin so the login page identifies this as the Admin app -
+         but unlike Courier/Service/Driver/Ride, Admin deliberately does
+         NOT get locked to a single tab there; Admin is meant to see and
+         reach every role from its own app. */
+      document.addEventListener('DOMContentLoaded', function () {
+        if (typeof Auth === 'undefined' || !Auth.isLoggedIn()) {
+          var base = (typeof ETEL !== 'undefined' && ETEL.api) ? ETEL.api.replace('api/boot.php', '') : '';
+          window.location.href = base + 'login.html?redirect=admin.html&role=admin';
+        }
+      });
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>if(typeof Chart==='undefined'){document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"><\/script>');}</script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/admin-group1.min.css?v=1.0"><!-- merged: admin, premium, admin-premium, servicegiver-ext -->
+    
+<style>
+html{color-scheme:light}
+/* Rides admin panel styles */
+.rides-filter-btn{padding:6px 12px;border-radius:9px;border:1px solid rgba(255,255,255,.12);
+  background:rgba(255,255,255,.04);color:#9A9AAE;font-size:12px;font-weight:700;cursor:pointer;
+  font-family:Outfit,sans-serif;white-space:nowrap;transition:all .18s}
+.rides-filter-btn.active{background:rgba(212,175,55,.15);color:#E5C76B;border-color:rgba(212,175,55,.4)}
+.rides-stat-card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);
+  border-radius:14px;padding:14px 16px}
+.rides-stat-label{font-size:11px;color:#9A9AAE;font-weight:700;text-transform:uppercase;
+  letter-spacing:.06em;margin-bottom:6px}
+.rides-stat-val{font-size:22px;font-weight:800;color:#EDEDF5;font-family:'Sora',sans-serif}
+.rides-stat-sub{font-size:11px;color:#B8B0A0;margin-top:3px}
+#rides-tbody tr:hover{background:rgba(255,255,255,.02)}
+#rides-tbody td{padding:11px 14px;border-bottom:1px solid rgba(255,255,255,.04);
+  color:#EDEDF5;vertical-align:middle}
+.ride-status-pill{display:inline-block;padding:3px 10px;border-radius:20px;
+  font-size:11px;font-weight:700;white-space:nowrap}
+.rs-searching{background:rgba(96,180,255,.15);color:#60B4FF}
+.rs-accepted{background:rgba(46,204,113,.15);color:#2ECC71}
+.rs-in_progress{background:rgba(212,175,55,.15);color:#E5C76B}
+.rs-arrived{background:rgba(78,205,196,.15);color:#4ECDC4}
+.rs-completed{background:rgba(39,174,96,.12);color:#27AE60}
+.rs-cancelled{background:rgba(192,57,43,.12);color:#E74C3C}
+
+/* Keep the header's App quick-links (Driver/Courier/Ride) from overflowing
+   on narrow phones - icon-only below 480px, same pattern as elsewhere. */
+@media (max-width:480px){
+  a.header-stat span:last-child{display:none}
+  a.header-stat{padding:6px 8px !important}
+}
+</style>
+    <link rel="stylesheet" href="css/admin-group2.min.css?v=1.1"><!-- merged: etel-phase5, etel-design-v4, etel-gold-theme, etel-responsive, etel-system, etel-dashboard -->
+</head>
+<body class="dark-page">
+<!-- Custom splash overlay - shows the group master logo briefly on
+     open. Deliberately separate from the manifest icons/ files (which
+     stay each app's own distinct branding for the home-screen icon) -
+     this only affects what's shown in-page while the app loads,
+     nothing about how it appears on the home screen or in "Add to
+     Home Screen"/APK builds. Removes itself automatically; if this
+     script fails to run for any reason the page underneath is
+     completely unaffected, it just won't have a splash. -->
+<div id="etel-master-splash" style="position:fixed;inset:0;z-index:999999;display:flex;align-items:center;justify-content:center;background:linear-gradient(155deg,#1A0A00 0%,#3A2008 15%,#6A4010 28%,#9A6820 40%,#C8922A 52%,#D4AF37 58%,#C8922A 64%,#9A6820 76%,#5A3808 90%,#1A0A00 100%);transition:opacity .35s ease;">
+  <img src="/delivery/assets/images/master-logo-splash.png" alt="ETEL" style="width:240px;height:240px;object-fit:contain;border-radius:50%;box-shadow:0 8px 40px rgba(0,0,0,.5);animation:etelSplashPulse 1.4s ease-in-out infinite;">
+</div>
+<style>@keyframes etelSplashPulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.05);opacity:.88}}</style>
+
+<!-- Floating refresh button - re-fetches whichever panel is currently
+     open, in case live data or a background sync ever stalls without
+     the founder noticing. -->
+<button id="admin-refresh-btn" onclick="refreshCurrentPage()" aria-label="Refresh"
+  style="position:fixed;left:16px;bottom:16px;z-index:9998;width:48px;height:48px;border-radius:50%;
+  background:linear-gradient(135deg,#E9C767,#D4AF37);border:none;box-shadow:0 4px 14px rgba(212,175,55,.5);
+  font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;">
+  <span id="admin-refresh-icon" style="display:inline-block;">🔄</span>
+</button>
+<style>
+#admin-refresh-btn.spinning #admin-refresh-icon{animation:adminRefreshSpin .6s linear infinite;}
+@keyframes adminRefreshSpin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+</style>
+
+<script>
+(function(){
+  setTimeout(function(){
+    var el = document.getElementById('etel-master-splash');
+    if (!el) return;
+    el.style.opacity = '0';
+    setTimeout(function(){ if (el.parentNode) el.parentNode.removeChild(el); }, 400);
+  }, 900);
+})();
+</script>
+
+    <!-- HEADER -->
+    <div class="header">
+        <div class="header-left">
+            <picture><source srcset="assets/images/etel-delivery-coin.webp" type="image/webp"/><img src="assets/images/etel-delivery-coin.png" style="width:44px;height:44px;border-radius:12px;object-fit:cover;border:1px solid rgba(212,175,55,.35);box-shadow:0 6px 18px -6px rgba(212,175,55,.5)" alt="ETEL" loading="lazy"/></picture>
+            <div class="header-info">
+                <div class="header-title">ETEL Admin</div>
+                <div class="header-subtitle">Enterprise Dashboard</div>
+            </div>
+        </div>
+        <div id="header-mobile-menu" style="display:none">
+            <div class="header-stat" style="width:100%">
+                <span class="header-stat-dot"></span>
+                <span id="sys-status-mobile">All Systems Online</span>
+            </div>
+            <div class="header-stat" style="width:100%">
+                <span>🕒</span>
+                <span id="last-updated-mobile">Loading…</span>
+            </div>
+            <a href="driver/" target="_blank" class="header-stat" style="width:100%;text-decoration:none;cursor:pointer;">
+                <span>🚗</span><span>Driver App</span>
+            </a>
+            <a href="courier/" target="_blank" class="header-stat" style="width:100%;text-decoration:none;cursor:pointer;">
+                <span>📦</span><span>Courier App</span>
+            </a>
+            <a href="ride/" target="_blank" class="header-stat" style="width:100%;text-decoration:none;cursor:pointer;">
+                <span>🚕</span><span>Ride App</span>
+            </a>
+        </div>
+        <div class="header-right">
+            <div class="header-stat">
+                <span class="header-stat-dot"></span>
+                <span id="sys-status">All Systems Online</span>
+            </div>
+            <div class="header-stat">
+                <span>🕒</span>
+                <span id="last-updated">Loading…</span>
+            </div>
+            <a href="driver/" target="_blank" class="header-stat" style="text-decoration:none;cursor:pointer;">
+                <span>🚗</span>
+                <span>Driver App</span>
+            </a>
+            <a href="courier/" target="_blank" class="header-stat" style="text-decoration:none;cursor:pointer;">
+                <span>📦</span>
+                <span>Courier App</span>
+            </a>
+            <a href="ride/" target="_blank" class="header-stat" style="text-decoration:none;cursor:pointer;" title="Open the customer-facing Ride booking app">
+                <span>🚕</span>
+                <span>Ride App</span>
+            </a>
+            <button class="user-btn" onclick="doLogout()" title="Logout">🚪</button>
+        </div>
+    </div>
+
+    <!-- MAIN CONTAINER -->
+    <div class="main-container">
+        <!-- SIDEBAR NAVIGATION -->
+        <div class="sidebar">
+            <div class="nav-item active" data-page="dashboard" onclick="switchPage('dashboard',this)">
+                <span class="nav-icon">📊</span><span>Dashboard</span>
+            </div>
+            <div class="nav-item" data-page="orders" onclick="switchPage('orders',this)">
+                <span class="nav-icon">📦</span><span>Orders</span>
+            </div>
+            <div class="nav-item" data-page="users" onclick="switchPage('users',this)">
+                <span class="nav-icon">👥</span><span>Users</span>
+            </div>
+            <div class="nav-item" data-page="couriers" onclick="switchPage('couriers',this)">
+                <span class="nav-icon">🚗</span><span>Couriers</span>
+            </div>
+            <div class="nav-item" data-page="servicegivers" onclick="switchPage('servicegivers',this)">
+                <span class="nav-icon">🏪</span><span>Service Givers</span>
+            </div>
+            <div class="nav-item" data-page="items" onclick="switchPage('items',this)">
+                <span class="nav-icon">🛍️</span><span>Items</span>
+            </div>
+            <div class="nav-item" data-page="rides" onclick="switchPage('rides',this)">
+                <span class="nav-icon">🚖</span><span>Rides</span>
+            </div>
+            <div class="nav-item" data-page="pricing" onclick="switchPage('pricing',this)">
+                <span class="nav-icon">💰</span><span>Pricing</span>
+            </div>
+            <div class="nav-item" data-page="telebirr" onclick="switchPage('telebirr',this)">
+                <span class="nav-icon">💳</span><span>Payments</span>
+                <span id="telebirr-badge" style="display:none;background:#e74c3c;color:#fff;font-size:10px;font-weight:800;border-radius:10px;padding:1px 7px;margin-left:6px">0</span>
+            </div>
+            <div class="nav-item" data-page="reports" onclick="switchPage('reports',this)">
+                <span class="nav-icon">📈</span><span>Reports</span>
+            </div>
+            <div class="nav-item" data-page="updater" onclick="switchPage('updater',this)">
+                <span class="nav-icon">⬆️</span><span>Updater</span>
+            </div>
+            <div class="nav-item" data-page="support" onclick="switchPage('support',this)">
+                <span class="nav-icon">🎧</span><span>Support</span>
+            </div>
+            <div class="nav-item" data-page="launch" onclick="switchPage('launch',this)">
+                <span class="nav-icon">🚀</span><span>Launch</span>
+            </div>
+            <div class="nav-item" data-page="releases" onclick="switchPage('releases',this)">
+                <span class="nav-icon">🐤</span><span>Releases</span>
+            </div>
+            <div class="nav-item" data-page="settings" onclick="switchPage('settings',this)">
+                <span class="nav-icon">⚙️</span><span>Settings</span>
+            </div>
+            <div class="nav-item" data-page="branding" onclick="switchPage('branding',this); if(typeof loadBrandingPanel==='function') loadBrandingPanel();">
+                <span class="nav-icon">🎨</span><span>Branding</span>
+            </div>
+            <div class="nav-item" data-page="roles" id="nav-item-roles" onclick="switchPage('roles',this)">
+                <span class="nav-icon">🔐</span><span>Roles</span>
+            </div>
+            <div class="nav-item" data-page="finance" id="nav-item-finance" onclick="switchPage('finance',this)">
+                <span class="nav-icon">💼</span><span>Finance & Planning</span>
+            </div>
+            <div class="nav-item" data-page="equb" id="nav-item-equb" onclick="switchPage('equb',this)">
+                <span class="nav-icon">🤝</span><span>Equb</span>
+            </div>
+            <div class="nav-item" data-page="danger" id="nav-item-danger" onclick="switchPage('danger',this)" style="border:1px solid rgba(255,93,108,.4)">
+                <span class="nav-icon">☠️</span><span>Danger Zone</span>
+            </div>
+            <div class="nav-item" id="header-mobile-menu-btn" onclick="toggleHeaderMobileMenu(event)">
+                <span class="nav-icon">🔗</span><span>Apps</span>
+            </div>
+        </div>
+
+        <!-- CONTENT AREA -->
+        <div class="content">
+            <div class="content-header">
+                <div class="content-title" id="page-title">Dashboard Overview</div>
+                <div class="action-buttons" id="action-buttons">
+                    <button class="btn btn-secondary" onclick="doExport()">📥 Export CSV</button>
+                    <button class="btn btn-secondary" id="purge-cache-btn" onclick="adminPurgeCache()" title="Clear LiteSpeed server cache">⚡ Purge Cache</button>
+                    <button class="btn btn-primary" onclick="openModal('new-user')">➕ New User</button>
+                </div>
+            </div>
+
+            <!-- SCROLLABLE CONTENT — all panels live here -->
+            <div class="content-scroll">
+
+                <!-- ══ DASHBOARD PANEL ══ -->
+                <div id="panel-dashboard" class="panel">
+                    <div class="etel-card" style="margin-bottom:20px">
+                        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
+                            <div>
+                                <div style="font-family:var(--etel-font-display);font-weight:800;font-size:15px;color:var(--etel-ink)">🧪 Ride System Test</div>
+                                <div style="font-size:12px;color:var(--etel-ink-dim);margin-top:2px">Runs a complete demo ride - booking, driver accept, GPS movement, waiting fee, arrival, and payment - end to end, then cleans up. Nothing here touches real customers or real stats.</div>
+                            </div>
+                            <button class="etel-btn etel-btn-primary" id="sys-test-btn" onclick="runSystemTest('sse_admin_system_test', 'sys-test-btn', 'sys-test-results', SYS_TEST_STEPS_RIDE)">▶ Run Ride Test</button>
+                        </div>
+                        <div id="sys-test-results" style="margin-top:14px;display:none"></div>
+                    </div>
+                    <div class="etel-card" style="margin-bottom:20px">
+                        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
+                            <div>
+                                <div style="font-family:var(--etel-font-display);font-weight:800;font-size:15px;color:var(--etel-ink)">🧪 Delivery System Test</div>
+                                <div style="font-size:12px;color:var(--etel-ink-dim);margin-top:2px">Runs a complete demo order - shop + item, order creation, courier assignment, pickup, transit, and delivery - end to end, then cleans up. Nothing here touches real customers, shops, or real stats.</div>
+                            </div>
+                            <button class="etel-btn etel-btn-primary" id="sys-test-btn-delivery" onclick="runSystemTest('sse_admin_delivery_system_test', 'sys-test-btn-delivery', 'sys-test-results-delivery', SYS_TEST_STEPS_DELIVERY)">▶ Run Delivery Test</button>
+                        </div>
+                        <div id="sys-test-results-delivery" style="margin-top:14px;display:none"></div>
+                    </div>
+                    <div class="stats-grid" id="dash-stats">
+                        <div class="stat-card"><div class="stat-icon">📦</div><div class="stat-content"><div class="stat-label">Total Orders</div><div class="stat-value" id="s-orders">…</div></div></div>
+                        <div class="stat-card"><div class="stat-icon">⏳</div><div class="stat-content"><div class="stat-label">Pending Orders</div><div class="stat-value" id="s-pending">…</div></div></div>
+                        <div class="stat-card"><div class="stat-icon">✅</div><div class="stat-content"><div class="stat-label">Delivered</div><div class="stat-value" id="s-delivered">…</div></div></div>
+                        <div class="stat-card"><div class="stat-icon">👥</div><div class="stat-content"><div class="stat-label">Total Users</div><div class="stat-value" id="s-users">…</div></div></div>
+                        <div class="stat-card"><div class="stat-icon">🚗</div><div class="stat-content"><div class="stat-label">Couriers</div><div class="stat-value" id="s-couriers">…</div></div></div>
+                        <div class="stat-card"><div class="stat-icon">💰</div><div class="stat-content"><div class="stat-label">Total Revenue (ETB)</div><div class="stat-value" id="s-revenue">…</div></div></div>
+                    </div>
+                    
+                    <!-- 🟢 Premium Charts Grid -->
+                    <div class="charts-grid">
+                        <div class="chart-card">
+                            <div class="chart-title">Revenue & Orders Trend (Last 30 Days)</div>
+                            <div style="position: relative; height: 220px; width: 100%;">
+                                <canvas id="chart-revenue-orders"></canvas>
+                            </div>
+                        </div>
+                        <div class="chart-card">
+                            <div class="chart-title">Orders by Status Distribution</div>
+                            <div style="position: relative; height: 220px; width: 100%;">
+                                <canvas id="chart-status-dist"></canvas>
+                            </div>
+                        </div>
+                        <div class="chart-card">
+                            <div class="chart-title">Top 5 Revenue Zones (ETB)</div>
+                            <div style="position: relative; height: 220px; width: 100%;">
+                                <canvas id="chart-zone-rev"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="data-section">
+                        <div class="section-title">Recent Orders</div>
+                        <div class="table-wrapper"><table><thead><tr><th>Order Code</th><th>From</th><th>To</th><th>Type</th><th>Amount (ETB)</th><th>Status</th><th>Placed</th><th>Action</th></tr></thead>
+                        <tbody id="dash-orders-tbody"><tr><td colspan="8" style="text-align:center;padding:30px;color:#B8B0A0">Loading…</td></tr></tbody></table></div>
+                    </div>
+                </div>
+
+                <!-- ══ ORDERS PANEL ══ -->
+                <div id="panel-orders" class="panel" style="display:none">
+
+                    <!-- ── Pending Confirmations section ── -->
+                    <div class="data-section" style="margin-bottom:20px">
+                        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+                            <div style="display:flex;align-items:center;gap:10px">
+                                <div class="section-title" style="margin-bottom:0">🔔 Pending Confirmations</div>
+                                <span id="conf-pickup-badge" style="display:none;padding:3px 9px;background:#ff8c00;color:#fff;border-radius:20px;font-size:11px;font-weight:700"></span>
+                                <span id="conf-delivery-badge" style="display:none;padding:3px 9px;background:#9B59B6;color:#fff;border-radius:20px;font-size:11px;font-weight:700"></span>
+                            </div>
+                            <button onclick="loadConfirmations()" class="btn btn-secondary" style="padding:6px 12px;font-size:12px">🔄 Refresh</button>
+                        </div>
+                        <div id="conf-cards" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px">
+                            <div style="color:#B8B0A0;font-size:13px;padding:8px">Loading confirmations…</div>
+                        </div>
+                    </div>
+
+                    <!-- ── Recent Confirmation History ── -->
+                    <div class="data-section" style="margin-bottom:20px">
+                        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;cursor:pointer" onclick="toggleConfHistory()">
+                            <div class="section-title" style="margin-bottom:0">📋 Confirmation History</div>
+                            <span id="conf-history-toggle" style="font-size:12px;color:#B8B0A0">▼ Show</span>
+                        </div>
+                        <div id="conf-history-wrap" style="display:none">
+                            <div class="table-wrapper"><table><thead><tr>
+                                <th>Order</th><th>Type</th><th>Status</th><th>Courier</th><th>Confirmed By</th><th>Requested</th><th>Responded</th><th>Admin</th>
+                            </tr></thead>
+                            <tbody id="conf-history-tbody"><tr><td colspan="8" style="text-align:center;padding:20px;color:#B8B0A0">Click "Show" to load history</td></tr></tbody>
+                            </table></div>
+                        </div>
+                    </div>
+
+                    <!-- ── Orders list ── -->
+                    <div style="display:flex;gap:10px;margin-bottom:18px;flex-wrap:wrap;align-items:center">
+                        <select id="order-filter" class="filter-sel" onchange="loadOrders()">
+                            <option value="">All Statuses</option>
+                            <option value="pending">Pending</option>
+                            <option value="assigned">Assigned</option>
+                            <option value="picked_up">Picked Up</option>
+                            <option value="in_transit">In Transit</option>
+                            <option value="delivered">Delivered</option>
+                            <option value="cancelled">Cancelled</option>
+                        </select>
+                        <input type="text" id="order-search" class="filter-sel" placeholder="Search order code…" oninput="filterOrderTable()" style="width:200px">
+                        <button class="btn btn-secondary" onclick="loadOrders()" style="padding:8px 14px">🔄 Refresh</button>
+                    </div>
+                    <div class="data-section">
+                        <div class="section-title">All Orders</div>
+                        <div class="table-wrapper"><table><thead><tr><th>Code</th><th>From</th><th>To</th><th>Type</th><th>Amount</th><th>Status</th><th>Confirmations</th><th>Date</th><th>Actions</th></tr></thead>
+                        <tbody id="orders-tbody"><tr><td colspan="9" style="text-align:center;padding:30px;color:#B8B0A0">Loading…</td></tr></tbody></table></div>
+                    </div>
+                </div>
+
+                <!-- ══ USERS PANEL ══ -->
+                <div id="panel-users" class="panel" style="display:none">
+                    <div style="display:flex;gap:10px;margin-bottom:18px;flex-wrap:wrap;align-items:center">
+                        <select id="user-role-filter" class="filter-sel" onchange="loadUsers()">
+                            <option value="">All Roles</option>
+                            <option value="customer">Customer</option>
+                            <option value="courier">Courier</option>
+                            <option value="service_giver">Service Giver</option>
+                            <option value="admin">Admin</option>
+                        </select>
+                        <input type="text" id="user-search" class="filter-sel" placeholder="Search name/phone…" oninput="filterUserTable()" style="width:200px">
+                        <button class="btn btn-secondary" onclick="loadUsers()" style="padding:8px 14px">🔄 Refresh</button>
+                        <button class="btn btn-primary" onclick="openModal('new-user')" style="padding:8px 14px">➕ New User</button>
+                    </div>
+                    <div class="data-section">
+                        <div class="section-title">All Users</div>
+                        <div class="table-wrapper"><table><thead><tr><th>ID</th><th>Name</th><th>Phone</th><th>Role</th><th>Joined</th></tr></thead>
+                        <tbody id="users-tbody"><tr><td colspan="5" style="text-align:center;padding:30px;color:#B8B0A0">Loading…</td></tr></tbody></table></div>
+                    </div>
+                </div>
+
+                <!-- ══ COURIERS PANEL ══ -->
+                <div id="panel-couriers" class="panel" style="display:none">
+                    <div style="display:flex;gap:10px;margin-bottom:18px;flex-wrap:wrap;align-items:center">
+                        <input type="text" id="courier-search" class="filter-sel" placeholder="Search name/phone/code…" oninput="filterCourierTable()" style="width:220px">
+                        <button class="btn btn-secondary" onclick="loadCouriers()" style="padding:8px 14px">🔄 Refresh</button>
+                        <button class="btn btn-primary" onclick="openModal('new-courier')" style="padding:8px 14px">➕ Register Courier</button>
+                    </div>
+                    <div class="data-section">
+                        <div class="section-title">All Couriers</div>
+                        <div class="table-wrapper"><table><thead><tr><th>Code</th><th>Name</th><th>Phone</th><th>Vehicle</th><th>Zone</th><th>Status</th><th>Rating</th><th>Deliveries</th><th>Print</th></tr></thead>
+                        <tbody id="couriers-tbody"><tr><td colspan="9" style="text-align:center;padding:30px;color:#B8B0A0">Loading…</td></tr></tbody></table></div>
+                    </div>
+                </div>
+
+                <!-- ══ SERVICE GIVERS PANEL ══ -->
+                <div id="panel-servicegivers" class="panel" style="display:none">
+                    <div id="sg-stat-strip" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:18px">
+                        <div class="stat-card"><div class="stat-icon">🏪</div><div class="stat-content"><div class="stat-label">Total Businesses</div><div class="stat-value" id="sg-stat-total">…</div></div></div>
+                        <div class="stat-card"><div class="stat-icon">✅</div><div class="stat-content"><div class="stat-label">Verified</div><div class="stat-value" id="sg-stat-verified">…</div></div></div>
+                        <div class="stat-card"><div class="stat-icon">🟢</div><div class="stat-content"><div class="stat-label">Online Now</div><div class="stat-value" id="sg-stat-online">…</div></div></div>
+                        <div class="stat-card"><div class="stat-icon">⭐</div><div class="stat-content"><div class="stat-label">Avg Rating</div><div class="stat-value" id="sg-stat-rating">…</div></div></div>
+                    </div>
+                    <div style="display:flex;gap:10px;margin-bottom:18px;flex-wrap:wrap;align-items:center">
+                        <select id="sg-status-filter" class="filter-sel" onchange="loadServiceGivers()">
+                            <option value="">All Statuses</option>
+                            <option value="verified">Verified</option>
+                            <option value="pending">Pending</option>
+                            <option value="suspended">Suspended</option>
+                        </select>
+                        <input type="text" id="sg-search" class="filter-sel" placeholder="Search name / phone / business…" oninput="filterSGTable()" style="width:240px">
+                        <button class="btn btn-secondary" onclick="loadServiceGivers()" style="padding:8px 14px">🔄 Refresh</button>
+                        <div style="display:flex;gap:4px;background:rgba(255,255,255,.06);border-radius:10px;padding:4px;margin-left:auto">
+                            <button id="sg-view-table-btn" class="upd-tab upd-tab-active" onclick="setSGView('table')">☰ Table</button>
+                            <button id="sg-view-cards-btn" class="upd-tab" onclick="setSGView('cards')">🎴 Cards</button>
+                        </div>
+                    </div>
+                    <div id="sg-table-wrap" class="table-wrap">
+                        <table>
+                            <thead><tr>
+                                <th>Code</th><th>Business</th><th>Name</th><th>Phone</th>
+                                <th>Type</th><th>Zone</th><th>Status</th><th>Online</th><th>Actions</th>
+                            </tr></thead>
+                            <tbody id="sg-tbody">
+                                <tr><td colspan="9" style="text-align:center;padding:40px;color:#B8B0A0">Loading...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div id="sg-cards-grid" style="display:none;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px"></div>
+                </div>
+
+                <!-- ══ ITEMS PANEL ══ -->
+                <div id="panel-items" class="panel" style="display:none">
+                    <div style="display:flex;gap:10px;margin-bottom:18px;flex-wrap:wrap;align-items:center">
+                        <select id="item-cat-filter" class="filter-sel" onchange="loadItems()">
+                            <option value="">All Categories</option>
+                            <option value="food">Food</option>
+                            <option value="grocery">Grocery</option>
+                            <option value="pharmacy">Pharmacy</option>
+                            <option value="package">Package</option>
+                            <option value="flower">Flower</option>
+                        </select>
+                        <select id="item-sg-filter" class="filter-sel" onchange="loadItems()">
+                            <option value="">All Service Givers</option>
+                        </select>
+                        <input type="text" id="item-search" class="filter-sel" placeholder="Search item name…" oninput="filterItemTable()" style="width:200px">
+                        <button class="btn btn-secondary" onclick="loadItems()" style="padding:8px 14px">🔄 Refresh</button>
+                        <button class="btn btn-primary" onclick="openAdminAddItem()" style="padding:8px 14px">➕ Add Item</button>
+                    </div>
+                    <div class="data-section">
+                        <div class="section-title">All Items</div>
+                        <div class="table-wrapper">
+                            <table><thead><tr>
+                                <th>Image</th><th>Name</th><th>Category</th><th>Service Giver</th>
+                                <th>Price (ETB)</th><th>Stock</th><th>Available</th><th>Actions</th>
+                            </tr></thead>
+                            <tbody id="items-tbody"><tr><td colspan="8" style="text-align:center;padding:30px;color:#B8B0A0">Loading…</td></tr></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ══ UPDATER PANEL ══ -->
+                <div id="panel-updater" class="panel" style="display:none">
+                    <!-- Header -->
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+                        <div>
+                            <div class="section-title" style="margin-bottom:4px">🚀 File Manager</div>
+                            <p style="color:#B8B0A0;font-size:13px;margin:0">Deploy files live — original auto-backed-up before every replace</p>
+                        </div>
+                    </div>
+                    <!-- Tab nav -->
+                    <div style="display:flex;gap:4px;background:rgba(255,255,255,.06);border-radius:10px;padding:4px;margin-bottom:24px">
+                        <button onclick="updSwitchTab('upload')" id="upd-tab-upload" class="upd-tab upd-tab-active">📤 Upload</button>
+                        <button onclick="updSwitchTab('browse')" id="upd-tab-browse" class="upd-tab">📂 Browse Files</button>
+                        <button onclick="updSwitchTab('backups')" id="upd-tab-backups" class="upd-tab">🗂 Backups</button>
+                        <button onclick="updSwitchTab('system')" id="upd-tab-system" class="upd-tab">📊 System</button>
+                    </div>
+
+                    <!-- ── UPLOAD TAB ── -->
+                    <div id="upd-pane-upload">
+                        <div style="background:rgba(230,126,34,.12);border:1px solid rgba(230,126,34,.3);border-radius:8px;padding:12px 16px;margin-bottom:20px;font-size:13px;color:#F0B060">
+                            ⚠️ File goes live immediately. Original is backed up first.
+                        </div>
+                        <!-- Quick-select -->
+                        <div style="margin-bottom:16px">
+                            <div style="font-size:11px;font-weight:700;color:#B8B0A0;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Quick Select</div>
+                            <div style="display:flex;gap:6px;flex-wrap:wrap">
+                                <button type="button" class="upd-qbtn" onclick="updSetPath('admin.html')">admin.html</button>
+                                <button type="button" class="upd-qbtn" onclick="updSetPath('customer.html')">customer.html</button>
+                                <button type="button" class="upd-qbtn" onclick="updSetPath('servicegiver.html')">servicegiver.html</button>
+                                <button type="button" class="upd-qbtn" onclick="updSetPath('courier/index.html')">courier.html</button>
+                                <button type="button" class="upd-qbtn" onclick="updSetPath('ride/index.html')">ride.html</button>
+                                <button type="button" class="upd-qbtn" onclick="updSetPath('driver/index.html')">driver.html</button>
+                                <button type="button" class="upd-qbtn" onclick="updSetPath('login.html')">login.html</button>
+                                <button type="button" class="upd-qbtn" onclick="updSetPath('api/boot.php')">api/boot.php</button>
+                                <button type="button" class="upd-qbtn" onclick="updSetPath('api/config-etb.php')">config-etb.php</button>
+                                <button type="button" class="upd-qbtn" onclick="updSetPath('js/core.js')">js/core.js</button>
+                            </div>
+                        </div>
+                        <div style="margin-bottom:18px;">
+                            <div style="font-size:11px;font-weight:700;color:#B8B0A0;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">One-Time Admin Tools</div>
+                            <button type="button" class="btn-secondary" onclick="(function(){
+                                var t = localStorage.getItem('etel_token');
+                                if (!t) { alert('No admin token found in this browser. Make sure you are logged in here.'); return; }
+                                window.open('api/backfill_open_trip_fares.php?token=' + encodeURIComponent(t), '_blank');
+                            })()" style="padding:10px 16px;border-radius:8px;font-size:13px;cursor:pointer;">
+                                &#x1F527; Open Fare Backfill Tool
+                            </button>
+                        </div>
+                        <!-- Drop zone -->
+                        <div id="upd-dropzone" onclick="document.getElementById('upd-file').click()"
+                             style="border:2.5px dashed rgba(212,175,55,.3);border-radius:12px;padding:32px;text-align:center;cursor:pointer;transition:all .2s;margin-bottom:16px;background:rgba(255,255,255,.03);user-select:none">
+                            <div style="font-size:38px;margin-bottom:8px">📁</div>
+                            <div style="font-weight:600;color:#e8e2d4;margin-bottom:4px">Drag &amp; drop file here</div>
+                            <div style="font-size:12px;color:#B8B0A0">or click to browse — HTML, PHP, JS, CSS, JSON, SQL, SVG</div>
+                            <div id="upd-file-chosen" style="margin-top:12px;display:none;background:rgba(46,204,113,.15);border:1px solid rgba(46,204,113,.3);border-radius:8px;padding:8px 14px;font-size:13px;color:#2ECC71;font-weight:600;display:inline-block"></div>
+                        </div>
+                        <input type="file" id="upd-file" style="display:none" accept=".html,.php,.js,.css,.json,.txt,.sql,.svg,.png,.jpg,.jpeg,.gif,.webp,.ico">
+                        <!-- Path input -->
+                        <div style="margin-bottom:18px">
+                            <label style="display:block;font-size:11px;font-weight:700;color:#B8B0A0;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Target Path <span style="color:#8a8378;font-weight:400;text-transform:none">(relative to delivery root, e.g. api/boot.php)</span></label>
+                            <div style="display:flex;gap:8px">
+                                <input type="text" id="upd-dest" placeholder="api/boot.php" class="filter-sel" style="flex:1" oninput="updPathChanged(this.value)">
+                                <button type="button" onclick="updSwitchTab('browse')" style="padding:9px 14px;background:rgba(255,255,255,.08);border:1.5px solid rgba(255,255,255,.15);border-radius:8px;font-size:13px;cursor:pointer;color:#e8e2d4;white-space:nowrap">📂 Browse</button>
+                            </div>
+                            <div id="upd-path-hint" style="font-size:11px;color:#f39c12;margin-top:4px;min-height:16px"></div>
+                        </div>
+                        <!-- Upload button -->
+                        <button onclick="updDoUpload()" id="upd-upload-btn"
+                                style="padding:13px 32px;background:linear-gradient(135deg,var(--gold-primary),var(--gold-dark));color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;transition:all .2s;display:inline-flex;align-items:center;gap:8px">
+                            <span id="upd-btn-icon">⬆️</span><span id="upd-btn-text">Upload &amp; Deploy Live</span>
+                        </button>
+                        <!-- Result -->
+                        <div id="upd-result" style="margin-top:16px;font-size:13px;display:none;border-radius:8px;padding:14px 16px;line-height:1.6"></div>
+                        <!-- Deploy log -->
+                        <div id="upd-log-wrap" style="margin-top:24px;display:none">
+                            <div style="font-size:11px;font-weight:700;color:#B8B0A0;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Deploy Log</div>
+                            <div id="upd-log" style="max-height:160px;overflow-y:auto;font-size:12px;font-family:monospace;background:#1a1a2e;color:#a0e9a0;border-radius:8px;padding:12px;line-height:1.8"></div>
+                        </div>
+                    </div>
+
+                    <!-- ── BROWSE TAB ── -->
+                    <div id="upd-pane-browse" style="display:none">
+                        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+                            <div style="font-size:13px;color:#B8B0A0">Click any editable file to set it as upload target</div>
+                            <button onclick="updLoadFileTree()" style="padding:6px 14px;background:rgba(255,255,255,.08);border:1.5px solid rgba(255,255,255,.15);border-radius:8px;font-size:12px;cursor:pointer;color:#e8e2d4">🔄 Refresh</button>
+                        </div>
+                        <div id="upd-file-tree" style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:12px;min-height:220px;max-height:520px;overflow-y:auto;font-size:13px;font-family:monospace;color:#e8e2d4">
+                            <span style="color:#B8B0A0">Loading…</span>
+                        </div>
+                    </div>
+
+                    <!-- ── BACKUPS TAB ── -->
+                    <div id="upd-pane-backups" style="display:none">
+                        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+                            <div style="font-size:13px;color:#B8B0A0">Auto-saved before every deploy — one-click restore</div>
+                            <button onclick="updLoadBackups()" style="padding:6px 14px;background:rgba(255,255,255,.08);border:1.5px solid rgba(255,255,255,.15);border-radius:8px;font-size:12px;cursor:pointer;color:#e8e2d4">🔄 Refresh</button>
+                        </div>
+                        <div id="upd-backups-list" style="min-height:100px"><span style="color:#B8B0A0;font-size:13px">Loading…</span></div>
+                    </div>
+
+                    <!-- ── SYSTEM TAB ── -->
+                    <div id="upd-pane-system" style="display:none">
+                        <button onclick="updLoadSystemInfo()" style="padding:6px 14px;background:rgba(255,255,255,.08);border:1.5px solid rgba(255,255,255,.15);border-radius:8px;font-size:12px;cursor:pointer;margin-bottom:16px;color:#e8e2d4">🔄 Refresh</button>
+                        <div id="upd-sys-info" style="min-height:100px"><span style="color:#B8B0A0;font-size:13px">Loading…</span></div>
+                    </div>
+                </div>
+
+                <!-- ══ REPORTS PANEL ══ -->
+                <div id="panel-reports" class="panel" style="display:none">
+                    <div style="margin-bottom:14px">
+                        <button class="btn btn-primary" onclick="printDailySummaryUI()">🖨️ Print Daily Summary</button>
+                    </div>
+                    <div class="stats-grid" id="report-stats">
+                        <div class="stat-card"><div class="stat-icon">📦</div><div class="stat-content"><div class="stat-label">Total Orders</div><div class="stat-value" id="r-orders">…</div></div></div>
+                        <div class="stat-card"><div class="stat-icon">✅</div><div class="stat-content"><div class="stat-label">Delivered</div><div class="stat-value" id="r-delivered">…</div></div></div>
+                        <div class="stat-card"><div class="stat-icon">⏳</div><div class="stat-content"><div class="stat-label">Pending</div><div class="stat-value" id="r-pending">…</div></div></div>
+                        <div class="stat-card"><div class="stat-icon">💰</div><div class="stat-content"><div class="stat-label">Revenue (ETB)</div><div class="stat-value" id="r-revenue">…</div></div></div>
+                        <div class="stat-card"><div class="stat-icon">🚗</div><div class="stat-content"><div class="stat-label">Couriers</div><div class="stat-value" id="r-couriers">…</div></div></div>
+                        <div class="stat-card"><div class="stat-icon">🏪</div><div class="stat-content"><div class="stat-label">Service Givers</div><div class="stat-value" id="r-sgs">…</div></div></div>
+                    </div>
+                    <div class="data-section">
+                        <div class="section-title">Delivery Rate</div>
+                        <p style="color:#B8B0A0;font-size:14px;margin-bottom:10px">Calculated from orders with final status.</p>
+                        <div style="background:rgba(255,255,255,.08);border-radius:8px;height:22px;overflow:hidden;margin-bottom:8px">
+                            <div id="delivery-bar" style="height:100%;background:linear-gradient(90deg,#2ECC71,#27ae60);width:0%;transition:width 1s;border-radius:8px"></div>
+                        </div>
+                        <span id="delivery-rate" style="font-weight:700;color:#2ECC71;font-size:18px">…</span>
+                        <span style="color:#B8B0A0;font-size:13px"> delivery success rate</span>
+                    </div>
+                </div>
+
+                <!-- ══ SETTINGS PANEL ══ -->
+                <div id="panel-launch" class="panel" style="display:none">
+                    <div id="launch-root"></div>
+                </div>
+
+                <!-- ══ RELEASES PANEL (canary release management) ══ -->
+                <div id="panel-releases" class="panel" style="display:none">
+                    <h2 style="color:#F5E7B8;margin-bottom:14px">🐤 Releases</h2>
+                    <div id="releases-root"></div>
+                </div>
+
+                <div id="panel-settings" class="panel" style="display:none">
+                    <div class="data-section">
+                        <div class="section-title">Account Settings</div>
+                        <div style="max-width:420px">
+                            <div id="settings-user-info" style="background:rgba(212,175,55,.08);border:1px solid rgba(212,175,55,.2);border-radius:8px;padding:16px;margin-bottom:20px;font-size:14px;color:#e8e2d4"></div>
+                            <label style="display:block;font-weight:600;margin-bottom:6px">Current Password</label>
+                            <input type="password" id="set-cur-pw" class="filter-sel" placeholder="Current password" style="width:100%;margin-bottom:12px">
+                            <label style="display:block;font-weight:600;margin-bottom:6px">New Password</label>
+                            <input type="password" id="set-new-pw" class="filter-sel" placeholder="Min 8 characters" style="width:100%;margin-bottom:12px">
+                            <label style="display:block;font-weight:600;margin-bottom:6px">Confirm New Password</label>
+                            <input type="password" id="set-conf-pw" class="filter-sel" placeholder="Repeat new password" style="width:100%;margin-bottom:16px">
+                            <button class="btn btn-primary" onclick="changePassword()">💾 Update Password</button>
+                            <div id="settings-msg" style="margin-top:12px;font-size:13px"></div>
+                        </div>
+                    </div>
+                    <div class="data-section">
+                        <div class="section-title">🖨️ Receipt Printer</div>
+                        <p style="font-size:13px;color:#B8B0A0;margin-bottom:14px;max-width:560px">
+                            Connect a Bluetooth thermal printer (e.g. P58E) here once. After that, order
+                            receipts, the daily summary, and partner verification slips print directly to
+                            it - branded ETEL Delivery, no third-party app.
+                        </p>
+                        <div id="admin-printer-status" style="font-size:13px;font-weight:700;margin-bottom:14px;color:#B8B0A0;">○ Not connected</div>
+                        <button class="btn btn-primary" onclick="connectAdminPrinter()">🔗 Connect Printer</button>
+                        <button class="btn btn-secondary" onclick="forgetAdminPrinter()" style="margin-left:8px">Forget Printer</button>
+                    </div>
+                    <div class="data-section">
+                        <div class="section-title">System Info</div>
+                        <div id="sys-info" style="font-size:13px;color:#e8e2d4;line-height:2">Loading…</div>
+                        <button class="btn btn-secondary" onclick="loadSysInfo()" style="margin-top:12px;padding:8px 14px">🔄 Refresh</button>
+                        <button class="btn btn-danger" onclick="doLogout()" style="margin-top:12px;margin-left:8px;padding:8px 14px;background:#e74c3c;color:white;border:none;border-radius:8px;cursor:pointer">🚪 Logout</button>
+                        <button class="btn" onclick="if(confirm('This clears everything cached for this site on THIS device only - service worker, cached files, and local data - then reloads. You will be logged out and need to sign in again. Continue?')) etelForceClearCacheAndReload()" style="margin-top:12px;margin-left:8px;padding:8px 14px;background:#8E44AD;color:white;border:none;border-radius:8px;cursor:pointer">🧹 Force Clear Cache &amp; Reload</button>
+                        <p style="font-size:11.5px;color:#B8B0A0;margin-top:8px;max-width:560px">Fixes "still showing the old version" issues by doing exactly what Chrome DevTools' Application tab → Clear site data does. Only clears <b>this device's own browser</b> - it can't reach other people's phones. Logs you out; sign back in after.</p>
+                    </div>
+                    <div class="data-section" data-cap="owner.only">
+                        <div class="section-title">🔍 Code Audit</div>
+                        <p style="font-size:13px;color:#B8B0A0;margin-bottom:14px;max-width:560px">Scans this project's own files on the server and runs the same AI audit used for manual zip uploads - no download/upload needed. Takes 20-60 seconds.</p>
+                        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:14px">
+                            <select id="audit-provider" class="filter-sel" style="width:auto">
+                                <option value="gemini">Gemini</option>
+                                <option value="claude">Claude</option>
+                                <option value="kimi">Kimi</option>
+                                <option value="openai">GPT-4o</option>
+                            </select>
+                            <button class="btn btn-primary" id="audit-run-btn" onclick="runCodeAudit()">▶️ Run Audit Now</button>
+                            <button class="btn btn-secondary" id="audit-download-btn" style="display:none" onclick="downloadAuditReport()">📥 Download JSON</button>
+                            <button class="btn btn-secondary" onclick="toggleAuditSettings()">⚙️ API Settings</button>
+                        </div>
+                        <div id="audit-settings-box" style="display:none;margin-bottom:16px;padding:14px;background:#1a1a1a;border:1px solid #444;border-radius:8px">
+                            <div style="font-size:12px;color:#ccc;margin-bottom:10px">Which backend "Run Audit Now" actually calls. Change this if you switch audit proxies or rotate the shared secret - no code deploy needed.</div>
+                            <div style="display:flex;flex-direction:column;gap:8px;max-width:520px">
+                                <div>
+                                    <label style="font-size:11px;color:#B8B0A0;display:block;margin-bottom:3px">Proxy URL</label>
+                                    <input type="text" id="audit-set-url" placeholder="https://ethelmarket.com/EtelGebeya/public/proxy.php" style="width:100%;box-sizing:border-box">
+                                </div>
+                                <div>
+                                    <label style="font-size:11px;color:#B8B0A0;display:block;margin-bottom:3px">Shared Secret</label>
+                                    <input type="text" id="audit-set-secret" placeholder="Shared secret the proxy expects" style="width:100%;box-sizing:border-box">
+                                </div>
+                                <div>
+                                    <label style="font-size:11px;color:#B8B0A0;display:block;margin-bottom:3px">Default Provider</label>
+                                    <select id="audit-set-provider" style="width:180px">
+                                        <option value="gemini">Gemini</option>
+                                        <option value="claude">Claude</option>
+                                        <option value="kimi">Kimi</option>
+                                        <option value="openai">GPT-4o</option>
+                                    </select>
+                                </div>
+                                <div style="margin-top:6px">
+                                    <button class="btn btn-primary" style="padding:7px 14px;font-size:12px" onclick="saveAuditSettings()">💾 Save Settings</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="audit-report"></div>
+                    </div>
+
+                    <div class="data-section" data-cap="owner.only">
+                        <div class="section-title">🗄️ Database Migrations</div>
+                        <p style="font-size:13px;color:#B8B0A0;margin-bottom:14px;max-width:560px">Runs any pending database migrations uploaded to api/migrations/. Check status any time; the Run button only appears when something's actually pending.</p>
+                        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:14px">
+                            <button class="btn btn-secondary" onclick="checkMigrationStatus()">🔄 Check Status</button>
+                            <button class="btn btn-primary" id="migrations-run-btn" style="display:none" onclick="runPendingMigrations()">▶️ Run Pending Migrations</button>
+                        </div>
+                        <div id="migrations-report"></div>
+                    </div>
+
+                    <div class="data-section" data-cap="settings.manage">
+                        <div class="section-title">📣 Driver Announcements</div>
+                        <p style="font-size:13px;color:#B8B0A0;margin-bottom:14px;max-width:640px">Posts to every driver's app (Chats &gt; From Etel Group / Support notifications / Pro news, depending on category) and sends a real push notification to all registered drivers at the same time - so time-sensitive messages don't just sit unseen in a tab nobody opens.</p>
+                        <div style="display:flex;flex-direction:column;gap:10px;max-width:640px;margin-bottom:14px">
+                            <input type="text" id="announce-title" class="filter-sel" placeholder="Title (e.g. How your earnings & cash out work)" style="width:100%">
+                            <select id="announce-category" class="filter-sel" style="width:220px">
+                                <option value="news">News (Pro news)</option>
+                                <option value="notification">Notification (Support notifications)</option>
+                                <option value="partner">Partner (From Etel Group)</option>
+                            </select>
+                            <textarea id="announce-body" class="filter-sel" rows="5" placeholder="Full message body…" style="width:100%;resize:vertical;font-family:inherit"></textarea>
+                        </div>
+                        <button class="btn btn-primary" onclick="postDriverAnnouncement()">📨 Post &amp; Notify All Drivers</button>
+                        <div id="announce-post-report" style="margin-top:12px"></div>
+
+                        <div style="border-top:1px solid rgba(212,175,55,.15);padding-top:16px;margin-top:20px">
+                            <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+                                <div style="font-weight:700;font-size:14px">Past Announcements</div>
+                                <button class="btn btn-secondary" style="padding:5px 12px;font-size:12px" onclick="loadDriverAnnouncements()">🔄 Refresh</button>
+                            </div>
+                            <div id="announce-list" style="font-size:13px;color:#B8B0A0">Click Refresh to load.</div>
+                        </div>
+                    </div>
+
+                    <div class="data-section">
+                        <div class="section-title">🔔 Web Push Self-Test</div>
+                        <p style="font-size:13px;color:#B8B0A0;margin-bottom:14px;max-width:560px">Sends a real push notification to your own account, so you can verify the whole pipeline (subscription → encryption → delivery) works without needing a second device or account. Open this page first, allow notifications if asked, then tap the button.</p>
+                        <button class="btn btn-primary" onclick="sendTestPush()">📨 Send Test Push To Myself</button>
+                        <div id="test-push-report" style="margin-top:12px"></div>
+                    </div>
+
+                    <div class="data-section" data-cap="owner.only">
+                        <div class="section-title">💰 Etel Pay Wallet</div>
+                        <p style="font-size:13px;color:#B8B0A0;margin-bottom:14px;max-width:640px">
+                            Etel Pay is fully built and working, but is held back everywhere (Delivery checkout, Ride,
+                            the customer Wallet screen) behind this flag until government approval comes through -
+                            customers see a disabled "🔜 Coming Soon" option until it's flipped on. You can also grant
+                            or deny it for specific members below, independent of this global switch (e.g. testers,
+                            or premium members, ahead of a full rollout).
+                        </p>
+                        <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px">
+                            <label class="ep-toggle-switch">
+                                <input type="checkbox" id="etelpay-live-toggle" onchange="toggleEtelPayLive(this.checked)">
+                                <span class="ep-toggle-slider"></span>
+                            </label>
+                            <span id="etelpay-live-label" style="font-size:14px;font-weight:700;color:#B8B0A0">Loading…</span>
+                        </div>
+                        <div id="etelpay-live-meta" style="font-size:12px;color:#B8B0A0;margin-bottom:20px"></div>
+
+                        <div style="border-top:1px solid rgba(212,175,55,.15);padding-top:16px;margin-top:4px">
+                            <div style="font-weight:700;font-size:14px;margin-bottom:10px">Per-User Overrides</div>
+                            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+                                <input type="text" id="etelpay-override-phone" class="filter-sel" placeholder="Member phone number" style="width:220px">
+                                <button class="btn btn-secondary" onclick="etelPaySetOverride(true)">✅ Grant Access</button>
+                                <button class="btn btn-secondary" onclick="etelPaySetOverride(false)">🚫 Deny Access</button>
+                            </div>
+                            <div class="table-wrapper">
+                            <table>
+                                <thead><tr><th>Member</th><th>Phone</th><th>Status</th><th>Updated</th><th></th></tr></thead>
+                                <tbody id="etelpay-overrides-tbody"><tr><td colspan="5" style="color:#B8B0A0">Loading…</td></tr></tbody>
+                            </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ═══════════ ROLES & PERMISSIONS PANEL ═══════════ -->
+                <div class="panel" id="panel-roles" style="display:none">
+                    <div class="data-section">
+                        <div class="section-title">🔐 Roles &amp; Permissions</div>
+                        <p style="font-size:13px;color:#B8B0A0;margin-bottom:14px;max-width:640px">
+                            Staff signed in via "Sign in with EtelID" get access based on the role assigned to them
+                            in Etel Group's Employees panel. Define what each role name is allowed to do here.
+                            "Owner", "Admin", and "Manager" default to unrestricted access; any new role name
+                            starts with view-only access to Orders and Rides until you configure it below.
+                        </p>
+                        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:20px;background:rgba(212,175,55,.05);border:1px solid rgba(212,175,55,.15);border-radius:10px;padding:16px">
+                            <div style="flex:1;min-width:160px">
+                                <label style="display:block;font-weight:600;margin-bottom:6px;font-size:13px">Role Name</label>
+                                <input type="text" id="role-name-input" class="filter-sel" placeholder="e.g. Dispatcher" style="width:100%">
+                            </div>
+                            <button class="btn btn-primary" onclick="editRolePermissions(null)">+ New Role</button>
+                        </div>
+                        <div id="roles-list"></div>
+                    </div>
+                </div>
+
+                <!-- ═══════════ EQUITY & INVESTORS PANEL ═══════════ -->
+                <!-- ═══════════ FINANCE & PLANNING HUB (consolidates the 4 panels below) ═══════════ -->
+                <div class="panel" id="panel-finance" style="display:none">
+                    <div class="data-section"></div>
+                </div>
+
+                <div class="panel" id="panel-equity" style="display:none">
+                    <div class="data-section eq-shell">
+                        <div style="display:flex;align-items:center;gap:14px;margin-bottom:6px">
+                            <div style="width:46px;height:46px;border-radius:14px;flex:none;background:linear-gradient(135deg,#C8960C,#F2CC6B 45%,#8a5e14 100%);display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-weight:800;font-size:19px;color:#100b02;box-shadow:0 10px 22px rgba(0,0,0,.4),0 2px 0 rgba(255,255,255,.5) inset">E</div>
+                            <div class="section-title" style="margin:0">📈 Equity &amp; Investors</div>
+                        </div>
+                        <p style="font-size:13px;color:#B8B0A0;margin-bottom:16px;max-width:640px">
+                            Etel Group's investor cap table, round settings, and profit-distribution tool.
+                            Visible only to roles granted the <span class="mono">equity.view</span> capability
+                            in the Roles panel — everyone else never sees this tab.
+                        </p>
+                        <div style="display:flex;gap:10px;margin-bottom:22px;flex-wrap:wrap">
+                            <button class="eq-btn" onclick="openEquitySettingsModal()">⚙️ Round Settings</button>
+                            <button class="eq-btn" onclick="openEquityScenarioModal()">🔬 What-If Scenario</button>
+                            <button class="eq-btn" onclick="exportEquityInvestorsCsv()">📥 Export CSV</button>
+                            <button class="eq-btn primary" onclick="openEquityInvestorEdit(null)">➕ Add Investor</button>
+                        </div>
+                        <div id="equity-dashboard-body" style="margin-bottom:8px"></div>
+                        <div class="section-title" style="font-size:15px;margin-top:6px">Investors</div>
+                        <div id="equity-investors-list" style="margin-bottom:8px"></div>
+                        <div class="section-title" style="font-size:15px;margin-top:6px">Profit Distribution</div>
+                        <div id="equity-profit-body"></div>
+                    </div>
+                </div>
+
+                <!-- ═══════════ PLATFORM ECONOMICS PANEL ═══════════ -->
+                <div class="panel" id="panel-platform-econ" style="display:none">
+                    <div class="data-section eq-shell">
+                        <div class="section-title">📊 Platform Economics</div>
+                        <p style="font-size:13px;color:#B8B0A0;margin-bottom:16px;max-width:660px">
+                            Real 5% commission revenue from completed rides, weighed against real cost
+                            assumptions you enter below. The revenue side is always live data — the cost
+                            side is only as accurate as what you fill in. Gated by
+                            <span class="mono">platform_economics.view</span>/<span class="mono">.manage</span>.
+                        </p>
+                        <div id="pe-body"></div>
+                    </div>
+                </div>
+
+                <!-- ═══════════ EQUB PANEL ═══════════ -->
+                <div class="panel" id="panel-equb" style="display:none">
+                    <div class="data-section eq-shell">
+                        <div class="section-title">🤝 Equb (Rotating Savings)</div>
+                        <p style="font-size:13px;color:#B8B0A0;margin-bottom:16px;max-width:660px">
+                            Real money moves automatically between participants' wallets. Only you can
+                            create or start a group — permitted users can join what you've set up, but
+                            never create their own. Grant a phone number below before anyone can join
+                            at all. A scheduled cron job processes rounds automatically once configured;
+                            use "Process Now" here to manually trigger one in the meantime or to recover
+                            an at-risk group.
+                        </p>
+                        <div id="eqb-body"></div>
+                    </div>
+                </div>
+
+                <!-- ═══════════ PAYROLL COST CALCULATOR ═══════════ -->
+                <div class="panel" id="panel-payroll" style="display:none">
+                    <div class="data-section"></div>
+                </div>
+
+                <!-- ═══════════ BUSINESS PLAN & CAPITAL REQUIREMENT ═══════════ -->
+                <div class="panel" id="panel-business-plan" style="display:none">
+                    <div class="data-section"></div>
+                </div>
+
+                <!-- ═══════════ BRANDING & ICONS ═══════════ -->
+                <div class="panel" id="panel-branding" style="display:none">
+                    <div class="data-section"></div>
+                </div>
+
+                <!-- ═══════════ DANGER ZONE: FULL SYSTEM RESET ═══════════ -->
+                <div class="panel" id="panel-danger" style="display:none">
+                    <div class="data-section" style="border:1px solid rgba(255,93,108,.35);border-radius:14px;padding:22px;background:linear-gradient(135deg, rgba(255,93,108,.06), rgba(255,93,108,.01))">
+                        <div class="section-title" style="color:#ff5d6c">☠️ Danger Zone — Full System Reset</div>
+                        <p style="font-size:13px;color:#B8B0A0;margin-bottom:16px;max-width:680px">
+                            Permanently deletes real orders, rides, ratings, driver/service-giver profiles,
+                            and user accounts across the whole system. <b style="color:#ff9aa4">This cannot be undone
+                            except by restoring the backup file this tool generates for you.</b> Gated by the
+                            <span class="mono">system.reset</span> capability — not included in a normal Owner
+                            grant, must be added explicitly in the Roles panel.
+                        </p>
+                        <div id="danger-zone-body"></div>
+                    </div>
+                </div>
+
+                <!-- ═══════════ SUPPORT INBOX PANEL ═══════════ -->
+                <div class="panel" id="panel-support" style="display:none">
+                    <div class="data-section">
+                        <div class="section-title">🎧 Support Inbox</div>
+                        <p style="font-size:13px;color:#B8B0A0;margin-bottom:14px;max-width:640px">
+                            Messages sent from the "Contact Support" composer in the Delivery and Ride apps'
+                            Settings &amp; Privacy screens, plus data-export and account-deletion requests. Click a
+                            person to open the full thread and reply.
+                        </p>
+                        <label style="display:flex;align-items:center;gap:8px;font-size:13px;margin-bottom:14px;cursor:pointer">
+                            <input type="checkbox" id="support-unread-only" onchange="loadSupportInbox()"> Show unread only
+                        </label>
+                        <div style="display:grid;grid-template-columns:minmax(240px,320px) 1fr;gap:16px;align-items:flex-start">
+                            <div class="table-wrapper" style="max-height:600px;overflow-y:auto">
+                                <table>
+                                    <thead><tr><th>Person</th><th>Last message</th><th></th></tr></thead>
+                                    <tbody id="support-threads-tbody"><tr><td colspan="3" style="color:#B8B0A0">Loading…</td></tr></tbody>
+                                </table>
+                            </div>
+                            <div id="support-thread-panel" style="background:rgba(212,175,55,.04);border:1px solid rgba(212,175,55,.15);border-radius:12px;padding:18px;min-height:300px">
+                                <div style="color:#B8B0A0;text-align:center;padding:40px 10px">Select a person on the left to view their conversation.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ═══════════ RIDES PANEL ═══════════ -->
+                <div class="panel" id="panel-rides" style="display:none">
+
+                  <div id="rides-stats-strip" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin-bottom:20px"></div>
+
+                  <div class="chart-card" style="margin-bottom:20px">
+                    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:4px">
+                      <div class="chart-title" id="growth-chart-title">📈 Trips & Drivers Growth — Daily</div>
+                      <div style="display:flex;gap:6px">
+                        <button class="rides-filter-btn active" id="growth-btn-daily" onclick="growthSetPeriod('daily',this)">Daily</button>
+                        <button class="rides-filter-btn" id="growth-btn-weekly" onclick="growthSetPeriod('weekly',this)">Weekly</button>
+                        <button class="rides-filter-btn" id="growth-btn-monthly" onclick="growthSetPeriod('monthly',this)">Monthly</button>
+                        <button class="rides-filter-btn" id="growth-btn-yearly" onclick="growthSetPeriod('yearly',this)">Yearly</button>
+                      </div>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px">
+                      <span style="font-size:12px;color:#9A9AAE">📅 Custom range:</span>
+                      <input type="date" id="growth-date-from" style="padding:5px 8px;border-radius:8px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.05);color:#EDEDF5;font-size:12px"/>
+                      <span style="color:#6B6455;font-size:12px">to</span>
+                      <input type="date" id="growth-date-to" style="padding:5px 8px;border-radius:8px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.05);color:#EDEDF5;font-size:12px"/>
+                      <button class="rides-filter-btn" id="growth-btn-custom" onclick="growthApplyCustomRange()">Apply</button>
+                      <button style="padding:6px 10px;border-radius:8px;border:none;background:rgba(255,255,255,.07);color:#9A9AAE;font-size:11px;cursor:pointer" onclick="growthClearCustomRange()">Clear</button>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px">
+                      <span style="font-size:12px;color:#9A9AAE">View as:</span>
+                      <button class="rides-filter-btn active" id="growth-view-combo" onclick="growthSetChartType('combo',this)" title="Bars for trips, line for drivers">🔀 Combo</button>
+                      <button class="rides-filter-btn" id="growth-view-bar" onclick="growthSetChartType('bar',this)" title="Both as bars">📊 Bar</button>
+                      <button class="rides-filter-btn" id="growth-view-line" onclick="growthSetChartType('line',this)" title="Both as lines">📈 Line</button>
+                    </div>
+                    <div style="display:flex;gap:18px;margin:10px 0 6px;flex-wrap:wrap">
+                      <div style="font-size:12px;color:#9A9AAE">All-time trips: <strong id="growth-total-trips" style="color:#E5C76B">…</strong></div>
+                      <div style="font-size:12px;color:#9A9AAE">All-time drivers: <strong id="growth-total-drivers" style="color:#E5C76B">…</strong></div>
+                      <div style="font-size:12px;color:#9A9AAE">Gross fares (all-time): <strong id="growth-gross-fares" style="color:#E5C76B">…</strong></div>
+                      <div style="font-size:12px;color:#9A9AAE" title="5% of every completed ride (cash or wallet) is deducted from the driver's own prepaid ኢE money balance, which they top up via Etel Pay or an admin manual top-up. commission_owed/cash_fares_total still update for cash rides too, as a legacy record only.">Commission (5%) ⓘ: <strong id="growth-projected-commission" style="color:#E5C76B">…</strong></div>
+                      <button style="padding:5px 10px;border-radius:8px;border:1px solid rgba(212,175,55,.35);background:rgba(212,175,55,.1);color:#E5C76B;font-size:11px;cursor:pointer" onclick="growthBackfillCashCommission()">Backfill cash commission (one-time)</button>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px">
+                      <span style="font-size:12px;color:#9A9AAE">💳 Top up driver ኢE balance:</span>
+                      <div id="growth-topup-driver-picker" style="position:relative;min-width:220px">
+                        <input type="text" id="growth-topup-driver-search" placeholder="Search name or phone…" autocomplete="off"
+                          oninput="growthDriverSearchInput()"
+                          style="width:100%;padding:5px 8px;border-radius:8px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.05);color:#EDEDF5;font-size:12px;box-sizing:border-box"/>
+                        <div id="growth-topup-driver-results" style="display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;z-index:20;max-height:220px;overflow-y:auto;background:#1a1a24;border:1px solid rgba(212,175,55,.3);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.5)"></div>
+                      </div>
+                      <input type="number" id="growth-topup-amount" placeholder="Amount (ETB)" min="0.01" step="0.01"
+                        style="padding:5px 8px;border-radius:8px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.05);color:#EDEDF5;font-size:12px;width:120px"/>
+                      <input type="text" id="growth-topup-note" placeholder="Note (optional)"
+                        style="padding:5px 8px;border-radius:8px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.05);color:#EDEDF5;font-size:12px;width:160px"/>
+                      <button class="rides-filter-btn" onclick="growthTopupDriver()">Top Up</button>
+                    </div>
+                    <div id="growth-pending-topups-wrap" style="margin-bottom:10px;display:none">
+                      <div style="font-size:12px;color:#E5C76B;font-weight:700;margin-bottom:6px">⏳ Pending ኢE top-up requests (Etel Pay, awaiting approval)</div>
+                      <div id="growth-pending-topups-list"></div>
+                    </div>
+                    <div id="suspended-drivers-wrap" style="margin-bottom:10px;display:none">
+                      <div style="font-size:12px;color:#E24B4A;font-weight:700;margin-bottom:6px">🚫 Suspended drivers — pending safety review</div>
+                      <div id="suspended-drivers-list"></div>
+                    </div>
+                    <div style="margin-bottom:14px;border-radius:14px;background:linear-gradient(160deg,rgba(78,205,196,.09),rgba(20,20,30,.4));border:1px solid rgba(78,205,196,.28);overflow:hidden;box-shadow:0 10px 26px -16px rgba(0,0,0,.5)">
+                      <div style="display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid rgba(78,205,196,.18)">
+                        <div style="width:38px;height:38px;border-radius:11px;background:rgba(78,205,196,.14);display:flex;align-items:center;justify-content:center;font-size:18px">☎️</div>
+                        <div>
+                          <div style="font-size:13.5px;font-weight:800;color:#7FE8DC">Phone Dispatch</div>
+                          <div style="font-size:10.5px;color:#9A9AAE">Book a ride on behalf of a caller — for riders without the app</div>
+                        </div>
+                      </div>
+
+                      <div style="padding:16px">
+                        <div style="font-size:10px;font-weight:700;color:#6B6455;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Caller</div>
+                        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
+                          <div style="flex:1;min-width:170px">
+                            <input type="text" id="pd-phone" placeholder="0911234567" oninput="pdCheckCaller()"
+                              style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.04);color:#EDEDF5;font-size:13px"/>
+                            <div id="pd-caller-status" style="font-size:10.5px;margin-top:5px;min-height:14px;color:#6B6455">Phone number</div>
+                          </div>
+                          <div style="flex:1;min-width:170px">
+                            <input type="text" id="pd-name" placeholder="Name (new callers only)"
+                              style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.04);color:#EDEDF5;font-size:13px"/>
+                            <div style="font-size:10.5px;margin-top:5px;color:#6B6455">Full name</div>
+                          </div>
+                        </div>
+
+                        <div style="font-size:10px;font-weight:700;color:#6B6455;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Vehicle Type</div>
+                        <div id="pd-vtype-cards" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(72px,1fr));gap:8px;margin-bottom:16px"></div>
+                        <input type="hidden" id="pd-vtype" value="bajaj"/>
+
+                        <div style="font-size:10px;font-weight:700;color:#6B6455;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Trip Type</div>
+                        <div style="display:flex;gap:8px;margin-bottom:16px">
+                          <button type="button" id="pd-mode-open" onclick="pdSetMode('open')"
+                            style="flex:1;padding:10px;border-radius:10px;border:1px solid rgba(78,205,196,.55);background:rgba(78,205,196,.16);color:#7FE8DC;font-size:12px;font-weight:700;cursor:pointer">📍 Open Trip <span style="font-weight:400;opacity:.75">— GPS meter</span></button>
+                          <button type="button" id="pd-mode-fixed" onclick="pdSetMode('fixed')"
+                            style="flex:1;padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.03);color:#9A9AAE;font-size:12px;font-weight:700;cursor:pointer">📏 Fixed Distance</button>
+                        </div>
+                        <div id="pd-km-wrap" style="display:none;margin-bottom:16px">
+                          <input type="number" id="pd-km" placeholder="Distance in km" step="0.1" min="0"
+                            style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.04);color:#EDEDF5;font-size:13px"/>
+                        </div>
+
+                        <div style="font-size:10px;font-weight:700;color:#6B6455;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Customer Address <span style="font-weight:400;text-transform:none;color:#4A4436">— filters drivers on the map below</span></div>
+                        <input type="text" id="pd-address" placeholder="Type an address to find nearby drivers…" oninput="pdAddressInput()"
+                          style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.04);color:#EDEDF5;font-size:13px;margin-bottom:8px"/>
+                        <div id="pd-map" style="width:100%;height:220px;border-radius:12px;overflow:hidden;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.1);margin-bottom:6px;position:relative">
+                          <div id="pd-map-loading" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#6B6455;font-size:12px">Loading map…</div>
+                        </div>
+                        <div id="pd-driver-count" style="font-size:11px;color:#6B6455;margin-bottom:16px">📍 Showing all online drivers</div>
+
+                        <div style="font-size:10px;font-weight:700;color:#6B6455;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Pickup Note <span style="font-weight:400;text-transform:none;color:#4A4436">(optional)</span></div>
+                        <input type="text" id="pd-note" placeholder="e.g. near South Star Hotel, blue gate"
+                          style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.04);color:#EDEDF5;font-size:13px;margin-bottom:18px"/>
+
+                        <button id="pd-submit-btn" onclick="phoneDispatchBook()"
+                          style="width:100%;padding:13px;border-radius:12px;border:none;background:linear-gradient(135deg,#7FE8DC,#4ECDC4);color:#0a1a17;font-size:14px;font-weight:800;cursor:pointer;box-shadow:0 8px 20px -10px rgba(78,205,196,.6)">📞 Create Ride for Caller</button>
+                        <div id="pd-status" style="margin-top:10px;font-size:12px;min-height:16px;text-align:center"></div>
+                      </div>
+                    </div>
+                    <div style="position: relative; height: 260px; width: 100%;">
+                      <canvas id="chart-ride-growth"></canvas>
+                    </div>
+                  </div>
+
+                  <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:16px">
+                    <div style="display:flex;gap:6px;flex-wrap:wrap">
+                      <button class="rides-filter-btn active" onclick="ridesFilter('all',this)">All</button>
+                      <button class="rides-filter-btn" onclick="ridesFilter('searching',this)">Searching</button>
+                      <button class="rides-filter-btn" onclick="ridesFilter('accepted',this)">Accepted</button>
+                      <button class="rides-filter-btn" onclick="ridesFilter('in_progress',this)">In Progress</button>
+                      <button class="rides-filter-btn" onclick="ridesFilter('arrived',this)">Arrived</button>
+                      <button class="rides-filter-btn" onclick="ridesFilter('completed',this)">Completed</button>
+                      <button class="rides-filter-btn" onclick="ridesFilter('cancelled',this)">Cancelled</button>
+                    </div>
+                    <input id="rides-search" type="text" placeholder="Search name, phone, plate..."
+                      style="flex:1;min-width:160px;padding:8px 12px;border-radius:10px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.05);color:#EDEDF5;font-size:13px;outline:none"
+                      oninput="ridesSearchDebounce()"/>
+                    <button onclick="ridesLoad()" style="padding:8px 14px;border-radius:10px;border:none;background:rgba(212,175,55,.15);color:#E5C76B;font-size:13px;cursor:pointer">Refresh</button>
+                    <button onclick="ridesExport()" style="padding:8px 14px;border-radius:10px;border:none;background:rgba(255,255,255,.07);color:#EDEDF5;font-size:13px;cursor:pointer">Export CSV</button>
+                  </div>
+
+                  <div style="overflow-x:auto;border-radius:14px;border:1px solid rgba(255,255,255,.08)">
+                    <table style="width:100%;border-collapse:collapse;font-size:13px;font-family:Outfit,sans-serif">
+                      <thead>
+                        <tr style="border-bottom:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04)">
+                          <th style="padding:12px 14px;text-align:left;color:#9A9AAE;font-weight:700">#</th>
+                          <th style="padding:12px 14px;text-align:left;color:#9A9AAE;font-weight:700">Status</th>
+                          <th style="padding:12px 14px;text-align:left;color:#9A9AAE;font-weight:700">Passenger</th>
+                          <th style="padding:12px 14px;text-align:left;color:#9A9AAE;font-weight:700">Driver</th>
+                          <th style="padding:12px 14px;text-align:left;color:#9A9AAE;font-weight:700">Route</th>
+                          <th style="padding:12px 14px;text-align:right;color:#9A9AAE;font-weight:700">Fare</th>
+                          <th style="padding:12px 14px;text-align:left;color:#9A9AAE;font-weight:700">Time</th>
+                          <th style="padding:12px 14px;text-align:center;color:#9A9AAE;font-weight:700">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody id="rides-tbody">
+                        <tr><td colspan="8" style="padding:40px;text-align:center;color:#B8B0A0">Loading rides...</td></tr>
+                      </tbody>
+                    </table>
+                  </div>
+
+                  <div id="rides-pagination" style="display:flex;gap:8px;align-items:center;justify-content:center;margin-top:16px;flex-wrap:wrap"></div>
+
+                  <h3 style="color:#f0cf5a;font-size:15px;margin:28px 0 12px">Ride issue reports</h3>
+                  <div style="display:flex;gap:6px;margin-bottom:12px">
+                    <button class="rides-filter-btn active" data-issue-filter="all" onclick="ridesIssuesFilter('all',this)">All</button>
+                    <button class="rides-filter-btn" data-issue-filter="open" onclick="ridesIssuesFilter('open',this)">Open</button>
+                    <button class="rides-filter-btn" data-issue-filter="resolved" onclick="ridesIssuesFilter('resolved',this)">Resolved</button>
+                  </div>
+                  <div id="ride-issues-wrap"></div>
+
+                  <h3 style="color:#f0cf5a;font-size:15px;margin:28px 0 12px">Pending vehicle changes</h3>
+                  <div style="font-size:12px;color:#9A9AAE;margin-bottom:12px">A driver's vehicle type/make/color/plate only actually changes on the map and in ride previews once approved here.</div>
+                  <div id="vehicle-change-wrap"></div>
+
+                  <h3 style="color:#f0cf5a;font-size:15px;margin:28px 0 12px">Flagged identities</h3>
+                  <div style="font-size:12px;color:#9A9AAE;margin-bottom:12px">Registration compares the driver's license name/date of birth against their EtelID record. A mismatch blocks them from going online until approved or rejected here.</div>
+                  <div id="identity-flagged-wrap"></div>
+
+                </div><!-- /panel-rides -->
+
+                <div class="panel" id="panel-pricing" style="display:none">
+
+                  <div data-cap="pricing.manage">
+                    <h3 style="color:#f0cf5a;font-size:15px;margin:0 0 12px">Ride fare rules (per vehicle type)</h3>
+                    <div id="pricing-fare-rules"></div>
+                  </div>
+
+                  <div data-cap="pricing.manage">
+                    <h3 style="color:#f0cf5a;font-size:15px;margin:28px 0 12px">Driver daily-goal tiers</h3>
+                    <div id="pricing-goal-tiers"></div>
+                  </div>
+
+                  <div data-cap="pricing.manage">
+                    <h3 style="color:#f0cf5a;font-size:15px;margin:28px 0 12px">Peak-hour schedule (when surge applies)</h3>
+                    <div id="pricing-peak-windows"></div>
+                  </div>
+
+                  <div data-cap="settings.view">
+                    <h3 style="color:#f0cf5a;font-size:15px;margin:28px 0 12px">Delivery zones</h3>
+                    <div id="pricing-zones"></div>
+                  </div>
+
+                  <div data-cap="settings.view">
+                    <h3 style="color:#f0cf5a;font-size:15px;margin:28px 0 12px">Delivery tiers (moto / car / express cargo)</h3>
+                    <div id="pricing-tiers"></div>
+                  </div>
+
+                  <div data-cap="finance.view">
+                    <h3 style="color:#f0cf5a;font-size:15px;margin:28px 0 12px">Bank transfer accounts</h3>
+                    <div id="pricing-bank-accounts"></div>
+                  </div>
+
+                </div><!-- /panel-pricing -->
+
+                <div class="panel" id="panel-telebirr" style="display:none">
+                    <div class="page-title">💳 Payments</div>
+                    <div class="page-subtitle">Manual verification only — check your Telebirr merchant SMS/dashboard and bank statement yourself, then confirm or reject each one below</div>
+
+                    <div id="payments-report" style="margin-bottom:24px">
+                        <div style="display:flex;gap:10px;align-items:center;margin-bottom:14px;flex-wrap:wrap">
+                            <select id="pr-range" class="filter-sel" onchange="loadPaymentsReport()">
+                                <option value="7">Last 7 days</option>
+                                <option value="30" selected>Last 30 days</option>
+                                <option value="90">Last 90 days</option>
+                                <option value="all">All time</option>
+                            </select>
+                            <button class="btn btn-secondary" onclick="loadPaymentsReport()" style="padding:8px 14px">🔄 Refresh Report</button>
+                        </div>
+                        <div id="payments-report-body">Loading report…</div>
+                    </div>
+
+                    <div style="font-weight:800;font-size:15px;color:#D4AF37;margin-bottom:10px">🎨 Payment Method Logos</div>
+                    <div style="font-size:12px;color:#B8B0A0;margin-bottom:14px">Upload a real logo for each payment method - every screen showing that method's icon (Service Giver settings, this admin panel) switches to it automatically. Leave any of these unset and a plain custom badge is used instead.</div>
+                    <div id="payment-logos-editor" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:28px"></div>
+
+                    <div style="font-weight:800;font-size:15px;color:#D4AF37;margin-bottom:10px">📱 Telebirr Confirmations</div>
+                    <button class="btn btn-secondary" onclick="loadTelebirrPayments()" style="padding:8px 14px;margin-bottom:16px">🔄 Refresh</button>
+                    <div id="telebirr-list" style="margin-bottom:28px">Loading…</div>
+
+                    <div style="font-weight:800;font-size:15px;color:#D4AF37;margin-bottom:10px">🏦 Bank Transfer Confirmations</div>
+                    <button class="btn btn-secondary" onclick="loadBankPayments()" style="padding:8px 14px;margin-bottom:16px">🔄 Refresh</button>
+                    <div id="bank-payments-list" style="margin-bottom:28px">Loading…</div>
+
+                    <div style="font-weight:800;font-size:15px;color:#D4AF37;margin-bottom:10px">🔐 Payout Method Change Approvals</div>
+                    <div style="font-size:12px;color:#B8B0A0;margin-bottom:10px">A business's payout details (bank account, Telebirr number) never change automatically — every change sits here until you approve or reject it.</div>
+                    <button class="btn btn-secondary" onclick="loadPayoutRequests()" style="padding:8px 14px;margin-bottom:16px">🔄 Refresh</button>
+                    <div id="payout-requests-list">Loading…</div>
+                </div><!-- /panel-telebirr -->
+
+            </div><!-- /content-scroll -->
+        </div><!-- /content -->
+    </div><!-- /main-container -->
+
+    <!-- ══ MODALS ══ -->
+    
+
+    <div id="modal-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:500;align-items:center;justify-content:center">
+        <div id="modal-box" style="background:#fff;border-radius:16px;padding:32px;width:100%;max-width:480px;max-height:90vh;overflow-y:auto;position:relative;box-shadow:0 20px 60px rgba(0,0,0,.3)">
+            <button onclick="closeModal()" style="position:absolute;top:14px;right:16px;background:none;border:none;font-size:22px;cursor:pointer;color:#999">✕</button>
+            <div id="modal-content"></div>
+        </div>
+    </div>
+
+
+    <script src="js/admin/admin-api.js?v=4.1"></script>
+    <script src="js/admin/admin-charts.js?v=4.1"></script>
+    <script src="js/admin/admin-growth-charts.js?v=2.5"></script>
+    <script src="js/admin/admin-ui.js?v=4.7"></script>
+    <script src="js/admin/admin-printer.js?v=1.0"></script><!-- Direct Bluetooth printer: order receipts, daily summary, verification slips -->
+    <script src="js/admin-pricing.js?v=1.9"></script><!-- Pricing tab (fare rules, zones, delivery tiers, bank accounts) -->
+    <script>
+    var SYS_TEST_STEPS_RIDE = [
+      'Demo accounts ready', 'Booking created', 'Driver accepted', 'Trip started',
+      'GPS movement simulated', 'Waiting fee simulated', 'Arrival + fare calculated',
+      'Payment confirmed', 'Test data cleaned up'
+    ];
+    var SYS_TEST_STEPS_DELIVERY = [
+      'Demo accounts ready', 'Demo shop + item ready', 'Order created', 'Courier accepted',
+      'Picked up from shop', 'In transit', 'Delivered', 'Test data cleaned up'
+    ];
+    function _sysTestRowHtml(idPrefix, label, state, detail) {
+      // state: 'pending' | 'ok' | 'bad'
+      var icon = state === 'ok' ? '✅' : state === 'bad' ? '❌' : '⏳';
+      var color = state === 'ok' ? '#639922' : state === 'bad' ? '#E24B4A' : '#8a8370';
+      var opacity = state === 'pending' ? '0.55' : '1';
+      return '<div id="' + idPrefix + '-' + label.replace(/[^a-zA-Z0-9]/g, '') + '" style="display:flex;gap:10px;padding:7px 0;border-bottom:1px solid rgba(212,175,55,.1);opacity:' + opacity + ';transition:opacity .3s">' +
+        '<div style="flex-shrink:0">' + icon + '</div>' +
+        '<div><div style="font-weight:700;font-size:13px;color:' + color + '">' + esc(label) + '</div>' +
+        (detail ? '<div style="font-size:12px;color:#999;margin-top:2px">' + esc(detail) + '</div>' : '') +
+        '</div></div>';
+    }
+    function runSystemTest(action, btnId, boxId, steps) {
+      var idPrefix = boxId; // unique per test, so the two tests' row ids never collide
+      var btn = document.getElementById(btnId);
+      var box = document.getElementById(boxId);
+      var originalLabel = btn.textContent;
+      btn.disabled = true; btn.textContent = '⏳ Running…';
+      box.style.display = 'block';
+      // Render the full pipeline immediately, all pending - this is what
+      // actually shows real progress instead of one opaque "Running…"
+      // state: the user watches each row light up as the server genuinely
+      // completes that exact step, not a generic spinner.
+      box.innerHTML = steps.map(function (label) { return _sysTestRowHtml(idPrefix, label, 'pending'); }).join('');
+
+      var url = ETEL.api + '?action=' + action + '&token=' + encodeURIComponent(Auth.getToken());
+      var es = new EventSource(url);
+      var sawFinal = false;
+      es.onmessage = function (evt) {
+        var data;
+        try { data = JSON.parse(evt.data); } catch (e) { return; }
+        if (data.final) { sawFinal = true; return; }
+        if (!data.step) return;
+        var rowId = idPrefix + '-' + data.step.replace(/[^a-zA-Z0-9]/g, '');
+        var row = document.getElementById(rowId);
+        if (row) row.outerHTML = _sysTestRowHtml(idPrefix, data.step, data.ok ? 'ok' : 'bad', data.detail);
+      };
+      es.addEventListener('close', function () {
+        es.close();
+        btn.disabled = false; btn.textContent = originalLabel;
+        var anyFailed = box.querySelectorAll('[style*="#E24B4A"]').length > 0;
+        var banner = anyFailed
+          ? '<div style="padding:10px 14px;background:rgba(226,75,74,.12);border:1px solid rgba(226,75,74,.4);border-radius:8px;color:#E24B4A;font-weight:700;font-size:13px;margin-bottom:10px">❌ One or more steps failed - see below</div>'
+          : '<div style="padding:10px 14px;background:rgba(99,153,34,.12);border:1px solid rgba(99,153,34,.4);border-radius:8px;color:#639922;font-weight:700;font-size:13px;margin-bottom:10px">✅ All steps passed - the full pipeline is working end to end</div>';
+        box.innerHTML = banner + box.innerHTML;
+      });
+      es.onerror = function () {
+        es.close();
+        if (sawFinal) return; // normal close after "close" event already handled above
+        btn.disabled = false; btn.textContent = originalLabel;
+        box.innerHTML = box.innerHTML + '<div style="padding:12px;background:rgba(226,75,74,.1);border:1px solid rgba(226,75,74,.4);border-radius:8px;color:#E24B4A;font-size:13px;margin-top:8px">Connection lost before the test finished.</div>';
+      };
+    }
+    </script>
+    <script src="js/admin-roles.js?v=1.5"></script><!-- Roles & Permissions tab -->
+    <script src="js/admin-equity.js?v=1.3"></script><!-- Equity & Investors tab (founder-only) -->
+    <script src="js/admin-platform-economics.js?v=1.3"></script><!-- Platform Economics: real 5% revenue vs real costs -->
+    <script src="js/admin-equb.js?v=1.2"></script><!-- Equb admin oversight: participants + groups + packages + force-process -->
+    <script src="js/admin-payroll.js?v=1.3"></script><!-- Ethiopia Payroll Cost Calculator -->
+    <script src="js/admin-business-plan.js?v=1.3"></script><!-- Business Plan & Capital Requirement -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script><!-- PDF generation library for Financial Snapshot report -->
+    <script src="js/admin-pdf-report.js?v=1.0"></script><!-- Financial Snapshot PDF: Growth + Equity + Platform Economics + Hiring Plan -->
+    <script src="js/admin-finance-hub.js?v=1.1"></script><!-- Consolidates Equity/Platform Economics/Payroll/Business Plan into one tab -->
+    <script src="js/admin-danger-zone.js?v=1.0"></script><!-- Danger Zone: full system reset (founder-only, gated) -->
+    <script src="js/admin-branding.js?v=1.0"></script><!-- Branding: site icon/PWA icon/splash/header logo uploads, admin-only -->
+    <script src="js/admin-etelpay.js?v=1.0"></script><!-- Etel Pay live-toggle + per-user overrides (Settings tab) -->
+    <script src="js/admin-support.js?v=1.0"></script><!-- Support Inbox (Contact Support messages) -->
+
+<script src="js/admin.js?v=6.3"></script>
+<script src="js/admin-confirmations-premium.js?v=1.1"></script><!-- Pending Confirmations + GLOBAL modal-box fix for entire admin system -->
+<script src="js/admin-couriers-premium.js?v=1.4"></script><!-- Premium Couriers Management: 3D cards + edit modal + live map -->
+    <script src="js/admin-premium.js?v=4.1"></script><!-- KPI count-ups + card motion -->
+        <script src="js/admin-updater-ext.js?v=4.3"></script>
+        <script src="js/admin-rides.js?v=4.9"></script><!-- Rides tab - Phase 4, + ride issue reports -->
+    <script src="js/admin-sos.js?v=1.0"></script><!-- SOS / intruder-alert monitor for driver & rider panic button -->
+    <script src="js/admin/servicegiver-ext.js?v=4.2"></script>
+    <script src="js/admin-audit.js?v=1.5"></script><!-- One-click code audit (Settings tab) -->
+    <script src="js/admin-migrations.js?v=1.0"></script><!-- Database migrations (Settings tab) -->
+    <script src="js/admin-announcements.js?v=1.0"></script><!-- Driver announcements + push (Settings tab) -->
+    <script src="js/admin-launch-checklist.js?v=1.0"></script><!-- Launch Readiness tab -->
+    <script src="js/admin-releases.js?v=1.0"></script><!-- Releases tab - canary release management -->
+    <script>
+      // admin.html's switchPage() (defined in one of the admin-*.js
+      // files above, not touched here) toggles .panel visibility purely
+      // by naming convention (data-page="X" <-> #panel-X), with no
+      // per-tab init hook this new tab could plug into safely without
+      // risking a change to code not reviewed as part of this feature.
+      // Watching #panel-releases' own style attribute for when it
+      // becomes visible is a robust, fully self-contained way to load
+      // the panel's data right when it's opened, regardless of how
+      // switchPage itself is implemented internally.
+      document.addEventListener('DOMContentLoaded', function () {
+        var panel = document.getElementById('panel-releases');
+        if (!panel) return;
+        var obs = new MutationObserver(function () {
+          if (panel.style.display !== 'none') loadReleasesPanel();
+        });
+        obs.observe(panel, { attributes: true, attributeFilter: ['style'] });
+      });
+    </script>
+    <script>
+        function initAdminMaps() {
+            window._mapsReady = true;
+            if (typeof initSGMapWhenReady === 'function') initSGMapWhenReady();
+        }
+    </script>
+    <script>loadGoogleMaps('geometry,places,marker', 'initAdminMaps');</script>
+<script src="js/apk-download-badge.js" data-role="admin"></script>
+</body>
+</html>

@@ -1,0 +1,109 @@
+/*
+ * ETEL Delivery & Ride - Universal Responsive Override
+ * Loaded LAST on every page (after etel-gold-theme.css), same convention as
+ * the gold theme layer - additive only, does not rewrite existing page CSS.
+ *
+ * Confirmed via codebase audit (2026-06-21): all 7 pages already ship a
+ * correct viewport meta tag, and per-page CSS already has correct max-width
+ * caps on modals/panels. The real, confirmed gap: every page is designed
+ * and tested mobile-only (max breakpoint in most files tops out at 768px,
+ * and several theme/override layers carry zero breakpoints at all). There
+ * is no tablet (768-1024px) or desktop (1024px+) layout - content just
+ * stretches edge-to-edge at those widths. This file adds that layer.
+ *
+ * Apply: add as the FINAL <link> before </head>, after etel-gold-theme.css,
+ * on admin.html, ride.html, driver.html, customer.html, courier.html,
+ * servicegiver.html, login.html, track.html, install.html.
+ */
+
+/* ── Safe-area insets (notched iPhones / Android gesture bars) ──
+   Only pages with viewport-fit=cover (ride.html, driver.html, login.html,
+   install.html) benefit from this; harmless no-op elsewhere. */
+body {
+  padding-left: env(safe-area-inset-left, 0);
+  padding-right: env(safe-area-inset-right, 0);
+}
+body > *:first-child,
+.header, .top-bar, .app-header {
+  padding-top: max(env(safe-area-inset-top, 0px), 0px);
+}
+.bottom-nav, .tab-bar, .driver-bottom-bar, .nav-bottom {
+  padding-bottom: max(env(safe-area-inset-bottom, 0px), 8px);
+}
+
+/* ── Guaranteed touch targets (WCAG 2.5.5 / mobile UX baseline) ──
+   Buttons/links under 44px are a common source of mis-taps on real
+   phones even when they look fine on a desktop dev-tools emulator. */
+button, .btn, a.btn, [onclick], .history-row, input[type="submit"] {
+  min-height: 40px;
+}
+
+/* ── Fluid typography ──
+   Headings that are hard-coded in px don't scale down gracefully on
+   very small phones (iPhone SE / older Android, ~360px wide) or scale
+   up to fill a tablet. clamp() keeps a sane min/max either direction. */
+h1, .page-title, .app-title { font-size: clamp(1.25rem, 4vw + 0.5rem, 2rem) !important; }
+h2, .section-title          { font-size: clamp(1.05rem, 2.5vw + 0.4rem, 1.5rem) !important; }
+
+/* ══════════════════════════════════════════════════════════════
+   TABLET (768px - 1023px)
+   ══════════════════════════════════════════════════════════════ */
+@media (min-width: 768px) {
+  /* Centered, capped-width content column instead of edge-to-edge
+     stretch - applies to the common top-level wrapper class names
+     used across these pages without assuming one specific page. */
+  body > .container, body > .app, body > .wrap, body > main,
+  .page-content, .content-area, .dashboard-body {
+    max-width: 720px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  /* Stat-card grids (seen on admin Rides Management, driver earnings,
+     etc.) currently stack 1-2 wide on phone widths even when there's
+     room for more - widen the grid once there's space. */
+  .rides-stats-strip, .stats-grid, .stat-cards, .dashboard-stats {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)) !important;
+    gap: 14px;
+  }
+
+  /* History/list rows: allow two-column layout on tablet instead of
+     a single long scrolling list. */
+  #history-list, #driver-history-list {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    align-items: start;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   DESKTOP / WIDE BROWSER (1024px+)
+   ══════════════════════════════════════════════════════════════ */
+@media (min-width: 1024px) {
+  body > .container, body > .app, body > .wrap, body > main,
+  .page-content, .content-area, .dashboard-body {
+    max-width: 1080px;
+  }
+
+  .rides-stats-strip, .stats-grid, .stat-cards, .dashboard-stats {
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)) !important;
+  }
+
+  #history-list, #driver-history-list {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  /* Admin tables: stop letting them stretch to full edge-to-edge
+     browser width on a large monitor - keeps row content scannable. */
+  .table-wrapper table { max-width: 1080px; margin: 0 auto; }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   VERY SMALL PHONES (<360px) - iPhone SE and similar
+   ══════════════════════════════════════════════════════════════ */
+@media (max-width: 359px) {
+  body { font-size: 14px; }
+  .rides-stat-card, .stat-card { padding: 12px !important; }
+}
