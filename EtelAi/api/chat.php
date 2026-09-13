@@ -227,6 +227,14 @@ if ($action === 'clear_history') {
 $message = isset($body['message']) ? trim($body['message']) : '';
 if ($message === '') err('message is required');
 
+// Client-detected skill category ('coding' or 'general', see
+// SKILL_REGISTRY's cat field in index.html) - used only to prefer a
+// tagged OpenRouter key suited to the task; never trusted for
+// anything else, so an unrecognized/missing value just means no
+// preference (falls through to the provider's normal key order).
+$taskTag = isset($body['skill_category']) ? trim((string)$body['skill_category']) : '';
+if ($taskTag !== 'coding' && $taskTag !== 'general') $taskTag = '';
+
 $pdo   = db();
 $facts = $member ? etelai_mem_get_facts($pdo, intval($member['member_id'])) : array();
 
@@ -837,14 +845,34 @@ function etelai_provider_default_base($providerId) {
     return '';
 }
 
-function etelai_try_provider_keys(&$providersCfg, $providerId, $messages, $tools, $toolExtra) {
+// $preferredTag lets a caller ask "try a key tagged for this task first"
+// (e.g. a key tagged 'coding' for the Debugger/Code Generator/Code
+// Reviewer/SQL Generator skills) without making a tag a hard
+// requirement - untagged keys, and keys with a different tag, are
+// still tried afterward in their normal order if no tagged key works
+// or none exists. This is what lets one provider (e.g. OpenRouter)
+// host several free models, each suited to a different kind of task,
+// instead of picking one model for everything.
+function etelai_try_provider_keys(&$providersCfg, $providerId, $messages, $tools, $toolExtra, $preferredTag = null) {
     $now = time();
     $lastError = null;
     $anyTried = false;
 
     foreach ($providersCfg['providers'] as &$prov) {
         if ($prov['id'] !== $providerId) continue;
-        foreach ($prov['keys'] as &$k) {
+        $orderedKeys = &$prov['keys'];
+        if ($preferredTag !== null && $preferredTag !== '') {
+            $tagged = array();
+            $untagged = array();
+            foreach ($prov['keys'] as $idx => $k) {
+                if (isset($k['tag']) && $k['tag'] === $preferredTag) $tagged[] = $idx;
+                else $untagged[] = $idx;
+            }
+            $orderedIdx = array_merge($tagged, $untagged);
+            $orderedKeys = array();
+            foreach ($orderedIdx as $idx) $orderedKeys[] = &$prov['keys'][$idx];
+        }
+        foreach ($orderedKeys as &$k) {
             if (empty($k['enabled'])) continue;
             if (!empty($k['cooldown_until']) && strtotime($k['cooldown_until']) > $now) continue;
             $anyTried = true;
@@ -953,7 +981,7 @@ if ($activeProvider['id'] === 'gemini' || $activeProvider['id'] === 'kimi') {
     $lastError = null;
     foreach ($tryOrder as $i => $pid) {
         try {
-            $reply = etelai_try_provider_keys($providersCfg, $pid, $messages, $toolsForThisCall, $toolExtra);
+            $reply = etelai_try_provider_keys($providersCfg, $pid, $messages, $toolsForThisCall, $toolExtra, $taskTag);
             break;
         } catch (Exception $e) {
             $lastError = $e->getMessage();
@@ -976,7 +1004,7 @@ if ($activeProvider['id'] === 'gemini' || $activeProvider['id'] === 'kimi') {
     // provider id that isn't literally 'gemini' - same key rotation and
     // cooldown handling gemini/kimi get above.
     try {
-        $reply = etelai_try_provider_keys($providersCfg, $activeProvider['id'], $messages, null, array());
+        $reply = etelai_try_provider_keys($providersCfg, $activeProvider['id'], $messages, null, array(), $taskTag);
     } catch (Exception $e) {
         err($e->getMessage(), 503);
     }
