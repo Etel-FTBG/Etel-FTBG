@@ -237,3 +237,30 @@ function egid_remove_company_role(int $linkId): void {
         throw new Exception($res['body']['message'] ?? 'Could not remove role in EtelID');
     }
 }
+
+// Real registered-member count from EtelID, for the public homepage's
+// member counter - replaces a client-side fake that seeded a number and
+// ticked it up with Math.random(). Cached briefly in a flat file (no
+// cache table needed for one integer) so the homepage doesn't call out
+// to EtelID on every single page load.
+function egid_member_count(): int {
+    $cacheFile = sys_get_temp_dir() . '/etelgroup_member_count.json';
+    $ttl = 300; // 5 minutes - "real, occasionally refreshed" beats "live", and beats hammering EtelID
+    if (is_file($cacheFile) && (time() - filemtime($cacheFile)) < $ttl) {
+        $cached = json_decode((string)file_get_contents($cacheFile), true);
+        if (is_array($cached) && isset($cached['count'])) return (int)$cached['count'];
+    }
+    $res = egid_post('/service/member_count', array());
+    if ($res['status'] !== 200 || empty($res['body']['ok'])) {
+        // EtelID unreachable - serve the last known-good cached count rather
+        // than fail the whole homepage load over one non-critical number.
+        if (is_file($cacheFile)) {
+            $cached = json_decode((string)file_get_contents($cacheFile), true);
+            if (is_array($cached) && isset($cached['count'])) return (int)$cached['count'];
+        }
+        throw new Exception($res['body']['message'] ?? 'Could not reach EtelID for member count');
+    }
+    $count = (int)($res['body']['count'] ?? 0);
+    @file_put_contents($cacheFile, json_encode(array('count' => $count)));
+    return $count;
+}
