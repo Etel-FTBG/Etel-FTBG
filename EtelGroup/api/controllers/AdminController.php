@@ -340,10 +340,12 @@ case 'admin_set_employee_role': {
 case 'admin_remove_employee_role': {
     eg_require_admin();
     $id = intval($body['id'] ?? 0);
+    $slug = trim((string)($body['company_slug'] ?? ''));
     if (!$id) fail('id required', 400);
+    if ($slug === '') fail('company_slug required', 400);
     try {
-        egid_remove_company_role($id);
-        eg_log_activity('employee_role_removed', "role link #$id");
+        egid_remove_company_role($id, $slug);
+        eg_log_activity('employee_role_removed', "role link #$id at $slug");
         ok(array('message' => 'Role removed'));
     } catch (Exception $e) {
         fail($e->getMessage(), 502);
