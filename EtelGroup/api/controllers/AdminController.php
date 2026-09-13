@@ -278,6 +278,19 @@ case 'admin_delete_company': {
     break;
 }
 
+case 'admin_list_id_companies': {
+    // Admin-only - EtelID's canonical slug/name/status registry, used to
+    // populate the Companies form's slug picker so it can't drift from
+    // what EtelID's role/auth routes actually recognize.
+    eg_require_admin();
+    try {
+        ok(array('companies' => egid_list_id_companies()));
+    } catch (Exception $e) {
+        fail($e->getMessage(), 502);
+    }
+    break;
+}
+
 case 'admin_reorder_companies': {
     eg_require_admin();
     $pdo = eg_db();
