@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta name="referrer" content="no-referrer-when-downgrade">
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+<title>ETEL Delivery — Ethiopia's Premium Last-Mile Platform</title>
+<link rel="icon" type="image/x-icon" href="favicon.ico">
+<meta name="description" content="ETEL Delivery — fast, reliable last-mile delivery across Hawassa, Ethiopia. Live tracking, smart pricing, secure payments via Telebirr, Etel Pay & CBE Birr."/>
+<meta name="theme-color" content="#D4AF37"/>
+<meta property="og:title" content="ETEL Delivery — Ethiopia's Premium Last-Mile Platform"/>
+<meta property="og:description" content="Real-time tracking. Smart pricing. Trusted across Hawassa."/>
+<meta property="og:type" content="website"/>
+<link rel="stylesheet" href="css/etel.css?v=3.7.4"/>
+<link rel="stylesheet" href="css/premium.css?v=3.7.4"/>
+
+<!-- GSAP (progressive enhancement — page works fully without it) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+
+
+<style>
+/* ── Hero design tokens (self-contained, robust) ── */
+:root{
+  --f-d:'DM Serif Display',serif;
+  --f-m:'Poppins',sans-serif;
+  --f-am:'Noto Sans Ethiopic',sans-serif;
+  --cream:#F5EDD8;
+  --gold-f:rgba(212,175,55,.12);
+  --gold3:rgba(212,175,55,.5);
+}
+
+/* ── HERO ── */
+#hero{position:relative;height:100vh;min-height:720px;display:flex;align-items:center;overflow:hidden;background:radial-gradient(ellipse 90% 90% at 60% 45%,#1b130a 0%,#0a0703 70%)}
+.hero-coins{position:absolute;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+.hero-coin-glow{position:absolute;border-radius:50%;filter:blur(90px)}
+.hero-coin-glow.gold{width:620px;height:620px;top:-200px;right:-160px;background:radial-gradient(circle,rgba(255,215,0,.5),transparent 70%)}
+.hero-coin-glow.blue{width:620px;height:620px;bottom:-220px;right:-100px;background:radial-gradient(circle,rgba(51,149,255,.45),transparent 70%)}
+.hero-coin{position:absolute;object-fit:contain;animation:heroCoinFloat 9s ease-in-out infinite}
+.hero-coin.delivery{width:420px;height:420px;top:-90px;right:-70px;filter:drop-shadow(0 30px 50px rgba(0,0,0,.6));transform:rotate(-8deg)}
+.hero-coin.ride{width:400px;height:400px;bottom:-110px;right:2%;filter:drop-shadow(0 30px 50px rgba(0,0,0,.6));animation-delay:1.4s;transform:rotate(6deg)}
+@keyframes heroCoinFloat{0%,100%{translate:0 0}50%{translate:0 -20px}}
+@media(prefers-reduced-motion:reduce){.hero-coin{animation:none}}
+@media(max-width:900px){
+  .hero-coin.delivery{width:260px;height:260px;top:-40px;right:-60px;opacity:.55}
+  .hero-coin.ride{width:240px;height:240px;bottom:-50px;right:-50px;opacity:.55}
+  .hero-coin-glow.gold,.hero-coin-glow.blue{width:380px;height:380px}
+}
+.hero-over{position:absolute;inset:0;z-index:1;pointer-events:none;
+  background:
+    linear-gradient(100deg,rgba(10,7,3,.97) 0%,rgba(10,7,3,.9) 30%,rgba(10,7,3,.55) 50%,rgba(10,7,3,.15) 68%,transparent 82%),
+    linear-gradient(180deg,rgba(10,7,3,.2) 0%,transparent 18%,transparent 60%,rgba(10,7,3,1) 100%)}
+.hero-content{position:relative;z-index:2;padding:0 6%;max-width:680px}
+.hero-eyebrow{display:flex;align-items:center;gap:12px;margin-bottom:28px}
+.hero-eline{width:36px;height:1px;background:rgba(212,175,55,.5)}
+.hero-h1{font-family:var(--f-d);font-size:clamp(3.8rem,8vw,7.8rem);font-weight:300;line-height:.96;color:#F5EDD8;margin-bottom:14px}
+.hero-h1 em{font-style:italic;color:var(--gold)}
+.hero-am{font-family:var(--f-am);font-size:1.1rem;color:rgba(212,175,55,.9);margin-bottom:22px}
+.hero-desc{font-family:var(--f-m);font-size:12px;color:rgba(245,237,216,.68);line-height:1.9;max-width:420px;margin-bottom:44px}
+.hero-ctas{display:flex;gap:14px;flex-wrap:wrap}
+.hero-stats{position:absolute;bottom:52px;right:6%;z-index:2;display:flex;gap:40px}
+.hstat-num{font-family:var(--f-d);font-size:2.8rem;font-weight:300;color:#F5EDD8;line-height:1;text-shadow:0 3px 16px rgba(0,0,0,.85),0 0 30px rgba(212,175,55,.35)}
+.hstat-lbl{font-family:var(--f-m);font-size:9px;letter-spacing:.22em;text-transform:uppercase;color:rgba(245,237,216,.85);margin-top:3px;text-shadow:0 2px 8px rgba(0,0,0,.9)}
+.scroll-cue{position:absolute;bottom:28px;left:50%;transform:translateX(-50%);z-index:2;display:flex;flex-direction:column;align-items:center;gap:7px}
+.scroll-line{width:1px;height:38px;background:linear-gradient(to bottom,rgba(212,175,55,.5),transparent);animation:fade-up 2.2s ease-in-out infinite}
+@keyframes fade-up{0%,100%{opacity:.3;transform:scaleY(.7)}50%{opacity:1;transform:scaleY(1)}}
+/* .btn-outline (etel.css) is tuned for light backgrounds elsewhere on the
+   site - scope a dark-appropriate version to the hero only rather than
+   changing the shared class and risking other pages that use it as-is. */
+#hero .btn-outline{background:rgba(245,237,216,.06);color:#F5EDD8;border-color:rgba(245,237,216,.28)}
+#hero .btn-outline:hover{background:rgba(245,237,216,.14)}
+
+/* ── UPDATE BANNER ── */
+
+/* ── SERVICE SELECTOR (3D tilt cards) ── */
+#portals{padding:56px 5% 90px;background:var(--light-bg);position:relative;overflow:hidden}
+#portals::before{content:'';position:absolute;top:-10%;left:50%;width:900px;height:900px;transform:translateX(-50%);
+  background:radial-gradient(circle,rgba(212,175,55,.06),transparent 60%);pointer-events:none}
+.svc-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:34px;max-width:1120px;margin:0 auto;perspective:1800px;position:relative;z-index:1}
+
+.svc-card{position:relative;text-decoration:none;display:block;transform-style:preserve-3d;cursor:pointer;
+  transform:rotateX(0deg) rotateY(0deg);transition:transform .7s cubic-bezier(.22,1,.36,1);
+  animation:svcIdle 8s ease-in-out infinite}
+.svc-card:nth-child(2){animation-delay:.9s}
+@media(hover:hover) and (pointer:fine){ .svc-card{animation:none} }
+
+.svc-card-inner{position:relative;border-radius:28px;padding:52px 42px 46px;min-height:430px;
+  background:linear-gradient(165deg,#171006 0%,#0a0703 100%);
+  border:1px solid rgba(212,175,55,.35);transform-style:preserve-3d;overflow:hidden;
+  box-shadow:0 30px 70px -20px rgba(0,0,0,.45),0 1px 0 rgba(255,255,255,.06) inset}
+.svc-card.ride .svc-card-inner{border-color:rgba(0,122,255,.35)}
+
+/* ── Signature treatment: each system's coin as a large, glowing, floating
+   3D object anchored to the card's corner, instead of a small cropped
+   badge sitting in a mostly-empty card. The coin bleeds past the card's
+   own edge (clipped by the rounded corner above) for a "bigger than its
+   frame" premium feel. A left-side scrim keeps the text column legible
+   regardless of how bright the coin/glow get. ── */
+.svc-coin-glow{position:absolute;z-index:0;pointer-events:none;border-radius:50%;filter:blur(60px);
+  width:440px;height:440px;right:-140px;bottom:-140px;opacity:.55}
+.svc-card.delivery .svc-coin-glow{background:radial-gradient(circle,rgba(255,215,0,.6),transparent 70%)}
+.svc-card.ride .svc-coin-glow{background:radial-gradient(circle,rgba(51,149,255,.6),transparent 70%)}
+
+.svc-coin-wrap{position:absolute;z-index:0;pointer-events:none;right:-52px;bottom:-46px;
+  width:320px;height:320px;transform:translateZ(30px)}
+.svc-coin{width:100%;height:100%;object-fit:contain;
+  filter:drop-shadow(0 26px 34px rgba(0,0,0,.6));
+  animation:coinFloat 7s ease-in-out infinite;
+  transition:transform .5s var(--ease),filter .5s var(--ease)}
+.svc-card:hover .svc-coin{transform:scale(1.045) rotate(-2deg);filter:drop-shadow(0 32px 40px rgba(0,0,0,.65))}
+@keyframes coinFloat{0%,100%{transform:rotate(-5deg) translateY(0)}50%{transform:rotate(-5deg) translateY(-14px)}}
+@media(prefers-reduced-motion:reduce){.svc-coin{animation:none}}
+
+.svc-scrim{position:absolute;inset:0;z-index:0;pointer-events:none;border-radius:28px;
+  background:linear-gradient(115deg,rgba(10,7,3,.96) 0%,rgba(10,7,3,.86) 34%,rgba(10,7,3,.4) 56%,transparent 74%)}
+
+.svc-content{position:relative;z-index:1;max-width:300px}
+
+/* gold-box trim bar, per Etel brand card treatment */
+.svc-card-inner::before{content:'';position:absolute;top:0;left:0;right:0;height:5px;z-index:2}
+.svc-card.delivery .svc-card-inner::before{background:linear-gradient(90deg,#C9A227,#D4AF37 25%,#FFD700 50%,#D4AF37 75%,#C9A227)}
+.svc-card.ride .svc-card-inner::before{background:linear-gradient(90deg,#005BB5,#007AFF 25%,#3395FF 50%,#007AFF 75%,#005BB5)}
+
+/* holo-strip near right edge, per brand design system - brighter so it actually reads on the dark card */
+.svc-card-inner::after{content:'';position:absolute;top:6%;bottom:6%;right:30px;width:2px;opacity:.9;z-index:0}
+.svc-card.delivery .svc-card-inner::after{background:linear-gradient(180deg,transparent,rgba(255,215,0,.7) 25%,rgba(255,215,0,1) 50%,rgba(255,215,0,.7) 75%,transparent)}
+.svc-card.ride .svc-card-inner::after{background:linear-gradient(180deg,transparent,rgba(51,149,255,.7) 25%,rgba(51,149,255,1) 50%,rgba(51,149,255,.7) 75%,transparent)}
+
+.svc-sheen{position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity .35s;border-radius:28px;z-index:2;
+  background:radial-gradient(circle 260px at var(--mx,50%) var(--my,20%),rgba(255,255,255,.18),transparent 60%);
+  mix-blend-mode:screen}
+.svc-card:hover .svc-sheen,.svc-card:focus-visible .svc-sheen{opacity:1}
+
+.svc-eyebrow{font-family:var(--f-m);font-size:10px;font-weight:700;letter-spacing:.24em;text-transform:uppercase;
+  transform:translateZ(42px);margin-bottom:14px}
+.svc-card.delivery .svc-eyebrow{color:#FFD700}
+.svc-card.ride .svc-eyebrow{color:#3395FF}
+
+.svc-name{font-family:var(--f-d);font-size:2.5rem;font-weight:400;color:#F5EDD8;margin-bottom:14px;
+  transform:translateZ(48px);line-height:1.06}
+.svc-name em{font-style:italic}
+.svc-card.delivery .svc-name em{color:#FFD700}
+.svc-card.ride .svc-name em{color:#3395FF}
+
+.svc-desc{font-family:var(--f-m);font-size:13px;color:rgba(245,237,216,.68);line-height:1.85;
+  margin-bottom:28px;transform:translateZ(30px)}
+
+.svc-stats{display:flex;gap:26px;margin-bottom:34px;transform:translateZ(26px)}
+.svc-stat-num{font-family:var(--f-d);font-size:1.5rem;color:#F5EDD8;line-height:1}
+.svc-stat-lbl{font-family:var(--f-m);font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:rgba(245,237,216,.5);margin-top:4px}
+
+.svc-cta{display:inline-flex;align-items:center;gap:10px;font-family:var(--f-m);font-size:11.5px;font-weight:700;
+  letter-spacing:.16em;text-transform:uppercase;padding:15px 28px;border-radius:100px;color:#1a1206;
+  transform:translateZ(58px);transition:transform .25s var(--ease),box-shadow .25s}
+.svc-card.delivery .svc-cta{background:linear-gradient(135deg,#FFD700,#D4AF37);box-shadow:0 12px 28px -6px rgba(255,215,0,.45)}
+.svc-card.ride .svc-cta{background:linear-gradient(135deg,#3395FF,#007AFF);color:#fff;box-shadow:0 12px 28px -6px rgba(51,149,255,.45)}
+.svc-card:hover .svc-cta{transform:translateZ(58px) translateY(-2px)}
+.svc-cta svg{width:14px;height:14px;transition:transform .25s var(--ease)}
+.svc-card:hover .svc-cta svg{transform:translateX(4px)}
+
+@keyframes svcIdle{0%,100%{transform:rotateX(0deg) rotateY(0deg)}50%{transform:rotateX(1.4deg) rotateY(-2deg)}}
+
+@media(max-width:640px){
+  .svc-coin-wrap{width:220px;height:220px;right:-40px;bottom:-30px}
+  .svc-coin-glow{width:320px;height:320px;right:-100px;bottom:-100px}
+  .svc-content{max-width:100%}
+}
+
+@media(prefers-reduced-motion:reduce){
+  .svc-card,.svc-cta,.svc-cta svg,.svc-sheen{animation:none!important;transition:none!important}
+}
+@media(max-width:900px){
+  .svc-grid{grid-template-columns:1fr;gap:24px;perspective:none}
+  .svc-card{animation:none!important;transform:none!important}
+  .svc-card-inner{min-height:0}
+}
+
+
+/* ── FEATURES ── */
+#features{background:rgba(0,0,0,.08)}
+.feat-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:24px;max-width:1180px;margin:0 auto}
+.feat{position:relative;padding:44px 40px;border-radius:20px;overflow:hidden;
+  background:linear-gradient(165deg,#1d1509 0%,#0d0904 100%);
+  border:1px solid rgba(212,175,55,.22);
+  box-shadow:0 20px 50px -25px rgba(0,0,0,.5);
+  transition:box-shadow .3s,transform .3s,border-color .3s}
+.feat::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;
+  background:linear-gradient(90deg,#C9A227,#D4AF37 50%,#C9A227);opacity:.8}
+.feat:hover{box-shadow:0 26px 60px -25px rgba(212,175,55,.3);transform:translateY(-4px);border-color:rgba(212,175,55,.4)}
+.feat-num{font-family:var(--f-m);font-size:10px;letter-spacing:.2em;color:var(--gold3);margin-bottom:18px}
+.feat-title{font-family:var(--f-d);font-size:1.6rem;font-weight:400;color:#F5EDD8;margin-bottom:10px}
+.feat-body{font-family:var(--f-m);font-size:11px;color:rgba(255,248,220,.6);line-height:1.85}
+
+/* ── HOW ── */
+#how{background:rgba(0,0,0,.08)}
+.how-steps{display:flex;position:relative}
+.how-steps::before{content:'';position:absolute;top:28px;left:28px;right:28px;height:1px;background:linear-gradient(90deg,rgba(255,255,255,.15),rgba(255,255,255,.45),rgba(255,255,255,.15))}
+.how-step{flex:1;text-align:center;padding:0 20px;position:relative}
+.how-dot{width:56px;height:56px;border-radius:50%;background:rgba(212,175,55,.1);backdrop-filter:blur(10px);border:1px solid rgba(212,175,55,.4);box-shadow:0 0 24px -6px rgba(212,175,55,.4);display:flex;align-items:center;justify-content:center;font-family:var(--f-d);font-size:1.4rem;color:var(--gold);margin:0 auto 22px;position:relative;z-index:1}
+.how-title{font-family:var(--f-d);font-size:1.1rem;color:#F5EDD8;margin-bottom:8px}
+.how-body{font-family:var(--f-m);font-size:11px;color:rgba(255,248,220,.6);line-height:1.75}
+
+/* ── SCROLL REVEAL (robust, CSS-driven) ── */
+[data-r]{opacity:0;transform:translateY(26px);transition:opacity .8s var(--ease),transform .8s var(--ease)}
+[data-r].v{opacity:1;transform:none}
+
+/* ── SECTION FRAMEWORK (base classes used across features/how/testimonials/partners) ──
+   These sections were authored with cream/gold text assuming a dark backdrop that was
+   never actually defined anywhere - fixing that here with real solid dark-carbon
+   backgrounds, matching the brand's documented dark-carbon + gold system. */
+.section{padding:100px 5%;position:relative;background:linear-gradient(180deg,#100b05,#0a0703)}
+.section-sm{padding:52px 5%;position:relative}
+.section-hdr{max-width:720px;margin:0 auto 60px}
+.text-center{text-align:center}
+.mb-8{margin-bottom:14px}
+.eyebrow{font-family:var(--f-m);font-size:10px;font-weight:700;letter-spacing:.24em;text-transform:uppercase;color:var(--gold)}
+.display{font-family:var(--f-d);font-weight:400;color:#F5EDD8}
+.display-lg{font-size:clamp(2.1rem,4vw,3.3rem);line-height:1.1}
+
+#features{background:linear-gradient(180deg,#100b05,#0a0703)}
+#how{background:linear-gradient(180deg,#0a0703,#0d0904)}
+#testimonials{background:linear-gradient(180deg,#0d0904,#0a0703)}
+
+/* ── TESTIMONIALS: 3-col grid + glass cards ── */
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:28px;max-width:1180px;margin:0 auto}
+.card{border-radius:22px;padding:36px 32px}
+.card-glass{position:relative;overflow:hidden;background:linear-gradient(165deg,#1d1509 0%,#0d0904 100%);
+  border:1px solid rgba(212,175,55,.22);box-shadow:0 20px 50px -25px rgba(0,0,0,.5);
+  transition:box-shadow .3s,transform .3s,border-color .3s}
+.card-glass::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;
+  background:linear-gradient(90deg,#C9A227,#D4AF37 50%,#C9A227);opacity:.8}
+.card-glass:hover{box-shadow:0 26px 60px -25px rgba(212,175,55,.28);transform:translateY(-4px);border-color:rgba(212,175,55,.4)}
+.testimonial-card{display:flex;flex-direction:column}
+.t-stars{font-size:13px;letter-spacing:2px;margin-bottom:16px}
+.t-quote{font-family:var(--f-m);font-size:13px;color:rgba(245,237,216,.82);line-height:1.85;margin-bottom:24px;flex:1}
+.t-author{display:flex;align-items:center;gap:12px}
+.t-avatar{width:42px;height:42px;border-radius:50%;background:rgba(212,175,55,.14);border:1px solid rgba(212,175,55,.3);display:flex;align-items:center;justify-content:center;font-size:19px;flex-shrink:0}
+.t-name{font-family:var(--f-m);font-size:12.5px;font-weight:700;color:#F5EDD8}
+.t-role{font-family:var(--f-m);font-size:10.5px;color:rgba(245,237,216,.5);margin-top:1px}
+
+/* ── PARTNERS & PAYMENTS ── */
+.partners-wrap{text-align:center;max-width:900px;margin:0 auto}
+.partner-title{font-family:var(--f-m);font-size:10px;font-weight:700;letter-spacing:.2em;color:rgba(245,237,216,.62);margin-bottom:26px}
+.partner-logos{display:flex;justify-content:center;flex-wrap:wrap;gap:14px}
+.partner-logo{font-family:var(--f-m);font-size:12.5px;font-weight:600;color:rgba(245,237,216,.75);
+  background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:100px;
+  padding:10px 20px;display:flex;align-items:center;gap:8px}
+
+/* ── BUTTON SIZE MODIFIERS (base .btn-gold/.btn-outline already defined in etel.css) ── */
+.btn-lg{padding:17px 34px;font-size:13px}
+.btn-sm{padding:9px 18px;font-size:11.5px}
+
+/* ── PWA INSTALL BANNER (light section, sits between dark partners and dark footer) ── */
+#pwa-install-banner{display:none;align-items:center;gap:20px;max-width:760px;margin:0 auto;padding:32px 5%}
+#pwa-install-banner.show{display:flex}
+.pwa-icon{font-size:32px;flex-shrink:0}
+.pwa-info{flex:1}
+.pwa-title{font-family:var(--f-d);font-size:1.3rem;color:#1A1A2E;margin-bottom:4px}
+.pwa-desc{font-family:var(--f-m);font-size:12px;color:rgba(0,0,0,.55);line-height:1.6}
+.pwa-actions{display:flex;align-items:center;gap:10px;flex-shrink:0}
+.btn-pwa-dismiss{width:32px;height:32px;border-radius:50%;border:1px solid rgba(0,0,0,.12);background:transparent;
+  color:rgba(0,0,0,.5);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.btn-pwa-dismiss:hover{background:rgba(0,0,0,.05)}
+
+.etel-footer-brand-text{font-family:var(--f-d);font-size:1.15rem;color:#F5EDD8}
+
+/* ── PREMIUM MULTI-COLUMN FOOTER ── */
+footer{padding:60px 8% 40px;border-top:1px solid rgba(255,255,255,.1);background:rgba(18,18,18,.95);color:#F5EDD8;backdrop-filter:blur(20px)}
+
+/* ── REDUCED MOTION ── */
+@media(prefers-reduced-motion:reduce){
+  [data-r]{opacity:1!important;transform:none!important;transition:none!important}
+  .scroll-line{animation:none}
+}
+
+@media(max-width:900px){
+  footer .f-grid{grid-template-columns:1fr 1fr !important}
+  .portals-grid{grid-template-columns:1fr}
+  .feat-grid{grid-template-columns:1fr}
+  .g3{grid-template-columns:1fr}
+  .how-steps{flex-direction:column;gap:30px}
+  .how-steps::before{display:none}
+  .hero-stats{position:static;margin-top:40px;padding:0 6%;gap:28px}
+}
+@media(max-width:600px){
+  footer .f-grid{grid-template-columns:1fr !important}
+  #trust-strip > div{gap:18px !important;justify-content:flex-start !important;padding:0 16px !important}
+}
+</style>
+
+<script src="js/core.js?v=5.9"></script>
+    <link rel="stylesheet" href="css/etel-phase5.css?v=3.7.4">
+    <link rel="stylesheet" href="css/etel-system.css?v=1.0">
+</head>
+<body>
+
+<!-- UPDATE BANNER -->
+
+<!-- SERVICE SELECTOR -->
+<section id="portals">
+  <div style="text-align:center;margin-bottom:64px" data-r>
+    <div class="eyebrow mb-8" style="color:var(--light-muted)">Choose Your Service</div>
+    <h2 class="display display-lg" style="color:#1A1A2E">Two Premium Systems.<br/><em style="color:var(--gold)">One Platform.</em></h2>
+  </div>
+  <div class="svc-grid">
+    <a href="customer.html" class="svc-card delivery" data-r data-tilt onclick="etelCardClick(event, null, 'customer.html'); return false;">
+      <div class="svc-card-inner">
+        <div class="svc-scrim"></div>
+        <div class="svc-coin-glow"></div>
+        <div class="svc-coin-wrap"><picture><source srcset="assets/images/etel-delivery-coin-crop.webp" type="image/webp"><img class="svc-coin" src="assets/images/etel-delivery-coin-crop.png" alt="ETEL Delivery"/></picture></div>
+        <div class="svc-sheen"></div>
+        <div class="svc-content">
+          <div class="svc-eyebrow">ETEL Delivery</div>
+          <h3 class="svc-name">Send &amp; <em>Receive</em></h3>
+          <p class="svc-desc">Fast, reliable last-mile delivery across Hawassa. Real-time map tracking, secure payments, and professional couriers for food and parcels.</p>
+          <div class="svc-stats">
+            <div><div class="svc-stat-num">12+</div><div class="svc-stat-lbl">Zones</div></div>
+            <div><div class="svc-stat-num">45min</div><div class="svc-stat-lbl">Avg Delivery</div></div>
+          </div>
+          <div class="svc-cta">Enter Delivery <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
+        </div>
+      </div>
+    </a>
+    <a href="login.html?redirect=ride/" class="svc-card ride" data-r style="transition-delay:.1s" data-tilt onclick="etelCardClick(event, 'ride/', 'login.html?redirect=ride/'); return false;">
+      <div class="svc-card-inner">
+        <div class="svc-scrim"></div>
+        <div class="svc-coin-glow"></div>
+        <div class="svc-coin-wrap"><picture><source srcset="assets/images/etel-ride-coin.webp" type="image/webp"><img class="svc-coin" src="assets/images/etel-ride-coin.png" alt="ETEL Ride"/></picture></div>
+        <div class="svc-sheen"></div>
+        <div class="svc-content">
+          <div class="svc-eyebrow">ETEL Ride</div>
+          <h3 class="svc-name">Book a <em>Ride</em></h3>
+          <p class="svc-desc">Safe, affordable, and comfortable transportation. Request a ride instantly and get matched with top-rated drivers nearby.</p>
+          <div class="svc-stats">
+            <div><div class="svc-stat-num">24/7</div><div class="svc-stat-lbl">Availability</div></div>
+            <div><div class="svc-stat-num">&lt;5min</div><div class="svc-stat-lbl">Avg Pickup</div></div>
+          </div>
+          <div class="svc-cta">Enter Ride <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
+        </div>
+      </div>
+    </a>
+  </div>
+</section>
+
+<!-- HERO with Three.js r184 -->
+<section id="hero">
+  <div class="hero-coins">
+    <div class="hero-coin-glow gold"></div>
+    <div class="hero-coin-glow blue"></div>
+    <picture><source srcset="assets/images/etel-delivery-coin-crop.webp" type="image/webp"><img class="hero-coin delivery" src="assets/images/etel-delivery-coin-crop.png" alt=""/></picture>
+    <picture><source srcset="assets/images/etel-ride-coin.webp" type="image/webp"><img class="hero-coin ride" src="assets/images/etel-ride-coin.png" alt=""/></picture>
+  </div>
+  <div class="hero-over"></div>
+  <div class="hero-content">
+    <div class="hero-eyebrow">
+      <div class="hero-eline"></div>
+      <span style="font-family:var(--f-m);font-size:9px;letter-spacing:.22em;text-transform:uppercase;color:var(--gold)">Hawassa's Premium Delivery</span>
+    </div>
+    <h1 class="hero-h1" style="text-shadow:0 4px 30px rgba(0,0,0,.35)">Fast.<br/><em>Reliable.</em><br/>Everywhere.</h1>
+    <div class="hero-am">ፈጣን · ታማኝ · ሀዋሳ ሁሉ</div>
+    <p class="hero-desc">From Mehal Ketema to Tabor, Referral to University — ETEL Delivery connects every corner of Hawassa with real-time tracking, secure payments, and professional couriers.</p>
+    <div class="hero-ctas">
+      <a href="customer" class="btn btn-gold btn-lg">Place an Order</a>
+      <a href="login?mode=register&role=courier" class="btn btn-outline btn-lg">Become a Courier</a>
+    </div>
+  </div>
+  <div class="hero-stats">
+    <div><div class="hstat-num" data-val="12" data-suffix="+">0</div><div class="hstat-lbl">Hawassa Zones</div></div>
+    <div><div class="hstat-num" data-val="45" data-suffix="min">0</div><div class="hstat-lbl">Avg Delivery</div></div>
+    <div><div class="hstat-num" data-val="98" data-suffix="%">0</div><div class="hstat-lbl">On-Time Rate</div></div>
+  </div>
+  <div class="scroll-cue">
+    <span style="font-family:var(--f-m);font-size:9px;letter-spacing:.18em;color:rgba(255,248,220,.6)">EXPLORE</span>
+    <div class="scroll-line"></div>
+  </div>
+</section>
+
+<!-- TRUST STRIP -->
+<div id="trust-strip" style="background:#0a0703;border-top:1px solid rgba(255,255,255,.06);border-bottom:1px solid rgba(255,255,255,.06);padding:18px 0">
+  <div style="max-width:1100px;margin:0 auto;padding:0 32px;display:flex;align-items:center;justify-content:center;gap:48px;flex-wrap:wrap">
+    <div style="display:flex;align-items:center;gap:9px;font-family:var(--f-m);font-size:12px;font-weight:500;color:rgba(245,237,216,.65)">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#2ECC71" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>ISO-Certified Couriers
+    </div>
+    <div style="display:flex;align-items:center;gap:9px;font-family:var(--f-m);font-size:12px;font-weight:500;color:rgba(245,237,216,.65)">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#D4AF37" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>End-to-End Insured
+    </div>
+    <div style="display:flex;align-items:center;gap:9px;font-family:var(--f-m);font-size:12px;font-weight:500;color:rgba(245,237,216,.65)">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#4ECDC4" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>24/7 Customer Support
+    </div>
+    <div style="display:flex;align-items:center;gap:9px;font-family:var(--f-m);font-size:12px;font-weight:500;color:rgba(245,237,216,.65)">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#9B59B6" stroke-width="2.5"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>Telebirr · Etel Pay · CBE Birr
+    </div>
+    <div style="display:flex;align-items:center;gap:9px;font-family:var(--f-m);font-size:12px;font-weight:500;color:rgba(245,237,216,.65)">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#FF7A45" stroke-width="2.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>12+ Hawassa Zones
+    </div>
+  </div>
+</div>
+
+<!-- FEATURES -->
+<section id="features" class="section">
+  <div class="section-hdr" data-r>
+    <div class="eyebrow" style="margin-bottom:14px">Platform Capabilities</div>
+    <h2 class="display display-lg" style="color:#F5EDD8">Built for<br/><em style="color:var(--gold)">Ethiopian scale.</em></h2>
+  </div>
+  <div class="feat-grid">
+    <div class="feat" data-r><div class="feat-num">01</div><div class="feat-title">Live Map Tracking</div><p class="feat-body">Watch your courier move in real-time across Hawassa zones. Animated map with zone overlays, ETA countdown, and courier position updates every 5 seconds.</p></div>
+    <div class="feat" data-r style="transition-delay:.1s"><div class="feat-num">02</div><div class="feat-title">Etel Pay &amp; Telebirr</div><p class="feat-body">Integrated payment gateway — Etel Pay wallet, Telebirr mobile money, and cash-on-delivery. Instant confirmation, split receipts, refund management.</p></div>
+    <div class="feat" data-r style="transition-delay:.12s"><div class="feat-num">03</div><div class="feat-title">Smart Fare Engine</div><p class="feat-body">Dynamic pricing based on distance, zone, package size, and real-time demand. Transparent fare breakdown before you confirm — no hidden charges.</p></div>
+    <div class="feat" data-r style="transition-delay:.16s"><div class="feat-num">04</div><div class="feat-title">Multi-Role Dashboards</div><p class="feat-body">Purpose-built interfaces for customers, couriers, and administrators. Each role sees exactly what they need — nothing more, nothing less.</p></div>
+    <div class="feat" data-r style="transition-delay:.2s"><div class="feat-num">05</div><div class="feat-title">Food &amp; Parcel Delivery</div><p class="feat-body">Documents, parcels, food &amp; groceries, and bulk logistics — all on one platform. Restaurant partners, shop owners, and individual senders covered.</p></div>
+    <div class="feat" data-r style="transition-delay:.24s"><div class="feat-num">06</div><div class="feat-title">Bilingual Interface</div><p class="feat-body">Full English + Amharic support across all portals. Noto Sans Ethiopic for perfect Amharic rendering. Localized for the Ethiopian market.</p></div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section id="how" class="section" style="padding-bottom:80px">
+  <div class="section-hdr text-center" data-r>
+    <div class="eyebrow" style="margin-bottom:14px">Process</div>
+    <h2 class="display display-lg" style="color:#F5EDD8">How It <em style="color:var(--gold)">Works</em></h2>
+  </div>
+  <div class="how-steps" data-r>
+    <div class="how-step"><div class="how-dot">1</div><div class="how-title">Place Order</div><p class="how-body">Enter pickup &amp; drop-off, select delivery type, get instant fare estimate.</p></div>
+    <div class="how-step"><div class="how-dot">2</div><div class="how-title">Courier Assigned</div><p class="how-body">Nearest available courier accepts within 60 seconds. You see them on the map.</p></div>
+    <div class="how-step"><div class="how-dot">3</div><div class="how-title">Live Tracking</div><p class="how-body">Follow every move in real-time. SMS updates at each milestone.</p></div>
+    <div class="how-step"><div class="how-dot">4</div><div class="how-title">Delivered &amp; Rated</div><p class="how-body">Confirm receipt, pay securely, rate your courier. Done.</p></div>
+  </div>
+</section>
+
+<!-- TESTIMONIALS -->
+<section id="testimonials" class="section">
+  <div class="section-hdr text-center" data-r>
+    <div class="eyebrow" style="margin-bottom:14px">Reviews</div>
+    <h2 class="display display-lg" style="color:#F5EDD8">What Hawassa <em style="color:var(--gold)">Says</em></h2>
+  </div>
+  <div class="g3" data-r>
+    <div class="card card-glass testimonial-card">
+      <div class="t-stars">⭐⭐⭐⭐⭐</div>
+      <p class="t-quote">"ETEL Delivery has completely transformed how our restaurant delivers food in Hawassa. The live tracking is incredibly accurate, and our customers love the Telebirr integration!"</p>
+      <div class="t-author">
+        <div class="t-avatar">🍰</div>
+        <div><div class="t-name">Aster K.</div><div class="t-role">Owner, Aster Cake &amp; Café</div></div>
+      </div>
+    </div>
+    <div class="card card-glass testimonial-card" style="transition-delay:.1s">
+      <div class="t-stars">⭐⭐⭐⭐⭐</div>
+      <p class="t-quote">"I use Etel Delivery to send urgent packages from my shop in Mehal Ketema to clients near Tabor. Extremely fast couriers and very polite customer service."</p>
+      <div class="t-author">
+        <div class="t-avatar">📦</div>
+        <div><div class="t-name">Yonas M.</div><div class="t-role">Merchant, Mehal Ketema</div></div>
+      </div>
+    </div>
+    <div class="card card-glass testimonial-card" style="transition-delay:.2s">
+      <div class="t-stars">⭐⭐⭐⭐⭐</div>
+      <p class="t-quote">"Ordering lunch has never been this smooth. The bilingual interface works perfectly in Amharic, and my food arrives piping hot within 35 minutes!"</p>
+      <div class="t-author">
+        <div class="t-avatar">🍔</div>
+        <div><div class="t-name">Selamawit G.</div><div class="t-role">Regular Customer</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PARTNERS & PAYMENTS -->
+<section id="partners" class="section-sm" style="background:#0a0703;border-top:1px solid rgba(255,255,255,.05);border-bottom:1px solid rgba(255,255,255,.05)">
+  <div class="partners-wrap" data-r>
+    <div class="partner-title">SUPPORTED PAYMENT SYSTEMS & PARTNERS</div>
+    <div class="partner-logos">
+      <div class="partner-logo"><span>📱</span> Telebirr</div>
+      <div class="partner-logo"><span>💳</span> Etel Pay</div>
+      <div class="partner-logo"><span>🏦</span> CBE Birr</div>
+      <div class="partner-logo"><span>⚡</span> Chapa</div>
+      <div class="partner-logo"><span>🍽️</span> Hawassa Eats</div>
+    </div>
+  </div>
+</section>
+
+<!-- PWA INSTALL BANNER -->
+<div id="pwa-install-banner">
+  <div class="pwa-icon">✨</div>
+  <div class="pwa-info">
+    <div class="pwa-title">Install ETEL Delivery App</div>
+    <div class="pwa-desc">Get faster access, offline mode & live push tracking notifications.</div>
+  </div>
+  <div class="pwa-actions">
+    <button class="btn btn-gold btn-sm" id="btn-pwa-install">Install</button>
+    <button class="btn-pwa-dismiss" id="btn-pwa-dismiss">✕</button>
+  </div>
+</div>
+
+
+
+
+<!-- ════════ GSAP hero intro + scroll parallax (progressive enhancement) ════════ -->
+<script>
+(function () {
+  var reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (!window.gsap || reduced) return;
+  var g = window.gsap;
+  g.from('.hero-eyebrow', { y: 18, opacity: 0, duration: .8, ease: 'power3.out', delay: .15 });
+  g.from('.hero-h1',      { y: 36, opacity: 0, duration: 1.0, ease: 'power4.out', delay: .28 });
+  g.from('.hero-am',      { y: 16, opacity: 0, duration: .7, ease: 'power3.out', delay: .5 });
+  g.from('.hero-desc',    { y: 16, opacity: 0, duration: .7, ease: 'power3.out', delay: .6 });
+  g.from('.hero-ctas',    { y: 16, opacity: 0, duration: .7, ease: 'power3.out', delay: .7 });
+  g.from('.hero-stats > div', { y: 24, opacity: 0, duration: .7, ease: 'back.out(1.6)', stagger: .12, delay: .85 });
+  if (window.ScrollTrigger) {
+    g.registerPlugin(window.ScrollTrigger);
+    g.to('.hero-coins', { yPercent: 16, scale: 1.08, ease: 'none', scrollTrigger: { trigger: '#hero', start: 'top top', end: 'bottom top', scrub: true } });
+    g.to('.hero-content', { yPercent: -28, opacity: .15, ease: 'none', scrollTrigger: { trigger: '#hero', start: 'top top', end: 'bottom top', scrub: true } });
+  }
+})();
+</script>
+
+<!-- ════════ Card clicks: install-aware launch + Ride auth check ════════ -->
+<script>
+/* Shared handler for both service cards. Two things happen before we
+   actually navigate:
+     1. Best-effort check (Chrome/Edge only - see PWAInstall.isInstalled in
+        core.js) for whether that system's PWA is already installed. If it
+        looks like it's NOT installed, we set a flag so that once we land
+        on the target page (which links its OWN manifest - Delivery's or
+        Ride's), it shows the native install prompt immediately instead of
+        making the visitor hunt for the floating Install button.
+     2. (Ride only) if the visitor already has a valid-looking session,
+        skip login.html entirely and go straight to ride/.
+   What this deliberately does NOT do: switch focus to an already-installed
+   separate PWA window. No website's JS can do that in any browser - it's
+   a deliberate security boundary, not a gap here. If the app is already
+   installed, this just navigates normally in the current tab. */
+async function etelCardClick(e, targetIfLoggedIn, targetIfNotLoggedIn) {
+  e.preventDefault();
+  try {
+    if (typeof PWAInstall !== 'undefined' && PWAInstall.prepareCardLaunch) {
+      await PWAInstall.prepareCardLaunch();
+    }
+  } catch (err) {}
+
+  var dest = targetIfNotLoggedIn;
+  if (targetIfLoggedIn) {
+    var t = '';
+    try { t = (typeof Auth !== 'undefined' && Auth.getToken) ? Auth.getToken() : (localStorage.getItem('etel_token') || ''); } catch (e2) {}
+    if (t) dest = targetIfLoggedIn;
+  }
+  location.href = dest;
+}
+</script>
+
+<!-- ════════ Scroll reveal (robust fallback, independent of GSAP) ════════ -->
+<script>
+(function () {
+  var els = document.querySelectorAll('[data-r]');
+  if (!('IntersectionObserver' in window)) { els.forEach(function (e) { e.classList.add('v'); }); return; }
+  var io = new IntersectionObserver(function (en) {
+    en.forEach(function (x) { if (x.isIntersecting) { x.target.classList.add('v'); io.unobserve(x.target); } });
+  }, { threshold: .12, rootMargin: '0px 0px -8% 0px' });
+  els.forEach(function (e) { io.observe(e); });
+})();
+</script>
+
+<!-- ════════ Service card 3D tilt (pointer-tracked; idle CSS animation covers touch) ════════ -->
+<script>
+(function () {
+  var reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var fine = matchMedia('(hover: hover) and (pointer: fine)').matches;
+  if (reduced || !fine) return; // touch/coarse devices keep the gentle idle CSS animation instead
+  var cards = document.querySelectorAll('.svc-card[data-tilt]');
+  cards.forEach(function (card) {
+    var raf = null;
+    card.addEventListener('pointerenter', function () {
+      card.style.transition = 'transform .08s linear';
+    });
+    card.addEventListener('pointermove', function (e) {
+      var r = card.getBoundingClientRect();
+      var px = (e.clientX - r.left) / r.width;
+      var py = (e.clientY - r.top) / r.height;
+      var rx = (0.5 - py) * 14;
+      var ry = (px - 0.5) * 16;
+      if (raf) cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(function () {
+        card.style.transform = 'rotateX(' + rx.toFixed(2) + 'deg) rotateY(' + ry.toFixed(2) + 'deg)';
+        card.style.setProperty('--mx', (px * 100).toFixed(1) + '%');
+        card.style.setProperty('--my', (py * 100).toFixed(1) + '%');
+      });
+    });
+    card.addEventListener('pointerleave', function () {
+      card.style.transition = 'transform .7s cubic-bezier(.22,1,.36,1)';
+      card.style.transform = 'rotateX(0deg) rotateY(0deg)';
+    });
+  });
+})();
+</script>
+
+<!-- ════════ Stat counters ════════ -->
+<script>
+(function () {
+  var stats = document.querySelectorAll('.hstat-num');
+  if (!stats.length) return;
+  var run = function (el) {
+    var val = parseInt(el.getAttribute('data-val') || '0', 10);
+    var suffix = el.getAttribute('data-suffix') || '';
+    var start = 0, dur = 1200, step = Math.max(Math.floor(dur / val), 15);
+    var timer = setInterval(function () {
+      start++;
+      if (suffix === 'min')      el.innerHTML = start + '<span style="font-size:1.5rem">min</span>';
+      else if (suffix === '%')   el.innerHTML = start + '<span style="font-size:1.5rem">%</span>';
+      else                       el.innerHTML = start + suffix;
+      if (start >= val) clearInterval(timer);
+    }, step);
+  };
+  if ('IntersectionObserver' in window) {
+    var obs = new IntersectionObserver(function (en) { en.forEach(function (e) { if (e.isIntersecting) { run(e.target); obs.unobserve(e.target); } }); }, { threshold: .5 });
+    stats.forEach(function (s) { obs.observe(s); });
+  } else { stats.forEach(run); }
+})();
+</script>
+
+<!-- ════════ PWA install ════════ -->
+<script>
+(function () {
+  var deferred = null;
+  var banner = document.getElementById('pwa-install-banner');
+  var btnI = document.getElementById('btn-pwa-install');
+  var btnD = document.getElementById('btn-pwa-dismiss');
+  if (!banner || !btnI || !btnD) return;
+  addEventListener('beforeinstallprompt', function (e) {
+    e.preventDefault(); deferred = e;
+    setTimeout(function () { if (localStorage.getItem('pwaDismissed') !== '1') banner.classList.add('show'); }, 3000);
+  });
+  btnI.addEventListener('click', async function () {
+    if (!deferred) return;
+    banner.classList.remove('show');
+    deferred.prompt(); await deferred.userChoice; deferred = null;
+  });
+  btnD.addEventListener('click', function () { banner.classList.remove('show'); localStorage.setItem('pwaDismissed', '1'); });
+})();
+</script>
+
+<!-- ═══════════════════════════════════════════
+     ETEL GROUP FOOTER
+     ═══════════════════════════════════════════ -->
+<footer class="etel-footer">
+  <div class="etel-footer-inner">
+
+    <!-- Brand -->
+    <div class="etel-footer-brand">
+      <div class="etel-footer-logo">
+        <img src="assets/images/etel-delivery-coin.png" alt="ETEL Delivery"/>
+      </div>
+      <div class="etel-footer-brand-text">
+        <div class="etel-footer-brand-name">ETEL Group · ኢትኤል ቡድን</div>
+        <div class="etel-footer-tagline">
+          Premium last-mile delivery across Hawassa · ሐዋሳ<br/>
+          <span class="etel-footer-am">ኢትኤል — "Gift of God" · ሀዋሳ, ሲዳማ ክልል, ኢትዮጵያ</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="etel-footer-stats">
+      <div class="etel-footer-stat">
+        <div class="etel-footer-stat-val">12+</div>
+        <div class="etel-footer-stat-lbl">Zones</div>
+      </div>
+      <div class="etel-footer-stat">
+        <div class="etel-footer-stat-val">45m</div>
+        <div class="etel-footer-stat-lbl">Avg time</div>
+      </div>
+      <div class="etel-footer-stat">
+        <div class="etel-footer-stat-val">98%</div>
+        <div class="etel-footer-stat-lbl">On-time</div>
+      </div>
+      <div class="etel-footer-stat">
+        <div class="etel-footer-stat-val">15%</div>
+        <div class="etel-footer-stat-lbl">Platform fee</div>
+      </div>
+    </div>
+
+    <!-- Install Apps -->
+    <div class="etel-footer-install" style="display:flex;gap:14px;flex-wrap:wrap;margin:28px 0;padding:18px 0;border-top:1px solid rgba(212,175,55,.15);border-bottom:1px solid rgba(212,175,55,.15)">
+      <button onclick="PWAInstall.trigger()" style="display:flex;align-items:center;gap:8px;padding:10px 18px;border-radius:100px;border:1px solid rgba(212,175,55,.4);background:rgba(212,175,55,.08);color:#D4AF37;font-family:var(--f-m,sans-serif);font-size:11.5px;font-weight:700;cursor:pointer">📲 Install ETEL Delivery</button>
+      <button onclick="etelCardClick(event,'ride/','ride/')" style="display:flex;align-items:center;gap:8px;padding:10px 18px;border-radius:100px;border:1px solid rgba(51,149,255,.4);background:rgba(51,149,255,.08);color:#3395FF;font-family:var(--f-m,sans-serif);font-size:11.5px;font-weight:700;cursor:pointer">📲 Install ETEL Ride</button>
+    </div>
+
+    <!-- Links grid -->
+    <div class="etel-footer-grid">
+      <div class="etel-footer-col">
+        <div class="etel-footer-col-title">Services</div>
+        <ul>
+          <li><a href="index.html">ETEL Delivery</a></li>
+          <li><a href="ride/">ETEL Ride · ኢትኤል ጉዞ</a></li>
+          <li><a href="/EtelMadeya/">ETEL Madeya · ጋዝ</a></li>
+          <li><span>ETEL Laundry</span></li>
+          <li><span>ETEL Pay</span></li>
+        </ul>
+      </div>
+      <div class="etel-footer-col">
+        <div class="etel-footer-col-title">For Partners</div>
+        <ul>
+          <li><a href="servicegiver.html">Register as Partner</a></li>
+          <li><a href="courier/">Become a Courier</a></li>
+          <li><a href="driver/">Become a Driver</a></li>
+          <li><a href="/EtelId/">EtelID — Single Sign-On</a></li>
+        </ul>
+      </div>
+      <div class="etel-footer-col">
+        <div class="etel-footer-col-title">Company</div>
+        <ul>
+          <li><span>About Etel Group</span></li>
+          <li><span>Hawassa, Sidama Region</span></li>
+          <li><span>Ethiopia · ኢትዮጵያ</span></li>
+          <li><a href="admin.html">Admin Portal</a></li>
+        </ul>
+      </div>
+      <div class="etel-footer-col">
+        <div class="etel-footer-col-title">Contact</div>
+        <ul>
+          <li><span>ethelmarket.com</span></li>
+          <li><span>Hawassa, Ethiopia</span></li>
+          <li><span>ሐዋሳ, ሲዳማ ክልል</span></li>
+          <li><a href="mailto:info@ethelmarket.com">info@ethelmarket.com</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Subsidiaries -->
+    <div class="etel-footer-subs">
+      <span class="etel-footer-sub-chip">🚚 Etel Delivery</span>
+      <span class="etel-footer-sub-chip">🚖 Etel Ride</span>
+      <span class="etel-footer-sub-chip">🔥 Etel Madeya</span>
+      <span class="etel-footer-sub-chip">🛒 Etel Market</span>
+      <span class="etel-footer-sub-chip">🚐 Etel Transport</span>
+      <span class="etel-footer-sub-chip">👔 Etel Laundry</span>
+      <span class="etel-footer-sub-chip">💳 Etel Pay</span>
+      <span class="etel-footer-sub-chip">📺 Etel Media</span>
+      <span class="etel-footer-sub-chip">💎 Etel LuxLine</span>
+    </div>
+
+    <!-- Bottom bar -->
+    <div class="etel-footer-bottom">
+      <span>© 2026 Etel Group · ኢትኤል ቡድን · All rights reserved.</span>
+      <div class="etel-footer-bottom-right">
+        <a href="#">Privacy Policy</a>
+        <a href="#">Terms of Service</a>
+        <span>v3.7.3</span>
+      </div>
+    </div>
+
+  </div>
+</footer>
+<!-- ETEL AI -- cross-company assistant widget -->
+<script src="https://ethelmarket.com/EtelAi/etel-ai-widget.js" data-project="delivery"></script>
+<script src="js/apk-download-badge.js" data-role="customer"></script>
+</body>
+</html>

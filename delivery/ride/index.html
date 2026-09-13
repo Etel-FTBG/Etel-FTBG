@@ -1,0 +1,1364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta name="referrer" content="no-referrer-when-downgrade">
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+<title>ETEL Ride — Book a Ride</title>
+<meta name="theme-color" content="#007AFF">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="ETEL Ride">
+<link rel="manifest" href="../manifest-ride.json">
+<link rel="icon" type="image/png" href="../icons/ride-icon-96.png">
+<link rel="apple-touch-icon" href="../icons/ride-apple-touch-icon.png">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Outfit:wght@400;500;600;700;800;900&family=Noto+Sans+Ethiopic:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/ride-bundle.css?v=1.3">
+<style>
+.etl-truck-layer,.etl-truck-layer-2,.etl-pin,.etl-pin-1,.etl-pin-2,.etl-pin-3,.etl-pin-4,.etl-speedlines{display:none!important}
+
+/* ── Phase-1 additions ── */
+:root{
+  --gold:#D4AF37;--gold-lt:#E5C76B;--gold-br:#FFE9A8;
+  --teal:#4ECDC4;--blue:#60B4FF;--text:#EDEDF5;--dim:#9A9AAE;
+  --sheet:#12121d;--sheet2:#191926;--line:rgba(255,255,255,.08);
+  --f:'Outfit',sans-serif;--f-d:'Sora',sans-serif;
+}
+
+/* Header: ኢE mark */
+.etel-mark{font-family:'Noto Sans Ethiopic',sans-serif;font-size:13px;font-weight:700;
+  color:var(--gold-lt);line-height:1;letter-spacing:-.5px}
+.etel-mark span{font-family:'Outfit',sans-serif;color:#D4AF37}
+.ride-logo-wrap{display:flex;align-items:center;gap:10px}
+.ride-logo-box{width:40px;height:40px;border-radius:12px;overflow:hidden;
+  border:1px solid rgba(212,175,55,.3);
+  box-shadow:0 4px 14px -4px rgba(212,175,55,.5);flex-shrink:0}
+.ride-logo-box img{width:100%;height:100%;object-fit:cover;display:block}
+
+/* Vehicle type chips */
+.vtype-row{display:flex;gap:8px;margin-bottom:14px;overflow-x:auto;padding-bottom:4px}
+.vtype-row::-webkit-scrollbar{display:none}
+.vtype-chip{flex:0 0 auto;display:flex;flex-direction:column;align-items:center;gap:4px;
+  padding:10px 14px;border-radius:16px;border:1.5px solid var(--line);cursor:pointer;
+  background:rgba(255,255,255,.03);transition:all .2s;min-width:88px}
+.vtype-chip.active{border-color:var(--gold);background:rgba(212,175,55,.1)}
+.vtype-chip .vt-icon{font-size:24px;line-height:1}
+.vtype-chip .vt-icon-img{width:32px;height:32px;object-fit:contain;filter:drop-shadow(0 2px 6px rgba(212,175,55,.35))}
+.vtype-chip .vt-name{font-size:11px;font-weight:700;color:var(--dim)}
+.vtype-chip.active .vt-name{color:var(--gold-lt)}
+.vtype-chip .vt-eta{font-size:10px;color:var(--dim);margin-top:1px}
+.vtype-chip .vt-price{font-size:11px;font-weight:800;color:var(--gold-lt)}
+
+/* Searching: timer + counter */
+.searching-timer{font-family:var(--f-d);font-size:36px;font-weight:800;
+  color:var(--gold-lt);text-align:center;margin-bottom:4px;letter-spacing:.05em}
+.searching-label{font-size:13px;color:var(--dim);text-align:center;margin-bottom:18px}
+
+/* Active ride: big arriving header */
+.arriving-header{font-family:var(--f-d);font-size:1.5rem;font-weight:800;
+  color:var(--text);margin-bottom:4px}
+.arriving-sub{font-size:12px;color:var(--dim);margin-bottom:16px}
+
+/* Driver card */
+.driver-card{background:var(--sheet2);border-radius:18px;border:1px solid var(--line);
+  padding:14px;margin-bottom:12px}
+.driver-top{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.driver-avatar{width:52px;height:52px;border-radius:50%;background:rgba(212,175,55,.12);
+  border:2px solid rgba(212,175,55,.3);display:flex;align-items:center;
+  justify-content:center;font-size:22px;cursor:pointer;flex-shrink:0}
+.driver-name{font-size:16px;font-weight:800;color:var(--text);line-height:1.2}
+.driver-rating{font-size:12px;color:var(--gold-lt);font-weight:700;margin-top:2px}
+.driver-vehicle{font-size:12px;color:var(--dim);margin-top:2px}
+.driver-plate{display:inline-block;padding:4px 10px;border:2px solid var(--text);
+  border-radius:6px;font-family:monospace;font-size:14px;font-weight:900;
+  color:var(--text);letter-spacing:.1em;margin-top:6px;background:rgba(255,255,255,.05)}
+
+/* Action bar */
+.action-bar{display:flex;gap:8px;margin-bottom:14px}
+.action-bar-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;
+  padding:10px 6px;border-radius:14px;cursor:pointer;border:1px solid var(--line);
+  background:rgba(255,255,255,.03);font-family:var(--f);transition:all .18s}
+.action-bar-btn:active{transform:scale(.96)}
+.action-bar-btn .ab-icon{font-size:18px}
+.action-bar-btn .ab-label{font-size:10px;font-weight:700;color:var(--dim)}
+.action-bar-btn.call-btn-ab{background:rgba(46,204,113,.12);border-color:rgba(46,204,113,.35)}
+.action-bar-btn.call-btn-ab .ab-label{color:#2ECC71}
+
+/* Info rows */
+.info-rows{background:rgba(255,255,255,.03);border:1px solid var(--line);
+  border-radius:16px;overflow:hidden;margin-bottom:12px}
+.info-row{display:flex;align-items:center;gap:12px;padding:12px 14px;
+  border-bottom:1px solid rgba(255,255,255,.05)}
+.info-row:last-child{border-bottom:none}
+.info-row-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.info-row-dot.pickup{background:var(--gold)}
+.info-row-dot.drop{background:rgba(255,255,255,.35);border:2px solid rgba(255,255,255,.4)}
+.info-row-label{font-size:11px;color:var(--dim)}
+.info-row-val{font-size:13px;font-weight:600;color:var(--text);margin-top:1px}
+.info-row-right{margin-left:auto;font-size:13px;font-weight:700;color:var(--gold-lt)}
+
+/* Driver profile modal */
+#driver-modal-bg{position:fixed;inset:0;z-index:99;background:rgba(0,0,0,.7);
+  display:none;align-items:flex-end;justify-content:center}
+#driver-modal-bg.open{display:flex}
+#driver-modal{background:var(--sheet);border-radius:26px 26px 0 0;
+  border-top:1px solid rgba(212,175,55,.2);padding:24px 20px 40px;
+  width:100%;max-width:480px;animation:sheetUp .35s cubic-bezier(.22,1,.36,1)}
+.modal-handle{width:40px;height:4px;border-radius:4px;background:rgba(255,255,255,.15);
+  margin:0 auto 20px}
+.modal-avatar-lg{width:90px;height:90px;border-radius:50%;margin:0 auto 16px;
+  background:rgba(212,175,55,.1);border:2px solid rgba(212,175,55,.3);
+  display:flex;align-items:center;justify-content:center;font-size:40px}
+.modal-name{font-family:var(--f-d);font-size:22px;font-weight:800;
+  color:var(--text);text-align:center;margin-bottom:4px}
+.modal-rating-wreath{font-size:13px;color:var(--gold-lt);font-weight:700;
+  text-align:center;margin-bottom:18px}
+.modal-rows{background:rgba(255,255,255,.03);border-radius:14px;
+  border:1px solid var(--line);overflow:hidden;margin-bottom:16px}
+.modal-row{display:flex;align-items:center;justify-content:space-between;
+  padding:13px 16px;border-bottom:1px solid rgba(255,255,255,.05);font-size:13px}
+.modal-row:last-child{border-bottom:none}
+.modal-row-label{color:var(--dim)}
+.modal-row-val{color:var(--text);font-weight:600}
+.modal-copy{font-size:12px;color:var(--gold-lt);cursor:pointer;padding:4px 8px;
+  background:rgba(212,175,55,.1);border-radius:8px;border:none;font-family:var(--f)}
+
+/* My Profile modal (passenger's own profile) */
+#my-profile-modal-bg{position:fixed;inset:0;z-index:99;background:rgba(0,0,0,.7);
+  display:none;align-items:flex-end;justify-content:center}
+#my-profile-modal-bg.open{display:flex}
+#my-profile-modal{background:var(--sheet);border-radius:26px 26px 0 0;
+  border-top:1px solid rgba(212,175,55,.2);padding:24px 20px 32px;
+  width:100%;max-width:480px;max-height:88vh;overflow-y:auto;
+  animation:sheetUp .35s cubic-bezier(.22,1,.36,1)}
+.mp-cover{height:110px;margin:-24px -20px 14px;background:
+    linear-gradient(180deg, rgba(8,8,15,.3) 0%, var(--sheet) 92%),
+    url('../img/hero/ride-home.jpg');
+  background-size:cover;background-position:center 22%;
+  border-radius:26px 26px 0 0}
+.mp-avatar-wrap{position:relative;width:fit-content;margin:0 auto 14px}
+.mp-avatar{width:78px;height:78px;border-radius:50%;
+  background:linear-gradient(135deg,var(--gold-br),var(--gold));
+  border:3px solid rgba(212,175,55,.35);display:flex;align-items:center;justify-content:center;
+  font-family:var(--f-d);font-size:26px;font-weight:800;color:#1a1206;
+  box-shadow:0 10px 26px -8px rgba(212,175,55,.55)}
+.mp-avatar-dot{position:absolute;bottom:2px;right:2px;width:15px;height:15px;border-radius:50%;
+  background:var(--green);border:3px solid var(--sheet)}
+.mp-name{font-family:var(--f-d);font-size:20px;font-weight:800;color:var(--text);text-align:center}
+.mp-phone{font-size:12px;color:var(--dim);text-align:center;margin-top:3px}
+.mp-badge{display:flex;align-items:center;gap:6px;justify-content:center;margin:10px auto 18px;
+  width:fit-content;padding:5px 13px;border-radius:999px;background:rgba(212,175,55,.12);
+  border:1px solid rgba(212,175,55,.3);color:var(--gold-lt);font-size:10.5px;font-weight:700;letter-spacing:.02em}
+.mp-stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px}
+.mp-stat{background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:14px;
+  padding:12px 8px;text-align:center}
+.mp-stat-val{font-family:var(--f-d);font-size:16px;font-weight:800;color:var(--gold-lt)}
+.mp-stat-lbl{font-size:9.5px;color:var(--dim);text-transform:uppercase;letter-spacing:.05em;margin-top:2px}
+.mp-section{background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:16px;
+  overflow:hidden;margin-bottom:12px}
+.mp-row{display:flex;align-items:center;gap:12px;padding:14px 16px;
+  border-bottom:1px solid rgba(255,255,255,.05);cursor:pointer}
+.mp-row:last-child{border-bottom:none}
+.mp-row-icon{width:34px;height:34px;border-radius:10px;background:rgba(212,175,55,.12);
+  display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
+.mp-row-label{font-size:13px;font-weight:700;color:var(--text)}
+.mp-row-sub{font-size:11px;color:var(--dim);margin-top:1px}
+.mp-row-arrow{margin-left:auto;color:var(--dim);font-size:15px}
+.mp-logout{width:100%;padding:13px;background:rgba(230,57,70,.12);
+  border:1px solid rgba(230,57,70,.35);color:#E63946;border-radius:12px;
+  font-size:13.5px;font-weight:700;cursor:pointer;font-family:var(--f)}
+.mp-version{text-align:center;font-size:10.5px;color:rgba(255,255,255,.3);margin-top:14px}
+
+/* Cancel reason chips */
+.reason-section{margin-bottom:14px}
+.reason-section-label{font-size:11px;color:var(--dim);text-transform:uppercase;
+  letter-spacing:.08em;margin-bottom:8px;font-weight:700}
+.reason-chips{display:flex;flex-wrap:wrap;gap:8px}
+.reason-chip{display:flex;align-items:center;gap:6px;padding:8px 12px;
+  border-radius:12px;border:1px solid var(--line);background:rgba(255,255,255,.03);
+  cursor:pointer;font-size:12px;font-weight:600;color:var(--text);
+  font-family:var(--f);transition:all .18s}
+.reason-chip:active{transform:scale(.97)}
+.reason-chip.selected{border-color:var(--gold);background:rgba(212,175,55,.1);color:var(--gold-lt)}
+.reason-chip-icon{font-size:14px}
+
+/* Searching: car icons animation  */
+@keyframes carFloat{0%,100%{transform:translateY(0) rotate(-5deg)}50%{transform:translateY(-8px) rotate(5deg)}}
+@keyframes carFloat2{0%,100%{transform:translateY(0) rotate(8deg)}50%{transform:translateY(-6px) rotate(-8deg)}}
+.nearby-cars{position:relative;width:140px;height:80px;margin:0 auto 12px}
+.nc{position:absolute;font-size:20px;animation:carFloat 2s ease-in-out infinite}
+.nc.n1{left:0;top:10px;animation-delay:0s}
+.nc.n2{left:30px;top:30px;animation-delay:.4s;animation-name:carFloat2}
+.nc.n3{right:10px;top:5px;animation-delay:.8s}
+.nc.n4{right:0;top:35px;animation-delay:1.2s;animation-name:carFloat2}
+
+@keyframes sheetUp{from{transform:translateY(40px);opacity:0}to{transform:none;opacity:1}}
+
+/* ── Slide-to-request-ride (replaces the tap "Request Ride" button) ── */
+.slide-book-wrap{width:78%;max-width:380px;margin:0 auto}
+.slide-book-track{
+  position:relative;width:100%;height:56px;border-radius:15px;
+  background:rgba(212,175,55,.08);border:1.5px solid rgba(212,175,55,.3);
+  overflow:hidden;user-select:none;cursor:pointer;
+  box-shadow:0 14px 32px -14px rgba(212,175,55,.5);
+}
+.slide-book-label{
+  position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  font-family:var(--f);font-size:14px;font-weight:800;color:#1a1206;
+  letter-spacing:.01em;pointer-events:none;gap:8px;
+}
+.slide-book-arrow{opacity:.55;font-size:15px;animation:r-slide-arrow-left 1.4s infinite}
+@keyframes r-slide-arrow-left{0%,100%{transform:translateX(0);opacity:.35}60%{transform:translateX(-6px);opacity:.95}}
+.slide-book-thumb{
+  position:absolute;top:4px;right:4px;left:auto;
+  width:48px;height:48px;border-radius:12px;
+  background:linear-gradient(135deg,var(--gold-br),var(--gold-lt),var(--gold));
+  display:flex;align-items:center;justify-content:center;
+  font-size:20px;color:#1a1206;
+  box-shadow:0 8px 20px -6px rgba(212,175,55,.8);
+  transition:transform .08s;touch-action:none;
+}
+.slide-book-fill{
+  position:absolute;inset:0;border-radius:15px;
+  background:rgba(212,175,55,.18);transform-origin:right;
+  transform:scaleX(0);transition:transform .05s;pointer-events:none;
+  left:auto;right:0;
+}
+.slide-book-track.disabled{opacity:.5;cursor:not-allowed}
+
+/* Full-map expand/collapse button */
+#ride-map-expand-btn{
+  position:fixed;top:78px;right:16px;z-index:11;
+  width:42px;height:42px;border-radius:50%;border:1.5px solid rgba(212,175,55,.5);
+  background:radial-gradient(circle,rgba(212,175,55,.28) 0%,rgba(168,134,10,.12) 100%);
+  color:#FFD700;font-size:18px;display:flex;align-items:center;justify-content:center;
+  cursor:pointer;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+  box-shadow:0 4px 16px -4px rgba(212,175,55,.35);
+  transition:transform .2s,box-shadow .2s;
+}
+#ride-map-expand-btn:hover{transform:scale(1.08);box-shadow:0 4px 22px -4px rgba(212,175,55,.55)}
+#ride-map-expand-btn:active{transform:scale(.94)}
+</style>
+    <!-- etel-phase5.css, etel-design-v4.css, etel-responsive.css now folded into css/ride-bundle.css above -->
+</head>
+<body class="dark-page" style="background:#08080f;margin:0;padding:0">
+
+<!-- Update-available banner - see driver/index.html for the fuller
+     explanation. Two independent things can show this: core.js's
+     silentPatchCheck() polling get_patch_info, and the service-worker
+     'updatefound' handler further down in core.js. Deliberately does
+     NOT auto-reload - opt-in only. -->
+<div id="update-banner" style="display:none;position:fixed;top:0;left:0;right:0;z-index:9999;
+  background:linear-gradient(135deg,#2a2110,#1a1206);border-bottom:1px solid rgba(212,175,55,.4);
+  padding:10px 14px;align-items:center;gap:10px;font-size:13px;color:#F5E7B8">
+  <span style="font-size:16px">🔄</span>
+  <span style="flex:1">A new version (<span class="upd-ver">—</span>) is available.</span>
+  <button onclick="location.reload(true)" style="background:linear-gradient(135deg,#FFE9A8,#D4AF37);
+    color:#1a1a2e;border:none;border-radius:8px;padding:7px 14px;font-weight:800;font-size:12.5px;cursor:pointer">
+    Update Now
+  </button>
+  <button onclick="document.getElementById('update-banner').style.display='none'" aria-label="Dismiss"
+    style="background:transparent;border:none;color:#F5E7B8;opacity:.7;font-size:18px;cursor:pointer;padding:0 4px">
+    ×
+  </button>
+</div>
+
+<!-- MAP -->
+<div id="ride-map"></div>
+<div id="ride-toasts"></div>
+
+<!-- Full-map toggle: hides header + sheet to show the map full-screen, and back -->
+<button id="ride-map-expand-btn" onclick="toggleRideSheet()" title="Full map">⤢</button>
+
+<!-- HEADER -->
+<div class="ride-header">
+  <div class="ride-logo-wrap">
+    <div class="ride-logo-box"><picture><source srcset="../assets/images/etel-ride-coin.webp" type="image/webp"/><img src="../assets/images/etel-ride-coin.png" alt="ETEL Ride" loading="lazy"/></picture></div>
+    <div>
+      <div class="ride-header-title">ETEL Ride</div>
+      <div class="ride-header-sub">ሐዋሳ · Fast · Safe</div>
+    </div>
+  </div>
+  <div class="ride-header-user" style="display:flex;gap:8px;align-items:center">
+    <a href="../driver/" style="text-decoration:none">
+      <button style="background:rgba(212,175,55,.12);border:1px solid rgba(212,175,55,.35);color:#E5C76B;border-radius:999px;padding:6px 12px;font-size:11px;font-weight:700;cursor:pointer;font-family:'Outfit',sans-serif">🚗 Driver</button>
+    </a>
+    <button onclick="openMyProfile()" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);color:#EDEDF5;border-radius:999px;padding:6px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:'Outfit',sans-serif">
+      <span id="user-name"></span>
+    </button>
+  </div>
+</div>
+
+<!-- BOTTOM SHEET -->
+<div class="ride-sheet">
+  <div class="ride-tabs" style="display:flex;gap:0;overflow-x:auto;scrollbar-width:none">
+    <button class="ride-tab" data-tab="book" onclick="switchRideTab('book')">🚗 Book</button>
+    <button class="ride-tab" data-tab="hail" onclick="switchRideTab('hail')">🚖 Street Hail</button>
+    <button class="ride-tab" data-tab="active" onclick="switchRideTab('active')">📍 Active</button>
+    <button class="ride-tab" data-tab="history" onclick="switchRideTab('history')">📋 History</button>
+  </div>
+
+  <!-- VIEW: BOOK -->
+  <div class="ride-view" id="view-book">
+
+    <!-- Vehicle type selector -->
+    <div class="vtype-row" id="vtype-row">
+      <div class="vtype-chip active" data-vtype="bajaj" onclick="selectVtype(this,'bajaj')">
+        <div class="vt-icon">🛺</div>
+        <div class="vt-name">Bajaj</div>
+        <div class="vt-eta">~2 min</div>
+        <div class="vt-price">fr ETB 120</div>
+      </div>
+      <div class="vtype-chip" data-vtype="moto" onclick="selectVtype(this,'moto')">
+        <div class="vt-icon">🛵</div>
+        <div class="vt-name">Moto</div>
+        <div class="vt-eta">~1 min</div>
+        <div class="vt-price">fr ETB 100</div>
+      </div>
+      <div class="vtype-chip" data-vtype="car" onclick="selectVtype(this,'car')">
+        <div class="vt-icon">🚗</div>
+        <div class="vt-name">Car</div>
+        <div class="vt-eta">~3 min</div>
+        <div class="vt-price">fr ETB 150</div>
+      </div>
+    </div>
+
+    <div style="display:flex;justify-content:center;margin:2px 0 12px">
+      <button id="driver-map-filter-btn" onclick="toggleDriverMapFilter()" style="background:rgba(212,175,55,.08);border:1px solid rgba(212,175,55,.28);color:var(--gold-lt);border-radius:999px;padding:7px 16px;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--f)">
+        🗺️ See All Types on Map
+      </button>
+    </div>
+
+    <!-- Location inputs -->
+    <div class="loc-card">
+      <div class="loc-row">
+        <div class="loc-icon pickup">📍</div>
+        <input id="pickup-input" class="loc-input" type="text" placeholder="Pickup — or tap the map" autocomplete="off"/>
+        <button type="button" onclick="useMyCurrentLocationForPickup(this)" title="Use my current location" style="flex-shrink:0;width:34px;height:34px;border-radius:11px;background:rgba(229,199,107,.12);border:1px solid rgba(229,199,107,.3);color:var(--gold-lt);font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center">🎯</button>
+        <div class="loc-line"></div>
+      </div>
+      <div class="loc-row">
+        <div class="loc-icon dropoff">🏁</div>
+        <input id="dropoff-input" class="loc-input" type="text" placeholder="Where to?" autocomplete="off"/>
+      </div>
+    </div>
+
+    <!-- Cross-sell: Delivery already links here (RIDE QUICK ACCESS on the
+         Delivery home screen) but nothing pointed back the other way. -->
+    <a href="../customer.html" class="loc-card" style="margin-top:10px;padding:12px 14px;display:flex;align-items:center;gap:10px;text-decoration:none;cursor:pointer">
+      <div style="font-size:22px">📦</div>
+      <div style="flex:1">
+        <div style="font-size:13px;font-weight:700;color:var(--gold-lt)">Sending a package instead?</div>
+        <div style="font-size:11.5px;color:var(--dim);margin-top:2px">Rides are for you — Delivery is for your packages</div>
+      </div>
+      <div style="font-size:16px;color:var(--dim)">→</div>
+    </a>
+
+    <!-- Ride by distance -->
+    <div class="loc-card" id="bykm-card" style="margin-top:10px;padding:12px 14px">
+      <div style="font-size:12px;color:var(--dim);margin-bottom:8px">🛣️ <b style="color:var(--gold-lt)">Open meter</b> — no destination? Tell the driver on the way</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+        <button class="zchip" onclick="setManualKm(2)">2 km</button>
+        <button class="zchip" onclick="setManualKm(5)">5 km</button>
+        <button class="zchip" onclick="setManualKm(10)">10 km</button>
+        <input id="bykm-input" type="number" min="1" max="100" step="0.5" placeholder="km"
+               style="width:74px;padding:8px 10px;border-radius:10px;border:1px solid var(--line);background:var(--sheet2);color:var(--text);font-family:var(--f);font-size:13px"
+               oninput="setManualKm(this.value)"/>
+        <span style="font-size:11px;color:var(--dim)">ETB 120 + 30/km</span>
+      </div>
+    </div>
+
+    <!-- Fare card -->
+    <div class="fare-card" id="fare-card" style="display:none">
+      <div>
+        <div class="fare-label">Estimated Fare</div>
+        <div class="fare-amount" id="fare-amount">ETB —</div>
+        <div class="fare-dist" id="fare-dist">—</div>
+        <span id="fare-surge-badge" style="display:none;align-items:center;gap:4px;background:rgba(255,152,0,.15);border:1px solid rgba(255,152,0,.4);color:#FFB74D;font-size:10.5px;font-weight:700;padding:3px 9px;border-radius:999px;margin-top:6px">⚡ Peak-hour pricing</span>
+        <div style="font-size:10.5px;color:var(--dim);margin-top:3px;max-width:220px;line-height:1.4">Final fare is based on the actual distance your driver travels, from pickup to drop-off — this is just an estimate.</div>
+      </div>
+      <span class="fare-type-badge" id="fare-type-badge">🛺 Bajaj</span>
+    </div>
+
+    <!-- Payment row -->
+    <div class="pay-row">
+      <div class="pay-opt" data-method="cash" onclick="selectPayment('cash')">
+        <span class="poi">💵</span><span class="pol">Cash</span>
+      </div>
+      <div class="pay-opt" data-method="wallet" onclick="selectPayment('wallet')">
+        <span class="poi">💳</span><span class="pol">Wallet</span>
+      </div>
+    </div>
+
+    <div class="slide-book-wrap" id="slide-book-wrap">
+      <div class="slide-book-track" id="slide-book-track">
+        <div class="slide-book-fill" id="slide-book-fill"></div>
+        <div class="slide-book-label">
+          <span class="slide-book-arrow">‹</span>
+          <span>Slide to request ride</span>
+        </div>
+        <div class="slide-book-thumb" id="slide-book-thumb">◀</div>
+      </div>
+    </div>
+    <p style="text-align:center;margin-top:10px;font-size:11px;color:var(--dim)">Tap the map to set pickup &amp; drop-off, or type above</p>
+  </div>
+
+  <!-- VIEW: SEARCHING -->
+  <div class="ride-view" id="view-searching">
+    <div class="arriving-header" id="searching-title">Finding your driver…</div>
+    <div class="arriving-sub">This usually takes a few seconds</div>
+
+    <div class="nearby-cars">
+      <div class="nc n1">🛺</div>
+      <div class="nc n2">🛺</div>
+      <div class="nc n3">🛺</div>
+      <div class="nc n4">🛺</div>
+    </div>
+
+    <div class="searching-timer" id="searching-timer">00:00</div>
+    <div class="searching-label">Connecting with nearby drivers</div>
+
+    <!-- Route summary while searching -->
+    <div class="info-rows" style="margin-bottom:12px">
+      <div class="info-row">
+        <div class="info-row-dot pickup"></div>
+        <div><div class="info-row-label">Pickup</div><div class="info-row-val" id="s-pickup-addr">Your location</div></div>
+        <div class="info-row-right" id="searching-fare">—</div>
+      </div>
+      <div class="info-row">
+        <div class="info-row-dot drop"></div>
+        <div><div class="info-row-label">Destination</div><div class="info-row-val" id="s-drop-addr">—</div></div>
+        <div class="info-row-right" id="searching-dist">—</div>
+      </div>
+    </div>
+
+    <button class="btn-outline btn-danger" onclick="showCancelReasons()">✕ Cancel Ride</button>
+
+    <div style="display:flex;gap:10px;align-items:flex-start;margin-top:14px;padding:12px 14px;background:rgba(46,204,113,.07);border:1px solid rgba(46,204,113,.25);border-radius:12px">
+      <div style="font-size:18px;line-height:1">🛡️</div>
+      <div style="font-size:12px;color:var(--dim);line-height:1.5" id="searching-safety-tip">Check that the driver&rsquo;s name and plate number match what&rsquo;s shown in the app before getting in.</div>
+    </div>
+  </div>
+
+  <!-- VIEW: ACTIVE RIDE -->
+  <div class="ride-view" id="view-active">
+    <!-- Arriving header (updated by JS) -->
+    <div class="arriving-header" id="arriving-header">Driver on the way</div>
+    <div class="arriving-sub" id="arriving-sub">Tracking your driver</div>
+    <div id="ride-offline-badge" style="display:none;align-items:center;gap:8px;background:rgba(230,81,0,.14);border:1px solid rgba(230,81,0,.4);color:#FFB74D;font-size:12px;font-weight:600;padding:8px 12px;margin-bottom:10px;border-radius:10px">
+      <span style="font-size:14px">📡</span>
+      <span>No connection — your fare and distance are still being tracked, this will update the moment you're back online.</span>
+    </div>
+    <button onclick="_showBatteryTipModal(_detectBatteryAggressiveOEM() || {brand:'your phone', steps:['Open your phone\'s Settings \u2192 Battery, find this browser app, and allow it to run in the background / remove it from any battery-saving or auto-close list.','Open your recent-apps switcher, find this browser, and lock or pin its card so the system does not close it.']})" style="background:none;border:none;color:inherit;opacity:.5;font-size:12px;cursor:pointer;padding:2px 0;margin-bottom:8px" title="Why did my ride reminder stop?">Tracking reminder not showing?</button>
+
+    <!-- Driver card -->
+    <div class="driver-card" id="driver-card">
+      <div class="driver-top">
+        <div class="driver-avatar" id="driver-avatar-btn" onclick="openDriverModal()" title="View driver profile">🧑</div>
+        <div style="flex:1">
+          <div class="driver-name" id="drv-name">Your Driver</div>
+          <div class="driver-rating" id="drv-rating">⭐ —</div>
+          <div class="driver-vehicle" id="drv-vehicle">—</div>
+          <div class="driver-plate" id="drv-plate">——</div>
+        </div>
+      </div>
+      <!-- Action bar: Call / Chat / Issues -->
+      <div class="action-bar">
+        <button class="action-bar-btn call-btn-ab" id="drv-call-btn" onclick="callDriver()">
+          <span class="ab-icon">📞</span><span class="ab-label">Call</span>
+        </button>
+        <button class="action-bar-btn" onclick="RideChat.open(RIDE.currentRideId || RIDE.currentRequestId, 'passenger')">
+          <span class="ab-icon">💬</span><span class="ab-label">Chat</span>
+        </button>
+        <button class="action-bar-btn" onclick="showRideIssues()">
+          <span class="ab-icon">⚠️</span><span class="ab-label">Issues</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Info rows: pickup ETA / destination / fare -->
+    <div class="info-rows" id="active-info-rows">
+      <div class="info-row">
+        <div class="info-row-dot pickup"></div>
+        <div><div class="info-row-label">Pickup at</div><div class="info-row-val" id="a-pickup-val">—</div></div>
+        <div class="info-row-right" id="a-eta-val">—</div>
+      </div>
+      <div class="info-row">
+        <div class="info-row-dot drop"></div>
+        <div><div class="info-row-label">Destination</div><div class="info-row-val" id="a-drop-val">—</div></div>
+      </div>
+      <div class="info-row">
+        <div style="font-size:14px">💵</div>
+        <div><div class="info-row-label">Fare estimate</div><div class="info-row-val" id="a-fare-val">—</div></div>
+      </div>
+      <div class="info-row" id="a-wait-box" style="display:none">
+        <div style="font-size:14px">⏱</div>
+        <div><div class="info-row-label">Driver is waiting</div><div class="info-row-val" id="a-wait-val" style="color:#FFB74D">—</div></div>
+      </div>
+      <div id="a-fare-breakdown" style="display:none"></div>
+    </div>
+
+    <button class="btn-outline" style="margin-top:4px;background:rgba(212,175,55,.08);border-color:rgba(212,175,55,.25);color:var(--gold-lt)" onclick="showRoutePath(RIDE.currentRideId)">🧭 View Route So Far</button>
+    <button class="btn-outline btn-danger" style="margin-top:4px" onclick="showCancelReasons()">✕ Cancel Ride</button>
+  </div>
+
+  <!-- VIEW: ARRIVED -->
+  <div class="ride-view" id="view-arrived">
+    <div class="sheet-title">Trip Complete</div>
+    <div id="arrived-ride-content">
+      <div style="text-align:center;padding:32px;color:var(--dim)">Loading...</div>
+    </div>
+  </div>
+
+  <!-- VIEW: RATING -->
+  <div class="ride-view" id="view-rating">
+    <div class="sheet-title">Rate Your Driver</div>
+    <p style="color:var(--dim);font-size:13px;margin-bottom:20px">How was your ride?</p>
+    <div class="star-row">
+      <button class="star-btn" onclick="setStar(1)">⭐</button>
+      <button class="star-btn" onclick="setStar(2)">⭐</button>
+      <button class="star-btn" onclick="setStar(3)">⭐</button>
+      <button class="star-btn" onclick="setStar(4)">⭐</button>
+      <button class="star-btn" onclick="setStar(5)">⭐</button>
+    </div>
+    <textarea id="rating-comment" placeholder="Leave a comment (optional)…" rows="3"
+      style="width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:14px;color:#EDEDF5;font-family:'Outfit',sans-serif;font-size:13px;padding:12px 14px;resize:none;outline:none;margin-bottom:14px"></textarea>
+    <button class="ride-book-btn" onclick="submitRating()">⭐ Submit Rating</button>
+    <button class="btn-outline" style="margin-top:10px" onclick="skipRating()">Skip</button>
+  </div>
+
+  <!-- VIEW: STREET HAIL -->
+  <div class="ride-view" id="view-hail">
+    <div class="arriving-header" style="margin-bottom:6px">🚖 Street Hail</div>
+    <div class="arriving-sub" style="margin-bottom:18px">A driver will link you directly — no booking needed</div>
+
+    <div style="background:rgba(212,175,55,.08);border:1.5px solid rgba(212,175,55,.3);border-radius:16px;padding:18px;margin-bottom:14px">
+      <div style="font-size:13px;font-weight:700;color:var(--gold-lt);margin-bottom:8px">How it works</div>
+      <div style="font-size:12px;color:var(--dim);line-height:1.8">
+        1. Find an ETEL driver on the street<br>
+        2. Give them your name or phone number<br>
+        3. The driver links your phone — the ride appears here automatically<br>
+        4. Track your trip and pay at the end
+      </div>
+    </div>
+
+    <div id="hail-status" style="text-align:center;padding:20px">
+      <div style="font-size:40px;margin-bottom:10px">🚖</div>
+      <div style="font-size:14px;font-weight:700;color:var(--text)">Waiting for driver to link your ride</div>
+      <div style="font-size:12px;color:var(--dim);margin-top:6px">This page checks every 5 seconds</div>
+      <div style="width:40px;height:4px;border-radius:2px;background:rgba(212,175,55,.2);margin:14px auto 0">
+        <div id="hail-pulse" style="height:100%;border-radius:2px;background:linear-gradient(90deg,var(--gold),var(--gold-lt));animation:hailPulse 1.5s ease-in-out infinite"></div>
+      </div>
+    </div>
+
+    <div style="background:rgba(46,204,113,.08);border:1px solid rgba(46,204,113,.25);border-radius:14px;padding:14px;margin-bottom:14px">
+      <div style="font-size:12px;color:#2ECC71;font-weight:700;margin-bottom:4px">✓ Auto-detection is active</div>
+      <div style="font-size:11px;color:var(--dim)">If a driver links your ride, you will be taken to the active ride screen automatically</div>
+    </div>
+
+    <button class="ride-book-btn" onclick="switchRideTab('book')" style="background:rgba(255,255,255,.07);color:var(--text);border:1.5px solid rgba(255,255,255,.12)">
+      ← Book a ride instead
+    </button>
+  </div>
+  <style>@keyframes hailPulse{0%,100%{width:20%}50%{width:100%}}</style>
+
+  <!-- VIEW: HISTORY -->
+  <div class="ride-view" id="view-history">
+    <div class="sheet-title">Ride History</div>
+    <div id="history-list"><div style="text-align:center;padding:32px;color:var(--dim)">Loading…</div></div>
+  </div>
+
+  <!-- VIEW: CANCEL REASONS -->
+  <div class="ride-view" id="view-cancel">
+    <div class="arriving-header" style="margin-bottom:4px">Why are you cancelling?</div>
+    <div class="arriving-sub" style="margin-bottom:16px">Help us improve your experience</div>
+
+    <div class="reason-section">
+      <div class="reason-section-label">My initiative</div>
+      <div class="reason-chips">
+        <button class="reason-chip" onclick="submitCancel(this,'Plans changed')"><span class="reason-chip-icon">🚶</span>Plans changed</button>
+        <button class="reason-chip" onclick="submitCancel(this,'Wrong address')"><span class="reason-chip-icon">📍</span>Wrong address</button>
+        <button class="reason-chip" onclick="submitCancel(this,'Weather conditions')"><span class="reason-chip-icon">🌧️</span>Weather</button>
+        <button class="reason-chip" onclick="submitCancel(this,'Found another ride')"><span class="reason-chip-icon">🚌</span>Found another ride</button>
+      </div>
+    </div>
+
+    <div class="reason-section">
+      <div class="reason-section-label">Driver actions</div>
+      <div class="reason-chips">
+        <button class="reason-chip" onclick="submitCancel(this,'Driver asked to cancel')"><span class="reason-chip-icon">🤷</span>Asked to cancel</button>
+        <button class="reason-chip" onclick="submitCancel(this,'Driver going wrong way')"><span class="reason-chip-icon">↪️</span>Wrong way</button>
+        <button class="reason-chip" onclick="submitCancel(this,'Driver not moving')"><span class="reason-chip-icon">🚗</span>Not moving</button>
+        <button class="reason-chip" onclick="submitCancel(this,'Driver asked for more money')"><span class="reason-chip-icon">💰</span>Asked for more money</button>
+        <button class="reason-chip" onclick="submitCancel(this,'Driver not responding')"><span class="reason-chip-icon">📵</span>Not responding</button>
+      </div>
+    </div>
+
+    <div class="reason-section">
+      <div class="reason-section-label">Service issues</div>
+      <div class="reason-chips">
+        <button class="reason-chip" onclick="submitCancel(this,'Pickup taking too long')"><span class="reason-chip-icon">⏱️</span>Pickup too long</button>
+        <button class="reason-chip" onclick="submitCancel(this,'Issue with ride price')"><span class="reason-chip-icon">🏷️</span>Ride price</button>
+      </div>
+    </div>
+
+    <textarea id="cancel-comment" placeholder="Any additional comments? (optional)" rows="2"
+      style="width:100%;background:rgba(255,255,255,.05);border:1px solid var(--line);border-radius:12px;color:var(--text);font-family:var(--f);font-size:13px;padding:10px 12px;resize:none;outline:none;margin:8px 0 14px"></textarea>
+
+    <button class="ride-book-btn" style="margin-bottom:10px" onclick="submitCancel(null,'No reason given')">Continue with cancellation</button>
+    <button class="btn-outline" onclick="switchRideTab('active')">← Go back</button>
+  </div>
+
+</div>
+
+<!-- DRIVER PROFILE MODAL -->
+<div id="driver-modal-bg" onclick="closeDriverModal(event)">
+  <div id="driver-modal">
+    <div class="modal-handle"></div>
+    <div class="modal-avatar-lg" id="modal-avatar">🧑</div>
+    <div class="modal-name" id="modal-name">Driver</div>
+    <div class="modal-rating-wreath" id="modal-rating">🏅 — · rating</div>
+    <div class="modal-rows">
+      <div class="modal-row">
+        <span class="modal-row-label">Vehicle</span>
+        <span class="modal-row-val" id="modal-vehicle">—</span>
+      </div>
+      <div class="modal-row">
+        <span class="modal-row-label">Plate</span>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span class="modal-row-val" id="modal-plate">—</span>
+          <button class="modal-copy" onclick="copyPlate()">Copy</button>
+        </div>
+      </div>
+      <div class="modal-row">
+        <span class="modal-row-label">Phone</span>
+        <span class="modal-row-val" id="modal-phone">—</span>
+      </div>
+    </div>
+    <button class="btn-outline" onclick="closeDriverModal(null)">Close</button>
+  </div>
+</div>
+
+<!-- RIDE ISSUES MODAL -->
+<div id="ride-issues-modal-bg" onclick="if(event.target===this)closeRideIssuesModal()">
+  <div id="ride-issues-modal">
+    <div class="modal-handle"></div>
+    <div class="modal-name" style="margin-bottom:4px">Report an Issue</div>
+    <p style="font-size:12.5px;color:var(--dim,#9A9AAE);text-align:center;margin-bottom:16px">Our team reviews every report. Select what happened:</p>
+    <div id="ride-issue-categories" style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px">
+      <button class="ride-issue-cat-btn" data-cat="no_show" onclick="selectRideIssueCat(this)">🚫 Driver didn't show up</button>
+      <button class="ride-issue-cat-btn" data-cat="wrong_route" onclick="selectRideIssueCat(this)">🗺️ Wrong route taken</button>
+      <button class="ride-issue-cat-btn" data-cat="safety" onclick="selectRideIssueCat(this)">⚠️ Safety concern</button>
+      <button class="ride-issue-cat-btn" data-cat="fare_dispute" onclick="selectRideIssueCat(this)">💰 Fare dispute</button>
+      <button class="ride-issue-cat-btn" data-cat="driver_behavior" onclick="selectRideIssueCat(this)">🙁 Driver behavior</button>
+      <button class="ride-issue-cat-btn" data-cat="other" onclick="selectRideIssueCat(this)">📝 Other</button>
+    </div>
+    <textarea id="ride-issue-details" placeholder="Add details (optional)" style="width:100%;min-height:70px;padding:11px;border-radius:12px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.04);color:#EDEDF5;font-family:inherit;font-size:13px;resize:vertical;margin-bottom:14px;box-sizing:border-box"></textarea>
+    <button class="btn-outline" id="ride-issue-submit-btn" style="background:linear-gradient(135deg,#3395FF,#007AFF);color:#fff;border:none;margin-bottom:8px" onclick="submitRideIssueReport()">Submit Report</button>
+    <button class="btn-outline" onclick="closeRideIssuesModal()">Cancel</button>
+  </div>
+</div>
+<style>
+  #ride-issues-modal-bg{position:fixed;inset:0;z-index:9999;display:none;align-items:flex-end;justify-content:center;background:rgba(5,5,10,.72);backdrop-filter:blur(6px)}
+  #ride-issues-modal-bg.open{display:flex}
+  #ride-issues-modal{width:min(460px,100vw);max-height:86vh;overflow-y:auto;background:linear-gradient(180deg,#16121a,#0d0a10);border:1px solid rgba(212,175,55,.2);border-bottom:none;border-radius:22px 22px 0 0;padding:10px 22px max(22px,env(safe-area-inset-bottom,22px))}
+  .ride-issue-cat-btn{display:block;width:100%;text-align:left;padding:13px 15px;border-radius:12px;border:1.5px solid rgba(255,255,255,.1);background:rgba(255,255,255,.03);color:#EDEDF5;font-size:13.5px;cursor:pointer;transition:all .15s}
+  .ride-issue-cat-btn.selected{border-color:#3395FF;background:rgba(51,149,255,.12);color:#60B4FF;font-weight:700}
+</style>
+
+<!-- MY PROFILE MODAL (passenger's own profile) -->
+<div id="my-profile-modal-bg" onclick="if(event.target===this)closeMyProfile()">
+  <div id="my-profile-modal">
+    <div class="modal-handle"></div>
+    <div class="mp-cover"></div>
+    <div class="mp-avatar-wrap">
+      <div class="mp-avatar" id="mp-avatar">--</div>
+      <div class="mp-avatar-dot"></div>
+    </div>
+    <div class="mp-name" id="mp-name">Loading…</div>
+    <div class="mp-phone" id="mp-phone"></div>
+    <div class="mp-badge">🚖 VERIFIED RIDER</div>
+
+    <div class="mp-stats">
+      <div class="mp-stat"><div class="mp-stat-val" id="mp-stat-rides">0</div><div class="mp-stat-lbl">Rides</div></div>
+      <div class="mp-stat"><div class="mp-stat-val" id="mp-stat-spent">ETB 0</div><div class="mp-stat-lbl">Total Spent</div></div>
+      <div class="mp-stat"><div class="mp-stat-val" id="mp-stat-rating">—</div><div class="mp-stat-lbl">Your Rating</div></div>
+    </div>
+
+    <div class="mp-section">
+      <div class="mp-row" onclick="closeMyProfile();switchRideTab('history')">
+        <div class="mp-row-icon">📋</div>
+        <div><div class="mp-row-label">Ride History</div><div class="mp-row-sub">All your past trips</div></div>
+        <div class="mp-row-arrow">›</div>
+      </div>
+      <div class="mp-row" onclick="closeMyProfile();openRideAddresses()">
+        <div class="mp-row-icon">📍</div>
+        <div><div class="mp-row-label">Saved Addresses</div><div class="mp-row-sub">Quick pickup and drop-off spots</div></div>
+        <div class="mp-row-arrow">›</div>
+      </div>
+      <div class="mp-row" onclick="closeMyProfile();openRideFavorites()">
+        <div class="mp-row-icon">⭐</div>
+        <div><div class="mp-row-label">Favorite Routes</div><div class="mp-row-sub">Save trips you take often</div></div>
+        <div class="mp-row-arrow">›</div>
+      </div>
+      <div class="mp-row" onclick="closeMyProfile();openRideMessages()">
+        <div class="mp-row-icon">💬</div>
+        <div><div class="mp-row-label">Messages</div><div class="mp-row-sub">Ride updates and support</div></div>
+        <div class="mp-row-arrow">›</div>
+      </div>
+      <div class="mp-row" onclick="closeMyProfile();openRideReferral()">
+        <div class="mp-row-icon">🎁</div>
+        <div><div class="mp-row-label">Referral &amp; Rewards</div><div class="mp-row-sub">Earn ETB with friends</div></div>
+        <div class="mp-row-arrow">›</div>
+      </div>
+      <div class="mp-row" onclick="closeMyProfile();openRideSettings()">
+        <div class="mp-row-icon">⚙️</div>
+        <div><div class="mp-row-label">Settings &amp; Privacy</div><div class="mp-row-sub">Notifications and password</div></div>
+        <div class="mp-row-arrow">›</div>
+      </div>
+      <div class="mp-row" onclick="window.open('https://ethelmarket.com/Etel.Pay/wallet/wallet.html','_blank')">
+        <div class="mp-row-icon">💰</div>
+        <div><div class="mp-row-label">ኢE Pay Wallet</div><div class="mp-row-sub">Balance and payments</div></div>
+        <div class="mp-row-arrow">›</div>
+      </div>
+      <div class="mp-row" onclick="etelBecomeDriver()">
+        <div class="mp-row-icon">🚗</div>
+        <div><div class="mp-row-label">Become a Driver</div><div class="mp-row-sub">Earn with ETEL Ride</div></div>
+        <div class="mp-row-arrow">›</div>
+      </div>
+      <div class="mp-row" onclick="if(confirm('This clears everything cached on THIS device - app data, cached files - then reloads. You will be logged out and need to sign in again. Continue?')) etelForceClearCacheAndReload()">
+        <div class="mp-row-icon">🧹</div>
+        <div><div class="mp-row-label">Fix app not updating</div><div class="mp-row-sub">Clear cache and reload if things look stuck or old</div></div>
+        <div class="mp-row-arrow">›</div>
+      </div>
+    </div>
+
+    <button class="mp-logout" onclick="closeMyProfile();doLogout()">🚪 Logout</button>
+    <div class="mp-version">ETEL Ride · ሐዋሳ</div>
+  </div>
+</div>
+
+<!-- SAVED ADDRESSES MODAL (rider) -->
+<div id="ride-addresses-modal-bg" onclick="if(event.target===this)closeRideAddresses()">
+  <div id="ride-addresses-modal" class="ride-subsheet">
+    <div class="modal-handle"></div>
+    <div class="modal-name" style="margin-bottom:4px">📍 Saved Addresses</div>
+    <p style="font-size:12.5px;color:var(--dim);text-align:center;margin-bottom:16px">Save spots you use often for faster booking.</p>
+    <div id="ride-addresses-list" style="margin-bottom:14px">
+      <div style="text-align:center;padding:24px;color:var(--dim)">Loading…</div>
+    </div>
+    <button class="btn-outline" style="background:linear-gradient(135deg,var(--gold-br),var(--gold));color:#1a1206;border:none;margin-bottom:8px" onclick="openRideAddressForm()">+ Add Address</button>
+    <button class="btn-outline" onclick="closeRideAddresses()">Close</button>
+  </div>
+</div>
+
+<!-- ADD/EDIT ADDRESS FORM MODAL (rider) -->
+<div id="ride-address-form-modal-bg" onclick="if(event.target===this)closeRideAddressForm()">
+  <div id="ride-address-form-modal" class="ride-subsheet">
+    <div class="modal-handle"></div>
+    <div class="modal-name" id="ride-address-form-title" style="margin-bottom:14px">📍 Add Address</div>
+    <input type="hidden" id="ride-addr-id" value="">
+    <label class="ride-form-label">Label</label>
+    <input id="ride-addr-label" placeholder="Home, Work, etc." class="ride-form-input">
+    <label class="ride-form-label">Address</label>
+    <textarea id="ride-addr-line" placeholder="Building, street, landmark…" class="ride-form-input" style="min-height:70px;resize:none"></textarea>
+    <label class="ride-form-label">Zone (optional)</label>
+    <input id="ride-addr-zone" placeholder="e.g. Tabor" class="ride-form-input">
+    <label style="display:flex;align-items:center;gap:8px;font-size:13px;margin:4px 0 16px;cursor:pointer;color:var(--text)">
+      <input type="checkbox" id="ride-addr-default"> Set as default address
+    </label>
+    <button class="btn-outline" style="background:linear-gradient(135deg,var(--gold-br),var(--gold));color:#1a1206;border:none;margin-bottom:8px" onclick="submitRideAddressForm()">Save</button>
+    <button class="btn-outline" onclick="closeRideAddressForm()">Cancel</button>
+  </div>
+</div>
+
+<!-- REFERRAL & REWARDS MODAL (rider) -->
+<div id="ride-referral-modal-bg" onclick="if(event.target===this)closeRideReferral()">
+  <div id="ride-referral-modal" class="ride-subsheet">
+    <div class="modal-handle"></div>
+    <div class="modal-name" style="margin-bottom:14px">🎁 Referral &amp; Rewards</div>
+    <div id="ride-referral-content">
+      <div style="text-align:center;padding:24px;color:var(--dim)">Loading…</div>
+    </div>
+    <button class="btn-outline" style="margin-top:14px" onclick="closeRideReferral()">Close</button>
+  </div>
+</div>
+
+<!-- SETTINGS & PRIVACY MODAL (rider) -->
+<div id="ride-settings-modal-bg" onclick="if(event.target===this)closeRideSettings()">
+  <div id="ride-settings-modal" class="ride-subsheet">
+    <div class="modal-handle"></div>
+    <div class="modal-name" style="margin-bottom:14px">⚙️ Settings &amp; Privacy</div>
+    <div id="ride-settings-content">
+      <div style="text-align:center;padding:24px;color:var(--dim)">Loading…</div>
+    </div>
+    <button class="btn-outline" style="margin-top:14px" onclick="closeRideSettings()">Close</button>
+  </div>
+</div>
+
+<!-- FAVORITE ROUTES MODAL (rider) -->
+<div id="ride-favorites-modal-bg" onclick="if(event.target===this)closeRideFavorites()">
+  <div id="ride-favorites-modal" class="ride-subsheet">
+    <div class="modal-handle"></div>
+    <div class="modal-name" style="margin-bottom:4px">⭐ Favorite Routes</div>
+    <p style="font-size:12.5px;color:var(--dim);text-align:center;margin-bottom:16px">Save trips you take often for one-tap rebooking.</p>
+    <div id="ride-favorites-list" style="margin-bottom:14px">
+      <div style="text-align:center;padding:24px;color:var(--dim)">Loading…</div>
+    </div>
+    <button class="btn-outline" style="background:linear-gradient(135deg,var(--gold-br),var(--gold));color:#1a1206;border:none;margin-bottom:8px" onclick="openRideFavoriteForm()">+ Save Current Route</button>
+    <button class="btn-outline" onclick="closeRideFavorites()">Close</button>
+  </div>
+</div>
+
+<!-- ADD FAVORITE ROUTE FORM MODAL (rider) -->
+<div id="ride-favorite-form-modal-bg" onclick="if(event.target===this)closeRideFavoriteForm()">
+  <div id="ride-favorite-form-modal" class="ride-subsheet">
+    <div class="modal-handle"></div>
+    <div class="modal-name" style="margin-bottom:14px">⭐ Save a Route</div>
+    <label class="ride-form-label">Label</label>
+    <input id="ride-fav-label" placeholder="e.g. Home to Work" class="ride-form-input">
+    <label class="ride-form-label">Pickup address</label>
+    <input id="ride-fav-pickup" placeholder="Pickup location" class="ride-form-input">
+    <label class="ride-form-label">Drop-off address</label>
+    <input id="ride-fav-dropoff" placeholder="Drop-off location" class="ride-form-input" style="margin-bottom:14px">
+    <button class="btn-outline" style="background:linear-gradient(135deg,var(--gold-br),var(--gold));color:#1a1206;border:none;margin-bottom:8px" onclick="submitRideFavoriteForm()">Save Route</button>
+    <button class="btn-outline" onclick="closeRideFavoriteForm()">Cancel</button>
+  </div>
+</div>
+
+<!-- MESSAGES MODAL (rider) -->
+<div id="ride-messages-modal-bg" onclick="if(event.target===this)closeRideMessages()">
+  <div id="ride-messages-modal" class="ride-subsheet">
+    <div class="modal-handle"></div>
+    <div class="modal-name" style="margin-bottom:4px">💬 Messages</div>
+    <p style="font-size:12.5px;color:var(--dim);text-align:center;margin-bottom:16px">Ride updates and past support conversations.</p>
+    <div id="ride-messages-list" style="margin-bottom:14px">
+      <div style="text-align:center;padding:24px;color:var(--dim)">Loading…</div>
+    </div>
+    <button class="btn-outline" style="background:linear-gradient(135deg,var(--gold-br),var(--gold));color:#1a1206;border:none;margin-bottom:8px" onclick="openRideContactSupportForm()">✉️ Contact Support</button>
+    <button class="btn-outline" onclick="closeRideMessages()">Close</button>
+  </div>
+</div>
+
+<!-- CONTACT SUPPORT FORM MODAL (rider) -->
+<div id="ride-support-form-modal-bg" onclick="if(event.target===this)closeRideContactSupportForm()">
+  <div id="ride-support-form-modal" class="ride-subsheet">
+    <div class="modal-handle"></div>
+    <div class="modal-name" style="margin-bottom:14px">✉️ Contact Support</div>
+    <label class="ride-form-label">Subject</label>
+    <input id="ride-support-subject" placeholder="What's this about?" class="ride-form-input">
+    <label class="ride-form-label">Message</label>
+    <textarea id="ride-support-body" placeholder="Tell us what's going on…" class="ride-form-input" style="min-height:90px;resize:none;margin-bottom:14px"></textarea>
+    <button class="btn-outline" style="background:linear-gradient(135deg,var(--gold-br),var(--gold));color:#1a1206;border:none;margin-bottom:8px" onclick="submitRideSupportMessage()">Send to Support</button>
+    <button class="btn-outline" onclick="closeRideContactSupportForm()">Cancel</button>
+  </div>
+</div>
+
+<style>
+  .ride-subsheet-bg{position:fixed;inset:0;z-index:9999;display:none;align-items:flex-end;justify-content:center;background:rgba(5,5,10,.72);backdrop-filter:blur(6px)}
+  .ride-subsheet-bg.open{display:flex}
+  .ride-subsheet{width:min(460px,100vw);max-height:86vh;overflow-y:auto;background:linear-gradient(180deg,#16121a,#0d0a10);border:1px solid rgba(212,175,55,.2);border-bottom:none;border-radius:22px 22px 0 0;padding:10px 22px max(22px,env(safe-area-inset-bottom,22px))}
+  #ride-addresses-modal-bg,#ride-address-form-modal-bg,#ride-referral-modal-bg,#ride-settings-modal-bg,#ride-favorites-modal-bg,#ride-favorite-form-modal-bg,#ride-messages-modal-bg,#ride-support-form-modal-bg{position:fixed;inset:0;z-index:9999;display:none;align-items:flex-end;justify-content:center;background:rgba(5,5,10,.72);backdrop-filter:blur(6px)}
+  #ride-addresses-modal-bg.open,#ride-address-form-modal-bg.open,#ride-referral-modal-bg.open,#ride-settings-modal-bg.open,#ride-favorites-modal-bg.open,#ride-favorite-form-modal-bg.open,#ride-messages-modal-bg.open,#ride-support-form-modal-bg.open{display:flex}
+  .ride-form-label{display:block;font-size:12.5px;font-weight:700;color:var(--dim);margin-bottom:6px;margin-top:12px}
+  .ride-form-input{width:100%;padding:11px;border-radius:12px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.04);color:#EDEDF5;font-family:inherit;font-size:13px;box-sizing:border-box}
+  .ra-row{display:flex;align-items:flex-start;gap:12px;padding:13px;margin-bottom:10px;background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:14px}
+  .ra-row-icon{font-size:18px;flex-shrink:0}
+  .ra-row-actions{display:flex;flex-direction:column;gap:6px;flex-shrink:0}
+  .ra-row-btn{background:none;border:1px solid rgba(255,255,255,.15);color:var(--text);border-radius:8px;padding:5px 10px;font-size:11px;cursor:pointer;font-family:var(--f)}
+  .ra-row-btn.danger{border-color:rgba(230,57,70,.35);color:#E63946}
+  .rs-code-box{padding:20px;background:rgba(212,175,55,.08);border:1px dashed rgba(212,175,55,.4);border-radius:16px;margin-bottom:16px;text-align:center}
+  .rs-code-val{font-family:var(--f-d);font-size:26px;font-weight:800;letter-spacing:.08em;color:var(--gold-lt);margin-bottom:12px}
+  .rs-stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+  .rs-stat{text-align:center;padding:14px;border-radius:12px}
+  .rst-toggle-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;font-size:13px;color:var(--text)}
+  .rst-section{background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:14px}
+</style>
+<script>
+/* Become a Driver: already a registered driver -> straight to the driver
+   dashboard. Logged in but not a driver yet, or not logged in at all ->
+   driver registration, not the dashboard directly (which would try to
+   load driver-specific data for an account that doesn't have any). */
+function etelBecomeDriver() {
+  try {
+    if (typeof Auth !== 'undefined' && Auth.isLoggedIn && Auth.isLoggedIn()) {
+      var u = Auth.getUser ? Auth.getUser() : null;
+      if (u && u.role === 'driver') { location.href = '../driver/'; return; }
+    }
+  } catch (e) {}
+  var base = (typeof ETEL !== 'undefined' && ETEL.api) ? ETEL.api.replace('api/boot.php', '') : '../';
+  location.href = base + 'login.html?redirect=driver/&role=driver&mode=register';
+}
+
+// ── SAVED ADDRESSES / REFERRAL & REWARDS / SETTINGS & PRIVACY ──────
+// These reuse the exact same customer_* backend actions built for the
+// Delivery app's Profile screen (customer_get_addresses, etc.) - they
+// live in OrderController.php/AuthController.php keyed only by the
+// authenticated user's id, not by which app/product called them, so a
+// rider's saved address or referral code is the same account record a
+// Delivery customer would see, and nothing new was needed server-side.
+
+function _rideApiHeaders() {
+  var t = '';
+  try { t = (typeof Auth !== 'undefined' && Auth.getToken) ? Auth.getToken() : (localStorage.getItem('etel_token') || ''); } catch (e) {}
+  return { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + t };
+}
+function _rideApiBase() {
+  return (typeof ETEL !== 'undefined' && ETEL.api) ? ETEL.api : '../api/boot.php';
+}
+function _rideApiGet(action) {
+  return fetch(_rideApiBase() + '?action=' + encodeURIComponent(action), { headers: _rideApiHeaders() }).then(function(r) { return r.json(); });
+}
+function _rideApiPost(action, body) {
+  var b = Object.assign({ action: action }, body || {});
+  return fetch(_rideApiBase(), { method: 'POST', headers: _rideApiHeaders(), body: JSON.stringify(b) }).then(function(r) { return r.json(); });
+}
+function _rideToast(msg, kind) {
+  if (typeof toast === 'function') { toast(msg, kind === 'err' ? 'err' : 'ok'); return; }
+  var r = document.getElementById('ride-toasts');
+  if (!r) { alert(msg); return; }
+  var el = document.createElement('div');
+  var bg = kind === 'err' ? '#c62828' : '#2e7d32';
+  el.style.cssText = 'background:' + bg + ';color:#fff;padding:12px 18px;border-radius:14px;margin-bottom:8px;font-family:Outfit,sans-serif;font-size:13px;font-weight:600;box-shadow:0 4px 20px rgba(0,0,0,.4)';
+  el.textContent = msg;
+  r.appendChild(el);
+  setTimeout(function() { if (el.parentNode) el.parentNode.removeChild(el); }, 3500);
+}
+
+// -- Saved Addresses --
+function openRideAddresses() {
+  document.getElementById('ride-addresses-modal-bg').classList.add('open');
+  loadRideAddresses();
+}
+function closeRideAddresses() {
+  document.getElementById('ride-addresses-modal-bg').classList.remove('open');
+}
+function loadRideAddresses() {
+  var el = document.getElementById('ride-addresses-list');
+  el.innerHTML = '<div style="text-align:center;padding:24px;color:var(--dim)">Loading…</div>';
+  _rideApiGet('customer_get_addresses').then(function(res) {
+    if (!res || !res.success) { el.innerHTML = '<div style="text-align:center;padding:24px;color:#e88">Could not load addresses.</div>'; return; }
+    var addrs = (res.data && res.data.addresses) || [];
+    if (!addrs.length) {
+      el.innerHTML = '<div style="text-align:center;padding:24px;color:var(--dim)">No saved addresses yet.<br>Add one for faster booking.</div>';
+      return;
+    }
+    el.innerHTML = addrs.map(function(a) {
+      return '<div class="ra-row">' +
+        '<div class="ra-row-icon">' + (a.is_default ? '🏠' : '📍') + '</div>' +
+        '<div style="flex:1;min-width:0">' +
+        '<div style="font-weight:700;font-size:13.5px;color:var(--text)">' + a.label + (a.is_default ? ' <span style="font-size:10px;color:var(--gold-lt)">· DEFAULT</span>' : '') + '</div>' +
+        '<div style="font-size:12.5px;color:var(--dim);margin-top:2px">' + a.address_line + '</div>' +
+        (a.zone ? '<div style="font-size:11px;color:var(--dim);opacity:.7;margin-top:2px">' + a.zone + '</div>' : '') +
+        '</div>' +
+        '<div class="ra-row-actions">' +
+        '<button class="ra-row-btn" onclick="openRideAddressForm(' + a.id + ')">Edit</button>' +
+        '<button class="ra-row-btn danger" onclick="deleteRideAddress(' + a.id + ')">Delete</button>' +
+        '</div></div>';
+    }).join('');
+  });
+}
+function openRideAddressForm(id) {
+  document.getElementById('ride-addr-id').value = id || '';
+  document.getElementById('ride-addr-label').value = '';
+  document.getElementById('ride-addr-line').value = '';
+  document.getElementById('ride-addr-zone').value = '';
+  document.getElementById('ride-addr-default').checked = false;
+  document.getElementById('ride-address-form-title').textContent = id ? '📍 Edit Address' : '📍 Add Address';
+  if (id) {
+    _rideApiGet('customer_get_addresses').then(function(res) {
+      var a = res && res.success && (res.data.addresses || []).find(function(x) { return x.id == id; });
+      if (a) {
+        document.getElementById('ride-addr-label').value = a.label || '';
+        document.getElementById('ride-addr-line').value = a.address_line || '';
+        document.getElementById('ride-addr-zone').value = a.zone || '';
+        document.getElementById('ride-addr-default').checked = !!a.is_default;
+      }
+    });
+  }
+  document.getElementById('ride-address-form-modal-bg').classList.add('open');
+}
+function closeRideAddressForm() {
+  document.getElementById('ride-address-form-modal-bg').classList.remove('open');
+}
+function submitRideAddressForm() {
+  var id = document.getElementById('ride-addr-id').value;
+  var label = document.getElementById('ride-addr-label').value.trim() || 'Home';
+  var line = document.getElementById('ride-addr-line').value.trim();
+  var zone = document.getElementById('ride-addr-zone').value.trim();
+  var isDefault = document.getElementById('ride-addr-default').checked;
+  if (!line) { _rideToast('Please enter an address', 'err'); return; }
+  var payload = { label: label, address_line: line, zone: zone, is_default: isDefault };
+  var action = id ? 'customer_update_address' : 'customer_add_address';
+  if (id) payload.id = parseInt(id, 10);
+  _rideApiPost(action, payload).then(function(res) {
+    if (res && res.success) {
+      _rideToast('Address saved ✓');
+      closeRideAddressForm();
+      loadRideAddresses();
+    } else {
+      _rideToast((res && res.message) || 'Could not save address', 'err');
+    }
+  });
+}
+function deleteRideAddress(id) {
+  if (!confirm('Remove this address?')) return;
+  _rideApiPost('customer_delete_address', { id: id }).then(function(res) {
+    if (res && res.success) { _rideToast('Address removed'); loadRideAddresses(); }
+    else _rideToast((res && res.message) || 'Could not delete address', 'err');
+  });
+}
+
+// -- Referral & Rewards --
+function openRideReferral() {
+  document.getElementById('ride-referral-modal-bg').classList.add('open');
+  loadRideReferral();
+}
+function closeRideReferral() {
+  document.getElementById('ride-referral-modal-bg').classList.remove('open');
+}
+function loadRideReferral() {
+  var el = document.getElementById('ride-referral-content');
+  el.innerHTML = '<div style="text-align:center;padding:24px;color:var(--dim)">Loading…</div>';
+  _rideApiGet('customer_get_referral_info').then(function(res) {
+    if (!res || !res.success) { el.innerHTML = '<div style="text-align:center;padding:24px;color:#e88">Could not load referral info.</div>'; return; }
+    var d = res.data;
+    var base = (typeof ETEL !== 'undefined' && ETEL.api) ? ETEL.api.replace('api/boot.php', '') : '../';
+    var link = window.location.origin + base + 'login.html?ref=' + encodeURIComponent(d.referral_code);
+    el.innerHTML =
+      '<div class="rs-code-box">' +
+      '<div style="font-size:12.5px;color:var(--dim);margin-bottom:8px">Your referral code</div>' +
+      '<div class="rs-code-val">' + d.referral_code + '</div>' +
+      '<button class="btn-outline" style="background:linear-gradient(135deg,var(--gold-br),var(--gold));color:#1a1206;border:none" onclick="copyRideReferralLink(\'' + link.replace(/'/g, "\\'") + '\')">📋 Copy Invite Link</button>' +
+      '</div>' +
+      '<div class="rs-stats">' +
+      '<div class="rs-stat" style="background:rgba(212,175,55,.06);border:1px solid rgba(212,175,55,.15)"><div style="font-size:20px;font-weight:800;color:var(--gold-lt)">' + d.referred_count + '</div><div style="font-size:11px;color:var(--dim);margin-top:4px">Friends Joined</div></div>' +
+      '<div class="rs-stat" style="background:rgba(46,204,113,.08);border:1px solid rgba(46,204,113,.15)"><div style="font-size:20px;font-weight:800;color:#2ECC71">ETB ' + d.total_reward_etb + '</div><div style="font-size:11px;color:var(--dim);margin-top:4px">Earned</div></div>' +
+      '</div>' +
+      '<div style="font-size:12px;color:var(--dim);text-align:center;padding:0 6px">Share your code — you get <b style="color:var(--text)">ETB ' + d.reward_per_referral_etb + '</b> in credit for every friend who signs up and completes their first ride or order.</div>';
+  });
+}
+function copyRideReferralLink(link) {
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(link).then(function() { _rideToast('Invite link copied ✓'); }, function() { prompt('Copy your invite link:', link); });
+  } else { prompt('Copy your invite link:', link); }
+}
+
+// -- Settings & Privacy --
+function openRideSettings() {
+  document.getElementById('ride-settings-modal-bg').classList.add('open');
+  loadRideSettings();
+}
+function closeRideSettings() {
+  document.getElementById('ride-settings-modal-bg').classList.remove('open');
+}
+function loadRideSettings() {
+  var el = document.getElementById('ride-settings-content');
+  el.innerHTML = '<div style="text-align:center;padding:24px;color:var(--dim)">Loading…</div>';
+  _rideApiGet('customer_get_settings').then(function(res) {
+    var s = (res && res.success) ? res.data : { notif_order_updates: true, notif_promotions: true };
+    el.innerHTML =
+      '<div class="rst-section">' +
+      '<div style="font-weight:700;font-size:13.5px;margin-bottom:6px;color:var(--text)">🔔 Notifications</div>' +
+      '<label class="rst-toggle-row">Ride updates <input type="checkbox" id="rst-notif-rides" onchange="saveRideSettingToggle(\'notif_order_updates\', this.checked)"' + (s.notif_order_updates ? ' checked' : '') + '></label>' +
+      '<label class="rst-toggle-row">Promotions &amp; offers <input type="checkbox" id="rst-notif-promos" onchange="saveRideSettingToggle(\'notif_promotions\', this.checked)"' + (s.notif_promotions ? ' checked' : '') + '></label>' +
+      '</div>' +
+      '<div class="rst-section">' +
+      '<div style="font-weight:700;font-size:13.5px;margin-bottom:10px;color:var(--text)">🔒 Change Password</div>' +
+      '<input type="password" id="rst-cur-pw" placeholder="Current password" class="ride-form-input" style="margin-bottom:10px">' +
+      '<input type="password" id="rst-new-pw" placeholder="New password (min 8 characters)" class="ride-form-input" style="margin-bottom:12px">' +
+      '<button class="btn-outline" style="background:linear-gradient(135deg,var(--gold-br),var(--gold));color:#1a1206;border:none" onclick="submitRideSettingsPasswordChange()">Update Password</button>' +
+      '<div id="rst-pw-msg" style="margin-top:10px;font-size:12px"></div>' +
+      '</div>' +
+      '<div class="rst-section">' +
+      '<div style="font-weight:700;font-size:13.5px;margin-bottom:8px;color:var(--text)">🔐 Privacy</div>' +
+      '<div style="font-size:12px;color:var(--dim);margin-bottom:12px">Request a copy of your data, or ask us to delete your account.</div>' +
+      '<button class="ra-row-btn" onclick="requestRidePrivacyAction(\'export\')" style="margin-right:8px">Request My Data</button>' +
+      '<button class="ra-row-btn danger" onclick="requestRidePrivacyAction(\'delete\')">Delete My Account</button>' +
+      '</div>';
+  });
+}
+function saveRideSettingToggle(key, value) {
+  var payload = {}; payload[key] = value;
+  _rideApiPost('customer_update_settings', payload).then(function(res) {
+    if (!res || !res.success) _rideToast('Could not save preference', 'err');
+  });
+}
+function submitRideSettingsPasswordChange() {
+  var cur = document.getElementById('rst-cur-pw').value;
+  var nw = document.getElementById('rst-new-pw').value;
+  var msg = document.getElementById('rst-pw-msg');
+  if (!cur || !nw) { msg.style.color = '#E63946'; msg.textContent = 'Both fields are required.'; return; }
+  if (nw.length < 8) { msg.style.color = '#E63946'; msg.textContent = 'New password must be at least 8 characters.'; return; }
+  msg.style.color = 'var(--dim)'; msg.textContent = 'Updating…';
+  _rideApiPost('change_password', { current_password: cur, new_password: nw }).then(function(res) {
+    if (res && res.success) {
+      if (res.data && res.data.token) { try { localStorage.setItem('etel_token', res.data.token); } catch (e) {} }
+      msg.style.color = '#2ECC71'; msg.textContent = 'Password updated ✓';
+      document.getElementById('rst-cur-pw').value = '';
+      document.getElementById('rst-new-pw').value = '';
+    } else {
+      msg.style.color = '#E63946'; msg.textContent = (res && res.message) || 'Could not update password.';
+    }
+  });
+}
+function requestRidePrivacyAction(kind) {
+  var subject = kind === 'delete' ? 'Account deletion request' : 'Data export request';
+  var body = kind === 'delete'
+    ? 'I would like to permanently delete my Etel Ride account and associated data.'
+    : 'I would like a copy of my personal data held by Etel Ride.';
+  if (kind === 'delete' && !confirm('This will send a request to permanently delete your account. Continue?')) return;
+  _rideApiPost('customer_send_message', { subject: subject, body: body }).then(function(res) {
+    if (res && res.success) _rideToast('Request sent — we\'ll follow up soon');
+    else _rideToast((res && res.message) || 'Could not send request', 'err');
+  });
+}
+
+// -- Favorite Routes --
+function openRideFavorites() {
+  document.getElementById('ride-favorites-modal-bg').classList.add('open');
+  loadRideFavorites();
+}
+function closeRideFavorites() {
+  document.getElementById('ride-favorites-modal-bg').classList.remove('open');
+}
+function loadRideFavorites() {
+  var el = document.getElementById('ride-favorites-list');
+  el.innerHTML = '<div style="text-align:center;padding:24px;color:var(--dim)">Loading…</div>';
+  _rideApiGet('ride_get_favorite_routes').then(function(res) {
+    if (!res || !res.success) { el.innerHTML = '<div style="text-align:center;padding:24px;color:#e88">Could not load routes.</div>'; return; }
+    var routes = (res.data && res.data.routes) || [];
+    if (!routes.length) {
+      el.innerHTML = '<div style="text-align:center;padding:24px;color:var(--dim)">No saved routes yet.<br>Save a trip you take often for one-tap booking.</div>';
+      return;
+    }
+    el.innerHTML = routes.map(function(r) {
+      return '<div class="ra-row">' +
+        '<div class="ra-row-icon">⭐</div>' +
+        '<div style="flex:1;min-width:0">' +
+        '<div style="font-weight:700;font-size:13.5px;color:var(--text)">' + r.label + '</div>' +
+        '<div style="font-size:12px;color:var(--dim);margin-top:2px">📍 ' + r.pickup_address + '</div>' +
+        '<div style="font-size:12px;color:var(--dim)">🏁 ' + r.dropoff_address + '</div>' +
+        '</div>' +
+        '<div class="ra-row-actions">' +
+        '<button class="ra-row-btn" onclick="useRideFavoriteRoute(' + r.id + ')">Use</button>' +
+        '<button class="ra-row-btn danger" onclick="deleteRideFavoriteRoute(' + r.id + ')">Delete</button>' +
+        '</div></div>';
+    }).join('');
+    window._rideFavoritesCache = routes;
+  });
+}
+function useRideFavoriteRoute(id) {
+  var routes = window._rideFavoritesCache || [];
+  var r = routes.find(function(x) { return x.id == id; });
+  if (!r) return;
+  closeRideFavorites();
+  switchRideTab('book');
+  if (r.pickup_lat && r.pickup_lng) setPickup(parseFloat(r.pickup_lat), parseFloat(r.pickup_lng), r.pickup_address);
+  else { var pi = document.getElementById('pickup-input'); if (pi) pi.value = r.pickup_address; }
+  if (r.dropoff_lat && r.dropoff_lng) setDropoff(parseFloat(r.dropoff_lat), parseFloat(r.dropoff_lng), r.dropoff_address);
+  else { var di = document.getElementById('dropoff-input'); if (di) di.value = r.dropoff_address; }
+  _rideToast('Route loaded — review and book below');
+}
+function openRideFavoriteForm() {
+  document.getElementById('ride-fav-label').value = '';
+  var pi = document.getElementById('pickup-input');
+  var di = document.getElementById('dropoff-input');
+  document.getElementById('ride-fav-pickup').value = (pi && pi.value) || '';
+  document.getElementById('ride-fav-dropoff').value = (di && di.value) || '';
+  document.getElementById('ride-favorite-form-modal-bg').classList.add('open');
+}
+function closeRideFavoriteForm() {
+  document.getElementById('ride-favorite-form-modal-bg').classList.remove('open');
+}
+function submitRideFavoriteForm() {
+  var label = document.getElementById('ride-fav-label').value.trim() || 'Saved Route';
+  var pickup = document.getElementById('ride-fav-pickup').value.trim();
+  var dropoff = document.getElementById('ride-fav-dropoff').value.trim();
+  if (!pickup || !dropoff) { _rideToast('Both pickup and drop-off are required', 'err'); return; }
+  var payload = { label: label, pickup_address: pickup, dropoff_address: dropoff };
+  if (RIDE.pickupLatLng) { payload.pickup_lat = RIDE.pickupLatLng.lat; payload.pickup_lng = RIDE.pickupLatLng.lng; }
+  if (RIDE.dropoffLatLng) { payload.dropoff_lat = RIDE.dropoffLatLng.lat; payload.dropoff_lng = RIDE.dropoffLatLng.lng; }
+  _rideApiPost('ride_add_favorite_route', payload).then(function(res) {
+    if (res && res.success) {
+      _rideToast('Route saved ✓');
+      closeRideFavoriteForm();
+      loadRideFavorites();
+    } else {
+      _rideToast((res && res.message) || 'Could not save route', 'err');
+    }
+  });
+}
+function deleteRideFavoriteRoute(id) {
+  if (!confirm('Remove this saved route?')) return;
+  _rideApiPost('ride_delete_favorite_route', { id: id }).then(function(res) {
+    if (res && res.success) { _rideToast('Route removed'); loadRideFavorites(); }
+    else _rideToast((res && res.message) || 'Could not delete route', 'err');
+  });
+}
+
+// -- Messages / Support inbox --
+function openRideMessages() {
+  document.getElementById('ride-messages-modal-bg').classList.add('open');
+  loadRideMessages();
+}
+function closeRideMessages() {
+  document.getElementById('ride-messages-modal-bg').classList.remove('open');
+}
+function loadRideMessages() {
+  var el = document.getElementById('ride-messages-list');
+  el.innerHTML = '<div style="text-align:center;padding:24px;color:var(--dim)">Loading…</div>';
+  _rideApiGet('ride_get_messages').then(function(res) {
+    if (!res || !res.success) { el.innerHTML = '<div style="text-align:center;padding:24px;color:#e88">Could not load messages.</div>'; return; }
+    var msgs = (res.data && res.data.messages) || [];
+    if (!msgs.length) {
+      el.innerHTML = '<div style="text-align:center;padding:24px;color:var(--dim)">No messages yet.<br>Ride updates and support replies will show up here.</div>';
+      return;
+    }
+    var senderIcon = { system: '🔔', support: '🎧', customer: '🧑' };
+    el.innerHTML = msgs.map(function(m) {
+      return '<div style="display:flex;gap:10px;padding:12px;margin-bottom:9px;background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:14px">' +
+        '<div style="font-size:18px;flex-shrink:0">' + (senderIcon[m.sender] || '💬') + '</div>' +
+        '<div style="flex:1;min-width:0">' +
+        '<div style="display:flex;justify-content:space-between;gap:8px"><div style="font-weight:700;font-size:12.5px;color:var(--text)">' + (m.subject || 'Message') + '</div>' +
+        '<div style="font-size:10.5px;color:var(--dim);white-space:nowrap">' + _rideFmtDate(m.created_at) + '</div></div>' +
+        '<div style="font-size:12.5px;color:var(--dim);margin-top:2px">' + (m.body || '') + '</div></div>' +
+        '</div>';
+    }).join('');
+  });
+}
+function _rideFmtDate(ts) {
+  if (!ts) return '';
+  try {
+    var d = new Date(ts.replace(' ', 'T'));
+    return d.toLocaleDateString([], { month: 'short', day: 'numeric' });
+  } catch (e) { return ''; }
+}
+function openRideContactSupportForm() {
+  document.getElementById('ride-support-subject').value = '';
+  document.getElementById('ride-support-body').value = '';
+  document.getElementById('ride-support-form-modal-bg').classList.add('open');
+}
+function closeRideContactSupportForm() {
+  document.getElementById('ride-support-form-modal-bg').classList.remove('open');
+}
+function submitRideSupportMessage() {
+  var subject = document.getElementById('ride-support-subject').value.trim() || 'Support request';
+  var body = document.getElementById('ride-support-body').value.trim();
+  if (!body) { _rideToast('Please write a message', 'err'); return; }
+  _rideApiPost('customer_send_message', { subject: subject, body: body }).then(function(res) {
+    if (res && res.success) {
+      _rideToast('Message sent to support ✓');
+      closeRideContactSupportForm();
+      loadRideMessages();
+    } else {
+      _rideToast((res && res.message) || 'Could not send message', 'err');
+    }
+  });
+}
+
+// -- Use my current location for pickup --
+function useMyCurrentLocationForPickup(btnEl) {
+  if (!navigator.geolocation) { _rideToast('Location is not available on this device/browser', 'err'); return; }
+  var original = btnEl ? btnEl.textContent : null;
+  if (btnEl) { btnEl.textContent = '…'; btnEl.disabled = true; }
+  navigator.geolocation.getCurrentPosition(function(pos) {
+    var lat = pos.coords.latitude, lng = pos.coords.longitude;
+    function applyPickup(addr) {
+      setPickup(lat, lng, addr);
+      var pi = document.getElementById('pickup-input');
+      if (pi) pi.value = addr;
+      if (btnEl) { btnEl.textContent = original; btnEl.disabled = false; }
+      _rideToast('Pickup set to your current location ✓');
+    }
+    if (RIDE.geocoder) {
+      RIDE.geocoder.geocode({ location: { lat: lat, lng: lng } }, function(results, status) {
+        applyPickup((status === 'OK' && results && results[0]) ? results[0].formatted_address : 'Your current location');
+      });
+    } else {
+      applyPickup('Your current location');
+    }
+  }, function(err) {
+    if (btnEl) { btnEl.textContent = original; btnEl.disabled = false; }
+    var msg = 'Could not get your location';
+    if (err && err.code === 1) msg = 'Location permission denied — enable it in your browser settings';
+    else if (err && err.code === 3) msg = 'Location request timed out — try again';
+    _rideToast(msg, 'err');
+  }, { enableHighAccuracy: true, timeout: 8000 });
+}
+</script>
+<!-- Canary release loader - resolves and injects the right version of
+     ride-bundle.js + ride-bundle-extra.js for THIS user (stable vs
+     canary, see api/lib/app_releases.php). ride-extra-features.js,
+     ride-fare-self-heal.js, and sos-button.js stay as independent
+     deferred tags below (unversioned) - everything in them is called
+     defensively (typeof x === 'function'), so load-order relative to
+     the bundle doesn't matter the way it did for driver's equivalents.
+     This tag itself should not need to change again after this
+     one-time migration - new releases go into a new
+     js/releases/ride/{version}/ folder and get pointed to from the
+     admin Releases panel instead. -->
+<script>window.ETEL_APP = 'ride';</script>
+<script src="../js/release-loader.js"></script>
+<script src="../js/ride-extra-features.js?v=1.0" defer></script>
+<script src="../js/ride-fare-self-heal.js?v=1.0" defer></script>
+<script src="../js/sos-button.js?v=1.1" defer></script>
+<script src="../js/ride-hex-search-overlay.js?v=1.0" defer></script>
+<script>
+  window.gm_authFailure = function () {
+    document.getElementById('ride-map').innerHTML =
+      '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#E5C76B;font-family:Outfit,sans-serif;flex-direction:column;gap:10px;padding:24px;text-align:center">' +
+      '<div style="font-size:40px">⚠️</div><div>Maps API restricted.<br>Add ethelmarket.com to Google Cloud Console.</div></div>';
+  };
+</script>
+<script>
+/* Street Hail watcher — checks every 5s for a driver-linked ride */
+var _hailInterval = null;
+function startHailWatcher() {
+  if (_hailInterval) return;
+  _hailInterval = setInterval(function() {
+    if (RIDE && (RIDE.currentRideId || RIDE.currentRequestId)) {
+      clearInterval(_hailInterval); _hailInterval = null; return;
+    }
+    fetch(apiBase ? apiBase() : '/delivery/api/boot.php?action=my_active_ride',
+      { headers: { 'Content-Type':'application/json', 'Authorization': 'Bearer ' + ((window.Auth && Auth.getToken) ? Auth.getToken() : '') } })
+      .then(function(r){ return r.json(); })
+      .then(function(d){
+        if ((d.success||d.ok) && d.data && d.data.id) {
+          var st = d.data.status || '';
+          if (st === 'accepted' || st === 'in_progress' || st === 'active') {
+            clearInterval(_hailInterval); _hailInterval = null;
+            if (window.RIDE) RIDE.currentRideId = d.data.id;
+            var hs = document.getElementById('hail-status');
+            if (hs) hs.innerHTML = '<div style="font-size:36px;margin-bottom:10px">✅</div><div style="font-size:14px;font-weight:700;color:#2ECC71">Driver linked your ride!</div><div style="font-size:12px;color:var(--dim);margin-top:6px">Switching to active ride...</div>';
+            setTimeout(function(){
+              if (typeof switchRideTab === 'function') switchRideTab('active');
+              if (typeof renderActiveRide === 'function') renderActiveRide(d.data);
+              if (typeof startPolling === 'function') startPolling();
+            }, 1200);
+          }
+        }
+      }).catch(function(){});
+  }, 5000);
+}
+function apiBase() {
+  return (window.ETEL && ETEL.api) ? ETEL.api : '/delivery/api/boot.php';
+}
+</script>
+<script>
+  // Was safe to call immediately when the bundle loaded via a plain
+  // synchronous <script> tag (guaranteed to finish first). Now that the
+  // bundle (which defines loadGoogleMaps, inside core.js) loads
+  // asynchronously via release-loader.js, this must wait for its
+  // completion event instead - calling it any earlier throws
+  // "loadGoogleMaps is not defined".
+  window.addEventListener('etel:bundle-ready', function () {
+    loadGoogleMaps('geometry,places,marker', 'initRideMap');
+  }, { once: true });
+</script>
+<!-- ETEL AI -- cross-company assistant widget -->
+<script src="https://ethelmarket.com/EtelAi/etel-ai-widget.js" data-project="delivery"></script>
+<script src="../js/apk-download-badge.js" data-role="ride"></script>
+</body>
+</html>

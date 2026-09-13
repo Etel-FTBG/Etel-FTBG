@@ -1,0 +1,37 @@
+{
+  "id": "./ride/",
+  "name": "ETEL Ride",
+  "short_name": "ኢE_Ride",
+  "description": "Request a ride and get matched with a nearby driver in Hawassa, Ethiopia",
+  "start_url": "/delivery/ride/?source=pwa",
+  "scope": "/delivery/ride/",
+  "display": "standalone",
+  "background_color": "#0B0B12",
+  "theme_color": "#D4AF37",
+  "orientation": "portrait-primary",
+  "lang": "en",
+  "dir": "ltr",
+  "categories": ["travel", "navigation", "lifestyle"],
+  "icons": [
+    { "src": "/delivery/icons/ride-icon-72.png",           "sizes": "72x72",   "type": "image/png" },
+    { "src": "/delivery/icons/ride-icon-96.png",           "sizes": "96x96",   "type": "image/png" },
+    { "src": "/delivery/icons/ride-icon-128.png",          "sizes": "128x128", "type": "image/png" },
+    { "src": "/delivery/icons/ride-icon-144.png",          "sizes": "144x144", "type": "image/png" },
+    { "src": "/delivery/icons/ride-icon-152.png",          "sizes": "152x152", "type": "image/png" },
+    { "src": "/delivery/icons/ride-icon-192.png",          "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/delivery/icons/ride-icon-192-maskable.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "/delivery/icons/ride-icon-384.png",          "sizes": "384x384", "type": "image/png" },
+    { "src": "/delivery/icons/ride-icon-512.png",          "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/delivery/icons/ride-icon-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    {
+      "name": "Book a Ride",
+      "short_name": "Book",
+      "description": "Request a new ride",
+      "url": "/delivery/ride/",
+      "icons": [{ "src": "/delivery/assets/images/etel-ride-coin.png", "sizes": "512x512" }]
+    }
+  ],
+  "prefer_related_applications": false
+}

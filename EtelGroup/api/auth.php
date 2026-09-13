@@ -26,24 +26,34 @@ function eg_token_secret(): string {
     return $s;
 }
 
-function eg_issue_token(): string {
+// Token payload now embeds who signed in (etel_id + full_name), not just
+// the fact that "an admin" is logged in - needed so state-changing actions
+// can be attributed to a real person in the activity log below. full_name
+// is urlencoded so it can safely contain any character without colliding
+// with the '|' field separator.
+function eg_issue_token(string $etelId = '', string $fullName = ''): string {
     $expires = time() + EG_TOKEN_TTL;
-    $payload = 'admin|' . $expires;
+    $payload = 'admin|' . $etelId . '|' . urlencode($fullName) . '|' . $expires;
     $sig = hash_hmac('sha256', $payload, eg_token_secret());
     return base64_encode($payload . '|' . $sig);
 }
 
-function eg_verify_token(?string $token): bool {
-    if (!$token) return false;
+// Returns the decoded actor {etel_id, full_name, expires} for a valid,
+// unexpired token, or null otherwise. Single source of truth for both
+// eg_require_admin() (which only cares whether this is null) and
+// eg_current_actor() (which needs the identity inside it).
+function eg_decode_token(?string $token): ?array {
+    if (!$token) return null;
     $decoded = base64_decode($token, true);
-    if ($decoded === false) return false;
+    if ($decoded === false) return null;
     $parts = explode('|', $decoded);
-    if (count($parts) !== 3 || $parts[0] !== 'admin') return false;
-    [$who, $expires, $sig] = $parts;
-    $expected = hash_hmac('sha256', $who . '|' . $expires, eg_token_secret());
-    if (!hash_equals($expected, $sig)) return false;
-    if ((int)$expires < time()) return false;
-    return true;
+    if (count($parts) !== 5 || $parts[0] !== 'admin') return null;
+    [$who, $etelId, $fullNameEnc, $expires, $sig] = $parts;
+    $payload = $who . '|' . $etelId . '|' . $fullNameEnc . '|' . $expires;
+    $expected = hash_hmac('sha256', $payload, eg_token_secret());
+    if (!hash_equals($expected, $sig)) return null;
+    if ((int)$expires < time()) return null;
+    return array('etel_id' => $etelId, 'full_name' => urldecode($fullNameEnc), 'expires' => (int)$expires);
 }
 
 function eg_bearer_token(): ?string {
@@ -57,8 +67,53 @@ function eg_bearer_token(): ?string {
 }
 
 function eg_require_admin(): void {
-    if (!eg_verify_token(eg_bearer_token())) {
+    if (eg_decode_token(eg_bearer_token()) === null) {
         fail('Not authenticated - please sign in again', 401);
+    }
+}
+
+// Who is making the current request, per their bearer token. Only
+// meaningful after eg_require_admin() has already confirmed the token is
+// valid; falls back to an empty identity rather than erroring, since a
+// couple of internal call sites (e.g. logging) should never be what turns
+// a valid request into a 401.
+function eg_current_actor(): array {
+    static $actor = null;
+    if ($actor === null) {
+        $actor = eg_decode_token(eg_bearer_token()) ?? array('etel_id' => '', 'full_name' => '');
+    }
+    return $actor;
+}
+
+// Self-healing table create (same convention as the companies table
+// below) - an append-only log of who did what, so a group with more than
+// one admin can actually answer "who changed this" instead of guessing.
+function eg_ensure_activity_log_table(PDO $pdo): void {
+    $pdo->exec(
+        "CREATE TABLE IF NOT EXISTS admin_activity_log (
+            id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+            actor_etel_id VARCHAR(30) NOT NULL DEFAULT '',
+            actor_name VARCHAR(150) NOT NULL DEFAULT '',
+            action VARCHAR(60) NOT NULL,
+            detail VARCHAR(500) NOT NULL DEFAULT '',
+            created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (id),
+            KEY idx_created (created_at)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
+    );
+}
+
+function eg_log_activity(string $action, string $detail = ''): void {
+    try {
+        $pdo = eg_db();
+        eg_ensure_activity_log_table($pdo);
+        $actor = eg_current_actor();
+        $pdo->prepare(
+            'INSERT INTO admin_activity_log (actor_etel_id, actor_name, action, detail) VALUES (?,?,?,?)'
+        )->execute(array($actor['etel_id'], $actor['full_name'], $action, $detail));
+    } catch (Exception $e) {
+        // Never let logging itself break the action being logged.
+        error_log('[EtelGroup][activity_log] ' . $e->getMessage());
     }
 }
 

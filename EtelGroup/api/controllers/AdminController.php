@@ -22,10 +22,11 @@ case 'admin_login': {
         if (!egid_is_company_admin($member['phone'])) {
             fail('This EtelID is not registered as the admin/owner for Etel Group. Ask an association admin to link your EtelID first.', 403);
         }
-        $token = eg_issue_token();
+        $token = eg_issue_token($member['etel_id'], $member['full_name']);
     } catch (Exception $e) {
         fail($e->getMessage(), 502);
     }
+    eg_log_activity('login', $member['full_name'] . ' signed in');
     ok(array(
         'token' => $token,
         'member' => array('full_name' => $member['full_name'], 'etel_id' => $member['etel_id']),
@@ -139,6 +140,7 @@ case 'admin_update_message_status': {
     if (!$id) fail('id required', 400);
     if (!in_array($status, array('new', 'read', 'replied'), true)) fail('Invalid status', 400);
     $pdo->prepare('UPDATE contact_messages SET status = ? WHERE id = ?')->execute(array($status, $id));
+    eg_log_activity('message_status_updated', "Message #$id -> $status");
     ok(array('message' => 'Status updated'));
     break;
 }
@@ -149,6 +151,7 @@ case 'admin_delete_message': {
     $id = intval($body['id'] ?? 0);
     if (!$id) fail('id required', 400);
     $pdo->prepare('DELETE FROM contact_messages WHERE id = ?')->execute(array($id));
+    eg_log_activity('message_deleted', "Message #$id");
     ok(array('message' => 'Message deleted'));
     break;
 }
@@ -227,6 +230,7 @@ case 'admin_create_company': {
     } catch (Exception $e) {
         fail('Could not create company - is the slug already used?', 400);
     }
+    eg_log_activity('company_created', $d['name'] . ' (' . $d['slug'] . ')');
     ok(array('id' => intval($pdo->lastInsertId())));
     break;
 }
@@ -252,6 +256,7 @@ case 'admin_update_company': {
     } catch (Exception $e) {
         fail('Could not update company - is the slug already used?', 400);
     }
+    eg_log_activity('company_updated', $d['name'] . ' (' . $d['slug'] . ')');
     ok(array('message' => 'Company updated'));
     break;
 }
@@ -262,7 +267,13 @@ case 'admin_delete_company': {
     eg_ensure_companies_table($pdo);
     $id = intval($body['id'] ?? 0);
     if (!$id) fail('id required', 400);
+    // Look up name/slug before deleting so the log entry still says what
+    // was removed, not just an id nobody can identify afterward.
+    $existing = $pdo->prepare('SELECT name, slug FROM companies WHERE id = ?');
+    $existing->execute(array($id));
+    $row = $existing->fetch();
     $pdo->prepare('DELETE FROM companies WHERE id = ?')->execute(array($id));
+    eg_log_activity('company_deleted', $row ? ($row['name'] . ' (' . $row['slug'] . ')') : "id #$id");
     ok(array('message' => 'Company deleted'));
     break;
 }
@@ -278,6 +289,7 @@ case 'admin_reorder_companies': {
         if (!isset($row['id'])) continue;
         $s->execute(array(intval($row['sort_order'] ?? 0), intval($row['id'])));
     }
+    eg_log_activity('companies_reordered', count($order) . ' compan' . (count($order) === 1 ? 'y' : 'ies'));
     ok(array('message' => 'Order saved'));
     break;
 }
@@ -304,6 +316,7 @@ case 'admin_set_employee_role': {
     if ($role === '') fail('Choose or enter a role', 400);
     try {
         $result = egid_set_company_role($identifier, $slug, $role);
+        eg_log_activity('employee_role_set', "$identifier -> $role at $slug");
         ok($result);
     } catch (Exception $e) {
         fail($e->getMessage(), 502);
@@ -317,10 +330,35 @@ case 'admin_remove_employee_role': {
     if (!$id) fail('id required', 400);
     try {
         egid_remove_company_role($id);
+        eg_log_activity('employee_role_removed', "role link #$id");
         ok(array('message' => 'Role removed'));
     } catch (Exception $e) {
         fail($e->getMessage(), 502);
     }
+    break;
+}
+
+// ---------- activity log (admin only) ----------
+
+case 'admin_list_activity': {
+    eg_require_admin();
+    $pdo = eg_db();
+    eg_ensure_activity_log_table($pdo);
+    $page = max(1, intval($body['page'] ?? ($_GET['page'] ?? 1)));
+    $perPage = 30;
+    $offset = ($page - 1) * $perPage;
+    $total = (int)$pdo->query('SELECT COUNT(*) FROM admin_activity_log')->fetchColumn();
+    $stmt = $pdo->prepare(
+        "SELECT actor_etel_id, actor_name, action, detail, created_at
+         FROM admin_activity_log ORDER BY created_at DESC LIMIT $perPage OFFSET $offset"
+    );
+    $stmt->execute();
+    ok(array(
+        'entries' => $stmt->fetchAll(),
+        'total' => $total,
+        'page' => $page,
+        'total_pages' => max(1, (int)ceil($total / $perPage)),
+    ));
     break;
 }
 
