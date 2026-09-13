@@ -1,0 +1,50 @@
+/* ══════════════════════════════════════════════════════════════
+   ETEL GROUP — SHARED DESIGN TOKENS (gold/carbon system)
+   ══════════════════════════════════════════════════════════════
+   Single source of truth for the brand constants every Etel Group
+   subsidiary has been independently re-declaring under its own
+   variable names (EtelGroup's --gold-light, Etel.Pay's --gold-pale,
+   EtelAi's --gold-light all resolve to the same #F5E6A3, for
+   example) - consistent by convention and memory, not by a shared
+   source. This file IS that source.
+
+   Deploy target: ethelmarket.com/design-system/etel-tokens.css
+   (root-relative, so any subsystem at any path on the same host can
+   link it: <link rel="stylesheet" href="/design-system/etel-tokens.css">)
+
+   Adopting this in a subsystem:
+   1. Add the <link> above BEFORE that system's own stylesheet.
+   2. Replace only the custom properties below that you already
+      declare with the *same value* - remove your local duplicate,
+      keep referencing the same var() name in your rules.
+   3. Keep any system-specific tokens (extra shades, layout vars)
+      declared locally. This file holds only the values that are
+      genuinely shared brand constants across the Group, not every
+      color a given subsidiary happens to use.
+   4. Deploy this file to /design-system/etel-tokens.css BEFORE (or
+      atomically with) any change that starts depending on it - a
+      subsystem linking this file before it exists on the live host
+      will render with browser-default (unstyled) colors until both
+      are live.
+
+   Do not rename these custom properties without checking every
+   consumer first - that's exactly the "brittle past it" risk this
+   file exists to remove.
+   ══════════════════════════════════════════════════════════════ */
+
+:root {
+  /* Brand gold - the one color every Etel system already agrees on */
+  --gold:       #D4AF37;
+  --gold-light: #F5E6A3;
+  --gold-dim:   #8B6914;
+  --gold-deep:  #C8922A;
+
+  /* Brand carbon - the near-black ground every system's dark theme sits on */
+  --carbon:     #1A0E00;
+
+  /* Shared type system */
+  --font-head:  'Syne', sans-serif;
+  --font-body:  'Cormorant Garamond', serif;
+  --font-mono:  'JetBrains Mono', monospace;
+  --font-eth:   'Noto Sans Ethiopic', sans-serif;
+}
