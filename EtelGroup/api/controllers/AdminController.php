@@ -168,6 +168,21 @@ case 'admin_export_messages_csv': {
     exit;
 }
 
+// ---------- public homepage data (no auth) ----------
+
+case 'member_count': {
+    // Public, no auth - real registered-member count for the homepage's
+    // counter. Falls back to a neutral response rather than a hard error
+    // if EtelID is briefly unreachable, since this is decorative, not
+    // critical, homepage data.
+    try {
+        ok(array('count' => egid_member_count()));
+    } catch (Exception $e) {
+        ok(array('count' => null));
+    }
+    break;
+}
+
 // ---------- companies (public read, admin write) ----------
 
 case 'list_companies': {

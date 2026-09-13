@@ -361,34 +361,50 @@ function switchTier(btn, tier, color, enLabel, amLabel) {
     requestAnimationFrame(step);
   }
 
-  /* ── Live member counter — starts at a "seed" and ticks up slowly ── */
-  let memberBase = 1247; // seed
+  /* ── Member counter — real count from EtelID, animated on reveal ──
+     Was a hardcoded seed that ticked up with Math.random() to simulate
+     "live" signups next to a "Live Count" badge - looked real but wasn't,
+     and diverged between two open tabs the moment anyone checked. Now
+     fetches the actual registered-member count via EtelGroup's own API
+     (which asks EtelID directly, cached briefly server-side) and counts
+     up to that true number once. No fake increments after landing. */
   const memberEl = document.getElementById('member-num');
+  const memberLiveBadge = document.querySelector('.live-indicator');
   let memberStarted = false;
+
+  function apiBase() {
+    return window.ETEL_GROUP_API || 'EtelGroup/api/boot.php';
+  }
 
   function startMemberCounter() {
     if (memberStarted || !memberEl) return;
     memberStarted = true;
 
-    // Initial fast count-up from 0 → seed
-    const dur = 2400;
-    const start = performance.now();
-    function countIn(now) {
-      const p = Math.min((now - start) / dur, 1);
-      const v = Math.round(easeOutCubic(p) * memberBase);
-      memberEl.textContent = v.toLocaleString();
-      if (p < 1) { requestAnimationFrame(countIn); }
-      else { startLiveTick(); }
-    }
-    requestAnimationFrame(countIn);
-  }
-
-  // After count-in, slowly increment to simulate live signups
-  function startLiveTick() {
-    setInterval(() => {
-      memberBase += Math.floor(Math.random() * 3); // 0-2 new per interval
-      memberEl.textContent = memberBase.toLocaleString();
-    }, 3800);
+    fetch(apiBase() + '?action=member_count')
+      .then(res => res.json())
+      .then(data => {
+        const count = data && data.data && Number.isFinite(data.data.count) ? data.data.count : null;
+        if (count === null) {
+          // Real count unavailable right now - don't show a fabricated
+          // number or a "Live" claim we can't back up.
+          memberEl.textContent = '—';
+          if (memberLiveBadge) memberLiveBadge.style.display = 'none';
+          return;
+        }
+        const dur = 2400;
+        const start = performance.now();
+        function countIn(now) {
+          const p = Math.min((now - start) / dur, 1);
+          const v = Math.round(easeOutCubic(p) * count);
+          memberEl.textContent = v.toLocaleString();
+          if (p < 1) requestAnimationFrame(countIn);
+        }
+        requestAnimationFrame(countIn);
+      })
+      .catch(() => {
+        memberEl.textContent = '—';
+        if (memberLiveBadge) memberLiveBadge.style.display = 'none';
+      });
   }
 
   /* ── IntersectionObserver for all Step 6 elements ── */
@@ -1072,8 +1088,21 @@ function setLang(lang) {
         hue:Math.random()<0.7?'212,175,55':Math.random()<0.5?'245,230,163':'74,144,217'});
     }
   }
+  // This spark canvas used to redraw via requestAnimationFrame forever,
+  // unconditionally, even while the About section is scrolled far out of
+  // view - real continuous GPU/CPU work for a section that's mostly text.
+  // Gate the loop on actual visibility instead: pause while off-screen,
+  // resume once it's back in the viewport.
+  let sigilVisible = true;
+  const sigilRoot = document.getElementById('aboutCoinWrap');
+  if (sigilRoot && 'IntersectionObserver' in window) {
+    sigilVisible = false; // start paused; the observer flips it on once seen
+    new IntersectionObserver((entries) => {
+      sigilVisible = entries[0].isIntersecting;
+    }, { threshold: 0 }).observe(sigilRoot);
+  }
   (function drawSp(){
-    if(sCtx){
+    if(sCtx && sigilVisible){
       sCtx.clearRect(0,0,280,280);
       for(let i=sparks.length-1;i>=0;i--){
         const s=sparks[i];
