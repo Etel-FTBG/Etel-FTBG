@@ -17,7 +17,6 @@
   }
 </script>
 </head>
-
 <body>
 
 <!-- LOGIN -->
@@ -46,6 +45,8 @@
     <div class="tabs" style="margin-right:8px">
       <button class="tab active" id="tab-nav-dashboard" onclick="switchTab('dashboard')">Dashboard</button>
       <button class="tab" id="tab-nav-companies" onclick="switchTab('companies')">Companies</button>
+      <button class="tab" id="tab-nav-employees" onclick="switchTab('employees')">Employees</button>
+      <button class="tab" id="tab-nav-activity" onclick="switchTab('activity')">Activity</button>
     </div>
     <button class="btn btn-danger" onclick="doLogout()">Sign Out</button>
   </header>
@@ -118,6 +119,72 @@
           </tbody>
         </table>
       </div>
+    </section>
+
+    <!-- EMPLOYEES TAB -->
+    <section id="panel-employees" style="display:none">
+      <div class="toolbar">
+        <h2 style="font-size:15px;color:var(--gold-light)">Employee Roles</h2>
+        <div style="flex:1"></div>
+        <select id="emp-company-select" style="max-width:260px" onchange="loadEmployeeRoles()">
+          <option value="">Loading companies…</option>
+        </select>
+      </div>
+
+      <div class="card" style="margin-bottom:20px">
+        <div style="font-size:13px;color:var(--gold-light);font-weight:700;margin-bottom:10px">Assign a role</div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
+          <div style="flex:1;min-width:200px">
+            <label style="display:block;font-size:11.5px;color:var(--text-dim);margin-bottom:4px">Employee phone or EtelID</label>
+            <input type="text" id="emp-identifier" placeholder="+2519... or EtelID" style="width:100%">
+          </div>
+          <div style="flex:1;min-width:180px">
+            <label style="display:block;font-size:11.5px;color:var(--text-dim);margin-bottom:4px">Role</label>
+            <input type="text" id="emp-role" list="emp-role-suggestions" placeholder="Dispatcher, Manager, Finance…" style="width:100%">
+            <datalist id="emp-role-suggestions">
+              <option value="Manager"></option>
+              <option value="Dispatcher"></option>
+              <option value="Finance"></option>
+              <option value="Support"></option>
+              <option value="Traffic Officer"></option>
+              <option value="Admin"></option>
+              <option value="Owner"></option>
+            </datalist>
+          </div>
+          <button class="btn btn-primary" style="width:auto" onclick="addEmployeeRole()">+ Assign Role</button>
+        </div>
+        <div id="emp-form-err" style="color:#e57373;font-size:12.5px;margin-top:8px"></div>
+      </div>
+
+      <div class="msg-table">
+        <table>
+          <thead>
+            <tr><th>Name</th><th>EtelID</th><th>Phone</th><th>Role</th><th>Linked</th><th></th></tr>
+          </thead>
+          <tbody id="employees-tbody">
+            <tr><td colspan="6" class="empty-row">Select a company above</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ACTIVITY TAB -->
+    <section id="panel-activity" style="display:none">
+      <div class="toolbar">
+        <h2 style="font-size:15px;color:var(--gold-light)">Activity Log</h2>
+        <div style="flex:1"></div>
+      </div>
+      <div class="msg-table">
+        <table>
+          <thead>
+            <tr><th>When</th><th>Who</th><th>Action</th><th>Detail</th></tr>
+          </thead>
+          <tbody id="activity-tbody">
+            <tr><td colspan="4" class="empty-row">Loading...</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="pagination" id="activity-pagination"></div>
     </section>
   </main>
 </div>
