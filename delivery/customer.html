@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta name="referrer" content="no-referrer-when-downgrade">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+    <title>ETEL Delivery — ሐዋሳ Premium</title>
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <!-- BUG FIX: this page had no PWA manifest link at all, and
+         login.html's role-detection had no 'customer' branch either -
+         both meant "Add to Home Screen" on this page fell back to
+         whatever the browser had cached from elsewhere in the same
+         origin (delivery/), which is why it was showing Service Giver's
+         icon rather than customer's own. Same static-tag pattern
+         already used correctly by driver/index.html and ride/index.html -
+         manifest.json is the plain, default "ETEL Delivery — Hawassa"
+         manifest (icons/icon-*.png), which is genuinely the customer-
+         facing brand identity here, not a generic fallback. -->
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/png" href="icons/icon-96.png">
+    <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+    <script src="js/customer-bundle.js?v=2.8"></script>
+    <script src="js/customer-bundle-extra.js?v=1.0" defer></script>
+    <script>window.initCustomerMap = function(){}; loadGoogleMaps('geometry,places', 'initCustomerMap');</script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/customer-v5.css?v=5.3">
+</head>
+<body>
+<!-- Custom splash overlay - shows the group master logo briefly on
+     open. Deliberately separate from the manifest icons/ files (which
+     stay each app's own distinct branding for the home-screen icon) -
+     this only affects what's shown in-page while the app loads,
+     nothing about how it appears on the home screen or in "Add to
+     Home Screen"/APK builds. Removes itself automatically; if this
+     script fails to run for any reason the page underneath is
+     completely unaffected, it just won't have a splash. -->
+<div id="etel-master-splash" style="position:fixed;inset:0;z-index:999999;display:flex;align-items:center;justify-content:center;background:#C9A961;transition:opacity .35s ease;">
+  <img src="/delivery/assets/images/master-logo-splash.png" alt="ETEL" style="width:120px;height:120px;object-fit:contain;border-radius:50%;box-shadow:0 8px 32px rgba(0,0,0,.4);animation:etelSplashPulse 1.4s ease-in-out infinite;">
+</div>
+<style>@keyframes etelSplashPulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.05);opacity:.88}}</style>
+
+<!-- Floating refresh button - re-fetches whichever view is currently
+     open. For when live/polled data stalls and the person has no
+     other obvious way to force a re-fetch. -->
+<button id="cust-refresh-btn" onclick="refreshCurrentView()" aria-label="Refresh"
+  style="position:fixed;left:16px;bottom:16px;z-index:9998;width:48px;height:48px;border-radius:50%;
+  background:linear-gradient(135deg,#E9C767,#D4AF37);border:none;box-shadow:0 4px 14px rgba(212,175,55,.5);
+  font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;">
+  <span id="cust-refresh-icon" style="display:inline-block;">🔄</span>
+</button>
+<style>
+#cust-refresh-btn.spinning #cust-refresh-icon{animation:custRefreshSpin .6s linear infinite;}
+@keyframes custRefreshSpin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+</style>
+
+<script>
+(function(){
+  setTimeout(function(){
+    var el = document.getElementById('etel-master-splash');
+    if (!el) return;
+    el.style.opacity = '0';
+    setTimeout(function(){ if (el.parentNode) el.parentNode.removeChild(el); }, 400);
+  }, 900);
+})();
+</script>
+
+
+<!-- ═══ AMBIENT BACKGROUND ═══ -->
+<div class="bg-ambient">
+    <div class="bg-orb bg-orb-1"></div>
+    <div class="bg-orb bg-orb-2"></div>
+    <div class="bg-orb bg-orb-3"></div>
+</div>
+
+<!-- ═══ HEADER ═══ -->
+<header class="app-header">
+    <div class="header-brand">
+        <picture>
+            <source srcset="assets/images/etel-delivery-coin.webp" type="image/webp"/>
+            <img src="assets/images/etel-delivery-coin.png" class="brand-logo" alt="ETEL" loading="lazy"/>
+        </picture>
+        <div class="brand-info">
+            <div class="brand-name">ETEL Delivery</div>
+            <div class="brand-location">
+                <span class="location-dot"></span>
+                <span id="current-location">Hawassa</span>
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            </div>
+        </div>
+    </div>
+    <div class="header-actions">
+        <button class="header-btn" onclick="toggleCustomerLanguage()" title="English / አማርኛ" style="font-size:13px;font-weight:700">EN/አማ</button>
+        <button class="header-btn cart-btn" onclick="toggleCart()">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+            <span class="cart-badge" id="cart-count">0</span>
+        </button>
+        <button class="header-btn avatar-btn" onclick="toggleProfile()">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        </button>
+    </div>
+</header>
+
+<!-- ═══ MAIN CONTENT ═══ -->
+<main class="app-main">
+
+    <!-- SEARCH BAR -->
+    <div class="search-container">
+        <div class="search-wrap">
+            <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" class="search-input" placeholder="Search restaurants, food, cuisines…" id="search-input" data-i18n-ph="search_placeholder">
+            <button class="search-filter-btn">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/></svg>
+            </button>
+        </div>
+
+        <!-- FILTER PILLS -->
+        <div class="filter-row">
+            <button class="filter-pill active" data-i18n="filter_trending" onclick="applySortFilter('trending', this)">🔥 Trending</button>
+            <button class="filter-pill" data-i18n="filter_top_rated" onclick="applySortFilter('top_rated', this)">⭐ Top Rated</button>
+            <button class="filter-pill" data-i18n="filter_fast" onclick="applySortFilter('fast', this)">⚡ Fast</button>
+            <button class="filter-pill" data-i18n="filter_budget" onclick="applySortFilter('budget', this)">💰 Budget</button>
+            <button class="filter-pill" data-i18n="filter_new" onclick="applySortFilter('new', this)">✨ New</button>
+        </div>
+
+        <!-- CATEGORY CHIPS -->
+        <div class="category-row">
+            <button class="cat-chip active" onclick="applyCuisineFilter('pizza', this)"><span>🍕</span> <span data-i18n="cat_pizza">Pizza</span></button>
+            <button class="cat-chip" onclick="applyCuisineFilter('burgers', this)"><span>🍔</span> <span data-i18n="cat_burgers">Burgers</span></button>
+            <button class="cat-chip" onclick="applyCuisineFilter('noodles', this)"><span>🍜</span> <span data-i18n="cat_noodles">Noodles</span></button>
+            <button class="cat-chip" onclick="applyCuisineFilter('ethiopian', this)"><span>🥘</span> <span data-i18n="cat_ethiopian">Ethiopian</span></button>
+            <button class="cat-chip" onclick="applyCuisineFilter('healthy', this)"><span>🥗</span> <span data-i18n="cat_healthy">Healthy</span></button>
+            <button class="cat-chip" onclick="applyCuisineFilter('sushi', this)"><span>🍣</span> <span data-i18n="cat_sushi">Sushi</span></button>
+            <button class="cat-chip" onclick="applyCuisineFilter('coffee', this)"><span>☕</span> <span data-i18n="cat_coffee">Coffee</span></button>
+            <button class="cat-chip" onclick="applyCuisineFilter('bakery', this)"><span>🧁</span> <span data-i18n="cat_bakery">Bakery</span></button>
+        </div>
+    </div>
+
+    <!-- ─── HOME VIEW ─── -->
+    <div id="view-home" class="view-section">
+
+        <!-- PROMO BANNERS -->
+        <div class="promo-track" id="promo-track">
+            <div class="promo-card promo-gold">
+                <div class="promo-badge" data-i18n="promo_limited">LIMITED</div>
+                <div class="promo-icon">🎉</div>
+                <div class="promo-body">
+                    <div class="promo-headline" data-i18n="promo_50off">50% OFF</div>
+                    <div class="promo-sub" data-i18n="promo_first_order">First Order Premium</div>
+                    <div class="promo-code-tag">PREMIUM50</div>
+                </div>
+                <div class="promo-shine"></div>
+            </div>
+            <div class="promo-card promo-teal">
+                <div class="promo-badge" data-i18n="promo_today">TODAY</div>
+                <div class="promo-icon">🚚</div>
+                <div class="promo-body">
+                    <div class="promo-headline" data-i18n="promo_free_delivery">FREE DELIVERY</div>
+                    <div class="promo-sub" data-i18n="promo_orders_above">Orders above ETB 500</div>
+                    <div class="promo-code-tag">FREEDEL</div>
+                </div>
+                <div class="promo-shine"></div>
+            </div>
+            <div class="promo-card promo-purple">
+                <div class="promo-badge" data-i18n="promo_weekend">WEEKEND</div>
+                <div class="promo-icon">💎</div>
+                <div class="promo-body">
+                    <div class="promo-headline" data-i18n="promo_2x_points">2× POINTS</div>
+                    <div class="promo-sub" data-i18n="promo_weekend_special">Weekend Special</div>
+                    <div class="promo-code-tag">WEEKEND2X</div>
+                </div>
+                <div class="promo-shine"></div>
+            </div>
+        </div>
+        <div class="promo-dots">
+            <span class="dot active"></span><span class="dot"></span><span class="dot"></span>
+        </div>
+
+        <!-- RIDE QUICK ACCESS -->
+        <div class="quick-access">
+            <a href="ride/" class="quick-card quick-ride">
+                <div class="quick-icon">🚗</div>
+                <div class="quick-text">
+                    <div class="quick-title" data-i18n="quick_ride_title">ETEL Ride</div>
+                    <div class="quick-sub" data-i18n="quick_ride_sub">From ETB 120</div>
+                </div>
+                <div class="quick-arrow">→</div>
+            </a>
+            <a href="ride/#hail" class="quick-card quick-hail">
+                <div class="quick-icon">🚖</div>
+                <div class="quick-text">
+                    <div class="quick-title" data-i18n="quick_hail_title">Street Hail</div>
+                    <div class="quick-sub" data-i18n="quick_hail_sub">Instant pickup</div>
+                </div>
+            </a>
+            <a href="driver/" class="quick-card quick-driver">
+                <div class="quick-icon">🏎️</div>
+                <div class="quick-text">
+                    <div class="quick-title" data-i18n="quick_driver_title">Be a Driver</div>
+                    <div class="quick-sub" data-i18n="quick_driver_sub">Earn with ETEL</div>
+                </div>
+            </a>
+        </div>
+
+        <!-- RESTAURANTS SECTION -->
+        <div class="section-header">
+            <div class="section-title-wrap">
+                <div class="section-title" data-i18n="section_restaurants">🌟 Restaurants &amp; Shops</div>
+                <div class="section-count" id="sg-count"></div>
+            </div>
+            <button class="see-all-btn" onclick="loadItems()" data-i18n="see_all">See all →</button>
+        </div>
+        <div class="shops-scroll" id="sg-scroll">
+            <div class="skeleton-card"></div>
+            <div class="skeleton-card"></div>
+            <div class="skeleton-card"></div>
+            <div class="skeleton-card"></div>
+        </div>
+
+        <!-- ITEMS GRID -->
+        <div class="section-header" style="margin-top:8px">
+            <div class="section-title" data-i18n="section_items">💎 Available Items</div>
+            <button class="see-all-btn" data-i18n="view_all">View all →</button>
+        </div>
+        <div class="items-grid" id="items-grid">
+            <div class="skeleton-item"></div>
+            <div class="skeleton-item"></div>
+            <div class="skeleton-item"></div>
+            <div class="skeleton-item"></div>
+            <div class="skeleton-item"></div>
+            <div class="skeleton-item"></div>
+        </div>
+
+        <!-- FOOTER -->
+        <footer class="app-footer">
+            <div class="footer-brand">
+                <picture><source srcset="assets/images/etel-delivery-coin.webp" type="image/webp"/><img src="assets/images/etel-delivery-coin.png" alt="ETEL" style="width:32px;height:32px;border-radius:8px" loading="lazy"/></picture>
+                <div>
+                    <div style="font-size:13px;font-weight:700;color:#E5C76B">ETEL Group · ኢትኤል ቡድን</div>
+                    <div style="font-size:11px;color:rgba(255,255,255,.4);margin-top:2px">Premium delivery · Hawassa ሐዋሳ · Ethiopia</div>
+                </div>
+            </div>
+            <div class="footer-chips">
+                <span>🚚 Delivery</span><span>🚖 Ride</span><span>🔥 Madeya</span>
+                <span>🛒 Market</span><span>👔 Laundry</span><span>💳 Pay</span>
+            </div>
+            <div class="footer-links">
+                <a href="servicegiver.html" data-i18n="footer_partner">Become a Partner</a>
+                <a href="courier/" data-i18n="footer_courier">Become a Courier</a>
+                <a href="mailto:info@ethelmarket.com" data-i18n="footer_contact">Contact</a>
+                <a href="#" data-i18n="footer_privacy">Privacy</a>
+            </div>
+            <div class="footer-copy">© 2026 Etel Group · All rights reserved · v3.7.4</div>
+        </footer>
+    </div>
+
+    <!-- ─── ORDERS VIEW ─── -->
+    <div id="view-orders" class="view-section" style="display:none">
+        <div class="section-header">
+            <div class="section-title" data-i18n="orders_title">📦 My Orders</div>
+            <button class="see-all-btn" onclick="loadOrders()" data-i18n="orders_refresh">Refresh →</button>
+        </div>
+        <div id="cust-delivery-banner" style="display:none;margin-bottom:14px"></div>
+        <button onclick="openCourierQRScanner()" style="width:100%;padding:12px;margin-bottom:14px;background:rgba(212,175,55,.12);color:#D4AF37;border:1px solid rgba(212,175,55,.35);border-radius:12px;font-size:13px;font-weight:700;cursor:pointer" data-i18n="scan_qr_btn">📷 Scan Courier's QR to Confirm Delivery</button>
+        <div id="orders-list">
+            <div class="empty-state">
+                <div class="empty-icon">📦</div>
+                <div class="empty-text">Loading your orders…</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ─── PAYMENTS VIEW ─── -->
+    <div id="view-payments" class="view-section" style="display:none">
+        <div class="section-title" data-i18n="payments_title">💳 Wallet &amp; Payments</div>
+        <div class="empty-state" style="margin-top:40px">
+            <div class="empty-icon">💳</div>
+            <div class="empty-text">Loading wallet…</div>
+        </div>
+    </div>
+
+    <!-- ─── FAVORITES VIEW ─── -->
+    <div id="view-favorites" class="view-section" style="display:none">
+        <div class="section-header">
+            <div class="section-title">⭐ My Favorites</div>
+            <button class="see-all-btn" onclick="loadFavorites()">Refresh →</button>
+        </div>
+        <div id="favorites-list">
+            <div class="empty-state"><div class="empty-icon">⭐</div><div class="empty-text">Loading your favorites…</div></div>
+        </div>
+    </div>
+
+    <!-- ─── MESSAGES VIEW ─── -->
+    <div id="view-messages" class="view-section" style="display:none">
+        <div class="section-header">
+            <div class="section-title">💬 Messages</div>
+            <button class="see-all-btn" onclick="openContactSupport()">✉️ Contact Support</button>
+        </div>
+        <div id="messages-list">
+            <div class="empty-state"><div class="empty-icon">💬</div><div class="empty-text">Loading messages…</div></div>
+        </div>
+    </div>
+
+    <!-- ─── SAVED ADDRESSES VIEW ─── -->
+    <div id="view-addresses" class="view-section" style="display:none">
+        <div class="section-header">
+            <div class="section-title">📍 Saved Addresses</div>
+            <button class="see-all-btn" onclick="openAddAddressForm()">+ Add New</button>
+        </div>
+        <div id="addresses-list">
+            <div class="empty-state"><div class="empty-icon">📍</div><div class="empty-text">Loading your addresses…</div></div>
+        </div>
+    </div>
+
+    <!-- ─── REFERRAL & REWARDS VIEW ─── -->
+    <div id="view-referrals" class="view-section" style="display:none">
+        <div class="section-header">
+            <div class="section-title">🎁 Referral &amp; Rewards</div>
+        </div>
+        <div id="referrals-content">
+            <div class="empty-state"><div class="empty-icon">🎁</div><div class="empty-text">Loading…</div></div>
+        </div>
+    </div>
+
+    <!-- ─── SETTINGS & PRIVACY VIEW ─── -->
+    <div id="view-settings" class="view-section" style="display:none">
+        <div class="section-header">
+            <div class="section-title">⚙️ Settings &amp; Privacy</div>
+        </div>
+        <div id="settings-content">
+            <div class="empty-state"><div class="empty-icon">⚙️</div><div class="empty-text">Loading…</div></div>
+        </div>
+    </div>
+
+</main>
+
+<!-- ═══ BOTTOM NAV ═══ -->
+<nav class="bottom-nav">
+    <button class="nav-item active" onclick="switchCategory('home')">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        <span data-i18n="nav_home">Home</span>
+    </button>
+    <button class="nav-item" onclick="switchCategory('favorites')">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+        <span data-i18n="nav_favorites">Favorites</span>
+    </button>
+    <button class="nav-item nav-center" onclick="switchCategory('orders')">
+        <div class="nav-center-btn">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+        </div>
+        <span data-i18n="nav_orders">Orders</span>
+    </button>
+    <button class="nav-item" onclick="switchCategory('messages')">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        <span data-i18n="nav_messages">Messages</span>
+    </button>
+    <button class="nav-item" onclick="toggleProfile()">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <span data-i18n="nav_profile">Profile</span>
+    </button>
+</nav>
+
+<!-- ═══ CART DRAWER ═══ -->
+<div id="cart-overlay" onclick="if(event.target===this)closeCart()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:400;backdrop-filter:blur(4px)">
+    <div class="cart-drawer">
+        <div class="cart-header">
+            <div class="cart-title">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+                <span data-i18n="cart_title">My Cart</span>
+            </div>
+            <button class="cart-close" onclick="closeCart()">✕</button>
+        </div>
+        <div id="cart-items"></div>
+        <div id="cart-total"></div>
+        <div id="cart-checkout"></div>
+    </div>
+</div>
+
+<!-- ═══ PROFILE PANEL ═══ -->
+<div id="profile-drop" onclick="if(event.target===this)closeProfile()" style="display:none;position:fixed;inset:0;z-index:400;backdrop-filter:blur(6px);background:rgba(0,0,0,.55)">
+    <div class="profile-panel-drawer">
+        <div style="display:flex;justify-content:flex-end;padding:14px 14px 0">
+            <button class="profile-close-btn" onclick="closeProfile()">✕</button>
+        </div>
+        <div id="profile-info"></div>
+    </div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modal-overlay"></div>
+
+<!-- REAL modal container for the shared openModal()/closeModal() helpers in
+     core.js (used by the order-rating flow in customer.js). This was missing
+     entirely before - openModal() looks for id="modal" specifically, not
+     "modal-overlay" above (which is an older, unrelated, unused stub kept
+     as-is rather than repurposed, to avoid touching anything that might
+     depend on its current dead behavior). -->
+<div id="modal"></div>
+
+    <!-- COURIER QR SCAN MODAL -->
+    <div id="courier-qr-overlay" onclick="if(event.target===this)closeCourierQRScanner()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);backdrop-filter:blur(3px);z-index:500;align-items:center;justify-content:center;padding:20px">
+        <div style="background:#1c1c2e;border:1px solid rgba(212,175,55,.3);border-radius:18px;padding:22px;max-width:360px;width:100%;text-align:center;box-shadow:0 24px 70px rgba(0,0,0,.5)">
+            <div style="font-size:15px;font-weight:700;color:#F5EAC8;margin-bottom:12px" data-i18n="courier_qr_title">Scan Courier's QR Code</div>
+            <video id="courier-qr-video" playsinline muted style="width:100%;border-radius:12px;background:#000;margin-bottom:10px"></video>
+            <canvas id="courier-qr-canvas" style="display:none"></canvas>
+            <div id="courier-qr-result" style="font-size:13px;margin:8px 0;min-height:18px"></div>
+            <button onclick="closeCourierQRScanner()" style="width:100%;padding:11px;background:rgba(255,255,255,.06);color:#A8A8B8;border:1px solid rgba(255,255,255,.12);border-radius:10px;font-size:13px;font-weight:600;cursor:pointer" data-i18n="cancel_btn">Cancel</button>
+        </div>
+    </div>
+
+    <script src="js/customer.js?v=4.19"></script>
+<!-- ETEL AI -- cross-company assistant widget -->
+<script src="https://ethelmarket.com/EtelAi/etel-ai-widget.js" data-project="delivery"></script>
+<script src="js/investor-nav-check.js"></script>
+</body>
+</html>

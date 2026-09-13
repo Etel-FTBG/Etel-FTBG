@@ -1,0 +1,220 @@
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=JetBrains+Mono:wght@400;500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=Noto+Sans+Ethiopic:wght@400;600;700&display=swap');
+
+/* ════════════════════════════════════════════════════════════════
+   ETEL PHASE 5 — Global Branding System v3.7.3-r2
+   Safe additive layer. Loads LAST on every page.
+   ════════════════════════════════════════════════════════════════ */
+
+/* ── TOKENS ── */
+:root{
+  --p5-gold:#D4AF37; --p5-gold-lt:#E8C84A;  /* g3 */ --p5-gold-br:#F5E6A3;  /* g2 */
+  --p5-ink:#08080f; --p5-sheet:#12121d; --p5-dim:#9A9AAE;
+  --p5-ease:cubic-bezier(.22,1,.36,1);
+}
+
+/* ════════════════════════════════════════════════════════════════
+   1. DARK PAGE BODY — strong override wins over premium.css
+   ════════════════════════════════════════════════════════════════ */
+html:has(body.dark-page),
+body.dark-page{
+  background:#08080f!important;
+  color:#EDEDF5!important;
+}
+body.dark-page *::before,
+body.dark-page *::after{
+  /* don't nuke pseudo-elements that are part of UI components */
+}
+/* Kill the mesh animation that premium.css injects as body::before */
+body.dark-page::before,
+body.dark-page::after{
+  display:none!important;
+  content:none!important;
+  background:none!important;
+}
+/* Dark inputs */
+body.dark-page input:not([type=radio]):not([type=checkbox]),
+body.dark-page select,
+body.dark-page textarea{
+  background:rgba(255,255,255,.06)!important;
+  color:#EDEDF5!important;
+  border-color:rgba(255,255,255,.1)!important;
+}
+body.dark-page input:focus,
+body.dark-page select:focus,
+body.dark-page textarea:focus{
+  border-color:rgba(212,175,55,.5)!important;
+  box-shadow:0 0 0 2px rgba(212,175,55,.18)!important;
+  outline:none!important;
+  background:rgba(255,255,255,.08)!important;
+}
+/* Stop premium.css glass/white card overrides on dark pages */
+body.dark-page [class*="-card"],
+body.dark-page .sidebar,
+body.dark-page .header,
+body.dark-page .navbar,
+body.dark-page .topbar{
+  background:revert!important;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   2. LIGHT PAGE FOCUS RING (customer, index, servicegiver, login)
+   ════════════════════════════════════════════════════════════════ */
+body:not(.dark-page) input:focus,
+body:not(.dark-page) select:focus,
+body:not(.dark-page) textarea:focus{
+  border-color:rgba(212,175,55,.55)!important;
+  box-shadow:0 0 0 2px rgba(212,175,55,.18)!important;
+  outline:none!important;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   3. GOLD BUTTON SYSTEM
+   ════════════════════════════════════════════════════════════════ */
+.etel-btn-gold,
+.place-order-btn,
+.pickup-btn,
+.deliver-btn,
+button.primary-gold{
+  background:linear-gradient(135deg,var(--p5-gold-br),var(--p5-gold-lt),var(--p5-gold))!important;
+  color:#1a1206!important;border:none!important;font-weight:800!important;
+  box-shadow:0 10px 28px -8px rgba(212,175,55,.5)!important;
+  transition:transform .15s var(--p5-ease),box-shadow .2s!important;cursor:pointer;
+}
+.etel-btn-gold:hover{transform:translateY(-2px)!important;box-shadow:0 18px 38px -8px rgba(212,175,55,.7)!important;}
+.etel-btn-gold:active{transform:scale(.97)!important;}
+
+/* ════════════════════════════════════════════════════════════════
+   4. ኢE BRAND MARK
+   ════════════════════════════════════════════════════════════════ */
+.etel-mark-box{
+  width:40px;height:40px;border-radius:12px;overflow:hidden;flex-shrink:0;
+  border:1.5px solid rgba(212,175,55,.4);
+  box-shadow:0 4px 14px -4px rgba(212,175,55,.45);
+}
+.etel-mark-box img{width:100%;height:100%;object-fit:cover;display:block;}
+.etel-mark-title{font-family:'Syne','Noto Sans Ethiopic',sans-serif;font-size:15px;font-weight:800;color:var(--p5-gold-lt);line-height:1;}
+.etel-mark-sub{font-size:9px;color:rgba(154,154,174,.75);letter-spacing:.08em;text-transform:uppercase;margin-top:3px;}
+
+/* ════════════════════════════════════════════════════════════════
+   5. GOLD SCROLLBAR (all pages)
+   ════════════════════════════════════════════════════════════════ */
+*{scrollbar-width:thin;scrollbar-color:rgba(212,175,55,.3) transparent;}
+*::-webkit-scrollbar{width:4px;height:4px;}
+*::-webkit-scrollbar-thumb{background:rgba(212,175,55,.3);border-radius:4px;}
+*::-webkit-scrollbar-track{background:transparent;}
+
+/* ════════════════════════════════════════════════════════════════
+   6. KM CHIPS (ride booking)
+   ════════════════════════════════════════════════════════════════ */
+.zchip{
+  padding:8px 14px;border-radius:10px;
+  border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.05);
+  color:#EDEDF5;font-family:'Outfit',sans-serif;font-size:13px;font-weight:700;
+  cursor:pointer;transition:all .18s var(--p5-ease);
+}
+.zchip:hover{border-color:rgba(212,175,55,.4);background:rgba(212,175,55,.1);color:var(--p5-gold-lt);}
+.zchip.active{background:rgba(212,175,55,.18);border-color:var(--p5-gold-lt);color:var(--p5-gold-lt);}
+
+/* ════════════════════════════════════════════════════════════════
+   7. MAP ANIMATIONS (ride.js zone circle & nearby cars)
+   ════════════════════════════════════════════════════════════════ */
+@keyframes etelZonePulse{0%,100%{transform:scale(.93);opacity:.85;}50%{transform:scale(1.05);opacity:.45;}}
+@keyframes etelZoneRing{0%{transform:scale(1);opacity:.55;}100%{transform:scale(1.22);opacity:0;}}
+@keyframes etelCarBob{0%,100%{transform:translateY(0) rotate(-3deg);}50%{transform:translateY(-5px) rotate(3deg);}}
+
+/* ════════════════════════════════════════════════════════════════
+   8. FOOTER COMPONENT
+   Used inside scrollable containers on: customer, index, servicegiver
+   ════════════════════════════════════════════════════════════════ */
+.etel-footer{
+  background:linear-gradient(180deg,#0d0d1a 0%,#08080f 100%);
+  border-top:1px solid rgba(212,175,55,.2);
+  padding:40px 20px 28px;
+  font-family:'Syne','Noto Sans Ethiopic',sans-serif;
+  position:relative;color:#EDEDF5;
+  /* Reset any inherited overflow constraints */
+  overflow:visible;
+}
+.etel-footer::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(212,175,55,.5),transparent);
+}
+.etel-footer-inner{max-width:860px;margin:0 auto;}
+
+/* Brand row */
+.etel-footer-brand{display:flex;align-items:center;gap:14px;margin-bottom:24px;}
+.etel-footer-logo{
+  width:52px;height:52px;border-radius:13px;overflow:hidden;flex-shrink:0;
+  border:1.5px solid rgba(212,175,55,.4);
+  box-shadow:0 4px 16px -6px rgba(212,175,55,.5);
+}
+.etel-footer-logo img{width:100%;height:100%;object-fit:cover;display:block;}
+.etel-footer-brand-name{
+  font-family:'Sora',sans-serif;font-size:17px;font-weight:800;
+  color:#E5C76B;line-height:1;margin-bottom:5px;
+}
+.etel-footer-tagline{font-size:11px;color:rgba(154,154,174,.7);line-height:1.5;}
+
+/* Stats row */
+.etel-footer-stats{
+  display:flex;gap:0;margin-bottom:24px;
+  background:rgba(255,255,255,.04);
+  border:1px solid rgba(255,255,255,.07);border-radius:14px;overflow:hidden;
+}
+.etel-footer-stat{
+  flex:1;padding:14px 8px;text-align:center;
+  border-right:1px solid rgba(255,255,255,.07);
+}
+.etel-footer-stat:last-child{border-right:none;}
+.etel-footer-stat-val{
+  font-family:'Sora',sans-serif;font-size:20px;font-weight:800;
+  color:#E5C76B;line-height:1;margin-bottom:3px;
+}
+.etel-footer-stat-lbl{font-size:9px;color:rgba(154,154,174,.7);text-transform:uppercase;letter-spacing:.06em;}
+
+/* Link grid */
+.etel-footer-grid{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));
+  gap:22px 16px;margin-bottom:24px;
+}
+.etel-footer-col-title{
+  font-size:10px;font-weight:800;color:#E5C76B;
+  text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px;
+}
+.etel-footer-col ul{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:7px;}
+.etel-footer-col li a,
+.etel-footer-col li span{
+  font-size:12px;color:rgba(154,154,174,.8);text-decoration:none;
+  transition:color .18s;display:block;
+}
+.etel-footer-col li a:hover{color:#E5C76B;}
+
+/* Subsidiary chips */
+.etel-footer-subs{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:22px;}
+.etel-footer-sub-chip{
+  padding:4px 11px;border-radius:20px;font-size:11px;font-weight:700;
+  border:1px solid rgba(212,175,55,.2);color:rgba(212,175,55,.65);
+  background:rgba(212,175,55,.06);
+}
+
+/* Bottom bar */
+.etel-footer-bottom{
+  display:flex;align-items:center;flex-wrap:wrap;gap:10px;
+  padding-top:18px;border-top:1px solid rgba(255,255,255,.06);
+  font-size:11px;color:rgba(154,154,174,.5);
+}
+.etel-footer-bottom a{color:rgba(212,175,55,.5);text-decoration:none;}
+.etel-footer-bottom a:hover{color:#E5C76B;}
+.etel-footer-bottom-right{margin-left:auto;display:flex;gap:14px;flex-wrap:wrap;}
+.etel-footer-am{font-family:'Noto Sans Ethiopic',sans-serif;font-size:11px;color:rgba(154,154,174,.45);margin-top:2px;}
+
+/* Mobile footer adjustments */
+@media(max-width:600px){
+  .etel-footer{padding:32px 16px 22px;}
+  .etel-footer-grid{grid-template-columns:1fr 1fr;}
+  .etel-footer-stats{flex-wrap:wrap;}
+  .etel-footer-stat{min-width:50%;border-bottom:1px solid rgba(255,255,255,.07);}
+  .etel-footer-stat:nth-child(odd){border-right:1px solid rgba(255,255,255,.07);}
+  .etel-footer-bottom{flex-direction:column;align-items:flex-start;}
+  .etel-footer-bottom-right{margin-left:0;}
+}

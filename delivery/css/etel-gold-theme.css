@@ -1,0 +1,184 @@
+/*
+ * ETEL Delivery - Gold/Carbon Theme Override
+ * Matches the EtelID + EtelPay design system: dark carbon backgrounds,
+ * gold accents (#C8960C/#D4AF37/#F2CC6B), diagonal gold-bronze page
+ * gradients, dark glass cards with gold borders.
+ *
+ * Loaded LAST (after admin.css / premium.css / etc.) so these rules
+ * win on specificity ties; !important used where the base styles are
+ * likely to set the same property directly on the element.
+ *
+ * Apply to: admin.html, customer.html, courier.html, servicegiver.html,
+ * login.html - add as the final <link> before </head> on each page.
+ */
+
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=JetBrains+Mono:wght@400;600&display=swap');
+
+:root{
+  --gold-1:#8A6418; --gold-2:#C8960C; --gold-3:#D4AF37; --gold-4:#F2CC6B; --gold-5:#A07820; --gold-6:#C9A227;
+  --carbon-0:#030205; --carbon-1:#0a0703; --carbon-2:#130d05; --carbon-3:#1a1206;
+}
+
+html, body.dark-page{
+  background:
+    linear-gradient(155deg,#2A1600 0%,#5A3A08 15%,#9A6818 30%,#C8922A 44%,#D4AF37 50%,#C8922A 56%,#9A6818 70%,#5A3A08 85%,#2A1600 100%) fixed !important;
+  background-attachment: fixed !important;
+}
+
+/* ── Header ── */
+.header{
+  background: linear-gradient(165deg,var(--carbon-2) 0%,var(--carbon-1) 100%) !important;
+  border-bottom: 1px solid rgba(212,175,55,.35) !important;
+  box-shadow: 0 2px 0 rgba(212,175,55,.15) !important;
+}
+.header-title{
+  font-family:'Syne',sans-serif !important;
+  font-weight:800 !important;
+  background:linear-gradient(90deg,var(--gold-2),var(--gold-4)) !important;
+  -webkit-background-clip:text !important; background-clip:text !important;
+  -webkit-text-fill-color:transparent !important;
+}
+.header-subtitle{ color:#998 !important; font-family:'JetBrains Mono',monospace !important; letter-spacing:.06em !important; }
+.header-stat{
+  background: rgba(212,175,55,.08) !important;
+  border: 1px solid rgba(212,175,55,.25) !important;
+  color: var(--gold-4) !important;
+  border-radius: 8px !important;
+}
+.header-stat-dot{ background: #6ee7a0 !important; box-shadow:0 0 8px #6ee7a0 !important; }
+.user-btn{
+  background: rgba(212,175,55,.1) !important;
+  border: 1px solid rgba(212,175,55,.3) !important;
+  color: var(--gold-4) !important;
+}
+
+/* ── Sidebar ── */
+.sidebar{
+  background: linear-gradient(180deg,var(--carbon-2) 0%,var(--carbon-0) 100%) !important;
+  border-right: 1px solid rgba(212,175,55,.25) !important;
+}
+.nav-item{ color:#aaa !important; border-radius:8px !important; }
+.nav-item:hover{ background: rgba(212,175,55,.08) !important; color: var(--gold-4) !important; }
+.nav-item.active{
+  background: linear-gradient(90deg, rgba(212,175,55,.18), rgba(212,175,55,.04)) !important;
+  border-left: 3px solid var(--gold-3) !important;
+  color: var(--gold-4) !important;
+  font-weight:700 !important;
+}
+.nav-icon{ filter: saturate(1.1); }
+
+/* ── Content area ── */
+.content{ background: transparent !important; }
+.content-header{ border-bottom: 1px solid rgba(212,175,55,.15) !important; }
+.content-title{
+  font-family:'Syne',sans-serif !important; font-weight:800 !important;
+  color:#f0e6c8 !important;
+}
+
+/* ── Buttons ── */
+.btn-primary{
+  background: linear-gradient(135deg,var(--gold-2),var(--gold-3)) !important;
+  color: #0d0d0d !important;
+  border: none !important;
+  font-weight: 700 !important;
+  box-shadow: 0 4px 14px -4px rgba(212,175,55,.5) !important;
+}
+.btn-secondary{
+  background: rgba(212,175,55,.08) !important;
+  border: 1px solid rgba(212,175,55,.3) !important;
+  color: var(--gold-4) !important;
+}
+.btn-danger{
+  background: rgba(220,80,80,.12) !important;
+  border: 1px solid rgba(220,80,80,.4) !important;
+  color: #ef9a9a !important;
+}
+
+/* ── Stat cards ── */
+.stat-card{
+  position:relative; overflow:hidden;
+  background:
+    radial-gradient(ellipse at 85% 0%, rgba(212,175,55,.14) 0%, transparent 55%),
+    linear-gradient(165deg,var(--carbon-2) 0%,var(--carbon-1) 100%) !important;
+  border: 1px solid rgba(212,175,55,.25) !important;
+  border-radius: 14px !important;
+}
+.stat-card::before{
+  content:''; position:absolute; top:0; left:0; right:0; height:2px;
+  background: linear-gradient(90deg,transparent,var(--gold-3),transparent);
+}
+.stat-icon{
+  background: rgba(212,175,55,.14) !important;
+  border: 1px solid rgba(212,175,55,.3) !important;
+  font-size: 22px !important;
+  filter: drop-shadow(0 0 4px rgba(212,175,55,.3));
+}
+.stat-label{ color:#998 !important; font-family:'JetBrains Mono',monospace !important; font-size:11px !important; letter-spacing:.05em !important; }
+.stat-value{
+  font-family:'Syne',sans-serif !important; font-weight:800 !important;
+  color: var(--gold-4) !important;
+}
+
+/* ── Chart cards ── */
+.chart-card{
+  background: linear-gradient(165deg,var(--carbon-2) 0%,var(--carbon-1) 100%) !important;
+  border: 1px solid rgba(212,175,55,.2) !important;
+  border-radius: 14px !important;
+}
+.chart-title{
+  color:#e8e2d4 !important; font-family:'Syne',sans-serif !important; font-weight:700 !important;
+}
+
+/* ── Panels / tables / sections ── */
+.panel, .data-section, .table-wrapper{
+  background: linear-gradient(165deg,var(--carbon-2) 0%,var(--carbon-1) 100%) !important;
+  border: 1px solid rgba(212,175,55,.15) !important;
+  border-radius: 12px !important;
+}
+.section-title{
+  color: var(--gold-4) !important; font-family:'Syne',sans-serif !important;
+  border-left: 3px solid var(--gold-3) !important; padding-left: 10px !important;
+}
+table th{
+  background: rgba(212,175,55,.08) !important;
+  color: var(--gold-4) !important;
+  font-family:'JetBrains Mono',monospace !important;
+  text-transform: uppercase !important; font-size: 11px !important; letter-spacing:.05em !important;
+}
+table td{ border-bottom: 1px solid rgba(212,175,55,.08) !important; }
+table tr:hover td{ background: rgba(212,175,55,.04) !important; }
+
+.filter-sel{
+  background: var(--carbon-2) !important;
+  border: 1px solid rgba(212,175,55,.3) !important;
+  color: #e8e2d4 !important;
+}
+
+/* ── Rides filter buttons (already gold-ish, harmonize) ── */
+.rides-filter-btn.active{
+  background: rgba(212,175,55,.18) !important;
+  border-color: var(--gold-3) !important;
+  color: var(--gold-4) !important;
+}
+.rides-stat-card{
+  background: linear-gradient(165deg,var(--carbon-2) 0%,var(--carbon-1) 100%) !important;
+  border: 1px solid rgba(212,175,55,.2) !important;
+}
+
+/* ── Updater tabs ── */
+.upd-tab.upd-tab-active{
+  background: rgba(212,175,55,.15) !important;
+  border-color: var(--gold-3) !important;
+  color: var(--gold-4) !important;
+}
+.upd-qbtn{
+  background: rgba(212,175,55,.06) !important;
+  border: 1px solid rgba(212,175,55,.2) !important;
+  color: #ddd !important;
+}
+
+/* ── Scrollbars (webkit) for that dashboard feel ── */
+.content-scroll::-webkit-scrollbar, .sidebar::-webkit-scrollbar{ width:8px; }
+.content-scroll::-webkit-scrollbar-thumb, .sidebar::-webkit-scrollbar-thumb{
+  background: rgba(212,175,55,.3); border-radius: 8px;
+}

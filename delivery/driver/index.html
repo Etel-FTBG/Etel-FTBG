@@ -1,0 +1,1573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta name="referrer" content="no-referrer-when-downgrade">
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+<title>ETEL Driver</title>
+<meta name="theme-color" content="#007AFF">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="ETEL Driver">
+<link rel="manifest" href="../manifest-driver.json">
+<link rel="icon" type="image/png" href="../icons/driver-icon-96.png">
+<link rel="apple-touch-icon" href="../icons/driver-apple-touch-icon.png">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Outfit:wght@400;500;600;700;800;900&family=Noto+Sans+Ethiopic:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/driver-bundle.css?v=1.4">
+<style>
+.etl-truck-layer,.etl-truck-layer-2,.etl-pin,.etl-pin-1,.etl-pin-2,.etl-pin-3,.etl-pin-4,.etl-speedlines{display:none!important}
+
+/* ── Phase 2 additions ── */
+
+/* ══════════════════════════════════
+   Phase 3 — Driver Registration
+   ══════════════════════════════════ */
+
+/* Wizard overlay — slides over everything */
+.reg-overlay{
+  position:fixed;inset:0;z-index:200;
+  /* Solid black theme - every color below is a literal hardcoded
+     value, nothing depends on a variable defined outside this block
+     (a shared stylesheet elsewhere silently clobbers several color
+     variables app-wide, which caused every earlier version of this
+     bug). */
+  background:#000000;
+  display:none;flex-direction:column;
+  overflow-y:auto;-webkit-overflow-scrolling:touch;
+}
+.reg-overlay.open{display:flex}
+
+/* Top bar */
+.reg-topbar{
+  display:flex;align-items:center;gap:12px;
+  padding:calc(env(safe-area-inset-top,0px)+14px) 20px 14px;
+  flex-shrink:0;
+  background:#000000;
+}
+.reg-back{width:38px;height:38px;border-radius:50%;background:#1A1A1A;
+  border:1px solid #B8860B;display:flex;align-items:center;justify-content:center;
+  font-size:18px;cursor:pointer;color:#FFFFFF;flex-shrink:0}
+.reg-title{font-family:var(--f-d);font-size:18px;font-weight:800;color:#FFFFFF}
+.reg-sub{font-size:12px;color:#D4AF37;margin-top:2px}
+
+/* Progress dots */
+.reg-progress{
+  display:flex;align-items:center;gap:6px;
+  padding:0 20px 22px;flex-shrink:0;
+  background:#000000;
+}
+.reg-dot{height:5px;border-radius:3px;background:#2A2A2A;
+  transition:all .3s;flex:1}
+.reg-dot.done{background:#C8922A}
+.reg-dot.active{background:#D4AF37;box-shadow:0 0 8px rgba(212,175,55,.6)}
+
+/* Step panels */
+.reg-body{flex:1;padding:0 20px 100px;overflow-y:auto;background:#000000}
+.reg-step{display:none}
+.reg-step.active{display:block;animation:viewIn .35s ease}
+@keyframes viewIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+
+.reg-step-title{font-family:var(--f-d);font-size:23px;font-weight:800;
+  color:#FFFFFF;margin-bottom:6px;line-height:1.25;letter-spacing:.01em}
+.reg-step-sub{font-size:13.5px;color:#D4AF37;margin-bottom:26px;line-height:1.6}
+
+/* Vehicle illustration */
+.reg-vehicle-hero{
+  width:100%;height:150px;border-radius:20px;
+  background:#1A1A1A;
+  border:1px solid #B8860B;
+  display:flex;align-items:center;justify-content:center;
+  font-size:72px;margin-bottom:22px;transition:all .3s;
+}
+.reg-vehicle-hero .reg-hero-img{width:100px;height:100px;object-fit:contain;filter:drop-shadow(0 6px 16px rgba(212,175,55,.45))}
+
+/* Option cards (vehicle type) */
+.reg-option-grid{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-bottom:22px}
+.reg-option .ro-icon-img{width:42px;height:42px;object-fit:contain;margin-bottom:9px;filter:drop-shadow(0 2px 6px rgba(212,175,55,.35))}
+.reg-option{
+  padding:18px 14px;border-radius:18px;border:1.5px solid #333333;
+  background:#111111;cursor:pointer;text-align:center;
+  transition:all .2s;
+}
+.reg-option:active{transform:scale(.97)}
+.reg-option.selected{border-color:#D4AF37;background:#1F1A0A;box-shadow:0 0 0 1px rgba(212,175,55,.4), 0 6px 18px rgba(212,175,55,.15)}
+.reg-option .ro-icon{font-size:34px;margin-bottom:9px}
+.reg-option .ro-label{font-size:13.5px;font-weight:700;color:#FFFFFF}
+.reg-option .ro-sub{font-size:11px;color:#B8860B;margin-top:3px}
+.reg-option.selected .ro-label{color:#E9C767}
+
+/* Form fields */
+.reg-field{margin-bottom:18px}
+.reg-field-label{font-size:11px;font-weight:700;color:#D4AF37;
+  text-transform:uppercase;letter-spacing:.09em;margin-bottom:7px;display:block}
+.reg-field-label.done::before{content:'✓ ';color:#E9C767}
+.reg-input{
+  width:100%;padding:15px 16px;border-radius:14px;
+  border:1.5px solid #4A4A4A;background:#111111;
+  color:#FFFFFF;font-family:var(--f);font-size:15.5px;
+  outline:none;transition:border-color .2s,box-shadow .2s;box-sizing:border-box;
+}
+.reg-input:focus{border-color:#D4AF37;box-shadow:0 0 0 3px rgba(212,175,55,.2)}
+.reg-input::placeholder{color:#D4AF37}
+.reg-select{
+  width:100%;padding:15px 16px;border-radius:14px;
+  border:1.5px solid #4A4A4A;background-color:#111111;
+  color:#FFFFFF;font-family:var(--f);font-size:15.5px;
+  outline:none;appearance:none;-webkit-appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23D4AF37' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 16px center;
+  cursor:pointer;box-sizing:border-box;
+}
+.reg-select:focus{border-color:#D4AF37;box-shadow:0 0 0 3px rgba(212,175,55,.2)}
+
+/* Color swatches */
+.reg-colors{display:flex;gap:11px;flex-wrap:wrap;margin-top:9px}
+.reg-color{width:38px;height:38px;border-radius:50%;cursor:pointer;
+  border:3px solid transparent;transition:all .2s;box-shadow:0 1px 4px rgba(0,0,0,.5)}
+.reg-color.selected{border-color:#D4AF37;transform:scale(1.15);box-shadow:0 0 0 2px rgba(212,175,55,.4), 0 2px 8px rgba(0,0,0,.5)}
+
+/* Selfie / photo step */
+.reg-photo-box{
+  width:150px;height:150px;border-radius:50%;margin:0 auto 22px;
+  background:#1A1A1A;
+  border:2px dashed #B8860B;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  cursor:pointer;font-size:34px;transition:all .2s;color:#D4AF37;
+}
+.reg-photo-box:active{transform:scale(.97)}
+.reg-photo-preview{width:150px;height:150px;border-radius:50%;
+  object-fit:cover;display:none;margin:0 auto 22px;border:2px solid #B8860B}
+
+/* Instructions numbered list */
+.reg-steps-list{background:#111111;border:1px solid #333333;
+  border-radius:18px;padding:16px;margin-bottom:22px}
+.reg-step-item{display:flex;align-items:flex-start;gap:13px;padding:11px 0;
+  border-bottom:1px solid #2A2A2A}
+.reg-step-item:last-child{border-bottom:none}
+.reg-step-num{width:27px;height:27px;border-radius:50%;background:#D4AF37;
+  color:#000000;font-size:11.5px;font-weight:800;display:flex;align-items:center;
+  justify-content:center;flex-shrink:0;margin-top:1px}
+.reg-step-text{font-size:13.5px;color:#FFFFFF;line-height:1.6}
+
+/* Bottom CTA */
+.reg-footer{
+  position:fixed;bottom:0;left:0;right:0;z-index:201;
+  padding:14px 20px calc(env(safe-area-inset-bottom,0px)+14px);
+  background:#000000;border-top:1px solid #2A2A2A;
+}
+.reg-btn{
+  width:100%;padding:16px;border:none;border-radius:16px;cursor:pointer;
+  font-family:var(--f);font-size:16px;font-weight:800;color:#000000;
+  background:linear-gradient(135deg,#FFE9A8,#E9C767,#D4AF37);
+  box-shadow:0 8px 22px -8px rgba(212,175,55,.6);transition:all .18s;
+}
+.reg-btn:active{transform:scale(.98)}
+.reg-btn:disabled{opacity:.5;cursor:not-allowed}
+.reg-btn.outline{background:#111111;color:#FFFFFF;
+  border:1px solid #4A4A4A;box-shadow:none}
+
+/* Success screen */
+.reg-success{text-align:center;padding:40px 20px}
+.reg-success-icon{font-size:80px;margin-bottom:20px;display:block}
+.reg-success-title{font-family:var(--f-d);font-size:26px;font-weight:800;
+  color:#FFFFFF;margin-bottom:12px}
+.reg-success-sub{font-size:14px;color:#D4AF37;line-height:1.6;margin-bottom:32px}
+
+:root{
+  --gold:#D4AF37;--gold-lt:#E5C76B;--gold-br:#FFE9A8;
+  --teal:#4ECDC4;--text:#EDEDF5;--dim:#9A9AAE;
+  --sheet:#12121d;--sheet2:#191926;--line:rgba(255,255,255,.08);
+  --f:'Outfit',sans-serif;--f-d:'Sora',sans-serif;
+  --tab-h:60px;
+}
+
+/* ── Bottom nav tabs (4 icons) ── */
+.driver-bottom-nav{
+  position:fixed;left:0;right:0;bottom:0;z-index:22;
+  display:flex;align-items:stretch;
+  background:rgba(13,13,24,.97);backdrop-filter:blur(20px);
+  border-top:1px solid rgba(212,175,55,.15);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+  height:calc(var(--tab-h) + env(safe-area-inset-bottom,0px));
+}
+.nav-tab{flex:1;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;gap:3px;cursor:pointer;border:none;background:none;
+  font-family:var(--f);transition:all .18s;padding:0}
+.nav-tab .ni{font-size:22px;line-height:1}
+.nav-tab .nl{font-size:10px;font-weight:700;color:var(--dim)}
+.nav-tab.active .nl{color:var(--gold-lt)}
+.nav-tab.active .ni{filter:drop-shadow(0 0 6px rgba(212,175,55,.6))}
+
+/* ── Status bar (top, replaces old .driver-statusbar) ── */
+.drv-topbar{
+  position:fixed;top:0;left:0;right:0;z-index:16;
+  display:flex;align-items:center;gap:10px;
+  padding:calc(env(safe-area-inset-top,0px) + 10px) 16px 10px;
+  background:linear-gradient(180deg,rgba(8,8,15,.95),rgba(8,8,15,.5) 80%,transparent);
+}
+
+/* ── Sidebar navigation (desktop/wide viewports) ──
+   Hidden entirely on narrow phone widths, where the bottom tab bar
+   already works well. On wider screens a bottom bar looks out of place
+   next to a full desktop window, so it's replaced by a proper
+   collapsible sidebar instead -- same switchPage()/nav-tab wiring,
+   just laid out differently. */
+:root{ --sidebar-w:0px; }
+.driver-sidebar{ display:none; }
+
+@media (min-width:900px){
+  :root{ --sidebar-w:236px; }
+  body.sidebar-collapsed{ --sidebar-w:0px; }
+
+  .topbar-sidebar-btn{display:flex;align-items:center;justify-content:center;
+    width:32px;height:32px;border-radius:9px;flex-shrink:0;
+    border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.05);
+    color:var(--dim);cursor:pointer;font-size:15px}
+  .topbar-sidebar-btn:hover{background:rgba(255,255,255,.1);color:var(--text)}
+
+  .driver-sidebar{
+    display:flex;flex-direction:column;
+    position:fixed;top:0;left:0;bottom:0;width:var(--sidebar-w);z-index:30;
+    background:linear-gradient(180deg,#14141f 0%,#0d0d16 100%);
+    border-right:1px solid rgba(212,175,55,.14);
+    transition:width .22s cubic-bezier(.22,1,.36,1);overflow:hidden;
+  }
+
+  /* Shift the whole app over to make room for the sidebar; when the
+     sidebar is fully hidden (--sidebar-w:0px) this naturally collapses
+     back to left:0, and the bottom tab bar takes over as the fallback
+     navigation instead -- there's always exactly one nav visible, never
+     both, never neither. */
+  .drv-topbar,.drv-main,#driver-map{ left:var(--sidebar-w) !important; transition:left .22s cubic-bezier(.22,1,.36,1); }
+  .driver-bottom-nav{ display:none !important; }
+  body.sidebar-collapsed .driver-bottom-nav{ display:flex !important; }
+  .sidebar-header{display:flex;align-items:center;gap:10px;padding:18px 16px;
+    border-bottom:1px solid rgba(255,255,255,.06);flex-shrink:0}
+  .sidebar-logo{width:36px;height:36px;border-radius:10px;overflow:hidden;flex-shrink:0;
+    border:1px solid rgba(212,175,55,.3)}
+  .sidebar-logo img{width:100%;height:100%;object-fit:cover;display:block}
+  .sidebar-brand{font-family:var(--f-d);font-size:14px;font-weight:800;color:var(--gold-lt);
+    white-space:nowrap;opacity:1;transition:opacity .15s}
+  body.sidebar-collapsed .sidebar-brand{display:none}
+  .sidebar-toggle{margin-left:auto;width:28px;height:28px;border-radius:8px;flex-shrink:0;
+    border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.05);
+    color:var(--dim);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center}
+  .sidebar-toggle:hover{background:rgba(255,255,255,.1);color:var(--text)}
+  /* Collapsed: logo + toggle stack vertically, centered -- side-by-side
+     never had enough room (74px sidebar minus padding is less than
+     logo+gap+toggle needs), which is exactly why the toggle button was
+     getting pushed out of view and became unreachable once collapsed. */
+  body.sidebar-collapsed .sidebar-header{flex-direction:column;gap:10px;padding:16px 8px}
+  body.sidebar-collapsed .sidebar-toggle{margin-left:0}
+  .sidebar-nav{flex:1;padding:14px 12px;display:flex;flex-direction:column;gap:3px;overflow-y:auto}
+  .sidebar-section-label{font-size:10px;font-weight:800;color:var(--dim);text-transform:uppercase;
+    letter-spacing:.09em;padding:0 10px 8px;white-space:nowrap;overflow:hidden;transition:opacity .15s}
+  body.sidebar-collapsed .sidebar-section-label{opacity:0;height:0;padding:0;margin:0}
+  .sidebar-item{position:relative;display:flex;align-items:center;gap:12px;padding:9px 10px;
+    border-radius:12px;cursor:pointer;border:none;background:none;width:100%;text-align:left;
+    font-family:var(--f);transition:background .15s}
+  .sidebar-item::before{content:'';position:absolute;left:-12px;top:50%;transform:translateY(-50%);
+    width:3px;height:0;border-radius:0 3px 3px 0;background:var(--gold);transition:height .18s}
+  .si-icon-box{width:36px;height:36px;border-radius:10px;flex-shrink:0;
+    display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.05);
+    transition:background .15s}
+  .si-icon-box-danger{background:rgba(230,57,70,.1)}
+  .sidebar-item .si-icon{font-size:17px;line-height:1}
+  .sidebar-item .si-label{font-size:13px;font-weight:700;color:var(--dim);white-space:nowrap;
+    overflow:hidden;transition:opacity .15s,color .15s}
+  body.sidebar-collapsed .sidebar-item .si-label{opacity:0;width:0}
+  body.sidebar-collapsed .sidebar-item{justify-content:center;padding:9px}
+  .sidebar-item:hover{background:rgba(255,255,255,.05)}
+  .sidebar-item:hover .si-icon-box{background:rgba(255,255,255,.09)}
+  .sidebar-item.active{background:rgba(212,175,55,.1)}
+  .sidebar-item.active::before{height:20px}
+  .sidebar-item.active .si-icon-box{background:rgba(212,175,55,.16);
+    box-shadow:0 0 0 1px rgba(212,175,55,.3) inset}
+  .sidebar-item.active .si-label{color:var(--gold-lt)}
+  .sidebar-footer{padding:12px;border-top:1px solid rgba(255,255,255,.07);flex-shrink:0}
+}
+.drv-logo-box{width:40px;height:40px;border-radius:11px;overflow:hidden;
+  border:1px solid rgba(212,175,55,.3);
+  box-shadow:0 4px 14px -4px rgba(212,175,55,.5);flex-shrink:0}
+.drv-logo-box img{width:100%;height:100%;object-fit:cover;display:block}
+.drv-title{font-family:var(--f-d);font-size:15px;font-weight:800;color:var(--gold-lt);line-height:1}
+.drv-subtitle{font-size:10px;color:var(--dim);margin-top:2px}
+.drv-online-pill{margin-left:auto;padding:6px 14px;border-radius:999px;
+  font-family:var(--f);font-size:12px;font-weight:700;cursor:pointer;
+  border:none;display:flex;align-items:center;gap:6px;transition:all .2s}
+.drv-online-pill.offline{background:rgba(255,255,255,.08);color:var(--dim)}
+.drv-online-pill.online {
+  background: rgba(46,204,113,0.12);
+  color: #2ECC71;
+  border: 1px solid rgba(46,204,113,0.35);
+  box-shadow: 0 0 10px rgba(46,204,113,0.15);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+.drv-online-pill .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #2ECC71;
+  box-shadow: 0 0 8px #2ECC71;
+  animation: pulse-dot 1.8s infinite ease-in-out;
+}
+@keyframes pulse-dot{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(0.85);opacity:.4}}
+
+/* ── Power-off button (topbar, shown when online) ── */
+.drv-poweroff-btn {
+  margin-left: auto;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(231,76,60,0.22) 0%, rgba(192,57,43,0.08) 100%);
+  border: 1.5px solid rgba(231,76,60,0.45);
+  box-shadow: 0 0 12px rgba(231,76,60,0.2), inset 0 2px 6px rgba(255,255,255,0.05);
+  color: #F87171;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 20px;
+  font-weight: bold;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+.drv-poweroff-btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, transparent 70%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+.drv-poweroff-btn:hover {
+  background: radial-gradient(circle, rgba(231,76,60,0.3) 0%, rgba(192,57,43,0.15) 100%);
+  border-color: rgba(231,76,60,0.7);
+  box-shadow: 0 0 20px rgba(231,76,60,0.45), inset 0 2px 8px rgba(255,255,255,0.1);
+  color: #FFA1A1;
+  transform: scale(1.08);
+}
+
+/* Full-map expand/collapse button - floats at the map/panel boundary */
+#drv-map-expand-btn{
+  position:fixed;right:16px;bottom:calc(50vh + 14px);z-index:9;
+  width:42px;height:42px;border-radius:50%;border:1.5px solid rgba(212,175,55,.5);
+  background:radial-gradient(circle,rgba(212,175,55,.28) 0%,rgba(168,134,10,.12) 100%);
+  color:#FFD700;font-size:18px;display:flex;align-items:center;justify-content:center;
+  cursor:pointer;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+  box-shadow:0 4px 16px -4px rgba(212,175,55,.35);
+  transition:bottom .3s ease,transform .2s,box-shadow .2s;
+}
+#drv-map-expand-btn:hover{transform:scale(1.08);box-shadow:0 4px 22px -4px rgba(212,175,55,.55)}
+#drv-map-expand-btn:active{transform:scale(.94)}
+.drv-poweroff-btn:hover::before {
+  opacity: 1;
+}
+.drv-poweroff-btn:active {
+  transform: scale(0.92);
+  box-shadow: 0 0 10px rgba(231,76,60,0.2), inset 0 1px 4px rgba(0,0,0,0.2);
+  transition: all 0.1s ease;
+}
+.drv-poweroff-btn::after {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: 50%;
+  border: 2px solid rgba(231,76,60,0.4);
+  opacity: 0;
+  animation: power-pulse 2s infinite ease-out;
+}
+@keyframes power-pulse {
+  0% { transform: scale(1); opacity: 0.5; }
+  100% { transform: scale(1.3); opacity: 0; }
+}
+/* Hold-progress ring: fills over the 800ms hold so touch users get clear
+   visual confirmation their press registered and is counting down,
+   instead of the invisible-on-mobile title="" tooltip being the only hint. */
+.drv-poweroff-btn.holding{
+  background: conic-gradient(#F87171 0deg, rgba(231,76,60,.15) 0deg) border-box,
+              radial-gradient(circle, rgba(231,76,60,0.22) 0%, rgba(192,57,43,0.08) 100%) border-box;
+  animation: drv-hold-fill .8s linear forwards;
+}
+@keyframes drv-hold-fill{
+  0%   { background: conic-gradient(#F87171 0deg, rgba(231,76,60,.15) 0deg) border-box, radial-gradient(circle, rgba(231,76,60,0.22) 0%, rgba(192,57,43,0.08) 100%) border-box; }
+  100% { background: conic-gradient(#F87171 360deg, rgba(231,76,60,.15) 360deg) border-box, radial-gradient(circle, rgba(231,76,60,0.22) 0%, rgba(192,57,43,0.08) 100%) border-box; }
+}
+
+/* ── Slide-to-go-online ── */
+.slide-online-wrap{
+  padding:14px 20px 4px;
+  max-width:300px;margin:0 auto;
+}
+.slide-online-track{
+  position:relative;height:62px;border-radius:31px;
+  background:rgba(46,204,113,.08);border:1.5px solid rgba(46,204,113,.28);
+  overflow:hidden;user-select:none;cursor:pointer;
+  box-shadow:0 4px 24px -8px rgba(46,204,113,.18);
+  touch-action:none;
+}
+.slide-online-label{
+  position:absolute;top:0;bottom:0;left:0;right:62px;display:flex;align-items:center;justify-content:center;
+  font-family:var(--f);font-size:13px;font-weight:700;color:#2ECC71;
+  letter-spacing:.02em;pointer-events:none;gap:6px;
+}
+.slide-online-arrow{opacity:.5;font-size:16px;animation:slide-arrow-left 1.4s infinite}
+@keyframes slide-arrow-left{0%,100%{transform:translateX(0);opacity:.3}60%{transform:translateX(-6px);opacity:.9}}
+.slide-online-thumb{
+  position:absolute;top:6px;right:6px;left:auto;
+  width:50px;height:50px;border-radius:50%;
+  background:linear-gradient(135deg,#2ECC71,#27AE60);
+  display:flex;align-items:center;justify-content:center;
+  font-size:22px;color:#fff;
+  box-shadow:0 4px 16px -4px rgba(46,204,113,.7);
+  transition:transform .08s;touch-action:none;
+}
+.slide-online-fill{
+  position:absolute;inset:0;border-radius:31px;
+  background:rgba(46,204,113,.15);transform-origin:right;
+  transform:scaleX(0);transition:transform .05s;pointer-events:none;
+  left:auto;right:0;
+}
+
+/* ── Slide-to-accept (in ride cards) ── */
+.slide-accept-wrap{
+  width:78%;max-width:380px;margin:12px auto 0;
+}
+.slide-accept-track{
+  position:relative;height:54px;border-radius:27px;
+  background:rgba(212,175,55,.08);border:1.5px solid rgba(212,175,55,.3);
+  overflow:hidden;user-select:none;cursor:pointer;
+  box-shadow:0 4px 18px -6px rgba(212,175,55,.2);
+}
+.slide-accept-label{
+  position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  font-family:var(--f);font-size:13px;font-weight:800;color:var(--gold-lt);
+  pointer-events:none;gap:6px;letter-spacing:.02em;
+}
+.slide-accept-arrow{opacity:.5;font-size:15px;animation:slide-arrow-left 1.4s infinite}
+.slide-accept-thumb{
+  position:absolute;top:5px;right:5px;left:auto;
+  width:44px;height:44px;border-radius:50%;
+  background:linear-gradient(135deg,var(--gold-br),var(--gold));
+  display:flex;align-items:center;justify-content:center;
+  font-size:20px;color:#1a1206;font-weight:900;
+  box-shadow:0 4px 14px -4px rgba(212,175,55,.6);
+  touch-action:none;
+}
+.slide-accept-fill{
+  position:absolute;inset:0;border-radius:27px;
+  background:rgba(212,175,55,.1);transform-origin:right;
+  transform:scaleX(0);pointer-events:none;
+  left:auto;right:0;
+}
+
+/* ── Unavail banner ── */
+.drv-unavail-banner{
+  position:fixed;top:0;left:0;right:0;z-index:14;
+  background:#C0392B;color:#fff;font-family:var(--f);font-size:13px;font-weight:700;
+  text-align:center;padding:8px 16px;display:none;
+  padding-top:calc(env(safe-area-inset-top,0px) + 8px);
+}
+.drv-unavail-banner.show{display:block}
+
+/* ── Main scroll area ── */
+.drv-main{
+  position:fixed;top:0;left:0;right:0;
+  bottom:calc(var(--tab-h) + env(safe-area-inset-bottom,0px));
+  overflow-y:auto;overflow-x:hidden;
+  -webkit-overflow-scrolling:touch;
+}
+.drv-main::-webkit-scrollbar{width:3px}
+.drv-main::-webkit-scrollbar-thumb{background:rgba(212,175,55,.3);border-radius:3px}
+
+/* Pages */
+.drv-page{display:none;min-height:100%}
+.drv-page.active{animation:drv-page-in .28s ease}
+@keyframes drv-page-in{from{opacity:0}to{opacity:1}}
+.drv-page.active{display:block}
+/* Non-map pages need a solid background to cover the fixed map behind them.
+   NOTE: this used to read background:var(--bg,#08080f) - but etel-design-v4.css
+   (shared across every page) defines --bg: transparent !important globally.
+   Since --bg IS defined (just wrong for this page), the var() fallback never
+   activates - CSS only falls back when a variable is completely undefined,
+   not merely wrong - so this was silently rendering fully transparent,
+   letting the map show through behind Profile/Money/Chats. Hardcoded instead
+   of depending on a shared variable this page doesn't control. */
+#page-money.active,#page-chats.active,#page-profile.active{
+  background:#08080f;
+  position:relative;z-index:10;min-height:100vh;
+}
+
+/* ── Requests page: map + sheet ── */
+#page-requests{padding:0}
+#driver-map{
+  position:fixed;top:0;left:0;right:0;
+  height:52vh;min-height:220px;z-index:1;background:#10101c;
+}
+.req-sheet{
+  position:relative;z-index:5;
+  background:linear-gradient(180deg,rgba(18,18,29,.99),rgba(13,13,24,1));
+  border-radius:22px 22px 0 0;
+  border-top:1px solid rgba(212,175,55,.2);
+  padding:16px 16px 8px;
+  min-height:50vh;
+  box-shadow:0 -24px 48px rgba(0,0,0,.8);
+}
+
+/* priority + today strip */
+.stats-strip{display:flex;gap:0;margin-bottom:14px;
+  background:var(--sheet2);border-radius:14px;overflow:hidden;
+  border:1px solid var(--line)}
+.stat-cell{flex:1;padding:12px 14px;display:flex;align-items:center;gap:10px}
+.stat-cell+.stat-cell{border-left:1px solid var(--line)}
+.stat-icon{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;
+  justify-content:center;font-size:16px;background:rgba(212,175,55,.12);flex-shrink:0}
+.stat-val{font-family:var(--f-d);font-size:18px;font-weight:800;color:var(--text);line-height:1}
+.stat-lbl{font-size:10px;color:var(--dim);margin-top:2px}
+
+/* goal card */
+.goal-card{background:var(--sheet2);border:1px solid var(--line);border-radius:14px;
+  padding:14px;margin-bottom:12px}
+.goal-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px}
+.goal-trips{font-size:14px;font-weight:700;color:var(--text)}
+.goal-date{font-size:11px;color:var(--dim);margin-top:2px}
+.goal-bonus{font-family:var(--f-d);font-size:18px;font-weight:800;color:var(--gold-lt)}
+.goal-bar{height:6px;background:rgba(255,255,255,.08);border-radius:3px;margin-bottom:10px;overflow:hidden}
+.goal-bar-fill{height:100%;border-radius:3px;
+  background:linear-gradient(90deg,var(--gold),var(--gold-lt));transition:width .4s}
+.goal-chips{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px}
+.goal-chips::-webkit-scrollbar{display:none}
+.goal-chip{flex:0 0 auto;text-align:center;padding:8px 12px;border-radius:10px;
+  border:1px solid var(--line);background:rgba(255,255,255,.03);cursor:pointer}
+.goal-chip.active{border-color:var(--gold);background:rgba(212,175,55,.1)}
+.goal-chip .gc-trips{font-size:11px;color:var(--dim)}
+.goal-chip .gc-price{font-size:12px;font-weight:800;color:var(--text)}
+.goal-chip.active .gc-price{color:var(--gold-lt)}
+
+/* street hail + requests */
+.hail-btn-full{width:100%;padding:13px;border:none;border-radius:12px;cursor:pointer;
+  font-family:var(--f);font-size:14px;font-weight:800;color:#1a1206;
+  background:linear-gradient(135deg,var(--gold-br),var(--gold-lt),var(--gold));
+  box-shadow:0 8px 22px -8px rgba(212,175,55,.6);margin-bottom:12px;
+  transition:transform .15s}
+.hail-btn-full:active{transform:scale(.98)}
+
+/* ── Money page (v2 — premium redesign) ── */
+.money-page{padding:80px 16px 24px}
+
+.money-hero{position:relative;overflow:hidden;border-radius:22px;padding:22px 20px 20px;
+  margin-bottom:16px;background:linear-gradient(150deg,#1d1a10 0%,#14121c 55%,#0e0e18 100%);
+  border:1px solid rgba(212,175,55,.22);
+  box-shadow:0 20px 50px -24px rgba(0,0,0,.65), inset 0 1px 0 rgba(255,255,255,.04)}
+.money-hero::before{content:"";position:absolute;top:-60%;right:-30%;width:75%;height:180%;
+  background:radial-gradient(closest-side,rgba(212,175,55,.16),transparent 70%);pointer-events:none}
+.money-hero::after{content:"";position:absolute;bottom:-50%;left:-20%;width:60%;height:140%;
+  background:radial-gradient(closest-side,rgba(78,205,196,.08),transparent 70%);pointer-events:none}
+.money-today-big{position:relative;margin-bottom:14px}
+.money-label{font-size:11.5px;color:var(--dim);font-weight:700;letter-spacing:.09em;text-transform:uppercase}
+.money-amount{font-family:var(--f-d);font-size:44px;font-weight:800;
+  background:linear-gradient(135deg,#fff 10%,var(--gold-lt) 90%);-webkit-background-clip:text;
+  background-clip:text;-webkit-text-fill-color:transparent;line-height:1.05;margin:6px 0 3px;letter-spacing:-.01em}
+.money-sublabel{font-size:12.5px;color:var(--dim);display:flex;align-items:center;gap:6px}
+.money-sublabel::before{content:"●";color:#2ECC71;font-size:8px}
+
+.date-strip{position:relative;display:flex;gap:0;margin-bottom:16px;
+  background:rgba(255,255,255,.03);border-radius:14px;overflow:hidden;
+  border:1px solid rgba(255,255,255,.07);padding:3px}
+.date-pip{flex:1;text-align:center;padding:9px 4px;font-size:12px;font-weight:700;border-radius:11px;
+  color:var(--dim);cursor:pointer;transition:all .2s}
+.date-pip.today{color:#1a1206;background:linear-gradient(135deg,var(--gold-br),var(--gold));
+  box-shadow:0 4px 14px -4px rgba(212,175,55,.6)}
+.date-pip.selected:not(.today){color:var(--text);background:rgba(212,175,55,.16);
+  border:1px solid rgba(212,175,55,.5)}
+
+.money-quickstats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.qstat-card{background:var(--sheet2);border:1px solid var(--line);border-radius:16px;padding:14px}
+.qstat-icon{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;
+  font-size:16px;margin-bottom:8px}
+.qstat-icon.gold{background:rgba(212,175,55,.14)}
+.qstat-icon.teal{background:rgba(78,205,196,.14)}
+.qstat-val{font-family:var(--f-d);font-size:19px;font-weight:800;color:var(--text);line-height:1.15}
+.qstat-lbl{font-size:11px;color:var(--dim);margin-top:2px;font-weight:600}
+
+.money-card{background:linear-gradient(165deg,var(--sheet2),#151520);border:1px solid var(--line);
+  border-radius:18px;padding:18px;margin-bottom:12px;box-shadow:0 12px 30px -18px rgba(0,0,0,.5)}
+.money-card-hdr{display:flex;align-items:center;gap:8px;margin-bottom:2px;font-size:11.5px;
+  font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:.08em}
+.money-card-row{display:flex;justify-content:space-between;align-items:center;
+  padding:11px 0;border-bottom:1px solid rgba(255,255,255,.05)}
+.money-card-row:last-child{border-bottom:none}
+.money-card-lbl{font-size:13px;color:var(--dim);display:flex;align-items:center;gap:7px}
+.kpi-period-btn{flex:1;padding:9px 6px;border-radius:10px;border:1px solid var(--line);background:var(--sheet2);
+  color:var(--dim);font-size:12.5px;font-weight:700;cursor:pointer}
+.kpi-period-btn.active{background:linear-gradient(135deg,#C8960C,#F2CC6B);color:#0d0d0d;border:none;
+  box-shadow:0 6px 16px -4px rgba(200,150,12,.5)}
+#kpi-dashboard-card{position:relative;overflow:hidden}
+#kpi-dashboard-card::before{content:"";position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,transparent,#F2CC6B,#C8960C,#F2CC6B,transparent);
+  box-shadow:0 0 12px rgba(242,204,107,.5)}
+.kpi-hero-wrap{position:relative;width:150px;height:150px;margin:10px auto 6px;
+  filter:drop-shadow(0 14px 22px rgba(0,0,0,.45))}
+.kpi-ring-outer{position:absolute;inset:0;border-radius:50%;
+  background:conic-gradient(from 0deg,#F2CC6B,#C8960C,#8a5e14,#C8960C,#F2CC6B);
+  animation:kpiRingSpin 10s linear infinite}
+@keyframes kpiRingSpin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+.kpi-ring-inner{position:absolute;inset:8px;border-radius:50%;
+  background:radial-gradient(circle at 35% 30%,#1c1608,#08050a 75%);
+  box-shadow:inset 0 4px 12px rgba(0,0,0,.6),0 0 0 1px rgba(255,255,255,.05);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+.kpi-ring-label{font-size:9.5px;font-weight:700;letter-spacing:.06em;color:#9a9a9a;line-height:1.3;margin-bottom:4px}
+.kpi-ring-value{font-family:var(--f-d);font-size:26px;font-weight:800;
+  background:linear-gradient(135deg,#F2CC6B,#C8960C);-webkit-background-clip:text;background-clip:text;
+  -webkit-text-fill-color:transparent;filter:drop-shadow(0 0 10px rgba(242,204,107,.3))}
+.money-card-val{font-size:15px;font-weight:800;color:var(--text);font-family:var(--f-d)}
+.money-card-val.good{color:#2ECC71}
+.money-card-val.bad{color:#E63946}
+
+#money-cashout-btn{position:relative;overflow:hidden}
+#money-cashout-btn::after{content:"";position:absolute;inset:0;
+  background:linear-gradient(120deg,transparent 30%,rgba(255,255,255,.35) 48%,transparent 66%);
+  transform:translateX(-120%);transition:none}
+#money-cashout-btn:not(:disabled):hover::after{transform:translateX(120%);transition:transform .7s ease}
+#money-cashout-btn:disabled{opacity:.4;cursor:default;box-shadow:none!important}
+
+/* ── ኢE Money balance card ── */
+.etel-money-card{position:relative;overflow:hidden;background:linear-gradient(135deg,#0f1f18 0%,#0c1420 100%);
+  border:1px solid rgba(78,205,196,.28);border-radius:18px;padding:18px;margin-bottom:12px;
+  box-shadow:0 12px 30px -18px rgba(0,0,0,.5)}
+.etel-money-card::before{content:"";position:absolute;top:-40%;right:-15%;width:55%;height:130%;
+  background:radial-gradient(closest-side,rgba(78,205,196,.14),transparent 70%);pointer-events:none}
+.etel-money-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;position:relative}
+.etel-money-title{font-size:12px;font-weight:700;color:var(--teal);text-transform:uppercase;
+  letter-spacing:.08em;display:flex;align-items:center;gap:6px}
+.etel-money-info{width:16px;height:16px;border-radius:50%;background:rgba(78,205,196,.15);
+  color:var(--teal);font-size:10px;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.etel-money-bal{font-family:var(--f-d);font-size:32px;font-weight:800;color:var(--text);
+  line-height:1.05;margin-bottom:3px;position:relative}
+.etel-money-bal.neg{color:#FF7043}
+.etel-money-sub{font-size:11.5px;color:var(--dim);margin-bottom:14px;line-height:1.5;position:relative}
+.etel-money-btns{display:flex;gap:8px;position:relative;flex-wrap:wrap}
+.etel-money-btns .etel-money-btn{flex:1 1 auto;min-width:118px}
+.etel-money-btn{flex:1;padding:11px;border-radius:12px;border:1px solid rgba(78,205,196,.35);
+  background:rgba(78,205,196,.1);color:var(--teal);font-size:12.5px;font-weight:800;cursor:pointer;
+  transition:all .15s;text-align:center}
+.etel-money-btn:active{transform:scale(.97);background:rgba(78,205,196,.2)}
+.etel-money-btn.ghost{background:transparent;border-color:rgba(255,255,255,.14);color:var(--dim)}
+.etel-money-pending{margin-top:10px;padding:9px 11px;border-radius:10px;background:rgba(212,175,55,.09);
+  border:1px solid rgba(212,175,55,.28);font-size:11px;color:var(--gold-lt);position:relative;display:none}
+
+.money-section-title{font-size:12px;font-weight:700;color:var(--dim);
+  text-transform:uppercase;letter-spacing:.08em;margin:20px 2px 10px;display:flex;align-items:center;justify-content:space-between}
+.money-section-title .msc-count{font-size:11px;font-weight:700;color:var(--gold-lt);
+  background:rgba(212,175,55,.1);padding:2px 8px;border-radius:999px}
+
+.history-row{position:relative;display:flex;align-items:center;gap:12px;
+  background:var(--sheet2);border:1px solid var(--line);border-radius:15px;
+  padding:13px 14px;margin-bottom:8px;transition:all .15s}
+.history-row:active{transform:scale(.985);background:#1d1d2c}
+.history-icon{width:40px;height:40px;border-radius:12px;flex-shrink:0;display:flex;align-items:center;
+  justify-content:center;font-size:17px;background:rgba(212,175,55,.1)}
+.history-meta{flex:1;min-width:0}
+.history-meta strong{display:block;font-size:13.5px;color:var(--text);font-weight:700;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.history-meta small{display:block;font-size:11px;color:var(--dim);margin-top:2px}
+.history-fare{font-family:var(--f-d);font-size:15px;font-weight:800;color:var(--gold-lt);flex-shrink:0}
+
+.compare-row{background:var(--sheet2);border:1px solid var(--line);border-radius:14px;
+  padding:14px;margin-bottom:10px;display:flex;align-items:center;gap:12px;cursor:pointer}
+.compare-icon{width:40px;height:40px;border-radius:12px;background:rgba(212,175,55,.08);
+  display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.compare-text{font-size:13px;color:var(--text);font-weight:600}
+.compare-sub{font-size:11px;color:var(--dim);margin-top:2px}
+
+/* ── Chats page ── */
+.chats-page{padding:80px 16px 20px}
+.news-carousel{display:flex;gap:10px;overflow-x:auto;margin-bottom:18px;padding-bottom:4px}
+.news-carousel::-webkit-scrollbar{display:none}
+.news-card{flex:0 0 140px;border-radius:14px;overflow:hidden;position:relative;
+  background:var(--sheet2);border:1px solid var(--line);cursor:pointer}
+.news-card-img{width:100%;height:80px;display:flex;align-items:center;justify-content:center;
+  font-size:32px;background:rgba(212,175,55,.06)}
+.news-card-label{padding:8px;font-size:11px;font-weight:600;color:var(--text);line-height:1.3}
+.news-new-badge{position:absolute;top:6px;left:6px;
+  background:var(--gold);color:#1a1206;font-size:9px;font-weight:800;
+  padding:2px 6px;border-radius:6px}
+.chat-row{display:flex;align-items:center;gap:12px;padding:14px 0;
+  border-bottom:1px solid rgba(255,255,255,.05);cursor:pointer}
+.chat-row:last-child{border-bottom:none}
+.chat-icon{width:42px;height:42px;border-radius:50%;display:flex;align-items:center;
+  justify-content:center;font-size:18px;flex-shrink:0}
+.chat-title{font-size:14px;font-weight:700;color:var(--text)}
+.chat-sub{font-size:12px;color:var(--dim);margin-top:2px}
+.chat-arrow{margin-left:auto;font-size:16px;color:var(--dim)}
+
+/* ── Profile page ── */
+.profile-page{padding:0 0 24px}
+.profile-cover{position:relative;padding:88px 16px 20px;margin-bottom:16px;overflow:hidden;
+  background:
+    radial-gradient(120% 100% at 15% 0%, rgba(212,175,55,.35) 0%, transparent 55%),
+    radial-gradient(120% 100% at 100% 0%, rgba(78,205,196,.2) 0%, transparent 50%),
+    linear-gradient(180deg, rgba(10,8,4,.55) 0%, var(--bg) 92%),
+    url('../img/hero/driver-home.jpg');
+  background-size: cover;
+  background-position: center 25%;
+  border-bottom:1px solid rgba(212,175,55,.14)}
+.profile-location-chip{position:absolute;top:88px;right:16px;display:inline-flex;align-items:center;gap:5px;
+  padding:5px 11px;border-radius:999px;background:rgba(255,255,255,.06);border:1px solid var(--line);
+  font-family:var(--f);font-size:10px;font-weight:600;color:var(--dim);letter-spacing:.02em}
+.profile-top{display:flex;align-items:center;gap:14px;position:relative;z-index:1}
+.profile-avatar-wrap{position:relative;flex-shrink:0}
+.profile-avatar{width:78px;height:78px;border-radius:50%;
+  background:linear-gradient(135deg,var(--gold-br),var(--gold));border:3px solid rgba(212,175,55,.4);
+  display:flex;align-items:center;justify-content:center;font-family:var(--f-d);font-size:25px;font-weight:800;
+  color:#1a1206;box-shadow:0 14px 32px -10px rgba(212,175,55,.6)}
+.profile-avatar-dot{position:absolute;bottom:3px;right:3px;width:16px;height:16px;border-radius:50%;
+  background:var(--green);border:3px solid #14141f;box-shadow:0 0 0 2px rgba(46,204,113,.2)}
+.profile-name{font-family:var(--f-d);font-size:21px;font-weight:800;color:var(--text)}
+.profile-phone{font-size:12px;color:var(--dim);margin-top:3px}
+.profile-verified-badge{display:inline-flex;align-items:center;gap:5px;margin-top:9px;padding:5px 12px;
+  border-radius:999px;background:rgba(212,175,55,.12);border:1px solid rgba(212,175,55,.32);
+  color:var(--gold-lt);font-family:var(--f);font-size:10.5px;font-weight:700;letter-spacing:.02em}
+.invite-btn{margin-left:auto;padding:8px 14px;border-radius:12px;flex-shrink:0;align-self:flex-start;
+  background:rgba(212,175,55,.12);border:1px solid rgba(212,175,55,.3);
+  color:var(--gold-lt);font-family:var(--f);font-size:12px;font-weight:700;cursor:pointer}
+.profile-body{padding:0 16px}
+
+/* vehicle card */
+.vehicle-card{background:var(--sheet2);border:1px solid var(--line);border-radius:16px;
+  padding:16px;margin-bottom:14px;display:flex;align-items:center;gap:14px}
+.vehicle-icon{font-size:36px;flex-shrink:0}
+.vehicle-name{font-size:14px;font-weight:800;color:var(--text)}
+.vehicle-plate-box{display:inline-block;padding:4px 10px;border:2px solid var(--text);
+  border-radius:6px;font-family:monospace;font-size:13px;font-weight:900;
+  color:var(--text);letter-spacing:.1em;margin-top:4px}
+
+/* stats pills */
+.profile-stats{display:flex;gap:10px;margin-bottom:16px}
+.pstat{flex:1;background:var(--sheet2);border:1px solid var(--line);border-radius:14px;
+  padding:14px 10px;text-align:center}
+.pstat-icon{font-size:15px;margin-bottom:4px;opacity:.85}
+.pstat-val{font-family:var(--f-d);font-size:19px;font-weight:800;color:var(--gold-lt)}
+.pstat-lbl{font-size:9.5px;color:var(--dim);margin-top:3px;text-transform:uppercase;letter-spacing:.05em}
+
+/* profile menu rows */
+.profile-section{background:var(--sheet2);border:1px solid var(--line);border-radius:16px;
+  overflow:hidden;margin-bottom:12px}
+.profile-row{display:flex;align-items:center;gap:12px;padding:14px 16px;
+  border-bottom:1px solid rgba(255,255,255,.04);cursor:pointer;transition:background .15s}
+.profile-row:last-child{border-bottom:none}
+.profile-row:active{background:rgba(255,255,255,.04)}
+.profile-row-icon{width:36px;height:36px;border-radius:10px;
+  background:rgba(255,255,255,.06);display:flex;align-items:center;
+  justify-content:center;font-size:16px;flex-shrink:0}
+.profile-row-label{font-size:14px;color:var(--text);font-weight:600}
+.profile-row-sub{font-size:11px;color:var(--dim);margin-top:2px}
+.profile-row-arrow{margin-left:auto;color:var(--dim);font-size:14px}
+.profile-row-badge{margin-left:auto;background:#E63946;color:#fff;
+  font-size:11px;font-weight:800;padding:2px 8px;border-radius:10px}
+.profile-row.danger .profile-row-label{color:#E63946}
+.app-version{font-size:11px;color:var(--dim);text-align:center;margin-top:16px;padding-bottom:8px}
+
+/* driver and active ride tabs inside requests sheet */
+.req-inner-tabs{display:flex;gap:6px;margin-bottom:12px}
+.req-inner-tab{flex:1;padding:9px 4px;border-radius:10px;border:1px solid var(--line);
+  cursor:pointer;font-family:var(--f);font-size:11px;font-weight:700;
+  color:var(--dim);background:rgba(255,255,255,.02);transition:all .2s}
+.req-inner-tab.active{color:#1a1206;background:linear-gradient(135deg,var(--gold-br),var(--gold));
+  border-color:transparent}
+.req-inner-view{display:none}
+.req-inner-view.active{display:block}
+
+@keyframes dtIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
+</style>
+    <!-- etel-phase5.css, etel-design-v4.css, etel-responsive.css now folded into css/driver-bundle.css above -->
+</head>
+<body class="dark-page" style="background:#08080f;margin:0;padding:0">
+<!-- Custom splash overlay - shows the group master logo briefly on
+     open. Deliberately separate from the manifest icons/ files (which
+     stay each app's own distinct branding for the home-screen icon) -
+     this only affects what's shown in-page while the app loads,
+     nothing about how it appears on the home screen or in "Add to
+     Home Screen"/APK builds. Removes itself automatically; if this
+     script fails to run for any reason the page underneath is
+     completely unaffected, it just won't have a splash. -->
+<div id="etel-master-splash" style="position:fixed;inset:0;z-index:999999;display:flex;align-items:center;justify-content:center;background:linear-gradient(155deg,#1A0A00 0%,#3A2008 15%,#6A4010 28%,#9A6820 40%,#C8922A 52%,#D4AF37 58%,#C8922A 64%,#9A6820 76%,#5A3808 90%,#1A0A00 100%);transition:opacity .35s ease;">
+  <img src="/delivery/assets/images/master-logo-splash.png" alt="ETEL" style="width:240px;height:240px;object-fit:contain;border-radius:50%;box-shadow:0 8px 40px rgba(0,0,0,.5);animation:etelSplashPulse 1.4s ease-in-out infinite;">
+</div>
+<style>@keyframes etelSplashPulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.05);opacity:.88}}</style>
+<script>
+(function(){
+  setTimeout(function(){
+    var el = document.getElementById('etel-master-splash');
+    if (!el) return;
+    el.style.opacity = '0';
+    setTimeout(function(){ if (el.parentNode) el.parentNode.removeChild(el); }, 400);
+  }, 900);
+})();
+</script>
+
+<script>
+  /* Restore sidebar collapsed preference before paint, to avoid a flash */
+  try { if (localStorage.getItem('etel_driver_sidebar_collapsed') === '1') document.body.classList.add('sidebar-collapsed'); } catch (e) {}
+</script>
+
+<!-- Update-available banner. Two independent things can show this
+     (both just do getElementById('update-banner').style.display='flex'):
+     core.js's silentPatchCheck() polling get_patch_info on load, and the
+     service-worker 'updatefound' handler further down in core.js. Hidden
+     by default; deliberately does NOT auto-reload - see the earlier
+     "opt-in, not forced" requirement this whole release system was
+     built around. -->
+<div id="update-banner" style="display:none;position:fixed;top:0;left:0;right:0;z-index:9999;
+  background:linear-gradient(135deg,#2a2110,#1a1206);border-bottom:1px solid rgba(212,175,55,.4);
+  padding:10px 14px;align-items:center;gap:10px;font-size:13px;color:#F5E7B8">
+  <span style="font-size:16px">🔄</span>
+  <span style="flex:1">A new version (<span class="upd-ver">—</span>) is available.</span>
+  <button onclick="location.reload(true)" style="background:linear-gradient(135deg,#FFE9A8,#D4AF37);
+    color:#1a1a2e;border:none;border-radius:8px;padding:7px 14px;font-weight:800;font-size:12.5px;cursor:pointer">
+    Update Now
+  </button>
+  <button onclick="document.getElementById('update-banner').style.display='none'" aria-label="Dismiss"
+    style="background:transparent;border:none;color:#F5E7B8;opacity:.7;font-size:18px;cursor:pointer;padding:0 4px">
+    ×
+  </button>
+</div>
+
+<!-- SIDEBAR (desktop/wide viewports only -- hidden on phone widths) -->
+<nav class="driver-sidebar">
+  <div class="sidebar-header">
+    <div class="sidebar-logo"><img src="../assets/images/etel-driver-coin.png" alt="ETEL Driver"/></div>
+    <div class="sidebar-brand">ETEL Driver</div>
+    <button class="sidebar-toggle" onclick="toggleSidebar()" title="Collapse/expand sidebar">⋮</button>
+  </div>
+  <div class="sidebar-nav">
+    <div class="sidebar-section-label">Menu</div>
+    <button class="sidebar-item nav-tab active" data-page="requests" onclick="switchPage('requests')" title="Requests">
+      <span class="si-icon-box"><span class="si-icon">▶</span></span><span class="si-label">Requests</span>
+    </button>
+    <button class="sidebar-item nav-tab" data-page="money" onclick="switchPage('money')" title="Money">
+      <span class="si-icon-box"><span class="si-icon">💳</span></span><span class="si-label">Money</span>
+    </button>
+    <button class="sidebar-item nav-tab" data-page="chats" onclick="switchPage('chats')" title="Chats">
+      <span class="si-icon-box"><span class="si-icon">💬</span></span><span class="si-label">Chats</span>
+    </button>
+    <button class="sidebar-item nav-tab" data-page="profile" onclick="switchPage('profile')" title="Profile">
+      <span class="si-icon-box"><span class="si-icon">👤</span></span><span class="si-label">Profile</span>
+    </button>
+  </div>
+  <div class="sidebar-footer">
+    <button class="sidebar-item" onclick="doLogout()" title="Exit">
+      <span class="si-icon-box si-icon-box-danger"><span class="si-icon">🚪</span></span><span class="si-label">Exit</span>
+    </button>
+  </div>
+</nav>
+
+
+<!-- MAP — fixed fullscreen, behind everything -->
+<div id="driver-map"></div>
+<div id="driver-toasts"></div>
+
+<!-- Full-map toggle: hides the panel below to show the map full-screen, and back -->
+<button id="drv-map-expand-btn" onclick="toggleDriverSheet()" title="Full map">⤢</button>
+
+<!-- UNAVAIL BANNER -->
+<div class="drv-unavail-banner" id="unavail-banner">
+  Orders unavailable <span style="opacity:.7;margin-left:8px">›</span>
+</div>
+
+<!-- TOP STATUS BAR -->
+<div class="drv-topbar">
+  <button class="topbar-sidebar-btn" onclick="toggleSidebar()" title="Show/hide sidebar">☰</button>
+  <div class="drv-logo-box"><img src="../assets/images/etel-driver-coin.png" alt="ETEL Driver"/></div>
+  <div>
+    <div class="drv-title">ETEL Driver</div>
+    <div class="drv-subtitle" id="status-text">Offline · Slide to go online</div>
+  </div>
+  <!-- Online status dot (shown when online) -->
+  <div class="drv-online-pill online" id="online-status-pill" style="display:none">
+    <div class="dot"></div>Online
+  </div>
+  <button id="battery-tip-help-btn" onclick="_showBatteryTipModal(_detectBatteryAggressiveOEM() || {brand:'your phone', steps:['Open your phone\'s Settings \u2192 Battery, find this browser app, and allow it to run in the background / remove it from any battery-saving or auto-close list.','Open your recent-apps switcher, find this browser, and lock or pin its card so the system does not close it.']})" style="display:none;background:none;border:none;color:inherit;opacity:.55;font-size:13px;cursor:pointer;padding:4px 8px" title="Why did my online reminder stop?">Reminder not showing?</button>
+  <!-- Power-off button (shown when online) -->
+  <button class="drv-poweroff-btn" id="poweroff-btn" onclick="confirmGoOffline()" style="display:none" title="Go offline">
+    ⏻
+  </button>
+</div>
+
+<!-- GPS OFFLINE / RECONNECTING BADGE -->
+<div id="gps-offline-badge" style="display:none;align-items:center;gap:8px;background:rgba(230,81,0,.14);border:1px solid rgba(230,81,0,.4);color:#FFB74D;font-size:12.5px;font-weight:600;padding:8px 14px;margin:0 12px 8px;border-radius:10px">
+  <span style="font-size:15px">📡</span>
+  <span>No connection — still tracking your location locally, will sync automatically once back online.</span>
+</div>
+
+<!-- MAIN SCROLL AREA -->
+<div class="drv-main" id="drv-main">
+
+  <!-- PAGE: REQUESTS -->
+  <div class="drv-page active" id="page-requests">
+
+    <!-- map space -->
+    <div style="height:50vh;min-height:220px;background:#08080f"></div>
+
+    <!-- bottom sheet -->
+    <div class="req-sheet">
+
+      <!-- Slide-to-go-online (shown when offline) -->
+      <div class="slide-online-wrap" id="slide-online-wrap">
+        <div class="slide-online-track" id="slide-online-track">
+          <div class="slide-online-fill" id="slide-online-fill"></div>
+          <div class="slide-online-label">
+            <span class="slide-online-arrow">‹</span>
+            <span>Slide to go online</span>
+          </div>
+          <div class="slide-online-thumb" id="slide-online-thumb">◀</div>
+        </div>
+      </div>
+
+      <!-- Priority + today strip -->
+      <div class="stats-strip">
+        <div class="stat-cell">
+          <div class="stat-icon">🏆</div>
+          <div>
+            <div class="stat-val" id="stat-priority">+0</div>
+            <div class="stat-lbl">Priority</div>
+          </div>
+        </div>
+        <div class="stat-cell">
+          <div class="stat-icon">💳</div>
+          <div>
+            <div class="stat-val" id="stat-trips-today">0 trips</div>
+            <div class="stat-lbl" id="stat-etb-today">ETB 0</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Daily goal card -->
+      <div class="goal-card" id="goal-card">
+        <div class="goal-header">
+          <div>
+            <div class="goal-trips" id="goal-title">2 trips goal</div>
+            <div class="goal-date" id="goal-date">Today · daily</div>
+          </div>
+          <div class="goal-bonus" id="goal-bonus">—</div>
+        </div>
+        <div class="goal-bar"><div class="goal-bar-fill" id="goal-bar-fill" style="width:0%"></div></div>
+        <div class="goal-progress" id="goal-progress" style="font-size:11.5px;color:var(--dim);margin:6px 0 2px">Loading your trips today…</div>
+        <div class="goal-chips" id="goal-chips">
+          <div style="width:100%;text-align:center;padding:16px;color:var(--dim);font-size:12px">Loading goals…</div>
+        </div>
+      </div>
+
+      <!-- Street Hail + Requests (always visible, no inner tabs) -->
+      <button class="hail-btn-full" onclick="openHailModal()">🚖 Street Hail — link a customer</button>
+
+      <!-- Active ride card (shown when driver has a ride) -->
+      <div id="active-ride-container" style="margin-bottom:8px"></div>
+
+      <!-- Nearby requests list -->
+      <div id="requests-list">
+        <div class="empty-state"><div class="ei">📴</div><p>Go online to see nearby ride requests</p></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- PAGE: MONEY -->
+  <div class="drv-page" id="page-money">
+    <div class="money-page">
+
+      <!-- Hero earnings card -->
+      <div class="money-hero">
+        <div class="money-today-big">
+          <div class="money-label">Today's Earnings</div>
+          <div class="money-amount" id="money-amount">ETB 0</div>
+          <div class="money-sublabel" id="money-trips-lbl">0 trips completed</div>
+        </div>
+
+        <!-- Date strip (last 7 days) -->
+        <div class="date-strip" id="date-strip"></div>
+
+        <!-- Quick stats -->
+        <div class="money-quickstats">
+          <div class="qstat-card">
+            <div class="qstat-icon gold">💵</div>
+            <div class="qstat-val" id="qstat-available">ETB 0</div>
+            <div class="qstat-lbl">Available to cash out</div>
+          </div>
+          <div class="qstat-card">
+            <div class="qstat-icon teal">📈</div>
+            <div class="qstat-val" id="qstat-alltime">ETB 0</div>
+            <div class="qstat-lbl">Total earned — all trips</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- KPI dashboard: net ETB/hour is the headline number -->
+      <div class="money-card" id="kpi-dashboard-card">
+        <div class="money-card-hdr">📊 Your Performance</div>
+        <div style="display:flex;gap:6px;margin-bottom:12px" id="kpi-period-toggle">
+          <button class="kpi-period-btn active" data-period="today" onclick="loadDriverKpiSummary('today', this)">Today</button>
+          <button class="kpi-period-btn" data-period="week" onclick="loadDriverKpiSummary('week', this)">This Week</button>
+          <button class="kpi-period-btn" data-period="month" onclick="loadDriverKpiSummary('month', this)">This Month</button>
+        </div>
+        <div class="kpi-hero-wrap">
+          <div class="kpi-ring-outer"></div>
+          <div class="kpi-ring-inner">
+            <div class="kpi-ring-label">NET ETB<br>PER HOUR</div>
+            <div id="kpi-net-per-hour" class="kpi-ring-value">—</div>
+          </div>
+        </div>
+        <div id="kpi-net-per-hour-note" style="text-align:center;font-size:11.5px;color:#9a9a9a;margin-top:10px"></div>
+        <div class="money-card-row"><div class="money-card-lbl">✅ Completed rides</div><div class="money-card-val" id="kpi-rides">—</div></div>
+        <div class="money-card-row"><div class="money-card-lbl">💰 Gross fares</div><div class="money-card-val" id="kpi-gross">—</div></div>
+        <div class="money-card-row"><div class="money-card-lbl">🧾 Platform fee (5%)</div><div class="money-card-val" id="kpi-fee">—</div></div>
+        <div class="money-card-row"><div class="money-card-lbl">💵 Net earnings (95%)</div><div class="money-card-val good" id="kpi-net">—</div></div>
+        <div class="money-card-row"><div class="money-card-lbl">🛣️ Distance driven</div><div class="money-card-val" id="kpi-km">—</div></div>
+        <div class="money-card-row"><div class="money-card-lbl">⏱️ Online time</div><div class="money-card-val" id="kpi-hours">—</div></div>
+        <div class="money-card-row"><div class="money-card-lbl">⛽ Fuel cost <span id="kpi-fuel-rate-tag" style="font-size:10px;color:#9a9a9a"></span></div><div class="money-card-val" id="kpi-fuel-cost">—</div></div>
+        <div class="money-card-row"><div class="money-card-lbl">💰 Net after fuel</div><div class="money-card-val good" id="kpi-net-after-fuel">—</div></div>
+      </div>
+
+      <!-- Fuel management -->
+      <div class="money-card" id="fuel-management-card">
+        <div class="money-card-hdr">⛽ Fuel Management</div>
+        <div style="font-size:11.5px;color:#9a9a9a;margin-bottom:12px;line-height:1.5">
+          Log every fill-up with your odometer reading. Once you have 2+ logs, your real cost per km
+          replaces the ~8 ETB/km estimate everywhere on this page.
+        </div>
+        <button class="kpi-period-btn active" style="width:100%;margin-bottom:12px" onclick="openFuelLogForm()">➕ Log a Fill-up</button>
+        <div id="fuel-log-list" style="font-size:12.5px;color:#9a9a9a">Loading…</div>
+      </div>
+
+      <!-- Cash-out card -->
+      <div class="money-card">
+        <div class="money-card-hdr">💳 Payout</div>
+        <div class="money-card-row">
+          <div class="money-card-lbl">🏦 Available to cash out</div>
+          <div class="money-card-val good" id="money-balance">ETB 0</div>
+        </div>
+        <div class="money-card-row">
+          <div class="money-card-lbl">🤝 Service partner</div>
+          <div class="money-card-val">Etel Group</div>
+        </div>
+        <div class="money-card-row">
+          <div class="money-card-lbl">💰 Total earned — all trips</div>
+          <div class="money-card-val good" id="money-total">ETB 0</div>
+        </div>
+        <div class="money-card-row" style="border-top:1px dashed rgba(255,255,255,.08);padding-top:10px">
+          <div class="money-card-lbl" style="opacity:.75">💳 From ኢE Pay trips (cashout-eligible)</div>
+          <div class="money-card-val" id="money-wallet-earned" style="font-size:13px;opacity:.85">ETB 0</div>
+        </div>
+        <div style="font-size:10.5px;color:var(--text-dim);opacity:.7;margin-top:4px;line-height:1.4">"Available to cash out" only includes ኢE Pay trips — cash trips are already in your hand, so they're counted in your total but not added here.</div>
+        <button id="money-cashout-btn" onclick="openCashoutModal()" style="width:100%;margin-top:12px;padding:14px;border-radius:12px;border:none;background:linear-gradient(135deg,#FFE9A8,#D4AF37);color:#1a1a2e;font-size:15px;font-weight:800;cursor:pointer" disabled>
+          &#x1F4B0; Cash Out to &#x1298;E Pay
+        </button>
+        <div id="cashout-status" style="margin-top:8px;text-align:center;font-size:12px;min-height:16px"></div>
+      </div>
+
+      <!-- ኢE Money balance card (prepaid commission balance) -->
+      <div class="etel-money-card">
+        <div class="etel-money-hdr">
+          <div class="etel-money-title">🅴 ኢE Money Balance</div>
+          <div class="etel-money-info" onclick="openEtelMoneyInfo()">ⓘ</div>
+        </div>
+        <div class="etel-money-bal" id="etel-money-bal">ETB 0</div>
+        <div class="etel-money-sub">5% of every completed trip is deducted from here automatically. Top up any time so it never runs low.</div>
+        <div class="etel-money-btns">
+          <button class="etel-money-btn" onclick="openEtelMoneyTopup()">➕ Top Up via ኢE Pay</button>
+          <button class="etel-money-btn ghost" onclick="openManualTopupModal()">🧾 Bank / Cash</button>
+          <button class="etel-money-btn ghost" onclick="openTopupHistoryModal()">🕘 History</button>
+        </div>
+        <div class="etel-money-pending" id="etel-money-pending"></div>
+      </div>
+
+      <!-- Ride history -->
+      <div class="money-section-title"><span>📋 Trip History</span><span class="msc-count" id="history-count" style="display:none"></span></div>
+      <div id="driver-history-list">
+        <div style="text-align:center;padding:28px;color:var(--dim);font-size:13px">Loading trips…</div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- PAGE: CHATS -->
+  <div class="drv-page" id="page-chats">
+    <div class="chats-page">
+
+      <div class="money-label" data-i18n="money_label" style="margin-bottom:14px;font-size:15px;font-weight:800;color:var(--text)">Messages</div>
+
+      <!-- Active ride chat -->
+      <div id="chats-active-ride" style="margin-bottom:16px;"></div>
+
+      <!-- News carousel -->
+      <div class="news-carousel">
+        <div class="news-card" onclick="openLearningCard('safety')">
+          <div class="news-card-img">🛡️</div>
+          <div class="news-new-badge">New</div>
+          <div class="news-card-label">About safety</div>
+        </div>
+        <div class="news-card" onclick="openLearningCard('service')">
+          <div class="news-card-img">📱</div>
+          <div class="news-new-badge">New</div>
+          <div class="news-card-label">የደህንነት አገልግሎቶች</div>
+        </div>
+        <div class="news-card" onclick="openLearningCard('earnings')">
+          <div class="news-card-img">💰</div>
+          <div class="news-new-badge">New</div>
+          <div class="news-card-label">እንዴት ተጨማሪ ገቢ ማግኘት ይቻላል?</div>
+        </div>
+        <div class="news-card" onclick="openLearningCard('tax')">
+          <div class="news-card-img">📋</div>
+          <div class="news-card-label">ቅናሽ ታክስ — እርስዎ እንዴት</div>
+        </div>
+      </div>
+
+      <!-- Chat list -->
+      <div style="background:var(--sheet2);border:1px solid var(--line);border-radius:16px;overflow:hidden">
+        <div class="chat-row" onclick="openSupportContact()">
+          <div class="chat-icon" style="background:rgba(46,204,113,.12)">🤝</div>
+          <div>
+            <div class="chat-title">Support</div>
+            <div class="chat-sub">Get help with your account</div>
+          </div>
+          <div class="chat-arrow">›</div>
+        </div>
+        <div class="chat-row" onclick="openAnnouncements('news')">
+          <div class="chat-icon" style="background:rgba(212,175,55,.1)">📰</div>
+          <div>
+            <div class="chat-title">Pro news</div>
+            <div class="chat-sub">Latest updates for drivers</div>
+          </div>
+          <div class="chat-arrow">›</div>
+        </div>
+        <div class="chat-row" onclick="openAnnouncements('notification')">
+          <div class="chat-icon" style="background:rgba(96,180,255,.1)">🔔</div>
+          <div>
+            <div class="chat-title">Support notifications</div>
+            <div class="chat-sub">Alerts and reminders</div>
+          </div>
+          <div class="chat-arrow">›</div>
+        </div>
+        <div class="chat-row" onclick="openAnnouncements('partner')">
+          <div class="chat-icon" style="background:rgba(212,175,55,.08)">🏢</div>
+          <div>
+            <div class="chat-title">From Etel Group</div>
+            <div class="chat-sub">Partner announcements</div>
+          </div>
+          <div class="chat-arrow">›</div>
+        </div>
+        <div class="chat-row" onclick="showDriverToast('No warnings — you are in good standing','ok')">
+          <div class="chat-icon" style="background:rgba(230,57,70,.1)">⚠️</div>
+          <div>
+            <div class="chat-title">Warnings</div>
+            <div class="chat-sub">Account restrictions</div>
+          </div>
+          <div class="chat-arrow">›</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- PAGE: PROFILE -->
+  <div class="drv-page" id="page-profile">
+    <div class="profile-page">
+
+      <div class="profile-cover">
+        <div class="profile-location-chip">📍 Hawassa, Ethiopia</div>
+        <!-- Top: avatar + name + invite -->
+        <div class="profile-top">
+          <div class="profile-avatar-wrap">
+            <div class="profile-avatar" id="prof-avatar">--</div>
+            <div class="profile-avatar-dot"></div>
+          </div>
+          <div>
+            <div class="profile-name" id="prof-name">Loading…</div>
+            <div class="profile-phone" id="prof-phone"></div>
+            <div class="profile-verified-badge">🚗 VERIFIED DRIVER</div>
+          </div>
+          <button class="invite-btn" onclick="openReferral()">👥 Invite</button>
+        </div>
+      </div>
+
+      <div class="profile-body">
+
+      <!-- Stats pills: priority + rating -->
+      <div class="profile-stats">
+        <div class="pstat">
+          <div class="pstat-icon">⚡</div>
+          <div class="pstat-val" id="prof-priority">+0</div>
+          <div class="pstat-lbl">Priority</div>
+        </div>
+        <div class="pstat">
+          <div class="pstat-icon">⭐</div>
+          <div class="pstat-val" id="prof-rating">5.0</div>
+          <div class="pstat-lbl">Rating</div>
+        </div>
+        <div class="pstat">
+          <div class="pstat-icon">🛣️</div>
+          <div class="pstat-val" id="prof-rides">0</div>
+          <div class="pstat-lbl">Total rides</div>
+        </div>
+      </div>
+
+      <!-- Partner + service + payment info -->
+      <div class="profile-section">
+        <div class="profile-row">
+          <div class="profile-row-icon">🏢</div>
+          <div>
+            <div class="profile-row-label">Partner</div>
+            <div class="profile-row-sub">Etel Group</div>
+          </div>
+        </div>
+        <div class="profile-row" onclick="openReg()">
+          <div class="profile-row-icon">🛺</div>
+          <div>
+            <div class="profile-row-label">Service classes</div>
+            <div class="profile-row-sub" id="prof-service">Bajaj · 1 of 4</div>
+          </div>
+          <div class="profile-row-arrow">›</div>
+        </div>
+        <div class="profile-row" onclick="switchPage('money')">
+          <div class="profile-row-icon">💵</div>
+          <div>
+            <div class="profile-row-label">Payment &amp; earnings</div>
+            <div class="profile-row-sub" id="prof-payment-sub">Cash · tap to view balance</div>
+          </div>
+          <div class="profile-row-arrow">›</div>
+        </div>
+      </div>
+
+      <!-- Vehicle card -->
+      <div class="money-label" style="margin-bottom:8px">My vehicles</div>
+      <div class="vehicle-card" id="prof-vehicle-card">
+        <div class="vehicle-icon">🛺</div>
+        <div>
+          <div class="vehicle-name" id="prof-vehicle-name">ETEL Bajaj</div>
+          <div class="vehicle-plate-box" id="prof-plate">——</div>
+        </div>
+      </div>
+
+      <!-- Menu rows -->
+      <!-- Registration status row — hidden when onboarded -->
+      <div class="profile-section" id="prof-reg-row" style="display:flex;margin-bottom:12px">
+        <div class="profile-row" style="flex:1;background:rgba(212,175,55,.06);border-radius:16px" onclick="openReg()">
+          <div class="profile-row-icon" style="background:rgba(212,175,55,.15)">📋</div>
+          <div>
+            <div class="profile-row-label" style="color:var(--gold-lt)">Complete vehicle registration</div>
+            <div class="profile-row-sub">Add your vehicle details to start driving</div>
+          </div>
+          <div class="profile-row-arrow" style="color:var(--gold-lt)">›</div>
+        </div>
+      </div>
+
+      <div class="profile-section">
+        <div class="profile-row" onclick="openVehicleInfoEdit()">
+          <div class="profile-row-icon">🔧</div>
+          <div>
+            <div class="profile-row-label">Update Vehicle Info</div>
+            <div class="profile-row-sub">Edit your vehicle details</div>
+          </div>
+          <div class="profile-row-arrow">›</div>
+        </div>
+      </div>
+
+      <div class="profile-section">
+        <div class="profile-row" onclick="openSupportContact()">
+          <div class="profile-row-icon">🛟</div>
+          <div>
+            <div class="profile-row-label">Support &amp; Safety Center</div>
+            <div class="profile-row-sub">Help, safety guides, report an issue</div>
+          </div>
+          <div class="profile-row-arrow">›</div>
+        </div>
+        <div class="profile-row" onclick="toggleDriverLanguage()">
+          <div class="profile-row-icon">🌐</div>
+          <div>
+            <div class="profile-row-label" data-i18n="profile_language">Language</div>
+            <div class="profile-row-sub" data-i18n="profile_language_sub">English selected</div>
+          </div>
+          <div class="profile-row-arrow">›</div>
+        </div>
+      </div>
+
+      <div class="profile-section">
+        <div class="profile-row" onclick="if(confirm('This clears everything cached on THIS device - app data, cached files - then reloads. You will be logged out and need to sign in again. Continue?')) etelForceClearCacheAndReload()">
+          <div class="profile-row-icon">🧹</div>
+          <div>
+            <div class="profile-row-label">Fix app not updating</div>
+            <div class="profile-row-sub">Clear cache and reload if things look stuck or old</div>
+          </div>
+          <div class="profile-row-arrow">›</div>
+        </div>
+      </div>
+
+      <div class="profile-section">
+        <div class="profile-row danger" onclick="doLogout()">
+          <div class="profile-row-icon" style="background:rgba(230,57,70,.1)">🚪</div>
+          <div class="profile-row-label">Exit</div>
+          <div class="profile-row-arrow">›</div>
+        </div>
+      </div>
+
+      <div class="app-version" id="app-version-lbl">App version 3.7.0</div>
+
+      </div><!-- /profile-body -->
+    </div>
+  </div>
+
+</div><!-- /drv-main -->
+
+<!-- BOTTOM NAV -->
+<nav class="driver-bottom-nav">
+  <button class="nav-tab active" data-page="requests" onclick="switchPage('requests')">
+    <span class="ni">▶</span><span class="nl" data-i18n="nav_requests">Requests</span>
+  </button>
+  <button class="nav-tab" data-page="money" onclick="switchPage('money')">
+    <span class="ni">💳</span><span class="nl" data-i18n="nav_money">Money</span>
+  </button>
+  <button class="nav-tab" data-page="chats" onclick="switchPage('chats')">
+    <span class="ni">💬</span><span class="nl" data-i18n="nav_chats">Chats</span>
+  </button>
+  <button class="nav-tab" data-page="profile" onclick="switchPage('profile')">
+    <span class="ni">👤</span><span class="nl" data-i18n="nav_profile">Profile</span>
+  </button>
+</nav>
+
+<!-- ══════════════════════════════════════════════
+     DRIVER REGISTRATION WIZARD (Phase 3)
+     Shown to new drivers who haven't onboarded yet.
+     ══════════════════════════════════════════════ -->
+<div class="reg-overlay" id="reg-overlay">
+
+  <!-- Top bar -->
+  <div class="reg-topbar">
+    <div class="reg-back" id="reg-back-btn" onclick="regBack()">←</div>
+    <div>
+      <div class="reg-title" id="reg-topbar-title">Get started</div>
+      <div class="reg-sub" id="reg-topbar-sub">Driver registration</div>
+    </div>
+  </div>
+
+  <!-- Progress bar -->
+  <div class="reg-progress" id="reg-progress"></div>
+
+  <!-- Steps body -->
+  <div class="reg-body">
+
+    <!-- STEP 1: Choose service (vehicle type) -->
+    <div class="reg-step active" id="reg-step-1">
+      <div class="reg-step-title">Choose a service</div>
+      <div class="reg-step-sub">Select your vehicle type to complete trips in Hawassa</div>
+      <div class="reg-vehicle-hero" id="reg-hero">🛺</div>
+      <div class="reg-option-grid" id="reg-option-grid">
+        <div style="grid-column:1/-1;text-align:center;padding:20px;color:#999">Loading vehicle types…</div>
+      </div>
+    </div>
+
+    <!-- STEP 2: Vehicle details -->
+    <div class="reg-step" id="reg-step-2">
+      <div class="reg-step-title">Enter your vehicle details</div>
+      <div class="reg-step-sub">Enter the details of your own or rented vehicle</div>
+
+      <div class="reg-field">
+        <div class="reg-field-label" id="lbl-vtype">Type of vehicle</div>
+        <select class="reg-select" id="reg-vtype-select" onchange="regVtypeChanged(this.value)">
+        </select>
+      </div>
+
+      <div class="reg-field">
+        <div class="reg-field-label" id="lbl-make">Make / Brand</div>
+        <input class="reg-input" id="reg-make" type="text" placeholder="e.g. Bajaj, ACE, Toyota" oninput="regCheckField('make')"/>
+      </div>
+
+      <div class="reg-field">
+        <div class="reg-field-label" id="lbl-color">Color</div>
+        <div class="reg-colors">
+          <div class="reg-color selected" data-color="Black"      style="background:#1a1a1a"    onclick="regSelectColor(this)"></div>
+          <div class="reg-color"          data-color="White"      style="background:#f0f0f0;border:1px solid #ccc" onclick="regSelectColor(this)"></div>
+          <div class="reg-color"          data-color="Blue"       style="background:#1565c0"    onclick="regSelectColor(this)"></div>
+          <div class="reg-color"          data-color="Light Blue" style="background:#42a5f5"    onclick="regSelectColor(this)"></div>
+          <div class="reg-color"          data-color="Red"        style="background:#c62828"    onclick="regSelectColor(this)"></div>
+          <div class="reg-color"          data-color="Yellow"     style="background:#f9a825"    onclick="regSelectColor(this)"></div>
+          <div class="reg-color"          data-color="Green"      style="background:#2e7d32"    onclick="regSelectColor(this)"></div>
+          <div class="reg-color"          data-color="Silver"     style="background:#9e9e9e"    onclick="regSelectColor(this)"></div>
+        </div>
+        <input class="reg-input" id="reg-color-text" type="text" placeholder="Or type color..." style="margin-top:10px" oninput="regColorText(this.value)"/>
+      </div>
+
+      <div class="reg-field">
+        <div class="reg-field-label" id="lbl-year">Manufacture year</div>
+        <input class="reg-input" id="reg-year" type="number" min="2000" max="2026" placeholder="e.g. 2018" oninput="regCheckField('year')"/>
+      </div>
+
+      <div class="reg-field">
+        <div class="reg-field-label" id="lbl-plate">Vehicle plate number</div>
+        <input class="reg-input" id="reg-plate" type="text" placeholder="e.g. 3-12345 AA" style="font-family:monospace;letter-spacing:.08em;text-transform:uppercase" oninput="regCheckField('plate')"/>
+      </div>
+    </div>
+
+    <!-- STEP 3: Driver's license -->
+    <div class="reg-step" id="reg-step-3">
+      <div class="reg-step-title">Driver's license information</div>
+      <div class="reg-step-sub">Enter your license details for verification</div>
+
+      <div class="reg-field">
+        <div class="reg-field-label">Country of issue</div>
+        <select class="reg-select" id="reg-license-country">
+          <option value="Ethiopia" selected>Ethiopia</option>
+        </select>
+      </div>
+
+      <div class="reg-field">
+        <div class="reg-field-label" id="lbl-lname">Full name (on license)</div>
+        <input class="reg-input" id="reg-license-name" type="text" placeholder="First and last name" oninput="regCheckField('lname')"/>
+      </div>
+
+      <div class="reg-field">
+        <div class="reg-field-label" id="lbl-lnum">License number</div>
+        <input class="reg-input" id="reg-license-num" type="text" placeholder="Driver's license number" oninput="regCheckField('lnum')"/>
+      </div>
+
+      <div class="reg-field">
+        <div class="reg-field-label" id="lbl-ldob">Date of birth (on license)</div>
+        <input class="reg-input" id="reg-license-dob" type="date" oninput="regCheckField('ldob')"/>
+        <div style="font-size:11px;color:var(--dim);margin-top:6px">Must match your Etel-ID exactly - this is how we verify it's really you.</div>
+      </div>
+
+      <div class="reg-field">
+        <div class="reg-field-label" id="lbl-lphoto">Photo of your license (required)</div>
+        <img class="reg-photo-preview" id="reg-license-photo-preview" alt="License photo preview"/>
+        <div class="reg-photo-box" id="reg-license-photo-box" onclick="regTakeLicensePhoto()">
+          <div style="font-size:36px">🪪</div>
+          <div style="font-size:12px;color:var(--dim);margin-top:8px">Tap to photograph your license</div>
+        </div>
+        <input type="file" id="reg-license-photo-input" accept="image/*" capture="environment" style="display:none" onchange="regLicensePhotoChosen(this)"/>
+      </div>
+    </div>
+
+    <!-- STEP 4: Take a selfie -->
+    <div class="reg-step" id="reg-step-4">
+      <div class="reg-step-title">Take a selfie</div>
+      <div class="reg-step-sub">We need a photo to verify your identity before your first trip</div>
+
+      <img class="reg-photo-preview" id="reg-selfie-preview" alt="Selfie preview"/>
+      <div class="reg-photo-box" id="reg-photo-box" onclick="regTakePhoto()">
+        <div style="font-size:36px">📸</div>
+        <div style="font-size:12px;color:var(--dim);margin-top:8px">Tap to take photo</div>
+      </div>
+      <input type="file" id="reg-selfie-input" accept="image/*" capture="user" style="display:none" onchange="regSelfieChosen(this)"/>
+
+      <div class="reg-steps-list">
+        <div class="reg-step-item">
+          <div class="reg-step-num">1</div>
+          <div class="reg-step-text">Sit behind the wheel and remove any head covering or sunglasses</div>
+        </div>
+        <div class="reg-step-item">
+          <div class="reg-step-num">2</div>
+          <div class="reg-step-text">Hold your phone level with your face</div>
+        </div>
+        <div class="reg-step-item">
+          <div class="reg-step-num">3</div>
+          <div class="reg-step-text">Make sure it is only you in the photo</div>
+        </div>
+        <div class="reg-step-item">
+          <div class="reg-step-num">4</div>
+          <div class="reg-step-text">Use a solid-coloured wall as background if you are outside a vehicle</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP 5: Almost ready -->
+    <div class="reg-step" id="reg-step-5">
+      <div class="reg-success">
+        <img src="../assets/images/etel-driver-coin.png" alt="ETEL Driver"
+          style="width:100px;height:100px;border-radius:50%;object-fit:cover;
+                 border:3px solid rgba(212,175,55,.4);
+                 box-shadow:0 8px 28px -8px rgba(212,175,55,.6);
+                 margin:0 auto 20px;display:block"/>
+        <div class="reg-success-title">You are almost ready for your first trip!</div>
+        <div class="reg-success-sub">Your registration is being reviewed by the ETEL team. You can start going online while we verify your details — it usually takes a few minutes.</div>
+
+        <!-- Summary card -->
+        <div style="background:var(--sheet2);border:1px solid var(--line);border-radius:16px;padding:16px;text-align:left;margin-bottom:20px">
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid rgba(255,255,255,.06)">
+            <div style="font-size:36px" id="reg-summary-icon">🛺</div>
+            <div>
+              <div style="font-size:15px;font-weight:800;color:var(--text)" id="reg-summary-type">Bajaj</div>
+              <div style="font-size:12px;color:var(--dim)" id="reg-summary-detail">—</div>
+            </div>
+          </div>
+          <div style="font-size:13px;color:var(--dim);margin-bottom:6px">Plate number</div>
+          <div style="font-family:monospace;font-size:18px;font-weight:900;color:var(--text);padding:8px 12px;background:rgba(255,255,255,.05);border-radius:8px;letter-spacing:.1em;display:inline-block" id="reg-summary-plate">——</div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:10px;font-size:13px;color:var(--dim)">
+          <div style="display:flex;align-items:center;gap:10px">
+            <div style="font-size:20px">📸</div>
+            <span>Prepare your driver's license for verification</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px">
+            <div style="font-size:20px">❤️</div>
+            <span>If you were invited, enter your referral code</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px">
+            <div style="font-size:20px">🏢</div>
+            <span>Etel Group — will help with your payouts</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /reg-body -->
+
+  <!-- Fixed bottom button -->
+  <div class="reg-footer">
+    <button class="reg-btn" id="reg-next-btn" onclick="regNext()">Continue</button>
+  </div>
+
+</div><!-- /reg-overlay -->
+
+<!-- Canary release loader - resolves and injects the right version of
+     driver-bundle.js, driver-bundle-extra.js, driver-rate-rider.js,
+     driver-announcements-v2.js, and sos-button.js for THIS user (stable
+     vs canary, see api/lib/app_releases.php). All five now load from
+     js/releases/driver/{version}/ together as one release unit, in this
+     order, since some of them reference bundle globals at file scope.
+     This tag itself should not need to change again after this one-time
+     migration - new releases go into a new versioned folder and get
+     pointed to from the admin Releases panel instead. -->
+<script>window.ETEL_APP = 'driver';</script>
+<script src="../js/release-loader.js"></script>
+<script>
+  window.gm_authFailure = function () {
+    document.getElementById('driver-map').innerHTML =
+      '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#E5C76B;font-family:Outfit,sans-serif;flex-direction:column;gap:10px;padding:24px;text-align:center">' +
+      '<div style="font-size:40px">⚠️</div><div>Maps API restricted.<br>Add ethelmarket.com to Google Cloud Console.</div></div>';
+  };
+</script>
+<script>
+  // Was safe to call immediately when the bundle loaded via a plain
+  // synchronous <script> tag (guaranteed to finish first). Now that the
+  // bundle (which defines loadGoogleMaps, inside core.js) loads
+  // asynchronously via release-loader.js, this must wait for its
+  // completion event instead - calling it any earlier throws
+  // "loadGoogleMaps is not defined".
+  window.addEventListener('etel:bundle-ready', function () {
+    loadGoogleMaps('geometry,places,marker', 'initDriverMap');
+  }, { once: true });
+</script>
+  <!-- Light/dark mode toggle — for outdoor use -->
+  <button class="theme-toggle-btn" id="theme-toggle-btn" onclick="toggleDriverTheme()" title="Toggle light/dark mode">🌙</button>
+<!-- ETEL AI -- cross-company assistant widget -->
+<script src="https://ethelmarket.com/EtelAi/etel-ai-widget.js" data-project="delivery"></script>
+<script src="../js/apk-download-badge.js" data-role="driver"></script>
+<script src="../js/investor-nav-check.js"></script>
+</body>
+</html>
