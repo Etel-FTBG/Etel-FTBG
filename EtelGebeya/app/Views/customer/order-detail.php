@@ -182,6 +182,15 @@ ob_start();
             </a>
           </div>
           <div class="item-meta">Qty: <?= (int)($it['qty']??$it['quantity']??1) ?> * Br <?= number_format((float)($it['price']??$it['unit_price']??0),2) ?> each</div>
+          <?php if (!empty($it['tracking_number']) || !empty($it['courier_name'])): ?>
+            <div class="item-meta" style="margin-top:.2rem;color:var(--g2,#D4AF37)">
+              <i class="bi bi-truck"></i>
+              <?php if (!empty($it['courier_name'])): ?><?= e($it['courier_name']) ?><?php if (!empty($it['courier_phone'])): ?> (<?= e($it['courier_phone']) ?>)<?php endif; ?><?php endif; ?>
+              <?php if (!empty($it['tracking_number'])): ?>
+                <?= !empty($it['courier_name']) ? ' &middot; ' : '' ?>Tracking: <span style="font-family:monospace"><?= e($it['tracking_number']) ?></span>
+              <?php endif; ?>
+            </div>
+          <?php endif; ?>
         </div>
         <div class="item-total">Br <?= number_format((float)($it['subtotal']??((($it['qty']??1)*($it['price']??0)))),2) ?></div>
       </div>

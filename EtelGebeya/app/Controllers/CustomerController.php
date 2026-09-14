@@ -118,9 +118,11 @@ final class CustomerController
             $items = $this->db->fetchAll(
                 "SELECT oi.*, p.name_en, p.name_am, p.slug,
                         oi.unit_price AS price, oi.quantity AS qty, oi.total_price AS subtotal,
+                        c.name AS courier_name, c.phone AS courier_phone,
                         (SELECT pi.path FROM product_images pi WHERE pi.product_id=oi.product_id ORDER BY pi.sort_order LIMIT 1) as thumb
                    FROM order_items oi
                    JOIN products p ON p.id = oi.product_id
+                   LEFT JOIN couriers c ON c.id = oi.courier_id
                   WHERE oi.order_id = ?",
                 [$order['id']]
             );

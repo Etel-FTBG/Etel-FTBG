@@ -337,6 +337,7 @@ final class VendorController
             $items = $this->db->fetchAll(
                 "SELECT oi.id AS item_id, oi.product_name, oi.quantity, oi.total_price, oi.status AS item_status,
                         oi.is_dropship, oi.forwarded_at, oi.forward_method,
+                        oi.tracking_number, oi.courier_id, c.name AS courier_name,
                         s.id AS supplier_id, s.name AS supplier_name, s.contact_email AS supplier_email,
                         s.contact_phone AS supplier_phone, s.website AS supplier_website,
                         p.supplier_sku, p.supplier_product_url,
@@ -347,16 +348,23 @@ final class VendorController
                    JOIN users u ON u.id = o.user_id
                    LEFT JOIN suppliers s ON s.id = oi.supplier_id
                    LEFT JOIN products p ON p.id = oi.product_id
+                   LEFT JOIN couriers c ON c.id = oi.courier_id
                   WHERE oi.seller_id = ?
                   ORDER BY o.created_at DESC LIMIT 100",
                 [$sid]
             );
         } catch (\Throwable $_) {}
 
+        $couriers = [];
+        try {
+            $couriers = $this->db->fetchAll("SELECT id, name, phone FROM couriers ORDER BY name");
+        } catch (\Throwable $_) {}
+
         $this->render('vendor/orders', [
             'pageTitle' => 'My Orders',
             'seller'    => $seller,
             'items'     => $items,
+            'couriers'  => $couriers,
             'flash'     => $this->auth->takeFlash(),
         ]);
     }
@@ -607,6 +615,15 @@ final class VendorController
         if ($status === 'delivered') {
             new \App\Core\EscrowService(); // ensures delivered_at/escrow columns exist
             $update['delivered_at'] = date('Y-m-d H:i:s');
+        }
+        if ($status === 'shipped') {
+            // Both optional - a seller may not have a tracking number yet
+            // (or the shipment doesn't have one at all), and shouldn't be
+            // blocked from marking the item shipped either way.
+            $tracking = trim((string)($_POST['tracking_number'] ?? ''));
+            if ($tracking !== '') $update['tracking_number'] = substr($tracking, 0, 60);
+            $courierId = (int)($_POST['courier_id'] ?? 0);
+            if ($courierId > 0) $update['courier_id'] = $courierId;
         }
         $this->db->update('order_items', $update, 'id = ?', [$itemId]);
         $this->bubbleOrderStatus((int)$item['order_id']);
