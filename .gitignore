@@ -25,3 +25,10 @@
 # contain today.
 **/storage/debug.log
 **/storage/*.log
+
+# Setup-notes files documenting default usernames/passwords (even when the
+# password shown is a CHANGE_ME placeholder) - EtelMadeya's
+# LOGIN_CREDENTIALS.md was found committed during the company-wide audit,
+# telling anyone who finds it the exact live usernames and a default
+# password that may well still be live if nobody's changed it since setup.
+**/LOGIN_CREDENTIALS.md
