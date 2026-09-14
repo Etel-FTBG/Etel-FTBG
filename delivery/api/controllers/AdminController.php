@@ -2083,6 +2083,62 @@ case 'admin_resolve_ride_issue': {
     break;
 }
 
+case 'admin_get_order_issues': {
+    // Order's counterpart to admin_get_ride_issues above - same shape,
+    // same orders.view permission every other order-admin action here uses.
+    $pdo = db();
+    require_admin($pdo, 'orders.view');
+    $pdo->exec(
+        "CREATE TABLE IF NOT EXISTS order_issues (
+            id INT(11) NOT NULL AUTO_INCREMENT,
+            order_id INT(11) DEFAULT NULL,
+            reporter_id INT(11) NOT NULL,
+            category VARCHAR(30) NOT NULL,
+            details VARCHAR(2000) DEFAULT NULL,
+            status VARCHAR(20) NOT NULL DEFAULT 'open',
+            created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            resolved_at DATETIME DEFAULT NULL,
+            PRIMARY KEY (id),
+            KEY idx_order (order_id),
+            KEY idx_reporter (reporter_id),
+            KEY idx_status (status)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
+    );
+    $status = isset($_GET['status']) ? trim($_GET['status']) : '';
+    if ($status) {
+        $q = $pdo->prepare(
+            'SELECT oi.*, u.name AS reporter_name, u.phone AS reporter_phone,
+                    o.order_code
+             FROM order_issues oi
+             LEFT JOIN users u ON u.id = oi.reporter_id
+             LEFT JOIN orders o ON o.id = oi.order_id
+             WHERE oi.status = ? ORDER BY oi.created_at DESC LIMIT 200'
+        );
+        $q->execute(array($status));
+    } else {
+        $q = $pdo->query(
+            'SELECT oi.*, u.name AS reporter_name, u.phone AS reporter_phone,
+                    o.order_code
+             FROM order_issues oi
+             LEFT JOIN users u ON u.id = oi.reporter_id
+             LEFT JOIN orders o ON o.id = oi.order_id
+             ORDER BY oi.created_at DESC LIMIT 200'
+        );
+    }
+    ok(array('issues' => $q->fetchAll(PDO::FETCH_ASSOC)));
+    break;
+}
+
+case 'admin_resolve_order_issue': {
+    $pdo = db();
+    require_admin($pdo, 'orders.manage');
+    $iid = isset($body['id']) ? intval($body['id']) : 0;
+    if (!$iid) fail('id required', 400);
+    $pdo->prepare("UPDATE order_issues SET status='resolved', resolved_at=NOW() WHERE id=?")->execute(array($iid));
+    ok(array('message' => 'Marked resolved'));
+    break;
+}
+
 case 'admin_get_sos_alerts': {
     $pdo = db();
     require_admin($pdo, 'sos.view');

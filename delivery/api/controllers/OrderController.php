@@ -91,6 +91,87 @@ case 'customer_get_orders': {
     ok(array('orders' => $orders, 'count' => count($orders)));
     break;
 }
+
+case 'submit_order_issue': {
+    // POST: (requires customer auth)  order_id (optional), category, details
+    // Delivery's counterpart to RideController.php's submit_ride_issue -
+    // Ride has had a real dispute pipeline (report -> admin review ->
+    // resolve) for a while; orders had nothing, so a customer with a
+    // botched delivery had no in-app recourse. Same shape, same table
+    // pattern (self-healing CREATE TABLE, no FK constraints - matches
+    // sos_alerts in RideController.php, not ride_issues, since this repo
+    // has no migration file for order_issues to run and shared hosting
+    // makes a manual one easy to forget).
+    $pdo = db();
+    $auth_user = require_auth($pdo);
+    $pdo->exec(
+        "CREATE TABLE IF NOT EXISTS order_issues (
+            id INT(11) NOT NULL AUTO_INCREMENT,
+            order_id INT(11) DEFAULT NULL,
+            reporter_id INT(11) NOT NULL,
+            category VARCHAR(30) NOT NULL,
+            details VARCHAR(2000) DEFAULT NULL,
+            status VARCHAR(20) NOT NULL DEFAULT 'open',
+            created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            resolved_at DATETIME DEFAULT NULL,
+            PRIMARY KEY (id),
+            KEY idx_order (order_id),
+            KEY idx_reporter (reporter_id),
+            KEY idx_status (status)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
+    );
+    $category = isset($body['category']) ? trim($body['category']) : '';
+    $allowed = array('item_missing', 'item_damaged', 'wrong_item', 'late_delivery', 'never_arrived', 'courier_behavior', 'other');
+    if (!in_array($category, $allowed, true)) fail('Invalid issue category', 400);
+    $order_id = isset($body['order_id']) ? intval($body['order_id']) : null;
+    if ($order_id) {
+        // Scope check - a customer can only file an issue against their
+        // own order, same reasoning as every other customer_* endpoint
+        // in this file (o.customer_id = ?).
+        $chk = $pdo->prepare('SELECT id FROM orders WHERE id = ? AND customer_id = ?');
+        $chk->execute(array($order_id, $auth_user['id']));
+        if (!$chk->fetch()) fail('Order not found', 404);
+    } else {
+        $order_id = null;
+    }
+    $details = isset($body['details']) ? trim(substr($body['details'], 0, 2000)) : '';
+    try {
+        $s = $pdo->prepare('INSERT INTO order_issues (order_id, reporter_id, category, details, status) VALUES (?, ?, ?, ?, "open")');
+        $s->execute(array($order_id, $auth_user['id'], $category, $details));
+        ok(array('message' => 'Report submitted - our team will follow up', 'id' => intval($pdo->lastInsertId())));
+    } catch (Exception $e) {
+        fail_ex($e, 'Could not submit report', 500);
+    }
+    break;
+}
+
+case 'customer_get_order_issues': {
+    // GET: (requires customer auth) - lets the customer see their own past
+    // reports and status, same as they can already see order history.
+    $pdo = db();
+    $auth_user = require_auth($pdo);
+    $pdo->exec(
+        "CREATE TABLE IF NOT EXISTS order_issues (
+            id INT(11) NOT NULL AUTO_INCREMENT,
+            order_id INT(11) DEFAULT NULL,
+            reporter_id INT(11) NOT NULL,
+            category VARCHAR(30) NOT NULL,
+            details VARCHAR(2000) DEFAULT NULL,
+            status VARCHAR(20) NOT NULL DEFAULT 'open',
+            created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            resolved_at DATETIME DEFAULT NULL,
+            PRIMARY KEY (id),
+            KEY idx_order (order_id),
+            KEY idx_reporter (reporter_id),
+            KEY idx_status (status)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
+    );
+    $s = $pdo->prepare('SELECT * FROM order_issues WHERE reporter_id = ? ORDER BY created_at DESC LIMIT 100');
+    $s->execute(array($auth_user['id']));
+    ok(array('issues' => $s->fetchAll()));
+    break;
+}
+
 case 'courier_get_available_orders': {
     $pdo = db();
     $courier_user = require_courier($pdo);
