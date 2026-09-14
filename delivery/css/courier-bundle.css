@@ -24,7 +24,7 @@
   --border:rgba(255,255,255,.08); --border-gold:rgba(212,175,55,.22);
   --r-sm:10px; --r:14px; --r-lg:18px;
   --ease:cubic-bezier(.22,1,.36,1);
-  --f:'Poppins',sans-serif; --f-d:'DM Serif Display',serif;
+  --f:'Cormorant Garamond',serif; --f-d:'Syne','Noto Sans Ethiopic',sans-serif;
 }
 
 *{margin:0;padding:0;box-sizing:border-box}
@@ -272,7 +272,7 @@ body.is-offline .gps-dot{background:var(--muted);animation:none}
    premium.css only adds typography and component polish. */
 body:not(.dark-page):not([data-dark]) {
     color: var(--etl-text);
-    font-family: 'Outfit', 'Noto Sans Ethiopic', system-ui, sans-serif;
+    font-family: var(--f-d);
     position: relative;
 }
 
@@ -308,7 +308,7 @@ body::after {
 
 /* ── TYPOGRAPHY ────────────────────────────────────────────── */
 h1, h2, h3, .page-title, .sidebar-brand-main {
-    font-family: 'Sora', 'Outfit', sans-serif !important;
+    font-family: var(--f-d) !important;
     letter-spacing: -.02em;
     color: var(--etl-blue-deep);
 }
@@ -373,7 +373,7 @@ body:not(.dark-page) .navbar { border-radius: 0 0 24px 24px; }
     background: linear-gradient(120deg, var(--etl-gold), var(--etl-blue));
     -webkit-background-clip: text; background-clip: text;
     -webkit-text-fill-color: transparent;
-    font-family: 'Sora', sans-serif !important;
+    font-family: var(--f-d) !important;
     font-weight: 800 !important;
     text-shadow: 0 4px 12px rgba(212, 175, 55, 0.2);
 }
@@ -381,7 +381,7 @@ body:not(.dark-page) .navbar { border-radius: 0 0 24px 24px; }
 /* ── PREMIUM BUTTONS ───────────────────────────────────────── */
 button, .btn, .btn-primary, .modal-submit, .nav-btn,
 input[type="submit"], .submit-btn {
-    font-family: 'Outfit', sans-serif;
+    font-family: var(--f-d);
     font-weight: 700;
     border-radius: 16px;
     letter-spacing: .02em;
@@ -429,7 +429,7 @@ input, select, textarea {
     border: 1px solid rgba(37, 99, 235, 0.1) !important;
     border-radius: 14px !important;
     color: var(--etl-text) !important;
-    font-family: 'Outfit', sans-serif;
+    font-family: var(--f-d);
     transition: all .3s var(--etl-ease);
     box-shadow: inset 0 2px 6px rgba(0,0,0,0.02);
 }
@@ -528,7 +528,7 @@ table { border-collapse: separate; border-spacing: 0; }
 th {
     background: rgba(241, 245, 249, 0.8) !important;
     color: var(--etl-blue-deep) !important;
-    font-family: 'Sora', sans-serif;
+    font-family: var(--f-d);
     letter-spacing: .05em;
     text-transform: uppercase;
     font-size: 11px;
@@ -694,7 +694,7 @@ button.primary-gold{
 .zchip{
   padding:8px 14px;border-radius:10px;
   border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.05);
-  color:#EDEDF5;font-family:'Outfit',sans-serif;font-size:13px;font-weight:700;
+  color:#EDEDF5;font-family:var(--f-d);font-size:13px;font-weight:700;
   cursor:pointer;transition:all .18s var(--p5-ease);
 }
 .zchip:hover{border-color:rgba(212,175,55,.4);background:rgba(212,175,55,.1);color:var(--p5-gold-lt);}
@@ -735,7 +735,7 @@ button.primary-gold{
 }
 .etel-footer-logo img{width:100%;height:100%;object-fit:cover;display:block;}
 .etel-footer-brand-name{
-  font-family:'Sora',sans-serif;font-size:17px;font-weight:800;
+  font-family:var(--f-d);font-size:17px;font-weight:800;
   color:#E5C76B;line-height:1;margin-bottom:5px;
 }
 .etel-footer-tagline{font-size:11px;color:rgba(154,154,174,.7);line-height:1.5;}
@@ -752,7 +752,7 @@ button.primary-gold{
 }
 .etel-footer-stat:last-child{border-right:none;}
 .etel-footer-stat-val{
-  font-family:'Sora',sans-serif;font-size:20px;font-weight:800;
+  font-family:var(--f-d);font-size:20px;font-weight:800;
   color:#E5C76B;line-height:1;margin-bottom:3px;
 }
 .etel-footer-stat-lbl{font-size:9px;color:rgba(154,154,174,.7);text-transform:uppercase;letter-spacing:.06em;}
