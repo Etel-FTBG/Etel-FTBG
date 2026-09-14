@@ -1,0 +1,18 @@
+User-agent: *
+Allow: /
+
+# Admin panels and API endpoints - functional, not content; nothing here
+# should be indexed or crawled.
+Disallow: /EtelGroup/admin.html
+Disallow: /EtelGroup/api/
+Disallow: /EtelId/wp-admin/
+Disallow: /EtelId/wp-json/
+Disallow: /EtelId/etel-api.php
+Disallow: /EtelId/updater-api.php
+Disallow: /Etel.Pay/wallet/api/
+Disallow: /EtelAi/api/
+Disallow: /EtelGebeya/api/
+Disallow: /EtelMadeya/api/
+Disallow: /delivery/api/
+
+Sitemap: https://ethelmarket.com/sitemap.xml
