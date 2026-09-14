@@ -3794,13 +3794,17 @@ function renderProviderDropdown(providers) {
   const optsEl = document.getElementById('model-dd-options');
   if (!optsEl) return;
   const cur = CFG.preferredProvider || '';
-  const autoRow = `<div class="model-dd-opt${cur===''?' selected':''}" onclick="selectProviderOption('','Auto')">
+  const autoRow = `<div class="model-dd-opt${cur===''?' selected':''}" data-provider-id="" data-provider-name="Auto">
       <svg class="mdo-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
       <div class="mdo-info"><div class="mdo-name">Auto</div><div class="mdo-desc">Server picks the best available model</div></div>
     </div>`;
   const rows = providers.map(p => {
     const disabled = !p.enabled;
-    return `<div class="model-dd-opt${cur===p.id?' selected':''}" style="${disabled?'opacity:0.4;cursor:not-allowed;':''}" ${disabled?'':`onclick="selectProviderOption('${p.id}', ${JSON.stringify(p.name)})"`}>
+    // data-* attributes instead of inline onclick with an interpolated
+    // name - a provider name containing a quote (e.g. an admin-entered
+    // label) would otherwise break out of the onclick="..." attribute
+    // and corrupt this whole toolbar's markup.
+    return `<div class="model-dd-opt${cur===p.id?' selected':''}"${disabled?' style="opacity:0.4;cursor:not-allowed;"':''} data-provider-id="${escHtml(p.id)}" data-provider-name="${escHtml(p.name)}" data-disabled="${disabled?'1':'0'}">
       <svg class="mdo-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
       <div class="mdo-info"><div class="mdo-name">${escHtml(p.name)}</div><div class="mdo-desc">${disabled ? 'Turned off in Settings' : 'Answer directly with this model'}</div></div>
     </div>`;
@@ -3808,6 +3812,12 @@ function renderProviderDropdown(providers) {
   optsEl.innerHTML = autoRow + rows;
   updateModelDropdownLabel();
 }
+document.addEventListener('click', (e) => {
+  const opt = e.target.closest('.model-dd-opt');
+  if (!opt || opt.dataset.disabled === '1') return;
+  if (!document.getElementById('model-dd-options')?.contains(opt)) return;
+  selectProviderOption(opt.dataset.providerId || '', opt.dataset.providerName || '');
+});
 function updateModelDropdownLabel() {
   const dot = document.getElementById('model-dd-live-dot');
   const label = document.getElementById('model-dd-current-label');
