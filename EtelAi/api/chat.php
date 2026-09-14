@@ -889,20 +889,19 @@ function etelai_try_provider_keys(&$providersCfg, $providerId, $messages, $tools
     $now = time();
     $lastError = null;
     $anyTried = false;
-    // Temporary diagnostic trail - records what this function actually saw
-    // for every provider block matching $providerId, so a "no keys" error
-    // can be traced without live server file access. Remove once the
-    // OpenRouter routing issue reported after PR #90/#91 is resolved.
-    $diag = array();
 
     foreach ($providersCfg['providers'] as &$prov) {
         if ($prov['id'] !== $providerId) continue;
-        $diag[] = 'provider(enabled=' . (!empty($prov['enabled']) ? '1' : '0') . ',keys=' . count($prov['keys']) . ')';
-        foreach ($prov['keys'] as $kk) {
-            $diag[] = (isset($kk['id']) ? $kk['id'] : '?') . ':enabled=' . (!empty($kk['enabled']) ? '1' : '0')
-                . ',cooldown=' . (isset($kk['cooldown_until']) ? $kk['cooldown_until'] : 'none');
-        }
-        $orderedKeys = &$prov['keys'];
+        // $orderedKeys only aliases $prov['keys'] directly when no
+        // reordering is needed. Aliasing it with =& and THEN reassigning
+        // it to a fresh array() (the old code here) doesn't just repoint
+        // $orderedKeys - because =& makes them the same underlying
+        // variable, that reassignment also wipes $prov['keys'] itself to
+        // an empty array, and the rebuild loop right after then reads
+        // from (and reference-appends into) that now-emptied, still-
+        // aliased array - producing extra corrupted null entries instead
+        // of the real keys. This is what caused "No enabled, available
+        // keys" even when every key was actually enabled and uncooled.
         if ($preferredTag !== null && $preferredTag !== '') {
             $tagged = array();
             $untagged = array();
@@ -913,12 +912,10 @@ function etelai_try_provider_keys(&$providersCfg, $providerId, $messages, $tools
             $orderedIdx = array_merge($tagged, $untagged);
             $orderedKeys = array();
             foreach ($orderedIdx as $idx) $orderedKeys[] = &$prov['keys'][$idx];
+        } else {
+            $orderedKeys = &$prov['keys'];
         }
-        $diag[] = 'preferredTag=' . json_encode($preferredTag) . ',orderedKeys=' . count($orderedKeys);
         foreach ($orderedKeys as &$k) {
-            $diag[] = 'check ' . (isset($k['id']) ? $k['id'] : '?') . ': enabled_raw=' . json_encode(isset($k['enabled']) ? $k['enabled'] : null)
-                . ' empty_enabled=' . (empty($k['enabled']) ? '1' : '0')
-                . ' cooldown_raw=' . json_encode(isset($k['cooldown_until']) ? $k['cooldown_until'] : null);
             if (empty($k['enabled'])) continue;
             if (!empty($k['cooldown_until']) && strtotime($k['cooldown_until']) > $now) continue;
             $anyTried = true;
@@ -957,7 +954,7 @@ function etelai_try_provider_keys(&$providersCfg, $providerId, $messages, $tools
     }
     unset($prov);
 
-    if (!$anyTried) throw new Exception('No enabled, available keys for ' . $providerId . '. [diag: ' . ($diag ? implode(' | ', $diag) : 'no matching provider block found') . ']');
+    if (!$anyTried) throw new Exception('No enabled, available keys for ' . $providerId . '.');
     throw new Exception($lastError ?: ('All ' . $providerId . ' keys failed.'));
 }
 
