@@ -146,6 +146,21 @@ $project = isset($body['project']) ? $body['project'] : (isset($_GET['project'])
 
 $member = memberFromToken($token);
 
+// ---- action=list_providers: safe fields only (no keys, no base URLs) so
+// the chat UI can offer a model picker without ever seeing a secret ----
+if ($action === 'list_providers') {
+    $cfg = etelai_load_providers();
+    $out = array();
+    foreach ($cfg['providers'] as $p) {
+        $out[] = array(
+            'id'      => $p['id'],
+            'name'    => isset($p['name']) ? $p['name'] : $p['id'],
+            'enabled' => !empty($p['enabled']),
+        );
+    }
+    ok(array('providers' => $out));
+}
+
 // ---- action=history: restore recent conversation for the widget ----
 if ($action === 'history') {
     if (!$member) ok(array('messages' => array(), 'signed_in' => false));
@@ -333,6 +348,23 @@ function etelai_pick_provider($cfg, $message) {
 
 $providersCfg = etelai_load_providers();
 $activeProvider = etelai_pick_provider($providersCfg, $message);
+
+// Optional client preference from the chat UI's model picker (list_providers
+// above). Purely a preference, same trust level as $taskTag below - if the
+// requested id doesn't exist or isn't enabled, silently ignored and the
+// normal automatic pick above stands. This does not reintroduce a
+// client-trusted model choice; it only reorders which already-enabled
+// server-configured provider goes first.
+$preferredProvider = isset($body['preferred_provider']) ? trim((string)$body['preferred_provider']) : '';
+if ($preferredProvider !== '') {
+    foreach ($providersCfg['providers'] as $p) {
+        if ($p['id'] === $preferredProvider && !empty($p['enabled'])) {
+            $activeProvider = $p;
+            break;
+        }
+    }
+}
+
 if (!$activeProvider) {
     err('No AI provider is turned on. Go to Settings and switch one on.', 503);
 }
@@ -1024,5 +1056,10 @@ ok(array(
     'member_name'     => $member ? $member['full_name'] : null,
     'companies'       => $member ? $member['companies'] : array(),
     'provider'        => $activeProvider['name'],
+    'provider_id'     => $activeProvider['id'],
+    // Real usage from the provider's own response when it reports one
+    // (Gemini and the OpenAI-compatible providers both do) - not an
+    // estimate, so the chat UI can show an honest token count.
+    'usage'           => isset($usage) ? $usage : array(),
     'conversation_id' => $convId,
 ));
