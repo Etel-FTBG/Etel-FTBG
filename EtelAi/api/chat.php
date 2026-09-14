@@ -914,7 +914,11 @@ function etelai_try_provider_keys(&$providersCfg, $providerId, $messages, $tools
             $orderedKeys = array();
             foreach ($orderedIdx as $idx) $orderedKeys[] = &$prov['keys'][$idx];
         }
+        $diag[] = 'preferredTag=' . json_encode($preferredTag) . ',orderedKeys=' . count($orderedKeys);
         foreach ($orderedKeys as &$k) {
+            $diag[] = 'check ' . (isset($k['id']) ? $k['id'] : '?') . ': enabled_raw=' . json_encode(isset($k['enabled']) ? $k['enabled'] : null)
+                . ' empty_enabled=' . (empty($k['enabled']) ? '1' : '0')
+                . ' cooldown_raw=' . json_encode(isset($k['cooldown_until']) ? $k['cooldown_until'] : null);
             if (empty($k['enabled'])) continue;
             if (!empty($k['cooldown_until']) && strtotime($k['cooldown_until']) > $now) continue;
             $anyTried = true;
