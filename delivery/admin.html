@@ -358,6 +358,14 @@ html{color-scheme:light}
                         <div class="table-wrapper"><table><thead><tr><th>Code</th><th>From</th><th>To</th><th>Type</th><th>Amount</th><th>Status</th><th>Confirmations</th><th>Date</th><th>Actions</th></tr></thead>
                         <tbody id="orders-tbody"><tr><td colspan="9" style="text-align:center;padding:30px;color:#B8B0A0">Loading…</td></tr></tbody></table></div>
                     </div>
+
+                    <div class="section-title" style="margin-top:24px">Order issue reports</div>
+                    <div style="display:flex;gap:6px;margin:10px 0 12px">
+                        <button class="rides-filter-btn active" data-order-issue-filter="all" onclick="orderIssuesFilterBtn('all',this)">All</button>
+                        <button class="rides-filter-btn" data-order-issue-filter="open" onclick="orderIssuesFilterBtn('open',this)">Open</button>
+                        <button class="rides-filter-btn" data-order-issue-filter="resolved" onclick="orderIssuesFilterBtn('resolved',this)">Resolved</button>
+                    </div>
+                    <div id="order-issues-wrap"></div>
                 </div>
 
                 <!-- ══ USERS PANEL ══ -->
