@@ -45,7 +45,11 @@ function eml_err($message, $code = 400) {
     exit;
 }
 
-if (!defined('ETELID_SERVICE_KEY') || !ETELID_SERVICE_KEY) {
+// config.php ships ETELID_SERVICE_KEY as the literal string 'CHANGE_ME' by
+// default - a truthy value, so a plain !ETELID_SERVICE_KEY check silently
+// accepts a forgotten override and then compares against a known,
+// guessable key below. Reject the placeholder explicitly, same as empty.
+if (!defined('ETELID_SERVICE_KEY') || !ETELID_SERVICE_KEY || strcasecmp(trim((string) ETELID_SERVICE_KEY), 'CHANGE_ME') === 0) {
     eml_err('Service key not configured on EtelPay.', 500);
 }
 
