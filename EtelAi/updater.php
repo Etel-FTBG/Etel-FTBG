@@ -6,7 +6,10 @@
 // ============================================================
 
 // ── SECURITY — Password via cPanel Environment Variable ──
-// In cPanel → Software → Setup Node.js App (or PHP INI): set ETEL_UPDATER_PASS=EtelAdmin1616.
+// In cPanel → Software → Setup Node.js App (or PHP INI): set ETEL_UPDATER_PASS
+// to a real secret of your own choosing. A previous version of this file
+// documented the actual live password directly in this comment - never do
+// that; a comment in a public repo is not a secure place to store one.
 // If not set, access is DENIED — do NOT fall back to a hardcoded password in production.
 $_env_pass = getenv('ETEL_UPDATER_PASS');
 if (!$_env_pass) {
