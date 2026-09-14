@@ -153,6 +153,7 @@
                 ordersData = (res.data && res.data.orders) ? res.data.orders : [];
                 renderOrderTable(ordersData);
                 loadConfirmations();
+                loadOrderIssues();
             } catch(e) {
                 tbody.innerHTML = '<tr><td colspan="9" style="color:#B8B0A0;text-align:center;padding:30px">No orders yet</td></tr>';
             }
@@ -192,6 +193,78 @@
         function filterOrderTable() {
             const q = document.getElementById('order-search').value.toLowerCase();
             renderOrderTable(ordersData.filter(o => (o.order_code||'').toLowerCase().includes(q) || (o.from_zone||'').toLowerCase().includes(q) || (o.to_zone||'').toLowerCase().includes(q)));
+        }
+
+        // ─── ORDER ISSUES (dispute/refund reports) ───────────────────
+        let orderIssuesFilter = 'all';
+        let orderIssuesData = [];
+        const ORDER_ISSUE_LABEL = {
+            open: ['🟡 Open', '#e65100', 'rgba(255,122,69,.15)'],
+            resolved: ['✅ Resolved', '#1b7e3a', 'rgba(46,204,113,.15)']
+        };
+        async function loadOrderIssues() {
+            const wrap = document.getElementById('order-issues-wrap');
+            if (!wrap) return;
+            wrap.innerHTML = '<div style="padding:20px;text-align:center;color:#B8B0A0">Loading…</div>';
+            try {
+                const res = await adm('admin_get_order_issues', {}, true);
+                if (!res || !res.success) { wrap.innerHTML = `<div style="padding:16px;color:#e74c3c">Could not load order issues: ${esc((res&&res.message)||'API error')}</div>`; return; }
+                orderIssuesData = (res.data && res.data.issues) ? res.data.issues : [];
+                renderOrderIssues();
+            } catch(e) {
+                wrap.innerHTML = '<div style="padding:16px;color:#e74c3c">Could not load order issues</div>';
+            }
+        }
+        function renderOrderIssues() {
+            const wrap = document.getElementById('order-issues-wrap');
+            if (!wrap) return;
+            const rows = orderIssuesData.filter(r => orderIssuesFilter === 'all' ? true : (r.status||'open') === orderIssuesFilter);
+            if (!rows.length) {
+                wrap.innerHTML = `<div style="padding:24px;text-align:center;color:#B8B0A0">No ${orderIssuesFilter==='all'?'':orderIssuesFilter+' '}order issues.</div>`;
+                return;
+            }
+            const trs = rows.map(r => {
+                const label = ORDER_ISSUE_LABEL[r.status||'open'] || ORDER_ISSUE_LABEL.open;
+                return `<tr>
+                    <td>${r.order_id?'#'+r.order_id:'—'}</td>
+                    <td>${esc(r.reporter_name||'—')}<br><small style="color:#9A9AAE">${esc(r.reporter_phone||'')}</small></td>
+                    <td>${esc(r.category||'—')}</td>
+                    <td style="max-width:260px;white-space:normal">${esc(r.details||'—')}</td>
+                    <td><span style="display:inline-flex;padding:5px 10px;border-radius:6px;font-size:11px;font-weight:700;text-transform:uppercase;color:${label[1]};background:${label[2]};border:1px solid ${label[1]}">${label[0]}</span></td>
+                    <td>${fmtTime(r.created_at)}</td>
+                    <td>${(r.status||'open')==='open'
+                        ? `<button class="btn btn-primary" style="padding:6px 10px;font-size:12px" onclick="resolveOrderIssue(${r.id})">Mark resolved</button>`
+                        : `<span style="color:#9A9AAE;font-size:12px">${fmtTime(r.resolved_at)}</span>`}
+                    </td>
+                </tr>`;
+            }).join('');
+            wrap.innerHTML = `<div style="overflow-x:auto;border-radius:14px;border:1px solid rgba(255,255,255,.08)">
+                <table style="width:100%;border-collapse:collapse;font-size:13px">
+                <thead><tr style="border-bottom:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04)">
+                <th style="padding:12px 14px;text-align:left;color:#9A9AAE;font-weight:700">Order</th>
+                <th style="padding:12px 14px;text-align:left;color:#9A9AAE;font-weight:700">Reporter</th>
+                <th style="padding:12px 14px;text-align:left;color:#9A9AAE;font-weight:700">Category</th>
+                <th style="padding:12px 14px;text-align:left;color:#9A9AAE;font-weight:700">Details</th>
+                <th style="padding:12px 14px;text-align:left;color:#9A9AAE;font-weight:700">Status</th>
+                <th style="padding:12px 14px;text-align:left;color:#9A9AAE;font-weight:700">Reported</th>
+                <th style="padding:12px 14px;text-align:left;color:#9A9AAE;font-weight:700">Action</th>
+                </tr></thead><tbody>${trs}</tbody></table></div>`;
+        }
+        function orderIssuesFilterBtn(f, el) {
+            orderIssuesFilter = f;
+            document.querySelectorAll('[data-order-issue-filter]').forEach(b => b.classList.remove('active'));
+            if (el) el.classList.add('active');
+            renderOrderIssues();
+        }
+        async function resolveOrderIssue(id) {
+            if (!confirm('Mark this order issue as resolved?')) return;
+            try {
+                const res = await adm('admin_resolve_order_issue', {id}, false);
+                if (!res || !res.success) { alert('Could not resolve: ' + ((res&&res.message)||'unknown error')); return; }
+                const r = orderIssuesData.find(x => x.id === id);
+                if (r) { r.status = 'resolved'; r.resolved_at = new Date().toISOString(); }
+                renderOrderIssues();
+            } catch(e) { alert('Could not resolve order issue'); }
         }
 
         // ─── CONFIRMATIONS ────────────────────────────────────────────

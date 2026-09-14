@@ -1175,6 +1175,7 @@ async function loadOrders() {
             '<span>' + fmtDate(o.placed_at) + '</span>' +
             '<span style="font-weight:700;color:#C9A961;font-size:14px">ETB ' + parseFloat(o.fare_total||0).toFixed(2) + '</span></div>' +
             (isDelivered ? '<button onclick="openRating('+o.id+')" style="margin-top:10px;width:100%;padding:8px;background:#fff;border:1.5px solid #C9A961;border-radius:8px;color:#C9A961;font-size:12px;font-weight:700;cursor:pointer">⭐ Rate this order</button>' : '') +
+            (o.status !== 'cancelled' ? '<button onclick="openOrderIssue('+o.id+',\''+o.order_code+'\')" style="margin-top:8px;width:100%;padding:8px;background:#fff;border:1.5px solid #B8B0A0;border-radius:8px;color:#6b6b6b;font-size:12px;font-weight:700;cursor:pointer">⚠️ Report an issue</button>' : '') +
             '</div>';
     }).join('');
 }
@@ -1517,6 +1518,40 @@ async function submitRating(orderId) {
         ratingStars = 0;
     } else {
         showToast((res && res.message) || 'Rating failed', 'err');
+    }
+}
+
+// ── ORDER ISSUE / DISPUTE REPORT ───────────────────────────────────
+const ORDER_ISSUE_CATEGORIES = [
+    ['item_missing', 'Item missing from order'],
+    ['item_damaged', 'Item arrived damaged'],
+    ['wrong_item', 'Wrong item delivered'],
+    ['late_delivery', 'Delivery was very late'],
+    ['never_arrived', 'Order never arrived'],
+    ['courier_behavior', 'Courier behavior'],
+    ['other', 'Other']
+];
+function openOrderIssue(orderId, orderCode) {
+    openModal(
+        '<h3 style="margin:0 0 16px;color:#1a1a2e">⚠️ Report an Issue</h3>' +
+        '<p style="font-size:13px;color:#B8B0A0;margin-bottom:14px">Order ' + orderCode + '</p>' +
+        '<select id="oi-category" style="width:100%;padding:10px;border:1.5px solid #ddd;border-radius:8px;font-size:13px;box-sizing:border-box;margin-bottom:10px">' +
+        ORDER_ISSUE_CATEGORIES.map(function(c) { return '<option value="'+c[0]+'">'+c[1]+'</option>'; }).join('') +
+        '</select>' +
+        '<textarea id="oi-details" placeholder="Describe what happened…" style="width:100%;padding:10px;border:1.5px solid #ddd;border-radius:8px;font-size:13px;min-height:80px;resize:none;box-sizing:border-box;margin-bottom:14px"></textarea>' +
+        '<button onclick="submitOrderIssue('+orderId+')" style="width:100%;padding:12px;background:#C9A961;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer">Submit Report</button>'
+    );
+}
+async function submitOrderIssue(orderId) {
+    const category = document.getElementById('oi-category').value;
+    const details = document.getElementById('oi-details').value.trim();
+    if (!details) { showToast('Please describe what happened', 'err'); return; }
+    const res = await api('submit_order_issue', { order_id: orderId, category: category, details: details });
+    if (res && res.success) {
+        showToast('Thanks — we\'ll review this order issue.');
+        closeModal();
+    } else {
+        showToast((res && res.message) || 'Could not submit report', 'err');
     }
 }
 
