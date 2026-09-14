@@ -83,11 +83,30 @@ ob_start();
           </td>
           <td style="font-size:.82rem;color:var(--eg-text-dim)"><?= date('M j, Y', strtotime($it['created_at'])) ?></td>
           <td>
+            <?php if (!empty($it['tracking_number']) || !empty($it['courier_name'])): ?>
+              <div style="font-size:.75rem;color:var(--eg-text-dim);margin-bottom:.35rem">
+                <?php if (!empty($it['courier_name'])): ?><i class="bi bi-truck"></i> <?= e($it['courier_name']) ?><br><?php endif; ?>
+                <?php if (!empty($it['tracking_number'])): ?><span style="font-family:monospace"><?= e($it['tracking_number']) ?></span><?php endif; ?>
+              </div>
+            <?php endif; ?>
             <?php if (isset($nextStatus[$it['item_status']])): $ns = $nextStatus[$it['item_status']]; ?>
               <form method="POST" action="<?= View::url('/vendor-panel/orders/item-status') ?>" style="display:inline">
                 <?= csrf() ?>
                 <input type="hidden" name="item_id" value="<?= (int)$it['item_id'] ?>">
                 <input type="hidden" name="status" value="<?= e($ns) ?>">
+                <?php if ($ns === 'shipped'): ?>
+                  <div style="display:flex;flex-direction:column;gap:.3rem;margin-bottom:.35rem;min-width:150px">
+                    <input type="text" name="tracking_number" placeholder="Tracking # (optional)" style="padding:.3rem .5rem;border-radius:6px;border:1px solid var(--dark-border);background:var(--dark-bg,#0d0d14);color:var(--eg-text-dim,#ddd);font-size:.75rem">
+                    <?php if (!empty($couriers)): ?>
+                      <select name="courier_id" style="padding:.3rem .5rem;border-radius:6px;border:1px solid var(--dark-border);background:var(--dark-bg,#0d0d14);color:var(--eg-text-dim,#ddd);font-size:.75rem">
+                        <option value="">Courier (optional)</option>
+                        <?php foreach ($couriers as $c): ?>
+                          <option value="<?= (int)$c['id'] ?>"><?= e($c['name']) ?></option>
+                        <?php endforeach; ?>
+                      </select>
+                    <?php endif; ?>
+                  </div>
+                <?php endif; ?>
                 <button type="submit" class="dash-btn-sm"><?= $nextLabel[$ns] ?></button>
               </form>
             <?php elseif (!in_array($it['item_status'], ['delivered','cancelled'], true)): ?>
