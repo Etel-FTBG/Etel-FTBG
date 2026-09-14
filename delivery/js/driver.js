@@ -205,7 +205,7 @@ function _updateGpsStatusBadge() {
     badge.style.display = isOffline ? 'flex' : 'none';
 }
 
-function broadcastLocation(){if(!DRV.isOnline||!DRV.currentLat)return;if(DRV._locSyncInFlight)return;DRV._locSyncInFlight=true;var _params={lat:DRV.currentLat,lng:DRV.currentLng,accuracy:DRV.currentAccuracy};if(DRV.activeRide&&DRV.activeRide.id)_params.ride_id=DRV.activeRide.id;drvApi("driver_update_location",_params,function(e){DRV._locSyncInFlight=false;DRV._consecutiveSyncFailures=0;_updateGpsStatusBadge();if(e&&e.meter&&DRV.activeRide){var t=document.getElementById("meter-km"),n=document.getElementById("meter-fare");if(t)t.textContent=parseFloat(e.meter.traveled_km||0).toFixed(2)+" km";if(n)n.textContent="ETB "+parseFloat(e.meter.meter_fare||0).toFixed(0);var r=document.getElementById("meter-surge");if(r)r.style.display=e.meter.surge?"inline-flex":"none";_updateLowAccuracyBadge(!!e.meter.low_accuracy,DRV.currentAccuracy);DRV.activeRide.distance_km=e.meter.traveled_km;DRV.activeRide.fare=e.meter.meter_fare;DRV.activeRide.surge=!!e.meter.surge;if(e.meter.wait_active!=null){DRV.activeRide.wait_active=e.meter.wait_active;DRV.activeRide.wait_minutes=e.meter.wait_minutes;DRV.activeRide.wait_etb=e.meter.wait_etb;_syncWaitState(DRV.activeRide)}if(e.meter.wait_auto_stopped){showDriverToast("Waiting stopped automatically \u2014 you\u2019re moving","info")}}},function(){DRV._locSyncInFlight=false;DRV._consecutiveSyncFailures++;_updateGpsStatusBadge()})}
+function broadcastLocation(){if(!DRV.isOnline||!DRV.currentLat)return;if(DRV._locSyncInFlight)return;DRV._locSyncInFlight=true;var _params={lat:DRV.currentLat,lng:DRV.currentLng,accuracy:DRV.currentAccuracy};if(DRV.activeRide&&DRV.activeRide.id)_params.ride_id=DRV.activeRide.id;drvApi("driver_update_location",_params,function(e){DRV._locSyncInFlight=false;DRV._consecutiveSyncFailures=0;_updateGpsStatusBadge();if(e&&e.meter&&DRV.activeRide){var t=document.getElementById("meter-km"),n=document.getElementById("meter-fare");if(t)t.textContent=parseFloat(e.meter.traveled_km||0).toFixed(2)+" km";if(n)n.textContent="ETB "+parseFloat(e.meter.meter_fare||0).toFixed(0);var r=document.getElementById("meter-surge");if(r)r.style.display=e.meter.surge?"inline-flex":"none";_updateLowAccuracyBadge(!!e.meter.low_accuracy,DRV.currentAccuracy);DRV.activeRide.distance_km=e.meter.traveled_km;DRV.activeRide.fare=e.meter.meter_fare;DRV.activeRide.traveled_km=e.meter.traveled_km;DRV.activeRide.meter_fare=e.meter.meter_fare;DRV.activeRide.surge=!!e.meter.surge;if(e.meter.wait_active!=null){DRV.activeRide.wait_active=e.meter.wait_active;DRV.activeRide.wait_minutes=e.meter.wait_minutes;DRV.activeRide.wait_etb=e.meter.wait_etb;_syncWaitState(DRV.activeRide)}if(e.meter.wait_auto_stopped){showDriverToast("Waiting stopped automatically \u2014 you\u2019re moving","info")}}},function(){DRV._locSyncInFlight=false;DRV._consecutiveSyncFailures++;_updateGpsStatusBadge()})}
 // Makes a normally-invisible server behavior visible: the meter/wait-
 // auto-stop logic silently skips any GPS fix reported as low-accuracy
 // (>30m), on the theory that a single noisy fix can register 100m+ of
@@ -854,6 +854,25 @@ function _applyActiveRideUpdate(newRide) {
         var curRank = DRV_STATUS_RANK.hasOwnProperty(cur.status) ? DRV_STATUS_RANK[cur.status] : 0;
         var newRank = DRV_STATUS_RANK.hasOwnProperty(newRide.status) ? DRV_STATUS_RANK[newRide.status] : 0;
         if (newRank < curRank) return; /* stale/out-of-order read - ignore */
+        // Same guard, for the live GPS-meter fields within one in_progress
+        // ride: this driver_get_profile snapshot and the GPS ping in
+        // broadcastLocation() race independently over the network, so a
+        // profile request sent BEFORE the latest location update can still
+        // arrive AFTER it - its traveled_km/meter_fare were read from the
+        // DB before that update landed, so they're a real but older value
+        // (often still 0 right at trip start). Blindly applying it would
+        // snap the on-screen meter back down, then the next fresh GPS ping
+        // snaps it forward again - the flicker this guard exists to stop.
+        // Both fields only ever increase over one in_progress ride, so the
+        // fix is just: never let them go backwards.
+        if (newRank === curRank) {
+            var curKm = parseFloat(cur.traveled_km != null ? cur.traveled_km : cur.distance_km);
+            var newKm = parseFloat(newRide.traveled_km != null ? newRide.traveled_km : newRide.distance_km);
+            if (!isNaN(curKm) && !isNaN(newKm) && newKm < curKm) newRide.traveled_km = curKm;
+            var curFare = parseFloat(cur.meter_fare != null ? cur.meter_fare : cur.fare);
+            var newFare = parseFloat(newRide.meter_fare != null ? newRide.meter_fare : newRide.fare);
+            if (!isNaN(curFare) && !isNaN(newFare) && newFare < curFare) newRide.meter_fare = curFare;
+        }
     }
     DRV.activeRide = newRide;
     renderActiveRide(newRide);
