@@ -72,7 +72,27 @@ function ensure_company_link(PDO $pdo, $memberId, $projectSlug) {
 
 function auth() {
     $k = $_SERVER['HTTP_X_ETEL_KEY'] ?? $_GET['key'] ?? '';
-    if ($k !== API_KEY) err('Unauthorized', 401);
+    if (!hash_equals(API_KEY, $k)) err('Unauthorized', 401);
+}
+
+function client_ip() {
+    foreach (['HTTP_CF_CONNECTING_IP', 'HTTP_X_FORWARDED_FOR', 'REMOTE_ADDR'] as $key) {
+        if (!empty($_SERVER[$key])) return explode(',', $_SERVER[$key])[0];
+    }
+    return '';
+}
+
+// Same shape as EtelID_Security::rate_limit() in the WordPress Service API,
+// reimplemented against etelid_log directly since this standalone gateway
+// has no WordPress transient store to share with it.
+function rate_limited(PDO $pdo, $column, $value, $max, $windowSeconds) {
+    if ($value === '') return false;
+    $stmt = $pdo->prepare(
+        "SELECT COUNT(*) FROM " . pfx('log') . "
+         WHERE event = 'login_failed' AND $column = ? AND created_at > (NOW() - INTERVAL ? SECOND)"
+    );
+    $stmt->execute([$value, $windowSeconds]);
+    return (int)$stmt->fetchColumn() >= $max;
 }
 
 // ── Route ─────────────────────────────────────────────────────
@@ -94,11 +114,25 @@ switch ($action) {
         if (!$phone || !$password) err('phone and password required');
 
         $pdo = db();
+        $ip  = client_ip();
+
+        // Mirror the Service API's brute-force limits (30/min per IP,
+        // 8 per 15 min per account) since this gateway shares the same
+        // members/sessions tables and is just as reachable.
+        if (rate_limited($pdo, 'actor_ip', $ip, 30, 60)) {
+            err('Too many attempts. Try again in a minute.', 429);
+        }
+
         $stmt = $pdo->prepare("SELECT * FROM " . pfx('members') . " WHERE phone = ? LIMIT 1");
         $stmt->execute([$phone]);
         $member = $stmt->fetch();
 
         if (!$member)                          err('No account found with this phone number', 404);
+
+        if (rate_limited($pdo, 'member_id', $member['id'], 8, 900)) {
+            err('Too many attempts for this account. Please wait a few minutes, or reset your password.', 429);
+        }
+
         if ($member['status'] === 'suspended') err('Account suspended. Contact support.', 403);
         if ($member['status'] === 'revoked')   err('Account revoked.', 403);
         if (empty($member['pin_hash']))        err('No password set. Reset your password.', 400);
@@ -113,8 +147,8 @@ switch ($action) {
         }
 
         if (!$valid) {
-            $pdo->prepare("INSERT INTO " . pfx('log') . " (member_id, etel_id, event, detail) VALUES (?,?,?,?)")
-                ->execute([$member['id'], $member['etel_id'], 'login_failed', "Failed login from: $project"]);
+            $pdo->prepare("INSERT INTO " . pfx('log') . " (member_id, etel_id, actor_ip, event, detail) VALUES (?,?,?,?,?)")
+                ->execute([$member['id'], $member['etel_id'], $ip, 'login_failed', "Failed login from: $project"]);
             err('Incorrect password', 401);
         }
 
