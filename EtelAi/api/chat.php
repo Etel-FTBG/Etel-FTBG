@@ -889,9 +889,19 @@ function etelai_try_provider_keys(&$providersCfg, $providerId, $messages, $tools
     $now = time();
     $lastError = null;
     $anyTried = false;
+    // Temporary diagnostic trail - records what this function actually saw
+    // for every provider block matching $providerId, so a "no keys" error
+    // can be traced without live server file access. Remove once the
+    // OpenRouter routing issue reported after PR #90/#91 is resolved.
+    $diag = array();
 
     foreach ($providersCfg['providers'] as &$prov) {
         if ($prov['id'] !== $providerId) continue;
+        $diag[] = 'provider(enabled=' . (!empty($prov['enabled']) ? '1' : '0') . ',keys=' . count($prov['keys']) . ')';
+        foreach ($prov['keys'] as $kk) {
+            $diag[] = (isset($kk['id']) ? $kk['id'] : '?') . ':enabled=' . (!empty($kk['enabled']) ? '1' : '0')
+                . ',cooldown=' . (isset($kk['cooldown_until']) ? $kk['cooldown_until'] : 'none');
+        }
         $orderedKeys = &$prov['keys'];
         if ($preferredTag !== null && $preferredTag !== '') {
             $tagged = array();
@@ -943,7 +953,7 @@ function etelai_try_provider_keys(&$providersCfg, $providerId, $messages, $tools
     }
     unset($prov);
 
-    if (!$anyTried) throw new Exception('No enabled, available keys for ' . $providerId . '.');
+    if (!$anyTried) throw new Exception('No enabled, available keys for ' . $providerId . '. [diag: ' . ($diag ? implode(' | ', $diag) : 'no matching provider block found') . ']');
     throw new Exception($lastError ?: ('All ' . $providerId . ' keys failed.'));
 }
 
