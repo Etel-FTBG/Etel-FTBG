@@ -51,7 +51,11 @@
 
 html { scroll-behavior: smooth; }
 body {
-  font-family: 'Poppins', sans-serif;
+  /* Was 'Poppins' - swapped to the Group's canonical body font (Syne for
+     display type below) so the customer app reads as the same product as
+     ethelmarket.com instead of a different one. Matching Google Fonts
+     <link> update needed in delivery/customer.html. */
+  font-family: 'Cormorant Garamond', serif;
   background: var(--dark);
   color: var(--text);
   min-height: 100vh;
@@ -204,7 +208,7 @@ body {
 .search-icon { color: var(--text-muted); flex-shrink: 0; }
 .search-input {
   flex: 1; border: none; background: none; outline: none;
-  font-family: 'Poppins', sans-serif;
+  font-family: 'Cormorant Garamond', serif;
   font-size: 14px; color: var(--text);
   padding: 12px 0;
 }
@@ -232,7 +236,7 @@ body {
   font-size: 12px; font-weight: 600; color: var(--text-muted);
   cursor: pointer; white-space: nowrap;
   transition: all .2s var(--ease);
-  font-family: 'Poppins', sans-serif;
+  font-family: 'Cormorant Garamond', serif;
 }
 .filter-pill:hover { border-color: rgba(255,215,0,.45); color: var(--gold-light); }
 .filter-pill.active {
@@ -257,7 +261,7 @@ body {
   font-size: 13px; font-weight: 600; color: var(--text-muted);
   cursor: pointer; white-space: nowrap;
   transition: all .2s var(--ease);
-  font-family: 'Poppins', sans-serif;
+  font-family: 'Cormorant Garamond', serif;
 }
 .cat-chip span { font-size: 16px; }
 .cat-chip:hover { transform: translateY(-2px); border-color: rgba(255,215,0,.4); color: var(--text); }
@@ -321,7 +325,7 @@ body {
 .promo-icon { font-size: 42px; line-height: 1; flex-shrink: 0; }
 .promo-body { flex: 1; }
 .promo-headline {
-  font-family: 'DM Serif Display', serif;
+  font-family: 'Syne', sans-serif;
   font-size: 24px; font-weight: 700; line-height: 1.1;
   letter-spacing: -.02em;
 }
@@ -402,7 +406,7 @@ body {
 .see-all-btn {
   font-size: 12px; font-weight: 700; color: var(--gold);
   background: none; border: 1px solid rgba(255,215,0,.2); cursor: pointer;
-  font-family: 'Poppins', sans-serif;
+  font-family: 'Cormorant Garamond', serif;
   padding: 5px 12px; border-radius: 20px;
   transition: all .2s;
   text-shadow: 0 0 8px rgba(255,215,0,.4);
@@ -552,7 +556,7 @@ body {
   flex: 1; display: flex; flex-direction: column;
   align-items: center; justify-content: center; gap: 4px;
   height: 100%; border: none; background: none; cursor: pointer;
-  font-family: 'Poppins', sans-serif;
+  font-family: 'Cormorant Garamond', serif;
   font-size: 10px; font-weight: 600; color: var(--text-dim);
   border-radius: 14px;
   transition: all .25s var(--ease);
@@ -646,7 +650,7 @@ body {
   background: rgba(239,68,68,.15); border: 1px solid rgba(239,68,68,.3);
   border-radius: 12px; font-size: 14px; font-weight: 600;
   color: #FCA5A5; cursor: pointer; margin-top: 16px;
-  font-family: 'Poppins', sans-serif;
+  font-family: 'Cormorant Garamond', serif;
   transition: all .2s;
 }
 .logout-btn:hover { background: rgba(239,68,68,.25); }
