@@ -1,5 +1,10 @@
 # ETEL AI — EtelAi folder rules
-SetEnv ETEL_UPDATER_PASS EtelAdmin1616.
+# The real updater password must be set directly in the live server's
+# .htaccess (or cPanel's PHP env var UI), never committed here - a
+# previous commit had the actual live password on this line in plain
+# text, publicly readable in this repo's git history. Rotate that
+# password on the server; do not reuse it.
+#SetEnv ETEL_UPDATER_PASS CHANGE_ME
 # Allow JSON, JS, and web app files
 <FilesMatch "\.(json|js|webmanifest|txt)$">
     Require all granted
