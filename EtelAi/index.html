@@ -30,7 +30,13 @@
   --neon:#FFD700;--neon-glow:0 0 8px rgba(255,215,0,0.6),0 0 20px rgba(255,215,0,0.3);
 }
 html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--tx);font-family:var(--font-body);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased;}
-.shell{display:flex;height:100vh;overflow:hidden;}
+/* 100vh on mobile Chrome/Safari sizes against the viewport with the
+   address bar collapsed - taller than what's actually visible on load,
+   which pushed the composer below the fold until some interaction
+   collapsed the browser chrome. 100dvh (the unit made for this) tracks
+   the real visible height; 100vh stays as a fallback for older browsers
+   that don't support dvh yet. */
+.shell{display:flex;height:100vh;height:100dvh;overflow:hidden;}
 
 /* SIDEBAR */
 .sidebar{width:var(--sidebar);flex-shrink:0;background:var(--bg2);border-right:1px solid var(--line);display:flex;flex-direction:column;overflow:hidden;transition:transform 0.3s;}
