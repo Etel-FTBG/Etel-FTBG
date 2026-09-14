@@ -417,9 +417,7 @@ try {
             break;
             
         case 'get_queue':
-            if (!isset($_SESSION['controller_id'])) {
-                jsonResponse(['success' => false, 'message' => 'Not authenticated'], 401);
-            }
+            requireControllerAuth();
             
             $controllerId = $_SESSION['controller_id'];
             $vehicleTypeId = (int)($_GET['vehicle_type_id'] ?? 0);
@@ -456,9 +454,7 @@ try {
             break;
             
         case 'serve_vehicle':
-            if (!isset($_SESSION['controller_id'])) {
-                jsonResponse(['success' => false, 'message' => 'Not authenticated'], 401);
-            }
+            requireControllerAuth();
             
             $queueId = (int)($_POST['queue_id'] ?? 0);
             $fuelGallons = (float)($_POST['fuel_gallons'] ?? 0);
@@ -518,9 +514,7 @@ try {
             break;
             
         case 'move_to_vip':
-            if (!isset($_SESSION['controller_id'])) {
-                jsonResponse(['success' => false, 'message' => 'Not authenticated'], 401);
-            }
+            requireControllerAuth();
             
             $queueId = (int)($_POST['queue_id'] ?? 0);
             
@@ -534,9 +528,7 @@ try {
             break;
             
         case 'move_to_waiting':
-            if (!isset($_SESSION['controller_id'])) {
-                jsonResponse(['success' => false, 'message' => 'Not authenticated'], 401);
-            }
+            requireControllerAuth();
             
             $queueId = (int)($_POST['queue_id'] ?? 0);
             
@@ -550,9 +542,7 @@ try {
             break;
             
         case 'bulk_import':
-            if (!isset($_SESSION['controller_id'])) {
-                jsonResponse(['success' => false, 'message' => 'Not authenticated'], 401);
-            }
+            requireControllerAuth();
             
             $plates = $_POST['plates'] ?? '';
             $vehicleTypeId = (int)($_POST['vehicle_type_id'] ?? 0);
@@ -677,9 +667,7 @@ try {
             break;
             
         case 'clear_queue':
-            if (!isset($_SESSION['controller_id'])) {
-                jsonResponse(['success' => false, 'message' => 'Not authenticated'], 401);
-            }
+            requireControllerAuth();
             
             $controllerId = $_SESSION['controller_id'];
             $vehicleTypeId = (int)($_POST['vehicle_type_id'] ?? 0);
@@ -698,9 +686,7 @@ try {
             break;
             
         case 'get_stats':
-            if (!isset($_SESSION['controller_id'])) {
-                jsonResponse(['success' => false, 'message' => 'Not authenticated'], 401);
-            }
+            requireControllerAuth();
             
             $controllerId = $_SESSION['controller_id'];
 
@@ -727,9 +713,7 @@ try {
             break;
 
         case 'check_import':
-            if (!isset($_SESSION['controller_id'])) {
-                jsonResponse(['success' => false, 'message' => 'Not authenticated'], 401);
-            }
+            requireControllerAuth();
             $controllerId = $_SESSION['controller_id'];
             $rawPlates = $_POST['plates'] ?? '';
             if (!$rawPlates) jsonResponse(['success' => false, 'message' => 'No plates provided'], 400);
@@ -782,9 +766,7 @@ try {
             break;
 
         case 'get_report':
-            if (!isset($_SESSION['controller_id'])) {
-                jsonResponse(['success' => false, 'message' => 'Not authenticated'], 401);
-            }
+            requireControllerAuth();
             $controllerId = $_SESSION['controller_id'];
             $date = $_GET['date'] ?? $_POST['date'] ?? date('Y-m-d');
             $date = preg_match('/^\d{4}-\d{2}-\d{2}$/', $date) ? $date : date('Y-m-d');
