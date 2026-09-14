@@ -42,7 +42,7 @@
 html { scroll-behavior: smooth; font-size: 16px; }
 
 body {
-  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  font-family: 'Cormorant Garamond', serif;
   background: var(--color-bg);
   color: var(--color-text);
   line-height: 1.6;
