@@ -129,16 +129,24 @@ case 'ep_login':
 case 'etel_pay_login': {
     $phone = ep_normalize_phone(in_str('phone'));
     $pin   = in_str('pin');
+    $ip    = isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : '';
     if (!$phone || !$pin) ep_err('Phone and PIN required');
+
+    if (ep_login_rate_limited($phone, $ip)) {
+        ep_err('Too many attempts. Please wait a while and try again.', 429);
+    }
 
     $pdo  = ep_db();
     $stmt = $pdo->prepare('SELECT id, pin_hash, status FROM ' . EP_TBL_USERS . ' WHERE phone = ? LIMIT 1');
     $stmt->execute(array($phone));
     $user = $stmt->fetch();
 
-    if (!$user) ep_err('Invalid phone or PIN');
+    if (!$user) { ep_record_failed_login($phone, $ip); ep_err('Invalid phone or PIN'); }
     if ($user['status'] !== 'active') ep_err('Account suspended');
-    if (!password_verify($pin, $user['pin_hash'])) ep_err('Invalid phone or PIN');
+    if (!password_verify($pin, $user['pin_hash'])) {
+        ep_record_failed_login($phone, $ip);
+        ep_err('Invalid phone or PIN');
+    }
 
     // Create session
     $token      = bin2hex(openssl_random_pseudo_bytes(32));

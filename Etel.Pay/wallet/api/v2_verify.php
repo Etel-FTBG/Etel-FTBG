@@ -95,6 +95,17 @@ function ep_env($key, $cfg_const, $default = '') {
     return $default;
 }
 
+/* Placeholder values (config.php ships these as literal defaults so a
+   fresh checkout is at least syntactically valid) must never be treated
+   as "configured" - they're truthy non-empty strings, so a bare !$value
+   check silently accepts them. Every !EP_*_PASS/!EP_SECRET-style guard
+   below must go through this instead of a plain empty check. */
+function ep_is_placeholder($v) {
+    if ($v === '' || $v === null) return true;
+    $v = strtolower(trim((string)$v));
+    return in_array($v, array('change_me', 'changeme', 'change-me'), true);
+}
+
 /* ── Runtime constants (priority: .env > getenv > CFG_ > default) ── */
 if (!defined('EP_DB_HOST'))    define('EP_DB_HOST',    ep_env('DB_HOST',      'EP_CFG_DB_HOST',    'localhost'));
 if (!defined('EP_DB_NAME'))    define('EP_DB_NAME',    ep_env('DB_NAME',      'EP_CFG_DB_NAME',    ''));
@@ -103,9 +114,9 @@ if (!defined('EP_DB_PASS'))    define('EP_DB_PASS',    ep_env('DB_PASS',      'E
 if (!defined('EP_SECRET'))     define('EP_SECRET',     ep_env('EP_SECRET',    'EP_CFG_SECRET',     ''));
 if (!defined('EP_TBL_PREFIX')) define('EP_TBL_PREFIX', ep_env('EP_TBL_PREFIX','EP_CFG_TBL_PREFIX', 'Etelpay_'));
 
-/* ── Guard: refuse to serve without DB password ─────────────
-   Prevents silent startup with empty credentials.           */
-if (!EP_DB_PASS) {
+/* -- Guard: refuse to serve without a real DB password --------
+   Prevents silent startup with empty OR still-placeholder credentials. */
+if (ep_is_placeholder(EP_DB_PASS)) {
     while (ob_get_level()) { @ob_end_clean(); }
     if (!headers_sent()) {
         http_response_code(500);
@@ -126,8 +137,12 @@ if (!EP_DB_PASS) {
 /* ── Auto-generate EP_SECRET from server fingerprint if missing ──
    Allows the wallet to operate without explicit config while
    ensuring the secret is unique per server (not 'changeme').
+   Also triggers when EP_SECRET is still the literal placeholder from
+   config.php's shipped default - a known, guessable value is no safer
+   than an empty one for something used in hash_equals() auth checks
+   throughout ep_r1.php.
    ALWAYS set EP_SECRET explicitly in .env for production.   */
-if (!EP_SECRET) {
+if (ep_is_placeholder(EP_SECRET)) {
     $auto = hash('sha256', php_uname('n') . EP_DB_NAME . EP_DB_USER . 'etelpay2026');
     define('EP_SECRET_FINAL', $auto);
 } else {
@@ -172,6 +187,54 @@ function ep_db() {
         ep_err('Database connection failed', 503);
     }
     return $pdo;
+}
+
+/* -- Login brute-force lockout ---------------------------------
+   ep_login (a 4-digit PIN, per the audit) had zero attempt tracking
+   or lockout - brute-forceable in minutes. Self-healing log table,
+   same convention as EP_TBL_UPDLOG above. */
+function ep_ensure_login_attempts_table($pdo) {
+    static $done = false;
+    if ($done) return;
+    $pdo->exec('CREATE TABLE IF NOT EXISTS ' . EP_TBL_PREFIX . 'ep_login_attempts (
+        id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+        phone VARCHAR(32) NOT NULL DEFAULT \'\',
+        ip VARCHAR(45) NOT NULL DEFAULT \'\',
+        created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (id),
+        KEY idx_phone (phone),
+        KEY idx_ip (ip),
+        KEY idx_created (created_at)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4');
+    $done = true;
+}
+function ep_record_failed_login($phone, $ip) {
+    $pdo = ep_db();
+    ep_ensure_login_attempts_table($pdo);
+    $pdo->prepare('INSERT INTO ' . EP_TBL_PREFIX . 'ep_login_attempts (phone, ip) VALUES (?, ?)')
+        ->execute(array($phone, $ip));
+}
+function ep_login_rate_limited($phone, $ip) {
+    $pdo = ep_db();
+    ep_ensure_login_attempts_table($pdo);
+    // Per-account: 5 failed attempts in 15 minutes. Per-IP: 20/hour, since
+    // one IP hammering many different phone numbers should also be capped.
+    $stmt = $pdo->prepare(
+        'SELECT COUNT(*) FROM ' . EP_TBL_PREFIX . 'ep_login_attempts
+         WHERE phone = ? AND created_at > (NOW() - INTERVAL 15 MINUTE)'
+    );
+    $stmt->execute(array($phone));
+    if ((int)$stmt->fetchColumn() >= 5) return true;
+
+    if ($ip !== '') {
+        $stmt = $pdo->prepare(
+            'SELECT COUNT(*) FROM ' . EP_TBL_PREFIX . 'ep_login_attempts
+             WHERE ip = ? AND created_at > (NOW() - INTERVAL 1 HOUR)'
+        );
+        $stmt->execute(array($ip));
+        if ((int)$stmt->fetchColumn() >= 20) return true;
+    }
+    return false;
 }
 
 /* ── Response helpers ────────────────────────────────────────── */

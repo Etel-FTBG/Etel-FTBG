@@ -201,13 +201,26 @@ case 'ep_admin_reverse_tx': {
 
     $pdo->beginTransaction();
     try {
+        // Flip the status conditionally on it still being "completed" and
+        // check the actual affected-row count before touching any balance -
+        // two concurrent reverse clicks both reading the same completed row
+        // above would otherwise both credit/debit balances, double-
+        // processing the reversal even though the status flip looks
+        // idempotent on its own. Only the request that wins this UPDATE
+        // proceeds to move money.
+        $flip = $pdo->prepare('UPDATE ' . EP_TBL_TX . ' SET status = "reversed" WHERE id = ? AND status = "completed"');
+        $flip->execute(array((int)$tx['id']));
+        if ($flip->rowCount() === 0) {
+            $pdo->rollBack();
+            ep_err('Transaction already reversed');
+        }
+
         if ($tx['sender_ep_id']) {
             $pdo->prepare('UPDATE ' . EP_TBL_USERS . ' SET balance_etb = balance_etb + ? WHERE id = ?')->execute(array((float)$tx['amount'], (int)$tx['sender_ep_id']));
         }
         if ($tx['receiver_ep_id']) {
             $pdo->prepare('UPDATE ' . EP_TBL_USERS . ' SET balance_etb = GREATEST(0, balance_etb - ?) WHERE id = ?')->execute(array((float)$tx['amount'], (int)$tx['receiver_ep_id']));
         }
-        $pdo->prepare('UPDATE ' . EP_TBL_TX . ' SET status = "reversed" WHERE id = ?')->execute(array((int)$tx['id']));
         $pdo->commit();
     } catch (Exception $ex) {
         $pdo->rollBack();
@@ -409,11 +422,22 @@ case 'ep_admin_topup_approve': {
     if ($req['status'] === 'completed') ep_err('Already completed');
     $pdo->beginTransaction();
     try {
+        // Same double-processing risk as ep_admin_reverse_tx above: gate on
+        // the actual row-count of a status flip that can only succeed once,
+        // before crediting any balance, instead of trusting the plain
+        // SELECT above (which two concurrent approve clicks could both
+        // pass while the request is still "pending").
+        $flip = $pdo->prepare('UPDATE ' . EP_TBL_TOPUP . ' SET status="completed" WHERE ref=? AND status != "completed"');
+        $flip->execute(array($ref));
+        if ($flip->rowCount() === 0) {
+            $pdo->rollBack();
+            ep_err('Already completed');
+        }
+
         $pdo->prepare('UPDATE ' . EP_TBL_USERS . ' SET balance_etb = balance_etb + ? WHERE id = ?')
             ->execute(array($req['amount'], $req['user_id']));
         $pdo->prepare('INSERT INTO ' . EP_TBL_TX . ' (tx_ref, type, receiver_ep_id, amount, currency, note, status, created_at) VALUES (?,?,?,?,?,?,?,NOW())')
             ->execute(array(ep_gen_ref(), 'deposit', $req['user_id'], $req['amount'], 'ETB', 'Top-up: '.$ref, 'completed'));
-        $pdo->prepare('UPDATE ' . EP_TBL_TOPUP . ' SET status="completed" WHERE ref=?')->execute(array($ref));
         $pdo->commit();
         ep_ok(array('ref'=>$ref,'credited'=>$req['amount']), 'ETB '.$req['amount'].' credited');
     } catch (Exception $ex) { $pdo->rollBack(); ep_err('Failed: '.$ex->getMessage(), 500); }
