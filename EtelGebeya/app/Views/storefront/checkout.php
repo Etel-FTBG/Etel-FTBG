@@ -315,7 +315,7 @@ const EG_BASE_URL = window.EG_BASE_URL;
                 <span class="payment-icon">📱</span>
                 <span>
                   <div class="payment-name">Telebirr</div>
-                  <div class="payment-sub">Ethio Telecom wallet</div>
+                  <div class="payment-sub">Ethio Telecom wallet -- you'll get payment instructions after placing the order; our team confirms it manually, not instant</div>
                 </span>
               </span>
             </label>
@@ -328,7 +328,7 @@ const EG_BASE_URL = window.EG_BASE_URL;
                 <span class="payment-icon">🏦</span>
                 <span>
                   <div class="payment-name">CBE Birr</div>
-                  <div class="payment-sub">Commercial Bank wallet</div>
+                  <div class="payment-sub">Commercial Bank wallet -- you'll get payment instructions after placing the order; our team confirms it manually, not instant</div>
                 </span>
               </span>
             </label>
