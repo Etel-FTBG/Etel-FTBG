@@ -9,13 +9,6 @@ header('Content-Type: application/json; charset=utf-8');
 
 $action = $_GET['action'] ?? $_POST['action'] ?? '';
 
-// Helper function to check admin authentication
-function requireAdmin() {
-    if (!isset($_SESSION['admin_id'])) {
-        jsonResponse(['success' => false, 'message' => 'Not authenticated'], 401);
-    }
-}
-
 try {
     switch ($action) {
         
@@ -135,7 +128,7 @@ try {
             break;
 
         case 'logout':
-            requireAdmin();
+            requireAdminAuth();
             
             db()->insert('activity_log', [
                 'admin_id' => $_SESSION['admin_id'],
@@ -163,7 +156,7 @@ try {
         // ─── DASHBOARD ──────────────────────────────────────────────
         
         case 'get_dashboard_stats':
-            requireAdmin();
+            requireAdminAuth();
             
             $stats = [
                 'controllers' => db()->count('controllers', 'is_active = 1'),
@@ -198,7 +191,7 @@ try {
             break;
 
         case 'get_served_trend':
-            requireAdmin();
+            requireAdminAuth();
 
             $days = db()->fetchAll(
                 "SELECT report_date, COUNT(*) served
@@ -212,7 +205,7 @@ try {
             break;
 
         case 'get_fuel_snapshot':
-            requireAdmin();
+            requireAdminAuth();
 
             $rows = db()->fetchAll(
                 "SELECT fuel_type,
@@ -229,7 +222,7 @@ try {
         // ─── CONTROLLERS ────────────────────────────────────────────
         
         case 'get_controllers':
-            requireAdmin();
+            requireAdminAuth();
 
             $controllers = db()->fetchAll(
                 "SELECT * FROM controllers ORDER BY created_at DESC"
@@ -252,7 +245,7 @@ try {
             break;
             
         case 'create_controller':
-            requireAdmin();
+            requireAdminAuth();
 
             $username = sanitize($_POST['username'] ?? '');
             $fullName = sanitize($_POST['full_name'] ?? '');
@@ -304,7 +297,7 @@ try {
             break;
             
         case 'update_controller':
-            requireAdmin();
+            requireAdminAuth();
             
             $id = (int)($_POST['id'] ?? 0);
             $fullName = sanitize($_POST['full_name'] ?? '');
@@ -353,7 +346,7 @@ try {
             break;
             
         case 'delete_controller':
-            requireAdmin();
+            requireAdminAuth();
             
             $id = (int)($_POST['id'] ?? 0);
             
@@ -377,7 +370,7 @@ try {
         // ─── VEHICLE TYPES ──────────────────────────────────────────
         
         case 'get_vehicle_types':
-            requireAdmin();
+            requireAdminAuth();
             
             $types = db()->fetchAll(
                 "SELECT * FROM vehicle_types ORDER BY sort_order, name"
@@ -387,7 +380,7 @@ try {
             break;
             
         case 'create_vehicle_type':
-            requireAdmin();
+            requireAdminAuth();
             
             $name = sanitize($_POST['name'] ?? '');
             $nameAm = sanitize($_POST['name_am'] ?? '');
@@ -417,7 +410,7 @@ try {
             break;
             
         case 'update_vehicle_type':
-            requireAdmin();
+            requireAdminAuth();
             
             $id = (int)($_POST['id'] ?? 0);
             $name = sanitize($_POST['name'] ?? '');
@@ -450,7 +443,7 @@ try {
             break;
             
         case 'delete_vehicle_type':
-            requireAdmin();
+            requireAdminAuth();
             
             $id = (int)($_POST['id'] ?? 0);
             
@@ -474,7 +467,7 @@ try {
         // ─── QUEUE MONITOR ──────────────────────────────────────────
         
         case 'get_queue_monitor':
-            requireAdmin();
+            requireAdminAuth();
             
             $sql = "SELECT q.*, vt.name as vehicle_type_name, vt.icon, 
                            c.station_name, c.full_name as controller_name
@@ -506,7 +499,7 @@ try {
         // ─── REPORTS ────────────────────────────────────────────────
         
         case 'get_reports':
-            requireAdmin();
+            requireAdminAuth();
             
             $date = $_GET['date'] ?? date('Y-m-d');
             
@@ -532,7 +525,7 @@ try {
         // ─── SETTINGS ───────────────────────────────────────────────
         
         case 'get_settings':
-            requireAdmin();
+            requireAdminAuth();
             
             $settings = db()->fetchAll("SELECT * FROM settings");
             
@@ -545,7 +538,7 @@ try {
             break;
             
         case 'update_settings':
-            requireAdmin();
+            requireAdminAuth();
             
             $settings = $_POST['settings'] ?? [];
             
