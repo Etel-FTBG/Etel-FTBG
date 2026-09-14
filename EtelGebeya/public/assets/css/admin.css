@@ -4,7 +4,7 @@
    Dark: #0A0A1A · Gold #D4AF37 · Glassmorphism
    ════════════════════════════════════════════════════════════════════ */
 
-@import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Outfit:wght@400;500;600;700;800;900&family=DM+Serif+Display:ital@0;1&family=Noto+Sans+Ethiopic:wght@400;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Noto+Sans+Ethiopic:wght@400;600;700&display=swap');
 
 :root {
   --dark-bg:      #0A0A1A;
@@ -41,7 +41,7 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html, body {
   height: 100%;
-  font-family: 'Outfit', 'Noto Sans Ethiopic', system-ui, sans-serif;
+  font-family: 'Cormorant Garamond', 'Noto Sans Ethiopic', serif;
   background:
     radial-gradient(ellipse at 18% 8%, rgba(255,230,80,.18) 0%,transparent 42%),
     radial-gradient(ellipse at 82% 92%, rgba(60,30,0,.36) 0%,transparent 42%),
@@ -281,7 +281,7 @@ body::before {
   margin-bottom: .75rem;
 }
 .stat-card-label { font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--dark-muted); margin-bottom: .4rem; }
-.stat-card-value { font-size: 1.75rem; font-weight: 800; color: #fff; font-family: 'Sora', sans-serif; letter-spacing: -.02em; }
+.stat-card-value { font-size: 1.75rem; font-weight: 800; color: #fff; font-family: 'Syne', sans-serif; letter-spacing: -.02em; }
 .stat-card-change { font-size: .75rem; font-weight: 600; margin-top: .4rem; }
 .stat-card-change.up { color: var(--green); }
 .stat-card-change.down { color: var(--red); }
@@ -416,7 +416,7 @@ body::before {
   padding: .6rem .9rem;
   font-size: .9rem;
   transition: all .25s;
-  font-family: 'Outfit', sans-serif;
+  font-family: 'Cormorant Garamond', serif;
 }
 .modal-input:focus, .modal-select:focus, .modal-textarea:focus {
   outline: none;
@@ -428,7 +428,7 @@ body::before {
 
 /* ── BUTTONS ──────────────────────────────────────────── */
 .btn {
-  font-family: 'Outfit', sans-serif;
+  font-family: 'Cormorant Garamond', serif;
   font-weight: 700;
   border-radius: var(--r-sm);
   letter-spacing: .02em;
