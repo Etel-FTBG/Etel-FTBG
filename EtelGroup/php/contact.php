@@ -35,14 +35,30 @@ if (strlen($message) > 5000) {
     err('Message is too long (max 5000 characters).');
 }
 
+$ip = $_SERVER['REMOTE_ADDR'] ?? '';
+
 try {
     $pdo = eg_db();
+
+    // The ip column was already being stored on every submission but never
+    // used for anything - an unlimited POST loop could fill this table and
+    // spam info@ethelmarket.com with no mitigation at all. Cap it at 5 per
+    // hour per IP, checked against the same table we're about to insert into.
+    if ($ip !== '') {
+        $rl = $pdo->prepare(
+            "SELECT COUNT(*) FROM contact_messages WHERE ip = ? AND created_at > (NOW() - INTERVAL 1 HOUR)"
+        );
+        $rl->execute([$ip]);
+        if ((int)$rl->fetchColumn() >= 5) {
+            err('Too many messages sent recently. Please try again in an hour.', 429);
+        }
+    }
+
     $pdo->prepare(
         "INSERT INTO contact_messages (name, email, subject, company, message, ip, created_at)
          VALUES (?, ?, ?, ?, ?, ?, NOW())"
     )->execute([
-        $name, $email, $subject ?: null, $company ?: null, $message,
-        $_SERVER['REMOTE_ADDR'] ?? null,
+        $name, $email, $subject ?: null, $company ?: null, $message, $ip ?: null,
     ]);
 } catch (\Throwable $e) {
     err('Could not save your message right now. Please try again shortly.', 500);
