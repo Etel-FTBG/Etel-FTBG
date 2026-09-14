@@ -62,8 +62,16 @@ function upd_sign_token($pass) {
     $sig = hash_hmac('sha256', 'upd:' . $ts, $pass);
     return base64_encode(json_encode(array('v'=>1,'ts'=>$ts,'sig'=>$sig)));
 }
+// Same placeholder rejection as the login action below - checking this
+// only at login and not here left a bypass: anyone who knows the public
+// default password could self-sign a valid token with upd_sign_token()
+// and hit any authenticated action directly, without ever calling login.
+function upd_password_is_configured($pass) {
+    return strlen($pass) >= 4 && $pass !== 'changeme' && $pass !== 'change_this_updater_password';
+}
 function upd_verify_token($token) {
     if (!$token) return false;
+    if (!upd_password_is_configured(EP_UPDATER_PASS)) return false;
     $d = @json_decode(@base64_decode($token), true);
     if (!$d || !isset($d['ts'], $d['sig'])) return false;
     if ((time() - (int)$d['ts']) > 86400) return false;
@@ -257,7 +265,7 @@ case 'login': {
     $pass = isset($_body['password']) ? trim($_body['password']) : '';
     if (!$pass) upd_err('Password required', 400);
     $expected = defined('EP_UPDATER_PASS') ? EP_UPDATER_PASS : '';
-    if (strlen($expected) < 4 || $expected === 'changeme' || $expected === 'change_this_updater_password') {
+    if (!upd_password_is_configured($expected)) {
         upd_err('Updater password not configured — set EP_UPDATER_PASS in config.php', 503);
     }
     if (!hash_equals($expected, $pass)) upd_err('Wrong password', 401);
