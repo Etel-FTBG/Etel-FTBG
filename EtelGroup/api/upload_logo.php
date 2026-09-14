@@ -110,4 +110,6 @@ if (!move_uploaded_file($file['tmp_name'], $destPath)) {
 // doesn't get stuck showing the old cached image indefinitely.
 $publicUrl = 'https://ethelmarket.com/EtelGroup/icons/uploads/' . $filename . '?v=' . filemtime($destPath);
 
+eg_log_activity('logo_uploaded', ($slug !== '' ? $slug : $filename) . ' (' . $file['size'] . ' bytes)');
+
 ok(array('url' => $publicUrl, 'filename' => $filename));
