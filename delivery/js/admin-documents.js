@@ -287,7 +287,22 @@ async function docsRenderViewer(doc) {
       if (!r.ok) throw new Error('HTTP ' + r.status);
       const buf = await r.arrayBuffer();
       const result = await mammoth.convertToHtml({ arrayBuffer: buf });
-      body.innerHTML = `<div style="padding:24px;color:#111;max-width:780px;margin:0 auto;line-height:1.6">${result.value}</div>` +
+      // mammoth carries over the source document's own run/theme colors as
+      // inline styles (e.g. a template's light-gray placeholder-text
+      // styling), which can land unreadably light against this preview's
+      // white background. Force consistent, readable text color here -
+      // this is a rendering-only override for the preview pane, it does
+      // not touch the underlying file. Scoped by class + !important since
+      // mammoth's inline `style="color:..."` on individual spans would
+      // otherwise beat plain inherited color.
+      body.innerHTML = `
+        <style>
+          .docs-mammoth-preview, .docs-mammoth-preview * { color:#1a1a2e !important; background-color:transparent !important; }
+          .docs-mammoth-preview a { color:#0645AD !important; text-decoration:underline; }
+          .docs-mammoth-preview table { border-collapse:collapse; width:100%; margin:10px 0; }
+          .docs-mammoth-preview td, .docs-mammoth-preview th { border:1px solid #ddd; padding:6px 8px; }
+        </style>
+        <div class="docs-mammoth-preview" style="padding:24px;max-width:780px;margin:0 auto;line-height:1.6">${result.value}</div>` +
         (result.messages && result.messages.length ? `<div style="padding:0 24px 16px;font-size:11px;color:#999">Note: this is a read-only preview - some formatting/images may not render exactly as in Word. Download for the original file.</div>` : '');
     } catch (err) {
       body.innerHTML = `<div style="padding:30px;text-align:center;color:#c0392b">Could not render DOCX preview (${esc(err.message || 'error')}). Use Download instead.</div>`;
