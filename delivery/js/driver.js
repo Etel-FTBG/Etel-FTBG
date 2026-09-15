@@ -1660,10 +1660,10 @@ function showDriverRideDetail(idx) {
         '<div style="font-size:15px;font-weight:800;color:#E5C76B">Ride #' + (r.id||'') + ' &middot; ' + (r.status||'') + '</div>' +
         '<button onclick="closeDriverRideDetail()" style="background:none;border:1px solid #333;color:#B8B0A0;border-radius:6px;padding:4px 10px;cursor:pointer;">✕</button>' +
         '</div>' +
-        (asDriver && r.passenger_name ? '<div style="margin-bottom:12px;"><div style="font-size:10px;color:#B8B0A0;text-transform:uppercase;">Passenger</div><div style="color:#EDEDF5;font-weight:700">' + r.passenger_name + '</div><div style="color:#9A9AAE;font-size:12px">' + (r.passenger_phone||'') + '</div></div>' : '') +
+        (asDriver && r.passenger_name ? '<div style="margin-bottom:12px;"><div style="font-size:10px;color:#B8B0A0;text-transform:uppercase;">Passenger</div><div style="color:#EDEDF5;font-weight:700">' + esc(r.passenger_name) + '</div><div style="color:#9A9AAE;font-size:12px">' + esc(r.passenger_phone||'') + '</div></div>' : '') +
         '<div style="margin-bottom:12px;"><div style="font-size:10px;color:#B8B0A0;text-transform:uppercase;margin-bottom:4px;">Route</div>' +
-        '<div style="color:#EDEDF5;font-size:13px;margin-bottom:3px;">📍 ' + (r.pickup_address||'—') + '</div>' +
-        '<div style="color:#EDEDF5;font-size:13px;">🏁 ' + (r.dropoff_address||'—') + '</div></div>' +
+        '<div style="color:#EDEDF5;font-size:13px;margin-bottom:3px;">📍 ' + esc(r.pickup_address||'—') + '</div>' +
+        '<div style="color:#EDEDF5;font-size:13px;">🏁 ' + esc(r.dropoff_address||'—') + '</div></div>' +
         '<div style="display:flex;gap:20px;margin-bottom:12px;">' +
         '<div><div style="font-size:10px;color:#B8B0A0;text-transform:uppercase;">Distance</div><div style="color:#EDEDF5;">' + parseFloat(r.distance_km||r.traveled_km||0).toFixed(2) + ' km</div></div>' +
         '<div><div style="font-size:10px;color:#B8B0A0;text-transform:uppercase;">Payment</div><div style="color:#EDEDF5;">' + (r.payment_method||'cash') + '</div></div>' +

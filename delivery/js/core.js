@@ -90,6 +90,10 @@ function escapeHtml(str) {
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
 }
+/* Short alias used by some pages (e.g. admin.js) - same behavior as
+   escapeHtml(). core.js loads before every page's own script, so this
+   is available wherever escapeHtml() is. */
+function esc(str) { return escapeHtml(str); }
 
 const ETEL = {
   version: '3.2.6',

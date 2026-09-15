@@ -415,7 +415,7 @@ function openItemDetail(itemId) {
                     '<span style="font-size:24px;font-weight:700;color:var(--gold);">ETB ' + parseFloat(item.price).toFixed(0) + '</span>' +
                     (discounted ? '<span style="font-size:15px;color:var(--text-dim);text-decoration:line-through;">ETB ' + parseFloat(item.original_price).toFixed(0) + '</span>' : '') +
                 '</div>' +
-                (displayDesc ? '<div style="color:var(--text-muted);font-size:13.5px;line-height:1.6;margin-bottom:16px;">' + displayDesc + '</div>'
+                (displayDesc ? '<div style="color:var(--text-muted);font-size:13.5px;line-height:1.6;margin-bottom:16px;">' + escapeHtml(displayDesc) + '</div>'
                              : '<div style="color:var(--text-dim);font-size:12.5px;font-style:italic;margin-bottom:16px;">No description provided yet.</div>') +
                 '<div style="display:flex;gap:16px;margin-bottom:20px;font-size:12px;color:var(--text-muted);">' +
                     (item.preparation_time ? '<div>⏱ ~' + item.preparation_time + ' min</div>' : '') +
@@ -1173,7 +1173,7 @@ async function loadOrders() {
             '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">' +
             '<div><span style="font-weight:700;font-size:14px;color:#1a1a2e">' + o.order_code + '</span>' + payBadge + '</div>' +
             '<span style="padding:4px 10px;border-radius:6px;font-size:11px;font-weight:700;background:' + col + '22;color:' + col + '">' + statusLabel.toUpperCase() + '</span></div>' +
-            '<div style="font-size:12px;color:#B8B0A0;margin-bottom:8px">📍 ' + (o.to_zone||'—') + ' · 👤 ' + (o.recipient_name||'—') + '</div>' +
+            '<div style="font-size:12px;color:#B8B0A0;margin-bottom:8px">📍 ' + escapeHtml(o.to_zone||'—') + ' · 👤 ' + escapeHtml(o.recipient_name||'—') + '</div>' +
             (o.status !== 'cancelled' && o.status !== 'delivered' ? '<div style="margin-bottom:10px"><div style="background:rgba(255,255,255,.1);border-radius:6px;height:5px;overflow:hidden"><div style="background:linear-gradient(90deg,#C9A961,#8B6E3A);height:100%;width:'+progressPct+'%;transition:width .4s"></div></div><div style="font-size:10px;color:#B8B0A0;margin-top:3px">' + statusLabel + '</div></div>' : '') +
             '<div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;color:#B8B0A0">' +
             '<span>' + fmtDate(o.placed_at) + '</span>' +
