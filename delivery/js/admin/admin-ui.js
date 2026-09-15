@@ -17,7 +17,7 @@ function switchPage(page, el) {
         users:'Users Management', couriers:'Couriers Management',
         servicegivers:'Service Givers', items:'Items & Products',
         rides:'Rides Management', pricing:'Pricing (Fares & Zones)',
-        reports:'Analytics & Reports', updater:'File Updater', settings:'Settings', roles:'Roles & Permissions', support:'Support Inbox', launch:'Launch Readiness'
+        reports:'Analytics & Reports', updater:'File Updater', settings:'Settings', roles:'Roles & Permissions', support:'Support Inbox', launch:'Launch Readiness', documents:'Documents'
     };
     document.getElementById('page-title').textContent = titles[page] || page;
 
@@ -73,6 +73,8 @@ function switchPage(page, el) {
         ab.innerHTML = '<button class="btn btn-primary" onclick="loadSupportInbox()">🔄 Refresh</button>';
     } else if (page === 'launch') {
         ab.innerHTML = '';
+    } else if (page === 'documents') {
+        ab.innerHTML = '<button class="btn btn-primary" onclick="openDocsUploadModal()">⬆️ Upload Document</button>';
     } else {
         ab.innerHTML = '<button class="btn btn-secondary" onclick="doExport()">📥 Export CSV</button>' +
                        '<button class="btn btn-primary" onclick="openModal(\'new-user\')">➕ New User</button>';
@@ -115,6 +117,7 @@ function switchPage(page, el) {
     else if (page === 'settings' && typeof loadSettings === 'function') { loadSettings(); if (typeof loadEtelPayPanel === 'function') loadEtelPayPanel(); }
     else if (page === 'support' && typeof loadSupportInbox === 'function') loadSupportInbox();
     else if (page === 'launch' && typeof loadLaunchChecklist === 'function') loadLaunchChecklist();
+    else if (page === 'documents' && typeof loadDocumentsPanel === 'function') loadDocumentsPanel();
 }
 
 // Auto-refresh confirmations every 15s when admin is on orders page
