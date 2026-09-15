@@ -158,6 +158,45 @@ function _setModalFullscreenLayout(box, content, on) {
     content.style.overflow = on ? 'hidden' : 'visible';
 }
 
+// True edge-to-edge fullscreen, toggled by a button inside a modal that
+// opted into {fullscreen:true}. The 'fullscreen' openModal option above
+// still leaves an 8px margin + rounded corners (a large windowed card
+// sized to the device); this instead pins #modal-box to the device's
+// actual screen edges with zero margin/radius, detected the same way
+// (window.innerWidth/innerHeight, re-measured on resize/rotation via the
+// existing _modalFullscreenResizeHandler) so it fills whatever screen it
+// is opened on. isDocsModalTrueFullscreen tracks state; closeModal()
+// resets it so the next modal never opens already-edge-to-edge.
+let isDocsModalTrueFullscreen = false;
+function toggleModalTrueFullscreen() {
+    const box = document.getElementById('modal-box');
+    const btn = document.getElementById('modal-fullscreen-btn');
+    if (!box) return;
+    isDocsModalTrueFullscreen = !isDocsModalTrueFullscreen;
+    if (isDocsModalTrueFullscreen) {
+        box.style.position = 'fixed';
+        box.style.top = '0';
+        box.style.left = '0';
+        box.style.right = '0';
+        box.style.bottom = '0';
+        box.style.width = '100vw';
+        box.style.height = '100dvh';
+        box.style.maxWidth = '100vw';
+        box.style.maxHeight = '100dvh';
+        box.style.margin = '0';
+        box.style.borderRadius = '0';
+    } else {
+        box.style.position = 'relative';
+        box.style.top = '';
+        box.style.left = '';
+        box.style.right = '';
+        box.style.bottom = '';
+        box.style.borderRadius = '16px';
+        _sizeModalToViewport(box);
+    }
+    if (btn) btn.textContent = isDocsModalTrueFullscreen ? '⤡ Exit Full Screen' : '⛶ Full Screen';
+}
+
 function openModal(type, customHtml, opts) {
     const overlay = document.getElementById('modal-overlay');
     const content = document.getElementById('modal-content');
@@ -174,7 +213,15 @@ function openModal(type, customHtml, opts) {
         window.removeEventListener('orientationchange', _modalFullscreenResizeHandler);
         _modalFullscreenResizeHandler = null;
     }
+    isDocsModalTrueFullscreen = false;
     if (box) {
+        box.style.position = 'relative';
+        box.style.top = '';
+        box.style.left = '';
+        box.style.right = '';
+        box.style.bottom = '';
+        box.style.margin = '';
+        box.style.borderRadius = '16px';
         if (opts && opts.fullscreen) {
             _sizeModalToViewport(box);
             _setModalFullscreenLayout(box, content, true);
@@ -250,6 +297,7 @@ function closeModal() {
         window.removeEventListener('orientationchange', _modalFullscreenResizeHandler);
         _modalFullscreenResizeHandler = null;
     }
+    isDocsModalTrueFullscreen = false;
 }
 
 function toast(msg, type='info') {
