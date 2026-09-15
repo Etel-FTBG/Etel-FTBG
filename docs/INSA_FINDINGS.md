@@ -1143,21 +1143,51 @@ Updater tool.
 
 ## Consolidated list of items needing Dagi's judgment call
 
-1. **RideController.php driver-privilege gap** (Section 1) — driver-money-moving/
-   ride-accepting actions are reachable by any authenticated role with no
-   identity-verification (`onboarded=1`) gate, by deliberate progressive-onboarding
-   design. Needs a product decision on exactly where to draw the line.
-2. **`audit_agent.php`'s embedded AI-grading prompt** (Section 4) — an internal,
-   non-submitted dev tool pre-declares some of its own patterns as "passed" in its
-   system prompt. Not a vulnerability in the live app and not part of the INSA
-   submission, but worth a second look as a design choice.
-3. **`change_password` token-refetch failure** (Section 5) — now logged, but still
-   soft-degrades (returns a potentially-stale token) rather than hard-failing. Product
-   decision on whether to force re-login instead.
+**Follow-up pass (post-submission-prep): Dagi made the call on all five items below.
+Status of each:**
+
+1. **RideController.php driver-privilege gap** (Section 1) — **FIXED.** Dagi's call:
+   add the gate. A new `rides_require_onboarded($pdo, $uid)` helper (fails 403 unless
+   `ride_drivers.onboarded = 1`) now guards every driver-money-moving/ride-accepting
+   action: `driver_go_online`, `driver_get_nearby_requests`, `driver_accept_ride`,
+   `driver_hail_customer`, `driver_start_ride`, `driver_arrived`,
+   `driver_complete_ride`, `driver_cashout`, `driver_topup_etel_money`. A plain
+   `customer`-role account (or a driver mid-onboarding) can no longer accept or run a
+   real ride or move driver-side money. `driver_update_profile` (the onboarding
+   submission endpoint itself) is deliberately NOT gated.
+2. **`audit_agent.php`'s embedded AI-grading prompt** (Section 4) — **Left as-is.**
+   Dagi's call: it's internal-only, never deployed, not part of the audit submission.
+3. **`change_password` token-refetch failure** (Section 5) — **FIXED.** Dagi's call:
+   hard-fail instead of soft-degrade. If the post-change `token_version` re-read fails,
+   the endpoint now returns `{success:true, token:null, require_relogin:true}` instead
+   of a token built from a guessed version. Both frontends (`admin.js`, `customer.js`)
+   now check `require_relogin` and force an explicit re-login via `ETEL.auth.logout()`
+   rather than silently showing "Password updated" with a token that might not work.
 4. **Order code / zone-name escaping, and image/photo URL attribute escaping**
-   (Section 3) — currently low/no risk (server-generated or admin-curated data), flagged
-   only in case either becomes user-editable free text, or in case the upload endpoint
-   doesn't actually constrain URL format the way assumed.
-5. **`js/releases/driver/v6/` appears to be missing several expected files** (Section 3)
-   — a pre-existing gap in the release-channel bundle set, unrelated to this pass,
-   worth confirming isn't silently serving stale code in production.
+   (Section 3) — **FIXED.** Dagi's call: add it now as cheap insurance. Added a new
+   `escUrl()` helper in `core.js` (HTML-attribute-escapes a URL and rejects
+   `javascript:`/`vbscript:`/`data:text/html` schemes, allowing only `http(s):`,
+   `data:image/*`, and relative paths) and applied it everywhere an image/photo URL
+   was placed raw into a `src="..."`/`href="..."` attribute
+   (`admin.js`, `servicegiver.js`, `customer.js`, `courier.js`, `driver.js`,
+   `ride.js`). Also escaped every remaining unescaped `order_code`/`from_zone`/
+   `to_zone`/`courier_name`/`customer_name` display spot found across `admin.js`
+   (order table, dashboard table, pending-confirmations panel, confirmation history,
+   Telebirr/bank payment lists) and `servicegiver.js`/`courier.js`, and hardened the
+   remaining raw `order_code` JS-string-in-onclick builders with the same
+   `.replace(/[<>"'\\]/g, '')` stripping pattern used elsewhere in this codebase.
+5. **`js/releases/driver/v6/` appears to be missing several expected files**
+   (Section 3) — **FIXED.** Confirmed real: `driver-bundle-extra.js`,
+   `driver-rate-rider.js`, `driver-announcements-v2.js`, and `sos-button.js` were
+   missing from both `js/releases/driver/v5/` and `v6/` (present in v1-v4, and
+   byte-identical across all of v1-v4 — they were simply never copied forward when
+   v5/v6 were cut). If the driver app's stable/canary channel is ever pointed at v5 or
+   v6, any driver on that version would 404 on these four files and lose rating,
+   in-app announcements, the SOS button, and premium/nav features. Restored by
+   copying the v4 copies (identical content) into both v5 and v6.
+
+All shipped JS (`core.js`, `admin.js`, `customer.js`, `courier.js`, `driver.js`,
+`ride.js`, `servicegiver.js`) was rebuilt via `node js/build-bundles.js` and synced
+into the currently-live release folders (`driver/v6`, `ride/v5`, `customer/v1`,
+`courier/v1`) the same way as the original XSS fix pass. Verified with `php -l`,
+`node --check`, and an ASCII-byte check on the touched PHP files.

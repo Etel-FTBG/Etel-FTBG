@@ -95,6 +95,27 @@ function escapeHtml(str) {
    is available wherever escapeHtml() is. */
 function esc(str) { return escapeHtml(str); }
 
+/* INSA audit follow-up: attribute-safe URL sanitizer for src="..."/
+   href="..." attributes built via string concatenation (item.image_url,
+   delivery_photo_url, selfie_url, etc). These come from an upload flow
+   today (so low/no risk in practice), but were placed raw into HTML
+   attributes with no defense if that ever changes. escapeHtml() alone
+   isn't enough here - it stops the string from breaking OUT of the
+   attribute, but a javascript:/vbscript:/data:text-html scheme value
+   would still execute when the attribute fires (a click on an <a href>,
+   an onerror on a broken <img>). This blocks those schemes outright,
+   allows only http(s):, data:image/*, and same-origin-relative paths,
+   and HTML-attribute-escapes whatever's left. Returns '' (a safely
+   empty attribute) for anything it can't validate as a plain URL. */
+function escUrl(u) {
+  if (typeof u !== 'string') return '';
+  var s = u.trim();
+  if (!s) return '';
+  if (/^(javascript|vbscript|data:text\/html|data:text\/javascript|data:application\/)/i.test(s)) return '';
+  if (/^[a-z][a-z0-9+.\-]*:/i.test(s) && !/^https?:/i.test(s) && !/^data:image\//i.test(s)) return '';
+  return escapeHtml(s);
+}
+
 const ETEL = {
   version: '3.2.6',
   city: 'Hawassa',

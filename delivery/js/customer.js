@@ -314,7 +314,7 @@ function renderItemsGrid(items) {
         const ic = catIcons[item.category] || catEmoji[item.category] || catIcons.default;
         const imgHtml = item.image_url
             ? '<span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:38px;opacity:.4">' + ic + '</span>'
-              + '<img src="' + item.image_url + '" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover" onerror="this.onerror=null;this.style.display=\'none\'">'
+              + '<img src="' + escUrl(item.image_url) + '" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover" onerror="this.onerror=null;this.style.display=\'none\'">'
             : '<span style="font-size:52px;filter:drop-shadow(0 4px 12px rgba(212,175,55,.3))">' + ic + '</span>';
         const displayName = (ETEL_I18N.current() === 'am' && item.name_am) ? item.name_am : (item.name || '');
         // Stripped (not just apostrophe-escaped): this string ends up both
@@ -379,7 +379,7 @@ function openItemDetail(itemId) {
     const discounted = item.original_price && parseFloat(item.original_price) > parseFloat(item.price);
     const ic = (catEmoji[item.category]) || '🍴';
     const imgHtml = item.image_url
-        ? '<img src="' + item.image_url + '" alt="" style="width:100%;height:100%;object-fit:cover" onerror="this.onerror=null;this.style.display=\'none\'">'
+        ? '<img src="' + escUrl(item.image_url) + '" alt="" style="width:100%;height:100%;object-fit:cover" onerror="this.onerror=null;this.style.display=\'none\'">'
         : '<span style="font-size:80px">' + ic + '</span>';
     const stock = parseInt(item.stock_quantity, 10);
     const available = item.is_available == 1 && (isNaN(stock) || stock > 0);
@@ -614,7 +614,7 @@ function renderCartDrawer() {
         '<input type="file" id="co-photo-file" accept="image/*" capture="environment" style="display:none" onchange="uploadDeliveryPhoto(this)">' +
         '<div id="co-photo-row" style="margin-bottom:14px">' +
         (_deliveryPhotoUrl
-            ? '<div style="display:flex;align-items:center;gap:8px"><img src="' + _deliveryPhotoUrl.replace(/"/g,'&quot;') + '" style="width:44px;height:44px;object-fit:cover;border-radius:8px;border:1px solid #e0e0e0"><span style="font-size:12px;color:#2ECC71;flex:1">Photo added</span><button onclick="removeDeliveryPhoto()" style="padding:6px 10px;background:#f5f5f5;border:none;border-radius:8px;font-size:11px;cursor:pointer;color:#888">Remove</button></div>'
+            ? '<div style="display:flex;align-items:center;gap:8px"><img src="' + escUrl(_deliveryPhotoUrl) + '" style="width:44px;height:44px;object-fit:cover;border-radius:8px;border:1px solid #e0e0e0"><span style="font-size:12px;color:#2ECC71;flex:1">Photo added</span><button onclick="removeDeliveryPhoto()" style="padding:6px 10px;background:#f5f5f5;border:none;border-radius:8px;font-size:11px;cursor:pointer;color:#888">Remove</button></div>'
             : '<button onclick="document.getElementById(\'co-photo-file\').click()" style="width:100%;padding:9px;background:#fff;border:1.5px dashed #ddd;border-radius:8px;font-size:12px;color:#8B6E3A;cursor:pointer">📷 Add a photo of your gate/entrance (optional — helps the courier find you)</button>') +
         '</div>' +
         '<!-- RECIPIENT -->' +
@@ -1868,6 +1868,12 @@ async function submitCustomerPasswordChange() {
     if (msg) { msg.style.color = 'rgba(240,237,216,.6)'; msg.textContent = 'Updating…'; }
     const res = await api('change_password', { current_password: cur, new_password: nw });
     if (res && res.success) {
+        if (res.data && res.data.require_relogin) {
+            if (msg) { msg.style.color = '#22C55E'; msg.textContent = 'Password updated. Please log in again…'; }
+            showToast('Password updated - please log in again');
+            setTimeout(() => { ETEL.auth.logout(); }, 1500);
+            return;
+        }
         if (res.data && res.data.token) localStorage.setItem('etel_token', res.data.token);
         if (msg) { msg.style.color = '#22C55E'; msg.textContent = 'Password updated ✓'; }
         showToast('Password updated');

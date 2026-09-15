@@ -856,7 +856,7 @@
     var dp = document.getElementById('drv-plate');   if (dp) dp.textContent = plate;
     var da = document.getElementById('driver-avatar-btn');
     if (da) da.innerHTML = photo
-        ? '<img src="' + photo + '" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:inherit">'
+        ? '<img src="' + escUrl(photo) + '" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:inherit">'
         : '🧑';
 
     /* Call button href */
@@ -1251,7 +1251,7 @@
     var mh = document.getElementById('modal-phone');   if (mh) mh.textContent = phone;
     var ma = document.getElementById('modal-avatar');
     if (ma) ma.innerHTML = photo
-        ? '<img src="' + photo + '" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:inherit">'
+        ? '<img src="' + escUrl(photo) + '" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:inherit">'
         : '🧑';
     RIDE._modalPlate = plate;
     var bg = document.getElementById('driver-modal-bg');
