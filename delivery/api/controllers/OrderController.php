@@ -743,11 +743,20 @@ case 'request_pickup_confirmation': {
 }
 case 'check_pickup_confirmation': {
     $pdo = db();
-    require_courier($pdo);
+    $cu = require_courier($pdo);
+    $courier = get_or_create_courier_profile($pdo, $cu['id']);
+    if (!$courier) fail('Courier profile not found', 404);
 
     $order_id = isset($_GET['order_id']) ? intval($_GET['order_id'])
               : (isset($body['order_id']) ? intval($body['order_id']) : 0);
     if (!$order_id) fail('order_id required', 400);
+
+    // Ownership check - a courier could otherwise pass any order_id and
+    // read another courier's pickup-confirmation status. Same pattern as
+    // request_pickup_confirmation above.
+    $ownChk = $pdo->prepare('SELECT id FROM orders WHERE id=? AND courier_id=?');
+    $ownChk->execute(array($order_id, $courier['id']));
+    if (!$ownChk->fetch()) fail('Order not found or not assigned to you', 403);
 
     $s = $pdo->prepare("SELECT status, responded_at FROM order_confirmations WHERE order_id=? AND type='pickup' ORDER BY requested_at DESC LIMIT 1");
     $s->execute(array($order_id));
@@ -917,11 +926,20 @@ case 'request_delivery_confirmation': {
 }
 case 'check_delivery_confirmation': {
     $pdo = db();
-    require_courier($pdo);
+    $cu = require_courier($pdo);
+    $courier = get_or_create_courier_profile($pdo, $cu['id']);
+    if (!$courier) fail('Courier profile not found', 404);
 
     $order_id = isset($_GET['order_id']) ? intval($_GET['order_id'])
               : (isset($body['order_id']) ? intval($body['order_id']) : 0);
     if (!$order_id) fail('order_id required', 400);
+
+    // Ownership check - a courier could otherwise pass any order_id and
+    // read another courier's delivery-confirmation status/payment_confirmed
+    // flag. Same pattern as request_delivery_confirmation above.
+    $ownChk = $pdo->prepare('SELECT id FROM orders WHERE id=? AND courier_id=?');
+    $ownChk->execute(array($order_id, $courier['id']));
+    if (!$ownChk->fetch()) fail('Order not found or not assigned to you', 403);
 
     $s = $pdo->prepare("SELECT status, responded_at, payment_confirmed FROM order_confirmations WHERE order_id=? AND type='delivery' ORDER BY requested_at DESC LIMIT 1");
     $s->execute(array($order_id));

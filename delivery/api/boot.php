@@ -378,7 +378,9 @@ function get_or_create_courier_profile($pdo, $user_id) {
             $s = $pdo->prepare('SELECT id, zone, home_zone, status FROM couriers WHERE user_id=?');
             $s->execute(array($user_id));
             $courier = $s->fetch();
-        } catch (Exception $e) {}
+        } catch (Exception $e) {
+            error_log('[ETEL] get_or_create_courier_profile failed for uid=' . $user_id . ': ' . $e->getMessage());
+        }
     }
     return $courier;
 }
@@ -436,7 +438,7 @@ function rate_limit_fail($pdo, $identifier) {
         $key = substr($identifier . '|' . $ip, 0, 120);
         $pdo->prepare('INSERT INTO login_attempts (identifier, attempted_at) VALUES (?, NOW())')
             ->execute(array($key));
-    } catch (Exception $e) { }
+    } catch (Exception $e) { error_log('[ETEL] rate_limit_fail failed: ' . $e->getMessage()); }
 }
 function rate_limit_clear($pdo, $identifier) {
     try {
@@ -444,7 +446,7 @@ function rate_limit_clear($pdo, $identifier) {
         $key = substr($identifier . '|' . $ip, 0, 120);
         $pdo->prepare('DELETE FROM login_attempts WHERE identifier = ?')
             ->execute(array($key));
-    } catch (Exception $e) { }
+    } catch (Exception $e) { error_log('[ETEL] rate_limit_clear failed: ' . $e->getMessage()); }
 }
 
 /* 
@@ -735,7 +737,7 @@ switch ($action) {
             $stats['users']     = intval($pdo->query('SELECT COUNT(*) FROM users')->fetchColumn());
             $stats['couriers']  = intval($pdo->query('SELECT COUNT(*) FROM couriers')->fetchColumn());
             try { $stats['service_givers'] = intval($pdo->query('SELECT COUNT(*) FROM service_givers')->fetchColumn()); } catch(Exception $e2){}
-        } catch(Exception $e){}
+        } catch(Exception $e){ error_log('[ETEL] admin_dashboard_stats query failed: ' . $e->getMessage()); }
         ok($stats);
         break;
     }
@@ -783,7 +785,7 @@ switch ($action) {
             $isg = $pdo->prepare('INSERT INTO service_givers (user_id,service_giver_code,business_name,service_type,vehicle_type,zone,address,identification_number,status,is_online,average_rating,total_deliveries,completed_deliveries,failed_deliveries,total_earnings,rating_count,created_at) VALUES (?,?,?,?,?,?,?,?,"verified",0,0.00,0,0,0,0.00,0,NOW())');
             $isg->execute(array($user_id,$sg_code,$business_name,$service_type,$vehicle_type,$zone,$address,$id_number));
             $sg_id = intval($pdo->lastInsertId());
-            if ($lat!==null && $lng!==null) { try { $pdo->prepare('UPDATE service_givers SET lat=?,lng=? WHERE id=?')->execute(array($lat,$lng,$sg_id)); } catch(Exception $e){} }
+            if ($lat!==null && $lng!==null) { try { $pdo->prepare('UPDATE service_givers SET lat=?,lng=? WHERE id=?')->execute(array($lat,$lng,$sg_id)); } catch(Exception $e){ error_log('[ETEL] admin_create_service_giver lat/lng update failed for sg_id=' . $sg_id . ': ' . $e->getMessage()); } }
             $pdo->commit();
             ok(array('message'=>'Service giver created','user_id'=>$user_id,'service_giver_id'=>$sg_id,'code'=>$sg_code));
         } catch(Exception $e) { $pdo->rollBack(); fail_ex($e, 'Creation failed', 500); }
@@ -1065,7 +1067,7 @@ switch ($action) {
             $courier = get_or_create_courier_profile($pdo, $courierUserId);
             if (!$courier) throw new Exception('Courier profile could not be created');
             $courierId = $courier['id'];
-            $emit('Demo accounts ready', true, "Customer #$custId · Shop owner #$sgUserId · Courier #$courierUserId");
+            $emit('Demo accounts ready', true, "Customer #$custId - Shop owner #$sgUserId - Courier #$courierUserId");
         } catch (Exception $e) {
             $emit('Demo accounts ready', false, $e->getMessage());
             echo "event: close\ndata: {}\n\n"; @ob_flush(); flush(); exit;
@@ -1095,7 +1097,7 @@ switch ($action) {
                     ->execute(array($sgId));
                 $itemId = $pdo->lastInsertId();
             }
-            $emit('Demo shop + item ready', true, "Shop #$sgId (Mehal Ketema) · Item #$itemId, ETB 85.00");
+            $emit('Demo shop + item ready', true, "Shop #$sgId (Mehal Ketema) - Item #$itemId, ETB 85.00");
         } catch (Exception $e) {
             $emit('Demo shop + item ready', false, $e->getMessage());
             echo "event: close\ndata: {}\n\n"; @ob_flush(); flush(); exit;
@@ -1117,7 +1119,7 @@ switch ($action) {
                 'delivery_tier' => 'moto',
             ));
             $orderId = $orderResult['order_id'];
-            $emit('Order created', true, 'Order #' . $orderId . ' · 2x Demo Test Item · Total ETB ' . $orderResult['total']);
+            $emit('Order created', true, 'Order #' . $orderId . ' - 2x Demo Test Item - Total ETB ' . $orderResult['total']);
         } catch (Exception $e) {
             $emit('Order created', false, $e->getMessage());
             echo "event: close\ndata: {}\n\n"; @ob_flush(); flush(); exit;
@@ -1199,7 +1201,7 @@ switch ($action) {
                            VALUES (?, 1, 'bajaj', 'DEMO-001', 'Demo Bajaj', 'Gold', NOW())
                            ON DUPLICATE KEY UPDATE online=1, last_seen=NOW()")
                 ->execute(array($drvId));
-            $emit('Demo accounts ready', true, "Customer #$custId · Driver #$drvId");
+            $emit('Demo accounts ready', true, "Customer #$custId - Driver #$drvId");
         } catch (Exception $e) {
             $emit('Demo accounts ready', false, $e->getMessage());
             echo "event: close\ndata: {}\n\n"; @ob_flush(); flush(); exit;
@@ -1216,7 +1218,7 @@ switch ($action) {
                 ->execute(array($custId, $plat, $plng, $dlat, $dlng,
                     '[SYSTEM TEST] Pickup', '[SYSTEM TEST] Dropoff', 3.0, 150, 150, 'cash'));
             $rideId = $pdo->lastInsertId();
-            $emit('Booking created', true, "Ride #$rideId · open trip · Bajaj");
+            $emit('Booking created', true, "Ride #$rideId - open trip - Bajaj");
         } catch (Exception $e) {
             $emit('Booking created', false, $e->getMessage());
             echo "event: close\ndata: {}\n\n"; @ob_flush(); flush(); exit;

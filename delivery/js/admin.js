@@ -451,8 +451,8 @@
             document.getElementById('users-tbody').innerHTML = data.length ? data.map(u => `
                 <tr>
                     <td>${u.id}</td>
-                    <td><strong>${u.name}</strong></td>
-                    <td>${u.phone}</td>
+                    <td><strong>${esc(u.name)}</strong></td>
+                    <td>${esc(u.phone)}</td>
                     <td><span class="badge-status badge-${u.role}">${u.role.replace(/_/g,' ')}</span></td>
                     <td>${fmtTime(u.created_at)}</td>
                 </tr>`).join('') : '<tr><td colspan="5" style="text-align:center;color:#B8B0A0;padding:30px">No users found</td></tr>';
@@ -478,9 +478,9 @@
         function renderCourierTable(data) {
             document.getElementById('couriers-tbody').innerHTML = data.length ? data.map(c => `
                 <tr>
-                    <td><strong>${c.courier_code||'—'}</strong></td>
-                    <td>${c.name}</td><td>${c.phone}</td>
-                    <td>${c.vehicle_type||'—'}</td><td>${c.zone||c.home_zone||'—'}</td>
+                    <td><strong>${esc(c.courier_code||'—')}</strong></td>
+                    <td>${esc(c.name)}</td><td>${esc(c.phone)}</td>
+                    <td>${esc(c.vehicle_type||'—')}</td><td>${esc(c.zone||c.home_zone||'—')}</td>
                     <td>${statusBadge(c.status||'offline')}</td>
                     <td>⭐ ${parseFloat(c.rating||0).toFixed(2)}</td>
                     <td>${c.total_deliveries||0}</td>
@@ -588,10 +588,10 @@
         function renderSGTable(data) {
             document.getElementById('sg-tbody').innerHTML = data.length ? data.map(sg => `
                 <tr>
-                    <td><strong>${sg.service_giver_code||'—'}</strong></td>
-                    <td>${sg.business_name||'—'}</td>
-                    <td>${sg.name}</td><td>${sg.phone}</td>
-                    <td>${sg.service_type||'—'}</td><td>${sg.zone||'—'}</td>
+                    <td><strong>${esc(sg.service_giver_code||'—')}</strong></td>
+                    <td>${esc(sg.business_name||'—')}</td>
+                    <td>${esc(sg.name)}</td><td>${esc(sg.phone)}</td>
+                    <td>${esc(sg.service_type||'—')}</td><td>${esc(sg.zone||'—')}</td>
                     <td>${statusBadge(sg.status)}</td>
                     <td><span class="badge-status ${sg.is_online?'badge-online':'badge-offline'}">${sg.is_online?'Online':'Offline'}</span></td>
                     <td style="white-space:nowrap">
@@ -1472,9 +1472,9 @@
             document.getElementById('items-tbody').innerHTML = data.length ? data.map(it => `
                 <tr>
                     <td>${it.image_url ? `<img src="${it.image_url}" style="width:44px;height:44px;object-fit:cover;border-radius:6px;border:1px solid #e0e0e0">` : '<div style="width:44px;height:44px;background:rgba(255,255,255,.06);border-radius:6px;display:flex;align-items:center;justify-content:center">🛍️</div>'}</td>
-                    <td><strong>${it.name}</strong><br><span style="font-size:11px;color:#B8B0A0">${it.item_code||''}</span></td>
-                    <td><span style="background:rgba(212,175,55,.15);color:#D4AF37;border:1px solid rgba(212,175,55,.3);padding:3px 8px;border-radius:20px;font-size:11px;font-weight:700;text-transform:uppercase">${it.category || '—'}</span></td>
-                    <td>${it.business_name||'—'}</td>
+                    <td><strong>${esc(it.name)}</strong><br><span style="font-size:11px;color:#B8B0A0">${esc(it.item_code||'')}</span></td>
+                    <td><span style="background:rgba(212,175,55,.15);color:#D4AF37;border:1px solid rgba(212,175,55,.3);padding:3px 8px;border-radius:20px;font-size:11px;font-weight:700;text-transform:uppercase">${esc(it.category || '—')}</span></td>
+                    <td>${esc(it.business_name||'—')}</td>
                     <td><strong>ETB ${parseFloat(it.price||0).toFixed(2)}</strong></td>
                     <td>${it.stock_quantity||0}</td>
                     <td>
@@ -1485,7 +1485,7 @@
                     </td>
                     <td style="white-space:nowrap">
                         <button class="act-btn act-gold" onclick="openAdminEditItem(${it.id})" style="margin-right:4px">✏ Edit</button>
-                        <button class="act-btn act-red"  onclick="adminDeleteItem(${it.id},'${(it.name||'').replace(/'/g,"\\'")}')">🗑 Del</button>
+                        <button class="act-btn act-red"  onclick="adminDeleteItem(${it.id},'${(it.name||'').replace(/[<>"'\\]/g,'')}')">🗑 Del</button>
                     </td>
                 </tr>`).join('') : '<tr><td colspan="8" style="text-align:center;color:#B8B0A0;padding:30px">No items found</td></tr>';
         }

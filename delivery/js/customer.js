@@ -317,14 +317,18 @@ function renderItemsGrid(items) {
               + '<img src="' + item.image_url + '" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover" onerror="this.onerror=null;this.style.display=\'none\'">'
             : '<span style="font-size:52px;filter:drop-shadow(0 4px 12px rgba(212,175,55,.3))">' + ic + '</span>';
         const displayName = (ETEL_I18N.current() === 'am' && item.name_am) ? item.name_am : (item.name || '');
-        const safeN = displayName.replace(/'/g,"\\'");
-        const safeB = (item.business_name||'').replace(/'/g,"\\'");
+        // Stripped (not just apostrophe-escaped): this string ends up both
+        // inside a JS string literal AND inside an HTML onclick="..."
+        // attribute below, so a quote or angle bracket in an item/shop name
+        // could otherwise break out of either context.
+        const safeN = displayName.replace(/[<>"'\\]/g, '');
+        const safeB = (item.business_name||'').replace(/[<>"'\\]/g, '');
         return '<div class="offer-card" onclick="openItemDetail(' + item.id + ')" style="cursor:pointer">' +
             '<div class="offer-card-image" style="position:relative">' + imgHtml + '</div>' +
             (discounted ? '<div style="position:absolute;top:10px;left:10px;background:#EF4444;color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:6px">SALE</div>' : '') +
             '<div class="offer-card-body">' +
-                '<div class="offer-card-name">' + displayName + '</div>' +
-                '<div class="offer-card-shop">' + (item.business_name||'') + '</div>' +
+                '<div class="offer-card-name">' + escapeHtml(displayName) + '</div>' +
+                '<div class="offer-card-shop">' + escapeHtml(item.business_name||'') + '</div>' +
                 '<div class="offer-card-footer">' +
                     '<div class="offer-card-price">ETB ' + parseFloat(item.price).toFixed(0) + '</div>' +
                     '<button class="add-btn" onclick="event.stopPropagation();addToCart('+item.id+',\''+safeN+'\','+item.price+','+item.service_giver_id+',\''+safeB+'\')">+</button>' +
@@ -379,8 +383,8 @@ function openItemDetail(itemId) {
         : '<span style="font-size:80px">' + ic + '</span>';
     const stock = parseInt(item.stock_quantity, 10);
     const available = item.is_available == 1 && (isNaN(stock) || stock > 0);
-    const safeN = displayName.replace(/'/g, "\\'");
-    const safeB = (item.business_name || '').replace(/'/g, "\\'");
+    const safeN = displayName.replace(/[<>"'\\]/g, '');
+    const safeB = (item.business_name || '').replace(/[<>"'\\]/g, '');
 
     let modal = document.getElementById('item-detail-overlay');
     if (!modal) {
@@ -402,8 +406,8 @@ function openItemDetail(itemId) {
             (discounted ? '<div style="position:absolute;top:14px;left:14px;background:var(--red);color:#fff;' +
                 'font-size:11px;font-weight:700;padding:3px 9px;border-radius:6px;">SALE</div>' : '') +
             '<div style="padding:20px;">' +
-                '<div style="font-family:var(--f-d,serif);font-size:22px;color:var(--text);margin-bottom:4px;">' + displayName + '</div>' +
-                '<div style="color:var(--text-muted);font-size:13px;margin-bottom:10px;">' + (item.business_name || '') +
+                '<div style="font-family:var(--f-d,serif);font-size:22px;color:var(--text);margin-bottom:4px;">' + escapeHtml(displayName) + '</div>' +
+                '<div style="color:var(--text-muted);font-size:13px;margin-bottom:10px;">' + escapeHtml(item.business_name || '') +
                     (item.zone ? ' · ' + item.zone : '') +
                     (item.rating > 0 ? ' · ⭐ ' + parseFloat(item.rating).toFixed(1) : '') +
                 '</div>' +
@@ -411,7 +415,7 @@ function openItemDetail(itemId) {
                     '<span style="font-size:24px;font-weight:700;color:var(--gold);">ETB ' + parseFloat(item.price).toFixed(0) + '</span>' +
                     (discounted ? '<span style="font-size:15px;color:var(--text-dim);text-decoration:line-through;">ETB ' + parseFloat(item.original_price).toFixed(0) + '</span>' : '') +
                 '</div>' +
-                (displayDesc ? '<div style="color:var(--text-muted);font-size:13.5px;line-height:1.6;margin-bottom:16px;">' + displayDesc + '</div>'
+                (displayDesc ? '<div style="color:var(--text-muted);font-size:13.5px;line-height:1.6;margin-bottom:16px;">' + escapeHtml(displayDesc) + '</div>'
                              : '<div style="color:var(--text-dim);font-size:12.5px;font-style:italic;margin-bottom:16px;">No description provided yet.</div>') +
                 '<div style="display:flex;gap:16px;margin-bottom:20px;font-size:12px;color:var(--text-muted);">' +
                     (item.preparation_time ? '<div>⏱ ~' + item.preparation_time + ' min</div>' : '') +
@@ -1169,7 +1173,7 @@ async function loadOrders() {
             '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">' +
             '<div><span style="font-weight:700;font-size:14px;color:#1a1a2e">' + o.order_code + '</span>' + payBadge + '</div>' +
             '<span style="padding:4px 10px;border-radius:6px;font-size:11px;font-weight:700;background:' + col + '22;color:' + col + '">' + statusLabel.toUpperCase() + '</span></div>' +
-            '<div style="font-size:12px;color:#B8B0A0;margin-bottom:8px">📍 ' + (o.to_zone||'—') + ' · 👤 ' + (o.recipient_name||'—') + '</div>' +
+            '<div style="font-size:12px;color:#B8B0A0;margin-bottom:8px">📍 ' + escapeHtml(o.to_zone||'—') + ' · 👤 ' + escapeHtml(o.recipient_name||'—') + '</div>' +
             (o.status !== 'cancelled' && o.status !== 'delivered' ? '<div style="margin-bottom:10px"><div style="background:rgba(255,255,255,.1);border-radius:6px;height:5px;overflow:hidden"><div style="background:linear-gradient(90deg,#C9A961,#8B6E3A);height:100%;width:'+progressPct+'%;transition:width .4s"></div></div><div style="font-size:10px;color:#B8B0A0;margin-top:3px">' + statusLabel + '</div></div>' : '') +
             '<div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;color:#B8B0A0">' +
             '<span>' + fmtDate(o.placed_at) + '</span>' +
@@ -1674,9 +1678,9 @@ async function loadMessages() {
         return '<div style="display:flex;gap:12px;padding:14px;margin-bottom:10px;background:rgba(255,255,255,.04);border:1px solid rgba(212,175,55,.12);border-radius:14px">' +
             '<div style="font-size:20px;flex-shrink:0">' + (senderIcon[m.sender] || '💬') + '</div>' +
             '<div style="flex:1;min-width:0">' +
-            '<div style="display:flex;justify-content:space-between;gap:8px"><div style="font-weight:700;font-size:13.5px">' + (m.subject || 'Message') + '</div>' +
+            '<div style="display:flex;justify-content:space-between;gap:8px"><div style="font-weight:700;font-size:13.5px">' + escapeHtml(m.subject || 'Message') + '</div>' +
             '<div style="font-size:11px;color:rgba(240,237,216,.4);white-space:nowrap">' + fmtDate(m.created_at) + '</div></div>' +
-            '<div style="font-size:13px;color:rgba(240,237,216,.75);margin-top:3px">' + (m.body || '') + '</div></div>' +
+            '<div style="font-size:13px;color:rgba(240,237,216,.75);margin-top:3px">' + escapeHtml(m.body || '') + '</div></div>' +
         '</div>';
     }).join('');
 }

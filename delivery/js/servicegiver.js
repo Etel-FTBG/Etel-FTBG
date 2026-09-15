@@ -380,12 +380,12 @@
                     }
                     return '<div style="padding:16px;border-bottom:1px solid var(--border-light);">' +
                         '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">' +
-                            '<div style="font-weight:700;color:var(--text-dark);">' + (order.order_code || ('#' + orderId)) + '</div>' +
+                            '<div style="font-weight:700;color:var(--text-dark);">' + escapeHtml(order.order_code || ('#' + orderId)) + '</div>' +
                             '<div>' + getStatusBadge(status) + '</div>' +
                         '</div>' +
                         '<div style="font-size:12px;color:#B8B0A0;">' +
-                            (order.from_zone ? 'From: ' + order.from_zone + ' → ' : '') + (order.to_zone || '') +
-                            (order.recipient_name ? ' · ' + order.recipient_name : '') +
+                            (order.from_zone ? 'From: ' + escapeHtml(order.from_zone) + ' → ' : '') + escapeHtml(order.to_zone || '') +
+                            (order.recipient_name ? ' · ' + escapeHtml(order.recipient_name) : '') +
                         '</div>' +
                         '<div style="font-size:13px;font-weight:700;color:var(--primary);margin-top:4px">Br ' + parseFloat(order.fare_total||0).toFixed(2) + '</div>' +
                         actionBtn +

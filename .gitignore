@@ -32,3 +32,4 @@
 # telling anyone who finds it the exact live usernames and a default
 # password that may well still be live if nobody's changed it since setup.
 **/LOGIN_CREDENTIALS.md
+node_modules/

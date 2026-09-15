@@ -1461,11 +1461,11 @@
             '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">' +
             '<span style="font-size:12px;font-weight:700;color:var(--gold-lt)">' + (r.status || '') + '</span>' +
             '<span style="font-size:11px;color:var(--dim)">' + (r.created_at ? r.created_at.split(' ')[0] : '') + '</span></div>' +
-            '<div style="font-size:12px;color:#EDEDF5;margin-bottom:3px">📍 ' + (r.pickup_address || r.pickup_addr || '—') + '</div>' +
-            '<div style="font-size:12px;color:#EDEDF5;margin-bottom:8px">🏁 ' + (r.dropoff_address || r.dropoff_addr || '—') + '</div>' +
+            '<div style="font-size:12px;color:#EDEDF5;margin-bottom:3px">📍 ' + escapeHtml(r.pickup_address || r.pickup_addr || '—') + '</div>' +
+            '<div style="font-size:12px;color:#EDEDF5;margin-bottom:8px">🏁 ' + escapeHtml(r.dropoff_address || r.dropoff_addr || '—') + '</div>' +
             '<div style="display:flex;justify-content:space-between;align-items:center">' +
             '<div><div style="font-size:13px;font-weight:700;color:var(--gold-lt)">ETB ' + (parseFloat(r.fare_final||r.fare_paid||r.fare||0)||0).toFixed(0) + '</div>' +
-            '<div style="font-size:11px;color:var(--dim);margin-top:2px">' + (parseFloat(r.distance_km||0)).toFixed(2) + ' km · ' + (r.payment_method||'cash') + (r.driver_name?' · Driver: '+r.driver_name:'') + '</div></div>' +
+            '<div style="font-size:11px;color:var(--dim);margin-top:2px">' + (parseFloat(r.distance_km||0)).toFixed(2) + ' km · ' + (r.payment_method||'cash') + (r.driver_name?' · Driver: '+escapeHtml(r.driver_name):'') + '</div></div>' +
             '<div style="display:flex;align-items:center;gap:4px;min-height:32px;padding:6px 10px;border-radius:999px;background:rgba(212,175,55,.12);border:1px solid rgba(212,175,55,.3);color:var(--gold-lt);font-size:11px;font-weight:700;white-space:nowrap">Details <span style="font-size:13px">›</span></div>' +
             '</div></div>';
         }).join('');
@@ -1486,10 +1486,10 @@
             '<div style="font-size:15px;font-weight:800;color:var(--gold-lt)">Ride #' + (r.id||'') + ' &middot; ' + (r.status||'') + '</div>' +
             '<button onclick="closeRideDetail()" style="background:none;border:1px solid #333;color:#B8B0A0;border-radius:6px;padding:4px 10px;cursor:pointer;">✕</button>' +
           '</div>' +
-          (r.driver_name ? '<div style="margin-bottom:12px;"><div style="font-size:10px;color:#B8B0A0;text-transform:uppercase;">Driver</div><div style="color:#EDEDF5;font-weight:700">' + r.driver_name + '</div><div style="color:#9A9AAE;font-size:12px">' + (r.driver_phone||'') + (r.vehicle_plate ? ' · ' + r.vehicle_plate : '') + (r.vehicle_type ? ' · ' + r.vehicle_type : '') + '</div></div>' : '') +
+          (r.driver_name ? '<div style="margin-bottom:12px;"><div style="font-size:10px;color:#B8B0A0;text-transform:uppercase;">Driver</div><div style="color:#EDEDF5;font-weight:700">' + escapeHtml(r.driver_name) + '</div><div style="color:#9A9AAE;font-size:12px">' + escapeHtml(r.driver_phone||'') + (r.vehicle_plate ? ' · ' + escapeHtml(r.vehicle_plate) : '') + (r.vehicle_type ? ' · ' + escapeHtml(r.vehicle_type) : '') + '</div></div>' : '') +
           '<div style="margin-bottom:12px;"><div style="font-size:10px;color:#B8B0A0;text-transform:uppercase;margin-bottom:4px;">Route</div>' +
-          '<div style="color:#EDEDF5;font-size:13px;margin-bottom:3px;">📍 ' + (r.pickup_address||'—') + '</div>' +
-          '<div style="color:#EDEDF5;font-size:13px;">🏁 ' + (r.dropoff_address||'—') + '</div></div>' +
+          '<div style="color:#EDEDF5;font-size:13px;margin-bottom:3px;">📍 ' + escapeHtml(r.pickup_address||'—') + '</div>' +
+          '<div style="color:#EDEDF5;font-size:13px;">🏁 ' + escapeHtml(r.dropoff_address||'—') + '</div></div>' +
           '<div style="display:flex;gap:20px;margin-bottom:12px;">' +
           '<div><div style="font-size:10px;color:#B8B0A0;text-transform:uppercase;">Distance</div><div style="color:#EDEDF5;">' + parseFloat(r.distance_km||r.traveled_km||0).toFixed(2) + ' km</div></div>' +
           '<div><div style="font-size:10px;color:#B8B0A0;text-transform:uppercase;">Payment</div><div style="color:#EDEDF5;">' + (r.payment_method||'cash') + '</div></div>' +

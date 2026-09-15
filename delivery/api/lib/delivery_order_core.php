@@ -363,10 +363,14 @@ function delivery_execute_order_creation($pdo, $auth_user, $body) {
                     require_once __DIR__ . '/../push.php';
                     etel_push_send($pdo, intval($best_id['user_id']), $notifTitle, $notifBody,
                         array('type' => 'new_order', 'order_id' => $order_id, 'url' => '/delivery/courier/'));
-                } catch (Exception $ne) {}
+                } catch (Exception $ne) {
+                    error_log('[ETEL] auto-dispatch notify failed for order_id=' . $order_id . ': ' . $ne->getMessage());
+                }
             }
-        } catch (Exception $de) {}
-        //  End auto-dispatch 
+        } catch (Exception $de) {
+            error_log('[ETEL] auto-dispatch failed for order_id=' . $order_id . ': ' . $de->getMessage());
+        }
+        //  End auto-dispatch
 
         // Return order details
         return array(
