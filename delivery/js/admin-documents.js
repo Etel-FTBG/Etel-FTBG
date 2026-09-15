@@ -228,21 +228,21 @@ async function openDocsViewModal(id) {
   const ext = (doc.file_ext || '').toLowerCase();
 
   openModal('custom', `
-    <div class="modal-title">${docsIconFor(ext)} ${esc(doc.title)}</div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;font-size:12px;color:#9A9AAE">
+    <div class="modal-title" style="flex:0 0 auto">${docsIconFor(ext)} ${esc(doc.title)}</div>
+    <div style="flex:0 0 auto;display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;font-size:12px;color:#9A9AAE">
       <span>${esc(doc.original_filename)}</span> · <span>${docsFormatSize(doc.file_size)}</span> ·
       <span>v${doc.current_version}</span> · <span>by ${esc(doc.uploaded_by_name || 'unknown')}</span>
     </div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+    <div style="flex:0 0 auto;display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
       <button class="btn btn-secondary" onclick="docsDownload(${doc.id})">⬇️ Download</button>
       <button class="btn btn-secondary" onclick="openDocsReplaceModal(${doc.id})">🔁 Replace</button>
       <button class="btn btn-secondary" onclick="openDocsHistoryModal(${doc.id})">🕓 History (${doc.versions.length})</button>
       <button class="btn btn-secondary" onclick="openDocsMetaModal(${doc.id})">✏️ Edit Info</button>
     </div>
-    <div id="docs-viewer-body" style="border:1px solid rgba(255,255,255,.1);border-radius:10px;min-height:200px;max-height:70vh;overflow:auto;background:#fff">
+    <div id="docs-viewer-body" style="flex:1 1 auto;min-height:0;border:1px solid rgba(255,255,255,.1);border-radius:10px;overflow:auto;background:#fff">
       <div style="padding:30px;text-align:center;color:#888">Loading preview…</div>
     </div>
-  `, { wide: true });
+  `, { fullscreen: true });
   docsRenderViewer(doc);
 }
 
@@ -273,7 +273,7 @@ async function docsRenderViewer(doc) {
       if (!r.ok) throw new Error('HTTP ' + r.status);
       const blob = await r.blob();
       const url = URL.createObjectURL(blob);
-      body.innerHTML = `<iframe src="${url}" style="width:100%;height:68vh;border:none;display:block"></iframe>`;
+      body.innerHTML = `<iframe src="${url}" style="width:100%;height:100%;min-height:60vh;border:none;display:block"></iframe>`;
     } catch (err) {
       body.innerHTML = `<div style="padding:30px;text-align:center;color:#c0392b">Could not load PDF preview (${esc(err.message || 'error')}). Use Download instead.</div>`;
     }

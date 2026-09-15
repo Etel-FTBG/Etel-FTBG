@@ -128,6 +128,36 @@ setInterval(function() {
 }, 15000);
 
 // ─── MODALS ───────────────────────────────────────────────────
+// Sizes #modal-box to the actual device viewport (not a fixed vw/vh
+// guess) for modals that opt into 'fullscreen'. Reads window.innerWidth/
+// innerHeight - the real, current layout viewport for THIS device/
+// orientation, including mobile browsers where the address bar shows/
+// hides and changes the usable height. Re-measures on resize/orientation
+// change while the modal is open (phone rotation, keyboard opening) and
+// tears the listener down when the modal closes so it never leaks.
+let _modalFullscreenResizeHandler = null;
+function _sizeModalToViewport(box) {
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+    box.style.width = (w - 16) + 'px';
+    box.style.maxWidth = (w - 16) + 'px';
+    box.style.height = (h - 16) + 'px';
+    box.style.maxHeight = (h - 16) + 'px';
+}
+
+function _setModalFullscreenLayout(box, content, on) {
+    if (!box || !content) return;
+    box.style.display = on ? 'flex' : 'block';
+    box.style.flexDirection = on ? 'column' : '';
+    box.style.overflow = on ? 'hidden' : 'visible';
+    box.style.overflowY = on ? 'hidden' : 'auto';
+    content.style.display = on ? 'flex' : 'block';
+    content.style.flexDirection = on ? 'column' : '';
+    content.style.minHeight = on ? '0' : '';
+    content.style.flex = on ? '1' : '';
+    content.style.overflow = on ? 'hidden' : 'visible';
+}
+
 function openModal(type, customHtml, opts) {
     const overlay = document.getElementById('modal-overlay');
     const content = document.getElementById('modal-content');
@@ -136,9 +166,29 @@ function openModal(type, customHtml, opts) {
     overlay.style.display = 'flex';
     // Some modals (e.g. the Documents viewer) need more room than the
     // default 480px card to show a full-page preview readably on a
-    // phone. closeModal() always resets this back to the default so the
-    // override never leaks into the next, unrelated modal that opens.
-    if (box) box.style.maxWidth = (opts && opts.wide) ? 'min(96vw, 900px)' : '480px';
+    // phone. Every call to openModal() (fullscreen or not) explicitly
+    // sets/clears #modal-box's sizing, so an override never leaks into
+    // the next, unrelated modal that opens.
+    if (_modalFullscreenResizeHandler) {
+        window.removeEventListener('resize', _modalFullscreenResizeHandler);
+        window.removeEventListener('orientationchange', _modalFullscreenResizeHandler);
+        _modalFullscreenResizeHandler = null;
+    }
+    if (box) {
+        if (opts && opts.fullscreen) {
+            _sizeModalToViewport(box);
+            _setModalFullscreenLayout(box, content, true);
+            _modalFullscreenResizeHandler = () => _sizeModalToViewport(box);
+            window.addEventListener('resize', _modalFullscreenResizeHandler);
+            window.addEventListener('orientationchange', _modalFullscreenResizeHandler);
+        } else {
+            box.style.width = '100%';
+            box.style.maxWidth = '480px';
+            box.style.height = 'auto';
+            box.style.maxHeight = '90vh';
+            _setModalFullscreenLayout(box, content, false);
+        }
+    }
     if (type === 'custom') { content.innerHTML = customHtml; return; }
 
     if (type === 'new-user') {
@@ -195,6 +245,11 @@ function openModal(type, customHtml, opts) {
 function closeModal() {
     const o = document.getElementById('modal-overlay');
     if (o) o.style.display = 'none';
+    if (_modalFullscreenResizeHandler) {
+        window.removeEventListener('resize', _modalFullscreenResizeHandler);
+        window.removeEventListener('orientationchange', _modalFullscreenResizeHandler);
+        _modalFullscreenResizeHandler = null;
+    }
 }
 
 function toast(msg, type='info') {
