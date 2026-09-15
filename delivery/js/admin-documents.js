@@ -239,10 +239,10 @@ async function openDocsViewModal(id) {
       <button class="btn btn-secondary" onclick="openDocsHistoryModal(${doc.id})">🕓 History (${doc.versions.length})</button>
       <button class="btn btn-secondary" onclick="openDocsMetaModal(${doc.id})">✏️ Edit Info</button>
     </div>
-    <div id="docs-viewer-body" style="border:1px solid rgba(255,255,255,.1);border-radius:10px;min-height:200px;max-height:60vh;overflow:auto;background:#fff">
+    <div id="docs-viewer-body" style="border:1px solid rgba(255,255,255,.1);border-radius:10px;min-height:200px;max-height:70vh;overflow:auto;background:#fff">
       <div style="padding:30px;text-align:center;color:#888">Loading preview…</div>
     </div>
-  `);
+  `, { wide: true });
   docsRenderViewer(doc);
 }
 
@@ -273,7 +273,7 @@ async function docsRenderViewer(doc) {
       if (!r.ok) throw new Error('HTTP ' + r.status);
       const blob = await r.blob();
       const url = URL.createObjectURL(blob);
-      body.innerHTML = `<iframe src="${url}" style="width:100%;height:65vh;border:none;display:block"></iframe>`;
+      body.innerHTML = `<iframe src="${url}" style="width:100%;height:68vh;border:none;display:block"></iframe>`;
     } catch (err) {
       body.innerHTML = `<div style="padding:30px;text-align:center;color:#c0392b">Could not load PDF preview (${esc(err.message || 'error')}). Use Download instead.</div>`;
     }
