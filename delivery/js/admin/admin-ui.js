@@ -128,11 +128,17 @@ setInterval(function() {
 }, 15000);
 
 // ─── MODALS ───────────────────────────────────────────────────
-function openModal(type, customHtml) {
+function openModal(type, customHtml, opts) {
     const overlay = document.getElementById('modal-overlay');
     const content = document.getElementById('modal-content');
+    const box = document.getElementById('modal-box');
     if (!overlay || !content) return;
     overlay.style.display = 'flex';
+    // Some modals (e.g. the Documents viewer) need more room than the
+    // default 480px card to show a full-page preview readably on a
+    // phone. closeModal() always resets this back to the default so the
+    // override never leaks into the next, unrelated modal that opens.
+    if (box) box.style.maxWidth = (opts && opts.wide) ? 'min(96vw, 900px)' : '480px';
     if (type === 'custom') { content.innerHTML = customHtml; return; }
 
     if (type === 'new-user') {
