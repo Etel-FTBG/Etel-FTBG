@@ -234,6 +234,7 @@ async function openDocsViewModal(id) {
       <span>v${doc.current_version}</span> · <span>by ${esc(doc.uploaded_by_name || 'unknown')}</span>
     </div>
     <div style="flex:0 0 auto;display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+      <button class="btn btn-secondary" id="modal-fullscreen-btn" onclick="toggleModalTrueFullscreen()">⛶ Full Screen</button>
       <button class="btn btn-secondary" onclick="docsDownload(${doc.id})">⬇️ Download</button>
       <button class="btn btn-secondary" onclick="openDocsReplaceModal(${doc.id})">🔁 Replace</button>
       <button class="btn btn-secondary" onclick="openDocsHistoryModal(${doc.id})">🕓 History (${doc.versions.length})</button>
