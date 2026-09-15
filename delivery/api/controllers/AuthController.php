@@ -135,6 +135,7 @@ case 'change_password': {
     // a re-login.
     etel_bump_token_version($pdo, $auth_user['id']);
     $newVersion = 0;
+    $refetchFailed = false;
     try {
         if (in_array('token_version', etel_table_columns($pdo, 'users'), true)) {
             $vs = $pdo->prepare('SELECT token_version FROM users WHERE id=?');
@@ -142,7 +143,25 @@ case 'change_password': {
             $newVersion = intval($vs->fetchColumn());
         }
     } catch (Exception $e) {
+        $refetchFailed = true;
         error_log('[ETEL] change_password token_version refetch failed for uid=' . $auth_user['id'] . ': ' . $e->getMessage());
+    }
+    // INSA audit follow-up: the password change itself already committed
+    // by this point (nothing left to roll back), but if we couldn't
+    // re-read the new token_version, handing back a token built with
+    // $newVersion=0 was a "soft degrade" - it looks like success but is
+    // built from a guessed version and can fail the very next request's
+    // version check, logging the user out right after they changed their
+    // password with no explanation. Hard-fail instead: tell the frontend
+    // explicitly to force a re-login rather than handing back a token
+    // that might not work.
+    if ($refetchFailed) {
+        ok(array(
+            'message' => 'Password updated, but please log in again to continue.',
+            'token' => null,
+            'require_relogin' => true,
+        ));
+        break;
     }
     $newToken = gen_token($auth_user['id'], $newVersion);
     ok(array('message' => 'Password updated', 'token' => $newToken));

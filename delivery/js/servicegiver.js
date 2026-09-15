@@ -338,8 +338,8 @@
                 container.innerHTML = orders.map(order =>
                     '<div style="padding:14px 0;border-bottom:1px solid var(--border-light);display:flex;justify-content:space-between;align-items:center">' +
                         '<div>' +
-                            '<div style="font-weight:600;color:var(--text-dark);font-size:13px">' + (order.order_code || ('#' + order.order_id)) + '</div>' +
-                            '<div style="font-size:11px;color:#B8B0A0;margin-top:3px">' + (order.from_zone || '') + (order.to_zone ? ' → ' + order.to_zone : '') + '</div>' +
+                            '<div style="font-weight:600;color:var(--text-dark);font-size:13px">' + escapeHtml(order.order_code || ('#' + order.order_id)) + '</div>' +
+                            '<div style="font-size:11px;color:#B8B0A0;margin-top:3px">' + escapeHtml(order.from_zone || '') + (order.to_zone ? ' → ' + escapeHtml(order.to_zone) : '') + '</div>' +
                         '</div>' +
                         '<div style="text-align:right">' +
                             '<div style="font-weight:700;color:var(--primary)">Br ' + parseFloat(order.fare_total||0).toFixed(2) + '</div>' +
@@ -637,7 +637,7 @@
                         '<div style="font-size:32px;line-height:1">🛵</div>' +
                         '<div style="flex:1">' +
                         '<div style="font-size:14px;font-weight:700;margin-bottom:2px">Courier is at your shop!</div>' +
-                        '<div style="font-size:13px;opacity:.9;margin-bottom:2px"><strong>' + (c.courier_name || 'Courier') + '</strong> is waiting to pick up order <strong>' + c.order_code + '</strong></div>' +
+                        '<div style="font-size:13px;opacity:.9;margin-bottom:2px"><strong>' + escapeHtml(c.courier_name || 'Courier') + '</strong> is waiting to pick up order <strong>' + escapeHtml(c.order_code || '') + '</strong></div>' +
                         '<div style="font-size:11px;opacity:.7">Waiting ' + (ago < 1 ? 'just now' : ago + ' min ago') + ' · ETB ' + parseFloat(c.fare_total||0).toFixed(2) + '</div>' +
                         '<div style="margin-top:12px;display:flex;gap:8px">' +
                         '<button onclick="sgConfirmPickup(' + c.order_id + ')" style="padding:9px 20px;background:#fff;color:#8e44ad;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;flex:1">✅ Confirm Pickup</button>' +
@@ -760,7 +760,7 @@
                 ${items.map(it => `
                     <tr style="border-bottom:1px solid #f0f0f0;transition:background .2s" onmouseover="this.style.background='#faf9f7'" onmouseout="this.style.background=''">
                         <td style="padding:10px 8px">
-                            ${it.image_url ? `<img src="${it.image_url}" style="width:48px;height:48px;object-fit:cover;border-radius:8px;border:1px solid #e0e0e0">` : '<div style="width:48px;height:48px;background:rgba(255,255,255,.06);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:20px">🛍️</div>'}
+                            ${it.image_url ? `<img src="${escUrl(it.image_url)}" style="width:48px;height:48px;object-fit:cover;border-radius:8px;border:1px solid #e0e0e0">` : '<div style="width:48px;height:48px;background:rgba(255,255,255,.06);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:20px">🛍️</div>'}
                         </td>
                         <td style="padding:10px 8px;font-weight:600;color:#1a1a2e">${it.name}</td>
                         <td style="padding:10px 8px"><span style="background:rgba(212,175,55,.15);color:#D4AF37;border:1px solid rgba(212,175,55,.3);padding:3px 8px;border-radius:20px;font-size:11px;font-weight:700;text-transform:uppercase">${it.category}</span></td>

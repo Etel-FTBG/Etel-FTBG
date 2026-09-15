@@ -1177,7 +1177,7 @@ function updateEarningsUI(d) {
     if (ph)  ph.textContent  = d.phone || '';
     if (pa) {
         if (d.selfie_url) {
-            pa.innerHTML = '<img src="' + d.selfie_url + '" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:inherit">';
+            pa.innerHTML = '<img src="' + escUrl(d.selfie_url) + '" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:inherit">';
         } else {
             var _parts = String(d.name || '').trim().split(/\s+/).filter(Boolean);
             pa.textContent = _parts.length ? (_parts[0][0] + (_parts[1] ? _parts[1][0] : '')).toUpperCase() : '?';

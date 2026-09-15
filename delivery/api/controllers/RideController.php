@@ -231,6 +231,26 @@ function rides_driver_profile($pdo, $uid) {
     return $d;
 }
 
+/* INSA audit follow-up: driver-privileged actions (going online, seeing
+   nearby requests, accepting/running a ride, hailing a customer, and both
+   cash-flow endpoints) used to be reachable by ANY authenticated role -
+   including a plain, freshly-registered 'customer' account - with no
+   check that this user has actually completed driver onboarding
+   (vehicle info + selfie + license photo, cross-checked against EtelID
+   and confirmed by an admin if it didn't auto-match). ride_drivers.
+   onboarded only ever gets set to 1 by driver_update_profile once all of
+   that is done (see the onboarded=1 write a few hundred lines down) -
+   this is the enforcement point. A user with no ride_drivers row at all
+   (never even started onboarding) is treated the same as onboarded=0. */
+function rides_require_onboarded($pdo, $uid) {
+    $s = $pdo->prepare("SELECT onboarded FROM ride_drivers WHERE user_id=?");
+    $s->execute(array($uid));
+    $row = $s->fetch();
+    if (!$row || intval($row['onboarded']) !== 1) {
+        fail('Your driver account is not fully verified yet. Finish onboarding (vehicle info, selfie, license photo) before you can go online, accept rides, or move money as a driver.', 403);
+    }
+}
+
 /* The driver's own registered vehicle_type (ride_drivers.vehicle_type) -
    used as the fallback when a ride row's own vehicle_type is empty
    (older rides created before Street Hail started storing it, or any
@@ -1255,6 +1275,7 @@ case 'ride_history': {
 case 'driver_go_online': {
     $lat = isset($body['lat']) ? floatval($body['lat']) : null;
     $lng = isset($body['lng']) ? floatval($body['lng']) : null;
+    rides_require_onboarded($pdo, $u['id']);
     rides_driver_profile($pdo, $u['id']);
     // The registration screen tells a driver with a license name/DOB
     // mismatch "your account has been flagged for admin review before
@@ -1825,6 +1846,7 @@ case 'admin_reject_driver_identity': {
 case 'driver_get_nearby_requests': {
     $radius = isset($body['radius_km']) ? floatval($body['radius_km']) : 8;
     if ($radius <= 0 || $radius > 50) $radius = 8;
+    rides_require_onboarded($pdo, $u['id']);
     $me = rides_driver_profile($pdo, $u['id']);
 
     $pdo->exec("UPDATE rides SET status='cancelled', cancelled_at=NOW()
@@ -2204,6 +2226,7 @@ case 'driver_cashout': {
        Pay wallet. Uses a DB-enforced idempotent partner_ref -- a network
        retry never double-credits, and a failed request never falls
        through to a false "success" toast. */
+    rides_require_onboarded($pdo, $u['id']);
     $amount = etel_validate_amount(isset($body['amount']) ? $body['amount'] : null);
     if ($amount === false) fail('amount must be a valid amount greater than 0');
 
@@ -2293,6 +2316,7 @@ case 'driver_topup_etel_money': {
        alone, but adds the extra human approval gate on top since a
        verified transfer and an approved commission-balance credit are
        not the same thing here. */
+    rides_require_onboarded($pdo, $u['id']);
     $amount = etel_validate_amount(isset($body['amount']) ? $body['amount'] : null);
     if ($amount === false) fail('amount must be a valid amount greater than 0');
     $tx_ref = isset($body['tx_ref']) ? trim($body['tx_ref']) : '';
@@ -2695,6 +2719,7 @@ case 'admin_reject_vehicle_change': {
 }
 
 case 'driver_accept_ride': {
+    rides_require_onboarded($pdo, $u['id']);
     $rid = isset($body['request_id']) ? intval($body['request_id']) : 0;
     if (!$rid) fail('request_id required');
     if (rides_get_active_for_driver($pdo, $u['id'])) fail('Finish your current ride first');
@@ -2719,6 +2744,7 @@ case 'driver_accept_ride': {
 }
 
 case 'driver_hail_customer': {
+    rides_require_onboarded($pdo, $u['id']);
     $raw_id = isset($body['phone']) ? trim($body['phone']) : '';
     $mkm    = isset($body['km'])  ? floatval($body['km'])  : 0;
     $open   = (isset($body['open']) && intval($body['open']) === 1) || $mkm <= 0;
@@ -2833,6 +2859,7 @@ case 'driver_hail_customer': {
 }
 
 case 'driver_start_ride': {
+    rides_require_onboarded($pdo, $u['id']);
     $rid = isset($body['ride_id']) ? intval($body['ride_id']) : 0;
     $pos = null;
     try {
@@ -2908,6 +2935,7 @@ case 'driver_toggle_wait': {
 }
 
 case 'driver_arrived': {
+    rides_require_onboarded($pdo, $u['id']);
     $rid = isset($body['ride_id']) ? intval($body['ride_id']) : 0;
     $vtypeCol = rides_has_vehicle_type_column($pdo) ? ', vehicle_type' : '';
     rides_ensure_wait_columns($pdo);
@@ -3096,6 +3124,7 @@ case 'driver_complete_ride': {
     // action name (rather than removed) so any already-cached driver
     // client still calling driver_complete_ride during a rollout gets
     // routed into the confirmation flow instead of bypassing it.
+    rides_require_onboarded($pdo, $u['id']);
     $rid = isset($body['ride_id']) ? intval($body['ride_id']) : 0;
     $vtypeCol2 = rides_has_vehicle_type_column($pdo) ? ', vehicle_type' : '';
     $s = $pdo->prepare("SELECT id, open_trip, traveled_km, distance_km, fare_final" . $vtypeCol2 . "

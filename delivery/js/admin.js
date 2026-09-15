@@ -125,16 +125,19 @@
                 renderDashboardCharts(ro.data.orders);
 
                 const recent = ro.data.orders.slice(0, 10);
-                document.getElementById('dash-orders-tbody').innerHTML = recent.length ? recent.map(o => `
+                document.getElementById('dash-orders-tbody').innerHTML = recent.length ? recent.map(o => {
+                    const safeCode = (o.order_code||'').replace(/[<>"'\\]/g, '');
+                    return `
                     <tr>
-                        <td><strong>${o.order_code}</strong></td>
-                        <td>${o.from_zone||'—'}</td><td>${o.to_zone||'—'}</td>
+                        <td><strong>${esc(o.order_code)}</strong></td>
+                        <td>${esc(o.from_zone)||'—'}</td><td>${esc(o.to_zone)||'—'}</td>
                         <td>${o.package_type||'—'}</td>
                         <td>ETB ${parseFloat(o.fare_total||0).toFixed(2)}</td>
                         <td>${statusBadge(o.status)}</td>
                         <td>${fmtTime(o.placed_at)}</td>
-                        <td><button class="act-btn act-gold" onclick="openOrderDetail(${o.id},'${o.order_code}','${o.status}')">🔍 Detail</button></td>
-                    </tr>`).join('') : '<tr><td colspan="8" style="text-align:center;color:#B8B0A0;padding:30px">No orders yet</td></tr>';
+                        <td><button class="act-btn act-gold" onclick="openOrderDetail(${o.id},'${safeCode}','${o.status}')">🔍 Detail</button></td>
+                    </tr>`;
+                }).join('') : '<tr><td colspan="8" style="text-align:center;color:#B8B0A0;padding:30px">No orders yet</td></tr>';
             }
             } catch(e) {}
             const upd = document.getElementById('last-updated'); if (upd) upd.textContent = 'Updated: ' + new Date().toLocaleTimeString();
@@ -175,20 +178,23 @@
             return h || '<span style="color:#ccc;font-size:11px">—</span>';
         }
         function renderOrderTable(data) {
-            document.getElementById('orders-tbody').innerHTML = data.length ? data.map(o => `
+            document.getElementById('orders-tbody').innerHTML = data.length ? data.map(o => {
+                const safeCode = (o.order_code||'').replace(/[<>"'\\]/g, '');
+                return `
                 <tr>
-                    <td><strong>${o.order_code}</strong></td>
-                    <td>${o.from_zone||'—'}</td><td>${o.to_zone||'—'}</td>
+                    <td><strong>${esc(o.order_code)}</strong></td>
+                    <td>${esc(o.from_zone)||'—'}</td><td>${esc(o.to_zone)||'—'}</td>
                     <td>${o.package_type||'—'}</td>
                     <td>ETB ${parseFloat(o.fare_total||0).toFixed(2)}</td>
                     <td>${statusBadge(o.status)}</td>
                     <td style="white-space:nowrap">${confBadges(o)}</td>
                     <td>${fmtTime(o.placed_at)}</td>
                     <td style="white-space:nowrap">
-                        <button class="act-btn act-gold" onclick="openOrderDetail(${o.id},'${o.order_code}','${o.status}')">🔍 Detail</button>
+                        <button class="act-btn act-gold" onclick="openOrderDetail(${o.id},'${safeCode}','${o.status}')">🔍 Detail</button>
                         ${o.status==='pending'?`<button class="act-btn act-red" onclick="updateOrderStatus(${o.id},'cancelled')">✕</button>`:''}
                     </td>
-                </tr>`).join('') : '<tr><td colspan="9" style="text-align:center;color:#B8B0A0;padding:30px">No orders found</td></tr>';
+                </tr>`;
+            }).join('') : '<tr><td colspan="9" style="text-align:center;color:#B8B0A0;padding:30px">No orders found</td></tr>';
         }
         function filterOrderTable() {
             const q = document.getElementById('order-search').value.toLowerCase();
@@ -300,6 +306,7 @@
                     const icon = isPickup ? '🛵' : '🚪';
                     const lbl  = isPickup ? 'Pickup Confirmation' : 'Delivery Confirmation';
                     const who  = isPickup ? 'Awaiting service giver' : 'Awaiting customer';
+                    const safeCode = (c.order_code||'').replace(/[<>"'\\]/g, '');
                     return `<div style="background:#fff;border-radius:12px;padding:16px;border:2px solid ${col}22;box-shadow:0 2px 12px ${col}18">
                         <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
                             <span style="font-size:20px">${icon}</span>
@@ -309,11 +316,11 @@
                             </div>
                             <span style="padding:3px 8px;border-radius:6px;font-size:10px;font-weight:700;background:${col}18;color:${col}">${waitLabel}</span>
                         </div>
-                        <div style="font-size:13px;margin-bottom:4px;color:#1a1a2e"><strong>${c.order_code}</strong> · ETB ${parseFloat(c.fare_total||0).toFixed(2)}</div>
-                        <div style="font-size:12px;color:#777;margin-bottom:10px">Courier: ${c.courier_name||'—'} · ${c.from_zone||'—'} → ${c.to_zone||'—'}</div>
+                        <div style="font-size:13px;margin-bottom:4px;color:#1a1a2e"><strong>${esc(c.order_code)}</strong> · ETB ${parseFloat(c.fare_total||0).toFixed(2)}</div>
+                        <div style="font-size:12px;color:#777;margin-bottom:10px">Courier: ${esc(c.courier_name)||'—'} · ${esc(c.from_zone)||'—'} → ${esc(c.to_zone)||'—'}</div>
                         <div style="display:flex;gap:6px">
-                            <button onclick="adminForceConfirm(${c.id},'${c.order_code}')" style="flex:1;padding:7px;background:${bg};color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer">✅ Force Confirm</button>
-                            <button onclick="adminRejectConf(${c.id},'${c.order_code}')" style="padding:7px 12px;background:#fde;color:#a00;border:1px solid #fbb;border-radius:8px;font-size:12px;cursor:pointer">✕</button>
+                            <button onclick="adminForceConfirm(${c.id},'${safeCode}')" style="flex:1;padding:7px;background:${bg};color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer">✅ Force Confirm</button>
+                            <button onclick="adminRejectConf(${c.id},'${safeCode}')" style="padding:7px 12px;background:#fde;color:#a00;border:1px solid #fbb;border-radius:8px;font-size:12px;cursor:pointer">✕</button>
                         </div>
                     </div>`;
                 }).join('');
@@ -342,17 +349,20 @@
                 const map = { pending:'#ff8c00', confirmed:'#2e7d32', rejected:'#a00' };
                 return `<span style="padding:2px 8px;border-radius:5px;font-size:11px;font-weight:700;background:${(map[s]||'#999')}22;color:${map[s]||'#999'};border:1px solid ${(map[s]||'#999')}44">${s}</span>`;
             };
-            tbody.innerHTML = confsData.map(c => `
+            tbody.innerHTML = confsData.map(c => {
+                const safeCode = (c.order_code||'').replace(/[<>"'\\]/g, '');
+                return `
                 <tr>
-                    <td><strong>${c.order_code}</strong></td>
+                    <td><strong>${esc(c.order_code)}</strong></td>
                     <td><span style="font-size:11px;font-weight:700;padding:2px 7px;border-radius:5px;background:${c.type==='pickup'?'#fff3e0':'#f3e5f5'};color:${c.type==='pickup'?'#e65100':'#6a1b9a'}">${c.type==='pickup'?'🛵 Pickup':'🚪 Delivery'}</span></td>
                     <td>${confStatusBadge(c.status)}${c.payment_confirmed?'<span style="font-size:10px;color:#2e7d32;margin-left:4px">💵 paid</span>':''}</td>
-                    <td>${c.courier_name||'—'}</td>
-                    <td>${c.responder_name||'—'}</td>
+                    <td>${esc(c.courier_name)||'—'}</td>
+                    <td>${esc(c.responder_name)||'—'}</td>
                     <td style="font-size:11px">${fmtTime(c.requested_at)}</td>
                     <td style="font-size:11px">${c.responded_at ? fmtTime(c.responded_at) : '<span style="color:#B8B0A0">pending</span>'}</td>
-                    <td>${c.status==='pending'?`<button class="act-btn act-gold" onclick="adminForceConfirm(${c.id},'${c.order_code}')" style="font-size:11px">Force ✓</button>`:'—'}</td>
-                </tr>`).join('');
+                    <td>${c.status==='pending'?`<button class="act-btn act-gold" onclick="adminForceConfirm(${c.id},'${safeCode}')" style="font-size:11px">Force ✓</button>`:'—'}</td>
+                </tr>`;
+            }).join('');
         }
 
         async function adminForceConfirm(confId, orderCode) {
@@ -387,11 +397,11 @@
                 : '<span style="color:#B8B0A0">Not requested</span>';
             const opts = ['pending','assigned','picked_up','in_transit','delivered','cancelled'].map(s => `<option value="${s}" ${s===status?'selected':''}>${s.replace(/_/g,' ')}</option>`).join('');
             openModal('custom', `
-                <div class="modal-title">Order ${code}</div>
+                <div class="modal-title">Order ${esc(code)}</div>
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;font-size:13px">
                     <div style="background:rgba(255,255,255,.06);border-radius:8px;padding:10px">
                         <div style="color:#B8B0A0;font-size:10px;text-transform:uppercase;font-weight:700;margin-bottom:4px">Route</div>
-                        <div>${o.from_zone||'—'} → ${o.to_zone||'—'}</div>
+                        <div>${esc(o.from_zone)||'—'} → ${esc(o.to_zone)||'—'}</div>
                     </div>
                     <div style="background:rgba(255,255,255,.06);border-radius:8px;padding:10px">
                         <div style="color:#B8B0A0;font-size:10px;text-transform:uppercase;font-weight:700;margin-bottom:4px">Amount</div>
@@ -684,8 +694,8 @@
             listEl.innerHTML = payments.map(p => `
                 <div class="stat-card" style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:10px;flex-wrap:wrap">
                     <div>
-                        <div style="font-weight:700;font-size:14px">Order ${p.order_code} — ETB ${parseFloat(p.amount).toFixed(2)}</div>
-                        <div style="font-size:12px;color:#B8B0A0">${p.customer_name} · Telebirr number: ${p.phone} · ${new Date(p.created_at).toLocaleString()}</div>
+                        <div style="font-weight:700;font-size:14px">Order ${esc(p.order_code)} — ETB ${parseFloat(p.amount).toFixed(2)}</div>
+                        <div style="font-size:12px;color:#B8B0A0">${esc(p.customer_name)} · Telebirr number: ${esc(p.phone)} · ${new Date(p.created_at).toLocaleString()}</div>
                     </div>
                     <div style="display:flex;gap:8px">
                         <button class="act-btn act-green" onclick="confirmTelebirrPayment(${p.id},'confirm')">✓ Confirm</button>
@@ -720,8 +730,8 @@
             listEl.innerHTML = payments.map(p => `
                 <div class="stat-card" style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:10px;flex-wrap:wrap">
                     <div>
-                        <div style="font-weight:700;font-size:14px">Order ${p.order_code} — ETB ${parseFloat(p.amount).toFixed(2)}</div>
-                        <div style="font-size:12px;color:#B8B0A0">${p.customer_name} · ${bankLabel[p.bank] || p.bank} · Ref: ${p.reference_no} · ${new Date(p.created_at).toLocaleString()}</div>
+                        <div style="font-weight:700;font-size:14px">Order ${esc(p.order_code)} — ETB ${parseFloat(p.amount).toFixed(2)}</div>
+                        <div style="font-size:12px;color:#B8B0A0">${esc(p.customer_name)} · ${esc(bankLabel[p.bank] || p.bank)} · Ref: ${esc(p.reference_no)} · ${new Date(p.created_at).toLocaleString()}</div>
                     </div>
                     <div style="display:flex;gap:8px">
                         <button class="act-btn act-green" onclick="confirmBankPayment(${p.id},'confirm')">✓ Confirm</button>
@@ -1140,6 +1150,11 @@
             msg.style.cssText='color:#B8B0A0'; msg.textContent='Updating…';
             const res = await api('change_password', { current_password: cur, new_password: nw });
             if (res && res.success) {
+                if (res.data && res.data.require_relogin) {
+                    msg.style.cssText='color:#2ECC71'; msg.textContent='Password updated. Please log in again…';
+                    setTimeout(() => { ETEL.auth.logout(); }, 1500);
+                    return;
+                }
                 if (res.data && res.data.token) localStorage.setItem('etel_token', res.data.token);
                 msg.style.cssText='color:#2ECC71'; msg.textContent='Password updated ✓';
                 document.getElementById('set-cur-pw').value = '';
@@ -1471,7 +1486,7 @@
         function renderItemTable(data) {
             document.getElementById('items-tbody').innerHTML = data.length ? data.map(it => `
                 <tr>
-                    <td>${it.image_url ? `<img src="${it.image_url}" style="width:44px;height:44px;object-fit:cover;border-radius:6px;border:1px solid #e0e0e0">` : '<div style="width:44px;height:44px;background:rgba(255,255,255,.06);border-radius:6px;display:flex;align-items:center;justify-content:center">🛍️</div>'}</td>
+                    <td>${it.image_url ? `<img src="${escUrl(it.image_url)}" style="width:44px;height:44px;object-fit:cover;border-radius:6px;border:1px solid #e0e0e0">` : '<div style="width:44px;height:44px;background:rgba(255,255,255,.06);border-radius:6px;display:flex;align-items:center;justify-content:center">🛍️</div>'}</td>
                     <td><strong>${esc(it.name)}</strong><br><span style="font-size:11px;color:#B8B0A0">${esc(it.item_code||'')}</span></td>
                     <td><span style="background:rgba(212,175,55,.15);color:#D4AF37;border:1px solid rgba(212,175,55,.3);padding:3px 8px;border-radius:20px;font-size:11px;font-weight:700;text-transform:uppercase">${esc(it.category || '—')}</span></td>
                     <td>${esc(it.business_name||'—')}</td>

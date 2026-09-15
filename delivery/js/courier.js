@@ -283,7 +283,7 @@
                         actionBtns = navShop +
                             '<button onclick="showOrderQR(' + o.id + ',\'pickup\')" style="width:100%;padding:12px;font-size:13px;font-weight:700;background:rgba(212,175,55,.15);color:#D4AF37;border:1px solid rgba(212,175,55,.4);border-radius:10px;cursor:pointer;margin-bottom:8px">' +
                             '📱 Show Pickup QR</button>' +
-                            '<button onclick="requestPickupConfirmation(' + o.id + ',\'' + o.order_code + '\')" style="width:100%;padding:12px;font-size:13px;font-weight:600;background:rgba(52,152,219,.15);color:#3498db;border:1px solid rgba(52,152,219,.4);border-radius:10px;cursor:pointer">' +
+                            '<button onclick="requestPickupConfirmation(' + o.id + ',\'' + (o.order_code||'').replace(/[<>"'\\]/g, '') + '\')" style="width:100%;padding:12px;font-size:13px;font-weight:600;background:rgba(52,152,219,.15);color:#3498db;border:1px solid rgba(52,152,219,.4);border-radius:10px;cursor:pointer">' +
                             '📦 I\'m at the shop — Request Pickup Confirmation</button>';
                     }
 
@@ -310,7 +310,7 @@
                         actionBtns = navCust +
                             '<button onclick="showOrderQR(' + o.id + ',\'delivery\')" style="width:100%;padding:12px;font-size:13px;font-weight:700;background:rgba(212,175,55,.15);color:#D4AF37;border:1px solid rgba(212,175,55,.4);border-radius:10px;cursor:pointer;margin-bottom:8px">' +
                             '📱 Show Delivery QR</button>' +
-                            '<button onclick="requestDeliveryConfirmation(' + o.id + ',\'' + o.order_code + '\')" style="width:100%;padding:12px;font-size:13px;font-weight:600;background:rgba(46,204,113,.15);color:#2ECC71;border:1px solid rgba(46,204,113,.4);border-radius:10px;cursor:pointer">' +
+                            '<button onclick="requestDeliveryConfirmation(' + o.id + ',\'' + (o.order_code||'').replace(/[<>"'\\]/g, '') + '\')" style="width:100%;padding:12px;font-size:13px;font-weight:600;background:rgba(46,204,113,.15);color:#2ECC71;border:1px solid rgba(46,204,113,.4);border-radius:10px;cursor:pointer">' +
                             '🚪 I\'ve delivered — Request Customer Confirmation</button>';
                     }
                 }
@@ -337,7 +337,7 @@
                             '<a href="' + mapsZoneLink + '" target="_blank" rel="noopener" ' +
                             'style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:rgba(212,175,55,.08);border:1px solid rgba(212,175,55,.2);border-radius:10px;color:#D4AF37;text-decoration:none">' +
                             '<span style="font-size:22px">🗺️</span>' +
-                            '<div><div style="font-size:13px;font-weight:700">' + (o.from_zone||'Unknown zone') + '</div>' +
+                            '<div><div style="font-size:13px;font-weight:700">' + escapeHtml(o.from_zone||'Unknown zone') + '</div>' +
                             '<div style="font-size:11px;opacity:.7">Tap to open in Google Maps navigation</div></div>' +
                             '</a>';
                     }
@@ -374,8 +374,8 @@
                     (o.payment_method ? '<div class="job-meta-item">' + paymentBadgeHtml(o.payment_method) + '</div>' : '') +
                     '</div>' +
                     (o.delivery_photo_url
-                        ? '<a href="' + o.delivery_photo_url.replace(/"/g,'&quot;') + '" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:8px;margin-top:8px;text-decoration:none">' +
-                          '<img src="' + o.delivery_photo_url.replace(/"/g,'&quot;') + '" style="width:48px;height:48px;object-fit:cover;border-radius:8px;border:1px solid rgba(255,255,255,.15)" alt="Gate/entrance photo">' +
+                        ? '<a href="' + escUrl(o.delivery_photo_url) + '" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:8px;margin-top:8px;text-decoration:none">' +
+                          '<img src="' + escUrl(o.delivery_photo_url) + '" style="width:48px;height:48px;object-fit:cover;border-radius:8px;border:1px solid rgba(255,255,255,.15)" alt="Gate/entrance photo">' +
                           '<span style="font-size:12px;color:#A8A8B8">📷 Customer added a gate/entrance photo — tap to view</span>' +
                           '</a>'
                         : '') +
@@ -644,10 +644,10 @@
                 '</div>' +
                 orders.map(function(o) {
                     return '<div class="job-card" style="opacity:0.85">' +
-                        '<div class="job-header"><span class="job-id">' + o.order_code + '</span>' +
+                        '<div class="job-header"><span class="job-id">' + escapeHtml(o.order_code) + '</span>' +
                         '<span class="job-status" style="background:rgba(46,204,113,.2);color:var(--accent-green);border-color:rgba(46,204,113,.3)">✓ DELIVERED</span></div>' +
                         '<div class="job-info">' +
-                        '<div class="job-address"><span class="job-address-icon">📍</span><span>' + (o.from_zone||'—') + ' → ' + (o.to_zone||'—') + '</span></div>' +
+                        '<div class="job-address"><span class="job-address-icon">📍</span><span>' + escapeHtml(o.from_zone||'—') + ' → ' + escapeHtml(o.to_zone||'—') + '</span></div>' +
                         (o.payment_method ? '<div style="margin-top:6px">' + paymentBadgeHtml(o.payment_method) + '</div>' : '') +
                         '<div class="job-fee" style="color:var(--accent-green)">You earned: ETB ' + parseFloat(o.delivery_fee != null ? o.delivery_fee : 0).toFixed(2) + '</div>' +
                         '</div></div>';
