@@ -1,0 +1,12 @@
+# Deny all direct web access to backup snapshots created by updater.php's
+# "backup" action (may contain index.html, config.js, etel-engine.js,
+# sw.js, skills/registry.json - i.e. copies of app source and settings).
+# Matches the same deny-all pattern already used for EtelAi/backups/.
+<IfModule mod_authz_core.c>
+    Require all denied
+</IfModule>
+<IfModule !mod_authz_core.c>
+    Order allow,deny
+    Deny from all
+</IfModule>
+Options -Indexes

@@ -202,7 +202,9 @@ function log_updater_action($pdo, $user_id, $action, $file_path) {
         $ip = isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : '0.0.0.0';
         $s = $pdo->prepare('INSERT INTO updater_logs (user_id, action, file_path, ip_address) VALUES (?, ?, ?, ?)');
         $s->execute([$user_id, $action, $file_path, $ip]);
-    } catch (Exception $e) {}
+    } catch (Exception $e) {
+        error_log('[ETEL][updater] log_updater_action failed for user=' . $user_id . ' action=' . $action . ': ' . $e->getMessage());
+    }
 }
 
 /* Resolve a path segment-by-segment ("." and ".." handled), without

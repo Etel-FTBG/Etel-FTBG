@@ -162,19 +162,19 @@
                     : '';
                 return '<div class="job-card">' +
                     '<div class="job-header">' +
-                    '<span class="job-id">' + job.order_code + '</span>' +
-                    '<span class="job-status">📦 ' + (job.package_type||'delivery').toUpperCase() + '</span>' +
+                    '<span class="job-id">' + escapeHtml(job.order_code) + '</span>' +
+                    '<span class="job-status">📦 ' + escapeHtml((job.package_type||'delivery').toUpperCase()) + '</span>' +
                     '<button onclick="muteJobRing(' + job.id + ', this)" style="margin-left:8px;padding:4px 9px;border:1px solid rgba(255,255,255,.2);background:transparent;color:#A8A8B8;border-radius:8px;font-size:11px;cursor:pointer">🔇 Mute</button>' +
                     '</div><div class="job-info">' +
-                    '<div class="job-address"><span class="job-address-icon">🏪</span><span>Pickup: <strong>' + (job.from_zone||'—') + '</strong> ' + distBadge + '</span></div>' +
-                    '<div class="job-address" style="margin-top:6px"><span class="job-address-icon">📍</span><span>Dropoff: ' + (job.to_zone||'—') + ' · ' + (job.recipient_name||'—') + (job.delivery_photo_url ? ' · 📷' : '') + '</span></div>' +
+                    '<div class="job-address"><span class="job-address-icon">🏪</span><span>Pickup: <strong>' + escapeHtml(job.from_zone||'—') + '</strong> ' + distBadge + '</span></div>' +
+                    '<div class="job-address" style="margin-top:6px"><span class="job-address-icon">📍</span><span>Dropoff: ' + escapeHtml(job.to_zone||'—') + ' · ' + escapeHtml(job.recipient_name||'—') + (job.delivery_photo_url ? ' · 📷' : '') + '</span></div>' +
                     '<div class="job-meta">' +
-                    '<div class="job-meta-item">📦 ' + (job.package_type||'package') + '</div>' +
+                    '<div class="job-meta-item">📦 ' + escapeHtml(job.package_type||'package') + '</div>' +
                     '<div class="job-meta-item">🕐 ' + fmtDate(job.placed_at) + '</div>' +
                     (job.payment_method ? '<div class="job-meta-item">' + paymentBadgeHtml(job.payment_method) + '</div>' : '') +
                     '</div><div class="job-fee">You earn: ETB ' + parseFloat(job.delivery_fee != null ? job.delivery_fee : 0).toFixed(2) + '</div>' +
                     '<div class="job-actions">' +
-                    '<button class="btn btn-primary" onclick="acceptJob(' + job.id + ',\'' + job.order_code + '\')">Accept Job</button>' +
+                    '<button class="btn btn-primary" onclick="acceptJob(' + job.id + ',\'' + escapeHtml(job.order_code).replace(/'/g,"\\'") + '\')">Accept Job</button>' +
                     '<button class="btn btn-secondary" onclick="skipJob(' + job.id + ')">Skip</button>' +
                     '</div></div></div>';
             }).join('');
@@ -258,7 +258,7 @@
                 var addrLine = '';
                 if (o.notes && o.notes.startsWith('Address:')) {
                     var addrText = o.notes.split('\n')[0].replace('Address:', '').trim();
-                    addrLine = '<div class="job-address" style="margin-top:6px;color:#A8A8B8;font-size:12px"><span class="job-address-icon">🏠</span><span>' + addrText + '</span></div>';
+                    addrLine = '<div class="job-address" style="margin-top:6px;color:#A8A8B8;font-size:12px"><span class="job-address-icon">🏠</span><span>' + escapeHtml(addrText) + '</span></div>';
                 }
 
                 // ── Navigation + confirmation buttons ──
@@ -289,9 +289,14 @@
 
                 } else if (o.status === 'picked_up' || o.status === 'in_transit') {
                     // Navigate to CUSTOMER
+                    // Stripped, not just quote-escaped: this string is embedded
+                    // both inside a JS string literal AND inside an HTML
+                    // onclick="..." attribute, so any of these chars in a
+                    // user-entered address could break out of either context.
+                    var delivAddrSafe = delivAddr.replace(/[<>"'\\]/g, '');
                     var navCustClick = delivLat && delivLng
-                        ? 'navigateToCustomer(' + delivLat + ',' + delivLng + ',\'' + delivAddr.replace(/'/g,"\\'") + '\')'
-                        : 'navigateToCustomer(null,null,\'' + delivAddr.replace(/'/g,"\\'") + '\')';
+                        ? 'navigateToCustomer(' + delivLat + ',' + delivLng + ',\'' + delivAddrSafe + '\')'
+                        : 'navigateToCustomer(null,null,\'' + delivAddrSafe + '\')';
 
                     var navCust = '<button class="nav-btn nav-btn-customer" style="width:100%;padding:14px;font-size:15px;font-weight:700;background:linear-gradient(135deg,#2ECC71,#27ae60);color:#fff;border:none;border-radius:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px" onclick="' + navCustClick + '">' +
                         '🗺️ NAVIGATE TO CUSTOMER</button>';
@@ -323,7 +328,7 @@
                         '<img src="' + staticUrl + '" style="width:100%;height:130px;object-fit:cover;border-radius:10px;border:1px solid rgba(212,175,55,.2)" alt="Shop location map" onerror="this.onerror=null;this.style.display=\'none\'">' +
                         '<div style="position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,.75);color:#fff;font-size:11px;font-weight:600;padding:4px 10px;border-radius:20px">Open in Maps ↗</div>' +
                         '</a>' +
-                        '<div style="font-size:11px;color:#A8A8B8;margin-top:4px">📍 ' + shopAddr + '</div>';
+                        '<div style="font-size:11px;color:#A8A8B8;margin-top:4px">📍 ' + escapeHtml(shopAddr) + '</div>';
                 } else {
                     var zc = ZONE_COORDS[o.from_zone];
                     if (zc) {
@@ -351,21 +356,21 @@
                         '<img src="' + custStaticUrl + '" style="width:100%;height:130px;object-fit:cover;border-radius:10px;border:1px solid rgba(52,152,219,.2)" alt="Customer location map" onerror="this.onerror=null;this.style.display=\'none\'">' +
                         '<div style="position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,.75);color:#fff;font-size:11px;font-weight:600;padding:4px 10px;border-radius:20px">Open in Maps ↗</div>' +
                         '</a>' +
-                        '<div style="font-size:11px;color:#A8A8B8;margin-top:4px">📍 ' + delivAddr + '</div>';
+                        '<div style="font-size:11px;color:#A8A8B8;margin-top:4px">📍 ' + escapeHtml(delivAddr) + '</div>';
                 }
 
                 var locationMapHtml = (o.status === 'assigned') ? shopMapHtml : custMapHtml;
 
                 return '<div class="job-card accepted">' +
-                    '<div class="job-header"><span class="job-id">' + o.order_code + '</span>' +
+                    '<div class="job-header"><span class="job-id">' + escapeHtml(o.order_code) + '</span>' +
                     '<div class="status-badge"><div class="status-dot"></div><span>' + statusLabel + '</span></div></div>' +
                     '<div class="job-info">' +
-                    '<div class="job-address"><span class="job-address-icon">🏪</span><span>Pickup: <strong>' + shopName + '</strong> · ' + (o.from_zone||'—') + '</span></div>' +
-                    '<div class="job-address" style="margin-top:6px"><span class="job-address-icon">📍</span><span>Dropoff: ' + (o.to_zone||'—') + '</span></div>' +
+                    '<div class="job-address"><span class="job-address-icon">🏪</span><span>Pickup: <strong>' + escapeHtml(shopName) + '</strong> · ' + escapeHtml(o.from_zone||'—') + '</span></div>' +
+                    '<div class="job-address" style="margin-top:6px"><span class="job-address-icon">📍</span><span>Dropoff: ' + escapeHtml(o.to_zone||'—') + '</span></div>' +
                     addrLine +
                     '<div class="job-meta" style="margin-top:8px">' +
-                    '<div class="job-meta-item">👤 ' + (o.recipient_name||'—') + '</div>' +
-                    '<div class="job-meta-item">📞 ' + (o.recipient_phone||'—') + '</div>' +
+                    '<div class="job-meta-item">👤 ' + escapeHtml(o.recipient_name||'—') + '</div>' +
+                    '<div class="job-meta-item">📞 ' + escapeHtml(o.recipient_phone||'—') + '</div>' +
                     (o.payment_method ? '<div class="job-meta-item">' + paymentBadgeHtml(o.payment_method) + '</div>' : '') +
                     '</div>' +
                     (o.delivery_photo_url

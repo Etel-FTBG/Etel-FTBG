@@ -141,7 +141,9 @@ case 'change_password': {
             $vs->execute(array($auth_user['id']));
             $newVersion = intval($vs->fetchColumn());
         }
-    } catch (Exception $e) {}
+    } catch (Exception $e) {
+        error_log('[ETEL] change_password token_version refetch failed for uid=' . $auth_user['id'] . ': ' . $e->getMessage());
+    }
     $newToken = gen_token($auth_user['id'], $newVersion);
     ok(array('message' => 'Password updated', 'token' => $newToken));
     break;
@@ -280,8 +282,10 @@ case 'sg_login': {
         $sgs = $pdo->prepare('SELECT id,service_giver_code,business_name,service_type,zone,bank_account,status,is_online,average_rating,total_deliveries,completed_deliveries,total_earnings FROM service_givers WHERE user_id=?');
         $sgs->execute(array($u['id']));
         $sg = $sgs->fetch();
-    } catch (Exception $e) {}
-    
+    } catch (Exception $e) {
+        error_log('[ETEL] service_giver login profile lookup failed for uid=' . $u['id'] . ': ' . $e->getMessage());
+    }
+
     if (!$sg) fail('Service giver profile not found', 404);
     if ($sg['status'] === 'suspended') fail('Your account is suspended. Contact admin.', 403);
     if ($sg['status'] === 'pending') fail('Your account is pending verification', 403);
