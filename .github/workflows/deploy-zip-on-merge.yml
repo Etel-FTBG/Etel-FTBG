@@ -1,0 +1,126 @@
+name: Deploy zip on merge
+
+# This repo hosts several independently-deployed systems (delivery/,
+# EtelGroup/, EtelGebeya/, EtelAi/, EtelId-backups/, etc.), each with its
+# own manual Admin Updater tool on shared cPanel hosting - there's no CD
+# pipeline, deploys are a person uploading a zip. This workflow saves that
+# person the "which files changed, zip them with the right relative
+# paths" step: every push to main (i.e. every PR merge), it looks at what
+# changed, groups those files by their top-level system folder, builds one
+# deploy zip per system (paths relative to that system's own root, matching
+# what each Updater's "Deploy ZIP" tab expects), and attaches them all to
+# a new GitHub Release so they're one click to download.
+#
+# This workflow only packages files - it never deploys anything itself.
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+# Folders here are never deployable apps on their own (docs, CI config,
+# shared non-deployed token files) - changes to only these produce no zip.
+env:
+  SKIP_TOP_LEVEL_DIRS: ".github docs design-system"
+
+jobs:
+  build-deploy-zips:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Build per-system deploy zips for changed files
+        id: build
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if ! git rev-parse HEAD~1 >/dev/null 2>&1; then
+            echo "No previous commit to diff against (initial commit) - nothing to package."
+            echo "has_zips=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          OUT_DIR="$RUNNER_TEMP/deploy-zips"
+          mkdir -p "$OUT_DIR"
+          SHORT_SHA="${GITHUB_SHA:0:7}"
+
+          # Added/modified files only - a deleted file can't go in a deploy zip.
+          mapfile -t CHANGED < <(git diff --name-status HEAD~1 HEAD | awk '$1 != "D" {print $2}')
+
+          if [ "${#CHANGED[@]}" -eq 0 ]; then
+            echo "No added/modified files in this push - nothing to package."
+            echo "has_zips=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          declare -A FOLDER_GROUPS=()
+          for f in "${CHANGED[@]}"; do
+            top="${f%%/*}"
+            # A root-level file (no "/" in path) has no system folder - skip it.
+            [ "$top" = "$f" ] && continue
+            skip=false
+            for d in $SKIP_TOP_LEVEL_DIRS; do
+              [ "$top" = "$d" ] && skip=true && break
+            done
+            [ "$skip" = true ] && continue
+            FOLDER_GROUPS["$top"]+="$f"$'\n'
+          done
+
+          if [ "${#FOLDER_GROUPS[@]}" -eq 0 ]; then
+            echo "Only non-deployable paths changed (docs/CI/etc.) - nothing to package."
+            echo "has_zips=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          SUMMARY=""
+          for top in "${!FOLDER_GROUPS[@]}"; do
+            safe_top="$(echo "$top" | tr '[:upper:]' '[:lower:]' | tr -c 'a-z0-9' '-' | sed 's/-\+/-/g;s/^-//;s/-$//')"
+            zipfile="$OUT_DIR/${safe_top}-deploy-${SHORT_SHA}.zip"
+            rm -f "$zipfile"
+            file_count=0
+            (
+              cd "$top"
+              rel_files=""
+              while IFS= read -r f; do
+                [ -z "$f" ] && continue
+                rel_files+="${f#"$top"/}"$'\n'
+              done <<< "${FOLDER_GROUPS[$top]}"
+              printf '%s' "$rel_files" | grep -v '^$' | zip -X -D -q "$zipfile" -@
+            )
+            file_count="$(printf '%s' "${FOLDER_GROUPS[$top]}" | grep -c . || true)"
+            echo "Built $zipfile ($file_count file(s) from $top/)"
+            SUMMARY+="- **${top}/** - ${file_count} file(s) -> \`$(basename "$zipfile")\`"$'\n'
+          done
+
+          {
+            echo "summary<<EOF_SUMMARY"
+            echo "$SUMMARY"
+            echo "EOF_SUMMARY"
+          } >> "$GITHUB_OUTPUT"
+          echo "zips_dir=$OUT_DIR" >> "$GITHUB_OUTPUT"
+          echo "has_zips=true" >> "$GITHUB_OUTPUT"
+          echo "short_sha=$SHORT_SHA" >> "$GITHUB_OUTPUT"
+
+      - name: Create release with deploy zips
+        if: steps.build.outputs.has_zips == 'true'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: deploy-${{ steps.build.outputs.short_sha }}-${{ github.run_number }}
+          name: "Deploy zip - ${{ steps.build.outputs.short_sha }}"
+          body: |
+            Auto-built deploy zip(s) for the systems changed by this merge.
+            Each zip's paths are relative to that system's own folder - upload
+            it as-is via that system's Admin Updater "Deploy ZIP" tool.
+
+            ${{ steps.build.outputs.summary }}
+
+            Commit: ${{ github.sha }}
+          files: ${{ steps.build.outputs.zips_dir }}/*.zip
+          draft: false
+          prerelease: false
