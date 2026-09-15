@@ -155,12 +155,51 @@ function openDocsNewTextModal() {
       </select>
     </div>
     <div class="modal-field"><label>Description</label><input type="text" id="docn-desc" placeholder="Optional"></div>
-    <div class="modal-field"><label>Content</label>
+    <div class="modal-field">
+      <label>Content</label>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+        <input type="file" id="docn-file-loader" style="font-size:12px" onchange="docsLoadTextFile(this)">
+        <span style="font-size:11px;color:#9A9AAE">Loads a local text file's content below instead of typing/pasting it. For PDF/Word/Excel/PowerPoint use "Upload Document" instead.</span>
+      </div>
       <textarea id="docn-content" rows="12" style="width:100%;font-family:Consolas,Monaco,monospace;font-size:12.5px;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.05);color:#EDEDF5"></textarea>
     </div>
     <div class="modal-msg" id="docn-msg"></div>
     <button class="modal-submit" onclick="docsSubmitNewText()">Create</button>
   `);
+}
+
+// Reads a locally-picked file straight into the New Text File modal's
+// Content box (and auto-fills filename/title if still empty) instead of
+// requiring the admin to open the file elsewhere and paste its content
+// in by hand. Text types only - readAsText() on a binary file (docx,
+// pdf, etc) would just produce garbage, so those are rejected here with
+// a pointer to the real Upload Document flow instead.
+function docsLoadTextFile(input) {
+  const file = input.files && input.files[0];
+  if (!file) return;
+  const ext = (file.name.split('.').pop() || '').toLowerCase();
+  if (!DOCS_TEXT_EXT.includes(ext)) {
+    input.value = '';
+    if (typeof toast === 'function') {
+      toast('".' + ext + '" is not a plain-text type - use "Upload Document" instead for PDF/Word/Excel/PowerPoint files', 'err');
+    }
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = e => {
+    const contentEl = document.getElementById('docn-content');
+    const filenameEl = document.getElementById('docn-filename');
+    const titleEl = document.getElementById('docn-title');
+    if (contentEl) contentEl.value = e.target.result;
+    if (filenameEl && !filenameEl.value.trim()) filenameEl.value = file.name;
+    if (titleEl && !titleEl.value.trim()) {
+      const base = file.name.replace(/\.[^.]+$/, '');
+      titleEl.value = base.replace(/[-_]+/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+    }
+    if (typeof toast === 'function') toast('Loaded ' + file.name, 'ok');
+  };
+  reader.onerror = () => { if (typeof toast === 'function') toast('Could not read that file', 'err'); };
+  reader.readAsText(file);
 }
 
 async function docsSubmitNewText() {
