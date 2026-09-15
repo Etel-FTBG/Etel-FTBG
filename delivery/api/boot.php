@@ -837,6 +837,17 @@ switch ($action) {
         // (both already exist) - not duplicated here.
         require __DIR__ . '/controllers/PlanningController.php';
         break;
+    case 'admin_docs_list': case 'admin_docs_get': case 'admin_docs_create_text': case 'admin_docs_update_text':
+    case 'admin_docs_update_meta': case 'admin_docs_restore_version': case 'admin_docs_delete':
+        // Admin Documents library (browse/view/edit/version PDFs, Office
+        // files, Markdown, XML/.rels, etc). Binary upload/replace and
+        // file streaming live in the separate documents_upload.php /
+        // documents_download.php - boot.php can't parse multipart bodies
+        // or stream raw bytes (it always sends a JSON content-type
+        // header up front), same reason upload.php/admin-branding.php
+        // already stay standalone. See migration 056_admin_documents.sql.
+        require __DIR__ . '/controllers/DocumentsController.php';
+        break;
     case 'platform_economics_get_costs': case 'platform_economics_update_costs': case 'platform_economics_get_summary':
     case 'platform_economics_get_growth_assumptions': case 'platform_economics_save_growth_assumptions': case 'platform_economics_reset_growth_assumptions':
         // Real-revenue-vs-real-cost-assumptions calculator. Own

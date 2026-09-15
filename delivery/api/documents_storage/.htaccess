@@ -1,0 +1,14 @@
+# Deny all direct web access to uploaded admin documents (PDFs, Office
+# files, Markdown, XML, etc. uploaded via the admin Documents panel -
+# some may contain internal/sensitive content). Files here are only ever
+# served through documents_download.php, which checks an admin bearer
+# token and the documents.view capability before streaming anything.
+# Matches the same deny-all pattern already used for api/backups/.
+<IfModule mod_authz_core.c>
+    Require all denied
+</IfModule>
+<IfModule !mod_authz_core.c>
+    Order allow,deny
+    Deny from all
+</IfModule>
+Options -Indexes

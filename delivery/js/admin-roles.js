@@ -25,6 +25,8 @@ const ROLE_CAP_LABELS = {
   'equb.manage': 'Grant/revoke Equb access, force-process rounds',
   'planning.view': 'View Business Plan & Capital Requirement',
   'planning.manage': 'Edit hiring plan and planning notes',
+  'documents.view': 'View the Documents library',
+  'documents.manage': 'Upload, edit, replace, and delete documents',
 };
 
 let ROLES_CACHE = [];
@@ -66,7 +68,7 @@ function editRolePermissions(index) {
   const allCaps = ['orders.view','orders.manage','rides.view','rides.manage','users.view','users.manage',
                     'service_givers.view','service_givers.manage','items.view','items.manage',
                     'settings.view','settings.manage','finance.view','finance.manage',
-                    'sos.view','sos.manage','analytics.view','owner.only','equity.view','equity.manage','system.reset','platform_economics.view','platform_economics.manage','equb.view','equb.manage','planning.view','planning.manage'];
+                    'sos.view','sos.manage','analytics.view','owner.only','equity.view','equity.manage','system.reset','platform_economics.view','platform_economics.manage','equb.view','equb.manage','planning.view','planning.manage','documents.view','documents.manage'];
   const current = existing ? existing.capabilities : [];
 
   openModal('custom', `
@@ -195,6 +197,7 @@ function etelHasCap(caps, required) {
       finance: ['finance.view', 'finance.manage'],
       equb: ['equb.view', 'equb.manage'],
       danger: 'system.reset',
+      documents: ['documents.view', 'documents.manage'],
     };
     Object.keys(navMap).forEach(page => {
       if (!etelHasCap(caps, navMap[page])) {

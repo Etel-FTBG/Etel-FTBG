@@ -227,6 +227,9 @@ html{color-scheme:light}
             <div class="nav-item" data-page="danger" id="nav-item-danger" onclick="switchPage('danger',this)" style="border:1px solid rgba(255,93,108,.4)">
                 <span class="nav-icon">☠️</span><span>Danger Zone</span>
             </div>
+            <div class="nav-item" data-page="documents" onclick="switchPage('documents',this)">
+                <span class="nav-icon">📄</span><span>Documents</span>
+            </div>
             <div class="nav-item" id="header-mobile-menu-btn" onclick="toggleHeaderMobileMenu(event)">
                 <span class="nav-icon">🔗</span><span>Apps</span>
             </div>
@@ -902,6 +905,39 @@ html{color-scheme:light}
                     </div>
                 </div>
 
+                <!-- ═══════════ DOCUMENTS PANEL ═══════════ -->
+                <div class="panel" id="panel-documents" style="display:none">
+                    <div class="data-section">
+                        <div class="section-title">📄 Documents Library</div>
+                        <p style="font-size:13px;color:#B8B0A0;margin-bottom:14px;max-width:680px">
+                            Upload, view, edit, and version PDFs, Word/Excel/PowerPoint files, Markdown, XML/.rels,
+                            and other reference documents. PDF and DOCX render inline; PPTX shows a text-only slide
+                            preview; Markdown/XML/.rels/TXT/JSON/CSV/YAML/HTML/CSS/JS are fully editable in place.
+                            Every save or replace keeps the previous version, recoverable from History.
+                        </p>
+                        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px">
+                            <input type="text" id="docs-search" placeholder="Search title, filename, description…" oninput="docsDebouncedReload()"
+                                   style="flex:1;min-width:200px;padding:9px 12px;border-radius:8px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.05);color:#EDEDF5;font-size:13px">
+                            <select id="docs-category-filter" onchange="loadDocumentsPanel()"
+                                    style="padding:9px 12px;border-radius:8px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.05);color:#EDEDF5;font-size:13px">
+                                <option value="all">All categories</option>
+                                <option value="legal">Legal</option>
+                                <option value="technical">Technical</option>
+                                <option value="audit">Audit / Compliance</option>
+                                <option value="finance">Finance</option>
+                                <option value="other">Other</option>
+                            </select>
+                            <button class="btn btn-secondary" onclick="openDocsNewTextModal()">📝 New Text File</button>
+                        </div>
+                        <div class="table-wrapper">
+                            <table>
+                                <thead><tr><th></th><th>Title</th><th>Type</th><th>Category</th><th>Size</th><th>Version</th><th>Updated</th><th></th></tr></thead>
+                                <tbody id="docs-tbody"><tr><td colspan="8" style="color:#B8B0A0">Loading…</td></tr></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- ═══════════ RIDES PANEL ═══════════ -->
                 <div class="panel" id="panel-rides" style="display:none">
 
@@ -1245,6 +1281,9 @@ html{color-scheme:light}
     <script src="js/admin-branding.js?v=1.0"></script><!-- Branding: site icon/PWA icon/splash/header logo uploads, admin-only -->
     <script src="js/admin-etelpay.js?v=1.0"></script><!-- Etel Pay live-toggle + per-user overrides (Settings tab) -->
     <script src="js/admin-support.js?v=1.0"></script><!-- Support Inbox (Contact Support messages) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script><!-- DOCX -> HTML read-only preview, Documents tab -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script><!-- PPTX slide-text preview (PPTX is a zip of XML), Documents tab -->
+    <script src="js/admin-documents.js?v=1.0"></script><!-- Documents library: view/edit/version PDFs, Office files, Markdown, XML, etc -->
 
 <script src="js/admin.js?v=6.3"></script>
 <script src="js/admin-confirmations-premium.js?v=1.1"></script><!-- Pending Confirmations + GLOBAL modal-box fix for entire admin system -->
