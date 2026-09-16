@@ -61,7 +61,8 @@ case 'admin_set_etelpay_override': {
     $admin = require_admin($pdo, 'owner.only');
     $user_id = isset($body['user_id']) ? intval($body['user_id']) : 0;
     if (!$user_id && !empty($body['phone'])) {
-        $phone = preg_replace('/[^0-9+]/', '', trim($body['phone']));
+        $phone = etel_validate_phone($body['phone']);
+        if (!$phone) fail('Enter a valid Ethiopian mobile number, e.g. 0911234567');
         $us = $pdo->prepare('SELECT id FROM users WHERE phone=?');
         $us->execute(array($phone));
         $user_id = intval($us->fetchColumn());
