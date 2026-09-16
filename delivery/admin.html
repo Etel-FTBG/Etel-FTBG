@@ -655,32 +655,32 @@ html{color-scheme:light}
                         <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:14px">
                             <select id="audit-provider" class="filter-sel" style="width:auto">
                                 <option value="gemini">Gemini</option>
-                                <option value="claude">Claude</option>
-                                <option value="kimi">Kimi</option>
-                                <option value="openai">GPT-4o</option>
+                                <option value="openrouter">OpenRouter</option>
                             </select>
                             <button class="btn btn-primary" id="audit-run-btn" onclick="runCodeAudit()">▶️ Run Audit Now</button>
                             <button class="btn btn-secondary" id="audit-download-btn" style="display:none" onclick="downloadAuditReport()">📥 Download JSON</button>
                             <button class="btn btn-secondary" onclick="toggleAuditSettings()">⚙️ API Settings</button>
                         </div>
                         <div id="audit-settings-box" style="display:none;margin-bottom:16px;padding:14px;background:#1a1a1a;border:1px solid #444;border-radius:8px">
-                            <div style="font-size:12px;color:#ccc;margin-bottom:10px">Which backend "Run Audit Now" actually calls. Change this if you switch audit proxies or rotate the shared secret - no code deploy needed.</div>
+                            <div style="font-size:12px;color:#ccc;margin-bottom:10px">"Run Audit Now" calls Gemini or OpenRouter directly with the key below - no shared proxy, no code deploy needed to rotate a key.</div>
                             <div style="display:flex;flex-direction:column;gap:8px;max-width:520px">
                                 <div>
-                                    <label style="font-size:11px;color:#B8B0A0;display:block;margin-bottom:3px">Proxy URL</label>
-                                    <input type="text" id="audit-set-url" placeholder="https://ethelmarket.com/EtelGebeya/public/proxy.php" style="width:100%;box-sizing:border-box">
+                                    <label style="font-size:11px;color:#B8B0A0;display:block;margin-bottom:3px">Gemini API Key</label>
+                                    <input type="text" id="audit-set-gemini-key" placeholder="AIza..." style="width:100%;box-sizing:border-box">
                                 </div>
                                 <div>
-                                    <label style="font-size:11px;color:#B8B0A0;display:block;margin-bottom:3px">Shared Secret</label>
-                                    <input type="text" id="audit-set-secret" placeholder="Shared secret the proxy expects" style="width:100%;box-sizing:border-box">
+                                    <label style="font-size:11px;color:#B8B0A0;display:block;margin-bottom:3px">OpenRouter API Key</label>
+                                    <input type="text" id="audit-set-openrouter-key" placeholder="sk-or-..." style="width:100%;box-sizing:border-box">
+                                </div>
+                                <div>
+                                    <label style="font-size:11px;color:#B8B0A0;display:block;margin-bottom:3px">OpenRouter Model</label>
+                                    <input type="text" id="audit-set-openrouter-model" placeholder="anthropic/claude-3.5-sonnet" style="width:100%;box-sizing:border-box">
                                 </div>
                                 <div>
                                     <label style="font-size:11px;color:#B8B0A0;display:block;margin-bottom:3px">Default Provider</label>
                                     <select id="audit-set-provider" style="width:180px">
                                         <option value="gemini">Gemini</option>
-                                        <option value="claude">Claude</option>
-                                        <option value="kimi">Kimi</option>
-                                        <option value="openai">GPT-4o</option>
+                                        <option value="openrouter">OpenRouter</option>
                                     </select>
                                 </div>
                                 <div style="margin-top:6px">
@@ -1293,7 +1293,7 @@ html{color-scheme:light}
         <script src="js/admin-rides.js?v=4.9"></script><!-- Rides tab - Phase 4, + ride issue reports -->
     <script src="js/admin-sos.js?v=1.0"></script><!-- SOS / intruder-alert monitor for driver & rider panic button -->
     <script src="js/admin/servicegiver-ext.js?v=4.2"></script>
-    <script src="js/admin-audit.js?v=1.5"></script><!-- One-click code audit (Settings tab) -->
+    <script src="js/admin-audit.js?v=1.6"></script><!-- One-click code audit (Settings tab) -->
     <script src="js/admin-migrations.js?v=1.0"></script><!-- Database migrations (Settings tab) -->
     <script src="js/admin-announcements.js?v=1.0"></script><!-- Driver announcements + push (Settings tab) -->
     <script src="js/admin-launch-checklist.js?v=1.0"></script><!-- Launch Readiness tab -->

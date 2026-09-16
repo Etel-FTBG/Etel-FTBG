@@ -2,46 +2,52 @@
 /**
  * ETEL self-audit agent (server-side, one-click)
  *
- * Reuses the exact same backend as EtelGebeya/audit/index.html (the
- * manual "zip it, upload it, download the JSON" tool) but skips the
- * upload entirely: this file already lives inside the project it's
- * auditing, so it reads its own files straight off disk, builds the same
- * file-tree + content payload the browser tool builds, and POSTs it to
- * the shared AI proxy (EtelGebeya/audit/proxy.php) over HTTPS. That proxy
- * already holds the real Gemini/Claude/Kimi/OpenAI keys server-side (see
- * EtelGebeya/audit/config.php) - this file never touches or needs a key
- * of its own.
+ * Calls Gemini or OpenRouter directly over HTTPS using a key configured
+ * for THIS project (same direct-call pattern EtelAi's providers.php uses
+ * for its own key-testing, not shared with any other project) - this
+ * file reads its own files straight off disk, builds the same file-tree
+ * + content payload the old EtelGebeya browser tool built, and posts it
+ * straight to the provider's real API.
+ *
+ * Previously this posted to a shared proxy (EtelGebeya/public/proxy.php)
+ * that held the real keys server-side so this file never needed one of
+ * its own. Switched to calling providers directly after that proxy's
+ * shared secret repeatedly failed to authenticate in production despite
+ * matching byte-for-byte on both sides (see git history) - direct calls
+ * remove that whole cross-project shared-secret failure mode, at the
+ * cost of this project now needing its own Gemini/OpenRouter key(s),
+ * configured from Settings > Code Audit > API Settings.
  *
  * This is a template: copy it into another project's api/ (or
- * equivalent) folder, and only PROJECT_ROOT/PROJECT_NAME below need to
- * change. It's kept as one self-contained function so it has no
- * dependency on this specific project's other files besides whatever
- * calls etel_run_self_audit() with an admin-gated action.
+ * equivalent) folder - it has no dependency on this specific project's
+ * other files besides whatever calls etel_run_self_audit() with an
+ * admin-gated action.
  */
 
 if (!function_exists('etel_run_self_audit')) {
 
-// Where the shared AI proxy lives - same one the manual browser tool
-// (EtelGebeya/public/index.html) already posts to via its relative
-// './proxy.php'. If you ever move EtelGebeya, update this one URL
-// across every project's copy of this file.
-define('ETEL_AUDIT_PROXY_URL', 'https://ethelmarket.com/EtelGebeya/public/proxy.php');
-define('ETEL_AUDIT_SECRET',    getenv('ETEL_AUDIT_SECRET') ?: ''); // must match EtelGebeya/audit/proxy.php's AUDIT_SECRET
+// Fallback keys if the DB table below is empty/unreachable - set these
+// as real environment variables in api/.env if you'd rather not touch
+// the DB at all. The admin panel (Settings > Code Audit > API Settings)
+// is the normal way to set/rotate these without a code deploy.
+define('ETEL_AUDIT_GEMINI_KEY',     getenv('GEMINI_API_KEY') ?: '');
+define('ETEL_AUDIT_OPENROUTER_KEY', getenv('OPENROUTER_API_KEY') ?: '');
 
-// Same extension allowlist as the browser tool's TEXT_EXTS, so results
-// are consistent whether a project is audited via upload or via this
-// button.
+// Gemini tries these in order, falling back to the next on a 400/401/403
+// (same resilience the old shared proxy had). OpenRouter uses a single
+// configurable model since it already routes across many backends itself.
+define('ETEL_AUDIT_GEMINI_MODELS', 'gemini-3.5-flash,gemini-3.1-flash-lite,gemini-3.1-pro');
+define('ETEL_AUDIT_OPENROUTER_DEFAULT_MODEL', 'anthropic/claude-3.5-sonnet');
+
+// Same extension allowlist as the old browser tool's TEXT_EXTS, so
+// results are consistent with what that tool used to produce.
 define('ETEL_AUDIT_TEXT_EXTS', 'php,js,ts,jsx,tsx,css,scss,sass,less,html,htm,xml,json,sql,md,txt,env,htaccess,yaml,yml,ini,conf,sh,py,rb,java,cs,go,rs,toml,vue,svelte,config,gitignore,lock');
 
 // ── Admin-editable audit config ──────────────────────────────────────
-// The proxy URL/secret above used to be the only source of truth -
-// changing which audit backend/API this points to meant editing this
-// file directly and re-deploying. Now they're stored in a DB table an
-// admin can edit from the panel; the constants above stay as the
-// fallback (and as what a fresh copy of this file in another project
-// starts with) if the table can't be created or is empty. Seeded with
-// the EXACT current values, so applying this changes nothing on its
-// own - only an actual edit in the admin panel does.
+// Keys/model live in a DB table an admin can edit from the panel; the
+// constants above are only the fallback if this table can't be created
+// or is empty (and what a fresh copy of this file in another project
+// starts with).
 if (!function_exists('etel_audit_ensure_settings_table')) {
 function etel_audit_ensure_settings_table($pdo) {
     static $checked = false;
@@ -52,25 +58,58 @@ function etel_audit_ensure_settings_table($pdo) {
         if (!$exists) {
             $pdo->exec("CREATE TABLE audit_settings (
                 id INT PRIMARY KEY DEFAULT 1,
-                proxy_url TEXT NOT NULL,
-                secret VARCHAR(255) NOT NULL,
+                gemini_key VARCHAR(255) NOT NULL DEFAULT '',
+                openrouter_key VARCHAR(255) NOT NULL DEFAULT '',
+                openrouter_model VARCHAR(120) NOT NULL DEFAULT 'anthropic/claude-3.5-sonnet',
                 default_provider VARCHAR(20) NOT NULL DEFAULT 'gemini',
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
             )");
-            $pdo->prepare("INSERT INTO audit_settings (id, proxy_url, secret, default_provider) VALUES (1, ?, ?, 'gemini')")
-                ->execute(array(ETEL_AUDIT_PROXY_URL, ETEL_AUDIT_SECRET));
+            $pdo->prepare("INSERT INTO audit_settings (id, gemini_key, openrouter_key, openrouter_model, default_provider) VALUES (1, ?, ?, ?, 'gemini')")
+                ->execute(array(ETEL_AUDIT_GEMINI_KEY, ETEL_AUDIT_OPENROUTER_KEY, ETEL_AUDIT_OPENROUTER_DEFAULT_MODEL));
+        } else {
+            // Upgrade path: an existing installation of this table (from
+            // before this file switched off the shared-proxy design) has
+            // proxy_url/secret columns instead of these - add the new
+            // ones without touching/dropping the old, now-unused columns.
+            $existing = array();
+            foreach ($pdo->query("SHOW COLUMNS FROM audit_settings")->fetchAll() as $c) {
+                $existing[strtolower($c['Field'])] = true;
+            }
+            $add = array(
+                'gemini_key'       => "gemini_key VARCHAR(255) NOT NULL DEFAULT ''",
+                'openrouter_key'   => "openrouter_key VARCHAR(255) NOT NULL DEFAULT ''",
+                'openrouter_model' => "openrouter_model VARCHAR(120) NOT NULL DEFAULT 'anthropic/claude-3.5-sonnet'",
+            );
+            foreach ($add as $col => $ddl) {
+                if (!isset($existing[$col])) {
+                    try { $pdo->exec("ALTER TABLE audit_settings ADD COLUMN $ddl"); }
+                    catch (Exception $e) { error_log('[ETEL][audit] add col ' . $col . ': ' . $e->getMessage()); }
+                }
+            }
         }
     } catch (Exception $e) { /* best-effort - falls back to the hardcoded constants if this never succeeds */ }
 }
 }
 if (!function_exists('etel_audit_get_config')) {
 function etel_audit_get_config($pdo) {
-    $fallback = array('proxy_url' => ETEL_AUDIT_PROXY_URL, 'secret' => ETEL_AUDIT_SECRET, 'default_provider' => 'gemini');
+    $fallback = array(
+        'gemini_key'       => ETEL_AUDIT_GEMINI_KEY,
+        'openrouter_key'   => ETEL_AUDIT_OPENROUTER_KEY,
+        'openrouter_model' => ETEL_AUDIT_OPENROUTER_DEFAULT_MODEL,
+        'default_provider' => 'gemini',
+    );
     if (!$pdo) return $fallback;
     try {
         etel_audit_ensure_settings_table($pdo);
-        $row = $pdo->query("SELECT proxy_url, secret, default_provider FROM audit_settings WHERE id=1")->fetch(PDO::FETCH_ASSOC);
-        if ($row && $row['proxy_url'] && $row['secret']) return $row;
+        $row = $pdo->query("SELECT gemini_key, openrouter_key, openrouter_model, default_provider FROM audit_settings WHERE id=1")->fetch(PDO::FETCH_ASSOC);
+        if ($row) {
+            return array(
+                'gemini_key'       => $row['gemini_key'] !== '' ? $row['gemini_key'] : $fallback['gemini_key'],
+                'openrouter_key'   => $row['openrouter_key'] !== '' ? $row['openrouter_key'] : $fallback['openrouter_key'],
+                'openrouter_model' => $row['openrouter_model'] !== '' ? $row['openrouter_model'] : $fallback['openrouter_model'],
+                'default_provider' => $row['default_provider'] ?: 'gemini',
+            );
+        }
     } catch (Exception $e) { /* fall through to hardcoded fallback below */ }
     return $fallback;
 }
@@ -277,59 +316,124 @@ function etel_audit_build_content($files) {
     return $userMsg;
 }
 
-/**
- * Run a full self-audit of $root and return the parsed report array, or
- * ['error' => '...'] on failure. Never throws - callers should just
- * check for the 'error' key.
- */
-function etel_run_self_audit($root, $projectName, $provider = 'gemini', $pdo = null) {
-    // Shared cPanel hosting commonly defaults max_execution_time to 30s,
-    // which would kill this request before a slower AI response (the
-    // manual browser tool's own loading UI budgets up to ~2 minutes)
-    // comes back. @ suppresses the notice on hosts where set_time_limit
-    // is disabled entirely - the cURL timeout below is the real bound.
-    @set_time_limit(300);
-    if (!is_dir($root)) return array('error' => "Project root not found: $root");
+/* Strips markdown code fences and stray leading/trailing prose the model
+   sometimes wraps the JSON in, then parses it - shared by both provider
+   callers below since they need identical cleanup. Returns the decoded
+   report array, or null if the text still isn't valid JSON after cleanup. */
+function etel_audit_parse_report_text($text) {
+    $text = trim(preg_replace(array('/^```(?:json)?\s*/im', '/```\s*$/m'), '', (string)$text));
+    if ($text !== '' && $text[0] !== '{') {
+        $s = strpos($text, '{'); $e = strrpos($text, '}');
+        if ($s !== false && $e > $s) $text = substr($text, $s, $e - $s + 1);
+    }
+    $report = json_decode($text, true);
+    return is_array($report) ? $report : null;
+}
 
-    $files = etel_audit_collect_files($root);
-    if (!$files) return array('error' => 'No text files found to audit under ' . $root);
+/* Calls Gemini's native generateContent API directly (same request shape
+   EtelAi's providers.php test_key action and the old EtelGebeya proxy
+   both use), trying each model in ETEL_AUDIT_GEMINI_MODELS in turn until
+   one returns 200 - a later model is only tried after a real failure
+   (400/401/403 or a non-2xx), not after a successful-but-unwanted result. */
+function etel_audit_call_gemini($cfg, $system, $content) {
+    if (!$cfg['gemini_key']) return array('error' => 'Gemini API key not configured - set it in Settings > Code Audit > API Settings');
 
-    $content = etel_audit_build_content($files);
-
-    $cfg = etel_audit_get_config($pdo);
-    $payload = json_encode(array(
-        'secret'   => $cfg['secret'],
-        'system'   => etel_audit_system_prompt(),
-        'content'  => $content,
-        'provider' => $provider,
-    ), JSON_UNESCAPED_UNICODE);
-
-    // json_encode() returns false (not a JSON "false" string, the actual
-    // PHP boolean) for the WHOLE payload if even one collected file has
-    // invalid UTF-8 bytes - e.g. a non-UTF8 legacy file or stray binary
-    // that slipped past the extension filter. curl then silently sends
-    // an empty body, which the proxy reports as "Empty request body".
-    // Retry once with bytes forced to valid UTF-8 instead of failing.
+    $payloadArr = array(
+        'contents'          => array(array('role' => 'user', 'parts' => array(array('text' => $content)))),
+        'systemInstruction' => array('parts' => array(array('text' => $system))),
+        'generationConfig'  => array('maxOutputTokens' => 65536, 'temperature' => 0.1, 'topP' => 0.8),
+        'safetySettings'    => array(
+            array('category' => 'HARM_CATEGORY_HARASSMENT',        'threshold' => 'BLOCK_NONE'),
+            array('category' => 'HARM_CATEGORY_HATE_SPEECH',       'threshold' => 'BLOCK_NONE'),
+            array('category' => 'HARM_CATEGORY_SEXUALLY_EXPLICIT', 'threshold' => 'BLOCK_NONE'),
+            array('category' => 'HARM_CATEGORY_DANGEROUS_CONTENT', 'threshold' => 'BLOCK_NONE'),
+        ),
+    );
+    $payload = json_encode($payloadArr, JSON_UNESCAPED_UNICODE);
     if ($payload === false) {
-        $cleanUtf8 = function ($s) {
+        // See the UTF-8 note in etel_run_self_audit() - same recovery.
+        $clean = function ($s) {
             $s = @iconv('UTF-8', 'UTF-8//IGNORE', (string)$s);
             return $s === false ? preg_replace('/[^\x09\x0A\x0D\x20-\x7E]/', '?', (string)$s) : $s;
         };
-        $payload = json_encode(array(
-            'secret'   => $cfg['secret'],
-            'system'   => $cleanUtf8(etel_audit_system_prompt()),
-            'content'  => $cleanUtf8($content),
-            'provider' => $provider,
-        ), JSON_UNESCAPED_UNICODE);
+        $payloadArr['contents'][0]['parts'][0]['text'] = $clean($content);
+        $payloadArr['systemInstruction']['parts'][0]['text'] = $clean($system);
+        $payload = json_encode($payloadArr, JSON_UNESCAPED_UNICODE);
     }
     if ($payload === false) return array('error' => 'Could not encode audit payload (invalid file content found)');
 
-    $ch = curl_init($cfg['proxy_url']);
+    $models = array_map('trim', explode(',', ETEL_AUDIT_GEMINI_MODELS));
+    $resp = ''; $http = 0; $err = '';
+    foreach ($models as $model) {
+        $url = 'https://generativelanguage.googleapis.com/v1beta/models/' . rawurlencode($model)
+             . ':generateContent?key=' . rawurlencode($cfg['gemini_key']);
+        $ch = curl_init($url);
+        curl_setopt_array($ch, array(
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_POST           => true,
+            CURLOPT_POSTFIELDS     => $payload,
+            CURLOPT_HTTPHEADER     => array('Content-Type: application/json'),
+            CURLOPT_TIMEOUT        => 280,
+            CURLOPT_CONNECTTIMEOUT => 15,
+            CURLOPT_SSL_VERIFYPEER => true,
+        ));
+        $resp = curl_exec($ch);
+        $http = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $err  = curl_error($ch);
+        curl_close($ch);
+        if ($http === 200) break;
+        if (in_array($http, array(400, 401, 403), true)) break; // bad key/request - retrying a different model won't help
+    }
+    if ($err) return array('error' => 'Could not reach Gemini: ' . $err);
+    if ($http !== 200) {
+        $decoded = json_decode($resp, true);
+        $msg = $decoded['error']['message'] ?? ('Gemini HTTP ' . $http);
+        if (strpos($msg, 'API_KEY') !== false || $http === 401 || $http === 403) {
+            return array('error' => 'Invalid Gemini API key - check Settings > Code Audit > API Settings.');
+        }
+        return array('error' => 'Gemini error: ' . $msg);
+    }
+
+    $decoded = json_decode($resp, true);
+    $parts = $decoded['candidates'][0]['content']['parts'] ?? array();
+    $text = '';
+    foreach ($parts as $p) { if (!($p['thought'] ?? false) && isset($p['text'])) $text .= $p['text']; }
+    if ($text === '') foreach ($parts as $p) $text .= ($p['text'] ?? '');
+
+    $report = etel_audit_parse_report_text($text);
+    if ($report === null) return array('error' => 'Gemini response was not valid JSON. First 200 chars: ' . substr(trim($text), 0, 200));
+    return $report;
+}
+
+/* Calls OpenRouter's OpenAI-compatible /chat/completions endpoint
+   directly - same Bearer-token + messages[] shape EtelAi's providers.php
+   uses for every non-Gemini provider. */
+function etel_audit_call_openrouter($cfg, $system, $content) {
+    if (!$cfg['openrouter_key']) return array('error' => 'OpenRouter API key not configured - set it in Settings > Code Audit > API Settings');
+
+    $model = $cfg['openrouter_model'] ?: ETEL_AUDIT_OPENROUTER_DEFAULT_MODEL;
+    $payload = json_encode(array(
+        'model'       => $model,
+        'max_tokens'  => 16000,
+        'temperature' => 0.1,
+        'messages'    => array(
+            array('role' => 'system', 'content' => $system),
+            array('role' => 'user',   'content' => $content),
+        ),
+    ), JSON_UNESCAPED_UNICODE);
+    if ($payload === false) return array('error' => 'Could not encode audit payload (invalid file content found)');
+
+    $ch = curl_init('https://openrouter.ai/api/v1/chat/completions');
     curl_setopt_array($ch, array(
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_POST           => true,
         CURLOPT_POSTFIELDS     => $payload,
-        CURLOPT_HTTPHEADER     => array('Content-Type: application/json'),
+        CURLOPT_HTTPHEADER     => array(
+            'Content-Type: application/json',
+            'Authorization: Bearer ' . $cfg['openrouter_key'],
+            'HTTP-Referer: https://ethelmarket.com/delivery/',
+            'X-Title: ETEL Delivery & Ride - Code Audit',
+        ),
         CURLOPT_TIMEOUT        => 280,
         CURLOPT_CONNECTTIMEOUT => 15,
         CURLOPT_SSL_VERIFYPEER => true,
@@ -339,25 +443,46 @@ function etel_run_self_audit($root, $projectName, $provider = 'gemini', $pdo = n
     $err  = curl_error($ch);
     curl_close($ch);
 
-    if ($err)        return array('error' => 'Could not reach audit backend: ' . $err);
-    $raw = json_decode($resp, true);
-    if (!is_array($raw)) return array('error' => 'Audit backend returned an unreadable response (HTTP ' . $http . ')');
-    if (isset($raw['error'])) {
-        if ($raw['error'] === 'setup_required') return array('error' => 'Audit backend is not configured yet - see EtelGebeya/audit/config.php');
-        return array('error' => $raw['error']);
+    if ($err) return array('error' => 'Could not reach OpenRouter: ' . $err);
+    if ($http !== 200) {
+        $decoded = json_decode($resp, true);
+        $msg = $decoded['error']['message'] ?? ('OpenRouter HTTP ' . $http);
+        if ($http === 401) return array('error' => 'Invalid OpenRouter API key - check Settings > Code Audit > API Settings.');
+        return array('error' => 'OpenRouter error: ' . $msg);
     }
 
-    $text = '';
-    foreach (($raw['content'] ?? array()) as $block) {
-        if (($block['type'] ?? '') === 'text') $text .= $block['text'];
-    }
-    $text = trim(preg_replace(array('/^```(?:json)?\s*/im', '/```\s*$/m'), '', $text));
-    if ($text !== '' && $text[0] !== '{') {
-        $s = strpos($text, '{'); $e = strrpos($text, '}');
-        if ($s !== false && $e > $s) $text = substr($text, $s, $e - $s + 1);
-    }
-    $report = json_decode($text, true);
-    if (!is_array($report)) return array('error' => 'Audit backend response was not valid JSON');
+    $decoded = json_decode($resp, true);
+    $text = trim($decoded['choices'][0]['message']['content'] ?? '');
+    $report = etel_audit_parse_report_text($text);
+    if ($report === null) return array('error' => 'OpenRouter response was not valid JSON. First 200 chars: ' . substr($text, 0, 200));
+    return $report;
+}
+
+/**
+ * Run a full self-audit of $root and return the parsed report array, or
+ * ['error' => '...'] on failure. Never throws - callers should just
+ * check for the 'error' key.
+ */
+function etel_run_self_audit($root, $projectName, $provider = 'gemini', $pdo = null) {
+    // Shared cPanel hosting commonly defaults max_execution_time to 30s,
+    // which would kill this request before a slower AI response comes
+    // back. @ suppresses the notice on hosts where set_time_limit is
+    // disabled entirely - the cURL timeout below is the real bound.
+    @set_time_limit(300);
+    if (!is_dir($root)) return array('error' => "Project root not found: $root");
+
+    $files = etel_audit_collect_files($root);
+    if (!$files) return array('error' => 'No text files found to audit under ' . $root);
+
+    $content = etel_audit_build_content($files);
+    $system  = etel_audit_system_prompt();
+    $cfg     = etel_audit_get_config($pdo);
+
+    $report = ($provider === 'openrouter')
+        ? etel_audit_call_openrouter($cfg, $system, $content)
+        : etel_audit_call_gemini($cfg, $system, $content);
+
+    if (isset($report['error'])) return $report;
 
     $report['_project_name_override'] = $projectName;
     $report['_audited_at'] = date('c');
