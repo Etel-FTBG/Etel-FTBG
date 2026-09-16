@@ -15,8 +15,9 @@
  *   Visit /wp-admin/ → Etel-ID login → NOT admin → redirected to /portal/
  *
  * EMERGENCY BACKDOOR (if locked out):
- *   Visit /wp-login.php?etelid_admin_access=1
- *   Sets a 30-min bypass cookie → shows normal WP login form
+ *   Visit /wp-login.php?etelid_admin_access=1 WHILE ALREADY LOGGED IN
+ *   as the Etel-ID site admin (the member matching etelid_admin_member_id
+ *   in Settings). Sets a 30-min bypass cookie → shows normal WP login form.
  *
  * PHP 5.6 compatible.
  */
@@ -25,7 +26,6 @@ if ( ! defined( 'ABSPATH' ) ) exit;
 class EtelID_Login_Interceptor {
 
     const BYPASS_COOKIE = 'etelid_admin_bypass';
-    const BYPASS_SECRET = 'etelid_bypass_v4';
     const INTENT_COOKIE = 'etelid_wants_wpadmin';
 
     public static function init() {
@@ -62,10 +62,26 @@ class EtelID_Login_Interceptor {
        HANDLE wp-login.php
     ══════════════════════════════════════════ */
     private static function handle_wp_login() {
-        /* Emergency backdoor */
+        /* HARDENING: this used to set the bypass cookie for ANY anonymous
+         * visitor who simply appended ?etelid_admin_access=1 to the URL -
+         * no proof of identity required at all, since the cookie's value
+         * was a fixed, publicly-documented string (BYPASS_SECRET, even
+         * printed in the wp_die() message below) rather than an actual
+         * secret. That meant the standard WordPress login form - and its
+         * native brute-force attack surface - was permanently exposed to
+         * anyone on the internet who knew (or simply guessed) this URL,
+         * defeating the entire point of this interceptor. Now the
+         * visitor must already hold a valid Etel-ID session that passes
+         * the same strict is_site_admin() check used everywhere else in
+         * this file - i.e. this only ever helps someone who has already
+         * proven they ARE the designated admin but has no matching WP
+         * user account yet, the exact scenario this backdoor exists for. */
         if ( isset( $_GET['etelid_admin_access'] ) ) {
-            setcookie( self::BYPASS_COOKIE, self::BYPASS_SECRET,
-                time() + 1800, COOKIEPATH, COOKIE_DOMAIN, is_ssl(), true );
+            $member = class_exists( 'EtelID_Auth' ) ? EtelID_Auth::get_current_member() : null;
+            if ( $member && EtelID_Auth::is_site_admin( $member ) ) {
+                setcookie( self::BYPASS_COOKIE, self::bypass_secret(),
+                    time() + 1800, COOKIEPATH, COOKIE_DOMAIN, is_ssl(), true );
+            }
             return;
         }
 
@@ -185,7 +201,24 @@ class EtelID_Login_Interceptor {
 
     private static function has_bypass() {
         return isset( $_COOKIE[ self::BYPASS_COOKIE ] ) &&
-               $_COOKIE[ self::BYPASS_COOKIE ] === self::BYPASS_SECRET;
+               hash_equals( self::bypass_secret(), $_COOKIE[ self::BYPASS_COOKIE ] );
+    }
+
+    /* Per-install random secret for the bypass cookie's value, generated
+     * once and stored in wp_options - replaces the old hardcoded
+     * BYPASS_SECRET constant (same value on every install, and printed
+     * straight into the wp_die() message below, so it was never actually
+     * secret). Now that setting the cookie itself requires already
+     * passing is_site_admin() (see handle_wp_login above), this value's
+     * only remaining job is telling this plugin's own cookie apart from
+     * anything else - but there's no reason to leave it guessable either. */
+    private static function bypass_secret() {
+        $secret = get_option( 'etelid_bypass_secret', '' );
+        if ( ! $secret ) {
+            $secret = function_exists( 'wp_generate_password' ) ? wp_generate_password( 40, false ) : bin2hex( random_bytes( 20 ) );
+            update_option( 'etelid_bypass_secret', $secret, false );
+        }
+        return $secret;
     }
 
     private static function set_intent_cookie() {

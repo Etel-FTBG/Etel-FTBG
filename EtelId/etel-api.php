@@ -71,15 +71,31 @@ function ensure_company_link(PDO $pdo, $memberId, $projectSlug) {
 }
 
 function auth() {
+    // HARDENING: fail closed if the key was never actually configured -
+    // 'CHANGE_ME' is the documented placeholder default (see the define()
+    // above), so treating it as a valid, usable secret would silently
+    // open the stats route to the public on any deploy that forgot to
+    // set ETEL_API_KEY.
+    if (!defined('API_KEY') || API_KEY === '' || API_KEY === 'CHANGE_ME') {
+        err('Service key not configured on the server.', 503);
+    }
     $k = $_SERVER['HTTP_X_ETEL_KEY'] ?? $_GET['key'] ?? '';
-    if (!hash_equals(API_KEY, $k)) err('Unauthorized', 401);
+    if (!hash_equals(API_KEY, (string) $k)) err('Unauthorized', 401);
 }
 
+// HARDENING: same fix as EtelID_Security::get_ip() on the WordPress side -
+// validate the forwarded-header value is actually an IP before trusting
+// it for rate-limit decisions below, and fall back to REMOTE_ADDR (the
+// real TCP peer, never spoofable) rather than trusting either header
+// unconditionally. See that function's comment for the full explanation.
 function client_ip() {
-    foreach (['HTTP_CF_CONNECTING_IP', 'HTTP_X_FORWARDED_FOR', 'REMOTE_ADDR'] as $key) {
-        if (!empty($_SERVER[$key])) return explode(',', $_SERVER[$key])[0];
+    foreach (['HTTP_CF_CONNECTING_IP', 'HTTP_X_FORWARDED_FOR'] as $key) {
+        if (!empty($_SERVER[$key])) {
+            $candidate = trim(explode(',', $_SERVER[$key])[0]);
+            if (filter_var($candidate, FILTER_VALIDATE_IP)) return $candidate;
+        }
     }
-    return '';
+    return $_SERVER['REMOTE_ADDR'] ?? '';
 }
 
 // Same shape as EtelID_Security::rate_limit() in the WordPress Service API,
@@ -152,11 +168,18 @@ switch ($action) {
             err('Incorrect password', 401);
         }
 
-        // Create session token
+        // Create session token. HARDENING: this used to store the raw
+        // token directly in the `token` column - the exact plaintext-
+        // session vulnerability class-etelid-auth.php::create_session()
+        // was deliberately hardened against (a DB dump/backup leak would
+        // otherwise hand over every valid session with no further
+        // authentication needed). Store a SHA-256 hash instead, same as
+        // the WordPress portal's own session creation, and keep the raw
+        // token only in the response handed to the caller.
         $token = bin2hex(random_bytes(32));
         $pdo->prepare("INSERT INTO " . pfx('sessions') . " (member_id, token, ip, ua, expires_at) VALUES (?,?,?,?,?)")
             ->execute([
-                $member['id'], $token,
+                $member['id'], hash('sha256', $token),
                 $_SERVER['REMOTE_ADDR'] ?? '',
                 $_SERVER['HTTP_USER_AGENT'] ?? '',
                 date('Y-m-d H:i:s', strtotime('+30 days')),
@@ -187,7 +210,11 @@ switch ($action) {
              JOIN " . pfx('members') . " m ON m.id = s.member_id
              WHERE s.token = ? AND s.expires_at > NOW() LIMIT 1"
         );
-        $stmt->execute([$token]);
+        // Hash the presented token the same way login (above) now hashes
+        // it before storing - the column holds SHA-256 hashes, not raw
+        // tokens, so comparing the raw incoming token directly would
+        // never match anything.
+        $stmt->execute([hash('sha256', $token)]);
         $session = $stmt->fetch();
 
         if (!$session)                              err('Invalid or expired token', 401);
@@ -210,7 +237,7 @@ switch ($action) {
         $token = $body['token'] ?? $_SERVER['HTTP_X_ETEL_TOKEN'] ?? '';
         if ($token) {
             db()->prepare("DELETE FROM " . pfx('sessions') . " WHERE token = ?")
-                ->execute([$token]);
+                ->execute([hash('sha256', $token)]);
         }
         ok(['logged_out' => true]);
 
