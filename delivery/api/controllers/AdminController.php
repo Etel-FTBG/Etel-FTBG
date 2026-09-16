@@ -370,12 +370,15 @@ case 'admin_run_code_audit': {
 }
 
 // ── Audit API settings ────────────────────────────────────────────
-// Which proxy URL/secret the "Run Audit Now" button above actually
-// calls - previously hardcoded directly in audit_agent.php, meaning
-// switching audit backends (a new proxy, a rotated secret) needed a
-// code deploy. Now editable from the panel; see
-// etel_audit_get_config() in audit_agent.php for the fallback-to-
-// hardcoded-constants behavior if this table is empty/missing.
+// Which Gemini/OpenRouter key (and OpenRouter model) "Run Audit Now"
+// actually calls, direct to each provider's real API - previously
+// hardcoded/routed through a shared cross-project proxy, meaning
+// switching keys or backends needed a code deploy (or, as it turned
+// out, depended on a shared secret staying in sync across two separate
+// projects' deploys - see audit_agent.php's header for why that was
+// dropped). Now editable from the panel; see etel_audit_get_config()
+// in audit_agent.php for the fallback-to-hardcoded-constants behavior
+// if this table is empty/missing.
 case 'admin_get_audit_settings': {
     $pdo = db();
     require_admin($pdo, 'owner.only');
@@ -390,18 +393,18 @@ case 'admin_save_audit_settings': {
     require_admin($pdo, 'owner.only');
     require_once __DIR__ . '/../audit_agent.php';
     etel_audit_ensure_settings_table($pdo);
-    $proxyUrl = isset($body['proxy_url']) ? trim($body['proxy_url']) : '';
-    $secret   = isset($body['secret'])    ? trim($body['secret'])    : '';
-    $provider = isset($body['default_provider']) ? trim($body['default_provider']) : 'gemini';
-    if (!$proxyUrl || !filter_var($proxyUrl, FILTER_VALIDATE_URL) || strpos($proxyUrl, 'https://') !== 0) {
-        fail('proxy_url must be a valid https:// URL', 400);
-    }
-    if (!$secret) fail('secret is required', 400);
-    if (!in_array($provider, array('gemini', 'claude', 'kimi', 'openai'), true)) $provider = 'gemini';
+    $geminiKey       = isset($body['gemini_key'])       ? trim($body['gemini_key'])       : '';
+    $openrouterKey   = isset($body['openrouter_key'])   ? trim($body['openrouter_key'])   : '';
+    $openrouterModel = isset($body['openrouter_model']) ? trim($body['openrouter_model']) : '';
+    $provider        = isset($body['default_provider']) ? trim($body['default_provider']) : 'gemini';
+    if (!in_array($provider, array('gemini', 'openrouter'), true)) $provider = 'gemini';
+    if ($provider === 'gemini' && !$geminiKey) fail('gemini_key is required when Gemini is the default provider', 400);
+    if ($provider === 'openrouter' && !$openrouterKey) fail('openrouter_key is required when OpenRouter is the default provider', 400);
+    if (!$openrouterModel) $openrouterModel = 'anthropic/claude-3.5-sonnet';
     try {
-        $pdo->prepare("INSERT INTO audit_settings (id, proxy_url, secret, default_provider) VALUES (1, ?, ?, ?)
-                       ON DUPLICATE KEY UPDATE proxy_url=VALUES(proxy_url), secret=VALUES(secret), default_provider=VALUES(default_provider)")
-            ->execute(array($proxyUrl, $secret, $provider));
+        $pdo->prepare("INSERT INTO audit_settings (id, gemini_key, openrouter_key, openrouter_model, default_provider) VALUES (1, ?, ?, ?, ?)
+                       ON DUPLICATE KEY UPDATE gemini_key=VALUES(gemini_key), openrouter_key=VALUES(openrouter_key), openrouter_model=VALUES(openrouter_model), default_provider=VALUES(default_provider)")
+            ->execute(array($geminiKey, $openrouterKey, $openrouterModel, $provider));
         ok(array('message' => 'Audit settings saved'));
     } catch (Exception $e) {
         fail_ex($e, 'Could not save audit settings', 500);

@@ -76,23 +76,28 @@ function toggleAuditSettings(){
   var showing = box.style.display !== 'none';
   if (showing) { box.style.display = 'none'; return; }
   box.style.display = 'block';
-  box.querySelector('#audit-set-url').value = 'Loading…';
+  document.getElementById('audit-set-gemini-key').value = 'Loading…';
   api('admin_get_audit_settings', {}, function(cfg){
-    document.getElementById('audit-set-url').value = cfg.proxy_url || '';
-    document.getElementById('audit-set-secret').value = cfg.secret || '';
+    document.getElementById('audit-set-gemini-key').value = cfg.gemini_key || '';
+    document.getElementById('audit-set-openrouter-key').value = cfg.openrouter_key || '';
+    document.getElementById('audit-set-openrouter-model').value = cfg.openrouter_model || 'anthropic/claude-3.5-sonnet';
     document.getElementById('audit-set-provider').value = cfg.default_provider || 'gemini';
   }, function(msg){
-    document.getElementById('audit-set-url').value = '';
+    document.getElementById('audit-set-gemini-key').value = '';
     toast('Could not load audit settings: ' + msg, 'err');
   });
 }
 function saveAuditSettings(){
-  var url = (document.getElementById('audit-set-url').value || '').trim();
-  var secret = (document.getElementById('audit-set-secret').value || '').trim();
+  var geminiKey = (document.getElementById('audit-set-gemini-key').value || '').trim();
+  var openrouterKey = (document.getElementById('audit-set-openrouter-key').value || '').trim();
+  var openrouterModel = (document.getElementById('audit-set-openrouter-model').value || '').trim();
   var provider = document.getElementById('audit-set-provider').value;
-  if (!url || url.indexOf('https://') !== 0) { toast('Proxy URL must start with https://', 'err'); return; }
-  if (!secret) { toast('Secret is required', 'err'); return; }
-  api('admin_save_audit_settings', { proxy_url: url, secret: secret, default_provider: provider }, function(){
+  if (provider === 'gemini' && !geminiKey) { toast('Gemini API key is required when Gemini is the default provider', 'err'); return; }
+  if (provider === 'openrouter' && !openrouterKey) { toast('OpenRouter API key is required when OpenRouter is the default provider', 'err'); return; }
+  api('admin_save_audit_settings', {
+    gemini_key: geminiKey, openrouter_key: openrouterKey,
+    openrouter_model: openrouterModel, default_provider: provider
+  }, function(){
     toast('Audit settings saved', 'ok');
   }, function(msg){
     toast('Save failed: ' + msg, 'err');
