@@ -56,13 +56,29 @@ class EtelID_Security {
         return true;
     }
 
+    /* HARDENING: previously trusted CF-Connecting-IP/X-Forwarded-For
+     * unconditionally - both are ordinary client-settable HTTP headers
+     * unless something in front of this server (a CDN, a reverse proxy)
+     * strips any inbound copy before setting its own. This code has no
+     * way to confirm that's actually happening, so a request that
+     * reaches the origin directly can set either header to any value it
+     * wants and rotate through them, bypassing every per-IP rate limit
+     * in the system (login, password reset, Service API auth all key
+     * off this). Validating the header as a real IP at least blocks
+     * garbage/injection values; it does NOT by itself prove the header
+     * wasn't spoofed by the client - full protection also requires the
+     * server firewall to only accept inbound traffic from the CDN's own
+     * IP ranges (an infra-level setting, not something this code can
+     * enforce). REMOTE_ADDR is never spoofable (it's the actual TCP
+     * peer), so it stays last and always wins if nothing else validates. */
     public static function get_ip() {
-        $keys = array( 'HTTP_CF_CONNECTING_IP', 'HTTP_X_FORWARDED_FOR', 'REMOTE_ADDR' );
+        $keys = array( 'HTTP_CF_CONNECTING_IP', 'HTTP_X_FORWARDED_FOR' );
         foreach ( $keys as $k ) {
             if ( ! empty( $_SERVER[ $k ] ) ) {
-                return sanitize_text_field( wp_unslash( explode( ',', $_SERVER[ $k ] )[0] ) );
+                $candidate = trim( explode( ',', sanitize_text_field( wp_unslash( $_SERVER[ $k ] ) ) )[0] );
+                if ( filter_var( $candidate, FILTER_VALIDATE_IP ) ) return $candidate;
             }
         }
-        return '';
+        return isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : '';
     }
 }

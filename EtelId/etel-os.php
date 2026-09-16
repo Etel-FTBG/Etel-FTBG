@@ -34,8 +34,33 @@ $pfx = $wpdb->prefix;
 function ok($d)  { echo json_encode(['ok' => true,  'data' => $d]); exit; }
 function err($m, $c = 400) { http_response_code($c); echo json_encode(['ok' => false, 'error' => $m]); exit; }
 function auth()  {
+    // HARDENING: fail closed if the key was never actually configured -
+    // 'CHANGE_ME' is the documented placeholder default (see the define()
+    // above), so treating it as a valid, usable secret would silently
+    // open every auth()-gated action below to the public on any deploy
+    // that forgot to set ETEL_API_KEY. Also switched the comparison
+    // itself to hash_equals() - the previous !== check is not
+    // constant-time, unlike every other secret comparison in this
+    // codebase (etel-api.php, the EtelID Service API, etc.).
+    if (!defined('ETEL_API_KEY') || ETEL_API_KEY === '' || ETEL_API_KEY === 'CHANGE_ME') {
+        err('Service key not configured on the server.', 503);
+    }
     $k = $_SERVER['HTTP_X_ETEL_KEY'] ?? $_GET['key'] ?? '';
-    if ($k !== ETEL_API_KEY) err('Unauthorized', 401);
+    if (!hash_equals(ETEL_API_KEY, (string) $k)) err('Unauthorized', 401);
+}
+
+// Same shape as etel-api.php's rate_limited() - this file bootstraps
+// WordPress with SHORTINIT, which skips loading plugins (so the
+// EtelID_Security/transient-backed rate limiter isn't available here),
+// so it's reimplemented directly against etelid_log the same way
+// etel-api.php's standalone gateway already does.
+function os_rate_limited($wpdb, $pfx, $column, $value, $max, $windowSeconds) {
+    if ($value === '' || $value === null) return false;
+    $stmt = $wpdb->prepare(
+        "SELECT COUNT(*) FROM {$pfx}etelid_log WHERE event = 'login_failed' AND $column = %s AND created_at > (NOW() - INTERVAL %d SECOND)",
+        $value, $windowSeconds
+    );
+    return (int) $wpdb->get_var($stmt) >= $max;
 }
 
 $action = $_GET['action'] ?? 'status';
@@ -106,11 +131,29 @@ switch ($action) {
         $project  = $body['project']  ?? 'api';
         if (!$phone || !$password) err('phone and password required');
 
+        $ip = $_SERVER['REMOTE_ADDR'] ?? '';
+        // HARDENING: this was the one login path in the whole EtelID
+        // system with ZERO rate limiting - the WordPress portal login,
+        // the Service API's /service/authenticate, and even this file's
+        // own sibling etel-api.php all throttle by IP and by account.
+        // Anyone could brute-force any member's password through this
+        // endpoint with no throttling at all. Same two-tier shield as
+        // etel-api.php: a looser per-IP cap, then a tighter per-account
+        // cap once the member is found.
+        if (os_rate_limited($wpdb, $pfx, 'actor_ip', $ip, 30, 60)) {
+            err('Too many attempts. Try again in a minute.', 429);
+        }
+
         $member = $wpdb->get_row($wpdb->prepare(
             "SELECT * FROM {$pfx}etelid_members WHERE phone=%s LIMIT 1", $phone
         ), ARRAY_A);
 
-        if (!$member)                          err('No account found with this phone number', 404);
+        if (!$member) err('No account found with this phone number', 404);
+
+        if (os_rate_limited($wpdb, $pfx, 'member_id', $member['id'], 8, 900)) {
+            err('Too many attempts for this account. Please wait a few minutes, or reset your password.', 429);
+        }
+
         if ($member['status'] === 'suspended') err('Account suspended. Contact support.', 403);
         if ($member['status'] === 'revoked')   err('Account revoked.', 403);
         if (empty($member['pin_hash']))        err('No password set. Reset your password.', 400);
@@ -128,17 +171,24 @@ switch ($action) {
 
         if (!$valid) {
             $wpdb->insert("{$pfx}etelid_log", [
-                'member_id' => $member['id'], 'etel_id' => $member['etel_id'],
+                'member_id' => $member['id'], 'etel_id' => $member['etel_id'], 'actor_ip' => $ip,
                 'event' => 'login_failed', 'detail' => "Cross-project login failed from: $project",
             ]);
             err('Incorrect password', 401);
         }
 
-        // Create session token
+        // Create session token. HARDENING: this used to store the raw
+        // token directly in the `token` column - the exact plaintext-
+        // session vulnerability class-etelid-auth.php::create_session()
+        // was deliberately hardened against (a DB dump/backup leak would
+        // otherwise hand over every valid session with no further
+        // authentication needed). Store a SHA-256 hash instead, same as
+        // the WordPress portal's own session creation, and keep the raw
+        // token only in the response handed to the caller.
         $token = bin2hex(random_bytes(32));
         $wpdb->insert("{$pfx}etelid_sessions", [
             'member_id'  => $member['id'],
-            'token'      => $token,
+            'token'      => hash('sha256', $token),
             'ip'         => $_SERVER['REMOTE_ADDR'] ?? '',
             'ua'         => $_SERVER['HTTP_USER_AGENT'] ?? '',
             'expires_at' => date('Y-m-d H:i:s', strtotime('+30 days')),
@@ -160,12 +210,16 @@ switch ($action) {
         $token = $body['token'] ?? $_GET['token'] ?? $_SERVER['HTTP_X_ETEL_TOKEN'] ?? '';
         if (!$token) err('token required');
 
+        // Hash the presented token the same way login (above) now hashes
+        // it before storing - the column holds SHA-256 hashes, not raw
+        // tokens, so comparing the raw incoming token directly would
+        // never match anything.
         $session = $wpdb->get_row($wpdb->prepare(
             "SELECT s.member_id, s.expires_at,
                     m.etel_id, m.fin, m.full_name, m.phone, m.status AS member_status
              FROM {$pfx}etelid_sessions s
              JOIN {$pfx}etelid_members m ON m.id = s.member_id
-             WHERE s.token=%s AND s.expires_at > NOW() LIMIT 1", $token
+             WHERE s.token=%s AND s.expires_at > NOW() LIMIT 1", hash('sha256', $token)
         ), ARRAY_A);
 
         if (!$session)                              err('Invalid or expired token', 401);
@@ -187,7 +241,7 @@ switch ($action) {
     // â”€â”€ Logout â€” invalidate token â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     case 'logout':
         $token = $body['token'] ?? $_SERVER['HTTP_X_ETEL_TOKEN'] ?? '';
-        if ($token) $wpdb->delete("{$pfx}etelid_sessions", ['token' => $token]);
+        if ($token) $wpdb->delete("{$pfx}etelid_sessions", ['token' => hash('sha256', $token)]);
         ok(['logged_out' => true]);
 
     // â”€â”€ Verify QR / FIN (for cross-project auth) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
