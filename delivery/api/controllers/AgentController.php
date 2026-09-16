@@ -72,10 +72,59 @@ function agent_geocode_cache_key($query) {
     return strtolower(trim(preg_replace('/\s+/', ' ', $query)));
 }
 
+define('AGENT_GEOCODE_REDIS_PREFIX', 'etel:geocode:');
+define('AGENT_GEOCODE_REDIS_TTL', 60 * 60 * 24 * 30); // 30 days - geocoded addresses don't move
+
+// Lazily connects to Redis (if the extension is loaded and a server is
+// reachable) and reuses that connection for the rest of the request.
+// Returns null on any failure - Redis is a speed optimization on top of
+// the MySQL geocode_cache below, never a hard dependency, since it may
+// not be enabled on every hosting plan this app runs on.
+function agent_redis() {
+    static $redis = null;
+    static $tried = false;
+    if ($tried) return $redis;
+    $tried = true;
+    if (!class_exists('Redis')) return null;
+    $host = etel_env('REDIS_HOST', 'CFG_REDIS_HOST', '127.0.0.1');
+    $port = (int) etel_env('REDIS_PORT', 'CFG_REDIS_PORT', 6379);
+    try {
+        $r = new Redis();
+        // Persistent connection - reused across requests on the same
+        // PHP-FPM worker instead of a fresh TCP handshake every time.
+        if ($r->pconnect($host, $port, 1.0)) $redis = $r;
+    } catch (Exception $e) {
+        $redis = null;
+    }
+    return $redis;
+}
+
 function agent_geocode_place($query) {
     $cacheKey = agent_geocode_cache_key($query);
+    $redis = agent_redis();
 
-    // Check the local cache first - avoids a real, billable Google API
+    // Redis first - sub-millisecond lookup for the popular handful of
+    // destinations that make up most repeat queries. Falls through to
+    // the MySQL cache (and then a live lookup) on any miss or failure.
+    if ($redis) {
+        try {
+            $hit = $redis->get(AGENT_GEOCODE_REDIS_PREFIX . $cacheKey);
+            if ($hit !== false) {
+                $decoded = json_decode($hit, true);
+                if (is_array($decoded) && isset($decoded['lat'], $decoded['lng'])) {
+                    return array(
+                        'lat'               => (float) $decoded['lat'],
+                        'lng'               => (float) $decoded['lng'],
+                        'formatted_address' => isset($decoded['formatted_address']) ? $decoded['formatted_address'] : $query,
+                    );
+                }
+            }
+        } catch (Exception $e) {
+            // Redis hiccup - fall through below.
+        }
+    }
+
+    // Check the MySQL cache next - avoids a real, billable Google API
     // call for a destination that's already been resolved before (flagged
     // by an audit as unnecessary latency + billing cost for repeated
     // queries against the same handful of popular destinations).
@@ -85,11 +134,17 @@ function agent_geocode_place($query) {
         $stmt->execute(array($cacheKey));
         $cached = $stmt->fetch(PDO::FETCH_ASSOC);
         if ($cached) {
-            return array(
+            $result = array(
                 'lat'               => (float) $cached['lat'],
                 'lng'               => (float) $cached['lng'],
                 'formatted_address' => $cached['formatted_address'] !== null ? $cached['formatted_address'] : $query,
             );
+            // Backfill Redis so the next lookup for this destination
+            // skips MySQL entirely.
+            if ($redis) {
+                try { $redis->setex(AGENT_GEOCODE_REDIS_PREFIX . $cacheKey, AGENT_GEOCODE_REDIS_TTL, json_encode($result)); } catch (Exception $e) {}
+            }
+            return $result;
         }
     } catch (Exception $e) {
         // Cache table missing or unreachable - fall through to a live
@@ -152,9 +207,9 @@ function agent_geocode_place($query) {
         'formatted_address' => isset($top['formatted_address']) ? $top['formatted_address'] : $query,
     );
 
-    // Write-through to the cache. Best-effort: a failed insert (e.g.
-    // race with another request caching the same key) should never break
-    // the actual geocoding result being returned to the caller.
+    // Write-through to both caches. Best-effort in each case: a failed
+    // write (e.g. race with another request caching the same key) should
+    // never break the actual geocoding result being returned to the caller.
     try {
         $pdo = db();
         $stmt = $pdo->prepare(
@@ -164,6 +219,9 @@ function agent_geocode_place($query) {
         $stmt->execute(array($cacheKey, $result['lat'], $result['lng'], $result['formatted_address']));
     } catch (Exception $e) {
         // Non-fatal - see note above.
+    }
+    if ($redis) {
+        try { $redis->setex(AGENT_GEOCODE_REDIS_PREFIX . $cacheKey, AGENT_GEOCODE_REDIS_TTL, json_encode($result)); } catch (Exception $e) {}
     }
 
     return $result;
