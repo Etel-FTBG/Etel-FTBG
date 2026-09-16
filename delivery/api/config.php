@@ -36,5 +36,12 @@ define('CFG_TOKEN_SECRET', '');   // fill in api/.env  TOKEN_SECRET
 define('CFG_MAPS_KEY',     '');   // fill in api/.env  GOOGLE_MAPS_API_KEY
 
 // EtelGroup Service Key 2026-06-15
-//  ETELID SERVICE KEY  set in api/.env, never here 
+//  ETELID SERVICE KEY  set in api/.env, never here
    define('CFG_ETELID_SERVICE_KEY', '');  // fill in api/.env  ETELID_SERVICE_KEY
+
+//  REDIS  optional fast-path cache; safe to leave as defaults
+// If Redis isn't installed/enabled on this hosting plan, or these
+// defaults don't resolve, the app just falls back to its existing
+// MySQL-backed caches - Redis is never a hard requirement.
+define('CFG_REDIS_HOST', '127.0.0.1');
+define('CFG_REDIS_PORT', 6379);
