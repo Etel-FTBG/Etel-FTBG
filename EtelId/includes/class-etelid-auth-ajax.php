@@ -416,8 +416,14 @@ class EtelID_Auth_Ajax {
         if ( ! EtelID_Auth::verify_password( $old, $member->pin_hash ) ) {
             wp_send_json_error( array( 'message' => 'Current password is incorrect.' ) );
         }
-        if ( strlen( $new ) < 6 ) {
-            wp_send_json_error( array( 'message' => 'New password must be at least 6 characters.' ) );
+        // HARDENING: was a 6-character minimum, inconsistent with the
+        // 8-character minimum EtelID_Auth::register() already enforces
+        // (see that function's own hardening note) - a member could
+        // register with a strong password and then quietly downgrade to
+        // a weaker one here. Match the same floor everywhere passwords
+        // are set.
+        if ( strlen( $new ) < 8 ) {
+            wp_send_json_error( array( 'message' => 'New password must be at least 8 characters.' ) );
         }
         if ( $new !== $cfm ) {
             wp_send_json_error( array( 'message' => 'New passwords do not match.' ) );
