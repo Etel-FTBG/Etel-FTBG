@@ -2,31 +2,47 @@
 /**
  * ETEL self-audit agent (server-side, one-click)
  *
- * Reuses the exact same backend as EtelGebeya/audit/index.html (the
- * manual "zip it, upload it, download the JSON" tool) but skips the
- * upload entirely: this file already lives inside the project it's
- * auditing, so it reads its own files straight off disk, builds the same
- * file-tree + content payload the browser tool builds, and POSTs it to
- * the shared AI proxy (EtelGebeya/audit/proxy.php) over HTTPS. That proxy
- * already holds the real Gemini/Claude/Kimi/OpenAI keys server-side (see
- * EtelGebeya/audit/config.php) - this file never touches or needs a key
- * of its own.
+ * Calls Gemini/Claude/Kimi/OpenAI directly using the keys already
+ * configured in EtelGebeya/audit/config.php - this file reads its own
+ * files straight off disk, builds the same file-tree + content payload
+ * the browser tool builds, and posts it straight to the provider's real
+ * API.
+ *
+ * Previously this posted to a shared proxy (EtelGebeya/public/proxy.php
+ * / audit/etelproxy.php) over HTTPS instead. That proxy kept returning
+ * "Unauthorized" in production even with the exact same AUDIT_SECRET
+ * value confirmed byte-for-byte identical in both audit/config.php and
+ * .env's ETEL_AUDIT_SECRET - the same unresolved shared-secret failure
+ * mode already hit (and worked around the same way) in
+ * delivery/api/audit_agent.php. Switched to calling providers directly,
+ * which removes that whole cross-hop failure mode entirely.
  *
  * This is a template: copy it into another project's api/ (or
- * equivalent) folder, and only PROJECT_ROOT/PROJECT_NAME below need to
- * change. It's kept as one self-contained function so it has no
- * dependency on this specific project's other files besides whatever
- * calls etel_run_self_audit() with an admin-gated action.
+ * equivalent) folder - it has no dependency on this specific project's
+ * other files besides whatever calls etel_run_self_audit() with an
+ * admin-gated action.
  */
 
 if (!function_exists('etel_run_self_audit')) {
 
-// Where the shared AI proxy lives - same one the manual browser tool
-// (EtelGebeya/public/index.html) already posts to via its relative
-// './proxy.php'. If you ever move EtelGebeya, update this one URL
-// across every project's copy of this file.
-define('ETEL_AUDIT_PROXY_URL', 'https://ethelmarket.com/EtelGebeya/public/proxy.php');
-define('ETEL_AUDIT_SECRET',    getenv('ETEL_AUDIT_SECRET') ?: ''); // set in .env - must match public/proxy.php's AUDIT_SECRET
+// The real keys live in audit/config.php (server-only, gitignored) -
+// same file the old proxy read from, so nothing needs reconfiguring.
+if (!defined('GEMINI_API_KEY')) {
+    $__etel_audit_cfg = __DIR__ . '/audit/config.php';
+    if (file_exists($__etel_audit_cfg)) require_once $__etel_audit_cfg;
+}
+
+// Fallback constants if audit/config.php doesn't define these (keeps
+// this file safe to copy into a project that hasn't set up that file).
+if (!defined('GEMINI_API_KEY')) define('GEMINI_API_KEY', 'YOUR_GEMINI_KEY_HERE');
+if (!defined('CLAUDE_API_KEY')) define('CLAUDE_API_KEY', 'YOUR_CLAUDE_KEY_HERE');
+if (!defined('KIMI_API_KEY'))   define('KIMI_API_KEY',   'YOUR_KIMI_KEY_HERE');
+if (!defined('OPENAI_API_KEY')) define('OPENAI_API_KEY', 'YOUR_OPENAI_KEY_HERE');
+
+define('ETEL_AUDIT_GEMINI_MODELS', 'gemini-3.5-flash,gemini-3.1-flash-lite,gemini-3.1-pro');
+define('ETEL_AUDIT_CLAUDE_MODEL',  'claude-sonnet-4-6');
+define('ETEL_AUDIT_KIMI_MODEL',    'moonshot-v1-32k');
+define('ETEL_AUDIT_OPENAI_MODEL',  'gpt-4o');
 
 // Same extension allowlist as the browser tool's TEXT_EXTS, so results
 // are consistent whether a project is audited via upload or via this
@@ -39,9 +55,10 @@ define('ETEL_AUDIT_TEXT_EXTS', 'php,js,ts,jsx,tsx,css,scss,sass,less,html,htm,xm
 // budget on noise instead of actual project code.
 define('ETEL_AUDIT_EXCLUDE_DIRS', '.git,.claude,.vscode,.gstack,node_modules,vendor,storage,uploads,backups,cache,logs,dist,build,.svn');
 
-// Keep well under api.php's hard 45000-char server-side cap so nothing
-// gets silently cut off mid-request; leaves room for the file-tree/stats
-// header the same way the browser tool's 58000 client-side cap does.
+// Keep well under the old proxy's hard 45000-char server-side cap so
+// nothing gets silently cut off mid-request; leaves room for the
+// file-tree/stats header the same way the browser tool's 58000
+// client-side cap does.
 define('ETEL_AUDIT_MAX_CONTENT', 42000);
 
 /* Same system prompt the browser tool sends, verbatim, so the two
@@ -234,58 +251,119 @@ function etel_audit_build_content($files) {
     return $userMsg;
 }
 
-/**
- * Run a full self-audit of $root and return the parsed report array, or
- * ['error' => '...'] on failure. Never throws - callers should just
- * check for the 'error' key.
- */
-function etel_run_self_audit($root, $projectName, $provider = 'gemini') {
-    // Shared cPanel hosting commonly defaults max_execution_time to 30s,
-    // which would kill this request before a slower AI response (the
-    // manual browser tool's own loading UI budgets up to ~2 minutes)
-    // comes back. @ suppresses the notice on hosts where set_time_limit
-    // is disabled entirely - the cURL timeout below is the real bound.
-    @set_time_limit(300);
-    if (!is_dir($root)) return array('error' => "Project root not found: $root");
+/* Strips markdown code fences and stray leading/trailing prose the model
+   sometimes wraps the JSON in, then parses it - shared by every provider
+   caller below since they all need identical cleanup. Returns the
+   decoded report array, or null if the text still isn't valid JSON. */
+function etel_audit_parse_report_text($text) {
+    $text = trim(preg_replace(array('/^```(?:json)?\s*/im', '/```\s*$/m'), '', (string)$text));
+    if ($text !== '' && $text[0] !== '{') {
+        $s = strpos($text, '{'); $e = strrpos($text, '}');
+        if ($s !== false && $e > $s) $text = substr($text, $s, $e - $s + 1);
+    }
+    $report = json_decode($text, true);
+    return is_array($report) ? $report : null;
+}
 
-    $files = etel_audit_collect_files($root);
-    if (!$files) return array('error' => 'No text files found to audit under ' . $root);
+/* Calls Gemini's native generateContent API directly, trying each model
+   in ETEL_AUDIT_GEMINI_MODELS in turn until one returns 200 - a later
+   model is only tried after a real failure (400/401/403 or a non-2xx),
+   not after a successful-but-unwanted result. */
+function etel_audit_call_gemini($system, $content) {
+    if (!defined('GEMINI_API_KEY') || GEMINI_API_KEY === 'YOUR_GEMINI_KEY_HERE' || !GEMINI_API_KEY) {
+        return array('error' => 'Gemini API key not configured - set GEMINI_API_KEY in EtelGebeya/audit/config.php');
+    }
 
-    $content = etel_audit_build_content($files);
-
-    $payload = json_encode(array(
-        'secret'   => ETEL_AUDIT_SECRET,
-        'system'   => etel_audit_system_prompt(),
-        'content'  => $content,
-        'provider' => $provider,
-    ), JSON_UNESCAPED_UNICODE);
-
-    // json_encode() returns false (not a JSON "false" string, the actual
-    // PHP boolean) for the WHOLE payload if even one collected file has
-    // invalid UTF-8 bytes - e.g. a non-UTF8 legacy file or stray binary
-    // that slipped past the extension filter. curl then silently sends
-    // an empty body, which the proxy reports as "Empty request body".
-    // Retry once with bytes forced to valid UTF-8 instead of failing.
+    $payloadArr = array(
+        'contents'          => array(array('role' => 'user', 'parts' => array(array('text' => $content)))),
+        'systemInstruction' => array('parts' => array(array('text' => $system))),
+        'generationConfig'  => array('maxOutputTokens' => 65536, 'temperature' => 0.1, 'topP' => 0.8),
+        'safetySettings'    => array(
+            array('category' => 'HARM_CATEGORY_HARASSMENT',        'threshold' => 'BLOCK_NONE'),
+            array('category' => 'HARM_CATEGORY_HATE_SPEECH',       'threshold' => 'BLOCK_NONE'),
+            array('category' => 'HARM_CATEGORY_SEXUALLY_EXPLICIT', 'threshold' => 'BLOCK_NONE'),
+            array('category' => 'HARM_CATEGORY_DANGEROUS_CONTENT', 'threshold' => 'BLOCK_NONE'),
+        ),
+    );
+    $payload = json_encode($payloadArr, JSON_UNESCAPED_UNICODE);
     if ($payload === false) {
-        $cleanUtf8 = function ($s) {
+        $clean = function ($s) {
             $s = @iconv('UTF-8', 'UTF-8//IGNORE', (string)$s);
             return $s === false ? preg_replace('/[^\x09\x0A\x0D\x20-\x7E]/', '?', (string)$s) : $s;
         };
-        $payload = json_encode(array(
-            'secret'   => ETEL_AUDIT_SECRET,
-            'system'   => $cleanUtf8(etel_audit_system_prompt()),
-            'content'  => $cleanUtf8($content),
-            'provider' => $provider,
-        ), JSON_UNESCAPED_UNICODE);
+        $payloadArr['contents'][0]['parts'][0]['text'] = $clean($content);
+        $payloadArr['systemInstruction']['parts'][0]['text'] = $clean($system);
+        $payload = json_encode($payloadArr, JSON_UNESCAPED_UNICODE);
     }
     if ($payload === false) return array('error' => 'Could not encode audit payload (invalid file content found)');
 
-    $ch = curl_init(ETEL_AUDIT_PROXY_URL);
+    $models = array_map('trim', explode(',', ETEL_AUDIT_GEMINI_MODELS));
+    $resp = ''; $http = 0; $err = '';
+    foreach ($models as $model) {
+        $url = 'https://generativelanguage.googleapis.com/v1beta/models/' . rawurlencode($model)
+             . ':generateContent?key=' . rawurlencode(GEMINI_API_KEY);
+        $ch = curl_init($url);
+        curl_setopt_array($ch, array(
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_POST           => true,
+            CURLOPT_POSTFIELDS     => $payload,
+            CURLOPT_HTTPHEADER     => array('Content-Type: application/json'),
+            CURLOPT_TIMEOUT        => 280,
+            CURLOPT_CONNECTTIMEOUT => 15,
+            CURLOPT_SSL_VERIFYPEER => true,
+        ));
+        $resp = curl_exec($ch);
+        $http = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $err  = curl_error($ch);
+        curl_close($ch);
+        if ($http === 200) break;
+        if (in_array($http, array(400, 401, 403), true)) break; // bad key/request - retrying a different model won't help
+    }
+    if ($err) return array('error' => 'Could not reach Gemini: ' . $err);
+    if ($http !== 200) {
+        $decoded = json_decode($resp, true);
+        $msg = $decoded['error']['message'] ?? ('Gemini HTTP ' . $http);
+        if (strpos($msg, 'API_KEY') !== false || $http === 401 || $http === 403) {
+            return array('error' => 'Invalid Gemini API key - check EtelGebeya/audit/config.php.');
+        }
+        return array('error' => 'Gemini error: ' . $msg);
+    }
+
+    $decoded = json_decode($resp, true);
+    $parts = $decoded['candidates'][0]['content']['parts'] ?? array();
+    $text = '';
+    foreach ($parts as $p) { if (!($p['thought'] ?? false) && isset($p['text'])) $text .= $p['text']; }
+    if ($text === '') foreach ($parts as $p) $text .= ($p['text'] ?? '');
+
+    $report = etel_audit_parse_report_text($text);
+    if ($report === null) return array('error' => 'Gemini response was not valid JSON. First 200 chars: ' . substr(trim($text), 0, 200));
+    return $report;
+}
+
+/* Calls Anthropic's Messages API directly. */
+function etel_audit_call_claude($system, $content) {
+    if (!defined('CLAUDE_API_KEY') || CLAUDE_API_KEY === 'YOUR_CLAUDE_KEY_HERE' || !CLAUDE_API_KEY) {
+        return array('error' => 'Claude API key not configured - set CLAUDE_API_KEY in EtelGebeya/audit/config.php');
+    }
+
+    $payload = json_encode(array(
+        'model'      => ETEL_AUDIT_CLAUDE_MODEL,
+        'max_tokens' => 16000,
+        'system'     => $system,
+        'messages'   => array(array('role' => 'user', 'content' => $content)),
+    ), JSON_UNESCAPED_UNICODE);
+    if ($payload === false) return array('error' => 'Could not encode audit payload (invalid file content found)');
+
+    $ch = curl_init('https://api.anthropic.com/v1/messages');
     curl_setopt_array($ch, array(
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_POST           => true,
         CURLOPT_POSTFIELDS     => $payload,
-        CURLOPT_HTTPHEADER     => array('Content-Type: application/json'),
+        CURLOPT_HTTPHEADER     => array(
+            'Content-Type: application/json',
+            'x-api-key: ' . CLAUDE_API_KEY,
+            'anthropic-version: 2023-06-01',
+        ),
         CURLOPT_TIMEOUT        => 280,
         CURLOPT_CONNECTTIMEOUT => 15,
         CURLOPT_SSL_VERIFYPEER => true,
@@ -295,25 +373,145 @@ function etel_run_self_audit($root, $projectName, $provider = 'gemini') {
     $err  = curl_error($ch);
     curl_close($ch);
 
-    if ($err)        return array('error' => 'Could not reach audit backend: ' . $err);
-    $raw = json_decode($resp, true);
-    if (!is_array($raw)) return array('error' => 'Audit backend returned an unreadable response (HTTP ' . $http . ')');
-    if (isset($raw['error'])) {
-        if ($raw['error'] === 'setup_required') return array('error' => 'Audit backend is not configured yet - see EtelGebeya/audit/config.php');
-        return array('error' => $raw['error']);
+    if ($err) return array('error' => 'Could not reach Claude: ' . $err);
+    if ($http !== 200) {
+        $decoded = json_decode($resp, true);
+        $msg = $decoded['error']['message'] ?? ('Claude HTTP ' . $http);
+        if ($http === 401) return array('error' => 'Invalid Claude API key - check EtelGebeya/audit/config.php.');
+        return array('error' => 'Claude error: ' . $msg);
     }
 
+    $decoded = json_decode($resp, true);
     $text = '';
-    foreach (($raw['content'] ?? array()) as $block) {
+    foreach (($decoded['content'] ?? array()) as $block) {
         if (($block['type'] ?? '') === 'text') $text .= $block['text'];
     }
-    $text = trim(preg_replace(array('/^```(?:json)?\s*/im', '/```\s*$/m'), '', $text));
-    if ($text !== '' && $text[0] !== '{') {
-        $s = strpos($text, '{'); $e = strrpos($text, '}');
-        if ($s !== false && $e > $s) $text = substr($text, $s, $e - $s + 1);
+    $report = etel_audit_parse_report_text($text);
+    if ($report === null) return array('error' => 'Claude response was not valid JSON. First 200 chars: ' . substr(trim($text), 0, 200));
+    return $report;
+}
+
+/* Calls Kimi (Moonshot AI)'s OpenAI-compatible /chat/completions endpoint. */
+function etel_audit_call_kimi($system, $content) {
+    if (!defined('KIMI_API_KEY') || KIMI_API_KEY === 'YOUR_KIMI_KEY_HERE' || !KIMI_API_KEY) {
+        return array('error' => 'Kimi API key not configured - set KIMI_API_KEY in EtelGebeya/audit/config.php');
     }
-    $report = json_decode($text, true);
-    if (!is_array($report)) return array('error' => 'Audit backend response was not valid JSON');
+
+    $messages = array();
+    if ($system) $messages[] = array('role' => 'system', 'content' => $system);
+    $messages[] = array('role' => 'user', 'content' => $content);
+
+    $payload = json_encode(array(
+        'model'       => ETEL_AUDIT_KIMI_MODEL,
+        'max_tokens'  => 16000,
+        'temperature' => 0.1,
+        'messages'    => $messages,
+    ), JSON_UNESCAPED_UNICODE);
+    if ($payload === false) return array('error' => 'Could not encode audit payload (invalid file content found)');
+
+    $ch = curl_init('https://api.moonshot.cn/v1/chat/completions');
+    curl_setopt_array($ch, array(
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_POST           => true,
+        CURLOPT_POSTFIELDS     => $payload,
+        CURLOPT_HTTPHEADER     => array('Content-Type: application/json', 'Authorization: Bearer ' . KIMI_API_KEY),
+        CURLOPT_TIMEOUT        => 280,
+        CURLOPT_CONNECTTIMEOUT => 15,
+        CURLOPT_SSL_VERIFYPEER => true,
+    ));
+    $resp = curl_exec($ch);
+    $http = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $err  = curl_error($ch);
+    curl_close($ch);
+
+    if ($err) return array('error' => 'Could not reach Kimi: ' . $err);
+    if ($http !== 200) {
+        $decoded = json_decode($resp, true);
+        $msg = $decoded['error']['message'] ?? ('Kimi HTTP ' . $http);
+        if ($http === 401) return array('error' => 'Invalid Kimi API key - check EtelGebeya/audit/config.php.');
+        return array('error' => 'Kimi error: ' . $msg);
+    }
+
+    $text = trim(json_decode($resp, true)['choices'][0]['message']['content'] ?? '');
+    $report = etel_audit_parse_report_text($text);
+    if ($report === null) return array('error' => 'Kimi response was not valid JSON. First 200 chars: ' . substr($text, 0, 200));
+    return $report;
+}
+
+/* Calls OpenAI's /chat/completions endpoint directly. */
+function etel_audit_call_openai($system, $content) {
+    if (!defined('OPENAI_API_KEY') || OPENAI_API_KEY === 'YOUR_OPENAI_KEY_HERE' || !OPENAI_API_KEY) {
+        return array('error' => 'OpenAI API key not configured - set OPENAI_API_KEY in EtelGebeya/audit/config.php');
+    }
+
+    $messages = array();
+    if ($system) $messages[] = array('role' => 'system', 'content' => $system);
+    $messages[] = array('role' => 'user', 'content' => $content);
+
+    $payload = json_encode(array(
+        'model'       => ETEL_AUDIT_OPENAI_MODEL,
+        'max_tokens'  => 16000,
+        'temperature' => 0.1,
+        'messages'    => $messages,
+    ), JSON_UNESCAPED_UNICODE);
+    if ($payload === false) return array('error' => 'Could not encode audit payload (invalid file content found)');
+
+    $ch = curl_init('https://api.openai.com/v1/chat/completions');
+    curl_setopt_array($ch, array(
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_POST           => true,
+        CURLOPT_POSTFIELDS     => $payload,
+        CURLOPT_HTTPHEADER     => array('Content-Type: application/json', 'Authorization: Bearer ' . OPENAI_API_KEY),
+        CURLOPT_TIMEOUT        => 280,
+        CURLOPT_CONNECTTIMEOUT => 15,
+        CURLOPT_SSL_VERIFYPEER => true,
+    ));
+    $resp = curl_exec($ch);
+    $http = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $err  = curl_error($ch);
+    curl_close($ch);
+
+    if ($err) return array('error' => 'Could not reach OpenAI: ' . $err);
+    if ($http !== 200) {
+        $decoded = json_decode($resp, true);
+        $msg = $decoded['error']['message'] ?? ('OpenAI HTTP ' . $http);
+        if ($http === 401) return array('error' => 'Invalid OpenAI API key - check EtelGebeya/audit/config.php.');
+        return array('error' => 'OpenAI error: ' . $msg);
+    }
+
+    $text = trim(json_decode($resp, true)['choices'][0]['message']['content'] ?? '');
+    $report = etel_audit_parse_report_text($text);
+    if ($report === null) return array('error' => 'OpenAI response was not valid JSON. First 200 chars: ' . substr($text, 0, 200));
+    return $report;
+}
+
+/**
+ * Run a full self-audit of $root and return the parsed report array, or
+ * ['error' => '...'] on failure. Never throws - callers should just
+ * check for the 'error' key.
+ */
+function etel_run_self_audit($root, $projectName, $provider = 'gemini') {
+    // Shared cPanel hosting commonly defaults max_execution_time to 30s,
+    // which would kill this request before a slower AI response comes
+    // back. @ suppresses the notice on hosts where set_time_limit is
+    // disabled entirely - the cURL timeout below is the real bound.
+    @set_time_limit(300);
+    if (!is_dir($root)) return array('error' => "Project root not found: $root");
+
+    $files = etel_audit_collect_files($root);
+    if (!$files) return array('error' => 'No text files found to audit under ' . $root);
+
+    $content = etel_audit_build_content($files);
+    $system  = etel_audit_system_prompt();
+
+    switch ($provider) {
+        case 'claude': $report = etel_audit_call_claude($system, $content); break;
+        case 'kimi':   $report = etel_audit_call_kimi($system, $content);   break;
+        case 'openai': $report = etel_audit_call_openai($system, $content); break;
+        default:       $report = etel_audit_call_gemini($system, $content);
+    }
+
+    if (isset($report['error'])) return $report;
 
     $report['_project_name_override'] = $projectName;
     $report['_audited_at'] = date('c');
