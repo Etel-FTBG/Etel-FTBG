@@ -175,7 +175,7 @@ a{color:var(--g1);text-decoration:none}
       <div class="setup-h">Configure Your API Key</div>
       <div class="setup-p">EtelAudit Pro uses Claude AI to analyze your projects. You need a free Anthropic API key to activate it. Setup takes 2 minutes.</div>
       <div class="step-row"><div class="step-num">1</div><div class="step-text">Visit <a href="https://aistudio.google.com/app/apikey" target="_blank"><strong>aistudio.google.com/app/apikey</strong></a> and sign in with your Google account (completely free, no credit card).</div></div>
-      <div class="step-row"><div class="step-num">2</div><div class="step-text">Open <strong>EtelGebeya/audit/proxy.php</strong> in cPanel File Manager &rarr; right-click &rarr; Edit.</div></div>
+      <div class="step-row"><div class="step-num">2</div><div class="step-text">Open <strong>EtelGebeya/audit/config.php</strong> in cPanel File Manager &rarr; right-click &rarr; Edit.</div></div>
       <div class="step-row"><div class="step-num">3</div><div class="step-text">Find this line and replace the placeholder with your Gemini key:</div></div>
       <div class="code-block">define('GEMINI_API_KEY', 'PASTE_YOUR_GEMINI_KEY_HERE');</div>
       <div class="step-row"><div class="step-num">4</div><div class="step-text">Save the file, then tap Test Connection below. Analysis is 100% free.</div></div>
@@ -790,7 +790,7 @@ async function testSetup() {
     });
     const data = await resp.json();
     if (data.error === 'setup_required') {
-      result.innerHTML = '<div style="color:var(--orange)"><i class="bi bi-exclamation-circle"></i> API key not set yet. Edit proxy.php and paste your key, then test again.</div>';
+      result.innerHTML = '<div style="color:var(--orange)"><i class="bi bi-exclamation-circle"></i> API key not set yet. Edit config.php and paste your key, then test again.</div>';
     } else if (data.error) {
       result.innerHTML = '<div style="color:var(--red)"><i class="bi bi-x-circle"></i> Error: ' + esc(data.error) + '</div>';
     } else {
@@ -804,7 +804,7 @@ async function testSetup() {
       }
     }
   } catch(e) {
-    result.innerHTML = '<div style="color:var(--red)"><i class="bi bi-x-circle"></i> Could not reach proxy.php. Check the file exists at audit/proxy.php.</div>';
+    result.innerHTML = '<div style="color:var(--red)"><i class="bi bi-x-circle"></i> Could not reach etelproxy.php. Check the file exists at audit/etelproxy.php.</div>';
   }
   btn.innerHTML = '<i class="bi bi-wifi"></i> Test Connection';
   btn.disabled = false;
