@@ -18,6 +18,16 @@
 # deploy overwriting live secrets with placeholders again.
 **/.env
 
+# EtelGebeya's own audit-tool key files - both say "never in git" / "keep
+# OUT of version control" in their own header comments, yet were committed
+# with CHANGE_ME placeholders. Any deploy zip built from a committed copy
+# silently overwrote the real keys the admin had pasted into the live
+# files, which is why the Code Audit tool kept using CHANGE_ME instead of
+# the real Gemini key no matter how many times it was re-entered on the
+# server.
+EtelGebeya/audit/config.php
+EtelGebeya/public/config.php
+
 # Runtime debug logs - EtelGebeya's storage/debug.log was found committed
 # (12KB+ of accumulated request paths/timestamps) during the company-wide
 # audit; a log file is generated data, not source, and shouldn't ship in
