@@ -38,7 +38,17 @@ if (!$raw) { http_response_code(400); echo json_encode(['error' => 'Empty reques
 
 $data = json_decode($raw, true);
 if (!is_array($data)) { http_response_code(400); echo json_encode(['error' => 'Invalid JSON']); exit; }
-if (($data['secret'] ?? '') !== AUDIT_SECRET) { http_response_code(403); echo json_encode(['error' => 'Unauthorized']); exit; }
+// HARDENING: fail closed if AUDIT_SECRET was never actually configured -
+// 'YOUR_AUDIT_SECRET_HERE' is the documented placeholder default above,
+// so treating it as a usable secret would let anyone who reads this
+// source (or just guesses the well-known placeholder) call every AI
+// provider through this proxy on Etel Group's own billed API keys.
+// Also switched to hash_equals() - the previous !== check is not
+// constant-time.
+if (!defined('AUDIT_SECRET') || AUDIT_SECRET === '' || AUDIT_SECRET === 'YOUR_AUDIT_SECRET_HERE' || AUDIT_SECRET === 'CHANGE_ME') {
+    http_response_code(503); echo json_encode(['error' => 'Audit secret not configured on the server.']); exit;
+}
+if (!hash_equals(AUDIT_SECRET, (string)($data['secret'] ?? ''))) { http_response_code(403); echo json_encode(['error' => 'Unauthorized']); exit; }
 
 $provider  = strtolower(trim($data['provider'] ?? 'gemini'));
 $test_mode = (bool)($data['test'] ?? false);
