@@ -27,9 +27,18 @@ if (!function_exists('etel_run_self_audit')) {
 
 // The real keys live in audit/config.php (server-only, gitignored) -
 // same file the old proxy read from, so nothing needs reconfiguring.
+//
+// DIAGNOSTIC: records the exact path checked, whether it existed, and
+// whether GEMINI_API_KEY was already defined *before* this ran (which
+// would mean something else in the request loaded a different config
+// first and this file's own require never fires) - surfaced in the
+// "invalid key" error messages below so a config mismatch is visible
+// without needing server file-system access to debug.
+define('ETEL_AUDIT_CFG_PATH', __DIR__ . '/audit/config.php');
+define('ETEL_AUDIT_CFG_PREDEFINED', defined('GEMINI_API_KEY') ? 'yes' : 'no');
+define('ETEL_AUDIT_CFG_EXISTS', file_exists(ETEL_AUDIT_CFG_PATH) ? 'yes' : 'no');
 if (!defined('GEMINI_API_KEY')) {
-    $__etel_audit_cfg = __DIR__ . '/audit/config.php';
-    if (file_exists($__etel_audit_cfg)) require_once $__etel_audit_cfg;
+    if (file_exists(ETEL_AUDIT_CFG_PATH)) require_once ETEL_AUDIT_CFG_PATH;
 }
 
 // Fallback constants if audit/config.php doesn't define these (keeps
@@ -256,8 +265,10 @@ function etel_audit_build_content($files) {
    another screenshot round-trip. Same idea as EtelAi's debug-key.php. */
 function etel_audit_key_fingerprint($key) {
     $len = strlen($key);
-    if ($len === 0) return 'empty';
-    return $len . ' chars, ends "' . substr($key, -4) . '"';
+    $keyDesc = $len === 0 ? 'empty' : ($len . ' chars, ends "' . substr($key, -4) . '"');
+    return $keyDesc . ' | config path checked: ' . ETEL_AUDIT_CFG_PATH
+        . ' | file existed: ' . ETEL_AUDIT_CFG_EXISTS
+        . ' | GEMINI_API_KEY already defined before that check: ' . ETEL_AUDIT_CFG_PREDEFINED;
 }
 
 /* Strips markdown code fences and stray leading/trailing prose the model
