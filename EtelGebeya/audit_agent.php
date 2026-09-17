@@ -376,6 +376,23 @@ function etel_audit_call_gemini($system, $content) {
     if (!$geminiKey || $geminiKey === 'YOUR_GEMINI_KEY_HERE') {
         return array('error' => 'Gemini API key not configured - set GEMINI_API_KEY in EtelGebeya/audit/config.php');
     }
+    // Real Gemini / Generative Language API keys always start with
+    // "AIzaSy" and are 39 characters. A value in a different shape (e.g.
+    // starting "AQ.") is not a usable API key at all - it's most likely
+    // something else copied from Google AI Studio's key list, such as a
+    // masked/reference display value shown when viewing a key's details
+    // rather than the actual secret from its "copy key" action. Google's
+    // own server-side error for this ("Expected OAuth 2 access token,
+    // login cookie...") is easy to mistake for a code bug, so catch the
+    // shape mismatch locally first and say exactly what's wrong.
+    if (!preg_match('/^AIzaSy[A-Za-z0-9_-]{33}$/', $geminiKey)) {
+        return array('error' => 'The configured value does not look like a real Gemini API key (as loaded: '
+            . etel_audit_key_fingerprint($geminiKey) . '). A real Gemini API key always starts with '
+            . '"AIzaSy" and is 39 characters long. In Google AI Studio, use "Get API key" and its '
+            . '"Copy" action on the key itself - not a value shown when viewing a key\'s details/info panel, '
+            . 'which can display a masked reference instead of the real secret. Paste the actual key into '
+            . 'EtelGebeya/audit/config.php or EtelGebeya/public/config.php.');
+    }
 
     $payloadArr = array(
         'contents'          => array(array('role' => 'user', 'parts' => array(array('text' => $content)))),
