@@ -25,31 +25,27 @@
 
 if (!function_exists('etel_run_self_audit')) {
 
-// The real keys live in audit/config.php (server-only, gitignored) -
-// same file the old proxy read from, so nothing needs reconfiguring.
-//
-// DIAGNOSTIC: records the exact path checked, whether it existed, and
-// whether GEMINI_API_KEY was already defined *before* this ran (which
-// would mean something else in the request loaded a different config
-// first and this file's own require never fires) - surfaced in the
-// "invalid key" error messages below so a config mismatch is visible
-// without needing server file-system access to debug.
-define('ETEL_AUDIT_CFG_PATH', __DIR__ . '/audit/config.php');
+// The real keys are supposed to live in audit/config.php, but three
+// rounds of diagnostics (wrong-file theory, OPcache, raw-bytes read)
+// proved the file actually being read here sat untouched at 182 bytes
+// from Sept 9 while the admin kept re-pasting a much longer real key
+// into cPanel - meaning the edits were landing in a different, near-
+// identical file (public/config.php) instead. Rather than rely on the
+// admin picking the one exact path by name, check every file this tool
+// has ever read keys from and use whichever one actually holds a real
+// (non-placeholder) key for each provider.
+define('ETEL_AUDIT_CFG_CANDIDATES', serialize(array(
+    __DIR__ . '/audit/config.php',
+    __DIR__ . '/public/config.php',
+)));
 define('ETEL_AUDIT_CFG_PREDEFINED', defined('GEMINI_API_KEY') ? 'yes' : 'no');
-define('ETEL_AUDIT_CFG_EXISTS', file_exists(ETEL_AUDIT_CFG_PATH) ? 'yes' : 'no');
-define('ETEL_AUDIT_CFG_SIZE',  ETEL_AUDIT_CFG_EXISTS === 'yes' ? filesize(ETEL_AUDIT_CFG_PATH) : 0);
-define('ETEL_AUDIT_CFG_MTIME', ETEL_AUDIT_CFG_EXISTS === 'yes' ? date('Y-m-d H:i:s', filemtime(ETEL_AUDIT_CFG_PATH)) : 'n/a');
 
 /**
- * Pull a define('CONST', 'value') value straight out of the file's raw
- * bytes with a regex, instead of executing the file with require(). Two
- * rounds of "the file was edited on the server but the key never
- * changed" (once suspected as a wrong-file bug, once as OPcache) both
- * turned out not to explain it, which only leaves PHP's own execution of
- * the file as an unverified link in the chain. Reading the raw bytes
- * removes that link entirely: whatever this returns is provably what is
- * sitting on disk right now, independent of require(), opcache, or any
- * other constant already defined earlier in the request.
+ * Pull a define('CONST', 'value') value straight out of a file's raw
+ * bytes with a regex, instead of executing it with require(). Reading
+ * the raw bytes proves whatever this returns is what is sitting on disk
+ * right now, independent of require(), opcache, or any constant already
+ * defined earlier in the request.
  */
 function etel_audit_extract_define($raw, $const) {
     if (preg_match('/define\s*\(\s*[\'"]' . preg_quote($const, '/') . '[\'"]\s*,\s*[\'"](.*?)[\'"]\s*\)/s', $raw, $m)) {
@@ -58,24 +54,63 @@ function etel_audit_extract_define($raw, $const) {
     return null;
 }
 
-$etelAuditCfgRaw = ETEL_AUDIT_CFG_EXISTS === 'yes' ? (string) file_get_contents(ETEL_AUDIT_CFG_PATH) : '';
-define('ETEL_AUDIT_CFG_RAW_GEMINI', etel_audit_extract_define($etelAuditCfgRaw, 'GEMINI_API_KEY'));
+$etelAuditKnownPlaceholders = array(
+    '', 'CHANGE_ME', 'YOUR_GEMINI_KEY_HERE', 'YOUR_CLAUDE_KEY_HERE',
+    'YOUR_KIMI_KEY_HERE', 'YOUR_OPENAI_KEY_HERE', 'YOUR_AUDIT_SECRET_HERE',
+);
 
-if (!defined('GEMINI_API_KEY')) {
-    $rawGemini = etel_audit_extract_define($etelAuditCfgRaw, 'GEMINI_API_KEY');
-    define('GEMINI_API_KEY', $rawGemini !== null ? $rawGemini : 'YOUR_GEMINI_KEY_HERE');
+/**
+ * Scan every candidate config file for the given constant and return the
+ * first real (non-placeholder) value found. Also builds a per-file debug
+ * trail (path, size, mtime, raw value found) so a failure can show
+ * exactly what was checked and why nothing usable was found - without
+ * needing another round of live server screenshots.
+ */
+function etel_audit_find_key($const, $fallback) {
+    $candidates = unserialize(ETEL_AUDIT_CFG_CANDIDATES);
+    $trail = array();
+    $found = null;
+    foreach ($candidates as $path) {
+        $exists = file_exists($path);
+        $raw = $exists ? (string) file_get_contents($path) : '';
+        $value = $exists ? etel_audit_extract_define($raw, $const) : null;
+        $isPlaceholder = $value === null || in_array($value, unserialize(ETEL_AUDIT_PLACEHOLDERS), true);
+        $trail[] = array(
+            'path' => $path,
+            'exists' => $exists,
+            'size' => $exists ? filesize($path) : 0,
+            'mtime' => $exists ? date('Y-m-d H:i:s', filemtime($path)) : 'n/a',
+            'value_found' => $value !== null,
+            'used' => false,
+        );
+        if ($found === null && $value !== null && !$isPlaceholder) {
+            $found = $value;
+            $trail[count($trail) - 1]['used'] = true;
+        }
+    }
+    return array(
+        'value' => $found !== null ? $found : $fallback,
+        'trail' => $trail,
+    );
 }
+
+define('ETEL_AUDIT_PLACEHOLDERS', serialize($etelAuditKnownPlaceholders));
+
+$etelAuditGemini = etel_audit_find_key('GEMINI_API_KEY', 'YOUR_GEMINI_KEY_HERE');
+define('ETEL_AUDIT_GEMINI_TRAIL', serialize($etelAuditGemini['trail']));
+if (!defined('GEMINI_API_KEY')) define('GEMINI_API_KEY', $etelAuditGemini['value']);
+
 if (!defined('CLAUDE_API_KEY')) {
-    $rawClaude = etel_audit_extract_define($etelAuditCfgRaw, 'CLAUDE_API_KEY');
-    define('CLAUDE_API_KEY', $rawClaude !== null ? $rawClaude : 'YOUR_CLAUDE_KEY_HERE');
+    $r = etel_audit_find_key('CLAUDE_API_KEY', 'YOUR_CLAUDE_KEY_HERE');
+    define('CLAUDE_API_KEY', $r['value']);
 }
 if (!defined('KIMI_API_KEY')) {
-    $rawKimi = etel_audit_extract_define($etelAuditCfgRaw, 'KIMI_API_KEY');
-    define('KIMI_API_KEY', $rawKimi !== null ? $rawKimi : 'YOUR_KIMI_KEY_HERE');
+    $r = etel_audit_find_key('KIMI_API_KEY', 'YOUR_KIMI_KEY_HERE');
+    define('KIMI_API_KEY', $r['value']);
 }
 if (!defined('OPENAI_API_KEY')) {
-    $rawOpenai = etel_audit_extract_define($etelAuditCfgRaw, 'OPENAI_API_KEY');
-    define('OPENAI_API_KEY', $rawOpenai !== null ? $rawOpenai : 'YOUR_OPENAI_KEY_HERE');
+    $r = etel_audit_find_key('OPENAI_API_KEY', 'YOUR_OPENAI_KEY_HERE');
+    define('OPENAI_API_KEY', $r['value']);
 }
 
 define('ETEL_AUDIT_GEMINI_MODELS', 'gemini-3.5-flash,gemini-3.1-flash-lite,gemini-3.1-pro');
@@ -296,15 +331,20 @@ function etel_audit_build_content($files) {
 function etel_audit_key_fingerprint($key) {
     $len = strlen($key);
     $keyDesc = $len === 0 ? 'empty' : ($len . ' chars, ends "' . substr($key, -4) . '"');
-    $rawGemini = ETEL_AUDIT_CFG_RAW_GEMINI;
-    $rawDesc = $rawGemini === null ? 'not found in file' :
-        (strlen($rawGemini) . ' chars, ends "' . substr($rawGemini, -4) . '"');
-    return $keyDesc . ' | config path checked: ' . ETEL_AUDIT_CFG_PATH
-        . ' | file existed: ' . ETEL_AUDIT_CFG_EXISTS
-        . ' | file size: ' . ETEL_AUDIT_CFG_SIZE . ' bytes'
-        . ' | file last modified: ' . ETEL_AUDIT_CFG_MTIME
-        . ' | GEMINI_API_KEY already defined before that check: ' . ETEL_AUDIT_CFG_PREDEFINED
-        . ' | raw GEMINI_API_KEY found in file bytes: ' . $rawDesc;
+    $trail = unserialize(ETEL_AUDIT_GEMINI_TRAIL);
+    $fileDescs = array();
+    foreach ($trail as $f) {
+        if (!$f['exists']) {
+            $fileDescs[] = $f['path'] . ' (not found)';
+            continue;
+        }
+        $fileDescs[] = $f['path'] . ' (' . $f['size'] . ' bytes, modified ' . $f['mtime']
+            . ', key found: ' . ($f['value_found'] ? 'yes' : 'no')
+            . ($f['used'] ? ', USED' : '') . ')';
+    }
+    return $keyDesc
+        . ' | GEMINI_API_KEY already defined before checks ran: ' . ETEL_AUDIT_CFG_PREDEFINED
+        . ' | files checked: ' . implode(' ; ', $fileDescs);
 }
 
 /* Strips markdown code fences and stray leading/trailing prose the model
