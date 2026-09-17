@@ -339,8 +339,15 @@ function etel_audit_call_gemini($system, $content) {
     if ($http !== 200) {
         $decoded = json_decode($resp, true);
         $msg = $decoded['error']['message'] ?? ('Gemini HTTP ' . $http);
-        if (strpos($msg, 'API_KEY') !== false || $http === 401 || $http === 403) {
-            return array('error' => 'Invalid Gemini API key (as loaded: ' . etel_audit_key_fingerprint($geminiKey) . ') - check EtelGebeya/audit/config.php.');
+        // HARDENING: was only matching the literal string 'API_KEY'
+        // (uppercase, underscore) - Google's actual error text for a bad
+        // key is "API key not valid. Please pass a valid API key."
+        // (lowercase, space), which never matched, so this branch was
+        // silently unreachable for the single most common failure and
+        // the key fingerprint below never actually got shown. Case-
+        // insensitive match on "api key" catches the real text.
+        if (stripos($msg, 'api key') !== false || $http === 401 || $http === 403) {
+            return array('error' => 'Invalid Gemini API key (as loaded: ' . etel_audit_key_fingerprint($geminiKey) . ') - Gemini says: ' . $msg);
         }
         return array('error' => 'Gemini error: ' . $msg);
     }
