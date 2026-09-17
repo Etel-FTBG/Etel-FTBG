@@ -1,7 +1,8 @@
 <?php
 // ============================================================
 //  EtelAudit Pro -- real API keys (server only, never in git)
-//  Loaded by proxy.php. Keep this file OUT of version control.
+//  Loaded by proxy.php. This file (public/config.php) is gitignored -
+//  copy this example to public/config.php and fill in real values there.
 // ============================================================
 declare(strict_types=1);
 

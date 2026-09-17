@@ -1,0 +1,15 @@
+<?php
+// ============================================================
+//  EtelAudit Pro -- real API keys go here, on the SERVER ONLY.
+//  This file (audit/config.php) is gitignored on purpose: copy this
+//  example to audit/config.php and fill in real values there. Never
+//  commit the real file - a committed copy with placeholders is what
+//  silently overwrote the live keys on every deploy in the past.
+// ============================================================
+define('GEMINI_API_KEY', 'CHANGE_ME');
+define('CLAUDE_API_KEY', 'CHANGE_ME');
+define('KIMI_API_KEY',   'YOUR_KIMI_KEY_HERE');
+define('OPENAI_API_KEY', 'YOUR_OPENAI_KEY_HERE');
+// Must match ETEL_AUDIT_SECRET in every project's api/.env that calls this
+// proxy (e.g. delivery/api/audit_agent.php).
+define('AUDIT_SECRET',   'CHANGE_ME');
