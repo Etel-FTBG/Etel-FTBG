@@ -251,6 +251,15 @@ function etel_audit_build_content($files) {
     return $userMsg;
 }
 
+/* Never logs/returns the real key - just enough to tell "is this the key I
+   think it is" apart from "did I paste something else" without needing
+   another screenshot round-trip. Same idea as EtelAi's debug-key.php. */
+function etel_audit_key_fingerprint($key) {
+    $len = strlen($key);
+    if ($len === 0) return 'empty';
+    return $len . ' chars, ends "' . substr($key, -4) . '"';
+}
+
 /* Strips markdown code fences and stray leading/trailing prose the model
    sometimes wraps the JSON in, then parses it - shared by every provider
    caller below since they all need identical cleanup. Returns the
@@ -270,7 +279,14 @@ function etel_audit_parse_report_text($text) {
    model is only tried after a real failure (400/401/403 or a non-2xx),
    not after a successful-but-unwanted result. */
 function etel_audit_call_gemini($system, $content) {
-    if (!defined('GEMINI_API_KEY') || GEMINI_API_KEY === 'YOUR_GEMINI_KEY_HERE' || !GEMINI_API_KEY) {
+    // HARDENING: trim() the key before use - config.php is hand-edited via
+    // cPanel's file manager (often from a phone), which can silently
+    // introduce a trailing space/newline or smart-quote around the value.
+    // A key that works fine everywhere else can then fail here alone with
+    // a confusing "API key not valid" straight from Google, since the
+    // actual bytes sent no longer match the real key.
+    $geminiKey = defined('GEMINI_API_KEY') ? trim(GEMINI_API_KEY) : '';
+    if (!$geminiKey || $geminiKey === 'YOUR_GEMINI_KEY_HERE') {
         return array('error' => 'Gemini API key not configured - set GEMINI_API_KEY in EtelGebeya/audit/config.php');
     }
 
@@ -301,7 +317,7 @@ function etel_audit_call_gemini($system, $content) {
     $resp = ''; $http = 0; $err = '';
     foreach ($models as $model) {
         $url = 'https://generativelanguage.googleapis.com/v1beta/models/' . rawurlencode($model)
-             . ':generateContent?key=' . rawurlencode(GEMINI_API_KEY);
+             . ':generateContent?key=' . rawurlencode($geminiKey);
         $ch = curl_init($url);
         curl_setopt_array($ch, array(
             CURLOPT_RETURNTRANSFER => true,
@@ -324,7 +340,7 @@ function etel_audit_call_gemini($system, $content) {
         $decoded = json_decode($resp, true);
         $msg = $decoded['error']['message'] ?? ('Gemini HTTP ' . $http);
         if (strpos($msg, 'API_KEY') !== false || $http === 401 || $http === 403) {
-            return array('error' => 'Invalid Gemini API key - check EtelGebeya/audit/config.php.');
+            return array('error' => 'Invalid Gemini API key (as loaded: ' . etel_audit_key_fingerprint($geminiKey) . ') - check EtelGebeya/audit/config.php.');
         }
         return array('error' => 'Gemini error: ' . $msg);
     }
@@ -342,7 +358,8 @@ function etel_audit_call_gemini($system, $content) {
 
 /* Calls Anthropic's Messages API directly. */
 function etel_audit_call_claude($system, $content) {
-    if (!defined('CLAUDE_API_KEY') || CLAUDE_API_KEY === 'YOUR_CLAUDE_KEY_HERE' || !CLAUDE_API_KEY) {
+    $claudeKey = defined('CLAUDE_API_KEY') ? trim(CLAUDE_API_KEY) : '';
+    if (!$claudeKey || $claudeKey === 'YOUR_CLAUDE_KEY_HERE') {
         return array('error' => 'Claude API key not configured - set CLAUDE_API_KEY in EtelGebeya/audit/config.php');
     }
 
@@ -361,7 +378,7 @@ function etel_audit_call_claude($system, $content) {
         CURLOPT_POSTFIELDS     => $payload,
         CURLOPT_HTTPHEADER     => array(
             'Content-Type: application/json',
-            'x-api-key: ' . CLAUDE_API_KEY,
+            'x-api-key: ' . $claudeKey,
             'anthropic-version: 2023-06-01',
         ),
         CURLOPT_TIMEOUT        => 280,
@@ -377,7 +394,7 @@ function etel_audit_call_claude($system, $content) {
     if ($http !== 200) {
         $decoded = json_decode($resp, true);
         $msg = $decoded['error']['message'] ?? ('Claude HTTP ' . $http);
-        if ($http === 401) return array('error' => 'Invalid Claude API key - check EtelGebeya/audit/config.php.');
+        if ($http === 401) return array('error' => 'Invalid Claude API key (as loaded: ' . etel_audit_key_fingerprint($claudeKey) . ') - check EtelGebeya/audit/config.php.');
         return array('error' => 'Claude error: ' . $msg);
     }
 
@@ -393,7 +410,8 @@ function etel_audit_call_claude($system, $content) {
 
 /* Calls Kimi (Moonshot AI)'s OpenAI-compatible /chat/completions endpoint. */
 function etel_audit_call_kimi($system, $content) {
-    if (!defined('KIMI_API_KEY') || KIMI_API_KEY === 'YOUR_KIMI_KEY_HERE' || !KIMI_API_KEY) {
+    $kimiKey = defined('KIMI_API_KEY') ? trim(KIMI_API_KEY) : '';
+    if (!$kimiKey || $kimiKey === 'YOUR_KIMI_KEY_HERE') {
         return array('error' => 'Kimi API key not configured - set KIMI_API_KEY in EtelGebeya/audit/config.php');
     }
 
@@ -414,7 +432,7 @@ function etel_audit_call_kimi($system, $content) {
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_POST           => true,
         CURLOPT_POSTFIELDS     => $payload,
-        CURLOPT_HTTPHEADER     => array('Content-Type: application/json', 'Authorization: Bearer ' . KIMI_API_KEY),
+        CURLOPT_HTTPHEADER     => array('Content-Type: application/json', 'Authorization: Bearer ' . $kimiKey),
         CURLOPT_TIMEOUT        => 280,
         CURLOPT_CONNECTTIMEOUT => 15,
         CURLOPT_SSL_VERIFYPEER => true,
@@ -428,7 +446,7 @@ function etel_audit_call_kimi($system, $content) {
     if ($http !== 200) {
         $decoded = json_decode($resp, true);
         $msg = $decoded['error']['message'] ?? ('Kimi HTTP ' . $http);
-        if ($http === 401) return array('error' => 'Invalid Kimi API key - check EtelGebeya/audit/config.php.');
+        if ($http === 401) return array('error' => 'Invalid Kimi API key (as loaded: ' . etel_audit_key_fingerprint($kimiKey) . ') - check EtelGebeya/audit/config.php.');
         return array('error' => 'Kimi error: ' . $msg);
     }
 
@@ -440,7 +458,8 @@ function etel_audit_call_kimi($system, $content) {
 
 /* Calls OpenAI's /chat/completions endpoint directly. */
 function etel_audit_call_openai($system, $content) {
-    if (!defined('OPENAI_API_KEY') || OPENAI_API_KEY === 'YOUR_OPENAI_KEY_HERE' || !OPENAI_API_KEY) {
+    $openaiKey = defined('OPENAI_API_KEY') ? trim(OPENAI_API_KEY) : '';
+    if (!$openaiKey || $openaiKey === 'YOUR_OPENAI_KEY_HERE') {
         return array('error' => 'OpenAI API key not configured - set OPENAI_API_KEY in EtelGebeya/audit/config.php');
     }
 
@@ -461,7 +480,7 @@ function etel_audit_call_openai($system, $content) {
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_POST           => true,
         CURLOPT_POSTFIELDS     => $payload,
-        CURLOPT_HTTPHEADER     => array('Content-Type: application/json', 'Authorization: Bearer ' . OPENAI_API_KEY),
+        CURLOPT_HTTPHEADER     => array('Content-Type: application/json', 'Authorization: Bearer ' . $openaiKey),
         CURLOPT_TIMEOUT        => 280,
         CURLOPT_CONNECTTIMEOUT => 15,
         CURLOPT_SSL_VERIFYPEER => true,
@@ -475,7 +494,7 @@ function etel_audit_call_openai($system, $content) {
     if ($http !== 200) {
         $decoded = json_decode($resp, true);
         $msg = $decoded['error']['message'] ?? ('OpenAI HTTP ' . $http);
-        if ($http === 401) return array('error' => 'Invalid OpenAI API key - check EtelGebeya/audit/config.php.');
+        if ($http === 401) return array('error' => 'Invalid OpenAI API key (as loaded: ' . etel_audit_key_fingerprint($openaiKey) . ') - check EtelGebeya/audit/config.php.');
         return array('error' => 'OpenAI error: ' . $msg);
     }
 
