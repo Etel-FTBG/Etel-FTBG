@@ -38,7 +38,19 @@ define('ETEL_AUDIT_CFG_PATH', __DIR__ . '/audit/config.php');
 define('ETEL_AUDIT_CFG_PREDEFINED', defined('GEMINI_API_KEY') ? 'yes' : 'no');
 define('ETEL_AUDIT_CFG_EXISTS', file_exists(ETEL_AUDIT_CFG_PATH) ? 'yes' : 'no');
 if (!defined('GEMINI_API_KEY')) {
-    if (file_exists(ETEL_AUDIT_CFG_PATH)) require_once ETEL_AUDIT_CFG_PATH;
+    if (file_exists(ETEL_AUDIT_CFG_PATH)) {
+        // Force PHP to re-read the file from disk instead of serving a
+        // stale OPcache-compiled copy. Many shared hosts run with
+        // opcache.validate_timestamps=0, which means a config file
+        // edited via FTP/cPanel after it was first compiled is never
+        // picked up again until PHP-FPM restarts - the real cause of
+        // this file's value staying stuck at an old placeholder no
+        // matter how many times the live file was re-saved.
+        if (function_exists('opcache_invalidate')) {
+            opcache_invalidate(ETEL_AUDIT_CFG_PATH, true);
+        }
+        require ETEL_AUDIT_CFG_PATH;
+    }
 }
 
 // Fallback constants if audit/config.php doesn't define these (keeps
