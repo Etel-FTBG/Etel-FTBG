@@ -1185,6 +1185,35 @@ async function runCodeAudit() {
   toast('Audit complete — score ' + (r.data.overall_score != null ? r.data.overall_score : '?'), 'ok');
 }
 
+async function toggleAuditSettings() {
+  const box = document.getElementById('audit-settings-box');
+  if (!box) return;
+  const showing = box.style.display !== 'none';
+  if (showing) { box.style.display = 'none'; return; }
+  box.style.display = 'block';
+  document.getElementById('audit-set-gemini-key').value = 'Loading…';
+  const r = await api('run_audit_settings', {}, 'GET');
+  if (!r.ok) { document.getElementById('audit-set-gemini-key').value = ''; toast('Could not load audit settings: ' + (r.error||''), 'err'); return; }
+  document.getElementById('audit-set-gemini-key').value = r.data.gemini_key || '';
+  document.getElementById('audit-set-openrouter-key').value = r.data.openrouter_key || '';
+  document.getElementById('audit-set-openrouter-model').value = r.data.openrouter_model || 'anthropic/claude-3.5-sonnet';
+  document.getElementById('audit-set-provider').value = r.data.default_provider || 'gemini';
+}
+
+async function saveAuditSettings() {
+  const geminiKey = (document.getElementById('audit-set-gemini-key').value || '').trim();
+  const openrouterKey = (document.getElementById('audit-set-openrouter-key').value || '').trim();
+  const openrouterModel = (document.getElementById('audit-set-openrouter-model').value || '').trim();
+  const provider = document.getElementById('audit-set-provider').value;
+  if (provider === 'gemini' && !geminiKey) { toast('Gemini API key is required when Gemini is the default provider', 'err'); return; }
+  if (provider === 'openrouter' && !openrouterKey) { toast('OpenRouter API key is required when OpenRouter is the default provider', 'err'); return; }
+  const r = await api('save_audit_settings', {
+    gemini_key: geminiKey, openrouter_key: openrouterKey,
+    openrouter_model: openrouterModel, default_provider: provider
+  }, 'POST');
+  toast(r.ok ? 'Audit settings saved' : ('Save failed: ' + (r.error||'')), r.ok ? 'ok' : 'err');
+}
+
 function renderAuditReport(r) {
   const wrap = document.getElementById('audit-report');
   if (!wrap) return;

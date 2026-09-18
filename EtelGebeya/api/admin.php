@@ -923,9 +923,36 @@ case 'run_audit':
     auth('owner.only');
     require_once dirname(__DIR__) . '/audit_agent.php';
     $provider = $_POST['provider'] ?? $_GET['provider'] ?? 'gemini';
-    $report = etel_run_self_audit(dirname(__DIR__), 'EtelGebeya', $provider);
+    $report = etel_run_self_audit(dirname(__DIR__), 'EtelGebeya', $provider, db());
     if (isset($report['error'])) err($report['error'], 502);
     ok($report);
+
+case 'run_audit_settings':
+    auth('owner.only');
+    require_once dirname(__DIR__) . '/audit_agent.php';
+    ok(etel_audit_get_config(db()));
+
+case 'save_audit_settings':
+    auth('owner.only');
+    require_once dirname(__DIR__) . '/audit_agent.php';
+    $geminiKey       = trim($_POST['gemini_key'] ?? '');
+    $openrouterKey   = trim($_POST['openrouter_key'] ?? '');
+    $openrouterModel = trim($_POST['openrouter_model'] ?? '');
+    $provider        = trim($_POST['default_provider'] ?? 'gemini');
+    if (!in_array($provider, ['gemini', 'openrouter'], true)) $provider = 'gemini';
+    if ($provider === 'gemini' && !$geminiKey) err('Gemini API key is required when Gemini is the default provider', 400);
+    if ($provider === 'openrouter' && !$openrouterKey) err('OpenRouter API key is required when OpenRouter is the default provider', 400);
+    if (!$openrouterModel) $openrouterModel = 'anthropic/claude-3.5-sonnet';
+    $pdo = db();
+    etel_audit_ensure_settings_table($pdo);
+    try {
+        $pdo->prepare("INSERT INTO audit_settings (id, gemini_key, openrouter_key, openrouter_model, default_provider) VALUES (1, ?, ?, ?, ?)
+                       ON DUPLICATE KEY UPDATE gemini_key=VALUES(gemini_key), openrouter_key=VALUES(openrouter_key), openrouter_model=VALUES(openrouter_model), default_provider=VALUES(default_provider)")
+            ->execute([$geminiKey, $openrouterKey, $openrouterModel, $provider]);
+        ok(['message' => 'Audit settings saved']);
+    } catch (Exception $e) {
+        err('Could not save audit settings', 500);
+    }
 
 // ?? PROMOTIONS ?????????????????????????????????????????????
 case 'promotions':
