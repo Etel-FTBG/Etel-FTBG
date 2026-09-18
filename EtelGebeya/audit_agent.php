@@ -328,23 +328,15 @@ function etel_audit_call_gemini($cfg, $system, $content) {
     if (!$geminiKey) {
         return array('error' => 'Gemini API key not configured - set it in Settings > Code Audit > API Settings');
     }
-    // Real Gemini / Generative Language API keys always start with
-    // "AIzaSy" and are 39 characters. A value in a different shape (e.g.
-    // starting "AQ.") is not a usable API key at all - it's most likely
-    // something else copied from Google AI Studio's key list, such as a
-    // masked/reference display value shown when viewing a key's details
-    // rather than the actual secret from its "copy key" action. Google's
-    // own server-side error for this ("Expected OAuth 2 access token,
-    // login cookie...") is easy to mistake for a code bug, so catch the
-    // shape mismatch locally first and say exactly what's wrong.
-    if (!preg_match('/^AIzaSy[A-Za-z0-9_-]{33}$/', $geminiKey)) {
-        return array('error' => 'The configured value does not look like a real Gemini API key (as loaded: '
-            . etel_audit_key_fingerprint($geminiKey) . '). A real Gemini API key always starts with '
-            . '"AIzaSy" and is 39 characters long. In Google AI Studio, use "Get API key" and its '
-            . '"Copy" action on the key itself - not a value shown when viewing a key\'s details/info panel, '
-            . 'which can display a masked reference instead of the real secret. Update it in '
-            . 'Settings > Code Audit > API Settings.');
-    }
+    // NOTE: earlier code here rejected any key not shaped like a classic
+    // "AIzaSy..." (39-char) key, assuming that was the only valid Gemini
+    // key format. That assumption was wrong - delivery/api/audit_agent.php
+    // (identical request shape, no such check) proved live on production
+    // that a differently-shaped key ("AQ." prefix, 53 chars) works fine
+    // against the real Gemini API. The format check was a false positive
+    // that blocked a genuinely working key from ever being tried. Removed;
+    // let Google's own response (handled below) be the source of truth on
+    // whether a key is valid.
 
     $payloadArr = array(
         'contents'          => array(array('role' => 'user', 'parts' => array(array('text' => $content)))),
