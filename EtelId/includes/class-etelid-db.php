@@ -493,6 +493,25 @@ class EtelID_DB {
         ));
     }
 
+    /* Matches on full_name (trimmed, case-insensitive) AND dob together,
+     * not name alone - two genuinely different people can share a common
+     * name, but the same name plus the same date of birth is a real
+     * duplicate-registration signal (e.g. someone re-registering with a
+     * different phone number to get a second ID card, or a test name
+     * typed in twice). Used by the registration wizard's live check
+     * (etelid_check_duplicate_name AJAX action) and re-checked server-side
+     * in EtelID_Auth::register() itself. */
+    public static function find_duplicate_registration( $full_name, $dob ) {
+        global $wpdb;
+        $name = trim( preg_replace( '/\s+/', ' ', (string) $full_name ) );
+        if ( '' === $name || empty( $dob ) ) return null;
+        return $wpdb->get_row( $wpdb->prepare(
+            "SELECT * FROM " . self::t_members() . "
+             WHERE LOWER(TRIM(full_name)) = LOWER(%s) AND dob = %s
+             LIMIT 1", $name, $dob
+        ));
+    }
+
     public static function get_companies( $member_id ) {
         global $wpdb;
         return $wpdb->get_results( $wpdb->prepare(

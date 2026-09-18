@@ -19,6 +19,7 @@ class EtelID_Auth_Ajax {
         $map = array(
             'etelid_auth_register'        => 'register',
             'etelid_quick_register'       => 'quick_register',
+            'etelid_check_duplicate_name' => 'check_duplicate_name',
             'etelid_auth_login'           => 'login',
             'etelid_auth_logout'          => 'logout',
             'etelid_auth_portal_data'     => 'portal_data',
@@ -124,6 +125,13 @@ class EtelID_Auth_Ajax {
         if ( ! isset( $valid_zones[ $data['region'] ] ) || ! in_array( $data['zone'], $valid_zones[ $data['region'] ], true ) ) {
             wp_send_json_error( array( 'field' => 'zone', 'message' => 'Select a zone/city that belongs to the chosen region.' ) );
         }
+        /* Re-check the same name+DOB duplicate signal the wizard's live
+         * check (check_duplicate_name() below) already offered during
+         * entry - defense-in-depth in case that step was skipped or the
+         * name/dob changed after it ran. */
+        if ( EtelID_DB::find_duplicate_registration( $data['full_name'], $data['dob'] ) ) {
+            wp_send_json_error( array( 'field' => 'full_name', 'message' => 'An account with this name and date of birth already exists. Please sign in instead, or contact support if this is an error.' ) );
+        }
 
         $result = EtelID_Auth::register( $data );
         if ( is_wp_error( $result ) ) {
@@ -142,6 +150,34 @@ class EtelID_Auth_Ajax {
             'verify_url' => $member ? EtelID_QR::verify_url( $member->etel_id ) : '',
             'redirect'   => home_url( '/portal/' ),
         ));
+    }
+
+    /* ── Live duplicate-name check (called from the registration wizard
+     * while the user fills in Step 2, on blur of Full Name and again
+     * right before advancing to Step 3) ──
+     * Matches on full_name + dob together (see
+     * EtelID_DB::find_duplicate_registration()'s own comment for why
+     * name alone isn't used) so two different people who happen to
+     * share a name aren't blocked from both registering. Public/nopriv -
+     * this only reveals whether a name+dob combination is taken, the
+     * same kind of signal the phone-duplicate check already exposes. */
+    public static function check_duplicate_name() {
+        check_ajax_referer( 'etelid_auth', 'nonce' );
+
+        $ip = EtelID_Security::get_ip();
+        if ( ! EtelID_Security::rate_limit( 'check_dup_name_' . $ip, 30, 600 ) ) {
+            wp_send_json_error( array( 'message' => 'Too many checks. Please wait a moment.' ) );
+        }
+
+        $full_name = isset( $_POST['full_name'] ) ? sanitize_text_field( wp_unslash( $_POST['full_name'] ) ) : '';
+        $dob       = isset( $_POST['dob'] )       ? sanitize_text_field( wp_unslash( $_POST['dob'] ) )       : '';
+
+        if ( empty( $full_name ) || empty( $dob ) ) {
+            wp_send_json_success( array( 'duplicate' => false ) );
+        }
+
+        $existing = EtelID_DB::find_duplicate_registration( $full_name, $dob );
+        wp_send_json_success( array( 'duplicate' => (bool) $existing ) );
     }
 
     /* -- Quick Register (public, self-service fast track) --------
@@ -703,20 +739,50 @@ class EtelID_Auth_Ajax {
      * Ethiopian given-name + father's-name convention), rejecting a single
      * short word like "Da" that previously passed as long as it was
      * non-empty. */
+    /* Placeholder/test-data words that pass a plain "is it letters" check
+     * but are never a real Ethiopian given/father's name - "Da fa" (a
+     * genuine case seen live: two 2-letter nonsense words) passed the
+     * original 2-letter minimum. Raised to 3, added a
+     * same-word-repeated-twice check ("Da Da"), and a blocklist for
+     * common placeholder/keyboard-mash entries. This still cannot prove a
+     * name is real (no authoritative Ethiopian name dictionary is used
+     * here - that would risk rejecting genuine unusual names), only that
+     * it isn't an obvious placeholder. */
+    private static $name_blocklist = array(
+        'test','tests','testing','asdf','asdfg','qwerty','xxx','xxxx','aaa','aaaa',
+        'sample','dummy','none','unknown','foo','bar','abc','xyz','name','fname',
+        'lname','firstname','lastname','fullname','na','nan','null','undefined',
+        'admin','user','demo',
+    );
+    private static function is_placeholder_word( $w ) {
+        $lw = strtolower( $w );
+        if ( in_array( $lw, self::$name_blocklist, true ) ) return true;
+        /* A word that's the same letter repeated ("aaaa", "mmmm") */
+        if ( preg_match( '/^([a-z])\1+$/i', $w ) ) return true;
+        return false;
+    }
     public static function is_real_full_name( $name ) {
         $words = preg_split( '/\s+/', trim( $name ), -1, PREG_SPLIT_NO_EMPTY );
         if ( count( $words ) < 2 ) return false;
+        $seen = array();
         foreach ( $words as $w ) {
-            if ( ! preg_match( "/^[A-Za-z'-]{2,}$/", $w ) ) return false;
+            if ( ! preg_match( "/^[A-Za-z'-]{3,}$/", $w ) ) return false;
+            if ( self::is_placeholder_word( $w ) ) return false;
+            $lw = strtolower( $w );
+            if ( isset( $seen[ $lw ] ) ) return false; /* same word repeated */
+            $seen[ $lw ] = true;
         }
         return true;
     }
     public static function is_real_amharic_name( $name_am ) {
         $words = preg_split( '/\s+/', trim( $name_am ), -1, PREG_SPLIT_NO_EMPTY );
         if ( count( $words ) < 2 ) return false;
+        $seen = array();
         foreach ( $words as $w ) {
             $amharic_chars = preg_match_all( '/[\x{1200}-\x{137F}]/u', $w );
-            if ( mb_strlen( $w, 'UTF-8' ) < 2 || $amharic_chars < 2 ) return false;
+            if ( mb_strlen( $w, 'UTF-8' ) < 3 || $amharic_chars < 3 ) return false;
+            if ( isset( $seen[ $w ] ) ) return false; /* same word repeated */
+            $seen[ $w ] = true;
         }
         return true;
     }
