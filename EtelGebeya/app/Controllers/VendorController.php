@@ -72,7 +72,18 @@ final class VendorController
             $fk = 'file_' . $i;
             if (!empty($_FILES[$fk]['tmp_name']) && $_FILES[$fk]['error'] === UPLOAD_ERR_OK) {
                 $ext = strtolower(pathinfo($_FILES[$fk]['name'], PATHINFO_EXTENSION));
-                if (in_array($ext, ['jpg','jpeg','png','webp','gif'], true) && $_FILES[$fk]['size'] <= 5*1024*1024) {
+                // The client-supplied extension alone was previously the
+                // only check -- a renamed non-image file (e.g. a PHP
+                // payload saved as "shell.php.jpg") would pass it and land
+                // in a public, web-served uploads directory. getimagesize()
+                // reads the file's real bytes, the same content-sniffing
+                // pattern this codebase's own App\Core\Upload::image()
+                // already uses for other upload paths.
+                $info = @getimagesize($_FILES[$fk]['tmp_name']);
+                $allowedTypes = [IMAGETYPE_JPEG => true, IMAGETYPE_PNG => true, IMAGETYPE_WEBP => true, IMAGETYPE_GIF => true];
+                if ($info && isset($allowedTypes[$info[2]])
+                    && in_array($ext, ['jpg','jpeg','png','webp','gif'], true)
+                    && $_FILES[$fk]['size'] <= 5*1024*1024) {
                     $fname = 'p' . $productId . '_' . time() . '_' . $i . '.' . $ext;
                     if (move_uploaded_file($_FILES[$fk]['tmp_name'], $uploadDir . $fname)) {
                         $slots[$i] = '/EtelGebeya/public/uploads/products/' . $fname;
@@ -757,7 +768,8 @@ final class VendorController
             ]);
             $this->auth->flash('success', 'Payout requested. An admin will review and release it via ኢE Pay.');
         } catch (\Throwable $e) {
-            $this->auth->flash('error', 'Could not request payout: ' . $e->getMessage());
+            error_log('[EG-Vendor] requestPayout: ' . $e->getMessage());
+            $this->auth->flash('error', 'Could not request payout. Please try again.');
         }
 
         redirect('/vendor-panel/payouts');

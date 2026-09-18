@@ -24,6 +24,19 @@ final class CustomerController
         }
     }
 
+    /** Verifies the POSTed _token CSRF value, redirecting back with a flash
+     *  error if it's missing or stale. Same pattern already used by
+     *  AdminController/VendorController's own requireCsrf() -- this
+     *  controller's POST actions never had it, unlike every sibling
+     *  controller that mutates state. */
+    private function requireCsrf(string $redirectTo): void
+    {
+        if (!$this->auth->csrfCheck($_POST['_token'] ?? null)) {
+            $this->auth->flash('error', 'Your session expired -- please try again.');
+            redirect($redirectTo);
+        }
+    }
+
     /* ?? GET /account ??????????????????????????????????????? */
     public function dashboard(): void
     {
@@ -160,6 +173,7 @@ final class CustomerController
     public function cancelOrder(string $code): void
     {
         $this->requireLogin();
+        $this->requireCsrf('/account/orders/' . $code);
         $uid = $this->auth->id();
 
         try {
@@ -190,7 +204,8 @@ final class CustomerController
                 ? 'Order cancelled and your payment has been refunded to your ኢE Pay wallet.'
                 : 'Order cancelled.');
         } catch (\Throwable $e) {
-            $this->auth->flash('error', 'Could not cancel order: ' . $e->getMessage());
+            error_log('[EG-Customer] cancelOrder: ' . $e->getMessage());
+            $this->auth->flash('error', 'Could not cancel order. Please try again or contact support.');
         }
 
         redirect('/account/orders/' . $code);
@@ -205,6 +220,7 @@ final class CustomerController
     public function confirmReceived(string $code): void
     {
         $this->requireLogin();
+        $this->requireCsrf('/account/orders/' . $code);
         $uid = $this->auth->id();
 
         try {
@@ -228,7 +244,8 @@ final class CustomerController
                 ? 'Thanks for confirming! Payment has been released to the seller.'
                 : 'Nothing to confirm yet -- no items are marked delivered.');
         } catch (\Throwable $e) {
-            $this->auth->flash('error', 'Could not confirm receipt: ' . $e->getMessage());
+            error_log('[EG-Customer] confirmReceived: ' . $e->getMessage());
+            $this->auth->flash('error', 'Could not confirm receipt. Please try again or contact support.');
         }
 
         redirect('/account/orders/' . $code);
@@ -241,6 +258,7 @@ final class CustomerController
     public function fileDispute(string $code): void
     {
         $this->requireLogin();
+        $this->requireCsrf('/account/orders/' . $code);
         $uid = $this->auth->id();
 
         $issueType   = $_POST['issue_type'] ?? 'other';
@@ -283,7 +301,8 @@ final class CustomerController
             ]);
             $this->auth->flash('success', 'Your report has been submitted -- our team will review it and your payment stays held until it\'s resolved.');
         } catch (\Throwable $e) {
-            $this->auth->flash('error', 'Could not submit report: ' . $e->getMessage());
+            error_log('[EG-Customer] fileDispute: ' . $e->getMessage());
+            $this->auth->flash('error', 'Could not submit report. Please try again or contact support.');
         }
 
         redirect('/account/orders/' . $code);
@@ -318,6 +337,7 @@ final class CustomerController
     public function saveAddress(): void
     {
         $this->requireLogin();
+        $this->requireCsrf('/account/addresses');
         $uid = $this->auth->id();
 
         $label    = trim($_POST['label'] ?? 'Home');
@@ -345,7 +365,8 @@ final class CustomerController
             );
             $this->auth->flash('success', 'Address saved.');
         } catch (\Throwable $e) {
-            $this->auth->flash('error', 'Could not save address: '.$e->getMessage());
+            error_log('[EG-Customer] saveAddress: ' . $e->getMessage());
+            $this->auth->flash('error', 'Could not save address. Please try again.');
         }
 
         redirect('/account/addresses');
@@ -355,6 +376,7 @@ final class CustomerController
     public function deleteAddress(): void
     {
         $this->requireLogin();
+        $this->requireCsrf('/account/addresses');
         $uid = $this->auth->id();
         $id  = (int)($_POST['id'] ?? 0);
 
@@ -373,7 +395,8 @@ final class CustomerController
             }
             $this->auth->flash('success', 'Address removed.');
         } catch (\Throwable $e) {
-            $this->auth->flash('error', 'Could not remove address: ' . $e->getMessage());
+            error_log('[EG-Customer] deleteAddress: ' . $e->getMessage());
+            $this->auth->flash('error', 'Could not remove address. Please try again.');
         }
 
         redirect('/account/addresses');
@@ -383,6 +406,7 @@ final class CustomerController
     public function setDefaultAddress(): void
     {
         $this->requireLogin();
+        $this->requireCsrf('/account/addresses');
         $uid = $this->auth->id();
         $id  = (int)($_POST['id'] ?? 0);
 
@@ -396,7 +420,8 @@ final class CustomerController
             $this->db->query("UPDATE user_addresses SET is_default = 1 WHERE id = ?", [$id]);
             $this->auth->flash('success', 'Default address updated.');
         } catch (\Throwable $e) {
-            $this->auth->flash('error', 'Could not update default address: ' . $e->getMessage());
+            error_log('[EG-Customer] setDefaultAddress: ' . $e->getMessage());
+            $this->auth->flash('error', 'Could not update default address. Please try again.');
         }
 
         redirect('/account/addresses');
@@ -406,6 +431,7 @@ final class CustomerController
     public function saveProfile(): void
     {
         $this->requireLogin();
+        $this->requireCsrf('/account');
         $uid = $this->auth->id();
 
         $fullName = trim($_POST['full_name'] ?? '');
@@ -532,6 +558,7 @@ final class CustomerController
     public function submitReview(string $slug): void
     {
         $this->requireLogin();
+        $this->requireCsrf('/product/' . $slug);
         $uid = $this->auth->id();
 
         $product = \App\Models\Product::bySlug($slug);
@@ -589,7 +616,8 @@ final class CustomerController
                 $this->auth->flash('success', 'Thanks! Your review will appear once approved.');
             }
         } catch (\Throwable $e) {
-            $this->auth->flash('error', 'Could not submit review: ' . $e->getMessage());
+            error_log('[EG-Customer] submitReview: ' . $e->getMessage());
+            $this->auth->flash('error', 'Could not submit review. Please try again.');
         }
 
         redirect('/product/' . $slug);
