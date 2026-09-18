@@ -58,8 +58,8 @@ class EtelID_Security {
      * elsewhere in this codebase (see EtelID_DB::find_by_phone()'s
      * last-9-digits comparison): a bare 9-digit subscriber number
      * (924445206), a local 10-digit number with the trunk 0
-     * (0924445206), or a full +251-prefixed 12-digit number
-     * (+251924445206 or 251924445206 - the + is stripped along with any
+     * (0912345678), or a full +251-prefixed 12-digit number
+     * (+251912345678 or 251912345678 - the + is stripped along with any
      * other non-digit before checking length). Ethiopian mobile numbers
      * start with 7 or 9 after the trunk/country code is removed. */
     public static function valid_ethiopian_phone( $phone ) {
