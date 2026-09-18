@@ -22,7 +22,6 @@ if ( EtelID_Auth::is_logged_in() ) {
     exit;
 }
 
-$companies       = EtelID_Generator::companies();
 $regions         = EtelID_Generator::regions();
 $zones_by_region = EtelID_Generator::zones_by_region();
 $blood           = EtelID_Generator::blood_types();
@@ -197,7 +196,6 @@ $features = array(
         <div class="eid-reg-dots">
           <div class="eid-reg-dot active" id="dot-1" data-step="1"></div>
           <div class="eid-reg-dot" id="dot-2" data-step="2"></div>
-          <div class="eid-reg-dot" id="dot-3" data-step="3"></div>
         </div>
 
         <!-- ── Step 1: Phone + Password ── -->
@@ -331,35 +329,7 @@ $features = array(
           </div>
           <div class="eid-step-nav">
             <button class="eid-step-back" onclick="regBack(2)"><i class="ti ti-arrow-left"></i></button>
-            <button class="eid-step-next" onclick="regNext(2)">
-              Continue <i class="ti ti-arrow-right" style="margin-left:4px"></i>
-            </button>
-          </div>
-        </div>
-
-        <!-- ── Step 3: Company + submit ── -->
-        <div id="reg-step-3" style="display:none">
-          <div class="eid-af-row">
-            <div class="eid-af-field">
-              <label class="eid-af-label">Company <span class="req">*</span></label>
-              <select id="reg-company" class="eid-af-select no-icon">
-                <?php foreach ($companies as $slug => $co): ?>
-                <option value="<?php echo esc_attr($slug); ?>"><?php echo esc_html($co['name']); ?></option>
-                <?php endforeach; ?>
-              </select>
-            </div>
-            <div class="eid-af-field">
-              <label class="eid-af-label">Role</label>
-              <input type="text" id="reg-role" class="eid-af-input no-icon" placeholder="e.g. Customer, Staff">
-            </div>
-          </div>
-
-          <!-- Summary preview -->
-          <div id="reg-summary" style="background:var(--ac2);border:.5px solid var(--ab);border-radius:8px;padding:12px 14px;margin:14px 0;font-size:12px;color:var(--at2);line-height:1.8;font-family:'JetBrains Mono',monospace"></div>
-
-          <div class="eid-step-nav">
-            <button class="eid-step-back" onclick="regBack(3)"><i class="ti ti-arrow-left"></i></button>
-            <button class="eid-auth-submit" style="flex:1;margin-top:0" id="reg-submit-btn" onclick="doRegister()">
+            <button class="eid-auth-submit" style="flex:1;margin-top:0" id="reg-submit-btn" onclick="regNext(2)">
               <i class="ti ti-id" style="margin-right:6px"></i>
               <span id="reg-submit-lbl">Create My Etel-ID</span>
             </button>
@@ -676,6 +646,17 @@ function regNext(from) {
     if (pw.length<8) { fieldErr('reg-password', 'Password must be at least 8 characters.'); ok = false; }
     if (pw!==pwc) { fieldErr('reg-password-confirm', 'Passwords do not match.'); ok = false; }
     if (!ok) return;
+    /* Live duplicate-phone check against the database before advancing
+     * to Step 2 - EtelID_Auth::register() already blocks a duplicate
+     * phone at final submit, this surfaces the same signal immediately. */
+    checkDuplicatePhone(phone, function(taken){
+      if (taken) {
+        fieldErr('reg-phone', 'An account with this phone number already exists. Please sign in instead.');
+        return;
+      }
+      setRegStep(2);
+    });
+    return;
   }
   if (from===2) {
     var name    = document.getElementById('reg-full-name').value.trim();
@@ -705,7 +686,8 @@ function regNext(from) {
     if (!ok2) return;
     /* All local checks passed - run the live duplicate-name check, then
      * (if an email was given) the live duplicate-email check, against
-     * the database before actually advancing to Step 3. */
+     * the database, and if both come back clear, create the account
+     * directly (no separate Company/Role step - see doRegister()). */
     if (!dobOk) return;
     checkDuplicateName(name, dob, function(result){
       if (result.duplicate) {
@@ -713,20 +695,17 @@ function regNext(from) {
         return;
       }
       showNameTakenWarning(result.nameTaken);
-      if (!email) { setRegStep(3); buildSummary(); return; }
+      if (!email) { doRegister(); return; }
       checkDuplicateEmail(email, function(taken){
         if (taken) {
           fieldErr('reg-email', 'This email is already registered. Please use a different email, or sign in instead.');
           return;
         }
-        setRegStep(3);
-        buildSummary();
+        doRegister();
       });
     });
     return;
   }
-  if (from===3) return;
-  setRegStep(from+1);
 }
 function showNameTakenWarning(nameTaken) {
   var el = document.getElementById('warn-reg-full-name');
@@ -776,6 +755,28 @@ function checkDuplicateEmail(email, cb) {
     cb(taken);
   });
 }
+var _dupPhoneCheck = { key: '', taken: false, checked: false };
+function checkDuplicatePhone(phone, cb) {
+  var key = phone.toLowerCase();
+  if (_dupPhoneCheck.checked && _dupPhoneCheck.key === key) {
+    cb(_dupPhoneCheck.taken);
+    return;
+  }
+  post({ action: 'etelid_check_duplicate_phone', phone: phone }, function(r) {
+    var taken = !!(r.success && r.data && r.data.taken);
+    _dupPhoneCheck = { key: key, taken: taken, checked: true };
+    cb(taken);
+  });
+}
+document.getElementById('reg-phone').addEventListener('blur', function() {
+  var phone = this.value.trim();
+  if (!phone || !isValidEthiopianPhone(phone)) return;
+  checkDuplicatePhone(phone, function(taken) {
+    if (taken) {
+      fieldErr('reg-phone', 'An account with this phone number already exists. Please sign in instead.');
+    }
+  });
+});
 document.getElementById('reg-full-name').addEventListener('blur', function() {
   var name = this.value.trim();
   var dob  = document.getElementById('reg-dob').value;
@@ -822,31 +823,18 @@ function regBack(from) {
 }
 function setRegStep(n) {
   _regStep = n;
-  [1,2,3].forEach(function(i){
+  [1,2].forEach(function(i){
     document.getElementById('reg-step-'+i).style.display = i===n ? '' : 'none';
     var dot = document.getElementById('dot-'+i);
     dot.className = 'eid-reg-dot' + (i<n?' done':(i===n?' active':''));
   });
 }
-function buildSummary() {
-  var dob = document.getElementById('reg-dob').value;
-  var age = dob ? ageFromDob(dob) : null;
-  var d = {
-    'Phone':  document.getElementById('reg-phone').value,
-    'Name':   document.getElementById('reg-full-name').value,
-    'DOB':    dob + (age !== null && age >= 0 ? ' (' + age + (age === 1 ? ' year' : ' years') + ' old)' : ''),
-    'Sex':    document.getElementById('reg-sex').value,
-    'Region': document.getElementById('reg-region').value || '—',
-    'Zone':   document.getElementById('reg-zone').value || '-',
-  };
-  var html='';
-  for(var k in d) html += '<span style="color:var(--ag)">'+k+':</span> '+d[k]+'  ';
-  document.getElementById('reg-summary').innerHTML = html;
-}
+/* No separate Company/Role step - every self-registered member defaults
+ * to Etel Group / Member, same as omitting these fields already works
+ * for quick_register() (EtelID_Generator::create() falls back cleanly
+ * when they're not sent). Staff/company assignment is handled later via
+ * EtelGroup admin's Employees panel, not at self-registration time. */
 function doRegister() {
-  hideNotices(); clearFieldErrs();
-  var co = document.getElementById('reg-company').value;
-  if (!co) { showErr('Please select a company.'); return; }
   var btn = document.getElementById('reg-submit-btn');
   var lbl = document.getElementById('reg-submit-lbl');
   btn.disabled=true; lbl.textContent='Creating your Etel-ID…';
@@ -863,8 +851,6 @@ function doRegister() {
     email:                document.getElementById('reg-email').value,
     region:               document.getElementById('reg-region').value,
     zone:                 document.getElementById('reg-zone').value,
-    primary_company_slug: co,
-    role:                 document.getElementById('reg-role').value,
     nationality:          'Ethiopian',
   };
   post(data,function(r){
