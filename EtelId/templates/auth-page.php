@@ -262,12 +262,14 @@ $features = array(
             <div class="eid-af-field">
               <label class="eid-af-label">Amharic Name</label>
               <input type="text" id="reg-full-name-am" class="eid-af-input no-icon" placeholder="ሙሉ ስም">
+              <div class="eid-af-err" id="err-reg-full-name-am"></div>
             </div>
           </div>
           <div class="eid-af-row">
             <div class="eid-af-field">
               <label class="eid-af-label">Date of Birth <span class="req">*</span></label>
-              <input type="date" id="reg-dob" class="eid-af-input no-icon">
+              <input type="date" id="reg-dob" class="eid-af-input no-icon" oninput="updateAgeHint()">
+              <div class="eid-af-age-hint" id="reg-age-hint" style="font-size:11px;color:var(--ink3);margin-top:4px;font-family:'JetBrains Mono',monospace"></div>
               <div class="eid-af-err" id="err-reg-dob"></div>
             </div>
             <div class="eid-af-field">
@@ -299,17 +301,19 @@ $features = array(
           </div>
           <div class="eid-af-row">
             <div class="eid-af-field">
-              <label class="eid-af-label">Region</label>
+              <label class="eid-af-label">Region <span class="req">*</span></label>
               <select id="reg-region" class="eid-af-select no-icon">
                 <option value="">— Select —</option>
                 <?php foreach ($regions as $r): ?>
                 <option value="<?php echo esc_attr($r); ?>"><?php echo esc_html($r); ?></option>
                 <?php endforeach; ?>
               </select>
+              <div class="eid-af-err" id="err-reg-region"></div>
             </div>
             <div class="eid-af-field">
-              <label class="eid-af-label">Zone / City</label>
+              <label class="eid-af-label">Zone / City <span class="req">*</span></label>
               <input type="text" id="reg-zone" class="eid-af-input no-icon" placeholder="e.g. Addis Ababa">
+              <div class="eid-af-err" id="err-reg-zone"></div>
             </div>
           </div>
           <div class="eid-step-nav">
@@ -547,6 +551,17 @@ async function doBioLogin(){
  * actually typed it into, instead of only at final submit after they've
  * filled in the rest of the wizard - the server-side check still runs
  * too (defense-in-depth), this just gives fast, in-place feedback. */
+/* Ethiopic Unicode block is U+1200-U+137F (decimal 4608-4991). Written as
+ * charCode comparison rather than a \u-escaped regex literal, since this
+ * source file is otherwise kept ASCII-clean for the same WAF-safety
+ * reason PHP files here are. */
+function hasAmharicChar(s) {
+  for (var i = 0; i < s.length; i++) {
+    var c = s.charCodeAt(i);
+    if (c >= 4608 && c <= 4991) return true;
+  }
+  return false;
+}
 function isValidEthiopianPhone(phone) {
   var digits = (phone || '').replace(/[^0-9]/g, '');
   if (digits.length === 12 && digits.slice(0,3) === '251') digits = digits.slice(3);
@@ -567,18 +582,53 @@ function regNext(from) {
     if (!ok) return;
   }
   if (from===2) {
-    var name  = document.getElementById('reg-full-name').value.trim();
-    var dob   = document.getElementById('reg-dob').value;
-    var email = document.getElementById('reg-email').value.trim();
+    var name    = document.getElementById('reg-full-name').value.trim();
+    var nameAm  = document.getElementById('reg-full-name-am').value.trim();
+    var dob     = document.getElementById('reg-dob').value;
+    var email   = document.getElementById('reg-email').value.trim();
+    var region  = document.getElementById('reg-region').value;
+    var zone    = document.getElementById('reg-zone').value.trim();
     var ok2 = true;
     if (!name) { fieldErr('reg-full-name', 'Full name is required.'); ok2 = false; }
+    else if (!/^[A-Za-z][A-Za-z '-]{1,}$/.test(name)) { fieldErr('reg-full-name', 'Enter a real full name (letters only, at least 2 characters).'); ok2 = false; }
+    if (nameAm && !hasAmharicChar(nameAm)) { fieldErr('reg-full-name-am', 'Enter your name in Amharic script, or leave this blank.'); ok2 = false; }
     if (!dob)  { fieldErr('reg-dob', 'Date of birth is required.'); ok2 = false; }
+    else {
+      var age = ageFromDob(dob);
+      if (age === null) { fieldErr('reg-dob', 'Enter a valid date.'); ok2 = false; }
+      else if (age < 0) { fieldErr('reg-dob', 'Date of birth cannot be in the future.'); ok2 = false; }
+      else if (age < 10) { fieldErr('reg-dob', 'You must be at least 10 years old to register.'); ok2 = false; }
+      else if (age > 120) { fieldErr('reg-dob', 'Enter a valid date of birth.'); ok2 = false; }
+    }
     if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showErr('Enter a valid email address, or leave it blank.'); ok2 = false; }
+    if (!region) { fieldErr('reg-region', 'Region is required.'); ok2 = false; }
+    if (!zone)   { fieldErr('reg-zone', 'Zone / City is required.'); ok2 = false; }
+    else if (zone.length < 2) { fieldErr('reg-zone', 'Enter a real zone/city name.'); ok2 = false; }
     if (!ok2) return;
   }
   if (from===3) return;
   setRegStep(from+1);
   if (from===2) buildSummary();
+}
+/* Returns whole years of age from a yyyy-mm-dd date-input value, or null
+ * if unparseable. Negative means the date is in the future. */
+function ageFromDob(dob) {
+  var d = new Date(dob + 'T00:00:00');
+  if (isNaN(d.getTime())) return null;
+  var now = new Date();
+  var age = now.getFullYear() - d.getFullYear();
+  var monthDiff = now.getMonth() - d.getMonth();
+  if (monthDiff < 0 || (monthDiff === 0 && now.getDate() < d.getDate())) age--;
+  return age;
+}
+function updateAgeHint() {
+  var dob  = document.getElementById('reg-dob').value;
+  var hint = document.getElementById('reg-age-hint');
+  if (!dob) { hint.textContent = ''; return; }
+  var age = ageFromDob(dob);
+  if (age === null) { hint.textContent = ''; }
+  else if (age < 0)  { hint.textContent = 'That date is in the future.'; }
+  else { hint.textContent = 'Age: ' + age + (age === 1 ? ' year' : ' years'); }
 }
 function regBack(from) {
   setRegStep(from-1);
@@ -592,12 +642,15 @@ function setRegStep(n) {
   });
 }
 function buildSummary() {
+  var dob = document.getElementById('reg-dob').value;
+  var age = dob ? ageFromDob(dob) : null;
   var d = {
-    'Phone':   document.getElementById('reg-phone').value,
-    'Name':    document.getElementById('reg-full-name').value,
-    'DOB':     document.getElementById('reg-dob').value,
-    'Sex':     document.getElementById('reg-sex').value,
-    'Region':  document.getElementById('reg-region').value || '—',
+    'Phone':  document.getElementById('reg-phone').value,
+    'Name':   document.getElementById('reg-full-name').value,
+    'DOB':    dob + (age !== null && age >= 0 ? ' (' + age + (age === 1 ? ' year' : ' years') + ' old)' : ''),
+    'Sex':    document.getElementById('reg-sex').value,
+    'Region': document.getElementById('reg-region').value || '—',
+    'Zone':   document.getElementById('reg-zone').value || '-',
   };
   var html='';
   for(var k in d) html += '<span style="color:var(--ag)">'+k+':</span> '+d[k]+'  ';
