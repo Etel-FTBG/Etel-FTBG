@@ -70,9 +70,17 @@ class EtelID_Auth_Ajax {
         $data['fayda_front_image']  = isset( $_POST['fayda_front_image'] )  ? wp_unslash( $_POST['fayda_front_image'] )  : '';
         $data['fayda_back_image']   = isset( $_POST['fayda_back_image'] )   ? wp_unslash( $_POST['fayda_back_image'] )   : '';
 
-        /* Basic validation */
+        /* Basic validation - mirrors the wizard's own client-side checks
+         * in templates/auth-page.php's regNext(2) (defense-in-depth: the
+         * client check is only ever a convenience, never the real gate). */
         if ( empty( $data['full_name'] ) ) {
             wp_send_json_error( array( 'field' => 'full_name', 'message' => 'Full name is required.' ) );
+        }
+        if ( ! preg_match( "/^[A-Za-z][A-Za-z '-]{1,}$/", $data['full_name'] ) ) {
+            wp_send_json_error( array( 'field' => 'full_name', 'message' => 'Enter a real full name (letters only, at least 2 characters).' ) );
+        }
+        if ( ! empty( $data['full_name_am'] ) && ! preg_match( '/[\x{1200}-\x{137F}]/u', $data['full_name_am'] ) ) {
+            wp_send_json_error( array( 'field' => 'full_name_am', 'message' => 'Enter your name in Amharic script, or leave this blank.' ) );
         }
         if ( empty( $data['phone'] ) ) {
             wp_send_json_error( array( 'field' => 'phone', 'message' => 'Phone number is required.' ) );
@@ -89,8 +97,28 @@ class EtelID_Auth_Ajax {
         if ( empty( $data['dob'] ) ) {
             wp_send_json_error( array( 'field' => 'dob', 'message' => 'Date of birth is required.' ) );
         }
+        $dob_time = strtotime( $data['dob'] );
+        if ( ! $dob_time ) {
+            wp_send_json_error( array( 'field' => 'dob', 'message' => 'Enter a valid date.' ) );
+        }
+        $age = (int) floor( ( time() - $dob_time ) / ( 365.25 * DAY_IN_SECONDS ) );
+        if ( $age < 0 ) {
+            wp_send_json_error( array( 'field' => 'dob', 'message' => 'Date of birth cannot be in the future.' ) );
+        }
+        if ( $age < 10 ) {
+            wp_send_json_error( array( 'field' => 'dob', 'message' => 'You must be at least 10 years old to register.' ) );
+        }
+        if ( $age > 120 ) {
+            wp_send_json_error( array( 'field' => 'dob', 'message' => 'Enter a valid date of birth.' ) );
+        }
         if ( ! empty( $data['email'] ) && ! is_email( $data['email'] ) ) {
             wp_send_json_error( array( 'field' => 'email', 'message' => 'Invalid email address.' ) );
+        }
+        if ( empty( $data['region'] ) ) {
+            wp_send_json_error( array( 'field' => 'region', 'message' => 'Region is required.' ) );
+        }
+        if ( empty( $data['zone'] ) || strlen( $data['zone'] ) < 2 ) {
+            wp_send_json_error( array( 'field' => 'zone', 'message' => 'Zone / City is required.' ) );
         }
 
         $result = EtelID_Auth::register( $data );
