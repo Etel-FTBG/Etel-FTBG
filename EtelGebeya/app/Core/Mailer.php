@@ -21,6 +21,14 @@ final class Mailer
         $host    = parse_url($appUrl, PHP_URL_HOST) ?: 'etelgebeya.local';
         $from    = 'no-reply@' . $host;
 
+        // $fromName reaches here as a vendor's own store_name (see
+        // VendorController::emailSupplier()) -- a vendor is free to set
+        // that to anything, including embedded CRLFs, which would inject
+        // arbitrary extra headers (e.g. Bcc:) into a mail() call sent from
+        // this server. Strip line breaks before it's ever placed in a
+        // header, same as any other header-injection guard.
+        $fromName = str_replace(["\r", "\n"], '', $fromName);
+
         $headers = [];
         $headers[] = 'From: ' . $fromName . ' <' . $from . '>';
         $headers[] = 'Content-Type: text/plain; charset=UTF-8';

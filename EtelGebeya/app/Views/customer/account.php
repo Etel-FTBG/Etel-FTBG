@@ -135,6 +135,7 @@ ob_start();
     </div>
     <div class="acc-card-body">
       <form method="POST" action="<?= View::url('/account/profile') ?>">
+        <?= csrf() ?>
         <div class="fg">
           <label>Full Name</label>
           <input type="text" name="full_name" required value="<?= e($u['full_name']??'') ?>">

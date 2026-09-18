@@ -412,7 +412,7 @@ final class CheckoutController
         } catch (\Throwable $e) {
             try { $this->db->pdo()->rollBack(); } catch (\Throwable $_) {}
             error_log('[EG-Checkout] ' . $e->getMessage());
-            $this->auth->flash('error', 'Order failed: ' . $e->getMessage());
+            $this->auth->flash('error', 'Order failed. Please try again or contact support if the problem continues.');
             redirect('/checkout');
         }
 

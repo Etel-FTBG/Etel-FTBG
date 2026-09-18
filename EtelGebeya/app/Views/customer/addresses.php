@@ -74,6 +74,7 @@ ob_start();
   </div>
   <div class="add-card-body">
     <form method="POST" action="<?= View::url('/account/addresses') ?>">
+      <?= csrf() ?>
       <div class="form-grid">
         <div class="fg">
           <label>Label</label>
