@@ -583,25 +583,48 @@ function countAmharicChars(s) {
   return n;
 }
 /* Requires at least two names (given name + father's name, the standard
- * Ethiopian full-name convention), each at least 2 letters - rejects a
- * single short word like "Da", which previously passed as long as it
- * was non-empty. */
+ * Ethiopian full-name convention), each at least 3 letters, no two
+ * identical words, and not a common placeholder/keyboard-mash word -
+ * "Da fa" (a genuine case seen live: two 2-letter nonsense words) passed
+ * the original 2-letter-minimum, non-repeated-word-blind version.
+ * Mirrors EtelID_Auth_Ajax::is_real_full_name() server-side. */
+var NAME_BLOCKLIST = ['test','tests','testing','asdf','asdfg','qwerty','xxx','xxxx',
+  'aaa','aaaa','sample','dummy','none','unknown','foo','bar','abc','xyz','name',
+  'fname','lname','firstname','lastname','fullname','na','nan','null','undefined',
+  'admin','user','demo'];
+function isPlaceholderWord(w) {
+  if (NAME_BLOCKLIST.indexOf(w.toLowerCase()) !== -1) return true;
+  if (/^([A-Za-z])\1+$/.test(w)) return true; /* "aaaa", "mmmm" */
+  return false;
+}
 function isRealFullName(name) {
   var words = name.split(/\s+/).filter(function(w){ return w.length > 0; });
   if (words.length < 2) return false;
+  var seen = {};
   for (var i = 0; i < words.length; i++) {
-    if (!/^[A-Za-z'-]{2,}$/.test(words[i])) return false;
+    var w = words[i];
+    if (!/^[A-Za-z'-]{3,}$/.test(w)) return false;
+    if (isPlaceholderWord(w)) return false;
+    var lw = w.toLowerCase();
+    if (seen[lw]) return false; /* same word repeated */
+    seen[lw] = true;
   }
   return true;
 }
-/* Same two-word shape as isRealFullName(), for the optional Amharic
- * name field - each word must actually contain Amharic script and be
- * at least 2 characters, not just one stray glyph. */
+/* Same shape as isRealFullName(), for the optional Amharic name field -
+ * each word must actually contain Amharic script and be at least 3
+ * characters (not a single stray glyph), with no word repeated - "chuch
+ * chuch"-style repeated test input (a genuine case seen live) no longer
+ * passes. Mirrors EtelID_Auth_Ajax::is_real_amharic_name() server-side. */
 function isRealAmharicName(nameAm) {
   var words = nameAm.split(/\s+/).filter(function(w){ return w.length > 0; });
   if (words.length < 2) return false;
+  var seen = {};
   for (var i = 0; i < words.length; i++) {
-    if (words[i].length < 2 || countAmharicChars(words[i]) < 2) return false;
+    var w = words[i];
+    if (w.length < 3 || countAmharicChars(w) < 3) return false;
+    if (seen[w]) return false; /* same word repeated */
+    seen[w] = true;
   }
   return true;
 }
@@ -661,8 +684,9 @@ function regNext(from) {
     var zone    = document.getElementById('reg-zone').value.trim();
     var ok2 = true;
     if (!name) { fieldErr('reg-full-name', 'Full name is required.'); ok2 = false; }
-    else if (!isRealFullName(name)) { fieldErr('reg-full-name', 'Enter your real full name - at least two names (e.g. given name and father\'s name), each at least 2 letters.'); ok2 = false; }
-    if (nameAm && !isRealAmharicName(nameAm)) { fieldErr('reg-full-name-am', 'Enter your full name in Amharic script (at least two words), or leave this blank.'); ok2 = false; }
+    else if (!isRealFullName(name)) { fieldErr('reg-full-name', 'Enter your real full name - at least two names (e.g. given name and father\'s name), each at least 3 letters, not repeated or a placeholder word.'); ok2 = false; }
+    if (nameAm && !isRealAmharicName(nameAm)) { fieldErr('reg-full-name-am', 'Enter your full name in Amharic script (at least two real words, not repeated), or leave this blank.'); ok2 = false; }
+    var dobOk = false;
     if (!dob)  { fieldErr('reg-dob', 'Date of birth is required.'); ok2 = false; }
     else {
       var age = ageFromDob(dob);
@@ -670,17 +694,59 @@ function regNext(from) {
       else if (age < 0) { fieldErr('reg-dob', 'Date of birth cannot be in the future.'); ok2 = false; }
       else if (age < 10) { fieldErr('reg-dob', 'You must be at least 10 years old to register.'); ok2 = false; }
       else if (age > 120) { fieldErr('reg-dob', 'Enter a valid date of birth.'); ok2 = false; }
+      else { dobOk = true; }
     }
     if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showErr('Enter a valid email address, or leave it blank.'); ok2 = false; }
     if (!region) { fieldErr('reg-region', 'Region is required.'); ok2 = false; }
     if (!zone)   { fieldErr('reg-zone', 'Please select your zone/city.'); ok2 = false; }
     else if (region && (_ZONES_BY_REGION[region]||[]).indexOf(zone) === -1) { fieldErr('reg-zone', 'Select a zone/city that belongs to the chosen region.'); ok2 = false; }
     if (!ok2) return;
+    /* All local checks passed - do the live duplicate-name check against
+     * the database before actually advancing to Step 3. */
+    if (dobOk) {
+      checkDuplicateName(name, dob, function(isDuplicate){
+        if (isDuplicate) {
+          fieldErr('reg-full-name', 'An account with this name and date of birth already exists. Please sign in instead, or contact support if this is an error.');
+          return;
+        }
+        setRegStep(3);
+        buildSummary();
+      });
+    }
+    return;
   }
   if (from===3) return;
   setRegStep(from+1);
-  if (from===2) buildSummary();
 }
+/* Live check against the database (etelid_check_duplicate_name AJAX
+ * action) - fires on blur of Full Name (once both name and DOB look
+ * valid) and again as the final gate before Step 2 -> Step 3, so a
+ * name+DOB combination that's already registered is caught while
+ * filling the form, not only after clicking "Create My Etel-ID" at
+ * the very end. */
+var _dupNameCheck = { key: '', duplicate: false, checked: false };
+function checkDuplicateName(name, dob, cb) {
+  var key = name.toLowerCase() + '|' + dob;
+  if (_dupNameCheck.checked && _dupNameCheck.key === key) {
+    cb(_dupNameCheck.duplicate);
+    return;
+  }
+  post({ action: 'etelid_check_duplicate_name', full_name: name, dob: dob }, function(r) {
+    var dup = !!(r.success && r.data && r.data.duplicate);
+    _dupNameCheck = { key: key, duplicate: dup, checked: true };
+    cb(dup);
+  });
+}
+document.getElementById('reg-full-name').addEventListener('blur', function() {
+  var name = this.value.trim();
+  var dob  = document.getElementById('reg-dob').value;
+  if (!name || !dob || !isRealFullName(name) || ageFromDob(dob) === null) return;
+  checkDuplicateName(name, dob, function(isDuplicate) {
+    if (isDuplicate) {
+      fieldErr('reg-full-name', 'An account with this name and date of birth already exists. Please sign in instead, or contact support if this is an error.');
+    }
+  });
+});
 /* Returns whole years of age from a yyyy-mm-dd date-input value, or null
  * if unparseable. Negative means the date is in the future. */
 function ageFromDob(dob) {
