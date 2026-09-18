@@ -5,8 +5,43 @@ if (function_exists('opcache_invalidate')) { opcache_invalidate(__FILE__, true);
 // Keys live in config.php (server only, never in git)
 // ============================================================
 
+// Gemini is now sourced from the DB-backed audit_settings table (same
+// place Settings > Code Audit > API Settings writes to) when reachable,
+// defined here *before* config.php's own require - PHP silently no-ops
+// a repeat define() rather than overwriting it, so this value wins and
+// config.php's own GEMINI_API_KEY line becomes unused. This is what lets
+// config.php go back to holding only placeholders instead of a live key
+// the Code Audit tool kept flagging as a critical security finding.
+try {
+    $__proxy_env = [];
+    $__proxy_envfile = dirname(__DIR__) . '/.env';
+    if (is_file($__proxy_envfile)) {
+        foreach (file($__proxy_envfile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) as $__line) {
+            $__line = trim($__line);
+            if ($__line === '' || $__line[0] === '#' || !str_contains($__line, '=')) continue;
+            [$__k, $__v] = explode('=', $__line, 2);
+            $__proxy_env[trim($__k)] = trim($__v);
+        }
+    }
+    $__proxy_pdo = new PDO(
+        'mysql:host=' . ($__proxy_env['DB_HOST'] ?? 'localhost') . ';dbname=' . ($__proxy_env['DB_NAME'] ?? '') . ';charset=utf8mb4',
+        $__proxy_env['DB_USER'] ?? '', $__proxy_env['DB_PASS'] ?? '',
+        [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_TIMEOUT => 3]
+    );
+    require_once dirname(__DIR__) . '/audit_agent.php';
+    $__proxy_cfg = etel_audit_get_config($__proxy_pdo);
+    if (!empty($__proxy_cfg['gemini_key'])) {
+        @define('GEMINI_API_KEY', $__proxy_cfg['gemini_key']);
+    }
+} catch (\Throwable $e) { /* DB unreachable - fall through to config.php/placeholder below */ }
+
 if (file_exists(__DIR__ . '/config.php')) {
+    // Suppress the harmless "constant already defined" warning when
+    // GEMINI_API_KEY was already set from the DB above - config.php's
+    // own define() call for it silently no-ops rather than overwriting.
+    $__proxy_er = error_reporting(0);
     require_once __DIR__ . '/config.php';
+    error_reporting($__proxy_er);
 } else {
     define('GEMINI_API_KEY', 'YOUR_GEMINI_KEY_HERE');
     define('CLAUDE_API_KEY', 'YOUR_CLAUDE_KEY_HERE');
