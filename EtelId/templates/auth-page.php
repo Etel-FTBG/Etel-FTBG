@@ -561,7 +561,7 @@ function regNext(from) {
     var pwc   = document.getElementById('reg-password-confirm').value;
     var ok = true;
     if (!phone) { fieldErr('reg-phone', 'Phone number is required.'); ok = false; }
-    else if (!isValidEthiopianPhone(phone)) { fieldErr('reg-phone', 'Enter a valid Ethiopian phone number, e.g. 0924445206 or +251924445206.'); ok = false; }
+    else if (!isValidEthiopianPhone(phone)) { fieldErr('reg-phone', 'Enter a valid Ethiopian phone number, e.g. 0912345678 or +251123456789.'); ok = false; }
     if (pw.length<8) { fieldErr('reg-password', 'Password must be at least 8 characters.'); ok = false; }
     if (pw!==pwc) { fieldErr('reg-password-confirm', 'Passwords do not match.'); ok = false; }
     if (!ok) return;
