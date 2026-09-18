@@ -75,6 +75,9 @@ class EtelID_Auth {
         /* Validate phone */
         $phone = isset( $data['phone'] ) ? preg_replace( '/\s+/', '', $data['phone'] ) : '';
         if ( ! $phone ) return new WP_Error( 'phone_required', 'Phone number is required.' );
+        if ( ! EtelID_Security::valid_ethiopian_phone( $phone ) ) {
+            return new WP_Error( 'phone_invalid', 'Enter a valid Ethiopian phone number, e.g. 0924445206 or +251924445206.' );
+        }
 
         /* Check duplicate */
         $existing = EtelID_DB::find_by_phone( $phone );

@@ -48,6 +48,30 @@ class EtelID_Security {
         return password_verify( (string) $pin, $hash );
     }
 
+    /* HARDENING: registration (both the full form and Quick Register) only
+     * ever checked that the phone field was non-empty - no length or
+     * format check at all. A value like "09" passed straight through
+     * class-etelid-auth-ajax.php's quick_register() (which never even
+     * calls EtelID_Auth::register() - it writes directly via
+     * EtelID_Generator::create()) and became a real account with an
+     * unusable phone number. Accepts the three real shapes seen
+     * elsewhere in this codebase (see EtelID_DB::find_by_phone()'s
+     * last-9-digits comparison): a bare 9-digit subscriber number
+     * (924445206), a local 10-digit number with the trunk 0
+     * (0924445206), or a full +251-prefixed 12-digit number
+     * (+251924445206 or 251924445206 - the + is stripped along with any
+     * other non-digit before checking length). Ethiopian mobile numbers
+     * start with 7 or 9 after the trunk/country code is removed. */
+    public static function valid_ethiopian_phone( $phone ) {
+        $digits = preg_replace( '/[^0-9]/', '', (string) $phone );
+        if ( strlen( $digits ) === 12 && substr( $digits, 0, 3 ) === '251' ) {
+            $digits = substr( $digits, 3 );
+        } elseif ( strlen( $digits ) === 10 && $digits[0] === '0' ) {
+            $digits = substr( $digits, 1 );
+        }
+        return (bool) preg_match( '/^[79][0-9]{8}$/', $digits );
+    }
+
     public static function rate_limit( $key, $max = 10, $window = 3600 ) {
         $transient = 'etelid_rl_' . md5( $key );
         $count     = (int) get_transient( $transient );
