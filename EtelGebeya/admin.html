@@ -975,13 +975,39 @@ tbody tr:last-child td{border-bottom:none;}
                 <label style="font-size:.75rem;color:var(--text-dim);display:block;margin-bottom:.35rem;">Provider</label>
                 <select id="audit-provider" style="width:100%;padding:.6rem .9rem;background:rgba(255,255,255,.04);border:1px solid rgba(127,224,127,.2);border-radius:8px;color:#e2e8f0;font-size:.88rem;box-sizing:border-box;">
                   <option value="gemini">Gemini</option>
-                  <option value="claude">Claude</option>
-                  <option value="kimi">Kimi</option>
-                  <option value="openai">OpenAI</option>
+                  <option value="openrouter">OpenRouter</option>
                 </select>
               </div>
               <button class="btn btn-primary" id="audit-run-btn" onclick="runCodeAudit()">▶️ Run Audit Now</button>
               <button class="btn btn-secondary" id="audit-download-btn" style="display:none" onclick="downloadAuditReport()">⬇️ Download JSON</button>
+              <button class="btn btn-secondary" onclick="toggleAuditSettings()">⚙️ API Settings</button>
+            </div>
+            <div id="audit-settings-box" style="display:none;margin-top:1rem;padding:1rem;background:rgba(255,255,255,.03);border:1px solid rgba(212,175,55,.2);border-radius:8px">
+              <div style="font-size:.78rem;color:var(--text-dim);margin-bottom:.75rem">"Run Audit Now" calls Gemini or OpenRouter directly with the key below - no shared proxy, no code deploy needed to rotate a key.</div>
+              <div style="display:flex;flex-direction:column;gap:.6rem;max-width:520px">
+                <div>
+                  <label style="font-size:.75rem;color:var(--text-dim);display:block;margin-bottom:.35rem;">Gemini API Key</label>
+                  <input type="text" id="audit-set-gemini-key" placeholder="AIza..." style="width:100%;padding:.6rem .9rem;background:rgba(255,255,255,.04);border:1px solid rgba(127,224,127,.2);border-radius:8px;color:#e2e8f0;font-size:.88rem;box-sizing:border-box;">
+                </div>
+                <div>
+                  <label style="font-size:.75rem;color:var(--text-dim);display:block;margin-bottom:.35rem;">OpenRouter API Key</label>
+                  <input type="text" id="audit-set-openrouter-key" placeholder="sk-or-..." style="width:100%;padding:.6rem .9rem;background:rgba(255,255,255,.04);border:1px solid rgba(127,224,127,.2);border-radius:8px;color:#e2e8f0;font-size:.88rem;box-sizing:border-box;">
+                </div>
+                <div>
+                  <label style="font-size:.75rem;color:var(--text-dim);display:block;margin-bottom:.35rem;">OpenRouter Model</label>
+                  <input type="text" id="audit-set-openrouter-model" placeholder="anthropic/claude-3.5-sonnet" style="width:100%;padding:.6rem .9rem;background:rgba(255,255,255,.04);border:1px solid rgba(127,224,127,.2);border-radius:8px;color:#e2e8f0;font-size:.88rem;box-sizing:border-box;">
+                </div>
+                <div>
+                  <label style="font-size:.75rem;color:var(--text-dim);display:block;margin-bottom:.35rem;">Default Provider</label>
+                  <select id="audit-set-provider" style="width:180px;padding:.6rem .9rem;background:rgba(255,255,255,.04);border:1px solid rgba(127,224,127,.2);border-radius:8px;color:#e2e8f0;font-size:.88rem;box-sizing:border-box;">
+                    <option value="gemini">Gemini</option>
+                    <option value="openrouter">OpenRouter</option>
+                  </select>
+                </div>
+                <div style="margin-top:.35rem">
+                  <button class="btn btn-primary" style="padding:.5rem 1rem;font-size:.82rem" onclick="saveAuditSettings()">💾 Save Settings</button>
+                </div>
+              </div>
             </div>
             <div id="audit-report" style="margin-top:1rem"></div>
           </div>
@@ -1024,7 +1050,7 @@ tbody tr:last-child td{border-bottom:none;}
 <!-- ═══ TOASTS ═══ -->
 <div class="toast-wrap" id="toast-wrap"></div>
 
-<script src="admin-panel.js?v=3"></script>
+<script src="admin-panel.js?v=4"></script>
 <script>
 /* ──────────────────────────────────────────────────────────────
    All JavaScript lives in admin-panel.js
