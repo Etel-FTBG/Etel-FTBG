@@ -216,7 +216,7 @@ $features = array(
               <label class="eid-af-label"><i class="ti ti-lock"></i> Password <span class="req">*</span></label>
               <div class="eid-af-input-wrap">
                 <i class="ti ti-lock eid-af-input-icon"></i>
-                <input type="password" id="reg-password" class="eid-af-input" placeholder="Min 6 characters">
+                <input type="password" id="reg-password" class="eid-af-input" placeholder="Min 8 characters">
                 <button type="button" class="eid-pw-toggle" onclick="togglePw('reg-password',this)" aria-label="Toggle">
                   <i class="ti ti-eye"></i>
                 </button>
@@ -542,21 +542,39 @@ async function doBioLogin(){
 }
 
 /* ── Register steps ─────────────────────────────── */
+/* Mirrors EtelID_Security::valid_ethiopian_phone() (includes/class-etelid-security.php)
+ * so an invalid phone (e.g. "09") is caught here, at the step the user
+ * actually typed it into, instead of only at final submit after they've
+ * filled in the rest of the wizard - the server-side check still runs
+ * too (defense-in-depth), this just gives fast, in-place feedback. */
+function isValidEthiopianPhone(phone) {
+  var digits = (phone || '').replace(/[^0-9]/g, '');
+  if (digits.length === 12 && digits.slice(0,3) === '251') digits = digits.slice(3);
+  else if (digits.length === 10 && digits[0] === '0') digits = digits.slice(1);
+  return /^[79][0-9]{8}$/.test(digits);
+}
 function regNext(from) {
   hideNotices(); clearFieldErrs();
   if (from===1) {
     var phone = document.getElementById('reg-phone').value.trim();
     var pw    = document.getElementById('reg-password').value;
     var pwc   = document.getElementById('reg-password-confirm').value;
-    if (!phone) { showErr('Phone number is required.'); return; }
-    if (pw.length<6) { showErr('Password must be at least 6 characters.'); return; }
-    if (pw!==pwc) { showErr('Passwords do not match.'); return; }
+    var ok = true;
+    if (!phone) { fieldErr('reg-phone', 'Phone number is required.'); ok = false; }
+    else if (!isValidEthiopianPhone(phone)) { fieldErr('reg-phone', 'Enter a valid Ethiopian phone number, e.g. 0924445206 or +251924445206.'); ok = false; }
+    if (pw.length<8) { fieldErr('reg-password', 'Password must be at least 8 characters.'); ok = false; }
+    if (pw!==pwc) { fieldErr('reg-password-confirm', 'Passwords do not match.'); ok = false; }
+    if (!ok) return;
   }
   if (from===2) {
-    var name = document.getElementById('reg-full-name').value.trim();
-    var dob  = document.getElementById('reg-dob').value;
-    if (!name) { showErr('Full name is required.'); return; }
-    if (!dob)  { showErr('Date of birth is required.'); return; }
+    var name  = document.getElementById('reg-full-name').value.trim();
+    var dob   = document.getElementById('reg-dob').value;
+    var email = document.getElementById('reg-email').value.trim();
+    var ok2 = true;
+    if (!name) { fieldErr('reg-full-name', 'Full name is required.'); ok2 = false; }
+    if (!dob)  { fieldErr('reg-dob', 'Date of birth is required.'); ok2 = false; }
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showErr('Enter a valid email address, or leave it blank.'); ok2 = false; }
+    if (!ok2) return;
   }
   if (from===3) return;
   setRegStep(from+1);
