@@ -381,6 +381,7 @@ ob_start();
       <div class="review-card" style="margin-top:1.5rem">
         <div style="font-weight:700;margin-bottom:.75rem">Write a review</div>
         <form method="post" action="<?= View::url('/product/' . htmlspecialchars($product->slug, ENT_QUOTES) . '/review') ?>">
+          <?= csrf() ?>
           <div class="review-star-input" style="display:flex;flex-direction:row-reverse;justify-content:flex-end;gap:4px;font-size:1.6rem;margin-bottom:.75rem">
             <?php for ($i = 5; $i >= 1; $i--): ?>
               <input type="radio" name="rating" value="<?= $i ?>" id="rv-star-<?= $i ?>" style="display:none" required>

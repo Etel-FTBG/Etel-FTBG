@@ -27,6 +27,17 @@ final class InstallController
 
     public function run(): void
     {
+        // index() already refuses to show the install form once installed,
+        // but that check was never repeated here -- a direct POST to
+        // /install could still re-run schema.sql/seed.sql against a live
+        // site and overwrite config/app.php with attacker-supplied DB
+        // credentials plus a new admin password, even on an already
+        // installed, in-production system. Same guard as index(), just
+        // enforced on the action that actually does the damage.
+        if ($this->isInstalled()) {
+            View::render('install/done', ['already' => true]);
+            return;
+        }
         if (!Request::isPost()) {
             Request::redirect('/install');
         }
@@ -120,12 +131,19 @@ final class InstallController
 
     private function isInstalled(): bool
     {
-        return is_file(__DIR__ . '/../../../storage/.installed');
+        // __DIR__ is app/Controllers -- two levels up is the project root
+        // (app/Controllers -> app -> EtelGebeya), not three. The extra
+        // "/.." previously pointed this at storage/.installed one
+        // directory ABOVE the project root, which never exists -- so
+        // is_file() always returned false and this guard never actually
+        // engaged, on either the GET form or (before the check above was
+        // added) the POST handler.
+        return is_file(__DIR__ . '/../../storage/.installed');
     }
 
     private function runChecks(): array
     {
-        $root = dirname(dirname(dirname(__DIR__)));
+        $root = dirname(__DIR__, 2);
         $checks = [];
         $checks[] = ['PHP >= 8.0',       version_compare(PHP_VERSION, '8.0', '>='), PHP_VERSION];
         $checks[] = ['pdo_mysql ext.',  extension_loaded('pdo_mysql')];
@@ -173,7 +191,9 @@ final class InstallController
 
     private function writeConfig(array $kv): void
     {
-        $path = __DIR__ . '/../../../config/app.php';
+        // Same off-by-one as isInstalled() -- two levels up from
+        // app/Controllers is the project root, not three.
+        $path = __DIR__ . '/../../config/app.php';
         $src  = file_get_contents($path);
         foreach ($kv as $k => $v) {
             $src = preg_replace_callback(

@@ -75,6 +75,7 @@ ob_start();
   <?php if (in_array($o['status']??'', ['new','confirmed'], true)): ?>
   <form method="post" action="<?= View::url('/account/orders/'.e($o['code']??'').'/cancel') ?>"
         onsubmit="return confirm('Cancel this order? This cannot be undone.');" style="margin-top:.75rem">
+    <?= csrf() ?>
     <button type="submit" style="background:rgba(239,68,68,.1);color:#ef4444;border:1px solid rgba(239,68,68,.25);
       padding:.5rem 1.1rem;border-radius:10px;font-weight:700;font-size:.8rem;cursor:pointer">
       <i class="bi bi-x-circle"></i> Cancel Order
@@ -101,6 +102,7 @@ ob_start();
       <div style="display:flex;gap:.6rem;margin-top:.9rem;flex-wrap:wrap">
         <form method="post" action="<?= View::url('/account/orders/'.e($o['code']??'').'/confirm') ?>"
               onsubmit="return confirm('Confirm you received this order? This releases payment to the seller.');">
+          <?= csrf() ?>
           <button type="submit" style="background:var(--grad-gold,linear-gradient(135deg,#FFE066,#D4AF37,#B8902E));color:#1a0e00;
             border:none;padding:.6rem 1.2rem;border-radius:10px;font-weight:800;font-size:.8rem;cursor:pointer">
             <i class="bi bi-check-circle"></i> I Received My Order
@@ -124,6 +126,7 @@ ob_start();
     <?php if (!$hasDispute && ($o['payment_status'] ?? '') !== 'refunded'): ?>
     <form id="disputeForm" method="post" action="<?= View::url('/account/orders/'.e($o['code']??'').'/dispute') ?>"
           style="display:none;margin-top:1rem;padding-top:1rem;border-top:1px solid rgba(212,175,55,.08)">
+      <?= csrf() ?>
       <div style="margin-bottom:.6rem">
         <label style="display:block;font-size:.72rem;font-weight:700;color:var(--text-muted,#7A6840);margin-bottom:.35rem;text-transform:uppercase">Issue</label>
         <select name="issue_type" style="width:100%;padding:.6rem .9rem;background:rgba(212,175,55,.04);border:1.5px solid rgba(212,175,55,.1);border-radius:10px;color:var(--text,#F7EFD9);font-family:inherit">
