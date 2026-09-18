@@ -9,8 +9,46 @@ if (function_exists('opcache_invalidate')) { opcache_invalidate(__FILE__, true);
 // this comment always claimed they lived in) - reverted to requiring
 // config.php, matching what's already safely committed for proxy.php at
 // HEAD and what config.example.php documents.
+//
+// Gemini is now sourced from the DB-backed audit_settings table (same
+// place Settings > Code Audit > API Settings writes to) when reachable,
+// defined here *before* config.php's own require - PHP silently no-ops
+// a repeat define() rather than overwriting it, so this value wins and
+// config.php's own GEMINI_API_KEY line becomes unused. This is what lets
+// config.php go back to holding only placeholders: every Code Audit run
+// was flagging the live key sitting in that plaintext file as a critical
+// security finding, and the key no longer needs to live there at all now
+// that the main tool reads from the database.
+try {
+    $__etelproxy_env = [];
+    $__etelproxy_envfile = dirname(__DIR__) . '/.env';
+    if (is_file($__etelproxy_envfile)) {
+        foreach (file($__etelproxy_envfile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) as $__line) {
+            $__line = trim($__line);
+            if ($__line === '' || $__line[0] === '#' || !str_contains($__line, '=')) continue;
+            [$__k, $__v] = explode('=', $__line, 2);
+            $__etelproxy_env[trim($__k)] = trim($__v);
+        }
+    }
+    $__etelproxy_pdo = new PDO(
+        'mysql:host=' . ($__etelproxy_env['DB_HOST'] ?? 'localhost') . ';dbname=' . ($__etelproxy_env['DB_NAME'] ?? '') . ';charset=utf8mb4',
+        $__etelproxy_env['DB_USER'] ?? '', $__etelproxy_env['DB_PASS'] ?? '',
+        [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_TIMEOUT => 3]
+    );
+    require_once dirname(__DIR__) . '/audit_agent.php';
+    $__etelproxy_cfg = etel_audit_get_config($__etelproxy_pdo);
+    if (!empty($__etelproxy_cfg['gemini_key'])) {
+        @define('GEMINI_API_KEY', $__etelproxy_cfg['gemini_key']);
+    }
+} catch (\Throwable $e) { /* DB unreachable - fall through to config.php/placeholder below */ }
+
 if (file_exists(__DIR__ . '/config.php')) {
+    // Suppress the harmless "constant already defined" warning when
+    // GEMINI_API_KEY was already set from the DB above - config.php's
+    // own define() call for it silently no-ops rather than overwriting.
+    $__etelproxy_er = error_reporting(0);
     require_once __DIR__ . '/config.php';
+    error_reporting($__etelproxy_er);
 } else {
     define('GEMINI_API_KEY', 'YOUR_GEMINI_KEY_HERE');
     define('CLAUDE_API_KEY', 'YOUR_CLAUDE_KEY_HERE');
