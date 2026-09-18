@@ -264,9 +264,10 @@ $features = array(
               <label class="eid-af-label">Full Name <span class="req">*</span></label>
               <div class="eid-af-input-wrap">
                 <i class="ti ti-user eid-af-input-icon"></i>
-                <input type="text" id="reg-full-name" class="eid-af-input" placeholder="Latin name">
+                <input type="text" id="reg-full-name" class="eid-af-input" placeholder="Latin name" oninput="document.getElementById('warn-reg-full-name').style.display='none'">
               </div>
               <div class="eid-af-err" id="err-reg-full-name"></div>
+              <div id="warn-reg-full-name" style="display:none;font-size:11px;color:#b45309;margin-top:4px;font-family:'JetBrains Mono',monospace"></div>
             </div>
             <div class="eid-af-field">
               <label class="eid-af-label">Amharic Name</label>
@@ -277,7 +278,7 @@ $features = array(
           <div class="eid-af-row">
             <div class="eid-af-field">
               <label class="eid-af-label">Date of Birth <span class="req">*</span></label>
-              <input type="date" id="reg-dob" class="eid-af-input no-icon" oninput="updateAgeHint()">
+              <input type="date" id="reg-dob" class="eid-af-input no-icon" oninput="updateAgeHint(); document.getElementById('warn-reg-full-name').style.display='none';">
               <div class="eid-af-age-hint" id="reg-age-hint" style="font-size:11px;color:var(--ink3);margin-top:4px;font-family:'JetBrains Mono',monospace"></div>
               <div class="eid-af-err" id="err-reg-dob"></div>
             </div>
@@ -306,6 +307,7 @@ $features = array(
                 <i class="ti ti-mail eid-af-input-icon"></i>
                 <input type="email" id="reg-email" class="eid-af-input" placeholder="Optional">
               </div>
+              <div class="eid-af-err" id="err-reg-email"></div>
             </div>
           </div>
           <div class="eid-af-row">
@@ -696,54 +698,102 @@ function regNext(from) {
       else if (age > 120) { fieldErr('reg-dob', 'Enter a valid date of birth.'); ok2 = false; }
       else { dobOk = true; }
     }
-    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showErr('Enter a valid email address, or leave it blank.'); ok2 = false; }
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { fieldErr('reg-email', 'Enter a valid email address, or leave it blank.'); ok2 = false; }
     if (!region) { fieldErr('reg-region', 'Region is required.'); ok2 = false; }
     if (!zone)   { fieldErr('reg-zone', 'Please select your zone/city.'); ok2 = false; }
     else if (region && (_ZONES_BY_REGION[region]||[]).indexOf(zone) === -1) { fieldErr('reg-zone', 'Select a zone/city that belongs to the chosen region.'); ok2 = false; }
     if (!ok2) return;
-    /* All local checks passed - do the live duplicate-name check against
+    /* All local checks passed - run the live duplicate-name check, then
+     * (if an email was given) the live duplicate-email check, against
      * the database before actually advancing to Step 3. */
-    if (dobOk) {
-      checkDuplicateName(name, dob, function(isDuplicate){
-        if (isDuplicate) {
-          fieldErr('reg-full-name', 'An account with this name and date of birth already exists. Please sign in instead, or contact support if this is an error.');
+    if (!dobOk) return;
+    checkDuplicateName(name, dob, function(result){
+      if (result.duplicate) {
+        fieldErr('reg-full-name', 'An account with this name and date of birth already exists. Please sign in instead, or contact support if this is an error.');
+        return;
+      }
+      showNameTakenWarning(result.nameTaken);
+      if (!email) { setRegStep(3); buildSummary(); return; }
+      checkDuplicateEmail(email, function(taken){
+        if (taken) {
+          fieldErr('reg-email', 'This email is already registered. Please use a different email, or sign in instead.');
           return;
         }
         setRegStep(3);
         buildSummary();
       });
-    }
+    });
     return;
   }
   if (from===3) return;
   setRegStep(from+1);
 }
-/* Live check against the database (etelid_check_duplicate_name AJAX
- * action) - fires on blur of Full Name (once both name and DOB look
- * valid) and again as the final gate before Step 2 -> Step 3, so a
- * name+DOB combination that's already registered is caught while
+function showNameTakenWarning(nameTaken) {
+  var el = document.getElementById('warn-reg-full-name');
+  if (nameTaken) {
+    el.textContent = 'Note: an account with this name already exists (different date of birth on file). If this is you, please sign in instead.';
+    el.style.display = 'block';
+  } else {
+    el.style.display = 'none';
+  }
+}
+/* Live checks against the database (etelid_check_duplicate_name /
+ * etelid_check_duplicate_email AJAX actions) - fire on blur of the
+ * relevant field once it locally looks valid, and again as the final
+ * gate before Step 2 -> Step 3, so a name+DOB combination that's
+ * already registered, or an email already in use, is caught while
  * filling the form, not only after clicking "Create My Etel-ID" at
- * the very end. */
-var _dupNameCheck = { key: '', duplicate: false, checked: false };
+ * the very end. Name+DOB together blocks (a real duplicate signal);
+ * name alone only warns (two different real people can share a name -
+ * see EtelID_DB::find_by_name()'s own comment); email always blocks
+ * since it should map to one account. */
+var _dupNameCheck  = { key: '', result: null, checked: false };
+var _dupEmailCheck = { key: '', taken: false, checked: false };
 function checkDuplicateName(name, dob, cb) {
   var key = name.toLowerCase() + '|' + dob;
   if (_dupNameCheck.checked && _dupNameCheck.key === key) {
-    cb(_dupNameCheck.duplicate);
+    cb(_dupNameCheck.result);
     return;
   }
   post({ action: 'etelid_check_duplicate_name', full_name: name, dob: dob }, function(r) {
-    var dup = !!(r.success && r.data && r.data.duplicate);
-    _dupNameCheck = { key: key, duplicate: dup, checked: true };
-    cb(dup);
+    var result = {
+      duplicate: !!(r.success && r.data && r.data.duplicate),
+      nameTaken: !!(r.success && r.data && r.data.name_taken),
+    };
+    _dupNameCheck = { key: key, result: result, checked: true };
+    cb(result);
+  });
+}
+function checkDuplicateEmail(email, cb) {
+  var key = email.toLowerCase();
+  if (_dupEmailCheck.checked && _dupEmailCheck.key === key) {
+    cb(_dupEmailCheck.taken);
+    return;
+  }
+  post({ action: 'etelid_check_duplicate_email', email: email }, function(r) {
+    var taken = !!(r.success && r.data && r.data.taken);
+    _dupEmailCheck = { key: key, taken: taken, checked: true };
+    cb(taken);
   });
 }
 document.getElementById('reg-full-name').addEventListener('blur', function() {
   var name = this.value.trim();
   var dob  = document.getElementById('reg-dob').value;
   if (!name || !dob || !isRealFullName(name) || ageFromDob(dob) === null) return;
-  checkDuplicateName(name, dob, function(isDuplicate) {
-    if (isDuplicate) {
+  checkDuplicateName(name, dob, function(result) {
+    if (result.duplicate) {
       fieldErr('reg-full-name', 'An account with this name and date of birth already exists. Please sign in instead, or contact support if this is an error.');
+    } else {
+      showNameTakenWarning(result.nameTaken);
+    }
+  });
+});
+document.getElementById('reg-email').addEventListener('blur', function() {
+  var email = this.value.trim();
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return;
+  checkDuplicateEmail(email, function(taken) {
+    if (taken) {
+      fieldErr('reg-email', 'This email is already registered. Please use a different email, or sign in instead.');
     }
   });
 });

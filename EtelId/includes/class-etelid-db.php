@@ -512,6 +512,39 @@ class EtelID_DB {
         ));
     }
 
+    /* Name-only match (no dob), used for a non-blocking live "this name
+     * looks like it might already be registered" notice while filling
+     * in the wizard - distinct from find_duplicate_registration() above,
+     * which requires name+dob together and is what actually blocks
+     * registration. Name alone is too weak a signal to block on (two
+     * real, different people can share a name), but still worth
+     * surfacing so the person filling the form can double-check before
+     * continuing. */
+    public static function find_by_name( $full_name ) {
+        global $wpdb;
+        $name = trim( preg_replace( '/\s+/', ' ', (string) $full_name ) );
+        if ( '' === $name ) return null;
+        return $wpdb->get_row( $wpdb->prepare(
+            "SELECT * FROM " . self::t_members() . "
+             WHERE LOWER(TRIM(full_name)) = LOWER(%s)
+             LIMIT 1", $name
+        ));
+    }
+
+    /* Email has no UNIQUE key at the schema level, so this is the only
+     * thing stopping the same email being reused across accounts -
+     * checked live during registration and re-checked server-side. */
+    public static function find_by_email( $email ) {
+        global $wpdb;
+        $email = trim( (string) $email );
+        if ( '' === $email ) return null;
+        return $wpdb->get_row( $wpdb->prepare(
+            "SELECT * FROM " . self::t_members() . "
+             WHERE email != '' AND LOWER(email) = LOWER(%s)
+             LIMIT 1", $email
+        ));
+    }
+
     public static function get_companies( $member_id ) {
         global $wpdb;
         return $wpdb->get_results( $wpdb->prepare(
