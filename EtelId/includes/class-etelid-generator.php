@@ -345,4 +345,32 @@ class EtelID_Generator {
     public static function blood_types() {
         return array( 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-', 'Unknown' );
     }
+
+    /* ─── Zones/cities per region ──────────────────────────────
+     * Used to make the registration wizard's Zone/City field a
+     * dropdown scoped to the selected Region, instead of free text
+     * that can name a city belonging to a completely different
+     * region (e.g. "Shashamane" typed while "Tigray" is selected -
+     * a real case seen live). Not an exhaustive list of every
+     * administrative zone/woreda - a practical set of the region's
+     * major zones and cities, enough to catch a genuine region/zone
+     * mismatch without being a strict government-form gazetteer. */
+    public static function zones_by_region() {
+        return array(
+            'Addis Ababa' => array( 'Bole', 'Kirkos', 'Yeka', 'Arada', 'Lideta', 'Kolfe Keranio', 'Nifas Silk-Lafto', 'Gulele', 'Addis Ketema', 'Akaky Kaliti', 'Lemi Kura' ),
+            'Oromia' => array( 'East Shewa', 'West Shewa', 'North Shewa (Oromia)', 'South West Shewa', 'Arsi', 'West Arsi', 'Bale', 'Guji', 'West Guji', 'Jimma', 'Illubabor', 'East Wellega', 'West Wellega', 'Horo Guduru Wellega', 'Kelem Wellega', 'East Hararghe', 'West Hararghe', 'Borena', 'Adama', 'Bishoftu', 'Jimma City' ),
+            'Amhara' => array( 'North Gondar', 'South Gondar', 'North Wollo', 'South Wollo', 'East Gojjam', 'West Gojjam', 'North Shewa (Amhara)', 'Awi', 'Wag Hemra', 'Oromia Zone (Amhara)', 'Bahir Dar', 'Gondar City', 'Dessie', 'Debre Markos' ),
+            'SNNP' => array( 'Gurage', 'Hadiya', 'Kembata Tembaro', 'Wolayita', 'Gamo', 'South Omo', 'Dawro', 'Konta', 'Basketo', 'Amaro', 'Burji', 'Silte', 'Yem' ),
+            'Tigray' => array( 'Mekelle', 'Central Tigray', 'Eastern Tigray', 'Southern Tigray', 'Western Tigray', 'North Western Tigray', 'South Eastern Tigray' ),
+            'Sidama' => array( 'Hawassa', 'Aleta Wondo', 'Boricha', 'Dale', 'Wondo Genet', 'Bensa', 'Hula', 'Chuko', 'Shebedino', 'Yirgalem' ),
+            'South West Ethiopia' => array( 'Bench Sheko', 'Sheka', 'Kaffa', 'West Omo', 'Konta Special Woreda', 'Bonga' ),
+            'Central Ethiopia' => array( 'Gurage (Central Ethiopia)', 'Hadiya (Central Ethiopia)', 'Kembata Tembaro (Central Ethiopia)', 'Silte (Central Ethiopia)', 'Halaba', 'Wolkite' ),
+            'Afar' => array( 'Zone 1 (Awsi Rasu)', 'Zone 2 (Kilbet Rasu)', 'Zone 3 (Gabi Rasu)', 'Zone 4 (Fantana Rasu)', 'Zone 5 (Hari Rasu)', 'Semera' ),
+            'Somali' => array( 'Jijiga', 'Shinile', 'Fafan', 'Doolo', 'Nogob', 'Jarar', 'Korahe', 'Shabelle', 'Afder', 'Liben', 'Erer' ),
+            'Benishangul-Gumuz' => array( 'Assosa', 'Metekel', 'Kamashi', 'Mao-Komo Special Woreda' ),
+            'Gambela' => array( 'Agnuak', 'Nuer', 'Majang', 'Etang Special Woreda', 'Gambela City' ),
+            'Harari' => array( 'Harar' ),
+            'Dire Dawa' => array( 'Dire Dawa City' ),
+        );
+    }
 }
