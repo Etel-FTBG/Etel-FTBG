@@ -2,20 +2,20 @@
 /**
  * ETEL self-audit agent (server-side, one-click)
  *
- * Calls Gemini/Claude/Kimi/OpenAI directly using the keys already
- * configured in EtelGebeya/audit/config.php - this file reads its own
- * files straight off disk, builds the same file-tree + content payload
- * the browser tool builds, and posts it straight to the provider's real
- * API.
+ * Calls Gemini or OpenRouter directly over HTTPS using a key configured
+ * for THIS project, admin-editable from Settings > Code Audit > API
+ * Settings - same pattern as delivery/api/audit_agent.php.
  *
- * Previously this posted to a shared proxy (EtelGebeya/public/proxy.php
- * / audit/etelproxy.php) over HTTPS instead. That proxy kept returning
- * "Unauthorized" in production even with the exact same AUDIT_SECRET
- * value confirmed byte-for-byte identical in both audit/config.php and
- * .env's ETEL_AUDIT_SECRET - the same unresolved shared-secret failure
- * mode already hit (and worked around the same way) in
- * delivery/api/audit_agent.php. Switched to calling providers directly,
- * which removes that whole cross-hop failure mode entirely.
+ * File-based config (audit/config.php, public/config.php) turned out to
+ * be a dead end: both files are hand-edited via cPanel's mobile file
+ * manager, which repeatedly led to edits landing in the wrong one of two
+ * near-identical files, edits that silently didn't persist, and (before
+ * that) a shared cross-project proxy secret that never authenticated
+ * despite matching byte-for-byte. Storing the key in this project's own
+ * database and editing it from the admin panel removes every one of
+ * those failure modes - there's exactly one place to look, one save
+ * button, and it's covered by the same admin auth that already gates
+ * everything else in this panel.
  *
  * This is a template: copy it into another project's api/ (or
  * equivalent) folder - it has no dependency on this specific project's
@@ -25,98 +25,70 @@
 
 if (!function_exists('etel_run_self_audit')) {
 
-// The real keys are supposed to live in audit/config.php, but three
-// rounds of diagnostics (wrong-file theory, OPcache, raw-bytes read)
-// proved the file actually being read here sat untouched at 182 bytes
-// from Sept 9 while the admin kept re-pasting a much longer real key
-// into cPanel - meaning the edits were landing in a different, near-
-// identical file (public/config.php) instead. Rather than rely on the
-// admin picking the one exact path by name, check every file this tool
-// has ever read keys from and use whichever one actually holds a real
-// (non-placeholder) key for each provider.
-define('ETEL_AUDIT_CFG_CANDIDATES', serialize(array(
-    __DIR__ . '/audit/config.php',
-    __DIR__ . '/public/config.php',
-)));
-define('ETEL_AUDIT_CFG_PREDEFINED', defined('GEMINI_API_KEY') ? 'yes' : 'no');
+// Fallback keys if the DB table below is empty/unreachable - set these
+// as real environment variables if you'd rather not touch the DB at
+// all. The admin panel (Settings > Code Audit > API Settings) is the
+// normal way to set/rotate these without a code deploy.
+define('ETEL_AUDIT_GEMINI_KEY',     getenv('GEMINI_API_KEY') ?: '');
+define('ETEL_AUDIT_OPENROUTER_KEY', getenv('OPENROUTER_API_KEY') ?: '');
 
-/**
- * Pull a define('CONST', 'value') value straight out of a file's raw
- * bytes with a regex, instead of executing it with require(). Reading
- * the raw bytes proves whatever this returns is what is sitting on disk
- * right now, independent of require(), opcache, or any constant already
- * defined earlier in the request.
- */
-function etel_audit_extract_define($raw, $const) {
-    if (preg_match('/define\s*\(\s*[\'"]' . preg_quote($const, '/') . '[\'"]\s*,\s*[\'"](.*?)[\'"]\s*\)/s', $raw, $m)) {
-        return $m[1];
-    }
-    return null;
-}
-
-$etelAuditKnownPlaceholders = array(
-    '', 'CHANGE_ME', 'YOUR_GEMINI_KEY_HERE', 'YOUR_CLAUDE_KEY_HERE',
-    'YOUR_KIMI_KEY_HERE', 'YOUR_OPENAI_KEY_HERE', 'YOUR_AUDIT_SECRET_HERE',
-);
-
-/**
- * Scan every candidate config file for the given constant and return the
- * first real (non-placeholder) value found. Also builds a per-file debug
- * trail (path, size, mtime, raw value found) so a failure can show
- * exactly what was checked and why nothing usable was found - without
- * needing another round of live server screenshots.
- */
-function etel_audit_find_key($const, $fallback) {
-    $candidates = unserialize(ETEL_AUDIT_CFG_CANDIDATES);
-    $trail = array();
-    $found = null;
-    foreach ($candidates as $path) {
-        $exists = file_exists($path);
-        $raw = $exists ? (string) file_get_contents($path) : '';
-        $value = $exists ? etel_audit_extract_define($raw, $const) : null;
-        $isPlaceholder = $value === null || in_array($value, unserialize(ETEL_AUDIT_PLACEHOLDERS), true);
-        $trail[] = array(
-            'path' => $path,
-            'exists' => $exists,
-            'size' => $exists ? filesize($path) : 0,
-            'mtime' => $exists ? date('Y-m-d H:i:s', filemtime($path)) : 'n/a',
-            'value_found' => $value !== null,
-            'used' => false,
-        );
-        if ($found === null && $value !== null && !$isPlaceholder) {
-            $found = $value;
-            $trail[count($trail) - 1]['used'] = true;
-        }
-    }
-    return array(
-        'value' => $found !== null ? $found : $fallback,
-        'trail' => $trail,
-    );
-}
-
-define('ETEL_AUDIT_PLACEHOLDERS', serialize($etelAuditKnownPlaceholders));
-
-$etelAuditGemini = etel_audit_find_key('GEMINI_API_KEY', 'YOUR_GEMINI_KEY_HERE');
-define('ETEL_AUDIT_GEMINI_TRAIL', serialize($etelAuditGemini['trail']));
-if (!defined('GEMINI_API_KEY')) define('GEMINI_API_KEY', $etelAuditGemini['value']);
-
-if (!defined('CLAUDE_API_KEY')) {
-    $r = etel_audit_find_key('CLAUDE_API_KEY', 'YOUR_CLAUDE_KEY_HERE');
-    define('CLAUDE_API_KEY', $r['value']);
-}
-if (!defined('KIMI_API_KEY')) {
-    $r = etel_audit_find_key('KIMI_API_KEY', 'YOUR_KIMI_KEY_HERE');
-    define('KIMI_API_KEY', $r['value']);
-}
-if (!defined('OPENAI_API_KEY')) {
-    $r = etel_audit_find_key('OPENAI_API_KEY', 'YOUR_OPENAI_KEY_HERE');
-    define('OPENAI_API_KEY', $r['value']);
-}
-
+// Gemini tries these in order, falling back to the next on a 400/401/403.
+// OpenRouter uses a single configurable model since it already routes
+// across many backends itself.
 define('ETEL_AUDIT_GEMINI_MODELS', 'gemini-3.5-flash,gemini-3.1-flash-lite,gemini-3.1-pro');
-define('ETEL_AUDIT_CLAUDE_MODEL',  'claude-sonnet-4-6');
-define('ETEL_AUDIT_KIMI_MODEL',    'moonshot-v1-32k');
-define('ETEL_AUDIT_OPENAI_MODEL',  'gpt-4o');
+define('ETEL_AUDIT_OPENROUTER_DEFAULT_MODEL', 'anthropic/claude-3.5-sonnet');
+
+// ── Admin-editable audit config ──────────────────────────────────────
+// Keys/model live in a DB table an admin can edit from the panel; the
+// constants above are only the fallback if this table can't be created
+// or is empty (and what a fresh copy of this file in another project
+// starts with).
+if (!function_exists('etel_audit_ensure_settings_table')) {
+function etel_audit_ensure_settings_table($pdo) {
+    static $checked = false;
+    if ($checked) return;
+    $checked = true;
+    try {
+        $exists = $pdo->query("SHOW TABLES LIKE 'audit_settings'")->fetch();
+        if (!$exists) {
+            $pdo->exec("CREATE TABLE audit_settings (
+                id INT PRIMARY KEY DEFAULT 1,
+                gemini_key VARCHAR(255) NOT NULL DEFAULT '',
+                openrouter_key VARCHAR(255) NOT NULL DEFAULT '',
+                openrouter_model VARCHAR(120) NOT NULL DEFAULT 'anthropic/claude-3.5-sonnet',
+                default_provider VARCHAR(20) NOT NULL DEFAULT 'gemini',
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+            )");
+            $pdo->prepare("INSERT INTO audit_settings (id, gemini_key, openrouter_key, openrouter_model, default_provider) VALUES (1, ?, ?, ?, 'gemini')")
+                ->execute(array(ETEL_AUDIT_GEMINI_KEY, ETEL_AUDIT_OPENROUTER_KEY, ETEL_AUDIT_OPENROUTER_DEFAULT_MODEL));
+        }
+    } catch (Exception $e) { /* best-effort - falls back to the hardcoded constants if this never succeeds */ }
+}
+}
+if (!function_exists('etel_audit_get_config')) {
+function etel_audit_get_config($pdo) {
+    $fallback = array(
+        'gemini_key'       => ETEL_AUDIT_GEMINI_KEY,
+        'openrouter_key'   => ETEL_AUDIT_OPENROUTER_KEY,
+        'openrouter_model' => ETEL_AUDIT_OPENROUTER_DEFAULT_MODEL,
+        'default_provider' => 'gemini',
+    );
+    if (!$pdo) return $fallback;
+    try {
+        etel_audit_ensure_settings_table($pdo);
+        $row = $pdo->query("SELECT gemini_key, openrouter_key, openrouter_model, default_provider FROM audit_settings WHERE id=1")->fetch(PDO::FETCH_ASSOC);
+        if ($row) {
+            return array(
+                'gemini_key'       => $row['gemini_key'] !== '' ? $row['gemini_key'] : $fallback['gemini_key'],
+                'openrouter_key'   => $row['openrouter_key'] !== '' ? $row['openrouter_key'] : $fallback['openrouter_key'],
+                'openrouter_model' => $row['openrouter_model'] !== '' ? $row['openrouter_model'] : $fallback['openrouter_model'],
+                'default_provider' => $row['default_provider'] ?: 'gemini',
+            );
+        }
+    } catch (Exception $e) { /* fall through to hardcoded fallback below */ }
+    return $fallback;
+}
+}
 
 // Same extension allowlist as the browser tool's TEXT_EXTS, so results
 // are consistent whether a project is audited via upload or via this
@@ -330,21 +302,7 @@ function etel_audit_build_content($files) {
    another screenshot round-trip. Same idea as EtelAi's debug-key.php. */
 function etel_audit_key_fingerprint($key) {
     $len = strlen($key);
-    $keyDesc = $len === 0 ? 'empty' : ($len . ' chars, ends "' . substr($key, -4) . '"');
-    $trail = unserialize(ETEL_AUDIT_GEMINI_TRAIL);
-    $fileDescs = array();
-    foreach ($trail as $f) {
-        if (!$f['exists']) {
-            $fileDescs[] = $f['path'] . ' (not found)';
-            continue;
-        }
-        $fileDescs[] = $f['path'] . ' (' . $f['size'] . ' bytes, modified ' . $f['mtime']
-            . ', key found: ' . ($f['value_found'] ? 'yes' : 'no')
-            . ($f['used'] ? ', USED' : '') . ')';
-    }
-    return $keyDesc
-        . ' | GEMINI_API_KEY already defined before checks ran: ' . ETEL_AUDIT_CFG_PREDEFINED
-        . ' | files checked: ' . implode(' ; ', $fileDescs);
+    return $len === 0 ? 'empty' : ($len . ' chars, ends "' . substr($key, -4) . '"');
 }
 
 /* Strips markdown code fences and stray leading/trailing prose the model
@@ -365,16 +323,10 @@ function etel_audit_parse_report_text($text) {
    in ETEL_AUDIT_GEMINI_MODELS in turn until one returns 200 - a later
    model is only tried after a real failure (400/401/403 or a non-2xx),
    not after a successful-but-unwanted result. */
-function etel_audit_call_gemini($system, $content) {
-    // HARDENING: trim() the key before use - config.php is hand-edited via
-    // cPanel's file manager (often from a phone), which can silently
-    // introduce a trailing space/newline or smart-quote around the value.
-    // A key that works fine everywhere else can then fail here alone with
-    // a confusing "API key not valid" straight from Google, since the
-    // actual bytes sent no longer match the real key.
-    $geminiKey = defined('GEMINI_API_KEY') ? trim(GEMINI_API_KEY) : '';
-    if (!$geminiKey || $geminiKey === 'YOUR_GEMINI_KEY_HERE') {
-        return array('error' => 'Gemini API key not configured - set GEMINI_API_KEY in EtelGebeya/audit/config.php');
+function etel_audit_call_gemini($cfg, $system, $content) {
+    $geminiKey = trim($cfg['gemini_key']);
+    if (!$geminiKey) {
+        return array('error' => 'Gemini API key not configured - set it in Settings > Code Audit > API Settings');
     }
     // Real Gemini / Generative Language API keys always start with
     // "AIzaSy" and are 39 characters. A value in a different shape (e.g.
@@ -390,8 +342,8 @@ function etel_audit_call_gemini($system, $content) {
             . etel_audit_key_fingerprint($geminiKey) . '). A real Gemini API key always starts with '
             . '"AIzaSy" and is 39 characters long. In Google AI Studio, use "Get API key" and its '
             . '"Copy" action on the key itself - not a value shown when viewing a key\'s details/info panel, '
-            . 'which can display a masked reference instead of the real secret. Paste the actual key into '
-            . 'EtelGebeya/audit/config.php or EtelGebeya/public/config.php.');
+            . 'which can display a masked reference instead of the real secret. Update it in '
+            . 'Settings > Code Audit > API Settings.');
     }
 
     $payloadArr = array(
@@ -467,30 +419,37 @@ function etel_audit_call_gemini($system, $content) {
     return $report;
 }
 
-/* Calls Anthropic's Messages API directly. */
-function etel_audit_call_claude($system, $content) {
-    $claudeKey = defined('CLAUDE_API_KEY') ? trim(CLAUDE_API_KEY) : '';
-    if (!$claudeKey || $claudeKey === 'YOUR_CLAUDE_KEY_HERE') {
-        return array('error' => 'Claude API key not configured - set CLAUDE_API_KEY in EtelGebeya/audit/config.php');
+/* Calls OpenRouter's OpenAI-compatible /chat/completions endpoint
+   directly - routes to whichever backend model is configured (Claude,
+   GPT-4o, etc.) through a single key, same as delivery/api/audit_agent.php. */
+function etel_audit_call_openrouter($cfg, $system, $content) {
+    $openrouterKey = trim($cfg['openrouter_key']);
+    if (!$openrouterKey) {
+        return array('error' => 'OpenRouter API key not configured - set it in Settings > Code Audit > API Settings');
     }
 
+    $model = $cfg['openrouter_model'] ?: ETEL_AUDIT_OPENROUTER_DEFAULT_MODEL;
     $payload = json_encode(array(
-        'model'      => ETEL_AUDIT_CLAUDE_MODEL,
-        'max_tokens' => 16000,
-        'system'     => $system,
-        'messages'   => array(array('role' => 'user', 'content' => $content)),
+        'model'       => $model,
+        'max_tokens'  => 16000,
+        'temperature' => 0.1,
+        'messages'    => array(
+            array('role' => 'system', 'content' => $system),
+            array('role' => 'user',   'content' => $content),
+        ),
     ), JSON_UNESCAPED_UNICODE);
     if ($payload === false) return array('error' => 'Could not encode audit payload (invalid file content found)');
 
-    $ch = curl_init('https://api.anthropic.com/v1/messages');
+    $ch = curl_init('https://openrouter.ai/api/v1/chat/completions');
     curl_setopt_array($ch, array(
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_POST           => true,
         CURLOPT_POSTFIELDS     => $payload,
         CURLOPT_HTTPHEADER     => array(
             'Content-Type: application/json',
-            'x-api-key: ' . $claudeKey,
-            'anthropic-version: 2023-06-01',
+            'Authorization: Bearer ' . $openrouterKey,
+            'HTTP-Referer: https://ethelmarket.com/EtelGebeya/',
+            'X-Title: ETEL Gebeya - Code Audit',
         ),
         CURLOPT_TIMEOUT        => 280,
         CURLOPT_CONNECTTIMEOUT => 15,
@@ -501,117 +460,18 @@ function etel_audit_call_claude($system, $content) {
     $err  = curl_error($ch);
     curl_close($ch);
 
-    if ($err) return array('error' => 'Could not reach Claude: ' . $err);
+    if ($err) return array('error' => 'Could not reach OpenRouter: ' . $err);
     if ($http !== 200) {
         $decoded = json_decode($resp, true);
-        $msg = $decoded['error']['message'] ?? ('Claude HTTP ' . $http);
-        if ($http === 401) return array('error' => 'Invalid Claude API key (as loaded: ' . etel_audit_key_fingerprint($claudeKey) . ') - check EtelGebeya/audit/config.php.');
-        return array('error' => 'Claude error: ' . $msg);
+        $msg = $decoded['error']['message'] ?? ('OpenRouter HTTP ' . $http);
+        if ($http === 401) return array('error' => 'Invalid OpenRouter API key (as loaded: ' . etel_audit_key_fingerprint($openrouterKey) . ') - check Settings > Code Audit > API Settings.');
+        return array('error' => 'OpenRouter error: ' . $msg);
     }
 
     $decoded = json_decode($resp, true);
-    $text = '';
-    foreach (($decoded['content'] ?? array()) as $block) {
-        if (($block['type'] ?? '') === 'text') $text .= $block['text'];
-    }
+    $text = trim($decoded['choices'][0]['message']['content'] ?? '');
     $report = etel_audit_parse_report_text($text);
-    if ($report === null) return array('error' => 'Claude response was not valid JSON. First 200 chars: ' . substr(trim($text), 0, 200));
-    return $report;
-}
-
-/* Calls Kimi (Moonshot AI)'s OpenAI-compatible /chat/completions endpoint. */
-function etel_audit_call_kimi($system, $content) {
-    $kimiKey = defined('KIMI_API_KEY') ? trim(KIMI_API_KEY) : '';
-    if (!$kimiKey || $kimiKey === 'YOUR_KIMI_KEY_HERE') {
-        return array('error' => 'Kimi API key not configured - set KIMI_API_KEY in EtelGebeya/audit/config.php');
-    }
-
-    $messages = array();
-    if ($system) $messages[] = array('role' => 'system', 'content' => $system);
-    $messages[] = array('role' => 'user', 'content' => $content);
-
-    $payload = json_encode(array(
-        'model'       => ETEL_AUDIT_KIMI_MODEL,
-        'max_tokens'  => 16000,
-        'temperature' => 0.1,
-        'messages'    => $messages,
-    ), JSON_UNESCAPED_UNICODE);
-    if ($payload === false) return array('error' => 'Could not encode audit payload (invalid file content found)');
-
-    $ch = curl_init('https://api.moonshot.cn/v1/chat/completions');
-    curl_setopt_array($ch, array(
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_POST           => true,
-        CURLOPT_POSTFIELDS     => $payload,
-        CURLOPT_HTTPHEADER     => array('Content-Type: application/json', 'Authorization: Bearer ' . $kimiKey),
-        CURLOPT_TIMEOUT        => 280,
-        CURLOPT_CONNECTTIMEOUT => 15,
-        CURLOPT_SSL_VERIFYPEER => true,
-    ));
-    $resp = curl_exec($ch);
-    $http = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    $err  = curl_error($ch);
-    curl_close($ch);
-
-    if ($err) return array('error' => 'Could not reach Kimi: ' . $err);
-    if ($http !== 200) {
-        $decoded = json_decode($resp, true);
-        $msg = $decoded['error']['message'] ?? ('Kimi HTTP ' . $http);
-        if ($http === 401) return array('error' => 'Invalid Kimi API key (as loaded: ' . etel_audit_key_fingerprint($kimiKey) . ') - check EtelGebeya/audit/config.php.');
-        return array('error' => 'Kimi error: ' . $msg);
-    }
-
-    $text = trim(json_decode($resp, true)['choices'][0]['message']['content'] ?? '');
-    $report = etel_audit_parse_report_text($text);
-    if ($report === null) return array('error' => 'Kimi response was not valid JSON. First 200 chars: ' . substr($text, 0, 200));
-    return $report;
-}
-
-/* Calls OpenAI's /chat/completions endpoint directly. */
-function etel_audit_call_openai($system, $content) {
-    $openaiKey = defined('OPENAI_API_KEY') ? trim(OPENAI_API_KEY) : '';
-    if (!$openaiKey || $openaiKey === 'YOUR_OPENAI_KEY_HERE') {
-        return array('error' => 'OpenAI API key not configured - set OPENAI_API_KEY in EtelGebeya/audit/config.php');
-    }
-
-    $messages = array();
-    if ($system) $messages[] = array('role' => 'system', 'content' => $system);
-    $messages[] = array('role' => 'user', 'content' => $content);
-
-    $payload = json_encode(array(
-        'model'       => ETEL_AUDIT_OPENAI_MODEL,
-        'max_tokens'  => 16000,
-        'temperature' => 0.1,
-        'messages'    => $messages,
-    ), JSON_UNESCAPED_UNICODE);
-    if ($payload === false) return array('error' => 'Could not encode audit payload (invalid file content found)');
-
-    $ch = curl_init('https://api.openai.com/v1/chat/completions');
-    curl_setopt_array($ch, array(
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_POST           => true,
-        CURLOPT_POSTFIELDS     => $payload,
-        CURLOPT_HTTPHEADER     => array('Content-Type: application/json', 'Authorization: Bearer ' . $openaiKey),
-        CURLOPT_TIMEOUT        => 280,
-        CURLOPT_CONNECTTIMEOUT => 15,
-        CURLOPT_SSL_VERIFYPEER => true,
-    ));
-    $resp = curl_exec($ch);
-    $http = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    $err  = curl_error($ch);
-    curl_close($ch);
-
-    if ($err) return array('error' => 'Could not reach OpenAI: ' . $err);
-    if ($http !== 200) {
-        $decoded = json_decode($resp, true);
-        $msg = $decoded['error']['message'] ?? ('OpenAI HTTP ' . $http);
-        if ($http === 401) return array('error' => 'Invalid OpenAI API key (as loaded: ' . etel_audit_key_fingerprint($openaiKey) . ') - check EtelGebeya/audit/config.php.');
-        return array('error' => 'OpenAI error: ' . $msg);
-    }
-
-    $text = trim(json_decode($resp, true)['choices'][0]['message']['content'] ?? '');
-    $report = etel_audit_parse_report_text($text);
-    if ($report === null) return array('error' => 'OpenAI response was not valid JSON. First 200 chars: ' . substr($text, 0, 200));
+    if ($report === null) return array('error' => 'OpenRouter response was not valid JSON. First 200 chars: ' . substr($text, 0, 200));
     return $report;
 }
 
@@ -620,7 +480,7 @@ function etel_audit_call_openai($system, $content) {
  * ['error' => '...'] on failure. Never throws - callers should just
  * check for the 'error' key.
  */
-function etel_run_self_audit($root, $projectName, $provider = 'gemini') {
+function etel_run_self_audit($root, $projectName, $provider = 'gemini', $pdo = null) {
     // Shared cPanel hosting commonly defaults max_execution_time to 30s,
     // which would kill this request before a slower AI response comes
     // back. @ suppresses the notice on hosts where set_time_limit is
@@ -633,13 +493,11 @@ function etel_run_self_audit($root, $projectName, $provider = 'gemini') {
 
     $content = etel_audit_build_content($files);
     $system  = etel_audit_system_prompt();
+    $cfg     = etel_audit_get_config($pdo);
 
-    switch ($provider) {
-        case 'claude': $report = etel_audit_call_claude($system, $content); break;
-        case 'kimi':   $report = etel_audit_call_kimi($system, $content);   break;
-        case 'openai': $report = etel_audit_call_openai($system, $content); break;
-        default:       $report = etel_audit_call_gemini($system, $content);
-    }
+    $report = ($provider === 'openrouter')
+        ? etel_audit_call_openrouter($cfg, $system, $content)
+        : etel_audit_call_gemini($cfg, $system, $content);
 
     if (isset($report['error'])) return $report;
 

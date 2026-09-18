@@ -147,6 +147,8 @@ $router->post('/admin/catalog/import-csv',       [\App\Controllers\AdminControll
 $router->get('/admin/settings',                  [\App\Controllers\AdminController::class, 'settings']);
 $router->post('/admin/settings',                 [\App\Controllers\AdminController::class, 'saveSettings']);
 $router->post('/admin/audit/run',                [\App\Controllers\AdminController::class, 'runAudit']);
+$router->get('/admin/audit/settings',            [\App\Controllers\AdminController::class, 'auditSettingsGet']);
+$router->post('/admin/audit/settings',           [\App\Controllers\AdminController::class, 'auditSettingsSave']);
 
 // Courier
 $router->get('/courier',                        [\App\Controllers\CourierController::class, 'dashboard']);
