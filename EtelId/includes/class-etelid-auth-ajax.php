@@ -19,7 +19,8 @@ class EtelID_Auth_Ajax {
         $map = array(
             'etelid_auth_register'        => 'register',
             'etelid_quick_register'       => 'quick_register',
-            'etelid_check_duplicate_name' => 'check_duplicate_name',
+            'etelid_check_duplicate_name'  => 'check_duplicate_name',
+            'etelid_check_duplicate_email' => 'check_duplicate_email',
             'etelid_auth_login'           => 'login',
             'etelid_auth_logout'          => 'logout',
             'etelid_auth_portal_data'     => 'portal_data',
@@ -115,6 +116,9 @@ class EtelID_Auth_Ajax {
         if ( ! empty( $data['email'] ) && ! is_email( $data['email'] ) ) {
             wp_send_json_error( array( 'field' => 'email', 'message' => 'Invalid email address.' ) );
         }
+        if ( ! empty( $data['email'] ) && EtelID_DB::find_by_email( $data['email'] ) ) {
+            wp_send_json_error( array( 'field' => 'email', 'message' => 'This email is already registered. Please use a different email, or sign in instead.' ) );
+        }
         if ( empty( $data['region'] ) ) {
             wp_send_json_error( array( 'field' => 'region', 'message' => 'Region is required.' ) );
         }
@@ -172,12 +176,41 @@ class EtelID_Auth_Ajax {
         $full_name = isset( $_POST['full_name'] ) ? sanitize_text_field( wp_unslash( $_POST['full_name'] ) ) : '';
         $dob       = isset( $_POST['dob'] )       ? sanitize_text_field( wp_unslash( $_POST['dob'] ) )       : '';
 
-        if ( empty( $full_name ) || empty( $dob ) ) {
-            wp_send_json_success( array( 'duplicate' => false ) );
+        if ( empty( $full_name ) ) {
+            wp_send_json_success( array( 'duplicate' => false, 'name_taken' => false ) );
         }
 
-        $existing = EtelID_DB::find_duplicate_registration( $full_name, $dob );
-        wp_send_json_success( array( 'duplicate' => (bool) $existing ) );
+        /* Two separate signals: an exact name+dob match is a real
+         * duplicate-registration block (see find_duplicate_registration()'s
+         * own comment); a name-only match ('name_taken') is only ever a
+         * non-blocking heads-up, since two different real people can
+         * share a name - the wizard shows this as a warning, not an error,
+         * and still lets the person continue. */
+        $duplicate  = ! empty( $dob ) && EtelID_DB::find_duplicate_registration( $full_name, $dob );
+        $name_taken = EtelID_DB::find_by_name( $full_name );
+        wp_send_json_success( array(
+            'duplicate'  => (bool) $duplicate,
+            'name_taken' => (bool) $name_taken,
+        ) );
+    }
+
+    /* Live email-uniqueness check, same reasoning as check_duplicate_name()
+     * above but blocking (unlike a name, an email really should map to one
+     * account - it's how password reset and notifications reach someone). */
+    public static function check_duplicate_email() {
+        check_ajax_referer( 'etelid_auth', 'nonce' );
+
+        $ip = EtelID_Security::get_ip();
+        if ( ! EtelID_Security::rate_limit( 'check_dup_email_' . $ip, 30, 600 ) ) {
+            wp_send_json_error( array( 'message' => 'Too many checks. Please wait a moment.' ) );
+        }
+
+        $email = isset( $_POST['email'] ) ? sanitize_text_field( wp_unslash( $_POST['email'] ) ) : '';
+        if ( empty( $email ) || ! is_email( $email ) ) {
+            wp_send_json_success( array( 'taken' => false ) );
+        }
+
+        wp_send_json_success( array( 'taken' => (bool) EtelID_DB::find_by_email( $email ) ) );
     }
 
     /* -- Quick Register (public, self-service fast track) --------
