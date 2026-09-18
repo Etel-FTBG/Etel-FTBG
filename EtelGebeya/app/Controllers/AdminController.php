@@ -568,12 +568,63 @@ final class AdminController
         require_once __DIR__ . '/../../audit_agent.php';
         $provider = $_POST['provider'] ?? 'gemini';
         $root = dirname(__DIR__, 2); // Controllers -> app -> project root
-        $report = \etel_run_self_audit($root, 'EtelGebeya', $provider);
+        $report = \etel_run_self_audit($root, 'EtelGebeya', $provider, $this->db->pdo());
         if (isset($report['error'])) {
             http_response_code(502);
             echo json_encode(['ok' => false, 'message' => $report['error']]);
             return;
         }
         echo json_encode(['ok' => true, 'report' => $report]);
+    }
+
+    // Audit API settings -- which Gemini/OpenRouter key (and OpenRouter
+    // model) "Run Audit Now" actually calls, direct to each provider's
+    // real API. Previously lived in hand-edited config.php files on the
+    // server (audit/config.php, public/config.php), which repeatedly led
+    // to edits landing in the wrong one of two near-identical files or
+    // not persisting at all. Now editable from this panel and stored in
+    // the DB, same as delivery/api/controllers/AdminController.php; see
+    // etel_audit_get_config() in audit_agent.php for the fallback-to-env
+    // behavior if this table is empty/unreachable.
+    public function auditSettingsGet(): void
+    {
+        header('Content-Type: application/json');
+        require_once __DIR__ . '/../../audit_agent.php';
+        $cfg = \etel_audit_get_config($this->db->pdo());
+        echo json_encode(['ok' => true] + $cfg);
+    }
+
+    public function auditSettingsSave(): void
+    {
+        header('Content-Type: application/json');
+        require_once __DIR__ . '/../../audit_agent.php';
+        $geminiKey       = trim($_POST['gemini_key'] ?? '');
+        $openrouterKey   = trim($_POST['openrouter_key'] ?? '');
+        $openrouterModel = trim($_POST['openrouter_model'] ?? '');
+        $provider        = trim($_POST['default_provider'] ?? 'gemini');
+        if (!in_array($provider, ['gemini', 'openrouter'], true)) $provider = 'gemini';
+        if ($provider === 'gemini' && !$geminiKey) {
+            http_response_code(400);
+            echo json_encode(['ok' => false, 'message' => 'Gemini API key is required when Gemini is the default provider']);
+            return;
+        }
+        if ($provider === 'openrouter' && !$openrouterKey) {
+            http_response_code(400);
+            echo json_encode(['ok' => false, 'message' => 'OpenRouter API key is required when OpenRouter is the default provider']);
+            return;
+        }
+        if (!$openrouterModel) $openrouterModel = 'anthropic/claude-3.5-sonnet';
+
+        $pdo = $this->db->pdo();
+        \etel_audit_ensure_settings_table($pdo);
+        try {
+            $pdo->prepare("INSERT INTO audit_settings (id, gemini_key, openrouter_key, openrouter_model, default_provider) VALUES (1, ?, ?, ?, ?)
+                           ON DUPLICATE KEY UPDATE gemini_key=VALUES(gemini_key), openrouter_key=VALUES(openrouter_key), openrouter_model=VALUES(openrouter_model), default_provider=VALUES(default_provider)")
+                ->execute([$geminiKey, $openrouterKey, $openrouterModel, $provider]);
+            echo json_encode(['ok' => true, 'message' => 'Audit settings saved']);
+        } catch (\Exception $e) {
+            http_response_code(500);
+            echo json_encode(['ok' => false, 'message' => 'Could not save audit settings']);
+        }
     }
 }

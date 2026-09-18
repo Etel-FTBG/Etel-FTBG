@@ -81,12 +81,38 @@ ob_start();
   <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:16px">
     <select id="ag-audit-provider" class="ag-sel">
       <option value="gemini">Gemini</option>
-      <option value="claude">Claude</option>
-      <option value="kimi">Kimi</option>
-      <option value="openai">GPT-4o</option>
+      <option value="openrouter">OpenRouter</option>
     </select>
     <button type="button" class="btn-xs btn-gold-xs" id="ag-audit-run" style="padding:8px 20px;font-size:13px" onclick="agRunAudit()">▶️ Run Audit Now</button>
     <button type="button" class="btn-xs btn-ghost-xs" id="ag-audit-download" style="padding:8px 20px;font-size:13px;display:none" onclick="agDownloadAudit()">📥 Download JSON</button>
+    <button type="button" class="btn-xs btn-ghost-xs" style="padding:8px 20px;font-size:13px" onclick="agToggleAuditSettings()">⚙️ API Settings</button>
+  </div>
+  <div id="ag-audit-settings-box" style="display:none;margin-bottom:16px;padding:14px;background:rgba(255,255,255,.03);border:1px solid var(--dark-border);border-radius:8px">
+    <div style="font-size:11.5px;color:var(--dark-muted);margin-bottom:10px">"Run Audit Now" calls Gemini or OpenRouter directly with the key below - no shared proxy, no code deploy needed to rotate a key.</div>
+    <div style="display:flex;flex-direction:column;gap:8px;max-width:520px">
+      <div>
+        <label style="font-size:11px;color:var(--dark-muted);display:block;margin-bottom:3px">Gemini API Key</label>
+        <input type="text" id="ag-audit-set-gemini-key" class="ag-inp" placeholder="AIza..." style="max-width:none">
+      </div>
+      <div>
+        <label style="font-size:11px;color:var(--dark-muted);display:block;margin-bottom:3px">OpenRouter API Key</label>
+        <input type="text" id="ag-audit-set-openrouter-key" class="ag-inp" placeholder="sk-or-..." style="max-width:none">
+      </div>
+      <div>
+        <label style="font-size:11px;color:var(--dark-muted);display:block;margin-bottom:3px">OpenRouter Model</label>
+        <input type="text" id="ag-audit-set-openrouter-model" class="ag-inp" placeholder="anthropic/claude-3.5-sonnet" style="max-width:none">
+      </div>
+      <div>
+        <label style="font-size:11px;color:var(--dark-muted);display:block;margin-bottom:3px">Default Provider</label>
+        <select id="ag-audit-set-provider" class="ag-sel" style="width:180px">
+          <option value="gemini">Gemini</option>
+          <option value="openrouter">OpenRouter</option>
+        </select>
+      </div>
+      <div style="margin-top:6px">
+        <button type="button" class="btn-xs btn-gold-xs" style="padding:7px 14px" onclick="agSaveAuditSettings()">💾 Save Settings</button>
+      </div>
+    </div>
   </div>
   <div id="ag-audit-report"></div>
 </div>
@@ -131,6 +157,43 @@ ob_start();
       btn.disabled = false; btn.textContent = '▶️ Run Audit Now';
       wrap.innerHTML = '<div style="padding:14px;color:var(--red);background:rgba(231,76,60,.1);border-radius:8px;font-size:12.5px">' + esc(e.message) + '</div>';
     });
+  };
+
+  window.agToggleAuditSettings = function(){
+    var box = document.getElementById('ag-audit-settings-box');
+    if (!box) return;
+    var showing = box.style.display !== 'none';
+    if (showing) { box.style.display = 'none'; return; }
+    box.style.display = 'block';
+    document.getElementById('ag-audit-set-gemini-key').value = 'Loading…';
+    fetch('<?= View::url('/admin/audit/settings') ?>').then(function(r){ return r.json(); }).then(function(d){
+      if (!d.ok) { document.getElementById('ag-audit-set-gemini-key').value = ''; return; }
+      document.getElementById('ag-audit-set-gemini-key').value = d.gemini_key || '';
+      document.getElementById('ag-audit-set-openrouter-key').value = d.openrouter_key || '';
+      document.getElementById('ag-audit-set-openrouter-model').value = d.openrouter_model || 'anthropic/claude-3.5-sonnet';
+      document.getElementById('ag-audit-set-provider').value = d.default_provider || 'gemini';
+    }).catch(function(){
+      document.getElementById('ag-audit-set-gemini-key').value = '';
+    });
+  };
+
+  window.agSaveAuditSettings = function(){
+    var geminiKey = (document.getElementById('ag-audit-set-gemini-key').value || '').trim();
+    var openrouterKey = (document.getElementById('ag-audit-set-openrouter-key').value || '').trim();
+    var openrouterModel = (document.getElementById('ag-audit-set-openrouter-model').value || '').trim();
+    var provider = document.getElementById('ag-audit-set-provider').value;
+    if (provider === 'gemini' && !geminiKey) { alert('Gemini API key is required when Gemini is the default provider'); return; }
+    if (provider === 'openrouter' && !openrouterKey) { alert('OpenRouter API key is required when OpenRouter is the default provider'); return; }
+    fetch('<?= View::url('/admin/audit/settings') ?>', {
+      method: 'POST',
+      headers: {'Content-Type':'application/x-www-form-urlencoded'},
+      body: 'gemini_key=' + encodeURIComponent(geminiKey) +
+            '&openrouter_key=' + encodeURIComponent(openrouterKey) +
+            '&openrouter_model=' + encodeURIComponent(openrouterModel) +
+            '&default_provider=' + encodeURIComponent(provider)
+    }).then(function(r){ return r.json(); }).then(function(d){
+      alert(d.ok ? 'Audit settings saved' : ('Save failed: ' + (d.message||'')));
+    }).catch(function(e){ alert('Save failed: ' + e.message); });
   };
 
   function renderReport(r){
