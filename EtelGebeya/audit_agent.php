@@ -101,6 +101,16 @@ define('ETEL_AUDIT_TEXT_EXTS', 'php,js,ts,jsx,tsx,css,scss,sass,less,html,htm,xm
 // budget on noise instead of actual project code.
 define('ETEL_AUDIT_EXCLUDE_DIRS', '.git,.claude,.vscode,.gstack,node_modules,vendor,storage,uploads,backups,cache,logs,dist,build,.svn');
 
+// Files that hold real, live credentials on the server - never send their
+// contents to a third-party AI provider as part of the scan payload. Every
+// audit run was uploading the actual Gemini/Claude/AUDIT_SECRET values
+// from these two files straight to Google/OpenRouter's API, which is a
+// live-credential exfiltration on every single click of "Run Audit Now" -
+// far worse than the "committed to git" framing the audit itself used
+// (these files are gitignored, not committed at all), since this happens
+// regardless of git status.
+define('ETEL_AUDIT_EXCLUDE_FILES', 'audit/config.php,public/config.php');
+
 // Keep well under the old proxy's hard 45000-char server-side cap so
 // nothing gets silently cut off mid-request; leaves room for the
 // file-tree/stats header the same way the browser tool's 58000
@@ -216,6 +226,7 @@ PROMPT;
 function etel_audit_collect_files($root) {
     $textExts   = array_flip(explode(',', ETEL_AUDIT_TEXT_EXTS));
     $excludeDir = array_flip(explode(',', ETEL_AUDIT_EXCLUDE_DIRS));
+    $excludeFile = array_flip(explode(',', ETEL_AUDIT_EXCLUDE_FILES));
     $files = array();
 
     $it = new RecursiveIteratorIterator(
@@ -230,12 +241,17 @@ function etel_audit_collect_files($root) {
             }
             continue;
         }
+        $relNorm = str_replace('\\', '/', $rel);
+
         // Prune excluded directories cheaply by checking any path segment.
         $skip = false;
-        foreach (explode('/', str_replace('\\', '/', $rel)) as $seg) {
+        foreach (explode('/', $relNorm) as $seg) {
             if (isset($excludeDir[$seg])) { $skip = true; break; }
         }
         if ($skip) continue;
+
+        // Never send a known live-credentials file's contents to the AI.
+        if (isset($excludeFile[$relNorm])) continue;
 
         $ext = strtolower(pathinfo($entry->getFilename(), PATHINFO_EXTENSION));
         $base = strtolower($entry->getFilename());
@@ -245,7 +261,7 @@ function etel_audit_collect_files($root) {
 
         $contents = @file_get_contents($entry->getPathname());
         if ($contents === false) continue;
-        $files[str_replace('\\', '/', $rel)] = $contents;
+        $files[$relNorm] = $contents;
     }
     return $files;
 }
