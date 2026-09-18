@@ -77,6 +77,9 @@ class EtelID_Auth_Ajax {
         if ( empty( $data['phone'] ) ) {
             wp_send_json_error( array( 'field' => 'phone', 'message' => 'Phone number is required.' ) );
         }
+        if ( ! EtelID_Security::valid_ethiopian_phone( $data['phone'] ) ) {
+            wp_send_json_error( array( 'field' => 'phone', 'message' => 'Enter a valid Ethiopian phone number, e.g. 0924445206 or +251924445206.' ) );
+        }
         if ( strlen( $data['password'] ) < 8 ) {
             wp_send_json_error( array( 'field' => 'password', 'message' => 'Password must be at least 8 characters.' ) );
         }
@@ -149,6 +152,9 @@ class EtelID_Auth_Ajax {
         }
         if ( empty( $data['phone'] ) ) {
             wp_send_json_error( array( 'field' => 'phone', 'message' => 'Phone number is required.' ) );
+        }
+        if ( ! EtelID_Security::valid_ethiopian_phone( $data['phone'] ) ) {
+            wp_send_json_error( array( 'field' => 'phone', 'message' => 'Enter a valid Ethiopian phone number, e.g. 0924445206 or +251924445206.' ) );
         }
         if ( empty( $data['fayda_front_image'] ) || strpos( $data['fayda_front_image'], 'data:image' ) !== 0 ) {
             wp_send_json_error( array( 'message' => 'Please add a photo of the front of your Fayda ID.' ) );
