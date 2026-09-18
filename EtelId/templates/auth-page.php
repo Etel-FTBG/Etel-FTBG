@@ -22,9 +22,10 @@ if ( EtelID_Auth::is_logged_in() ) {
     exit;
 }
 
-$companies = EtelID_Generator::companies();
-$regions   = EtelID_Generator::regions();
-$blood     = EtelID_Generator::blood_types();
+$companies       = EtelID_Generator::companies();
+$regions         = EtelID_Generator::regions();
+$zones_by_region = EtelID_Generator::zones_by_region();
+$blood           = EtelID_Generator::blood_types();
 $org_name  = get_option( 'etelid_org_name', 'Etel Group' );
 $org_site  = get_option( 'etelid_org_website', 'etelgroup.com' );
 $init_tab  = ( get_query_var('etelid_page') === 'signup' ) ? 'signup' : 'login';
@@ -228,6 +229,14 @@ $features = array(
                 </div>
                 <span class="eid-pw-strength-lbl" id="pw-strength-lbl"></span>
               </div>
+              <!-- Live requirements checklist -->
+              <div class="eid-pw-checklist" id="pw-checklist" style="display:none;font-size:11px;margin-top:6px;line-height:1.7;font-family:'JetBrains Mono',monospace">
+                <div id="pwc-len" data-label="At least 8 characters" style="color:var(--ink3)">[ ] At least 8 characters</div>
+                <div id="pwc-upper" data-label="One uppercase letter (A-Z)" style="color:var(--ink3)">[ ] One uppercase letter (A-Z)</div>
+                <div id="pwc-lower" data-label="One lowercase letter (a-z)" style="color:var(--ink3)">[ ] One lowercase letter (a-z)</div>
+                <div id="pwc-num" data-label="One number (0-9)" style="color:var(--ink3)">[ ] One number (0-9)</div>
+                <div id="pwc-special" data-label="One special character (!@#$%...)" style="color:var(--ink3)">[ ] One special character (!@#$%...)</div>
+              </div>
               <div class="eid-af-err" id="err-reg-password"></div>
             </div>
           </div>
@@ -302,7 +311,7 @@ $features = array(
           <div class="eid-af-row">
             <div class="eid-af-field">
               <label class="eid-af-label">Region <span class="req">*</span></label>
-              <select id="reg-region" class="eid-af-select no-icon">
+              <select id="reg-region" class="eid-af-select no-icon" onchange="populateZones()">
                 <option value="">— Select —</option>
                 <?php foreach ($regions as $r): ?>
                 <option value="<?php echo esc_attr($r); ?>"><?php echo esc_html($r); ?></option>
@@ -312,7 +321,9 @@ $features = array(
             </div>
             <div class="eid-af-field">
               <label class="eid-af-label">Zone / City <span class="req">*</span></label>
-              <input type="text" id="reg-zone" class="eid-af-input no-icon" placeholder="e.g. Addis Ababa">
+              <select id="reg-zone" class="eid-af-select no-icon" disabled>
+                <option value="">— Select a region first —</option>
+              </select>
               <div class="eid-af-err" id="err-reg-zone"></div>
             </div>
           </div>
@@ -374,6 +385,7 @@ $features = array(
 var _NONCE   = '<?php echo esc_js(wp_create_nonce("etelid_auth")); ?>';
 var _AJAX    = '<?php echo esc_js(admin_url("admin-ajax.php")); ?>';
 var _PORTAL  = '<?php echo esc_js(home_url("/portal/")); ?>';
+var _ZONES_BY_REGION = <?php echo wp_json_encode( $zones_by_region ); ?>;
 var _regStep = 1;
 
 /* ── Tab switch ─────────────────────────────────── */
@@ -562,6 +574,65 @@ function hasAmharicChar(s) {
   }
   return false;
 }
+function countAmharicChars(s) {
+  var n = 0;
+  for (var i = 0; i < s.length; i++) {
+    var c = s.charCodeAt(i);
+    if (c >= 4608 && c <= 4991) n++;
+  }
+  return n;
+}
+/* Requires at least two names (given name + father's name, the standard
+ * Ethiopian full-name convention), each at least 2 letters - rejects a
+ * single short word like "Da", which previously passed as long as it
+ * was non-empty. */
+function isRealFullName(name) {
+  var words = name.split(/\s+/).filter(function(w){ return w.length > 0; });
+  if (words.length < 2) return false;
+  for (var i = 0; i < words.length; i++) {
+    if (!/^[A-Za-z'-]{2,}$/.test(words[i])) return false;
+  }
+  return true;
+}
+/* Same two-word shape as isRealFullName(), for the optional Amharic
+ * name field - each word must actually contain Amharic script and be
+ * at least 2 characters, not just one stray glyph. */
+function isRealAmharicName(nameAm) {
+  var words = nameAm.split(/\s+/).filter(function(w){ return w.length > 0; });
+  if (words.length < 2) return false;
+  for (var i = 0; i < words.length; i++) {
+    if (words[i].length < 2 || countAmharicChars(words[i]) < 2) return false;
+  }
+  return true;
+}
+/* Rebuilds the Zone/City <select> to only offer zones that belong to
+ * whichever Region is currently selected - this is what stops a
+ * region/zone mismatch (e.g. "Tigray" + "Shashamane and Hawassa",
+ * a real case seen live) from being possible to submit at all. */
+function populateZones() {
+  var region = document.getElementById('reg-region').value;
+  var sel    = document.getElementById('reg-zone');
+  sel.innerHTML = '';
+  var zones = _ZONES_BY_REGION[region] || [];
+  if (!region || !zones.length) {
+    sel.disabled = true;
+    var opt = document.createElement('option');
+    opt.value = '';
+    opt.textContent = region ? 'No zones available' : 'Select a region first';
+    sel.appendChild(opt);
+    return;
+  }
+  sel.disabled = false;
+  var placeholder = document.createElement('option');
+  placeholder.value = '';
+  placeholder.textContent = '— Select —';
+  sel.appendChild(placeholder);
+  zones.forEach(function(z){
+    var o = document.createElement('option');
+    o.value = z; o.textContent = z;
+    sel.appendChild(o);
+  });
+}
 function isValidEthiopianPhone(phone) {
   var digits = (phone || '').replace(/[^0-9]/g, '');
   if (digits.length === 12 && digits.slice(0,3) === '251') digits = digits.slice(3);
@@ -590,8 +661,8 @@ function regNext(from) {
     var zone    = document.getElementById('reg-zone').value.trim();
     var ok2 = true;
     if (!name) { fieldErr('reg-full-name', 'Full name is required.'); ok2 = false; }
-    else if (!/^[A-Za-z][A-Za-z '-]{1,}$/.test(name)) { fieldErr('reg-full-name', 'Enter a real full name (letters only, at least 2 characters).'); ok2 = false; }
-    if (nameAm && !hasAmharicChar(nameAm)) { fieldErr('reg-full-name-am', 'Enter your name in Amharic script, or leave this blank.'); ok2 = false; }
+    else if (!isRealFullName(name)) { fieldErr('reg-full-name', 'Enter your real full name - at least two names (e.g. given name and father\'s name), each at least 2 letters.'); ok2 = false; }
+    if (nameAm && !isRealAmharicName(nameAm)) { fieldErr('reg-full-name-am', 'Enter your full name in Amharic script (at least two words), or leave this blank.'); ok2 = false; }
     if (!dob)  { fieldErr('reg-dob', 'Date of birth is required.'); ok2 = false; }
     else {
       var age = ageFromDob(dob);
@@ -602,8 +673,8 @@ function regNext(from) {
     }
     if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showErr('Enter a valid email address, or leave it blank.'); ok2 = false; }
     if (!region) { fieldErr('reg-region', 'Region is required.'); ok2 = false; }
-    if (!zone)   { fieldErr('reg-zone', 'Zone / City is required.'); ok2 = false; }
-    else if (zone.length < 2) { fieldErr('reg-zone', 'Enter a real zone/city name.'); ok2 = false; }
+    if (!zone)   { fieldErr('reg-zone', 'Please select your zone/city.'); ok2 = false; }
+    else if (region && (_ZONES_BY_REGION[region]||[]).indexOf(zone) === -1) { fieldErr('reg-zone', 'Select a zone/city that belongs to the chosen region.'); ok2 = false; }
     if (!ok2) return;
   }
   if (from===3) return;
@@ -721,26 +792,43 @@ function post(data, cb) {
   }).catch(function(){/* ignore network errors */});
 })();
 
-/* Password strength meter */
+/* Password strength meter + live requirements checklist */
+function pwCheckItem(id, met) {
+  var el = document.getElementById(id);
+  el.style.color = met ? '#16a34a' : 'var(--ink3)';
+  el.textContent = (met ? '[OK] ' : '[ ] ') + el.getAttribute('data-label');
+}
 document.getElementById('reg-password').addEventListener('input', function() {
-  var pw   = this.value;
-  var wrap = document.getElementById('pw-strength-wrap');
-  var fill = document.getElementById('pw-strength-fill');
-  var lbl  = document.getElementById('pw-strength-lbl');
-  if (!pw) { wrap.style.display='none'; return; }
+  var pw        = this.value;
+  var wrap      = document.getElementById('pw-strength-wrap');
+  var fill      = document.getElementById('pw-strength-fill');
+  var lbl       = document.getElementById('pw-strength-lbl');
+  var checklist = document.getElementById('pw-checklist');
+  if (!pw) { wrap.style.display='none'; checklist.style.display='none'; return; }
   wrap.style.display = 'block';
-  var score = 0;
-  if (pw.length >= 6)  score++;
-  if (pw.length >= 10) score++;
-  if (/[A-Z]/.test(pw)) score++;
-  if (/[0-9]/.test(pw)) score++;
-  if (/[^A-Za-z0-9]/.test(pw)) score++;
-  var colors = ['','#ef4444','#f59e0b','#eab308','#22c55e','#16a34a'];
-  var labels = ['','Very Weak','Weak','Fair','Strong','Very Strong'];
-  fill.style.width   = (score*20)+'%';
-  fill.style.background = colors[score]||'#ef4444';
-  lbl.textContent    = labels[score]||'Very Weak';
-  lbl.style.color    = colors[score]||'#ef4444';
+  checklist.style.display = 'block';
+
+  var hasLen     = pw.length >= 8;
+  var hasUpper   = /[A-Z]/.test(pw);
+  var hasLower   = /[a-z]/.test(pw);
+  var hasNum     = /[0-9]/.test(pw);
+  var hasSpecial = /[^A-Za-z0-9]/.test(pw);
+
+  pwCheckItem('pwc-len',     hasLen);
+  pwCheckItem('pwc-upper',   hasUpper);
+  pwCheckItem('pwc-lower',   hasLower);
+  pwCheckItem('pwc-num',     hasNum);
+  pwCheckItem('pwc-special', hasSpecial);
+
+  var classesMet = [hasUpper, hasLower, hasNum, hasSpecial].filter(Boolean).length;
+  var score = (hasLen ? 1 : 0) + classesMet + (pw.length >= 12 ? 1 : 0);
+  var colors = ['#ef4444','#ef4444','#f59e0b','#eab308','#eab308','#22c55e','#16a34a'];
+  var labels = ['Too Short','Very Weak','Weak','Fair','Good','Strong','Very Strong'];
+  var i = hasLen ? Math.min(score, 6) : 0;
+  fill.style.width       = (Math.round((i/6)*100))+'%';
+  fill.style.background  = colors[i];
+  lbl.textContent        = labels[i];
+  lbl.style.color        = colors[i];
 });
 
 /* Enter key on login fields */

@@ -76,11 +76,11 @@ class EtelID_Auth_Ajax {
         if ( empty( $data['full_name'] ) ) {
             wp_send_json_error( array( 'field' => 'full_name', 'message' => 'Full name is required.' ) );
         }
-        if ( ! preg_match( "/^[A-Za-z][A-Za-z '-]{1,}$/", $data['full_name'] ) ) {
-            wp_send_json_error( array( 'field' => 'full_name', 'message' => 'Enter a real full name (letters only, at least 2 characters).' ) );
+        if ( ! EtelID_Auth_Ajax::is_real_full_name( $data['full_name'] ) ) {
+            wp_send_json_error( array( 'field' => 'full_name', 'message' => "Enter your real full name - at least two names (e.g. given name and father's name), each at least 2 letters." ) );
         }
-        if ( ! empty( $data['full_name_am'] ) && ! preg_match( '/[\x{1200}-\x{137F}]/u', $data['full_name_am'] ) ) {
-            wp_send_json_error( array( 'field' => 'full_name_am', 'message' => 'Enter your name in Amharic script, or leave this blank.' ) );
+        if ( ! empty( $data['full_name_am'] ) && ! EtelID_Auth_Ajax::is_real_amharic_name( $data['full_name_am'] ) ) {
+            wp_send_json_error( array( 'field' => 'full_name_am', 'message' => 'Enter your full name in Amharic script (at least two words), or leave this blank.' ) );
         }
         if ( empty( $data['phone'] ) ) {
             wp_send_json_error( array( 'field' => 'phone', 'message' => 'Phone number is required.' ) );
@@ -117,8 +117,12 @@ class EtelID_Auth_Ajax {
         if ( empty( $data['region'] ) ) {
             wp_send_json_error( array( 'field' => 'region', 'message' => 'Region is required.' ) );
         }
-        if ( empty( $data['zone'] ) || strlen( $data['zone'] ) < 2 ) {
-            wp_send_json_error( array( 'field' => 'zone', 'message' => 'Zone / City is required.' ) );
+        if ( empty( $data['zone'] ) ) {
+            wp_send_json_error( array( 'field' => 'zone', 'message' => 'Please select your zone/city.' ) );
+        }
+        $valid_zones = EtelID_Generator::zones_by_region();
+        if ( ! isset( $valid_zones[ $data['region'] ] ) || ! in_array( $data['zone'], $valid_zones[ $data['region'] ], true ) ) {
+            wp_send_json_error( array( 'field' => 'zone', 'message' => 'Select a zone/city that belongs to the chosen region.' ) );
         }
 
         $result = EtelID_Auth::register( $data );
@@ -690,5 +694,30 @@ class EtelID_Auth_Ajax {
         EtelID_DB::log( $member->id, $member->etel_id, 'updated', 'Profile updated by member via portal' );
 
         wp_send_json_success( array( 'message' => 'Profile updated successfully! Your card now reflects the changes.' ) );
+    }
+
+    /* ── Name validation helpers ───────────────────────────
+     * Mirror templates/auth-page.php's isRealFullName()/isRealAmharicName()
+     * (defense-in-depth for register(), same reasoning as the phone/dob/
+     * region/zone checks above). Requires at least two names (the standard
+     * Ethiopian given-name + father's-name convention), rejecting a single
+     * short word like "Da" that previously passed as long as it was
+     * non-empty. */
+    public static function is_real_full_name( $name ) {
+        $words = preg_split( '/\s+/', trim( $name ), -1, PREG_SPLIT_NO_EMPTY );
+        if ( count( $words ) < 2 ) return false;
+        foreach ( $words as $w ) {
+            if ( ! preg_match( "/^[A-Za-z'-]{2,}$/", $w ) ) return false;
+        }
+        return true;
+    }
+    public static function is_real_amharic_name( $name_am ) {
+        $words = preg_split( '/\s+/', trim( $name_am ), -1, PREG_SPLIT_NO_EMPTY );
+        if ( count( $words ) < 2 ) return false;
+        foreach ( $words as $w ) {
+            $amharic_chars = preg_match_all( '/[\x{1200}-\x{137F}]/u', $w );
+            if ( mb_strlen( $w, 'UTF-8' ) < 2 || $amharic_chars < 2 ) return false;
+        }
+        return true;
     }
 }
