@@ -340,13 +340,11 @@ $features = array(
         <div id="reg-step-3" style="display:none">
           <div class="eid-cam-field">
             <label class="eid-af-label"><i class="ti ti-camera"></i> Profile Photo <span class="req">*</span></label>
-            <div class="eid-cam-box round" id="cam-box-photo">
-              <video id="cam-video-photo" autoplay playsinline muted style="display:none"></video>
-            </div>
+            <div class="eid-cam-box round" id="cam-box-photo"></div>
+            <input type="file" id="cam-file-cam-photo" accept="image/*" capture="user" style="display:none" onchange="camFileChange('photo', this)">
             <input type="file" id="cam-file-photo" accept="image/*" style="display:none" onchange="camFileChange('photo', this)">
             <div class="eid-cam-btns" id="cam-btns-photo">
-              <button type="button" class="eid-cam-btn" onclick="camStart('photo')"><i class="ti ti-camera"></i> Open Camera</button>
-              <button type="button" class="eid-cam-btn" id="cam-capture-photo" style="display:none" disabled onclick="camCapture('photo')"><i class="ti ti-aperture"></i> Capture</button>
+              <button type="button" class="eid-cam-btn" onclick="document.getElementById('cam-file-cam-photo').click()"><i class="ti ti-camera"></i> Open Camera</button>
             </div>
             <button type="button" class="eid-cam-btn-ghost" id="cam-retake-photo" style="display:none;width:100%" onclick="camRetake('photo')"><i class="ti ti-refresh"></i> Retake</button>
             <button type="button" class="eid-cam-btn-ghost" style="width:100%" onclick="document.getElementById('cam-file-photo').click()"><i class="ti ti-upload"></i> Or upload a photo</button>
@@ -355,14 +353,11 @@ $features = array(
 
           <div class="eid-cam-field">
             <label class="eid-af-label"><i class="ti ti-id-badge-2"></i> Fayda ID - Front Side <span class="req">*</span></label>
-            <div class="eid-cam-box" id="cam-box-fayda-front">
-              <video id="cam-video-fayda-front" autoplay playsinline muted style="display:none"></video>
-              <div class="eid-cam-guide"></div>
-            </div>
+            <div class="eid-cam-box" id="cam-box-fayda-front"><div class="eid-cam-guide"></div></div>
+            <input type="file" id="cam-file-cam-fayda-front" accept="image/*" capture="environment" style="display:none" onchange="camFileChange('fayda-front', this)">
             <input type="file" id="cam-file-fayda-front" accept="image/*" style="display:none" onchange="camFileChange('fayda-front', this)">
             <div class="eid-cam-btns" id="cam-btns-fayda-front">
-              <button type="button" class="eid-cam-btn" onclick="camStart('fayda-front')"><i class="ti ti-camera"></i> Open Camera</button>
-              <button type="button" class="eid-cam-btn" id="cam-capture-fayda-front" style="display:none" disabled onclick="camCapture('fayda-front')"><i class="ti ti-aperture"></i> Capture</button>
+              <button type="button" class="eid-cam-btn" onclick="document.getElementById('cam-file-cam-fayda-front').click()"><i class="ti ti-camera"></i> Open Camera</button>
             </div>
             <button type="button" class="eid-cam-btn-ghost" id="cam-retake-fayda-front" style="display:none;width:100%" onclick="camRetake('fayda-front')"><i class="ti ti-refresh"></i> Retake</button>
             <button type="button" class="eid-cam-btn-ghost" style="width:100%" onclick="document.getElementById('cam-file-fayda-front').click()"><i class="ti ti-upload"></i> Or upload a photo</button>
@@ -371,14 +366,11 @@ $features = array(
 
           <div class="eid-cam-field">
             <label class="eid-af-label"><i class="ti ti-id-badge-2"></i> Fayda ID - Back Side <span class="req">*</span></label>
-            <div class="eid-cam-box" id="cam-box-fayda-back">
-              <video id="cam-video-fayda-back" autoplay playsinline muted style="display:none"></video>
-              <div class="eid-cam-guide"></div>
-            </div>
+            <div class="eid-cam-box" id="cam-box-fayda-back"><div class="eid-cam-guide"></div></div>
+            <input type="file" id="cam-file-cam-fayda-back" accept="image/*" capture="environment" style="display:none" onchange="camFileChange('fayda-back', this)">
             <input type="file" id="cam-file-fayda-back" accept="image/*" style="display:none" onchange="camFileChange('fayda-back', this)">
             <div class="eid-cam-btns" id="cam-btns-fayda-back">
-              <button type="button" class="eid-cam-btn" onclick="camStart('fayda-back')"><i class="ti ti-camera"></i> Open Camera</button>
-              <button type="button" class="eid-cam-btn" id="cam-capture-fayda-back" style="display:none" disabled onclick="camCapture('fayda-back')"><i class="ti ti-aperture"></i> Capture</button>
+              <button type="button" class="eid-cam-btn" onclick="document.getElementById('cam-file-cam-fayda-back').click()"><i class="ti ti-camera"></i> Open Camera</button>
             </div>
             <button type="button" class="eid-cam-btn-ghost" id="cam-retake-fayda-back" style="display:none;width:100%" onclick="camRetake('fayda-back')"><i class="ti ti-refresh"></i> Retake</button>
             <button type="button" class="eid-cam-btn-ghost" style="width:100%" onclick="document.getElementById('cam-file-fayda-back').click()"><i class="ti ti-upload"></i> Or upload a photo</button>
@@ -866,122 +858,29 @@ document.getElementById('reg-email').addEventListener('blur', function() {
   });
 });
 /* -- Step 3: Profile photo + Fayda ID capture --
- * Three capture slots share the same camera/upload machinery:
- *   photo         - facingMode 'user'  (selfie), no crop guide.
- *   fayda-front/back - facingMode 'environment' (rear cam), cropped
- *     to the ID-1 card aspect ratio (85.6mm x 54mm ~= 1.586:1) so the
- *     stored image is just the card, not the desk/hand/background
- *     around it - both when captured live via the on-screen guide
- *     frame and when a file is uploaded (centre-cropped to the same
- *     ratio then). The live-camera crop works by inverting the
- *     object-fit:cover transform the video element uses to fill its
- *     box: cropRectCover() maps the guide frame's on-screen position
- *     back to native video pixel coordinates. */
+ * "Open Camera" is a plain <input type=file capture="user|environment">
+ * (see cam-file-cam-<kind> in the HTML above), the exact same mechanism
+ * templates/apply-form.php's already-working "Take Selfie"/"Take Photo"
+ * buttons use - it launches the device's native camera app via an
+ * Android/iOS intent, not a JS API. An earlier version of this used
+ * getUserMedia() for a live in-page preview so the crop guide frame
+ * could be shown while framing the shot; that turned out unreliable on
+ * live devices (secure-context and per-origin permission requirements
+ * that this proven, already-working native-camera pattern doesn't have
+ * at all), so this now matches the reliable approach instead. The
+ * guide frame stays as a purely visual alignment aid on the empty box
+ * (see .eid-cam-guide in etelid-auth.css); the actual crop happens
+ * after the fact in camFileChange(), the same way an uploaded gallery
+ * photo is already cropped - a centre-crop to the ID-1 card ratio
+ * (85.6mm x 54mm ~= 1.586:1) so the stored image is just the card, not
+ * the desk/hand/background around it. */
 var CAM = {
-  'photo':        { facing: 'user',        crop: false },
-  'fayda-front':  { facing: 'environment', crop: true  },
-  'fayda-back':   { facing: 'environment', crop: true  }
+  'photo':        { crop: false },
+  'fayda-front':  { crop: true  },
+  'fayda-back':   { crop: true  }
 };
-var _camStreams  = {};
 var _capturedImg = { 'photo': '', 'fayda-front': '', 'fayda-back': '' };
 var FAYDA_RATIO = 1.586;
-
-function camStart(kind) {
-  var cfg = CAM[kind];
-  /* getUserMedia() (the live in-page camera preview) is blocked by the
-   * browser itself on a non-HTTPS origin, regardless of what the OS/app
-   * level camera permission says - this is different from the native
-   * camera app launched by a plain <input capture> file picker (which
-   * doesn't need a secure context at all), and matches exactly what was
-   * reported live: the old capture-attribute upload button opened the
-   * camera fine, but this in-page preview never could, even after
-   * granting Chrome's own OS-level camera permission. Checked explicitly
-   * so the message names the real cause instead of a misleading
-   * "permission blocked" when permission was never actually requestable. */
-  if (!window.isSecureContext) {
-    fieldErr('reg-' + kind, 'Live camera preview needs a secure (https://) connection, which this page isn\'t loaded over right now - camera permission on your device doesn\'t change that. Please upload a photo instead.');
-    return;
-  }
-  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-    document.getElementById('cam-file-' + kind).click();
-    return;
-  }
-  function onStream(stream) {
-    _camStreams[kind] = stream;
-    var video = document.getElementById('cam-video-' + kind);
-    var box   = document.getElementById('cam-box-' + kind);
-    video.srcObject = stream;
-    video.style.display = 'block';
-    box.classList.add('live');
-    var capBtn = document.getElementById('cam-capture-' + kind);
-    capBtn.style.display = 'inline-flex';
-    capBtn.disabled = false;
-    document.querySelectorAll('#cam-btns-' + kind + ' .eid-cam-btn')[0].style.display = 'none';
-  }
-  function onFail(err) {
-    /* Once a browser has recorded "block" for a site's camera
-     * permission, no page can make the native Allow/Block prompt
-     * reappear by calling getUserMedia() again - that decision is
-     * stored per-origin by the browser itself and only the person can
-     * change it (a website re-asking would defeat the point of the
-     * permission). The most this code can do is point at exactly where
-     * that setting lives, so "upload a photo" stays the reliable path
-     * either way. */
-    var msg = 'Could not access the camera. Please upload a photo instead.';
-    if (err && err.name === 'NotAllowedError') {
-      msg = 'Camera access is blocked for this site. Tap the lock/info icon next to the address bar, open Permissions (or Site settings), set Camera to Allow, then reload this page - or just upload a photo below.';
-    } else if (err && err.name === 'NotFoundError') {
-      msg = 'No camera was found on this device. Please upload a photo instead.';
-    } else if (err && err.name === 'NotReadableError') {
-      msg = 'The camera is in use by another app. Close it and try again, or upload a photo instead.';
-    }
-    fieldErr('reg-' + kind, msg);
-  }
-  /* A hard facingMode requirement (rather than a soft "ideal" preference)
-   * throws OverconstrainedError on devices that don't expose that exact
-   * lens (e.g. a laptop with only a front camera, or some Android
-   * webviews that don't report facingMode at all) - live testing showed
-   * every capture slot failing with the same generic error, which this
-   * was the most likely cause of. Try the preferred facing camera first,
-   * then fall back to whatever camera is available before giving up. */
-  navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: cfg.facing } }, audio: false })
-    .then(onStream)
-    .catch(function() {
-      navigator.mediaDevices.getUserMedia({ video: true, audio: false })
-        .then(onStream)
-        .catch(onFail);
-    });
-}
-
-function camCapture(kind) {
-  var video = document.getElementById('cam-video-' + kind);
-  var box   = document.getElementById('cam-box-' + kind);
-  var cfg   = CAM[kind];
-  var vw = video.videoWidth  || 640;
-  var vh = video.videoHeight || 480;
-  var sx = 0, sy = 0, sw = vw, sh = vh;
-  if (cfg.crop) {
-    var rect = box.getBoundingClientRect();
-    var r = cropRectCover(vw, vh, rect.width, rect.height, 0.04, 0.04);
-    sx = r.sx; sy = r.sy; sw = r.sw; sh = r.sh;
-  }
-  var dataUrl = drawCropped(video, sx, sy, sw, sh, cfg.crop ? 1000 : 500);
-  finishCapture(kind, dataUrl);
-}
-
-/* Inverts an object-fit:cover transform: given a source of size
- * videoW x videoH displayed to completely fill a box boxW x boxH
- * (cropping whichever dimension overflows, centred), returns the
- * source-pixel rectangle that corresponds to an inset guide frame
- * drawn at insetXPct/insetYPct within that box. */
-function cropRectCover(videoW, videoH, boxW, boxH, insetXPct, insetYPct) {
-  var scale  = Math.max(boxW / videoW, boxH / videoH);
-  var dispW  = videoW * scale, dispH = videoH * scale;
-  var offX   = (dispW - boxW) / 2, offY = (dispH - boxH) / 2;
-  var gx = boxW * insetXPct, gy = boxH * insetYPct;
-  var gw = boxW * (1 - 2 * insetXPct), gh = boxH * (1 - 2 * insetYPct);
-  return { sx: (gx + offX) / scale, sy: (gy + offY) / scale, sw: gw / scale, sh: gh / scale };
-}
 
 function drawCropped(source, sx, sy, sw, sh, maxDim) {
   var outW = sw, outH = sh;
@@ -997,11 +896,9 @@ function drawCropped(source, sx, sy, sw, sh, maxDim) {
 
 function finishCapture(kind, dataUrl) {
   _capturedImg[kind] = dataUrl;
-  var stream = _camStreams[kind];
-  if (stream) { stream.getTracks().forEach(function(t){ t.stop(); }); _camStreams[kind] = null; }
   var box = document.getElementById('cam-box-' + kind);
   box.innerHTML = '<img src="' + dataUrl + '">';
-  box.classList.remove('live'); box.classList.add('filled');
+  box.classList.add('filled');
   document.getElementById('cam-btns-' + kind).style.display = 'none';
   document.getElementById('cam-retake-' + kind).style.display = 'block';
   var err = document.getElementById('err-reg-' + kind);
@@ -1013,15 +910,9 @@ function camRetake(kind) {
   var cfg = CAM[kind];
   var box = document.getElementById('cam-box-' + kind);
   box.className = 'eid-cam-box' + (kind === 'photo' ? ' round' : '');
-  box.innerHTML = '<video id="cam-video-' + kind + '" autoplay playsinline muted style="display:none"></video>'
-    + (cfg.crop ? '<div class="eid-cam-guide"></div>' : '');
+  box.innerHTML = cfg.crop ? '<div class="eid-cam-guide"></div>' : '';
   document.getElementById('cam-retake-' + kind).style.display = 'none';
-  var btns = document.getElementById('cam-btns-' + kind);
-  btns.style.display = 'flex';
-  btns.querySelectorAll('.eid-cam-btn')[0].style.display = 'inline-flex';
-  var capBtn = document.getElementById('cam-capture-' + kind);
-  capBtn.style.display = 'none';
-  capBtn.disabled = true;
+  document.getElementById('cam-btns-' + kind).style.display = 'flex';
 }
 
 /* Upload fallback - centre-crops to the same card aspect ratio so a
@@ -1070,10 +961,6 @@ function updateAgeHint() {
   else { hint.textContent = 'Age: ' + age + (age === 1 ? ' year' : ' years'); }
 }
 function regBack(from) {
-  ['photo','fayda-front','fayda-back'].forEach(function(kind){
-    var stream = _camStreams[kind];
-    if (stream) { stream.getTracks().forEach(function(t){ t.stop(); }); _camStreams[kind] = null; }
-  });
   setRegStep(from-1);
 }
 function setRegStep(n) {
