@@ -1434,6 +1434,57 @@ function apfImageSharpness(dataUrl, cb) {
   img.onerror = function() { cb(null); };
   img.src = dataUrl;
 }
+/* The browser's own native FaceDetector (Shape Detection API) turned
+ * out to essentially never actually be present - live testing on
+ * Chrome/Android (the one browser that ever shipped it) still let a
+ * sharp, textured but face-less photo straight through, because
+ * "typeof FaceDetector !== 'undefined'" was false there too, silently
+ * skipping the whole check and leaving only the blur heuristic (which
+ * can't tell a real face apart from any other sharp, detailed image).
+ * Replaced with a real, free, open face-detection model (face-api.js,
+ * a thin wrapper around TensorFlow.js's tiny face detector) loaded
+ * lazily from a CDN on first use - actual AI inference in the browser,
+ * not a browser API that mostly doesn't exist. Same fail-open design
+ * throughout (script/model load failure, detection error) so a CDN
+ * hiccup degrades to the blur-only check rather than blocking
+ * registration outright. */
+var _apfFaceApiScriptPromise = null;
+function apfLoadFaceApiScript() {
+  if (_apfFaceApiScriptPromise) return _apfFaceApiScriptPromise;
+  _apfFaceApiScriptPromise = new Promise(function(resolve, reject) {
+    if (typeof faceapi !== 'undefined') { resolve(); return; }
+    var s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js';
+    s.onload = function() { resolve(); };
+    s.onerror = function() { reject(new Error('face-api.js script failed to load')); };
+    document.head.appendChild(s);
+  });
+  return _apfFaceApiScriptPromise;
+}
+var _apfFaceModelsPromise = null;
+function apfLoadFaceModels() {
+  if (_apfFaceModelsPromise) return _apfFaceModelsPromise;
+  _apfFaceModelsPromise = apfLoadFaceApiScript().then(function() {
+    var MODEL_URL = 'https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/weights';
+    return faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
+  });
+  return _apfFaceModelsPromise;
+}
+function apfDetectFaceReal(dataUrl, cb) {
+  apfLoadFaceModels().then(function() {
+    var img = new Image();
+    img.onload = function() {
+      try {
+        var options = new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.5 });
+        faceapi.detectSingleFace(img, options).then(function(result) {
+          cb(!!result);
+        }).catch(function() { cb(true); });
+      } catch (e) { cb(true); }
+    };
+    img.onerror = function() { cb(true); };
+    img.src = dataUrl;
+  }).catch(function() { cb(true); });
+}
 function apfCheckPhotoQuality(dataUrl, checkFace, cb) {
   if (!dataUrl) { cb(true); return; }
   apfImageSharpness(dataUrl, function(sharpness) {
@@ -1441,22 +1492,14 @@ function apfCheckPhotoQuality(dataUrl, checkFace, cb) {
       cb(false, 'That photo looks blank or too blurry to be useful. Please retake it in better light, holding the camera steady, or upload a clearer photo.');
       return;
     }
-    if (checkFace && typeof FaceDetector !== 'undefined') {
-      var img = new Image();
-      img.onload = function() {
-        try {
-          var detector = new FaceDetector({ fastMode: true, maxDetectedFaces: 1 });
-          detector.detect(img).then(function(faces) {
-            if (!faces || !faces.length) {
-              cb(false, "We couldn't find a face in that photo. Please take a clear selfie of yourself, or upload a real photo.");
-            } else {
-              cb(true);
-            }
-          }).catch(function() { cb(true); });
-        } catch (e) { cb(true); }
-      };
-      img.onerror = function() { cb(true); };
-      img.src = dataUrl;
+    if (checkFace) {
+      apfDetectFaceReal(dataUrl, function(hasFace) {
+        if (!hasFace) {
+          cb(false, "We couldn't find a face in that photo. Please take a clear selfie of yourself, or upload a real photo.");
+        } else {
+          cb(true);
+        }
+      });
     } else {
       cb(true);
     }
