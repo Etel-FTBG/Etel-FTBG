@@ -108,20 +108,21 @@ class EtelID_Auth {
         unset( $data['password'] );
         unset( $data['password_confirm'] );
 
-        /* Fayda ID photos are optional at registration, but if either is
-         * provided, both must be - and both must actually be images.
-         * Same check fayda_id_submit() already does for an existing
-         * member's later submission; applied here too since this is now
-         * a second entry point writing to the same columns. */
-        $has_front = ! empty( $data['fayda_front_image'] );
-        $has_back  = ! empty( $data['fayda_back_image'] );
-        if ( $has_front || $has_back ) {
-            if ( ! $has_front || strpos( $data['fayda_front_image'], 'data:image' ) !== 0 ) {
-                return new WP_Error( 'fayda_front_invalid', 'Please add a photo of the front of your Fayda ID.' );
-            }
-            if ( ! $has_back || strpos( $data['fayda_back_image'], 'data:image' ) !== 0 ) {
-                return new WP_Error( 'fayda_back_invalid', 'Please add a photo of the back of your Fayda ID.' );
-            }
+        /* Profile photo and both sides of the Fayda ID are required at
+         * registration (Step 3 of the wizard in auth-page.php always
+         * collects all three before calling this) - each must actually
+         * be an image data URI, not just a non-empty string, since the
+         * client sends base64 captures/uploads here rather than file
+         * uploads. Same shape of check fayda_id_submit() already does
+         * for an existing member's later resubmission. */
+        if ( empty( $data['photo_url'] ) || strpos( $data['photo_url'], 'data:image' ) !== 0 ) {
+            return new WP_Error( 'photo_required', 'Please add a profile photo.' );
+        }
+        if ( empty( $data['fayda_front_image'] ) || strpos( $data['fayda_front_image'], 'data:image' ) !== 0 ) {
+            return new WP_Error( 'fayda_front_invalid', 'Please add a photo of the front of your Fayda ID.' );
+        }
+        if ( empty( $data['fayda_back_image'] ) || strpos( $data['fayda_back_image'], 'data:image' ) !== 0 ) {
+            return new WP_Error( 'fayda_back_invalid', 'Please add a photo of the back of your Fayda ID.' );
         }
 
         /* Create the member record (generates Etel-ID, FIN, card number etc.) */
