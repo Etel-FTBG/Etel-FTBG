@@ -888,6 +888,20 @@ var FAYDA_RATIO = 1.586;
 
 function camStart(kind) {
   var cfg = CAM[kind];
+  /* getUserMedia() (the live in-page camera preview) is blocked by the
+   * browser itself on a non-HTTPS origin, regardless of what the OS/app
+   * level camera permission says - this is different from the native
+   * camera app launched by a plain <input capture> file picker (which
+   * doesn't need a secure context at all), and matches exactly what was
+   * reported live: the old capture-attribute upload button opened the
+   * camera fine, but this in-page preview never could, even after
+   * granting Chrome's own OS-level camera permission. Checked explicitly
+   * so the message names the real cause instead of a misleading
+   * "permission blocked" when permission was never actually requestable. */
+  if (!window.isSecureContext) {
+    fieldErr('reg-' + kind, 'Live camera preview needs a secure (https://) connection, which this page isn\'t loaded over right now - camera permission on your device doesn\'t change that. Please upload a photo instead.');
+    return;
+  }
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
     document.getElementById('cam-file-' + kind).click();
     return;
