@@ -744,7 +744,7 @@ function regNext(from) {
         fieldErr('reg-full-name', 'An account with this name and date of birth already exists. Please sign in instead, or contact support if this is an error.');
         return;
       }
-      showNameTakenWarning(result.nameTaken);
+      if (!applyNameMatchLevel(result.matchLevel)) return;
       if (!email) { setRegStep(3); return; }
       checkDuplicateEmail(email, function(taken){
         if (taken) {
@@ -766,14 +766,30 @@ function regNext(from) {
     return;
   }
 }
-function showNameTakenWarning(nameTaken) {
-  var el = document.getElementById('warn-reg-full-name');
-  if (nameTaken) {
-    el.textContent = 'Note: an account with this name already exists (different date of birth on file). If this is you, please sign in instead.';
-    el.style.display = 'block';
-  } else {
-    el.style.display = 'none';
+/* Ethiopian full names are given-name + father's-name (+
+ * grandfather's-name etc), not first/last in the Western sense - see
+ * EtelID_DB::name_match_level()'s own comment. Mirrors its 0-3 scale
+ * client-side: level 1 (given name only) is too common to act on;
+ * level 2 (given + father's name both match) is a real live-reported
+ * case - two different people whose first two names matched - and is
+ * blocking until a 3rd (grandfather's) name is added; level 3 (the
+ * full entered name matches) is the strongest name-only signal this
+ * can produce but still isn't DOB-backed, so it stays a warning.
+ * Returns false when Step 2 -> Step 3 should be held back. */
+function applyNameMatchLevel(level) {
+  var warnEl  = document.getElementById('warn-reg-full-name');
+  if (level >= 2) {
+    fieldErr('reg-full-name', "This given name and father's name match an existing record. Please also add your grandfather's name (a 3rd name) so we can tell you apart, then continue.");
+    warnEl.style.display = 'none';
+    return false;
   }
+  if (level === 3) {
+    warnEl.textContent = 'Note: this exact name already exists (different date of birth on file). If this is you, please sign in instead.';
+    warnEl.style.display = 'block';
+  } else {
+    warnEl.style.display = 'none';
+  }
+  return true;
 }
 /* Live checks against the database (etelid_check_duplicate_name /
  * etelid_check_duplicate_email AJAX actions) - fire on blur of the
@@ -782,9 +798,9 @@ function showNameTakenWarning(nameTaken) {
  * already registered, or an email already in use, is caught while
  * filling the form, not only after clicking "Create My Etel-ID" at
  * the very end. Name+DOB together blocks (a real duplicate signal);
- * name alone only warns (two different real people can share a name -
- * see EtelID_DB::find_by_name()'s own comment); email always blocks
- * since it should map to one account. */
+ * a given+father's-name match (applyNameMatchLevel()'s level 2) also
+ * blocks, asking for a 3rd name; email always blocks since it should
+ * map to one account. */
 var _dupNameCheck  = { key: '', result: null, checked: false };
 var _dupEmailCheck = { key: '', taken: false, checked: false };
 function checkDuplicateName(name, dob, cb) {
@@ -795,8 +811,8 @@ function checkDuplicateName(name, dob, cb) {
   }
   post({ action: 'etelid_check_duplicate_name', full_name: name, dob: dob }, function(r) {
     var result = {
-      duplicate: !!(r.success && r.data && r.data.duplicate),
-      nameTaken: !!(r.success && r.data && r.data.name_taken),
+      duplicate:   !!(r.success && r.data && r.data.duplicate),
+      matchLevel:  (r.success && r.data && r.data.match_level) ? r.data.match_level : 0,
     };
     _dupNameCheck = { key: key, result: result, checked: true };
     cb(result);
@@ -844,7 +860,7 @@ document.getElementById('reg-full-name').addEventListener('blur', function() {
     if (result.duplicate) {
       fieldErr('reg-full-name', 'An account with this name and date of birth already exists. Please sign in instead, or contact support if this is an error.');
     } else {
-      showNameTakenWarning(result.nameTaken);
+      applyNameMatchLevel(result.matchLevel);
     }
   });
 });

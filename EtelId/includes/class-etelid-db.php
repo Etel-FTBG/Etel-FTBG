@@ -543,6 +543,38 @@ class EtelID_DB {
         return $wpdb->get_row( $wpdb->prepare( $sql, $params ) );
     }
 
+    /* Ethiopian names are given-name + father's-name (+ grandfather's-name
+     * etc), not first/last in the Western sense - two unrelated people
+     * sharing just a given name is extremely common, so that alone isn't
+     * worth flagging. Sharing given name AND father's name together is a
+     * much stronger coincidence and worth asking the person to add their
+     * grandfather's name to tell them apart, per a real case seen live
+     * (two different registrants whose first two names matched). Returns
+     * how many of the input's leading name components form a match
+     * against some existing member.full_name, via find_by_name() reused
+     * on word subsets (its own AND-of-all-words LIKE match is exactly
+     * what's needed here when given only the first 1, 2, or all words):
+     *   0 = no match at all
+     *   1 = only the given name matches
+     *   2 = given name + father's name both match (ask for a 3rd name)
+     *   3 = the full entered name (3+ words) matches - as strong a
+     *       name-only signal as this can produce; still not necessarily
+     *       the same person (see find_duplicate_registration() for the
+     *       real, DOB-backed duplicate signal), so callers should warn,
+     *       not block, at this level. */
+    public static function name_match_level( $full_name ) {
+        $words = preg_split( '/\s+/', trim( (string) $full_name ), -1, PREG_SPLIT_NO_EMPTY );
+        if ( empty( $words ) ) return 0;
+        $level = 0;
+        if ( self::find_by_name( $words[0] ) ) $level = 1;
+        if ( count( $words ) >= 2 ) {
+            $first_two = $words[0] . ' ' . $words[1];
+            if ( self::find_by_name( $first_two ) ) $level = 2;
+        }
+        if ( count( $words ) >= 3 && self::find_by_name( $full_name ) ) $level = 3;
+        return $level;
+    }
+
     /* Email has no UNIQUE key at the schema level, so this is the only
      * thing stopping the same email being reused across accounts -
      * checked live during registration and re-checked server-side. */

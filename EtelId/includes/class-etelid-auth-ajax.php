@@ -137,6 +137,12 @@ class EtelID_Auth_Ajax {
         if ( EtelID_DB::find_duplicate_registration( $data['full_name'], $data['dob'] ) ) {
             wp_send_json_error( array( 'field' => 'full_name', 'message' => 'An account with this name and date of birth already exists. Please sign in instead, or contact support if this is an error.' ) );
         }
+        /* Same re-check for the given-name+father's-name match level (see
+         * EtelID_DB::name_match_level()) the wizard's Step 2 already
+         * blocks on - defense-in-depth in case that step was bypassed. */
+        if ( 2 === EtelID_DB::name_match_level( $data['full_name'] ) ) {
+            wp_send_json_error( array( 'field' => 'full_name', 'message' => "This given name and father's name match an existing record. Please also add your grandfather's name (a 3rd name) to tell the two of you apart." ) );
+        }
 
         $result = EtelID_Auth::register( $data );
         if ( is_wp_error( $result ) ) {
@@ -178,20 +184,23 @@ class EtelID_Auth_Ajax {
         $dob       = isset( $_POST['dob'] )       ? sanitize_text_field( wp_unslash( $_POST['dob'] ) )       : '';
 
         if ( empty( $full_name ) ) {
-            wp_send_json_success( array( 'duplicate' => false, 'name_taken' => false ) );
+            wp_send_json_success( array( 'duplicate' => false, 'match_level' => 0 ) );
         }
 
-        /* Two separate signals: an exact name+dob match is a real
-         * duplicate-registration block (see find_duplicate_registration()'s
-         * own comment); a name-only match ('name_taken') is only ever a
-         * non-blocking heads-up, since two different real people can
-         * share a name - the wizard shows this as a warning, not an error,
-         * and still lets the person continue. */
-        $duplicate  = ! empty( $dob ) && EtelID_DB::find_duplicate_registration( $full_name, $dob );
-        $name_taken = EtelID_DB::find_by_name( $full_name );
+        /* Three signals, from weakest to strongest: an exact name+dob
+         * match is a real duplicate-registration block (see
+         * find_duplicate_registration()'s own comment). Short of that,
+         * name_match_level() (see its own comment in class-etelid-db.php)
+         * tells the wizard how many leading name components matched -
+         * given-name-only is too common to act on, given+father's-name
+         * together is worth blocking until a 3rd (grandfather's) name is
+         * added to tell two same-named people apart, and a full 3+-word
+         * match is only ever a non-blocking heads-up since it's still not
+         * DOB-backed. */
+        $duplicate = ! empty( $dob ) && EtelID_DB::find_duplicate_registration( $full_name, $dob );
         wp_send_json_success( array(
-            'duplicate'  => (bool) $duplicate,
-            'name_taken' => (bool) $name_taken,
+            'duplicate'   => (bool) $duplicate,
+            'match_level' => EtelID_DB::name_match_level( $full_name ),
         ) );
     }
 
