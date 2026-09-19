@@ -329,7 +329,7 @@ $features = array(
             </div>
           </div>
           <div class="eid-step-nav">
-            <button class="eid-step-back" onclick="regBack(2)"><i class="ti ti-arrow-left"></i></button>
+            <button class="eid-step-back" onclick="regBack(2)"><i class="ti ti-arrow-left"></i><span class="eid-step-back-txt">Back</span></button>
             <button class="eid-step-next" style="flex:1" onclick="regNext(2)">
               Continue <i class="ti ti-arrow-right" style="margin-left:4px"></i>
             </button>
@@ -386,7 +386,7 @@ $features = array(
           </div>
 
           <div class="eid-step-nav">
-            <button class="eid-step-back" onclick="regBack(3)"><i class="ti ti-arrow-left"></i></button>
+            <button class="eid-step-back" onclick="regBack(3)"><i class="ti ti-arrow-left"></i><span class="eid-step-back-txt">Back</span></button>
             <button class="eid-auth-submit" style="flex:1;margin-top:0" id="reg-submit-btn" onclick="regNext(3)">
               <i class="ti ti-id" style="margin-right:6px"></i>
               <span id="reg-submit-lbl">Create My Etel-ID</span>
@@ -905,9 +905,17 @@ function camStart(kind) {
     document.querySelectorAll('#cam-btns-' + kind + ' .eid-cam-btn')[0].style.display = 'none';
   }
   function onFail(err) {
+    /* Once a browser has recorded "block" for a site's camera
+     * permission, no page can make the native Allow/Block prompt
+     * reappear by calling getUserMedia() again - that decision is
+     * stored per-origin by the browser itself and only the person can
+     * change it (a website re-asking would defeat the point of the
+     * permission). The most this code can do is point at exactly where
+     * that setting lives, so "upload a photo" stays the reliable path
+     * either way. */
     var msg = 'Could not access the camera. Please upload a photo instead.';
     if (err && err.name === 'NotAllowedError') {
-      msg = 'Camera access was denied. Allow camera permission for this site in your browser settings, or upload a photo instead.';
+      msg = 'Camera access is blocked for this site. Tap the lock/info icon next to the address bar, open Permissions (or Site settings), set Camera to Allow, then reload this page - or just upload a photo below.';
     } else if (err && err.name === 'NotFoundError') {
       msg = 'No camera was found on this device. Please upload a photo instead.';
     } else if (err && err.name === 'NotReadableError') {
