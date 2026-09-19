@@ -18,7 +18,6 @@
   function getUser()   { try { return (typeof user !== 'undefined') ? user : null; } catch (e) { return null; } }
 
   ready(function () {
-    injectOnlineToggle();
     injectEarningsCard();
     wireHaptics();
     wireTabRefresh();
@@ -105,104 +104,22 @@
     }).catch(function () {});
   }
 
-  /* ── SLIDE-TO-GO-ONLINE (matches the Driver app's control) ──
-     Frontend state persisted locally. If you add a presence endpoint,
-     wire it where marked below. */
-  function injectOnlineToggle() {
-    var wrap  = document.getElementById('c-slide-online-wrap');
-    var track = document.getElementById('c-slide-online-track');
-    var thumb = document.getElementById('c-slide-online-thumb');
-    var fill  = document.getElementById('c-slide-online-fill');
-    var pill  = document.getElementById('c-online-pill');
-    if (!wrap || !track || !thumb) return;
-
-    var on = localStorage.getItem('etelCourierOnline') === '1'; // default OFFLINE until slid, matching the Driver app
-    var dragging = false, startX = 0, progress = 0;
-
-    function render() {
-      wrap.style.display = on ? 'none' : 'block';
-      if (pill) pill.style.display = on ? 'flex' : 'none';
-      document.body.classList.toggle('is-offline', !on);
-    }
-    render();
-    if (on) showCourierOnlineReminder();
-
-    function setOnline(val) {
-      on = val;
-      localStorage.setItem('etelCourierOnline', on ? '1' : '0');
-      render();
-      if (navigator.vibrate && !reduced) navigator.vibrate(on ? [12, 40, 12] : 12);
-      if (on) showCourierOnlineReminder(); else clearCourierOnlineReminder();
-      // OPTIONAL: wire to backend presence here, e.g.
-      // if (typeof api === 'function') api('courier_set_status', {online: on ? 1 : 0}).catch(function(){});
-    }
-
-    function getClientX(e) { return e.touches ? e.touches[0].clientX : e.clientX; }
-    function onStart(e) {
-      if (on) return;
-      dragging = true; startX = getClientX(e); progress = 0;
-      e.preventDefault();
-    }
-    function onMove(e) {
-      if (!dragging) return;
-      var maxX = track.offsetWidth - thumb.offsetWidth - 10;
-      if (maxX <= 0) return;
-      var dx = startX - getClientX(e); // positive when sliding LEFT (RTL, matches Driver app)
-      dx = Math.max(0, Math.min(dx, maxX));
-      progress = dx / maxX;
-      thumb.style.transform = 'translateX(' + (-dx) + 'px)';
-      if (fill) fill.style.transform = 'scaleX(' + progress + ')';
-      e.preventDefault();
-    }
-    function onEnd() {
-      if (!dragging) return;
-      dragging = false;
-      if (progress >= 0.75) {
-        var maxX = track.offsetWidth - thumb.offsetWidth - 10;
-        thumb.style.transform = 'translateX(' + (-maxX) + 'px)';
-        if (fill) fill.style.transform = 'scaleX(1)';
-        setTimeout(function () {
-          thumb.style.transform = '';
-          if (fill) fill.style.transform = '';
-          setOnline(true);
-        }, 180);
-      } else {
-        thumb.style.transition = 'transform .25s';
-        thumb.style.transform = 'translateX(0)';
-        if (fill) fill.style.transform = 'scaleX(0)';
-        progress = 0;
-        setTimeout(function () { thumb.style.transition = ''; }, 260);
-      }
-    }
-    track.addEventListener('mousedown', onStart);
-    track.addEventListener('touchstart', onStart, { passive: false });
-    document.addEventListener('mousemove', onMove);
-    document.addEventListener('touchmove', onMove, { passive: false });
-    document.addEventListener('mouseup', onEnd);
-    document.addEventListener('touchend', onEnd);
-
-    /* Tap-and-hold the online pill to go back offline (mirrors the Driver
-       app's hold-the-power-button-to-go-offline gesture, so the two service-
-       provider apps behave the same way). */
-    if (pill) {
-      var holdTimer = null;
-      function startHold() {
-        pill.classList.add('holding');
-        try { if (typeof showToast === 'function') showToast('Keep holding to go offline…'); } catch (e) {}
-        holdTimer = setTimeout(function () { pill.classList.remove('holding'); setOnline(false); }, 900);
-      }
-      function cancelHold() { clearTimeout(holdTimer); pill.classList.remove('holding'); }
-      pill.addEventListener('mousedown', startHold);
-      pill.addEventListener('touchstart', startHold, { passive: true });
-      pill.addEventListener('mouseup', cancelHold);
-      pill.addEventListener('mouseleave', cancelHold);
-      pill.addEventListener('touchend', cancelHold);
-    }
-
-    document.addEventListener('visibilitychange', function () {
-      if (document.visibilityState === 'hidden' && on) showCourierOnlineReminder();
-    });
-  }
+  // Exposed so courier.js's real, backend-wired online/offline toggle
+  // (initCourierSlideOnline/courierGoOnline/courierGoOffline) can trigger
+  // these reminders from the actual state transition, instead of this
+  // file re-implementing its own separate slide-to-go-online control.
+  // A second, local-storage-only toggle used to live here, wired to the
+  // exact same #c-slide-online-wrap/#c-online-pill DOM elements as
+  // courier.js's real one - both ran on every page load, and whichever
+  // rendered last silently won, which is why the control could vanish
+  // entirely (courier.js correctly hides the slider once truly online,
+  // but this file's separate render() never got told about that real
+  // state, leaving document.body's "is-offline" class stuck and hiding
+  // the online pill too via the body.is-offline CSS rule - no control
+  // visible at all). Removed; courier.js is the single source of truth
+  // now.
+  window.showCourierOnlineReminder = showCourierOnlineReminder;
+  window.clearCourierOnlineReminder = clearCourierOnlineReminder;
 
 
   /* ── EARNINGS SUMMARY CARD (top of sidebar) ── */
