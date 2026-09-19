@@ -523,7 +523,36 @@ body::before{
           </button>
           <button type="button" class="af-btn-next" id="qr-submit-btn" onclick="etelIDQuickSubmit()" style="padding:12px 28px;font-size:15px;">
             <i class="ti ti-bolt"></i>
-            <span id="qr-btn-label">Quick Register</span>
+            <span id="qr-btn-label">Continue</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- == QUICK REGISTER REVIEW == -->
+  <div id="qr-review-state" style="display:none;">
+    <div class="af-panel">
+      <div class="af-panel-head">
+        <div class="af-panel-icon"><i class="ti ti-circle-check"></i></div>
+        <div>
+          <span class="af-panel-title">Review &amp; Confirm</span>
+          <span class="af-panel-sub">Confirm your details before issuing your Etel-ID</span>
+        </div>
+      </div>
+      <div class="af-panel-body">
+        <div id="qr-review-summary" class="af-review-grid"></div>
+        <div class="af-terms" style="margin-top:20px;">
+          By confirming, you confirm all information is accurate. Your Etel-ID will be issued
+          immediately with a temporary password - you'll be asked to set your own right after.
+        </div>
+        <div class="af-nav-row">
+          <button type="button" class="af-btn-back" onclick="qrBackToEdit()">
+            <i class="ti ti-arrow-left"></i> Edit
+          </button>
+          <button type="button" class="af-btn-next" id="qr-confirm-btn" onclick="qrDoSubmit()" style="padding:12px 28px;font-size:15px;">
+            <i class="ti ti-bolt"></i>
+            <span id="qr-confirm-lbl">Confirm &amp; Register</span>
           </button>
         </div>
       </div>
@@ -964,6 +993,13 @@ function qrShowErr(msg) {
  * here, so apfCheckDuplicateName() is called with an empty dob (the
  * exact name+dob duplicate signal doesn't apply, but the given/
  * father's-name match-level tiering still does). */
+/* Runs local field checks, then photo-quality checks (blur/blank
+ * heuristic + face detection on the profile photo where the browser
+ * supports it - see apfValidatePhotos()'s own comment), then the same
+ * live duplicate-check chain as before - but instead of submitting
+ * straight away, shows a Review & Confirm screen so a one-tap "Quick
+ * Register" can no longer create an account from a single click
+ * without the person seeing what they typed first. */
 function etelIDQuickSubmit() {
   var fullName = document.getElementById('q-full_name').value.trim();
   var phone    = document.getElementById('q-phone').value.trim();
@@ -990,51 +1026,91 @@ function etelIDQuickSubmit() {
   btn.disabled = true;
   lbl.textContent = 'Checking...';
 
-  function reset() { btn.disabled = false; lbl.textContent = 'Quick Register'; }
+  function reset() { btn.disabled = false; lbl.textContent = 'Continue'; }
 
-  apfCheckDuplicatePhone(phone, function(taken) {
-    if (taken) { qrShowErr('An account with this phone number already exists. Please sign in instead.'); reset(); return; }
-    apfCheckDuplicateName(fullName, '', function(result) {
-      if (!apfApplyNameMatchLevel(result.matchLevel, qrShowErr)) { reset(); return; }
-      if (!email) { qrDoSubmit(); return; }
-      apfCheckDuplicateEmail(email, function(taken2) {
-        if (taken2) { qrShowErr('This email is already registered. Please use a different email, or sign in instead.'); reset(); return; }
-        qrDoSubmit();
+  apfValidatePhotos(_qrData.photo_url, _qrData.fayda_front_image, _qrData.fayda_back_image, qrShowErr, function(photosOk) {
+    if (!photosOk) { reset(); return; }
+    apfCheckDuplicatePhone(phone, function(taken) {
+      if (taken) { qrShowErr('An account with this phone number already exists. Please sign in instead.'); reset(); return; }
+      apfCheckDuplicateName(fullName, '', function(result) {
+        if (!apfApplyNameMatchLevel(result.matchLevel, qrShowErr)) { reset(); return; }
+        if (!email) { qrShowReview(fullName, phone, email); reset(); return; }
+        apfCheckDuplicateEmail(email, function(taken2) {
+          if (taken2) { qrShowErr('This email is already registered. Please use a different email, or sign in instead.'); reset(); return; }
+          qrShowReview(fullName, phone, email);
+          reset();
+        });
       });
     });
   });
+}
 
-  function qrDoSubmit() {
-    lbl.textContent = 'Registering...';
-    var body = 'action=etelid_quick_register&nonce=' + EtelIDConfig.nonceAuth
-      + '&full_name=' + encodeURIComponent(fullName)
-      + '&phone=' + encodeURIComponent(phone)
-      + '&email=' + encodeURIComponent(email)
-      + '&photo_url=' + encodeURIComponent(_qrData.photo_url)
-      + '&fayda_front_image=' + encodeURIComponent(_qrData.fayda_front_image)
-      + '&fayda_back_image=' + encodeURIComponent(_qrData.fayda_back_image);
+function qrShowReview(fullName, phone, email) {
+  document.getElementById('af-mode-quick').style.display = 'none';
+  document.getElementById('qr-review-state').style.display = 'block';
+  var rows = [
+    ['Full Name', fullName],
+    ['Phone', phone],
+    ['Email', email || 'Not provided'],
+    ['Profile Photo', _qrData.photo_url ? 'Added' : 'Missing'],
+    ['Fayda ID', (_qrData.fayda_front_image && _qrData.fayda_back_image) ? 'Added' : 'Missing'],
+  ];
+  var html = '';
+  rows.forEach(function(r) {
+    html += '<div class="af-review-item">'
+          + '<div class="af-review-lbl">' + apfEsc(r[0]) + '</div>'
+          + '<div class="af-review-val">' + apfEsc(r[1]) + '</div>'
+          + '</div>';
+  });
+  document.getElementById('qr-review-summary').innerHTML = html;
+  window.scrollTo({top:0, behavior:'smooth'});
+}
 
-    fetch(EtelIDConfig.ajax, {
-      method:'POST',
-      headers:{'Content-Type':'application/x-www-form-urlencoded'},
-      body: body
-    }).then(function(r){ return r.json(); }).then(function(res) {
-      if (res.success) {
-        document.getElementById('af-mode-quick').style.display = 'none';
-        document.getElementById('qr-success-state').style.display = 'block';
-        document.getElementById('qr-res-etel-id').textContent = res.data.etel_id;
-        document.getElementById('qr-res-temp-password').value = res.data.temp_password;
-        document.getElementById('qr-res-portal-link').href = res.data.redirect || '<?php echo esc_js(home_url('/portal/')); ?>';
-        window.scrollTo({top:0, behavior:'smooth'});
-      } else {
-        qrShowErr((res.data && res.data.message) ? res.data.message : 'Registration failed. Please try again.');
-        reset();
-      }
-    }).catch(function() {
-      reset();
-      qrShowErr('Network error. Please try again.');
-    });
-  }
+function qrBackToEdit() {
+  document.getElementById('qr-review-state').style.display = 'none';
+  document.getElementById('af-mode-quick').style.display = 'block';
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+function qrDoSubmit() {
+  var fullName = document.getElementById('q-full_name').value.trim();
+  var phone    = document.getElementById('q-phone').value.trim();
+  var email    = document.getElementById('q-email').value.trim();
+  var btn = document.getElementById('qr-confirm-btn');
+  var lbl = document.getElementById('qr-confirm-lbl');
+  btn.disabled = true;
+  lbl.textContent = 'Registering...';
+
+  var body = 'action=etelid_quick_register&nonce=' + EtelIDConfig.nonceAuth
+    + '&full_name=' + encodeURIComponent(fullName)
+    + '&phone=' + encodeURIComponent(phone)
+    + '&email=' + encodeURIComponent(email)
+    + '&photo_url=' + encodeURIComponent(_qrData.photo_url)
+    + '&fayda_front_image=' + encodeURIComponent(_qrData.fayda_front_image)
+    + '&fayda_back_image=' + encodeURIComponent(_qrData.fayda_back_image);
+
+  fetch(EtelIDConfig.ajax, {
+    method:'POST',
+    headers:{'Content-Type':'application/x-www-form-urlencoded'},
+    body: body
+  }).then(function(r){ return r.json(); }).then(function(res) {
+    if (res.success) {
+      document.getElementById('qr-review-state').style.display = 'none';
+      document.getElementById('qr-success-state').style.display = 'block';
+      document.getElementById('qr-res-etel-id').textContent = res.data.etel_id;
+      document.getElementById('qr-res-temp-password').value = res.data.temp_password;
+      document.getElementById('qr-res-portal-link').href = res.data.redirect || '<?php echo esc_js(home_url('/portal/')); ?>';
+      window.scrollTo({top:0, behavior:'smooth'});
+    } else {
+      qrShowErr((res.data && res.data.message) ? res.data.message : 'Registration failed. Please try again.');
+      btn.disabled = false;
+      lbl.textContent = 'Confirm & Register';
+    }
+  }).catch(function() {
+    btn.disabled = false;
+    lbl.textContent = 'Confirm & Register';
+    qrShowErr('Network error. Please try again.');
+  });
 }
 
 /* Step 1 (name/dob/phone/email) and Step 2 (region/zone) both need a
@@ -1063,6 +1139,18 @@ function etelIDNext(from) {
           etelIDCollect(); etelIDGoto(2);
         });
       });
+    });
+    return;
+  }
+  if (from === 3) {
+    /* Photo & Fayda ID are optional at this step (can be added later
+     * from the portal), so apfValidatePhotos() only checks whichever
+     * of the three were actually provided - see its own comment. */
+    apfValidatePhotos(_eidData.photo_url || '', _eidData.fayda_front_image || '', _eidData.fayda_back_image || '', showErr, function(ok) {
+      if (!ok) return;
+      etelIDCollect();
+      etelIDGoto(4);
+      etelIDRenderReview();
     });
     return;
   }
@@ -1290,6 +1378,100 @@ function apfCheckDuplicateEmail(email, cb) {
     var taken = !!(r.success && r.data && r.data.taken);
     _apfDupEmailCheck = { key: key, taken: taken, checked: true };
     cb(taken);
+  });
+}
+function apfEsc(s) {
+  var d = document.createElement('div');
+  d.textContent = String(s == null ? '' : s);
+  return d.innerHTML;
+}
+/* -- Photo quality heuristics (client-side, no server/API needed) --
+ * A live-reported case showed a random photo (a close-up of clothing
+ * fabric) passing straight through as both the profile photo and the
+ * Fayda ID sides. There is no server-side service here (no paid vision
+ * API is connected) that could reliably confirm "this is a face" or
+ * "this is a genuine ID document", so this is deliberately a
+ * best-effort, free, client-side check rather than a guarantee:
+ *   - apfImageSharpness() estimates detail/focus via average gradient
+ *     magnitude on a downscaled grayscale copy of the image (a simple
+ *     Sobel-like edge measure) - catches an image that's blank, a
+ *     near-solid color, or badly out of focus (e.g. a finger over the
+ *     lens), which a real photo of a face or document won't be. The
+ *     threshold is intentionally lenient to avoid rejecting real
+ *     photos taken in imperfect conditions.
+ *   - For the profile photo specifically, the browser's own
+ *     FaceDetector API (Shape Detection API - available in Chrome on
+ *     Android, which is what was used live; not on every browser) is
+ *     used to confirm an actual face is present. Where it's
+ *     unavailable, this check is skipped rather than blocking
+ *     registration on browsers that can't run it (fails open, not
+ *     closed - it's a bonus check, not the only gate: the sharpness
+ *     check above still runs everywhere). */
+function apfImageSharpness(dataUrl, cb) {
+  var img = new Image();
+  img.onload = function() {
+    var W = 80, H = Math.max(1, Math.round(80 * img.height / img.width));
+    var canvas = document.createElement('canvas');
+    canvas.width = W; canvas.height = H;
+    var ctx = canvas.getContext('2d');
+    ctx.drawImage(img, 0, 0, W, H);
+    var data;
+    try { data = ctx.getImageData(0, 0, W, H).data; } catch (e) { cb(null); return; }
+    var gray = new Float32Array(W * H);
+    for (var i = 0; i < W * H; i++) {
+      gray[i] = 0.299 * data[i * 4] + 0.587 * data[i * 4 + 1] + 0.114 * data[i * 4 + 2];
+    }
+    var sum = 0, n = 0;
+    for (var y = 0; y < H - 1; y++) {
+      for (var x = 0; x < W - 1; x++) {
+        var idx = y * W + x;
+        sum += Math.abs(gray[idx] - gray[idx + 1]) + Math.abs(gray[idx] - gray[idx + W]);
+        n++;
+      }
+    }
+    cb(n ? sum / n : 0);
+  };
+  img.onerror = function() { cb(null); };
+  img.src = dataUrl;
+}
+function apfCheckPhotoQuality(dataUrl, checkFace, cb) {
+  if (!dataUrl) { cb(true); return; }
+  apfImageSharpness(dataUrl, function(sharpness) {
+    if (sharpness !== null && sharpness < 3) {
+      cb(false, 'That photo looks blank or too blurry to be useful. Please retake it in better light, holding the camera steady, or upload a clearer photo.');
+      return;
+    }
+    if (checkFace && typeof FaceDetector !== 'undefined') {
+      var img = new Image();
+      img.onload = function() {
+        try {
+          var detector = new FaceDetector({ fastMode: true, maxDetectedFaces: 1 });
+          detector.detect(img).then(function(faces) {
+            if (!faces || !faces.length) {
+              cb(false, "We couldn't find a face in that photo. Please take a clear selfie of yourself, or upload a real photo.");
+            } else {
+              cb(true);
+            }
+          }).catch(function() { cb(true); });
+        } catch (e) { cb(true); }
+      };
+      img.onerror = function() { cb(true); };
+      img.src = dataUrl;
+    } else {
+      cb(true);
+    }
+  });
+}
+function apfValidatePhotos(photoUrl, faydaFront, faydaBack, showFn, cb) {
+  apfCheckPhotoQuality(photoUrl, true, function(ok, msg) {
+    if (!ok) { showFn(msg); cb(false); return; }
+    apfCheckPhotoQuality(faydaFront, false, function(ok2, msg2) {
+      if (!ok2) { showFn(msg2); cb(false); return; }
+      apfCheckPhotoQuality(faydaBack, false, function(ok3, msg3) {
+        if (!ok3) { showFn(msg3); cb(false); return; }
+        cb(true);
+      });
+    });
   });
 }
 /* Mirrors applyNameMatchLevel() in auth-page.php: level 1 (given name
