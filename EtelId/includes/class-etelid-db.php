@@ -520,15 +520,27 @@ class EtelID_DB {
      * real, different people can share a name), but still worth
      * surfacing so the person filling the form can double-check before
      * continuing. */
+    /* Component-wise match, not an exact full-string match: an exact
+     * comparison missed a real case ("Dagmawi Dikasso" typed at
+     * registration vs. "Dagmawi Dikasso Aydiko" already on file - a
+     * different string, but every word the user typed is part of that
+     * existing name). Requires every word in $full_name to appear
+     * (as a substring, case-insensitive) somewhere in an existing
+     * member's full_name - i.e. first name matches AND middle/last
+     * name(s) match, not just any one word in common (which would
+     * false-positive on every other "Dagmawi" in the system). */
     public static function find_by_name( $full_name ) {
         global $wpdb;
-        $name = trim( preg_replace( '/\s+/', ' ', (string) $full_name ) );
-        if ( '' === $name ) return null;
-        return $wpdb->get_row( $wpdb->prepare(
-            "SELECT * FROM " . self::t_members() . "
-             WHERE LOWER(TRIM(full_name)) = LOWER(%s)
-             LIMIT 1", $name
-        ));
+        $words = preg_split( '/\s+/', trim( (string) $full_name ), -1, PREG_SPLIT_NO_EMPTY );
+        if ( empty( $words ) ) return null;
+        $where  = array();
+        $params = array();
+        foreach ( $words as $w ) {
+            $where[]  = 'full_name LIKE %s';
+            $params[] = '%' . $wpdb->esc_like( $w ) . '%';
+        }
+        $sql = "SELECT * FROM " . self::t_members() . " WHERE " . implode( ' AND ', $where ) . " LIMIT 1";
+        return $wpdb->get_row( $wpdb->prepare( $sql, $params ) );
     }
 
     /* Email has no UNIQUE key at the schema level, so this is the only

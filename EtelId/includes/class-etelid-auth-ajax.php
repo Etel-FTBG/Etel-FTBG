@@ -21,6 +21,7 @@ class EtelID_Auth_Ajax {
             'etelid_quick_register'       => 'quick_register',
             'etelid_check_duplicate_name'  => 'check_duplicate_name',
             'etelid_check_duplicate_email' => 'check_duplicate_email',
+            'etelid_check_duplicate_phone' => 'check_duplicate_phone',
             'etelid_auth_login'           => 'login',
             'etelid_auth_logout'          => 'logout',
             'etelid_auth_portal_data'     => 'portal_data',
@@ -211,6 +212,27 @@ class EtelID_Auth_Ajax {
         }
 
         wp_send_json_success( array( 'taken' => (bool) EtelID_DB::find_by_email( $email ) ) );
+    }
+
+    /* Live phone-uniqueness check for Step 1 of the registration wizard,
+     * same reasoning as check_duplicate_email() - EtelID_Auth::register()
+     * already blocks a duplicate phone server-side (find_by_phone()), this
+     * just surfaces the same signal before the person fills in the rest
+     * of the form instead of only at final submit. */
+    public static function check_duplicate_phone() {
+        check_ajax_referer( 'etelid_auth', 'nonce' );
+
+        $ip = EtelID_Security::get_ip();
+        if ( ! EtelID_Security::rate_limit( 'check_dup_phone_' . $ip, 30, 600 ) ) {
+            wp_send_json_error( array( 'message' => 'Too many checks. Please wait a moment.' ) );
+        }
+
+        $phone = isset( $_POST['phone'] ) ? sanitize_text_field( wp_unslash( $_POST['phone'] ) ) : '';
+        if ( empty( $phone ) || ! EtelID_Security::valid_ethiopian_phone( $phone ) ) {
+            wp_send_json_success( array( 'taken' => false ) );
+        }
+
+        wp_send_json_success( array( 'taken' => (bool) EtelID_DB::find_by_phone( $phone ) ) );
     }
 
     /* -- Quick Register (public, self-service fast track) --------
