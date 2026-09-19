@@ -507,11 +507,11 @@
 .eid-step-next:hover { transform: translateY(-1px); box-shadow: 0 5px 0 var(--g9), 0 8px 20px rgba(80,40,0,.3); }
 .eid-step-back {
   width: 42px; height: 42px; display: flex; align-items: center; justify-content: center;
-  background: rgba(212,175,55,.08); border: 1.5px solid rgba(212,175,55,.25);
-  border-radius: 9px; color: var(--g5); cursor: pointer; font-size: 18px;
+  background: rgba(212,175,55,.16); border: 1.5px solid var(--g5);
+  border-radius: 9px; color: var(--g9); cursor: pointer; font-size: 20px;
   transition: all .15s; flex-shrink: 0;
 }
-.eid-step-back:hover { background: rgba(212,175,55,.15); border-color: rgba(212,175,55,.45); color: var(--g4); }
+.eid-step-back:hover { background: rgba(212,175,55,.28); border-color: var(--g4); color: var(--ink); }
 
 /* ════════════════════════════════════════════════
    CARD FOOTER
