@@ -892,7 +892,7 @@ function camStart(kind) {
     document.getElementById('cam-file-' + kind).click();
     return;
   }
-  navigator.mediaDevices.getUserMedia({ video: { facingMode: cfg.facing }, audio: false }).then(function(stream) {
+  function onStream(stream) {
     _camStreams[kind] = stream;
     var video = document.getElementById('cam-video-' + kind);
     var box   = document.getElementById('cam-box-' + kind);
@@ -903,9 +903,32 @@ function camStart(kind) {
     capBtn.style.display = 'inline-flex';
     capBtn.disabled = false;
     document.querySelectorAll('#cam-btns-' + kind + ' .eid-cam-btn')[0].style.display = 'none';
-  }).catch(function() {
-    fieldErr('reg-' + kind, 'Could not access the camera. Please upload a photo instead.');
-  });
+  }
+  function onFail(err) {
+    var msg = 'Could not access the camera. Please upload a photo instead.';
+    if (err && err.name === 'NotAllowedError') {
+      msg = 'Camera access was denied. Allow camera permission for this site in your browser settings, or upload a photo instead.';
+    } else if (err && err.name === 'NotFoundError') {
+      msg = 'No camera was found on this device. Please upload a photo instead.';
+    } else if (err && err.name === 'NotReadableError') {
+      msg = 'The camera is in use by another app. Close it and try again, or upload a photo instead.';
+    }
+    fieldErr('reg-' + kind, msg);
+  }
+  /* A hard facingMode requirement (rather than a soft "ideal" preference)
+   * throws OverconstrainedError on devices that don't expose that exact
+   * lens (e.g. a laptop with only a front camera, or some Android
+   * webviews that don't report facingMode at all) - live testing showed
+   * every capture slot failing with the same generic error, which this
+   * was the most likely cause of. Try the preferred facing camera first,
+   * then fall back to whatever camera is available before giving up. */
+  navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: cfg.facing } }, audio: false })
+    .then(onStream)
+    .catch(function() {
+      navigator.mediaDevices.getUserMedia({ video: true, audio: false })
+        .then(onStream)
+        .catch(onFail);
+    });
 }
 
 function camCapture(kind) {
