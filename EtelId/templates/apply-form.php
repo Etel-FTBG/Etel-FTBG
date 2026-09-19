@@ -345,6 +345,18 @@ body::before{
 }
 .af-id-lbl{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--g5);letter-spacing:2px;text-transform:uppercase;display:block;margin-bottom:6px;}
 .af-id-val{font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:800;color:var(--g1);letter-spacing:1.5px;display:block;}
+.af-pw-box{display:flex;align-items:center;gap:8px;}
+.af-pw-input{
+  font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:800;color:var(--g1);
+  letter-spacing:1.5px;background:transparent;border:none;padding:0;width:11ch;
+}
+.af-pw-copy{
+  background:rgba(212,175,55,.18);border:1px solid rgba(212,175,55,.4);border-radius:6px;
+  color:var(--g3);font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;
+  padding:5px 10px;cursor:pointer;flex-shrink:0;transition:background .15s;
+}
+.af-pw-copy:hover{background:rgba(212,175,55,.3);}
+.af-pw-copy.copied{background:rgba(34,197,94,.25);border-color:rgba(34,197,94,.5);color:#86efac;}
 .af-success-actions{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;}
 .af-btn-primary-lg{
   display:inline-flex;align-items:center;gap:8px;
@@ -533,7 +545,10 @@ body::before{
             </div>
             <div class="af-id-card">
               <span class="af-id-lbl">Temporary Password</span>
-              <span class="af-id-val" id="qr-res-temp-password">—</span>
+              <div class="af-pw-box">
+                <input type="text" class="af-pw-input" id="qr-res-temp-password" value="-" readonly>
+                <button type="button" class="af-pw-copy" onclick="apfCopyPassword('qr-res-temp-password', this)">Copy</button>
+              </div>
             </div>
           </div>
           <div class="af-terms" style="text-align:left;">
@@ -842,7 +857,10 @@ body::before{
             </div>
             <div class="af-id-card">
               <span class="af-id-lbl">Temporary Password</span>
-              <span class="af-id-val" id="res-temp-password">-</span>
+              <div class="af-pw-box">
+                <input type="text" class="af-pw-input" id="res-temp-password" value="-" readonly>
+                <button type="button" class="af-pw-copy" onclick="apfCopyPassword('res-temp-password', this)">Copy</button>
+              </div>
             </div>
           </div>
           <div class="af-success-actions">
@@ -939,50 +957,84 @@ function qrShowErr(msg) {
   err.scrollIntoView({behavior:'smooth', block:'center'});
 }
 
+/* Same live database checks Full Registration's Step 1 already runs
+ * (see apfCheckDuplicatePhone/Name/Email above) - Quick Register is a
+ * single-page form with no step boundary, so they all run right
+ * before submit instead of on a "Next" click. No DOB field exists
+ * here, so apfCheckDuplicateName() is called with an empty dob (the
+ * exact name+dob duplicate signal doesn't apply, but the given/
+ * father's-name match-level tiering still does). */
 function etelIDQuickSubmit() {
   var fullName = document.getElementById('q-full_name').value.trim();
   var phone    = document.getElementById('q-phone').value.trim();
   var email    = document.getElementById('q-email').value.trim();
 
   if (!fullName || !phone) { qrShowErr('Full name and phone number are required.'); return; }
+  if (!isRealFullName(fullName)) {
+    qrShowErr("Enter your real full name - at least two names (e.g. given name and father's name), each at least 3 letters, not repeated or a placeholder word.");
+    return;
+  }
+  if (!isValidEthiopianPhone(phone)) {
+    qrShowErr('Enter a valid Ethiopian phone number, e.g. 0912345678 or +251123456789.');
+    return;
+  }
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    qrShowErr('Enter a valid email address, or leave it blank.');
+    return;
+  }
   if (!_qrData.photo_url) { qrShowErr('Please add a profile photo.'); return; }
   if (!_qrData.fayda_front_image || !_qrData.fayda_back_image) { qrShowErr('Please add both sides of your Fayda ID.'); return; }
 
   var btn = document.getElementById('qr-submit-btn');
   var lbl = document.getElementById('qr-btn-label');
   btn.disabled = true;
-  lbl.textContent = 'Registering…';
+  lbl.textContent = 'Checking...';
 
-  var body = 'action=etelid_quick_register&nonce=' + EtelIDConfig.nonceAuth
-    + '&full_name=' + encodeURIComponent(fullName)
-    + '&phone=' + encodeURIComponent(phone)
-    + '&email=' + encodeURIComponent(email)
-    + '&photo_url=' + encodeURIComponent(_qrData.photo_url)
-    + '&fayda_front_image=' + encodeURIComponent(_qrData.fayda_front_image)
-    + '&fayda_back_image=' + encodeURIComponent(_qrData.fayda_back_image);
+  function reset() { btn.disabled = false; lbl.textContent = 'Quick Register'; }
 
-  fetch(EtelIDConfig.ajax, {
-    method:'POST',
-    headers:{'Content-Type':'application/x-www-form-urlencoded'},
-    body: body
-  }).then(function(r){ return r.json(); }).then(function(res) {
-    if (res.success) {
-      document.getElementById('af-mode-quick').style.display = 'none';
-      document.getElementById('qr-success-state').style.display = 'block';
-      document.getElementById('qr-res-etel-id').textContent = res.data.etel_id;
-      document.getElementById('qr-res-temp-password').textContent = res.data.temp_password;
-      document.getElementById('qr-res-portal-link').href = res.data.redirect || '<?php echo esc_js(home_url('/portal/')); ?>';
-      window.scrollTo({top:0, behavior:'smooth'});
-    } else {
-      qrShowErr((res.data && res.data.message) ? res.data.message : 'Registration failed. Please try again.');
-      btn.disabled = false;
-      lbl.textContent = 'Quick Register';
-    }
-  }).catch(function() {
-    btn.disabled = false;
-    lbl.textContent = 'Quick Register';
-    qrShowErr('Network error. Please try again.');
+  apfCheckDuplicatePhone(phone, function(taken) {
+    if (taken) { qrShowErr('An account with this phone number already exists. Please sign in instead.'); reset(); return; }
+    apfCheckDuplicateName(fullName, '', function(result) {
+      if (!apfApplyNameMatchLevel(result.matchLevel, qrShowErr)) { reset(); return; }
+      if (!email) { qrDoSubmit(); return; }
+      apfCheckDuplicateEmail(email, function(taken2) {
+        if (taken2) { qrShowErr('This email is already registered. Please use a different email, or sign in instead.'); reset(); return; }
+        qrDoSubmit();
+      });
+    });
   });
+
+  function qrDoSubmit() {
+    lbl.textContent = 'Registering...';
+    var body = 'action=etelid_quick_register&nonce=' + EtelIDConfig.nonceAuth
+      + '&full_name=' + encodeURIComponent(fullName)
+      + '&phone=' + encodeURIComponent(phone)
+      + '&email=' + encodeURIComponent(email)
+      + '&photo_url=' + encodeURIComponent(_qrData.photo_url)
+      + '&fayda_front_image=' + encodeURIComponent(_qrData.fayda_front_image)
+      + '&fayda_back_image=' + encodeURIComponent(_qrData.fayda_back_image);
+
+    fetch(EtelIDConfig.ajax, {
+      method:'POST',
+      headers:{'Content-Type':'application/x-www-form-urlencoded'},
+      body: body
+    }).then(function(r){ return r.json(); }).then(function(res) {
+      if (res.success) {
+        document.getElementById('af-mode-quick').style.display = 'none';
+        document.getElementById('qr-success-state').style.display = 'block';
+        document.getElementById('qr-res-etel-id').textContent = res.data.etel_id;
+        document.getElementById('qr-res-temp-password').value = res.data.temp_password;
+        document.getElementById('qr-res-portal-link').href = res.data.redirect || '<?php echo esc_js(home_url('/portal/')); ?>';
+        window.scrollTo({top:0, behavior:'smooth'});
+      } else {
+        qrShowErr((res.data && res.data.message) ? res.data.message : 'Registration failed. Please try again.');
+        reset();
+      }
+    }).catch(function() {
+      reset();
+      qrShowErr('Network error. Please try again.');
+    });
+  }
 }
 
 /* Step 1 (name/dob/phone/email) and Step 2 (region/zone) both need a
@@ -1245,9 +1297,29 @@ function apfCheckDuplicateEmail(email, cb) {
  * father's name both match) blocks, asking for a grandfather's name;
  * level 3 (the full entered name matches) is the strongest signal
  * available but still not DOB-backed, so it's allowed through. */
-function apfApplyNameMatchLevel(level) {
+/* Copies the temp-password field's value and gives brief visual
+ * confirmation - clipboard access needs a secure (https) context and
+ * can be denied by the browser, so this falls back to just selecting
+ * the text (still lets the person copy it manually) rather than
+ * failing silently. */
+function apfCopyPassword(fieldId, btn) {
+  var field = document.getElementById(fieldId);
+  field.select();
+  field.setSelectionRange(0, 99999);
+  function showCopied() {
+    var original = btn.textContent;
+    btn.textContent = 'Copied!';
+    btn.classList.add('copied');
+    setTimeout(function() { btn.textContent = original; btn.classList.remove('copied'); }, 1800);
+  }
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(field.value).then(showCopied).catch(function(){});
+  }
+}
+function apfApplyNameMatchLevel(level, errFn) {
+  errFn = errFn || showErr;
   if (level >= 2) {
-    showErr("This given name and father's name match an existing record. Please also add your grandfather's name (a 3rd name), then continue.");
+    errFn("This given name and father's name match an existing record. Please also add your grandfather's name (a 3rd name), then continue.");
     return false;
   }
   return true;
@@ -1264,6 +1336,29 @@ document.getElementById('f-email').addEventListener('blur', function() {
   if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return;
   apfCheckDuplicateEmail(email, function(taken) {
     if (taken) showErr('This email is already registered. Please use a different email, or sign in instead.');
+  });
+});
+/* Same blur checks, wired to Quick Register's own fields (q-*) and
+ * error banner (qrShowErr) instead of Full Registration's (f- fields, showErr). */
+document.getElementById('q-phone').addEventListener('blur', function() {
+  var phone = this.value.trim();
+  if (!phone || !isValidEthiopianPhone(phone)) return;
+  apfCheckDuplicatePhone(phone, function(taken) {
+    if (taken) qrShowErr('An account with this phone number already exists. Please sign in instead.');
+  });
+});
+document.getElementById('q-full_name').addEventListener('blur', function() {
+  var name = this.value.trim();
+  if (!name || !isRealFullName(name)) return;
+  apfCheckDuplicateName(name, '', function(result) {
+    apfApplyNameMatchLevel(result.matchLevel, qrShowErr);
+  });
+});
+document.getElementById('q-email').addEventListener('blur', function() {
+  var email = this.value.trim();
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return;
+  apfCheckDuplicateEmail(email, function(taken) {
+    if (taken) qrShowErr('This email is already registered. Please use a different email, or sign in instead.');
   });
 });
 
@@ -1396,7 +1491,7 @@ function etelIDSubmit() {
       document.getElementById('eid-success-state').style.display = 'block';
       document.getElementById('res-etel-id').textContent = res.data.etel_id;
       document.getElementById('res-fin').textContent     = res.data.fin;
-      document.getElementById('res-temp-password').textContent = res.data.temp_password;
+      document.getElementById('res-temp-password').value = res.data.temp_password;
       document.getElementById('res-verify-link').href    = res.data.verify_url;
       [1,2,3,4].forEach(function(i){
         document.getElementById('step-dot-'+i).className = 'af-step done';
