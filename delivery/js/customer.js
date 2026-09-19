@@ -931,7 +931,22 @@ async function getMyLocation() {
         btn.textContent = '📍';
         btn.disabled = false;
         const msgs = { 1: 'Location permission denied. Allow it in browser settings.', 2: 'Location unavailable. Try again.', 3: 'Location request timed out — try moving somewhere with a clearer signal, or enter your address manually.' };
-        showToast(msgs[err.code] || 'Could not get location', 'err');
+        // Surface the browser's own diagnostic detail alongside our generic
+        // message - both attempts (high accuracy AND the network-based
+        // fallback) failing identically is not explained by weak GPS signal
+        // alone, and guessing further without this detail wastes another
+        // round trip. err.message is the browser/OS's own reason, and
+        // window.self !== window.top flags a case Permissions-Policy would
+        // actually block (geolocation=(self) in .htaccess denies any
+        // cross-origin iframe embedding this page).
+        const diag = ' [code ' + err.code + (err.message ? ': ' + err.message : '') + (window.self !== window.top ? ', embedded' : '') + ']';
+        showToast((msgs[err.code] || 'Could not get location') + diag, 'err');
+        console.error('[ETEL] geolocation failed', { code: err.code, message: err.message, embedded: window.self !== window.top, isSecureContext: window.isSecureContext });
+        if (navigator.permissions && navigator.permissions.query) {
+            navigator.permissions.query({ name: 'geolocation' }).then(function (status) {
+                console.error('[ETEL] geolocation permission state:', status.state);
+            }).catch(function () {});
+        }
     }
 
     // Try a high-accuracy GPS fix first (best result), but GPS can
