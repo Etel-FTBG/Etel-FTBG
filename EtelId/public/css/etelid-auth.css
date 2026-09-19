@@ -506,12 +506,21 @@
 }
 .eid-step-next:hover { transform: translateY(-1px); box-shadow: 0 5px 0 var(--g9), 0 8px 20px rgba(80,40,0,.3); }
 .eid-step-back {
-  width: 42px; height: 42px; display: flex; align-items: center; justify-content: center;
+  height: 42px; display: flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 0 14px;
   background: rgba(212,175,55,.16); border: 1.5px solid var(--g5);
-  border-radius: 9px; color: var(--g9); cursor: pointer; font-size: 20px;
+  border-radius: 9px; color: var(--g9); cursor: pointer; font-size: 18px;
   transition: all .15s; flex-shrink: 0;
 }
 .eid-step-back:hover { background: rgba(212,175,55,.28); border-color: var(--g4); color: var(--ink); }
+/* Text label alongside the arrow icon - the icon comes from a webfont
+ * (Tabler icons, loaded from a CDN) that can silently fail to load on a
+ * slow/blocked connection, leaving the button looking empty even with
+ * high-contrast color. This text never depends on that font, so the
+ * button always shows something legible either way. */
+.eid-step-back-txt {
+  font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 600;
+}
 
 /* ════════════════════════════════════════════════
    CARD FOOTER
