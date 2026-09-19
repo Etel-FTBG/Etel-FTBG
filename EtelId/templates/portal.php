@@ -616,8 +616,17 @@ $etelid_kyc_level   = isset( $member->kyc_level ) ? (int) $member->kyc_level : 0
  * always required by every other entry point (the full registration
  * wizard, admin-created accounts, the Fayda quick-register admin tool),
  * so an empty dob reliably means this account still needs the rest of
- * its profile filled in, regardless of which flow created it. */
-$etelid_profile_incomplete = empty( $member->dob );
+ * its profile filled in, regardless of which flow created it.
+ *
+ * HARDENING: this banner never actually showed for a single Quick
+ * Register account, live-reported. Root cause: the dob column is
+ * DATE NOT NULL - inserting the empty string EtelID_Generator::create()
+ * writes when no dob was collected gets silently coerced by MySQL to
+ * '0000-00-00', not stored as NULL/empty. empty('0000-00-00') is false
+ * in PHP (it's a non-blank, non-zero string), so the condition below
+ * never matched a real Quick Register account. Checking for that exact
+ * sentinel value alongside empty() is what actually catches it. */
+$etelid_profile_incomplete = empty( $member->dob ) || '0000-00-00' === $member->dob;
 ?>
 <?php if ( $etelid_profile_incomplete ): ?>
 <div id="etelid-complete-profile-banner" style="position:relative;z-index:40;max-width:1100px;margin:14px auto 0;padding:12px 18px;border-radius:12px;background:rgba(212,175,55,.12);border:1px solid rgba(212,175,55,.35);display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;font-family:'JetBrains Mono',monospace;">
@@ -652,8 +661,15 @@ $etelid_profile_incomplete = empty( $member->dob );
     <p style="font-size:12px;color:#cbbf9a;margin-bottom:16px;line-height:1.5;">Your account was created with a temporary password. Please set your own password to continue.</p>
     <label style="display:block;font-size:11px;color:#D4AF37;margin-bottom:5px;">Temporary password</label>
     <input type="password" id="mcp-old" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(212,175,55,.28);border-radius:8px;padding:10px 12px;color:#fff;font-family:inherit;font-size:13px;margin-bottom:10px;">
-    <label style="display:block;font-size:11px;color:#D4AF37;margin-bottom:5px;">New password (min 6 characters)</label>
+    <label style="display:block;font-size:11px;color:#D4AF37;margin-bottom:5px;">New password (min 8 characters)</label>
     <input type="password" id="mcp-new" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(212,175,55,.28);border-radius:8px;padding:10px 12px;color:#fff;font-family:inherit;font-size:13px;margin-bottom:10px;">
+    <div id="mcp-pw-checklist" style="display:none;font-size:11px;margin:-4px 0 10px;line-height:1.7;">
+      <div id="mcp-pwc-len" data-label="At least 8 characters" style="color:#cbbf9a;">[ ] At least 8 characters</div>
+      <div id="mcp-pwc-upper" data-label="One uppercase letter (A-Z)" style="color:#cbbf9a;">[ ] One uppercase letter (A-Z)</div>
+      <div id="mcp-pwc-lower" data-label="One lowercase letter (a-z)" style="color:#cbbf9a;">[ ] One lowercase letter (a-z)</div>
+      <div id="mcp-pwc-num" data-label="One number (0-9)" style="color:#cbbf9a;">[ ] One number (0-9)</div>
+      <div id="mcp-pwc-special" data-label="One special character (!@#$%...)" style="color:#cbbf9a;">[ ] One special character (!@#$%...)</div>
+    </div>
     <label style="display:block;font-size:11px;color:#D4AF37;margin-bottom:5px;">Confirm new password</label>
     <input type="password" id="mcp-confirm" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(212,175,55,.28);border-radius:8px;padding:10px 12px;color:#fff;font-family:inherit;font-size:13px;margin-bottom:14px;">
     <button type="button" id="mcp-submit" style="width:100%;background:linear-gradient(135deg,#E8C84A,#C8922A);color:#1A0E00;font-family:'Syne',sans-serif;font-weight:700;border:none;border-radius:10px;padding:12px;cursor:pointer;font-size:13px;">Change Password &amp; Continue</button>
@@ -664,13 +680,35 @@ $etelid_profile_incomplete = empty( $member->dob );
 (function(){
   var btn = document.getElementById('mcp-submit');
   var msg = document.getElementById('mcp-msg');
+  /* Live strength checklist, same shape as the registration wizard's
+   * (templates/auth-page.php) - purely informational like there (the
+   * only hard requirement, here and server-side in
+   * EtelID_Auth_Ajax::change_password(), is the 8-character minimum),
+   * but shown here too so a person changing their temp password gets
+   * the same guidance as someone registering fresh. */
+  function mcpPwCheckItem(id, met) {
+    var el = document.getElementById(id);
+    el.style.color = met ? '#86efac' : '#cbbf9a';
+    el.textContent = (met ? '[OK] ' : '[ ] ') + el.getAttribute('data-label');
+  }
+  document.getElementById('mcp-new').addEventListener('input', function() {
+    var pw = this.value;
+    var checklist = document.getElementById('mcp-pw-checklist');
+    if (!pw) { checklist.style.display = 'none'; return; }
+    checklist.style.display = 'block';
+    mcpPwCheckItem('mcp-pwc-len',     pw.length >= 8);
+    mcpPwCheckItem('mcp-pwc-upper',   /[A-Z]/.test(pw));
+    mcpPwCheckItem('mcp-pwc-lower',   /[a-z]/.test(pw));
+    mcpPwCheckItem('mcp-pwc-num',     /[0-9]/.test(pw));
+    mcpPwCheckItem('mcp-pwc-special', /[^A-Za-z0-9]/.test(pw));
+  });
   btn.addEventListener('click', function(){
     var oldP = document.getElementById('mcp-old').value;
     var newP = document.getElementById('mcp-new').value;
     var cfP  = document.getElementById('mcp-confirm').value;
-    if (!oldP || newP.length < 6 || newP !== cfP) {
+    if (!oldP || newP.length < 8 || newP !== cfP) {
       msg.style.display='block'; msg.style.background='rgba(239,68,68,.12)'; msg.style.color='#fca5a5';
-      msg.textContent = (!oldP) ? 'Enter your temporary password.' : (newP.length<6 ? 'New password must be at least 6 characters.' : 'Passwords do not match.');
+      msg.textContent = (!oldP) ? 'Enter your temporary password.' : (newP.length<8 ? 'New password must be at least 8 characters.' : 'Passwords do not match.');
       return;
     }
     btn.disabled = true; btn.textContent = 'Saving…';
