@@ -30,6 +30,7 @@ $includes = array(
     'includes/class-etelid-notify.php',         /* NEW v3.10.0 — Telegram/WhatsApp/email credential delivery */
     'includes/class-etelid-telegram.php',       /* NEW — Telegram account linking (deep link + webhook) */
     'includes/class-etelid-qr.php',
+    'includes/class-etelid-nfc.php',        /* NEW - NFC card: /m/{token} service-selector, courier pickup/delivery confirmation */
     'includes/class-etelid-barcode.php',    /* v3.9.2 — pure PHP Code128, no TEC-IT */
     'includes/class-etelid-security.php',
     'includes/class-etelid-mailer.php',
@@ -75,6 +76,7 @@ function etelid_boot() {
     EtelID_Ajax::init();
     EtelID_Auth_Ajax::init();
     EtelID_Admin_Panels::init();
+    Etelid_Nfc::init();
     EtelID_Rewrite::init();
     EtelID_Updater::init();
     EtelID_Nav::init();

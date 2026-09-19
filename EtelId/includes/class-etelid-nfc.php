@@ -32,6 +32,8 @@ class Etelid_Nfc {
     const TOKEN_BYTES = 18; // -> 24 char base64url token
 
     public static function init() {
+        self::maybe_install();
+
         add_action('init', array(__CLASS__, 'register_rewrite'));
         add_filter('query_vars', array(__CLASS__, 'register_query_var'));
         add_action('template_redirect', array(__CLASS__, 'maybe_render_profile'));
@@ -39,6 +41,25 @@ class Etelid_Nfc {
         add_action('wp_ajax_etelid_nfc_issue', array(__CLASS__, 'ajax_issue'));
         add_action('wp_ajax_etelid_nfc_revoke', array(__CLASS__, 'ajax_revoke'));
         add_action('wp_ajax_etelid_nfc_lookup_member', array(__CLASS__, 'ajax_lookup_member'));
+
+        /* Public flow on the /m/{token} page - the scanning person
+           (service giver or customer) is never a logged-in WP user, so
+           both priv and nopriv hooks point at the same handlers, same
+           pattern as class-etelid-ajax.php's public apply endpoint. */
+        add_action('wp_ajax_etelid_nfc_start',   array(__CLASS__, 'ajax_start'));
+        add_action('wp_ajax_nopriv_etelid_nfc_start', array(__CLASS__, 'ajax_start'));
+        add_action('wp_ajax_etelid_nfc_confirm', array(__CLASS__, 'ajax_confirm'));
+        add_action('wp_ajax_nopriv_etelid_nfc_confirm', array(__CLASS__, 'ajax_confirm'));
+    }
+
+    /* Idempotent runtime install - the plugin's own activation hook only
+       fires on activation, which this already-active plugin will not go
+       through again just because this file is now wired in. Cheap
+       option check keeps this from running dbDelta() on every request. */
+    public static function maybe_install() {
+        if ('1.0' !== get_option('etelid_nfc_db_version')) {
+            self::install();
+        }
     }
 
     /* ---------------------------------------------------------------
@@ -137,12 +158,11 @@ class Etelid_Nfc {
 
     protected static function get_member($member_id) {
         global $wpdb;
-        // ADJUST HERE: members table name + column names
         $members_table = $wpdb->prefix . 'etelid_members';
 
         $member = $wpdb->get_row(
             $wpdb->prepare(
-                "SELECT id, etelid_number, full_name, photo_url, tier, status
+                "SELECT id, etel_id, full_name, phone, photo_url, tier, status, pin_hash
                  FROM {$members_table} WHERE id = %d",
                 (int) $member_id
             )
@@ -246,15 +266,14 @@ class Etelid_Nfc {
         }
 
         global $wpdb;
-        // ADJUST HERE: members table / column names, same as get_member() above
         $members_table = $wpdb->prefix . 'etelid_members';
         $search = isset($_POST['q']) ? sanitize_text_field($_POST['q']) : '';
         $like = '%' . $wpdb->esc_like($search) . '%';
 
         $rows = $wpdb->get_results(
             $wpdb->prepare(
-                "SELECT id, etelid_number, full_name FROM {$members_table}
-                 WHERE etelid_number LIKE %s OR full_name LIKE %s
+                "SELECT id, etel_id, full_name FROM {$members_table}
+                 WHERE etel_id LIKE %s OR full_name LIKE %s
                  LIMIT 10",
                 $like,
                 $like
@@ -262,5 +281,153 @@ class Etelid_Nfc {
         );
 
         wp_send_json_success($rows);
+    }
+
+    /* ---------------------------------------------------------------
+     * Public flow: /m/{token} page - "confirm pickup" / "confirm delivery"
+     * ------------------------------------------------------------- */
+
+    public static function resolve_token($token) {
+        $card = self::get_card_row($token);
+        if (!$card || 'active' !== $card->status) return null;
+        $member = self::get_member($card->member_id);
+        if (!$member) return null;
+        return array('card' => $card, 'member' => $member);
+    }
+
+    /* Outbound call to the Delivery system's shared-service-key API -
+       the reverse direction of Delivery's own etelid_bridge.php (which
+       calls INTO EtelID). Same base-URL/option pattern already used by
+       class-etelid-admin-panels.php's Members Controller. */
+    protected static function delivery_service_call($action, $payload) {
+        $key = defined('ETELID_SERVICE_KEY') ? ETELID_SERVICE_KEY : get_option('etelid_service_key', '');
+        if (!$key) return new WP_Error('no_key', 'etelid_service_key is not configured.');
+
+        $home_parts = wp_parse_url(home_url());
+        $site_root  = (isset($home_parts['scheme']) ? $home_parts['scheme'] : 'https') . '://'
+                    . (isset($home_parts['host']) ? $home_parts['host'] : $_SERVER['HTTP_HOST']);
+        $base = get_option('etelid_delivery_api_base', $site_root . '/delivery');
+        $url  = trailingslashit($base) . 'api/api.php';
+
+        $payload['action'] = $action;
+        $resp = wp_remote_post($url, array(
+            'timeout' => 12,
+            'headers' => array('X-Etel-Service-Key' => $key, 'Content-Type' => 'application/json'),
+            'body'    => wp_json_encode($payload),
+        ));
+
+        if (is_wp_error($resp)) return $resp;
+        $code = wp_remote_retrieve_response_code($resp);
+        $body = json_decode(wp_remote_retrieve_body($resp), true);
+        if (!is_array($body)) return new WP_Error('bad_response', 'Delivery returned an unreadable response.');
+        if ($code < 200 || $code >= 300 || empty($body['success'])) {
+            $msg = !empty($body['message']) ? $body['message'] : ('Delivery request failed (HTTP ' . $code . ').');
+            return new WP_Error('delivery_error', $msg);
+        }
+        return isset($body['data']) ? $body['data'] : array();
+    }
+
+    /* Step 1: the scanning person picks "Confirm Pickup" / "Confirm
+       Delivery Complete" and enters THEIR OWN EtelID phone/Etel-ID +
+       password. On success, returns the courier's active orders for
+       that stage plus a short-lived single-use action token (so step 2
+       does not need to resend the password). */
+    public static function ajax_start() {
+        if (!check_ajax_referer('etelid_public', 'nonce', false)) {
+            wp_send_json_error(array('message' => 'Session expired, please reload the page.'));
+        }
+
+        $token  = isset($_POST['token'])  ? sanitize_text_field(wp_unslash($_POST['token']))  : '';
+        $stage  = isset($_POST['stage'])  ? sanitize_key($_POST['stage'])                     : '';
+        $ident  = isset($_POST['identifier']) ? sanitize_text_field(wp_unslash($_POST['identifier'])) : '';
+        $pass   = isset($_POST['password']) ? (string) $_POST['password'] : '';
+
+        if (!$token || !in_array($stage, array('pickup', 'delivery'), true) || !$ident || !$pass) {
+            wp_send_json_error(array('message' => 'Missing required fields.'));
+        }
+
+        $resolved = self::resolve_token($token);
+        if (!$resolved) wp_send_json_error(array('message' => 'This card is not active.'));
+        $courier = $resolved['member'];
+
+        $ip = class_exists('EtelID_Security') ? EtelID_Security::get_ip() : '';
+        if (class_exists('EtelID_Security') && !EtelID_Security::rate_limit('nfc_confirm_' . md5($ip . $token), 15, 900)) {
+            wp_send_json_error(array('message' => 'Too many attempts. Please wait a few minutes.'));
+        }
+
+        $confirmer = EtelID_DB::get_by_etel_id(strtoupper($ident));
+        if (!$confirmer) $confirmer = EtelID_DB::find_by_phone($ident);
+        if (!$confirmer) wp_send_json_error(array('message' => 'No EtelID account found for that phone/Etel-ID.'));
+
+        if (empty($confirmer->pin_hash) || !EtelID_Auth::verify_password($pass, $confirmer->pin_hash)) {
+            wp_send_json_error(array('message' => 'Incorrect password.'));
+        }
+        if ('suspended' === $confirmer->status || 'revoked' === $confirmer->status) {
+            wp_send_json_error(array('message' => 'This EtelID account is not active.'));
+        }
+
+        $orders = self::delivery_service_call('nfc_list_courier_orders', array(
+            'stage'              => $stage,
+            'courier_etel_id'    => $courier->etel_id,
+            'courier_phone'      => $courier->phone,
+            'confirmer_etel_id'  => $confirmer->etel_id,
+            'confirmer_phone'    => $confirmer->phone,
+            'confirmer_name'     => $confirmer->full_name,
+        ));
+        if (is_wp_error($orders)) {
+            wp_send_json_error(array('message' => $orders->get_error_message()));
+        }
+
+        $action_token = wp_generate_password(24, false, false);
+        set_transient('etelid_nfc_action_' . $action_token, array(
+            'stage'             => $stage,
+            'courier_etel_id'   => $courier->etel_id,
+            'courier_phone'     => $courier->phone,
+            'confirmer_etel_id' => $confirmer->etel_id,
+            'confirmer_phone'   => $confirmer->phone,
+            'confirmer_name'    => $confirmer->full_name,
+        ), 5 * MINUTE_IN_SECONDS);
+
+        EtelID_DB::log($confirmer->id, $confirmer->etel_id, 'nfc_' . $stage . '_start', 'NFC card scan - ' . $courier->full_name);
+
+        wp_send_json_success(array(
+            'action_token'  => $action_token,
+            'courier_name'  => $courier->full_name,
+            'orders'        => isset($orders['orders']) ? $orders['orders'] : array(),
+        ));
+    }
+
+    /* Step 2: confirm one specific order using the action token from
+       step 1 - no password resend needed, single-use, 5-minute expiry. */
+    public static function ajax_confirm() {
+        if (!check_ajax_referer('etelid_public', 'nonce', false)) {
+            wp_send_json_error(array('message' => 'Session expired, please reload the page.'));
+        }
+
+        $action_token = isset($_POST['action_token']) ? sanitize_text_field(wp_unslash($_POST['action_token'])) : '';
+        $order_id     = isset($_POST['order_id']) ? absint($_POST['order_id']) : 0;
+        if (!$action_token || !$order_id) wp_send_json_error(array('message' => 'Missing required fields.'));
+
+        $key  = 'etelid_nfc_action_' . $action_token;
+        $data = get_transient($key);
+        if (false === $data) wp_send_json_error(array('message' => 'This confirmation has expired. Please start again.'));
+        delete_transient($key); // single-use
+
+        $delivery_action = 'pickup' === $data['stage'] ? 'nfc_confirm_pickup' : 'nfc_confirm_delivery';
+
+        $result = self::delivery_service_call($delivery_action, array(
+            'order_id'           => $order_id,
+            'courier_etel_id'    => $data['courier_etel_id'],
+            'courier_phone'      => $data['courier_phone'],
+            'confirmer_etel_id'  => $data['confirmer_etel_id'],
+            'confirmer_phone'    => $data['confirmer_phone'],
+            'confirmer_name'     => $data['confirmer_name'],
+        ));
+
+        if (is_wp_error($result)) {
+            wp_send_json_error(array('message' => $result->get_error_message()));
+        }
+
+        wp_send_json_success(array('message' => isset($result['message']) ? $result['message'] : 'Confirmed.'));
     }
 }
