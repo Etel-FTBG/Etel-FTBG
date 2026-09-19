@@ -196,6 +196,7 @@ $features = array(
         <div class="eid-reg-dots">
           <div class="eid-reg-dot active" id="dot-1" data-step="1"></div>
           <div class="eid-reg-dot" id="dot-2" data-step="2"></div>
+          <div class="eid-reg-dot" id="dot-3" data-step="3"></div>
         </div>
 
         <!-- ── Step 1: Phone + Password ── -->
@@ -329,7 +330,64 @@ $features = array(
           </div>
           <div class="eid-step-nav">
             <button class="eid-step-back" onclick="regBack(2)"><i class="ti ti-arrow-left"></i></button>
-            <button class="eid-auth-submit" style="flex:1;margin-top:0" id="reg-submit-btn" onclick="regNext(2)">
+            <button class="eid-step-next" style="flex:1" onclick="regNext(2)">
+              Continue <i class="ti ti-arrow-right" style="margin-left:4px"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- -- Step 3: Profile photo + Fayda ID (front/back) -- -->
+        <div id="reg-step-3" style="display:none">
+          <div class="eid-cam-field">
+            <label class="eid-af-label"><i class="ti ti-camera"></i> Profile Photo <span class="req">*</span></label>
+            <div class="eid-cam-box round" id="cam-box-photo">
+              <video id="cam-video-photo" autoplay playsinline muted style="display:none"></video>
+            </div>
+            <input type="file" id="cam-file-photo" accept="image/*" capture="user" style="display:none" onchange="camFileChange('photo', this)">
+            <div class="eid-cam-btns" id="cam-btns-photo">
+              <button type="button" class="eid-cam-btn" onclick="camStart('photo')"><i class="ti ti-camera"></i> Open Camera</button>
+              <button type="button" class="eid-cam-btn" id="cam-capture-photo" style="display:none" disabled onclick="camCapture('photo')"><i class="ti ti-aperture"></i> Capture</button>
+            </div>
+            <button type="button" class="eid-cam-btn-ghost" id="cam-retake-photo" style="display:none;width:100%" onclick="camRetake('photo')"><i class="ti ti-refresh"></i> Retake</button>
+            <button type="button" class="eid-cam-btn-ghost" style="width:100%" onclick="document.getElementById('cam-file-photo').click()"><i class="ti ti-upload"></i> Or upload a photo</button>
+            <div class="eid-af-err" id="err-reg-photo"></div>
+          </div>
+
+          <div class="eid-cam-field">
+            <label class="eid-af-label"><i class="ti ti-id-badge-2"></i> Fayda ID - Front Side <span class="req">*</span></label>
+            <div class="eid-cam-box" id="cam-box-fayda-front">
+              <video id="cam-video-fayda-front" autoplay playsinline muted style="display:none"></video>
+              <div class="eid-cam-guide"></div>
+            </div>
+            <input type="file" id="cam-file-fayda-front" accept="image/*" capture="environment" style="display:none" onchange="camFileChange('fayda-front', this)">
+            <div class="eid-cam-btns" id="cam-btns-fayda-front">
+              <button type="button" class="eid-cam-btn" onclick="camStart('fayda-front')"><i class="ti ti-camera"></i> Open Camera</button>
+              <button type="button" class="eid-cam-btn" id="cam-capture-fayda-front" style="display:none" disabled onclick="camCapture('fayda-front')"><i class="ti ti-aperture"></i> Capture</button>
+            </div>
+            <button type="button" class="eid-cam-btn-ghost" id="cam-retake-fayda-front" style="display:none;width:100%" onclick="camRetake('fayda-front')"><i class="ti ti-refresh"></i> Retake</button>
+            <button type="button" class="eid-cam-btn-ghost" style="width:100%" onclick="document.getElementById('cam-file-fayda-front').click()"><i class="ti ti-upload"></i> Or upload a photo</button>
+            <div class="eid-af-err" id="err-reg-fayda-front"></div>
+          </div>
+
+          <div class="eid-cam-field">
+            <label class="eid-af-label"><i class="ti ti-id-badge-2"></i> Fayda ID - Back Side <span class="req">*</span></label>
+            <div class="eid-cam-box" id="cam-box-fayda-back">
+              <video id="cam-video-fayda-back" autoplay playsinline muted style="display:none"></video>
+              <div class="eid-cam-guide"></div>
+            </div>
+            <input type="file" id="cam-file-fayda-back" accept="image/*" capture="environment" style="display:none" onchange="camFileChange('fayda-back', this)">
+            <div class="eid-cam-btns" id="cam-btns-fayda-back">
+              <button type="button" class="eid-cam-btn" onclick="camStart('fayda-back')"><i class="ti ti-camera"></i> Open Camera</button>
+              <button type="button" class="eid-cam-btn" id="cam-capture-fayda-back" style="display:none" disabled onclick="camCapture('fayda-back')"><i class="ti ti-aperture"></i> Capture</button>
+            </div>
+            <button type="button" class="eid-cam-btn-ghost" id="cam-retake-fayda-back" style="display:none;width:100%" onclick="camRetake('fayda-back')"><i class="ti ti-refresh"></i> Retake</button>
+            <button type="button" class="eid-cam-btn-ghost" style="width:100%" onclick="document.getElementById('cam-file-fayda-back').click()"><i class="ti ti-upload"></i> Or upload a photo</button>
+            <div class="eid-af-err" id="err-reg-fayda-back"></div>
+          </div>
+
+          <div class="eid-step-nav">
+            <button class="eid-step-back" onclick="regBack(3)"><i class="ti ti-arrow-left"></i></button>
+            <button class="eid-auth-submit" style="flex:1;margin-top:0" id="reg-submit-btn" onclick="regNext(3)">
               <i class="ti ti-id" style="margin-right:6px"></i>
               <span id="reg-submit-lbl">Create My Etel-ID</span>
             </button>
@@ -695,15 +753,24 @@ function regNext(from) {
         return;
       }
       showNameTakenWarning(result.nameTaken);
-      if (!email) { doRegister(); return; }
+      if (!email) { setRegStep(3); return; }
       checkDuplicateEmail(email, function(taken){
         if (taken) {
           fieldErr('reg-email', 'This email is already registered. Please use a different email, or sign in instead.');
           return;
         }
-        doRegister();
+        setRegStep(3);
       });
     });
+    return;
+  }
+  if (from===3) {
+    var ok3 = true;
+    if (!_capturedImg.photo)        { fieldErr('reg-photo', 'Please add a profile photo.'); ok3 = false; }
+    if (!_capturedImg['fayda-front']) { fieldErr('reg-fayda-front', 'Please add a photo of the front of your Fayda ID.'); ok3 = false; }
+    if (!_capturedImg['fayda-back'])  { fieldErr('reg-fayda-back', 'Please add a photo of the back of your Fayda ID.'); ok3 = false; }
+    if (!ok3) return;
+    doRegister();
     return;
   }
 }
@@ -798,6 +865,145 @@ document.getElementById('reg-email').addEventListener('blur', function() {
     }
   });
 });
+/* -- Step 3: Profile photo + Fayda ID capture --
+ * Three capture slots share the same camera/upload machinery:
+ *   photo         - facingMode 'user'  (selfie), no crop guide.
+ *   fayda-front/back - facingMode 'environment' (rear cam), cropped
+ *     to the ID-1 card aspect ratio (85.6mm x 54mm ~= 1.586:1) so the
+ *     stored image is just the card, not the desk/hand/background
+ *     around it - both when captured live via the on-screen guide
+ *     frame and when a file is uploaded (centre-cropped to the same
+ *     ratio then). The live-camera crop works by inverting the
+ *     object-fit:cover transform the video element uses to fill its
+ *     box: cropRectCover() maps the guide frame's on-screen position
+ *     back to native video pixel coordinates. */
+var CAM = {
+  'photo':        { facing: 'user',        crop: false },
+  'fayda-front':  { facing: 'environment', crop: true  },
+  'fayda-back':   { facing: 'environment', crop: true  }
+};
+var _camStreams  = {};
+var _capturedImg = { 'photo': '', 'fayda-front': '', 'fayda-back': '' };
+var FAYDA_RATIO = 1.586;
+
+function camStart(kind) {
+  var cfg = CAM[kind];
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    document.getElementById('cam-file-' + kind).click();
+    return;
+  }
+  navigator.mediaDevices.getUserMedia({ video: { facingMode: cfg.facing }, audio: false }).then(function(stream) {
+    _camStreams[kind] = stream;
+    var video = document.getElementById('cam-video-' + kind);
+    var box   = document.getElementById('cam-box-' + kind);
+    video.srcObject = stream;
+    video.style.display = 'block';
+    box.classList.add('live');
+    var capBtn = document.getElementById('cam-capture-' + kind);
+    capBtn.style.display = 'inline-flex';
+    capBtn.disabled = false;
+    document.querySelectorAll('#cam-btns-' + kind + ' .eid-cam-btn')[0].style.display = 'none';
+  }).catch(function() {
+    fieldErr('reg-' + kind, 'Could not access the camera. Please upload a photo instead.');
+  });
+}
+
+function camCapture(kind) {
+  var video = document.getElementById('cam-video-' + kind);
+  var box   = document.getElementById('cam-box-' + kind);
+  var cfg   = CAM[kind];
+  var vw = video.videoWidth  || 640;
+  var vh = video.videoHeight || 480;
+  var sx = 0, sy = 0, sw = vw, sh = vh;
+  if (cfg.crop) {
+    var rect = box.getBoundingClientRect();
+    var r = cropRectCover(vw, vh, rect.width, rect.height, 0.04, 0.04);
+    sx = r.sx; sy = r.sy; sw = r.sw; sh = r.sh;
+  }
+  var dataUrl = drawCropped(video, sx, sy, sw, sh, cfg.crop ? 1000 : 500);
+  finishCapture(kind, dataUrl);
+}
+
+/* Inverts an object-fit:cover transform: given a source of size
+ * videoW x videoH displayed to completely fill a box boxW x boxH
+ * (cropping whichever dimension overflows, centred), returns the
+ * source-pixel rectangle that corresponds to an inset guide frame
+ * drawn at insetXPct/insetYPct within that box. */
+function cropRectCover(videoW, videoH, boxW, boxH, insetXPct, insetYPct) {
+  var scale  = Math.max(boxW / videoW, boxH / videoH);
+  var dispW  = videoW * scale, dispH = videoH * scale;
+  var offX   = (dispW - boxW) / 2, offY = (dispH - boxH) / 2;
+  var gx = boxW * insetXPct, gy = boxH * insetYPct;
+  var gw = boxW * (1 - 2 * insetXPct), gh = boxH * (1 - 2 * insetYPct);
+  return { sx: (gx + offX) / scale, sy: (gy + offY) / scale, sw: gw / scale, sh: gh / scale };
+}
+
+function drawCropped(source, sx, sy, sw, sh, maxDim) {
+  var outW = sw, outH = sh;
+  if (outW > maxDim || outH > maxDim) {
+    if (outW > outH) { outH = Math.round(outH * maxDim / outW); outW = maxDim; }
+    else              { outW = Math.round(outW * maxDim / outH); outH = maxDim; }
+  }
+  var canvas = document.createElement('canvas');
+  canvas.width = Math.round(outW); canvas.height = Math.round(outH);
+  canvas.getContext('2d').drawImage(source, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
+  return canvas.toDataURL('image/jpeg', 0.85);
+}
+
+function finishCapture(kind, dataUrl) {
+  _capturedImg[kind] = dataUrl;
+  var stream = _camStreams[kind];
+  if (stream) { stream.getTracks().forEach(function(t){ t.stop(); }); _camStreams[kind] = null; }
+  var box = document.getElementById('cam-box-' + kind);
+  box.innerHTML = '<img src="' + dataUrl + '">';
+  box.classList.remove('live'); box.classList.add('filled');
+  document.getElementById('cam-btns-' + kind).style.display = 'none';
+  document.getElementById('cam-retake-' + kind).style.display = 'block';
+  var err = document.getElementById('err-reg-' + kind);
+  if (err) { err.classList.remove('show'); err.textContent = ''; }
+}
+
+function camRetake(kind) {
+  _capturedImg[kind] = '';
+  var cfg = CAM[kind];
+  var box = document.getElementById('cam-box-' + kind);
+  box.className = 'eid-cam-box' + (kind === 'photo' ? ' round' : '');
+  box.innerHTML = '<video id="cam-video-' + kind + '" autoplay playsinline muted style="display:none"></video>'
+    + (cfg.crop ? '<div class="eid-cam-guide"></div>' : '');
+  document.getElementById('cam-retake-' + kind).style.display = 'none';
+  var btns = document.getElementById('cam-btns-' + kind);
+  btns.style.display = 'flex';
+  btns.querySelectorAll('.eid-cam-btn')[0].style.display = 'inline-flex';
+  var capBtn = document.getElementById('cam-capture-' + kind);
+  capBtn.style.display = 'none';
+  capBtn.disabled = true;
+}
+
+/* Upload fallback - centre-crops to the same card aspect ratio so a
+ * gallery photo of the ID gets the same "just the card" treatment as
+ * a live capture, instead of keeping the whole surrounding photo. */
+function camFileChange(kind, input) {
+  var f = input.files && input.files[0];
+  if (!f) return;
+  if (!f.type.match(/^image\//)) { fieldErr('reg-' + kind, 'Please select an image file.'); return; }
+  var cfg = CAM[kind];
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    var img = new Image();
+    img.onload = function() {
+      var sx = 0, sy = 0, sw = img.width, sh = img.height;
+      if (cfg.crop) {
+        var srcRatio = img.width / img.height;
+        if (srcRatio > FAYDA_RATIO) { sw = img.height * FAYDA_RATIO; sx = (img.width - sw) / 2; }
+        else                        { sh = img.width / FAYDA_RATIO;  sy = (img.height - sh) / 2; }
+      }
+      finishCapture(kind, drawCropped(img, sx, sy, sw, sh, cfg.crop ? 1000 : 500));
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(f);
+}
+
 /* Returns whole years of age from a yyyy-mm-dd date-input value, or null
  * if unparseable. Negative means the date is in the future. */
 function ageFromDob(dob) {
@@ -819,15 +1025,20 @@ function updateAgeHint() {
   else { hint.textContent = 'Age: ' + age + (age === 1 ? ' year' : ' years'); }
 }
 function regBack(from) {
+  ['photo','fayda-front','fayda-back'].forEach(function(kind){
+    var stream = _camStreams[kind];
+    if (stream) { stream.getTracks().forEach(function(t){ t.stop(); }); _camStreams[kind] = null; }
+  });
   setRegStep(from-1);
 }
 function setRegStep(n) {
   _regStep = n;
-  [1,2].forEach(function(i){
+  [1,2,3].forEach(function(i){
     document.getElementById('reg-step-'+i).style.display = i===n ? '' : 'none';
     var dot = document.getElementById('dot-'+i);
     dot.className = 'eid-reg-dot' + (i<n?' done':(i===n?' active':''));
   });
+  window.scrollTo({top:0, behavior:'smooth'});
 }
 /* No separate Company/Role step - every self-registered member defaults
  * to Etel Group / Member, same as omitting these fields already works
@@ -852,6 +1063,9 @@ function doRegister() {
     region:               document.getElementById('reg-region').value,
     zone:                 document.getElementById('reg-zone').value,
     nationality:          'Ethiopian',
+    photo_url:            _capturedImg.photo,
+    fayda_front_image:    _capturedImg['fayda-front'],
+    fayda_back_image:     _capturedImg['fayda-back'],
   };
   post(data,function(r){
     if(r.success){ showOk(r.data.message+' Redirecting…'); setTimeout(function(){location.href=r.data.redirect;},800); }

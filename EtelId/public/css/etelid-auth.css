@@ -545,3 +545,36 @@
 @media (max-width: 400px) {
   .eid-auth-card-footer { padding: 10px 16px 16px; }
 }
+
+/* ════════════════════════════════════════════════
+   STEP 3 — PHOTO + FAYDA ID CAPTURE
+════════════════════════════════════════════════ */
+.eid-cam-field { margin-bottom: 18px; }
+.eid-cam-box {
+  position: relative; width: 100%; border-radius: 12px;
+  overflow: hidden; background: var(--g9); border: 1.5px solid var(--ab);
+  aspect-ratio: 1.586 / 1; display: flex; align-items: center; justify-content: center;
+}
+.eid-cam-box.round { aspect-ratio: 1 / 1; max-width: 200px; margin: 0 auto; border-radius: 50%; }
+.eid-cam-box video, .eid-cam-box img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.eid-cam-box::after {
+  content: 'No image yet'; position: absolute; color: rgba(232,200,74,.4);
+  font-family: 'JetBrains Mono', monospace; font-size: 11px; pointer-events: none;
+}
+.eid-cam-box.live::after, .eid-cam-box.filled::after { content: none; }
+.eid-cam-guide {
+  position: absolute; inset: 4%; border: 2px dashed var(--g3);
+  border-radius: 8px; pointer-events: none; box-shadow: 0 0 0 999px rgba(0,0,0,.35);
+}
+.eid-cam-btns { display: flex; gap: 8px; margin-top: 8px; }
+.eid-cam-btn, .eid-cam-btn-ghost {
+  flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 10px 14px; border-radius: 8px; cursor: pointer;
+  font-family: 'JetBrains Mono', monospace; font-size: 11.5px; font-weight: 600;
+  transition: all .15s; border: 1.5px solid var(--ab);
+}
+.eid-cam-btn { background: linear-gradient(135deg, var(--g5), var(--g4)); color: var(--g9); border-color: var(--g4); }
+.eid-cam-btn:hover { transform: translateY(-1px); }
+.eid-cam-btn:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+.eid-cam-btn-ghost { background: rgba(212,175,55,.06); color: var(--g6); margin-top: 8px; }
+.eid-cam-btn-ghost:hover { background: rgba(212,175,55,.14); color: var(--g5); }
