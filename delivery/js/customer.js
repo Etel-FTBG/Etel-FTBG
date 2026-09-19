@@ -935,14 +935,17 @@ async function getMyLocation() {
     }
 
     // Try a high-accuracy GPS fix first (best result), but GPS can
-    // genuinely take longer than 10s indoors or with a weak signal - if it
-    // times out, fall back to a much faster network/wifi-based fix rather
-    // than just failing outright. Lower accuracy is still far better than
-    // no location at all for picking the right delivery zone.
+    // genuinely take longer than 10s indoors or with a weak signal, or
+    // fail outright with POSITION_UNAVAILABLE (code 2) when the device
+    // can't get a satellite fix at all - very common on mobile data
+    // indoors/urban canyon, where a much faster network/cell-tower fix
+    // can still succeed even though GPS could not. Only skip the retry
+    // on permission denied (code 1), which a lower-accuracy request
+    // would fail identically.
     navigator.geolocation.getCurrentPosition(
         onSuccess,
         function (err) {
-            if (err.code !== 3) { onFinalError(err); return; } // not a timeout - don't bother retrying
+            if (err.code === 1) { onFinalError(err); return; } // permission denied - retrying won't help
             navigator.geolocation.getCurrentPosition(
                 onSuccess,
                 onFinalError,
