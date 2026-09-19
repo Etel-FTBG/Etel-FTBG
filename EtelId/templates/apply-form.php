@@ -15,7 +15,7 @@ $blood     = EtelID_Generator::blood_types();
 $logo_src  = defined('ETELID_LOGO_B64') ? ETELID_LOGO_B64 : ETELID_URL.'public/images/etel-logo.png';
 $org_name  = get_option('etelid_org_name','Etel Group');
 $nonce     = wp_create_nonce('etelid_public'); // must match check_ajax_referer('etelid_public', ...) in class-etelid-ajax.php - this was previously 'etelid_apply', a different action string, which made every submission fail nonce verification unconditionally regardless of timing or caching
-$nonce_auth = wp_create_nonce('etelid_auth'); // matches check_ajax_referer('etelid_auth', ...) in class-etelid-auth-ajax.php::register() - the wizard submits through this action (not etelid_apply) so accounts get a real password, per EtelID_Auth::register()
+$nonce_auth = wp_create_nonce('etelid_auth'); // matches check_ajax_referer('etelid_auth', ...) in class-etelid-auth-ajax.php::register() - both Quick Register and Full Registration submit through this action, which issues a temporary password (must_change_password=1) rather than collecting one from the person, per EtelID_Auth::register()
 $ajax      = admin_url('admin-ajax.php');
 ?><!DOCTYPE html>
 <html lang="en">
@@ -415,7 +415,7 @@ body::before{
           <div style="font-size:28px;flex-shrink:0;">📋</div>
           <div>
             <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:16px;color:var(--g1);">Full Registration</div>
-            <div style="font-size:13px;color:var(--g4);margin-top:2px;">Personal details, address, a password, and ID verification in one go - about 5 minutes.</div>
+            <div style="font-size:13px;color:var(--g4);margin-top:2px;">Personal details, address, and ID verification in one go - about 4 minutes.</div>
           </div>
         </button>
       </div>
@@ -565,14 +565,10 @@ body::before{
     </div>
     <div class="af-step" id="step-dot-3">
       <div class="af-step-dot">3</div>
-      <span class="af-step-lbl">Security</span>
+      <span class="af-step-lbl">Photo &amp; ID</span>
     </div>
     <div class="af-step" id="step-dot-4">
       <div class="af-step-dot">4</div>
-      <span class="af-step-lbl">Photo &amp; ID</span>
-    </div>
-    <div class="af-step" id="step-dot-5">
-      <div class="af-step-dot">5</div>
       <span class="af-step-lbl">Review</span>
     </div>
   </div>
@@ -696,44 +692,8 @@ body::before{
     </div>
   </div>
 
-  <!-- ══ STEP 3: Security (create password) ══ -->
+  <!-- == STEP 3: Photo & Fayda ID == -->
   <div class="af-panel" id="eid-step-3" style="display:none">
-    <div class="af-panel-head">
-      <div class="af-panel-icon">🔒</div>
-      <div>
-        <span class="af-panel-title">Create Your Password</span>
-        <span class="af-panel-sub">You'll use your phone number and this password to sign in to the portal</span>
-      </div>
-    </div>
-    <div class="af-panel-body">
-      <div class="af-grid">
-        <div class="af-field">
-          <label class="af-label">Password <span class="req">*</span></label>
-          <input type="password" class="af-input" id="f-password" name="password"
-            placeholder="At least 6 characters" autocomplete="new-password">
-        </div>
-        <div class="af-field">
-          <label class="af-label">Confirm Password <span class="req">*</span></label>
-          <input type="password" class="af-input" id="f-password_confirm" name="password_confirm"
-            placeholder="Re-enter your password" autocomplete="new-password">
-        </div>
-      </div>
-      <div class="af-nav-row">
-        <span class="af-step-of">Step 3 of 5</span>
-        <div class="af-nav-btns">
-          <button type="button" class="af-btn-back" onclick="etelIDBack(3)">
-            <i class="ti ti-arrow-left"></i> Back
-          </button>
-          <button type="button" class="af-btn-next" onclick="etelIDNext(3)">
-            Continue <i class="ti ti-arrow-right"></i>
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ══ STEP 5: Photo & Fayda ID ══ -->
-  <div class="af-panel" id="eid-step-4" style="display:none">
     <div class="af-panel-head">
       <div class="af-panel-icon">📸</div>
       <div>
@@ -813,12 +773,12 @@ body::before{
       </div>
 
       <div class="af-nav-row">
-        <span class="af-step-of">Step 4 of 5</span>
+        <span class="af-step-of">Step 3 of 4</span>
         <div class="af-nav-btns">
-          <button type="button" class="af-btn-back" onclick="etelIDBack(4)">
+          <button type="button" class="af-btn-back" onclick="etelIDBack(3)">
             <i class="ti ti-arrow-left"></i> Back
           </button>
-          <button type="button" class="af-btn-next" onclick="etelIDNext(4)">
+          <button type="button" class="af-btn-next" onclick="etelIDNext(3)">
             Continue <i class="ti ti-arrow-right"></i>
           </button>
         </div>
@@ -826,8 +786,8 @@ body::before{
     </div>
   </div>
 
-  <!-- ══ STEP 6: Review ══ -->
-  <div class="af-panel" id="eid-step-5" style="display:none">
+  <!-- == STEP 4: Review == -->
+  <div class="af-panel" id="eid-step-4" style="display:none">
     <div class="af-panel-head">
       <div class="af-panel-icon">✅</div>
       <div>
@@ -839,14 +799,15 @@ body::before{
       <div id="eid-review-summary" class="af-review-grid"></div>
       <div class="af-terms">
         By submitting, you confirm all information is accurate. Your Etel-ID will be issued
-        immediately. Company assignment will be set up by an administrator afterward. This card
+        immediately with a temporary password - you'll be asked to set your own right after you
+        sign in. Company assignment will be set up by an administrator afterward. This card
         is the property of
         <?php echo esc_html($org_name); ?> · ኢትኤል ቡድን.
       </div>
       <div class="af-nav-row">
-        <span class="af-step-of">Step 5 of 5</span>
+        <span class="af-step-of">Step 4 of 4</span>
         <div class="af-nav-btns">
-          <button type="button" class="af-btn-back" onclick="etelIDBack(5)">
+          <button type="button" class="af-btn-back" onclick="etelIDBack(4)">
             <i class="ti ti-arrow-left"></i> Back
           </button>
           <button type="button" class="af-btn-next" id="eid-submit-btn"
@@ -866,7 +827,7 @@ body::before{
         <div class="af-success">
           <div class="af-success-check">✓</div>
           <div class="af-success-title">Your Etel-ID Has Been Issued!</div>
-          <div class="af-success-sub">Save your ID numbers below. Your card is ready to view and print.</div>
+          <div class="af-success-sub">Save your temporary password below - you'll need it to sign in and set a real one.</div>
           <div class="af-success-ids">
             <div class="af-id-card">
               <span class="af-id-lbl">Etel-ID</span>
@@ -875,6 +836,10 @@ body::before{
             <div class="af-id-card">
               <span class="af-id-lbl">FIN Number</span>
               <span class="af-id-val" id="res-fin">—</span>
+            </div>
+            <div class="af-id-card">
+              <span class="af-id-lbl">Temporary Password</span>
+              <span class="af-id-val" id="res-temp-password">-</span>
             </div>
           </div>
           <div class="af-success-actions">
@@ -1020,7 +985,7 @@ function etelIDNext(from) {
   if (!etelIDValidate(from)) return;
   etelIDCollect();
   etelIDGoto(from + 1);
-  if (from + 1 === 5) etelIDRenderReview();
+  if (from + 1 === 4) etelIDRenderReview();
 }
 function etelIDBack(from) { etelIDGoto(from - 1); }
 
@@ -1034,7 +999,7 @@ function etelIDGoto(n) {
   panel.style.animation = 'none';
   panel.offsetHeight; /* reflow */
   panel.style.animation = 'slide-up .4s ease both';
-  [1,2,3,4,5].forEach(function(i) {
+  [1,2,3,4].forEach(function(i) {
     var dot = document.getElementById('step-dot-' + i);
     dot.className = 'af-step' + (i < n ? ' done' : (i === n ? ' active' : ''));
   });
@@ -1103,19 +1068,7 @@ function etelIDValidate(step) {
       return false;
     }
   }
-  if (step === 4) {
-    var pw = document.getElementById('f-password').value;
-    var pw2 = document.getElementById('f-password_confirm').value;
-    if (pw.length < 8) {
-      showErr('Password must be at least 8 characters.');
-      return false;
-    }
-    if (pw !== pw2) {
-      showErr('Passwords do not match.');
-      return false;
-    }
-  }
-  if (step === 5) {
+  if (step === 3) {
     // Fayda ID is optional here, but if either side was added, both
     // must be present - same rule the backend enforces, checked here
     // too so the person finds out before submitting, not after.
@@ -1136,9 +1089,11 @@ function showErr(msg) {
 }
 
 function etelIDCollect() {
+  /* No 'password'/'password_confirm' here - the person no longer sets
+   * their own password on this form at all (see etelIDSubmit()'s own
+   * comment); the backend issues a temporary one instead. */
   ['full_name','full_name_am','dob','sex','blood_type','nationality',
-   'phone','email','region','zone','woreda',
-   'password','password_confirm'].forEach(function(f) {
+   'phone','email','region','zone','woreda'].forEach(function(f) {
     var el = document.getElementById('f-' + f);
     if (el) _eidData[f] = el.value;
   });
@@ -1172,8 +1127,12 @@ function etelIDSubmit() {
   btn.disabled = true;
   lbl.textContent = 'Issuing your ID…';
   /* Submits through etelid_auth_register (EtelID_Auth::register()), not the
-     old etelid_apply action - this is the path that actually sets a password,
-     auto-logs the member in, and sends the welcome email.
+     old etelid_apply action - auto-logs the member in and sends the welcome
+     email. No 'password'/'password_confirm' sent at all any more - omitting
+     them tells EtelID_Auth::register() to issue a temporary password
+     instead (same mechanism Quick Register already uses), so the person
+     never has to invent one at signup; res.data.temp_password below is
+     what they'll use to sign in and then be prompted to change.
      Company/role/department/employee_number are no longer collected here
      at all - an administrator assigns those afterward from the admin
      panel, instead of a new member guessing at their own org assignment
@@ -1182,7 +1141,6 @@ function etelIDSubmit() {
   var d = _eidData;
   ['full_name','full_name_am','dob','sex','blood_type','nationality',
    'phone','email','region','zone','woreda',
-   'password','password_confirm',
    'photo_url','fayda_front_image','fayda_back_image'].forEach(function(k) {
     if (d[k]) body += '&' + encodeURIComponent(k) + '=' + encodeURIComponent(d[k]);
   });
@@ -1192,12 +1150,13 @@ function etelIDSubmit() {
     body: body
   }).then(function(r){ return r.json(); }).then(function(res) {
     if (res.success) {
-      document.getElementById('eid-step-5').style.display = 'none';
+      document.getElementById('eid-step-4').style.display = 'none';
       document.getElementById('eid-success-state').style.display = 'block';
       document.getElementById('res-etel-id').textContent = res.data.etel_id;
       document.getElementById('res-fin').textContent     = res.data.fin;
+      document.getElementById('res-temp-password').textContent = res.data.temp_password;
       document.getElementById('res-verify-link').href    = res.data.verify_url;
-      [1,2,3,4,5].forEach(function(i){
+      [1,2,3,4].forEach(function(i){
         document.getElementById('step-dot-'+i).className = 'af-step done';
       });
       window.scrollTo({top:0, behavior:'smooth'});

@@ -85,21 +85,39 @@ class EtelID_Auth {
             return new WP_Error( 'phone_exists', 'An account with this phone number already exists. Please sign in.' );
         }
 
-        /* Validate password */
-        $password = isset( $data['password'] ) ? $data['password'] : '';
-        /* HARDENING: was a 6-character minimum with no other requirement -
-         * below current OWASP/NIST guidance (8 minimum is the baseline
-         * they recommend; NIST explicitly discourages forced complexity
-         * rules like "must contain a symbol" in favor of length, since
-         * complexity rules push people toward predictable substitutions
-         * like "Passw0rd!"). Raising to 8, still no complexity
-         * requirement - length is what actually matters. This only
-         * affects new registrations and password resets going forward;
-         * existing shorter passwords keep working exactly like the old
-         * SHA-256->bcrypt hash migration above (verified on login and
-         * left alone otherwise), not force-invalidated. */
-        if ( strlen( $password ) < 8 ) {
-            return new WP_Error( 'weak_password', 'Password must be at least 8 characters.' );
+        /* Validate password - or, if none was supplied at all, issue a
+         * temporary one and require it be changed on first login. This
+         * is the same mechanism quick_register()'s AJAX handler already
+         * uses (see its own comment on must_change_password); putting it
+         * here too lets a caller that doesn't want to make the person
+         * invent a password at signup time (apply-form.php's Full
+         * Registration) skip that step entirely and just omit 'password'
+         * from $data, while a caller that does collect one (auth-page.php's
+         * wizard) is completely unaffected - it always sends a password,
+         * so this branch never triggers for it. */
+        $password      = isset( $data['password'] ) ? $data['password'] : '';
+        $temp_password = null;
+        if ( '' === $password ) {
+            if ( ! class_exists( 'EtelID_Fayda' ) ) {
+                return new WP_Error( 'server_error', 'Server setup error: EtelID_Fayda class is not loaded.' );
+            }
+            $temp_password = EtelID_Fayda::generate_temp_password();
+            $password       = $temp_password;
+        } else {
+            /* HARDENING: was a 6-character minimum with no other requirement -
+             * below current OWASP/NIST guidance (8 minimum is the baseline
+             * they recommend; NIST explicitly discourages forced complexity
+             * rules like "must contain a symbol" in favor of length, since
+             * complexity rules push people toward predictable substitutions
+             * like "Passw0rd!"). Raising to 8, still no complexity
+             * requirement - length is what actually matters. This only
+             * affects new registrations and password resets going forward;
+             * existing shorter passwords keep working exactly like the old
+             * SHA-256->bcrypt hash migration above (verified on login and
+             * left alone otherwise), not force-invalidated. */
+            if ( strlen( $password ) < 8 ) {
+                return new WP_Error( 'weak_password', 'Password must be at least 8 characters.' );
+            }
         }
 
         /* Hash password and store in data */
@@ -129,13 +147,19 @@ class EtelID_Auth {
         $member_id = EtelID_Generator::create( $data );
         if ( is_wp_error( $member_id ) ) return $member_id;
 
-        /* Save password hash */
-        EtelID_DB::update_member( $member_id, array( 'pin_hash' => $data['password_hash'] ) );
+        /* Save password hash, and flag the temp one (if any) as needing
+         * to be changed - same shape quick_register() already writes,
+         * which templates/portal.php's must-change-password overlay
+         * already knows how to pick up regardless of which entry point
+         * set it. */
+        $update = array( 'pin_hash' => $data['password_hash'] );
+        if ( $temp_password ) $update['must_change_password'] = 1;
+        EtelID_DB::update_member( $member_id, $update );
 
         /* Log */
         EtelID_DB::log( $member_id, '', 'registered', 'Self-registration via portal' );
 
-        return $member_id;
+        return array( 'member_id' => $member_id, 'temp_password' => $temp_password );
     }
 
     /* ─── Login ──────────────────────────────────────────── */

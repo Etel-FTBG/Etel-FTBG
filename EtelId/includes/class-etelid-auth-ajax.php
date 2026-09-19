@@ -91,11 +91,18 @@ class EtelID_Auth_Ajax {
         if ( ! EtelID_Security::valid_ethiopian_phone( $data['phone'] ) ) {
             wp_send_json_error( array( 'field' => 'phone', 'message' => 'Enter a valid Ethiopian phone number, e.g. 0912345678 or +251123456789.' ) );
         }
-        if ( strlen( $data['password'] ) < 8 ) {
-            wp_send_json_error( array( 'field' => 'password', 'message' => 'Password must be at least 8 characters.' ) );
-        }
-        if ( $data['password'] !== $data['password_confirm'] ) {
-            wp_send_json_error( array( 'field' => 'password_confirm', 'message' => 'Passwords do not match.' ) );
+        /* An empty password is allowed through here - it means the caller
+         * (apply-form.php's Full Registration) wants a temp password
+         * auto-issued, which EtelID_Auth::register() below handles; a
+         * caller that IS collecting one (auth-page.php's wizard) still
+         * gets the normal 8-char minimum enforced. */
+        if ( '' !== $data['password'] ) {
+            if ( strlen( $data['password'] ) < 8 ) {
+                wp_send_json_error( array( 'field' => 'password', 'message' => 'Password must be at least 8 characters.' ) );
+            }
+            if ( $data['password'] !== $data['password_confirm'] ) {
+                wp_send_json_error( array( 'field' => 'password_confirm', 'message' => 'Passwords do not match.' ) );
+            }
         }
         if ( empty( $data['dob'] ) ) {
             wp_send_json_error( array( 'field' => 'dob', 'message' => 'Date of birth is required.' ) );
@@ -149,17 +156,28 @@ class EtelID_Auth_Ajax {
             wp_send_json_error( array( 'message' => $result->get_error_message() ) );
         }
 
-        $member = EtelID_DB::get_member( $result );
+        /* EtelID_Auth::register() returns array('member_id'=>..,
+         * 'temp_password'=>..|null) rather than a bare id, so a caller
+         * that omitted 'password' entirely (apply-form.php's Full
+         * Registration) gets the generated temp password back to show
+         * the person, the same way quick_register()'s response already
+         * does - a caller that sent its own password (auth-page.php's
+         * wizard) just gets temp_password: null, no behavior change. */
+        $member_id     = $result['member_id'];
+        $temp_password = $result['temp_password'];
+
+        $member = EtelID_DB::get_member( $member_id );
         /* Auto login after register */
-        EtelID_Auth::create_session( $result );
+        EtelID_Auth::create_session( $member_id );
         if ( $member ) EtelID_Mailer::send_welcome( $member );
 
         wp_send_json_success( array(
-            'message'    => 'Account created! Welcome to Etel Group.',
-            'etel_id'    => $member ? $member->etel_id : '',
-            'fin'        => $member ? $member->fin : '',
-            'verify_url' => $member ? EtelID_QR::verify_url( $member->etel_id ) : '',
-            'redirect'   => home_url( '/portal/' ),
+            'message'       => 'Account created! Welcome to Etel Group.',
+            'etel_id'       => $member ? $member->etel_id : '',
+            'fin'           => $member ? $member->fin : '',
+            'temp_password' => $temp_password,
+            'verify_url'    => $member ? EtelID_QR::verify_url( $member->etel_id ) : '',
+            'redirect'      => home_url( '/portal/' ),
         ));
     }
 
