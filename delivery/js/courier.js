@@ -1214,6 +1214,7 @@
         loadAvailableJobs();
         maybeRequestCourierNotifications();
         initCourierSlideOnline();
+        setCourierOnlineUI(false); // safe default (offline) until the real status loads below
         loadCourierOnlineStatus();
 
         // ── ONLINE / OFFLINE ─────────────────────────────────────────────
@@ -1231,6 +1232,7 @@
                 if (res && res.success && res.data && res.data.status === 'online') {
                     COURIER_IS_ONLINE = true;
                     setCourierOnlineUI(true);
+                    if (typeof window.showCourierOnlineReminder === 'function') window.showCourierOnlineReminder();
                 }
             }).catch(function () {});
         }
@@ -1239,7 +1241,13 @@
             var wrap = document.getElementById('c-slide-online-wrap');
             var pill = document.getElementById('c-online-pill');
             if (wrap) wrap.style.display = isOnline ? 'none' : '';
-            if (pill) pill.style.display = isOnline ? '' : 'none';
+            if (pill) pill.style.display = isOnline ? 'flex' : 'none';
+            // .courier-online-pill's CSS is also gated behind
+            // body.is-offline (used elsewhere for the GPS indicator's
+            // dimmed look) - this is the single place that class gets
+            // set now, so the pill's own inline display style set above
+            // is never overridden by a stale class from a previous state.
+            document.body.classList.toggle('is-offline', !isOnline);
         }
 
         function courierGoOnline() {
@@ -1247,6 +1255,8 @@
                 if (res && res.success) {
                     COURIER_IS_ONLINE = true;
                     setCourierOnlineUI(true);
+                    if (navigator.vibrate) navigator.vibrate([12, 40, 12]);
+                    if (typeof window.showCourierOnlineReminder === 'function') window.showCourierOnlineReminder();
                     showToast('You\'re online', 'ok');
                 } else {
                     showToast((res && res.message) || 'Could not go online', 'err');
@@ -1260,6 +1270,8 @@
                 if (res && res.success) {
                     COURIER_IS_ONLINE = false;
                     setCourierOnlineUI(false);
+                    if (navigator.vibrate) navigator.vibrate(12);
+                    if (typeof window.clearCourierOnlineReminder === 'function') window.clearCourierOnlineReminder();
                     showToast('You\'re offline', 'ok');
                 } else {
                     showToast((res && res.message) || 'Could not go offline', 'err');
@@ -1320,6 +1332,15 @@
             // Tapping the "online" pill lets you go offline again.
             var pill = document.getElementById('c-online-pill');
             if (pill) pill.addEventListener('click', courierGoOffline);
+
+            // Persistent reminder (notification + app badge) while online
+            // and the tab is backgrounded - same mechanism as the Driver
+            // app, via courier-premium.js's optional helpers.
+            document.addEventListener('visibilitychange', function () {
+                if (document.visibilityState === 'hidden' && COURIER_IS_ONLINE && typeof window.showCourierOnlineReminder === 'function') {
+                    window.showCourierOnlineReminder();
+                }
+            });
         }
 
         // ── KPI SUMMARY (net ETB/hour) ───────────────────────────────────
