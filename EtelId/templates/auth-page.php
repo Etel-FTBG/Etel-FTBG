@@ -343,7 +343,7 @@ $features = array(
             <div class="eid-cam-box round" id="cam-box-photo">
               <video id="cam-video-photo" autoplay playsinline muted style="display:none"></video>
             </div>
-            <input type="file" id="cam-file-photo" accept="image/*" capture="user" style="display:none" onchange="camFileChange('photo', this)">
+            <input type="file" id="cam-file-photo" accept="image/*" style="display:none" onchange="camFileChange('photo', this)">
             <div class="eid-cam-btns" id="cam-btns-photo">
               <button type="button" class="eid-cam-btn" onclick="camStart('photo')"><i class="ti ti-camera"></i> Open Camera</button>
               <button type="button" class="eid-cam-btn" id="cam-capture-photo" style="display:none" disabled onclick="camCapture('photo')"><i class="ti ti-aperture"></i> Capture</button>
@@ -359,7 +359,7 @@ $features = array(
               <video id="cam-video-fayda-front" autoplay playsinline muted style="display:none"></video>
               <div class="eid-cam-guide"></div>
             </div>
-            <input type="file" id="cam-file-fayda-front" accept="image/*" capture="environment" style="display:none" onchange="camFileChange('fayda-front', this)">
+            <input type="file" id="cam-file-fayda-front" accept="image/*" style="display:none" onchange="camFileChange('fayda-front', this)">
             <div class="eid-cam-btns" id="cam-btns-fayda-front">
               <button type="button" class="eid-cam-btn" onclick="camStart('fayda-front')"><i class="ti ti-camera"></i> Open Camera</button>
               <button type="button" class="eid-cam-btn" id="cam-capture-fayda-front" style="display:none" disabled onclick="camCapture('fayda-front')"><i class="ti ti-aperture"></i> Capture</button>
@@ -375,7 +375,7 @@ $features = array(
               <video id="cam-video-fayda-back" autoplay playsinline muted style="display:none"></video>
               <div class="eid-cam-guide"></div>
             </div>
-            <input type="file" id="cam-file-fayda-back" accept="image/*" capture="environment" style="display:none" onchange="camFileChange('fayda-back', this)">
+            <input type="file" id="cam-file-fayda-back" accept="image/*" style="display:none" onchange="camFileChange('fayda-back', this)">
             <div class="eid-cam-btns" id="cam-btns-fayda-back">
               <button type="button" class="eid-cam-btn" onclick="camStart('fayda-back')"><i class="ti ti-camera"></i> Open Camera</button>
               <button type="button" class="eid-cam-btn" id="cam-capture-fayda-back" style="display:none" disabled onclick="camCapture('fayda-back')"><i class="ti ti-aperture"></i> Capture</button>
