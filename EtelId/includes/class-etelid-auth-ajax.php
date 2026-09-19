@@ -297,8 +297,20 @@ class EtelID_Auth_Ajax {
         $data['fayda_front_image'] = isset( $_POST['fayda_front_image'] ) ? wp_unslash( $_POST['fayda_front_image'] ) : '';
         $data['fayda_back_image']  = isset( $_POST['fayda_back_image'] )  ? wp_unslash( $_POST['fayda_back_image'] )  : '';
 
+        /* Same validation the full register() handler above already
+         * enforces (real-name format, phone format/duplicate, email
+         * format/duplicate, given+father's-name match level) - this
+         * fast-track form was missing all of it except phone format,
+         * so a name like "x" or an already-registered email/name could
+         * slip through here even though the full form blocked them. No
+         * DOB is collected on this form, so the exact name+dob duplicate
+         * check (find_duplicate_registration()) doesn't apply here, but
+         * name_match_level() doesn't need one. */
         if ( empty( $data['full_name'] ) ) {
             wp_send_json_error( array( 'field' => 'full_name', 'message' => 'Full name is required.' ) );
+        }
+        if ( ! EtelID_Auth_Ajax::is_real_full_name( $data['full_name'] ) ) {
+            wp_send_json_error( array( 'field' => 'full_name', 'message' => "Enter your real full name - at least two names (e.g. given name and father's name), each at least 3 letters, not repeated or a placeholder word." ) );
         }
         if ( empty( $data['phone'] ) ) {
             wp_send_json_error( array( 'field' => 'phone', 'message' => 'Phone number is required.' ) );
@@ -314,6 +326,12 @@ class EtelID_Auth_Ajax {
         }
         if ( ! empty( $data['email'] ) && ! is_email( $data['email'] ) ) {
             wp_send_json_error( array( 'field' => 'email', 'message' => 'Invalid email address.' ) );
+        }
+        if ( ! empty( $data['email'] ) && EtelID_DB::find_by_email( $data['email'] ) ) {
+            wp_send_json_error( array( 'field' => 'email', 'message' => 'This email is already registered. Please use a different email, or sign in instead.' ) );
+        }
+        if ( 2 === EtelID_DB::name_match_level( $data['full_name'] ) ) {
+            wp_send_json_error( array( 'field' => 'full_name', 'message' => "This given name and father's name match an existing record. Please also add your grandfather's name (a 3rd name) to tell the two of you apart." ) );
         }
 
         if ( ! class_exists( 'EtelID_Fayda' ) ) {
