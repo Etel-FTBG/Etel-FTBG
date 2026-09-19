@@ -12,6 +12,7 @@ if ( class_exists('EtelID_Auth') && EtelID_Auth::is_logged_in() ) {
 $companies = EtelID_Generator::companies();
 $regions   = EtelID_Generator::regions();
 $blood     = EtelID_Generator::blood_types();
+$zones_by_region = EtelID_Generator::zones_by_region();
 $logo_src  = defined('ETELID_LOGO_B64') ? ETELID_LOGO_B64 : ETELID_URL.'public/images/etel-logo.png';
 $org_name  = get_option('etelid_org_name','Etel Group');
 $nonce     = wp_create_nonce('etelid_public'); // must match check_ajax_referer('etelid_public', ...) in class-etelid-ajax.php - this was previously 'etelid_apply', a different action string, which made every submission fail nonce verification unconditionally regardless of timing or caching
@@ -602,8 +603,8 @@ body::before{
         </div>
         <div class="af-field">
           <label class="af-label">Date of Birth <span class="req">*</span></label>
-          <input type="date" class="af-input" id="f-dob" name="dob">
-          <span class="af-hint">Gregorian calendar</span>
+          <input type="date" class="af-input" id="f-dob" name="dob" oninput="apfUpdateAgeHint()">
+          <span class="af-hint" id="f-age-hint">Gregorian calendar</span>
         </div>
         <div class="af-field">
           <label class="af-label">Sex</label>
@@ -639,7 +640,7 @@ body::before{
         </div>
       </div>
       <div class="af-nav-row">
-        <span class="af-step-of">Step 1 of 5</span>
+        <span class="af-step-of">Step 1 of 4</span>
         <div class="af-nav-btns">
           <button type="button" class="af-btn-next" onclick="etelIDNext(1)">
             Next <i class="ti ti-arrow-right"></i>
@@ -662,7 +663,7 @@ body::before{
       <div class="af-grid">
         <div class="af-field">
           <label class="af-label">Region</label>
-          <select class="af-select" id="f-region" name="region">
+          <select class="af-select" id="f-region" name="region" onchange="apfPopulateZones()">
             <option value="">— Select Region —</option>
             <?php foreach ($regions as $r): ?>
             <option value="<?php echo esc_attr($r); ?>"><?php echo esc_html($r); ?></option>
@@ -671,7 +672,9 @@ body::before{
         </div>
         <div class="af-field">
           <label class="af-label">Zone / City</label>
-          <input type="text" class="af-input" id="f-zone" name="zone" placeholder="e.g. Hawassa">
+          <select class="af-select" id="f-zone" name="zone" disabled>
+            <option value="">-- Select a region first --</option>
+          </select>
         </div>
         <div class="af-field af-full">
           <label class="af-label">Woreda / Sub-city</label>
@@ -679,7 +682,7 @@ body::before{
         </div>
       </div>
       <div class="af-nav-row">
-        <span class="af-step-of">Step 2 of 5</span>
+        <span class="af-step-of">Step 2 of 4</span>
         <div class="af-nav-btns">
           <button type="button" class="af-btn-back" onclick="etelIDBack(2)">
             <i class="ti ti-arrow-left"></i> Back
@@ -869,6 +872,7 @@ body::before{
 var EtelIDConfig = { nonce:'<?php echo esc_js($nonce); ?>', nonceAuth:'<?php echo esc_js($nonce_auth); ?>', ajax:'<?php echo esc_js($ajax); ?>' };
 var _eidCurrent  = 1;
 var _eidData     = {};
+var _ZONES_BY_REGION = <?php echo wp_json_encode( $zones_by_region ); ?>;
 
 /* ── Mode choice (Quick Register vs Full Registration) ──────────
    Both flows live on this same page/URL rather than a separate route,
@@ -981,8 +985,35 @@ function etelIDQuickSubmit() {
   });
 }
 
+/* Step 1 (name/dob/phone/email) and Step 2 (region/zone) both need a
+ * live round-trip to the database before the wizard can move on - the
+ * same duplicate-phone/name/email checks and region<->zone linking
+ * already hardened on the /EtelId/ wizard (templates/auth-page.php),
+ * ported here since this form submits through the exact same backend
+ * (etelid_auth_register) and was missing the live client-side half of
+ * that hardening. etelIDNext() stays synchronous for steps 3/4 (no DB
+ * round-trip needed there) but goes async for 1 and 2. */
 function etelIDNext(from) {
   if (!etelIDValidate(from)) return;
+  if (from === 1) {
+    var name  = document.getElementById('f-full_name').value.trim();
+    var dob   = document.getElementById('f-dob').value;
+    var phone = document.getElementById('f-phone').value.trim();
+    var email = document.getElementById('f-email').value.trim();
+    apfCheckDuplicatePhone(phone, function(taken) {
+      if (taken) { showErr('An account with this phone number already exists. Please sign in instead.'); return; }
+      apfCheckDuplicateName(name, dob, function(result) {
+        if (result.duplicate) { showErr('An account with this name and date of birth already exists. Please sign in instead, or contact support if this is an error.'); return; }
+        if (!apfApplyNameMatchLevel(result.matchLevel)) return;
+        if (!email) { etelIDCollect(); etelIDGoto(2); return; }
+        apfCheckDuplicateEmail(email, function(taken2) {
+          if (taken2) { showErr('This email is already registered. Please use a different email, or sign in instead.'); return; }
+          etelIDCollect(); etelIDGoto(2);
+        });
+      });
+    });
+    return;
+  }
   etelIDCollect();
   etelIDGoto(from + 1);
   if (from + 1 === 4) etelIDRenderReview();
@@ -1059,12 +1090,223 @@ function etelIDFaydaFile(side, input) {
   reader.readAsDataURL(f);
 }
 
+/* -- Validation hardening ported from templates/auth-page.php's /EtelId/
+ * wizard, which already went through several rounds of live-testing
+ * fixes - this form submits through the exact same backend
+ * (etelid_auth_register) so the same real-name, phone-format, and
+ * duplicate-checking rules apply; this was the missing client-side
+ * half of that hardening on this form specifically. -- */
+function hasAmharicChar(s) {
+  for (var i = 0; i < s.length; i++) {
+    var c = s.charCodeAt(i);
+    if (c >= 4608 && c <= 4991) return true;
+  }
+  return false;
+}
+function countAmharicChars(s) {
+  var n = 0;
+  for (var i = 0; i < s.length; i++) {
+    var c = s.charCodeAt(i);
+    if (c >= 4608 && c <= 4991) n++;
+  }
+  return n;
+}
+var NAME_BLOCKLIST = ['test','tests','testing','asdf','asdfg','qwerty','xxx','xxxx',
+  'aaa','aaaa','sample','dummy','none','unknown','foo','bar','abc','xyz','name',
+  'fname','lname','firstname','lastname','fullname','na','nan','null','undefined',
+  'admin','user','demo'];
+function isPlaceholderWord(w) {
+  if (NAME_BLOCKLIST.indexOf(w.toLowerCase()) !== -1) return true;
+  if (/^([A-Za-z])\1+$/.test(w)) return true; /* "aaaa", "mmmm" */
+  return false;
+}
+function isRealFullName(name) {
+  var words = name.split(/\s+/).filter(function(w){ return w.length > 0; });
+  if (words.length < 2) return false;
+  var seen = {};
+  for (var i = 0; i < words.length; i++) {
+    var w = words[i];
+    if (!/^[A-Za-z'-]{3,}$/.test(w)) return false;
+    if (isPlaceholderWord(w)) return false;
+    var lw = w.toLowerCase();
+    if (seen[lw]) return false;
+    seen[lw] = true;
+  }
+  return true;
+}
+function isRealAmharicName(nameAm) {
+  var words = nameAm.split(/\s+/).filter(function(w){ return w.length > 0; });
+  if (words.length < 2) return false;
+  var seen = {};
+  for (var i = 0; i < words.length; i++) {
+    var w = words[i];
+    if (w.length < 3 || countAmharicChars(w) < 3) return false;
+    if (seen[w]) return false;
+    seen[w] = true;
+  }
+  return true;
+}
+function isValidEthiopianPhone(phone) {
+  var digits = (phone || '').replace(/[^0-9]/g, '');
+  if (digits.length === 12 && digits.slice(0,3) === '251') digits = digits.slice(3);
+  else if (digits.length === 10 && digits[0] === '0') digits = digits.slice(1);
+  return /^[79][0-9]{8}$/.test(digits);
+}
+function ageFromDob(dob) {
+  var d = new Date(dob + 'T00:00:00');
+  if (isNaN(d.getTime())) return null;
+  var now = new Date();
+  var age = now.getFullYear() - d.getFullYear();
+  var monthDiff = now.getMonth() - d.getMonth();
+  if (monthDiff < 0 || (monthDiff === 0 && now.getDate() < d.getDate())) age--;
+  return age;
+}
+function apfUpdateAgeHint() {
+  var dob  = document.getElementById('f-dob').value;
+  var hint = document.getElementById('f-age-hint');
+  if (!dob) { hint.textContent = 'Gregorian calendar'; return; }
+  var age = ageFromDob(dob);
+  if (age === null) { hint.textContent = 'Gregorian calendar'; }
+  else if (age < 0)  { hint.textContent = 'That date is in the future.'; }
+  else { hint.textContent = 'Age: ' + age + (age === 1 ? ' year' : ' years'); }
+}
+function apfPopulateZones() {
+  var region = document.getElementById('f-region').value;
+  var sel    = document.getElementById('f-zone');
+  sel.innerHTML = '';
+  var zones = _ZONES_BY_REGION[region] || [];
+  if (!region || !zones.length) {
+    sel.disabled = true;
+    var opt = document.createElement('option');
+    opt.value = '';
+    opt.textContent = region ? 'No zones available' : 'Select a region first';
+    sel.appendChild(opt);
+    return;
+  }
+  sel.disabled = false;
+  var placeholder = document.createElement('option');
+  placeholder.value = '';
+  placeholder.textContent = '-- Select --';
+  sel.appendChild(placeholder);
+  zones.forEach(function(z){
+    var o = document.createElement('option');
+    o.value = z; o.textContent = z;
+    sel.appendChild(o);
+  });
+}
+/* Live duplicate checks against the database, same AJAX actions and
+ * blocking rules templates/auth-page.php's wizard already uses (see
+ * EtelID_DB::name_match_level()'s own comment for the 0-3 tiering) -
+ * this form has no per-field error UI, only the single eid-form-error
+ * banner, so a blocking result surfaces through showErr() instead of a
+ * fieldErr()-style inline message. */
+function apfPost(data, cb) {
+  data.nonce = EtelIDConfig.nonceAuth;
+  var body = Object.keys(data).map(function(k){return encodeURIComponent(k)+'='+encodeURIComponent(data[k]);}).join('&');
+  fetch(EtelIDConfig.ajax,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:body})
+    .then(function(r){return r.json();}).then(cb)
+    .catch(function(){cb({success:false,data:{message:'Network error. Please try again.'}});});
+}
+var _apfDupPhoneCheck = { key: '', taken: false, checked: false };
+function apfCheckDuplicatePhone(phone, cb) {
+  var key = phone.toLowerCase();
+  if (_apfDupPhoneCheck.checked && _apfDupPhoneCheck.key === key) { cb(_apfDupPhoneCheck.taken); return; }
+  apfPost({ action: 'etelid_check_duplicate_phone', phone: phone }, function(r) {
+    var taken = !!(r.success && r.data && r.data.taken);
+    _apfDupPhoneCheck = { key: key, taken: taken, checked: true };
+    cb(taken);
+  });
+}
+var _apfDupNameCheck = { key: '', result: null, checked: false };
+function apfCheckDuplicateName(name, dob, cb) {
+  var key = name.toLowerCase() + '|' + dob;
+  if (_apfDupNameCheck.checked && _apfDupNameCheck.key === key) { cb(_apfDupNameCheck.result); return; }
+  apfPost({ action: 'etelid_check_duplicate_name', full_name: name, dob: dob }, function(r) {
+    var result = {
+      duplicate:  !!(r.success && r.data && r.data.duplicate),
+      matchLevel: (r.success && r.data && r.data.match_level) ? r.data.match_level : 0,
+    };
+    _apfDupNameCheck = { key: key, result: result, checked: true };
+    cb(result);
+  });
+}
+var _apfDupEmailCheck = { key: '', taken: false, checked: false };
+function apfCheckDuplicateEmail(email, cb) {
+  var key = email.toLowerCase();
+  if (_apfDupEmailCheck.checked && _apfDupEmailCheck.key === key) { cb(_apfDupEmailCheck.taken); return; }
+  apfPost({ action: 'etelid_check_duplicate_email', email: email }, function(r) {
+    var taken = !!(r.success && r.data && r.data.taken);
+    _apfDupEmailCheck = { key: key, taken: taken, checked: true };
+    cb(taken);
+  });
+}
+/* Mirrors applyNameMatchLevel() in auth-page.php: level 1 (given name
+ * only) is too common in Ethiopian naming to act on; level 2 (given +
+ * father's name both match) blocks, asking for a grandfather's name;
+ * level 3 (the full entered name matches) is the strongest signal
+ * available but still not DOB-backed, so it's allowed through. */
+function apfApplyNameMatchLevel(level) {
+  if (level >= 2) {
+    showErr("This given name and father's name match an existing record. Please also add your grandfather's name (a 3rd name), then continue.");
+    return false;
+  }
+  return true;
+}
+document.getElementById('f-phone').addEventListener('blur', function() {
+  var phone = this.value.trim();
+  if (!phone || !isValidEthiopianPhone(phone)) return;
+  apfCheckDuplicatePhone(phone, function(taken) {
+    if (taken) showErr('An account with this phone number already exists. Please sign in instead.');
+  });
+});
+document.getElementById('f-email').addEventListener('blur', function() {
+  var email = this.value.trim();
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return;
+  apfCheckDuplicateEmail(email, function(taken) {
+    if (taken) showErr('This email is already registered. Please use a different email, or sign in instead.');
+  });
+});
+
 function etelIDValidate(step) {
   if (step === 1) {
-    if (!document.getElementById('f-full_name').value.trim() ||
-        !document.getElementById('f-dob').value ||
-        !document.getElementById('f-phone').value.trim()) {
+    var name   = document.getElementById('f-full_name').value.trim();
+    var nameAm = document.getElementById('f-full_name_am').value.trim();
+    var dob    = document.getElementById('f-dob').value;
+    var phone  = document.getElementById('f-phone').value.trim();
+    var email  = document.getElementById('f-email').value.trim();
+    if (!name || !dob || !phone) {
       showErr('Please fill in all required fields (marked with *).');
+      return false;
+    }
+    if (!isRealFullName(name)) {
+      showErr("Enter your real full name - at least two names (e.g. given name and father's name), each at least 3 letters, not repeated or a placeholder word.");
+      return false;
+    }
+    if (nameAm && !isRealAmharicName(nameAm)) {
+      showErr('Enter your full name in Amharic script (at least two real words, not repeated), or leave that field blank.');
+      return false;
+    }
+    var age = ageFromDob(dob);
+    if (age === null) { showErr('Enter a valid date of birth.'); return false; }
+    if (age < 0)  { showErr('Date of birth cannot be in the future.'); return false; }
+    if (age < 10) { showErr('You must be at least 10 years old to register.'); return false; }
+    if (age > 120) { showErr('Enter a valid date of birth.'); return false; }
+    if (!isValidEthiopianPhone(phone)) {
+      showErr('Enter a valid Ethiopian phone number, e.g. 0912345678 or +251123456789.');
+      return false;
+    }
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      showErr('Enter a valid email address, or leave it blank.');
+      return false;
+    }
+  }
+  if (step === 2) {
+    var region = document.getElementById('f-region').value;
+    var zone   = document.getElementById('f-zone').value.trim();
+    if (!region) { showErr('Region is required.'); return false; }
+    if (!zone)   { showErr('Please select your zone/city.'); return false; }
+    if ((_ZONES_BY_REGION[region] || []).indexOf(zone) === -1) {
+      showErr('Select a zone/city that belongs to the chosen region.');
       return false;
     }
   }
