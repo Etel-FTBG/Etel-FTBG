@@ -202,6 +202,7 @@ function etelid_bridge_local_user($pdo, $member) {
     $digits = preg_replace('/[^0-9]/', '', $member['phone']);
     $last9  = strlen($digits) >= 9 ? substr($digits, -9) : $digits;
     $hasVer = function_exists('etel_table_columns') && in_array('token_version', etel_table_columns($pdo, 'users'), true);
+    $hasEtelId = function_exists('etel_table_columns') && in_array('etel_id', etel_table_columns($pdo, 'users'), true);
     $s = $pdo->prepare(
         "SELECT id, name, phone, role" . ($hasVer ? ", token_version" : "") . " FROM users
          WHERE REPLACE(REPLACE(phone,'+',''),' ','') = ?
@@ -209,16 +210,33 @@ function etelid_bridge_local_user($pdo, $member) {
          LIMIT 1");
     $s->execute(array($digits, $last9));
     $u = $s->fetch();
-    if ($u) return $u;
+    if ($u) {
+        /* Backfill the etel_id link the first time this account is seen
+           through EtelID SSO/service calls - existing accounts predate
+           this column, and a courier's NFC card lookup (nfc_list_courier_orders
+           etc.) needs it to resolve directly by etel_id, not only by phone. */
+        if ($hasEtelId && !empty($member['etel_id'])) {
+            $pdo->prepare("UPDATE users SET etel_id = ? WHERE id = ? AND (etel_id IS NULL OR etel_id = '')")
+                ->execute(array($member['etel_id'], $u['id']));
+        }
+        return $u;
+    }
 
     /* Auto-provision: one EtelID = access to the whole system */
     $hash = (strpos($member['pin_hash'], '$2') === 0)
         ? $member['pin_hash']                                   /* bcrypt: same password also works on classic login */
         : password_hash(bin2hex(openssl_random_pseudo_bytes(16)), PASSWORD_DEFAULT);
+    $etelIdVal = $hasEtelId && !empty($member['etel_id']) ? $member['etel_id'] : null;
     try {
-        $pdo->prepare("INSERT INTO users (name, phone, password_hash, role, active, created_at)
-                       VALUES (?,?,?, 'customer', 1, NOW())")
-            ->execute(array($member['full_name'], $member['phone'], $hash));
+        if ($hasEtelId) {
+            $pdo->prepare("INSERT INTO users (name, phone, etel_id, password_hash, role, active, created_at)
+                           VALUES (?,?,?,?, 'customer', 1, NOW())")
+                ->execute(array($member['full_name'], $member['phone'], $etelIdVal, $hash));
+        } else {
+            $pdo->prepare("INSERT INTO users (name, phone, password_hash, role, active, created_at)
+                           VALUES (?,?,?, 'customer', 1, NOW())")
+                ->execute(array($member['full_name'], $member['phone'], $hash));
+        }
     } catch (Exception $e) {
         /* schema variant without active column */
         $pdo->prepare("INSERT INTO users (name, phone, password_hash, role, created_at)

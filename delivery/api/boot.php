@@ -182,6 +182,7 @@ define('ETEL_WRITE_ACTIONS', array(
     'admin_update_courier',
     'admin_backfill_order_service_giver_ids',
     'courier_update_location',
+    'nfc_confirm_pickup','nfc_confirm_delivery',
 ));
 
 /*  READ INPUT  */
@@ -885,6 +886,11 @@ switch ($action) {
         break;
     case 'save_push_subscription': case 'remove_push_subscription': case 'get_vapid_public_key': case 'test_send_push':
         require __DIR__ . '/controllers/PushController.php';
+        break;
+    case 'nfc_list_courier_orders': case 'nfc_confirm_pickup': case 'nfc_confirm_delivery':
+        // Service-key gated (EtelID calls these server-to-server after an
+        // NFC card scan) - see NfcController.php's own header comment.
+        require __DIR__ . '/controllers/NfcController.php';
         break;
     case 'get_items': case 'customer_get_items': {
         $pdo = db();
