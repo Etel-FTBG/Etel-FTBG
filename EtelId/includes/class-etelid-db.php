@@ -571,7 +571,25 @@ class EtelID_DB {
             $first_two = $words[0] . ' ' . $words[1];
             if ( self::find_by_name( $first_two ) ) $level = 2;
         }
-        if ( count( $words ) >= 3 && self::find_by_name( $full_name ) ) $level = 3;
+        /* HARDENING: a real live case - someone was asked (level 2) to add
+         * their grandfather's name to tell them apart from an existing
+         * given+father's-name match, did exactly that, and the block
+         * never went away because level 2 only ever escalated to 3 (full
+         * match) and never downgraded when the 3rd name DIDN'T match.
+         * That's the whole point of asking for it: a 3rd word that fails
+         * to match means the two people ARE distinguishable, so this
+         * should stop blocking, not keep blocking forever regardless of
+         * what the person enters. Only escalate past level 2 (to 3) or
+         * resolve it (back to 1, non-blocking) once 3+ words were
+         * actually supplied; with fewer than 3, level 2 still means
+         * "please add one" exactly as before. */
+        if ( count( $words ) >= 3 ) {
+            if ( self::find_by_name( $full_name ) ) {
+                $level = 3;
+            } elseif ( 2 === $level ) {
+                $level = 1;
+            }
+        }
         return $level;
     }
 
