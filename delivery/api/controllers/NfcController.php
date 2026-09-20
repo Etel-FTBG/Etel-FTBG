@@ -130,9 +130,7 @@ case 'nfc_driver_status': {
     // fires (see class-etelid-nfc.php's ajax_start 'driver_status'
     // branch). Unlike the rest of the public profile, this data
     // (license, compliance status) is only released to someone who
-    // holds Delivery's "Traffic Officer" staff role (or a full,
-    // non-EtelGroup-managed admin account) - a bare card tap, or a tap
-    // confirmed by an ordinary EtelID login, gets a 403.
+    // holds the "Traffic Officer" role.
     nfc_require_service_key();
     $pdo = db();
 
@@ -140,20 +138,43 @@ case 'nfc_driver_status': {
     $officer_phone   = isset($body['officer_phone'])   ? trim($body['officer_phone'])   : '';
     if (!$officer_etel_id && !$officer_phone) fail('officer_etel_id or officer_phone is required', 400);
 
-    $officer_user = nfc_find_or_create_user($pdo, $officer_etel_id, $officer_phone, '', false);
-    if (!$officer_user) fail('No Delivery account found for this EtelID. Sign in once in the Delivery admin panel first.', 404);
+    /* Checked LIVE against Etel Group's own Employees panel first, via
+       the same bridge call admin_etelid_login uses (etelid_bridge_
+       check_role) - a role assigned there must work immediately for a
+       roadside check, without first requiring that officer to have
+       separately logged into Delivery's full admin dashboard once (the
+       only place a local users.staff_role/is_etelgroup_managed sync
+       would otherwise happen). This was a real bug: an officer freshly
+       assigned "Traffic Officer" in EtelGroup, who had never logged
+       into admin.html, got rejected here even though the assignment
+       was genuinely correct. */
+    require_once __DIR__ . '/../etelid_bridge.php';
+    $egRole = $officer_phone ? etelid_bridge_check_role('etel-delivery', $officer_phone) : null;
+    $isAuthorized = $egRole && isset($egRole['role_at']) && strcasecmp($egRole['role_at'], 'Traffic Officer') === 0;
 
-    $userCols = etel_table_columns($pdo, 'users');
-    $officerSel = 'SELECT role'
-        . (in_array('staff_role', $userCols, true) ? ', staff_role' : '')
-        . (in_array('is_etelgroup_managed', $userCols, true) ? ', is_etelgroup_managed' : '')
-        . ' FROM users WHERE id = ?';
-    $os = $pdo->prepare($officerSel);
-    $os->execute(array($officer_user['id']));
-    $officerRow = $os->fetch(PDO::FETCH_ASSOC);
+    if (!$isAuthorized) {
+        // Fallback for a legacy local admin account (never EtelGroup-
+        // managed) or one whose local sync already ran from a prior
+        // admin.html login - same role_permissions/staff_role check as
+        // everywhere else in this codebase.
+        $officer_user = nfc_find_or_create_user($pdo, $officer_etel_id, $officer_phone, '', false);
+        if ($officer_user) {
+            $userCols = etel_table_columns($pdo, 'users');
+            $officerSel = 'SELECT role'
+                . (in_array('staff_role', $userCols, true) ? ', staff_role' : '')
+                . (in_array('is_etelgroup_managed', $userCols, true) ? ', is_etelgroup_managed' : '')
+                . ' FROM users WHERE id = ?';
+            $os = $pdo->prepare($officerSel);
+            $os->execute(array($officer_user['id']));
+            $officerRow = $os->fetch(PDO::FETCH_ASSOC);
+            nfc_ensure_traffic_officer_capability($pdo);
+            if ($officerRow && $officerRow['role'] === 'admin' && user_has_capability($pdo, $officerRow, 'drivers.compliance.view')) {
+                $isAuthorized = true;
+            }
+        }
+    }
 
-    nfc_ensure_traffic_officer_capability($pdo);
-    if (!$officerRow || $officerRow['role'] !== 'admin' || !user_has_capability($pdo, $officerRow, 'drivers.compliance.view')) {
+    if (!$isAuthorized) {
         fail('Traffic Officer access required to view driver compliance info.', 403);
     }
 
