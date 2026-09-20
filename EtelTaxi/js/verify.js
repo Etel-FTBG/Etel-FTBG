@@ -13,7 +13,8 @@ function renderResult(d) {
   const assoc = d.association ? (d.association.name_en || d.association.name_am) : '';
   const route = d.association ? (d.association.route_en || d.association.route_am) : '';
   return `
-    <div class="result-card ${s.cls}">
+    <div class="result-card guilloche ${s.cls}">
+      <div class="eta-holo"></div>
       <div class="result-icon">${s.icon}</div>
       <div class="result-label">${s.label}</div>
       <div class="driver-name">${taxiEsc(d.full_name)}</div>
