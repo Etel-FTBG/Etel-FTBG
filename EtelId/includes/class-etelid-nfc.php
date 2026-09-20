@@ -417,6 +417,38 @@ class Etelid_Nfc {
         return isset($body['data']) ? $body['data'] : array();
     }
 
+    /* Outbound call to Etel Gebeya's shared-service-key API, same shape
+       as etelpay_service_call()/madeya_service_call() above - reuses
+       the same ETELID_SERVICE_KEY, since Etel Gebeya's own
+       api/config.php now defines the matching ETELID_SERVICE_KEY
+       constant for exactly this inbound direction. */
+    protected static function gebeya_service_call($path, $payload) {
+        $key = defined('ETELID_SERVICE_KEY') ? ETELID_SERVICE_KEY : get_option('etelid_service_key', '');
+        if (!$key) return new WP_Error('no_key', 'etelid_service_key is not configured.');
+
+        $home_parts = wp_parse_url(home_url());
+        $site_root  = (isset($home_parts['scheme']) ? $home_parts['scheme'] : 'https') . '://'
+                    . (isset($home_parts['host']) ? $home_parts['host'] : $_SERVER['HTTP_HOST']);
+        $base = get_option('etelid_gebeya_api_base', $site_root . '/EtelGebeya');
+        $url  = trailingslashit($base) . 'api/' . $path;
+
+        $resp = wp_remote_post($url, array(
+            'timeout' => 12,
+            'headers' => array('X-Etel-Service-Key' => $key, 'Content-Type' => 'application/json'),
+            'body'    => wp_json_encode($payload),
+        ));
+
+        if (is_wp_error($resp)) return $resp;
+        $code = wp_remote_retrieve_response_code($resp);
+        $body = json_decode(wp_remote_retrieve_body($resp), true);
+        if (!is_array($body)) return new WP_Error('bad_response', 'Etel Gebeya returned an unreadable response.');
+        if ($code < 200 || $code >= 300 || empty($body['ok'])) {
+            $msg = !empty($body['error']) ? $body['error'] : ('Etel Gebeya request failed (HTTP ' . $code . ').');
+            return new WP_Error('gebeya_error', $msg);
+        }
+        return isset($body['data']) ? $body['data'] : array();
+    }
+
     /* Whether $phone currently holds $role_name at $company_slug in Etel
        Group's own Employees panel data - queried DIRECTLY here (this
        data lives in EtelID's own WordPress DB, the same tables
@@ -459,7 +491,7 @@ class Etelid_Nfc {
         $ident  = isset($_POST['identifier']) ? sanitize_text_field(wp_unslash($_POST['identifier'])) : '';
         $pass   = isset($_POST['password']) ? (string) $_POST['password'] : '';
 
-        $allowedStages = array('pickup', 'delivery', 'ride_start', 'driver_status', 'etelpay_payout', 'etelpay_cardholder_pay', 'etelmadeya_register');
+        $allowedStages = array('pickup', 'delivery', 'ride_start', 'driver_status', 'etelpay_payout', 'etelpay_cardholder_pay', 'etelmadeya_register', 'gebeya_delivery');
         if (!$token || !in_array($stage, $allowedStages, true) || !$ident || !$pass) {
             wp_send_json_error(array('message' => 'Missing required fields.'));
         }
@@ -661,14 +693,29 @@ class Etelid_Nfc {
             ));
         }
 
-        $orders = self::delivery_service_call('nfc_list_courier_orders', array(
-            'stage'              => $stage,
-            'courier_etel_id'    => $courier->etel_id,
-            'courier_phone'      => $courier->phone,
-            'confirmer_etel_id'  => $confirmer->etel_id,
-            'confirmer_phone'    => $confirmer->phone,
-            'confirmer_name'     => $confirmer->full_name,
-        ));
+        /* "Confirm Gebeya Order" (Etel Gebeya marketplace deliveries):
+           same generic list-then-confirm shape as pickup/delivery
+           above, just routed to Etel Gebeya's own service instead of
+           Delivery's - the tapped card's owner is the courier whose
+           still-open deliveries get listed. */
+        if ('gebeya_delivery' === $stage) {
+            $orders = self::gebeya_service_call('service_nfc_order_list.php', array(
+                'courier_etel_id'   => $courier->etel_id,
+                'courier_phone'     => $courier->phone,
+                'confirmer_etel_id' => $confirmer->etel_id,
+                'confirmer_phone'   => $confirmer->phone,
+                'confirmer_name'    => $confirmer->full_name,
+            ));
+        } else {
+            $orders = self::delivery_service_call('nfc_list_courier_orders', array(
+                'stage'              => $stage,
+                'courier_etel_id'    => $courier->etel_id,
+                'courier_phone'      => $courier->phone,
+                'confirmer_etel_id'  => $confirmer->etel_id,
+                'confirmer_phone'    => $confirmer->phone,
+                'confirmer_name'     => $confirmer->full_name,
+            ));
+        }
         if (is_wp_error($orders)) {
             wp_send_json_error(array('message' => $orders->get_error_message()));
         }
@@ -708,16 +755,24 @@ class Etelid_Nfc {
         if (false === $data) wp_send_json_error(array('message' => 'This confirmation has expired. Please start again.'));
         delete_transient($key); // single-use
 
-        $delivery_action = 'pickup' === $data['stage'] ? 'nfc_confirm_pickup' : 'nfc_confirm_delivery';
+        if ('gebeya_delivery' === $data['stage']) {
+            $result = self::gebeya_service_call('service_nfc_order_confirm.php', array(
+                'order_vendor_id'   => $order_id,
+                'courier_phone'     => $data['courier_phone'],
+                'confirmer_name'    => $data['confirmer_name'],
+            ));
+        } else {
+            $delivery_action = 'pickup' === $data['stage'] ? 'nfc_confirm_pickup' : 'nfc_confirm_delivery';
 
-        $result = self::delivery_service_call($delivery_action, array(
-            'order_id'           => $order_id,
-            'courier_etel_id'    => $data['courier_etel_id'],
-            'courier_phone'      => $data['courier_phone'],
-            'confirmer_etel_id'  => $data['confirmer_etel_id'],
-            'confirmer_phone'    => $data['confirmer_phone'],
-            'confirmer_name'     => $data['confirmer_name'],
-        ));
+            $result = self::delivery_service_call($delivery_action, array(
+                'order_id'           => $order_id,
+                'courier_etel_id'    => $data['courier_etel_id'],
+                'courier_phone'      => $data['courier_phone'],
+                'confirmer_etel_id'  => $data['confirmer_etel_id'],
+                'confirmer_phone'    => $data['confirmer_phone'],
+                'confirmer_name'     => $data['confirmer_name'],
+            ));
+        }
 
         if (is_wp_error($result)) {
             wp_send_json_error(array('message' => $result->get_error_message()));

@@ -343,6 +343,8 @@ $nfc_nonce = wp_create_nonce('etelid_public');
             <button type="button" class="nfc-btn primary" data-stage="etelpay_cardholder_pay">Cardholder Pays via EtelPay</button>
             <p class="nfc-role-label">Station Controller</p>
             <button type="button" class="nfc-btn primary" data-stage="etelmadeya_register">Register in Queue</button>
+            <p class="nfc-role-label">Etel Gebeya Courier</p>
+            <button type="button" class="nfc-btn primary" data-stage="gebeya_delivery">Confirm Gebeya Order</button>
           </div>
 
           <div id="nfc-step-charge-amount" class="nfc-step">
@@ -619,7 +621,13 @@ $nfc_nonce = wp_create_nonce('etelid_public');
             var el = document.createElement('button');
             el.type = 'button';
             el.className = 'nfc-order';
-            el.textContent = (o.order_code || ('#' + o.id)) + '  -  ' + o.from_zone + ' to ' + o.to_zone;
+            var label = o.order_code || ('#' + o.id);
+            if (o.from_zone || o.to_zone) {
+              label += '  -  ' + o.from_zone + ' to ' + o.to_zone;
+            } else if (o.vendor_name || o.amount) {
+              label += '  -  ' + (o.vendor_name || '') + (o.amount ? '  (' + o.amount + ' ' + (o.currency || 'ETB') + ')' : '');
+            }
+            el.textContent = label;
             el.addEventListener('click', function () { confirmOrder(o.id); });
             list.appendChild(el);
           });
