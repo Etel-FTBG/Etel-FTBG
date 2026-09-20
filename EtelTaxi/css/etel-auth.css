@@ -1,0 +1,201 @@
+/* ════════════════════════════════════════════════════════════════
+   ETEL TAXI — shared premium auth screen (split-screen, glowing gold)
+   Same visual family as ETEL Delivery's login.html (del-auth-* design
+   language), rebuilt here as a proper full-page split-screen instead of
+   a plain card, with a stronger/glowier gold treatment per request.
+   Used by: driver.html, admin.html (full split-screen takeover) and
+   verify.html (card-only, since that page's primary job is quick QR
+   scanning without a login gate).
+   ════════════════════════════════════════════════════════════════ */
+
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=JetBrains+Mono:wght@500;700&display=swap');
+
+@keyframes etaHolo        { 0%{background-position:0 0}100%{background-position:300% 0} }
+@keyframes etaShimmer     { 0%{background-position:-400px 0}100%{background-position:400px 0} }
+@keyframes etaSpin        { to{transform:rotate(360deg)} }
+@keyframes etaOrbDrift1   { 0%,100%{transform:translate(0,0)}33%{transform:translate(30px,-25px)}66%{transform:translate(-20px,18px)} }
+@keyframes etaOrbDrift2   { 0%,100%{transform:translate(0,0)}33%{transform:translate(-25px,18px)}66%{transform:translate(22px,-28px)} }
+@keyframes etaLogoGlow    { 0%,100%{filter:drop-shadow(0 0 18px rgba(255,215,90,.55)) drop-shadow(0 0 40px rgba(212,175,55,.35))} 50%{filter:drop-shadow(0 0 30px rgba(255,225,120,.85)) drop-shadow(0 0 60px rgba(212,175,55,.55))} }
+@keyframes etaSparkle     { 0%,100%{opacity:0;transform:scale(.4)} 50%{opacity:1;transform:scale(1)} }
+@keyframes etaSlideUp     { from{opacity:0;transform:translateY(24px)} to{opacity:1;transform:none} }
+@keyframes etaSlideRight  { from{opacity:0;transform:translateX(-24px)} to{opacity:1;transform:none} }
+
+/* ── Full-page split-screen takeover (driver.html, admin.html) ──
+   position:fixed so it fully overlays whatever app shell/header sits
+   underneath in the DOM, regardless of where this element lives - no
+   need to physically relocate it out of an existing container. */
+.eta-page{
+  position:fixed; inset:0; z-index:200; overflow-y:auto; overflow-x:hidden;
+  display:flex; min-height:100vh; min-height:100dvh;
+  font-family:'Cormorant Garamond',serif;
+  background:var(--bg);
+}
+
+.eta-left{
+  flex:0 0 42%; position:relative; overflow:hidden;
+  display:flex; flex-direction:column; justify-content:center; align-items:center;
+  padding:40px 30px;
+  background:linear-gradient(155deg,
+    #1A0A00 0%,#3A2008 14%,#6A4010 26%,#9A6820 38%,
+    #D4AF37 50%,#F5E6A3 56%,#D4AF37 62%,
+    #9A6820 74%,#5A3808 88%,#1A0A00 100%);
+}
+.eta-left::before{
+  content:''; position:absolute; inset:0; pointer-events:none;
+  background-image:
+    repeating-linear-gradient(30deg, transparent 0,transparent 22px,rgba(255,255,255,.04) 22px,rgba(255,255,255,.04) 23px),
+    repeating-linear-gradient(-30deg,transparent 0,transparent 22px,rgba(255,255,255,.04) 22px,rgba(255,255,255,.04) 23px);
+}
+.eta-orb{ position:absolute; border-radius:50%; pointer-events:none; filter:blur(60px); }
+.eta-orb-1{ width:420px; height:420px; top:-120px; left:-120px; background:radial-gradient(circle,rgba(255,230,120,.35) 0%,transparent 70%); animation:etaOrbDrift1 14s ease-in-out infinite; }
+.eta-orb-2{ width:360px; height:360px; bottom:-90px; right:-90px; background:radial-gradient(circle,rgba(255,200,60,.28) 0%,transparent 70%); animation:etaOrbDrift2 18s ease-in-out infinite; }
+
+.eta-brand{ position:relative; z-index:1; display:flex; flex-direction:column; align-items:center; text-align:center; gap:16px; animation:etaSlideRight .6s ease both; }
+.eta-logo-wrap{ position:relative; display:flex; align-items:center; justify-content:center; }
+.eta-logo{
+  width:104px; height:104px; object-fit:contain; border-radius:50%;
+  animation:etaLogoGlow 3.2s ease-in-out infinite;
+}
+.eta-sparkle{ position:absolute; color:#fff9d6; font-size:14px; animation:etaSparkle 2.6s ease-in-out infinite; pointer-events:none; }
+.eta-sparkle:nth-child(1){ top:-6px; left:6px; animation-delay:0s; }
+.eta-sparkle:nth-child(2){ bottom:2px; right:-4px; animation-delay:.9s; }
+.eta-sparkle:nth-child(3){ top:40%; right:-14px; animation-delay:1.7s; font-size:10px; }
+
+.eta-name{ font-family:'Syne',sans-serif; font-size:24px; font-weight:800; color:#FFF6D6; letter-spacing:1px; text-shadow:0 2px 18px rgba(0,0,0,.5), 0 0 24px rgba(255,220,120,.4); }
+.eta-sub{ font-family:'JetBrains Mono',monospace; font-size:10px; color:#3A2200; letter-spacing:2.5px; text-transform:uppercase; font-weight:700; }
+.eta-desc{ font-size:13.5px; color:rgba(58,34,0,.82); line-height:1.7; max-width:260px; font-weight:600; }
+
+.eta-feats{ display:flex; flex-direction:column; gap:8px; width:100%; max-width:260px; margin-top:6px; }
+.eta-feat{ display:flex; align-items:center; gap:10px; padding:9px 13px; background:rgba(255,255,255,.14); border:1px solid rgba(58,34,0,.18); border-radius:10px; font-size:12.5px; color:#2A1A06; font-weight:700; backdrop-filter:blur(6px); }
+.eta-feat-dot{ width:6px; height:6px; border-radius:50%; background:#1a7a3a; flex-shrink:0; box-shadow:0 0 8px rgba(26,122,58,.7); }
+
+.eta-right{
+  flex:1; display:flex; align-items:center; justify-content:center; padding:24px 20px;
+  background:
+    radial-gradient(1200px 700px at 20% -10%, rgba(212,175,55,.10), transparent 60%),
+    radial-gradient(900px 600px at 110% 20%, rgba(212,175,55,.08), transparent 55%),
+    var(--bg);
+  position:relative; overflow:hidden;
+}
+.eta-right::before{
+  content:''; position:absolute; inset:0; pointer-events:none; z-index:0;
+  background-image:
+    repeating-linear-gradient(45deg, transparent 0,transparent 32px,rgba(212,175,55,.05) 32px,rgba(212,175,55,.05) 33px),
+    repeating-linear-gradient(-45deg,transparent 0,transparent 32px,rgba(212,175,55,.05) 32px,rgba(212,175,55,.05) 33px);
+}
+
+.eta-card{
+  width:100%; max-width:420px; position:relative; z-index:1;
+  background:linear-gradient(170deg, rgba(30,22,8,.92), rgba(16,11,4,.94));
+  border-radius:20px; border:1.5px solid rgba(212,175,55,.4);
+  box-shadow:0 0 0 1px rgba(212,175,55,.08), 0 20px 70px -12px rgba(0,0,0,.7), 0 0 90px -20px rgba(212,175,55,.35);
+  overflow:hidden; animation:etaSlideUp .5s ease both;
+}
+.eta-holo{ height:3px; background:linear-gradient(90deg,#ff6b6b,#ffd93d,#6bcb77,#4d96ff,#ff6b6b,#ffd93d,#6bcb77,#4d96ff); background-size:300%; animation:etaHolo 3s linear infinite; }
+.eta-head{ padding:22px 24px 16px; text-align:center; border-bottom:1px solid rgba(212,175,55,.18); }
+.eta-head-logo{ width:52px; height:52px; object-fit:contain; margin:0 auto 8px; display:block; filter:drop-shadow(0 4px 16px rgba(212,175,55,.4)); }
+.eta-org{ font-family:'JetBrains Mono',monospace; font-size:10px; color:#C8922A; letter-spacing:1px; margin-bottom:4px; }
+.eta-title{ font-family:'Syne',sans-serif; font-size:20px; font-weight:800; color:#FFF6D6; }
+.eta-subtitle{ font-size:12.5px; color:rgba(255,246,216,.55); margin-top:3px; }
+.eta-body{ padding:20px 24px 22px; }
+
+.eta-hero{
+  background:linear-gradient(135deg, rgba(58,34,0,.9), rgba(106,64,16,.75));
+  border:1.5px solid rgba(255,210,90,.55); border-radius:14px; padding:18px;
+  margin-bottom:18px; text-align:center;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.06), 0 0 40px -12px rgba(255,210,90,.5);
+}
+.eta-hero-tag{ font-size:11px; font-weight:800; color:rgba(255,240,190,.75); letter-spacing:1.5px; text-transform:uppercase; margin-bottom:12px; }
+
+.eta-field{ margin-bottom:12px; text-align:left; }
+.eta-label{ font-family:'JetBrains Mono',monospace; font-size:9px; font-weight:700; color:#C8922A; text-transform:uppercase; letter-spacing:1.5px; display:block; margin-bottom:5px; }
+.eta-wrap{ position:relative; display:flex; align-items:center; }
+.eta-icon{ position:absolute; left:12px; color:#C8922A; font-size:14px; pointer-events:none; opacity:.85; }
+.eta-input{
+  width:100%; padding:11px 14px 11px 38px;
+  background:rgba(212,175,55,.08); border:1.5px solid rgba(212,175,55,.35);
+  border-radius:9px; font-size:14px; font-family:'Cormorant Garamond',serif; font-weight:600;
+  color:#FFF6D6; transition:border-color .2s,box-shadow .2s,background .2s;
+  -webkit-appearance:none; appearance:none;
+}
+.eta-input:focus{ border-color:#FFDF80; background:rgba(212,175,55,.13); box-shadow:0 0 0 3px rgba(255,220,120,.2); outline:none; }
+.eta-input::placeholder{ color:rgba(255,246,216,.35); }
+.eta-pw-toggle{ position:absolute; right:10px; background:none; border:none; color:#C8922A; cursor:pointer; font-size:14px; padding:4px; }
+.eta-pw-toggle:hover{ color:#FFDF80; }
+
+.eta-etelid-btn{
+  width:100%; padding:13px; display:flex; align-items:center; justify-content:center; gap:9px;
+  background:linear-gradient(135deg,#1A0A00,#3A2008,#6A4010,#9A6820,#D4AF37,#F5E6A3,#D4AF37);
+  background-size:250%; border:1.5px solid rgba(255,220,120,.6); border-radius:11px;
+  font-family:'Syne',sans-serif; font-size:14px; font-weight:800; color:#FFF9E8; cursor:pointer; letter-spacing:.3px;
+  box-shadow:0 5px 0 #1A0E00, 0 8px 24px rgba(212,175,55,.4), 0 0 30px -6px rgba(255,220,120,.6);
+  transition:transform .15s,box-shadow .15s; position:relative; overflow:hidden;
+}
+.eta-etelid-btn::before{ content:''; position:absolute; top:0; left:-100%; width:50%; height:100%; background:linear-gradient(90deg,transparent,rgba(255,255,255,.25),transparent); animation:etaShimmer 2.2s infinite; pointer-events:none; }
+.eta-etelid-btn:hover:not(:disabled){ transform:translateY(-1px); box-shadow:0 6px 0 #1A0E00,0 10px 30px rgba(212,175,55,.5),0 0 40px -6px rgba(255,220,120,.75); }
+.eta-etelid-btn:disabled{ opacity:.65; cursor:not-allowed; }
+.eta-etelid-mark{ font-family:'Syne',sans-serif; font-size:17px; font-weight:700; background:linear-gradient(135deg,#FDF6D8,#FFDF80); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+.eta-hero-foot{ font-size:11px; color:rgba(255,246,216,.5); margin-top:9px; }
+
+.eta-divider{ display:flex; align-items:center; gap:10px; margin:14px 0; color:rgba(255,246,216,.35); font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:1.5px; text-transform:uppercase; }
+.eta-divider::before,.eta-divider::after{ content:''; flex:1; height:1px; background:rgba(212,175,55,.25); }
+
+.eta-submit{
+  width:100%; padding:13px;
+  background:linear-gradient(135deg,#2A1A06 0%,#7A5518 25%,#C8922A 50%,#D4AF37 65%,#F5E6A3 78%,#D4AF37 90%,#C8922A 100%);
+  background-size:220%; color:#2A1A06; border:none; border-radius:10px;
+  font-family:'Syne',sans-serif; font-size:15px; font-weight:800; cursor:pointer; letter-spacing:.5px;
+  box-shadow:0 5px 0 #1A0E00,0 8px 24px rgba(212,175,55,.4);
+  transition:transform .15s,box-shadow .15s; position:relative; overflow:hidden; margin-top:4px;
+}
+.eta-submit::before{ content:''; position:absolute; top:0; left:-100%; width:50%; height:100%; background:linear-gradient(90deg,transparent,rgba(255,255,255,.2),transparent); animation:etaShimmer 2.5s infinite; }
+.eta-submit:hover:not(:disabled){ transform:translateY(-1px); box-shadow:0 6px 0 #1A0E00,0 10px 28px rgba(212,175,55,.5); }
+.eta-submit:disabled{ opacity:.65; cursor:not-allowed; transform:none; }
+
+.eta-ghost{
+  width:100%; padding:11px; background:rgba(212,175,55,.08); border:1.5px solid rgba(212,175,55,.35); border-radius:10px;
+  font-family:'Syne',sans-serif; font-size:13px; font-weight:800; color:#E8C84A; cursor:pointer; letter-spacing:.3px; transition:all .2s; margin-top:6px;
+}
+.eta-ghost:hover{ background:rgba(212,175,55,.16); border-color:#FFDF80; color:#FFF6D6; }
+
+.eta-foot{ padding:10px 24px 18px; text-align:center; font-family:'JetBrains Mono',monospace; font-size:9px; color:rgba(255,246,216,.4); letter-spacing:1px; border-top:1px solid rgba(212,175,55,.15); }
+
+.eta-spin{ display:inline-block; width:14px; height:14px; border:2px solid rgba(253,246,216,.3); border-top-color:#FFF6D8; border-radius:50%; animation:etaSpin .7s linear infinite; vertical-align:middle; margin-right:5px; }
+
+/* ── Card-only variant (verify.html): glowing hero treatment inside an
+   existing page flow, no full-page takeover. ── */
+.eta-inline-card{
+  background:linear-gradient(170deg, rgba(30,22,8,.92), rgba(16,11,4,.94));
+  border-radius:16px; border:1.5px solid rgba(212,175,55,.4);
+  box-shadow:0 0 0 1px rgba(212,175,55,.08), 0 16px 50px -12px rgba(0,0,0,.6), 0 0 60px -18px rgba(212,175,55,.35);
+  padding:20px; margin-bottom:14px;
+}
+
+@media (max-width:820px){
+  .eta-page{ flex-direction:column; overflow-y:auto; }
+  .eta-left{ flex:0 0 auto; padding:24px 20px 18px; min-height:auto; }
+  .eta-feats{ display:none; }
+  .eta-name{ font-size:19px; }
+  .eta-logo{ width:76px; height:76px; }
+  .eta-right{ padding:10px 16px 30px; }
+}
+
+/* ── Inline variant (verify.html only): same gold/dark visual language
+   as the full-screen login takeover, but rendered in normal document
+   flow instead of position:fixed - this page must keep showing the
+   public QR-scan verification result (no officer login required for
+   that flow) above/around this card, which a full-screen overlay would
+   otherwise permanently block. ── */
+.eta-page-inline{
+  position:relative; inset:auto; z-index:auto;
+  min-height:auto; border-radius:20px; overflow:hidden;
+  margin-bottom:18px;
+  box-shadow:0 0 0 1px rgba(212,175,55,.08), 0 20px 60px -16px rgba(0,0,0,.5);
+}
+@media (min-width:821px){
+  .eta-page-inline{ display:flex; }
+}
+@media (max-width:820px){
+  .eta-page-inline{ display:flex; flex-direction:column; }
+  .eta-page-inline .eta-left{ padding:26px 22px 20px; }
+}

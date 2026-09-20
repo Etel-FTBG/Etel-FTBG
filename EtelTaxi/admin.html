@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Etel Taxi - Admin</title>
+<link rel="stylesheet" href="css/core.css">
+<link rel="stylesheet" href="css/etel-auth.css">
+<style>
+  #shell{display:flex;min-height:100vh;position:relative;z-index:1;}
+  #sidebar{width:230px;flex-shrink:0;background:linear-gradient(180deg, rgba(19,13,5,.96), rgba(10,7,3,.98));
+    border-right:1px solid var(--line);padding:20px 12px;backdrop-filter:blur(8px);}
+  #side-brand{display:flex;align-items:center;gap:10px;padding:6px 8px 22px;}
+  .logo{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--gold-deep),var(--gold));display:flex;align-items:center;justify-content:center;font-weight:800;color:#0d0d0d;flex-shrink:0;
+    box-shadow:0 1px 0 rgba(255,255,255,.4) inset, 0 8px 18px -6px rgba(212,175,55,.5);}
+  .side-link{
+    display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:none;border:none;
+    color:var(--text-dim);font-size:13px;padding:11px 14px;border-radius:9px;margin-bottom:3px;position:relative;
+    transition:background .15s ease, color .15s ease;
+  }
+  .side-link .ic{font-size:15px;width:18px;text-align:center;}
+  .side-link:hover{background:rgba(212,175,55,.07);color:var(--text);}
+  .side-link.active{background:rgba(212,175,55,.12);color:var(--gold);font-weight:700;}
+  .side-link.active::before{content:'';position:absolute;left:-12px;top:8px;bottom:8px;width:3px;border-radius:3px;background:var(--gold);box-shadow:0 0 10px rgba(212,175,55,.7);}
+  #content{flex:1;padding:32px;max-width:960px;}
+  #content h1{font-size:23px;margin-bottom:22px;}
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  thead th{position:sticky;top:0;}
+  th{text-align:left;color:var(--gold-dim);font-size:11px;text-transform:uppercase;padding:12px 10px;border-bottom:2px solid var(--line);letter-spacing:.3px;}
+  td{padding:11px 10px;border-bottom:1px solid var(--line);}
+  tbody tr{transition:background .12s ease;}
+  tbody tr:hover{background:rgba(212,175,55,.05);}
+  tbody tr:nth-child(even){background:rgba(255,255,255,.012);}
+  [id$="-table"]{background:var(--bg2);border:1px solid var(--line);border-radius:var(--radius);padding:6px;box-shadow:var(--shadow-1);overflow:hidden;}
+  [id$="-table"] table{margin:0;}
+  .stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px;margin-bottom:24px;}
+  .panel{display:none;}
+  .panel.active{display:block;}
+  .verify-link{display:flex;align-items:center;gap:10px;margin-top:16px;padding:11px 14px;border-radius:9px;border:1px dashed var(--line2);color:var(--gold-dim);font-size:12px;}
+  .verify-link:hover{border-color:var(--gold);color:var(--gold);}
+</style>
+</head>
+<body>
+<div class="bg-orbs"></div>
+
+<div id="login-screen">
+  <div class="eta-page">
+    <div class="page-topbar">
+      <button class="back-btn" onclick="history.back()">🔙 Back</button>
+      <button class="theme-toggle-btn" onclick="toggleTheme()">☀️ Light</button>
+    </div>
+    <div class="eta-left">
+      <div class="eta-orb eta-orb-1"></div>
+      <div class="eta-orb eta-orb-2"></div>
+      <div class="eta-brand">
+        <div class="eta-logo-wrap">
+          <img src="assets/images/etel-logo.png" class="eta-logo" alt="ETEL">
+          <span class="eta-sparkle">✦</span><span class="eta-sparkle">✦</span><span class="eta-sparkle">✧</span>
+        </div>
+        <div class="eta-name">ETEL TAXI</div>
+        <div class="eta-sub">ኢትኤል ታክሲ · Association</div>
+        <div class="eta-desc">Manage drivers, associations, payments, and permits across Hawassa - all in one dashboard.</div>
+        <div class="eta-feats">
+          <div class="eta-feat"><div class="eta-feat-dot"></div><span>Driver &amp; association management</span></div>
+          <div class="eta-feat"><div class="eta-feat-dot"></div><span>Payments &amp; overdue tracking</span></div>
+          <div class="eta-feat"><div class="eta-feat-dot"></div><span>One identity, one EtelID</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="eta-right">
+      <div class="eta-card">
+        <div class="eta-holo"></div>
+        <div class="eta-head">
+          <img src="assets/images/etel-logo.png" class="eta-head-logo" alt="ETEL">
+          <div class="eta-org">ኢE · Etel Group · Hawassa</div>
+          <div class="eta-title">ETEL Taxi</div>
+          <div class="eta-subtitle">Association Admin Login</div>
+        </div>
+        <div class="eta-body">
+          <div class="eta-hero">
+            <div class="eta-hero-tag">✦ Recommended — One ID for all ETEL services ✦</div>
+            <div class="eta-field">
+              <div class="eta-wrap"><span class="eta-icon">📱</span><input class="eta-input" type="text" id="admin-etelid-identifier" placeholder="Phone or EtelID"></div>
+            </div>
+            <div class="eta-field" style="margin-bottom:12px">
+              <div class="eta-wrap"><span class="eta-icon">🔒</span><input class="eta-input" type="password" id="admin-etelid-password" placeholder="EtelID Password"></div>
+            </div>
+            <button class="eta-etelid-btn" type="button" onclick="adminEtelIdLogin()">
+              <span class="eta-etelid-mark">ኢE</span><span>Sign in with EtelID</span>
+            </button>
+            <p class="eta-hero-foot">Delivery · Ride · Pay · Taxi — one identity</p>
+          </div>
+        </div>
+        <div class="eta-foot">ETEL Taxi · ethelmarket.com · Etel Group</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="shell" style="display:none">
+  <nav id="sidebar">
+    <div id="side-brand"><div class="logo">ኢT</div><div style="font-family:var(--f-display);font-weight:800;font-size:14px">Etel Taxi</div></div>
+    <div class="page-topbar" style="padding:0 8px 16px;flex-wrap:wrap">
+      <button class="back-btn" onclick="history.back()">🔙 Back</button>
+      <button class="theme-toggle-btn" onclick="toggleTheme()">☀️ Light</button>
+    </div>
+    <button class="side-link active" data-panel="dashboard" onclick="switchPanel('dashboard',this)"><span class="ic">📊</span>Dashboard</button>
+    <button class="side-link" data-panel="drivers" onclick="switchPanel('drivers',this)"><span class="ic">🚕</span>Drivers</button>
+    <button class="side-link" data-panel="pending" onclick="switchPanel('pending',this)"><span class="ic">⏳</span>Pending Payments</button>
+    <button class="side-link" data-panel="overdue" onclick="switchPanel('overdue',this)"><span class="ic">⚠️</span>Overdue</button>
+    <button class="side-link" data-panel="bank" onclick="switchPanel('bank',this)"><span class="ic">🏦</span>Bank Accounts</button>
+    <button class="side-link" data-panel="associations" onclick="switchPanel('associations',this)"><span class="ic">🧾</span>Associations</button>
+    <button class="side-link" data-panel="officers" onclick="switchPanel('officers',this)"><span class="ic">🚦</span>Traffic Officers</button>
+    <button class="side-link" data-panel="roles" id="nav-item-roles" onclick="switchPanel('roles',this)"><span class="ic">🔐</span>Roles</button>
+    <a href="verify.html" target="_blank" class="verify-link"><span>🔍</span> Open Traffic Verification Tool</a>
+    <button class="side-link" style="margin-top:20px;color:var(--red)" onclick="adminLogout()"><span class="ic">🚪</span>Sign Out</button>
+  </nav>
+
+  <main id="content">
+    <section class="panel active" id="panel-dashboard">
+      <h1>Dashboard</h1>
+      <div class="stat-grid" id="stat-grid"></div>
+      <div class="card" style="margin-bottom:16px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+          <h2 style="font-family:var(--f-display);font-size:14px">Dues Collected · Last 30 Days</h2>
+          <button class="btn btn-outline" style="padding:6px 12px;font-size:12px" onclick="exportDriversCsv()">⬇ Export Drivers CSV</button>
+        </div>
+        <canvas id="revenue-chart" height="80"></canvas>
+      </div>
+    </section>
+
+    <section class="panel" id="panel-drivers">
+      <h1>Drivers</h1>
+      <div class="card" style="margin-bottom:16px">
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <input type="text" id="nd-name" placeholder="Full name" style="flex:1;min-width:140px">
+          <input type="text" id="nd-phone" placeholder="Phone" style="flex:1;min-width:120px">
+          <input type="text" id="nd-plate" placeholder="Plate number" style="flex:1;min-width:120px">
+          <select id="nd-assoc" style="flex:1;min-width:160px"><option value="">Loading associations...</option></select>
+          <input type="text" id="nd-license-name" placeholder="Full name (on license)" style="flex:1;min-width:160px">
+          <input type="text" id="nd-license-num" placeholder="License number" style="flex:1;min-width:140px">
+          <input type="date" id="nd-license-dob" placeholder="DOB (on license)" style="flex:1;min-width:140px">
+          <button class="btn btn-primary" onclick="registerDriver()">+ Add Driver</button>
+        </div>
+      </div>
+      <div id="drivers-table">Loading...</div>
+    </section>
+
+    <section class="panel" id="panel-pending">
+      <h1>Pending Payments</h1>
+      <div id="pending-table">Loading...</div>
+    </section>
+
+    <section class="panel" id="panel-overdue">
+      <h1>Overdue Drivers</h1>
+      <div id="overdue-table">Loading...</div>
+    </section>
+
+    <section class="panel" id="panel-bank">
+      <h1>Bank Accounts</h1>
+      <div id="bank-table">Loading...</div>
+    </section>
+
+    <section class="panel" id="panel-associations">
+      <h1>Associations</h1>
+      <div id="associations-table">Loading...</div>
+    </section>
+
+    <section class="panel" id="panel-officers">
+      <h1>Traffic Officers</h1>
+      <div class="card" style="margin-bottom:16px">
+        <p style="font-size:12px;color:var(--text-dim);margin-bottom:12px">Only a super admin can add officers. Once added, an officer signs in with their own EtelID on the Verification Tool's Plate Lookup tab - no separate password to manage here.</p>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <input type="text" id="no-name" placeholder="Full name" style="flex:1;min-width:160px">
+          <input type="text" id="no-phone" placeholder="Phone (must match their EtelID)" style="flex:1;min-width:200px">
+          <button class="btn btn-primary" onclick="registerOfficer()">+ Add Officer</button>
+        </div>
+      </div>
+      <div id="officers-table">Loading...</div>
+    </section>
+
+    <section class="panel" id="panel-roles">
+      <h1>Roles &amp; Permissions</h1>
+      <p style="font-size:13px;color:var(--text-dim);margin-bottom:16px;max-width:640px">
+        Staff signed in via "Sign in with EtelID" get access based on the role assigned to them in Etel Group's
+        Employees panel. Define what each role name is allowed to do here. "Owner", "Admin", and "Manager" default
+        to unrestricted access; any new role name starts with view-only access to Drivers and Associations until
+        you configure it below.
+      </p>
+      <div class="card" style="margin-bottom:20px">
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
+          <div style="flex:1;min-width:160px">
+            <label style="display:block;font-weight:600;margin-bottom:6px;font-size:13px">Role Name</label>
+            <input type="text" id="role-name-input" placeholder="e.g. Dispatcher" style="width:100%">
+          </div>
+          <button class="btn btn-primary" onclick="editRolePermissions(null)">+ New Role</button>
+        </div>
+      </div>
+      <div id="roles-list"></div>
+    </section>
+  </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<script src="js/core.js"></script>
+<script src="js/admin.js"></script>
+<script src="js/admin-roles.js"></script>
+</body>
+</html>
