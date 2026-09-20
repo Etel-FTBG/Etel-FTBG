@@ -1191,3 +1191,193 @@ All shipped JS (`core.js`, `admin.js`, `customer.js`, `courier.js`, `driver.js`,
 into the currently-live release folders (`driver/v6`, `ride/v5`, `customer/v1`,
 `courier/v1`) the same way as the original XSS fix pass. Verified with `php -l`,
 `node --check`, and an ASCII-byte check on the touched PHP files.
+
+---
+
+## 10. Update — 2026-09-20: NFC card integration & other new surface since the pass above
+
+Re-scoped to just the code that is genuinely new since the pass above, found by diffing
+every `case '<action>':` name currently in `delivery/api/boot.php` and every file under
+`delivery/api/controllers/` against every action name already inventoried in Section 8 of
+this document — 27 action names were new; 20 of those turned out to already be documented
+under a combined table cell the diff script split incorrectly (e.g. `` `get_items`,
+`customer_get_items` `` on one row), leaving **7 genuinely new actions** in one file
+(`NfcController.php`) plus **7 more** in a driver-compliance-documents feature added to
+`RideController.php`, plus **7 more** in a brand-new admin document library
+(`DocumentsController.php` + two standalone multipart endpoints). None of these three
+features existed, or were reviewed, when Sections 1-9 above were written.
+
+### 10.1 `NfcController.php` (new file — `nfc_driver_status`, `nfc_start_ride`,
+`nfc_list_courier_orders`, `nfc_confirm_pickup`, `nfc_confirm_delivery`)
+
+**Checked:** the full file (531 lines) plus its `boot.php` routing (the 5 action names are
+dispatched straight to this controller with no `require_auth()` first — correct, since
+these are server-to-server calls from EtelID after an NFC card tap, not calls from a
+Delivery-app bearer token, mirroring `AgentController.php`'s existing service-key pattern
+already verified clean in Section 1).
+
+**Findings: none. No fix required.**
+
+**Verified clean:**
+- Every case calls `nfc_require_service_key()` as its first line — a constant-time
+  `hash_equals()` check against `ETELID_SERVICE_KEY` (header, with a `?key=` query-param
+  fallback for hosts that strip custom `X-*` headers — same dual-path pattern already used
+  elsewhere in this codebase per the shared skill notes). This is the sole trust boundary:
+  nothing in this file is reachable without the shared key.
+- `nfc_start_ride` verifies the resolved driver's `role` is `driver`/`admin` **and**
+  `ride_drivers.onboarded = 1` before letting them start a trip — the same onboarding gate
+  Section 1's driver-privilege fix added to the phone-entry ride flow, applied here too so
+  the NFC path can't be used to route around it.
+- `nfc_list_courier_orders`/`nfc_confirm_pickup` scope a service-giver confirmer to their
+  own business via the same three-tier ownership check (direct `service_giver_id` link →
+  `order_assignments` link → zone fallback) `sg_confirm_pickup` already uses and was
+  verified clean for in Section 1 — no separate, weaker copy of this logic was introduced.
+- `nfc_confirm_delivery` requires an exact `orders.customer_id = $confirmer_user['id']`
+  match — same ownership rule as `customer_confirm_delivery`.
+- `nfc_driver_status` returns driver compliance/license data (Section 10.2's data) with
+  **no role check of its own** — this is intentional and matches the file's own header
+  comment: EtelID already verifies the scanning person holds the "Traffic Officer" role
+  (via its own Employees-panel data) before ever calling in here, and the service key is
+  what proves the call genuinely came from EtelID having done that check. Documented in the
+  file as a deliberate trust delegation, not an oversight — same shape as `AgentController`
+  trusting the service key for `agent_*` actions in Section 1.
+- All SQL is parameterized; the one dynamically-built column list (`nfc_start_ride`'s
+  optional `ride_code`/`request_code`/`code`/`tracking_code`/`order_code`/`vehicle_type`
+  columns) is built only from a hardcoded whitelist array checked against
+  `SHOW COLUMNS`, never from request input.
+- `nfc_find_or_create_user()`'s auto-provisioned account gets a `password_hash()` of random
+  bytes (never a guessable/derivable value) and is only ever reachable through the same
+  service-key boundary — not a path a public visitor can trigger directly.
+
+### 10.2 Driver compliance documents (new actions in `RideController.php`:
+`admin_list_driver_compliance`, `admin_update_driver_compliance`,
+`driver_get_compliance_status`, `driver_submit_compliance_document`,
+`admin_get_pending_compliance_requests`, `admin_approve_compliance_document`,
+`admin_reject_compliance_document`)
+
+**Checked:** all 7 actions (lines ~1882-2084) plus the `driver_compliance_requests` table
+definition.
+
+**Findings: none. No fix required.**
+
+**Verified clean:**
+- Every `admin_*` action in this group requires `$u['role'] === 'admin'` **and** the
+  `users.manage` (or `users.view` for the read-only list) capability — matches the
+  established `require_admin($pdo, 'capability')` pattern everywhere else in this file.
+- The two driver-facing actions (`driver_get_compliance_status`,
+  `driver_submit_compliance_document`) only ever read/write rows scoped to `$u['id']` (the
+  authenticated caller from the file's module-level `require_auth()`) — a driver can only
+  see or submit their own documents, never another driver's.
+- `admin_approve_compliance_document` builds `$expiryCol`/`$receiptCol` by concatenating
+  `$req['doc_type']` into a raw `UPDATE ... SET $expiryCol=?, $receiptCol=?` string — looks
+  like a dynamic-column-name pattern worth double-checking, but `doc_type` is doubly
+  constrained: (1) the only INSERT path (`driver_submit_compliance_document`) whitelists it
+  to exactly `insurance`/`technical_inspection`/`road_fund` via `in_array(..., true)` before
+  the row is ever created, and (2) the column itself is a MySQL
+  `ENUM('insurance','technical_inspection','road_fund')` (line 356), so even a hypothetical
+  future INSERT path bypassing the PHP check would still be rejected at the database level.
+  No fix needed — safe by construction, not by convention alone.
+- `expiry_date`/`requested_expiry_date` values are validated with
+  `preg_match('/^\d{4}-\d{2}-\d{2}$/', $v)` before ever reaching a query.
+
+### 10.3 Admin document library (new file `DocumentsController.php` — `admin_docs_list`,
+`admin_docs_get`, `admin_docs_create_text`, `admin_docs_update_text`,
+`admin_docs_update_meta`, `admin_docs_restore_version`, `admin_docs_delete` — plus two new
+standalone endpoints, `documents_upload.php` and `documents_download.php`, and a shared
+helper, `lib/documents_storage.php`)
+
+**Checked:** all three files in full (`DocumentsController.php` 230 lines,
+`documents_upload.php` 260 lines, `documents_download.php` 201 lines,
+`documents_storage.php` 112 lines).
+
+### Fixed (1 finding — Medium/High severity: admin-to-admin stored XSS → session-token theft)
+
+**`documents_download.php` served `.html`/`.htm`/`.js` documents with
+`Content-Disposition: inline` by default, and the front-end viewer
+(`admin-documents.js` line 277) loads that response straight into an `<iframe src="...">`
+via a `blob:` object URL.** A `blob:` URL created by a page inherits that page's own
+security origin — so an uploaded HTML document containing `<script>` would execute with
+the full origin privileges of `ethelmarket.com`, including read access to
+`localStorage.getItem('etel_token')` (`core.js` line 201 — the bearer token that *is* this
+app's entire session/auth mechanism, per Section 4's own findings on token-based auth).
+
+**Why this matters beyond "admin-only, so low risk":** `documents.manage` (upload/replace/
+edit) and `documents.view` (view/download) are two separate capabilities in the
+EtelGroup-managed role-permissions system — an account holding only `documents.manage` is
+not necessarily a full owner-tier admin. Under the previous behavior, such a scoped account
+could plant a malicious `.html` document, and **any higher-privileged admin who simply
+opened it to view it** (a completely ordinary action for a "review this document" workflow)
+would have their own real bearer token exfiltrated to wherever the script sends it — a
+privilege-escalation path from a narrow capability to full owner-tier account takeover, not
+merely a self-XSS.
+
+**Fix applied** in `delivery/api/documents_download.php`: the actual extension of the file
+about to be streamed is now derived from `$storageName` (the server-generated
+`doc_<timestamp>_<hex>.<ext>` filename actually being read off disk — correct for both the
+current version and an older `version_id`, unlike `$doc['file_ext']`, which only reflects
+the document's *current* version and can disagree with an older one). If that extension is
+`html`, `htm`, or `js`, the response is forced to `Content-Disposition: attachment`
+regardless of the client-requested `disposition` query parameter — the viewer can never opt
+back into inline rendering for a type that can carry executable script. PDFs, Office docs,
+images, and genuinely-inert text types (md/txt/csv/json/yaml/xml/css) are unaffected and
+still render inline as before.
+
+```php
+$streamedExt = strtolower(pathinfo($storageName, PATHINFO_EXTENSION));
+if (in_array($streamedExt, array('html', 'htm', 'js'), true)) {
+    $disposition = 'attachment';
+}
+```
+
+Verified with `php -l` (no syntax errors).
+
+### Verified clean (the rest of the document library)
+
+- **Path traversal / arbitrary file write:** storage filenames are always server-generated
+  (`etel_docs_new_storage_name()` — `doc_<time>_<hex>.<ext>`), never derived from a client
+  filename; every read (`etel_docs_read_text()`, `documents_download.php`) additionally
+  wraps the stored name in `basename()` before building the filesystem path.
+- **Upload type restriction:** `documents_upload.php` whitelists extensions against
+  `etel_docs_type_map()` and additionally content-sniffs (`mime_content_type()`) to reject
+  anything reporting a `php`/`x-httpd`/`x-executable`/`x-sh`/`x-python`/`x-perl`/
+  `x-msdownload`-flavored MIME regardless of its extension — a disguised
+  `report.md.php`-style double extension is still caught by `pathinfo()` only ever reading
+  the last extension, and a renamed executable is still caught by the content sniff.
+- **Auth on both standalone multipart/streaming endpoints:** both independently re-verify
+  the bearer token (HMAC signature + 7-day expiry + live `token_version` match — same
+  scheme Section 4 verified for the rest of the app), require `role === 'admin'`, and
+  additionally check the `documents.manage`/`documents.view` capability for
+  EtelGroup-managed accounts — not a weaker, separately-invented auth path just because
+  these two files can't `require` `boot.php`'s controllers directly.
+- **SQL:** fully parameterized throughout; `admin_docs_update_meta`'s dynamic `SET` clause
+  is built only from a hardcoded whitelist of three column names
+  (`title`/`category`/`description`), never from request keys.
+- **Size caps:** 3 MB for inline text create/edit (`DocumentsController.php`), 20 MB for
+  binary upload/replace (`documents_upload.php`).
+- **Soft-delete only:** `admin_docs_delete` sets `deleted_at`, never actually removes the
+  file from disk — consistent with this being an internal reference-document library where
+  accidental permanent loss would be a real problem.
+
+### 10.4 Other new-since-last-pass items checked, no fix needed
+
+- `get_vapid_public_key` (`PushController.php`) — returns the app's public VAPID key for
+  Web Push subscription. Public by design (a VAPID *public* key is meant to be
+  client-visible; it has no authority without the paired private key, which never leaves
+  the server) — correctly requires no auth.
+
+All edited/new files in this section verified with `php -l`. No non-ASCII bytes were
+introduced (Delivery & Ride is not under the hard ASCII constraint that applies to EtelID/
+EtelPay, but the check was still run for consistency).
+
+### Summary of code changes in this update
+
+| File | Change |
+|---|---|
+| `delivery/api/documents_download.php` | Force `Content-Disposition: attachment` for `.html`/`.htm`/`.js` documents regardless of requested disposition (stored-XSS-to-token-theft fix) |
+
+### Needs Dagi's judgment call
+
+None new. `NfcController.php`'s `nfc_driver_status` trusting EtelID's own role check with
+no independent re-verification (10.1) is a deliberate, already-documented architectural
+choice consistent with every other service-key bridge in this codebase, not a new item
+requiring a decision.
