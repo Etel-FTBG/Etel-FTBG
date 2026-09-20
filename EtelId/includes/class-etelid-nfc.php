@@ -370,6 +370,38 @@ class Etelid_Nfc {
         return isset($body['data']) ? $body['data'] : array();
     }
 
+    /* Outbound call to Etel Madeya's shared-service-key API, same shape
+       as etelpay_service_call() above - reuses the same
+       ETELID_SERVICE_KEY, since Etel Madeya's own etelid_bridge.php
+       already authenticates outgoing calls to EtelID against that same
+       shared EtelGroup key. */
+    protected static function madeya_service_call($path, $payload) {
+        $key = defined('ETELID_SERVICE_KEY') ? ETELID_SERVICE_KEY : get_option('etelid_service_key', '');
+        if (!$key) return new WP_Error('no_key', 'etelid_service_key is not configured.');
+
+        $home_parts = wp_parse_url(home_url());
+        $site_root  = (isset($home_parts['scheme']) ? $home_parts['scheme'] : 'https') . '://'
+                    . (isset($home_parts['host']) ? $home_parts['host'] : $_SERVER['HTTP_HOST']);
+        $base = get_option('etelid_madeya_api_base', $site_root . '/Etel-Madeya');
+        $url  = trailingslashit($base) . 'api/' . $path;
+
+        $resp = wp_remote_post($url, array(
+            'timeout' => 12,
+            'headers' => array('X-Etel-Service-Key' => $key, 'Content-Type' => 'application/json'),
+            'body'    => wp_json_encode($payload),
+        ));
+
+        if (is_wp_error($resp)) return $resp;
+        $code = wp_remote_retrieve_response_code($resp);
+        $body = json_decode(wp_remote_retrieve_body($resp), true);
+        if (!is_array($body)) return new WP_Error('bad_response', 'Etel Madeya returned an unreadable response.');
+        if ($code < 200 || $code >= 300 || empty($body['success'])) {
+            $msg = !empty($body['message']) ? $body['message'] : ('Etel Madeya request failed (HTTP ' . $code . ').');
+            return new WP_Error('madeya_error', $msg);
+        }
+        return isset($body['data']) ? $body['data'] : array();
+    }
+
     /* Whether $phone currently holds $role_name at $company_slug in Etel
        Group's own Employees panel data - queried DIRECTLY here (this
        data lives in EtelID's own WordPress DB, the same tables
@@ -412,7 +444,7 @@ class Etelid_Nfc {
         $ident  = isset($_POST['identifier']) ? sanitize_text_field(wp_unslash($_POST['identifier'])) : '';
         $pass   = isset($_POST['password']) ? (string) $_POST['password'] : '';
 
-        $allowedStages = array('pickup', 'delivery', 'ride_start', 'driver_status', 'etelpay_charge', 'etelpay_payout', 'etelpay_cardholder_pay');
+        $allowedStages = array('pickup', 'delivery', 'ride_start', 'driver_status', 'etelpay_payout', 'etelpay_cardholder_pay', 'etelmadeya_register');
         if (!$token || !in_array($stage, $allowedStages, true) || !$ident || !$pass) {
             wp_send_json_error(array('message' => 'Missing required fields.'));
         }
@@ -487,52 +519,49 @@ class Etelid_Nfc {
             wp_send_json_success(array('driver_status' => $result));
         }
 
-        /* EtelPay tap-to-pay CHARGE (pay IN, "Collect Payment"): the
-           tapped card belongs to whoever is COLLECTING the payment
-           (e.g. a vendor's own EtelID card used as their tap-to-pay
-           tool) - money goes TO them. The person actually filling in
-           this form is the one PAYING (e.g. a customer standing at the
-           vendor's card/reader), so their own login above both
-           identifies whose wallet pays AND authorizes the debit, same
-           "authorize whoever's money is leaving" rule as every login
-           on this page. No fixed business/till account, no second
-           confirm step - money moves immediately once they log in. */
-        if ('etelpay_charge' === $stage) {
-            $amount = isset($_POST['amount']) ? (float) $_POST['amount'] : 0;
-            $note   = isset($_POST['note']) ? sanitize_text_field(wp_unslash($_POST['note'])) : '';
-            if ($amount <= 0) wp_send_json_error(array('message' => 'Enter an amount greater than zero.'));
-
-            $result = self::etelpay_service_call('service_nfc_charge.php', array(
-                'receiver_phone' => $courier->phone,    // whoever's card was tapped COLLECTS
-                'payer_phone'    => $confirmer->phone,  // whoever is filling in this form PAYS
-                'amount'         => $amount,
-                'note'           => $note,
+        /* "Register in Queue" (Etel Madeya fuel station): a controller
+           taps a DRIVER's card to auto-register their plate into that
+           station's queue, using whichever plate/vehicle type is
+           already on file for that phone number in Etel Madeya's own
+           driver_vehicles registry (built the first time a controller
+           manually registers that driver with their phone number).
+           The controller must type their own phone/Etel-ID + password
+           here, same as every other stage - a shared station device
+           can be used by different controllers through the day, so
+           there is no reliable "who is currently signed in" ambient
+           session to read; only an explicit login on THIS tap
+           correctly identifies who is doing it. Whether that person is
+           actually a real Etel Madeya controller is checked
+           server-side on Etel Madeya's own end (against its
+           controllers table), not duplicated here. Single round trip,
+           no second confirm step. */
+        if ('etelmadeya_register' === $stage) {
+            $result = self::madeya_service_call('service_nfc_register.php', array(
+                'controller_phone' => $confirmer->phone,
+                'driver_phone'     => $courier->phone,
+                'driver_etel_id'   => $courier->etel_id,
             ));
             if (is_wp_error($result)) {
                 wp_send_json_error(array('message' => $result->get_error_message()));
             }
-
-            EtelID_DB::log($confirmer->id, $confirmer->etel_id, 'nfc_etelpay_charge', 'NFC tap-to-pay: paid ' . $amount . ' ETB to ' . $courier->full_name . ', tx ' . (isset($result['tx_ref']) ? $result['tx_ref'] : '?'));
-
+            EtelID_DB::log($confirmer->id, $confirmer->etel_id, 'nfc_etelmadeya_register', 'NFC card scan - registered ' . $courier->full_name . ' into Etel Madeya queue');
             wp_send_json_success(array(
-                'charge_done' => true,
-                'message'     => 'Paid ' . $amount . ' ETB to ' . $courier->full_name . '.',
-                'tx_ref'      => isset($result['tx_ref']) ? $result['tx_ref'] : null,
+                'madeya_register_done' => true,
+                'message' => isset($result['message']) ? $result['message'] : 'Registered in queue.',
             ));
         }
 
         /* EtelPay tap-to-pay, CARDHOLDER PAYS (classic tap-to-pay: the
            customer taps their own card, the merchant's device collects):
-           the opposite of 'etelpay_charge' above - here the tapped card
-           is the PAYER, and the person filling in this form (the
-           scanner/merchant) is the RECEIVER. Since it's the tapped
-           card owner's money leaving, the scanner's own login here only
-           identifies who is collecting - it does NOT move any money
-           yet. Money only moves once the cardholder also proves their
-           own EtelID password, in ajax_cardholder_pay_confirm() below -
-           same "authorize whoever's money is leaving" rule as every
-           other flow on this card, just with the roles that
-           'etelpay_charge' uses swapped back. */
+           the tapped card is the PAYER, and the person filling in this
+           form (the scanner/merchant) is the RECEIVER. Since it's the
+           tapped card owner's money leaving, the scanner's own login
+           here only identifies who is collecting - it does NOT move
+           any money yet. Money only moves once the cardholder also
+           proves their own EtelID password, in
+           ajax_cardholder_pay_confirm() below - same "authorize
+           whoever's money is leaving" rule as every other flow on this
+           card, just with 'etelpay_payout's roles swapped back. */
         if ('etelpay_cardholder_pay' === $stage) {
             $amount = isset($_POST['amount']) ? (float) $_POST['amount'] : 0;
             $note   = isset($_POST['note']) ? sanitize_text_field(wp_unslash($_POST['note'])) : '';
@@ -561,12 +590,14 @@ class Etelid_Nfc {
             ));
         }
 
-        /* EtelPay tap-to-pay PAYOUT (pay OUT, e.g. a driver's earnings):
-           same mechanism as 'etelpay_charge' above (whoever logs in
-           here pays, whoever's card was tapped receives) - the two
-           buttons exist for the two real-world scenarios (a vendor
-           collecting from a customer vs. staff paying out to a
-           driver), not for a difference in money direction. */
+        /* EtelPay tap-to-pay PAYOUT (pay OUT, e.g. a driver's earnings,
+           or collecting payment when the tapped card belongs to the
+           collector): whoever logs in here pays, whoever's card was
+           tapped receives - their own login both identifies whose
+           wallet pays AND authorizes the debit, same "authorize
+           whoever's money is leaving" rule as every login on this
+           page. No fixed business/till account, no second confirm
+           step - money moves immediately once they log in. */
         if ('etelpay_payout' === $stage) {
             $amount = isset($_POST['amount']) ? (float) $_POST['amount'] : 0;
             $note   = isset($_POST['note']) ? sanitize_text_field(wp_unslash($_POST['note'])) : '';

@@ -327,12 +327,12 @@ $nfc_nonce = wp_create_nonce('etelid_public');
           <button type="button" class="nfc-btn primary" data-stage="ride_start">Confirm Rider &amp; Start Trip</button>
           <p class="nfc-role-label">Traffic Officer</p>
           <button type="button" class="nfc-btn primary" data-stage="driver_status">Driver Info</button>
-          <p class="nfc-role-label">Collect Payment</p>
-          <button type="button" class="nfc-btn primary" data-stage="etelpay_charge">Charge via EtelPay</button>
-          <p class="nfc-role-label">Pay Driver / Cardholder</p>
+          <p class="nfc-role-label">Pay Driver / Cardholder / Collect Payment</p>
           <button type="button" class="nfc-btn primary" data-stage="etelpay_payout">Pay Out via EtelPay</button>
           <p class="nfc-role-label">Cardholder Pays (tap to pay)</p>
           <button type="button" class="nfc-btn primary" data-stage="etelpay_cardholder_pay">Cardholder Pays via EtelPay</button>
+          <p class="nfc-role-label">Station Controller</p>
+          <button type="button" class="nfc-btn primary" data-stage="etelmadeya_register">Register in Queue</button>
         </div>
 
         <div id="nfc-step-charge-amount" class="nfc-step">
@@ -448,12 +448,16 @@ $nfc_nonce = wp_create_nonce('etelid_public');
       // Both EtelPay stages need an amount first, then whoever is
       // filling in this form types their own EtelID login - that
       // login both identifies AND authorizes it, since it's their own
-      // money leaving either way (etelpay_charge: they're paying the
-      // tapped card's owner; etelpay_payout: same mechanism, different
-      // real-world scenario; etelpay_cardholder_pay: the tapped card
+      // money leaving either way (etelpay_payout: they're paying the
+      // tapped card's owner; etelpay_cardholder_pay: the tapped card
       // pays instead - their own approval comes after this login,
       // which here only identifies who's collecting).
-      var etelpayStages = (stage === 'etelpay_charge' || stage === 'etelpay_payout' || stage === 'etelpay_cardholder_pay');
+      // "Register in Queue" (etelmadeya_register) also needs the
+      // controller's own login here - a shared station device can be
+      // used by different controllers through the day, so there is no
+      // reliable ambient "who's signed in" to read; only an explicit
+      // login on this specific tap correctly identifies who's doing it.
+      var etelpayStages = (stage === 'etelpay_payout' || stage === 'etelpay_cardholder_pay');
       showStep(etelpayStages ? 'nfc-step-charge-amount' : 'nfc-step-login');
     });
   }
@@ -482,7 +486,7 @@ $nfc_nonce = wp_create_nonce('etelid_public');
     this.disabled = true;
     var self = this;
     var postData = { token: TOKEN, stage: stage, identifier: ident, password: pass };
-    if (stage === 'etelpay_charge' || stage === 'etelpay_payout' || stage === 'etelpay_cardholder_pay') { postData.amount = chargeAmount; postData.note = chargeNote; }
+    if (stage === 'etelpay_payout' || stage === 'etelpay_cardholder_pay') { postData.amount = chargeAmount; postData.note = chargeNote; }
     post('etelid_nfc_start', postData)
       .then(function (res) {
         self.disabled = false;
@@ -505,10 +509,18 @@ $nfc_nonce = wp_create_nonce('etelid_public');
           return;
         }
 
-        if (res.data.payout_done || res.data.charge_done) {
+        if (res.data.payout_done) {
           var payMsg = document.getElementById('nfc-done-msg');
           payMsg.className = 'nfc-msg ok';
           payMsg.textContent = res.data.message || 'Payment sent.';
+          showStep('nfc-step-done');
+          return;
+        }
+
+        if (res.data.madeya_register_done) {
+          var madeyaMsg = document.getElementById('nfc-done-msg');
+          madeyaMsg.className = 'nfc-msg ok';
+          madeyaMsg.textContent = res.data.message || 'Registered in queue.';
           showStep('nfc-step-done');
           return;
         }
