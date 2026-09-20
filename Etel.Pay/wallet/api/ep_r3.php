@@ -276,6 +276,18 @@ case 'ep_admin_dispute_resolve': {
     $res = in_str('resolution');
     $pdo = ep_db();
     if ($act === 'refund') {
+        // Same double-processing risk ep_admin_reverse_tx/ep_admin_topup_approve
+        // already guard against, missing here: a double-click or retried
+        // request previously re-ran the credit/debit block every time,
+        // since nothing checked the dispute was still open before moving
+        // money. Gate on an atomic status flip (open/investigating -> a
+        // terminal status) first - only the request that actually wins
+        // that flip is allowed to touch any balance.
+        $flip = $pdo->prepare('UPDATE ' . EP_TBL_DISPUTES . ' SET status="resolved" WHERE id=? AND status IN ("open","investigating")');
+        $flip->execute(array($id));
+        if ($flip->rowCount() === 0) {
+            ep_err('Dispute already resolved/rejected');
+        }
         $disp = $pdo->prepare('SELECT * FROM ' . EP_TBL_DISPUTES . ' WHERE id=? LIMIT 1');
         $disp->execute(array($id)); $d = $disp->fetch();
         if ($d) {
@@ -288,6 +300,8 @@ case 'ep_admin_dispute_resolve': {
                     ->execute(array(ep_gen_ref(),'refund',$t['receiver_ep_id'],$t['sender_ep_id'],$t['amount'],'ETB','Refund: '.$d['tx_ref'],'completed'));
             }
         }
+        $pdo->prepare('UPDATE ' . EP_TBL_DISPUTES . ' SET resolution=?, resolved_at=NOW() WHERE id=?')->execute(array($res, $id));
+        ep_ok(null, 'Dispute resolved');
     }
     $pdo->prepare('UPDATE ' . EP_TBL_DISPUTES . ' SET status=?,resolution=?,resolved_at=NOW() WHERE id=?')->execute(array($act==='reject'?'rejected':'resolved',$res,$id));
     ep_ok(null, 'Dispute ' . ($act==='reject'?'rejected':'resolved'));
