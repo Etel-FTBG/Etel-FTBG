@@ -45,6 +45,7 @@ function ridesLoad(){
   loadRideIssues();
   loadVehicleChanges();
   loadFlaggedIdentities();
+  loadPendingComplianceRequests();
   loadDriverCompliance();
   var tb=document.getElementById('rides-tbody');
   if(tb)tb.innerHTML='<tr><td colspan="8" style="padding:40px;text-align:center;color:#B8B0A0">Loading...</td></tr>';
@@ -423,6 +424,83 @@ function rejectDriverIdentity(id){
    view - the Traffic Officer role only gets a separate, narrower
    drivers.compliance.view capability checked server-side by
    nfc_driver_status, and never sees this admin panel at all. */
+/* ── Pending compliance submissions (driver self-reported) ──────────
+   A driver can submit their own document expiry date + photo directly
+   from their app (driver_submit_compliance_document) - this queue is
+   the review step before it becomes what a Traffic Officer sees.
+   Same review-panel pattern as flagged identities/vehicle changes. */
+var CR={rows:[]};
+async function loadPendingComplianceRequests(){
+  var wrap=document.getElementById('compliance-pending-wrap');
+  if(!wrap)return;
+  var caps = window.ETEL_CAPS || await window.ETEL_CAPS_PROMISE;
+  if (caps.indexOf('*')===-1 && caps.indexOf('users.manage')===-1) {
+    wrap.style.display='none';
+    var heading = wrap.previousElementSibling;
+    if (heading) heading.style.display='none';
+    return;
+  }
+  wrap.innerHTML='<div style="padding:20px;text-align:center;color:#B8B0A0">Loading…</div>';
+  api('admin_get_pending_compliance_requests',{},function(d){
+    CR.rows=d.requests||[];
+    renderPendingComplianceRequests();
+  },function(msg){
+    wrap.innerHTML='<div style="padding:16px;color:#e74c3c">Could not load submissions: '+esc(msg||'API error')+'</div>';
+  });
+}
+function renderPendingComplianceRequests(){
+  var wrap=document.getElementById('compliance-pending-wrap');
+  if(!wrap)return;
+  if(!CR.rows.length){
+    wrap.innerHTML='<div style="padding:24px;text-align:center;color:#B8B0A0">No pending submissions.</div>';
+    return;
+  }
+  var docLabels={insurance:'Insurance',technical_inspection:'Technical Inspection',road_fund:'Road Fund'};
+  var trs=CR.rows.map(function(r){
+    var photo=r.requested_receipt_url?'<a href="'+esc(r.requested_receipt_url)+'" target="_blank" style="color:#4ECDC4;font-size:11.5px">📷 Photo</a>':'—';
+    return '<tr>'+
+      '<td>'+esc(r.name||'—')+'<br><small style="color:#9A9AAE">'+esc(r.phone||'')+'</small></td>'+
+      '<td>'+esc(docLabels[r.doc_type]||r.doc_type)+'</td>'+
+      '<td style="color:#f0cf5a">'+esc(r.requested_expiry_date||'')+'</td>'+
+      '<td>'+photo+'</td>'+
+      '<td>'+fmtTime(r.created_at)+'</td>'+
+      '<td style="white-space:nowrap">'+
+        '<button class="btn btn-primary" style="padding:6px 10px;font-size:12px;margin-right:6px" onclick="approveComplianceRequest('+r.id+')">Approve</button>'+
+        '<button class="btn" style="padding:6px 10px;font-size:12px;background:rgba(231,76,60,.12);color:#e74c3c" onclick="rejectComplianceRequest('+r.id+')">Reject</button>'+
+      '</td>'+
+      '</tr>';
+  }).join('');
+  wrap.innerHTML='<div style="overflow-x:auto;border-radius:14px;border:1px solid rgba(255,255,255,.08)">'+
+    '<table style="width:100%;border-collapse:collapse;font-size:13px;font-family:Outfit,sans-serif">'+
+    '<thead><tr style="border-bottom:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04)">'+
+    '<th style="padding:12px 14px;text-align:left;color:#9A9AAE;font-weight:700">Driver</th>'+
+    '<th style="padding:12px 14px;text-align:left;color:#9A9AAE;font-weight:700">Document</th>'+
+    '<th style="padding:12px 14px;text-align:left;color:#9A9AAE;font-weight:700">Requested Expiry</th>'+
+    '<th style="padding:12px 14px;text-align:left;color:#9A9AAE;font-weight:700">Photo</th>'+
+    '<th style="padding:12px 14px;text-align:left;color:#9A9AAE;font-weight:700">Submitted</th>'+
+    '<th style="padding:12px 14px;text-align:left;color:#9A9AAE;font-weight:700">Action</th>'+
+    '</tr></thead><tbody>'+trs+'</tbody></table></div>';
+}
+function approveComplianceRequest(id){
+  if(!confirm('Approve this document? It becomes visible on the Traffic Officer NFC check immediately.'))return;
+  api('admin_approve_compliance_document',{request_id:id},function(){
+    CR.rows=CR.rows.filter(function(x){return x.id!==id;});
+    renderPendingComplianceRequests();
+    loadDriverCompliance();
+  },function(msg){alert('Could not approve: '+(msg||'unknown error'));});
+}
+function rejectComplianceRequest(id){
+  var reason=prompt('Reason for rejecting (shown to the driver):','Photo unclear - please resubmit.');
+  if(reason===null)return;
+  api('admin_reject_compliance_document',{request_id:id,reason:reason},function(){
+    CR.rows=CR.rows.filter(function(x){return x.id!==id;});
+    renderPendingComplianceRequests();
+  },function(msg){alert('Could not reject: '+(msg||'unknown error'));});
+}
+window.loadPendingComplianceRequests=loadPendingComplianceRequests;
+window.approveComplianceRequest=approveComplianceRequest;
+window.rejectComplianceRequest=rejectComplianceRequest;
+
 /* Association dues are NOT managed here at all - nfc_driver_status
    checks EtelTaxi's own live database instead (see taxi_bridge.php),
    since EtelTaxi is the actual system of record for that. This panel

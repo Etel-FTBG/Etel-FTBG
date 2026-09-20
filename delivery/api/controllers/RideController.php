@@ -1919,6 +1919,170 @@ case 'admin_update_driver_compliance': {
     break;
 }
 
+/* ── Driver self-submitted compliance documents ─────────────────────
+   A driver can submit their own insurance/technical inspection/road
+   fund expiry date + a photo of the sticker directly from their own
+   app, instead of only an admin entering it. Same pattern this
+   codebase already uses for anything a driver self-reports that other
+   people then rely on (driver_vehicle_change_requests,
+   admin_get_flagged_identities): goes into a pending queue an admin
+   must approve before it becomes the live, Traffic-Officer-visible
+   value - a self-reported "valid until 2030" with no review would
+   defeat the entire point of an officer trusting this data. */
+if (!function_exists('rides_ensure_compliance_requests_table')) {
+    function rides_ensure_compliance_requests_table($pdo) {
+        $pdo->exec("CREATE TABLE IF NOT EXISTS driver_compliance_requests (
+            id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+            driver_user_id INT UNSIGNED NOT NULL,
+            doc_type ENUM('insurance','technical_inspection','road_fund') NOT NULL,
+            requested_expiry_date DATE NOT NULL,
+            requested_receipt_url VARCHAR(500) NOT NULL DEFAULT '',
+            status ENUM('pending','approved','rejected') NOT NULL DEFAULT 'pending',
+            reject_reason VARCHAR(255) NULL,
+            created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            reviewed_at DATETIME NULL,
+            reviewed_by_user_id INT UNSIGNED NULL,
+            PRIMARY KEY (id),
+            KEY idx_driver_status (driver_user_id, status)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+    }
+}
+
+case 'driver_get_compliance_status': {
+    // The driver's own view of the three documents: the current LIVE
+    // value (same valid/expired computation NfcController.php's
+    // nfc_driver_status uses) plus whatever they have pending review,
+    // if anything.
+    rides_ensure_compliance_requests_table($pdo);
+    rides_add_missing_cols($pdo, 'ride_drivers', array(
+        'insurance_expiry_date'              => "insurance_expiry_date DATE NULL",
+        'insurance_receipt_url'              => "insurance_receipt_url VARCHAR(500) DEFAULT ''",
+        'technical_inspection_expiry_date'   => "technical_inspection_expiry_date DATE NULL",
+        'technical_inspection_receipt_url'   => "technical_inspection_receipt_url VARCHAR(500) DEFAULT ''",
+        'road_fund_expiry_date'              => "road_fund_expiry_date DATE NULL",
+        'road_fund_receipt_url'              => "road_fund_receipt_url VARCHAR(500) DEFAULT ''",
+    ));
+
+    $s = $pdo->prepare("SELECT
+        insurance_expiry_date, insurance_receipt_url,
+        technical_inspection_expiry_date, technical_inspection_receipt_url,
+        road_fund_expiry_date, road_fund_receipt_url
+        FROM ride_drivers WHERE user_id = ?");
+    $s->execute(array($u['id']));
+    $d = $s->fetch();
+
+    $ps = $pdo->prepare("SELECT doc_type, requested_expiry_date, status, reject_reason, created_at
+        FROM driver_compliance_requests
+        WHERE driver_user_id = ? AND status = 'pending'
+        ORDER BY id DESC");
+    $ps->execute(array($u['id']));
+    $pending = array();
+    foreach ($ps->fetchAll() as $row) { $pending[$row['doc_type']] = $row; }
+
+    $today = date('Y-m-d');
+    $docTypes = array('insurance', 'technical_inspection', 'road_fund');
+    $out = array();
+    foreach ($docTypes as $t) {
+        $expiry = $d ? $d[$t . '_expiry_date'] : null;
+        $status = 'unknown';
+        if (!empty($expiry)) $status = ($expiry >= $today) ? 'valid' : 'expired';
+        $out[$t] = array(
+            'status'      => $status,
+            'expiry_date' => $expiry,
+            'receipt_url' => $d ? $d[$t . '_receipt_url'] : '',
+            'pending'     => isset($pending[$t]) ? array(
+                'requested_expiry_date' => $pending[$t]['requested_expiry_date'],
+                'created_at'            => $pending[$t]['created_at'],
+            ) : null,
+        );
+    }
+    ok(array('documents' => $out));
+    break;
+}
+
+case 'driver_submit_compliance_document': {
+    // POST: doc_type ('insurance'|'technical_inspection'|'road_fund'),
+    // expiry_date (YYYY-MM-DD), receipt_url (required - a self-reported
+    // expiry with no photo of the actual document isn't verifiable).
+    rides_ensure_compliance_requests_table($pdo);
+
+    $docType = isset($body['doc_type']) ? trim($body['doc_type']) : '';
+    if (!in_array($docType, array('insurance', 'technical_inspection', 'road_fund'), true)) {
+        fail('doc_type must be insurance, technical_inspection, or road_fund');
+    }
+    $expiry = isset($body['expiry_date']) ? trim($body['expiry_date']) : '';
+    if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $expiry)) fail('expiry_date must be a YYYY-MM-DD date');
+    $receiptUrl = isset($body['receipt_url']) ? trim($body['receipt_url']) : '';
+    if ($receiptUrl === '') fail('A photo of the document is required.');
+
+    $pending = $pdo->prepare("SELECT id FROM driver_compliance_requests WHERE driver_user_id=? AND doc_type=? AND status='pending' LIMIT 1");
+    $pending->execute(array($u['id'], $docType));
+    if ($pending->fetch()) fail('You already have a ' . $docType . ' submission awaiting admin review.');
+
+    $pdo->prepare("INSERT INTO driver_compliance_requests
+        (driver_user_id, doc_type, requested_expiry_date, requested_receipt_url)
+        VALUES (?,?,?,?)")
+        ->execute(array($u['id'], $docType, $expiry, substr($receiptUrl, 0, 500)));
+
+    ok(array('submitted' => true, 'message' => 'Submitted for admin review.'));
+    break;
+}
+
+case 'admin_get_pending_compliance_requests': {
+    if ($u['role'] !== 'admin' || !user_has_capability($pdo, $u, 'users.manage')) fail('Admin only', 403);
+    rides_ensure_compliance_requests_table($pdo);
+    $stmt = $pdo->prepare("SELECT r.id, r.driver_user_id, r.doc_type, r.requested_expiry_date,
+        r.requested_receipt_url, r.created_at, us.name, us.phone
+        FROM driver_compliance_requests r JOIN users us ON us.id = r.driver_user_id
+        WHERE r.status = 'pending'
+        ORDER BY r.created_at ASC");
+    $stmt->execute();
+    ok(array('requests' => $stmt->fetchAll()));
+    break;
+}
+
+case 'admin_approve_compliance_document': {
+    if ($u['role'] !== 'admin' || !user_has_capability($pdo, $u, 'users.manage')) fail('Admin only', 403);
+    rides_ensure_compliance_requests_table($pdo);
+    $rid = isset($body['request_id']) ? intval($body['request_id']) : 0;
+    if (!$rid) fail('request_id is required');
+
+    $r = $pdo->prepare("SELECT * FROM driver_compliance_requests WHERE id=? AND status='pending'");
+    $r->execute(array($rid));
+    $req = $r->fetch();
+    if (!$req) fail('Request not found or already reviewed.', 404);
+
+    rides_add_missing_cols($pdo, 'ride_drivers', array(
+        'insurance_expiry_date'              => "insurance_expiry_date DATE NULL",
+        'insurance_receipt_url'              => "insurance_receipt_url VARCHAR(500) DEFAULT ''",
+        'technical_inspection_expiry_date'   => "technical_inspection_expiry_date DATE NULL",
+        'technical_inspection_receipt_url'   => "technical_inspection_receipt_url VARCHAR(500) DEFAULT ''",
+        'road_fund_expiry_date'              => "road_fund_expiry_date DATE NULL",
+        'road_fund_receipt_url'              => "road_fund_receipt_url VARCHAR(500) DEFAULT ''",
+    ));
+    $expiryCol  = $req['doc_type'] . '_expiry_date';
+    $receiptCol = $req['doc_type'] . '_receipt_url';
+    $pdo->prepare("UPDATE ride_drivers SET $expiryCol=?, $receiptCol=? WHERE user_id=?")
+        ->execute(array($req['requested_expiry_date'], $req['requested_receipt_url'], $req['driver_user_id']));
+    $pdo->prepare("UPDATE driver_compliance_requests SET status='approved', reviewed_at=NOW(), reviewed_by_user_id=? WHERE id=?")
+        ->execute(array($u['id'], $rid));
+    ok(array('approved' => true));
+    break;
+}
+
+case 'admin_reject_compliance_document': {
+    if ($u['role'] !== 'admin' || !user_has_capability($pdo, $u, 'users.manage')) fail('Admin only', 403);
+    rides_ensure_compliance_requests_table($pdo);
+    $rid = isset($body['request_id']) ? intval($body['request_id']) : 0;
+    if (!$rid) fail('request_id is required');
+    $reason = isset($body['reason']) ? trim(substr($body['reason'], 0, 255)) : '';
+    $n = $pdo->prepare("UPDATE driver_compliance_requests SET status='rejected', reject_reason=?, reviewed_at=NOW(), reviewed_by_user_id=? WHERE id=? AND status='pending'");
+    $n->execute(array($reason, $u['id'], $rid));
+    if ($n->rowCount() === 0) fail('Request not found or already reviewed.', 404);
+    ok(array('rejected' => true));
+    break;
+}
+
 case 'driver_get_nearby_requests': {
     $radius = isset($body['radius_km']) ? floatval($body['radius_km']) : 8;
     if ($radius <= 0 || $radius > 50) $radius = 8;

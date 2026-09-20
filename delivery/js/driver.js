@@ -3043,6 +3043,95 @@ function saveVehicleInfoEdit(){
   });
 }
 
+/* ── Compliance Documents (insurance / technical inspection / Road Fund) ──
+   A driver submits their own expiry date + a photo of the sticker for
+   each document; an admin reviews and approves it before it becomes
+   what a Traffic Officer sees on an NFC card check - see
+   driver_submit_compliance_document / admin_approve_compliance_document
+   in RideController.php. */
+var CD_DOCS=[
+  {key:'insurance',label:'Insurance',icon:'🛡️'},
+  {key:'technical_inspection',label:'Technical Inspection',icon:'🔧'},
+  {key:'road_fund',label:'Road Fund',icon:'🛣️'}
+];
+function openComplianceDocuments(){
+  openDriverModal('📄 Compliance Documents','<div id="cd-body" style="text-align:center;padding:24px;color:rgba(245,237,216,.5)">Loading…</div>');
+  drvApi('driver_get_compliance_status',{},function(data){
+    renderComplianceDocuments(data.documents||{});
+  },function(e){
+    var el=document.getElementById('cd-body');
+    if(el)el.innerHTML='<div style="color:#ff8a8a;text-align:center;padding:20px">Could not load: '+esc(e||'error')+'</div>';
+  });
+}
+function renderComplianceDocuments(docs){
+  var el=document.getElementById('cd-body');
+  if(!el)return;
+  el.innerHTML=CD_DOCS.map(function(doc){
+    var d=docs[doc.key]||{};
+    var statusHtml;
+    if(d.pending){
+      statusHtml='<span style="color:#F2CC6B">Submitted, awaiting review (expiry '+esc(d.pending.requested_expiry_date)+')</span>';
+    }else if(d.status==='valid'){
+      statusHtml='<span style="color:#9e9">Valid until '+esc(d.expiry_date)+'</span>';
+    }else if(d.status==='expired'){
+      statusHtml='<span style="color:#e88">EXPIRED ('+esc(d.expiry_date)+')</span>';
+    }else{
+      statusHtml='<span style="color:rgba(245,237,216,.5)">Not on file</span>';
+    }
+    return '<div style="padding:14px 0;border-bottom:1px solid rgba(212,175,55,.12)">'+
+      '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px">'+
+        '<div style="font-weight:700;font-size:13.5px">'+doc.icon+' '+esc(doc.label)+'</div>'+
+        (d.pending?'':'<button style="padding:7px 12px;border-radius:8px;border:1px solid rgba(212,175,55,.35);background:rgba(212,175,55,.08);color:#D4AF37;font-size:12px;cursor:pointer" onclick="openComplianceDocSubmitForm(\''+doc.key+'\')">Submit</button>')+
+      '</div>'+
+      '<div style="font-size:12.5px;margin-top:4px">'+statusHtml+'</div>'+
+    '</div>';
+  }).join('')+
+  '<div style="font-size:11px;color:rgba(245,237,216,.4);margin-top:12px;text-align:center">Submissions are reviewed by an admin before they show on a traffic check.</div>';
+}
+var CD_STATE={docKey:null,photoFile:null};
+function openComplianceDocSubmitForm(docKey){
+  CD_STATE.docKey=docKey;
+  CD_STATE.photoFile=null;
+  var doc=CD_DOCS.filter(function(d){return d.key===docKey})[0]||{label:docKey};
+  var el=document.getElementById('cd-body');
+  if(!el)return;
+  el.innerHTML=
+    '<div style="margin-bottom:14px"><label style="display:block;font-size:11px;color:rgba(245,237,216,.6);margin-bottom:6px">'+esc(doc.label)+' expiry date</label>'+
+      '<input type="date" id="cd-expiry" style="width:100%;padding:11px;border-radius:10px;border:1px solid rgba(212,175,55,.25);background:#191926;color:#EDEDF5;font-size:14px;box-sizing:border-box"></div>'+
+    '<div style="margin-bottom:14px"><label style="display:block;font-size:11px;color:rgba(245,237,216,.6);margin-bottom:6px">Photo of the document</label>'+
+      '<input type="file" id="cd-photo-input" accept="image/*" style="width:100%;color:rgba(245,237,216,.8);font-size:12px">'+
+      '<div id="cd-photo-status" style="font-size:11px;color:rgba(245,237,216,.4);margin-top:6px"></div></div>'+
+    '<button id="cd-submit-btn" style="width:100%;padding:13px;border:none;border-radius:12px;background:linear-gradient(135deg,#FFD700,#D4AF37);color:#1a1206;font-weight:700;font-size:14px;cursor:pointer" onclick="submitComplianceDocument()">Submit for Review</button>'+
+    '<button style="width:100%;padding:11px;margin-top:8px;border:1px solid rgba(212,175,55,.25);border-radius:12px;background:transparent;color:rgba(245,237,216,.7);font-size:13px;cursor:pointer" onclick="openComplianceDocuments()">Back</button>';
+  document.getElementById('cd-photo-input').addEventListener('change',function(){
+    CD_STATE.photoFile=this.files&&this.files[0]||null;
+    document.getElementById('cd-photo-status').textContent=CD_STATE.photoFile?CD_STATE.photoFile.name:'';
+  });
+}
+function submitComplianceDocument(){
+  var docKey=CD_STATE.docKey;
+  var expiry=(document.getElementById('cd-expiry').value||'').trim();
+  if(!expiry){showDriverToast('Pick the expiry date printed on the document','err');return}
+  if(!CD_STATE.photoFile){showDriverToast('Attach a photo of the document','err');return}
+  var btn=document.getElementById('cd-submit-btn');
+  if(btn){btn.disabled=true;btn.textContent='Uploading…'}
+  driverUploadReceiptPhoto(CD_STATE.photoFile,'driver_'+docKey+'_photo').then(function(url){
+    drvApi('driver_submit_compliance_document',{doc_type:docKey,expiry_date:expiry,receipt_url:url},function(){
+      showDriverToast('Submitted for admin review ✓','ok');
+      openComplianceDocuments();
+    },function(e){
+      if(btn){btn.disabled=false;btn.textContent='Submit for Review'}
+      showDriverToast(e||'Could not submit','err');
+    });
+  }).catch(function(e){
+    if(btn){btn.disabled=false;btn.textContent='Submit for Review'}
+    showDriverToast((e&&e.message)||'Photo upload failed','err');
+  });
+}
+window.openComplianceDocuments=openComplianceDocuments;
+window.openComplianceDocSubmitForm=openComplianceDocSubmitForm;
+window.submitComplianceDocument=submitComplianceDocument;
+
 function toggleWaitFee(){
   var ride=DRV.activeRide;
   if(!ride||!ride.id){showDriverToast("No active ride","err");return}
