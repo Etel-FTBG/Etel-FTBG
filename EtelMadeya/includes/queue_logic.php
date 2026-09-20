@@ -175,3 +175,39 @@ function madeyaRememberDriverVehicle($phone, $plate, $vehicleTypeId, $driverName
         db()->insert('driver_vehicles', $data);
     }
 }
+
+/**
+ * Finds an active controller row by phone (last-9 match), or null.
+ */
+function madeyaFindControllerByPhone($phone) {
+    $last9 = madeyaNormalizePhone($phone);
+    if (!$last9) return null;
+    foreach (db()->fetchAll("SELECT * FROM controllers WHERE is_active = 1") as $c) {
+        if (madeyaNormalizePhone($c['phone']) === $last9) return $c;
+    }
+    return null;
+}
+
+/**
+ * Finds an active admin/manager row by phone (last-9 match), or null.
+ * admin_users.phone was added by migration_add_etelid_sso.sql for
+ * exactly this kind of EtelID phone matching. 'staff' role is
+ * deliberately excluded - only admin/manager can act on behalf of a
+ * station they don't personally have a controllers row for.
+ */
+function madeyaFindAdminByPhone($phone) {
+    $last9 = madeyaNormalizePhone($phone);
+    if (!$last9) return null;
+    foreach (db()->fetchAll("SELECT * FROM admin_users WHERE is_active = 1 AND role IN ('admin','manager')") as $a) {
+        if (!empty($a['phone']) && madeyaNormalizePhone($a['phone']) === $last9) return $a;
+    }
+    return null;
+}
+
+/**
+ * Active stations for an admin to pick from when registering a
+ * vehicle via NFC (they have no single station of their own).
+ */
+function madeyaActiveStations() {
+    return db()->fetchAll("SELECT id, station_name FROM controllers WHERE is_active = 1 ORDER BY station_name");
+}

@@ -378,6 +378,13 @@ $nfc_nonce = wp_create_nonce('etelid_public');
           <div id="nfc-cardholder-pay-msg" class="nfc-msg"></div>
         </div>
 
+        <div id="nfc-step-madeya-station" class="nfc-step">
+          <p id="nfc-madeya-station-hint" class="nfc-msg"></p>
+          <div id="nfc-madeya-station-list"></div>
+          <span class="nfc-back" data-back="menu">Cancel</span>
+          <div id="nfc-madeya-station-msg" class="nfc-msg"></div>
+        </div>
+
         <div id="nfc-step-orders" class="nfc-step">
           <div id="nfc-order-list"></div>
           <span class="nfc-back" data-back="menu">Cancel</span>
@@ -522,6 +529,33 @@ $nfc_nonce = wp_create_nonce('etelid_public');
           madeyaMsg.className = 'nfc-msg ok';
           madeyaMsg.textContent = res.data.message || 'Registered in queue.';
           showStep('nfc-step-done');
+          return;
+        }
+
+        if (res.data.station_pending) {
+          actionToken = res.data.action_token;
+          document.getElementById('nfc-madeya-station-hint').textContent =
+            'Registering ' + res.data.driver_name + '. Pick which station:';
+          document.getElementById('nfc-madeya-station-msg').textContent = '';
+          var stationList = document.getElementById('nfc-madeya-station-list');
+          stationList.innerHTML = '';
+          var stations = res.data.stations || [];
+          if (!stations.length) {
+            var noStations = document.createElement('p');
+            noStations.className = 'nfc-msg error';
+            noStations.textContent = 'No active stations found.';
+            stationList.appendChild(noStations);
+          } else {
+            stations.forEach(function (s) {
+              var btn = document.createElement('button');
+              btn.type = 'button';
+              btn.className = 'nfc-order';
+              btn.textContent = s.station_name;
+              btn.addEventListener('click', function () { confirmMadeyaStation(s.id); });
+              stationList.appendChild(btn);
+            });
+          }
+          showStep('nfc-step-madeya-station');
           return;
         }
 
@@ -735,6 +769,27 @@ $nfc_nonce = wp_create_nonce('etelid_public');
         } else {
           doneMsg.className = 'nfc-msg error';
           doneMsg.textContent = res.data && res.data.message ? res.data.message : 'Could not confirm.';
+        }
+        showStep('nfc-step-done');
+      })
+      .catch(function () {
+        var doneMsg = document.getElementById('nfc-done-msg');
+        doneMsg.className = 'nfc-msg error';
+        doneMsg.textContent = 'Network error, please try again.';
+        showStep('nfc-step-done');
+      });
+  }
+
+  function confirmMadeyaStation(stationId) {
+    post('etelid_nfc_madeya_station_confirm', { action_token: actionToken, station_id: stationId })
+      .then(function (res) {
+        var doneMsg = document.getElementById('nfc-done-msg');
+        if (res.success) {
+          doneMsg.className = 'nfc-msg ok';
+          doneMsg.textContent = res.data && res.data.message ? res.data.message : 'Registered in queue.';
+        } else {
+          doneMsg.className = 'nfc-msg error';
+          doneMsg.textContent = res.data && res.data.message ? res.data.message : 'Could not register.';
         }
         showStep('nfc-step-done');
       })

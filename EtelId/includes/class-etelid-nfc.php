@@ -57,6 +57,13 @@ class Etelid_Nfc {
            password instead of an order id. */
         add_action('wp_ajax_etelid_nfc_cardholder_pay_confirm', array(__CLASS__, 'ajax_cardholder_pay_confirm'));
         add_action('wp_ajax_nopriv_etelid_nfc_cardholder_pay_confirm', array(__CLASS__, 'ajax_cardholder_pay_confirm'));
+
+        /* Etel Madeya "Register in Queue", admin path only: separate
+           confirm step for when the signed-in person is an admin/
+           manager (not a station controller) and has to pick which
+           station's queue to register the tapped driver into. */
+        add_action('wp_ajax_etelid_nfc_madeya_station_confirm', array(__CLASS__, 'ajax_madeya_station_confirm'));
+        add_action('wp_ajax_nopriv_etelid_nfc_madeya_station_confirm', array(__CLASS__, 'ajax_madeya_station_confirm'));
     }
 
     /* Idempotent runtime install - the plugin's own activation hook only
@@ -544,6 +551,30 @@ class Etelid_Nfc {
             if (is_wp_error($result)) {
                 wp_send_json_error(array('message' => $result->get_error_message()));
             }
+
+            /* Signed-in person isn't a station controller but IS an
+               Etel Madeya admin/manager - they have no single station
+               of their own, so Etel Madeya asks which one to register
+               into. Bridge the same way ajax_charge_confirm() does:
+               short-lived single-use action_token, second request
+               supplies the chosen station_id. */
+            if (!empty($result['needs_station'])) {
+                $action_token = wp_generate_password(24, false, false);
+                set_transient('etelid_nfc_action_' . $action_token, array(
+                    'stage'             => $stage,
+                    'courier_etel_id'   => $courier->etel_id,
+                    'courier_phone'     => $courier->phone,
+                    'confirmer_phone'   => $confirmer->phone,
+                ), 5 * MINUTE_IN_SECONDS);
+
+                wp_send_json_success(array(
+                    'station_pending' => true,
+                    'action_token'    => $action_token,
+                    'stations'        => isset($result['stations']) ? $result['stations'] : array(),
+                    'driver_name'     => $courier->full_name,
+                ));
+            }
+
             EtelID_DB::log($confirmer->id, $confirmer->etel_id, 'nfc_etelmadeya_register', 'NFC card scan - registered ' . $courier->full_name . ' into Etel Madeya queue');
             wp_send_json_success(array(
                 'madeya_register_done' => true,
@@ -747,6 +778,42 @@ class Etelid_Nfc {
             'message' => 'Payment of ' . $data['amount'] . ' ETB sent.',
             'tx_ref'  => isset($result['tx_ref']) ? $result['tx_ref'] : null,
             'amount'  => $data['amount'],
+        ));
+    }
+
+    /* Step 2 of the Etel Madeya admin-registers-a-vehicle flow: the
+       admin/manager picked which station to register into. Re-sends
+       the same request to Etel Madeya, this time with station_id -
+       single-use action_token, same pattern as every other confirm
+       step here. */
+    public static function ajax_madeya_station_confirm() {
+        if (!check_ajax_referer('etelid_public', 'nonce', false)) {
+            wp_send_json_error(array('message' => 'Session expired, please reload the page.'));
+        }
+
+        $action_token = isset($_POST['action_token']) ? sanitize_text_field(wp_unslash($_POST['action_token'])) : '';
+        $stationId    = isset($_POST['station_id']) ? (int) $_POST['station_id'] : 0;
+        if (!$action_token || !$stationId) wp_send_json_error(array('message' => 'Missing required fields.'));
+
+        $key  = 'etelid_nfc_action_' . $action_token;
+        $data = get_transient($key);
+        if (false === $data || 'etelmadeya_register' !== $data['stage']) {
+            wp_send_json_error(array('message' => 'This request has expired. Please start again.'));
+        }
+        delete_transient($key); // single-use - a resubmit needs a fresh tap+login
+
+        $result = self::madeya_service_call('service_nfc_register.php', array(
+            'controller_phone' => $data['confirmer_phone'],
+            'driver_phone'     => $data['courier_phone'],
+            'driver_etel_id'   => $data['courier_etel_id'],
+            'station_id'       => $stationId,
+        ));
+        if (is_wp_error($result)) {
+            wp_send_json_error(array('message' => $result->get_error_message()));
+        }
+
+        wp_send_json_success(array(
+            'message' => isset($result['message']) ? $result['message'] : 'Registered in queue.',
         ));
     }
 
