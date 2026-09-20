@@ -412,7 +412,7 @@ class Etelid_Nfc {
         $ident  = isset($_POST['identifier']) ? sanitize_text_field(wp_unslash($_POST['identifier'])) : '';
         $pass   = isset($_POST['password']) ? (string) $_POST['password'] : '';
 
-        $allowedStages = array('pickup', 'delivery', 'ride_start', 'driver_status', 'etelpay_charge', 'etelpay_payout', 'etelpay_cardholder_pay');
+        $allowedStages = array('pickup', 'delivery', 'ride_start', 'driver_status', 'etelpay_payout', 'etelpay_cardholder_pay');
         if (!$token || !in_array($stage, $allowedStages, true) || !$ident || !$pass) {
             wp_send_json_error(array('message' => 'Missing required fields.'));
         }
@@ -487,52 +487,17 @@ class Etelid_Nfc {
             wp_send_json_success(array('driver_status' => $result));
         }
 
-        /* EtelPay tap-to-pay CHARGE (pay IN, "Collect Payment"): the
-           tapped card belongs to whoever is COLLECTING the payment
-           (e.g. a vendor's own EtelID card used as their tap-to-pay
-           tool) - money goes TO them. The person actually filling in
-           this form is the one PAYING (e.g. a customer standing at the
-           vendor's card/reader), so their own login above both
-           identifies whose wallet pays AND authorizes the debit, same
-           "authorize whoever's money is leaving" rule as every login
-           on this page. No fixed business/till account, no second
-           confirm step - money moves immediately once they log in. */
-        if ('etelpay_charge' === $stage) {
-            $amount = isset($_POST['amount']) ? (float) $_POST['amount'] : 0;
-            $note   = isset($_POST['note']) ? sanitize_text_field(wp_unslash($_POST['note'])) : '';
-            if ($amount <= 0) wp_send_json_error(array('message' => 'Enter an amount greater than zero.'));
-
-            $result = self::etelpay_service_call('service_nfc_charge.php', array(
-                'receiver_phone' => $courier->phone,    // whoever's card was tapped COLLECTS
-                'payer_phone'    => $confirmer->phone,  // whoever is filling in this form PAYS
-                'amount'         => $amount,
-                'note'           => $note,
-            ));
-            if (is_wp_error($result)) {
-                wp_send_json_error(array('message' => $result->get_error_message()));
-            }
-
-            EtelID_DB::log($confirmer->id, $confirmer->etel_id, 'nfc_etelpay_charge', 'NFC tap-to-pay: paid ' . $amount . ' ETB to ' . $courier->full_name . ', tx ' . (isset($result['tx_ref']) ? $result['tx_ref'] : '?'));
-
-            wp_send_json_success(array(
-                'charge_done' => true,
-                'message'     => 'Paid ' . $amount . ' ETB to ' . $courier->full_name . '.',
-                'tx_ref'      => isset($result['tx_ref']) ? $result['tx_ref'] : null,
-            ));
-        }
-
         /* EtelPay tap-to-pay, CARDHOLDER PAYS (classic tap-to-pay: the
            customer taps their own card, the merchant's device collects):
-           the opposite of 'etelpay_charge' above - here the tapped card
-           is the PAYER, and the person filling in this form (the
-           scanner/merchant) is the RECEIVER. Since it's the tapped
-           card owner's money leaving, the scanner's own login here only
-           identifies who is collecting - it does NOT move any money
-           yet. Money only moves once the cardholder also proves their
-           own EtelID password, in ajax_cardholder_pay_confirm() below -
-           same "authorize whoever's money is leaving" rule as every
-           other flow on this card, just with the roles that
-           'etelpay_charge' uses swapped back. */
+           the tapped card is the PAYER, and the person filling in this
+           form (the scanner/merchant) is the RECEIVER. Since it's the
+           tapped card owner's money leaving, the scanner's own login
+           here only identifies who is collecting - it does NOT move
+           any money yet. Money only moves once the cardholder also
+           proves their own EtelID password, in
+           ajax_cardholder_pay_confirm() below - same "authorize
+           whoever's money is leaving" rule as every other flow on this
+           card, just with 'etelpay_payout's roles swapped back. */
         if ('etelpay_cardholder_pay' === $stage) {
             $amount = isset($_POST['amount']) ? (float) $_POST['amount'] : 0;
             $note   = isset($_POST['note']) ? sanitize_text_field(wp_unslash($_POST['note'])) : '';
@@ -561,12 +526,14 @@ class Etelid_Nfc {
             ));
         }
 
-        /* EtelPay tap-to-pay PAYOUT (pay OUT, e.g. a driver's earnings):
-           same mechanism as 'etelpay_charge' above (whoever logs in
-           here pays, whoever's card was tapped receives) - the two
-           buttons exist for the two real-world scenarios (a vendor
-           collecting from a customer vs. staff paying out to a
-           driver), not for a difference in money direction. */
+        /* EtelPay tap-to-pay PAYOUT (pay OUT, e.g. a driver's earnings,
+           or collecting payment when the tapped card belongs to the
+           collector): whoever logs in here pays, whoever's card was
+           tapped receives - their own login both identifies whose
+           wallet pays AND authorizes the debit, same "authorize
+           whoever's money is leaving" rule as every login on this
+           page. No fixed business/till account, no second confirm
+           step - money moves immediately once they log in. */
         if ('etelpay_payout' === $stage) {
             $amount = isset($_POST['amount']) ? (float) $_POST['amount'] : 0;
             $note   = isset($_POST['note']) ? sanitize_text_field(wp_unslash($_POST['note'])) : '';
