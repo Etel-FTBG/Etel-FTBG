@@ -11,10 +11,25 @@ case 'ep_ping':
 /* ── Telegram/WhatsApp OTP sender (shared group-wide) ────────── */
 case 'ep_send_tg_otp': {
     /* Send an OTP to a phone via Telegram (looks up chat_id from EtelID).
-       Used by Pay for password reset and large transfer confirmation. */
+       Used by Pay for password reset and large transfer confirmation.
+       Unauthenticated by design (called before the caller has a session,
+       e.g. during password reset) - but the caller-supplied $otp was
+       previously accepted as any free-text string with no rate limit,
+       which turned this into an open message relay through the official
+       Etel bot to any phone with Telegram linked (send arbitrary short
+       text to any member, unlimited times). Now enforced: must actually
+       look like a 4-8 digit OTP, and reuses the same per-phone/per-IP
+       rate limiter ep_login already uses. */
     $phone = in_str('phone');
     $otp   = in_str('otp');  /* pre-generated 6-digit OTP from caller */
     if (!$phone || !$otp) ep_err('phone and otp required');
+    if (!preg_match('/^\d{4,8}$/', $otp)) ep_err('otp must be a 4-8 digit code');
+    $ip = isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : '';
+    if (ep_login_rate_limited($phone, $ip)) ep_err('Too many attempts. Please wait a while and try again.', 429);
+    // Count this call itself toward the shared limiter (not just failed
+    // logins) - otherwise the check above never actually trips for a
+    // phone/IP that only ever calls this action.
+    ep_record_failed_login($phone, $ip);
 
     $tg_token = ep_env('TG_BOT_TOKEN','CFG_TG_BOT_TOKEN','');
     if (!$tg_token) ep_err('Telegram not configured',503);
@@ -78,8 +93,15 @@ case 'ep_check_tg_link': {
     ep_ok(array('linked'=>$linked,'tg_bot'=>$tg_bot,'link_url'=>'https://t.me/'.$tg_bot.'?start='.urlencode($phone)));
 }
 
-/* ── Diagnostics (admin-only in production — IP-gated here for dev) ── */
+/* -- Diagnostics (admin-only) --------------------------------
+   The comment above this block used to claim these were
+   "IP-gated here for dev", but no such gate existed anywhere in this
+   file - all three ep_diag_* actions were reachable by anyone with no
+   auth at all, disclosing table row counts, DB host/name, active
+   session counts, and Telebirr-config status. Now behind the same
+   admin check ep_admin_stats uses. */
 case 'ep_diag_db': {
+    _ep_require_admin();
     $pdo    = ep_db();
     $tables = array(
         EP_TBL_USERS, EP_TBL_TX, EP_TBL_SESSIONS,
@@ -103,6 +125,7 @@ case 'ep_diag_db': {
 }
 
 case 'ep_diag_sessions': {
+    _ep_require_admin();
     $pdo = ep_db();
     try {
         $active  = (int) $pdo->query("SELECT COUNT(*) FROM ".EP_TBL_SESSIONS." WHERE expires_at > NOW()")->fetchColumn();
@@ -114,6 +137,7 @@ case 'ep_diag_sessions': {
 }
 
 case 'ep_diag_telebirr': {
+    _ep_require_admin();
     $app_id  = defined('TELEBIRR_APP_ID')     ? TELEBIRR_APP_ID     : (getenv('TELEBIRR_APP_ID') ?: '');
     $app_key = defined('TELEBIRR_APP_KEY')    ? TELEBIRR_APP_KEY    : (getenv('TELEBIRR_APP_KEY') ?: '');
     $configured = ($app_id && $app_key && $app_id !== 'your_app_id');
