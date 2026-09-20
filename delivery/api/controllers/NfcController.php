@@ -89,94 +89,37 @@ if (!function_exists('nfc_find_or_create_user')) {
 require_once __DIR__ . '/../lib/ride_fare.php';
 require_once __DIR__ . '/../lib/schema_helpers.php';
 
-/* One-time (per-request-cheap, idempotent) grant of the capability the
-   Traffic Officer staff role needs for nfc_driver_status below. Migration
-   018_role_permissions.sql seeded this role with only "orders.view" -
-   this adds "drivers.compliance.view" without disturbing whatever an
-   admin has since customized the row to, mirroring rides_add_missing_cols'
-   self-heal-without-clobbering approach but for a JSON array field
-   instead of a table column. */
-if (!function_exists('nfc_ensure_traffic_officer_capability')) {
-    function nfc_ensure_traffic_officer_capability($pdo) {
-        try {
-            $s = $pdo->prepare("SELECT capabilities FROM role_permissions WHERE LOWER(role_name) = LOWER('Traffic Officer') LIMIT 1");
-            $s->execute();
-            $row = $s->fetch();
-            if (!$row) {
-                $pdo->prepare("INSERT IGNORE INTO role_permissions (role_name, capabilities) VALUES ('Traffic Officer', ?)")
-                    ->execute(array(json_encode(array('orders.view', 'drivers.compliance.view'))));
-                return;
-            }
-            $caps = json_decode($row['capabilities'], true);
-            if (!is_array($caps)) $caps = array();
-            if (!in_array('*', $caps, true) && !in_array('drivers.compliance.view', $caps, true)) {
-                $caps[] = 'drivers.compliance.view';
-                $pdo->prepare("UPDATE role_permissions SET capabilities = ? WHERE LOWER(role_name) = LOWER('Traffic Officer')")
-                    ->execute(array(json_encode($caps)));
-            }
-        } catch (Exception $e) {
-            error_log('[ETEL][nfc] Traffic Officer capability self-heal failed: ' . $e->getMessage());
-        }
-    }
-}
-
 switch ($action) {
 
 case 'nfc_driver_status': {
     // POST: etel_id/phone - identifies whoever's card was scanned (the
-    // driver being checked). officer_etel_id/officer_phone - the
-    // confirming person, who already authenticated with their OWN
-    // EtelID password on the /m/{token} page before this call ever
-    // fires (see class-etelid-nfc.php's ajax_start 'driver_status'
-    // branch). Unlike the rest of the public profile, this data
-    // (license, compliance status) is only released to someone who
-    // holds the "Traffic Officer" role.
+    // driver being checked). EtelID also sends officer_etel_id/
+    // officer_phone (who's asking) - unused here, kept in the payload
+    // only because EtelID's own EtelID_DB::log() call already records
+    // it on that side.
+    //
+    // Unlike the rest of the public profile, this data (license,
+    // compliance status) is only released for a request EtelID already
+    // gated behind the confirming person holding the "Traffic Officer"
+    // role - see class-etelid-nfc.php's ajax_start 'driver_status'
+    // branch, checked directly against EtelGroup's own Employees-panel
+    // data before it ever calls in here. This endpoint trusts that gate
+    // the same way every other nfc_ action here trusts EtelID's own
+    // password check on the confirming person (nfc_require_service_key
+    // is the actual trust boundary throughout this file - only EtelID's
+    // server holds the key to reach any of these actions at all).
+    //
+    // An earlier version re-derived the officer's role independently by
+    // calling BACK into EtelID's own REST API mid-request - a
+    // self-referential HTTP round trip (EtelID -> Delivery -> EtelID)
+    // that can deadlock on shared hosting with a small PHP-FPM worker
+    // pool, which is exactly what happened in testing (a cURL timeout
+    // on EtelID's own outbound call to Delivery, stuck waiting on
+    // Delivery's nested call back to EtelID). It was also independently
+    // broken for a freshly-assigned officer with no pre-existing local
+    // Delivery account. Removed rather than patched further.
     nfc_require_service_key();
     $pdo = db();
-
-    $officer_etel_id = isset($body['officer_etel_id']) ? trim($body['officer_etel_id']) : '';
-    $officer_phone   = isset($body['officer_phone'])   ? trim($body['officer_phone'])   : '';
-    if (!$officer_etel_id && !$officer_phone) fail('officer_etel_id or officer_phone is required', 400);
-
-    /* Checked LIVE against Etel Group's own Employees panel first, via
-       the same bridge call admin_etelid_login uses (etelid_bridge_
-       check_role) - a role assigned there must work immediately for a
-       roadside check, without first requiring that officer to have
-       separately logged into Delivery's full admin dashboard once (the
-       only place a local users.staff_role/is_etelgroup_managed sync
-       would otherwise happen). This was a real bug: an officer freshly
-       assigned "Traffic Officer" in EtelGroup, who had never logged
-       into admin.html, got rejected here even though the assignment
-       was genuinely correct. */
-    require_once __DIR__ . '/../etelid_bridge.php';
-    $egRole = $officer_phone ? etelid_bridge_check_role('etel-delivery', $officer_phone) : null;
-    $isAuthorized = $egRole && isset($egRole['role_at']) && strcasecmp($egRole['role_at'], 'Traffic Officer') === 0;
-
-    if (!$isAuthorized) {
-        // Fallback for a legacy local admin account (never EtelGroup-
-        // managed) or one whose local sync already ran from a prior
-        // admin.html login - same role_permissions/staff_role check as
-        // everywhere else in this codebase.
-        $officer_user = nfc_find_or_create_user($pdo, $officer_etel_id, $officer_phone, '', false);
-        if ($officer_user) {
-            $userCols = etel_table_columns($pdo, 'users');
-            $officerSel = 'SELECT role'
-                . (in_array('staff_role', $userCols, true) ? ', staff_role' : '')
-                . (in_array('is_etelgroup_managed', $userCols, true) ? ', is_etelgroup_managed' : '')
-                . ' FROM users WHERE id = ?';
-            $os = $pdo->prepare($officerSel);
-            $os->execute(array($officer_user['id']));
-            $officerRow = $os->fetch(PDO::FETCH_ASSOC);
-            nfc_ensure_traffic_officer_capability($pdo);
-            if ($officerRow && $officerRow['role'] === 'admin' && user_has_capability($pdo, $officerRow, 'drivers.compliance.view')) {
-                $isAuthorized = true;
-            }
-        }
-    }
-
-    if (!$isAuthorized) {
-        fail('Traffic Officer access required to view driver compliance info.', 403);
-    }
 
     $etel_id = isset($body['etel_id']) ? trim($body['etel_id']) : '';
     $phone   = isset($body['phone'])   ? trim($body['phone'])   : '';
