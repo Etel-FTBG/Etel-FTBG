@@ -395,14 +395,20 @@ class Etelid_Nfc {
 
         /* "Driver Info" (traffic-officer compliance check): gated behind
            the scanning person's own EtelID login (same as every other
-           stage here) - unlike the page's name/photo, license and
-           commission info is not shown to a bare, unauthenticated tap.
-           Read-only on the Delivery side either way, so this is a single
-           round trip with no second confirm step. */
+           stage here) AND, on the Delivery side, behind actually holding
+           the "Traffic Officer" staff role there - unlike the page's
+           name/photo, license and compliance info is not shown to a bare
+           EtelID login alone. Delivery resolves and checks the officer's
+           role itself (officer_etel_id/officer_phone below); EtelID has
+           no visibility into Delivery's staff_role/role_permissions data
+           to pre-check it here. Read-only either way, so this is a
+           single round trip with no second confirm step. */
         if ('driver_status' === $stage) {
             $result = self::delivery_service_call('nfc_driver_status', array(
-                'etel_id' => $courier->etel_id,
-                'phone'   => $courier->phone,
+                'etel_id'         => $courier->etel_id,
+                'phone'           => $courier->phone,
+                'officer_etel_id' => $confirmer->etel_id,
+                'officer_phone'   => $confirmer->phone,
             ));
             if (is_wp_error($result)) {
                 wp_send_json_error(array('message' => $result->get_error_message()));

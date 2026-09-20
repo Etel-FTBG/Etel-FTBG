@@ -1843,6 +1843,69 @@ case 'admin_reject_driver_identity': {
     break;
 }
 
+/* ── Driver compliance (association dues / insurance) ──────────────
+   Feeds the Traffic Officer NFC "Driver Info" check (see
+   NfcController.php's nfc_driver_status). Admin sets each status after
+   confirming payment offline; the receipt photo is uploaded through the
+   existing generic api/upload.php the same way selfie_url/
+   license_photo_url already are, then its returned URL is submitted
+   here alongside the status. */
+case 'admin_list_driver_compliance': {
+    if ($u['role'] !== 'admin' || !user_has_capability($pdo, $u, 'users.view')) fail('Admin only', 403);
+    rides_add_missing_cols($pdo, 'ride_drivers', array(
+        'association_payment_status' => "association_payment_status ENUM('paid','unpaid') NOT NULL DEFAULT 'unpaid'",
+        'association_receipt_url'    => "association_receipt_url VARCHAR(500) DEFAULT ''",
+        'insurance_status'           => "insurance_status ENUM('paid','unpaid') NOT NULL DEFAULT 'unpaid'",
+        'insurance_receipt_url'      => "insurance_receipt_url VARCHAR(500) DEFAULT ''",
+    ));
+    $stmt = $pdo->prepare("SELECT u.id AS user_id, u.name, u.phone,
+        rd.vehicle_type, rd.vehicle_plate, rd.onboarded,
+        rd.association_payment_status, rd.association_receipt_url,
+        rd.insurance_status, rd.insurance_receipt_url
+        FROM users u JOIN ride_drivers rd ON rd.user_id = u.id
+        WHERE rd.onboarded = 1
+        ORDER BY u.name ASC");
+    $stmt->execute();
+    ok(array('drivers' => $stmt->fetchAll()));
+    break;
+}
+
+case 'admin_update_driver_compliance': {
+    if ($u['role'] !== 'admin' || !user_has_capability($pdo, $u, 'users.manage')) fail('Admin only', 403);
+    rides_add_missing_cols($pdo, 'ride_drivers', array(
+        'association_payment_status' => "association_payment_status ENUM('paid','unpaid') NOT NULL DEFAULT 'unpaid'",
+        'association_receipt_url'    => "association_receipt_url VARCHAR(500) DEFAULT ''",
+        'insurance_status'           => "insurance_status ENUM('paid','unpaid') NOT NULL DEFAULT 'unpaid'",
+        'insurance_receipt_url'      => "insurance_receipt_url VARCHAR(500) DEFAULT ''",
+    ));
+    $did = isset($body['user_id']) ? intval($body['user_id']) : 0;
+    if (!$did) fail('user_id is required');
+
+    $sets = array(); $vals = array();
+    if (isset($body['association_payment_status'])) {
+        $v = trim($body['association_payment_status']);
+        if (!in_array($v, array('paid', 'unpaid'), true)) fail('association_payment_status must be paid or unpaid');
+        $sets[] = 'association_payment_status=?'; $vals[] = $v;
+    }
+    if (isset($body['association_receipt_url'])) {
+        $sets[] = 'association_receipt_url=?'; $vals[] = substr(trim($body['association_receipt_url']), 0, 500);
+    }
+    if (isset($body['insurance_status'])) {
+        $v = trim($body['insurance_status']);
+        if (!in_array($v, array('paid', 'unpaid'), true)) fail('insurance_status must be paid or unpaid');
+        $sets[] = 'insurance_status=?'; $vals[] = $v;
+    }
+    if (isset($body['insurance_receipt_url'])) {
+        $sets[] = 'insurance_receipt_url=?'; $vals[] = substr(trim($body['insurance_receipt_url']), 0, 500);
+    }
+    if (empty($sets)) fail('No valid fields provided');
+
+    $vals[] = $did;
+    $pdo->prepare("UPDATE ride_drivers SET " . implode(',', $sets) . " WHERE user_id=?")->execute($vals);
+    ok(array('updated' => true));
+    break;
+}
+
 case 'driver_get_nearby_requests': {
     $radius = isset($body['radius_km']) ? floatval($body['radius_km']) : 8;
     if ($radius <= 0 || $radius > 50) $radius = 8;

@@ -45,6 +45,7 @@ function ridesLoad(){
   loadRideIssues();
   loadVehicleChanges();
   loadFlaggedIdentities();
+  loadDriverCompliance();
   var tb=document.getElementById('rides-tbody');
   if(tb)tb.innerHTML='<tr><td colspan="8" style="padding:40px;text-align:center;color:#B8B0A0">Loading...</td></tr>';
   api('admin_get_rides',{status:RS.status,search:RS.search,limit:RS.limit,offset:RS.page*RS.limit},
@@ -415,6 +416,119 @@ function rejectDriverIdentity(id){
   },function(msg){alert('Could not reject: '+(msg||'unknown error'));});
 }
 
+/* ── Driver compliance (association dues / insurance) ───────────────
+   Feeds the Traffic Officer NFC "Driver Info" check. Same review-panel
+   pattern as flagged identities right above, gated on the same
+   users.manage capability since this is a management action, not a
+   view - the Traffic Officer role only gets a separate, narrower
+   drivers.compliance.view capability checked server-side by
+   nfc_driver_status, and never sees this admin panel at all. */
+var DC={rows:[]};
+async function loadDriverCompliance(){
+  var wrap=document.getElementById('driver-compliance-wrap');
+  if(!wrap)return;
+  var caps = window.ETEL_CAPS || await window.ETEL_CAPS_PROMISE;
+  if (caps.indexOf('*')===-1 && caps.indexOf('users.manage')===-1) {
+    wrap.style.display='none';
+    var heading = wrap.previousElementSibling;
+    if (heading) heading.style.display='none';
+    return;
+  }
+  wrap.innerHTML='<div style="padding:20px;text-align:center;color:#B8B0A0">Loading…</div>';
+  api('admin_list_driver_compliance',{},function(d){
+    DC.rows=d.drivers||[];
+    renderDriverCompliance();
+  },function(msg){
+    wrap.innerHTML='<div style="padding:16px;color:#e74c3c">Could not load driver compliance: '+esc(msg||'API error')+'</div>';
+  });
+}
+function renderDriverCompliance(){
+  var wrap=document.getElementById('driver-compliance-wrap');
+  if(!wrap)return;
+  if(!DC.rows.length){
+    wrap.innerHTML='<div style="padding:24px;text-align:center;color:#B8B0A0">No onboarded drivers yet.</div>';
+    return;
+  }
+  var trs=DC.rows.map(function(r){
+    var assoc=r.association_payment_status==='paid'
+      ? '<span style="color:#2ECC71">Paid</span>' : '<span style="color:#e74c3c">Unpaid</span>';
+    var ins=r.insurance_status==='paid'
+      ? '<span style="color:#2ECC71">Paid</span>' : '<span style="color:#e74c3c">Unpaid</span>';
+    if(r.association_receipt_url)assoc+=' <a href="'+esc(r.association_receipt_url)+'" target="_blank" style="color:#4ECDC4;font-size:11px">receipt</a>';
+    if(r.insurance_receipt_url)ins+=' <a href="'+esc(r.insurance_receipt_url)+'" target="_blank" style="color:#4ECDC4;font-size:11px">receipt</a>';
+    return '<tr>'+
+      '<td>'+esc(r.name||'—')+'<br><small style="color:#9A9AAE">'+esc(r.phone||'')+'</small></td>'+
+      '<td style="color:#9A9AAE">'+esc(r.vehicle_type||'—')+' · '+esc(r.vehicle_plate||'')+'</td>'+
+      '<td>'+assoc+'</td>'+
+      '<td>'+ins+'</td>'+
+      '<td style="white-space:nowrap">'+
+        '<button class="btn" style="padding:6px 10px;font-size:12px;margin-right:6px" onclick="dcSetCompliance('+r.user_id+',\'association\')">Set Association</button>'+
+        '<button class="btn" style="padding:6px 10px;font-size:12px" onclick="dcSetCompliance('+r.user_id+',\'insurance\')">Set Insurance</button>'+
+      '</td>'+
+      '</tr>';
+  }).join('');
+  wrap.innerHTML='<div style="overflow-x:auto;border-radius:14px;border:1px solid rgba(255,255,255,.08)">'+
+    '<table style="width:100%;border-collapse:collapse;font-size:13px;font-family:Outfit,sans-serif">'+
+    '<thead><tr style="border-bottom:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04)">'+
+    '<th style="padding:12px 14px;text-align:left;color:#9A9AAE;font-weight:700">Driver</th>'+
+    '<th style="padding:12px 14px;text-align:left;color:#9A9AAE;font-weight:700">Vehicle</th>'+
+    '<th style="padding:12px 14px;text-align:left;color:#9A9AAE;font-weight:700">Association Due</th>'+
+    '<th style="padding:12px 14px;text-align:left;color:#9A9AAE;font-weight:700">Insurance</th>'+
+    '<th style="padding:12px 14px;text-align:left;color:#9A9AAE;font-weight:700">Action</th>'+
+    '</tr></thead><tbody>'+trs+'</tbody></table></div>';
+}
+function dcApplyCompliance(userId,field,status,receiptUrl){
+  var body={user_id:userId};
+  if(field==='association'){
+    body.association_payment_status=status;
+    if(receiptUrl)body.association_receipt_url=receiptUrl;
+  }else{
+    body.insurance_status=status;
+    if(receiptUrl)body.insurance_receipt_url=receiptUrl;
+  }
+  api('admin_update_driver_compliance',body,function(){
+    loadDriverCompliance();
+  },function(msg){alert('Could not update: '+(msg||'unknown error'));});
+}
+function dcSetCompliance(userId,field){
+  var status=prompt('Set '+field+' status to "paid" or "unpaid":','paid');
+  if(status===null)return;
+  status=status.trim().toLowerCase();
+  if(status!=='paid'&&status!=='unpaid'){alert('Must be "paid" or "unpaid".');return;}
+
+  if(!confirm('Attach a receipt photo now? Cancel to save the status without one.')){
+    dcApplyCompliance(userId,field,status,'');
+    return;
+  }
+  var input=document.getElementById('dc-file-input');
+  if(!input){
+    input=document.createElement('input');
+    input.type='file';
+    input.accept='image/*';
+    input.id='dc-file-input';
+    input.style.display='none';
+    document.body.appendChild(input);
+  }
+  input.onchange=function(){
+    var file=input.files&&input.files[0];
+    input.value='';
+    if(!file){dcApplyCompliance(userId,field,status,'');return;}
+    var token=typeof Auth!=='undefined'?Auth.getToken():'';
+    var uploadBase=(window.ETEL&&window.ETEL.api)?window.ETEL.api.replace('boot.php','upload.php'):'/delivery/api/upload.php';
+    var fd=new FormData();
+    fd.append('image',file);
+    fd.append('type','driver_'+field+'_receipt');
+    fetch(uploadBase,{method:'POST',headers:{'Authorization':'Bearer '+token},body:fd})
+      .then(function(r){return r.json();})
+      .then(function(d){
+        if(!d||!d.success)throw new Error(d&&d.message?d.message:'Upload failed');
+        dcApplyCompliance(userId,field,status,d.data.url);
+      })
+      .catch(function(e){alert('Receipt upload failed: '+(e.message||'unknown error'));});
+  };
+  input.click();
+}
+
 window.ridesIssuesFilter=ridesIssuesFilter;
 window.resolveRideIssue=resolveRideIssue;
 window.approveVehicleChange=approveVehicleChange;
@@ -422,6 +536,8 @@ window.rejectVehicleChange=rejectVehicleChange;
 window.loadFlaggedIdentities=loadFlaggedIdentities;
 window.approveDriverIdentity=approveDriverIdentity;
 window.rejectDriverIdentity=rejectDriverIdentity;
+window.loadDriverCompliance=loadDriverCompliance;
+window.dcSetCompliance=dcSetCompliance;
 
 /* Auto-load stats when the rides panel becomes active.
    Called both by switchPage and by a MutationObserver watching display changes. */
