@@ -197,6 +197,25 @@ case 'nfc_driver_status': {
         );
     }
 
+    // EtelPay wallet - checked LIVE against EtelPay's own database,
+    // same "never a stale/guessed status" discipline as the
+    // association-dues bridge above. Deliberately never surfaces a
+    // balance - see etelpay_bridge.php/service_check_wallet.php's own
+    // comments on why: a driver's wallet balance has no bearing on a
+    // roadside compliance check.
+    require_once __DIR__ . '/../etelpay_bridge.php';
+    $ep = etelpay_bridge_check_wallet($phone ?: $user['phone']);
+    if ($ep === null) {
+        $wallet = array('status' => 'unavailable');
+    } elseif (empty($ep['has_wallet'])) {
+        $wallet = array('status' => 'not_registered');
+    } else {
+        $wallet = array(
+            'status'     => $ep['status'],     // active | suspended | ...
+            'kyc_status' => isset($ep['kyc_status']) ? $ep['kyc_status'] : null,
+        );
+    }
+
     ok(array(
         'is_driver'             => true,
         'onboarded'             => intval($d['onboarded']) === 1,
@@ -207,6 +226,7 @@ case 'nfc_driver_status': {
         'license_photo_url'     => $d['license_photo_url'],
         'identity_match'        => $d['identity_match'] ? $d['identity_match'] : 'unverified',
         'association'           => $association,
+        'wallet'                => $wallet,
         'insurance'             => $doc($d['insurance_expiry_date'], $d['insurance_receipt_url']),
         'technical_inspection'  => $doc($d['technical_inspection_expiry_date'], $d['technical_inspection_receipt_url']),
         'road_fund'             => $doc($d['road_fund_expiry_date'], $d['road_fund_receipt_url']),

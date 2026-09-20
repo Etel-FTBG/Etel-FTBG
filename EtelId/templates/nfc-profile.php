@@ -602,6 +602,18 @@ $nfc_nonce = wp_create_nonce('etelid_public');
     }
     row('Association Due', assocText, assocClass, assocReceiptUrl);
 
+    // EtelPay wallet - live from EtelPay's own database, same pattern
+    // as Association Due. Deliberately shows status only, never a
+    // balance (see etelpay_bridge.php's own comment on why) - this is
+    // an identity/compliance check, not a financial one.
+    var w = d.wallet || {};
+    var walletText, walletClass;
+    if (w.status === 'active') { walletText = w.kyc_status === 'verified' ? 'Active - KYC Verified' : 'Active - KYC Pending'; walletClass = w.kyc_status === 'verified' ? 'nfc-badge-ok' : 'nfc-badge-unverified'; }
+    else if (w.status === 'not_registered') { walletText = 'No EtelPay wallet'; walletClass = 'nfc-badge-unverified'; }
+    else if (w.status === 'unavailable') { walletText = 'Unavailable'; walletClass = 'nfc-badge-unverified'; }
+    else { walletText = w.status ? w.status.charAt(0).toUpperCase() + w.status.slice(1) : 'Unavailable'; walletClass = 'nfc-badge-bad'; }
+    row('EtelPay Wallet', walletText, walletClass);
+
     function docRow(label, doc) {
       doc = doc || {};
       var text, cls;
