@@ -81,22 +81,81 @@ if (!function_exists('nfc_find_or_create_user')) {
     }
 }
 
-/* Needed by nfc_start_ride below (rides_get_active_for_driver) - this
-   file is required directly by boot.php's router (see the nfc_ case),
-   never through RideController.php, so its helper libs are not already
-   loaded the way they would be for a normal ride_* action. */
+/* Needed by nfc_start_ride below (rides_get_active_for_driver) and by
+   nfc_driver_status's schema self-heal - this file is required directly
+   by boot.php's router (see the nfc_ case), never through
+   RideController.php, so its helper libs are not already loaded the way
+   they would be for a normal ride_* action. */
 require_once __DIR__ . '/../lib/ride_fare.php';
+require_once __DIR__ . '/../lib/schema_helpers.php';
+
+/* One-time (per-request-cheap, idempotent) grant of the capability the
+   Traffic Officer staff role needs for nfc_driver_status below. Migration
+   018_role_permissions.sql seeded this role with only "orders.view" -
+   this adds "drivers.compliance.view" without disturbing whatever an
+   admin has since customized the row to, mirroring rides_add_missing_cols'
+   self-heal-without-clobbering approach but for a JSON array field
+   instead of a table column. */
+if (!function_exists('nfc_ensure_traffic_officer_capability')) {
+    function nfc_ensure_traffic_officer_capability($pdo) {
+        try {
+            $s = $pdo->prepare("SELECT capabilities FROM role_permissions WHERE LOWER(role_name) = LOWER('Traffic Officer') LIMIT 1");
+            $s->execute();
+            $row = $s->fetch();
+            if (!$row) {
+                $pdo->prepare("INSERT IGNORE INTO role_permissions (role_name, capabilities) VALUES ('Traffic Officer', ?)")
+                    ->execute(array(json_encode(array('orders.view', 'drivers.compliance.view'))));
+                return;
+            }
+            $caps = json_decode($row['capabilities'], true);
+            if (!is_array($caps)) $caps = array();
+            if (!in_array('*', $caps, true) && !in_array('drivers.compliance.view', $caps, true)) {
+                $caps[] = 'drivers.compliance.view';
+                $pdo->prepare("UPDATE role_permissions SET capabilities = ? WHERE LOWER(role_name) = LOWER('Traffic Officer')")
+                    ->execute(array(json_encode($caps)));
+            }
+        } catch (Exception $e) {
+            error_log('[ETEL][nfc] Traffic Officer capability self-heal failed: ' . $e->getMessage());
+        }
+    }
+}
 
 switch ($action) {
 
 case 'nfc_driver_status': {
-    // POST: etel_id, phone - identifies whoever's card was scanned.
-    // Read-only, no confirming password required (same exposure level as
-    // the rest of the public /m/{token} profile - name/photo already
-    // show with no login). Used by the traffic-officer-facing card
-    // display: shows nothing (is_driver=false) for a non-driver card.
+    // POST: etel_id/phone - identifies whoever's card was scanned (the
+    // driver being checked). officer_etel_id/officer_phone - the
+    // confirming person, who already authenticated with their OWN
+    // EtelID password on the /m/{token} page before this call ever
+    // fires (see class-etelid-nfc.php's ajax_start 'driver_status'
+    // branch). Unlike the rest of the public profile, this data
+    // (license, compliance status) is only released to someone who
+    // holds Delivery's "Traffic Officer" staff role (or a full,
+    // non-EtelGroup-managed admin account) - a bare card tap, or a tap
+    // confirmed by an ordinary EtelID login, gets a 403.
     nfc_require_service_key();
     $pdo = db();
+
+    $officer_etel_id = isset($body['officer_etel_id']) ? trim($body['officer_etel_id']) : '';
+    $officer_phone   = isset($body['officer_phone'])   ? trim($body['officer_phone'])   : '';
+    if (!$officer_etel_id && !$officer_phone) fail('officer_etel_id or officer_phone is required', 400);
+
+    $officer_user = nfc_find_or_create_user($pdo, $officer_etel_id, $officer_phone, '', false);
+    if (!$officer_user) fail('No Delivery account found for this EtelID. Sign in once in the Delivery admin panel first.', 404);
+
+    $userCols = etel_table_columns($pdo, 'users');
+    $officerSel = 'SELECT role'
+        . (in_array('staff_role', $userCols, true) ? ', staff_role' : '')
+        . (in_array('is_etelgroup_managed', $userCols, true) ? ', is_etelgroup_managed' : '')
+        . ' FROM users WHERE id = ?';
+    $os = $pdo->prepare($officerSel);
+    $os->execute(array($officer_user['id']));
+    $officerRow = $os->fetch(PDO::FETCH_ASSOC);
+
+    nfc_ensure_traffic_officer_capability($pdo);
+    if (!$officerRow || $officerRow['role'] !== 'admin' || !user_has_capability($pdo, $officerRow, 'drivers.compliance.view')) {
+        fail('Traffic Officer access required to view driver compliance info.', 403);
+    }
 
     $etel_id = isset($body['etel_id']) ? trim($body['etel_id']) : '';
     $phone   = isset($body['phone'])   ? trim($body['phone'])   : '';
@@ -105,9 +164,18 @@ case 'nfc_driver_status': {
     $user = nfc_find_or_create_user($pdo, $etel_id, $phone, '', false);
     if (!$user) { ok(array('is_driver' => false)); break; }
 
+    rides_add_missing_cols($pdo, 'ride_drivers', array(
+        'association_payment_status' => "association_payment_status ENUM('paid','unpaid') NOT NULL DEFAULT 'unpaid'",
+        'association_receipt_url'    => "association_receipt_url VARCHAR(500) DEFAULT ''",
+        'insurance_status'           => "insurance_status ENUM('paid','unpaid') NOT NULL DEFAULT 'unpaid'",
+        'insurance_receipt_url'      => "insurance_receipt_url VARCHAR(500) DEFAULT ''",
+    ));
+
     $s = $pdo->prepare(
-        'SELECT vehicle_type, vehicle_plate, license_name, license_number,
-                identity_match, onboarded, commission_owed
+        'SELECT vehicle_type, vehicle_plate, license_name, license_number, license_photo_url,
+                identity_match, onboarded,
+                association_payment_status, association_receipt_url,
+                insurance_status, insurance_receipt_url
          FROM ride_drivers WHERE user_id = ?'
     );
     $s->execute(array($user['id']));
@@ -120,18 +188,20 @@ case 'nfc_driver_status': {
         $tail = substr($license_no, -4);
         $masked = str_repeat('*', max(0, strlen($license_no) - strlen($tail))) . $tail;
     }
-    $owed = round(floatval(isset($d['commission_owed']) ? $d['commission_owed'] : 0), 2);
 
     ok(array(
-        'is_driver'       => true,
-        'onboarded'       => intval($d['onboarded']) === 1,
-        'vehicle_type'    => $d['vehicle_type'],
-        'vehicle_plate'   => $d['vehicle_plate'],
-        'license_name'    => $d['license_name'],
-        'license_masked'  => $masked,
-        'identity_match'  => $d['identity_match'] ? $d['identity_match'] : 'unverified',
-        'payment_status'  => $owed > 0 ? 'unpaid' : 'paid',
-        'commission_owed' => $owed,
+        'is_driver'                  => true,
+        'onboarded'                  => intval($d['onboarded']) === 1,
+        'vehicle_type'               => $d['vehicle_type'],
+        'vehicle_plate'              => $d['vehicle_plate'],
+        'license_name'               => $d['license_name'],
+        'license_masked'             => $masked,
+        'license_photo_url'          => $d['license_photo_url'],
+        'identity_match'             => $d['identity_match'] ? $d['identity_match'] : 'unverified',
+        'association_payment_status' => $d['association_payment_status'] ? $d['association_payment_status'] : 'unpaid',
+        'association_receipt_url'    => $d['association_receipt_url'],
+        'insurance_status'           => $d['insurance_status'] ? $d['insurance_status'] : 'unpaid',
+        'insurance_receipt_url'      => $d['insurance_receipt_url'],
     ));
     break;
 }

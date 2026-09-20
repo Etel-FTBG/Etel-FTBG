@@ -277,6 +277,24 @@ $nfc_nonce = wp_create_nonce('etelid_public');
   .nfc-badge-ok, .nfc-badge-matched { color: #9e9; }
   .nfc-badge-bad, .nfc-badge-mismatch { color: #e88; }
   .nfc-badge-unverified { color: #F2CC6B; }
+  .nfc-license-photo {
+    display: block;
+    width: 100%;
+    max-height: 220px;
+    object-fit: contain;
+    border-radius: 8px;
+    border: 1px solid rgba(212,175,55,0.3);
+    background: rgba(0,0,0,0.25);
+    margin-bottom: 10px;
+  }
+  .nfc-receipt-link {
+    display: block;
+    font-size: 11px;
+    color: #4ECDC4;
+    text-decoration: underline;
+    text-align: right;
+    margin: -6px 0 6px;
+  }
 </style>
 </head>
 <body>
@@ -462,7 +480,15 @@ $nfc_nonce = wp_create_nonce('etelid_public');
 
     var wrap = document.createElement('div');
 
-    function row(label, valueText, badgeClass) {
+    if (d.license_photo_url) {
+      var photo = document.createElement('img');
+      photo.src = d.license_photo_url;
+      photo.alt = 'Driving license';
+      photo.className = 'nfc-license-photo';
+      wrap.appendChild(photo);
+    }
+
+    function row(label, valueText, badgeClass, receiptUrl) {
       var r = document.createElement('div');
       r.className = 'nfc-driver-row';
       var l = document.createElement('span');
@@ -473,6 +499,15 @@ $nfc_nonce = wp_create_nonce('etelid_public');
       r.appendChild(l);
       r.appendChild(v);
       wrap.appendChild(r);
+      if (receiptUrl) {
+        var link = document.createElement('a');
+        link.href = receiptUrl;
+        link.target = '_blank';
+        link.rel = 'noopener';
+        link.className = 'nfc-receipt-link';
+        link.textContent = 'View receipt';
+        wrap.appendChild(link);
+      }
     }
 
     row('Vehicle', (d.vehicle_type || '') + (d.vehicle_plate ? ' - ' + d.vehicle_plate : ''));
@@ -481,8 +516,12 @@ $nfc_nonce = wp_create_nonce('etelid_public');
     }
     row('Identity', d.identity_match ? d.identity_match.charAt(0).toUpperCase() + d.identity_match.slice(1) : 'Unverified',
       'nfc-badge-' + (d.identity_match || 'unverified'));
-    row('Commission', d.payment_status === 'paid' ? 'Paid' : ('Unpaid - ETB ' + parseFloat(d.commission_owed || 0).toFixed(2)),
-      d.payment_status === 'paid' ? 'nfc-badge-ok' : 'nfc-badge-bad');
+    row('Association Due', d.association_payment_status === 'paid' ? 'Paid' : 'Unpaid',
+      d.association_payment_status === 'paid' ? 'nfc-badge-ok' : 'nfc-badge-bad',
+      d.association_receipt_url);
+    row('Insurance', d.insurance_status === 'paid' ? 'Paid' : 'Unpaid',
+      d.insurance_status === 'paid' ? 'nfc-badge-ok' : 'nfc-badge-bad',
+      d.insurance_receipt_url);
 
     doneMsg.appendChild(wrap);
   }
