@@ -412,7 +412,8 @@ class Etelid_Nfc {
         $ident  = isset($_POST['identifier']) ? sanitize_text_field(wp_unslash($_POST['identifier'])) : '';
         $pass   = isset($_POST['password']) ? (string) $_POST['password'] : '';
 
-        if (!$token || !in_array($stage, array('pickup', 'delivery', 'ride_start', 'driver_status', 'etelpay_charge'), true) || !$ident || !$pass) {
+        $allowedStages = array('pickup', 'delivery', 'ride_start', 'driver_status', 'etelpay_charge', 'etelpay_payout');
+        if (!$token || !in_array($stage, $allowedStages, true) || !$ident || !$pass) {
             wp_send_json_error(array('message' => 'Missing required fields.'));
         }
 
@@ -459,38 +460,13 @@ class Etelid_Nfc {
             ));
         }
 
-        /* "Driver Info" (traffic-officer compliance check): gated behind
-           the scanning person's own EtelID login (same as every other
-           stage here) AND, on the Delivery side, behind actually holding
-           the "Traffic Officer" staff role there - unlike the page's
-           name/photo, license and compliance info is not shown to a bare
-           EtelID login alone. Delivery resolves and checks the officer's
-           role itself (officer_etel_id/officer_phone below); EtelID has
-           no visibility into Delivery's staff_role/role_permissions data
-           to pre-check it here. Read-only either way, so this is a
-           single round trip with no second confirm step. */
-        if ('driver_status' === $stage) {
-            if (!self::has_company_role($confirmer->phone, 'etel-delivery', 'Traffic Officer')) {
-                wp_send_json_error(array('message' => 'Traffic Officer access required to view driver compliance info.'));
-            }
-            $result = self::delivery_service_call('nfc_driver_status', array(
-                'etel_id'         => $courier->etel_id,
-                'phone'           => $courier->phone,
-                'officer_etel_id' => $confirmer->etel_id,
-                'officer_phone'   => $confirmer->phone,
-            ));
-            if (is_wp_error($result)) {
-                wp_send_json_error(array('message' => $result->get_error_message()));
-            }
-            EtelID_DB::log($confirmer->id, $confirmer->etel_id, 'nfc_driver_status', 'NFC card scan - driver info checked for ' . $courier->full_name);
-            wp_send_json_success(array('driver_status' => $result));
-        }
-
-        /* EtelPay tap-to-pay: does NOT charge anything yet, even though
-           the receiver's EtelID password just checked out above - money
-           only moves once the PAYER (whoever's card was tapped) also
-           proves their own EtelID password, in ajax_charge_confirm() below.
-           This step only establishes who is collecting the payment and
+        /* EtelPay tap-to-pay CHARGE (pay IN): does NOT charge anything
+           yet, even though the receiver's (operator's) EtelID password
+           just checked out above - money only moves once the PAYER
+           (whoever's card was tapped) also proves their own EtelID
+           password, in ajax_charge_confirm() below. This step only
+           establishes who is collecting the payment (into THEIR OWN
+           EtelPay wallet - there is no shared business account) and
            for how much, same short-lived single-use action_token
            pattern as every other stage here. */
         if ('etelpay_charge' === $stage) {
@@ -518,6 +494,67 @@ class Etelid_Nfc {
                 'action_token'   => $action_token,
                 'payer_name'     => $courier->full_name,
                 'amount'         => $amount,
+            ));
+        }
+
+        /* "Driver Info" (traffic-officer compliance check): gated behind
+           the scanning person's own EtelID login (same as every other
+           stage here) AND, on the Delivery side, behind actually holding
+           the "Traffic Officer" staff role there - unlike the page's
+           name/photo, license and compliance info is not shown to a bare
+           EtelID login alone. Delivery resolves and checks the officer's
+           role itself (officer_etel_id/officer_phone below); EtelID has
+           no visibility into Delivery's staff_role/role_permissions data
+           to pre-check it here. Read-only either way, so this is a
+           single round trip with no second confirm step. */
+        if ('driver_status' === $stage) {
+            if (!self::has_company_role($confirmer->phone, 'etel-delivery', 'Traffic Officer')) {
+                wp_send_json_error(array('message' => 'Traffic Officer access required to view driver compliance info.'));
+            }
+            $result = self::delivery_service_call('nfc_driver_status', array(
+                'etel_id'         => $courier->etel_id,
+                'phone'           => $courier->phone,
+                'officer_etel_id' => $confirmer->etel_id,
+                'officer_phone'   => $confirmer->phone,
+            ));
+            if (is_wp_error($result)) {
+                wp_send_json_error(array('message' => $result->get_error_message()));
+            }
+            EtelID_DB::log($confirmer->id, $confirmer->etel_id, 'nfc_driver_status', 'NFC card scan - driver info checked for ' . $courier->full_name);
+            wp_send_json_success(array('driver_status' => $result));
+        }
+
+        /* EtelPay tap-to-pay PAYOUT (pay OUT, e.g. a driver's earnings):
+           the mirror image of 'etelpay_charge' - here it's the
+           OPERATOR's own money leaving THEIR OWN EtelPay wallet, so
+           their own login above both identifies whose wallet pays AND
+           authorizes the debit (the same "authorize whoever's money is
+           leaving" rule 'etelpay_charge' + ajax_charge_confirm() use,
+           just with the two roles swapped) - no fixed business/till
+           account, no separate company-role gate. The cardholder just
+           receives, no login needed from them for that. Single round
+           trip, no second confirm step, money moves immediately. */
+        if ('etelpay_payout' === $stage) {
+            $amount = isset($_POST['amount']) ? (float) $_POST['amount'] : 0;
+            $note   = isset($_POST['note']) ? sanitize_text_field(wp_unslash($_POST['note'])) : '';
+            if ($amount <= 0) wp_send_json_error(array('message' => 'Enter an amount greater than zero.'));
+
+            $result = self::etelpay_service_call('service_nfc_charge.php', array(
+                'receiver_phone' => $courier->phone,    // cardholder RECEIVES
+                'payer_phone'    => $confirmer->phone,  // operator's OWN wallet PAYS
+                'amount'         => $amount,
+                'note'           => $note,
+            ));
+            if (is_wp_error($result)) {
+                wp_send_json_error(array('message' => $result->get_error_message()));
+            }
+
+            EtelID_DB::log($confirmer->id, $confirmer->etel_id, 'nfc_etelpay_payout', 'NFC tap-to-pay: paid out ' . $amount . ' ETB to ' . $courier->full_name . ', tx ' . (isset($result['tx_ref']) ? $result['tx_ref'] : '?'));
+
+            wp_send_json_success(array(
+                'payout_done' => true,
+                'message'     => 'Paid ' . $amount . ' ETB to ' . $courier->full_name . '.',
+                'tx_ref'      => isset($result['tx_ref']) ? $result['tx_ref'] : null,
             ));
         }
 
@@ -632,7 +669,7 @@ class Etelid_Nfc {
             wp_send_json_error(array('message' => $result->get_error_message()));
         }
 
-        EtelID_DB::log($data['confirmer_id'], $data['confirmer_etel_id'], 'nfc_etelpay_charge', 'NFC tap-to-pay: charged ' . $data['courier_phone'] . ' ' . $data['amount'] . ' ETB, tx ' . (isset($result['tx_ref']) ? $result['tx_ref'] : '?'));
+        EtelID_DB::log($payer->id, $payer->etel_id, 'nfc_etelpay_charge', 'NFC tap-to-pay: charged ' . $data['courier_phone'] . ' ' . $data['amount'] . ' ETB, tx ' . (isset($result['tx_ref']) ? $result['tx_ref'] : '?'));
 
         wp_send_json_success(array(
             'message' => 'Payment of ' . $data['amount'] . ' ETB received.',

@@ -329,6 +329,8 @@ $nfc_nonce = wp_create_nonce('etelid_public');
           <button type="button" class="nfc-btn primary" data-stage="driver_status">Driver Info</button>
           <p class="nfc-role-label">Collect Payment</p>
           <button type="button" class="nfc-btn primary" data-stage="etelpay_charge">Charge via EtelPay</button>
+          <p class="nfc-role-label">Pay Driver / Cardholder</p>
+          <button type="button" class="nfc-btn primary" data-stage="etelpay_payout">Pay Out via EtelPay</button>
         </div>
 
         <div id="nfc-step-charge-amount" class="nfc-step">
@@ -436,10 +438,14 @@ $nfc_nonce = wp_create_nonce('etelid_public');
   for (var m = 0; m < menuBtns.length; m++) {
     menuBtns[m].addEventListener('click', function () {
       stage = this.getAttribute('data-stage');
-      // EtelPay charge needs an amount first - the operator's own
-      // EtelID login (nfc-step-login) comes after, same as every other
-      // stage, since it's what identifies who is COLLECTING the money.
-      showStep(stage === 'etelpay_charge' ? 'nfc-step-charge-amount' : 'nfc-step-login');
+      // Both EtelPay stages need an amount first, then the OPERATOR's
+      // own EtelID login (nfc-step-login) - same trust level as every
+      // other stage here, since there is no shared business account:
+      // Charge collects into the operator's own wallet, Payout pays
+      // out of the operator's own wallet, so identifying/authorizing
+      // the operator always comes right after the amount.
+      var etelpayStages = (stage === 'etelpay_charge' || stage === 'etelpay_payout');
+      showStep(etelpayStages ? 'nfc-step-charge-amount' : 'nfc-step-login');
     });
   }
 
@@ -467,7 +473,7 @@ $nfc_nonce = wp_create_nonce('etelid_public');
     this.disabled = true;
     var self = this;
     var postData = { token: TOKEN, stage: stage, identifier: ident, password: pass };
-    if (stage === 'etelpay_charge') { postData.amount = chargeAmount; postData.note = chargeNote; }
+    if (stage === 'etelpay_charge' || stage === 'etelpay_payout') { postData.amount = chargeAmount; postData.note = chargeNote; }
     post('etelid_nfc_start', postData)
       .then(function (res) {
         self.disabled = false;
@@ -486,6 +492,14 @@ $nfc_nonce = wp_create_nonce('etelid_public');
 
         if (res.data.driver_status) {
           renderDriverStatus(res.data.driver_status);
+          showStep('nfc-step-done');
+          return;
+        }
+
+        if (res.data.payout_done) {
+          var payoutMsg = document.getElementById('nfc-done-msg');
+          payoutMsg.className = 'nfc-msg ok';
+          payoutMsg.textContent = res.data.message || 'Payment sent.';
           showStep('nfc-step-done');
           return;
         }
