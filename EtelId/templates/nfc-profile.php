@@ -18,6 +18,23 @@ $has_member = !empty($member);
 $nfc_token = (!empty($card) && isset($card->token)) ? esc_attr($card->token) : '';
 $nfc_ajax_url = esc_url(admin_url('admin-ajax.php'));
 $nfc_nonce = wp_create_nonce('etelid_public');
+
+/* Cross-company brand medallions - each service row below wears the
+   real logo of the Etel Group product it actually hands the request
+   to, not a generic icon, so the card reads as one federated system
+   rather than a single-app menu. Etel Madeya's public path is
+   '/Etel-Madeya' (hyphenated) on the live site even though this repo
+   folder is 'EtelMadeya' - same base URL class-etelid-nfc.php's own
+   madeya_service_call() already calls out to. */
+$home_parts = wp_parse_url(home_url());
+$site_root  = (isset($home_parts['scheme']) ? $home_parts['scheme'] : 'https') . '://'
+            . (isset($home_parts['host']) ? $home_parts['host'] : $_SERVER['HTTP_HOST']);
+$logo_group    = $site_root . '/EtelGroup/icons/etelgroup-logo.png';
+$logo_delivery = defined('ETELID_URL') ? ETELID_URL . 'public/images/etel-delivery-coin.webp' : '';
+$logo_ride     = defined('ETELID_URL') ? ETELID_URL . 'public/images/logo-ride.webp' : '';
+$logo_driver   = defined('ETELID_URL') ? ETELID_URL . 'public/images/logo-driver.webp' : '';
+$logo_etelpay  = $site_root . '/Etel.Pay/wallet/logo.png';
+$logo_madeya   = $site_root . '/Etel-Madeya/assets/images/etel-madeya-logo-sm.webp';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -26,272 +43,443 @@ $nfc_nonce = wp_create_nonce('etelid_public');
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>EtelID</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
 <style>
   :root {
     --carbon-1: #030205;
     --carbon-2: #0d0d0d;
     --carbon-3: #0a0703;
     --carbon-4: #130d05;
+    --carbon-5: #1b1309;
     --gold-1: #C8960C;
     --gold-2: #D4AF37;
     --gold-3: #F2CC6B;
+    --gold-4: #FFF6D9;
     --gold-deep-1: #A07820;
     --gold-deep-2: #C9A227;
+    --ink: #f2e8d0;
+    --ink-dim: rgba(242,232,208,0.68);
+    --ink-faint: rgba(242,232,208,0.5);
+    --ok: #7ee8a8;
+    --bad: #ff8a7a;
   }
   * { box-sizing: border-box; }
   html, body {
     margin: 0;
     padding: 0;
     min-height: 100%;
-    background: linear-gradient(155deg,#2A1600 0%,#5A3A08 15%,#9A6818 30%,#C8922A 44%,#D4AF37 50%,#C8922A 56%,#9A6818 70%,#5A3A08 85%,#2A1600 100%);
-    font-family: 'JetBrains Mono', monospace;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 24px;
   }
+  body {
+    background:
+      radial-gradient(900px 620px at 50% -8%, rgba(255,246,217,0.10), transparent 60%),
+      radial-gradient(1100px 800px at 50% 112%, rgba(0,0,0,0.55), transparent 60%),
+      linear-gradient(155deg,#1c1100 0%,#3d2705 14%,#7a5012 28%,#b98420 42%,#D4AF37 50%,#b98420 58%,#7a5012 72%,#3d2705 86%,#1c1100 100%);
+    background-attachment: fixed;
+    font-family: 'Manrope', system-ui, sans-serif;
+    color: var(--ink);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 40px 20px 32px;
+  }
+  ::selection { background: rgba(212,175,55,0.38); color: #1b1309; }
+  ::-webkit-scrollbar { width: 9px; height: 9px; }
+  ::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); }
+  ::-webkit-scrollbar-thumb { background: linear-gradient(var(--gold-deep-1), var(--gold-2)); border-radius: 8px; }
+  a { color: inherit; }
+  :focus-visible { outline: 2px solid var(--gold-3); outline-offset: 2px; border-radius: 4px; }
+
+  /* ---------------- Brand header: the federated Etel Group mark,
+     large and unmissable above the card itself - the card is a single
+     credential inside a bigger system, not the whole story. -------- */
+  .brand-hero {
+    width: 100%;
+    max-width: 460px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    margin-bottom: 28px;
+  }
+  .brand-hero-logo-wrap {
+    position: relative;
+    width: 132px;
+    height: 132px;
+    margin-bottom: 14px;
+  }
+  .brand-hero-logo-wrap::before {
+    content: "";
+    position: absolute;
+    inset: -22px;
+    background: radial-gradient(circle, rgba(255,246,217,0.55) 0%, rgba(255,246,217,0.14) 45%, transparent 72%);
+    filter: blur(2px);
+  }
+  .brand-hero-logo {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    filter: drop-shadow(0 10px 26px rgba(0,0,0,0.45));
+  }
+  .brand-hero-word {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: clamp(22px, 6vw, 28px);
+    letter-spacing: 4px;
+    color: #1b1309;
+    text-shadow: 0 1px 0 rgba(255,255,255,0.35);
+  }
+  .brand-hero-word span { color: #fff; }
+  .brand-hero-tag {
+    margin-top: 6px;
+    font-family: 'Manrope', sans-serif;
+    font-size: 12.5px;
+    font-weight: 600;
+    letter-spacing: 1.6px;
+    text-transform: uppercase;
+    color: rgba(27,19,9,0.72);
+  }
+
+  /* ---------------------------- Card ---------------------------- */
   .card {
     position: relative;
     width: 100%;
-    max-width: 380px;
-    background: linear-gradient(165deg, var(--carbon-4) 0%, var(--carbon-3) 100%);
-    border: 1px solid rgba(212,175,55,0.35);
-    border-radius: 18px;
+    max-width: 420px;
+    background:
+      radial-gradient(620px 260px at 50% -10%, rgba(255,246,217,0.07), transparent 60%),
+      linear-gradient(165deg, var(--carbon-5) 0%, var(--carbon-3) 55%, var(--carbon-4) 100%);
+    border-radius: 22px;
     overflow: hidden;
-    padding: 32px 28px 28px;
-    color: #f2e8d0;
-    text-align: center;
+    padding: 2px;
+    box-shadow:
+      0 2px 0 rgba(255,255,255,0.05) inset,
+      0 40px 80px -30px rgba(0,0,0,0.75),
+      0 12px 30px -12px rgba(0,0,0,0.6);
   }
   .card::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    padding: 1.5px;
+    border-radius: 22px;
+    background: linear-gradient(150deg, var(--gold-3), var(--gold-deep-1) 30%, rgba(212,175,55,0.25) 55%, var(--gold-2) 78%, var(--gold-4));
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+  .card-inner {
+    position: relative;
+    padding: 30px 26px 26px;
+    text-align: center;
+  }
+  .card-inner::before {
     content: "";
     position: absolute;
     top: 0; left: 0; right: 0;
     height: 3px;
     background: linear-gradient(90deg, var(--gold-deep-1), var(--gold-2), var(--gold-3), var(--gold-2), var(--gold-deep-1));
   }
-  .card::after {
-    content: "";
-    position: absolute;
-    top: 0; bottom: 0; right: 28px;
-    width: 6px;
-    background: linear-gradient(180deg, transparent, rgba(212,175,55,0.5), transparent);
-    opacity: 0.5;
-  }
-  .mark {
-    font-family: 'Syne', sans-serif;
-    font-weight: 800;
-    font-size: 20px;
-    letter-spacing: 1px;
+  .card-kicker {
+    font-family: 'Manrope', sans-serif;
+    font-weight: 700;
+    font-size: 10.5px;
+    letter-spacing: 2.6px;
+    text-transform: uppercase;
     color: var(--gold-3);
-    margin-bottom: 18px;
+    margin-bottom: 20px;
+    opacity: 0.85;
   }
-  .mark span { color: #fff; }
   .photo {
-    width: 96px;
-    height: 96px;
+    width: 100px;
+    height: 100px;
     border-radius: 50%;
     object-fit: cover;
     border: 2px solid var(--gold-2);
-    margin-bottom: 16px;
+    box-shadow: 0 8px 22px -6px rgba(0,0,0,0.6), 0 0 0 5px rgba(212,175,55,0.08);
+    margin-bottom: 18px;
     background: var(--carbon-2);
   }
   .photo-placeholder {
-    width: 96px;
-    height: 96px;
+    width: 100px;
+    height: 100px;
     border-radius: 50%;
-    border: 2px solid rgba(212,175,55,0.4);
-    margin: 0 auto 16px;
+    border: 2px solid rgba(212,175,55,0.45);
+    box-shadow: 0 8px 22px -6px rgba(0,0,0,0.6), 0 0 0 5px rgba(212,175,55,0.08);
+    margin: 0 auto 18px;
     display: flex;
     align-items: center;
     justify-content: center;
     font-family: 'Syne', sans-serif;
-    font-size: 28px;
+    font-size: 30px;
     font-weight: 800;
     color: var(--gold-2);
-    background: var(--carbon-2);
+    background: linear-gradient(160deg, var(--carbon-2), var(--carbon-4));
   }
   .name {
     font-family: 'Cormorant Garamond', serif;
-    font-weight: 600;
-    font-size: 26px;
+    font-weight: 700;
+    font-size: 28px;
     color: #fff;
-    margin: 0 0 4px;
+    margin: 0 0 5px;
+    letter-spacing: 0.2px;
   }
   .etelid {
+    font-family: 'JetBrains Mono', monospace;
     font-size: 13px;
-    letter-spacing: 1px;
+    font-weight: 600;
+    letter-spacing: 1.4px;
     color: var(--gold-2);
-    margin-bottom: 14px;
+    margin-bottom: 16px;
   }
   .badge {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
+    gap: 7px;
+    font-family: 'Manrope', sans-serif;
     font-size: 11px;
-    letter-spacing: 0.5px;
-    padding: 6px 14px;
+    font-weight: 600;
+    letter-spacing: 0.6px;
+    padding: 7px 16px 7px 12px;
     border-radius: 999px;
     border: 1px solid rgba(212,175,55,0.4);
-    background: rgba(212,175,55,0.08);
+    background: rgba(212,175,55,0.1);
     color: var(--gold-3);
     margin-bottom: 18px;
   }
+  .badge svg { width: 13px; height: 13px; flex: none; }
   .tier {
-    font-size: 12px;
-    color: rgba(242,232,208,0.65);
-    letter-spacing: 1px;
+    font-family: 'Manrope', sans-serif;
+    font-size: 11.5px;
+    font-weight: 600;
+    color: var(--ink-dim);
+    letter-spacing: 1.4px;
     text-transform: uppercase;
   }
   .invalid {
     font-family: 'Cormorant Garamond', serif;
     font-size: 22px;
-    color: rgba(242,232,208,0.8);
-    padding: 20px 0;
+    color: rgba(242,232,208,0.85);
+    padding: 28px 0;
   }
   .footer {
-    margin-top: 24px;
+    margin-top: 26px;
     font-size: 10px;
-    color: rgba(242,232,208,0.35);
-    letter-spacing: 1px;
+    font-weight: 500;
+    letter-spacing: 1.4px;
+    text-transform: uppercase;
+    color: rgba(242,232,208,0.32);
   }
+
+  /* ------------------------- Services list ------------------------ */
   .nfc-services {
-    margin-top: 20px;
-    padding-top: 20px;
-    border-top: 1px solid rgba(212,175,55,0.25);
+    margin-top: 22px;
+    padding-top: 22px;
+    border-top: 1px solid rgba(212,175,55,0.22);
     text-align: left;
   }
   .nfc-services h2 {
-    font-family: 'Syne', sans-serif;
-    font-size: 12px;
-    letter-spacing: 1px;
+    font-family: 'Manrope', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 2.2px;
     text-transform: uppercase;
-    color: rgba(242,232,208,0.6);
-    margin: 0 0 12px;
+    color: var(--ink-faint);
+    margin: 0 0 14px;
     text-align: center;
   }
+
   .nfc-btn {
     display: block;
     width: 100%;
-    padding: 13px 14px;
+    padding: 13px 16px;
     margin-bottom: 10px;
-    border-radius: 10px;
-    border: 1px solid rgba(212,175,55,0.4);
-    background: rgba(212,175,55,0.08);
+    border-radius: 12px;
+    border: 1px solid rgba(212,175,55,0.32);
+    background: rgba(212,175,55,0.07);
     color: var(--gold-3);
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 13px;
-    letter-spacing: 0.3px;
+    font-family: 'Manrope', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0.1px;
     cursor: pointer;
     text-align: center;
+    transition: background 160ms ease, border-color 160ms ease, transform 160ms ease, box-shadow 160ms ease;
   }
-  .nfc-btn:hover { background: rgba(212,175,55,0.16); }
-  .nfc-role-label {
-    font-family: 'Syne', sans-serif;
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    color: rgba(242,232,208,0.45);
-    margin: 0 0 6px;
-  }
+  .nfc-btn:hover { background: rgba(212,175,55,0.14); border-color: rgba(212,175,55,0.5); }
+  .nfc-btn:active { transform: translateY(1px); }
   .nfc-btn.primary {
     background: linear-gradient(135deg,#C8960C,#D4AF37);
-    color: #0d0d0d;
+    color: #1b1309;
     font-weight: 700;
     border: none;
+    box-shadow: 0 8px 20px -8px rgba(200,150,12,0.55);
   }
+  .nfc-btn.primary:hover { box-shadow: 0 10px 24px -8px rgba(200,150,12,0.7); transform: translateY(-1px); }
+  .nfc-btn:disabled { opacity: 0.55; cursor: default; transform: none; }
+
+  /* Service-row buttons carry the tapped-into company's own medallion
+     logo, the role who taps this button, and the action - a labeled
+     row, not a bare button, so the card reads as a directory of real
+     Etel Group services rather than one generic action list. */
+  .nfc-svc-row {
+    display: flex;
+    align-items: center;
+    gap: 13px;
+    text-align: left;
+    padding: 10px 14px 10px 10px;
+    background: linear-gradient(180deg, rgba(255,255,255,0.02), transparent);
+  }
+  .nfc-svc-row:hover { transform: translateY(-1px); box-shadow: 0 10px 22px -12px rgba(0,0,0,0.6); }
+  .nfc-svc-icon {
+    flex: none;
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    overflow: hidden;
+    background: radial-gradient(circle at 35% 30%, rgba(255,246,217,0.35), rgba(212,175,55,0.08) 70%);
+    border: 1px solid rgba(212,175,55,0.5);
+    box-shadow: 0 4px 10px -4px rgba(0,0,0,0.6);
+  }
+  .nfc-svc-icon img, .nfc-svc-icon svg { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .nfc-svc-text { flex: 1 1 auto; min-width: 0; }
+  .nfc-svc-role {
+    display: block;
+    font-family: 'Manrope', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    color: rgba(27,19,9,0.55);
+    margin-bottom: 2px;
+  }
+  .nfc-svc-title {
+    display: block;
+    font-family: 'Manrope', sans-serif;
+    font-size: 14.5px;
+    font-weight: 700;
+    color: #1b1309;
+    line-height: 1.25;
+  }
+  .nfc-svc-chevron {
+    flex: none;
+    width: 18px;
+    height: 18px;
+    color: rgba(27,19,9,0.55);
+    transition: transform 160ms ease;
+  }
+  .nfc-svc-row:hover .nfc-svc-chevron { transform: translateX(3px); }
+
   .nfc-step { display: none; }
   .nfc-step.active { display: block; }
-  .nfc-field {
-    margin-bottom: 12px;
-    text-align: left;
-  }
+  .nfc-field { margin-bottom: 14px; text-align: left; }
   .nfc-field label {
     display: block;
-    font-size: 10px;
-    letter-spacing: 0.5px;
+    font-family: 'Manrope', sans-serif;
+    font-size: 10.5px;
+    font-weight: 600;
+    letter-spacing: 0.8px;
     text-transform: uppercase;
-    color: rgba(242,232,208,0.55);
-    margin-bottom: 5px;
+    color: var(--ink-faint);
+    margin-bottom: 6px;
   }
   .nfc-field input, .nfc-order-list select {
     width: 100%;
-    padding: 10px 12px;
-    border-radius: 8px;
+    padding: 12px 14px;
+    border-radius: 10px;
     border: 1px solid rgba(212,175,55,0.35);
-    background: rgba(0,0,0,0.25);
-    color: #f2e8d0;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 13px;
+    background: rgba(0,0,0,0.28);
+    color: var(--ink);
+    font-family: 'Manrope', sans-serif;
+    font-size: 14px;
+    transition: border-color 160ms ease, background 160ms ease;
   }
+  .nfc-field input::placeholder { color: rgba(242,232,208,0.32); }
+  .nfc-field input:focus { border-color: var(--gold-2); background: rgba(0,0,0,0.4); }
+
   .nfc-order {
     display: block;
     width: 100%;
     text-align: left;
-    padding: 10px 12px;
+    padding: 12px 14px;
     margin-bottom: 8px;
-    border-radius: 8px;
-    border: 1px solid rgba(212,175,55,0.3);
-    background: rgba(0,0,0,0.2);
-    color: #f2e8d0;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 12px;
+    border-radius: 10px;
+    border: 1px solid rgba(212,175,55,0.28);
+    background: rgba(0,0,0,0.22);
+    color: var(--ink);
+    font-family: 'Manrope', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
     cursor: pointer;
+    transition: border-color 160ms ease, background 160ms ease, transform 160ms ease;
   }
-  .nfc-order:hover { border-color: var(--gold-2); }
-  .nfc-msg {
-    font-size: 12px;
-    margin-top: 10px;
-    text-align: center;
+  .nfc-order:hover { border-color: var(--gold-2); background: rgba(0,0,0,0.32); transform: translateY(-1px); }
+
+  .nfc-msg { font-family: 'Manrope', sans-serif; font-size: 12.5px; font-weight: 500; margin-top: 10px; text-align: center; }
+  .nfc-msg.error { color: var(--bad); }
+  .nfc-msg.ok { color: var(--ok); }
+  .nfc-msg-loading { display: flex; align-items: center; justify-content: center; gap: 9px; }
+  .nfc-spinner {
+    width: 15px; height: 15px; flex: none;
+    border: 2px solid rgba(212,175,55,0.25);
+    border-top-color: var(--gold-2);
+    border-radius: 50%;
+    animation: nfc-spin 0.8s linear infinite;
   }
-  .nfc-msg.error { color: #e8a; }
-  .nfc-msg.ok { color: #9e9; }
+  @keyframes nfc-spin { to { transform: rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce) {
+    .nfc-spinner { animation: none; }
+    .nfc-btn, .nfc-order, .nfc-svc-row, .nfc-svc-chevron { transition: none; }
+  }
+
   .nfc-back {
-    display: inline-block;
-    margin-top: 6px;
-    font-size: 11px;
-    color: rgba(242,232,208,0.5);
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    margin-top: 8px;
+    font-family: 'Manrope', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--ink-faint);
     cursor: pointer;
-    text-decoration: underline;
   }
+  .nfc-back:hover { color: var(--gold-3); }
+  .nfc-back svg { width: 13px; height: 13px; }
+
   .nfc-driver-row {
     display: flex;
     justify-content: space-between;
     align-items: center;
     gap: 10px;
-    font-size: 12px;
-    padding: 7px 0;
-    border-bottom: 1px solid rgba(212,175,55,0.12);
+    font-family: 'Manrope', sans-serif;
+    font-size: 12.5px;
+    padding: 9px 0;
+    border-bottom: 1px solid rgba(212,175,55,0.14);
     text-align: left;
   }
   .nfc-driver-row:last-child { border-bottom: none; }
-  .nfc-driver-row span:first-child {
-    color: rgba(242,232,208,0.55);
-    letter-spacing: 0.3px;
-  }
-  .nfc-driver-row span:last-child {
-    color: #f2e8d0;
-    font-weight: 600;
-    text-align: right;
-  }
-  .nfc-badge-ok, .nfc-badge-matched { color: #9e9; }
-  .nfc-badge-bad, .nfc-badge-mismatch { color: #e88; }
-  .nfc-badge-unverified { color: #F2CC6B; }
+  .nfc-driver-row span:first-child { color: var(--ink-faint); letter-spacing: 0.3px; font-weight: 500; }
+  .nfc-driver-row span:last-child { color: var(--ink); font-weight: 700; text-align: right; }
+  .nfc-badge-ok, .nfc-badge-matched { color: var(--ok); }
+  .nfc-badge-bad, .nfc-badge-mismatch { color: var(--bad); }
+  .nfc-badge-unverified { color: var(--gold-3); }
   .nfc-license-photo {
     display: block;
     width: 100%;
     max-height: 220px;
     object-fit: contain;
-    border-radius: 8px;
+    border-radius: 10px;
     border: 1px solid rgba(212,175,55,0.3);
     background: rgba(0,0,0,0.25);
     margin-bottom: 10px;
   }
   .nfc-receipt-link {
     display: block;
-    font-size: 11px;
-    color: #4ECDC4;
+    font-family: 'Manrope', sans-serif;
+    font-size: 11.5px;
+    font-weight: 600;
+    color: #6FE0D6;
     text-decoration: underline;
     text-align: right;
     margin: -6px 0 6px;
@@ -299,12 +487,21 @@ $nfc_nonce = wp_create_nonce('etelid_public');
 </style>
 </head>
 <body>
+  <div class="brand-hero">
+    <div class="brand-hero-logo-wrap">
+      <img class="brand-hero-logo" src="<?php echo esc_url($logo_group); ?>" alt="Etel Group" loading="eager">
+    </div>
+    <div class="brand-hero-word">ETEL<span> GROUP</span></div>
+    <div class="brand-hero-tag">Digital Identity &middot; One Card, Every Etel Service</div>
+  </div>
+
   <div class="card">
-    <div class="mark">&#4773;<span>E</span> ETELID</div>
+   <div class="card-inner">
+    <div class="card-kicker">EtelID &middot; Verified Digital Card</div>
 
     <?php if ($has_member) : ?>
       <div id="nfc-step-gate" class="nfc-step active">
-        <p class="nfc-role-label">Sign in with your own EtelID to view this card</p>
+        <p class="nfc-role-label" style="font-family:'Manrope',sans-serif;font-size:13px;font-weight:500;color:var(--ink-dim);text-align:center;margin:0 0 18px;">Sign in with your own EtelID to view this card</p>
         <div class="nfc-field">
           <label>Your Phone or Etel-ID</label>
           <input type="text" id="nfc-gate-ident" placeholder="09... or EG-2026-00001" autocomplete="username">
@@ -322,29 +519,58 @@ $nfc_nonce = wp_create_nonce('etelid_public');
         <div class="photo-placeholder" id="nfc-photo-placeholder" style="display:none;"></div>
         <p class="name" id="nfc-name"></p>
         <p class="etelid" id="nfc-etelid"></p>
-        <div class="badge">&#10003; Verified Member</div>
+        <div class="badge">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+          Verified Member
+        </div>
         <p class="tier" id="nfc-tier" style="display:none;"></p>
 
         <div class="nfc-services">
           <h2>Card Services</h2>
 
           <div id="nfc-step-menu" class="nfc-step active">
-            <p class="nfc-role-label">Service Giver</p>
-            <button type="button" class="nfc-btn primary" data-stage="pickup">Confirm Pickup</button>
-            <p class="nfc-role-label">Customer</p>
-            <button type="button" class="nfc-btn primary" data-stage="delivery">Confirm Delivery Complete</button>
-            <p class="nfc-role-label">Driver</p>
-            <button type="button" class="nfc-btn primary" data-stage="ride_start">Confirm Rider &amp; Start Trip</button>
-            <p class="nfc-role-label">Traffic Officer</p>
-            <button type="button" class="nfc-btn primary" data-stage="driver_status">Driver Info</button>
-            <p class="nfc-role-label">Pay Driver / Cardholder / Collect Payment</p>
-            <button type="button" class="nfc-btn primary" data-stage="etelpay_payout">Pay Out via EtelPay</button>
-            <p class="nfc-role-label">Cardholder Pays (tap to pay)</p>
-            <button type="button" class="nfc-btn primary" data-stage="etelpay_cardholder_pay">Cardholder Pays via EtelPay</button>
-            <p class="nfc-role-label">Station Controller</p>
-            <button type="button" class="nfc-btn primary" data-stage="etelmadeya_register">Register in Queue</button>
-            <p class="nfc-role-label">Etel Gebeya Courier</p>
-            <button type="button" class="nfc-btn primary" data-stage="gebeya_delivery">Confirm Gebeya Order</button>
+            <button type="button" class="nfc-btn primary nfc-svc-row" data-stage="pickup">
+              <span class="nfc-svc-icon"><img src="<?php echo esc_url($logo_delivery); ?>" alt="" loading="lazy"></span>
+              <span class="nfc-svc-text"><span class="nfc-svc-role">Service Giver</span><span class="nfc-svc-title">Confirm Pickup</span></span>
+              <svg class="nfc-svc-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+            </button>
+            <button type="button" class="nfc-btn primary nfc-svc-row" data-stage="delivery">
+              <span class="nfc-svc-icon"><img src="<?php echo esc_url($logo_delivery); ?>" alt="" loading="lazy"></span>
+              <span class="nfc-svc-text"><span class="nfc-svc-role">Customer</span><span class="nfc-svc-title">Confirm Delivery Complete</span></span>
+              <svg class="nfc-svc-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+            </button>
+            <button type="button" class="nfc-btn primary nfc-svc-row" data-stage="ride_start">
+              <span class="nfc-svc-icon"><img src="<?php echo esc_url($logo_ride); ?>" alt="" loading="lazy"></span>
+              <span class="nfc-svc-text"><span class="nfc-svc-role">Driver</span><span class="nfc-svc-title">Confirm Rider &amp; Start Trip</span></span>
+              <svg class="nfc-svc-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+            </button>
+            <button type="button" class="nfc-btn primary nfc-svc-row" data-stage="driver_status">
+              <span class="nfc-svc-icon"><img src="<?php echo esc_url($logo_driver); ?>" alt="" loading="lazy"></span>
+              <span class="nfc-svc-text"><span class="nfc-svc-role">Traffic Officer</span><span class="nfc-svc-title">Driver Info</span></span>
+              <svg class="nfc-svc-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+            </button>
+            <button type="button" class="nfc-btn primary nfc-svc-row" data-stage="etelpay_payout">
+              <span class="nfc-svc-icon"><img src="<?php echo esc_url($logo_etelpay); ?>" alt="" loading="lazy"></span>
+              <span class="nfc-svc-text"><span class="nfc-svc-role">Pay Driver / Cardholder / Collect Payment</span><span class="nfc-svc-title">Pay Out via EtelPay</span></span>
+              <svg class="nfc-svc-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+            </button>
+            <button type="button" class="nfc-btn primary nfc-svc-row" data-stage="etelpay_cardholder_pay">
+              <span class="nfc-svc-icon"><img src="<?php echo esc_url($logo_etelpay); ?>" alt="" loading="lazy"></span>
+              <span class="nfc-svc-text"><span class="nfc-svc-role">Cardholder Pays (tap to pay)</span><span class="nfc-svc-title">Cardholder Pays via EtelPay</span></span>
+              <svg class="nfc-svc-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+            </button>
+            <button type="button" class="nfc-btn primary nfc-svc-row" data-stage="etelmadeya_register">
+              <span class="nfc-svc-icon"><img src="<?php echo esc_url($logo_madeya); ?>" alt="" loading="lazy"></span>
+              <span class="nfc-svc-text"><span class="nfc-svc-role">Station Controller</span><span class="nfc-svc-title">Register in Queue</span></span>
+              <svg class="nfc-svc-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+            </button>
+            <button type="button" class="nfc-btn primary nfc-svc-row" data-stage="gebeya_delivery">
+              <span class="nfc-svc-icon">
+                <svg viewBox="0 0 32 32" role="img" aria-label="Etel Gebeya"><rect width="32" height="32" fill="#130d05"/><defs><linearGradient id="egg" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#FFE066"/><stop offset="100%" stop-color="#B8902E"/></linearGradient></defs><rect width="32" height="32" fill="url(#egg)"/><text x="16" y="21" font-family="Syne,system-ui,sans-serif" font-size="13" font-weight="800" fill="#130d05" text-anchor="middle">EG</text></svg>
+              </span>
+              <span class="nfc-svc-text"><span class="nfc-svc-role">Etel Gebeya Courier</span><span class="nfc-svc-title">Confirm Gebeya Order</span></span>
+              <svg class="nfc-svc-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+            </button>
           </div>
 
           <div id="nfc-step-charge-amount" class="nfc-step">
@@ -357,7 +583,7 @@ $nfc_nonce = wp_create_nonce('etelid_public');
               <input type="text" id="nfc-charge-note" placeholder="What is this for?">
             </div>
             <button type="button" class="nfc-btn primary" id="nfc-charge-amount-next">Continue</button>
-            <span class="nfc-back" data-back="menu">Cancel</span>
+            <span class="nfc-back" data-back="menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>Cancel</span>
             <div id="nfc-charge-amount-msg" class="nfc-msg"></div>
           </div>
 
@@ -372,25 +598,25 @@ $nfc_nonce = wp_create_nonce('etelid_public');
             <input type="password" id="nfc-cardholder-pay-pass" placeholder="Password" autocomplete="current-password">
           </div>
           <button type="button" class="nfc-btn primary" id="nfc-cardholder-pay-submit">Approve Payment</button>
-          <span class="nfc-back" data-back="menu">Cancel</span>
+          <span class="nfc-back" data-back="menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>Cancel</span>
           <div id="nfc-cardholder-pay-msg" class="nfc-msg"></div>
         </div>
 
         <div id="nfc-step-madeya-station" class="nfc-step">
           <p id="nfc-madeya-station-hint" class="nfc-msg"></p>
           <div id="nfc-madeya-station-list"></div>
-          <span class="nfc-back" data-back="menu">Cancel</span>
+          <span class="nfc-back" data-back="menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>Cancel</span>
           <div id="nfc-madeya-station-msg" class="nfc-msg"></div>
         </div>
 
         <div id="nfc-step-orders" class="nfc-step">
           <div id="nfc-order-list"></div>
-          <span class="nfc-back" data-back="menu">Cancel</span>
+          <span class="nfc-back" data-back="menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>Cancel</span>
         </div>
 
         <div id="nfc-step-done" class="nfc-step">
           <div id="nfc-done-msg" class="nfc-msg"></div>
-          <span class="nfc-back" data-back="menu">Back</span>
+          <span class="nfc-back" data-back="menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>Back</span>
         </div>
         </div>
       </div>
@@ -398,7 +624,8 @@ $nfc_nonce = wp_create_nonce('etelid_public');
       <p class="invalid">This card is not active.</p>
     <?php endif; ?>
 
-    <div class="footer">ethelmarket.com / EtelId</div>
+    <div class="footer">ethelmarket.com &middot; EtelId</div>
+   </div>
   </div>
 <!-- ETEL AI -- cross-company assistant widget -->
 <script src="https://ethelmarket.com/EtelAi/etel-ai-widget.js" data-project="etel-id"></script>
@@ -532,8 +759,8 @@ $nfc_nonce = wp_create_nonce('etelid_public');
 
   function startFlow(extra) {
     var doneMsg = document.getElementById('nfc-done-msg');
-    doneMsg.className = 'nfc-msg';
-    doneMsg.textContent = 'Please wait...';
+    doneMsg.className = 'nfc-msg nfc-msg-loading';
+    doneMsg.innerHTML = '<span class="nfc-spinner" aria-hidden="true"></span>Please wait...';
     showStep('nfc-step-done');
 
     var postData = { token: TOKEN, stage: stage, identifier: gateIdent, password: gatePass };
