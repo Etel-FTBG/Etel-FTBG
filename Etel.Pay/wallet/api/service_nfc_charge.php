@@ -2,21 +2,25 @@
 /**
  * EtelPay - service-to-service NFC tap-to-pay charge.
  *
- * Called by EtelID (class-etelid-nfc.php) after TWO separate proofs of
- * consent, neither of which this endpoint re-derives on its own:
- *   1. The receiver (person collecting payment) already verified THEIR
- *      OWN EtelID password, locally, on EtelID's side.
- *   2. This request also carries the PAYER's own EtelPay PIN, entered
- *      by the payer themselves on this same device, verified HERE
- *      against their real pin_hash before a single Birr moves.
- * A bare NFC tap alone can never move money - it only identifies whose
- * wallet is being charged. Same shared ETELID_SERVICE_KEY every other
- * EtelPay<->EtelID service call already uses.
+ * Called by EtelID (class-etelid-nfc.php) only after TWO separate
+ * proofs of consent, both already verified on EtelID's own side before
+ * this endpoint is ever reached:
+ *   1. The receiver (person collecting payment) verified THEIR OWN
+ *      EtelID password.
+ *   2. The payer (whoever's card was tapped) also verified THEIR OWN
+ *      EtelID password, on the same device, in a separate step.
+ * This endpoint trusts that assertion the same way etelid_member_detail.php
+ * already trusts a valid ETELID_SERVICE_KEY caller for read access - it
+ * does not re-derive payer consent itself (no EtelPay-specific PIN
+ * exists here; EtelID owns identity/auth for the whole group). A bare
+ * NFC tap alone still can never move money - it only identifies whose
+ * wallet is being charged, and EtelID's own two-password flow is what
+ * actually authorizes the debit before this is ever called.
  *
  * Place at: Etel.Pay/wallet/api/service_nfc_charge.php
  * Called as: POST https://ethelmarket.com/Etel.Pay/wallet/api/service_nfc_charge.php
  *            body: {"receiver_phone":"+251...","payer_phone":"+251...",
- *                    "payer_pin":"1234","amount":100,"note":"..."}
+ *                    "amount":100,"note":"..."}
  * Header:    X-Etel-Service-Key: <same key as config.php ETELID_SERVICE_KEY>
  */
 
@@ -76,12 +80,10 @@ if (!is_array($body)) $body = $_POST;
 
 $receiverPhone = isset($body['receiver_phone']) ? trim($body['receiver_phone']) : '';
 $payerPhone    = isset($body['payer_phone'])    ? trim($body['payer_phone'])    : '';
-$payerPin      = isset($body['payer_pin'])      ? (string) $body['payer_pin']   : '';
 $amount        = isset($body['amount'])         ? (float) $body['amount']       : 0;
 $note          = isset($body['note'])           ? trim((string) $body['note'])  : '';
-$ip            = isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : '';
 
-if (!$receiverPhone || !$payerPhone || !$payerPin) snc_err('Missing required fields.', 400);
+if (!$receiverPhone || !$payerPhone) snc_err('Missing required fields.', 400);
 if ($amount <= 0) snc_err('Amount must be greater than zero.', 400);
 
 $payerLast9    = substr(preg_replace('/\D/', '', $payerPhone), -9);
@@ -103,32 +105,12 @@ try {
     snc_err('Database connection failed.', 503);
 }
 
-// Same login_attempts table ep_login already uses (v2_verify.php) -
-// reused here for PIN attempts, keyed by the PAYER's phone so a wrong
-// guess against one wallet can't be retried indefinitely.
-$pdo->exec('CREATE TABLE IF NOT EXISTS ' . EP_TBL_PREFIX . 'ep_login_attempts (
-    id INT UNSIGNED NOT NULL AUTO_INCREMENT,
-    phone VARCHAR(32) NOT NULL DEFAULT \'\',
-    ip VARCHAR(45) NOT NULL DEFAULT \'\',
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (id),
-    KEY idx_phone (phone),
-    KEY idx_ip (ip),
-    KEY idx_created (created_at)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4');
-
-$rl = $pdo->prepare('SELECT COUNT(*) FROM ' . EP_TBL_PREFIX . 'ep_login_attempts WHERE phone = ? AND created_at > (NOW() - INTERVAL 15 MINUTE)');
-$rl->execute(array($payerPhone));
-if ((int) $rl->fetchColumn() >= 5) {
-    snc_err('Too many incorrect PIN attempts. Please wait 15 minutes and try again.', 429);
-}
-
 try {
-    $rs = $pdo->prepare('SELECT id, phone, pin_hash, status, balance_etb FROM ' . EP_TBL_USERS . ' WHERE RIGHT(phone, 9) = ? LIMIT 1');
+    $rs = $pdo->prepare('SELECT id, phone, status, balance_etb FROM ' . EP_TBL_USERS . ' WHERE RIGHT(phone, 9) = ? LIMIT 1');
     $rs->execute(array($receiverLast9));
     $receiver = $rs->fetch();
 
-    $ps = $pdo->prepare('SELECT id, phone, pin_hash, status, balance_etb FROM ' . EP_TBL_USERS . ' WHERE RIGHT(phone, 9) = ? LIMIT 1');
+    $ps = $pdo->prepare('SELECT id, phone, status, balance_etb FROM ' . EP_TBL_USERS . ' WHERE RIGHT(phone, 9) = ? LIMIT 1');
     $ps->execute(array($payerLast9));
     $payer = $ps->fetch();
 } catch (Exception $e) {
@@ -139,11 +121,6 @@ if (!$receiver) snc_err('The person collecting payment has no EtelPay wallet.', 
 if ($receiver['status'] !== 'active') snc_err('The receiving wallet is not active.', 403);
 if (!$payer) snc_err('This card has no EtelPay wallet.', 404);
 if ($payer['status'] !== 'active') snc_err('This wallet is not active.', 403);
-
-if (empty($payer['pin_hash']) || !password_verify($payerPin, $payer['pin_hash'])) {
-    $pdo->prepare('INSERT INTO ' . EP_TBL_PREFIX . 'ep_login_attempts (phone, ip) VALUES (?, ?)')->execute(array($payerPhone, $ip));
-    snc_err('Incorrect PIN.', 401);
-}
 
 if ((float) $payer['balance_etb'] < $amount) snc_err('Insufficient balance.', 402);
 

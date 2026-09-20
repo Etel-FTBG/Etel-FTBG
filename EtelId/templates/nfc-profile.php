@@ -362,8 +362,8 @@ $nfc_nonce = wp_create_nonce('etelid_public');
         <div id="nfc-step-charge-pin" class="nfc-step">
           <p id="nfc-charge-pin-hint" class="nfc-msg"></p>
           <div class="nfc-field">
-            <label>Cardholder: enter YOUR OWN EtelPay PIN to approve</label>
-            <input type="password" id="nfc-charge-pin" placeholder="PIN" inputmode="numeric" autocomplete="off">
+            <label>Cardholder: enter YOUR OWN EtelID password to approve</label>
+            <input type="password" id="nfc-charge-pin" placeholder="Password" autocomplete="current-password">
           </div>
           <button type="button" class="nfc-btn primary" id="nfc-charge-pin-submit">Approve Payment</button>
           <span class="nfc-back" data-back="menu">Cancel</span>
@@ -711,15 +711,15 @@ $nfc_nonce = wp_create_nonce('etelid_public');
   }
 
   document.getElementById('nfc-charge-pin-submit').addEventListener('click', function () {
-    var pin = document.getElementById('nfc-charge-pin').value;
+    var pass = document.getElementById('nfc-charge-pin').value;
     var msg = document.getElementById('nfc-charge-pin-msg');
     msg.className = 'nfc-msg';
     msg.textContent = '';
-    if (!pin) { msg.className = 'nfc-msg error'; msg.textContent = 'Enter your EtelPay PIN.'; return; }
+    if (!pass) { msg.className = 'nfc-msg error'; msg.textContent = 'Enter your EtelID password.'; return; }
 
     this.disabled = true;
     var self = this;
-    post('etelid_nfc_charge_confirm', { action_token: actionToken, payer_pin: pin })
+    post('etelid_nfc_charge_confirm', { action_token: actionToken, payer_password: pass })
       .then(function (res) {
         self.disabled = false;
         var doneMsg = document.getElementById('nfc-done-msg');

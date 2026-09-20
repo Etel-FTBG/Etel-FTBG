@@ -489,7 +489,7 @@ class Etelid_Nfc {
         /* EtelPay tap-to-pay: does NOT charge anything yet, even though
            the receiver's EtelID password just checked out above - money
            only moves once the PAYER (whoever's card was tapped) also
-           proves their own EtelPay PIN, in ajax_charge_confirm() below.
+           proves their own EtelID password, in ajax_charge_confirm() below.
            This step only establishes who is collecting the payment and
            for how much, same short-lived single-use action_token
            pattern as every other stage here. */
@@ -587,19 +587,23 @@ class Etelid_Nfc {
     }
 
     /* Step 2 of EtelPay tap-to-pay: the PAYER (whoever's card was
-       tapped) types their own EtelPay PIN into this same device. Only
-       here does any money actually move - service_nfc_charge.php
-       verifies the PIN itself against the payer's real pin_hash before
-       touching any balance. Single-use action_token, same as
-       ajax_confirm() above. */
+       tapped) types their own EtelID password into this same device -
+       verified LOCALLY here against their real EtelID pin_hash, same
+       function/column EtelID already uses for every other sign-in on
+       this page (see the $confirmer check in ajax_start() above). No
+       separate EtelPay-specific PIN involved - one credential system,
+       nothing extra to set up. Only once this passes does
+       service_nfc_charge.php get called at all, so it is still true
+       that a bare tap alone can never move money. Single-use
+       action_token, same as ajax_confirm() above. */
     public static function ajax_charge_confirm() {
         if (!check_ajax_referer('etelid_public', 'nonce', false)) {
             wp_send_json_error(array('message' => 'Session expired, please reload the page.'));
         }
 
         $action_token = isset($_POST['action_token']) ? sanitize_text_field(wp_unslash($_POST['action_token'])) : '';
-        $pin          = isset($_POST['payer_pin']) ? (string) $_POST['payer_pin'] : '';
-        if (!$action_token || !$pin) wp_send_json_error(array('message' => 'Missing required fields.'));
+        $password     = isset($_POST['payer_password']) ? (string) $_POST['payer_password'] : '';
+        if (!$action_token || !$password) wp_send_json_error(array('message' => 'Missing required fields.'));
 
         $key  = 'etelid_nfc_action_' . $action_token;
         $data = get_transient($key);
@@ -608,10 +612,18 @@ class Etelid_Nfc {
         }
         delete_transient($key); // single-use - a resubmit needs a fresh tap+login+amount
 
+        $payer = EtelID_DB::get_by_etel_id($data['courier_etel_id']);
+        if (!$payer) $payer = EtelID_DB::find_by_phone($data['courier_phone']);
+        if (!$payer || empty($payer->pin_hash) || !EtelID_Auth::verify_password($password, $payer->pin_hash)) {
+            wp_send_json_error(array('message' => 'Incorrect password.'));
+        }
+        if ('suspended' === $payer->status || 'revoked' === $payer->status) {
+            wp_send_json_error(array('message' => 'This EtelID account is not active.'));
+        }
+
         $result = self::etelpay_service_call('service_nfc_charge.php', array(
             'receiver_phone' => $data['confirmer_phone'],
             'payer_phone'    => $data['courier_phone'],
-            'payer_pin'      => $pin,
             'amount'         => $data['amount'],
             'note'           => $data['note'],
         ));
