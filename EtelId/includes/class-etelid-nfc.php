@@ -50,6 +50,13 @@ class Etelid_Nfc {
         add_action('wp_ajax_nopriv_etelid_nfc_start', array(__CLASS__, 'ajax_start'));
         add_action('wp_ajax_etelid_nfc_confirm', array(__CLASS__, 'ajax_confirm'));
         add_action('wp_ajax_nopriv_etelid_nfc_confirm', array(__CLASS__, 'ajax_confirm'));
+
+        /* EtelPay tap-to-pay, cardholder pays: separate confirm step
+           from ajax_confirm() above (that one is order_id-specific for
+           pickup/delivery), since this one takes the cardholder's own
+           password instead of an order id. */
+        add_action('wp_ajax_etelid_nfc_cardholder_pay_confirm', array(__CLASS__, 'ajax_cardholder_pay_confirm'));
+        add_action('wp_ajax_nopriv_etelid_nfc_cardholder_pay_confirm', array(__CLASS__, 'ajax_cardholder_pay_confirm'));
     }
 
     /* Idempotent runtime install - the plugin's own activation hook only
@@ -405,7 +412,7 @@ class Etelid_Nfc {
         $ident  = isset($_POST['identifier']) ? sanitize_text_field(wp_unslash($_POST['identifier'])) : '';
         $pass   = isset($_POST['password']) ? (string) $_POST['password'] : '';
 
-        $allowedStages = array('pickup', 'delivery', 'ride_start', 'driver_status', 'etelpay_charge', 'etelpay_payout');
+        $allowedStages = array('pickup', 'delivery', 'ride_start', 'driver_status', 'etelpay_charge', 'etelpay_payout', 'etelpay_cardholder_pay');
         if (!$token || !in_array($stage, $allowedStages, true) || !$ident || !$pass) {
             wp_send_json_error(array('message' => 'Missing required fields.'));
         }
@@ -514,6 +521,46 @@ class Etelid_Nfc {
             ));
         }
 
+        /* EtelPay tap-to-pay, CARDHOLDER PAYS (classic tap-to-pay: the
+           customer taps their own card, the merchant's device collects):
+           the opposite of 'etelpay_charge' above - here the tapped card
+           is the PAYER, and the person filling in this form (the
+           scanner/merchant) is the RECEIVER. Since it's the tapped
+           card owner's money leaving, the scanner's own login here only
+           identifies who is collecting - it does NOT move any money
+           yet. Money only moves once the cardholder also proves their
+           own EtelID password, in ajax_cardholder_pay_confirm() below -
+           same "authorize whoever's money is leaving" rule as every
+           other flow on this card, just with the roles that
+           'etelpay_charge' uses swapped back. */
+        if ('etelpay_cardholder_pay' === $stage) {
+            $amount = isset($_POST['amount']) ? (float) $_POST['amount'] : 0;
+            $note   = isset($_POST['note']) ? sanitize_text_field(wp_unslash($_POST['note'])) : '';
+            if ($amount <= 0) wp_send_json_error(array('message' => 'Enter an amount greater than zero.'));
+
+            $action_token = wp_generate_password(24, false, false);
+            set_transient('etelid_nfc_action_' . $action_token, array(
+                'stage'             => $stage,
+                'amount'            => $amount,
+                'note'              => $note,
+                'courier_etel_id'   => $courier->etel_id,
+                'courier_phone'     => $courier->phone,
+                'confirmer_id'      => $confirmer->id,
+                'confirmer_etel_id' => $confirmer->etel_id,
+                'confirmer_phone'   => $confirmer->phone,
+                'confirmer_name'    => $confirmer->full_name,
+            ), 5 * MINUTE_IN_SECONDS);
+
+            EtelID_DB::log($confirmer->id, $confirmer->etel_id, 'nfc_etelpay_cardholder_pay_start', 'NFC tap-to-pay started against ' . $courier->full_name . ' for ' . $amount . ' ETB');
+
+            wp_send_json_success(array(
+                'cardholder_pay_pending' => true,
+                'action_token'           => $action_token,
+                'payer_name'             => $courier->full_name,
+                'amount'                 => $amount,
+            ));
+        }
+
         /* EtelPay tap-to-pay PAYOUT (pay OUT, e.g. a driver's earnings):
            same mechanism as 'etelpay_charge' above (whoever logs in
            here pays, whoever's card was tapped receives) - the two
@@ -607,6 +654,69 @@ class Etelid_Nfc {
         }
 
         wp_send_json_success(array('message' => isset($result['message']) ? $result['message'] : 'Confirmed.'));
+    }
+
+    /* Step 2 of the cardholder-pays flow: the PAYER (whoever's card was
+       tapped) types their own phone/Etel-ID + password into this same
+       device - verified LOCALLY against their real EtelID pin_hash,
+       same as every other login on this page. Only once this passes
+       does service_nfc_charge.php get called, so a bare tap alone still
+       can never move money. Single-use action_token, same pattern as
+       ajax_confirm() above. */
+    public static function ajax_cardholder_pay_confirm() {
+        if (!check_ajax_referer('etelid_public', 'nonce', false)) {
+            wp_send_json_error(array('message' => 'Session expired, please reload the page.'));
+        }
+
+        $action_token = isset($_POST['action_token']) ? sanitize_text_field(wp_unslash($_POST['action_token'])) : '';
+        $identifier   = isset($_POST['payer_identifier']) ? sanitize_text_field(wp_unslash($_POST['payer_identifier'])) : '';
+        $password     = isset($_POST['payer_password']) ? (string) $_POST['payer_password'] : '';
+        if (!$action_token || !$identifier || !$password) wp_send_json_error(array('message' => 'Missing required fields.'));
+
+        $key  = 'etelid_nfc_action_' . $action_token;
+        $data = get_transient($key);
+        if (false === $data || 'etelpay_cardholder_pay' !== $data['stage']) {
+            wp_send_json_error(array('message' => 'This payment has expired. Please start again.'));
+        }
+        delete_transient($key); // single-use - a resubmit needs a fresh tap+login+amount
+
+        $payer = EtelID_DB::get_by_etel_id(strtoupper($identifier));
+        if (!$payer) $payer = EtelID_DB::find_by_phone($identifier);
+        if (!$payer) wp_send_json_error(array('message' => 'No EtelID account found for that phone/Etel-ID.'));
+
+        /* The identifier typed here must belong to the SAME person whose
+           card was tapped - otherwise this field would let anyone
+           approve someone else's payment with their own unrelated
+           account, defeating the whole point of asking. */
+        if (0 !== strcasecmp($payer->etel_id, $data['courier_etel_id'])) {
+            wp_send_json_error(array('message' => 'That is not the cardholder\'s account. Enter the tapped card owner\'s own phone/Etel-ID.'));
+        }
+
+        if (empty($payer->pin_hash) || !EtelID_Auth::verify_password($password, $payer->pin_hash)) {
+            wp_send_json_error(array('message' => 'Incorrect password.'));
+        }
+        if ('suspended' === $payer->status || 'revoked' === $payer->status) {
+            wp_send_json_error(array('message' => 'This EtelID account is not active.'));
+        }
+
+        $result = self::etelpay_service_call('service_nfc_charge.php', array(
+            'receiver_phone' => $data['confirmer_phone'],
+            'payer_phone'    => $data['courier_phone'],
+            'amount'         => $data['amount'],
+            'note'           => $data['note'],
+        ));
+
+        if (is_wp_error($result)) {
+            wp_send_json_error(array('message' => $result->get_error_message()));
+        }
+
+        EtelID_DB::log($payer->id, $payer->etel_id, 'nfc_etelpay_cardholder_pay', 'NFC tap-to-pay: paid ' . $data['confirmer_phone'] . ' ' . $data['amount'] . ' ETB, tx ' . (isset($result['tx_ref']) ? $result['tx_ref'] : '?'));
+
+        wp_send_json_success(array(
+            'message' => 'Payment of ' . $data['amount'] . ' ETB sent.',
+            'tx_ref'  => isset($result['tx_ref']) ? $result['tx_ref'] : null,
+            'amount'  => $data['amount'],
+        ));
     }
 
 }
