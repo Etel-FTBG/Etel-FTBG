@@ -660,8 +660,9 @@ class Etelid_Nfc {
         }
 
         $action_token = isset($_POST['action_token']) ? sanitize_text_field(wp_unslash($_POST['action_token'])) : '';
+        $identifier   = isset($_POST['payer_identifier']) ? sanitize_text_field(wp_unslash($_POST['payer_identifier'])) : '';
         $password     = isset($_POST['payer_password']) ? (string) $_POST['payer_password'] : '';
-        if (!$action_token || !$password) wp_send_json_error(array('message' => 'Missing required fields.'));
+        if (!$action_token || !$identifier || !$password) wp_send_json_error(array('message' => 'Missing required fields.'));
 
         $key  = 'etelid_nfc_action_' . $action_token;
         $data = get_transient($key);
@@ -670,9 +671,19 @@ class Etelid_Nfc {
         }
         delete_transient($key); // single-use - a resubmit needs a fresh tap+login+amount
 
-        $payer = EtelID_DB::get_by_etel_id($data['courier_etel_id']);
-        if (!$payer) $payer = EtelID_DB::find_by_phone($data['courier_phone']);
-        if (!$payer || empty($payer->pin_hash) || !EtelID_Auth::verify_password($password, $payer->pin_hash)) {
+        $payer = EtelID_DB::get_by_etel_id(strtoupper($identifier));
+        if (!$payer) $payer = EtelID_DB::find_by_phone($identifier);
+        if (!$payer) wp_send_json_error(array('message' => 'No EtelID account found for that phone/Etel-ID.'));
+
+        /* The identifier typed here must belong to the SAME person whose
+           card was tapped - otherwise this field would let anyone
+           approve someone else's charge with their own unrelated
+           account, defeating the whole point of asking. */
+        if (0 !== strcasecmp($payer->etel_id, $data['courier_etel_id'])) {
+            wp_send_json_error(array('message' => 'That is not the cardholder\'s account. Enter the tapped card owner\'s own phone/Etel-ID.'));
+        }
+
+        if (empty($payer->pin_hash) || !EtelID_Auth::verify_password($password, $payer->pin_hash)) {
             wp_send_json_error(array('message' => 'Incorrect password.'));
         }
         if ('suspended' === $payer->status || 'revoked' === $payer->status) {

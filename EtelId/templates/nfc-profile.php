@@ -364,7 +364,11 @@ $nfc_nonce = wp_create_nonce('etelid_public');
         <div id="nfc-step-charge-pin" class="nfc-step">
           <p id="nfc-charge-pin-hint" class="nfc-msg"></p>
           <div class="nfc-field">
-            <label>Cardholder: enter YOUR OWN EtelID password to approve</label>
+            <label>Cardholder: Your Phone or Etel-ID</label>
+            <input type="text" id="nfc-charge-pin-ident" placeholder="09... or EG-2026-00001" autocomplete="username">
+          </div>
+          <div class="nfc-field">
+            <label>Cardholder: Your EtelID Password</label>
             <input type="password" id="nfc-charge-pin" placeholder="Password" autocomplete="current-password">
           </div>
           <button type="button" class="nfc-btn primary" id="nfc-charge-pin-submit">Approve Payment</button>
@@ -428,6 +432,7 @@ $nfc_nonce = wp_create_nonce('etelid_public');
       document.getElementById('nfc-charge-amount').value = '';
       document.getElementById('nfc-charge-note').value = '';
       document.getElementById('nfc-charge-amount-msg').textContent = '';
+      document.getElementById('nfc-charge-pin-ident').value = '';
       document.getElementById('nfc-charge-pin').value = '';
       document.getElementById('nfc-charge-pin-msg').textContent = '';
       showStep('nfc-step-menu');
@@ -478,6 +483,7 @@ $nfc_nonce = wp_create_nonce('etelid_public');
           document.getElementById('nfc-charge-pin-hint').textContent =
             'Charging ' + res.data.payer_name + ' ' + res.data.amount + ' ETB. Hand the device to the cardholder.';
           document.getElementById('nfc-charge-pin-msg').textContent = '';
+          document.getElementById('nfc-charge-pin-ident').value = '';
           document.getElementById('nfc-charge-pin').value = '';
           showStep('nfc-step-charge-pin');
         })
@@ -747,15 +753,16 @@ $nfc_nonce = wp_create_nonce('etelid_public');
   }
 
   document.getElementById('nfc-charge-pin-submit').addEventListener('click', function () {
+    var ident = document.getElementById('nfc-charge-pin-ident').value.trim();
     var pass = document.getElementById('nfc-charge-pin').value;
     var msg = document.getElementById('nfc-charge-pin-msg');
     msg.className = 'nfc-msg';
     msg.textContent = '';
-    if (!pass) { msg.className = 'nfc-msg error'; msg.textContent = 'Enter your EtelID password.'; return; }
+    if (!ident || !pass) { msg.className = 'nfc-msg error'; msg.textContent = 'Enter your phone/Etel-ID and password.'; return; }
 
     this.disabled = true;
     var self = this;
-    post('etelid_nfc_charge_confirm', { action_token: actionToken, payer_password: pass })
+    post('etelid_nfc_charge_confirm', { action_token: actionToken, payer_identifier: ident, payer_password: pass })
       .then(function (res) {
         self.disabled = false;
         var doneMsg = document.getElementById('nfc-done-msg');
