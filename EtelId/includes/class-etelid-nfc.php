@@ -50,6 +50,13 @@ class Etelid_Nfc {
         add_action('wp_ajax_nopriv_etelid_nfc_start', array(__CLASS__, 'ajax_start'));
         add_action('wp_ajax_etelid_nfc_confirm', array(__CLASS__, 'ajax_confirm'));
         add_action('wp_ajax_nopriv_etelid_nfc_confirm', array(__CLASS__, 'ajax_confirm'));
+
+        /* EtelPay NFC tap-to-pay - separate confirm step from
+           ajax_confirm() above (that one is order_id-specific for
+           pickup/delivery), since this one takes the payer's own PIN
+           instead of an order id. */
+        add_action('wp_ajax_etelid_nfc_charge_confirm', array(__CLASS__, 'ajax_charge_confirm'));
+        add_action('wp_ajax_nopriv_etelid_nfc_charge_confirm', array(__CLASS__, 'ajax_charge_confirm'));
     }
 
     /* Idempotent runtime install - the plugin's own activation hook only
@@ -331,6 +338,38 @@ class Etelid_Nfc {
         return isset($body['data']) ? $body['data'] : array();
     }
 
+    /* Outbound call to EtelPay's shared-service-key API, same shape as
+       delivery_service_call() above but a different base URL/pairing -
+       reuses the same ETELID_SERVICE_KEY, since EtelPay's own service
+       endpoints (etelid_member_detail.php etc.) already authenticate
+       incoming calls against that same shared EtelGroup key. */
+    protected static function etelpay_service_call($path, $payload) {
+        $key = defined('ETELID_SERVICE_KEY') ? ETELID_SERVICE_KEY : get_option('etelid_service_key', '');
+        if (!$key) return new WP_Error('no_key', 'etelid_service_key is not configured.');
+
+        $home_parts = wp_parse_url(home_url());
+        $site_root  = (isset($home_parts['scheme']) ? $home_parts['scheme'] : 'https') . '://'
+                    . (isset($home_parts['host']) ? $home_parts['host'] : $_SERVER['HTTP_HOST']);
+        $base = get_option('etelid_etelpay_api_base', $site_root . '/Etel.Pay/wallet');
+        $url  = trailingslashit($base) . 'api/' . $path;
+
+        $resp = wp_remote_post($url, array(
+            'timeout' => 12,
+            'headers' => array('X-Etel-Service-Key' => $key, 'Content-Type' => 'application/json'),
+            'body'    => wp_json_encode($payload),
+        ));
+
+        if (is_wp_error($resp)) return $resp;
+        $code = wp_remote_retrieve_response_code($resp);
+        $body = json_decode(wp_remote_retrieve_body($resp), true);
+        if (!is_array($body)) return new WP_Error('bad_response', 'EtelPay returned an unreadable response.');
+        if ($code < 200 || $code >= 300 || empty($body['success'])) {
+            $msg = !empty($body['message']) ? $body['message'] : ('EtelPay request failed (HTTP ' . $code . ').');
+            return new WP_Error('etelpay_error', $msg);
+        }
+        return isset($body['data']) ? $body['data'] : array();
+    }
+
     /* Whether $phone currently holds $role_name at $company_slug in Etel
        Group's own Employees panel data - queried DIRECTLY here (this
        data lives in EtelID's own WordPress DB, the same tables
@@ -373,7 +412,7 @@ class Etelid_Nfc {
         $ident  = isset($_POST['identifier']) ? sanitize_text_field(wp_unslash($_POST['identifier'])) : '';
         $pass   = isset($_POST['password']) ? (string) $_POST['password'] : '';
 
-        if (!$token || !in_array($stage, array('pickup', 'delivery', 'ride_start', 'driver_status'), true) || !$ident || !$pass) {
+        if (!$token || !in_array($stage, array('pickup', 'delivery', 'ride_start', 'driver_status', 'etelpay_charge'), true) || !$ident || !$pass) {
             wp_send_json_error(array('message' => 'Missing required fields.'));
         }
 
@@ -447,6 +486,41 @@ class Etelid_Nfc {
             wp_send_json_success(array('driver_status' => $result));
         }
 
+        /* EtelPay tap-to-pay: does NOT charge anything yet, even though
+           the receiver's EtelID password just checked out above - money
+           only moves once the PAYER (whoever's card was tapped) also
+           proves their own EtelPay PIN, in ajax_charge_confirm() below.
+           This step only establishes who is collecting the payment and
+           for how much, same short-lived single-use action_token
+           pattern as every other stage here. */
+        if ('etelpay_charge' === $stage) {
+            $amount = isset($_POST['amount']) ? (float) $_POST['amount'] : 0;
+            $note   = isset($_POST['note']) ? sanitize_text_field(wp_unslash($_POST['note'])) : '';
+            if ($amount <= 0) wp_send_json_error(array('message' => 'Enter an amount greater than zero.'));
+
+            $action_token = wp_generate_password(24, false, false);
+            set_transient('etelid_nfc_action_' . $action_token, array(
+                'stage'             => $stage,
+                'amount'            => $amount,
+                'note'              => $note,
+                'courier_etel_id'   => $courier->etel_id,
+                'courier_phone'     => $courier->phone,
+                'confirmer_id'      => $confirmer->id,
+                'confirmer_etel_id' => $confirmer->etel_id,
+                'confirmer_phone'   => $confirmer->phone,
+                'confirmer_name'    => $confirmer->full_name,
+            ), 5 * MINUTE_IN_SECONDS);
+
+            EtelID_DB::log($confirmer->id, $confirmer->etel_id, 'nfc_etelpay_charge_start', 'NFC tap-to-pay started against ' . $courier->full_name . ' for ' . $amount . ' ETB');
+
+            wp_send_json_success(array(
+                'charge_pending' => true,
+                'action_token'   => $action_token,
+                'payer_name'     => $courier->full_name,
+                'amount'         => $amount,
+            ));
+        }
+
         $orders = self::delivery_service_call('nfc_list_courier_orders', array(
             'stage'              => $stage,
             'courier_etel_id'    => $courier->etel_id,
@@ -510,5 +584,48 @@ class Etelid_Nfc {
         }
 
         wp_send_json_success(array('message' => isset($result['message']) ? $result['message'] : 'Confirmed.'));
+    }
+
+    /* Step 2 of EtelPay tap-to-pay: the PAYER (whoever's card was
+       tapped) types their own EtelPay PIN into this same device. Only
+       here does any money actually move - service_nfc_charge.php
+       verifies the PIN itself against the payer's real pin_hash before
+       touching any balance. Single-use action_token, same as
+       ajax_confirm() above. */
+    public static function ajax_charge_confirm() {
+        if (!check_ajax_referer('etelid_public', 'nonce', false)) {
+            wp_send_json_error(array('message' => 'Session expired, please reload the page.'));
+        }
+
+        $action_token = isset($_POST['action_token']) ? sanitize_text_field(wp_unslash($_POST['action_token'])) : '';
+        $pin          = isset($_POST['payer_pin']) ? (string) $_POST['payer_pin'] : '';
+        if (!$action_token || !$pin) wp_send_json_error(array('message' => 'Missing required fields.'));
+
+        $key  = 'etelid_nfc_action_' . $action_token;
+        $data = get_transient($key);
+        if (false === $data || 'etelpay_charge' !== $data['stage']) {
+            wp_send_json_error(array('message' => 'This charge has expired. Please start again.'));
+        }
+        delete_transient($key); // single-use - a resubmit needs a fresh tap+login+amount
+
+        $result = self::etelpay_service_call('service_nfc_charge.php', array(
+            'receiver_phone' => $data['confirmer_phone'],
+            'payer_phone'    => $data['courier_phone'],
+            'payer_pin'      => $pin,
+            'amount'         => $data['amount'],
+            'note'           => $data['note'],
+        ));
+
+        if (is_wp_error($result)) {
+            wp_send_json_error(array('message' => $result->get_error_message()));
+        }
+
+        EtelID_DB::log($data['confirmer_id'], $data['confirmer_etel_id'], 'nfc_etelpay_charge', 'NFC tap-to-pay: charged ' . $data['courier_phone'] . ' ' . $data['amount'] . ' ETB, tx ' . (isset($result['tx_ref']) ? $result['tx_ref'] : '?'));
+
+        wp_send_json_success(array(
+            'message' => 'Payment of ' . $data['amount'] . ' ETB received.',
+            'tx_ref'  => isset($result['tx_ref']) ? $result['tx_ref'] : null,
+            'amount'  => $data['amount'],
+        ));
     }
 }
