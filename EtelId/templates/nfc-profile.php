@@ -529,6 +529,7 @@ $logo_madeya   = $site_root . '/Etel-Madeya/assets/images/etel-madeya-logo-sm.we
           <h2>Card Services</h2>
 
           <div id="nfc-step-menu" class="nfc-step active">
+            <p id="nfc-menu-empty" class="nfc-msg" style="display:none;">No card services are enabled for your EtelID account yet.</p>
             <button type="button" class="nfc-btn primary nfc-svc-row" data-stage="pickup">
               <span class="nfc-svc-icon"><img src="<?php echo esc_url($logo_delivery); ?>" alt="" loading="lazy"></span>
               <span class="nfc-svc-text"><span class="nfc-svc-role">Service Giver</span><span class="nfc-svc-title">Confirm Pickup</span></span>
@@ -644,6 +645,26 @@ $logo_madeya   = $site_root . '/Etel-Madeya/assets/images/etel-madeya-logo-sm.we
     document.getElementById(id).classList.add('active');
   }
 
+  // Hides the service rows the signed-in scanner doesn't hold the
+  // role for, so the menu shows only what THEY can actually use
+  // instead of all 8 actions to every visitor. capabilities is
+  // {stage: true|false}; a stage missing from it (an older backend,
+  // or a lookup that failed) stays visible rather than vanishing, so
+  // this can never silently hide a real action from someone entitled
+  // to it.
+  function applyCapabilities(capabilities) {
+    var rows = document.querySelectorAll('#nfc-step-menu .nfc-btn');
+    var visibleCount = 0;
+    for (var i = 0; i < rows.length; i++) {
+      var row = rows[i];
+      var stg = row.getAttribute('data-stage');
+      var allowed = !Object.prototype.hasOwnProperty.call(capabilities, stg) || capabilities[stg];
+      row.style.display = allowed ? '' : 'none';
+      if (allowed) visibleCount++;
+    }
+    document.getElementById('nfc-menu-empty').style.display = visibleCount ? 'none' : 'block';
+  }
+
   function post(action, data) {
     var body = 'action=' + encodeURIComponent(action) + '&nonce=' + encodeURIComponent(NONCE);
     for (var k in data) {
@@ -702,6 +723,8 @@ $logo_madeya   = $site_root . '/Etel-Madeya/assets/images/etel-madeya-logo-sm.we
           tierEl.textContent = d.tier + ' Tier';
           tierEl.style.display = 'block';
         }
+
+        applyCapabilities(d.capabilities || {});
 
         document.getElementById('nfc-step-gate').classList.remove('active');
         document.getElementById('nfc-revealed').style.display = 'block';

@@ -921,11 +921,55 @@ class Etelid_Nfc {
         }
 
         wp_send_json_success(array(
-            'name'      => $courier->full_name,
-            'etel_id'   => $courier->etel_id,
-            'tier'      => $courier->tier,
-            'photo_url' => !empty($courier->photo_url) ? $courier->photo_url : '',
+            'name'         => $courier->full_name,
+            'etel_id'      => $courier->etel_id,
+            'tier'         => $courier->tier,
+            'photo_url'    => !empty($courier->photo_url) ? $courier->photo_url : '',
+            'capabilities' => self::scanner_capabilities($confirmer),
         ));
+    }
+
+    /* Which of the 8 card-service buttons this SCANNING person (not
+       the tapped card's owner) can actually use, so the page can show
+       only the ones relevant to them instead of all 8 to everyone.
+       pickup/delivery and both EtelPay stages stay universally
+       visible - they have no real "role" of their own (a pickup
+       service giver or a paying customer is not an assigned staff
+       role, and every EtelID member already has an EtelPay wallet),
+       and were already self-filtering via "no matching orders found"
+       / a failed charge. The other four map to an actual role that
+       can be checked right now: Traffic Officer and Driver are
+       assigned in EtelID's own cross-company Employees panel
+       (etelid_companies), while Etel Madeya controllers/admins and
+       Etel Gebeya couriers live only in THEIR OWN databases, so a
+       small live lookup call is needed for those two - same
+       service-key bridge pattern as every other cross-system call on
+       this card. A lookup failure hides that button rather than
+       failing the whole reveal - one product being briefly
+       unreachable should never block signing in to view the card. */
+    protected static function scanner_capabilities($confirmer) {
+        $caps = array(
+            'pickup'                 => true,
+            'delivery'                => true,
+            'ride_start'              => self::has_company_role($confirmer->phone, 'etel-delivery', 'Driver'),
+            'driver_status'           => self::has_company_role($confirmer->phone, 'etel-delivery', 'Traffic Officer'),
+            'etelpay_payout'          => true,
+            'etelpay_cardholder_pay'  => true,
+            'etelmadeya_register'     => false,
+            'gebeya_delivery'         => false,
+        );
+
+        $madeya = self::madeya_service_call('service_nfc_check_role.php', array('phone' => $confirmer->phone));
+        if (!is_wp_error($madeya)) {
+            $caps['etelmadeya_register'] = !empty($madeya['is_eligible']);
+        }
+
+        $gebeya = self::gebeya_service_call('service_nfc_check_courier.php', array('phone' => $confirmer->phone));
+        if (!is_wp_error($gebeya)) {
+            $caps['gebeya_delivery'] = !empty($gebeya['is_courier']);
+        }
+
+        return $caps;
     }
 
 }
