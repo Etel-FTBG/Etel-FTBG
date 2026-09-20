@@ -102,7 +102,7 @@ case 'nfc_list_courier_orders': {
     $courier_user = nfc_find_or_create_user($pdo, $courier_etel_id, $courier_phone, '', false);
     if (!$courier_user) fail('This card is not linked to a courier account on Delivery yet. The courier needs to sign in with EtelID in the Courier app once first.', 404);
 
-    $cs = $pdo->prepare('SELECT id, zone, home_zone FROM couriers WHERE user_id = ?');
+    $cs = $pdo->prepare('SELECT id, zone, home_zone FROM couriers WHERE user_id = ? ORDER BY id DESC LIMIT 1');
     $cs->execute(array($courier_user['id']));
     $courier = $cs->fetch();
     if (!$courier) fail('No courier profile for this account.', 404);
@@ -118,7 +118,7 @@ case 'nfc_list_courier_orders': {
         if ($confirmer_user['role'] !== 'service_giver' && $confirmer_user['role'] !== 'admin') {
             fail('This EtelID is not registered as a Service Giver on Delivery.', 403);
         }
-        $sgs = $pdo->prepare('SELECT id, zone FROM service_givers WHERE user_id = ?');
+        $sgs = $pdo->prepare('SELECT id, zone FROM service_givers WHERE user_id = ? ORDER BY id DESC LIMIT 1');
         $sgs->execute(array($confirmer_user['id']));
         $sg = $sgs->fetch();
         if (!$sg) fail('Service giver profile not found.', 404);
@@ -175,7 +175,7 @@ case 'nfc_confirm_pickup': {
     $courier_phone   = isset($body['courier_phone'])   ? trim($body['courier_phone'])   : '';
     $courier_user = nfc_find_or_create_user($pdo, $courier_etel_id, $courier_phone, '', false);
     if (!$courier_user) fail('Courier account not found on Delivery.', 404);
-    $cs = $pdo->prepare('SELECT id, zone FROM couriers WHERE user_id = ?');
+    $cs = $pdo->prepare('SELECT id, zone FROM couriers WHERE user_id = ? ORDER BY id DESC LIMIT 1');
     $cs->execute(array($courier_user['id']));
     $courier = $cs->fetch();
     if (!$courier) fail('Courier profile not found.', 404);
@@ -189,7 +189,7 @@ case 'nfc_confirm_pickup': {
         fail('This EtelID is not registered as a Service Giver on Delivery.', 403);
     }
 
-    $sgs = $pdo->prepare('SELECT id, zone FROM service_givers WHERE user_id = ?');
+    $sgs = $pdo->prepare('SELECT id, zone FROM service_givers WHERE user_id = ? ORDER BY id DESC LIMIT 1');
     $sgs->execute(array($confirmer_user['id']));
     $sg = $sgs->fetch();
     if (!$sg) fail('Service giver profile not found.', 404);
@@ -241,7 +241,7 @@ case 'nfc_confirm_delivery': {
     $courier_phone   = isset($body['courier_phone'])   ? trim($body['courier_phone'])   : '';
     $courier_user = nfc_find_or_create_user($pdo, $courier_etel_id, $courier_phone, '', false);
     if (!$courier_user) fail('Courier account not found on Delivery.', 404);
-    $cs = $pdo->prepare('SELECT id FROM couriers WHERE user_id = ?');
+    $cs = $pdo->prepare('SELECT id FROM couriers WHERE user_id = ? ORDER BY id DESC LIMIT 1');
     $cs->execute(array($courier_user['id']));
     $courier = $cs->fetch();
     if (!$courier) fail('Courier profile not found.', 404);
