@@ -17,7 +17,6 @@ $photo = $has_member && !empty($member->photo_url) ? esc_url($member->photo_url)
 $nfc_token = (!empty($card) && isset($card->token)) ? esc_attr($card->token) : '';
 $nfc_ajax_url = esc_url(admin_url('admin-ajax.php'));
 $nfc_nonce = wp_create_nonce('etelid_public');
-$is_driver = !empty($driver_status);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -298,34 +297,6 @@ $is_driver = !empty($driver_status);
         <p class="tier"><?php echo $tier; ?> Tier</p>
       <?php endif; ?>
 
-      <?php if ($is_driver) : ?>
-      <div class="nfc-services">
-        <h2>Driver Compliance</h2>
-        <div class="nfc-driver-row">
-          <span>Vehicle</span>
-          <span><?php echo esc_html(trim($driver_status['vehicle_type'] . ' - ' . $driver_status['vehicle_plate'], ' -')); ?></span>
-        </div>
-        <?php if (!empty($driver_status['license_name']) || !empty($driver_status['license_masked'])) : ?>
-        <div class="nfc-driver-row">
-          <span>License</span>
-          <span><?php echo esc_html(trim($driver_status['license_name'] . ' ' . $driver_status['license_masked'])); ?></span>
-        </div>
-        <?php endif; ?>
-        <div class="nfc-driver-row">
-          <span>Identity</span>
-          <span class="nfc-badge-<?php echo esc_attr($driver_status['identity_match']); ?>"><?php echo esc_html(ucfirst($driver_status['identity_match'])); ?></span>
-        </div>
-        <div class="nfc-driver-row">
-          <span>Commission</span>
-          <span class="<?php echo 'paid' === $driver_status['payment_status'] ? 'nfc-badge-ok' : 'nfc-badge-bad'; ?>">
-            <?php echo 'paid' === $driver_status['payment_status']
-              ? 'Paid'
-              : esc_html('Unpaid - ETB ' . number_format((float) $driver_status['commission_owed'], 2)); ?>
-          </span>
-        </div>
-      </div>
-      <?php endif; ?>
-
       <div class="nfc-services">
         <h2>Card Services</h2>
 
@@ -336,6 +307,8 @@ $is_driver = !empty($driver_status);
           <button type="button" class="nfc-btn primary" data-stage="delivery">Confirm Delivery Complete</button>
           <p class="nfc-role-label">Driver</p>
           <button type="button" class="nfc-btn primary" data-stage="ride_start">Confirm Rider &amp; Start Trip</button>
+          <p class="nfc-role-label">Traffic Officer</p>
+          <button type="button" class="nfc-btn primary" data-stage="driver_status">Driver Info</button>
         </div>
 
         <div id="nfc-step-login" class="nfc-step">
@@ -443,6 +416,12 @@ $is_driver = !empty($driver_status);
           return;
         }
 
+        if (res.data.driver_status) {
+          renderDriverStatus(res.data.driver_status);
+          showStep('nfc-step-done');
+          return;
+        }
+
         actionToken = res.data.action_token;
         var orders = res.data.orders || [];
         var list = document.getElementById('nfc-order-list');
@@ -470,6 +449,43 @@ $is_driver = !empty($driver_status);
         msg.textContent = 'Network error, please try again.';
       });
   });
+
+  function renderDriverStatus(d) {
+    var doneMsg = document.getElementById('nfc-done-msg');
+    doneMsg.className = 'nfc-msg';
+    doneMsg.innerHTML = '';
+
+    if (!d.is_driver) {
+      doneMsg.textContent = 'This card is not linked to a driver account.';
+      return;
+    }
+
+    var wrap = document.createElement('div');
+
+    function row(label, valueText, badgeClass) {
+      var r = document.createElement('div');
+      r.className = 'nfc-driver-row';
+      var l = document.createElement('span');
+      l.textContent = label;
+      var v = document.createElement('span');
+      if (badgeClass) v.className = badgeClass;
+      v.textContent = valueText;
+      r.appendChild(l);
+      r.appendChild(v);
+      wrap.appendChild(r);
+    }
+
+    row('Vehicle', (d.vehicle_type || '') + (d.vehicle_plate ? ' - ' + d.vehicle_plate : ''));
+    if (d.license_name || d.license_masked) {
+      row('License', [d.license_name, d.license_masked].filter(Boolean).join(' '));
+    }
+    row('Identity', d.identity_match ? d.identity_match.charAt(0).toUpperCase() + d.identity_match.slice(1) : 'Unverified',
+      'nfc-badge-' + (d.identity_match || 'unverified'));
+    row('Commission', d.payment_status === 'paid' ? 'Paid' : ('Unpaid - ETB ' + parseFloat(d.commission_owed || 0).toFixed(2)),
+      d.payment_status === 'paid' ? 'nfc-badge-ok' : 'nfc-badge-bad');
+
+    doneMsg.appendChild(wrap);
+  }
 
   function confirmOrder(orderId) {
     post('etelid_nfc_confirm', { action_token: actionToken, order_id: orderId })
