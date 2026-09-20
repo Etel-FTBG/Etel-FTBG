@@ -174,18 +174,26 @@ case 'nfc_driver_status': {
     // side field - see taxi_bridge.php. Unreachable/not configured
     // shows 'unavailable', never a stale or guessed status.
     require_once __DIR__ . '/../taxi_bridge.php';
-    $taxi = taxi_bridge_check_association_payment($user['etel_id'], $phone ?: $user['phone']);
+    // taxi_bridge_check_association_payment($phone, $etel_id) - argument
+    // order matters, this was previously swapped (etel_id passed as
+    // $phone and vice versa), so EtelTaxi's driver lookup always failed
+    // and this always showed "Not registered with EtelTaxi" even for a
+    // real, registered driver.
+    $taxi = taxi_bridge_check_association_payment($phone ?: $user['phone'], $user['etel_id']);
     if ($taxi === null) {
         $association = array('status' => 'unavailable');
     } elseif (empty($taxi['is_registered'])) {
         $association = array('status' => 'not_registered');
     } else {
         $association = array(
-            'status'         => $taxi['payment_status'], // active | grace_period | overdue
+            // ServiceController.php's response key is 'status', not
+            // 'payment_status' - this always read as null/undefined.
+            'status'         => $taxi['status'], // active | grace_period | overdue
             'current_period' => isset($taxi['current_period']) ? $taxi['current_period'] : null,
             'window_end'     => isset($taxi['window_end']) ? $taxi['window_end'] : null,
             'penalty_owed'   => isset($taxi['penalty_owed']) ? floatval($taxi['penalty_owed']) : 0,
             'association'    => isset($taxi['association']) ? $taxi['association'] : null,
+            'last_payment'   => isset($taxi['last_payment']) ? $taxi['last_payment'] : null,
         );
     }
 

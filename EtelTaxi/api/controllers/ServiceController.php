@@ -61,6 +61,19 @@ case 'service_check_association_payment': {
     $as->execute(array($driver['association_id']));
     $assoc = $as->fetch();
 
+    // Most recent VERIFIED payment - EtelTaxi has no uploaded receipt
+    // photo (drivers submit a bank/Telebirr reference number, an admin
+    // verifies it - see taxi_dues_payments), so there is no image to
+    // link to. This gives the NFC card enough to build a real text
+    // receipt (period/amount/method/reference/verified date) instead
+    // of a fake or missing "View receipt" link.
+    $lp = $pdo->prepare('SELECT period_month, amount, penalty_amount, payment_method, reference_number, verified_at
+                         FROM ' . tbl('taxi_dues_payments') . '
+                         WHERE driver_id = ? AND status = "verified"
+                         ORDER BY verified_at DESC LIMIT 1');
+    $lp->execute(array($driver['id']));
+    $lastPayment = $lp->fetch();
+
     ok(array(
         'is_registered' => true,
         'status'         => $status['status'],
@@ -69,6 +82,14 @@ case 'service_check_association_payment': {
         'monthly_due'    => $status['monthly_due'],
         'penalty_owed'   => $status['penalty_owed'],
         'association'    => $assoc ? array('name_am' => $assoc['name_am'], 'name_en' => $assoc['name_en']) : null,
+        'last_payment'   => $lastPayment ? array(
+            'period_month'      => $lastPayment['period_month'],
+            'amount'             => floatval($lastPayment['amount']),
+            'penalty_amount'     => floatval($lastPayment['penalty_amount']),
+            'payment_method'     => $lastPayment['payment_method'],
+            'reference_number'   => $lastPayment['reference_number'],
+            'verified_at'        => $lastPayment['verified_at'],
+        ) : null,
     ));
     break;
 }
