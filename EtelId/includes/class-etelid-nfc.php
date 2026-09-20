@@ -948,15 +948,23 @@ class Etelid_Nfc {
        failing the whole reveal - one product being briefly
        unreachable should never block signing in to view the card. */
     protected static function scanner_capabilities($confirmer) {
-        /* The site admin (same single account EtelID_Auth::is_site_admin()
-           already recognizes elsewhere in this plugin, e.g. portal.php's
-           Admin Tools section) sees and can use every button - they are
-           not a Delivery driver, Traffic Officer, Madeya controller or
-           Gebeya courier individually, but administering all of these
-           companies is exactly what that account is for. Short-circuits
-           before the two live Madeya/Gebeya lookups below, so an admin
-           login is not slowed down by checks it does not need. */
-        if (class_exists('EtelID_Auth') && EtelID_Auth::is_site_admin($confirmer)) {
+        /* Etel Group admin/owner - assigned through the existing Company
+           Roles admin tool (role_at 'Admin' or 'Owner' at company_slug
+           'etel-group'), NOT EtelID_Auth::is_site_admin() - that check
+           depends on a WP option (etelid_admin_member_id) or a matching
+           admin_email that may not be configured for every real admin,
+           and this page has no WP session to fall back on either way.
+           A role in the Employees panel is something any current admin
+           can already grant to a new admin themselves, with no code
+           change and no dependency on WordPress-level settings. Sees and
+           can use every button - not individually a Delivery driver,
+           Traffic Officer, Madeya controller or Gebeya courier, but
+           administering all of these companies is exactly what this role
+           is for. Short-circuits before the two live Madeya/Gebeya
+           lookups below, so an admin login is not slowed down by checks
+           it does not need. */
+        if (self::has_company_role($confirmer->phone, 'etel-group', 'Admin')
+            || self::has_company_role($confirmer->phone, 'etel-group', 'Owner')) {
             return array(
                 'pickup'                 => true,
                 'delivery'                => true,
