@@ -66,8 +66,15 @@ function upd_sign_token($pass) {
 // only at login and not here left a bypass: anyone who knows the public
 // default password could self-sign a valid token with upd_sign_token()
 // and hit any authenticated action directly, without ever calling login.
+// Comparison must be case-insensitive: config.php ships EP_UPDATER_PASS
+// as the literal 'CHANGE_ME' (uppercase) - the old check here only
+// rejected the lowercase 'changeme', so a fresh checkout whose config.php
+// was never edited would treat 'CHANGE_ME' as a valid, configured
+// password and grant full file-deploy (arbitrary PHP write) access to
+// anyone who tried that known placeholder.
 function upd_password_is_configured($pass) {
-    return strlen($pass) >= 4 && $pass !== 'changeme' && $pass !== 'change_this_updater_password';
+    $p = strtolower(trim((string)$pass));
+    return strlen($p) >= 4 && $p !== 'changeme' && $p !== 'change_this_updater_password' && $p !== 'change-me';
 }
 function upd_verify_token($token) {
     if (!$token) return false;

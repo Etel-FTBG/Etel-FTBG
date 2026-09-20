@@ -1,0 +1,12 @@
+# EtelPay updater backups - deny all direct web access.
+# Files here are timestamped copies of deployed source (api/*.php, *.html,
+# js/*.js, etc.) written by updater-api.php's upd_backup() before every
+# overwrite. Nothing in this directory should ever be served directly.
+<IfModule mod_authz_core.c>
+    Require all denied
+</IfModule>
+<IfModule !mod_authz_core.c>
+    Order allow,deny
+    Deny from all
+</IfModule>
+Options -Indexes
