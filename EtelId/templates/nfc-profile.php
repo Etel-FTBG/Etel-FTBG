@@ -329,6 +329,8 @@ $nfc_nonce = wp_create_nonce('etelid_public');
           <button type="button" class="nfc-btn primary" data-stage="driver_status">Driver Info</button>
           <p class="nfc-role-label">Collect Payment</p>
           <button type="button" class="nfc-btn primary" data-stage="etelpay_charge">Charge via EtelPay</button>
+          <p class="nfc-role-label">Pay Driver / Cardholder</p>
+          <button type="button" class="nfc-btn primary" data-stage="etelpay_payout">Pay Out via EtelPay</button>
         </div>
 
         <div id="nfc-step-charge-amount" class="nfc-step">
@@ -436,10 +438,15 @@ $nfc_nonce = wp_create_nonce('etelid_public');
   for (var m = 0; m < menuBtns.length; m++) {
     menuBtns[m].addEventListener('click', function () {
       stage = this.getAttribute('data-stage');
-      // EtelPay charge needs an amount first - the operator's own
-      // EtelID login (nfc-step-login) comes after, same as every other
-      // stage, since it's what identifies who is COLLECTING the money.
-      showStep(stage === 'etelpay_charge' ? 'nfc-step-charge-amount' : 'nfc-step-login');
+      // Both EtelPay stages need an amount first. From there:
+      // - etelpay_charge: the CARDHOLDER's own money is leaving, so the
+      //   next step is the cardholder's password (nfc-step-charge-pin),
+      //   never an operator login.
+      // - etelpay_payout: the BUSINESS account's money is leaving, so
+      //   the next step is the operator's own EtelID login
+      //   (nfc-step-login), same trust level as every other stage here.
+      var etelpayStages = (stage === 'etelpay_charge' || stage === 'etelpay_payout');
+      showStep(etelpayStages ? 'nfc-step-charge-amount' : 'nfc-step-login');
     });
   }
 
@@ -453,6 +460,38 @@ $nfc_nonce = wp_create_nonce('etelid_public');
     chargeNote = document.getElementById('nfc-charge-note').value.trim();
     msg.className = 'nfc-msg';
     msg.textContent = '';
+
+    if (stage === 'etelpay_charge') {
+      // No operator login for a charge - call straight through with
+      // just the amount, then the cardholder approves with their own
+      // password on the next step.
+      this.disabled = true;
+      var selfBtn = this;
+      post('etelid_nfc_start', { token: TOKEN, stage: stage, amount: chargeAmount, note: chargeNote })
+        .then(function (res) {
+          selfBtn.disabled = false;
+          if (!res.success) {
+            msg.className = 'nfc-msg error';
+            msg.textContent = res.data && res.data.message ? res.data.message : 'Could not continue.';
+            return;
+          }
+          actionToken = res.data.action_token;
+          document.getElementById('nfc-charge-pin-hint').textContent =
+            'Charging ' + res.data.payer_name + ' ' + res.data.amount + ' ETB. Hand the device to the cardholder.';
+          document.getElementById('nfc-charge-pin-msg').textContent = '';
+          document.getElementById('nfc-charge-pin').value = '';
+          showStep('nfc-step-charge-pin');
+        })
+        .catch(function () {
+          selfBtn.disabled = false;
+          msg.className = 'nfc-msg error';
+          msg.textContent = 'Network error, please try again.';
+        });
+      return;
+    }
+
+    // etelpay_payout: business money is leaving, so the operator
+    // authorizes it next with their own EtelID login.
     showStep('nfc-step-login');
   });
 
@@ -467,7 +506,7 @@ $nfc_nonce = wp_create_nonce('etelid_public');
     this.disabled = true;
     var self = this;
     var postData = { token: TOKEN, stage: stage, identifier: ident, password: pass };
-    if (stage === 'etelpay_charge') { postData.amount = chargeAmount; postData.note = chargeNote; }
+    if (stage === 'etelpay_payout') { postData.amount = chargeAmount; postData.note = chargeNote; }
     post('etelid_nfc_start', postData)
       .then(function (res) {
         self.disabled = false;
@@ -490,13 +529,11 @@ $nfc_nonce = wp_create_nonce('etelid_public');
           return;
         }
 
-        if (res.data.charge_pending) {
-          actionToken = res.data.action_token;
-          document.getElementById('nfc-charge-pin-hint').textContent =
-            'Charging ' + res.data.payer_name + ' ' + res.data.amount + ' ETB. Hand the device to the cardholder.';
-          document.getElementById('nfc-charge-pin-msg').textContent = '';
-          document.getElementById('nfc-charge-pin').value = '';
-          showStep('nfc-step-charge-pin');
+        if (res.data.payout_done) {
+          var payoutMsg = document.getElementById('nfc-done-msg');
+          payoutMsg.className = 'nfc-msg ok';
+          payoutMsg.textContent = res.data.message || 'Payment sent.';
+          showStep('nfc-step-done');
           return;
         }
 
