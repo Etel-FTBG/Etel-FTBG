@@ -9,11 +9,12 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+/* The tapped card's own photo/name/Etel-ID/tier are deliberately NOT
+   echoed anywhere below - a bare tap alone must not reveal anyone's
+   personal info. $has_member only tells us whether the token itself
+   is valid; the actual member fields are fetched by ajax_reveal()
+   only after the scanning person proves their own EtelID login. */
 $has_member = !empty($member);
-$name = $has_member ? esc_html($member->full_name) : '';
-$etelid_number = $has_member ? esc_html($member->etel_id) : '';
-$tier = $has_member ? esc_html($member->tier) : '';
-$photo = $has_member && !empty($member->photo_url) ? esc_url($member->photo_url) : '';
 $nfc_token = (!empty($card) && isset($card->token)) ? esc_attr($card->token) : '';
 $nfc_ajax_url = esc_url(admin_url('admin-ajax.php'));
 $nfc_nonce = wp_create_nonce('etelid_public');
@@ -23,7 +24,7 @@ $nfc_nonce = wp_create_nonce('etelid_public');
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title><?php echo $has_member ? $name . ' - EtelID' : 'EtelID'; ?></title>
+<title>EtelID</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
 <style>
@@ -302,68 +303,63 @@ $nfc_nonce = wp_create_nonce('etelid_public');
     <div class="mark">&#4773;<span>E</span> ETELID</div>
 
     <?php if ($has_member) : ?>
-      <?php if ($photo) : ?>
-        <img class="photo" src="<?php echo $photo; ?>" alt="<?php echo $name; ?>">
-      <?php else : ?>
-        <div class="photo-placeholder"><?php echo strtoupper(substr($name, 0, 1)); ?></div>
-      <?php endif; ?>
-
-      <p class="name"><?php echo $name; ?></p>
-      <p class="etelid"><?php echo $etelid_number; ?></p>
-      <div class="badge">&#10003; Verified Member</div>
-      <?php if ($tier) : ?>
-        <p class="tier"><?php echo $tier; ?> Tier</p>
-      <?php endif; ?>
-
-      <div class="nfc-services">
-        <h2>Card Services</h2>
-
-        <div id="nfc-step-menu" class="nfc-step active">
-          <p class="nfc-role-label">Service Giver</p>
-          <button type="button" class="nfc-btn primary" data-stage="pickup">Confirm Pickup</button>
-          <p class="nfc-role-label">Customer</p>
-          <button type="button" class="nfc-btn primary" data-stage="delivery">Confirm Delivery Complete</button>
-          <p class="nfc-role-label">Driver</p>
-          <button type="button" class="nfc-btn primary" data-stage="ride_start">Confirm Rider &amp; Start Trip</button>
-          <p class="nfc-role-label">Traffic Officer</p>
-          <button type="button" class="nfc-btn primary" data-stage="driver_status">Driver Info</button>
-          <p class="nfc-role-label">Pay Driver / Cardholder / Collect Payment</p>
-          <button type="button" class="nfc-btn primary" data-stage="etelpay_payout">Pay Out via EtelPay</button>
-          <p class="nfc-role-label">Cardholder Pays (tap to pay)</p>
-          <button type="button" class="nfc-btn primary" data-stage="etelpay_cardholder_pay">Cardholder Pays via EtelPay</button>
-          <p class="nfc-role-label">Station Controller</p>
-          <button type="button" class="nfc-btn primary" data-stage="etelmadeya_register">Register in Queue</button>
+      <div id="nfc-step-gate" class="nfc-step active">
+        <p class="nfc-role-label">Sign in with your own EtelID to view this card</p>
+        <div class="nfc-field">
+          <label>Your Phone or Etel-ID</label>
+          <input type="text" id="nfc-gate-ident" placeholder="09... or EG-2026-00001" autocomplete="username">
         </div>
-
-        <div id="nfc-step-charge-amount" class="nfc-step">
-          <div class="nfc-field">
-            <label>Amount (ETB)</label>
-            <input type="number" id="nfc-charge-amount" placeholder="0.00" min="0.01" step="0.01" inputmode="decimal">
-          </div>
-          <div class="nfc-field">
-            <label>Note (optional)</label>
-            <input type="text" id="nfc-charge-note" placeholder="What is this for?">
-          </div>
-          <button type="button" class="nfc-btn primary" id="nfc-charge-amount-next">Continue</button>
-          <span class="nfc-back" data-back="menu">Cancel</span>
-          <div id="nfc-charge-amount-msg" class="nfc-msg"></div>
+        <div class="nfc-field">
+          <label>Your EtelID Password</label>
+          <input type="password" id="nfc-gate-pass" placeholder="Password" autocomplete="current-password">
         </div>
+        <button type="button" class="nfc-btn primary" id="nfc-gate-submit">View Card</button>
+        <div id="nfc-gate-msg" class="nfc-msg"></div>
+      </div>
 
-        <div id="nfc-step-login" class="nfc-step">
-          <div class="nfc-field">
-            <label>Your Phone or Etel-ID</label>
-            <input type="text" id="nfc-ident" placeholder="09... or EG-2026-00001" autocomplete="username">
-          </div>
-          <div class="nfc-field">
-            <label>Your EtelID Password</label>
-            <input type="password" id="nfc-pass" placeholder="Password" autocomplete="current-password">
-          </div>
-          <button type="button" class="nfc-btn primary" id="nfc-login-submit">Continue</button>
-          <span class="nfc-back" data-back="menu">Cancel</span>
-          <div id="nfc-login-msg" class="nfc-msg"></div>
-        </div>
+      <div id="nfc-revealed" style="display:none;">
+        <img class="photo" id="nfc-photo" style="display:none;">
+        <div class="photo-placeholder" id="nfc-photo-placeholder" style="display:none;"></div>
+        <p class="name" id="nfc-name"></p>
+        <p class="etelid" id="nfc-etelid"></p>
+        <div class="badge">&#10003; Verified Member</div>
+        <p class="tier" id="nfc-tier" style="display:none;"></p>
 
-        <div id="nfc-step-cardholder-pay-pin" class="nfc-step">
+        <div class="nfc-services">
+          <h2>Card Services</h2>
+
+          <div id="nfc-step-menu" class="nfc-step active">
+            <p class="nfc-role-label">Service Giver</p>
+            <button type="button" class="nfc-btn primary" data-stage="pickup">Confirm Pickup</button>
+            <p class="nfc-role-label">Customer</p>
+            <button type="button" class="nfc-btn primary" data-stage="delivery">Confirm Delivery Complete</button>
+            <p class="nfc-role-label">Driver</p>
+            <button type="button" class="nfc-btn primary" data-stage="ride_start">Confirm Rider &amp; Start Trip</button>
+            <p class="nfc-role-label">Traffic Officer</p>
+            <button type="button" class="nfc-btn primary" data-stage="driver_status">Driver Info</button>
+            <p class="nfc-role-label">Pay Driver / Cardholder / Collect Payment</p>
+            <button type="button" class="nfc-btn primary" data-stage="etelpay_payout">Pay Out via EtelPay</button>
+            <p class="nfc-role-label">Cardholder Pays (tap to pay)</p>
+            <button type="button" class="nfc-btn primary" data-stage="etelpay_cardholder_pay">Cardholder Pays via EtelPay</button>
+            <p class="nfc-role-label">Station Controller</p>
+            <button type="button" class="nfc-btn primary" data-stage="etelmadeya_register">Register in Queue</button>
+          </div>
+
+          <div id="nfc-step-charge-amount" class="nfc-step">
+            <div class="nfc-field">
+              <label>Amount (ETB)</label>
+              <input type="number" id="nfc-charge-amount" placeholder="0.00" min="0.01" step="0.01" inputmode="decimal">
+            </div>
+            <div class="nfc-field">
+              <label>Note (optional)</label>
+              <input type="text" id="nfc-charge-note" placeholder="What is this for?">
+            </div>
+            <button type="button" class="nfc-btn primary" id="nfc-charge-amount-next">Continue</button>
+            <span class="nfc-back" data-back="menu">Cancel</span>
+            <div id="nfc-charge-amount-msg" class="nfc-msg"></div>
+          </div>
+
+          <div id="nfc-step-cardholder-pay-pin" class="nfc-step">
           <p id="nfc-cardholder-pay-pin-hint" class="nfc-msg"></p>
           <div class="nfc-field">
             <label>Cardholder: Your Phone or Etel-ID</label>
@@ -393,6 +389,7 @@ $nfc_nonce = wp_create_nonce('etelid_public');
         <div id="nfc-step-done" class="nfc-step">
           <div id="nfc-done-msg" class="nfc-msg"></div>
           <span class="nfc-back" data-back="menu">Back</span>
+        </div>
         </div>
       </div>
     <?php else : ?>
@@ -432,12 +429,65 @@ $nfc_nonce = wp_create_nonce('etelid_public');
     }).then(function (r) { return r.json(); });
   }
 
+  // Reused for every action after the reveal gate below - the scanning
+  // person's identity/password only needs to be typed once per visit.
+  var gateIdent = '', gatePass = '';
+
+  document.getElementById('nfc-gate-submit').addEventListener('click', function () {
+    var ident = document.getElementById('nfc-gate-ident').value.trim();
+    var pass = document.getElementById('nfc-gate-pass').value;
+    var msg = document.getElementById('nfc-gate-msg');
+    msg.className = 'nfc-msg';
+    msg.textContent = '';
+    if (!ident || !pass) { msg.className = 'nfc-msg error'; msg.textContent = 'Enter your phone/Etel-ID and password.'; return; }
+
+    this.disabled = true;
+    var self = this;
+    post('etelid_nfc_reveal', { token: TOKEN, identifier: ident, password: pass })
+      .then(function (res) {
+        self.disabled = false;
+        if (!res.success) {
+          msg.className = 'nfc-msg error';
+          msg.textContent = res.data && res.data.message ? res.data.message : 'Could not continue.';
+          return;
+        }
+        gateIdent = ident;
+        gatePass = pass;
+
+        var d = res.data;
+        document.title = d.name + ' - EtelID';
+        document.getElementById('nfc-name').textContent = d.name;
+        document.getElementById('nfc-etelid').textContent = d.etel_id;
+        if (d.photo_url) {
+          var photoEl = document.getElementById('nfc-photo');
+          photoEl.src = d.photo_url;
+          photoEl.alt = d.name;
+          photoEl.style.display = 'block';
+        } else {
+          var placeholder = document.getElementById('nfc-photo-placeholder');
+          placeholder.textContent = (d.name || '?').charAt(0).toUpperCase();
+          placeholder.style.display = 'flex';
+        }
+        if (d.tier) {
+          var tierEl = document.getElementById('nfc-tier');
+          tierEl.textContent = d.tier + ' Tier';
+          tierEl.style.display = 'block';
+        }
+
+        document.getElementById('nfc-step-gate').classList.remove('active');
+        document.getElementById('nfc-revealed').style.display = 'block';
+        showStep('nfc-step-menu');
+      })
+      .catch(function () {
+        self.disabled = false;
+        msg.className = 'nfc-msg error';
+        msg.textContent = 'Network error, please try again.';
+      });
+  });
+
   var backs = document.querySelectorAll('.nfc-back');
   for (var b = 0; b < backs.length; b++) {
     backs[b].addEventListener('click', function () {
-      document.getElementById('nfc-ident').value = '';
-      document.getElementById('nfc-pass').value = '';
-      document.getElementById('nfc-login-msg').textContent = '';
       document.getElementById('nfc-charge-amount').value = '';
       document.getElementById('nfc-charge-note').value = '';
       document.getElementById('nfc-charge-amount-msg').textContent = '';
@@ -452,20 +502,16 @@ $nfc_nonce = wp_create_nonce('etelid_public');
   for (var m = 0; m < menuBtns.length; m++) {
     menuBtns[m].addEventListener('click', function () {
       stage = this.getAttribute('data-stage');
-      // Both EtelPay stages need an amount first, then whoever is
-      // filling in this form types their own EtelID login - that
-      // login both identifies AND authorizes it, since it's their own
-      // money leaving either way (etelpay_payout: they're paying the
-      // tapped card's owner; etelpay_cardholder_pay: the tapped card
-      // pays instead - their own approval comes after this login,
-      // which here only identifies who's collecting).
-      // "Register in Queue" (etelmadeya_register) also needs the
-      // controller's own login here - a shared station device can be
-      // used by different controllers through the day, so there is no
-      // reliable ambient "who's signed in" to read; only an explicit
-      // login on this specific tap correctly identifies who's doing it.
+      // Both EtelPay stages need an amount first. Every stage's own
+      // identity/authorization now comes from the reveal-gate login
+      // above (reused via gateIdent/gatePass in startFlow()) - no
+      // separate per-action login step anymore.
       var etelpayStages = (stage === 'etelpay_payout' || stage === 'etelpay_cardholder_pay');
-      showStep(etelpayStages ? 'nfc-step-charge-amount' : 'nfc-step-login');
+      if (etelpayStages) {
+        showStep('nfc-step-charge-amount');
+      } else {
+        startFlow({});
+      }
     });
   }
 
@@ -479,56 +525,45 @@ $nfc_nonce = wp_create_nonce('etelid_public');
     chargeNote = document.getElementById('nfc-charge-note').value.trim();
     msg.className = 'nfc-msg';
     msg.textContent = '';
-    showStep('nfc-step-login');
+    startFlow({ amount: chargeAmount, note: chargeNote });
   });
 
-  document.getElementById('nfc-login-submit').addEventListener('click', function () {
-    var ident = document.getElementById('nfc-ident').value.trim();
-    var pass = document.getElementById('nfc-pass').value;
-    var msg = document.getElementById('nfc-login-msg');
-    msg.className = 'nfc-msg';
-    msg.textContent = '';
-    if (!ident || !pass) { msg.className = 'nfc-msg error'; msg.textContent = 'Enter your phone/Etel-ID and password.'; return; }
+  function startFlow(extra) {
+    var doneMsg = document.getElementById('nfc-done-msg');
+    doneMsg.className = 'nfc-msg';
+    doneMsg.textContent = 'Please wait...';
+    showStep('nfc-step-done');
 
-    this.disabled = true;
-    var self = this;
-    var postData = { token: TOKEN, stage: stage, identifier: ident, password: pass };
-    if (stage === 'etelpay_payout' || stage === 'etelpay_cardholder_pay') { postData.amount = chargeAmount; postData.note = chargeNote; }
+    var postData = { token: TOKEN, stage: stage, identifier: gateIdent, password: gatePass };
+    for (var k in extra) { if (Object.prototype.hasOwnProperty.call(extra, k)) postData[k] = extra[k]; }
+
     post('etelid_nfc_start', postData)
       .then(function (res) {
-        self.disabled = false;
         if (!res.success) {
-          msg.className = 'nfc-msg error';
-          msg.textContent = res.data && res.data.message ? res.data.message : 'Could not continue.';
+          doneMsg.className = 'nfc-msg error';
+          doneMsg.textContent = res.data && res.data.message ? res.data.message : 'Could not continue.';
           return;
         }
         if (res.data.ride_started) {
-          var startMsg = document.getElementById('nfc-done-msg');
-          startMsg.className = 'nfc-msg ok';
-          startMsg.textContent = res.data.message || 'Trip started.';
-          showStep('nfc-step-done');
+          doneMsg.className = 'nfc-msg ok';
+          doneMsg.textContent = res.data.message || 'Trip started.';
           return;
         }
 
         if (res.data.driver_status) {
           renderDriverStatus(res.data.driver_status);
-          showStep('nfc-step-done');
           return;
         }
 
         if (res.data.payout_done) {
-          var payMsg = document.getElementById('nfc-done-msg');
-          payMsg.className = 'nfc-msg ok';
-          payMsg.textContent = res.data.message || 'Payment sent.';
-          showStep('nfc-step-done');
+          doneMsg.className = 'nfc-msg ok';
+          doneMsg.textContent = res.data.message || 'Payment sent.';
           return;
         }
 
         if (res.data.madeya_register_done) {
-          var madeyaMsg = document.getElementById('nfc-done-msg');
-          madeyaMsg.className = 'nfc-msg ok';
-          madeyaMsg.textContent = res.data.message || 'Registered in queue.';
-          showStep('nfc-step-done');
+          doneMsg.className = 'nfc-msg ok';
+          doneMsg.textContent = res.data.message || 'Registered in queue.';
           return;
         }
 
@@ -592,11 +627,10 @@ $nfc_nonce = wp_create_nonce('etelid_public');
         showStep('nfc-step-orders');
       })
       .catch(function () {
-        self.disabled = false;
-        msg.className = 'nfc-msg error';
-        msg.textContent = 'Network error, please try again.';
+        doneMsg.className = 'nfc-msg error';
+        doneMsg.textContent = 'Network error, please try again.';
       });
-  });
+  }
 
   function renderDriverStatus(d) {
     var doneMsg = document.getElementById('nfc-done-msg');
