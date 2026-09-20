@@ -146,7 +146,7 @@ function taxi_admin_capabilities($pdo, $admin) {
     // these role names fell through to the safe read-only baseline
     // below instead, blocking normal admin actions like verifying a
     // payment with "requires: payments.manage".
-    if (in_array(strtolower($admin['staff_role']), array('owner', 'admin', 'manager'), true)) {
+    if (in_array(strtolower(trim($admin['staff_role'])), array('owner', 'admin', 'manager'), true)) {
         return array('*');
     }
     try {
