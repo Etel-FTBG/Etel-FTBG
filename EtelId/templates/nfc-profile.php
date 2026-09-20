@@ -498,7 +498,12 @@ $nfc_nonce = wp_create_nonce('etelid_public');
         + '</style></head><body><h1>' + title + '</h1><table>'
         + rows.map(function (r) { return '<tr><td>' + r[0] + '</td><td>' + (r[1] || '-') + '</td></tr>'; }).join('')
         + '</table><div class="foot">ethelmarket.com &middot; Printed ' + new Date().toLocaleString() + '</div></body></html>';
-      return 'data:text/html;charset=utf-8,' + encodeURIComponent(html);
+      // A blob: URL, not data: - Chrome blocks top-level/new-tab
+      // navigation to data: URLs as an anti-phishing measure, which on
+      // some builds tears down the whole tab/browser instead of just
+      // failing quietly. blob: URLs open normally.
+      var blob = new Blob([html], { type: 'text/html' });
+      return URL.createObjectURL(blob);
     }
 
     if (d.license_photo_url) {
