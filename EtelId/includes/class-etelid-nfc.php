@@ -331,6 +331,33 @@ class Etelid_Nfc {
         return isset($body['data']) ? $body['data'] : array();
     }
 
+    /* Whether $phone currently holds $role_name at $company_slug in Etel
+       Group's own Employees panel data - queried DIRECTLY here (this
+       data lives in EtelID's own WordPress DB, the same tables
+       EtelID_Service_Api::check_role() reads), never over HTTP.
+       Delivery's nfc_driver_status previously re-derived this by
+       calling BACK into EtelID's own REST API mid-request (Delivery's
+       etelid_bridge_check_role) while EtelID was itself in the middle
+       of calling Delivery for this exact request - a self-referential
+       round trip that can deadlock on shared hosting with a small
+       PHP-FPM worker pool (every worker ends up blocked waiting on
+       another blocked worker). Checking locally here removes that
+       outbound hop entirely instead of just tuning a timeout. */
+    protected static function has_company_role($phone, $company_slug, $role_name) {
+        global $wpdb;
+        $companies_t = EtelID_DB::t_companies();
+        $members_t   = EtelID_DB::t_members();
+        $row = $wpdb->get_row($wpdb->prepare(
+            "SELECT c.role_at
+               FROM {$companies_t} c
+               JOIN {$members_t} m ON m.id = c.member_id
+              WHERE c.company_slug = %s AND m.phone = %s AND c.active = 1
+              ORDER BY c.linked_at DESC LIMIT 1",
+            $company_slug, $phone
+        ));
+        return $row && isset($row->role_at) && 0 === strcasecmp($row->role_at, $role_name);
+    }
+
     /* Step 1: the scanning person picks "Confirm Pickup" / "Confirm
        Delivery Complete" and enters THEIR OWN EtelID phone/Etel-ID +
        password. On success, returns the courier's active orders for
@@ -404,6 +431,9 @@ class Etelid_Nfc {
            to pre-check it here. Read-only either way, so this is a
            single round trip with no second confirm step. */
         if ('driver_status' === $stage) {
+            if (!self::has_company_role($confirmer->phone, 'etel-delivery', 'Traffic Officer')) {
+                wp_send_json_error(array('message' => 'Traffic Officer access required to view driver compliance info.'));
+            }
             $result = self::delivery_service_call('nfc_driver_status', array(
                 'etel_id'         => $courier->etel_id,
                 'phone'           => $courier->phone,
