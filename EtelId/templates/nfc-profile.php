@@ -516,12 +516,31 @@ $nfc_nonce = wp_create_nonce('etelid_public');
     }
     row('Identity', d.identity_match ? d.identity_match.charAt(0).toUpperCase() + d.identity_match.slice(1) : 'Unverified',
       'nfc-badge-' + (d.identity_match || 'unverified'));
-    row('Association Due', d.association_payment_status === 'paid' ? 'Paid' : 'Unpaid',
-      d.association_payment_status === 'paid' ? 'nfc-badge-ok' : 'nfc-badge-bad',
-      d.association_receipt_url);
-    row('Insurance', d.insurance_status === 'paid' ? 'Paid' : 'Unpaid',
-      d.insurance_status === 'paid' ? 'nfc-badge-ok' : 'nfc-badge-bad',
-      d.insurance_receipt_url);
+
+    // Association dues - live from EtelTaxi's own database, not a
+    // Delivery-side field, so this can also legitimately say
+    // "unavailable" (EtelTaxi unreachable) or "not registered" (this
+    // driver has no EtelTaxi account at all), not just paid/unpaid.
+    var a = d.association || {};
+    var assocText, assocClass;
+    if (a.status === 'active') { assocText = 'Paid / Active'; assocClass = 'nfc-badge-ok'; }
+    else if (a.status === 'grace_period') { assocText = 'Due (grace period until ' + (a.window_end || '?') + ')'; assocClass = 'nfc-badge-unverified'; }
+    else if (a.status === 'overdue') { assocText = 'OVERDUE' + (a.penalty_owed ? ' - ETB ' + parseFloat(a.penalty_owed).toFixed(2) + ' penalty' : ''); assocClass = 'nfc-badge-bad'; }
+    else if (a.status === 'not_registered') { assocText = 'Not registered with EtelTaxi'; assocClass = 'nfc-badge-unverified'; }
+    else { assocText = 'Unavailable'; assocClass = 'nfc-badge-unverified'; }
+    row('Association Due', assocText, assocClass);
+
+    function docRow(label, doc) {
+      doc = doc || {};
+      var text, cls;
+      if (doc.status === 'valid') { text = 'Valid until ' + doc.expiry_date; cls = 'nfc-badge-ok'; }
+      else if (doc.status === 'expired') { text = 'EXPIRED (' + doc.expiry_date + ')'; cls = 'nfc-badge-bad'; }
+      else { text = 'Not on file'; cls = 'nfc-badge-unverified'; }
+      row(label, text, cls, doc.receipt_url);
+    }
+    docRow('Insurance', d.insurance);
+    docRow('Technical Inspection', d.technical_inspection);
+    docRow('Road Fund', d.road_fund);
 
     doneMsg.appendChild(wrap);
   }
