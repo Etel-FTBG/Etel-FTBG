@@ -592,7 +592,7 @@ $nfc_nonce = wp_create_nonce('etelid_public');
       var lp = a.last_payment;
       var badgeKind = a.status === 'active' ? 'ok' : (a.status === 'overdue' ? 'bad' : 'warn');
       assocReceiptUrl = buildReceiptUrl('Association Due', [
-        ['Association', (a.name_en || a.name_am || '-')],
+        ['Association', (a.association ? (a.association.name_en || a.association.name_am) : null)],
         ['Period', lp.period_month],
         ['Amount', 'ETB ' + parseFloat(lp.amount || 0).toFixed(2) + (lp.penalty_amount > 0 ? ' + ETB ' + parseFloat(lp.penalty_amount).toFixed(2) + ' penalty' : '')],
         ['Method', lp.payment_method],
