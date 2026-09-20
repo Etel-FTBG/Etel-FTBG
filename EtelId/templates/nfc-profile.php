@@ -185,6 +185,15 @@ $nfc_nonce = wp_create_nonce('etelid_public');
     text-align: center;
   }
   .nfc-btn:hover { background: rgba(212,175,55,0.16); }
+  .nfc-role-label {
+    font-family: 'Syne', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: rgba(242,232,208,0.45);
+    margin: 0 0 6px;
+  }
   .nfc-btn.primary {
     background: linear-gradient(135deg,#C8960C,#D4AF37);
     color: #0d0d0d;
@@ -269,8 +278,9 @@ $nfc_nonce = wp_create_nonce('etelid_public');
         <h2>Courier Services</h2>
 
         <div id="nfc-step-menu" class="nfc-step active">
-          <button type="button" class="nfc-btn primary" data-stage="accepted">Verify Order Accepted</button>
+          <p class="nfc-role-label">Service Giver</p>
           <button type="button" class="nfc-btn primary" data-stage="pickup">Confirm Pickup</button>
+          <p class="nfc-role-label">Customer</p>
           <button type="button" class="nfc-btn primary" data-stage="delivery">Confirm Delivery Complete</button>
         </div>
 
@@ -380,15 +390,6 @@ $nfc_nonce = wp_create_nonce('etelid_public');
           p.className = 'nfc-msg';
           p.textContent = 'No matching active orders found for this courier.';
           list.appendChild(p);
-        } else if (stage === 'accepted') {
-          // Read-only verification - nothing to tap, nothing changes.
-          orders.forEach(function (o) {
-            var el = document.createElement('div');
-            el.className = 'nfc-order';
-            el.style.cursor = 'default';
-            el.textContent = '\u2713 ' + (o.order_code || ('#' + o.id)) + '  -  ' + o.from_zone + ' to ' + o.to_zone + ' (accepted by this courier)';
-            list.appendChild(el);
-          });
         } else {
           orders.forEach(function (o) {
             var el = document.createElement('button');
