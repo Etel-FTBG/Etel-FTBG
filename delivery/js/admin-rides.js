@@ -423,7 +423,19 @@ function rejectDriverIdentity(id){
    view - the Traffic Officer role only gets a separate, narrower
    drivers.compliance.view capability checked server-side by
    nfc_driver_status, and never sees this admin panel at all. */
+/* Association dues are NOT managed here at all - nfc_driver_status
+   checks EtelTaxi's own live database instead (see taxi_bridge.php),
+   since EtelTaxi is the actual system of record for that. This panel
+   only manages the three physical documents Delivery has no other
+   source for: insurance, technical inspection, and Road Fund sticker -
+   each by real expiry date (matching what's printed on the actual
+   certificate/sticker), not a manually-flipped paid/unpaid switch. */
 var DC={rows:[]};
+var DC_DOCS=[
+  {key:'insurance',label:'Insurance'},
+  {key:'technical_inspection',label:'Technical Inspection'},
+  {key:'road_fund',label:'Road Fund'}
+];
 async function loadDriverCompliance(){
   var wrap=document.getElementById('driver-compliance-wrap');
   if(!wrap)return;
@@ -442,6 +454,20 @@ async function loadDriverCompliance(){
     wrap.innerHTML='<div style="padding:16px;color:#e74c3c">Could not load driver compliance: '+esc(msg||'API error')+'</div>';
   });
 }
+function dcDocCell(r,doc){
+  var expiry=r[doc.key+'_expiry_date'];
+  var receipt=r[doc.key+'_receipt_url'];
+  var badge;
+  if(!expiry){
+    badge='<span style="color:#9A9AAE">Not set</span>';
+  }else{
+    var today=new Date().toISOString().slice(0,10);
+    var valid=expiry>=today;
+    badge='<span style="color:'+(valid?'#2ECC71':'#e74c3c')+'">'+(valid?'Valid':'EXPIRED')+' until '+esc(expiry)+'</span>';
+  }
+  if(receipt)badge+=' <a href="'+esc(receipt)+'" target="_blank" style="color:#4ECDC4;font-size:11px">photo</a>';
+  return '<td>'+badge+'<br><button class="btn" style="padding:4px 8px;font-size:11px;margin-top:4px" onclick="dcSetCompliance('+r.user_id+',\''+doc.key+'\')">Set</button></td>';
+}
 function renderDriverCompliance(){
   var wrap=document.getElementById('driver-compliance-wrap');
   if(!wrap)return;
@@ -450,21 +476,10 @@ function renderDriverCompliance(){
     return;
   }
   var trs=DC.rows.map(function(r){
-    var assoc=r.association_payment_status==='paid'
-      ? '<span style="color:#2ECC71">Paid</span>' : '<span style="color:#e74c3c">Unpaid</span>';
-    var ins=r.insurance_status==='paid'
-      ? '<span style="color:#2ECC71">Paid</span>' : '<span style="color:#e74c3c">Unpaid</span>';
-    if(r.association_receipt_url)assoc+=' <a href="'+esc(r.association_receipt_url)+'" target="_blank" style="color:#4ECDC4;font-size:11px">receipt</a>';
-    if(r.insurance_receipt_url)ins+=' <a href="'+esc(r.insurance_receipt_url)+'" target="_blank" style="color:#4ECDC4;font-size:11px">receipt</a>';
     return '<tr>'+
       '<td>'+esc(r.name||'—')+'<br><small style="color:#9A9AAE">'+esc(r.phone||'')+'</small></td>'+
       '<td style="color:#9A9AAE">'+esc(r.vehicle_type||'—')+' · '+esc(r.vehicle_plate||'')+'</td>'+
-      '<td>'+assoc+'</td>'+
-      '<td>'+ins+'</td>'+
-      '<td style="white-space:nowrap">'+
-        '<button class="btn" style="padding:6px 10px;font-size:12px;margin-right:6px" onclick="dcSetCompliance('+r.user_id+',\'association\')">Set Association</button>'+
-        '<button class="btn" style="padding:6px 10px;font-size:12px" onclick="dcSetCompliance('+r.user_id+',\'insurance\')">Set Insurance</button>'+
-      '</td>'+
+      DC_DOCS.map(function(doc){return dcDocCell(r,doc);}).join('')+
       '</tr>';
   }).join('');
   wrap.innerHTML='<div style="overflow-x:auto;border-radius:14px;border:1px solid rgba(255,255,255,.08)">'+
@@ -472,32 +487,26 @@ function renderDriverCompliance(){
     '<thead><tr style="border-bottom:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04)">'+
     '<th style="padding:12px 14px;text-align:left;color:#9A9AAE;font-weight:700">Driver</th>'+
     '<th style="padding:12px 14px;text-align:left;color:#9A9AAE;font-weight:700">Vehicle</th>'+
-    '<th style="padding:12px 14px;text-align:left;color:#9A9AAE;font-weight:700">Association Due</th>'+
-    '<th style="padding:12px 14px;text-align:left;color:#9A9AAE;font-weight:700">Insurance</th>'+
-    '<th style="padding:12px 14px;text-align:left;color:#9A9AAE;font-weight:700">Action</th>'+
-    '</tr></thead><tbody>'+trs+'</tbody></table></div>';
+    DC_DOCS.map(function(doc){return '<th style="padding:12px 14px;text-align:left;color:#9A9AAE;font-weight:700">'+esc(doc.label)+'</th>';}).join('')+
+    '</tr></thead><tbody>'+trs+'</tbody></table></div>'+
+    '<div style="font-size:11px;color:#9A9AAE;margin-top:8px">Association dues are not set here - they come live from EtelTaxi\'s own records when a Traffic Officer checks a card.</div>';
 }
-function dcApplyCompliance(userId,field,status,receiptUrl){
+function dcApplyCompliance(userId,docKey,expiryDate,receiptUrl){
   var body={user_id:userId};
-  if(field==='association'){
-    body.association_payment_status=status;
-    if(receiptUrl)body.association_receipt_url=receiptUrl;
-  }else{
-    body.insurance_status=status;
-    if(receiptUrl)body.insurance_receipt_url=receiptUrl;
-  }
+  body[docKey+'_expiry_date']=expiryDate;
+  if(receiptUrl)body[docKey+'_receipt_url']=receiptUrl;
   api('admin_update_driver_compliance',body,function(){
     loadDriverCompliance();
   },function(msg){alert('Could not update: '+(msg||'unknown error'));});
 }
-function dcSetCompliance(userId,field){
-  var status=prompt('Set '+field+' status to "paid" or "unpaid":','paid');
-  if(status===null)return;
-  status=status.trim().toLowerCase();
-  if(status!=='paid'&&status!=='unpaid'){alert('Must be "paid" or "unpaid".');return;}
+function dcSetCompliance(userId,docKey){
+  var expiryDate=prompt('Expiry date for this document (YYYY-MM-DD), or leave blank to clear:','');
+  if(expiryDate===null)return;
+  expiryDate=expiryDate.trim();
+  if(expiryDate!==''&&!/^\d{4}-\d{2}-\d{2}$/.test(expiryDate)){alert('Enter a date as YYYY-MM-DD, e.g. 2027-06-26.');return;}
 
-  if(!confirm('Attach a receipt photo now? Cancel to save the status without one.')){
-    dcApplyCompliance(userId,field,status,'');
+  if(expiryDate===''||!confirm('Attach a photo of this document now? Cancel to save the date without one.')){
+    dcApplyCompliance(userId,docKey,expiryDate,'');
     return;
   }
   var input=document.getElementById('dc-file-input');
@@ -512,19 +521,19 @@ function dcSetCompliance(userId,field){
   input.onchange=function(){
     var file=input.files&&input.files[0];
     input.value='';
-    if(!file){dcApplyCompliance(userId,field,status,'');return;}
+    if(!file){dcApplyCompliance(userId,docKey,expiryDate,'');return;}
     var token=typeof Auth!=='undefined'?Auth.getToken():'';
     var uploadBase=(window.ETEL&&window.ETEL.api)?window.ETEL.api.replace('boot.php','upload.php'):'/delivery/api/upload.php';
     var fd=new FormData();
     fd.append('image',file);
-    fd.append('type','driver_'+field+'_receipt');
+    fd.append('type','driver_'+docKey+'_photo');
     fetch(uploadBase,{method:'POST',headers:{'Authorization':'Bearer '+token},body:fd})
       .then(function(r){return r.json();})
       .then(function(d){
         if(!d||!d.success)throw new Error(d&&d.message?d.message:'Upload failed');
-        dcApplyCompliance(userId,field,status,d.data.url);
+        dcApplyCompliance(userId,docKey,expiryDate,d.data.url);
       })
-      .catch(function(e){alert('Receipt upload failed: '+(e.message||'unknown error'));});
+      .catch(function(e){alert('Photo upload failed: '+(e.message||'unknown error'));});
   };
   input.click();
 }

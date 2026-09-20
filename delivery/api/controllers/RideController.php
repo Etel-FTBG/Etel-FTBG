@@ -1851,17 +1851,30 @@ case 'admin_reject_driver_identity': {
    license_photo_url already are, then its returned URL is submitted
    here alongside the status. */
 case 'admin_list_driver_compliance': {
+    // Association dues are no longer managed here at all - see
+    // nfc_driver_status in NfcController.php, which now checks
+    // EtelTaxi's own live database (via taxi_bridge.php) instead of a
+    // manually-toggled Delivery-side field, since EtelTaxi is the
+    // actual system of record for that data. This panel only manages
+    // the three physical documents Delivery has no other source for:
+    // insurance, technical inspection, and Road Fund sticker - each
+    // tracked by real expiry date (matching what's printed on the
+    // actual certificate/sticker) rather than a manually-flipped
+    // paid/unpaid switch an admin could forget to update.
     if ($u['role'] !== 'admin' || !user_has_capability($pdo, $u, 'users.view')) fail('Admin only', 403);
     rides_add_missing_cols($pdo, 'ride_drivers', array(
-        'association_payment_status' => "association_payment_status ENUM('paid','unpaid') NOT NULL DEFAULT 'unpaid'",
-        'association_receipt_url'    => "association_receipt_url VARCHAR(500) DEFAULT ''",
-        'insurance_status'           => "insurance_status ENUM('paid','unpaid') NOT NULL DEFAULT 'unpaid'",
-        'insurance_receipt_url'      => "insurance_receipt_url VARCHAR(500) DEFAULT ''",
+        'insurance_expiry_date'              => "insurance_expiry_date DATE NULL",
+        'insurance_receipt_url'              => "insurance_receipt_url VARCHAR(500) DEFAULT ''",
+        'technical_inspection_expiry_date'   => "technical_inspection_expiry_date DATE NULL",
+        'technical_inspection_receipt_url'   => "technical_inspection_receipt_url VARCHAR(500) DEFAULT ''",
+        'road_fund_expiry_date'              => "road_fund_expiry_date DATE NULL",
+        'road_fund_receipt_url'              => "road_fund_receipt_url VARCHAR(500) DEFAULT ''",
     ));
     $stmt = $pdo->prepare("SELECT u.id AS user_id, u.name, u.phone,
         rd.vehicle_type, rd.vehicle_plate, rd.onboarded,
-        rd.association_payment_status, rd.association_receipt_url,
-        rd.insurance_status, rd.insurance_receipt_url
+        rd.insurance_expiry_date, rd.insurance_receipt_url,
+        rd.technical_inspection_expiry_date, rd.technical_inspection_receipt_url,
+        rd.road_fund_expiry_date, rd.road_fund_receipt_url
         FROM users u JOIN ride_drivers rd ON rd.user_id = u.id
         WHERE rd.onboarded = 1
         ORDER BY u.name ASC");
@@ -1873,30 +1886,30 @@ case 'admin_list_driver_compliance': {
 case 'admin_update_driver_compliance': {
     if ($u['role'] !== 'admin' || !user_has_capability($pdo, $u, 'users.manage')) fail('Admin only', 403);
     rides_add_missing_cols($pdo, 'ride_drivers', array(
-        'association_payment_status' => "association_payment_status ENUM('paid','unpaid') NOT NULL DEFAULT 'unpaid'",
-        'association_receipt_url'    => "association_receipt_url VARCHAR(500) DEFAULT ''",
-        'insurance_status'           => "insurance_status ENUM('paid','unpaid') NOT NULL DEFAULT 'unpaid'",
-        'insurance_receipt_url'      => "insurance_receipt_url VARCHAR(500) DEFAULT ''",
+        'insurance_expiry_date'              => "insurance_expiry_date DATE NULL",
+        'insurance_receipt_url'              => "insurance_receipt_url VARCHAR(500) DEFAULT ''",
+        'technical_inspection_expiry_date'   => "technical_inspection_expiry_date DATE NULL",
+        'technical_inspection_receipt_url'   => "technical_inspection_receipt_url VARCHAR(500) DEFAULT ''",
+        'road_fund_expiry_date'              => "road_fund_expiry_date DATE NULL",
+        'road_fund_receipt_url'              => "road_fund_receipt_url VARCHAR(500) DEFAULT ''",
     ));
     $did = isset($body['user_id']) ? intval($body['user_id']) : 0;
     if (!$did) fail('user_id is required');
 
+    $dateFields = array('insurance_expiry_date', 'technical_inspection_expiry_date', 'road_fund_expiry_date');
+    $urlFields  = array('insurance_receipt_url', 'technical_inspection_receipt_url', 'road_fund_receipt_url');
+
     $sets = array(); $vals = array();
-    if (isset($body['association_payment_status'])) {
-        $v = trim($body['association_payment_status']);
-        if (!in_array($v, array('paid', 'unpaid'), true)) fail('association_payment_status must be paid or unpaid');
-        $sets[] = 'association_payment_status=?'; $vals[] = $v;
+    foreach ($dateFields as $f) {
+        if (!isset($body[$f])) continue;
+        $v = trim($body[$f]);
+        if ($v === '') { $sets[] = "$f=NULL"; continue; }
+        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $v)) fail("$f must be a YYYY-MM-DD date or empty");
+        $sets[] = "$f=?"; $vals[] = $v;
     }
-    if (isset($body['association_receipt_url'])) {
-        $sets[] = 'association_receipt_url=?'; $vals[] = substr(trim($body['association_receipt_url']), 0, 500);
-    }
-    if (isset($body['insurance_status'])) {
-        $v = trim($body['insurance_status']);
-        if (!in_array($v, array('paid', 'unpaid'), true)) fail('insurance_status must be paid or unpaid');
-        $sets[] = 'insurance_status=?'; $vals[] = $v;
-    }
-    if (isset($body['insurance_receipt_url'])) {
-        $sets[] = 'insurance_receipt_url=?'; $vals[] = substr(trim($body['insurance_receipt_url']), 0, 500);
+    foreach ($urlFields as $f) {
+        if (!isset($body[$f])) continue;
+        $sets[] = "$f=?"; $vals[] = substr(trim($body[$f]), 0, 500);
     }
     if (empty($sets)) fail('No valid fields provided');
 

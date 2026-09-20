@@ -129,17 +129,20 @@ case 'nfc_driver_status': {
     if (!$user) { ok(array('is_driver' => false)); break; }
 
     rides_add_missing_cols($pdo, 'ride_drivers', array(
-        'association_payment_status' => "association_payment_status ENUM('paid','unpaid') NOT NULL DEFAULT 'unpaid'",
-        'association_receipt_url'    => "association_receipt_url VARCHAR(500) DEFAULT ''",
-        'insurance_status'           => "insurance_status ENUM('paid','unpaid') NOT NULL DEFAULT 'unpaid'",
-        'insurance_receipt_url'      => "insurance_receipt_url VARCHAR(500) DEFAULT ''",
+        'insurance_expiry_date'              => "insurance_expiry_date DATE NULL",
+        'insurance_receipt_url'              => "insurance_receipt_url VARCHAR(500) DEFAULT ''",
+        'technical_inspection_expiry_date'   => "technical_inspection_expiry_date DATE NULL",
+        'technical_inspection_receipt_url'   => "technical_inspection_receipt_url VARCHAR(500) DEFAULT ''",
+        'road_fund_expiry_date'              => "road_fund_expiry_date DATE NULL",
+        'road_fund_receipt_url'              => "road_fund_receipt_url VARCHAR(500) DEFAULT ''",
     ));
 
     $s = $pdo->prepare(
         'SELECT vehicle_type, vehicle_plate, license_name, license_number, license_photo_url,
                 identity_match, onboarded,
-                association_payment_status, association_receipt_url,
-                insurance_status, insurance_receipt_url
+                insurance_expiry_date, insurance_receipt_url,
+                technical_inspection_expiry_date, technical_inspection_receipt_url,
+                road_fund_expiry_date, road_fund_receipt_url
          FROM ride_drivers WHERE user_id = ?'
     );
     $s->execute(array($user['id']));
@@ -153,19 +156,52 @@ case 'nfc_driver_status': {
         $masked = str_repeat('*', max(0, strlen($license_no) - strlen($tail))) . $tail;
     }
 
+    // Each physical document's status is computed from its real expiry
+    // date (matching what's actually printed on the certificate/
+    // sticker), not a manually-flipped switch an admin could forget to
+    // update. 'unknown' means no expiry date has been entered yet.
+    $today = date('Y-m-d');
+    $doc = function ($expiry, $receiptUrl) use ($today) {
+        $status = 'unknown';
+        if (!empty($expiry)) {
+            $status = ($expiry >= $today) ? 'valid' : 'expired';
+        }
+        return array('status' => $status, 'expiry_date' => $expiry, 'receipt_url' => $receiptUrl);
+    };
+
+    // Association dues: checked LIVE against EtelTaxi's own database
+    // (the actual system of record for this) rather than a Delivery-
+    // side field - see taxi_bridge.php. Unreachable/not configured
+    // shows 'unavailable', never a stale or guessed status.
+    require_once __DIR__ . '/../taxi_bridge.php';
+    $taxi = taxi_bridge_check_association_payment($user['etel_id'], $phone ?: $user['phone']);
+    if ($taxi === null) {
+        $association = array('status' => 'unavailable');
+    } elseif (empty($taxi['is_registered'])) {
+        $association = array('status' => 'not_registered');
+    } else {
+        $association = array(
+            'status'         => $taxi['payment_status'], // active | grace_period | overdue
+            'current_period' => isset($taxi['current_period']) ? $taxi['current_period'] : null,
+            'window_end'     => isset($taxi['window_end']) ? $taxi['window_end'] : null,
+            'penalty_owed'   => isset($taxi['penalty_owed']) ? floatval($taxi['penalty_owed']) : 0,
+            'association'    => isset($taxi['association']) ? $taxi['association'] : null,
+        );
+    }
+
     ok(array(
-        'is_driver'                  => true,
-        'onboarded'                  => intval($d['onboarded']) === 1,
-        'vehicle_type'               => $d['vehicle_type'],
-        'vehicle_plate'              => $d['vehicle_plate'],
-        'license_name'               => $d['license_name'],
-        'license_masked'             => $masked,
-        'license_photo_url'          => $d['license_photo_url'],
-        'identity_match'             => $d['identity_match'] ? $d['identity_match'] : 'unverified',
-        'association_payment_status' => $d['association_payment_status'] ? $d['association_payment_status'] : 'unpaid',
-        'association_receipt_url'    => $d['association_receipt_url'],
-        'insurance_status'           => $d['insurance_status'] ? $d['insurance_status'] : 'unpaid',
-        'insurance_receipt_url'      => $d['insurance_receipt_url'],
+        'is_driver'             => true,
+        'onboarded'             => intval($d['onboarded']) === 1,
+        'vehicle_type'          => $d['vehicle_type'],
+        'vehicle_plate'         => $d['vehicle_plate'],
+        'license_name'          => $d['license_name'],
+        'license_masked'        => $masked,
+        'license_photo_url'     => $d['license_photo_url'],
+        'identity_match'        => $d['identity_match'] ? $d['identity_match'] : 'unverified',
+        'association'           => $association,
+        'insurance'             => $doc($d['insurance_expiry_date'], $d['insurance_receipt_url']),
+        'technical_inspection'  => $doc($d['technical_inspection_expiry_date'], $d['technical_inspection_receipt_url']),
+        'road_fund'             => $doc($d['road_fund_expiry_date'], $d['road_fund_receipt_url']),
     ));
     break;
 }
