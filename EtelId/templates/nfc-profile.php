@@ -486,18 +486,55 @@ $nfc_nonce = wp_create_nonce('etelid_public');
     // number, an admin verifies it - see ServiceController.php's
     // last_payment), so this constructs a real text receipt on the fly
     // instead of linking to an image that doesn't exist.
-    function buildReceiptUrl(title, rows) {
+    function buildReceiptUrl(title, rows, badgeText, badgeKind) {
+      // Full gold/carbon branded receipt - same design language as the
+      // card itself (holo strip, gold gradient title, badge pills),
+      // not a bare unstyled table - this is handed to a traffic
+      // officer or kept by the driver as a real record.
+      var badgeColors = {
+        ok:  ['rgba(46,204,113,.14)', '#7ee8a8', 'rgba(46,204,113,.4)'],
+        bad: ['rgba(231,76,60,.14)',  '#ff8a7a', 'rgba(231,76,60,.4)'],
+        warn:['rgba(242,204,107,.14)','#F2CC6B', 'rgba(242,204,107,.4)']
+      };
+      var bc = badgeColors[badgeKind] || badgeColors.warn;
+      var badgeHtml = badgeText
+        ? '<div style="display:inline-block;padding:8px 20px;border-radius:30px;background:' + bc[0] + ';color:' + bc[1] + ';border:1px solid ' + bc[2] + ';font-weight:800;font-size:14px;letter-spacing:.4px;text-transform:uppercase;margin-bottom:22px">' + badgeText + '</div>'
+        : '';
       var html = '<!DOCTYPE html><html><head><meta charset="utf-8">'
-        + '<title>' + title + ' Receipt</title><style>'
-        + 'body{font-family:system-ui,sans-serif;max-width:420px;margin:40px auto;padding:0 20px;color:#111}'
-        + 'h1{font-size:18px;border-bottom:2px solid #D4AF37;padding-bottom:10px}'
-        + 'table{width:100%;border-collapse:collapse;margin-top:14px}'
-        + 'td{padding:8px 0;border-bottom:1px solid #eee;font-size:14px}'
-        + 'td:first-child{color:#666;width:45%}'
-        + '.foot{margin-top:20px;font-size:11px;color:#999}'
-        + '</style></head><body><h1>' + title + '</h1><table>'
-        + rows.map(function (r) { return '<tr><td>' + r[0] + '</td><td>' + (r[1] || '-') + '</td></tr>'; }).join('')
-        + '</table><div class="foot">ethelmarket.com &middot; Printed ' + new Date().toLocaleString() + '</div></body></html>';
+        + '<meta name="viewport" content="width=device-width, initial-scale=1.0">'
+        + '<title>' + title + ' Receipt</title>'
+        + '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;700&family=JetBrains+Mono:wght@500;700&display=swap">'
+        + '<style>'
+        + '*{box-sizing:border-box;margin:0;padding:0}'
+        + 'body{font-family:"DM Sans",system-ui,sans-serif;background:'
+        +   'radial-gradient(1100px 600px at 15% -10%, rgba(212,175,55,.14), transparent 60%),'
+        +   'radial-gradient(900px 500px at 110% 10%, rgba(212,175,55,.1), transparent 55%),#000;'
+        +   'min-height:100vh;padding:36px 18px;color:#fff}'
+        + '.receipt{max-width:560px;margin:0 auto;background:linear-gradient(165deg,#161616,#0d0d0d);'
+        +   'border:1px solid rgba(212,175,55,.32);border-radius:22px;overflow:hidden;'
+        +   'box-shadow:0 1px 0 rgba(255,255,255,.04) inset, 0 30px 60px -20px rgba(0,0,0,.7)}'
+        + '.holo{height:4px;background:linear-gradient(90deg,#ff6b6b,#ffd93d,#6bcb77,#4d96ff,#ff6b6b,#ffd93d,#6bcb77,#4d96ff);background-size:300%;animation:holo 3s linear infinite}'
+        + '@keyframes holo{to{background-position:300% 0}}'
+        + '.body{padding:40px 36px 32px;text-align:center}'
+        + '.mark{font-family:"Syne",sans-serif;font-weight:800;font-size:13px;letter-spacing:3px;color:#8B6914;text-transform:uppercase;margin-bottom:6px}'
+        + 'h1{font-family:"Syne",sans-serif;font-weight:800;font-size:26px;'
+        +   'background:linear-gradient(100deg,#C8960C,#D4AF37 45%,#fff6d9 55%,#D4AF37);'
+        +   '-webkit-background-clip:text;background-clip:text;color:transparent;margin-bottom:22px}'
+        + 'table{width:100%;border-collapse:collapse;text-align:left}'
+        + 'td{padding:14px 4px;border-bottom:1px solid rgba(212,175,55,.16);font-size:15px}'
+        + 'td:first-child{color:#9a9a9a;font-weight:600;width:42%}'
+        + 'td:last-child{font-family:"JetBrains Mono",monospace;font-weight:700;letter-spacing:.2px;text-align:right}'
+        + 'tr:last-child td{border-bottom:none}'
+        + '.foot{padding:18px 36px 26px;text-align:center;font-size:11px;color:#7a7a7a;border-top:1px solid rgba(212,175,55,.16)}'
+        + '.foot strong{color:#D4AF37}'
+        + '</style></head><body>'
+        + '<div class="receipt"><div class="holo"></div><div class="body">'
+        + '<div class="mark">ETEL GROUP &middot; OFFICIAL RECEIPT</div>'
+        + '<h1>' + title + '</h1>'
+        + badgeHtml
+        + '<table>' + rows.map(function (r) { return '<tr><td>' + r[0] + '</td><td>' + (r[1] || '&mdash;') + '</td></tr>'; }).join('') + '</table>'
+        + '</div><div class="foot">ethelmarket.com &middot; Printed <strong>' + new Date().toLocaleString() + '</strong></div></div>'
+        + '</body></html>';
       // A blob: URL, not data: - Chrome blocks top-level/new-tab
       // navigation to data: URLs as an anti-phishing measure, which on
       // some builds tears down the whole tab/browser instead of just
@@ -553,14 +590,15 @@ $nfc_nonce = wp_create_nonce('etelid_public');
     var assocReceiptUrl = null;
     if (a.last_payment) {
       var lp = a.last_payment;
+      var badgeKind = a.status === 'active' ? 'ok' : (a.status === 'overdue' ? 'bad' : 'warn');
       assocReceiptUrl = buildReceiptUrl('Association Due', [
-        ['Association', (a.name_en || a.name_am || '-')],
+        ['Association', (a.association ? (a.association.name_en || a.association.name_am) : null)],
         ['Period', lp.period_month],
         ['Amount', 'ETB ' + parseFloat(lp.amount || 0).toFixed(2) + (lp.penalty_amount > 0 ? ' + ETB ' + parseFloat(lp.penalty_amount).toFixed(2) + ' penalty' : '')],
         ['Method', lp.payment_method],
         ['Reference', lp.reference_number],
         ['Verified', lp.verified_at],
-      ]);
+      ], assocText, badgeKind);
     }
     row('Association Due', assocText, assocClass, assocReceiptUrl);
 
