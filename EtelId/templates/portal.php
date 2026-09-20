@@ -857,10 +857,6 @@ $etelid_profile_incomplete = empty( $member->dob ) || '0000-00-00' === $member->
           <div class="p-action-icon">🏢</div>
           <span class="p-action-lbl">Company Roles</span>
         </a>
-        <a href="#" onclick="openEtelpayBusinessModal(event)" class="p-action admin">
-          <div class="p-action-icon">💳</div>
-          <span class="p-action-lbl">EtelPay Business Acct</span>
-        </a>
         <a href="#" onclick="openBiometricCenterModal(event)" class="p-action admin">
           <div class="p-action-icon">🔏</div>
           <span class="p-action-lbl">Biometric Center</span>
@@ -2387,25 +2383,6 @@ document.getElementById('eid-fayda-modal').addEventListener('click', function(e)
   </div>
 </div>
 
-<!-- ── NFC Tap-to-Pay Business Account ── -->
-<div id="eap-etelpay-business-modal" class="eap-modal">
-  <div class="eap-box eid-gold-box" style="width:min(96vw,460px);">
-    <div class="eap-head">
-      <div><div class="eap-title">&#128179; EtelPay Business Account</div><div class="eap-sub">The one fixed EtelPay wallet the NFC card's Charge / Pay Out buttons move money in/out of</div></div>
-      <button class="eap-close" onclick="closeEtelpayBusinessModal()">&#10005;</button>
-    </div>
-    <div class="eap-body">
-      <div class="eap-field">
-        <label>Business EtelPay Phone</label>
-        <input type="tel" id="eap-epb-phone" class="eap-input" placeholder="+2519XXXXXXXX">
-        <span style="font-size:11px;color:#9a9a9a;">Must be a phone number with an existing, active EtelPay wallet.</span>
-      </div>
-      <button class="eap-btn-gold" onclick="eapEtelpayBusinessSave()">Save</button>
-      <div id="eap-etelpay-business-msg"></div>
-    </div>
-  </div>
-</div>
-
 <!-- ── Reset Password ── -->
 <div id="eap-resetpw-modal" class="eap-modal">
   <div class="eap-box eid-gold-box" style="width:min(96vw,460px);">
@@ -3424,21 +3401,6 @@ async function eapBrandingSave(){
     logo_id: logoEl.getAttribute('data-id') || 0
   });
   _eidPanelMsg('eap-branding-msg', res.data.message || '', res.success);
-}
-
-/* ════════ ETELPAY BUSINESS ACCOUNT ════════ */
-function openEtelpayBusinessModal(e){ if(e)e.preventDefault(); _eapOpen('eap-etelpay-business-modal'); eapEtelpayBusinessLoad(); }
-function closeEtelpayBusinessModal(){ _eapClose('eap-etelpay-business-modal'); }
-async function eapEtelpayBusinessLoad(){
-  var res = await _eidPanel('etelid_panel_etelpay_business_get', {});
-  if (!res.success) return;
-  document.getElementById('eap-epb-phone').value = res.data.phone || '';
-}
-async function eapEtelpayBusinessSave(){
-  var res = await _eidPanel('etelid_panel_etelpay_business_set', {
-    phone: document.getElementById('eap-epb-phone').value
-  });
-  _eidPanelMsg('eap-etelpay-business-msg', res.data.message || '', res.success);
 }
 
 /* ════════ RESET PASSWORD ════════ */

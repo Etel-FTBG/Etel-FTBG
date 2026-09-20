@@ -338,18 +338,6 @@ class Etelid_Nfc {
         return isset($body['data']) ? $body['data'] : array();
     }
 
-    /* The one fixed EtelPay wallet phone number tap-to-pay Charge
-       credits and Payout debits - set once via
-       update_option('etelid_nfc_etelpay_business_phone', '+2519...')
-       (no settings-page UI for this yet, deliberately: it's a single
-       operational value, not something that needed a whole new admin
-       screen for a first version). Both directions share one account
-       on purpose - "charge" and "payout" are opposite sides of the
-       same till, not two different businesses. */
-    protected static function business_etelpay_phone() {
-        return trim((string) get_option('etelid_nfc_etelpay_business_phone', ''));
-    }
-
     /* Outbound call to EtelPay's shared-service-key API, same shape as
        delivery_service_call() above but a different base URL/pairing -
        reuses the same ETELID_SERVICE_KEY, since EtelPay's own service
@@ -425,17 +413,7 @@ class Etelid_Nfc {
         $pass   = isset($_POST['password']) ? (string) $_POST['password'] : '';
 
         $allowedStages = array('pickup', 'delivery', 'ride_start', 'driver_status', 'etelpay_charge', 'etelpay_payout');
-        if (!$token || !in_array($stage, $allowedStages, true)) {
-            wp_send_json_error(array('message' => 'Missing required fields.'));
-        }
-        // 'etelpay_charge' is the one stage with no operator login at all -
-        // the money is leaving the CARDHOLDER's own wallet, so the
-        // cardholder is who has to prove consent (their own EtelID
-        // password, in ajax_charge_confirm() below), not whoever is
-        // holding the reader. Every other stage (including
-        // 'etelpay_payout', where money leaves the business account)
-        // still needs the operator's own login here, same as always.
-        if ('etelpay_charge' !== $stage && (!$ident || !$pass)) {
+        if (!$token || !in_array($stage, $allowedStages, true) || !$ident || !$pass) {
             wp_send_json_error(array('message' => 'Missing required fields.'));
         }
 
@@ -446,38 +424,6 @@ class Etelid_Nfc {
         $ip = class_exists('EtelID_Security') ? EtelID_Security::get_ip() : '';
         if (class_exists('EtelID_Security') && !EtelID_Security::rate_limit('nfc_confirm_' . md5($ip . $token), 15, 900)) {
             wp_send_json_error(array('message' => 'Too many attempts. Please wait a few minutes.'));
-        }
-
-        /* EtelPay tap-to-pay CHARGE (pay IN): no operator identification
-           step at all - money is leaving the cardholder's own wallet
-           into the business's one fixed EtelPay account (see
-           business_etelpay_phone() below), so the only consent that
-           matters is the cardholder's own, collected next in
-           ajax_charge_confirm(). Nothing moves yet here. */
-        if ('etelpay_charge' === $stage) {
-            $amount = isset($_POST['amount']) ? (float) $_POST['amount'] : 0;
-            $note   = isset($_POST['note']) ? sanitize_text_field(wp_unslash($_POST['note'])) : '';
-            if ($amount <= 0) wp_send_json_error(array('message' => 'Enter an amount greater than zero.'));
-
-            $businessPhone = self::business_etelpay_phone();
-            if (!$businessPhone) wp_send_json_error(array('message' => 'EtelPay receiving account is not configured yet. Contact an admin.'));
-
-            $action_token = wp_generate_password(24, false, false);
-            set_transient('etelid_nfc_action_' . $action_token, array(
-                'stage'           => $stage,
-                'amount'          => $amount,
-                'note'            => $note,
-                'courier_etel_id' => $courier->etel_id,
-                'courier_phone'   => $courier->phone,
-                'business_phone'  => $businessPhone,
-            ), 5 * MINUTE_IN_SECONDS);
-
-            wp_send_json_success(array(
-                'charge_pending' => true,
-                'action_token'   => $action_token,
-                'payer_name'     => $courier->full_name,
-                'amount'         => $amount,
-            ));
         }
 
         $confirmer = EtelID_DB::get_by_etel_id(strtoupper($ident));
@@ -514,6 +460,43 @@ class Etelid_Nfc {
             ));
         }
 
+        /* EtelPay tap-to-pay CHARGE (pay IN): does NOT charge anything
+           yet, even though the receiver's (operator's) EtelID password
+           just checked out above - money only moves once the PAYER
+           (whoever's card was tapped) also proves their own EtelID
+           password, in ajax_charge_confirm() below. This step only
+           establishes who is collecting the payment (into THEIR OWN
+           EtelPay wallet - there is no shared business account) and
+           for how much, same short-lived single-use action_token
+           pattern as every other stage here. */
+        if ('etelpay_charge' === $stage) {
+            $amount = isset($_POST['amount']) ? (float) $_POST['amount'] : 0;
+            $note   = isset($_POST['note']) ? sanitize_text_field(wp_unslash($_POST['note'])) : '';
+            if ($amount <= 0) wp_send_json_error(array('message' => 'Enter an amount greater than zero.'));
+
+            $action_token = wp_generate_password(24, false, false);
+            set_transient('etelid_nfc_action_' . $action_token, array(
+                'stage'             => $stage,
+                'amount'            => $amount,
+                'note'              => $note,
+                'courier_etel_id'   => $courier->etel_id,
+                'courier_phone'     => $courier->phone,
+                'confirmer_id'      => $confirmer->id,
+                'confirmer_etel_id' => $confirmer->etel_id,
+                'confirmer_phone'   => $confirmer->phone,
+                'confirmer_name'    => $confirmer->full_name,
+            ), 5 * MINUTE_IN_SECONDS);
+
+            EtelID_DB::log($confirmer->id, $confirmer->etel_id, 'nfc_etelpay_charge_start', 'NFC tap-to-pay started against ' . $courier->full_name . ' for ' . $amount . ' ETB');
+
+            wp_send_json_success(array(
+                'charge_pending' => true,
+                'action_token'   => $action_token,
+                'payer_name'     => $courier->full_name,
+                'amount'         => $amount,
+            ));
+        }
+
         /* "Driver Info" (traffic-officer compliance check): gated behind
            the scanning person's own EtelID login (same as every other
            stage here) AND, on the Delivery side, behind actually holding
@@ -543,36 +526,22 @@ class Etelid_Nfc {
 
         /* EtelPay tap-to-pay PAYOUT (pay OUT, e.g. a driver's earnings):
            the mirror image of 'etelpay_charge' - here it's the
-           BUSINESS account's money leaving, so the operator's own
-           login is what has to authorize it (same trust level as
-           Confirm Pickup/Delivery Complete elsewhere on this page),
-           and the cardholder just receives - no login needed from
-           them for that. Gated behind actually holding a real staff
-           role for this company (same has_company_role() check
-           'driver_status' uses for Traffic Officer), since a bare
-           EtelID login only proves who the operator is, not that
-           they're allowed to spend company funds. Single round trip,
-           no second confirm step, money moves immediately. */
+           OPERATOR's own money leaving THEIR OWN EtelPay wallet, so
+           their own login above both identifies whose wallet pays AND
+           authorizes the debit (the same "authorize whoever's money is
+           leaving" rule 'etelpay_charge' + ajax_charge_confirm() use,
+           just with the two roles swapped) - no fixed business/till
+           account, no separate company-role gate. The cardholder just
+           receives, no login needed from them for that. Single round
+           trip, no second confirm step, money moves immediately. */
         if ('etelpay_payout' === $stage) {
             $amount = isset($_POST['amount']) ? (float) $_POST['amount'] : 0;
             $note   = isset($_POST['note']) ? sanitize_text_field(wp_unslash($_POST['note'])) : '';
             if ($amount <= 0) wp_send_json_error(array('message' => 'Enter an amount greater than zero.'));
 
-            $allowedPayoutRoles = array('owner', 'admin', 'manager', 'finance');
-            $hasPayoutRole = false;
-            foreach ($allowedPayoutRoles as $r) {
-                if (self::has_company_role($confirmer->phone, 'etel-transport', ucfirst($r))) { $hasPayoutRole = true; break; }
-            }
-            if (!$hasPayoutRole) {
-                wp_send_json_error(array('message' => 'You are not authorized to pay out from the business EtelPay account.'));
-            }
-
-            $businessPhone = self::business_etelpay_phone();
-            if (!$businessPhone) wp_send_json_error(array('message' => 'EtelPay paying-out account is not configured yet. Contact an admin.'));
-
             $result = self::etelpay_service_call('service_nfc_charge.php', array(
-                'receiver_phone' => $courier->phone,   // cardholder RECEIVES
-                'payer_phone'    => $businessPhone,     // business account PAYS
+                'receiver_phone' => $courier->phone,    // cardholder RECEIVES
+                'payer_phone'    => $confirmer->phone,  // operator's OWN wallet PAYS
                 'amount'         => $amount,
                 'note'           => $note,
             ));
@@ -690,7 +659,7 @@ class Etelid_Nfc {
         }
 
         $result = self::etelpay_service_call('service_nfc_charge.php', array(
-            'receiver_phone' => $data['business_phone'],
+            'receiver_phone' => $data['confirmer_phone'],
             'payer_phone'    => $data['courier_phone'],
             'amount'         => $data['amount'],
             'note'           => $data['note'],
@@ -700,7 +669,7 @@ class Etelid_Nfc {
             wp_send_json_error(array('message' => $result->get_error_message()));
         }
 
-        EtelID_DB::log($payer->id, $payer->etel_id, 'nfc_etelpay_charge', 'NFC tap-to-pay: charged self ' . $data['amount'] . ' ETB to business account, tx ' . (isset($result['tx_ref']) ? $result['tx_ref'] : '?'));
+        EtelID_DB::log($payer->id, $payer->etel_id, 'nfc_etelpay_charge', 'NFC tap-to-pay: charged ' . $data['courier_phone'] . ' ' . $data['amount'] . ' ETB, tx ' . (isset($result['tx_ref']) ? $result['tx_ref'] : '?'));
 
         wp_send_json_success(array(
             'message' => 'Payment of ' . $data['amount'] . ' ETB received.',

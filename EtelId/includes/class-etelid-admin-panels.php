@@ -67,12 +67,6 @@ class EtelID_Admin_Panels {
             'etelid_panel_company_roles_set'    => 'company_roles_set',
             'etelid_panel_company_roles_remove' => 'company_roles_remove',
 
-            /* NFC tap-to-pay business account -- the one fixed EtelPay
-               wallet the card's Charge/Payout buttons move money in/out
-               of (see class-etelid-nfc.php's business_etelpay_phone()) */
-            'etelid_panel_etelpay_business_get' => 'etelpay_business_get',
-            'etelid_panel_etelpay_business_set' => 'etelpay_business_set',
-
             /* Biometric Center -- real device-biometric (WebAuthn) status +
                revoke, plus physical NFC card linking. Doesn't reproduce the
                old wp-admin panel's "paste a hash" fields for fingerprint/
@@ -726,24 +720,6 @@ class EtelID_Admin_Panels {
         if ( ! $id ) wp_send_json_error( array( 'message' => 'Missing link id.' ) );
         EtelID_DB::remove_company_link( $id );
         wp_send_json_success();
-    }
-
-    /* ================================================================
-     *  NFC TAP-TO-PAY -- the one fixed business EtelPay account
-     * ================================================================ */
-
-    public static function etelpay_business_get() {
-        self::guard();
-        wp_send_json_success( array(
-            'phone' => get_option( 'etelid_nfc_etelpay_business_phone', '' ),
-        ) );
-    }
-
-    public static function etelpay_business_set() {
-        self::guard();
-        $phone = isset( $_POST['phone'] ) ? sanitize_text_field( wp_unslash( $_POST['phone'] ) ) : '';
-        update_option( 'etelid_nfc_etelpay_business_phone', $phone );
-        wp_send_json_success( array( 'message' => $phone ? 'Business EtelPay account saved.' : 'Business EtelPay account cleared.' ) );
     }
 
     /* ================================================================

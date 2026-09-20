@@ -235,24 +235,6 @@ if ( isset( $_POST['_etelid_settings_nonce'] ) &&
             </div>
           </div>
         </div>
-
-        <!-- NFC EtelPay tap-to-pay business account -->
-        <div class="eid-panel">
-          <div class="eid-panel-header"><h3>💳 NFC Tap-to-Pay — Business EtelPay Account</h3></div>
-          <div class="eid-panel-body" style="display:flex;flex-direction:column;gap:14px;">
-            <p style="font-size:12px;color:var(--ink3);">
-              The one fixed EtelPay wallet used by the NFC card's <strong>Charge via EtelPay</strong>
-              (money moves in) and <strong>Pay Out via EtelPay</strong> (money moves out) buttons.
-              Must be a phone number with an existing, active EtelPay wallet.
-            </p>
-            <div class="eid-field">
-              <label>Business EtelPay Phone</label>
-              <input type="tel" name="etelpay_business_phone"
-                value="<?php echo esc_attr( get_option('etelid_nfc_etelpay_business_phone','') ); ?>"
-                placeholder="+2519XXXXXXXX">
-            </div>
-          </div>
-        </div>
       </div>
 
       <!-- Save -->
