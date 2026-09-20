@@ -948,6 +948,27 @@ class Etelid_Nfc {
        failing the whole reveal - one product being briefly
        unreachable should never block signing in to view the card. */
     protected static function scanner_capabilities($confirmer) {
+        /* The site admin (same single account EtelID_Auth::is_site_admin()
+           already recognizes elsewhere in this plugin, e.g. portal.php's
+           Admin Tools section) sees and can use every button - they are
+           not a Delivery driver, Traffic Officer, Madeya controller or
+           Gebeya courier individually, but administering all of these
+           companies is exactly what that account is for. Short-circuits
+           before the two live Madeya/Gebeya lookups below, so an admin
+           login is not slowed down by checks it does not need. */
+        if (class_exists('EtelID_Auth') && EtelID_Auth::is_site_admin($confirmer)) {
+            return array(
+                'pickup'                 => true,
+                'delivery'                => true,
+                'ride_start'              => true,
+                'driver_status'           => true,
+                'etelpay_payout'          => true,
+                'etelpay_cardholder_pay'  => true,
+                'etelmadeya_register'     => true,
+                'gebeya_delivery'         => true,
+            );
+        }
+
         $caps = array(
             'pickup'                 => true,
             'delivery'                => true,
