@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Etel Taxi - Verify Permit</title>
-<link rel="stylesheet" href="css/core.css?v=2">
+<link rel="stylesheet" href="css/core.css?v=3">
 <link rel="stylesheet" href="css/etel-auth.css?v=1">
 <style>
   #app{position:relative;z-index:1;max-width:440px;margin:0 auto;padding:22px;min-height:100vh;display:flex;flex-direction:column;}
@@ -13,20 +13,26 @@
   header h1{font-size:16px;}
   header .tag{font-size:11px;color:var(--text-dim);margin-left:auto;text-transform:uppercase;letter-spacing:.5px;}
 
-  /* the big glanceable result - readable at arm's length in daylight */
+  /* the big glanceable result - readable at arm's length in daylight.
+     Same embossed-document feel as the driver's permit card (holo
+     strip + guilloche texture + Oswald name), since this is the
+     officer-facing side of that same physical-ID metaphor. */
   .result-card{
-    border-radius:22px;padding:34px 24px;text-align:center;margin-bottom:18px;
-    box-shadow:var(--shadow-2);border:1px solid var(--line2);
+    position:relative;overflow:hidden;
+    border-radius:22px;padding:38px 24px 30px;text-align:center;margin-bottom:18px;
+    box-shadow:var(--shadow-2), 3px 3px 0 rgba(212,175,55,.18), 5px 5px 0 rgba(212,175,55,.1);
+    border:1px solid var(--line2);
   }
+  .result-card>.eta-holo{position:absolute;top:0;left:0;right:0;}
   .result-card.ok{background:radial-gradient(120% 140% at 50% 0%, rgba(46,204,113,.18), transparent 60%), var(--bg2);border-color:rgba(46,204,113,.4);}
   .result-card.warn{background:radial-gradient(120% 140% at 50% 0%, rgba(230,126,34,.18), transparent 60%), var(--bg2);border-color:rgba(230,126,34,.4);}
   .result-card.fail{background:radial-gradient(120% 140% at 50% 0%, rgba(231,76,60,.18), transparent 60%), var(--bg2);border-color:rgba(231,76,60,.4);}
-  .result-icon{font-size:54px;line-height:1;margin-bottom:10px;}
+  .result-icon{font-size:54px;line-height:1;margin-bottom:10px;margin-top:6px;}
   .result-label{font-family:var(--f-display);font-weight:800;font-size:19px;letter-spacing:.3px;margin-bottom:18px;}
   .result-card.ok .result-label{color:var(--green);}
   .result-card.warn .result-label{color:var(--amber);}
   .result-card.fail .result-label{color:var(--red);}
-  .driver-name{font-family:var(--f-display);font-size:24px;margin-bottom:4px;}
+  .driver-name{font-family:var(--f-name);font-weight:600;font-size:23px;letter-spacing:.3px;text-transform:uppercase;margin-bottom:6px;}
   .driver-plate{font-family:var(--f-mono);font-size:20px;letter-spacing:1px;color:var(--gold);margin-bottom:10px;}
   .assoc-line{font-size:13px;color:var(--text-dim);margin-bottom:14px;}
   .valid-through{font-size:12px;color:var(--text-faint);padding-top:14px;border-top:1px solid var(--line);}
@@ -141,6 +147,6 @@
 </div>
 
 <script src="js/core.js?v=1"></script>
-<script src="js/verify.js?v=1"></script>
+<script src="js/verify.js?v=2"></script>
 </body>
 </html>
