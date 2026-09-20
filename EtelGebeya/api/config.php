@@ -32,6 +32,17 @@ define('DB_PASS', $_ENV['DB_PASS'] ?? '');
 // IMPORTANT: token stored in localStorage must match this exactly
 define('ADMIN_SECRET', $_ENV['ADMIN_SECRET'] ?? '');
 
+// ?? ETELID SERVICE KEY (inbound) ?????????????????????????????
+// Shared EtelGroup service-to-service key - same value as EtelID's own
+// etelid_service_key option and every sibling system's config (Etel
+// Madeya, EtelPay). Used by the service_nfc_*.php endpoints to trust
+// calls coming FROM EtelID's NFC card page (class-etelid-nfc.php).
+// The outbound bridges (etelid_service_bridge.php, etelpay_bridge.php)
+// already read $_ENV['ETELID_SERVICE_KEY'] directly for calls going
+// the other way; this constant just makes the same value available
+// for the inbound direction without a second .env entry.
+define('ETELID_SERVICE_KEY', $_ENV['ETELID_SERVICE_KEY'] ?? '');
+
 // ?? SITE ???????????????????????????????????????????????????
 define('SITE_NAME', 'Etel Gebeya');
 define('SITE_URL',  'https://ethelmarket.com/EtelGebeya');
