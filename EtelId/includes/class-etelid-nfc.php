@@ -210,24 +210,6 @@ class Etelid_Nfc {
             );
         }
 
-        /* Traffic-officer-facing driver compliance display - read-only,
-           no login required (same exposure level as the name/photo
-           already shown below with no auth). Looked up synchronously
-           here, not via the page's own AJAX calls, so it appears the
-           instant the card is tapped rather than needing a button press.
-           Silently absent (null) for any non-driver card or if Delivery
-           is unreachable - never blocks the rest of the profile. */
-        $driver_status = null;
-        if ($member) {
-            $driver_status = self::delivery_service_call('nfc_driver_status', array(
-                'etel_id' => $member->etel_id,
-                'phone'   => $member->phone,
-            ));
-            if (is_wp_error($driver_status) || empty($driver_status['is_driver'])) {
-                $driver_status = null;
-            }
-        }
-
         $template = plugin_dir_path(__FILE__) . '../templates/nfc-profile.php';
 
         if (file_exists($template)) {
@@ -364,7 +346,7 @@ class Etelid_Nfc {
         $ident  = isset($_POST['identifier']) ? sanitize_text_field(wp_unslash($_POST['identifier'])) : '';
         $pass   = isset($_POST['password']) ? (string) $_POST['password'] : '';
 
-        if (!$token || !in_array($stage, array('pickup', 'delivery', 'ride_start'), true) || !$ident || !$pass) {
+        if (!$token || !in_array($stage, array('pickup', 'delivery', 'ride_start', 'driver_status'), true) || !$ident || !$pass) {
             wp_send_json_error(array('message' => 'Missing required fields.'));
         }
 
@@ -409,6 +391,24 @@ class Etelid_Nfc {
                 'ride_started' => true,
                 'message'      => isset($result['message']) ? $result['message'] : 'Trip started.',
             ));
+        }
+
+        /* "Driver Info" (traffic-officer compliance check): gated behind
+           the scanning person's own EtelID login (same as every other
+           stage here) - unlike the page's name/photo, license and
+           commission info is not shown to a bare, unauthenticated tap.
+           Read-only on the Delivery side either way, so this is a single
+           round trip with no second confirm step. */
+        if ('driver_status' === $stage) {
+            $result = self::delivery_service_call('nfc_driver_status', array(
+                'etel_id' => $courier->etel_id,
+                'phone'   => $courier->phone,
+            ));
+            if (is_wp_error($result)) {
+                wp_send_json_error(array('message' => $result->get_error_message()));
+            }
+            EtelID_DB::log($confirmer->id, $confirmer->etel_id, 'nfc_driver_status', 'NFC card scan - driver info checked for ' . $courier->full_name);
+            wp_send_json_success(array('driver_status' => $result));
         }
 
         $orders = self::delivery_service_call('nfc_list_courier_orders', array(
