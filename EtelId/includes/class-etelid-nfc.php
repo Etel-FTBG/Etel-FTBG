@@ -445,7 +445,15 @@ class Etelid_Nfc {
         $pass   = isset($_POST['password']) ? (string) $_POST['password'] : '';
 
         $allowedStages = array('pickup', 'delivery', 'ride_start', 'driver_status', 'etelpay_payout', 'etelpay_cardholder_pay', 'etelmadeya_register');
-        if (!$token || !in_array($stage, $allowedStages, true) || !$ident || !$pass) {
+        if (!$token || !in_array($stage, $allowedStages, true)) {
+            wp_send_json_error(array('message' => 'Missing required fields.'));
+        }
+        // 'etelmadeya_register' identifies the controller from their own
+        // already-signed-in EtelID portal session below, not from a
+        // phone/password typed into this form - stations need this to
+        // be a single instant tap, not a login. Every other stage still
+        // needs the operator's own login typed in here, same as always.
+        if ('etelmadeya_register' !== $stage && (!$ident || !$pass)) {
             wp_send_json_error(array('message' => 'Missing required fields.'));
         }
 
@@ -456,6 +464,45 @@ class Etelid_Nfc {
         $ip = class_exists('EtelID_Security') ? EtelID_Security::get_ip() : '';
         if (class_exists('EtelID_Security') && !EtelID_Security::rate_limit('nfc_confirm_' . md5($ip . $token), 15, 900)) {
             wp_send_json_error(array('message' => 'Too many attempts. Please wait a few minutes.'));
+        }
+
+        /* "Register in Queue" (Etel Madeya fuel station): a controller
+           taps a DRIVER's card to auto-register their plate into that
+           station's queue, using whichever plate/vehicle type is
+           already on file for that phone number in Etel Madeya's own
+           driver_vehicles registry (built the first time a controller
+           manually registers that driver with their phone number).
+           The controller is whoever is currently signed into their own
+           EtelID portal session in this browser
+           (EtelID_Auth::get_current_member()) - no phone/password
+           typed into this form, since the whole point at a gas station
+           is one fast tap, not a login every time. Whether that signed-
+           in person is actually a real Etel Madeya controller is
+           checked server-side on Etel Madeya's own end (against its
+           controllers table), not duplicated here. Single round trip,
+           no second confirm step. */
+        if ('etelmadeya_register' === $stage) {
+            $controller = EtelID_Auth::get_current_member();
+            if (!$controller) {
+                wp_send_json_error(array('message' => 'Sign in to your EtelID portal on this device first, then tap the driver\'s card.'));
+            }
+            if ('suspended' === $controller->status || 'revoked' === $controller->status) {
+                wp_send_json_error(array('message' => 'This EtelID account is not active.'));
+            }
+
+            $result = self::madeya_service_call('service_nfc_register.php', array(
+                'controller_phone' => $controller->phone,
+                'driver_phone'     => $courier->phone,
+                'driver_etel_id'   => $courier->etel_id,
+            ));
+            if (is_wp_error($result)) {
+                wp_send_json_error(array('message' => $result->get_error_message()));
+            }
+            EtelID_DB::log($controller->id, $controller->etel_id, 'nfc_etelmadeya_register', 'NFC card scan - registered ' . $courier->full_name . ' into Etel Madeya queue');
+            wp_send_json_success(array(
+                'madeya_register_done' => true,
+                'message' => isset($result['message']) ? $result['message'] : 'Registered in queue.',
+            ));
         }
 
         $confirmer = EtelID_DB::get_by_etel_id(strtoupper($ident));
@@ -517,35 +564,6 @@ class Etelid_Nfc {
             }
             EtelID_DB::log($confirmer->id, $confirmer->etel_id, 'nfc_driver_status', 'NFC card scan - driver info checked for ' . $courier->full_name);
             wp_send_json_success(array('driver_status' => $result));
-        }
-
-        /* "Register in Queue" (Etel Madeya fuel station): a controller
-           taps a DRIVER's card to auto-register their plate into that
-           station's queue, using whichever plate/vehicle type is
-           already on file for that phone number in Etel Madeya's own
-           driver_vehicles registry (built the first time a controller
-           manually registers that driver with their phone number).
-           Whether the scanning person is actually a real Etel Madeya
-           controller is checked server-side on Etel Madeya's own end
-           (against its controllers table), not duplicated here - same
-           division of responsibility as etelpay_payout/etelpay_charge,
-           where EtelID only proves who logged in, not what they're
-           allowed to do with it. Single round trip, no second confirm
-           step. */
-        if ('etelmadeya_register' === $stage) {
-            $result = self::madeya_service_call('service_nfc_register.php', array(
-                'controller_phone' => $confirmer->phone,
-                'driver_phone'     => $courier->phone,
-                'driver_etel_id'   => $courier->etel_id,
-            ));
-            if (is_wp_error($result)) {
-                wp_send_json_error(array('message' => $result->get_error_message()));
-            }
-            EtelID_DB::log($confirmer->id, $confirmer->etel_id, 'nfc_etelmadeya_register', 'NFC card scan - registered ' . $courier->full_name . ' into Etel Madeya queue');
-            wp_send_json_success(array(
-                'madeya_register_done' => true,
-                'message' => isset($result['message']) ? $result['message'] : 'Registered in queue.',
-            ));
         }
 
         /* EtelPay tap-to-pay, CARDHOLDER PAYS (classic tap-to-pay: the
