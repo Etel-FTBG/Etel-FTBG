@@ -226,7 +226,11 @@ class Etelid_Nfc {
      * ------------------------------------------------------------- */
 
     public static function ajax_issue() {
-        check_ajax_referer('etelid_nfc_admin', 'nonce');
+        // The live "Write NFC Card" tool is built into templates/portal.php,
+        // which uses the same 'etelid_auth' nonce as every other in-portal
+        // admin AJAX call (_P.nonce) - not a separate 'etelid_nfc_admin'
+        // nonce, which nothing on that page ever generates.
+        check_ajax_referer('etelid_auth', 'nonce');
 
         if (!current_user_can(ETELID_NFC_ADMIN_CAP)) {
             wp_send_json_error(array('message' => 'Not allowed.'), 403);
@@ -246,7 +250,7 @@ class Etelid_Nfc {
     }
 
     public static function ajax_revoke() {
-        check_ajax_referer('etelid_nfc_admin', 'nonce');
+        check_ajax_referer('etelid_auth', 'nonce');
 
         if (!current_user_can(ETELID_NFC_ADMIN_CAP)) {
             wp_send_json_error(array('message' => 'Not allowed.'), 403);
@@ -259,7 +263,7 @@ class Etelid_Nfc {
     }
 
     public static function ajax_lookup_member() {
-        check_ajax_referer('etelid_nfc_admin', 'nonce');
+        check_ajax_referer('etelid_auth', 'nonce');
 
         if (!current_user_can(ETELID_NFC_ADMIN_CAP)) {
             wp_send_json_error(array('message' => 'Not allowed.'), 403);
