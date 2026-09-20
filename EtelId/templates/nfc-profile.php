@@ -480,15 +480,32 @@ $nfc_nonce = wp_create_nonce('etelid_public');
 
     var wrap = document.createElement('div');
 
-    if (d.license_photo_url) {
-      var photo = document.createElement('img');
-      photo.src = d.license_photo_url;
-      photo.alt = 'Driving license';
-      photo.className = 'nfc-license-photo';
-      wrap.appendChild(photo);
+    // Print-style receipt built entirely client-side from data the
+    // bridge already returned - EtelTaxi has no uploaded receipt photo
+    // for association dues (drivers submit a bank/Telebirr reference
+    // number, an admin verifies it - see ServiceController.php's
+    // last_payment), so this constructs a real text receipt on the fly
+    // instead of linking to an image that doesn't exist.
+    function buildReceiptUrl(title, rows) {
+      var html = '<!DOCTYPE html><html><head><meta charset="utf-8">'
+        + '<title>' + title + ' Receipt</title><style>'
+        + 'body{font-family:system-ui,sans-serif;max-width:420px;margin:40px auto;padding:0 20px;color:#111}'
+        + 'h1{font-size:18px;border-bottom:2px solid #D4AF37;padding-bottom:10px}'
+        + 'table{width:100%;border-collapse:collapse;margin-top:14px}'
+        + 'td{padding:8px 0;border-bottom:1px solid #eee;font-size:14px}'
+        + 'td:first-child{color:#666;width:45%}'
+        + '.foot{margin-top:20px;font-size:11px;color:#999}'
+        + '</style></head><body><h1>' + title + '</h1><table>'
+        + rows.map(function (r) { return '<tr><td>' + r[0] + '</td><td>' + (r[1] || '-') + '</td></tr>'; }).join('')
+        + '</table><div class="foot">ethelmarket.com &middot; Printed ' + new Date().toLocaleString() + '</div></body></html>';
+      return 'data:text/html;charset=utf-8,' + encodeURIComponent(html);
     }
 
-    function row(label, valueText, badgeClass, receiptUrl) {
+    if (d.license_photo_url) {
+      row('License Photo', 'On file', null, d.license_photo_url, 'View license');
+    }
+
+    function row(label, valueText, badgeClass, receiptUrl, receiptLabel) {
       var r = document.createElement('div');
       r.className = 'nfc-driver-row';
       var l = document.createElement('span');
@@ -505,7 +522,7 @@ $nfc_nonce = wp_create_nonce('etelid_public');
         link.target = '_blank';
         link.rel = 'noopener';
         link.className = 'nfc-receipt-link';
-        link.textContent = 'View receipt';
+        link.textContent = receiptLabel || 'View receipt';
         wrap.appendChild(link);
       }
     }
@@ -528,7 +545,19 @@ $nfc_nonce = wp_create_nonce('etelid_public');
     else if (a.status === 'overdue') { assocText = 'OVERDUE' + (a.penalty_owed ? ' - ETB ' + parseFloat(a.penalty_owed).toFixed(2) + ' penalty' : ''); assocClass = 'nfc-badge-bad'; }
     else if (a.status === 'not_registered') { assocText = 'Not registered with EtelTaxi'; assocClass = 'nfc-badge-unverified'; }
     else { assocText = 'Unavailable'; assocClass = 'nfc-badge-unverified'; }
-    row('Association Due', assocText, assocClass);
+    var assocReceiptUrl = null;
+    if (a.last_payment) {
+      var lp = a.last_payment;
+      assocReceiptUrl = buildReceiptUrl('Association Due', [
+        ['Association', (a.name_en || a.name_am || '-')],
+        ['Period', lp.period_month],
+        ['Amount', 'ETB ' + parseFloat(lp.amount || 0).toFixed(2) + (lp.penalty_amount > 0 ? ' + ETB ' + parseFloat(lp.penalty_amount).toFixed(2) + ' penalty' : '')],
+        ['Method', lp.payment_method],
+        ['Reference', lp.reference_number],
+        ['Verified', lp.verified_at],
+      ]);
+    }
+    row('Association Due', assocText, assocClass, assocReceiptUrl);
 
     function docRow(label, doc) {
       doc = doc || {};

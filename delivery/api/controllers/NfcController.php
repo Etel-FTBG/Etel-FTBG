@@ -193,6 +193,7 @@ case 'nfc_driver_status': {
             'window_end'     => isset($taxi['window_end']) ? $taxi['window_end'] : null,
             'penalty_owed'   => isset($taxi['penalty_owed']) ? floatval($taxi['penalty_owed']) : 0,
             'association'    => isset($taxi['association']) ? $taxi['association'] : null,
+            'last_payment'   => isset($taxi['last_payment']) ? $taxi['last_payment'] : null,
         );
     }
 
