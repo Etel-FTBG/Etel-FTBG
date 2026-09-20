@@ -888,6 +888,7 @@ switch ($action) {
         require __DIR__ . '/controllers/PushController.php';
         break;
     case 'nfc_list_courier_orders': case 'nfc_confirm_pickup': case 'nfc_confirm_delivery':
+    case 'nfc_driver_status': case 'nfc_start_ride':
         // Service-key gated (EtelID calls these server-to-server after an
         // NFC card scan) - see NfcController.php's own header comment.
         require __DIR__ . '/controllers/NfcController.php';
