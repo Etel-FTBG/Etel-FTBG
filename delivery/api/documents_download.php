@@ -192,6 +192,24 @@ try {
 $path = etel_docs_storage_dir() . '/' . basename($storageName);
 if (!is_file($path)) dd_json_fail('File is missing on disk', 404);
 
+// An .html/.htm/.js document served inline (the default - see the
+// admin-documents.js iframe viewer) would execute in this app's own
+// origin with the viewing admin's real session (bearer token lives in
+// localStorage - see core.js). Any account with documents.manage
+// (not necessarily a full owner-tier admin) could otherwise plant a
+// document that steals a HIGHER-privileged admin's token the moment
+// they open it to view. Force a real download for these regardless of
+// the requested disposition - the client can never opt back into
+// inline rendering for a type that can carry script. Derived from the
+// actual file about to be streamed ($storageName, server-generated as
+// "doc_<ts>_<hex>.<ext>" - see etel_docs_new_storage_name()), not
+// $doc['file_ext'], which only reflects the CURRENT version and can
+// disagree with an older version fetched via version_id.
+$streamedExt = strtolower(pathinfo($storageName, PATHINFO_EXTENSION));
+if (in_array($streamedExt, array('html', 'htm', 'js'), true)) {
+    $disposition = 'attachment';
+}
+
 header('Content-Type: ' . $mime);
 header('Content-Length: ' . filesize($path));
 header('Content-Disposition: ' . $disposition . '; filename="' . str_replace('"', '', $downloadName) . '"');
