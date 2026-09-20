@@ -183,6 +183,10 @@ class EtelID_Admin {
             update_option( 'etelid_driver_app_url',   esc_url_raw( wp_unslash( (isset($_POST['driver_app_url'])   ? $_POST['driver_app_url']   : '') ) ) );
             update_option( 'etelid_ride_app_url',     esc_url_raw( wp_unslash( (isset($_POST['ride_app_url'])     ? $_POST['ride_app_url']     : '') ) ) );
             update_option( 'etelid_customer_app_url', esc_url_raw( wp_unslash( (isset($_POST['customer_app_url']) ? $_POST['customer_app_url'] : '') ) ) );
+            /* NFC tap-to-pay business account - the one fixed EtelPay
+             * wallet Charge credits and Payout debits (see
+             * class-etelid-nfc.php's business_etelpay_phone()). */
+            update_option( 'etelid_nfc_etelpay_business_phone', sanitize_text_field( wp_unslash( (isset($_POST['etelpay_business_phone']) ? $_POST['etelpay_business_phone'] : '') ) ) );
         }
         include ETELID_PATH . 'admin/views/settings.php';
     }
