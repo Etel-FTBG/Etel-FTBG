@@ -4,6 +4,7 @@
 // ═══════════════════════════════════════════════════════════════════
 
 require_once __DIR__ . '/../includes/config.php';
+require_once __DIR__ . '/../includes/queue_logic.php';
 
 header('Content-Type: application/json; charset=utf-8');
 
@@ -17,43 +18,9 @@ $action = $_GET['action'] ?? $_POST['action'] ?? '';
 // received fuel today at ANY station (cross-station on purpose - the
 // whole point is stopping a vehicle from double-dipping the daily fuel
 // ration by visiting a second station after already being served).
-
-// No rows in controller_vehicle_types for this controller = unrestricted.
-function madeyaVehicleTypeAllowed($controllerId, $vehicleTypeId) {
-    $rows = db()->fetchAll(
-        "SELECT vehicle_type_id FROM controller_vehicle_types WHERE controller_id = ?",
-        [$controllerId]
-    );
-    if (empty($rows)) return true;
-    foreach ($rows as $r) {
-        if ((int)$r['vehicle_type_id'] === (int)$vehicleTypeId) return true;
-    }
-    return false;
-}
-
-// Returns the required parity ('odd'/'even') if the plate violates the
-// controller's odd_even_rule, or null if it's fine (rule is 'all', or
-// the plate has no trailing digit to determine parity from).
-function madeyaParityViolation($controllerId, $plate) {
-    $controller = db()->fetchOne("SELECT odd_even_rule FROM controllers WHERE id = ?", [$controllerId]);
-    $rule = $controller['odd_even_rule'] ?? 'all';
-    if (empty($rule) || $rule === 'all') return null;
-    $isOdd = isOddPlate($plate);
-    if ($isOdd === null) return null;
-    $plateParity = $isOdd ? 'odd' : 'even';
-    return $plateParity !== $rule ? $rule : null;
-}
-
-// Cross-station: no controller_id filter, by design.
-function madeyaServedTodayConflict($plate, $vehicleTypeId) {
-    return db()->fetchOne(
-        "SELECT r.served_at, c.station_name FROM report r
-         JOIN controllers c ON c.id = r.controller_id
-         WHERE r.plate_number = ? AND r.vehicle_type_id = ? AND r.report_date = ?
-         ORDER BY r.served_at DESC LIMIT 1",
-        [$plate, $vehicleTypeId, date('Y-m-d')]
-    );
-}
+// Implemented in includes/queue_logic.php (madeyaVehicleTypeAllowed,
+// madeyaParityViolation, madeyaServedTodayConflict, madeyaRegisterVehicle)
+// so the NFC auto-register endpoint can reuse the exact same rules.
 
 try {
     switch ($action) {
@@ -104,93 +71,19 @@ try {
             $driverName = sanitize($_POST['driver_name'] ?? '');
             $driverPhone = sanitize($_POST['driver_phone'] ?? '');
             $controllerId = (int)($_POST['controller_id'] ?? 1);
-            
-            if (empty($plate) || !$vehicleTypeId) {
-                jsonResponse(['success' => false, 'message' => 'Missing required fields'], 400);
+
+            $result = madeyaRegisterVehicle($controllerId, $vehicleTypeId, $plate, $driverName, $driverPhone);
+
+            // Remember this phone -> plate/type association so a future
+            // NFC tap of this same driver's card can auto-register them
+            // without the controller re-typing anything.
+            if (!empty($driverPhone) && !empty($vehicleTypeId)) {
+                madeyaRememberDriverVehicle($driverPhone, $plate, $vehicleTypeId, $driverName);
             }
 
-            if (!madeyaVehicleTypeAllowed($controllerId, $vehicleTypeId)) {
-                jsonResponse(['success' => false, 'message' => 'This vehicle type is not served at this station today.', 'code' => 'TYPE_NOT_ALLOWED'], 400);
-            }
-
-            $requiredParity = madeyaParityViolation($controllerId, $plate);
-            if ($requiredParity) {
-                $need = $requiredParity === 'odd' ? 'odd-numbered' : 'even-numbered';
-                jsonResponse(['success' => false, 'message' => "This station only accepts {$need} plates today.", 'code' => 'WRONG_PARITY'], 400);
-            }
-
-            // Check if already in queue
-            $existing = db()->fetchOne(
-                "SELECT id FROM queue WHERE plate_number = ? AND status = 'queued'",
-                [$plate]
-            );
-
-            if ($existing) {
-                jsonResponse(['success' => false, 'message' => 'Vehicle already in queue']);
-            }
-
-            // Already served today, at this station or any other - stops a
-            // vehicle from getting fuel twice in one day by hopping stations.
-            $servedToday = madeyaServedTodayConflict($plate, $vehicleTypeId);
-            if ($servedToday) {
-                $t = date('H:i', strtotime($servedToday['served_at']));
-                jsonResponse([
-                    'success' => false,
-                    'message' => "This vehicle already received fuel today at {$t} ({$servedToday['station_name']}).",
-                    'code' => 'SERVED_TODAY',
-                    'served_at' => $t,
-                    'station_name' => $servedToday['station_name'],
-                ], 400);
-            }
-
-            // Get next position
-            $maxPos = db()->fetchOne(
-                "SELECT COALESCE(MAX(position), 0) as max_pos FROM queue 
-                 WHERE controller_id = ? AND vehicle_type_id = ? AND status = 'queued'",
-                [$controllerId, $vehicleTypeId]
-            );
-            $nextPosition = $maxPos['max_pos'] + 1;
-            
-            // Generate token
-            $token = strtoupper(substr(md5(uniqid()), 0, 8));
-            
-            // Determine plate parity
-            $parity = isOddPlate($plate);
-            $parityStr = $parity === true ? 'odd' : ($parity === false ? 'even' : '');
-            
-            // Insert into queue
-            // Single registrations join the latest batch (or batch 1 if none)
-            $curBatch = db()->fetchOne(
-                "SELECT COALESCE(MAX(batch_id), 0) as max_batch FROM queue 
-                 WHERE controller_id = ? AND status = 'queued'",
-                [$controllerId]
-            );
-            $batchId = max(1, (int)$curBatch['max_batch']);
-            
-            $id = db()->insert('queue', [
-                'controller_id' => $controllerId,
-                'vehicle_type_id' => $vehicleTypeId,
-                'plate_number' => $plate,
-                'plate_parity' => $parityStr,
-                'driver_name' => $driverName,
-                'driver_phone' => $driverPhone,
-                'token' => $token,
-                'position' => $nextPosition,
-                'queue_type' => 'normal',
-                'status' => 'queued',
-                'batch_id' => $batchId
-            ]);
-            
-            jsonResponse([
-                'success' => true,
-                'message' => 'Successfully registered in queue',
-                'data' => [
-                    'id' => $id,
-                    'token' => $token,
-                    'position' => $nextPosition,
-                    'plate_number' => $plate
-                ]
-            ]);
+            $httpCode = isset($result['http_code']) ? $result['http_code'] : 200;
+            unset($result['http_code']);
+            jsonResponse($result, $httpCode);
             break;
             
         case 'get_vehicle_types':

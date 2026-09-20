@@ -331,6 +331,8 @@ $nfc_nonce = wp_create_nonce('etelid_public');
           <button type="button" class="nfc-btn primary" data-stage="etelpay_payout">Pay Out via EtelPay</button>
           <p class="nfc-role-label">Cardholder Pays (tap to pay)</p>
           <button type="button" class="nfc-btn primary" data-stage="etelpay_cardholder_pay">Cardholder Pays via EtelPay</button>
+          <p class="nfc-role-label">Station Controller</p>
+          <button type="button" class="nfc-btn primary" data-stage="etelmadeya_register">Register in Queue</button>
         </div>
 
         <div id="nfc-step-charge-amount" class="nfc-step">
@@ -506,6 +508,14 @@ $nfc_nonce = wp_create_nonce('etelid_public');
           var payMsg = document.getElementById('nfc-done-msg');
           payMsg.className = 'nfc-msg ok';
           payMsg.textContent = res.data.message || 'Payment sent.';
+          showStep('nfc-step-done');
+          return;
+        }
+
+        if (res.data.madeya_register_done) {
+          var madeyaMsg = document.getElementById('nfc-done-msg');
+          madeyaMsg.className = 'nfc-msg ok';
+          madeyaMsg.textContent = res.data.message || 'Registered in queue.';
           showStep('nfc-step-done');
           return;
         }

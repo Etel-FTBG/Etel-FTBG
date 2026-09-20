@@ -370,6 +370,38 @@ class Etelid_Nfc {
         return isset($body['data']) ? $body['data'] : array();
     }
 
+    /* Outbound call to Etel Madeya's shared-service-key API, same shape
+       as etelpay_service_call() above - reuses the same
+       ETELID_SERVICE_KEY, since Etel Madeya's own etelid_bridge.php
+       already authenticates outgoing calls to EtelID against that same
+       shared EtelGroup key. */
+    protected static function madeya_service_call($path, $payload) {
+        $key = defined('ETELID_SERVICE_KEY') ? ETELID_SERVICE_KEY : get_option('etelid_service_key', '');
+        if (!$key) return new WP_Error('no_key', 'etelid_service_key is not configured.');
+
+        $home_parts = wp_parse_url(home_url());
+        $site_root  = (isset($home_parts['scheme']) ? $home_parts['scheme'] : 'https') . '://'
+                    . (isset($home_parts['host']) ? $home_parts['host'] : $_SERVER['HTTP_HOST']);
+        $base = get_option('etelid_madeya_api_base', $site_root . '/Etel-Madeya');
+        $url  = trailingslashit($base) . 'api/' . $path;
+
+        $resp = wp_remote_post($url, array(
+            'timeout' => 12,
+            'headers' => array('X-Etel-Service-Key' => $key, 'Content-Type' => 'application/json'),
+            'body'    => wp_json_encode($payload),
+        ));
+
+        if (is_wp_error($resp)) return $resp;
+        $code = wp_remote_retrieve_response_code($resp);
+        $body = json_decode(wp_remote_retrieve_body($resp), true);
+        if (!is_array($body)) return new WP_Error('bad_response', 'Etel Madeya returned an unreadable response.');
+        if ($code < 200 || $code >= 300 || empty($body['success'])) {
+            $msg = !empty($body['message']) ? $body['message'] : ('Etel Madeya request failed (HTTP ' . $code . ').');
+            return new WP_Error('madeya_error', $msg);
+        }
+        return isset($body['data']) ? $body['data'] : array();
+    }
+
     /* Whether $phone currently holds $role_name at $company_slug in Etel
        Group's own Employees panel data - queried DIRECTLY here (this
        data lives in EtelID's own WordPress DB, the same tables
@@ -412,7 +444,7 @@ class Etelid_Nfc {
         $ident  = isset($_POST['identifier']) ? sanitize_text_field(wp_unslash($_POST['identifier'])) : '';
         $pass   = isset($_POST['password']) ? (string) $_POST['password'] : '';
 
-        $allowedStages = array('pickup', 'delivery', 'ride_start', 'driver_status', 'etelpay_payout', 'etelpay_cardholder_pay');
+        $allowedStages = array('pickup', 'delivery', 'ride_start', 'driver_status', 'etelpay_payout', 'etelpay_cardholder_pay', 'etelmadeya_register');
         if (!$token || !in_array($stage, $allowedStages, true) || !$ident || !$pass) {
             wp_send_json_error(array('message' => 'Missing required fields.'));
         }
@@ -485,6 +517,35 @@ class Etelid_Nfc {
             }
             EtelID_DB::log($confirmer->id, $confirmer->etel_id, 'nfc_driver_status', 'NFC card scan - driver info checked for ' . $courier->full_name);
             wp_send_json_success(array('driver_status' => $result));
+        }
+
+        /* "Register in Queue" (Etel Madeya fuel station): a controller
+           taps a DRIVER's card to auto-register their plate into that
+           station's queue, using whichever plate/vehicle type is
+           already on file for that phone number in Etel Madeya's own
+           driver_vehicles registry (built the first time a controller
+           manually registers that driver with their phone number).
+           Whether the scanning person is actually a real Etel Madeya
+           controller is checked server-side on Etel Madeya's own end
+           (against its controllers table), not duplicated here - same
+           division of responsibility as etelpay_payout/etelpay_charge,
+           where EtelID only proves who logged in, not what they're
+           allowed to do with it. Single round trip, no second confirm
+           step. */
+        if ('etelmadeya_register' === $stage) {
+            $result = self::madeya_service_call('service_nfc_register.php', array(
+                'controller_phone' => $confirmer->phone,
+                'driver_phone'     => $courier->phone,
+                'driver_etel_id'   => $courier->etel_id,
+            ));
+            if (is_wp_error($result)) {
+                wp_send_json_error(array('message' => $result->get_error_message()));
+            }
+            EtelID_DB::log($confirmer->id, $confirmer->etel_id, 'nfc_etelmadeya_register', 'NFC card scan - registered ' . $courier->full_name . ' into Etel Madeya queue');
+            wp_send_json_success(array(
+                'madeya_register_done' => true,
+                'message' => isset($result['message']) ? $result['message'] : 'Registered in queue.',
+            ));
         }
 
         /* EtelPay tap-to-pay, CARDHOLDER PAYS (classic tap-to-pay: the
