@@ -140,6 +140,15 @@ function taxi_admin_capabilities($pdo, $admin) {
     $managed = !empty($admin['is_etelgroup_managed']);
     if (!$managed) return array('*');
     if (empty($admin['staff_role'])) return array();
+    // "Owner", "Admin", and "Manager" default to unrestricted access -
+    // documented in admin.html's Roles panel and admin-roles.js, but
+    // never actually implemented here: any managed admin with one of
+    // these role names fell through to the safe read-only baseline
+    // below instead, blocking normal admin actions like verifying a
+    // payment with "requires: payments.manage".
+    if (in_array(strtolower($admin['staff_role']), array('owner', 'admin', 'manager'), true)) {
+        return array('*');
+    }
     try {
         $s = $pdo->prepare('SELECT capabilities FROM ' . tbl('taxi_role_permissions') . ' WHERE LOWER(role_name) = LOWER(?) LIMIT 1');
         $s->execute(array($admin['staff_role']));
