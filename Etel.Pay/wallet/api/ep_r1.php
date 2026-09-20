@@ -379,7 +379,7 @@ case 'ep_escrow_send': {
 }
 
 /* ── Escrow release / reverse (server-to-server) ─────────────────
-   Auth: X-Etel-Key header must match EP_SECRET, same as ep_verify_tx.
+   Auth: X-Etel-Key header must match EP_SECRET_FINAL, same as ep_verify_tx.
    Resolves a pending hold created by ep_escrow_send:
      release -> credits the receiver now, status becomes "completed"
      reverse -> credits the ORIGINAL SENDER back, status becomes "reversed"
@@ -388,7 +388,7 @@ case 'ep_escrow_send': {
 case 'ep_escrow_release':
 case 'ep_escrow_reverse': {
     $key = isset($_SERVER['HTTP_X_ETEL_KEY']) ? $_SERVER['HTTP_X_ETEL_KEY'] : in_str('key');
-    if (!hash_equals(EP_SECRET, (string)$key)) ep_err('Unauthorized', 401);
+    if (!hash_equals(EP_SECRET_FINAL, (string)$key)) ep_err('Unauthorized', 401);
 
     $tx_ref = in_str('tx_ref');
     if (!$tx_ref) ep_err('tx_ref required');
@@ -429,14 +429,17 @@ case 'ep_escrow_reverse': {
 }
 
 /* ── Verify a transaction (server-to-server, for partner projects) ──
-   Auth: X-Etel-Key header must match EP_SECRET (shared with delivery,
-   EtelGebeya, etc.) -- NOT a user session token. Lets a partner backend
+   Auth: X-Etel-Key header must match EP_SECRET_FINAL (shared with
+   delivery, EtelGebeya, etc.) -- NOT a user session token, and NOT the
+   raw EP_SECRET constant, which can still be the literal placeholder
+   from config.php's shipped default if .env was never set. Lets a
+   partner backend
    independently confirm a transfer actually happened before trusting a
    client's claim of payment (e.g. delivery's ride/order fare flow). */
 case 'ep_verify_tx':
 case 'etel_pay_verify_tx': {
     $key = isset($_SERVER['HTTP_X_ETEL_KEY']) ? $_SERVER['HTTP_X_ETEL_KEY'] : in_str('key');
-    if (!hash_equals(EP_SECRET, (string)$key)) ep_err('Unauthorized', 401);
+    if (!hash_equals(EP_SECRET_FINAL, (string)$key)) ep_err('Unauthorized', 401);
 
     $tx_ref = in_str('tx_ref');
     if (!$tx_ref) ep_err('tx_ref required');
@@ -458,7 +461,7 @@ case 'etel_pay_verify_tx': {
 }
 
 /* ── Partner credit (server-to-server, for partner projects) ────
-   Auth: X-Etel-Key header must match EP_SECRET, same as ep_verify_tx.
+   Auth: X-Etel-Key header must match EP_SECRET_FINAL, same as ep_verify_tx.
    Lets a trusted partner (e.g. delivery paying out driver earnings)
    credit a member's Etel Pay balance without a human Etel Pay admin
    session -- distinct from ep_admin_credit, which is for the Etel Pay
@@ -476,7 +479,7 @@ case 'ep_partner_credit': {
     if (!defined('EP_PARTNER_CREDIT_DAILY_MAX')) define('EP_PARTNER_CREDIT_DAILY_MAX', 20000); // ETB, per partner per 24h
 
     $key = isset($_SERVER['HTTP_X_ETEL_KEY']) ? $_SERVER['HTTP_X_ETEL_KEY'] : in_str('key');
-    if (!hash_equals(EP_SECRET, (string)$key)) ep_err('Unauthorized', 401);
+    if (!hash_equals(EP_SECRET_FINAL, (string)$key)) ep_err('Unauthorized', 401);
 
     $phone       = ep_normalize_phone(in_str('phone'));
     $amount      = in_float('amount');
@@ -568,7 +571,7 @@ case 'ep_partner_credit': {
 }
 
 /* ── Partner transfer (server-to-server, escrow release/refund) ─
-   Auth: X-Etel-Key header must match EP_SECRET, same as ep_verify_tx.
+   Auth: X-Etel-Key header must match EP_SECRET_FINAL, same as ep_verify_tx.
    Unlike ep_partner_credit (which mints new balance from nowhere --
    fine for e.g. delivery driver cash payouts), this does a REAL
    debit(from_phone)/credit(to_phone) transfer between two existing
@@ -585,7 +588,7 @@ case 'ep_platform_transfer': {
     if (!defined('EP_PLATFORM_TRANSFER_DAILY_MAX'))  define('EP_PLATFORM_TRANSFER_DAILY_MAX', 500000); // ETB, per partner per 24h
 
     $key = isset($_SERVER['HTTP_X_ETEL_KEY']) ? $_SERVER['HTTP_X_ETEL_KEY'] : in_str('key');
-    if (!hash_equals(EP_SECRET, (string)$key)) ep_err('Unauthorized', 401);
+    if (!hash_equals(EP_SECRET_FINAL, (string)$key)) ep_err('Unauthorized', 401);
 
     $fromPhone   = ep_normalize_phone(in_str('from_phone'));
     $toPhone     = ep_normalize_phone(in_str('to_phone'));

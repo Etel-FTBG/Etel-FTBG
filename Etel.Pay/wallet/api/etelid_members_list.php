@@ -64,18 +64,14 @@ $expected = trim( (string) ETELID_SERVICE_KEY );
 $provided = trim( (string) $provided );
 $match = function_exists('hash_equals') ? hash_equals($expected, $provided) : ($provided === $expected);
 if (!$match) {
-    /* Temporary debug fingerprint so we can see WITHOUT exposing the
-       actual key whether the two sides differ in length/prefix, e.g.
-       a stray newline or truncated copy-paste. Safe to remove later. */
-    $dbg = array(
-        'expected_len'    => strlen( $expected ),
-        'provided_len'    => strlen( $provided ),
-        'expected_prefix' => substr( $expected, 0, 6 ),
-        'provided_prefix' => substr( $provided, 0, 6 ),
-        'expected_suffix' => substr( $expected, -6 ),
-        'provided_suffix' => substr( $provided, -6 ),
-    );
-    eml_err('Invalid or missing service key. debug=' . json_encode($dbg), 401);
+    /* Do not leak any fragment (length, prefix, suffix) of the real
+       service key on a failed match - this key also gates the
+       money-moving service_nfc_charge.php endpoint, and a partial
+       fingerprint materially narrows a brute-force attempt. A prior
+       version of this check returned exactly that debug fingerprint
+       in the error body; removed - use server-side logging instead
+       if this ever needs to be diagnosed again. */
+    eml_err('Invalid or missing service key.', 401);
 }
 
 try {
