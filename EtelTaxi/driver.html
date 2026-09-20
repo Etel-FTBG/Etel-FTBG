@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Etel Taxi - Driver</title>
+<link rel="stylesheet" href="css/core.css">
+<link rel="stylesheet" href="css/etel-auth.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+  #app{position:relative;z-index:1;max-width:480px;margin:0 auto;padding:18px;min-height:100vh;}
+  header{display:flex;align-items:center;gap:10px;margin-bottom:22px;}
+  .logo{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--gold-deep),var(--gold));display:flex;align-items:center;justify-content:center;font-weight:800;color:#0d0d0d;
+    box-shadow:0 1px 0 rgba(255,255,255,.4) inset, 0 8px 18px -6px rgba(212,175,55,.5);}
+  header h1{font-size:17px;}
+  .view{display:none;}
+  .view.active{display:block;}
+  .field{margin-bottom:14px;}
+  .toggle-link{text-align:center;font-size:13px;color:var(--gold-dim);margin-top:14px;}
+  .toggle-link a{color:var(--gold);font-weight:700;}
+
+  /* Permit card styled like a physical ID card - metallic gradient,
+     embossed edge, holographic-style frame around the QR. */
+  .permit-card{
+    position:relative;overflow:hidden;
+    background:
+      radial-gradient(120% 140% at 0% 0%, rgba(212,175,55,.16), transparent 55%),
+      linear-gradient(155deg,var(--bg3),var(--bg2));
+    border:1px solid var(--line2);border-radius:20px;padding:26px 22px;text-align:center;margin-bottom:16px;
+    box-shadow:var(--shadow-2);
+  }
+  .permit-card{padding-top:20px;}
+  .permit-card>.eta-holo{position:absolute;top:0;left:0;right:0;border-radius:20px 20px 0 0;}
+  .permit-card::before{
+    content:'ETEL TAXI · OFFICIAL PERMIT';position:absolute;top:14px;left:0;right:0;
+    font-family:var(--f-mono);font-size:9px;letter-spacing:2px;color:var(--gold-dim);text-align:center;opacity:.7;
+  }
+  .permit-card .route{font-family:var(--f-display);font-size:21px;margin:16px 0 2px;letter-spacing:.2px;}
+  .permit-card .assoc{font-size:12px;color:var(--text-dim);}
+  .permit-serial{font-family:var(--f-mono);font-size:10px;letter-spacing:1.5px;color:var(--text-faint);margin-top:6px;}
+  #qr-box{
+    background:#fff;border-radius:14px;padding:14px;display:inline-block;margin:18px 0 12px;
+  }
+  #qr-box img,#qr-box canvas{display:block;}
+  .qr-hint{font-size:11px;color:var(--text-dim);}
+
+  /* ---- account summary (permit info + pay) — elevated from the
+     original flat two-column list to a real ledger read: mono figures,
+     clearer label weight, a highlighted "due today" line. ---- */
+  .info-row{display:flex;justify-content:space-between;align-items:baseline;font-size:13px;padding:12px 2px;border-bottom:1px solid var(--line);}
+  .info-row:last-child{border-bottom:none;}
+  .info-row>span:first-child{color:var(--text-dim);font-weight:600;}
+  .info-row>span:last-child{font-family:var(--f-mono);font-weight:700;letter-spacing:.2px;}
+  .info-row.hero{padding:16px 2px;}
+  .info-row.hero>span:last-child{font-size:19px;color:var(--gold);}
+
+  /* ---- payment method picker: real selectable cards, not a bare
+     native <select>, so the amount owed reads as the header of a
+     deliberate choice rather than a form field buried in a list. ---- */
+  .method-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:14px;}
+  .method-card{
+    display:flex;align-items:center;gap:9px;padding:12px 12px;border-radius:11px;
+    background:rgba(212,175,55,.045);border:1px solid var(--line2);cursor:pointer;
+    transition:background .15s ease,border-color .15s ease,transform .12s ease;font-size:12.5px;font-weight:700;
+  }
+  .method-card:active{transform:scale(.97);}
+  .method-card .mi{font-size:17px;line-height:1;flex-shrink:0;}
+  .method-card.sel{background:rgba(212,175,55,.14);border-color:var(--gold);box-shadow:0 0 0 1px var(--gold) inset;color:var(--gold-light);}
+
+  .history-row{display:flex;align-items:center;gap:12px;padding:13px 0;border-bottom:1px solid var(--line);font-size:13px;}
+  .history-row:last-child{border-bottom:none;}
+  .hr-icon{
+    width:36px;height:36px;border-radius:10px;flex-shrink:0;display:flex;align-items:center;justify-content:center;
+    font-size:15px;background:linear-gradient(135deg, rgba(212,175,55,.2), rgba(212,175,55,.05));border:1px solid var(--line2);
+  }
+  .hr-body{flex:1;min-width:0;}
+  .hr-period{font-family:var(--f-mono);font-weight:700;}
+  .hr-meta{color:var(--text-dim);font-size:11px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .hr-amount{text-align:right;flex-shrink:0;}
+  .hr-amount .amt{font-family:var(--f-mono);font-weight:700;}
+</style>
+</head>
+<body>
+<div class="bg-orbs"></div>
+
+<div id="app">
+  <header id="app-header" style="display:none">
+    <div class="logo">ኢT</div>
+    <h1 class="gradient-text">Etel Taxi</h1>
+    <div class="page-topbar" style="margin-left:auto">
+      <button class="back-btn" onclick="history.back()">🔙 Back</button>
+      <button id="theme-toggle-btn-2" class="theme-toggle-btn" onclick="toggleTheme()">☀️ Light</button>
+    </div>
+  </header>
+
+  <!-- LOGIN -->
+  <div class="view active" id="view-login">
+    <div class="eta-page">
+      <div class="page-topbar">
+        <button class="back-btn" onclick="history.back()">🔙 Back</button>
+        <button id="theme-toggle-btn" class="theme-toggle-btn" onclick="toggleTheme()">☀️ Light</button>
+      </div>
+      <div class="eta-left">
+        <div class="eta-orb eta-orb-1"></div>
+        <div class="eta-orb eta-orb-2"></div>
+        <div class="eta-brand">
+          <div class="eta-logo-wrap">
+            <img src="assets/images/etel-logo.png" class="eta-logo" alt="ETEL">
+            <span class="eta-sparkle">✦</span><span class="eta-sparkle">✦</span><span class="eta-sparkle">✧</span>
+          </div>
+          <div class="eta-name">ETEL TAXI</div>
+          <div class="eta-sub">ኢትኤል ታክሲ · Hawassa</div>
+          <div class="eta-desc">Verified permits, real-time association tracking, and one identity across the whole Etel Group.</div>
+          <div class="eta-feats">
+            <div class="eta-feat"><div class="eta-feat-dot"></div><span>Instant QR permit verification</span></div>
+            <div class="eta-feat"><div class="eta-feat-dot"></div><span>Association &amp; payment tracking</span></div>
+            <div class="eta-feat"><div class="eta-feat-dot"></div><span>ኢE Pay · Telebirr · Cash</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="eta-right">
+        <div class="eta-card">
+          <div class="eta-holo"></div>
+          <div class="eta-head">
+            <img src="assets/images/etel-logo.png" class="eta-head-logo" alt="ETEL">
+            <div class="eta-org">ኢE · Etel Group · Hawassa</div>
+            <div class="eta-title">ETEL Taxi</div>
+            <div class="eta-subtitle">Driver Login</div>
+          </div>
+          <div class="eta-body">
+            <div class="eta-hero">
+              <div class="eta-hero-tag">✦ Recommended — One ID for all ETEL services ✦</div>
+              <div class="eta-field">
+                <div class="eta-wrap"><span class="eta-icon">📱</span><input class="eta-input" type="text" id="etelid-identifier" placeholder="Phone or EtelID"></div>
+              </div>
+              <div class="eta-field" style="margin-bottom:12px">
+                <div class="eta-wrap"><span class="eta-icon">🔒</span><input class="eta-input" type="password" id="etelid-password" placeholder="EtelID Password"></div>
+              </div>
+              <button class="eta-etelid-btn" id="taxi-etelid-btn" type="button" onclick="doEtelIdLogin()">
+                <span class="eta-etelid-mark">ኢE</span><span>Sign in with EtelID</span>
+              </button>
+              <p class="eta-hero-foot">Delivery · Ride · Pay · Taxi — one identity</p>
+            </div>
+            <div class="toggle-link">New driver, no EtelID yet? <a onclick="showView('register')">Register here</a></div>
+          </div>
+          <div class="eta-foot">ETEL Taxi · ethelmarket.com · Etel Group</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- COMPLETE ETELID REGISTRATION (association + plate only - name/phone already known from EtelID) -->
+  <div class="view" id="view-complete-etelid">
+    <div class="card">
+      <p style="font-size:13px;color:var(--text-dim);margin-bottom:14px">Welcome, <span id="ce-name"></span>! One more step - tell us your vehicle and association.</p>
+      <div class="field"><label>Vehicle Plate Number</label><input type="text" id="ce-plate"></div>
+      <div class="field"><label>Association</label><select id="ce-association"><option>Loading...</option></select></div>
+      <div class="field"><label>Full name (on driving license)</label><input type="text" id="ce-license-name" placeholder="As printed on your license"></div>
+      <div class="field"><label>License number</label><input type="text" id="ce-license-num"></div>
+      <div class="field"><label>Date of birth (on license)</label><input type="date" id="ce-license-dob"></div>
+      <p style="font-size:11px;color:var(--text-dim);margin-top:-6px;margin-bottom:12px">Must match your Etel-ID exactly - this is how we verify it's really you.</p>
+      <button class="btn btn-primary" style="width:100%" onclick="completeEtelIdRegistration()">Finish Registration</button>
+    </div>
+  </div>
+
+  <!-- REGISTER -->
+  <div class="view" id="view-register">
+    <div class="card">
+      <div class="field"><label>Full Name</label><input type="text" id="reg-name"></div>
+      <div class="field"><label>Phone Number</label><input type="text" id="reg-phone" placeholder="09..."></div>
+      <div class="field"><label>Choose a PIN (4+ digits)</label><input type="password" id="reg-pin"></div>
+      <div class="field"><label>Vehicle Plate Number</label><input type="text" id="reg-plate"></div>
+      <div class="field"><label>Association</label><select id="reg-association"><option>Loading...</option></select></div>
+      <div class="field"><label>Full name (on driving license)</label><input type="text" id="reg-license-name" placeholder="As printed on your license"></div>
+      <div class="field"><label>License number</label><input type="text" id="reg-license-num"></div>
+      <div class="field"><label>Date of birth (on license)</label><input type="date" id="reg-license-dob"></div>
+      <p style="font-size:11px;color:var(--text-dim);margin-top:-6px;margin-bottom:12px">Must match your Etel-ID exactly - this is how we verify it's really you.</p>
+      <button class="btn btn-primary" style="width:100%" onclick="doRegister()">Register</button>
+    </div>
+    <div class="toggle-link">Already registered? <a onclick="showView('login')">Sign in</a></div>
+  </div>
+
+  <!-- STATUS / PERMIT -->
+  <div class="view" id="view-status">
+    <div class="permit-card">
+      <div class="eta-holo"></div>
+      <div class="pill" id="status-pill">...</div>
+      <div class="route" id="status-name">-</div>
+      <div class="assoc" id="status-plate">-</div>
+      <div class="assoc" id="status-route">-</div>
+      <div id="qr-box" class="glow-ring"></div>
+      <div class="qr-hint">Show this QR to a traffic officer to verify your permit</div>
+      <div class="permit-serial" id="status-serial"></div>
+    </div>
+    <div class="card" style="margin-bottom:16px">
+      <div class="info-row"><span>Current period</span><span id="info-period">-</span></div>
+      <div class="info-row"><span>Pay by</span><span id="info-window">-</span></div>
+      <div class="info-row hero"><span>Monthly due</span><span id="info-due">-</span></div>
+      <div class="info-row" id="info-penalty-row" style="display:none"><span style="color:var(--red)">Penalty owed</span><span id="info-penalty" style="color:var(--red)">-</span></div>
+    </div>
+    <button class="btn btn-primary" style="width:100%;margin-bottom:10px" onclick="showView('pay')">💳 Pay Now</button>
+    <button class="btn btn-outline" style="width:100%;margin-bottom:10px" onclick="enablePushNotifications()">🔔 Enable Payment Reminders</button>
+    <button class="btn btn-outline" style="width:100%;margin-bottom:10px" onclick="showView('history')">🧾 Payment History</button>
+    <button class="btn btn-outline" style="width:100%" onclick="doLogout()">Sign Out</button>
+  </div>
+
+  <!-- PAY -->
+  <div class="view" id="view-pay">
+    <div class="card" style="margin-bottom:16px">
+      <label>Payment Method</label>
+      <select id="pay-method" onchange="renderBankInfo()" style="display:none"></select>
+      <div class="method-grid" id="method-grid"></div>
+      <div id="bank-info" style="font-size:13px;color:var(--text-dim);margin-bottom:14px"></div>
+      <div class="field" id="ref-field"><label>Reference / Transaction Number</label><input type="text" id="pay-ref"></div>
+      <button class="btn btn-primary" style="width:100%" onclick="submitPayment()">Submit Payment</button>
+    </div>
+    <button class="btn btn-outline" style="width:100%" onclick="showView('status')">Back</button>
+  </div>
+
+  <!-- HISTORY -->
+  <div class="view" id="view-history">
+    <div class="card" id="history-list" style="margin-bottom:16px">Loading...</div>
+    <button class="btn btn-outline" style="width:100%" onclick="showView('status')">Back</button>
+  </div>
+</div>
+
+<script src="js/core.js"></script>
+<script src="js/driver.js"></script>
+</body>
+</html>

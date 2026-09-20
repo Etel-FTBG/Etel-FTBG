@@ -36,6 +36,11 @@ EtelGebeya/public/config.php
 **/storage/debug.log
 **/storage/*.log
 
+# PHP's default error_log destination (e.g. EtelTaxi/api/error_log) -
+# same reasoning as the debug logs above: runtime output, not source,
+# and can carry request data (phone numbers, etc.) from real traffic.
+**/error_log
+
 # Setup-notes files documenting default usernames/passwords (even when the
 # password shown is a CHANGE_ME placeholder) - EtelMadeya's
 # LOGIN_CREDENTIALS.md was found committed during the company-wide audit,

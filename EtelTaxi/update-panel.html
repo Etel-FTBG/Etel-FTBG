@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Etel Taxi - Updater</title>
+<link rel="stylesheet" href="css/core.css">
+<style>
+  #app{max-width:640px;margin:0 auto;padding:24px 18px;}
+  h1{font-family:var(--f-display);font-size:20px;margin-bottom:18px;}
+  .drop{border:1.5px dashed var(--line2);border-radius:12px;padding:26px;text-align:center;font-size:13px;color:var(--text-dim);margin-bottom:14px;}
+  #status-list{font-size:12px;font-family:var(--f-mono);}
+  #status-list .row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--line);}
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="page-topbar" style="justify-content:flex-end;margin-bottom:14px">
+    <button class="back-btn" onclick="history.back()">🔙 Back</button>
+    <button id="theme-toggle-btn" class="theme-toggle-btn" onclick="toggleTheme()">☀️ Light</button>
+  </div>
+  <h1>Etel Taxi - Updater</h1>
+
+  <div class="card" style="margin-bottom:16px">
+    <label>Updater Password</label>
+    <input type="password" id="auth" placeholder="Set once, reused for every action below">
+  </div>
+
+  <div class="card" style="margin-bottom:16px">
+    <h2 style="font-family:var(--f-display);font-size:14px;margin-bottom:10px">Upload ZIP (multiple files)</h2>
+    <div class="drop">Drop a .zip here or choose one below - relative paths inside it (like api/controllers/X.php) are preserved.</div>
+    <input type="file" id="zip-input" accept=".zip" style="margin-bottom:10px">
+    <button class="btn btn-primary" style="width:100%" onclick="uploadZip()">Upload &amp; Deploy ZIP</button>
+  </div>
+
+  <div class="card" style="margin-bottom:16px">
+    <h2 style="font-family:var(--f-display);font-size:14px;margin-bottom:10px">Upload Single File</h2>
+    <input type="file" id="file-input" style="margin-bottom:10px">
+    <div style="margin-bottom:10px"><label>Target path (relative to project root, e.g. api/boot.php)</label><input type="text" id="file-path" placeholder="Leave blank to use the filename as-is"></div>
+    <button class="btn btn-primary" style="width:100%" onclick="uploadFile()">Upload File</button>
+  </div>
+
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+      <h2 style="font-family:var(--f-display);font-size:14px">System Status</h2>
+      <button class="btn btn-outline" style="padding:6px 12px;font-size:12px" onclick="loadStatus()">Refresh</button>
+    </div>
+    <div id="status-list">Click Refresh to load.</div>
+  </div>
+</div>
+
+<script src="js/core.js"></script>
+<script>
+async function callUpdater(action, formData) {
+  const auth = document.getElementById('auth').value.trim();
+  if (!auth) { taxiToast('Enter the updater password first', 'err'); return null; }
+  formData.append('auth', auth);
+  try {
+    const res = await fetch('updater.php?action=' + action, { method: 'POST', body: formData });
+    const data = await res.json();
+    if (!data.ok) { taxiToast(data.error || 'Failed', 'err'); return null; }
+    return data;
+  } catch (e) {
+    taxiToast('Connection error', 'err');
+    return null;
+  }
+}
+
+async function uploadZip() {
+  const input = document.getElementById('zip-input');
+  if (!input.files[0]) return taxiToast('Choose a .zip file first', 'err');
+  const fd = new FormData();
+  fd.append('zipfile', input.files[0]);
+  const res = await callUpdater('upload_zip', fd);
+  if (res) { taxiToast(res.message, 'ok'); loadStatus(); }
+}
+
+async function uploadFile() {
+  const input = document.getElementById('file-input');
+  if (!input.files[0]) return taxiToast('Choose a file first', 'err');
+  const fd = new FormData();
+  fd.append('file', input.files[0]);
+  fd.append('path', document.getElementById('file-path').value.trim());
+  const res = await callUpdater('upload', fd);
+  if (res) { taxiToast(res.message, 'ok'); loadStatus(); }
+}
+
+async function loadStatus() {
+  const el = document.getElementById('status-list');
+  const res = await callUpdater('status', new FormData());
+  if (!res) return;
+  el.innerHTML = Object.entries(res.data.files).map(([name, f]) =>
+    `<div class="row"><span>${name}</span><span>${f.exists ? f.size + ' - ' + f.modified : 'missing'}</span></div>`
+  ).join('') + `<div class="row"><span>PHP</span><span>${res.data.php_version}</span></div>
+     <div class="row"><span>Disk free</span><span>${res.data.disk_free}</span></div>`;
+}
+</script>
+</body>
+</html>

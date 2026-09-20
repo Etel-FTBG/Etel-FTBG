@@ -1,0 +1,10 @@
+# ETEL TAXI - block direct access to sensitive files
+<FilesMatch "\.(env|sql)$">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+
+# Root-level marker file - included in deploy zips so the Updater's
+# auto-strip-one-folder behavior (if this project ever gets one, same
+# as Delivery's) doesn't misread the zip structure.
