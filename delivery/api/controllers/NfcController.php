@@ -93,7 +93,7 @@ case 'nfc_list_courier_orders': {
     $pdo = db();
 
     $stage = isset($body['stage']) ? trim($body['stage']) : '';
-    if (!in_array($stage, array('pickup', 'delivery'), true)) fail('stage must be pickup or delivery', 400);
+    if (!in_array($stage, array('pickup', 'delivery', 'accepted'), true)) fail('stage must be pickup, accepted, or delivery', 400);
 
     $courier_etel_id = isset($body['courier_etel_id']) ? trim($body['courier_etel_id']) : '';
     $courier_phone   = isset($body['courier_phone'])   ? trim($body['courier_phone'])   : '';
@@ -112,7 +112,12 @@ case 'nfc_list_courier_orders': {
     $confirmer_name    = isset($body['confirmer_name'])    ? trim($body['confirmer_name'])    : '';
     if (!$confirmer_etel_id && !$confirmer_phone) fail('confirmer_etel_id or confirmer_phone is required', 400);
 
-    if ($stage === 'pickup') {
+    if ($stage === 'pickup' || $stage === 'accepted') {
+        // 'accepted' is a read-only variant of the exact same lookup: the
+        // service giver verifying which courier is assigned to their
+        // order(s) before handoff, not confirming anything - the caller
+        // (EtelID) never calls nfc_confirm_pickup for this stage, only
+        // displays the list. Same ownership query either way.
         $confirmer_user = nfc_find_or_create_user($pdo, $confirmer_etel_id, $confirmer_phone, $confirmer_name, false);
         if (!$confirmer_user) fail('No Delivery account found for this EtelID. Sign in once in the Service Giver app first.', 404);
         if ($confirmer_user['role'] !== 'service_giver' && $confirmer_user['role'] !== 'admin') {
