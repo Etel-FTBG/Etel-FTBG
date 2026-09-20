@@ -338,6 +338,35 @@ function rides_has_surge_column($pdo) {
     return $has;
 }
 
+/* ── Driver self-submitted compliance documents ─────────────────────
+   A driver can submit their own insurance/technical inspection/road
+   fund expiry date + a photo of the sticker directly from their own
+   app, instead of only an admin entering it. Same pattern this
+   codebase already uses for anything a driver self-reports that other
+   people then rely on (driver_vehicle_change_requests,
+   admin_get_flagged_identities): goes into a pending queue an admin
+   must approve before it becomes the live, Traffic-Officer-visible
+   value - a self-reported "valid until 2030" with no review would
+   defeat the entire point of an officer trusting this data. */
+if (!function_exists('rides_ensure_compliance_requests_table')) {
+    function rides_ensure_compliance_requests_table($pdo) {
+        $pdo->exec("CREATE TABLE IF NOT EXISTS driver_compliance_requests (
+            id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+            driver_user_id INT UNSIGNED NOT NULL,
+            doc_type ENUM('insurance','technical_inspection','road_fund') NOT NULL,
+            requested_expiry_date DATE NOT NULL,
+            requested_receipt_url VARCHAR(500) NOT NULL DEFAULT '',
+            status ENUM('pending','approved','rejected') NOT NULL DEFAULT 'pending',
+            reject_reason VARCHAR(255) NULL,
+            created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            reviewed_at DATETIME NULL,
+            reviewed_by_user_id INT UNSIGNED NULL,
+            PRIMARY KEY (id),
+            KEY idx_driver_status (driver_user_id, status)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+    }
+}
+
 switch ($action) {
 
 // ── ACTIVE VEHICLE TYPES (driver onboarding / vehicle-info screens) ──
@@ -1917,35 +1946,6 @@ case 'admin_update_driver_compliance': {
     $pdo->prepare("UPDATE ride_drivers SET " . implode(',', $sets) . " WHERE user_id=?")->execute($vals);
     ok(array('updated' => true));
     break;
-}
-
-/* ── Driver self-submitted compliance documents ─────────────────────
-   A driver can submit their own insurance/technical inspection/road
-   fund expiry date + a photo of the sticker directly from their own
-   app, instead of only an admin entering it. Same pattern this
-   codebase already uses for anything a driver self-reports that other
-   people then rely on (driver_vehicle_change_requests,
-   admin_get_flagged_identities): goes into a pending queue an admin
-   must approve before it becomes the live, Traffic-Officer-visible
-   value - a self-reported "valid until 2030" with no review would
-   defeat the entire point of an officer trusting this data. */
-if (!function_exists('rides_ensure_compliance_requests_table')) {
-    function rides_ensure_compliance_requests_table($pdo) {
-        $pdo->exec("CREATE TABLE IF NOT EXISTS driver_compliance_requests (
-            id INT UNSIGNED NOT NULL AUTO_INCREMENT,
-            driver_user_id INT UNSIGNED NOT NULL,
-            doc_type ENUM('insurance','technical_inspection','road_fund') NOT NULL,
-            requested_expiry_date DATE NOT NULL,
-            requested_receipt_url VARCHAR(500) NOT NULL DEFAULT '',
-            status ENUM('pending','approved','rejected') NOT NULL DEFAULT 'pending',
-            reject_reason VARCHAR(255) NULL,
-            created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            reviewed_at DATETIME NULL,
-            reviewed_by_user_id INT UNSIGNED NULL,
-            PRIMARY KEY (id),
-            KEY idx_driver_status (driver_user_id, status)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
-    }
 }
 
 case 'driver_get_compliance_status': {
