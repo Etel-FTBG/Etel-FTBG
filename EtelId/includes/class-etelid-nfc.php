@@ -64,6 +64,14 @@ class Etelid_Nfc {
            station's queue to register the tapped driver into. */
         add_action('wp_ajax_etelid_nfc_madeya_station_confirm', array(__CLASS__, 'ajax_madeya_station_confirm'));
         add_action('wp_ajax_nopriv_etelid_nfc_madeya_station_confirm', array(__CLASS__, 'ajax_madeya_station_confirm'));
+
+        /* Reveal gate: the tapped card's photo/name/Etel-ID/tier are no
+           longer rendered into the page at all until the scanning
+           person proves who THEY are with their own EtelID login -
+           the card's PII is not shown to a bare tap. See ajax_reveal()
+           below. */
+        add_action('wp_ajax_etelid_nfc_reveal', array(__CLASS__, 'ajax_reveal'));
+        add_action('wp_ajax_nopriv_etelid_nfc_reveal', array(__CLASS__, 'ajax_reveal'));
     }
 
     /* Idempotent runtime install - the plugin's own activation hook only
@@ -814,6 +822,54 @@ class Etelid_Nfc {
 
         wp_send_json_success(array(
             'message' => isset($result['message']) ? $result['message'] : 'Registered in queue.',
+        ));
+    }
+
+    /* Reveal gate: verifies the SCANNING person's own EtelID login
+       (same identity that then also authorizes whichever action they
+       pick next - the frontend keeps this identifier/password in
+       memory and reuses it for the rest of this page visit, so this
+       is the only login prompt for a normal visit) and, only once
+       that succeeds, returns the tapped card's public display fields.
+       An invalid token still fails before this (see resolve_token()
+       above), so a dead/revoked card never even offers a login form. */
+    public static function ajax_reveal() {
+        if (!check_ajax_referer('etelid_public', 'nonce', false)) {
+            wp_send_json_error(array('message' => 'Session expired, please reload the page.'));
+        }
+
+        $token = isset($_POST['token']) ? sanitize_text_field(wp_unslash($_POST['token'])) : '';
+        $ident = isset($_POST['identifier']) ? sanitize_text_field(wp_unslash($_POST['identifier'])) : '';
+        $pass  = isset($_POST['password']) ? (string) $_POST['password'] : '';
+        if (!$token || !$ident || !$pass) {
+            wp_send_json_error(array('message' => 'Missing required fields.'));
+        }
+
+        $resolved = self::resolve_token($token);
+        if (!$resolved) wp_send_json_error(array('message' => 'This card is not active.'));
+        $courier = $resolved['member'];
+
+        $ip = class_exists('EtelID_Security') ? EtelID_Security::get_ip() : '';
+        if (class_exists('EtelID_Security') && !EtelID_Security::rate_limit('nfc_reveal_' . md5($ip . $token), 15, 900)) {
+            wp_send_json_error(array('message' => 'Too many attempts. Please wait a few minutes.'));
+        }
+
+        $confirmer = EtelID_DB::get_by_etel_id(strtoupper($ident));
+        if (!$confirmer) $confirmer = EtelID_DB::find_by_phone($ident);
+        if (!$confirmer) wp_send_json_error(array('message' => 'No EtelID account found for that phone/Etel-ID.'));
+
+        if (empty($confirmer->pin_hash) || !EtelID_Auth::verify_password($pass, $confirmer->pin_hash)) {
+            wp_send_json_error(array('message' => 'Incorrect password.'));
+        }
+        if ('suspended' === $confirmer->status || 'revoked' === $confirmer->status) {
+            wp_send_json_error(array('message' => 'This EtelID account is not active.'));
+        }
+
+        wp_send_json_success(array(
+            'name'      => $courier->full_name,
+            'etel_id'   => $courier->etel_id,
+            'tier'      => $courier->tier,
+            'photo_url' => !empty($courier->photo_url) ? $courier->photo_url : '',
         ));
     }
 
