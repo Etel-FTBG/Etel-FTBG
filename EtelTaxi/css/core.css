@@ -6,7 +6,7 @@
    components (stat cards, glow rings, tilt) shared by every page.
    ============================================================ */
 
-@import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;700&family=JetBrains+Mono:wght@500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;700&family=JetBrains+Mono:wght@500;700&family=Cormorant+Garamond:wght@400;600;700&family=Oswald:wght@500;600;700&family=Noto+Sans+Ethiopic:wght@400;600;700&display=swap');
 
 html[data-theme="dark"]{
   --bg:#000000; --bg2:#0d0d0d; --bg3:#161616;
@@ -22,10 +22,19 @@ html[data-theme="light"]{
 }
 :root{
   /* Gold is the one constant - EtelTaxi's own accent (amber, for
-     grace-period pills) rides alongside it, unchanged by the toggle. */
+     grace-period pills) rides alongside it, unchanged by the toggle.
+     Full 9-step ramp matches EtelID's own card/portal palette exactly
+     (etelid-card.css/etelid-auth.css --g1..--g9) so EtelTaxi reads as
+     the same family, not a different company's app that happens to
+     also use gold. */
+  --g1:#FDF6D8; --g2:#F5E6A3; --g3:#E8C84A; --g4:#D4AF37;
+  --g5:#C8922A; --g6:#A07020; --g7:#7A5518; --g8:#4A3210; --g9:#2A1A06;
+  --navy:#003366; --navy2:#001a40;
+  --holo1:#ff6b6b; --holo2:#ffd93d; --holo3:#6bcb77; --holo4:#4d96ff;
   --gold:#D4AF37; --gold-dim:#8B6914; --gold-deep:#C8960C; --gold-light:#F7D774;
   --green:#2ECC71; --red:#E74C3C; --amber:#E67E22;
   --f-display:'Syne',sans-serif; --f-body:'DM Sans',system-ui,sans-serif; --f-mono:'JetBrains Mono',monospace;
+  --f-serif:'Cormorant Garamond',serif; --f-name:'Oswald',sans-serif; --f-ethiopic:'Noto Sans Ethiopic',sans-serif;
   --radius:14px;
   --shadow-1:0 1px 0 rgba(255,255,255,.03) inset, 0 10px 24px -12px rgba(0,0,0,.55);
   --shadow-2:0 1px 0 rgba(255,255,255,.04) inset, 0 20px 44px -16px rgba(0,0,0,.6);
@@ -72,7 +81,13 @@ h1,h2,h3{font-family:var(--f-display);}
 }
 .btn:active{transform:scale(.97) translateY(1px);}
 .btn-primary{
-  background:linear-gradient(135deg,var(--gold-deep),var(--gold));color:#0d0d0d;
+  /* Same brushed-metal ingot sweep as EtelID's own gold buttons, not a
+     flat two-stop gradient - the visual "family resemblance" a driver
+     moving between EtelID and EtelTaxi should recognize instantly. */
+  background:linear-gradient(90deg,
+    var(--g7) 0%, var(--g6) 12%, var(--g5) 28%, var(--g4) 45%,
+    var(--g3) 52%, var(--g4) 58%, var(--g5) 72%, var(--g6) 88%, var(--g7) 100%);
+  color:#0d0d0d;
   box-shadow:0 1px 0 rgba(255,255,255,.35) inset, 0 -2px 0 rgba(0,0,0,.15) inset, 0 10px 20px -8px rgba(212,175,55,.55);
 }
 .btn-primary:hover{filter:brightness(1.06);box-shadow:0 1px 0 rgba(255,255,255,.4) inset, 0 -2px 0 rgba(0,0,0,.15) inset, 0 14px 26px -8px rgba(212,175,55,.65);}
@@ -199,3 +214,44 @@ label{font-size:12px;color:var(--gold-dim);font-weight:700;text-transform:upperc
    plain pages and pinned over full-screen login overlays (.eta-page) ---------- */
 .page-topbar{display:flex;align-items:center;gap:8px;}
 .eta-page .page-topbar{position:absolute;top:16px;right:16px;z-index:5;}
+
+/* ============================================================
+   EtelID-matched signature patterns - same brushed-metal "ingot" bar,
+   layered 3D gold shadow stack, and guilloché security texture EtelID
+   uses on its own card/portal (etelid-card.css/etelid-front.css), so
+   these two sibling apps read as one brand's identity, not a
+   generic-gold reskin of a different design system.
+   ============================================================ */
+
+/* Brushed-metal gradient sweep - card headers/footers, primary buttons */
+.ingot-bar{
+  background:linear-gradient(90deg,
+    var(--g9) 0%, var(--g8) 8%, var(--g7) 18%,
+    var(--g6) 28%, var(--g5) 40%, var(--g4) 50%,
+    var(--g3) 58%, var(--g4) 66%, var(--g5) 76%,
+    var(--g7) 88%, var(--g9) 100%);
+  box-shadow:0 2px 6px rgba(0,0,0,.2);
+  position:relative;overflow:hidden;
+}
+.ingot-bar::before{
+  content:'';position:absolute;inset:0 0 55% 0;
+  background:linear-gradient(180deg, rgba(255,255,255,.25) 0%, transparent 100%);
+  pointer-events:none;
+}
+
+/* Layered "stepped embossed card" shadow - QR frames, photo frames,
+   anything meant to feel like a real security-printed document. */
+.card-3d{
+  box-shadow:
+    3px 3px 0 var(--g5), 5px 5px 0 var(--g6), 7px 7px 0 var(--g8),
+    0 12px 24px rgba(0,0,0,.2), inset 0 0 0 1px rgba(212,175,55,.1);
+}
+
+/* Subtle diagonal guilloché security-pattern texture, laid under a
+   card/page's other backgrounds - matches EtelID's card-back/auth-page
+   texture at the same 30deg/19px cadence. */
+.guilloche{
+  background-image:
+    repeating-linear-gradient(30deg, transparent 0 18px, rgba(212,175,55,.04) 18px 19px),
+    repeating-linear-gradient(-30deg, transparent 0 18px, rgba(212,175,55,.04) 18px 19px);
+}

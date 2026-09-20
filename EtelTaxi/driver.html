@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Etel Taxi - Driver</title>
-<link rel="stylesheet" href="css/core.css?v=1">
+<link rel="stylesheet" href="css/core.css?v=2">
 <link rel="stylesheet" href="css/etel-auth.css?v=1">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <style>
@@ -35,7 +35,7 @@
     content:'ETEL TAXI · OFFICIAL PERMIT';position:absolute;top:14px;left:0;right:0;
     font-family:var(--f-mono);font-size:9px;letter-spacing:2px;color:var(--gold-dim);text-align:center;opacity:.7;
   }
-  .permit-card .route{font-family:var(--f-display);font-size:21px;margin:16px 0 2px;letter-spacing:.2px;}
+  .permit-card .route{font-family:var(--f-name);font-weight:600;font-size:22px;margin:16px 0 2px;letter-spacing:.3px;text-transform:uppercase;}
   .permit-card .assoc{font-size:12px;color:var(--text-dim);}
   .permit-serial{font-family:var(--f-mono);font-size:10px;letter-spacing:1.5px;color:var(--text-faint);margin-top:6px;}
   #qr-box{
@@ -182,13 +182,13 @@
 
   <!-- STATUS / PERMIT -->
   <div class="view" id="view-status">
-    <div class="permit-card">
+    <div class="permit-card guilloche">
       <div class="eta-holo"></div>
       <div class="pill" id="status-pill">...</div>
       <div class="route" id="status-name">-</div>
       <div class="assoc" id="status-plate">-</div>
       <div class="assoc" id="status-route">-</div>
-      <div id="qr-box" class="glow-ring"></div>
+      <div id="qr-box" class="glow-ring card-3d"></div>
       <div class="qr-hint">Show this QR to a traffic officer to verify your permit</div>
       <div class="permit-serial" id="status-serial"></div>
     </div>
