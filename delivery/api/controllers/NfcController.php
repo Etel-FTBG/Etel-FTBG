@@ -81,7 +81,154 @@ if (!function_exists('nfc_find_or_create_user')) {
     }
 }
 
+/* Needed by nfc_start_ride below (rides_get_active_for_driver) - this
+   file is required directly by boot.php's router (see the nfc_ case),
+   never through RideController.php, so its helper libs are not already
+   loaded the way they would be for a normal ride_* action. */
+require_once __DIR__ . '/../lib/ride_fare.php';
+
 switch ($action) {
+
+case 'nfc_driver_status': {
+    // POST: etel_id, phone - identifies whoever's card was scanned.
+    // Read-only, no confirming password required (same exposure level as
+    // the rest of the public /m/{token} profile - name/photo already
+    // show with no login). Used by the traffic-officer-facing card
+    // display: shows nothing (is_driver=false) for a non-driver card.
+    nfc_require_service_key();
+    $pdo = db();
+
+    $etel_id = isset($body['etel_id']) ? trim($body['etel_id']) : '';
+    $phone   = isset($body['phone'])   ? trim($body['phone'])   : '';
+    if (!$etel_id && !$phone) fail('etel_id or phone is required', 400);
+
+    $user = nfc_find_or_create_user($pdo, $etel_id, $phone, '', false);
+    if (!$user) { ok(array('is_driver' => false)); break; }
+
+    $s = $pdo->prepare(
+        'SELECT vehicle_type, vehicle_plate, license_name, license_number,
+                identity_match, onboarded, commission_owed
+         FROM ride_drivers WHERE user_id = ?'
+    );
+    $s->execute(array($user['id']));
+    $d = $s->fetch();
+    if (!$d) { ok(array('is_driver' => false)); break; }
+
+    $license_no = trim((string) $d['license_number']);
+    $masked = '';
+    if ($license_no !== '') {
+        $tail = substr($license_no, -4);
+        $masked = str_repeat('*', max(0, strlen($license_no) - strlen($tail))) . $tail;
+    }
+    $owed = round(floatval(isset($d['commission_owed']) ? $d['commission_owed'] : 0), 2);
+
+    ok(array(
+        'is_driver'       => true,
+        'onboarded'       => intval($d['onboarded']) === 1,
+        'vehicle_type'    => $d['vehicle_type'],
+        'vehicle_plate'   => $d['vehicle_plate'],
+        'license_name'    => $d['license_name'],
+        'license_masked'  => $masked,
+        'identity_match'  => $d['identity_match'] ? $d['identity_match'] : 'unverified',
+        'payment_status'  => $owed > 0 ? 'unpaid' : 'paid',
+        'commission_owed' => $owed,
+    ));
+    break;
+}
+
+case 'nfc_start_ride': {
+    // POST: driver_etel_id/phone (the confirming driver, who scanned the
+    // rider's card and entered THEIR OWN password on EtelID), plus
+    // customer_etel_id/phone/name (the card owner, i.e. the rider).
+    // Mirrors driver_hail_customer's street-hail insert, but the rider is
+    // resolved from the tapped card's identity instead of a typed phone
+    // number - see RideController.php's driver_hail_customer for the
+    // original, phone-entry version of this same flow.
+    nfc_require_service_key();
+    $pdo = db();
+
+    $driver_etel_id = isset($body['driver_etel_id']) ? trim($body['driver_etel_id']) : '';
+    $driver_phone   = isset($body['driver_phone'])   ? trim($body['driver_phone'])   : '';
+    if (!$driver_etel_id && !$driver_phone) fail('driver_etel_id or driver_phone is required', 400);
+
+    $driver_user = nfc_find_or_create_user($pdo, $driver_etel_id, $driver_phone, '', false);
+    if (!$driver_user) fail('No Delivery driver account found for this EtelID. Sign in once in the Driver app first.', 404);
+    if ($driver_user['role'] !== 'driver' && $driver_user['role'] !== 'admin') {
+        fail('This EtelID is not registered as a Driver on Delivery.', 403);
+    }
+
+    $ob = $pdo->prepare('SELECT vehicle_type, onboarded FROM ride_drivers WHERE user_id = ?');
+    $ob->execute(array($driver_user['id']));
+    $driverRow = $ob->fetch();
+    if (!$driverRow || intval($driverRow['onboarded']) !== 1) {
+        fail('Your driver account is not fully verified yet. Finish onboarding (vehicle info, selfie, license photo) before starting trips.', 403);
+    }
+
+    $customer_etel_id = isset($body['customer_etel_id']) ? trim($body['customer_etel_id']) : '';
+    $customer_phone   = isset($body['customer_phone'])   ? trim($body['customer_phone'])   : '';
+    $customer_name    = isset($body['customer_name'])    ? trim($body['customer_name'])    : '';
+    if (!$customer_etel_id && !$customer_phone) fail('customer_etel_id or customer_phone is required', 400);
+
+    $customer_user = nfc_find_or_create_user($pdo, $customer_etel_id, $customer_phone, $customer_name, true);
+    if (!$customer_user) fail('Could not resolve the rider\'s EtelID account.', 404);
+    if (intval($customer_user['id']) === intval($driver_user['id'])) fail('You cannot start a trip with yourself');
+
+    $mine = rides_get_active_for_driver($pdo, $driver_user['id']);
+    if ($mine) fail('You have an active ride #' . $mine['id'] . ' (' . $mine['status'] . '). Complete or cancel it first.');
+
+    $s2 = $pdo->prepare("SELECT id, status FROM rides WHERE passenger_id=? AND status IN ('searching','accepted','in_progress','arrived') LIMIT 1");
+    $s2->execute(array($customer_user['id']));
+    $theirs = $s2->fetch();
+    if ($theirs) {
+        if ($theirs['status'] === 'searching') {
+            $pdo->prepare("UPDATE rides SET status='cancelled', cancelled_at=NOW() WHERE id=? AND status='searching'")
+                ->execute(array($theirs['id']));
+        } else {
+            fail($customer_user['name'] . ' already has an active ride #' . $theirs['id'] . ' (' . $theirs['status'] . '). Ask them to cancel it first.', 409);
+        }
+    }
+
+    $driverVtype = !empty($driverRow['vehicle_type']) ? $driverRow['vehicle_type'] : 'bajaj';
+
+    // No GPS/distance is captured at NFC-tap time (unlike the phone-entry
+    // flow, which can send the driver's current lat/lng) - an NFC-started
+    // street hail always begins as an open (metered) trip, same as the
+    // driver app's own "open trip" toggle when no km is entered.
+    $extraCols = array(); $extraVals = array();
+    try {
+        $have = array();
+        foreach ($pdo->query("SHOW COLUMNS FROM `rides`")->fetchAll() as $c) {
+            $have[strtolower($c['Field'])] = true;
+        }
+        foreach (array('ride_code', 'request_code', 'code', 'tracking_code', 'order_code') as $cc) {
+            if (isset($have[$cc])) {
+                $extraCols[] = "`$cc`";
+                $extraVals[] = 'R' . date('ymdHis') . strtoupper(substr(md5(uniqid(mt_rand(), true)), 0, 5));
+            }
+        }
+        if (isset($have['vehicle_type'])) {
+            $extraCols[] = '`vehicle_type`';
+            $extraVals[] = $driverVtype;
+        }
+    } catch (Exception $e) { /* non-fatal */ }
+
+    $cols = "passenger_id, driver_id, pickup_lat, pickup_lng,
+             pickup_address, dropoff_address, distance_km,
+             fare_estimate, fare_final, payment_method,
+             status, open_trip, assigned_at, created_at";
+    $ph   = "?,?,?,?, 'NFC tap - street hail', ?, 0, 0, 0, 'cash', 'accepted', 1, NOW(), NOW()";
+    $vals = array($customer_user['id'], $driver_user['id'], null, null,
+                  'Open trip - customer directs the driver (GPS meter)');
+    if ($extraCols) {
+        $cols .= ', ' . implode(', ', $extraCols);
+        $ph   .= str_repeat(', ?', count($extraCols));
+        $vals  = array_merge($vals, $extraVals);
+    }
+    $pdo->prepare("INSERT INTO rides ($cols) VALUES ($ph)")->execute($vals);
+
+    ok(array('message' => 'Trip started with ' . $customer_user['name'] . '.'));
+    break;
+}
 
 case 'nfc_list_courier_orders': {
     // POST: courier_etel_id, courier_phone, courier_name, confirmer_etel_id,

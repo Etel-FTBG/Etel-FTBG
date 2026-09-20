@@ -17,6 +17,7 @@ $photo = $has_member && !empty($member->photo_url) ? esc_url($member->photo_url)
 $nfc_token = (!empty($card) && isset($card->token)) ? esc_attr($card->token) : '';
 $nfc_ajax_url = esc_url(admin_url('admin-ajax.php'));
 $nfc_nonce = wp_create_nonce('etelid_public');
+$is_driver = !empty($driver_status);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -254,6 +255,29 @@ $nfc_nonce = wp_create_nonce('etelid_public');
     cursor: pointer;
     text-decoration: underline;
   }
+  .nfc-driver-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    font-size: 12px;
+    padding: 7px 0;
+    border-bottom: 1px solid rgba(212,175,55,0.12);
+    text-align: left;
+  }
+  .nfc-driver-row:last-child { border-bottom: none; }
+  .nfc-driver-row span:first-child {
+    color: rgba(242,232,208,0.55);
+    letter-spacing: 0.3px;
+  }
+  .nfc-driver-row span:last-child {
+    color: #f2e8d0;
+    font-weight: 600;
+    text-align: right;
+  }
+  .nfc-badge-ok, .nfc-badge-matched { color: #9e9; }
+  .nfc-badge-bad, .nfc-badge-mismatch { color: #e88; }
+  .nfc-badge-unverified { color: #F2CC6B; }
 </style>
 </head>
 <body>
@@ -274,14 +298,44 @@ $nfc_nonce = wp_create_nonce('etelid_public');
         <p class="tier"><?php echo $tier; ?> Tier</p>
       <?php endif; ?>
 
+      <?php if ($is_driver) : ?>
       <div class="nfc-services">
-        <h2>Courier Services</h2>
+        <h2>Driver Compliance</h2>
+        <div class="nfc-driver-row">
+          <span>Vehicle</span>
+          <span><?php echo esc_html(trim($driver_status['vehicle_type'] . ' - ' . $driver_status['vehicle_plate'], ' -')); ?></span>
+        </div>
+        <?php if (!empty($driver_status['license_name']) || !empty($driver_status['license_masked'])) : ?>
+        <div class="nfc-driver-row">
+          <span>License</span>
+          <span><?php echo esc_html(trim($driver_status['license_name'] . ' ' . $driver_status['license_masked'])); ?></span>
+        </div>
+        <?php endif; ?>
+        <div class="nfc-driver-row">
+          <span>Identity</span>
+          <span class="nfc-badge-<?php echo esc_attr($driver_status['identity_match']); ?>"><?php echo esc_html(ucfirst($driver_status['identity_match'])); ?></span>
+        </div>
+        <div class="nfc-driver-row">
+          <span>Commission</span>
+          <span class="<?php echo 'paid' === $driver_status['payment_status'] ? 'nfc-badge-ok' : 'nfc-badge-bad'; ?>">
+            <?php echo 'paid' === $driver_status['payment_status']
+              ? 'Paid'
+              : esc_html('Unpaid - ETB ' . number_format((float) $driver_status['commission_owed'], 2)); ?>
+          </span>
+        </div>
+      </div>
+      <?php endif; ?>
+
+      <div class="nfc-services">
+        <h2>Card Services</h2>
 
         <div id="nfc-step-menu" class="nfc-step active">
           <p class="nfc-role-label">Service Giver</p>
           <button type="button" class="nfc-btn primary" data-stage="pickup">Confirm Pickup</button>
           <p class="nfc-role-label">Customer</p>
           <button type="button" class="nfc-btn primary" data-stage="delivery">Confirm Delivery Complete</button>
+          <p class="nfc-role-label">Driver</p>
+          <button type="button" class="nfc-btn primary" data-stage="ride_start">Confirm Rider &amp; Start Trip</button>
         </div>
 
         <div id="nfc-step-login" class="nfc-step">
@@ -381,6 +435,14 @@ $nfc_nonce = wp_create_nonce('etelid_public');
           msg.textContent = res.data && res.data.message ? res.data.message : 'Could not continue.';
           return;
         }
+        if (res.data.ride_started) {
+          var startMsg = document.getElementById('nfc-done-msg');
+          startMsg.className = 'nfc-msg ok';
+          startMsg.textContent = res.data.message || 'Trip started.';
+          showStep('nfc-step-done');
+          return;
+        }
+
         actionToken = res.data.action_token;
         var orders = res.data.orders || [];
         var list = document.getElementById('nfc-order-list');

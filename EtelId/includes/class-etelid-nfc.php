@@ -210,6 +210,24 @@ class Etelid_Nfc {
             );
         }
 
+        /* Traffic-officer-facing driver compliance display - read-only,
+           no login required (same exposure level as the name/photo
+           already shown below with no auth). Looked up synchronously
+           here, not via the page's own AJAX calls, so it appears the
+           instant the card is tapped rather than needing a button press.
+           Silently absent (null) for any non-driver card or if Delivery
+           is unreachable - never blocks the rest of the profile. */
+        $driver_status = null;
+        if ($member) {
+            $driver_status = self::delivery_service_call('nfc_driver_status', array(
+                'etel_id' => $member->etel_id,
+                'phone'   => $member->phone,
+            ));
+            if (is_wp_error($driver_status) || empty($driver_status['is_driver'])) {
+                $driver_status = null;
+            }
+        }
+
         $template = plugin_dir_path(__FILE__) . '../templates/nfc-profile.php';
 
         if (file_exists($template)) {
@@ -346,13 +364,13 @@ class Etelid_Nfc {
         $ident  = isset($_POST['identifier']) ? sanitize_text_field(wp_unslash($_POST['identifier'])) : '';
         $pass   = isset($_POST['password']) ? (string) $_POST['password'] : '';
 
-        if (!$token || !in_array($stage, array('pickup', 'delivery'), true) || !$ident || !$pass) {
+        if (!$token || !in_array($stage, array('pickup', 'delivery', 'ride_start'), true) || !$ident || !$pass) {
             wp_send_json_error(array('message' => 'Missing required fields.'));
         }
 
         $resolved = self::resolve_token($token);
         if (!$resolved) wp_send_json_error(array('message' => 'This card is not active.'));
-        $courier = $resolved['member'];
+        $courier = $resolved['member']; // whoever's card was physically tapped
 
         $ip = class_exists('EtelID_Security') ? EtelID_Security::get_ip() : '';
         if (class_exists('EtelID_Security') && !EtelID_Security::rate_limit('nfc_confirm_' . md5($ip . $token), 15, 900)) {
@@ -368,6 +386,29 @@ class Etelid_Nfc {
         }
         if ('suspended' === $confirmer->status || 'revoked' === $confirmer->status) {
             wp_send_json_error(array('message' => 'This EtelID account is not active.'));
+        }
+
+        /* "Start Trip" (street hail): the driver taps the RIDER's card and
+           enters their own driver password. Unlike pickup/delivery there
+           is nothing to list or choose between - one tap either starts
+           the trip or fails - so this is a single round trip with no
+           second "confirm" step and no action_token. */
+        if ('ride_start' === $stage) {
+            $result = self::delivery_service_call('nfc_start_ride', array(
+                'driver_etel_id'   => $confirmer->etel_id,
+                'driver_phone'     => $confirmer->phone,
+                'customer_etel_id' => $courier->etel_id,
+                'customer_phone'   => $courier->phone,
+                'customer_name'    => $courier->full_name,
+            ));
+            if (is_wp_error($result)) {
+                wp_send_json_error(array('message' => $result->get_error_message()));
+            }
+            EtelID_DB::log($confirmer->id, $confirmer->etel_id, 'nfc_ride_start', 'NFC card scan - trip started with ' . $courier->full_name);
+            wp_send_json_success(array(
+                'ride_started' => true,
+                'message'      => isset($result['message']) ? $result['message'] : 'Trip started.',
+            ));
         }
 
         $orders = self::delivery_service_call('nfc_list_courier_orders', array(
