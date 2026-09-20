@@ -346,7 +346,7 @@ class Etelid_Nfc {
         $ident  = isset($_POST['identifier']) ? sanitize_text_field(wp_unslash($_POST['identifier'])) : '';
         $pass   = isset($_POST['password']) ? (string) $_POST['password'] : '';
 
-        if (!$token || !in_array($stage, array('pickup', 'delivery'), true) || !$ident || !$pass) {
+        if (!$token || !in_array($stage, array('pickup', 'delivery', 'accepted'), true) || !$ident || !$pass) {
             wp_send_json_error(array('message' => 'Missing required fields.'));
         }
 
@@ -416,6 +416,13 @@ class Etelid_Nfc {
         $data = get_transient($key);
         if (false === $data) wp_send_json_error(array('message' => 'This confirmation has expired. Please start again.'));
         delete_transient($key); // single-use
+
+        // 'accepted' is a read-only verification stage - it never confirms
+        // anything, even if a request forges a call here with a stage
+        // that was never meant to reach a state-changing action.
+        if ('accepted' === $data['stage']) {
+            wp_send_json_error(array('message' => 'This is a verification-only step and cannot be confirmed.'));
+        }
 
         $delivery_action = 'pickup' === $data['stage'] ? 'nfc_confirm_pickup' : 'nfc_confirm_delivery';
 
