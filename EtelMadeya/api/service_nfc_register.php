@@ -73,17 +73,31 @@ if (!is_array($body)) $body = $_POST;
 $controllerPhone = isset($body['controller_phone']) ? trim($body['controller_phone']) : '';
 $driverPhone     = isset($body['driver_phone'])     ? trim($body['driver_phone'])     : '';
 $driverEtelId    = isset($body['driver_etel_id'])   ? trim($body['driver_etel_id'])   : '';
+$stationId       = isset($body['station_id'])       ? (int) $body['station_id']       : 0;
 
 if (!$controllerPhone || !$driverPhone) snr_err('Missing required fields.', 400);
 
-$controllerLast9 = madeyaNormalizePhone($controllerPhone);
-if (!$controllerLast9) snr_err('Invalid controller phone.', 400);
+$controller = madeyaFindControllerByPhone($controllerPhone);
 
-$controller = null;
-foreach (db()->fetchAll("SELECT * FROM controllers WHERE is_active = 1") as $c) {
-    if (madeyaNormalizePhone($c['phone']) === $controllerLast9) { $controller = $c; break; }
+if (!$controller) {
+    // Not a station controller - but an admin/manager can still act,
+    // by picking which station's queue to register into (they have no
+    // single station of their own the way a controller does).
+    $admin = madeyaFindAdminByPhone($controllerPhone);
+    if (!$admin) {
+        snr_err('This EtelID account is not registered as an Etel Madeya controller.', 403);
+    }
+
+    if (!$stationId) {
+        snr_ok(array(
+            'needs_station' => true,
+            'stations'      => madeyaActiveStations(),
+        ));
+    }
+
+    $controller = db()->fetchOne("SELECT * FROM controllers WHERE id = ? AND is_active = 1", [$stationId]);
+    if (!$controller) snr_err('Invalid station.', 400);
 }
-if (!$controller) snr_err('This EtelID account is not registered as an Etel Madeya controller.', 403);
 
 $driverLast9 = madeyaNormalizePhone($driverPhone);
 if (!$driverLast9) snr_err('Invalid driver phone.', 400);
