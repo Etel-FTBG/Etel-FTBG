@@ -445,32 +445,6 @@ $nfc_nonce = wp_create_nonce('etelid_public');
   for (var m = 0; m < menuBtns.length; m++) {
     menuBtns[m].addEventListener('click', function () {
       stage = this.getAttribute('data-stage');
-
-      // "Register in Queue": no amount, no login form at all - one
-      // instant tap. The controller is identified server-side from
-      // their own signed-in EtelID portal session in this browser.
-      if (stage === 'etelmadeya_register') {
-        var doneMsg = document.getElementById('nfc-done-msg');
-        doneMsg.className = 'nfc-msg';
-        doneMsg.textContent = 'Registering...';
-        showStep('nfc-step-done');
-        post('etelid_nfc_start', { token: TOKEN, stage: stage })
-          .then(function (res) {
-            if (res.success && res.data.madeya_register_done) {
-              doneMsg.className = 'nfc-msg ok';
-              doneMsg.textContent = res.data.message || 'Registered in queue.';
-            } else {
-              doneMsg.className = 'nfc-msg error';
-              doneMsg.textContent = res.data && res.data.message ? res.data.message : 'Could not register.';
-            }
-          })
-          .catch(function () {
-            doneMsg.className = 'nfc-msg error';
-            doneMsg.textContent = 'Network error, please try again.';
-          });
-        return;
-      }
-
       // Both EtelPay stages need an amount first, then whoever is
       // filling in this form types their own EtelID login - that
       // login both identifies AND authorizes it, since it's their own
@@ -478,6 +452,11 @@ $nfc_nonce = wp_create_nonce('etelid_public');
       // tapped card's owner; etelpay_cardholder_pay: the tapped card
       // pays instead - their own approval comes after this login,
       // which here only identifies who's collecting).
+      // "Register in Queue" (etelmadeya_register) also needs the
+      // controller's own login here - a shared station device can be
+      // used by different controllers through the day, so there is no
+      // reliable ambient "who's signed in" to read; only an explicit
+      // login on this specific tap correctly identifies who's doing it.
       var etelpayStages = (stage === 'etelpay_payout' || stage === 'etelpay_cardholder_pay');
       showStep(etelpayStages ? 'nfc-step-charge-amount' : 'nfc-step-login');
     });
@@ -534,6 +513,14 @@ $nfc_nonce = wp_create_nonce('etelid_public');
           var payMsg = document.getElementById('nfc-done-msg');
           payMsg.className = 'nfc-msg ok';
           payMsg.textContent = res.data.message || 'Payment sent.';
+          showStep('nfc-step-done');
+          return;
+        }
+
+        if (res.data.madeya_register_done) {
+          var madeyaMsg = document.getElementById('nfc-done-msg');
+          madeyaMsg.className = 'nfc-msg ok';
+          madeyaMsg.textContent = res.data.message || 'Registered in queue.';
           showStep('nfc-step-done');
           return;
         }
