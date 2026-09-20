@@ -327,6 +327,22 @@ $nfc_nonce = wp_create_nonce('etelid_public');
           <button type="button" class="nfc-btn primary" data-stage="ride_start">Confirm Rider &amp; Start Trip</button>
           <p class="nfc-role-label">Traffic Officer</p>
           <button type="button" class="nfc-btn primary" data-stage="driver_status">Driver Info</button>
+          <p class="nfc-role-label">Collect Payment</p>
+          <button type="button" class="nfc-btn primary" data-stage="etelpay_charge">Charge via EtelPay</button>
+        </div>
+
+        <div id="nfc-step-charge-amount" class="nfc-step">
+          <div class="nfc-field">
+            <label>Amount (ETB)</label>
+            <input type="number" id="nfc-charge-amount" placeholder="0.00" min="0.01" step="0.01" inputmode="decimal">
+          </div>
+          <div class="nfc-field">
+            <label>Note (optional)</label>
+            <input type="text" id="nfc-charge-note" placeholder="What is this for?">
+          </div>
+          <button type="button" class="nfc-btn primary" id="nfc-charge-amount-next">Continue</button>
+          <span class="nfc-back" data-back="menu">Cancel</span>
+          <div id="nfc-charge-amount-msg" class="nfc-msg"></div>
         </div>
 
         <div id="nfc-step-login" class="nfc-step">
@@ -341,6 +357,17 @@ $nfc_nonce = wp_create_nonce('etelid_public');
           <button type="button" class="nfc-btn primary" id="nfc-login-submit">Continue</button>
           <span class="nfc-back" data-back="menu">Cancel</span>
           <div id="nfc-login-msg" class="nfc-msg"></div>
+        </div>
+
+        <div id="nfc-step-charge-pin" class="nfc-step">
+          <p id="nfc-charge-pin-hint" class="nfc-msg"></p>
+          <div class="nfc-field">
+            <label>Cardholder: enter YOUR OWN EtelPay PIN to approve</label>
+            <input type="password" id="nfc-charge-pin" placeholder="PIN" inputmode="numeric" autocomplete="off">
+          </div>
+          <button type="button" class="nfc-btn primary" id="nfc-charge-pin-submit">Approve Payment</button>
+          <span class="nfc-back" data-back="menu">Cancel</span>
+          <div id="nfc-charge-pin-msg" class="nfc-msg"></div>
         </div>
 
         <div id="nfc-step-orders" class="nfc-step">
@@ -396,6 +423,11 @@ $nfc_nonce = wp_create_nonce('etelid_public');
       document.getElementById('nfc-ident').value = '';
       document.getElementById('nfc-pass').value = '';
       document.getElementById('nfc-login-msg').textContent = '';
+      document.getElementById('nfc-charge-amount').value = '';
+      document.getElementById('nfc-charge-note').value = '';
+      document.getElementById('nfc-charge-amount-msg').textContent = '';
+      document.getElementById('nfc-charge-pin').value = '';
+      document.getElementById('nfc-charge-pin-msg').textContent = '';
       showStep('nfc-step-menu');
     });
   }
@@ -404,9 +436,25 @@ $nfc_nonce = wp_create_nonce('etelid_public');
   for (var m = 0; m < menuBtns.length; m++) {
     menuBtns[m].addEventListener('click', function () {
       stage = this.getAttribute('data-stage');
-      showStep('nfc-step-login');
+      // EtelPay charge needs an amount first - the operator's own
+      // EtelID login (nfc-step-login) comes after, same as every other
+      // stage, since it's what identifies who is COLLECTING the money.
+      showStep(stage === 'etelpay_charge' ? 'nfc-step-charge-amount' : 'nfc-step-login');
     });
   }
+
+  var chargeAmount = 0, chargeNote = '';
+  document.getElementById('nfc-charge-amount-next').addEventListener('click', function () {
+    var amtEl = document.getElementById('nfc-charge-amount');
+    var msg = document.getElementById('nfc-charge-amount-msg');
+    var amt = parseFloat(amtEl.value);
+    if (!amt || amt <= 0) { msg.className = 'nfc-msg error'; msg.textContent = 'Enter an amount greater than zero.'; return; }
+    chargeAmount = amt;
+    chargeNote = document.getElementById('nfc-charge-note').value.trim();
+    msg.className = 'nfc-msg';
+    msg.textContent = '';
+    showStep('nfc-step-login');
+  });
 
   document.getElementById('nfc-login-submit').addEventListener('click', function () {
     var ident = document.getElementById('nfc-ident').value.trim();
@@ -418,7 +466,9 @@ $nfc_nonce = wp_create_nonce('etelid_public');
 
     this.disabled = true;
     var self = this;
-    post('etelid_nfc_start', { token: TOKEN, stage: stage, identifier: ident, password: pass })
+    var postData = { token: TOKEN, stage: stage, identifier: ident, password: pass };
+    if (stage === 'etelpay_charge') { postData.amount = chargeAmount; postData.note = chargeNote; }
+    post('etelid_nfc_start', postData)
       .then(function (res) {
         self.disabled = false;
         if (!res.success) {
@@ -437,6 +487,16 @@ $nfc_nonce = wp_create_nonce('etelid_public');
         if (res.data.driver_status) {
           renderDriverStatus(res.data.driver_status);
           showStep('nfc-step-done');
+          return;
+        }
+
+        if (res.data.charge_pending) {
+          actionToken = res.data.action_token;
+          document.getElementById('nfc-charge-pin-hint').textContent =
+            'Charging ' + res.data.payer_name + ' ' + res.data.amount + ' ETB. Hand the device to the cardholder.';
+          document.getElementById('nfc-charge-pin-msg').textContent = '';
+          document.getElementById('nfc-charge-pin').value = '';
+          showStep('nfc-step-charge-pin');
           return;
         }
 
@@ -649,6 +709,37 @@ $nfc_nonce = wp_create_nonce('etelid_public');
         showStep('nfc-step-done');
       });
   }
+
+  document.getElementById('nfc-charge-pin-submit').addEventListener('click', function () {
+    var pin = document.getElementById('nfc-charge-pin').value;
+    var msg = document.getElementById('nfc-charge-pin-msg');
+    msg.className = 'nfc-msg';
+    msg.textContent = '';
+    if (!pin) { msg.className = 'nfc-msg error'; msg.textContent = 'Enter your EtelPay PIN.'; return; }
+
+    this.disabled = true;
+    var self = this;
+    post('etelid_nfc_charge_confirm', { action_token: actionToken, payer_pin: pin })
+      .then(function (res) {
+        self.disabled = false;
+        var doneMsg = document.getElementById('nfc-done-msg');
+        if (res.success) {
+          doneMsg.className = 'nfc-msg ok';
+          doneMsg.textContent = res.data && res.data.message ? res.data.message : 'Payment received.';
+        } else {
+          doneMsg.className = 'nfc-msg error';
+          doneMsg.textContent = res.data && res.data.message ? res.data.message : 'Payment failed.';
+        }
+        showStep('nfc-step-done');
+      })
+      .catch(function () {
+        self.disabled = false;
+        var doneMsg = document.getElementById('nfc-done-msg');
+        doneMsg.className = 'nfc-msg error';
+        doneMsg.textContent = 'Network error, please try again.';
+        showStep('nfc-step-done');
+      });
+  });
 })();
 </script>
 <?php endif; ?>
