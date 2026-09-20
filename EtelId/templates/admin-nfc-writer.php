@@ -17,7 +17,7 @@ if (!current_user_can(ETELID_NFC_ADMIN_CAP)) {
     wp_die('Not allowed.');
 }
 
-$nonce = wp_create_nonce('etelid_nfc_admin');
+$nonce = wp_create_nonce('etelid_auth'); // matches class-etelid-nfc.php's admin AJAX handlers
 $ajax_url = admin_url('admin-ajax.php');
 
 wp_enqueue_script(

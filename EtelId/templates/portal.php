@@ -2484,7 +2484,7 @@ async function eapNfcSearch(){
   }
   var html = '';
   res.data.members.forEach(function(m){
-    html += '<div class="eap-row" onclick=\'eapNfcSelect(' + JSON.stringify(m.name) + ',' + JSON.stringify(m.etel_id) + ')\'>'
+    html += '<div class="eap-row" onclick=\'eapNfcSelect(' + JSON.stringify(m.id) + ',' + JSON.stringify(m.name) + ',' + JSON.stringify(m.etel_id) + ')\'>'
       + '<div style="flex:1;"><div style="font-weight:700;color:#e8e2d4;">' + (m.name||'—') + '</div>'
       + '<div style="font-size:11px;color:#998;">' + (m.etel_id||'') + '</div></div>'
       + (m.status && m.status!=='active' ? '<span class="eap-pill ' + m.status + '">' + m.status + '</span>' : '')
@@ -2496,15 +2496,29 @@ async function eapNfcSearch(){
   box.innerHTML = html;
 }
 
-function eapNfcSelect(name, etelId){
+async function eapNfcSelect(memberId, name, etelId){
   document.getElementById('eap-nfc-sel-name').textContent = name;
   document.getElementById('eap-nfc-sel-id').textContent = etelId;
-  var url = _P.verifyBase + encodeURIComponent(etelId);
-  document.getElementById('eap-nfc-url').value = url;
-  document.getElementById('eap-nfc-test-link').href = url;
+  document.getElementById('eap-nfc-url').value = 'Generating link...';
   document.getElementById('eap-nfc-status').textContent = '';
   document.getElementById('eap-nfc-selected').style.display = 'block';
   document.getElementById('eap-nfc-results').innerHTML = '';
+
+  // Issues a real card token (etelid_nfc_cards row) and returns the
+  // opaque /m/{token} link the NFC service-selector page resolves -
+  // this used to just build a /verify/{etel_id} link client-side,
+  // which pointed at the public read-only verify page (no service
+  // buttons, and the member's real Etel-ID printed in the clear on
+  // the physical tag) instead of ever actually issuing a card.
+  var res = await _eidPanel('etelid_nfc_issue', { member_id: memberId });
+  if (!res.success) {
+    document.getElementById('eap-nfc-url').value = '';
+    document.getElementById('eap-nfc-status').textContent = 'Error: ' + (res.data && res.data.message ? res.data.message : 'Could not issue card.');
+    return;
+  }
+  var url = res.data.url;
+  document.getElementById('eap-nfc-url').value = url;
+  document.getElementById('eap-nfc-test-link').href = url;
 }
 
 function eapNfcCopy(){
