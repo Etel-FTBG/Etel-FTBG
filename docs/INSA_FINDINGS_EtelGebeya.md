@@ -767,6 +767,73 @@ actions** (`api/admin.php`).
 
 ---
 
+## 9. Update -- 2026-09-21: NFC order-confirmation service endpoints
+
+Three new server-to-server endpoints were added after the pass above, as
+part of extending the EtelID NFC card to EtelGebeya: `api/service_nfc_order_list.php`
+(lists a courier's open deliveries), `api/service_nfc_order_confirm.php`
+(marks one delivered), and `api/service_nfc_check_courier.php` (answers
+whether a phone is a registered courier, used to show/hide the "Confirm
+Gebeya Order" button on the card). None of these existed when Sections 1-8
+above were written.
+
+**Checked:** all three files in full, plus `api/config.php`'s
+`ETELID_SERVICE_KEY` definition they all depend on.
+
+### Fixed (2 findings)
+
+- **Error-message info leak (Medium).** `service_nfc_order_confirm.php`'s
+  catch block returned `'Could not confirm delivery: ' . $e->getMessage()`
+  directly in the HTTP response body -- raw PDO/SQL exception text (table/
+  column names, constraint names) reaching the caller, the same class of
+  bug already found and fixed this session in Delivery & Ride, EtelPay,
+  and Etel Madeya. `config.php`'s own `error_reporting(0)`/
+  `display_errors=0` settings do not protect against this, since the
+  message is deliberately echoed by the catch block, not leaked via an
+  uncaught exception. Fixed: the real message is now `error_log()`'d
+  server-side only; the client gets a generic
+  `"Could not confirm delivery. Please try again."`.
+- **Race condition (Medium).** The same file's SELECT-then-UPDATE for
+  marking an `order_vendors` row delivered was not atomic: two concurrent
+  confirm requests for the same `order_vendor_id` (e.g. a double-tap, or a
+  retried request racing the first) could both pass the
+  `$ov['status'] === 'delivered'` check before either one's `UPDATE`
+  committed, double-logging the delivery in `order_status_log` and
+  double-incrementing `couriers.total_deliveries`. Fixed with an atomic
+  status flip -- `UPDATE order_vendors SET status='delivered', ... WHERE
+  id=? AND status NOT IN ('delivered','cancelled','returned')`, checking
+  `rowCount()` -- so only the request that actually wins the flip proceeds
+  to log/increment; a losing concurrent request gets a clean "Already
+  confirmed delivered" error instead. Same pattern already used for
+  EtelPay's dispute-resolution double-refund fix earlier this session.
+
+### Verified clean
+
+- All three endpoints correctly reject `ETELID_SERVICE_KEY` still being
+  the shipped `CHANGE_ME` placeholder (`strcasecmp(...) === 0`, matching
+  the pattern this session found missing -- and fixed -- in older,
+  pre-existing code in EtelPay/Etel Madeya/EtelTaxi).
+- `service_nfc_check_courier.php` is read-only (no state mutation), has no
+  exception-message leak path, and has no race to guard against.
+- `service_nfc_order_list.php`'s query is read-only and fully
+  parameterized; an uncaught exception there is masked by
+  `display_errors=0` (a blank response, not a leak) -- a known,
+  already-documented tradeoff for this codebase (Section 5), not a new
+  gap.
+- Courier identity resolution (last-9-digit phone match against
+  `couriers.status = 'active'`) and ownership scoping
+  (`order_vendors.courier_id` must match the resolved courier, and for
+  confirm, additionally re-verified before any write) are consistent
+  across all three files -- no IDOR: a courier can only list or confirm
+  their own assigned deliveries.
+- All SQL is parameterized; no dynamic column/table-name interpolation
+  from request input anywhere in these three files.
+
+Both fixes verified with `php -l` and the ASCII-purity check (no
+non-ASCII bytes present or introduced).
+
+---
+
 ## Summary of code changes made in this pass
 
 | File | Change |

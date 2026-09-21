@@ -75,8 +75,24 @@ if (in_array($ov['status'], ['cancelled', 'returned'], true)) {
 
 $pdo->beginTransaction();
 try {
-    $pdo->prepare("UPDATE order_vendors SET status = 'delivered', delivered_at = NOW() WHERE id = ?")
-        ->execute([$ov['id']]);
+    // Atomic status flip, not a blind UPDATE - the SELECT above and this
+    // UPDATE are not otherwise atomic, so two concurrent confirm taps for
+    // the same order_vendor_id could both pass the checks above and both
+    // reach here. Only the request that actually flips the row (still
+    // 'assigned'/'processing'/'shipped', not already 'delivered') is
+    // allowed to log the delivery and bump the courier's stats - a
+    // second/racing request gets a clean error instead of double-logging
+    // and double-incrementing total_deliveries. Same pattern used for
+    // EtelPay's dispute-resolution double-refund fix.
+    $flip = $pdo->prepare(
+        "UPDATE order_vendors SET status = 'delivered', delivered_at = NOW()
+          WHERE id = ? AND status NOT IN ('delivered', 'cancelled', 'returned')"
+    );
+    $flip->execute([$ov['id']]);
+    if ($flip->rowCount() === 0) {
+        $pdo->rollBack();
+        err('Already confirmed delivered.', 400);
+    }
 
     $note = 'Delivery confirmed via NFC tap' . ($confirmerName ? (' by ' . $confirmerName) : '');
     $pdo->prepare("INSERT INTO order_status_log (order_id, status, note, created_at) VALUES (?, 'delivered', ?, NOW())")
@@ -102,7 +118,10 @@ try {
     $pdo->commit();
 } catch (Throwable $e) {
     $pdo->rollBack();
-    err('Could not confirm delivery: ' . $e->getMessage(), 500);
+    // Log server-side only - raw exception text (can include table/column
+    // names or SQL fragments) has no business in an HTTP response body.
+    error_log('[EtelGebeya][nfc_order_confirm] ' . $e->getMessage());
+    err('Could not confirm delivery. Please try again.', 500);
 }
 
 ok(['message' => 'Delivery confirmed for order ' . $ov['order_code'] . '.']);
