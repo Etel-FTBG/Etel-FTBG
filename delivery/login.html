@@ -495,18 +495,13 @@ body { font-family:var(--ff-b); background:#0a0a14; overflow:hidden; }
         <div class="del-auth-subtitle" id="del-card-sub">Sign in to continue</div>
       </div>
 
-      <!-- Role tabs - deliberately no Admin button here. The public,
-           generic login page (this file, reached bare or via any of the
-           customer/driver/courier/service apps) should never advertise
-           that an admin login exists at all. Admin sign-in still works
-           exactly as before, just privately: admin.html redirects an
-           unauthenticated visitor straight to
-           login.html?redirect=admin.html&role=admin, which still
-           auto-selects the Admin tab via the DOMContentLoaded handler
-           below (setRole('admin') from the ?role= param) - see
-           ROLE_IDS/ROLE_TITLES and setRole() further down, both left
-           untouched. Only the owner/admin, who knows to go to
-           admin.html directly, ever sees it. -->
+      <!-- Role tabs - deliberately no Admin button here, and no way to
+           reach an admin login on this page at all anymore (see
+           setRole()'s guard further down: r === 'admin' is ignored).
+           Admin sign-in now lives entirely on its own standalone page,
+           admin-login.html, which is not linked from here or any other
+           public page - only admin.html's own signed-out redirect points
+           to it. -->
       <div class="del-role-tabs">
         <button class="del-rtab on" id="tab-c" onclick="setRole('customer')">
           <span class="del-rtab-icon">📦</span>Customer
@@ -524,23 +519,6 @@ body { font-family:var(--ff-b); background:#0a0a14; overflow:hidden; }
           <span class="del-rtab-icon">🏪</span>Service
         </button>
       </div>
-
-      <!-- Staff role preview (Admin tab only) - purely informational.
-           Actual access and landing page are always decided server-side
-           by EtelGroup's Employees panel via admin_etelid_login, never
-           by which of these buttons was clicked - a person who taps
-           "Finance" here but whose real EtelGroup role is Dispatcher
-           still signs in (and lands) as a Dispatcher. This only updates
-           the caption below to preview where that role type typically
-           lands, before anyone has even entered credentials. -->
-      <div class="del-staff-tabs" id="staff-role-tabs" style="display:none">
-        <button class="del-staff-tab on" onclick="setStaffPreview('dispatcher', this)">🚦 Dispatcher</button>
-        <button class="del-staff-tab" onclick="setStaffPreview('finance', this)">💰 Finance</button>
-        <button class="del-staff-tab" onclick="setStaffPreview('traffic officer', this)">🚓 Traffic</button>
-        <button class="del-staff-tab" onclick="setStaffPreview('manager', this)">🧑‍💼 Manager</button>
-        <button class="del-staff-tab" onclick="setStaffPreview('admin', this)">⚙️ Admin</button>
-      </div>
-      <div id="staff-landing-caption" style="display:none;text-align:center;font-size:10px;color:rgba(253,246,216,.5);padding:6px 22px 0"></div>
 
       <div class="del-auth-body">
         <!-- Main alert -->
@@ -746,9 +724,9 @@ function safeRedirectTarget() {
 }
 var ROLE_TITLES = {
   customer:'Customer Login', courier:'Courier Login', driver:'Driver Login',
-  service_giver:'Service Login', admin:'Admin Login'
+  service_giver:'Service Login'
 };
-var ROLE_IDS = { customer:'tab-c', courier:'tab-d', driver:'tab-r', service_giver:'tab-s', admin:'tab-a', ride:'tab-ride' };
+var ROLE_IDS = { customer:'tab-c', courier:'tab-d', driver:'tab-r', service_giver:'tab-s', ride:'tab-ride' };
 // Ride isn't a real backend role - Ride passengers are just customers,
 // distinguished only by where they land after login (ride/ instead of
 // customer.html). Previously the ONLY way to reach that context was
@@ -761,6 +739,12 @@ var ROLE_IDS = { customer:'tab-c', courier:'tab-d', driver:'tab-r', service_give
 var _forceRideRedirect = false;
 
 function setRole(r) {
+  // Admin sign-in no longer lives on this page at all (see
+  // admin-login.html) - the only remaining way anyone could ask for it
+  // here is a stray ?role=admin in the URL, now that the tab button
+  // itself is gone. Silently fall back to Customer rather than letting
+  // that still work as an unlisted backdoor into the admin login flow.
+  if (r === 'admin') r = 'customer';
   _forceRideRedirect = (r === 'ride');
   _role = _forceRideRedirect ? 'customer' : r; // backend only knows 5 roles - map Ride's tab to the real one underneath
   Object.keys(ROLE_IDS).forEach(function(k) {
