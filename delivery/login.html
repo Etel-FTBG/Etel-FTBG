@@ -495,7 +495,18 @@ body { font-family:var(--ff-b); background:#0a0a14; overflow:hidden; }
         <div class="del-auth-subtitle" id="del-card-sub">Sign in to continue</div>
       </div>
 
-      <!-- Role tabs -->
+      <!-- Role tabs - deliberately no Admin button here. The public,
+           generic login page (this file, reached bare or via any of the
+           customer/driver/courier/service apps) should never advertise
+           that an admin login exists at all. Admin sign-in still works
+           exactly as before, just privately: admin.html redirects an
+           unauthenticated visitor straight to
+           login.html?redirect=admin.html&role=admin, which still
+           auto-selects the Admin tab via the DOMContentLoaded handler
+           below (setRole('admin') from the ?role= param) - see
+           ROLE_IDS/ROLE_TITLES and setRole() further down, both left
+           untouched. Only the owner/admin, who knows to go to
+           admin.html directly, ever sees it. -->
       <div class="del-role-tabs">
         <button class="del-rtab on" id="tab-c" onclick="setRole('customer')">
           <span class="del-rtab-icon">📦</span>Customer
@@ -511,9 +522,6 @@ body { font-family:var(--ff-b); background:#0a0a14; overflow:hidden; }
         </button>
         <button class="del-rtab" id="tab-s" onclick="setRole('service_giver')">
           <span class="del-rtab-icon">🏪</span>Service
-        </button>
-        <button class="del-rtab" id="tab-a" onclick="setRole('admin')">
-          <span class="del-rtab-icon">⚙️</span>Admin
         </button>
       </div>
 
