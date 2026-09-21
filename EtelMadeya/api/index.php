@@ -33,7 +33,14 @@ try {
                 jsonResponse(['success' => false, 'message' => 'Plate number required'], 400);
             }
             
-            $sql = "SELECT q.*, vt.name as vehicle_type_name, vt.name_am as vehicle_type_name_am, 
+            // Public, unauthenticated lookup by plate - select explicit
+            // columns rather than q.* so driver_name/driver_phone (another
+            // person's PII, not shown by any caller of this action) are
+            // never sent back just because someone knows or guesses a
+            // plate number. Matches driver_active_queue's own column list.
+            $sql = "SELECT q.id, q.controller_id, q.vehicle_type_id, q.plate_number, q.plate_parity,
+                           q.token, q.position, q.queue_type, q.status, q.batch_id, q.registered_at,
+                           vt.name as vehicle_type_name, vt.name_am as vehicle_type_name_am,
                            vt.icon, c.station_name, c.station_name as station_name_am
                     FROM queue q
                     JOIN vehicle_types vt ON q.vehicle_type_id = vt.id
@@ -348,18 +355,24 @@ try {
             
         case 'serve_vehicle':
             requireControllerAuth();
-            
+
             $queueId = (int)($_POST['queue_id'] ?? 0);
             $fuelGallons = (float)($_POST['fuel_gallons'] ?? 0);
             $fuelLiters = (float)($_POST['fuel_liters'] ?? 0);
-            
+
             if (!$queueId) {
                 jsonResponse(['success' => false, 'message' => 'Queue ID required'], 400);
             }
-            
-            // Get vehicle from queue
-            $vehicle = db()->fetchOne("SELECT * FROM queue WHERE id = ?", [$queueId]);
-            
+
+            // Get vehicle from queue - scoped to this controller's own
+            // station so one controller can't serve (and thereby delete
+            // from the queue, and credit fuel-used stats to their own
+            // station) a vehicle that belongs to a different station.
+            $vehicle = db()->fetchOne(
+                "SELECT * FROM queue WHERE id = ? AND controller_id = ?",
+                [$queueId, $_SESSION['controller_id']]
+            );
+
             if (!$vehicle) {
                 jsonResponse(['success' => false, 'message' => 'Vehicle not found']);
             }
@@ -402,35 +415,39 @@ try {
                 
             } catch (Exception $e) {
                 db()->rollback();
-                jsonResponse(['success' => false, 'message' => 'Failed to serve vehicle: ' . $e->getMessage()], 500);
+                error_log("serve_vehicle failed: " . $e->getMessage());
+                jsonResponse(['success' => false, 'message' => 'Failed to serve vehicle. Please try again.'], 500);
             }
             break;
             
         case 'move_to_vip':
             requireControllerAuth();
-            
+
             $queueId = (int)($_POST['queue_id'] ?? 0);
-            
+
             if (!$queueId) {
                 jsonResponse(['success' => false, 'message' => 'Queue ID required'], 400);
             }
-            
-            db()->update('queue', ['queue_type' => 'vip'], 'id = ?', [$queueId]);
-            
+
+            // Scoped to this controller's own station - see serve_vehicle
+            // above for why (otherwise any controller could reorder any
+            // other station's queue by guessing a queue_id).
+            db()->update('queue', ['queue_type' => 'vip'], 'id = ? AND controller_id = ?', [$queueId, $_SESSION['controller_id']]);
+
             jsonResponse(['success' => true, 'message' => 'Moved to VIP queue']);
             break;
-            
+
         case 'move_to_waiting':
             requireControllerAuth();
-            
+
             $queueId = (int)($_POST['queue_id'] ?? 0);
-            
+
             if (!$queueId) {
                 jsonResponse(['success' => false, 'message' => 'Queue ID required'], 400);
             }
-            
-            db()->update('queue', ['queue_type' => 'waiting'], 'id = ?', [$queueId]);
-            
+
+            db()->update('queue', ['queue_type' => 'waiting'], 'id = ? AND controller_id = ?', [$queueId, $_SESSION['controller_id']]);
+
             jsonResponse(['success' => true, 'message' => 'Moved to waiting queue']);
             break;
             
@@ -449,7 +466,12 @@ try {
                 jsonResponse(['success' => false, 'message' => 'This vehicle type is not served at this station today.', 'code' => 'TYPE_NOT_ALLOWED'], 400);
             }
 
-            $plateArray = array_filter(array_map('trim', explode("\n", $plates)));
+            // sanitize() each plate the same way the manual 'register'
+            // action already does - bulk_import previously only trimmed,
+            // so a plate containing raw HTML could be stored unescaped
+            // and later rendered unescaped on the public driver pages
+            // (check_position / driver_active_queue).
+            $plateArray = array_filter(array_map(fn($p) => sanitize(trim($p)), explode("\n", $plates)));
             
             if (empty($plateArray)) {
                 jsonResponse(['success' => false, 'message' => 'No valid plates provided'], 400);
@@ -555,10 +577,11 @@ try {
                 
             } catch (Exception $e) {
                 db()->rollback();
-                jsonResponse(['success' => false, 'message' => 'Import failed: ' . $e->getMessage()], 500);
+                error_log("bulk_import failed: " . $e->getMessage());
+                jsonResponse(['success' => false, 'message' => 'Import failed. Please try again.'], 500);
             }
             break;
-            
+
         case 'clear_queue':
             requireControllerAuth();
             
@@ -680,5 +703,5 @@ try {
     
 } catch (Exception $e) {
     error_log("API Error: " . $e->getMessage());
-    jsonResponse(['success' => false, 'message' => 'Server error: ' . $e->getMessage()], 500);
+    jsonResponse(['success' => false, 'message' => 'Server error. Please try again.'], 500);
 }

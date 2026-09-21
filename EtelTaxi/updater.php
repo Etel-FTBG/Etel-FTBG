@@ -10,7 +10,13 @@
 // ============================================================
 
 $_env_pass = getenv('ETEL_TAXI_UPDATER_PASS');
-if (!$_env_pass) {
+// Reject the shipped .env.example template's literal placeholder value
+// too, in case someone typed it verbatim as the actual cPanel env var
+// instead of a real password - same class of bug found (and fixed) in
+// EtelPay's updater (a case-sensitive check let 'CHANGE_ME' through as
+// "configured", granting arbitrary file-write to anyone who knew it).
+$_env_pass_norm = strtolower(str_replace(array('-', ' '), '_', trim((string) $_env_pass)));
+if (!$_env_pass || $_env_pass_norm === 'change_me' || $_env_pass_norm === 'changeme') {
     http_response_code(503);
     die(json_encode(['ok' => false, 'error' => 'Updater not configured. Set ETEL_TAXI_UPDATER_PASS env variable in cPanel first.']));
 }
@@ -27,7 +33,7 @@ header('Vary: Origin');
 
 function checkAuth() {
     $auth = $_SERVER['HTTP_X_AUTH'] ?? $_POST['auth'] ?? $_GET['auth'] ?? '';
-    if ($auth !== UPDATER_PASSWORD) {
+    if (!hash_equals(UPDATER_PASSWORD, (string) $auth)) {
         http_response_code(401);
         die(json_encode(['ok' => false, 'error' => 'Unauthorized. Wrong password.']));
     }

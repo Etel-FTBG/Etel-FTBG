@@ -15,7 +15,7 @@
 //     (or set the ETELID_SERVICE_KEY environment variable instead)
 
 function etelid_bridge_service_key() {
-    if (defined('ETELID_SERVICE_KEY') && ETELID_SERVICE_KEY && ETELID_SERVICE_KEY !== 'CHANGE_ME') {
+    if (defined('ETELID_SERVICE_KEY') && ETELID_SERVICE_KEY && strcasecmp(trim((string) ETELID_SERVICE_KEY), 'CHANGE_ME') !== 0) {
         return ETELID_SERVICE_KEY;
     }
     $k = getenv('ETELID_SERVICE_KEY');

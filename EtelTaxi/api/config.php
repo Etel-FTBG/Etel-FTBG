@@ -6,9 +6,20 @@
 // guessable defaults for anything security-sensitive.
 // ============================================================
 
+// Rejects the .env.example template's own literal placeholder value
+// ("CHANGE_ME") so a server whose .env was copied from the template but
+// never actually edited never treats that placeholder as a real
+// configured secret - same class of bug found (and fixed) in EtelPay's
+// EP_SECRET/updater password and Etel Madeya's etelid_bridge.php this
+// session. Case-insensitive and tolerant of "change-me"/"change me" too.
+function etel_taxi_is_placeholder($v) {
+    $norm = strtolower(str_replace(array('-', ' '), '_', trim((string) $v)));
+    return $norm === 'change_me' || $norm === 'changeme';
+}
 function etel_taxi_env($envName, $fallback = '') {
     $v = getenv($envName);
-    return ($v !== false && $v !== '') ? $v : $fallback;
+    if ($v === false || $v === '' || etel_taxi_is_placeholder($v)) return $fallback;
+    return $v;
 }
 
 // Load api/.env if present (same simple parser convention as

@@ -70,71 +70,93 @@ function madeyaRegisterVehicle($controllerId, $vehicleTypeId, $plate, $driverNam
         return ['success' => false, 'message' => "This station only accepts {$need} plates today.", 'code' => 'WRONG_PARITY', 'http_code' => 400];
     }
 
-    $existing = db()->fetchOne(
-        "SELECT id FROM queue WHERE plate_number = ? AND status = 'queued'",
-        [$plate]
-    );
-    if ($existing) {
-        return ['success' => false, 'message' => 'Vehicle already in queue', 'http_code' => 200];
-    }
+    // The duplicate-plate check below and the insert that follows it are
+    // not atomic on their own - two concurrent registrations of the same
+    // plate (e.g. two NFC taps of two different driver cards that happen
+    // to resolve to the same plate, or a manual register racing an NFC
+    // auto-register) could both read "not in queue" before either one
+    // inserts. Wrapping the check-then-insert in a transaction, with the
+    // check done as SELECT ... FOR UPDATE against the indexed
+    // plate_number column, makes InnoDB hold a lock on that plate's index
+    // range for the duration of the transaction - a concurrent
+    // transaction's own SELECT ... FOR UPDATE for the same plate blocks
+    // until this one commits or rolls back, serializing the two calls
+    // instead of letting both pass the check.
+    db()->beginTransaction();
+    try {
+        $existing = db()->fetchOne(
+            "SELECT id FROM queue WHERE plate_number = ? AND status = 'queued' FOR UPDATE",
+            [$plate]
+        );
+        if ($existing) {
+            db()->commit();
+            return ['success' => false, 'message' => 'Vehicle already in queue', 'http_code' => 200];
+        }
 
-    $servedToday = madeyaServedTodayConflict($plate, $vehicleTypeId);
-    if ($servedToday) {
-        $t = date('H:i', strtotime($servedToday['served_at']));
+        $servedToday = madeyaServedTodayConflict($plate, $vehicleTypeId);
+        if ($servedToday) {
+            db()->commit();
+            $t = date('H:i', strtotime($servedToday['served_at']));
+            return [
+                'success'      => false,
+                'message'      => "This vehicle already received fuel today at {$t} ({$servedToday['station_name']}).",
+                'code'         => 'SERVED_TODAY',
+                'served_at'    => $t,
+                'station_name' => $servedToday['station_name'],
+                'http_code'    => 400,
+            ];
+        }
+
+        $maxPos = db()->fetchOne(
+            "SELECT COALESCE(MAX(position), 0) as max_pos FROM queue
+             WHERE controller_id = ? AND vehicle_type_id = ? AND status = 'queued'",
+            [$controllerId, $vehicleTypeId]
+        );
+        $nextPosition = $maxPos['max_pos'] + 1;
+
+        $token = strtoupper(substr(md5(uniqid()), 0, 8));
+
+        $parity = isOddPlate($plate);
+        $parityStr = $parity === true ? 'odd' : ($parity === false ? 'even' : '');
+
+        $curBatch = db()->fetchOne(
+            "SELECT COALESCE(MAX(batch_id), 0) as max_batch FROM queue
+             WHERE controller_id = ? AND status = 'queued'",
+            [$controllerId]
+        );
+        $batchId = max(1, (int)$curBatch['max_batch']);
+
+        $id = db()->insert('queue', [
+            'controller_id'   => $controllerId,
+            'vehicle_type_id' => $vehicleTypeId,
+            'plate_number'    => $plate,
+            'plate_parity'    => $parityStr,
+            'driver_name'     => $driverName,
+            'driver_phone'    => $driverPhone,
+            'token'           => $token,
+            'position'        => $nextPosition,
+            'queue_type'      => 'normal',
+            'status'          => 'queued',
+            'batch_id'        => $batchId,
+        ]);
+
+        db()->commit();
+
         return [
-            'success'      => false,
-            'message'      => "This vehicle already received fuel today at {$t} ({$servedToday['station_name']}).",
-            'code'         => 'SERVED_TODAY',
-            'served_at'    => $t,
-            'station_name' => $servedToday['station_name'],
-            'http_code'    => 400,
+            'success'   => true,
+            'message'   => 'Successfully registered in queue',
+            'data'      => [
+                'id'           => $id,
+                'token'        => $token,
+                'position'     => $nextPosition,
+                'plate_number' => $plate,
+            ],
+            'http_code' => 200,
         ];
+    } catch (Exception $e) {
+        db()->rollback();
+        throw $e;
     }
-
-    $maxPos = db()->fetchOne(
-        "SELECT COALESCE(MAX(position), 0) as max_pos FROM queue
-         WHERE controller_id = ? AND vehicle_type_id = ? AND status = 'queued'",
-        [$controllerId, $vehicleTypeId]
-    );
-    $nextPosition = $maxPos['max_pos'] + 1;
-
-    $token = strtoupper(substr(md5(uniqid()), 0, 8));
-
-    $parity = isOddPlate($plate);
-    $parityStr = $parity === true ? 'odd' : ($parity === false ? 'even' : '');
-
-    $curBatch = db()->fetchOne(
-        "SELECT COALESCE(MAX(batch_id), 0) as max_batch FROM queue
-         WHERE controller_id = ? AND status = 'queued'",
-        [$controllerId]
-    );
-    $batchId = max(1, (int)$curBatch['max_batch']);
-
-    $id = db()->insert('queue', [
-        'controller_id'   => $controllerId,
-        'vehicle_type_id' => $vehicleTypeId,
-        'plate_number'    => $plate,
-        'plate_parity'    => $parityStr,
-        'driver_name'     => $driverName,
-        'driver_phone'    => $driverPhone,
-        'token'           => $token,
-        'position'        => $nextPosition,
-        'queue_type'      => 'normal',
-        'status'          => 'queued',
-        'batch_id'        => $batchId,
-    ]);
-
-    return [
-        'success'   => true,
-        'message'   => 'Successfully registered in queue',
-        'data'      => [
-            'id'           => $id,
-            'token'        => $token,
-            'position'     => $nextPosition,
-            'plate_number' => $plate,
-        ],
-        'http_code' => 200,
-    ];
 }
 
 /**

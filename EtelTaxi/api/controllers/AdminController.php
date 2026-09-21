@@ -268,6 +268,19 @@ case 'admin_verify_payment': {
     $admin = require_admin_auth($pdo, 'payments.manage');
     $id = isset($body['id']) ? intval($body['id']) : 0;
     if (!$id) fail('id is required.');
+    // Non-super-admins are scoped to their own association elsewhere
+    // (admin_list_pending_payments already filters this way) - without
+    // the same check here, an association-scoped admin with
+    // payments.manage could verify/reject ANY other association's
+    // pending payment just by guessing/incrementing the id. Mirrors the
+    // ownership check already applied in admin_update_association.
+    if ($admin['role'] !== 'super_admin') {
+        $own = $pdo->prepare('SELECT p.id FROM ' . tbl('taxi_dues_payments') . ' p
+            JOIN ' . tbl('taxi_drivers') . ' d ON d.id = p.driver_id
+            WHERE p.id = ? AND d.association_id = ?');
+        $own->execute(array($id, intval($admin['association_id'])));
+        if (!$own->fetch()) fail('Not authorized for this payment.', 403);
+    }
     $pdo->prepare('UPDATE ' . tbl('taxi_dues_payments') . '
         SET status = "verified", verified_by = ?, verified_at = NOW() WHERE id = ? AND status = "pending_verification"')
         ->execute(array($admin['id'], $id));
@@ -281,6 +294,14 @@ case 'admin_reject_payment': {
     $id = isset($body['id']) ? intval($body['id']) : 0;
     $reason = isset($body['reason']) ? trim($body['reason']) : '';
     if (!$id) fail('id is required.');
+    // Same association-ownership check as admin_verify_payment above.
+    if ($admin['role'] !== 'super_admin') {
+        $own = $pdo->prepare('SELECT p.id FROM ' . tbl('taxi_dues_payments') . ' p
+            JOIN ' . tbl('taxi_drivers') . ' d ON d.id = p.driver_id
+            WHERE p.id = ? AND d.association_id = ?');
+        $own->execute(array($id, intval($admin['association_id'])));
+        if (!$own->fetch()) fail('Not authorized for this payment.', 403);
+    }
     $pdo->prepare('UPDATE ' . tbl('taxi_dues_payments') . '
         SET status = "rejected", verified_by = ?, verified_at = NOW(), notes = ? WHERE id = ? AND status = "pending_verification"')
         ->execute(array($admin['id'], $reason ?: null, $id));

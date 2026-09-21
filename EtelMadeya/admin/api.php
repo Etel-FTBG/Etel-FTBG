@@ -573,5 +573,5 @@ try {
     
 } catch (Exception $e) {
     error_log("Admin API Error: " . $e->getMessage());
-    jsonResponse(['success' => false, 'message' => 'Server error: ' . $e->getMessage()], 500);
+    jsonResponse(['success' => false, 'message' => 'Server error. Please try again.'], 500);
 }
