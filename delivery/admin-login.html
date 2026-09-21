@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#D4AF37">
+<meta name="robots" content="noindex,nofollow">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="ETEL Admin">
+<title>ETEL Group — Admin Sign In</title>
+<link rel="manifest" href="manifest-admin.json">
+<link rel="icon" type="image/png" href="icons/admin-icon-96.png">
+<link rel="apple-touch-icon" href="icons/admin-apple-touch-icon.png">
+<link rel="stylesheet" href="css/etel.css?v=4.1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=JetBrains+Mono:wght@400;500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=Noto+Sans+Ethiopic:wght@400;600;700&display=swap" rel="stylesheet">
+
+<style>
+/* ════════════════════════════════════════════════════════
+   ETEL GROUP — Private Admin Sign In
+   Standalone page, deliberately not linked from login.html or
+   any public-facing page - reached only by navigating to
+   admin.html directly (which redirects here when signed out).
+   Shares login.html's premium gold/carbon design language
+   (same class names, copied verbatim) but is admin-only: no
+   role tabs, no registration flow, no local forgot-password
+   flow (all three were either public-facing or already dead
+   code on the original page - see login.html's own comments).
+   ════════════════════════════════════════════════════════ */
+
+:root {
+  --g1:#FDF6D8; --g2:#F5E6A3; --g3:#E8C84A; --g4:#D4AF37;
+  --g5:#C8922A; --g6:#A07020; --g7:#7A5518; --g8:#4A3210; --g9:#2A1A06;
+  --ink:#1A0E00; --ink2:#3A2200; --ink3:#7A5520;
+  --card-bg:rgba(255,254,248,.06); --card-bg2:rgba(253,248,238,.04);
+  --ab:rgba(212,175,55,.25);
+  --ff-d:'Syne',sans-serif;
+  --ff-b:'Cormorant Garamond',serif;
+  --ff-m:'JetBrains Mono',monospace;
+  --ff-a:'Noto Sans Ethiopic',sans-serif;
+  --ease:cubic-bezier(.22,1,.36,1);
+}
+
+@keyframes holo        { 0%{background-position:0 0}100%{background-position:300% 0} }
+@keyframes slide-up    { from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:none} }
+@keyframes slide-right { from{opacity:0;transform:translateX(-24px)}to{opacity:1;transform:none} }
+@keyframes orb-drift-1 { 0%,100%{transform:translate(0,0)}33%{transform:translate(30px,-25px)}66%{transform:translate(-20px,18px)} }
+@keyframes orb-drift-2 { 0%,100%{transform:translate(0,0)}33%{transform:translate(-25px,18px)}66%{transform:translate(22px,-28px)} }
+@keyframes shimmer     { 0%{background-position:-400px 0}100%{background-position:400px 0} }
+@keyframes float-mock  { 0%,100%{transform:translateY(0) rotate(-1deg)}50%{transform:translateY(-10px) rotate(1deg)} }
+@keyframes pulse-dot   { 0%{box-shadow:0 0 0 0 rgba(46,204,113,.6)}70%{box-shadow:0 0 0 10px rgba(46,204,113,0)}100%{box-shadow:0 0 0 0 rgba(46,204,113,0)} }
+
+*,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
+html,body { height:100%; }
+body { font-family:var(--ff-b); background:#0a0a14; overflow:hidden; }
+
+.del-auth-page { min-height:100vh; min-height:100dvh; display:flex; }
+
+.del-auth-left {
+  flex:0 0 42%;
+  position:relative; overflow:hidden;
+  display:flex; flex-direction:column;
+  justify-content:center; align-items:center;
+  padding:40px 30px;
+  background:linear-gradient(155deg,
+    #1A0A00 0%,#3A2008 15%,#6A4010 28%,
+    #9A6820 40%,#C8922A 52%,#D4AF37 58%,
+    #C8922A 64%,#9A6820 76%,#5A3808 90%,#1A0A00 100%);
+}
+.del-auth-left::before {
+  content:''; position:absolute; inset:0; pointer-events:none;
+  background-image:
+    repeating-linear-gradient(30deg, transparent 0,transparent 22px,rgba(255,255,255,.025) 22px,rgba(255,255,255,.025) 23px),
+    repeating-linear-gradient(-30deg,transparent 0,transparent 22px,rgba(255,255,255,.025) 22px,rgba(255,255,255,.025) 23px);
+}
+.del-auth-orb { position:absolute; border-radius:50%; pointer-events:none; filter:blur(60px); }
+.del-auth-orb-1 { width:400px; height:400px; top:-120px; left:-120px; background:radial-gradient(circle,rgba(255,220,80,.22) 0%,transparent 70%); animation:orb-drift-1 14s ease-in-out infinite; }
+.del-auth-orb-2 { width:350px; height:350px; bottom:-80px; right:-80px; background:radial-gradient(circle,rgba(80,40,0,.28) 0%,transparent 70%); animation:orb-drift-2 18s ease-in-out infinite; }
+
+.del-auth-brand { position:relative; z-index:1; display:flex; flex-direction:column; align-items:center; text-align:center; gap:16px; animation:slide-right .6s ease both; }
+.del-auth-logo { width:76px; height:76px; border-radius:18px; object-fit:cover; border:1.5px solid rgba(212,175,55,.4); box-shadow:0 8px 32px rgba(0,0,0,.5),0 0 0 6px rgba(212,175,55,.08); }
+.del-auth-mark  { font-family:var(--ff-a); font-size:38px; font-weight:700; color:var(--g3); line-height:1; text-shadow:0 2px 16px rgba(0,0,0,.4); }
+.del-auth-name  { font-family:var(--ff-d); font-size:20px; font-weight:800; color:var(--g1); letter-spacing:.3px; text-shadow:0 2px 10px rgba(0,0,0,.4); }
+.del-auth-sub   { font-family:var(--ff-m); font-size:9px; color:var(--g4); letter-spacing:2.5px; text-transform:uppercase; }
+.del-auth-desc  { font-size:13px; color:rgba(253,246,216,.72); line-height:1.7; max-width:250px; }
+
+.del-auth-feats { display:flex; flex-direction:column; gap:7px; width:100%; max-width:250px; }
+.del-auth-feat  { display:flex; align-items:center; gap:10px; padding:8px 13px; background:rgba(255,255,255,.07); border:1px solid rgba(212,175,55,.2); border-radius:10px; font-size:12px; color:rgba(253,246,216,.8); backdrop-filter:blur(6px); }
+.del-feat-dot { width:6px; height:6px; border-radius:50%; background:#22c55e; flex-shrink:0; animation:pulse-dot 2.4s ease-out infinite; }
+
+.del-auth-right {
+  flex:1; display:flex; align-items:center; justify-content:center;
+  padding:24px 20px;
+  background-color:#0a0703;
+  background-image:url('assets/images/etel-admin-coin.webp');
+  background-size:contain; background-position:center; background-repeat:no-repeat;
+  position:relative; overflow:hidden;
+}
+.del-auth-right::before {
+  content:''; position:absolute; inset:0; pointer-events:none; z-index:0;
+  background-image:
+    repeating-linear-gradient(45deg, transparent 0,transparent 32px,rgba(212,175,55,.04) 32px,rgba(212,175,55,.04) 33px),
+    repeating-linear-gradient(-45deg,transparent 0,transparent 32px,rgba(212,175,55,.04) 32px,rgba(212,175,55,.04) 33px);
+}
+
+.del-auth-card {
+  width:100%; max-width:400px;
+  background:var(--card-bg); border-radius:20px;
+  border:1.5px solid rgba(255,255,255,.5);
+  box-shadow:0 20px 60px rgba(0,0,0,.4),0 4px 16px rgba(0,0,0,.25),inset 0 1px 0 rgba(255,255,255,.6);
+  overflow:hidden; position:relative; z-index:1;
+  animation:slide-up .5s ease both;
+}
+.del-auth-holo { height:3px; background:linear-gradient(90deg,#ff6b6b,#ffd93d,#6bcb77,#4d96ff,#ff6b6b,#ffd93d,#6bcb77,#4d96ff); background-size:300%; animation:holo 3s linear infinite; }
+.del-auth-head { padding:20px 22px 16px; background:transparent; border-bottom:1px solid rgba(255,255,255,.25); text-align:center; }
+.del-auth-logo-wrap { display:flex; flex-direction:column; align-items:center; gap:4px; margin-bottom:10px; }
+.del-auth-logo-img  { height:44px; width:auto; object-fit:contain; filter:drop-shadow(0 3px 12px rgba(100,60,0,.2)); }
+.del-auth-org   { font-family:var(--ff-a); font-size:10px; color:#FFF3D0; letter-spacing:.5px; text-shadow:0 1px 4px rgba(0,0,0,.95),0 0 10px rgba(0,0,0,.8); }
+.del-auth-title { font-family:var(--ff-d); font-size:20px; font-weight:800; color:#FFFFFF; text-shadow:0 2px 5px rgba(0,0,0,.95),0 0 14px rgba(0,0,0,.85),0 0 3px rgba(0,0,0,.9); }
+.del-auth-subtitle { font-size:12px; color:#F5E6C0; margin-top:3px; line-height:1.5; text-shadow:0 1px 4px rgba(0,0,0,.95),0 0 8px rgba(0,0,0,.8); }
+
+/* Staff role preview row - purely informational, matches login.html's
+   Admin-tab-only version, just always visible here since this whole
+   page IS the admin context. Never wire this into anything that grants
+   access - actual access/landing is always decided server-side by
+   EtelGroup's Employees panel via admin_etelid_login. */
+.del-staff-tabs { display:flex; gap:4px; flex-wrap:wrap; padding:14px 22px 0; }
+.del-staff-tab {
+  flex:1 1 auto; min-width:0;
+  padding:5px 8px; border-radius:7px; cursor:pointer;
+  font-family:var(--ff-m); font-size:9.5px; font-weight:600; white-space:nowrap;
+  color:rgba(253,246,216,.65); background:rgba(255,255,255,.06);
+  border:1px solid rgba(212,175,55,.28);
+  transition:all .2s var(--ease);
+}
+.del-staff-tab:hover { color:rgba(253,246,216,.9); background:rgba(255,255,255,.1); border-color:rgba(212,175,55,.5); }
+.del-staff-tab.on { color:var(--g9); font-weight:700; background:linear-gradient(135deg,var(--g2),var(--g3)); border-color:transparent; }
+
+.del-auth-body { padding:16px 22px 10px; }
+
+.del-falert { display:none; padding:10px 13px; border-radius:9px; font-size:12px; margin-bottom:12px; }
+.del-falert.on { display:block; }
+.del-falert.err { background:rgba(239,68,68,.08); border:1px solid rgba(239,68,68,.25); color:#991b1b; }
+.del-falert.ok  { background:rgba(34,197,94,.08);  border:1px solid rgba(34,197,94,.25);  color:#166534; }
+
+.del-af-field { margin-bottom:12px; }
+.del-af-label { font-family:var(--ff-m); font-size:9px; font-weight:700; color:#FFE9A8; text-transform:uppercase; letter-spacing:1.5px; display:block; margin-bottom:5px; text-shadow:0 1px 4px rgba(0,0,0,.95),0 0 8px rgba(0,0,0,.85); }
+.del-af-wrap  { position:relative; display:flex; align-items:center; }
+.del-af-icon  { position:absolute; left:12px; color:var(--g5); font-size:14px; pointer-events:none; opacity:.7; }
+.del-af-input {
+  width:100%; padding:10px 14px 10px 38px;
+  background:rgba(255,253,245,.82); border:1.5px solid rgba(212,175,55,.4);
+  border-radius:9px; font-size:14px; font-family:var(--ff-b);
+  color:var(--ink); transition:border-color .2s,box-shadow .2s,background .2s;
+  -webkit-appearance:none; appearance:none;
+}
+.del-af-input:focus { border-color:var(--g4); background:rgba(255,255,255,.94); box-shadow:0 0 0 3px rgba(212,175,55,.2); outline:none; }
+.del-af-input::placeholder { color:rgba(100,60,0,.3); }
+.del-pw-toggle { position:absolute; right:10px; background:none; border:none; color:var(--g5); cursor:pointer; font-size:14px; padding:4px; border-radius:4px; transition:color .15s; }
+.del-pw-toggle:hover { color:var(--g4); }
+
+.del-forgot-wrap { text-align:right; margin-bottom:16px; }
+.del-forgot-link {
+  display:inline-block;
+  padding:6px 14px; border-radius:20px;
+  background:linear-gradient(135deg,var(--g9) 0%,var(--g7) 25%,var(--g5) 50%,var(--g4) 65%,var(--g3) 78%,var(--g4) 90%,var(--g5) 100%);
+  background-size:200%;
+  color:var(--g1); font-family:var(--ff-m); font-size:10px; font-weight:700;
+  text-decoration:none; letter-spacing:.3px;
+  box-shadow:0 3px 0 var(--g9),0 5px 14px rgba(80,40,0,.3);
+  transition:transform .15s,box-shadow .15s;
+}
+.del-forgot-link:hover { transform:translateY(-1px); box-shadow:0 4px 0 var(--g9),0 7px 18px rgba(80,40,0,.4); color:#fff; text-shadow:0 1px 2px rgba(0,0,0,.5); }
+
+.del-spin { display:inline-block; width:14px; height:14px; border:2px solid rgba(253,246,216,.3); border-top-color:var(--g1); border-radius:50%; animation:_spin .7s linear infinite; vertical-align:middle; margin-right:5px; }
+@keyframes _spin { to{transform:rotate(360deg)} }
+
+.del-auth-foot { padding:8px 22px 16px; text-align:center; border-top:1px solid rgba(255,255,255,.25); font-family:var(--ff-m); font-size:9px; color:#EBDCB4; letter-spacing:1px; text-shadow:0 1px 4px rgba(0,0,0,.95); }
+
+.del-auth-etelid {
+  width:100%; padding:11px;
+  display:flex; align-items:center; justify-content:center; gap:9px;
+  background:linear-gradient(135deg,#1A0A00,#3A2008,#6A4010,#9A6820,#C8922A,#D4AF37);
+  background-size:200%; border:1.5px solid rgba(212,175,55,.4); border-radius:10px;
+  font-family:var(--ff-d); font-size:13px; font-weight:800; color:var(--g1);
+  cursor:pointer; letter-spacing:.3px;
+  box-shadow:0 4px 0 var(--g9),0 6px 16px rgba(80,40,0,.25);
+  transition:transform .15s,box-shadow .15s; position:relative; overflow:hidden; margin-bottom:6px;
+}
+.del-auth-etelid::before { content:''; position:absolute; top:0; left:-100%; width:50%; height:100%; background:linear-gradient(90deg,transparent,rgba(255,255,255,.15),transparent); animation:shimmer 2.5s infinite; pointer-events:none; }
+.del-auth-etelid:hover:not(:disabled) { transform:translateY(-1px); box-shadow:0 5px 0 var(--g9),0 8px 20px rgba(80,40,0,.3); }
+.del-auth-etelid:active:not(:disabled) { transform:translateY(1px); }
+.del-auth-etelid:disabled { opacity:.65; cursor:not-allowed; }
+.del-etelid-mark { font-family:var(--ff-a); font-size:16px; font-weight:700; background:linear-gradient(135deg,#FDF6D8,#E8C84A); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+
+@media (max-width:820px) {
+  .del-auth-page { flex-direction:column; }
+  html,body { overflow:auto; height:auto; }
+  .del-auth-left { flex:0 0 auto; padding:14px 20px 10px; min-height:auto; }
+  .del-auth-feats { display:none; }
+  .del-auth-brand { gap:7px; }
+  .del-auth-mark { font-size:28px; }
+  .del-auth-name { font-size:16px; }
+  .del-auth-right { padding:8px 16px 28px; }
+  .del-auth-org, .del-auth-mark+* { display:none; }
+}
+</style>
+    <link rel="stylesheet" href="css/etel-design-v4.css?v=4.4">
+    <link rel="stylesheet" href="css/etel-responsive.css?v=1.0">
+    <link rel="stylesheet" href="css/etel-system.css?v=1.0">
+</head>
+<body>
+
+<div class="del-auth-page">
+
+  <!-- ── LEFT PANEL ── -->
+  <div class="del-auth-left">
+    <div class="del-auth-orb del-auth-orb-1"></div>
+    <div class="del-auth-orb del-auth-orb-2"></div>
+
+    <div class="del-auth-brand">
+      <picture><source srcset="assets/images/logo-admin.webp" type="image/webp"><img src="assets/images/logo-admin.png" alt="ETEL" class="del-auth-logo" onerror="this.style.display='none'"></picture>
+      <div class="del-auth-mark">ኢE</div>
+      <div class="del-auth-name">ETEL ADMIN</div>
+      <div class="del-auth-sub">ኢትኤል ቡድን · Hawassa</div>
+      <div class="del-auth-desc">Manage Etel Group staff, roles, and operations.</div>
+
+      <div class="del-auth-feats">
+        <div class="del-auth-feat"><div class="del-feat-dot"></div><span>EtelGroup Employees panel role sync</span></div>
+        <div class="del-auth-feat"><div class="del-feat-dot"></div><span>Full platform oversight</span></div>
+        <div class="del-auth-feat"><div class="del-feat-dot"></div><span>Private — not linked from any public page</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── RIGHT PANEL ── -->
+  <div class="del-auth-right">
+
+    <div class="del-auth-card">
+      <div class="del-auth-holo"></div>
+
+      <div class="del-auth-head">
+        <div class="del-auth-logo-wrap">
+          <picture><source srcset="assets/images/logo-admin.webp" type="image/webp"><img src="assets/images/logo-admin.png" alt="ETEL" class="del-auth-logo-img" onerror="this.style.display='none'"></picture>
+          <div class="del-auth-org">ኢE · Etel Group · Hawassa</div>
+        </div>
+        <div class="del-auth-title">ETEL Group — Admin Login</div>
+        <div class="del-auth-subtitle">Full admin access — every panel</div>
+      </div>
+
+      <!-- Staff role preview - purely informational, see the CSS comment
+           above .del-staff-tabs. Always shown here (this whole page is
+           the admin context, unlike login.html where it only appeared
+           after picking the Admin tab). -->
+      <div class="del-staff-tabs" id="staff-role-tabs">
+        <button class="del-staff-tab on" onclick="setStaffPreview('dispatcher', this)">🚦 Dispatcher</button>
+        <button class="del-staff-tab" onclick="setStaffPreview('finance', this)">💰 Finance</button>
+        <button class="del-staff-tab" onclick="setStaffPreview('traffic officer', this)">🚓 Traffic</button>
+        <button class="del-staff-tab" onclick="setStaffPreview('manager', this)">🧑‍💼 Manager</button>
+        <button class="del-staff-tab" onclick="setStaffPreview('admin', this)">⚙️ Admin</button>
+      </div>
+      <div id="staff-landing-caption" style="display:none;text-align:center;font-size:10px;color:rgba(253,246,216,.5);padding:6px 22px 0"></div>
+
+      <div class="del-auth-body">
+        <div class="del-falert" id="falert"></div>
+
+        <div class="del-af-field">
+          <label class="del-af-label">Phone Number or EtelID</label>
+          <div class="del-af-wrap">
+            <span class="del-af-icon">📱</span>
+            <input class="del-af-input" id="inp-phone" type="tel"
+              placeholder="+251 9XX XXX XXX"
+              autocomplete="tel" inputmode="tel">
+          </div>
+        </div>
+        <div class="del-af-field">
+          <label class="del-af-label">Password</label>
+          <div class="del-af-wrap">
+            <span class="del-af-icon">🔒</span>
+            <input class="del-af-input" id="inp-pw" type="password"
+              placeholder="Enter password" autocomplete="current-password">
+            <button class="del-pw-toggle" type="button" onclick="togglePw()">👁</button>
+          </div>
+        </div>
+        <div class="del-forgot-wrap"><a class="del-forgot-link" href="https://ethelmarket.com/EtelId/reset-password/" target="_blank" rel="noopener">Forgot password?</a></div>
+
+        <button class="del-auth-etelid" id="del-etelid-btn" type="button" onclick="doEtelIdLogin()" style="margin-bottom:4px;width:100%">
+          <span class="del-etelid-mark">ኢE</span>
+          <span>Sign in with EtelID</span>
+        </button>
+        <p style="font-size:11px;color:rgba(253,246,216,.5);text-align:center;margin-top:6px">
+          Admin accounts are provisioned in EtelGroup's Employees panel — there is no self-registration here.
+        </p>
+      </div>
+
+      <div class="del-auth-foot">
+        ETEL Delivery v5.3 · ethelmarket.com · Etel Group · 2026
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script src="js/core.js?v=5.12"></script>
+<script>
+/* This page's identity is fixed - always admin, never a tab choice - so
+   the redirect target is always admin.html (plus an optional staff
+   landing query param). No role-tab whitelist needed like login.html's
+   safeRedirectTarget(); ?redirect= isn't honored here at all, since
+   nothing legitimately deep-links into this private page with one. */
+
+var _staffPreview = 'dispatcher';
+var STAFF_LANDING_PREVIEW = { dispatcher: 'rides', finance: 'pricing', 'traffic officer': 'rides', manager: 'dashboard' };
+var STAFF_LANDING_LABELS  = { rides: 'Rides Management', pricing: 'Pricing (Fares & Zones)', dashboard: 'Dashboard Overview' };
+function setStaffPreview(staffRole, el) {
+  _staffPreview = staffRole;
+  document.querySelectorAll('.del-staff-tab').forEach(function (b) { b.classList.remove('on'); });
+  if (el) el.classList.add('on');
+  var cap = document.getElementById('staff-landing-caption');
+  if (!cap) return;
+  cap.style.display = 'block';
+  if (staffRole === 'admin') {
+    cap.textContent = 'Full admin access — every panel';
+  } else {
+    var landing = STAFF_LANDING_PREVIEW[staffRole];
+    var label = landing ? STAFF_LANDING_LABELS[landing] : null;
+    cap.textContent = label ? ('Typically lands on: ' + label) : 'Landing page depends on your EtelGroup role';
+  }
+}
+
+function clearAlert() {
+  var a = document.getElementById('falert');
+  if (a) { a.className = 'del-falert'; a.textContent = ''; }
+}
+function showAlert(msg, type) {
+  var a = document.getElementById('falert');
+  if (a) { a.textContent = msg; a.className = 'del-falert on ' + (type || 'err'); }
+}
+function togglePw() { var i = document.getElementById('inp-pw'); if (i) i.type = i.type === 'password' ? 'text' : 'password'; }
+
+/* ── EtelID SSO login (admin-only) ── */
+async function doEtelIdLogin() {
+  var ident = (document.getElementById('inp-phone').value || '').trim();
+  var pw    = (document.getElementById('inp-pw').value || '');
+  if (!ident || !pw) { showAlert('Enter your EtelID (EG-..., FIN, card no. or phone) and password.'); return; }
+  var btn = document.getElementById('del-etelid-btn');
+  if (btn) { btn.disabled = true; btn.innerHTML = '<span class="del-spin"></span>EtelID...'; }
+  clearAlert();
+  try {
+    // admin_etelid_login never auto-provisions a plain customer account -
+    // it only ever grants the admin dashboard, and only when an existing
+    // 'admin' users row already matches this phone or EtelGroup's own
+    // Employees panel has assigned this phone a role at 'etel-delivery'.
+    var res = await api('admin_etelid_login', { identifier: ident.replace(/\s/g, ''), password: pw, role: 'admin' });
+    if (btn) { btn.disabled = false; btn.innerHTML = '<span class="del-etelid-mark">ኢE</span><span>Sign in with EtelID</span>'; }
+    if (!res.success) { showAlert(res.message || 'EtelID authentication failed.'); return; }
+    Auth.save(res.data);
+    var u = Auth.getUser();
+    if (!u || u.role !== 'admin') {
+      // Defensive - admin_etelid_login should never return a non-admin
+      // role, but this page's whole purpose is admin-only access, so
+      // refuse to proceed rather than silently landing a non-admin
+      // session somewhere.
+      showAlert('This sign-in is for administrators only.');
+      return;
+    }
+    var target = 'admin.html';
+    var effectiveStaffRole = (u.staff_role) ? String(u.staff_role).trim().toLowerCase() : _staffPreview;
+    var landing = STAFF_LANDING_PREVIEW[effectiveStaffRole];
+    if (landing) target += '?landing=' + encodeURIComponent(landing);
+    showAlert('Welcome! Signing in via EtelID...', 'ok');
+    setTimeout(function () { location.href = target; }, 600);
+  } catch (err) {
+    if (btn) { btn.disabled = false; btn.innerHTML = '<span class="del-etelid-mark">ኢE</span><span>Sign in with EtelID</span>'; }
+    showAlert('Server connection error. Please try again.');
+  }
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+  if (typeof Auth !== 'undefined' && Auth.isLoggedIn()) {
+    var u = Auth.getUser();
+    if (u && u.role === 'admin') { location.href = 'admin.html'; return; }
+  }
+  var phoneEl = document.getElementById('inp-phone');
+  if (phoneEl) phoneEl.focus();
+});
+</script>
+</body>
+</html>

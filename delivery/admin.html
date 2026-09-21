@@ -19,15 +19,19 @@
     <script src="js/core.js?v=5.14"></script>
     <script>
       /* Auth gate - previously missing entirely, meaning unauthenticated
-         visitors saw the admin dashboard with no redirect. Carries
-         role=admin so the login page identifies this as the Admin app -
-         but unlike Courier/Service/Driver/Ride, Admin deliberately does
-         NOT get locked to a single tab there; Admin is meant to see and
-         reach every role from its own app. */
+         visitors saw the admin dashboard with no redirect. Sends signed-
+         out visitors to admin-login.html - a standalone page with no
+         link from login.html or any other public page, reachable only
+         by knowing to come to admin.html directly (see admin-login.html's
+         own header comment). Previously bounced through
+         login.html?redirect=admin.html&role=admin, which put an "Admin"
+         tab right next to the public Customer/Driver/Courier/Service
+         tabs on the shared login page - that tab is gone now, and this
+         is the private replacement path. */
       document.addEventListener('DOMContentLoaded', function () {
         if (typeof Auth === 'undefined' || !Auth.isLoggedIn()) {
           var base = (typeof ETEL !== 'undefined' && ETEL.api) ? ETEL.api.replace('api/boot.php', '') : '';
-          window.location.href = base + 'login.html?redirect=admin.html&role=admin';
+          window.location.href = base + 'admin-login.html';
         }
       });
     </script>
