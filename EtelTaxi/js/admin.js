@@ -109,7 +109,7 @@ async function loadDriverFormAssociations() {
     return;
   }
   sel.innerHTML = '<option value="">Choose association</option>' + res.data.associations.map(a =>
-    `<option value="${a.id}">${a.name_en || a.name_am}</option>`).join('');
+    `<option value="${a.id}">${taxiEsc(a.name_en || a.name_am)}</option>`).join('');
 }
 
 async function loadDrivers() {
@@ -218,9 +218,9 @@ async function loadBank() {
   el.innerHTML = res.data.accounts.map(a => `
     <div class="card" style="margin-bottom:10px" data-id="${a.id}">
       <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
-        <strong style="min-width:100px">${a.display_name}</strong>
-        <input type="text" class="bank-name" value="${a.account_name || ''}" placeholder="Account name" style="flex:1;min-width:120px">
-        <input type="text" class="bank-number" value="${a.account_number || ''}" placeholder="Account number" style="flex:1;min-width:120px">
+        <strong style="min-width:100px">${taxiEsc(a.display_name)}</strong>
+        <input type="text" class="bank-name" value="${taxiEsc(a.account_name || '')}" placeholder="Account name" style="flex:1;min-width:120px">
+        <input type="text" class="bank-number" value="${taxiEsc(a.account_number || '')}" placeholder="Account number" style="flex:1;min-width:120px">
         <label style="display:flex;align-items:center;gap:6px;margin:0;font-weight:400;text-transform:none">
           <input type="checkbox" class="bank-active" ${a.active ? 'checked' : ''} style="width:auto"> Active
         </label>
@@ -247,8 +247,8 @@ async function loadAssociations() {
   if (!res.ok) { el.innerHTML = res.error; return; }
   el.innerHTML = `<table><thead><tr><th>Name</th><th>Route</th><th>Monthly Due</th><th>Penalty</th><th>Grace Days</th></tr></thead><tbody>${
     res.data.associations.map(a => `<tr>
-      <td>${a.name_am}${a.name_en ? '<br><span style="color:var(--text-dim);font-size:11px">' + a.name_en + '</span>' : ''}</td>
-      <td>${a.route_am || '-'}</td>
+      <td>${taxiEsc(a.name_am)}${a.name_en ? '<br><span style="color:var(--text-dim);font-size:11px">' + taxiEsc(a.name_en) + '</span>' : ''}</td>
+      <td>${taxiEsc(a.route_am) || '-'}</td>
       <td>ETB ${Number(a.monthly_due_amount).toFixed(0)}</td>
       <td>ETB ${Number(a.penalty_amount).toFixed(0)}</td>
       <td>${a.grace_period_days}</td>

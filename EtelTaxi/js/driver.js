@@ -69,7 +69,7 @@ async function loadAssociationsInto(selectId) {
     return;
   }
   sel.innerHTML = '<option value="">Choose your association</option>' + res.data.associations.map(a =>
-    `<option value="${a.id}">${a.name_am}${a.route_am ? ' - ' + a.route_am : ''}</option>`
+    `<option value="${a.id}">${taxiEsc(a.name_am)}${a.route_am ? ' - ' + taxiEsc(a.route_am) : ''}</option>`
   ).join('');
 }
 
