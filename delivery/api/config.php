@@ -43,5 +43,9 @@ define('CFG_MAPS_KEY',     '');   // fill in api/.env  GOOGLE_MAPS_API_KEY
 // If Redis isn't installed/enabled on this hosting plan, or these
 // defaults don't resolve, the app just falls back to its existing
 // MySQL-backed caches - Redis is never a hard requirement.
+// Set REDIS_SOCKET in api/.env instead of REDIS_HOST/PORT if this hosting
+// plan's Redis add-on only exposes a Unix socket (common on cPanel) -
+// see api/.env.example.
+define('CFG_REDIS_SOCKET', '');
 define('CFG_REDIS_HOST', '127.0.0.1');
 define('CFG_REDIS_PORT', 6379);

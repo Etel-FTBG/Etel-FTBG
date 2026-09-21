@@ -86,13 +86,22 @@ function agent_redis() {
     if ($tried) return $redis;
     $tried = true;
     if (!class_exists('Redis')) return null;
+    // Many cPanel/CloudLinux Redis add-ons (this one included) only expose
+    // a Unix socket, not a TCP loopback port - a bare host:port connect
+    // silently fails and every request falls back to MySQL, forever. If a
+    // socket path is configured, prefer it; only fall back to host:port
+    // when it isn't set.
+    $socket = etel_env('REDIS_SOCKET', 'CFG_REDIS_SOCKET', '');
     $host = etel_env('REDIS_HOST', 'CFG_REDIS_HOST', '127.0.0.1');
     $port = (int) etel_env('REDIS_PORT', 'CFG_REDIS_PORT', 6379);
     try {
         $r = new Redis();
         // Persistent connection - reused across requests on the same
         // PHP-FPM worker instead of a fresh TCP handshake every time.
-        if ($r->pconnect($host, $port, 1.0)) $redis = $r;
+        $connected = $socket !== ''
+            ? $r->pconnect($socket, 0, 1.0)
+            : $r->pconnect($host, $port, 1.0);
+        if ($connected) $redis = $r;
     } catch (Exception $e) {
         $redis = null;
     }
