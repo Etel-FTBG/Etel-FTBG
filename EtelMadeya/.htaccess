@@ -22,6 +22,17 @@ RewriteRule ^api/(.*)$ index.php?route=api&$1 [QSA,L]
     Deny from all
 </FilesMatch>
 
+# PHP's default error log ("error_log", no extension - so the FilesMatch
+# above, which only matches a trailing ".log", does not cover it) is
+# written by both the root and admin/ directories whenever a DB
+# connection fails - it can contain the DB host/user being tried.
+# Applies recursively to admin/error_log too since there's no other
+# .htaccess in this codebase to override it.
+<Files "error_log">
+    Order allow,deny
+    Deny from all
+</Files>
+
 # Protect configuration files
 <FilesMatch "^(config|database|security)\.php$">
     Order allow,deny

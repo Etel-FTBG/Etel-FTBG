@@ -160,11 +160,11 @@ async function checkPosition(event) {
                         ${v.alert ? '<div class="alert alert-warning">⚠️ Your turn is coming soon! Please be ready.</div>' : ''}
                         
                         <div class="vehicle-info">
-                            <p><strong>Plate:</strong> ${v.plate_number}</p>
-                            <p><strong>Vehicle Type:</strong> ${v.vehicle_type_name} (${v.vehicle_type_name_am})</p>
-                            <p><strong>Queue Type:</strong> ${v.queue_type.toUpperCase()}</p>
-                            <p><strong>Token:</strong> ${v.token}</p>
-                            <p><strong>Station:</strong> ${v.station_name}</p>
+                            <p><strong>Plate:</strong> ${escHtml(v.plate_number)}</p>
+                            <p><strong>Vehicle Type:</strong> ${escHtml(v.vehicle_type_name)} (${escHtml(v.vehicle_type_name_am)})</p>
+                            <p><strong>Queue Type:</strong> ${escHtml(v.queue_type.toUpperCase())}</p>
+                            <p><strong>Token:</strong> ${escHtml(v.token)}</p>
+                            <p><strong>Station:</strong> ${escHtml(v.station_name)}</p>
                         </div>
                         
                         <button onclick="checkPosition(event)" class="btn btn-primary">${ICONS.refresh} Refresh</button>
@@ -250,10 +250,10 @@ function renderDriverQueue(myPlate, station) {
         const rowClass = isMe ? 'style="background: rgba(212,175,55,0.25); font-weight: bold;"' : '';
         const marker = isMe ? ' ← YOU' : '';
         return `<tr ${rowClass}>
-            <td>#${v.display_position}</td>
-            <td>${v.plate_number}${marker}</td>
-            <td>${v.icon} ${v.vehicle_type_name}</td>
-            <td>${v.queue_type.toUpperCase()}</td>
+            <td>#${escHtml(v.display_position)}</td>
+            <td>${escHtml(v.plate_number)}${marker}</td>
+            <td>${escHtml(v.icon)} ${escHtml(v.vehicle_type_name)}</td>
+            <td>${escHtml(v.queue_type.toUpperCase())}</td>
         </tr>`;
     }).join('');
     
@@ -277,8 +277,8 @@ function renderDriverQueue(myPlate, station) {
     
     section.innerHTML = `
         <div class="card" style="margin-top: 16px;">
-            <h2 class="card-title" data-t="Active Queue — ${stationName}|ንቁ ወረፋ — ${stationName}">
-                Active Queue — ${stationName}
+            <h2 class="card-title" data-t="Active Queue — ${escHtml(stationName)}|ንቁ ወረፋ — ${escHtml(stationName)}">
+                Active Queue — ${escHtml(stationName)}
             </h2>
             <div style="overflow-x: auto;">
                 <table style="width: 100%; border-collapse: collapse; font-size: 0.95em;">
