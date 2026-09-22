@@ -84,7 +84,7 @@ $logo_madeya   = $site_root . '/Etel-Madeya/assets/images/etel-madeya-logo-sm.we
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 40px 20px 32px;
+    padding: 26px 10px 28px;
   }
   ::selection { background: rgba(212,175,55,0.38); color: #1b1309; }
   ::-webkit-scrollbar { width: 9px; height: 9px; }
@@ -98,7 +98,7 @@ $logo_madeya   = $site_root . '/Etel-Madeya/assets/images/etel-madeya-logo-sm.we
      credential inside a bigger system, not the whole story. -------- */
   .brand-hero {
     width: 100%;
-    max-width: 460px;
+    max-width: 640px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -148,7 +148,7 @@ $logo_madeya   = $site_root . '/Etel-Madeya/assets/images/etel-madeya-logo-sm.we
   .card {
     position: relative;
     width: 100%;
-    max-width: 420px;
+    max-width: 640px;
     background:
       radial-gradient(620px 260px at 50% -10%, rgba(255,246,217,0.07), transparent 60%),
       linear-gradient(165deg, var(--carbon-5) 0%, var(--carbon-3) 55%, var(--carbon-4) 100%);
@@ -174,7 +174,7 @@ $logo_madeya   = $site_root . '/Etel-Madeya/assets/images/etel-madeya-logo-sm.we
   }
   .card-inner {
     position: relative;
-    padding: 30px 26px 26px;
+    padding: 26px 16px 22px;
     text-align: center;
   }
   .card-inner::before {
@@ -445,7 +445,7 @@ $logo_madeya   = $site_root . '/Etel-Madeya/assets/images/etel-madeya-logo-sm.we
      shown here is the real card, not a cut-down summary. */
   .nfc-card-scene {
     width: 100%;
-    max-width: 380px;
+    max-width: 520px;
     margin: 0 auto 4px;
     cursor: pointer;
     position: relative;
@@ -793,8 +793,17 @@ $logo_madeya   = $site_root . '/Etel-Madeya/assets/images/etel-madeya-logo-sm.we
 
       var badge = document.createElement('div');
       badge.className = 'nfc-link-badge';
-      badge.style.background = l.color || '#A07820';
-      badge.textContent = l.mono || '?';
+      if (l.logo) {
+        badge.style.background = '#fff';
+        var img = document.createElement('img');
+        img.src = l.logo;
+        img.alt = '';
+        img.style.cssText = 'width:100%;height:100%;object-fit:cover;border-radius:50%;';
+        badge.appendChild(img);
+      } else {
+        badge.style.background = l.color || '#A07820';
+        badge.textContent = l.mono || '?';
+      }
       item.appendChild(badge);
 
       var label = document.createElement('div');

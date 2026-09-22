@@ -1109,6 +1109,7 @@ $etelid_profile_incomplete = empty( $member->dob ) || '0000-00-00' === $member->
         <div class="p-card-head">
           <div class="p-card-head-icon">🔗</div>
           <h3>Social &amp; Bank Accounts</h3>
+          <button type="button" class="p-flip-btn" id="p-logos-admin-btn" style="display:none;margin-left:auto;" onclick="openPlatformLogosModal()">🖼 Platform Logos</button>
         </div>
         <div class="p-card-body">
           <p style="font-size:11.5px;color:var(--g5);margin:0 0 12px;">Shown on your NFC card so a signed-in scanner can follow you or pay you instantly - no manual typing.</p>
@@ -1118,6 +1119,7 @@ $etelid_profile_incomplete = empty( $member->dob ) || '0000-00-00' === $member->
           <button type="button" class="p-link-add-btn" id="p-link-add-toggle" onclick="toggleLinkForm()">+ Add Social or Bank Account</button>
 
           <div class="p-link-form" id="p-link-form">
+            <div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:800;color:var(--g2);margin-bottom:12px;" id="p-link-form-title">Add Account</div>
             <div class="p-link-type-toggle">
               <div class="p-link-type-btn active" id="p-link-type-social" onclick="setLinkType('social')">📱 Social</div>
               <div class="p-link-type-btn" id="p-link-type-bank" onclick="setLinkType('bank')">🏦 Bank</div>
@@ -1132,7 +1134,7 @@ $etelid_profile_incomplete = empty( $member->dob ) || '0000-00-00' === $member->
               <input type="text" id="p-link-value" class="p-pw-input" placeholder="Handle, profile link, or account number">
             </div>
             <div style="display:flex;gap:8px;">
-              <button type="button" class="p-pw-btn" style="flex:1;" onclick="saveLink()">Save Account</button>
+              <button type="button" class="p-pw-btn" style="flex:1;" id="p-link-save-btn" onclick="saveLink()">Save Account</button>
               <button type="button" class="p-flip-btn" onclick="toggleLinkForm()">Cancel</button>
             </div>
             <div id="p-link-msg" class="p-pw-msg" style="display:none;"></div>
@@ -1240,7 +1242,7 @@ function _eidPanelMsg(elId, msg, ok) {
 }
 
 /* ── Social & Bank Accounts (Connect & Pay on the NFC card) ── */
-var _PL = { platforms: null, type: 'social', editingId: 0 };
+var _PL = { platforms: null, type: 'social', editingId: 0, links: [] };
 
 function _plMonogramColor(meta) {
   return 'background:' + (meta && meta.color ? meta.color : '#A07820') + ';';
@@ -1254,8 +1256,17 @@ async function loadLinks() {
     return;
   }
   _PL.platforms = res.data.platforms || {};
-  renderLinksList(res.data.links || []);
+  _PL.links = res.data.links || [];
+  renderLinksList(_PL.links);
   populatePlatformSelect();
+  document.getElementById('p-logos-admin-btn').style.display = res.data.is_admin ? 'inline-flex' : 'none';
+}
+
+function _plBadgeHtml(meta) {
+  if (meta && meta.logo) {
+    return '<img src="' + meta.logo.replace(/"/g, '&quot;') + '" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">';
+  }
+  return (meta && meta.mono) ? meta.mono : '?';
 }
 
 function renderLinksList(links) {
@@ -1271,8 +1282,8 @@ function renderLinksList(links) {
 
     var badge = document.createElement('div');
     badge.className = 'p-link-badge';
-    badge.setAttribute('style', _plMonogramColor(l.meta));
-    badge.textContent = (l.meta && l.meta.mono) ? l.meta.mono : '?';
+    if (!(l.meta && l.meta.logo)) badge.setAttribute('style', _plMonogramColor(l.meta));
+    badge.innerHTML = _plBadgeHtml(l.meta);
     row.appendChild(badge);
 
     var body = document.createElement('div');
@@ -1285,12 +1296,23 @@ function renderLinksList(links) {
     val.textContent = l.link_type === 'bank' && l.account_name ? (l.account_name + ' · ' + l.account_value) : l.account_value;
     body.appendChild(nm);
     body.appendChild(val);
+    body.style.cursor = 'pointer';
+    body.addEventListener('click', function () { editLink(l); });
     row.appendChild(body);
+
+    var edit = document.createElement('button');
+    edit.type = 'button';
+    edit.className = 'p-link-del';
+    edit.innerHTML = '<i class="ti ti-pencil"></i>';
+    edit.title = 'Edit';
+    edit.addEventListener('click', function () { editLink(l); });
+    row.appendChild(edit);
 
     var del = document.createElement('button');
     del.type = 'button';
     del.className = 'p-link-del';
     del.innerHTML = '<i class="ti ti-trash"></i>';
+    del.title = 'Remove';
     del.addEventListener('click', function () { deleteLink(l.id); });
     row.appendChild(del);
 
@@ -1302,6 +1324,7 @@ function populatePlatformSelect() {
   var sel = document.getElementById('p-link-platform');
   if (!sel || !_PL.platforms) return;
   var group = _PL.platforms[_PL.type] || {};
+  var current = sel.value;
   sel.innerHTML = '';
   Object.keys(group).forEach(function (key) {
     var opt = document.createElement('option');
@@ -1309,6 +1332,7 @@ function populatePlatformSelect() {
     opt.textContent = group[key].label;
     sel.appendChild(opt);
   });
+  if (current && group[current]) sel.value = current;
   document.getElementById('p-link-name-row').style.display = (_PL.type === 'bank') ? 'block' : 'none';
   document.getElementById('p-link-value').placeholder = (_PL.type === 'bank') ? 'Account number' : 'Handle or profile link (e.g. yourname)';
 }
@@ -1320,15 +1344,42 @@ function setLinkType(type) {
   populatePlatformSelect();
 }
 
+// Opens the form empty for a new account. Editing goes through
+// editLink() instead, which fills the same form and sets
+// _PL.editingId so saveLink() updates that row rather than inserting.
 function toggleLinkForm() {
   var form = document.getElementById('p-link-form');
-  form.classList.toggle('open');
   if (form.classList.contains('open')) {
-    document.getElementById('p-link-value').value = '';
-    document.getElementById('p-link-account-name').value = '';
-    document.getElementById('p-link-msg').style.display = 'none';
-    if (!_PL.platforms) loadLinks(); else populatePlatformSelect();
+    form.classList.remove('open');
+    _PL.editingId = 0;
+    return;
   }
+  _PL.editingId = 0;
+  document.getElementById('p-link-form-title').textContent = 'Add Account';
+  document.getElementById('p-link-save-btn').textContent = 'Save Account';
+  document.getElementById('p-link-value').value = '';
+  document.getElementById('p-link-account-name').value = '';
+  document.getElementById('p-link-msg').style.display = 'none';
+  setLinkType('social');
+  form.classList.add('open');
+  if (!_PL.platforms) loadLinks(); else populatePlatformSelect();
+}
+
+function editLink(l) {
+  _PL.editingId = l.id;
+  _PL.type = l.link_type;
+  document.getElementById('p-link-type-social').classList.toggle('active', l.link_type === 'social');
+  document.getElementById('p-link-type-bank').classList.toggle('active', l.link_type === 'bank');
+  populatePlatformSelect();
+  document.getElementById('p-link-platform').value = l.platform;
+  document.getElementById('p-link-value').value = l.account_value;
+  document.getElementById('p-link-account-name').value = l.account_name || '';
+  document.getElementById('p-link-name-row').style.display = (l.link_type === 'bank') ? 'block' : 'none';
+  document.getElementById('p-link-form-title').textContent = 'Edit Account';
+  document.getElementById('p-link-save-btn').textContent = 'Update Account';
+  document.getElementById('p-link-msg').style.display = 'none';
+  document.getElementById('p-link-form').classList.add('open');
+  document.getElementById('p-link-form').scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
 async function saveLink() {
@@ -1338,6 +1389,7 @@ async function saveLink() {
   if (!value) { _eidPanelMsg('p-link-msg', _PL.type === 'bank' ? 'Enter the account number.' : 'Enter your handle or profile link.', false); return; }
 
   var res = await _eidPanel('etelid_links_save', {
+    id: _PL.editingId || 0,
     link_type: _PL.type,
     platform: platform,
     account_value: value,
@@ -1347,17 +1399,105 @@ async function saveLink() {
     _eidPanelMsg('p-link-msg', (res.data && res.data.message) ? res.data.message : 'Could not save.', false);
     return;
   }
-  renderLinksList(res.data.links || []);
+  _PL.links = res.data.links || [];
+  renderLinksList(_PL.links);
   toggleLinkForm();
 }
 
 async function deleteLink(id) {
   if (!confirm('Remove this account from your card?')) return;
   var res = await _eidPanel('etelid_links_delete', { id: id });
-  if (res.success) renderLinksList(res.data.links || []);
+  if (res.success) { _PL.links = res.data.links || []; renderLinksList(_PL.links); }
 }
 
 loadLinks();
+
+/* ── Platform Logos (admin-only) ── */
+function openPlatformLogosModal() {
+  _eapOpen('eap-platform-logos-modal');
+  loadPlatformLogos();
+}
+function closePlatformLogosModal() { _eapClose('eap-platform-logos-modal'); }
+
+async function loadPlatformLogos() {
+  var res = await _eidPanel('etelid_links_admin_logos_list', {});
+  var grid = document.getElementById('p-logos-grid');
+  if (!res.success) {
+    grid.innerHTML = '<div style="color:#ef9a9a;font-size:12.5px;">' + ((res.data && res.data.message) || 'Could not load.') + '</div>';
+    return;
+  }
+  _PL.platforms = res.data.platforms || {};
+  renderPlatformLogosGrid();
+}
+
+function renderPlatformLogosGrid() {
+  var grid = document.getElementById('p-logos-grid');
+  grid.innerHTML = '';
+  ['social', 'bank'].forEach(function (type) {
+    var group = (_PL.platforms && _PL.platforms[type]) || {};
+    Object.keys(group).forEach(function (key) {
+      var meta = group[key];
+      var tile = document.createElement('div');
+      tile.style.cssText = 'border:1px solid rgba(212,175,55,.22);border-radius:10px;padding:10px;text-align:center;background:rgba(212,175,55,.04);';
+
+      var preview = document.createElement('div');
+      preview.style.cssText = 'width:44px;height:44px;border-radius:50%;margin:0 auto 8px;display:flex;align-items:center;justify-content:center;font-family:Syne,sans-serif;font-weight:800;font-size:11px;color:#fff;overflow:hidden;' + (meta.logo ? '' : ('background:' + meta.color + ';'));
+      preview.innerHTML = meta.logo ? ('<img src="' + meta.logo.replace(/"/g,'&quot;') + '" style="width:100%;height:100%;object-fit:cover;">') : meta.mono;
+      tile.appendChild(preview);
+
+      var lbl = document.createElement('div');
+      lbl.style.cssText = 'font-size:10.5px;color:var(--g2);font-weight:700;margin-bottom:8px;';
+      lbl.textContent = meta.label;
+      tile.appendChild(lbl);
+
+      var fileInput = document.createElement('input');
+      fileInput.type = 'file';
+      fileInput.accept = 'image/*';
+      fileInput.style.display = 'none';
+      fileInput.addEventListener('change', function () {
+        if (fileInput.files && fileInput.files[0]) uploadPlatformLogo(type, key, fileInput.files[0]);
+      });
+      tile.appendChild(fileInput);
+
+      var upBtn = document.createElement('button');
+      upBtn.type = 'button';
+      upBtn.className = 'p-flip-btn';
+      upBtn.style.cssText = 'width:100%;justify-content:center;font-size:9px;padding:6px 8px;margin-bottom:4px;';
+      upBtn.textContent = meta.logo ? 'Replace' : 'Upload';
+      upBtn.addEventListener('click', function () { fileInput.click(); });
+      tile.appendChild(upBtn);
+
+      if (meta.logo) {
+        var rmBtn = document.createElement('button');
+        rmBtn.type = 'button';
+        rmBtn.className = 'p-flip-btn';
+        rmBtn.style.cssText = 'width:100%;justify-content:center;font-size:9px;padding:6px 8px;color:#ef9a9a;border-color:rgba(239,68,68,.35);';
+        rmBtn.textContent = 'Remove';
+        rmBtn.addEventListener('click', function () { removePlatformLogo(type, key); });
+        tile.appendChild(rmBtn);
+      }
+
+      grid.appendChild(tile);
+    });
+  });
+}
+
+async function uploadPlatformLogo(type, key, file) {
+  var res = await _eidPanel('etelid_links_admin_logo_upload', { link_type: type, platform: key, file: file }, true);
+  if (!res.success) { alert((res.data && res.data.message) || 'Upload failed.'); return; }
+  _PL.platforms = res.data.platforms || {};
+  renderPlatformLogosGrid();
+  loadLinks(); // refresh the member's own list so badges reflect the new logo immediately
+}
+
+async function removePlatformLogo(type, key) {
+  if (!confirm('Remove this platform\'s logo? It will fall back to the color badge for everyone.')) return;
+  var res = await _eidPanel('etelid_links_admin_logo_remove', { link_type: type, platform: key });
+  if (!res.success) { alert((res.data && res.data.message) || 'Could not remove.'); return; }
+  _PL.platforms = res.data.platforms || {};
+  renderPlatformLogosGrid();
+  loadLinks();
+}
 
 /* ── Flip card ── */
 function flipCard() {
@@ -2442,6 +2582,20 @@ document.getElementById('eid-fayda-modal').addEventListener('click', function(e)
   </div>
 </div>
 
+<!-- ── Platform Logos (admin-only: one real logo image per social/bank
+     platform, used on every member's NFC card from then on) ── -->
+<div id="eap-platform-logos-modal" class="eap-modal">
+  <div class="eap-box eid-gold-box" style="width:min(98vw,760px);max-height:96vh;">
+    <div class="eap-head">
+      <div><div class="eap-title">🖼 Platform Logos</div><div class="eap-sub">Upload one real logo per platform - it replaces the color badge on every member's card, everywhere, instantly.</div></div>
+      <button class="eap-close" onclick="closePlatformLogosModal()">✕</button>
+    </div>
+    <div class="eap-body" style="padding:16px;">
+      <div id="p-logos-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;">Loading...</div>
+    </div>
+  </div>
+</div>
+
 <!-- ── Company Roles ── -->
 <div id="eap-company-roles-modal" class="eap-modal">
   <div class="eap-box eid-gold-box" style="width:min(98vw,1080px);max-height:96vh;">
@@ -2652,7 +2806,7 @@ document.getElementById('eid-fayda-modal').addEventListener('click', function(e)
 /* ── Generic modal helpers ── */
 function _eapOpen(id){ document.getElementById(id).style.display='flex'; document.body.style.overflow='hidden'; }
 function _eapClose(id){ document.getElementById(id).style.display='none'; document.body.style.overflow=''; }
-['eap-members-modal','eap-pages-modal','eap-media-modal','eap-menus-modal','eap-branding-modal','eap-resetpw-modal','eap-nfc-modal','eap-company-roles-modal','eap-bio-register-modal','eap-biometric-modal'].forEach(function(id){
+['eap-members-modal','eap-pages-modal','eap-media-modal','eap-menus-modal','eap-branding-modal','eap-resetpw-modal','eap-nfc-modal','eap-company-roles-modal','eap-bio-register-modal','eap-biometric-modal','eap-platform-logos-modal'].forEach(function(id){
   document.getElementById(id).addEventListener('click', function(e){ if (e.target === this) _eapClose(id); });
 });
 
