@@ -194,7 +194,15 @@ function etelHasCap(caps, required) {
       launch: 'settings.view',
       releases: 'owner.only',
       branding: 'settings.manage',
-      finance: ['finance.view', 'finance.manage'],
+      // Finance & Planning bundles Equity & Investors, Platform Economics,
+      // Payroll and Business Plan into one tab - none of those sub-panels
+      // carry their own data-cap gate in the markup (the "Visible only to
+      // equity.view" text next to Equity & Investors is descriptive only,
+      // not enforced), so gating the tab on finance.view/finance.manage
+      // let any Finance-department staff account (bank-account access)
+      // see the founder's full cap table, cost model, and business plan
+      // too. Narrowed to owner.only, matching Roles/Updater/Releases.
+      finance: 'owner.only',
       equb: ['equb.view', 'equb.manage'],
       danger: 'system.reset',
       documents: ['documents.view', 'documents.manage'],
