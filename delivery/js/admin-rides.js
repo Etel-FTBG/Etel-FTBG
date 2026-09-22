@@ -161,7 +161,7 @@ window.ridesCloseDetail=ridesCloseDetail;
    computes the real distance/fare from those two points and completes
    the trip through the same payout path every other completed ride
    uses. See that action's own header comment for the full rationale. */
-var MC={pickup:null,dropoff:null,rideId:null,map:null,geocoder:null,pickupMarker:null,dropoffMarker:null,line:null,active:'pickup'};
+var MC={pickup:null,dropoff:null,rideId:null,map:null,geocoder:null,pickupMarker:null,dropoffMarker:null,line:null,active:'pickup',waypoints:[],waypointMarkers:[]};
 
 function _mcHaversineKm(a,b,c,d){ // mirrors rides_haversine_km (lib/ride_fare.php) exactly, so the
   var R=6371,r=Math.PI/180,dA=(c-a)*r,dB=(d-b)*r;               // live preview never disagrees with what
@@ -169,9 +169,39 @@ function _mcHaversineKm(a,b,c,d){ // mirrors rides_haversine_km (lib/ride_fare.p
   return R*2*Math.atan2(Math.sqrt(s),Math.sqrt(1-s));
 }
 
+// Google appends .pac-container (the autocomplete suggestion dropdown)
+// directly to <body>, completely outside this modal's own stacking
+// context - every OTHER app in this codebase (ride/driver/courier/
+// customer bundles) already had to style this explicitly for the same
+// reason (see css/ride-bundle.css "GOOGLE PLACES AUTOCOMPLETE DROPDOWN"),
+// but admin.html never has, because this is the first Autocomplete used
+// anywhere in the admin dashboard. Left unstyled, it rendered BEHIND
+// this modal's own z-index:10000 overlay - suggestions existed and were
+// clickable in theory, just invisible, so search looked "dead" and an
+// admin was left with raw unselected text (no lat/lng, nothing to
+// calculate a distance from). Injected once, z-index above the modal.
+function _mcEnsurePacStyle(){
+  if(document.getElementById('mc-pac-style'))return;
+  var s=document.createElement('style');
+  s.id='mc-pac-style';
+  s.textContent='.pac-container{background:#151016!important;border:1px solid rgba(212,175,55,.4)!important;'+
+    'border-radius:12px!important;margin-top:6px!important;box-shadow:0 16px 40px -12px rgba(0,0,0,.7)!important;'+
+    'font-family:Outfit,sans-serif!important;overflow:hidden!important;z-index:100002!important}'+
+    '.pac-item{padding:10px 14px!important;border-top:1px solid rgba(255,255,255,.06)!important;'+
+    'color:#EDEDF5!important;font-size:13px!important;cursor:pointer!important}'+
+    '.pac-item:first-child{border-top:none!important}'+
+    '.pac-item:hover,.pac-item-selected{background:rgba(212,175,55,.16)!important}'+
+    '.pac-item-query{color:#F5EDD8!important;font-weight:700!important;font-size:13.5px!important}'+
+    '.pac-matched{color:#FFD700!important;font-weight:700!important}'+
+    '.pac-icon{filter:invert(1) brightness(1.6)!important;opacity:.7!important}'+
+    '.pac-logo:after{filter:invert(1) brightness(1.8)!important;opacity:.5!important}';
+  document.head.appendChild(s);
+}
+
 function ridesShowManualComplete(id){
   ridesCloseDetail();
-  MC={pickup:null,dropoff:null,rideId:id,map:null,geocoder:null,pickupMarker:null,dropoffMarker:null,line:null,active:'pickup'};
+  _mcEnsurePacStyle();
+  MC={pickup:null,dropoff:null,rideId:id,map:null,geocoder:null,pickupMarker:null,dropoffMarker:null,line:null,active:'pickup',waypoints:[],waypointMarkers:[]};
   var html=
     '<div id="mc-overlay" onclick="if(event.target===this)ridesCloseManualComplete()" style="position:fixed;inset:0;z-index:10000;background:rgba(6,4,1,.86);backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;padding:16px;">'+
       '<div style="background:linear-gradient(165deg,#171009,#0a0703);border:1px solid rgba(212,175,55,.4);border-radius:18px;width:min(96vw,580px);max-height:92vh;overflow-y:auto;font-family:Outfit,sans-serif;box-shadow:0 30px 90px -20px rgba(0,0,0,.8),0 0 0 1px rgba(212,175,55,.08) inset;">'+
@@ -186,7 +216,7 @@ function ridesShowManualComplete(id){
           '<button onclick="ridesCloseManualComplete()" style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);color:#B8B0A0;border-radius:8px;width:30px;height:30px;cursor:pointer;flex:none">✕</button>'+
         '</div>'+
         '<div style="padding:18px 22px 22px;">'+
-        '<div style="font-size:12px;color:#9A9AAE;margin-bottom:16px;line-height:1.55">Call the driver, get the pickup point and where the passenger was actually dropped. Search each address below <b style="color:#c9bd9c">or tap the map</b> to place the pin precisely — the real distance and fare are calculated from these two points, and the trip is completed immediately.</div>'+
+        '<div style="font-size:12px;color:#9A9AAE;margin-bottom:16px;line-height:1.55">Call the driver, get the pickup point and where the passenger was actually dropped. Search each address below <b style="color:#c9bd9c">or tap the map</b> to place the pin precisely — add a stop if the driver went somewhere in between. The real distance and fare are calculated from every point in order, and the trip is completed immediately.</div>'+
 
         '<div style="display:flex;gap:8px;margin-bottom:10px">'+
           '<button type="button" id="mc-active-pickup" onclick="mcSetActive(\'pickup\')" style="flex:1;padding:8px 10px;border-radius:9px;border:1px solid rgba(46,204,113,.45);background:rgba(46,204,113,.16);color:#6EE7A8;font-size:11.5px;font-weight:700;cursor:pointer;font-family:Outfit,sans-serif;display:flex;align-items:center;justify-content:center;gap:6px">🟢 Tap map = Pickup</button>'+
@@ -197,6 +227,10 @@ function ridesShowManualComplete(id){
           '<label style="display:block;font-size:10px;color:#B8B0A0;text-transform:uppercase;letter-spacing:.04em;margin-bottom:5px">🟢 Pickup point</label>'+
           '<input id="mc-pickup" type="text" placeholder="Search pickup address..." style="width:100%;padding:10px 12px;border-radius:9px;border:1px solid rgba(46,204,113,.3);background:rgba(255,255,255,.05);color:#e8e2d4;font-size:13px;font-family:Outfit,sans-serif;box-sizing:border-box" autocomplete="off" onfocus="mcSetActive(\'pickup\')">'+
         '</div>'+
+
+        '<div id="mc-waypoints-list"></div>'+
+        '<button type="button" onclick="mcAddWaypoint()" style="width:100%;padding:7px;border-radius:8px;border:1px dashed rgba(212,175,55,.4);background:transparent;color:#c9bd9c;font-size:11.5px;font-weight:700;cursor:pointer;font-family:Outfit,sans-serif;margin-bottom:12px">+ Add stop between pickup and drop-off</button>'+
+
         '<div style="margin-bottom:12px;position:relative;">'+
           '<label style="display:block;font-size:10px;color:#B8B0A0;text-transform:uppercase;letter-spacing:.04em;margin-bottom:5px">🔴 Where the passenger was dropped off</label>'+
           '<input id="mc-dropoff" type="text" placeholder="Search drop-off address..." style="width:100%;padding:10px 12px;border-radius:9px;border:1px solid rgba(230,80,80,.3);background:rgba(255,255,255,.05);color:#e8e2d4;font-size:13px;font-family:Outfit,sans-serif;box-sizing:border-box" autocomplete="off" onfocus="mcSetActive(\'dropoff\')">'+
@@ -213,7 +247,7 @@ function ridesShowManualComplete(id){
             '<div id="mc-distance-val" style="font-size:16px;font-weight:800;color:#E5C76B;margin-top:2px">—</div>'+
           '</div>'+
           '<div style="flex:1;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:10px 12px;text-align:center">'+
-            '<div style="font-size:9.5px;color:#9A9AAE;text-transform:uppercase;letter-spacing:.05em">Straight-line route</div>'+
+            '<div style="font-size:9.5px;color:#9A9AAE;text-transform:uppercase;letter-spacing:.05em">Route</div>'+
             '<div id="mc-route-val" style="font-size:12px;font-weight:700;color:#e8e2d4;margin-top:5px">Set both points</div>'+
           '</div>'+
         '</div>'+
@@ -253,70 +287,136 @@ function ridesShowManualComplete(id){
       fullscreenControl:true, zoomControl:true, backgroundColor:'#10101c'
     });
 
-    var ac1=new google.maps.places.Autocomplete(pe,{componentRestrictions:{country:'ET'}});
-    ac1.addListener('place_changed',function(){
-      var p=ac1.getPlace();
-      if(p&&p.geometry)mcSetPoint('pickup',p.geometry.location.lat(),p.geometry.location.lng(),p.formatted_address||p.name,false);
-    });
-    var ac2=new google.maps.places.Autocomplete(de,{componentRestrictions:{country:'ET'}});
-    ac2.addListener('place_changed',function(){
-      var p=ac2.getPlace();
-      if(p&&p.geometry)mcSetPoint('dropoff',p.geometry.location.lat(),p.geometry.location.lng(),p.formatted_address||p.name,false);
-    });
+    mcWireAutocomplete(pe,'pickup');
+    mcWireAutocomplete(de,'dropoff');
 
     MC.map.addListener('click',function(e){
-      var lat=e.latLng.lat(), lng=e.latLng.lng(), kind=MC.active;
-      mcSetPoint(kind,lat,lng,lat.toFixed(5)+', '+lng.toFixed(5),true); // placeholder text, replaced once reverse-geocode resolves
+      var lat=e.latLng.lat(), lng=e.latLng.lng(), key=MC.active;
+      mcSetPoint(key,lat,lng,lat.toFixed(5)+', '+lng.toFixed(5),true); // placeholder text, replaced once reverse-geocode resolves
       MC.geocoder.geocode({location:e.latLng},function(res,st){
-        if(st==='OK'&&res&&res[0])mcSetPoint(kind,lat,lng,res[0].formatted_address,false);
+        if(st==='OK'&&res&&res[0])mcSetPoint(key,lat,lng,res[0].formatted_address,false);
       });
     });
   }
   initMcMap();
 }
 
-window.mcSetActive=function(kind){
-  MC.active=kind;
+// Shared by pickup/dropoff (fixed inputs in the markup) and every dynamically
+// added stop input (mcAddWaypoint) - one Autocomplete instance per input,
+// scoped to Ethiopia same as every other address field in this app.
+function mcWireAutocomplete(inputEl,key){
+  if(!inputEl||!(window.google&&google.maps&&google.maps.places))return;
+  var ac=new google.maps.places.Autocomplete(inputEl,{componentRestrictions:{country:'ET'}});
+  ac.addListener('place_changed',function(){
+    var p=ac.getPlace();
+    if(p&&p.geometry)mcSetPoint(key,p.geometry.location.lat(),p.geometry.location.lng(),p.formatted_address||p.name,false);
+  });
+}
+
+// key is 'pickup', 'dropoff', or 'wp'+index (a stop between them).
+window.mcSetActive=function(key){
+  MC.active=key;
   var pb=document.getElementById('mc-active-pickup'), db=document.getElementById('mc-active-dropoff'), hint=document.getElementById('mc-map-hint');
-  if(pb)pb.style.cssText=kind==='pickup'
+  var offStyle='flex:1;padding:8px 10px;border-radius:9px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.04);color:#9A9AAE;font-size:11.5px;font-weight:700;cursor:pointer;font-family:Outfit,sans-serif;display:flex;align-items:center;justify-content:center;gap:6px';
+  if(pb)pb.style.cssText=key==='pickup'
     ?'flex:1;padding:8px 10px;border-radius:9px;border:1px solid rgba(46,204,113,.45);background:rgba(46,204,113,.16);color:#6EE7A8;font-size:11.5px;font-weight:700;cursor:pointer;font-family:Outfit,sans-serif;display:flex;align-items:center;justify-content:center;gap:6px'
-    :'flex:1;padding:8px 10px;border-radius:9px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.04);color:#9A9AAE;font-size:11.5px;font-weight:700;cursor:pointer;font-family:Outfit,sans-serif;display:flex;align-items:center;justify-content:center;gap:6px';
-  if(db)db.style.cssText=kind==='dropoff'
+    :offStyle;
+  if(db)db.style.cssText=key==='dropoff'
     ?'flex:1;padding:8px 10px;border-radius:9px;border:1px solid rgba(230,80,80,.45);background:rgba(230,80,80,.16);color:#F5A3A3;font-size:11.5px;font-weight:700;cursor:pointer;font-family:Outfit,sans-serif;display:flex;align-items:center;justify-content:center;gap:6px'
-    :'flex:1;padding:8px 10px;border-radius:9px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.04);color:#9A9AAE;font-size:11.5px;font-weight:700;cursor:pointer;font-family:Outfit,sans-serif;display:flex;align-items:center;justify-content:center;gap:6px';
-  if(hint)hint.textContent=kind==='pickup'?'Tap the map to drop the 🟢 pickup pin':'Tap the map to drop the 🔴 drop-off pin';
+    :offStyle;
+  if(hint){
+    if(key==='pickup')hint.textContent='Tap the map to drop the 🟢 pickup pin';
+    else if(key==='dropoff')hint.textContent='Tap the map to drop the 🔴 drop-off pin';
+    else hint.textContent='Tap the map to drop the 🟡 stop '+(parseInt(key.slice(2),10)+1)+' pin';
+  }
 };
 
-function mcSetPoint(kind,lat,lng,addr,isPlaceholder){
-  MC[kind]={lat:lat,lng:lng,address:addr};
-  var input=document.getElementById(kind==='pickup'?'mc-pickup':'mc-dropoff');
+function mcSetPoint(key,lat,lng,addr,isPlaceholder){
+  var isWp=(typeof key==='string'&&key.indexOf('wp')===0), wpIdx=isWp?parseInt(key.slice(2),10):-1;
+  if(isWp){ MC.waypoints[wpIdx]={lat:lat,lng:lng,address:addr}; }
+  else{ MC[key]={lat:lat,lng:lng,address:addr}; }
+
+  var input=document.getElementById(isWp?'mc-wp-'+wpIdx:(key==='pickup'?'mc-pickup':'mc-dropoff'));
   if(input)input.value=addr;
-  var color=kind==='pickup'?'#2ECC71':'#E63946';
-  var markerKey=kind==='pickup'?'pickupMarker':'dropoffMarker';
+
+  var color=key==='pickup'?'#2ECC71':(key==='dropoff'?'#E63946':'#D4AF37');
+  var label=key==='pickup'?'P':(key==='dropoff'?'D':String(wpIdx+1));
+  var existingMarker=isWp?MC.waypointMarkers[wpIdx]:MC[key==='pickup'?'pickupMarker':'dropoffMarker'];
   try{
-    if(MC[markerKey]){
-      MC[markerKey].setPosition({lat:lat,lng:lng});
+    if(existingMarker){
+      existingMarker.setPosition({lat:lat,lng:lng});
     }else if(MC.map){
-      MC[markerKey]=new google.maps.Marker({
+      var marker=new google.maps.Marker({
         position:{lat:lat,lng:lng}, map:MC.map, draggable:true,
-        label:{text:kind==='pickup'?'P':'D',color:'#1a1200',fontWeight:'800',fontSize:'11px'},
+        label:{text:label,color:'#1a1200',fontWeight:'800',fontSize:'11px'},
         icon:{path:google.maps.SymbolPath.CIRCLE,fillColor:color,fillOpacity:1,strokeColor:'#fff',strokeWeight:2,scale:13}
       });
-      MC[markerKey].addListener('dragend',function(e){
+      marker.addListener('dragend',function(e){
         var la=e.latLng.lat(), ln=e.latLng.lng();
-        mcSetPoint(kind,la,ln,la.toFixed(5)+', '+ln.toFixed(5),true);
+        mcSetPoint(key,la,ln,la.toFixed(5)+', '+ln.toFixed(5),true);
         MC.geocoder.geocode({location:e.latLng},function(res,st){
-          if(st==='OK'&&res&&res[0])mcSetPoint(kind,la,ln,res[0].formatted_address,false);
+          if(st==='OK'&&res&&res[0])mcSetPoint(key,la,ln,res[0].formatted_address,false);
         });
       });
+      if(isWp)MC.waypointMarkers[wpIdx]=marker; else MC[key==='pickup'?'pickupMarker':'dropoffMarker']=marker;
     }
   }catch(e){}
   if(MC.map)MC.map.panTo({lat:lat,lng:lng});
   // Autocomplete/click on pickup with drop-off still empty hands control
   // straight to drop-off next - the natural order for reading a trip out
   // over the phone. Doesn't override a deliberate manual re-tap.
-  if(kind==='pickup'&&!MC.dropoff&&!isPlaceholder)window.mcSetActive('dropoff');
+  if(key==='pickup'&&!MC.dropoff&&!isPlaceholder)window.mcSetActive('dropoff');
   mcRedraw();
+}
+
+// Ordered list of every set point from pickup through each stop to
+// drop-off - the single source of truth for both the polyline and the
+// summed leg-by-leg distance, so the two can never disagree.
+function mcOrderedPoints(){
+  var pts=[];
+  if(MC.pickup)pts.push(MC.pickup);
+  MC.waypoints.forEach(function(w){if(w)pts.push(w);});
+  if(MC.dropoff)pts.push(MC.dropoff);
+  return pts;
+}
+
+window.mcAddWaypoint=function(){
+  MC.waypoints.push(null);
+  mcRenderWaypoints();
+};
+
+window.mcRemoveWaypoint=function(idx){
+  try{if(MC.waypointMarkers[idx])MC.waypointMarkers[idx].setMap(null);}catch(e){}
+  MC.waypoints.splice(idx,1);
+  MC.waypointMarkers.splice(idx,1);
+  // Every stop after the removed one shifts down a slot - relabel its
+  // marker pin to match its new position number, not the one it had before.
+  MC.waypointMarkers.forEach(function(m,i){
+    if(!m)return;
+    try{m.setLabel({text:String(i+1),color:'#1a1200',fontWeight:'800',fontSize:'11px'});}catch(e){}
+  });
+  if(MC.active==='wp'+idx)window.mcSetActive('dropoff');
+  mcRenderWaypoints();
+  mcRedraw();
+};
+
+function mcRenderWaypoints(){
+  var list=document.getElementById('mc-waypoints-list');
+  if(!list)return;
+  var h='';
+  MC.waypoints.forEach(function(wp,i){
+    h+='<div style="margin-bottom:10px;position:relative">'+
+      '<label style="display:block;font-size:10px;color:#B8B0A0;text-transform:uppercase;letter-spacing:.04em;margin-bottom:5px">🟡 Stop '+(i+1)+'</label>'+
+      '<div style="display:flex;gap:6px">'+
+        '<input id="mc-wp-'+i+'" type="text" placeholder="Search a stop along the way..." value="'+(wp?String(wp.address).replace(/"/g,'&quot;'):'')+'" style="flex:1;min-width:0;padding:10px 12px;border-radius:9px;border:1px solid rgba(212,175,55,.35);background:rgba(255,255,255,.05);color:#e8e2d4;font-size:13px;font-family:Outfit,sans-serif;box-sizing:border-box" autocomplete="off" onfocus="mcSetActive(\'wp'+i+'\')">'+
+        '<button type="button" onclick="mcRemoveWaypoint('+i+')" title="Remove this stop" style="flex:none;width:38px;border-radius:9px;border:1px solid rgba(230,80,80,.3);background:rgba(230,80,80,.1);color:#F5A3A3;cursor:pointer;font-size:14px">✕</button>'+
+      '</div>'+
+    '</div>';
+  });
+  list.innerHTML=h;
+  MC.waypoints.forEach(function(wp,i){
+    mcWireAutocomplete(document.getElementById('mc-wp-'+i),'wp'+i);
+  });
 }
 
 function mcRedraw(){
@@ -327,18 +427,19 @@ function mcRedraw(){
     if(routeEl)routeEl.textContent='Set both points';
     return;
   }
-  var km=_mcHaversineKm(MC.pickup.lat,MC.pickup.lng,MC.dropoff.lat,MC.dropoff.lng);
+  var pts=mcOrderedPoints(), km=0;
+  for(var i=1;i<pts.length;i++)km+=_mcHaversineKm(pts[i-1].lat,pts[i-1].lng,pts[i].lat,pts[i].lng);
+  var stopCount=pts.length-2; // total points minus pickup and drop-off
   if(distEl)distEl.textContent=km.toFixed(2)+' km';
-  if(routeEl)routeEl.textContent='🟢 → 🔴 direct line';
+  if(routeEl)routeEl.textContent=stopCount>0?('🟢 → 🟡×'+stopCount+' → 🔴 via '+stopCount+' stop'+(stopCount===1?'':'s')):'🟢 → 🔴 direct line';
   try{
     MC.line=new google.maps.Polyline({
-      path:[{lat:MC.pickup.lat,lng:MC.pickup.lng},{lat:MC.dropoff.lat,lng:MC.dropoff.lng}],
+      path:pts.map(function(p){return {lat:p.lat,lng:p.lng};}),
       map:MC.map, strokeColor:'#E5C76B', strokeOpacity:.85, strokeWeight:3,
       icons:[{icon:{path:'M 0,-1 0,1',strokeOpacity:1,scale:3},offset:'0',repeat:'14px'}]
     });
     var b=new google.maps.LatLngBounds();
-    b.extend({lat:MC.pickup.lat,lng:MC.pickup.lng});
-    b.extend({lat:MC.dropoff.lat,lng:MC.dropoff.lng});
+    pts.forEach(function(p){b.extend({lat:p.lat,lng:p.lng});});
     MC.map.fitBounds(b,64);
   }catch(e){}
 }
@@ -346,7 +447,7 @@ function mcRedraw(){
 function ridesCloseManualComplete(){
   var el=document.getElementById('mc-wrap');
   if(el)el.remove();
-  MC.map=null;MC.pickupMarker=null;MC.dropoffMarker=null;MC.line=null;MC.geocoder=null;
+  MC.map=null;MC.pickupMarker=null;MC.dropoffMarker=null;MC.line=null;MC.geocoder=null;MC.waypointMarkers=[];
 }
 
 function _mcAlert(msg,ok){
@@ -364,12 +465,17 @@ function ridesSubmitManualComplete(){
     _mcAlert('Pick a real suggestion from the dropdown for both the pickup and drop-off fields — typed text alone has no coordinates to calculate distance from.',false);
     return;
   }
+  if(MC.waypoints.some(function(w){return !w;})){
+    _mcAlert('Every stop needs a real suggestion picked from the dropdown (or a pin placed on the map) before you can complete the trip — remove any empty stop with ✕ if it\'s not needed.',false);
+    return;
+  }
   var btn=document.getElementById('mc-submit-btn');
   if(btn){btn.disabled=true;btn.textContent='Calculating…';}
   api('admin_manual_complete_ride',{
     ride_id: MC.rideId,
     pickup_lat: MC.pickup.lat, pickup_lng: MC.pickup.lng, pickup_address: MC.pickup.address,
     dropoff_lat: MC.dropoff.lat, dropoff_lng: MC.dropoff.lng, dropoff_address: MC.dropoff.address,
+    waypoints: MC.waypoints.map(function(w){return {lat:w.lat,lng:w.lng,address:w.address};}),
     payment_method: (document.getElementById('mc-payment')||{value:'cash'}).value,
     note: (document.getElementById('mc-note')||{value:''}).value.trim(),
   },function(d){
