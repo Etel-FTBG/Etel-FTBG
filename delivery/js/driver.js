@@ -147,6 +147,7 @@ function startGps() {
         if (saved && saved.lat) { DRV.currentLat = saved.lat; DRV.currentLng = saved.lng; }
     } catch (e) {}
 
+    DRV._lastFixAt = Date.now(); // seeded now, not left undefined, so the staleness watchdog below has a real baseline from the moment tracking starts
     DRV.watchId = navigator.geolocation.watchPosition(function (pos) {
         DRV.currentLat = pos.coords.latitude;
         DRV.currentLng = pos.coords.longitude;
@@ -157,6 +158,9 @@ function startGps() {
         // protection (skip fixes reported as >30m accuracy) could never
         // engage no matter how poor the GPS signal genuinely was.
         DRV.currentAccuracy = pos.coords.accuracy;
+        DRV._lastFixAt = Date.now();
+        DRV._geoError = null;
+        _updateGpsErrorBadge(null);
         updateSelfMarker();
         /* watchPosition keeps firing regardless of network state, so this
            keeps accumulating the driver's real path even while offline;
@@ -164,9 +168,58 @@ function startGps() {
            the moment connectivity drops and the moment it returns. */
         try { localStorage.setItem('etel_driver_last_pos', JSON.stringify({ lat: DRV.currentLat, lng: DRV.currentLng, t: Date.now() })); } catch (e) {}
         _updateGpsStatusBadge();
-    }, null, { enableHighAccuracy: true, maximumAge: 5000 });
+    }, function (err) {
+        // This callback was `null` - any geolocation failure (permission
+        // revoked mid-session, GPS/location services turned off, the OS
+        // killing location access in the background, a provider timeout)
+        // failed completely silently: no retry, no badge, nothing. The
+        // meter looked "stuck" with zero indication of why, because
+        // nothing was ever actually wrong with the meter's own math -
+        // watchPosition had simply stopped delivering positions at all,
+        // so DRV.currentLat never moved and there was nothing new for
+        // broadcastLocation to even send.
+        DRV._geoError = err;
+        _updateGpsErrorBadge(err);
+        // PERMISSION_DENIED (code 1) can't be recovered by retrying - only
+        // the driver re-granting the permission fixes it, so don't loop
+        // pointlessly. POSITION_UNAVAILABLE (2) and TIMEOUT (3) are
+        // usually transient (momentary GPS dropout, cold start under
+        // cover) - one delayed retry via getCurrentPosition often
+        // recovers a fix without waiting for watchPosition's own next
+        // internal attempt, which can be much slower to retry on some
+        // Android WebViews.
+        if (err && err.code !== 1) {
+            setTimeout(function () {
+                if (!DRV.isOnline) return;
+                navigator.geolocation.getCurrentPosition(function (pos) {
+                    DRV.currentLat = pos.coords.latitude;
+                    DRV.currentLng = pos.coords.longitude;
+                    DRV.currentAccuracy = pos.coords.accuracy;
+                    DRV._lastFixAt = Date.now();
+                    DRV._geoError = null;
+                    _updateGpsErrorBadge(null);
+                    updateSelfMarker();
+                }, function () { /* still failing - the staleness watchdog below will keep the badge visible */ }, { enableHighAccuracy: true, maximumAge: 0, timeout: 15000 });
+            }, 4000);
+        }
+    }, { enableHighAccuracy: true, maximumAge: 5000 });
 
     DRV.locationInterval = setInterval(broadcastLocation, 5000);
+    // Staleness watchdog: watchPosition can also just go quiet without
+    // ever firing its error callback on some devices/browsers (observed
+    // behavior, not just a theoretical gap) - if no fix has landed in
+    // 5x the normal ping interval while online, something is wrong even
+    // though no explicit error was ever reported, so say so instead of
+    // broadcastLocation silently re-sending the same aging coordinates
+    // forever.
+    DRV.staleWatchInterval = setInterval(function () {
+        if (!DRV.isOnline) return;
+        if (DRV._geoError) return; // already showing the more specific error badge
+        var age = Date.now() - (DRV._lastFixAt || 0);
+        if (age > 25000) {
+            _updateGpsErrorBadge({ code: 0, message: 'No GPS update for ' + Math.round(age / 1000) + 's' });
+        }
+    }, 5000);
 
     /* The instant connectivity returns, sync right away instead of
        waiting for the next scheduled 5s tick - broadcastLocation sends
@@ -188,7 +241,42 @@ function startGps() {
 function stopGps() {
     if (DRV.watchId !== null) { navigator.geolocation.clearWatch(DRV.watchId); DRV.watchId = null; }
     clearInterval(DRV.locationInterval);
+    clearInterval(DRV.staleWatchInterval);
+    _updateGpsErrorBadge(null);
     _releaseWakeLock();
+}
+
+/* Distinct from _updateGpsStatusBadge (network connectivity) and
+   _updateLowAccuracyBadge (a fix landed, but its accuracy is too poor
+   to trust) - this one is for "no fix is landing at all", which used to
+   fail completely silently (see startGps()'s watchPosition error
+   callback, previously `null`). err.code follows the standard
+   GeolocationPositionError values (1=PERMISSION_DENIED,
+   2=POSITION_UNAVAILABLE, 3=TIMEOUT); code 0 is this file's own
+   synthetic "watchdog noticed positions stopped arriving, with no
+   explicit error ever reported" case. */
+function _updateGpsErrorBadge(err) {
+    var box = document.getElementById('gps-error-badge');
+    if (!box) {
+        var meterBox = document.getElementById('meter-km');
+        var anchor = (meterBox && meterBox.parentElement) || document.getElementById('active-ride-container');
+        if (!anchor) return;
+        box = document.createElement('div');
+        box.id = 'gps-error-badge';
+        box.style.cssText = 'display:none;margin-top:6px;padding:8px 10px;border-radius:8px;background:rgba(211,47,47,.14);border:1px solid rgba(211,47,47,.4);color:#FF6B6B;font-size:11.5px;font-weight:600;text-align:center';
+        anchor.appendChild(box);
+    }
+    if (!err) { box.style.display = 'none'; return; }
+    box.style.display = 'block';
+    if (err.code === 1) {
+        box.textContent = '⚠ Location permission denied — the meter cannot run at all until you allow location access for this app in your phone Settings, then reload';
+    } else if (err.code === 2) {
+        box.textContent = '⚠ GPS unavailable — check that Location is turned on in your phone Settings';
+    } else if (err.code === 3) {
+        box.textContent = '⚠ GPS timed out getting a fix — retrying…';
+    } else {
+        box.textContent = '⚠ ' + (err.message || 'GPS not responding') + ' — try toggling Online off and back on if this continues';
+    }
 }
 
 /* Shows a small persistent badge near the meter/active-ride UI so the
