@@ -749,7 +749,44 @@ document.addEventListener('visibilitychange', function () {
         /* Back in the foreground - resume immediately instead of waiting for
            the next throttled timer tick or SSE reconnect attempt. */
         if (DRV.isOnline) _acquireWakeLock();
-        broadcastLocation();
+        // While the screen is off, watchPosition gets suspended on most
+        // Android browsers (not just throttled - it stops delivering fixes
+        // entirely) and the underlying GPS provider often doesn't resume
+        // cleanly on its own once the tab wakes back up. DRV.currentLat/lng
+        // is therefore whatever position was current the instant the screen
+        // went to sleep - broadcasting that immediately used to send a
+        // stale ping (near-zero movement for the whole sleep duration), and
+        // the GPS chip's first fix after a cold resume is often a poor
+        // accuracy reading anyway, which the server's accuracy gate then
+        // correctly excludes from distance credit - together this is what
+        // made trips continued after a screen sleep look like tracking had
+        // silently stopped. Force a fresh fix and restart the watch instead
+        // of trusting whatever was last known, so the very first thing that
+        // happens on resume is real, current, high-accuracy position data.
+        if (DRV.isOnline && navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(function (pos) {
+                DRV.currentLat = pos.coords.latitude;
+                DRV.currentLng = pos.coords.longitude;
+                DRV.currentAccuracy = pos.coords.accuracy;
+                DRV._lastFixAt = Date.now();
+                DRV._geoError = null;
+                _updateGpsErrorBadge(null);
+                updateSelfMarker();
+                broadcastLocation();
+            }, function () {
+                broadcastLocation(); // fall back to whatever's known rather than blocking resume entirely
+            }, { enableHighAccuracy: true, maximumAge: 0, timeout: 15000 });
+            // Full stop+restart rather than trusting the existing watchId to
+            // keep delivering fixes post-resume - some Android WebViews
+            // leave a pre-sleep watch "registered" but silently dead after
+            // the OS suspends and resumes the tab. stopGps() also clears
+            // the location/staleness intervals so startGps() doesn't stack
+            // a second set of them on top of the still-running originals.
+            stopGps();
+            startGps();
+        } else {
+            broadcastLocation();
+        }
         if (!DRV.sseSource || DRV.sseSource.readyState === EventSource.CLOSED) {
             _startSSE();
         }
