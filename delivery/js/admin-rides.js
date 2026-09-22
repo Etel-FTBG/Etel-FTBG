@@ -161,37 +161,76 @@ window.ridesCloseDetail=ridesCloseDetail;
    computes the real distance/fare from those two points and completes
    the trip through the same payout path every other completed ride
    uses. See that action's own header comment for the full rationale. */
-var MC={pickup:null,dropoff:null,rideId:null};
+var MC={pickup:null,dropoff:null,rideId:null,map:null,geocoder:null,pickupMarker:null,dropoffMarker:null,line:null,active:'pickup'};
+
+function _mcHaversineKm(a,b,c,d){ // mirrors rides_haversine_km (lib/ride_fare.php) exactly, so the
+  var R=6371,r=Math.PI/180,dA=(c-a)*r,dB=(d-b)*r;               // live preview never disagrees with what
+  var s=Math.sin(dA/2)*Math.sin(dA/2)+Math.cos(a*r)*Math.cos(c*r)*Math.sin(dB/2)*Math.sin(dB/2);
+  return R*2*Math.atan2(Math.sqrt(s),Math.sqrt(1-s));
+}
 
 function ridesShowManualComplete(id){
   ridesCloseDetail();
-  MC={pickup:null,dropoff:null,rideId:id};
+  MC={pickup:null,dropoff:null,rideId:id,map:null,geocoder:null,pickupMarker:null,dropoffMarker:null,line:null,active:'pickup'};
   var html=
-    '<div id="mc-overlay" onclick="if(event.target===this)ridesCloseManualComplete()" style="position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.8);display:flex;align-items:center;justify-content:center;padding:16px;">'+
-      '<div style="background:linear-gradient(165deg,#130d05,#0a0703);border:1px solid rgba(212,175,55,.35);border-radius:14px;width:min(96vw,480px);max-height:90vh;overflow-y:auto;padding:20px;font-family:Outfit,sans-serif;">'+
-        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">'+
-          '<div style="font-size:15px;font-weight:800;color:#D4AF37">Manually Complete Ride #'+id+'</div>'+
-          '<button onclick="ridesCloseManualComplete()" style="background:none;border:1px solid #333;color:#B8B0A0;border-radius:6px;padding:4px 10px;cursor:pointer;">✕</button>'+
+    '<div id="mc-overlay" onclick="if(event.target===this)ridesCloseManualComplete()" style="position:fixed;inset:0;z-index:10000;background:rgba(6,4,1,.86);backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;padding:16px;">'+
+      '<div style="background:linear-gradient(165deg,#171009,#0a0703);border:1px solid rgba(212,175,55,.4);border-radius:18px;width:min(96vw,580px);max-height:92vh;overflow-y:auto;font-family:Outfit,sans-serif;box-shadow:0 30px 90px -20px rgba(0,0,0,.8),0 0 0 1px rgba(212,175,55,.08) inset;">'+
+        '<div style="padding:20px 22px 16px;background:linear-gradient(135deg,rgba(212,175,55,.14),transparent 70%);border-bottom:1px solid rgba(212,175,55,.18);display:flex;justify-content:space-between;align-items:flex-start;">'+
+          '<div style="display:flex;gap:12px;align-items:center;">'+
+            '<div style="width:40px;height:40px;flex:none;border-radius:11px;background:linear-gradient(135deg,#8a6410,#D4AF37);display:flex;align-items:center;justify-content:center;font-size:19px;box-shadow:0 6px 16px -4px rgba(212,175,55,.5)">📞</div>'+
+            '<div>'+
+              '<div style="font-size:16px;font-weight:800;color:#F2E4B8;letter-spacing:-.2px">Manually Complete Ride #'+id+'</div>'+
+              '<div style="font-size:11px;color:#9A9AAE;margin-top:1px">GPS/connection-lost rescue path</div>'+
+            '</div>'+
+          '</div>'+
+          '<button onclick="ridesCloseManualComplete()" style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);color:#B8B0A0;border-radius:8px;width:30px;height:30px;cursor:pointer;flex:none">✕</button>'+
         '</div>'+
-        '<div style="font-size:12px;color:#9A9AAE;margin-bottom:16px;line-height:1.5">For when the driver\'s phone died, lost signal, or the app was killed mid-trip and GPS never tracked distance. Call the driver, get the pickup point and where the passenger was actually dropped, and enter both below — the real distance and fare are calculated from these two points, and the trip is completed immediately.</div>'+
-        '<div style="margin-bottom:12px;"><label style="display:block;font-size:10px;color:#B8B0A0;text-transform:uppercase;margin-bottom:5px">Pickup point</label>'+
-          '<input id="mc-pickup" type="text" placeholder="Search pickup address..." style="width:100%;padding:9px 12px;border-radius:8px;border:1px solid rgba(212,175,55,.3);background:rgba(255,255,255,.05);color:#e8e2d4;font-size:13px;font-family:Outfit,sans-serif" autocomplete="off">'+
+        '<div style="padding:18px 22px 22px;">'+
+        '<div style="font-size:12px;color:#9A9AAE;margin-bottom:16px;line-height:1.55">Call the driver, get the pickup point and where the passenger was actually dropped. Search each address below <b style="color:#c9bd9c">or tap the map</b> to place the pin precisely — the real distance and fare are calculated from these two points, and the trip is completed immediately.</div>'+
+
+        '<div style="display:flex;gap:8px;margin-bottom:10px">'+
+          '<button type="button" id="mc-active-pickup" onclick="mcSetActive(\'pickup\')" style="flex:1;padding:8px 10px;border-radius:9px;border:1px solid rgba(46,204,113,.45);background:rgba(46,204,113,.16);color:#6EE7A8;font-size:11.5px;font-weight:700;cursor:pointer;font-family:Outfit,sans-serif;display:flex;align-items:center;justify-content:center;gap:6px">🟢 Tap map = Pickup</button>'+
+          '<button type="button" id="mc-active-dropoff" onclick="mcSetActive(\'dropoff\')" style="flex:1;padding:8px 10px;border-radius:9px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.04);color:#9A9AAE;font-size:11.5px;font-weight:700;cursor:pointer;font-family:Outfit,sans-serif;display:flex;align-items:center;justify-content:center;gap:6px">🔴 Tap map = Drop-off</button>'+
         '</div>'+
-        '<div style="margin-bottom:12px;"><label style="display:block;font-size:10px;color:#B8B0A0;text-transform:uppercase;margin-bottom:5px">Where the passenger was dropped off</label>'+
-          '<input id="mc-dropoff" type="text" placeholder="Search drop-off address..." style="width:100%;padding:9px 12px;border-radius:8px;border:1px solid rgba(212,175,55,.3);background:rgba(255,255,255,.05);color:#e8e2d4;font-size:13px;font-family:Outfit,sans-serif" autocomplete="off">'+
+
+        '<div style="margin-bottom:8px;position:relative;">'+
+          '<label style="display:block;font-size:10px;color:#B8B0A0;text-transform:uppercase;letter-spacing:.04em;margin-bottom:5px">🟢 Pickup point</label>'+
+          '<input id="mc-pickup" type="text" placeholder="Search pickup address..." style="width:100%;padding:10px 12px;border-radius:9px;border:1px solid rgba(46,204,113,.3);background:rgba(255,255,255,.05);color:#e8e2d4;font-size:13px;font-family:Outfit,sans-serif;box-sizing:border-box" autocomplete="off" onfocus="mcSetActive(\'pickup\')">'+
         '</div>'+
-        '<div style="margin-bottom:12px;"><label style="display:block;font-size:10px;color:#B8B0A0;text-transform:uppercase;margin-bottom:5px">Payment method</label>'+
-          '<select id="mc-payment" style="width:100%;padding:9px 12px;border-radius:8px;border:1px solid rgba(212,175,55,.3);background:rgba(255,255,255,.05);color:#e8e2d4;font-size:13px;font-family:Outfit,sans-serif">'+
+        '<div style="margin-bottom:12px;position:relative;">'+
+          '<label style="display:block;font-size:10px;color:#B8B0A0;text-transform:uppercase;letter-spacing:.04em;margin-bottom:5px">🔴 Where the passenger was dropped off</label>'+
+          '<input id="mc-dropoff" type="text" placeholder="Search drop-off address..." style="width:100%;padding:10px 12px;border-radius:9px;border:1px solid rgba(230,80,80,.3);background:rgba(255,255,255,.05);color:#e8e2d4;font-size:13px;font-family:Outfit,sans-serif;box-sizing:border-box" autocomplete="off" onfocus="mcSetActive(\'dropoff\')">'+
+        '</div>'+
+
+        '<div style="position:relative;border-radius:13px;overflow:hidden;border:1px solid rgba(212,175,55,.28);margin-bottom:10px;background:#10101c">'+
+          '<div id="mc-map" style="width:100%;height:240px"></div>'+
+          '<div id="mc-map-hint" style="position:absolute;left:10px;bottom:10px;padding:6px 11px;border-radius:8px;background:rgba(10,7,3,.82);backdrop-filter:blur(4px);color:#c9bd9c;font-size:11px;font-weight:600;pointer-events:none;border:1px solid rgba(212,175,55,.25)">Tap the map to drop the 🟢 pickup pin</div>'+
+        '</div>'+
+
+        '<div style="display:flex;gap:10px;margin-bottom:16px">'+
+          '<div style="flex:1;background:rgba(212,175,55,.07);border:1px solid rgba(212,175,55,.18);border-radius:10px;padding:10px 12px;text-align:center">'+
+            '<div style="font-size:9.5px;color:#9A9AAE;text-transform:uppercase;letter-spacing:.05em">Distance</div>'+
+            '<div id="mc-distance-val" style="font-size:16px;font-weight:800;color:#E5C76B;margin-top:2px">—</div>'+
+          '</div>'+
+          '<div style="flex:1;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:10px 12px;text-align:center">'+
+            '<div style="font-size:9.5px;color:#9A9AAE;text-transform:uppercase;letter-spacing:.05em">Straight-line route</div>'+
+            '<div id="mc-route-val" style="font-size:12px;font-weight:700;color:#e8e2d4;margin-top:5px">Set both points</div>'+
+          '</div>'+
+        '</div>'+
+
+        '<div style="margin-bottom:12px;"><label style="display:block;font-size:10px;color:#B8B0A0;text-transform:uppercase;letter-spacing:.04em;margin-bottom:5px">Payment method</label>'+
+          '<select id="mc-payment" style="width:100%;padding:9px 12px;border-radius:8px;border:1px solid rgba(212,175,55,.3);background:rgba(255,255,255,.05);color:#e8e2d4;font-size:13px;font-family:Outfit,sans-serif;box-sizing:border-box">'+
             '<option value="cash">Cash (paid to driver directly)</option>'+
             '<option value="telebirr">Telebirr</option>'+
             '<option value="cbe">CBE</option>'+
           '</select>'+
         '</div>'+
-        '<div style="margin-bottom:16px;"><label style="display:block;font-size:10px;color:#B8B0A0;text-transform:uppercase;margin-bottom:5px">Note (optional)</label>'+
-          '<textarea id="mc-note" rows="2" placeholder="e.g. driver\'s phone battery died, called from a borrowed phone" style="width:100%;padding:9px 12px;border-radius:8px;border:1px solid rgba(212,175,55,.3);background:rgba(255,255,255,.05);color:#e8e2d4;font-size:13px;font-family:Outfit,sans-serif;resize:vertical"></textarea>'+
+        '<div style="margin-bottom:16px;"><label style="display:block;font-size:10px;color:#B8B0A0;text-transform:uppercase;letter-spacing:.04em;margin-bottom:5px">Note (optional)</label>'+
+          '<textarea id="mc-note" rows="2" placeholder="e.g. driver\'s phone battery died, called from a borrowed phone" style="width:100%;padding:9px 12px;border-radius:8px;border:1px solid rgba(212,175,55,.3);background:rgba(255,255,255,.05);color:#e8e2d4;font-size:13px;font-family:Outfit,sans-serif;resize:vertical;box-sizing:border-box"></textarea>'+
         '</div>'+
         '<div id="mc-alert" style="display:none;padding:10px 12px;border-radius:8px;font-size:12px;margin-bottom:12px"></div>'+
-        '<button id="mc-submit-btn" onclick="ridesSubmitManualComplete()" style="width:100%;padding:11px;border-radius:9px;border:none;background:linear-gradient(135deg,#8a6410,#D4AF37);color:#1a1200;font-weight:800;font-size:13px;cursor:pointer;font-family:Outfit,sans-serif">Calculate Fare &amp; Complete Trip</button>'+
+        '<button id="mc-submit-btn" onclick="ridesSubmitManualComplete()" style="width:100%;padding:12px;border-radius:10px;border:none;background:linear-gradient(135deg,#8a6410,#D4AF37);color:#1a1200;font-weight:800;font-size:13.5px;cursor:pointer;font-family:Outfit,sans-serif;box-shadow:0 8px 20px -6px rgba(212,175,55,.5)">Calculate Fare &amp; Complete Trip</button>'+
+        '</div>'+
       '</div>'+
     '</div>';
   var wrap=document.createElement('div');
@@ -199,30 +238,115 @@ function ridesShowManualComplete(id){
   wrap.innerHTML=html;
   document.body.appendChild(wrap);
 
-  function wireAutocomplete(){
+  function initMcMap(){
     if(!(window.google&&google.maps&&google.maps.places)){
-      setTimeout(wireAutocomplete,400); // Maps JS API still loading (loadGoogleMaps() is async) - retry shortly
+      setTimeout(initMcMap,400); // Maps JS API still loading (loadGoogleMaps() is async) - retry shortly
       return;
     }
-    var pe=document.getElementById('mc-pickup'), de=document.getElementById('mc-dropoff');
-    if(!pe||!de)return; // modal was closed before Maps finished loading
+    var pe=document.getElementById('mc-pickup'), de=document.getElementById('mc-dropoff'), mapEl=document.getElementById('mc-map');
+    if(!pe||!de||!mapEl)return; // modal was closed before Maps finished loading
+
+    MC.geocoder=new google.maps.Geocoder();
+    MC.map=new google.maps.Map(mapEl,{
+      center:{lat:7.0621,lng:38.4761}, zoom:13, mapId:'ETEL_RIDE_MAP',
+      disableDefaultUI:false, mapTypeControl:false, streetViewControl:false,
+      fullscreenControl:true, zoomControl:true, backgroundColor:'#10101c'
+    });
+
     var ac1=new google.maps.places.Autocomplete(pe,{componentRestrictions:{country:'ET'}});
     ac1.addListener('place_changed',function(){
       var p=ac1.getPlace();
-      if(p&&p.geometry)MC.pickup={lat:p.geometry.location.lat(),lng:p.geometry.location.lng(),address:p.formatted_address||p.name};
+      if(p&&p.geometry)mcSetPoint('pickup',p.geometry.location.lat(),p.geometry.location.lng(),p.formatted_address||p.name,false);
     });
     var ac2=new google.maps.places.Autocomplete(de,{componentRestrictions:{country:'ET'}});
     ac2.addListener('place_changed',function(){
       var p=ac2.getPlace();
-      if(p&&p.geometry)MC.dropoff={lat:p.geometry.location.lat(),lng:p.geometry.location.lng(),address:p.formatted_address||p.name};
+      if(p&&p.geometry)mcSetPoint('dropoff',p.geometry.location.lat(),p.geometry.location.lng(),p.formatted_address||p.name,false);
+    });
+
+    MC.map.addListener('click',function(e){
+      var lat=e.latLng.lat(), lng=e.latLng.lng(), kind=MC.active;
+      mcSetPoint(kind,lat,lng,lat.toFixed(5)+', '+lng.toFixed(5),true); // placeholder text, replaced once reverse-geocode resolves
+      MC.geocoder.geocode({location:e.latLng},function(res,st){
+        if(st==='OK'&&res&&res[0])mcSetPoint(kind,lat,lng,res[0].formatted_address,false);
+      });
     });
   }
-  wireAutocomplete();
+  initMcMap();
+}
+
+window.mcSetActive=function(kind){
+  MC.active=kind;
+  var pb=document.getElementById('mc-active-pickup'), db=document.getElementById('mc-active-dropoff'), hint=document.getElementById('mc-map-hint');
+  if(pb)pb.style.cssText=kind==='pickup'
+    ?'flex:1;padding:8px 10px;border-radius:9px;border:1px solid rgba(46,204,113,.45);background:rgba(46,204,113,.16);color:#6EE7A8;font-size:11.5px;font-weight:700;cursor:pointer;font-family:Outfit,sans-serif;display:flex;align-items:center;justify-content:center;gap:6px'
+    :'flex:1;padding:8px 10px;border-radius:9px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.04);color:#9A9AAE;font-size:11.5px;font-weight:700;cursor:pointer;font-family:Outfit,sans-serif;display:flex;align-items:center;justify-content:center;gap:6px';
+  if(db)db.style.cssText=kind==='dropoff'
+    ?'flex:1;padding:8px 10px;border-radius:9px;border:1px solid rgba(230,80,80,.45);background:rgba(230,80,80,.16);color:#F5A3A3;font-size:11.5px;font-weight:700;cursor:pointer;font-family:Outfit,sans-serif;display:flex;align-items:center;justify-content:center;gap:6px'
+    :'flex:1;padding:8px 10px;border-radius:9px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.04);color:#9A9AAE;font-size:11.5px;font-weight:700;cursor:pointer;font-family:Outfit,sans-serif;display:flex;align-items:center;justify-content:center;gap:6px';
+  if(hint)hint.textContent=kind==='pickup'?'Tap the map to drop the 🟢 pickup pin':'Tap the map to drop the 🔴 drop-off pin';
+};
+
+function mcSetPoint(kind,lat,lng,addr,isPlaceholder){
+  MC[kind]={lat:lat,lng:lng,address:addr};
+  var input=document.getElementById(kind==='pickup'?'mc-pickup':'mc-dropoff');
+  if(input)input.value=addr;
+  var color=kind==='pickup'?'#2ECC71':'#E63946';
+  var markerKey=kind==='pickup'?'pickupMarker':'dropoffMarker';
+  try{
+    if(MC[markerKey]){
+      MC[markerKey].setPosition({lat:lat,lng:lng});
+    }else if(MC.map){
+      MC[markerKey]=new google.maps.Marker({
+        position:{lat:lat,lng:lng}, map:MC.map, draggable:true,
+        label:{text:kind==='pickup'?'P':'D',color:'#1a1200',fontWeight:'800',fontSize:'11px'},
+        icon:{path:google.maps.SymbolPath.CIRCLE,fillColor:color,fillOpacity:1,strokeColor:'#fff',strokeWeight:2,scale:13}
+      });
+      MC[markerKey].addListener('dragend',function(e){
+        var la=e.latLng.lat(), ln=e.latLng.lng();
+        mcSetPoint(kind,la,ln,la.toFixed(5)+', '+ln.toFixed(5),true);
+        MC.geocoder.geocode({location:e.latLng},function(res,st){
+          if(st==='OK'&&res&&res[0])mcSetPoint(kind,la,ln,res[0].formatted_address,false);
+        });
+      });
+    }
+  }catch(e){}
+  if(MC.map)MC.map.panTo({lat:lat,lng:lng});
+  // Autocomplete/click on pickup with drop-off still empty hands control
+  // straight to drop-off next - the natural order for reading a trip out
+  // over the phone. Doesn't override a deliberate manual re-tap.
+  if(kind==='pickup'&&!MC.dropoff&&!isPlaceholder)window.mcSetActive('dropoff');
+  mcRedraw();
+}
+
+function mcRedraw(){
+  var distEl=document.getElementById('mc-distance-val'), routeEl=document.getElementById('mc-route-val');
+  try{if(MC.line){MC.line.setMap(null);MC.line=null;}}catch(e){}
+  if(!MC.pickup||!MC.dropoff){
+    if(distEl)distEl.textContent='—';
+    if(routeEl)routeEl.textContent='Set both points';
+    return;
+  }
+  var km=_mcHaversineKm(MC.pickup.lat,MC.pickup.lng,MC.dropoff.lat,MC.dropoff.lng);
+  if(distEl)distEl.textContent=km.toFixed(2)+' km';
+  if(routeEl)routeEl.textContent='🟢 → 🔴 direct line';
+  try{
+    MC.line=new google.maps.Polyline({
+      path:[{lat:MC.pickup.lat,lng:MC.pickup.lng},{lat:MC.dropoff.lat,lng:MC.dropoff.lng}],
+      map:MC.map, strokeColor:'#E5C76B', strokeOpacity:.85, strokeWeight:3,
+      icons:[{icon:{path:'M 0,-1 0,1',strokeOpacity:1,scale:3},offset:'0',repeat:'14px'}]
+    });
+    var b=new google.maps.LatLngBounds();
+    b.extend({lat:MC.pickup.lat,lng:MC.pickup.lng});
+    b.extend({lat:MC.dropoff.lat,lng:MC.dropoff.lng});
+    MC.map.fitBounds(b,64);
+  }catch(e){}
 }
 
 function ridesCloseManualComplete(){
   var el=document.getElementById('mc-wrap');
   if(el)el.remove();
+  MC.map=null;MC.pickupMarker=null;MC.dropoffMarker=null;MC.line=null;MC.geocoder=null;
 }
 
 function _mcAlert(msg,ok){
