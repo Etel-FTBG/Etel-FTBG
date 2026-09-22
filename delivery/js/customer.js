@@ -1977,6 +1977,15 @@ function toggleProfile() {
         ${m[3]?'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,215,0,0.3)" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>':''}
       </button>`;
     }).join('')}
+    ${u.role === 'admin' ? `
+    <a href="admin.html" style="display:flex;align-items:center;gap:14px;padding:12px 10px;border-radius:12px;background:rgba(255,215,0,.07);border:1px solid rgba(255,215,0,.16);cursor:pointer;width:100%;text-align:left;font-family:'Poppins',sans-serif;text-decoration:none;box-sizing:border-box;margin-top:4px">
+        <div style="width:38px;height:38px;border-radius:10px;background:rgba(255,215,0,.08);border:1px solid rgba(255,215,0,.12);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0">🛡️</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:13px;font-weight:600;color:#FFD700;line-height:1.3">Admin Dashboard</div>
+          <div style="font-size:11px;color:rgba(255,248,231,.35);margin-top:2px">You're signed in as admin</div>
+        </div>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,215,0,0.3)" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+      </a>` : ''}
   </div>
 
   <!-- ── DIVIDER ── -->

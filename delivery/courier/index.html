@@ -36,6 +36,16 @@
       document.addEventListener('DOMContentLoaded', function () {
         if (typeof requireRole === 'undefined') return; // core.js failed to load - nothing to gate with
         requireRole(['courier']);
+        // requireRole() above lets an admin session through (admin bypasses
+        // every role gate by design), so an admin account CAN end up
+        // browsing this app - but a real courier has no route back to the
+        // dashboard from here. Show the shortcut only for that admin case;
+        // every genuine courier never sees it.
+        var u = (typeof Auth !== 'undefined' && Auth.getUser) ? Auth.getUser() : null;
+        if (u && u.role === 'admin') {
+          var row = document.getElementById('cp-admin-row');
+          if (row) row.style.display = 'block';
+        }
       });
     </script>
     <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&display=swap" rel="stylesheet">
@@ -356,6 +366,16 @@
                     <div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:700;color:#F5F5F7">Invite Friends</div><div style="font-size:11px;color:#A8A8B8;margin-top:1px">Earn together with ETEL Delivery</div></div>
                     <div style="color:#A8A8B8;font-size:15px">›</div>
                 </div>
+            </div>
+
+            <!-- Admin shortcut: requireRole() lets an admin account browse this
+                 app like any courier (admin bypasses every role gate by
+                 design), but a real courier has no route back to the admin
+                 dashboard from here. Hidden by default; the inline script
+                 near the top of this file shows it only when the signed-in
+                 session's role is actually 'admin'. -->
+            <div id="cp-admin-row" style="padding:0 20px 10px;display:none">
+                <a href="../admin.html" style="display:block;width:100%;padding:13px;background:rgba(212,175,55,.12);border:1px solid rgba(212,175,55,.3);color:#E5C76B;border-radius:12px;font-size:13.5px;font-weight:700;cursor:pointer;text-align:center;text-decoration:none;box-sizing:border-box">🛡️ Admin Dashboard</a>
             </div>
 
             <div style="padding:0 20px 10px">
