@@ -1686,11 +1686,19 @@ case 'admin_manual_complete_ride': {
 
     rides_ensure_wait_columns($pdo);
     $vtypeCol = rides_has_vehicle_type_column($pdo) ? ', vehicle_type' : '';
+    // 'arrived' included alongside 'in_progress': driver_arrived already
+    // computes a distance/fare from whatever GPS was tracked up to that
+    // point, but if the same call/connection that killed live tracking
+    // also stops the passenger from ever reaching customer_confirm_arrival,
+    // the trip is stuck exactly the same way - waiting on a device that
+    // isn't coming back. Admin re-entering the real pickup/drop-off points
+    // here and recomputing the distance is the same trusted-override path
+    // either way, not just for 'in_progress'.
     $s = $pdo->prepare("SELECT id, driver_id, open_trip, wait_active, wait_started_at, wait_seconds_total" . $vtypeCol . "
-                        FROM rides WHERE id=? AND status='in_progress'");
+                        FROM rides WHERE id=? AND status IN ('in_progress','arrived')");
     $s->execute(array($rid));
     $r = $s->fetch();
-    if (!$r) fail('Ride not found, or not currently in progress', 404);
+    if (!$r) fail('Ride not found, or not currently in progress/arrived', 404);
     if (!$r['driver_id']) fail('This ride has no assigned driver', 400);
 
     // Same auto-close-forgotten-wait-clock safeguard as driver_arrived.
