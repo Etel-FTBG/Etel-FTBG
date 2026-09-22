@@ -1121,10 +1121,27 @@
         }
 
         // ─── SETTINGS ─────────────────────────────────────────────────
+        // A staff account (Dispatcher, Finance, Traffic Officer, Manager -
+        // assigned in EtelGroup's Employees panel) always carries role
+        // 'admin' underneath (that's what grants dashboard access at all -
+        // see admin.html's auth gate), but showing the bare word "admin"
+        // here told a Dispatcher they were somehow a full admin/owner,
+        // which isn't what their account actually is. staff_role (already
+        // returned by login/admin_etelid_login and saved in Auth.getUser())
+        // is the real, specific title EtelGroup assigned them - show that
+        // instead whenever it's set; only a true full admin with no
+        // specific staff assignment still shows "Admin".
+        function _staffRoleLabel(u) {
+            if (!u) return '—';
+            if (u.staff_role) {
+                return String(u.staff_role).replace(/\b\w/g, function (c) { return c.toUpperCase(); });
+            }
+            return u.role ? (u.role.charAt(0).toUpperCase() + u.role.slice(1)) : '—';
+        }
         function loadSettings() {
             const u = Auth.getUser();
             document.getElementById('settings-user-info').innerHTML =
-                `<strong>Logged in as:</strong> ${u?u.name:'—'}<br><strong>Phone:</strong> ${u?u.phone:'—'}<br><strong>Role:</strong> ${u?u.role:'—'}`;
+                `<strong>Logged in as:</strong> ${u?u.name:'—'}<br><strong>Phone:</strong> ${u?u.phone:'—'}<br><strong>Role:</strong> ${_staffRoleLabel(u)}`;
             loadSysInfo();
         }
         async function loadSysInfo() {
