@@ -23,6 +23,15 @@ class EtelID_Links {
         add_action( 'wp_ajax_nopriv_etelid_links_save',  array( __CLASS__, 'ajax_save' ) );
         add_action( 'wp_ajax_etelid_links_delete',        array( __CLASS__, 'ajax_delete' ) );
         add_action( 'wp_ajax_nopriv_etelid_links_delete', array( __CLASS__, 'ajax_delete' ) );
+
+        /* Admin-only: one uploaded logo per platform, used on every
+           member's card - see class doc on platform_meta(). */
+        add_action( 'wp_ajax_etelid_links_admin_logos_list',         array( __CLASS__, 'ajax_admin_logos_list' ) );
+        add_action( 'wp_ajax_nopriv_etelid_links_admin_logos_list',  array( __CLASS__, 'ajax_admin_logos_list' ) );
+        add_action( 'wp_ajax_etelid_links_admin_logo_upload',        array( __CLASS__, 'ajax_admin_logo_upload' ) );
+        add_action( 'wp_ajax_nopriv_etelid_links_admin_logo_upload', array( __CLASS__, 'ajax_admin_logo_upload' ) );
+        add_action( 'wp_ajax_etelid_links_admin_logo_remove',        array( __CLASS__, 'ajax_admin_logo_remove' ) );
+        add_action( 'wp_ajax_nopriv_etelid_links_admin_logo_remove', array( __CLASS__, 'ajax_admin_logo_remove' ) );
     }
 
     /* Curated catalog - label, brand color, and a short monogram used as
@@ -61,11 +70,99 @@ class EtelID_Links {
         );
     }
 
+    /* An admin can upload one real logo image per platform (Admin Tools
+       -> Platform Logos, portal-only, gated the same way as the
+       Media/Branding panels). That single upload is what every
+       member's card shows for that platform from then on - members
+       never upload their own, they just pick from this catalog. Falls
+       back to the color+monogram badge (meta['logo'] === '') until an
+       admin sets one. */
     public static function platform_meta( $link_type, $platform ) {
         $catalog = self::platforms();
         $type    = isset( $catalog[ $link_type ] ) ? $link_type : 'social';
-        if ( isset( $catalog[ $type ][ $platform ] ) ) return $catalog[ $type ][ $platform ];
-        return $catalog[ $type ]['other'];
+        $meta    = isset( $catalog[ $type ][ $platform ] ) ? $catalog[ $type ][ $platform ] : $catalog[ $type ]['other'];
+        $logos   = self::stored_logos();
+        $key     = $type . ':' . $platform;
+        $meta['logo'] = isset( $logos[ $key ] ) ? $logos[ $key ] : '';
+        return $meta;
+    }
+
+    protected static function stored_logos() {
+        $logos = get_option( 'etelid_link_platform_logos', array() );
+        return is_array( $logos ) ? $logos : array();
+    }
+
+    /* Full catalog with each platform's stored logo (if any) merged in -
+       used by the portal's account picker and the admin Platform Logos
+       manager, so both always reflect the same live state. */
+    public static function platforms_admin_view() {
+        $catalog = self::platforms();
+        $out = array();
+        foreach ( $catalog as $type => $group ) {
+            $out[ $type ] = array();
+            foreach ( $group as $key => $meta ) {
+                $out[ $type ][ $key ] = self::platform_meta( $type, $key );
+            }
+        }
+        return $out;
+    }
+
+    protected static function require_admin() {
+        $member = EtelID_Auth::get_current_member();
+        if ( ! $member || ! EtelID_Auth::is_site_admin( $member ) ) {
+            wp_send_json_error( array( 'message' => 'Not authorized.' ) );
+        }
+        return $member;
+    }
+
+    public static function ajax_admin_logos_list() {
+        check_ajax_referer( 'etelid_auth', 'nonce' );
+        self::require_admin();
+        wp_send_json_success( array( 'platforms' => self::platforms_admin_view() ) );
+    }
+
+    public static function ajax_admin_logo_upload() {
+        check_ajax_referer( 'etelid_auth', 'nonce' );
+        self::require_admin();
+
+        $link_type = isset( $_POST['link_type'] ) ? sanitize_key( wp_unslash( $_POST['link_type'] ) ) : '';
+        $platform  = isset( $_POST['platform'] ) ? sanitize_key( wp_unslash( $_POST['platform'] ) ) : '';
+        $catalog   = self::platforms();
+        if ( ! isset( $catalog[ $link_type ][ $platform ] ) ) {
+            wp_send_json_error( array( 'message' => 'Unknown platform.' ) );
+        }
+        if ( empty( $_FILES['file'] ) ) {
+            wp_send_json_error( array( 'message' => 'No file received.' ) );
+        }
+
+        require_once ABSPATH . 'wp-admin/includes/file.php';
+        require_once ABSPATH . 'wp-admin/includes/media.php';
+        require_once ABSPATH . 'wp-admin/includes/image.php';
+
+        $attachment_id = media_handle_upload( 'file', 0 );
+        if ( is_wp_error( $attachment_id ) ) {
+            wp_send_json_error( array( 'message' => $attachment_id->get_error_message() ) );
+        }
+
+        $url   = wp_get_attachment_url( $attachment_id );
+        $logos = self::stored_logos();
+        $logos[ $link_type . ':' . $platform ] = $url;
+        update_option( 'etelid_link_platform_logos', $logos );
+
+        wp_send_json_success( array( 'url' => $url, 'platforms' => self::platforms_admin_view() ) );
+    }
+
+    public static function ajax_admin_logo_remove() {
+        check_ajax_referer( 'etelid_auth', 'nonce' );
+        self::require_admin();
+
+        $link_type = isset( $_POST['link_type'] ) ? sanitize_key( wp_unslash( $_POST['link_type'] ) ) : '';
+        $platform  = isset( $_POST['platform'] ) ? sanitize_key( wp_unslash( $_POST['platform'] ) ) : '';
+        $logos     = self::stored_logos();
+        unset( $logos[ $link_type . ':' . $platform ] );
+        update_option( 'etelid_link_platform_logos', $logos );
+
+        wp_send_json_success( array( 'platforms' => self::platforms_admin_view() ) );
     }
 
     /* -- Portal self-service (the account owner manages their own list) -- */
@@ -76,7 +173,8 @@ class EtelID_Links {
         if ( ! $member ) wp_send_json_error( array( 'message' => 'Please sign in again.' ) );
         wp_send_json_success( array(
             'links'     => self::rows_for_portal( $member->id ),
-            'platforms' => self::platforms(),
+            'platforms' => self::platforms_admin_view(),
+            'is_admin'  => EtelID_Auth::is_site_admin( $member ),
         ) );
     }
 
@@ -190,6 +288,7 @@ class EtelID_Links {
                 'account_name'  => $r->account_name,
                 'color'         => $meta['color'],
                 'mono'          => $meta['mono'],
+                'logo'          => $meta['logo'],
                 'open_url'      => $open_url,
             );
         }

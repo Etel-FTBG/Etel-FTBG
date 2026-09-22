@@ -178,19 +178,18 @@ class Etelid_Nfc {
         return $row;
     }
 
+    /* Full member row (every column - dob, sex, blood_type, nationality,
+       fin, card_number, serial_number, issue/expiry dates, region, zone,
+       primary_company, role, ...), not a narrow projection. The public
+       NFC card renders templates/card-front.php and card-back.php -
+       the exact same templates the member's own portal uses - and both
+       read dozens of these fields directly off $member; a stripped-down
+       row here previously left most of the printed card blank (visible
+       as "-" for DOB/blood/etc.) even though the portal showed the real
+       values from the same row via EtelID_DB::get_member(). Delegating
+       to that one method keeps both surfaces reading identical data. */
     protected static function get_member($member_id) {
-        global $wpdb;
-        $members_table = $wpdb->prefix . 'etelid_members';
-
-        $member = $wpdb->get_row(
-            $wpdb->prepare(
-                "SELECT id, etel_id, full_name, phone, photo_url, tier, status, pin_hash
-                 FROM {$members_table} WHERE id = %d",
-                (int) $member_id
-            )
-        );
-
-        return $member;
+        return EtelID_DB::get_member($member_id);
     }
 
     /* ---------------------------------------------------------------
