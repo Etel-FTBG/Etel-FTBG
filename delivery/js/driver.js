@@ -2147,21 +2147,56 @@ function _driverStartup() {
        was gone and manually went through "Go Online" again - the fare
        itself was never actually lost server-side (see driver_update_
        location's delta-from-last-known-position logic), but tracking
-       stayed frozen indefinitely instead of resuming on its own. */
+       stayed frozen indefinitely instead of resuming on its own.
+
+       That fix had its own gap though: with NO active ride (a stale
+       online=1 left over from a previous session/shift that was never
+       explicitly ended - killing the app, a session token expiring,
+       logging back in on a fresh login screen), this same code marked
+       the UI "Online" and called startGps() directly, bypassing
+       goOnline()'s getCurrentPosition() call entirely. startGps()'s own
+       fallback only seeds a position from localStorage's last cached
+       fix (etel_driver_last_pos) if one exists on THIS device/browser -
+       on a genuinely fresh login there often isn't one yet, and
+       startGps()'s watchPosition() has no error callback at all, so a
+       denied/unavailable permission fails completely silently. The
+       driver saw "Online" and the map showed nothing for them - not
+       because GPS was slow, but because nothing had ever actually
+       requested a fix yet - and the only way out was toggling off then
+       on again, which does go through goOnline()'s proper
+       getCurrentPosition()-first path.
+
+       Mid-trip (active_ride present), silent auto-resume stays exactly
+       as before - interrupting an active, paying trip with a
+       confirmation prompt would be actively harmful, and this is the
+       one case the original fix above was built for. With no active
+       ride, ask first instead of silently claiming to be online: only
+       goOnline() (which gets a real, fresh fix with proper permission/
+       error handling before ever marking online) is allowed to flip
+       DRV.isOnline - declining, or a failed location grab, explicitly
+       syncs the server back down to offline instead of leaving it
+       stranded as online=1 with no driver actually broadcasting. */
     drvApi('driver_get_profile', {}, function (data) {
         DRV.driverProfile = data.driver;
         updateEarningsUI(data.driver);
         if (data.driver && parseInt(data.driver.online, 10) === 1) {
-            DRV.isOnline = true;
-            setOnlineUI(true);
-            startGps();
-            startPolling();
             if (data.active_ride) {
+                DRV.isOnline = true;
+                setOnlineUI(true);
+                startGps();
+                startPolling();
                 _applyActiveRideUpdate(data.active_ride);
                 switchReqTab('active');
-            }
-            if (!DRV.sseSource || DRV.sseSource.readyState === EventSource.CLOSED) {
-                _startSSE();
+                if (!DRV.sseSource || DRV.sseSource.readyState === EventSource.CLOSED) {
+                    _startSSE();
+                }
+            } else if (confirm('You were left online from a previous session. Go back online now?')) {
+                goOnline();
+            } else {
+                drvApi('driver_go_offline', {}, function () {
+                    DRV.isOnline = false;
+                    setOnlineUI(false);
+                }, function () { setOnlineUI(false); });
             }
         }
     }, null);
