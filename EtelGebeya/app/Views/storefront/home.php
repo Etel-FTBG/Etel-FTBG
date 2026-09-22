@@ -76,7 +76,6 @@ View::render('_layouts/public', [
     <!-- HERO -->
     <div class="eg-hero">
       <div class="eg-hero-left">
-        <div class="eg-hero-tag"><i class="bi bi-geo-alt"></i> Proudly Built in Hawassa, Ethiopia</div>
         <h1>Ethiopia's Marketplace,<br>Delivered to You</h1>
         <p>Buy in Birr, pay with Telebirr, CBE Birr or cards. Thousands of products from verified Ethiopian vendors, delivered nationwide.</p>
         <div class="eg-hero-actions">
