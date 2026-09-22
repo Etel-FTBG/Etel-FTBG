@@ -128,7 +128,10 @@ function ridesShowDetail(id){
           '<div><div style="font-size:10px;color:#B8B0A0;text-transform:uppercase;">Driver Rating</div><div style="color:#e8e2d4;">'+(r.driver_rating>0?'★ '+r.driver_rating:'—')+'</div></div>'+
         '</div>'+
         '<div style="border-top:1px solid rgba(212,175,55,.15);padding-top:10px;margin-bottom:14px;">'+fareRows+'</div>'+
-        '<div style="font-size:11px;color:#B8B0A0;">Created '+(r.created_at||'—')+(r.completed_at?' · Completed '+r.completed_at:'')+'</div>'+
+        '<div style="font-size:11px;color:#B8B0A0;margin-bottom:'+(r.status==='in_progress'?'14px':'0')+'">Created '+(r.created_at||'—')+(r.completed_at?' · Completed '+r.completed_at:'')+'</div>'+
+        (r.status==='in_progress'
+          ?'<button onclick="ridesShowManualComplete('+r.id+')" style="width:100%;padding:10px;border-radius:9px;border:1px solid rgba(230,180,80,.4);background:rgba(230,180,80,.1);color:#E5C76B;font-size:12px;font-weight:700;cursor:pointer;font-family:Outfit,sans-serif">📞 Manually Complete (GPS/connection lost)</button>'
+          :'')+
       '</div>'+
     '</div>';
   var wrap=document.createElement('div');
@@ -142,6 +145,116 @@ function ridesCloseDetail(){
 }
 window.ridesShowDetail=ridesShowDetail;
 window.ridesCloseDetail=ridesCloseDetail;
+
+/* ── Manually complete a trip whose GPS/connection died mid-ride ──
+   Support-desk rescue path: the driver calls in, reads out the pickup
+   point and where they actually dropped the passenger, an admin/support
+   agent types both into the two address fields below (the same Google
+   Places autocomplete every booking screen in this app already uses -
+   ride.js's RIDE.autocompletePickup/autocompleteDropoff is the pattern
+   this mirrors), and admin_manual_complete_ride (RideController.php)
+   computes the real distance/fare from those two points and completes
+   the trip through the same payout path every other completed ride
+   uses. See that action's own header comment for the full rationale. */
+var MC={pickup:null,dropoff:null,rideId:null};
+
+function ridesShowManualComplete(id){
+  ridesCloseDetail();
+  MC={pickup:null,dropoff:null,rideId:id};
+  var html=
+    '<div id="mc-overlay" onclick="if(event.target===this)ridesCloseManualComplete()" style="position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.8);display:flex;align-items:center;justify-content:center;padding:16px;">'+
+      '<div style="background:linear-gradient(165deg,#130d05,#0a0703);border:1px solid rgba(212,175,55,.35);border-radius:14px;width:min(96vw,480px);max-height:90vh;overflow-y:auto;padding:20px;font-family:Outfit,sans-serif;">'+
+        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">'+
+          '<div style="font-size:15px;font-weight:800;color:#D4AF37">Manually Complete Ride #'+id+'</div>'+
+          '<button onclick="ridesCloseManualComplete()" style="background:none;border:1px solid #333;color:#B8B0A0;border-radius:6px;padding:4px 10px;cursor:pointer;">✕</button>'+
+        '</div>'+
+        '<div style="font-size:12px;color:#9A9AAE;margin-bottom:16px;line-height:1.5">For when the driver\'s phone died, lost signal, or the app was killed mid-trip and GPS never tracked distance. Call the driver, get the pickup point and where the passenger was actually dropped, and enter both below — the real distance and fare are calculated from these two points, and the trip is completed immediately.</div>'+
+        '<div style="margin-bottom:12px;"><label style="display:block;font-size:10px;color:#B8B0A0;text-transform:uppercase;margin-bottom:5px">Pickup point</label>'+
+          '<input id="mc-pickup" type="text" placeholder="Search pickup address..." style="width:100%;padding:9px 12px;border-radius:8px;border:1px solid rgba(212,175,55,.3);background:rgba(255,255,255,.05);color:#e8e2d4;font-size:13px;font-family:Outfit,sans-serif" autocomplete="off">'+
+        '</div>'+
+        '<div style="margin-bottom:12px;"><label style="display:block;font-size:10px;color:#B8B0A0;text-transform:uppercase;margin-bottom:5px">Where the passenger was dropped off</label>'+
+          '<input id="mc-dropoff" type="text" placeholder="Search drop-off address..." style="width:100%;padding:9px 12px;border-radius:8px;border:1px solid rgba(212,175,55,.3);background:rgba(255,255,255,.05);color:#e8e2d4;font-size:13px;font-family:Outfit,sans-serif" autocomplete="off">'+
+        '</div>'+
+        '<div style="margin-bottom:12px;"><label style="display:block;font-size:10px;color:#B8B0A0;text-transform:uppercase;margin-bottom:5px">Payment method</label>'+
+          '<select id="mc-payment" style="width:100%;padding:9px 12px;border-radius:8px;border:1px solid rgba(212,175,55,.3);background:rgba(255,255,255,.05);color:#e8e2d4;font-size:13px;font-family:Outfit,sans-serif">'+
+            '<option value="cash">Cash (paid to driver directly)</option>'+
+            '<option value="telebirr">Telebirr</option>'+
+            '<option value="cbe">CBE</option>'+
+          '</select>'+
+        '</div>'+
+        '<div style="margin-bottom:16px;"><label style="display:block;font-size:10px;color:#B8B0A0;text-transform:uppercase;margin-bottom:5px">Note (optional)</label>'+
+          '<textarea id="mc-note" rows="2" placeholder="e.g. driver\'s phone battery died, called from a borrowed phone" style="width:100%;padding:9px 12px;border-radius:8px;border:1px solid rgba(212,175,55,.3);background:rgba(255,255,255,.05);color:#e8e2d4;font-size:13px;font-family:Outfit,sans-serif;resize:vertical"></textarea>'+
+        '</div>'+
+        '<div id="mc-alert" style="display:none;padding:10px 12px;border-radius:8px;font-size:12px;margin-bottom:12px"></div>'+
+        '<button id="mc-submit-btn" onclick="ridesSubmitManualComplete()" style="width:100%;padding:11px;border-radius:9px;border:none;background:linear-gradient(135deg,#8a6410,#D4AF37);color:#1a1200;font-weight:800;font-size:13px;cursor:pointer;font-family:Outfit,sans-serif">Calculate Fare &amp; Complete Trip</button>'+
+      '</div>'+
+    '</div>';
+  var wrap=document.createElement('div');
+  wrap.id='mc-wrap';
+  wrap.innerHTML=html;
+  document.body.appendChild(wrap);
+
+  function wireAutocomplete(){
+    if(!(window.google&&google.maps&&google.maps.places)){
+      setTimeout(wireAutocomplete,400); // Maps JS API still loading (loadGoogleMaps() is async) - retry shortly
+      return;
+    }
+    var pe=document.getElementById('mc-pickup'), de=document.getElementById('mc-dropoff');
+    if(!pe||!de)return; // modal was closed before Maps finished loading
+    var ac1=new google.maps.places.Autocomplete(pe,{componentRestrictions:{country:'ET'}});
+    ac1.addListener('place_changed',function(){
+      var p=ac1.getPlace();
+      if(p&&p.geometry)MC.pickup={lat:p.geometry.location.lat(),lng:p.geometry.location.lng(),address:p.formatted_address||p.name};
+    });
+    var ac2=new google.maps.places.Autocomplete(de,{componentRestrictions:{country:'ET'}});
+    ac2.addListener('place_changed',function(){
+      var p=ac2.getPlace();
+      if(p&&p.geometry)MC.dropoff={lat:p.geometry.location.lat(),lng:p.geometry.location.lng(),address:p.formatted_address||p.name};
+    });
+  }
+  wireAutocomplete();
+}
+
+function ridesCloseManualComplete(){
+  var el=document.getElementById('mc-wrap');
+  if(el)el.remove();
+}
+
+function _mcAlert(msg,ok){
+  var a=document.getElementById('mc-alert');
+  if(!a)return;
+  a.style.display='block';
+  a.style.background=ok?'rgba(46,204,113,.12)':'rgba(230,57,70,.12)';
+  a.style.border='1px solid '+(ok?'rgba(46,204,113,.3)':'rgba(230,57,70,.3)');
+  a.style.color=ok?'#2ECC71':'#E74C3C';
+  a.textContent=msg;
+}
+
+function ridesSubmitManualComplete(){
+  if(!MC.pickup||!MC.dropoff){
+    _mcAlert('Pick a real suggestion from the dropdown for both the pickup and drop-off fields — typed text alone has no coordinates to calculate distance from.',false);
+    return;
+  }
+  var btn=document.getElementById('mc-submit-btn');
+  if(btn){btn.disabled=true;btn.textContent='Calculating…';}
+  api('admin_manual_complete_ride',{
+    ride_id: MC.rideId,
+    pickup_lat: MC.pickup.lat, pickup_lng: MC.pickup.lng, pickup_address: MC.pickup.address,
+    dropoff_lat: MC.dropoff.lat, dropoff_lng: MC.dropoff.lng, dropoff_address: MC.dropoff.address,
+    payment_method: (document.getElementById('mc-payment')||{value:'cash'}).value,
+    note: (document.getElementById('mc-note')||{value:''}).value.trim(),
+  },function(d){
+    _mcAlert('Trip completed — '+parseFloat(d.distance_km).toFixed(2)+' km, ETB '+parseFloat(d.fare).toFixed(0)+' ('+d.payment_method+')',true);
+    setTimeout(function(){ridesCloseManualComplete();ridesLoad();},1800);
+  },function(msg){
+    if(btn){btn.disabled=false;btn.textContent='Calculate Fare & Complete Trip';}
+    _mcAlert(msg||'Could not complete the trip',false);
+  });
+}
+
+window.ridesShowManualComplete=ridesShowManualComplete;
+window.ridesCloseManualComplete=ridesCloseManualComplete;
+window.ridesSubmitManualComplete=ridesSubmitManualComplete;
 
 function renderPager(){
   var el=document.getElementById('rides-pagination'); if(!el)return;

@@ -1646,6 +1646,101 @@ case 'admin_cancel_ride': {
     break;
 }
 
+case 'admin_manual_complete_ride': {
+    // Rescue path for a trip that can't complete itself: the driver's
+    // phone died, lost signal, or the app got killed mid-trip, so
+    // driver_update_location never accumulated a usable traveled_km and
+    // driver_arrived has nothing real to bill from. The driver calls
+    // support, reads out the pickup point and where they actually
+    // dropped the passenger, and an admin/support agent enters both
+    // here as lat/lng (from the same Google Places-autocomplete map
+    // every other booking screen in this app already uses, not a raw
+    // address string - there's no server-side geocoder available on
+    // this code path, see AgentController.php's agent_geocode_place for
+    // why that one lives only there). Computes the real distance/fare
+    // from those two points and completes the trip immediately - waiting
+    // on driver_arrived/customer_confirm_arrival isn't realistic here
+    // since the driver's own device is the reason this is needed in the
+    // first place - through rides_complete_and_pay() (lib/ride_fare.php),
+    // the exact same payout path every other completed ride uses.
+    // Logged to ride_issues (already admin-visible under Ride Issues) so
+    // every manual override has a permanent audit trail.
+    if ($u['role'] !== 'admin' || !user_has_capability($pdo, $u, 'rides.manage')) fail('Admin only', 403);
+    $rid = intval($body['ride_id'] ?? 0);
+    if (!$rid) fail('ride_id required');
+    $plat = isset($body['pickup_lat'])  ? floatval($body['pickup_lat'])  : 0;
+    $plng = isset($body['pickup_lng'])  ? floatval($body['pickup_lng'])  : 0;
+    $dlat = isset($body['dropoff_lat']) ? floatval($body['dropoff_lat']) : 0;
+    $dlng = isset($body['dropoff_lng']) ? floatval($body['dropoff_lng']) : 0;
+    if (!$plat || !$plng || !$dlat || !$dlng) fail('pickup_lat/pickup_lng/dropoff_lat/dropoff_lng are all required');
+    $pickupAddr  = isset($body['pickup_address'])  ? trim($body['pickup_address'])  : '';
+    $dropoffAddr = isset($body['dropoff_address']) ? trim($body['dropoff_address']) : '';
+    $pm = isset($body['payment_method']) ? substr(preg_replace('/[^a-z_]/', '', strtolower($body['payment_method'])), 0, 20) : 'cash';
+    // Wallet needs an independently-verified transaction reference
+    // (etel_pay_verify_tx) - there's no such reference to check here,
+    // just a phone call, so wallet can't be trusted as "already paid"
+    // through this path the way customer_confirm_arrival's wallet
+    // branch can.
+    if ($pm === 'wallet') fail('Wallet payment cannot be confirmed on a support call - use cash or another off-app method for a manually-closed trip.', 400);
+    $note = isset($body['note']) ? trim($body['note']) : '';
+
+    rides_ensure_wait_columns($pdo);
+    $vtypeCol = rides_has_vehicle_type_column($pdo) ? ', vehicle_type' : '';
+    $s = $pdo->prepare("SELECT id, driver_id, open_trip, wait_active, wait_started_at, wait_seconds_total" . $vtypeCol . "
+                        FROM rides WHERE id=? AND status='in_progress'");
+    $s->execute(array($rid));
+    $r = $s->fetch();
+    if (!$r) fail('Ride not found, or not currently in progress', 404);
+    if (!$r['driver_id']) fail('This ride has no assigned driver', 400);
+
+    // Same auto-close-forgotten-wait-clock safeguard as driver_arrived.
+    if (intval($r['wait_active']) === 1) {
+        $elapsed = $r['wait_started_at'] ? max(0, time() - strtotime($r['wait_started_at'])) : 0;
+        $r['wait_seconds_total'] = intval($r['wait_seconds_total']) + $elapsed;
+        $pdo->prepare("UPDATE rides SET wait_active=0, wait_started_at=NULL, wait_seconds_total=? WHERE id=?")
+            ->execute(array($r['wait_seconds_total'], $rid));
+    }
+    $waitMinutes = rides_current_wait_minutes($r);
+
+    $vtype = !empty($r['vehicle_type']) ? $r['vehicle_type'] : rides_driver_own_vtype($pdo, $r['driver_id']);
+    $isOpenTrip = intval($r['open_trip']) === 1;
+    $km = rides_haversine_km($plat, $plng, $dlat, $dlng);
+    if ($km <= 0) fail('Pickup and drop-off cannot be the same point', 400);
+
+    $fareResult = rides_calc_fare($pdo, $km, $vtype, $isOpenTrip, $waitMinutes);
+    $fare = $fareResult['fare'];
+    $breakdown = rides_fare_breakdown_for_ui($fareResult);
+    $breakdown['manual_completion']  = true;
+    $breakdown['completed_by_admin'] = $u['name'];
+    if ($note !== '') $breakdown['admin_note'] = $note;
+    $breakdownJson = json_encode($breakdown);
+
+    $sets = array("distance_km=?", "traveled_km=?", "fare_breakdown_json=?");
+    $params = array($km, $km, $breakdownJson);
+    if ($pickupAddr !== '') { $sets[] = "pickup_lat=?"; $sets[] = "pickup_lng=?"; $sets[] = "pickup_address=?"; array_push($params, $plat, $plng, $pickupAddr); }
+    if ($dropoffAddr !== '') { $sets[] = "dropoff_lat=?"; $sets[] = "dropoff_lng=?"; $sets[] = "dropoff_address=?"; array_push($params, $dlat, $dlng, $dropoffAddr); }
+    if (rides_has_surge_column($pdo)) { $sets[] = "surge_applied=?"; $params[] = $fareResult['surge'] ? 1 : 0; }
+    $params[] = $rid;
+    $pdo->prepare("UPDATE rides SET " . implode(', ', $sets) . " WHERE id=?")->execute($params);
+
+    rides_complete_and_pay($pdo, $rid, $r['driver_id'], $fare, $pm);
+
+    try {
+        $details = 'Manually completed by ' . $u['name'] . ' - distance ' . round($km, 2) . ' km, fare ETB ' . number_format($fare, 2)
+            . ($note !== '' ? '. Note: ' . $note : '');
+        $pdo->prepare("INSERT INTO ride_issues (ride_id, reporter_id, category, details, status, resolved_at) VALUES (?, ?, 'manual_completion', ?, 'resolved', NOW())")
+            ->execute(array($rid, $u['id'], $details));
+    } catch (Exception $e) {
+        // Audit trail only - never let a logging failure undo a
+        // trip that already completed and paid out successfully above.
+        error_log('[ETEL][admin_manual_complete_ride] audit log insert failed for ride ' . $rid . ': ' . $e->getMessage());
+    }
+
+    ok(array_merge(array('completed' => true, 'ride_id' => $rid, 'distance_km' => round($km, 2),
+             'fare' => $fare, 'payment_method' => $pm), $breakdown));
+    break;
+}
+
 case 'admin_get_drivers': {
     if ($u['role'] !== 'admin' || !user_has_capability($pdo, $u, 'users.view')) fail('Admin only', 403);
     // Guarantee these columns exist even if no ride has completed yet
@@ -3295,55 +3390,20 @@ case 'customer_confirm_arrival': {
         if (!$tx) fail('Could not verify Etel Pay payment. If money left your account, contact support with reference ' . $tx_ref, 402);
         $wallet_tx_ref = $tx_ref;
     }
-    if ($wallet_tx_ref) {
-        $pdo->prepare("UPDATE rides SET status='completed', completed_at=NOW(), fare_paid=?, payment_method=?, wallet_tx_ref=? WHERE id=?")
-            ->execute(array($fare, $pm, $wallet_tx_ref, $rid));
-    } else {
-        $pdo->prepare("UPDATE rides SET status='completed', completed_at=NOW(), fare_paid=?, payment_method=? WHERE id=?")
-            ->execute(array($fare, $pm, $rid));
-    }
-    if ($r['driver_id']) {
-        /* PAYOUT: only wallet-paid rides credit total_earnings (the
-           driver's cashout-eligible balance) - a cash ride was already
-           paid to the driver directly in person, so crediting the same
-           fare here again let a driver cash out money they'd already
-           physically collected. */
-        rides_add_missing_cols($pdo, 'ride_drivers', array(
-            'commission_owed'   => "commission_owed DECIMAL(12,2) DEFAULT 0",
-            'cash_fares_total'  => "cash_fares_total DECIMAL(12,2) DEFAULT 0",
-            'etel_money_balance' => "etel_money_balance DECIMAL(12,2) DEFAULT 0"
-        ));
-        /* COMMISSION MODEL: drivers prepay into their own ኢE money
-           balance (etel_money_balance) - a running balance THEY hold
-           with the platform, topped up via EtelPay or an admin manual
-           top-up (see driver_topup_etel_money / admin_topup_etel_money).
-           On every completed ride, cash or wallet alike, 5% of the fare
-           is deducted from that balance. This is now the ACTUAL
-           commission-collection mechanism - the driver keeps their full
-           fare either way (cash in hand, or full 100% credited to
-           total_earnings for wallet), and separately settles the 5%
-           from their own prepaid balance. The balance is allowed to go
-           negative (a running tab) rather than blocking new ride
-           requests - that's a deliberate product decision, not an
-           oversight.
-
-           commission_owed/cash_fares_total (below) are kept updating in
-           parallel as legacy/fallback bookkeeping only - they no longer
-           determine what's actually collected, but nothing reads or
-           relies on them being frozen, so there's no reason to stop
-           writing to them and lose that historical trail. */
-        $commissionRate = 0.05; // ETEL platform commission - activated 2026-08-18
-        $commissionAmt = round($fare * $commissionRate, 2);
-        $pdo->prepare("UPDATE ride_drivers SET etel_money_balance=etel_money_balance-? WHERE user_id=?")
-            ->execute(array($commissionAmt, $r['driver_id']));
-        if ($pm === 'wallet') {
-            $pdo->prepare("UPDATE ride_drivers SET total_earnings=total_earnings+?, total_rides=total_rides+1 WHERE user_id=?")
-                ->execute(array($fare, $r['driver_id']));
-        } else {
-            $pdo->prepare("UPDATE ride_drivers SET cash_fares_total=cash_fares_total+?, commission_owed=commission_owed+?, total_rides=total_rides+1 WHERE user_id=?")
-                ->execute(array($fare, $commissionAmt, $r['driver_id']));
-        }
-    }
+    /* PAYOUT: only wallet-paid rides credit total_earnings (the driver's
+       cashout-eligible balance) - a cash ride was already paid to the
+       driver directly in person, so crediting the same fare here again
+       let a driver cash out money they'd already physically collected.
+       COMMISSION MODEL: drivers prepay into their own ኢE money balance
+       (etel_money_balance) - a running balance THEY hold with the
+       platform, topped up via EtelPay or an admin manual top-up (see
+       driver_topup_etel_money / admin_topup_etel_money). On every
+       completed ride, cash or wallet alike, 5% of the fare is deducted
+       from that balance - see rides_complete_and_pay() (lib/ride_fare.php)
+       for the full mechanism, shared with admin_manual_complete_ride
+       below (a support-desk trip closeout goes through the exact same
+       payout math, not a separate copy that could drift). */
+    rides_complete_and_pay($pdo, $rid, $r['driver_id'], $fare, $pm, $wallet_tx_ref);
     etel_maybe_pay_referral_reward($pdo, $u['id']);
     ok(array('completed' => true, 'fare_paid' => $fare,
              'distance_km' => floatval($r['distance_km']), 'payment_method' => $pm));
