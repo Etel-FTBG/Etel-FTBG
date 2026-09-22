@@ -405,3 +405,43 @@ function rides_fare_breakdown_for_ui($fareCalc) {
     );
 }
 }
+
+if (!function_exists('rides_complete_and_pay')) {
+/* Marks a ride completed and runs the exact same driver payout/commission
+   bookkeeping every completed ride goes through - extracted from
+   customer_confirm_arrival's tail (RideController.php) so a second call
+   site (admin_manual_complete_ride, for GPS-lost/phone-died trips closed
+   out over a support call) doesn't have to duplicate the commission math
+   and risk drifting from it. Behavior is unchanged from the original
+   inline version - this is a pure move, same pattern as the rest of this
+   file. Caller is responsible for validating the ride/fare/payment_method
+   first (wallet verification, ownership, status checks - those differ
+   between call sites, so they stay at the call site, not in here). */
+function rides_complete_and_pay($pdo, $rideId, $driverId, $fare, $paymentMethod, $walletTxRef = null) {
+    if ($walletTxRef) {
+        $pdo->prepare("UPDATE rides SET status='completed', completed_at=NOW(), fare_paid=?, payment_method=?, wallet_tx_ref=? WHERE id=?")
+            ->execute(array($fare, $paymentMethod, $walletTxRef, $rideId));
+    } else {
+        $pdo->prepare("UPDATE rides SET status='completed', completed_at=NOW(), fare_paid=?, payment_method=? WHERE id=?")
+            ->execute(array($fare, $paymentMethod, $rideId));
+    }
+    if ($driverId) {
+        rides_add_missing_cols($pdo, 'ride_drivers', array(
+            'commission_owed'    => "commission_owed DECIMAL(12,2) DEFAULT 0",
+            'cash_fares_total'   => "cash_fares_total DECIMAL(12,2) DEFAULT 0",
+            'etel_money_balance' => "etel_money_balance DECIMAL(12,2) DEFAULT 0"
+        ));
+        $commissionRate = 0.05; // ETEL platform commission - activated 2026-08-18
+        $commissionAmt = round($fare * $commissionRate, 2);
+        $pdo->prepare("UPDATE ride_drivers SET etel_money_balance=etel_money_balance-? WHERE user_id=?")
+            ->execute(array($commissionAmt, $driverId));
+        if ($paymentMethod === 'wallet') {
+            $pdo->prepare("UPDATE ride_drivers SET total_earnings=total_earnings+?, total_rides=total_rides+1 WHERE user_id=?")
+                ->execute(array($fare, $driverId));
+        } else {
+            $pdo->prepare("UPDATE ride_drivers SET cash_fares_total=cash_fares_total+?, commission_owed=commission_owed+?, total_rides=total_rides+1 WHERE user_id=?")
+                ->execute(array($fare, $commissionAmt, $driverId));
+        }
+    }
+}
+}
