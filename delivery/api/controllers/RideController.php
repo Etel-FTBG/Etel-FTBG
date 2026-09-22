@@ -1412,13 +1412,79 @@ case 'driver_update_location': {
         }
         $r = $s->fetch();
         if ($r) {
-            $waitMinutes = rides_current_wait_minutes($r);
             $lowAccuracy = ($accuracy !== null && $accuracy > 75);
+
+            // Wait-clock auto-stop used to live ONLY inside the "good
+            // accuracy" branch below, sharing that branch's 75m gate -
+            // so a device stuck reporting network-only fixes (seen live:
+            // 2000m, meaning the OS handed the browser a WiFi/cell
+            // position with no real GPS chip fix at all, not just a
+            // noisy one) never ran the auto-stop check either, no matter
+            // how far the vehicle actually drove. Distance and "is the
+            // vehicle moving at all" are different questions with
+            // different error tolerances - crediting 2000m-accuracy
+            // fixes to the BILLED distance would be genuinely wrong (the
+            // fare needs real precision), but requiring the same
+            // precision just to notice the car left is not. This block
+            // now always runs when there's a prior point to compare
+            // against, before the meter-only branch below decides
+            // whether to bill that same raw distance.
+            $d = null; $isFirstPoint = ($r['last_lat'] === null || $r['last_lng'] === null);
+            $maxPlausibleKm = 2.0;
+            if (!empty($r['last_location_at'])) {
+                $elapsedSeconds = max(0, time() - strtotime($r['last_location_at']));
+                $maxPlausibleKm = max(2.0, $elapsedSeconds * (120.0 / 3600.0));
+            }
+            if (!$isFirstPoint) {
+                $d = rides_haversine_km(floatval($r['last_lat']), floatval($r['last_lng']), $lat, $lng);
+            }
+            $justMoved = false;
+            if ($d !== null && $d < $maxPlausibleKm) {
+                // Good fix: the original tight 20m bar (a clear "actually
+                // moving" signal, comfortably above ordinary GPS jitter).
+                // Poor fix: raw GPS jitter isn't the noise floor to beat
+                // any more - a WiFi/cell-tower position can itself drift
+                // tens to low-hundreds of meters while the phone doesn't
+                // move at all, so the bar scales with how bad THIS fix's
+                // own reported accuracy is (half the accuracy radius,
+                // floored at 150m) - comfortably past that device's own
+                // noise band, while still far below what a genuine drive-
+                // off covers within a few 5s pings at any real speed.
+                $moveFloorKm = $lowAccuracy ? max(0.15, ($accuracy / 1000.0) * 0.5) : 0.02;
+                if ($d >= $moveFloorKm) $justMoved = true;
+            }
+            $waitAutoStopped = false;
+            if ($justMoved && intval($r['wait_active']) === 1) {
+                // Auto-stop a wait clock the driver forgot to stop, the
+                // instant real movement is detected - mirrors the existing
+                // auto-close-on-arrived safeguard in driver_arrived below,
+                // just triggered by driving off instead of tapping Arrived.
+                // Without this, a driver who simply pulls away without
+                // remembering to tap "Stop Waiting" keeps silently billing
+                // the passenger for waiting time for the rest of the trip -
+                // exactly the class of bug the fare breakdown feature exists
+                // to surface, not something that should still be possible.
+                $elapsed = $r['wait_started_at'] ? max(0, time() - strtotime($r['wait_started_at'])) : 0;
+                $r['wait_seconds_total'] = intval($r['wait_seconds_total']) + $elapsed;
+                $r['wait_active'] = 0;
+                $r['wait_started_at'] = null;
+                $pdo->prepare("UPDATE rides SET wait_active=0, wait_started_at=NULL, wait_seconds_total=? WHERE id=?")
+                    ->execute(array($r['wait_seconds_total'], $r['id']));
+                $waitAutoStopped = true;
+            }
+            $waitMinutes = rides_current_wait_minutes($r);
+            $rideVtype = !empty($r['vehicle_type']) ? $r['vehicle_type'] : rides_driver_own_vtype($pdo, $u['id']);
+
             if ($lowAccuracy) {
-                // Report the CURRENT (unchanged) meter state back to the
-                // client rather than silently returning null, so the UI
-                // doesn't flicker/blank out during a run of poor fixes.
-                $rideVtype = !empty($r['vehicle_type']) ? $r['vehicle_type'] : rides_driver_own_vtype($pdo, $u['id']);
+                // Distance itself still is NOT credited from a fix this
+                // poor - see the restructuring note above for why that
+                // stays separate from the wait-auto-stop check just run.
+                // last_lat/last_lng also stay untouched, so the next GOOD
+                // fix still computes its delta from the last trustworthy
+                // reference point instead of drifting from noise - same
+                // "catch up the whole gap in one step" pattern already
+                // used for offline/backgrounded gaps, just applied to
+                // accuracy instead of time.
                 $liveFareCalc = rides_calc_fare($pdo, floatval($r['traveled_km']), $rideVtype, intval($r['open_trip']) === 1, $waitMinutes);
                 $meter = array_merge(array('ride_id' => intval($r['id']),
                                'traveled_km' => round(floatval($r['traveled_km']), 2),
@@ -1427,13 +1493,10 @@ case 'driver_update_location': {
                                'meter_fare' => $liveFareCalc['fare'],
                                'wait_active' => (bool) $r['wait_active'],
                                'wait_minutes' => round($waitMinutes, 2),
+                               'wait_auto_stopped' => $waitAutoStopped,
                                'low_accuracy' => true), rides_fare_breakdown_for_ui($liveFareCalc));
             } else {
-            $add = 0;
-            $justMoved = false;
-            $isFirstPoint = ($r['last_lat'] === null || $r['last_lng'] === null);
-            if (!$isFirstPoint) {
-                $d = rides_haversine_km(floatval($r['last_lat']), floatval($r['last_lng']), $lat, $lng);
+                $add = 0;
                 // The ceiling used to be a flat 2.0 km regardless of how
                 // long it had been since the last accepted point - fine
                 // for normal ~5s pings, but it silently discarded real
@@ -1445,86 +1508,49 @@ case 'driver_update_location': {
                 // pings behave exactly as before - this only ever makes
                 // the ceiling MORE permissive after a real gap, never
                 // less permissive than the original behavior.
-                $maxPlausibleKm = 2.0;
-                if (!empty($r['last_location_at'])) {
-                    $elapsedSeconds = max(0, time() - strtotime($r['last_location_at']));
-                    $maxPlausibleKm = max(2.0, $elapsedSeconds * (120.0 / 3600.0));
+                if ($d !== null && $d > 0.005 && $d < $maxPlausibleKm) $add = $d;
+                $newKm = floatval($r['traveled_km']) + $add;
+                $pdo->prepare("UPDATE rides SET last_lat=?, last_lng=?, last_location_at=NOW(), traveled_km=? WHERE id=?")
+                    ->execute(array($lat, $lng, $newKm, $r['id']));
+
+                // Record this point in the trip's breadcrumb trail - either
+                // real movement was detected ($add>0, same jitter floor as
+                // the meter itself) or this is the very first ping of the
+                // trip (establishing where the path starts), so a parked
+                // driver doesn't spam the table with hundreds of near-
+                // identical points every 5s, but the path also doesn't skip
+                // its own starting point. This is what lets "View Route"
+                // show the actual path driven instead of a straight line
+                // from pickup to dropoff.
+                if ($add > 0 || $isFirstPoint) {
+                    try {
+                        $pdo->prepare("INSERT INTO ride_path_points (ride_id, lat, lng) VALUES (?, ?, ?)")
+                            ->execute(array($r['id'], $lat, $lng));
+                    } catch (Exception $e) { /* table may not exist yet on older installs - non-fatal */ }
                 }
-                if ($d > 0.005 && $d < $maxPlausibleKm) $add = $d;
-                // A deliberately higher bar than the 5 m jitter floor used
-                // just above for meter accumulation - real GPS jitter
-                // while genuinely parked can occasionally clear 5-10 m on
-                // its own, and falsely auto-stopping the wait clock would
-                // shortchange the driver's waiting fee. 20 m is a clear
-                // "the vehicle is actually moving" signal without being so
-                // high that a real departure goes undetected for several
-                // pings.
-                if ($d >= 0.02 && $d < $maxPlausibleKm) $justMoved = true;
-            }
-            $newKm = floatval($r['traveled_km']) + $add;
-            $pdo->prepare("UPDATE rides SET last_lat=?, last_lng=?, last_location_at=NOW(), traveled_km=? WHERE id=?")
-                ->execute(array($lat, $lng, $newKm, $r['id']));
 
-            // Record this point in the trip's breadcrumb trail - either
-            // real movement was detected ($add>0, same jitter floor as
-            // the meter itself) or this is the very first ping of the
-            // trip (establishing where the path starts), so a parked
-            // driver doesn't spam the table with hundreds of near-
-            // identical points every 5s, but the path also doesn't skip
-            // its own starting point. This is what lets "View Route"
-            // show the actual path driven instead of a straight line
-            // from pickup to dropoff.
-            if ($add > 0 || $isFirstPoint) {
-                try {
-                    $pdo->prepare("INSERT INTO ride_path_points (ride_id, lat, lng) VALUES (?, ?, ?)")
-                        ->execute(array($r['id'], $lat, $lng));
-                } catch (Exception $e) { /* table may not exist yet on older installs - non-fatal */ }
-            }
-
-            // Auto-stop a wait clock the driver forgot to stop, the
-            // instant real movement is detected - mirrors the existing
-            // auto-close-on-arrived safeguard in driver_arrived below,
-            // just triggered by driving off instead of tapping Arrived.
-            // Without this, a driver who simply pulls away without
-            // remembering to tap "Stop Waiting" keeps silently billing
-            // the passenger for waiting time for the rest of the trip -
-            // exactly the class of bug the fare breakdown feature exists
-            // to surface, not something that should still be possible.
-            $waitAutoStopped = false;
-            if ($justMoved && intval($r['wait_active']) === 1) {
-                $elapsed = $r['wait_started_at'] ? max(0, time() - strtotime($r['wait_started_at'])) : 0;
-                $r['wait_seconds_total'] = intval($r['wait_seconds_total']) + $elapsed;
-                $r['wait_active'] = 0;
-                $r['wait_started_at'] = null;
-                $pdo->prepare("UPDATE rides SET wait_active=0, wait_started_at=NULL, wait_seconds_total=? WHERE id=?")
-                    ->execute(array($r['wait_seconds_total'], $r['id']));
-                $waitAutoStopped = true;
-            }
-            $waitMinutes = rides_current_wait_minutes($r);
-
-            $rideVtype = !empty($r['vehicle_type']) ? $r['vehicle_type'] : rides_driver_own_vtype($pdo, $u['id']);
-            // Live running fare for every in-progress ride, not just
-            // "open trip" ones - the final bill (driver_arrived, below)
-            // now always uses this same real GPS distance, so showing it
-            // live here means nothing surprises the driver or passenger
-            // at arrival. Also surfaces live surge status (whether the
-            // 1.3x peak-hour multiplier is currently active) so a
-            // higher-than-expected running fare doesn't look like a bug -
-            // see driver.js's meter box and ride.js's active-ride view.
-            // Full itemized breakdown (base/distance/wait/surge/total) is
-            // included the same way so a waiting-fee charge - or any
-            // other part of the fare - is visible live on both sides,
-            // broken down line by line, not just discovered as one
-            // opaque total at the final bill.
-            $liveFareCalc = rides_calc_fare($pdo, $newKm, $rideVtype, intval($r['open_trip']) === 1, $waitMinutes);
-            $meter = array_merge(array('ride_id' => intval($r['id']),
-                           'traveled_km' => round($newKm, 2),
-                           'open_trip' => intval($r['open_trip']),
-                           'surge' => (bool) $liveFareCalc['surge'],
-                           'meter_fare' => $liveFareCalc['fare'],
-                           'wait_active' => (bool) $r['wait_active'],
-                           'wait_minutes' => round($waitMinutes, 2),
-                           'wait_auto_stopped' => $waitAutoStopped), rides_fare_breakdown_for_ui($liveFareCalc));
+                // Live running fare for every in-progress ride, not just
+                // "open trip" ones - the final bill (driver_arrived, below)
+                // now always uses this same real GPS distance, so showing it
+                // live here means nothing surprises the driver or passenger
+                // at arrival. Also surfaces live surge status (whether the
+                // 1.3x peak-hour multiplier is currently active) so a
+                // higher-than-expected running fare doesn't look like a bug -
+                // see driver.js's meter box and ride.js's active-ride view.
+                // Full itemized breakdown (base/distance/wait/surge/total) is
+                // included the same way so a waiting-fee charge - or any
+                // other part of the fare - is visible live on both sides,
+                // broken down line by line, not just discovered as one
+                // opaque total at the final bill.
+                $liveFareCalc = rides_calc_fare($pdo, $newKm, $rideVtype, intval($r['open_trip']) === 1, $waitMinutes);
+                $meter = array_merge(array('ride_id' => intval($r['id']),
+                               'traveled_km' => round($newKm, 2),
+                               'open_trip' => intval($r['open_trip']),
+                               'surge' => (bool) $liveFareCalc['surge'],
+                               'meter_fare' => $liveFareCalc['fare'],
+                               'wait_active' => (bool) $r['wait_active'],
+                               'wait_minutes' => round($waitMinutes, 2),
+                               'wait_auto_stopped' => $waitAutoStopped), rides_fare_breakdown_for_ui($liveFareCalc));
             }
         }
     } catch (Exception $e) { error_log('[ETEL][meter] ' . $e->getMessage()); }
