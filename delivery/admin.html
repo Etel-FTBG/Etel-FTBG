@@ -27,10 +27,34 @@
          login.html?redirect=admin.html&role=admin, which put an "Admin"
          tab right next to the public Customer/Driver/Courier/Service
          tabs on the shared login page - that tab is gone now, and this
-         is the private replacement path. */
+         is the private replacement path.
+
+         BUG FIX: this only ever checked Auth.isLoggedIn() - true for ANY
+         signed-in role, not just admin - so a customer/driver/courier/
+         service_giver account with a valid session that navigated to
+         /delivery/admin directly sailed straight into the full dashboard
+         shell (real numbers included, since every admin_* API action's
+         own server-side require_admin()/user_has_capability() check had
+         already been satisfied... by a genuinely-admin account in the
+         report that surfaced this, but nothing here stopped a real
+         non-admin session from reaching the same UI). Now also checks
+         the session's actual role, matching the same intentionally
+         admin-only design admin-login.html itself already established -
+         a wrong-role session is cleared (same keys Auth.logout() clears)
+         and sent to admin-login.html to re-authenticate as an admin,
+         same destination as the signed-out case. The real authorization
+         boundary was always server-side (every admin_* action independently
+         re-checks role there) - this is the client-side UI gate matching
+         it, not a new security boundary. */
       document.addEventListener('DOMContentLoaded', function () {
+        var base = (typeof ETEL !== 'undefined' && ETEL.api) ? ETEL.api.replace('api/boot.php', '') : '';
         if (typeof Auth === 'undefined' || !Auth.isLoggedIn()) {
-          var base = (typeof ETEL !== 'undefined' && ETEL.api) ? ETEL.api.replace('api/boot.php', '') : '';
+          window.location.href = base + 'admin-login.html';
+          return;
+        }
+        var sessionUser = Auth.getUser();
+        if (!sessionUser || sessionUser.role !== 'admin') {
+          ['etel_token','etel_user','etel_courier','etel_service_giver','etel_sso'].forEach(function (k) { localStorage.removeItem(k); });
           window.location.href = base + 'admin-login.html';
         }
       });
