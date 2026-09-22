@@ -26,6 +26,7 @@ class EtelID_DB {
     public static function t_biometric() { global $wpdb; return $wpdb->prefix . 'etelid_biometric'; }    /* v3.0.0 */
     public static function t_bio_log()   { global $wpdb; return $wpdb->prefix . 'etelid_bio_log'; }       /* v3.0.0 */
     public static function t_password_resets() { global $wpdb; return $wpdb->prefix . 'etelid_password_resets'; }
+    public static function t_links()     { global $wpdb; return $wpdb->prefix . 'etelid_member_links'; }  /* NEW — member's own social/bank accounts, shown on their NFC card after a scanner logs in */
 
     /* ─── Install / Activate ──────────────────────────────── */
     /* ── Schema upgrades — runs on every boot, idempotent ── */
@@ -172,6 +173,29 @@ class EtelID_DB {
                 PRIMARY KEY (id),
                 KEY idx_member (member_id)
             ) $c2"
+        );
+
+        /* Upgrade 8 — member-managed social/bank accounts, shown on the
+         * member's own NFC card once a scanning person proves their own
+         * EtelID login (see Etelid_Nfc::ajax_reveal()). CREATE TABLE IF
+         * NOT EXISTS is naturally idempotent. */
+        $c3 = $wpdb->get_charset_collate();
+        $wpdb->query(
+            "CREATE TABLE IF NOT EXISTS " . self::t_links() . " (
+                id             BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+                member_id      BIGINT UNSIGNED NOT NULL,
+                link_type      VARCHAR(10)     NOT NULL DEFAULT 'social' COMMENT 'social|bank',
+                platform       VARCHAR(30)     NOT NULL DEFAULT 'other',
+                label          VARCHAR(100)    NOT NULL DEFAULT '',
+                account_value  VARCHAR(255)    NOT NULL DEFAULT '' COMMENT 'handle/URL for social, account number for bank',
+                account_name   VARCHAR(150)    NOT NULL DEFAULT '' COMMENT 'account holder name, bank accounts only',
+                sort_order     INT UNSIGNED    NOT NULL DEFAULT 0,
+                created_at     DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                updated_at     DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                PRIMARY KEY (id),
+                KEY idx_member (member_id),
+                KEY idx_type (link_type)
+            ) $c3"
         );
     }
 
