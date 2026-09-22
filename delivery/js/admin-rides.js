@@ -128,8 +128,13 @@ function ridesShowDetail(id){
           '<div><div style="font-size:10px;color:#B8B0A0;text-transform:uppercase;">Driver Rating</div><div style="color:#e8e2d4;">'+(r.driver_rating>0?'★ '+r.driver_rating:'—')+'</div></div>'+
         '</div>'+
         '<div style="border-top:1px solid rgba(212,175,55,.15);padding-top:10px;margin-bottom:14px;">'+fareRows+'</div>'+
-        '<div style="font-size:11px;color:#B8B0A0;margin-bottom:'+(r.status==='in_progress'?'14px':'0')+'">Created '+(r.created_at||'—')+(r.completed_at?' · Completed '+r.completed_at:'')+'</div>'+
-        (r.status==='in_progress'
+        '<div style="font-size:11px;color:#B8B0A0;margin-bottom:'+((r.status==='in_progress'||r.status==='arrived')?'14px':'0')+'">Created '+(r.created_at||'—')+(r.completed_at?' · Completed '+r.completed_at:'')+'</div>'+
+        // 'arrived' means driver_arrived already fired and computed a
+        // fare from whatever GPS was tracked - but if that trip is stuck
+        // because the passenger's side can never reach
+        // customer_confirm_arrival (same dead connection that killed live
+        // tracking), it needs the exact same rescue path as 'in_progress'.
+        ((r.status==='in_progress'||r.status==='arrived')
           ?'<button onclick="ridesShowManualComplete('+r.id+')" style="width:100%;padding:10px;border-radius:9px;border:1px solid rgba(230,180,80,.4);background:rgba(230,180,80,.1);color:#E5C76B;font-size:12px;font-weight:700;cursor:pointer;font-family:Outfit,sans-serif">📞 Manually Complete (GPS/connection lost)</button>'
           :'')+
       '</div>'+
