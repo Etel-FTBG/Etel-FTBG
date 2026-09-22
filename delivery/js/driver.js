@@ -228,7 +228,15 @@ function _updateLowAccuracyBadge(isLow,accuracyMeters){
   }
   if(isLow){
     box.style.display="block";
-    box.textContent="\u26A0 Weak GPS signal ("+(accuracyMeters?Math.round(accuracyMeters)+"m":"?")+") \u2014 distance & waiting-fee updates paused until signal improves";
+    // >500m is not "noisy GPS" any more - it's the phone handing the
+    // browser a WiFi/cell-tower position with no real satellite fix at
+    // all (a plain distance-threshold bump can't fix that, only a real
+    // fix can), so say so and name the actual setting to check instead
+    // of leaving the driver waiting on a signal that was never coming.
+    var severe=accuracyMeters&&accuracyMeters>500;
+    box.textContent=severe
+      ? "\u26A0 No real GPS fix ("+Math.round(accuracyMeters)+"m, network-only) \u2014 check phone Settings > Location is set to \"High accuracy\"/\"Precise\", then step outside or near a window"
+      : "\u26A0 Weak GPS signal ("+(accuracyMeters?Math.round(accuracyMeters)+"m":"?")+") \u2014 distance paused until signal improves; waiting-fee still auto-stops once you're clearly moving";
   } else {
     box.style.display="none";
   }
