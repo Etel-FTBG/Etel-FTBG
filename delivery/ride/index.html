@@ -727,6 +727,16 @@
         <div><div class="mp-row-label">Become a Driver</div><div class="mp-row-sub">Earn with ETEL Ride</div></div>
         <div class="mp-row-arrow">›</div>
       </div>
+      <!-- Admin shortcut: Ride has no role gate of its own, so an admin
+           account browsing here is expected, but a real rider has no route
+           back to the admin dashboard from here. Hidden by default; the
+           script near the bottom of this file shows it only when the
+           signed-in session's role is actually 'admin'. -->
+      <div class="mp-row" id="mp-admin-row" style="display:none" onclick="closeMyProfile();window.location.href='../admin.html'">
+        <div class="mp-row-icon">🛡️</div>
+        <div><div class="mp-row-label">Admin Dashboard</div><div class="mp-row-sub">You're signed in as admin</div></div>
+        <div class="mp-row-arrow">›</div>
+      </div>
       <div class="mp-row" onclick="if(confirm('This clears everything cached on THIS device - app data, cached files - then reloads. You will be logged out and need to sign in again. Continue?')) etelForceClearCacheAndReload()">
         <div class="mp-row-icon">🧹</div>
         <div><div class="mp-row-label">Fix app not updating</div><div class="mp-row-sub">Clear cache and reload if things look stuck or old</div></div>
@@ -1355,6 +1365,21 @@ function apiBase() {
   // "loadGoogleMaps is not defined".
   window.addEventListener('etel:bundle-ready', function () {
     loadGoogleMaps('geometry,places,marker', 'initRideMap');
+  }, { once: true });
+</script>
+<script>
+  // Ride has no role gate of its own (any logged-in account can book a
+  // ride) - this just shows an Admin Dashboard shortcut row (hidden by
+  // default, see #mp-admin-row above) when the signed-in session happens
+  // to be an admin account. Auth/Auth.getUser live inside the bundle, so
+  // this waits for the same 'etel:bundle-ready' event the map init above
+  // waits for, rather than assuming core.js has loaded yet.
+  window.addEventListener('etel:bundle-ready', function () {
+    var u = (typeof Auth !== 'undefined' && Auth.getUser) ? Auth.getUser() : null;
+    if (u && u.role === 'admin') {
+      var row = document.getElementById('mp-admin-row');
+      if (row) row.style.display = 'flex';
+    }
   }, { once: true });
 </script>
 <!-- ETEL AI -- cross-company assistant widget -->

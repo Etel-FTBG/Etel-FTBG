@@ -34,6 +34,16 @@
       document.addEventListener('DOMContentLoaded', function () {
         if (typeof requireRole === 'undefined') return; // core.js failed to load - nothing to gate with
         requireRole(['service_giver']);
+        // requireRole() above lets an admin session through (admin bypasses
+        // every role gate by design), so an admin account CAN end up
+        // browsing this app - but a real service_giver has no route back
+        // to the dashboard from here. Show the shortcut only for that
+        // admin case; every genuine service_giver never sees it.
+        var u = (typeof Auth !== 'undefined' && Auth.getUser) ? Auth.getUser() : null;
+        if (u && u.role === 'admin') {
+          var row = document.getElementById('sgp-admin-row');
+          if (row) row.style.display = 'block';
+        }
       });
     </script>
 
@@ -948,6 +958,16 @@ body.role-cashier .owner-only-btn { display: none !important; }
                     <div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:700;color:var(--text)">Settings &amp; Payment</div><div style="font-size:11px;color:var(--text-dim);margin-top:1px">Business info, bank account</div></div>
                     <div style="color:var(--text-faint);font-size:15px">›</div>
                 </div>
+            </div>
+
+            <!-- Admin shortcut: requireRole() lets an admin account browse this
+                 app like any service_giver (see servicegiver.html's own auth
+                 gate), but a real service_giver has no way back to the admin
+                 dashboard from here. Hidden by default; the inline script at
+                 the bottom of this file shows it only when the signed-in
+                 session's role is actually 'admin'. -->
+            <div id="sgp-admin-row" style="padding:0 20px 10px;display:none">
+                <a href="admin.html" style="display:block;width:100%;padding:13px;background:rgba(212,175,55,.12);border:1px solid var(--border-lt);color:var(--gold-lt);border-radius:12px;font-size:13.5px;font-weight:700;cursor:pointer;text-align:center;text-decoration:none;box-sizing:border-box">🛡️ Admin Dashboard</a>
             </div>
 
             <div style="padding:0 20px 10px">
