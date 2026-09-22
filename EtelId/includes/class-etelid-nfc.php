@@ -920,12 +920,37 @@ class Etelid_Nfc {
             wp_send_json_error(array('message' => 'This EtelID account is not active.'));
         }
 
+        /* Full front/back card - reuses the exact same premium card
+           templates the member's own portal renders (templates/card-
+           front.php, templates/card-back.php), so the NFC page shows
+           the real card, not a stripped-down summary. These templates
+           read $member (and $companies for the back's role chips) from
+           the including scope, which is why they're set as locals
+           right before include() rather than passed as arguments. */
+        $card_front_html = '';
+        $card_back_html  = '';
+        if (file_exists(ETELID_PATH . 'templates/card-front.php') && file_exists(ETELID_PATH . 'templates/card-back.php')) {
+            $member    = $courier;
+            $companies = class_exists('EtelID_DB') ? EtelID_DB::get_companies($courier->id) : array();
+
+            ob_start();
+            include ETELID_PATH . 'templates/card-front.php';
+            $card_front_html = ob_get_clean();
+
+            ob_start();
+            include ETELID_PATH . 'templates/card-back.php';
+            $card_back_html = ob_get_clean();
+        }
+
         wp_send_json_success(array(
-            'name'         => $courier->full_name,
-            'etel_id'      => $courier->etel_id,
-            'tier'         => $courier->tier,
-            'photo_url'    => !empty($courier->photo_url) ? $courier->photo_url : '',
-            'capabilities' => self::scanner_capabilities($confirmer),
+            'name'            => $courier->full_name,
+            'etel_id'         => $courier->etel_id,
+            'tier'            => $courier->tier,
+            'photo_url'       => !empty($courier->photo_url) ? $courier->photo_url : '',
+            'capabilities'    => self::scanner_capabilities($confirmer),
+            'card_front_html' => $card_front_html,
+            'card_back_html'  => $card_back_html,
+            'links'           => class_exists('EtelID_Links') ? EtelID_Links::public_payload_for_member($courier->id) : array(),
         ));
     }
 

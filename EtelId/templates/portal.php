@@ -565,6 +565,49 @@ body{margin:0;font-family:'Cormorant Garamond',serif;overflow-x:hidden;}
   font-family:'JetBrains Mono',monospace;font-size:8px;
   color:rgba(212,175,55,.28);letter-spacing:2px;text-transform:uppercase;
 }
+
+/* ════════════════════════════════════════════════
+   SOCIAL & BANK ACCOUNTS (Connect & Pay on the NFC card)
+════════════════════════════════════════════════ */
+.p-links-list{display:flex;flex-direction:column;gap:8px;margin-bottom:12px;}
+.p-links-empty{font-size:12.5px;color:var(--g5);text-align:center;padding:14px 0;}
+.p-link-row{
+  display:flex;align-items:center;gap:11px;
+  padding:10px 12px;border-radius:10px;
+  background:rgba(212,175,55,.05);border:1px solid rgba(212,175,55,.16);
+}
+.p-link-badge{
+  width:34px;height:34px;border-radius:50%;flex:none;
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Syne',sans-serif;font-weight:800;font-size:10px;color:#fff;
+}
+.p-link-body{flex:1 1 auto;min-width:0;}
+.p-link-name{font-family:'Manrope',sans-serif;font-size:12.5px;font-weight:700;color:var(--g1);}
+.p-link-val{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--g5);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.p-link-del{
+  flex:none;background:none;border:none;color:var(--g6);cursor:pointer;
+  font-size:15px;padding:4px 6px;border-radius:6px;transition:all .15s;
+}
+.p-link-del:hover{color:#f87171;background:rgba(248,113,113,.1);}
+.p-link-add-btn{
+  width:100%;padding:10px;border-radius:10px;
+  border:1.5px dashed rgba(212,175,55,.35);background:transparent;
+  color:var(--g2);font-family:'Manrope',sans-serif;font-size:12.5px;font-weight:700;
+  cursor:pointer;transition:all .15s;
+}
+.p-link-add-btn:hover{border-color:rgba(212,175,55,.6);background:rgba(212,175,55,.06);}
+.p-link-form{display:none;margin-top:12px;padding:14px;border-radius:10px;background:rgba(212,175,55,.05);border:1px solid rgba(212,175,55,.2);}
+.p-link-form.open{display:block;animation:slide-up .3s ease both;}
+.p-link-form-row{display:flex;gap:8px;margin-bottom:10px;}
+.p-link-form-row .p-pw-input{margin-bottom:0;}
+.p-link-type-toggle{display:flex;gap:8px;margin-bottom:10px;}
+.p-link-type-btn{
+  flex:1;padding:8px;border-radius:8px;text-align:center;cursor:pointer;
+  border:1.5px solid rgba(212,175,55,.25);color:var(--g5);
+  font-family:'Manrope',sans-serif;font-size:11.5px;font-weight:700;
+  transition:all .15s;
+}
+.p-link-type-btn.active{border-color:var(--g2);color:var(--g1);background:rgba(212,175,55,.12);}
 </style>
 </head>
 <body>
@@ -1061,6 +1104,42 @@ $etelid_profile_incomplete = empty( $member->dob ) || '0000-00-00' === $member->
         </div>
       </div>
 
+      <!-- Social & Bank Accounts (Connect & Pay on the NFC card) -->
+      <div class="p-card">
+        <div class="p-card-head">
+          <div class="p-card-head-icon">🔗</div>
+          <h3>Social &amp; Bank Accounts</h3>
+        </div>
+        <div class="p-card-body">
+          <p style="font-size:11.5px;color:var(--g5);margin:0 0 12px;">Shown on your NFC card so a signed-in scanner can follow you or pay you instantly - no manual typing.</p>
+          <div class="p-links-list" id="p-links-list">
+            <div class="p-links-empty">Loading...</div>
+          </div>
+          <button type="button" class="p-link-add-btn" id="p-link-add-toggle" onclick="toggleLinkForm()">+ Add Social or Bank Account</button>
+
+          <div class="p-link-form" id="p-link-form">
+            <div class="p-link-type-toggle">
+              <div class="p-link-type-btn active" id="p-link-type-social" onclick="setLinkType('social')">📱 Social</div>
+              <div class="p-link-type-btn" id="p-link-type-bank" onclick="setLinkType('bank')">🏦 Bank</div>
+            </div>
+            <div class="p-link-form-row">
+              <select id="p-link-platform" class="p-pw-input" style="cursor:pointer;"></select>
+            </div>
+            <div class="p-link-form-row" id="p-link-name-row" style="display:none;">
+              <input type="text" id="p-link-account-name" class="p-pw-input" placeholder="Account holder name">
+            </div>
+            <div class="p-link-form-row">
+              <input type="text" id="p-link-value" class="p-pw-input" placeholder="Handle, profile link, or account number">
+            </div>
+            <div style="display:flex;gap:8px;">
+              <button type="button" class="p-pw-btn" style="flex:1;" onclick="saveLink()">Save Account</button>
+              <button type="button" class="p-flip-btn" onclick="toggleLinkForm()">Cancel</button>
+            </div>
+            <div id="p-link-msg" class="p-pw-msg" style="display:none;"></div>
+          </div>
+        </div>
+      </div>
+
       <!-- Activity -->
       <?php if ($log): ?>
       <div class="p-card">
@@ -1159,6 +1238,126 @@ function _eidPanelMsg(elId, msg, ok) {
   el.style.marginTop = '10px';
   el.textContent = msg;
 }
+
+/* ── Social & Bank Accounts (Connect & Pay on the NFC card) ── */
+var _PL = { platforms: null, type: 'social', editingId: 0 };
+
+function _plMonogramColor(meta) {
+  return 'background:' + (meta && meta.color ? meta.color : '#A07820') + ';';
+}
+
+async function loadLinks() {
+  var res = await _eidPanel('etelid_links_list', {});
+  var list = document.getElementById('p-links-list');
+  if (!res.success) {
+    list.innerHTML = '<div class="p-links-empty">Could not load your accounts.</div>';
+    return;
+  }
+  _PL.platforms = res.data.platforms || {};
+  renderLinksList(res.data.links || []);
+  populatePlatformSelect();
+}
+
+function renderLinksList(links) {
+  var list = document.getElementById('p-links-list');
+  if (!links.length) {
+    list.innerHTML = '<div class="p-links-empty">No accounts added yet. Add your social profiles or bank/mobile money accounts below.</div>';
+    return;
+  }
+  list.innerHTML = '';
+  links.forEach(function (l) {
+    var row = document.createElement('div');
+    row.className = 'p-link-row';
+
+    var badge = document.createElement('div');
+    badge.className = 'p-link-badge';
+    badge.setAttribute('style', _plMonogramColor(l.meta));
+    badge.textContent = (l.meta && l.meta.mono) ? l.meta.mono : '?';
+    row.appendChild(badge);
+
+    var body = document.createElement('div');
+    body.className = 'p-link-body';
+    var nm = document.createElement('div');
+    nm.className = 'p-link-name';
+    nm.textContent = l.label;
+    var val = document.createElement('div');
+    val.className = 'p-link-val';
+    val.textContent = l.link_type === 'bank' && l.account_name ? (l.account_name + ' · ' + l.account_value) : l.account_value;
+    body.appendChild(nm);
+    body.appendChild(val);
+    row.appendChild(body);
+
+    var del = document.createElement('button');
+    del.type = 'button';
+    del.className = 'p-link-del';
+    del.innerHTML = '<i class="ti ti-trash"></i>';
+    del.addEventListener('click', function () { deleteLink(l.id); });
+    row.appendChild(del);
+
+    list.appendChild(row);
+  });
+}
+
+function populatePlatformSelect() {
+  var sel = document.getElementById('p-link-platform');
+  if (!sel || !_PL.platforms) return;
+  var group = _PL.platforms[_PL.type] || {};
+  sel.innerHTML = '';
+  Object.keys(group).forEach(function (key) {
+    var opt = document.createElement('option');
+    opt.value = key;
+    opt.textContent = group[key].label;
+    sel.appendChild(opt);
+  });
+  document.getElementById('p-link-name-row').style.display = (_PL.type === 'bank') ? 'block' : 'none';
+  document.getElementById('p-link-value').placeholder = (_PL.type === 'bank') ? 'Account number' : 'Handle or profile link (e.g. yourname)';
+}
+
+function setLinkType(type) {
+  _PL.type = type;
+  document.getElementById('p-link-type-social').classList.toggle('active', type === 'social');
+  document.getElementById('p-link-type-bank').classList.toggle('active', type === 'bank');
+  populatePlatformSelect();
+}
+
+function toggleLinkForm() {
+  var form = document.getElementById('p-link-form');
+  form.classList.toggle('open');
+  if (form.classList.contains('open')) {
+    document.getElementById('p-link-value').value = '';
+    document.getElementById('p-link-account-name').value = '';
+    document.getElementById('p-link-msg').style.display = 'none';
+    if (!_PL.platforms) loadLinks(); else populatePlatformSelect();
+  }
+}
+
+async function saveLink() {
+  var platform = document.getElementById('p-link-platform').value;
+  var value    = document.getElementById('p-link-value').value.trim();
+  var name     = document.getElementById('p-link-account-name').value.trim();
+  if (!value) { _eidPanelMsg('p-link-msg', _PL.type === 'bank' ? 'Enter the account number.' : 'Enter your handle or profile link.', false); return; }
+
+  var res = await _eidPanel('etelid_links_save', {
+    link_type: _PL.type,
+    platform: platform,
+    account_value: value,
+    account_name: name
+  });
+  if (!res.success) {
+    _eidPanelMsg('p-link-msg', (res.data && res.data.message) ? res.data.message : 'Could not save.', false);
+    return;
+  }
+  renderLinksList(res.data.links || []);
+  toggleLinkForm();
+}
+
+async function deleteLink(id) {
+  if (!confirm('Remove this account from your card?')) return;
+  var res = await _eidPanel('etelid_links_delete', { id: id });
+  if (res.success) renderLinksList(res.data.links || []);
+}
+
+loadLinks();
 
 /* ── Flip card ── */
 function flipCard() {

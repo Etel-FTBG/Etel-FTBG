@@ -45,6 +45,9 @@ $logo_madeya   = $site_root . '/Etel-Madeya/assets/images/etel-madeya-logo-sm.we
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<?php if (defined('ETELID_URL')) : ?>
+<link rel="stylesheet" href="<?php echo esc_url(ETELID_URL . 'public/css/etelid-card.css'); ?>">
+<?php endif; ?>
 <style>
   :root {
     --carbon-1: #030205;
@@ -58,7 +61,7 @@ $logo_madeya   = $site_root . '/Etel-Madeya/assets/images/etel-madeya-logo-sm.we
     --gold-4: #FFF6D9;
     --gold-deep-1: #A07820;
     --gold-deep-2: #C9A227;
-    --ink: #f2e8d0;
+    --nfc-ink: #f2e8d0;
     --ink-dim: rgba(242,232,208,0.68);
     --ink-faint: rgba(242,232,208,0.5);
     --ok: #7ee8a8;
@@ -77,7 +80,7 @@ $logo_madeya   = $site_root . '/Etel-Madeya/assets/images/etel-madeya-logo-sm.we
       linear-gradient(155deg,#1c1100 0%,#3d2705 14%,#7a5012 28%,#b98420 42%,#D4AF37 50%,#b98420 58%,#7a5012 72%,#3d2705 86%,#1c1100 100%);
     background-attachment: fixed;
     font-family: 'Manrope', system-ui, sans-serif;
-    color: var(--ink);
+    color: var(--nfc-ink);
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -191,48 +194,6 @@ $logo_madeya   = $site_root . '/Etel-Madeya/assets/images/etel-madeya-logo-sm.we
     margin-bottom: 20px;
     opacity: 0.85;
   }
-  .photo {
-    width: 100px;
-    height: 100px;
-    border-radius: 50%;
-    object-fit: cover;
-    border: 2px solid var(--gold-2);
-    box-shadow: 0 8px 22px -6px rgba(0,0,0,0.6), 0 0 0 5px rgba(212,175,55,0.08);
-    margin-bottom: 18px;
-    background: var(--carbon-2);
-  }
-  .photo-placeholder {
-    width: 100px;
-    height: 100px;
-    border-radius: 50%;
-    border: 2px solid rgba(212,175,55,0.45);
-    box-shadow: 0 8px 22px -6px rgba(0,0,0,0.6), 0 0 0 5px rgba(212,175,55,0.08);
-    margin: 0 auto 18px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-family: 'Syne', sans-serif;
-    font-size: 30px;
-    font-weight: 800;
-    color: var(--gold-2);
-    background: linear-gradient(160deg, var(--carbon-2), var(--carbon-4));
-  }
-  .name {
-    font-family: 'Cormorant Garamond', serif;
-    font-weight: 700;
-    font-size: 28px;
-    color: #fff;
-    margin: 0 0 5px;
-    letter-spacing: 0.2px;
-  }
-  .etelid {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 13px;
-    font-weight: 600;
-    letter-spacing: 1.4px;
-    color: var(--gold-2);
-    margin-bottom: 16px;
-  }
   .badge {
     display: inline-flex;
     align-items: center;
@@ -249,14 +210,6 @@ $logo_madeya   = $site_root . '/Etel-Madeya/assets/images/etel-madeya-logo-sm.we
     margin-bottom: 18px;
   }
   .badge svg { width: 13px; height: 13px; flex: none; }
-  .tier {
-    font-family: 'Manrope', sans-serif;
-    font-size: 11.5px;
-    font-weight: 600;
-    color: var(--ink-dim);
-    letter-spacing: 1.4px;
-    text-transform: uppercase;
-  }
   .invalid {
     font-family: 'Cormorant Garamond', serif;
     font-size: 22px;
@@ -390,7 +343,7 @@ $logo_madeya   = $site_root . '/Etel-Madeya/assets/images/etel-madeya-logo-sm.we
     border-radius: 10px;
     border: 1px solid rgba(212,175,55,0.35);
     background: rgba(0,0,0,0.28);
-    color: var(--ink);
+    color: var(--nfc-ink);
     font-family: 'Manrope', sans-serif;
     font-size: 14px;
     transition: border-color 160ms ease, background 160ms ease;
@@ -407,7 +360,7 @@ $logo_madeya   = $site_root . '/Etel-Madeya/assets/images/etel-madeya-logo-sm.we
     border-radius: 10px;
     border: 1px solid rgba(212,175,55,0.28);
     background: rgba(0,0,0,0.22);
-    color: var(--ink);
+    color: var(--nfc-ink);
     font-family: 'Manrope', sans-serif;
     font-size: 13px;
     font-weight: 500;
@@ -460,7 +413,7 @@ $logo_madeya   = $site_root . '/Etel-Madeya/assets/images/etel-madeya-logo-sm.we
   }
   .nfc-driver-row:last-child { border-bottom: none; }
   .nfc-driver-row span:first-child { color: var(--ink-faint); letter-spacing: 0.3px; font-weight: 500; }
-  .nfc-driver-row span:last-child { color: var(--ink); font-weight: 700; text-align: right; }
+  .nfc-driver-row span:last-child { color: var(--nfc-ink); font-weight: 700; text-align: right; }
   .nfc-badge-ok, .nfc-badge-matched { color: var(--ok); }
   .nfc-badge-bad, .nfc-badge-mismatch { color: var(--bad); }
   .nfc-badge-unverified { color: var(--gold-3); }
@@ -484,6 +437,128 @@ $logo_madeya   = $site_root . '/Etel-Madeya/assets/images/etel-madeya-logo-sm.we
     text-align: right;
     margin: -6px 0 6px;
   }
+
+  /* ------------------------ Full flip ID card --------------------
+     Reuses the exact same premium card design the member's own
+     portal renders (templates/card-front.php / card-back.php,
+     loaded via public/css/etelid-card.css above) - the tapped card
+     shown here is the real card, not a cut-down summary. */
+  .nfc-card-scene {
+    width: 100%;
+    max-width: 380px;
+    margin: 0 auto 4px;
+    cursor: pointer;
+    position: relative;
+  }
+  .nfc-card-wrap {
+    width: 100%;
+    aspect-ratio: 460 / 290;
+    position: relative;
+    filter: drop-shadow(0 16px 34px rgba(0,0,0,0.55));
+    transform-style: preserve-3d;
+    transition: transform 0.5s ease, filter 0.5s ease;
+  }
+  .nfc-card-face {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: 10px;
+    overflow: hidden;
+    background: #0d0d0d;
+    transition: opacity 0.5s ease, transform 0.5s ease;
+  }
+  .nfc-card-face:first-child { opacity: 1; transform: scale(1); z-index: 2; pointer-events: auto; }
+  .nfc-card-face-back { opacity: 0; transform: scale(0.97); z-index: 1; pointer-events: none; }
+  .nfc-card-wrap.flipped .nfc-card-face:first-child { opacity: 0; transform: scale(0.97); z-index: 1; pointer-events: none; }
+  .nfc-card-wrap.flipped .nfc-card-face-back { opacity: 1; transform: scale(1); z-index: 2; pointer-events: auto; }
+  .nfc-card-face .eid-card-front,
+  .nfc-card-face .eid-card-back { position: absolute !important; inset: 0; border-radius: 10px; }
+  .nfc-card-loading {
+    display: flex; align-items: center; justify-content: center;
+    height: 100%; color: rgba(212,175,55,0.5);
+    font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 1.4px;
+  }
+  .nfc-card-controls {
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    margin: 12px 0 20px; flex-wrap: wrap;
+  }
+  .nfc-card-side {
+    font-family: 'JetBrains Mono', monospace; font-size: 9px;
+    color: rgba(212,175,55,0.55); letter-spacing: 2px; text-transform: uppercase;
+  }
+  .nfc-flip-btn {
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 8px 18px;
+    background: rgba(212,175,55,0.1);
+    border: 1.5px solid rgba(212,175,55,0.32);
+    border-radius: 22px;
+    font-family: 'Manrope', sans-serif; font-size: 11px; font-weight: 700;
+    color: var(--gold-3); letter-spacing: 0.6px; text-transform: uppercase;
+    cursor: pointer; transition: background 160ms ease, border-color 160ms ease;
+  }
+  .nfc-flip-btn:hover { background: rgba(212,175,55,0.2); border-color: rgba(212,175,55,0.6); }
+  .nfc-flip-btn svg { width: 14px; height: 14px; flex: none; }
+
+  /* ------------------------ Connect & Pay -------------------------
+     The card owner's own social/bank accounts (added from their
+     portal) - tap a social badge to open their profile, tap a bank
+     badge to copy the account number, both without leaving this
+     page. */
+  .nfc-links { margin-top: 6px; }
+  .nfc-links h3 {
+    font-family: 'Manrope', sans-serif; font-size: 11px; font-weight: 700;
+    letter-spacing: 2.2px; text-transform: uppercase; color: var(--ink-faint);
+    margin: 0 0 12px; text-align: center;
+  }
+  .nfc-links-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(76px, 1fr));
+    gap: 10px;
+    margin-bottom: 4px;
+  }
+  .nfc-link-item {
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+    padding: 10px 4px 9px;
+    border-radius: 12px;
+    border: 1px solid rgba(212,175,55,0.2);
+    background: rgba(0,0,0,0.18);
+    cursor: pointer;
+    transition: transform 150ms ease, border-color 150ms ease, background 150ms ease;
+    text-align: center;
+  }
+  .nfc-link-item:hover { transform: translateY(-2px); border-color: rgba(212,175,55,0.5); background: rgba(212,175,55,0.08); }
+  .nfc-link-badge {
+    width: 38px; height: 38px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Syne', sans-serif; font-weight: 800; font-size: 11px; color: #fff;
+    box-shadow: 0 4px 10px -4px rgba(0,0,0,0.6);
+    flex: none;
+  }
+  .nfc-link-label {
+    font-family: 'Manrope', sans-serif; font-size: 10px; font-weight: 700;
+    color: var(--ink-dim); line-height: 1.25;
+    max-width: 74px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .nfc-link-sub {
+    font-family: 'JetBrains Mono', monospace; font-size: 8.5px;
+    color: var(--ink-faint);
+    max-width: 74px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .nfc-toast {
+    position: fixed; left: 50%; bottom: 26px;
+    transform: translateX(-50%) translateY(16px);
+    opacity: 0; pointer-events: none;
+    padding: 10px 22px;
+    border-radius: 30px;
+    background: rgba(19,13,5,0.96);
+    border: 1px solid rgba(212,175,55,0.4);
+    color: var(--gold-3);
+    font-family: 'Manrope', sans-serif; font-size: 12.5px; font-weight: 700;
+    z-index: 999;
+    transition: opacity 200ms ease, transform 200ms ease;
+  }
+  .nfc-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 </style>
 </head>
 <body>
@@ -515,15 +590,29 @@ $logo_madeya   = $site_root . '/Etel-Madeya/assets/images/etel-madeya-logo-sm.we
       </div>
 
       <div id="nfc-revealed" style="display:none;">
-        <img class="photo" id="nfc-photo" style="display:none;">
-        <div class="photo-placeholder" id="nfc-photo-placeholder" style="display:none;"></div>
-        <p class="name" id="nfc-name"></p>
-        <p class="etelid" id="nfc-etelid"></p>
-        <div class="badge">
+        <div class="nfc-card-scene" id="nfc-card-scene" onclick="nfcFlipCard()">
+          <div class="nfc-card-wrap" id="nfc-card-3d">
+            <div class="nfc-card-face" id="nfc-card-front"><div class="nfc-card-loading">LOADING CARD...</div></div>
+            <div class="nfc-card-face nfc-card-face-back" id="nfc-card-back"></div>
+          </div>
+        </div>
+        <div class="nfc-card-controls">
+          <span class="nfc-card-side" id="nfc-card-side-lbl">FRONT SIDE</span>
+          <button type="button" class="nfc-flip-btn" onclick="event.stopPropagation();nfcFlipCard()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 3v6h-6"/></svg>
+            Flip Card
+          </button>
+        </div>
+
+        <div class="badge" style="margin:0 auto 20px;width:max-content;">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
           Verified Member
         </div>
-        <p class="tier" id="nfc-tier" style="display:none;"></p>
+
+        <div class="nfc-links" id="nfc-links-section" style="display:none;">
+          <h3>Connect &amp; Pay</h3>
+          <div class="nfc-links-grid" id="nfc-links-grid"></div>
+        </div>
 
         <div class="nfc-services">
           <h2>Card Services</h2>
@@ -628,6 +717,7 @@ $logo_madeya   = $site_root . '/Etel-Madeya/assets/images/etel-madeya-logo-sm.we
     <div class="footer">ethelmarket.com &middot; EtelId</div>
    </div>
   </div>
+  <div class="nfc-toast" id="nfc-toast"></div>
 <!-- ETEL AI -- cross-company assistant widget -->
 <script src="https://ethelmarket.com/EtelAi/etel-ai-widget.js" data-project="etel-id"></script>
 <?php if ($has_member) : ?>
@@ -643,6 +733,92 @@ $logo_madeya   = $site_root . '/Etel-Madeya/assets/images/etel-madeya-logo-sm.we
     var steps = document.querySelectorAll('.nfc-step');
     for (var i = 0; i < steps.length; i++) steps[i].classList.remove('active');
     document.getElementById(id).classList.add('active');
+  }
+
+  var cardFlipped = false;
+  window.nfcFlipCard = function () {
+    cardFlipped = !cardFlipped;
+    var wrap = document.getElementById('nfc-card-3d');
+    if (wrap) wrap.classList.toggle('flipped', cardFlipped);
+    var lbl = document.getElementById('nfc-card-side-lbl');
+    if (lbl) lbl.textContent = cardFlipped ? 'BACK SIDE' : 'FRONT SIDE';
+  };
+
+  function showToast(text) {
+    var el = document.getElementById('nfc-toast');
+    if (!el) return;
+    el.textContent = text;
+    el.classList.add('show');
+    clearTimeout(el._t);
+    el._t = setTimeout(function () { el.classList.remove('show'); }, 2200);
+  }
+
+  function copyText(text) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function () { showToast('Copied to clipboard'); })
+        .catch(function () { legacyCopy(text); });
+    } else {
+      legacyCopy(text);
+    }
+  }
+
+  function legacyCopy(text) {
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    try { document.execCommand('copy'); showToast('Copied to clipboard'); }
+    catch (e) { showToast('Could not copy - long-press to select'); }
+    document.body.removeChild(ta);
+  }
+
+  // The card owner's own social/bank accounts (added from their
+  // portal). A social item opens the profile in a new tab; a bank
+  // item copies the account number so the scanner can paste it
+  // straight into their banking/mobile-money app - no retyping.
+  function renderLinks(links) {
+    var section = document.getElementById('nfc-links-section');
+    var grid = document.getElementById('nfc-links-grid');
+    if (!section || !grid) return;
+    grid.innerHTML = '';
+    if (!links.length) { section.style.display = 'none'; return; }
+    section.style.display = 'block';
+
+    links.forEach(function (l) {
+      var item = document.createElement('div');
+      item.className = 'nfc-link-item';
+
+      var badge = document.createElement('div');
+      badge.className = 'nfc-link-badge';
+      badge.style.background = l.color || '#A07820';
+      badge.textContent = l.mono || '?';
+      item.appendChild(badge);
+
+      var label = document.createElement('div');
+      label.className = 'nfc-link-label';
+      label.textContent = l.label || '';
+      item.appendChild(label);
+
+      var sub = document.createElement('div');
+      sub.className = 'nfc-link-sub';
+      sub.textContent = l.link_type === 'bank' ? 'Tap to copy' : 'Tap to open';
+      item.appendChild(sub);
+
+      item.addEventListener('click', function () {
+        if (l.link_type === 'bank') {
+          copyText(l.account_value);
+        } else if (l.open_url) {
+          window.open(l.open_url, '_blank', 'noopener');
+        } else {
+          copyText(l.account_value);
+        }
+      });
+
+      grid.appendChild(item);
+    });
   }
 
   // Hides the service rows the signed-in scanner doesn't hold the
@@ -706,24 +882,11 @@ $logo_madeya   = $site_root . '/Etel-Madeya/assets/images/etel-madeya-logo-sm.we
 
         var d = res.data;
         document.title = d.name + ' - EtelID';
-        document.getElementById('nfc-name').textContent = d.name;
-        document.getElementById('nfc-etelid').textContent = d.etel_id;
-        if (d.photo_url) {
-          var photoEl = document.getElementById('nfc-photo');
-          photoEl.src = d.photo_url;
-          photoEl.alt = d.name;
-          photoEl.style.display = 'block';
-        } else {
-          var placeholder = document.getElementById('nfc-photo-placeholder');
-          placeholder.textContent = (d.name || '?').charAt(0).toUpperCase();
-          placeholder.style.display = 'flex';
-        }
-        if (d.tier) {
-          var tierEl = document.getElementById('nfc-tier');
-          tierEl.textContent = d.tier + ' Tier';
-          tierEl.style.display = 'block';
-        }
 
+        if (d.card_front_html) document.getElementById('nfc-card-front').innerHTML = d.card_front_html;
+        if (d.card_back_html) document.getElementById('nfc-card-back').innerHTML = d.card_back_html;
+
+        renderLinks(d.links || []);
         applyCapabilities(d.capabilities || {});
 
         document.getElementById('nfc-step-gate').classList.remove('active');
