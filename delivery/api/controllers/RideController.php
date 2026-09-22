@@ -1675,6 +1675,21 @@ case 'admin_manual_complete_ride': {
     if (!$plat || !$plng || !$dlat || !$dlng) fail('pickup_lat/pickup_lng/dropoff_lat/dropoff_lng are all required');
     $pickupAddr  = isset($body['pickup_address'])  ? trim($body['pickup_address'])  : '';
     $dropoffAddr = isset($body['dropoff_address']) ? trim($body['dropoff_address']) : '';
+    // Optional stops between pickup and drop-off (e.g. the passenger had
+    // the driver swing by a second location) - same call-and-read-out
+    // origin as pickup/dropoff above, just more than two points. Each
+    // must carry real lat/lng (a raw address string alone can't be
+    // distanced); anything malformed is dropped rather than failing the
+    // whole request, since a stop is a refinement, not a required field.
+    $waypoints = array();
+    if (isset($body['waypoints']) && is_array($body['waypoints'])) {
+        foreach ($body['waypoints'] as $wp) {
+            if (!is_array($wp) || !isset($wp['lat']) || !isset($wp['lng'])) continue;
+            $wlat = floatval($wp['lat']); $wlng = floatval($wp['lng']);
+            if (!$wlat || !$wlng) continue;
+            $waypoints[] = array('lat' => $wlat, 'lng' => $wlng, 'address' => isset($wp['address']) ? trim($wp['address']) : '');
+        }
+    }
     $pm = isset($body['payment_method']) ? substr(preg_replace('/[^a-z_]/', '', strtolower($body['payment_method'])), 0, 20) : 'cash';
     // Wallet needs an independently-verified transaction reference
     // (etel_pay_verify_tx) - there's no such reference to check here,
@@ -1712,7 +1727,15 @@ case 'admin_manual_complete_ride': {
 
     $vtype = !empty($r['vehicle_type']) ? $r['vehicle_type'] : rides_driver_own_vtype($pdo, $r['driver_id']);
     $isOpenTrip = intval($r['open_trip']) === 1;
-    $km = rides_haversine_km($plat, $plng, $dlat, $dlng);
+    // Distance is summed leg-by-leg across pickup -> each stop in order ->
+    // drop-off, not a single point-to-point line, so a trip with stops
+    // bills for the real route the driver actually drove rather than the
+    // straight-line shortcut between just the first and last point.
+    $chain = array_merge(array(array('lat' => $plat, 'lng' => $plng)), $waypoints, array(array('lat' => $dlat, 'lng' => $dlng)));
+    $km = 0;
+    for ($i = 1; $i < count($chain); $i++) {
+        $km += rides_haversine_km($chain[$i - 1]['lat'], $chain[$i - 1]['lng'], $chain[$i]['lat'], $chain[$i]['lng']);
+    }
     if ($km <= 0) fail('Pickup and drop-off cannot be the same point', 400);
 
     $fareResult = rides_calc_fare($pdo, $km, $vtype, $isOpenTrip, $waitMinutes);
@@ -1721,6 +1744,7 @@ case 'admin_manual_complete_ride': {
     $breakdown['manual_completion']  = true;
     $breakdown['completed_by_admin'] = $u['name'];
     if ($note !== '') $breakdown['admin_note'] = $note;
+    if ($waypoints) $breakdown['manual_waypoints'] = $waypoints;
     $breakdownJson = json_encode($breakdown);
 
     $sets = array("distance_km=?", "traveled_km=?", "fare_breakdown_json=?");
@@ -1734,7 +1758,8 @@ case 'admin_manual_complete_ride': {
     rides_complete_and_pay($pdo, $rid, $r['driver_id'], $fare, $pm);
 
     try {
-        $details = 'Manually completed by ' . $u['name'] . ' - distance ' . round($km, 2) . ' km, fare ETB ' . number_format($fare, 2)
+        $details = 'Manually completed by ' . $u['name'] . ' - distance ' . round($km, 2) . ' km'
+            . ($waypoints ? ' via ' . count($waypoints) . ' stop(s)' : '') . ', fare ETB ' . number_format($fare, 2)
             . ($note !== '' ? '. Note: ' . $note : '');
         $pdo->prepare("INSERT INTO ride_issues (ride_id, reporter_id, category, details, status, resolved_at) VALUES (?, ?, 'manual_completion', ?, 'resolved', NOW())")
             ->execute(array($rid, $u['id'], $details));
