@@ -1363,15 +1363,28 @@ case 'driver_update_location': {
     /* GPS meter: while a ride is in progress, accumulate traveled km.
        Ignore micro-jitter (<5 m) and GPS glitches (>2 km between pings).
        Also ignore any fix the device itself reports as low-accuracy
-       (>30 m) for METER purposes specifically - a single noisy fix can
-       easily exceed the 5 m jitter floor on its own (observed: up to
-       ~150 m of phantom "movement" accumulating over several pings while
-       genuinely stationary, e.g. indoors or under cover). A poor-accuracy
-       fix here does NOT update last_lat/last_lng either, so the next
-       GOOD fix still computes its delta from the last trustworthy
-       reference point instead of drifting from noise - same "catch up
-       the whole gap in one step" pattern already used for offline/
-       backgrounded gaps, just applied to accuracy instead of time. */
+       for METER purposes specifically - a single noisy fix can easily
+       exceed the 5 m jitter floor on its own (observed: up to ~150 m of
+       phantom "movement" accumulating over several pings while genuinely
+       stationary, e.g. indoors or under cover). A poor-accuracy fix here
+       does NOT update last_lat/last_lng either, so the next GOOD fix
+       still computes its delta from the last trustworthy reference point
+       instead of drifting from noise - same "catch up the whole gap in
+       one step" pattern already used for offline/backgrounded gaps, just
+       applied to accuracy instead of time.
+
+       Threshold was 30 m, confirmed live (driver screenshot + the
+       "Weak GPS signal" badge showing on-screen) to sit permanently
+       unmet on ordinary driving in Addis/Hawassa traffic - dense
+       building cover plus mid-range Android GPS chipsets routinely
+       report 30-60 m even with a real, moving fix, not just indoors or
+       stationary. That left the meter frozen at 0.00 km/base-fare-only
+       for an entire trip, every time, on exactly the phones most drivers
+       actually carry - not a rare edge case. Raised to 75 m: still well
+       short of the several-hundred-to-thousand-meter errors a WiFi/cell-
+       tower-only fix produces (which is the failure mode this guard
+       actually exists to catch), but wide enough that real driving with
+       a real GPS fix stops being silently discarded. */
     $meter = null;
     try {
         rides_ensure_wait_columns($pdo);
@@ -1400,7 +1413,7 @@ case 'driver_update_location': {
         $r = $s->fetch();
         if ($r) {
             $waitMinutes = rides_current_wait_minutes($r);
-            $lowAccuracy = ($accuracy !== null && $accuracy > 30);
+            $lowAccuracy = ($accuracy !== null && $accuracy > 75);
             if ($lowAccuracy) {
                 // Report the CURRENT (unchanged) meter state back to the
                 // client rather than silently returning null, so the UI
