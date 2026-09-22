@@ -17,12 +17,23 @@
          visitors saw service-giver page content with no redirect. Also
          carries role=service_giver so the login page can identify this
          app specifically (same pattern driver/index.html already used)
-         rather than falling through to the generic bare-launch case. */
+         rather than falling through to the generic bare-launch case.
+
+         BUG FIX: this only ever checked Auth.isLoggedIn() - true for ANY
+         signed-in role, not just service_giver - so a customer/driver/
+         courier account with a valid session could load this page's full
+         content too (same class of gap found and fixed on admin.html).
+         Now uses core.js's shared requireRole() helper instead of a
+         hand-rolled login-only check - it already does exactly this
+         (verifies the session's real role, not just that one exists,
+         with admin exempted from every role gate by design) and was
+         built specifically for this, per login.html's own comment
+         referencing it ("requireRole() on every page ... lets an admin
+         account stay there") - it just was never actually wired into
+         any page's own gate until now. */
       document.addEventListener('DOMContentLoaded', function () {
-        if (typeof Auth === 'undefined' || !Auth.isLoggedIn()) {
-          var base = (typeof ETEL !== 'undefined' && ETEL.api) ? ETEL.api.replace('api/boot.php', '') : '';
-          window.location.href = base + 'login.html?redirect=servicegiver.html&role=service_giver';
-        }
+        if (typeof requireRole === 'undefined') return; // core.js failed to load - nothing to gate with
+        requireRole(['service_giver']);
       });
     </script>
 

@@ -21,12 +21,21 @@
          visitors saw courier page content with no redirect. Also carries
          role=courier so the login page can identify this app specifically
          (same pattern driver/index.html already used) rather than falling
-         through to the generic bare-launch case. */
+         through to the generic bare-launch case.
+
+         BUG FIX: this only ever checked Auth.isLoggedIn() - true for ANY
+         signed-in role, not just courier - so a customer/driver/
+         service_giver account with a valid session could load this
+         page's full content too (same class of gap found and fixed on
+         admin.html/servicegiver.html). Now uses core.js's shared
+         requireRole() helper, which already verifies the session's real
+         role (with admin exempted by design) instead of just that one
+         exists - built for exactly this per login.html's own comment
+         referencing it, just never actually wired into any page's own
+         gate before now. */
       document.addEventListener('DOMContentLoaded', function () {
-        if (typeof Auth === 'undefined' || !Auth.isLoggedIn()) {
-          var base = (typeof ETEL !== 'undefined' && ETEL.api) ? ETEL.api.replace('api/boot.php', '') : '../';
-          window.location.href = base + 'login.html?redirect=courier/&role=courier';
-        }
+        if (typeof requireRole === 'undefined') return; // core.js failed to load - nothing to gate with
+        requireRole(['courier']);
       });
     </script>
     <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&display=swap" rel="stylesheet">
