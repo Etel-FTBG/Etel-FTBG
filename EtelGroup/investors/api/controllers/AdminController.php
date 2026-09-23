@@ -61,12 +61,22 @@ case 'admin_dashboard_summary': {
     }
 
     $costTotal = (float)$pdo->query('SELECT COALESCE(SUM(monthly_amount),0) FROM ir_cost_categories WHERE is_active = 1')->fetchColumn();
-    $holdings = ir_investor_holdings($pdo, false);
+    // Must match admin_list_investors' own demo-mode check below - this
+    // was hardcoded to false, so the stat cards (Investors, Shares Sold,
+    // Total Invested) always excluded demo investors even with Demo Mode
+    // on, while the Investors table beneath them (which does check
+    // ir_is_demo_mode()) correctly included them - two different counts
+    // on the same screen.
+    $includeDemo = ir_is_demo_mode($pdo);
+    $holdings = ir_investor_holdings($pdo, $includeDemo);
     $soldShares = 0; $investedTotal = 0.0;
     foreach ($holdings as $h) { $soldShares += (int)$h['shares_owned']; $investedTotal += (float)$h['total_invested']; }
 
     $tranches = $pdo->query('SELECT * FROM ir_tranches ORDER BY tranche_number')->fetchAll();
-    $lastPeriod = $pdo->query('SELECT * FROM ir_distribution_periods WHERE is_demo = 0 ORDER BY period_end DESC LIMIT 1')->fetch();
+    $periodSql = 'SELECT * FROM ir_distribution_periods';
+    if (!$includeDemo) $periodSql .= ' WHERE is_demo = 0';
+    $periodSql .= ' ORDER BY period_end DESC LIMIT 1';
+    $lastPeriod = $pdo->query($periodSql)->fetch();
 
     ok([
         'delivery' => $delivery,
@@ -153,6 +163,28 @@ case 'admin_get_cost_category_history': {
     $s = $pdo->prepare('SELECT * FROM ir_cost_category_history WHERE category_id = ? ORDER BY changed_at DESC');
     $s->execute([$id]);
     ok($s->fetchAll());
+    break;
+}
+
+case 'admin_delete_cost_category': {
+    // Hard delete, unlike the is_active toggle in admin_save_cost_category -
+    // for cleaning up genuine mistakes (e.g. an accidentally duplicated
+    // category), not for the normal "stop counting this cost" workflow,
+    // which should still use is_active so its history stays attached to
+    // something visible. Leaves that category's ir_cost_category_history
+    // rows in place (no FK cascade) - they simply become unreachable from
+    // the UI once the category itself is gone, which is fine for this use.
+    eg_require_admin();
+    $pdo = eg_db();
+    $id = (int)($body['id'] ?? 0);
+    if (!$id) fail('Missing category id', 400);
+    $s = $pdo->prepare('SELECT name FROM ir_cost_categories WHERE id = ?');
+    $s->execute([$id]);
+    $name = $s->fetchColumn();
+    if ($name === false) fail('Cost category not found', 404);
+    $pdo->prepare('DELETE FROM ir_cost_categories WHERE id = ?')->execute([$id]);
+    ir_log($pdo, eg_current_actor()['full_name'], 'cost_category_deleted', "$name (#$id)");
+    ok(['deleted' => true]);
     break;
 }
 

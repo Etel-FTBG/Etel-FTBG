@@ -239,7 +239,18 @@ function irOpenCostModal(cat) {
   document.getElementById('cost-modal-err').textContent = '';
   document.getElementById('cost-history-body').innerHTML = '';
   document.getElementById('cost-history-btn').style.display = cat ? 'inline-flex' : 'none';
+  document.getElementById('cost-delete-btn').style.display = cat ? 'inline-flex' : 'none';
   document.getElementById('cost-modal-bg').classList.add('open');
+}
+async function irDeleteCostCategory() {
+  const id = document.getElementById('cost-id').value;
+  if (!id) return;
+  if (!confirm('Permanently delete this cost category? This cannot be undone.')) return;
+  const res = await irApi('admin_delete_cost_category', { id });
+  if (!res.ok) { document.getElementById('cost-modal-err').textContent = res.error; return; }
+  irCloseModal('cost-modal-bg');
+  irLoadCostCategories();
+  irLoadDashboard();
 }
 async function irSaveCostCategory() {
   const id = document.getElementById('cost-id').value;

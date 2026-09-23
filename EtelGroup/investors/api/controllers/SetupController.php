@@ -72,10 +72,19 @@ case 'setup_save_commission_rate': {
 case 'setup_save_cost_categories': {
     // Bulk-create initial cost categories during the wizard. Later
     // edits go through admin_save_cost_category (which also logs
-    // history) - this action is only for first-time seeding.
+    // history) - this action is only for first-time seeding, and is
+    // now guarded to run at most once: without this check, an admin
+    // who has to retry an earlier wizard step (e.g. fixing the Delivery
+    // connection) and lands back on this step re-submits it, appending
+    // a full duplicate set of categories every time - exactly what
+    // happened in practice before this guard existed.
     eg_require_admin();
     $pdo = eg_db();
     ir_ensure_core_tables($pdo);
+    $existing = (int)$pdo->query('SELECT COUNT(*) FROM ir_cost_categories')->fetchColumn();
+    if ($existing > 0) {
+        fail('Cost categories already exist - edit them from the dashboard instead of re-running setup.', 409);
+    }
     $cats = $body['categories'] ?? [];
     if (!is_array($cats) || !count($cats)) fail('Provide at least one cost category.', 400);
     $stmt = $pdo->prepare('INSERT INTO ir_cost_categories (name, monthly_amount, sort_order) VALUES (?, ?, ?)');
