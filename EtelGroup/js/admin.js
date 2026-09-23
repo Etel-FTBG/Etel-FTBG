@@ -272,6 +272,18 @@ async function loadFinanceTab() {
       egaLoadCss('../delivery/css/admin-group1.min.css'),
       egaLoadCss('../delivery/css/admin-group2.min.css'),
     ]);
+    // delivery's own admin page has its own internal scrollable content
+    // area, so its bundle sets html{height:100vh;overflow:hidden} - it
+    // never needs page-level scrolling. EtelGroup's page has no such
+    // wrapper and relies on the ordinary document scrolling normally, so
+    // loading that rule globally trapped the whole page (nothing below
+    // the fold was reachable). Appended AFTER both stylesheets so normal
+    // cascade order already favors it; !important guards against any
+    // later-loaded delivery rule (e.g. admin-finance-hub-triggered code)
+    // re-asserting the same properties.
+    var financeScrollFix = document.createElement('style');
+    financeScrollFix.textContent = 'html,body{height:auto!important;min-height:100%!important;overflow:auto!important}';
+    document.head.appendChild(financeScrollFix);
     await egaLoadScript('../delivery/js/core.js');
     // core.js's ETEL.api auto-detects the API base from a "/delivery/"
     // marker in the CURRENT PAGE's own URL - that marker isn't present
