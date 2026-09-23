@@ -56,6 +56,17 @@
         if (!sessionUser || sessionUser.role !== 'admin') {
           ['etel_token','etel_user','etel_courier','etel_service_giver','etel_sso'].forEach(function (k) { localStorage.removeItem(k); });
           window.location.href = base + 'admin-login.html';
+          return;
+        }
+        // Deep link for embedders (e.g. EtelGroup admin's Finance & Planning
+        // tab, loaded in an iframe) - only fires after the auth check above
+        // has already passed, so it never bypasses anything. Still subject
+        // to the INSA audit lockdown CSS below like any other path to this
+        // tab: while that's active the nav item/panel stay force-hidden
+        // regardless of this click.
+        if (window.location.hash === '#finance') {
+          var financeNav = document.getElementById('nav-item-finance');
+          if (financeNav && typeof switchPage === 'function') switchPage('finance', financeNav);
         }
       });
     </script>
