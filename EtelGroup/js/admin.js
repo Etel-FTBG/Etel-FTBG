@@ -225,13 +225,26 @@ function switchTab(name) {
   document.getElementById('panel-companies').style.display = name === 'companies' ? 'block' : 'none';
   document.getElementById('panel-employees').style.display = name === 'employees' ? 'block' : 'none';
   document.getElementById('panel-activity').style.display = name === 'activity' ? 'block' : 'none';
+  document.getElementById('panel-finance').style.display = name === 'finance' ? 'block' : 'none';
   document.getElementById('tab-nav-dashboard').classList.toggle('active', name === 'dashboard');
   document.getElementById('tab-nav-companies').classList.toggle('active', name === 'companies');
   document.getElementById('tab-nav-employees').classList.toggle('active', name === 'employees');
   document.getElementById('tab-nav-activity').classList.toggle('active', name === 'activity');
+  document.getElementById('tab-nav-finance').classList.toggle('active', name === 'finance');
   if (name === 'companies') loadCompanies();
   if (name === 'employees') loadEmployeesTab();
   if (name === 'activity') loadActivityTab(1);
+  if (name === 'finance') loadFinanceTab();
+}
+
+// Lazy: the iframe only ever points at delivery/admin.html once this tab
+// is actually opened, and only once per page load - so simply having
+// EtelGroup admin open never touches delivery's login/session at all.
+let EGA_FINANCE_FRAME_LOADED = false;
+function loadFinanceTab() {
+  if (EGA_FINANCE_FRAME_LOADED) return;
+  EGA_FINANCE_FRAME_LOADED = true;
+  document.getElementById('finance-frame').src = '../delivery/admin.html#finance';
 }
 
 // ---------- companies CRUD ----------
