@@ -237,14 +237,22 @@ function switchTab(name) {
   if (name === 'finance') loadFinanceTab();
 }
 
-// Lazy: the iframe only ever points at delivery/admin.html once this tab
-// is actually opened, and only once per page load - so simply having
+// Lazy: the iframe only ever points at delivery/admin once this tab is
+// actually opened, and only once per page load - so simply having
 // EtelGroup admin open never touches delivery's login/session at all.
+// Deliberately the extension-less clean URL ("admin", not "admin.html") -
+// requesting the .html path 301-redirects to this same URL server-side
+// (see delivery/.htaccess), and that intermediate redirect response
+// carries the SITE-WIDE frame-ancestors 'none' (the per-file CSP
+// override for admin.html only ever attaches to the final served
+// response, not to a redirect generated before any file is mapped) -
+// so the browser blocked the iframe at that hop even after the fix.
+// Going straight to the clean URL skips the redirect entirely.
 let EGA_FINANCE_FRAME_LOADED = false;
 function loadFinanceTab() {
   if (EGA_FINANCE_FRAME_LOADED) return;
   EGA_FINANCE_FRAME_LOADED = true;
-  document.getElementById('finance-frame').src = '../delivery/admin.html#finance';
+  document.getElementById('finance-frame').src = '../delivery/admin#finance';
 }
 
 // ---------- companies CRUD ----------
