@@ -80,6 +80,89 @@ case 'admin_get_milestone_progress': {
     break;
 }
 
+// ---------- growth & goal planner ----------
+case 'admin_growth_planner': {
+    // Hypothetical projection tool for showing investors day/week/
+    // month/year profit at an assumed trip volume - same fare-
+    // composition formula as delivery admin's own Growth & Goal
+    // Planner (ride fare = base + distance*per-km; wait charge =
+    // wait_min*wait_rate; surge uplift = (% of trips at peak) *
+    // ride_fare * (surge_multiplier - 1)), but projected through the
+    // REAL investor pool math (2.5x payback boost, unsold-share
+    // bounce) via ir_project_growth(), not the simpler flat split
+    // delivery's own planner uses - this is specifically for pitching
+    // investors on THEIR projected returns, not platform-wide economics.
+    eg_require_admin();
+    $pdo = eg_db();
+    ir_ensure_core_tables($pdo);
+
+    $registeredDrivers = (float)($body['registered_drivers'] ?? 0);
+    $tripsPerDriverPerDay = (float)($body['trips_per_driver_per_day'] ?? 0);
+    $baseFare = (float)($body['base_fare'] ?? 0);
+    $perKmRate = (float)($body['per_km_rate'] ?? 0);
+    $avgDistanceKm = (float)($body['avg_distance_km'] ?? 0);
+    $avgWaitMin = (float)($body['avg_wait_min'] ?? 0);
+    $waitRatePerMin = (float)($body['wait_rate_per_min'] ?? 0);
+    $pctPeakSurge = (float)($body['pct_peak_surge'] ?? 0); // 0-100
+    $surgeMultiplier = (float)($body['surge_multiplier'] ?? 1);
+
+    if ($registeredDrivers <= 0 || $tripsPerDriverPerDay <= 0) {
+        fail('Registered drivers and trips/driver/day must both be greater than zero.', 400);
+    }
+
+    $rideFare = $baseFare + ($avgDistanceKm * $perKmRate);
+    $waitCharge = $avgWaitMin * $waitRatePerMin;
+    $surgeUplift = ($pctPeakSurge / 100) * $rideFare * max(0, $surgeMultiplier - 1);
+    $blendedAvgFare = $rideFare + $waitCharge + $surgeUplift;
+
+    $tripsPerDay = $registeredDrivers * $tripsPerDriverPerDay;
+    $grossFarePerDay = $tripsPerDay * $blendedAvgFare;
+
+    $commissionRate = ir_commission_rate($pdo);
+    $costCats = $pdo->query('SELECT monthly_amount FROM ir_cost_categories WHERE is_active = 1')->fetchAll();
+    $includeDemo = ir_is_demo_mode($pdo);
+    $holdings = ir_investor_holdings($pdo, $includeDemo);
+    $investorsForEngine = [];
+    foreach ($holdings as $h) {
+        $cum = ir_cumulative_received_before($pdo, (int)$h['id'], date('Y-m-d', strtotime('+1 day')), $includeDemo);
+        $investorsForEngine[] = [
+            'id' => (int)$h['id'],
+            'name' => $h['name'],
+            'shares_owned' => (int)$h['shares_owned'],
+            'total_invested' => (float)$h['total_invested'],
+            'cumulative_received_before' => $cum['cumulative'],
+        ];
+    }
+
+    $periods = ['day' => 1, 'week' => 7, 'month' => 30, 'year' => 365];
+    $results = [];
+    foreach ($periods as $key => $days) {
+        $r = ir_project_growth($grossFarePerDay, $days, $commissionRate, $costCats, $investorsForEngine, $key);
+        $r['trips'] = round($tripsPerDay * $days);
+        // Attach investor names for display - ir_project_growth's lines
+        // only carry investor_id, same as a real run's persisted record.
+        foreach ($r['lines'] as &$line) {
+            foreach ($investorsForEngine as $inv) {
+                if ($inv['id'] === $line['investor_id']) { $line['investor_name'] = $inv['name']; break; }
+            }
+        }
+        unset($line);
+        $results[$key] = $r;
+    }
+
+    ok([
+        'fare_breakdown' => [
+            'ride_fare' => round($rideFare, 2),
+            'wait_charge' => round($waitCharge, 2),
+            'surge_uplift' => round($surgeUplift, 2),
+            'blended_avg_fare' => round($blendedAvgFare, 2),
+        ],
+        'trips_per_day' => round($tripsPerDay),
+        'periods' => $results,
+    ]);
+    break;
+}
+
 // ---------- cost categories ----------
 case 'admin_list_cost_categories': {
     eg_require_admin();
