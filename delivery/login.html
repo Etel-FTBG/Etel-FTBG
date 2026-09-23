@@ -451,12 +451,12 @@ body { font-family:var(--ff-b); background:#0a0a14; overflow:hidden; }
       <div class="del-auth-mark" id="auth-mark">ኢE</div>
       <div class="del-auth-name" id="auth-name">ETEL DELIVERY</div>
       <div class="del-auth-sub" id="auth-sub">ኢትኤል ድሊቨሪ · Hawassa</div>
-      <div class="del-auth-desc" id="auth-desc">Fast food, groceries & packages across all 12 Hawassa zones.</div>
+      <div class="del-auth-desc" id="auth-desc">Fast food, groceries &amp; packages across all 12 Hawassa zones.</div>
 
       <!-- Floating order card -->
       <div class="del-mock-card">
         <div class="del-mock-inner">
-          <div class="del-mock-label">Active Order</div>
+          <div class="del-mock-label" data-i18n="active_order_label" data-i18n-fallback="Active Order">Active Order</div>
           <div class="del-mock-id">ET-2847</div>
           <div class="del-mock-route">
             <div class="del-mock-stop">
@@ -473,9 +473,9 @@ body { font-family:var(--ff-b); background:#0a0a14; overflow:hidden; }
 
       <!-- Features -->
       <div class="del-auth-feats">
-        <div class="del-auth-feat"><div class="del-feat-dot"></div><span>12 Hawassa zones covered</span></div>
-        <div class="del-auth-feat"><div class="del-feat-dot"></div><span>Real-time GPS tracking</span></div>
-        <div class="del-auth-feat"><div class="del-feat-dot"></div><span>ኢE Pay · Telebirr · Cash</span></div>
+        <div class="del-auth-feat"><div class="del-feat-dot"></div><span data-i18n="feat_zones" data-i18n-fallback="12 Hawassa zones covered">12 Hawassa zones covered</span></div>
+        <div class="del-auth-feat"><div class="del-feat-dot"></div><span data-i18n="feat_gps" data-i18n-fallback="Real-time GPS tracking">Real-time GPS tracking</span></div>
+        <div class="del-auth-feat"><div class="del-feat-dot"></div><span data-i18n="feat_pay" data-i18n-fallback="ኢE Pay · Telebirr · Cash">ኢE Pay · Telebirr · Cash</span></div>
       </div>
     </div>
   </div>
@@ -485,6 +485,14 @@ body { font-family:var(--ff-b); background:#0a0a14; overflow:hidden; }
 
     <div class="del-auth-card">
       <div class="del-auth-holo"></div>
+
+      <!-- Language switcher - one tap, persisted to localStorage
+           immediately and to the user's account (users.lang) once they're
+           authenticated on a later page, via I18N.setLang() in js/i18n.js. -->
+      <div class="del-lang-switch" role="group" aria-label="Language / ቋንቋ" style="position:absolute;top:14px;right:16px;z-index:5;display:flex;gap:0;border:1px solid rgba(212,175,55,.35);border-radius:8px;overflow:hidden;">
+        <button type="button" id="lang-btn-en" onclick="setAppLang('en')" style="padding:5px 10px;font-size:11px;font-weight:700;letter-spacing:.5px;border:none;cursor:pointer;background:transparent;color:var(--ink2,#555);">EN</button>
+        <button type="button" id="lang-btn-am" onclick="setAppLang('am')" style="padding:5px 10px;font-size:11px;font-weight:700;letter-spacing:.5px;border:none;cursor:pointer;background:transparent;color:var(--ink2,#555);">አማ</button>
+      </div>
 
       <div class="del-auth-head">
         <div class="del-auth-logo-wrap">
@@ -528,33 +536,33 @@ body { font-family:var(--ff-b); background:#0a0a14; overflow:hidden; }
         <div class="del-fview on" id="fv-login">
 
           <div class="del-af-field">
-            <label class="del-af-label">Phone Number or EtelID</label>
+            <label class="del-af-label" data-i18n="field_phone_or_etelid" data-i18n-fallback="Phone Number or EtelID">Phone Number or EtelID</label>
             <div class="del-af-wrap">
               <span class="del-af-icon">📱</span>
               <input class="del-af-input" id="inp-phone" type="tel"
-                placeholder="+251 9XX XXX XXX"
+                placeholder="+251 9XX XXX XXX" data-i18n-placeholder="placeholder_phone"
                 autocomplete="tel" inputmode="tel">
             </div>
           </div>
           <div class="del-af-field">
-            <label class="del-af-label">Password</label>
+            <label class="del-af-label" data-i18n="field_password" data-i18n-fallback="Password">Password</label>
             <div class="del-af-wrap">
               <span class="del-af-icon">🔒</span>
               <input class="del-af-input" id="inp-pw" type="password"
-                placeholder="Enter password" autocomplete="current-password">
+                placeholder="Enter password" data-i18n-placeholder="placeholder_password" autocomplete="current-password">
               <button class="del-pw-toggle" type="button" onclick="togglePw()">👁</button>
             </div>
           </div>
-          <div class="del-forgot-wrap"><a class="del-forgot-link" href="https://ethelmarket.com/EtelId/reset-password/" target="_blank" rel="noopener">Forgot password?</a></div>
+          <div class="del-forgot-wrap"><a class="del-forgot-link" href="https://ethelmarket.com/EtelId/reset-password/" target="_blank" rel="noopener" data-i18n="forgot_password" data-i18n-fallback="Forgot password?">Forgot password?</a></div>
 
           <!-- ✦ EtelID PRIMARY HERO ✦ -->
           <div style="background:linear-gradient(135deg,rgba(42,26,6,.88),rgba(74,50,16,.78));border:1.5px solid rgba(212,175,55,.45);border-radius:14px;padding:16px;margin-top:14px;margin-bottom:16px;text-align:center">
-            <div style="font-size:11px;font-weight:700;color:rgba(253,246,216,.5);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px">✦ Recommended — One ID for all ETEL services ✦</div>
+            <div style="font-size:11px;font-weight:700;color:rgba(253,246,216,.5);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px" data-i18n="recommended_badge" data-i18n-fallback="✦ Recommended — One ID for all ETEL services ✦">✦ Recommended — One ID for all ETEL services ✦</div>
             <button class="del-auth-etelid" id="del-etelid-btn" type="button" onclick="doEtelIdLogin()" style="margin-bottom:4px;width:100%">
               <span class="del-etelid-mark">ኢE</span>
-              <span>Sign in with EtelID</span>
+              <span data-i18n="signin_with_etelid" data-i18n-fallback="Sign in with EtelID">Sign in with EtelID</span>
             </button>
-            <p style="font-size:11px;color:rgba(253,246,216,.38);margin-top:6px">Delivery · Ride · Pay — one identity</p>
+            <p style="font-size:11px;color:rgba(253,246,216,.38);margin-top:6px" data-i18n="etelid_tagline" data-i18n-fallback="Delivery · Ride · Pay — one identity">Delivery · Ride · Pay — one identity</p>
           </div>
 
           <!-- The plain (non-EtelID) "Sign In" button that used to sit here
@@ -572,7 +580,7 @@ body { font-family:var(--ff-b); background:#0a0a14; overflow:hidden; }
                fields (as an earlier pass here mistakenly did) breaks
                EtelID sign-in entirely, not just the old plain login. -->
 
-          <button class="del-auth-ghost" onclick="switchMode('register')" style="margin-top:4px">Create EtelID Account →</button>
+          <button class="del-auth-ghost" onclick="switchMode('register')" style="margin-top:4px" data-i18n="create_etelid_account" data-i18n-fallback="Create EtelID Account →">Create EtelID Account →</button>
         </div>
 
         <!-- REGISTER view -->
@@ -580,7 +588,7 @@ body { font-family:var(--ff-b); background:#0a0a14; overflow:hidden; }
           <!-- ✦ EtelId Registration Gate ✦ -->
           <div style="text-align:center;padding:10px 0 18px">
             <div style="font-size:48px;margin-bottom:10px">🪪</div>
-            <div style="font-size:20px;font-weight:800;font-family:var(--ff-d);color:var(--ink1);margin-bottom:6px">Get your EtelID First</div>
+            <div style="font-size:20px;font-weight:800;font-family:var(--ff-d);color:var(--ink1);margin-bottom:6px" data-i18n="get_etelid_first_title" data-i18n-fallback="Get your EtelID First">Get your EtelID First</div>
             <div style="font-size:13px;color:var(--ink3);line-height:1.7;margin-bottom:20px">
               To use ETEL Delivery, Ride, Pay and all ETEL services,<br>
               you need one <strong>ኢE EtelID</strong> — your single identity<br>
@@ -588,22 +596,22 @@ body { font-family:var(--ff-b); background:#0a0a14; overflow:hidden; }
             </div>
             <!-- EtelId benefits -->
             <div style="background:rgba(212,175,55,.08);border:1.5px solid rgba(212,175,55,.25);border-radius:16px;padding:16px;text-align:left;margin-bottom:18px">
-              <div style="font-size:12px;font-weight:700;color:var(--g5);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px">One ID. All Services.</div>
+              <div style="font-size:12px;font-weight:700;color:var(--g5);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px" data-i18n="one_id_all_services" data-i18n-fallback="One ID. All Services.">One ID. All Services.</div>
               <div style="font-size:13px;color:var(--ink2);line-height:2">
-                🛵 &nbsp;<strong>ETEL Delivery</strong> — Order food &amp; packages<br>
-                🚗 &nbsp;<strong>ETEL Ride</strong> — Book rides across Hawassa<br>
-                💳 &nbsp;<strong>ኢE Pay</strong> — Digital wallet &amp; payments<br>
-                🪪 &nbsp;<strong>One login</strong> — Use your EtelID everywhere
+                🛵 &nbsp;<strong>ETEL Delivery</strong> — <span data-i18n="svc_delivery_desc" data-i18n-fallback="Order food &amp; packages">Order food &amp; packages</span><br>
+                🚗 &nbsp;<strong>ETEL Ride</strong> — <span data-i18n="svc_ride_desc" data-i18n-fallback="Book rides across Hawassa">Book rides across Hawassa</span><br>
+                💳 &nbsp;<strong>ኢE Pay</strong> — <span data-i18n="svc_pay_desc" data-i18n-fallback="Digital wallet &amp; payments">Digital wallet &amp; payments</span><br>
+                🪪 &nbsp;<strong>One login</strong> — <span data-i18n="svc_login_desc" data-i18n-fallback="Use your EtelID everywhere">Use your EtelID everywhere</span>
               </div>
             </div>
             <a href="https://ethelmarket.com/EtelId/" target="_blank" style="display:block;text-decoration:none;margin-bottom:10px">
               <button class="del-auth-submit" style="width:100%;font-size:15px" type="button">
-                🪪 &nbsp;Register at EtelID Portal →
+                🪪 &nbsp;<span data-i18n="register_at_etelid" data-i18n-fallback="Register at EtelID Portal →">Register at EtelID Portal →</span>
               </button>
             </a>
             <p style="font-size:11px;color:var(--ink3);margin-top:8px">
-              Already have an EtelID? 
-              <button onclick="switchMode('login')" style="background:none;border:none;color:var(--g5);font-weight:700;font-size:11px;cursor:pointer;padding:0">Sign in here ←</button>
+              <span data-i18n="already_have_etelid" data-i18n-fallback="Already have an EtelID?">Already have an EtelID?</span>
+              <button onclick="switchMode('login')" style="background:none;border:none;color:var(--g5);font-weight:700;font-size:11px;cursor:pointer;padding:0" data-i18n="signin_here" data-i18n-fallback="Sign in here ←">Sign in here ←</button>
             </p>
           </div>
         </div>
@@ -675,6 +683,8 @@ body { font-family:var(--ff-b); background:#0a0a14; overflow:hidden; }
 </div>
 
 <!-- Core scripts (same as original login.html) -->
+<script src="js/i18n.js?v=1.0"></script>
+<script src="js/locales/login-am.js?v=1.0"></script>
 <script src="js/core.js?v=5.12"></script>
 <script src="js/login.js?v=4.3"></script>
 
@@ -725,6 +735,12 @@ function safeRedirectTarget() {
 var ROLE_TITLES = {
   customer:'Customer Login', courier:'Courier Login', driver:'Driver Login',
   service_giver:'Service Login'
+};
+// Key names into I18N's dictionary, mirroring ROLE_TITLES above one-for-one
+// so a language switch re-renders the same labels via roleLabelForContext().
+var ROLE_TITLE_KEYS = {
+  customer:'role_title_customer', courier:'role_title_courier',
+  driver:'role_title_driver', service_giver:'role_title_service_giver'
 };
 var ROLE_IDS = { customer:'tab-c', courier:'tab-d', driver:'tab-r', service_giver:'tab-s', ride:'tab-ride' };
 // Ride isn't a real backend role - Ride passengers are just customers,
@@ -782,6 +798,7 @@ var _staffPreview = 'dispatcher';
 var STAFF_LANDING_PREVIEW = { dispatcher: 'rides', finance: 'pricing', 'traffic officer': 'rides', manager: 'dashboard' };
 var STAFF_LANDING_LABELS  = { rides: 'Rides Management', pricing: 'Pricing (Fares & Zones)', dashboard: 'Dashboard Overview' };
 function setStaffPreview(staffRole, el) {
+  function tr(key, fallback) { return (typeof I18N !== 'undefined') ? I18N.t(key, fallback) : fallback; }
   _staffPreview = staffRole;
   document.querySelectorAll('.del-staff-tab').forEach(function (b) { b.classList.remove('on'); });
   if (el) el.classList.add('on');
@@ -789,11 +806,11 @@ function setStaffPreview(staffRole, el) {
   if (!cap) return;
   cap.style.display = 'block';
   if (staffRole === 'admin') {
-    cap.textContent = 'Full admin access — every panel';
+    cap.textContent = tr('staff_full_admin', 'Full admin access — every panel');
   } else {
     var landing = STAFF_LANDING_PREVIEW[staffRole];
     var label = landing ? STAFF_LANDING_LABELS[landing] : null;
-    cap.textContent = label ? ('Typically lands on: ' + label) : 'Landing page depends on your EtelGroup role';
+    cap.textContent = label ? (tr('staff_lands_on_prefix', 'Typically lands on: ') + label) : tr('staff_landing_depends', 'Landing page depends on your EtelGroup role');
   }
 }
 /* The manifest/icon <link> tags are only decided once, at initial page
@@ -860,29 +877,33 @@ function isRideContext() {
    alone is ambiguous - it's shared between Delivery customers and Ride
    passengers - so that one still needs the ride-context check too. */
 function appNameForContext() {
-  if (_role === 'driver') return 'ETEL Drive';
-  if (_role === 'courier') return 'ETEL Courier';
-  if (_role === 'customer') return isRideContext() ? 'ETEL Ride' : 'ETEL Delivery';
-  if (_role === 'admin') return 'ETEL Group';
-  if (_role === 'service_giver') return 'ETEL Service';
-  return 'ETEL Delivery';
+  function tr(key, fallback) { return (typeof I18N !== 'undefined') ? I18N.t(key, fallback) : fallback; }
+  if (_role === 'driver') return tr('app_name_drive', 'ETEL Drive');
+  if (_role === 'courier') return tr('app_name_courier', 'ETEL Courier');
+  if (_role === 'customer') return isRideContext() ? tr('app_name_ride', 'ETEL Ride') : tr('app_name_delivery', 'ETEL Delivery');
+  if (_role === 'admin') return tr('app_name_group', 'ETEL Group');
+  if (_role === 'service_giver') return tr('app_name_service', 'ETEL Service');
+  return tr('app_name_delivery', 'ETEL Delivery');
 }
 
 function roleLabelForContext() {
-  if (_role === 'customer' && isRideContext()) return 'Passenger Login';
-  return ROLE_TITLES[_role] || 'Login';
+  function tr(key, fallback) { return (typeof I18N !== 'undefined') ? I18N.t(key, fallback) : fallback; }
+  if (_role === 'customer' && isRideContext()) return tr('role_title_passenger', 'Passenger Login');
+  var key = ROLE_TITLE_KEYS[_role];
+  return (key ? tr(key, ROLE_TITLES[_role]) : null) || tr('role_title_default', 'Login');
 }
 
 function updateCardHeader() {
+  function tr(key, fallback) { return (typeof I18N !== 'undefined') ? I18N.t(key, fallback) : fallback; }
   var t = document.getElementById('del-card-title');
   var s = document.getElementById('del-card-sub');
   var appName = appNameForContext();
   if (_mode === 'login') {
     if(t) t.textContent = appName + ' — ' + roleLabelForContext();
-    if(s) s.textContent = 'Sign in to continue';
+    if(s) s.textContent = tr('signin_to_continue', 'Sign in to continue');
   } else if (_mode === 'register') {
-    if(t) t.textContent = 'Create Account';
-    if(s) s.textContent = 'Join ' + appName;
+    if(t) t.textContent = tr('register_title', 'Create Account');
+    if(s) s.textContent = tr('join_prefix', 'Join ') + appName;
   }
   applyBrandTheme();
 }
@@ -939,17 +960,20 @@ function applyBrandTheme() {
   var mark = document.getElementById('auth-mark');
   if (name) name.textContent = driver ? 'ETEL DRIVER' : ride ? 'ETEL RIDE' : courier ? 'ETEL COURIER' : serviceGiver ? 'ETEL SERVICE' : admin ? 'ETEL ADMIN' : 'ETEL DELIVERY';
   if (sub)  sub.textContent  = driver ? 'ኢትኤል ሹፌር · Hawassa' : ride ? 'ኢትኤል ጉዞ · Hawassa' : courier ? 'ኢትኤል ተላላኪ · Hawassa' : serviceGiver ? 'ኢትኤል አገልግሎት · Hawassa' : admin ? 'ኢትኤል ቡድን · Hawassa' : 'ኢትኤል ድሊቨሪ · Hawassa';
-  if (desc) desc.textContent = driver
-    ? 'Go online and start earning across all Hawassa zones.'
-    : ride
-    ? 'Safe, affordable rides across all Hawassa zones.'
-    : courier
-    ? 'Pick up and deliver orders across all Hawassa zones.'
-    : serviceGiver
-    ? 'Manage your shop and orders across all Hawassa zones.'
-    : admin
-    ? 'Manage Etel Group staff, roles, and operations.'
-    : 'Fast food, groceries & packages across all 12 Hawassa zones.';
+  if (desc) {
+    var trDesc = (typeof I18N !== 'undefined') ? I18N.t : function (k, f) { return f; };
+    desc.textContent = driver
+      ? trDesc('desc_driver', 'Go online and start earning across all Hawassa zones.')
+      : ride
+      ? trDesc('desc_ride', 'Safe, affordable rides across all Hawassa zones.')
+      : courier
+      ? trDesc('desc_courier', 'Pick up and deliver orders across all Hawassa zones.')
+      : serviceGiver
+      ? trDesc('desc_service', 'Manage your shop and orders across all Hawassa zones.')
+      : admin
+      ? trDesc('desc_admin', 'Manage Etel Group staff, roles, and operations.')
+      : trDesc('desc_default', 'Fast food, groceries & packages across all 12 Hawassa zones.');
+  }
   if (mark) mark.style.color = accentColor;
 
   var authRight = document.querySelector('.del-auth-right');
@@ -1247,6 +1271,39 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   updateCardHeader();
+
+  if (typeof I18N !== 'undefined') I18N.applyTranslations();
+  updateLangSwitchUI();
+});
+
+/* Language switcher - one tap, applies immediately (I18N.applyTranslations
+   handles static [data-i18n] markup; updateCardHeader()/setStaffPreview()
+   re-render the JS-generated strings that aren't plain DOM text). Saved to
+   localStorage right away by I18N.setLang(), and to the user's account
+   (users.lang) automatically once they're authenticated on a later page -
+   this page runs entirely signed-out, so only localStorage applies here. */
+function setAppLang(lang) {
+  if (typeof I18N === 'undefined') return;
+  I18N.setLang(lang);
+}
+function updateLangSwitchUI() {
+  if (typeof I18N === 'undefined') return;
+  var lang = I18N.getLang();
+  var enBtn = document.getElementById('lang-btn-en');
+  var amBtn = document.getElementById('lang-btn-am');
+  if (enBtn) { enBtn.style.background = (lang === 'en') ? 'rgba(212,175,55,.22)' : 'transparent'; enBtn.style.color = (lang === 'en') ? 'var(--g5,#C8960C)' : 'var(--ink2,#555)'; }
+  if (amBtn) { amBtn.style.background = (lang === 'am') ? 'rgba(212,175,55,.22)' : 'transparent'; amBtn.style.color = (lang === 'am') ? 'var(--g5,#C8960C)' : 'var(--ink2,#555)'; }
+}
+document.addEventListener('etel:translated', function () {
+  updateCardHeader();
+  // Only re-render the staff-landing caption if it's actually showing
+  // (Admin tab selected) - setStaffPreview() unconditionally sets
+  // display:block, which would wrongly reveal it for every other role.
+  var staffTabs = document.getElementById('staff-role-tabs');
+  if (staffTabs && staffTabs.style.display !== 'none') {
+    setStaffPreview(_staffPreview, document.querySelector('.del-staff-tab.on'));
+  }
+  updateLangSwitchUI();
 });
 </script>
 <!-- ETEL AI -- cross-company assistant widget -->
