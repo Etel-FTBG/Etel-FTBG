@@ -128,6 +128,24 @@
       </div>
 
       <div class="ir-card">
+        <h2>🚀 Growth &amp; Goal Planner</h2>
+        <div class="desc">Assumption-based, not historical. Set an assumed trip volume and fare structure below to project day/week/month/year profit — through the exact same investor pool math (real commission rate, real entered costs, the 2.5x payback boost, unsold-share bounce) a real distribution run uses, not a simplified estimate. Use this to show prospective investors what their projected return looks like at a given scale.</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:6px">
+          <div class="cf-field"><label>Registered Drivers</label><input type="number" id="gp-drivers" value="20" min="0"></div>
+          <div class="cf-field"><label>Trips / Driver / Day</label><input type="number" id="gp-trips-per-driver" value="10" min="0"></div>
+          <div class="cf-field"><label>Avg Distance / Trip (km)</label><input type="number" id="gp-distance" value="5" min="0"></div>
+          <div class="cf-field"><label>Base Fare (ETB)</label><input type="number" id="gp-base-fare" value="120" min="0"></div>
+          <div class="cf-field"><label>Per-km Rate (ETB)</label><input type="number" id="gp-per-km" value="30" min="0"></div>
+          <div class="cf-field"><label>Avg Wait Time / Trip (min)</label><input type="number" id="gp-wait-min" value="2" min="0"></div>
+          <div class="cf-field"><label>Wait Rate (ETB/min)</label><input type="number" id="gp-wait-rate" value="3" min="0"></div>
+          <div class="cf-field"><label>% of Trips at Peak/Surge</label><input type="number" id="gp-pct-surge" value="25" min="0" max="100"></div>
+          <div class="cf-field"><label>Surge Multiplier</label><input type="number" id="gp-surge-mult" value="1.2" min="1" step="0.1"></div>
+        </div>
+        <button class="btn btn-outline" onclick="irRunGrowthPlanner()">Project</button>
+        <div id="gp-output" style="margin-top:16px"></div>
+      </div>
+
+      <div class="ir-card">
         <h2>🧮 Run Monthly Distribution</h2>
         <div class="desc">Computes the period's payout using real commission revenue and current costs, then previews before locking. Locked periods are permanent historical records.</div>
         <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">

@@ -34,7 +34,13 @@ function ir_prorate_monthly(float $monthlyAmount, string $periodStart, string $p
 }
 
 /**
- * Runs the full distribution calculation for one period.
+ * Runs the full distribution calculation for one REAL period, dated by
+ * calendar days (period_start/period_end). Public signature unchanged
+ * from before this file was split - real distribution runs, previews,
+ * and the demo seeder all still call this exactly as before. Costs are
+ * prorated against actual calendar days via ir_prorate_monthly(); the
+ * rest of the math is delegated to ir_distribution_core() below, shared
+ * with ir_project_growth()'s hypothetical projections.
  *
  * @param float $grossFareTotal   Real gross fares for the period (from Delivery & Ride, via the read-only connection)
  * @param float $commissionRate   e.g. 0.05 for 5%
@@ -56,13 +62,61 @@ function ir_run_distribution(
     string $periodEnd,
     array $investors
 ): array {
-    $commissionRevenue = $grossFareTotal * $commissionRate;
-
     $totalCosts = 0.0;
     foreach ($activeCostCategories as $cat) {
         $totalCosts += ir_prorate_monthly((float)$cat['monthly_amount'], $periodStart, $periodEnd);
     }
+    return ir_distribution_core($grossFareTotal, $commissionRate, $totalCosts, $investors, $periodStart, $periodEnd);
+}
 
+/**
+ * Hypothetical/projected version of ir_run_distribution(), for the
+ * Growth & Goal Planner - takes an assumed trips/day * blended average
+ * fare instead of real Delivery & Ride data, and prorates costs by a
+ * plain day-count (days/30) instead of real calendar dates, since a
+ * "day/week/month/year" projection has no real period_start/period_end
+ * to anchor to. Shares the exact same pool/payback/bounce math as a
+ * real run via ir_distribution_core() - this is a projection of the
+ * SAME rules, not a different, simplified model.
+ *
+ * @param float $grossFarePerDay  Assumed trips/day * blended average fare/trip
+ * @param int   $days             1 (day), 7 (week), 30 (month), or 365 (year)
+ * @param array $costCategories   [['monthly_amount' => float], ...] - only active categories
+ * @param array $investors        Same shape as ir_run_distribution()'s $investors
+ * @param string $label           Human label (e.g. 'day') - carried through as period_start/period_end for display only
+ */
+function ir_project_growth(
+    float $grossFarePerDay,
+    int $days,
+    float $commissionRate,
+    array $costCategories,
+    array $investors,
+    string $label = ''
+): array {
+    $grossFareTotal = $grossFarePerDay * $days;
+    $totalCosts = 0.0;
+    foreach ($costCategories as $cat) {
+        $totalCosts += (float)$cat['monthly_amount'] * ($days / 30.0);
+    }
+    return ir_distribution_core($grossFareTotal, $commissionRate, $totalCosts, $investors, $label, $label);
+}
+
+/**
+ * Shared pool/payback/bounce math for both a real dated period
+ * (ir_run_distribution) and a hypothetical projection
+ * (ir_project_growth) - takes total_costs already computed by whichever
+ * caller, so this function itself has no opinion on how costs were
+ * prorated.
+ */
+function ir_distribution_core(
+    float $grossFareTotal,
+    float $commissionRate,
+    float $totalCosts,
+    array $investors,
+    string $periodStart,
+    string $periodEnd
+): array {
+    $commissionRevenue = $grossFareTotal * $commissionRate;
     $netProfit = $commissionRevenue - $totalCosts;
 
     // Step 2: standard 20% investor pool entitlement. Floored at zero -

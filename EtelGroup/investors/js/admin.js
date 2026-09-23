@@ -365,6 +365,68 @@ async function irUnlockTranche2() {
   irLoadDashboard();
 }
 
+// ---------- growth & goal planner ----------
+async function irRunGrowthPlanner() {
+  const body = {
+    registered_drivers: Number(document.getElementById('gp-drivers').value || 0),
+    trips_per_driver_per_day: Number(document.getElementById('gp-trips-per-driver').value || 0),
+    avg_distance_km: Number(document.getElementById('gp-distance').value || 0),
+    base_fare: Number(document.getElementById('gp-base-fare').value || 0),
+    per_km_rate: Number(document.getElementById('gp-per-km').value || 0),
+    avg_wait_min: Number(document.getElementById('gp-wait-min').value || 0),
+    wait_rate_per_min: Number(document.getElementById('gp-wait-rate').value || 0),
+    pct_peak_surge: Number(document.getElementById('gp-pct-surge').value || 0),
+    surge_multiplier: Number(document.getElementById('gp-surge-mult').value || 1),
+  };
+  const el = document.getElementById('gp-output');
+  el.innerHTML = 'Calculating…';
+  const res = await irApi('admin_growth_planner', body);
+  if (!res.ok) { el.innerHTML = `<div class="ir-not-connected">⚠ ${irEsc(res.error)}</div>`; return; }
+  const d = res.data;
+  const fb = d.fare_breakdown;
+  const periodOrder = ['day', 'week', 'month', 'year'];
+  const periodLabel = { day: 'Day', week: 'Week', month: 'Month', year: 'Year' };
+
+  let html = `
+    <div class="stat-grid">
+      <div class="stat-card"><div class="label">Ride Fare (base+km)</div><div class="val">${irMoney(fb.ride_fare)}</div></div>
+      <div class="stat-card"><div class="label">Wait Charge</div><div class="val">${irMoney(fb.wait_charge)}</div></div>
+      <div class="stat-card"><div class="label">Surge Uplift</div><div class="val">${irMoney(fb.surge_uplift)}</div></div>
+      <div class="stat-card premium"><div class="label">Blended Avg Fare</div><div class="val">${irMoney(fb.blended_avg_fare)}</div></div>
+    </div>
+    <table class="ir-table"><thead><tr><th></th>${periodOrder.map(p => `<th class="ir-num">${periodLabel[p]}</th>`).join('')}</tr></thead><tbody>
+      <tr><td>Trips</td>${periodOrder.map(p => `<td class="ir-num">${d.periods[p].trips.toLocaleString()}</td>`).join('')}</tr>
+      <tr><td>Gross Fares (ETB)</td>${periodOrder.map(p => `<td class="ir-num">${irMoney(d.periods[p].gross_fare_total)}</td>`).join('')}</tr>
+      <tr><td>Commission Revenue</td>${periodOrder.map(p => `<td class="ir-num">${irMoney(d.periods[p].commission_revenue)}</td>`).join('')}</tr>
+      <tr><td>Total Costs</td>${periodOrder.map(p => `<td class="ir-num">${irMoney(d.periods[p].total_costs)}</td>`).join('')}</tr>
+      <tr><td><strong>Net Profit</strong></td>${periodOrder.map(p => `<td class="ir-num"><strong>${irMoney(d.periods[p].net_profit)}</strong></td>`).join('')}</tr>
+      <tr><td>Investor Pool Entitlement (20%)</td>${periodOrder.map(p => `<td class="ir-num">${irMoney(d.periods[p].pool_entitlement)}</td>`).join('')}</tr>
+      <tr><td>Total Investor Payout</td>${periodOrder.map(p => `<td class="ir-num">${irMoney(d.periods[p].total_investor_payout)}</td>`).join('')}</tr>
+      <tr><td>Founder Amount</td>${periodOrder.map(p => `<td class="ir-num">${irMoney(d.periods[p].founder_amount)}</td>`).join('')}</tr>
+    </tbody></table>
+  `;
+
+  const monthLines = d.periods.month.lines;
+  if (monthLines.length) {
+    html += `
+      <div class="section-title" style="font-size:14px;margin-top:18px">Projected Per-Investor Payout</div>
+      <table class="ir-table"><thead><tr><th>Investor</th><th>Rate</th>${periodOrder.map(p => `<th class="ir-num">${periodLabel[p]}</th>`).join('')}</tr></thead><tbody>
+        ${monthLines.map(ml => {
+          const byPeriod = periodOrder.map(p => {
+            const line = d.periods[p].lines.find(l => l.investor_id === ml.investor_id);
+            return `<td class="ir-num">${irMoney(line ? line.total_payout : 0)}</td>`;
+          }).join('');
+          return `<tr><td>${irEsc(ml.investor_name)}</td><td>${ml.multiplier}x</td>${byPeriod}</tr>`;
+        }).join('')}
+      </tbody></table>
+    `;
+  } else {
+    html += '<div class="ir-not-connected" style="margin-top:14px">No investors yet — add one to see their projected payout here.</div>';
+  }
+
+  el.innerHTML = html;
+}
+
 // ---------- distribution ----------
 let IR_LAST_PREVIEW = null;
 async function irPreviewDistribution() {
