@@ -168,3 +168,40 @@ function ir_log(PDO $pdo, string $actor, string $action, string $detail = ''): v
         error_log('[InvestorRelations][activity_log] ' . $e->getMessage());
     }
 }
+
+// Moved here (from AdminController.php) so SetupController.php's demo
+// seeder can reuse the exact same holdings/cumulative logic a real
+// distribution run uses - boot.php only ever loads ONE controller file
+// per request (routed by action prefix), so a helper only AdminController
+// defined was unreachable from SetupController.
+function ir_investor_holdings(PDO $pdo, bool $includeDemo, string $asOf = null): array {
+    $asOf = $asOf ?? date('Y-m-d');
+    $demoClause = $includeDemo ? '' : 'AND p.is_demo = 0';
+    $stmt = $pdo->prepare(
+        "SELECT i.id, i.name, i.contact_email, i.contact_phone, i.is_demo,
+                COALESCE(SUM(p.shares), 0) AS shares_owned,
+                COALESCE(SUM(p.amount_paid), 0) AS total_invested
+         FROM ir_investors i
+         LEFT JOIN ir_share_purchases p ON p.investor_id = i.id AND p.purchase_date <= ? $demoClause
+         WHERE i.is_active = 1 " . ($includeDemo ? '' : 'AND i.is_demo = 0') . "
+         GROUP BY i.id
+         ORDER BY i.name"
+    );
+    $stmt->execute([$asOf]);
+    return $stmt->fetchAll();
+}
+
+// Sums an investor's real total_payout across all PRIOR locked periods
+// (period_end < the period being calculated), the "cumulative received
+// before" the engine needs to determine payback phase.
+function ir_cumulative_received_before(PDO $pdo, int $investorId, string $beforePeriodStart, bool $includeDemo): array {
+    $demoClause = $includeDemo ? '' : 'AND dp.is_demo = 0';
+    $stmt = $pdo->prepare(
+        "SELECT COALESCE(SUM(l.total_payout), 0)
+         FROM ir_distribution_investor_lines l
+         JOIN ir_distribution_periods dp ON dp.id = l.period_id
+         WHERE l.investor_id = ? AND dp.period_start < ? $demoClause"
+    );
+    $stmt->execute([$investorId, $beforePeriodStart]);
+    return ['cumulative' => (float)$stmt->fetchColumn()];
+}

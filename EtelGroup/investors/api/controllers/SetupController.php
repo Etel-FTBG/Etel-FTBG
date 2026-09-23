@@ -105,14 +105,37 @@ case 'setup_seed_demo': {
     // distribution period, all flagged is_demo=1, purely for showing
     // prospective investors how the system works. Never mixed into
     // real math - every query elsewhere filters is_demo appropriately.
+    // Builds a 6-month GROWTH STORY, not one flat sample month - the
+    // platform hasn't launched yet, so there's no real trip history to
+    // seed from; a single static month doesn't tell an investor anything
+    // about trajectory. Illustrates, end to end: early unprofitable
+    // months turning profitable as trips/day ramps up, investors joining
+    // at different points, Tranche 2 unlocking mid-story the same real
+    // way the admin dashboard's own milestone trigger works (first month
+    // trips/day crosses 400), an early investor completing payback and
+    // dropping to the standard 1.0x rate, and unsold pool shares left
+    // over (room for new investors, not a hard sell-out) - all clearly
+    // tagged DEMO and fully separate from real data throughout.
     eg_require_admin();
     $pdo = eg_db();
     ir_ensure_core_tables($pdo);
+    $actor = eg_current_actor()['full_name'];
 
-    $demoInvestors = [
-        ['name' => 'Yonas Bekele (DEMO)', 'email' => 'demo.yonas@example.com', 'phone' => '+251911000001', 'shares' => 400, 'tranche' => 1, 'amount' => 400000],
-        ['name' => 'Selamawit Girma (DEMO)', 'email' => 'demo.selam@example.com', 'phone' => '+251911000002', 'shares' => 150, 'tranche' => 2, 'amount' => 150000],
-        ['name' => 'Abel Tesfaye (DEMO)', 'email' => 'demo.abel@example.com', 'phone' => '+251911000003', 'shares' => 100, 'tranche' => 2, 'amount' => 100000],
+    $months = [];
+    for ($i = 5; $i >= 0; $i--) {
+        $months[] = date('Y-m-01', strtotime("-$i months", strtotime(date('Y-m-01'))));
+    }
+    // Illustrative trips/day per month (there's no real data yet) and a
+    // rough average fare/trip, used only to derive a plausible gross
+    // fare total per month (trips/day * days in month * avg fare).
+    $tripsPerDayByMonth = [60, 140, 230, 320, 410, 480];
+    $avgFarePerTrip = 150.0;
+
+    $investorsPlan = [
+        ['month_index' => 0, 'name' => 'Yonas Bekele (DEMO)', 'email' => 'demo.yonas@example.com', 'phone' => '+251911000001', 'shares' => 300, 'tranche' => 1, 'amount' => 300000],
+        ['month_index' => 2, 'name' => 'Selamawit Girma (DEMO)', 'email' => 'demo.selam@example.com', 'phone' => '+251911000002', 'shares' => 100, 'tranche' => 1, 'amount' => 100000],
+        ['month_index' => 4, 'name' => 'Abel Tesfaye (DEMO)', 'email' => 'demo.abel@example.com', 'phone' => '+251911000003', 'shares' => 250, 'tranche' => 2, 'amount' => 250000],
+        ['month_index' => 5, 'name' => 'Mekdes Alemu (DEMO)', 'email' => 'demo.mekdes@example.com', 'phone' => '+251911000004', 'shares' => 150, 'tranche' => 2, 'amount' => 150000],
     ];
 
     $pdo->beginTransaction();
@@ -126,32 +149,22 @@ case 'setup_seed_demo': {
              VALUES (?, ?, ?, ?, ?, 1)'
         );
         $investorIds = [];
-        foreach ($demoInvestors as $d) {
+        foreach ($investorsPlan as $inv) {
             $hash = password_hash('demo1234', PASSWORD_DEFAULT);
-            $insInv->execute([$d['name'], $d['email'], $d['phone'], $d['email'], $hash]);
+            $insInv->execute([$inv['name'], $inv['email'], $inv['phone'], $inv['email'], $hash]);
             $id = (int)$pdo->lastInsertId();
             $investorIds[] = $id;
-            $insPurchase->execute([$id, date('Y-m-d', strtotime('-90 days')), $d['shares'], $d['tranche'], $d['amount']]);
+            $joinDate = date('Y-m-05', strtotime($months[$inv['month_index']]));
+            $insPurchase->execute([$id, $joinDate, $inv['shares'], $inv['tranche'], $inv['amount']]);
         }
 
-        // One sample locked period so the demo has payout history to show.
-        $investorsForEngine = [];
-        foreach ($demoInvestors as $i => $d) {
-            $investorsForEngine[] = [
-                'id' => $investorIds[$i],
-                'shares_owned' => $d['shares'],
-                'total_invested' => $d['amount'],
-                'cumulative_received_before' => 0,
-            ];
-        }
-        $periodStart = date('Y-m-01', strtotime('-1 month'));
-        $periodEnd = date('Y-m-t', strtotime('-1 month'));
-        $result = ir_run_distribution(
-            180000.0, // sample gross fares for the demo month
-            ir_commission_rate($pdo),
-            [], // no real cost categories deducted in the demo snapshot, keeps it simple/illustrative
-            $periodStart, $periodEnd, $investorsForEngine
-        );
+        $commissionRate = ir_commission_rate($pdo);
+        // Reuses whatever REAL active cost categories are currently
+        // configured (prorated per demo month, same as a real run) so
+        // the demo's cost side matches the admin's actual entered
+        // numbers rather than an unrelated illustrative figure - falls
+        // back to zero costs if none are configured yet.
+        $costCats = $pdo->query('SELECT monthly_amount FROM ir_cost_categories WHERE is_active = 1')->fetchAll();
 
         $insPeriod = $pdo->prepare(
             'INSERT INTO ir_distribution_periods
@@ -160,27 +173,62 @@ case 'setup_seed_demo': {
               unsold_bounce_to_founder, total_investor_payout, founder_amount, is_demo, locked_by)
              VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,1,?)'
         );
-        $insPeriod->execute([
-            $result['period_start'], $result['period_end'], $result['commission_rate'], $result['gross_fare_total'],
-            $result['commission_revenue'], $result['total_costs'], $result['net_profit'], $result['pool_entitlement'],
-            $result['sold_shares'], $result['unsold_shares'], $result['unsold_bounce_theoretical'],
-            $result['unsold_bounce_to_investors'], $result['unsold_bounce_to_founder'], $result['total_investor_payout'],
-            $result['founder_amount'], eg_current_actor()['full_name'] . ' (DEMO)',
-        ]);
-        $periodId = (int)$pdo->lastInsertId();
-
         $insLine = $pdo->prepare(
             'INSERT INTO ir_distribution_investor_lines
              (period_id, investor_id, shares_at_time, invested_principal_at_time, cumulative_received_before,
               payback_phase, multiplier, base_entitlement, bounce_share, total_payout, cumulative_received_after)
              VALUES (?,?,?,?,?,?,?,?,?,?,?)'
         );
-        foreach ($result['lines'] as $line) {
-            $insLine->execute([
-                $periodId, $line['investor_id'], $line['shares_at_time'], $line['invested_principal_at_time'],
-                $line['cumulative_received_before'], $line['payback_phase'] ? 1 : 0, $line['multiplier'],
-                $line['base_entitlement'], $line['bounce_share'], $line['total_payout'], $line['cumulative_received_after'],
+
+        $tranche2UnlockedByDemo = false;
+        foreach ($months as $mi => $monthStart) {
+            $periodStart = $monthStart;
+            $periodEnd = date('Y-m-t', strtotime($monthStart));
+            $tripsPerDay = $tripsPerDayByMonth[$mi];
+            $daysInMonth = (int)date('t', strtotime($monthStart));
+            $grossFare = $tripsPerDay * $daysInMonth * $avgFarePerTrip;
+
+            // Same 400 trips/day trigger the real milestone panel uses -
+            // only touches Tranche 2 if it isn't already really unlocked.
+            if ($tripsPerDay >= 400 && !$tranche2UnlockedByDemo) {
+                $already = (bool)$pdo->query('SELECT is_unlocked FROM ir_tranches WHERE tranche_number = 2')->fetchColumn();
+                if (!$already) {
+                    $pdo->prepare(
+                        "UPDATE ir_tranches SET is_unlocked=1, unlocked_at=?, unlocked_note=?, unlocked_by='(DEMO)' WHERE tranche_number=2"
+                    )->execute([$periodEnd . ' 00:00:00', "DEMO: hit $tripsPerDay trips/day in " . date('F Y', strtotime($monthStart))]);
+                }
+                $tranche2UnlockedByDemo = true;
+            }
+
+            $holdings = ir_investor_holdings($pdo, true, $periodEnd);
+            $investorsForEngine = [];
+            foreach ($holdings as $h) {
+                $cum = ir_cumulative_received_before($pdo, (int)$h['id'], $periodStart, true);
+                $investorsForEngine[] = [
+                    'id' => (int)$h['id'],
+                    'shares_owned' => (int)$h['shares_owned'],
+                    'total_invested' => (float)$h['total_invested'],
+                    'cumulative_received_before' => $cum['cumulative'],
+                ];
+            }
+
+            $result = ir_run_distribution($grossFare, $commissionRate, $costCats, $periodStart, $periodEnd, $investorsForEngine);
+
+            $insPeriod->execute([
+                $result['period_start'], $result['period_end'], $result['commission_rate'], $result['gross_fare_total'],
+                $result['commission_revenue'], $result['total_costs'], $result['net_profit'], $result['pool_entitlement'],
+                $result['sold_shares'], $result['unsold_shares'], $result['unsold_bounce_theoretical'],
+                $result['unsold_bounce_to_investors'], $result['unsold_bounce_to_founder'], $result['total_investor_payout'],
+                $result['founder_amount'], $actor . ' (DEMO)',
             ]);
+            $periodId = (int)$pdo->lastInsertId();
+            foreach ($result['lines'] as $line) {
+                $insLine->execute([
+                    $periodId, $line['investor_id'], $line['shares_at_time'], $line['invested_principal_at_time'],
+                    $line['cumulative_received_before'], $line['payback_phase'] ? 1 : 0, $line['multiplier'],
+                    $line['base_entitlement'], $line['bounce_share'], $line['total_payout'], $line['cumulative_received_after'],
+                ]);
+            }
         }
 
         ir_set_setting($pdo, 'demo_mode', '1');
@@ -190,8 +238,8 @@ case 'setup_seed_demo': {
         fail('Could not seed demo data: ' . $e->getMessage(), 500);
     }
 
-    ir_log($pdo, eg_current_actor()['full_name'], 'setup_seed_demo', count($demoInvestors) . ' demo investors + 1 sample period');
-    ok(['seeded_investors' => count($demoInvestors)]);
+    ir_log($pdo, $actor, 'setup_seed_demo', count($investorsPlan) . ' demo investors across ' . count($months) . ' months');
+    ok(['seeded_investors' => count($investorsPlan), 'seeded_periods' => count($months)]);
     break;
 }
 
@@ -209,6 +257,10 @@ case 'setup_clear_demo': {
         }
         $pdo->exec('DELETE FROM ir_share_purchases WHERE is_demo = 1');
         $pdo->exec('DELETE FROM ir_investors WHERE is_demo = 1');
+        // Revert a Tranche 2 unlock ONLY if the demo itself performed it
+        // (marked unlocked_by='(DEMO)') - never touches a real admin unlock.
+        $pdo->exec("UPDATE ir_tranches SET is_unlocked=0, unlocked_at=NULL, unlocked_note='', unlocked_by=''
+                     WHERE tranche_number=2 AND unlocked_by='(DEMO)'");
         ir_set_setting($pdo, 'demo_mode', '0');
         $pdo->commit();
     } catch (Exception $e) {
