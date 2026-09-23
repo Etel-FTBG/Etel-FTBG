@@ -621,6 +621,22 @@ switch ($action) {
     case 'register': case 'login': case 'sg_login': case 'etelid_login': case 'admin_etelid_login': case 'change_password':
         require __DIR__ . '/controllers/AuthController.php';
         break;
+    case 'set_user_language': {
+        // Persists the caller's one-click language choice (currently 'en'
+        // or 'am') to their account, so it follows them across devices -
+        // the client also keeps it in localStorage for instant effect
+        // and for signed-out pages. Whitelisted values only; never trust
+        // an arbitrary string into a column read back and rendered as a
+        // language code elsewhere.
+        $pdo = db(); $u = require_auth($pdo);
+        $body = json_decode(file_get_contents('php://input'), true);
+        $lang = isset($body['lang']) ? trim($body['lang']) : '';
+        if (!in_array($lang, array('en', 'am'), true)) fail('Unsupported language', 400);
+        if (!in_array('lang', etel_table_columns($pdo, 'users'), true)) fail('Language preference not supported on this install', 501);
+        $pdo->prepare('UPDATE users SET lang = ? WHERE id = ?')->execute(array($lang, $u['id']));
+        ok(array('lang' => $lang));
+        break;
+    }
     case 'admin_get_service_givers': case 'admin_get_service_givers_list': {
         $pdo = db(); require_admin($pdo);
         $status = isset($_GET['status']) ? trim($_GET['status']) : '';
