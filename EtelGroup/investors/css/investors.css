@@ -1,0 +1,64 @@
+/* ============================================================
+   Investor Relations (Etel Delivery & Ride) — module-specific styles
+   Loaded ALONGSIDE ../../css/admin.css (EtelGroup's own gold/carbon
+   admin stylesheet) - reuses its tokens/components (.btn, .stat-card,
+   .tab, .msg-table, .pill, .modal, .cf-field, etc.) rather than
+   redefining them. Only the pieces this module needs that don't
+   already exist live here.
+   ============================================================ */
+
+.ir-shell{max-width:1180px;margin:0 auto;padding:24px 20px 60px;}
+.ir-topbar{display:flex;align-items:center;gap:14px;margin-bottom:24px;flex-wrap:wrap;}
+.ir-topbar h1{font-size:19px;color:var(--gold-light);}
+.ir-topbar .sub{font-size:12px;color:var(--text-dim);}
+.ir-spacer{flex:1;}
+
+.ir-demo-banner{
+  background:rgba(231,76,60,.12);border:1px solid rgba(231,76,60,.4);color:#ff8a7a;
+  border-radius:10px;padding:10px 16px;font-size:12.5px;font-weight:700;margin-bottom:18px;
+  display:flex;align-items:center;gap:10px;
+}
+.ir-demo-tag{
+  display:inline-block;background:rgba(231,76,60,.16);color:#ff8a7a;border:1px solid rgba(231,76,60,.4);
+  border-radius:6px;padding:1px 7px;font-size:9.5px;font-weight:800;letter-spacing:.4px;margin-left:6px;
+  vertical-align:middle;text-transform:uppercase;
+}
+
+.ir-card{background:var(--bg2);border:1px solid var(--line);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow-1);margin-bottom:20px;}
+.ir-card h2{font-size:15px;color:var(--gold-light);margin-bottom:4px;}
+.ir-card .desc{font-size:12.5px;color:var(--text-dim);margin-bottom:16px;max-width:640px;line-height:1.6;}
+
+.ir-progress-track{background:rgba(212,175,55,.08);border:1px solid var(--line);border-radius:20px;height:14px;overflow:hidden;margin:10px 0 6px;}
+.ir-progress-fill{height:100%;background:linear-gradient(90deg,var(--gold-dim),var(--gold));border-radius:20px;transition:width .4s;}
+.ir-progress-label{font-size:12px;color:var(--text-dim);display:flex;justify-content:space-between;}
+
+.ir-not-connected{
+  background:rgba(255,180,60,.08);border:1px solid rgba(255,180,60,.35);color:#ffcf80;
+  border-radius:10px;padding:14px 16px;font-size:13px;line-height:1.6;
+}
+
+.ir-tranche-row{display:flex;align-items:center;gap:14px;padding:14px 0;border-bottom:1px solid var(--line);}
+.ir-tranche-row:last-child{border-bottom:none;}
+.ir-tranche-row .name{font-weight:700;color:var(--text);min-width:110px;}
+.ir-tranche-row .meta{font-size:12px;color:var(--text-dim);flex:1;}
+
+table.ir-table{width:100%;border-collapse:collapse;font-size:13px;}
+table.ir-table th{text-align:left;font-size:10.5px;color:var(--gold-dim);text-transform:uppercase;letter-spacing:.4px;
+  padding:8px 10px;border-bottom:1px solid var(--line2);}
+table.ir-table td{padding:10px;border-bottom:1px solid var(--line);color:var(--text);}
+table.ir-table tr:hover td{background:rgba(212,175,55,.03);}
+.ir-num{font-variant-numeric:tabular-nums;text-align:right;}
+
+.ir-wizard-step{display:none;}
+.ir-wizard-step.active{display:block;}
+.ir-wizard-steps{display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;}
+.ir-wizard-steps .step{padding:6px 12px;border-radius:20px;font-size:11.5px;border:1px solid var(--line);color:var(--text-dim);}
+.ir-wizard-steps .step.active{border-color:var(--gold);color:var(--gold);background:rgba(212,175,55,.08);}
+.ir-wizard-steps .step.done{border-color:rgba(46,204,113,.4);color:#7ee8a8;}
+
+.ir-login-wrap{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:20px;}
+
+@media (max-width:640px){
+  .ir-shell{padding:16px 12px 40px;}
+  table.ir-table{font-size:12px;}
+}

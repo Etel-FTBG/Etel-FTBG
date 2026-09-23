@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Investor Relations — Etel Delivery & Ride</title>
+<link rel="stylesheet" href="../css/admin.css">
+<link rel="stylesheet" href="css/investors.css">
+</head>
+<body>
+
+<!-- Reuses EtelGroup's OWN admin login (EtelGroup/api/boot.php?action=admin_login,
+     the same EtelID owner/admin auth as the rest of EtelGroup admin) - not a
+     second admin credential to manage. Stores the token under the SAME
+     localStorage key ('ega_token') EtelGroup admin itself uses, so being
+     already signed in there in this browser is picked up automatically. -->
+<div id="login-screen" class="ir-login-wrap">
+  <div class="login-card">
+    <div class="login-mark">λE</div>
+    <h1>Investor Relations</h1>
+    <div class="sub">Etel Delivery &amp; Ride — Admin</div>
+    <div class="login-err" id="login-err"></div>
+    <input type="text" id="login-identifier" placeholder="Phone or EtelID" autofocus>
+    <input type="password" id="login-password" placeholder="EtelID Password">
+    <button class="btn btn-primary" id="login-btn" style="width:100%" onclick="irDoLogin()">Sign In with EtelID</button>
+  </div>
+</div>
+
+<div id="shell" style="display:none">
+  <div class="ir-shell">
+    <div class="ir-topbar">
+      <div>
+        <h1>Investor Relations</h1>
+        <div class="sub">Etel Delivery &amp; Ride</div>
+      </div>
+      <div class="ir-spacer"></div>
+      <button class="btn btn-outline" id="demo-toggle-btn" onclick="irToggleDemo()">Loading…</button>
+      <button class="btn btn-danger" onclick="irLogout()">Sign Out</button>
+    </div>
+
+    <div id="demo-banner" class="ir-demo-banner" style="display:none">
+      ⚠ DEMO MODE is ON — the investors, purchases and one sample distribution period shown below are illustrative sample data, not real. Turn it off above once you're ready to go live.
+    </div>
+
+    <!-- ===================== SETUP WIZARD ===================== -->
+    <div id="wizard" style="display:none">
+      <div class="ir-card">
+        <h2>Get Started</h2>
+        <div class="desc">Connect the read-only Delivery &amp; Ride database, set your commission rate, and enter starting monthly costs. This only needs to be done once.</div>
+        <div class="ir-wizard-steps">
+          <div class="step" data-step="1">1. Delivery Connection</div>
+          <div class="step" data-step="2">2. Commission Rate</div>
+          <div class="step" data-step="3">3. Cost Categories</div>
+          <div class="step" data-step="4">4. Done</div>
+        </div>
+
+        <div class="ir-wizard-step" data-step="1">
+          <p class="desc">Enter a <strong>read-only</strong> MySQL user scoped to Delivery &amp; Ride's database (SELECT privilege only, no writes). See the README for the exact <code>GRANT</code> statement to run.</p>
+          <div class="cf-field"><label>DB Host</label><input type="text" id="w-host" placeholder="localhost"></div>
+          <div class="cf-field"><label>Database Name</label><input type="text" id="w-name" placeholder="delivery_db"></div>
+          <div class="cf-field"><label>Read-only Username</label><input type="text" id="w-user" placeholder="ir_readonly"></div>
+          <div class="cf-field"><label>Password</label><input type="password" id="w-pass"></div>
+          <div id="w-conn-msg" style="font-size:12.5px;margin:10px 0"></div>
+          <div class="modal-actions">
+            <button class="btn btn-outline" onclick="irSaveConnection()">Save</button>
+            <button class="btn btn-outline" onclick="irTestConnection()">Test Connection</button>
+            <button class="btn btn-primary" onclick="irWizardStep(2)">Next →</button>
+          </div>
+        </div>
+
+        <div class="ir-wizard-step" data-step="2">
+          <div class="cf-field"><label>Commission rate (as a fraction, e.g. 0.05 = 5%)</label><input type="number" id="w-rate" value="0.05" step="0.001" min="0" max="1"></div>
+          <div class="modal-actions">
+            <button class="btn btn-outline" onclick="irWizardStep(1)">← Back</button>
+            <button class="btn btn-primary" onclick="irSaveRate()">Save &amp; Next →</button>
+          </div>
+        </div>
+
+        <div class="ir-wizard-step" data-step="3">
+          <p class="desc">Add your starting monthly cost categories — you can add more or edit these anytime from the dashboard.</p>
+          <div id="w-cats"></div>
+          <button class="btn btn-outline" onclick="irAddCatRow()" style="margin:10px 0">+ Add Category</button>
+          <div class="modal-actions">
+            <button class="btn btn-outline" onclick="irWizardStep(2)">← Back</button>
+            <button class="btn btn-primary" onclick="irSaveCats()">Save &amp; Next →</button>
+          </div>
+        </div>
+
+        <div class="ir-wizard-step" data-step="4">
+          <p class="desc">Setup is complete. You can optionally seed sample DEMO investors to preview the full system before entering real investor data.</p>
+          <div class="modal-actions">
+            <button class="btn btn-outline" onclick="irSeedDemo()">Seed Demo Data</button>
+            <button class="btn btn-primary" onclick="irFinishWizard()">Go to Dashboard →</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================== DASHBOARD ===================== -->
+    <div id="dashboard" style="display:none">
+      <div class="stat-grid" id="ir-stats"></div>
+
+      <div class="ir-card">
+        <h2>📈 Tranche 2 Milestone</h2>
+        <div class="desc">Rolling 4-week average trips/day, from real Delivery &amp; Ride data. Tranche 2 unlock is always a manual decision — this is a progress indicator only.</div>
+        <div id="ir-milestone"></div>
+      </div>
+
+      <div class="ir-card">
+        <h2>🎟 Tranches</h2>
+        <div id="ir-tranches"></div>
+      </div>
+
+      <div class="ir-card">
+        <h2>💸 Monthly Costs</h2>
+        <div class="desc">Itemized operating costs — each category has its own editable amount and a full change history.</div>
+        <table class="ir-table" id="ir-costs-table"><thead><tr><th>Category</th><th class="ir-num">Monthly Amount (ETB)</th><th>Status</th><th></th></tr></thead><tbody></tbody></table>
+        <button class="btn btn-outline" onclick="irOpenCostModal(null)" style="margin-top:12px">+ Add Category</button>
+      </div>
+
+      <div class="ir-card">
+        <h2>👤 Investors</h2>
+        <table class="ir-table" id="ir-investors-table"><thead><tr>
+          <th>Name</th><th class="ir-num">Shares</th><th class="ir-num">Invested (ETB)</th>
+          <th class="ir-num">Received (ETB)</th><th class="ir-num">Remaining</th><th>Rate</th><th></th>
+        </tr></thead><tbody></tbody></table>
+        <button class="btn btn-outline" onclick="irOpenInvestorModal(null)" style="margin-top:12px">+ Add Investor</button>
+      </div>
+
+      <div class="ir-card">
+        <h2>🧮 Run Monthly Distribution</h2>
+        <div class="desc">Computes the period's payout using real commission revenue and current costs, then previews before locking. Locked periods are permanent historical records.</div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
+          <div class="cf-field"><label>Period Start</label><input type="date" id="dist-start"></div>
+          <div class="cf-field"><label>Period End</label><input type="date" id="dist-end"></div>
+          <button class="btn btn-outline" onclick="irPreviewDistribution()">Preview</button>
+        </div>
+        <div id="dist-preview" style="margin-top:16px"></div>
+      </div>
+
+      <div class="ir-card">
+        <h2>📜 Distribution History</h2>
+        <table class="ir-table" id="ir-periods-table"><thead><tr>
+          <th>Period</th><th class="ir-num">Net Profit</th><th class="ir-num">Investor Payout</th><th class="ir-num">Founder</th><th></th>
+        </tr></thead><tbody></tbody></table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ---------- Cost category modal ---------- -->
+<div class="modal-bg" id="cost-modal-bg">
+  <div class="modal">
+    <button class="modal-close btn btn-outline" onclick="irCloseModal('cost-modal-bg')">✕</button>
+    <h2 id="cost-modal-title">Cost Category</h2>
+    <input type="hidden" id="cost-id">
+    <div class="cf-field"><label>Name</label><input type="text" id="cost-name" placeholder="Staff/Payroll"></div>
+    <div class="cf-field"><label>Monthly Amount (ETB)</label><input type="number" id="cost-amount" min="0" step="0.01"></div>
+    <div class="cf-field"><label><input type="checkbox" id="cost-active" checked style="width:auto;display:inline-block"> Active</label></div>
+    <div id="cost-modal-err" style="color:#ff8a7a;font-size:12px;margin:8px 0"></div>
+    <div class="modal-actions">
+      <button class="btn btn-primary" onclick="irSaveCostCategory()">Save</button>
+      <button class="btn btn-outline" id="cost-history-btn" onclick="irShowCostHistory()" style="display:none">View History</button>
+    </div>
+    <div id="cost-history-body" style="margin-top:14px"></div>
+  </div>
+</div>
+
+<!-- ---------- Investor modal ---------- -->
+<div class="modal-bg" id="investor-modal-bg">
+  <div class="modal">
+    <button class="modal-close btn btn-outline" onclick="irCloseModal('investor-modal-bg')">✕</button>
+    <h2 id="investor-modal-title">Investor</h2>
+    <input type="hidden" id="inv-id">
+    <div class="cf-field"><label>Name</label><input type="text" id="inv-name"></div>
+    <div class="cf-field"><label>Contact Email</label><input type="email" id="inv-email"></div>
+    <div class="cf-field"><label>Contact Phone</label><input type="text" id="inv-phone"></div>
+    <div class="cf-field" id="inv-identifier-field"><label>Login Identifier (email or phone)</label><input type="text" id="inv-identifier"></div>
+    <div class="cf-field"><label id="inv-pw-label">Password (min 6 chars)</label><input type="password" id="inv-password"></div>
+    <div id="investor-modal-err" style="color:#ff8a7a;font-size:12px;margin:8px 0"></div>
+    <div class="modal-actions"><button class="btn btn-primary" onclick="irSaveInvestor()">Save</button></div>
+
+    <div id="inv-purchases-section" style="display:none;margin-top:18px;border-top:1px solid var(--line);padding-top:14px">
+      <div class="field-label">Share Purchases</div>
+      <table class="ir-table" id="inv-purchases-table"><thead><tr><th>Date</th><th class="ir-num">Shares</th><th>Tranche</th><th class="ir-num">Amount</th></tr></thead><tbody></tbody></table>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
+        <input type="date" id="p-date" style="flex:1;min-width:120px">
+        <input type="number" id="p-shares" placeholder="Shares" style="flex:1;min-width:90px">
+        <select id="p-tranche" style="flex:1;min-width:90px"><option value="1">Tranche 1</option><option value="2">Tranche 2</option></select>
+        <input type="number" id="p-amount" placeholder="Amount ETB" style="flex:1;min-width:110px">
+        <button class="btn btn-outline" onclick="irAddPurchase()">+ Add</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ---------- Tranche 2 unlock modal ---------- -->
+<div class="modal-bg" id="tranche-modal-bg">
+  <div class="modal">
+    <button class="modal-close btn btn-outline" onclick="irCloseModal('tranche-modal-bg')">✕</button>
+    <h2>Unlock Tranche 2</h2>
+    <div class="cf-field"><label>Why is Tranche 2 being unlocked?</label><textarea id="tranche-note" placeholder="e.g. hit 400 trips/day for 4 weeks on 2026-09-23"></textarea></div>
+    <div id="tranche-modal-err" style="color:#ff8a7a;font-size:12px;margin:8px 0"></div>
+    <div class="modal-actions"><button class="btn btn-primary" onclick="irUnlockTranche2()">Unlock</button></div>
+  </div>
+</div>
+
+<!-- ---------- Period detail modal ---------- -->
+<div class="modal-bg" id="period-modal-bg">
+  <div class="modal" style="max-width:720px">
+    <button class="modal-close btn btn-outline" onclick="irCloseModal('period-modal-bg')">✕</button>
+    <h2 id="period-modal-title">Distribution Period</h2>
+    <div id="period-modal-body"></div>
+  </div>
+</div>
+
+<script src="js/admin.js"></script>
+</body>
+</html>

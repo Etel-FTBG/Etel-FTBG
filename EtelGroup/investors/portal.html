@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Investor Portal — Etel Delivery & Ride</title>
+<link rel="stylesheet" href="../css/admin.css">
+<link rel="stylesheet" href="css/investors.css">
+</head>
+<body>
+
+<div id="login-screen" class="ir-login-wrap">
+  <div class="login-card">
+    <div class="login-mark">λE</div>
+    <h1>Investor Portal</h1>
+    <div class="sub">Etel Delivery &amp; Ride</div>
+    <div class="login-err" id="login-err"></div>
+    <input type="text" id="login-identifier" placeholder="Your login identifier (email or phone)" autofocus>
+    <input type="password" id="login-password" placeholder="Password">
+    <button class="btn btn-primary" id="login-btn" style="width:100%" onclick="ipDoLogin()">Sign In</button>
+  </div>
+</div>
+
+<div id="shell" style="display:none">
+  <div class="ir-shell">
+    <div class="ir-topbar">
+      <div>
+        <h1 id="p-name">Welcome</h1>
+        <div class="sub">Etel Delivery &amp; Ride — Your Holding</div>
+      </div>
+      <div class="ir-spacer"></div>
+      <button class="btn btn-danger" onclick="ipLogout()">Sign Out</button>
+    </div>
+
+    <div id="p-demo-banner" class="ir-demo-banner" style="display:none">
+      ⚠ This is a DEMO account. Numbers shown are sample data for demonstration purposes only.
+    </div>
+
+    <div class="stat-grid" id="p-stats"></div>
+
+    <div class="ir-card">
+      <h2>Current Rate</h2>
+      <div id="p-rate"></div>
+    </div>
+
+    <div class="ir-card">
+      <h2>📜 Payout History</h2>
+      <table class="ir-table" id="p-history-table"><thead><tr>
+        <th>Period</th><th class="ir-num">Shares</th><th>Rate</th><th class="ir-num">Payout</th><th class="ir-num">Cumulative After</th>
+      </tr></thead><tbody></tbody></table>
+    </div>
+
+    <div class="ir-card">
+      <h2>🧾 Share Purchases</h2>
+      <table class="ir-table" id="p-purchases-table"><thead><tr>
+        <th>Date</th><th class="ir-num">Shares</th><th>Tranche</th><th class="ir-num">Amount</th>
+      </tr></thead><tbody></tbody></table>
+    </div>
+  </div>
+</div>
+
+<script src="js/portal.js"></script>
+</body>
+</html>

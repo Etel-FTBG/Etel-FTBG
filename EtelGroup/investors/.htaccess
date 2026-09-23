@@ -1,0 +1,23 @@
+# Investor Relations module — Apache config
+# Inherits EtelGroup/.htaccess's security headers; adds module-specific
+# rules on top.
+
+Options -Indexes
+
+# Block direct web access to the migration SQL files - meant to be run
+# once against the database, never served as a response.
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteRule ^api/migrations/ - [F,L]
+</IfModule>
+<FilesMatch "\.sql$">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+# Block direct access to the lib/ and controllers/ folders' PHP files -
+# they're only ever require()'d by api/boot.php, never requested directly.
+<FilesMatch "^(Crypto|Settings|DeliveryReadonly|DistributionEngine|InvestorAuth|SetupController|AdminController|PortalController)\.php$">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
