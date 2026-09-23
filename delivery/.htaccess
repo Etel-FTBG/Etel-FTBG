@@ -55,6 +55,21 @@ AddDefaultCharset UTF-8
     Header always unset X-Powered-By
 </IfModule>
 
+<Files "admin.html">
+    <IfModule mod_headers.c>
+        # admin.html only: EtelGroup admin's Finance & Planning tab embeds
+        # this exact page in a same-origin iframe (see EtelGroup/admin.html).
+        # The site-wide policy above sends frame-ancestors 'none', which
+        # blocks ALL framing (including same-origin) and takes precedence
+        # over X-Frame-Options: SAMEORIGIN in every modern browser - that's
+        # what "ethelmarket.com refused to connect" in the iframe was.
+        # Narrowed to 'self' here, scoped to just this one file, so every
+        # other delivery page (customer/courier/driver-facing) keeps the
+        # stricter clickjacking protection unchanged.
+        Header always set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://unpkg.com https://esm.sh https://maps.googleapis.com https://maps.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://ethelmarket.com https://maps.googleapis.com https://maps.gstatic.com https://lh3.googleusercontent.com; connect-src 'self' https://ethelmarket.com https://www.ethelmarket.com https://api.telebirr.com https://maps.googleapis.com https://maps.gstatic.com https://fcm.googleapis.com https://cdn.jsdelivr.net https://nominatim.openstreetmap.org; worker-src 'self'; manifest-src 'self'; frame-ancestors 'self';"
+    </IfModule>
+</Files>
+
 ServerSignature Off
 Options -Indexes -MultiViews
 
