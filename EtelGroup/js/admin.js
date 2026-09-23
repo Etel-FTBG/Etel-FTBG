@@ -296,6 +296,32 @@ async function loadFinanceTab() {
     // though it IS visible as a plain global to every script tag loaded
     // after it in the same document. window.ETEL would stay undefined here.
     ETEL.api = window.location.protocol + '//' + window.location.host + '/delivery/api/boot.php';
+    // Round Settings / What-If Scenario / Add Investor (and the equivalent
+    // dialogs in Platform Economics, Payroll, Business Plan) all render
+    // through delivery's admin-ui.js openModal(type, customHtml) - a
+    // DIFFERENT, incompatible function from the one-argument openModal(html)
+    // core.js itself declares. Both are plain top-level "function openModal"
+    // declarations, which (unlike const/let) DO become the same window
+    // property - so whichever script's declaration runs last simply
+    // overwrites the other's, and core.js loaded most recently just above.
+    // Loading the real admin-ui.js instead of re-implementing this would
+    // also pull in its unrelated side effects (e.g. a 15s setInterval
+    // polling loadConfirmations() forever after one visit to this tab), so
+    // it's reproduced narrowly here instead, matching its exact DOM
+    // contract (#modal-overlay/#modal-box/#modal-content, injected below)
+    // and its exact two-argument signature - every button in these panels
+    // only ever calls openModal('custom', htmlString) or closeModal().
+    window.openModal = function (type, customHtml) {
+      var overlay = document.getElementById('modal-overlay');
+      var content = document.getElementById('modal-content');
+      if (!overlay || !content) return;
+      overlay.style.display = 'flex';
+      content.innerHTML = customHtml;
+    };
+    window.closeModal = function () {
+      var overlay = document.getElementById('modal-overlay');
+      if (overlay) overlay.style.display = 'none';
+    };
     await Promise.all([
       egaLoadScript('../delivery/js/admin-equity.js'),
       egaLoadScript('../delivery/js/admin-platform-economics.js'),
@@ -392,6 +418,16 @@ const EGA_FINANCE_PANELS_HTML =
   '</div>' +
   '<div class="panel" id="panel-business-plan" style="display:none">' +
     '<div class="data-section"></div>' +
+  '</div>' +
+  // Copied verbatim from delivery/admin.html - the DOM contract the
+  // openModal/closeModal shim above targets. Every "Round Settings" /
+  // "What-If Scenario" / "Add Investor" style button in these panels
+  // needs this exact structure to render anything at all.
+  '<div id="modal-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:500;align-items:center;justify-content:center">' +
+    '<div id="modal-box" style="background:#fff;border-radius:16px;padding:32px;width:100%;max-width:480px;max-height:90vh;overflow-y:auto;position:relative;box-shadow:0 20px 60px rgba(0,0,0,.3)">' +
+      '<button onclick="closeModal()" style="position:absolute;top:14px;right:16px;background:none;border:none;font-size:22px;cursor:pointer;color:#999">✕</button>' +
+      '<div id="modal-content"></div>' +
+    '</div>' +
   '</div>';
 
 let EGA_FIN_HUB_RENDERED = false;
