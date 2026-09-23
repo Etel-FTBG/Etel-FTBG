@@ -225,7 +225,7 @@ function switchTab(name) {
   document.getElementById('panel-companies').style.display = name === 'companies' ? 'block' : 'none';
   document.getElementById('panel-employees').style.display = name === 'employees' ? 'block' : 'none';
   document.getElementById('panel-activity').style.display = name === 'activity' ? 'block' : 'none';
-  document.getElementById('panel-finance').style.display = name === 'finance' ? 'block' : 'none';
+  document.getElementById('tab-panel-finance').style.display = name === 'finance' ? 'block' : 'none';
   document.getElementById('tab-nav-dashboard').classList.toggle('active', name === 'dashboard');
   document.getElementById('tab-nav-companies').classList.toggle('active', name === 'companies');
   document.getElementById('tab-nav-employees').classList.toggle('active', name === 'employees');
@@ -237,22 +237,156 @@ function switchTab(name) {
   if (name === 'finance') loadFinanceTab();
 }
 
-// Lazy: the iframe only ever points at delivery/admin once this tab is
-// actually opened, and only once per page load - so simply having
-// EtelGroup admin open never touches delivery's login/session at all.
-// Deliberately the extension-less clean URL ("admin", not "admin.html") -
-// requesting the .html path 301-redirects to this same URL server-side
-// (see delivery/.htaccess), and that intermediate redirect response
-// carries the SITE-WIDE frame-ancestors 'none' (the per-file CSP
-// override for admin.html only ever attaches to the final served
-// response, not to a redirect generated before any file is mapped) -
-// so the browser blocked the iframe at that hop even after the fix.
-// Going straight to the clean URL skips the redirect entirely.
-let EGA_FINANCE_FRAME_LOADED = false;
-function loadFinanceTab() {
-  if (EGA_FINANCE_FRAME_LOADED) return;
-  EGA_FINANCE_FRAME_LOADED = true;
-  document.getElementById('finance-frame').src = '../delivery/admin#finance';
+// ---------- Finance & Planning (native, not an iframe) ----------
+// Pulls in delivery admin's own JS controllers (admin-equity.js etc.) and
+// CSS bundles on demand, the first time this tab opens, and renders the
+// real Equity/Platform Economics/Payroll/Business Plan panels straight
+// into #finance-native-root. This sidesteps every same-origin edge case
+// the earlier iframe approach kept hitting (delivery's clean-URL redirect
+// dropping the CSP override on its intermediate hop, then the INSA audit
+// lockdown hiding the panel inside the framed document too) by never
+// loading delivery/admin.html or its lockdown at all - only its
+// controllers and API.
+
+function egaLoadCss(href) {
+  return new Promise(function (resolve) {
+    var link = document.createElement('link');
+    link.rel = 'stylesheet'; link.href = href;
+    link.onload = resolve; link.onerror = resolve; // non-fatal - panels still function unstyled
+    document.head.appendChild(link);
+  });
+}
+function egaLoadScript(src) {
+  return new Promise(function (resolve, reject) {
+    var s = document.createElement('script');
+    s.src = src; s.onload = resolve; s.onerror = reject;
+    document.head.appendChild(s);
+  });
+}
+
+let EGA_FIN_ASSETS_LOADED = false;
+async function loadFinanceTab() {
+  if (!EGA_FIN_ASSETS_LOADED) {
+    EGA_FIN_ASSETS_LOADED = true;
+    await Promise.all([
+      egaLoadCss('../delivery/css/admin-group1.min.css'),
+      egaLoadCss('../delivery/css/admin-group2.min.css'),
+    ]);
+    await egaLoadScript('../delivery/js/core.js');
+    // core.js's ETEL.api auto-detects the API base from a "/delivery/"
+    // marker in the CURRENT PAGE's own URL - that marker isn't present
+    // here (we're on EtelGroup/admin.html), so it would otherwise fall
+    // back to this page's own directory. Point it at delivery's API
+    // directly instead.
+    window.ETEL.api = window.location.protocol + '//' + window.location.host + '/delivery/api/boot.php';
+    await Promise.all([
+      egaLoadScript('../delivery/js/admin-equity.js'),
+      egaLoadScript('../delivery/js/admin-platform-economics.js'),
+      egaLoadScript('../delivery/js/admin-payroll.js'),
+      egaLoadScript('../delivery/js/admin-business-plan.js'),
+    ]);
+    await egaLoadScript('../delivery/js/admin-finance-hub.js');
+  }
+  egaRenderFinanceGate();
+}
+
+// Deliberately separate from EtelGroup's own ega_token: these panels call
+// delivery's API directly with delivery's own bearer-token scheme, so a
+// Delivery admin session is required. Reuses one already in localStorage
+// (etel_token - same origin as delivery, so a direct delivery admin login
+// in this same browser is picked up automatically) if present; otherwise
+// prompts for delivery admin credentials right here, once.
+function egaRenderFinanceGate() {
+  var root = document.getElementById('finance-native-root');
+  if (window.Auth && Auth.isLoggedIn() && Auth.getUser() && Auth.getUser().role === 'admin') {
+    egaRenderFinanceHub();
+    return;
+  }
+  root.innerHTML =
+    '<div style="max-width:360px">' +
+      '<p style="font-size:13px;color:var(--text-dim);margin-bottom:14px">' +
+        'This tab pulls live data straight from Delivery admin - sign in with a Delivery admin account to view it. ' +
+        'This is separate from your EtelGroup admin login.</p>' +
+      '<input type="text" id="fin-login-phone" placeholder="Delivery admin phone" style="width:100%;margin-bottom:8px">' +
+      '<input type="password" id="fin-login-pw" placeholder="Password" style="width:100%;margin-bottom:8px">' +
+      '<div id="fin-login-err" style="color:#e57373;font-size:12px;margin-bottom:8px"></div>' +
+      '<button class="btn btn-primary" onclick="egaFinanceDeliveryLogin()">Sign In</button>' +
+    '</div>';
+}
+
+async function egaFinanceDeliveryLogin() {
+  var phone = document.getElementById('fin-login-phone').value.trim();
+  var password = document.getElementById('fin-login-pw').value;
+  var errEl = document.getElementById('fin-login-err');
+  errEl.textContent = '';
+  if (!phone || !password) { errEl.textContent = 'Enter phone and password.'; return; }
+  var res = await api('login', { phone: phone, password: password });
+  if (!res.success) { errEl.textContent = res.message || 'Login failed'; return; }
+  if (res.data.user.role !== 'admin') { errEl.textContent = 'This account is not a Delivery admin.'; return; }
+  Auth.save(res.data);
+  egaRenderFinanceGate();
+}
+
+// The exact markup for each sub-panel, copied verbatim from
+// delivery/admin.html (#panel-equity / #panel-platform-econ /
+// #panel-payroll / #panel-business-plan) - their load functions
+// (loadEquityPanel etc., from the scripts loaded above) fill these
+// .data-section containers completely unchanged from how they work on
+// delivery admin's own page; admin-finance-hub.js's loadFinanceHub()
+// moves these real DOM nodes into #panel-finance's sub-tab layout the
+// same way it does there.
+const EGA_FINANCE_PANELS_HTML =
+  '<div class="panel" id="panel-equity" style="display:none">' +
+    '<div class="data-section eq-shell">' +
+      '<div style="display:flex;align-items:center;gap:14px;margin-bottom:6px">' +
+        '<div style="width:46px;height:46px;border-radius:14px;flex:none;background:linear-gradient(135deg,#C8960C,#F2CC6B 45%,#8a5e14 100%);display:flex;align-items:center;justify-content:center;font-family:\'Syne\',sans-serif;font-weight:800;font-size:19px;color:#100b02;box-shadow:0 10px 22px rgba(0,0,0,.4),0 2px 0 rgba(255,255,255,.5) inset">E</div>' +
+        '<div class="section-title" style="margin:0">📈 Equity &amp; Investors</div>' +
+      '</div>' +
+      '<p style="font-size:13px;color:#B8B0A0;margin-bottom:16px;max-width:640px">' +
+        'Etel Group\'s investor cap table, round settings, and profit-distribution tool. ' +
+        'Visible only to roles granted the <span class="mono">equity.view</span> capability ' +
+        'in the Roles panel — everyone else never sees this tab.</p>' +
+      '<div style="display:flex;gap:10px;margin-bottom:22px;flex-wrap:wrap">' +
+        '<button class="eq-btn" onclick="openEquitySettingsModal()">⚙️ Round Settings</button>' +
+        '<button class="eq-btn" onclick="openEquityScenarioModal()">🔬 What-If Scenario</button>' +
+        '<button class="eq-btn" onclick="exportEquityInvestorsCsv()">📥 Export CSV</button>' +
+        '<button class="eq-btn primary" onclick="openEquityInvestorEdit(null)">➕ Add Investor</button>' +
+      '</div>' +
+      '<div id="equity-dashboard-body" style="margin-bottom:8px"></div>' +
+      '<div class="section-title" style="font-size:15px;margin-top:6px">Investors</div>' +
+      '<div id="equity-investors-list" style="margin-bottom:8px"></div>' +
+      '<div class="section-title" style="font-size:15px;margin-top:6px">Profit Distribution</div>' +
+      '<div id="equity-profit-body"></div>' +
+    '</div>' +
+  '</div>' +
+  '<div class="panel" id="panel-platform-econ" style="display:none">' +
+    '<div class="data-section eq-shell">' +
+      '<div class="section-title">📊 Platform Economics</div>' +
+      '<p style="font-size:13px;color:#B8B0A0;margin-bottom:16px;max-width:660px">' +
+        'Real 5% commission revenue from completed rides, weighed against real cost ' +
+        'assumptions you enter below. The revenue side is always live data — the cost ' +
+        'side is only as accurate as what you fill in. Gated by ' +
+        '<span class="mono">platform_economics.view</span>/<span class="mono">.manage</span>.</p>' +
+      '<div id="pe-body"></div>' +
+    '</div>' +
+  '</div>' +
+  '<div class="panel" id="panel-payroll" style="display:none">' +
+    '<div class="data-section"></div>' +
+  '</div>' +
+  '<div class="panel" id="panel-business-plan" style="display:none">' +
+    '<div class="data-section"></div>' +
+  '</div>';
+
+let EGA_FIN_HUB_RENDERED = false;
+function egaRenderFinanceHub() {
+  var root = document.getElementById('finance-native-root');
+  if (!EGA_FIN_HUB_RENDERED) {
+    EGA_FIN_HUB_RENDERED = true;
+    root.innerHTML =
+      '<div class="panel" id="panel-finance" style="display:block"><div class="data-section"></div></div>' +
+      EGA_FINANCE_PANELS_HTML;
+  }
+  if (typeof loadFinanceHub === 'function') loadFinanceHub();
 }
 
 // ---------- companies CRUD ----------

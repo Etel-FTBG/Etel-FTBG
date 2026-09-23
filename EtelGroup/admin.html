@@ -188,24 +188,33 @@
       <div class="pagination" id="activity-pagination"></div>
     </section>
 
-    <!-- FINANCE & PLANNING TAB — surfaces the real delivery admin's Equity /
-         Platform Economics / Payroll / Business Plan hub in place, via a
-         same-origin iframe onto delivery/admin.html. Deliberately NOT a
-         re-implementation: it's the exact same authenticated UI and data,
-         reached from a second entry point. The iframe carries its own
-         auth boundary - if this browser has no valid delivery admin
-         session (etel_token), delivery/admin.html's own auth check inside
-         the iframe redirects to its login screen, same as visiting it
-         directly. Nothing here bridges or reuses EtelGroup's ega_token for
-         delivery's API - the two admin sessions stay fully separate. -->
-    <section id="panel-finance" style="display:none">
+    <!-- FINANCE & PLANNING TAB — renders the real delivery admin Equity /
+         Platform Economics / Payroll / Business Plan hub natively in this
+         page (not an iframe - the earlier iframe approach kept hitting
+         same-origin edge cases: delivery's clean-URL redirect losing the
+         CSP override on its intermediate hop, then the INSA audit
+         lockdown hiding the panel inside the framed document too).
+         Native rendering sidesteps both: delivery's own admin.html/its
+         lockdown are never loaded here at all - only its JS controllers
+         (admin-equity.js etc.) and CSS bundles are pulled in on demand,
+         the very first time this tab opens (see loadFinanceTab() in
+         EtelGroup/js/admin.js), and rendered straight into
+         #finance-native-root below.
+         Auth stays fully separate from EtelGroup's own ega_token: these
+         panels call delivery's API directly with delivery's own
+         etel_token bearer scheme, so a Delivery admin login is prompted
+         here the first time (reusing an existing etel_token already in
+         localStorage - same-origin with delivery - if one's there from
+         a direct delivery admin session in this same browser). -->
+    <section id="tab-panel-finance" style="display:none">
       <div class="toolbar">
         <h2 style="font-size:15px;color:var(--gold-light)">Finance &amp; Planning</h2>
         <div style="flex:1"></div>
         <span style="font-size:11.5px;color:var(--text-dim)">Delivery admin — Equity, Platform Economics, Payroll, Business Plan</span>
       </div>
-      <iframe id="finance-frame" title="Delivery Finance & Planning"
-              style="width:100%;height:80vh;border:1px solid rgba(255,255,255,.08);border-radius:10px;background:#0c0c14"></iframe>
+      <div id="finance-native-root">
+        <p style="font-size:13px;color:var(--text-dim)">Loading…</p>
+      </div>
     </section>
   </main>
 </div>
