@@ -65,8 +65,18 @@ function ir_run_distribution(
 
     $netProfit = $commissionRevenue - $totalCosts;
 
-    // Step 2: standard 20% investor pool entitlement.
-    $poolEntitlement = $netProfit * (IR_INVESTOR_POOL_SHARES / IR_TOTAL_SHARES);
+    // Step 2: standard 20% investor pool entitlement. Floored at zero -
+    // in a loss month (net_profit <= 0) there is no profit pool to
+    // share, so investors are entitled to nothing, not a negative
+    // amount. Without this floor, every downstream figure (base
+    // entitlement, bounce, total_payout) went negative in a loss month,
+    // meaning investors were "charged" a share of the company's losses
+    // and could end up with a negative cumulative_received and a
+    // remaining_principal that EXCEEDED what they originally invested -
+    // investors only ever share in profit, never absorb losses; the
+    // founder/company residual (netProfit - totalInvestorPayout, below)
+    // still correctly reflects the full loss.
+    $poolEntitlement = max(0.0, $netProfit) * (IR_INVESTOR_POOL_SHARES / IR_TOTAL_SHARES);
 
     $soldShares = 0;
     foreach ($investors as $inv) $soldShares += (int)$inv['shares_owned'];
