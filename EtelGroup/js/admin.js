@@ -278,7 +278,12 @@ async function loadFinanceTab() {
     // here (we're on EtelGroup/admin.html), so it would otherwise fall
     // back to this page's own directory. Point it at delivery's API
     // directly instead.
-    window.ETEL.api = window.location.protocol + '//' + window.location.host + '/delivery/api/boot.php';
+    // Bare identifier, not window.ETEL: core.js declares "const ETEL = {...}"
+    // at its top level - a classic <script> tag's top-level const/let never
+    // becomes a window property (only var/function declarations do), even
+    // though it IS visible as a plain global to every script tag loaded
+    // after it in the same document. window.ETEL would stay undefined here.
+    ETEL.api = window.location.protocol + '//' + window.location.host + '/delivery/api/boot.php';
     await Promise.all([
       egaLoadScript('../delivery/js/admin-equity.js'),
       egaLoadScript('../delivery/js/admin-platform-economics.js'),
@@ -298,7 +303,7 @@ async function loadFinanceTab() {
 // prompts for delivery admin credentials right here, once.
 function egaRenderFinanceGate() {
   var root = document.getElementById('finance-native-root');
-  if (window.Auth && Auth.isLoggedIn() && Auth.getUser() && Auth.getUser().role === 'admin') {
+  if (typeof Auth !== 'undefined' && Auth.isLoggedIn() && Auth.getUser() && Auth.getUser().role === 'admin') {
     egaRenderFinanceHub();
     return;
   }
