@@ -616,10 +616,6 @@ body { font-family:var(--ff-body); background:#0a0a14; }
 
           <span class="ep-forgot-link" id="forgot-link" onclick="switchTab('forgot')">Forgot PIN?</span>
 
-          <button class="ep-auth-submit" id="l-btn" type="button">
-            <span id="l-btn-txt">Sign In</span>
-          </button>
-
           <button class="ep-auth-ghost" onclick="switchTab('register')" id="create-btn" style="margin-top:6px">
             Get EtelID / Create Account →
           </button>
@@ -753,7 +749,6 @@ function applyLang(l) {
   document.getElementById('forgot-link').textContent   = s.forgot;
   document.getElementById('forgot-desc').textContent   = s.forgotDesc;
   document.getElementById('lbl-forgot-phone').textContent = s.lblForgotPhone;
-  document.getElementById('l-btn-txt').textContent = s.btnLogin;
   document.getElementById('f-btn-txt').textContent = s.btnForgot;
   document.getElementById('create-btn').textContent= s.btnCreate;
   var etlTxt = document.getElementById('etelid-btn-txt'); if(etlTxt) etlTxt.textContent = s.btnEtelId;
@@ -785,9 +780,6 @@ async function doLogin() {
   clearNotices();
   if (!phone || !pin) { showErr(s.required); return; }
   phone = normalizePhone(phone);
-  var btn = document.getElementById('l-btn');
-  btn.disabled = true;
-  btn.innerHTML = '<span class="ep-spin"></span>' + s.btnLogin;
   try {
     await EP_API.refreshNonce();
     var j = await EP_API.login(phone, pin);
@@ -796,11 +788,9 @@ async function doLogin() {
       EP_CORE.nav('wallet');
     } else {
       showErr((j.data && j.data.message) || 'Login failed.');
-      btn.disabled = false; btn.innerHTML = '<span id="l-btn-txt">'+s.btnLogin+'</span>';
     }
   } catch(e) {
     showErr(s.connErr);
-    btn.disabled = false; btn.innerHTML = '<span id="l-btn-txt">'+s.btnLogin+'</span>';
   }
 }
 
@@ -827,7 +817,6 @@ async function doForgot() {
   btn.disabled = false; btn.innerHTML = '<span id="f-btn-txt">'+s.btnForgot+'</span>';
 }
 
-document.getElementById('l-btn').addEventListener('click', doLogin);
 document.getElementById('f-btn').addEventListener('click', doForgot);
 document.addEventListener('keydown', function(e) {
   if (e.key === 'Enter') {
