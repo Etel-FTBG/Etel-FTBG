@@ -241,14 +241,6 @@ body {
 }
 .ep-etelid-sub { font-size:12px; color:var(--tan-dim); margin-top:8px; }
 
-/* Divider */
-.ep-auth-divider-row { display:flex; align-items:center; gap:10px; margin-bottom:16px; }
-.ep-auth-divider-row .rule { flex:1; height:1px; background:rgba(212,175,55,.18); }
-.ep-auth-divider-row span {
-  font-size:11px; font-weight:700; color:var(--g4);
-  font-family:var(--ff-mono); letter-spacing:1px;
-}
-
 /* Fields */
 .ep-af-field { margin-bottom:18px; }
 .ep-af-label {
@@ -338,15 +330,6 @@ body {
   margin-bottom:8px;
 }
 .ep-auth-ghost:hover { background:rgba(212,175,55,.1); border-color:rgba(212,175,55,.5); color:var(--g1); }
-
-/* Forgot link */
-.ep-forgot-link {
-  display:block; text-align:center; margin-bottom:12px;
-  font-family:var(--ff-mono); font-size:12px; font-weight:700; letter-spacing:.5px;
-  color:var(--g3); text-decoration:none;
-  cursor:pointer; transition:color .2s;
-}
-.ep-forgot-link:hover { color:var(--g1); }
 
 /* Footer */
 .ep-auth-foot {
@@ -492,23 +475,8 @@ body {
         <div class="ep-auth-notice ep-notice-err" id="l-err"></div>
         <div class="ep-auth-notice ep-notice-ok" id="l-ok"></div>
 
-        <!-- Login form -->
+        <!-- Login form — single path: EtelID authenticates the phone + password below -->
         <div id="form-login">
-          <div class="ep-etelid-panel">
-            <div class="ep-etelid-rec">✦ Recommended — one ID for all ETEL services ✦</div>
-            <button class="ep-auth-etelid" id="etelid-btn-hero" type="button" onclick="doEtelIdLogin()">
-              <span class="ep-etelid-mark">ኢE</span>
-              <span id="etelid-btn-txt">Sign in with EtelID</span>
-            </button>
-            <p class="ep-etelid-sub">Delivery · Ride · Pay — one identity</p>
-          </div>
-
-          <div class="ep-auth-divider-row">
-            <div class="rule"></div>
-            <span id="div-or">OR PHONE + PIN</span>
-            <div class="rule"></div>
-          </div>
-
           <div class="ep-af-field">
             <label class="ep-af-label" id="lbl-phone">Phone Number</label>
             <div class="ep-af-wrap">
@@ -519,7 +487,7 @@ body {
             </div>
           </div>
           <div class="ep-af-field">
-            <label class="ep-af-label" id="lbl-pin">Wallet PIN</label>
+            <label class="ep-af-label" id="lbl-pin">EtelID Password</label>
             <div class="ep-af-wrap">
               <span class="ep-af-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
               <input class="ep-af-input" id="l-pin" type="password"
@@ -531,30 +499,17 @@ body {
             </div>
           </div>
 
-          <span class="ep-forgot-link" id="forgot-link" onclick="switchTab('forgot')">Forgot PIN?</span>
-
-          <button class="ep-auth-ghost" onclick="switchTab('register')" id="create-btn" style="margin-top:6px">
-            Get EtelID / Create Account →
-          </button>
-        </div>
-
-        <!-- Forgot PIN form -->
-        <div id="form-forgot" style="display:none;">
-          <p style="font-size:13px;color:var(--tan);margin-bottom:16px;line-height:1.6;" id="forgot-desc">Enter your phone number and we'll send a reset code via Telegram or SMS.</p>
-          <div class="ep-af-field">
-            <label class="ep-af-label" id="lbl-forgot-phone">Phone Number</label>
-            <div class="ep-af-wrap">
-              <span class="ep-af-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg></span>
-              <input class="ep-af-input" id="f-phone" type="tel"
-                placeholder="+251 9__ ___ ___"
-                autocomplete="tel" inputmode="tel">
-            </div>
+          <div class="ep-etelid-panel">
+            <div class="ep-etelid-rec">✦ One ID for all ETEL services ✦</div>
+            <button class="ep-auth-etelid" id="etelid-btn-hero" type="button" onclick="doEtelIdLogin()">
+              <span class="ep-etelid-mark">ኢE</span>
+              <span id="etelid-btn-txt">Sign in with EtelID</span>
+            </button>
+            <p class="ep-etelid-sub">Delivery · Ride · Pay — one identity</p>
           </div>
-          <button class="ep-auth-submit" id="f-btn" type="button">
-            <span id="f-btn-txt">Send Reset Code</span>
-          </button>
-          <button class="ep-auth-ghost" onclick="switchTab('login')" style="margin-top:4px;" id="back-login-btn">
-            ← Back to Sign In
+
+          <button class="ep-auth-ghost" onclick="switchTab('register')" id="create-btn">
+            Get EtelID / Create Account →
           </button>
         </div>
       </div>
@@ -591,7 +546,6 @@ var _tab = 'login';
 function switchTab(t) {
   _tab = t;
   document.getElementById('form-login').style.display   = t==='login'   ? '' : 'none';
-  document.getElementById('form-forgot').style.display  = t==='forgot'  ? '' : 'none';
   document.getElementById('tab-login').classList.toggle('active',    t==='login');
   document.getElementById('tab-register').classList.toggle('active', t==='register');
   clearNotices();
@@ -621,32 +575,20 @@ function showOk(msg) {
 /* ── Bilingual strings ── */
 var STRINGS = {
   en: {
-    feat1:'Instant transfers across Ethiopia', feat2:'PIN-secured, KYC-verified', feat3:'Telebirr & bank top-up',
+    feat1:'Instant transfers across Ethiopia', feat2:'EtelID-secured, KYC-verified', feat3:'Telebirr & bank top-up',
     org:'ኢE · Etel Group · Hawassa', title:'ኢE Pay', subtitle:'Sign in to your digital wallet',
     tabLogin:'Sign In', tabReg:'Create Wallet',
-    lblPhone:'Phone Number', lblPin:'Wallet PIN',
-    forgot:'Forgot PIN?', forgotDesc:"Enter your phone number and we'll send a reset code via Telegram or SMS.",
-    lblForgotPhone:'Phone Number',
-    btnLogin:'Sign In', btnForgot:'Send Reset Code', btnCreate:'Create Wallet', btnBackLogin:'← Back to Sign In', btnEtelId:'Sign in with EtelID',
-    divOr:'or', brandDesc:"Ethiopia's trusted digital payment wallet — send, receive and top up instantly.",
-    required:'Phone & PIN required.',
-    connErr:'Connection error. Check internet.',
-    sendOk:'Reset code sent! Check your Telegram or SMS.',
-    sendFail:'Could not send reset code. Try again.'
+    lblPhone:'Phone Number', lblPin:'EtelID Password',
+    btnCreate:'Create Wallet', btnEtelId:'Sign in with EtelID',
+    brandDesc:"Ethiopia's trusted digital payment wallet — send, receive and top up instantly."
   },
   am: {
-    feat1:'ፈጣን ዝውውር በኢትዮጵያ', feat2:'PIN ጥበቃ፣ KYC የተረጋገጠ', feat3:'ቴሌብር እና ባንክ ቅድሚያ ክፍያ',
+    feat1:'ፈጣን ዝውውር በኢትዮጵያ', feat2:'በEtelID የተጠበቀ፣ KYC የተረጋገጠ', feat3:'ቴሌብር እና ባንክ ቅድሚያ ክፍያ',
     org:'ኢE · ኢትኤል ቡድን · ሃዋሳ', title:'ኢE ክፍያ', subtitle:'ወደ ዲጂታል ቦርሳዎ ይግቡ',
     tabLogin:'ግባ', tabReg:'ቦርሳ ፍጠር',
-    lblPhone:'ስልክ ቁጥር', lblPin:'ቦርሳ PIN',
-    forgot:'PIN ረሱ?', forgotDesc:'ስልክ ቁጥርዎን ያስገቡ — ዳግም ማስጀመሪያ ኮድ በቴሌግራም ወይም SMS እንልካለን።',
-    lblForgotPhone:'ስልክ ቁጥር',
-    btnLogin:'ግባ', btnForgot:'ዳግም ማስጀመሪያ ኮድ ላክ', btnCreate:'ቦርሳ ፍጠር', btnBackLogin:'← ወደ ግቤት ተመለስ', btnEtelId:'በEtelID ግባ',
-    divOr:'ወይም', brandDesc:'የኢትዮጵያ ዲጂታል ክፍያ ቦርሳ — ቅጽበታዊ ዝውውር፣ ቅድሚያ ክፍያ።',
-    required:'ስልክ ቁጥር እና PIN ያስፈልጋሉ።',
-    connErr:'የግንኙነት ስህተት። ኢንተርኔት ያረጋግጡ።',
-    sendOk:'ኮድ ተልኳል! ቴሌግራም ወይም SMS ይፈትሹ።',
-    sendFail:'ዳግም ማስጀመሪያ ኮድ ላክ አልተቻለም። እንደገና ይሞክሩ።'
+    lblPhone:'ስልክ ቁጥር', lblPin:'የEtelID የይለፍ ቃል',
+    btnCreate:'ቦርሳ ፍጠር', btnEtelId:'በEtelID ግባ',
+    brandDesc:'የኢትዮጵያ ዲጂታል ክፍያ ቦርሳ — ቅጽበታዊ ዝውውር፣ ቅድሚያ ክፍያ።'
   }
 };
 
@@ -665,14 +607,8 @@ function applyLang(l) {
   document.getElementById('tab-reg-txt').textContent   = s.tabReg;
   document.getElementById('lbl-phone').textContent = s.lblPhone;
   document.getElementById('lbl-pin').textContent   = s.lblPin;
-  document.getElementById('forgot-link').textContent   = s.forgot;
-  document.getElementById('forgot-desc').textContent   = s.forgotDesc;
-  document.getElementById('lbl-forgot-phone').textContent = s.lblForgotPhone;
-  document.getElementById('f-btn-txt').textContent = s.btnForgot;
   document.getElementById('create-btn').textContent= s.btnCreate;
   var etlTxt = document.getElementById('etelid-btn-txt'); if(etlTxt) etlTxt.textContent = s.btnEtelId;
-  document.getElementById('back-login-btn').textContent = s.btnBackLogin;
-  document.getElementById('div-or').textContent    = s.divOr;
   document.getElementById('ep-lang-btn').textContent = l==='am' ? 'EN' : 'አማ';
   document.getElementById('foot-year').textContent = new Date().getFullYear();
 }
@@ -691,57 +627,8 @@ function normalizePhone(p) {
   return p;
 }
 
-/* ── Login ── */
-async function doLogin() {
-  var s = STRINGS[_lang];
-  var phone = document.getElementById('l-phone').value.trim();
-  var pin   = document.getElementById('l-pin').value.trim();
-  clearNotices();
-  if (!phone || !pin) { showErr(s.required); return; }
-  phone = normalizePhone(phone);
-  try {
-    await EP_API.refreshNonce();
-    var j = await EP_API.login(phone, pin);
-    if (j.success) {
-      EP_CORE.saveToken(j.data.token, phone);
-      EP_CORE.nav('wallet');
-    } else {
-      showErr((j.data && j.data.message) || 'Login failed.');
-    }
-  } catch(e) {
-    showErr(s.connErr);
-  }
-}
-
-/* ── Forgot PIN ── */
-async function doForgot() {
-  var s = STRINGS[_lang];
-  var phone = document.getElementById('f-phone').value.trim();
-  clearNotices();
-  if (!phone) { showErr(s.required.split('&')[0] + 'required.'); return; }
-  phone = normalizePhone(phone);
-  var btn = document.getElementById('f-btn');
-  btn.disabled = true;
-  btn.innerHTML = '<span class="ep-spin"></span>' + s.btnForgot;
-  try {
-    var j = await EP_API.call('ep_forgot_pin', { phone: phone });
-    if (j && j.success) {
-      showOk(s.sendOk);
-    } else {
-      showErr((j && j.data && j.data.message) || s.sendFail);
-    }
-  } catch(e) {
-    showErr(s.connErr);
-  }
-  btn.disabled = false; btn.innerHTML = '<span id="f-btn-txt">'+s.btnForgot+'</span>';
-}
-
-document.getElementById('f-btn').addEventListener('click', doForgot);
 document.addEventListener('keydown', function(e) {
-  if (e.key === 'Enter') {
-    if (_tab === 'login') doLogin();
-    else if (_tab === 'forgot') doForgot();
-  }
+  if (e.key === 'Enter' && _tab === 'login') doEtelIdLogin();
 });
 
 /* ── Lang toggle ── */
