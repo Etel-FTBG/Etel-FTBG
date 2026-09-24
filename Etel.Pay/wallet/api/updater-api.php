@@ -123,6 +123,29 @@ function upd_detect_path($name) {
     return (isset($dirs[$ext]) ? $dirs[$ext] : '') . $base;
 }
 
+/* ── Reject any relative path that escapes BASE_DIR ─────────────
+ * realpath() returns false for a not-yet-existing target, and both
+ * callers used to fall back to the raw, unresolved path string in
+ * that case - a value like "../../../public_html/shell.php" still
+ * starts with the BASE_DIR text before its own "../../..", so a
+ * naive strpos() prefix check on that string passed even though the
+ * true destination is outside BASE_DIR. Normalize "." / ".." segments
+ * ourselves, independent of whether the target currently exists. */
+function upd_is_safe_rel_path($rel) {
+    $rel = str_replace('\\', '/', $rel);
+    $parts = array();
+    foreach (explode('/', $rel) as $seg) {
+        if ($seg === '' || $seg === '.') continue;
+        if ($seg === '..') {
+            if (empty($parts)) return false;
+            array_pop($parts);
+            continue;
+        }
+        $parts[] = $seg;
+    }
+    return !empty($parts);
+}
+
 /* ── Backup a file before overwriting ────────────────────────── */
 function upd_backup($full_path, $BACKUP_DIR) {
     if (!file_exists($full_path)) return false;
@@ -279,10 +302,12 @@ function upd_do_zip_deploy($zf, $BASE_DIR, $BACKUP_DIR, $ALLOWED_EXT, $PROTECTED
         $ext = strtolower(pathinfo($rel, PATHINFO_EXTENSION));
         if (!in_array($ext, $ALLOWED_EXT, true)) { $skipped[] = $rel; continue; }
         if (in_array($rel, $PROTECTED_FILES, true)) { $skipped[] = $rel . ' (protected)'; continue; }
+        // Same class of bug as update_file/upload_file: a raw string-prefix
+        // check against realpath($BASE_DIR) . '/' . $rel never resolves the
+        // ".." segments in $rel itself, so it doesn't actually catch traversal.
+        if (!upd_is_safe_rel_path($rel)) { $skipped[] = $rel . ' (traversal)'; continue; }
 
         $dest = realpath($BASE_DIR) . '/' . $rel;
-        // Security: no path traversal
-        if (strpos($dest, realpath($BASE_DIR)) !== 0) { $skipped[] = $rel . ' (traversal)'; continue; }
 
         $dir = dirname($dest);
         if (!file_exists($dir)) @mkdir($dir, 0755, true);
@@ -386,10 +411,9 @@ case 'update_file': {
     $rel     = isset($_body['path'])    ? ltrim($_body['path'], '/') : '';
     $content = isset($_body['content']) ? $_body['content']          : null;
     if (!$rel || $content === null) upd_err('Path and content required');
+    if (!upd_is_safe_rel_path($rel)) upd_err('Path traversal denied');
     if (in_array($rel, $PROTECTED_FILES, true)) upd_err('File is protected');
     $full = $BASE_DIR . '/' . $rel;
-    $real = realpath($full) ?: $full;
-    if (strpos(dirname($real), realpath($BASE_DIR)) !== 0) upd_err('Path traversal denied');
     if (!file_exists(dirname($full))) @mkdir(dirname($full), 0755, true);
     $backed = upd_backup($full, $BACKUP_DIR);
     if (file_put_contents($full, $content) === false) upd_err('Write failed — check permissions', 500);
@@ -403,6 +427,7 @@ case 'upload_file': {
     if (empty($_FILES['file'])) upd_err('No file uploaded');
     $f    = $_FILES['file'];
     $tp   = isset($_POST['target_path']) ? ltrim(trim($_POST['target_path']), '/') : upd_detect_path($f['name']);
+    if (!upd_is_safe_rel_path($tp)) upd_err('Path traversal denied');
     if (in_array($tp, $PROTECTED_FILES, true)) upd_err('File is protected');
     $ext  = strtolower(pathinfo($tp, PATHINFO_EXTENSION));
     if (!in_array($ext, array_merge($ALLOWED_EXT, array('png','jpg','jpeg','gif','ico','webp','zip')), true)) upd_err('File type not allowed');
@@ -410,7 +435,6 @@ case 'upload_file': {
         upd_do_zip_deploy($f, $BASE_DIR, $BACKUP_DIR, $ALLOWED_EXT, $PROTECTED_FILES);
     }
     $full = $BASE_DIR . '/' . $tp;
-    if (strpos(realpath(dirname($full)) ?: dirname($full), realpath($BASE_DIR)) !== 0) upd_err('Path traversal denied');
     if (!file_exists(dirname($full))) @mkdir(dirname($full), 0755, true);
     $backed = upd_backup($full, $BACKUP_DIR);
     if (!move_uploaded_file($f['tmp_name'], $full)) upd_err('Deploy failed — check permissions', 500);
@@ -495,10 +519,6 @@ case 'run_sql': {
     if (!$sql) upd_err('No SQL provided');
     // Safety: block destructive ops unless force flag set
     $force = isset($_body['force']) && $_body['force'] === true;
-    $upper = strtoupper(substr(ltrim($sql), 0, 6));
-    if (in_array($upper, array('DROP T', 'TRUNCA')) && !$force) {
-        upd_err('Destructive SQL blocked. Send force:true to override.');
-    }
     try {
         $pdo = new PDO(
             'mysql:host=' . EP_DB_HOST . ';dbname=' . EP_DB_NAME . ';charset=utf8mb4',
@@ -511,6 +531,14 @@ case 'run_sql': {
         $affected = 0;
         foreach ($stmts as $s) {
             if (!$s) continue;
+            // Checked per-statement, not just against the head of the raw
+            // input - "SELECT 1; DROP TABLE x;" has SELECT as its first six
+            // chars, so a single check against $sql let a chained DROP/
+            // TRUNCATE through even without force:true.
+            $up0 = strtoupper(substr(ltrim($s), 0, 6));
+            if (in_array($up0, array('DROP T', 'TRUNCA')) && !$force) {
+                throw new Exception('Destructive SQL blocked. Send force:true to override.');
+            }
             $st = $pdo->prepare($s);
             $st->execute();
             $rows = $st->rowCount();

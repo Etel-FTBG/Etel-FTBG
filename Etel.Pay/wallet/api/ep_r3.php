@@ -90,6 +90,13 @@ case 'ep_paylink_pay': {
     $pdo->beginTransaction();
     try {
         $pdo->prepare('UPDATE ' . EP_TBL_USERS . ' SET balance_etb=balance_etb-? WHERE id=? AND balance_etb>=?')->execute(array($pay_amount,$payer_uid,$pay_amount));
+        // Same concurrent-debit guard as ep_send/ep_qr_process - without it, two
+        // simultaneous payments against the same link could both pass the balance
+        // pre-check, and the loser's debit silently affects zero rows while the
+        // link owner still gets credited.
+        if ($pdo->query('SELECT ROW_COUNT()')->fetchColumn() == 0) {
+            throw new Exception('Insufficient balance (concurrent change)');
+        }
         $pdo->prepare('UPDATE ' . EP_TBL_USERS . ' SET balance_etb=balance_etb+? WHERE id=?')->execute(array($pay_amount,$link['user_id']));
         $ref = ep_gen_ref();
         $pdo->prepare('INSERT INTO ' . EP_TBL_TX . ' (tx_ref,type,sender_ep_id,receiver_ep_id,amount,currency,note,status,created_at) VALUES (?,?,?,?,?,?,?,?,NOW())')
@@ -157,7 +164,8 @@ case 'ep_kyc_submit': {
     $doc_b64  = in_str('doc_front_b64');
     $back_b64 = in_str('doc_back_b64');
     $selfie   = in_str('selfie_b64');
-    if (!$doc_type || !$doc_b64) ep_err('Document type and front image required');
+    if (!in_array($doc_type, array('national_id', 'passport', 'driving_license'), true)) ep_err('Invalid document type');
+    if (!$doc_b64) ep_err('Document type and front image required');
     $pdo = ep_db();
     $pdo->exec('CREATE TABLE IF NOT EXISTS ' . EP_TBL_KYC . ' (
         id          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
