@@ -1052,3 +1052,35 @@ introduced). The JS in `diag.html` was verified with `node --check`. Nothing was
 deployed — all changes are in this repo's git working tree only; deployment to
 `ethelmarket.com/Etel.Pay/wallet/` remains a separate manual step through EtelPay's own
 Updater tool (`updater.html`).
+
+## Third pass — adversarial re-audit
+
+A fresh, more adversarial read targeting areas the first two passes hadn't dug into:
+CORS/security headers, money-precision handling, escrow race conditions, QR/payment-link
+authorization, dispute-flow authorization, API-key scope enforcement, the Updater tool's
+own auth strength, and file-upload edge cases. Findings and outcomes:
+
+| # | Finding | Severity | Outcome |
+|---|---|---|---|
+| 1 | Updater's `read_file` action bypassed `$PROTECTED_FILES`, letting an authenticated Updater session read `config.php`/`.env` in plaintext (DB password, `EP_SECRET`, `ETELID_SERVICE_KEY`, Telebirr credentials) even though `.htaccess` correctly blocks direct HTTP fetches of those files | Critical | **Fixed** |
+| 2 | `ep_escrow_release`/`ep_escrow_reverse` credited a balance *before* flipping the transaction's status (the reverse order of every other status-flip-then-move-money action in this codebase), so two concurrent or retried calls with the same `tx_ref` could both pass the "still pending" check and both pay out — a real double-credit | Critical | **Fixed** |
+| 3 | Updater login (`updater-api.php`) had zero brute-force protection, unlike the main wallet's `ep_login` — `EP_UPDATER_PASS` could be brute-forced at whatever rate the host tolerates, then chained into #1 and #9 | High | **Fixed** |
+| 4 | QR-code (`ep_qr_process`) and payment-link (`ep_paylink_pay`) payments checked only the *payer's* account status, never the receiving account's — a suspended fraudulent merchant's existing QR/link kept collecting money indefinitely | Medium | **Fixed** |
+| 5 | `ep_dispute_open` never checked that `tx_ref` existed or belonged to the caller — any user could open a dispute against any transaction reference (e.g. one seen in a shared receipt); `ep_admin_dispute_resolve`'s refund branch didn't cross-check either, so an admin approving a bad-faith dispute could move money between two unrelated accounts | Medium | **Fixed** |
+| 6 | Apparent absence of CSP/X-Frame-Options/HSTS/Referrer-Policy | Medium (as reported) | **False positive** — all of these are already set via `mod_headers` in `Etel.Pay/wallet/.htaccess` (`X-Frame-Options: SAMEORIGIN`, a locked-down `Content-Security-Policy` with `frame-ancestors 'none'`, HSTS with `preload`, `Referrer-Policy: strict-origin-when-cross-origin`). The re-audit only grepped PHP/HTML files and missed the `.htaccess` directives; verified clean, no change needed. |
+| 7 | The merchant API-key system (`ep_apikey_create`/`list`/`revoke`) generated and stored `pub_key`/`secret_key`/`permissions`, but nothing anywhere authenticated a request with them or enforced `permissions` — a merchant restricting or revoking a key got no actual behavior change | Low | **Fixed** — see below |
+| 8 | Updater session tokens can't be individually revoked before their 24h expiry (no logout endpoint, no server-side token list); only remedy is rotating the shared password, which invalidates every session at once | Low | **Left as-is**, per Dagi — single-operator tool, rotating the shared password is an acceptable revocation path for this scale |
+| 9 | `.htaccess` was writable through the Updater (the `htaccess` extension wasn't excluded and `$PROTECTED_FILES` didn't name any `.htaccess` path) — a compromised Updater session could remove the deny-all rules protecting `config.php`/`.env`/the backups directory, a second path to #1's secrets | Low | **Fixed** |
+| 10 | Amounts are handled as PHP floats with no `round(...,2)`, so a client sending e.g. `150.999999` gets that exact figure echoed back while the `DECIMAL` column stores MySQL's own rounding — a reconciliation/display inconsistency, not an exploit (debit and credit are symmetric, so no value can be created) | Low | Not changed — cosmetic only, flagged for awareness |
+
+**Fixes applied:**
+
+| File | Change |
+|---|---|
+| `Etel.Pay/wallet/api/updater-api.php` | `read_file` now rejects any path in `$PROTECTED_FILES` (item 1); `$PROTECTED_FILES` now also lists all three `.htaccess` files in the wallet tree (`api/.htaccess`, `backups/.htaccess`, `.htaccess`) so the Updater can never overwrite them (item 9); added a new per-IP rate limiter (`ep_updater_login_attempts` table, 5 failed attempts / 15 minutes) on the `login` action (item 3). |
+| `Etel.Pay/wallet/api/ep_r1.php` | `ep_escrow_release`/`ep_escrow_reverse` now flip the transaction's status atomically (`UPDATE ... WHERE status="pending"`, checking `rowCount()`) *before* touching any balance, matching the pattern already used by `ep_admin_dispute_resolve`/`ep_admin_reverse_tx`/`ep_admin_topup_approve` (item 2); `ep_qr_process` now checks the QR owner's account status before crediting (item 4). |
+| `Etel.Pay/wallet/api/ep_r3.php` | `ep_paylink_pay` now checks the link owner's account status before crediting (item 4); `ep_dispute_open` now verifies the caller was the sender or receiver on `tx_ref` before creating a dispute, and `ep_admin_dispute_resolve`'s refund branch cross-checks the same as defense-in-depth (item 5); `ep_paylink_create` now also accepts merchant API-key auth (item 7). |
+| `Etel.Pay/wallet/api/v2_verify.php` | Added `ep_apikey_lookup()`/`ep_auth_or_apikey()`/`ep_auth_or_apikey_id()` — real API-key authentication (`X-Api-Key`/`X-Api-Secret` headers, `?api_key=`/`?api_secret=` query fallback per this host's known header-stripping issue) with `permissions`-string enforcement and a `last_used` timestamp update on every successful use (item 7). Wired into `ep_get_balance` (any valid key) and `ep_paylink_create` (requires the `receive` permission) as the first two real consumers — the minimal set needed to make the existing key/permission fields actually mean something, not a full merchant-API rollout. Extending API-key auth to further actions (e.g. a merchant-initiated charge/QR-generation flow) is a separate product decision for Dagi, not assumed here. |
+
+All PHP edits verified with `php -l` and the ASCII-safety check. Nothing was deployed —
+all changes are in this repo's git working tree only.

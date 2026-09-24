@@ -4,7 +4,10 @@ function ep_route_part3($action) {
   global $_body;
   switch($action) {
 case 'ep_paylink_create': {
-    $uid    = ep_auth_id();
+    // Accepts either a logged-in session token or a merchant API key with
+    // "receive" permission (X-Api-Key/X-Api-Secret) - lets a merchant's
+    // backend generate payment links programmatically.
+    $uid    = ep_auth_or_apikey_id('receive');
     $amount = in_float('amount');
     $label  = in_str('label') ?: 'Payment';
     $note   = in_str('note');
@@ -70,6 +73,13 @@ case 'ep_paylink_pay': {
     if (!$link) ep_err('Payment link not found', 404);
     if ($link['expires_at'] && $link['expires_at'] < date('Y-m-d H:i:s')) ep_err('Link expired', 410);
     if ((int)$link['user_id'] === $payer_uid) ep_err('Cannot pay your own link');
+    // ep_send checks both sides' status before moving money; this
+    // endpoint only checked the payer below, so a merchant suspended
+    // after creating a link could keep collecting payments indefinitely.
+    $owner = $pdo->prepare('SELECT status FROM ' . EP_TBL_USERS . ' WHERE id=? LIMIT 1');
+    $owner->execute(array($link['user_id']));
+    $orow = $owner->fetch();
+    if (!$orow || $orow['status'] !== 'active') ep_err('This payment link\'s account is not active');
     $pay_amount = $link['amount'] ?: $amount;
     if (!$pay_amount || $pay_amount <= 0) ep_err('Amount required');
     $payer = $pdo->prepare('SELECT balance_etb, status FROM ' . EP_TBL_USERS . ' WHERE id=? LIMIT 1');
@@ -251,6 +261,17 @@ case 'ep_dispute_open': {
     $reason = in_str('reason');
     if (!$tx_ref || !$reason) ep_err('TX ref and reason required');
     $pdo = ep_db();
+    // Nothing previously checked that tx_ref exists or that the caller was
+    // actually a party to it - anyone who obtained any transaction reference
+    // (a shared receipt, a screenshot) could open a dispute against a
+    // transaction they had no part in.
+    $tx = $pdo->prepare('SELECT sender_ep_id, receiver_ep_id FROM ' . EP_TBL_TX . ' WHERE tx_ref = ? LIMIT 1');
+    $tx->execute(array($tx_ref));
+    $t = $tx->fetch();
+    if (!$t) ep_err('Transaction not found', 404);
+    if ((int)$t['sender_ep_id'] !== $uid && (int)$t['receiver_ep_id'] !== $uid) {
+        ep_err('You were not a party to this transaction', 403);
+    }
     $pdo->exec('CREATE TABLE IF NOT EXISTS ' . EP_TBL_DISPUTES . ' (
         id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
         user_id INT UNSIGNED NOT NULL,
@@ -297,6 +318,13 @@ case 'ep_admin_dispute_resolve': {
         if ($d) {
             $tx = $pdo->prepare('SELECT * FROM ' . EP_TBL_TX . ' WHERE tx_ref=? LIMIT 1');
             $tx->execute(array($d['tx_ref'])); $t = $tx->fetch();
+            // Defense in depth alongside the ownership check now enforced at
+            // ep_dispute_open: don't refund a transaction the disputer wasn't
+            // actually a party to (covers disputes opened before that check
+            // existed, or via any other path into this table).
+            if ($t && (int)$t['sender_ep_id'] !== (int)$d['user_id'] && (int)$t['receiver_ep_id'] !== (int)$d['user_id']) {
+                $t = false;
+            }
             if ($t && $t['sender_ep_id']) {
                 $pdo->prepare('UPDATE ' . EP_TBL_USERS . ' SET balance_etb=balance_etb+? WHERE id=?')->execute(array($t['amount'],$t['sender_ep_id']));
                 $pdo->prepare('UPDATE ' . EP_TBL_USERS . ' SET balance_etb=GREATEST(0,balance_etb-?) WHERE id=?')->execute(array($t['amount'],$t['receiver_ep_id']));

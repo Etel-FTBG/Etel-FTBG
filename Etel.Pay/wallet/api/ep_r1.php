@@ -199,7 +199,10 @@ case 'etel_pay_logout': {
 /* ── Get balance ─────────────────────────────────────────────── */
 case 'ep_get_balance':
 case 'etel_pay_get_balance': {
-    $user = ep_auth();
+    // Accepts either a logged-in session token or a merchant API key
+    // (X-Api-Key/X-Api-Secret) - lets a merchant's own backend poll its
+    // own balance without a user session.
+    $user = ep_auth_or_apikey();
     ep_ok(array(
         'etb'         => (float)$user['balance_etb'],
         'usd'         => (float)$user['balance_usd'],
@@ -431,6 +434,18 @@ case 'ep_escrow_reverse': {
         ep_err('Transaction is not pending (currently "' . $tx['status'] . '") -- cannot resolve', 409);
     }
 
+    // Atomic status flip FIRST (same pattern as ep_admin_dispute_resolve /
+    // ep_admin_reverse_tx / ep_admin_topup_approve): two concurrent or
+    // retried calls could otherwise both pass the "pending" check above
+    // and both credit a balance before either write landed, double-paying
+    // out the escrow amount. Only the request that actually wins this
+    // flip (rowCount > 0) is allowed to touch any balance.
+    $flip = $pdo->prepare('UPDATE ' . EP_TBL_TX . ' SET status = ? WHERE tx_ref = ? AND status = "pending"');
+    $flip->execute(array($wantStatus, $tx_ref));
+    if ($flip->rowCount() === 0) {
+        ep_err('Transaction already resolved by a concurrent request', 409);
+    }
+
     $pdo->beginTransaction();
     try {
         if ($action === 'ep_escrow_release') {
@@ -442,7 +457,6 @@ case 'ep_escrow_reverse': {
             $pdo->prepare('UPDATE ' . EP_TBL_USERS . ' SET balance_etb = balance_etb + ? WHERE id = ?')
                 ->execute(array((float)$tx['amount'], (int)$tx['sender_ep_id']));
         }
-        $pdo->prepare('UPDATE ' . EP_TBL_TX . ' SET status = ? WHERE tx_ref = ?')->execute(array($wantStatus, $tx_ref));
         $pdo->commit();
     } catch (Exception $ex) {
         $pdo->rollBack();
@@ -808,6 +822,14 @@ case 'etel_pay_qr_process': {
 
     $owner_uid = (int)(isset($qrow['owner_id']) ? $qrow['owner_id'] : (isset($qrow['user_id']) ? $qrow['user_id'] : (isset($qrow['ep_user_id']) ? $qrow['ep_user_id'] : 0)));
     if ($owner_uid === $payer_uid) ep_err('Cannot pay your own QR code');
+
+    // ep_send checks both sides' status before moving money; this endpoint
+    // only checked the payer below, so a QR owner suspended after
+    // generating a static code could keep collecting payments indefinitely.
+    $owner = $pdo->prepare('SELECT status FROM ' . EP_TBL_USERS . ' WHERE id = ? LIMIT 1');
+    $owner->execute(array($owner_uid));
+    $orow = $owner->fetch();
+    if (!$orow || $orow['status'] !== 'active') ep_err('This QR code\'s account is not active');
 
     $pay_amount = $qrow['amount'] ? (float)$qrow['amount'] : $amount;
     if (!$pay_amount || $pay_amount <= 0) ep_err('Amount required');
