@@ -303,40 +303,40 @@ body { font-family:var(--ff-body); background:#0a0a14; }
 }
 
 /* Fields */
-.ep-af-field { margin-bottom:14px; }
+.ep-af-field { margin-bottom:18px; }
 .ep-af-label {
   font-family:var(--ff-mono);
-  font-size:9.5px; font-weight:700;
-  color:var(--g5); text-transform:uppercase;
-  letter-spacing:1.5px; display:block; margin-bottom:6px;
+  font-size:12px; font-weight:700;
+  color:var(--g7); text-transform:uppercase;
+  letter-spacing:1.5px; display:block; margin-bottom:8px;
 }
 .ep-af-wrap { position:relative; display:flex; align-items:center; }
 .ep-af-icon {
-  position:absolute; left:12px;
-  color:var(--g5); font-size:14px; pointer-events:none; opacity:.7;
+  position:absolute; left:14px;
+  color:var(--g7); font-size:17px; pointer-events:none; opacity:1;
 }
 .ep-af-input {
-  width:100%; padding:11px 14px 11px 38px;
-  background:rgba(212,175,55,.06);
-  border:1.5px solid rgba(212,175,55,.22);
-  border-radius:9px;
-  font-size:15px; font-family:var(--ff-body);
+  width:100%; padding:15px 16px 15px 44px;
+  background:#FFFFFF;
+  border:2px solid rgba(160,112,32,.45);
+  border-radius:10px;
+  font-size:17px; font-weight:600; font-family:var(--ff-body);
   color:var(--ink);
   transition:border-color .2s, box-shadow .2s, background .2s;
   -webkit-appearance:none; appearance:none;
 }
 .ep-af-input:focus {
-  border-color:var(--g4);
-  background:rgba(212,175,55,.09);
-  box-shadow:0 0 0 3px rgba(212,175,55,.14);
+  border-color:var(--g5);
+  background:#FFFFFF;
+  box-shadow:0 0 0 3px rgba(212,175,55,.25);
   outline:none;
 }
-.ep-af-input::placeholder { color:rgba(100,60,0,.3); }
+.ep-af-input::placeholder { color:rgba(58,34,0,.5); font-weight:500; }
 .ep-pw-toggle {
   position:absolute; right:10px;
   background:none; border:none;
-  color:var(--g5); cursor:pointer; font-size:15px;
-  padding:4px; border-radius:4px; transition:color .15s;
+  color:var(--g7); cursor:pointer; font-size:19px;
+  padding:6px; border-radius:4px; transition:color .15s;
 }
 .ep-pw-toggle:hover { color:var(--g4); }
 
@@ -387,12 +387,12 @@ body { font-family:var(--ff-body); background:#0a0a14; }
 
 /* Ghost button */
 .ep-auth-ghost {
-  width:100%; padding:12px;
+  width:100%; padding:14px;
   background:rgba(212,175,55,.06);
   border:1.5px solid rgba(212,175,55,.25);
   border-radius:10px;
-  font-family:var(--ff-display); font-size:13px; font-weight:800;
-  color:var(--g5); cursor:pointer; letter-spacing:.3px;
+  font-family:var(--ff-display); font-size:14px; font-weight:800;
+  color:var(--g7); cursor:pointer; letter-spacing:.3px;
   transition:all .2s;
   margin-bottom:8px;
 }
@@ -404,9 +404,9 @@ body { font-family:var(--ff-body); background:#0a0a14; }
 
 /* Forgot link */
 .ep-forgot-link {
-  display:block; text-align:center; margin-bottom:10px;
-  font-family:var(--ff-mono); font-size:10px; letter-spacing:.5px;
-  color:var(--g5); text-decoration:none;
+  display:block; text-align:center; margin-bottom:12px;
+  font-family:var(--ff-mono); font-size:12px; font-weight:700; letter-spacing:.5px;
+  color:var(--g7); text-decoration:none;
   cursor:pointer; transition:color .2s;
 }
 .ep-forgot-link:hover { color:var(--g4); }
@@ -570,20 +570,6 @@ body { font-family:var(--ff-body); background:#0a0a14; }
 
         <!-- Login form -->
         <div id="form-login">
-        <!-- ✦ EtelId PRIMARY HERO ✦ -->
-        <div style="background:linear-gradient(135deg,rgba(42,26,6,.85),rgba(74,50,16,.75));border:1.5px solid rgba(212,175,55,.4);border-radius:14px;padding:16px;margin-bottom:16px;text-align:center">
-          <div style="font-size:11px;font-weight:700;color:rgba(253,246,216,.55);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px">✦ Recommended — Works across all ETEL services ✦</div>
-          <button class="ep-auth-etelid" id="etelid-btn-hero" type="button" onclick="doEtelIdLogin()" style="width:100%;margin-bottom:4px">
-            <span class="ep-etelid-mark">ኢE</span>
-            <span id="etelid-btn-txt">Sign in with EtelID</span>
-          </button>
-          <p style="font-size:10px;color:rgba(253,246,216,.35);margin-top:6px">Delivery · Ride · Pay — one identity</p>
-        </div>
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
-          <div style="flex:1;height:1px;background:rgba(212,175,55,.15)"></div>
-          <span id="div-or" style="font-size:10px;color:rgba(253,246,216,.35);letter-spacing:1px">OR PHONE + PIN</span>
-          <div style="flex:1;height:1px;background:rgba(212,175,55,.15)"></div>
-        </div>
           <div class="ep-af-field">
             <label class="ep-af-label" id="lbl-phone">Phone Number</label>
             <div class="ep-af-wrap">
