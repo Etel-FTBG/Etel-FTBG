@@ -156,6 +156,12 @@ async function loadMore(){
 function calcSummary(txs){
   let totalIn=0, totalOut=0;
   txs.forEach(tx=>{
+    // Only count settled money toward these totals. A still-pending escrow
+    // hold isn't a completed movement yet, and a reversed one was undone -
+    // counting either here overstates real lifetime in/out, since a
+    // cancelled order's original debit would otherwise stay counted
+    // forever with no offsetting credit once it's refunded.
+    if(tx.status && tx.status!=='completed') return;
     const dir = EP_CORE.txDirection(tx);
     if(dir==='in')  totalIn  += parseFloat(tx.amount)||0;
     else            totalOut += parseFloat(tx.amount)||0;
