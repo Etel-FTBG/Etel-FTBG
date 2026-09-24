@@ -100,15 +100,31 @@
 /* Load more */
 #load-more-btn{margin-top:16px;display:none}
 
-/* ── Receipt (transaction detail sheet) ────────────────────── */
+/* ── Receipt (transaction detail sheet) ──────────────────────
+   NOTE: css/etel-design-v4.css (loaded after this block, site-wide)
+   carries a blanket rule -- `p, span, div, li, td, th, label {
+   color: inherit !important }` -- meant to keep text readable on
+   every page's dark/gold background. It cascades a div's color up
+   to <body>'s own #F7EFD9 (near-white) !important color, which is
+   invisible on this receipt's white card. Every color below is
+   !important specifically to survive that rule; nothing else on
+   this page needed it because everything else sits on a dark
+   background where inheriting that near-white text was already
+   the intended look. */
+.receipt, .receipt *{
+  color:#1a1207 !important;
+}
 .receipt{
-  background:#fff; color:#1a1207; border-radius:var(--r-lg);
+  background:#fff; border-radius:var(--r-lg);
   overflow:hidden; border:1px solid rgba(0,0,0,.08);
   font-family:'Segoe UI',Roboto,Arial,sans-serif;
 }
+.rcpt-band, .rcpt-band *{
+  color:#fff !important;
+}
 .rcpt-band{
   background:linear-gradient(120deg,#7A5518 0%,#C8960C 45%,#D4AF37 75%,#F2CC6B 100%);
-  color:#fff; padding:18px 20px 16px; text-align:center;
+  padding:18px 20px 16px; text-align:center;
 }
 .rcpt-mark{
   width:38px;height:38px;border-radius:50%;margin:0 auto 8px;
@@ -124,33 +140,41 @@
 }
 .rcpt-body{padding:18px 18px 6px}
 .rcpt-amt-row{text-align:center;padding-bottom:16px;border-bottom:1px dashed rgba(0,0,0,.15);margin-bottom:14px}
-.rcpt-amt{font-family:var(--fm);font-size:26px;font-weight:700;color:#1a1207}
-.rcpt-amt-dir{font-size:11.5px;color:#7a6a45;margin-top:2px;font-weight:600;letter-spacing:.4px;text-transform:uppercase}
+.rcpt-amt{font-family:var(--fm);font-size:26px;font-weight:700}
+.rcpt-amt-dir, .rcpt-sec-title,
+.rcpt-field b, .rcpt-table td:first-child,
+.rcpt-words b, .rcpt-qr-cap, .rcpt-foot{
+  color:#7a6540 !important;
+}
+.rcpt-amt-dir{font-size:11.5px;margin-top:2px;font-weight:600;letter-spacing:.4px;text-transform:uppercase}
 .rcpt-sec-title{
   font-size:10.5px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;
-  color:#7a6540;margin:14px 0 8px;
+  margin:14px 0 8px;
 }
 .rcpt-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:4px}
 .rcpt-field{font-size:12px;line-height:1.65}
-.rcpt-field b{display:block;font-size:10px;font-weight:700;color:#7a6540;text-transform:uppercase;letter-spacing:.4px}
+.rcpt-field b{display:block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.4px}
 .rcpt-table{width:100%;border-collapse:collapse;margin-top:2px}
 .rcpt-table tr{border-bottom:1px solid rgba(0,0,0,.08)}
 .rcpt-table tr:last-child{border-bottom:none}
 .rcpt-table td{padding:8px 2px;font-size:12.5px;vertical-align:top}
-.rcpt-table td:first-child{color:#7a6a45;width:46%}
+.rcpt-table td:first-child{width:46%}
 .rcpt-table td:last-child{font-weight:600;text-align:right;font-family:var(--fm);word-break:break-word}
 .rcpt-words{
   margin:14px 0 4px;padding:10px 12px;border-radius:9px;
   background:#FBF6E7;border:1px solid #EEDDA8;font-size:11.5px;text-align:center;
 }
-.rcpt-words b{display:block;font-size:9.5px;color:#7a6540;text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px;font-weight:700}
+.rcpt-words b{display:block;font-size:9.5px;text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px;font-weight:700}
 .rcpt-qr-wrap{text-align:center;padding:16px 0 6px}
 .rcpt-qr-box{display:inline-block;padding:8px;background:#fff;border:1px solid rgba(0,0,0,.1);border-radius:8px}
-.rcpt-qr-cap{font-size:10px;color:#7a6540;margin-top:6px;letter-spacing:.3px}
+.rcpt-qr-cap{font-size:10px;margin-top:6px;letter-spacing:.3px}
 .rcpt-foot{
-  text-align:center;padding:14px 18px 18px;font-size:10px;color:#7a6540;
+  text-align:center;padding:14px 18px 18px;font-size:10px;
   border-top:1px solid rgba(0,0,0,.08);margin-top:8px;line-height:1.6;
 }
+.receipt .co-chip.co-gebeya{ color:#B8790A !important; }
+.receipt .co-chip.co-delivery{ color:#1E6FA8 !important; }
+.receipt .co-chip.co-pay{ color:#8A6A10 !important; }
 .rcpt-actions{display:flex;gap:10px;margin-top:14px}
 .rcpt-actions .ep-btn{flex:1}
 
