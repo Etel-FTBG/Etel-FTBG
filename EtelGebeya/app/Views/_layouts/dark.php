@@ -83,10 +83,13 @@ $roleLabel = $role ?? ($user['roles'][0] ?? 'user');
 
       <div class="nav-section-label" style="margin-top:1rem;">Account</div>
 
-      <a href="<?= View::url('/logout') ?>" class="nav-item" style="margin-top:.5rem;">
-        <i class="bi bi-box-arrow-right nav-icon"></i>
-        <span>Logout</span>
-      </a>
+      <form action="<?= View::url('/logout') ?>" method="post" style="margin-top:.5rem;">
+        <?= csrf() ?>
+        <button type="submit" class="nav-item" style="width:100%;background:none;border:none;text-align:left;cursor:pointer;font:inherit;">
+          <i class="bi bi-box-arrow-right nav-icon"></i>
+          <span>Logout</span>
+        </button>
+      </form>
     </nav>
   </aside>
 
