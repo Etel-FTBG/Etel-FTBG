@@ -297,6 +297,15 @@ final class CheckoutController
             'delivery_lat' => 'delivery_lat DECIMAL(10,7) DEFAULT NULL',
             'delivery_lng' => 'delivery_lng DECIMAL(10,7) DEFAULT NULL',
         ]);
+        // Supplier::ensureSchema() also runs CREATE TABLE/ALTER TABLE DDL
+        // internally -- it used to be called from inside the transaction
+        // below, which MySQL implicitly commits on hitting that DDL,
+        // leaving the later pdo()->commit() with nothing to commit and
+        // throwing "There is no active transaction" (surfaced to the
+        // customer as a failed order even though every insert up to that
+        // point had already been auto-committed individually). Moved out
+        // here for the same reason the orders schema guard above already is.
+        \App\Models\Supplier::ensureSchema($this->db);
 
         try {
             $this->db->pdo()->beginTransaction();
@@ -345,7 +354,6 @@ final class CheckoutController
             // order_item so a later change to the product's dropship setup
             // never rewrites history on an already-placed order) for all
             // cart products.
-            \App\Models\Supplier::ensureSchema($this->db);
             $pids      = array_unique(array_column(array_values($cart), 'id'));
             $plist     = implode(',', array_map('intval', $pids));
             $sellerMap = [];
