@@ -161,8 +161,12 @@ case 'ep_kyc_submit': {
         submitted_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
         reviewed_at  DATETIME DEFAULT NULL
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4');
-    // Validate base64 size (max 3MB each)
-    if (strlen($doc_b64) > 4194304) ep_err('Document image too large (max 3MB)');
+    // Validate base64 size (max 3MB each) - applied to all three uploaded
+    // images, not just the front document, since each is stored the same
+    // way (LONGTEXT) and each is an equally uncapped upload otherwise.
+    if (strlen($doc_b64) > 4194304) ep_err('Front document image too large (max 3MB)');
+    if ($back_b64 && strlen($back_b64) > 4194304) ep_err('Back document image too large (max 3MB)');
+    if ($selfie && strlen($selfie) > 4194304) ep_err('Selfie image too large (max 3MB)');
     $pdo->prepare('INSERT INTO ' . EP_TBL_KYC . ' (user_id, doc_type, doc_front, doc_back, selfie) VALUES (?,?,?,?,?) ON DUPLICATE KEY UPDATE doc_type=VALUES(doc_type), doc_front=VALUES(doc_front), doc_back=VALUES(doc_back), selfie=VALUES(selfie), status="submitted", submitted_at=NOW()')
         ->execute(array($uid, $doc_type, $doc_b64, $back_b64, $selfie));
     $pdo->prepare('UPDATE ' . EP_TBL_USERS . ' SET kyc_status="pending" WHERE id=?')->execute(array($uid));
