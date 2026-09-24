@@ -65,6 +65,10 @@ case 'ep_upload_avatar': {
     $mime   = 'image/jpeg';
     // Detect PNG
     if (substr($data, 0, 4) === "\x89PNG") $mime = 'image/png';
+    // Otherwise require a real JPEG magic-byte signature rather than assuming
+    // any non-PNG upload is a valid JPEG - cheap, consistent insurance
+    // matching the rigor already applied to the PNG case.
+    elseif (substr($data, 0, 3) !== "\xFF\xD8\xFF") ep_err('Unsupported image format (PNG or JPEG only)');
     $ext    = ($mime === 'image/png') ? 'png' : 'jpg';
     $dir    = dirname(__DIR__) . '/uploads/avatars';
     if (!file_exists($dir)) @mkdir($dir, 0755, true);

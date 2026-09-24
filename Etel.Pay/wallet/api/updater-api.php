@@ -149,7 +149,9 @@ function upd_log($action, $file) {
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4');
         $ip = isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : '0.0.0.0';
         $pdo->prepare('INSERT INTO `' . EP_TBL_UPDLOG . '` (action, file_path, ip_address) VALUES (?, ?, ?)')->execute(array($action, $file, $ip));
-    } catch (Exception $e) {}
+    } catch (Exception $e) {
+        error_log('[EtelPay Updater] upd_log failed for action=' . $action . ' file=' . $file . ': ' . $e->getMessage());
+    }
 }
 
 /* ── Pure-PHP ZIP reader (no ZipArchive needed) ─────────────── */

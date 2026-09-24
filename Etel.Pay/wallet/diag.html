@@ -90,11 +90,24 @@ function now() {
   return new Date().toLocaleTimeString('en-GB',{hour12:false,hour:'2-digit',minute:'2-digit',second:'2-digit'});
 }
 
+// Same textContent-round-trip escaper as EP_CORE.esc() in js/core.js - this
+// page doesn't load core.js, so a local copy avoids leaving the JSON dump
+// below unescaped if a future response ever echoes another party's input.
+function esc(s) {
+  const d = document.createElement('div');
+  d.textContent = s == null ? '' : s;
+  return d.innerHTML;
+}
+
 function log(tag, msg, raw) {
+  // msg is developer-authored markup (e.g. `<span class="val-num">...`) built
+  // by this page's own test functions, not attacker-controlled - only the
+  // raw API response dump below can contain server/other-party data, so only
+  // that is escaped.
   const con = document.getElementById('con');
   const el = document.createElement('div');
   el.className = 'log-entry';
-  const rawHtml = raw ? `<pre>${JSON.stringify(raw,null,2)}</pre>` : '';
+  const rawHtml = raw ? `<pre>${esc(JSON.stringify(raw,null,2))}</pre>` : '';
   el.innerHTML = `<span class="ts">${now()}</span><span class="tag tag-${tag}">${tag.toUpperCase()}</span><span class="msg">${msg}${rawHtml}</span>`;
   con.appendChild(el);
   con.scrollTop = con.scrollHeight;

@@ -1018,5 +1018,37 @@ Updater tool (`updater.html`).
    1 and 6) — self-service registration is currently non-functional on the standalone
    EtelPay app; only EtelID-SSO auto-provisioning (`ep_login_etelid`) actually creates
    wallets today. Whether to build a real registration action, deliberately keep
-   registration EtelID-SSO-only, or remove the dead form is a product decision. Not
-   changed.
+   registration EtelID-SSO-only, or remove the dead form is a product decision. **Resolved
+   — removed (see second pass below).**
+
+## Second pass — Dagi's decisions on the judgment-call list
+
+Dagi reviewed the 8 items above and decided:
+
+| # | Item | Decision |
+|---|---|---|
+| 1 | `ep_admin_self_topup` unlimited self-mint | Leave as-is — by-design admin power, no secondary approval added |
+| 2 | `run_sql` single shared password | Leave as-is — accepted, consistent with the rest of Etel Group |
+| 3 | `diag.html` unescaped `innerHTML` | **Fixed** — see below |
+| 4 | `ep_upload_avatar` JPEG not magic-byte-checked | **Fixed** — see below |
+| 5 | No session idle timeout | **Fixed** — 8-hour idle timeout added |
+| 6 | `upd_log()` swallows write failures | **Fixed** — see below |
+| 7 | `ep_kyc_submit` size cap not on back/selfie | **Fixed** — see below |
+| 8 | Dead `register.html` self-registration form | **Fixed** — form removed |
+
+## Summary of code changes made in this second pass
+
+| File | Change |
+|---|---|
+| `Etel.Pay/wallet/diag.html` | Added a local `esc()` HTML-escaping helper and applied it to the raw JSON API-response dump in `log()` (item 3). The developer-authored status markup passed alongside it was left unescaped, since it is trusted local HTML, not response data. |
+| `Etel.Pay/wallet/api/ep_r2.php` | `ep_upload_avatar` now checks the real JPEG magic bytes (`FF D8 FF`) instead of assuming any non-PNG upload is a valid JPEG (item 4). |
+| `Etel.Pay/wallet/api/v2_verify.php` | Added an 8-hour (`28800`s) idle-session timeout: a new `last_active_at` column on `ep_sessions` (added lazily, same self-healing pattern as `etelid_kyc.php`), checked and refreshed on every `ep_auth()` call; a session idle past the cutoff is deleted and rejected with 401 (item 5). |
+| `Etel.Pay/wallet/api/updater-api.php` | `upd_log()`'s empty catch block now calls `error_log()` on a failed write, matching the equivalent fix already made for Delivery & Ride (item 6). |
+| `Etel.Pay/wallet/api/ep_r3.php` | `ep_kyc_submit`'s existing ~3&nbsp;MB (4194304-byte) size cap is now enforced on the back-document and selfie fields as well as the front document (item 7). |
+| `Etel.Pay/wallet/register.html` | **Deleted.** Confirmed orphaned — nothing links to it, and the action it posts to (`etel_pay_register_wallet`) has never existed on the backend. Self-service registration remains EtelID-SSO-only via `ep_login_etelid` (item 8). |
+
+All PHP edits verified with `php -l` and the ASCII-safety check (no new non-ASCII bytes
+introduced). The JS in `diag.html` was verified with `node --check`. Nothing was
+deployed — all changes are in this repo's git working tree only; deployment to
+`ethelmarket.com/Etel.Pay/wallet/` remains a separate manual step through EtelPay's own
+Updater tool (`updater.html`).

@@ -298,15 +298,43 @@ function ep_get_bearer() {
     return (strpos($h, 'Bearer ') === 0) ? trim(substr($h, 7)) : '';
 }
 
+// Idle timeout in addition to (not instead of) the 7-day hard EP_SESSION_TTL
+// cap: a session unused for this long is treated as expired even if it's
+// still within its 7-day window, matching EtelID's own 8-hour SSO idle
+// cutoff for a wallet app that moves real money.
+define('EP_SESSION_IDLE_SECONDS', 28800);
+
+function ep_ensure_session_activity_column($pdo) {
+    // Same lazy check-and-add pattern already used elsewhere in this
+    // codebase (see etelid_kyc.php's etelid_fin/etelid_kyc_level columns)
+    // rather than a migration file, since this system has no migration
+    // runner.
+    try {
+        $pdo->query('SELECT last_active_at FROM ' . EP_TBL_SESSIONS . ' LIMIT 0');
+    } catch (Exception $e) {
+        $pdo->exec('ALTER TABLE ' . EP_TBL_SESSIONS . ' ADD COLUMN last_active_at DATETIME DEFAULT CURRENT_TIMESTAMP');
+    }
+}
+
 function ep_auth() {
     $token = ep_get_bearer();
     if (!$token) ep_err('Unauthorized — no token', 401);
     $pdo  = ep_db();
-    $stmt = $pdo->prepare('SELECT s.ep_user_id, u.phone, u.full_name, u.status, u.kyc_status, u.balance_etb, u.balance_usd, u.avatar_url, u.is_admin FROM ' . EP_TBL_SESSIONS . ' s JOIN ' . EP_TBL_USERS . ' u ON s.ep_user_id = u.id WHERE s.token = ? AND s.expires_at > NOW() LIMIT 1');
+    ep_ensure_session_activity_column($pdo);
+    $stmt = $pdo->prepare('SELECT s.ep_user_id, s.last_active_at, u.phone, u.full_name, u.status, u.kyc_status, u.balance_etb, u.balance_usd, u.avatar_url, u.is_admin FROM ' . EP_TBL_SESSIONS . ' s JOIN ' . EP_TBL_USERS . ' u ON s.ep_user_id = u.id WHERE s.token = ? AND s.expires_at > NOW() LIMIT 1');
     $stmt->execute(array($token));
     $row = $stmt->fetch();
     if (!$row) ep_err('Session expired or invalid', 401);
     if ($row['status'] !== 'active') ep_err('Account suspended', 403);
+    $lastActive = $row['last_active_at'] ? strtotime($row['last_active_at']) : 0;
+    if ($lastActive && (time() - $lastActive) > EP_SESSION_IDLE_SECONDS) {
+        // Idle too long - revoke this session outright (not just reject
+        // this one request) so the next login issues a fresh token rather
+        // than leaving a stale, still-technically-unexpired row behind.
+        $pdo->prepare('DELETE FROM ' . EP_TBL_SESSIONS . ' WHERE token = ?')->execute(array($token));
+        ep_err('Session expired due to inactivity - please log in again', 401);
+    }
+    $pdo->prepare('UPDATE ' . EP_TBL_SESSIONS . ' SET last_active_at = NOW() WHERE token = ?')->execute(array($token));
     return $row;
 }
 
