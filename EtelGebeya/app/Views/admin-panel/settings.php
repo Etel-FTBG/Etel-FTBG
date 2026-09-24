@@ -47,16 +47,16 @@ ob_start();
     <?= csrf() ?>
     <div style="display:grid;gap:14px">
       <div>
-        <label style="font-size:11px;color:var(--dark-muted);display:block;margin-bottom:5px;font-weight:700">App Name</label>
-        <input type="text" name="app_name" class="ag-inp" value="<?= e($cfg['app']['name'] ?? 'Etel Gebeya') ?>" style="max-width:none;width:100%">
+        <label for="set-app_name" style="font-size:11px;color:var(--dark-muted);display:block;margin-bottom:5px;font-weight:700">App Name</label>
+        <input type="text" name="app_name" id="set-app_name" class="ag-inp" value="<?= e($cfg['app']['name'] ?? 'Etel Gebeya') ?>" style="max-width:none;width:100%">
       </div>
       <div>
-        <label style="font-size:11px;color:var(--dark-muted);display:block;margin-bottom:5px;font-weight:700">App URL</label>
-        <input type="text" name="app_url" class="ag-inp" value="<?= e($cfg['app']['url'] ?? '') ?>" style="max-width:none;width:100%">
+        <label for="set-app_url" style="font-size:11px;color:var(--dark-muted);display:block;margin-bottom:5px;font-weight:700">App URL</label>
+        <input type="text" name="app_url" id="set-app_url" class="ag-inp" value="<?= e($cfg['app']['url'] ?? '') ?>" style="max-width:none;width:100%">
       </div>
       <div>
-        <label style="font-size:11px;color:var(--dark-muted);display:block;margin-bottom:5px;font-weight:700">Debug Mode</label>
-        <select name="app_debug" class="ag-sel">
+        <label for="set-app_debug" style="font-size:11px;color:var(--dark-muted);display:block;margin-bottom:5px;font-weight:700">Debug Mode</label>
+        <select name="app_debug" id="set-app_debug" class="ag-sel">
           <option value="0" <?= empty($cfg['app']['debug'])?'selected':'' ?>>Off (production)</option>
           <option value="1" <?= !empty($cfg['app']['debug'])?'selected':'' ?>>On (development)</option>
         </select>
@@ -91,19 +91,19 @@ ob_start();
     <div style="font-size:11.5px;color:var(--dark-muted);margin-bottom:10px">"Run Audit Now" calls Gemini or OpenRouter directly with the key below - no shared proxy, no code deploy needed to rotate a key.</div>
     <div style="display:flex;flex-direction:column;gap:8px;max-width:520px">
       <div>
-        <label style="font-size:11px;color:var(--dark-muted);display:block;margin-bottom:3px">Gemini API Key</label>
+        <label for="ag-audit-set-gemini-key" style="font-size:11px;color:var(--dark-muted);display:block;margin-bottom:3px">Gemini API Key</label>
         <input type="text" id="ag-audit-set-gemini-key" class="ag-inp" placeholder="AIza..." style="max-width:none">
       </div>
       <div>
-        <label style="font-size:11px;color:var(--dark-muted);display:block;margin-bottom:3px">OpenRouter API Key</label>
+        <label for="ag-audit-set-openrouter-key" style="font-size:11px;color:var(--dark-muted);display:block;margin-bottom:3px">OpenRouter API Key</label>
         <input type="text" id="ag-audit-set-openrouter-key" class="ag-inp" placeholder="sk-or-..." style="max-width:none">
       </div>
       <div>
-        <label style="font-size:11px;color:var(--dark-muted);display:block;margin-bottom:3px">OpenRouter Model</label>
+        <label for="ag-audit-set-openrouter-model" style="font-size:11px;color:var(--dark-muted);display:block;margin-bottom:3px">OpenRouter Model</label>
         <input type="text" id="ag-audit-set-openrouter-model" class="ag-inp" placeholder="anthropic/claude-3.5-sonnet" style="max-width:none">
       </div>
       <div>
-        <label style="font-size:11px;color:var(--dark-muted);display:block;margin-bottom:3px">Default Provider</label>
+        <label for="ag-audit-set-provider" style="font-size:11px;color:var(--dark-muted);display:block;margin-bottom:3px">Default Provider</label>
         <select id="ag-audit-set-provider" class="ag-sel" style="width:180px">
           <option value="gemini">Gemini</option>
           <option value="openrouter">OpenRouter</option>

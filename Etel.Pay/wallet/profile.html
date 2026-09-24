@@ -346,11 +346,11 @@
   <div class="ep-sheet">
     <div class="ep-sheet-handle"></div>
     <div class="ep-sheet-title">Change PIN</div>
-    <div class="ep-field"><label class="ep-label">Current PIN</label>
+    <div class="ep-field"><label class="ep-label" for="pin-old">Current PIN</label>
       <input class="ep-input" id="pin-old" type="password" placeholder="••••" maxlength="8" inputmode="numeric"></div>
-    <div class="ep-field"><label class="ep-label">New PIN</label>
+    <div class="ep-field"><label class="ep-label" for="pin-new">New PIN</label>
       <input class="ep-input" id="pin-new" type="password" placeholder="••••" maxlength="8" inputmode="numeric"></div>
-    <div class="ep-field"><label class="ep-label">Confirm new PIN</label>
+    <div class="ep-field"><label class="ep-label" for="pin-con">Confirm new PIN</label>
       <input class="ep-input" id="pin-con" type="password" placeholder="••••" maxlength="8" inputmode="numeric"></div>
     <div class="ep-err-msg" id="pin-err"></div>
     <button class="ep-btn ep-btn-primary" id="pin-btn" onclick="doChangePin()" style="margin-top:14px">Update PIN</button>
@@ -362,7 +362,7 @@
   <div class="ep-sheet">
     <div class="ep-sheet-handle"></div>
     <div class="ep-sheet-title">Edit Name</div>
-    <div class="ep-field"><label class="ep-label">Full name</label>
+    <div class="ep-field"><label class="ep-label" for="edit-name">Full name</label>
       <input class="ep-input" id="edit-name" type="text" placeholder="Abebe Girma"></div>
     <div class="ep-err-msg" id="name-err"></div>
     <button class="ep-btn ep-btn-primary" id="name-btn" onclick="saveName()" style="margin-top:14px">Save</button>
@@ -374,7 +374,7 @@
   <div class="ep-sheet">
     <div class="ep-sheet-handle"></div>
     <div class="ep-sheet-title">Edit Email</div>
-    <div class="ep-field"><label class="ep-label">Email</label>
+    <div class="ep-field"><label class="ep-label" for="edit-email">Email</label>
       <input class="ep-input" id="edit-email" type="email" placeholder="you@email.com"></div>
     <div class="ep-err-msg" id="email-err"></div>
     <button class="ep-btn ep-btn-primary" id="email-btn" onclick="saveEmail()" style="margin-top:14px">Save</button>

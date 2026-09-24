@@ -119,14 +119,14 @@
           <input type="file" accept="image/*" capture="environment" onchange="previewDoc(event,'front')" style="position:absolute;inset:0;opacity:0;cursor:pointer">
           <div style="font-size:28px">📄</div>
           <div style="font-size:12px;color:var(--t3);margin-top:6px">Tap to take photo or upload</div>
-          <img id="prev-front" style="max-height:100px;max-width:100%;border-radius:8px;margin-top:8px;display:none">
+          <img id="prev-front" alt="Document front preview" style="max-height:100px;max-width:100%;border-radius:8px;margin-top:8px;display:none">
         </div>
         <div class="step-badge"><div class="step-num">3</div>Selfie with document (optional)</div>
         <div style="border:2px dashed var(--glass-brd);border-radius:12px;padding:18px;text-align:center;cursor:pointer;margin-bottom:16px;position:relative">
           <input type="file" accept="image/*" capture="user" onchange="previewDoc(event,'selfie')" style="position:absolute;inset:0;opacity:0;cursor:pointer">
           <div style="font-size:24px">🤳</div>
           <div style="font-size:12px;color:var(--t3);margin-top:6px">Hold document next to your face</div>
-          <img id="prev-selfie" style="max-height:80px;max-width:100%;border-radius:8px;margin-top:8px;display:none">
+          <img id="prev-selfie" alt="Selfie preview" style="max-height:80px;max-width:100%;border-radius:8px;margin-top:8px;display:none">
         </div>
         <div class="ep-err-msg" id="manual-err"></div>
         <button class="ep-btn ep-btn-gold" onclick="submitManual()" id="manual-btn">Submit for Review</button>

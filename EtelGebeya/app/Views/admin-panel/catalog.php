@@ -103,13 +103,13 @@ ob_start();
     <?= csrf() ?>
     <input type="hidden" name="id" id="ci-id" value="0">
     <div class="fg-row">
-      <div class="fg"><label>Name (EN) *</label><input class="ag-inp" type="text" name="name_en" id="ci-name_en" required></div>
-      <div class="fg"><label>Name (AM)</label><input class="ag-inp" type="text" name="name_am" id="ci-name_am"></div>
-      <div class="fg"><label>SKU</label><input class="ag-inp" type="text" name="sku" id="ci-sku"></div>
+      <div class="fg"><label for="ci-name_en">Name (EN) *</label><input class="ag-inp" type="text" name="name_en" id="ci-name_en" required></div>
+      <div class="fg"><label for="ci-name_am">Name (AM)</label><input class="ag-inp" type="text" name="name_am" id="ci-name_am"></div>
+      <div class="fg"><label for="ci-sku">SKU</label><input class="ag-inp" type="text" name="sku" id="ci-sku"></div>
     </div>
     <div class="fg-row">
       <div class="fg">
-        <label>Supplier *</label>
+        <label for="ci-supplier_id">Supplier *</label>
         <select class="ag-sel" name="supplier_id" id="ci-supplier_id" required>
           <option value="">-- Select supplier --</option>
           <?php foreach ($suppliers as $s): ?>
@@ -118,7 +118,7 @@ ob_start();
         </select>
       </div>
       <div class="fg">
-        <label>Category</label>
+        <label for="ci-category_id">Category</label>
         <select class="ag-sel" name="category_id" id="ci-category_id">
           <option value="">-- None --</option>
           <?php foreach ($categories as $c): ?>
@@ -127,7 +127,7 @@ ob_start();
         </select>
       </div>
       <div class="fg">
-        <label>Status</label>
+        <label for="ci-status">Status</label>
         <select class="ag-sel" name="status" id="ci-status">
           <option value="active">Active</option>
           <option value="archived">Archived</option>
@@ -135,9 +135,9 @@ ob_start();
       </div>
     </div>
     <div class="fg-row">
-      <div class="fg"><label>Cost Price (ETB) *</label><input class="ag-inp" type="number" step="0.01" min="0.01" name="cost_price" id="ci-cost_price" required></div>
-      <div class="fg"><label>Suggested Markup %</label><input class="ag-inp" type="number" step="0.01" min="0" name="suggested_markup_pct" id="ci-suggested_markup_pct" value="30"></div>
-      <div class="fg"><label>Ships in (days min-max)</label>
+      <div class="fg"><label for="ci-cost_price">Cost Price (ETB) *</label><input class="ag-inp" type="number" step="0.01" min="0.01" name="cost_price" id="ci-cost_price" required></div>
+      <div class="fg"><label for="ci-suggested_markup_pct">Suggested Markup %</label><input class="ag-inp" type="number" step="0.01" min="0" name="suggested_markup_pct" id="ci-suggested_markup_pct" value="30"></div>
+      <div class="fg"><label for="ci-lead_min">Ships in (days min-max)</label>
         <div style="display:flex;gap:6px">
           <input class="ag-inp" type="number" min="1" name="dropship_lead_days_min" id="ci-lead_min" placeholder="7">
           <input class="ag-inp" type="number" min="1" name="dropship_lead_days_max" id="ci-lead_max" placeholder="14">
@@ -145,11 +145,11 @@ ob_start();
       </div>
     </div>
     <div class="fg-row col2">
-      <div class="fg"><label>Primary Image URL</label><input class="ag-inp" type="text" name="image_url" id="ci-image_url" placeholder="https://..."></div>
-      <div class="fg"><label>Gallery Image URLs (comma-separated)</label><input class="ag-inp" type="text" name="gallery_urls" id="ci-gallery_urls"></div>
+      <div class="fg"><label for="ci-image_url">Primary Image URL</label><input class="ag-inp" type="text" name="image_url" id="ci-image_url" placeholder="https://..."></div>
+      <div class="fg"><label for="ci-gallery_urls">Gallery Image URLs (comma-separated)</label><input class="ag-inp" type="text" name="gallery_urls" id="ci-gallery_urls"></div>
     </div>
     <div class="fg" style="margin-bottom:10px">
-      <label>Description (EN)</label>
+      <label for="ci-description_en">Description (EN)</label>
       <textarea class="ag-txt" name="description_en" id="ci-description_en"></textarea>
     </div>
     <button type="submit" class="btn-xs btn-gold-xs">Save Catalog Item</button>

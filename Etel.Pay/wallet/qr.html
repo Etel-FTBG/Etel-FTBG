@@ -75,11 +75,11 @@
     <div class="qr-panel" id="tab-request">
       <p class="text-dim mb-20" style="font-size:14px;line-height:1.6">Generate a QR code with a specific amount. Anyone who scans it will be prompted to pay exactly that amount.</p>
       <div class="ep-field">
-        <label class="ep-label">Amount (ETB)</label>
+        <label class="ep-label" for="dyn-amount">Amount (ETB)</label>
         <input class="ep-input" id="dyn-amount" type="number" placeholder="e.g. 150.00" min="1" inputmode="decimal">
       </div>
       <div class="ep-field">
-        <label class="ep-label" data-t="label">Label / Description</label>
+        <label class="ep-label" data-t="label" for="dyn-label">Label / Description</label>
         <input class="ep-input" id="dyn-label" type="text" placeholder="Rent, invoice #001…" maxlength="80">
       </div>
       <div class="ep-err-msg" id="dyn-err"></div>
@@ -108,11 +108,11 @@
         <div class="scan-sub">Paste a QR token below or enter the payment code you received.</div>
       </div>
       <div class="ep-field">
-        <label class="ep-label">QR token / payment code</label>
+        <label class="ep-label" for="scan-token">QR token / payment code</label>
         <input class="ep-input" id="scan-token" type="text" placeholder="Paste token here…">
       </div>
       <div class="ep-field">
-        <label class="ep-label">Amount (ETB) — leave blank if preset</label>
+        <label class="ep-label" for="scan-amount">Amount (ETB) — leave blank if preset</label>
         <input class="ep-input" id="scan-amount" type="number" placeholder="Optional" min="1" inputmode="decimal">
       </div>
       <div class="ep-err-msg" id="scan-err"></div>
