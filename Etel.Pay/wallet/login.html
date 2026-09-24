@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#D4AF37">
+<meta name="color-scheme" content="light">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -25,6 +26,7 @@
 
 /* GOLD TOKEN RAMP */
 :root {
+  color-scheme: light;
   --g1:#FDF6D8; --g2:#F5E6A3; --g3:#E8C84A; --g4:#D4AF37;
   --g5:#C8922A; --g6:#A07020; --g7:#7A5518; --g8:#4A3210; --g9:#2A1A06;
   --ink:#1A0E00; --ink2:#3A2200; --ink3:#7A5520;
@@ -332,6 +334,14 @@ body { font-family:var(--ff-body); background:#0a0a14; }
   outline:none;
 }
 .ep-af-input::placeholder { color:rgba(58,34,0,.5); font-weight:500; }
+.ep-af-input:-webkit-autofill,
+.ep-af-input:-webkit-autofill:hover,
+.ep-af-input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--ink);
+  -webkit-box-shadow: 0 0 0 1000px #FFFFFF inset;
+  box-shadow: 0 0 0 1000px #FFFFFF inset;
+  caret-color: var(--ink);
+}
 .ep-pw-toggle {
   position:absolute; right:10px;
   background:none; border:none;
@@ -570,6 +580,20 @@ body { font-family:var(--ff-body); background:#0a0a14; }
 
         <!-- Login form -->
         <div id="form-login">
+        <!-- ✦ EtelId PRIMARY HERO ✦ -->
+        <div style="background:linear-gradient(135deg,rgba(42,26,6,.85),rgba(74,50,16,.75));border:1.5px solid rgba(212,175,55,.4);border-radius:14px;padding:16px;margin-bottom:16px;text-align:center">
+          <div style="font-size:11px;font-weight:700;color:rgba(253,246,216,.55);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px">✦ Recommended — Works across all ETEL services ✦</div>
+          <button class="ep-auth-etelid" id="etelid-btn-hero" type="button" onclick="doEtelIdLogin()" style="width:100%;margin-bottom:4px">
+            <span class="ep-etelid-mark">ኢE</span>
+            <span id="etelid-btn-txt">Sign in with EtelID</span>
+          </button>
+          <p style="font-size:10px;color:rgba(253,246,216,.35);margin-top:6px">Delivery · Ride · Pay — one identity</p>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+          <div style="flex:1;height:1px;background:rgba(212,175,55,.15)"></div>
+          <span id="div-or" style="font-size:10px;color:rgba(253,246,216,.35);letter-spacing:1px">OR PHONE + PIN</span>
+          <div style="flex:1;height:1px;background:rgba(212,175,55,.15)"></div>
+        </div>
           <div class="ep-af-field">
             <label class="ep-af-label" id="lbl-phone">Phone Number</label>
             <div class="ep-af-wrap">
