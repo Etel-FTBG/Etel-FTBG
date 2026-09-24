@@ -99,6 +99,74 @@
 
 /* Load more */
 #load-more-btn{margin-top:16px;display:none}
+
+/* ── Receipt (transaction detail sheet) ────────────────────── */
+.receipt{
+  background:#fff; color:#1a1207; border-radius:var(--r-lg);
+  overflow:hidden; border:1px solid rgba(0,0,0,.08);
+  font-family:'Segoe UI',Roboto,Arial,sans-serif;
+}
+.rcpt-band{
+  background:linear-gradient(120deg,#7A5518 0%,#C8960C 45%,#D4AF37 75%,#F2CC6B 100%);
+  color:#fff; padding:18px 20px 16px; text-align:center;
+}
+.rcpt-mark{
+  width:38px;height:38px;border-radius:50%;margin:0 auto 8px;
+  background:rgba(255,255,255,.18); display:flex;align-items:center;justify-content:center;
+  font-family:var(--fe); font-weight:700; font-size:17px;
+}
+.rcpt-org{font-family:var(--fd);font-weight:800;font-size:15px;letter-spacing:.3px}
+.rcpt-sub{font-size:11.5px;opacity:.9;margin-top:2px}
+.rcpt-status{
+  display:inline-block;margin-top:10px;padding:3px 12px;border-radius:20px;
+  font-size:10.5px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;
+  background:rgba(255,255,255,.22);
+}
+.rcpt-body{padding:18px 18px 6px}
+.rcpt-amt-row{text-align:center;padding-bottom:16px;border-bottom:1px dashed rgba(0,0,0,.15);margin-bottom:14px}
+.rcpt-amt{font-family:var(--fm);font-size:26px;font-weight:700;color:#1a1207}
+.rcpt-amt-dir{font-size:11.5px;color:#7a6a45;margin-top:2px;font-weight:600;letter-spacing:.4px;text-transform:uppercase}
+.rcpt-sec-title{
+  font-size:10.5px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;
+  color:#7a6540;margin:14px 0 8px;
+}
+.rcpt-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:4px}
+.rcpt-field{font-size:12px;line-height:1.65}
+.rcpt-field b{display:block;font-size:10px;font-weight:700;color:#7a6540;text-transform:uppercase;letter-spacing:.4px}
+.rcpt-table{width:100%;border-collapse:collapse;margin-top:2px}
+.rcpt-table tr{border-bottom:1px solid rgba(0,0,0,.08)}
+.rcpt-table tr:last-child{border-bottom:none}
+.rcpt-table td{padding:8px 2px;font-size:12.5px;vertical-align:top}
+.rcpt-table td:first-child{color:#7a6a45;width:46%}
+.rcpt-table td:last-child{font-weight:600;text-align:right;font-family:var(--fm);word-break:break-word}
+.rcpt-words{
+  margin:14px 0 4px;padding:10px 12px;border-radius:9px;
+  background:#FBF6E7;border:1px solid #EEDDA8;font-size:11.5px;text-align:center;
+}
+.rcpt-words b{display:block;font-size:9.5px;color:#7a6540;text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px;font-weight:700}
+.rcpt-qr-wrap{text-align:center;padding:16px 0 6px}
+.rcpt-qr-box{display:inline-block;padding:8px;background:#fff;border:1px solid rgba(0,0,0,.1);border-radius:8px}
+.rcpt-qr-cap{font-size:10px;color:#7a6540;margin-top:6px;letter-spacing:.3px}
+.rcpt-foot{
+  text-align:center;padding:14px 18px 18px;font-size:10px;color:#7a6540;
+  border-top:1px solid rgba(0,0,0,.08);margin-top:8px;line-height:1.6;
+}
+.rcpt-actions{display:flex;gap:10px;margin-top:14px}
+.rcpt-actions .ep-btn{flex:1}
+
+@media print{
+  body > *:not(#sheet-tx){display:none!important}
+  #sheet-tx{
+    position:static!important;background:#fff!important;display:block!important;
+    inset:auto!important;
+  }
+  #sheet-tx .ep-sheet{
+    box-shadow:none!important;max-width:none!important;width:100%!important;
+    margin:0!important;border-radius:0!important;padding:0!important;
+  }
+  #sheet-tx .ep-sheet-handle,#sheet-tx .ep-sheet-title,.rcpt-actions,#ep-toast{display:none!important}
+  .receipt{border:none;border-radius:0}
+}
 </style>
     <link rel="stylesheet" href="css/etel-design-v4.css?v=4.1">
 </head>
@@ -182,7 +250,11 @@
     <div class="ep-sheet-handle"></div>
     <div class="ep-sheet-title">Transaction details</div>
     <div id="tx-detail-body"></div>
-    <button class="ep-btn ep-btn-ghost" onclick="EP_CORE.closeSheet('sheet-tx')" style="margin-top:16px">Close</button>
+    <div class="rcpt-actions">
+      <button class="ep-btn ep-btn-ghost" onclick="printReceipt()">Print Receipt</button>
+      <button class="ep-btn ep-btn-ghost" onclick="downloadReceiptPdf()">Download PDF</button>
+    </div>
+    <button class="ep-btn ep-btn-ghost" onclick="EP_CORE.closeSheet('sheet-tx')" style="margin-top:10px">Close</button>
   </div>
 </div>
 
@@ -191,6 +263,8 @@
 <script src="js/config.js?v=4.1"></script>
 <script src="js/api.js?v=4.1"></script>
 <script src="js/core.js?v=4.1"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
 let _allTx    = [];
 let _filter   = 'all';
@@ -360,38 +434,227 @@ function renderTx(){
   c.innerHTML=html;
 }
 
-function showDetail(tx){
-  const dir=EP_CORE.txDirection(tx);
-  const sign=dir==='in'?'+':'-';
-  const statusBadge=`<span class="ep-badge ep-badge-${tx.status==='completed'?'ok':tx.status==='pending'?'warn':'err'}">${tx.status||'completed'}</span>`;
-  const p = partnerInfo(tx);
-  document.getElementById('tx-detail-body').innerHTML=`
-    <div class="txd-head">
-      <div class="txd-icon" style="color:${dir==='in'?'var(--ok)':'var(--err)'};border-color:${dir==='in'?'rgba(16,185,129,.28)':'rgba(239,68,68,.24)'};background:${dir==='in'?'var(--ok-bg)':'var(--err-bg)'}">${EP_CORE.txIcon(tx)}</div>
-      <div class="txd-amt" style="color:${dir==='in'?'var(--ok)':'var(--err)'}">${sign}${EP_CORE.numFmt(tx.amount||0)} ${tx.currency||'ETB'}</div>
-      <div style="margin-top:9px">${statusBadge}</div>
+/* ── Amount in words (English, ETB) ─────────────────────────── */
+const NUM_ONES = ['','One','Two','Three','Four','Five','Six','Seven','Eight','Nine',
+  'Ten','Eleven','Twelve','Thirteen','Fourteen','Fifteen','Sixteen','Seventeen','Eighteen','Nineteen'];
+const NUM_TENS = ['','','Twenty','Thirty','Forty','Fifty','Sixty','Seventy','Eighty','Ninety'];
+function threeDigitsToWords(n){
+  let s='';
+  if(n>=100){ s+=NUM_ONES[Math.floor(n/100)]+' Hundred'; n%=100; if(n) s+=' '; }
+  if(n>=20){ s+=NUM_TENS[Math.floor(n/10)]; if(n%10) s+='-'+NUM_ONES[n%10]; }
+  else if(n>0){ s+=NUM_ONES[n]; }
+  return s;
+}
+function integerToWords(n){
+  if(n===0) return 'Zero';
+  const groups=[['',1],[' Thousand',1e3],[' Million',1e6],[' Billion',1e9]];
+  let parts=[];
+  for(let i=groups.length-1;i>=0;i--){
+    const size=groups[i][1];
+    const chunk=Math.floor(n/size)%1000;
+    if(chunk>0) parts.push(threeDigitsToWords(chunk)+groups[i][0]);
+  }
+  return parts.join(' ');
+}
+function amountToWords(amount, currency){
+  const n = Math.round((parseFloat(amount)||0)*100)/100;
+  const whole = Math.floor(n);
+  const cents = Math.round((n-whole)*100);
+  let words = integerToWords(whole)+' '+(currency||'ETB');
+  if(cents>0) words += ' and '+integerToWords(cents)+' Cents';
+  return words;
+}
+
+/* ── Receipt (used by the detail sheet, print, and PDF download) ── */
+let _rcptTx = null;
+
+function receiptStatus(tx){
+  return (tx.status||'completed').toUpperCase();
+}
+function txReference(tx){
+  return tx.tx_ref || tx.ref || tx.id || '—';
+}
+function buildReceiptHtml(tx){
+  const dir   = EP_CORE.txDirection(tx);
+  const sign  = dir==='in'?'+':'-';
+  const p     = partnerInfo(tx);
+  const me    = EP_CORE.getPhone() || '—';
+  const ref   = txReference(tx);
+  return `
+  <div class="receipt" id="receipt-print-area">
+    <div class="rcpt-band">
+      <div class="rcpt-mark">ኢE</div>
+      <div class="rcpt-org">ETEL GROUP</div>
+      <div class="rcpt-sub">ኢE Pay — Wallet Transaction Receipt</div>
+      <div class="rcpt-status">${EP_CORE.esc(receiptStatus(tx))}</div>
     </div>
-    ${row('Type',     tx.type||'—')}
-    ${row('From',     tx.sender_phone||'—')}
-    ${row('To',       tx.receiver_phone||'—')}
-    ${row('Note',     tx.note||'—')}
-    ${row('Reference',tx.ref||tx.id||'—')}
-    ${row('Date',     EP_CORE.dateFmtFull(tx.created_at))}
-    <div class="txd-row">
-      <span class="txd-k">Linked Service</span>
-      <div>
-        ${companyChip(tx)}
-        <div class="txd-service-note">${EP_CORE.esc(p.note)}</div>
+    <div class="rcpt-body">
+      <div class="rcpt-amt-row">
+        <div class="rcpt-amt">${sign}${EP_CORE.numFmt(tx.amount||0)} ${EP_CORE.esc(tx.currency||'ETB')}</div>
+        <div class="rcpt-amt-dir">${dir==='in'?'Money Received':'Money Sent'}</div>
+      </div>
+
+      <div class="rcpt-sec-title">Company Information</div>
+      <div class="rcpt-grid">
+        <div class="rcpt-field"><b>Company</b>Etel Group</div>
+        <div class="rcpt-field"><b>Service</b>EtelPay Digital Wallet</div>
+        <div class="rcpt-field"><b>Country / City</b>Ethiopia, Hawassa</div>
+        <div class="rcpt-field"><b>Website</b>ethelmarket.com</div>
+      </div>
+
+      <div class="rcpt-sec-title">Customer Information</div>
+      <div class="rcpt-grid">
+        <div class="rcpt-field"><b>Your Phone</b>${EP_CORE.esc(me)}</div>
+        <div class="rcpt-field"><b>Linked Service</b>${companyChip(tx)}</div>
+      </div>
+
+      <div class="rcpt-sec-title">Payment / Transaction Information</div>
+      <table class="rcpt-table">
+        <tr><td>Payer</td><td>${EP_CORE.esc(tx.sender_phone||(dir==='out'?me:'—'))}</td></tr>
+        <tr><td>Receiver</td><td>${EP_CORE.esc(tx.receiver_phone||(dir==='in'?me:'—'))}</td></tr>
+        <tr><td>Payment Type</td><td>${EP_CORE.esc(tx.type||'—')}</td></tr>
+        <tr><td>Payment Date &amp; Time</td><td>${EP_CORE.esc(EP_CORE.dateFmtFull(tx.created_at))}</td></tr>
+        <tr><td>Reference No.</td><td>${EP_CORE.esc(String(ref))}</td></tr>
+        <tr><td>Note / Reason</td><td>${EP_CORE.esc(tx.note||'—')}</td></tr>
+        <tr><td>Transferred Amount</td><td>${EP_CORE.numFmt(tx.amount||0)} ${EP_CORE.esc(tx.currency||'ETB')}</td></tr>
+      </table>
+
+      <div class="rcpt-words">
+        <b>Amount in Words</b>
+        ${EP_CORE.esc(amountToWords(tx.amount, tx.currency))}
+      </div>
+
+      <div class="rcpt-qr-wrap">
+        <div class="rcpt-qr-box" id="rcpt-qr"></div>
+        <div class="rcpt-qr-cap">Scan to verify this receipt</div>
       </div>
     </div>
-  `;
+    <div class="rcpt-foot">
+      EtelPay — Etel Group's trusted digital wallet · ethelmarket.com<br>
+      This is a system-generated receipt and requires no signature.
+    </div>
+  </div>`;
+}
+
+function showDetail(tx){
+  _rcptTx = tx;
+  document.getElementById('tx-detail-body').innerHTML = buildReceiptHtml(tx);
+  const qrBox = document.getElementById('rcpt-qr');
+  if(qrBox && typeof QRCode!=='undefined'){
+    qrBox.innerHTML='';
+    new QRCode(qrBox, {
+      text: `ETELPAY-RECEIPT|${txReference(tx)}|${tx.amount||0}|${tx.currency||'ETB'}|${tx.created_at||''}`,
+      width: 96, height: 96,
+      correctLevel: QRCode.CorrectLevel.M
+    });
+  }
   EP_CORE.openSheet('sheet-tx');
 }
-function row(label,val){
-  return `<div class="txd-row">
-    <span class="txd-k">${label}</span>
-    <span class="txd-v">${EP_CORE.esc(String(val))}</span>
-  </div>`;
+
+function printReceipt(){
+  window.print();
+}
+
+async function downloadReceiptPdf(){
+  const tx = _rcptTx;
+  if(!tx || typeof window.jspdf==='undefined'){ printReceipt(); return; }
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit:'pt', format:'a4' });
+  const pw = doc.internal.pageSize.getWidth();
+  const marginX = 40;
+  let y = 0;
+
+  // Header band
+  doc.setFillColor(200,150,12);
+  doc.rect(0,0,pw,90,'F');
+  doc.setTextColor(255,255,255);
+  doc.setFont('helvetica','bold'); doc.setFontSize(18);
+  doc.text('ETEL GROUP', pw/2, 40, {align:'center'});
+  doc.setFont('helvetica','normal'); doc.setFontSize(11);
+  doc.text("EtelPay - Wallet Transaction Receipt", pw/2, 60, {align:'center'});
+  doc.setFontSize(10);
+  doc.text(receiptStatus(tx), pw/2, 78, {align:'center'});
+
+  y = 120;
+  doc.setTextColor(26,18,7);
+  const dir = EP_CORE.txDirection(tx);
+  const sign = dir==='in'?'+':'-';
+  doc.setFont('helvetica','bold'); doc.setFontSize(20);
+  doc.text(`${sign}${EP_CORE.numFmt(tx.amount||0)} ${tx.currency||'ETB'}`, pw/2, y, {align:'center'});
+  y += 18;
+  doc.setFont('helvetica','normal'); doc.setFontSize(10);
+  doc.setTextColor(122,106,69);
+  doc.text(dir==='in'?'MONEY RECEIVED':'MONEY SENT', pw/2, y, {align:'center'});
+  doc.setTextColor(26,18,7);
+  y += 30;
+
+  function section(title){
+    doc.setFont('helvetica','bold'); doc.setFontSize(10);
+    doc.setTextColor(154,131,82);
+    doc.text(title.toUpperCase(), marginX, y);
+    doc.setTextColor(26,18,7);
+    y += 16;
+  }
+  function field(label, value){
+    doc.setFont('helvetica','normal'); doc.setFontSize(10);
+    doc.setTextColor(122,106,69);
+    doc.text(String(label), marginX, y);
+    doc.setTextColor(26,18,7);
+    doc.setFont('helvetica','bold');
+    doc.text(String(value), pw-marginX, y, {align:'right'});
+    y += 18;
+  }
+
+  const me = EP_CORE.getPhone() || '—';
+  section('Company Information');
+  field('Company', 'Etel Group');
+  field('Service', 'EtelPay Digital Wallet');
+  field('Country / City', 'Ethiopia, Hawassa');
+  field('Website', 'ethelmarket.com');
+  y += 6;
+
+  section('Customer Information');
+  field('Your Phone', me);
+  field('Linked Service', partnerInfo(tx).label);
+  y += 6;
+
+  section('Payment / Transaction Information');
+  field('Payer', tx.sender_phone || (dir==='out'?me:'—'));
+  field('Receiver', tx.receiver_phone || (dir==='in'?me:'—'));
+  field('Payment Type', tx.type||'—');
+  field('Payment Date & Time', EP_CORE.dateFmtFull(tx.created_at));
+  field('Reference No.', String(txReference(tx)));
+  field('Note / Reason', tx.note||'—');
+  field('Transferred Amount', `${EP_CORE.numFmt(tx.amount||0)} ${tx.currency||'ETB'}`);
+  y += 10;
+
+  doc.setDrawColor(238,221,168);
+  doc.setFillColor(251,246,231);
+  doc.roundedRect(marginX, y, pw-marginX*2, 40, 6, 6, 'FD');
+  doc.setFont('helvetica','bold'); doc.setFontSize(8);
+  doc.setTextColor(154,131,82);
+  doc.text('AMOUNT IN WORDS', marginX+12, y+15);
+  doc.setFont('helvetica','normal'); doc.setFontSize(10);
+  doc.setTextColor(26,18,7);
+  doc.text(amountToWords(tx.amount, tx.currency), marginX+12, y+30, {maxWidth: pw-marginX*2-24});
+  y += 60;
+
+  // QR code, reusing the on-screen canvas rendered by qrcode.js
+  try {
+    const qrCanvas = document.querySelector('#rcpt-qr canvas');
+    if(qrCanvas){
+      const qrData = qrCanvas.toDataURL('image/png');
+      doc.addImage(qrData, 'PNG', pw/2-40, y, 80, 80);
+      y += 90;
+    }
+  } catch(e) {}
+
+  doc.setFont('helvetica','normal'); doc.setFontSize(8);
+  doc.setTextColor(154,131,82);
+  doc.text("EtelPay - Etel Group's trusted digital wallet - ethelmarket.com", pw/2, y+10, {align:'center'});
+  doc.text('This is a system-generated receipt and requires no signature.', pw/2, y+22, {align:'center'});
+
+  doc.save(`EtelPay-Receipt-${txReference(tx)}.pdf`);
 }
 </script>
 <script src="js/devpanel.js"></script>
