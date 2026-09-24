@@ -146,7 +146,7 @@ ob_start();
     fetch('<?= View::url('/admin/audit/run') ?>', {
       method: 'POST',
       headers: {'Content-Type':'application/x-www-form-urlencoded'},
-      body: 'provider=' + encodeURIComponent(provider)
+      body: 'provider=' + encodeURIComponent(provider) + '&_token=' + encodeURIComponent('<?= $GLOBALS['__auth']->csrfToken() ?>')
     }).then(function(r){ return r.json(); }).then(function(d){
       btn.disabled = false; btn.textContent = '▶️ Run Audit Now';
       if (!d.ok) { wrap.innerHTML = '<div style="padding:14px;color:var(--red);background:rgba(231,76,60,.1);border-radius:8px;font-size:12.5px">' + esc(d.message||'Audit failed') + '</div>'; return; }
@@ -190,7 +190,8 @@ ob_start();
       body: 'gemini_key=' + encodeURIComponent(geminiKey) +
             '&openrouter_key=' + encodeURIComponent(openrouterKey) +
             '&openrouter_model=' + encodeURIComponent(openrouterModel) +
-            '&default_provider=' + encodeURIComponent(provider)
+            '&default_provider=' + encodeURIComponent(provider) +
+            '&_token=' + encodeURIComponent('<?= $GLOBALS['__auth']->csrfToken() ?>')
     }).then(function(r){ return r.json(); }).then(function(d){
       alert(d.ok ? 'Audit settings saved' : ('Save failed: ' + (d.message||'')));
     }).catch(function(e){ alert('Save failed: ' + e.message); });

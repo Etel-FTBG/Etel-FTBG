@@ -565,6 +565,11 @@ final class AdminController
         // dependency on this framework's autoloader and is a clean
         // copy-paste template for other Etel projects.
         header('Content-Type: application/json');
+        if (!$this->auth->csrfCheck($_POST['_token'] ?? null)) {
+            http_response_code(403);
+            echo json_encode(['ok' => false, 'message' => 'Your session expired -- please refresh and try again.']);
+            return;
+        }
         require_once __DIR__ . '/../../audit_agent.php';
         $provider = $_POST['provider'] ?? 'gemini';
         $root = dirname(__DIR__, 2); // Controllers -> app -> project root
@@ -597,6 +602,11 @@ final class AdminController
     public function auditSettingsSave(): void
     {
         header('Content-Type: application/json');
+        if (!$this->auth->csrfCheck($_POST['_token'] ?? null)) {
+            http_response_code(403);
+            echo json_encode(['ok' => false, 'message' => 'Your session expired -- please refresh and try again.']);
+            return;
+        }
         require_once __DIR__ . '/../../audit_agent.php';
         $geminiKey       = trim($_POST['gemini_key'] ?? '');
         $openrouterKey   = trim($_POST['openrouter_key'] ?? '');

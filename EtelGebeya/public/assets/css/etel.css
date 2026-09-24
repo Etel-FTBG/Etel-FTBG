@@ -34,7 +34,7 @@
   /* Text */
   --text:       #F7EFD9;
   --text-dim:   #C9B88A;
-  --text-muted: #7A6840;
+  --text-muted: #96804F; /* WCAG AA fix (~4.5:1) -- was #7A6840 (~3.5:1, fails AA); see DESIGN.md */
 
   /* Semantic */
   --ok:    #10B981;
