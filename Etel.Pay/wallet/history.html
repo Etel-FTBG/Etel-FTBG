@@ -8,19 +8,95 @@
 <link rel="manifest" href="manifest.php">
 <link rel="stylesheet" href="css/pay.css">
 <style>
-.hist-wrap{padding:16px 20px 20px}
-/* Summary row */
+.hist-wrap{padding:16px 20px 28px}
+
+/* ── Summary cards ─────────────────────────────────────────── */
 .hist-summary{
-  display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px;
+  display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:22px;
 }
-.hs-card{background:var(--s1);border:1px solid var(--gold-brd);border-radius:var(--r);padding:14px}
-.hs-label{font-size:11px;color:var(--text-3);font-weight:600;text-transform:uppercase;letter-spacing:1px}
-.hs-val{font-family:var(--fm);font-size:20px;font-weight:700;margin-top:4px}
-/* Date separator */
+.hs-card{
+  position:relative; overflow:hidden;
+  background:linear-gradient(155deg,var(--bg-3) 0%,var(--bg-2) 100%);
+  border:1px solid var(--gold-brd); border-radius:var(--r-lg);
+  padding:16px 16px 15px;
+  box-shadow:0 10px 28px rgba(0,0,0,.28);
+}
+.hs-card::after{
+  content:''; position:absolute; top:-30%; right:-20%;
+  width:90px; height:90px; border-radius:50%;
+  background:radial-gradient(circle,rgba(212,175,55,.16) 0%,transparent 72%);
+  pointer-events:none;
+}
+.hs-top{display:flex; align-items:center; gap:7px; margin-bottom:9px}
+.hs-top svg{width:14px;height:14px}
+.hs-label{font-size:11px;color:var(--text-3);font-weight:700;text-transform:uppercase;letter-spacing:1.1px}
+.hs-val{font-family:var(--fm);font-size:21px;font-weight:700;letter-spacing:-.2px}
+
+/* ── Search icon (SVG, no emoji) ───────────────────────────── */
+.ep-search-icon svg{width:15px;height:15px;display:block}
+
+/* ── Filter pills row: allow horizontal scroll without wrapping ── */
+.ep-pills.mb-16{flex-wrap:nowrap; overflow-x:auto; scrollbar-width:none; -ms-overflow-style:none; padding-bottom:2px}
+.ep-pills.mb-16::-webkit-scrollbar{display:none}
+.ep-pills.mb-16 .ep-pill{flex-shrink:0}
+
+/* ── Date separator ────────────────────────────────────────── */
 .ep-date-sep{
-  padding:8px 0 4px;font-size:11px;font-weight:700;
+  padding:14px 2px 6px;font-size:11px;font-weight:700;
   letter-spacing:1.5px;text-transform:uppercase;color:var(--text-3);
 }
+.ep-date-sep:first-child{padding-top:2px}
+
+/* ── Transaction rows, elevated within this page only ─────── */
+.hist-wrap .ep-tx{
+  padding:12px 4px; border-radius:var(--r-sm);
+  border-bottom:1px solid rgba(212,175,55,.08);
+  transition:background .15s;
+}
+.hist-wrap .ep-tx:last-child{border-bottom:none}
+.hist-wrap .ep-tx-dot{
+  width:40px; height:40px; font-size:16px;
+  border:1px solid; box-shadow:inset 0 1px 0 rgba(255,255,255,.04);
+}
+.hist-wrap .ep-tx-who{font-size:14.5px}
+
+/* ── Company/service chip ──────────────────────────────────── */
+.co-chip{
+  display:inline-flex; align-items:center; gap:4px;
+  font-family:var(--fm); font-size:10.5px; font-weight:600;
+  padding:2px 7px 2px 6px; border-radius:20px;
+  border:1px solid; line-height:1.5; white-space:nowrap;
+  vertical-align:middle;
+}
+.co-chip svg{width:10px;height:10px;flex-shrink:0}
+.co-chip.co-gebeya{ color:#F0B84A; border-color:rgba(240,184,74,.35); background:rgba(240,184,74,.10); }
+.co-chip.co-delivery{ color:#5FB6E8; border-color:rgba(95,182,232,.35); background:rgba(95,182,232,.10); }
+.co-chip.co-pay{ color:var(--gold-lt); border-color:var(--gold-brd); background:var(--gold-bg); }
+.tx-sub-row{display:flex; align-items:center; gap:6px; min-width:0; margin-top:3px}
+.tx-sub-row .ep-tx-sub{margin-top:0; min-width:0}
+.ep-tx-meta > .co-chip{margin-top:5px}
+
+/* ── Empty state icon ──────────────────────────────────────── */
+.ep-empty-icon svg{width:30px;height:30px;opacity:.55}
+
+/* ── Detail sheet ──────────────────────────────────────────── */
+.txd-head{text-align:center;padding:8px 0 22px}
+.txd-icon{
+  width:56px;height:56px;border-radius:50%;margin:0 auto 12px;
+  display:flex;align-items:center;justify-content:center;
+  border:1px solid; box-shadow:inset 0 1px 0 rgba(255,255,255,.05);
+}
+.txd-icon svg{width:24px;height:24px}
+.txd-amt{font-family:var(--fm);font-size:27px;font-weight:700;letter-spacing:-.3px}
+.txd-row{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:12px 2px;border-bottom:1px solid var(--gold-brd);gap:16px;
+}
+.txd-row:last-child{border-bottom:none}
+.txd-k{font-size:12.5px;color:var(--text-3);flex-shrink:0}
+.txd-v{font-size:13px;font-weight:600;font-family:var(--fm);max-width:210px;text-align:right;word-break:break-all}
+.txd-service-note{font-size:11.5px;color:var(--text-3);margin-top:6px;line-height:1.5;text-align:right}
+
 /* Load more */
 #load-more-btn{margin-top:16px;display:none}
 </style>
@@ -42,18 +118,24 @@
       <!-- Summary cards -->
       <div class="hist-summary">
         <div class="hs-card">
-          <div class="hs-label">Total In</div>
+          <div class="hs-top">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+            <span class="hs-label">Total In</span>
+          </div>
           <div class="hs-val text-ok" id="sum-in">—</div>
         </div>
         <div class="hs-card">
-          <div class="hs-label">Total Out</div>
+          <div class="hs-top">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
+            <span class="hs-label">Total Out</span>
+          </div>
           <div class="hs-val text-err" id="sum-out">—</div>
         </div>
       </div>
 
       <!-- Search -->
       <div class="ep-search">
-        <span class="ep-search-icon">🔍</span>
+        <span class="ep-search-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg></span>
         <input type="text" id="search-inp" placeholder="Search by phone, note…" oninput="onSearch()">
       </div>
 
@@ -114,6 +196,45 @@ let _allTx    = [];
 let _filter   = 'all';
 let _page     = 0;
 let _hasMore  = false;
+
+/* ── Cross-company linkage ──────────────────────────────────────
+   EtelPay is the shared wallet behind every Etel Group app. Some
+   transactions are pure wallet-to-wallet moves (send/receive/NFC
+   tap-to-pay), but others are settled on EtelPay's behalf by a
+   sibling company through its own server-to-server bridge:
+     - EtelGebeya's escrow release/refund (partner: gebeya/etelgebeya)
+     - Delivery & Ride driver payouts / cashouts (partner: delivery)
+   The API now returns which partner (if any) settled each transaction;
+   older rows that predate that field fall back to a note-text match. */
+const PARTNER_INFO = {
+  gebeya:     { cls:'co-gebeya',   label:'Etel Gebeya',
+    svg:'<path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/>',
+    note:"Settled through Etel Gebeya's marketplace escrow." },
+  etelgebeya: { cls:'co-gebeya',   label:'Etel Gebeya',
+    svg:'<path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/>',
+    note:"Settled through Etel Gebeya's marketplace escrow." },
+  delivery:   { cls:'co-delivery', label:'Delivery & Ride',
+    svg:'<rect x="1" y="7" width="14" height="10" rx="1.5"/><path d="M15 10h4l3 3.5V17h-2"/><circle cx="6" cy="18.5" r="1.6"/><circle cx="17" cy="18.5" r="1.6"/>',
+    note:'Settled by the Etel Delivery & Ride driver-payout bridge.' }
+};
+const PARTNER_DEFAULT = { cls:'co-pay', label:'EtelPay',
+  svg:'<rect x="2" y="5" width="20" height="14" rx="2.5"/><path d="M2 10h20"/>',
+  note:'Direct EtelPay wallet transfer — no other company involved.' };
+
+function partnerInfo(tx){
+  const key = (tx.partner||'').toLowerCase().trim();
+  if (key && PARTNER_INFO[key]) return PARTNER_INFO[key];
+  // Fallback for rows recorded before the API returned `partner`:
+  // infer from the free-text note the settling side wrote.
+  const note = (tx.note||'').toLowerCase();
+  if (/gebeya/.test(note)) return PARTNER_INFO.gebeya;
+  if (/delivery|\bride\b/.test(note)) return PARTNER_INFO.delivery;
+  return PARTNER_DEFAULT;
+}
+function companyChip(tx){
+  const p = partnerInfo(tx);
+  return `<span class="co-chip ${p.cls}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">${p.svg}</svg>${EP_CORE.esc(p.label)}</span>`;
+}
 
 EP_CORE.onReady(async function(){
   EP_CORE.initSheets();
@@ -198,7 +319,7 @@ function renderTx(){
   const txs = filtered();
   const c = document.getElementById('tx-list');
   if(!txs.length){
-    c.innerHTML='<div class="ep-empty"><div class="ep-empty-icon">🔍</div>'+EP_CORE.t('no_tx')+'</div>';
+    c.innerHTML='<div class="ep-empty"><div class="ep-empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg></div>'+EP_CORE.t('no_tx')+'</div>';
     return;
   }
 
@@ -223,7 +344,11 @@ function renderTx(){
         <div class="ep-tx-dot ${dir}">${EP_CORE.txIcon(tx)}</div>
         <div class="ep-tx-meta">
           <div class="ep-tx-who">${EP_CORE.esc(EP_CORE.txLabel(tx))}</div>
-          <div class="ep-tx-sub">${EP_CORE.esc(tx.note||tx.type||'')}${status}</div>
+          <div class="tx-sub-row">
+            <div class="ep-tx-sub">${EP_CORE.esc(tx.note||tx.type||'')}</div>
+            ${status}
+          </div>
+          ${companyChip(tx)}
         </div>
         <div class="ep-tx-right">
           <div class="ep-tx-amt ${dir}">${sign}${EP_CORE.numFmt(tx.amount||0)} ${tx.currency||'ETB'}</div>
@@ -239,11 +364,12 @@ function showDetail(tx){
   const dir=EP_CORE.txDirection(tx);
   const sign=dir==='in'?'+':'-';
   const statusBadge=`<span class="ep-badge ep-badge-${tx.status==='completed'?'ok':tx.status==='pending'?'warn':'err'}">${tx.status||'completed'}</span>`;
+  const p = partnerInfo(tx);
   document.getElementById('tx-detail-body').innerHTML=`
-    <div style="text-align:center;padding:12px 0 24px">
-      <div style="font-size:48px;margin-bottom:8px">${EP_CORE.txIcon(tx)}</div>
-      <div style="font-family:var(--fm);font-size:28px;font-weight:700;color:${dir==='in'?'var(--ok)':'var(--err)'}">${sign}${EP_CORE.numFmt(tx.amount||0)} ${tx.currency||'ETB'}</div>
-      <div style="margin-top:8px">${statusBadge}</div>
+    <div class="txd-head">
+      <div class="txd-icon" style="color:${dir==='in'?'var(--ok)':'var(--err)'};border-color:${dir==='in'?'rgba(16,185,129,.28)':'rgba(239,68,68,.24)'};background:${dir==='in'?'var(--ok-bg)':'var(--err-bg)'}">${EP_CORE.txIcon(tx)}</div>
+      <div class="txd-amt" style="color:${dir==='in'?'var(--ok)':'var(--err)'}">${sign}${EP_CORE.numFmt(tx.amount||0)} ${tx.currency||'ETB'}</div>
+      <div style="margin-top:9px">${statusBadge}</div>
     </div>
     ${row('Type',     tx.type||'—')}
     ${row('From',     tx.sender_phone||'—')}
@@ -251,13 +377,20 @@ function showDetail(tx){
     ${row('Note',     tx.note||'—')}
     ${row('Reference',tx.ref||tx.id||'—')}
     ${row('Date',     EP_CORE.dateFmtFull(tx.created_at))}
+    <div class="txd-row">
+      <span class="txd-k">Linked Service</span>
+      <div>
+        ${companyChip(tx)}
+        <div class="txd-service-note">${EP_CORE.esc(p.note)}</div>
+      </div>
+    </div>
   `;
   EP_CORE.openSheet('sheet-tx');
 }
 function row(label,val){
-  return `<div style="display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid var(--gold-brd)">
-    <span style="font-size:13px;color:var(--text-3)">${label}</span>
-    <span style="font-size:13px;font-weight:600;font-family:var(--fm);max-width:200px;text-align:right;word-break:break-all">${EP_CORE.esc(String(val))}</span>
+  return `<div class="txd-row">
+    <span class="txd-k">${label}</span>
+    <span class="txd-v">${EP_CORE.esc(String(val))}</span>
   </div>`;
 }
 </script>
