@@ -48,7 +48,9 @@ $BASE_DIR   = dirname(__DIR__);           // /Etel.Pay/wallet/
 $BACKUP_DIR = $BASE_DIR . '/backups';
 
 $ALLOWED_EXT    = array('php', 'html', 'js', 'css', 'json', 'md', 'txt', 'sql', 'svg', 'htaccess');
-$PROTECTED_FILES = array('api/config.php', 'api/.env');   // never overwritten
+// .htaccess entries included so a compromised/brute-forced Updater session cannot
+// disable the deny-all rules protecting config.php/.env and the backups directory.
+$PROTECTED_FILES = array('api/config.php', 'api/.env', 'api/.htaccess', 'backups/.htaccess', '.htaccess');   // never overwritten
 
 if (!file_exists($BACKUP_DIR)) @mkdir($BACKUP_DIR, 0755, true);
 
@@ -151,6 +153,63 @@ function upd_log($action, $file) {
         $pdo->prepare('INSERT INTO `' . EP_TBL_UPDLOG . '` (action, file_path, ip_address) VALUES (?, ?, ?)')->execute(array($action, $file, $ip));
     } catch (Exception $e) {
         error_log('[EtelPay Updater] upd_log failed for action=' . $action . ' file=' . $file . ': ' . $e->getMessage());
+    }
+}
+
+/* -- Login brute-force lockout ----------------------------------
+   Unlike the main wallet's ep_login, this password check had no
+   attempt tracking at all - brute-forceable at whatever rate the
+   host tolerates. Single shared password, so limiting is per-IP
+   only (no separate account to key on). */
+function upd_login_db() {
+    if (!defined('EP_DB_HOST')) return null;
+    try {
+        return new PDO(
+            'mysql:host=' . EP_DB_HOST . ';dbname=' . EP_DB_NAME . ';charset=utf8mb4',
+            EP_DB_USER, EP_DB_PASS,
+            array(PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION)
+        );
+    } catch (Exception $e) {
+        error_log('[EtelPay Updater] DB connect failed: ' . $e->getMessage());
+        return null;
+    }
+}
+function upd_ensure_login_attempts_table($pdo) {
+    $pdo->exec('CREATE TABLE IF NOT EXISTS `' . EP_TBL_PREFIX . 'ep_updater_login_attempts` (
+        `id`         INT(11) NOT NULL AUTO_INCREMENT,
+        `ip_address` VARCHAR(45) NOT NULL,
+        `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (`id`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4');
+}
+function upd_login_ip() {
+    return isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : '0.0.0.0';
+}
+function upd_login_rate_limited() {
+    $pdo = upd_login_db();
+    if (!$pdo) return false; // fail open only if DB is unreachable, matching upd_log's own fallback
+    try {
+        upd_ensure_login_attempts_table($pdo);
+        $stmt = $pdo->prepare(
+            'SELECT COUNT(*) FROM `' . EP_TBL_PREFIX . 'ep_updater_login_attempts`
+             WHERE ip_address = ? AND created_at > (NOW() - INTERVAL 15 MINUTE)'
+        );
+        $stmt->execute(array(upd_login_ip()));
+        return (int)$stmt->fetchColumn() >= 5;
+    } catch (Exception $e) {
+        error_log('[EtelPay Updater] rate-limit check failed: ' . $e->getMessage());
+        return false;
+    }
+}
+function upd_record_failed_login() {
+    $pdo = upd_login_db();
+    if (!$pdo) return;
+    try {
+        upd_ensure_login_attempts_table($pdo);
+        $pdo->prepare('INSERT INTO `' . EP_TBL_PREFIX . 'ep_updater_login_attempts` (ip_address) VALUES (?)')
+            ->execute(array(upd_login_ip()));
+    } catch (Exception $e) {
+        error_log('[EtelPay Updater] failed-login record failed: ' . $e->getMessage());
     }
 }
 
@@ -271,13 +330,14 @@ case 'ping':
 
 /* ── Login ────────────────────────────────────────────────────── */
 case 'login': {
+    if (upd_login_rate_limited()) upd_err('Too many attempts. Please wait a while and try again.', 429);
     $pass = isset($_body['password']) ? trim($_body['password']) : '';
     if (!$pass) upd_err('Password required', 400);
     $expected = defined('EP_UPDATER_PASS') ? EP_UPDATER_PASS : '';
     if (!upd_password_is_configured($expected)) {
         upd_err('Updater password not configured — set EP_UPDATER_PASS in config.php', 503);
     }
-    if (!hash_equals($expected, $pass)) upd_err('Wrong password', 401);
+    if (!hash_equals($expected, $pass)) { upd_record_failed_login(); upd_err('Wrong password', 401); }
     $token = upd_sign_token($pass);
     upd_ok(array('token' => $token, 'expires_in' => 86400), 'Authenticated');
 }
@@ -312,6 +372,7 @@ case 'list_files': {
 case 'read_file': {
     upd_require_auth();
     $rel  = isset($_body['path']) ? ltrim($_body['path'], '/') : '';
+    if (in_array($rel, $PROTECTED_FILES, true)) upd_err('File is protected', 403);
     $full = realpath($BASE_DIR . '/' . $rel);
     if (!$full || strpos($full, realpath($BASE_DIR)) !== 0) upd_err('Invalid path');
     if (!file_exists($full) || is_dir($full)) upd_err('File not found', 404);

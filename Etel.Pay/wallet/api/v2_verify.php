@@ -343,6 +343,47 @@ function ep_auth_id() {
     return (int)$u['ep_user_id'];
 }
 
+/* -- Merchant API key auth --------------------------------------
+   ep_apikey_create/list/revoke (ep_r3.php) generate and store
+   pub_key/secret_key/permissions, but nothing previously read or
+   checked them anywhere - a merchant restricting or revoking a key
+   got no actual behavior change. This wires real auth + permission
+   enforcement for actions that opt into accepting it as an
+   alternative to a logged-in session token. */
+function ep_apikey_lookup($required_permission = null) {
+    $pub = isset($_SERVER['HTTP_X_API_KEY'])    ? trim($_SERVER['HTTP_X_API_KEY'])    : (isset($_GET['api_key'])    ? trim($_GET['api_key'])    : '');
+    $sec = isset($_SERVER['HTTP_X_API_SECRET']) ? trim($_SERVER['HTTP_X_API_SECRET']) : (isset($_GET['api_secret']) ? trim($_GET['api_secret']) : '');
+    if ($pub === '' || $sec === '') return null;
+    $pdo  = ep_db();
+    $stmt = $pdo->prepare('SELECT * FROM ' . EP_TBL_API_KEYS . ' WHERE pub_key = ? AND status = "active" LIMIT 1');
+    $stmt->execute(array($pub));
+    $row = $stmt->fetch();
+    if (!$row || !hash_equals((string)$row['secret_key'], $sec)) return null;
+    if ($required_permission !== null) {
+        $perms = ',' . str_replace(' ', '', (string)$row['permissions']) . ',';
+        if (strpos($perms, ',' . $required_permission . ',') === false) return null;
+    }
+    $pdo->prepare('UPDATE ' . EP_TBL_API_KEYS . ' SET last_used = NOW() WHERE id = ?')->execute(array($row['id']));
+    return (int)$row['user_id'];
+}
+function ep_auth_or_apikey($required_permission = null) {
+    $uid = ep_apikey_lookup($required_permission);
+    if ($uid !== null) {
+        $pdo  = ep_db();
+        $stmt = $pdo->prepare('SELECT id AS ep_user_id, phone, full_name, status, kyc_status, balance_etb, balance_usd, avatar_url, is_admin FROM ' . EP_TBL_USERS . ' WHERE id = ? LIMIT 1');
+        $stmt->execute(array($uid));
+        $row = $stmt->fetch();
+        if (!$row) ep_err('API key owner not found', 401);
+        if ($row['status'] !== 'active') ep_err('Account suspended', 403);
+        return $row;
+    }
+    return ep_auth();
+}
+function ep_auth_or_apikey_id($required_permission = null) {
+    $u = ep_auth_or_apikey($required_permission);
+    return (int)$u['ep_user_id'];
+}
+
 /* ── Generate TX ref ─────────────────────────────────────────── */
 function ep_gen_ref() {
     $pdo = ep_db();
