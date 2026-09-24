@@ -224,59 +224,82 @@ case 'etel_pay_get_history': {
 
     $pdo  = ep_db();
 
-    // Both tables are created lazily (only once a cross-company payout or
-    // transfer actually happens) by ep_partner_credit / ep_platform_transfer
-    // below -- ensure they exist here too so the LEFT JOIN never errors out
-    // on a fresh install that hasn't taken one of those calls yet.
-    $pdo->exec(
-        'CREATE TABLE IF NOT EXISTS ' . EP_TBL_PREFIX . 'ep_partner_credits (' .
-        'id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT, ' .
-        'partner VARCHAR(40) NOT NULL, ' .
-        'partner_ref VARCHAR(80) NOT NULL, ' .
-        'phone VARCHAR(20) NOT NULL, ' .
-        'amount DECIMAL(12,2) NOT NULL, ' .
-        'tx_ref VARCHAR(40) NULL, ' .
-        'status VARCHAR(20) NOT NULL DEFAULT "pending", ' .
-        'note VARCHAR(255) NULL, ' .
-        'created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, ' .
-        'PRIMARY KEY (id), ' .
-        'UNIQUE KEY uk_partner_ref (partner, partner_ref), ' .
-        'KEY idx_partner_time (partner, created_at)' .
-        ') ENGINE=InnoDB DEFAULT CHARSET=utf8mb4'
-    );
-    $pdo->exec(
-        'CREATE TABLE IF NOT EXISTS ' . EP_TBL_PREFIX . 'ep_platform_transfers (' .
-        'id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT, ' .
-        'partner VARCHAR(40) NOT NULL, ' .
-        'partner_ref VARCHAR(80) NOT NULL, ' .
-        'from_phone VARCHAR(20) NOT NULL, ' .
-        'to_phone VARCHAR(20) NOT NULL, ' .
-        'amount DECIMAL(12,2) NOT NULL, ' .
-        'tx_ref VARCHAR(40) NULL, ' .
-        'status VARCHAR(20) NOT NULL DEFAULT "pending", ' .
-        'note VARCHAR(255) NULL, ' .
-        'created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, ' .
-        'PRIMARY KEY (id), ' .
-        'UNIQUE KEY uk_partner_ref (partner, partner_ref), ' .
-        'KEY idx_partner_time (partner, created_at)' .
-        ') ENGINE=InnoDB DEFAULT CHARSET=utf8mb4'
-    );
+    // Best-effort: show which sibling company (if any) settled each
+    // transaction, by joining the two partner bridge-log tables that
+    // ep_partner_credit / ep_platform_transfer already maintain. This is
+    // purely cosmetic (a badge in the UI), so any failure here -- the
+    // tables not existing yet, a DDL/permission quirk on this host, a
+    // stale schema -- must never break history loading itself. Fall back
+    // to the plain query (no `partner` field) on any error.
+    $rows = null;
+    try {
+        $pdo->exec(
+            'CREATE TABLE IF NOT EXISTS ' . EP_TBL_PREFIX . 'ep_partner_credits (' .
+            'id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT, ' .
+            'partner VARCHAR(40) NOT NULL, ' .
+            'partner_ref VARCHAR(80) NOT NULL, ' .
+            'phone VARCHAR(20) NOT NULL, ' .
+            'amount DECIMAL(12,2) NOT NULL, ' .
+            'tx_ref VARCHAR(40) NULL, ' .
+            'status VARCHAR(20) NOT NULL DEFAULT "pending", ' .
+            'note VARCHAR(255) NULL, ' .
+            'created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, ' .
+            'PRIMARY KEY (id), ' .
+            'UNIQUE KEY uk_partner_ref (partner, partner_ref), ' .
+            'KEY idx_partner_time (partner, created_at)' .
+            ') ENGINE=InnoDB DEFAULT CHARSET=utf8mb4'
+        );
+        $pdo->exec(
+            'CREATE TABLE IF NOT EXISTS ' . EP_TBL_PREFIX . 'ep_platform_transfers (' .
+            'id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT, ' .
+            'partner VARCHAR(40) NOT NULL, ' .
+            'partner_ref VARCHAR(80) NOT NULL, ' .
+            'from_phone VARCHAR(20) NOT NULL, ' .
+            'to_phone VARCHAR(20) NOT NULL, ' .
+            'amount DECIMAL(12,2) NOT NULL, ' .
+            'tx_ref VARCHAR(40) NULL, ' .
+            'status VARCHAR(20) NOT NULL DEFAULT "pending", ' .
+            'note VARCHAR(255) NULL, ' .
+            'created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, ' .
+            'PRIMARY KEY (id), ' .
+            'UNIQUE KEY uk_partner_ref (partner, partner_ref), ' .
+            'KEY idx_partner_time (partner, created_at)' .
+            ') ENGINE=InnoDB DEFAULT CHARSET=utf8mb4'
+        );
 
-    $stmt = $pdo->prepare(
-        'SELECT t.*, ' .
-        'su.phone AS sender_phone, su.full_name AS sender_name, ' .
-        'ru.phone AS receiver_phone, ru.full_name AS receiver_name, ' .
-        'COALESCE(pc.partner, pt.partner) AS partner ' .
-        'FROM ' . EP_TBL_TX . ' t ' .
-        'LEFT JOIN ' . EP_TBL_USERS . ' su ON t.sender_ep_id   = su.id ' .
-        'LEFT JOIN ' . EP_TBL_USERS . ' ru ON t.receiver_ep_id = ru.id ' .
-        'LEFT JOIN ' . EP_TBL_PREFIX . 'ep_partner_credits pc ON pc.tx_ref = t.tx_ref AND pc.status = "completed" ' .
-        'LEFT JOIN ' . EP_TBL_PREFIX . 'ep_platform_transfers pt ON pt.tx_ref = t.tx_ref AND pt.status = "completed" ' .
-        'WHERE (t.sender_ep_id = ? OR t.receiver_ep_id = ?) ' .
-        'ORDER BY t.created_at DESC LIMIT ? OFFSET ?'
-    );
-    $stmt->execute(array($uid, $uid, $limit, $offset));
-    $rows = $stmt->fetchAll();
+        $stmt = $pdo->prepare(
+            'SELECT t.*, ' .
+            'su.phone AS sender_phone, su.full_name AS sender_name, ' .
+            'ru.phone AS receiver_phone, ru.full_name AS receiver_name, ' .
+            'COALESCE(pc.partner, pt.partner) AS partner ' .
+            'FROM ' . EP_TBL_TX . ' t ' .
+            'LEFT JOIN ' . EP_TBL_USERS . ' su ON t.sender_ep_id   = su.id ' .
+            'LEFT JOIN ' . EP_TBL_USERS . ' ru ON t.receiver_ep_id = ru.id ' .
+            'LEFT JOIN ' . EP_TBL_PREFIX . 'ep_partner_credits pc ON pc.tx_ref = t.tx_ref AND pc.status = "completed" ' .
+            'LEFT JOIN ' . EP_TBL_PREFIX . 'ep_platform_transfers pt ON pt.tx_ref = t.tx_ref AND pt.status = "completed" ' .
+            'WHERE (t.sender_ep_id = ? OR t.receiver_ep_id = ?) ' .
+            'ORDER BY t.created_at DESC LIMIT ? OFFSET ?'
+        );
+        $stmt->execute(array($uid, $uid, $limit, $offset));
+        $rows = $stmt->fetchAll();
+    } catch (Exception $ex) {
+        $rows = null;
+    }
+
+    if ($rows === null) {
+        $stmt = $pdo->prepare(
+            'SELECT t.*, ' .
+            'su.phone AS sender_phone, su.full_name AS sender_name, ' .
+            'ru.phone AS receiver_phone, ru.full_name AS receiver_name ' .
+            'FROM ' . EP_TBL_TX . ' t ' .
+            'LEFT JOIN ' . EP_TBL_USERS . ' su ON t.sender_ep_id   = su.id ' .
+            'LEFT JOIN ' . EP_TBL_USERS . ' ru ON t.receiver_ep_id = ru.id ' .
+            'WHERE (t.sender_ep_id = ? OR t.receiver_ep_id = ?) ' .
+            'ORDER BY t.created_at DESC LIMIT ? OFFSET ?'
+        );
+        $stmt->execute(array($uid, $uid, $limit, $offset));
+        $rows = $stmt->fetchAll();
+    }
 
     // Tag direction relative to current user
     foreach ($rows as &$row) {
