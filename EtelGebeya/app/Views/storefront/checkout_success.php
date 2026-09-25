@@ -108,27 +108,27 @@ ob_start();
     <?php if ($order): ?>
 
       <div class="success-icon">✅</div>
-      <h1 class="success-title">Order Confirmed!</h1>
-      <p class="success-sub">Thank you for your order. We'll process it shortly.</p>
+      <h1 class="success-title"><?= e(t('storefront.success.order_confirmed')) ?></h1>
+      <p class="success-sub"><?= e(t('storefront.success.thank_you')) ?></p>
 
       <div class="order-code"># <?= e($order['code']) ?></div>
 
       <div class="order-detail-grid">
         <div class="detail-box">
-          <div class="detail-label">Status</div>
-          <div class="detail-val" style="color:#4ADE80">Pending</div>
+          <div class="detail-label"><?= e(t('common.status')) ?></div>
+          <div class="detail-val" style="color:#4ADE80"><?= e(t('status.pending')) ?></div>
         </div>
-        <?php $payLabels = ['etel_pay'=>'ኢE Pay Wallet','telebirr'=>'Telebirr','cbe_birr'=>'CBE Birr','bank_transfer'=>'Chapa','cash'=>'Cash on Delivery']; ?>
+        <?php $payLabels = ['etel_pay'=>'ኢE Pay Wallet','telebirr'=>'Telebirr','cbe_birr'=>'CBE Birr','bank_transfer'=>'Chapa','cash'=>t('storefront.footer.cash_on_delivery')]; ?>
         <div class="detail-box">
-          <div class="detail-label">Payment</div>
+          <div class="detail-label"><?= e(t('admin.nav.payments')) ?></div>
           <div class="detail-val"><?= e($payLabels[$order['payment_method'] ?? 'cash'] ?? ucfirst($order['payment_method'] ?? 'cod')) ?></div>
         </div>
         <div class="detail-box">
-          <div class="detail-label">City</div>
+          <div class="detail-label"><?= e(t('admin.orders.col_city')) ?></div>
           <div class="detail-val"><?= e($order['city'] ?? '--') ?></div>
         </div>
         <div class="detail-box">
-          <div class="detail-label">Date</div>
+          <div class="detail-label"><?= e(t('common.date')) ?></div>
           <div class="detail-val"><?= date('d M Y', strtotime($order['placed_at'] ?? 'now')) ?></div>
         </div>
       </div>
@@ -141,17 +141,17 @@ ob_start();
       <?php if ($payMethod === 'etel_pay' && ($order['payment_status'] ?? '') === 'paid'): ?>
         <div class="payment-notice" style="background:rgba(16,185,129,.08);border-color:rgba(16,185,129,.25);color:#6EE7A0">
           <i class="bi bi-check-circle" style="flex-shrink:0;margin-top:.1rem"></i>
-          Paid via ኢE Pay Wallet -- verified and confirmed instantly.
+          <?= e(t('storefront.success.paid_via_etelpay')) ?>
         </div>
       <?php elseif ($payMethod === 'telebirr' && ($order['payment_status'] ?? '') !== 'paid'): ?>
         <div class="payment-notice">
           <i class="bi bi-phone" style="flex-shrink:0;margin-top:.1rem"></i>
           <div>
-            Complete your payment via Telebirr:
+            <?= e(t('storefront.success.complete_via_telebirr')) ?>
             <ol style="margin:.5rem 0 0 1.1rem;padding:0">
-              <li>Dial <strong><?= e($payments['telebirr']['short_code'] ?? '*127*6*2#') ?></strong> or open the Telebirr app</li>
-              <li>Send <strong>Br <?= $orderTotal ?></strong> using reference <strong><?= e($order['code']) ?></strong></li>
-              <li>An admin will confirm your payment and start processing your order</li>
+              <li><?= e(t('storefront.success.dial_prefix')) ?> <strong><?= e($payments['telebirr']['short_code'] ?? '*127*6*2#') ?></strong> <?= e(t('storefront.success.or_open_app')) ?></li>
+              <li><?= e(t('storefront.success.send_prefix')) ?> <strong>Br <?= $orderTotal ?></strong> <?= e(t('storefront.success.using_reference')) ?> <strong><?= e($order['code']) ?></strong></li>
+              <li><?= e(t('storefront.success.admin_will_confirm')) ?></li>
             </ol>
           </div>
         </div>
@@ -159,24 +159,24 @@ ob_start();
         <div class="payment-notice">
           <i class="bi bi-bank" style="flex-shrink:0;margin-top:.1rem"></i>
           <div>
-            Complete your payment via CBE:
+            <?= e(t('storefront.success.complete_via_cbe')) ?>
             <ol style="margin:.5rem 0 0 1.1rem;padding:0">
-              <li>Transfer <strong>Br <?= $orderTotal ?></strong> to account <strong><?= e($payments['cbe']['account'] ?? '1000123456789') ?></strong> (<?= e($payments['cbe']['account_name'] ?? 'ETEL GROUP PLC') ?>)</li>
-              <li>Use <strong><?= e($order['code']) ?></strong> as the transfer reference/narration</li>
-              <li>An admin will confirm your payment and start processing your order</li>
+              <li><?= e(t('storefront.success.transfer_prefix')) ?> <strong>Br <?= $orderTotal ?></strong> <?= e(t('storefront.success.to_account')) ?> <strong><?= e($payments['cbe']['account'] ?? '1000123456789') ?></strong> (<?= e($payments['cbe']['account_name'] ?? 'ETEL GROUP PLC') ?>)</li>
+              <li><?= e(t('storefront.success.use_as_reference_prefix')) ?> <strong><?= e($order['code']) ?></strong> <?= e(t('storefront.success.as_reference_suffix')) ?></li>
+              <li><?= e(t('storefront.success.admin_will_confirm')) ?></li>
             </ol>
           </div>
         </div>
       <?php elseif ($payMethod !== 'cash' && ($order['payment_status'] ?? '') !== 'paid'): ?>
         <div class="payment-notice">
           <i class="bi bi-info-circle" style="flex-shrink:0;margin-top:.1rem"></i>
-          Your order is saved. We'll contact you at <?= e($order['phone'] ?? '') ?> to complete payment.
+          <?= e(t('storefront.success.order_saved_prefix')) ?> <?= e($order['phone'] ?? '') ?> <?= e(t('storefront.success.order_saved_suffix')) ?>
         </div>
       <?php endif; ?>
 
       <?php if (!empty($items)): ?>
         <div class="order-items-list">
-          <h4>Items Ordered</h4>
+          <h4><?= e(t('storefront.success.items_ordered')) ?></h4>
           <?php foreach ($items as $it): ?>
             <div class="success-item">
               <span class="success-item-name"><?= e($it['name_en']) ?> × <?= (int)$it['qty'] ?></span>
@@ -184,11 +184,11 @@ ob_start();
             </div>
           <?php endforeach; ?>
           <div class="success-item" style="border-bottom:none;">
-            <span style="color:#C9B88A">Shipping</span>
+            <span style="color:#C9B88A"><?= e(t('storefront.cart.shipping')) ?></span>
             <span class="success-item-price">Br <?= number_format((float)($order['shipping_fee'] ?? 30), 2) ?></span>
           </div>
           <div class="total-row">
-            <span>Total Paid</span>
+            <span><?= e(t('storefront.success.total_paid')) ?></span>
             <span>Br <?= number_format((float)($order['total'] ?? 0), 2) ?></span>
           </div>
         </div>
@@ -196,20 +196,20 @@ ob_start();
 
       <div class="action-btns">
         <a href="<?= View::url('/account/orders') ?>" class="btn-gold">
-          <i class="bi bi-bag-check"></i> View My Orders
+          <i class="bi bi-bag-check"></i> <?= e(t('storefront.success.view_my_orders')) ?>
         </a>
         <a href="<?= View::url('/') ?>" class="btn-outline">
-          <i class="bi bi-shop"></i> Continue Shopping
+          <i class="bi bi-shop"></i> <?= e(t('storefront.cart.continue_shopping')) ?>
         </a>
       </div>
 
     <?php else: ?>
       <!-- Order not found -->
       <div class="success-icon" style="border-color:rgba(239,68,68,.4);background:rgba(239,68,68,.1)">❌</div>
-      <h1 class="success-title" style="color:#FCA5A5">Order Not Found</h1>
-      <p class="success-sub">We couldn't find order #<?= e($code) ?>.</p>
+      <h1 class="success-title" style="color:#FCA5A5"><?= e(t('storefront.success.order_not_found')) ?></h1>
+      <p class="success-sub"><?= e(t('storefront.success.could_not_find_prefix')) ?> #<?= e($code) ?>.</p>
       <div class="action-btns">
-        <a href="<?= View::url('/') ?>" class="btn-gold"><i class="bi bi-house"></i> Go Home</a>
+        <a href="<?= View::url('/') ?>" class="btn-gold"><i class="bi bi-house"></i> <?= e(t('storefront.success.go_home')) ?></a>
       </div>
     <?php endif; ?>
 
@@ -219,6 +219,6 @@ ob_start();
 $__content = ob_get_clean();
 echo View::capture('_layouts/public', [
     '__content' => $__content,
-    'pageTitle'  => $pageTitle ?? 'Order Confirmed -- Etel Gebeya',
+    'pageTitle'  => $pageTitle ?? t('storefront.success.order_confirmed') . ' -- Etel Gebeya',
     'locale'     => $locale,
 ]);
