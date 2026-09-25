@@ -18,7 +18,7 @@ $cartCount = (int)($_SESSION['cart_count'] ?? array_sum(array_column($_SESSION['
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title><?= isset($pageTitle) ? e($pageTitle) . ' -- ' : '' ?>Etel Gebeya</title>
-  <meta name="description" content="Ethiopia's premium marketplace. Shop electronics, fashion, food and more.">
+  <meta name="description" content="<?= e(t('storefront.meta_description')) ?>">
   <meta name="theme-color" content="#D4AF37">
   <link rel="icon" type="image/svg+xml" href="<?= View::url('/public/favicon.svg') ?>">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -48,9 +48,9 @@ $cartCount = (int)($_SESSION['cart_count'] ?? array_sum(array_column($_SESSION['
 <!-- TOP BAR -->
 <div class="eg-topbar">
   <div class="eg-topbar-left">
-    <span>Buy in Birr. Pay with Telebirr, CBE Birr or Cards.</span>
+    <span><?= e(t('storefront.topbar.pay_line')) ?></span>
     <span class="eg-topbar-divider"></span>
-    <a href="<?= View::url('/sell') ?>"><i class="bi bi-shop"></i> Sell on Etel Gebeya</a>
+    <a href="<?= View::url('/sell') ?>"><i class="bi bi-shop"></i> <?= e(t('storefront.topbar.sell_link')) ?></a>
   </div>
   <div class="eg-topbar-right">
     <div class="eg-lang">
@@ -58,7 +58,7 @@ $cartCount = (int)($_SESSION['cart_count'] ?? array_sum(array_column($_SESSION['
       <a href="<?= View::url('/lang/am') ?>" class="<?= $locale==='am'?'active':'' ?>">Am</a>
     </div>
     <span class="eg-topbar-divider"></span>
-    <span>ETB &bull; Ethiopian Birr</span>
+    <span><?= e(t('storefront.topbar.currency_line')) ?></span>
   </div>
 </div>
 
@@ -74,7 +74,7 @@ $cartCount = (int)($_SESSION['cart_count'] ?? array_sum(array_column($_SESSION['
 
   <div class="eg-search">
     <form action="<?= View::url('/search') ?>" method="GET" style="display:flex;flex:1">
-      <input type="search" name="q" placeholder="Search products, brands, categories..."
+      <input type="search" name="q" placeholder="<?= e(t('site.search.placeholder')) ?>"
              value="<?= e($_GET['q'] ?? '') ?>" autocomplete="off">
       <button type="submit" class="eg-search-btn"><i class="bi bi-search"></i></button>
     </form>
@@ -83,7 +83,7 @@ $cartCount = (int)($_SESSION['cart_count'] ?? array_sum(array_column($_SESSION['
   <div class="eg-header-actions">
     <a href="<?= View::url('/cart') ?>" class="eg-header-btn">
       <i class="bi bi-cart3 ico"></i>
-      <span>Cart</span>
+      <span><?= e(t('storefront.nav.cart')) ?></span>
       <?php if ($cartCount > 0): ?>
         <span class="eg-cart-badge"><?= $cartCount > 9 ? '9+' : $cartCount ?></span>
       <?php endif; ?>
@@ -92,20 +92,20 @@ $cartCount = (int)($_SESSION['cart_count'] ?? array_sum(array_column($_SESSION['
     <?php if ($user): ?>
       <a href="<?= View::url('/account') ?>" class="eg-header-btn">
         <i class="bi bi-person-circle ico"></i>
-        <span><?= e(explode(' ', $user['full_name'] ?? 'Account')[0]) ?></span>
+        <span><?= e(explode(' ', $user['full_name'] ?? t('storefront.nav.account'))[0]) ?></span>
       </a>
       <a href="<?= View::url('/account/orders') ?>" class="eg-header-btn">
         <i class="bi bi-receipt ico"></i>
-        <span>Orders</span>
+        <span><?= e(t('storefront.nav.orders')) ?></span>
       </a>
     <?php else: ?>
       <a href="<?= View::url('/login') ?>" class="eg-header-btn">
         <i class="bi bi-person ico"></i>
-        <span>Login</span>
+        <span><?= e(t('storefront.nav.login')) ?></span>
       </a>
       <a href="<?= View::url('/register') ?>" class="eg-header-btn" style="color:var(--g2)">
         <i class="bi bi-person-plus ico"></i>
-        <span>Register</span>
+        <span><?= e(t('storefront.nav.register')) ?></span>
       </a>
     <?php endif; ?>
   </div>
@@ -116,44 +116,44 @@ $cartCount = (int)($_SESSION['cart_count'] ?? array_sum(array_column($_SESSION['
   <div class="eg-shell">
     <div class="eg-catnav-inner">
       <a href="<?= View::url('/') ?>" class="eg-catnav-item <?= !isset($_GET['cat']) && strpos($_SERVER['REQUEST_URI']??'','/category/') === false ? 'active' : '' ?>">
-        <i class="bi bi-house"></i> Home
+        <i class="bi bi-house"></i> <?= e(t('storefront.catnav.home')) ?>
       </a>
       <a href="<?= View::url('/search') ?>" class="eg-catnav-item">
-        <i class="bi bi-grid"></i> All Products
+        <i class="bi bi-grid"></i> <?= e(t('storefront.catnav.all_products')) ?>
       </a>
       <a href="<?= View::url('/search?q=electronics') ?>" class="eg-catnav-item">
-        <i class="bi bi-phone"></i> Electronics
+        <i class="bi bi-phone"></i> <?= e(t('storefront.catnav.electronics')) ?>
       </a>
       <a href="<?= View::url('/search?q=fashion') ?>" class="eg-catnav-item">
-        <i class="bi bi-bag"></i> Fashion
+        <i class="bi bi-bag"></i> <?= e(t('storefront.catnav.fashion')) ?>
       </a>
       <a href="<?= View::url('/search?q=home') ?>" class="eg-catnav-item">
-        <i class="bi bi-house-door"></i> Home &amp; Living
+        <i class="bi bi-house-door"></i> <?= e(t('storefront.catnav.home_living')) ?>
       </a>
       <a href="<?= View::url('/search?q=food') ?>" class="eg-catnav-item">
-        <i class="bi bi-egg-fried"></i> Food &amp; Grocery
+        <i class="bi bi-egg-fried"></i> <?= e(t('storefront.catnav.food_grocery')) ?>
       </a>
       <a href="<?= View::url('/search?q=health') ?>" class="eg-catnav-item">
-        <i class="bi bi-heart-pulse"></i> Health
+        <i class="bi bi-heart-pulse"></i> <?= e(t('storefront.catnav.health')) ?>
       </a>
       <a href="<?= View::url('/search?q=office') ?>" class="eg-catnav-item">
-        <i class="bi bi-briefcase"></i> Office
+        <i class="bi bi-briefcase"></i> <?= e(t('storefront.catnav.office')) ?>
       </a>
       <?php if ($user): ?>
         <?php if ($GLOBALS['__auth']->isAdmin()): ?>
           <a href="<?= View::url('/admin') ?>" class="eg-catnav-item" style="color:var(--g2)">
-            <i class="bi bi-shield-check"></i> Admin
+            <i class="bi bi-shield-check"></i> <?= e(t('storefront.catnav.admin')) ?>
           </a>
         <?php endif; ?>
         <?php if ($GLOBALS['__auth']->isVendor()): ?>
           <a href="<?= View::url('/vendor-panel') ?>" class="eg-catnav-item" style="color:var(--g2)">
-            <i class="bi bi-shop"></i> My Store
+            <i class="bi bi-shop"></i> <?= e(t('storefront.catnav.my_store')) ?>
           </a>
         <?php endif; ?>
         <form action="<?= View::url('/logout') ?>" method="POST" style="display:inline">
           <?= csrf() ?>
           <button type="submit" class="eg-catnav-item" style="font-size:12.5px">
-            <i class="bi bi-box-arrow-right"></i> Logout
+            <i class="bi bi-box-arrow-right"></i> <?= e(t('storefront.catnav.logout')) ?>
           </button>
         </form>
       <?php endif; ?>
@@ -178,51 +178,51 @@ $cartCount = (int)($_SESSION['cart_count'] ?? array_sum(array_column($_SESSION['
   <div class="eg-footer-grid">
     <div>
       <div class="eg-footer-logo-mark">Etel Gebeya</div>
-      <div class="eg-footer-tagline">Ethiopia's premium marketplace. Buy and sell anything, delivered to your door.</div>
+      <div class="eg-footer-tagline"><?= e(t('storefront.footer.tagline')) ?></div>
       <div style="font-size:11.5px;color:var(--text3)">
-        <i class="bi bi-geo-alt"></i> Hawassa, Sidama, Ethiopia
+        <i class="bi bi-geo-alt"></i> <?= e(t('storefront.footer.location')) ?>
       </div>
     </div>
     <div>
-      <div class="eg-footer-col-title">Shop</div>
+      <div class="eg-footer-col-title"><?= e(t('storefront.footer.shop_head')) ?></div>
       <div class="eg-footer-links">
-        <a href="<?= View::url('/search') ?>">All Products</a>
-        <a href="<?= View::url('/search?q=electronics') ?>">Electronics</a>
-        <a href="<?= View::url('/search?q=fashion') ?>">Fashion</a>
-        <a href="<?= View::url('/search?q=food') ?>">Food &amp; Grocery</a>
-        <a href="<?= View::url('/search?q=home') ?>">Home &amp; Living</a>
+        <a href="<?= View::url('/search') ?>"><?= e(t('storefront.catnav.all_products')) ?></a>
+        <a href="<?= View::url('/search?q=electronics') ?>"><?= e(t('storefront.catnav.electronics')) ?></a>
+        <a href="<?= View::url('/search?q=fashion') ?>"><?= e(t('storefront.catnav.fashion')) ?></a>
+        <a href="<?= View::url('/search?q=food') ?>"><?= e(t('storefront.catnav.food_grocery')) ?></a>
+        <a href="<?= View::url('/search?q=home') ?>"><?= e(t('storefront.catnav.home_living')) ?></a>
       </div>
     </div>
     <div>
-      <div class="eg-footer-col-title">Sell</div>
+      <div class="eg-footer-col-title"><?= e(t('storefront.footer.sell_head')) ?></div>
       <div class="eg-footer-links">
-        <a href="<?= View::url('/sell') ?>">Become a Vendor</a>
-        <a href="<?= View::url('/vendor-panel') ?>">Vendor Dashboard</a>
-        <a href="<?= View::url('/sell') ?>">Seller Guide</a>
+        <a href="<?= View::url('/sell') ?>"><?= e(t('storefront.footer.become_vendor')) ?></a>
+        <a href="<?= View::url('/vendor-panel') ?>"><?= e(t('storefront.footer.vendor_dashboard')) ?></a>
+        <a href="<?= View::url('/sell') ?>"><?= e(t('storefront.footer.seller_guide')) ?></a>
       </div>
     </div>
     <div>
-      <div class="eg-footer-col-title">Account</div>
+      <div class="eg-footer-col-title"><?= e(t('storefront.footer.account_head')) ?></div>
       <div class="eg-footer-links">
-        <a href="<?= View::url('/account') ?>">My Account</a>
-        <a href="<?= View::url('/account/orders') ?>">My Orders</a>
-        <a href="<?= View::url('/account/wishlist') ?>">Wishlist</a>
-        <a href="<?= View::url('/account/addresses') ?>">Addresses</a>
+        <a href="<?= View::url('/account') ?>"><?= e(t('storefront.footer.my_account')) ?></a>
+        <a href="<?= View::url('/account/orders') ?>"><?= e(t('storefront.footer.my_orders')) ?></a>
+        <a href="<?= View::url('/account/wishlist') ?>"><?= e(t('storefront.footer.wishlist')) ?></a>
+        <a href="<?= View::url('/account/addresses') ?>"><?= e(t('storefront.footer.addresses')) ?></a>
       </div>
     </div>
     <div>
-      <div class="eg-footer-col-title">Pay With</div>
+      <div class="eg-footer-col-title"><?= e(t('storefront.footer.pay_with_head')) ?></div>
       <div class="eg-footer-links">
         <a href="#"><i class="bi bi-phone"></i> Telebirr</a>
         <a href="#"><i class="bi bi-bank"></i> CBE Birr</a>
-        <a href="#"><i class="bi bi-credit-card"></i> Bank Transfer</a>
-        <a href="#"><i class="bi bi-cash-coin"></i> Cash on Delivery</a>
+        <a href="#"><i class="bi bi-credit-card"></i> <?= e(t('storefront.footer.bank_transfer')) ?></a>
+        <a href="#"><i class="bi bi-cash-coin"></i> <?= e(t('storefront.footer.cash_on_delivery')) ?></a>
       </div>
     </div>
   </div>
   <div class="eg-footer-bottom">
-    <span>&copy; <?= date('Y') ?> <strong>Etel Gebeya</strong> &mdash; Etel Group &bull; Hawassa, Ethiopia</span>
-    <span style="color:var(--text3)">Built with <span style="color:var(--g2)">&#9733;</span> in Ethiopia</span>
+    <span>&copy; <?= date('Y') ?> <strong>Etel Gebeya</strong> &mdash; <?= e(t('storefront.footer.copyright_line')) ?></span>
+    <span style="color:var(--text3)"><?= e(t('storefront.footer.built_with')) ?> <span style="color:var(--g2)">&#9733;</span> <?= e(t('storefront.footer.in_ethiopia')) ?></span>
   </div>
 </footer>
 
