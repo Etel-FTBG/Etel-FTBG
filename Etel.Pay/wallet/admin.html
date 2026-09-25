@@ -171,7 +171,7 @@
           <div style="font-size:15px;font-weight:600;margin-bottom:4px">⬆️ Updater</div>
           <p class="text-dim mb-16" style="font-size:13px">Enter your updater password to deploy files.</p>
           <div class="ep-field">
-            <label class="ep-label">Updater password</label>
+            <label class="ep-label" for="upd-pass">Updater password</label>
             <input class="ep-input" id="upd-pass" type="password" placeholder="••••••••">
           </div>
           <div class="ep-err-msg" id="upd-login-err"></div>
@@ -210,7 +210,7 @@
           <!-- Target path (single mode only) -->
           <div id="upd-target-wrap" style="margin-top:12px">
             <div class="ep-field">
-              <label class="ep-label">Target path (auto-detected)</label>
+              <label class="ep-label" for="upd-target">Target path (auto-detected)</label>
               <input class="ep-input" id="upd-target" type="text" placeholder="e.g. js/core.js  or  api/v2_verify.php">
             </div>
           </div>
@@ -328,8 +328,8 @@
   <div class="ep-sheet">
     <div class="ep-sheet-handle"></div>
     <div class="ep-sheet-title">Credit wallet</div>
-    <div class="ep-field"><label class="ep-label">Amount (ETB)</label><input class="ep-input" id="credit-amt" type="number" placeholder="0.00" min="1" inputmode="decimal"></div>
-    <div class="ep-field"><label class="ep-label">Note</label><input class="ep-input" id="credit-note" type="text" placeholder="Top-up, refund…"></div>
+    <div class="ep-field"><label class="ep-label" for="credit-amt">Amount (ETB)</label><input class="ep-input" id="credit-amt" type="number" placeholder="0.00" min="1" inputmode="decimal"></div>
+    <div class="ep-field"><label class="ep-label" for="credit-note">Note</label><input class="ep-input" id="credit-note" type="text" placeholder="Top-up, refund…"></div>
     <div class="ep-err-msg" id="credit-err"></div>
     <button class="ep-btn ep-btn-primary" id="credit-btn" onclick="doCredit()" style="margin-top:14px">Credit</button>
     <button class="ep-btn ep-btn-ghost" onclick="EP_CORE.closeSheet('sheet-credit')" style="margin-top:10px">Cancel</button>
@@ -340,8 +340,8 @@
   <div class="ep-sheet">
     <div class="ep-sheet-handle"></div>
     <div class="ep-sheet-title">Debit wallet</div>
-    <div class="ep-field"><label class="ep-label">Amount (ETB)</label><input class="ep-input" id="debit-amt" type="number" placeholder="0.00" min="1" inputmode="decimal"></div>
-    <div class="ep-field"><label class="ep-label">Note</label><input class="ep-input" id="debit-note" type="text" placeholder="Fee, correction…"></div>
+    <div class="ep-field"><label class="ep-label" for="debit-amt">Amount (ETB)</label><input class="ep-input" id="debit-amt" type="number" placeholder="0.00" min="1" inputmode="decimal"></div>
+    <div class="ep-field"><label class="ep-label" for="debit-note">Note</label><input class="ep-input" id="debit-note" type="text" placeholder="Fee, correction…"></div>
     <div class="ep-err-msg" id="debit-err"></div>
     <button class="ep-btn ep-btn-danger" id="debit-btn" onclick="doDebit()" style="margin-top:14px">Debit</button>
     <button class="ep-btn ep-btn-ghost" onclick="EP_CORE.closeSheet('sheet-debit')" style="margin-top:10px">Cancel</button>
@@ -475,7 +475,7 @@ async function loadKYC(status='submitted'){
         <div style="display:flex;justify-content:space-between;margin-bottom:8px">
           <div>
             <div style="font-weight:700">${EP_CORE.esc(s.full_name||'—')}</div>
-            <div style="font-size:12px;color:var(--text-3)">${s.phone} · ${s.doc_type?.replace('_',' ')}</div>
+            <div style="font-size:12px;color:var(--text-3)">${EP_CORE.esc(s.phone||'')} · ${EP_CORE.esc((s.doc_type||'').replace('_',' '))}</div>
           </div>
           <div style="font-size:11px;color:var(--text-3)">${EP_CORE.dateFmt(s.submitted_at)}</div>
         </div>
@@ -705,12 +705,12 @@ async function loadSettings(){
     const s=j.data||{};
     document.getElementById('settings-body').innerHTML=`
       <div class="ep-card">
-        <div class="ep-field"><label class="ep-label">Platform name</label><input class="ep-input" id="s-name"  type="text"  value="${EP_CORE.esc(s.platform_name||'ኢE Pay')}"></div>
-        <div class="ep-field"><label class="ep-label">Support phone</label><input class="ep-input" id="s-phone" type="tel"   value="${EP_CORE.esc(s.support_phone||'')}"></div>
-        <div class="ep-field"><label class="ep-label">Support email</label><input class="ep-input" id="s-email" type="email" value="${EP_CORE.esc(s.support_email||'')}"></div>
-        <div class="ep-field"><label class="ep-label">Admin phones (comma-separated)</label><input class="ep-input" id="s-admins" type="text" value="${EP_CORE.esc(s.admin_phones||'')}"></div>
-        <div class="ep-field"><label class="ep-label">Daily send limit (ETB, 0=unlimited)</label><input class="ep-input" id="s-limit" type="number" value="${EP_CORE.esc(s.daily_limit||'0')}"></div>
-        <div class="ep-field" style="margin-bottom:0"><label class="ep-label">Platform fee (%)</label><input class="ep-input" id="s-fee" type="number" step="0.1" value="${EP_CORE.esc(s.platform_fee||'0')}"></div>
+        <div class="ep-field"><label class="ep-label" for="s-name">Platform name</label><input class="ep-input" id="s-name"  type="text"  value="${EP_CORE.esc(s.platform_name||'ኢE Pay')}"></div>
+        <div class="ep-field"><label class="ep-label" for="s-phone">Support phone</label><input class="ep-input" id="s-phone" type="tel"   value="${EP_CORE.esc(s.support_phone||'')}"></div>
+        <div class="ep-field"><label class="ep-label" for="s-email">Support email</label><input class="ep-input" id="s-email" type="email" value="${EP_CORE.esc(s.support_email||'')}"></div>
+        <div class="ep-field"><label class="ep-label" for="s-admins">Admin phones (comma-separated)</label><input class="ep-input" id="s-admins" type="text" value="${EP_CORE.esc(s.admin_phones||'')}"></div>
+        <div class="ep-field"><label class="ep-label" for="s-limit">Daily send limit (ETB, 0=unlimited)</label><input class="ep-input" id="s-limit" type="number" value="${EP_CORE.esc(s.daily_limit||'0')}"></div>
+        <div class="ep-field" style="margin-bottom:0"><label class="ep-label" for="s-fee">Platform fee (%)</label><input class="ep-input" id="s-fee" type="number" step="0.1" value="${EP_CORE.esc(s.platform_fee||'0')}"></div>
       </div>
       <button class="ep-btn ep-btn-primary" id="save-settings-btn" onclick="saveSettings()" style="margin-top:16px">Save settings</button>`;
   }catch(e){}

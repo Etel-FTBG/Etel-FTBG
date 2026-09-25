@@ -49,7 +49,7 @@ $roleLabel = $role ?? ($user['roles'][0] ?? 'user');
     <div style="margin:0 .75rem .75rem;padding:.85rem 1rem;background:linear-gradient(135deg,rgba(212,175,55,.1),rgba(212,175,55,.03));border:1.5px solid rgba(212,175,55,.2);border-radius:14px">
       <div style="display:flex;align-items:center;gap:.65rem">
         <div style="width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,#D4AF37,#E8C76B);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:1.1rem;color:#1A1A2E;flex-shrink:0">
-          <?= mb_substr($seller['store_name']??'S',0,1,'UTF-8') ?>
+          <?= e(mb_substr($seller['store_name']??'S',0,1,'UTF-8')) ?>
         </div>
         <div style="overflow:hidden;flex:1">
           <div style="font-weight:800;font-size:.82rem;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"><?= e($seller['store_name']??'') ?></div>

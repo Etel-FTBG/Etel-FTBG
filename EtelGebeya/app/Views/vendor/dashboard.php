@@ -67,6 +67,18 @@ ob_start();
 .check-icon.todo{background:rgba(212,175,55,.12);color:var(--gold);border:1.5px solid rgba(212,175,55,.3)}
 .check-text{flex:1;font-size:.83rem;font-weight:600;color:var(--dark-text)}
 .check-text span{display:block;font-size:.72rem;color:var(--dark-muted);font-weight:400;margin-top:.1rem}
+
+@media (max-width: 900px){
+  .vd-grid{grid-template-columns:1fr}
+}
+@media (max-width: 760px){
+  .vd-hero{flex-direction:column;align-items:flex-start}
+  .vd-stats{grid-template-columns:repeat(2,1fr)}
+  .qa-grid{grid-template-columns:repeat(2,1fr)}
+}
+@media (max-width: 420px){
+  .vd-stats{grid-template-columns:1fr}
+}
 </style>
 
 <!-- Hero -->

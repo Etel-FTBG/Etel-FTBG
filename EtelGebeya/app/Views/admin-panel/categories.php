@@ -54,16 +54,16 @@ ob_start();
     <input type="hidden" name="id" value="0">
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:10px;align-items:end;flex-wrap:wrap">
       <div>
-        <label style="font-size:11px;color:var(--dark-muted);display:block;margin-bottom:4px">Name (EN)*</label>
-        <input type="text" name="name_en" class="ag-inp" placeholder="e.g. Electronics" required style="max-width:none;width:100%">
+        <label for="cat-name_en" style="font-size:11px;color:var(--dark-muted);display:block;margin-bottom:4px">Name (EN)*</label>
+        <input type="text" name="name_en" id="cat-name_en" class="ag-inp" placeholder="e.g. Electronics" required style="max-width:none;width:100%">
       </div>
       <div>
-        <label style="font-size:11px;color:var(--dark-muted);display:block;margin-bottom:4px">Name (AM)</label>
-        <input type="text" name="name_am" class="ag-inp" placeholder="Amharic name (optional)" style="max-width:none;width:100%">
+        <label for="cat-name_am" style="font-size:11px;color:var(--dark-muted);display:block;margin-bottom:4px">Name (AM)</label>
+        <input type="text" name="name_am" id="cat-name_am" class="ag-inp" placeholder="Amharic name (optional)" style="max-width:none;width:100%">
       </div>
       <div>
-        <label style="font-size:11px;color:var(--dark-muted);display:block;margin-bottom:4px">Slug (auto-generated)</label>
-        <input type="text" name="slug" class="ag-inp" placeholder="electronics" style="max-width:none;width:100%">
+        <label for="cat-slug" style="font-size:11px;color:var(--dark-muted);display:block;margin-bottom:4px">Slug (auto-generated)</label>
+        <input type="text" name="slug" id="cat-slug" class="ag-inp" placeholder="electronics" style="max-width:none;width:100%">
       </div>
       <button type="submit" class="btn-xs btn-gold-xs" style="height:38px;padding:0 16px">Save</button>
     </div>

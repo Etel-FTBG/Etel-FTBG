@@ -63,7 +63,7 @@ $isAdmin = isset($auth) && $auth->isAdmin();
   <aside class="cp-sidebar">
     <!-- User card -->
     <div class="cp-user-card">
-      <div class="cp-avatar"><?= mb_strtoupper(mb_substr($u['full_name']??'U',0,1,'UTF-8'),'UTF-8') ?></div>
+      <div class="cp-avatar"><?= e(mb_strtoupper(mb_substr($u['full_name']??'U',0,1,'UTF-8'),'UTF-8')) ?></div>
       <div class="cp-uname"><?= e($u['full_name'] ?? 'My Account') ?></div>
       <div class="cp-uemail"><?= e($u['email'] ?? '') ?></div>
       <div class="cp-ustatus">Verified Customer</div>
@@ -104,6 +104,7 @@ $isAdmin = isset($auth) && $auth->isAdmin();
 
     <!-- Logout -->
     <form method="POST" action="<?= View::url('/logout') ?>">
+      <?= csrf() ?>
       <button type="submit" class="cp-logout" style="width:100%;border-radius:14px">
         <i class="bi bi-box-arrow-right"></i> Sign Out
       </button>

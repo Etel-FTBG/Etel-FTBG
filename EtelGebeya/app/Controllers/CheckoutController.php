@@ -563,7 +563,7 @@ final class CheckoutController
         }
         if ((int)$coupon['per_user_limit'] > 0 && $this->auth->check()) {
             $usedByMe = (int)($this->db->fetchColumn(
-                "SELECT COUNT(*) FROM orders WHERE user_id = ? AND coupon_code = ?",
+                "SELECT COUNT(*) FROM orders WHERE user_id = ? AND coupon_code = ? AND status != 'cancelled'",
                 [$this->auth->id(), $coupon['code']]
             ) ?: 0);
             if ($usedByMe >= (int)$coupon['per_user_limit']) {
