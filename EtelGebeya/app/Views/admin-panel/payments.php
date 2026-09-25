@@ -1,7 +1,7 @@
 <?php
 use App\Core\View;
 require __DIR__.'/_layout.php';
-$pageTitle = ucfirst('payments');
+$pageTitle = t('admin.nav.payments');
 ob_start();
 ?>
 <style>
@@ -38,44 +38,44 @@ ob_start();
   <div class="flash-<?= e($flash['type'] ?? 'success') ?>"><?= e($flash['msg'] ?? '') ?></div>
 <?php endif; ?>
 
-<div class="ag-bar-title"><?= ucfirst('payments') ?></div>
+<div class="ag-bar-title"><?= e(t('admin.nav.payments')) ?></div>
 
 
 <?php $perPage = 20; $pages = isset($total) && $total > 0 ? (int)ceil($total / $perPage) : 1; ?>
 <?php if (!empty($summary)): ?>
 <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px;margin-bottom:20px">
   <div style="background:var(--dark-card);border:1px solid var(--dark-border);border-radius:var(--r-md);padding:18px 16px">
-    <div style="font-size:10px;color:var(--dark-muted);text-transform:uppercase;letter-spacing:1px;font-weight:700">Paid Revenue</div>
+    <div style="font-size:10px;color:var(--dark-muted);text-transform:uppercase;letter-spacing:1px;font-weight:700"><?= e(t('admin.payments.paid_revenue')) ?></div>
     <div style="font-size:24px;font-weight:800;color:var(--gold-lt);margin:7px 0 4px">ETB <?= number_format((float)($summary['paid_total']??0), 0) ?></div>
-    <div style="font-size:11.5px;color:var(--dark-muted)"><?= (int)($summary['paid_count']??0) ?> orders</div>
+    <div style="font-size:11.5px;color:var(--dark-muted)"><?= e(t('admin.payments.orders_count', ['n' => (int)($summary['paid_count']??0)])) ?></div>
   </div>
   <div style="background:var(--dark-card);border:1px solid var(--dark-border);border-radius:var(--r-md);padding:18px 16px">
-    <div style="font-size:10px;color:var(--dark-muted);text-transform:uppercase;letter-spacing:1px;font-weight:700">Pending Payment</div>
+    <div style="font-size:10px;color:var(--dark-muted);text-transform:uppercase;letter-spacing:1px;font-weight:700"><?= e(t('admin.payments.pending_payment')) ?></div>
     <div style="font-size:24px;font-weight:800;color:var(--gold);margin:7px 0 4px">ETB <?= number_format((float)($summary['pending_total']??0), 0) ?></div>
-    <div style="font-size:11.5px;color:var(--dark-muted)"><?= (int)($summary['pending_count']??0) ?> orders</div>
+    <div style="font-size:11.5px;color:var(--dark-muted)"><?= e(t('admin.payments.orders_count', ['n' => (int)($summary['pending_count']??0)])) ?></div>
   </div>
 </div>
 <?php endif; ?>
 <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;align-items:center">
   <form method="GET" action="<?= View::url('/admin/payments') ?>" style="display:flex;gap:9px">
     <select name="filter" class="ag-sel" onchange="this.form.submit()">
-      <option value="all"           <?= ($filter??'')==='all'          ?'selected':'' ?>>All Payments</option>
-      <option value="paid"          <?= ($filter??'')==='paid'         ?'selected':'' ?>>Paid</option>
-      <option value="pending"       <?= ($filter??'')==='pending'      ?'selected':'' ?>>Pending</option>
+      <option value="all"           <?= ($filter??'')==='all'          ?'selected':'' ?>><?= e(t('admin.payments.filter_all')) ?></option>
+      <option value="paid"          <?= ($filter??'')==='paid'         ?'selected':'' ?>><?= e(t('admin.payments.filter_paid')) ?></option>
+      <option value="pending"       <?= ($filter??'')==='pending'      ?'selected':'' ?>><?= e(t('admin.payments.filter_pending')) ?></option>
       <option value="telebirr"      <?= ($filter??'')==='telebirr'     ?'selected':'' ?>>Telebirr</option>
       <option value="cbe_birr"      <?= ($filter??'')==='cbe_birr'     ?'selected':'' ?>>CBE Birr</option>
-      <option value="bank_transfer" <?= ($filter??'')==='bank_transfer'?'selected':'' ?>>Bank Transfer</option>
-      <option value="cash"          <?= ($filter??'')==='cash'         ?'selected':'' ?>>Cash</option>
+      <option value="bank_transfer" <?= ($filter??'')==='bank_transfer'?'selected':'' ?>><?= e(t('admin.payments.filter_bank_transfer')) ?></option>
+      <option value="cash"          <?= ($filter??'')==='cash'         ?'selected':'' ?>><?= e(t('admin.payments.filter_cash')) ?></option>
     </select>
   </form>
-  <span style="font-size:12px;color:var(--dark-muted)"><?= number_format($total??0) ?> orders</span>
+  <span style="font-size:12px;color:var(--dark-muted)"><?= e(t('admin.payments.orders_count', ['n' => number_format($total??0)])) ?></span>
 </div>
 <div class="ag-card">
   <?php if (empty($orders)): ?>
-    <div class="empty-s">No payment records found.</div>
+    <div class="empty-s"><?= e(t('admin.payments.no_records')) ?></div>
   <?php else: ?>
   <table class="ag-tbl">
-    <thead><tr><th>Ref</th><th>Customer</th><th>Total</th><th>Method</th><th>Pay Status</th><th>Order Status</th><th>Date</th><th></th></tr></thead>
+    <thead><tr><th><?= e(t('admin.dashboard.col_ref')) ?></th><th><?= e(t('admin.dashboard.col_customer')) ?></th><th><?= e(t('admin.dashboard.col_total')) ?></th><th><?= e(t('admin.payments.col_method')) ?></th><th><?= e(t('admin.payments.col_pay_status')) ?></th><th><?= e(t('admin.payments.col_order_status')) ?></th><th><?= e(t('common.date')) ?></th><th></th></tr></thead>
     <tbody>
       <?php foreach ($orders as $o): ?>
         <tr>
@@ -88,12 +88,12 @@ ob_start();
           <td style="font-size:11px;color:var(--dark-muted);white-space:nowrap"><?= date('d M Y', strtotime($o['created_at'])) ?></td>
           <td>
             <?php if (($o['payment_status'] ?? '') !== 'paid' && ($o['payment_method'] ?? '') !== 'etel_pay'): ?>
-            <form method="POST" action="<?= View::url('/admin/payments/mark-paid') ?>" style="margin:0" onsubmit="return confirm('Confirm this order was actually paid? This cannot be undone from here.');">
+            <form method="POST" action="<?= View::url('/admin/payments/mark-paid') ?>" style="margin:0" onsubmit="return confirm('<?= e(addslashes(t('admin.payments.mark_paid_confirm'))) ?>');">
               <?= csrf() ?>
               <input type="hidden" name="order_id" value="<?= (int)$o['id'] ?>">
               <input type="hidden" name="filter" value="<?= e($filter ?? 'all') ?>">
               <input type="hidden" name="page" value="<?= (int)($page ?? 1) ?>">
-              <button type="submit" class="btn-xs btn-gold-xs">Mark Paid</button>
+              <button type="submit" class="btn-xs btn-gold-xs"><?= e(t('admin.payments.mark_paid')) ?></button>
             </form>
             <?php endif; ?>
           </td>

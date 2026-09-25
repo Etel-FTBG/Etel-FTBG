@@ -1,7 +1,7 @@
 <?php
 use App\Core\View;
 require __DIR__.'/_layout.php';
-$pageTitle = 'Orders';
+$pageTitle = t('admin.nav.orders');
 $perPage   = 20;
 $pages     = $total > 0 ? (int)ceil($total / $perPage) : 1;
 ob_start();
@@ -50,23 +50,23 @@ ob_start();
 
 <div class="ag-bar">
   <div>
-    <div class="ag-bar-title">Orders</div>
-    <div class="ag-bar-sub"><?= number_format($total) ?> found</div>
+    <div class="ag-bar-title"><?= e(t('admin.nav.orders')) ?></div>
+    <div class="ag-bar-sub"><?= e(t('admin.orders.found_count', ['n' => number_format($total)])) ?></div>
   </div>
   <div class="ag-filter-row">
     <form method="GET" action="<?= View::url('/admin/orders') ?>">
       <select name="filter" class="ag-sel" onchange="this.form.submit()">
-        <option value="all"        <?= $filter==='all'       ?'selected':'' ?>>All Statuses</option>
-        <option value="new"        <?= $filter==='new'       ?'selected':'' ?>>New</option>
-        <option value="processing" <?= $filter==='processing'?'selected':'' ?>>Processing</option>
-        <option value="shipped"    <?= $filter==='shipped'   ?'selected':'' ?>>Shipped</option>
-        <option value="delivered"  <?= $filter==='delivered' ?'selected':'' ?>>Delivered</option>
-        <option value="cancelled"  <?= $filter==='cancelled' ?'selected':'' ?>>Cancelled</option>
+        <option value="all"        <?= $filter==='all'       ?'selected':'' ?>><?= e(t('admin.orders.status_all')) ?></option>
+        <option value="new"        <?= $filter==='new'       ?'selected':'' ?>><?= e(t('admin.orders.status_new')) ?></option>
+        <option value="processing" <?= $filter==='processing'?'selected':'' ?>><?= e(t('admin.orders.status_processing')) ?></option>
+        <option value="shipped"    <?= $filter==='shipped'   ?'selected':'' ?>><?= e(t('admin.orders.status_shipped')) ?></option>
+        <option value="delivered"  <?= $filter==='delivered' ?'selected':'' ?>><?= e(t('admin.orders.status_delivered')) ?></option>
+        <option value="cancelled"  <?= $filter==='cancelled' ?'selected':'' ?>><?= e(t('admin.orders.status_cancelled')) ?></option>
       </select>
-      <input type="text" name="q" class="ag-inp" placeholder="Order ref, name, phone..." value="<?= e($search) ?>">
-      <button type="submit" class="btn-xs btn-gold-xs">Search</button>
+      <input type="text" name="q" class="ag-inp" placeholder="<?= e(t('admin.orders.search_placeholder')) ?>" value="<?= e($search) ?>">
+      <button type="submit" class="btn-xs btn-gold-xs"><?= e(t('admin.orders.search')) ?></button>
       <?php if ($search || $filter !== 'all'): ?>
-        <a href="<?= View::url('/admin/orders') ?>" class="btn-xs btn-ghost-xs">Clear</a>
+        <a href="<?= View::url('/admin/orders') ?>" class="btn-xs btn-ghost-xs"><?= e(t('admin.orders.clear')) ?></a>
       <?php endif; ?>
     </form>
   </div>
@@ -74,12 +74,12 @@ ob_start();
 
 <div class="ag-card">
   <?php if (empty($orders)): ?>
-    <div class="empty-s"><i class="bi bi-receipt" style="font-size:40px;display:block;margin-bottom:10px;opacity:.3"></i>No orders found.</div>
+    <div class="empty-s"><i class="bi bi-receipt" style="font-size:40px;display:block;margin-bottom:10px;opacity:.3"></i><?= e(t('admin.orders.no_orders_found')) ?></div>
   <?php else: ?>
   <table class="ag-tbl">
     <thead>
       <tr>
-        <th>Ref</th><th>Customer</th><th>City</th><th>Total</th><th>Payment</th><th>Status</th><th>Date</th>
+        <th><?= e(t('admin.dashboard.col_ref')) ?></th><th><?= e(t('admin.dashboard.col_customer')) ?></th><th><?= e(t('admin.orders.col_city')) ?></th><th><?= e(t('admin.dashboard.col_total')) ?></th><th><?= e(t('admin.nav.payments')) ?></th><th><?= e(t('common.status')) ?></th><th><?= e(t('common.date')) ?></th>
       </tr>
     </thead>
     <tbody>
