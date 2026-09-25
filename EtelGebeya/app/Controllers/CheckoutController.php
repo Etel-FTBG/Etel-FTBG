@@ -175,6 +175,28 @@ final class CheckoutController
             redirect('/checkout');
         }
 
+        // Fail fast, before any ኢE Pay wallet money moves: CartController
+        // only checked stock_qty at add-to-cart time, and cart contents can
+        // sit for a while before checkout. This is a best-effort check, not
+        // the actual reservation (that's the guarded UPDATE later, inside
+        // the transaction) -- it just avoids debiting a wallet for an item
+        // that's already visibly gone before we ever get that far.
+        $pids = array_unique(array_column(array_values($cart), 'id'));
+        if ($pids) {
+            $plist = implode(',', array_map('intval', $pids));
+            $stockMap = [];
+            foreach ($this->db->fetchAll("SELECT id, name_en, stock_qty FROM products WHERE id IN ($plist)") as $row) {
+                $stockMap[(int)$row['id']] = $row;
+            }
+            foreach ($cart as $item) {
+                $p = $stockMap[(int)$item['id']] ?? null;
+                if (!$p || (int)$p['stock_qty'] < (int)$item['qty']) {
+                    $this->auth->flash('error', 'Sorry, "' . ($p['name_en'] ?? $item['name_en']) . '" no longer has enough stock for the quantity in your cart.');
+                    redirect('/cart');
+                }
+            }
+        }
+
         $total = CartController::cartTotal($cart);
         // Delivery fee is re-derived here from the pin the customer set --
         // never trust the shipping figure the page happened to display,
@@ -368,14 +390,33 @@ final class CheckoutController
                 $prow      = $sellerMap[$pid] ?? null;
                 $sellerId  = $prow ? (int)$prow['seller_id'] : null;
                 if (!$sellerId) continue; // skip if product has no seller
-                $lineTotal = round((float)$item['price'] * (int)$item['qty'], 2);
+                $qty       = (int)$item['qty'];
+
+                // Atomic, race-safe stock reservation. CartController only
+                // checked stock_qty at add-to-cart time -- without this
+                // guarded UPDATE, two concurrent checkouts for the same
+                // low-stock product could both pass that earlier check and
+                // both succeed here, overselling it. A rowCount() of 0
+                // means someone else's order (or another tab of this same
+                // customer) already took the remaining stock since then.
+                $reserved = $this->db->query(
+                    "UPDATE products SET stock_qty = stock_qty - ? WHERE id = ? AND stock_qty >= ?",
+                    [$qty, $pid, $qty]
+                )->rowCount();
+                if ($reserved === 0) {
+                    throw new \App\Core\InsufficientStockException(
+                        'Sorry, "' . $item['name_en'] . '" no longer has enough stock for the quantity in your cart.'
+                    );
+                }
+
+                $lineTotal = round((float)$item['price'] * $qty, 2);
                 $this->db->insert('order_items', [
                     'order_id'      => $orderId,
                     'product_id'    => $pid,
                     'seller_id'     => $sellerId,
                     'product_name'  => $item['name_en'],
                     'unit_price'    => (float)$item['price'],
-                    'quantity'      => (int)$item['qty'],
+                    'quantity'      => $qty,
                     'total_price'   => $lineTotal,
                     'platform_fee'  => 0,
                     'seller_payout' => $lineTotal,
@@ -417,6 +458,10 @@ final class CheckoutController
 
             $this->db->pdo()->commit();
 
+        } catch (\App\Core\InsufficientStockException $e) {
+            try { $this->db->pdo()->rollBack(); } catch (\Throwable $_) {}
+            $this->auth->flash('error', $e->getMessage());
+            redirect('/cart');
         } catch (\Throwable $e) {
             try { $this->db->pdo()->rollBack(); } catch (\Throwable $_) {}
             error_log('[EG-Checkout] ' . $e->getMessage());

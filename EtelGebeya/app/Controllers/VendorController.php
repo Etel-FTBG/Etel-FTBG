@@ -610,7 +610,7 @@ final class VendorController
             redirect('/vendor-panel/orders');
         }
 
-        $item = $this->db->fetch("SELECT id, order_id, status FROM order_items WHERE id = ? AND seller_id = ?", [$itemId, $sid]);
+        $item = $this->db->fetch("SELECT id, order_id, status, product_id, quantity FROM order_items WHERE id = ? AND seller_id = ?", [$itemId, $sid]);
         if (!$item) {
             $this->auth->flash('error', 'Order item not found.');
             redirect('/vendor-panel/orders');
@@ -641,6 +641,16 @@ final class VendorController
             if ($tracking !== '') $update['tracking_number'] = substr($tracking, 0, 60);
             $courierId = (int)($_POST['courier_id'] ?? 0);
             if ($courierId > 0) $update['courier_id'] = $courierId;
+        }
+        if ($status === 'cancelled' && !empty($item['product_id'])) {
+            // Give back the stock CheckoutController::place() reserved at
+            // purchase time -- without this, every cancelled item would
+            // permanently shrink stock_qty for a sale that never actually
+            // happened.
+            $this->db->query(
+                "UPDATE products SET stock_qty = stock_qty + ? WHERE id = ?",
+                [(int)$item['quantity'], (int)$item['product_id']]
+            );
         }
         $this->db->update('order_items', $update, 'id = ?', [$itemId]);
         \App\Core\OrderFulfillment::bubbleOrderStatus($this->db, (int)$item['order_id']);
