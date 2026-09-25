@@ -1120,8 +1120,10 @@ function updateClock() {
 
 // ── API HELPER ──────────────────────────────────────────────
 async function api(action, params={}, method='GET') {
-  const authParam = '&auth=' + encodeURIComponent(TOKEN);
-  const url = API + '?action=' + action + authParam + (method==='GET' ? '&'+new URLSearchParams(params) : '');
+  // Token travels only via the X-Auth header (and the POST body below) --
+  // never in the URL, since query strings land in server access logs and
+  // browser history.
+  const url = API + '?action=' + action + (method==='GET' ? '&'+new URLSearchParams(params) : '');
   const opts = { headers: {'X-Auth': TOKEN} };
   if (method === 'POST') {
     opts.method = 'POST';
@@ -1930,7 +1932,7 @@ function renderUpdHistory() {
 async function loadFileTree() {
   const el = document.getElementById('upd-file-list');
   el.innerHTML = '<div style="color:var(--text-dim);font-size:.8rem">Loading file tree…</div>';
-  const r = await fetch(UPD_API+'?action=browse&auth='+TOKEN, {headers:{'X-Auth':TOKEN}});
+  const r = await fetch(UPD_API+'?action=browse', {headers:{'X-Auth':TOKEN}});
   const d = await r.json();
   if (!d.ok) { el.textContent = d.error || 'Failed to load files'; return; }
   const files = d.data || [];
@@ -1945,7 +1947,7 @@ async function loadFileTree() {
 }
 
 async function loadUpdaterSystem() {
-  const r = await fetch(UPD_API+'?action=status&auth='+TOKEN, {headers:{'X-Auth':TOKEN}});
+  const r = await fetch(UPD_API+'?action=status', {headers:{'X-Auth':TOKEN}});
   const d = await r.json();
   if (!d.ok) { document.getElementById('upd-sys-grid').textContent = d.error||'Error'; return; }
   const s = d.data || {};
