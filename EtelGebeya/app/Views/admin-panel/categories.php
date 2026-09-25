@@ -1,7 +1,7 @@
 <?php
 use App\Core\View;
 require __DIR__.'/_layout.php';
-$pageTitle = ucfirst('categories');
+$pageTitle = t('admin.nav.categories');
 ob_start();
 ?>
 <style>
@@ -38,44 +38,44 @@ ob_start();
   <div class="flash-<?= e($flash['type'] ?? 'success') ?>"><?= e($flash['msg'] ?? '') ?></div>
 <?php endif; ?>
 
-<div class="ag-bar-title"><?= ucfirst('categories') ?></div>
+<div class="ag-bar-title"><?= e(t('admin.nav.categories')) ?></div>
 
 
 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;gap:12px;flex-wrap:wrap">
-  <span style="font-size:12px;color:var(--dark-muted)"><?= count($categories??[]) ?> categories</span>
+  <span style="font-size:12px;color:var(--dark-muted)"><?= e(t('admin.categories.count', ['n' => count($categories??[])])) ?></span>
   <button onclick="document.getElementById('cat-form').style.display='block';this.style.display='none'"
-          class="btn-xs btn-gold-xs">+ Add Category</button>
+          class="btn-xs btn-gold-xs">+ <?= e(t('admin.categories.add')) ?></button>
 </div>
 
 <div id="cat-form" style="display:none;background:var(--dark-card);border:1px solid var(--dark-border);border-radius:var(--r-md);padding:20px;margin-bottom:16px">
-  <div style="font-size:14px;font-weight:700;color:var(--dark-text);margin-bottom:16px">New Category</div>
+  <div style="font-size:14px;font-weight:700;color:var(--dark-text);margin-bottom:16px"><?= e(t('admin.categories.new_category')) ?></div>
   <form method="POST" action="<?= View::url('/admin/categories') ?>">
     <?= csrf() ?>
     <input type="hidden" name="id" value="0">
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:10px;align-items:end;flex-wrap:wrap">
       <div>
-        <label for="cat-name_en" style="font-size:11px;color:var(--dark-muted);display:block;margin-bottom:4px">Name (EN)*</label>
+        <label for="cat-name_en" style="font-size:11px;color:var(--dark-muted);display:block;margin-bottom:4px"><?= e(t('admin.categories.name_en_label')) ?>*</label>
         <input type="text" name="name_en" id="cat-name_en" class="ag-inp" placeholder="e.g. Electronics" required style="max-width:none;width:100%">
       </div>
       <div>
-        <label for="cat-name_am" style="font-size:11px;color:var(--dark-muted);display:block;margin-bottom:4px">Name (AM)</label>
-        <input type="text" name="name_am" id="cat-name_am" class="ag-inp" placeholder="Amharic name (optional)" style="max-width:none;width:100%">
+        <label for="cat-name_am" style="font-size:11px;color:var(--dark-muted);display:block;margin-bottom:4px"><?= e(t('admin.categories.name_am_label')) ?></label>
+        <input type="text" name="name_am" id="cat-name_am" class="ag-inp" placeholder="<?= e(t('admin.categories.name_am_placeholder')) ?>" style="max-width:none;width:100%">
       </div>
       <div>
-        <label for="cat-slug" style="font-size:11px;color:var(--dark-muted);display:block;margin-bottom:4px">Slug (auto-generated)</label>
+        <label for="cat-slug" style="font-size:11px;color:var(--dark-muted);display:block;margin-bottom:4px"><?= e(t('admin.categories.slug_label')) ?></label>
         <input type="text" name="slug" id="cat-slug" class="ag-inp" placeholder="electronics" style="max-width:none;width:100%">
       </div>
-      <button type="submit" class="btn-xs btn-gold-xs" style="height:38px;padding:0 16px">Save</button>
+      <button type="submit" class="btn-xs btn-gold-xs" style="height:38px;padding:0 16px"><?= e(t('admin.categories.save')) ?></button>
     </div>
   </form>
 </div>
 
 <div class="ag-card">
   <?php if (empty($categories)): ?>
-    <div class="empty-s">No categories yet. Add one above.</div>
+    <div class="empty-s"><?= e(t('admin.categories.empty')) ?></div>
   <?php else: ?>
   <table class="ag-tbl">
-    <thead><tr><th>ID</th><th>Name (EN)</th><th>Name (AM)</th><th>Slug</th><th>Products</th></tr></thead>
+    <thead><tr><th>ID</th><th><?= e(t('admin.categories.col_name_en')) ?></th><th><?= e(t('admin.categories.col_name_am')) ?></th><th><?= e(t('admin.categories.col_slug')) ?></th><th><?= e(t('admin.nav.products')) ?></th></tr></thead>
     <tbody>
       <?php foreach ($categories as $c): ?>
         <tr>

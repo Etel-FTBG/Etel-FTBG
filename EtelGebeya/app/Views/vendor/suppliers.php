@@ -32,11 +32,11 @@ ob_start();
 
 <div class="sp-toolbar">
   <div>
-    <h1>Suppliers</h1>
-    <p>Contacts you forward dropshipped orders to for fulfilment</p>
+    <h1><?= e(t('vendor.suppliers.title')) ?></h1>
+    <p><?= e(t('vendor.suppliers.subtitle')) ?></p>
   </div>
   <button type="button" class="btn btn-gold" onclick="document.getElementById('sp-form').style.display='block';this.style.display='none'">
-    <i class="bi bi-plus-lg"></i> Add Supplier
+    <i class="bi bi-plus-lg"></i> <?= e(t('vendor.suppliers.add')) ?>
   </button>
 </div>
 
@@ -46,29 +46,29 @@ ob_start();
     <input type="hidden" name="id" value="0">
     <div class="fg-row">
       <div class="fg">
-        <label>Supplier Name <span style="color:#ef4444">*</span></label>
+        <label><?= e(t('vendor.suppliers.name_label')) ?> <span style="color:#ef4444">*</span></label>
         <input type="text" name="name" required placeholder="e.g. Addis Wholesale Textiles">
       </div>
       <div class="fg">
-        <label>Website</label>
+        <label><?= e(t('vendor.suppliers.website_label')) ?></label>
         <input type="text" name="website" placeholder="https://...">
       </div>
     </div>
     <div class="fg-row">
       <div class="fg">
-        <label>Contact Email</label>
+        <label><?= e(t('vendor.suppliers.email_label')) ?></label>
         <input type="email" name="contact_email" placeholder="orders@supplier.com">
       </div>
       <div class="fg">
-        <label>Contact Phone</label>
+        <label><?= e(t('vendor.suppliers.phone_label')) ?></label>
         <input type="tel" name="contact_phone" placeholder="+251 9xx xxx xxx">
       </div>
     </div>
     <div class="fg">
-      <label>Notes</label>
-      <textarea name="notes" placeholder="Payment terms, minimum order, anything worth remembering"></textarea>
+      <label><?= e(t('vendor.suppliers.notes_label')) ?></label>
+      <textarea name="notes" placeholder="<?= e(t('vendor.suppliers.notes_placeholder')) ?>"></textarea>
     </div>
-    <button type="submit" class="btn btn-gold"><i class="bi bi-check-lg"></i> Save Supplier</button>
+    <button type="submit" class="btn btn-gold"><i class="bi bi-check-lg"></i> <?= e(t('vendor.suppliers.save')) ?></button>
   </form>
 </div>
 
@@ -76,11 +76,11 @@ ob_start();
   <?php if (empty($suppliers)): ?>
     <div class="empty-zone">
       <i class="bi bi-truck"></i>
-      <p>No suppliers yet. Add one, then assign it to a dropshipped product.</p>
+      <p><?= e(t('vendor.suppliers.empty')) ?></p>
     </div>
   <?php else: ?>
   <table class="sp-table">
-    <thead><tr><th>Supplier</th><th>Contact</th><th>Notes</th><th></th></tr></thead>
+    <thead><tr><th><?= e(t('vendor.suppliers.col_supplier')) ?></th><th><?= e(t('vendor.suppliers.col_contact')) ?></th><th><?= e(t('vendor.suppliers.col_notes')) ?></th><th></th></tr></thead>
     <tbody>
       <?php foreach ($suppliers as $s): ?>
         <tr>
@@ -95,9 +95,9 @@ ob_start();
           </td>
           <td class="sp-muted" style="max-width:220px"><?= e(mb_substr($s['notes'] ?? '', 0, 80, 'UTF-8')) ?></td>
           <td class="act-btns">
-            <form method="POST" action="<?= View::url('/vendor-panel/suppliers/'.(int)$s['id'].'/delete') ?>" onsubmit="return confirm('Remove this supplier? Products using it will keep working but lose the supplier assignment.')">
+            <form method="POST" action="<?= View::url('/vendor-panel/suppliers/'.(int)$s['id'].'/delete') ?>" onsubmit="return confirm('<?= e(addslashes(t('vendor.suppliers.remove_confirm'))) ?>')">
               <?= csrf() ?>
-              <button type="submit" class="act-btn act-del"><i class="bi bi-trash3"></i> Remove</button>
+              <button type="submit" class="act-btn act-del"><i class="bi bi-trash3"></i> <?= e(t('vendor.suppliers.remove')) ?></button>
             </form>
           </td>
         </tr>

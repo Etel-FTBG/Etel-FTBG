@@ -8,7 +8,7 @@ ob_start();
 ?>
 <div>
   <div class="dash-header">
-    <div><h1 class="dash-title">Payouts</h1><p class="dash-sub">Track your earnings and withdrawal requests</p></div>
+    <div><h1 class="dash-title"><?= e(t('vendor.payouts.title')) ?></h1><p class="dash-sub"><?= e(t('vendor.payouts.subtitle')) ?></p></div>
   </div>
 
   <?php if (!empty($flash)): ?>
@@ -19,46 +19,46 @@ ob_start();
 
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.5rem">
     <div class="form-card">
-      <div style="font-size:.78rem;color:var(--eg-text-dim,#aaa);font-weight:700;text-transform:uppercase;letter-spacing:.05em">Total Earned</div>
+      <div style="font-size:.78rem;color:var(--eg-text-dim,#aaa);font-weight:700;text-transform:uppercase;letter-spacing:.05em"><?= e(t('vendor.payouts.total_earned')) ?></div>
       <div style="font-size:1.8rem;font-weight:900;color:#F7EFD9;margin-top:.3rem">Br <?= number_format($earned, 2) ?></div>
-      <div style="font-size:.75rem;color:var(--eg-text-dim,#aaa);margin-top:.2rem">From delivered orders</div>
+      <div style="font-size:.75rem;color:var(--eg-text-dim,#aaa);margin-top:.2rem"><?= e(t('vendor.payouts.from_delivered')) ?></div>
     </div>
     <div class="form-card">
-      <div style="font-size:.78rem;color:var(--eg-text-dim,#aaa);font-weight:700;text-transform:uppercase;letter-spacing:.05em">Available to Withdraw</div>
+      <div style="font-size:.78rem;color:var(--eg-text-dim,#aaa);font-weight:700;text-transform:uppercase;letter-spacing:.05em"><?= e(t('vendor.payouts.available')) ?></div>
       <div style="font-size:1.8rem;font-weight:900;color:var(--eg-gold,#D4AF37);margin-top:.3rem">Br <?= number_format($available, 2) ?></div>
-      <div style="font-size:.75rem;color:var(--eg-text-dim,#aaa);margin-top:.2rem">After pending/paid payouts</div>
+      <div style="font-size:.75rem;color:var(--eg-text-dim,#aaa);margin-top:.2rem"><?= e(t('vendor.payouts.after_pending')) ?></div>
     </div>
   </div>
 
   <form method="POST" action="<?= View::url('/vendor-panel/payouts/request') ?>">
     <?= csrf() ?>
     <div class="form-card" style="max-width:500px;margin-bottom:1.5rem">
-      <h3 class="form-card-title">Request a Payout</h3>
+      <h3 class="form-card-title"><?= e(t('vendor.payouts.request_title')) ?></h3>
       <div class="form-group">
-        <label>Amount (ETB)</label>
+        <label><?= e(t('vendor.payouts.amount_etb')) ?></label>
         <input type="number" name="amount" min="1" step="0.01" max="<?= $available ?>" placeholder="e.g. 500" required>
       </div>
       <div style="font-size:.78rem;color:var(--eg-text-dim,#aaa);margin-bottom:1rem">
-        Paid out via ኢE Pay to <strong><?= e($seller['phone'] ?? 'no phone on file') ?></strong>
+        <?= e(t('vendor.payouts.paid_via')) ?> <strong><?= e($seller['phone'] ?? t('vendor.payouts.no_phone')) ?></strong>
         <?php if (empty($seller['phone'])): ?>
-          &mdash; <a href="<?= View::url('/vendor-panel/settings') ?>" style="color:var(--eg-gold,#D4AF37)">add one in Settings</a>
+          &mdash; <a href="<?= View::url('/vendor-panel/settings') ?>" style="color:var(--eg-gold,#D4AF37)"><?= e(t('vendor.payouts.add_phone_link')) ?></a>
         <?php endif; ?>
       </div>
       <button type="submit" class="btn-gold" <?= ($available <= 0 || empty($seller['phone'])) ? 'disabled style="opacity:.5;cursor:not-allowed"' : '' ?>>
-        <i class="bi bi-cash-coin"></i> Request Payout
+        <i class="bi bi-cash-coin"></i> <?= e(t('vendor.payouts.request_button')) ?>
       </button>
     </div>
   </form>
 
   <div class="form-card">
-    <h3 class="form-card-title">Payout History</h3>
+    <h3 class="form-card-title"><?= e(t('vendor.payouts.history_title')) ?></h3>
     <?php if (empty($history)): ?>
-      <p style="color:var(--eg-text-dim,#aaa);font-size:.85rem">No payout requests yet.</p>
+      <p style="color:var(--eg-text-dim,#aaa);font-size:.85rem"><?= e(t('vendor.payouts.no_history')) ?></p>
     <?php else: ?>
       <table style="width:100%;border-collapse:collapse;font-size:.85rem">
         <thead>
           <tr style="text-align:left;color:var(--eg-text-dim,#aaa);font-size:.72rem;text-transform:uppercase">
-            <th style="padding:.5rem 0">Date</th><th>Amount</th><th>Status</th><th>Reference</th>
+            <th style="padding:.5rem 0"><?= e(t('common.date')) ?></th><th><?= e(t('vendor.payouts.col_amount')) ?></th><th><?= e(t('common.status')) ?></th><th><?= e(t('vendor.payouts.col_reference')) ?></th>
           </tr>
         </thead>
         <tbody>
@@ -70,7 +70,7 @@ ob_start();
               <span style="padding:.15rem .55rem;border-radius:99px;font-size:.7rem;font-weight:800;text-transform:uppercase;
                 background:<?= $h['status']==='completed'?'rgba(16,185,129,.15)':($h['status']==='rejected'?'rgba(239,68,68,.15)':'rgba(212,175,55,.15)') ?>;
                 color:<?= $h['status']==='completed'?'#10b981':($h['status']==='rejected'?'#ef4444':'var(--eg-gold,#D4AF37)') ?>">
-                <?= e($h['status']) ?>
+                <?= e(t('status.'.$h['status'])) ?>
               </span>
             </td>
             <td style="font-family:monospace;font-size:.78rem"><?= e($h['txn_ref'] ?? '—') ?></td>

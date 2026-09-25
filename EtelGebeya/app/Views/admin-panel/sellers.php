@@ -1,7 +1,7 @@
 <?php
 use App\Core\View;
 require __DIR__.'/_layout.php';
-$pageTitle = 'Sellers';
+$pageTitle = t('admin.nav.sellers');
 $perPage   = 20;
 $pages     = $total > 0 ? (int)ceil($total / $perPage) : 1;
 ob_start();
@@ -45,22 +45,22 @@ ob_start();
 
 <div class="ag-bar">
   <div>
-    <div class="ag-bar-title">Sellers</div>
-    <div class="ag-bar-sub"><?= number_format($total) ?> found</div>
+    <div class="ag-bar-title"><?= e(t('admin.nav.sellers')) ?></div>
+    <div class="ag-bar-sub"><?= e(t('admin.orders.found_count', ['n' => number_format($total)])) ?></div>
   </div>
   <div class="ag-filter-row">
     <form method="GET" action="<?= View::url('/admin/vendors') ?>">
       <select name="filter" class="ag-sel" onchange="this.form.submit()">
-        <option value="all"      <?= $filter==='all'     ?'selected':'' ?>>All Statuses</option>
-        <option value="pending"  <?= $filter==='pending' ?'selected':'' ?>>Pending</option>
-        <option value="active"   <?= $filter==='active'  ?'selected':'' ?>>Active</option>
-        <option value="suspended"<?= $filter==='suspended'?'selected':'' ?>>Suspended</option>
-        <option value="rejected" <?= $filter==='rejected'?'selected':'' ?>>Rejected</option>
+        <option value="all"      <?= $filter==='all'     ?'selected':'' ?>><?= e(t('admin.orders.status_all')) ?></option>
+        <option value="pending"  <?= $filter==='pending' ?'selected':'' ?>><?= e(t('admin.payments.filter_pending')) ?></option>
+        <option value="active"   <?= $filter==='active'  ?'selected':'' ?>><?= e(t('status.active')) ?></option>
+        <option value="suspended"<?= $filter==='suspended'?'selected':'' ?>><?= e(t('admin.sellers.status_suspended')) ?></option>
+        <option value="rejected" <?= $filter==='rejected'?'selected':'' ?>><?= e(t('admin.products.status_rejected')) ?></option>
       </select>
-      <input type="text" name="q" class="ag-inp" placeholder="Store, email, owner..." value="<?= e($search) ?>">
-      <button type="submit" class="btn-xs btn-gold-xs">Search</button>
+      <input type="text" name="q" class="ag-inp" placeholder="<?= e(t('admin.sellers.search_placeholder')) ?>" value="<?= e($search) ?>">
+      <button type="submit" class="btn-xs btn-gold-xs"><?= e(t('admin.orders.search')) ?></button>
       <?php if ($search || $filter !== 'all'): ?>
-        <a href="<?= View::url('/admin/vendors') ?>" class="btn-xs btn-ghost-xs">Clear</a>
+        <a href="<?= View::url('/admin/vendors') ?>" class="btn-xs btn-ghost-xs"><?= e(t('admin.orders.clear')) ?></a>
       <?php endif; ?>
     </form>
   </div>
@@ -68,11 +68,11 @@ ob_start();
 
 <div class="ag-card">
   <?php if (empty($sellers)): ?>
-    <div class="empty-s"><i class="bi bi-shop" style="font-size:40px;display:block;margin-bottom:10px;opacity:.3"></i>No sellers found.</div>
+    <div class="empty-s"><i class="bi bi-shop" style="font-size:40px;display:block;margin-bottom:10px;opacity:.3"></i><?= e(t('admin.sellers.no_sellers_found')) ?></div>
   <?php else: ?>
   <table class="ag-tbl">
     <thead>
-      <tr><th>Store</th><th>Owner</th><th>Contact</th><th>Products</th><th>Status</th><th>Actions</th></tr>
+      <tr><th><?= e(t('admin.dashboard.col_store')) ?></th><th><?= e(t('admin.dashboard.col_owner')) ?></th><th><?= e(t('admin.sellers.col_contact')) ?></th><th><?= e(t('admin.nav.products')) ?></th><th><?= e(t('common.status')) ?></th><th><?= e(t('common.actions')) ?></th></tr>
     </thead>
     <tbody>
       <?php foreach ($sellers as $s): ?>
@@ -91,7 +91,7 @@ ob_start();
           <td>
             <span style="font-weight:700;color:var(--dark-text)"><?= (int)$s['product_count'] ?></span>
             <?php if ((int)$s['pending_count'] > 0): ?>
-              <span style="font-size:10.5px;color:var(--gold);margin-left:4px"><?= (int)$s['pending_count'] ?> pend.</span>
+              <span style="font-size:10.5px;color:var(--gold);margin-left:4px"><?= e(t('admin.sellers.pend_short', ['n' => (int)$s['pending_count']])) ?></span>
             <?php endif; ?>
           </td>
           <td><span class="badge badge-<?= e($s['status'] ?? 'pending') ?>"><?= ucfirst($s['status'] ?? 'pending') ?></span></td>
@@ -100,21 +100,21 @@ ob_start();
             <?php if ($st === 'pending'): ?>
               <form method="POST" action="<?= View::url('/admin/vendors/' . (int)$s['id'] . '/approve') ?>" style="display:inline">
                 <?= csrf() ?>
-                <button type="submit" class="btn-xs btn-gold-xs" onclick="return confirm('Approve seller?')">Approve</button>
+                <button type="submit" class="btn-xs btn-gold-xs" onclick="return confirm('<?= e(addslashes(t('admin.dashboard.approve_seller_confirm'))) ?>')"><?= e(t('admin.dashboard.approve')) ?></button>
               </form>
               <form method="POST" action="<?= View::url('/admin/vendors/' . (int)$s['id'] . '/suspend') ?>" style="display:inline;margin-left:4px">
                 <?= csrf() ?>
-                <button type="submit" class="btn-xs btn-danger-xs" onclick="return confirm('Reject?')">Reject</button>
+                <button type="submit" class="btn-xs btn-danger-xs" onclick="return confirm('<?= e(addslashes(t('admin.products.reject_confirm'))) ?>')"><?= e(t('admin.dashboard.reject')) ?></button>
               </form>
             <?php elseif ($st === 'active'): ?>
               <form method="POST" action="<?= View::url('/admin/vendors/' . (int)$s['id'] . '/suspend') ?>" style="display:inline">
                 <?= csrf() ?>
-                <button type="submit" class="btn-xs btn-danger-xs" onclick="return confirm('Suspend this seller?')">Suspend</button>
+                <button type="submit" class="btn-xs btn-danger-xs" onclick="return confirm('<?= e(addslashes(t('admin.sellers.suspend_confirm'))) ?>')"><?= e(t('admin.sellers.suspend')) ?></button>
               </form>
             <?php else: ?>
               <form method="POST" action="<?= View::url('/admin/vendors/' . (int)$s['id'] . '/approve') ?>" style="display:inline">
                 <?= csrf() ?>
-                <button type="submit" class="btn-xs btn-ghost-xs" onclick="return confirm('Re-activate?')">Restore</button>
+                <button type="submit" class="btn-xs btn-ghost-xs" onclick="return confirm('<?= e(addslashes(t('admin.sellers.reactivate_confirm'))) ?>')"><?= e(t('admin.sellers.restore')) ?></button>
               </form>
             <?php endif; ?>
           </td>

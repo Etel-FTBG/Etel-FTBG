@@ -1,7 +1,7 @@
 <?php
 use App\Core\View;
 require __DIR__.'/_layout.php';
-$pageTitle = 'Supplier Catalog';
+$pageTitle = t('admin.nav.supplier_catalog');
 ob_start();
 ?>
 <style>
@@ -45,99 +45,99 @@ ob_start();
   <div class="flash-<?= e($flash['type'] ?? 'success') ?>"><?= e($flash['msg'] ?? '') ?></div>
 <?php endif; ?>
 
-<div class="ag-bar-title">Supplier Catalog</div>
+<div class="ag-bar-title"><?= e(t('admin.nav.supplier_catalog')) ?></div>
 
 <div class="panel-toggle-row">
-  <button type="button" class="btn-xs btn-gold-xs" onclick="togglePanel('item-panel')">+ Add Catalog Item</button>
-  <button type="button" class="btn-xs btn-ghost-xs" onclick="togglePanel('supplier-panel')">+ Add Platform Supplier</button>
-  <button type="button" class="btn-xs btn-ghost-xs" onclick="togglePanel('csv-panel')">Import CSV</button>
-  <span style="font-size:12px;color:var(--dark-muted);margin-left:auto;align-self:center"><?= number_format($total) ?> items</span>
+  <button type="button" class="btn-xs btn-gold-xs" onclick="togglePanel('item-panel')">+ <?= e(t('admin.catalog.add_item')) ?></button>
+  <button type="button" class="btn-xs btn-ghost-xs" onclick="togglePanel('supplier-panel')">+ <?= e(t('admin.catalog.add_platform_supplier')) ?></button>
+  <button type="button" class="btn-xs btn-ghost-xs" onclick="togglePanel('csv-panel')"><?= e(t('admin.catalog.import_csv')) ?></button>
+  <span style="font-size:12px;color:var(--dark-muted);margin-left:auto;align-self:center"><?= e(t('admin.catalog.items_count', ['n' => number_format($total)])) ?></span>
 </div>
 
 <!-- Add platform supplier -->
 <div id="supplier-panel" class="form-panel">
-  <h3>New Platform Supplier</h3>
+  <h3><?= e(t('admin.catalog.new_platform_supplier')) ?></h3>
   <form method="POST" action="<?= View::url('/admin/catalog/supplier') ?>">
     <?= csrf() ?>
     <div class="fg-row">
-      <div class="fg"><label>Name *</label><input class="ag-inp" type="text" name="name" required placeholder="e.g. Addis Import Co."></div>
-      <div class="fg"><label>Contact Email</label><input class="ag-inp" type="email" name="contact_email"></div>
-      <div class="fg"><label>Contact Phone</label><input class="ag-inp" type="tel" name="contact_phone"></div>
+      <div class="fg"><label><?= e(t('admin.catalog.name_label')) ?> *</label><input class="ag-inp" type="text" name="name" required placeholder="e.g. Addis Import Co."></div>
+      <div class="fg"><label><?= e(t('vendor.suppliers.email_label')) ?></label><input class="ag-inp" type="email" name="contact_email"></div>
+      <div class="fg"><label><?= e(t('vendor.suppliers.phone_label')) ?></label><input class="ag-inp" type="tel" name="contact_phone"></div>
     </div>
     <div class="fg-row col2">
-      <div class="fg"><label>Website</label><input class="ag-inp" type="text" name="website" placeholder="https://..."></div>
-      <div class="fg"><label>Notes</label><input class="ag-inp" type="text" name="notes"></div>
+      <div class="fg"><label><?= e(t('vendor.suppliers.website_label')) ?></label><input class="ag-inp" type="text" name="website" placeholder="https://..."></div>
+      <div class="fg"><label><?= e(t('vendor.suppliers.notes_label')) ?></label><input class="ag-inp" type="text" name="notes"></div>
     </div>
-    <button type="submit" class="btn-xs btn-gold-xs" style="margin-top:8px">Save Supplier</button>
+    <button type="submit" class="btn-xs btn-gold-xs" style="margin-top:8px"><?= e(t('admin.catalog.save_supplier')) ?></button>
   </form>
 </div>
 
 <!-- CSV import -->
 <div id="csv-panel" class="form-panel">
-  <h3>Import Catalog Items from CSV</h3>
+  <h3><?= e(t('admin.catalog.import_csv_title')) ?></h3>
   <p style="font-size:12px;color:var(--dark-muted);margin-bottom:12px">
-    Header row required. Columns: <code>name_en,sku,cost_price,suggested_markup_pct,category_id,image_url,gallery_urls,description_en,lead_days_min,lead_days_max</code> -- any subset works.
+    <?= e(t('admin.catalog.csv_help')) ?> <code>name_en,sku,cost_price,suggested_markup_pct,category_id,image_url,gallery_urls,description_en,lead_days_min,lead_days_max</code> <?= e(t('admin.catalog.csv_help_suffix')) ?>
   </p>
   <form method="POST" action="<?= View::url('/admin/catalog/import-csv') ?>" enctype="multipart/form-data">
     <?= csrf() ?>
     <div class="fg-row col2">
       <div class="fg">
-        <label>Supplier *</label>
+        <label><?= e(t('vendor.pf.supplier_label')) ?> *</label>
         <select class="ag-sel" name="supplier_id" required>
-          <option value="">-- Select supplier --</option>
+          <option value=""><?= e(t('admin.catalog.select_supplier')) ?></option>
           <?php foreach ($suppliers as $s): ?>
             <option value="<?= (int)$s['id'] ?>"><?= e($s['name']) ?></option>
           <?php endforeach; ?>
         </select>
       </div>
-      <div class="fg"><label>CSV File *</label><input class="ag-inp" type="file" name="csv" accept=".csv" required></div>
+      <div class="fg"><label><?= e(t('admin.catalog.csv_file_label')) ?> *</label><input class="ag-inp" type="file" name="csv" accept=".csv" required></div>
     </div>
-    <button type="submit" class="btn-xs btn-gold-xs" style="margin-top:8px">Upload &amp; Import</button>
+    <button type="submit" class="btn-xs btn-gold-xs" style="margin-top:8px"><?= e(t('admin.catalog.upload_and_import')) ?></button>
   </form>
 </div>
 
 <!-- Add/edit catalog item -->
 <div id="item-panel" class="form-panel">
-  <h3 id="item-panel-title">New Catalog Item</h3>
+  <h3 id="item-panel-title"><?= e(t('admin.catalog.new_catalog_item')) ?></h3>
   <form method="POST" action="<?= View::url('/admin/catalog/save') ?>" id="item-form">
     <?= csrf() ?>
     <input type="hidden" name="id" id="ci-id" value="0">
     <div class="fg-row">
-      <div class="fg"><label for="ci-name_en">Name (EN) *</label><input class="ag-inp" type="text" name="name_en" id="ci-name_en" required></div>
-      <div class="fg"><label for="ci-name_am">Name (AM)</label><input class="ag-inp" type="text" name="name_am" id="ci-name_am"></div>
-      <div class="fg"><label for="ci-sku">SKU</label><input class="ag-inp" type="text" name="sku" id="ci-sku"></div>
+      <div class="fg"><label for="ci-name_en"><?= e(t('admin.catalog.name_en_label')) ?> *</label><input class="ag-inp" type="text" name="name_en" id="ci-name_en" required></div>
+      <div class="fg"><label for="ci-name_am"><?= e(t('admin.categories.name_am_label')) ?></label><input class="ag-inp" type="text" name="name_am" id="ci-name_am"></div>
+      <div class="fg"><label for="ci-sku"><?= e(t('vendor.pf.sku_label')) ?></label><input class="ag-inp" type="text" name="sku" id="ci-sku"></div>
     </div>
     <div class="fg-row">
       <div class="fg">
-        <label for="ci-supplier_id">Supplier *</label>
+        <label for="ci-supplier_id"><?= e(t('vendor.pf.supplier_label')) ?> *</label>
         <select class="ag-sel" name="supplier_id" id="ci-supplier_id" required>
-          <option value="">-- Select supplier --</option>
+          <option value=""><?= e(t('admin.catalog.select_supplier')) ?></option>
           <?php foreach ($suppliers as $s): ?>
             <option value="<?= (int)$s['id'] ?>"><?= e($s['name']) ?></option>
           <?php endforeach; ?>
         </select>
       </div>
       <div class="fg">
-        <label for="ci-category_id">Category</label>
+        <label for="ci-category_id"><?= e(t('vendor.pf.category_label')) ?></label>
         <select class="ag-sel" name="category_id" id="ci-category_id">
-          <option value="">-- None --</option>
+          <option value=""><?= e(t('admin.catalog.select_none')) ?></option>
           <?php foreach ($categories as $c): ?>
             <option value="<?= (int)$c['id'] ?>"><?= e($c['name_en']) ?></option>
           <?php endforeach; ?>
         </select>
       </div>
       <div class="fg">
-        <label for="ci-status">Status</label>
+        <label for="ci-status"><?= e(t('common.status')) ?></label>
         <select class="ag-sel" name="status" id="ci-status">
-          <option value="active">Active</option>
-          <option value="archived">Archived</option>
+          <option value="active"><?= e(t('status.active')) ?></option>
+          <option value="archived"><?= e(t('admin.catalog.status_archived')) ?></option>
         </select>
       </div>
     </div>
     <div class="fg-row">
-      <div class="fg"><label for="ci-cost_price">Cost Price (ETB) *</label><input class="ag-inp" type="number" step="0.01" min="0.01" name="cost_price" id="ci-cost_price" required></div>
-      <div class="fg"><label for="ci-suggested_markup_pct">Suggested Markup %</label><input class="ag-inp" type="number" step="0.01" min="0" name="suggested_markup_pct" id="ci-suggested_markup_pct" value="30"></div>
-      <div class="fg"><label for="ci-lead_min">Ships in (days min-max)</label>
+      <div class="fg"><label for="ci-cost_price"><?= e(t('admin.catalog.cost_price_label')) ?> *</label><input class="ag-inp" type="number" step="0.01" min="0.01" name="cost_price" id="ci-cost_price" required></div>
+      <div class="fg"><label for="ci-suggested_markup_pct"><?= e(t('admin.catalog.suggested_markup_label')) ?></label><input class="ag-inp" type="number" step="0.01" min="0" name="suggested_markup_pct" id="ci-suggested_markup_pct" value="30"></div>
+      <div class="fg"><label for="ci-lead_min"><?= e(t('admin.catalog.ships_in_label')) ?></label>
         <div style="display:flex;gap:6px">
           <input class="ag-inp" type="number" min="1" name="dropship_lead_days_min" id="ci-lead_min" placeholder="7">
           <input class="ag-inp" type="number" min="1" name="dropship_lead_days_max" id="ci-lead_max" placeholder="14">
@@ -145,32 +145,32 @@ ob_start();
       </div>
     </div>
     <div class="fg-row col2">
-      <div class="fg"><label for="ci-image_url">Primary Image URL</label><input class="ag-inp" type="text" name="image_url" id="ci-image_url" placeholder="https://..."></div>
-      <div class="fg"><label for="ci-gallery_urls">Gallery Image URLs (comma-separated)</label><input class="ag-inp" type="text" name="gallery_urls" id="ci-gallery_urls"></div>
+      <div class="fg"><label for="ci-image_url"><?= e(t('admin.catalog.primary_image_url_label')) ?></label><input class="ag-inp" type="text" name="image_url" id="ci-image_url" placeholder="https://..."></div>
+      <div class="fg"><label for="ci-gallery_urls"><?= e(t('admin.catalog.gallery_urls_label')) ?></label><input class="ag-inp" type="text" name="gallery_urls" id="ci-gallery_urls"></div>
     </div>
     <div class="fg" style="margin-bottom:10px">
-      <label for="ci-description_en">Description (EN)</label>
+      <label for="ci-description_en"><?= e(t('vendor.pf.desc_en_label')) ?></label>
       <textarea class="ag-txt" name="description_en" id="ci-description_en"></textarea>
     </div>
-    <button type="submit" class="btn-xs btn-gold-xs">Save Catalog Item</button>
-    <button type="button" class="btn-xs btn-ghost-xs" onclick="resetItemForm()">Clear</button>
+    <button type="submit" class="btn-xs btn-gold-xs"><?= e(t('admin.catalog.save_catalog_item')) ?></button>
+    <button type="button" class="btn-xs btn-ghost-xs" onclick="resetItemForm()"><?= e(t('admin.catalog.clear')) ?></button>
   </form>
 </div>
 
 <div class="ag-card">
   <?php if (empty($items)): ?>
-    <div class="empty-s">No catalog items yet. Add one above, or import a CSV for a supplier.</div>
+    <div class="empty-s"><?= e(t('admin.catalog.empty')) ?></div>
   <?php else: ?>
   <table class="ag-tbl">
     <thead>
       <tr>
         <th style="width:46px"></th>
-        <th>Item</th>
-        <th>Supplier</th>
-        <th>Cost</th>
-        <th>Suggested Sale</th>
-        <th>Status</th>
-        <th>Actions</th>
+        <th><?= e(t('admin.catalog.col_item')) ?></th>
+        <th><?= e(t('vendor.pf.supplier_label')) ?></th>
+        <th><?= e(t('admin.catalog.col_cost')) ?></th>
+        <th><?= e(t('admin.catalog.col_suggested_sale')) ?></th>
+        <th><?= e(t('common.status')) ?></th>
+        <th><?= e(t('common.actions')) ?></th>
       </tr>
     </thead>
     <tbody>
@@ -194,10 +194,10 @@ ob_start();
           <td style="white-space:nowrap;color:var(--gold-lt);font-weight:700">ETB <?= number_format($suggested, 2) ?></td>
           <td><span class="badge badge-<?= e($it['status']) ?>"><?= ucfirst($it['status']) ?></span></td>
           <td style="white-space:nowrap">
-            <button type="button" class="btn-xs btn-ghost-xs" onclick='editItem(<?= json_encode($it, JSON_HEX_TAG|JSON_HEX_APOS|JSON_HEX_QUOT|JSON_HEX_AMP) ?>)'>Edit</button>
-            <form method="POST" action="<?= View::url('/admin/catalog/'.(int)$it['id'].'/delete') ?>" style="display:inline" onsubmit="return confirm('Remove this catalog item? Products vendors already imported from it are not affected.')">
+            <button type="button" class="btn-xs btn-ghost-xs" onclick='editItem(<?= json_encode($it, JSON_HEX_TAG|JSON_HEX_APOS|JSON_HEX_QUOT|JSON_HEX_AMP) ?>)'><?= e(t('common.edit')) ?></button>
+            <form method="POST" action="<?= View::url('/admin/catalog/'.(int)$it['id'].'/delete') ?>" style="display:inline" onsubmit="return confirm('<?= e(addslashes(t('admin.catalog.remove_item_confirm'))) ?>')">
               <?= csrf() ?>
-              <button type="submit" class="btn-xs btn-danger-xs">Delete</button>
+              <button type="submit" class="btn-xs btn-danger-xs"><?= e(t('admin.catalog.delete')) ?></button>
             </form>
           </td>
         </tr>
@@ -221,10 +221,12 @@ function togglePanel(id) {
   document.querySelectorAll('.form-panel').forEach(p => { if (p.id !== id) p.classList.remove('open'); });
   document.getElementById(id).classList.toggle('open');
 }
+const i18nNewCatalogItem = <?= json_encode(t('admin.catalog.new_catalog_item')) ?>;
+const i18nEditCatalogItem = <?= json_encode(t('admin.catalog.edit_catalog_item')) ?>;
 function resetItemForm() {
   document.getElementById('item-form').reset();
   document.getElementById('ci-id').value = '0';
-  document.getElementById('item-panel-title').textContent = 'New Catalog Item';
+  document.getElementById('item-panel-title').textContent = i18nNewCatalogItem;
 }
 function editItem(it) {
   document.getElementById('ci-id').value = it.id;
@@ -241,7 +243,7 @@ function editItem(it) {
   document.getElementById('ci-image_url').value = it.image_url || '';
   document.getElementById('ci-gallery_urls').value = it.gallery_urls || '';
   document.getElementById('ci-description_en').value = it.description_en || '';
-  document.getElementById('item-panel-title').textContent = 'Edit Catalog Item';
+  document.getElementById('item-panel-title').textContent = i18nEditCatalogItem;
   document.getElementById('item-panel').classList.add('open');
   document.getElementById('item-panel').scrollIntoView({behavior:'smooth', block:'start'});
 }

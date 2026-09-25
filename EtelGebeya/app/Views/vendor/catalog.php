@@ -42,12 +42,12 @@ ob_start();
 
 <div class="cg-toolbar">
   <div>
-    <h1>Supplier Catalog</h1>
-    <p>Import a product from Etel Gebeya's platform suppliers straight into your store -- set your own price, we handle the rest of the dropship setup.</p>
+    <h1><?= e(t('vendor.catalog.title')) ?></h1>
+    <p><?= e(t('vendor.catalog.subtitle')) ?></p>
   </div>
   <form method="GET" action="<?= View::url('/vendor-panel/catalog') ?>" class="cg-search">
     <i class="bi bi-search"></i>
-    <input type="text" name="q" value="<?= e($q) ?>" placeholder="Search catalog...">
+    <input type="text" name="q" value="<?= e($q) ?>" placeholder="<?= e(t('vendor.catalog.search_placeholder')) ?>">
   </form>
 </div>
 
@@ -61,13 +61,13 @@ ob_start();
   <?php if (empty($items)): ?>
     <div class="empty-zone">
       <i class="bi bi-shop-window"></i>
-      <p><?= $q ? 'No catalog items match your search.' : 'No platform catalog items available yet -- check back soon.' ?></p>
+      <p><?= $q ? e(t('vendor.catalog.empty_no_match')) : e(t('vendor.catalog.empty_none')) ?></p>
     </div>
   <?php else: foreach ($items as $it):
     $suggested   = (float)$it['cost_price'] * (1 + (float)$it['suggested_markup_pct'] / 100);
     $productId   = $imported[(int)$it['id']] ?? null;
     $shipRange   = $it['dropship_lead_days_min']
-      ? ((int)$it['dropship_lead_days_min'] . ($it['dropship_lead_days_max'] && $it['dropship_lead_days_max'] > $it['dropship_lead_days_min'] ? '-'.(int)$it['dropship_lead_days_max'] : '+') . ' days')
+      ? ((int)$it['dropship_lead_days_min'] . ($it['dropship_lead_days_max'] && $it['dropship_lead_days_max'] > $it['dropship_lead_days_min'] ? '-'.(int)$it['dropship_lead_days_max'] : '+'))
       : null;
   ?>
     <div class="cg-card">
@@ -81,23 +81,23 @@ ob_start();
       <div class="cg-body">
         <div class="cg-name"><?= e($it['name_en']) ?></div>
         <div class="cg-supplier"><i class="bi bi-truck"></i> <?= e($it['supplier_name']) ?></div>
-        <?php if ($shipRange): ?><div class="cg-ship"><i class="bi bi-clock-history"></i> Ships in <?= e($shipRange) ?></div><?php endif; ?>
+        <?php if ($shipRange): ?><div class="cg-ship"><i class="bi bi-clock-history"></i> <?= e(t('vendor.catalog.ships_in', ['range' => $shipRange])) ?></div><?php endif; ?>
         <div class="cg-price-row">
-          <span class="cg-cost">Cost: Br <?= number_format((float)$it['cost_price'], 2) ?></span>
+          <span class="cg-cost"><?= e(t('vendor.catalog.cost', ['amount' => number_format((float)$it['cost_price'], 2)])) ?></span>
           <span class="cg-suggested">Br <?= number_format($suggested, 2) ?></span>
         </div>
 
         <?php if ($productId): ?>
-          <a href="<?= View::url('/vendor-panel/products/'.$productId.'/edit') ?>" class="cg-imported"><i class="bi bi-check-circle"></i> Imported -- Edit Product</a>
+          <a href="<?= View::url('/vendor-panel/products/'.$productId.'/edit') ?>" class="cg-imported"><i class="bi bi-check-circle"></i> <?= e(t('vendor.catalog.imported')) ?></a>
         <?php else: ?>
           <form method="POST" action="<?= View::url('/vendor-panel/catalog/import') ?>" class="cg-import-form">
             <?= csrf() ?>
             <input type="hidden" name="catalog_item_id" value="<?= (int)$it['id'] ?>">
             <div>
-              <label>Your Sale Price (ETB)</label>
+              <label><?= e(t('vendor.catalog.sale_price_label')) ?></label>
               <input type="number" step="0.01" min="0.01" name="sale_price" value="<?= number_format($suggested, 2, '.', '') ?>" required>
             </div>
-            <button type="submit" class="btn-import"><i class="bi bi-plus-circle"></i> Import to My Store</button>
+            <button type="submit" class="btn-import"><i class="bi bi-plus-circle"></i> <?= e(t('vendor.catalog.import_button')) ?></button>
           </form>
         <?php endif; ?>
       </div>

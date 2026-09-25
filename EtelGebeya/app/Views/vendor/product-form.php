@@ -107,10 +107,10 @@ ob_start();
 <!-- Page header -->
 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem">
   <div>
-    <h1 style="font-size:1.5rem;font-weight:900;color:#fff;margin:0"><?= $isEdit ? 'Edit Product' : 'Add New Product' ?></h1>
-    <p style="color:var(--dark-muted);font-size:.85rem;margin:.25rem 0 0"><?= $isEdit ? e(html_entity_decode($p['name_en']??'',ENT_QUOTES,'UTF-8')) : 'Fill in the details to list your product' ?></p>
+    <h1 style="font-size:1.5rem;font-weight:900;color:#fff;margin:0"><?= $isEdit ? e(t('vendor.pf.edit_title')) : e(t('vendor.pf.add_title')) ?></h1>
+    <p style="color:var(--dark-muted);font-size:.85rem;margin:.25rem 0 0"><?= $isEdit ? e(html_entity_decode($p['name_en']??'',ENT_QUOTES,'UTF-8')) : e(t('vendor.pf.add_subtitle')) ?></p>
   </div>
-  <a href="<?= View::url('/vendor-panel/products') ?>" class="btn btn-dark btn-sm"><i class="bi bi-arrow-left"></i> Back</a>
+  <a href="<?= View::url('/vendor-panel/products') ?>" class="btn btn-dark btn-sm"><i class="bi bi-arrow-left"></i> <?= e(t('vendor.pf.back')) ?></a>
 </div>
 
 <?php if (!empty($flash)): ?>
@@ -134,8 +134,8 @@ ob_start();
       <div class="pf-section-head">
         <div class="pf-section-icon icon-gold"><i class="bi bi-images"></i></div>
         <div>
-          <div class="pf-section-title">Product Media</div>
-          <div class="pf-section-sub">Add up to 6 photos * Max 5 MB each * JPG/PNG/WEBP</div>
+          <div class="pf-section-title"><?= e(t('vendor.pf.media_title')) ?></div>
+          <div class="pf-section-sub"><?= e(t('vendor.pf.media_sub')) ?></div>
         </div>
       </div>
       <div class="pf-body">
@@ -143,22 +143,22 @@ ob_start();
           <?php for ($slot = 0; $slot < 6; $slot++): ?>
             <?php $existing = $imgUrls[$slot] ?? ''; ?>
             <div class="img-slot<?= $slot===0?' primary':'' ?><?= $existing?' has-image':'' ?>" id="slot<?= $slot ?>" onclick="document.getElementById('urlInput<?= $slot ?>').focus()">
-              <?php if ($slot===0): ?><div class="primary-badge"><i class="bi bi-star-fill"></i> Primary</div><?php endif; ?>
+              <?php if ($slot===0): ?><div class="primary-badge"><i class="bi bi-star-fill"></i> <?= e(t('vendor.pf.primary_badge')) ?></div><?php endif; ?>
               <?php if ($existing): ?>
                 <img src="<?= e($existing) ?>" id="preview<?= $slot ?>" alt="">
               <?php else: ?>
                 <div class="img-slot-add" id="slotAdd<?= $slot ?>">
                   <i class="bi bi-<?= $slot===0?'cloud-upload':'plus-lg' ?>"></i>
-                  <span><?= $slot===0?'Main Photo':'Add photo' ?></span>
+                  <span><?= $slot===0 ? e(t('vendor.pf.main_photo')) : e(t('vendor.pf.add_photo')) ?></span>
                 </div>
                 <img src="" id="preview<?= $slot ?>" alt="" style="display:none;width:100%;height:100%;object-fit:cover">
               <?php endif; ?>
               <div class="img-slot-overlay">
                 <?php if ($existing): ?>
                   <i class="bi bi-pencil" style="font-size:1.2rem"></i>
-                  <span>Change</span>
+                  <span><?= e(t('vendor.pf.change')) ?></span>
                 <?php else: ?>
-                  <span>Enter URL below</span>
+                  <span><?= e(t('vendor.pf.enter_url_below')) ?></span>
                 <?php endif; ?>
               </div>
             </div>
@@ -169,26 +169,26 @@ ob_start();
           <div style="margin-bottom:.6rem;background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:.55rem .75rem">
             <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.4rem">
               <span style="font-size:.7rem;color:var(--gold);font-weight:800;min-width:18px"><?= $slot===0?'<i class="bi bi-star-fill"></i>':$slot+1 ?></span>
-              <span style="font-size:.72rem;color:var(--dark-muted);font-weight:600"><?= $slot===0?'Primary Image':'Gallery '.($slot+1) ?></span>
+              <span style="font-size:.72rem;color:var(--dark-muted);font-weight:600"><?= $slot===0 ? e(t('vendor.pf.primary_image')) : e(t('vendor.pf.gallery_n', ['n' => $slot+1])) ?></span>
             </div>
             <div style="display:flex;gap:.5rem;align-items:center">
               <!-- File browse -->
               <label style="flex-shrink:0;display:inline-flex;align-items:center;gap:.35rem;padding:.42rem .75rem;background:rgba(212,175,55,.1);border:1.5px solid rgba(212,175,55,.25);border-radius:8px;color:var(--gold);font-size:.75rem;font-weight:700;cursor:pointer;white-space:nowrap">
-                <i class="bi bi-folder2-open"></i> Browse
+                <i class="bi bi-folder2-open"></i> <?= e(t('vendor.pf.browse')) ?>
                 <input type="file" name="file_<?= $slot ?>" accept="image/jpeg,image/png,image/webp,image/gif"
                        style="display:none" onchange="previewFromFile(<?= $slot ?>, this)">
               </label>
-              <span style="font-size:.7rem;color:var(--dark-muted)">or</span>
+              <span style="font-size:.7rem;color:var(--dark-muted)"><?= e(t('vendor.pf.or')) ?></span>
               <!-- URL paste -->
               <input type="url" name="path_<?= $slot ?>" id="urlInput<?= $slot ?>"
-                     placeholder="Paste image URL..."
+                     placeholder="<?= e(t('vendor.pf.paste_image_url')) ?>"
                      value="<?= e($imgUrls[$slot] ?? '') ?>"
                      style="flex:1;padding:.42rem .75rem;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:8px;color:#f0f0f0;font-size:.8rem;font-family:'Outfit',sans-serif;outline:none;min-width:0"
                      oninput="previewFromUrl(<?= $slot ?>, this.value)">
             </div>
           </div>
         <?php endfor; ?>
-        <p style="font-size:.73rem;color:var(--dark-muted);margin-top:.25rem"><i class="bi bi-info-circle"></i> File uploads are saved to the server. Max 5 MB each. URL paste also works.</p>
+        <p style="font-size:.73rem;color:var(--dark-muted);margin-top:.25rem"><i class="bi bi-info-circle"></i> <?= e(t('vendor.pf.upload_help')) ?></p>
       </div>
     </div>
 
@@ -197,47 +197,47 @@ ob_start();
       <div class="pf-section-head">
         <div class="pf-section-icon icon-blue"><i class="bi bi-card-text"></i></div>
         <div>
-          <div class="pf-section-title">Product Information</div>
-          <div class="pf-section-sub">Name, SKU, and description</div>
+          <div class="pf-section-title"><?= e(t('vendor.pf.info_title')) ?></div>
+          <div class="pf-section-sub"><?= e(t('vendor.pf.info_sub')) ?></div>
         </div>
       </div>
       <div class="pf-body">
         <div class="fg-row col2">
           <div class="fg">
-            <label>Product Name (English)<span>*</span></label>
+            <label><?= e(t('vendor.pf.name_en_label')) ?><span>*</span></label>
             <input type="text" name="name_en" required
                    value="<?= e(html_entity_decode($p['name_en']??'',ENT_QUOTES,'UTF-8')) ?>"
-                   placeholder="e.g. Premium Ethiopian Coffee Beans"
+                   placeholder="<?= e(t('vendor.pf.name_en_placeholder')) ?>"
                    id="nameEnInput" oninput="updateSlugPreview(this.value)">
           </div>
           <div class="fg">
-            <label>Product Name (Amharic) <span style="text-transform:none;letter-spacing:0;font-weight:500">optional</span></label>
+            <label><?= e(t('vendor.pf.name_am_label')) ?> <span style="text-transform:none;letter-spacing:0;font-weight:500"><?= e(t('vendor.pf.optional')) ?></span></label>
             <input type="text" name="name_am"
                    value="<?= e(html_entity_decode($p['name_am']??'',ENT_QUOTES,'UTF-8')) ?>"
-                   placeholder="Amharic name (optional)">
+                   placeholder="<?= e(t('vendor.pf.name_am_placeholder')) ?>">
           </div>
         </div>
         <div class="fg-row col2">
           <div class="fg">
-            <label>SKU / Product Code</label>
+            <label><?= e(t('vendor.pf.sku_label')) ?></label>
             <input type="text" name="sku" value="<?= e($p['sku']??'') ?>" placeholder="EG-001">
-            <div class="hint">Unique identifier for your product</div>
+            <div class="hint"><?= e(t('vendor.pf.sku_hint')) ?></div>
           </div>
           <div class="fg">
-            <label>URL Slug</label>
+            <label><?= e(t('vendor.pf.slug_label')) ?></label>
             <input type="text" id="slugPreview" readonly
                    value="<?= e($p['slug']??'') ?>"
                    style="opacity:.55;cursor:default">
-            <div class="hint">Auto-generated from product name</div>
+            <div class="hint"><?= e(t('vendor.pf.slug_hint')) ?></div>
           </div>
         </div>
         <div class="fg">
-          <label>Description (English)</label>
-          <textarea name="description_en" rows="5" placeholder="Describe your product in detail -- quality, origin, usage, dimensions..."><?= e(html_entity_decode($p['description_en']??'',ENT_QUOTES,'UTF-8')) ?></textarea>
+          <label><?= e(t('vendor.pf.desc_en_label')) ?></label>
+          <textarea name="description_en" rows="5" placeholder="<?= e(t('vendor.pf.desc_en_placeholder')) ?>"><?= e(html_entity_decode($p['description_en']??'',ENT_QUOTES,'UTF-8')) ?></textarea>
         </div>
         <div class="fg">
-          <label>Description (Amharic) <span style="text-transform:none;letter-spacing:0;font-weight:500">optional</span></label>
-          <textarea name="description_am" rows="4" placeholder="Amharic description (optional)"><?= e(html_entity_decode($p['description_am']??'',ENT_QUOTES,'UTF-8')) ?></textarea>
+          <label><?= e(t('vendor.pf.desc_am_label')) ?> <span style="text-transform:none;letter-spacing:0;font-weight:500"><?= e(t('vendor.pf.optional')) ?></span></label>
+          <textarea name="description_am" rows="4" placeholder="<?= e(t('vendor.pf.desc_am_placeholder')) ?>"><?= e(html_entity_decode($p['description_am']??'',ENT_QUOTES,'UTF-8')) ?></textarea>
         </div>
       </div>
     </div>
@@ -247,26 +247,26 @@ ob_start();
       <div class="pf-section-head">
         <div class="pf-section-icon icon-green"><i class="bi bi-currency-exchange"></i></div>
         <div>
-          <div class="pf-section-title">Pricing</div>
-          <div class="pf-section-sub">Set sale and compare prices in Ethiopian Birr</div>
+          <div class="pf-section-title"><?= e(t('vendor.pf.pricing_title')) ?></div>
+          <div class="pf-section-sub"><?= e(t('vendor.pf.pricing_sub')) ?></div>
         </div>
       </div>
       <div class="pf-body">
         <div class="fg-row col2">
           <div class="fg">
-            <label>Sale Price (ETB)<span>*</span></label>
+            <label><?= e(t('vendor.pf.sale_price_label')) ?><span>*</span></label>
             <input type="number" name="price" required min="0" step="0.01"
                    id="priceInput"
                    value="<?= (float)($p['price']??0) ?>" placeholder="0.00"
                    oninput="updatePricePreview()">
           </div>
           <div class="fg">
-            <label>Compare-at Price (ETB)</label>
+            <label><?= e(t('vendor.pf.compare_price_label')) ?></label>
             <input type="number" name="compare_price" min="0" step="0.01"
                    id="compareInput"
-                   value="<?= (float)($p['compare_price']??0) ?: '' ?>" placeholder="Original price"
+                   value="<?= (float)($p['compare_price']??0) ?: '' ?>" placeholder="<?= e(t('vendor.pf.compare_price_placeholder')) ?>"
                    oninput="updatePricePreview()">
-            <div class="hint">Shows crossed-out on storefront = "was Br X"</div>
+            <div class="hint"><?= e(t('vendor.pf.compare_price_hint')) ?></div>
           </div>
         </div>
         <div id="pricePreview" style="display:none" class="price-preview">
@@ -282,33 +282,33 @@ ob_start();
       <div class="pf-section-head">
         <div class="pf-section-icon icon-teal"><i class="bi bi-box-seam"></i></div>
         <div>
-          <div class="pf-section-title">Inventory & Stock</div>
-          <div class="pf-section-sub">Track quantities and set low-stock alerts</div>
+          <div class="pf-section-title"><?= e(t('vendor.pf.inventory_title')) ?></div>
+          <div class="pf-section-sub"><?= e(t('vendor.pf.inventory_sub')) ?></div>
         </div>
       </div>
       <div class="pf-body">
         <div class="fg-row col3">
           <div class="fg">
-            <label>Stock Quantity<span>*</span></label>
+            <label><?= e(t('vendor.pf.stock_qty_label')) ?><span>*</span></label>
             <input type="number" name="stock_qty" min="0" id="stockInput"
                    value="<?= (int)($p['stock_qty']??0) ?>" placeholder="0"
                    oninput="updateStockBar()">
           </div>
           <div class="fg">
-            <label>Low Stock Alert At</label>
+            <label><?= e(t('vendor.pf.low_stock_label')) ?></label>
             <input type="number" name="low_stock_alert" min="0"
                    value="<?= (int)($p['low_stock_alert']??5) ?>" placeholder="5">
-            <div class="hint">Alert when stock <= this</div>
+            <div class="hint"><?= e(t('vendor.pf.low_stock_hint')) ?></div>
           </div>
           <div class="fg">
-            <label>Weight (grams)</label>
+            <label><?= e(t('vendor.pf.weight_label')) ?></label>
             <input type="number" name="weight_grams" min="0"
                    value="<?= (int)($p['weight_grams']??0) ?: '' ?>" placeholder="e.g. 500">
-            <div class="hint">Used for shipping calculations</div>
+            <div class="hint"><?= e(t('vendor.pf.weight_hint')) ?></div>
           </div>
         </div>
         <div class="stock-bar"><div class="stock-fill" id="stockFill" style="width:0%"></div></div>
-        <div id="stockLabel" style="font-size:.75rem;color:var(--dark-muted);margin-top:.35rem">Enter quantity above</div>
+        <div id="stockLabel" style="font-size:.75rem;color:var(--dark-muted);margin-top:.35rem"><?= e(t('vendor.pf.stock_enter_qty')) ?></div>
       </div>
     </div>
 
@@ -318,8 +318,8 @@ ob_start();
       <div class="pf-section-head">
         <div class="pf-section-icon icon-purple"><i class="bi bi-truck"></i></div>
         <div>
-          <div class="pf-section-title">Dropshipping</div>
-          <div class="pf-section-sub">List this without holding stock -- your supplier ships it directly</div>
+          <div class="pf-section-title"><?= e(t('vendor.pf.dropship_title')) ?></div>
+          <div class="pf-section-sub"><?= e(t('vendor.pf.dropship_sub')) ?></div>
         </div>
       </div>
       <div class="pf-body">
@@ -328,38 +328,38 @@ ob_start();
             <input type="checkbox" name="is_dropship" id="dsToggle" value="1" <?= $isDropship?'checked':'' ?> onchange="document.getElementById('dsFields').style.display=this.checked?'block':'none'">
             <span class="toggle-slider"></span>
           </label>
-          <span class="toggle-label">This is a dropshipped product</span>
+          <span class="toggle-label"><?= e(t('vendor.pf.dropship_toggle')) ?></span>
         </div>
         <div id="dsFields" style="display:<?= $isDropship?'block':'none' ?>">
           <div class="fg">
-            <label>Supplier</label>
+            <label><?= e(t('vendor.pf.supplier_label')) ?></label>
             <select name="supplier_id">
-              <option value="">-- No supplier --</option>
+              <option value=""><?= e(t('vendor.pf.no_supplier')) ?></option>
               <?php foreach (($suppliers ?? []) as $sup): ?>
                 <option value="<?= (int)$sup['id'] ?>" <?= ((int)($p['supplier_id']??0)===(int)$sup['id'])?'selected':'' ?>><?= e($sup['name']) ?></option>
               <?php endforeach; ?>
             </select>
-            <div class="hint"><a href="<?= View::url('/vendor-panel/suppliers') ?>" target="_blank" style="color:var(--gold)">+ Add a new supplier</a> (opens in a new tab)</div>
+            <div class="hint"><a href="<?= View::url('/vendor-panel/suppliers') ?>" target="_blank" style="color:var(--gold)"><?= e(t('vendor.pf.add_supplier_hint')) ?></a></div>
           </div>
           <div class="fg-row col2">
             <div class="fg">
-              <label>Supplier SKU / Reference</label>
+              <label><?= e(t('vendor.pf.supplier_sku_label')) ?></label>
               <input type="text" name="supplier_sku" value="<?= e($p['supplier_sku']??'') ?>" placeholder="e.g. SUP-4521">
             </div>
             <div class="fg">
-              <label>Supplier Product Link</label>
+              <label><?= e(t('vendor.pf.supplier_link_label')) ?></label>
               <input type="url" name="supplier_product_url" value="<?= e($p['supplier_product_url']??'') ?>" placeholder="https://...">
             </div>
           </div>
           <div class="fg-row col2">
             <div class="fg">
-              <label>Ships In -- Min Days</label>
+              <label><?= e(t('vendor.pf.ship_min_label')) ?></label>
               <input type="number" name="dropship_lead_days_min" min="1" value="<?= (int)($p['dropship_lead_days_min']??0) ?: '' ?>" placeholder="e.g. 7">
             </div>
             <div class="fg">
-              <label>Ships In -- Max Days</label>
+              <label><?= e(t('vendor.pf.ship_max_label')) ?></label>
               <input type="number" name="dropship_lead_days_max" min="1" value="<?= (int)($p['dropship_lead_days_max']??0) ?: '' ?>" placeholder="e.g. 14">
-              <div class="hint">Shown to customers as an honest delivery estimate</div>
+              <div class="hint"><?= e(t('vendor.pf.ship_max_hint')) ?></div>
             </div>
           </div>
         </div>
@@ -373,13 +373,13 @@ ob_start();
 
     <!-- PUBLISH -->
     <div class="pub-card">
-      <div class="pub-head"><i class="bi bi-rocket-takeoff" style="color:var(--gold)"></i> Publish</div>
+      <div class="pub-head"><i class="bi bi-rocket-takeoff" style="color:var(--gold)"></i> <?= e(t('vendor.pf.publish_head')) ?></div>
       <div class="pub-body">
         <div class="fg" style="margin-bottom:.9rem">
-          <label>Visibility Status</label>
+          <label><?= e(t('vendor.pf.visibility_label')) ?></label>
           <select name="status" id="statusSelect" onchange="updateStatusBadge()">
-            <option value="active" <?= ($p['status']??'draft')==='active'?'selected':'' ?>>🟢 Active -- visible to buyers</option>
-            <option value="draft"  <?= ($p['status']??'draft')==='draft' ?'selected':'' ?>>🔴 Draft -- hidden from store</option>
+            <option value="active" <?= ($p['status']??'draft')==='active'?'selected':'' ?>><?= e(t('vendor.pf.status_active_option')) ?></option>
+            <option value="draft"  <?= ($p['status']??'draft')==='draft' ?'selected':'' ?>><?= e(t('vendor.pf.status_draft_option')) ?></option>
           </select>
         </div>
         <div class="toggle-wrap">
@@ -387,17 +387,17 @@ ob_start();
             <input type="checkbox" name="is_featured" value="1" <?= !empty($p['is_featured'])?'checked':'' ?>>
             <span class="toggle-slider"></span>
           </label>
-          <span class="toggle-label">⭐ Featured Product</span>
+          <span class="toggle-label"><?= e(t('vendor.pf.featured_toggle')) ?></span>
         </div>
-        <div style="font-size:.75rem;color:var(--dark-muted);margin-top:.4rem;margin-left:54px">Appears in homepage featured section</div>
+        <div style="font-size:.75rem;color:var(--dark-muted);margin-top:.4rem;margin-left:54px"><?= e(t('vendor.pf.featured_hint')) ?></div>
         <div class="submit-zone" style="margin-top:1.2rem">
           <button type="submit" class="btn-publish" name="_action" value="publish">
             <i class="bi bi-rocket-takeoff"></i>
-            <?= $isEdit ? 'Save Changes' : 'Publish Product' ?>
+            <?= $isEdit ? e(t('vendor.pf.save_changes')) : e(t('vendor.pf.publish_product')) ?>
           </button>
           <?php if (!$isEdit): ?>
           <button type="submit" class="btn-draft" name="_action" value="draft" onclick="document.getElementById('statusSelect').value='draft'">
-            <i class="bi bi-file-earmark"></i> Save as Draft
+            <i class="bi bi-file-earmark"></i> <?= e(t('vendor.pf.save_draft')) ?>
           </button>
           <?php endif; ?>
         </div>
@@ -406,12 +406,12 @@ ob_start();
 
     <!-- ORGANIZATION -->
     <div class="pub-card">
-      <div class="pub-head"><i class="bi bi-folder2-open" style="color:var(--blue)"></i> Organization</div>
+      <div class="pub-head"><i class="bi bi-folder2-open" style="color:var(--blue)"></i> <?= e(t('vendor.pf.org_head')) ?></div>
       <div class="pub-body">
         <div class="fg">
-          <label>Category</label>
+          <label><?= e(t('vendor.pf.category_label')) ?></label>
           <select name="category_id">
-            <option value="">-- No category --</option>
+            <option value=""><?= e(t('vendor.pf.no_category')) ?></option>
             <?php foreach ($categories as $cat): ?>
               <option value="<?= $cat['id'] ?>" <?= ($p['category_id']??null)==$cat['id']?'selected':'' ?>>
                 <?= e(html_entity_decode($cat['name_en'],ENT_QUOTES,'UTF-8')) ?>
@@ -420,31 +420,31 @@ ob_start();
           </select>
         </div>
         <div class="fg" style="margin-bottom:0">
-          <label>Tags <span style="text-transform:none;letter-spacing:0;font-weight:500">(press Enter or comma)</span></label>
+          <label><?= e(t('vendor.pf.tags_label')) ?> <span style="text-transform:none;letter-spacing:0;font-weight:500"><?= e(t('vendor.pf.tags_hint_key')) ?></span></label>
           <div class="tags-wrap" id="tagsWrap">
-            <input type="text" class="tag-input-inner" id="tagInput" placeholder="Add tag..." onkeydown="handleTagKey(event)">
+            <input type="text" class="tag-input-inner" id="tagInput" placeholder="<?= e(t('vendor.pf.tag_placeholder')) ?>" onkeydown="handleTagKey(event)">
           </div>
           <input type="hidden" name="tags" id="tagsHidden" value="">
-          <div class="hint">e.g. "handmade", "organic", "imported"</div>
+          <div class="hint"><?= e(t('vendor.pf.tags_example')) ?></div>
         </div>
       </div>
     </div>
 
     <!-- STORE INFO -->
     <div class="pub-card">
-      <div class="pub-head"><i class="bi bi-shop" style="color:var(--teal)"></i> Store</div>
+      <div class="pub-head"><i class="bi bi-shop" style="color:var(--teal)"></i> <?= e(t('vendor.pf.store_head')) ?></div>
       <div class="pub-body" style="padding:.75rem 1.2rem">
         <div class="pub-row">
-          <span class="pub-label">Store</span>
+          <span class="pub-label"><?= e(t('vendor.pf.store_label')) ?></span>
           <span class="pub-value"><?= e($seller['store_name']??'') ?></span>
         </div>
         <div class="pub-row">
-          <span class="pub-label">Status</span>
+          <span class="pub-label"><?= e(t('common.status')) ?></span>
           <span class="status-pill sp-green" style="font-size:.7rem"><?= e(ucfirst($seller['status']??'active')) ?></span>
         </div>
         <div class="pub-row">
-          <span class="pub-label">URL</span>
-          <a href="<?= View::url('/vendor/'.e($seller['store_slug']??'')) ?>" target="_blank" style="color:var(--gold);font-size:.8rem;text-decoration:none">View storefront <i class="bi bi-box-arrow-up-right"></i></a>
+          <span class="pub-label"><?= e(t('vendor.pf.url_label')) ?></span>
+          <a href="<?= View::url('/vendor/'.e($seller['store_slug']??'')) ?>" target="_blank" style="color:var(--gold);font-size:.8rem;text-decoration:none"><?= e(t('vendor.settings.view_storefront')) ?> <i class="bi bi-box-arrow-up-right"></i></a>
         </div>
       </div>
     </div>
@@ -452,13 +452,13 @@ ob_start();
     <?php if ($isEdit): ?>
     <!-- DANGER ZONE -->
     <div class="pub-card" style="border-color:rgba(231,76,60,.2)">
-      <div class="pub-head" style="color:#e74c3c"><i class="bi bi-exclamation-triangle"></i> Danger Zone</div>
+      <div class="pub-head" style="color:#e74c3c"><i class="bi bi-exclamation-triangle"></i> <?= e(t('vendor.pf.danger_head')) ?></div>
       <div class="pub-body">
         <form method="POST" action="<?= View::url('/vendor-panel/products/'.(int)($p['id'])  .'/delete') ?>"
-              onsubmit="return confirm('Permanently delete this product? This cannot be undone.')">
+              onsubmit="return confirm('<?= e(addslashes(t('vendor.pf.delete_confirm'))) ?>')">
           <?= csrf() ?>
           <button type="submit" class="btn btn-danger" style="width:100%;justify-content:center">
-            <i class="bi bi-trash3"></i> Delete Product
+            <i class="bi bi-trash3"></i> <?= e(t('vendor.pf.delete_product')) ?>
           </button>
         </form>
       </div>
@@ -470,6 +470,14 @@ ob_start();
 </form>
 
 <script>
+const offSuffix=<?= json_encode(t('vendor.pf.off_suffix')) ?>;
+const stockMsg={
+  out:<?= json_encode(t('vendor.pf.stock_out')) ?>,
+  veryLow:<?= json_encode(str_replace(':n', '%n', t('vendor.pf.stock_very_low'))) ?>,
+  low:<?= json_encode(str_replace(':n', '%n', t('vendor.pf.stock_low'))) ?>,
+  in:<?= json_encode(str_replace(':n', '%n', t('vendor.pf.stock_in'))) ?>
+};
+
 // Slug preview
 function slugify(s){return s.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')}
 function updateSlugPreview(v){document.getElementById('slugPreview').value=slugify(v).substring(0,80)}
@@ -486,7 +494,7 @@ function updatePricePreview(){
     document.getElementById('ppCompare').textContent='Br '+c.toLocaleString('en',{minimumFractionDigits:2,maximumFractionDigits:2});
     document.getElementById('ppCompare').style.display='';
     const disc=Math.round((1-p/c)*100);
-    document.getElementById('ppDiscount').textContent=disc+'% OFF';
+    document.getElementById('ppDiscount').textContent=disc+offSuffix;
     document.getElementById('ppDiscount').style.display='';
   } else {
     document.getElementById('ppCompare').style.display='none';
@@ -502,7 +510,7 @@ function updateStockBar(){
   const pct=Math.min(100,Math.round(v/100*100));
   fill.style.width=Math.max(2,pct)+'%';
   fill.className='stock-fill'+(v<=5?' low':v<=20?' medium':'');
-  label.textContent=v===0?'Out of stock':v<=5?`Very low stock (${v} left)`:v<=20?`Low stock (${v} units)`:`In stock -- ${v} units available`;
+  label.textContent=v===0?stockMsg.out:v<=5?stockMsg.veryLow.replace('%n',v):v<=20?stockMsg.low.replace('%n',v):stockMsg.in.replace('%n',v);
   label.style.color=v===0?'#e74c3c':v<=5?'#e67e22':v<=20?'#f39c12':'#2ecc71';
 }
 

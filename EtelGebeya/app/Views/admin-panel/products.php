@@ -1,7 +1,7 @@
 <?php
 use App\Core\View;
 require __DIR__.'/_layout.php';
-$pageTitle = 'Products';
+$pageTitle = t('admin.nav.products');
 $perPage   = 20;
 $pages     = $total > 0 ? (int)ceil($total / $perPage) : 1;
 ob_start();
@@ -48,22 +48,22 @@ ob_start();
 
 <div class="ag-bar">
   <div>
-    <div class="ag-bar-title">Products</div>
-    <div class="ag-bar-sub"><?= number_format($total) ?> found</div>
+    <div class="ag-bar-title"><?= e(t('admin.nav.products')) ?></div>
+    <div class="ag-bar-sub"><?= e(t('admin.orders.found_count', ['n' => number_format($total)])) ?></div>
   </div>
   <div class="ag-filter-row">
     <form method="GET" action="<?= View::url('/admin/products') ?>">
       <select name="filter" class="ag-sel" onchange="this.form.submit()">
-        <option value="all"       <?= $filter==='all'       ?'selected':'' ?>>All Statuses</option>
-        <option value="pending"   <?= $filter==='pending'   ?'selected':'' ?>>Pending Approval</option>
-        <option value="published" <?= $filter==='published' ?'selected':'' ?>>Published</option>
-        <option value="active"    <?= $filter==='active'    ?'selected':'' ?>>Active</option>
-        <option value="rejected"  <?= $filter==='rejected'  ?'selected':'' ?>>Rejected</option>
+        <option value="all"       <?= $filter==='all'       ?'selected':'' ?>><?= e(t('admin.orders.status_all')) ?></option>
+        <option value="pending"   <?= $filter==='pending'   ?'selected':'' ?>><?= e(t('admin.products.status_pending')) ?></option>
+        <option value="published" <?= $filter==='published' ?'selected':'' ?>><?= e(t('admin.products.status_published')) ?></option>
+        <option value="active"    <?= $filter==='active'    ?'selected':'' ?>><?= e(t('status.active')) ?></option>
+        <option value="rejected"  <?= $filter==='rejected'  ?'selected':'' ?>><?= e(t('admin.products.status_rejected')) ?></option>
       </select>
-      <input type="text" name="q" class="ag-inp" placeholder="Search name, seller..." value="<?= e($search) ?>">
-      <button type="submit" class="btn-xs btn-gold-xs">Search</button>
+      <input type="text" name="q" class="ag-inp" placeholder="<?= e(t('admin.products.search_placeholder')) ?>" value="<?= e($search) ?>">
+      <button type="submit" class="btn-xs btn-gold-xs"><?= e(t('admin.orders.search')) ?></button>
       <?php if ($search || $filter !== 'all'): ?>
-        <a href="<?= View::url('/admin/products') ?>" class="btn-xs btn-ghost-xs">Clear</a>
+        <a href="<?= View::url('/admin/products') ?>" class="btn-xs btn-ghost-xs"><?= e(t('admin.orders.clear')) ?></a>
       <?php endif; ?>
     </form>
   </div>
@@ -71,18 +71,18 @@ ob_start();
 
 <div class="ag-card">
   <?php if (empty($products)): ?>
-    <div class="empty-s"><i class="bi bi-box-seam" style="font-size:40px;display:block;margin-bottom:10px;opacity:.3"></i>No products found.</div>
+    <div class="empty-s"><i class="bi bi-box-seam" style="font-size:40px;display:block;margin-bottom:10px;opacity:.3"></i><?= e(t('admin.products.no_products_found')) ?></div>
   <?php else: ?>
   <table class="ag-tbl">
     <thead>
       <tr>
         <th style="width:46px">ID</th>
-        <th>Product</th>
-        <th>Seller</th>
-        <th>Price</th>
-        <th>Stock</th>
-        <th>Status</th>
-        <th>Actions</th>
+        <th><?= e(t('admin.dashboard.col_product')) ?></th>
+        <th><?= e(t('admin.dashboard.col_seller')) ?></th>
+        <th><?= e(t('admin.dashboard.col_price')) ?></th>
+        <th><?= e(t('admin.products.col_stock')) ?></th>
+        <th><?= e(t('common.status')) ?></th>
+        <th><?= e(t('common.actions')) ?></th>
       </tr>
     </thead>
     <tbody>
@@ -118,21 +118,21 @@ ob_start();
             <?php if ($p['status'] === 'pending'): ?>
               <form method="POST" action="<?= View::url('/admin/products/' . (int)$p['id'] . '/approve') ?>" style="display:inline">
                 <?= csrf() ?>
-                <button type="submit" class="btn-xs btn-gold-xs" onclick="return confirm('Approve: <?= e(addslashes($p['name_en'])) ?>?')">Approve</button>
+                <button type="submit" class="btn-xs btn-gold-xs" onclick="return confirm('<?= e(addslashes(t('admin.products.approve_confirm', ['name' => $p['name_en']]))) ?>')"><?= e(t('admin.dashboard.approve')) ?></button>
               </form>
               <form method="POST" action="<?= View::url('/admin/products/' . (int)$p['id'] . '/reject') ?>" style="display:inline;margin-left:4px">
                 <?= csrf() ?>
-                <button type="submit" class="btn-xs btn-danger-xs" onclick="return confirm('Reject this product?')">Reject</button>
+                <button type="submit" class="btn-xs btn-danger-xs" onclick="return confirm('<?= e(addslashes(t('admin.products.reject_confirm'))) ?>')"><?= e(t('admin.dashboard.reject')) ?></button>
               </form>
             <?php elseif ($p['status'] === 'published' || $p['status'] === 'active'): ?>
               <form method="POST" action="<?= View::url('/admin/products/' . (int)$p['id'] . '/reject') ?>" style="display:inline">
                 <?= csrf() ?>
-                <button type="submit" class="btn-xs btn-danger-xs" onclick="return confirm('Unpublish?')">Unpublish</button>
+                <button type="submit" class="btn-xs btn-danger-xs" onclick="return confirm('<?= e(addslashes(t('admin.products.unpublish_confirm'))) ?>')"><?= e(t('admin.products.unpublish')) ?></button>
               </form>
             <?php elseif ($p['status'] === 'rejected'): ?>
               <form method="POST" action="<?= View::url('/admin/products/' . (int)$p['id'] . '/approve') ?>" style="display:inline">
                 <?= csrf() ?>
-                <button type="submit" class="btn-xs btn-ghost-xs" onclick="return confirm('Re-approve?')">Re-approve</button>
+                <button type="submit" class="btn-xs btn-ghost-xs" onclick="return confirm('<?= e(addslashes(t('admin.products.reapprove_confirm'))) ?>')"><?= e(t('admin.products.reapprove')) ?></button>
               </form>
             <?php endif; ?>
           </td>
