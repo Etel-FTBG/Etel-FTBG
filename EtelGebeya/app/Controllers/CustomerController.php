@@ -195,6 +195,17 @@ final class CustomerController
                 [$order['id']]
             );
 
+            // Give back the stock CheckoutController::place() reserved at
+            // purchase time for every item on this order -- otherwise a
+            // cancelled order (allowed only pre-shipment, per the status
+            // check above) would permanently shrink stock_qty for a sale
+            // that never actually happened.
+            foreach ($this->db->fetchAll("SELECT product_id, quantity FROM order_items WHERE order_id = ?", [$order['id']]) as $it) {
+                if (!empty($it['product_id'])) {
+                    $this->db->query("UPDATE products SET stock_qty = stock_qty + ? WHERE id = ?", [(int)$it['quantity'], (int)$it['product_id']]);
+                }
+            }
+
             // If this was paid via the ኢE Pay wallet, the money is sitting
             // in escrow (the platform's own wallet) -- reverse it back to
             // the customer now. Cash/Telebirr/CBE orders never put money
