@@ -31,8 +31,8 @@ ob_start();
 </style>
 
 <div style="margin-bottom:1.25rem">
-  <h1 class="cp-page-title"><i class="bi bi-heart"></i> My Wishlist</h1>
-  <p style="font-size:.82rem;color:var(--text-muted,#7A6840);margin:-.5rem 0 0"><?= count($items) ?> saved item<?= count($items)!==1?'s':'' ?></p>
+  <h1 class="cp-page-title"><i class="bi bi-heart"></i> <?= e(t('customer.wishlist.my_wishlist')) ?></h1>
+  <p style="font-size:.82rem;color:var(--text-muted,#7A6840);margin:-.5rem 0 0"><?= e(t('customer.wishlist.n_saved', ['n' => count($items)])) ?></p>
 </div>
 
 <?php if (!empty($flash)): ?>
@@ -42,10 +42,10 @@ ob_start();
 <?php if (empty($items)): ?>
   <div class="empty-state">
     <i class="bi bi-heart" style="font-size:2.8rem;color:rgba(212,175,55,.12);display:block;margin-bottom:1rem"></i>
-    <h3 style="font-size:1.1rem;font-weight:800;color:var(--text,#F7EFD9);margin:0 0 .5rem">Your wishlist is empty</h3>
-    <p style="font-size:.85rem;color:var(--text-muted,#7A6840);margin:0 0 1.25rem">Save items you love while browsing the store.</p>
+    <h3 style="font-size:1.1rem;font-weight:800;color:var(--text,#F7EFD9);margin:0 0 .5rem"><?= e(t('customer.wishlist.empty_title')) ?></h3>
+    <p style="font-size:.85rem;color:var(--text-muted,#7A6840);margin:0 0 1.25rem"><?= e(t('customer.wishlist.empty_sub')) ?></p>
     <a href="<?= View::url('/') ?>" style="display:inline-flex;align-items:center;gap:.4rem;background:var(--grad-gold,linear-gradient(135deg,#FFE066,#D4AF37,#B8902E));color:#1a0e00;font-weight:800;padding:.65rem 1.4rem;border-radius:12px;text-decoration:none;box-shadow:0 6px 20px rgba(212,175,55,.3)">
-      <i class="bi bi-shop"></i> Explore Store
+      <i class="bi bi-shop"></i> <?= e(t('customer.wishlist.explore_store')) ?>
     </a>
   </div>
 <?php else: ?>
@@ -75,11 +75,11 @@ ob_start();
           </div>
           <div class="wl-actions">
             <a href="<?= View::url('/cart/add?product_id='.$it['product_id']) ?>" class="btn-cart">
-              <i class="bi bi-cart-plus"></i> Add to Cart
+              <i class="bi bi-cart-plus"></i> <?= e(t('product.add_to_cart')) ?>
             </a>
             <form method="POST" action="<?= View::url('/account/wishlist/remove') ?>">
               <input type="hidden" name="product_id" value="<?= (int)$it['product_id'] ?>">
-              <button type="submit" class="btn-remove" title="Remove"><i class="bi bi-trash3"></i></button>
+              <button type="submit" class="btn-remove" title="<?= e(t('vendor.suppliers.remove')) ?>"><i class="bi bi-trash3"></i></button>
             </form>
           </div>
         </div>
@@ -95,6 +95,6 @@ require __DIR__ . '/_layout.php';
 $__panel = ob_get_clean();
 echo View::capture('_layouts/public', [
     '__content' => $__panel,
-    'pageTitle'  => 'My Wishlist -- Etel Gebeya',
+    'pageTitle'  => t('customer.wishlist.my_wishlist') . ' -- Etel Gebeya',
     'locale'     => $locale,
 ]);

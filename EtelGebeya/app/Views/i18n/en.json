@@ -244,6 +244,12 @@
   "customer.order_detail.no_address_on_record": "No delivery address on record.",
   "customer.order_detail.payment_colon": "Payment:",
 
+  "customer.wishlist.my_wishlist": "My Wishlist",
+  "customer.wishlist.n_saved": ":n saved item(s)",
+  "customer.wishlist.empty_title": "Your wishlist is empty",
+  "customer.wishlist.empty_sub": "Save items you love while browsing the store.",
+  "customer.wishlist.explore_store": "Explore Store",
+
   "cart.title": "Shopping Cart",
   "cart.empty": "Your cart is empty",
   "cart.subtotal": "Subtotal",

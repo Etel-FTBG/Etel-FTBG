@@ -244,6 +244,12 @@
   "customer.order_detail.no_address_on_record": "ምንም የመላኪያ አድራሻ የለም።",
   "customer.order_detail.payment_colon": "ክፍያ፦",
 
+  "customer.wishlist.my_wishlist": "የእኔ የምኞት ዝርዝር",
+  "customer.wishlist.n_saved": ":n የተቀመጡ ዕቃዎች",
+  "customer.wishlist.empty_title": "የምኞት ዝርዝርዎ ባዶ ነው",
+  "customer.wishlist.empty_sub": "መደብሩን እየተመለከቱ የሚወዷቸውን ዕቃዎች ያስቀምጡ።",
+  "customer.wishlist.explore_store": "መደብር ያስሱ",
+
   "cart.title": "የ�shopping ጋሪ",
   "cart.empty": "ጋሪዎ ባዶ ነው",
   "cart.subtotal": "ንዑስ ድምር",
