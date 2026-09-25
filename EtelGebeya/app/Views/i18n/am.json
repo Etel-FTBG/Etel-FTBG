@@ -280,5 +280,16 @@
   "vendor.settings.check_store_name_am": "የአማርኛ ስም",
   "vendor.settings.check_description": "መግለጫ",
   "vendor.settings.check_phone": "ስልክ ቁጥር",
-  "vendor.settings.check_pickup": "መነሻ ቦታ"
+  "vendor.settings.check_pickup": "መነሻ ቦታ",
+
+  "vendor.catalog.title": "የአቅራቢ ካታሎግ",
+  "vendor.catalog.subtitle": "ከእጸላ ገበያ የመድረክ አቅራቢዎች ምርት በቀጥታ ወደ ሱቅዎ ያስገቡ -- የራስዎን ዋጋ ያዘጋጁ፣ የቀረውን የድሮፕሺፕ ማዘጋጀት እኛ እናከናውናለን።",
+  "vendor.catalog.search_placeholder": "ካታሎግ ይፈልጉ...",
+  "vendor.catalog.empty_no_match": "ከፍለጋዎ ጋር የሚዛመድ የካታሎግ ንጥል የለም።",
+  "vendor.catalog.empty_none": "እስካሁን የመድረክ ካታሎግ ንጥሎች የሉም -- በቅርቡ ይመልከቱ።",
+  "vendor.catalog.ships_in": "በ:range ቀናት ውስጥ ይላካል",
+  "vendor.catalog.cost": "ዋጋ፦ ብር :amount",
+  "vendor.catalog.imported": "ገብቷል -- ምርትን አርትዕ",
+  "vendor.catalog.sale_price_label": "የእርስዎ የሽያጭ ዋጋ (ብር)",
+  "vendor.catalog.import_button": "ወደ ሱቄ አስገባ"
 }

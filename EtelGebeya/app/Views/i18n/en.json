@@ -280,5 +280,16 @@
   "vendor.settings.check_store_name_am": "Amharic name",
   "vendor.settings.check_description": "Description",
   "vendor.settings.check_phone": "Phone number",
-  "vendor.settings.check_pickup": "Pickup location"
+  "vendor.settings.check_pickup": "Pickup location",
+
+  "vendor.catalog.title": "Supplier Catalog",
+  "vendor.catalog.subtitle": "Import a product from Etel Gebeya's platform suppliers straight into your store -- set your own price, we handle the rest of the dropship setup.",
+  "vendor.catalog.search_placeholder": "Search catalog...",
+  "vendor.catalog.empty_no_match": "No catalog items match your search.",
+  "vendor.catalog.empty_none": "No platform catalog items available yet -- check back soon.",
+  "vendor.catalog.ships_in": "Ships in :range days",
+  "vendor.catalog.cost": "Cost: Br :amount",
+  "vendor.catalog.imported": "Imported -- Edit Product",
+  "vendor.catalog.sale_price_label": "Your Sale Price (ETB)",
+  "vendor.catalog.import_button": "Import to My Store"
 }
