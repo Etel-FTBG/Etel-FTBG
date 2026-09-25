@@ -34,11 +34,17 @@ final class VendorController
         if (!$seller) {
             $user = $this->auth->user();
             $slug = preg_replace('/[^a-z0-9]+/', '-', strtolower($user['full_name'] ?? 'vendor')) . '-' . $this->auth->id();
+            // 'pending', not 'active' - matches AuthController::register()'s
+            // vendor path and AdminController::approveVendor()'s intended
+            // flow. Storefront visibility already gates on status='active'
+            // (see StorefrontController), so this doesn't block the vendor
+            // from using their panel, only from being publicly listed
+            // before an admin approves them.
             $this->db->insert('sellers', [
                 'user_id'    => $this->auth->id(),
                 'store_name' => $user['full_name'] ?? 'My Store',
                 'store_slug' => $slug,
-                'status'     => 'active',
+                'status'     => 'pending',
                 'created_at' => date('Y-m-d H:i:s'),
             ]);
             $seller = $this->db->fetch("SELECT * FROM sellers WHERE user_id = ? LIMIT 1", [$this->auth->id()]);
@@ -877,12 +883,19 @@ final class VendorController
 
             try { $this->db->insert('user_roles', ['user_id' => $userId, 'role' => 'vendor']); } catch (\Throwable $_) {}
 
+            // 'pending', not 'active' - /sell used to activate sellers
+            // immediately with no admin review, bypassing the same approval
+            // gate AuthController::register()'s vendor path already
+            // enforces. Storefront visibility gates on status='active', so
+            // the new vendor can still use their panel and set up their
+            // store while awaiting approval; they just aren't publicly
+            // listed until an admin approves them.
             $this->db->insert('sellers', [
                 'user_id'    => $userId,
                 'store_name' => $store,
                 'store_slug' => $slug,
                 'phone'      => $phone,
-                'status'     => 'active',
+                'status'     => 'pending',
                 'created_at' => date('Y-m-d H:i:s'),
             ]);
 

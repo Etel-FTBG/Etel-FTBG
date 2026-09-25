@@ -53,8 +53,9 @@ $roleLabel = $role ?? ($user['roles'][0] ?? 'user');
         </div>
         <div style="overflow:hidden;flex:1">
           <div style="font-weight:800;font-size:.82rem;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"><?= e($seller['store_name']??'') ?></div>
-          <div style="font-size:.68rem;color:#2ecc71;font-weight:700;display:flex;align-items:center;gap:.3rem">
-            <span style="width:5px;height:5px;background:#2ecc71;border-radius:50%;display:inline-block;flex-shrink:0"></span>
+          <?php $sellerStatusColor = ($seller['status'] ?? 'active') === 'active' ? '#2ecc71' : (($seller['status'] ?? '') === 'suspended' ? '#e74c3c' : '#D4AF37'); ?>
+          <div style="font-size:.68rem;color:<?= $sellerStatusColor ?>;font-weight:700;display:flex;align-items:center;gap:.3rem">
+            <span style="width:5px;height:5px;background:<?= $sellerStatusColor ?>;border-radius:50%;display:inline-block;flex-shrink:0"></span>
             Store <?= e(ucfirst($seller['status']??'active')) ?>
           </div>
         </div>

@@ -81,6 +81,13 @@ ob_start();
 }
 </style>
 
+<?php if (($seller['status'] ?? 'active') === 'pending'): ?>
+<div style="display:flex;align-items:center;gap:.65rem;background:rgba(212,175,55,.1);border:1.5px solid rgba(212,175,55,.3);border-radius:14px;padding:.85rem 1.1rem;margin-bottom:1.25rem;font-size:.83rem;color:#fff">
+  <i class="bi bi-hourglass-split" style="color:var(--gold);font-size:1.1rem"></i>
+  <div><strong>Your store is pending approval.</strong> You can set up products and settings now, but your store won't appear on the storefront until an admin reviews and approves it.</div>
+</div>
+<?php endif; ?>
+
 <!-- Hero -->
 <div class="vd-hero">
   <div class="vd-hero-left">
