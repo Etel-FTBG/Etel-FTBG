@@ -30,8 +30,8 @@ ob_start();
 </style>
 
 <div style="margin-bottom:1.25rem">
-  <h1 class="cp-page-title"><i class="bi bi-geo-alt"></i> My Addresses</h1>
-  <p style="font-size:.82rem;color:var(--text-muted,#7A6840);margin:-.5rem 0 0">Saved delivery addresses</p>
+  <h1 class="cp-page-title"><i class="bi bi-geo-alt"></i> <?= e(t('customer.addresses.my_addresses')) ?></h1>
+  <p style="font-size:.82rem;color:var(--text-muted,#7A6840);margin:-.5rem 0 0"><?= e(t('customer.addresses.saved_addresses')) ?></p>
 </div>
 
 <?php if (!empty($flash)): ?>
@@ -47,19 +47,21 @@ ob_start();
     <?php foreach ($addresses as $addr):
       $icons = ['Home'=>'bi-house','Office'=>'bi-building','Other'=>'bi-geo-alt'];
       $icon  = $icons[$addr['label']??'Other'] ?? 'bi-geo-alt';
+      $labelKeys = ['Home'=>'customer.addresses.label_home','Office'=>'customer.addresses.label_office','Other'=>'customer.addresses.label_other'];
+      $labelText = t($labelKeys[$addr['label']??'Home'] ?? 'customer.addresses.label_home');
     ?>
       <div class="addr-card<?= !empty($addr['is_default'])?' default':'' ?>">
         <?php if (!empty($addr['is_default'])): ?>
-          <div class="addr-default-badge"><i class="bi bi-star-fill" style="font-size:.6rem"></i> Default</div>
+          <div class="addr-default-badge"><i class="bi bi-star-fill" style="font-size:.6rem"></i> <?= e(t('customer.addresses.default')) ?></div>
         <?php endif; ?>
         <div class="addr-label">
           <div class="addr-icon"><i class="bi <?= $icon ?>"></i></div>
-          <?= e($addr['label']??'Home') ?>
+          <?= e($labelText) ?>
         </div>
         <div class="addr-detail">
           <strong style="color:var(--text,#F7EFD9)"><?= e($addr['full_name']??'') ?></strong><br>
           <?= e($addr['phone']??'') ?><br>
-          <?= e($addr['city']??'') ?><?= $addr['sub_city']?', '.e($addr['sub_city']):'' ?><?= $addr['wereda']?', Wereda '.e($addr['wereda']):'' ?><br>
+          <?= e($addr['city']??'') ?><?= $addr['sub_city']?', '.e($addr['sub_city']):'' ?><?= $addr['wereda']?', '.e(t('customer.addresses.wereda_prefix')).' '.e($addr['wereda']):'' ?><br>
           <?php if ($addr['address_detail']): ?><?= e($addr['address_detail']) ?><?php endif; ?>
         </div>
       </div>
@@ -70,45 +72,47 @@ ob_start();
 <!-- Add new address -->
 <div class="add-card">
   <div class="add-card-head">
-    <i class="bi bi-plus-circle" style="color:var(--g2,#D4AF37)"></i> Add New Address
+    <i class="bi bi-plus-circle" style="color:var(--g2,#D4AF37)"></i> <?= e(t('customer.addresses.add_new')) ?>
   </div>
   <div class="add-card-body">
     <form method="POST" action="<?= View::url('/account/addresses') ?>">
       <?= csrf() ?>
       <div class="form-grid">
         <div class="fg">
-          <label>Label</label>
+          <label><?= e(t('customer.addresses.label')) ?></label>
           <select name="label">
-            <option>Home</option><option>Office</option><option>Other</option>
+            <option value="Home"><?= e(t('customer.addresses.label_home')) ?></option>
+            <option value="Office"><?= e(t('customer.addresses.label_office')) ?></option>
+            <option value="Other"><?= e(t('customer.addresses.label_other')) ?></option>
           </select>
         </div>
         <div class="fg">
-          <label>Full Name *</label>
-          <input type="text" name="full_name" required placeholder="Your name">
+          <label><?= e(t('auth.full_name')) ?> *</label>
+          <input type="text" name="full_name" required placeholder="<?= e(t('customer.addresses.your_name')) ?>">
         </div>
         <div class="fg">
-          <label>Phone *</label>
+          <label><?= e(t('storefront.checkout.phone_label')) ?> *</label>
           <input type="tel" name="phone" required placeholder="+251 9xx xxx xxx">
         </div>
         <div class="fg">
-          <label>City *</label>
+          <label><?= e(t('storefront.checkout.city_label')) ?> *</label>
           <input type="text" name="city" required placeholder="e.g. Addis Ababa">
         </div>
         <div class="fg">
-          <label>Sub-city</label>
+          <label><?= e(t('customer.addresses.sub_city')) ?></label>
           <input type="text" name="sub_city" placeholder="e.g. Bole">
         </div>
         <div class="fg">
-          <label>Wereda</label>
+          <label><?= e(t('customer.addresses.wereda')) ?></label>
           <input type="text" name="wereda" placeholder="e.g. 03">
         </div>
       </div>
       <div class="fg">
-        <label>Address Detail</label>
-        <textarea name="address_detail" rows="2" placeholder="Building, floor, landmark..."></textarea>
+        <label><?= e(t('customer.addresses.address_detail')) ?></label>
+        <textarea name="address_detail" rows="2" placeholder="<?= e(t('customer.addresses.address_detail_placeholder')) ?>"></textarea>
       </div>
       <button type="submit" class="btn-gold-sm">
-        <i class="bi bi-check-lg"></i> Save Address
+        <i class="bi bi-check-lg"></i> <?= e(t('customer.addresses.save_address')) ?>
       </button>
     </form>
   </div>
@@ -121,6 +125,6 @@ require __DIR__ . '/_layout.php';
 $__panel = ob_get_clean();
 echo View::capture('_layouts/public', [
     '__content' => $__panel,
-    'pageTitle'  => 'My Addresses -- Etel Gebeya',
+    'pageTitle'  => t('customer.addresses.my_addresses') . ' -- Etel Gebeya',
     'locale'     => $locale,
 ]);
