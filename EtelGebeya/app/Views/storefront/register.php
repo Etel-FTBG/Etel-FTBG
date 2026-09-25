@@ -251,7 +251,7 @@ $token  = Auth::getInstance()->csrfToken();
           <div class="input-wrap">
             <i class="bi bi-lock icon"></i>
             <input type="password" id="password" name="password" class="form-input"
-                   placeholder="Min 8 characters" required autocomplete="new-password"
+                   placeholder="<?= e(t('auth.min_8_chars')) ?>" required autocomplete="new-password"
                    oninput="checkStrength(this.value)">
             <button type="button" class="pw-toggle" onclick="togglePw('password',this)" tabindex="-1">
               <i class="bi bi-eye"></i>
@@ -269,7 +269,7 @@ $token  = Auth::getInstance()->csrfToken();
           <div class="input-wrap">
             <i class="bi bi-lock-fill icon"></i>
             <input type="password" id="confirm" name="confirm" class="form-input"
-                   placeholder="Repeat password" required autocomplete="new-password">
+                   placeholder="<?= e(t('auth.repeat_password')) ?>" required autocomplete="new-password">
             <button type="button" class="pw-toggle" onclick="togglePw('confirm',this)" tabindex="-1">
               <i class="bi bi-eye"></i>
             </button>
