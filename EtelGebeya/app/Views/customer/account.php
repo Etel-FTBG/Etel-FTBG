@@ -72,8 +72,8 @@ ob_start();
 
 <!-- Page header -->
 <div style="margin-bottom:1.25rem">
-  <h1 class="cp-page-title"><i class="bi bi-speedometer2"></i> Dashboard</h1>
-  <p style="font-size:.82rem;color:var(--text-muted,#7A6840);margin:-.5rem 0 0">Member since <?= date('F Y', strtotime($u['created_at']??'now')) ?></p>
+  <h1 class="cp-page-title"><i class="bi bi-speedometer2"></i> <?= e(t('customer.nav.dashboard')) ?></h1>
+  <p style="font-size:.82rem;color:var(--text-muted,#7A6840);margin:-.5rem 0 0"><?= e(t('customer.dashboard.member_since')) ?> <?= date('F Y', strtotime($u['created_at']??'now')) ?></p>
 </div>
 
 <!-- Stats -->
@@ -81,17 +81,17 @@ ob_start();
   <div class="acc-stat gold">
     <div class="acc-stat-icon" style="background:rgba(212,175,55,.1)"><i class="bi bi-receipt" style="color:var(--g2,#D4AF37)"></i></div>
     <div class="acc-stat-val"><?= number_format($orderCount) ?></div>
-    <div class="acc-stat-lbl">Total Orders</div>
+    <div class="acc-stat-lbl"><?= e(t('customer.dashboard.total_orders')) ?></div>
   </div>
   <div class="acc-stat green">
     <div class="acc-stat-icon" style="background:rgba(16,185,129,.1)"><i class="bi bi-cash-stack" style="color:#10b981"></i></div>
     <div class="acc-stat-val" style="font-size:<?= strlen(number_format($totalSpent,0))>7?'1.1rem':'1.7rem' ?>">Br <?= number_format($totalSpent,0) ?></div>
-    <div class="acc-stat-lbl">Total Spent</div>
+    <div class="acc-stat-lbl"><?= e(t('customer.dashboard.total_spent')) ?></div>
   </div>
   <div class="acc-stat blue">
     <div class="acc-stat-icon" style="background:rgba(96,165,250,.1)"><i class="bi bi-heart" style="color:#60a5fa"></i></div>
     <div class="acc-stat-val">0</div>
-    <div class="acc-stat-lbl">Wishlist</div>
+    <div class="acc-stat-lbl"><?= e(t('customer.nav.wishlist')) ?></div>
   </div>
 </div>
 
@@ -100,15 +100,15 @@ ob_start();
   <!-- Recent Orders -->
   <div class="acc-card">
     <div class="acc-card-head">
-      <div class="acc-card-title"><i class="bi bi-receipt" style="color:var(--g2,#D4AF37)"></i> Recent Orders</div>
-      <a href="<?= View::url('/account/orders') ?>" class="acc-card-link">View all ?</a>
+      <div class="acc-card-title"><i class="bi bi-receipt" style="color:var(--g2,#D4AF37)"></i> <?= e(t('customer.dashboard.recent_orders')) ?></div>
+      <a href="<?= View::url('/account/orders') ?>" class="acc-card-link"><?= e(t('customer.dashboard.view_all')) ?></a>
     </div>
     <div class="acc-card-body">
       <?php if (empty($orders)): ?>
         <div class="empty-panel">
           <i class="bi bi-cart-x"></i>
-          <p>No orders yet</p>
-          <a href="<?= View::url('/') ?>" class="btn-gold-sm"><i class="bi bi-shop"></i> Start Shopping</a>
+          <p><?= e(t('customer.dashboard.no_orders_yet')) ?></p>
+          <a href="<?= View::url('/') ?>" class="btn-gold-sm"><i class="bi bi-shop"></i> <?= e(t('storefront.cart.start_shopping')) ?></a>
         </div>
       <?php else: ?>
         <?php foreach ($orders as $o): ?>
@@ -120,7 +120,7 @@ ob_start();
             <div style="display:flex;align-items:center;gap:.65rem">
               <span class="ord-amt">Br <?= number_format((float)($o['total']??0),0) ?></span>
               <span class="sp sp-<?= $o['status'] ?>"><?= $o['status'] ?></span>
-              <a href="<?= View::url('/account/orders/'.$o['code']) ?>" style="color:var(--g2,#D4AF37);font-size:.75rem;text-decoration:none">View</a>
+              <a href="<?= View::url('/account/orders/'.$o['code']) ?>" style="color:var(--g2,#D4AF37);font-size:.75rem;text-decoration:none"><?= e(t('customer.dashboard.view')) ?></a>
             </div>
           </div>
         <?php endforeach; ?>
@@ -131,31 +131,31 @@ ob_start();
   <!-- Profile -->
   <div class="acc-card">
     <div class="acc-card-head">
-      <div class="acc-card-title"><i class="bi bi-person-circle" style="color:#60a5fa"></i> Edit Profile</div>
+      <div class="acc-card-title"><i class="bi bi-person-circle" style="color:#60a5fa"></i> <?= e(t('customer.dashboard.edit_profile')) ?></div>
     </div>
     <div class="acc-card-body">
       <form method="POST" action="<?= View::url('/account/profile') ?>">
         <?= csrf() ?>
         <div class="fg">
-          <label>Full Name</label>
+          <label><?= e(t('auth.full_name')) ?></label>
           <input type="text" name="full_name" required value="<?= e($u['full_name']??'') ?>">
         </div>
         <div class="fg">
-          <label>Phone</label>
+          <label><?= e(t('storefront.checkout.phone_label')) ?></label>
           <input type="tel" name="phone" value="<?= e($u['phone']??'') ?>" placeholder="+251 9xx xxx xxx">
         </div>
         <div class="pass-divider">
-          <div class="pass-divider-label">Change Password</div>
+          <div class="pass-divider-label"><?= e(t('customer.dashboard.change_password')) ?></div>
           <div class="fg">
-            <label>New Password</label>
-            <input type="password" name="new_password" minlength="8" placeholder="Leave blank to keep current">
+            <label><?= e(t('customer.dashboard.new_password')) ?></label>
+            <input type="password" name="new_password" minlength="8" placeholder="<?= e(t('customer.dashboard.leave_blank_hint')) ?>">
           </div>
           <div class="fg" style="margin-bottom:1.1rem">
-            <label>Confirm Password</label>
-            <input type="password" name="confirm_password" placeholder="Repeat new password">
+            <label><?= e(t('auth.confirm_password')) ?></label>
+            <input type="password" name="confirm_password" placeholder="<?= e(t('auth.repeat_password')) ?>">
           </div>
         </div>
-        <button type="submit" class="btn-gold-sm"><i class="bi bi-check-lg"></i> Save Changes</button>
+        <button type="submit" class="btn-gold-sm"><i class="bi bi-check-lg"></i> <?= e(t('customer.dashboard.save_changes')) ?></button>
       </form>
     </div>
   </div>
@@ -165,9 +165,9 @@ ob_start();
 <!-- Quick actions -->
 <div class="qa-grid">
   <?php foreach ([
-    ['/account/orders',   'bi-receipt',    '#D4AF37','My Orders'],
-    ['/account/addresses','bi-geo-alt',    '#60a5fa','Addresses'],
-    ['/',                 'bi-bag',        '#10b981','Shop Now'],
+    ['/account/orders',   'bi-receipt',    '#D4AF37',t('customer.nav.my_orders')],
+    ['/account/addresses','bi-geo-alt',    '#60a5fa',t('customer.nav.addresses')],
+    ['/',                 'bi-bag',        '#10b981',t('customer.dashboard.shop_now')],
   ] as [$url,$icon,$col,$lbl]): ?>
   <a href="<?= View::url($url) ?>" class="qa-btn">
     <i class="bi <?= $icon ?>" style="color:<?= $col ?>"></i>
@@ -187,6 +187,6 @@ $__panel = ob_get_clean();
 
 echo View::capture('_layouts/public', [
     '__content' => $__panel,
-    'pageTitle'  => 'My Account -- Etel Gebeya',
+    'pageTitle'  => t('storefront.footer.my_account') . ' -- Etel Gebeya',
     'locale'     => $locale,
 ]);
