@@ -192,11 +192,14 @@ function eg_ensure_admin_schema(PDO $pdo): void {
 // admin.php action already calls, so upgrading it here covers the
 // whole file without touching each call site.
 function auth(?string $capability = null): void {
+    // Header or POST body only -- never $_GET, since a query-string token
+    // lands in the server's own access logs and the admin's browser
+    // history the moment the request is sent, whether or not it's ever
+    // actually checked against anything.
     $token = trim(
         $_SERVER['HTTP_X_AUTH']
         ?? $_SERVER['HTTP_AUTHORIZATION']
         ?? $_POST['auth']
-        ?? $_GET['auth']
         ?? ''
     );
     $token = str_replace('Bearer ', '', $token);

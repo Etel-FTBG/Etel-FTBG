@@ -23,12 +23,22 @@ define('BACKUP_DIR', __DIR__ . '/storage/backups/updater/');
         }
     }
 })();
-define('UPDATER_PASSWORD', $_ENV['ADMIN_SECRET'] ?? '');
+// UPDATER_SECRET is deliberately separate from ADMIN_SECRET: the admin
+// dashboard (api/admin.php, api/config.php) is read-mostly and now has a
+// real per-admin login system (gebeya_admins), but this file can upload
+// and overwrite arbitrary files anywhere under the webroot -- a much
+// higher-privilege capability that a leaked dashboard credential
+// shouldn't also grant. Falls back to ADMIN_SECRET only when
+// UPDATER_SECRET isn't set, so an already-deployed site keeps working
+// until its .env is updated with a distinct value.
+define('UPDATER_PASSWORD', $_ENV['UPDATER_SECRET'] ?? $_ENV['ADMIN_SECRET'] ?? '');
 
 function checkAuth(): void {
+    // Header or POST body only -- never $_GET (see api/config.php::auth()
+    // for why).
     $h = trim($_SERVER['HTTP_X_AUTH'] ?? $_SERVER['HTTP_AUTHORIZATION'] ?? '');
     $h = str_replace('Bearer ', '', $h);
-    $p = trim($_POST['auth'] ?? $_GET['auth'] ?? $h);
+    $p = trim($_POST['auth'] ?? $h);
     if (empty(UPDATER_PASSWORD) || !hash_equals(UPDATER_PASSWORD, $p)) {
         ob_end_clean();
         http_response_code(401);

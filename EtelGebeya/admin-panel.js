@@ -104,8 +104,10 @@ function updateClock() {
 
 // ── API HELPER ──────────────────────────────────────────────
 async function api(action, params={}, method='GET') {
-  const authParam = '&auth=' + encodeURIComponent(TOKEN);
-  const url = API + '?action=' + action + authParam + (method==='GET' ? '&'+new URLSearchParams(params) : '');
+  // Token travels only via the X-Auth header (and the POST body below) --
+  // never in the URL, since query strings land in server access logs and
+  // browser history.
+  const url = API + '?action=' + action + (method==='GET' ? '&'+new URLSearchParams(params) : '');
   const opts = { headers: {'X-Auth': TOKEN} };
   if (method === 'POST') {
     opts.method = 'POST';
@@ -236,7 +238,7 @@ async function runDiagnostics() {
 
   let data;
   try {
-    const resp = await fetch(`${DIAG_API}?check=all&auth=${encodeURIComponent(TOKEN)}`, {headers:{'X-Auth':TOKEN}});
+    const resp = await fetch(`${DIAG_API}?check=all`, {headers:{'X-Auth':TOKEN}});
     if (!resp.ok) {
       diagLine(`<span style="color:#ef4444">✗ HTTP ${resp.status} — ${resp.status===401?'Unauthorized, re-login':'Server error'}</span>`);
       btn.disabled=false; btn.textContent='▶ Run All Checks';
@@ -860,7 +862,7 @@ function renderUpdHistory() {
 async function loadFileTree() {
   const el = document.getElementById('upd-file-list');
   el.innerHTML = '<div style="color:var(--text-dim);font-size:.8rem">Loading…</div>';
-  const r = await fetch(UPD_API+'?action=browse&auth='+encodeURIComponent(TOKEN), {headers:{'X-Auth':TOKEN}});
+  const r = await fetch(UPD_API+'?action=browse', {headers:{'X-Auth':TOKEN}});
   const d = await r.json();
   if (!d.ok) { el.textContent = d.error||'Failed'; return; }
   el.innerHTML = `<div class="file-tree">${(d.data||[]).map(f=>`
@@ -874,7 +876,7 @@ async function loadFileTree() {
 }
 
 async function loadUpdaterSystem() {
-  const r = await fetch(UPD_API+'?action=status&auth='+encodeURIComponent(TOKEN), {headers:{'X-Auth':TOKEN}});
+  const r = await fetch(UPD_API+'?action=status', {headers:{'X-Auth':TOKEN}});
   const d = await r.json();
   if (!d.ok) { document.getElementById('upd-sys-grid').textContent = d.error||'Error'; return; }
   const s = d.data||{};
@@ -1100,7 +1102,7 @@ function exportCSV(type) { toast(`📥 Export for ${type} — connect to backend
     if (!TOKEN) { if (checksEl) checksEl.textContent = 'Not logged in'; return; }
     if (checksEl) checksEl.innerHTML = '<div style="color:#64748b;padding:8px 0">Running checks…</div>';
     try {
-      const r = await fetch('api/diagnostics.php?check=all&auth='+encodeURIComponent(TOKEN));
+      const r = await fetch('api/diagnostics.php?check=all', {headers:{'X-Auth':TOKEN}});
       const d = await r.json();
       if (!d.ok) { if (checksEl) checksEl.textContent = d.error||'Error'; return; }
       lastData = d.data;
