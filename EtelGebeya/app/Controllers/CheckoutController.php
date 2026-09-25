@@ -422,6 +422,12 @@ final class CheckoutController
                     'seller_payout' => $lineTotal,
                     'is_dropship'   => !empty($prow['is_dropship']) ? 1 : 0,
                     'supplier_id'   => !empty($prow['is_dropship']) ? ($prow['supplier_id'] ?: null) : null,
+                    // Set explicitly rather than relying on the column's
+                    // implicit default -- VendorController::updateOrderItemStatus()'s
+                    // forward-only transition table starts at 'pending', so a
+                    // mismatched default (e.g. 'new') would silently block the
+                    // first status update on every fresh order item.
+                    'status'        => 'pending',
                     'created_at'    => $now,
                 ]);
             }

@@ -189,7 +189,7 @@ case 'grant_admin': {
 // as ?auth=... the same way admin-panel.js already sends it for other
 // GET-based calls).
 case 'become_vendor': {
-    auth();
+    auth('owner.only');
     $db = db();
     if (!$db) err('Database unavailable', 503);
 
