@@ -297,13 +297,13 @@ $token  = Auth::getInstance()->csrfToken();
         <div class="auth-logo-mark">EG</div>
         <span>Etel Gebeya</span>
       </a>
-      <h1 class="auth-brand-word">The marketplace<br>built for <em>Ethiopia</em>.</h1>
-      <p class="auth-brand-sub">One account, powered by Etel-ID, across every Etel service &mdash; shopping, delivery, and payments.</p>
+      <h1 class="auth-brand-word"><?= e(t('auth.brand_title_1')) ?><br><?= e(t('auth.brand_title_2_prefix')) ?> <em><?= e(t('auth.brand_title_2_em')) ?></em>.</h1>
+      <p class="auth-brand-sub"><?= e(t('auth.brand_sub')) ?></p>
     </div>
     <div class="auth-trust">
-      <div class="auth-trust-item"><i class="bi bi-shield-check"></i> Buyer Protection on every order</div>
-      <div class="auth-trust-item"><i class="bi bi-patch-check"></i> Verified vendors only</div>
-      <div class="auth-trust-item"><i class="bi bi-geo-alt"></i> Proudly built in Hawassa</div>
+      <div class="auth-trust-item"><i class="bi bi-shield-check"></i> <?= e(t('auth.trust_buyer_protection')) ?></div>
+      <div class="auth-trust-item"><i class="bi bi-patch-check"></i> <?= e(t('auth.trust_verified_vendors')) ?></div>
+      <div class="auth-trust-item"><i class="bi bi-geo-alt"></i> <?= e(t('auth.trust_built_in_hawassa')) ?></div>
     </div>
   </aside>
 
@@ -318,11 +318,11 @@ $token  = Auth::getInstance()->csrfToken();
 
       <div class="etelid-badge">
         <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
-        Powered by Etel-ID
+        <?= e(t('auth.powered_by_etelid')) ?>
       </div>
 
-      <h2 class="auth-heading">Sign in to your account</h2>
-      <p class="auth-sub">Use your Etel-ID to access all Etel services.</p>
+      <h2 class="auth-heading"><?= e(t('auth.signin_heading')) ?></h2>
+      <p class="auth-sub"><?= e(t('auth.signin_sub')) ?></p>
 
       <?php if ($flash): ?>
         <div class="flash-msg flash-<?= e($flash['type']) ?>">
@@ -336,7 +336,7 @@ $token  = Auth::getInstance()->csrfToken();
         <?= csrf() ?>
 
         <div class="form-group">
-          <label class="form-label" for="etelid_identifier">Phone Number or Etel-ID</label>
+          <label class="form-label" for="etelid_identifier"><?= e(t('auth.phone_or_etelid_label')) ?></label>
           <div class="input-wrap">
             <i class="bi bi-person-badge"></i>
             <input type="text" id="etelid_identifier" name="etelid_identifier" class="form-input"
@@ -347,11 +347,11 @@ $token  = Auth::getInstance()->csrfToken();
         </div>
 
         <div class="form-group">
-          <label class="form-label" for="etelid_password">Etel-ID Password</label>
+          <label class="form-label" for="etelid_password"><?= e(t('auth.etelid_password_label')) ?></label>
           <div class="input-wrap">
             <i class="bi bi-lock"></i>
             <input type="password" id="etelid_password" name="etelid_password" class="form-input"
-                   placeholder="Your Etel-ID password" required autocomplete="current-password">
+                   placeholder="<?= e(t('auth.etelid_password_placeholder')) ?>" required autocomplete="current-password">
             <button type="button" class="pw-toggle" onclick="togglePw('etelid_password',this)" tabindex="-1" aria-label="Show password">
               <i class="bi bi-eye"></i>
             </button>
@@ -361,20 +361,20 @@ $token  = Auth::getInstance()->csrfToken();
         <button type="submit" class="submit-btn">
           <span class="spin"></span>
           <i class="bi bi-box-arrow-in-right btn-label"></i>
-          <span class="btn-label">Sign In with Etel-ID</span>
+          <span class="btn-label"><?= e(t('auth.sign_in_with_etelid')) ?></span>
         </button>
       </form>
 
       <!-- FALLBACK: Email/Password (staff / legacy) -->
       <button type="button" class="staff-toggle" onclick="document.getElementById('staff-panel').classList.toggle('hidden')">
-        Staff / email login &rsaquo;
+        <?= e(t('auth.staff_email_login')) ?> &rsaquo;
       </button>
 
       <div id="staff-panel" class="staff-panel hidden">
         <form method="POST" action="<?= View::url('/login') ?>" autocomplete="on" onsubmit="return armSubmit(this)">
           <?= csrf() ?>
           <div class="form-group">
-            <label class="form-label" for="email">Email Address</label>
+            <label class="form-label" for="email"><?= e(t('auth.email')) ?></label>
             <div class="input-wrap">
               <i class="bi bi-envelope"></i>
               <input type="email" id="email" name="email" class="form-input"
@@ -383,7 +383,7 @@ $token  = Auth::getInstance()->csrfToken();
             </div>
           </div>
           <div class="form-group" style="margin-bottom:0">
-            <label class="form-label" for="password">Password</label>
+            <label class="form-label" for="password"><?= e(t('auth.password')) ?></label>
             <div class="input-wrap">
               <i class="bi bi-lock"></i>
               <input type="password" id="password" name="password" class="form-input"
@@ -396,13 +396,13 @@ $token  = Auth::getInstance()->csrfToken();
           <button type="submit" class="staff-submit">
             <span class="spin"></span>
             <i class="bi bi-box-arrow-in-right btn-label"></i>
-            <span class="btn-label">Sign In</span>
+            <span class="btn-label"><?= e(t('auth.sign_in')) ?></span>
           </button>
         </form>
       </div>
 
       <div class="auth-switch">
-        Don't have an account? <a href="<?= View::url('/register') ?>">Create Account</a>
+        <?= e(t('auth.no_account')) ?> <a href="<?= View::url('/register') ?>"><?= e(t('auth.create_account')) ?></a>
       </div>
 
     </div>

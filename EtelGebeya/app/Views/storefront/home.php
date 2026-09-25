@@ -8,7 +8,7 @@ use App\Core\View;
 require_once __DIR__ . '/_product_card.php';
 
 View::render('_layouts/public', [
-    'pageTitle' => "Ethiopia's Marketplace",
+    'pageTitle' => t('storefront.home.page_title'),
 ], function() use ($featured, $recent, $categories) {
     $locale     = $GLOBALS['__i18n']->locale();
     $featured   = $featured   ?? [];
@@ -36,7 +36,7 @@ View::render('_layouts/public', [
   <!-- ===== LEFT SIDEBAR ===== -->
   <aside class="eg-sidebar">
     <div class="eg-sidebar-box">
-      <div class="eg-sidebar-head">All Categories</div>
+      <div class="eg-sidebar-head"><?= e(t('storefront.home.all_categories')) ?></div>
       <?php if (!empty($categories)): ?>
         <?php foreach ($categories as $cat): ?>
           <a href="<?= View::url('/category/' . e($cat->slug)) ?>" class="eg-sidebar-item">
@@ -45,21 +45,21 @@ View::render('_layouts/public', [
           </a>
         <?php endforeach; ?>
         <a href="<?= View::url('/search') ?>" class="eg-sidebar-item" style="color:var(--g2);font-weight:700">
-          <i class="bi bi-grid-3x3-gap"></i> View All
+          <i class="bi bi-grid-3x3-gap"></i> <?= e(t('storefront.home.view_all')) ?>
         </a>
       <?php else: ?>
         <?php
         $fallback = [
-            ['q'=>'electronics',  'name'=>'Electronics',      'ico'=>'bi-phone'],
-            ['q'=>'fashion',      'name'=>'Fashion',          'ico'=>'bi-bag-heart'],
-            ['q'=>'home',         'name'=>'Home & Living',    'ico'=>'bi-house-door'],
-            ['q'=>'food',         'name'=>'Food & Grocery',   'ico'=>'bi-egg-fried'],
-            ['q'=>'health',       'name'=>'Health & Beauty',  'ico'=>'bi-heart-pulse'],
-            ['q'=>'office',       'name'=>'Office & School',  'ico'=>'bi-briefcase'],
-            ['q'=>'sports',       'name'=>'Sports',           'ico'=>'bi-bicycle'],
-            ['q'=>'automotive',   'name'=>'Automotive',       'ico'=>'bi-car-front'],
-            ['q'=>'baby',         'name'=>'Baby & Toys',      'ico'=>'bi-emoji-smile'],
-            ['q'=>'tools',        'name'=>'Tools & Garden',   'ico'=>'bi-tools'],
+            ['q'=>'electronics',  'name'=>t('storefront.home.fb_electronics'),      'ico'=>'bi-phone'],
+            ['q'=>'fashion',      'name'=>t('storefront.home.fb_fashion'),          'ico'=>'bi-bag-heart'],
+            ['q'=>'home',         'name'=>t('storefront.home.fb_home_living'),      'ico'=>'bi-house-door'],
+            ['q'=>'food',         'name'=>t('storefront.home.fb_food_grocery'),     'ico'=>'bi-egg-fried'],
+            ['q'=>'health',       'name'=>t('storefront.home.fb_health_beauty'),    'ico'=>'bi-heart-pulse'],
+            ['q'=>'office',       'name'=>t('storefront.home.fb_office_school'),    'ico'=>'bi-briefcase'],
+            ['q'=>'sports',       'name'=>t('storefront.home.fb_sports'),           'ico'=>'bi-bicycle'],
+            ['q'=>'automotive',   'name'=>t('storefront.home.fb_automotive'),       'ico'=>'bi-car-front'],
+            ['q'=>'baby',         'name'=>t('storefront.home.fb_baby_toys'),        'ico'=>'bi-emoji-smile'],
+            ['q'=>'tools',        'name'=>t('storefront.home.fb_tools_garden'),     'ico'=>'bi-tools'],
         ];
         foreach ($fallback as $fb): ?>
           <a href="<?= View::url('/search?q=' . $fb['q']) ?>" class="eg-sidebar-item">
@@ -76,77 +76,77 @@ View::render('_layouts/public', [
     <!-- HERO -->
     <div class="eg-hero">
       <div class="eg-hero-left">
-        <h1>Ethiopia's Marketplace,<br>Delivered to You</h1>
-        <p>Buy in Birr, pay with Telebirr, CBE Birr or cards. Thousands of products from verified Ethiopian vendors, delivered nationwide.</p>
+        <h1><?= e(t('storefront.home.hero_title_1')) ?><br><?= e(t('storefront.home.hero_title_2')) ?></h1>
+        <p><?= e(t('storefront.home.hero_sub')) ?></p>
         <div class="eg-hero-actions">
           <a href="<?= View::url('/search') ?>" class="eg-btn eg-btn-gold">
-            <i class="bi bi-bag-check"></i> Shop Now
+            <i class="bi bi-bag-check"></i> <?= e(t('storefront.home.shop_now')) ?>
           </a>
           <a href="<?= View::url('/sell') ?>" class="eg-btn eg-btn-outline">
-            <i class="bi bi-shop"></i> Become a Vendor
+            <i class="bi bi-shop"></i> <?= e(t('storefront.footer.become_vendor')) ?>
           </a>
         </div>
         <div class="eg-hero-stats">
-          <div><div class="eg-hero-stat-val">10K+</div><div class="eg-hero-stat-label">Products</div></div>
-          <div><div class="eg-hero-stat-val">500+</div><div class="eg-hero-stat-label">Vendors</div></div>
-          <div><div class="eg-hero-stat-val">50K+</div><div class="eg-hero-stat-label">Customers</div></div>
+          <div><div class="eg-hero-stat-val">10K+</div><div class="eg-hero-stat-label"><?= e(t('admin.nav.products')) ?></div></div>
+          <div><div class="eg-hero-stat-val">500+</div><div class="eg-hero-stat-label"><?= e(t('admin.nav.sellers')) ?></div></div>
+          <div><div class="eg-hero-stat-val">50K+</div><div class="eg-hero-stat-label"><?= e(t('storefront.home.customers')) ?></div></div>
         </div>
       </div>
       <div class="eg-hero-right">
         <a href="<?= View::url('/search?q=electronics') ?>" class="eg-hero-card">
           <div class="eg-hero-card-ico"><i class="bi bi-phone" style="font-size:26px;color:#D4AF37"></i></div>
-          <div class="eg-hero-card-name">Electronics</div>
-          <div class="eg-hero-card-sub">Phones &amp; laptops</div>
+          <div class="eg-hero-card-name"><?= e(t('storefront.catnav.electronics')) ?></div>
+          <div class="eg-hero-card-sub"><?= e(t('storefront.home.hero_card_electronics_sub')) ?></div>
         </a>
         <a href="<?= View::url('/search?q=fashion') ?>" class="eg-hero-card">
           <div class="eg-hero-card-ico"><i class="bi bi-bag-heart" style="font-size:26px;color:#D4AF37"></i></div>
-          <div class="eg-hero-card-name">Fashion</div>
-          <div class="eg-hero-card-sub">Clothes &amp; shoes</div>
+          <div class="eg-hero-card-name"><?= e(t('storefront.catnav.fashion')) ?></div>
+          <div class="eg-hero-card-sub"><?= e(t('storefront.home.hero_card_fashion_sub')) ?></div>
         </a>
         <a href="<?= View::url('/search?q=home') ?>" class="eg-hero-card">
           <div class="eg-hero-card-ico"><i class="bi bi-house-door" style="font-size:26px;color:#D4AF37"></i></div>
-          <div class="eg-hero-card-name">Home Living</div>
-          <div class="eg-hero-card-sub">Furniture &amp; decor</div>
+          <div class="eg-hero-card-name"><?= e(t('storefront.home.hero_card_home_living')) ?></div>
+          <div class="eg-hero-card-sub"><?= e(t('storefront.home.hero_card_home_living_sub')) ?></div>
         </a>
         <a href="<?= View::url('/search?q=coffee') ?>" class="eg-hero-card">
           <div class="eg-hero-card-ico"><i class="bi bi-cup-hot" style="font-size:26px;color:#D4AF37"></i></div>
-          <div class="eg-hero-card-name">Ethiopian</div>
-          <div class="eg-hero-card-sub">Coffee &amp; spices</div>
+          <div class="eg-hero-card-name"><?= e(t('storefront.home.hero_card_ethiopian')) ?></div>
+          <div class="eg-hero-card-sub"><?= e(t('storefront.home.hero_card_ethiopian_sub')) ?></div>
         </a>
       </div>
     </div>
 
     <!-- TRUST BAR -->
     <div class="eg-trust-bar">
-      <div class="eg-trust-item"><i class="bi bi-shield-check"></i> Buyer Protection</div>
-      <div class="eg-trust-item"><i class="bi bi-patch-check"></i> Verified Vendors</div>
-      <div class="eg-trust-item"><i class="bi bi-lock"></i> Secure Payments</div>
-      <div class="eg-trust-item"><i class="bi bi-truck"></i> Nationwide Delivery</div>
-      <div class="eg-trust-item"><i class="bi bi-geo-alt"></i> Based in Hawassa</div>
+      <div class="eg-trust-item"><i class="bi bi-shield-check"></i> <?= e(t('storefront.home.trust_buyer_protection')) ?></div>
+      <div class="eg-trust-item"><i class="bi bi-patch-check"></i> <?= e(t('storefront.home.trust_verified_vendors')) ?></div>
+      <div class="eg-trust-item"><i class="bi bi-lock"></i> <?= e(t('storefront.home.trust_secure_payments')) ?></div>
+      <div class="eg-trust-item"><i class="bi bi-truck"></i> <?= e(t('storefront.home.trust_nationwide_delivery')) ?></div>
+      <div class="eg-trust-item"><i class="bi bi-geo-alt"></i> <?= e(t('storefront.home.trust_based_in_hawassa')) ?></div>
     </div>
 
     <!-- PROMO STRIP -->
     <div class="eg-promo-strip">
       <div class="eg-promo-card">
         <i class="bi bi-truck eg-promo-icon"></i>
-        <div class="eg-promo-card-tag">Fast Delivery</div>
-        <div class="eg-promo-card-title">Nationwide Shipping</div>
-        <div class="eg-promo-card-sub">Delivered across all regions of Ethiopia</div>
-        <a href="<?= View::url('/search') ?>" class="eg-promo-card-link">Shop Now <i class="bi bi-arrow-right"></i></a>
+        <div class="eg-promo-card-tag"><?= e(t('storefront.home.promo_fast_delivery_tag')) ?></div>
+        <div class="eg-promo-card-title"><?= e(t('storefront.home.promo_fast_delivery_title')) ?></div>
+        <div class="eg-promo-card-sub"><?= e(t('storefront.home.promo_fast_delivery_sub')) ?></div>
+        <a href="<?= View::url('/search') ?>" class="eg-promo-card-link"><?= e(t('storefront.home.shop_now')) ?> <i class="bi bi-arrow-right"></i></a>
       </div>
       <div class="eg-promo-card">
         <i class="bi bi-phone eg-promo-icon"></i>
-        <div class="eg-promo-card-tag">Pay Your Way</div>
-        <div class="eg-promo-card-title">Telebirr &amp; CBE Birr</div>
-        <div class="eg-promo-card-sub">Secure payments in Ethiopian Birr</div>
-        <a href="<?= View::url('/checkout') ?>" class="eg-promo-card-link">Learn More <i class="bi bi-arrow-right"></i></a>
+        <div class="eg-promo-card-tag"><?= e(t('storefront.home.promo_pay_your_way_tag')) ?></div>
+        <div class="eg-promo-card-title"><?= e(t('storefront.home.promo_pay_your_way_title')) ?></div>
+        <div class="eg-promo-card-sub"><?= e(t('storefront.home.promo_pay_your_way_sub')) ?></div>
+        <a href="<?= View::url('/checkout') ?>" class="eg-promo-card-link"><?= e(t('storefront.home.learn_more')) ?> <i class="bi bi-arrow-right"></i></a>
       </div>
       <div class="eg-promo-card">
         <i class="bi bi-shop eg-promo-icon"></i>
-        <div class="eg-promo-card-tag">500+ Sellers</div>
-        <div class="eg-promo-card-title">Ethiopian Vendors</div>
-        <div class="eg-promo-card-sub">Real businesses, verified sellers</div>
-        <a href="<?= View::url('/sell') ?>" class="eg-promo-card-link">Sell With Us <i class="bi bi-arrow-right"></i></a>
+        <div class="eg-promo-card-tag"><?= e(t('storefront.home.promo_sellers_tag')) ?></div>
+        <div class="eg-promo-card-title"><?= e(t('storefront.home.promo_sellers_title')) ?></div>
+        <div class="eg-promo-card-sub"><?= e(t('storefront.home.promo_sellers_sub')) ?></div>
+        <a href="<?= View::url('/sell') ?>" class="eg-promo-card-link"><?= e(t('storefront.home.sell_with_us')) ?> <i class="bi bi-arrow-right"></i></a>
       </div>
     </div>
 
@@ -155,10 +155,10 @@ View::render('_layouts/public', [
     <div class="mb-20">
       <div class="eg-sec-head">
         <div>
-          <div class="eg-sec-title eg-sec-title-hot"><i class="bi bi-fire"></i> Hot Deals</div>
-          <div class="eg-sec-sub">Biggest discounts right now</div>
+          <div class="eg-sec-title eg-sec-title-hot"><i class="bi bi-fire"></i> <?= e(t('storefront.home.hot_deals')) ?></div>
+          <div class="eg-sec-sub"><?= e(t('storefront.home.hot_deals_sub')) ?></div>
         </div>
-        <a href="<?= View::url('/search') ?>" class="eg-sec-more">See All Deals <i class="bi bi-arrow-right"></i></a>
+        <a href="<?= View::url('/search') ?>" class="eg-sec-more"><?= e(t('storefront.home.see_all_deals')) ?> <i class="bi bi-arrow-right"></i></a>
       </div>
       <div class="eg-product-grid">
         <?php foreach ($deals as $p): echo eg_product_card($p, $locale); endforeach; ?>
@@ -171,10 +171,10 @@ View::render('_layouts/public', [
     <div class="mb-20">
       <div class="eg-sec-head">
         <div>
-          <div class="eg-sec-title">Shop by Category</div>
-          <div class="eg-sec-sub">Find exactly what you need</div>
+          <div class="eg-sec-title"><?= e(t('storefront.home.shop_by_category')) ?></div>
+          <div class="eg-sec-sub"><?= e(t('storefront.home.shop_by_category_sub')) ?></div>
         </div>
-        <a href="<?= View::url('/search') ?>" class="eg-sec-more">See All <i class="bi bi-arrow-right"></i></a>
+        <a href="<?= View::url('/search') ?>" class="eg-sec-more"><?= e(t('storefront.home.see_all')) ?> <i class="bi bi-arrow-right"></i></a>
       </div>
       <div class="eg-cat-grid">
         <?php foreach ($categories as $cat): [$ca, $cb] = eg_cat_color($cat->id); ?>
@@ -184,15 +184,15 @@ View::render('_layouts/public', [
               <i class="bi <?= eg_cat_icon($cat->nameEn) ?>"></i>
             </div>
             <div class="eg-cat-card-name"><?= e(html_entity_decode($cat->name($locale), ENT_QUOTES | ENT_HTML5, 'UTF-8')) ?></div>
-            <div class="eg-cat-card-cta">Shop now <i class="bi bi-arrow-right"></i></div>
+            <div class="eg-cat-card-cta"><?= e(t('storefront.home.shop_now_lower')) ?> <i class="bi bi-arrow-right"></i></div>
           </a>
         <?php endforeach; ?>
         <a href="<?= View::url('/search') ?>" class="eg-cat-card eg-cat-card-more">
           <div class="eg-cat-card-ico">
             <i class="bi bi-grid-3x3-gap-fill"></i>
           </div>
-          <div class="eg-cat-card-name">All Categories</div>
-          <div class="eg-cat-card-cta">Browse all <i class="bi bi-arrow-right"></i></div>
+          <div class="eg-cat-card-name"><?= e(t('storefront.home.all_categories')) ?></div>
+          <div class="eg-cat-card-cta"><?= e(t('storefront.home.browse_all')) ?> <i class="bi bi-arrow-right"></i></div>
         </a>
       </div>
     </div>
@@ -203,10 +203,10 @@ View::render('_layouts/public', [
     <div class="mb-20">
       <div class="eg-sec-head">
         <div>
-          <div class="eg-sec-title">Featured Products</div>
-          <div class="eg-sec-sub">Hand-picked by Etel Gebeya</div>
+          <div class="eg-sec-title"><?= e(t('storefront.home.featured_products')) ?></div>
+          <div class="eg-sec-sub"><?= e(t('storefront.home.featured_products_sub')) ?></div>
         </div>
-        <a href="<?= View::url('/search') ?>" class="eg-sec-more">View All <i class="bi bi-arrow-right"></i></a>
+        <a href="<?= View::url('/search') ?>" class="eg-sec-more"><?= e(t('common.view_all')) ?> <i class="bi bi-arrow-right"></i></a>
       </div>
       <div class="eg-product-grid">
         <?php foreach ($featured as $p): echo eg_product_card($p, $locale); endforeach; ?>
@@ -216,14 +216,14 @@ View::render('_layouts/public', [
 
     <!-- VENDOR BANNER -->
     <div class="eg-vendor-banner">
-      <h2>Ready to Sell on Etel Gebeya?</h2>
-      <p>Join 500+ Ethiopian vendors reaching thousands of customers nationwide. Free to start.</p>
+      <h2><?= e(t('storefront.home.vendor_banner_title')) ?></h2>
+      <p><?= e(t('storefront.home.vendor_banner_sub')) ?></p>
       <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
         <a href="<?= View::url('/sell') ?>" class="eg-btn eg-btn-gold">
-          <i class="bi bi-shop"></i> Start Selling Free
+          <i class="bi bi-shop"></i> <?= e(t('storefront.home.start_selling_free')) ?>
         </a>
         <a href="<?= View::url('/vendor-panel') ?>" class="eg-btn eg-btn-outline">
-          <i class="bi bi-speedometer2"></i> Vendor Dashboard
+          <i class="bi bi-speedometer2"></i> <?= e(t('storefront.footer.vendor_dashboard')) ?>
         </a>
       </div>
     </div>
@@ -233,10 +233,10 @@ View::render('_layouts/public', [
     <div class="mb-20">
       <div class="eg-sec-head">
         <div>
-          <div class="eg-sec-title">New Arrivals</div>
-          <div class="eg-sec-sub">Fresh products added this week</div>
+          <div class="eg-sec-title"><?= e(t('storefront.home.new_arrivals')) ?></div>
+          <div class="eg-sec-sub"><?= e(t('storefront.home.new_arrivals_sub')) ?></div>
         </div>
-        <a href="<?= View::url('/search?sort=newest') ?>" class="eg-sec-more">View All <i class="bi bi-arrow-right"></i></a>
+        <a href="<?= View::url('/search?sort=newest') ?>" class="eg-sec-more"><?= e(t('common.view_all')) ?> <i class="bi bi-arrow-right"></i></a>
       </div>
       <div class="eg-product-grid">
         <?php foreach ($recent as $p): echo eg_product_card($p, $locale); endforeach; ?>
@@ -245,7 +245,7 @@ View::render('_layouts/public', [
     <?php else: ?>
     <div class="eg-empty mt-20">
       <i class="bi bi-bag"></i>
-      <p>No products yet. <a href="<?= View::url('/sell') ?>">Be the first vendor!</a></p>
+      <p><?= e(t('storefront.home.no_products_yet')) ?> <a href="<?= View::url('/sell') ?>"><?= e(t('storefront.home.be_first_vendor')) ?></a></p>
     </div>
     <?php endif; ?>
 

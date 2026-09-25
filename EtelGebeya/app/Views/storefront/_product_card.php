@@ -43,7 +43,7 @@ if (!function_exists('eg_product_card')) {
 
         // Badges
         $badges = '';
-        if ($isNew)   $badges .= '<span class="eg-badge-new">NEW</span>';
+        if ($isNew)   $badges .= '<span class="eg-badge-new">' . e(t('storefront.product_card.new')) . '</span>';
         if ($disc > 0) $badges .= '<span class="eg-badge-disc">-' . $disc . '%</span>';
 
         // Image -- falls back to a neutral placeholder if the source 404s
@@ -69,10 +69,10 @@ if (!function_exists('eg_product_card')) {
                 ? '<div class="eg-card-add-wrap">'
                   . '<button class="eg-card-add" type="button"'
                   . ' onclick="event.preventDefault();egAddToCart(' . $pid . ',1,this)">'
-                  . '<i class="bi bi-cart-plus"></i> Add to Cart</button></div>'
+                  . '<i class="bi bi-cart-plus"></i> ' . e(t('product.add_to_cart')) . '</button></div>'
                 : '<div class="eg-card-add-wrap">'
                   . '<button class="eg-card-add" type="button" disabled style="opacity:.5;cursor:not-allowed">'
-                  . '<i class="bi bi-slash-circle"></i> Out of Stock</button></div>')
+                  . '<i class="bi bi-slash-circle"></i> ' . e(t('product.out_of_stock')) . '</button></div>')
             : '';
 
         return '<a href="' . $url . '" class="eg-card">'
@@ -94,7 +94,7 @@ if (!function_exists('eg_product_card')) {
              . '</div>'
              . '<div class="eg-card-footer">'
              .   '<span>' . $vendorName . '</span>'
-             .   '<span>' . ($sold > 0 ? $sold . ' sold' : 'In stock') . '</span>'
+             .   '<span>' . ($sold > 0 ? e(t('storefront.product.n_sold', ['n' => $sold])) : e(t('product.in_stock'))) . '</span>'
              . '</div>'
              . $addBtn
              . '</a>';

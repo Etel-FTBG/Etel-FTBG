@@ -171,7 +171,7 @@ const EG_BASE_URL = window.EG_BASE_URL;
 <script src="<?= View::asset('js/address-picker.js') ?>"></script>
 
 <div class="container checkout-page">
-  <h1 class="checkout-heading"><i class="bi bi-bag-check"></i> Checkout</h1>
+  <h1 class="checkout-heading"><i class="bi bi-bag-check"></i> <?= e(t('storefront.checkout.heading')) ?></h1>
 
   <?php if ($flash && $flash['type'] === 'error'): ?>
     <div class="flash-msg flash-error">
@@ -189,10 +189,10 @@ const EG_BASE_URL = window.EG_BASE_URL;
         <!-- Shipping Address -->
         <div class="checkout-section">
           <div class="section-head" style="display:flex;align-items:center;justify-content:space-between">
-            <span><i class="bi bi-geo-alt"></i> Shipping Address</span>
+            <span><i class="bi bi-geo-alt"></i> <?= e(t('storefront.checkout.shipping_address')) ?></span>
             <?php if (!empty($addresses)): ?>
               <select onchange="autofillAddress(this)" style="background:rgba(212,175,55,.06);border:1.5px solid rgba(212,175,55,.2);border-radius:10px;padding:.3rem .75rem;color:var(--text-dim,#C9B88A);font-size:.78rem;font-family:inherit;outline:none">
-                <option value="">Use saved address...</option>
+                <option value=""><?= e(t('storefront.checkout.use_saved_address')) ?></option>
                 <?php foreach ($addresses as $i => $a): ?>
                   <option value="<?= $i ?>"><?= e($a['label'].' -- '.$a['city']) ?></option>
                 <?php endforeach; ?>
@@ -214,7 +214,7 @@ const EG_BASE_URL = window.EG_BASE_URL;
           <?php endif; ?>
           <div class="form-row-2">
             <div class="form-group">
-              <label class="form-label" for="full_name">Full Name <span>*</span></label>
+              <label class="form-label" for="full_name"><?= e(t('auth.full_name')) ?> <span>*</span></label>
               <div class="input-wrap">
                 <i class="bi bi-person icon"></i>
                 <input type="text" id="full_name" name="full_name" class="form-input" required
@@ -222,7 +222,7 @@ const EG_BASE_URL = window.EG_BASE_URL;
               </div>
             </div>
             <div class="form-group">
-              <label class="form-label" for="phone">Phone <span>*</span></label>
+              <label class="form-label" for="phone"><?= e(t('storefront.checkout.phone_label')) ?> <span>*</span></label>
               <div class="input-wrap">
                 <i class="bi bi-phone icon"></i>
                 <input type="tel" id="phone" name="phone" class="form-input" required
@@ -232,11 +232,11 @@ const EG_BASE_URL = window.EG_BASE_URL;
           </div>
           <div class="form-row-2">
             <div class="form-group">
-              <label class="form-label" for="city">City <span>*</span></label>
+              <label class="form-label" for="city"><?= e(t('storefront.checkout.city_label')) ?> <span>*</span></label>
               <div class="input-wrap">
                 <i class="bi bi-building icon"></i>
                 <select id="city" name="city" class="form-input no-icon" style="padding-left:.9rem" required>
-                  <option value="">Select city...</option>
+                  <option value=""><?= e(t('storefront.checkout.select_city')) ?></option>
                   <?php
                   $cities = ['Addis Ababa','Dire Dawa','Mekelle','Gondar','Bahir Dar','Hawassa','Adama','Jimma','Dessie','Jijiga'];
                   foreach ($cities as $c):
@@ -245,38 +245,38 @@ const EG_BASE_URL = window.EG_BASE_URL;
               </div>
             </div>
             <div class="form-group">
-              <label class="form-label" for="address">Specific Address <span>*</span></label>
+              <label class="form-label" for="address"><?= e(t('storefront.checkout.specific_address_label')) ?> <span>*</span></label>
               <div class="input-wrap">
                 <i class="bi bi-map icon"></i>
-                <input type="text" id="address" name="address" class="form-input" required placeholder="Kebele, area, landmark...">
+                <input type="text" id="address" name="address" class="form-input" required placeholder="<?= e(t('storefront.checkout.address_placeholder')) ?>">
               </div>
             </div>
           </div>
 
           <div class="form-group">
-            <label class="form-label"><i class="bi bi-geo-alt-fill"></i> Pin Your Exact Location <span style="color:#7A6840;text-transform:none;font-weight:400">(for accurate delivery pricing)</span></label>
+            <label class="form-label"><i class="bi bi-geo-alt-fill"></i> <?= e(t('storefront.checkout.pin_location_label')) ?> <span style="color:#7A6840;text-transform:none;font-weight:400"><?= e(t('storefront.checkout.pin_location_hint')) ?></span></label>
             <div class="ap-wrap">
               <div class="ap-search-row">
-                <input type="text" id="addr-search" class="form-input no-icon" placeholder="Search an address in Ethiopia...">
-                <button type="button" id="addr-locate" class="ap-locate-btn"><i class="bi bi-crosshair"></i> Use My Location</button>
+                <input type="text" id="addr-search" class="form-input no-icon" placeholder="<?= e(t('storefront.checkout.search_address_placeholder')) ?>">
+                <button type="button" id="addr-locate" class="ap-locate-btn"><i class="bi bi-crosshair"></i> <?= e(t('storefront.checkout.use_my_location')) ?></button>
               </div>
               <div id="addr-results" class="ap-results"></div>
             </div>
             <div id="addr-map" class="ap-map"></div>
-            <div class="ap-hint">Drag the pin, search, or use your location -- this sets the exact delivery point couriers use.</div>
+            <div class="ap-hint"><?= e(t('storefront.checkout.map_hint')) ?></div>
             <input type="hidden" name="delivery_lat" id="delivery_lat">
             <input type="hidden" name="delivery_lng" id="delivery_lng">
           </div>
 
           <div class="form-group">
-            <label class="form-label" for="notes">Order Notes (optional)</label>
-            <textarea id="notes" name="notes" class="form-input no-icon" placeholder="Any special instructions for delivery..."></textarea>
+            <label class="form-label" for="notes"><?= e(t('storefront.checkout.order_notes_label')) ?></label>
+            <textarea id="notes" name="notes" class="form-input no-icon" placeholder="<?= e(t('storefront.checkout.order_notes_placeholder')) ?>"></textarea>
           </div>
         </div>
 
         <!-- Payment Method -->
         <div class="checkout-section">
-          <div class="section-head"><i class="bi bi-credit-card"></i> Payment Method</div>
+          <div class="section-head"><i class="bi bi-credit-card"></i> <?= e(t('storefront.checkout.payment_method')) ?></div>
           <div class="payment-grid">
 
             <!-- ኢE Pay wallet (real, verified transfer) -->
@@ -288,7 +288,7 @@ const EG_BASE_URL = window.EG_BASE_URL;
                 <span class="payment-icon">🅴</span>
                 <span>
                   <div class="payment-name">ኢE Pay Wallet</div>
-                  <div class="payment-sub">Held safely until you confirm receipt -- <a href="<?= View::url('/protection-policy') ?>" target="_blank" style="color:var(--eg-gold,#D4AF37);text-decoration:underline">buyer protection</a></div>
+                  <div class="payment-sub"><?= e(t('storefront.checkout.etelpay_sub')) ?> <a href="<?= View::url('/protection-policy') ?>" target="_blank" style="color:var(--eg-gold,#D4AF37);text-decoration:underline"><?= e(t('storefront.checkout.buyer_protection_link')) ?></a></div>
                 </span>
               </span>
             </label>
@@ -302,7 +302,7 @@ const EG_BASE_URL = window.EG_BASE_URL;
                 <span class="payment-icon">💳</span>
                 <span>
                   <div class="payment-name">Chapa</div>
-                  <div class="payment-sub">Cards / Bank transfer</div>
+                  <div class="payment-sub"><?= e(t('storefront.checkout.chapa_sub')) ?></div>
                 </span>
               </span>
             </label>
@@ -315,7 +315,7 @@ const EG_BASE_URL = window.EG_BASE_URL;
                 <span class="payment-icon">📱</span>
                 <span>
                   <div class="payment-name">Telebirr</div>
-                  <div class="payment-sub">Ethio Telecom wallet -- you'll get payment instructions after placing the order; our team confirms it manually, not instant</div>
+                  <div class="payment-sub"><?= e(t('storefront.checkout.manual_wallet_sub')) ?></div>
                 </span>
               </span>
             </label>
@@ -328,7 +328,7 @@ const EG_BASE_URL = window.EG_BASE_URL;
                 <span class="payment-icon">🏦</span>
                 <span>
                   <div class="payment-name">CBE Birr</div>
-                  <div class="payment-sub">Commercial Bank wallet -- you'll get payment instructions after placing the order; our team confirms it manually, not instant</div>
+                  <div class="payment-sub"><?= e(t('storefront.checkout.manual_wallet_sub')) ?></div>
                 </span>
               </span>
             </label>
@@ -340,8 +340,8 @@ const EG_BASE_URL = window.EG_BASE_URL;
               <span class="payment-label">
                 <span class="payment-icon">💵</span>
                 <span>
-                  <div class="payment-name">Cash on Delivery</div>
-                  <div class="payment-sub">Pay when you receive</div>
+                  <div class="payment-name"><?= e(t('storefront.footer.cash_on_delivery')) ?></div>
+                  <div class="payment-sub"><?= e(t('storefront.checkout.cod_sub')) ?></div>
                 </span>
               </span>
             </label>
@@ -353,7 +353,7 @@ const EG_BASE_URL = window.EG_BASE_URL;
 
       <!-- Right: order summary -->
       <div class="order-box">
-        <h3><i class="bi bi-receipt"></i> Your Order</h3>
+        <h3><i class="bi bi-receipt"></i> <?= e(t('storefront.checkout.your_order')) ?></h3>
 
         <?php foreach ($cart as $item): ?>
           <div class="order-item">
@@ -366,34 +366,34 @@ const EG_BASE_URL = window.EG_BASE_URL;
             </div>
             <div style="flex:1">
               <div class="order-item-name"><?= e($locale === 'am' && $item['name_am'] ? $item['name_am'] : $item['name_en']) ?></div>
-              <div class="order-item-meta">Qty: <?= (int)$item['qty'] ?> · Br <?= number_format($item['price'], 2) ?></div>
+              <div class="order-item-meta"><?= e(t('storefront.checkout.qty_label', ['n' => (int)$item['qty']])) ?> · Br <?= number_format($item['price'], 2) ?></div>
             </div>
             <div class="order-item-price">Br <?= number_format($item['price'] * $item['qty'], 2) ?></div>
           </div>
         <?php endforeach; ?>
 
         <div style="display:flex;gap:8px;margin:1rem 0 .75rem">
-          <input type="text" id="coupon-code" name="coupon_code" class="form-input" style="flex:1;text-transform:uppercase" placeholder="Promo code">
-          <button type="button" class="btn-outline" id="coupon-apply-btn" onclick="applyCoupon()" style="padding:0 1rem;white-space:nowrap">Apply</button>
+          <input type="text" id="coupon-code" name="coupon_code" class="form-input" style="flex:1;text-transform:uppercase" placeholder="<?= e(t('storefront.checkout.promo_code_placeholder')) ?>">
+          <button type="button" class="btn-outline" id="coupon-apply-btn" onclick="applyCoupon()" style="padding:0 1rem;white-space:nowrap"><?= e(t('storefront.checkout.apply')) ?></button>
         </div>
         <div id="coupon-msg" style="font-size:.78rem;margin-bottom:.5rem;min-height:1rem"></div>
         <input type="hidden" name="coupon_discount" id="coupon-discount-input" value="0">
 
         <div style="margin-top:1rem;padding-top:.75rem;border-top:1px solid rgba(212,175,55,.1)">
-          <div class="sum-row"><span>Subtotal</span><span>Br <?= number_format($total, 2) ?></span></div>
-          <div class="sum-row"><span>Shipping</span><span id="shipping-fee-display">Br <?= number_format($shipping, 2) ?></span></div>
+          <div class="sum-row"><span><?= e(t('storefront.checkout.subtotal')) ?></span><span>Br <?= number_format($total, 2) ?></span></div>
+          <div class="sum-row"><span><?= e(t('storefront.cart.shipping')) ?></span><span id="shipping-fee-display">Br <?= number_format($shipping, 2) ?></span></div>
           <div class="ap-hint" id="shipping-fee-note" style="margin:-.3rem 0 .3rem"></div>
-          <div class="sum-row" id="coupon-discount-row" style="display:none;color:#6ee7a0"><span>Discount</span><span id="coupon-discount-amt">-Br 0.00</span></div>
-          <div class="sum-row total"><span>Total</span><span id="order-total-display">Br <?= number_format($grand, 2) ?></span></div>
+          <div class="sum-row" id="coupon-discount-row" style="display:none;color:#6ee7a0"><span><?= e(t('storefront.checkout.discount')) ?></span><span id="coupon-discount-amt">-Br 0.00</span></div>
+          <div class="sum-row total"><span><?= e(t('storefront.cart.total')) ?></span><span id="order-total-display">Br <?= number_format($grand, 2) ?></span></div>
         </div>
 
         <input type="hidden" name="wallet_escrow_refs" id="wallet-escrow-refs" value="">
         <input type="hidden" name="wallet_shipping_tx_ref" id="wallet-shipping-tx-ref" value="">
         <div id="etelpay-status" style="font-size:.8rem;margin-bottom:.5rem;min-height:1.1rem"></div>
         <button type="submit" class="place-btn" id="place-btn">
-          <i class="bi bi-lock-fill"></i> Place Order -- Br <?= number_format($grand, 2) ?>
+          <i class="bi bi-lock-fill"></i> <?= e(t('storefront.checkout.place_order_prefix')) ?> -- Br <?= number_format($grand, 2) ?>
         </button>
-        <div class="secure-note"><i class="bi bi-shield-check"></i> Secure & encrypted checkout</div>
+        <div class="secure-note"><i class="bi bi-shield-check"></i> <?= e(t('storefront.checkout.secure_note')) ?></div>
       </div>
 
     </div><!-- .checkout-grid -->
@@ -405,6 +405,27 @@ const EG_BASE_URL = window.EG_BASE_URL;
 // this browser to Etel Pay, never through EtelGebeya's backend. Only the
 // resulting tx_ref is sent here, and the backend independently verifies
 // it with Etel Pay before ever marking the order paid.
+const CHECKOUT_I18N = <?= json_encode([
+    'place_order_prefix' => t('storefront.checkout.place_order_prefix'),
+    'placing_order'       => t('storefront.checkout.placing_order'),
+    'enter_code'          => t('storefront.checkout.enter_code'),
+    'checking'            => t('storefront.checkout.checking'),
+    'invalid_coupon'      => t('storefront.checkout.invalid_coupon'),
+    'coupon_applied'      => t('storefront.checkout.coupon_applied'),
+    'free_shipping_suffix'=> t('storefront.checkout.free_shipping_suffix'),
+    'network_error'       => t('storefront.checkout.network_error'),
+    'no_phone_on_file'    => t('storefront.checkout.no_phone_on_file'),
+    'empty_cart'          => t('storefront.checkout.empty_cart'),
+    'enter_pin_prefix'    => t('storefront.checkout.enter_pin_prefix'),
+    'signing_in'          => t('storefront.checkout.signing_in'),
+    'signin_failed'       => t('storefront.checkout.signin_failed'),
+    'holding_payment'     => t('storefront.checkout.holding_payment'),
+    'hold_failed'         => t('storefront.checkout.hold_failed'),
+    'sending_shipping'    => t('storefront.checkout.sending_shipping'),
+    'transfer_failed'     => t('storefront.checkout.transfer_failed'),
+    'payment_held'        => t('storefront.checkout.payment_held'),
+    'payment_failed'      => t('storefront.checkout.payment_failed'),
+]) ?>;
 const ETEL_PAY_API = 'https://ethelmarket.com/Etel.Pay/wallet/api/v2_verify.php';
 const ETELPAY_MERCHANT_PHONE = <?= json_encode($etelPayMerchantPhone ?? '') ?>;
 const ETELGEBEYA_USER_PHONE  = <?= json_encode($user['phone'] ?? '') ?>;
@@ -441,7 +462,7 @@ function recomputeTotals() {
   CHECKOUT_GRAND_TOTAL = Math.max(0, CHECKOUT_SUBTOTAL + shipping - CHECKOUT_DISCOUNT);
   document.getElementById('shipping-fee-display').textContent = 'Br ' + shipping.toFixed(2);
   document.getElementById('order-total-display').textContent = 'Br ' + CHECKOUT_GRAND_TOTAL.toFixed(2);
-  document.getElementById('place-btn').innerHTML = '<i class="bi bi-lock-fill"></i> Place Order -- Br ' + CHECKOUT_GRAND_TOTAL.toFixed(2);
+  document.getElementById('place-btn').innerHTML = '<i class="bi bi-lock-fill"></i> ' + CHECKOUT_I18N.place_order_prefix + ' -- Br ' + CHECKOUT_GRAND_TOTAL.toFixed(2);
 }
 
 // Delivery fee is distance-based (Br 50 flat within 2km of the seller,
@@ -479,10 +500,10 @@ async function applyCoupon() {
   const msgEl = document.getElementById('coupon-msg');
   const btn = document.getElementById('coupon-apply-btn');
   const code = codeEl.value.trim();
-  if (!code) { msgEl.style.color = '#ef4444'; msgEl.textContent = 'Enter a code.'; return; }
+  if (!code) { msgEl.style.color = '#ef4444'; msgEl.textContent = CHECKOUT_I18N.enter_code; return; }
 
   btn.disabled = true;
-  msgEl.style.color = '#999'; msgEl.textContent = 'Checking…';
+  msgEl.style.color = '#999'; msgEl.textContent = CHECKOUT_I18N.checking;
 
   try {
     const res = await fetch('<?= View::url('/checkout/apply-coupon') ?>', {
@@ -491,22 +512,22 @@ async function applyCoupon() {
     }).then(r => r.json());
 
     if (!res.ok) {
-      msgEl.style.color = '#ef4444'; msgEl.textContent = res.message || 'Invalid coupon.';
+      msgEl.style.color = '#ef4444'; msgEl.textContent = res.message || CHECKOUT_I18N.invalid_coupon;
       document.getElementById('coupon-discount-row').style.display = 'none';
       document.getElementById('coupon-discount-input').value = '0';
       CHECKOUT_DISCOUNT = 0;
       CHECKOUT_FREE_SHIPPING = false;
     } else {
-      msgEl.style.color = '#6ee7a0'; msgEl.textContent = res.message || 'Coupon applied!';
+      msgEl.style.color = '#6ee7a0'; msgEl.textContent = res.message || CHECKOUT_I18N.coupon_applied;
       CHECKOUT_DISCOUNT = res.discount;
       CHECKOUT_FREE_SHIPPING = !!res.free_shipping;
       document.getElementById('coupon-discount-input').value = res.discount;
       document.getElementById('coupon-discount-row').style.display = 'flex';
-      document.getElementById('coupon-discount-amt').textContent = '-Br ' + res.discount.toFixed(2) + (res.free_shipping ? ' + free shipping' : '');
+      document.getElementById('coupon-discount-amt').textContent = '-Br ' + res.discount.toFixed(2) + (res.free_shipping ? ' ' + CHECKOUT_I18N.free_shipping_suffix : '');
     }
     recomputeTotals();
   } catch (e) {
-    msgEl.style.color = '#ef4444'; msgEl.textContent = 'Network error, try again.';
+    msgEl.style.color = '#ef4444'; msgEl.textContent = CHECKOUT_I18N.network_error;
   } finally {
     btn.disabled = false;
   }
@@ -524,19 +545,19 @@ document.getElementById('checkout-form').addEventListener('submit', function(e) 
   }
 
   btn.disabled = true;
-  btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Placing order...';
+  btn.innerHTML = '<i class="bi bi-hourglass-split"></i> ' + CHECKOUT_I18N.placing_order;
 });
 
 async function payWithEtelPay(btn, statusEl) {
-  if (!ETELGEBEYA_USER_PHONE) { statusEl.textContent = 'Could not find your phone number on file.'; statusEl.style.color = '#ef4444'; return; }
-  if (!CHECKOUT_SELLERS.length) { statusEl.textContent = 'Your cart has no items to pay for.'; statusEl.style.color = '#ef4444'; return; }
-  const pin = prompt('Enter your ኢE Pay PIN to pay Br ' + CHECKOUT_GRAND_TOTAL.toFixed(2));
+  if (!ETELGEBEYA_USER_PHONE) { statusEl.textContent = CHECKOUT_I18N.no_phone_on_file; statusEl.style.color = '#ef4444'; return; }
+  if (!CHECKOUT_SELLERS.length) { statusEl.textContent = CHECKOUT_I18N.empty_cart; statusEl.style.color = '#ef4444'; return; }
+  const pin = prompt(CHECKOUT_I18N.enter_pin_prefix + ' Br ' + CHECKOUT_GRAND_TOTAL.toFixed(2));
   if (!pin) return;
 
   btn.disabled = true;
   statusEl.style.color = '';
   try {
-    statusEl.textContent = 'Signing in to ኢE Pay…';
+    statusEl.textContent = CHECKOUT_I18N.signing_in;
     // Uses the shared EtelID password (not a separate Etel Pay PIN) --
     // most shoppers never set up a dedicated Etel Pay wallet PIN, only
     // their one EtelID, and this endpoint auto-provisions/uses their
@@ -546,7 +567,7 @@ async function payWithEtelPay(btn, statusEl) {
       body: JSON.stringify({ action: 'ep_login_etelid', phone: ETELGEBEYA_USER_PHONE, pin: pin }),
     }).then(r => r.json());
     if (!loginRes.success || !loginRes.data || !loginRes.data.token) {
-      throw new Error((loginRes.data && loginRes.data.message) || 'ኢE Pay sign-in failed. Check your EtelID password.');
+      throw new Error((loginRes.data && loginRes.data.message) || CHECKOUT_I18N.signin_failed);
     }
     const authHeader = { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + loginRes.data.token };
 
@@ -559,13 +580,13 @@ async function payWithEtelPay(btn, statusEl) {
     for (const s of CHECKOUT_SELLERS) {
       const amount = perSellerAmounts[s.seller_id] || 0;
       if (amount <= 0) continue;
-      statusEl.textContent = 'Holding payment for ' + amount.toFixed(2) + ' ETB…';
+      statusEl.textContent = CHECKOUT_I18N.holding_payment + ' ' + amount.toFixed(2) + ' ETB…';
       const holdRes = await fetch(ETEL_PAY_API, {
         method: 'POST', headers: authHeader,
         body: JSON.stringify({ action: 'ep_escrow_send', receiver: s.phone, amount: amount, note: 'Etel Gebeya order' }),
       }).then(r => r.json());
       if (!holdRes.success || !holdRes.data || !holdRes.data.tx_ref) {
-        throw new Error((holdRes.data && holdRes.data.message) || 'ኢE Pay hold failed for one of the sellers in your cart.');
+        throw new Error((holdRes.data && holdRes.data.message) || CHECKOUT_I18N.hold_failed);
       }
       escrowRefs.push({ seller_id: s.seller_id, tx_ref: holdRes.data.tx_ref });
     }
@@ -576,23 +597,23 @@ async function payWithEtelPay(btn, statusEl) {
     // made it free).
     const shippingDue = CHECKOUT_GRAND_TOTAL - Object.values(perSellerAmounts).reduce((a,b) => a+b, 0);
     if (shippingDue > 0.009) {
-      statusEl.textContent = 'Sending shipping fee…';
+      statusEl.textContent = CHECKOUT_I18N.sending_shipping;
       const sendRes = await fetch(ETEL_PAY_API, {
         method: 'POST', headers: authHeader,
         body: JSON.stringify({ action: 'ep_send', receiver: ETELPAY_MERCHANT_PHONE, amount: Math.round(shippingDue*100)/100, currency: 'ETB', note: 'Etel Gebeya order shipping' }),
       }).then(r => r.json());
       if (!sendRes.success || !sendRes.data || !sendRes.data.tx_ref) {
-        throw new Error((sendRes.data && sendRes.data.message) || 'ኢE Pay transfer failed.');
+        throw new Error((sendRes.data && sendRes.data.message) || CHECKOUT_I18N.transfer_failed);
       }
       document.getElementById('wallet-shipping-tx-ref').value = sendRes.data.tx_ref;
     }
 
     statusEl.style.color = '#10b981';
-    statusEl.textContent = 'Payment held -- placing your order…';
+    statusEl.textContent = CHECKOUT_I18N.payment_held;
     document.getElementById('checkout-form').submit();
   } catch (err) {
     statusEl.style.color = '#ef4444';
-    statusEl.textContent = err.message || 'Payment failed. Please try again.';
+    statusEl.textContent = err.message || CHECKOUT_I18N.payment_failed;
     btn.disabled = false;
   }
 }
@@ -601,6 +622,6 @@ async function payWithEtelPay(btn, statusEl) {
 $__content = ob_get_clean();
 echo View::capture('_layouts/public', [
     '__content' => $__content,
-    'pageTitle'  => $pageTitle ?? 'Checkout -- Etel Gebeya',
+    'pageTitle'  => $pageTitle ?? t('storefront.checkout.heading') . ' -- Etel Gebeya',
     'locale'     => $locale,
 ]);

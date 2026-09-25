@@ -12,11 +12,11 @@ $base     = rtrim(parse_url(View::url('/'), PHP_URL_PATH) ?? '', '/');
 $rel      = substr($current, strlen($base)) ?: '/';
 
 $navItems = [
-    ['bi-speedometer2','/account',          'Dashboard',  str_starts_with($rel,'/account')&&!str_contains($rel,'orders')&&!str_contains($rel,'addresses')],
-    ['bi-receipt',     '/account/orders',   'My Orders',  str_contains($rel,'orders')],
-    ['bi-geo-alt',     '/account/addresses','Addresses',  str_contains($rel,'addresses')],
-    ['bi-heart',       '/account/wishlist', 'Wishlist',   str_contains($rel,'wishlist')],
-    ['bi-person-gear', '/account',          'Profile',    false],
+    ['bi-speedometer2','/account',          t('customer.nav.dashboard'), str_starts_with($rel,'/account')&&!str_contains($rel,'orders')&&!str_contains($rel,'addresses')],
+    ['bi-receipt',     '/account/orders',   t('customer.nav.my_orders'), str_contains($rel,'orders')],
+    ['bi-geo-alt',     '/account/addresses',t('customer.nav.addresses'), str_contains($rel,'addresses')],
+    ['bi-heart',       '/account/wishlist', t('customer.nav.wishlist'),  str_contains($rel,'wishlist')],
+    ['bi-person-gear', '/account',          t('customer.nav.profile'),  false],
 ];
 $isAdmin = isset($auth) && $auth->isAdmin();
 ?>
@@ -64,9 +64,9 @@ $isAdmin = isset($auth) && $auth->isAdmin();
     <!-- User card -->
     <div class="cp-user-card">
       <div class="cp-avatar"><?= e(mb_strtoupper(mb_substr($u['full_name']??'U',0,1,'UTF-8'),'UTF-8')) ?></div>
-      <div class="cp-uname"><?= e($u['full_name'] ?? 'My Account') ?></div>
+      <div class="cp-uname"><?= e($u['full_name'] ?? t('storefront.footer.my_account')) ?></div>
       <div class="cp-uemail"><?= e($u['email'] ?? '') ?></div>
-      <div class="cp-ustatus">Verified Customer</div>
+      <div class="cp-ustatus"><?= e(t('customer.verified_customer')) ?></div>
     </div>
 
     <!-- Nav -->
@@ -92,29 +92,36 @@ $isAdmin = isset($auth) && $auth->isAdmin();
     <!-- Admin switcher -- only visible to EtelID admins -->
     <button type="button" class="cp-admin-btn" onclick="goToAdmin()" id="admin-switch-btn">
       <i class="bi bi-shield-fill-check"></i>
-      <span>Admin Panel</span>
+      <span><?= e(t('customer.admin_panel')) ?></span>
       <i class="bi bi-arrow-right-circle" style="margin-left:auto;font-size:.85rem;opacity:.7"></i>
     </button>
     <?php endif; ?>
 
     <!-- Store link -->
     <a href="<?= View::url('/') ?>" style="display:flex;align-items:center;gap:.65rem;padding:.7rem 1.1rem;font-size:.82rem;font-weight:700;color:var(--text-dim,#C9B88A);text-decoration:none;background:var(--card,#130d05);border:1.5px solid var(--border-dim,rgba(212,175,55,.08));border-radius:14px;margin-bottom:.6rem;transition:all .2s" onmouseover="this.style.borderColor='rgba(212,175,55,.25)'" onmouseout="this.style.borderColor=''">
-      <i class="bi bi-shop" style="color:var(--g2,#D4AF37)"></i> Back to Store
+      <i class="bi bi-shop" style="color:var(--g2,#D4AF37)"></i> <?= e(t('customer.back_to_store')) ?>
     </a>
 
     <!-- Logout -->
     <form method="POST" action="<?= View::url('/logout') ?>">
       <?= csrf() ?>
       <button type="submit" class="cp-logout" style="width:100%;border-radius:14px">
-        <i class="bi bi-box-arrow-right"></i> Sign Out
+        <i class="bi bi-box-arrow-right"></i> <?= e(t('customer.sign_out')) ?>
       </button>
     </form>
 
     <?php if ($isAdmin): ?>
     <script>
+    const CP_I18N = <?= json_encode([
+        'opening'             => t('customer.opening'),
+        'admin_panel'         => t('customer.admin_panel'),
+        'admin_access_denied' => t('customer.admin_access_denied'),
+        'network_error'       => t('storefront.checkout.network_error'),
+        'unknown'             => t('customer.unknown'),
+    ]) ?>;
     async function goToAdmin() {
       const btn = document.getElementById('admin-switch-btn');
-      btn.innerHTML = '<i class="bi bi-hourglass-split"></i> <span>Opening...</span>';
+      btn.innerHTML = '<i class="bi bi-hourglass-split"></i> <span>' + CP_I18N.opening + '</span>';
       btn.style.opacity = '0.7'; btn.disabled = true;
       try {
         const base = '<?= $eg_base ?>';
@@ -128,13 +135,13 @@ $isAdmin = isset($auth) && $auth->isAdmin();
           localStorage.setItem('eg_admin_token', d.data.token);
           window.location.href = base + '/admin';
         } else {
-          alert('Admin access denied: ' + (d.error || 'unknown'));
-          btn.innerHTML = '<i class="bi bi-shield-fill-check"></i><span>Admin Panel</span>';
+          alert(CP_I18N.admin_access_denied + ': ' + (d.error || CP_I18N.unknown));
+          btn.innerHTML = '<i class="bi bi-shield-fill-check"></i><span>' + CP_I18N.admin_panel + '</span>';
           btn.style.opacity = '1'; btn.disabled = false;
         }
       } catch(e) {
-        alert('Network error: ' + e.message);
-        btn.innerHTML = '<i class="bi bi-shield-fill-check"></i><span>Admin Panel</span>';
+        alert(CP_I18N.network_error + ': ' + e.message);
+        btn.innerHTML = '<i class="bi bi-shield-fill-check"></i><span>' + CP_I18N.admin_panel + '</span>';
         btn.style.opacity = '1'; btn.disabled = false;
       }
     }

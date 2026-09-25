@@ -110,12 +110,12 @@ ob_start();
   <!-- Search Hero -->
   <div class="search-hero">
     <h2 style="text-align:center;font-size:1.4rem;font-weight:800;color:var(--text)">
-      <?= $q ? 'Results for <em style="color:var(--g1)">'.e($q).'</em>' : 'Search Etel Gebeya' ?>
+      <?= $q ? t('storefront.search.results_for_em', ['q' => e($q)]) : e(t('storefront.search.hero_title')) ?>
     </h2>
     <div class="search-hero-form">
       <form action="<?= View::url('/search') ?>" method="GET" style="display:flex;gap:.75rem;width:100%">
         <input type="search" name="q" value="<?= htmlspecialchars($q, ENT_QUOTES) ?>" placeholder="<?= t('site.search.placeholder') ?>" autofocus>
-        <button type="submit"><i class="bi bi-search"></i> <?= $locale === 'am' ? '&#4936;&#4621;&#4877;' : 'Search' ?></button>
+        <button type="submit"><i class="bi bi-search"></i> <?= e(t('storefront.search.search_button')) ?></button>
       </form>
     </div>
   </div>
@@ -124,8 +124,8 @@ ob_start();
     <!-- Filters -->
     <aside class="search-sidebar">
       <div class="filter-card">
-        <div class="filter-title"><i class="bi bi-folder2"></i> Categories</div>
-        <a href="<?= View::url('/search?q='.urlencode($q)) ?>" class="cat-filter-link active"><i class="bi bi-grid-3x3-gap"></i> All categories</a>
+        <div class="filter-title"><i class="bi bi-folder2"></i> <?= e(t('storefront.search.categories')) ?></div>
+        <a href="<?= View::url('/search?q='.urlencode($q)) ?>" class="cat-filter-link active"><i class="bi bi-grid-3x3-gap"></i> <?= e(t('storefront.search.all_categories')) ?></a>
         <?php $catShowFirst = 8; foreach ($allCats as $i => $cat): [$ca] = eg_cat_color($cat->id); ?>
           <a href="<?= View::url('/category/'.$cat->slug) ?>" class="cat-filter-link<?= $i >= $catShowFirst ? ' cat-filter-extra' : '' ?>"
              style="--cat-a:<?= $ca ?>" <?= $i >= $catShowFirst ? 'hidden' : '' ?>>
@@ -135,27 +135,27 @@ ob_start();
         <?php endforeach; ?>
         <?php if (count($allCats) > $catShowFirst): ?>
           <button type="button" class="cat-filter-more" aria-expanded="false" onclick="egToggleCats(this)">
-            <span>Show <?= count($allCats) - $catShowFirst ?> more</span> <i class="bi bi-chevron-down"></i>
+            <span><?= e(t('storefront.search.show_n_more', ['n' => count($allCats) - $catShowFirst])) ?></span> <i class="bi bi-chevron-down"></i>
           </button>
         <?php endif; ?>
       </div>
 
       <div class="filter-card">
-        <div class="filter-title"><i class="bi bi-cash-stack"></i> Price Range</div>
+        <div class="filter-title"><i class="bi bi-cash-stack"></i> <?= e(t('category.price_range')) ?></div>
         <div class="chip-row">
-          <?php foreach ([['All',''],['Under Br 500','0-500'],['Br 500-2,000','500-2000'],['Br 2,000-10,000','2000-10000'],['Br 10,000+','10000+']] as [$label,$val]): ?>
+          <?php foreach ([[t('storefront.search.filter_all'),''],[t('category.under_br', ['n'=>500]),'0-500'],['Br 500-2,000','500-2000'],['Br 2,000-10,000','2000-10000'],['Br 10,000+','10000+']] as [$label,$val]): ?>
             <label class="filter-chip">
               <input type="radio" name="price" value="<?= $val ?>" <?= (($_GET['price']??'')===$val||(empty($_GET['price'])&&$val==='')?'checked':'') ?>>
-              <span><?= $label ?></span>
+              <span><?= e($label) ?></span>
             </label>
           <?php endforeach; ?>
         </div>
       </div>
 
       <div class="filter-card">
-        <div class="filter-title"><i class="bi bi-star-fill"></i> Rating</div>
+        <div class="filter-title"><i class="bi bi-star-fill"></i> <?= e(t('category.rating')) ?></div>
         <div class="chip-row">
-          <?php foreach ([['Any rating',''],['4&#9733; & up','4'],['3&#9733; & up','3']] as [$label,$val]): ?>
+          <?php foreach ([[t('category.any_rating'),''],['4&#9733; '.t('storefront.search.and_up'),'4'],['3&#9733; '.t('storefront.search.and_up'),'3']] as [$label,$val]): ?>
             <label class="filter-chip">
               <input type="radio" name="rating" value="<?= $val ?>" <?= (($_GET['rating']??'')===$val?'checked':'') ?>>
               <span><?= $label ?></span>
@@ -170,20 +170,20 @@ ob_start();
       <div class="sort-bar">
         <div class="results-count">
           <?php if ($q): ?>
-            <strong><?= number_format($total) ?></strong> results for <span class="highlight"><?= htmlspecialchars($q, ENT_QUOTES) ?></span>
+            <strong><?= number_format($total) ?></strong> <?= e(t('storefront.search.results_for_plain')) ?> <span class="highlight"><?= htmlspecialchars($q, ENT_QUOTES) ?></span>
           <?php else: ?>
-            Browse all <strong><?= number_format($total) ?></strong> products
+            <?= e(t('storefront.search.browse_all_prefix')) ?> <strong><?= number_format($total) ?></strong> <?= e(t('storefront.search.products_suffix')) ?>
           <?php endif; ?>
         </div>
         <div style="display:flex;align-items:center;gap:.5rem;">
-          <span style="font-size:.8rem;color:var(--text2)">Sort:</span>
+          <span style="font-size:.8rem;color:var(--text2)"><?= e(t('category.sort_label')) ?></span>
           <select onchange="applySort(this.value)">
-            <option value="relevant" <?= ($_GET['sort']??'')==='relevant'?'selected':'' ?>>Most Relevant</option>
-            <option value="newest" <?= ($_GET['sort']??'')==='newest'?'selected':'' ?>>Newest</option>
-            <option value="price_asc" <?= ($_GET['sort']??'')==='price_asc'?'selected':'' ?>>Price: Low to High</option>
-            <option value="price_desc" <?= ($_GET['sort']??'')==='price_desc'?'selected':'' ?>>Price: High to Low</option>
-            <option value="rating" <?= ($_GET['sort']??'')==='rating'?'selected':'' ?>>Top Rated</option>
-            <option value="popular" <?= ($_GET['sort']??'')==='popular'?'selected':'' ?>>Most Sold</option>
+            <option value="relevant" <?= ($_GET['sort']??'')==='relevant'?'selected':'' ?>><?= e(t('storefront.search.sort_relevant')) ?></option>
+            <option value="newest" <?= ($_GET['sort']??'')==='newest'?'selected':'' ?>><?= e(t('storefront.search.sort_newest')) ?></option>
+            <option value="price_asc" <?= ($_GET['sort']??'')==='price_asc'?'selected':'' ?>><?= e(t('category.sort_price_asc')) ?></option>
+            <option value="price_desc" <?= ($_GET['sort']??'')==='price_desc'?'selected':'' ?>><?= e(t('category.sort_price_desc')) ?></option>
+            <option value="rating" <?= ($_GET['sort']??'')==='rating'?'selected':'' ?>><?= e(t('category.sort_rating')) ?></option>
+            <option value="popular" <?= ($_GET['sort']??'')==='popular'?'selected':'' ?>><?= e(t('storefront.search.sort_most_sold')) ?></option>
           </select>
         </div>
       </div>
@@ -192,7 +192,7 @@ ob_start();
         <div class="no-results">
           <div style="font-size:4rem;margin-bottom:1rem;color:var(--g2);opacity:.5"><i class="bi bi-search"></i></div>
           <h3 style="color:var(--text)"><?= htmlspecialchars(t('search.no_results'), ENT_QUOTES) ?></h3>
-          <p style="margin-top:.5rem;margin-bottom:1.5rem">Try different keywords or browse by category</p>
+          <p style="margin-top:.5rem;margin-bottom:1.5rem"><?= e(t('storefront.search.try_different_keywords')) ?></p>
           <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap">
             <?php foreach (array_slice($allCats,0,4) as $cat): ?>
               <a href="<?= View::url('/category/'.$cat->slug) ?>" style="padding:.5rem 1.1rem;border-radius:20px;border:1.5px solid var(--border);color:var(--g1);text-decoration:none;font-size:.85rem;background:var(--card)">
@@ -231,14 +231,18 @@ ob_start();
 </div>
 
 <script>
+const SEARCH_I18N = <?= json_encode([
+    'show_n_more' => t('storefront.search.show_n_more', ['n' => '%n']),
+    'show_less'   => t('storefront.search.show_less'),
+]) ?>;
 function egToggleCats(btn) {
   const card = btn.closest('.filter-card');
   const expanded = btn.getAttribute('aria-expanded') === 'true';
   card.querySelectorAll('.cat-filter-extra').forEach(a => { a.hidden = expanded; });
   btn.setAttribute('aria-expanded', String(!expanded));
   btn.querySelector('span').textContent = expanded
-    ? 'Show ' + card.querySelectorAll('.cat-filter-extra').length + ' more'
-    : 'Show less';
+    ? SEARCH_I18N.show_n_more.replace('%n', card.querySelectorAll('.cat-filter-extra').length)
+    : SEARCH_I18N.show_less;
 }
 (function(){
   const input   = document.querySelector('.search-hero-form input[name=q]');
@@ -322,6 +326,6 @@ function egToggleCats(btn) {
 $__content = ob_get_clean();
 echo \App\Core\View::capture('_layouts/public', [
     '__content' => $__content,
-    'pageTitle'  => $q ? "Search: $q" : 'Browse Products',
+    'pageTitle'  => $q ? t('storefront.search.search_title_prefix') . ": $q" : t('storefront.search.browse_products'),
     'locale'     => $locale,
 ]);

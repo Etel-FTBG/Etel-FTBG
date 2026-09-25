@@ -287,16 +287,16 @@ ob_start();
         <?php if (!$product->inStock()): ?>
           <span class="out-stock"><i class="bi bi-x-circle-fill"></i> <?= t('product.out_of_stock') ?></span>
         <?php elseif ($product->lowStock()): ?>
-          <span class="low-stock"><i class="bi bi-exclamation-triangle-fill"></i> Only <?= $product->stockQty ?> left!</span>
+          <span class="low-stock"><i class="bi bi-exclamation-triangle-fill"></i> <?= e(t('product.low_stock', ['count' => $product->stockQty])) ?>!</span>
         <?php else: ?>
           <span class="in-stock"><i class="bi bi-check-circle-fill"></i> <?= t('product.in_stock') ?></span>
-          <?php if ($product->trackStock): ?><span style="font-size:.8rem;color:var(--text2)"><?= number_format($product->stockQty) ?> available</span><?php endif; ?>
+          <?php if ($product->trackStock): ?><span style="font-size:.8rem;color:var(--text2)"><?= number_format($product->stockQty) ?> <?= e(t('storefront.product.available')) ?></span><?php endif; ?>
         <?php endif; ?>
       </div>
 
       <?php if ($product->shippingEstimate()): ?>
       <div class="ship-estimate">
-        <i class="bi bi-truck"></i> Ships in <?= e($product->shippingEstimate()) ?> -- shipped directly by the supplier
+        <i class="bi bi-truck"></i> <?= e(t('storefront.product.ships_in_prefix')) ?> <?= e($product->shippingEstimate()) ?> <?= e(t('storefront.product.ships_in_suffix')) ?>
       </div>
       <?php endif; ?>
 
@@ -311,7 +311,7 @@ ob_start();
           <?= !$product->inStock() ? 'disabled' : '' ?>>
           <i class="bi bi-cart-plus"></i> <?= t('product.add_to_cart') ?>
         </button>
-        <button class="wishlist-btn" onclick="addWishlist(<?= $product->id ?>)" title="Add to wishlist"><i class="bi bi-heart"></i></button>
+        <button class="wishlist-btn" onclick="addWishlist(<?= $product->id ?>)" title="<?= e(t('storefront.product.add_to_wishlist')) ?>"><i class="bi bi-heart"></i></button>
       </div>
 
       <!-- Meta -->
@@ -319,8 +319,8 @@ ob_start();
         <table>
           <?php if ($product->sku): ?><tr><td><?= t('product.sku') ?></td><td style="font-family:monospace"><?= htmlspecialchars($product->sku, ENT_QUOTES) ?></td></tr><?php endif; ?>
           <?php if ($product->weightKg): ?><tr><td><?= t('product.weight') ?></td><td><?= $product->weightKg ?> <?= t('product.kg') ?></td></tr><?php endif; ?>
-          <tr><td>Views</td><td><?= number_format($product->viewCount) ?></td></tr>
-          <tr><td>Sold</td><td><?= number_format($product->soldCount) ?></td></tr>
+          <tr><td><?= e(t('storefront.product.views')) ?></td><td><?= number_format($product->viewCount) ?></td></tr>
+          <tr><td><?= e(t('storefront.product.sold_label')) ?></td><td><?= number_format($product->soldCount) ?></td></tr>
         </table>
       </div>
 
@@ -331,11 +331,11 @@ ob_start();
         <div style="flex:1">
           <div class="vendor-name"><?= htmlspecialchars($vendor['shop_name']??'', ENT_QUOTES) ?></div>
           <div class="vendor-rating">
-            <i class="bi bi-star-fill"></i> <?= number_format((float)($vendor['rating_avg']??0),1) ?> &middot; <?= $vendor['rating_count']??0 ?> reviews
-            <?php if (($vendor['total_sold'] ?? 0) > 0): ?>&middot; <?= number_format($vendor['total_sold']) ?> sold<?php endif; ?>
+            <i class="bi bi-star-fill"></i> <?= number_format((float)($vendor['rating_avg']??0),1) ?> &middot; <?= e(t('storefront.product.n_reviews', ['n' => $vendor['rating_count']??0])) ?>
+            <?php if (($vendor['total_sold'] ?? 0) > 0): ?>&middot; <?= e(t('storefront.product.n_sold', ['n' => number_format($vendor['total_sold'])])) ?><?php endif; ?>
           </div>
         </div>
-        <a href="<?= View::url('/vendor/'.htmlspecialchars($vendor['shop_slug']??'',ENT_QUOTES)) ?>" style="text-decoration:none;color:var(--text);display:inline-block;padding:8px 16px;border-radius:var(--r);border:1.5px solid var(--border);font-size:12.5px;font-weight:700;transition:border-color .15s" onmouseover="this.style.borderColor='var(--g2)'" onmouseout="this.style.borderColor='var(--border)'">Visit Shop</a>
+        <a href="<?= View::url('/vendor/'.htmlspecialchars($vendor['shop_slug']??'',ENT_QUOTES)) ?>" style="text-decoration:none;color:var(--text);display:inline-block;padding:8px 16px;border-radius:var(--r);border:1.5px solid var(--border);font-size:12.5px;font-weight:700;transition:border-color .15s" onmouseover="this.style.borderColor='var(--g2)'" onmouseout="this.style.borderColor='var(--border)'"><?= e(t('storefront.product.visit_shop')) ?></a>
       </div>
       <?php endif; ?>
     </div>
@@ -344,8 +344,8 @@ ob_start();
   <!-- Detail Tabs -->
   <div class="detail-panel" style="margin-top:3rem;">
     <div class="detail-tabs">
-      <div class="detail-tab active" onclick="showTab('desc',this)"><i class="bi bi-file-text"></i> Description</div>
-      <div class="detail-tab" onclick="showTab('reviews',this)"><i class="bi bi-chat-square-text"></i> Reviews (<?= count($reviews) ?>)</div>
+      <div class="detail-tab active" onclick="showTab('desc',this)"><i class="bi bi-file-text"></i> <?= e(t('product.description')) ?></div>
+      <div class="detail-tab" onclick="showTab('reviews',this)"><i class="bi bi-chat-square-text"></i> <?= e(t('storefront.product.reviews_count', ['n' => count($reviews)])) ?></div>
     </div>
 
     <!-- Description -->
@@ -353,14 +353,14 @@ ob_start();
       <?php if ($desc): ?>
         <div style="line-height:1.8;color:var(--text2)"><?= nl2br(htmlspecialchars(strip_tags($desc), ENT_QUOTES)) ?></div>
       <?php else: ?>
-        <p style="color:var(--text3)">No description provided for this product.</p>
+        <p style="color:var(--text3)"><?= e(t('storefront.product.no_description')) ?></p>
       <?php endif; ?>
     </div>
 
     <!-- Reviews -->
     <div id="tab-reviews" style="display:none;">
       <?php if (empty($reviews)): ?>
-        <p style="color:var(--text3);padding:1rem 0">No reviews yet for this product.</p>
+        <p style="color:var(--text3);padding:1rem 0"><?= e(t('storefront.product.no_reviews_yet')) ?></p>
       <?php else: ?>
         <?php foreach ($reviews as $rv): ?>
         <div class="review-card">
@@ -379,7 +379,7 @@ ob_start();
 
       <?php if ($auth && $auth->check()): ?>
       <div class="review-card" style="margin-top:1.5rem">
-        <div style="font-weight:700;margin-bottom:.75rem">Write a review</div>
+        <div style="font-weight:700;margin-bottom:.75rem"><?= e(t('storefront.product.write_a_review')) ?></div>
         <form method="post" action="<?= View::url('/product/' . htmlspecialchars($product->slug, ENT_QUOTES) . '/review') ?>">
           <?= csrf() ?>
           <div class="review-star-input" style="display:flex;flex-direction:row-reverse;justify-content:flex-end;gap:4px;font-size:1.6rem;margin-bottom:.75rem">
@@ -388,11 +388,11 @@ ob_start();
               <label for="rv-star-<?= $i ?>" style="cursor:pointer;color:var(--border)">★</label>
             <?php endfor; ?>
           </div>
-          <input type="text" name="title" maxlength="150" placeholder="Title (optional)"
+          <input type="text" name="title" maxlength="150" placeholder="<?= e(t('storefront.product.title_optional')) ?>"
                  style="width:100%;padding:.6rem .8rem;border-radius:10px;border:1px solid var(--border);background:var(--card);color:inherit;margin-bottom:.5rem">
-          <textarea name="body" rows="3" required placeholder="Share your experience with this product…"
+          <textarea name="body" rows="3" required placeholder="<?= e(t('storefront.product.share_experience')) ?>"
                     style="width:100%;padding:.6rem .8rem;border-radius:10px;border:1px solid var(--border);background:var(--card);color:inherit;margin-bottom:.75rem"></textarea>
-          <button type="submit" class="add-cart-btn" style="width:auto;flex:none;padding:.6rem 1.4rem">Submit review</button>
+          <button type="submit" class="add-cart-btn" style="width:auto;flex:none;padding:.6rem 1.4rem"><?= e(t('storefront.product.submit_review')) ?></button>
         </form>
       </div>
       <style>
@@ -401,7 +401,7 @@ ob_start();
         .review-star-input label:hover ~ label { color: var(--g2); }
       </style>
       <?php else: ?>
-      <p style="margin-top:1.5rem;color:var(--text3)"><a href="<?= View::url('/login') ?>">Log in</a> to write a review.</p>
+      <p style="margin-top:1.5rem;color:var(--text3)"><a href="<?= View::url('/login') ?>"><?= e(t('storefront.product.log_in')) ?></a> <?= e(t('storefront.product.to_write_review')) ?></p>
       <?php endif; ?>
     </div>
   </div>
@@ -411,10 +411,10 @@ ob_start();
   <div class="related-section">
     <div class="eg-sec-head">
       <div>
-        <div class="eg-sec-title">You Might Also Like</div>
-        <div class="eg-sec-sub">More from this category</div>
+        <div class="eg-sec-title"><?= e(t('storefront.product.you_might_also_like')) ?></div>
+        <div class="eg-sec-sub"><?= e(t('storefront.product.more_from_category')) ?></div>
       </div>
-      <a href="<?= View::url('/search') ?>" class="eg-sec-more">See All <i class="bi bi-arrow-right"></i></a>
+      <a href="<?= View::url('/search') ?>" class="eg-sec-more"><?= e(t('storefront.home.see_all')) ?> <i class="bi bi-arrow-right"></i></a>
     </div>
     <div class="eg-product-grid">
       <?php foreach ($related as $rp): ?>
@@ -441,17 +441,23 @@ function showTab(name, el) {
   document.getElementById('tab-desc').style.display = name==='desc'?'block':'none';
   document.getElementById('tab-reviews').style.display = name==='reviews'?'block':'none';
 }
+const PRODUCT_I18N = <?= json_encode([
+    'adding'        => t('storefront.product.adding'),
+    'added_to_cart' => t('storefront.product.added_to_cart'),
+    'error'         => t('storefront.product.error'),
+    'add_to_cart'   => t('product.add_to_cart'),
+]) ?>;
 function addToCart(id) {
   const qty = parseInt(document.getElementById('qty').value)||1;
   const btn = document.getElementById('add-cart-btn');
-  btn.textContent = 'Adding...'; btn.disabled = true;
+  btn.textContent = PRODUCT_I18N.adding; btn.disabled = true;
   fetch('<?= View::url('/cart/add') ?>', {
     method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'},
     body:'product_id='+id+'&qty='+qty+'&_token=<?= $_SESSION['_token'] ?? '' ?>'
   }).then(r=>r.json()).then(d=>{
-    btn.textContent = d.ok ? 'Added to Cart!' : 'Error';
-    setTimeout(()=>{ btn.innerHTML = '<i class="bi bi-cart-plus"></i> <?= t('product.add_to_cart') ?>'; btn.disabled = false; }, 2000);
-  }).catch(()=>{ btn.innerHTML = '<i class="bi bi-cart-plus"></i> Add to Cart'; btn.disabled=false; });
+    btn.textContent = d.ok ? PRODUCT_I18N.added_to_cart : PRODUCT_I18N.error;
+    setTimeout(()=>{ btn.innerHTML = '<i class="bi bi-cart-plus"></i> ' + PRODUCT_I18N.add_to_cart; btn.disabled = false; }, 2000);
+  }).catch(()=>{ btn.innerHTML = '<i class="bi bi-cart-plus"></i> ' + PRODUCT_I18N.add_to_cart; btn.disabled=false; });
 }
 function addWishlist(id) {
   const btn = event.target.closest('.wishlist-btn');
