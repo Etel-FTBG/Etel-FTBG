@@ -505,6 +505,10 @@ ul{list-style:none}
 .eg-lang a{padding:4px 10px;font-size:11.5px;font-weight:700;color:var(--text3);transition:background .15s,color .15s}
 .eg-lang a.active{background:var(--g2);color:#080604}
 .eg-lang a:hover:not(.active){color:var(--g1)}
+/* Mobile copy of the lang toggle -- the topbar that normally holds it is
+   hidden below 768px (see MOBILE section), so this duplicate lives in the
+   header itself and is the only one shown on small screens. */
+.eg-lang-mobile{display:none}
 
 /* ---- UTILITIES ---- */
 .text-gold{color:var(--g1)}
@@ -519,6 +523,8 @@ ul{list-style:none}
   .eg-header{padding:0 12px;gap:10px}
   .eg-logo-name{font-size:15px}
   .eg-logo-tag{display:none}
+  .eg-search{min-width:0}
+  .eg-lang-mobile{display:flex}
   .eg-hero{padding:20px 18px;flex-direction:column}
   .eg-hero-right{display:none}
   .eg-sidebar{display:none}
@@ -534,4 +540,6 @@ ul{list-style:none}
 @media(max-width:400px){
   .eg-product-grid{grid-template-columns:repeat(2,1fr);gap:8px}
   .eg-cat-grid{grid-template-columns:repeat(2,1fr)}
+  .eg-header-btn span{display:none}
+  .eg-header-btn{padding:6px}
 }

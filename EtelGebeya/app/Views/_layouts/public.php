@@ -80,6 +80,11 @@ $cartCount = (int)($_SESSION['cart_count'] ?? array_sum(array_column($_SESSION['
     </form>
   </div>
 
+  <div class="eg-lang eg-lang-mobile">
+    <a href="<?= View::url('/lang/en') ?>" class="<?= $locale==='en'?'active':'' ?>">EN</a>
+    <a href="<?= View::url('/lang/am') ?>" class="<?= $locale==='am'?'active':'' ?>">Am</a>
+  </div>
+
   <div class="eg-header-actions">
     <a href="<?= View::url('/cart') ?>" class="eg-header-btn">
       <i class="bi bi-cart3 ico"></i>
