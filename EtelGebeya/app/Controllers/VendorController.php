@@ -643,44 +643,9 @@ final class VendorController
             if ($courierId > 0) $update['courier_id'] = $courierId;
         }
         $this->db->update('order_items', $update, 'id = ?', [$itemId]);
-        $this->bubbleOrderStatus((int)$item['order_id']);
+        \App\Core\OrderFulfillment::bubbleOrderStatus($this->db, (int)$item['order_id']);
         $this->auth->flash('success', 'Order item marked as ' . $status . '.');
         redirect('/vendor-panel/orders');
-    }
-
-    /**
-     * Keeps the customer-facing orders.status in sync with what sellers
-     * actually report at the item level -- it must never be the only
-     * thing that says "delivered" (escrow release depends on
-     * order_items.status, not this), but leaving it stuck on "new"
-     * forever while every item ships is equally wrong. Whole-order
-     * status = the weakest stage among its still-active items.
-     */
-    private function bubbleOrderStatus(int $orderId): void
-    {
-        $items = $this->db->fetchAll("SELECT status FROM order_items WHERE order_id = ?", [$orderId]);
-        if (!$items) return;
-
-        // order_items.status -> orders.status, in ascending fulfillment order.
-        $stageOrder  = ['pending' => 0, 'confirmed' => 1, 'shipped' => 2, 'delivered' => 3];
-        $itemToOrder = ['pending' => 'new', 'confirmed' => 'confirmed', 'shipped' => 'shipped', 'delivered' => 'delivered'];
-        $active = array_filter($items, fn($it) => !in_array($it['status'], ['cancelled', 'returned'], true));
-        if (!$active) return; // everything on this order was cancelled -- leave orders.status alone
-
-        $minStage  = min(array_map(fn($it) => $stageOrder[$it['status']] ?? 0, $active));
-        $itemStage = array_search($minStage, $stageOrder, true);
-        $newStatus = $itemToOrder[$itemStage] ?? 'new';
-
-        $orderRank = ['new'=>0,'confirmed'=>1,'processing'=>2,'packed'=>3,'shipped'=>4,'out_for_delivery'=>5,'delivered'=>6];
-        $current = $this->db->fetchColumn("SELECT status FROM orders WHERE id = ?", [$orderId]);
-        // Never touch a cancelled/disputed/etc. order, and never move it
-        // backward (item-level tracking is coarser than orders.status --
-        // e.g. it has no notion of "packed" -- so it should only ever
-        // push the order FORWARD to a stage it can actually represent).
-        if (!isset($orderRank[$current])) return;
-        if (($orderRank[$newStatus] ?? 0) > $orderRank[$current]) {
-            $this->db->query("UPDATE orders SET status=?, updated_at=NOW() WHERE id=?", [$newStatus, $orderId]);
-        }
     }
 
     /* ?? GET /vendor-panel/payouts ????????????????????????? */

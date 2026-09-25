@@ -316,6 +316,42 @@ final class AdminController
             compact('orders', 'filter', 'page', 'total', 'summary'));
     }
 
+    /**
+     * Telebirr/CBE/bank-transfer checkout is intentionally manual by
+     * design (see config/app.php's payments.telebirr/cbe comments): the
+     * customer sees pay-by-reference instructions and "an admin will
+     * confirm your payment" (checkout_success.php's own copy) -- this is
+     * the missing other half of that promise, since nothing previously
+     * existed anywhere in the app to actually record that confirmation.
+     */
+    public function markPaymentPaid(): void
+    {
+        $this->requireCsrf('/admin/payments');
+        $orderId = (int)($_POST['order_id'] ?? 0);
+        $filter  = $_POST['filter'] ?? 'all';
+        $page    = (int)($_POST['page'] ?? 1);
+        $back    = '/admin/payments?filter=' . urlencode($filter) . '&page=' . $page;
+
+        $order = $this->db->fetch("SELECT id, payment_method, payment_status FROM orders WHERE id = ?", [$orderId]);
+        if (!$order) {
+            $this->auth->flash('error', 'Order not found.');
+            redirect($back);
+        }
+        if ($order['payment_method'] === 'etel_pay') {
+            $this->auth->flash('error', 'ኢE Pay orders are verified automatically and cannot be marked paid manually.');
+            redirect($back);
+        }
+        $updated = $this->db->update(
+            'orders',
+            ['payment_status' => 'paid', 'paid_at' => date('Y-m-d H:i:s')],
+            'id = ? AND payment_status != ?',
+            [$orderId, 'paid']
+        );
+        $this->auth->flash($updated > 0 ? 'success' : 'error',
+            $updated > 0 ? 'Payment marked as confirmed.' : 'This order was already marked paid.');
+        redirect($back);
+    }
+
     // -------------------------------------------------------
     // Users
     // -------------------------------------------------------

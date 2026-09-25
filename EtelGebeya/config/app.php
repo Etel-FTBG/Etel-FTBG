@@ -105,6 +105,14 @@ return [
             'merchant_id' => getenv('EG_TELEBIRR_MERCHANT_ID') ?: 'sandbox-merchant',
             'short_code'  => getenv('EG_TELEBIRR_SHORT_CODE') ?: '091',
             'mode'        => getenv('EG_TELEBIRR_MODE') ?: 'sandbox', // sandbox | live
+            // Ethio Telecom's real merchant webhook has its own signing
+            // scheme, not implemented here (no live merchant agreement to
+            // verify it against). Until then, PaymentController::
+            // telebirrNotify() accepts a manual confirmation call only
+            // when this shared secret is set AND sent back as
+            // X-Webhook-Secret -- unset (default) means the endpoint is
+            // disabled rather than silently trusting unauthenticated input.
+            'webhook_secret' => getenv('EG_TELEBIRR_WEBHOOK_SECRET') ?: '',
         ],
         'cbe' => [
             // Same manual/instructional pattern as telebirr above.
@@ -115,6 +123,8 @@ return [
             'merchant_id' => getenv('EG_CBE_MERCHANT_ID') ?: 'sandbox-merchant',
             'api_key'     => getenv('EG_CBE_API_KEY') ?: 'sandbox-key',
             'mode'        => getenv('EG_CBE_MODE') ?: 'sandbox',
+            // Same placeholder-verification pattern as telebirr.webhook_secret above.
+            'webhook_secret' => getenv('EG_CBE_WEBHOOK_SECRET') ?: '',
         ],
         'chapa' => [
             'enabled'     => filter_var(getenv('EG_CHAPA_ENABLED') ?: 'true', FILTER_VALIDATE_BOOL),

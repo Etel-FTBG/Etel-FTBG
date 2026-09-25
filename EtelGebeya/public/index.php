@@ -136,6 +136,7 @@ $router->post('/admin/products/{id}/approve',   [\App\Controllers\AdminControlle
 $router->post('/admin/products/{id}/reject',    [\App\Controllers\AdminController::class, 'rejectProduct']);
 $router->get('/admin/orders',                   [\App\Controllers\AdminController::class, 'orders']);
 $router->get('/admin/payments',                 [\App\Controllers\AdminController::class, 'payments']);
+$router->post('/admin/payments/mark-paid',      [\App\Controllers\AdminController::class, 'markPaymentPaid']);
 $router->get('/admin/users',                    [\App\Controllers\AdminController::class, 'users']);
 $router->get('/admin/categories',               [\App\Controllers\AdminController::class, 'categories']);
 $router->post('/admin/categories',              [\App\Controllers\AdminController::class, 'saveCategory']);
