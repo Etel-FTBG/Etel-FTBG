@@ -28,17 +28,17 @@ ob_start();
 </style>
 
 <div style="margin-bottom:1.25rem">
-  <h1 class="cp-page-title"><i class="bi bi-receipt"></i> My Orders</h1>
-  <p style="font-size:.82rem;color:var(--text-muted,#7A6840);margin:-.5rem 0 0"><?= number_format($total) ?> order<?= $total!==1?'s':'' ?> placed</p>
+  <h1 class="cp-page-title"><i class="bi bi-receipt"></i> <?= e(t('customer.nav.my_orders')) ?></h1>
+  <p style="font-size:.82rem;color:var(--text-muted,#7A6840);margin:-.5rem 0 0"><?= e(t('customer.orders.n_placed', ['n' => number_format($total)])) ?></p>
 </div>
 
 <?php if (empty($orders)): ?>
   <div class="empty-state">
     <i class="bi bi-cart-x" style="font-size:2.8rem;color:rgba(212,175,55,.15);display:block;margin-bottom:1rem"></i>
-    <h3 style="font-size:1.1rem;font-weight:800;color:var(--text,#F7EFD9);margin:0 0 .5rem">No orders yet</h3>
-    <p style="font-size:.85rem;color:var(--text-muted,#7A6840);margin:0 0 1.25rem">Browse the store and place your first order!</p>
+    <h3 style="font-size:1.1rem;font-weight:800;color:var(--text,#F7EFD9);margin:0 0 .5rem"><?= e(t('customer.dashboard.no_orders_yet')) ?></h3>
+    <p style="font-size:.85rem;color:var(--text-muted,#7A6840);margin:0 0 1.25rem"><?= e(t('customer.orders.browse_and_place')) ?></p>
     <a href="<?= View::url('/') ?>" style="display:inline-flex;align-items:center;gap:.4rem;background:var(--grad-gold,linear-gradient(135deg,#FFE066,#D4AF37,#B8902E));color:#1a0e00;font-weight:800;padding:.65rem 1.4rem;border-radius:12px;text-decoration:none;box-shadow:0 6px 20px rgba(212,175,55,.3)">
-      <i class="bi bi-shop"></i> Shop Now
+      <i class="bi bi-shop"></i> <?= e(t('customer.dashboard.shop_now')) ?>
     </a>
   </div>
 <?php else: ?>
@@ -54,18 +54,18 @@ ob_start();
       <div class="order-card-body">
         <div class="oc-fields">
           <div class="oc-field">
-            <label>Total</label>
+            <label><?= e(t('storefront.cart.total')) ?></label>
             <span style="color:var(--g2,#D4AF37)">Br <?= number_format((float)($o['total']??0),0) ?></span>
           </div>
           <?php if (!empty($o['payment_method'])): ?>
           <div class="oc-field">
-            <label>Payment</label>
+            <label><?= e(t('admin.nav.payments')) ?></label>
             <span><?= e(ucfirst($o['payment_method'])) ?></span>
           </div>
           <?php endif; ?>
         </div>
         <a href="<?= View::url('/account/orders/'.$o['code']) ?>" class="btn-view">
-          <i class="bi bi-eye"></i> View Details
+          <i class="bi bi-eye"></i> <?= e(t('customer.orders.view_details')) ?>
         </a>
       </div>
     </div>
@@ -87,6 +87,6 @@ require __DIR__ . '/_layout.php';
 $__panel = ob_get_clean();
 echo View::capture('_layouts/public', [
     '__content' => $__panel,
-    'pageTitle'  => 'My Orders -- Etel Gebeya',
+    'pageTitle'  => t('customer.nav.my_orders') . ' -- Etel Gebeya',
     'locale'     => $locale,
 ]);
