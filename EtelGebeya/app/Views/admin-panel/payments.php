@@ -75,7 +75,7 @@ ob_start();
     <div class="empty-s">No payment records found.</div>
   <?php else: ?>
   <table class="ag-tbl">
-    <thead><tr><th>Ref</th><th>Customer</th><th>Total</th><th>Method</th><th>Pay Status</th><th>Order Status</th><th>Date</th></tr></thead>
+    <thead><tr><th>Ref</th><th>Customer</th><th>Total</th><th>Method</th><th>Pay Status</th><th>Order Status</th><th>Date</th><th></th></tr></thead>
     <tbody>
       <?php foreach ($orders as $o): ?>
         <tr>
@@ -86,6 +86,17 @@ ob_start();
           <td><span class="badge badge-<?= $o['payment_status']==='paid'?'paid':'unpaid' ?>"><?= ucfirst($o['payment_status'] ?? 'pending') ?></span></td>
           <td><span class="badge badge-<?= e($o['status']) ?>"><?= ucfirst($o['status']) ?></span></td>
           <td style="font-size:11px;color:var(--dark-muted);white-space:nowrap"><?= date('d M Y', strtotime($o['created_at'])) ?></td>
+          <td>
+            <?php if (($o['payment_status'] ?? '') !== 'paid' && ($o['payment_method'] ?? '') !== 'etel_pay'): ?>
+            <form method="POST" action="<?= View::url('/admin/payments/mark-paid') ?>" style="margin:0" onsubmit="return confirm('Confirm this order was actually paid? This cannot be undone from here.');">
+              <?= csrf() ?>
+              <input type="hidden" name="order_id" value="<?= (int)$o['id'] ?>">
+              <input type="hidden" name="filter" value="<?= e($filter ?? 'all') ?>">
+              <input type="hidden" name="page" value="<?= (int)($page ?? 1) ?>">
+              <button type="submit" class="btn-xs btn-gold-xs">Mark Paid</button>
+            </form>
+            <?php endif; ?>
+          </td>
         </tr>
       <?php endforeach; ?>
     </tbody>
