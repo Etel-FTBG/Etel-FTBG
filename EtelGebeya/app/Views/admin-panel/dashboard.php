@@ -1,7 +1,7 @@
 <?php
 use App\Core\View;
 require __DIR__.'/_layout.php';
-$pageTitle = 'Dashboard';
+$pageTitle = t('admin.nav.dashboard');
 ob_start();
 ?>
 
@@ -40,47 +40,47 @@ ob_start();
 <div class="ag-stats">
   <div class="ag-stat">
     <i class="bi bi-receipt ag-stat-ico"></i>
-    <div class="ag-stat-lbl">Total Orders</div>
+    <div class="ag-stat-lbl"><?= e(t('admin.dashboard.total_orders')) ?></div>
     <div class="ag-stat-val"><?= number_format($stats['orders_total']) ?></div>
-    <div class="ag-stat-hint"><?= $stats['orders_new'] ?> new / pending</div>
+    <div class="ag-stat-hint"><?= e(t('admin.dashboard.new_pending_count', ['n' => $stats['orders_new']])) ?></div>
   </div>
   <div class="ag-stat">
     <i class="bi bi-currency-dollar ag-stat-ico"></i>
-    <div class="ag-stat-lbl">Revenue (Paid)</div>
+    <div class="ag-stat-lbl"><?= e(t('admin.dashboard.revenue_paid')) ?></div>
     <div class="ag-stat-val" style="font-size:20px;margin-top:9px">ETB <?= number_format($stats['revenue'], 0) ?></div>
-    <div class="ag-stat-hint">from paid orders</div>
+    <div class="ag-stat-hint"><?= e(t('admin.dashboard.from_paid_orders')) ?></div>
   </div>
   <div class="ag-stat">
     <i class="bi bi-box-seam ag-stat-ico"></i>
-    <div class="ag-stat-lbl">Products</div>
+    <div class="ag-stat-lbl"><?= e(t('admin.nav.products')) ?></div>
     <div class="ag-stat-val"><?= number_format($stats['products_total']) ?></div>
-    <div class="ag-stat-hint"><?= $stats['products_pending'] ?> awaiting review</div>
+    <div class="ag-stat-hint"><?= e(t('admin.dashboard.awaiting_review', ['n' => $stats['products_pending']])) ?></div>
   </div>
   <div class="ag-stat">
     <i class="bi bi-shop ag-stat-ico"></i>
-    <div class="ag-stat-lbl">Sellers</div>
+    <div class="ag-stat-lbl"><?= e(t('admin.nav.sellers')) ?></div>
     <div class="ag-stat-val"><?= number_format($stats['sellers_total']) ?></div>
-    <div class="ag-stat-hint"><?= $stats['sellers_pending'] ?> pending</div>
+    <div class="ag-stat-hint"><?= e(t('admin.dashboard.pending_count', ['n' => $stats['sellers_pending']])) ?></div>
   </div>
   <div class="ag-stat">
     <i class="bi bi-people ag-stat-ico"></i>
-    <div class="ag-stat-lbl">Users</div>
+    <div class="ag-stat-lbl"><?= e(t('admin.nav.users')) ?></div>
     <div class="ag-stat-val"><?= number_format($stats['users_total']) ?></div>
-    <div class="ag-stat-hint">registered accounts</div>
+    <div class="ag-stat-hint"><?= e(t('admin.dashboard.registered_accounts')) ?></div>
   </div>
 </div>
 
 <div class="ag-two">
   <div class="ag-card">
     <div class="ag-card-head">
-      <span class="ag-card-title"><i class="bi bi-receipt" style="color:var(--gold)"></i> Recent Orders</span>
-      <a href="<?= View::url('/admin/orders') ?>" class="btn-xs btn-ghost-xs">View All</a>
+      <span class="ag-card-title"><i class="bi bi-receipt" style="color:var(--gold)"></i> <?= e(t('admin.dashboard.recent_orders')) ?></span>
+      <a href="<?= View::url('/admin/orders') ?>" class="btn-xs btn-ghost-xs"><?= e(t('common.view_all')) ?></a>
     </div>
     <table class="ag-tbl">
-      <thead><tr><th>Ref</th><th>Customer</th><th>Total</th><th>Status</th></tr></thead>
+      <thead><tr><th><?= e(t('admin.dashboard.col_ref')) ?></th><th><?= e(t('admin.dashboard.col_customer')) ?></th><th><?= e(t('admin.dashboard.col_total')) ?></th><th><?= e(t('common.status')) ?></th></tr></thead>
       <tbody>
         <?php if (empty($recent_orders)): ?>
-          <tr><td colspan="4" class="empty-s">No orders yet</td></tr>
+          <tr><td colspan="4" class="empty-s"><?= e(t('admin.dashboard.no_orders_yet')) ?></td></tr>
         <?php else: foreach ($recent_orders as $o): ?>
           <tr>
             <td style="font-family:monospace;color:var(--gold);font-size:11px"><?= e($o['code']) ?></td>
@@ -95,14 +95,14 @@ ob_start();
 
   <div class="ag-card">
     <div class="ag-card-head">
-      <span class="ag-card-title"><i class="bi bi-box-seam" style="color:var(--orange)"></i> Pending Products</span>
-      <a href="<?= View::url('/admin/products?filter=pending') ?>" class="btn-xs btn-ghost-xs">View All</a>
+      <span class="ag-card-title"><i class="bi bi-box-seam" style="color:var(--orange)"></i> <?= e(t('admin.dashboard.pending_products')) ?></span>
+      <a href="<?= View::url('/admin/products?filter=pending') ?>" class="btn-xs btn-ghost-xs"><?= e(t('common.view_all')) ?></a>
     </div>
     <table class="ag-tbl">
-      <thead><tr><th>Product</th><th>Seller</th><th>Price</th><th>Act</th></tr></thead>
+      <thead><tr><th><?= e(t('admin.dashboard.col_product')) ?></th><th><?= e(t('admin.dashboard.col_seller')) ?></th><th><?= e(t('admin.dashboard.col_price')) ?></th><th><?= e(t('admin.dashboard.col_act')) ?></th></tr></thead>
       <tbody>
         <?php if (empty($pending_products)): ?>
-          <tr><td colspan="4" class="empty-s">No pending products</td></tr>
+          <tr><td colspan="4" class="empty-s"><?= e(t('admin.dashboard.no_pending_products')) ?></td></tr>
         <?php else: foreach ($pending_products as $p): ?>
           <tr>
             <td style="max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--dark-text)"><?= e($p['name_en']) ?></td>
@@ -111,11 +111,11 @@ ob_start();
             <td style="white-space:nowrap">
               <form method="POST" action="<?= View::url('/admin/products/' . (int)$p['id'] . '/approve') ?>" style="display:inline">
                 <?= csrf() ?>
-                <button type="submit" class="btn-xs btn-gold-xs" onclick="return confirm('Approve?')">OK</button>
+                <button type="submit" class="btn-xs btn-gold-xs" onclick="return confirm('<?= e(addslashes(t('admin.dashboard.approve_confirm'))) ?>')"><?= e(t('admin.dashboard.ok')) ?></button>
               </form>
               <form method="POST" action="<?= View::url('/admin/products/' . (int)$p['id'] . '/reject') ?>" style="display:inline;margin-left:4px">
                 <?= csrf() ?>
-                <button type="submit" class="btn-xs btn-danger-xs" onclick="return confirm('Reject?')">X</button>
+                <button type="submit" class="btn-xs btn-danger-xs" onclick="return confirm('<?= e(addslashes(t('admin.dashboard.reject_confirm'))) ?>')">X</button>
               </form>
             </td>
           </tr>
@@ -128,11 +128,11 @@ ob_start();
 <?php if (!empty($pending_sellers)): ?>
 <div class="ag-card">
   <div class="ag-card-head">
-    <span class="ag-card-title"><i class="bi bi-shop" style="color:var(--gold)"></i> Pending Seller Applications</span>
-    <a href="<?= View::url('/admin/vendors?filter=pending') ?>" class="btn-xs btn-ghost-xs">View All</a>
+    <span class="ag-card-title"><i class="bi bi-shop" style="color:var(--gold)"></i> <?= e(t('admin.dashboard.pending_seller_applications')) ?></span>
+    <a href="<?= View::url('/admin/vendors?filter=pending') ?>" class="btn-xs btn-ghost-xs"><?= e(t('common.view_all')) ?></a>
   </div>
   <table class="ag-tbl">
-    <thead><tr><th>Store</th><th>Owner</th><th>Email</th><th>Phone</th><th>Actions</th></tr></thead>
+    <thead><tr><th><?= e(t('admin.dashboard.col_store')) ?></th><th><?= e(t('admin.dashboard.col_owner')) ?></th><th><?= e(t('admin.dashboard.col_email')) ?></th><th><?= e(t('admin.dashboard.col_phone')) ?></th><th><?= e(t('common.actions')) ?></th></tr></thead>
     <tbody>
       <?php foreach ($pending_sellers as $s): ?>
         <tr>
@@ -143,11 +143,11 @@ ob_start();
           <td style="white-space:nowrap">
             <form method="POST" action="<?= View::url('/admin/vendors/' . (int)$s['id'] . '/approve') ?>" style="display:inline">
               <?= csrf() ?>
-              <button type="submit" class="btn-xs btn-gold-xs" onclick="return confirm('Approve seller?')">Approve</button>
+              <button type="submit" class="btn-xs btn-gold-xs" onclick="return confirm('<?= e(addslashes(t('admin.dashboard.approve_seller_confirm'))) ?>')"><?= e(t('admin.dashboard.approve')) ?></button>
             </form>
             <form method="POST" action="<?= View::url('/admin/vendors/' . (int)$s['id'] . '/suspend') ?>" style="display:inline;margin-left:4px">
               <?= csrf() ?>
-              <button type="submit" class="btn-xs btn-danger-xs" onclick="return confirm('Reject this seller?')">Reject</button>
+              <button type="submit" class="btn-xs btn-danger-xs" onclick="return confirm('<?= e(addslashes(t('admin.dashboard.reject_seller_confirm'))) ?>')"><?= e(t('admin.dashboard.reject')) ?></button>
             </form>
           </td>
         </tr>
