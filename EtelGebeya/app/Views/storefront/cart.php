@@ -155,15 +155,15 @@ ob_start();
   <?php if (empty($cart)): ?>
     <div class="cart-empty">
       <div class="icon"><i class="bi bi-cart-x"></i></div>
-      <h2>Your cart is empty</h2>
-      <p>Add some products to get started!</p>
-      <a href="<?= View::url('/') ?>" class="shop-btn"><i class="bi bi-shop"></i> Start Shopping</a>
+      <h2><?= e(t('storefront.cart.empty_title')) ?></h2>
+      <p><?= e(t('storefront.cart.empty_sub')) ?></p>
+      <a href="<?= View::url('/') ?>" class="shop-btn"><i class="bi bi-shop"></i> <?= e(t('storefront.cart.start_shopping')) ?></a>
     </div>
 
   <?php else: ?>
     <div class="cart-header-row">
-      <h1 class="cart-heading"><i class="bi bi-cart3"></i> Shopping Cart</h1>
-      <button class="clear-btn" onclick="clearCart()"><i class="bi bi-trash"></i> Clear All</button>
+      <h1 class="cart-heading"><i class="bi bi-cart3"></i> <?= e(t('storefront.cart.heading')) ?></h1>
+      <button class="clear-btn" onclick="clearCart()"><i class="bi bi-trash"></i> <?= e(t('storefront.cart.clear_all')) ?></button>
     </div>
 
     <div class="cart-layout">
@@ -193,7 +193,7 @@ ob_start();
               </div>
               <div class="item-total" id="sub-<?= $id ?>">Br <?= number_format($item['price'] * $item['qty'], 2) ?></div>
               <button class="remove-btn" onclick="removeItem(<?= $id ?>)">
-                <i class="bi bi-x-circle"></i> Remove
+                <i class="bi bi-x-circle"></i> <?= e(t('storefront.cart.remove')) ?>
               </button>
             </div>
           </div>
@@ -202,16 +202,16 @@ ob_start();
 
       <!-- Summary -->
       <div class="order-summary">
-        <h3>Order Summary</h3>
-        <div class="summary-row"><span>Items (<?= array_sum(array_column($cart, 'qty')) ?>)</span><span id="sum-subtotal">Br <?= number_format($total, 2) ?></span></div>
-        <div class="summary-row"><span>Shipping</span><span>Br <?= number_format($ship, 2) ?></span></div>
-        <div class="summary-row total"><span>Total</span><span id="sum-total">Br <?= number_format($grand, 2) ?></span></div>
+        <h3><?= e(t('storefront.cart.order_summary')) ?></h3>
+        <div class="summary-row"><span><?= e(t('storefront.cart.items_count', ['n' => array_sum(array_column($cart, 'qty'))])) ?></span><span id="sum-subtotal">Br <?= number_format($total, 2) ?></span></div>
+        <div class="summary-row"><span><?= e(t('storefront.cart.shipping')) ?></span><span>Br <?= number_format($ship, 2) ?></span></div>
+        <div class="summary-row total"><span><?= e(t('storefront.cart.total')) ?></span><span id="sum-total">Br <?= number_format($grand, 2) ?></span></div>
 
         <a href="<?= View::url('/checkout') ?>" class="checkout-btn">
-          <i class="bi bi-lock"></i> Proceed to Checkout
+          <i class="bi bi-lock"></i> <?= e(t('storefront.cart.proceed_to_checkout')) ?>
         </a>
         <a href="<?= View::url('/') ?>" class="continue-link">
-          <i class="bi bi-arrow-left"></i> Continue Shopping
+          <i class="bi bi-arrow-left"></i> <?= e(t('storefront.cart.continue_shopping')) ?>
         </a>
       </div>
     </div>
@@ -282,6 +282,6 @@ function fmtMoney(n) {
 $__content = ob_get_clean();
 echo View::capture('_layouts/public', [
     '__content' => $__content,
-    'pageTitle'  => $pageTitle ?? 'Shopping Cart -- Etel Gebeya',
+    'pageTitle'  => $pageTitle ?? t('storefront.cart.heading') . ' -- Etel Gebeya',
     'locale'     => $locale,
 ]);
