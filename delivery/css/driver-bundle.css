@@ -143,6 +143,13 @@ body{background:transparent;color:var(--text);font-family:var(--f);min-height:10
 .action-btn.primary:hover{filter:brightness(1.05);transform:translateY(-2px)}
 .action-btn.danger{color:#ff9aa2;background:rgba(230,57,70,.1);border:1px solid rgba(230,57,70,.32)}
 
+/* Secondary controls (nav, route history, chat, cancel) live one tap away
+   behind "⋯ More" instead of crowding the primary action during a trip. */
+.action-btn.more-toggle{flex:0 0 auto;padding:13px 18px;color:var(--dim);
+  background:rgba(255,255,255,.05);border:1px solid var(--line)}
+.ride-more-panel{display:none;margin-top:10px;animation:viewIn .2s ease}
+.ride-more-panel.open{display:block}
+
 /* ── HISTORY ── */
 .history-row{display:flex;align-items:center;gap:13px;padding:13px;border-radius:var(--r-sm);background:var(--panel2);
   border:1px solid var(--line);margin-bottom:10px;animation:cardIn .4s var(--ease) both}
