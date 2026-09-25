@@ -8,8 +8,8 @@ ob_start();
   <div style="width:100%;max-width:460px">
     <div style="text-align:center;margin-bottom:2rem">
       <div style="font-size:2.5rem;margin-bottom:.5rem"><i class="bi bi-shop"></i></div>
-      <h1 style="font-size:1.8rem;font-weight:900;background:linear-gradient(135deg,#FFE066,#D4AF37);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">Become a Vendor</h1>
-      <p style="color:var(--text2);margin-top:.5rem">Join thousands of Ethiopian sellers on Etel Gebeya</p>
+      <h1 style="font-size:1.8rem;font-weight:900;background:linear-gradient(135deg,#FFE066,#D4AF37);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text"><?= e(t('storefront.footer.become_vendor')) ?></h1>
+      <p style="color:var(--text2);margin-top:.5rem"><?= e(t('storefront.sell.subtitle')) ?></p>
     </div>
 
     <?php if (!empty($flash)): ?>
@@ -27,37 +27,37 @@ ob_start();
       ?>
 
       <div style="<?= $grp ?>">
-        <label style="<?= $lbl ?>">Full Name *</label>
-        <input type="text" name="name" required placeholder="Your full name" style="<?= $inp ?>">
+        <label style="<?= $lbl ?>"><?= e(t('auth.full_name')) ?> *</label>
+        <input type="text" name="name" required placeholder="<?= e(t('storefront.sell.your_full_name')) ?>" style="<?= $inp ?>">
       </div>
       <div style="<?= $grp ?>">
-        <label style="<?= $lbl ?>">Email *</label>
+        <label style="<?= $lbl ?>"><?= e(t('auth.email')) ?> *</label>
         <input type="email" name="email" required placeholder="you@example.com" style="<?= $inp ?>">
       </div>
       <div style="<?= $grp ?>">
-        <label style="<?= $lbl ?>">Phone</label>
+        <label style="<?= $lbl ?>"><?= e(t('storefront.checkout.phone_label')) ?></label>
         <input type="tel" name="phone" placeholder="+251 9xx xxx xxx" style="<?= $inp ?>">
       </div>
       <div style="<?= $grp ?>">
-        <label style="<?= $lbl ?>">Store Name *</label>
+        <label style="<?= $lbl ?>"><?= e(t('storefront.sell.store_name')) ?> *</label>
         <input type="text" name="store_name" required placeholder="e.g. Addis Fashion House" style="<?= $inp ?>">
       </div>
       <div style="margin-bottom:1.5rem">
-        <label style="<?= $lbl ?>">Password * <span style="color:var(--text2);font-weight:400">(min. 8 characters)</span></label>
-        <input type="password" name="password" required minlength="8" placeholder="Choose a strong password" style="<?= $inp ?>">
+        <label style="<?= $lbl ?>"><?= e(t('auth.password')) ?> * <span style="color:var(--text2);font-weight:400">(<?= e(t('storefront.sell.min_8_chars_hint')) ?>)</span></label>
+        <input type="password" name="password" required minlength="8" placeholder="<?= e(t('storefront.sell.choose_strong_password')) ?>" style="<?= $inp ?>">
       </div>
 
       <button type="submit" style="width:100%;padding:.85rem;background:linear-gradient(135deg,#FFE066,#D4AF37,#B8902E);color:#080604;font-weight:900;font-size:1rem;border:none;border-radius:12px;cursor:pointer;transition:opacity .2s" onmouseover="this.style.opacity='.9'" onmouseout="this.style.opacity='1'">
-        <i class="bi bi-shop"></i> Create My Store
+        <i class="bi bi-shop"></i> <?= e(t('storefront.sell.create_my_store')) ?>
       </button>
 
       <p style="text-align:center;margin-top:1.2rem;font-size:.85rem;color:var(--text2)">
-        Already have an account? <a href="<?= View::url('/login') ?>" style="color:var(--g1)">Log in</a>
+        <?= e(t('auth.have_account')) ?> <a href="<?= View::url('/login') ?>" style="color:var(--g1)"><?= e(t('storefront.product.log_in')) ?></a>
       </p>
     </form>
 
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-top:2rem;text-align:center">
-      <?php foreach ([['bi-check-circle','Free to join'],['bi-box-seam','List unlimited products'],['bi-credit-card','Get paid fast']] as [$icon,$text]): ?>
+      <?php foreach ([['bi-check-circle',t('storefront.sell.free_to_join')],['bi-box-seam',t('storefront.sell.list_unlimited')],['bi-credit-card',t('storefront.sell.get_paid_fast')]] as [$icon,$text]): ?>
         <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1rem .75rem">
           <div style="font-size:1.5rem;margin-bottom:.4rem"><i class="bi <?= $icon ?>"></i></div>
           <div style="font-size:.8rem;color:var(--text2)"><?= $text ?></div>
@@ -70,6 +70,6 @@ ob_start();
 $__content = ob_get_clean();
 echo View::capture('_layouts/public', [
     '__content' => $__content,
-    'pageTitle'  => 'Become a Vendor -- Etel Gebeya',
+    'pageTitle'  => t('storefront.footer.become_vendor') . ' -- Etel Gebeya',
     'locale'     => $locale,
 ]);

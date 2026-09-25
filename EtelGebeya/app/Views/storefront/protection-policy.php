@@ -14,58 +14,42 @@ ob_start();
 
 <div class="pp-wrap">
   <div style="text-align:center;margin-bottom:1.5rem">
-    <h1 class="cp-page-title"><i class="bi bi-shield-check"></i> Buyer &amp; Seller Protection Policy</h1>
-    <p style="color:var(--text-muted,#7A6840);font-size:.85rem">How ኢE Pay Wallet escrow protects every order on Etel Gebeya</p>
+    <h1 class="cp-page-title"><i class="bi bi-shield-check"></i> <?= e(t('storefront.policy.page_title')) ?></h1>
+    <p style="color:var(--text-muted,#7A6840);font-size:.85rem"><?= e(t('storefront.policy.page_sub')) ?></p>
   </div>
 
   <div class="pp-section">
-    <span class="pp-badge">For Buyers</span>
-    <h2><i class="bi bi-lock"></i> Your payment is held, not sent instantly</h2>
-    <p>When you pay with the ኢE Pay Wallet, your money is not sent to the seller right away. It is held safely by
-       Etel Gebeya until your order is confirmed as received. This protects you from paying for something that
-       never arrives, arrives damaged, or isn't what was described.</p>
+    <span class="pp-badge"><?= e(t('storefront.policy.for_buyers')) ?></span>
+    <h2><i class="bi bi-lock"></i> <?= e(t('storefront.policy.buyers_heading')) ?></h2>
+    <p><?= e(t('storefront.policy.buyers_intro')) ?></p>
     <ul>
-      <li><strong>Cancel any time before shipping</strong> -- while your order is still "New" or "Confirmed", you can
-          cancel it yourself and your payment is refunded to your wallet immediately.</li>
-      <li><strong>Confirm when you receive it</strong> -- once the seller marks your order delivered, tap
-          <em>"I Received My Order"</em> on your order page to release payment to the seller.</li>
-      <li><strong>Auto-confirm after 5 days</strong> -- if you don't confirm manually, payment automatically releases
-          to the seller 5 days after delivery, unless you've reported a problem.</li>
-      <li><strong>Report a problem</strong> -- if something is wrong (not delivered, wrong item, defective, not as
-          described), tap <em>"Report a Problem"</em> on your order page before the 5 days are up. This pauses the
-          release and our team reviews it.</li>
+      <li><?= t('storefront.policy.buyers_li1') ?></li>
+      <li><?= t('storefront.policy.buyers_li2') ?></li>
+      <li><?= t('storefront.policy.buyers_li3') ?></li>
+      <li><?= t('storefront.policy.buyers_li4') ?></li>
     </ul>
   </div>
 
   <div class="pp-section">
-    <span class="pp-badge">For Sellers</span>
-    <h2><i class="bi bi-shop"></i> You get paid once the customer confirms</h2>
-    <p>Ship what was ordered, mark each order item as Confirmed &rarr; Shipped &rarr; Delivered promptly and
-       accurately in your Vendor Panel. Your payout for that item is released automatically once the customer
-       confirms receipt, or 5 days after you mark it delivered if the customer doesn't respond.</p>
+    <span class="pp-badge"><?= e(t('storefront.policy.for_sellers')) ?></span>
+    <h2><i class="bi bi-shop"></i> <?= e(t('storefront.policy.sellers_heading')) ?></h2>
+    <p><?= e(t('storefront.policy.sellers_intro')) ?></p>
     <ul>
-      <li>Marking an item "Delivered" before it has actually reached the customer is a violation and can result in
-          your store being suspended.</li>
-      <li>If a customer opens a dispute, your payout for that order is held until an admin reviews it. Respond
-          honestly and promptly to any dispute contact -- repeated disputes against your store can lead to review or
-          suspension.</li>
-      <li>Payouts are sent directly to your Etel Pay wallet (or your configured payout method in Vendor Settings) --
-          no manual payout request needed for wallet-paid orders.</li>
+      <li><?= e(t('storefront.policy.sellers_li1')) ?></li>
+      <li><?= e(t('storefront.policy.sellers_li2')) ?></li>
+      <li><?= e(t('storefront.policy.sellers_li3')) ?></li>
     </ul>
   </div>
 
   <div class="pp-section">
-    <span class="pp-badge">Dispute Process</span>
-    <h2><i class="bi bi-flag"></i> What happens when a problem is reported</h2>
-    <p>A buyer's dispute report pauses the payout for that order. An Etel Gebeya admin reviews the order, delivery
-       status, and both sides' account of what happened, then decides one of two outcomes:</p>
+    <span class="pp-badge"><?= e(t('storefront.policy.dispute_process')) ?></span>
+    <h2><i class="bi bi-flag"></i> <?= e(t('storefront.policy.dispute_heading')) ?></h2>
+    <p><?= e(t('storefront.policy.dispute_intro')) ?></p>
     <ul>
-      <li><strong>Refund the buyer</strong> -- the held payment returns to the customer's ኢE Pay Wallet.</li>
-      <li><strong>Release to the seller</strong> -- if the order was fulfilled correctly, the held payment is
-          released to the seller as normal.</li>
+      <li><?= t('storefront.policy.dispute_li1') ?></li>
+      <li><?= t('storefront.policy.dispute_li2') ?></li>
     </ul>
-    <p>Cash on Delivery, Telebirr and CBE Birr orders are not held in escrow (no money passes through the platform
-       wallet for those), so this policy applies specifically to ኢE Pay Wallet payments.</p>
+    <p><?= e(t('storefront.policy.dispute_outro')) ?></p>
   </div>
 </div>
 
@@ -73,6 +57,6 @@ ob_start();
 $__content = ob_get_clean();
 echo \App\Core\View::capture('_layouts/public', [
     '__content' => $__content,
-    'pageTitle'  => $pageTitle ?? 'Buyer & Seller Protection Policy -- Etel Gebeya',
+    'pageTitle'  => $pageTitle ?? t('storefront.policy.page_title') . ' -- Etel Gebeya',
     'locale'     => $locale ?? 'en',
 ]);
