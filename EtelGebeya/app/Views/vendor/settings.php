@@ -4,11 +4,11 @@ require __DIR__.'/_layout.php';
 ob_start();
 
 $checks = [
-  ['field' => 'store_name',     'label' => 'Store name',      'done' => trim($seller['store_name'] ?? '') !== ''],
-  ['field' => 'store_name_am',  'label' => 'Amharic name',     'done' => trim($seller['store_name_am'] ?? '') !== ''],
-  ['field' => 'description',    'label' => 'Description',      'done' => trim($seller['description'] ?? '') !== ''],
-  ['field' => 'phone',          'label' => 'Phone number',     'done' => trim($seller['phone'] ?? '') !== ''],
-  ['field' => 'pickup_address', 'label' => 'Pickup location',  'done' => trim($seller['pickup_address'] ?? '') !== ''],
+  ['field' => 'store_name',     'label' => t('vendor.settings.check_store_name'),    'done' => trim($seller['store_name'] ?? '') !== ''],
+  ['field' => 'store_name_am',  'label' => t('vendor.settings.check_store_name_am'), 'done' => trim($seller['store_name_am'] ?? '') !== ''],
+  ['field' => 'description',    'label' => t('vendor.settings.check_description'),   'done' => trim($seller['description'] ?? '') !== ''],
+  ['field' => 'phone',          'label' => t('vendor.settings.check_phone'),         'done' => trim($seller['phone'] ?? '') !== ''],
+  ['field' => 'pickup_address', 'label' => t('vendor.settings.check_pickup'),        'done' => trim($seller['pickup_address'] ?? '') !== ''],
 ];
 $doneCount = 0;
 foreach ($checks as $c) { if ($c['done']) { $doneCount++; } }
@@ -21,11 +21,11 @@ $initial = mb_substr($seller['store_name'] ?? 'S', 0, 1, 'UTF-8');
 
   <div class="eg-set-head">
     <div>
-      <h1 class="dash-title">Store Settings</h1>
-      <p class="dash-sub">This is what shoppers see and how couriers find you</p>
+      <h1 class="dash-title"><?= e(t('vendor.settings.title')) ?></h1>
+      <p class="dash-sub"><?= e(t('vendor.settings.subtitle')) ?></p>
     </div>
     <a href="<?= View::url('/vendor/'.e($seller['store_slug']??'')) ?>" target="_blank" class="eg-view-store">
-      <i class="bi bi-shop"></i> View storefront
+      <i class="bi bi-shop"></i> <?= e(t('vendor.settings.view_storefront')) ?>
     </a>
   </div>
 
@@ -47,47 +47,47 @@ $initial = mb_substr($seller['store_name'] ?? 'S', 0, 1, 'UTF-8');
           <div class="eg-card-head">
             <div class="eg-card-icon"><i class="bi bi-shop-window"></i></div>
             <div>
-              <h3>Store identity</h3>
-              <p>The name and description customers see across the marketplace</p>
+              <h3><?= e(t('vendor.settings.identity_title')) ?></h3>
+              <p><?= e(t('vendor.settings.identity_sub')) ?></p>
             </div>
           </div>
 
           <div class="eg-avatar-row">
             <div class="eg-avatar" id="eg-avatar"><?= e($initial) ?></div>
             <div class="eg-avatar-meta">
-              <div class="eg-avatar-name" id="eg-avatar-name"><?= e($seller['store_name'] ?? 'Your store') ?></div>
+              <div class="eg-avatar-name" id="eg-avatar-name"><?= e($seller['store_name'] ?? t('vendor.settings.your_store_fallback')) ?></div>
               <div class="eg-status-pill eg-status-<?= ($seller['status']??'active')==='active'?'active':'draft' ?>">
-                <span class="dot"></span> Store <?= e(ucfirst($seller['status'] ?? 'active')) ?>
+                <span class="dot"></span> <?= e(t('vendor.settings.store_status', ['status' => t('status.'.($seller['status'] ?? 'active'))])) ?>
               </div>
             </div>
           </div>
 
           <div class="eg-field-grid">
             <div class="eg-field">
-              <label for="f-store-name">Store name (English) <span class="req">*</span></label>
+              <label for="f-store-name"><?= e(t('vendor.settings.store_name_en_label')) ?> <span class="req">*</span></label>
               <input type="text" id="f-store-name" name="store_name" required value="<?= e($seller['store_name'] ?? '') ?>" aria-describedby="h-store-name">
-              <p class="eg-help" id="h-store-name">Shown on your storefront, receipts and search results</p>
+              <p class="eg-help" id="h-store-name"><?= e(t('vendor.settings.store_name_en_help')) ?></p>
             </div>
             <div class="eg-field">
-              <label for="f-store-name-am">Store name (Amharic)</label>
+              <label for="f-store-name-am"><?= e(t('vendor.settings.store_name_am_label')) ?></label>
               <input type="text" id="f-store-name-am" name="store_name_am" value="<?= e($seller['store_name_am'] ?? '') ?>" aria-describedby="h-store-name-am">
-              <p class="eg-help" id="h-store-name-am">Used when a customer browses in Amharic</p>
+              <p class="eg-help" id="h-store-name-am"><?= e(t('vendor.settings.store_name_am_help')) ?></p>
             </div>
           </div>
 
           <div class="eg-field">
-            <label for="f-store-url">Store URL</label>
+            <label for="f-store-url"><?= e(t('vendor.settings.store_url_label')) ?></label>
             <div class="eg-copy-row">
               <input type="text" readonly value="<?= e($storeUrl) ?>" id="f-store-url" aria-describedby="h-store-url">
-              <button type="button" class="eg-copy-btn" id="eg-copy-url" aria-label="Copy store link"><i class="bi bi-clipboard" aria-hidden="true"></i></button>
+              <button type="button" class="eg-copy-btn" id="eg-copy-url" aria-label="<?= e(t('vendor.settings.copy_link_aria')) ?>"><i class="bi bi-clipboard" aria-hidden="true"></i></button>
             </div>
-            <p class="eg-help" id="h-store-url">Share this link directly with customers</p>
+            <p class="eg-help" id="h-store-url"><?= e(t('vendor.settings.store_url_help')) ?></p>
           </div>
 
           <div class="eg-field">
-            <label for="f-description">Description</label>
-            <textarea id="f-description" name="description" rows="4" placeholder="Tell shoppers what you sell and what makes your store worth buying from" aria-describedby="h-description"><?= e($seller['description'] ?? '') ?></textarea>
-            <p class="eg-help" id="h-description">Appears at the top of your storefront page</p>
+            <label for="f-description"><?= e(t('vendor.settings.description_label')) ?></label>
+            <textarea id="f-description" name="description" rows="4" placeholder="<?= e(t('vendor.settings.description_placeholder')) ?>" aria-describedby="h-description"><?= e($seller['description'] ?? '') ?></textarea>
+            <p class="eg-help" id="h-description"><?= e(t('vendor.settings.description_help')) ?></p>
           </div>
         </section>
 
@@ -95,14 +95,14 @@ $initial = mb_substr($seller['store_name'] ?? 'S', 0, 1, 'UTF-8');
           <div class="eg-card-head">
             <div class="eg-card-icon"><i class="bi bi-telephone" aria-hidden="true"></i></div>
             <div>
-              <h3>Contact</h3>
-              <p>How customers and couriers reach you</p>
+              <h3><?= e(t('vendor.settings.contact_title')) ?></h3>
+              <p><?= e(t('vendor.settings.contact_sub')) ?></p>
             </div>
           </div>
           <div class="eg-field" style="max-width:340px">
-            <label for="f-phone">Phone</label>
+            <label for="f-phone"><?= e(t('vendor.settings.phone_label')) ?></label>
             <input type="tel" id="f-phone" name="phone" value="<?= e($seller['phone'] ?? '') ?>" placeholder="+251 9xx xxx xxx" aria-describedby="h-phone">
-            <p class="eg-help" id="h-phone">Used for order updates and courier pickup coordination</p>
+            <p class="eg-help" id="h-phone"><?= e(t('vendor.settings.phone_help')) ?></p>
           </div>
         </section>
 
@@ -110,24 +110,24 @@ $initial = mb_substr($seller['store_name'] ?? 'S', 0, 1, 'UTF-8');
           <div class="eg-card-head">
             <div class="eg-card-icon"><i class="bi bi-geo-alt"></i></div>
             <div>
-              <h3>Pickup location</h3>
-              <p>Where couriers collect your orders</p>
+              <h3><?= e(t('vendor.settings.pickup_title')) ?></h3>
+              <p><?= e(t('vendor.settings.pickup_sub')) ?></p>
             </div>
           </div>
 
           <div class="ap-wrap">
             <div class="ap-search-row">
-              <input type="text" id="addr-search" placeholder="Search an address in Ethiopia...">
-              <button type="button" id="addr-locate" class="ap-locate-btn"><i class="bi bi-crosshair"></i> Use my location</button>
+              <input type="text" id="addr-search" placeholder="<?= e(t('vendor.settings.address_search_placeholder')) ?>">
+              <button type="button" id="addr-locate" class="ap-locate-btn"><i class="bi bi-crosshair"></i> <?= e(t('vendor.settings.use_my_location')) ?></button>
             </div>
             <div id="addr-results" class="ap-results"></div>
           </div>
           <div id="addr-map" class="ap-map"></div>
           <div class="eg-field" style="margin-top:.85rem">
-            <label for="pickup_address" class="sr-only">Pickup address</label>
-            <input type="text" name="pickup_address" id="pickup_address" placeholder="Pickup address"
+            <label for="pickup_address" class="sr-only"><?= e(t('vendor.settings.pickup_address_label')) ?></label>
+            <input type="text" name="pickup_address" id="pickup_address" placeholder="<?= e(t('vendor.settings.pickup_address_label')) ?>"
                    value="<?= e($seller['pickup_address'] ?? '') ?>" aria-describedby="h-pickup-address">
-            <p class="eg-help" id="h-pickup-address">Confirm the pin matches where couriers should actually collect from</p>
+            <p class="eg-help" id="h-pickup-address"><?= e(t('vendor.settings.pickup_address_help')) ?></p>
           </div>
           <input type="hidden" name="pickup_lat" id="pickup_lat" value="<?= e($seller['pickup_lat'] ?? '') ?>">
           <input type="hidden" name="pickup_lng" id="pickup_lng" value="<?= e($seller['pickup_lng'] ?? '') ?>">
@@ -141,8 +141,8 @@ $initial = mb_substr($seller['store_name'] ?? 'S', 0, 1, 'UTF-8');
           <div class="eg-ring" id="eg-ring" style="--pct:<?= $pct ?>">
             <div class="eg-ring-value"><span id="eg-ring-pct"><?= $pct ?></span>%</div>
           </div>
-          <div class="eg-readiness-title">Profile completeness</div>
-          <p class="eg-readiness-sub">Complete stores earn more customer trust and rank higher in search</p>
+          <div class="eg-readiness-title"><?= e(t('vendor.settings.readiness_title')) ?></div>
+          <p class="eg-readiness-sub"><?= e(t('vendor.settings.readiness_sub')) ?></p>
 
           <ul class="eg-checklist" id="eg-checklist">
             <?php foreach ($checks as $c): ?>
@@ -154,7 +154,7 @@ $initial = mb_substr($seller['store_name'] ?? 'S', 0, 1, 'UTF-8');
           </ul>
 
           <button type="submit" class="btn-gold eg-save-btn">
-            <i class="bi bi-check-lg"></i> Save changes
+            <i class="bi bi-check-lg"></i> <?= e(t('vendor.settings.save_changes')) ?>
           </button>
         </div>
       </aside>
@@ -163,7 +163,7 @@ $initial = mb_substr($seller['store_name'] ?? 'S', 0, 1, 'UTF-8');
   </form>
 
   <div class="eg-mobile-savebar">
-    <button type="button" class="btn-gold" id="eg-mobile-save"><i class="bi bi-check-lg"></i> Save changes</button>
+    <button type="button" class="btn-gold" id="eg-mobile-save"><i class="bi bi-check-lg"></i> <?= e(t('vendor.settings.save_changes')) ?></button>
   </div>
 </div>
 
@@ -186,10 +186,11 @@ document.addEventListener('DOMContentLoaded', function () {
   var nameInput = document.getElementById('f-store-name');
   var avatar = document.getElementById('eg-avatar');
   var avatarName = document.getElementById('eg-avatar-name');
+  var storeFallback = <?= json_encode(t('vendor.settings.your_store_fallback')) ?>;
   nameInput.addEventListener('input', function () {
     var v = nameInput.value.trim();
     avatar.textContent = v ? v.charAt(0).toUpperCase() : 'S';
-    avatarName.textContent = v || 'Your store';
+    avatarName.textContent = v || storeFallback;
   });
 
   // -- copy store URL --
