@@ -20,8 +20,8 @@ foreach ($items as $__it) {
 <div>
   <div class="orders-header">
     <div>
-      <h1 class="orders-title">My Orders</h1>
-      <p class="orders-sub">Items containing your products — mark them confirmed, shipped or delivered as you fulfill them</p>
+      <h1 class="orders-title"><?= e(t('vendor.orders.title')) ?></h1>
+      <p class="orders-sub"><?= e(t('vendor.orders.subtitle')) ?></p>
     </div>
   </div>
 
@@ -36,23 +36,23 @@ foreach ($items as $__it) {
   <div class="orders-stats">
     <div class="ostat-card">
       <div class="ostat-icon" style="background:rgba(96,180,255,.12);color:var(--blue)"><i class="bi bi-receipt"></i></div>
-      <div><div class="ostat-val"><?= $statTotal ?></div><div class="ostat-label">Total Items</div></div>
+      <div><div class="ostat-val"><?= $statTotal ?></div><div class="ostat-label"><?= e(t('vendor.orders.stat_total_items')) ?></div></div>
     </div>
     <div class="ostat-card">
       <div class="ostat-icon" style="background:rgba(255,149,0,.12);color:var(--orange)"><i class="bi bi-hourglass-split"></i></div>
-      <div><div class="ostat-val"><?= $statPending ?></div><div class="ostat-label">Pending</div></div>
+      <div><div class="ostat-val"><?= $statPending ?></div><div class="ostat-label"><?= e(t('status.pending')) ?></div></div>
     </div>
     <div class="ostat-card">
       <div class="ostat-icon" style="background:rgba(96,180,255,.12);color:var(--blue)"><i class="bi bi-truck"></i></div>
-      <div><div class="ostat-val"><?= $statTransit ?></div><div class="ostat-label">In Transit</div></div>
+      <div><div class="ostat-val"><?= $statTransit ?></div><div class="ostat-label"><?= e(t('vendor.orders.stat_in_transit')) ?></div></div>
     </div>
     <div class="ostat-card">
       <div class="ostat-icon" style="background:rgba(46,204,113,.12);color:var(--green)"><i class="bi bi-house-check"></i></div>
-      <div><div class="ostat-val"><?= $statDelivered ?></div><div class="ostat-label">Delivered</div></div>
+      <div><div class="ostat-val"><?= $statDelivered ?></div><div class="ostat-label"><?= e(t('status.delivered')) ?></div></div>
     </div>
     <div class="ostat-card ostat-card-gold">
       <div class="ostat-icon" style="background:var(--gold-dim);color:var(--gold)"><i class="bi bi-gem"></i></div>
-      <div><div class="ostat-val">Br <?= number_format($revenue, 2) ?></div><div class="ostat-label">My Revenue</div></div>
+      <div><div class="ostat-val">Br <?= number_format($revenue, 2) ?></div><div class="ostat-label"><?= e(t('vendor.orders.stat_my_revenue')) ?></div></div>
     </div>
   </div>
   <?php endif; ?>
@@ -60,8 +60,8 @@ foreach ($items as $__it) {
   <?php if (empty($items)): ?>
     <div class="orders-empty">
       <div class="orders-empty-icon"><i class="bi bi-cart-x"></i></div>
-      <h3>No orders yet</h3>
-      <p>Orders will appear here when customers buy your products.</p>
+      <h3><?= e(t('vendor.orders.empty_title')) ?></h3>
+      <p><?= e(t('vendor.orders.empty_body')) ?></p>
     </div>
   <?php else: ?>
 
@@ -69,71 +69,71 @@ foreach ($items as $__it) {
     <table class="orders-table">
       <thead>
         <tr>
-          <th>Order</th>
-          <th>Product</th>
-          <th>Customer</th>
-          <th>Qty</th>
-          <th>My Revenue</th>
-          <th>Status</th>
-          <th>Fulfilment</th>
-          <th>Date</th>
-          <th>Action</th>
+          <th><?= e(t('vendor.orders.col_order')) ?></th>
+          <th><?= e(t('vendor.orders.col_product')) ?></th>
+          <th><?= e(t('vendor.orders.col_customer')) ?></th>
+          <th><?= e(t('vendor.orders.col_qty')) ?></th>
+          <th><?= e(t('vendor.orders.col_my_revenue')) ?></th>
+          <th><?= e(t('common.status')) ?></th>
+          <th><?= e(t('vendor.orders.col_fulfilment')) ?></th>
+          <th><?= e(t('common.date')) ?></th>
+          <th><?= e(t('common.actions')) ?></th>
         </tr>
       </thead>
       <tbody>
       <?php
         $nextStatus = ['pending' => 'confirmed', 'confirmed' => 'shipped', 'shipped' => 'delivered'];
-        $nextLabel  = ['confirmed' => '<i class="bi bi-check-circle"></i> Confirm', 'shipped' => '<i class="bi bi-box-seam"></i> Mark Shipped', 'delivered' => '<i class="bi bi-house-check"></i> Mark Delivered'];
+        $nextLabel  = ['confirmed' => '<i class="bi bi-check-circle"></i> '.e(t('vendor.orders.action_confirm')), 'shipped' => '<i class="bi bi-box-seam"></i> '.e(t('vendor.orders.action_mark_shipped')), 'delivered' => '<i class="bi bi-house-check"></i> '.e(t('vendor.orders.action_mark_delivered'))];
         $statusIcon = ['pending' => 'bi-hourglass-split', 'confirmed' => 'bi-check-circle', 'shipped' => 'bi-truck', 'delivered' => 'bi-house-check', 'cancelled' => 'bi-x-circle', 'returned' => 'bi-arrow-return-left'];
       ?>
       <?php foreach ($items as $it): ?>
         <tr data-label-row="<?= e($it['code']) ?>">
-          <td data-label="Order">
+          <td data-label="<?= e(t('vendor.orders.col_order')) ?>">
             <span class="orders-code"><?= e($it['code']) ?></span>
           </td>
-          <td data-label="Product"><?= e($it['product_name']) ?></td>
-          <td data-label="Customer">
+          <td data-label="<?= e(t('vendor.orders.col_product')) ?>"><?= e($it['product_name']) ?></td>
+          <td data-label="<?= e(t('vendor.orders.col_customer')) ?>">
             <div class="orders-customer"><?= e($it['customer_name']) ?></div>
             <div class="orders-customer-phone"><?= e($it['customer_phone']) ?></div>
           </td>
-          <td data-label="Qty"><?= (int)$it['quantity'] ?></td>
-          <td data-label="My Revenue" class="orders-revenue">Br <?= number_format((float)$it['total_price'], 2) ?></td>
-          <td data-label="Status">
+          <td data-label="<?= e(t('vendor.orders.col_qty')) ?>"><?= (int)$it['quantity'] ?></td>
+          <td data-label="<?= e(t('vendor.orders.col_my_revenue')) ?>" class="orders-revenue">Br <?= number_format((float)$it['total_price'], 2) ?></td>
+          <td data-label="<?= e(t('common.status')) ?>">
             <span class="badge-status badge-<?= e($it['item_status']) ?>">
               <i class="bi <?= e($statusIcon[$it['item_status']] ?? 'bi-circle') ?>"></i>
-              <?= e(ucfirst($it['item_status'])) ?>
+              <?= e(t('status.'.$it['item_status'])) ?>
             </span>
           </td>
-          <td data-label="Fulfilment">
+          <td data-label="<?= e(t('vendor.orders.col_fulfilment')) ?>">
             <?php if (empty($it['is_dropship'])): ?>
-              <span class="orders-inhouse">In-house</span>
+              <span class="orders-inhouse"><?= e(t('vendor.orders.in_house')) ?></span>
             <?php else: ?>
-              <span class="badge-status badge-dropship"><i class="bi bi-truck"></i> Dropship</span>
+              <span class="badge-status badge-dropship"><i class="bi bi-truck"></i> <?= e(t('vendor.orders.dropship')) ?></span>
               <?php if (!empty($it['supplier_name'])): ?>
                 <div class="orders-supplier"><?= e($it['supplier_name']) ?></div>
               <?php endif; ?>
               <?php if (!empty($it['forwarded_at'])): ?>
-                <div class="orders-forwarded"><i class="bi bi-check2"></i> Forwarded <?= e($it['forward_method'] === 'email' ? '(emailed)' : '') ?> <?= date('M j', strtotime($it['forwarded_at'])) ?></div>
+                <div class="orders-forwarded"><i class="bi bi-check2"></i> <?= e(t('vendor.orders.forwarded')) ?> <?= e($it['forward_method'] === 'email' ? t('vendor.orders.forwarded_emailed') : '') ?> <?= date('M j', strtotime($it['forwarded_at'])) ?></div>
               <?php else: ?>
                 <div class="orders-forward-actions">
                   <form method="POST" action="<?= View::url('/vendor-panel/orders/mark-forwarded') ?>">
                     <?= csrf() ?>
                     <input type="hidden" name="item_id" value="<?= (int)$it['item_id'] ?>">
-                    <button type="submit" class="orders-btn-ghost" title="I forwarded this to my supplier myself">Mark Forwarded</button>
+                    <button type="submit" class="orders-btn-ghost" title="I forwarded this to my supplier myself"><?= e(t('vendor.orders.mark_forwarded')) ?></button>
                   </form>
                   <?php if (!empty($it['supplier_email'])): ?>
-                    <form method="POST" action="<?= View::url('/vendor-panel/orders/email-supplier') ?>" onsubmit="return confirm('Email the order details to <?= e(addslashes($it['supplier_name'] ?? 'this supplier')) ?>?')">
+                    <form method="POST" action="<?= View::url('/vendor-panel/orders/email-supplier') ?>" onsubmit="return confirm('<?= e(addslashes(t('vendor.orders.email_supplier_confirm', ['supplier' => $it['supplier_name'] ?? t('vendor.orders.this_supplier')]))) ?>')">
                       <?= csrf() ?>
                       <input type="hidden" name="item_id" value="<?= (int)$it['item_id'] ?>">
-                      <button type="submit" class="orders-btn-ghost"><i class="bi bi-envelope"></i> Email Supplier</button>
+                      <button type="submit" class="orders-btn-ghost"><i class="bi bi-envelope"></i> <?= e(t('vendor.orders.email_supplier')) ?></button>
                     </form>
                   <?php endif; ?>
                 </div>
               <?php endif; ?>
             <?php endif; ?>
           </td>
-          <td data-label="Date" class="orders-date"><?= date('M j, Y', strtotime($it['created_at'])) ?></td>
-          <td data-label="Action">
+          <td data-label="<?= e(t('common.date')) ?>" class="orders-date"><?= date('M j, Y', strtotime($it['created_at'])) ?></td>
+          <td data-label="<?= e(t('common.actions')) ?>">
             <?php if (!empty($it['tracking_number']) || !empty($it['courier_name'])): ?>
               <div class="orders-tracking">
                 <?php if (!empty($it['courier_name'])): ?><span><i class="bi bi-truck"></i> <?= e($it['courier_name']) ?></span><?php endif; ?>
@@ -147,10 +147,10 @@ foreach ($items as $__it) {
                 <input type="hidden" name="status" value="<?= e($ns) ?>">
                 <?php if ($ns === 'shipped'): ?>
                   <div class="orders-ship-fields">
-                    <input type="text" name="tracking_number" placeholder="Tracking # (optional)" class="orders-input">
+                    <input type="text" name="tracking_number" placeholder="<?= e(t('vendor.orders.tracking_placeholder')) ?>" class="orders-input">
                     <?php if (!empty($couriers)): ?>
                       <select name="courier_id" class="orders-input">
-                        <option value="">Courier (optional)</option>
+                        <option value=""><?= e(t('vendor.orders.courier_placeholder')) ?></option>
                         <?php foreach ($couriers as $c): ?>
                           <option value="<?= (int)$c['id'] ?>"><?= e($c['name']) ?></option>
                         <?php endforeach; ?>

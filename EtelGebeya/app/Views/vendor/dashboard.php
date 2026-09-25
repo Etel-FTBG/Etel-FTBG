@@ -84,21 +84,21 @@ ob_start();
 <?php if (($seller['status'] ?? 'active') === 'pending'): ?>
 <div style="display:flex;align-items:center;gap:.65rem;background:rgba(212,175,55,.1);border:1.5px solid rgba(212,175,55,.3);border-radius:14px;padding:.85rem 1.1rem;margin-bottom:1.25rem;font-size:.83rem;color:#fff">
   <i class="bi bi-hourglass-split" style="color:var(--gold);font-size:1.1rem"></i>
-  <div><strong>Your store is pending approval.</strong> You can set up products and settings now, but your store won't appear on the storefront until an admin reviews and approves it.</div>
+  <div><strong><?= e(t('vendor.dashboard.pending_title')) ?></strong> <?= e(t('vendor.dashboard.pending_body')) ?></div>
 </div>
 <?php endif; ?>
 
 <!-- Hero -->
 <div class="vd-hero">
   <div class="vd-hero-left">
-    <h1>Welcome back, <?= e(explode(' ', $seller['store_name'] ?? 'Vendor')[0]) ?> &#128075;</h1>
-    <p>Here's what's happening with your store today</p>
+    <h1><?= e(t('vendor.dashboard.welcome', ['name' => explode(' ', $seller['store_name'] ?? 'Vendor')[0]])) ?> &#128075;</h1>
+    <p><?= e(t('vendor.dashboard.subtitle')) ?></p>
     <div class="vd-hero-store">
       <i class="bi bi-shop"></i> <?= e($seller['store_name'] ?? '') ?>
     </div>
   </div>
   <a href="<?= View::url('/vendor-panel/products/new') ?>" class="btn btn-gold">
-    <i class="bi bi-plus-lg"></i> Add Product
+    <i class="bi bi-plus-lg"></i> <?= e(t('vendor.dashboard.add_product')) ?>
   </a>
 </div>
 
@@ -107,36 +107,36 @@ ob_start();
   <div class="vd-stat gold">
     <div class="vd-stat-icon icon-gold"><i class="bi bi-box-seam"></i></div>
     <div class="vd-stat-val"><?= number_format($productCount) ?></div>
-    <div class="vd-stat-label">Total Products</div>
-    <div class="vd-stat-sub"><?= number_format($activeCount) ?> active * <?= number_format($productCount - $activeCount) ?> draft</div>
+    <div class="vd-stat-label"><?= e(t('vendor.dashboard.total_products')) ?></div>
+    <div class="vd-stat-sub"><?= e(t('vendor.dashboard.active_draft', ['active' => number_format($activeCount), 'draft' => number_format($productCount - $activeCount)])) ?></div>
   </div>
   <div class="vd-stat blue">
     <div class="vd-stat-icon icon-blue"><i class="bi bi-receipt"></i></div>
     <div class="vd-stat-val"><?= number_format($orderCount) ?></div>
-    <div class="vd-stat-label">Total Orders</div>
-    <div class="vd-stat-sub">Lifetime orders</div>
+    <div class="vd-stat-label"><?= e(t('vendor.dashboard.total_orders')) ?></div>
+    <div class="vd-stat-sub"><?= e(t('vendor.dashboard.lifetime_orders')) ?></div>
   </div>
   <div class="vd-stat green">
     <div class="vd-stat-icon icon-green"><i class="bi bi-cash-stack"></i></div>
     <div class="vd-stat-val" style="font-size:<?= strlen(number_format($revenue,0))>8?'1.2rem':'1.8rem' ?>">Br <?= number_format($revenue, 0) ?></div>
-    <div class="vd-stat-label">Total Revenue</div>
-    <div class="vd-stat-sub">Confirmed orders only</div>
+    <div class="vd-stat-label"><?= e(t('vendor.dashboard.total_revenue')) ?></div>
+    <div class="vd-stat-sub"><?= e(t('vendor.dashboard.confirmed_orders_only')) ?></div>
   </div>
   <div class="vd-stat purple">
     <div class="vd-stat-icon icon-purple"><i class="bi bi-graph-up-arrow"></i></div>
     <div class="vd-stat-val"><?= $productCount > 0 ? (int)round($revenue / max($productCount,1)) : 0 ?></div>
-    <div class="vd-stat-label">Avg Rev/Product</div>
-    <div class="vd-stat-sub">Revenue per listing</div>
+    <div class="vd-stat-label"><?= e(t('vendor.dashboard.avg_rev_product')) ?></div>
+    <div class="vd-stat-sub"><?= e(t('vendor.dashboard.revenue_per_listing')) ?></div>
   </div>
 </div>
 
 <!-- Quick actions -->
 <div class="qa-grid" style="margin-bottom:1.5rem">
   <?php foreach ([
-    ['/vendor-panel/products/new','bi-plus-square-dotted','#60b4ff','List Product'],
-    ['/vendor-panel/orders',     'bi-receipt',           '#2ecc71','View Orders'],
-    ['/vendor-panel/settings',   'bi-gear',              '#D4AF37','Store Settings'],
-    ['/vendor/'.e($seller['store_slug']??''), 'bi-shop', '#9b59b6','My Storefront'],
+    ['/vendor-panel/products/new','bi-plus-square-dotted','#60b4ff',t('vendor.dashboard.qa_list_product')],
+    ['/vendor-panel/orders',     'bi-receipt',           '#2ecc71',t('vendor.dashboard.qa_view_orders')],
+    ['/vendor-panel/settings',   'bi-gear',              '#D4AF37',t('vendor.dashboard.qa_store_settings')],
+    ['/vendor/'.e($seller['store_slug']??''), 'bi-shop', '#9b59b6',t('vendor.nav.my_storefront')],
   ] as [$url,$icon,$color,$label]): ?>
   <a href="<?= View::url($url) ?>" class="qa-btn">
     <i class="bi <?= $icon ?>" style="color:<?= $color ?>"></i>
@@ -150,18 +150,18 @@ ob_start();
   <!-- Recent Products -->
   <div class="vd-card">
     <div class="vd-card-head">
-      <div class="vd-card-title"><i class="bi bi-box-seam" style="color:var(--gold)"></i> Recent Products</div>
-      <a href="<?= View::url('/vendor-panel/products') ?>" class="vd-card-link">View all <i class="bi bi-arrow-right"></i></a>
+      <div class="vd-card-title"><i class="bi bi-box-seam" style="color:var(--gold)"></i> <?= e(t('vendor.dashboard.recent_products')) ?></div>
+      <a href="<?= View::url('/vendor-panel/products') ?>" class="vd-card-link"><?= e(t('common.view_all')) ?> <i class="bi bi-arrow-right"></i></a>
     </div>
     <?php if (empty($recentProducts)): ?>
       <div class="empty-state">
         <i class="bi bi-box2"></i>
-        <p>You haven't listed any products yet.</p>
-        <a href="<?= View::url('/vendor-panel/products/new') ?>" class="btn btn-gold btn-sm"><i class="bi bi-plus"></i> Add First Product</a>
+        <p><?= e(t('vendor.dashboard.no_products_yet')) ?></p>
+        <a href="<?= View::url('/vendor-panel/products/new') ?>" class="btn btn-gold btn-sm"><i class="bi bi-plus"></i> <?= e(t('vendor.dashboard.add_first_product')) ?></a>
       </div>
     <?php else: ?>
     <table class="vd-table">
-      <thead><tr><th colspan="2">Product</th><th>Price</th><th>Status</th></tr></thead>
+      <thead><tr><th colspan="2"><?= e(t('vendor.dashboard.col_product')) ?></th><th><?= e(t('vendor.dashboard.col_price')) ?></th><th><?= e(t('common.status')) ?></th></tr></thead>
       <tbody>
       <?php foreach ($recentProducts as $pr): ?>
         <tr>
@@ -176,10 +176,10 @@ ob_start();
             <a href="<?= View::url('/vendor-panel/products/'.$pr['id'].'/edit') ?>" style="color:var(--dark-text);text-decoration:none;font-weight:600;font-size:.82rem">
               <?= e(mb_substr(html_entity_decode($pr['name_en'],ENT_QUOTES,'UTF-8'), 0, 28, 'UTF-8')) ?>...
             </a>
-            <div style="font-size:.72rem;color:var(--dark-muted)">Qty: <?= (int)$pr['stock_qty'] ?></div>
+            <div style="font-size:.72rem;color:var(--dark-muted)"><?= e(t('vendor.dashboard.qty', ['count' => (int)$pr['stock_qty']])) ?></div>
           </td>
           <td style="font-weight:700;white-space:nowrap">Br <?= number_format((float)$pr['price'],0) ?></td>
-          <td><span class="sp sp-<?= $pr['status'] ?>"><?= $pr['status'] ?></span></td>
+          <td><span class="sp sp-<?= $pr['status'] ?>"><?= e(t('status.'.$pr['status'])) ?></span></td>
         </tr>
       <?php endforeach; ?>
       </tbody>
@@ -193,17 +193,17 @@ ob_start();
     <!-- Recent Orders -->
     <div class="vd-card">
       <div class="vd-card-head">
-        <div class="vd-card-title"><i class="bi bi-receipt" style="color:#60b4ff"></i> Recent Orders</div>
-        <a href="<?= View::url('/vendor-panel/orders') ?>" class="vd-card-link">View all <i class="bi bi-arrow-right"></i></a>
+        <div class="vd-card-title"><i class="bi bi-receipt" style="color:#60b4ff"></i> <?= e(t('vendor.dashboard.recent_orders')) ?></div>
+        <a href="<?= View::url('/vendor-panel/orders') ?>" class="vd-card-link"><?= e(t('common.view_all')) ?> <i class="bi bi-arrow-right"></i></a>
       </div>
       <?php if (empty($recentOrders)): ?>
         <div class="empty-state">
           <i class="bi bi-cart-x"></i>
-          <p>No orders yet -- share your store link!</p>
+          <p><?= e(t('vendor.dashboard.no_orders_yet')) ?></p>
         </div>
       <?php else: ?>
       <table class="vd-table">
-        <thead><tr><th>Order</th><th>Total</th><th>Status</th></tr></thead>
+        <thead><tr><th><?= e(t('vendor.dashboard.col_order')) ?></th><th><?= e(t('cart.total')) ?></th><th><?= e(t('common.status')) ?></th></tr></thead>
         <tbody>
         <?php foreach ($recentOrders as $o): ?>
           <tr>
@@ -212,7 +212,7 @@ ob_start();
               <div style="font-size:.72rem;color:var(--dark-muted)"><?= date('M j', strtotime($o['created_at'])) ?></div>
             </td>
             <td style="font-weight:700">Br <?= number_format((float)$o['total'],0) ?></td>
-            <td><span class="sp sp-<?= $o['status'] ?>"><?= $o['status'] ?></span></td>
+            <td><span class="sp sp-<?= $o['status'] ?>"><?= e(t('status.'.$o['status'])) ?></span></td>
           </tr>
         <?php endforeach; ?>
         </tbody>
@@ -223,18 +223,18 @@ ob_start();
     <!-- Onboarding checklist -->
     <div class="vd-card">
       <div class="vd-card-head">
-        <div class="vd-card-title"><i class="bi bi-check2-circle" style="color:#2ecc71"></i> Setup Checklist</div>
-        <span style="font-size:.75rem;color:var(--dark-muted)"><?= min($productCount>0?1:0 + ($orderCount>0?1:0) + (!empty($seller['description'])?1:0) + (!empty($seller['phone'])?1:0) + 1, 5) ?>/5 done</span>
+        <div class="vd-card-title"><i class="bi bi-check2-circle" style="color:#2ecc71"></i> <?= e(t('vendor.dashboard.setup_checklist')) ?></div>
+        <span style="font-size:.75rem;color:var(--dark-muted)"><?= e(t('vendor.dashboard.done_count', ['done' => min($productCount>0?1:0 + ($orderCount>0?1:0) + (!empty($seller['description'])?1:0) + (!empty($seller['phone'])?1:0) + 1, 5), 'total' => 5])) ?></span>
       </div>
       <div style="padding:1rem 1.1rem">
         <div class="checklist">
           <?php
           $checks = [
-            [true,                          'bi-check-lg','Account created',   'You\'re in! Welcome to Etel Gebeya',  ''],
-            [!empty($seller['description']),'bi-pencil',  'Complete store info','Add description & phone',            '/vendor-panel/settings'],
-            [$productCount>0,               'bi-box-seam','List first product', 'Products drive sales',               '/vendor-panel/products/new'],
-            [!empty($seller['store_slug']), 'bi-share',   'Share store link',   'Let customers find you',             '/vendor/'.($seller['store_slug']??'')],
-            [$orderCount>0,                 'bi-receipt',  'First order',        'When a customer buys from you',      '/vendor-panel/orders'],
+            [true,                          'bi-check-lg',t('vendor.dashboard.check_account_created'),   t('vendor.dashboard.check_account_created_sub'),  ''],
+            [!empty($seller['description']),'bi-pencil',  t('vendor.dashboard.check_store_info'),t('vendor.dashboard.check_store_info_sub'),            '/vendor-panel/settings'],
+            [$productCount>0,               'bi-box-seam',t('vendor.dashboard.check_first_product'), t('vendor.dashboard.check_first_product_sub'),               '/vendor-panel/products/new'],
+            [!empty($seller['store_slug']), 'bi-share',   t('vendor.dashboard.check_share_link'),   t('vendor.dashboard.check_share_link_sub'),             '/vendor/'.($seller['store_slug']??'')],
+            [$orderCount>0,                 'bi-receipt',  t('vendor.dashboard.check_first_order'),        t('vendor.dashboard.check_first_order_sub'),      '/vendor-panel/orders'],
           ];
           foreach ($checks as [$done,$icon,$title,$sub,$url]):
           ?>

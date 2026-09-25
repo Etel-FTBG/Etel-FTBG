@@ -101,8 +101,9 @@ The palette is a single gold family read against two near-black neutrals; nothin
 - **Torch Gold** (`#FFE066`): the bright end of the gold gradient. Appears only inside gradients (buttons, avatar badges, hero highlights), never as a flat fill on its own.
 
 ### Neutral — Dashboard surfaces (vendor panel, admin panel)
-- **Vault Navy** (`#0A0A1A`): page background for every dashboard screen.
-- **Vault Navy Surface** (`#11112A`): sidebar/secondary-panel background, one step lighter than the page.
+- **Vault Gold Wash**: the actual page background for every dashboard screen — a fixed radial+linear gradient sweeping through `#2A1600 → #5A3A08 → #9A6818 → #C8922A → #D4AF37 → #C8922A → #9A6818 → #5A3A08 → #2A1600` (see `public/assets/css/admin.css`'s `html, body` rule), meant to read as torchlit vault walls behind the sidebar and cards. This was flagged in an earlier audit as contradicting an older draft of this doc (which called for a flat Vault Navy page background) — the gradient is the confirmed, intentional look; this doc was the one that was stale.
+- **Vault Navy** (`#0A0A1A`): the mobile browser chrome color (`<meta name="theme-color">`) and a couple of small accent borders — not a large visible surface anywhere in the current layout.
+- **Vault Navy Surface** (`#11112A`, at 90%/80% opacity): the sidebar and topbar background — the actual dark surface users see, floating over the gold wash behind it.
 - **Vault Card** (`rgba(9,7,3,.88)`): the near-opaque card surface used for every panel — deliberately opaque so the page's own ambient glow doesn't bleed through into card content (a real bug this project hit once; keep cards at or above this opacity).
 - **Vault Border** (`rgba(212,175,55,.22)`): the thin gold-tinted hairline around every dashboard card.
 - **Dashboard Text** (`#E8E8F0`) / **Dashboard Muted Text** (`#8888A8`): body text and secondary/helper text on dashboard surfaces.
@@ -120,7 +121,7 @@ The palette is a single gold family read against two near-black neutrals; nothin
 - **Info Blue**: `#60B4FF` on dashboards, `#3b82f6` on the storefront — kept as two distinct values rather than forced to match; don't introduce a third blue.
 
 ### Named Rules
-**The Rarity Rule.** Vault Gold is spent on the single primary action per view and on real trust signals (verification, escrow status) — never on backgrounds, never on more than one element competing for attention at once.
+**The Rarity Rule.** Vault Gold (the flat accent, `#D4AF37`) is spent on the single primary action per view and on real trust signals (verification, escrow status) — never as a decorative fill on a UI element, never on more than one element competing for attention at once. The dashboard's own ambient Vault Gold Wash page background is the one deliberate exception (it's the room the UI sits in, not a UI element competing for attention), not a license to reach for gold anywhere else — status pills, chips, link text, and table headers should still default to the functional colors below or to Dashboard Muted Text.
 
 **The Opaque Card Rule.** Card/panel surfaces stay at or above the documented card opacity (`rgba(9,7,3,.88)` dashboards, solid `#160f06` storefront). A more transparent card lets the page's own ambient background glow show through and read as a rendering bug, not a design choice — this has actually happened in this codebase once.
 
@@ -199,7 +200,7 @@ Dashboard corners run larger than storefront corners: `12px` / `18px` / `24px` (
 - **Do** reserve shadow/glow for hover, focus, and active states — flat at rest.
 
 ### Don't:
-- **Don't** introduce a third near-black background value. Dashboards use Vault Navy; the storefront uses Market Black. Pick the one matching the surface.
+- **Don't** introduce a third near-black surface tone. Dashboard sidebars/panels use Vault Navy Surface; the storefront uses Market Black. Pick the one matching the surface.
 - **Don't** mix Outfit into the storefront or Sora-only body copy into dashboards — the two surfaces' body fonts are intentionally different.
-- **Don't** use gold as a large fill or background wash — it's an accent, not a surface color.
+- **Don't** use gold as a fill on a UI element (buttons aside), a chip, or a table/text treatment — the one exception is the dashboard's own page-level Vault Gold Wash background, not a general license to use gold as a surface color elsewhere.
 - **Don't** add a drop shadow to a static, non-interactive card "to make it feel premium" — that's exactly the failure mode this system avoids.
