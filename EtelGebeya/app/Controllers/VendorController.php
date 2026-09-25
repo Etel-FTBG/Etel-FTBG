@@ -97,9 +97,13 @@ final class VendorController
                     }
                 }
             }
-            // Fallback: URL paste
+            // Fallback: URL paste -- restrict to http(s) so a pasted
+            // data:/javascript:/other scheme can never land in a stored
+            // <img src> across storefront/vendor views.
             $url = trim($_POST['path_' . $i] ?? '');
-            if ($url) $slots[$i] = $url;
+            if ($url !== '' && strlen($url) <= 2048 && preg_match('#^https?://#i', $url)) {
+                $slots[$i] = $url;
+            }
         }
 
         if (!$slots) return;
