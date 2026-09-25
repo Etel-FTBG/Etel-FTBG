@@ -446,5 +446,28 @@
   "admin.payments.col_pay_status": "የክፍያ ሁኔታ",
   "admin.payments.col_order_status": "የትዕዛዝ ሁኔታ",
   "admin.payments.mark_paid_confirm": "ይህ ትዕዛዝ በትክክል ተከፍሏል ብለው ያረጋግጣሉ? ይህ ከዚህ ሊቀለበስ አይችልም።",
-  "admin.payments.mark_paid": "እንደተከፈለ ምልክት አድርግ"
+  "admin.payments.mark_paid": "እንደተከፈለ ምልክት አድርግ",
+
+  "admin.products.status_pending": "ማጽደቅ በመጠበቅ ላይ",
+  "admin.products.status_published": "የታተመ",
+  "admin.products.status_rejected": "ውድቅ የተደረገ",
+  "admin.products.search_placeholder": "ስም፣ ሻጭ ይፈልጉ...",
+  "admin.products.no_products_found": "ምንም ምርት አልተገኘም።",
+  "admin.products.col_stock": "ክምችት",
+  "admin.products.approve_confirm": "ይፈቀድ፦ :name?",
+  "admin.products.reject_confirm": "ይህ ምርት ውድቅ ይደረግ?",
+  "admin.products.unpublish_confirm": "ከህትመት ይውጣ?",
+  "admin.products.unpublish": "ከህትመት አውጣ",
+  "admin.products.reapprove_confirm": "እንደገና ይፈቀድ?",
+  "admin.products.reapprove": "እንደገና ፍቀድ",
+
+  "admin.sellers.status_suspended": "የታገደ",
+  "admin.sellers.search_placeholder": "መደብር፣ ኢሜይል፣ ባለቤት ይፈልጉ...",
+  "admin.sellers.no_sellers_found": "ምንም ሻጭ አልተገኘም።",
+  "admin.sellers.col_contact": "እውቂያ",
+  "admin.sellers.pend_short": ":n በመጠባበቅ",
+  "admin.sellers.suspend_confirm": "ይህ ሻጭ ይታገድ?",
+  "admin.sellers.suspend": "አግድ",
+  "admin.sellers.reactivate_confirm": "እንደገና ይነቃ?",
+  "admin.sellers.restore": "መልስ"
 }

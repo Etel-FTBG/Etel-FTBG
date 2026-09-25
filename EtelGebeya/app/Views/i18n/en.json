@@ -446,5 +446,28 @@
   "admin.payments.col_pay_status": "Pay Status",
   "admin.payments.col_order_status": "Order Status",
   "admin.payments.mark_paid_confirm": "Confirm this order was actually paid? This cannot be undone from here.",
-  "admin.payments.mark_paid": "Mark Paid"
+  "admin.payments.mark_paid": "Mark Paid",
+
+  "admin.products.status_pending": "Pending Approval",
+  "admin.products.status_published": "Published",
+  "admin.products.status_rejected": "Rejected",
+  "admin.products.search_placeholder": "Search name, seller...",
+  "admin.products.no_products_found": "No products found.",
+  "admin.products.col_stock": "Stock",
+  "admin.products.approve_confirm": "Approve: :name?",
+  "admin.products.reject_confirm": "Reject this product?",
+  "admin.products.unpublish_confirm": "Unpublish?",
+  "admin.products.unpublish": "Unpublish",
+  "admin.products.reapprove_confirm": "Re-approve?",
+  "admin.products.reapprove": "Re-approve",
+
+  "admin.sellers.status_suspended": "Suspended",
+  "admin.sellers.search_placeholder": "Store, email, owner...",
+  "admin.sellers.no_sellers_found": "No sellers found.",
+  "admin.sellers.col_contact": "Contact",
+  "admin.sellers.pend_short": ":n pend.",
+  "admin.sellers.suspend_confirm": "Suspend this seller?",
+  "admin.sellers.suspend": "Suspend",
+  "admin.sellers.reactivate_confirm": "Re-activate?",
+  "admin.sellers.restore": "Restore"
 }
