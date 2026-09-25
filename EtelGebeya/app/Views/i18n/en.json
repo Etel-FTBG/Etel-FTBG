@@ -160,6 +160,19 @@
 
   "storefront.product_card.new": "NEW",
 
+  "customer.nav.dashboard": "Dashboard",
+  "customer.nav.my_orders": "My Orders",
+  "customer.nav.addresses": "Addresses",
+  "customer.nav.wishlist": "Wishlist",
+  "customer.nav.profile": "Profile",
+  "customer.verified_customer": "Verified Customer",
+  "customer.admin_panel": "Admin Panel",
+  "customer.back_to_store": "Back to Store",
+  "customer.sign_out": "Sign Out",
+  "customer.opening": "Opening...",
+  "customer.admin_access_denied": "Admin access denied",
+  "customer.unknown": "unknown",
+
   "cart.title": "Shopping Cart",
   "cart.empty": "Your cart is empty",
   "cart.subtotal": "Subtotal",

@@ -160,6 +160,19 @@
 
   "storefront.product_card.new": "አዲስ",
 
+  "customer.nav.dashboard": "ዳሽቦርድ",
+  "customer.nav.my_orders": "የእኔ ትዕዛዞች",
+  "customer.nav.addresses": "አድራሻዎች",
+  "customer.nav.wishlist": "የምኞት ዝርዝር",
+  "customer.nav.profile": "መገለጫ",
+  "customer.verified_customer": "የተረጋገጠ ደንበኛ",
+  "customer.admin_panel": "የአስተዳዳሪ ፓነል",
+  "customer.back_to_store": "ወደ መደብር ተመለስ",
+  "customer.sign_out": "ውጣ",
+  "customer.opening": "በመክፈት ላይ...",
+  "customer.admin_access_denied": "የአስተዳዳሪ መዳረሻ ተከልክሏል",
+  "customer.unknown": "ያልታወቀ",
+
   "cart.title": "የ�shopping ጋሪ",
   "cart.empty": "ጋሪዎ ባዶ ነው",
   "cart.subtotal": "ንዑስ ድምር",
