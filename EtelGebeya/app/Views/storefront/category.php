@@ -92,7 +92,7 @@ ob_start();
 <div class="cat-page">
   <!-- Breadcrumb -->
   <div class="cat-breadcrumb">
-    <a href="<?= View::url('/') ?>">Home</a>
+    <a href="<?= View::url('/') ?>"><?= e(t('storefront.catnav.home')) ?></a>
     <i class="bi bi-chevron-right"></i>
     <span class="current"><?= $catName ?></span>
   </div>
@@ -104,7 +104,7 @@ ob_start();
     </div>
     <div>
       <h1><?= $catName ?></h1>
-      <p><?= number_format($total) ?> products available</p>
+      <p><?= e(t('category.products_available', ['n' => number_format($total)])) ?></p>
     </div>
   </div>
 
@@ -113,7 +113,7 @@ ob_start();
     <aside class="filter-sidebar">
       <?php if (!empty($subCats)): ?>
       <div class="filter-card">
-        <div class="filter-title">Sub-categories</div>
+        <div class="filter-title"><?= e(t('category.subcategories')) ?></div>
         <?php foreach ($subCats as $sc): ?>
           <a href="<?= View::url('/category/' . $sc->slug) ?>" class="sub-cat-link">
             <i class="bi bi-chevron-right" style="font-size:.7rem"></i> <?= htmlspecialchars($sc->name($locale), ENT_QUOTES) ?>
@@ -123,10 +123,10 @@ ob_start();
       <?php endif; ?>
 
       <div class="filter-card">
-        <div class="filter-title">Price Range</div>
+        <div class="filter-title"><?= e(t('category.price_range')) ?></div>
         <div class="filter-group">
-          <label><input type="radio" name="price" value="all" checked> Any price</label>
-          <label><input type="radio" name="price" value="0-500"> Under Br 500</label>
+          <label><input type="radio" name="price" value="all" checked> <?= e(t('category.any_price')) ?></label>
+          <label><input type="radio" name="price" value="0-500"> <?= e(t('category.under_br', ['n' => 500])) ?></label>
           <label><input type="radio" name="price" value="500-2000"> Br 500 - 2,000</label>
           <label><input type="radio" name="price" value="2000-10000"> Br 2,000 - 10,000</label>
           <label><input type="radio" name="price" value="10000+"> Br 10,000+</label>
@@ -134,11 +134,11 @@ ob_start();
       </div>
 
       <div class="filter-card">
-        <div class="filter-title">Rating</div>
+        <div class="filter-title"><?= e(t('category.rating')) ?></div>
         <div class="filter-group">
-          <label><input type="radio" name="rating" value="any" checked> Any rating</label>
-          <label><input type="radio" name="rating" value="4"> &#9733;&#9733;&#9733;&#9733; &amp; above</label>
-          <label><input type="radio" name="rating" value="3"> &#9733;&#9733;&#9733; &amp; above</label>
+          <label><input type="radio" name="rating" value="any" checked> <?= e(t('category.any_rating')) ?></label>
+          <label><input type="radio" name="rating" value="4"> &#9733;&#9733;&#9733;&#9733; <?= e(t('category.and_above')) ?></label>
+          <label><input type="radio" name="rating" value="3"> &#9733;&#9733;&#9733; <?= e(t('category.and_above')) ?></label>
         </div>
       </div>
     </aside>
@@ -148,16 +148,16 @@ ob_start();
       <!-- Sort bar -->
       <div class="sort-bar">
         <div class="results-info">
-          Showing <strong><?= count($products) ?></strong> of <strong><?= number_format($total) ?></strong> products in <strong><?= $catName ?></strong>
+          <?= t('category.showing_results', ['shown' => count($products), 'total' => number_format($total), 'cat' => $catName]) ?>
         </div>
         <div style="display:flex;align-items:center;gap:8px;">
-          <span style="font-size:12px;color:var(--text3)">Sort:</span>
+          <span style="font-size:12px;color:var(--text3)"><?= e(t('category.sort_label')) ?></span>
           <select onchange="applySort(this.value)">
-            <option value="newest">Newest First</option>
-            <option value="price_asc">Price: Low to High</option>
-            <option value="price_desc">Price: High to Low</option>
-            <option value="popular">Most Popular</option>
-            <option value="rating">Top Rated</option>
+            <option value="newest"><?= e(t('category.sort_newest')) ?></option>
+            <option value="price_asc"><?= e(t('category.sort_price_asc')) ?></option>
+            <option value="price_desc"><?= e(t('category.sort_price_desc')) ?></option>
+            <option value="popular"><?= e(t('category.sort_popular')) ?></option>
+            <option value="rating"><?= e(t('category.sort_rating')) ?></option>
           </select>
         </div>
       </div>
@@ -166,9 +166,9 @@ ob_start();
         <div class="no-products">
           <div class="icon"><i class="bi bi-box-seam"></i></div>
           <h3><?= t('category.no_products') ?></h3>
-          <p style="margin-top:.5rem">Be the first to sell in this category!</p>
+          <p style="margin-top:.5rem"><?= e(t('category.be_first_to_sell')) ?></p>
           <a href="<?= View::url('/sell') ?>" class="eg-btn eg-btn-gold" style="display:inline-flex;margin-top:1rem;text-decoration:none">
-            <i class="bi bi-shop"></i> Open a Shop
+            <i class="bi bi-shop"></i> <?= e(t('category.open_a_shop')) ?>
           </a>
         </div>
       <?php else: ?>
