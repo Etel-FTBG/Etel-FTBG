@@ -63,11 +63,11 @@ ob_start();
 <!-- Header -->
 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem">
   <div>
-    <h1 style="font-size:1.4rem;font-weight:900;color:#fff;margin:0">My Products</h1>
-    <p style="font-size:.82rem;color:var(--dark-muted);margin:.2rem 0 0"><?= number_format($total) ?> product<?= $total!==1?'s':'' ?> in your catalog</p>
+    <h1 style="font-size:1.4rem;font-weight:900;color:#fff;margin:0"><?= e(t('vendor.products.title')) ?></h1>
+    <p style="font-size:.82rem;color:var(--dark-muted);margin:.2rem 0 0"><?= e(t('vendor.products.count', ['count' => number_format($total)])) ?></p>
   </div>
   <a href="<?= View::url('/vendor-panel/products/new') ?>" class="btn btn-gold">
-    <i class="bi bi-plus-lg"></i> Add Product
+    <i class="bi bi-plus-lg"></i> <?= e(t('vendor.dashboard.add_product')) ?>
   </a>
 </div>
 
@@ -76,14 +76,14 @@ ob_start();
   <form method="GET" action="<?= View::url('/vendor-panel/products') ?>" style="display:contents">
     <div class="pl-search">
       <i class="bi bi-search"></i>
-      <input type="text" name="q" value="<?= e($q??'') ?>" placeholder="Search by name or SKU..." autofocus>
+      <input type="text" name="q" value="<?= e($q??'') ?>" placeholder="<?= e(t('vendor.products.search_placeholder')) ?>" autofocus>
       <?php if ($status): ?><input type="hidden" name="status" value="<?= e($status) ?>"><?php endif; ?>
     </div>
   </form>
   <div class="pl-filter">
-    <?php foreach ([''=>'All','active'=>'Active','draft'=>'Draft'] as $val=>$lbl): ?>
+    <?php foreach (['' => t('common.all'), 'active' => t('status.active'), 'draft' => t('status.draft')] as $val=>$lbl): ?>
       <a href="<?= View::url('/vendor-panel/products?status='.$val.($q?'&q='.urlencode($q):'')) ?>"
-         class="<?= $status===$val?'on':'' ?>"><?= $lbl ?></a>
+         class="<?= $status===$val?'on':'' ?>"><?= e($lbl) ?></a>
     <?php endforeach; ?>
   </div>
 </div>
@@ -93,10 +93,10 @@ ob_start();
   <?php if (empty($products)): ?>
     <div class="empty-zone">
       <i class="bi bi-box2 big-icon"></i>
-      <h3><?= $q?'No products match your search':'No products yet' ?></h3>
-      <p><?= $q?'Try a different keyword or clear the filter':'Start building your catalog to drive sales' ?></p>
+      <h3><?= $q ? e(t('vendor.products.empty_no_match_title')) : e(t('vendor.products.empty_no_products_title')) ?></h3>
+      <p><?= $q ? e(t('vendor.products.empty_no_match_body')) : e(t('vendor.products.empty_no_products_body')) ?></p>
       <?php if (!$q): ?>
-        <a href="<?= View::url('/vendor-panel/products/new') ?>" class="btn btn-gold">Add Your First Product</a>
+        <a href="<?= View::url('/vendor-panel/products/new') ?>" class="btn btn-gold"><?= e(t('vendor.products.add_first')) ?></a>
       <?php endif; ?>
     </div>
   <?php else: ?>
@@ -104,11 +104,11 @@ ob_start();
     <thead>
       <tr>
         <th style="width:56px"></th>
-        <th>Product</th>
-        <th>Price</th>
-        <th>Stock</th>
-        <th>Status</th>
-        <th>Actions</th>
+        <th><?= e(t('vendor.dashboard.col_product')) ?></th>
+        <th><?= e(t('vendor.dashboard.col_price')) ?></th>
+        <th><?= e(t('vendor.products.col_stock')) ?></th>
+        <th><?= e(t('common.status')) ?></th>
+        <th><?= e(t('common.actions')) ?></th>
       </tr>
     </thead>
     <tbody>
@@ -125,7 +125,7 @@ ob_start();
           <div class="prod-name"><?= e(html_entity_decode($pr['name_en'],ENT_QUOTES,'UTF-8')) ?></div>
           <div class="prod-sku"><?= $pr['sku']?e($pr['sku']):'--' ?></div>
           <?php if (!empty($pr['is_featured'])): ?>
-            <span class="sp sp-featured" style="margin-top:.25rem"><i class="bi bi-star-fill" style="font-size:.6rem"></i> Featured</span>
+            <span class="sp sp-featured" style="margin-top:.25rem"><i class="bi bi-star-fill" style="font-size:.6rem"></i> <?= e(t('vendor.products.featured')) ?></span>
           <?php endif; ?>
         </td>
         <td>
@@ -137,17 +137,17 @@ ob_start();
         <td>
           <?php $qty=(int)$pr['stock_qty']; $alert=(int)($pr['low_stock_alert']??5); ?>
           <span class="<?= $qty<=0?'stock-low':($qty<=$alert?'stock-mid':'stock-ok') ?>">
-            <?= $qty<=0?'Out of stock':$qty.' units' ?>
+            <?= $qty<=0 ? e(t('vendor.products.out_of_stock')) : e(t('vendor.products.units', ['count' => $qty])) ?>
           </span>
         </td>
-        <td><span class="sp sp-<?= $pr['status'] ?>"><?= $pr['status'] ?></span></td>
+        <td><span class="sp sp-<?= $pr['status'] ?>"><?= e(t('status.'.$pr['status'])) ?></span></td>
         <td>
           <div class="act-btns">
             <a href="<?= View::url('/vendor-panel/products/'.$pr['id'].'/edit') ?>" class="act-btn act-edit">
-              <i class="bi bi-pencil"></i> Edit
+              <i class="bi bi-pencil"></i> <?= e(t('common.edit')) ?>
             </a>
             <form method="POST" action="<?= View::url('/vendor-panel/products/'.$pr['id'].'/delete') ?>"
-                  onsubmit="return confirm('Delete \'<?= e(addslashes(html_entity_decode($pr['name_en'],ENT_QUOTES,'UTF-8'))) ?>\'?')">
+                  onsubmit="return confirm('<?= e(addslashes(t('common.delete_confirm', ['name' => html_entity_decode($pr['name_en'],ENT_QUOTES,'UTF-8')]))) ?>')">
               <?= csrf() ?>
               <button type="submit" class="act-btn act-del"><i class="bi bi-trash3"></i></button>
             </form>
@@ -160,7 +160,7 @@ ob_start();
 
   <?php if ($totalPages > 1): ?>
   <div class="pager">
-    <span class="pager-info">Showing <?= number_format(($page-1)*$per+1) ?>-<?= number_format(min($page*$per,$total)) ?> of <?= number_format($total) ?></span>
+    <span class="pager-info"><?= e(t('common.showing_range', ['from' => number_format(($page-1)*$per+1), 'to' => number_format(min($page*$per,$total)), 'total' => number_format($total)])) ?></span>
     <div class="pager-btns">
       <?php for ($i=1;$i<=$totalPages;$i++): ?>
         <a href="?page=<?=$i?>&status=<?=urlencode($status)?>&q=<?=urlencode($q??'')?>"
