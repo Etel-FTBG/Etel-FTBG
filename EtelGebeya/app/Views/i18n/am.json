@@ -469,5 +469,25 @@
   "admin.sellers.suspend_confirm": "ይህ ሻጭ ይታገድ?",
   "admin.sellers.suspend": "አግድ",
   "admin.sellers.reactivate_confirm": "እንደገና ይነቃ?",
-  "admin.sellers.restore": "መልስ"
+  "admin.sellers.restore": "መልስ",
+
+  "admin.users.search_placeholder": "ስም፣ ኢሜይል፣ ስልክ ይፈልጉ...",
+  "admin.users.count": ":n ተጠቃሚዎች",
+  "admin.users.no_users_found": "ምንም ተጠቃሚ አልተገኘም።",
+  "admin.users.col_name": "ስም",
+  "admin.users.col_role": "ሚና",
+  "admin.users.col_joined": "የተቀላቀለበት",
+
+  "admin.categories.count": ":n ምድቦች",
+  "admin.categories.add": "ምድብ ጨምር",
+  "admin.categories.new_category": "አዲስ ምድብ",
+  "admin.categories.name_en_label": "ስም (እንግሊዝኛ)",
+  "admin.categories.name_am_label": "ስም (አማርኛ)",
+  "admin.categories.name_am_placeholder": "የአማርኛ ስም (አማራጭ)",
+  "admin.categories.slug_label": "ዩአርኤል ስም (በራስ-ሰር ይፈጠራል)",
+  "admin.categories.save": "አስቀምጥ",
+  "admin.categories.empty": "እስካሁን ምድብ የለም። ከላይ ይጨምሩ።",
+  "admin.categories.col_name_en": "ስም (እንግሊዝኛ)",
+  "admin.categories.col_name_am": "ስም (አማርኛ)",
+  "admin.categories.col_slug": "ዩአርኤል ስም"
 }

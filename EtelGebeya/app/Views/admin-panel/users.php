@@ -1,7 +1,7 @@
 <?php
 use App\Core\View;
 require __DIR__.'/_layout.php';
-$pageTitle = ucfirst('users');
+$pageTitle = t('admin.nav.users');
 ob_start();
 ?>
 <style>
@@ -38,7 +38,7 @@ ob_start();
   <div class="flash-<?= e($flash['type'] ?? 'success') ?>"><?= e($flash['msg'] ?? '') ?></div>
 <?php endif; ?>
 
-<div class="ag-bar-title"><?= ucfirst('users') ?></div>
+<div class="ag-bar-title"><?= e(t('admin.nav.users')) ?></div>
 
 
 <?php
@@ -47,20 +47,20 @@ $pages   = isset($total) && $total > 0 ? (int)ceil($total / $perPage) : 1;
 ?>
 <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;align-items:center">
   <form method="GET" action="<?= View::url('/admin/users') ?>" style="display:flex;gap:9px">
-    <input type="text" name="q" class="ag-inp" placeholder="Search name, email, phone..." value="<?= e($search ?? '') ?>">
-    <button type="submit" class="btn-xs btn-gold-xs">Search</button>
+    <input type="text" name="q" class="ag-inp" placeholder="<?= e(t('admin.users.search_placeholder')) ?>" value="<?= e($search ?? '') ?>">
+    <button type="submit" class="btn-xs btn-gold-xs"><?= e(t('admin.orders.search')) ?></button>
     <?php if (!empty($search)): ?>
-      <a href="<?= View::url('/admin/users') ?>" class="btn-xs btn-ghost-xs">Clear</a>
+      <a href="<?= View::url('/admin/users') ?>" class="btn-xs btn-ghost-xs"><?= e(t('admin.orders.clear')) ?></a>
     <?php endif; ?>
   </form>
-  <span style="font-size:12px;color:var(--dark-muted)"><?= number_format($total ?? 0) ?> users</span>
+  <span style="font-size:12px;color:var(--dark-muted)"><?= e(t('admin.users.count', ['n' => number_format($total ?? 0)])) ?></span>
 </div>
 <div class="ag-card">
   <?php if (empty($users)): ?>
-    <div class="empty-s">No users found.</div>
+    <div class="empty-s"><?= e(t('admin.users.no_users_found')) ?></div>
   <?php else: ?>
   <table class="ag-tbl">
-    <thead><tr><th>ID</th><th>Name</th><th>Email</th><th>Phone</th><th>Role</th><th>Joined</th></tr></thead>
+    <thead><tr><th>ID</th><th><?= e(t('admin.users.col_name')) ?></th><th><?= e(t('admin.dashboard.col_email')) ?></th><th><?= e(t('admin.dashboard.col_phone')) ?></th><th><?= e(t('admin.users.col_role')) ?></th><th><?= e(t('admin.users.col_joined')) ?></th></tr></thead>
     <tbody>
       <?php foreach ($users as $u): ?>
         <tr>

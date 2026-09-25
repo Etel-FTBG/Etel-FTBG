@@ -469,5 +469,25 @@
   "admin.sellers.suspend_confirm": "Suspend this seller?",
   "admin.sellers.suspend": "Suspend",
   "admin.sellers.reactivate_confirm": "Re-activate?",
-  "admin.sellers.restore": "Restore"
+  "admin.sellers.restore": "Restore",
+
+  "admin.users.search_placeholder": "Search name, email, phone...",
+  "admin.users.count": ":n users",
+  "admin.users.no_users_found": "No users found.",
+  "admin.users.col_name": "Name",
+  "admin.users.col_role": "Role",
+  "admin.users.col_joined": "Joined",
+
+  "admin.categories.count": ":n categories",
+  "admin.categories.add": "Add Category",
+  "admin.categories.new_category": "New Category",
+  "admin.categories.name_en_label": "Name (EN)",
+  "admin.categories.name_am_label": "Name (AM)",
+  "admin.categories.name_am_placeholder": "Amharic name (optional)",
+  "admin.categories.slug_label": "Slug (auto-generated)",
+  "admin.categories.save": "Save",
+  "admin.categories.empty": "No categories yet. Add one above.",
+  "admin.categories.col_name_en": "Name (EN)",
+  "admin.categories.col_name_am": "Name (AM)",
+  "admin.categories.col_slug": "Slug"
 }
