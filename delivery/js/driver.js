@@ -263,20 +263,27 @@ function _updateGpsErrorBadge(err) {
         if (!anchor) return;
         box = document.createElement('div');
         box.id = 'gps-error-badge';
-        box.style.cssText = 'display:none;margin-top:6px;padding:8px 10px;border-radius:8px;background:rgba(211,47,47,.14);border:1px solid rgba(211,47,47,.4);color:#FF6B6B;font-size:11.5px;font-weight:600;text-align:center';
+        box.style.cssText = 'display:none;margin-top:6px;padding:8px 10px;border-radius:8px;background:rgba(211,47,47,.14);border:1px solid rgba(211,47,47,.4);color:#FF6B6B;font-size:11.5px;font-weight:700;text-align:center;cursor:pointer';
         anchor.appendChild(box);
     }
     if (!err) { box.style.display = 'none'; return; }
     box.style.display = 'block';
+    var short, detail;
     if (err.code === 1) {
-        box.textContent = '⚠ Location permission denied — the meter cannot run at all until you allow location access for this app in your phone Settings, then reload';
+        short = '⚠ Location permission needed';
+        detail = 'Allow location access for this app in your phone Settings, then reload — the meter cannot run without it.';
     } else if (err.code === 2) {
-        box.textContent = '⚠ GPS unavailable — check that Location is turned on in your phone Settings';
+        short = '⚠ GPS unavailable';
+        detail = 'Check that Location is turned on in your phone Settings.';
     } else if (err.code === 3) {
-        box.textContent = '⚠ GPS timed out getting a fix — retrying…';
+        short = '⚠ GPS signal weak — retrying…';
+        detail = 'Still trying to get a GPS fix. This can take a few seconds outdoors or near a window.';
     } else {
-        box.textContent = '⚠ ' + (err.message || 'GPS not responding') + ' — try toggling Online off and back on if this continues';
+        short = '⚠ ' + (err.message || 'GPS not responding');
+        detail = 'Try toggling Online off and back on if this continues.';
     }
+    box.textContent = short + '  ›';
+    box.onclick = function () { showDriverToast(detail, 'err'); };
 }
 
 /* Shows a small persistent badge near the meter/active-ride UI so the
@@ -311,7 +318,7 @@ function _updateLowAccuracyBadge(isLow,accuracyMeters){
     if(!meterBox||!meterBox.parentElement)return;
     box=document.createElement("div");
     box.id="gps-accuracy-badge";
-    box.style.cssText="display:none;margin-top:6px;padding:6px 10px;border-radius:8px;background:rgba(255,87,34,.12);border:1px solid rgba(255,87,34,.35);color:#FF7043;font-size:11.5px;font-weight:600;text-align:center";
+    box.style.cssText="display:none;margin-top:6px;padding:6px 10px;border-radius:8px;background:rgba(255,87,34,.12);border:1px solid rgba(255,87,34,.35);color:#FF7043;font-size:11.5px;font-weight:700;text-align:center;cursor:pointer";
     meterBox.parentElement.appendChild(box);
   }
   if(isLow){
@@ -322,9 +329,13 @@ function _updateLowAccuracyBadge(isLow,accuracyMeters){
     // fix can), so say so and name the actual setting to check instead
     // of leaving the driver waiting on a signal that was never coming.
     var severe=accuracyMeters&&accuracyMeters>500;
-    box.textContent=severe
-      ? "\u26A0 No real GPS fix ("+Math.round(accuracyMeters)+"m, network-only) \u2014 check phone Settings > Location is set to \"High accuracy\"/\"Precise\", then step outside or near a window"
-      : "\u26A0 Weak GPS signal ("+(accuracyMeters?Math.round(accuracyMeters)+"m":"?")+") \u2014 distance paused until signal improves; waiting-fee still auto-stops once you're clearly moving";
+    box.textContent="\u26A0 GPS signal weak  \u203A";
+    box.onclick=function(){
+      showDriverToast(severe
+        ? "No real GPS fix ("+Math.round(accuracyMeters)+"m, network-only) \u2014 check phone Settings > Location is set to \"High accuracy\"/\"Precise\", then step outside or near a window"
+        : "Weak GPS signal ("+(accuracyMeters?Math.round(accuracyMeters)+"m":"?")+") \u2014 distance paused until signal improves; waiting-fee still auto-stops once you're clearly moving",
+        "err");
+    };
   } else {
     box.style.display="none";
   }
@@ -621,6 +632,7 @@ function confirmGoOffline() {
 function goOffline() {
     drvApi('driver_go_offline', {}, function () {
         DRV.isOnline = false;
+        DRV._nearbyCount = 0;
         setOnlineUI(false);
         stopGps();
         stopPolling();
@@ -637,14 +649,29 @@ function setOnlineUI(on) {
     var powerBtn   = document.getElementById('poweroff-btn');
     var slideWrap  = document.getElementById('slide-online-wrap');
     var st         = document.getElementById('status-text');
+    var dot        = document.getElementById('drv-status-dot');
     var helpBtn    = document.getElementById('battery-tip-help-btn');
     if (statusPill) statusPill.style.display = on ? 'flex' : 'none';
     if (powerBtn)   powerBtn.style.display   = on ? 'flex' : 'none';
     if (helpBtn)    helpBtn.style.display    = on ? 'block' : 'none';
     if (slideWrap)  slideWrap.style.display  = on ? 'none' : 'block';
-    if (st) st.textContent = on ? 'Online · Ready for rides' : 'Offline · Slide to go online';
+    if (st) st.textContent = on ? 'Ready for rides' : 'Offline';
+    if (dot) dot.classList.toggle('online', !!on);
     var banner = document.getElementById('unavail-banner');
     if (banner) banner.style.display = 'none';
+    _updateSheetFocus();
+}
+
+/* ── Sheet focus: while a request is waiting for a decision or a ride is
+   active, that's the only thing that matters on this screen - collapse
+   the goal/Street-Hail section instead of making the driver scroll past
+   it to reach the thing that actually needs their attention. Restored
+   automatically the moment neither is true. */
+function _updateSheetFocus() {
+    var sheet = document.getElementById('req-sheet');
+    if (!sheet) return;
+    var focused = !!DRV.activeRide || !!(DRV._nearbyCount > 0);
+    sheet.classList.toggle('sheet-focused', focused);
 }
 
 /* ── SSE stream — replaces 8s setInterval polling ── */
@@ -812,10 +839,13 @@ function renderNearbyRequests(requests) {
     if (!el) return;
     clearRideMarkers();
 
+    DRV._nearbyCount = requests.length;
+    _updateSheetFocus();
+
     if (!requests.length) {
         stopAllRinging();
         DRV._seenRequestIds = {};
-        el.innerHTML = '<div class="empty-state"><div class="ei">🔍</div><p>No nearby ride requests.<br>Stay online — requests update every 8s</p></div>';
+        el.innerHTML = '<div class="empty-state"><div class="ei">🔍</div><p>Waiting for nearby requests…</p></div>';
         return;
     }
     /* New requests arrived — auto-show the requests sub-tab */
@@ -1024,13 +1054,94 @@ function _applyActiveRideUpdate(newRide) {
 }
 
 /* ── Render active ride ── */
-function renderActiveRide(e){var t=document.getElementById("active-ride-container");if(!e){t.innerHTML='<div class="empty-state"><div class="ei">✅</div><p>No active ride.<br>Go online to receive requests.</p></div>';return}var n={driver_assigned:'<span class="active-status-pill pill-assigned">🚗 Go to Pickup</span>',accepted:'<span class="active-status-pill pill-assigned">🤝 Linked — ready</span>',in_progress:'<span class="active-status-pill pill-inprog">📟 Meter Running</span>',arrived:'<span class="active-status-pill pill-inprog">🏁 Awaiting Payment</span>'};var r=n[e.status]||"";var i;if(e.status==="driver_assigned"||e.status==="accepted"){i='<button class="action-btn primary" onclick="startRide('+e.id+')">🚀 Passenger Picked Up</button>'}else if(e.status==="arrived"){i=""}else{i='<button class="action-btn primary" onclick="arrivedRide('+e.id+')">🏁 Arrived — Bill Customer</button>'}var a="";var o=e.meter_surge!=null?!!e.meter_surge:(e.surge_applied==1||e.surge===true);var smd=e.fare_surge_mult!=null?parseFloat(e.fare_surge_mult).toFixed(1):"1.3";var s=o?'<span id="meter-surge" style="display:inline-flex;align-items:center;gap:4px;background:rgba(255,152,0,.15);border:1px solid rgba(255,152,0,.4);color:#FFB74D;font-size:10.5px;font-weight:700;padding:3px 9px;border-radius:999px;margin-top:6px">⚡ Peak-hour pricing ('+smd+'×)</span>':'<span id="meter-surge" style="display:none"></span>';if(e.status==="in_progress"){a='<div style="display:flex;gap:8px;margin-bottom:12px;background:rgba(212,175,55,.07);border:1px dashed rgba(212,175,55,.4);border-radius:12px;padding:12px;align-items:center">'+'<div style="font-size:22px">📟</div>'+'<div style="flex:1"><div class="ride-info-k">GPS meter</div><div id="meter-km" style="font-size:17px;font-weight:800;color:var(--gold-lt)">'+parseFloat(e.traveled_km!=null?e.traveled_km:(e.distance_km||0)).toFixed(2)+" km</div></div>"+'<div style="text-align:right"><div class="ride-info-k">Current fare</div><div id="meter-fare" style="font-size:17px;font-weight:800;color:var(--teal)">ETB '+parseFloat(e.meter_fare!=null?e.meter_fare:(e.fare_final||e.fare_estimate||e.fare||0)).toFixed(0)+"</div>"+s+"</div>"+"</div>"+
-'<div id="wait-toggle-box" style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px;background:rgba(255,255,255,.03);border:1px solid rgba(212,175,55,.15);border-radius:12px;padding:12px 14px;transition:all .25s">'+
-  '<div><div class="ride-info-k">Waiting for customer</div><div id="wait-status-text" style="font-size:13px;font-weight:700;color:var(--text-dim);margin-top:2px">Not waiting</div></div>'+
-  '<button id="wait-toggle-btn" onclick="toggleWaitFee()" style="border:none;border-radius:10px;padding:10px 16px;font-weight:700;font-size:12.5px;cursor:pointer;background:linear-gradient(135deg,#FFD700,#D4AF37);color:#1a1206;white-space:nowrap">⏱ Start Waiting</button>'+
-"</div>"+
-(e.fare_total!=null?_fareBreakdownHtml(e):"")+
-"</div>"}if(e.status==="arrived"){a='<div style="margin-bottom:12px;background:rgba(46,204,113,.08);border:1px solid rgba(46,204,113,.35);border-radius:12px;padding:14px;text-align:center">'+'<div style="font-size:13px;color:var(--text-dim);margin-bottom:4px">Trip finished — '+parseFloat(e.distance_km||0).toFixed(2)+" km</div>"+'<div style="font-size:24px;font-weight:800;color:#2ECC71">ETB '+parseFloat(e.fare_final||e.fare_estimate||e.fare||0).toFixed(0)+"</div>"+(o?'<div style="display:inline-flex;align-items:center;gap:4px;background:rgba(255,152,0,.15);border:1px solid rgba(255,152,0,.4);color:#FFB74D;font-size:10.5px;font-weight:700;padding:3px 9px;border-radius:999px;margin-top:6px">⚡ Peak-hour pricing was applied ('+smd+'×)</div>':"")+'<div style="font-size:12px;color:var(--text-dim);margin-top:6px">Waiting for the customer to confirm &amp; pay… collect cash if cash.</div>'+"</div>"+(e.fare_total!=null?_fareBreakdownHtml(e):"")}t.innerHTML='<div class="active-ride-card">'+'<div class="active-ride-header">'+'<span class="active-ride-code">🔑 '+esc(e.ride_code||"")+"</span>"+r+"</div>"+'<div class="passenger-info">'+'<div class="passenger-avatar">🧑</div>'+'<div><div class="passenger-name">'+esc(e.passenger_name||e.passenger&&e.passenger.name||"—")+"</div>"+'<div class="passenger-phone">'+esc(e.passenger_phone||e.passenger&&e.passenger.phone||"")+"</div></div>"+'<a href="tel:'+esc(e.passenger_phone||e.passenger&&e.passenger.phone||"")+'" class="call-btn">📞 Call</a>'+"</div>"+'<div style="display:flex;gap:10px;margin-bottom:14px">'+'<div class="ride-info-box" style="background:rgba(229,199,107,.08);border:1px solid var(--gbrd);border-radius:14px;padding:12px;flex:1"><div class="ride-info-k">Pickup</div><div style="font-size:12px;margin-top:4px;color:var(--text)">'+esc(e.pickup_address||"—")+"</div></div>"+'<div class="ride-info-box" style="background:rgba(78,205,196,.08);border:1px solid rgba(78,205,196,.2);border-radius:14px;padding:12px;flex:1"><div class="ride-info-k">Drop-off</div><div style="font-size:12px;margin-top:4px;color:var(--text)">'+esc(e.dropoff_address||"—")+"</div></div>"+"</div>"+a+'<div style="display:flex;gap:8px;margin-bottom:12px">'+'<div class="ride-info-box" style="flex:1;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:10px;text-align:center"><div class="ride-info-k">Fare</div><div style="font-size:18px;font-weight:800;color:var(--gold-lt)">ETB '+parseFloat(e.status==="in_progress"&&e.meter_fare!=null?e.meter_fare:(e.fare_final||e.fare_estimate||e.fare||0)).toFixed(0)+"</div></div>"+'<div class="ride-info-box" style="flex:1;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:10px;text-align:center"><div class="ride-info-k">Distance</div><div style="font-size:18px;font-weight:800;color:var(--teal)">'+parseFloat(e.status==="in_progress"&&e.traveled_km!=null?e.traveled_km:(e.distance_km||0)).toFixed(1)+" km</div></div>"+"</div>"+'<div class="ride-actions">'+i+'<button class="action-btn danger" onclick="cancelRide('+(e.id||0)+')">Cancel</button>'+"</div>"+'<div style="display:flex;gap:10px;margin-top:10px">'+'<button class="action-btn" style="flex:1;background:rgba(78,205,196,.12);border:1px solid rgba(78,205,196,.3);color:var(--teal)" onclick="navigateTo('+parseFloat(e.pickup_lat||0)+","+parseFloat(e.pickup_lng||0)+')">🗺️ Pickup Nav</button>'+'<button class="action-btn" style="flex:1;background:rgba(96,180,255,.10);border:1px solid rgba(96,180,255,.2);color:#60B4FF" onclick="navigateTo('+parseFloat(e.dropoff_lat||0)+","+parseFloat(e.dropoff_lng||0)+')">📍 Dropoff Nav</button>'+"</div>"+'<button class="action-btn" style="width:100%;margin-top:8px;background:rgba(212,175,55,.08);border:1px solid rgba(212,175,55,.25);color:var(--gold-lt)" onclick="showRoutePath('+(e.id||0)+')">🧭 View Route So Far</button>'+'<button class="action-btn" style="width:100%;margin-top:8px;background:rgba(212,175,55,.1);border:1px solid rgba(212,175,55,.3);color:var(--gold-lt);font-size:13px" onclick="RideChat.open('+(e.id||0)+",'driver')\">💬 Chat with Passenger</button>"+"</div>";_syncWaitState(e)}
+function renderActiveRide(ride) {
+    var container = document.getElementById('active-ride-container');
+    _updateSheetFocus();
+    if (!ride) {
+        container.innerHTML = '<div class="empty-state"><div class="ei">✅</div><p>No active ride.<br>Go online to receive requests.</p></div>';
+        return;
+    }
+
+    var statusPill = {
+        driver_assigned: '<span class="active-status-pill pill-assigned">🚗 Go to Pickup</span>',
+        accepted:        '<span class="active-status-pill pill-assigned">🤝 Linked — ready</span>',
+        in_progress:     '<span class="active-status-pill pill-inprog">📟 Meter Running</span>',
+        arrived:         '<span class="active-status-pill pill-inprog">🏁 Awaiting Payment</span>'
+    }[ride.status] || '';
+
+    /* One primary action per state — everything else (nav, route history,
+       chat, cancel) lives behind the "⋯ More" panel below so the driver
+       isn't shown five buttons at once mid-trip. */
+    var primaryBtn;
+    if (ride.status === 'driver_assigned' || ride.status === 'accepted') {
+        primaryBtn = '<button class="action-btn primary" onclick="startRide(' + ride.id + ')">🚀 Passenger Picked Up</button>';
+    } else if (ride.status === 'arrived') {
+        primaryBtn = '';
+    } else {
+        primaryBtn = '<button class="action-btn primary" onclick="arrivedRide(' + ride.id + ')">🏁 Arrived — Bill Customer</button>';
+    }
+
+    var extra = '';
+    var isSurge = ride.meter_surge != null ? !!ride.meter_surge : (ride.surge_applied == 1 || ride.surge === true);
+    var surgeMult = ride.fare_surge_mult != null ? parseFloat(ride.fare_surge_mult).toFixed(1) : '1.3';
+    var surgeTag = isSurge
+        ? '<span id="meter-surge" style="display:inline-flex;align-items:center;gap:4px;background:rgba(255,152,0,.15);border:1px solid rgba(255,152,0,.4);color:#FFB74D;font-size:10.5px;font-weight:700;padding:3px 9px;border-radius:999px;margin-top:6px">⚡ Peak-hour pricing (' + surgeMult + '×)</span>'
+        : '<span id="meter-surge" style="display:none"></span>';
+
+    if (ride.status === 'in_progress') {
+        extra = '<div style="display:flex;gap:8px;margin-bottom:12px;background:rgba(212,175,55,.07);border:1px dashed rgba(212,175,55,.4);border-radius:12px;padding:12px;align-items:center">'
+            + '<div style="font-size:22px">📟</div>'
+            + '<div style="flex:1"><div class="ride-info-k">GPS meter</div><div id="meter-km" style="font-size:17px;font-weight:800;color:var(--gold-lt)">' + parseFloat(ride.traveled_km != null ? ride.traveled_km : (ride.distance_km || 0)).toFixed(2) + ' km</div></div>'
+            + '<div style="text-align:right"><div class="ride-info-k">Current fare</div><div id="meter-fare" style="font-size:17px;font-weight:800;color:var(--teal)">ETB ' + parseFloat(ride.meter_fare != null ? ride.meter_fare : (ride.fare_final || ride.fare_estimate || ride.fare || 0)).toFixed(0) + '</div>' + surgeTag + '</div>'
+            + '</div>'
+            + '<div id="wait-toggle-box" style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px;background:rgba(255,255,255,.03);border:1px solid rgba(212,175,55,.15);border-radius:12px;padding:12px 14px;transition:all .25s">'
+            +   '<div><div class="ride-info-k">Waiting for customer</div><div id="wait-status-text" style="font-size:13px;font-weight:700;color:var(--text-dim);margin-top:2px">Not waiting</div></div>'
+            +   '<button id="wait-toggle-btn" onclick="toggleWaitFee()" style="border:none;border-radius:10px;padding:10px 16px;font-weight:700;font-size:12.5px;cursor:pointer;background:linear-gradient(135deg,#FFD700,#D4AF37);color:#1a1206;white-space:nowrap">⏱ Start Waiting</button>'
+            + '</div>'
+            + (ride.fare_total != null ? _fareBreakdownHtml(ride) : '');
+    }
+    if (ride.status === 'arrived') {
+        extra = '<div style="margin-bottom:12px;background:rgba(46,204,113,.08);border:1px solid rgba(46,204,113,.35);border-radius:12px;padding:14px;text-align:center">'
+            + '<div style="font-size:13px;color:var(--text-dim);margin-bottom:4px">Trip finished — ' + parseFloat(ride.distance_km || 0).toFixed(2) + ' km</div>'
+            + '<div style="font-size:24px;font-weight:800;color:#2ECC71">ETB ' + parseFloat(ride.fare_final || ride.fare_estimate || ride.fare || 0).toFixed(0) + '</div>'
+            + (isSurge ? '<div style="display:inline-flex;align-items:center;gap:4px;background:rgba(255,152,0,.15);border:1px solid rgba(255,152,0,.4);color:#FFB74D;font-size:10.5px;font-weight:700;padding:3px 9px;border-radius:999px;margin-top:6px">⚡ Peak-hour pricing was applied (' + surgeMult + '×)</div>' : '')
+            + '<div style="font-size:12px;color:var(--text-dim);margin-top:6px">Waiting for the customer to confirm &amp; pay… collect cash if cash.</div>'
+            + '</div>'
+            + (ride.fare_total != null ? _fareBreakdownHtml(ride) : '');
+    }
+
+    var phone = ride.passenger_phone || (ride.passenger && ride.passenger.phone) || '';
+    var morePanel = '<div class="ride-more-panel" id="ride-more-panel">'
+        + '<div style="display:flex;gap:10px;margin-bottom:8px">'
+        +   '<button class="action-btn" style="flex:1;background:rgba(78,205,196,.12);border:1px solid rgba(78,205,196,.3);color:var(--teal)" onclick="navigateTo(' + parseFloat(ride.pickup_lat || 0) + ',' + parseFloat(ride.pickup_lng || 0) + ')">🗺️ Pickup Nav</button>'
+        +   '<button class="action-btn" style="flex:1;background:rgba(96,180,255,.10);border:1px solid rgba(96,180,255,.2);color:#60B4FF" onclick="navigateTo(' + parseFloat(ride.dropoff_lat || 0) + ',' + parseFloat(ride.dropoff_lng || 0) + ')">📍 Dropoff Nav</button>'
+        + '</div>'
+        + '<button class="action-btn" style="width:100%;margin-bottom:8px;background:rgba(212,175,55,.1);border:1px solid rgba(212,175,55,.3);color:var(--gold-lt);font-size:13px" onclick="RideChat.open(' + (ride.id || 0) + ",'driver')\">💬 Chat with Passenger</button>"
+        + '<button class="action-btn" style="width:100%;margin-bottom:8px;background:rgba(212,175,55,.08);border:1px solid rgba(212,175,55,.25);color:var(--gold-lt)" onclick="showRoutePath(' + (ride.id || 0) + ')">🧭 View Route So Far</button>'
+        + '<button class="action-btn danger" style="width:100%" onclick="cancelRide(' + (ride.id || 0) + ')">Cancel Ride</button>'
+        + '</div>';
+
+    container.innerHTML = '<div class="active-ride-card">'
+        + '<div class="active-ride-header"><span class="active-ride-code">🔑 ' + esc(ride.ride_code || '') + '</span>' + statusPill + '</div>'
+        + '<div class="passenger-info">'
+        +   '<div class="passenger-avatar">🧑</div>'
+        +   '<div><div class="passenger-name">' + esc(ride.passenger_name || (ride.passenger && ride.passenger.name) || '—') + '</div><div class="passenger-phone">' + esc(phone) + '</div></div>'
+        +   '<a href="tel:' + esc(phone) + '" class="call-btn">📞 Call</a>'
+        + '</div>'
+        + '<div style="display:flex;gap:10px;margin-bottom:14px">'
+        +   '<div class="ride-info-box" style="background:rgba(229,199,107,.08);border:1px solid var(--gbrd);border-radius:14px;padding:12px;flex:1"><div class="ride-info-k">Pickup</div><div style="font-size:12px;margin-top:4px;color:var(--text)">' + esc(ride.pickup_address || '—') + '</div></div>'
+        +   '<div class="ride-info-box" style="background:rgba(78,205,196,.08);border:1px solid rgba(78,205,196,.2);border-radius:14px;padding:12px;flex:1"><div class="ride-info-k">Drop-off</div><div style="font-size:12px;margin-top:4px;color:var(--text)">' + esc(ride.dropoff_address || '—') + '</div></div>'
+        + '</div>'
+        + extra
+        + '<div style="display:flex;gap:8px;margin-bottom:12px">'
+        +   '<div class="ride-info-box" style="flex:1;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:10px;text-align:center"><div class="ride-info-k">Fare</div><div style="font-size:18px;font-weight:800;color:var(--gold-lt)">ETB ' + parseFloat(ride.status === 'in_progress' && ride.meter_fare != null ? ride.meter_fare : (ride.fare_final || ride.fare_estimate || ride.fare || 0)).toFixed(0) + '</div></div>'
+        +   '<div class="ride-info-box" style="flex:1;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:10px;text-align:center"><div class="ride-info-k">Distance</div><div style="font-size:18px;font-weight:800;color:var(--teal)">' + parseFloat(ride.status === 'in_progress' && ride.traveled_km != null ? ride.traveled_km : (ride.distance_km || 0)).toFixed(1) + ' km</div></div>'
+        + '</div>'
+        + '<div class="ride-actions">' + primaryBtn + '<button class="action-btn more-toggle" onclick="document.getElementById(\'ride-more-panel\').classList.toggle(\'open\')">⋯ More</button></div>'
+        + morePanel
+        + '</div>';
+    _syncWaitState(ride);
+}
 
 /* ── Ride actions ── */
 function arrivedRide(rideId) {
@@ -1228,6 +1339,21 @@ function updateEarningsUI(d) {
     var pct = tier.trips ? Math.min(100, Math.round(ridesToday / tier.trips * 100)) : 0;
     var bar = document.getElementById('goal-bar-fill');
     if (bar) bar.style.width = pct + '%';
+
+    /* Compact goal block: "X/Y trips" + earned-so-far + trips remaining,
+       replacing the old always-on horizontal tier scroller. The tier
+       list itself still lives in #goal-chips, just tucked behind the
+       "Goals ›" toggle now. */
+    var gfNum = document.getElementById('goal-fraction-num');
+    var gfDen = document.getElementById('goal-fraction-den');
+    var gSub  = document.getElementById('goal-subtext');
+    if (gfNum) gfNum.textContent = ridesToday;
+    if (gfDen) gfDen.textContent = tier.trips || 0;
+    if (gSub) {
+        var remaining = Math.max(0, (tier.trips || 0) - ridesToday);
+        gSub.textContent = 'ETB ' + earnToday.toFixed(0) + ' earned' +
+            (remaining > 0 ? ' · ' + remaining + ' trip' + (remaining === 1 ? '' : 's') + ' remaining' : ' · goal reached 🎉');
+    }
 
     /* Money page hero card - shows whichever date is currently selected
        in the date strip (today by default). Only re-render from this
@@ -2198,11 +2324,11 @@ function openSupportContact() {
    not done here. */
 var DRIVER_I18N = {
     en: {
-        nav_requests: 'Requests', nav_money: 'Money', nav_chats: 'Chats', nav_profile: 'Profile',
+        nav_requests: 'Requests', nav_money: 'Earnings', nav_chats: 'Chats', nav_profile: 'Profile',
         money_label: 'Messages', profile_language: 'Language', profile_language_sub: 'English selected'
     },
     am: {
-        nav_requests: '\u1325\u12eb\u1244\u12ce\u127d', nav_money: '\u1308\u1295\u12d8\u1265', nav_chats: '\u1218\u120d\u12d5\u12ad\u1276\u127d', nav_profile: '\u1218\u1308\u1208\u132b',
+        nav_requests: '\u1325\u12eb\u1244\u12ce\u127d', nav_money: '\u1308\u1262', nav_chats: '\u1218\u120d\u12d5\u12ad\u1276\u127d', nav_profile: '\u1218\u1308\u1208\u132b',
         money_label: '\u1218\u120d\u12d5\u12ad\u1276\u127d', profile_language: '\u124b\u1295\u124b', profile_language_sub: '\u12a0\u121b\u122d\u129b \u1270\u1218\u122d\u1327\u120d'
     }
 };

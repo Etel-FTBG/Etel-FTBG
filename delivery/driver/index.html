@@ -292,7 +292,11 @@
   box-shadow:0 4px 14px -4px rgba(212,175,55,.5);flex-shrink:0}
 .drv-logo-box img{width:100%;height:100%;object-fit:cover;display:block}
 .drv-title{font-family:var(--f-d);font-size:15px;font-weight:800;color:var(--gold-lt);line-height:1}
-.drv-subtitle{font-size:10px;color:var(--dim);margin-top:2px}
+.drv-status-line{display:flex;align-items:center;gap:6px;margin-top:3px}
+.drv-status-dot{width:7px;height:7px;border-radius:50%;background:var(--dim);flex-shrink:0;transition:background .2s}
+.drv-status-dot.online{background:#2ECC71;box-shadow:0 0 6px #2ECC71;animation:pulse-dot 1.8s infinite ease-in-out}
+.drv-subtitle{font-size:11.5px;font-weight:800;color:var(--dim);letter-spacing:.01em}
+.drv-status-dot.online+.drv-subtitle{color:#2ECC71}
 .drv-online-pill{margin-left:auto;padding:6px 14px;border-radius:999px;
   font-family:var(--f);font-size:12px;font-weight:700;cursor:pointer;
   border:none;display:flex;align-items:center;gap:6px;transition:all .2s}
@@ -520,6 +524,11 @@
   box-shadow:0 -24px 48px rgba(0,0,0,.8);
 }
 
+/* While a request or an active ride needs a decision, that's the only
+   thing on this screen that matters — collapse today's-performance
+   entirely rather than making the driver scroll past it. */
+.req-sheet.sheet-focused #goal-section{display:none}
+
 /* priority + today strip */
 .stats-strip{display:flex;gap:0;margin-bottom:14px;
   background:var(--sheet2);border-radius:14px;overflow:hidden;
@@ -531,16 +540,27 @@
 .stat-val{font-family:var(--f-d);font-size:18px;font-weight:800;color:var(--text);line-height:1}
 .stat-lbl{font-size:10px;color:var(--dim);margin-top:2px}
 
-/* goal card */
+/* goal card — compact by default, tiers tucked behind "Goals ›" */
 .goal-card{background:var(--sheet2);border:1px solid var(--line);border-radius:14px;
   padding:14px;margin-bottom:12px}
-.goal-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px}
-.goal-trips{font-size:14px;font-weight:700;color:var(--text)}
-.goal-date{font-size:11px;color:var(--dim);margin-top:2px}
-.goal-bonus{font-family:var(--f-d);font-size:18px;font-weight:800;color:var(--gold-lt)}
-.goal-bar{height:6px;background:rgba(255,255,255,.08);border-radius:3px;margin-bottom:10px;overflow:hidden}
+.goal-compact-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.goal-compact-title{font-size:11px;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:.07em}
+.goal-tiers-toggle{border:none;background:none;color:var(--gold-lt);font-family:var(--f);
+  font-size:11.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:2px;padding:2px}
+.gt-chev{display:inline-block;transition:transform .2s}
+.goal-tiers-toggle.open .gt-chev{transform:rotate(90deg)}
+.goal-fraction{font-family:var(--f-d);font-size:22px;font-weight:800;color:var(--text);
+  line-height:1;margin-bottom:8px}
+.goal-fraction .gf-sep{color:var(--dim);font-weight:600;margin:0 2px}
+.goal-bar{height:6px;background:rgba(255,255,255,.08);border-radius:3px;margin-bottom:8px;overflow:hidden}
 .goal-bar-fill{height:100%;border-radius:3px;
   background:linear-gradient(90deg,var(--gold),var(--gold-lt));transition:width .4s}
+.goal-subtext{font-size:12px;color:var(--dim)}
+.goal-tiers-panel{display:none;margin-top:14px;padding-top:12px;border-top:1px solid var(--line)}
+.goal-tiers-panel.open{display:block;animation:viewIn .2s ease}
+.goal-tiers-panel-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.goal-tiers-panel-hdr #goal-title{font-size:13px;font-weight:700;color:var(--text)}
+.goal-tiers-panel-hdr .goal-bonus{font-family:var(--f-d);font-size:16px;font-weight:800;color:var(--gold-lt)}
 .goal-chips{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px}
 .goal-chips::-webkit-scrollbar{display:none}
 .goal-chip{flex:0 0 auto;text-align:center;padding:8px 12px;border-radius:10px;
@@ -550,13 +570,13 @@
 .goal-chip .gc-price{font-size:12px;font-weight:800;color:var(--text)}
 .goal-chip.active .gc-price{color:var(--gold-lt)}
 
-/* street hail + requests */
-.hail-btn-full{width:100%;padding:13px;border:none;border-radius:12px;cursor:pointer;
-  font-family:var(--f);font-size:14px;font-weight:800;color:#1a1206;
-  background:linear-gradient(135deg,var(--gold-br),var(--gold-lt),var(--gold));
-  box-shadow:0 8px 22px -8px rgba(212,175,55,.6);margin-bottom:12px;
+/* street hail — a secondary tool, styled with less weight than before */
+.hail-btn-full{width:100%;padding:12px;border:none;border-radius:12px;cursor:pointer;
+  font-family:var(--f);font-size:13px;font-weight:700;color:var(--gold-lt);
+  background:rgba(212,175,55,.1);border:1px solid rgba(212,175,55,.3);
   transition:transform .15s}
 .hail-btn-full:active{transform:scale(.98)}
+.goal-section{margin-top:14px}
 
 /* ── Money page (v2 — premium redesign) ── */
 .money-page{padding:80px 16px 24px}
@@ -851,8 +871,8 @@
     <button class="sidebar-item nav-tab active" data-page="requests" onclick="switchPage('requests')" title="Requests">
       <span class="si-icon-box"><span class="si-icon">▶</span></span><span class="si-label">Requests</span>
     </button>
-    <button class="sidebar-item nav-tab" data-page="money" onclick="switchPage('money')" title="Money">
-      <span class="si-icon-box"><span class="si-icon">💳</span></span><span class="si-label">Money</span>
+    <button class="sidebar-item nav-tab" data-page="money" onclick="switchPage('money')" title="Earnings">
+      <span class="si-icon-box"><span class="si-icon">💳</span></span><span class="si-label">Earnings</span>
     </button>
     <button class="sidebar-item nav-tab" data-page="chats" onclick="switchPage('chats')" title="Chats">
       <span class="si-icon-box"><span class="si-icon">💬</span></span><span class="si-label">Chats</span>
@@ -887,9 +907,12 @@
   <div class="drv-logo-box"><img src="../assets/images/etel-driver-coin.png" alt="ETEL Driver"/></div>
   <div>
     <div class="drv-title">ETEL Driver</div>
-    <div class="drv-subtitle" id="status-text">Offline · Slide to go online</div>
+    <div class="drv-status-line">
+      <span class="drv-status-dot" id="drv-status-dot"></span>
+      <span class="drv-subtitle" id="status-text">Offline</span>
+    </div>
   </div>
-  <!-- Online status dot (shown when online) -->
+  <!-- Online status pill (shown when online) -->
   <div class="drv-online-pill online" id="online-status-pill" style="display:none">
     <div class="dot"></div>Online
   </div>
@@ -901,9 +924,10 @@
 </div>
 
 <!-- GPS OFFLINE / RECONNECTING BADGE -->
-<div id="gps-offline-badge" style="display:none;align-items:center;gap:8px;background:rgba(230,81,0,.14);border:1px solid rgba(230,81,0,.4);color:#FFB74D;font-size:12.5px;font-weight:600;padding:8px 14px;margin:0 12px 8px;border-radius:10px">
+<div id="gps-offline-badge" onclick="showDriverToast('Still tracking your location locally — it will sync automatically once you\'re back online.','info')" style="display:none;align-items:center;gap:8px;background:rgba(230,81,0,.14);border:1px solid rgba(230,81,0,.4);color:#FFB74D;font-size:12.5px;font-weight:700;padding:8px 14px;margin:0 12px 8px;border-radius:10px;cursor:pointer">
   <span style="font-size:15px">📡</span>
-  <span>No connection — still tracking your location locally, will sync automatically once back online.</span>
+  <span>Connection lost — reconnecting</span>
+  <span style="margin-left:auto;opacity:.6;font-size:11px">Details ›</span>
 </div>
 
 <!-- MAIN SCROLL AREA -->
@@ -916,7 +940,7 @@
     <div style="height:50vh;min-height:220px;background:#08080f"></div>
 
     <!-- bottom sheet -->
-    <div class="req-sheet">
+    <div class="req-sheet" id="req-sheet">
 
       <!-- Slide-to-go-online (shown when offline) -->
       <div class="slide-online-wrap" id="slide-online-wrap">
@@ -930,49 +954,61 @@
         </div>
       </div>
 
-      <!-- Priority + today strip -->
-      <div class="stats-strip">
-        <div class="stat-cell">
-          <div class="stat-icon">🏆</div>
-          <div>
-            <div class="stat-val" id="stat-priority">+0</div>
-            <div class="stat-lbl">Priority</div>
-          </div>
-        </div>
-        <div class="stat-cell">
-          <div class="stat-icon">💳</div>
-          <div>
-            <div class="stat-val" id="stat-trips-today">0 trips</div>
-            <div class="stat-lbl" id="stat-etb-today">ETB 0</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Daily goal card -->
-      <div class="goal-card" id="goal-card">
-        <div class="goal-header">
-          <div>
-            <div class="goal-trips" id="goal-title">2 trips goal</div>
-            <div class="goal-date" id="goal-date">Today · daily</div>
-          </div>
-          <div class="goal-bonus" id="goal-bonus">—</div>
-        </div>
-        <div class="goal-bar"><div class="goal-bar-fill" id="goal-bar-fill" style="width:0%"></div></div>
-        <div class="goal-progress" id="goal-progress" style="font-size:11.5px;color:var(--dim);margin:6px 0 2px">Loading your trips today…</div>
-        <div class="goal-chips" id="goal-chips">
-          <div style="width:100%;text-align:center;padding:16px;color:var(--dim);font-size:12px">Loading goals…</div>
-        </div>
-      </div>
-
-      <!-- Street Hail + Requests (always visible, no inner tabs) -->
-      <button class="hail-btn-full" onclick="openHailModal()">🚖 Street Hail — link a customer</button>
-
-      <!-- Active ride card (shown when driver has a ride) -->
+      <!-- Active ride card (shown when driver has a ride) — the current
+           task always sits right under the map/online control, never
+           below the stats or goal sections. -->
       <div id="active-ride-container" style="margin-bottom:8px"></div>
 
       <!-- Nearby requests list -->
       <div id="requests-list">
         <div class="empty-state"><div class="ei">📴</div><p>Go online to see nearby ride requests</p></div>
+      </div>
+
+      <!-- Today's performance: priority + trips/earnings strip, and a
+           compact goal block (tiers tucked behind "Goals ›"). Collapsed
+           automatically by _updateSheetFocus() while a request or an
+           active ride needs the driver's attention (see req-sheet.sheet-focused
+           below). -->
+      <div class="goal-section" id="goal-section">
+        <div class="stats-strip">
+          <div class="stat-cell">
+            <div class="stat-icon">🏆</div>
+            <div>
+              <div class="stat-val" id="stat-priority">+0</div>
+              <div class="stat-lbl">Priority</div>
+            </div>
+          </div>
+          <div class="stat-cell">
+            <div class="stat-icon">💳</div>
+            <div>
+              <div class="stat-val" id="stat-trips-today">0 trips</div>
+              <div class="stat-lbl" id="stat-etb-today">ETB 0</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="goal-card" id="goal-card">
+          <div class="goal-compact-hdr">
+            <span class="goal-compact-title">Today's progress</span>
+            <button class="goal-tiers-toggle" onclick="document.getElementById('goal-tiers-panel').classList.toggle('open');this.classList.toggle('open')">Goals <span class="gt-chev">›</span></button>
+          </div>
+          <div class="goal-fraction"><span id="goal-fraction-num">0</span><span class="gf-sep">/</span><span id="goal-fraction-den">2</span> trips</div>
+          <div class="goal-bar"><div class="goal-bar-fill" id="goal-bar-fill" style="width:0%"></div></div>
+          <div class="goal-subtext" id="goal-subtext">Loading your trips today…</div>
+
+          <div class="goal-tiers-panel" id="goal-tiers-panel">
+            <div class="goal-tiers-panel-hdr">
+              <span id="goal-title">2 trips goal</span>
+              <span class="goal-bonus" id="goal-bonus">—</span>
+            </div>
+            <div class="goal-chips" id="goal-chips">
+              <div style="width:100%;text-align:center;padding:16px;color:var(--dim);font-size:12px">Loading goals…</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Street Hail — a secondary tool, not the main workflow -->
+        <button class="hail-btn-full" onclick="openHailModal()">🚖 Street Hail — link a customer</button>
       </div>
 
     </div>
@@ -1354,7 +1390,7 @@
     <span class="ni">▶</span><span class="nl" data-i18n="nav_requests">Requests</span>
   </button>
   <button class="nav-tab" data-page="money" onclick="switchPage('money')">
-    <span class="ni">💳</span><span class="nl" data-i18n="nav_money">Money</span>
+    <span class="ni">💳</span><span class="nl" data-i18n="nav_money">Earnings</span>
   </button>
   <button class="nav-tab" data-page="chats" onclick="switchPage('chats')">
     <span class="ni">💬</span><span class="nl" data-i18n="nav_chats">Chats</span>
