@@ -180,6 +180,42 @@
   --sheet:#12121d;--sheet2:#191926;--line:rgba(255,255,255,.08);
   --f:'Outfit',sans-serif;--f-d:'Sora',sans-serif;
   --tab-h:60px;
+
+  /* ── Named design-system tokens ──
+     Same ETEL gold/carbon palette above, given the semantic names a
+     state-driven redesign refers to (surface tiers, status colors, text
+     hierarchy). These are aliases onto the real, already-shipped colors
+     this app uses everywhere today - not a recolor. New tiers that don't
+     have an existing equivalent (surface-3, gold-dark, success-light,
+     text-secondary) get a value consistent with the rest of the palette,
+     ready for anything that wants to reach for them, without requiring
+     every existing var(--dim)/var(--gold)/etc. call site to be rewritten
+     - that mechanical rename across the whole app would be a large,
+     purely cosmetic diff with real regression risk and zero visible
+     change, for no benefit over aliasing here.
+
+     NOTE: deliberately NOT defining --bg or --surface (without a
+     number) here - css/driver-bundle.css (etel-design-v4.css's portion)
+     already defines those exact two names with !important, specifically
+     to neutralize a shared design system's background tokens on this
+     page (see the #page-money/#page-chats/#page-profile comment
+     elsewhere in this file for the bug that caused). !important always
+     wins regardless of source order, so defining --bg/--surface here
+     would silently do nothing - use --surface-1 below, or the literal
+     hex, instead. */
+  --surface-1:var(--sheet);      /* #12121d */
+  --surface-2:var(--sheet2);     /* #191926 */
+  --surface-3:#22222f;
+  --gold-dark:#C99616;
+  --gold-light:var(--gold-lt);   /* #E5C76B */
+  --success:#2ECC71;
+  --success-light:#4ADE80;
+  --info:var(--teal);            /* #4ECDC4 - this app's existing informational accent */
+  --danger:#E63946;
+  --warning:#FFB74D;
+  --text-secondary:#CBD5E1;
+  --text-muted:var(--dim);       /* #9A9AAE */
+  --border:var(--line);
 }
 
 /* ── Bottom nav tabs (4 icons) ── */
@@ -293,10 +329,10 @@
 .drv-logo-box img{width:100%;height:100%;object-fit:cover;display:block}
 .drv-title{font-family:var(--f-d);font-size:15px;font-weight:800;color:var(--gold-lt);line-height:1}
 .drv-status-line{display:flex;align-items:center;gap:6px;margin-top:3px}
-.drv-status-dot{width:7px;height:7px;border-radius:50%;background:var(--dim);flex-shrink:0;transition:background .2s}
-.drv-status-dot.online{background:#2ECC71;box-shadow:0 0 6px #2ECC71;animation:pulse-dot 1.8s infinite ease-in-out}
-.drv-subtitle{font-size:11.5px;font-weight:800;color:var(--dim);letter-spacing:.01em}
-.drv-status-dot.online+.drv-subtitle{color:#2ECC71}
+.drv-status-dot{width:7px;height:7px;border-radius:50%;background:var(--text-muted);flex-shrink:0;transition:background .2s}
+.drv-status-dot.online{background:var(--success);box-shadow:0 0 6px var(--success);animation:pulse-dot 1.8s infinite ease-in-out}
+.drv-subtitle{font-size:11.5px;font-weight:800;color:var(--text-muted);letter-spacing:.01em}
+.drv-status-dot.online+.drv-subtitle{color:var(--success)}
 .drv-online-pill{margin-left:auto;padding:6px 14px;border-radius:999px;
   font-family:var(--f);font-size:12px;font-weight:700;cursor:pointer;
   border:none;display:flex;align-items:center;gap:6px;transition:all .2s}
