@@ -18,6 +18,75 @@
    anything about the version check fails so a network hiccup can
    never leave the page blank.
    ════════════════════════════════════════════════════════════════ */
+/* TEMPORARY on-screen debug banner - diagnosing a mobile-only rendering
+   bug where #requests-list/.stats-strip render empty on one phone but not
+   on desktop with the same account, with zero console errors seen there.
+   Opt-in only (add ?etelDebug=1 to the URL once; it then persists via
+   localStorage until cleared) so it never shows for ordinary drivers.
+   Safe to delete this whole block once the bug is found. */
+(function () {
+    'use strict';
+    var qs = window.location.search || '';
+    var debugOn = false;
+    try { debugOn = /[?&]etelDebug=1\b/.test(qs) || localStorage.getItem('etel_debug_banner') === '1'; }
+    catch (e) { debugOn = /[?&]etelDebug=1\b/.test(qs); }
+    if (!debugOn) return;
+    try { if (/[?&]etelDebug=1\b/.test(qs)) localStorage.setItem('etel_debug_banner', '1'); } catch (e) {}
+
+    var caughtErrors = [];
+    window.addEventListener('error', function (e) {
+        caughtErrors.push((e.message || 'error') + ' @ ' + (e.filename || '?') + ':' + (e.lineno || '?'));
+    });
+    window.addEventListener('unhandledrejection', function (e) {
+        caughtErrors.push('unhandledrejection: ' + (e.reason && e.reason.message ? e.reason.message : e.reason));
+    });
+
+    function renderDebugBanner() {
+        if (!document.body) return;
+        var el = document.getElementById('etel-debug-banner');
+        if (!el) {
+            el = document.createElement('div');
+            el.id = 'etel-debug-banner';
+            el.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:999999;background:#000;color:#0f0;' +
+                'font:11px/1.4 monospace;padding:8px;max-height:45vh;overflow:auto;white-space:pre-wrap;' +
+                'border-bottom:2px solid #0f0';
+            var closeBtn = document.createElement('button');
+            closeBtn.textContent = 'X close';
+            closeBtn.style.cssText = 'float:right;background:#0f0;color:#000;border:none;padding:2px 8px;margin-left:8px';
+            closeBtn.onclick = function () {
+                try { localStorage.removeItem('etel_debug_banner'); } catch (e) {}
+                el.remove();
+            };
+            document.body.appendChild(el);
+            el.appendChild(closeBtn);
+        }
+        var reqList = document.getElementById('requests-list');
+        var statsStrip = document.querySelector('.stats-strip');
+        var goalCard = document.querySelector('.goal-card');
+        var goalSection = document.getElementById('goal-section');
+        var text =
+            'ETEL DEBUG  app=' + window.ETEL_APP +
+            '\nloaded version=' + window.__ETEL_LOADED_VERSION +
+            '\nUA=' + navigator.userAgent +
+            '\n#requests-list: ' + (reqList ? ('FOUND, innerHTML.length=' + reqList.innerHTML.length + ', display=' + getComputedStyle(reqList).display) : 'MISSING FROM DOM') +
+            '\n#goal-section: ' + (goalSection ? ('FOUND, display=' + getComputedStyle(goalSection).display + ', class=' + goalSection.className) : 'MISSING FROM DOM') +
+            '\n.stats-strip: ' + (statsStrip ? ('FOUND, innerHTML.length=' + statsStrip.innerHTML.length + ', display=' + getComputedStyle(statsStrip).display) : 'MISSING FROM DOM') +
+            '\n.goal-card: ' + (goalCard ? 'FOUND' : 'MISSING FROM DOM') +
+            '\nJS errors (' + caughtErrors.length + '):' + (caughtErrors.length ? '\n  ' + caughtErrors.join('\n  ') : ' none');
+        // Rebuild text without touching the close button (always node 0).
+        while (el.childNodes.length > 1) el.removeChild(el.lastChild);
+        el.appendChild(document.createTextNode(text));
+    }
+
+    document.addEventListener('DOMContentLoaded', function () { setTimeout(renderDebugBanner, 100); });
+    window.addEventListener('etel:bundle-ready', function () {
+        setTimeout(renderDebugBanner, 300);
+        setTimeout(renderDebugBanner, 1500);
+        setTimeout(renderDebugBanner, 4000);
+    });
+    setInterval(renderDebugBanner, 3000);
+})();
+
 (function () {
     'use strict';
     var APP = window.ETEL_APP;
