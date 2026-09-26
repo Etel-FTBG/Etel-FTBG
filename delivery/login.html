@@ -127,8 +127,20 @@ body { font-family:var(--ff-b); background:#0a0a14; overflow:hidden; }
 /* ── SPLIT LAYOUT ── */
 .del-auth-page { min-height:100vh; min-height:100dvh; display:flex; }
 
+/* The card's own header (.del-auth-head below) already shows the logo,
+   org name, and title/subtitle - this separate brand panel duplicated
+   all of that above the card, wasting most of the screen as empty gold
+   on mobile with nothing but a second copy of the same branding. A
+   single focused card on a full-bleed metallic-gold background (see
+   .del-auth-page below) reads as one screen, not two stacked ones.
+   !important so it stays hidden regardless of the (now dead, left in
+   place below) .del-auth-left rules' own cascade position. */
+.del-auth-left { display:none !important; }
+
 /* ══════════════════════
-   LEFT — Gold Brand Panel
+   LEFT — Gold Brand Panel (dead code - hidden by the rule above; left
+   in place only so this diff stays reviewable without deleting a
+   large block of unrelated styling in the same change)
    ══════════════════════ */
 .del-auth-left {
   flex:0 0 42%;
@@ -211,31 +223,42 @@ body { font-family:var(--ff-b); background:#0a0a14; overflow:hidden; }
 .del-feat-dot { width:6px; height:6px; border-radius:50%; background:#22c55e; flex-shrink:0; animation:pulse-dot 2.4s ease-out infinite; }
 
 /* ══════════════════════
-   RIGHT — Cream Auth Card
+   RIGHT — Full-bleed Metallic Gold + Card
+   With .del-auth-left hidden (above), this panel now IS the whole
+   screen, so the background lives on .del-auth-page itself (full
+   bleed behind everything) and .del-auth-right is just the centering
+   flex box for the card - no separate background/pattern of its own.
    ══════════════════════ */
+.del-auth-page {
+  position:relative; overflow:hidden;
+  background:
+    radial-gradient(ellipse 90% 55% at 50% -8%, rgba(255,239,157,.58), transparent 58%),
+    radial-gradient(ellipse 75% 70% at 100% 100%, rgba(89,56,5,.62), transparent 66%),
+    radial-gradient(ellipse 65% 60% at 0% 100%, rgba(104,65,8,.58), transparent 68%),
+    linear-gradient(135deg, #4f3208 0%, #9a6815 25%, #d8ad3b 48%, #9a6815 73%, #4a2e06 100%);
+}
+.del-auth-page::before {
+  content:''; position:absolute; inset:0; pointer-events:none; z-index:0; opacity:.5;
+  background:
+    repeating-linear-gradient(112deg, rgba(255,255,255,.055) 0,rgba(255,255,255,.055) 1px,rgba(255,255,255,0) 1px,rgba(255,255,255,0) 7px),
+    repeating-linear-gradient(22deg, rgba(48,28,2,.035) 0,rgba(48,28,2,.035) 1px,transparent 1px,transparent 11px);
+  mix-blend-mode:soft-light;
+}
+.del-auth-page::after {
+  content:''; position:absolute; inset:0; pointer-events:none; z-index:0; opacity:.8;
+  background:
+    linear-gradient(126deg, transparent 0 24%, rgba(255,244,177,.20) 28%, transparent 32%),
+    linear-gradient(305deg, transparent 0 63%, rgba(255,235,151,.15) 67%, transparent 71%);
+}
 .del-auth-right {
   flex:1; display:flex; align-items:center; justify-content:center;
   padding:24px 20px;
-  background-color:#0a0703;
-  background-image:url('assets/images/etel-delivery-coin.webp');
-  /* Show the WHOLE clean coin (full medallion + name text), centered, like
-     the reference. Uses the high-res square coin art (etel-*-coin.webp,
-     ~1024px) NOT the old login-bg-*.jpg crops, which were a different,
-     tall, zoomed-in image. "contain" fits the entire square coin inside
-     the panel; the login card sits over it as translucent glass. */
-  background-size:contain; background-position:center; background-repeat:no-repeat;
-  position:relative; overflow:hidden;
-}
-.del-auth-right::before {
-  content:''; position:absolute; inset:0; pointer-events:none; z-index:0;
-  background-image:
-    repeating-linear-gradient(45deg, transparent 0,transparent 32px,rgba(212,175,55,.04) 32px,rgba(212,175,55,.04) 33px),
-    repeating-linear-gradient(-45deg,transparent 0,transparent 32px,rgba(212,175,55,.04) 32px,rgba(212,175,55,.04) 33px);
+  position:relative; z-index:1;
 }
 
 /* Card */
 .del-auth-card {
-  width:100%; max-width:400px;
+  width:100%; max-width:460px;
   background:var(--card-bg); border-radius:20px;
   /* No backdrop blur - blurring the backdrop is what hides the coin's
      name and artwork behind the card. True clear glass = tint only,
@@ -251,7 +274,7 @@ body { font-family:var(--ff-b); background:#0a0a14; overflow:hidden; }
   background-size:300%; animation:holo 3s linear infinite;
 }
 .del-auth-head {
-  padding:20px 22px 16px;
+  padding:26px 22px 16px;
   /* No extra fill here - this sits ON TOP of the card's own translucent
      background, so tinting it again double-stacks the opacity and makes
      the header read milky-white while the body below looks like glass.
@@ -259,11 +282,14 @@ body { font-family:var(--ff-b); background:#0a0a14; overflow:hidden; }
   background:transparent;
   border-bottom:1px solid rgba(255,255,255,.25); text-align:center;
 }
-.del-auth-logo-wrap { display:flex; flex-direction:column; align-items:center; gap:4px; margin-bottom:10px; }
-.del-auth-logo-img  { height:44px; width:auto; object-fit:contain; filter:drop-shadow(0 3px 12px rgba(100,60,0,.2)); }
-.del-auth-org   { font-family:var(--ff-a); font-size:10px; color:#FFF3D0; letter-spacing:.5px; text-shadow:0 1px 4px rgba(0,0,0,.95),0 0 10px rgba(0,0,0,.8); }
-.del-auth-title { font-family:var(--ff-d); font-size:20px; font-weight:800; color:#FFFFFF; text-shadow:0 2px 5px rgba(0,0,0,.95),0 0 14px rgba(0,0,0,.85),0 0 3px rgba(0,0,0,.9); }
-.del-auth-subtitle { font-size:12px; color:#F5E6C0; margin-top:3px; line-height:1.5; text-shadow:0 1px 4px rgba(0,0,0,.95),0 0 8px rgba(0,0,0,.8); }
+/* Logo/name/org/title/subtitle used to be duplicated in the now-hidden
+   .del-auth-left panel too - now that this header is the ONLY branding
+   on the page, it's sized to carry that weight on its own. */
+.del-auth-logo-wrap { display:flex; flex-direction:column; align-items:center; gap:7px; margin-bottom:12px; }
+.del-auth-logo-img  { height:80px; width:80px; object-fit:contain; border-radius:50%; filter:drop-shadow(0 5px 14px rgba(241,193,52,.3)); }
+.del-auth-org   { font-family:var(--ff-a); font-size:10px; color:#FFF3D0; letter-spacing:1.7px; text-transform:uppercase; text-shadow:0 1px 4px rgba(0,0,0,.95),0 0 10px rgba(0,0,0,.8); }
+.del-auth-title { font-family:var(--ff-d); font-size:clamp(22px,6vw,28px); font-weight:800; color:#FFFFFF; margin-top:6px; text-shadow:0 2px 5px rgba(0,0,0,.95),0 0 14px rgba(0,0,0,.85),0 0 3px rgba(0,0,0,.9); }
+.del-auth-subtitle { font-size:13px; color:#F5E6C0; margin-top:5px; line-height:1.5; text-shadow:0 1px 4px rgba(0,0,0,.95),0 0 8px rgba(0,0,0,.8); }
 
 /* Role tabs */
 .del-role-tabs { display:flex; gap:4px; flex-wrap:wrap; padding:14px 22px 0; }
@@ -422,22 +448,11 @@ body { font-family:var(--ff-b); background:#0a0a14; overflow:hidden; }
 
 /* ══════════════════════
    METALLIC GOLD THEME — applies to every role
-   (the same premium treatment first built for Driver, now the shared
-   look for Customer/Ride/Courier/Driver/Service; auth logic is
-   unaffected — visual only)
+   (background itself now lives on .del-auth-page above; this just
+   layers the dark glass card + submit shadow on top of it, for
+   Customer/Ride/Courier/Driver/Service alike - auth logic is
+   unaffected, visual only)
    ══════════════════════ */
-.del-auth-right {
-  background-image:
-    radial-gradient(circle at 50% 0%, rgba(255,225,140,.55), transparent 38%),
-    linear-gradient(135deg, #5B430D 0%, #A77A16 22%, #F0C75E 48%, #B88620 65%, #5A410C 100%) !important;
-  background-size: cover !important;
-  background-position: center !important;
-}
-.del-auth-right::before {
-  background-image:
-    repeating-linear-gradient(115deg, transparent 0,transparent 3px,rgba(255,255,255,.035) 3px,rgba(255,255,255,.035) 4px),
-    repeating-linear-gradient(25deg, transparent 0,transparent 3px,rgba(60,40,0,.04) 3px,rgba(60,40,0,.04) 4px);
-}
 .del-auth-card {
   background: rgba(8,10,15,.88);
   border: 1px solid rgba(255,215,100,.30);
@@ -451,21 +466,20 @@ body { font-family:var(--ff-b); background:#0a0a14; overflow:hidden; }
 @media (max-width:820px) {
   .del-auth-page { flex-direction:column; }
   html,body { overflow:auto; height:auto; }
-  /* Shrink the brand strip to a slim header instead of a tall block, so
-     the metallic-gold canvas below it is mostly given to the card, not
-     empty space above/below it. */
-  .del-auth-left { flex:0 0 auto; padding:10px 20px 8px; min-height:auto; }
-  .del-mock-card,.del-auth-feats,.del-auth-desc { display:none; }
-  .del-auth-brand { gap:5px; }
-  .del-auth-mark { font-size:24px; }
-  .del-auth-name { font-size:15px; }
-  /* Pin the card to the top of the remaining gold canvas instead of
-     vertically centering it, and let it fill nearly the full width -
-     "biggest full the metallic gold background" instead of a small
-     card floating in a sea of empty gold. */
-  .del-auth-right { align-items:flex-start; justify-content:center; padding:14px 10px 24px; }
-  .del-auth-card { max-width:none; width:100%; }
-  .del-auth-org, .del-auth-mark+* { display:none; }
+  /* .del-auth-left is hidden entirely now (see above) - the card is the
+     whole screen, centered on the full-bleed gold background. Centering
+     (rather than pinning to the top) is what avoids a lopsided page on
+     taller phones; the max-height query below pins it to the top only
+     on short screens, where centering would push the sign-in button
+     below the fold. */
+  .del-auth-right { padding:20px 14px; }
+}
+@media (max-width:480px) {
+  .del-auth-right { padding:16px 10px; align-items:flex-start; }
+  .del-auth-card { width:100%; }
+}
+@media (max-height:700px) and (orientation:portrait) {
+  .del-auth-right { align-items:flex-start; }
 }
 </style>
     <link rel="stylesheet" href="css/etel-design-v4.css?v=4.4">
@@ -1138,11 +1152,10 @@ function applyBrandTheme() {
   }
   if (mark) mark.style.color = accentColor;
 
-  // The right panel's background is now the shared metallic-gold theme
-  // for every role (see .del-auth-right in <style>, which overrides this
-  // with !important) - bannerUrl/coin art is no longer shown here, but
-  // this assignment is left harmless in case that CSS override is ever
-  // relaxed for a specific role again.
+  // The metallic-gold background now lives on .del-auth-page itself (see
+  // <style>), the same for every role - .del-auth-right no longer shows
+  // per-role coin art at all. This assignment is left harmless in case a
+  // per-role background is ever reintroduced on that element.
   var authRight = document.querySelector('.del-auth-right');
   if (authRight && authRight.style.backgroundImage !== bannerUrl) authRight.style.backgroundImage = bannerUrl;
 }
