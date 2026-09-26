@@ -333,6 +333,11 @@
 .drv-status-dot.online{background:var(--success);box-shadow:0 0 6px var(--success);animation:pulse-dot 1.8s infinite ease-in-out}
 .drv-subtitle{font-size:11.5px;font-weight:800;color:var(--text-muted);letter-spacing:.01em}
 .drv-status-dot.online+.drv-subtitle{color:var(--success)}
+.drv-gps-quality{display:inline-flex;align-items:center;gap:4px;margin-left:6px;padding-left:7px;border-left:1px solid rgba(255,255,255,.12);font-size:10.5px;font-weight:700;color:var(--text-muted);letter-spacing:.01em}
+.drv-gps-dot{width:6px;height:6px;border-radius:50%;background:var(--text-muted);flex-shrink:0}
+.drv-gps-dot.good{background:var(--success)}
+.drv-gps-dot.weak{background:var(--warning)}
+.drv-gps-dot.bad{background:var(--danger)}
 .drv-online-pill{margin-left:auto;padding:6px 14px;border-radius:999px;
   font-family:var(--f);font-size:12px;font-weight:700;cursor:pointer;
   border:none;display:flex;align-items:center;gap:6px;transition:all .2s}
@@ -946,6 +951,9 @@
     <div class="drv-status-line">
       <span class="drv-status-dot" id="drv-status-dot"></span>
       <span class="drv-subtitle" id="status-text">Offline</span>
+      <span class="drv-gps-quality" id="drv-gps-quality" style="display:none">
+        <span class="drv-gps-dot" id="drv-gps-dot"></span><span id="drv-gps-label"></span>
+      </span>
     </div>
   </div>
   <!-- Online status pill (shown when online) -->

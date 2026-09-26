@@ -161,6 +161,7 @@ function startGps() {
         DRV._lastFixAt = Date.now();
         DRV._geoError = null;
         _updateGpsErrorBadge(null);
+        _updateGpsQualityBadge();
         updateSelfMarker();
         /* watchPosition keeps firing regardless of network state, so this
            keeps accumulating the driver's real path even while offline;
@@ -180,6 +181,7 @@ function startGps() {
         // broadcastLocation to even send.
         DRV._geoError = err;
         _updateGpsErrorBadge(err);
+        _updateGpsQualityBadge();
         // PERMISSION_DENIED (code 1) can't be recovered by retrying - only
         // the driver re-granting the permission fixes it, so don't loop
         // pointlessly. POSITION_UNAVAILABLE (2) and TIMEOUT (3) are
@@ -198,6 +200,7 @@ function startGps() {
                     DRV._lastFixAt = Date.now();
                     DRV._geoError = null;
                     _updateGpsErrorBadge(null);
+                    _updateGpsQualityBadge();
                     updateSelfMarker();
                 }, function () { /* still failing - the staleness watchdog below will keep the badge visible */ }, { enableHighAccuracy: true, maximumAge: 0, timeout: 15000 });
             }, 4000);
@@ -219,6 +222,7 @@ function startGps() {
         if (age > 25000) {
             _updateGpsErrorBadge({ code: 0, message: 'No GPS update for ' + Math.round(age / 1000) + 's' });
         }
+        _updateGpsQualityBadge();
     }, 5000);
 
     /* The instant connectivity returns, sync right away instead of
@@ -243,6 +247,7 @@ function stopGps() {
     clearInterval(DRV.locationInterval);
     clearInterval(DRV.staleWatchInterval);
     _updateGpsErrorBadge(null);
+    _updateGpsQualityBadge();
     _releaseWakeLock();
 }
 
@@ -298,6 +303,33 @@ function _updateGpsStatusBadge() {
     if (!badge) return;
     var isOffline = !navigator.onLine || DRV._consecutiveSyncFailures >= 2;
     badge.style.display = isOffline ? 'flex' : 'none';
+}
+
+/* Small always-visible GPS quality indicator in the header (Good/Weak/
+   Location off), separate from the more detailed error/offline badges
+   above - those only render once something's near the meter, so they're
+   invisible while just Online waiting for a request. Reuses the exact
+   same state (DRV._geoError, DRV._lastFixAt) those badges already
+   track; no new GPS watcher or polling added. */
+function _updateGpsQualityBadge() {
+    var wrap = document.getElementById('drv-gps-quality');
+    var dot = document.getElementById('drv-gps-dot');
+    var label = document.getElementById('drv-gps-label');
+    if (!wrap || !dot || !label) return;
+    if (!DRV.isOnline) { wrap.style.display = 'none'; return; }
+    var state, text;
+    if (DRV._geoError && DRV._geoError.code === 1) {
+        state = 'bad'; text = 'Location off';
+    } else if (!DRV._lastFixAt) {
+        state = 'weak'; text = 'GPS…';
+    } else if (DRV._geoError || (Date.now() - DRV._lastFixAt) > 25000) {
+        state = 'weak'; text = 'GPS weak';
+    } else {
+        state = 'good'; text = 'GPS good';
+    }
+    wrap.style.display = 'inline-flex';
+    dot.className = 'drv-gps-dot ' + state;
+    label.textContent = text;
 }
 
 function broadcastLocation(){if(!DRV.isOnline||!DRV.currentLat)return;if(DRV._locSyncInFlight)return;DRV._locSyncInFlight=true;var _params={lat:DRV.currentLat,lng:DRV.currentLng,accuracy:DRV.currentAccuracy};if(DRV.activeRide&&DRV.activeRide.id)_params.ride_id=DRV.activeRide.id;drvApi("driver_update_location",_params,function(e){DRV._locSyncInFlight=false;DRV._consecutiveSyncFailures=0;_updateGpsStatusBadge();if(e&&e.meter&&DRV.activeRide){var t=document.getElementById("meter-km"),n=document.getElementById("meter-fare");if(t)t.textContent=parseFloat(e.meter.traveled_km||0).toFixed(2)+" km";if(n)n.textContent="ETB "+parseFloat(e.meter.meter_fare||0).toFixed(0);var r=document.getElementById("meter-surge");if(r)r.style.display=e.meter.surge?"inline-flex":"none";_updateLowAccuracyBadge(!!e.meter.low_accuracy,DRV.currentAccuracy);DRV.activeRide.distance_km=e.meter.traveled_km;DRV.activeRide.fare=e.meter.meter_fare;DRV.activeRide.traveled_km=e.meter.traveled_km;DRV.activeRide.meter_fare=e.meter.meter_fare;DRV.activeRide.surge=!!e.meter.surge;['fare_total','fare_base','fare_distance','fare_wait','fare_subtotal','fare_surge_mult','fare_surge_etb','fare_floor_topup'].forEach(function(_k){if(e.meter[_k]!=null)DRV.activeRide[_k]=e.meter[_k]});if(e.meter.wait_active!=null){DRV.activeRide.wait_active=e.meter.wait_active;DRV.activeRide.wait_minutes=e.meter.wait_minutes;DRV.activeRide.wait_etb=e.meter.wait_etb;_syncWaitState(DRV.activeRide)}if(e.meter.wait_auto_stopped){showDriverToast("Waiting stopped automatically \u2014 you\u2019re moving","info")}}},function(){DRV._locSyncInFlight=false;DRV._consecutiveSyncFailures++;_updateGpsStatusBadge()})}
@@ -587,6 +619,7 @@ function _doGoOnline(btn) {
         DRV.isOnline = true;
         setOnlineUI(true);
         startGps();
+        _updateGpsQualityBadge();
         startPolling();
         showDriverToast('You are now online', 'ok');
         setTimeout(function () {
@@ -823,6 +856,7 @@ document.addEventListener('visibilitychange', function () {
                 DRV._lastFixAt = Date.now();
                 DRV._geoError = null;
                 _updateGpsErrorBadge(null);
+                _updateGpsQualityBadge();
                 updateSelfMarker();
                 broadcastLocation();
             }, function () {
