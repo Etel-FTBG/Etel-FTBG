@@ -21,11 +21,23 @@
 /* TEMPORARY on-screen debug banner - diagnosing a mobile-only rendering
    bug where #requests-list/.stats-strip render empty on one phone but not
    on desktop with the same account, with zero console errors seen there.
-   Opt-in only (add ?etelDebug=1 to the URL once; it then persists via
-   localStorage until cleared) so it never shows for ordinary drivers.
+   Restricted to admin accounts only (checked directly against
+   localStorage's etel_user, the same field core.js's Auth.getUser() reads
+   - core.js itself hasn't loaded yet at this point, since it's part of
+   the versioned bundle this file is about to inject) AND opt-in (add
+   ?etelDebug=1 to the URL once; it then persists via localStorage until
+   cleared) - an ordinary driver can never see this even if they guess the
+   URL flag, since it fails the admin check first.
    Safe to delete this whole block once the bug is found. */
 (function () {
     'use strict';
+    var isAdmin = false;
+    try {
+        var u = JSON.parse(localStorage.getItem('etel_user') || 'null');
+        isAdmin = !!(u && u.role === 'admin');
+    } catch (e) {}
+    if (!isAdmin) { try { localStorage.removeItem('etel_debug_banner'); } catch (e) {} return; }
+
     var qs = window.location.search || '';
     var debugOn = false;
     try { debugOn = /[?&]etelDebug=1\b/.test(qs) || localStorage.getItem('etel_debug_banner') === '1'; }
