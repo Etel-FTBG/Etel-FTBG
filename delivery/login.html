@@ -420,6 +420,32 @@ body { font-family:var(--ff-b); background:#0a0a14; overflow:hidden; }
 .del-auth-etelid:disabled { opacity:.65; cursor:not-allowed; }
 .del-etelid-mark { font-family:var(--ff-a); font-size:16px; font-weight:700; background:linear-gradient(135deg,#FDF6D8,#E8C84A); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
 
+/* ══════════════════════
+   DRIVER — Metallic Gold Theme
+   (scoped to .del-auth-page.role-driver so every other role/tab keeps
+   its existing look untouched; auth logic is unaffected — visual only)
+   ══════════════════════ */
+.del-auth-page.role-driver .del-auth-right {
+  background-image:
+    radial-gradient(circle at 50% 0%, rgba(255,225,140,.55), transparent 38%),
+    linear-gradient(135deg, #5B430D 0%, #A77A16 22%, #F0C75E 48%, #B88620 65%, #5A410C 100%) !important;
+  background-size: cover !important;
+  background-position: center !important;
+}
+.del-auth-page.role-driver .del-auth-right::before {
+  background-image:
+    repeating-linear-gradient(115deg, transparent 0,transparent 3px,rgba(255,255,255,.035) 3px,rgba(255,255,255,.035) 4px),
+    repeating-linear-gradient(25deg, transparent 0,transparent 3px,rgba(60,40,0,.04) 3px,rgba(60,40,0,.04) 4px);
+}
+.del-auth-page.role-driver .del-auth-card {
+  background: rgba(8,10,15,.88);
+  border: 1px solid rgba(255,215,100,.30);
+  box-shadow: 0 20px 60px rgba(0,0,0,.35);
+}
+.del-auth-page.role-driver .del-auth-submit {
+  box-shadow: 0 5px 0 var(--g8), 0 8px 22px rgba(0,0,0,.45);
+}
+
 /* MOBILE */
 @media (max-width:820px) {
   .del-auth-page { flex-direction:column; }
@@ -733,6 +759,8 @@ ETEL_I18N.register('login', {
     role_title_passenger: 'Passenger Login',
     role_title_default: 'Login',
     signin_to_continue: 'Sign in to continue',
+    welcome_back_driver: 'Welcome back, Driver',
+    driver_signin_sub: 'Sign in to continue to your driver account.',
     register_title: 'Create Account',
     join_prefix: 'Join ',
     app_name_delivery: 'ETEL Delivery',
@@ -782,6 +810,8 @@ ETEL_I18N.register('login', {
     role_title_passenger: 'የተሳፋሪ መግቢያ',
     role_title_default: 'መግቢያ',
     signin_to_continue: 'ለመቀጠል ይግቡ',
+    welcome_back_driver: 'እንኳን ደህና መጡ፣ ሹፌር',
+    driver_signin_sub: 'ወደ አሽከርካሪ መለያዎ ለመግባት ይግቡ።',
     register_title: 'መለያ ይፍጠሩ',
     join_prefix: 'ይቀላቀሉ ',
     app_name_delivery: 'ETEL ድሊቨሪ',
@@ -1014,8 +1044,13 @@ function updateCardHeader() {
   var s = document.getElementById('del-card-sub');
   var appName = appNameForContext();
   if (_mode === 'login') {
-    if(t) t.textContent = appName + ' — ' + roleLabelForContext();
-    if(s) s.textContent = tr('signin_to_continue', 'Sign in to continue');
+    if (_role === 'driver') {
+      if(t) t.textContent = tr('welcome_back_driver', 'Welcome back, Driver');
+      if(s) s.textContent = tr('driver_signin_sub', 'Sign in to continue to your driver account.');
+    } else {
+      if(t) t.textContent = appName + ' — ' + roleLabelForContext();
+      if(s) s.textContent = tr('signin_to_continue', 'Sign in to continue');
+    }
   } else if (_mode === 'register') {
     if(t) t.textContent = tr('register_title', 'Create Account');
     if(s) s.textContent = tr('join_prefix', 'Join ') + appName;
@@ -1041,7 +1076,7 @@ function applyBrandTheme() {
   if (driver) {
     logoPng = 'assets/images/logo-driver.png'; logoWebp = 'assets/images/logo-driver.webp';
     bannerUrl = "url('assets/images/etel-driver-coin.webp')";
-    accentColor = '#3395FF';
+    accentColor = '#D4AF37';
   } else if (ride) {
     logoPng = 'assets/images/logo-ride.png'; logoWebp = 'assets/images/logo-ride.webp';
     bannerUrl = "url('assets/images/etel-ride-coin.webp')";
@@ -1093,6 +1128,9 @@ function applyBrandTheme() {
 
   var authRight = document.querySelector('.del-auth-right');
   if (authRight && authRight.style.backgroundImage !== bannerUrl) authRight.style.backgroundImage = bannerUrl;
+
+  var authPage = document.querySelector('.del-auth-page');
+  if (authPage) authPage.classList.toggle('role-driver', driver);
 }
 
 function clearAlert() {
