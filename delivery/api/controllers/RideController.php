@@ -3554,7 +3554,7 @@ case 'passenger_get_ride_history': {
     $s = $pdo->prepare(
         "SELECT r.id, r.pickup_address, r.dropoff_address, r.distance_km,
                 r.fare_paid, r.fare_final, r.status, r.rating,
-                r.driver_rating, r.created_at, r.assigned_at, r.completed_at,
+                r.driver_rating, r.created_at, r.assigned_at, r.started_at, r.completed_at,
                 r.payment_method, r.open_trip, r.traveled_km, r.driver_id, r.passenger_id,
                 r.fare_breakdown_json, r.pickup_lat, r.pickup_lng, r.dropoff_lat, r.dropoff_lng,
                 p.name AS passenger_name, p.phone AS passenger_phone,

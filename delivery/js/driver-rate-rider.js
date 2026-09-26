@@ -65,14 +65,49 @@
     if (el) el.remove();
   }
 
-  function openRateRiderSheet(rideId) {
+  /* Real trip summary above the rating - fare, breakdown, distance and
+     duration, all straight from the completed ride row (no fabricated
+     fields). This is the driver's only view of "trip completed": there
+     is no separate completion screen elsewhere, so it belongs here. */
+  function _completionSummaryHtml(ride) {
+    var fare = parseFloat(ride.fare_paid != null ? ride.fare_paid : (ride.fare_final || 0));
+    var km = parseFloat(ride.traveled_km != null ? ride.traveled_km : (ride.distance_km || 0));
+    var durationLine = "";
+    if (ride.started_at && ride.completed_at) {
+      var startMs = Date.parse(String(ride.started_at).replace(" ", "T") + "Z");
+      var endMs = Date.parse(String(ride.completed_at).replace(" ", "T") + "Z");
+      if (startMs && endMs && endMs > startMs) {
+        var mins = Math.round((endMs - startMs) / 60000);
+        durationLine = mins + " min";
+      }
+    }
+    var hasBreakdown = ride.fare_base != null || ride.fare_distance != null;
+    var breakdown = (hasBreakdown && typeof _fareBreakdownHtml === "function")
+      ? _fareBreakdownHtml(Object.assign({}, ride, { fare_total: fare, status: "completed" }))
+      : "";
+    return '<div style="text-align:center;margin-bottom:18px">' +
+      '<div style="font-size:34px;margin-bottom:4px">✅</div>' +
+      '<div style="font-size:13px;font-weight:800;color:#9A9AAE;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Trip Completed</div>' +
+      '<div style="font-family:\'Sora\',sans-serif;font-size:32px;font-weight:800;color:#F5E7B8;margin-bottom:8px">ETB ' + fare.toFixed(0) + '</div>' +
+      '<div style="display:flex;justify-content:center;gap:14px;font-size:12px;color:#9A9AAE;margin-bottom:' + (breakdown ? "14" : "4") + 'px">' +
+        (km ? '<span>' + km.toFixed(1) + ' km</span>' : '') +
+        (durationLine ? '<span>' + durationLine + '</span>' : '') +
+      '</div>' +
+      breakdown +
+    '</div>';
+  }
+
+  function openRateRiderSheet(ride) {
     closeSheet();
     selected = 0;
+    var rideId = ride.id;
     var wrap = document.createElement("div");
     wrap.id = "etel-rate-rider-sheet";
-    wrap.style.cssText = "position:fixed;inset:0;z-index:20000;background:rgba(5,5,10,.75);display:flex;align-items:flex-end;justify-content:center;font-family:'Outfit',sans-serif";
+    wrap.style.cssText = "position:fixed;inset:0;z-index:20000;background:rgba(5,5,10,.75);display:flex;align-items:flex-end;justify-content:center;font-family:'Outfit',sans-serif;overflow-y:auto";
     wrap.innerHTML =
       '<div style="width:min(460px,100vw);background:linear-gradient(180deg,#14141f,#0b0b13);border:1px solid rgba(212,175,55,.16);border-bottom:none;border-radius:22px 22px 0 0;padding:24px 20px max(24px,env(safe-area-inset-bottom,24px));text-align:center">' +
+      _completionSummaryHtml(ride) +
+      '<div style="border-top:1px solid rgba(255,255,255,.08);margin-bottom:18px"></div>' +
       '<div style="font-size:16px;font-weight:800;color:#EDEDF5;margin-bottom:6px">Rate your rider</div>' +
       '<div style="font-size:12.5px;color:#9A9AAE;margin-bottom:18px">How was this trip?</div>' +
       '<div id="etel-rr-stars" style="display:flex;justify-content:center;gap:8px;margin-bottom:16px;font-size:32px">' +
@@ -141,7 +176,7 @@
           var completedTime = row.completed_at ? Date.parse(row.completed_at.replace(" ", "T") + "Z") : 0;
           if (completedTime && completedTime < cutoff) continue;
           markPrompted(row.id);
-          openRateRiderSheet(row.id);
+          openRateRiderSheet(row);
           return; // one at a time
         }
       })
