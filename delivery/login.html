@@ -1098,30 +1098,24 @@ function applyBrandTheme() {
   // even the accent color) - now genuinely distinct, matching the same
   // three-way split already done for manifests and PWA icons tonight.
   // Courier, Service, and Admin now each get their own coin/logo too.
-  var logoPng, logoWebp, bannerUrl, accentColor;
+  var logoPng, logoWebp, accentColor;
   if (driver) {
     logoPng = 'assets/images/logo-driver.png'; logoWebp = 'assets/images/logo-driver.webp';
-    bannerUrl = "url('assets/images/etel-driver-coin.webp')";
     accentColor = '#D4AF37';
   } else if (ride) {
     logoPng = 'assets/images/logo-ride.png'; logoWebp = 'assets/images/logo-ride.webp';
-    bannerUrl = "url('assets/images/etel-ride-coin.webp')";
     accentColor = '#3395FF';
   } else if (courier) {
     logoPng = 'assets/images/logo-courier.png'; logoWebp = 'assets/images/logo-courier.webp';
-    bannerUrl = "url('assets/images/etel-courier-coin.webp')";
     accentColor = '#E5A83A';
   } else if (serviceGiver) {
     logoPng = 'assets/images/logo-service.png'; logoWebp = 'assets/images/logo-service.webp';
-    bannerUrl = "url('assets/images/etel-service-coin.webp')";
     accentColor = '#E5A83A';
   } else if (admin) {
     logoPng = 'assets/images/logo-admin.png'; logoWebp = 'assets/images/logo-admin.webp';
-    bannerUrl = "url('assets/images/etel-admin-coin.webp')";
     accentColor = '#D4AF37';
   } else {
     logoPng = 'assets/images/logo.png'; logoWebp = 'assets/images/logo.webp';
-    bannerUrl = "url('assets/images/etel-delivery-coin.webp')";
     accentColor = '';
   }
   ['auth-logo-left', 'auth-logo-card'].forEach(function (id) {
@@ -1151,13 +1145,6 @@ function applyBrandTheme() {
       : trDesc('desc_default', 'Fast food, groceries & packages across all 12 Hawassa zones.');
   }
   if (mark) mark.style.color = accentColor;
-
-  // The metallic-gold background now lives on .del-auth-page itself (see
-  // <style>), the same for every role - .del-auth-right no longer shows
-  // per-role coin art at all. This assignment is left harmless in case a
-  // per-role background is ever reintroduced on that element.
-  var authRight = document.querySelector('.del-auth-right');
-  if (authRight && authRight.style.backgroundImage !== bannerUrl) authRight.style.backgroundImage = bannerUrl;
 }
 
 function clearAlert() {
