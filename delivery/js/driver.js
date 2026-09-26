@@ -638,7 +638,7 @@ function goOffline() {
         stopPolling();
         clearRideMarkers();
         var rl2 = document.getElementById('requests-list');
-        if (rl2) rl2.innerHTML = '<div class="empty-state"><div class="ei">📴</div><p>Go online to see ride requests</p></div>';
+        if (rl2) rl2.innerHTML = _offlineEmptyStateHtml();
         showDriverToast('You are now offline', 'info');
         _clearOnlineReminder();
     }, function (msg) { showDriverToast(msg, 'err'); });
@@ -684,7 +684,10 @@ function _updateTopbarStatus() {
     if (ride && (ride.status === 'driver_assigned' || ride.status === 'accepted')) {
         label = 'Going to pickup'; on = true;
     } else if (ride && ride.status === 'arrived') {
-        label = 'At pickup'; on = true;
+        /* 'arrived' means arrived at the DESTINATION awaiting payment
+           (see arrivedRide()/driver-rate-rider.js's header comment) -
+           NOT arrived at pickup. Was mislabeled 'At pickup' before. */
+        label = 'Awaiting payment'; on = true;
     } else if (ride && ride.status === 'in_progress') {
         label = 'On trip'; on = true;
     } else if (DRV.isOnline) {
@@ -877,7 +880,7 @@ function renderNearbyRequests(requests) {
         stopAllRinging();
         DRV._seenRequestIds = {};
         DRV._dismissedRequestIds = {};
-        el.innerHTML = '<div class="empty-state"><div class="ei">🔍</div><p>Waiting for nearby requests…</p></div>';
+        el.innerHTML = _waitingForRequestsHtml();
         return;
     }
     /* New requests arrived — auto-show the requests sub-tab */
@@ -994,6 +997,17 @@ function stopRingingFor(requestId) {
     }
 }
 
+/* Shared empty-state markup for the requests list, with a big
+   state-specific header (Online/Offline) matching the design's
+   per-state headers. Centralized so the call sites that show these
+   can't drift out of sync with each other. */
+function _waitingForRequestsHtml() {
+    return '<div class="empty-state state-empty"><div class="state-empty-header">Online</div><div class="ei">🔍</div><p>Waiting for nearby requests…</p></div>';
+}
+function _offlineEmptyStateHtml() {
+    return '<div class="empty-state state-empty"><div class="state-empty-header state-empty-header--offline">Offline</div><div class="ei">📴</div><p>Go online to see nearby ride requests</p></div>';
+}
+
 function stopAllRinging() {
     Object.keys(window.DRV_ringingTimers).forEach(stopRingingFor);
 }
@@ -1012,7 +1026,7 @@ function declineRequest(requestId) {
         var el = document.getElementById('requests-list');
         DRV._nearbyCount = 0;
         _updateSheetFocus();
-        if (el) el.innerHTML = '<div class="empty-state"><div class="ei">🔍</div><p>Waiting for nearby requests…</p></div>';
+        if (el) el.innerHTML = _waitingForRequestsHtml();
     }
 }
 /* Kept as an alias in case any external caller still references the old
@@ -1041,7 +1055,7 @@ function _tickRequestExpiries() {
                 DRV._nearbyCount = 0;
                 _updateSheetFocus();
                 var el = document.getElementById('requests-list');
-                if (el) el.innerHTML = '<div class="empty-state"><div class="ei">🔍</div><p>Waiting for nearby requests…</p></div>';
+                if (el) el.innerHTML = _waitingForRequestsHtml();
             }
             return;
         }
@@ -1145,7 +1159,12 @@ function renderActiveRide(ride) {
     _updateSheetFocus();
     _updateTopbarStatus();
     if (!ride) {
-        container.innerHTML = '<div class="empty-state"><div class="ei">✅</div><p>No active ride.<br>Go online to receive requests.</p></div>';
+        /* No separate "No active ride" card - the Offline/Ready-for-rides
+           state right below already says everything there is to say
+           when there's nothing active, and showing both was redundant
+           clutter (two empty-state messages stacked on top of each
+           other). */
+        container.innerHTML = '';
         DRV._routeEtaKey = null;
         return;
     }
@@ -1155,6 +1174,18 @@ function renderActiveRide(ride) {
         accepted:        '<span class="active-status-pill pill-assigned">🤝 Linked — ready</span>',
         in_progress:     '<span class="active-status-pill pill-inprog">📟 Meter Running</span>',
         arrived:         '<span class="active-status-pill pill-inprog">🏁 Awaiting Payment</span>'
+    }[ride.status] || '';
+
+    /* Large state-specific title, matching the target design's per-state
+       headers - purely a bigger label over the same statusPill/state,
+       not a new state. 'arrived' says "Awaiting Payment" here too (not
+       "Arrived"), since that status means arrived at the DESTINATION
+       waiting for the customer to pay, not arrived at pickup. */
+    var stateHeader = {
+        driver_assigned: 'Going to Pickup',
+        accepted:        'Going to Pickup',
+        in_progress:     'Trip in Progress',
+        arrived:         'Awaiting Payment'
     }[ride.status] || '';
 
     /* One primary action per state — everything else (nav, route history,
@@ -1210,6 +1241,7 @@ function renderActiveRide(ride) {
         + '</div>';
 
     container.innerHTML = '<div class="active-ride-card">'
+        + (stateHeader ? '<div class="ride-state-header">' + stateHeader + '</div>' : '')
         + '<div class="active-ride-header"><span class="active-ride-code">🔑 ' + esc(ride.ride_code || '') + '</span>' + statusPill + '</div>'
         + '<div class="passenger-info">'
         +   '<div class="passenger-avatar">🧑</div>'
