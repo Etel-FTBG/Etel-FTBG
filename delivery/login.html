@@ -421,28 +421,29 @@ body { font-family:var(--ff-b); background:#0a0a14; overflow:hidden; }
 .del-etelid-mark { font-family:var(--ff-a); font-size:16px; font-weight:700; background:linear-gradient(135deg,#FDF6D8,#E8C84A); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
 
 /* ══════════════════════
-   DRIVER — Metallic Gold Theme
-   (scoped to .del-auth-page.role-driver so every other role/tab keeps
-   its existing look untouched; auth logic is unaffected — visual only)
+   METALLIC GOLD THEME — applies to every role
+   (the same premium treatment first built for Driver, now the shared
+   look for Customer/Ride/Courier/Driver/Service; auth logic is
+   unaffected — visual only)
    ══════════════════════ */
-.del-auth-page.role-driver .del-auth-right {
+.del-auth-right {
   background-image:
     radial-gradient(circle at 50% 0%, rgba(255,225,140,.55), transparent 38%),
     linear-gradient(135deg, #5B430D 0%, #A77A16 22%, #F0C75E 48%, #B88620 65%, #5A410C 100%) !important;
   background-size: cover !important;
   background-position: center !important;
 }
-.del-auth-page.role-driver .del-auth-right::before {
+.del-auth-right::before {
   background-image:
     repeating-linear-gradient(115deg, transparent 0,transparent 3px,rgba(255,255,255,.035) 3px,rgba(255,255,255,.035) 4px),
     repeating-linear-gradient(25deg, transparent 0,transparent 3px,rgba(60,40,0,.04) 3px,rgba(60,40,0,.04) 4px);
 }
-.del-auth-page.role-driver .del-auth-card {
+.del-auth-card {
   background: rgba(8,10,15,.88);
   border: 1px solid rgba(255,215,100,.30);
   box-shadow: 0 20px 60px rgba(0,0,0,.35);
 }
-.del-auth-page.role-driver .del-auth-submit {
+.del-auth-submit {
   box-shadow: 0 5px 0 var(--g8), 0 8px 22px rgba(0,0,0,.45);
 }
 
@@ -759,8 +760,14 @@ ETEL_I18N.register('login', {
     role_title_passenger: 'Passenger Login',
     role_title_default: 'Login',
     signin_to_continue: 'Sign in to continue',
-    welcome_back_driver: 'Welcome back, Driver',
-    driver_signin_sub: 'Sign in to continue to your driver account.',
+    welcome_back_prefix: 'Welcome back, ',
+    signin_account_prefix: 'Sign in to continue to your ',
+    signin_account_suffix: ' account.',
+    welcome_word_customer: 'Customer',
+    welcome_word_courier: 'Courier',
+    welcome_word_driver: 'Driver',
+    welcome_word_service: 'Partner',
+    welcome_word_passenger: 'Rider',
     register_title: 'Create Account',
     join_prefix: 'Join ',
     app_name_delivery: 'ETEL Delivery',
@@ -810,8 +817,14 @@ ETEL_I18N.register('login', {
     role_title_passenger: 'የተሳፋሪ መግቢያ',
     role_title_default: 'መግቢያ',
     signin_to_continue: 'ለመቀጠል ይግቡ',
-    welcome_back_driver: 'እንኳን ደህና መጡ፣ ሹፌር',
-    driver_signin_sub: 'ወደ አሽከርካሪ መለያዎ ለመግባት ይግቡ።',
+    welcome_back_prefix: 'እንኳን ደህና መጡ፣ ',
+    signin_account_prefix: 'ወደ ',
+    signin_account_suffix: ' መለያዎ ለመግባት ይግቡ።',
+    welcome_word_customer: 'ደንበኛ',
+    welcome_word_courier: 'ተላላኪ',
+    welcome_word_driver: 'ሹፌር',
+    welcome_word_service: 'አጋር',
+    welcome_word_passenger: 'ተሳፋሪ',
     register_title: 'መለያ ይፍጠሩ',
     join_prefix: 'ይቀላቀሉ ',
     app_name_delivery: 'ETEL ድሊቨሪ',
@@ -876,17 +889,6 @@ function safeRedirectTarget() {
   var r = new URLSearchParams(location.search).get('redirect');
   return (r && allowed.indexOf(r) !== -1) ? r : null;
 }
-var ROLE_TITLES = {
-  customer:'Customer Login', courier:'Courier Login', driver:'Driver Login',
-  service_giver:'Service Login'
-};
-// Key names into ETEL_I18N's dictionary, mirroring ROLE_TITLES above
-// one-for-one so a language switch re-renders the same labels via
-// roleLabelForContext().
-var ROLE_TITLE_KEYS = {
-  customer:'role_title_customer', courier:'role_title_courier',
-  driver:'role_title_driver', service_giver:'role_title_service_giver'
-};
 var ROLE_IDS = { customer:'tab-c', courier:'tab-d', driver:'tab-r', service_giver:'tab-s', ride:'tab-ride' };
 // Ride isn't a real backend role - Ride passengers are just customers,
 // distinguished only by where they land after login (ride/ instead of
@@ -1031,11 +1033,17 @@ function appNameForContext() {
   return tr('app_name_delivery', 'ETEL Delivery');
 }
 
-function roleLabelForContext() {
+/* Word used in "Welcome back, {word}" / "...your {word} account." on the
+   login card - same copy pattern for every role now, not just Driver. */
+var ROLE_WELCOME_WORD_KEYS = {
+  customer: 'welcome_word_customer', courier: 'welcome_word_courier',
+  driver: 'welcome_word_driver', service_giver: 'welcome_word_service'
+};
+function welcomeRoleWord() {
   function tr(key, fallback) { var v = ETEL_I18N.t(key); return (v !== key) ? v : fallback; }
-  if (_role === 'customer' && isRideContext()) return tr('role_title_passenger', 'Passenger Login');
-  var key = ROLE_TITLE_KEYS[_role];
-  return (key ? tr(key, ROLE_TITLES[_role]) : null) || tr('role_title_default', 'Login');
+  if (_role === 'customer' && isRideContext()) return tr('welcome_word_passenger', 'Rider');
+  var key = ROLE_WELCOME_WORD_KEYS[_role];
+  return (key ? tr(key, null) : null) || 'User';
 }
 
 function updateCardHeader() {
@@ -1044,13 +1052,9 @@ function updateCardHeader() {
   var s = document.getElementById('del-card-sub');
   var appName = appNameForContext();
   if (_mode === 'login') {
-    if (_role === 'driver') {
-      if(t) t.textContent = tr('welcome_back_driver', 'Welcome back, Driver');
-      if(s) s.textContent = tr('driver_signin_sub', 'Sign in to continue to your driver account.');
-    } else {
-      if(t) t.textContent = appName + ' — ' + roleLabelForContext();
-      if(s) s.textContent = tr('signin_to_continue', 'Sign in to continue');
-    }
+    var word = welcomeRoleWord();
+    if(t) t.textContent = tr('welcome_back_prefix', 'Welcome back, ') + word;
+    if(s) s.textContent = tr('signin_account_prefix', 'Sign in to continue to your ') + word.toLowerCase() + tr('signin_account_suffix', ' account.');
   } else if (_mode === 'register') {
     if(t) t.textContent = tr('register_title', 'Create Account');
     if(s) s.textContent = tr('join_prefix', 'Join ') + appName;
@@ -1126,11 +1130,13 @@ function applyBrandTheme() {
   }
   if (mark) mark.style.color = accentColor;
 
+  // The right panel's background is now the shared metallic-gold theme
+  // for every role (see .del-auth-right in <style>, which overrides this
+  // with !important) - bannerUrl/coin art is no longer shown here, but
+  // this assignment is left harmless in case that CSS override is ever
+  // relaxed for a specific role again.
   var authRight = document.querySelector('.del-auth-right');
   if (authRight && authRight.style.backgroundImage !== bannerUrl) authRight.style.backgroundImage = bannerUrl;
-
-  var authPage = document.querySelector('.del-auth-page');
-  if (authPage) authPage.classList.toggle('role-driver', driver);
 }
 
 function clearAlert() {
