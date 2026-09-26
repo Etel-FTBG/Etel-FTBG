@@ -648,15 +648,12 @@ function setOnlineUI(on) {
     var statusPill = document.getElementById('online-status-pill');
     var powerBtn   = document.getElementById('poweroff-btn');
     var slideWrap  = document.getElementById('slide-online-wrap');
-    var st         = document.getElementById('status-text');
-    var dot        = document.getElementById('drv-status-dot');
     var helpBtn    = document.getElementById('battery-tip-help-btn');
     if (statusPill) statusPill.style.display = on ? 'flex' : 'none';
     if (powerBtn)   powerBtn.style.display   = on ? 'flex' : 'none';
     if (helpBtn)    helpBtn.style.display    = on ? 'block' : 'none';
     if (slideWrap)  slideWrap.style.display  = on ? 'none' : 'block';
-    if (st) st.textContent = on ? 'Ready for rides' : 'Offline';
-    if (dot) dot.classList.toggle('online', !!on);
+    _updateTopbarStatus();
     var banner = document.getElementById('unavail-banner');
     if (banner) banner.style.display = 'none';
     _updateSheetFocus();
@@ -672,6 +669,31 @@ function _updateSheetFocus() {
     if (!sheet) return;
     var focused = !!DRV.activeRide || !!(DRV._nearbyCount > 0);
     sheet.classList.toggle('sheet-focused', focused);
+}
+
+/* ── Topbar status: reflects the actual ride lifecycle, not just
+   online/offline, so the driver can read their current stage at a
+   glance without opening the ride card. Reads existing state only
+   (DRV.isOnline, DRV.activeRide.status) - no new state is introduced. */
+function _updateTopbarStatus() {
+    var st  = document.getElementById('status-text');
+    var dot = document.getElementById('drv-status-dot');
+    if (!st) return;
+    var ride = DRV.activeRide;
+    var label, on;
+    if (ride && (ride.status === 'driver_assigned' || ride.status === 'accepted')) {
+        label = 'Going to pickup'; on = true;
+    } else if (ride && ride.status === 'arrived') {
+        label = 'At pickup'; on = true;
+    } else if (ride && ride.status === 'in_progress') {
+        label = 'On trip'; on = true;
+    } else if (DRV.isOnline) {
+        label = 'Ready for rides'; on = true;
+    } else {
+        label = 'Offline'; on = false;
+    }
+    st.textContent = label;
+    if (dot) dot.classList.toggle('online', on);
 }
 
 /* ── SSE stream — replaces 8s setInterval polling ── */
@@ -839,12 +861,22 @@ function renderNearbyRequests(requests) {
     if (!el) return;
     clearRideMarkers();
 
+    /* Requests here are broadcast to every online nearby driver (first to
+       accept wins) - there's no per-driver "offer" to decline server-side.
+       Declining is therefore a local dismissal only: stop ringing and hide
+       this one card until it naturally drops out of the next poll/SSE
+       tick, which is exactly what already happens once it expires or
+       another driver takes it. */
+    if (!DRV._dismissedRequestIds) DRV._dismissedRequestIds = {};
+    requests = requests.filter(function (r) { return !DRV._dismissedRequestIds[r.id]; });
+
     DRV._nearbyCount = requests.length;
     _updateSheetFocus();
 
     if (!requests.length) {
         stopAllRinging();
         DRV._seenRequestIds = {};
+        DRV._dismissedRequestIds = {};
         el.innerHTML = '<div class="empty-state"><div class="ei">🔍</div><p>Waiting for nearby requests…</p></div>';
         return;
     }
@@ -879,11 +911,11 @@ function renderNearbyRequests(requests) {
         DRV.rideMarkers.push(marker);
 
         var expiryLeft = r.expires_at ? Math.max(0, Math.round((new Date(r.expires_at) - new Date()) / 1000)) : 0;
-        return '<div class="req-card">' +
+        return '<div class="req-card" id="req-card-' + r.id + '">' +
             '<div class="req-top">' +
                 '<div class="req-fare">ETB ' + parseFloat(r.fare_final).toFixed(0) + '</div>' +
                 '<span class="req-dist-badge">📍 ' + parseFloat(r.distance_from_driver_km).toFixed(1) + ' km away</span>' +
-                '<button onclick="muteRequestRing(\'' + r.id + '\', this)" style="margin-left:auto;padding:5px 10px;border:1px solid rgba(255,255,255,.15);background:transparent;color:var(--dim,#9A9AAE);border-radius:8px;font-size:11px;cursor:pointer">🔇 Mute</button>' +
+                '<button onclick="declineRequest(\'' + r.id + '\')" style="margin-left:auto;padding:5px 10px;border:1px solid rgba(255,255,255,.15);background:transparent;color:var(--dim,#9A9AAE);border-radius:8px;font-size:11px;cursor:pointer">🚫 Decline</button>' +
             '</div>' +
             '<div style="font-size:12px;color:var(--dim);margin-bottom:8px">👤 ' + esc(r.passenger_name || 'Passenger') + '</div>' +
             '<div class="req-route">' +
@@ -966,10 +998,26 @@ function stopAllRinging() {
     Object.keys(window.DRV_ringingTimers).forEach(stopRingingFor);
 }
 
-function muteRequestRing(requestId, btn) {
+/* Local-only dismissal (see the comment in renderNearbyRequests): stop
+   ringing, hide this one card, and remember it for the rest of this
+   session so a poll/SSE tick landing before it naturally expires
+   doesn't bring it straight back. */
+function declineRequest(requestId) {
     stopRingingFor(requestId);
-    if (btn) { btn.textContent = '🔇 Muted'; btn.disabled = true; btn.style.opacity = '0.5'; }
+    if (!DRV._dismissedRequestIds) DRV._dismissedRequestIds = {};
+    DRV._dismissedRequestIds[requestId] = true;
+    var card = document.getElementById('req-card-' + requestId);
+    if (card) card.remove();
+    if (!document.querySelector('#requests-list .req-card')) {
+        var el = document.getElementById('requests-list');
+        DRV._nearbyCount = 0;
+        _updateSheetFocus();
+        if (el) el.innerHTML = '<div class="empty-state"><div class="ei">🔍</div><p>Waiting for nearby requests…</p></div>';
+    }
 }
+/* Kept as an alias in case any external caller still references the old
+   name - functionally identical now that decline also mutes. */
+function muteRequestRing(requestId) { declineRequest(requestId); }
 
 function clearRideMarkers() {
     DRV.rideMarkers.forEach(function (m) { m.setMap(null); });
@@ -1057,6 +1105,7 @@ function _applyActiveRideUpdate(newRide) {
 function renderActiveRide(ride) {
     var container = document.getElementById('active-ride-container');
     _updateSheetFocus();
+    _updateTopbarStatus();
     if (!ride) {
         container.innerHTML = '<div class="empty-state"><div class="ei">✅</div><p>No active ride.<br>Go online to receive requests.</p></div>';
         return;
