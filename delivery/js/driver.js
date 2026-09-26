@@ -1108,6 +1108,7 @@ function renderActiveRide(ride) {
     _updateTopbarStatus();
     if (!ride) {
         container.innerHTML = '<div class="empty-state"><div class="ei">✅</div><p>No active ride.<br>Go online to receive requests.</p></div>';
+        DRV._routeEtaKey = null;
         return;
     }
 
@@ -1181,6 +1182,7 @@ function renderActiveRide(ride) {
         +   '<div class="ride-info-box" style="background:rgba(229,199,107,.08);border:1px solid var(--gbrd);border-radius:14px;padding:12px;flex:1"><div class="ride-info-k">Pickup</div><div style="font-size:12px;margin-top:4px;color:var(--text)">' + esc(ride.pickup_address || '—') + '</div></div>'
         +   '<div class="ride-info-box" style="background:rgba(78,205,196,.08);border:1px solid rgba(78,205,196,.2);border-radius:14px;padding:12px;flex:1"><div class="ride-info-k">Drop-off</div><div style="font-size:12px;margin-top:4px;color:var(--text)">' + esc(ride.dropoff_address || '—') + '</div></div>'
         + '</div>'
+        + '<div class="route-eta-badge" id="route-eta-badge" style="display:none"></div>'
         + extra
         + '<div style="display:flex;gap:8px;margin-bottom:12px">'
         +   '<div class="ride-info-box" style="flex:1;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:10px;text-align:center"><div class="ride-info-k">Fare</div><div style="font-size:18px;font-weight:800;color:var(--gold-lt)">ETB ' + parseFloat(ride.status === 'in_progress' && ride.meter_fare != null ? ride.meter_fare : (ride.fare_final || ride.fare_estimate || ride.fare || 0)).toFixed(0) + '</div></div>'
@@ -1190,6 +1192,7 @@ function renderActiveRide(ride) {
         + morePanel
         + '</div>';
     _syncWaitState(ride);
+    _maybeRefreshRouteEta(ride);
 }
 
 /* ── Ride actions ── */
@@ -1323,8 +1326,9 @@ function navigateTo(lat, lng) {
     DRV.map.panTo({ lat: lat, lng: lng });
 }
 
-function drawRoute(dest) {
-    if (!DRV.currentLat) { showDriverToast('Location not available', 'err'); return; }
+function drawRoute(dest, opts) {
+    var silent = opts && opts.silent;
+    if (!DRV.currentLat) { if (!silent) showDriverToast('Location not available', 'err'); return; }
     DRV.directionsService.route({
         origin: { lat: DRV.currentLat, lng: DRV.currentLng },
         destination: dest,
@@ -1333,9 +1337,37 @@ function drawRoute(dest) {
         if (status === 'OK') {
             DRV.directionsRenderer.setDirections(result);
             var leg = result.routes[0].legs[0];
-            showDriverToast('Route: ' + leg.distance.text + ' · ' + leg.duration.text, 'info');
+            if (!silent) showDriverToast('Route: ' + leg.distance.text + ' · ' + leg.duration.text, 'info');
+            var badge = document.getElementById('route-eta-badge');
+            if (badge) { badge.textContent = '🗺️ ' + leg.distance.text + ' · ' + leg.duration.text; badge.style.display = 'block'; }
         }
     });
+}
+
+/* Auto-computes and shows real distance/ETA to the driver's current leg
+   (pickup while going to pickup, destination while on trip) using the
+   same Google Directions call navigateTo() already makes on a manual
+   tap - just triggered once per leg instead of requiring the driver to
+   tap Nav first. Guarded by DRV._routeEtaKey so a re-render from a
+   background poll/SSE tick never re-requests the same route twice. */
+function _maybeRefreshRouteEta(ride) {
+    var badge = document.getElementById('route-eta-badge');
+    if (!ride) { if (badge) badge.style.display = 'none'; return; }
+    var dest, key;
+    if (ride.status === 'driver_assigned' || ride.status === 'accepted') {
+        dest = { lat: parseFloat(ride.pickup_lat || 0), lng: parseFloat(ride.pickup_lng || 0) };
+        key = ride.id + ':pickup:' + dest.lat + ',' + dest.lng;
+    } else if (ride.status === 'in_progress') {
+        dest = { lat: parseFloat(ride.dropoff_lat || 0), lng: parseFloat(ride.dropoff_lng || 0) };
+        key = ride.id + ':dropoff:' + dest.lat + ',' + dest.lng;
+    } else {
+        if (badge) badge.style.display = 'none';
+        return;
+    }
+    if (!dest.lat || !dest.lng) { if (badge) badge.style.display = 'none'; return; }
+    if (DRV._routeEtaKey === key) return;
+    DRV._routeEtaKey = key;
+    drawRoute(dest, { silent: true });
 }
 
 /* ── Profile & Earnings ── */
