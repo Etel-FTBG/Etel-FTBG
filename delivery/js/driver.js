@@ -911,7 +911,7 @@ function renderNearbyRequests(requests) {
         DRV.rideMarkers.push(marker);
 
         var expiryLeft = r.expires_at ? Math.max(0, Math.round((new Date(r.expires_at) - new Date()) / 1000)) : 0;
-        return '<div class="req-card" id="req-card-' + r.id + '">' +
+        return '<div class="req-card" id="req-card-' + r.id + '" data-expires-at="' + esc(r.expires_at || '') + '">' +
             '<div class="req-top">' +
                 '<div class="req-fare">ETB ' + parseFloat(r.fare_final).toFixed(0) + '</div>' +
                 '<span class="req-dist-badge">📍 ' + parseFloat(r.distance_from_driver_km).toFixed(1) + ' km away</span>' +
@@ -923,7 +923,7 @@ function renderNearbyRequests(requests) {
                 '<div class="req-connector"></div>' +
                 '<div class="req-stop"><div class="req-stop-dot dropoff"></div><div class="req-addr">' + esc(r.dropoff_address || 'Drop-off') + ' <small>· ' + parseFloat(r.distance_km).toFixed(1) + ' km</small></div></div>' +
             '</div>' +
-            (expiryLeft ? '<div style="font-size:11px;color:var(--dim);margin-bottom:10px">⏱ Expires in ' + expiryLeft + 's</div>' : '') +
+            (expiryLeft ? '<div class="req-expiry-text" style="font-size:11px;color:var(--dim);margin-bottom:10px">⏱ Expires in ' + expiryLeft + 's</div>' : '') +
             '<div class="slide-accept-wrap">' +
               '<div class="slide-accept-track" data-ride-id="' + r.id + '">' +
                 '<div class="slide-accept-fill"></div>' +
@@ -1018,6 +1018,44 @@ function declineRequest(requestId) {
 /* Kept as an alias in case any external caller still references the old
    name - functionally identical now that decline also mutes. */
 function muteRequestRing(requestId) { declineRequest(requestId); }
+
+/* A request card's countdown used to be computed once at render time and
+   never updated again until the next poll/SSE tick happened to redraw
+   the whole list - so it both froze between refreshes and, worse, could
+   sit on screen reading "Expires in 0s" (or a stale positive number)
+   indefinitely if the next refresh was delayed. This ticks every second
+   off the real expires_at timestamp and removes a card itself the
+   moment it's actually expired, rather than waiting on the network. */
+function _tickRequestExpiries() {
+    var cards = document.querySelectorAll('.req-card[data-expires-at]');
+    cards.forEach(function (card) {
+        var expiresAt = card.getAttribute('data-expires-at');
+        if (!expiresAt) return;
+        var secondsLeft = Math.round((new Date(expiresAt) - Date.now()) / 1000);
+        if (secondsLeft <= 0) {
+            var id = card.id.replace('req-card-', '');
+            stopRingingFor(id);
+            if (DRV._seenRequestIds) delete DRV._seenRequestIds[id];
+            card.remove();
+            if (!document.querySelector('#requests-list .req-card')) {
+                DRV._nearbyCount = 0;
+                _updateSheetFocus();
+                var el = document.getElementById('requests-list');
+                if (el) el.innerHTML = '<div class="empty-state"><div class="ei">🔍</div><p>Waiting for nearby requests…</p></div>';
+            }
+            return;
+        }
+        var label = card.querySelector('.req-expiry-text');
+        if (label) label.textContent = '⏱ Expires in ' + secondsLeft + 's';
+    });
+}
+/* Started exactly once when this script first loads, guarded so a
+   duplicate <script> load or a hot-reload during development can never
+   stack a second ticking interval on top of this one. */
+if (!window._etelReqExpiryTickStarted) {
+    window._etelReqExpiryTickStarted = true;
+    setInterval(_tickRequestExpiries, 1000);
+}
 
 function clearRideMarkers() {
     DRV.rideMarkers.forEach(function (m) { m.setMap(null); });
