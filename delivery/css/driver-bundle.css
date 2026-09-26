@@ -93,6 +93,17 @@ body{background:transparent;color:var(--text);font-family:var(--f);min-height:10
 .empty-state .ei{font-size:42px;margin-bottom:12px;opacity:.8}
 .empty-state p{font-size:13px;line-height:1.6}
 
+/* Big state-specific header on the Online/Offline empty state and atop
+   the active-ride card, e.g. "GOING TO PICKUP" / "TRIP IN PROGRESS" -
+   makes the current state readable at a glance instead of only living
+   in the small topbar subtitle. */
+.state-empty.empty-state{padding-top:28px}
+.state-empty-header{font-family:var(--f-d);font-size:22px;font-weight:800;
+  color:var(--success,#2ECC71);margin-bottom:14px;letter-spacing:-.01em}
+.state-empty-header--offline{color:var(--text-muted,var(--dim))}
+.ride-state-header{font-family:var(--f-d);font-size:22px;font-weight:800;
+  color:var(--text);margin-bottom:10px;letter-spacing:-.01em}
+
 /* ── REQUEST CARD ── */
 .req-card{background:var(--panel2);border:1px solid var(--line);border-radius:var(--r);padding:16px;margin-bottom:12px;
   position:relative;overflow:hidden;animation:cardIn .45s var(--ease) both;transition:transform .2s var(--ease),border-color .2s,box-shadow .2s}

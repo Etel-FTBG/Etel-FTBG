@@ -85,11 +85,12 @@
     var breakdown = (hasBreakdown && typeof _fareBreakdownHtml === "function")
       ? _fareBreakdownHtml(Object.assign({}, ride, { fare_total: fare, status: "completed" }))
       : "";
-    return '<div style="text-align:center;margin-bottom:18px">' +
-      '<div style="font-size:34px;margin-bottom:4px">✅</div>' +
-      '<div style="font-size:13px;font-weight:800;color:#9A9AAE;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Trip Completed</div>' +
-      '<div style="font-family:\'Sora\',sans-serif;font-size:32px;font-weight:800;color:#F5E7B8;margin-bottom:8px">ETB ' + fare.toFixed(0) + '</div>' +
-      '<div style="display:flex;justify-content:center;gap:14px;font-size:12px;color:#9A9AAE;margin-bottom:' + (breakdown ? "14" : "4") + 'px">' +
+    return '<div style="text-align:center;margin-bottom:22px">' +
+      '<div style="width:64px;height:64px;margin:0 auto 14px;border-radius:50%;background:rgba(46,204,113,.12);border:2px solid rgba(46,204,113,.4);display:flex;align-items:center;justify-content:center;font-size:32px;color:#2ECC71">✓</div>' +
+      '<div style="font-family:\'Sora\',sans-serif;font-size:20px;font-weight:800;color:#EDEDF5;margin-bottom:2px">Trip Completed</div>' +
+      '<div style="font-size:12px;color:#9A9AAE;margin-bottom:16px">Great job!</div>' +
+      '<div style="font-family:\'Sora\',sans-serif;font-size:36px;font-weight:800;color:#F5E7B8;margin-bottom:8px">ETB ' + fare.toFixed(0) + '</div>' +
+      '<div style="display:flex;justify-content:center;gap:14px;font-size:12px;color:#9A9AAE;margin-bottom:' + (breakdown ? "16" : "4") + 'px">' +
         (km ? '<span>' + km.toFixed(1) + ' km</span>' : '') +
         (durationLine ? '<span>' + durationLine + '</span>' : '') +
       '</div>' +
@@ -103,9 +104,13 @@
     var rideId = ride.id;
     var wrap = document.createElement("div");
     wrap.id = "etel-rate-rider-sheet";
-    wrap.style.cssText = "position:fixed;inset:0;z-index:20000;background:rgba(5,5,10,.75);display:flex;align-items:flex-end;justify-content:center;font-family:'Outfit',sans-serif;overflow-y:auto";
+    /* Full-screen completion moment, not a bottom sheet - this is the
+       driver's one dedicated "Trip Completed" screen, so it takes the
+       whole viewport like every other ride state rather than floating
+       as a popover over whatever was behind it. */
+    wrap.style.cssText = "position:fixed;inset:0;z-index:20000;background:linear-gradient(180deg,#0d0d16,#08080f);display:flex;align-items:center;justify-content:center;font-family:'Outfit',sans-serif;overflow-y:auto;padding:env(safe-area-inset-top,20px) 20px env(safe-area-inset-bottom,20px)";
     wrap.innerHTML =
-      '<div style="width:min(460px,100vw);background:linear-gradient(180deg,#14141f,#0b0b13);border:1px solid rgba(212,175,55,.16);border-bottom:none;border-radius:22px 22px 0 0;padding:24px 20px max(24px,env(safe-area-inset-bottom,24px));text-align:center">' +
+      '<div style="width:min(460px,100%);margin:auto;padding:24px 4px;text-align:center">' +
       _completionSummaryHtml(ride) +
       '<div style="border-top:1px solid rgba(255,255,255,.08);margin-bottom:18px"></div>' +
       '<div style="font-size:16px;font-weight:800;color:#EDEDF5;margin-bottom:6px">Rate your rider</div>' +
