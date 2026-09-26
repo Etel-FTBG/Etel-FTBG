@@ -1250,8 +1250,18 @@ function renderActiveRide(ride) {
             + '<div id="wait-toggle-box" style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px;background:rgba(255,255,255,.03);border:1px solid rgba(212,175,55,.15);border-radius:12px;padding:12px 14px;transition:all .25s">'
             +   '<div><div class="ride-info-k">Waiting for customer</div><div id="wait-status-text" style="font-size:13px;font-weight:700;color:var(--text-dim);margin-top:2px">Not waiting</div></div>'
             +   '<button id="wait-toggle-btn" onclick="toggleWaitFee()" style="border:none;border-radius:10px;padding:10px 16px;font-weight:700;font-size:12.5px;cursor:pointer;background:linear-gradient(135deg,#FFD700,#D4AF37);color:#1a1206;white-space:nowrap">⏱ Start Waiting</button>'
-            + '</div>'
-            + (ride.fare_total != null ? _fareBreakdownHtml(ride) : '');
+            + '</div>';
+        /* The itemized Fare Breakdown table (base/distance/subtotal/total)
+           used to also render here, live, throughout the entire trip -
+           stacked directly below the running meter box, in the same
+           card, it read as a second "billing" screen sitting on top of
+           the "Trip in Progress" screen (reported as the trip card
+           appearing to render two different interfaces for the same
+           ride). The running "Current fare" figure in the meter box
+           above already gives the driver a live total; the itemized
+           breakdown now only appears once the trip actually reaches
+           'arrived' (awaiting payment) below, which is the one moment
+           it's actually meant to be read as a bill. */
     }
     if (ride.status === 'arrived') {
         extra = '<div style="margin-bottom:12px;background:rgba(46,204,113,.08);border:1px solid rgba(46,204,113,.35);border-radius:12px;padding:14px;text-align:center">'
