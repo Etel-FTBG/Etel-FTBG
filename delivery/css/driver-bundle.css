@@ -140,7 +140,7 @@ body{background:transparent;color:var(--text);font-family:var(--f);min-height:10
    proactively instead of requiring that tap first. */
 .route-eta-badge{margin-bottom:12px;padding:8px 12px;border-radius:10px;
   background:rgba(78,205,196,.08);border:1px solid rgba(78,205,196,.25);
-  color:var(--teal);font-size:12.5px;font-weight:700;text-align:center}
+  color:var(--info);font-size:12.5px;font-weight:700;text-align:center}
 
 .ride-actions{display:flex;gap:10px;margin-top:6px}
 .action-btn{flex:1;padding:13px;border:none;border-radius:13px;cursor:pointer;font-family:var(--f);font-size:13px;font-weight:800;
