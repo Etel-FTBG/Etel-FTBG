@@ -1307,6 +1307,54 @@ function useMyCurrentLocationForPickup(btnEl) {
     _rideToast(msg, 'err');
   }, { enableHighAccuracy: true, timeout: 8000 });
 }
+
+/* Auto-set pickup to the rider's current location when the page opens.
+   The bundle's own startup locate (_geolocateUser in ride.js) asks only
+   for high-accuracy GPS with an 8s timeout and silently gives up on
+   failure - common indoors - and even on success fills the field with a
+   bare "Your location" instead of an address. This retries with network
+   location on GPS failure and reverse-geocodes to a real address, the
+   same way the 🎯 button does. It never overwrites a pickup the rider
+   chose themselves, and does nothing during an active ride. */
+(function autoLocateOnOpen() {
+  if (!navigator.geolocation) return;
+  var tries = 0;
+  (function waitForMap() {
+    if (window.RIDE && RIDE.map && RIDE.geocoder && typeof setPickup === 'function') return locate();
+    if (tries++ < 50) setTimeout(waitForMap, 200);
+  })();
+
+  function pickupIsUntouched() {
+    if (RIDE.currentRideId || RIDE.currentRequestId) return false;
+    var v = ((document.getElementById('pickup-input') || {}).value || '').trim();
+    return !RIDE.pickupLatLng || v === '' || v === 'Your location';
+  }
+
+  function apply(pos) {
+    if (!pickupIsUntouched()) return;
+    var lat = pos.coords.latitude, lng = pos.coords.longitude;
+    try { RIDE.map.setCenter({ lat: lat, lng: lng }); } catch (e) {}
+    RIDE.geocoder.geocode({ location: { lat: lat, lng: lng } }, function (res, status) {
+      if (!pickupIsUntouched()) return;
+      var addr = (status === 'OK' && res && res[0]) ? res[0].formatted_address : 'Your current location';
+      setPickup(lat, lng, addr);
+      var pi = document.getElementById('pickup-input');
+      if (pi) pi.value = addr;
+    });
+  }
+
+  function locate() {
+    if (!pickupIsUntouched()) return;
+    navigator.geolocation.getCurrentPosition(apply, function (err) {
+      if (err && err.code === 1) {
+        _rideToast('Allow location access to set your pickup automatically, or tap 🎯', 'err');
+        return;
+      }
+      // GPS unavailable/slow (typical indoors): fall back to network location.
+      navigator.geolocation.getCurrentPosition(apply, function () {}, { enableHighAccuracy: false, timeout: 15000, maximumAge: 300000 });
+    }, { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 });
+  }
+})();
 </script>
 <!-- Canary release loader - resolves and injects the right version of
      ride-bundle.js + ride-bundle-extra.js for THIS user (stable vs
