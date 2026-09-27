@@ -7,6 +7,18 @@
   --r-green:#35D17C;--r-red:#EF5350;--r-shadow:0 18px 55px rgba(0,0,0,.42);
 }
 html,body{background:var(--r-bg)!important;color:var(--r-text)!important}
+/* Real, tappable sheet-collapse control - see the comment above it in
+   ride/index.html. Sits where the purely-decorative drag-handle bar
+   (.ride-sheet::before, still shown behind it) already was, but this is
+   an actual <button> wired to the existing toggleSheet(), not a restyle
+   of that bar. Full-width hit target for a reliable tap, not just the
+   small bar's width. */
+.sheet-toggle-btn{
+  display:block;width:100%;min-height:30px;padding:6px 0 2px;margin:-4px 0 4px;
+  background:transparent;border:none;color:var(--r-muted);font-size:15px;
+  line-height:1;cursor:pointer;flex-shrink:0;
+}
+.sheet-toggle-btn:active{color:var(--r-gold2)}
 body.dark-page{font-family:'Outfit',system-ui,sans-serif!important;background:radial-gradient(circle at 50% -20%,rgba(212,175,55,.12),transparent 38%),#08090f!important}
 #ride-map{filter:saturate(.86) contrast(.98);}
 .ride-header{
