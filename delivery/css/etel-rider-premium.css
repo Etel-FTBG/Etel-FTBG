@@ -93,7 +93,13 @@ body.dark-page{font-family:'Outfit',system-ui,sans-serif!important;background:ra
 /* core.js's floating theme toggle sits at bottom:24px, which now lands
    on top of the bottom nav's History tab - lift it clear, level with
    the SOS button on the other side. */
-.dark-toggle-btn{bottom:calc(env(safe-area-inset-bottom,0px) + 90px)!important;width:46px!important;height:46px!important}
+/* Floating buttons live over the MAP, never over the sheet: the sheet is
+   capped at 66vh, so the band just below the header is always map. The
+   SOS button (sos-button.js, shared with Driver - overridden only here)
+   sat at bottom:90px and covered the fare/price once the sheet scrolled. */
+#sos-fab,#sos-sent-badge{top:calc(env(safe-area-inset-top,0px) + 84px)!important;bottom:auto!important;left:14px!important}
+#sos-fab{width:46px!important;height:46px!important}
+.dark-toggle-btn{top:calc(env(safe-area-inset-top,0px) + 136px)!important;bottom:auto!important;right:14px!important;width:42px!important;height:42px!important;font-size:19px!important}
 /* Delivery cross-sell card rendered in off-brand blue link color. */
 #view-book > a.loc-card > div > div:first-child{color:var(--r-gold2)!important}
 #view-book > a.loc-card > div > div:last-child,#view-book > a.loc-card > div:last-child{color:var(--r-muted)!important}
