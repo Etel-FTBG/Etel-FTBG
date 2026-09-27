@@ -293,6 +293,15 @@
 
 <!-- BOTTOM SHEET -->
 <div class="ride-sheet">
+  <!-- The sheet auto-collapses to a thin strip the moment a search starts
+       (showView('searching') in ride.js calls the same toggleSheet() this
+       button calls), but until now nothing in this markup could call
+       toggleSheet() again - so once collapsed, a rider had no way to
+       re-open the sheet to see or cancel their request. The decorative
+       drag-handle bar (.ride-sheet::before in ride-bundle.css) is a
+       pseudo-element and can't be tapped, so this is a real, separate,
+       always-visible control - not just a restyle of that bar. -->
+  <button type="button" id="sheet-toggle-btn" class="sheet-toggle-btn" onclick="toggleSheet()" aria-label="Expand or collapse ride panel">▼</button>
   <div class="ride-tabs" style="display:flex;gap:0;overflow-x:auto;scrollbar-width:none">
     <button class="ride-tab" data-tab="book" onclick="switchRideTab('book')">🚗 Book</button>
     <button class="ride-tab" data-tab="hail" onclick="switchRideTab('hail')">🚖 Street Hail</button>
