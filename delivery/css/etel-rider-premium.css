@@ -20,7 +20,12 @@ html,body{background:var(--r-bg)!important;color:var(--r-text)!important}
 }
 .sheet-toggle-btn:active{color:var(--r-gold2)}
 body.dark-page{font-family:'Outfit',system-ui,sans-serif!important;background:radial-gradient(circle at 50% -20%,rgba(212,175,55,.12),transparent 38%),#08090f!important}
-#ride-map{filter:saturate(.86) contrast(.98);}
+/* Map stays the real Google map - this just gives the UI a legibility
+   veil over it (darker near the header/sheet edges) so overlaid text
+   and controls stay readable regardless of what the map tiles show. */
+#ride-map{filter:saturate(.86) contrast(.98);position:relative}
+#ride-map::after{content:'';position:absolute;inset:0;pointer-events:none;z-index:1;
+  background:linear-gradient(180deg,rgba(4,4,8,.38),transparent 26%,transparent 62%,rgba(5,5,9,.55));}
 .ride-header{
   height:68px!important;min-height:68px!important;padding:9px 14px!important;
   background:linear-gradient(180deg,rgba(9,10,15,.97),rgba(9,10,15,.88))!important;
@@ -28,7 +33,8 @@ body.dark-page{font-family:'Outfit',system-ui,sans-serif!important;background:ra
   box-shadow:0 8px 28px rgba(0,0,0,.28)!important;backdrop-filter:blur(12px)!important;
 }
 .ride-logo-box{width:44px!important;height:44px!important;border-radius:14px!important;border:1px solid rgba(212,175,55,.5)!important;box-shadow:0 8px 24px rgba(212,175,55,.18)!important}
-.ride-header-title{font-family:'Sora',sans-serif!important;font-weight:800!important;letter-spacing:.02em!important;color:#fff!important;font-size:16px!important}
+.ride-header-title{font-family:'Sora',sans-serif!important;font-weight:800!important;letter-spacing:.02em!important;font-size:16px!important;
+  background:linear-gradient(180deg,#fff2ad,#d4af37 75%)!important;-webkit-background-clip:text!important;background-clip:text!important;color:transparent!important}
 .ride-header-sub{color:var(--r-gold2)!important;font-size:10px!important;font-weight:700!important;letter-spacing:.08em!important}
 .ride-header-user button{min-height:34px!important}
 .ride-header-user button:last-child{background:rgba(255,255,255,.06)!important;border-color:rgba(255,255,255,.14)!important;color:#D6D8E2!important}
@@ -56,7 +62,10 @@ body.dark-page{font-family:'Outfit',system-ui,sans-serif!important;background:ra
 .loc-icon.dropoff{background:rgba(96,180,255,.14)!important;border-color:rgba(96,180,255,.4)!important}
 .pay-row{display:grid!important;grid-template-columns:1fr 1fr!important;gap:8px!important;padding:5px!important;border-radius:16px!important;margin-top:10px!important}
 .pay-opt{border-radius:12px!important;padding:12px!important}.pay-opt.active{background:rgba(212,175,55,.15)!important;box-shadow:inset 0 0 0 1px rgba(212,175,55,.4)!important;color:var(--r-gold2)!important}
-.fare-card{border-radius:18px!important;margin-top:10px!important;padding:15px!important}.fare-amount{font-family:'Sora',sans-serif!important;color:var(--r-gold2)!important;font-size:25px!important;font-weight:900!important}.fare-label{color:#8D91A0!important}.fare-type-badge{background:rgba(212,175,55,.12)!important;color:var(--r-gold2)!important;border-color:rgba(212,175,55,.25)!important}
+.fare-card{border-radius:18px!important;margin-top:10px!important;padding:15px!important}
+.fare-amount{font-family:'Sora',sans-serif!important;font-size:27px!important;font-weight:900!important;
+  background:linear-gradient(180deg,#fff3b0,#d4af37)!important;-webkit-background-clip:text!important;background-clip:text!important;color:transparent!important}
+.fare-label{color:#8D91A0!important}.fare-type-badge{background:rgba(212,175,55,.12)!important;color:var(--r-gold2)!important;border-color:rgba(212,175,55,.25)!important}
 .slide-book-wrap{width:100%!important;max-width:none!important;margin:14px auto 0!important}.slide-book-track{height:58px!important;border-radius:17px!important;background:linear-gradient(135deg,#EFD064,#C89A24)!important;border:1px solid rgba(255,233,168,.55)!important;box-shadow:0 14px 34px rgba(212,175,55,.22)!important}.slide-book-label{color:#17130A!important;font-weight:900!important}.slide-book-thumb{background:#151820!important;color:var(--r-gold2)!important;border:1px solid rgba(255,255,255,.1)!important;width:50px!important;height:50px!important}
 .btn-outline,.ride-book-btn{border-radius:15px!important;min-height:48px!important;font-weight:800!important}.ride-book-btn{background:linear-gradient(135deg,#F7D66D,#C49422)!important;color:#16120A!important;border:0!important;box-shadow:0 10px 25px rgba(212,175,55,.16)!important}
 .btn-danger{border-color:rgba(239,83,80,.38)!important;color:#FF7773!important;background:rgba(239,83,80,.07)!important}
@@ -72,3 +81,16 @@ body.dark-page{font-family:'Outfit',system-ui,sans-serif!important;background:ra
 .mp-badge{color:var(--r-gold2)!important;background:rgba(212,175,55,.10)!important;border-color:rgba(212,175,55,.28)!important}
 .reason-chip.selected{border-color:var(--r-gold)!important;background:rgba(212,175,55,.12)!important;color:var(--r-gold2)!important}
 @media(max-width:520px){.ride-header-user a{display:none}.ride-sheet{padding-left:12px!important;padding-right:12px!important}.ride-tab{font-size:10px!important;padding:10px 4px!important}.vtype-chip{min-width:92px!important}}
+
+/* Tablet/desktop: the sheet and header were full-bleed at any width,
+   reading as a stretched phone layout rather than something designed
+   for a larger screen. Center both as a fixed-width phone-proportioned
+   column instead - the map (position:fixed, full viewport) is
+   untouched either way. */
+@media(min-width:700px){
+  .ride-sheet{left:50%!important;right:auto!important;width:520px!important;transform:translateX(-50%)!important;border-left:1px solid rgba(212,175,55,.12)!important;border-right:1px solid rgba(212,175,55,.12)!important}
+  .ride-header{max-width:760px!important;left:50%!important;right:auto!important;width:100%!important;transform:translateX(-50%)!important}
+}
+
+.searching-timer{font-size:32px!important;text-shadow:0 0 20px rgba(212,175,55,.18)!important}
+.star-btn{filter:drop-shadow(0 4px 10px rgba(212,175,55,.2))}
