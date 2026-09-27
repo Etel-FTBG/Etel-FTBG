@@ -1355,6 +1355,67 @@ function useMyCurrentLocationForPickup(btnEl) {
     }, { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 });
   }
 })();
+
+/* Two-step Book flow (matches the reference mockup): step 1 "where to"
+   (pickup, destination, quick zones, open meter), step 2 "ride" (vehicle,
+   fare, payment, schedule, slide-to-request). Pure show/hide of the
+   existing elements via #view-book[data-step] - every input, handler,
+   fare calculation and bookRide() call is the original one, untouched. */
+(function bookSteps() {
+  var view = document.getElementById('view-book');
+  if (!view) return;
+
+  function routeReady() {
+    return !!(window.RIDE && RIDE.pickupLatLng && (RIDE.dropoffLatLng || RIDE.manualKm));
+  }
+  function val(id) { return ((document.getElementById(id) || {}).value || '').trim(); }
+
+  var title = document.createElement('div');
+  title.id = 'book-step-title'; title.className = 'sheet-title';
+  title.textContent = 'Where are you going?';
+  view.insertBefore(title, view.firstChild);
+
+  var summary = document.createElement('div');
+  summary.id = 'book-route-summary';
+  summary.innerHTML =
+    '<div class="brs-rows"><div class="brs-row"><span class="brs-dot pickup"></span><span class="brs-text" id="brs-pickup"></span></div>' +
+    '<div class="brs-row"><span class="brs-dot dropoff"></span><span class="brs-text" id="brs-dropoff"></span></div></div>' +
+    '<button type="button" class="brs-change">Change</button>';
+  view.insertBefore(summary, title.nextSibling);
+  summary.querySelector('.brs-change').addEventListener('click', function () { setStep(1); });
+
+  var filterBtn = document.getElementById('driver-map-filter-btn');
+  if (filterBtn && filterBtn.parentNode && filterBtn.parentNode.parentNode === view) filterBtn.parentNode.classList.add('book-vehicle-extra');
+
+  var cont = document.createElement('button');
+  cont.type = 'button'; cont.id = 'book-continue'; cont.className = 'ride-book-btn';
+  cont.textContent = 'Choose vehicle →';
+  var anchor = document.getElementById('bykm-card') || view.querySelector('.loc-card');
+  view.insertBefore(cont, anchor ? anchor.nextSibling : null);
+  cont.addEventListener('click', function () {
+    if (!routeReady()) {
+      if (typeof _rideToast === 'function') _rideToast('Set your pickup and destination first (or pick an Open meter distance)', 'err');
+      return;
+    }
+    setStep(2);
+  });
+
+  function setStep(n) {
+    view.setAttribute('data-step', String(n));
+    if (n === 2) {
+      document.getElementById('brs-pickup').textContent = val('pickup-input') || 'Pickup';
+      document.getElementById('brs-dropoff').textContent = val('dropoff-input') || 'Destination';
+    }
+    view.scrollTop = 0;
+  }
+  setStep(1);
+
+  // Drop back to step 1 if the route is cleared (e.g. after a completed or
+  // cancelled ride resets pickup/destination).
+  setInterval(function () {
+    if (view.getAttribute('data-step') === '2' && !routeReady()) setStep(1);
+  }, 800);
+})();
 </script>
 <!-- Canary release loader - resolves and injects the right version of
      ride-bundle.js + ride-bundle-extra.js for THIS user (stable vs
