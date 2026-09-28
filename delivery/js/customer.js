@@ -249,9 +249,13 @@ function filterBySG(sgId) {
 // ── SHOP DETAIL (Menu / Info tabs) — real items + real service_giver
 // fields already present on each item row (business_name, zone,
 // service_type, rating) from customer_get_items; no new endpoint. ──
+let _shopDetailSgId = null;
+let _shopDetailReviewsLoaded = false;
 function openShopDetail(sgId) {
     const items = itemsCache.filter(function(i){ return i.service_giver_id == sgId; });
     if (!items.length) { filterBySG(sgId); return; }
+    _shopDetailSgId = sgId;
+    _shopDetailReviewsLoaded = false;
     const first = items[0];
     const emoji  = {restaurant:'🍽️',grocery:'🛒',pharmacy:'💊',laundry:'👕',cafe:'☕',fastfood:'🍔',bakery:'🧁',general:'🏪'};
     const ic = emoji[first.service_type] || '🏪';
@@ -280,11 +284,48 @@ function infoRow(icon, label, value) {
 }
 function switchShopDetailTab(tab) {
     document.getElementById('shop-tab-menu').classList.toggle('active', tab === 'menu');
+    document.getElementById('shop-tab-reviews').classList.toggle('active', tab === 'reviews');
     document.getElementById('shop-tab-info').classList.toggle('active', tab === 'info');
     document.getElementById('shop-detail-menu-panel').style.display = tab === 'menu' ? 'grid' : 'none';
+    document.getElementById('shop-detail-reviews-panel').style.display = tab === 'reviews' ? 'block' : 'none';
     document.getElementById('shop-detail-info-panel').style.display = tab === 'info' ? 'block' : 'none';
+    if (tab === 'reviews' && !_shopDetailReviewsLoaded) loadShopReviews(_shopDetailSgId);
 }
 function closeShopDetail() { document.getElementById('view-shop-detail').style.display = 'none'; }
+
+// ── SHOP REVIEWS — real get_shop_reviews action (added alongside this
+// feature) scoped to orders actually assigned to this service_giver_id.
+async function loadShopReviews(sgId) {
+    const el = document.getElementById('shop-detail-reviews-panel');
+    if (!el || !sgId) return;
+    el.innerHTML = UI.loading('Loading reviews...');
+    const res = await apiGet('get_shop_reviews', {service_giver_id: sgId, limit: 20});
+    _shopDetailReviewsLoaded = true;
+    if (!res || !res.success) {
+        el.innerHTML = '<div style="padding:20px;text-align:center;color:rgba(247,241,223,.5);font-size:13px">Could not load reviews.</div>';
+        return;
+    }
+    const reviews = res.data.reviews || [];
+    const avg = res.data.average || 0;
+    const total = res.data.total || 0;
+    let html = '<div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;padding:14px;background:var(--glass-2);border:1px solid var(--glass-border);border-radius:14px">' +
+        '<div style="font-size:28px;font-weight:800;color:#F0CA58">' + (avg ? avg.toFixed(1) : '—') + '</div>' +
+        '<div><div style="color:#F0CA58;font-size:13px">' + '★'.repeat(Math.round(avg)) + '☆'.repeat(5 - Math.round(avg)) + '</div>' +
+        '<div style="font-size:11px;color:rgba(247,241,223,.5);margin-top:2px">' + total + (total === 1 ? ' review' : ' reviews') + '</div></div></div>';
+    if (!reviews.length) {
+        html += '<div style="padding:30px 10px;text-align:center;color:rgba(247,241,223,.4);font-size:13px">No reviews yet for this shop.</div>';
+    } else {
+        html += reviews.map(function(r) {
+            return '<div style="padding:14px;margin-bottom:10px;background:rgba(255,255,255,.03);border:1px solid rgba(212,175,55,.12);border-radius:12px">' +
+                '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">' +
+                '<span style="color:#F0CA58;font-size:13px">' + '★'.repeat(r.stars) + '☆'.repeat(5 - r.stars) + '</span>' +
+                '<span style="font-size:10.5px;color:rgba(247,241,223,.4)">' + fmtDate(r.rated_at) + '</span></div>' +
+                (r.comment ? '<div style="font-size:12.5px;color:rgba(247,241,223,.75);margin-bottom:4px">' + escapeHtml(r.comment) + '</div>' : '') +
+                '<div style="font-size:11px;color:rgba(247,241,223,.4)">— ' + escapeHtml(r.reviewer_first_name || 'Customer') + '</div></div>';
+        }).join('');
+    }
+    el.innerHTML = html;
+}
 
 // ── CATEGORY STOREFRONT (Groceries / Pharmacy) — real customer_get_items
 // call filtered by the real item.category column. ──
@@ -312,6 +353,85 @@ function filterCategoryView(q) {
     renderItemsGrid(filtered, 'category-items-grid');
 }
 function closeCategoryView() { document.getElementById('view-category').style.display = 'none'; }
+
+// ── TRACK ORDER — real track_order polling + a real Google Map using
+// couriers.last_lat/last_lng (written by courier_update_location) and
+// orders.delivery_lat/delivery_lng (written at checkout). Both columns
+// already existed and were already populated; track_order just never
+// selected/exposed them until this change. ──
+let _trackOrderId = null;
+let _trackPollTimer = null;
+let _trackGMap = null, _trackDestMarker = null, _trackCourierMarker = null;
+
+async function openTrackOrder(orderId) {
+    _trackOrderId = orderId;
+    document.getElementById('view-track-order').style.display = 'block';
+    document.getElementById('track-map').innerHTML = 'Loading map…';
+    await refreshTrackOrder();
+    if (_trackPollTimer) clearInterval(_trackPollTimer);
+    _trackPollTimer = setInterval(refreshTrackOrder, 8000);
+}
+function closeTrackOrder() {
+    document.getElementById('view-track-order').style.display = 'none';
+    if (_trackPollTimer) { clearInterval(_trackPollTimer); _trackPollTimer = null; }
+    _trackOrderId = null; _trackGMap = null; _trackDestMarker = null; _trackCourierMarker = null;
+}
+async function refreshTrackOrder() {
+    if (!_trackOrderId) return;
+    const res = await apiGet('track_order', {order_id: _trackOrderId});
+    if (!res || !res.success) return;
+    const o = res.data.order, timeline = res.data.timeline || [];
+    document.getElementById('track-order-code').textContent = o.order_code || ('Order #' + _trackOrderId);
+    document.getElementById('track-order-status').textContent = (o.status || '').replace('_', ' ');
+    document.getElementById('track-timeline').innerHTML =
+        '<div style="background:var(--glass-2);border:1px solid var(--glass-border);border-radius:16px;padding:16px">' +
+        timeline.map(function(t, i) {
+            const color = t.done ? '#D4AF37' : 'rgba(255,255,255,.15)';
+            return '<div style="display:flex;align-items:center;gap:12px' + (i < timeline.length - 1 ? ';margin-bottom:14px' : '') + '">' +
+                '<div style="width:12px;height:12px;border-radius:50%;background:' + color + ';flex-shrink:0;box-shadow:' + (t.current ? '0 0 10px rgba(212,175,55,.6)' : 'none') + '"></div>' +
+                '<span style="font-size:13px;color:' + (t.done ? 'var(--text)' : 'rgba(247,241,223,.4)') + ';font-weight:' + (t.current ? '700' : '500') + '">' + escapeHtml(t.label) + '</span></div>';
+        }).join('') + '</div>';
+    document.getElementById('track-courier-card').innerHTML = o.courier_name
+        ? '<div style="display:flex;align-items:center;gap:12px;padding:14px;background:var(--glass-2);border:1px solid var(--glass-border);border-radius:14px;margin-top:14px">' +
+          '<div style="width:44px;height:44px;border-radius:50%;background:rgba(212,175,55,.15);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">🛵</div>' +
+          '<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:700;color:var(--text)">' + escapeHtml(o.courier_name) + '</div>' +
+          '<div style="font-size:11px;color:rgba(247,241,223,.5)">' + escapeHtml(o.courier_vehicle || 'Courier') + '</div></div>' +
+          (o.courier_phone ? '<a href="tel:' + escapeHtml(o.courier_phone) + '" style="width:38px;height:38px;border-radius:50%;background:rgba(34,197,94,.15);border:1px solid rgba(34,197,94,.3);display:flex;align-items:center;justify-content:center;font-size:16px;text-decoration:none;flex-shrink:0">📞</a>' : '') +
+          '</div>'
+        : '';
+    updateTrackMap(o);
+}
+function updateTrackMap(o) {
+    const mapEl = document.getElementById('track-map');
+    if (!mapEl) return;
+    if (!(window.google && window.google.maps)) { mapEl.textContent = 'Map unavailable (still loading Google Maps)'; return; }
+    const hasDest = o.delivery_lat && o.delivery_lng;
+    const hasCourier = o.courier_lat && o.courier_lng;
+    if (!hasDest && !hasCourier) { mapEl.textContent = 'Location not available for this order yet.'; return; }
+    if (!_trackGMap) {
+        mapEl.textContent = '';
+        _trackGMap = new google.maps.Map(mapEl, {
+            zoom: 14,
+            center: hasDest ? {lat: +o.delivery_lat, lng: +o.delivery_lng} : {lat: +o.courier_lat, lng: +o.courier_lng},
+            disableDefaultUI: true, zoomControl: true,
+            styles: [{elementType: 'geometry', stylers: [{color: '#15151B'}]}, {elementType: 'labels.text.fill', stylers: [{color: '#9D998D'}]}, {elementType: 'labels.text.stroke', stylers: [{color: '#07070A'}]}]
+        });
+    }
+    const bounds = new google.maps.LatLngBounds();
+    if (hasDest) {
+        const pos = {lat: +o.delivery_lat, lng: +o.delivery_lng};
+        if (!_trackDestMarker) _trackDestMarker = new google.maps.Marker({map: _trackGMap, position: pos, label: {text: '🏠', fontSize: '18px'}});
+        else _trackDestMarker.setPosition(pos);
+        bounds.extend(pos);
+    }
+    if (hasCourier) {
+        const pos = {lat: +o.courier_lat, lng: +o.courier_lng};
+        if (!_trackCourierMarker) _trackCourierMarker = new google.maps.Marker({map: _trackGMap, position: pos, label: {text: '🛵', fontSize: '18px'}});
+        else _trackCourierMarker.setPosition(pos);
+        bounds.extend(pos);
+    }
+    if (hasDest && hasCourier) _trackGMap.fitBounds(bounds, 40);
+}
 
 // ── FILTER PILLS (Trending / Top Rated / Fast / Budget / New) ──────
 // These were previously pure decoration with no click handler at all.
@@ -1344,6 +1464,7 @@ async function loadOrders() {
             '<div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;color:rgba(247,241,223,.55)">' +
             '<span>' + fmtDate(o.placed_at) + '</span>' +
             '<span style="font-weight:700;color:#D4AF37;font-size:14px">ETB ' + parseFloat(o.fare_total||0).toFixed(2) + '</span></div>' +
+            (o.status !== 'cancelled' && o.status !== 'delivered' ? '<button onclick="openTrackOrder('+o.id+')" style="margin-top:10px;width:100%;padding:8px;background:rgba(212,175,55,.12);border:1.5px solid rgba(212,175,55,.35);border-radius:8px;color:#F0CA58;font-size:12px;font-weight:700;cursor:pointer">🛵 Track Order</button>' : '') +
             (isDelivered ? '<button onclick="openRating('+o.id+')" style="margin-top:10px;width:100%;padding:8px;background:#fff;border:1.5px solid #D4AF37;border-radius:8px;color:#D4AF37;font-size:12px;font-weight:700;cursor:pointer">⭐ Rate this order</button>' : '') +
             (o.status !== 'cancelled' ? '<button onclick="openOrderIssue('+o.id+',\''+o.order_code+'\')" style="margin-top:8px;width:100%;padding:8px;background:#fff;border:1.5px solid #B8B0A0;border-radius:8px;color:rgba(247,241,223,.5);font-size:12px;font-weight:700;cursor:pointer">⚠️ Report an issue</button>' : '') +
             '</div>';
