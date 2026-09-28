@@ -296,7 +296,7 @@ function applyCuisineFilter(key, btn) {
     renderSGScroll(list);
     if (!list.length) {
         const grid = document.getElementById('items-grid');
-        if (grid) grid.innerHTML = '<div style="padding:30px;color:#B8B0A0;text-align:center;font-size:13px;grid-column:1/-1">No ' + key + ' items found yet - check back soon!</div>';
+        if (grid) grid.innerHTML = '<div style="padding:30px;color:rgba(247,241,223,.55);text-align:center;font-size:13px;grid-column:1/-1">No ' + key + ' items found yet - check back soon!</div>';
     }
 }
 
@@ -305,7 +305,7 @@ function renderItemsGrid(items) {
     const grid = document.getElementById('items-grid');
     if (!grid) return;
     if (!items.length) {
-        grid.innerHTML = '<div style="padding:30px;color:#B8B0A0;text-align:center;font-size:13px;grid-column:1/-1">No items found</div>';
+        grid.innerHTML = '<div style="padding:30px;color:rgba(247,241,223,.55);text-align:center;font-size:13px;grid-column:1/-1">No items found</div>';
         return;
     }
     const catIcons = {food:'🍽️',grocery:'🛒',pharmacy:'💊',laundry:'👕',delivery:'📦',beverage:'🥤',bakery:'🧁',snack:'🍿',meat:'🥩',default:'🍴'};
@@ -574,21 +574,21 @@ function renderCartDrawer() {
     const grand = subtotal + deliveryFee + serviceCharge;
     document.getElementById('cart-items').innerHTML = cart.map(function(c, i) {
         return '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #f5f5f5">' +
-            '<div style="flex:1"><div style="font-weight:600;font-size:13px;color:#1a1a2e">' + c.name + '</div>' +
-            '<div style="font-size:11px;color:#B8B0A0">ETB ' + c.price.toFixed(2) + ' each</div></div>' +
+            '<div style="flex:1"><div style="font-weight:600;font-size:13px;color:#F7F1DF">' + c.name + '</div>' +
+            '<div style="font-size:11px;color:rgba(247,241,223,.55)">ETB ' + c.price.toFixed(2) + ' each</div></div>' +
             '<div style="display:flex;align-items:center;gap:8px">' +
             '<button onclick="changeQty(' + i + ',-1)" style="width:26px;height:26px;border:1.5px solid #ddd;border-radius:50%;background:#fff;cursor:pointer;font-size:14px">-</button>' +
             '<span style="font-weight:700;font-size:14px;min-width:18px;text-align:center">' + c.quantity + '</span>' +
-            '<button onclick="changeQty(' + i + ',1)" style="width:26px;height:26px;border:none;border-radius:50%;background:#C9A961;color:#fff;cursor:pointer;font-size:14px">+</button>' +
-            '</div><div style="margin-left:10px;font-weight:700;color:#1a1a2e;font-size:13px;min-width:70px;text-align:right">ETB ' + (c.price*c.quantity).toFixed(2) + '</div></div>';
+            '<button onclick="changeQty(' + i + ',1)" style="width:26px;height:26px;border:none;border-radius:50%;background:#D4AF37;color:#fff;cursor:pointer;font-size:14px">+</button>' +
+            '</div><div style="margin-left:10px;font-weight:700;color:#F7F1DF;font-size:13px;min-width:70px;text-align:right">ETB ' + (c.price*c.quantity).toFixed(2) + '</div></div>';
     }).join('');
     const estTime = getEstimatedTime(selectedZone);
     document.getElementById('cart-total').innerHTML =
         '<div style="border-top:2px solid #f0f0f0;padding-top:14px;margin-top:12px">' +
-        '<div style="display:flex;justify-content:space-between;font-size:13px;color:#B8B0A0;margin-bottom:6px"><span>' + ETEL_I18N.t('lbl_subtotal') + '</span><span>ETB ' + subtotal.toFixed(2) + '</span></div>' +
-        '<div style="display:flex;justify-content:space-between;font-size:13px;color:#B8B0A0;margin-bottom:6px"><span>' + ETEL_I18N.t('lbl_delivery_fee') + '' + (selectedZone ? ' (' + estTime + ' min)' : '') + '</span><span>ETB ' + deliveryFee.toFixed(2) + '</span></div>' +
-        '<div style="display:flex;justify-content:space-between;font-size:13px;color:#B8B0A0;margin-bottom:12px"><span>' + ETEL_I18N.t('lbl_service_charge') + ' (' + SERVICE_CHARGE_PCT + '%)</span><span>ETB ' + serviceCharge.toFixed(2) + '</span></div>' +
-        '<div style="display:flex;justify-content:space-between;font-size:16px;font-weight:700;color:#1a1a2e"><span>' + ETEL_I18N.t('lbl_total') + '</span><span>ETB ' + grand.toFixed(2) + '</span></div></div>';
+        '<div style="display:flex;justify-content:space-between;font-size:13px;color:rgba(247,241,223,.55);margin-bottom:6px"><span>' + ETEL_I18N.t('lbl_subtotal') + '</span><span>ETB ' + subtotal.toFixed(2) + '</span></div>' +
+        '<div style="display:flex;justify-content:space-between;font-size:13px;color:rgba(247,241,223,.55);margin-bottom:6px"><span>' + ETEL_I18N.t('lbl_delivery_fee') + '' + (selectedZone ? ' (' + estTime + ' min)' : '') + '</span><span>ETB ' + deliveryFee.toFixed(2) + '</span></div>' +
+        '<div style="display:flex;justify-content:space-between;font-size:13px;color:rgba(247,241,223,.55);margin-bottom:12px"><span>' + ETEL_I18N.t('lbl_service_charge') + ' (' + SERVICE_CHARGE_PCT + '%)</span><span>ETB ' + serviceCharge.toFixed(2) + '</span></div>' +
+        '<div style="display:flex;justify-content:space-between;font-size:16px;font-weight:700;color:#F7F1DF"><span>' + ETEL_I18N.t('lbl_total') + '</span><span>ETB ' + grand.toFixed(2) + '</span></div></div>';
 
     var zoneHint = selectedZone
         ? '📍 ' + selectedZone + ' · ETB ' + deliveryFee.toFixed(0) + ' delivery (' + estTime + ' min)'
@@ -599,33 +599,33 @@ function renderCartDrawer() {
     document.getElementById('cart-checkout').innerHTML =
         '<div style="margin-top:16px">' +
         '<!-- DELIVERY TIER (moto / car / express cargo) -->' +
-        '<label style="display:block;font-size:11px;font-weight:700;color:#B8B0A0;margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px">🚚 Delivery Speed</label>' +
+        '<label style="display:block;font-size:11px;font-weight:700;color:rgba(247,241,223,.55);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px">🚚 Delivery Speed</label>' +
         '<div style="display:grid;grid-template-columns:repeat(' + _deliveryTiers.length + ',1fr);gap:8px;margin-bottom:16px">' +
         _deliveryTiers.map(function(t) { return tierOptionBtn(t, selectedZone); }).join('') +
         '</div>' +
         '<!-- DELIVERY ADDRESS (Google Places Autocomplete) -->' +
-        '<label style="display:block;font-size:11px;font-weight:700;color:#B8B0A0;margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px">' + ETEL_I18N.t('lbl_delivery_address') + '</label>' +
+        '<label style="display:block;font-size:11px;font-weight:700;color:rgba(247,241,223,.55);margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px">' + ETEL_I18N.t('lbl_delivery_address') + '</label>' +
         '<div style="display:flex;gap:8px;margin-bottom:4px">' +
         '<input type="text" id="co-address" autocomplete="off" placeholder="' + ETEL_I18N.t('ph_address') + '" value="' + _deliveryAddr.replace(/"/g,'&quot;') + '" style="flex:1;padding:10px;border:1.5px solid #e0e0e0;border-radius:8px;font-size:13px;box-sizing:border-box">' +
-        '<button onclick="getMyLocation()" id="gps-btn" title="Use my current location" style="padding:10px 12px;background:#C9A961;color:#fff;border:none;border-radius:8px;font-size:18px;cursor:pointer;white-space:nowrap">📍</button>' +
+        '<button onclick="getMyLocation()" id="gps-btn" title="Use my current location" style="padding:10px 12px;background:#D4AF37;color:#fff;border:none;border-radius:8px;font-size:18px;cursor:pointer;white-space:nowrap">📍</button>' +
         '</div>' +
         '<div id="co-zone-hint" style="font-size:11px;color:' + (selectedZone?'#2ECC71':'#aaa') + ';margin-bottom:12px;padding:0 2px">' + zoneHint + '</div>' +
         '<!-- OPTIONAL GATE/ENTRANCE PHOTO -->' +
         '<input type="file" id="co-photo-file" accept="image/*" capture="environment" style="display:none" onchange="uploadDeliveryPhoto(this)">' +
         '<div id="co-photo-row" style="margin-bottom:14px">' +
         (_deliveryPhotoUrl
-            ? '<div style="display:flex;align-items:center;gap:8px"><img src="' + escUrl(_deliveryPhotoUrl) + '" style="width:44px;height:44px;object-fit:cover;border-radius:8px;border:1px solid #e0e0e0"><span style="font-size:12px;color:#2ECC71;flex:1">Photo added</span><button onclick="removeDeliveryPhoto()" style="padding:6px 10px;background:#f5f5f5;border:none;border-radius:8px;font-size:11px;cursor:pointer;color:#888">Remove</button></div>'
-            : '<button onclick="document.getElementById(\'co-photo-file\').click()" style="width:100%;padding:9px;background:#fff;border:1.5px dashed #ddd;border-radius:8px;font-size:12px;color:#8B6E3A;cursor:pointer">📷 Add a photo of your gate/entrance (optional — helps the courier find you)</button>') +
+            ? '<div style="display:flex;align-items:center;gap:8px"><img src="' + escUrl(_deliveryPhotoUrl) + '" style="width:44px;height:44px;object-fit:cover;border-radius:8px;border:1px solid rgba(212,175,55,.25)"><span style="font-size:12px;color:#2ECC71;flex:1">Photo added</span><button onclick="removeDeliveryPhoto()" style="padding:6px 10px;background:rgba(255,255,255,.06);border:none;border-radius:8px;font-size:11px;cursor:pointer;color:rgba(247,241,223,.4)">Remove</button></div>'
+            : '<button onclick="document.getElementById(\'co-photo-file\').click()" style="width:100%;padding:9px;background:rgba(255,255,255,.03);border:1.5px dashed rgba(212,175,55,.3);border-radius:8px;font-size:12px;color:#F0CA58;cursor:pointer">📷 Add a photo of your gate/entrance (optional — helps the courier find you)</button>') +
         '</div>' +
         '<!-- RECIPIENT -->' +
-        '<label style="display:block;font-size:11px;font-weight:700;color:#B8B0A0;margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px">' + ETEL_I18N.t('lbl_recipient_name') + '</label>' +
+        '<label style="display:block;font-size:11px;font-weight:700;color:rgba(247,241,223,.55);margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px">' + ETEL_I18N.t('lbl_recipient_name') + '</label>' +
         '<input type="text" id="co-name" placeholder="' + ETEL_I18N.t('ph_full_name') + '" style="width:100%;padding:10px;border:1.5px solid #e0e0e0;border-radius:8px;font-size:13px;margin-bottom:12px;box-sizing:border-box">' +
-        '<label style="display:block;font-size:11px;font-weight:700;color:#B8B0A0;margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px">' + ETEL_I18N.t('lbl_recipient_phone') + '</label>' +
+        '<label style="display:block;font-size:11px;font-weight:700;color:rgba(247,241,223,.55);margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px">' + ETEL_I18N.t('lbl_recipient_phone') + '</label>' +
         '<input type="tel" id="co-phone" placeholder="+251911000000" style="width:100%;padding:10px;border:1.5px solid #e0e0e0;border-radius:8px;font-size:13px;margin-bottom:12px;box-sizing:border-box">' +
-        '<label style="display:block;font-size:11px;font-weight:700;color:#B8B0A0;margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px">' + ETEL_I18N.t('lbl_notes') + '</label>' +
+        '<label style="display:block;font-size:11px;font-weight:700;color:rgba(247,241,223,.55);margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px">' + ETEL_I18N.t('lbl_notes') + '</label>' +
         '<input type="text" id="co-notes" placeholder="' + ETEL_I18N.t('ph_notes') + '" style="width:100%;padding:10px;border:1.5px solid #e0e0e0;border-radius:8px;font-size:13px;margin-bottom:16px;box-sizing:border-box">' +
         '<!-- PAYMENT METHOD -->' +
-        '<label style="display:block;font-size:11px;font-weight:700;color:#B8B0A0;margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px">💳 ' + ETEL_I18N.t('lbl_payment_method') + '</label>' +
+        '<label style="display:block;font-size:11px;font-weight:700;color:rgba(247,241,223,.55);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px">💳 ' + ETEL_I18N.t('lbl_payment_method') + '</label>' +
         '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">' +
         paymentOptionBtn('telebirr', '📱 Telebirr', ETEL_I18N.t('pay_telebirr_sub')) +
         paymentOptionBtn('wallet',   '💰 ኢE Pay',   ETEL_I18N.t('pay_wallet_sub'), !etelPayLive) +
@@ -633,8 +633,8 @@ function renderCartDrawer() {
         paymentOptionBtn('abysinia', '🏦 Abysinia', ETEL_I18N.t('pay_bank_sub')) +
         paymentOptionBtn('cbe',      '🏛️ CBE',      ETEL_I18N.t('pay_bank_sub')) +
         '</div>' +
-        '<div id="wallet-info" style="display:none;background:rgba(201,169,97,.1);padding:14px;border-radius:10px;margin-bottom:14px;border-left:4px solid #C9A961">' +
-        '<p style="font-size:12px;font-weight:600;margin-bottom:4px;color:#8B6E3A">💰 ኢE Pay — Ethiopian Wallet</p>' +
+        '<div id="wallet-info" style="display:none;background:rgba(201,169,97,.1);padding:14px;border-radius:10px;margin-bottom:14px;border-left:4px solid #D4AF37">' +
+        '<p style="font-size:12px;font-weight:600;margin-bottom:4px;color:#C8960C">💰 ኢE Pay — Ethiopian Wallet</p>' +
         '<p style="font-size:12px;color:#e8e2d4;margin:0">You\'ll confirm and pay with your ኢE Pay PIN when your order arrives — instant and cashless, just like handing over cash but nothing to carry.</p>' +
         '</div>' +
         '<div id="telebirr-form" style="display:none;background:rgba(51,149,255,.1);padding:14px;border-radius:10px;margin-bottom:14px;border-left:4px solid #3395FF;color:#e8e2d4">' +
@@ -647,23 +647,23 @@ function renderCartDrawer() {
         '</ol>' +
         '<div style="display:flex;gap:0">' +
         '<span style="background:rgba(255,255,255,.08);padding:10px 10px;border:1px solid rgba(255,255,255,.15);border-radius:8px 0 0 8px;font-weight:700;font-size:13px;color:#e8e2d4">+251</span>' +
-        '<input type="tel" id="tb-phone" placeholder="911234567" maxlength="9" style="flex:1;padding:10px;border:1px solid #ddd;border-left:none;border-radius:0 8px 8px 0;font-size:13px">' +
+        '<input type="tel" id="tb-phone" placeholder="911234567" maxlength="9" style="flex:1;padding:10px;border:1px solid rgba(212,175,55,.25);border-left:none;border-radius:0 8px 8px 0;font-size:13px">' +
         '</div>' +
         '</div>' +
         '<div id="bank-form" style="display:none;background:rgba(230,126,34,.1);padding:14px;border-radius:10px;margin-bottom:14px;border-left:4px solid #E67E22;color:#e8e2d4">' +
         '<p id="bank-name" style="font-weight:700;font-size:13px;margin-bottom:6px">🏦 Bank Transfer</p>' +
         '<p style="font-size:12px;color:#e8e2d4;margin-bottom:6px">Account: <strong id="bank-acct-name">ETEL Hawassa</strong></p>' +
         '<p id="bank-acct" style="font-size:12px;color:#e8e2d4;margin-bottom:10px">Account No: <strong>1234567890</strong></p>' +
-        '<label style="font-size:11px;font-weight:700;color:#B8B0A0;display:block;margin-bottom:4px">Bank Reference No. *</label>' +
-        '<input type="text" id="bank-ref" placeholder="Enter reference number after transfer" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:13px;box-sizing:border-box">' +
+        '<label style="font-size:11px;font-weight:700;color:rgba(247,241,223,.55);display:block;margin-bottom:4px">Bank Reference No. *</label>' +
+        '<input type="text" id="bank-ref" placeholder="Enter reference number after transfer" style="width:100%;padding:10px;border:1px solid rgba(212,175,55,.25);border-radius:8px;font-size:13px;box-sizing:border-box">' +
         '</div>' +
         '<div id="co-msg" style="font-size:13px;margin-bottom:10px;display:none"></div>' +
         '<div id="telebirr-status" style="display:none;background:#d4edda;padding:14px;border-radius:10px;margin-bottom:14px;text-align:center">' +
         '<p style="color:#155724;font-weight:700;margin-bottom:6px">✅ Payment Initiated!</p>' +
         '<p style="font-size:13px;color:#155724;margin-bottom:4px">Dial <strong>*150#</strong> on your phone</p>' +
-        '<p id="tb-poll-msg" style="font-size:12px;color:#B8B0A0">Waiting for confirmation… <span id="tb-counter">120</span>s</p>' +
+        '<p id="tb-poll-msg" style="font-size:12px;color:rgba(247,241,223,.55)">Waiting for confirmation… <span id="tb-counter">120</span>s</p>' +
         '</div>' +
-        '<button onclick="handleCheckout()" id="checkout-btn" style="width:100%;padding:14px;background:linear-gradient(135deg,#C9A961,#8B6E3A);color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer">' + ETEL_I18N.t('btn_place_order') + ' — ETB ' + grand.toFixed(2) + '</button>' +
+        '<button onclick="handleCheckout()" id="checkout-btn" style="width:100%;padding:14px;background:linear-gradient(135deg,#D4AF37,#C8960C);color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer">' + ETEL_I18N.t('btn_place_order') + ' — ETB ' + grand.toFixed(2) + '</button>' +
         '</div>';
 
     // Restore payment selection UI state
@@ -713,7 +713,7 @@ function initDeliveryAutocomplete() {
         var zones = ['Mehal Ketema','Tabor','Addis Ketema','Haik Dar','Tulu Dimtu','Misrak','Referral','Hawela Teklehaimanot','Dore Bafana','Stadium','Liqe Mender','University'];
         var sel = document.createElement('select');
         sel.id = 'co-zone-picker';
-        sel.style.cssText = 'width:100%;padding:10px 12px;border:1px solid #ddd;border-radius:8px;font-size:13px;margin-top:6px;background:#fff;color:#1a1a2e;font-family:inherit;cursor:pointer';
+        sel.style.cssText = 'width:100%;padding:10px 12px;border:1px solid rgba(212,175,55,.25);border-radius:8px;font-size:13px;margin-top:6px;background:rgba(255,255,255,.04);color:#F7F1DF;font-family:inherit;cursor:pointer';
         sel.innerHTML = '<option value="">— Select delivery zone —</option>' + zones.map(function(z){ return '<option value="'+z+'">'+z+'</option>'; }).join('');
         sel.onchange = function() {
             if (sel.value) {
@@ -765,10 +765,10 @@ function tierOptionBtn(tier, zone) {
     const fee = Math.round((HAWASSA_FEES[zone] ? HAWASSA_FEES[zone].fee : 50) * Number(tier.multiplier));
     const baseTime = HAWASSA_FEES[zone] ? HAWASSA_FEES[zone].time : 25;
     const eta = Math.max(3, baseTime + Number(tier.eta_delta_min));
-    return '<button data-tier="'+tier.tier_key+'" onclick="selectTier(\''+tier.tier_key+'\')" style="padding:10px 6px;border:2px solid '+(active?'#C9A961':'#ddd')+';border-radius:8px;background:'+(active?'#fdf6e3':'#fff')+';cursor:pointer;text-align:center;transition:all .2s">' +
+    return '<button data-tier="'+tier.tier_key+'" onclick="selectTier(\''+tier.tier_key+'\')" style="padding:10px 6px;border:2px solid '+(active?'#D4AF37':'rgba(212,175,55,.18)')+';border-radius:10px;background:'+(active?'linear-gradient(145deg,rgba(212,175,55,.22),rgba(212,175,55,.08))':'rgba(255,255,255,.03)')+';box-shadow:'+(active?'0 0 16px rgba(212,175,55,.35)':'none')+';cursor:pointer;text-align:center;transition:all .2s">' +
         '<span style="display:block;font-size:20px;margin-bottom:2px">'+(tier.icon||'📦')+'</span>' +
-        '<span style="display:block;font-weight:700;font-size:11px;color:#1a1a2e">'+tier.label+'</span>' +
-        '<span style="display:block;font-size:10px;color:#B8B0A0;margin-top:2px">'+eta+' min · ETB '+fee+'</span>' +
+        '<span style="display:block;font-weight:700;font-size:11px;color:'+(active?'#F0CA58':'#F7F1DF')+'">'+tier.label+'</span>' +
+        '<span style="display:block;font-size:10px;color:rgba(247,241,223,.55);margin-top:2px">'+eta+' min · ETB '+fee+'</span>' +
         '</button>';
 }
 
@@ -780,23 +780,24 @@ function selectTier(tierKey) {
 function paymentOptionBtn(method, label, sub, disabled) {
     if (disabled) {
         return '<button disabled data-pay="'+method+'" title="Pending government approval" ' +
-            'style="padding:10px 8px;border:2px dashed #999;border-radius:8px;background:#f2f2f2;cursor:not-allowed;text-align:left;opacity:.65">' +
-            '<span style="display:block;font-weight:700;font-size:12px;color:#777">'+label+' 🔜</span>' +
-            '<span style="display:block;font-size:10px;color:#999;margin-top:2px">Coming soon</span>' +
+            'style="padding:10px 8px;border:2px dashed rgba(247,241,223,.2);border-radius:10px;background:rgba(255,255,255,.02);cursor:not-allowed;text-align:left;opacity:.55">' +
+            '<span style="display:block;font-weight:700;font-size:12px;color:rgba(247,241,223,.5)">'+label+' 🔜</span>' +
+            '<span style="display:block;font-size:10px;color:rgba(247,241,223,.35);margin-top:2px">Coming soon</span>' +
             '</button>';
     }
     const active = selectedPayment === method;
-    return '<button data-pay="'+method+'" onclick="selectPayment(\''+method+'\')" style="padding:10px 8px;border:2px solid '+(active?'#C9A961':'#ddd')+';border-radius:8px;background:'+(active?'#fdf6e3':'#fff')+';cursor:pointer;text-align:left;transition:all .2s">' +
-        '<span style="display:block;font-weight:700;font-size:12px;color:#1a1a2e">'+label+'</span>' +
-        '<span style="display:block;font-size:10px;color:#B8B0A0;margin-top:2px">'+sub+'</span>' +
+    return '<button data-pay="'+method+'" onclick="selectPayment(\''+method+'\')" style="padding:10px 8px;border:2px solid '+(active?'#D4AF37':'rgba(212,175,55,.18)')+';border-radius:10px;background:'+(active?'linear-gradient(145deg,rgba(212,175,55,.22),rgba(212,175,55,.08))':'rgba(255,255,255,.03)')+';box-shadow:'+(active?'0 0 16px rgba(212,175,55,.35)':'none')+';cursor:pointer;text-align:left;transition:all .2s">' +
+        '<span style="display:block;font-weight:700;font-size:12px;color:'+(active?'#F0CA58':'#F7F1DF')+'">'+label+'</span>' +
+        '<span style="display:block;font-size:10px;color:rgba(247,241,223,.55);margin-top:2px">'+sub+'</span>' +
         '</button>';
 }
 
 function highlightPaymentBtn(method) {
     document.querySelectorAll('[data-pay]').forEach(function(b) {
         const active = b.dataset.pay === method;
-        b.style.borderColor = active ? '#C9A961' : '#ddd';
-        b.style.background  = active ? '#fdf6e3' : '#fff';
+        b.style.borderColor = active ? '#D4AF37' : 'rgba(212,175,55,.18)';
+        b.style.background  = active ? 'linear-gradient(145deg,rgba(212,175,55,.22),rgba(212,175,55,.08))' : 'rgba(255,255,255,.03)';
+        b.style.boxShadow   = active ? '0 0 16px rgba(212,175,55,.35)' : 'none';
     });
 }
 
@@ -916,7 +917,7 @@ async function getMyLocation() {
             btn.textContent = '✓';
             btn.style.background = '#2ecc71';
             btn.disabled = false;
-            setTimeout(function() { btn.textContent = '📍'; btn.style.background = '#C9A961'; }, 3000);
+            setTimeout(function() { btn.textContent = '📍'; btn.style.background = '#D4AF37'; }, 3000);
             const hint = document.getElementById('co-zone-hint');
             if (hint) {
                 const fee = getDeliveryFee(selectedZone);
@@ -1170,11 +1171,11 @@ async function loadOrders() {
     const orders = res.data.orders;
     if (!orders.length) {
         document.getElementById('orders-list').innerHTML =
-            '<div style="text-align:center;padding:60px 20px;color:#B8B0A0">' +
+            '<div style="text-align:center;padding:60px 20px;color:rgba(247,241,223,.55)">' +
             '<div style="font-size:48px;margin-bottom:16px">📦</div>' +
-            '<div style="font-size:16px;font-weight:600;color:#B8B0A0;margin-bottom:8px">No orders yet</div>' +
+            '<div style="font-size:16px;font-weight:600;color:rgba(247,241,223,.55);margin-bottom:8px">No orders yet</div>' +
             '<div style="font-size:13px">Start browsing to place your first order!</div>' +
-            '<button onclick="switchCategory(\'home\')" style="margin-top:20px;padding:12px 24px;background:#C9A961;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer">Browse Items</button>' +
+            '<button onclick="switchCategory(\'home\')" style="margin-top:20px;padding:12px 24px;background:#D4AF37;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer">Browse Items</button>' +
             '</div>';
         return;
     }
@@ -1187,17 +1188,17 @@ async function loadOrders() {
         const progressPct = curStep < 0 ? 0 : Math.round((curStep + 1) / progressSteps.length * 100);
         const statusLabel = {'pending':'Order placed','assigned':'Assigned','picked_up':'Picked up','in_transit':'On the way','delivered':'Delivered','cancelled':'Cancelled'}[o.status] || o.status;
         const payBadge = o.payment_method ? '<span style="padding:2px 7px;border-radius:4px;font-size:10px;background:rgba(255,255,255,.1);color:#e8e2d4;margin-left:6px">' + o.payment_method.toUpperCase() + '</span>' : '';
-        return '<div style="background:#fff;border-radius:14px;padding:16px;margin-bottom:14px;box-shadow:0 2px 10px rgba(0,0,0,.07)">' +
+        return '<div style="background:rgba(255,255,255,.03);border-radius:14px;padding:16px;margin-bottom:14px;box-shadow:0 2px 10px rgba(0,0,0,.07)">' +
             '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">' +
-            '<div><span style="font-weight:700;font-size:14px;color:#1a1a2e">' + o.order_code + '</span>' + payBadge + '</div>' +
+            '<div><span style="font-weight:700;font-size:14px;color:#F7F1DF">' + o.order_code + '</span>' + payBadge + '</div>' +
             '<span style="padding:4px 10px;border-radius:6px;font-size:11px;font-weight:700;background:' + col + '22;color:' + col + '">' + statusLabel.toUpperCase() + '</span></div>' +
-            '<div style="font-size:12px;color:#B8B0A0;margin-bottom:8px">📍 ' + escapeHtml(o.to_zone||'—') + ' · 👤 ' + escapeHtml(o.recipient_name||'—') + '</div>' +
-            (o.status !== 'cancelled' && o.status !== 'delivered' ? '<div style="margin-bottom:10px"><div style="background:rgba(255,255,255,.1);border-radius:6px;height:5px;overflow:hidden"><div style="background:linear-gradient(90deg,#C9A961,#8B6E3A);height:100%;width:'+progressPct+'%;transition:width .4s"></div></div><div style="font-size:10px;color:#B8B0A0;margin-top:3px">' + statusLabel + '</div></div>' : '') +
-            '<div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;color:#B8B0A0">' +
+            '<div style="font-size:12px;color:rgba(247,241,223,.55);margin-bottom:8px">📍 ' + escapeHtml(o.to_zone||'—') + ' · 👤 ' + escapeHtml(o.recipient_name||'—') + '</div>' +
+            (o.status !== 'cancelled' && o.status !== 'delivered' ? '<div style="margin-bottom:10px"><div style="background:rgba(255,255,255,.1);border-radius:6px;height:5px;overflow:hidden"><div style="background:linear-gradient(90deg,#D4AF37,#C8960C);height:100%;width:'+progressPct+'%;transition:width .4s"></div></div><div style="font-size:10px;color:rgba(247,241,223,.55);margin-top:3px">' + statusLabel + '</div></div>' : '') +
+            '<div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;color:rgba(247,241,223,.55)">' +
             '<span>' + fmtDate(o.placed_at) + '</span>' +
-            '<span style="font-weight:700;color:#C9A961;font-size:14px">ETB ' + parseFloat(o.fare_total||0).toFixed(2) + '</span></div>' +
-            (isDelivered ? '<button onclick="openRating('+o.id+')" style="margin-top:10px;width:100%;padding:8px;background:#fff;border:1.5px solid #C9A961;border-radius:8px;color:#C9A961;font-size:12px;font-weight:700;cursor:pointer">⭐ Rate this order</button>' : '') +
-            (o.status !== 'cancelled' ? '<button onclick="openOrderIssue('+o.id+',\''+o.order_code+'\')" style="margin-top:8px;width:100%;padding:8px;background:#fff;border:1.5px solid #B8B0A0;border-radius:8px;color:#6b6b6b;font-size:12px;font-weight:700;cursor:pointer">⚠️ Report an issue</button>' : '') +
+            '<span style="font-weight:700;color:#D4AF37;font-size:14px">ETB ' + parseFloat(o.fare_total||0).toFixed(2) + '</span></div>' +
+            (isDelivered ? '<button onclick="openRating('+o.id+')" style="margin-top:10px;width:100%;padding:8px;background:#fff;border:1.5px solid #D4AF37;border-radius:8px;color:#D4AF37;font-size:12px;font-weight:700;cursor:pointer">⭐ Rate this order</button>' : '') +
+            (o.status !== 'cancelled' ? '<button onclick="openOrderIssue('+o.id+',\''+o.order_code+'\')" style="margin-top:8px;width:100%;padding:8px;background:#fff;border:1.5px solid #B8B0A0;border-radius:8px;color:rgba(247,241,223,.5);font-size:12px;font-weight:700;cursor:pointer">⚠️ Report an issue</button>' : '') +
             '</div>';
     }).join('');
 }
@@ -1326,13 +1327,13 @@ function renderConfirmCard(c) {
         '</div>';
 
     const actionBlock = method === 'wallet'
-        ? '<button onclick="customerPayWalletOrder(' + orderId + ',' + fare + ')" style="width:100%;padding:10px;background:#fff;color:#27ae60;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer">💰 Pay ETB ' + fare.toFixed(2) + ' with ኢE Pay</button>'
+        ? '<button onclick="customerPayWalletOrder(' + orderId + ',' + fare + ')" style="width:100%;padding:10px;background:rgba(255,255,255,.92);color:#27ae60;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer">💰 Pay ETB ' + fare.toFixed(2) + ' with ኢE Pay</button>'
         : '<div style="background:rgba(255,255,255,.2);border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:12px">' +
           '<label style="display:flex;align-items:center;gap:8px;cursor:pointer">' +
           '<input type="checkbox" id="cust-pay-conf-' + orderId + '" style="width:16px;height:16px;cursor:pointer">' +
           '<span>I confirm I paid <strong>ETB ' + fare.toFixed(2) + '</strong> cash to the courier</span>' +
           '</label></div>' +
-          '<button onclick="customerConfirmDelivery(' + orderId + ',1)" style="width:100%;padding:10px;background:#fff;color:#27ae60;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer">✅ Confirm I Received My Order</button>';
+          '<button onclick="customerConfirmDelivery(' + orderId + ',1)" style="width:100%;padding:10px;background:rgba(255,255,255,.92);color:#27ae60;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer">✅ Confirm I Received My Order</button>';
 
     return '<div style="background:linear-gradient(135deg,#2ECC71,#27ae60);color:#fff;border-radius:16px;padding:20px;margin-bottom:12px;box-shadow:0 4px 20px rgba(46,204,113,.35)">' +
         '<div style="font-size:14px;font-weight:700;margin-bottom:4px">🚪 Your order has been delivered!</div>' +
@@ -1512,15 +1513,15 @@ setInterval(function() {
 // ── ORDER RATING ─────────────────────────────────────────────────
 function openRating(orderId) {
     openModal(
-        '<h3 style="margin:0 0 16px;color:#1a1a2e">⭐ Rate Your Order</h3>' +
-        '<p style="font-size:13px;color:#B8B0A0;margin-bottom:14px">How was your experience?</p>' +
+        '<h3 style="margin:0 0 16px;color:#F7F1DF">⭐ Rate Your Order</h3>' +
+        '<p style="font-size:13px;color:rgba(247,241,223,.55);margin-bottom:14px">How was your experience?</p>' +
         '<div id="star-row" style="display:flex;gap:8px;justify-content:center;margin-bottom:16px;font-size:28px">' +
         [1,2,3,4,5].map(function(s){
             return '<span onclick="setStars('+s+')" data-star="'+s+'" style="cursor:pointer;opacity:.3;transition:opacity .15s">⭐</span>';
         }).join('') +
         '</div>' +
-        '<textarea id="rating-comment" placeholder="Tell us more (optional)…" style="width:100%;padding:10px;border:1.5px solid #ddd;border-radius:8px;font-size:13px;min-height:70px;resize:none;box-sizing:border-box;margin-bottom:14px"></textarea>' +
-        '<button onclick="submitRating('+orderId+')" style="width:100%;padding:12px;background:#C9A961;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer">Submit Rating</button>'
+        '<textarea id="rating-comment" placeholder="Tell us more (optional)…" style="width:100%;padding:10px;border:1.5px solid rgba(212,175,55,.25);border-radius:8px;font-size:13px;min-height:70px;resize:none;box-sizing:border-box;margin-bottom:14px"></textarea>' +
+        '<button onclick="submitRating('+orderId+')" style="width:100%;padding:12px;background:#D4AF37;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer">Submit Rating</button>'
     );
 }
 let ratingStars = 0;
@@ -1555,13 +1556,13 @@ const ORDER_ISSUE_CATEGORIES = [
 ];
 function openOrderIssue(orderId, orderCode) {
     openModal(
-        '<h3 style="margin:0 0 16px;color:#1a1a2e">⚠️ Report an Issue</h3>' +
-        '<p style="font-size:13px;color:#B8B0A0;margin-bottom:14px">Order ' + orderCode + '</p>' +
-        '<select id="oi-category" style="width:100%;padding:10px;border:1.5px solid #ddd;border-radius:8px;font-size:13px;box-sizing:border-box;margin-bottom:10px">' +
+        '<h3 style="margin:0 0 16px;color:#F7F1DF">⚠️ Report an Issue</h3>' +
+        '<p style="font-size:13px;color:rgba(247,241,223,.55);margin-bottom:14px">Order ' + orderCode + '</p>' +
+        '<select id="oi-category" style="width:100%;padding:10px;border:1.5px solid rgba(212,175,55,.25);border-radius:8px;font-size:13px;box-sizing:border-box;margin-bottom:10px">' +
         ORDER_ISSUE_CATEGORIES.map(function(c) { return '<option value="'+c[0]+'">'+c[1]+'</option>'; }).join('') +
         '</select>' +
-        '<textarea id="oi-details" placeholder="Describe what happened…" style="width:100%;padding:10px;border:1.5px solid #ddd;border-radius:8px;font-size:13px;min-height:80px;resize:none;box-sizing:border-box;margin-bottom:14px"></textarea>' +
-        '<button onclick="submitOrderIssue('+orderId+')" style="width:100%;padding:12px;background:#C9A961;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer">Submit Report</button>'
+        '<textarea id="oi-details" placeholder="Describe what happened…" style="width:100%;padding:10px;border:1.5px solid rgba(212,175,55,.25);border-radius:8px;font-size:13px;min-height:80px;resize:none;box-sizing:border-box;margin-bottom:14px"></textarea>' +
+        '<button onclick="submitOrderIssue('+orderId+')" style="width:100%;padding:12px;background:#D4AF37;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer">Submit Report</button>'
     );
 }
 async function submitOrderIssue(orderId) {
@@ -1598,22 +1599,22 @@ async function loadPayments() {
     const orders = (res && res.success && res.data && res.data.orders) ? res.data.orders : [];
     const totalPaid = orders.reduce(function(sum, o) { return sum + parseFloat(o.fare_total || 0); }, 0);
     el.innerHTML =
-        '<div style="background:linear-gradient(135deg,#C9A961,#8B6E3A);border-radius:16px;padding:24px;margin:16px;color:#fff;text-align:center">' +
+        '<div style="background:linear-gradient(135deg,#D4AF37,#C8960C);border-radius:16px;padding:24px;margin:16px;color:#fff;text-align:center">' +
         '<div style="font-size:13px;opacity:.85;margin-bottom:8px">💰 ኢE Pay — Ethiopian Wallet</div>' +
         '<div style="font-size:12.5px;opacity:.9;margin-bottom:16px;line-height:1.55">Pay for orders instantly and cashlessly. Choose ኢE Pay at checkout, or right when your order arrives at the door.</div>' +
-        '<a href="https://ethelmarket.com/Etel.Pay/wallet/wallet.html" target="_blank" rel="noopener" style="display:inline-block;padding:11px 22px;background:#fff;color:#8B6E3A;border-radius:10px;font-size:13px;font-weight:700;text-decoration:none">Open ኢE Pay Wallet ↗</a>' +
+        '<a href="https://ethelmarket.com/Etel.Pay/wallet/wallet.html" target="_blank" rel="noopener" style="display:inline-block;padding:11px 22px;background:#fff;color:#C8960C;border-radius:10px;font-size:13px;font-weight:700;text-decoration:none">Open ኢE Pay Wallet ↗</a>' +
         '</div>' +
         '<div style="padding:0 16px 16px">' +
         '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">' +
-        '<h3 style="font-size:14px;color:#1a1a2e;margin:0">Paid with ኢE Pay</h3>' +
-        (orders.length ? '<span style="font-size:12px;color:#B8B0A0">Total: ETB ' + totalPaid.toFixed(2) + '</span>' : '') +
+        '<h3 style="font-size:14px;color:#F7F1DF;margin:0">Paid with ኢE Pay</h3>' +
+        (orders.length ? '<span style="font-size:12px;color:rgba(247,241,223,.55)">Total: ETB ' + totalPaid.toFixed(2) + '</span>' : '') +
         '</div>' +
         (orders.length ? orders.map(function(o) {
             return '<div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #f5f5f5">' +
-                '<div><div style="font-size:13px;font-weight:600;color:#1a1a2e">' + o.order_code + '</div>' +
-                '<div style="font-size:11px;color:#B8B0A0">' + fmtDate(o.delivered_at || o.placed_at) + '</div></div>' +
+                '<div><div style="font-size:13px;font-weight:600;color:#F7F1DF">' + o.order_code + '</div>' +
+                '<div style="font-size:11px;color:rgba(247,241,223,.55)">' + fmtDate(o.delivered_at || o.placed_at) + '</div></div>' +
                 '<span style="font-weight:700;font-size:14px;color:#2ecc71">−ETB ' + parseFloat(o.fare_total).toFixed(2) + '</span></div>';
-        }).join('') : '<div style="color:#B8B0A0;font-size:13px;padding:20px 0;text-align:center">No ኢE Pay payments yet.<br>Choose ኢE Pay at checkout or when your order arrives.</div>') +
+        }).join('') : '<div style="color:rgba(247,241,223,.55);font-size:13px;padding:20px 0;text-align:center">No ኢE Pay payments yet.<br>Choose ኢE Pay at checkout or when your order arrives.</div>') +
         '</div>';
 }
 
@@ -1712,7 +1713,7 @@ function contactSupportHtml() {
         '<input id="support-subject" placeholder="What\'s this about?" style="width:100%;padding:10px;border:1.5px solid rgba(212,175,55,.3);background:rgba(0,0,0,.25);color:#fff;border-radius:8px;font-size:13px;margin-bottom:12px;box-sizing:border-box">' +
         '<label style="display:block;font-weight:600;margin-bottom:6px;font-size:13px">Message</label>' +
         '<textarea id="support-body" placeholder="Tell us what\'s going on…" style="width:100%;padding:10px;border:1.5px solid rgba(212,175,55,.3);background:rgba(0,0,0,.25);color:#fff;border-radius:8px;font-size:13px;min-height:100px;resize:none;box-sizing:border-box;margin-bottom:14px"></textarea>' +
-        '<button onclick="submitSupportMessage()" style="width:100%;padding:12px;background:#C9A961;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer">Send to Support</button>' +
+        '<button onclick="submitSupportMessage()" style="width:100%;padding:12px;background:#D4AF37;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer">Send to Support</button>' +
     '</div>';
 }
 function showContactSupportFallback() {
@@ -1779,7 +1780,7 @@ function addressFormHtml(existing) {
         '<label style="display:block;font-weight:600;margin-bottom:6px;font-size:13px">Zone (optional)</label>' +
         '<input id="addr-zone" placeholder="e.g. Tabor" value="' + (a.zone || '') + '" style="width:100%;padding:10px;border:1.5px solid rgba(212,175,55,.3);background:rgba(0,0,0,.25);color:#fff;border-radius:8px;font-size:13px;margin-bottom:12px;box-sizing:border-box">' +
         '<label style="display:flex;align-items:center;gap:8px;font-size:13px;margin-bottom:14px;cursor:pointer"><input type="checkbox" id="addr-default"' + (a.is_default ? ' checked' : '') + '> Set as default address</label>' +
-        '<button onclick="submitAddressForm()" style="width:100%;padding:12px;background:#C9A961;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer">Save Address</button>' +
+        '<button onclick="submitAddressForm()" style="width:100%;padding:12px;background:#D4AF37;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer">Save Address</button>' +
     '</div>';
 }
 function openAddAddressForm() {
