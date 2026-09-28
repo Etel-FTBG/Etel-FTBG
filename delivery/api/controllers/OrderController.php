@@ -716,6 +716,25 @@ case 'get_scheduled_orders': {
     ok(array('scheduled' => $s->fetchAll()));
     break;
 }
+case 'cancel_scheduled_order': {
+    $pdo = db();
+    $u   = require_auth($pdo);
+    $id  = isset($body['scheduled_id']) ? intval($body['scheduled_id']) : 0;
+    if (!$id) fail('scheduled_id required', 400);
+
+    try { $pdo->query("SELECT 1 FROM scheduled_orders LIMIT 0"); }
+    catch (Exception $e) { fail('Scheduled orders table not initialised.', 503); }
+
+    // Ownership check first (same pattern as request_pickup_confirmation
+    // below) - never let a customer cancel another customer's schedule.
+    $own = $pdo->prepare("SELECT id FROM scheduled_orders WHERE id=? AND customer_id=? AND status='active'");
+    $own->execute(array($id, $u['id']));
+    if (!$own->fetch()) fail('Scheduled order not found', 404);
+
+    $pdo->prepare("UPDATE scheduled_orders SET status='cancelled' WHERE id=?")->execute(array($id));
+    ok(array('message' => 'Scheduled order cancelled'));
+    break;
+}
 case 'request_pickup_confirmation': {
     $pdo     = db();
     $cu      = require_courier($pdo);
