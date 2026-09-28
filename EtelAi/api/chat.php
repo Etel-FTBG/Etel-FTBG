@@ -84,6 +84,10 @@ function buildSystemPrompt($member, $project, $facts) {
           . 'after they say yes. '
           . 'Never skip straight from question 1 to executing - always show the confirm step first, and never '
           . 'execute on a first mention of wanting something before they have confirmed the specifics. '
+          . 'book_ride and place_order are server-enforced to require the confirmation_token from the matching '
+          . 'quote call you just showed the member - if a call is refused for a missing/expired/mismatched '
+          . 'token, do not retry blindly: call the quote tool again with the final details, show the member '
+          . 'the (possibly updated) price, get a fresh yes, then try again with the new confirmation_token. '
           . 'For signed-in members, you CAN actually get a real ride fare quote and book a real ETEL Ride - '
           . 'either to a named place near Hawassa (e.g. "Haile Resort") or by distance if there is no specific '
           . 'destination. Pickup is always their current device location automatically - never ask for it. '
@@ -453,15 +457,17 @@ function etelai_agent_tools() {
         ),
         array(
             'name' => 'book_ride',
-            'description' => 'Actually books a real ETEL Ride and notifies nearby drivers. Only call this AFTER get_ride_quote has shown a price AND the member has clearly said yes/confirm/book it. Never call this on the first mention of wanting a ride. Uses the member\'s current device location automatically as pickup - you do not need to ask for coordinates. Give EITHER destination_name OR distance_km, matching whichever you used for the quote.',
+            'description' => 'Actually books a real ETEL Ride and notifies nearby drivers. Only call this AFTER get_ride_quote has shown a price AND the member has clearly said yes/confirm/book it. Never call this on the first mention of wanting a ride. Uses the member\'s current device location automatically as pickup - you do not need to ask for coordinates. Give EITHER destination_name OR distance_km, matching whichever you used for the quote. REQUIRES confirmation_token from that get_ride_quote call, with vehicle_type/destination_name/distance_km unchanged since - this call is refused otherwise, even if you believe the member confirmed.',
             'parameters' => array(
                 'type' => 'object',
                 'properties' => array(
-                    'vehicle_type'     => array('type' => 'string', 'enum' => array('bajaj', 'moto', 'car', 'minibus')),
-                    'destination_name' => array('type' => 'string', 'description' => 'A place name or address near Hawassa - same one used in the quote.'),
-                    'distance_km'      => array('type' => 'number'),
-                    'payment_method'   => array('type' => 'string', 'enum' => array('cash', 'telebirr', 'wallet'), 'description' => 'Defaults to cash if the member has not said.'),
+                    'vehicle_type'        => array('type' => 'string', 'enum' => array('bajaj', 'moto', 'car', 'minibus')),
+                    'destination_name'    => array('type' => 'string', 'description' => 'A place name or address near Hawassa - same one used in the quote.'),
+                    'distance_km'         => array('type' => 'number'),
+                    'payment_method'      => array('type' => 'string', 'enum' => array('cash', 'telebirr', 'wallet'), 'description' => 'Defaults to cash if the member has not said.'),
+                    'confirmation_token'  => array('type' => 'string', 'description' => 'Copy this EXACTLY from the confirmation_token field of the get_ride_quote response you just showed the member.'),
                 ),
+                'required' => array('confirmation_token'),
             ),
         ),
         array(
@@ -521,17 +527,18 @@ function etelai_agent_tools() {
         ),
         array(
             'name' => 'place_order',
-            'description' => 'Actually places a real order for delivery. Only call this AFTER get_order_quote has shown a total AND the member has clearly confirmed. Never call this on the first mention of wanting to order something. Recipient defaults to the member themself unless they say it is for someone else. Same rule as get_order_quote: leave to_zone out entirely and let GPS-based distance pricing handle it.',
+            'description' => 'Actually places a real order for delivery. Only call this AFTER get_order_quote or find_and_quote has shown a total AND the member has clearly confirmed. Never call this on the first mention of wanting to order something. Recipient defaults to the member themself unless they say it is for someone else. Same rule as get_order_quote: leave to_zone out entirely and let GPS-based distance pricing handle it. REQUIRES confirmation_token from that quote call, with the exact same items and to_zone - this call is refused otherwise, even if you believe the member confirmed.',
             'parameters' => array(
                 'type' => 'object',
                 'properties' => array(
-                    'items'           => array('type' => 'array', 'items' => array('type' => 'object', 'properties' => array('item_id' => array('type' => 'integer'), 'quantity' => array('type' => 'integer')))),
-                    'to_zone'         => array('type' => 'string', 'description' => 'Only set this if the member explicitly names a zone themself - leave out for GPS-based distance pricing.'),
-                    'payment_method'  => array('type' => 'string', 'enum' => array('cash', 'telebirr', 'wallet'), 'description' => 'Defaults to cash if the member has not said.'),
-                    'recipient_name'  => array('type' => 'string', 'description' => 'Only set this if the member says the order is for someone else.'),
-                    'recipient_phone' => array('type' => 'string', 'description' => 'Only set this if the member says the order is for someone else.'),
+                    'items'              => array('type' => 'array', 'items' => array('type' => 'object', 'properties' => array('item_id' => array('type' => 'integer'), 'quantity' => array('type' => 'integer')))),
+                    'to_zone'            => array('type' => 'string', 'description' => 'Only set this if the member explicitly names a zone themself - leave out for GPS-based distance pricing.'),
+                    'payment_method'     => array('type' => 'string', 'enum' => array('cash', 'telebirr', 'wallet'), 'description' => 'Defaults to cash if the member has not said.'),
+                    'recipient_name'     => array('type' => 'string', 'description' => 'Only set this if the member says the order is for someone else.'),
+                    'recipient_phone'    => array('type' => 'string', 'description' => 'Only set this if the member says the order is for someone else.'),
+                    'confirmation_token' => array('type' => 'string', 'description' => 'Copy this EXACTLY from the confirmation_token field of the get_order_quote or find_and_quote response you just showed the member.'),
                 ),
-                'required' => array('items'),
+                'required' => array('items', 'confirmation_token'),
             ),
         ),
         array(
@@ -552,10 +559,99 @@ function etelai_agent_tools() {
     )));
 }
 
+// ── Money/dispatch confirmation gate ────────────────────────────────
+// book_ride and place_order actually move a real driver or place a real
+// order. The system prompt tells the model to ask-then-confirm before
+// calling them, but that is only a prompt instruction - nothing stopped
+// a confused model (or a prompt-injected one, e.g. from text scraped off
+// a web page) from calling book_ride/place_order directly. This makes
+// the confirm step a real code-level gate instead of a trusted
+// instruction: book_ride/place_order now REQUIRE a confirmation_token
+// that can only have come from a prior get_ride_quote/get_order_quote/
+// find_and_quote call for this exact member with these exact same
+// details (vehicle/destination, or item_id+quantity list+zone), minted
+// no more than 5 minutes ago. A model that tries to book/order without
+// first quoting - or with different details than it quoted - is refused
+// server-side, no reliance on the model behaving.
+function etelai_confirm_secret() {
+    $a = defined('ETELID_KEY') ? ETELID_KEY : '';
+    $b = defined('ETELAI_ADMIN_KEY') ? ETELAI_ADMIN_KEY : '';
+    return hash('sha256', $a . '|' . $b . '|etelai_confirm_v1');
+}
+
+function etelai_canon_ride($args) {
+    $vt = isset($args['vehicle_type']) ? strtolower(trim($args['vehicle_type'])) : 'bajaj';
+    $dest = isset($args['destination_name']) ? strtolower(trim($args['destination_name'])) : '';
+    $dist = isset($args['distance_km']) && $args['distance_km'] !== '' ? round(floatval($args['distance_km']), 1) : '';
+    return $vt . '|' . $dest . '|' . $dist;
+}
+
+// Canonicalizes on a quote RESPONSE's resolved items (item_id:qty pairs)
+// + zone - not the request args - so this works the same whether the
+// quote came from get_order_quote (which takes item_id directly) or
+// find_and_quote (which resolves names to item_id server-side); both
+// return the same {items:[{item_id,quantity}], to_zone} shape.
+function etelai_canon_order($items, $toZone) {
+    $pairs = array();
+    foreach ((array) $items as $it) {
+        $iid = isset($it['item_id']) ? intval($it['item_id']) : 0;
+        $qty = isset($it['quantity']) ? intval($it['quantity']) : 1;
+        if ($iid) $pairs[] = $iid . ':' . $qty;
+    }
+    sort($pairs);
+    return implode(',', $pairs) . '|' . strtolower(trim((string) $toZone));
+}
+
+function etelai_make_confirm_token($type, $memberId, $canonKey, $amount) {
+    $payload = array('type' => $type, 'mid' => intval($memberId), 'ck' => $canonKey, 'amt' => $amount, 'exp' => time() + 300);
+    $b64 = rtrim(strtr(base64_encode(json_encode($payload)), '+/', '-_'), '=');
+    $sig = hash_hmac('sha256', $b64, etelai_confirm_secret());
+    return $b64 . '.' . $sig;
+}
+
+// Returns null if valid, or an error string explaining why not (fed
+// straight back to the model as the tool result so it knows to get a
+// fresh quote rather than silently failing).
+function etelai_verify_confirm_token($token, $type, $memberId, $canonKey) {
+    if (!is_string($token) || strpos($token, '.') === false) {
+        return 'Missing or malformed confirmation_token - call the quote tool first and use the confirmation_token it returns.';
+    }
+    list($b64, $sig) = explode('.', $token, 2);
+    if (!hash_equals(hash_hmac('sha256', $b64, etelai_confirm_secret()), $sig)) {
+        return 'Invalid confirmation_token.';
+    }
+    $payload = json_decode(base64_decode(strtr($b64, '-_', '+/')), true);
+    if (!is_array($payload)) return 'Invalid confirmation_token.';
+    if (!isset($payload['type']) || $payload['type'] !== $type) return 'confirmation_token was issued for a different action.';
+    if (!isset($payload['mid']) || intval($payload['mid']) !== intval($memberId)) return 'confirmation_token does not belong to this member.';
+    if (!isset($payload['ck']) || $payload['ck'] !== $canonKey) return 'Details changed since the quote - call the quote tool again with the final details and confirm again.';
+    if (!isset($payload['exp']) || time() > intval($payload['exp'])) return 'confirmation_token expired - call the quote tool again and confirm again.';
+    return null;
+}
+
+// Secondary, defense-in-depth check: the member's own latest message
+// should read like a real "yes" to what was just quoted. This alone is
+// not the security boundary (a token is required regardless) - it just
+// catches a model that somehow produced a matching token without the
+// member actually having said yes in this turn.
+function etelai_looks_like_confirmation($text) {
+    $t = mb_strtolower(trim((string) $text));
+    if ($t === '') return false;
+    $patterns = array(
+        '/\byes\b/', '/\byeah\b/', '/\byep\b/', '/\bconfirm(ed)?\b/', '/\bgo ahead\b/',
+        '/\bdo it\b/', '/\bsure\b/', '/\bok(ay)?\b/', '/አዎ/u', '/እሺ/u', '/ይሁን/u',
+    );
+    foreach ($patterns as $p) {
+        if (preg_match($p, $t)) return true;
+    }
+    return false;
+}
+
 // Executes a tool call against Delivery's agent connector. $extra carries
 // server-known values (the caller's own session token, the browser's
-// reported GPS position) that the model itself never sees or supplies -
-// keeping location handling out of the model's hands entirely.
+// reported GPS position, the member id, and the member's latest message
+// text) that the model itself never sees or supplies - keeping location
+// handling and the confirmation gate out of the model's hands entirely.
 //
 // IMPORTANT: the names Gemini sees (get_ride_quote, book_ride, etc) are
 // deliberately friendlier/shorter than Delivery's own action names
@@ -584,8 +680,39 @@ function etelai_call_delivery_agent($action, $args, $extra = array()) {
     if (!defined('DELIVERY_SERVICE_KEY') || DELIVERY_SERVICE_KEY === '') {
         return array('error' => 'Ride booking is not configured yet on this server (DELIVERY_SERVICE_KEY missing in secrets.php).');
     }
+
+    $memberId = isset($extra['member_id']) ? $extra['member_id'] : null;
+    $lastUserMessage = isset($extra['last_user_message']) ? $extra['last_user_message'] : '';
+
+    // ── Confirmation gate for money/dispatch actions ────────────────
+    // book_ride and place_order are refused outright unless a valid,
+    // unexpired confirmation_token from a matching prior quote call is
+    // present - see etelai_verify_confirm_token() above for what
+    // "matching" means. This never reaches AgentController.php at all
+    // when the gate fails, so a bad/missing token can't even attempt a
+    // real booking/order.
+    if ($action === 'book_ride') {
+        $canon = etelai_canon_ride($args);
+        $tokenErr = etelai_verify_confirm_token(isset($args['confirmation_token']) ? $args['confirmation_token'] : null, 'ride', $memberId, $canon);
+        if ($tokenErr === null && !etelai_looks_like_confirmation($lastUserMessage)) {
+            $tokenErr = 'The member has not clearly confirmed this ride in their latest message - ask them to confirm, then call book_ride again once they say yes.';
+        }
+        if ($tokenErr !== null) return array('error' => $tokenErr);
+        unset($args['confirmation_token']);
+    }
+    if ($action === 'place_order') {
+        $canon = etelai_canon_order(isset($args['items']) ? $args['items'] : array(), isset($args['to_zone']) ? $args['to_zone'] : '');
+        $tokenErr = etelai_verify_confirm_token(isset($args['confirmation_token']) ? $args['confirmation_token'] : null, 'order', $memberId, $canon);
+        if ($tokenErr === null && !etelai_looks_like_confirmation($lastUserMessage)) {
+            $tokenErr = 'The member has not clearly confirmed this order in their latest message - ask them to confirm, then call place_order again once they say yes.';
+        }
+        if ($tokenErr !== null) return array('error' => $tokenErr);
+        unset($args['confirmation_token']);
+    }
+
     $backendAction = etelai_tool_to_backend_action($action);
     $payload = array_merge($args, $extra);
+    unset($payload['member_id'], $payload['last_user_message']);
     $url = DELIVERY_API_BASE . '?action=' . rawurlencode($backendAction);
 
     // cURL instead of file_get_contents: distinguishable error info
@@ -626,7 +753,25 @@ function etelai_call_delivery_agent($action, $args, $extra = array()) {
     if (empty($decoded['success']) && empty($decoded['ok'])) {
         return array('error' => isset($decoded['message']) ? $decoded['message'] : (isset($decoded['error']) ? $decoded['error'] : 'Request failed.'));
     }
-    return isset($decoded['data']) ? $decoded['data'] : $decoded;
+    $result = isset($decoded['data']) ? $decoded['data'] : $decoded;
+
+    // Mint the confirmation_token book_ride/place_order will require,
+    // bound to exactly what THIS quote resolved to - not what the model
+    // was asked for, so e.g. find_and_quote's server-resolved item_ids
+    // are what gets locked in, not whatever the member originally typed.
+    if ($action === 'get_ride_quote' && is_array($result)) {
+        $canon = etelai_canon_ride($args);
+        $result['confirmation_token'] = etelai_make_confirm_token('ride', $memberId, $canon, isset($result['fare']) ? $result['fare'] : null);
+    }
+    if ($action === 'get_order_quote' && is_array($result)) {
+        $canon = etelai_canon_order(isset($result['items']) ? $result['items'] : array(), isset($result['to_zone']) ? $result['to_zone'] : '');
+        $result['confirmation_token'] = etelai_make_confirm_token('order', $memberId, $canon, isset($result['total']) ? $result['total'] : null);
+    }
+    if ($action === 'find_and_quote' && is_array($result) && !empty($result['resolved'])) {
+        $canon = etelai_canon_order(isset($result['items']) ? $result['items'] : array(), isset($result['to_zone']) ? $result['to_zone'] : '');
+        $result['confirmation_token'] = etelai_make_confirm_token('order', $memberId, $canon, isset($result['total']) ? $result['total'] : null);
+    }
+    return $result;
 }
 
 
@@ -996,6 +1141,12 @@ if ($activeProvider['id'] === 'gemini' || $activeProvider['id'] === 'kimi') {
             'etel_sso_token' => $token,
             'pickup_lat'     => isset($body['pickup_lat']) ? floatval($body['pickup_lat']) : null,
             'pickup_lng'     => isset($body['pickup_lng']) ? floatval($body['pickup_lng']) : null,
+            // Not sent to Delivery's API - stripped in
+            // etelai_call_delivery_agent() before the payload goes out.
+            // Used only for the confirmation-token gate (member_id) and
+            // the "did they actually say yes" heuristic (last_user_message).
+            'member_id'         => $member['member_id'],
+            'last_user_message' => $message,
         );
     }
 
