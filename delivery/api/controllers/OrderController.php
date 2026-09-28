@@ -620,6 +620,39 @@ case 'get_order_ratings': {
     ok(array('ratings' => $ratings, 'average' => round(floatval($avg['avg']), 2), 'total' => intval($avg['total'])));
     break;
 }
+case 'get_shop_reviews': {
+    // Customer-facing per-shop reviews for the Shop Detail "Reviews" tab.
+    // get_order_ratings above is admin-only and platform-wide, not scoped
+    // to one shop, so it can't back a customer-facing tab - this is a
+    // separate, narrower read: only stars/comment/rated_at plus the
+    // reviewer's first name (never phone/full name) for orders actually
+    // assigned to this service_giver_id.
+    $pdo = db();
+    require_auth($pdo);
+    $sgId  = isset($_GET['service_giver_id']) ? intval($_GET['service_giver_id']) : 0;
+    $limit = isset($_GET['limit']) ? min(50, intval($_GET['limit'])) : 20;
+    if (!$sgId) fail('service_giver_id required', 400);
+    try {
+        $s = $pdo->prepare("SELECT r.stars, r.comment, r.rated_at,
+                                    SUBSTRING_INDEX(u.name, ' ', 1) AS reviewer_first_name
+                             FROM order_ratings r
+                             JOIN orders o ON r.order_id = o.id
+                             JOIN order_assignments oa ON oa.order_id = o.id
+                             LEFT JOIN users u ON r.customer_id = u.id
+                             WHERE oa.service_giver_id = ?
+                             ORDER BY r.rated_at DESC LIMIT ?");
+        $s->execute(array($sgId, $limit));
+        $reviews = $s->fetchAll();
+        $agg = $pdo->prepare("SELECT AVG(r.stars) as avg, COUNT(*) as total
+                               FROM order_ratings r
+                               JOIN order_assignments oa ON oa.order_id = r.order_id
+                               WHERE oa.service_giver_id = ?");
+        $agg->execute(array($sgId));
+        $a = $agg->fetch();
+    } catch (Exception $e) { fail_ex($e, 'Query failed', 500); }
+    ok(array('reviews' => $reviews, 'average' => round(floatval($a['avg']), 2), 'total' => intval($a['total'])));
+    break;
+}
 case 'track_order': {
     $pdo = db();
     $u   = require_auth($pdo);
@@ -640,10 +673,11 @@ case 'track_order': {
                 o.from_zone, o.to_zone, o.fare_total, o.delivery_fee, o.service_charge,
                 o.placed_at, o.delivered_at, o.notes,
                 o.recipient_name, o.recipient_phone, o.recipient_address, o.delivery_photo_url,
+                o.delivery_lat, o.delivery_lng,
                 oa.status as assignment_status, oa.accepted_at, oa.pickup_qr_scanned,
                 sg.business_name as service_giver_name, sg.zone as sg_zone,
                 u_sg.phone as sg_phone,
-                c.vehicle_type as courier_vehicle,
+                c.vehicle_type as courier_vehicle, c.last_lat as courier_lat, c.last_lng as courier_lng, c.last_seen as courier_last_seen,
                 u_c.name as courier_name, u_c.phone as courier_phone
             FROM orders o
             LEFT JOIN order_assignments oa ON o.id = oa.order_id
