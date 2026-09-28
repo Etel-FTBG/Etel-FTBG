@@ -338,6 +338,24 @@ function rides_has_surge_column($pdo) {
     return $has;
 }
 
+// Same pattern for migration 040 (rides.cancel_reason). Without this,
+// the reason a passenger picks when cancelling (js/ride.js's
+// showCancelReasons/doCancel already sends it as body.reason) was
+// silently discarded - the cancel UPDATE never wrote it anywhere, so a
+// cluster of same-day cancellations had no way to be explained after
+// the fact.
+function rides_has_cancel_reason_column($pdo) {
+    static $has = null;
+    if ($has !== null) return $has;
+    $has = false;
+    try {
+        foreach ($pdo->query("SHOW COLUMNS FROM `rides`")->fetchAll() as $c) {
+            if (strtolower($c['Field']) === 'cancel_reason') { $has = true; break; }
+        }
+    } catch (Exception $e) { /* stay false - treat as not migrated yet */ }
+    return $has;
+}
+
 /* ── Driver self-submitted compliance documents ─────────────────────
    A driver can submit their own insurance/technical inspection/road
    fund expiry date + a photo of the sticker directly from their own
@@ -991,6 +1009,7 @@ case 'my_active_ride': {
 case 'cancel_ride': {
     $id = isset($body['id']) ? intval($body['id']) : (isset($body['ride_id']) ? intval($body['ride_id']) : 0);
     if (!$id) fail('Ride id required');
+    $cancelReason = isset($body['reason']) ? trim(substr($body['reason'], 0, 255)) : '';
 
     /* MID-TRIP CANCEL FIX: previously any cancel (including one on an
        already-in-progress ride, meter running, driver already carrying
@@ -1047,7 +1066,12 @@ case 'cancel_ride': {
             // Cancelled almost immediately after starting - essentially
             // nothing was travelled, so this is a free cancel too rather
             // than billing a minimum fare for a few metres.
-            $pdo->prepare("UPDATE rides SET status='cancelled', cancelled_at=NOW() WHERE id=?")->execute(array($id));
+            if ($cancelReason !== '' && rides_has_cancel_reason_column($pdo)) {
+                $pdo->prepare("UPDATE rides SET status='cancelled', cancelled_at=NOW(), cancel_reason=? WHERE id=?")
+                    ->execute(array($cancelReason, $id));
+            } else {
+                $pdo->prepare("UPDATE rides SET status='cancelled', cancelled_at=NOW() WHERE id=?")->execute(array($id));
+            }
             ok(array('cancelled' => true));
             break;
         }
@@ -1065,10 +1089,17 @@ case 'cancel_ride': {
         break;
     }
 
-    $n = $pdo->prepare(
-        "UPDATE rides SET status='cancelled', cancelled_at=NOW()
-         WHERE id=? AND passenger_id=? AND status NOT IN ('completed','cancelled','arrived')");
-    $n->execute(array($id, $u['id']));
+    if ($cancelReason !== '' && rides_has_cancel_reason_column($pdo)) {
+        $n = $pdo->prepare(
+            "UPDATE rides SET status='cancelled', cancelled_at=NOW(), cancel_reason=?
+             WHERE id=? AND passenger_id=? AND status NOT IN ('completed','cancelled','arrived')");
+        $n->execute(array($cancelReason, $id, $u['id']));
+    } else {
+        $n = $pdo->prepare(
+            "UPDATE rides SET status='cancelled', cancelled_at=NOW()
+             WHERE id=? AND passenger_id=? AND status NOT IN ('completed','cancelled','arrived')");
+        $n->execute(array($id, $u['id']));
+    }
     if (!$n->rowCount()) fail('Ride cannot be cancelled - the driver has already arrived and billed this trip. Please confirm payment instead.');
     ok(array('cancelled' => true));
     break;
