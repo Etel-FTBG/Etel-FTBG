@@ -1,0 +1,11 @@
+# Block direct access to everything except index.php - config.php, .env,
+# and lib/*.php must never be served directly, only require()'d.
+<FilesMatch "^(config\.php|\.env.*)$">
+    Require all denied
+</FilesMatch>
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteCond %{REQUEST_URI} ^/lib/
+    RewriteRule .* - [F,L]
+</IfModule>
