@@ -145,7 +145,7 @@ function switchCategory(cat) {
     });
     document.getElementById('view-home').style.display     = cat === 'home'     ? 'block' : 'none';
     document.getElementById('view-orders').style.display   = cat === 'orders'   ? 'block' : 'none';
-    const viewIds = {payments:'view-payments', favorites:'view-favorites', messages:'view-messages', addresses:'view-addresses', referrals:'view-referrals', settings:'view-settings'};
+    const viewIds = {payments:'view-payments', favorites:'view-favorites', messages:'view-messages', addresses:'view-addresses', referrals:'view-referrals', settings:'view-settings', notifications:'view-notifications'};
     Object.keys(viewIds).forEach(function(key) {
         const el = document.getElementById(viewIds[key]);
         if (el) el.style.display = cat === key ? 'block' : 'none';
@@ -157,6 +157,7 @@ function switchCategory(cat) {
     else if (cat === 'addresses') loadAddresses();
     else if (cat === 'referrals') loadReferralInfo();
     else if (cat === 'settings') loadSettingsView();
+    else if (cat === 'notifications') loadNotifications();
     else if (cat === 'home' && !itemsCache.length) loadItems();
 }
 
@@ -225,7 +226,7 @@ function renderSGScroll(items) {
         const ic = emoji[sg.type]||'🏪';
         const col = colors[sg.type]||colors.default;
         const bg = bgMap[sg.type]||'sg-bg-default';
-        return '<div class="restaurant-card" style="position:relative" onclick="filterBySG('+sg.id+')">' +
+        return '<div class="restaurant-card" style="position:relative" onclick="openShopDetail('+sg.id+')">' +
             '<button onclick="event.stopPropagation();toggleFavorite('+sg.id+')" style="position:absolute;top:8px;right:8px;z-index:2;width:26px;height:26px;border-radius:50%;background:rgba(10,7,3,.55);backdrop-filter:blur(2px);border:1px solid rgba(255,215,0,.3);color:#FFD700;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center">☆</button>' +
             '<div class="restaurant-card-image ' + bg + '" style="background-image:radial-gradient(circle at 30% 30%, ' + col + '22, transparent 65%);">' +
                 '<span style="font-size:48px;line-height:1;filter:drop-shadow(0 4px 12px ' + col + '66)">' + ic + '</span>' +
@@ -244,6 +245,73 @@ function filterBySG(sgId) {
     const grid = document.getElementById('items-grid');
     if (grid) grid.scrollIntoView({behavior:'smooth'});
 }
+
+// ── SHOP DETAIL (Menu / Info tabs) — real items + real service_giver
+// fields already present on each item row (business_name, zone,
+// service_type, rating) from customer_get_items; no new endpoint. ──
+function openShopDetail(sgId) {
+    const items = itemsCache.filter(function(i){ return i.service_giver_id == sgId; });
+    if (!items.length) { filterBySG(sgId); return; }
+    const first = items[0];
+    const emoji  = {restaurant:'🍽️',grocery:'🛒',pharmacy:'💊',laundry:'👕',cafe:'☕',fastfood:'🍔',bakery:'🧁',general:'🏪'};
+    const ic = emoji[first.service_type] || '🏪';
+    document.getElementById('shop-detail-name').textContent = first.business_name || 'Shop';
+    const rating = parseFloat(first.rating) || 0;
+    document.getElementById('shop-detail-meta').textContent =
+        (rating ? '⭐ ' + rating.toFixed(1) + ' · ' : '') + (first.zone || 'Hawassa');
+    document.getElementById('shop-detail-hero').innerHTML =
+        '<div style="position:absolute;inset:0;background:radial-gradient(circle at 30% 30%,rgba(212,175,55,.18),transparent 65%),var(--dark-2)"></div>' +
+        '<span style="font-size:56px;position:relative;filter:drop-shadow(0 4px 14px rgba(212,175,55,.35))">' + ic + '</span>';
+    renderItemsGrid(items, 'shop-detail-menu-panel');
+    document.getElementById('shop-detail-info-panel').innerHTML =
+        '<div style="background:var(--glass-2);border:1px solid var(--glass-border);border-radius:16px;padding:18px;display:flex;flex-direction:column;gap:12px">' +
+        infoRow('🏷️', 'Type', first.service_type || 'General') +
+        infoRow('📍', 'Zone', first.zone || 'Hawassa') +
+        infoRow('⭐', 'Rating', rating ? rating.toFixed(1) + ' / 5' : 'No ratings yet') +
+        infoRow('📦', 'Menu items', String(items.length)) +
+        '</div>';
+    switchShopDetailTab('menu');
+    document.getElementById('view-shop-detail').style.display = 'block';
+}
+function infoRow(icon, label, value) {
+    return '<div style="display:flex;justify-content:space-between;align-items:center;font-size:13px">' +
+        '<span style="color:var(--text-muted)">' + icon + ' ' + label + '</span>' +
+        '<span style="color:var(--text);font-weight:700">' + escapeHtml(value) + '</span></div>';
+}
+function switchShopDetailTab(tab) {
+    document.getElementById('shop-tab-menu').classList.toggle('active', tab === 'menu');
+    document.getElementById('shop-tab-info').classList.toggle('active', tab === 'info');
+    document.getElementById('shop-detail-menu-panel').style.display = tab === 'menu' ? 'grid' : 'none';
+    document.getElementById('shop-detail-info-panel').style.display = tab === 'info' ? 'block' : 'none';
+}
+function closeShopDetail() { document.getElementById('view-shop-detail').style.display = 'none'; }
+
+// ── CATEGORY STOREFRONT (Groceries / Pharmacy) — real customer_get_items
+// call filtered by the real item.category column. ──
+let _categoryItems = [];
+async function openCategoryView(cat, label, icon) {
+    document.getElementById('category-title').textContent = label;
+    document.getElementById('category-icon').textContent = icon;
+    document.getElementById('category-search').value = '';
+    document.getElementById('category-items-grid').innerHTML = UI.loading('Loading ' + label + '…');
+    document.getElementById('view-category').style.display = 'block';
+    const res = await apiGet('customer_get_items', {category: cat});
+    _categoryItems = (res && res.success) ? res.data.items : [];
+    if (!res || !res.success) {
+        document.getElementById('category-items-grid').innerHTML =
+            '<div style="padding:30px;color:rgba(247,241,223,.55);text-align:center;font-size:13px;grid-column:1/-1">Could not load ' + label + '. Check your connection.</div>';
+        return;
+    }
+    renderItemsGrid(_categoryItems, 'category-items-grid');
+}
+function filterCategoryView(q) {
+    q = (q || '').toLowerCase();
+    const filtered = !q ? _categoryItems : _categoryItems.filter(function(i) {
+        return (i.name || '').toLowerCase().indexOf(q) !== -1 || (i.business_name || '').toLowerCase().indexOf(q) !== -1;
+    });
+    renderItemsGrid(filtered, 'category-items-grid');
+}
+function closeCategoryView() { document.getElementById('view-category').style.display = 'none'; }
 
 // ── FILTER PILLS (Trending / Top Rated / Fast / Budget / New) ──────
 // These were previously pure decoration with no click handler at all.
@@ -301,8 +369,8 @@ function applyCuisineFilter(key, btn) {
 }
 
 const catEmoji = {food:'🍽️',grocery:'🛒',pharmacy:'💊',laundry:'👕',delivery:'📦'};
-function renderItemsGrid(items) {
-    const grid = document.getElementById('items-grid');
+function renderItemsGrid(items, targetId) {
+    const grid = document.getElementById(targetId || 'items-grid');
     if (!grid) return;
     if (!items.length) {
         grid.innerHTML = '<div style="padding:30px;color:rgba(247,241,223,.55);text-align:center;font-size:13px;grid-column:1/-1">No items found</div>';
@@ -502,6 +570,7 @@ let selectedZone = '';
 let _deliveryAddr = '';
 let _deliveryAC = null;
 let _deliveryPhotoUrl = ''; // optional gate/entrance photo, uploaded via api/upload.php
+let _scheduleEnabled = false; // "Schedule for later" toggle in the cart drawer
 let selectedPayment = 'cash';
 // Delivery vehicle tier (moto / car / express cargo). Fetched from the
 // server (admin-editable) on first checkout open; this hardcoded list is
@@ -573,7 +642,7 @@ function renderCartDrawer() {
     const serviceCharge = Math.round(subtotal * SERVICE_CHARGE_PCT / 100 * 100) / 100;
     const grand = subtotal + deliveryFee + serviceCharge;
     document.getElementById('cart-items').innerHTML = cart.map(function(c, i) {
-        return '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #f5f5f5">' +
+        return '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.06)">' +
             '<div style="flex:1"><div style="font-weight:600;font-size:13px;color:#F7F1DF">' + c.name + '</div>' +
             '<div style="font-size:11px;color:rgba(247,241,223,.55)">ETB ' + c.price.toFixed(2) + ' each</div></div>' +
             '<div style="display:flex;align-items:center;gap:8px">' +
@@ -584,7 +653,7 @@ function renderCartDrawer() {
     }).join('');
     const estTime = getEstimatedTime(selectedZone);
     document.getElementById('cart-total').innerHTML =
-        '<div style="border-top:2px solid #f0f0f0;padding-top:14px;margin-top:12px">' +
+        '<div style="border-top:2px solid rgba(212,175,55,.15);padding-top:14px;margin-top:12px">' +
         '<div style="display:flex;justify-content:space-between;font-size:13px;color:rgba(247,241,223,.55);margin-bottom:6px"><span>' + ETEL_I18N.t('lbl_subtotal') + '</span><span>ETB ' + subtotal.toFixed(2) + '</span></div>' +
         '<div style="display:flex;justify-content:space-between;font-size:13px;color:rgba(247,241,223,.55);margin-bottom:6px"><span>' + ETEL_I18N.t('lbl_delivery_fee') + '' + (selectedZone ? ' (' + estTime + ' min)' : '') + '</span><span>ETB ' + deliveryFee.toFixed(2) + '</span></div>' +
         '<div style="display:flex;justify-content:space-between;font-size:13px;color:rgba(247,241,223,.55);margin-bottom:12px"><span>' + ETEL_I18N.t('lbl_service_charge') + ' (' + SERVICE_CHARGE_PCT + '%)</span><span>ETB ' + serviceCharge.toFixed(2) + '</span></div>' +
@@ -603,10 +672,24 @@ function renderCartDrawer() {
         '<div style="display:grid;grid-template-columns:repeat(' + _deliveryTiers.length + ',1fr);gap:8px;margin-bottom:16px">' +
         _deliveryTiers.map(function(t) { return tierOptionBtn(t, selectedZone); }).join('') +
         '</div>' +
+        '<!-- SCHEDULE FOR LATER: real schedule_order/get_scheduled_orders backend action -->' +
+        '<div style="display:flex;align-items:center;justify-content:space-between;padding:12px;background:rgba(255,255,255,.03);border:1px solid var(--glass-border);border-radius:12px;margin-bottom:14px">' +
+        '<div><div style="font-size:13px;font-weight:700;color:var(--text)">🕐 Schedule for later</div><div style="font-size:11px;color:rgba(247,241,223,.5);margin-top:2px">Choose a date &amp; time for this order</div></div>' +
+        '<label style="position:relative;display:inline-block;width:44px;height:24px;flex-shrink:0">' +
+        '<input type="checkbox" id="co-schedule-toggle" onchange="toggleScheduleDelivery(this.checked)" style="opacity:0;width:0;height:0" ' + (_scheduleEnabled ? 'checked' : '') + '>' +
+        '<span style="position:absolute;inset:0;background:' + (_scheduleEnabled ? '#D4AF37' : 'rgba(255,255,255,.15)') + ';border-radius:24px;transition:.2s"></span>' +
+        '<span style="position:absolute;top:3px;left:' + (_scheduleEnabled ? '23px' : '3px') + ';width:18px;height:18px;background:#fff;border-radius:50%;transition:.2s"></span>' +
+        '</label></div>' +
+        '<div id="co-schedule-fields" style="display:' + (_scheduleEnabled ? 'grid' : 'none') + ';grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">' +
+        '<div><label style="display:block;font-size:10.5px;font-weight:700;color:rgba(247,241,223,.5);margin-bottom:4px;text-transform:uppercase">Date</label>' +
+        '<input type="date" id="co-schedule-date" min="' + new Date().toISOString().slice(0,10) + '" style="width:100%;padding:10px;border:1.5px solid rgba(212,175,55,.25);border-radius:8px;font-size:13px;box-sizing:border-box;background:rgba(255,255,255,.03);color:var(--text)"></div>' +
+        '<div><label style="display:block;font-size:10.5px;font-weight:700;color:rgba(247,241,223,.5);margin-bottom:4px;text-transform:uppercase">Time</label>' +
+        '<input type="time" id="co-schedule-time" style="width:100%;padding:10px;border:1.5px solid rgba(212,175,55,.25);border-radius:8px;font-size:13px;box-sizing:border-box;background:rgba(255,255,255,.03);color:var(--text)"></div>' +
+        '</div>' +
         '<!-- DELIVERY ADDRESS (Google Places Autocomplete) -->' +
         '<label style="display:block;font-size:11px;font-weight:700;color:rgba(247,241,223,.55);margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px">' + ETEL_I18N.t('lbl_delivery_address') + '</label>' +
         '<div style="display:flex;gap:8px;margin-bottom:4px">' +
-        '<input type="text" id="co-address" autocomplete="off" placeholder="' + ETEL_I18N.t('ph_address') + '" value="' + _deliveryAddr.replace(/"/g,'&quot;') + '" style="flex:1;padding:10px;border:1.5px solid #e0e0e0;border-radius:8px;font-size:13px;box-sizing:border-box">' +
+        '<input type="text" id="co-address" autocomplete="off" placeholder="' + ETEL_I18N.t('ph_address') + '" value="' + _deliveryAddr.replace(/"/g,'&quot;') + '" style="flex:1;padding:10px;border:1.5px solid rgba(212,175,55,.25);border-radius:8px;font-size:13px;box-sizing:border-box;background:rgba(255,255,255,.03);color:var(--text)">' +
         '<button onclick="getMyLocation()" id="gps-btn" title="Use my current location" style="padding:10px 12px;background:#D4AF37;color:#fff;border:none;border-radius:8px;font-size:18px;cursor:pointer;white-space:nowrap">📍</button>' +
         '</div>' +
         '<div id="co-zone-hint" style="font-size:11px;color:' + (selectedZone?'#2ECC71':'#aaa') + ';margin-bottom:12px;padding:0 2px">' + zoneHint + '</div>' +
@@ -619,11 +702,11 @@ function renderCartDrawer() {
         '</div>' +
         '<!-- RECIPIENT -->' +
         '<label style="display:block;font-size:11px;font-weight:700;color:rgba(247,241,223,.55);margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px">' + ETEL_I18N.t('lbl_recipient_name') + '</label>' +
-        '<input type="text" id="co-name" placeholder="' + ETEL_I18N.t('ph_full_name') + '" style="width:100%;padding:10px;border:1.5px solid #e0e0e0;border-radius:8px;font-size:13px;margin-bottom:12px;box-sizing:border-box">' +
+        '<input type="text" id="co-name" placeholder="' + ETEL_I18N.t('ph_full_name') + '" style="width:100%;padding:10px;border:1.5px solid rgba(212,175,55,.25);border-radius:8px;font-size:13px;margin-bottom:12px;box-sizing:border-box;background:rgba(255,255,255,.03);color:var(--text)">' +
         '<label style="display:block;font-size:11px;font-weight:700;color:rgba(247,241,223,.55);margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px">' + ETEL_I18N.t('lbl_recipient_phone') + '</label>' +
-        '<input type="tel" id="co-phone" placeholder="+251911000000" style="width:100%;padding:10px;border:1.5px solid #e0e0e0;border-radius:8px;font-size:13px;margin-bottom:12px;box-sizing:border-box">' +
+        '<input type="tel" id="co-phone" placeholder="+251911000000" style="width:100%;padding:10px;border:1.5px solid rgba(212,175,55,.25);border-radius:8px;font-size:13px;margin-bottom:12px;box-sizing:border-box;background:rgba(255,255,255,.03);color:var(--text)">' +
         '<label style="display:block;font-size:11px;font-weight:700;color:rgba(247,241,223,.55);margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px">' + ETEL_I18N.t('lbl_notes') + '</label>' +
-        '<input type="text" id="co-notes" placeholder="' + ETEL_I18N.t('ph_notes') + '" style="width:100%;padding:10px;border:1.5px solid #e0e0e0;border-radius:8px;font-size:13px;margin-bottom:16px;box-sizing:border-box">' +
+        '<input type="text" id="co-notes" placeholder="' + ETEL_I18N.t('ph_notes') + '" style="width:100%;padding:10px;border:1.5px solid rgba(212,175,55,.25);border-radius:8px;font-size:13px;margin-bottom:16px;box-sizing:border-box;background:rgba(255,255,255,.03);color:var(--text)">' +
         '<!-- PAYMENT METHOD -->' +
         '<label style="display:block;font-size:11px;font-weight:700;color:rgba(247,241,223,.55);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px">💳 ' + ETEL_I18N.t('lbl_payment_method') + '</label>' +
         '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">' +
@@ -658,9 +741,9 @@ function renderCartDrawer() {
         '<input type="text" id="bank-ref" placeholder="Enter reference number after transfer" style="width:100%;padding:10px;border:1px solid rgba(212,175,55,.25);border-radius:8px;font-size:13px;box-sizing:border-box">' +
         '</div>' +
         '<div id="co-msg" style="font-size:13px;margin-bottom:10px;display:none"></div>' +
-        '<div id="telebirr-status" style="display:none;background:#d4edda;padding:14px;border-radius:10px;margin-bottom:14px;text-align:center">' +
-        '<p style="color:#155724;font-weight:700;margin-bottom:6px">✅ Payment Initiated!</p>' +
-        '<p style="font-size:13px;color:#155724;margin-bottom:4px">Dial <strong>*150#</strong> on your phone</p>' +
+        '<div id="telebirr-status" style="display:none;background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.3);padding:14px;border-radius:10px;margin-bottom:14px;text-align:center">' +
+        '<p style="color:#4ADE80;font-weight:700;margin-bottom:6px">✅ Payment Initiated!</p>' +
+        '<p style="font-size:13px;color:#4ADE80;margin-bottom:4px">Dial <strong>*150#</strong> on your phone</p>' +
         '<p id="tb-poll-msg" style="font-size:12px;color:rgba(247,241,223,.55)">Waiting for confirmation… <span id="tb-counter">120</span>s</p>' +
         '</div>' +
         '<button onclick="handleCheckout()" id="checkout-btn" style="width:100%;padding:14px;background:linear-gradient(135deg,#D4AF37,#C8960C);color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer">' + ETEL_I18N.t('btn_place_order') + ' — ETB ' + grand.toFixed(2) + '</button>' +
@@ -774,6 +857,11 @@ function tierOptionBtn(tier, zone) {
 
 function selectTier(tierKey) {
     selectedTier = tierKey;
+    renderCartDrawer();
+}
+
+function toggleScheduleDelivery(checked) {
+    _scheduleEnabled = checked;
     renderCartDrawer();
 }
 
@@ -986,6 +1074,16 @@ async function handleCheckout() {
     if (!name)  { showCoMsg('Recipient name is required.'); return; }
     if (!phone) { showCoMsg('Recipient phone is required.'); return; }
 
+    if (_scheduleEnabled) {
+        const d = (document.getElementById('co-schedule-date') || {}).value;
+        const t = (document.getElementById('co-schedule-time') || {}).value;
+        if (!d || !t) { showCoMsg('Pick a date and time for the scheduled delivery.'); return; }
+        const scheduledAt = d + ' ' + t + ':00';
+        if (new Date(scheduledAt) <= new Date()) { showCoMsg('Scheduled time must be in the future.'); return; }
+        await scheduleOrderFromCart(zone, name, phone, notes, scheduledAt);
+        return;
+    }
+
     if (selectedPayment === 'telebirr') {
         const tbPhone = (document.getElementById('tb-phone') ? document.getElementById('tb-phone').value : '').trim();
         if (!tbPhone || tbPhone.length < 9) { showCoMsg('Enter valid Telebirr phone number (9 digits).'); return; }
@@ -1029,6 +1127,54 @@ async function placeOrder(zone, name, phone, notes) {
         setTimeout(function(){ switchCategory('orders'); }, 1200);
     } else {
         showCoMsg((res && res.message) || 'Order failed. Please try again.');
+    }
+}
+
+// Real schedule_order backend action (existing before this change, just
+// never wired to any UI) - stores the current cart as an order_template
+// JSON blob, dispatched later by the existing cron_dispatch_scheduled.php
+// job. No fabricated scheduling behavior; it's the real backend flow.
+async function loadScheduledOrders() {
+    const el = document.getElementById('scheduled-orders-section');
+    if (!el) return;
+    const res = await apiGet('get_scheduled_orders', {});
+    const list = (res && res.success && res.data && res.data.scheduled) || [];
+    if (!list.length) { el.style.display = 'none'; el.innerHTML = ''; return; }
+    el.style.display = 'block';
+    el.innerHTML = '<div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:8px">🕐 Scheduled Deliveries</div>' +
+        list.map(function(s) {
+            return '<div style="display:flex;justify-content:space-between;align-items:center;padding:12px;margin-bottom:8px;background:rgba(212,175,55,.08);border:1px solid rgba(212,175,55,.25);border-radius:12px">' +
+                '<div><div style="font-size:13px;font-weight:700;color:#F0CA58">' + fmtDate(s.scheduled_at) + '</div>' +
+                '<div style="font-size:11px;color:rgba(247,241,223,.5);margin-top:2px">' + (s.repeat_daily ? 'Repeats daily' : 'One-time') + '</div></div>' +
+                '<button onclick="cancelScheduledOrder(' + s.id + ')" style="padding:7px 12px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);color:#FCA5A5;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer">Cancel</button></div>';
+        }).join('');
+}
+async function cancelScheduledOrder(id) {
+    if (!confirm('Cancel this scheduled delivery?')) return;
+    const res = await api('cancel_scheduled_order', {scheduled_id: id});
+    if (res && res.success) { showToast('Scheduled order cancelled'); loadScheduledOrders(); }
+    else { showToast((res && res.message) || 'Could not cancel', 'err'); }
+}
+async function scheduleOrderFromCart(zone, name, phone, notes, scheduledAt) {
+    showCoMsg('Scheduling order…', '#888');
+    const btn = document.getElementById('checkout-btn');
+    if (btn) btn.disabled = true;
+    const template = {
+        items: cart.map(function(c){ return {item_id:c.item_id, quantity:c.quantity}; }),
+        to_zone: zone, recipient_name: name, recipient_phone: phone, notes: notes,
+        payment_method: selectedPayment, delivery_tier: selectedTier,
+        delivery_photo_url: _deliveryPhotoUrl, delivery_lat: _deliveryLat, delivery_lng: _deliveryLng
+    };
+    const res = await api('schedule_order', {scheduled_at: scheduledAt, order_template: template});
+    if (btn) btn.disabled = false;
+    if (res && res.success) {
+        cart = []; selectedZone = ''; _deliveryAddr = ''; _deliveryLat = null; _deliveryLng = null; _deliveryAC = null; _deliveryPhotoUrl = ''; _scheduleEnabled = false;
+        updateCartCount();
+        closeCart();
+        showToast('Order scheduled for ' + scheduledAt, 'ok');
+        setTimeout(function(){ switchCategory('orders'); }, 1000);
+    } else {
+        showCoMsg((res && res.message) || 'Could not schedule order. Please try again.');
     }
 }
 
@@ -1163,6 +1309,7 @@ function showCoMsg(text, color) {
 async function loadOrders() {
     document.getElementById('orders-list').innerHTML = UI.loading('Loading your orders...');
     checkDeliveryConfirmations(); // Check for pending delivery confirmation requests
+    loadScheduledOrders();
     const res = await apiGet('customer_get_orders', {});
     if (!res.success) {
         document.getElementById('orders-list').innerHTML = '<div style="padding:20px;color:#e63946;font-size:13px">Failed to load orders.</div>';
@@ -1364,14 +1511,30 @@ async function customerConfirmDelivery(orderId, hasCashPayment) {
     }
     const res = await api('customer_confirm_delivery', { order_id: orderId, payment_confirmed: paymentConfirmed, confirm_payment_method: 'cash' });
     if (res && res.success) {
-        showToast('Order confirmed! Thank you. 🎉');
+        const conf = _lastConfs.find(function(c){ return c.order_id === orderId; });
         document.getElementById('cust-delivery-banner').style.display = 'none';
         delete _confirmPayMethod[orderId];
         loadOrders();
+        showOrderDeliveredScreen(orderId, conf);
     } else {
         showToast((res && res.message) || 'Confirmation failed', 'err');
     }
 }
+
+// ── ORDER DELIVERED — full-screen success state, shown from the same
+// real confirmation data already fetched above (order_code, fare_total,
+// courier_name) - no fabricated order content. ──
+function showOrderDeliveredScreen(orderId, conf) {
+    const fare = conf ? parseFloat(conf.fare_total || 0) : 0;
+    document.getElementById('order-delivered-summary').innerHTML =
+        infoRow('🧾', 'Order', (conf && conf.order_code) || ('#' + orderId)) +
+        (conf && conf.courier_name ? infoRow('🛵', 'Courier', conf.courier_name) : '') +
+        infoRow('💰', 'Total', 'ETB ' + fare.toFixed(2));
+    const rateBtn = document.getElementById('order-delivered-rate-btn');
+    rateBtn.onclick = function() { closeOrderDeliveredScreen(); openRating(orderId); };
+    document.getElementById('view-order-delivered').style.display = 'flex';
+}
+function closeOrderDeliveredScreen() { document.getElementById('view-order-delivered').style.display = 'none'; }
 
 // Etel Pay's own live API -- the customer's PIN goes straight from this
 // browser to Etel Pay, never through delivery's backend.
@@ -1610,7 +1773,7 @@ async function loadPayments() {
         (orders.length ? '<span style="font-size:12px;color:rgba(247,241,223,.55)">Total: ETB ' + totalPaid.toFixed(2) + '</span>' : '') +
         '</div>' +
         (orders.length ? orders.map(function(o) {
-            return '<div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #f5f5f5">' +
+            return '<div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.06)">' +
                 '<div><div style="font-size:13px;font-weight:600;color:#F7F1DF">' + o.order_code + '</div>' +
                 '<div style="font-size:11px;color:rgba(247,241,223,.55)">' + fmtDate(o.delivered_at || o.placed_at) + '</div></div>' +
                 '<span style="font-weight:700;font-size:14px;color:#2ecc71">−ETB ' + parseFloat(o.fare_total).toFixed(2) + '</span></div>';
@@ -1677,7 +1840,7 @@ async function toggleFavorite(sgId, btnEl) {
 }
 function filterBySGAndGoHome(sgId) {
     switchCategory('home');
-    if (itemsCache.length) filterBySG(sgId);
+    if (itemsCache.length) openShopDetail(sgId);
 }
 
 // ── MESSAGES VIEW ───────────────────────────────────────────────
@@ -1846,6 +2009,39 @@ function copyReferralLink(link) {
 }
 function promptCopyFallback(link) { prompt('Copy your invite link:', link); }
 
+// ── NOTIFICATIONS VIEW ──────────────────────────────────────────
+// get_my_notifications is real and already returns { unread, notifications }
+// from the backend - it just has no producer wired up yet (no
+// notifications table/writer exists), so it honestly returns an empty
+// list rather than fake sample rows. This view reflects that truthfully.
+async function loadNotifications() {
+    const el = document.getElementById('notifications-list');
+    if (!el) return;
+    el.innerHTML = UI.loading('Loading notifications...');
+    const res = await apiGet('get_my_notifications', {});
+    if (!res || !res.success) {
+        el.innerHTML = '<div class="empty-state"><div class="empty-icon">⚠️</div><div class="empty-text">Could not load notifications.</div></div>';
+        return;
+    }
+    const list = (res.data && res.data.notifications) || [];
+    if (!list.length) {
+        el.innerHTML = '<div class="empty-state"><div class="empty-icon">🔔</div><div class="empty-text">No notifications yet</div>' +
+            '<div style="font-size:12px;color:rgba(247,241,223,.4);margin-top:6px">Order updates and offers will show up here</div></div>';
+        return;
+    }
+    const iconFor = {order_placed:'📦', order_preparing:'👨‍🍳', courier_assigned:'🛵', order_delivered:'✅', order_cancelled:'❌', promotion:'🎁'};
+    el.innerHTML = list.map(function(n) {
+        const ic = iconFor[n.type] || '🔔';
+        return '<div style="display:flex;gap:12px;padding:14px;margin-bottom:10px;background:rgba(255,255,255,.04);border:1px solid rgba(212,175,55,.15);border-radius:14px">' +
+            '<div style="width:38px;height:38px;flex-shrink:0;border-radius:10px;background:rgba(212,175,55,.1);display:flex;align-items:center;justify-content:center;font-size:17px">' + ic + '</div>' +
+            '<div style="flex:1;min-width:0">' +
+            '<div style="font-size:13px;font-weight:700;color:var(--text)">' + escapeHtml(n.title || 'Update') + '</div>' +
+            '<div style="font-size:12px;color:rgba(247,241,223,.55);margin-top:2px">' + escapeHtml(n.body || '') + '</div>' +
+            '<div style="font-size:10.5px;color:rgba(247,241,223,.35);margin-top:6px">' + fmtDate(n.created_at) + '</div>' +
+            '</div></div>';
+    }).join('');
+}
+
 // ── SETTINGS & PRIVACY VIEW ─────────────────────────────────────
 async function loadSettingsView() {
     const el = document.getElementById('settings-content');
@@ -1965,6 +2161,7 @@ function toggleProfile() {
       ['💳','Wallet & Payments','Balance and transactions','payments'],
       ['⭐','My Favorites','Saved restaurants','favorites'],
       ['📍','Saved Addresses','Manage your locations','addresses'],
+      ['🔔','Notifications','Order updates & offers','notifications'],
       ['🎁','Referral & Rewards','Earn ETB with friends','referrals'],
       ['⚙️','Settings & Privacy','Account preferences','settings'],
     ].map(function(m){
