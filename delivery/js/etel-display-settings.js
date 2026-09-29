@@ -1,5 +1,5 @@
 /* ════════════════════════════════════════════════════════════════
-   ETEL — Display size controller  v1.3
+   ETEL — Display size controller  v1.4
    ════════════════════════════════════════════════════════════════
    One shared script, loaded by every delivery / ride / driver /
    courier / service-giver / admin / login page. It adds a small
@@ -19,6 +19,14 @@
    public pages) a temporary "guest" setting is used; it is handed to
    the account that signs in within 30 minutes, then discarded, so
    someone who enlarged the login screen to read it keeps that size.
+
+   SYNC: for signed-in accounts the choice is also stored on the server
+   (delivery: get_display_prefs / save_display_prefs in boot.php; Gebeya:
+   /display-prefs and api/admin.php?action=display_prefs_*), so it follows
+   the person to every device they sign in on.  The server keeps a version
+   number; a device adopts a newer server copy unless it has an unsent local
+   change, in which case the local change wins and is pushed.  Signed-out
+   visitors and any failed request just keep the device-local behaviour.
 
    How the scaling works (no page has to be edited beyond loading
    this file):
@@ -105,6 +113,111 @@
             localStorage.removeItem(guestKey);
             localStorage.removeItem(BASE_KEY);
         } catch (e) {}
+    }
+
+    /* ----------------------  cross-device sync  --------------------- */
+    var syncTimer = 0, pulling = false, pushing = false;
+    function metaKey() { return 'etel_display_sync:' + ns + ':' + (uid ? 'u' + uid : 'guest'); }
+    function loadMeta() {
+        try {
+            var m = JSON.parse(localStorage.getItem(metaKey()) || 'null');
+            if (m && typeof m === 'object') return { sv: Number(m.sv) || 0, dirty: !!m.dirty };
+        } catch (e) {}
+        return { sv: 0, dirty: false };
+    }
+    function saveMeta(m) { try { localStorage.setItem(metaKey(), JSON.stringify(m)); } catch (e) {} }
+    function deliveryApi() {
+        var loc = window.location.pathname, mk = '/delivery/', i = loc.indexOf(mk);
+        var dir = i >= 0 ? loc.substring(0, i + mk.length) : loc.substring(0, loc.lastIndexOf('/') + 1);
+        return window.location.protocol + '//' + window.location.host + dir + 'api/boot.php';
+    }
+    function readJson(r) { return r.text().then(function (t) { try { return JSON.parse(t); } catch (e) { return null; } }); }
+    // Returns { get(): Promise<{prefs,v}|null>, save(prefs): Promise<{v}|null> } or null when there is nowhere to sync.
+    function transport() {
+        if (!uid) return null;
+        var cfg = window.ETEL_DISPLAY_SYNC;
+        if (cfg && cfg.url) {                                        // Gebeya PHP pages (session cookie + CSRF)
+            return {
+                get: function () {
+                    return fetch(cfg.url, { credentials: 'same-origin', cache: 'no-store', headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+                        .then(readJson).then(function (j) { return j && j.ok ? { prefs: j.prefs || null, v: j.v | 0 } : null; });
+                },
+                save: function (p) {
+                    var f = new URLSearchParams(); f.set('_token', cfg.csrf || ''); f.set('prefs', JSON.stringify(p));
+                    return fetch(cfg.url, { method: 'POST', credentials: 'same-origin', body: f, headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+                        .then(readJson).then(function (j) { return j && j.ok ? { v: j.v | 0 } : null; });
+                }
+            };
+        }
+        var adminUrl = cur && cur.getAttribute('data-sync-admin');
+        if (adminUrl) {                                              // Gebeya static admin (token in X-Auth)
+            var atok = ''; try { atok = localStorage.getItem('eg_admin_token') || ''; } catch (e) {}
+            if (!atok) return null;
+            var abs = new URL(adminUrl, window.location.href).href;
+            return {
+                get: function () {
+                    return fetch(abs + '?action=display_prefs_get', { headers: { 'X-Auth': atok }, cache: 'no-store' })
+                        .then(readJson).then(function (j) { return j && j.ok && j.data ? { prefs: j.data.prefs || null, v: j.data.v | 0 } : null; });
+                },
+                save: function (p) {
+                    var f = new URLSearchParams(); f.set('auth', atok); f.set('prefs', JSON.stringify(p));
+                    return fetch(abs + '?action=display_prefs_save', { method: 'POST', headers: { 'X-Auth': atok }, body: f })
+                        .then(readJson).then(function (j) { return j && j.ok && j.data ? { v: j.data.v | 0 } : null; });
+                }
+            };
+        }
+        if (ns === 'delivery') {                                     // delivery apps (Bearer token, JSON)
+            var dtok = ''; try { dtok = localStorage.getItem('etel_token') || ''; } catch (e) {}
+            if (!dtok) return null;
+            var url = deliveryApi();
+            var call = function (payload) {
+                return fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + dtok }, body: JSON.stringify(payload) }).then(readJson);
+            };
+            return {
+                get: function () { return call({ action: 'get_display_prefs' }).then(function (j) { return j && j.success && j.data ? { prefs: j.data.prefs || null, v: j.data.v | 0 } : null; }); },
+                save: function (p) { return call({ action: 'save_display_prefs', prefs: p }).then(function (j) { return j && j.success && j.data ? { v: j.data.v | 0 } : null; }); }
+            };
+        }
+        return null;
+    }
+    function markDirty() {
+        if (!transport()) return;
+        var m = loadMeta(); m.dirty = true; saveMeta(m);
+        clearTimeout(syncTimer);
+        syncTimer = setTimeout(push, 700);
+    }
+    function push() {
+        var tr = transport();
+        if (!tr || pushing) return;
+        pushing = true;
+        var sent = get();
+        tr.save(sent).then(function (r) {
+            pushing = false;
+            if (!r || !r.v) return;
+            var unchanged = JSON.stringify(sent) === JSON.stringify(get());
+            saveMeta({ sv: r.v, dirty: !unchanged });
+            if (!unchanged) { clearTimeout(syncTimer); syncTimer = setTimeout(push, 300); }
+        }).catch(function () { pushing = false; });
+    }
+    function pull() {
+        var tr = transport();
+        if (!tr || pulling || pushing) return;
+        pulling = true;
+        tr.get().then(function (r) {
+            pulling = false;
+            if (!r) return;
+            var m = loadMeta();
+            if (m.dirty) { push(); return; }                          // unsent local change wins
+            if (r.prefs && r.v && r.v !== m.sv) {                     // newer copy from another device
+                prefs = sanitize(r.prefs);
+                save();
+                saveMeta({ sv: r.v, dirty: false });
+                applyVars();
+                syncUI();
+            } else if (!r.prefs && !isDefault(prefs)) {               // server has nothing yet: upload this device's
+                push();
+            }
+        }).catch(function () { pulling = false; });
     }
 
     /* ─────────────────────────  storage  ───────────────────────── */
@@ -449,7 +562,8 @@
             weight: 'Text boldness', wNormal: 'Normal', wBold: 'Bold', wXbold: 'Extra bold',
             preview: 'Preview', sample: 'Hello, Hawassa!', btn: 'Order now',
             reset: 'Reset to default', done: 'Done', close: 'Close',
-            dec: 'Smaller', inc: 'Bigger', saved: 'Saved on this device for your account only.'
+            dec: 'Smaller', inc: 'Bigger', saved: 'Saved on this device for your account only.',
+            savedSync: 'Saved to your account - the same on all your devices.'
         },
         am: {
             fab: 'የማሳያ መጠን ቅንብር',
@@ -461,7 +575,8 @@
             weight: 'የጽሑፍ ውፍረት', wNormal: 'መደበኛ', wBold: 'ደማቅ', wXbold: 'እጅግ ደማቅ',
             preview: 'ቅድመ እይታ', sample: 'ሰላም ሐዋሳ!', btn: 'አሁን ይዘዙ',
             reset: 'ወደ መጀመሪያው መልስ', done: 'ተጠናቀቀ', close: 'ዝጋ',
-            dec: 'ቀንስ', inc: 'ጨምር', saved: 'ለእርስዎ መለያ ብቻ በዚህ መሣሪያ ላይ ይቀመጣል።'
+            dec: 'ቀንስ', inc: 'ጨምር', saved: 'ለእርስዎ መለያ ብቻ በዚህ መሣሪያ ላይ ይቀመጣል።',
+            savedSync: 'በመለያዎ ላይ ይቀመጣል - በሁሉም መሣሪያዎችዎ ላይ ተመሳሳይ ነው።'
         }
     };
     function lang() {
@@ -658,7 +773,7 @@
         dn.addEventListener('click', close);
         ft.appendChild(rs); ft.appendChild(dn);
         panel.appendChild(ft);
-        panel.appendChild(el('p', 'note', T('saved')));
+        panel.appendChild(el('p', 'note', T(transport() ? 'savedSync' : 'saved')));
         syncUI();
     }
 
@@ -748,6 +863,7 @@
         save();
         applyVars();
         syncUI();
+        markDirty();
         return get();
     }
     function get() { return { ts: prefs.ts, is: prefs.is, bs: prefs.bs, ls: prefs.ls, fw: prefs.fw }; }
@@ -774,6 +890,7 @@
         applyVars();
         syncUI();
         if (fab) placeFab(loadPos());
+        pull();
     }
 
     window.EtelDisplay = { open: open, close: close, get: get, set: set, reset: reset, refreshUser: refreshUser };
@@ -791,6 +908,13 @@
         var t = e.target && e.target.closest ? e.target.closest('[data-etel-display-open]') : null;
         if (t) { e.preventDefault(); open(); }
     });
+
+    // Pick up changes made on another device: at load, when the app comes back into view,
+    // when the network returns, and every 5 minutes while it is open.
+    setTimeout(pull, 400);
+    doc.addEventListener('visibilitychange', function () { if (doc.visibilityState === 'visible') pull(); });
+    window.addEventListener('online', function () { pull(); });
+    setInterval(function () { if (doc.visibilityState === 'visible') pull(); }, 5 * 60 * 1000);
 
     function ready() { build(); }
     if (doc.readyState === 'loading') doc.addEventListener('DOMContentLoaded', ready);

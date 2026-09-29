@@ -229,6 +229,65 @@ case 'become_vendor': {
     ok(['redirect' => SITE_URL . '/vendor-panel'], 'Logged in as ' . $fullName);
 }
 
+// Display size preferences for the static admin page, synced per admin
+// account across devices (see public/assets/js/etel-display-settings.js).
+// Owner is derived from the admin session token, never from the request:
+// 'a<admin id>' for a personal admin login, 'master' for the shared key.
+case 'display_prefs_get':
+case 'display_prefs_save': {
+    auth();
+    $db = db();
+    if (!$db) err('DB unavailable', 503);
+    $adm   = current_gebeya_admin();
+    $owner = $adm ? 'a' . (int)$adm['id'] : 'master';
+    try {
+        $db->exec(
+            "CREATE TABLE IF NOT EXISTS " . t('user_display_prefs') . " (
+                owner_key  VARCHAR(64)  NOT NULL,
+                prefs_json VARCHAR(255) NOT NULL,
+                version    INT UNSIGNED NOT NULL DEFAULT 1,
+                updated_at DATETIME     NOT NULL,
+                PRIMARY KEY (owner_key)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
+        );
+    } catch (PDOException $e) { /* table may already exist */ }
+    $clean = function ($p) {
+        if (!is_array($p)) return null;
+        $o = [];
+        foreach (['ts', 'is', 'bs', 'ls'] as $k) { $o[$k] = max(70, min(200, (int)($p[$k] ?? 100))); }
+        $o['fw'] = max(0, min(2, (int)($p['fw'] ?? 0)));
+        return $o;
+    };
+    try {
+        if ($action === 'display_prefs_get') {
+            $s = $db->prepare('SELECT prefs_json, version FROM ' . t('user_display_prefs') . ' WHERE owner_key = ? LIMIT 1');
+            $s->execute([$owner]);
+            $row = $s->fetch();
+            if (!$row) ok(['prefs' => null, 'v' => 0]);
+            ok(['prefs' => $clean(json_decode((string)$row['prefs_json'], true)), 'v' => (int)$row['version']]);
+        }
+        $prefs = $clean(json_decode((string)($_POST['prefs'] ?? ''), true));
+        if ($prefs === null) err('Invalid display settings', 400);
+        $json = json_encode($prefs);
+        $now  = date('Y-m-d H:i:s');
+        $up = $db->prepare('UPDATE ' . t('user_display_prefs') . ' SET prefs_json = ?, version = version + 1, updated_at = ? WHERE owner_key = ?');
+        $up->execute([$json, $now, $owner]);
+        if ($up->rowCount() === 0) {
+            try {
+                $db->prepare('INSERT INTO ' . t('user_display_prefs') . ' (owner_key, prefs_json, version, updated_at) VALUES (?, ?, 1, ?)')
+                   ->execute([$owner, $json, $now]);
+            } catch (PDOException $e2) {
+                $up->execute([$json, $now, $owner]);
+            }
+        }
+        $s = $db->prepare('SELECT version FROM ' . t('user_display_prefs') . ' WHERE owner_key = ? LIMIT 1');
+        $s->execute([$owner]);
+        ok(['prefs' => $prefs, 'v' => (int)$s->fetchColumn()]);
+    } catch (PDOException $e) {
+        err('Could not process display settings', 500);
+    }
+}
+
 // ?? DASHBOARD KPIs ?????????????????????????????????????????
 case 'stats':
     auth('analytics.view');

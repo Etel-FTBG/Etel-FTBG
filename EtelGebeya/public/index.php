@@ -86,6 +86,10 @@ $router->post('/register',              [\App\Controllers\AuthController::class,
 $router->post('/logout',                [\App\Controllers\AuthController::class, 'logout']);
 $router->get('/lang/{locale}',          [\App\Controllers\AuthController::class, 'setLanguage']);
 
+// Display size preferences (synced per account across devices)
+$router->get('/display-prefs',          [\App\Controllers\DisplayPrefsController::class, 'get']);
+$router->post('/display-prefs',         [\App\Controllers\DisplayPrefsController::class, 'save']);
+
 // Customer
 $router->get('/account',                [\App\Controllers\CustomerController::class, 'dashboard']);
 $router->get('/account/orders',         [\App\Controllers\CustomerController::class, 'orders']);

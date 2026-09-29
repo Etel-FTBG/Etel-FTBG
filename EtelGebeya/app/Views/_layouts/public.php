@@ -33,7 +33,10 @@ $cartCount = (int)($_SESSION['cart_count'] ?? array_sum(array_column($_SESSION['
   <link rel="stylesheet" href="<?= View::asset('css/etel.css') ?>">
   <!-- Display size controller (floating Aa button): text / icon / button / logo size + boldness -->
   <script>window.ETEL_DISPLAY_USER = <?= json_encode((string)($user['id'] ?? '')) ?>;</script>
-  <script src="<?= View::asset('js/etel-display-settings.js') ?>?v=1.3" data-ns="gebeya" defer></script>
+  <?php if (!empty($user['id'])): ?>
+  <script>window.ETEL_DISPLAY_SYNC = <?= json_encode(['url' => View::url('/display-prefs'), 'csrf' => \App\Core\Auth::getInstance()->csrfToken()]) ?>;</script>
+  <?php endif; ?>
+  <script src="<?= View::asset('js/etel-display-settings.js') ?>?v=1.4" data-ns="gebeya" defer></script>
   <script>
   // Defined in <head> (not the footer) so it exists before any product image's
   // onerror can fire during initial parsing -- broken photo -> neutral placeholder.
