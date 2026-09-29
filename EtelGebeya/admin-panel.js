@@ -47,6 +47,8 @@ async function doUnifiedLogin() {
     if (d.ok) {
       TOKEN = d.data.token;
       localStorage.setItem('eg_admin_token', TOKEN);
+      localStorage.setItem('eg_admin_ident', (identifier || 'master').toLowerCase());   // display-size settings are per account
+      if (window.EtelDisplay && EtelDisplay.refreshUser) EtelDisplay.refreshUser();
       document.getElementById('login-screen').style.display = 'none';
       document.getElementById('app').style.display = 'flex';
       init();
@@ -70,6 +72,7 @@ async function doUnifiedLogin() {
 
 function doLogout() {
   localStorage.removeItem('eg_admin_token');
+  localStorage.removeItem('eg_admin_ident');
   location.reload();
 }
 

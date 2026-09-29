@@ -133,6 +133,7 @@ $isAdmin = isset($auth) && $auth->isAdmin();
         const d = await r.json();
         if (d.ok && d.data?.token) {
           localStorage.setItem('eg_admin_token', d.data.token);
+          localStorage.setItem('eg_admin_ident', '<?= (int)$eg_nonce_uid ?>');
           window.location.href = base + '/admin';
         } else {
           alert(CP_I18N.admin_access_denied + ': ' + (d.error || CP_I18N.unknown));

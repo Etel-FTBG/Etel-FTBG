@@ -30,7 +30,8 @@ $roleLabel = $role ?? ($user['roles'][0] ?? 'user');
   <link rel="stylesheet" href="<?= View::asset('css/admin.css') ?>">
   <link rel="stylesheet" href="<?= View::asset('vendor/bootstrap-icons/bootstrap-icons.min.css') ?>">
   <!-- Display size controller: the panels have a "Display size" row in the sidebar, so no floating button -->
-  <script src="<?= View::asset('js/etel-display-settings.js') ?>?v=1.2" data-fab="off" defer></script>
+  <script>window.ETEL_DISPLAY_USER = <?= json_encode((string)($user['id'] ?? '')) ?>;</script>
+  <script src="<?= View::asset('js/etel-display-settings.js') ?>?v=1.3" data-ns="gebeya" data-fab="off" defer></script>
 </head>
 <body>
 
