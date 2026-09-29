@@ -24,8 +24,15 @@ if (!requireRole(['customer','courier','driver','service_giver','admin'])) throw
 const user = Auth.getUser();
 if (user) document.getElementById('current-location').textContent = user.name || 'My Account';
 
-// Force dark theme on customer page so toggle works correctly
-document.body.classList.add('dark-theme');
+// Customer app is dark by default; the saved light/dark choice (set by the
+// floating toggle in core.js) always wins. Applied here first so there is no
+// flash, core.js then keeps the toggle icon in step with the same value.
+window.ETEL_THEME_DEFAULT = 'dark';
+(function () {
+    var t = null;
+    try { t = localStorage.getItem('theme'); } catch (e) {}
+    document.body.classList.toggle('dark-theme', t !== 'light');
+})();
 
 // ── LANGUAGE (English / Amharic) ─────────────────────────────────
 ETEL_I18N.register('customer', {

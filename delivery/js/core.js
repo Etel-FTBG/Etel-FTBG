@@ -1373,25 +1373,34 @@ const DarkMode = {
     btn.className = 'dark-toggle-btn';
     btn.title = 'Toggle Dark Mode';
     
-    const currentTheme = localStorage.getItem('theme') || 'light';
-    if (currentTheme === 'dark') {
-      document.body.classList.add('dark-theme');
-      btn.innerHTML = '☀️'; btn.className = 'dark-toggle-btn mode-dark';
-    } else {
-      btn.innerHTML = '🌙'; btn.className = 'dark-toggle-btn mode-light';
-    }
-
-    btn.onclick = () => {
-      document.body.classList.toggle('dark-theme');
-      const isDark = document.body.classList.contains('dark-theme');
-      localStorage.setItem('theme', isDark ? 'dark' : 'light');
+    const paint = (isDark) => {
+      document.body.classList.toggle('dark-theme', isDark);
       btn.innerHTML = isDark ? '☀️' : '🌙';
+      btn.title = isDark ? 'Switch to light mode' : 'Switch to dark mode';
+      btn.setAttribute('aria-label', btn.title);
       btn.className = isDark ? 'dark-toggle-btn mode-dark' : 'dark-toggle-btn mode-light';
-      
       if (typeof updateChartsForTheme === 'function') {
-         updateChartsForTheme(isDark);
+        try { updateChartsForTheme(isDark); } catch (e) {}
       }
     };
+    const readTheme = () => {
+      let t = null;
+      try { t = localStorage.getItem('theme'); } catch (e) {}
+      if (t !== 'dark' && t !== 'light') t = window.ETEL_THEME_DEFAULT === 'dark' ? 'dark' : 'light';
+      return t === 'dark';
+    };
+    paint(readTheme());
+
+    btn.onclick = () => {
+      const isDark = !document.body.classList.contains('dark-theme');
+      try { localStorage.setItem('theme', isDark ? 'dark' : 'light'); } catch (e) {}
+      paint(isDark);
+    };
+
+    /* keep other open tabs / apps in step with the choice */
+    window.addEventListener('storage', (ev) => {
+      if (ev.key === 'theme') paint(readTheme());
+    });
 
     document.body.appendChild(btn);
   }
