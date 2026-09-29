@@ -158,8 +158,26 @@ class EtelID_Service_API {
     }
 
     /* ---- Public payload (no secrets) ----------------------------- */
+    /* Apps a limited (Ride-only) account may still sign in to. Everything
+     * else is blocked until the member adds a profile photo and both sides
+     * of their Fayda ID - see EtelID_DB::refresh_limited(). */
+    private static $limited_apps = array( 'ride' );
+
+    private static function app_allowed_for( $m, $app ) {
+        if ( ! EtelID_DB::is_limited( $m ) ) return true;
+        $app = strtolower( trim( (string) $app ) );
+        return in_array( $app, self::$limited_apps, true );
+    }
+
     private static function member_payload( $m ) {
+        $limited = EtelID_DB::is_limited( $m );
         return array(
+            /* Limited (Ride-only) accounts: every consuming app must check
+             * profile_limited and refuse anything that is not Ride. */
+            'kyc_level'       => isset( $m->kyc_level ) ? (int) $m->kyc_level : 0,
+            'profile_limited' => $limited,
+            'allowed_apps'    => $limited ? self::$limited_apps : array( '*' ),
+            'missing_items'   => $limited ? EtelID_DB::missing_profile_items( $m ) : array(),
             'etel_id'    => $m->etel_id,
             'full_name'  => $m->full_name,
             'phone'      => $m->phone,
@@ -235,6 +253,18 @@ class EtelID_Service_API {
         if ( ! EtelID_Auth::verify_password( $pass, $m->pin_hash ) ) {
             EtelID_DB::log( $m->id, $m->etel_id, 'login_failed', 'Service API SSO - wrong password' );
             return new WP_Error( 'wrong_password', 'Incorrect EtelID password.', array( 'status' => 401 ) );
+        }
+
+        /* Limited (Ride-only) account signing in to anything but Ride: refuse
+         * with a clear reason. Checked only AFTER the password is verified so
+         * this can never reveal an account's state to someone who does not
+         * know its password. The calling app names itself with `app`. */
+        $app = (string) $request->get_param( 'app' );
+        if ( '' !== $app && ! self::app_allowed_for( $m, $app ) ) {
+            EtelID_DB::log( $m->id, $m->etel_id, 'limited_blocked', 'Limited account refused by ' . substr( sanitize_key( $app ), 0, 30 ) );
+            return new WP_Error( 'profile_incomplete',
+                'Your Etel-ID is limited to Ride. Add your profile photo and both sides of your Fayda ID in the EtelID portal to unlock all Etel services.',
+                array( 'status' => 403 ) );
         }
 
         EtelID_DB::log( $m->id, $m->etel_id, 'login', 'Service API SSO (' . substr( $ip, 0, 45 ) . ')' );

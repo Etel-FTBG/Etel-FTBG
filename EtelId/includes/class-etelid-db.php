@@ -197,6 +197,68 @@ class EtelID_DB {
                 KEY idx_type (link_type)
             ) $c3"
         );
+
+        /* Upgrade 9 - "limited" accounts from the simplified Quick Register
+         * (name + phone + optional email only). A limited account can use
+         * Ride and nothing else in Etel Group until the member adds a
+         * profile photo and both sides of their Fayda ID (see
+         * refresh_limited() below). DEFAULT 0 on purpose: every account
+         * that already exists stays fully unrestricted, only accounts
+         * created by the new Quick Register are ever set to 1.
+         * Idempotent - checks column existence first. */
+        $lim_col = $wpdb->get_row(
+            "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
+             WHERE TABLE_SCHEMA = DATABASE()
+               AND TABLE_NAME   = '" . self::t_members() . "'
+               AND COLUMN_NAME  = 'profile_limited'"
+        );
+        if ( ! $lim_col ) {
+            $wpdb->query(
+                "ALTER TABLE " . self::t_members() . "
+                 ADD COLUMN profile_limited TINYINT(1) NOT NULL DEFAULT 0 COMMENT '1 = Quick Register account without photo/Fayda ID: Ride only until completed',
+                 ADD KEY idx_profile_limited (profile_limited)"
+            );
+        }
+    }
+
+    /* ---- Limited (Ride-only) accounts ---------------------------- */
+
+    /** True when this member row is a limited (Ride-only) account. */
+    public static function is_limited( $m ) {
+        if ( is_array( $m ) ) return ! empty( $m['profile_limited'] );
+        return is_object( $m ) && ! empty( $m->profile_limited );
+    }
+
+    /** Which of the three items that lift the limit are still missing:
+     *  array of 'photo', 'fayda_front', 'fayda_back'. */
+    public static function missing_profile_items( $m ) {
+        $g = function ( $k ) use ( $m ) {
+            if ( is_array( $m ) ) return isset( $m[ $k ] ) ? $m[ $k ] : '';
+            return isset( $m->$k ) ? $m->$k : '';
+        };
+        $missing = array();
+        if ( '' === trim( (string) $g( 'photo_url' ) ) )         $missing[] = 'photo';
+        if ( '' === trim( (string) $g( 'fayda_front_image' ) ) ) $missing[] = 'fayda_front';
+        if ( '' === trim( (string) $g( 'fayda_back_image' ) ) )  $missing[] = 'fayda_back';
+        return $missing;
+    }
+
+    /** Lifts the limit as soon as the profile photo and BOTH sides of the
+     *  Fayda ID are on file (same trust level the old Quick Register gave:
+     *  kyc_level 1 straight away; the second, reviewed pass that unlocks
+     *  Etel Pay is separate). Safe to call after any profile save.
+     *  Returns true when the member is (now) not limited. */
+    public static function refresh_limited( $member_id ) {
+        $m = self::get_member( $member_id );
+        if ( ! $m ) return false;
+        if ( ! self::is_limited( $m ) ) return true;
+        if ( count( self::missing_profile_items( $m ) ) > 0 ) return false;
+        $upd = array( 'profile_limited' => 0 );
+        if ( (int) $m->kyc_level < 1 ) $upd['kyc_level'] = 1;
+        self::update_member( $member_id, $upd );
+        self::log( $member_id, $m->etel_id, 'profile_completed',
+            'Profile photo and Fayda ID added - Ride-only limit lifted, all Etel services unlocked' );
+        return true;
     }
 
     public static function install() {

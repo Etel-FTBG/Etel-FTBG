@@ -54,6 +54,9 @@ class EtelID_Service_KYC {
         }
 
         $kyc_level = (int)(isset($member['kyc_level']) ? $member['kyc_level'] : 0);
+        /* Limited (Ride-only) account from the simplified Quick Register -
+         * see EtelID_DB::refresh_limited(). */
+        $limited   = !empty($member['profile_limited']);
 
         /* Build response — never expose sensitive raw fields (no Fayda
          * images, no OCR text, no password hash). */
@@ -66,6 +69,7 @@ class EtelID_Service_KYC {
                 'email'      => $member['email'],
                 'status'     => $member['status'],
                 'kyc_level'  => $kyc_level,
+                'profile_limited' => $limited,
                 'dob'        => $member['dob'],
                 'sex'        => isset($member['sex']) ? $member['sex'] : null,
                 'photo_url'  => !empty($member['photo_url']) ? esc_url($member['photo_url']) : null,
@@ -84,10 +88,12 @@ class EtelID_Service_KYC {
              * not just the Fayda quick-register. Delivery/Ride only need
              * Pass 1. */
             'cross_system' => array(
-                'etelpay_allowed'   => $kyc_level >= 2 && $member['status'] === 'active',
-                'delivery_allowed'  => $kyc_level >= 1 && $member['status'] === 'active',
-                'ride_allowed'      => $kyc_level >= 1 && $member['status'] === 'active',
-                'high_value_txn'    => $kyc_level >= 2,
+                'etelpay_allowed'   => !$limited && $kyc_level >= 2 && $member['status'] === 'active',
+                'delivery_allowed'  => !$limited && $kyc_level >= 1 && $member['status'] === 'active',
+                /* Ride is the ONE service a limited account may use. */
+                'ride_allowed'      => ($limited || $kyc_level >= 1) && $member['status'] === 'active',
+                'high_value_txn'    => !$limited && $kyc_level >= 2,
+                'profile_limited'   => $limited,
             ),
         );
 

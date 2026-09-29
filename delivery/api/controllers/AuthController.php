@@ -343,6 +343,7 @@ case 'etelid_login': {
     rate_limit_clear($pdo, 'etelid:' . substr($ident, 0, 60));
 
     $u = etelid_bridge_local_user($pdo, $member);
+    if (!$u && !empty($GLOBALS['etelid_link_error'])) fail($GLOBALS['etelid_link_error'], 403);
     if (!$u) fail('Could not link your EtelID to a delivery account', 500);
 
     // An account already assigned a specific role (courier, driver,
@@ -386,6 +387,7 @@ case 'etelid_login': {
             'role'  => $u['role']
         ),
         'etel_id'    => $member['etel_id'],
+        'etelid_limited' => !empty($member['profile_limited']),
         'sso'        => true,
         // Real cross-app session token (Etelid_sessions table) - lets any
         // other Etel Group app that checks the same shared key recognize

@@ -168,6 +168,15 @@ switch ($action) {
             err('Incorrect password', 401);
         }
 
+        // Limited (Ride-only) account from the simplified Quick Register:
+        // only the Ride project may sign it in. Checked after the password is
+        // verified so it never reveals account state to a stranger.
+        if (!empty($member['profile_limited']) && strtolower($project) !== 'ride') {
+            $pdo->prepare("INSERT INTO " . pfx('log') . " (member_id, etel_id, actor_ip, event, detail) VALUES (?,?,?,?,?)")
+                ->execute([$member['id'], $member['etel_id'], $ip, 'limited_blocked', "Limited account refused by: $project"]);
+            err('Your Etel-ID is limited to Ride. Add your profile photo and both sides of your Fayda ID in the EtelID portal to unlock all Etel services.', 403);
+        }
+
         // Create session token. HARDENING: this used to store the raw
         // token directly in the `token` column - the exact plaintext-
         // session vulnerability class-etelid-auth.php::create_session()
@@ -220,10 +229,25 @@ switch ($action) {
         if (!$session)                              err('Invalid or expired token', 401);
         if ($session['member_status'] !== 'active') err('Account ' . $session['member_status'], 403);
 
+        // Limited (Ride-only) accounts - see EtelID_DB::refresh_limited(). The
+        // column is added by the WordPress plugin's schema upgrade; if this
+        // gateway is hit before that has run, treat the account as normal.
+        $profileLimited = false;
+        try {
+            $lq = $pdo->prepare("SELECT profile_limited FROM " . pfx('members') . " WHERE id = ? LIMIT 1");
+            $lq->execute([$session['member_id']]);
+            $profileLimited = (bool)$lq->fetchColumn();
+        } catch (Exception $e) { $profileLimited = false; }
+        $callerProject = strtolower((string)($body['project'] ?? $_GET['project'] ?? ''));
+        if ($profileLimited && $callerProject !== '' && $callerProject !== 'ride') {
+            err('Your Etel-ID is limited to Ride. Add your profile photo and both sides of your Fayda ID in the EtelID portal to unlock all Etel services.', 403);
+        }
+
         $stmt3 = $pdo->prepare("SELECT company_slug, company_name, role_at AS role FROM " . pfx('companies') . " WHERE member_id = ?");
         $stmt3->execute([$session['member_id']]);
 
         ok(['valid' => true, 'member' => [
+            'profile_limited' => $profileLimited,
             'id'        => $session['member_id'],
             'etel_id'   => $session['etel_id'],
             'fin'       => $session['fin'],

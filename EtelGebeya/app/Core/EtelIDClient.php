@@ -47,10 +47,19 @@ final class EtelIDClient
             'identifier' => $identifier,
             'password'   => $password,
             'project'    => 'EtelGebeya',
+            // Names this app to EtelID so a limited (Ride-only) account is refused there.
+            'app'        => 'gebeya',
         ]);
         // Response shape: { ok: true, member: { etel_id, full_name, phone, role, ... } }
         if (!$r) return null;
-        return $r['member'] ?? (isset($r['etel_id']) ? $r : null);
+        $member = $r['member'] ?? (isset($r['etel_id']) ? $r : null);
+        // Belt and braces: EtelID already refuses a limited account when `app` is sent,
+        // but never let one through if that check is ever missing.
+        if (is_array($member) && !empty($member['profile_limited'])) {
+            $this->lastError = 'Your Etel-ID is limited to Ride. Add your profile photo and both sides of your Fayda ID in the EtelID portal to unlock Etel Gebeya.';
+            return null;
+        }
+        return $member;
     }
 
     /** Resolve a phone / EtelID / FIN to a member profile. */

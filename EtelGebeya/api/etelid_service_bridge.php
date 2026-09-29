@@ -55,9 +55,13 @@ function eg_etelid_post($path, $payload) {
 function eg_etelid_authenticate($identifier, $password) {
     $res = eg_etelid_post('service/authenticate', array(
         'identifier' => $identifier, 'password' => $password, 'create_session' => true,
+        'app' => 'gebeya', // a limited (Ride-only) EtelID is refused by EtelID itself
     ));
     if (isset($res['__error'])) return $res;
     if (empty($res['ok'])) return array('__error' => $res['message'] ?? 'Incorrect EtelID or password.');
+    if (!empty($res['member']['profile_limited'])) {
+        return array('__error' => 'Your Etel-ID is limited to Ride. Add your profile photo and both sides of your Fayda ID in the EtelID portal to unlock Etel Gebeya.');
+    }
     return $res['member'];
 }
 

@@ -78,6 +78,7 @@ function etelid_bridge_authenticate($identifier, $password) {
     $svc = etelid_bridge_service_call('authenticate', array(
         'identifier' => $identifier,
         'password'   => $password,
+        'app'        => 'madeya', // a limited (Ride-only) EtelID is refused by EtelID itself
     ));
     if ($svc !== null) {
         $m = etelid_bridge_member_from_service($svc);

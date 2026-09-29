@@ -331,6 +331,35 @@ body::before{
   </div>
 
   <?php
+    /* Limited (Ride-only) account created by the simplified Quick Register:
+     * show exactly which items still unlock every other Etel service. */
+    $lim_on      = ! empty( $member->profile_limited );
+    $lim_missing = $lim_on ? EtelID_DB::missing_profile_items( $member ) : array();
+  ?>
+  <?php if ( $lim_on ) : ?>
+  <div id="limited-card" style="background:rgba(230,126,34,.10);border:1px solid rgba(230,126,34,.45);border-radius:12px;padding:16px 18px;margin-bottom:18px;">
+    <div style="font-size:14px;font-weight:700;color:#F5B041;margin-bottom:6px;">Your Etel-ID is limited to Ride</div>
+    <div style="font-size:12.5px;color:#E8D9B0;margin-bottom:12px;">
+      Add the items below to unlock Delivery, Market, Pay and every other Etel service. Ride keeps working in the meantime.
+    </div>
+    <?php
+      $lim_items = array(
+        'photo'       => 'Profile photo (Upload Photo, further down this page)',
+        'fayda_front' => 'Fayda ID - front side (Add Fayda ID below)',
+        'fayda_back'  => 'Fayda ID - back side (Add Fayda ID below)',
+      );
+      foreach ( $lim_items as $lim_key => $lim_label ) :
+        $lim_done = ! in_array( $lim_key, $lim_missing, true );
+    ?>
+    <div style="display:flex;align-items:center;gap:10px;font-size:13px;color:<?php echo $lim_done ? '#6ee7a0' : '#FFFEF8'; ?>;margin:4px 0;">
+      <span style="font-weight:800;width:16px;text-align:center;"><?php echo $lim_done ? '&#10003;' : '&#9675;'; ?></span>
+      <span><?php echo esc_html( $lim_label ); ?></span>
+    </div>
+    <?php endforeach; ?>
+  </div>
+  <?php endif; ?>
+
+  <?php
     $fid_kyc    = isset($member->kyc_level) ? (int) $member->kyc_level : 0;
     $fid_status = isset($member->pass2_status) ? $member->pass2_status : '';
     $fid_note   = isset($member->pass2_review_note) ? $member->pass2_review_note : '';

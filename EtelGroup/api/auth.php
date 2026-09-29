@@ -237,6 +237,7 @@ function egid_authenticate(string $identifier, string $password): array {
         'identifier' => $identifier,
         'password' => $password,
         'create_session' => true,
+        'app' => 'group', // a limited (Ride-only) EtelID is refused by EtelID itself
     ));
     if ($res['status'] !== 200 || empty($res['body']['ok'])) {
         $msg = $res['body']['message'] ?? ($res['body']['code'] ?? 'EtelID sign-in failed');

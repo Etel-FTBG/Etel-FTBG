@@ -31,7 +31,7 @@ function etelid_call($ep, $pl) {
     return $d ? array('ok'=>true,'data'=>$d,'http'=>$code) : array('ok'=>false,'error'=>'Bad JSON HTTP '.$code);
 }
 function etelid_resolve($id,$type='phone'){ return etelid_call('service/resolve',array('identifier'=>$id,'type'=>$type)); }
-function etelid_authenticate($phone,$pin){ return etelid_call('service/authenticate',array('identifier'=>$phone,'password'=>$pin)); }
+function etelid_authenticate($phone,$pin){ return etelid_call('service/authenticate',array('identifier'=>$phone,'password'=>$pin,'app'=>'pay')); }
 
 function ep_sync_etelid_kyc($uid,$phone){
     $r=etelid_resolve($phone);
@@ -41,6 +41,12 @@ function ep_sync_etelid_kyc($uid,$phone){
         'success'=>false,
         'message'=>'No EtelID for '.$phone.'. Register at ethelmarket.com/EtelId',
         'register_url'=>'https://ethelmarket.com/EtelId/register',
+    );
+    // Limited (Ride-only) EtelID: simplified Quick Register, no photo / Fayda ID on file yet.
+    if(!empty($m['profile_limited'])) return array(
+        'success'=>false,
+        'message'=>'Your Etel-ID is limited to Ride. Add your profile photo and both sides of your Fayda ID in the EtelID portal to unlock Etel Pay.',
+        'portal_url'=>'https://ethelmarket.com/EtelId/portal',
     );
     $st=strtolower(isset($m['status'])?$m['status']:'');
     $lv=(int)(isset($m['kyc_level'])?$m['kyc_level']:0);

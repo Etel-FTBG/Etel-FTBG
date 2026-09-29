@@ -24,7 +24,7 @@ case 'driver_etelid_login': {
     $ctx = stream_context_create(array('http' => array(
         'method'  => 'POST',
         'header'  => "Content-Type: application/json\r\nX-Etel-Service-Key: " . ETELID_SERVICE_KEY . "\r\n",
-        'content' => json_encode(array('identifier' => $identifier, 'password' => $password, 'create_session' => true)),
+        'content' => json_encode(array('identifier' => $identifier, 'password' => $password, 'create_session' => true, 'app' => 'taxi')),
         'timeout' => 15,
         'ignore_errors' => true,
     )));
@@ -94,6 +94,18 @@ case 'driver_complete_etelid_registration': {
         fail('Could not verify your EtelID session - cross-app database access may not be configured on this server yet. Contact Etel Taxi support.', 500);
     }
     if (!$member) fail('Session expired. Please sign in with EtelID again.', 401);
+
+    // Limited (Ride-only) EtelID accounts (simplified Quick Register, no
+    // photo / Fayda ID yet) cannot register as a taxi driver. Separate query
+    // in its own try/catch so a server where EtelID's schema upgrade has not
+    // added the column yet keeps working exactly as before.
+    try {
+        $lq = $pdo->prepare('SELECT profile_limited FROM ' . ETELID_DB_NAME . '.' . ETELID_DB_PREFIX . 'etelid_members WHERE etel_id = ? LIMIT 1');
+        $lq->execute(array($member['etel_id']));
+        if ($lq->fetchColumn()) {
+            fail('Your Etel-ID is limited to Ride. Add your profile photo and both sides of your Fayda ID in the EtelID portal to unlock Etel Taxi.', 403);
+        }
+    } catch (Exception $e) { /* column not there yet: not limited */ }
 
     $existing = $pdo->prepare('SELECT id FROM ' . tbl('taxi_drivers') . ' WHERE etel_id = ?');
     $existing->execute(array($member['etel_id']));

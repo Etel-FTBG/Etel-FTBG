@@ -89,7 +89,41 @@ function etelid_bridge_member_from_service($d) {
         'phone'     => isset($m['phone'])     ? $m['phone']     : '',
         'status'    => isset($m['status'])    ? $m['status']    : '',
         'pin_hash'  => '__VERIFIED_BY_SERVICE__',
+        /* Limited (Ride-only) EtelID: created by the simplified Quick
+           Register, no profile photo / Fayda ID on file yet. */
+        'profile_limited' => !empty($m['profile_limited']),
     );
+}
+
+/* Makes sure users.etelid_limited exists (migration 061 adds it; this is the
+   self-heal for a deploy where the code lands first) and returns whether the
+   column is available. DDL is done here, never inside a transaction. */
+function etelid_bridge_limited_col($pdo) {
+    static $ok = null;
+    if ($ok !== null) return $ok;
+    try {
+        if (function_exists('etel_table_columns') && in_array('etelid_limited', etel_table_columns($pdo, 'users'), true)) { return $ok = true; }
+        $pdo->exec("ALTER TABLE users ADD COLUMN etelid_limited TINYINT(1) NOT NULL DEFAULT 0");
+        return $ok = true;
+    } catch (Exception $e) {
+        error_log('[ETEL] etelid_limited column: ' . $e->getMessage());
+        return $ok = false;
+    }
+}
+
+/* Records on the local users row whether the linked EtelID is limited. */
+function etelid_bridge_set_limited($pdo, $user_id, $limited) {
+    if (!$limited && !function_exists('etel_table_columns')) return;
+    if ($limited) {
+        if (!etelid_bridge_limited_col($pdo)) return;
+    } else {
+        if (!in_array('etelid_limited', etel_table_columns($pdo, 'users'), true)) return;
+    }
+    try {
+        $pdo->prepare('UPDATE users SET etelid_limited = ? WHERE id = ?')->execute(array($limited ? 1 : 0, $user_id));
+    } catch (Exception $e) {
+        error_log('[ETEL] etelid_bridge_set_limited: ' . $e->getMessage());
+    }
 }
 
 /* Narrow, best-effort use only: looking up a Telegram chat_id for OTP
@@ -210,7 +244,31 @@ function etelid_bridge_local_user($pdo, $member) {
          LIMIT 1");
     $s->execute(array($digits, $last9));
     $u = $s->fetch();
+    $isLimited = !empty($member['profile_limited']);
+    /* Only the Service API payload carries profile_limited. The agent
+       connector's direct SSO-token lookup does not, and must never be
+       mistaken for "not limited" - so the local flag is only ever written
+       when the member data actually says which it is. */
+    $limitKnown = array_key_exists('profile_limited', $member);
+    if ($u && $isLimited) {
+        /* A limited (Ride-only) EtelID has no ID documents on file and its
+           phone number is not verified at sign-up, so it must NOT be able to
+           take over a pre-existing Delivery/Ride account that merely shares
+           that phone number. Only an account already linked to this same
+           EtelID may be used; anything else is refused. */
+        $linked = false;
+        if ($hasEtelId && !empty($member['etel_id'])) {
+            $ck = $pdo->prepare('SELECT etel_id FROM users WHERE id = ?');
+            $ck->execute(array($u['id']));
+            $linked = ($ck->fetchColumn() === $member['etel_id']);
+        }
+        if (!$linked) {
+            $GLOBALS['etelid_link_error'] = 'A Delivery/Ride account with this phone number already exists. Sign in with that account, or add your profile photo and Fayda ID to your Etel-ID first to link them.';
+            return null;
+        }
+    }
     if ($u) {
+        if ($limitKnown) etelid_bridge_set_limited($pdo, $u['id'], $isLimited);
         /* Backfill the etel_id link the first time this account is seen
            through EtelID SSO/service calls - existing accounts predate
            this column, and a courier's NFC card lookup (nfc_list_courier_orders
@@ -245,7 +303,45 @@ function etelid_bridge_local_user($pdo, $member) {
     }
     $s = $pdo->prepare("SELECT id, name, phone, role" . ($hasVer ? ", token_version" : "") . " FROM users WHERE id = ?");
     $s->execute(array($pdo->lastInsertId()));
-    return $s->fetch();
+    $created = $s->fetch();
+    if ($created && $limitKnown) etelid_bridge_set_limited($pdo, $created['id'], $isLimited);
+    return $created;
+}
+
+/* True when this local user is a limited (Ride-only) EtelID account right
+   now (re-checked against EtelID, see etelid_bridge_still_limited()). */
+function etelid_bridge_user_is_limited($pdo, $user_id) {
+    try {
+        if (!in_array('etelid_limited', etel_table_columns($pdo, 'users'), true)) return false;
+        $hasEtelId = in_array('etel_id', etel_table_columns($pdo, 'users'), true);
+        $q = $pdo->prepare('SELECT id, etelid_limited' . ($hasEtelId ? ', etel_id' : '') . ' FROM users WHERE id = ?');
+        $q->execute(array($user_id));
+        $r = $q->fetch(PDO::FETCH_ASSOC);
+        if (!$r || empty($r['etelid_limited'])) return false;
+        return etelid_bridge_still_limited($pdo, $r);
+    } catch (Exception $e) {
+        return false;
+    }
+}
+
+/* Fresh check of a limited account against EtelID (the member may have added
+   their photo + Fayda ID since they signed in). Returns true while the EtelID
+   is STILL limited, false once it is not (and clears the local flag). Fails
+   closed (still limited) when EtelID cannot be reached. Cached per user for
+   60 seconds in the system temp dir so a blocked client that keeps retrying
+   cannot hammer EtelID. */
+function etelid_bridge_still_limited($pdo, $user) {
+    if (empty($user['etel_id'])) return true;
+    $cache = rtrim(sys_get_temp_dir(), '/\\') . '/etel_limited_' . intval($user['id']) . '.txt';
+    if (is_file($cache) && (time() - @filemtime($cache)) < 60) {
+        return trim((string)@file_get_contents($cache)) !== '0';
+    }
+    $svc = etelid_bridge_service_call('resolve', array('identifier' => $user['etel_id']));
+    if ($svc === null || empty($svc['member'])) return true;
+    $still = !empty($svc['member']['profile_limited']);
+    @file_put_contents($cache, $still ? '1' : '0');
+    if (!$still) etelid_bridge_set_limited($pdo, $user['id'], false);
+    return $still;
 }
 
 

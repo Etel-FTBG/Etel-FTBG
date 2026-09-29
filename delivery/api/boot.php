@@ -307,7 +307,9 @@ function get_auth_user($pdo) {
     $hasVersionCol = in_array('token_version', $cols, true);
     $hasStaffRole  = in_array('staff_role', $cols, true);
     $hasManagedCol = in_array('is_etelgroup_managed', $cols, true);
-    $s = $pdo->prepare('SELECT id,name,phone,role' . ($hasVersionCol ? ',token_version' : '') . ($hasStaffRole ? ',staff_role' : '') . ($hasManagedCol ? ',is_etelgroup_managed' : '') . ' FROM users WHERE id=?');
+    $hasLimitedCol = in_array('etelid_limited', $cols, true);
+    $hasEtelIdCol  = in_array('etel_id', $cols, true);
+    $s = $pdo->prepare('SELECT id,name,phone,role' . ($hasVersionCol ? ',token_version' : '') . ($hasStaffRole ? ',staff_role' : '') . ($hasManagedCol ? ',is_etelgroup_managed' : '') . ($hasLimitedCol ? ',etelid_limited' : '') . ($hasLimitedCol && $hasEtelIdCol ? ',etel_id' : '') . ' FROM users WHERE id=?');
     $s->execute(array($tok['uid']));
     $u = $s->fetch(PDO::FETCH_ASSOC);
     if (!$u) return null;
@@ -315,7 +317,26 @@ function get_auth_user($pdo) {
     // against - fail open on that specific gap rather than locking everyone
     // out, since a missing column is an ops issue, not a compromised token.
     if ($hasVersionCol && intval($u['token_version']) !== $tok['version']) return null;
+    /* Limited (Ride-only) EtelID accounts: only Ride is open. Controllers for
+       everything else (orders, service givers, equb, courier) set
+       $GLOBALS['ETEL_LIMITED_BLOCK'] in the dispatch below before they load,
+       so this one check covers every authenticated action they contain. */
+    if (!empty($GLOBALS['ETEL_LIMITED_BLOCK']) && !empty($u['etelid_limited'])) {
+        require_once __DIR__ . '/etelid_bridge.php';
+        if (etelid_bridge_still_limited($pdo, $u)) etel_limited_refuse();
+    }
     return $u;
+}
+/* 403 for a limited (Ride-only) EtelID trying to use anything but Ride. */
+function etel_limited_refuse() {
+    http_response_code(403);
+    echo json_encode(array(
+        'success' => false,
+        'profile_incomplete' => true,
+        'message' => 'Your Etel-ID is limited to Ride. Add your profile photo and both sides of your Fayda ID in the EtelID portal to unlock Delivery and all other Etel services.',
+        'v' => APP_VER,
+    ));
+    exit;
 }
 function require_auth($pdo) {
     $u = get_auth_user($pdo);
@@ -844,6 +865,7 @@ switch ($action) {
         // equb_cron.php, so there's exactly one place that logic can
         // exist - never duplicated between the scheduled job and the
         // admin's manual "force process" button.
+        $GLOBALS['ETEL_LIMITED_BLOCK'] = true; // limited (Ride-only) EtelIDs are refused here - see get_auth_user()
         require __DIR__ . '/controllers/EqubController.php';
         break;
     case 'planning_list_hires': case 'planning_add_hire': case 'planning_update_hire': case 'planning_delete_hire': case 'planning_get_notes': case 'planning_save_notes': case 'planning_reset_and_seed_demo':
@@ -883,13 +905,16 @@ switch ($action) {
         require __DIR__ . '/controllers/DriverFuelController.php';
         break;
     case 'courier_add_fuel_log': case 'courier_list_fuel_logs': case 'courier_delete_fuel_log': case 'courier_get_fuel_summary':
+        $GLOBALS['ETEL_LIMITED_BLOCK'] = true; // limited (Ride-only) EtelIDs are refused here - see get_auth_user()
         require __DIR__ . '/controllers/CourierFuelController.php';
         break;
     case 'customer_create_order': case 'customer_get_orders': case 'submit_order_issue': case 'customer_get_order_issues': case 'courier_get_available_orders': case 'courier_accept_order': case 'courier_update_order_status': case 'courier_get_my_orders': case 'courier_get_profile': case 'courier_go_online': case 'courier_go_offline': case 'courier_update_location': case 'courier_get_kpi_summary': case 'rate_order': case 'get_order_ratings': case 'track_order': case 'get_shop_reviews': case 'schedule_order': case 'get_scheduled_orders': case 'cancel_scheduled_order': case 'request_pickup_confirmation': case 'check_pickup_confirmation': case 'sg_pending_confirmations': case 'sg_confirm_pickup': case 'request_delivery_confirmation': case 'check_delivery_confirmation': case 'customer_pending_confirmations': case 'customer_confirm_delivery': case 'customer_wallet_history': case 'initiate_telebirr_payment': case 'check_telebirr_payment': case 'admin_list_telebirr_payments': case 'admin_confirm_telebirr_payment': case 'confirm_bank_payment': case 'admin_list_bank_payments': case 'admin_confirm_bank_payment': case 'admin_financial_report': case 'get_payment_method_logos': case 'admin_set_payment_logo':
     case 'customer_get_favorites': case 'customer_toggle_favorite': case 'customer_get_addresses': case 'customer_add_address': case 'customer_update_address': case 'customer_delete_address': case 'customer_get_messages': case 'customer_send_message': case 'customer_get_referral_info': case 'customer_get_settings': case 'customer_update_settings':
+        $GLOBALS['ETEL_LIMITED_BLOCK'] = true; // limited (Ride-only) EtelIDs are refused here - see get_auth_user()
         require __DIR__ . '/controllers/OrderController.php';
         break;
     case 'sg_profile': case 'sg_update_profile': case 'sg_orders': case 'sg_accept_order': case 'sg_update_order_status': case 'sg_get_kitchen_ticket': case 'sg_order_detail': case 'sg_scan_qr': case 'sg_complete_order': case 'sg_stats': case 'sg_set_online': case 'sg_notifications': case 'sg_add_item': case 'sg_get_my_items': case 'sg_update_item': case 'sg_delete_item': case 'sg_get_staff': case 'sg_add_staff': case 'sg_remove_staff': case 'sg_update_staff_role': case 'sg_list_roles': case 'sg_save_role': case 'sg_delete_role': case 'sg_my_role': case 'sg_financial_report': case 'sg_get_pending_payout_request': case 'admin_list_payout_requests': case 'admin_review_payout_request':
+        $GLOBALS['ETEL_LIMITED_BLOCK'] = true; // limited (Ride-only) EtelIDs are refused here - see get_auth_user()
         require __DIR__ . '/controllers/ServiceGiverController.php';
         break;
     case 'agent_ride_quote': case 'agent_book_ride': case 'agent_search_items': case 'agent_order_quote': case 'agent_place_order': case 'agent_ride_status': case 'agent_cancel_ride': case 'agent_order_status': case 'agent_find_and_quote':

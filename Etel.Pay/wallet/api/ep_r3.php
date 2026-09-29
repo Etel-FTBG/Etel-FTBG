@@ -391,6 +391,9 @@ case 'ep_login_etelid': {
         ep_err($msg, 401);
     }
     $mm = isset($auth['data']['member']) ? $auth['data']['member'] : array();
+    /* Limited (Ride-only) EtelID: EtelID already refuses it when `app` is sent, this
+       is the safety net if that ever changes. */
+    if (!empty($mm['profile_limited'])) ep_err('Your Etel-ID is limited to Ride. Add your profile photo and both sides of your Fayda ID in the EtelID portal to unlock Etel Pay.', 403);
     /* Callers (ride.js, customer.js, the wallet's own login form) don't all
        send the same phone format for the same person -- +251936533606 vs
        0936533606 vs spaced/dashed variants. Match by the last 9 digits
