@@ -1,4 +1,4 @@
--- Migration 058: user_display_prefs - per-account display size settings
+-- Migration 060: user_display_prefs - per-account display size settings
 -- (text / icon / button / logo size and boldness) so a person's choice
 -- follows them across every device they sign in on.
 --

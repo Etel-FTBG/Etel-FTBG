@@ -10,7 +10,7 @@
  * or overwrite another account's setting.
  *
  * The table is created on first use (CREATE TABLE IF NOT EXISTS, outside any
- * transaction) as well as by migration 058, so the code and the migration
+ * transaction) as well as by migration 060, so the code and the migration
  * can be deployed in either order.
  */
 if (!defined('APP_VER')) { http_response_code(403); exit('Direct access forbidden'); }
