@@ -848,7 +848,7 @@
 @keyframes dtIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
 </style>
     <!-- etel-phase5.css, etel-design-v4.css, etel-responsive.css now folded into css/driver-bundle.css above -->
-<script src="../js/etel-display-settings.js?v=1.1" defer></script>
+<script src="../js/etel-display-settings.js?v=1.2" data-fab="off" defer></script>
 </head>
 <body class="dark-page" style="background:#08080f;margin:0;padding:0">
 <!-- Custom splash overlay - shows the group master logo briefly on
@@ -1397,6 +1397,17 @@
           <div>
             <div class="profile-row-label">Admin Dashboard</div>
             <div class="profile-row-sub">You're signed in as admin</div>
+          </div>
+          <div class="profile-row-arrow">›</div>
+        </div>
+      </div>
+
+      <div class="profile-section">
+        <div class="profile-row" data-etel-display-open onclick="EtelDisplay.open()">
+          <div class="profile-row-icon">🔠</div>
+          <div>
+            <div class="profile-row-label">Display size</div>
+            <div class="profile-row-sub">Make text, icons, buttons and logos bigger or smaller</div>
           </div>
           <div class="profile-row-arrow">›</div>
         </div>

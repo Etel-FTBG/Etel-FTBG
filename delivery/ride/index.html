@@ -242,7 +242,7 @@
 #ride-map-expand-btn:active{transform:scale(.94)}
 </style>
     <!-- etel-phase5.css, etel-design-v4.css, etel-responsive.css now folded into css/ride-bundle.css above -->
-<script src="../js/etel-display-settings.js?v=1.1" defer></script>
+<script src="../js/etel-display-settings.js?v=1.2" data-fab="off" defer></script>
 </head>
 <body class="dark-page" style="background:#08080f;margin:0;padding:0">
 
@@ -721,6 +721,11 @@
       <div class="mp-row" onclick="closeMyProfile();openRideReferral()">
         <div class="mp-row-icon">🎁</div>
         <div><div class="mp-row-label">Referral &amp; Rewards</div><div class="mp-row-sub">Earn ETB with friends</div></div>
+        <div class="mp-row-arrow">›</div>
+      </div>
+      <div class="mp-row" data-etel-display-open onclick="closeMyProfile();EtelDisplay.open()">
+        <div class="mp-row-icon">🔠</div>
+        <div><div class="mp-row-label">Display Size</div><div class="mp-row-sub">Text, icons, buttons and logos</div></div>
         <div class="mp-row-arrow">›</div>
       </div>
       <div class="mp-row" onclick="closeMyProfile();openRideSettings()">

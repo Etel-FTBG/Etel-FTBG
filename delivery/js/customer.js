@@ -2285,8 +2285,9 @@ function toggleProfile() {
       ['🔔','Notifications','Order updates & offers','notifications'],
       ['🎁','Referral & Rewards','Earn ETB with friends','referrals'],
       ['⚙️','Settings & Privacy','Account preferences','settings'],
+      ['🔠','Display Size','Text, icons, buttons & logos','__display'],
     ].map(function(m){
-      var onclick = m[3] ? "closeProfile();switchCategory('"+m[3]+"')" : '';
+      var onclick = m[3] === '__display' ? "closeProfile();EtelDisplay.open()" : (m[3] ? "closeProfile();switchCategory('"+m[3]+"')" : '');
       return `<button onclick="${onclick}" style="display:flex;align-items:center;gap:14px;padding:12px 10px;border-radius:12px;background:transparent;border:none;cursor:${m[3]?'pointer':'default'};width:100%;text-align:left;font-family:'Poppins',sans-serif;transition:background .15s" onmouseover="this.style.background='rgba(255,215,0,.07)'" onmouseout="this.style.background='transparent'">
         <div style="width:38px;height:38px;border-radius:10px;background:rgba(255,215,0,.08);border:1px solid rgba(255,215,0,.12);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0">${m[0]}</div>
         <div style="flex:1;min-width:0">
