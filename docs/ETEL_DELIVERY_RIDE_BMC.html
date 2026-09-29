@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ETEL Delivery &amp; Ride - Business Model Canvas</title>
+<style>
+:root{--bg:#0d0d0d;--card:#171411;--line:#3a2f17;--gold:#D4AF37;--gold2:#F2CC6B;--text:#eee6d3;--mute:#b3a78a}
+@page{size:A4 landscape;margin:8mm}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:13px/1.4 system-ui,Segoe UI,Arial,sans-serif;padding:16px}
+header{display:flex;justify-content:space-between;align-items:baseline;border-bottom:1px solid var(--gold);padding-bottom:8px;margin-bottom:12px}
+h1{margin:0;font-size:22px;color:var(--gold2);letter-spacing:.5px}
+header span{color:var(--mute);font-size:12px}
+.grid{display:grid;grid-template-columns:repeat(10,1fr);grid-template-rows:auto auto auto;gap:8px}
+.b{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:10px}
+.b h2{margin:0 0 6px;font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--gold)}
+.b ul{margin:0;padding-left:16px}.b li{margin:2px 0}
+.kp{grid-column:1/3;grid-row:1/3}.ka{grid-column:3/5;grid-row:1}.kr{grid-column:3/5;grid-row:2}
+.vp{grid-column:5/7;grid-row:1/3;border-color:var(--gold)}
+.cr{grid-column:7/9;grid-row:1}.ch{grid-column:7/9;grid-row:2}.cs{grid-column:9/11;grid-row:1/3}
+.co{grid-column:1/6}.rv{grid-column:6/11}
+.rv strong{color:var(--gold2)}
+footer{margin-top:10px;color:var(--mute);font-size:11px}
+@media(max-width:800px){.grid{display:block}.b{margin-bottom:8px}}
+@media print{html,body{height:auto;overflow:hidden}body{zoom:.6;padding:0;font-size:10px;line-height:1.3}.b{padding:6px}.b h2{font-size:10px}header{margin-bottom:6px}h1{font-size:18px}}
+</style></head><body>
+<header><h1>ETEL Delivery &amp; Ride - Business Model Canvas</h1><span>Etel Group - Hawassa, Ethiopia</span></header>
+<div class="grid">
+<div class="b kp"><h2>Key Partners</h2><ul><li>Telebirr and banks</li><li>Restaurants, shops, pharmacies</li><li>Independent drivers and couriers</li><li>SMS, push, Telegram providers</li><li>Hawassa transport authorities</li><li>INSA (security compliance)</li><li>Investors</li></ul></div>
+<div class="b ka"><h2>Key Activities</h2><ul><li>Dispatch and ride matching</li><li>Settlement, escrow, payouts</li><li>Recruiting drivers and merchants</li><li>Platform maintenance and audits</li><li>Marketing and support</li></ul></div>
+<div class="b kr"><h2>Key Resources</h2><ul><li>PHP/MySQL PWA platform</li><li>EtelID (SSO) and EtelPay wallet</li><li>Driver and courier network</li><li>Etel Group brand, local knowledge</li></ul></div>
+<div class="b vp"><h2>Value Propositions</h2><ul><li><b>Customers:</b> delivery and rides in one app, English and Amharic, Telebirr / bank / EtelPay, live tracking</li><li><b>Merchants:</b> ready customers and couriers, inventory dashboard, wallet payouts</li><li><b>Drivers:</b> steady income, driver app, wallet settlement</li><li><b>All:</b> one EtelID login across every Etel service; installable, offline-capable PWA for low-cost Android</li></ul></div>
+<div class="b cr"><h2>Customer Relationships</h2><ul><li>Self-service app</li><li>Live order and ride tracking</li><li>In-app chat and support</li><li>Personal merchant and driver onboarding</li></ul></div>
+<div class="b ch"><h2>Channels</h2><ul><li>PWA install, ethelmarket.com</li><li>Push and Telegram</li><li>Agents and field onboarding</li><li>Cross-promotion: Gebeya, Taxi, Pay</li></ul></div>
+<div class="b cs"><h2>Customer Segments</h2><ul><li>Hawassa consumers (food, groceries, goods)</li><li>Ride passengers</li><li>Merchants (service givers)</li><li>Couriers and ride drivers</li><li>Equb / community groups</li><li>Investors</li></ul></div>
+<div class="b co"><h2>Cost Structure</h2><ul><li>Driver and courier incentives</li><li>Payment gateway fees</li><li>Hosting, domain, SMS, push</li><li>Staff: support, agents, developers</li><li>Marketing and acquisition</li><li>Security audits, refunds and disputes</li></ul></div>
+<div class="b rv"><h2>Revenue Streams</h2><ul><li><strong>5% commission</strong> on merchant orders</li><li>Zone-based delivery fees</li><li>Platform cut of ride fares (rate to confirm)</li><li>EtelPay wallet fees (to confirm)</li></ul></div>
+</div>
+<footer>Draft from the delivery/ codebase and owner input (5% merchant commission). Other rates and partners to be confirmed.</footer>
+</body></html>
