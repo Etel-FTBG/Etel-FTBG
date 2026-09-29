@@ -906,6 +906,9 @@ switch ($action) {
     case 'save_push_subscription': case 'remove_push_subscription': case 'get_vapid_public_key': case 'test_send_push':
         require __DIR__ . '/controllers/PushController.php';
         break;
+    case 'get_display_prefs': case 'save_display_prefs':
+        require __DIR__ . '/controllers/DisplayPrefsController.php';
+        break;
     case 'nfc_list_courier_orders': case 'nfc_confirm_pickup': case 'nfc_confirm_delivery':
     case 'nfc_driver_status': case 'nfc_start_ride':
         // Service-key gated (EtelID calls these server-to-server after an
