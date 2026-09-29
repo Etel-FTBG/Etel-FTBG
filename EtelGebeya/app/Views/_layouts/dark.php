@@ -29,6 +29,8 @@ $roleLabel = $role ?? ($user['roles'][0] ?? 'user');
   <meta name="theme-color" content="#0A0A1A">
   <link rel="stylesheet" href="<?= View::asset('css/admin.css') ?>">
   <link rel="stylesheet" href="<?= View::asset('vendor/bootstrap-icons/bootstrap-icons.min.css') ?>">
+  <!-- Display size controller: the panels have a "Display size" row in the sidebar, so no floating button -->
+  <script src="<?= View::asset('js/etel-display-settings.js') ?>?v=1.2" data-fab="off" defer></script>
 </head>
 <body>
 
@@ -84,6 +86,11 @@ $roleLabel = $role ?? ($user['roles'][0] ?? 'user');
 
       <div class="nav-section-label" style="margin-top:1rem;">Account</div>
 
+      <a href="#" class="nav-item" data-etel-display-open>
+        <i class="bi bi-fonts nav-icon"></i>
+        <span>Display size</span>
+      </a>
+
       <form action="<?= View::url('/logout') ?>" method="post" style="margin-top:.5rem;">
         <?= csrf() ?>
         <button type="submit" class="nav-item" style="width:100%;background:none;border:none;text-align:left;cursor:pointer;font:inherit;">
@@ -133,9 +140,9 @@ $roleLabel = $role ?? ($user['roles'][0] ?? 'user');
 </div>
 
 <script>
-document.querySelectorAll('.nav-item').forEach(el => {
+document.querySelectorAll('.nav-item:not([data-etel-display-open])').forEach(el => {
   el.addEventListener('click', () => {
-    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.querySelectorAll('.nav-item:not([data-etel-display-open])').forEach(n => n.classList.remove('active'));
     el.classList.add('active');
   });
 });
