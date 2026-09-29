@@ -260,7 +260,26 @@
             if (!rules) continue;
             walkRules(rules);
         }
+        ensureExtraCss();
         if (!rootSized) ensureRootRule();
+    }
+    var extraAdded = false;
+    function styleEl() {
+        var st = doc.getElementById('etel-display-css');
+        if (!st) {
+            st = doc.createElement('style');
+            st.id = 'etel-display-css';
+            (doc.head || root).appendChild(st);
+        }
+        return st;
+    }
+    // Tab / nav labels are often nowrap - at big sizes let them wrap instead of being cut off.
+    function ensureExtraCss() {
+        if (extraAdded) return;
+        extraAdded = true;
+        styleEl().appendChild(doc.createTextNode(
+            'html[data-etel-on] :is([class*="tab"],[class*="nav-item"],[class*="nav-btn"],[class*="nav-link"])' +
+            '{white-space:normal!important;text-overflow:clip!important;line-height:1.15}'));
     }
     var rootRuleAdded = false;
     function ensureRootRule() {
@@ -268,13 +287,7 @@
         rootRuleAdded = true;
         var base = 16;
         try { base = parseFloat(getComputedStyle(root).fontSize) || 16; } catch (e) {}
-        var st = doc.getElementById('etel-display-css');
-        if (!st) {
-            st = doc.createElement('style');
-            st.id = 'etel-display-css';
-            (doc.head || root).appendChild(st);
-        }
-        st.textContent = 'html[data-etel-on]{font-size:calc(' + base + 'px * var(--etel-ts,1))}';
+        styleEl().appendChild(doc.createTextNode('html[data-etel-on]{font-size:calc(' + base + 'px * var(--etel-ts,1))}'));
     }
 
     /* ────────────────────  inline-style pass  ───────────────────── */
