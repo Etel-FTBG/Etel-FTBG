@@ -1,5 +1,5 @@
 /* ════════════════════════════════════════════════════════════════
-   ETEL — Display size controller  v1.0
+   ETEL — Display size controller  v1.3
    ════════════════════════════════════════════════════════════════
    One shared script, loaded by every delivery / ride / driver /
    courier / service-giver / admin / login page. It adds a small
@@ -12,8 +12,13 @@
        - Logo size        (70% - 200%)
        - Text boldness    (Normal / Bold / Extra bold)
 
-   The choice is saved in localStorage under ONE shared key, so it
-   follows the person across every ETEL app on this origin.
+   PRIVACY: the choice is saved on this device under a key that is
+   specific to the signed-in account (system + user id), so one
+   person's setting can never change what another person sees - even
+   on a shared phone or computer.  Before sign-in (login screens,
+   public pages) a temporary "guest" setting is used; it is handed to
+   the account that signs in within 30 minutes, then discarded, so
+   someone who enlarged the login screen to read it keeps that size.
 
    How the scaling works (no page has to be edited beyond loading
    this file):
@@ -35,7 +40,7 @@
    at 200%.
 
    Public API:  window.EtelDisplay.open() / .close() / .get() /
-                .set({ts,is,bs,ls,fw}) / .reset()
+                .set({ts,is,bs,ls,fw}) / .reset() / .refreshUser()
    Any element with the attribute  data-etel-display-open  opens the
    panel when clicked (handy for a "Display size" row in a settings
    screen).  Apps that have such a row in their profile menu load this
@@ -45,8 +50,8 @@
     'use strict';
     if (window.EtelDisplay) return;
 
-    var KEY = 'etel_display_prefs';
-    var POS_KEY = 'etel_display_fab_pos';
+    var BASE_KEY = 'etel_display_prefs';          // pre-v1.3 shared key (migrated once)
+    var GUEST_TTL = 30 * 60 * 1000;               // guest setting is adoptable by a sign-in for 30 min
     var MIN = 70, MAX = 200, STEP = 5;
     var DEFAULTS = { ts: 100, is: 100, bs: 100, ls: 100, fw: 0 };
     var FW_MIN = [0, 700, 800];          // fw level -> minimum font-weight
@@ -55,8 +60,52 @@
     var cur = doc.currentScript;
     var fabOff = !!(cur && cur.getAttribute('data-fab') === 'off');   // app has a Display size row in its profile menu
     var root = doc.documentElement;
+    var ns = ((cur && cur.getAttribute('data-ns')) || 'delivery').toLowerCase().replace(/[^a-z0-9_-]/g, '') || 'delivery';
+    var uid = currentUid();
+    var KEY = keyFor(uid);
+    migrate();
     var prefs = load();
     var engineOn = false;
+
+    /* ---------------------  per-account scoping  -------------------- */
+    // Who is signed in?  Server-rendered pages set window.ETEL_DISPLAY_USER (authoritative,
+    // '' = signed out); the delivery apps keep the user in localStorage 'etel_user'; the
+    // Gebeya static admin keeps an identifier in 'eg_admin_ident'.
+    function currentUid() {
+        var id = '';
+        try {
+            if (typeof window.ETEL_DISPLAY_USER !== 'undefined' && window.ETEL_DISPLAY_USER !== null) {
+                id = String(window.ETEL_DISPLAY_USER);
+            } else if (ns === 'gebeya') {
+                // only while an admin session exists - a stale identifier must not colour the login screen
+                id = localStorage.getItem('eg_admin_token') ? (localStorage.getItem('eg_admin_ident') || '') : '';
+            } else if (localStorage.getItem('etel_token')) {
+                var u = JSON.parse(localStorage.getItem('etel_user') || 'null');
+                if (u && typeof u === 'object') id = String(u.id != null ? u.id : (u.user_id != null ? u.user_id : (u.member_id || u.phone || '')));
+            }
+        } catch (e) {}
+        return id.replace(/[^A-Za-z0-9_.@+-]/g, '').slice(0, 64);
+    }
+    function keyFor(id) { return BASE_KEY + ':' + ns + ':' + (id ? 'u' + id : 'guest'); }
+    function posKey() { return 'etel_display_fab_pos:' + ns + ':' + (uid ? 'u' + uid : 'guest'); }
+    // Move device-wide / guest settings to the account that just signed in (never the reverse).
+    function migrate() {
+        try {
+            if (!uid) return;
+            var guestKey = keyFor('');
+            if (localStorage.getItem(KEY) == null) {
+                var src = null, g = localStorage.getItem(guestKey);
+                if (g != null) {
+                    var gp = JSON.parse(g);
+                    if (gp && typeof gp.t === 'number' && Date.now() - gp.t < GUEST_TTL) src = g;
+                }
+                if (src == null) src = localStorage.getItem(BASE_KEY);        // old shared setting: first sign-in claims it
+                if (src != null) localStorage.setItem(KEY, src);
+            }
+            localStorage.removeItem(guestKey);
+            localStorage.removeItem(BASE_KEY);
+        } catch (e) {}
+    }
 
     /* ─────────────────────────  storage  ───────────────────────── */
     function clamp(n, lo, hi) { n = Number(n); if (isNaN(n)) return lo; return Math.max(lo, Math.min(hi, n)); }
@@ -77,7 +126,7 @@
     function save() {
         try {
             if (isDefault(prefs)) localStorage.removeItem(KEY);
-            else localStorage.setItem(KEY, JSON.stringify(prefs));
+            else localStorage.setItem(KEY, JSON.stringify({ ts: prefs.ts, is: prefs.is, bs: prefs.bs, ls: prefs.ls, fw: prefs.fw, t: Date.now() }));
         } catch (e) {}
     }
     function isDefault(p) {
@@ -400,7 +449,7 @@
             weight: 'Text boldness', wNormal: 'Normal', wBold: 'Bold', wXbold: 'Extra bold',
             preview: 'Preview', sample: 'Hello, Hawassa!', btn: 'Order now',
             reset: 'Reset to default', done: 'Done', close: 'Close',
-            dec: 'Smaller', inc: 'Bigger', saved: 'Saved automatically on this device.'
+            dec: 'Smaller', inc: 'Bigger', saved: 'Saved on this device for your account only.'
         },
         am: {
             fab: 'የማሳያ መጠን ቅንብር',
@@ -412,7 +461,7 @@
             weight: 'የጽሑፍ ውፍረት', wNormal: 'መደበኛ', wBold: 'ደማቅ', wXbold: 'እጅግ ደማቅ',
             preview: 'ቅድመ እይታ', sample: 'ሰላም ሐዋሳ!', btn: 'አሁን ይዘዙ',
             reset: 'ወደ መጀመሪያው መልስ', done: 'ተጠናቀቀ', close: 'ዝጋ',
-            dec: 'ቀንስ', inc: 'ጨምር', saved: 'በዚህ መሣሪያ ላይ በራሱ ይቀመጣል።'
+            dec: 'ቀንስ', inc: 'ጨምር', saved: 'ለእርስዎ መለያ ብቻ በዚህ መሣሪያ ላይ ይቀመጣል።'
         }
     };
     function lang() {
@@ -643,7 +692,7 @@
     var dragMoved = false;
     function loadPos() {
         try {
-            var p = JSON.parse(localStorage.getItem(POS_KEY) || 'null');
+            var p = JSON.parse(localStorage.getItem(posKey()) || 'null');
             if (p && typeof p.x === 'number' && typeof p.y === 'number') return p;
         } catch (e) {}
         return null;
@@ -681,7 +730,7 @@
             down = false;
             if (dragMoved) {
                 var r = fab.getBoundingClientRect();
-                try { localStorage.setItem(POS_KEY, JSON.stringify({ x: Math.round(r.left), y: Math.round(r.top) })); } catch (e) {}
+                try { localStorage.setItem(posKey(), JSON.stringify({ x: Math.round(r.left), y: Math.round(r.top) })); } catch (e) {}
                 setTimeout(function () { dragMoved = false; }, 0);
             }
         }
@@ -716,13 +765,24 @@
         try { fab.focus(); } catch (e) {}
     }
 
-    window.EtelDisplay = { open: open, close: close, get: get, set: set, reset: reset };
+    // Call after a sign-in / sign-out that does not reload the page.
+    function refreshUser() {
+        uid = currentUid();
+        KEY = keyFor(uid);
+        migrate();
+        prefs = load();
+        applyVars();
+        syncUI();
+        if (fab) placeFab(loadPos());
+    }
+
+    window.EtelDisplay = { open: open, close: close, get: get, set: set, reset: reset, refreshUser: refreshUser };
 
     /* ───────────────────────────  boot  ────────────────────────── */
     applyVars();                              // sets vars + starts engine if non-default
 
     window.addEventListener('storage', function (e) {                // another tab/app changed it
-        if (e.key !== KEY && e.key !== null) return;
+        if (e.key !== KEY && e.key !== null) return;    // only OUR account's key
         prefs = load();
         applyVars();
         syncUI();

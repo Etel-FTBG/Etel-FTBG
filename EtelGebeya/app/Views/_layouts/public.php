@@ -32,7 +32,8 @@ $cartCount = (int)($_SESSION['cart_count'] ?? array_sum(array_column($_SESSION['
        <link> was never added, leaving those pages unstyled. -->
   <link rel="stylesheet" href="<?= View::asset('css/etel.css') ?>">
   <!-- Display size controller (floating Aa button): text / icon / button / logo size + boldness -->
-  <script src="<?= View::asset('js/etel-display-settings.js') ?>?v=1.2" defer></script>
+  <script>window.ETEL_DISPLAY_USER = <?= json_encode((string)($user['id'] ?? '')) ?>;</script>
+  <script src="<?= View::asset('js/etel-display-settings.js') ?>?v=1.3" data-ns="gebeya" defer></script>
   <script>
   // Defined in <head> (not the footer) so it exists before any product image's
   // onerror can fire during initial parsing -- broken photo -> neutral placeholder.
