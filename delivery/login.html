@@ -485,7 +485,9 @@ body { font-family:var(--ff-b); background:#0a0a14; overflow:hidden; }
     <link rel="stylesheet" href="css/etel-design-v4.css?v=4.4">
     <link rel="stylesheet" href="css/etel-responsive.css?v=1.0">
     <link rel="stylesheet" href="css/etel-system.css?v=1.0">
-<script src="js/etel-display-settings.js?v=1.0" defer></script>
+<style>/* keep the EN/አማ switch out of the header text when the display size is enlarged */
+html[data-etel-on] .del-lang-switch{position:static!important;margin:0 0 10px auto;width:max-content}</style>
+<script src="js/etel-display-settings.js?v=1.1" defer></script>
 </head>
 <body>
 
