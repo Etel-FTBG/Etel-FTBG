@@ -318,11 +318,17 @@ class EtelID_Auth_Ajax {
         if ( ! EtelID_Security::valid_ethiopian_phone( $data['phone'] ) ) {
             wp_send_json_error( array( 'field' => 'phone', 'message' => 'Enter a valid Ethiopian phone number, e.g. 0912345678 or +251123456789.' ) );
         }
-        if ( empty( $data['fayda_front_image'] ) || strpos( $data['fayda_front_image'], 'data:image' ) !== 0 ) {
-            wp_send_json_error( array( 'message' => 'Please add a photo of the front of your Fayda ID.' ) );
-        }
-        if ( empty( $data['fayda_back_image'] ) || strpos( $data['fayda_back_image'], 'data:image' ) !== 0 ) {
-            wp_send_json_error( array( 'message' => 'Please add a photo of the back of your Fayda ID.' ) );
+        /* The photo and the Fayda ID (both sides) are NO LONGER required here -
+         * Quick Register is name + phone (+ optional email) only, to make
+         * signing up fast. An account created without them is a "limited"
+         * account: Ride only, until the photo and both Fayda sides are added
+         * from the portal (see EtelID_DB::refresh_limited()). An older cached
+         * form that still sends them is honoured, but only when they are real
+         * images; anything else is dropped rather than stored. */
+        foreach ( array( 'photo_url', 'fayda_front_image', 'fayda_back_image' ) as $img_key ) {
+            if ( '' !== $data[ $img_key ] && 0 !== strpos( $data[ $img_key ], 'data:image' ) ) {
+                $data[ $img_key ] = '';
+            }
         }
         if ( ! empty( $data['email'] ) && ! is_email( $data['email'] ) ) {
             wp_send_json_error( array( 'field' => 'email', 'message' => 'Invalid email address.' ) );
@@ -354,15 +360,21 @@ class EtelID_Auth_Ajax {
          * the must_change_password portal overlay expects exactly this
          * shape (pin_hash set, must_change_password=1). */
         $temp_password = EtelID_Fayda::generate_temp_password();
+        $has_all_docs  = ( '' !== $data['photo_url'] && '' !== $data['fayda_front_image'] && '' !== $data['fayda_back_image'] );
         EtelID_DB::update_member( $member_id, array(
             'pin_hash'             => EtelID_Auth::hash_password( $temp_password ),
             'must_change_password' => 1,
-            'kyc_level'            => 1,
+            /* Photo + both Fayda sides on file -> normal level-1 account.
+             * Otherwise a limited (Ride-only) account until they are added. */
+            'kyc_level'            => $has_all_docs ? 1 : 0,
+            'profile_limited'      => $has_all_docs ? 0 : 1,
         ) );
 
         $member = EtelID_DB::get_member( $member_id );
         EtelID_DB::log( $member_id, $member ? $member->etel_id : '', 'issued',
-            'Self-service quick registration (fast form) - remaining profile fields to be completed later' );
+            'Self-service quick registration (fast form) - ' . ( $has_all_docs
+                ? 'remaining profile fields to be completed later'
+                : 'LIMITED account (Ride only) until profile photo and Fayda ID are added' ) );
 
         /* Auto login - unlike the admin-driven quick-register flow, the
          * registrant is present in this browser right now. */
@@ -376,6 +388,7 @@ class EtelID_Auth_Ajax {
             'temp_password' => $temp_password,
             'verify_url'    => $member ? EtelID_QR::verify_url( $member->etel_id ) : '',
             'redirect'      => home_url( '/portal/' ),
+            'limited'       => ! $has_all_docs,
         ) );
     }
 
@@ -566,6 +579,7 @@ class EtelID_Auth_Ajax {
                 'last_verified'=> $member->last_verified,
                 'photo_url'    => $member->photo_url,
                 'kyc_level'           => isset( $member->kyc_level ) ? (int) $member->kyc_level : 0,
+                'profile_limited'     => ! empty( $member->profile_limited ) ? 1 : 0,
                 'must_change_password'=> isset( $member->must_change_password ) ? (int) $member->must_change_password : 0,
                 'pass2_completed_at'  => isset( $member->pass2_completed_at ) ? $member->pass2_completed_at : null,
             ),
@@ -683,7 +697,18 @@ class EtelID_Auth_Ajax {
 
         EtelID_DB::log( $member->id, $member->etel_id, 'updated', 'Member submitted Fayda ID photos for Pass 2 review.' );
 
-        wp_send_json_success( array( 'message' => 'Submitted! An admin will review your Fayda ID shortly.' ) );
+        /* Both sides are now on file - if a profile photo is too, the
+         * limited (Ride-only) account is unlocked straight away. The admin
+         * review that follows is only for the second pass (Etel Pay). */
+        $now_unlimited = EtelID_DB::refresh_limited( $member->id );
+        $msg = 'Submitted! An admin will review your Fayda ID shortly.';
+        if ( EtelID_DB::is_limited( $member ) ) {
+            $msg = $now_unlimited
+                ? 'Submitted! Your account is now unlocked for all Etel services. An admin will review your Fayda ID for Etel Pay.'
+                : 'Submitted! Add your profile photo too and your account will be fully unlocked.';
+        }
+
+        wp_send_json_success( array( 'message' => $msg, 'limited' => ! $now_unlimited ) );
     }
 
     /* ── Fayda Quick Register — portal version ───────────────
@@ -829,7 +854,15 @@ class EtelID_Auth_Ajax {
         EtelID_DB::update_member( $member->id, $data );
         EtelID_DB::log( $member->id, $member->etel_id, 'updated', 'Profile updated by member via portal' );
 
-        wp_send_json_success( array( 'message' => 'Profile updated successfully! Your card now reflects the changes.' ) );
+        /* A photo added here may be the last thing a limited (Ride-only)
+         * account was missing. */
+        $now_unlimited = EtelID_DB::refresh_limited( $member->id );
+        $msg = 'Profile updated successfully! Your card now reflects the changes.';
+        if ( EtelID_DB::is_limited( $member ) && $now_unlimited ) {
+            $msg .= ' Your account is now fully unlocked for all Etel services.';
+        }
+
+        wp_send_json_success( array( 'message' => $msg, 'limited' => ! $now_unlimited ) );
     }
 
     /* ── Name validation helpers ───────────────────────────

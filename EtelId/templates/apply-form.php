@@ -420,7 +420,7 @@ body::before{
           <div style="font-size:28px;flex-shrink:0;">⚡</div>
           <div>
             <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:16px;color:var(--g1);">Quick Register</div>
-            <div style="font-size:13px;color:var(--g4);margin-top:2px;">Full name, photo, Fayda ID, email &amp; phone - about a minute. Fill in the rest from your portal whenever you like.</div>
+            <div style="font-size:13px;color:var(--g4);margin-top:2px;">Just your name and phone number - about 30 seconds. Ride works right away; add your photo and Fayda ID later to unlock every other Etel service.</div>
           </div>
         </button>
         <button type="button" class="af-mode-card" onclick="etelIDChooseMode('full')"
@@ -446,7 +446,7 @@ body::before{
         <div class="af-panel-icon">⚡</div>
         <div>
           <span class="af-panel-title">Quick Register</span>
-          <span class="af-panel-sub">Just the essentials - add the rest from your portal any time</span>
+          <span class="af-panel-sub">Just your name and phone - add your photo and Fayda ID later</span>
         </div>
       </div>
       <div class="af-panel-body">
@@ -465,56 +465,12 @@ body::before{
           </div>
         </div>
 
-        <!-- Profile photo -->
-        <div class="af-field" style="margin:20px 0;">
-          <label class="af-label">Profile Photo <span class="req">*</span></label>
-          <div style="display:flex;align-items:center;gap:14px;border:1.5px dashed rgba(212,175,55,.35);border-radius:10px;padding:14px;">
-            <div id="q-photo-preview" style="width:56px;height:56px;border-radius:50%;background:rgba(212,175,55,.12);display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;font-size:22px;">📷</div>
-            <div style="font-size:11px;color:var(--g4);">Use the camera directly, or choose one from your gallery</div>
-          </div>
-          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;">
-            <label style="cursor:pointer;background:rgba(255,255,255,.06);border:1px solid rgba(212,175,55,.3);border-radius:8px;padding:10px 14px;font-size:12px;color:#fff;">
-              <input type="file" accept="image/*" capture="user" style="display:none" onchange="etelIDQuickPhotoFile(this)">🤳 Take Selfie
-            </label>
-            <label style="cursor:pointer;background:rgba(255,255,255,.06);border:1px solid rgba(212,175,55,.3);border-radius:8px;padding:10px 14px;font-size:12px;color:#fff;">
-              <input type="file" accept="image/*" style="display:none" onchange="etelIDQuickPhotoFile(this)">🖼️ Choose from Gallery
-            </label>
-          </div>
-        </div>
-
-        <!-- Fayda ID front/back -->
-        <div class="af-field">
-          <label class="af-label">Fayda National ID <span class="req">*</span></label>
-          <div style="font-size:11px;color:var(--g4);margin-bottom:10px;">Both sides are needed to verify your identity.</div>
-          <div style="margin-bottom:12px;">
-            <div style="font-size:11px;color:var(--g4);margin-bottom:6px;">Front of Fayda ID</div>
-            <div style="display:flex;gap:8px;flex-wrap:wrap;">
-              <label style="cursor:pointer;background:rgba(255,255,255,.06);border:1px solid rgba(212,175,55,.3);border-radius:8px;padding:10px 14px;font-size:12px;color:#fff;">
-                <input type="file" accept="image/*" capture="environment" style="display:none" onchange="etelIDQuickFaydaFile('front', this)">📷 Take Photo
-              </label>
-              <label style="cursor:pointer;background:rgba(255,255,255,.06);border:1px solid rgba(212,175,55,.3);border-radius:8px;padding:10px 14px;font-size:12px;color:#fff;">
-                <input type="file" accept="image/*" style="display:none" onchange="etelIDQuickFaydaFile('front', this)">🖼️ Choose from Gallery
-              </label>
-            </div>
-          </div>
-          <div style="margin-bottom:10px;">
-            <div style="font-size:11px;color:var(--g4);margin-bottom:6px;">Back of Fayda ID</div>
-            <div style="display:flex;gap:8px;flex-wrap:wrap;">
-              <label style="cursor:pointer;background:rgba(255,255,255,.06);border:1px solid rgba(212,175,55,.3);border-radius:8px;padding:10px 14px;font-size:12px;color:#fff;">
-                <input type="file" accept="image/*" capture="environment" style="display:none" onchange="etelIDQuickFaydaFile('back', this)">📷 Take Photo
-              </label>
-              <label style="cursor:pointer;background:rgba(255,255,255,.06);border:1px solid rgba(212,175,55,.3);border-radius:8px;padding:10px 14px;font-size:12px;color:#fff;">
-                <input type="file" accept="image/*" style="display:none" onchange="etelIDQuickFaydaFile('back', this)">🖼️ Choose from Gallery
-              </label>
-            </div>
-          </div>
-          <div id="q-fayda-preview" style="display:flex;gap:8px;margin-bottom:6px;"></div>
-        </div>
-
         <div class="af-terms" style="margin-top:20px;">
           By submitting, you confirm all information is accurate. Your Etel-ID will be issued
-          immediately with a temporary password - you'll be asked to set your own right after,
-          and you can add your date of birth, address, and other details from your portal any time.
+          immediately with a temporary password - you'll be asked to set your own right after.
+          <strong>Ride works right away.</strong> To use every other Etel service (Delivery, Market,
+          Pay and more) you will need to add your profile photo and both sides of your Fayda ID
+          from your portal - until then your account is limited to Ride.
         </div>
 
         <div class="af-nav-row">
@@ -581,9 +537,9 @@ body::before{
             </div>
           </div>
           <div class="af-terms" style="text-align:left;">
-            <i class="ti ti-info-circle"></i> Your name, photo, Fayda ID, email, and phone are saved. Date of birth,
-            address, and a few other details are still missing - the portal will remind you to add them, whenever
-            you're ready, from Edit Profile.
+            <i class="ti ti-info-circle"></i> Your name and phone are saved and you can <strong>book a Ride right now</strong>.
+            To unlock Delivery, Market, Pay and every other Etel service, add your profile photo and both sides of
+            your Fayda ID from Edit Profile in your portal - the portal will remind you until it is done.
           </div>
           <div class="af-success-actions" style="margin-top:20px;">
             <a id="qr-res-portal-link" href="<?php echo esc_url(home_url('/portal/')); ?>" class="af-btn-primary-lg">
@@ -934,51 +890,10 @@ function etelIDChooseMode(mode) {
 }
 
 /* ── Quick Register ───────────────────────────────────────────
-   Same canvas-resize-to-base64 technique as the full form's
-   etelIDPhotoFile()/etelIDFaydaFile(), just against this panel's own
-   element IDs (q-*) so the two forms' file inputs never collide. */
+   Name + phone (+ optional email) only. The profile photo and Fayda ID
+   are added later from the portal; until then the account is limited to
+   Ride (see EtelID_DB::refresh_limited()). */
 var _qrData = {};
-function etelIDQuickPhotoFile(input) {
-  if (!input.files || !input.files[0]) return;
-  var file = input.files[0];
-  if (!file.type.match(/^image\//)) { qrShowErr('Please select an image file (JPG, PNG, WebP).'); return; }
-  var reader = new FileReader();
-  reader.onload = function(e) {
-    var img = new Image();
-    img.onload = function() {
-      var MAX = 400;
-      var w = img.width, h = img.height;
-      if (w > MAX || h > MAX) {
-        if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
-        else       { w = Math.round(w * MAX / h); h = MAX; }
-      }
-      var canvas = document.createElement('canvas');
-      canvas.width = w; canvas.height = h;
-      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-      var compressed = canvas.toDataURL('image/jpeg', 0.80);
-      _qrData.photo_url = compressed;
-      document.getElementById('q-photo-preview').innerHTML =
-        '<img src="' + compressed + '" style="width:100%;height:100%;object-fit:cover;">';
-    };
-    img.src = e.target.result;
-  };
-  reader.readAsDataURL(file);
-}
-
-function etelIDQuickFaydaFile(side, input) {
-  var f = input.files[0];
-  if (!f) return;
-  var reader = new FileReader();
-  reader.onload = function(e) {
-    _qrData['fayda_' + side + '_image'] = e.target.result;
-    var prev = document.getElementById('q-fayda-preview');
-    var existing = document.getElementById('q-fayda-prev-' + side);
-    var imgHtml = '<img id="q-fayda-prev-' + side + '" src="' + e.target.result + '" style="max-width:120px;max-height:80px;border-radius:6px;border:1px solid rgba(212,175,55,.3);">';
-    if (existing) { existing.outerHTML = imgHtml; } else { prev.insertAdjacentHTML('beforeend', imgHtml); }
-  };
-  reader.readAsDataURL(f);
-}
-
 function qrShowErr(msg) {
   var err = document.getElementById('qr-form-error');
   document.getElementById('qr-error-text').textContent = msg;
@@ -1018,8 +933,6 @@ function etelIDQuickSubmit() {
     qrShowErr('Enter a valid email address, or leave it blank.');
     return;
   }
-  if (!_qrData.photo_url) { qrShowErr('Please add a profile photo.'); return; }
-  if (!_qrData.fayda_front_image || !_qrData.fayda_back_image) { qrShowErr('Please add both sides of your Fayda ID.'); return; }
 
   var btn = document.getElementById('qr-submit-btn');
   var lbl = document.getElementById('qr-btn-label');
@@ -1028,18 +941,15 @@ function etelIDQuickSubmit() {
 
   function reset() { btn.disabled = false; lbl.textContent = 'Continue'; }
 
-  apfValidatePhotos(_qrData.photo_url, _qrData.fayda_front_image, _qrData.fayda_back_image, qrShowErr, function(photosOk) {
-    if (!photosOk) { reset(); return; }
-    apfCheckDuplicatePhone(phone, function(taken) {
-      if (taken) { qrShowErr('An account with this phone number already exists. Please sign in instead.'); reset(); return; }
-      apfCheckDuplicateName(fullName, '', function(result) {
-        if (!apfApplyNameMatchLevel(result.matchLevel, qrShowErr)) { reset(); return; }
-        if (!email) { qrShowReview(fullName, phone, email); reset(); return; }
-        apfCheckDuplicateEmail(email, function(taken2) {
-          if (taken2) { qrShowErr('This email is already registered. Please use a different email, or sign in instead.'); reset(); return; }
-          qrShowReview(fullName, phone, email);
-          reset();
-        });
+  apfCheckDuplicatePhone(phone, function(taken) {
+    if (taken) { qrShowErr('An account with this phone number already exists. Please sign in instead.'); reset(); return; }
+    apfCheckDuplicateName(fullName, '', function(result) {
+      if (!apfApplyNameMatchLevel(result.matchLevel, qrShowErr)) { reset(); return; }
+      if (!email) { qrShowReview(fullName, phone, email); reset(); return; }
+      apfCheckDuplicateEmail(email, function(taken2) {
+        if (taken2) { qrShowErr('This email is already registered. Please use a different email, or sign in instead.'); reset(); return; }
+        qrShowReview(fullName, phone, email);
+        reset();
       });
     });
   });
@@ -1052,8 +962,7 @@ function qrShowReview(fullName, phone, email) {
     ['Full Name', fullName],
     ['Phone', phone],
     ['Email', email || 'Not provided'],
-    ['Profile Photo', _qrData.photo_url ? 'Added' : 'Missing'],
-    ['Fayda ID', (_qrData.fayda_front_image && _qrData.fayda_back_image) ? 'Added' : 'Missing'],
+    ['Access', 'Ride now - add photo + Fayda ID later for everything else'],
   ];
   var html = '';
   rows.forEach(function(r) {
@@ -1084,10 +993,7 @@ function qrDoSubmit() {
   var body = 'action=etelid_quick_register&nonce=' + EtelIDConfig.nonceAuth
     + '&full_name=' + encodeURIComponent(fullName)
     + '&phone=' + encodeURIComponent(phone)
-    + '&email=' + encodeURIComponent(email)
-    + '&photo_url=' + encodeURIComponent(_qrData.photo_url)
-    + '&fayda_front_image=' + encodeURIComponent(_qrData.fayda_front_image)
-    + '&fayda_back_image=' + encodeURIComponent(_qrData.fayda_back_image);
+    + '&email=' + encodeURIComponent(email);
 
   fetch(EtelIDConfig.ajax, {
     method:'POST',

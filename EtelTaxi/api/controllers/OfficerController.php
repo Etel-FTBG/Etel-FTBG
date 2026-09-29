@@ -15,7 +15,7 @@ case 'officer_etelid_login': {
     $ctx = stream_context_create(array('http' => array(
         'method'  => 'POST',
         'header'  => "Content-Type: application/json\r\nX-Etel-Service-Key: " . ETELID_SERVICE_KEY . "\r\n",
-        'content' => json_encode(array('identifier' => $identifier, 'password' => $password, 'create_session' => true)),
+        'content' => json_encode(array('identifier' => $identifier, 'password' => $password, 'create_session' => true, 'app' => 'taxi')),
         'timeout' => 15,
         'ignore_errors' => true,
     )));

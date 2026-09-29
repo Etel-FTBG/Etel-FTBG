@@ -279,7 +279,7 @@ function agent_require_member($pdo, $body) {
     $member = etelid_bridge_member_from_sso_token($pdo, $ssoToken);
     if (!$member) fail('This person is not currently signed in with EtelID, or their session expired. Ask them to sign in again.', 401);
     $u = etelid_bridge_local_user($pdo, $member);
-    if (!$u) fail('Could not link this EtelID to a Delivery account.', 500);
+    if (!$u) fail(!empty($GLOBALS['etelid_link_error']) ? $GLOBALS['etelid_link_error'] : 'Could not link this EtelID to a Delivery account.', !empty($GLOBALS['etelid_link_error']) ? 403 : 500);
     return $u;
 }
 
@@ -470,7 +470,8 @@ case 'agent_place_order': {
     if (!$member) fail('This person is not currently signed in with EtelID, or their session expired. Ask them to sign in again.', 401);
 
     $u = etelid_bridge_local_user($pdo, $member);
-    if (!$u) fail('Could not link this EtelID to a Delivery account.', 500);
+    if (!$u) fail(!empty($GLOBALS['etelid_link_error']) ? $GLOBALS['etelid_link_error'] : 'Could not link this EtelID to a Delivery account.', !empty($GLOBALS['etelid_link_error']) ? 403 : 500);
+    if (etelid_bridge_user_is_limited($pdo, $u['id'])) etel_limited_refuse();
 
     $items = isset($body['items']) && is_array($body['items']) ? $body['items'] : array();
     $toZone = isset($body['to_zone']) ? trim($body['to_zone']) : '';
@@ -709,6 +710,7 @@ case 'agent_order_status': {
     agent_verify_service_key();
     $pdo = db();
     $u = agent_require_member($pdo, $body);
+    if (etelid_bridge_user_is_limited($pdo, $u['id'])) etel_limited_refuse();
 
     // Same as ride status - no order_id ever asked of the model. Finds
     // the member's most recent order that isn't finished/cancelled yet;

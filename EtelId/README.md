@@ -191,3 +191,13 @@ Tested on InfinityFree (PHP 5.6 / 7.4 shared hosting).
 ---
 
 *Etel Group · ኢትኤል ቡድን · etelgroup.com*
+
+## Limited (Ride-only) accounts
+
+Quick Register (`templates/apply-form.php`) now asks only for full name, phone and an optional email. An account created that way has `profile_limited = 1` and `kyc_level = 0`: it can use **Ride** and nothing else in Etel Group.
+
+- The limit lifts automatically (`EtelID_DB::refresh_limited()`, called after `profile_update` and `fayda_id_submit`) once the member has a profile photo **and** both sides of their Fayda ID on file. That sets `profile_limited = 0` and `kyc_level = 1`. The second, reviewed pass (Etel Pay) is unchanged.
+- Existing members are never limited: the column defaults to 0 and only the new Quick Register sets it to 1.
+- Service API: `member` now carries `kyc_level`, `profile_limited`, `allowed_apps` and `missing_items`. `POST /service/authenticate` accepts an optional `app` (e.g. `gebeya`, `pay`, `taxi`, `madeya`, `group`) and refuses a limited account for anything except `ride` (403 `profile_incomplete`). `/service/kyc` sets `ride_allowed` for limited accounts and every other `*_allowed` flag to false.
+- `etel-api.php` (standalone gateway): `login` and `verify_token` honour `project` the same way.
+- Delivery/Ride does not pass `app` (Ride lives in the same codebase as Delivery); it stores the flag on `users.etelid_limited` and refuses limited users in the order, service-giver, equb and courier controllers. See `delivery/api/etelid_bridge.php` and `boot.php` (`get_auth_user`).

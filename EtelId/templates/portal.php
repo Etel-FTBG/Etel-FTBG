@@ -671,6 +671,15 @@ $etelid_kyc_level   = isset( $member->kyc_level ) ? (int) $member->kyc_level : 0
  * sentinel value alongside empty() is what actually catches it. */
 $etelid_profile_incomplete = empty( $member->dob ) || '0000-00-00' === $member->dob;
 ?>
+<?php if ( ! empty( $member->profile_limited ) ): ?>
+<div id="etelid-limited-banner" style="position:relative;z-index:41;max-width:1100px;margin:14px auto 0;padding:14px 18px;border-radius:12px;background:rgba(230,126,34,.14);border:1px solid rgba(230,126,34,.55);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+  <div style="color:#FFFEF8;font-size:13px;line-height:1.5;">
+    <strong style="color:#F5B041;">Your Etel-ID is limited to Ride.</strong>
+    Add your profile photo and both sides of your Fayda ID to unlock Delivery, Market, Pay and every other Etel service.
+  </div>
+  <a href="<?php echo esc_url( home_url('/profile/') ); ?>" style="background:linear-gradient(135deg,#E8C84A,#C8922A);color:#1A0E00;font-weight:700;font-size:12px;padding:9px 16px;border-radius:8px;text-decoration:none;white-space:nowrap;">Add photo &amp; Fayda ID</a>
+</div>
+<?php endif; ?>
 <?php if ( $etelid_profile_incomplete ): ?>
 <div id="etelid-complete-profile-banner" style="position:relative;z-index:40;max-width:1100px;margin:14px auto 0;padding:12px 18px;border-radius:12px;background:rgba(212,175,55,.12);border:1px solid rgba(212,175,55,.35);display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;font-family:'JetBrains Mono',monospace;">
   <div style="display:flex;align-items:center;gap:10px;color:#FFFEF8;font-size:13px;">
