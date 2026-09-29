@@ -86,13 +86,35 @@ function initDriverMap() {
 }
 
 
-/* ── Light / Dark mode toggle — for outdoor use ── */
-function toggleDriverTheme() {
-    var isLight = document.body.classList.toggle('light-mode');
-    document.body.classList.toggle('dark-mode', !isLight);
+/* ── Light / Dark mode toggle — for outdoor use ──
+   One source of truth: localStorage 'etel_driver_theme' ('dark' default).
+   Light mode drops body.dark-page (its !important dark surfaces) and adds
+   body.light-mode (the light tokens); dark mode is the reverse. The button
+   always shows the mode you would SWITCH TO (sun while dark, moon while
+   light), same as the other Etel apps. core.js' floating toggle is turned
+   off on this page (ETEL_NO_THEME_FAB) so there is never a second, fighting
+   switch. */
+function applyDriverTheme(isLight) {
+    var b = document.body;
+    b.classList.toggle('light-mode', isLight);
+    b.classList.toggle('dark-page', !isLight);
+    b.classList.remove('dark-mode');
+    b.style.background = isLight ? '' : '#08080f';
+    var root = document.documentElement;
+    root.style.background = isLight ? '#F0EDE6' : '';
+    root.style.colorScheme = isLight ? 'light' : 'dark';
+    var meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.setAttribute('content', isLight ? '#F0EDE6' : '#08080f');
     var btn = document.getElementById('theme-toggle-btn');
-    if (btn) btn.textContent = isLight ? '☀️' : '🌙';
-    /* Persist preference */
+    if (btn) {
+        btn.textContent = isLight ? '🌙' : '☀️';
+        btn.title = isLight ? 'Switch to dark mode' : 'Switch to light mode';
+        btn.setAttribute('aria-label', btn.title);
+    }
+}
+function toggleDriverTheme() {
+    var isLight = !document.body.classList.contains('light-mode');
+    applyDriverTheme(isLight);
     try { localStorage.setItem('etel_driver_theme', isLight ? 'light' : 'dark'); } catch(e) {}
     /* Tell Google Maps to repaint after theme change */
     setTimeout(function() {
@@ -102,14 +124,12 @@ function toggleDriverTheme() {
 
 /* Apply saved theme on load */
 (function() {
-    try {
-        var saved = localStorage.getItem('etel_driver_theme');
-        if (saved === 'light') {
-            document.body.classList.add('light-mode');
-            var btn = document.getElementById('theme-toggle-btn');
-            if (btn) btn.textContent = '☀️';
-        }
-    } catch(e) {}
+    var saved = null;
+    try { saved = localStorage.getItem('etel_driver_theme'); } catch(e) {}
+    applyDriverTheme(saved === 'light');
+    window.addEventListener('storage', function(ev) {
+        if (ev.key === 'etel_driver_theme') applyDriverTheme(ev.newValue === 'light');
+    });
 })();
 
 /* ── Screen Wake Lock ──

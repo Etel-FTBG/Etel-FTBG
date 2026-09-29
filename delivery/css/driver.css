@@ -150,15 +150,6 @@ body{background:transparent;color:var(--text);font-family:var(--f);min-height:10
    Activated by: body.light-mode or prefers-color-scheme:light
    Toggle button added by driver.js
    ═══════════════════════════════════════════════════════════ */
-body.light-mode,
-@media (prefers-color-scheme: light) { body:not(.dark-mode) {
-  --ink:#F0EDE6; --panel:#FFFFFF; --panel2:#F7F4EE; --field:#EFEFEF;
-  --gbrd:rgba(180,140,20,.25); --line:rgba(0,0,0,.08);
-  --text:#1A1206; --dim:#5A5650; --teal:#0B7B72; --green:#1A8A4A;
-  --gold:#B8860B; --gold-dk:#9A6F00; --gold-lt:#D4A017;
-  --offline:#C0392B;
-} }
-
 body.light-mode {
   --ink:#F0EDE6; --panel:#FFFFFF; --panel2:#F7F4EE; --field:#EFEFEF;
   --gbrd:rgba(180,140,20,.25); --line:rgba(0,0,0,.08);

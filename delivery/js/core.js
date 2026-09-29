@@ -1201,7 +1201,7 @@ window.addEventListener('appinstalled', () => {
 // ── DARK SYSTEM-WIDE MODE ──────────────────────────────────
 const DarkMode = {
   injectToggle() {
-    if (document.getElementById('dark-theme-toggle')) return;
+    if (window.ETEL_NO_THEME_FAB || document.getElementById('dark-theme-toggle')) return;
 
     const style = document.createElement('style');
     style.id = 'dark-theme-styles';
