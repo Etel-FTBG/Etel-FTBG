@@ -38,7 +38,8 @@
                 .set({ts,is,bs,ls,fw}) / .reset()
    Any element with the attribute  data-etel-display-open  opens the
    panel when clicked (handy for a "Display size" row in a settings
-   screen).
+   screen).  Apps that have such a row in their profile menu load this
+   script with  data-fab="off"  so the floating Aa button is not shown.
    ════════════════════════════════════════════════════════════════ */
 (function () {
     'use strict';
@@ -51,6 +52,8 @@
     var FW_MIN = [0, 700, 800];          // fw level -> minimum font-weight
 
     var doc = document;
+    var cur = doc.currentScript;
+    var fabOff = !!(cur && cur.getAttribute('data-fab') === 'off');   // app has a Display size row in its profile menu
     var root = doc.documentElement;
     var prefs = load();
     var engineOn = false;
@@ -503,6 +506,7 @@
         shadow.appendChild(st);
 
         fab = el('button', 'fab');
+        if (fabOff) fab.style.display = 'none';
         fab.type = 'button';
         fab.innerHTML = 'A<small>a</small>';
         fab.addEventListener('click', function () { if (!dragMoved) open(); });
