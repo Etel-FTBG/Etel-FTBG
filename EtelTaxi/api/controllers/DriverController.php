@@ -32,11 +32,22 @@ case 'driver_etelid_login': {
     if ($resp === false) fail('Could not reach EtelID right now.', 503);
     $decoded = json_decode($resp, true);
     if (!is_array($decoded) || empty($decoded['ok']) || empty($decoded['session_token'])) {
+        // EtelID refuses a limited (Ride-only) account for app=taxi with the
+        // code profile_incomplete - a 403 with the Taxi wording, not the
+        // generic 401 "wrong password" that would make the driver keep
+        // retyping a password that was actually correct.
+        if (is_array($decoded) && isset($decoded['code']) && $decoded['code'] === 'profile_incomplete') {
+            fail(taxi_limited_message(), 403);
+        }
         fail(isset($decoded['message']) ? $decoded['message'] : 'Incorrect EtelID or password.', 401);
     }
 
     $member = $decoded['member'];
     $token  = $decoded['session_token'];
+
+    // Safety net: even if EtelID were ever to answer ok for a limited account
+    // (for example an older EtelID build that ignores `app`), never open Taxi.
+    if (!empty($member['profile_limited'])) fail(taxi_limited_message(), 403);
 
     $ds = $pdo->prepare('SELECT * FROM ' . tbl('taxi_drivers') . ' WHERE etel_id = ?');
     $ds->execute(array($member['etel_id']));
@@ -99,13 +110,7 @@ case 'driver_complete_etelid_registration': {
     // photo / Fayda ID yet) cannot register as a taxi driver. Separate query
     // in its own try/catch so a server where EtelID's schema upgrade has not
     // added the column yet keeps working exactly as before.
-    try {
-        $lq = $pdo->prepare('SELECT profile_limited FROM ' . ETELID_DB_NAME . '.' . ETELID_DB_PREFIX . 'etelid_members WHERE etel_id = ? LIMIT 1');
-        $lq->execute(array($member['etel_id']));
-        if ($lq->fetchColumn()) {
-            fail('Your Etel-ID is limited to Ride. Add your profile photo and both sides of your Fayda ID in the EtelID portal to unlock Etel Taxi.', 403);
-        }
-    } catch (Exception $e) { /* column not there yet: not limited */ }
+    if (taxi_etelid_is_limited($pdo, $member['etel_id'])) fail(taxi_limited_message(), 403);
 
     $existing = $pdo->prepare('SELECT id FROM ' . tbl('taxi_drivers') . ' WHERE etel_id = ?');
     $existing->execute(array($member['etel_id']));

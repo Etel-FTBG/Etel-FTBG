@@ -54,6 +54,30 @@ function gen_session_token() {
 // ---- Driver auth: EtelID SSO session first (a driver already logged
 // into any other Etel app is recognized here automatically), falling
 // back to this app's own phone+PIN session. ----
+/* Ride-only ("limited") EtelID accounts: created by EtelID's simplified Quick
+   Register (name + phone only) and limited to Ride until the member adds a
+   profile photo and both sides of their Fayda ID. Taxi is not Ride, so such an
+   account cannot sign in as a driver. */
+function taxi_limited_message() {
+    return 'Your Etel-ID is limited to Ride. Add your profile photo and both sides of your Fayda ID in the EtelID portal, then sign in again to use Etel Taxi.';
+}
+
+/* True when the EtelID with this etel_id is currently limited. Reads EtelID's
+   own members table (the same cross-database access the session lookups
+   here already use). Separate query in its own try/catch so a server where
+   EtelID's schema upgrade has not added the profile_limited column yet, or
+   where the cross-database grant is missing, behaves exactly as before. */
+function taxi_etelid_is_limited($pdo, $etelId) {
+    if ($etelId === '' || $etelId === null) return false;
+    try {
+        $lq = $pdo->prepare('SELECT profile_limited FROM ' . ETELID_DB_NAME . '.' . ETELID_DB_PREFIX . 'etelid_members WHERE etel_id = ? LIMIT 1');
+        $lq->execute(array($etelId));
+        return (bool) $lq->fetchColumn();
+    } catch (Exception $e) {
+        return false;
+    }
+}
+
 function require_driver_auth($pdo) {
     $token = '';
     $hdrs = function_exists('getallheaders') ? getallheaders() : array();
@@ -88,6 +112,10 @@ function require_driver_auth($pdo) {
         $es->execute(array(hash('sha256', $token)));
         $member = $es->fetch();
         if ($member) {
+            // A limited (Ride-only) EtelID may hold a perfectly valid shared
+            // session (it is created at Quick Register) - that session must
+            // not open Taxi.
+            if (taxi_etelid_is_limited($pdo, $member['etel_id'])) fail(taxi_limited_message(), 403);
             $ds = $pdo->prepare('SELECT * FROM ' . tbl('taxi_drivers') . ' WHERE etel_id = ? LIMIT 1');
             $ds->execute(array($member['etel_id']));
             $driver = $ds->fetch();
