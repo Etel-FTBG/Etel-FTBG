@@ -108,3 +108,5 @@ function etelaiToggleTheme() {
 // Applied immediately (not waiting for DOMContentLoaded) so a
 // returning member never sees a flash of the wrong theme.
 etelaiApplyTheme(etelaiGetTheme());
+// keep other open tabs in step when the theme is switched in one of them
+window.addEventListener('storage', (ev) => { if (ev.key === ETELAI_THEME_STORAGE) etelaiApplyTheme(etelaiGetTheme()); });

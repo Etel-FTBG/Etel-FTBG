@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script>window.ETEL_NO_THEME_FAB = true;</script>
 <meta name="referrer" content="no-referrer-when-downgrade">
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
@@ -849,6 +850,42 @@
 </style>
     <!-- etel-phase5.css, etel-design-v4.css, etel-responsive.css now folded into css/driver-bundle.css above -->
 <script src="../js/etel-display-settings.js?v=1.4" data-fab="off" defer></script>
+<style id="drv-light-theme">
+/* Driver light mode (outdoor use). Loaded last so it beats the dark surfaces
+   hard-coded above; only active while body.light-mode is set. */
+body.light-mode{
+  --sheet:#FFFFFF;--sheet2:#F7F4EE;--surface-3:#EFEAE0;--line:rgba(0,0,0,.1);
+  --text:#1A1206;--dim:#5A5650;--gold-lt:#8A6500;
+  color:#1A1206 !important;background:#F0EDE6 !important;
+}
+body.light-mode .drv-map-space{background:#E8E4DA !important}
+body.light-mode #driver-map{background:#E8E4DA}
+body.light-mode .drv-topbar{background:linear-gradient(180deg,rgba(240,237,230,.96),rgba(240,237,230,.6) 80%,transparent) !important;background-image:linear-gradient(180deg,rgba(240,237,230,.96),rgba(240,237,230,.6) 80%,transparent) !important}
+body.light-mode .drv-topbar,body.light-mode .drv-topbar *{color:#1A1206}
+body.light-mode .req-sheet{
+  background:linear-gradient(180deg,#FFFFFF,#F7F4EE);
+  border-top:1px solid rgba(160,120,20,.3);box-shadow:0 -12px 32px rgba(0,0,0,.12);
+}
+body.light-mode .stats-strip,body.light-mode .goal-card{background:#F7F4EE}
+body.light-mode .driver-bottom-nav{background:rgba(255,255,255,.97) !important;background-image:none !important;border-top:1px solid rgba(160,120,20,.3)}
+body.light-mode .nav-tab .nl{color:#5A5650}
+body.light-mode .nav-tab.active .nl{color:#8A6500}
+body.light-mode .stat-val{color:#1A1206}
+body.light-mode .driver-sidebar{background:#FFFFFF;border-right:1px solid rgba(0,0,0,.1)}
+body.light-mode .sidebar-brand{color:#8A6500}
+body.light-mode input:not([type=radio]):not([type=checkbox]):not([type=range]),
+body.light-mode select,body.light-mode textarea,body.light-mode .ep-input{background:#FFFFFF !important;color:#1A1206 !important;border-color:rgba(160,120,20,.45) !important}
+body.light-mode input::placeholder,body.light-mode textarea::placeholder{color:rgba(26,18,6,.45) !important}
+body.light-mode [class*="order-item"],body.light-mode [class*="job-card"]{background:#FFFFFF !important;color:#1A1206 !important;border-color:rgba(160,120,20,.3) !important;box-shadow:0 4px 16px rgba(0,0,0,.08) !important}
+body.light-mode .drv-title{color:#8A6500 !important;-webkit-text-fill-color:#8A6500 !important;background:none !important}
+body.light-mode #drv-map-expand-btn{color:#8A6500 !important;background:rgba(255,255,255,.9) !important;border-color:rgba(160,120,20,.5) !important}
+body.light-mode .goal-subtext,body.light-mode .stat-lbl,body.light-mode .goal-fraction,body.light-mode .goal-compact-title,body.light-mode .drv-subtitle{color:#5A5650 !important}
+body.light-mode .goal-fraction-num,body.light-mode #goal-fraction-num,body.light-mode #goal-fraction-den,body.light-mode .gf-sep,body.light-mode .stat-val{color:#1A1206 !important}
+body.light-mode [style*="color:#fff"],body.light-mode [style*="color: #fff"],
+body.light-mode [style*="color:#FFF"],body.light-mode [style*="color:#EDEDF5"]{color:#1A1206 !important}
+body.light-mode [style*="color:#E5C76B"],body.light-mode [style*="color:#F0CA58"],
+body.light-mode [style*="color:#D4AF37"],body.light-mode [style*="color:#FFD700"]{color:#8A6500 !important}
+</style>
 </head>
 <body class="dark-page" style="background:#08080f;margin:0;padding:0">
 <!-- Custom splash overlay - shows the group master logo briefly on
@@ -982,7 +1019,7 @@
   <div class="drv-page active" id="page-requests">
 
     <!-- map space -->
-    <div style="height:50vh;min-height:220px;background:#08080f"></div>
+    <div class="drv-map-space" style="height:50vh;min-height:220px;background:#08080f"></div>
 
     <!-- bottom sheet -->
     <div class="req-sheet" id="req-sheet">

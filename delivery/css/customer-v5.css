@@ -37,7 +37,7 @@
   /* ── TEXT ── */
   --text:         #F7F1DF;
   --text-muted:   rgba(247,241,223,.55);
-  --text-dim:     rgba(247,241,223,.28);
+  --text-dim:     rgba(247,241,223,.5);
   --muted:        #9D998D;
 
   /* ── ACCENT COLORS ── */
@@ -885,6 +885,57 @@ body:not(.dark-theme) .bg-orb-1 { background: radial-gradient(circle, rgba(212,1
 body:not(.dark-theme) .bg-orb-2 { background: radial-gradient(circle, rgba(255,193,7,.1) 0%, transparent 70%) !important; }
 body:not(.dark-theme) .bg-orb-3 { background: radial-gradient(circle, rgba(212,175,55,.12) 0%, transparent 70%) !important; }
 
+/* Light-mode tokens: every var(--text*) / glass rule below the fold follows
+   these, so anything not explicitly overridden is still readable. */
+body:not(.dark-theme) {
+  --text:         #1A1200;
+  --text-muted:   rgba(26,18,0,.68);
+  --text-dim:     rgba(26,18,0,.58);
+  --muted:        #6B5F45;
+  --glass:        rgba(255,255,255,.7);
+  --glass-2:      rgba(255,255,255,.85);
+  --glass-border: rgba(160,120,20,.28);
+  --gold-light:   #8A6500;
+  --gold-pale:    #7A5500;
+  --gold-grad-text: linear-gradient(120deg,#8A6500 0%,#B8860B 45%,#8A6500 100%);
+  color-scheme: light;
+}
+body.dark-theme { color-scheme: dark; }
+body:not(.dark-theme) .search-container {
+  background: rgba(253,248,238,.95) !important;
+}
+body:not(.dark-theme) .header-btn,
+body:not(.dark-theme) .app-header .brand-name,
+body:not(.dark-theme) .app-header span,
+body:not(.dark-theme) .app-header #current-location {
+  color: #1A1200 !important;
+}
+body:not(.dark-theme) .app-header .brand-name {
+  background: none !important;
+  -webkit-text-fill-color: #8A6500 !important;
+  color: #8A6500 !important;
+}
+body:not(.dark-theme) .filter-pill.active,
+body:not(.dark-theme) .cat-chip.active {
+  color: #5C4000 !important;
+  border-color: rgba(160,120,20,.55) !important;
+}
+body:not(.dark-theme) .quick-arrow { color: #7A5500 !important; }
+body:not(.dark-theme) .footer-links a,
+body:not(.dark-theme) .footer-copy { color: rgba(26,18,0,.68) !important; }
+body:not(.dark-theme) .footer-links a:hover { color: #7A5500 !important; }
+/* gold text generated inline by customer.js (shop cards, prices, favourites) */
+body:not(.dark-theme) [style*="color:#FFD700"],
+body:not(.dark-theme) [style*="color: #FFD700"],
+body:not(.dark-theme) [style*="color:#D4AF37"],
+body:not(.dark-theme) [style*="color: #D4AF37"],
+body:not(.dark-theme) [style*="color:#F0CA58"],
+body:not(.dark-theme) [style*="color: #F0CA58"] {
+  color: #8A6500 !important;
+}
+body:not(.dark-theme) .restaurant-card-price,
+body:not(.dark-theme) .offer-card-price { color: #8A6500 !important; }
+
 body:not(.dark-theme) .app-header {
   background: rgba(253,248,238,.92) !important;
   border-bottom: 1px solid rgba(212,175,55,.25) !important;
@@ -972,6 +1023,18 @@ body:not(.dark-theme) .promo-teal {
 body:not(.dark-theme) .promo-purple {
   background: linear-gradient(135deg,#1A0D2E,#110820) !important;
 }
+/* promo cards stay dark in light mode -> keep their own light text/gold */
+body:not(.dark-theme) .promo-card { color: #F7F1DF !important; }
+body:not(.dark-theme) .promo-card .promo-sub { color: rgba(247,241,223,.75) !important; }
+body:not(.dark-theme) .promo-gold .promo-badge,
+body:not(.dark-theme) .promo-gold .promo-code-tag { color: #F0CA58 !important; }
+body:not(.dark-theme) .promo-gold .promo-headline {
+  background: linear-gradient(120deg,#F5DFA0 0%,#D4AF37 40%,#C8960C 70%,#A07820 100%) !important;
+  -webkit-background-clip: text !important; background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+}
+/* floating theme toggle sits above the bottom nav, never over a tab */
+#dark-theme-toggle { bottom: calc(96px + env(safe-area-inset-bottom, 0px)) !important; right: 14px !important; width: 44px !important; height: 44px !important; font-size: 20px !important; }
 body:not(.dark-theme) .app-footer {
   background: rgba(255,255,255,.6) !important;
   border-top: 1px solid rgba(212,175,55,.15) !important;

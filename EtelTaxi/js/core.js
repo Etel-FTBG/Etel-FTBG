@@ -26,6 +26,8 @@ function toggleTheme() {
 // most pages here, but this still runs before paint settles) so a
 // returning visitor never sees a flash of the wrong theme.
 taxiApplyTheme(taxiGetTheme());
+// keep other open tabs in step when the theme is switched in one of them
+window.addEventListener('storage', function (ev) { if (ev.key === TAXI_THEME_STORAGE) taxiApplyTheme(taxiGetTheme()); });
 
 // Generic per-"kind" token storage (driver/admin sessions, or the
 // traffic officer's plate-lookup key) - same key format
