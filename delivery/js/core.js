@@ -1295,6 +1295,76 @@ const DarkMode = {
         border-top: 1px solid #2D2D2D !important;
       }
 
+
+      /* ── LIGHT LAYER for the gold "premium" dashboards (admin, service
+         provider, courier). Those pages are built dark-first on shared
+         --g-* tokens with hard-coded cream text; when a page opts in
+         (window.ETEL_LIGHT_LAYER) and the user picks light, body gets
+         .etel-light and everything below re-skins it readable. ── */
+      html:has(body.etel-light), body.etel-light {
+        background: #FBF6EA !important; color: #1A1200 !important;
+        --g-glass: rgba(255,255,255,.92);
+        --g-glass-head: linear-gradient(135deg,#FFF6DA,#F6E7B8);
+        --g-glass-border: rgba(160,120,20,.35);
+        color-scheme: light;
+      }
+      body.etel-light::before, body.etel-light::after { background: none !important; display: none !important; }
+      body.etel-light [class~="card"], body.etel-light [class$="-card"], body.etel-light [class*="-card "],
+      body.etel-light [class~="panel"], body.etel-light [class$="-panel"], body.etel-light [class*="-panel "],
+      body.etel-light .data-section, body.etel-light .sidebar, body.etel-light .driver-sidebar,
+      body.etel-light .topbar, body.etel-light .content-header, body.etel-light .table-wrapper,
+      body.etel-light .modal-box, body.etel-light .order-item, body.etel-light .job-card,
+      body.etel-light .nav-panel, body.etel-light .header, body.etel-light header {
+        background: #FFFFFF !important; background-image: none !important;
+        border-color: rgba(160,120,20,.3) !important;
+        box-shadow: 0 2px 14px rgba(120,90,10,.10) !important;
+      }
+      body.etel-light .header *:not(button):not([class*="btn"]):not(.active),
+      body.etel-light header *:not(button):not([class*="btn"]):not(.active),
+      body.etel-light .header-title, body.etel-light .driver-mode-btn,
+      body.etel-light [class~="card"] *:not(button):not([class*="btn"]):not([class*="badge"]),
+      body.etel-light [class$="-card"] *:not(button):not([class*="btn"]):not([class*="badge"]),
+      body.etel-light [class~="panel"] *:not(button):not([class*="btn"]):not([class*="badge"]),
+      body.etel-light [class$="-panel"] *:not(button):not([class*="btn"]):not([class*="badge"]),
+      body.etel-light .data-section *:not(button):not([class*="btn"]):not([class*="badge"]),
+      body.etel-light .sidebar *:not(button):not([class*="btn"]):not([class*="badge"]),
+      body.etel-light .table-wrapper *:not(button):not([class*="btn"]):not([class*="badge"]),
+      body.etel-light [class*="etel-footer"], body.etel-light [class*="etel-footer"] *,
+      body.etel-light h1, body.etel-light h2, body.etel-light h3, body.etel-light h4,
+      body.etel-light p, body.etel-light label, body.etel-light td, body.etel-light th,
+      body.etel-light .page-title, body.etel-light .content-title {
+        color: #1A1200 !important; -webkit-text-fill-color: #1A1200 !important; text-shadow: none !important;
+      }
+      body.etel-light .section-title { color: #1A1200 !important; -webkit-text-fill-color: #1A1200 !important; }
+      body.etel-light .section-title, body.etel-light .section-title * { text-shadow: none !important; }
+      body.etel-light .data-section > div:first-child, body.etel-light .section-header { background: #FBEFCB !important; background-image: none !important; }
+      body.etel-light .btn-secondary, body.etel-light .btn-ghost, body.etel-light .user-btn,
+      body.etel-light .filter-btn, body.etel-light .earn-refresh, body.etel-light .header .btn {
+        background: #FFFFFF !important; background-image: none !important;
+        color: #5A4000 !important; -webkit-text-fill-color: #5A4000 !important;
+        border: 1px solid rgba(160,120,20,.5) !important; text-shadow: none !important;
+      }
+      body.etel-light .filter-btn.active { background: #F0D98A !important; color: #3A2800 !important; }
+      body.etel-light [id$="map"], body.etel-light [id$="map"] * { color: #F7EFD9 !important; -webkit-text-fill-color: #F7EFD9 !important; }
+      body.etel-light .sg-ring-inner { background: #FFF6DA !important; }
+      body.etel-light .tab-btn:not(.active) { color: #5A4A20 !important; -webkit-text-fill-color: #5A4A20 !important; }
+      body.etel-light #_diag_fab { color: #F7EFD9 !important; -webkit-text-fill-color: #F7EFD9 !important; }
+      body.etel-light [class*="lbl"], body.etel-light [class*="label"], body.etel-light [class*="sub"],
+      body.etel-light [class*="muted"], body.etel-light [class*="dim"], body.etel-light small,
+      body.etel-light [class*="trend"], body.etel-light [class*="meta"] {
+        color: #5A4A20 !important; -webkit-text-fill-color: #5A4A20 !important;
+      }
+      body.etel-light th { background: #F6E7B8 !important; }
+      body.etel-light td { border-bottom: 1px solid rgba(160,120,20,.2) !important; }
+      body.etel-light tbody tr:hover { background: rgba(212,175,55,.12) !important; }
+      body.etel-light .active, body.etel-light [class*="nav-item"].active, body.etel-light [class*="tab"].active {
+        background: linear-gradient(135deg,#F6E7B8,#EBD28A) !important; color: #3A2800 !important; -webkit-text-fill-color: #3A2800 !important;
+      }
+      body.etel-light input:not([type=radio]):not([type=checkbox]):not([type=range]), body.etel-light select, body.etel-light textarea {
+        background: #FFFFFF !important; color: #1A1200 !important; border-color: rgba(160,120,20,.5) !important;
+      }
+      body.etel-light input::placeholder, body.etel-light textarea::placeholder { color: rgba(26,18,0,.45) !important; }
+
       .dark-toggle-btn {
         position: fixed;
         bottom: 24px;
@@ -1375,6 +1445,7 @@ const DarkMode = {
     
     const paint = (isDark) => {
       document.body.classList.toggle('dark-theme', isDark);
+      document.body.classList.toggle('etel-light', !isDark && window.ETEL_LIGHT_LAYER === true);
       btn.innerHTML = isDark ? '☀️' : '🌙';
       btn.title = isDark ? 'Switch to light mode' : 'Switch to dark mode';
       btn.setAttribute('aria-label', btn.title);
