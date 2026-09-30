@@ -1356,3 +1356,15 @@ body:not(.dark-theme) .rc-logo { border-color: #FFFFFF; box-shadow: 0 4px 12px r
 /* shop page + category storefront are hard-coded to --dark inline; follow the theme (track/delivered screens have their own light text, left as is) */
 body:not(.dark-theme) #view-shop-detail,
 body:not(.dark-theme) #view-category { background: #FFFFFF !important; }
+
+/* ══ OPEN / CLOSED badge + delivery fee on shop cards ═══════════════════ */
+.rc-status {
+  position: absolute; top: 10px; left: 10px; z-index: 2; font-size: 11px; font-weight: 800; line-height: 1;
+  padding: 6px 9px; border-radius: 999px; color: #fff; -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px);
+}
+.rc-status-open { background: rgba(22,163,74,.88); }
+.rc-status-closed { background: rgba(60,60,66,.85); }
+.restaurant-card.rc-closed .rc-cover, .restaurant-card.rc-closed .rc-ph { filter: grayscale(.85) brightness(.75); }
+.restaurant-card.rc-closed .restaurant-card-name { opacity: .75; }
+.restaurant-card-fee { font-size: 12px; font-weight: 700; color: var(--text-muted); margin-top: 4px; }
+body:not(.dark-theme) .restaurant-card-fee { color: var(--lt-ink-2, #4A4536) !important; }

@@ -53,6 +53,7 @@ window.ETEL_THEME_DEFAULT = 'dark';
 ETEL_I18N.register('customer', {
     en: {
         nav_home:'Home', nav_favorites:'Favorites', nav_orders:'Orders', nav_messages:'Messages', nav_profile:'Profile',
+        shop_open:'Open', shop_closed:'Closed', shop_fee_from:'Delivery from ETB', closed_warn:'appears closed right now. You can still order, but it may wait until they open. Continue?',
         trk_title:'Your order', trk_pending:'Order placed', trk_assigned:'Courier assigned', trk_picked_up:'Picked up', trk_in_transit:'On the way', trk_track:'Track', trk_more:'more', cart_view:'View cart →', cart_items_one:'item', cart_items_many:'items', filter_none:'No matches for these filters', filter_clear:'Clear filters',
         greet_morning:'Good morning', greet_afternoon:'Good afternoon', greet_evening:'Good evening', greet_sub:'What would you like today?',
         svc_food:'Food', svc_groceries:'Groceries', svc_pharmacy:'Pharmacy', svc_ride:'Ride', shop_min:'min', shop_from:'From', shop_items:'items', shop_no_rating:'New',
@@ -84,6 +85,7 @@ ETEL_I18N.register('customer', {
     },
     am: {
         nav_home:'ቤት', nav_favorites:'ተወዳጆች', nav_orders:'ትዕዛዞች', nav_messages:'መልዕክቶች', nav_profile:'መገለጫ',
+        shop_open:'ክፍት', shop_closed:'ዝግ', shop_fee_from:'ማድረሻ ከ ETB', closed_warn:'አሁን ዝግ ይመስላል። አሁንም ማዘዝ ይችላሉ፤ እስኪከፈት ሊዘገይ ይችላል። ይቀጥሉ?',
         trk_title:'ትዕዛዝዎ', trk_pending:'ትዕዛዝ ተቀብሏል', trk_assigned:'ሹፌር ተመድቧል', trk_picked_up:'ተነስቷል', trk_in_transit:'በመንገድ ላይ', trk_track:'ተከታተል', trk_more:'ተጨማሪ', cart_view:'ጋሪ ይመልከቱ →', cart_items_one:'ዕቃ', cart_items_many:'ዕቃዎች', filter_none:'ለእነዚህ ማጣሪያዎች ውጤት የለም', filter_clear:'ማጣሪያ አጽዳ',
         greet_morning:'እንደምን አደሩ', greet_afternoon:'እንደምን ዋሉ', greet_evening:'እንደምን አመሹ', greet_sub:'ዛሬ ምን ይፈልጋሉ?',
         svc_food:'ምግብ', svc_groceries:'ግሮሰሪ', svc_pharmacy:'ፋርማሲ', svc_ride:'ጉዞ', shop_min:'ደቂቃ', shop_from:'ከ', shop_items:'ዕቃዎች', shop_no_rating:'አዲስ',
@@ -132,6 +134,8 @@ function toggleCustomerLanguage() {
 // ── STATE ───────────────────────────────────────────────────────
 let cart = [];       // [{item_id, name, price, quantity, sg_id, sg_name}]
 let itemsCache = [];
+let _sgOnline = {};        // service_giver_id -> true/false (open) or null (unknown)
+let _closedWarned = {};    // shops we already warned about this session
 
 // Etel Pay is a real, fully-built wallet payment integration, but is
 // being held back from customers until government approval comes
@@ -239,17 +243,28 @@ function renderSGScroll(items) {
     items.forEach(function(item) {
         let sg = bySG[item.service_giver_id];
         if (!sg) {
-            sg = bySG[item.service_giver_id] = {id:item.service_giver_id, name:item.business_name||'Shop', zone:item.zone||'', type:item.service_type||'', count:0, img:'', cover:'', logo:'', minPrice:Infinity, minPrep:Infinity, rating:0};
+            sg = bySG[item.service_giver_id] = {id:item.service_giver_id, name:item.business_name||'Shop', zone:item.zone||'', type:item.service_type||'', count:0, img:'', cover:'', logo:'', online:null, minPrice:Infinity, minPrep:Infinity, rating:0};
         }
         sg.count++;
         if (!sg.img && item.image_url) sg.img = item.image_url;          // fallback cover: first real item photo
         if (!sg.cover && item.cover_url) sg.cover = item.cover_url;      // the shop's own cover photo wins
         if (!sg.logo && item.logo_url) sg.logo = item.logo_url;
+        if (item.is_online !== undefined && item.is_online !== null) sg.online = (parseInt(item.is_online, 10) === 1);
         const pr = parseFloat(item.price); if (pr > 0 && pr < sg.minPrice) sg.minPrice = pr;
         const pt = parseInt(item.preparation_time, 10); if (pt > 0 && pt < sg.minPrep) sg.minPrep = pt;
         const rt = parseFloat(item.rating); if (rt > sg.rating) sg.rating = rt;
     });
-    const sgs = Object.values(bySG);
+    let sgs = Object.values(bySG);
+    // Remember who is open (for the add-to-cart warning) and, when at least one shop is open,
+    // list open shops first. If none/unknown are open the original order is kept so a shop that
+    // simply never flipped its switch is never buried.
+    _sgOnline = {};
+    sgs.forEach(function(g){ _sgOnline[g.id] = g.online; });
+    if (sgs.some(function(g){ return g.online === true; })) {
+        sgs = sgs.map(function(g, i){ return {g: g, i: i}; })
+                 .sort(function(a, b){ return ((b.g.online === true) - (a.g.online === true)) || (a.i - b.i); })
+                 .map(function(x){ return x.g; });
+    }
     const emoji  = {restaurant:'🍽️',grocery:'🛒',pharmacy:'💊',laundry:'👕',delivery:'📦',cafe:'☕',fastfood:'🍔',electronics:'📱',bakery:'🧁',general:'🏪',shop:'🏪',market:'🛍️',food:'🍽️',drink:'🥤',snack:'🍿'};
     const bgMap  = {restaurant:'sg-bg-restaurant',grocery:'sg-bg-grocery',pharmacy:'sg-bg-pharmacy',cafe:'sg-bg-cafe',fastfood:'sg-bg-fastfood',laundry:'sg-bg-laundry',general:'sg-bg-restaurant',default:'sg-bg-default'};
     const sgCount = document.getElementById('sg-count');
@@ -258,6 +273,8 @@ function renderSGScroll(items) {
         document.getElementById('sg-scroll').innerHTML = '<div style="padding:30px;color:rgba(240,237,216,.4);text-align:center;font-size:13px;font-style:italic">No shops available yet</div>';
         return;
     }
+    const minFee = Math.min.apply(null, Object.keys(HAWASSA_FEES).map(function(z){ return HAWASSA_FEES[z].fee; }));
+    const tOpen = ETEL_I18N.t('shop_open'), tClosed = ETEL_I18N.t('shop_closed'), tFee = ETEL_I18N.t('shop_fee_from');
     const tMin = ETEL_I18N.t('shop_min'), tFrom = ETEL_I18N.t('shop_from'), tItems = ETEL_I18N.t('shop_items'), tNew = ETEL_I18N.t('shop_no_rating');
     document.getElementById('sg-scroll').innerHTML = sgs.map(function(sg) {
         const ic = emoji[sg.type]||'🏪';
@@ -271,8 +288,10 @@ function renderSGScroll(items) {
             ? '<span class="rc-ph">' + ic + '</span><img class="rc-cover" src="' + escUrl(coverSrc) + '" alt="" loading="lazy" onerror="this.onerror=null;this.style.display=\'none\'">'
             : '<span class="rc-ph rc-ph-solo">' + ic + '</span>';
         const from = isFinite(sg.minPrice) ? escapeHtml(tFrom) + ' ETB ' + Math.round(sg.minPrice) + ' · ' : '';
-        return '<div class="restaurant-card" onclick="openShopDetail('+sg.id+')">' +
-            '<div class="restaurant-card-image ' + bg + '">' + cover + '<span class="rc-shade"></span>' +
+        const status = sg.online === true ? '<span class="rc-status rc-status-open">● ' + escapeHtml(tOpen) + '</span>'
+                     : (sg.online === false ? '<span class="rc-status rc-status-closed">● ' + escapeHtml(tClosed) + '</span>' : '');
+        return '<div class="restaurant-card' + (sg.online === false ? ' rc-closed' : '') + '" onclick="openShopDetail('+sg.id+')">' +
+            '<div class="restaurant-card-image ' + bg + '">' + cover + '<span class="rc-shade"></span>' + status +
                 '<button class="rc-fav" onclick="event.stopPropagation();toggleFavorite('+sg.id+')" aria-label="Favorite">☆</button>' +
                 rate + eta +
             '</div>' +
@@ -281,6 +300,7 @@ function renderSGScroll(items) {
                 '<div class="restaurant-card-name">' + escapeHtml(sg.name) + '</div>' +
                 '<div class="restaurant-card-meta">' + escapeHtml(sg.type||'Shop') + ' · ' + escapeHtml(sg.zone||'Hawassa') + '</div>' +
                 '<div class="restaurant-card-info">' + from + sg.count + ' ' + escapeHtml(tItems) + '</div>' +
+                '<div class="restaurant-card-fee">🛵 ' + escapeHtml(tFee) + ' ' + minFee + '</div>' +
             '</div></div>';
     }).join('');
 }
@@ -641,6 +661,10 @@ function renderItemsGrid(items, targetId) {
 
 // ── CART ────────────────────────────────────────────────────────
 function addToCart(itemId, name, price, sgId, sgName) {
+    if (_sgOnline[sgId] === false && !_closedWarned[sgId]) {
+        if (!confirm('"' + sgName + '" ' + ETEL_I18N.t('closed_warn'))) return;
+        _closedWarned[sgId] = true;
+    }
     if (cart.length && cart[0].sg_id !== sgId) {
         if (!confirm('Your cart has items from "' + cart[0].sg_name + '". Adding from "' + sgName + '" will clear it. Continue?')) return;
         cart = [];
@@ -656,6 +680,10 @@ function addToCart(itemId, name, price, sgId, sgName) {
 // with a single toast - used by the item detail modal's quantity
 // stepper so choosing "3" doesn't fire three separate "Added" toasts.
 function addToCartWithQty(itemId, name, price, sgId, sgName, qty) {
+    if (_sgOnline[sgId] === false && !_closedWarned[sgId]) {
+        if (!confirm('"' + sgName + '" ' + ETEL_I18N.t('closed_warn'))) return;
+        _closedWarned[sgId] = true;
+    }
     qty = Math.max(1, parseInt(qty, 10) || 1);
     if (cart.length && cart[0].sg_id !== sgId) {
         if (!confirm('Your cart has items from "' + cart[0].sg_name + '". Adding from "' + sgName + '" will clear it. Continue?')) return;
