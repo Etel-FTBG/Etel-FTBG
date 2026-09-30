@@ -460,7 +460,7 @@
                 groups.forEach(function (g) {
                     html += '<div class="table-wrapper" style="margin:10px 0"><table><thead><tr><th>ID</th><th>Name</th><th>Phone as stored</th><th>Role</th><th>Shop</th></tr></thead><tbody>';
                     g.accounts.forEach(function (a) {
-                        const shop = a.shop_id ? (escapeHtml(a.business_name || ('#' + a.shop_id)) + ' <small>(' + escapeHtml(a.shop_status || '') + ')</small>' + (a.admin_placeholder_shop ? ' <b style="color:#c0392b">placeholder</b>' : '')) : '—';
+                        const shop = a.shop_id ? (escapeHtml(a.business_name || ('#' + a.shop_id)) + (a.shop_status ? ' <small>(' + escapeHtml(a.shop_status) + ')</small>' : '') + (a.admin_placeholder_shop ? ' <b style="color:#c0392b">placeholder</b> <button class="btn btn-secondary" style="padding:4px 10px;font-size:11px;margin-left:6px" onclick="removePlaceholderShop(' + a.shop_id + ')">🗑 Remove placeholder shop</button>' : '')) : '—';
                         html += '<tr><td>' + a.id + '</td><td>' + escapeHtml(a.name || '') + '</td><td>' + escapeHtml(a.phone || '') + '</td><td>' + escapeHtml(a.role || '') + '</td><td>' + shop + '</td></tr>';
                     });
                     html += '</tbody></table></div>';
@@ -469,6 +469,21 @@
             } catch (e) {
                 box.innerHTML = '<div class="section-title">Duplicate phone numbers</div><div style="padding:16px;color:#c0392b">Could not load the report</div>';
             }
+        }
+
+        // Removes ONE empty placeholder shop (owned by an admin account). The server refuses
+        // anything that is not exactly that, or that has any items/orders/staff/payouts.
+        async function removePlaceholderShop(shopId) {
+            if (!confirm('Remove this empty placeholder shop?\n\nNo account is deleted. The server will refuse if the shop has any items, orders or staff.')) return;
+            try {
+                const res = await adm('admin_delete_placeholder_shop', { shop_id: shopId }, false);
+                if (res && res.success) {
+                    if (typeof showNotification === 'function') showNotification('Placeholder shop removed', 'success'); else alert('Placeholder shop removed');
+                    loadDuplicatePhones();
+                } else {
+                    alert((res && res.message) || 'Could not remove the shop');
+                }
+            } catch (e) { alert('Could not remove the shop'); }
         }
 
         async function loadUsers() {
