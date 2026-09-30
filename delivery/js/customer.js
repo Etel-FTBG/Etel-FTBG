@@ -501,20 +501,44 @@ async function refreshTrackOrder() {
     document.getElementById('track-timeline').innerHTML =
         '<div style="background:var(--glass-2);border:1px solid var(--glass-border);border-radius:16px;padding:16px">' +
         timeline.map(function(t, i) {
-            const color = t.done ? '#D4AF37' : 'rgba(255,255,255,.15)';
+            const color = t.done ? '#D4AF37' : 'var(--glass-border)';
             return '<div style="display:flex;align-items:center;gap:12px' + (i < timeline.length - 1 ? ';margin-bottom:14px' : '') + '">' +
                 '<div style="width:12px;height:12px;border-radius:50%;background:' + color + ';flex-shrink:0;box-shadow:' + (t.current ? '0 0 10px rgba(212,175,55,.6)' : 'none') + '"></div>' +
-                '<span style="font-size:13px;color:' + (t.done ? 'var(--text)' : 'rgba(247,241,223,.4)') + ';font-weight:' + (t.current ? '700' : '500') + '">' + escapeHtml(t.label) + '</span></div>';
+                '<span style="font-size:13px;color:' + (t.done ? 'var(--text)' : 'var(--text-dim)') + ';font-weight:' + (t.current ? '700' : '500') + '">' + escapeHtml(t.label) + '</span></div>';
         }).join('') + '</div>';
     document.getElementById('track-courier-card').innerHTML = o.courier_name
         ? '<div style="display:flex;align-items:center;gap:12px;padding:14px;background:var(--glass-2);border:1px solid var(--glass-border);border-radius:14px;margin-top:14px">' +
           '<div style="width:44px;height:44px;border-radius:50%;background:rgba(212,175,55,.15);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">🛵</div>' +
           '<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:700;color:var(--text)">' + escapeHtml(o.courier_name) + '</div>' +
-          '<div style="font-size:11px;color:rgba(247,241,223,.5)">' + escapeHtml(o.courier_vehicle || 'Courier') + '</div></div>' +
+          '<div style="font-size:11px;color:var(--text-muted)">' + escapeHtml(o.courier_vehicle || 'Courier') + '</div></div>' +
           (o.courier_phone ? '<a href="tel:' + escapeHtml(o.courier_phone) + '" style="width:38px;height:38px;border-radius:50%;background:rgba(34,197,94,.15);border:1px solid rgba(34,197,94,.3);display:flex;align-items:center;justify-content:center;font-size:16px;text-decoration:none;flex-shrink:0">📞</a>' : '') +
           '</div>'
         : '';
+    renderTrackEta(o);
     updateTrackMap(o);
+}
+// Honest ETA: only when the courier is on the road AND both coordinates are known.
+// Straight-line distance at ~20 km/h city pace (+2 min handover), clearly shown as approximate.
+function renderTrackEta(o) {
+    const el = document.getElementById('track-eta');
+    if (!el) return;
+    const st = o.status || '';
+    if (st === 'delivered') { el.innerHTML = '<div class="trk-eta-main">✅ Delivered</div>'; return; }
+    if (st === 'cancelled') { el.innerHTML = '<div class="trk-eta-main">Order cancelled</div>'; return; }
+    const onRoad = (st === 'picked_up' || st === 'in_transit');
+    if (onRoad && o.courier_lat && o.courier_lng && o.delivery_lat && o.delivery_lng) {
+        const R = 6371, rad = Math.PI / 180;
+        const dLat = (o.delivery_lat - o.courier_lat) * rad, dLng = (o.delivery_lng - o.courier_lng) * rad;
+        const h = Math.sin(dLat/2)*Math.sin(dLat/2) + Math.cos(o.courier_lat*rad)*Math.cos(o.delivery_lat*rad)*Math.sin(dLng/2)*Math.sin(dLng/2);
+        const km = 2 * R * Math.asin(Math.min(1, Math.sqrt(h)));
+        const mins = Math.max(1, Math.round(km / 20 * 60) + 2);
+        el.innerHTML = '<div class="trk-eta-main">🛵 Arriving in about ' + mins + ' min</div><div class="trk-eta-sub">' + km.toFixed(1) + ' km away · approximate</div>';
+    } else if (onRoad) {
+        el.innerHTML = '<div class="trk-eta-main">🛵 On the way to you</div>';
+    } else {
+        const label = {pending:'Waiting for the shop to confirm', assigned:'Shop is confirming your order', preparing:'Your order is being prepared', accepted:'Ready — waiting for the courier'}[st] || 'Processing your order';
+        el.innerHTML = '<div class="trk-eta-main">' + label + '</div>';
+    }
 }
 function updateTrackMap(o) {
     const mapEl = document.getElementById('track-map');
@@ -529,7 +553,7 @@ function updateTrackMap(o) {
             zoom: 14,
             center: hasDest ? {lat: +o.delivery_lat, lng: +o.delivery_lng} : {lat: +o.courier_lat, lng: +o.courier_lng},
             disableDefaultUI: true, zoomControl: true,
-            styles: [{elementType: 'geometry', stylers: [{color: '#15151B'}]}, {elementType: 'labels.text.fill', stylers: [{color: '#9D998D'}]}, {elementType: 'labels.text.stroke', stylers: [{color: '#07070A'}]}]
+            styles: document.body.classList.contains('dark-theme') ? [{elementType: 'geometry', stylers: [{color: '#15151B'}]}, {elementType: 'labels.text.fill', stylers: [{color: '#9D998D'}]}, {elementType: 'labels.text.stroke', stylers: [{color: '#07070A'}]}] : []
         });
     }
     const bounds = new google.maps.LatLngBounds();
