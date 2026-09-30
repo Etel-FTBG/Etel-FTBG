@@ -1417,3 +1417,20 @@ body:not(.dark-theme) .view-section [style*="color:#fff8e7"],
 body:not(.dark-theme) .view-section [style*="color: #F7F1DF"] { color: var(--lt-ink) !important; }
 body:not(.dark-theme) .view-section [style*="rgba(247,241,223"] { color: var(--lt-ink-3) !important; }
 body:not(.dark-theme) .view-section [style*="rgba(255,255,255,.06)"] { border-color: rgba(20,17,8,.1) !important; }
+
+/* ═══ ORDER TRACKING + DELIVERED — ETA banner & light mode ═══ */
+.trk-eta { padding: 14px 16px; border-radius: 16px; margin-bottom: 14px; text-align: center;
+  background: linear-gradient(135deg, rgba(212,175,55,.16), rgba(212,175,55,.06)); border: 1px solid rgba(212,175,55,.3); }
+.trk-eta:empty { display: none; }
+.trk-eta-main { font-size: 16px; font-weight: 800; color: var(--text); }
+.trk-eta-sub { font-size: 11.5px; margin-top: 3px; color: var(--text-muted); }
+body:not(.dark-theme) #view-track-order,
+body:not(.dark-theme) #view-order-delivered {
+  --dark: #FFFFFF; --dark-2: #F7F5EE; --dark-3: #F4F1E8;
+  --text: var(--lt-ink); --text-muted: var(--lt-ink-2); --text-dim: var(--lt-ink-3);
+  --glass: rgba(20,17,8,.04); --glass-2: rgba(20,17,8,.05); --glass-border: rgba(20,17,8,.12);
+  background: #FFFFFF !important; color: var(--lt-ink);
+}
+body:not(.dark-theme) #view-track-order .trk-eta { background: linear-gradient(135deg, rgba(212,175,55,.2), rgba(212,175,55,.08)); border-color: rgba(160,120,20,.35); }
+body:not(.dark-theme) #view-order-delivered #order-delivered-summary * { color: var(--lt-ink) !important; }
+body:not(.dark-theme) #view-order-delivered button[onclick^="closeOrderDeliveredScreen();switchCategory"] { background: rgba(20,17,8,.05) !important; }
