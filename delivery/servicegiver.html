@@ -622,6 +622,22 @@ body.role-cashier .owner-only-btn { display: none !important; }
                                 </div>
                             </div>
                         </div>
+                        <div class="card-body" style="padding-bottom:0">
+                            <p style="font-size:11px;color:var(--text-faint,#9A9AAE);margin:0 0 10px;text-transform:uppercase;letter-spacing:.5px;font-weight:700">Cover photo</p>
+                            <div id="settings-cover-box" style="position:relative;height:150px;border-radius:16px;overflow:hidden;border:1.5px dashed rgba(212,175,55,.45);background:rgba(212,175,55,.06);display:flex;align-items:center;justify-content:center">
+                                <img id="settings-cover-preview" alt="" style="display:none;position:absolute;inset:0;width:100%;height:100%;object-fit:cover">
+                                <div id="settings-cover-empty" style="text-align:center;color:var(--text-faint,#9A9AAE);font-size:13px;padding:10px">
+                                    <div style="font-size:28px;margin-bottom:4px">🖼️</div>
+                                    Add a wide photo of your shop or best dish. Customers see it on your card in the ETEL app.
+                                </div>
+                            </div>
+                            <div style="display:flex;gap:10px;align-items:center;margin-top:10px;flex-wrap:wrap">
+                                <label for="settings-cover-file" class="btn btn-secondary" style="cursor:pointer;margin:0">📷 Choose cover photo</label>
+                                <input type="file" id="settings-cover-file" accept="image/*" style="display:none" onchange="previewSettingsCover(this)">
+                                <button type="button" id="settings-cover-remove" class="btn btn-secondary" style="display:none" onclick="removeSettingsCover()">Remove</button>
+                                <span style="font-size:11px;color:var(--text-faint,#9A9AAE)">Best size 1200 × 600 (2:1), JPG or PNG, up to 5 MB. Saved with "Save" below.</span>
+                            </div>
+                        </div>
                         <div class="card-body">
                             <p style="font-size:11px;color:var(--text-faint,#9A9AAE);margin:0 0 16px;text-transform:uppercase;letter-spacing:.5px;font-weight:700">Business Information</p>
                             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px;">
@@ -984,7 +1000,7 @@ body.role-cashier .owner-only-btn { display: none !important; }
         </div>
     </div>
 
-    <script src="js/servicegiver.js?v=3.4"></script>
+    <script src="js/servicegiver.js?v=3.5"></script>
     <script src="js/servicegiver-premium.js?v=1.9"></script>
     <script src="js/servicegiver-3d-premium.js?v=1.1"></script><!-- 3D visual upgrade: glass depth, glowing sweep borders, rating ring -->
     <script>

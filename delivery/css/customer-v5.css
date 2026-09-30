@@ -1337,3 +1337,22 @@ body:not(.dark-theme) .footer-links a, body:not(.dark-theme) .footer-copy { colo
   .svc-more { justify-content: flex-start; margin-left: 4px; }
 }
 body:not(.dark-theme) .chip-row { padding: 10px 6px 14px !important; margin: 0 -6px; }
+
+/* ══ SHOP BRANDING: logo badge on cards + cover/logo on the shop page ═══ */
+.restaurant-card-body { position: relative; }
+.restaurant-card-body.has-logo { padding-top: 26px; }
+.rc-logo {
+  position: absolute; left: 14px; top: -24px; width: 48px; height: 48px; border-radius: 50%;
+  object-fit: cover; background: #fff; border: 3px solid var(--dark-2, #101014);
+  box-shadow: 0 4px 12px rgba(0,0,0,.35); z-index: 3;
+}
+body:not(.dark-theme) .rc-logo { border-color: #FFFFFF; box-shadow: 0 4px 12px rgba(20,17,8,.18); }
+#shop-detail-hero { height: 150px !important; }
+#shop-detail-hero .rc-shade { position: absolute; inset: auto 0 0 0; height: 55%; background: linear-gradient(180deg, transparent, rgba(0,0,0,.55)); pointer-events: none; }
+.hero-logo {
+  position: absolute; left: 16px; bottom: 12px; width: 56px; height: 56px; border-radius: 50%;
+  object-fit: cover; background: #fff; border: 3px solid #fff; box-shadow: 0 6px 16px rgba(0,0,0,.4); z-index: 2;
+}
+/* shop page + category storefront are hard-coded to --dark inline; follow the theme (track/delivered screens have their own light text, left as is) */
+body:not(.dark-theme) #view-shop-detail,
+body:not(.dark-theme) #view-category { background: #FFFFFF !important; }

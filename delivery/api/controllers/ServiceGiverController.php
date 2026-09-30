@@ -128,13 +128,14 @@ case 'sg_profile': {
     $auth_user = require_auth($pdo);
     if ($auth_user['role'] !== 'service_giver' && $auth_user['role'] !== 'admin') fail('Not a service giver account', 403);
 
+    etel_ensure_sg_branding_columns($pdo);
     $ctx = sg_get_context($pdo, $auth_user['id']);
 
     // Try full column set first, fall back to minimal columns if schema is behind
     $sg = null;
     if ($ctx) {
         try {
-            $s = $pdo->prepare('SELECT id,service_giver_code,business_name,service_type,vehicle_type,vehicle_plate,zone,address,city,bank_account,payout_bank,telebirr_number,cbe_account,abysinia_account,cbe_account_name,abysinia_account_name,telebirr_account_name,status,is_online,average_rating,total_deliveries,completed_deliveries,failed_deliveries,total_earnings,rating_count,logo_url,created_at FROM service_givers WHERE id=?');
+            $s = $pdo->prepare('SELECT id,service_giver_code,business_name,service_type,vehicle_type,vehicle_plate,zone,address,city,bank_account,payout_bank,telebirr_number,cbe_account,abysinia_account,cbe_account_name,abysinia_account_name,telebirr_account_name,status,is_online,average_rating,total_deliveries,completed_deliveries,failed_deliveries,total_earnings,rating_count,logo_url,cover_url,created_at FROM service_givers WHERE id=?');
             $s->execute(array($ctx['sg_id']));
             $sg = $s->fetch();
         } catch (Exception $e) {
@@ -254,6 +255,14 @@ case 'sg_update_profile': {
     }
     if (isset($body['logo_url'])) {
         $updates['logo_url'] = trim($body['logo_url']);
+    }
+    // Cover photo: empty string clears it; otherwise it must be an http(s) URL
+    // (what upload.php returns), so nothing like javascript: can ever be stored.
+    if (isset($body['cover_url'])) {
+        $cv = trim($body['cover_url']);
+        if ($cv !== '' && (strlen($cv) > 512 || !preg_match('#^https?://#i', $cv))) fail('Invalid cover photo URL', 400);
+        etel_ensure_sg_branding_columns($pdo);
+        $updates['cover_url'] = ($cv === '') ? null : $cv;
     }
     // Real shop coordinates were never settable through any action
     // before this - only the text-only zone/address/city fields were.

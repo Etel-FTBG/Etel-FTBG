@@ -235,6 +235,27 @@ function etel_table_columns($pdo, $table) {
     return $cols;
 }
 
+/* Shop branding columns (logo_url already exists on most installs; cover_url is
+   new, migration 062). Added on first use so code and migration can be deployed
+   in either order; runs at most once per request and never throws. */
+function etel_ensure_sg_branding_columns($pdo) {
+    static $done = false;
+    if ($done) return;
+    $done = true;
+    try {
+        $cols = etel_table_columns($pdo, 'service_givers');
+        if (!$cols) return;
+        if (!in_array('logo_url', $cols, true)) {
+            $pdo->exec("ALTER TABLE service_givers ADD COLUMN logo_url VARCHAR(512) NULL DEFAULT NULL");
+        }
+        if (!in_array('cover_url', $cols, true)) {
+            $pdo->exec("ALTER TABLE service_givers ADD COLUMN cover_url VARCHAR(512) NULL DEFAULT NULL");
+        }
+    } catch (Exception $e) {
+        error_log('[ETEL] etel_ensure_sg_branding_columns: ' . $e->getMessage());
+    }
+}
+
 function fail_ex($e, $context, $code = 500) {
     error_log('[ETEL] ' . $context . ': ' . $e->getMessage());
     http_response_code($code);
@@ -942,6 +963,7 @@ switch ($action) {
         break;
     case 'get_items': case 'customer_get_items': {
         $pdo = db();
+        etel_ensure_sg_branding_columns($pdo);
         $cat = isset($_GET['category']) ? trim($_GET['category']) : '';
         $sgid = isset($_GET['service_giver_id']) ? intval($_GET['service_giver_id']) : 0;
         $q = isset($_GET['q']) ? trim($_GET['q']) : '';
@@ -958,7 +980,8 @@ switch ($action) {
                 COALESCE(i.is_available,i.active,1) AS is_available,
                 i.service_giver_id,sg.business_name,COALESCE(sg.zone,'') AS zone,
                 COALESCE(sg.service_type,sg.category,'general') AS service_type,
-                COALESCE(sg.average_rating,sg.rating,0) AS rating
+                COALESCE(sg.average_rating,sg.rating,0) AS rating,
+                COALESCE(sg.logo_url,'') AS logo_url, COALESCE(sg.cover_url,'') AS cover_url
                 FROM items i JOIN service_givers sg ON i.service_giver_id=sg.id $w
                 ORDER BY rating DESC,i.id DESC LIMIT 200");
             $st->execute($p); ok(array('items'=>$st->fetchAll(),'count'=>$st->rowCount()));
