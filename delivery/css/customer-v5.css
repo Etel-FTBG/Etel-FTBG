@@ -1368,3 +1368,52 @@ body:not(.dark-theme) #view-category { background: #FFFFFF !important; }
 .restaurant-card.rc-closed .restaurant-card-name { opacity: .75; }
 .restaurant-card-fee { font-size: 12px; font-weight: 700; color: var(--text-muted); margin-top: 4px; }
 body:not(.dark-theme) .restaurant-card-fee { color: var(--lt-ink-2, #4A4536) !important; }
+
+/* ═══ LIGHT MODE — overlays, drawers & sub-screens (option 2) ═══
+   These surfaces read var(--dark*)/var(--text*) tokens (or hard-coded dark
+   colours), so in light mode we re-scope the tokens to a white palette. */
+body:not(.dark-theme) #item-detail-overlay > div,
+body:not(.dark-theme) #cart-overlay .cart-drawer,
+body:not(.dark-theme) .profile-panel-drawer,
+body:not(.dark-theme) #modal,
+body:not(.dark-theme) #view-payments,
+body:not(.dark-theme) #view-orders,
+body:not(.dark-theme) #view-favorites,
+body:not(.dark-theme) #view-messages,
+body:not(.dark-theme) #view-addresses,
+body:not(.dark-theme) #view-referrals,
+body:not(.dark-theme) #view-settings,
+body:not(.dark-theme) #view-notifications {
+  --dark: #FFFFFF; --dark-2: #FFFFFF; --dark-3: #F4F1E8;
+  --text: var(--lt-ink); --text-muted: var(--lt-ink-2); --text-dim: var(--lt-ink-3);
+  --glass: rgba(20,17,8,.04); --glass-2: rgba(20,17,8,.06);
+  --glass-border: rgba(20,17,8,.12);
+  --gold: #8A6500;
+  color: var(--lt-ink);
+}
+body:not(.dark-theme) #item-detail-overlay > div,
+body:not(.dark-theme) #cart-overlay .cart-drawer,
+body:not(.dark-theme) .profile-panel-drawer { background: #FFFFFF !important; box-shadow: 0 -8px 40px rgba(20,17,8,.18); }
+body:not(.dark-theme) .profile-panel-drawer { border-left: 1px solid rgba(20,17,8,.1); }
+body:not(.dark-theme) .profile-close-btn { background: rgba(20,17,8,.06); border-color: rgba(20,17,8,.12); color: var(--lt-ink-2); }
+body:not(.dark-theme) #cart-overlay .cart-title,
+body:not(.dark-theme) #cart-overlay .cart-close { color: var(--lt-ink) !important; }
+/* Cart / checkout / profile content uses light cream inline text */
+body:not(.dark-theme) #cart-overlay .cart-drawer *:not(button):not(.ok-keep),
+body:not(.dark-theme) #profile-info *:not(button):not(.prof-hero):not(.prof-hero *) { color: var(--lt-ink) !important; }
+body:not(.dark-theme) #profile-info .prof-logout { color: #B42318 !important; background: rgba(239,68,68,.08) !important; border-color: rgba(180,35,24,.3) !important; }
+body:not(.dark-theme) #cart-overlay .cart-header { background: #FFFFFF !important; }
+body:not(.dark-theme) #cart-overlay .cart-drawer input,
+body:not(.dark-theme) #cart-overlay .cart-drawer select,
+body:not(.dark-theme) #cart-overlay .cart-drawer textarea {
+  background: #FFFFFF !important; color: var(--lt-ink) !important; border: 1px solid rgba(20,17,8,.22) !important;
+}
+body:not(.dark-theme) #cart-overlay .cart-drawer [style*="rgba(255,255,255"] { background: rgba(20,17,8,.04) !important; border-color: rgba(20,17,8,.14) !important; }
+body:not(.dark-theme) #profile-info [style*="rgba(212,175,55"] { background: rgba(212,175,55,.12) !important; border-color: rgba(160,120,20,.3) !important; }
+body:not(.dark-theme) #profile-info [style*="color:#C8960C"], body:not(.dark-theme) #profile-info [style*="color: #C8960C"] { color: #8A6500 !important; }
+/* Sub-view headings / empty states / cards with hard-coded cream text */
+body:not(.dark-theme) .view-section [style*="color:#F7F1DF"],
+body:not(.dark-theme) .view-section [style*="color:#fff8e7"],
+body:not(.dark-theme) .view-section [style*="color: #F7F1DF"] { color: var(--lt-ink) !important; }
+body:not(.dark-theme) .view-section [style*="rgba(247,241,223"] { color: var(--lt-ink-3) !important; }
+body:not(.dark-theme) .view-section [style*="rgba(255,255,255,.06)"] { border-color: rgba(20,17,8,.1) !important; }

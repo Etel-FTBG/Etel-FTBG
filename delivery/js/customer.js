@@ -2024,7 +2024,7 @@ async function loadPayments() {
 
     if (!etelPayLive) {
         el.innerHTML =
-            '<div style="background:linear-gradient(135deg,#999,#666);border-radius:16px;padding:24px;margin:16px;color:#fff;text-align:center">' +
+            '<div style="background:linear-gradient(135deg,#3B3526,#1E1B12);border-radius:16px;padding:24px;margin:16px;color:#fffdf5;text-align:center">' +
             '<div style="font-size:13px;opacity:.85;margin-bottom:8px">💰 ኢE Pay — Ethiopian Wallet</div>' +
             '<div style="font-size:22px;font-weight:700;margin-bottom:10px">🔜 Coming Soon</div>' +
             '<div style="font-size:12.5px;opacity:.9;line-height:1.55">ኢE Pay is built and ready, but is currently pending government approval before it can go live. Cash, Telebirr, and bank transfer are all available now.</div>' +
@@ -2043,7 +2043,7 @@ async function loadPayments() {
         '</div>' +
         '<div style="padding:0 16px 16px">' +
         '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">' +
-        '<h3 style="font-size:14px;color:#F7F1DF;margin:0">Paid with ኢE Pay</h3>' +
+        '<h3 style="font-size:14px;color:var(--text,#F7F1DF);margin:0">Paid with ኢE Pay</h3>' +
         (orders.length ? '<span style="font-size:12px;color:rgba(247,241,223,.55)">Total: ETB ' + totalPaid.toFixed(2) + '</span>' : '') +
         '</div>' +
         (orders.length ? orders.map(function(o) {
@@ -2393,7 +2393,7 @@ function toggleProfile() {
 <div style="font-family:'Poppins',sans-serif;padding-bottom:24px">
 
   <!-- ── HERO HEADER ── -->
-  <div style="position:relative;padding:24px 22px 22px;background:linear-gradient(160deg,#0E0A00 0%,#1C1400 55%,#241A00 100%);overflow:hidden">
+  <div class="prof-hero" style="position:relative;padding:24px 22px 22px;background:linear-gradient(160deg,#0E0A00 0%,#1C1400 55%,#241A00 100%);overflow:hidden">
     <div style="position:absolute;inset:0;background:radial-gradient(ellipse 100% 80% at 50% 0%,rgba(255,215,0,.16),transparent 65%);pointer-events:none"></div>
     <div style="position:absolute;bottom:-20px;right:-20px;width:120px;height:120px;border-radius:50%;background:radial-gradient(circle,rgba(255,215,0,.08),transparent 70%);pointer-events:none"></div>
 
@@ -2466,7 +2466,7 @@ function toggleProfile() {
 
   <!-- ── LOGOUT ── -->
   <div style="padding:4px 14px">
-    <button onclick="doLogout()" style="width:100%;padding:13px;border-radius:12px;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.18);color:#FCA5A5;font-size:13px;font-weight:600;cursor:pointer;font-family:'Poppins',sans-serif;display:flex;align-items:center;justify-content:center;gap:10px;transition:all .2s;letter-spacing:.01em" onmouseover="this.style.background='rgba(239,68,68,.16)'" onmouseout="this.style.background='rgba(239,68,68,.08)'">
+    <button onclick="doLogout()" class="prof-logout" style="width:100%;padding:13px;border-radius:12px;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.18);color:#FCA5A5;font-size:13px;font-weight:600;cursor:pointer;font-family:'Poppins',sans-serif;display:flex;align-items:center;justify-content:center;gap:10px;transition:all .2s;letter-spacing:.01em" onmouseover="this.style.background='rgba(239,68,68,.16)'" onmouseout="this.style.background='rgba(239,68,68,.08)'">
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
       Sign Out
     </button>
