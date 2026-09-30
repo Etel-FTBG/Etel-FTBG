@@ -33,9 +33,8 @@ case 'register': {
     rate_limit_fail($pdo, 'register:' . $phone); // count this attempt whether or not it ultimately succeeds
     rate_limit_fail($pdo, 'register:ip');
     // Check duplicate
-    $chk = $pdo->prepare('SELECT id FROM users WHERE phone = ?');
-    $chk->execute(array($phone));
-    if ($chk->fetch()) fail('Phone number already registered');
+    // Any written form of the number counts (0924.., +251924.., 924..): same person, same account.
+    if (etel_phone_taken($pdo, $phone)) fail('Phone number already registered');
     $hash = password_hash($pw, PASSWORD_DEFAULT);
     // Build one INSERT from the actual schema instead of trying several
     // variants and swallowing failures - see etel_table_columns() in
@@ -184,9 +183,9 @@ case 'login': {
     // person's actual EtelGroup role.
     $cols = etel_table_columns($pdo, 'users');
     $hasStaffRole = in_array('staff_role', $cols, true);
-    $s = $pdo->prepare('SELECT id,name,phone,role,password_hash' . ($hasVer ? ',token_version' : '') . ($hasStaffRole ? ',staff_role' : '') . ' FROM users WHERE phone=?');
-    $s->execute(array($phone));
-    $u = $s->fetch();
+    // Exact match first; a number written in another form (0924.. vs +251924..) still
+    // finds its one account, but is never allowed to pick between two duplicates.
+    $u = etel_find_user_by_phone($pdo, $phone, 'id,name,phone,role,password_hash' . ($hasVer ? ',token_version' : '') . ($hasStaffRole ? ',staff_role' : ''));
     if (!$u) { rate_limit_fail($pdo, 'login:' . $phone); fail('No account found with that phone', 404); }
     if (!isset($u['password_hash']) || !$u['password_hash']) fail('Account misconfigured  contact admin', 403);
     if (!password_verify($pw, $u['password_hash'])) {
@@ -271,9 +270,7 @@ case 'sg_login': {
     // allowed through every tab with the same phone + password (see the
     // matching note in the 'login' case above).
     try {
-        $s = $pdo->prepare('SELECT id,name,phone,role,password_hash' . ($hasVer ? ',token_version' : '') . ' FROM users WHERE phone=? AND role IN (\'service_giver\',\'admin\')');
-        $s->execute(array($phone));
-        $u = $s->fetch();
+        $u = etel_find_user_by_phone($pdo, $phone, 'id,name,phone,role,password_hash' . ($hasVer ? ',token_version' : ''), "role IN ('service_giver','admin')");
     } catch (Exception $e) { $u = null; }
     
     if (!$u) { rate_limit_fail($pdo, 'sg_login:' . $phone); fail('No service giver account found with that phone number', 404); }

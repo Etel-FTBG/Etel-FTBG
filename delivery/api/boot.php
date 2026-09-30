@@ -703,6 +703,43 @@ switch ($action) {
         ok(array('users' => $users, 'count' => count($users)));
         break;
     }
+    case 'admin_duplicate_phones': {
+        // Read-only report: accounts that share ONE phone number written in different
+        // forms (0924445206 vs +251924445206). Changes nothing - an admin decides
+        // which account is the real one. Shops owned by an admin account are flagged
+        // (they are the placeholder shops created when an admin opens the Service
+        // dashboard, not real businesses).
+        $pdo = db(); require_admin($pdo);
+        $key = "RIGHT(REPLACE(REPLACE(REPLACE(u.phone,'+',''),' ',''),'-',''),9)";
+        try {
+            $q = $pdo->query("SELECT u.id, u.name, u.phone, u.role, u.created_at, $key AS pkey,
+                                     sg.id AS shop_id, sg.business_name, sg.status AS shop_status
+                              FROM users u LEFT JOIN service_givers sg ON sg.user_id = u.id
+                              WHERE $key IN (
+                                  SELECT k FROM (
+                                      SELECT RIGHT(REPLACE(REPLACE(REPLACE(phone,'+',''),' ',''),'-',''),9) AS k
+                                      FROM users WHERE phone IS NOT NULL AND phone <> ''
+                                      GROUP BY k HAVING COUNT(*) > 1
+                                  ) d
+                              )
+                              ORDER BY pkey, u.id");
+            $rows = $q->fetchAll(PDO::FETCH_ASSOC);
+        } catch (Exception $e) { fail_ex($e, 'Could not build the duplicate-phone report', 500); }
+        $groups = array();
+        foreach ($rows as $r) {
+            $k = $r['pkey'];
+            if (!isset($groups[$k])) $groups[$k] = array('key' => $k, 'accounts' => array());
+            $groups[$k]['accounts'][] = array(
+                'id' => (int)$r['id'], 'name' => $r['name'], 'phone' => $r['phone'], 'role' => $r['role'],
+                'created_at' => $r['created_at'],
+                'shop_id' => $r['shop_id'] ? (int)$r['shop_id'] : null,
+                'business_name' => $r['business_name'], 'shop_status' => $r['shop_status'],
+                'admin_placeholder_shop' => ($r['role'] === 'admin' && $r['shop_id']) ? true : false
+            );
+        }
+        ok(array('groups' => array_values($groups), 'count' => count($groups)));
+        break;
+    }
     case 'admin_get_couriers': {
         $pdo = db(); require_admin($pdo);
         $limit = isset($_GET['limit']) ? intval($_GET['limit']) : 100;
@@ -830,8 +867,8 @@ switch ($action) {
         if (!$name) fail('Name is required',400);
         if (!$phone) fail('Phone is required',400);
         if (!$pw || strlen($pw)<8) fail('Password must be at least 8 characters',400);
-        $chk = $pdo->prepare('SELECT id FROM users WHERE phone=?'); $chk->execute(array($phone));
-        if ($chk->fetch()) fail('Phone number already registered',409);
+        // Any written form of the number counts (0924.., +251924.., 924..): same person, same account.
+        if (etel_phone_taken($pdo, $phone)) fail('Phone number already registered',409);
         try { $pdo->query('SELECT lat,lng FROM service_givers LIMIT 1'); } catch(Exception $e) { try { $pdo->exec('ALTER TABLE service_givers ADD COLUMN lat DECIMAL(10,7) NULL, ADD COLUMN lng DECIMAL(10,7) NULL'); } catch(Exception $e2){} }
         try {
             $pdo->beginTransaction();
@@ -1592,9 +1629,7 @@ switch ($action) {
 
         $pdo = db();
 
-        $u = $pdo->prepare('SELECT id FROM users WHERE phone=? LIMIT 1');
-        $u->execute(array($phone));
-        if (!$u->fetch()) {
+        if (!etel_find_user_by_phone($pdo, $phone, 'id,phone')) {
             // Same response either way  don't let this endpoint be used to
             // enumerate which phone numbers have accounts.
             ok(array('sent' => true, 'message' => 'If this number is registered, an OTP has been sent.'));
@@ -1800,8 +1835,12 @@ switch ($action) {
         // have silently failed (rowCount 0) while reporting success up to
         // the point of the fail() below. The live column is `password_hash`.
         $new_hash = password_hash($new_pw, PASSWORD_BCRYPT, array('cost' => 10));
-        $upd = $pdo->prepare('UPDATE users SET password_hash=? WHERE phone=? LIMIT 1');
-        $upd->execute(array($new_hash, $phone));
+        // Resolve the account by number in any written form (exact match wins; an
+        // ambiguous number never resets the wrong one of two duplicate accounts).
+        $resetUser = etel_find_user_by_phone($pdo, $phone, 'id,phone');
+        if (!$resetUser) fail('User not found');
+        $upd = $pdo->prepare('UPDATE users SET password_hash=? WHERE id=? LIMIT 1');
+        $upd->execute(array($new_hash, $resetUser['id']));
         if ($upd->rowCount() === 0) fail('User not found');
 
         $pdo->prepare('UPDATE password_resets SET used=1 WHERE id=?')->execute(array($match['id']));
@@ -1812,10 +1851,7 @@ switch ($action) {
         // issued before the reset (e.g. from a device that triggered the
         // reset because it was stolen) would keep working for up to 7 days.
         try {
-            $uid_row = $pdo->prepare('SELECT id FROM users WHERE phone=? LIMIT 1');
-            $uid_row->execute(array($phone));
-            $urow = $uid_row->fetch();
-            if ($urow) etel_bump_token_version($pdo, $urow['id']);
+            etel_bump_token_version($pdo, $resetUser['id']);
         } catch (Exception $e) { /* non-fatal  password is already reset */ }
 
         try {
