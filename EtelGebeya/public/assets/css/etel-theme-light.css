@@ -1,0 +1,74 @@
+/* Etel Gebeya - light theme. Only active under html[data-theme="light"];
+   dark stays the untouched default. Loaded after the other stylesheets.
+   Both the storefront (etel-v2.css / etel.css tokens) and the vendor / admin /
+   courier panels (admin.css tokens) are dark-first with hard-coded cream text,
+   so this re-maps the tokens and then patches what is hard-coded. */
+
+/* ---- storefront tokens (etel-v2.css + etel.css) ---- */
+html[data-theme="light"] {
+  --bg:#FBF6EA; --bg2:#F6EFDC; --bg3:#F1E6C8;
+  --card:#FFFFFF; --card2:#FFF9EA; --card-hover:#FFF6DA;
+  --border:rgba(160,120,20,.32); --border2:rgba(160,120,20,.16); --border-dim:rgba(160,120,20,.16);
+  --text:#1A1200; --text2:#4A3A10; --text3:#6B5A2E;
+  --text-dim:#4A3A10; --text-muted:#6B5A2E;
+  --g1:#8A6500;
+  --shadow:0 4px 18px rgba(120,90,10,.12); --shadow-gold:0 4px 18px rgba(212,175,55,.18);
+  /* panels (admin.css) */
+  --dark-bg:#FBF6EA; --dark-surface:#FFFFFF; --dark-card:rgba(255,255,255,.96);
+  --dark-border:rgba(160,120,20,.32); --dark-text:#1A1200; --dark-muted:#6B5A2E;
+  --gold-lt:#8A6500; --gold-br:#7A5500;
+  color-scheme: light;
+}
+html[data-theme="light"] body,
+html[data-theme="light"],
+html[data-theme="light"] html {
+  background: #FBF6EA !important; color: #1A1200;
+}
+html[data-theme="light"] body { background-image: linear-gradient(160deg,#FFF9EA 0%,#FBF6EA 55%,#F6EBC8 100%) !important; background-attachment: fixed; }
+html[data-theme="light"] body::before { opacity: .04; }
+
+/* text that was hard-coded cream/white for the dark surfaces */
+html[data-theme="light"] h1, html[data-theme="light"] h2, html[data-theme="light"] h3,
+html[data-theme="light"] h4, html[data-theme="light"] h5, html[data-theme="light"] label,
+html[data-theme="light"] th, html[data-theme="light"] td, html[data-theme="light"] p,
+html[data-theme="light"] .page-title, html[data-theme="light"] .sidebar-brand-name {
+  color: #1A1200;
+}
+html[data-theme="light"] .eg-topbar, html[data-theme="light"] .eg-header,
+html[data-theme="light"] .eg-catnav, html[data-theme="light"] .eg-footer {
+  background: #FFFFFF; color: #4A3A10; border-color: rgba(160,120,20,.25);
+}
+html[data-theme="light"] .eg-topbar a, html[data-theme="light"] .eg-footer a { color: #4A3A10; }
+html[data-theme="light"] .eg-lang a.active { background: #D4AF37; color: #1A1200; }
+html[data-theme="light"] .eg-catnav-item { color: #4A3A10; }
+html[data-theme="light"] .eg-catnav-item.active, html[data-theme="light"] .eg-catnav-item:hover { color: #7A5500; }
+html[data-theme="light"] .eg-header-btn, html[data-theme="light"] .eg-header-btn span { color: #1A1200; }
+html[data-theme="light"] .eg-logo-name { color: #7A5500; }
+html[data-theme="light"] input, html[data-theme="light"] select, html[data-theme="light"] textarea {
+  background: #FFFFFF; color: #1A1200; border-color: rgba(160,120,20,.5);
+}
+html[data-theme="light"] input::placeholder, html[data-theme="light"] textarea::placeholder { color: rgba(26,18,0,.45); }
+
+/* ---- panels (dark.php layout) ---- */
+html[data-theme="light"] .dash-sidebar { background: #FFFFFF; border-right: 1px solid rgba(160,120,20,.28); }
+html[data-theme="light"] .dash-topbar { background: #FFFFFF; border-bottom: 1px solid rgba(160,120,20,.28); }
+html[data-theme="light"] .nav-item { color: #4A3A10; }
+html[data-theme="light"] .nav-item:hover { background: rgba(212,175,55,.14); color: #1A1200; }
+html[data-theme="light"] .nav-item.active { background: linear-gradient(135deg,#F6E7B8,#EBD28A); color: #3A2800; }
+html[data-theme="light"] .nav-section-label, html[data-theme="light"] .sidebar-brand-role { color: #6B5A2E; }
+html[data-theme="light"] .topbar-btn { color: #4A3A10; background: rgba(212,175,55,.12); }
+html[data-theme="light"] .topbar-btn:hover { background: rgba(212,175,55,.25); color: #1A1200; }
+html[data-theme="light"] .dash-main, html[data-theme="light"] .dash-content { background: transparent; }
+
+/* the toggle button itself, in both layouts */
+[data-etel-theme-toggle] { cursor: pointer; }
+
+/* hard-coded white text in admin.css */
+html[data-theme="light"] .stat-card-value, html[data-theme="light"] .data-section-title,
+html[data-theme="light"] .modal-title { color: #1A1200; }
+html[data-theme="light"] .data-section th { color: #7A5500 !important; background: rgba(212,175,55,.14) !important; }
+html[data-theme="light"] .data-section td { color: #2A2000; border-bottom: 1px solid rgba(160,120,20,.2) !important; }
+html[data-theme="light"] .data-section tbody tr:hover { background: rgba(212,175,55,.14) !important; }
+html[data-theme="light"] .dash-content::before { opacity: .035; }
+html[data-theme="light"] .eg-logo-name { background: none !important; -webkit-text-fill-color: #7A5500 !important; color: #7A5500 !important; }
+html[data-theme="light"] .eg-card-price, html[data-theme="light"] .eg-price { color: #7A5500 !important; }

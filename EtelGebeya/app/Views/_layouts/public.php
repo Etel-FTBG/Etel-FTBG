@@ -31,6 +31,9 @@ $cartCount = (int)($_SESSION['cart_count'] ?? array_sum(array_column($_SESSION['
        block. It was written to be loaded alongside etel-v2.css but the
        <link> was never added, leaving those pages unstyled. -->
   <link rel="stylesheet" href="<?= View::asset('css/etel.css') ?>">
+  <!-- Light theme (only active under html[data-theme="light"]) + the switch; loaded sync so the saved theme applies before first paint -->
+  <link rel="stylesheet" href="<?= View::asset('css/etel-theme-light.css') ?>?v=1.0">
+  <script src="<?= View::asset('js/etel-theme.js') ?>?v=1.0"></script>
   <!-- Display size controller (floating Aa button): text / icon / button / logo size + boldness -->
   <script>window.ETEL_DISPLAY_USER = <?= json_encode((string)($user['id'] ?? '')) ?>;</script>
   <?php if (!empty($user['id'])): ?>
@@ -92,6 +95,10 @@ $cartCount = (int)($_SESSION['cart_count'] ?? array_sum(array_column($_SESSION['
   </div>
 
   <div class="eg-header-actions">
+    <button type="button" class="eg-header-btn" data-etel-theme-toggle title="Light mode" aria-label="Switch to light mode">
+      <i class="bi bi-sun ico" data-keep="ico"></i>
+      <span data-etel-theme-label>Light mode</span>
+    </button>
     <a href="<?= View::url('/cart') ?>" class="eg-header-btn">
       <i class="bi bi-cart3 ico"></i>
       <span><?= e(t('storefront.nav.cart')) ?></span>
