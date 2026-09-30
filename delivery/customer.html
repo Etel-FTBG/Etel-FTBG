@@ -23,7 +23,7 @@
     <script src="js/customer-bundle-extra.js?v=1.0" defer></script>
     <script>window.initCustomerMap = function(){}; loadGoogleMaps('geometry,places', 'initCustomerMap');</script>
     <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/customer-v5.css?v=6.0">
+    <link rel="stylesheet" href="css/customer-v5.css?v=6.1">
 <script src="js/etel-display-settings.js?v=1.4" data-fab="off" defer></script>
 </head>
 <body>
@@ -114,18 +114,15 @@
             </button>
         </div>
 
-        <!-- FILTER PILLS -->
-        <div class="filter-row">
+        <!-- ONE FILTER ROW: sort pills, divider, then cuisine chips (both can be combined) -->
+        <div class="chip-row" id="chip-row">
             <button class="filter-pill active" data-i18n="filter_trending" onclick="applySortFilter('trending', this)">🔥 Trending</button>
             <button class="filter-pill" data-i18n="filter_top_rated" onclick="applySortFilter('top_rated', this)">⭐ Top Rated</button>
             <button class="filter-pill" data-i18n="filter_fast" onclick="applySortFilter('fast', this)">⚡ Fast</button>
             <button class="filter-pill" data-i18n="filter_budget" onclick="applySortFilter('budget', this)">💰 Budget</button>
             <button class="filter-pill" data-i18n="filter_new" onclick="applySortFilter('new', this)">✨ New</button>
-        </div>
-
-        <!-- CATEGORY CHIPS -->
-        <div class="category-row">
-            <button class="cat-chip active" onclick="applyCuisineFilter('pizza', this)"><span>🍕</span> <span data-i18n="cat_pizza">Pizza</span></button>
+            <span class="chip-sep" aria-hidden="true"></span>
+            <button class="cat-chip" onclick="applyCuisineFilter('pizza', this)"><span>🍕</span> <span data-i18n="cat_pizza">Pizza</span></button>
             <button class="cat-chip" onclick="applyCuisineFilter('burgers', this)"><span>🍔</span> <span data-i18n="cat_burgers">Burgers</span></button>
             <button class="cat-chip" onclick="applyCuisineFilter('noodles', this)"><span>🍜</span> <span data-i18n="cat_noodles">Noodles</span></button>
             <button class="cat-chip" onclick="applyCuisineFilter('ethiopian', this)"><span>🥘</span> <span data-i18n="cat_ethiopian">Ethiopian</span></button>
@@ -144,6 +141,9 @@
             <div class="home-greeting-hi" id="home-greeting-hi">Hello 👋</div>
             <div class="home-greeting-sub" data-i18n="greet_sub">What would you like today?</div>
         </div>
+
+        <!-- LIVE ORDER TRACKER (shown only while an order is in progress) -->
+        <div id="home-order-tracker" class="order-tracker" style="display:none"></div>
 
         <!-- SERVICE GRID: four equal tiles -->
         <div class="svc-grid">
@@ -448,6 +448,13 @@
 </div>
 
 <!-- ═══ BOTTOM NAV ═══ -->
+<!-- CART BAR: slides up while the cart has items -->
+<button type="button" id="cart-bar" class="cart-bar" onclick="toggleCart()" aria-label="View cart" hidden>
+    <span class="cart-bar-count" id="cart-bar-count">0</span>
+    <span class="cart-bar-label"><span id="cart-bar-items">0 items</span> · <b id="cart-bar-total">ETB 0</b></span>
+    <span class="cart-bar-go" data-i18n="cart_view">View cart →</span>
+</button>
+
 <nav class="bottom-nav">
     <button class="nav-item active" onclick="switchCategory('home')">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
@@ -521,7 +528,7 @@
         </div>
     </div>
 
-    <script src="js/customer.js?v=4.30"></script>
+    <script src="js/customer.js?v=4.31"></script>
 <script src="js/investor-nav-check.js"></script>
 </body>
 </html>

@@ -53,6 +53,7 @@ window.ETEL_THEME_DEFAULT = 'dark';
 ETEL_I18N.register('customer', {
     en: {
         nav_home:'Home', nav_favorites:'Favorites', nav_orders:'Orders', nav_messages:'Messages', nav_profile:'Profile',
+        trk_title:'Your order', trk_pending:'Order placed', trk_assigned:'Courier assigned', trk_picked_up:'Picked up', trk_in_transit:'On the way', trk_track:'Track', trk_more:'more', cart_view:'View cart →', cart_items_one:'item', cart_items_many:'items', filter_none:'No matches for these filters', filter_clear:'Clear filters',
         greet_morning:'Good morning', greet_afternoon:'Good afternoon', greet_evening:'Good evening', greet_sub:'What would you like today?',
         svc_food:'Food', svc_groceries:'Groceries', svc_pharmacy:'Pharmacy', svc_ride:'Ride', shop_min:'min', shop_from:'From', shop_items:'items', shop_no_rating:'New',
         search_placeholder:'Search restaurants, food, cuisines…',
@@ -83,6 +84,7 @@ ETEL_I18N.register('customer', {
     },
     am: {
         nav_home:'ቤት', nav_favorites:'ተወዳጆች', nav_orders:'ትዕዛዞች', nav_messages:'መልዕክቶች', nav_profile:'መገለጫ',
+        trk_title:'ትዕዛዝዎ', trk_pending:'ትዕዛዝ ተቀብሏል', trk_assigned:'ሹፌር ተመድቧል', trk_picked_up:'ተነስቷል', trk_in_transit:'በመንገድ ላይ', trk_track:'ተከታተል', trk_more:'ተጨማሪ', cart_view:'ጋሪ ይመልከቱ →', cart_items_one:'ዕቃ', cart_items_many:'ዕቃዎች', filter_none:'ለእነዚህ ማጣሪያዎች ውጤት የለም', filter_clear:'ማጣሪያ አጽዳ',
         greet_morning:'እንደምን አደሩ', greet_afternoon:'እንደምን ዋሉ', greet_evening:'እንደምን አመሹ', greet_sub:'ዛሬ ምን ይፈልጋሉ?',
         svc_food:'ምግብ', svc_groceries:'ግሮሰሪ', svc_pharmacy:'ፋርማሲ', svc_ride:'ጉዞ', shop_min:'ደቂቃ', shop_from:'ከ', shop_items:'ዕቃዎች', shop_no_rating:'አዲስ',
         search_placeholder:'ምግብ ቤቶችን፣ ምግብን ይፈልጉ…',
@@ -186,6 +188,7 @@ function switchCategory(cat) {
     else if (cat === 'settings') loadSettingsView();
     else if (cat === 'notifications') loadNotifications();
     else if (cat === 'home' && !itemsCache.length) loadItems();
+    if (cat === 'home') loadHomeTracker();
 }
 
 // Single floating refresh button (see #cust-refresh-btn in the HTML)
@@ -217,8 +220,8 @@ async function refreshCurrentView() {
 
 // ── LOAD ITEMS (public endpoint) ────────────────────────────────
 async function loadItems(category) {
-    document.getElementById('sg-scroll').innerHTML = UI.loading('Loading shops...');
-    document.getElementById('items-grid').innerHTML = UI.loading('Loading items...');
+    document.getElementById('sg-scroll').innerHTML = '<div class="skeleton-shop"></div><div class="skeleton-shop"></div><div class="skeleton-shop"></div>';
+    document.getElementById('items-grid').innerHTML = '<div class="skeleton-item"></div><div class="skeleton-item"></div><div class="skeleton-item"></div><div class="skeleton-item"></div>';
     const params = {};
     if (category) params.category = category;
     const res = await apiGet('customer_get_items', params);
@@ -277,6 +280,35 @@ function renderSGScroll(items) {
             '</div></div>';
     }).join('');
 }
+
+// ── LIVE ORDER TRACKER (home) ───────────────────────────────────
+// Shows the newest in-progress order with a progress bar and a Track button,
+// refreshed every 45 s while the home view is open. Uses the same
+// customer_get_orders data as the Orders tab; silent if it can't load.
+const _TRK_STEPS = ['pending','assigned','picked_up','in_transit'];
+async function loadHomeTracker() {
+    const box = document.getElementById('home-order-tracker');
+    if (!box) return;
+    try {
+        if (!Auth.getToken()) return;
+        const res = await apiGet('customer_get_orders', {});
+        if (!res || !res.success) return;
+        const active = (res.data.orders || []).filter(function(o){ return _TRK_STEPS.indexOf(o.status) !== -1; });
+        if (!active.length) { box.style.display = 'none'; box.innerHTML = ''; return; }
+        const o = active[0];
+        const step = _TRK_STEPS.indexOf(o.status);
+        const pct = Math.round((step + 1) / (_TRK_STEPS.length + 1) * 100);
+        const more = active.length > 1 ? ' · +' + (active.length - 1) + ' ' + ETEL_I18N.t('trk_more') : '';
+        box.innerHTML =
+            '<div class="trk-top"><span class="trk-ico">🛵</span>' +
+            '<div class="trk-text"><div class="trk-title">' + escapeHtml(ETEL_I18N.t('trk_title')) + ' · ' + escapeHtml(o.order_code || '') + escapeHtml(more) + '</div>' +
+            '<div class="trk-status">' + escapeHtml(ETEL_I18N.t('trk_' + o.status)) + '</div></div>' +
+            '<button type="button" class="trk-btn" onclick="openTrackOrder(' + parseInt(o.id, 10) + ')">' + escapeHtml(ETEL_I18N.t('trk_track')) + '</button></div>' +
+            '<div class="trk-bar"><span style="width:' + pct + '%"></span></div>';
+        box.style.display = 'block';
+    } catch (e) { /* tracker is decoration - never break the home page */ }
+}
+setInterval(function() { if (currentView === 'home' && document.visibilityState === 'visible') loadHomeTracker(); }, 45000);
 
 // Greeting line on the home view: time of day + first name (updates on language change).
 function renderHomeGreeting() {
@@ -488,11 +520,25 @@ function updateTrackMap(o) {
 // Trending = default order already returned by the API (rating DESC).
 // The rest are simple client-side sorts/filters over the same
 // itemsCache the grid already has - no new API call needed.
+// Sort pills and cuisine chips now combine: pick "Fast" AND "Coffee" and you get
+// fast coffee. Tapping the active cuisine chip again clears it.
+const _flt = {sort: 'trending', cuisine: null};
 function applySortFilter(type, btn) {
+    _flt.sort = type;
     document.querySelectorAll('.filter-pill').forEach(function(b){ b.classList.remove('active'); });
     if (btn) btn.classList.add('active');
-
+    applyFilters();
+}
+function applyFilters() {
     let list = itemsCache.slice(); // copy - never mutate the cache itself
+    if (_flt.cuisine) {
+        const keywords = CUISINE_KEYWORDS[_flt.cuisine] || [];
+        list = list.filter(function(item) {
+            const hay = ((item.name||'') + ' ' + (item.name_am||'') + ' ' + (item.category||'')).toLowerCase();
+            return keywords.some(function(k){ return hay.indexOf(k) !== -1; });
+        });
+    }
+    const type = _flt.sort;
     if (type === 'top_rated') {
         list.sort(function(a,b){ return (parseFloat(b.rating)||0) - (parseFloat(a.rating)||0); });
     } else if (type === 'fast') {
@@ -503,9 +549,22 @@ function applySortFilter(type, btn) {
         list.sort(function(a,b){ return b.id - a.id; });
     }
     // 'trending' (default) - leave in the API's own order, already rating-first.
-
+    if (!list.length && itemsCache.length) {
+        const empty = '<div class="filter-empty">' + escapeHtml(ETEL_I18N.t('filter_none')) +
+            ' <button type="button" onclick="clearFilters()">' + escapeHtml(ETEL_I18N.t('filter_clear')) + '</button></div>';
+        document.getElementById('items-grid').innerHTML = empty;
+        document.getElementById('sg-scroll').innerHTML = '';
+        const c = document.getElementById('sg-count'); if (c) c.textContent = '';
+        return;
+    }
     renderItemsGrid(list);
     renderSGScroll(list);
+}
+function clearFilters() {
+    _flt.sort = 'trending'; _flt.cuisine = null;
+    document.querySelectorAll('.filter-pill').forEach(function(b, i){ b.classList.toggle('active', i === 0); });
+    document.querySelectorAll('.cat-chip').forEach(function(b){ b.classList.remove('active'); });
+    applyFilters();
 }
 
 // ── CATEGORY CHIPS (Pizza / Burgers / Noodles / etc.) ───────────────
@@ -522,20 +581,11 @@ const CUISINE_KEYWORDS = {
     coffee: ['coffee','buna','macchiato','latte'], bakery: ['bread','bakery','croissant','muffin','cake','pastry'],
 };
 function applyCuisineFilter(key, btn) {
+    const wasActive = btn && btn.classList.contains('active');
     document.querySelectorAll('.cat-chip').forEach(function(b){ b.classList.remove('active'); });
-    if (btn) btn.classList.add('active');
-
-    const keywords = CUISINE_KEYWORDS[key] || [];
-    const list = itemsCache.filter(function(item) {
-        const hay = ((item.name||'') + ' ' + (item.name_am||'') + ' ' + (item.category||'')).toLowerCase();
-        return keywords.some(function(k){ return hay.indexOf(k) !== -1; });
-    });
-    renderItemsGrid(list);
-    renderSGScroll(list);
-    if (!list.length) {
-        const grid = document.getElementById('items-grid');
-        if (grid) grid.innerHTML = '<div style="padding:30px;color:rgba(247,241,223,.55);text-align:center;font-size:13px;grid-column:1/-1">No ' + key + ' items found yet - check back soon!</div>';
-    }
+    if (wasActive) { _flt.cuisine = null; }
+    else { _flt.cuisine = key; if (btn) btn.classList.add('active'); }
+    applyFilters();
 }
 
 const catEmoji = {food:'🍽️',grocery:'🛒',pharmacy:'💊',laundry:'👕',delivery:'📦'};
@@ -686,7 +736,19 @@ function closeItemDetail() {
     if (modal) modal.style.display = 'none';
 }
 function updateCartCount() {
-    document.getElementById('cart-count').textContent = cart.reduce(function(s,c){ return s+c.quantity; }, 0);
+    const n = cart.reduce(function(s,c){ return s+c.quantity; }, 0);
+    document.getElementById('cart-count').textContent = n;
+    // Floating cart bar: visible only while the cart has something in it.
+    const bar = document.getElementById('cart-bar');
+    if (bar) {
+        const total = cart.reduce(function(s,c){ return s + c.price*c.quantity; }, 0);
+        document.getElementById('cart-bar-count').textContent = n;
+        document.getElementById('cart-bar-items').textContent = n + ' ' + ETEL_I18N.t(n === 1 ? 'cart_items_one' : 'cart_items_many');
+        document.getElementById('cart-bar-total').textContent = 'ETB ' + Math.round(total);
+        bar.hidden = n === 0;
+        document.body.classList.toggle('has-cartbar', n > 0);
+        if (n > 0) { bar.classList.remove('bump'); void bar.offsetWidth; bar.classList.add('bump'); }
+    }
 }
 function toggleCart() {
     if (!cart.length) { showToast('Cart is empty — add some items first', 'err'); return; }
@@ -2417,7 +2479,7 @@ document.querySelectorAll('.category-tab').forEach(function(tab, i) {
 // ── TOAST ────────────────────────────────────────────────────────
 function showToast(msg, type) {
     const t = document.createElement('div');
-    t.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);z-index:999;padding:12px 20px;background:' + (type==='err'?'#e63946':'#2ecc71') + ';color:#fff;border-radius:10px;font-size:13px;font-weight:600;box-shadow:0 4px 20px rgba(0,0,0,.2);white-space:nowrap;max-width:90vw;text-align:center';
+    t.style.cssText = 'position:fixed;bottom:' + (document.body.classList.contains('has-cartbar') ? '148px' : '80px') + ';left:50%;transform:translateX(-50%);z-index:999;padding:12px 20px;background:' + (type==='err'?'#e63946':'#2ecc71') + ';color:#fff;border-radius:10px;font-size:13px;font-weight:600;box-shadow:0 4px 20px rgba(0,0,0,.2);white-space:nowrap;max-width:90vw;text-align:center';
     t.textContent = msg;
     document.body.appendChild(t);
     setTimeout(function(){ t.remove(); }, 3000);
@@ -2476,6 +2538,7 @@ function maybeShowPermissionsOnboarding() {
 
 // ── INIT ─────────────────────────────────────────────────────────
 renderHomeGreeting();
+loadHomeTracker();
 loadItems();
 loadFeatureFlags();
 maybeShowPermissionsOnboarding();
