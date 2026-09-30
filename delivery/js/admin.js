@@ -474,9 +474,26 @@
         // Removes ONE empty placeholder shop (owned by an admin account). The server refuses
         // anything that is not exactly that, or that has any items/orders/staff/payouts.
         async function removePlaceholderShop(shopId) {
-            if (!confirm('Remove this empty placeholder shop?\n\nNo account is deleted. The server will refuse if the shop has any items, orders or staff.')) return;
             try {
-                const res = await adm('admin_delete_placeholder_shop', { shop_id: shopId }, false);
+                // 1) look only - changes nothing
+                const look = await adm('admin_delete_placeholder_shop', { shop_id: shopId, inspect: 1 }, false);
+                if (!look || !look.success) { alert((look && look.message) || 'Could not check this shop'); return; }
+                const d = look.data || {};
+                if (!d.can_delete) {
+                    alert('This shop cannot be removed because it is in use:\n\n' + (d.blockers || []).join('\n') + '\n\nNothing was changed.');
+                    return;
+                }
+                let msg = 'Remove the placeholder shop "' + ((d.shop && d.shop.business_name) || '') + '"?\n\nNo account is deleted.';
+                const hasItems = (d.item_count || 0) > 0;
+                if (hasItems) {
+                    msg += '\n\nIt still has ' + d.item_count + ' test item(s) that will be DELETED with it:\n' +
+                        (d.items || []).slice(0, 10).map(function (i) { return '  - ' + i.name + ' (ETB ' + i.price + ')'; }).join('\n') +
+                        (d.item_count > 10 ? '\n  ...and ' + (d.item_count - 10) + ' more' : '') +
+                        '\n\nNone of these items appears in any order.';
+                }
+                if (!confirm(msg)) return;
+                // 2) remove (items only if the admin just confirmed that)
+                const res = await adm('admin_delete_placeholder_shop', { shop_id: shopId, delete_items: hasItems ? 1 : 0 }, false);
                 if (res && res.success) {
                     if (typeof showNotification === 'function') showNotification('Placeholder shop removed', 'success'); else alert('Placeholder shop removed');
                     loadDuplicatePhones();
