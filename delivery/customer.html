@@ -23,7 +23,7 @@
     <script src="js/customer-bundle-extra.js?v=1.0" defer></script>
     <script>window.initCustomerMap = function(){}; loadGoogleMaps('geometry,places', 'initCustomerMap');</script>
     <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/customer-v5.css?v=6.6">
+    <link rel="stylesheet" href="css/customer-v5.css?v=6.7">
 <script src="js/etel-display-settings.js?v=1.4" data-fab="off" defer></script>
 </head>
 <body>
@@ -371,10 +371,13 @@
     </header>
     <div style="padding:16px clamp(16px,3vw,40px) 0">
         <div id="shop-detail-hero" style="height:120px;border-radius:16px;display:flex;align-items:center;justify-content:center;margin-bottom:16px;position:relative;overflow:hidden;border:1px solid var(--glass-border)"></div>
-        <div style="display:flex;gap:8px;margin-bottom:16px">
-            <button id="shop-tab-menu" class="filter-pill active" onclick="switchShopDetailTab('menu')" style="flex:1;text-align:center">Menu</button>
-            <button id="shop-tab-reviews" class="filter-pill" onclick="switchShopDetailTab('reviews')" style="flex:1;text-align:center">Reviews</button>
-            <button id="shop-tab-info" class="filter-pill" onclick="switchShopDetailTab('info')" style="flex:1;text-align:center">Info</button>
+        <div id="shop-toolbar" class="shop-toolbar">
+            <div style="display:flex;gap:8px">
+                <button id="shop-tab-menu" class="filter-pill active" onclick="switchShopDetailTab('menu')" style="flex:1;text-align:center">Menu</button>
+                <button id="shop-tab-reviews" class="filter-pill" onclick="switchShopDetailTab('reviews')" style="flex:1;text-align:center">Reviews</button>
+                <button id="shop-tab-info" class="filter-pill" onclick="switchShopDetailTab('info')" style="flex:1;text-align:center">Info</button>
+            </div>
+            <div id="shop-menu-chips" class="shop-menu-chips"></div>
         </div>
         <div id="shop-detail-menu-panel" class="items-grid"></div>
         <div id="shop-detail-reviews-panel" style="display:none"></div>
@@ -529,7 +532,7 @@
         </div>
     </div>
 
-    <script src="js/customer.js?v=4.36"></script>
+    <script src="js/customer.js?v=4.37"></script>
 <script src="js/investor-nav-check.js"></script>
 </body>
 </html>

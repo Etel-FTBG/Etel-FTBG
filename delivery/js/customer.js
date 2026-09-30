@@ -54,7 +54,7 @@ ETEL_I18N.register('customer', {
     en: {
         nav_home:'Home', nav_favorites:'Favorites', nav_orders:'Orders', nav_messages:'Messages', nav_profile:'Profile',
         shop_open:'Open', shop_closed:'Closed', shop_fee_from:'Delivery from ETB', closed_warn:'appears closed right now. You can still order, but it may wait until they open. Continue?',
-        trk_title:'Your order', trk_pending:'Order placed', trk_assigned:'Courier assigned', trk_picked_up:'Picked up', trk_in_transit:'On the way', trk_track:'Track', trk_more:'more', reorder_btn:'Order again', reorder_home:'Hungry again?', reorder_none:'Those items are no longer available', reorder_added:'added to your cart at today\'s prices', reorder_skipped:'unavailable, skipped', reorder_fail:'Could not load that order', cart_view:'View cart →', cart_items_one:'item', cart_items_many:'items', filter_none:'No matches for these filters', filter_clear:'Clear filters',
+        trk_title:'Your order', trk_pending:'Order placed', trk_assigned:'Courier assigned', trk_picked_up:'Picked up', trk_in_transit:'On the way', trk_track:'Track', trk_more:'more', menu_all:'All', menu_popular:'🔥 Popular', menu_deals:'🏷️ Deals', menu_quick:'⚡ Quick', pop_badge:'🔥 Popular', reorder_btn:'Order again', reorder_home:'Hungry again?', reorder_none:'Those items are no longer available', reorder_added:'added to your cart at today\'s prices', reorder_skipped:'unavailable, skipped', reorder_fail:'Could not load that order', cart_view:'View cart →', cart_items_one:'item', cart_items_many:'items', filter_none:'No matches for these filters', filter_clear:'Clear filters',
         greet_morning:'Good morning', greet_afternoon:'Good afternoon', greet_evening:'Good evening', greet_sub:'What would you like today?',
         svc_food:'Food', svc_groceries:'Groceries', svc_pharmacy:'Pharmacy', svc_ride:'Ride', shop_min:'min', shop_from:'From', shop_items:'items', shop_no_rating:'New',
         search_placeholder:'Search restaurants, food, cuisines…',
@@ -86,7 +86,7 @@ ETEL_I18N.register('customer', {
     am: {
         nav_home:'ቤት', nav_favorites:'ተወዳጆች', nav_orders:'ትዕዛዞች', nav_messages:'መልዕክቶች', nav_profile:'መገለጫ',
         shop_open:'ክፍት', shop_closed:'ዝግ', shop_fee_from:'ማድረሻ ከ ETB', closed_warn:'አሁን ዝግ ይመስላል። አሁንም ማዘዝ ይችላሉ፤ እስኪከፈት ሊዘገይ ይችላል። ይቀጥሉ?',
-        trk_title:'ትዕዛዝዎ', trk_pending:'ትዕዛዝ ተቀብሏል', trk_assigned:'ሹፌር ተመድቧል', trk_picked_up:'ተነስቷል', trk_in_transit:'በመንገድ ላይ', trk_track:'ተከታተል', trk_more:'ተጨማሪ', reorder_btn:'እንደገና አዝዝ', reorder_home:'እንደገና ይራብዎታል?', reorder_none:'እነዚህ ዕቃዎች አሁን አይገኙም', reorder_added:'በዛሬ ዋጋ ወደ ጋሪዎ ተጨምረዋል', reorder_skipped:'አይገኝም፣ ተዘሏል', reorder_fail:'ትዕዛዙን መጫን አልተቻለም', cart_view:'ጋሪ ይመልከቱ →', cart_items_one:'ዕቃ', cart_items_many:'ዕቃዎች', filter_none:'ለእነዚህ ማጣሪያዎች ውጤት የለም', filter_clear:'ማጣሪያ አጽዳ',
+        trk_title:'ትዕዛዝዎ', trk_pending:'ትዕዛዝ ተቀብሏል', trk_assigned:'ሹፌር ተመድቧል', trk_picked_up:'ተነስቷል', trk_in_transit:'በመንገድ ላይ', trk_track:'ተከታተል', trk_more:'ተጨማሪ', menu_all:'ሁሉም', menu_popular:'🔥 ተወዳጅ', menu_deals:'🏷️ ቅናሽ', menu_quick:'⚡ ፈጣን', pop_badge:'🔥 ተወዳጅ', reorder_btn:'እንደገና አዝዝ', reorder_home:'እንደገና ይራብዎታል?', reorder_none:'እነዚህ ዕቃዎች አሁን አይገኙም', reorder_added:'በዛሬ ዋጋ ወደ ጋሪዎ ተጨምረዋል', reorder_skipped:'አይገኝም፣ ተዘሏል', reorder_fail:'ትዕዛዙን መጫን አልተቻለም', cart_view:'ጋሪ ይመልከቱ →', cart_items_one:'ዕቃ', cart_items_many:'ዕቃዎች', filter_none:'ለእነዚህ ማጣሪያዎች ውጤት የለም', filter_clear:'ማጣሪያ አጽዳ',
         greet_morning:'እንደምን አደሩ', greet_afternoon:'እንደምን ዋሉ', greet_evening:'እንደምን አመሹ', greet_sub:'ዛሬ ምን ይፈልጋሉ?',
         svc_food:'ምግብ', svc_groceries:'ግሮሰሪ', svc_pharmacy:'ፋርማሲ', svc_ride:'ጉዞ', shop_min:'ደቂቃ', shop_from:'ከ', shop_items:'ዕቃዎች', shop_no_rating:'አዲስ',
         search_placeholder:'ምግብ ቤቶችን፣ ምግብን ይፈልጉ…',
@@ -417,7 +417,9 @@ function openShopDetail(sgId) {
         : '<div style="position:absolute;inset:0;background:radial-gradient(circle at 30% 30%,rgba(212,175,55,.18),transparent 65%),var(--dark-2)"></div>' +
           '<span style="font-size:56px;position:relative;filter:drop-shadow(0 4px 14px rgba(212,175,55,.35))">' + ic + '</span>' +
           (heroLogo ? '<img class="hero-logo" src="' + escUrl(heroLogo) + '" alt="" onerror="this.remove()">' : '');
-    renderItemsGrid(items, 'shop-detail-menu-panel');
+    _shopMenuItems = items; _shopMenuFilter = 'all';
+    renderShopMenuChips();
+    renderShopMenu();
     document.getElementById('shop-detail-info-panel').innerHTML =
         '<div style="background:var(--glass-2);border:1px solid var(--glass-border);border-radius:16px;padding:18px;display:flex;flex-direction:column;gap:12px">' +
         infoRow('🏷️', 'Type', first.service_type || 'General') +
@@ -428,6 +430,35 @@ function openShopDetail(sgId) {
     switchShopDetailTab('menu');
     document.getElementById('view-shop-detail').style.display = 'block';
 }
+// ── SHOP MENU FILTER CHIPS (sticky under the tabs): All / Popular / Deals / Quick
+// plus one chip per item category when the shop sells more than one kind.
+let _shopMenuItems = [], _shopMenuFilter = 'all';
+function _shopMenuMatch(i, key) {
+    if (key === 'all') return true;
+    if (key === 'popular') return parseInt(i.times_ordered, 10) >= 3;
+    if (key === 'deals') return i.original_price && parseFloat(i.original_price) > parseFloat(i.price);
+    if (key === 'quick') return parseInt(i.preparation_time, 10) > 0 && parseInt(i.preparation_time, 10) <= 20;
+    if (key.indexOf('cat:') === 0) return i.category === key.slice(4);
+    return true;
+}
+function renderShopMenuChips() {
+    const box = document.getElementById('shop-menu-chips');
+    if (!box) return;
+    const defs = [['all', ETEL_I18N.t('menu_all')], ['popular', ETEL_I18N.t('menu_popular')], ['deals', ETEL_I18N.t('menu_deals')], ['quick', ETEL_I18N.t('menu_quick')]];
+    const cats = [];
+    _shopMenuItems.forEach(function(i){ if (i.category && cats.indexOf(i.category) === -1) cats.push(i.category); });
+    if (cats.length > 1) cats.forEach(function(c){ defs.push(['cat:' + c, (catEmoji[c] || '🍴') + ' ' + c.charAt(0).toUpperCase() + c.slice(1)]); });
+    const shown = defs.filter(function(d){ return d[0] === 'all' || _shopMenuItems.some(function(i){ return _shopMenuMatch(i, d[0]); }); });
+    box.style.display = shown.length > 1 ? 'flex' : 'none';
+    box.innerHTML = shown.map(function(d) {
+        return '<button type="button" class="shop-chip' + (d[0] === _shopMenuFilter ? ' active' : '') + '" onclick="setShopMenuFilter(\'' + d[0] + '\')">' + escapeHtml(d[1]) + '</button>';
+    }).join('');
+}
+function renderShopMenu() {
+    const list = _shopMenuItems.filter(function(i){ return _shopMenuMatch(i, _shopMenuFilter); });
+    renderItemsGrid(list, 'shop-detail-menu-panel');
+}
+function setShopMenuFilter(key) { _shopMenuFilter = key; renderShopMenuChips(); renderShopMenu(); }
 function infoRow(icon, label, value) {
     return '<div style="display:flex;justify-content:space-between;align-items:center;font-size:13px">' +
         '<span style="color:var(--text-muted)">' + icon + ' ' + label + '</span>' +
@@ -437,6 +468,8 @@ function switchShopDetailTab(tab) {
     document.getElementById('shop-tab-menu').classList.toggle('active', tab === 'menu');
     document.getElementById('shop-tab-reviews').classList.toggle('active', tab === 'reviews');
     document.getElementById('shop-tab-info').classList.toggle('active', tab === 'info');
+    const _chips = document.getElementById('shop-menu-chips');
+    if (_chips) _chips.style.visibility = tab === 'menu' ? 'visible' : 'hidden', _chips.style.height = tab === 'menu' ? '' : '0';
     document.getElementById('shop-detail-menu-panel').style.display = tab === 'menu' ? 'grid' : 'none';
     document.getElementById('shop-detail-reviews-panel').style.display = tab === 'reviews' ? 'block' : 'none';
     document.getElementById('shop-detail-info-panel').style.display = tab === 'info' ? 'block' : 'none';
@@ -707,9 +740,10 @@ function renderItemsGrid(items, targetId) {
         return '<div class="offer-card" onclick="openItemDetail(' + item.id + ')" style="cursor:pointer">' +
             '<div class="offer-card-image" style="position:relative">' + imgHtml + '</div>' +
             (discounted ? '<div style="position:absolute;top:10px;left:10px;background:#EF4444;color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:6px">SALE</div>' : '') +
+            (parseInt(item.times_ordered, 10) >= 3 ? '<div class="pop-badge">' + escapeHtml(ETEL_I18N.t('pop_badge')) + '</div>' : '') +
             '<div class="offer-card-body">' +
                 '<div class="offer-card-name">' + escapeHtml(displayName) + '</div>' +
-                '<div class="offer-card-shop">' + escapeHtml(item.business_name||'') + '</div>' +
+                '<div class="offer-card-shop">' + escapeHtml(item.business_name||'') + (item.preparation_time ? ' · ⏱ ' + parseInt(item.preparation_time, 10) + ' min' : '') + '</div>' +
                 '<div class="offer-card-footer">' +
                     '<div class="offer-card-price">ETB ' + parseFloat(item.price).toFixed(0) + '</div>' +
                     '<button class="add-btn" onclick="event.stopPropagation();addToCart('+item.id+',\''+safeN+'\','+item.price+','+item.service_giver_id+',\''+safeB+'\')">+</button>' +
