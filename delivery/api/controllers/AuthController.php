@@ -433,6 +433,7 @@ case 'admin_etelid_login': {
         "SELECT id, name, phone, role" . ($hasVer ? ", token_version" : "") . ($hasStaffRole ? ", staff_role" : "") . ($hasManaged ? ", is_etelgroup_managed" : "") . " FROM users
          WHERE REPLACE(REPLACE(phone,'+',''),' ','') = ?
             OR RIGHT(REPLACE(REPLACE(phone,'+',''),' ',''), 9) = ?
+         ORDER BY (role = 'admin') DESC, id ASC
          LIMIT 1");
     $s->execute(array($digits, $last9));
     $u = $s->fetch();
