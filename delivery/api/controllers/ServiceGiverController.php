@@ -155,9 +155,16 @@ case 'sg_profile': {
     if (!$sg && !$ctx) {
         try {
             $code = 'SG-' . strtoupper(substr(md5($auth_user['id'] . time()), 0, 6));
+            // An admin opening the Service app via "Test as..." gets a clearly
+            // labelled, NOT-live test shop ('pending' never shows to
+            // customers, which only list 'verified' shops) so it can't be
+            // mistaken for a real business or a duplicate of a real owner.
+            $isAdmin = ($auth_user['role'] === 'admin');
             $ins  = $pdo->prepare("INSERT IGNORE INTO service_givers (user_id, service_giver_code, business_name, service_type, zone, status, created_at)
-                                   VALUES (?, ?, ?, 'restaurant', 'Mehal Ketema', 'active', NOW())");
-            $ins->execute(array($auth_user['id'], $code, $auth_user['name'] . "'s Shop"));
+                                   VALUES (?, ?, ?, 'restaurant', 'Mehal Ketema', ?, NOW())");
+            $ins->execute(array($auth_user['id'], $code,
+                $isAdmin ? 'Admin test shop (not live)' : $auth_user['name'] . "'s Shop",
+                $isAdmin ? 'pending' : 'active'));
             $s2 = $pdo->prepare('SELECT * FROM service_givers WHERE user_id=?');
             $s2->execute(array($auth_user['id']));
             $sg = $s2->fetch();
