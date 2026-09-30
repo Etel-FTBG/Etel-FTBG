@@ -441,8 +441,10 @@ html{color-scheme:light}
                         </select>
                         <input type="text" id="user-search" class="filter-sel" placeholder="Search name/phone…" oninput="filterUserTable()" style="width:200px">
                         <button class="btn btn-secondary" onclick="loadUsers()" style="padding:8px 14px">🔄 Refresh</button>
+                        <button class="btn btn-secondary" onclick="loadDuplicatePhones()" style="padding:8px 14px" title="Accounts that share one number written two ways (0924... / +251924...)">📞 Duplicate phones</button>
                         <button class="btn btn-primary" onclick="openModal('new-user')" style="padding:8px 14px">➕ New User</button>
                     </div>
+                    <div id="dup-phones-box" class="data-section" style="display:none;margin-bottom:18px"></div>
                     <div class="data-section">
                         <div class="section-title">All Users</div>
                         <div class="table-wrapper"><table><thead><tr><th>ID</th><th>Name</th><th>Phone</th><th>Role</th><th>Joined</th></tr></thead>
@@ -1351,7 +1353,7 @@ html{color-scheme:light}
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script><!-- PPTX slide-text preview (PPTX is a zip of XML), Documents tab -->
     <script src="js/admin-documents.js?v=1.5"></script><!-- Documents library: view/edit/version PDFs, Office files, Markdown, XML, etc -->
 
-<script src="js/admin.js?v=6.5"></script>
+<script src="js/admin.js?v=6.6"></script>
 <script src="js/admin-confirmations-premium.js?v=1.1"></script><!-- Pending Confirmations + GLOBAL modal-box fix for entire admin system -->
 <script src="js/admin-couriers-premium.js?v=1.4"></script><!-- Premium Couriers Management: 3D cards + edit modal + live map -->
     <script src="js/admin-premium.js?v=4.1"></script><!-- KPI count-ups + card motion -->

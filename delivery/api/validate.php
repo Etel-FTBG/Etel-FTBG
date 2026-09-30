@@ -55,6 +55,67 @@ function etel_validate_phone($raw) {
     return $valid ? $sanitized : false;
 }
 
+
+/**
+ * Phone number identity. One Ethiopian mobile number is written several ways
+ * (0924445206, +251924445206, 251924445206, 924445206) and old rows were stored
+ * exactly as typed, so the same person could end up as two accounts. These
+ * helpers identify a number by its last 9 digits so every lookup and every
+ * duplicate check treats all of those forms as the same number. Nothing here
+ * rewrites stored data.
+ */
+function etel_phone_last9($raw) {
+    $d = preg_replace('/[^0-9]/', '', (string) $raw);
+    if (strlen($d) < 9) return '';
+    return substr($d, -9);
+}
+
+/* Every common way of writing the same number, plus the value as typed. */
+function etel_phone_variants($raw) {
+    $raw = trim((string) $raw);
+    $out = array();
+    if ($raw !== '') $out[] = preg_replace('/\s+/', '', $raw);
+    $l9 = etel_phone_last9($raw);
+    if ($l9 !== '') {
+        $out[] = '0' . $l9;
+        $out[] = '+251' . $l9;
+        $out[] = '251' . $l9;
+        $out[] = $l9;
+    }
+    return array_values(array_unique($out));
+}
+
+/* True when any stored user already has this number in ANY written form. */
+function etel_phone_taken($pdo, $phone) {
+    $v = etel_phone_variants($phone);
+    if (!$v) return false;
+    $in = implode(',', array_fill(0, count($v), '?'));
+    $s = $pdo->prepare('SELECT id FROM users WHERE phone IN (' . $in . ') LIMIT 1');
+    $s->execute($v);
+    return (bool) $s->fetch();
+}
+
+/* Find ONE user for a number: an exact match always wins; otherwise a match
+   written in a different form is accepted only if it is unambiguous (exactly
+   one account). If several accounts match and none is exact, returns null, so
+   a number can never silently open the wrong one of two duplicate accounts.
+   $cols = SELECT list (must include phone), $extra = extra AND conditions,
+   $extraParams = their bound values. */
+function etel_find_user_by_phone($pdo, $phone, $cols = 'id,phone', $extra = '', $extraParams = array()) {
+    $v = etel_phone_variants($phone);
+    if (!$v) return null;
+    $in = implode(',', array_fill(0, count($v), '?'));
+    $s = $pdo->prepare('SELECT ' . $cols . ' FROM users WHERE phone IN (' . $in . ')' . ($extra !== '' ? ' AND ' . $extra : '') . ' ORDER BY id ASC');
+    $s->execute(array_merge($v, $extraParams));
+    $rows = $s->fetchAll();
+    if (!$rows) return null;
+    $typed = preg_replace('/\s+/', '', trim((string) $phone));
+    foreach ($rows as $r) {
+        if (isset($r['phone']) && $r['phone'] === $typed) return $r;
+    }
+    return count($rows) === 1 ? $rows[0] : null;
+}
+
 /**
  * Validate a currency amount (item prices, fares, wallet/payment amounts).
  *

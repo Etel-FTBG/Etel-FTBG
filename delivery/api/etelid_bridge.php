@@ -241,8 +241,9 @@ function etelid_bridge_local_user($pdo, $member) {
         "SELECT id, name, phone, role" . ($hasVer ? ", token_version" : "") . " FROM users
          WHERE REPLACE(REPLACE(phone,'+',''),' ','') = ?
             OR RIGHT(REPLACE(REPLACE(phone,'+',''),' ',''), 9) = ?
+         ORDER BY (REPLACE(REPLACE(phone,'+',''),' ','') = ?) DESC, id ASC
          LIMIT 1");
-    $s->execute(array($digits, $last9));
+    $s->execute(array($digits, $last9, $digits));
     $u = $s->fetch();
     $isLimited = !empty($member['profile_limited']);
     /* Only the Service API payload carries profile_limited. The agent

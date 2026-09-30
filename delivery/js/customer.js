@@ -239,10 +239,12 @@ function renderSGScroll(items) {
     items.forEach(function(item) {
         let sg = bySG[item.service_giver_id];
         if (!sg) {
-            sg = bySG[item.service_giver_id] = {id:item.service_giver_id, name:item.business_name||'Shop', zone:item.zone||'', type:item.service_type||'', count:0, img:'', minPrice:Infinity, minPrep:Infinity, rating:0};
+            sg = bySG[item.service_giver_id] = {id:item.service_giver_id, name:item.business_name||'Shop', zone:item.zone||'', type:item.service_type||'', count:0, img:'', cover:'', logo:'', minPrice:Infinity, minPrep:Infinity, rating:0};
         }
         sg.count++;
-        if (!sg.img && item.image_url) sg.img = item.image_url;          // first real photo of the shop becomes its cover
+        if (!sg.img && item.image_url) sg.img = item.image_url;          // fallback cover: first real item photo
+        if (!sg.cover && item.cover_url) sg.cover = item.cover_url;      // the shop's own cover photo wins
+        if (!sg.logo && item.logo_url) sg.logo = item.logo_url;
         const pr = parseFloat(item.price); if (pr > 0 && pr < sg.minPrice) sg.minPrice = pr;
         const pt = parseInt(item.preparation_time, 10); if (pt > 0 && pt < sg.minPrep) sg.minPrep = pt;
         const rt = parseFloat(item.rating); if (rt > sg.rating) sg.rating = rt;
@@ -264,8 +266,9 @@ function renderSGScroll(items) {
         // travel time is a flat +10..20 min estimate on top of the shop's own prep time.
         const eta = isFinite(sg.minPrep) ? '<span class="rc-eta">' + (sg.minPrep + 10) + '–' + (sg.minPrep + 20) + ' ' + escapeHtml(tMin) + '</span>' : '';
         const rate = sg.rating > 0 ? '<span class="rc-rate">★ ' + sg.rating.toFixed(1) + '</span>' : '<span class="rc-rate rc-rate-new">' + escapeHtml(tNew) + '</span>';
-        const cover = sg.img
-            ? '<span class="rc-ph">' + ic + '</span><img class="rc-cover" src="' + escUrl(sg.img) + '" alt="" loading="lazy" onerror="this.onerror=null;this.style.display=\'none\'">'
+        const coverSrc = sg.cover || sg.img;
+        const cover = coverSrc
+            ? '<span class="rc-ph">' + ic + '</span><img class="rc-cover" src="' + escUrl(coverSrc) + '" alt="" loading="lazy" onerror="this.onerror=null;this.style.display=\'none\'">'
             : '<span class="rc-ph rc-ph-solo">' + ic + '</span>';
         const from = isFinite(sg.minPrice) ? escapeHtml(tFrom) + ' ETB ' + Math.round(sg.minPrice) + ' · ' : '';
         return '<div class="restaurant-card" onclick="openShopDetail('+sg.id+')">' +
@@ -273,7 +276,8 @@ function renderSGScroll(items) {
                 '<button class="rc-fav" onclick="event.stopPropagation();toggleFavorite('+sg.id+')" aria-label="Favorite">☆</button>' +
                 rate + eta +
             '</div>' +
-            '<div class="restaurant-card-body">' +
+            '<div class="restaurant-card-body' + (sg.logo ? ' has-logo' : '') + '">' +
+                (sg.logo ? '<img class="rc-logo" src="' + escUrl(sg.logo) + '" alt="" loading="lazy" onerror="this.parentNode.classList.remove(\'has-logo\');this.remove()">' : '') +
                 '<div class="restaurant-card-name">' + escapeHtml(sg.name) + '</div>' +
                 '<div class="restaurant-card-meta">' + escapeHtml(sg.type||'Shop') + ' · ' + escapeHtml(sg.zone||'Hawassa') + '</div>' +
                 '<div class="restaurant-card-info">' + from + sg.count + ' ' + escapeHtml(tItems) + '</div>' +
@@ -345,9 +349,18 @@ function openShopDetail(sgId) {
     const rating = parseFloat(first.rating) || 0;
     document.getElementById('shop-detail-meta').textContent =
         (rating ? '⭐ ' + rating.toFixed(1) + ' · ' : '') + (first.zone || 'Hawassa');
-    document.getElementById('shop-detail-hero').innerHTML =
-        '<div style="position:absolute;inset:0;background:radial-gradient(circle at 30% 30%,rgba(212,175,55,.18),transparent 65%),var(--dark-2)"></div>' +
-        '<span style="font-size:56px;position:relative;filter:drop-shadow(0 4px 14px rgba(212,175,55,.35))">' + ic + '</span>';
+    const heroCover = first.cover_url || '';
+    const heroLogo = first.logo_url || '';
+    const heroPhoto = heroCover || (items.find(function(i){ return i.image_url; }) || {}).image_url || '';
+    document.getElementById('shop-detail-hero').innerHTML = heroPhoto
+        ? '<div style="position:absolute;inset:0;background:radial-gradient(circle at 30% 30%,rgba(212,175,55,.18),transparent 65%),var(--dark-2)"></div>' +
+          '<span style="font-size:56px;position:relative;opacity:.4">' + ic + '</span>' +
+          '<img src="' + escUrl(heroPhoto) + '" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover" onerror="this.onerror=null;this.style.display=\'none\'">' +
+          '<span class="rc-shade"></span>' +
+          (heroLogo ? '<img class="hero-logo" src="' + escUrl(heroLogo) + '" alt="" onerror="this.remove()">' : '')
+        : '<div style="position:absolute;inset:0;background:radial-gradient(circle at 30% 30%,rgba(212,175,55,.18),transparent 65%),var(--dark-2)"></div>' +
+          '<span style="font-size:56px;position:relative;filter:drop-shadow(0 4px 14px rgba(212,175,55,.35))">' + ic + '</span>' +
+          (heroLogo ? '<img class="hero-logo" src="' + escUrl(heroLogo) + '" alt="" onerror="this.remove()">' : '');
     renderItemsGrid(items, 'shop-detail-menu-panel');
     document.getElementById('shop-detail-info-panel').innerHTML =
         '<div style="background:var(--glass-2);border:1px solid var(--glass-border);border-radius:16px;padding:18px;display:flex;flex-direction:column;gap:12px">' +

@@ -115,6 +115,7 @@
             }
             applyPaymentMethodLogos();
             checkPendingPayoutRequest();
+            if (typeof showSettingsCover === 'function') showSettingsCover(currentServiceGiver.cover_url || '');
             updateOnlineStatusUI();
             renderSgProfilePanel();
         }
@@ -914,6 +915,30 @@
             }
         }
 
+        // ── Cover photo (wide banner shown on the customer app's shop card) ──
+        let _coverRemoved = false;
+        function showSettingsCover(url) {
+            const img = document.getElementById('settings-cover-preview');
+            const empty = document.getElementById('settings-cover-empty');
+            const rm = document.getElementById('settings-cover-remove');
+            if (!img) return;
+            if (url) { img.src = url; img.style.display = 'block'; if (empty) empty.style.display = 'none'; if (rm) rm.style.display = 'inline-flex'; }
+            else { img.removeAttribute('src'); img.style.display = 'none'; if (empty) empty.style.display = 'block'; if (rm) rm.style.display = 'none'; }
+        }
+        function previewSettingsCover(input) {
+            if (input.files && input.files[0]) {
+                _coverRemoved = false;
+                const reader = new FileReader();
+                reader.onload = e => showSettingsCover(e.target.result);
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+        function removeSettingsCover() {
+            _coverRemoved = true;
+            const f = document.getElementById('settings-cover-file'); if (f) f.value = '';
+            showSettingsCover('');
+        }
+
         async function saveBusinessSettings() {
             const payload = {
                 business_name: document.getElementById('settings-business-name').value,
@@ -934,8 +959,26 @@
                 } catch (e) { showNotification('Logo upload error', 'error'); return; }
             }
 
+            const coverInput = document.getElementById('settings-cover-file');
+            if (coverInput && coverInput.files && coverInput.files[0]) {
+                const uploadBase2 = ETEL.api.replace('boot.php', 'upload.php');
+                const fd2 = new FormData();
+                fd2.append('image', coverInput.files[0]);
+                fd2.append('type', 'shop_cover');
+                try {
+                    const ur2 = await fetch(uploadBase2, { method: 'POST', headers: { 'Authorization': 'Bearer ' + Auth.getToken() }, body: fd2 });
+                    const uj2 = await ur2.json();
+                    if (uj2.success) payload.cover_url = uj2.data.url;
+                    else { showNotification('Cover upload failed: ' + uj2.message, 'error'); return; }
+                } catch (e) { showNotification('Cover upload error', 'error'); return; }
+            } else if (_coverRemoved) {
+                payload.cover_url = '';
+            }
+
             const data = await apiCall('sg_update_profile', payload);
             if (data) {
+                _coverRemoved = false;
+                if (coverInput) coverInput.value = '';
                 showNotification('Settings saved!', 'success');
                 await loadUserProfile();
             }

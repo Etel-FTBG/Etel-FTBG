@@ -443,6 +443,34 @@
         }
 
         // ─── USERS ────────────────────────────────────────────────────
+        // Read-only report: accounts sharing one phone number written in different forms
+        // (0924445206 vs +251924445206). Nothing is changed here - decide which account is real.
+        async function loadDuplicatePhones() {
+            const box = document.getElementById('dup-phones-box');
+            if (!box) return;
+            box.style.display = 'block';
+            box.innerHTML = '<div class="section-title">Duplicate phone numbers</div><div style="padding:16px">' + UI.loading('Checking...') + '</div>';
+            try {
+                const res = await adm('admin_duplicate_phones', {}, true);
+                if (!res || !res.success) { box.innerHTML = '<div class="section-title">Duplicate phone numbers</div><div style="padding:16px;color:#c0392b">' + escapeHtml((res && res.message) || 'Could not load the report') + '</div>'; return; }
+                const groups = (res.data && res.data.groups) || [];
+                if (!groups.length) { box.innerHTML = '<div class="section-title">Duplicate phone numbers</div><div style="padding:16px">✅ No phone number is shared by more than one account.</div>'; return; }
+                let html = '<div class="section-title">Duplicate phone numbers (' + groups.length + ')</div>' +
+                    '<div style="padding:0 16px 8px;font-size:12px;opacity:.8">Each group is ONE number stored in different forms. Nothing here is changed automatically.</div>';
+                groups.forEach(function (g) {
+                    html += '<div class="table-wrapper" style="margin:10px 0"><table><thead><tr><th>ID</th><th>Name</th><th>Phone as stored</th><th>Role</th><th>Shop</th></tr></thead><tbody>';
+                    g.accounts.forEach(function (a) {
+                        const shop = a.shop_id ? (escapeHtml(a.business_name || ('#' + a.shop_id)) + ' <small>(' + escapeHtml(a.shop_status || '') + ')</small>' + (a.admin_placeholder_shop ? ' <b style="color:#c0392b">placeholder</b>' : '')) : '—';
+                        html += '<tr><td>' + a.id + '</td><td>' + escapeHtml(a.name || '') + '</td><td>' + escapeHtml(a.phone || '') + '</td><td>' + escapeHtml(a.role || '') + '</td><td>' + shop + '</td></tr>';
+                    });
+                    html += '</tbody></table></div>';
+                });
+                box.innerHTML = html;
+            } catch (e) {
+                box.innerHTML = '<div class="section-title">Duplicate phone numbers</div><div style="padding:16px;color:#c0392b">Could not load the report</div>';
+            }
+        }
+
         async function loadUsers() {
             const tbody = document.getElementById('users-tbody');
             tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:30px;">' + UI.loading('Loading users...') + '</td></tr>';
