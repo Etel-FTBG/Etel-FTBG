@@ -34,6 +34,21 @@ window.ETEL_THEME_DEFAULT = 'dark';
     document.body.classList.toggle('dark-theme', t !== 'light');
 })();
 
+// Keep the sticky search bar directly under the header whatever the header's
+// real height is (display-size controller, wrapped text, big phone fonts).
+// A fixed 64px offset let a taller header slide over the search bar.
+(function () {
+    var hdr = document.querySelector('.app-header');
+    if (!hdr) return;
+    function sync() {
+        document.documentElement.style.setProperty('--app-header-h', Math.round(hdr.getBoundingClientRect().height) + 'px');
+    }
+    sync();
+    if (window.ResizeObserver) { new ResizeObserver(sync).observe(hdr); }
+    window.addEventListener('resize', sync);
+    window.addEventListener('load', sync);
+})();
+
 // ── LANGUAGE (English / Amharic) ─────────────────────────────────
 ETEL_I18N.register('customer', {
     en: {

@@ -191,7 +191,7 @@ body {
 
 /* ── SEARCH ───────────────────────────────────────────────────── */
 .search-container {
-  position: sticky; top: 64px; z-index: 100;
+  position: sticky; top: var(--app-header-h, 64px); z-index: 100;
   background: rgba(8,8,16,.85);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
