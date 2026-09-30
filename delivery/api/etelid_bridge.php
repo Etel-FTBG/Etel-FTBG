@@ -237,13 +237,17 @@ function etelid_bridge_local_user($pdo, $member) {
     $last9  = strlen($digits) >= 9 ? substr($digits, -9) : $digits;
     $hasVer = function_exists('etel_table_columns') && in_array('token_version', etel_table_columns($pdo, 'users'), true);
     $hasEtelId = function_exists('etel_table_columns') && in_array('etel_id', etel_table_columns($pdo, 'users'), true);
+    /* Oldest matching account wins, deterministically (this is the order the
+       database effectively returned before). When one number has two accounts
+       (e.g. an admin login and a separate shop-owner login), preferring the
+       exact +251 form would hand the EtelID session to the wrong one. */
     $s = $pdo->prepare(
         "SELECT id, name, phone, role" . ($hasVer ? ", token_version" : "") . " FROM users
          WHERE REPLACE(REPLACE(phone,'+',''),' ','') = ?
             OR RIGHT(REPLACE(REPLACE(phone,'+',''),' ',''), 9) = ?
-         ORDER BY (REPLACE(REPLACE(phone,'+',''),' ','') = ?) DESC, id ASC
+         ORDER BY id ASC
          LIMIT 1");
-    $s->execute(array($digits, $last9, $digits));
+    $s->execute(array($digits, $last9));
     $u = $s->fetch();
     $isLimited = !empty($member['profile_limited']);
     /* Only the Service API payload carries profile_limited. The agent
