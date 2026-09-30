@@ -29,6 +29,9 @@ $roleLabel = $role ?? ($user['roles'][0] ?? 'user');
   <meta name="theme-color" content="#0A0A1A">
   <link rel="stylesheet" href="<?= View::asset('css/admin.css') ?>">
   <link rel="stylesheet" href="<?= View::asset('vendor/bootstrap-icons/bootstrap-icons.min.css') ?>">
+  <!-- Light theme (only active under html[data-theme="light"]) + the switch; loaded sync so the saved theme applies before first paint -->
+  <link rel="stylesheet" href="<?= View::asset('css/etel-theme-light.css') ?>?v=1.0">
+  <script src="<?= View::asset('js/etel-theme.js') ?>?v=1.0"></script>
   <!-- Display size controller: the panels have a "Display size" row in the sidebar, so no floating button -->
   <script>window.ETEL_DISPLAY_USER = <?= json_encode((string)($user['id'] ?? '')) ?>;</script>
   <?php if (!empty($user['id'])): ?>
@@ -123,6 +126,9 @@ $roleLabel = $role ?? ($user['roles'][0] ?? 'user');
             <span class="nav-badge" style="margin-left:.25rem;"><?= $notifCount ?></span>
           <?php endif; ?>
         </div>
+        <button type="button" class="topbar-btn" data-etel-theme-toggle title="Light mode" aria-label="Switch to light mode" style="border:none;font:inherit">
+          <i class="bi bi-sun"></i>
+        </button>
         <a href="<?= View::url('/') ?>" class="topbar-btn" title="View storefront">
           <i class="bi bi-globe2"></i>
         </a>
