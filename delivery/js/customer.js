@@ -54,7 +54,7 @@ ETEL_I18N.register('customer', {
     en: {
         nav_home:'Home', nav_favorites:'Favorites', nav_orders:'Orders', nav_messages:'Messages', nav_profile:'Profile',
         shop_open:'Open', shop_closed:'Closed', shop_fee_from:'Delivery from ETB', closed_warn:'appears closed right now. You can still order, but it may wait until they open. Continue?',
-        trk_title:'Your order', trk_pending:'Order placed', trk_assigned:'Courier assigned', trk_picked_up:'Picked up', trk_in_transit:'On the way', trk_track:'Track', trk_more:'more', menu_all:'All', menu_popular:'🔥 Popular', menu_deals:'🏷️ Deals', menu_quick:'⚡ Quick', pop_badge:'🔥 Popular', reorder_btn:'Order again', reorder_home:'Hungry again?', reorder_none:'Those items are no longer available', reorder_added:'added to your cart at today\'s prices', reorder_skipped:'unavailable, skipped', reorder_fail:'Could not load that order', cart_view:'View cart →', cart_items_one:'item', cart_items_many:'items', filter_none:'No matches for these filters', filter_clear:'Clear filters',
+        trk_title:'Your order', trk_pending:'Order placed', trk_assigned:'Courier assigned', trk_picked_up:'Picked up', trk_in_transit:'On the way', trk_track:'Track', trk_more:'more', menu_all:'All', menu_popular:'🔥 Popular', menu_deals:'🏷️ Deals', menu_quick:'⚡ Quick', pop_badge:'🔥 Popular', promo_have:'Have a promo code?', promo_ph:'Enter code', promo_apply:'Apply', promo_remove:'Remove', promo_discount:'Discount', promo_saved:'You save', reorder_btn:'Order again', reorder_home:'Hungry again?', reorder_none:'Those items are no longer available', reorder_added:'added to your cart at today\'s prices', reorder_skipped:'unavailable, skipped', reorder_fail:'Could not load that order', cart_view:'View cart →', cart_items_one:'item', cart_items_many:'items', filter_none:'No matches for these filters', filter_clear:'Clear filters',
         greet_morning:'Good morning', greet_afternoon:'Good afternoon', greet_evening:'Good evening', greet_sub:'What would you like today?',
         svc_food:'Food', svc_groceries:'Groceries', svc_pharmacy:'Pharmacy', svc_ride:'Ride', shop_min:'min', shop_from:'From', shop_items:'items', shop_no_rating:'New',
         search_placeholder:'Search restaurants, food, cuisines…',
@@ -86,7 +86,7 @@ ETEL_I18N.register('customer', {
     am: {
         nav_home:'ቤት', nav_favorites:'ተወዳጆች', nav_orders:'ትዕዛዞች', nav_messages:'መልዕክቶች', nav_profile:'መገለጫ',
         shop_open:'ክፍት', shop_closed:'ዝግ', shop_fee_from:'ማድረሻ ከ ETB', closed_warn:'አሁን ዝግ ይመስላል። አሁንም ማዘዝ ይችላሉ፤ እስኪከፈት ሊዘገይ ይችላል። ይቀጥሉ?',
-        trk_title:'ትዕዛዝዎ', trk_pending:'ትዕዛዝ ተቀብሏል', trk_assigned:'ሹፌር ተመድቧል', trk_picked_up:'ተነስቷል', trk_in_transit:'በመንገድ ላይ', trk_track:'ተከታተል', trk_more:'ተጨማሪ', menu_all:'ሁሉም', menu_popular:'🔥 ተወዳጅ', menu_deals:'🏷️ ቅናሽ', menu_quick:'⚡ ፈጣን', pop_badge:'🔥 ተወዳጅ', reorder_btn:'እንደገና አዝዝ', reorder_home:'እንደገና ይራብዎታል?', reorder_none:'እነዚህ ዕቃዎች አሁን አይገኙም', reorder_added:'በዛሬ ዋጋ ወደ ጋሪዎ ተጨምረዋል', reorder_skipped:'አይገኝም፣ ተዘሏል', reorder_fail:'ትዕዛዙን መጫን አልተቻለም', cart_view:'ጋሪ ይመልከቱ →', cart_items_one:'ዕቃ', cart_items_many:'ዕቃዎች', filter_none:'ለእነዚህ ማጣሪያዎች ውጤት የለም', filter_clear:'ማጣሪያ አጽዳ',
+        trk_title:'ትዕዛዝዎ', trk_pending:'ትዕዛዝ ተቀብሏል', trk_assigned:'ሹፌር ተመድቧል', trk_picked_up:'ተነስቷል', trk_in_transit:'በመንገድ ላይ', trk_track:'ተከታተል', trk_more:'ተጨማሪ', menu_all:'ሁሉም', menu_popular:'🔥 ተወዳጅ', menu_deals:'🏷️ ቅናሽ', menu_quick:'⚡ ፈጣን', pop_badge:'🔥 ተወዳጅ', promo_have:'የቅናሽ ኮድ አለዎት?', promo_ph:'ኮድ ያስገቡ', promo_apply:'ተግብር', promo_remove:'አስወግድ', promo_discount:'ቅናሽ', promo_saved:'ይቆጥባሉ', reorder_btn:'እንደገና አዝዝ', reorder_home:'እንደገና ይራብዎታል?', reorder_none:'እነዚህ ዕቃዎች አሁን አይገኙም', reorder_added:'በዛሬ ዋጋ ወደ ጋሪዎ ተጨምረዋል', reorder_skipped:'አይገኝም፣ ተዘሏል', reorder_fail:'ትዕዛዙን መጫን አልተቻለም', cart_view:'ጋሪ ይመልከቱ →', cart_items_one:'ዕቃ', cart_items_many:'ዕቃዎች', filter_none:'ለእነዚህ ማጣሪያዎች ውጤት የለም', filter_clear:'ማጣሪያ አጽዳ',
         greet_morning:'እንደምን አደሩ', greet_afternoon:'እንደምን ዋሉ', greet_evening:'እንደምን አመሹ', greet_sub:'ዛሬ ምን ይፈልጋሉ?',
         svc_food:'ምግብ', svc_groceries:'ግሮሰሪ', svc_pharmacy:'ፋርማሲ', svc_ride:'ጉዞ', shop_min:'ደቂቃ', shop_from:'ከ', shop_items:'ዕቃዎች', shop_no_rating:'አዲስ',
         search_placeholder:'ምግብ ቤቶችን፣ ምግብን ይፈልጉ…',
@@ -995,6 +995,52 @@ function getEstimatedTime(zone) {
     return Math.max(3, baseTime + delta);
 }
 
+// ── PROMO CODE at checkout. The discount shown here is a PREVIEW from
+// customer_validate_promo; the server recomputes it from the real basket when
+// the order is placed, so this number can never be used to change the price.
+let _promo = null;          // {code, discount}
+let _promoBasketKey = '';
+function _promoBasket() {
+    const subtotal = cart.reduce(function(s,c){ return s + c.price*c.quantity; }, 0);
+    return {subtotal: subtotal, fee: getDeliveryFee(selectedZone)};
+}
+async function applyPromo(codeIn) {
+    const inp = document.getElementById('co-promo-input');
+    const code = String(codeIn || (inp && inp.value) || '').trim();
+    const msg = document.getElementById('co-promo-msg');
+    if (!code) { if (msg) { msg.style.color = '#e63946'; msg.textContent = ETEL_I18N.t('promo_ph'); } return; }
+    const b = _promoBasket();
+    let res = null;
+    try { res = await api('customer_validate_promo', {code: code, subtotal: b.subtotal, delivery_fee: b.fee}); } catch (e) { res = null; }
+    if (res && res.success) {
+        _promo = {code: res.data.code, discount: parseFloat(res.data.discount) || 0};
+        _promoBasketKey = b.subtotal + '|' + b.fee;
+        renderCartDrawer();
+    } else {
+        _promo = null;
+        if (msg) { msg.style.color = '#e63946'; msg.textContent = (res && res.message) || 'Could not apply that code'; }
+    }
+}
+function removePromo() { _promo = null; _promoBasketKey = ''; renderCartDrawer(); }
+// Basket or delivery fee changed after the code was applied -> re-check quietly.
+async function _promoRecheck() {
+    if (!_promo) return;
+    const b = _promoBasket();
+    const key = b.subtotal + '|' + b.fee;
+    if (key === _promoBasketKey) return;
+    _promoBasketKey = key;
+    let res = null;
+    try { res = await api('customer_validate_promo', {code: _promo.code, subtotal: b.subtotal, delivery_fee: b.fee}); } catch (e) { return; }
+    if (res && res.success) _promo.discount = parseFloat(res.data.discount) || 0;
+    else { showToast((res && res.message) || 'Promo code removed', 'err'); _promo = null; }
+    renderCartDrawer();
+}
+function promoCardTap(code) {
+    if (!cart.length) { showToast('Add items first, then apply ' + code); return; }
+    toggleCart();
+    setTimeout(function(){ applyPromo(code); }, 120);
+}
+
 function renderCartDrawer() {
     // Any full re-render of this drawer (tier selection, photo upload, etc.)
     // used to reset the address input back to the stale _deliveryAddr value,
@@ -1007,7 +1053,8 @@ function renderCartDrawer() {
     const subtotal = cart.reduce(function(s,c){ return s + c.price*c.quantity; }, 0);
     const deliveryFee = getDeliveryFee(selectedZone);
     const serviceCharge = Math.round(subtotal * SERVICE_CHARGE_PCT / 100 * 100) / 100;
-    const grand = subtotal + deliveryFee + serviceCharge;
+    const promoDisc = _promo ? Math.min(_promo.discount, subtotal + deliveryFee) : 0;
+    const grand = subtotal + deliveryFee + serviceCharge - promoDisc;
     document.getElementById('cart-items').innerHTML = cart.map(function(c, i) {
         return '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.06)">' +
             '<div style="flex:1"><div style="font-weight:600;font-size:13px;color:#F7F1DF">' + c.name + '</div>' +
@@ -1024,7 +1071,17 @@ function renderCartDrawer() {
         '<div style="display:flex;justify-content:space-between;font-size:13px;color:rgba(247,241,223,.55);margin-bottom:6px"><span>' + ETEL_I18N.t('lbl_subtotal') + '</span><span>ETB ' + subtotal.toFixed(2) + '</span></div>' +
         '<div style="display:flex;justify-content:space-between;font-size:13px;color:rgba(247,241,223,.55);margin-bottom:6px"><span>' + ETEL_I18N.t('lbl_delivery_fee') + '' + (selectedZone ? ' (' + estTime + ' min)' : '') + '</span><span>ETB ' + deliveryFee.toFixed(2) + '</span></div>' +
         '<div style="display:flex;justify-content:space-between;font-size:13px;color:rgba(247,241,223,.55);margin-bottom:12px"><span>' + ETEL_I18N.t('lbl_service_charge') + ' (' + SERVICE_CHARGE_PCT + '%)</span><span>ETB ' + serviceCharge.toFixed(2) + '</span></div>' +
+        (promoDisc > 0 ? '<div class="co-discount" style="display:flex;justify-content:space-between;font-size:13px;font-weight:700;color:#2ECC71;margin:-6px 0 12px"><span>🏷️ ' + escapeHtml(_promo.code) + ' <button type="button" onclick="removePromo()" style="background:none;border:none;color:inherit;text-decoration:underline;font-size:11px;cursor:pointer;padding:0 0 0 6px">' + escapeHtml(ETEL_I18N.t('promo_remove')) + '</button></span><span>−ETB ' + promoDisc.toFixed(2) + '</span></div>' : '') +
         '<div style="display:flex;justify-content:space-between;font-size:16px;font-weight:700;color:#F7F1DF"><span>' + ETEL_I18N.t('lbl_total') + '</span><span>ETB ' + grand.toFixed(2) + '</span></div></div>';
+
+    if (!_promo) {
+        document.getElementById('cart-total').insertAdjacentHTML('beforeend',
+            '<div class="co-promo" style="margin-top:14px"><div style="display:flex;gap:8px">' +
+            '<input type="text" id="co-promo-input" autocomplete="off" autocapitalize="characters" placeholder="🏷️ ' + escapeHtml(ETEL_I18N.t('promo_have')) + '" style="flex:1;min-width:0;padding:10px;border:1.5px solid rgba(212,175,55,.25);border-radius:8px;font-size:13px;text-transform:uppercase;box-sizing:border-box;background:rgba(255,255,255,.04);color:inherit" onkeydown="if(event.key===\'Enter\'){event.preventDefault();applyPromo();}">' +
+            '<button type="button" onclick="applyPromo()" style="padding:10px 16px;background:rgba(212,175,55,.15);border:1.5px solid rgba(212,175,55,.45);border-radius:8px;color:#F0CA58;font-size:12.5px;font-weight:800;cursor:pointer">' + escapeHtml(ETEL_I18N.t('promo_apply')) + '</button></div>' +
+            '<div id="co-promo-msg" style="font-size:11.5px;margin-top:6px;min-height:14px"></div></div>');
+    }
+    setTimeout(_promoRecheck, 0);
 
     var zoneHint = selectedZone
         ? '📍 ' + selectedZone + ' · ETB ' + deliveryFee.toFixed(0) + ' delivery (' + estTime + ' min)'
@@ -1441,6 +1498,7 @@ async function handleCheckout() {
     if (!name)  { showCoMsg('Recipient name is required.'); return; }
     if (!phone) { showCoMsg('Recipient phone is required.'); return; }
 
+    if (_scheduleEnabled && _promo) { showCoMsg('Promo codes can\'t be used on scheduled orders - remove the code or turn off "Schedule for later".'); return; }
     if (_scheduleEnabled) {
         const d = (document.getElementById('co-schedule-date') || {}).value;
         const t = (document.getElementById('co-schedule-time') || {}).value;
@@ -1474,6 +1532,7 @@ async function placeOrder(zone, name, phone, notes) {
     let res = null;
     for (let attempt = 1; attempt <= 2; attempt++) {
         res = await api('customer_create_order', {
+            promo_code: _promo ? _promo.code : '',
             items: cart.map(function(c){ return {item_id:c.item_id, quantity:c.quantity}; }),
             to_zone: zone, recipient_name: name, recipient_phone: phone, notes: notes,
             payment_method: selectedPayment,
@@ -1487,7 +1546,7 @@ async function placeOrder(zone, name, phone, notes) {
     if (btn) btn.disabled = false;
     if (res && res.success) {
         currentOrderId = res.data.order_id;
-        cart = []; selectedZone = ''; _deliveryAddr = ''; _deliveryLat = null; _deliveryLng = null; _deliveryAC = null; _deliveryPhotoUrl = '';
+        _promo = null; cart = []; selectedZone = ''; _deliveryAddr = ''; _deliveryLat = null; _deliveryLng = null; _deliveryAC = null; _deliveryPhotoUrl = '';
         updateCartCount();
         closeCart();
         showToast('Order placed! Track at: /track?code=' + res.data.order_code, 'ok');
@@ -1535,7 +1594,7 @@ async function scheduleOrderFromCart(zone, name, phone, notes, scheduledAt) {
     const res = await api('schedule_order', {scheduled_at: scheduledAt, order_template: template});
     if (btn) btn.disabled = false;
     if (res && res.success) {
-        cart = []; selectedZone = ''; _deliveryAddr = ''; _deliveryLat = null; _deliveryLng = null; _deliveryAC = null; _deliveryPhotoUrl = ''; _scheduleEnabled = false;
+        _promo = null; cart = []; selectedZone = ''; _deliveryAddr = ''; _deliveryLat = null; _deliveryLng = null; _deliveryAC = null; _deliveryPhotoUrl = ''; _scheduleEnabled = false;
         updateCartCount();
         closeCart();
         showToast('Order scheduled for ' + scheduledAt, 'ok');
@@ -1551,6 +1610,7 @@ async function placeOrderThenPay(zone, name, phone, notes, tbPhone) {
     if (btn) btn.disabled = true;
 
     const orderRes = await api('customer_create_order', {
+            promo_code: _promo ? _promo.code : '',
         items: cart.map(function(c){ return {item_id:c.item_id, quantity:c.quantity}; }),
         to_zone: zone, recipient_name: name, recipient_phone: phone, notes: notes,
         payment_method: 'telebirr',
@@ -1586,7 +1646,7 @@ async function placeOrderThenPay(zone, name, phone, notes, tbPhone) {
         document.getElementById('co-msg').style.display          = 'none';
         if (btn) btn.style.display = 'none';
         startTelebirrPolling(currentPaymentId, orderRes.data.order_code);
-        cart = []; selectedZone = ''; _deliveryAddr = ''; _deliveryLat = null; _deliveryLng = null; _deliveryAC = null; _deliveryPhotoUrl = '';
+        _promo = null; cart = []; selectedZone = ''; _deliveryAddr = ''; _deliveryLat = null; _deliveryLng = null; _deliveryAC = null; _deliveryPhotoUrl = '';
         updateCartCount();
     } else {
         showCoMsg('Telebirr error: ' + ((payRes && payRes.message) || 'Unknown error. Try Cash payment.'));
@@ -1625,6 +1685,7 @@ async function placeOrderThenBank(zone, name, phone, notes, reference) {
     if (btn) btn.disabled = true;
 
     const orderRes = await api('customer_create_order', {
+            promo_code: _promo ? _promo.code : '',
         items: cart.map(function(c){ return {item_id:c.item_id, quantity:c.quantity}; }),
         to_zone: zone, recipient_name: name, recipient_phone: phone, notes: notes,
         payment_method: selectedPayment,
@@ -1648,7 +1709,7 @@ async function placeOrderThenBank(zone, name, phone, notes, reference) {
     });
 
     if (btn) btn.disabled = false;
-    cart = []; selectedZone = ''; _deliveryAddr = ''; _deliveryLat = null; _deliveryLng = null; _deliveryAC = null; _deliveryPhotoUrl = '';
+    _promo = null; cart = []; selectedZone = ''; _deliveryAddr = ''; _deliveryLat = null; _deliveryLng = null; _deliveryAC = null; _deliveryPhotoUrl = '';
     updateCartCount();
     closeCart();
     if (bankRes && bankRes.success) {

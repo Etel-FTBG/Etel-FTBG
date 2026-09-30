@@ -703,6 +703,84 @@ switch ($action) {
         ok(array('users' => $users, 'count' => count($users)));
         break;
     }
+    case 'customer_validate_promo': {
+        // POST: code, subtotal, delivery_fee  -> live preview for the checkout box. Read-only:
+        // the real discount is recomputed from the actual basket when the order is placed.
+        $GLOBALS['ETEL_LIMITED_BLOCK'] = true;
+        $pdo = db(); $au = require_auth($pdo);
+        require_once __DIR__ . '/lib/promo.php';
+        try {
+            $r = etel_promo_check($pdo, isset($body['code']) ? $body['code'] : '', $au['id'],
+                isset($body['subtotal']) ? floatval($body['subtotal']) : 0,
+                isset($body['delivery_fee']) ? floatval($body['delivery_fee']) : 0);
+        } catch (Exception $e) { fail_ex($e, 'Could not check that code', 500); }
+        if (!$r['ok']) fail($r['error'], 422);
+        ok(array('code' => $r['promo']['code'], 'discount' => $r['discount'], 'type' => $r['promo']['discount_type'],
+                 'description' => $r['promo']['description']));
+        break;
+    }
+    case 'admin_list_promos': {
+        $pdo = db(); require_admin($pdo);
+        require_once __DIR__ . '/lib/promo.php';
+        etel_ensure_promo_tables($pdo);
+        try {
+            $rows = $pdo->query("SELECT p.*, COALESCE((SELECT SUM(r.discount) FROM promo_redemptions r WHERE r.promo_id = p.id),0) AS total_discount
+                                 FROM promo_codes p ORDER BY p.is_active DESC, p.id DESC")->fetchAll(PDO::FETCH_ASSOC);
+        } catch (Exception $e) { fail_ex($e, 'Could not load promo codes', 500); }
+        ok(array('promos' => $rows));
+        break;
+    }
+    case 'admin_save_promo': {
+        // POST: id? (update), code, discount_type, value, min_subtotal, max_discount, starts_at, expires_at,
+        //       max_uses, per_user_limit, first_order_only, is_active, description
+        $pdo = db(); require_admin($pdo, 'owner.only');
+        require_once __DIR__ . '/lib/promo.php';
+        etel_ensure_promo_tables($pdo);
+        $id   = isset($body['id']) ? intval($body['id']) : 0;
+        $code = etel_promo_normalize(isset($body['code']) ? $body['code'] : '');
+        $type = isset($body['discount_type']) ? $body['discount_type'] : 'percent';
+        if (!in_array($type, array('percent','fixed','free_delivery'), true)) fail('Invalid discount type', 400);
+        if (strlen($code) < 3 || strlen($code) > 40) fail('Code must be 3-40 letters/numbers', 400);
+        $value = isset($body['value']) ? floatval($body['value']) : 0;
+        if ($type === 'percent' && ($value <= 0 || $value > 100)) fail('Percent must be between 1 and 100', 400);
+        if ($type === 'fixed' && $value <= 0) fail('Fixed amount must be more than 0', 400);
+        $nn = function ($k) use ($body) { return (isset($body[$k]) && $body[$k] !== '' && $body[$k] !== null) ? $body[$k] : null; };
+        $min = $nn('min_subtotal') !== null ? max(0, floatval($body['min_subtotal'])) : 0;
+        $max = $nn('max_discount') !== null ? max(0, floatval($body['max_discount'])) : null;
+        $starts = $nn('starts_at'); $exp = $nn('expires_at');
+        foreach (array($starts, $exp) as $dt) { if ($dt !== null && strtotime($dt) === false) fail('Invalid date', 400); }
+        $maxUses = $nn('max_uses') !== null ? max(1, intval($body['max_uses'])) : null;
+        $perUser = max(1, intval(isset($body['per_user_limit']) ? $body['per_user_limit'] : 1));
+        $first = !empty($body['first_order_only']) ? 1 : 0;
+        $active = (!isset($body['is_active']) || !empty($body['is_active'])) ? 1 : 0;
+        $desc = isset($body['description']) ? substr(trim($body['description']), 0, 255) : null;
+        try {
+            if ($id > 0) {
+                $u = $pdo->prepare('UPDATE promo_codes SET code=?, description=?, discount_type=?, value=?, min_subtotal=?, max_discount=?, starts_at=?, expires_at=?, max_uses=?, per_user_limit=?, first_order_only=?, is_active=? WHERE id=?');
+                $u->execute(array($code, $desc, $type, $value, $min, $max, $starts, $exp, $maxUses, $perUser, $first, $active, $id));
+            } else {
+                $i = $pdo->prepare('INSERT INTO promo_codes (code, description, discount_type, value, min_subtotal, max_discount, starts_at, expires_at, max_uses, per_user_limit, first_order_only, is_active) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)');
+                $i->execute(array($code, $desc, $type, $value, $min, $max, $starts, $exp, $maxUses, $perUser, $first, $active));
+                $id = intval($pdo->lastInsertId());
+            }
+        } catch (PDOException $e) {
+            if ($e->getCode() === '23000') fail('That code already exists', 409);
+            fail_ex($e, 'Could not save the promo code', 500);
+        }
+        ok(array('id' => $id, 'code' => $code));
+        break;
+    }
+    case 'admin_toggle_promo': {
+        $pdo = db(); require_admin($pdo, 'owner.only');
+        require_once __DIR__ . '/lib/promo.php';
+        etel_ensure_promo_tables($pdo);
+        $id = isset($body['id']) ? intval($body['id']) : 0;
+        if ($id <= 0) fail('id required', 400);
+        try { $pdo->prepare('UPDATE promo_codes SET is_active = ? WHERE id = ?')->execute(array(!empty($body['is_active']) ? 1 : 0, $id)); }
+        catch (Exception $e) { fail_ex($e, 'Could not update the promo code', 500); }
+        ok(array('id' => $id));
+        break;
+    }
     case 'admin_duplicate_phones': {
         // Read-only report: accounts that share ONE phone number written in different
         // forms (0924445206 vs +251924445206). Changes nothing - an admin decides

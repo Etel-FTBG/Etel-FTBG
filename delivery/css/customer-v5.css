@@ -1448,3 +1448,8 @@ body:not(.dark-theme) #view-order-delivered button[onclick^="closeOrderDelivered
 body:not(.dark-theme) #view-shop-detail .shop-toolbar { background: #FFFFFF; border-bottom-color: rgba(20,17,8,.1); }
 body:not(.dark-theme) .shop-chip { background: #F4F1E8; color: var(--lt-ink-2); border-color: rgba(20,17,8,.12); }
 body:not(.dark-theme) .shop-chip.active { background: linear-gradient(135deg,#F0CA58,#D4AF37); color: #1a1400; }
+
+/* Checkout: promo code discount row stays green in light mode */
+body:not(.dark-theme) #cart-overlay .cart-drawer .co-discount:not(.x),
+body:not(.dark-theme) #cart-overlay .cart-drawer .co-discount *:not(.x) { color: #178A4A !important; }
+body:not(.dark-theme) #cart-overlay .cart-drawer .co-promo input { background: #FFFFFF !important; }

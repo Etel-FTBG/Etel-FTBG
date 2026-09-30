@@ -503,6 +503,96 @@
             } catch (e) { alert('Could not remove the shop'); }
         }
 
+        // ─── PROMO CODES ─────────────────────────────────────────────
+        // Codes are validated again on the server every time an order is placed;
+        // this panel only manages the list. The discount is paid by the platform.
+        function promoTypeChanged() {
+            const t = document.getElementById('promo-type').value;
+            const w = document.getElementById('promo-value-wrap');
+            if (w) w.style.display = t === 'free_delivery' ? 'none' : '';
+        }
+        function resetPromoForm() {
+            ['promo-id','promo-code','promo-value','promo-min','promo-max','promo-start','promo-exp','promo-uses','promo-desc'].forEach(function (i) { document.getElementById(i).value = ''; });
+            document.getElementById('promo-per').value = '1';
+            document.getElementById('promo-first').checked = false;
+            document.getElementById('promo-type').value = 'percent';
+            document.getElementById('promo-form-title').textContent = 'New promo code';
+            promoTypeChanged();
+        }
+        function _promoDt(v) { return v ? String(v).replace(' ', 'T').slice(0, 16) : ''; }
+        let _promoRows = [];
+        function editPromo(id) {
+            const p = _promoRows.find(function (r) { return String(r.id) === String(id); });
+            if (!p) return;
+            document.getElementById('promo-id').value = p.id;
+            document.getElementById('promo-code').value = p.code;
+            document.getElementById('promo-type').value = p.discount_type;
+            document.getElementById('promo-value').value = p.value;
+            document.getElementById('promo-min').value = parseFloat(p.min_subtotal) > 0 ? p.min_subtotal : '';
+            document.getElementById('promo-max').value = p.max_discount || '';
+            document.getElementById('promo-start').value = _promoDt(p.starts_at);
+            document.getElementById('promo-exp').value = _promoDt(p.expires_at);
+            document.getElementById('promo-uses').value = p.max_uses || '';
+            document.getElementById('promo-per').value = p.per_user_limit || 1;
+            document.getElementById('promo-desc').value = p.description || '';
+            document.getElementById('promo-first').checked = String(p.first_order_only) === '1';
+            document.getElementById('promo-form-title').textContent = 'Edit ' + p.code;
+            promoTypeChanged();
+            document.getElementById('promo-form-title').scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+        async function loadPromos() {
+            const box = document.getElementById('promo-list');
+            if (!box) return;
+            box.innerHTML = UI.loading('Loading...');
+            try {
+                const res = await adm('admin_list_promos', {}, true);
+                if (!res || !res.success) { box.innerHTML = '<div style="color:#c0392b">' + escapeHtml((res && res.message) || 'Could not load promo codes') + '</div>'; return; }
+                _promoRows = (res.data && res.data.promos) || [];
+                if (!_promoRows.length) { box.innerHTML = '<div style="opacity:.7;padding:10px 0">No promo codes yet.</div>'; return; }
+                box.innerHTML = '<div style="overflow-x:auto"><table class="data-table" style="width:100%"><thead><tr><th>Code</th><th>Discount</th><th>Rules</th><th>Used</th><th>Given</th><th>Status</th><th></th></tr></thead><tbody>' +
+                    _promoRows.map(function (p) {
+                        const disc = p.discount_type === 'percent' ? (parseFloat(p.value) + '%' + (p.max_discount ? ' (max ETB ' + parseFloat(p.max_discount) + ')' : ''))
+                            : p.discount_type === 'fixed' ? 'ETB ' + parseFloat(p.value) : 'Free delivery';
+                        const rules = [];
+                        if (parseFloat(p.min_subtotal) > 0) rules.push('min ETB ' + parseFloat(p.min_subtotal));
+                        if (String(p.first_order_only) === '1') rules.push('first order');
+                        rules.push(p.per_user_limit + '/customer');
+                        if (p.expires_at) rules.push('until ' + String(p.expires_at).slice(0, 10));
+                        const active = String(p.is_active) === '1';
+                        return '<tr><td><b>' + escapeHtml(p.code) + '</b><div style="font-size:11px;opacity:.7">' + escapeHtml(p.description || '') + '</div></td>' +
+                            '<td>' + escapeHtml(disc) + '</td><td style="font-size:12px">' + escapeHtml(rules.join(' · ')) + '</td>' +
+                            '<td>' + (p.used_count || 0) + (p.max_uses ? ' / ' + p.max_uses : '') + '</td>' +
+                            '<td>ETB ' + (parseFloat(p.total_discount) || 0).toFixed(2) + '</td>' +
+                            '<td><span style="color:' + (active ? '#2ecc71' : '#c0392b') + ';font-weight:700">' + (active ? 'Active' : 'Off') + '</span></td>' +
+                            '<td style="white-space:nowrap"><button class="btn btn-secondary" style="padding:4px 10px" onclick="editPromo(' + p.id + ')">Edit</button> ' +
+                            '<button class="btn btn-secondary" style="padding:4px 10px" onclick="togglePromo(' + p.id + ',' + (active ? 0 : 1) + ')">' + (active ? 'Turn off' : 'Turn on') + '</button></td></tr>';
+                    }).join('') + '</tbody></table></div>';
+            } catch (e) { box.innerHTML = '<div style="color:#c0392b">Could not load promo codes</div>'; }
+        }
+        async function savePromo() {
+            const v = function (i) { return document.getElementById(i).value.trim(); };
+            const body = {
+                id: v('promo-id') || 0, code: v('promo-code'), discount_type: document.getElementById('promo-type').value,
+                value: v('promo-value'), min_subtotal: v('promo-min'), max_discount: v('promo-max'),
+                starts_at: v('promo-start') ? v('promo-start').replace('T', ' ') + ':00' : '',
+                expires_at: v('promo-exp') ? v('promo-exp').replace('T', ' ') + ':00' : '',
+                max_uses: v('promo-uses'), per_user_limit: v('promo-per') || 1, description: v('promo-desc'),
+                first_order_only: document.getElementById('promo-first').checked ? 1 : 0, is_active: 1
+            };
+            if (body.id) { const old = _promoRows.find(function (r) { return String(r.id) === String(body.id); }); if (old) body.is_active = String(old.is_active) === '1' ? 1 : 0; }
+            try {
+                const res = await adm('admin_save_promo', body, false);
+                if (res && res.success) { if (typeof showNotification === 'function') showNotification('Promo code saved', 'success'); else alert('Promo code saved'); resetPromoForm(); loadPromos(); }
+                else alert((res && res.message) || 'Could not save the promo code');
+            } catch (e) { alert('Could not save the promo code'); }
+        }
+        async function togglePromo(id, on) {
+            try {
+                const res = await adm('admin_toggle_promo', { id: id, is_active: on }, false);
+                if (res && res.success) loadPromos(); else alert((res && res.message) || 'Could not update the promo code');
+            } catch (e) { alert('Could not update the promo code'); }
+        }
+
         async function loadUsers() {
             const tbody = document.getElementById('users-tbody');
             tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:30px;">' + UI.loading('Loading users...') + '</td></tr>';

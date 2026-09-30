@@ -184,6 +184,20 @@ function delivery_execute_order_creation($pdo, $auth_user, $body) {
         $service_charge = delivery_calc_service_charge($items_subtotal);
         $fare_total     = $items_subtotal + $delivery_fee + $service_charge;
 
+        // Optional promo code - re-validated here on the server from the real
+        // basket (never trusts a discount amount sent by the client).
+        $promo_row = null; $discount = 0.0; $claimed_promo_id = 0;
+        $promo_code_in = isset($body['promo_code']) ? trim((string)$body['promo_code']) : '';
+        if ($promo_code_in !== '') {
+            require_once __DIR__ . '/promo.php';
+            $chk = etel_promo_check($pdo, $promo_code_in, $auth_user['id'], $items_subtotal, $delivery_fee);
+            if (!$chk['ok']) throw new EtelPromoException($chk['error']);
+            if (!etel_promo_claim($pdo, $chk['promo']['id'])) throw new EtelPromoException('This promo code has been fully redeemed');
+            $claimed_promo_id = intval($chk['promo']['id']);
+            $promo_row = $chk['promo']; $discount = $chk['discount'];
+            $fare_total = round($fare_total - $discount, 2);
+        }
+
         // Generate order code
         $order_code = 'ETD-' . strtoupper(bin2hex(random_bytes(3)));
 
@@ -222,6 +236,13 @@ function delivery_execute_order_creation($pdo, $auth_user, $body) {
         }
         
         $order_id = $pdo->lastInsertId();
+
+        if ($promo_row) {
+            try {
+                $pdo->prepare('UPDATE orders SET promo_code = ?, discount = ? WHERE id = ?')->execute(array($promo_row['code'], $discount, $order_id));
+                $pdo->prepare('INSERT INTO promo_redemptions (promo_id, user_id, order_id, discount) VALUES (?, ?, ?, ?)')->execute(array($promo_row['id'], $auth_user['id'], $order_id, $discount));
+            } catch (Exception $e) { error_log('[ETEL] promo bookkeeping failed for order ' . $order_id . ': ' . $e->getMessage()); }
+        }
         
         // Insert order items
         $item_ins = $pdo->prepare("
@@ -384,12 +405,18 @@ function delivery_execute_order_creation($pdo, $auth_user, $body) {
             'delivery_fee'     => $delivery_fee,
             'service_charge'   => $service_charge,
             'total'            => $fare_total,
+            'discount'         => $discount,
+            'promo_code'       => $promo_row ? $promo_row['code'] : null,
             'payment_method'   => $payment_method,
             'items_count'      => count($item_details),
             'message'          => 'Order created and assigned to service giver',
         );
         
     } catch (Exception $e) {
+        if (!empty($claimed_promo_id) && empty($order_id)) {
+            try { $pdo->prepare('UPDATE promo_codes SET used_count = GREATEST(used_count - 1, 0) WHERE id = ?')->execute(array($claimed_promo_id)); } catch (Exception $e2) {}
+        }
+        if ($e instanceof EtelPromoException) throw new Exception($e->getMessage());
         error_log('[ETEL] Order creation failed: ' . $e->getMessage());
         throw new Exception('Order creation failed - please try again or contact support');
     }

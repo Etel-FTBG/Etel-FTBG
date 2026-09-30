@@ -245,6 +245,9 @@ html{color-scheme:light}
             <div class="nav-item" data-page="pricing" onclick="switchPage('pricing',this)">
                 <span class="nav-icon">💰</span><span>Pricing</span>
             </div>
+            <div class="nav-item" data-page="promos" onclick="switchPage('promos',this); if(typeof loadPromos==='function') loadPromos();">
+                <span class="nav-icon">🏷️</span><span>Promo codes</span>
+            </div>
             <div class="nav-item" data-page="telebirr" onclick="switchPage('telebirr',this)">
                 <span class="nav-icon">💳</span><span>Payments</span>
                 <span id="telebirr-badge" style="display:none;background:#e74c3c;color:#fff;font-size:10px;font-weight:800;border-radius:10px;padding:1px 7px;margin-left:6px">0</span>
@@ -1217,6 +1220,31 @@ html{color-scheme:light}
 
                 </div><!-- /panel-pricing -->
 
+                <div class="panel" id="panel-promos" style="display:none">
+                    <div class="data-section" style="margin-bottom:18px">
+                        <div class="section-title" id="promo-form-title">New promo code</div>
+                        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;padding:0 16px 8px">
+                            <input type="hidden" id="promo-id">
+                            <label style="font-size:12px">Code<input id="promo-code" class="filter-sel" placeholder="WELCOME20" style="width:100%;text-transform:uppercase"></label>
+                            <label style="font-size:12px">Type<select id="promo-type" class="filter-sel" style="width:100%" onchange="promoTypeChanged()"><option value="percent">% off items</option><option value="fixed">Fixed ETB off items</option><option value="free_delivery">Free delivery</option></select></label>
+                            <label style="font-size:12px" id="promo-value-wrap">Value<input id="promo-value" type="number" min="0" step="any" class="filter-sel" placeholder="20" style="width:100%"></label>
+                            <label style="font-size:12px">Min items subtotal (ETB)<input id="promo-min" type="number" min="0" step="any" class="filter-sel" placeholder="0" style="width:100%"></label>
+                            <label style="font-size:12px">Max discount (ETB, % only)<input id="promo-max" type="number" min="0" step="any" class="filter-sel" placeholder="no cap" style="width:100%"></label>
+                            <label style="font-size:12px">Starts<input id="promo-start" type="datetime-local" class="filter-sel" style="width:100%"></label>
+                            <label style="font-size:12px">Expires<input id="promo-exp" type="datetime-local" class="filter-sel" style="width:100%"></label>
+                            <label style="font-size:12px">Total uses (blank = unlimited)<input id="promo-uses" type="number" min="1" class="filter-sel" style="width:100%"></label>
+                            <label style="font-size:12px">Uses per customer<input id="promo-per" type="number" min="1" value="1" class="filter-sel" style="width:100%"></label>
+                            <label style="font-size:12px;grid-column:1/-1">Description (shown to customers)<input id="promo-desc" class="filter-sel" maxlength="255" style="width:100%"></label>
+                            <label style="font-size:12.5px;display:flex;align-items:center;gap:8px"><input id="promo-first" type="checkbox"> First order only</label>
+                        </div>
+                        <div style="padding:6px 16px 16px;display:flex;gap:10px">
+                            <button class="btn btn-primary" onclick="savePromo()">💾 Save code</button>
+                            <button class="btn btn-secondary" onclick="resetPromoForm()">Clear</button>
+                        </div>
+                    </div>
+                    <div class="data-section"><div class="section-title">All promo codes</div><div id="promo-list" style="padding:0 16px 16px"></div></div>
+                </div><!-- /panel-promos -->
+
                 <div class="panel" id="panel-telebirr" style="display:none">
                     <div class="page-title">💳 Payments</div>
                     <div class="page-subtitle">Manual verification only — check your Telebirr merchant SMS/dashboard and bank statement yourself, then confirm or reject each one below</div>
@@ -1353,7 +1381,7 @@ html{color-scheme:light}
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script><!-- PPTX slide-text preview (PPTX is a zip of XML), Documents tab -->
     <script src="js/admin-documents.js?v=1.5"></script><!-- Documents library: view/edit/version PDFs, Office files, Markdown, XML, etc -->
 
-<script src="js/admin.js?v=6.8"></script>
+<script src="js/admin.js?v=6.9"></script>
 <script src="js/admin-confirmations-premium.js?v=1.1"></script><!-- Pending Confirmations + GLOBAL modal-box fix for entire admin system -->
 <script src="js/admin-couriers-premium.js?v=1.4"></script><!-- Premium Couriers Management: 3D cards + edit modal + live map -->
     <script src="js/admin-premium.js?v=4.1"></script><!-- KPI count-ups + card motion -->
