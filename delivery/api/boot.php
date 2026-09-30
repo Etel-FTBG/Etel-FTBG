@@ -1082,7 +1082,8 @@ switch ($action) {
                 COALESCE(sg.service_type,sg.category,'general') AS service_type,
                 COALESCE(sg.average_rating,sg.rating,0) AS rating,
                 COALESCE(sg.logo_url,'') AS logo_url, COALESCE(sg.cover_url,'') AS cover_url,
-                COALESCE(sg.is_online,0) AS is_online
+                COALESCE(sg.is_online,0) AS is_online,
+                (SELECT COALESCE(SUM(oi.quantity),0) FROM order_items oi WHERE oi.item_id=i.id) AS times_ordered
                 FROM items i JOIN service_givers sg ON i.service_giver_id=sg.id $w
                 ORDER BY rating DESC,i.id DESC LIMIT 200");
             $st->execute($p); ok(array('items'=>$st->fetchAll(),'count'=>$st->rowCount()));
