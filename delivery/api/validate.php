@@ -116,6 +116,31 @@ function etel_find_user_by_phone($pdo, $phone, $cols = 'id,phone', $extra = '', 
     return count($rows) === 1 ? $rows[0] : null;
 }
 
+
+/**
+ * Decision for removing a placeholder shop (admin-owned, created automatically when an admin
+ * opens the Service dashboard). $counts = rows per table that point at the shop
+ * (tbl => n, WITHOUT the service_givers table itself); $itemRefs = rows per table that point
+ * at one of the shop's ITEMS (e.g. order_items => n). The shop's own items may be deleted
+ * with it, but nothing else may be in use: any other table, or any order line for its items,
+ * blocks the removal.
+ */
+function etel_placeholder_shop_plan($counts, $itemRefs) {
+    $blockers = array();
+    $items = 0;
+    foreach ($counts as $tbl => $n) {
+        $n = intval($n);
+        if ($n <= 0) continue;
+        if ($tbl === 'items') { $items = $n; continue; }
+        $blockers[] = $tbl . ' (' . $n . ')';
+    }
+    foreach ($itemRefs as $tbl => $n) {
+        $n = intval($n);
+        if ($n > 0) $blockers[] = $tbl . ' for its items (' . $n . ')';
+    }
+    return array('blockers' => $blockers, 'items' => $items, 'can_delete' => count($blockers) === 0);
+}
+
 /**
  * Validate a currency amount (item prices, fares, wallet/payment amounts).
  *

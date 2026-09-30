@@ -741,10 +741,13 @@ switch ($action) {
         break;
     }
     case 'admin_delete_placeholder_shop': {
-        // POST: shop_id. Removes ONE empty placeholder shop (the kind created when an admin
-        // account opens the Service dashboard). Refuses anything else: the shop must belong to
-        // an ADMIN account, and no table may hold a single row that points at it (items, orders,
-        // staff, payouts...). Never deletes a user account.
+        // POST: shop_id, inspect?, delete_items?
+        //  inspect=1      -> changes nothing; returns what (if anything) blocks the removal and
+        //                    lists the shop's own items.
+        //  (default)      -> removes the shop. Only a shop owned by an ADMIN account, and only when
+        //                    nothing else uses it. Its own items are deleted with it ONLY when
+        //                    delete_items=1 and no order line references any of them.
+        // Never deletes a user account.
         $pdo = db(); require_admin($pdo, 'owner.only');
         $shopId = isset($body['shop_id']) ? intval($body['shop_id']) : 0;
         if ($shopId <= 0) fail('shop_id required', 400);
@@ -755,25 +758,49 @@ switch ($action) {
         } catch (Exception $e) { fail_ex($e, 'Could not look up the shop', 500); }
         if (!$shop) fail('Shop not found', 404);
         if ($shop['role'] !== 'admin') fail('Only a placeholder shop owned by an admin account can be removed here.', 409);
-        // every other table that references a shop must have zero rows for it
-        $inUse = array();
+        $counts = array(); $itemRefs = array(); $itemList = array();
         try {
             $t = $pdo->query("SELECT TABLE_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND COLUMN_NAME = 'service_giver_id' AND TABLE_NAME <> 'service_givers'");
             foreach ($t->fetchAll(PDO::FETCH_COLUMN) as $tbl) {
                 if (!preg_match('/^[A-Za-z0-9_]+$/', $tbl)) continue;
                 $c = $pdo->prepare('SELECT COUNT(*) FROM `' . $tbl . '` WHERE service_giver_id = ?');
                 $c->execute(array($shopId));
-                $n = intval($c->fetchColumn());
-                if ($n > 0) $inUse[] = $tbl . ' (' . $n . ')';
+                $counts[$tbl] = intval($c->fetchColumn());
+            }
+            if (!empty($counts['items'])) {
+                $li = $pdo->prepare('SELECT id, name, price FROM items WHERE service_giver_id = ? ORDER BY id LIMIT 50');
+                $li->execute(array($shopId));
+                $itemList = $li->fetchAll(PDO::FETCH_ASSOC);
+                // any other table that holds an item_id (order lines, carts, favorites...) must have none for these items
+                $t2 = $pdo->query("SELECT TABLE_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND COLUMN_NAME = 'item_id' AND TABLE_NAME <> 'items'");
+                foreach ($t2->fetchAll(PDO::FETCH_COLUMN) as $tbl) {
+                    if (!preg_match('/^[A-Za-z0-9_]+$/', $tbl)) continue;
+                    $c = $pdo->prepare('SELECT COUNT(*) FROM `' . $tbl . '` WHERE item_id IN (SELECT id FROM items WHERE service_giver_id = ?)');
+                    $c->execute(array($shopId));
+                    $itemRefs[$tbl] = intval($c->fetchColumn());
+                }
             }
         } catch (Exception $e) { fail_ex($e, 'Could not check what uses this shop', 500); }
-        if ($inUse) fail('This shop is in use (' . implode(', ', $inUse) . ') so it was not removed.', 409);
+        $plan = etel_placeholder_shop_plan($counts, $itemRefs);
+        if (!empty($body['inspect'])) {
+            ok(array('shop' => array('id' => (int)$shop['id'], 'business_name' => $shop['business_name']),
+                     'can_delete' => $plan['can_delete'], 'blockers' => $plan['blockers'],
+                     'item_count' => $plan['items'], 'items' => $itemList));
+        }
+        if (!$plan['can_delete']) fail('This shop is in use (' . implode(', ', $plan['blockers']) . ') so it was not removed.', 409);
+        $deleteItems = !empty($body['delete_items']);
+        if ($plan['items'] > 0 && !$deleteItems) fail('This shop still has ' . $plan['items'] . ' item(s). Confirm deleting them too, or remove them first.', 409);
         try {
-            $d = $pdo->prepare('DELETE FROM service_givers WHERE id = ? LIMIT 1');
-            $d->execute(array($shopId));
-        } catch (Exception $e) { fail_ex($e, 'Could not remove the shop', 500); }
-        error_log('[ETEL][admin] placeholder shop #' . $shopId . ' (' . $shop['business_name'] . ') removed');
-        ok(array('removed' => true, 'shop_id' => $shopId));
+            $pdo->beginTransaction();
+            if ($plan['items'] > 0) { $pdo->prepare('DELETE FROM items WHERE service_giver_id = ?')->execute(array($shopId)); }
+            $pdo->prepare('DELETE FROM service_givers WHERE id = ? LIMIT 1')->execute(array($shopId));
+            $pdo->commit();
+        } catch (Exception $e) {
+            if ($pdo->inTransaction()) $pdo->rollBack();
+            fail_ex($e, 'Could not remove the shop', 500);
+        }
+        error_log('[ETEL][admin] placeholder shop #' . $shopId . ' (' . $shop['business_name'] . ') removed with ' . $plan['items'] . ' item(s)');
+        ok(array('removed' => true, 'shop_id' => $shopId, 'items_deleted' => $plan['items']));
         break;
     }
     case 'admin_get_couriers': {
