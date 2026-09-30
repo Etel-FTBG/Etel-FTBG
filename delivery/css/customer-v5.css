@@ -1018,6 +1018,43 @@ body:not(.dark-theme) .promo-teal {
 body:not(.dark-theme) .promo-purple {
   background: linear-gradient(135deg,#1A0D2E,#110820) !important;
 }
+/* ── Light mode = clean white. Gold stays as an accent (text, active outline,
+   buttons) but no gold-tinted fills, borders or glows, which read as cream. ── */
+body:not(.dark-theme) .app-header {
+  background: #FFFFFF !important;
+  border-bottom: 1px solid rgba(0,0,0,.09) !important;
+  box-shadow: 0 1px 8px rgba(0,0,0,.06) !important;
+}
+body:not(.dark-theme) .search-container { background: #FFFFFF !important; border-bottom: 1px solid rgba(0,0,0,.06) !important; }
+body:not(.dark-theme) .brand-logo { filter: none !important; box-shadow: none !important; }
+body:not(.dark-theme) .header-btn,
+body:not(.dark-theme) .search-filter-btn,
+body:not(.dark-theme) .search-wrap,
+body:not(.dark-theme) .filter-pill,
+body:not(.dark-theme) .cat-chip,
+body:not(.dark-theme) .quick-card,
+body:not(.dark-theme) .restaurant-card,
+body:not(.dark-theme) .offer-card {
+  background: #FFFFFF !important;
+  border: 1px solid rgba(0,0,0,.12) !important;
+  box-shadow: 0 1px 6px rgba(0,0,0,.06) !important;
+}
+body:not(.dark-theme) .filter-pill.active,
+body:not(.dark-theme) .cat-chip.active {
+  background: #FFFFFF !important;
+  border: 1.5px solid #C8960C !important;
+  color: #5C4000 !important;
+  box-shadow: 0 1px 6px rgba(0,0,0,.08) !important;
+}
+body:not(.dark-theme) .bottom-nav {
+  background: #FFFFFF !important;
+  border-top: 1px solid rgba(0,0,0,.09) !important;
+  box-shadow: 0 -2px 10px rgba(0,0,0,.06) !important;
+}
+body:not(.dark-theme) .app-footer { background: #FFFFFF !important; border-top: 1px solid rgba(0,0,0,.09) !important; }
+body:not(.dark-theme) .promo-card { box-shadow: 0 6px 18px rgba(0,0,0,.18) !important; }
+body:not(.dark-theme) .promo-track, body:not(.dark-theme) .promo-wrap { background: transparent !important; }
+
 /* promo cards stay dark in light mode -> keep their own light text/gold */
 body:not(.dark-theme) .promo-card { color: #F7F1DF !important; }
 body:not(.dark-theme) .promo-card .promo-sub { color: rgba(247,241,223,.75) !important; }
