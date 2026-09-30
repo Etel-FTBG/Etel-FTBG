@@ -92,6 +92,50 @@ case 'customer_get_orders': {
     break;
 }
 
+case 'customer_reorder_items': {
+    // GET ?order_id=N  (customer auth). Returns the lines of one of the caller's
+    // own past orders joined to the CURRENT item row, so the app can rebuild the
+    // cart at today's prices and skip anything no longer orderable.
+    $pdo = db();
+    $auth_user = require_auth($pdo);
+    $order_id = isset($_GET['order_id']) ? intval($_GET['order_id']) : (isset($body['order_id']) ? intval($body['order_id']) : 0);
+    if ($order_id <= 0) fail('order_id required', 400);
+    try {
+        $own = $pdo->prepare('SELECT id FROM orders WHERE id = ? AND customer_id = ?');
+        $own->execute(array($order_id, $auth_user['id']));
+        if (!$own->fetch()) fail('Order not found', 404);
+        $s = $pdo->prepare("
+            SELECT oi.item_id, oi.item_name, oi.quantity,
+                   i.name AS cur_name, i.price AS cur_price, i.is_available, i.stock_quantity,
+                   i.service_giver_id, sg.business_name, sg.status AS sg_status, COALESCE(sg.is_online,0) AS sg_online
+            FROM order_items oi
+            LEFT JOIN items i ON i.id = oi.item_id
+            LEFT JOIN service_givers sg ON sg.id = i.service_giver_id
+            WHERE oi.order_id = ?
+        ");
+        $s->execute(array($order_id));
+        $rows = $s->fetchAll();
+    } catch (Exception $e) { fail_ex($e, 'Query failed', 500); }
+    $lines = array();
+    foreach ($rows as $r) {
+        $stock = ($r['stock_quantity'] === null) ? null : intval($r['stock_quantity']);
+        $orderable = $r['cur_price'] !== null && intval($r['is_available']) === 1
+                     && ($stock === null || $stock > 0) && $r['sg_status'] === 'verified';
+        $lines[] = array(
+            'item_id'          => intval($r['item_id']),
+            'name'             => $r['cur_name'] !== null ? $r['cur_name'] : $r['item_name'],
+            'quantity'         => max(1, intval($r['quantity'])),
+            'price'            => $r['cur_price'] !== null ? floatval($r['cur_price']) : null,
+            'service_giver_id' => $r['service_giver_id'] !== null ? intval($r['service_giver_id']) : null,
+            'business_name'    => $r['business_name'],
+            'is_online'        => intval($r['sg_online']) === 1,
+            'orderable'        => $orderable,
+        );
+    }
+    ok(array('items' => $lines));
+    break;
+}
+
 case 'submit_order_issue': {
     // POST: (requires customer auth)  order_id (optional), category, details
     // Delivery's counterpart to RideController.php's submit_ride_issue -
