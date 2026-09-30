@@ -872,18 +872,13 @@ body {
    (customer page defaults dark; toggle removes the class)
    ══════════════════════════════════════════════════════════════ */
 body:not(.dark-theme) {
-  background: #FDF8EE !important;
+  background: #FFFFFF !important;
   color: #1A1200 !important;
 }
-body:not(.dark-theme) .bg-ambient {
-  background:
-    radial-gradient(ellipse 90% 50% at 50% -5%, rgba(212,175,55,.18) 0%, transparent 65%),
-    radial-gradient(ellipse 50% 35% at 100% 100%, rgba(255,193,7,.08) 0%, transparent 60%),
-    linear-gradient(160deg, #FDF8EE 0%, #FFF9F0 50%, #FDF8EE 100%) !important;
-}
-body:not(.dark-theme) .bg-orb-1 { background: radial-gradient(circle, rgba(212,175,55,.18) 0%, transparent 70%) !important; }
-body:not(.dark-theme) .bg-orb-2 { background: radial-gradient(circle, rgba(255,193,7,.1) 0%, transparent 70%) !important; }
-body:not(.dark-theme) .bg-orb-3 { background: radial-gradient(circle, rgba(212,175,55,.12) 0%, transparent 70%) !important; }
+body:not(.dark-theme) .bg-ambient { background: #FFFFFF !important; }
+body:not(.dark-theme) .bg-orb-1 { background: none !important; }
+body:not(.dark-theme) .bg-orb-2 { background: none !important; }
+body:not(.dark-theme) .bg-orb-3 { background: none !important; }
 
 /* Light-mode tokens: every var(--text*) / glass rule below the fold follows
    these, so anything not explicitly overridden is still readable. */
@@ -902,7 +897,7 @@ body:not(.dark-theme) {
 }
 body.dark-theme { color-scheme: dark; }
 body:not(.dark-theme) .search-container {
-  background: rgba(253,248,238,.95) !important;
+  background: rgba(255,255,255,.98) !important;
 }
 body:not(.dark-theme) .header-btn,
 body:not(.dark-theme) .app-header .brand-name,
@@ -937,7 +932,7 @@ body:not(.dark-theme) .restaurant-card-price,
 body:not(.dark-theme) .offer-card-price { color: #8A6500 !important; }
 
 body:not(.dark-theme) .app-header {
-  background: rgba(253,248,238,.92) !important;
+  background: rgba(255,255,255,.96) !important;
   border-bottom: 1px solid rgba(212,175,55,.25) !important;
   box-shadow: 0 2px 20px rgba(212,175,55,.1) !important;
 }
@@ -1005,7 +1000,7 @@ body:not(.dark-theme) .offer-card-name { color: #1A1200 !important; }
 body:not(.dark-theme) .offer-card-shop { color: rgba(26,18,0,.5) !important; }
 
 body:not(.dark-theme) .bottom-nav {
-  background: rgba(253,248,238,.96) !important;
+  background: rgba(255,255,255,.98) !important;
   border-top: 1px solid rgba(212,175,55,.2) !important;
   box-shadow: 0 -4px 24px rgba(212,175,55,.1) !important;
 }
