@@ -23,7 +23,7 @@
     <script src="js/customer-bundle-extra.js?v=1.0" defer></script>
     <script>window.initCustomerMap = function(){}; loadGoogleMaps('geometry,places', 'initCustomerMap');</script>
     <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/customer-v5.css?v=5.9">
+    <link rel="stylesheet" href="css/customer-v5.css?v=6.0">
 <script src="js/etel-display-settings.js?v=1.4" data-fab="off" defer></script>
 </head>
 <body>
@@ -139,6 +139,37 @@
     <!-- ─── HOME VIEW ─── -->
     <div id="view-home" class="view-section">
 
+        <!-- GREETING -->
+        <div class="home-greeting">
+            <div class="home-greeting-hi" id="home-greeting-hi">Hello 👋</div>
+            <div class="home-greeting-sub" data-i18n="greet_sub">What would you like today?</div>
+        </div>
+
+        <!-- SERVICE GRID: four equal tiles -->
+        <div class="svc-grid">
+            <button type="button" class="svc-tile" onclick="document.getElementById('sg-scroll').scrollIntoView({behavior:'smooth',block:'center'})">
+                <span class="svc-ico svc-ico-food">🍽️</span>
+                <span class="svc-label" data-i18n="svc_food">Food</span>
+            </button>
+            <button type="button" class="svc-tile" onclick="openCategoryView('grocery','Groceries','🛒')">
+                <span class="svc-ico svc-ico-groc">🛒</span>
+                <span class="svc-label" data-i18n="svc_groceries">Groceries</span>
+            </button>
+            <button type="button" class="svc-tile" onclick="openCategoryView('pharmacy','Pharmacy','💊')">
+                <span class="svc-ico svc-ico-pharm">💊</span>
+                <span class="svc-label" data-i18n="svc_pharmacy">Pharmacy</span>
+            </button>
+            <a href="ride/" class="svc-tile">
+                <span class="svc-ico svc-ico-ride">🚗</span>
+                <span class="svc-label" data-i18n="svc_ride">Ride</span>
+            </a>
+        </div>
+        <div class="svc-more">
+            <a href="ride/#hail" data-i18n="quick_hail_title">Street Hail</a>
+            <span>·</span>
+            <a href="driver/" data-i18n="quick_driver_title">Be a Driver</a>
+        </div>
+
         <!-- PROMO BANNERS -->
         <div class="promo-track" id="promo-track">
             <div class="promo-card promo-gold">
@@ -174,54 +205,6 @@
         </div>
         <div class="promo-dots">
             <span class="dot active"></span><span class="dot"></span><span class="dot"></span>
-        </div>
-
-        <!-- RIDE QUICK ACCESS -->
-        <div class="quick-access">
-            <a href="ride/" class="quick-card quick-ride">
-                <div class="quick-icon">🚗</div>
-                <div class="quick-text">
-                    <div class="quick-title" data-i18n="quick_ride_title">ETEL Ride</div>
-                    <div class="quick-sub" data-i18n="quick_ride_sub">From ETB 120</div>
-                </div>
-                <div class="quick-arrow">→</div>
-            </a>
-            <a href="ride/#hail" class="quick-card quick-hail">
-                <div class="quick-icon">🚖</div>
-                <div class="quick-text">
-                    <div class="quick-title" data-i18n="quick_hail_title">Street Hail</div>
-                    <div class="quick-sub" data-i18n="quick_hail_sub">Instant pickup</div>
-                </div>
-            </a>
-            <a href="driver/" class="quick-card quick-driver">
-                <div class="quick-icon">🏎️</div>
-                <div class="quick-text">
-                    <div class="quick-title" data-i18n="quick_driver_title">Be a Driver</div>
-                    <div class="quick-sub" data-i18n="quick_driver_sub">Earn with ETEL</div>
-                </div>
-            </a>
-        </div>
-
-        <!-- GROCERY / PHARMACY SHORTCUTS — real item.category filter
-             (category ENUM already includes 'grocery'/'pharmacy' on the
-             items table), not a separate fake storefront. -->
-        <div class="quick-access" style="margin-top:10px">
-            <button type="button" class="quick-card quick-hail" style="width:100%;border:none;cursor:pointer;font:inherit" onclick="openCategoryView('grocery','Groceries','🛒')">
-                <div class="quick-icon">🛒</div>
-                <div class="quick-text">
-                    <div class="quick-title">Groceries</div>
-                    <div class="quick-sub">Fresh &amp; everyday</div>
-                </div>
-                <div class="quick-arrow">→</div>
-            </button>
-            <button type="button" class="quick-card quick-ride" style="width:100%;border:none;cursor:pointer;font:inherit" onclick="openCategoryView('pharmacy','Pharmacy','💊')">
-                <div class="quick-icon">💊</div>
-                <div class="quick-text">
-                    <div class="quick-title">Pharmacy</div>
-                    <div class="quick-sub">Medicine &amp; health</div>
-                </div>
-                <div class="quick-arrow">→</div>
-            </button>
         </div>
 
         <!-- RESTAURANTS SECTION -->
@@ -538,7 +521,7 @@
         </div>
     </div>
 
-    <script src="js/customer.js?v=4.29"></script>
+    <script src="js/customer.js?v=4.30"></script>
 <script src="js/investor-nav-check.js"></script>
 </body>
 </html>
