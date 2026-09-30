@@ -54,7 +54,7 @@ ETEL_I18N.register('customer', {
     en: {
         nav_home:'Home', nav_favorites:'Favorites', nav_orders:'Orders', nav_messages:'Messages', nav_profile:'Profile',
         shop_open:'Open', shop_closed:'Closed', shop_fee_from:'Delivery from ETB', closed_warn:'appears closed right now. You can still order, but it may wait until they open. Continue?',
-        trk_title:'Your order', trk_pending:'Order placed', trk_assigned:'Courier assigned', trk_picked_up:'Picked up', trk_in_transit:'On the way', trk_track:'Track', trk_more:'more', cart_view:'View cart →', cart_items_one:'item', cart_items_many:'items', filter_none:'No matches for these filters', filter_clear:'Clear filters',
+        trk_title:'Your order', trk_pending:'Order placed', trk_assigned:'Courier assigned', trk_picked_up:'Picked up', trk_in_transit:'On the way', trk_track:'Track', trk_more:'more', reorder_btn:'Order again', reorder_home:'Hungry again?', reorder_none:'Those items are no longer available', reorder_added:'added to your cart at today\'s prices', reorder_skipped:'unavailable, skipped', reorder_fail:'Could not load that order', cart_view:'View cart →', cart_items_one:'item', cart_items_many:'items', filter_none:'No matches for these filters', filter_clear:'Clear filters',
         greet_morning:'Good morning', greet_afternoon:'Good afternoon', greet_evening:'Good evening', greet_sub:'What would you like today?',
         svc_food:'Food', svc_groceries:'Groceries', svc_pharmacy:'Pharmacy', svc_ride:'Ride', shop_min:'min', shop_from:'From', shop_items:'items', shop_no_rating:'New',
         search_placeholder:'Search restaurants, food, cuisines…',
@@ -86,7 +86,7 @@ ETEL_I18N.register('customer', {
     am: {
         nav_home:'ቤት', nav_favorites:'ተወዳጆች', nav_orders:'ትዕዛዞች', nav_messages:'መልዕክቶች', nav_profile:'መገለጫ',
         shop_open:'ክፍት', shop_closed:'ዝግ', shop_fee_from:'ማድረሻ ከ ETB', closed_warn:'አሁን ዝግ ይመስላል። አሁንም ማዘዝ ይችላሉ፤ እስኪከፈት ሊዘገይ ይችላል። ይቀጥሉ?',
-        trk_title:'ትዕዛዝዎ', trk_pending:'ትዕዛዝ ተቀብሏል', trk_assigned:'ሹፌር ተመድቧል', trk_picked_up:'ተነስቷል', trk_in_transit:'በመንገድ ላይ', trk_track:'ተከታተል', trk_more:'ተጨማሪ', cart_view:'ጋሪ ይመልከቱ →', cart_items_one:'ዕቃ', cart_items_many:'ዕቃዎች', filter_none:'ለእነዚህ ማጣሪያዎች ውጤት የለም', filter_clear:'ማጣሪያ አጽዳ',
+        trk_title:'ትዕዛዝዎ', trk_pending:'ትዕዛዝ ተቀብሏል', trk_assigned:'ሹፌር ተመድቧል', trk_picked_up:'ተነስቷል', trk_in_transit:'በመንገድ ላይ', trk_track:'ተከታተል', trk_more:'ተጨማሪ', reorder_btn:'እንደገና አዝዝ', reorder_home:'እንደገና ይራብዎታል?', reorder_none:'እነዚህ ዕቃዎች አሁን አይገኙም', reorder_added:'በዛሬ ዋጋ ወደ ጋሪዎ ተጨምረዋል', reorder_skipped:'አይገኝም፣ ተዘሏል', reorder_fail:'ትዕዛዙን መጫን አልተቻለም', cart_view:'ጋሪ ይመልከቱ →', cart_items_one:'ዕቃ', cart_items_many:'ዕቃዎች', filter_none:'ለእነዚህ ማጣሪያዎች ውጤት የለም', filter_clear:'ማጣሪያ አጽዳ',
         greet_morning:'እንደምን አደሩ', greet_afternoon:'እንደምን ዋሉ', greet_evening:'እንደምን አመሹ', greet_sub:'ዛሬ ምን ይፈልጋሉ?',
         svc_food:'ምግብ', svc_groceries:'ግሮሰሪ', svc_pharmacy:'ፋርማሲ', svc_ride:'ጉዞ', shop_min:'ደቂቃ', shop_from:'ከ', shop_items:'ዕቃዎች', shop_no_rating:'አዲስ',
         search_placeholder:'ምግብ ቤቶችን፣ ምግብን ይፈልጉ…',
@@ -309,6 +309,32 @@ function renderSGScroll(items) {
 // Shows the newest in-progress order with a progress bar and a Track button,
 // refreshed every 45 s while the home view is open. Uses the same
 // customer_get_orders data as the Orders tab; silent if it can't load.
+// ── ORDER AGAIN — rebuilds the cart from a past order at TODAY's prices via
+// customer_reorder_items (server re-checks price / availability / shop status).
+async function reorderOrder(orderId) {
+    let res;
+    try { res = await apiGet('customer_reorder_items', {order_id: orderId}); } catch (e) { res = null; }
+    if (!res || !res.success) { showToast(ETEL_I18N.t('reorder_fail'), 'err'); return; }
+    const lines = res.data.items || [];
+    const ok = lines.filter(function(l){ return l.orderable && l.service_giver_id; });
+    if (!ok.length) { showToast(ETEL_I18N.t('reorder_none'), 'err'); return; }
+    const sgId = ok[0].service_giver_id, sgName = ok[0].business_name || '';
+    const same = ok.filter(function(l){ return l.service_giver_id === sgId; });
+    const skipped = lines.length - same.length;
+    if (cart.length && cart[0].sg_id !== sgId) {
+        if (!confirm('Your cart has items from "' + cart[0].sg_name + '". Order again from "' + sgName + '" will clear it. Continue?')) return;
+    }
+    if (ok[0].is_online === false && !_closedWarned[sgId]) {
+        if (!confirm('"' + sgName + '" ' + ETEL_I18N.t('closed_warn'))) return;
+        _closedWarned[sgId] = true;
+    }
+    _sgOnline[sgId] = ok[0].is_online;
+    cart = same.map(function(l){ return {item_id: l.item_id, name: l.name, price: parseFloat(l.price), quantity: l.quantity, sg_id: sgId, sg_name: sgName}; });
+    updateCartCount();
+    showToast(same.length + ' ' + ETEL_I18N.t('reorder_added') + (skipped > 0 ? ' · ' + skipped + ' ' + ETEL_I18N.t('reorder_skipped') : ''));
+    toggleCart();
+}
+
 const _TRK_STEPS = ['pending','assigned','picked_up','in_transit'];
 async function loadHomeTracker() {
     const box = document.getElementById('home-order-tracker');
@@ -318,7 +344,17 @@ async function loadHomeTracker() {
         const res = await apiGet('customer_get_orders', {});
         if (!res || !res.success) return;
         const active = (res.data.orders || []).filter(function(o){ return _TRK_STEPS.indexOf(o.status) !== -1; });
-        if (!active.length) { box.style.display = 'none'; box.innerHTML = ''; return; }
+        if (!active.length) {
+            const last = (res.data.orders || []).find(function(o){ return o.status === 'delivered'; });
+            if (!last) { box.style.display = 'none'; box.innerHTML = ''; return; }
+            box.innerHTML =
+                '<div class="trk-top"><span class="trk-ico">🍽️</span>' +
+                '<div class="trk-text"><div class="trk-title">' + escapeHtml(ETEL_I18N.t('reorder_home')) + '</div>' +
+                '<div class="trk-status">' + escapeHtml(last.order_code || '') + ' · ETB ' + parseFloat(last.fare_total || 0).toFixed(0) + '</div></div>' +
+                '<button type="button" class="trk-btn" onclick="reorderOrder(' + parseInt(last.id, 10) + ')">' + escapeHtml(ETEL_I18N.t('reorder_btn')) + '</button></div>';
+            box.style.display = 'block';
+            return;
+        }
         const o = active[0];
         const step = _TRK_STEPS.indexOf(o.status);
         const pct = Math.round((step + 1) / (_TRK_STEPS.length + 1) * 100);
@@ -1642,6 +1678,7 @@ async function loadOrders() {
             '<span>' + fmtDate(o.placed_at) + '</span>' +
             '<span style="font-weight:700;color:#D4AF37;font-size:14px">ETB ' + parseFloat(o.fare_total||0).toFixed(2) + '</span></div>' +
             (o.status !== 'cancelled' && o.status !== 'delivered' ? '<button onclick="openTrackOrder('+o.id+')" style="margin-top:10px;width:100%;padding:8px;background:rgba(212,175,55,.12);border:1.5px solid rgba(212,175,55,.35);border-radius:8px;color:#F0CA58;font-size:12px;font-weight:700;cursor:pointer">🛵 Track Order</button>' : '') +
+            ((isDelivered || o.status === 'cancelled') ? '<button onclick="reorderOrder('+o.id+')" class="reorder-btn" style="margin-top:10px;width:100%;padding:9px;background:linear-gradient(135deg,#F0CA58,#D4AF37);border:none;border-radius:8px;color:#1a1400;font-size:12.5px;font-weight:800;cursor:pointer">🔁 ' + escapeHtml(ETEL_I18N.t('reorder_btn')) + '</button>' : '') +
             (isDelivered ? '<button onclick="openRating('+o.id+')" style="margin-top:10px;width:100%;padding:8px;background:#fff;border:1.5px solid #D4AF37;border-radius:8px;color:#D4AF37;font-size:12px;font-weight:700;cursor:pointer">⭐ Rate this order</button>' : '') +
             (o.status !== 'cancelled' ? '<button onclick="openOrderIssue('+o.id+',\''+o.order_code+'\')" style="margin-top:8px;width:100%;padding:8px;background:#fff;border:1.5px solid #B8B0A0;border-radius:8px;color:rgba(247,241,223,.5);font-size:12px;font-weight:700;cursor:pointer">⚠️ Report an issue</button>' : '') +
             '</div>';
