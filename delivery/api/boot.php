@@ -1018,7 +1018,8 @@ switch ($action) {
                 i.service_giver_id,sg.business_name,COALESCE(sg.zone,'') AS zone,
                 COALESCE(sg.service_type,sg.category,'general') AS service_type,
                 COALESCE(sg.average_rating,sg.rating,0) AS rating,
-                COALESCE(sg.logo_url,'') AS logo_url, COALESCE(sg.cover_url,'') AS cover_url
+                COALESCE(sg.logo_url,'') AS logo_url, COALESCE(sg.cover_url,'') AS cover_url,
+                COALESCE(sg.is_online,0) AS is_online
                 FROM items i JOIN service_givers sg ON i.service_giver_id=sg.id $w
                 ORDER BY rating DESC,i.id DESC LIMIT 200");
             $st->execute($p); ok(array('items'=>$st->fetchAll(),'count'=>$st->rowCount()));
