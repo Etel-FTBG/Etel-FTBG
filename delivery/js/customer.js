@@ -34,10 +34,27 @@ window.ETEL_THEME_DEFAULT = 'dark';
     document.body.classList.toggle('dark-theme', t !== 'light');
 })();
 
+// Keep the sticky search bar directly under the header whatever the header's
+// real height is (display-size controller, wrapped text, big phone fonts).
+// A fixed 64px offset let a taller header slide over the search bar.
+(function () {
+    var hdr = document.querySelector('.app-header');
+    if (!hdr) return;
+    function sync() {
+        document.documentElement.style.setProperty('--app-header-h', Math.round(hdr.getBoundingClientRect().height) + 'px');
+    }
+    sync();
+    if (window.ResizeObserver) { new ResizeObserver(sync).observe(hdr); }
+    window.addEventListener('resize', sync);
+    window.addEventListener('load', sync);
+})();
+
 // ── LANGUAGE (English / Amharic) ─────────────────────────────────
 ETEL_I18N.register('customer', {
     en: {
         nav_home:'Home', nav_favorites:'Favorites', nav_orders:'Orders', nav_messages:'Messages', nav_profile:'Profile',
+        greet_morning:'Good morning', greet_afternoon:'Good afternoon', greet_evening:'Good evening', greet_sub:'What would you like today?',
+        svc_food:'Food', svc_groceries:'Groceries', svc_pharmacy:'Pharmacy', svc_ride:'Ride', shop_min:'min', shop_from:'From', shop_items:'items', shop_no_rating:'New',
         search_placeholder:'Search restaurants, food, cuisines…',
         quick_ride_title:'ETEL Ride', quick_ride_sub:'From ETB 120',
         quick_hail_title:'Street Hail', quick_hail_sub:'Instant pickup',
@@ -66,6 +83,8 @@ ETEL_I18N.register('customer', {
     },
     am: {
         nav_home:'ቤት', nav_favorites:'ተወዳጆች', nav_orders:'ትዕዛዞች', nav_messages:'መልዕክቶች', nav_profile:'መገለጫ',
+        greet_morning:'እንደምን አደሩ', greet_afternoon:'እንደምን ዋሉ', greet_evening:'እንደምን አመሹ', greet_sub:'ዛሬ ምን ይፈልጋሉ?',
+        svc_food:'ምግብ', svc_groceries:'ግሮሰሪ', svc_pharmacy:'ፋርማሲ', svc_ride:'ጉዞ', shop_min:'ደቂቃ', shop_from:'ከ', shop_items:'ዕቃዎች', shop_no_rating:'አዲስ',
         search_placeholder:'ምግብ ቤቶችን፣ ምግብን ይፈልጉ…',
         quick_ride_title:'ኢቴል ጉዞ', quick_ride_sub:'ከ ETB 120 ጀምሮ',
         quick_hail_title:'የመንገድ ጥሪ', quick_hail_sub:'ፈጣን መነሳት',
@@ -104,6 +123,7 @@ function toggleCustomerLanguage() {
         renderCartDrawer();
     }
     if (itemsCache.length) { renderSGScroll(itemsCache); renderItemsGrid(itemsCache); }
+    if (typeof renderHomeGreeting === 'function') renderHomeGreeting();
     showToast(next === 'am' ? 'ቋንቋ: አማርኛ' : 'Language: English');
 }
 
@@ -214,14 +234,18 @@ async function loadItems(category) {
 function renderSGScroll(items) {
     const bySG = {};
     items.forEach(function(item) {
-        if (!bySG[item.service_giver_id]) {
-            bySG[item.service_giver_id] = {id:item.service_giver_id, name:item.business_name||'Shop', zone:item.zone||'', type:item.service_type||'', count:0};
+        let sg = bySG[item.service_giver_id];
+        if (!sg) {
+            sg = bySG[item.service_giver_id] = {id:item.service_giver_id, name:item.business_name||'Shop', zone:item.zone||'', type:item.service_type||'', count:0, img:'', minPrice:Infinity, minPrep:Infinity, rating:0};
         }
-        bySG[item.service_giver_id].count++;
+        sg.count++;
+        if (!sg.img && item.image_url) sg.img = item.image_url;          // first real photo of the shop becomes its cover
+        const pr = parseFloat(item.price); if (pr > 0 && pr < sg.minPrice) sg.minPrice = pr;
+        const pt = parseInt(item.preparation_time, 10); if (pt > 0 && pt < sg.minPrep) sg.minPrep = pt;
+        const rt = parseFloat(item.rating); if (rt > sg.rating) sg.rating = rt;
     });
     const sgs = Object.values(bySG);
     const emoji  = {restaurant:'🍽️',grocery:'🛒',pharmacy:'💊',laundry:'👕',delivery:'📦',cafe:'☕',fastfood:'🍔',electronics:'📱',bakery:'🧁',general:'🏪',shop:'🏪',market:'🛍️',food:'🍽️',drink:'🥤',snack:'🍿'};
-    const colors = {restaurant:'#FFD700',grocery:'#22C55E',pharmacy:'#4ECDC4',laundry:'#60A5FA',cafe:'#FB923C',fastfood:'#F97316',electronics:'#A855F7',bakery:'#F472B6',general:'#FFD700',default:'#FFD700'};
     const bgMap  = {restaurant:'sg-bg-restaurant',grocery:'sg-bg-grocery',pharmacy:'sg-bg-pharmacy',cafe:'sg-bg-cafe',fastfood:'sg-bg-fastfood',laundry:'sg-bg-laundry',general:'sg-bg-restaurant',default:'sg-bg-default'};
     const sgCount = document.getElementById('sg-count');
     if (sgCount) sgCount.textContent = sgs.length + ' ' + ETEL_I18N.t('shops_count');
@@ -229,21 +253,40 @@ function renderSGScroll(items) {
         document.getElementById('sg-scroll').innerHTML = '<div style="padding:30px;color:rgba(240,237,216,.4);text-align:center;font-size:13px;font-style:italic">No shops available yet</div>';
         return;
     }
+    const tMin = ETEL_I18N.t('shop_min'), tFrom = ETEL_I18N.t('shop_from'), tItems = ETEL_I18N.t('shop_items'), tNew = ETEL_I18N.t('shop_no_rating');
     document.getElementById('sg-scroll').innerHTML = sgs.map(function(sg) {
         const ic = emoji[sg.type]||'🏪';
-        const col = colors[sg.type]||colors.default;
         const bg = bgMap[sg.type]||'sg-bg-default';
-        return '<div class="restaurant-card" style="position:relative" onclick="openShopDetail('+sg.id+')">' +
-            '<button onclick="event.stopPropagation();toggleFavorite('+sg.id+')" style="position:absolute;top:8px;right:8px;z-index:2;width:26px;height:26px;border-radius:50%;background:rgba(10,7,3,.55);backdrop-filter:blur(2px);border:1px solid rgba(255,215,0,.3);color:#FFD700;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center">☆</button>' +
-            '<div class="restaurant-card-image ' + bg + '" style="background-image:radial-gradient(circle at 30% 30%, ' + col + '22, transparent 65%);">' +
-                '<span style="font-size:48px;line-height:1;filter:drop-shadow(0 4px 12px ' + col + '66)">' + ic + '</span>' +
+        // Honest, data-backed facts only: rating and prep time come from the items API;
+        // travel time is a flat +10..20 min estimate on top of the shop's own prep time.
+        const eta = isFinite(sg.minPrep) ? '<span class="rc-eta">' + (sg.minPrep + 10) + '–' + (sg.minPrep + 20) + ' ' + escapeHtml(tMin) + '</span>' : '';
+        const rate = sg.rating > 0 ? '<span class="rc-rate">★ ' + sg.rating.toFixed(1) + '</span>' : '<span class="rc-rate rc-rate-new">' + escapeHtml(tNew) + '</span>';
+        const cover = sg.img
+            ? '<span class="rc-ph">' + ic + '</span><img class="rc-cover" src="' + escUrl(sg.img) + '" alt="" loading="lazy" onerror="this.onerror=null;this.style.display=\'none\'">'
+            : '<span class="rc-ph rc-ph-solo">' + ic + '</span>';
+        const from = isFinite(sg.minPrice) ? escapeHtml(tFrom) + ' ETB ' + Math.round(sg.minPrice) + ' · ' : '';
+        return '<div class="restaurant-card" onclick="openShopDetail('+sg.id+')">' +
+            '<div class="restaurant-card-image ' + bg + '">' + cover + '<span class="rc-shade"></span>' +
+                '<button class="rc-fav" onclick="event.stopPropagation();toggleFavorite('+sg.id+')" aria-label="Favorite">☆</button>' +
+                rate + eta +
             '</div>' +
             '<div class="restaurant-card-body">' +
-                '<div class="restaurant-card-name">' + sg.name + '</div>' +
-                '<div class="restaurant-card-meta">' + (sg.type||'Shop') + ' · ' + (sg.zone||'Hawassa') + '</div>' +
-                '<div class="restaurant-card-info" style="color:' + col + '">📦 ' + sg.count + ' items</div>' +
+                '<div class="restaurant-card-name">' + escapeHtml(sg.name) + '</div>' +
+                '<div class="restaurant-card-meta">' + escapeHtml(sg.type||'Shop') + ' · ' + escapeHtml(sg.zone||'Hawassa') + '</div>' +
+                '<div class="restaurant-card-info">' + from + sg.count + ' ' + escapeHtml(tItems) + '</div>' +
             '</div></div>';
     }).join('');
+}
+
+// Greeting line on the home view: time of day + first name (updates on language change).
+function renderHomeGreeting() {
+    const el = document.getElementById('home-greeting-hi');
+    if (!el) return;
+    const h = new Date().getHours();
+    const key = h < 12 ? 'greet_morning' : (h < 18 ? 'greet_afternoon' : 'greet_evening');
+    let first = '';
+    try { const u = Auth.getUser(); if (u && u.name) first = String(u.name).trim().split(/\s+/)[0]; } catch (e) {}
+    el.textContent = ETEL_I18N.t(key) + (first ? ', ' + first : '') + ' 👋';
 }
 
 function filterBySG(sgId) {
@@ -2432,6 +2475,7 @@ function maybeShowPermissionsOnboarding() {
 }
 
 // ── INIT ─────────────────────────────────────────────────────────
+renderHomeGreeting();
 loadItems();
 loadFeatureFlags();
 maybeShowPermissionsOnboarding();

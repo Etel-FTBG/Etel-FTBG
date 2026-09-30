@@ -191,7 +191,7 @@ body {
 
 /* ── SEARCH ───────────────────────────────────────────────────── */
 .search-container {
-  position: sticky; top: 64px; z-index: 100;
+  position: sticky; top: var(--app-header-h, 64px); z-index: 100;
   background: rgba(8,8,16,.85);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
@@ -1117,3 +1117,64 @@ body:not(.dark-theme) .app-footer {
 .pac-matched{color:#D4AF37 !important;font-weight:700 !important}
 .pac-icon{filter:invert(1) brightness(1.6) !important;opacity:.7 !important}
 .pac-logo:after{filter:invert(1) brightness(1.8) !important;opacity:.5 !important}
+
+/* ══ STEP 1 REDESIGN: greeting, service grid, photo shop cards ══════════ */
+.home-greeting { padding: 4px 2px 14px; }
+.home-greeting-hi { font-family: 'Syne','Cormorant Garamond',serif; font-size: 22px; font-weight: 800; color: var(--text); letter-spacing: -.01em; }
+.home-greeting-sub { font-size: 14px; color: var(--text-muted); margin-top: 2px; }
+
+.svc-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 8px; }
+.svc-tile {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
+  padding: 14px 6px 12px; border-radius: 18px; cursor: pointer; text-decoration: none; font: inherit;
+  background: var(--glass); border: 1px solid var(--glass-border); color: var(--text);
+  transition: transform .2s var(--spring), border-color .2s, box-shadow .2s;
+}
+.svc-tile:hover, .svc-tile:active { transform: translateY(-3px); border-color: rgba(212,175,55,.45); box-shadow: 0 10px 26px rgba(0,0,0,.25); }
+.svc-ico {
+  width: 54px; height: 54px; border-radius: 16px; display: flex; align-items: center; justify-content: center;
+  font-size: 28px; line-height: 1;
+}
+.svc-ico-food  { background: linear-gradient(135deg, rgba(212,175,55,.28), rgba(212,175,55,.08)); }
+.svc-ico-groc  { background: linear-gradient(135deg, rgba(34,197,94,.26),  rgba(34,197,94,.07)); }
+.svc-ico-pharm { background: linear-gradient(135deg, rgba(78,205,196,.26), rgba(78,205,196,.07)); }
+.svc-ico-ride  { background: linear-gradient(135deg, rgba(96,165,250,.26), rgba(96,165,250,.07)); }
+.svc-label { font-size: 12.5px; font-weight: 700; letter-spacing: .01em; }
+.svc-more { display: flex; justify-content: center; gap: 8px; font-size: 12px; color: var(--text-muted); margin-bottom: 18px; }
+.svc-more a { color: var(--gold-light); text-decoration: none; font-weight: 600; }
+
+/* shop card: photo cover, rating + ETA pills, facts row */
+.restaurant-card { width: 250px; border-radius: 20px; }
+.restaurant-card-image { height: 140px; background-size: cover; }
+.restaurant-card-image .rc-cover { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: transform .5s var(--ease); }
+.restaurant-card:hover .rc-cover { transform: scale(1.06); }
+.rc-ph { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 34px; opacity: .35; }
+.rc-ph-solo { font-size: 60px; opacity: .9; filter: drop-shadow(0 6px 16px rgba(212,175,55,.45)); }
+.rc-shade { position: absolute; inset: auto 0 0 0; height: 60%; background: linear-gradient(180deg, transparent, rgba(0,0,0,.6)); pointer-events: none; }
+.rc-fav {
+  position: absolute; top: 10px; right: 10px; z-index: 2; width: 30px; height: 30px; border-radius: 50%;
+  background: rgba(10,7,3,.55); -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px);
+  border: 1px solid rgba(255,255,255,.25); color: #fff; font-size: 14px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+}
+.rc-rate, .rc-eta {
+  position: absolute; bottom: 10px; z-index: 2; font-size: 11.5px; font-weight: 800; line-height: 1;
+  padding: 6px 9px; border-radius: 999px; color: #fff; background: rgba(10,7,3,.62);
+  -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); border: 1px solid rgba(255,255,255,.18);
+}
+.rc-rate { left: 10px; color: #F5D76E; }
+.rc-rate-new { color: #fff; background: linear-gradient(135deg,#D4AF37,#B8860B); border-color: transparent; }
+.rc-eta { right: 10px; }
+.restaurant-card-body { padding: 12px 14px 14px; }
+.restaurant-card-name { font-size: 15px; font-weight: 800; margin-bottom: 3px; }
+.restaurant-card-meta { font-size: 12px; text-transform: capitalize; }
+.restaurant-card-info { font-size: 12px; font-weight: 600; color: var(--gold-light); margin-top: 6px; }
+@media (max-width: 480px) { .restaurant-card { width: min(78vw, 260px); } }
+
+body:not(.dark-theme) .svc-tile { background: #FFFFFF !important; border: 1px solid rgba(0,0,0,.1) !important; box-shadow: 0 1px 6px rgba(0,0,0,.06) !important; color: #1A1200 !important; }
+body:not(.dark-theme) .svc-label { color: #1A1200 !important; }
+body:not(.dark-theme) .svc-more a { color: #7A5500 !important; }
+body:not(.dark-theme) .home-greeting-hi { color: #1A1200 !important; }
+body:not(.dark-theme) .restaurant-card-info { color: #8A6500 !important; }
+body:not(.dark-theme) .restaurant-card-meta { color: rgba(26,18,0,.6) !important; }
+body:not(.dark-theme) .restaurant-card { border-radius: 20px !important; }
