@@ -1465,3 +1465,10 @@ body:not(.dark-theme) #modal .modal-box textarea, body:not(.dark-theme) #modal .
 body:not(.dark-theme) #modal .modal-box [style*="color:#F7F1DF"], body:not(.dark-theme) #modal .modal-box h3 { color: var(--lt-ink) !important; }
 body:not(.dark-theme) #modal .modal-box [style*="rgba(247,241,223"] { color: var(--lt-ink-3) !important; }
 body:not(.dark-theme) #modal .modal-close { color: var(--lt-ink-2) !important; }
+
+/* Order chat entry on the tracking screen */
+.trk-chat { width: 100%; padding: 12px; border-radius: 14px; font-size: 14px; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
+  background: rgba(212,175,55,.14); border: 1.5px solid rgba(212,175,55,.45); color: #F0CA58; }
+.trk-chat-badge { min-width: 20px; height: 20px; padding: 0 6px; border-radius: 10px; background: #E63946; color: #fff; font-size: 11px; font-weight: 800; align-items: center; justify-content: center; }
+body:not(.dark-theme) .trk-chat { color: #7A5500; background: rgba(212,175,55,.2); border-color: rgba(160,120,20,.5); }
+body:not(.dark-theme) #orders-list button[onclick^="EtelOrderChat"] { color: #7A5500 !important; border-color: rgba(160,120,20,.5) !important; }

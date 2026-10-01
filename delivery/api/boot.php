@@ -704,6 +704,133 @@ switch ($action) {
         ok(array('users' => $users, 'count' => count($users)));
         break;
     }
+    case 'order_chat_get': {
+        // GET/POST order_id [, after_id] -> the order's chat (only for people attached to the order,
+        // plus admins). Returns messages newer than after_id and marks them read for the caller.
+        $GLOBALS['ETEL_LIMITED_BLOCK'] = true;
+        $pdo = db(); $au = require_auth($pdo);
+        require_once __DIR__ . '/lib/order_chat.php';
+        etel_ensure_chat_tables($pdo);
+        $oid = isset($_GET['order_id']) ? intval($_GET['order_id']) : (isset($body['order_id']) ? intval($body['order_id']) : 0);
+        $after = isset($_GET['after_id']) ? intval($_GET['after_id']) : (isset($body['after_id']) ? intval($body['after_id']) : 0);
+        if ($oid <= 0) fail('order_id required', 400);
+        try {
+            $order = etel_chat_order($pdo, $oid);
+            if (!$order) fail('Order not found', 404);
+            $role = etel_chat_role($order, $au);
+            if (!$role) fail('You are not part of this order', 403);
+            $shopName = '';
+            if (!empty($order['sg_id'])) { $sn = $pdo->prepare('SELECT business_name FROM service_givers WHERE id = ?'); $sn->execute(array($order['sg_id'])); $shopName = (string)$sn->fetchColumn(); }
+            $m = $pdo->prepare("SELECT m.id, m.sender_id, m.sender_role, m.body, m.created_at, SUBSTRING_INDEX(u.name, ' ', 1) AS first_name
+                                FROM order_messages m LEFT JOIN users u ON u.id = m.sender_id
+                                WHERE m.order_id = ? AND m.id > ? ORDER BY m.id ASC LIMIT 100");
+            $m->execute(array($oid, $after));
+            $rows = $m->fetchAll(PDO::FETCH_ASSOC);
+            $msgs = array(); $last = $after;
+            foreach ($rows as $r) {
+                $label = $r['sender_role'] === 'shop' ? ($shopName !== '' ? $shopName : 'Shop')
+                       : ($r['sender_role'] === 'support' ? 'ETEL Support' : ($r['first_name'] !== null && $r['first_name'] !== '' ? $r['first_name'] : ucfirst($r['sender_role'])));
+                $msgs[] = array('id' => intval($r['id']), 'role' => $r['sender_role'], 'label' => $label, 'mine' => intval($r['sender_id']) === intval($au['id']),
+                                'body' => $r['body'], 'created_at' => $r['created_at']);
+                $last = max($last, intval($r['id']));
+            }
+            if ($last > $after) etel_chat_mark_read($pdo, $oid, $au['id'], $last);
+        } catch (Exception $e) { fail_ex($e, 'Could not load the chat', 500); }
+        ok(array('order' => array('id' => $oid, 'code' => $order['order_code'], 'status' => $order['status']),
+                 'my_role' => $role, 'can_send' => etel_chat_is_open($order['status'], $order['delivered_at']),
+                 'has_courier' => $order['courier_user_id'] > 0, 'messages' => $msgs, 'last_id' => $last));
+        break;
+    }
+    case 'order_chat_send': {
+        // POST order_id, body -> add a message to the order's chat and notify everyone else on the order.
+        $GLOBALS['ETEL_LIMITED_BLOCK'] = true;
+        $pdo = db(); $au = require_auth($pdo);
+        require_once __DIR__ . '/lib/order_chat.php';
+        etel_ensure_chat_tables($pdo);
+        $oid = isset($body['order_id']) ? intval($body['order_id']) : 0;
+        $text = etel_chat_clean_body(isset($body['body']) ? $body['body'] : '');
+        if ($oid <= 0) fail('order_id required', 400);
+        if ($text === '') fail('Write a message first', 400);
+        try {
+            $order = etel_chat_order($pdo, $oid);
+            if (!$order) fail('Order not found', 404);
+            $role = etel_chat_role($order, $au);
+            if (!$role) fail('You are not part of this order', 403);
+            if (!etel_chat_is_open($order['status'], $order['delivered_at'])) fail('This chat is closed', 409);
+            $rl = $pdo->prepare('SELECT COUNT(*) FROM order_messages WHERE sender_id = ? AND created_at >= DATE_SUB(NOW(), INTERVAL 1 MINUTE)');
+            $rl->execute(array($au['id']));
+            if (intval($rl->fetchColumn()) >= ETEL_CHAT_RATE_PER_MIN) fail('Slow down a little - too many messages', 429);
+            $pdo->prepare('INSERT INTO order_messages (order_id, sender_id, sender_role, body) VALUES (?, ?, ?, ?)')->execute(array($oid, $au['id'], $role, $text));
+            $mid = intval($pdo->lastInsertId());
+            etel_chat_mark_read($pdo, $oid, $au['id'], $mid);
+        } catch (Exception $e) { fail_ex($e, 'Could not send the message', 500); }
+        // Notify the others (best effort - never fails the send).
+        try {
+            require_once __DIR__ . '/push.php';
+            $who = $role === 'shop' ? 'Shop' : ($role === 'courier' ? 'Courier' : ($role === 'support' ? 'ETEL Support' : 'Customer'));
+            $preview = function_exists('mb_substr') ? mb_substr($text, 0, 100) : substr($text, 0, 100);
+            foreach (etel_chat_recipients($order, $au['id']) as $rid) {
+                $isCustomer = ($rid === intval($order['customer_id']));
+                if ($isCustomer) {
+                    $us = $pdo->prepare('SELECT settings_json FROM users WHERE id = ?'); $us->execute(array($rid));
+                    $cfg = json_decode((string)$us->fetchColumn(), true);
+                    if (is_array($cfg) && isset($cfg['notif_order_updates']) && !$cfg['notif_order_updates']) continue;
+                }
+                $url = $isCustomer ? '/delivery/customer.html?order=' . $oid . '&chat=1'
+                     : ($rid === intval($order['courier_user_id']) ? '/delivery/courier/' : '/delivery/servicegiver.html');
+                etel_push_send($pdo, $rid, '💬 ' . $who . ' · ' . $order['order_code'], $preview,
+                    array('type' => 'order_chat', 'order_id' => $oid, 'tag' => 'chat-' . $oid . '-' . $rid, 'url' => $url));
+            }
+        } catch (Exception $e) { error_log('[ETEL] order chat push failed (non-fatal): ' . $e->getMessage()); }
+        ok(array('id' => $mid, 'role' => $role, 'body' => $text, 'created_at' => date('Y-m-d H:i:s')));
+        break;
+    }
+    case 'order_chat_inbox': {
+        // GET -> the signed-in person's open chats (customer / courier / shop staff): one row per active order,
+        // with the latest message and an unread count. Used for the inbox button in the courier and shop apps.
+        $GLOBALS['ETEL_LIMITED_BLOCK'] = true;
+        $pdo = db(); $au = require_auth($pdo);
+        require_once __DIR__ . '/lib/order_chat.php';
+        etel_ensure_chat_tables($pdo);
+        $uid = intval($au['id']);
+        $openCond = "o.status <> 'cancelled' AND (o.status <> 'delivered' OR o.delivered_at >= DATE_SUB(NOW(), INTERVAL " . ETEL_CHAT_AFTER_DELIVERY_MIN . " MINUTE))";
+        $sql = function ($withStaff) use ($openCond) {
+            return "SELECT o.id, o.order_code, o.status,
+                    (SELECT MAX(m.id) FROM order_messages m WHERE m.order_id = o.id) AS last_id,
+                    (SELECT COUNT(*) FROM order_messages m WHERE m.order_id = o.id AND m.sender_id <> ?
+                        AND m.id > COALESCE((SELECT r.last_read_id FROM order_message_reads r WHERE r.order_id = o.id AND r.user_id = ?), 0)) AS unread
+                FROM orders o LEFT JOIN order_assignments oa ON oa.order_id = o.id
+                WHERE ($openCond) AND (o.customer_id = ?
+                    OR o.courier_id IN (SELECT id FROM couriers WHERE user_id = ?)
+                    OR oa.service_giver_id IN (SELECT id FROM service_givers WHERE user_id = ?)"
+                    . ($withStaff ? " OR oa.service_giver_id IN (SELECT service_giver_id FROM sg_staff WHERE user_id = ? AND active = 1)" : "") . ")
+                GROUP BY o.id ORDER BY o.id DESC LIMIT 30";
+        };
+        try {
+            try {
+                $q = $pdo->prepare($sql(true));
+                $q->execute(array($uid, $uid, $uid, $uid, $uid, $uid));
+            } catch (Exception $e) {   // sg_staff table missing on this deployment
+                $q = $pdo->prepare($sql(false));
+                $q->execute(array($uid, $uid, $uid, $uid, $uid));
+            }
+            $rows = $q->fetchAll(PDO::FETCH_ASSOC);
+            $chats = array(); $total = 0;
+            foreach ($rows as $r) {
+                $last = null;
+                if (!empty($r['last_id'])) {
+                    $lm = $pdo->prepare('SELECT body, sender_role, created_at FROM order_messages WHERE id = ?');
+                    $lm->execute(array($r['last_id']));
+                    $last = $lm->fetch(PDO::FETCH_ASSOC);
+                }
+                $total += intval($r['unread']);
+                $chats[] = array('order_id' => intval($r['id']), 'order_code' => $r['order_code'], 'status' => $r['status'],
+                                 'unread' => intval($r['unread']), 'last' => $last ? $last : null);
+            }
+        } catch (Exception $e) { fail_ex($e, 'Could not load your chats', 500); }
+        ok(array('chats' => $chats, 'unread_total' => $total));
+        break;
+    }
     case 'customer_loyalty': {
         // GET -> points balance, what it is worth, simple stats and recent activity for the signed-in customer.
         $GLOBALS['ETEL_LIMITED_BLOCK'] = true;
