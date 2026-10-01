@@ -688,6 +688,7 @@
             if (pageName === 'services') loadServices();
             if (pageName === 'orders') loadOrders();
             if (pageName === 'payments') loadSGFinancialReport();
+            if (pageName === 'analytics') loadSalesReport();
             if (pageName === 'staff' && currentStaffRole === 'owner') { loadRoles(); loadStaff(); }
             closeSidebar();
         }
@@ -706,6 +707,7 @@
                     case 'orders':   await loadOrders(); break;
                     case 'services': await loadServices(); break;
                     case 'payments': await loadSGFinancialReport(); break;
+                    case 'analytics': await loadSalesReport(); break;
                     case 'staff':
                         if (currentStaffRole === 'owner') { await loadRoles(); await loadStaff(); }
                         break;
@@ -1033,6 +1035,69 @@
         }
 
         // ── FINANCIAL REPORT (payments.view capability) ──────────────────
+        // ─── SALES REPORT ───────────────────────────────────────────
+        // Live from sg_sales_report. Revenue = item sales of DELIVERED orders only
+        // (delivery fee and service charge are not the shop's money); orders / hours /
+        // top items count every order that wasn't cancelled.
+        async function loadSalesReport(days) {
+            const body = document.getElementById('sales-report-body');
+            if (!body) return;
+            days = days || parseInt((document.querySelector('#sr-range .sr-pill.active') || {}).dataset?.days || '7', 10);
+            document.querySelectorAll('#sr-range .sr-pill').forEach(b => b.classList.toggle('active', parseInt(b.dataset.days, 10) === days));
+            body.innerHTML = '<div style="padding:20px;color:var(--text-dim)">Loading…</div>';
+            const d = await apiCall('sg_sales_report', { days });
+            if (!d) { body.innerHTML = '<p style="color:#e74c3c">Could not load the report.</p>'; return; }
+            const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+            const cur = d.current || {}, prev = d.previous || {};
+            const label = days === 1 ? 'yesterday' : 'the previous ' + days + ' days';
+            const delta = (a, b) => {
+                if (a == null || b == null) return '';
+                if (!b && !a) return '<em class="sr-flat">no change</em>';
+                if (!b) return '<em class="sr-up">▲ new vs ' + label + '</em>';
+                const p = Math.round((a - b) / b * 100);
+                return p === 0 ? '<em class="sr-flat">same as ' + label + '</em>'
+                    : '<em class="' + (p > 0 ? 'sr-up">▲ ' : 'sr-down">▼ ') + Math.abs(p) + '% vs ' + label + '</em>';
+            };
+            const money = v => v == null ? '—' : 'ETB ' + Number(v).toLocaleString(undefined, { maximumFractionDigits: 0 });
+            const avg = (cur.delivered && cur.revenue != null) ? cur.revenue / cur.delivered : null;
+            let html = '<div class="sr-kpis">' +
+                '<div class="sr-kpi"><span>Orders</span><b>' + (cur.orders || 0) + '</b>' + delta(cur.orders, prev.orders) + '</div>' +
+                '<div class="sr-kpi"><span>Delivered</span><b>' + (cur.delivered || 0) + '</b><em class="sr-flat">' + (cur.cancelled || 0) + ' cancelled</em></div>' +
+                (d.show_money ? '<div class="sr-kpi"><span>Sales</span><b>' + money(cur.revenue) + '</b>' + delta(cur.revenue, prev.revenue) + '</div>' +
+                    '<div class="sr-kpi"><span>Avg order</span><b>' + money(avg) + '</b><em class="sr-flat">delivered orders</em></div>' : '') +
+                '</div>';
+
+            // daily bars (fill empty days so the chart is honest)
+            const byDate = {}; (d.daily || []).forEach(r => { byDate[r.date] = r; });
+            const dayList = [];
+            for (let i = days - 1; i >= 0; i--) { const dt = new Date(); dt.setDate(dt.getDate() - i); dayList.push(dt.toISOString().slice(0, 10)); }
+            if (days > 1) {
+                const vals = dayList.map(k => byDate[k] ? (d.show_money && byDate[k].revenue != null ? byDate[k].revenue : byDate[k].orders) : 0);
+                const max = Math.max.apply(null, vals.concat([1]));
+                html += '<div class="sr-card"><h4>' + (d.show_money ? 'Sales per day' : 'Orders per day') + '</h4><div class="sr-bars">' +
+                    vals.map((v, i) => '<div class="sr-bar" title="' + dayList[i] + ': ' + (d.show_money ? money(v) : v + ' orders') + '" style="height:' + Math.max(2, Math.round(v / max * 100)) + '%"></div>').join('') +
+                    '</div><div class="sr-axis"><span>' + dayList[0].slice(5) + '</span><span>' + dayList[dayList.length - 1].slice(5) + '</span></div></div>';
+            }
+
+            // busy hours
+            const hrs = d.hours || [];
+            const hmax = Math.max.apply(null, hrs.concat([0]));
+            if (hmax > 0) {
+                const peak = hrs.indexOf(hmax);
+                const fmt = h => (h % 12 === 0 ? 12 : h % 12) + (h < 12 ? ' AM' : ' PM');
+                html += '<div class="sr-card"><h4>Busy hours <span style="font-weight:600;color:var(--text-dim)">· busiest around ' + fmt(peak) + '</span></h4><div class="sr-bars">' +
+                    hrs.map((v, i) => '<div class="sr-bar' + (i === peak ? ' peak' : '') + '" title="' + fmt(i) + ': ' + v + ' orders" style="height:' + Math.max(2, Math.round(v / hmax * 100)) + '%"></div>').join('') +
+                    '</div><div class="sr-axis"><span>12 AM</span><span>6 AM</span><span>12 PM</span><span>6 PM</span><span>11 PM</span></div></div>';
+            }
+
+            // top items
+            const top = d.top_items || [];
+            html += '<div class="sr-card"><h4>Top items</h4>' + (top.length ? top.map((t, i) =>
+                '<div class="sr-top"><i>' + (i + 1) + '</i><span class="nm">' + esc(t.name) + '</span><span class="q">' + t.qty + ' sold' + (t.revenue != null ? ' · ' + money(t.revenue) : '') + '</span></div>').join('')
+                : '<div style="color:var(--text-dim);font-size:13px">No orders in this period yet.</div>') + '</div>';
+            body.innerHTML = html;
+        }
+
         async function loadSGFinancialReport() {
             const body = document.getElementById('sg-financial-report-body');
             const rangeSel = document.getElementById('sg-fr-range');
