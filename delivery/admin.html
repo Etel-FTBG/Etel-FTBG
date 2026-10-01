@@ -278,6 +278,9 @@ html{color-scheme:light}
             <div class="nav-item" data-page="pricing" onclick="switchPage('pricing',this)">
                 <span class="nav-icon">💰</span><span>Pricing</span>
             </div>
+            <div class="nav-item" data-page="menucat" onclick="switchPage('menucat',this); if(typeof loadMenuCatalog==='function') loadMenuCatalog();">
+                <span class="nav-icon">📚</span><span>Menu catalog</span><span id="mc-badge" style="display:none;background:#e74c3c;color:#fff;font-size:10px;font-weight:800;border-radius:10px;padding:1px 7px;margin-left:6px">0</span>
+            </div>
             <div class="nav-item" data-page="promos" onclick="switchPage('promos',this); if(typeof loadPromos==='function') loadPromos();">
                 <span class="nav-icon">🏷️</span><span>Promo codes</span>
             </div>
@@ -1294,6 +1297,40 @@ html{color-scheme:light}
                     <div class="data-section"><div class="section-title">All promo codes</div><div id="promo-list" style="padding:0 16px 16px"></div></div>
                 </div><!-- /panel-promos -->
 
+                                <div class="panel" id="panel-menucat" style="display:none">
+                    <div class="data-section">
+                        <div class="section-title">Menu catalog</div>
+                        <div style="padding:0 16px 8px;font-size:12px;opacity:.75">Common dishes every shop can pick from, so restaurants only type their own price. Shops can <b>suggest</b> new dishes - approve them here to add them to the catalog.</div>
+                        <div class="oc-tools">
+                            <input id="mc-search" class="filter-sel" placeholder="Search dishes…" oninput="mcSearchDebounced()" style="width:200px">
+                            <button type="button" id="mc-f-all" class="oc-pill active" onclick="loadMenuCatalog('all')">All</button>
+                            <button type="button" id="mc-f-pending" class="oc-pill" onclick="loadMenuCatalog('pending')">⏳ Suggested</button>
+                            <button type="button" id="mc-f-active" class="oc-pill" onclick="loadMenuCatalog('active')">Active</button>
+                            <button type="button" id="mc-f-hidden" class="oc-pill" onclick="loadMenuCatalog('hidden')">Hidden</button>
+                            <button class="btn btn-primary" onclick="mcEdit(0)" style="padding:8px 14px">+ New dish</button>
+                        </div>
+                        <div id="mc-form" style="display:none;padding:0 16px 12px">
+                            <input type="hidden" id="mc-id">
+                            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px">
+                                <label style="font-size:12px">Name (English)<input id="mc-name" class="filter-sel" style="width:100%"></label>
+                                <label style="font-size:12px">Name (አማርኛ)<input id="mc-name-am" class="filter-sel" style="width:100%"></label>
+                                <label style="font-size:12px">Category<select id="mc-cat" class="filter-sel" style="width:100%"><option value="food">Food</option><option value="grocery">Grocery</option><option value="pharmacy">Pharmacy</option><option value="package">Package</option><option value="flower">Flower</option></select></label>
+                                <label style="font-size:12px">Group (e.g. Ethiopian)<input id="mc-cuisine" class="filter-sel" style="width:100%"></label>
+                                <label style="font-size:12px">Starter packs (comma separated)<input id="mc-packs" class="filter-sel" placeholder="ethiopian_restaurant, cafe" style="width:100%"></label>
+                                <label style="font-size:12px">Prep time (min)<input id="mc-prep" type="number" min="1" class="filter-sel" value="20" style="width:100%"></label>
+                                <label style="font-size:12px">Photo URL<input id="mc-img" class="filter-sel" placeholder="https://..." style="width:100%"></label>
+                                <label style="font-size:12px">Status<select id="mc-status" class="filter-sel" style="width:100%"><option value="active">Active</option><option value="pending">Suggested</option><option value="hidden">Hidden</option></select></label>
+                            </div>
+                            <label style="font-size:12px;display:block;margin-top:10px">Description<textarea id="mc-desc" class="filter-sel" rows="2" style="width:100%"></textarea></label>
+                            <div style="margin-top:10px;display:flex;gap:8px">
+                                <button class="btn btn-primary" onclick="mcSave()" style="padding:8px 16px">💾 Save</button>
+                                <button class="btn btn-secondary" onclick="mcEdit(-1)" style="padding:8px 16px">Cancel</button>
+                            </div>
+                        </div>
+                        <div id="mc-list" style="padding:0 16px 16px"></div>
+                    </div>
+                </div><!-- /panel-menucat -->
+
                 <div class="panel" id="panel-orderchats" style="display:none">
                     <div class="data-section">
                         <div class="section-title">Order chats</div>
@@ -1361,7 +1398,7 @@ html{color-scheme:light}
     <script src="js/admin/admin-api.js?v=4.1"></script>
     <script src="js/admin/admin-charts.js?v=4.1"></script>
     <script src="js/admin/admin-growth-charts.js?v=2.5"></script>
-    <script src="js/admin/admin-ui.js?v=5.1"></script>
+    <script src="js/admin/admin-ui.js?v=5.2"></script>
     <script src="js/admin/admin-printer.js?v=1.0"></script><!-- Direct Bluetooth printer: order receipts, daily summary, verification slips -->
     <script src="js/admin-pricing.js?v=1.9"></script><!-- Pricing tab (fare rules, zones, delivery tiers, bank accounts) -->
     <script>
@@ -1444,7 +1481,7 @@ html{color-scheme:light}
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script><!-- PPTX slide-text preview (PPTX is a zip of XML), Documents tab -->
     <script src="js/admin-documents.js?v=1.5"></script><!-- Documents library: view/edit/version PDFs, Office files, Markdown, XML, etc -->
 
-<script src="js/admin.js?v=7.1"></script>
+<script src="js/admin.js?v=7.2"></script>
 <script src="js/admin-confirmations-premium.js?v=1.1"></script><!-- Pending Confirmations + GLOBAL modal-box fix for entire admin system -->
 <script src="js/admin-couriers-premium.js?v=1.4"></script><!-- Premium Couriers Management: 3D cards + edit modal + live map -->
     <script src="js/admin-premium.js?v=4.1"></script><!-- KPI count-ups + card motion -->

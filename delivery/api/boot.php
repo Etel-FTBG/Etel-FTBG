@@ -179,7 +179,7 @@ define('ETEL_WRITE_ACTIONS', array(
     'admin_create_user','admin_add_item','admin_update_item','admin_delete_item',
     'admin_toggle_item','admin_create_service_giver','admin_verify_service_giver',
     'admin_suspend_service_giver','sg_update_order_status','sg_complete_order',
-    'sg_add_item','sg_update_item','sg_delete_item','admin_purge_cache',
+    'sg_add_item','sg_update_item','sg_delete_item','sg_catalog_add','admin_catalog_save','admin_catalog_delete','admin_purge_cache',
     'admin_update_courier',
     'admin_backfill_order_service_giver_ids',
     'courier_update_location',
@@ -1111,6 +1111,82 @@ switch ($action) {
         ok(array('orders' => $orders, 'count' => count($orders)));
         break;
     }
+    case 'admin_catalog_list': {
+        // GET [status=active|pending|hidden|all] [q] -> every catalog dish with how many shops sell it.
+        $pdo = db(); require_admin($pdo, 'items.manage');
+        require_once __DIR__ . '/lib/menu_catalog.php';
+        etel_ensure_catalog_schema($pdo);
+        $status = isset($_GET['status']) ? $_GET['status'] : 'all';
+        $q = trim(isset($_GET['q']) ? $_GET['q'] : '');
+        $w = '1=1'; $params = array();
+        if (in_array($status, array('active', 'pending', 'hidden'), true)) { $w .= ' AND c.status = ?'; $params[] = $status; }
+        if ($q !== '') { $w .= ' AND (c.name LIKE ? OR c.name_am LIKE ?)'; $params[] = '%' . $q . '%'; $params[] = '%' . $q . '%'; }
+        try {
+            $st = $pdo->prepare("SELECT c.*, (SELECT COUNT(*) FROM items i WHERE i.catalog_id = c.id) AS shops,
+                                        (SELECT business_name FROM service_givers sg WHERE sg.user_id = c.suggested_by LIMIT 1) AS suggested_by_name
+                                 FROM menu_catalog c WHERE $w
+                                 ORDER BY (c.status = 'pending') DESC, c.category, COALESCE(c.cuisine,''), c.sort_order, c.name LIMIT 800");
+            $st->execute($params);
+            $rows = $st->fetchAll(PDO::FETCH_ASSOC);
+            $pending = (int)$pdo->query("SELECT COUNT(*) FROM menu_catalog WHERE status = 'pending'")->fetchColumn();
+            ok(array('catalog' => $rows, 'pending' => $pending));
+        } catch (Exception $e) { fail_ex($e, 'Could not load the catalog', 500); }
+        break;
+    }
+    case 'admin_catalog_save': {
+        // POST [id] name, name_am, description, description_am, category, cuisine, packs, image_url, prep_time, status
+        // (no id = create). Approving a pending suggestion = save it with status 'active'.
+        $pdo = db(); require_admin($pdo, 'items.manage');
+        require_once __DIR__ . '/lib/menu_catalog.php';
+        etel_ensure_catalog_schema($pdo);
+        $id = isset($body['id']) ? (int)$body['id'] : 0;
+        $name = trim(isset($body['name']) ? $body['name'] : '');
+        $cat = isset($body['category']) ? trim($body['category']) : 'food';
+        $status = isset($body['status']) ? $body['status'] : 'active';
+        if ($name === '') fail('Dish name is required', 400);
+        if (!in_array($cat, etel_catalog_categories(), true)) fail('Invalid category', 400);
+        if (!in_array($status, array('active', 'pending', 'hidden'), true)) fail('Invalid status', 400);
+        $f = array(
+            substr($name, 0, 150),
+            ($v = trim(isset($body['name_am']) ? $body['name_am'] : '')) !== '' ? substr($v, 0, 150) : null,
+            trim(isset($body['description']) ? $body['description'] : ''),
+            ($v = trim(isset($body['description_am']) ? $body['description_am'] : '')) !== '' ? $v : null,
+            $cat,
+            ($v = trim(isset($body['cuisine']) ? $body['cuisine'] : '')) !== '' ? substr($v, 0, 40) : null,
+            ($v = etel_catalog_clean_packs(isset($body['packs']) ? $body['packs'] : '')) !== '' ? $v : null,
+            ($v = trim(isset($body['image_url']) ? $body['image_url'] : '')) !== '' ? substr($v, 0, 500) : null,
+            max(1, min(240, isset($body['prep_time']) ? (int)$body['prep_time'] : 20)),
+            $status
+        );
+        try {
+            if ($id > 0) {
+                $f[] = $id;
+                $pdo->prepare('UPDATE menu_catalog SET name=?, name_am=?, description=?, description_am=?, category=?, cuisine=?, packs=?, image_url=?, prep_time=?, status=? WHERE id=?')->execute($f);
+            } else {
+                $pdo->prepare('INSERT INTO menu_catalog (name, name_am, description, description_am, category, cuisine, packs, image_url, prep_time, status) VALUES (?,?,?,?,?,?,?,?,?,?)')->execute($f);
+                $id = (int)$pdo->lastInsertId();
+            }
+        } catch (PDOException $e) {
+            if ($e->getCode() == 23000) fail('That dish already exists in this category', 409);
+            fail_ex($e, 'Could not save the dish', 500);
+        }
+        ok(array('id' => $id));
+        break;
+    }
+    case 'admin_catalog_delete': {
+        // POST id -> removes a dish; if shops already sell it, it is hidden instead (their items keep working).
+        $pdo = db(); require_admin($pdo, 'items.manage');
+        require_once __DIR__ . '/lib/menu_catalog.php';
+        etel_ensure_catalog_schema($pdo);
+        $id = isset($body['id']) ? (int)$body['id'] : 0;
+        if ($id <= 0) fail('id is required', 400);
+        try {
+            $u = $pdo->prepare('SELECT COUNT(*) FROM items WHERE catalog_id = ?'); $u->execute(array($id));
+            if ((int)$u->fetchColumn() > 0) { $pdo->prepare("UPDATE menu_catalog SET status='hidden' WHERE id=?")->execute(array($id)); ok(array('hidden' => true)); }
+            else { $pdo->prepare('DELETE FROM menu_catalog WHERE id=?')->execute(array($id)); ok(array('deleted' => true)); }
+        } catch (Exception $e) { fail_ex($e, 'Could not delete the dish', 500); }
+        break;
+    }
     case 'admin_platform_pulse': {
         // GET/POST days=1|7|30 -> platform-wide snapshot for the admin Dashboard (read-only, see lib/platform_pulse.php).
         $pdo = db(); require_admin($pdo);
@@ -1300,7 +1376,7 @@ switch ($action) {
         $GLOBALS['ETEL_LIMITED_BLOCK'] = true; // limited (Ride-only) EtelIDs are refused here - see get_auth_user()
         require __DIR__ . '/controllers/OrderController.php';
         break;
-    case 'sg_profile': case 'sg_update_profile': case 'sg_orders': case 'sg_accept_order': case 'sg_update_order_status': case 'sg_get_kitchen_ticket': case 'sg_order_detail': case 'sg_scan_qr': case 'sg_complete_order': case 'sg_stats': case 'sg_set_online': case 'sg_notifications': case 'sg_add_item': case 'sg_get_my_items': case 'sg_update_item': case 'sg_delete_item': case 'sg_get_staff': case 'sg_add_staff': case 'sg_remove_staff': case 'sg_update_staff_role': case 'sg_list_roles': case 'sg_save_role': case 'sg_delete_role': case 'sg_my_role': case 'sg_sales_report': case 'sg_reviews': case 'sg_reply_review': case 'sg_financial_report': case 'sg_get_pending_payout_request': case 'admin_list_payout_requests': case 'admin_review_payout_request':
+    case 'sg_profile': case 'sg_update_profile': case 'sg_orders': case 'sg_accept_order': case 'sg_update_order_status': case 'sg_get_kitchen_ticket': case 'sg_order_detail': case 'sg_scan_qr': case 'sg_complete_order': case 'sg_stats': case 'sg_set_online': case 'sg_notifications': case 'sg_add_item': case 'sg_catalog_list': case 'sg_catalog_add': case 'sg_get_my_items': case 'sg_update_item': case 'sg_delete_item': case 'sg_get_staff': case 'sg_add_staff': case 'sg_remove_staff': case 'sg_update_staff_role': case 'sg_list_roles': case 'sg_save_role': case 'sg_delete_role': case 'sg_my_role': case 'sg_sales_report': case 'sg_reviews': case 'sg_reply_review': case 'sg_financial_report': case 'sg_get_pending_payout_request': case 'admin_list_payout_requests': case 'admin_review_payout_request':
         $GLOBALS['ETEL_LIMITED_BLOCK'] = true; // limited (Ride-only) EtelIDs are refused here - see get_auth_user()
         require __DIR__ . '/controllers/ServiceGiverController.php';
         break;
@@ -1330,6 +1406,8 @@ switch ($action) {
     case 'get_items': case 'customer_get_items': {
         $pdo = db();
         etel_ensure_sg_branding_columns($pdo);
+        require_once __DIR__ . '/lib/menu_catalog.php';
+        etel_ensure_catalog_schema($pdo);
         $cat = isset($_GET['category']) ? trim($_GET['category']) : '';
         $sgid = isset($_GET['service_giver_id']) ? intval($_GET['service_giver_id']) : 0;
         $q = isset($_GET['q']) ? trim($_GET['q']) : '';
@@ -1343,7 +1421,7 @@ switch ($action) {
                 COALESCE(i.original_price,i.price) AS original_price,i.image_url,
                 COALESCE(i.stock_quantity,i.stock_qty,100) AS stock_quantity,
                 COALESCE(i.preparation_time,i.prep_time_min,15) AS preparation_time,
-                COALESCE(i.is_available,i.active,1) AS is_available,
+                COALESCE(i.is_available,i.active,1) AS is_available, i.quality, i.portion,
                 i.service_giver_id,sg.business_name,COALESCE(sg.zone,'') AS zone,
                 COALESCE(sg.service_type,sg.category,'general') AS service_type,
                 COALESCE(sg.average_rating,sg.rating,0) AS rating,

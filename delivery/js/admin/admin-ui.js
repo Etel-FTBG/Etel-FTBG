@@ -16,7 +16,7 @@ function switchPage(page, el) {
         dashboard:'Dashboard Overview', orders:'Orders Management',
         users:'Users Management', couriers:'Couriers Management',
         servicegivers:'Service Givers', items:'Items & Products',
-        rides:'Rides Management', pricing:'Pricing (Fares & Zones)',
+        rides:'Rides Management', pricing:'Pricing (Fares & Zones)', promos:'Promo codes', orderchats:'Order chats', menucat:'Menu catalog',
         reports:'Analytics & Reports', updater:'File Updater', settings:'Settings', roles:'Roles & Permissions', support:'Support Inbox', launch:'Launch Readiness', documents:'Documents'
     };
     document.getElementById('page-title').textContent = titles[page] || page;

@@ -767,7 +767,7 @@
                         <td style="padding:10px 8px">
                             ${it.image_url ? `<img src="${escUrl(it.image_url)}" style="width:48px;height:48px;object-fit:cover;border-radius:8px;border:1px solid #e0e0e0">` : '<div style="width:48px;height:48px;background:rgba(255,255,255,.06);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:20px">🛍️</div>'}
                         </td>
-                        <td style="padding:10px 8px;font-weight:600;color:#1a1a2e">${it.name}</td>
+                        <td style="padding:10px 8px;font-weight:600;color:#1a1a2e">${it.name}${it.quality ? ' <span style="font-size:10px;font-weight:800;text-transform:uppercase;color:#D4AF37">' + escapeHtml(it.quality) + '</span>' : ''}${it.portion ? '<div style="font-size:11px;font-weight:500;color:#B8B0A0">' + escapeHtml(it.portion) + '</div>' : ''}</td>
                         <td style="padding:10px 8px"><span style="background:rgba(212,175,55,.15);color:#D4AF37;border:1px solid rgba(212,175,55,.3);padding:3px 8px;border-radius:20px;font-size:11px;font-weight:700;text-transform:uppercase">${it.category}</span></td>
                         <td style="padding:10px 8px;font-weight:600">ETB ${parseFloat(it.price).toFixed(2)}</td>
                         <td style="padding:10px 8px">${it.stock_quantity}</td>
@@ -788,6 +788,139 @@
             </div>`;
         }
 
+
+        // ── MENU CATALOG PICKER ──────────────────────────────────
+        // Shared dishes: tick what you sell, type only your price (see api/lib/menu_catalog.php).
+        const CAT_LABELS = { food: '🍽️ Food', grocery: '🛒 Grocery', pharmacy: '💊 Pharmacy', package: '📦 Package', flower: '💐 Flowers' };
+        let catState = { rows: [], picked: {}, packs: {}, cat: 'food', pack: '', sel: {} };
+
+        function catAttr(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;'); }
+
+        async function openCatalog() {
+            document.getElementById('catalog-overlay').style.display = 'flex';
+            document.getElementById('cat-list').innerHTML = '<p class="empty-msg">Loading catalog…</p>';
+            document.getElementById('cat-msg').style.display = 'none';
+            document.getElementById('cat-search').value = '';
+            const data = await apiCall('sg_catalog_list');
+            if (!data) { closeCatalog(); return; }
+            const present = {};
+            (data.catalog || []).forEach(r => { present[r.category] = 1; });
+            catState = { rows: data.catalog || [], picked: data.picked || {}, packs: data.packs || {}, cat: present.food ? 'food' : (Object.keys(present)[0] || 'food'), pack: '', sel: {} };
+            catalogRender();
+        }
+
+        function closeCatalog() { document.getElementById('catalog-overlay').style.display = 'none'; }
+
+        function catalogSetCat(c) { catState.cat = c; catState.pack = ''; catalogRender(); }
+        function catalogSetPack(pk) { catState.pack = (catState.pack === pk) ? '' : pk; catalogRender(); }
+
+        // Tick every dish of the current filter that the shop doesn't sell yet (price still to be typed).
+        function catalogTickAll() {
+            catalogVisible().forEach(r => { if (!catState.picked[r.id] && !catState.sel[r.id]) catState.sel[r.id] = { price: '', quality: '' }; });
+            catalogRender();
+        }
+
+        function catalogVisible() {
+            const q = document.getElementById('cat-search').value.trim().toLowerCase();
+            return catState.rows.filter(r => {
+                if (r.category !== catState.cat) return false;
+                if (catState.pack && (',' + (r.packs || '') + ',').indexOf(',' + catState.pack + ',') === -1) return false;
+                if (q && (r.name || '').toLowerCase().indexOf(q) === -1 && (r.name_am || '').indexOf(q) === -1) return false;
+                return true;
+            });
+        }
+
+        function catalogRender() {
+            const cats = {};
+            catState.rows.forEach(r => { cats[r.category] = 1; });
+            document.getElementById('cat-tabs').innerHTML = Object.keys(cats).map(c =>
+                `<button type="button" class="cat-chip${c === catState.cat ? ' on' : ''}" onclick="catalogSetCat('${c}')">${CAT_LABELS[c] || c}</button>`).join('');
+            const packNames = Object.keys(catState.packs);
+            document.getElementById('cat-packs').innerHTML = packNames.length
+                ? '<span class="cat-qs">Quick start:</span>' + packNames.map(pk =>
+                    `<button type="button" class="cat-chip${pk === catState.pack ? ' on' : ''}" onclick="catalogSetPack('${pk}')">${catAttr(pk.replace(/_/g, ' '))} · ${catState.packs[pk]}</button>`).join('') +
+                  (catState.pack ? '<button type="button" class="cat-chip" onclick="catalogTickAll()">✓ Tick all shown</button>' : '')
+                : '';
+            const rows = catalogVisible();
+            if (!rows.length) { document.getElementById('cat-list').innerHTML = '<p class="empty-msg" style="padding:24px;text-align:center">No dishes match.</p>'; catalogCount(); return; }
+            let html = '', last = null;
+            rows.forEach(r => {
+                const grp = r.cuisine || 'Other';
+                if (grp !== last) { html += `<div class="cat-group">${escapeHtml(grp)}</div>`; last = grp; }
+                const sold = !!catState.picked[r.id];
+                const sel = catState.sel[r.id];
+                const img = r.image_url ? `<img class="cat-img" src="${catAttr(r.image_url)}" alt="" loading="lazy">` : '<div class="cat-img">🍽️</div>';
+                html += `<div class="cat-row${sold ? ' sold' : ''}" data-id="${r.id}">
+                    <input type="checkbox" ${sold ? 'checked disabled' : ''} ${sel ? 'checked' : ''} onchange="catalogToggle(${r.id}, this.checked)">
+                    ${img}
+                    <div class="cat-name">${escapeHtml(r.name)}${r.name_am ? '<small>' + escapeHtml(r.name_am) + '</small>' : ''}${sold ? '<span class="cat-tag">✓ On your menu</span>' : ''}</div>
+                    ${sold ? '' : `<select class="field-input cat-q" ${sel ? '' : 'disabled'} onchange="catalogField(${r.id},'quality',this.value)">
+                        <option value=""${sel && !sel.quality ? ' selected' : ''}>Quality</option>
+                        <option value="regular"${sel && sel.quality === 'regular' ? ' selected' : ''}>Regular</option>
+                        <option value="special"${sel && sel.quality === 'special' ? ' selected' : ''}>Special</option>
+                        <option value="premium"${sel && sel.quality === 'premium' ? ' selected' : ''}>Premium</option></select>
+                    <input type="number" class="field-input cat-price" min="0" step="0.01" placeholder="Price ETB" value="${sel ? catAttr(sel.price) : ''}" ${sel ? '' : 'disabled'} oninput="catalogField(${r.id},'price',this.value)">`}
+                </div>`;
+            });
+            document.getElementById('cat-list').innerHTML = html;
+            catalogCount();
+        }
+
+        function catalogToggle(id, on) {
+            if (on) catState.sel[id] = catState.sel[id] || { price: '', quality: '' }; else delete catState.sel[id];
+            const row = document.querySelector('#cat-list .cat-row[data-id="' + id + '"]');
+            if (row) {
+                row.querySelectorAll('select,input[type=number]').forEach(e => { e.disabled = !on; });
+                if (on) { const pr = row.querySelector('.cat-price'); if (pr) pr.focus(); }
+            }
+            catalogCount();
+        }
+
+        function catalogField(id, field, val) {
+            if (!catState.sel[id]) return;
+            catState.sel[id][field] = val;
+            if (field === 'price') {
+                const row = document.querySelector('#cat-list .cat-row[data-id="' + id + '"] .cat-price');
+                if (row) row.classList.remove('bad');
+            }
+            catalogCount();
+        }
+
+        function catalogCount() {
+            const n = Object.keys(catState.sel).length;
+            const btn = document.getElementById('cat-submit');
+            btn.disabled = n === 0;
+            btn.textContent = n ? 'Add ' + n + ' dish' + (n === 1 ? '' : 'es') + ' to my menu' : 'Tick dishes to add';
+        }
+
+        async function catalogSubmit() {
+            const msg = document.getElementById('cat-msg');
+            const ids = Object.keys(catState.sel);
+            let bad = 0;
+            ids.forEach(id => {
+                const pr = parseFloat(catState.sel[id].price);
+                if (!(pr > 0)) {
+                    bad++;
+                    const el = document.querySelector('#cat-list .cat-row[data-id="' + id + '"] .cat-price');
+                    if (el) el.classList.add('bad');
+                }
+            });
+            if (bad) {
+                msg.style.cssText = 'display:block;background:#fde;color:#a00;padding:8px 12px;border-radius:6px;font-size:13px;margin-bottom:10px';
+                msg.textContent = 'Enter a price for every ticked dish (' + bad + ' missing). Un-tick the ones you don\'t sell.';
+                return;
+            }
+            msg.style.display = 'none';
+            const btn = document.getElementById('cat-submit');
+            btn.disabled = true; btn.textContent = 'Adding…';
+            const picks = ids.map(id => ({ catalog_id: parseInt(id), price: parseFloat(catState.sel[id].price), quality: catState.sel[id].quality || '' }));
+            const data = await apiCall('sg_catalog_add', { picks });
+            if (!data) { catalogCount(); return; }
+            showNotification('Added ' + data.added + ' dish' + (data.added === 1 ? '' : 'es') + (data.skipped && data.skipped.length ? ' (' + data.skipped.length + ' already on your menu)' : ''), 'success');
+            closeCatalog();
+            loadServices();
+        }
+
         function openAddItemModal() {
             document.getElementById('item-edit-id').value = '';
             document.getElementById('item-modal-title').textContent = 'Add New Item';
@@ -796,6 +929,10 @@
             document.getElementById('item-desc').value = '';
             document.getElementById('item-desc-am').value = '';
             document.getElementById('item-category').value = 'food';
+            document.getElementById('item-quality').value = '';
+            document.getElementById('item-portion').value = '';
+            document.getElementById('item-suggest').checked = false;
+            document.getElementById('item-suggest-row').style.display = '';
             document.getElementById('item-price').value = '';
             document.getElementById('item-orig-price').value = '';
             document.getElementById('item-stock').value = '100';
@@ -817,6 +954,10 @@
             document.getElementById('item-desc').value = it.description || '';
             document.getElementById('item-desc-am').value = it.description_am || '';
             document.getElementById('item-category').value = it.category || 'food';
+            document.getElementById('item-quality').value = it.quality || '';
+            document.getElementById('item-portion').value = it.portion || '';
+            document.getElementById('item-suggest').checked = false;
+            document.getElementById('item-suggest-row').style.display = 'none';
             document.getElementById('item-price').value = it.price || '';
             document.getElementById('item-orig-price').value = it.original_price || '';
             document.getElementById('item-stock').value = it.stock_quantity || 0;
@@ -878,7 +1019,9 @@
                 } catch(e) { msgEl.style.cssText='display:block;background:#fde;color:#a00;padding:8px 12px;border-radius:6px;font-size:13px'; msgEl.textContent='Image upload error'; return; }
             }
 
-            const payload = { name, name_am:nameAm, description:desc, description_am:descAm, category, price, original_price:origP, stock_quantity:stock, preparation_time:prep, image_url };
+            const payload = { name, name_am:nameAm, description:desc, description_am:descAm, category, price, original_price:origP, stock_quantity:stock, preparation_time:prep, image_url,
+                             quality: document.getElementById('item-quality').value, portion: document.getElementById('item-portion').value.trim() };
+            if (!editId && document.getElementById('item-suggest').checked) payload.suggest_catalog = 1;
             let data;
             if (editId) {
                 payload.item_id = parseInt(editId);

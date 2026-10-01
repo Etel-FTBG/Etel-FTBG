@@ -973,6 +973,10 @@ case 'sg_add_item': {
     $stock_quantity = isset($body['stock_quantity']) ? intval($body['stock_quantity']) : 0;
     $preparation_time = isset($body['preparation_time']) ? intval($body['preparation_time']) : 30;
     $image_url = isset($body['image_url']) ? trim($body['image_url']) : '';
+    require_once __DIR__ . '/../lib/menu_catalog.php';
+    etel_ensure_catalog_schema($pdo);
+    $quality = etel_catalog_clean_quality(isset($body['quality']) ? $body['quality'] : '');
+    $portion = isset($body['portion']) ? trim(substr((string)$body['portion'], 0, 40)) : '';
 
     if (!$name) fail('Item name is required', 400);
     if (!$category || !in_array($category, array('food','grocery','package','pharmacy','flower'))) {
@@ -992,15 +996,18 @@ case 'sg_add_item': {
         $ins = $pdo->prepare("
             INSERT INTO items (
                 service_giver_id, item_code, name, name_am, description, description_am, category,
-                price, original_price, stock_quantity, preparation_time, image_url, is_available
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
+                price, original_price, stock_quantity, preparation_time, image_url, is_available, quality, portion
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)
         ");
         $ins->execute(array(
             $sg['id'], $item_code, $name, ($name_am ?: null), $description, ($description_am ?: null), $category,
-            $price, $original_price, $stock_quantity, $preparation_time, $image_url
+            $price, $original_price, $stock_quantity, $preparation_time, $image_url, $quality, ($portion !== '' ? $portion : null)
         ));
         
         $item_id = $pdo->lastInsertId();
+        if (!empty($body['suggest_catalog'])) {
+            try { etel_catalog_suggest($pdo, $auth_user['id'], $name, $name_am, $category, $description); } catch (Exception $e) { error_log('[ServiceGiverController] catalog suggest: ' . $e->getMessage()); }
+        }
         
         ok(array(
             'item_id' => $item_id,
@@ -1028,6 +1035,8 @@ case 'sg_get_my_items': {
     if (!$sg) fail('Service giver profile not found', 404);
     sg_require_capability($auth_user, $sg_ctx, 'menu.view');
     
+    require_once __DIR__ . '/../lib/menu_catalog.php';
+    etel_ensure_catalog_schema($pdo);
     $category = isset($_GET['category']) ? trim($_GET['category']) : '';
     $where = 'WHERE service_giver_id = ?';
     $params = array($sg['id']);
@@ -1041,7 +1050,7 @@ case 'sg_get_my_items': {
         $s = $pdo->prepare("
             SELECT 
                 id, item_code, name, name_am, description, description_am, category, price, original_price,
-                image_url, stock_quantity, preparation_time, is_available, created_at
+                image_url, stock_quantity, preparation_time, is_available, created_at, catalog_id, quality, portion
             FROM items
             $where
             ORDER BY created_at DESC
@@ -1053,6 +1062,37 @@ case 'sg_get_my_items': {
     }
     
     ok(array('items' => $items, 'count' => count($items)));
+    break;
+}
+case 'sg_catalog_list': {
+    // GET ?category= &q=  -> shared dishes the shop can pick from, which ones it already sells, and the starter packs.
+    $pdo = db();
+    $auth_user = require_auth($pdo);
+    if ($auth_user['role'] !== 'service_giver' && $auth_user['role'] !== 'admin') fail('Service giver access required', 403);
+    $sg_ctx = sg_get_context($pdo, $auth_user['id']);
+    if (!$sg_ctx) fail('Service giver profile not found', 404);
+    sg_require_capability($auth_user, $sg_ctx, 'menu.view');
+    require_once __DIR__ . '/../lib/menu_catalog.php';
+    $category = isset($_GET['category']) ? trim($_GET['category']) : '';
+    $q = isset($_GET['q']) ? trim($_GET['q']) : '';
+    try { ok(etel_catalog_for_shop($pdo, $sg_ctx['sg_id'], $category, $q)); }
+    catch (Exception $e) { fail_ex($e, 'Could not load the menu catalog', 500); }
+    break;
+}
+case 'sg_catalog_add': {
+    // POST picks:[{catalog_id, price, [original_price], [quality], [portion], [image_url]}]  -> creates the shop's items.
+    $pdo = db();
+    $auth_user = require_auth($pdo);
+    if ($auth_user['role'] !== 'service_giver' && $auth_user['role'] !== 'admin') fail('Service giver access required', 403);
+    $sg_ctx = sg_get_context($pdo, $auth_user['id']);
+    if (!$sg_ctx) fail('Service giver profile not found', 404);
+    sg_require_capability($auth_user, $sg_ctx, 'menu.manage');
+    require_once __DIR__ . '/../lib/menu_catalog.php';
+    $picks = etel_catalog_parse_picks(isset($body['picks']) ? $body['picks'] : null);
+    if (!$picks) fail('Pick at least one dish and enter its price', 400);
+    try { $res = etel_catalog_add_picks($pdo, $sg_ctx['sg_id'], $picks); }
+    catch (Exception $e) { fail_ex($e, 'Could not add the dishes', 500); }
+    ok($res);
     break;
 }
 case 'sg_update_item': {
@@ -1102,6 +1142,12 @@ case 'sg_update_item': {
     if (isset($body['description_am'])) {
         $updates[] = 'description_am = ?';
         $params[] = trim($body['description_am']) ?: null;
+    }
+    if (array_key_exists('quality', $body) || array_key_exists('portion', $body)) {
+        require_once __DIR__ . '/../lib/menu_catalog.php';
+        etel_ensure_catalog_schema($pdo);
+        if (array_key_exists('quality', $body)) { $updates[] = 'quality = ?'; $params[] = etel_catalog_clean_quality($body['quality']); }
+        if (array_key_exists('portion', $body)) { $pt = trim(substr((string)$body['portion'], 0, 40)); $updates[] = 'portion = ?'; $params[] = ($pt !== '' ? $pt : null); }
     }
     if (isset($body['price'])) {
         $vp = etel_validate_amount($body['price']);

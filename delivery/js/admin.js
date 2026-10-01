@@ -581,6 +581,69 @@
                 '<span class="oc-tag">' + t.messages + ' msgs</span></div>').join('');
         }
 
+
+        // ─── MENU CATALOG ────────────────────────────────────────────
+        // Shared dishes shops pick from (api/lib/menu_catalog.php). Pending rows are shop suggestions.
+        let _mcFilter = 'all', _mcTimer = null, _mcRows = [];
+        function mcSearchDebounced() { clearTimeout(_mcTimer); _mcTimer = setTimeout(() => loadMenuCatalog(), 350); }
+        async function loadMenuCatalog(filter) {
+            const box = document.getElementById('mc-list');
+            if (!box) return;
+            if (filter) _mcFilter = filter;
+            ['all', 'pending', 'active', 'hidden'].forEach(f => { const b = document.getElementById('mc-f-' + f); if (b) b.classList.toggle('active', f === _mcFilter); });
+            box.innerHTML = UI.loading('Loading...');
+            const q = (document.getElementById('mc-search') || {}).value || '';
+            const res = await adm('admin_catalog_list', { status: _mcFilter, q: q.trim() }, true);
+            if (!res || !res.success) { box.innerHTML = '<div style="color:#c0392b">' + escapeHtml((res && res.message) || 'Could not load the catalog') + '</div>'; return; }
+            _mcRows = res.data.catalog || [];
+            const badge = document.getElementById('mc-badge');
+            if (badge) { badge.textContent = res.data.pending || 0; badge.style.display = res.data.pending ? 'inline-block' : 'none'; }
+            if (!_mcRows.length) { box.innerHTML = '<div style="opacity:.65;padding:14px 0">No dishes here.</div>'; return; }
+            box.innerHTML = '<div style="overflow-x:auto"><table class="data-table" style="width:100%"><thead><tr><th>Dish</th><th>Category</th><th>Group</th><th>Shops</th><th>Status</th><th></th></tr></thead><tbody>' +
+                _mcRows.map(r =>
+                    '<tr><td><b>' + escapeHtml(r.name) + '</b>' + (r.name_am ? '<div style="font-size:12px;opacity:.7">' + escapeHtml(r.name_am) + '</div>' : '') +
+                    (r.status === 'pending' && r.suggested_by_name ? '<div style="font-size:11px;opacity:.7">Suggested by ' + escapeHtml(r.suggested_by_name) + '</div>' : '') + '</td>' +
+                    '<td>' + escapeHtml(r.category) + '</td><td>' + escapeHtml(r.cuisine || '-') + '</td><td>' + (r.shops || 0) + '</td>' +
+                    '<td>' + (r.status === 'pending' ? '<span class="oc-tag warn">Suggested</span>' : r.status === 'hidden' ? '<span class="oc-tag">Hidden</span>' : 'Active') + '</td>' +
+                    '<td style="white-space:nowrap">' +
+                    (r.status === 'pending' ? '<button class="btn btn-primary" style="padding:4px 10px" onclick="mcApprove(' + r.id + ')">✓ Approve</button> ' : '') +
+                    '<button class="btn btn-secondary" style="padding:4px 10px" onclick="mcEdit(' + r.id + ')">Edit</button> ' +
+                    '<button class="btn btn-secondary" style="padding:4px 10px" onclick="mcDelete(' + r.id + ')">' + (r.shops > 0 ? 'Hide' : 'Delete') + '</button></td></tr>').join('') +
+                '</tbody></table></div>';
+        }
+        function mcEdit(id) {
+            const f = document.getElementById('mc-form');
+            if (id < 0) { f.style.display = 'none'; return; }
+            const r = _mcRows.find(x => String(x.id) === String(id)) || {};
+            const set = (i, v) => { document.getElementById(i).value = v == null ? '' : v; };
+            set('mc-id', r.id || ''); set('mc-name', r.name); set('mc-name-am', r.name_am); set('mc-cat', r.category || 'food');
+            set('mc-cuisine', r.cuisine); set('mc-packs', r.packs); set('mc-prep', r.prep_time || 20); set('mc-img', r.image_url);
+            set('mc-status', r.status || 'active'); set('mc-desc', r.description);
+            f.style.display = 'block';
+            document.getElementById('mc-name').focus();
+        }
+        async function mcSave(extra) {
+            const v = i => document.getElementById(i).value.trim();
+            const body = Object.assign({ id: v('mc-id') || 0, name: v('mc-name'), name_am: v('mc-name-am'), category: v('mc-cat'), cuisine: v('mc-cuisine'),
+                packs: v('mc-packs'), prep_time: v('mc-prep'), image_url: v('mc-img'), status: v('mc-status'), description: v('mc-desc') }, extra || {});
+            const res = await adm('admin_catalog_save', body, false);
+            if (res && res.success) { document.getElementById('mc-form').style.display = 'none'; if (typeof showNotification === 'function') showNotification('Dish saved', 'success'); loadMenuCatalog(); }
+            else alert((res && res.message) || 'Could not save the dish');
+        }
+        async function mcApprove(id) {
+            const r = _mcRows.find(x => String(x.id) === String(id));
+            if (!r) return;
+            const res = await adm('admin_catalog_save', { id: r.id, name: r.name, name_am: r.name_am || '', description: r.description || '', description_am: r.description_am || '',
+                category: r.category, cuisine: r.cuisine || '', packs: r.packs || '', image_url: r.image_url || '', prep_time: r.prep_time || 20, status: 'active' }, false);
+            if (res && res.success) loadMenuCatalog(); else alert((res && res.message) || 'Could not approve the dish');
+        }
+        async function mcDelete(id) {
+            const r = _mcRows.find(x => String(x.id) === String(id));
+            if (!r || !confirm((r.shops > 0 ? 'Hide "' : 'Delete "') + r.name + '" from the catalog?' + (r.shops > 0 ? ' Shops that already sell it keep their items.' : ''))) return;
+            const res = await adm('admin_catalog_delete', { id: id }, false);
+            if (res && res.success) loadMenuCatalog(); else alert((res && res.message) || 'Could not remove the dish');
+        }
+
         // ─── PROMO CODES ─────────────────────────────────────────────
         // Codes are validated again on the server every time an order is placed;
         // this panel only manages the list. The discount is paid by the platform.
