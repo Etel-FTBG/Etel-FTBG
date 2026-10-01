@@ -585,6 +585,9 @@ case 'sg_update_order_status': {
         // pickup" moment, not just a silent status flip. Best-effort: push
         // failures (no FCM key configured yet, no token on file, etc.)
         // never block or fail this response.
+        if ($new_status === 'preparing') {
+            etel_notify_order_status($pdo, $order_id, 'preparing');
+        }
         if ($new_status === 'accepted') {
             try {
                 require_once __DIR__ . '/../push.php';
@@ -739,6 +742,8 @@ case 'sg_scan_qr': {
         }
         
         $pdo->commit();
+        if (function_exists('etel_notify_order_status')) etel_notify_order_status($pdo, $order_id);
+
         
         ok(array('message' => ucfirst($qr_type) . ' confirmed', 'qr_type' => $qr_type, 'scanned_at' => date('Y-m-d H:i:s')));
     } catch (Exception $e) {
@@ -786,6 +791,8 @@ case 'sg_complete_order': {
         $upd_ord->execute(array($order_id));
         
         $pdo->commit();
+        if (function_exists('etel_notify_order_status')) etel_notify_order_status($pdo, $order_id);
+
         
         ok(array('message' => 'Order marked as delivered'));
     } catch (Exception $e) {

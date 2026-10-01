@@ -54,7 +54,7 @@ ETEL_I18N.register('customer', {
     en: {
         nav_home:'Home', nav_favorites:'Favorites', nav_orders:'Orders', nav_messages:'Messages', nav_profile:'Profile',
         shop_open:'Open', shop_closed:'Closed', shop_fee_from:'Delivery from ETB', closed_warn:'appears closed right now. You can still order, but it may wait until they open. Continue?',
-        trk_title:'Your order', trk_pending:'Order placed', trk_assigned:'Courier assigned', trk_picked_up:'Picked up', trk_in_transit:'On the way', trk_track:'Track', trk_more:'more', menu_all:'All', menu_popular:'🔥 Popular', menu_deals:'🏷️ Deals', menu_quick:'⚡ Quick', pop_badge:'🔥 Popular', promo_have:'Have a promo code?', promo_ph:'Enter code', promo_apply:'Apply', promo_remove:'Remove', promo_discount:'Discount', promo_saved:'You save', reorder_btn:'Order again', reorder_home:'Hungry again?', reorder_none:'Those items are no longer available', reorder_added:'added to your cart at today\'s prices', reorder_skipped:'unavailable, skipped', reorder_fail:'Could not load that order', cart_view:'View cart →', cart_items_one:'item', cart_items_many:'items', filter_none:'No matches for these filters', filter_clear:'Clear filters',
+        trk_title:'Your order', trk_pending:'Order placed', trk_assigned:'Courier assigned', trk_picked_up:'Picked up', trk_in_transit:'On the way', trk_track:'Track', trk_more:'more', menu_all:'All', menu_popular:'🔥 Popular', menu_deals:'🏷️ Deals', menu_quick:'⚡ Quick', pop_badge:'🔥 Popular', promo_have:'Have a promo code?', promo_ph:'Enter code', promo_apply:'Apply', promo_remove:'Remove', promo_discount:'Discount', promo_saved:'You save', push_on:'🔔 Turn on order alerts', push_enabled:'Order alerts are on', push_blocked:'Notifications are blocked in your browser settings', reorder_btn:'Order again', reorder_home:'Hungry again?', reorder_none:'Those items are no longer available', reorder_added:'added to your cart at today\'s prices', reorder_skipped:'unavailable, skipped', reorder_fail:'Could not load that order', cart_view:'View cart →', cart_items_one:'item', cart_items_many:'items', filter_none:'No matches for these filters', filter_clear:'Clear filters',
         greet_morning:'Good morning', greet_afternoon:'Good afternoon', greet_evening:'Good evening', greet_sub:'What would you like today?',
         svc_food:'Food', svc_groceries:'Groceries', svc_pharmacy:'Pharmacy', svc_ride:'Ride', shop_min:'min', shop_from:'From', shop_items:'items', shop_no_rating:'New',
         search_placeholder:'Search restaurants, food, cuisines…',
@@ -86,7 +86,7 @@ ETEL_I18N.register('customer', {
     am: {
         nav_home:'ቤት', nav_favorites:'ተወዳጆች', nav_orders:'ትዕዛዞች', nav_messages:'መልዕክቶች', nav_profile:'መገለጫ',
         shop_open:'ክፍት', shop_closed:'ዝግ', shop_fee_from:'ማድረሻ ከ ETB', closed_warn:'አሁን ዝግ ይመስላል። አሁንም ማዘዝ ይችላሉ፤ እስኪከፈት ሊዘገይ ይችላል። ይቀጥሉ?',
-        trk_title:'ትዕዛዝዎ', trk_pending:'ትዕዛዝ ተቀብሏል', trk_assigned:'ሹፌር ተመድቧል', trk_picked_up:'ተነስቷል', trk_in_transit:'በመንገድ ላይ', trk_track:'ተከታተል', trk_more:'ተጨማሪ', menu_all:'ሁሉም', menu_popular:'🔥 ተወዳጅ', menu_deals:'🏷️ ቅናሽ', menu_quick:'⚡ ፈጣን', pop_badge:'🔥 ተወዳጅ', promo_have:'የቅናሽ ኮድ አለዎት?', promo_ph:'ኮድ ያስገቡ', promo_apply:'ተግብር', promo_remove:'አስወግድ', promo_discount:'ቅናሽ', promo_saved:'ይቆጥባሉ', reorder_btn:'እንደገና አዝዝ', reorder_home:'እንደገና ይራብዎታል?', reorder_none:'እነዚህ ዕቃዎች አሁን አይገኙም', reorder_added:'በዛሬ ዋጋ ወደ ጋሪዎ ተጨምረዋል', reorder_skipped:'አይገኝም፣ ተዘሏል', reorder_fail:'ትዕዛዙን መጫን አልተቻለም', cart_view:'ጋሪ ይመልከቱ →', cart_items_one:'ዕቃ', cart_items_many:'ዕቃዎች', filter_none:'ለእነዚህ ማጣሪያዎች ውጤት የለም', filter_clear:'ማጣሪያ አጽዳ',
+        trk_title:'ትዕዛዝዎ', trk_pending:'ትዕዛዝ ተቀብሏል', trk_assigned:'ሹፌር ተመድቧል', trk_picked_up:'ተነስቷል', trk_in_transit:'በመንገድ ላይ', trk_track:'ተከታተል', trk_more:'ተጨማሪ', menu_all:'ሁሉም', menu_popular:'🔥 ተወዳጅ', menu_deals:'🏷️ ቅናሽ', menu_quick:'⚡ ፈጣን', pop_badge:'🔥 ተወዳጅ', promo_have:'የቅናሽ ኮድ አለዎት?', promo_ph:'ኮድ ያስገቡ', promo_apply:'ተግብር', promo_remove:'አስወግድ', promo_discount:'ቅናሽ', promo_saved:'ይቆጥባሉ', push_on:'🔔 የትዕዛዝ ማሳወቂያ አብራ', push_enabled:'የትዕዛዝ ማሳወቂያ በርቷል', push_blocked:'ማሳወቂያዎች በአሳሽ ቅንብር ታግደዋል', reorder_btn:'እንደገና አዝዝ', reorder_home:'እንደገና ይራብዎታል?', reorder_none:'እነዚህ ዕቃዎች አሁን አይገኙም', reorder_added:'በዛሬ ዋጋ ወደ ጋሪዎ ተጨምረዋል', reorder_skipped:'አይገኝም፣ ተዘሏል', reorder_fail:'ትዕዛዙን መጫን አልተቻለም', cart_view:'ጋሪ ይመልከቱ →', cart_items_one:'ዕቃ', cart_items_many:'ዕቃዎች', filter_none:'ለእነዚህ ማጣሪያዎች ውጤት የለም', filter_clear:'ማጣሪያ አጽዳ',
         greet_morning:'እንደምን አደሩ', greet_afternoon:'እንደምን ዋሉ', greet_evening:'እንደምን አመሹ', greet_sub:'ዛሬ ምን ይፈልጋሉ?',
         svc_food:'ምግብ', svc_groceries:'ግሮሰሪ', svc_pharmacy:'ፋርማሲ', svc_ride:'ጉዞ', shop_min:'ደቂቃ', shop_from:'ከ', shop_items:'ዕቃዎች', shop_no_rating:'አዲስ',
         search_placeholder:'ምግብ ቤቶችን፣ ምግብን ይፈልጉ…',
@@ -335,6 +335,42 @@ async function reorderOrder(orderId) {
     toggleCart();
 }
 
+// ── ORDER ALERTS (Web Push) — the server pushes a notification when a shop starts
+// preparing, a courier is assigned, the order is on its way, delivered or cancelled
+// (api/lib/order_notify.php). This only needs the browser subscription saved against
+// the signed-in account; it is a no-op where push isn't supported or not allowed.
+function _etelB64ToU8(b64) {
+    const pad = '='.repeat((4 - b64.length % 4) % 4);
+    const raw = atob((b64 + pad).replace(/-/g, '+').replace(/_/g, '/'));
+    const out = new Uint8Array(raw.length);
+    for (let i = 0; i < raw.length; i++) out[i] = raw.charCodeAt(i);
+    return out;
+}
+async function subscribeCustomerPush() {
+    try {
+        if (!Auth.getToken() || !('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) return false;
+        if (Notification.permission !== 'granted') return false;
+        const reg = await navigator.serviceWorker.ready;
+        let sub = await reg.pushManager.getSubscription();
+        if (!sub) {
+            const k = await fetch(ETEL.api + '?action=get_vapid_public_key').then(function(r){ return r.json(); });
+            if (!k || !k.success || !k.data || !k.data.publicKey) return false;
+            sub = await reg.pushManager.subscribe({userVisibleOnly: true, applicationServerKey: _etelB64ToU8(k.data.publicKey)});
+        }
+        const res = await api('save_push_subscription', {subscription: sub.toJSON()});
+        return !!(res && res.success);
+    } catch (e) { console.warn('[push] customer subscribe failed', e); return false; }
+}
+// Called from a tap (needed for the permission prompt): asks if not yet asked, then subscribes.
+async function enableOrderPush() {
+    if (!('Notification' in window)) return false;
+    if (Notification.permission === 'denied') { showToast(ETEL_I18N.t('push_blocked'), 'err'); return false; }
+    if (Notification.permission === 'default') { try { await Notification.requestPermission(); } catch (e) {} }
+    const ok = await subscribeCustomerPush();
+    if (ok) { showToast(ETEL_I18N.t('push_enabled')); loadHomeTracker(); }
+    return ok;
+}
+
 const _TRK_STEPS = ['pending','assigned','picked_up','in_transit'];
 async function loadHomeTracker() {
     const box = document.getElementById('home-order-tracker');
@@ -364,7 +400,8 @@ async function loadHomeTracker() {
             '<div class="trk-text"><div class="trk-title">' + escapeHtml(ETEL_I18N.t('trk_title')) + ' · ' + escapeHtml(o.order_code || '') + escapeHtml(more) + '</div>' +
             '<div class="trk-status">' + escapeHtml(ETEL_I18N.t('trk_' + o.status)) + '</div></div>' +
             '<button type="button" class="trk-btn" onclick="openTrackOrder(' + parseInt(o.id, 10) + ')">' + escapeHtml(ETEL_I18N.t('trk_track')) + '</button></div>' +
-            '<div class="trk-bar"><span style="width:' + pct + '%"></span></div>';
+            '<div class="trk-bar"><span style="width:' + pct + '%"></span></div>' +
+            (('Notification' in window && Notification.permission === 'default') ? '<button type="button" class="trk-push" onclick="enableOrderPush()">' + escapeHtml(ETEL_I18N.t('push_on')) + '</button>' : '');
         box.style.display = 'block';
     } catch (e) { /* tracker is decoration - never break the home page */ }
 }
@@ -2503,6 +2540,7 @@ async function saveSettingToggle(key, value) {
     const payload = {}; payload[key] = value;
     const res = await api('customer_update_settings', payload);
     if (!res || !res.success) showToast('Could not save preference', 'err');
+    if (key === 'notif_order_updates' && value) enableOrderPush();
 }
 async function submitCustomerPasswordChange() {
     const cur = (document.getElementById('set-cur-pw') || {}).value || '';
@@ -2735,7 +2773,7 @@ function maybeShowPermissionsOnboarding() {
             }, function () { /* denied or unavailable - fine, they can still use the pin button later */ }, { timeout: 8000, enableHighAccuracy: true });
         }
         if ('Notification' in window && Notification.permission === 'default') {
-            Notification.requestPermission().catch(function () {});
+            Notification.requestPermission().then(subscribeCustomerPush).catch(function () {});
         }
         dismiss();
     });
@@ -2747,3 +2785,11 @@ loadHomeTracker();
 loadItems();
 loadFeatureFlags();
 maybeShowPermissionsOnboarding();
+subscribeCustomerPush();
+// Notification tap -> customer.html?order=ID opens that order's live tracking.
+(function () {
+    try {
+        const id = parseInt(new URLSearchParams(location.search).get('order'), 10);
+        if (id > 0 && Auth.getToken()) setTimeout(function () { openTrackOrder(id); }, 600);
+    } catch (e) {}
+})();

@@ -306,6 +306,7 @@ case 'courier_accept_order': {
         $upd_asgn->execute(array($order_id));
         
         $pdo->commit();
+        if (function_exists('etel_notify_order_status')) etel_notify_order_status($pdo, $order_id);
         
         ok(array('message' => 'Order accepted successfully', 'order_id' => $order_id));
     } catch (Exception $e) {
@@ -360,6 +361,7 @@ case 'courier_update_order_status': {
         }
         
         $pdo->commit();
+        if (function_exists('etel_notify_order_status')) etel_notify_order_status($pdo, $order_id);
         
         ok(array('message' => 'Order status updated', 'status' => $status));
     } catch (Exception $e) {
@@ -990,6 +992,7 @@ case 'sg_confirm_pickup': {
         $pdo->prepare("UPDATE order_assignments SET status='picked_up' WHERE order_id=?")
             ->execute(array($order_id));
         $pdo->commit();
+        if (function_exists('etel_notify_order_status')) etel_notify_order_status($pdo, $order_id);
         ok(array('message' => 'Pickup confirmed  order is now in transit'));
     } catch (Exception $e) {
         $pdo->rollBack();
@@ -1147,6 +1150,7 @@ case 'customer_confirm_delivery': {
         $pdo->prepare("UPDATE order_assignments SET status='delivered' WHERE order_id=?")
             ->execute(array($order_id));
         $pdo->commit();
+        if (function_exists('etel_notify_order_status')) etel_notify_order_status($pdo, $order_id);
         etel_maybe_pay_referral_reward($pdo, $auth_user['id']);
         ok(array('message' => 'Delivery confirmed! Thank you.'));
     } catch (Exception $e) {

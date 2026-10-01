@@ -59,6 +59,7 @@ $_etel_env = etel_parse_env_file(__DIR__ . '/.env');
    no side effects, so it's loaded unconditionally here rather than
    per-action like some other lib files. */
 require_once __DIR__ . '/lib/hexgrid.php';
+require_once __DIR__ . '/lib/order_notify.php';
 
 /* Helper: .env array > getenv > CFG_ constant > default.
    Checks our parsed array first  never relies on putenv/getenv. */

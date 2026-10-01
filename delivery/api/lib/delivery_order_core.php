@@ -363,6 +363,7 @@ function delivery_execute_order_creation($pdo, $auth_user, $body) {
                 // Auto-assign this courier
                 $pdo->prepare("UPDATE orders SET courier_id=?, status='assigned' WHERE id=?")
                     ->execute(array($best_id['user_id'], $order_id));
+        if (function_exists('etel_notify_order_status')) etel_notify_order_status($pdo, $order_id);
                 $pdo->prepare("UPDATE couriers SET status='busy' WHERE user_id=?")
                     ->execute(array($best_id['user_id']));
                 // Notify courier via notifications table
