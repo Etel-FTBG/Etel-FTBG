@@ -23,7 +23,7 @@
     <script src="js/customer-bundle-extra.js?v=1.0" defer></script>
     <script>window.initCustomerMap = function(){}; loadGoogleMaps('geometry,places', 'initCustomerMap');</script>
     <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/customer-v5.css?v=6.7">
+    <link rel="stylesheet" href="css/customer-v5.css?v=6.8">
 <script src="js/etel-display-settings.js?v=1.4" data-fab="off" defer></script>
 </head>
 <body>
@@ -178,7 +178,7 @@
                 <div class="promo-body">
                     <div class="promo-headline" data-i18n="promo_50off">50% OFF</div>
                     <div class="promo-sub" data-i18n="promo_first_order">First Order Premium</div>
-                    <div class="promo-code-tag">PREMIUM50</div>
+                    <div class="promo-code-tag" onclick="promoCardTap('PREMIUM50')" style="cursor:pointer">PREMIUM50</div>
                 </div>
                 <div class="promo-shine"></div>
             </div>
@@ -188,7 +188,7 @@
                 <div class="promo-body">
                     <div class="promo-headline" data-i18n="promo_free_delivery">FREE DELIVERY</div>
                     <div class="promo-sub" data-i18n="promo_orders_above">Orders above ETB 500</div>
-                    <div class="promo-code-tag">FREEDEL</div>
+                    <div class="promo-code-tag" onclick="promoCardTap('FREEDEL')" style="cursor:pointer">FREEDEL</div>
                 </div>
                 <div class="promo-shine"></div>
             </div>
@@ -532,7 +532,7 @@
         </div>
     </div>
 
-    <script src="js/customer.js?v=4.37"></script>
+    <script src="js/customer.js?v=4.38"></script>
 <script src="js/investor-nav-check.js"></script>
 </body>
 </html>
