@@ -649,6 +649,7 @@ case 'rate_order': {
                                VALUES (?, ?, ?, ?, ?, ?, ?, NOW())");
         $ins->execute(array($order_id, $u['id'], $stars, $comment, $food_rating, $courier_rating, $tags !== '' ? $tags : null));
         etel_review_update_shop_aggregate($pdo, $order_id);
+        if ($courier_rating) etel_review_update_courier_aggregate($pdo, $order_id);
         ok(array('message' => 'Thank you for your rating!', 'stars' => $stars));
     } catch (Exception $e) {
         fail_ex($e, 'Rating failed', 500);
@@ -731,7 +732,7 @@ case 'track_order': {
                 oa.status as assignment_status, oa.accepted_at, oa.pickup_qr_scanned,
                 sg.business_name as service_giver_name, sg.zone as sg_zone,
                 u_sg.phone as sg_phone,
-                c.vehicle_type as courier_vehicle, c.last_lat as courier_lat, c.last_lng as courier_lng, c.last_seen as courier_last_seen,
+                c.vehicle_type as courier_vehicle, c.rating AS courier_avg_rating, c.last_lat as courier_lat, c.last_lng as courier_lng, c.last_seen as courier_last_seen,
                 u_c.name as courier_name, u_c.phone as courier_phone
             FROM orders o
             LEFT JOIN order_assignments oa ON o.id = oa.order_id
