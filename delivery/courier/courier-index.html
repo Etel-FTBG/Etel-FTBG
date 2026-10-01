@@ -363,6 +363,10 @@
                  dashboard from here. Hidden by default; the inline script
                  near the top of this file shows it only when the signed-in
                  session's role is actually 'admin'. -->
+            <div data-etel-apk data-etel-apk-display="block" style="padding:0 20px 10px;display:none">
+                <a href="#" style="display:block;width:100%;padding:13px;background:rgba(212,175,55,.12);border:1px solid rgba(212,175,55,.3);color:#E5C76B;border-radius:12px;font-size:13.5px;font-weight:700;cursor:pointer;text-align:center;text-decoration:none;box-sizing:border-box">📲 Download the ETEL app</a>
+            </div>
+
             <div id="cp-admin-row" style="padding:0 20px 10px;display:none">
                 <a href="../admin.html" style="display:block;width:100%;padding:13px;background:rgba(212,175,55,.12);border:1px solid rgba(212,175,55,.3);color:#E5C76B;border-radius:12px;font-size:13.5px;font-weight:700;cursor:pointer;text-align:center;text-decoration:none;box-sizing:border-box">🛡️ Admin Dashboard</a>
             </div>
@@ -403,7 +407,7 @@
         loadGoogleMaps('geometry,places,marker', 'initMap');
       }, { once: true });
     </script>
-<script src="../js/apk-download-badge.js" data-role="courier"></script>
+<script src="../js/apk-download-badge.js?v=2" data-role="courier"></script>
 <script src="../js/investor-nav-check.js"></script>
 </body>
 </html>

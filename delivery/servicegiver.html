@@ -988,6 +988,10 @@ body.role-cashier .owner-only-btn { display: none !important; }
                  dashboard from here. Hidden by default; the inline script at
                  the bottom of this file shows it only when the signed-in
                  session's role is actually 'admin'. -->
+            <div data-etel-apk data-etel-apk-display="block" style="padding:0 20px 10px;display:none">
+                <a href="#" style="display:block;width:100%;padding:13px;background:rgba(212,175,55,.12);border:1px solid var(--border-lt);color:var(--gold-lt);border-radius:12px;font-size:13.5px;font-weight:700;cursor:pointer;text-align:center;text-decoration:none;box-sizing:border-box">📲 Download the ETEL app</a>
+            </div>
+
             <div id="sgp-admin-row" style="padding:0 20px 10px;display:none">
                 <a href="admin.html" style="display:block;width:100%;padding:13px;background:rgba(212,175,55,.12);border:1px solid var(--border-lt);color:var(--gold-lt);border-radius:12px;font-size:13.5px;font-weight:700;cursor:pointer;text-align:center;text-decoration:none;box-sizing:border-box">🛡️ Admin Dashboard</a>
             </div>
@@ -1084,7 +1088,7 @@ body.role-cashier .owner-only-btn { display: none !important; }
         }
     }
     </script>
-<script src="js/apk-download-badge.js" data-role="service"></script>
+<script src="js/apk-download-badge.js?v=2" data-role="service"></script>
 <script src="js/investor-nav-check.js"></script>
 </body>
 </html>
