@@ -97,6 +97,7 @@
                 // to click into that tab first - doesn't block or slow
                 // down the main dashboard stats load below.
                 if (typeof updatePaymentsBadge === 'function') updatePaymentsBadge().catch(() => {});
+                loadPlatformPulse().catch(() => {});
                 const res = await adm('admin_dashboard_stats', {}, true);
                 if (res && res.success && res.data) {
                     const d = res.data;
@@ -501,6 +502,83 @@
                     alert((res && res.message) || 'Could not remove the shop');
                 }
             } catch (e) { alert('Could not remove the shop'); }
+        }
+
+        // ─── PLATFORM PULSE (Dashboard) ──────────────────────────────
+        // One read-only snapshot from admin_platform_pulse (api/lib/platform_pulse.php).
+        let _ppDays = 7;
+        async function loadPlatformPulse(days) {
+            const body = document.getElementById('pp-body');
+            if (!body) return;
+            _ppDays = days || _ppDays;
+            document.querySelectorAll('#pp-range button').forEach(b => b.classList.toggle('active', parseInt(b.dataset.days, 10) === _ppDays));
+            const res = await adm('admin_platform_pulse', { days: _ppDays }, true);
+            if (!res || !res.success) { body.innerHTML = '<div style="padding:16px;color:#c0392b">' + escapeHtml((res && res.message) || 'Could not load the platform snapshot') + '</div>'; return; }
+            const d = res.data, c = d.current, p = d.previous, dl = d.deltas, at = d.attention, lv = d.live, pr = d.programs;
+            const label = _ppDays === 1 ? 'yesterday' : 'the previous ' + _ppDays + ' days';
+            const delta = v => v === null ? '<em class="pp-up">▲ new vs ' + label + '</em>' : v === 0 ? '<em class="pp-flat">same as ' + label + '</em>'
+                : '<em class="' + (v > 0 ? 'pp-up">▲ ' : 'pp-down">▼ ') + Math.abs(v) + '% vs ' + label + '</em>';
+            const etb = v => 'ETB ' + Number(v || 0).toLocaleString(undefined, { maximumFractionDigits: 0 });
+            const done = c.orders ? Math.round(c.delivered / c.orders * 100) : 0, canc = c.orders ? Math.round(c.cancelled / c.orders * 100) : 0;
+            const aov = c.delivered ? c.sales / c.delivered : 0;
+            let h = '<div class="pp-kpis">' +
+                '<div class="pp-kpi"><span>Orders</span><b>' + c.orders + '</b>' + delta(dl.orders) + '</div>' +
+                '<div class="pp-kpi"><span>Sales (delivered)</span><b>' + etb(c.sales) + '</b>' + delta(dl.sales) + '</div>' +
+                '<div class="pp-kpi"><span>Delivered / cancelled</span><b>' + done + '% <small style="font-size:13px;opacity:.7">/ ' + canc + '%</small></b><em class="pp-flat">' + c.delivered + ' delivered · ' + c.cancelled + ' cancelled</em></div>' +
+                '<div class="pp-kpi"><span>Avg order</span><b>' + etb(aov) + '</b><em class="pp-flat">Fees kept: ' + etb(c.service_fees) + '</em></div>' +
+                '<div class="pp-kpi"><span>New customers</span><b>' + c.new_customers + '</b>' + delta(dl.new_customers) + '</div>' +
+                '<div class="pp-kpi"><span>Customers ordering</span><b>' + c.active_customers + '</b>' + delta(dl.active_customers) + '</div>' +
+                '<div class="pp-kpi"><span>Avg delivery time</span><b>' + (c.avg_minutes == null ? '—' : c.avg_minutes + ' min') + '</b><em class="pp-flat">order placed → delivered</em></div>' +
+                '<div class="pp-kpi"><span>Discounts given</span><b>' + etb(c.discounts) + '</b><em class="pp-flat">promo codes + points</em></div></div>';
+
+            const link = (page, n, text) => '<div class="pp-row pp-link ' + (n > 0 ? 'alert' : 'ok') + '" onclick="switchPage(\'' + page + '\', document.querySelector(\'[data-page=' + page + ']\'))"><span>' + text + '</span><span class="n">' + n + '</span></div>';
+            const inflight = lv.in_flight || {};
+            const names = { pending: 'Waiting for the shop', assigned: 'Courier assigned', picked_up: 'Picked up', in_transit: 'On the way' };
+            h += '<div class="pp-grid">' +
+                '<div class="pp-box"><h4>🚨 Needs attention</h4>' +
+                    link('servicegiver' + 's', at.pending_shops, 'Shops waiting for approval') +
+                    link('telebirr', at.pending_payments, 'Payments to confirm') +
+                    link('orders', at.stuck_orders, 'Orders not picked up for 20+ min') +
+                    link('orders', at.open_issues, 'Open order problems reported') + '</div>' +
+                '<div class="pp-box"><h4>🟢 Live right now</h4>' +
+                    '<div class="pp-row"><span>Couriers online</span><span class="n">' + lv.couriers_online + ' / ' + lv.couriers_total + '</span></div>' +
+                    '<div class="pp-row"><span>Shops online</span><span class="n">' + lv.shops_online + ' / ' + lv.shops_total + '</span></div>' +
+                    Object.keys(names).map(k => '<div class="pp-row"><span>' + names[k] + '</span><span class="n">' + (inflight[k] || 0) + '</span></div>').join('') + '</div>' +
+                '<div class="pp-box"><h4>🏪 Top shops</h4>' + ((d.top_shops || []).length ? d.top_shops.map((s, i) =>
+                    '<div class="pp-row"><span>' + (i + 1) + '. ' + escapeHtml(s.name || 'Shop') + ' <small style="opacity:.6">' + s.orders + ' orders' + (s.rating ? ' · ⭐ ' + s.rating : '') + '</small></span><span class="n">' + etb(s.sales) + '</span></div>').join('')
+                    : '<div style="opacity:.6;font-size:13px">No orders in this period yet.</div>') + '</div>' +
+                '<div class="pp-box"><h4>🎁 Growth programs</h4>' +
+                    '<div class="pp-row"><span>Promo code uses</span><span class="n">' + pr.promo_uses + ' · ' + etb(pr.promo_given) + '</span></div>' +
+                    '<div class="pp-row"><span>Points earned / spent</span><span class="n">' + Number(pr.points_issued).toLocaleString() + ' / ' + Number(pr.points_spent).toLocaleString() + '</span></div>' +
+                    '<div class="pp-row"><span>Reviews</span><span class="n">' + pr.reviews + (pr.avg_rating ? ' · ⭐ ' + pr.avg_rating : '') + '</span></div>' +
+                    '<div class="pp-row"><span>Order chat messages</span><span class="n">' + pr.chat_messages + ' in ' + pr.chat_orders + ' orders</span></div></div></div>';
+            body.innerHTML = h;
+        }
+
+        // ─── ORDER CHATS (admin) ─────────────────────────────────────
+        // Lists orders that have chat messages. Opening one uses the shared chat sheet (js/order-chat.js);
+        // admins join as "ETEL Support".
+        let _ocFilter = 'all', _ocTimer = null;
+        function ocSearchDebounced() { clearTimeout(_ocTimer); _ocTimer = setTimeout(() => loadOrderChats(), 350); }
+        async function loadOrderChats(filter) {
+            const box = document.getElementById('oc-list');
+            if (!box) return;
+            if (filter) _ocFilter = filter;
+            ['all', 'waiting'].forEach(f => { const b = document.getElementById('oc-f-' + f); if (b) b.classList.toggle('active', f === _ocFilter); });
+            box.innerHTML = UI.loading('Loading...');
+            const q = (document.getElementById('oc-search') || {}).value || '';
+            const res = await adm('admin_chat_threads', { q: q.trim(), filter: _ocFilter }, true);
+            if (!res || !res.success) { box.innerHTML = '<div style="color:#c0392b">' + escapeHtml((res && res.message) || 'Could not load the chats') + '</div>'; return; }
+            const threads = res.data.threads || [];
+            const badge = document.getElementById('oc-badge');
+            if (badge && _ocFilter === 'waiting') { badge.textContent = threads.length; badge.style.display = threads.length ? 'inline-block' : 'none'; }
+            if (!threads.length) { box.innerHTML = '<div style="opacity:.65;padding:14px 0">' + (_ocFilter === 'waiting' ? '✅ No customer is waiting for an answer.' : 'No order chats yet.') + '</div>'; return; }
+            box.innerHTML = threads.map(t =>
+                '<div class="oc-row" onclick="EtelOrderChat.open(' + t.order_id + ')"><div class="t"><b>' + escapeHtml(t.order_code) + ' · ' + escapeHtml(String(t.status).replace('_', ' ')) + '</b>' +
+                '<span>' + (t.last ? escapeHtml(({customer: 'Customer', shop: 'Shop', courier: 'Courier', support: 'Support'}[t.last.sender_role] || t.last.sender_role)) + ': ' + escapeHtml(t.last.body) : '') + '</span></div>' +
+                (t.waiting ? '<span class="oc-tag warn">Customer waiting</span>' : '') +
+                (t.open ? '' : '<span class="oc-tag">closed</span>') +
+                '<span class="oc-tag">' + t.messages + ' msgs</span></div>').join('');
         }
 
         // ─── PROMO CODES ─────────────────────────────────────────────
