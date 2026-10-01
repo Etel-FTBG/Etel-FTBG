@@ -1423,6 +1423,19 @@ body.light-mode [style*="color:#D4AF37"],body.light-mode [style*="color:#FFD700"
         </div>
       </div>
 
+      <!-- Download the app: shown only in a normal browser tab (never inside the installed app)
+           by js/apk-download-badge.js - replaces the old pop-up banner. -->
+      <div class="profile-section" id="pf-apk-section" data-etel-apk data-etel-apk-display="block" style="display:none">
+        <a class="profile-row" href="#" style="text-decoration:none;color:inherit">
+          <div class="profile-row-icon">📲</div>
+          <div>
+            <div class="profile-row-label">Download the ETEL app</div>
+            <div class="profile-row-sub">Faster, and opens even with a weak connection</div>
+          </div>
+          <div class="profile-row-arrow">›</div>
+        </a>
+      </div>
+
       <!-- Admin shortcut: js/driver.js's own role gate already lets an admin
            account browse this app like any driver (admin bypasses every
            role gate by design), but a real driver has no route back to the
@@ -1733,7 +1746,7 @@ body.light-mode [style*="color:#D4AF37"],body.light-mode [style*="color:#FFD700"
 </script>
   <!-- Light/dark mode toggle — for outdoor use -->
   <button class="theme-toggle-btn" id="theme-toggle-btn" onclick="toggleDriverTheme()" title="Toggle light/dark mode">🌙</button>
-<script src="../js/apk-download-badge.js" data-role="driver"></script>
+<script src="../js/apk-download-badge.js?v=2" data-role="driver"></script>
 <script src="../js/investor-nav-check.js"></script>
 </body>
 </html>
