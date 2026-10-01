@@ -90,6 +90,10 @@ step by step if you don't want to walk it through with real devices.
 ### 5.9 APK button
 - [ ] In a normal browser (not the installed app) open the Profile of Customer / Driver / Ride / Courier / Service: **📲 Download the ETEL app** is there and downloads the APK. No pop-up banner anywhere.
 
+### 5.10 Admin: platform pulse and order chats
+- [ ] Admin → Dashboard → **📊 Platform pulse**: Today / 7 / 30 days. Orders and sales match what you know; the "Needs attention" counts link to the right pages.
+- [ ] Admin → **💬 Order chats**: orders with messages are listed; "⏳ Customer waiting" shows chats where the customer wrote last more than 10 minutes ago. Open one and reply — it shows as **ETEL Support** to the customer, shop and courier.
+
 ## 6. Tell shop owners
 - [ ] Use the **Online** switch when open; closed shops show as Closed to customers.
 - [ ] Reply to reviews in the new Reviews page; keep chat messages short and polite.
