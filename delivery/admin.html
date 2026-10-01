@@ -97,12 +97,12 @@
 .pp-kpi b { display:block; font-size:22px; margin:5px 0 2px; color:#D4AF37; }
 .pp-kpi em { font-style:normal; font-size:11.5px; font-weight:700; opacity:.9; }
 .pp-up { color:#2ECC71; } .pp-down { color:#E63946; } .pp-flat { opacity:.55; }
-.pp-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:14px; }
+.pp-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(280px,100%),1fr)); gap:14px; }
 .pp-box { background:rgba(255,255,255,.04); border:1px solid rgba(212,175,55,.18); border-radius:14px; padding:14px 16px; }
 .pp-box h4 { margin:0 0 10px; font-size:13px; }
-.pp-row { display:flex; justify-content:space-between; align-items:center; gap:10px; padding:7px 0; border-bottom:1px solid rgba(212,175,55,.12); font-size:13px; }
+.pp-row { display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:4px 10px; padding:7px 0; border-bottom:1px solid rgba(212,175,55,.12); font-size:13px; }
 .pp-row:last-child { border-bottom:none; }
-.pp-row .n { font-weight:800; } .pp-row.alert .n { color:#E63946; } .pp-row.ok .n { color:#2ECC71; }
+.pp-row .n { font-weight:800; text-align:right; } .pp-row > span:first-child { min-width:0; } .pp-row.pp-bad .n { color:#E63946; } .pp-row.pp-good .n { color:#2ECC71; }
 .pp-link { cursor:pointer; } .pp-link:hover { background:rgba(212,175,55,.08); }
 .oc-tools { display:flex; gap:8px; flex-wrap:wrap; align-items:center; padding:0 16px 12px; }
 .oc-row { display:flex; align-items:center; gap:12px; padding:12px 14px; margin-bottom:8px; border:1px solid rgba(212,175,55,.2); border-radius:12px; cursor:pointer; }
@@ -1444,7 +1444,7 @@ html{color-scheme:light}
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script><!-- PPTX slide-text preview (PPTX is a zip of XML), Documents tab -->
     <script src="js/admin-documents.js?v=1.5"></script><!-- Documents library: view/edit/version PDFs, Office files, Markdown, XML, etc -->
 
-<script src="js/admin.js?v=7.0"></script>
+<script src="js/admin.js?v=7.1"></script>
 <script src="js/admin-confirmations-premium.js?v=1.1"></script><!-- Pending Confirmations + GLOBAL modal-box fix for entire admin system -->
 <script src="js/admin-couriers-premium.js?v=1.4"></script><!-- Premium Couriers Management: 3D cards + edit modal + live map -->
     <script src="js/admin-premium.js?v=4.1"></script><!-- KPI count-ups + card motion -->

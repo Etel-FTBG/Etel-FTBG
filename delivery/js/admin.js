@@ -531,7 +531,7 @@
                 '<div class="pp-kpi"><span>Avg delivery time</span><b>' + (c.avg_minutes == null ? '—' : c.avg_minutes + ' min') + '</b><em class="pp-flat">order placed → delivered</em></div>' +
                 '<div class="pp-kpi"><span>Discounts given</span><b>' + etb(c.discounts) + '</b><em class="pp-flat">promo codes + points</em></div></div>';
 
-            const link = (page, n, text) => '<div class="pp-row pp-link ' + (n > 0 ? 'alert' : 'ok') + '" onclick="switchPage(\'' + page + '\', document.querySelector(\'[data-page=' + page + ']\'))"><span>' + text + '</span><span class="n">' + n + '</span></div>';
+            const link = (page, n, text) => '<div class="pp-row pp-link ' + (n > 0 ? 'pp-bad' : 'pp-good') + '" onclick="switchPage(\'' + page + '\', document.querySelector(\'[data-page=' + page + ']\'))"><span>' + text + '</span><span class="n">' + n + '</span></div>';
             const inflight = lv.in_flight || {};
             const names = { pending: 'Waiting for the shop', assigned: 'Courier assigned', picked_up: 'Picked up', in_transit: 'On the way' };
             h += '<div class="pp-grid">' +
