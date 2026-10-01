@@ -601,7 +601,11 @@ case 'sg_update_order_status': {
                             array('order_id' => $order_id, 'type' => 'order_ready', 'url' => '/delivery/customer.html'));
                     }
                     if (!empty($orow['courier_id'])) {
-                        etel_push_send($pdo, $orow['courier_id'], 'Order Ready for Pickup',
+                        // orders.courier_id is a couriers.id - pushes go to the courier's USER id
+                        $cu = $pdo->prepare('SELECT user_id FROM couriers WHERE id = ?');
+                        $cu->execute(array($orow['courier_id']));
+                        $courierUserId = intval($cu->fetchColumn());
+                        if ($courierUserId > 0) etel_push_send($pdo, $courierUserId, 'Order Ready for Pickup',
                             'Order ' . $orow['order_code'] . ' is ready -- head to the shop now.',
                             array('order_id' => $order_id, 'type' => 'order_ready', 'url' => '/delivery/courier/'));
                     }

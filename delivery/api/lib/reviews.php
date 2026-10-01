@@ -58,3 +58,21 @@ function etel_review_update_shop_aggregate($pdo, $order_id) {
         return true;
     } catch (Exception $e) { error_log('[ETEL] review aggregate failed (non-fatal): ' . $e->getMessage()); return false; }
 }
+
+// Recompute the courier's stored rating from the courier stars customers gave on orders they delivered.
+// (orders.courier_id is a couriers.id; orders auto-assigned before the dispatch fix stored a users.id,
+// so very old ratings may be credited to the wrong courier - new orders are correct.)
+function etel_review_update_courier_aggregate($pdo, $order_id) {
+    try {
+        $s = $pdo->prepare('SELECT courier_id FROM orders WHERE id = ?');
+        $s->execute(array(intval($order_id)));
+        $cid = intval($s->fetchColumn());
+        if ($cid <= 0) return false;
+        $a = $pdo->prepare('SELECT AVG(r.courier_rating) AS avg FROM order_ratings r JOIN orders o ON o.id = r.order_id WHERE o.courier_id = ? AND r.courier_rating IS NOT NULL');
+        $a->execute(array($cid));
+        $avg = $a->fetchColumn();
+        if ($avg === false || $avg === null) return false;
+        $pdo->prepare('UPDATE couriers SET rating = ? WHERE id = ?')->execute(array(round(floatval($avg), 2), $cid));
+        return true;
+    } catch (Exception $e) { error_log('[ETEL] courier rating aggregate failed (non-fatal): ' . $e->getMessage()); return false; }
+}

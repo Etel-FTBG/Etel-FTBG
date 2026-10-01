@@ -391,8 +391,11 @@ function delivery_execute_order_creation($pdo, $auth_user, $body) {
             }
             if ($best_id) {
                 // Auto-assign this courier
+                // orders.courier_id is a couriers.id everywhere else (joins, the courier's own order
+                // lists, NFC, the "busy" filter above). This used to store the courier's users.id,
+                // so an auto-assigned order could be missing from that courier's list.
                 $pdo->prepare("UPDATE orders SET courier_id=?, status='assigned' WHERE id=?")
-                    ->execute(array($best_id['user_id'], $order_id));
+                    ->execute(array($best_id['id'], $order_id));
         if (function_exists('etel_notify_order_status')) etel_notify_order_status($pdo, $order_id);
                 $pdo->prepare("UPDATE couriers SET status='busy' WHERE user_id=?")
                     ->execute(array($best_id['user_id']));

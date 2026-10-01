@@ -618,7 +618,7 @@ async function refreshTrackOrder() {
         ? '<div style="display:flex;align-items:center;gap:12px;padding:14px;background:var(--glass-2);border:1px solid var(--glass-border);border-radius:14px;margin-top:14px">' +
           '<div style="width:44px;height:44px;border-radius:50%;background:rgba(212,175,55,.15);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">🛵</div>' +
           '<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:700;color:var(--text)">' + escapeHtml(o.courier_name) + '</div>' +
-          '<div style="font-size:11px;color:var(--text-muted)">' + escapeHtml(o.courier_vehicle || 'Courier') + '</div></div>' +
+          '<div style="font-size:11px;color:var(--text-muted)">' + escapeHtml(o.courier_vehicle || 'Courier') + (parseFloat(o.courier_avg_rating) > 0 ? ' · ⭐ ' + parseFloat(o.courier_avg_rating).toFixed(1) : '') + '</div></div>' +
           (o.courier_phone ? '<a href="tel:' + escapeHtml(o.courier_phone) + '" style="width:38px;height:38px;border-radius:50%;background:rgba(34,197,94,.15);border:1px solid rgba(34,197,94,.3);display:flex;align-items:center;justify-content:center;font-size:16px;text-decoration:none;flex-shrink:0">📞</a>' : '') +
           '</div>'
         : '';

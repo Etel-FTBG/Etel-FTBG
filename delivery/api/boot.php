@@ -1269,7 +1269,7 @@ switch ($action) {
             if (!$user) fail('User not found.', 404);
             $orders = $pdo->prepare(
                 "SELECT id, order_code, from_zone, to_zone, package_type, fare_total, status, placed_at
-                 FROM orders WHERE customer_id=? OR courier_id=? ORDER BY id DESC LIMIT 15"
+                 FROM orders WHERE customer_id=? OR courier_id IN (SELECT id FROM couriers WHERE user_id=?) ORDER BY id DESC LIMIT 15"
             );
             $orders->execute(array($uid, $uid));
             $rides = $pdo->prepare(
