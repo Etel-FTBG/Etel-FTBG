@@ -76,7 +76,8 @@ case 'customer_get_orders': {
                 o.placed_at,
                 o.notes,
                 oa.status as assignment_status,
-                oa.accepted_at
+                oa.accepted_at,
+                (SELECT r.stars FROM order_ratings r WHERE r.order_id = o.id LIMIT 1) AS my_rating
             FROM orders o
             LEFT JOIN order_assignments oa ON o.id = oa.order_id
             $where
@@ -622,8 +623,12 @@ case 'rate_order': {
     $order_id = isset($body['order_id']) ? intval($body['order_id']) : 0;
     $stars    = isset($body['stars'])    ? intval($body['stars'])   : 5;
     $comment  = isset($body['comment'])  ? trim($body['comment'])   : '';
-    $food_rating    = isset($body['food_rating'])    ? intval($body['food_rating'])    : null;
-    $courier_rating = isset($body['courier_rating']) ? intval($body['courier_rating']) : null;
+    require_once __DIR__ . '/../lib/reviews.php';
+    etel_ensure_review_columns($pdo);
+    $food_rating    = etel_review_star(isset($body['food_rating'])    ? $body['food_rating']    : null);
+    $courier_rating = etel_review_star(isset($body['courier_rating']) ? $body['courier_rating'] : null);
+    $tags           = etel_review_clean_tags(isset($body['tags']) ? $body['tags'] : array());
+    if (function_exists('mb_substr')) $comment = mb_substr($comment, 0, 500); else $comment = substr($comment, 0, 500);
 
     if (!$order_id) fail('order_id required', 400);
     if ($stars < 1 || $stars > 5) fail('stars must be 15', 400);
@@ -640,9 +645,10 @@ case 'rate_order': {
 
     try {
         $ins = $pdo->prepare("INSERT INTO order_ratings
-                               (order_id, customer_id, stars, comment, food_rating, courier_rating, rated_at)
-                               VALUES (?, ?, ?, ?, ?, ?, NOW())");
-        $ins->execute(array($order_id, $u['id'], $stars, $comment, $food_rating, $courier_rating));
+                               (order_id, customer_id, stars, comment, food_rating, courier_rating, tags, rated_at)
+                               VALUES (?, ?, ?, ?, ?, ?, ?, NOW())");
+        $ins->execute(array($order_id, $u['id'], $stars, $comment, $food_rating, $courier_rating, $tags !== '' ? $tags : null));
+        etel_review_update_shop_aggregate($pdo, $order_id);
         ok(array('message' => 'Thank you for your rating!', 'stars' => $stars));
     } catch (Exception $e) {
         fail_ex($e, 'Rating failed', 500);
@@ -679,7 +685,9 @@ case 'get_shop_reviews': {
     $limit = isset($_GET['limit']) ? min(50, intval($_GET['limit'])) : 20;
     if (!$sgId) fail('service_giver_id required', 400);
     try {
-        $s = $pdo->prepare("SELECT r.stars, r.comment, r.rated_at,
+        require_once __DIR__ . '/../lib/reviews.php';
+        etel_ensure_review_columns($pdo);
+        $s = $pdo->prepare("SELECT r.stars, r.comment, r.rated_at, r.tags, r.shop_reply, r.shop_replied_at,
                                     SUBSTRING_INDEX(u.name, ' ', 1) AS reviewer_first_name
                              FROM order_ratings r
                              JOIN orders o ON r.order_id = o.id

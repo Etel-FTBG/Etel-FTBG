@@ -228,6 +228,17 @@ button { font-family:inherit; }
 .sr-top i { font-style:normal; width:22px; height:22px; border-radius:50%; background:rgba(212,175,55,.2); color:var(--gold); display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:800; flex-shrink:0; }
 .sr-top .nm { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .sr-top .q { color:var(--text-dim); font-size:12px; white-space:nowrap; }
+/* Reviews */
+.rv-card { background:var(--surface-lt); border:1px solid var(--border); border-radius:14px; padding:14px; margin-bottom:12px; }
+.rv-top { display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; font-size:13px; color:var(--text); }
+.rv-stars { color:#F0CA58; letter-spacing:1px; }
+.rv-tag { display:inline-block; padding:3px 9px; margin:0 5px 5px 0; border-radius:999px; font-size:10.5px; font-weight:700; background:rgba(212,175,55,.14); color:var(--text); }
+.rv-reply { margin-top:8px; padding:9px 11px; border-left:3px solid var(--gold); background:rgba(212,175,55,.08); border-radius:0 8px 8px 0; font-size:12.5px; color:var(--text); }
+.rv-form textarea { width:100%; box-sizing:border-box; padding:9px; border-radius:8px; border:1px solid var(--border-lt); background:var(--surface-lt); color:var(--text); font:inherit; font-size:13px; min-height:54px; resize:vertical; margin-top:8px; }
+.rv-form button { margin-top:6px; padding:8px 16px; border-radius:var(--r-full); border:none; background:linear-gradient(135deg,#F0CA58,#D4AF37); color:#1a1400; font-weight:800; font-size:12.5px; cursor:pointer; }
+body.etel-light .rv-card { background:#FFFFFF; border-color:rgba(20,17,8,.1); }
+body.etel-light .rv-stars, body.etel-light .rv-top .rv-stars, body.etel-light .sr-kpi em.rv-stars { color:#B8860B !important; }
+body.etel-light .rv-form textarea { background:#FFFFFF; color:#141108; }
 body.etel-light .sr-pill { background:#F4F1E8; color:#4A4536; }
 body.etel-light .sr-kpi b, body.etel-light .sr-top i { color:#8A6500; }
 body.etel-light .sr-kpi { background:#FFFFFF; border-color:rgba(20,17,8,.1); }
@@ -406,6 +417,10 @@ body.role-cashier .owner-only-btn { display: none !important; }
                     <div class="menu-icon">📈</div>
                     <div class="menu-label">Analytics</div>
                 </div>
+                <div class="menu-item" data-page="reviews" data-sg-cap="orders.view" onclick="switchPage('reviews')" style="display:none">
+                    <div class="menu-icon">⭐</div>
+                    <div class="menu-label">Reviews <span id="sg-reviews-badge" style="display:none;background:#e74c3c;color:#fff;font-size:10px;font-weight:800;border-radius:10px;padding:1px 7px;margin-left:6px">0</span></div>
+                </div>
                 <div class="menu-item" data-page="payments" data-sg-cap="payments.view" onclick="switchPage('payments')" style="display:none">
                     <div class="menu-icon">💰</div>
                     <div class="menu-label">Payments</div>
@@ -561,6 +576,13 @@ body.role-cashier .owner-only-btn { display: none !important; }
                         <button type="button" class="sr-pill" data-days="30" onclick="loadSalesReport(30)">Last 30 days</button>
                     </div>
                     <div id="sales-report-body"><div style="padding:20px;color:var(--text-dim)">Loading…</div></div>
+                </div>
+
+                <!-- REVIEWS -->
+                <div id="page-reviews" style="display: none;">
+                    <div class="page-title">Customer Reviews</div>
+                    <div class="page-subtitle">What customers say about your shop — reply to build trust</div>
+                    <div id="sg-reviews-body"><div style="padding:20px;color:var(--text-dim)">Loading…</div></div>
                 </div>
 
                 <!-- PAYMENTS -->
@@ -1021,7 +1043,7 @@ body.role-cashier .owner-only-btn { display: none !important; }
         </div>
     </div>
 
-    <script src="js/servicegiver.js?v=3.6"></script>
+    <script src="js/servicegiver.js?v=3.7"></script>
     <script src="js/servicegiver-premium.js?v=1.9"></script>
     <script src="js/servicegiver-3d-premium.js?v=1.1"></script><!-- 3D visual upgrade: glass depth, glowing sweep borders, rating ring -->
     <script>

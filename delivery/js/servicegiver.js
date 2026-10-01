@@ -689,6 +689,7 @@
             if (pageName === 'orders') loadOrders();
             if (pageName === 'payments') loadSGFinancialReport();
             if (pageName === 'analytics') loadSalesReport();
+            if (pageName === 'reviews') loadSgReviews();
             if (pageName === 'staff' && currentStaffRole === 'owner') { loadRoles(); loadStaff(); }
             closeSidebar();
         }
@@ -708,6 +709,7 @@
                     case 'services': await loadServices(); break;
                     case 'payments': await loadSGFinancialReport(); break;
                     case 'analytics': await loadSalesReport(); break;
+                    case 'reviews': await loadSgReviews(); break;
                     case 'staff':
                         if (currentStaffRole === 'owner') { await loadRoles(); await loadStaff(); }
                         break;
@@ -1035,6 +1037,47 @@
         }
 
         // ── FINANCIAL REPORT (payments.view capability) ──────────────────
+        // ─── CUSTOMER REVIEWS (read + reply) ───────────────────────────
+        const SG_TAG_LABEL = { fast_delivery:'⚡ Fast delivery', great_taste:'😋 Great taste', well_packed:'📦 Well packed', friendly_courier:'🙂 Friendly courier',
+            good_value:'💰 Good value', late:'🐢 Late', cold:'🥶 Arrived cold', wrong_item:'❌ Wrong item' };
+        async function loadSgReviews() {
+            const body = document.getElementById('sg-reviews-body');
+            if (!body) return;
+            const d = await apiCall('sg_reviews', {});
+            if (!d) { body.innerHTML = '<p style="color:#e74c3c">Could not load reviews.</p>'; return; }
+            const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+            const badge = document.getElementById('sg-reviews-badge');
+            if (badge) { badge.textContent = d.unreplied || 0; badge.style.display = d.unreplied ? 'inline-block' : 'none'; }
+            const stars = n => '★'.repeat(n) + '☆'.repeat(5 - n);
+            let html = '<div class="sr-kpis">' +
+                '<div class="sr-kpi"><span>Average</span><b>' + (d.total ? d.average.toFixed(1) : '—') + '</b><em class="sr-flat rv-stars">' + (d.total ? stars(Math.round(d.average)) : '') + '</em></div>' +
+                '<div class="sr-kpi"><span>Reviews</span><b>' + d.total + '</b><em class="sr-flat">all time</em></div>' +
+                '<div class="sr-kpi"><span>Need a reply</span><b>' + d.unreplied + '</b><em class="sr-flat">' + (d.unreplied ? 'reply to build trust' : 'all answered') + '</em></div></div>';
+            if (!(d.reviews || []).length) {
+                html += '<div style="padding:24px;color:var(--text-dim);text-align:center">No reviews yet. They appear here after customers rate delivered orders.</div>';
+            }
+            (d.reviews || []).forEach(r => {
+                const when = r.rated_at ? new Date(r.rated_at.replace(' ', 'T')).toLocaleDateString() : '';
+                html += '<div class="rv-card" id="rv-' + r.id + '">' +
+                    '<div class="rv-top"><span class="rv-stars">' + stars(r.stars) + '</span><span style="color:var(--text-faint);font-size:11px">' + esc(r.order_code) + ' · ' + esc(when) + '</span></div>' +
+                    (r.tags ? '<div>' + String(r.tags).split(',').map(k => '<span class="rv-tag">' + esc(SG_TAG_LABEL[k] || k) + '</span>').join('') + '</div>' : '') +
+                    (r.comment ? '<div style="font-size:13px;color:var(--text);margin-bottom:4px">' + esc(r.comment) + '</div>' : '') +
+                    '<div style="font-size:11px;color:var(--text-faint)">— ' + esc(r.reviewer_first_name || 'Customer') + '</div>' +
+                    (r.shop_reply ? '<div class="rv-reply"><b style="font-size:10.5px;opacity:.7">Your reply</b><br>' + esc(r.shop_reply) + '</div>' : '') +
+                    (d.can_reply ? '<div class="rv-form"><textarea id="rv-text-' + r.id + '" maxlength="300" placeholder="' + (r.shop_reply ? 'Edit your reply…' : 'Write a short, polite reply…') + '">' + esc(r.shop_reply || '') + '</textarea>' +
+                        '<button type="button" onclick="replyToReview(' + r.id + ')">' + (r.shop_reply ? 'Update reply' : 'Reply') + '</button></div>' : '') +
+                    '</div>';
+            });
+            body.innerHTML = html;
+        }
+        async function replyToReview(id) {
+            const ta = document.getElementById('rv-text-' + id);
+            const text = ta ? ta.value.trim() : '';
+            if (!text) { showNotification('Write a reply first', 'error'); return; }
+            const res = await apiCall('sg_reply_review', { rating_id: id, reply: text });
+            if (res) { showNotification('Reply sent', 'success'); loadSgReviews(); }
+        }
+
         // ─── SALES REPORT ───────────────────────────────────────────
         // Live from sg_sales_report. Revenue = item sales of DELIVERED orders only
         // (delivery fee and service charge are not the shop's money); orders / hours /

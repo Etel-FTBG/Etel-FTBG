@@ -54,7 +54,7 @@ ETEL_I18N.register('customer', {
     en: {
         nav_home:'Home', nav_favorites:'Favorites', nav_orders:'Orders', nav_messages:'Messages', nav_profile:'Profile',
         shop_open:'Open', shop_closed:'Closed', shop_fee_from:'Delivery from ETB', closed_warn:'appears closed right now. You can still order, but it may wait until they open. Continue?',
-        trk_title:'Your order', trk_pending:'Order placed', trk_assigned:'Courier assigned', trk_picked_up:'Picked up', trk_in_transit:'On the way', trk_track:'Track', trk_more:'more', menu_all:'All', menu_popular:'🔥 Popular', menu_deals:'🏷️ Deals', menu_quick:'⚡ Quick', pop_badge:'🔥 Popular', promo_have:'Have a promo code?', promo_ph:'Enter code', promo_apply:'Apply', promo_remove:'Remove', promo_discount:'Discount', promo_saved:'You save', pts_title:'Your points', pts_use:'Use my points', pts_off:'Not using points', pts_need:'Earn {n} more points to start spending them', pts_applied:'⭐ Points', pts_how:'How it works', pts_earn:'Earn 1 point for every ETB 10 of items on delivered orders — double on Saturdays and Sundays.', pts_spend:'Spend 10 points = ETB 1 off your items at checkout, once you have 100 points.', pts_recent:'Recent activity', pts_none:'No activity yet — your first delivered order earns points.', pts_worth:'worth', push_on:'🔔 Turn on order alerts', push_enabled:'Order alerts are on', push_blocked:'Notifications are blocked in your browser settings', reorder_btn:'Order again', reorder_home:'Hungry again?', reorder_none:'Those items are no longer available', reorder_added:'added to your cart at today\'s prices', reorder_skipped:'unavailable, skipped', reorder_fail:'Could not load that order', cart_view:'View cart →', cart_items_one:'item', cart_items_many:'items', filter_none:'No matches for these filters', filter_clear:'Clear filters',
+        trk_title:'Your order', trk_pending:'Order placed', trk_assigned:'Courier assigned', trk_picked_up:'Picked up', trk_in_transit:'On the way', trk_track:'Track', trk_more:'more', menu_all:'All', menu_popular:'🔥 Popular', menu_deals:'🏷️ Deals', menu_quick:'⚡ Quick', pop_badge:'🔥 Popular', promo_have:'Have a promo code?', promo_ph:'Enter code', promo_apply:'Apply', promo_remove:'Remove', promo_discount:'Discount', promo_saved:'You save', rate_title:'Rate your order', rate_overall:'Overall', rate_food:'Order quality', rate_courier:'Courier', rate_tags:'What stood out?', rate_comment:'Tell us more (optional)…', rate_submit:'Submit rating', rate_pick:'Please choose an overall rating', rate_thanks:'Thanks for your review!', rate_yours:'Your rating', rate_reply:'Reply from the shop', tag_fast_delivery:'⚡ Fast delivery', tag_great_taste:'😋 Great taste', tag_well_packed:'📦 Well packed', tag_friendly_courier:'🙂 Friendly courier', tag_good_value:'💰 Good value', tag_late:'🐢 Late', tag_cold:'🥶 Arrived cold', tag_wrong_item:'❌ Wrong item', pts_title:'Your points', pts_use:'Use my points', pts_off:'Not using points', pts_need:'Earn {n} more points to start spending them', pts_applied:'⭐ Points', pts_how:'How it works', pts_earn:'Earn 1 point for every ETB 10 of items on delivered orders — double on Saturdays and Sundays.', pts_spend:'Spend 10 points = ETB 1 off your items at checkout, once you have 100 points.', pts_recent:'Recent activity', pts_none:'No activity yet — your first delivered order earns points.', pts_worth:'worth', push_on:'🔔 Turn on order alerts', push_enabled:'Order alerts are on', push_blocked:'Notifications are blocked in your browser settings', reorder_btn:'Order again', reorder_home:'Hungry again?', reorder_none:'Those items are no longer available', reorder_added:'added to your cart at today\'s prices', reorder_skipped:'unavailable, skipped', reorder_fail:'Could not load that order', cart_view:'View cart →', cart_items_one:'item', cart_items_many:'items', filter_none:'No matches for these filters', filter_clear:'Clear filters',
         greet_morning:'Good morning', greet_afternoon:'Good afternoon', greet_evening:'Good evening', greet_sub:'What would you like today?',
         svc_food:'Food', svc_groceries:'Groceries', svc_pharmacy:'Pharmacy', svc_ride:'Ride', shop_min:'min', shop_from:'From', shop_items:'items', shop_no_rating:'New',
         search_placeholder:'Search restaurants, food, cuisines…',
@@ -86,7 +86,7 @@ ETEL_I18N.register('customer', {
     am: {
         nav_home:'ቤት', nav_favorites:'ተወዳጆች', nav_orders:'ትዕዛዞች', nav_messages:'መልዕክቶች', nav_profile:'መገለጫ',
         shop_open:'ክፍት', shop_closed:'ዝግ', shop_fee_from:'ማድረሻ ከ ETB', closed_warn:'አሁን ዝግ ይመስላል። አሁንም ማዘዝ ይችላሉ፤ እስኪከፈት ሊዘገይ ይችላል። ይቀጥሉ?',
-        trk_title:'ትዕዛዝዎ', trk_pending:'ትዕዛዝ ተቀብሏል', trk_assigned:'ሹፌር ተመድቧል', trk_picked_up:'ተነስቷል', trk_in_transit:'በመንገድ ላይ', trk_track:'ተከታተል', trk_more:'ተጨማሪ', menu_all:'ሁሉም', menu_popular:'🔥 ተወዳጅ', menu_deals:'🏷️ ቅናሽ', menu_quick:'⚡ ፈጣን', pop_badge:'🔥 ተወዳጅ', promo_have:'የቅናሽ ኮድ አለዎት?', promo_ph:'ኮድ ያስገቡ', promo_apply:'ተግብር', promo_remove:'አስወግድ', promo_discount:'ቅናሽ', promo_saved:'ይቆጥባሉ', pts_title:'ነጥቦችዎ', pts_use:'ነጥቤን ተጠቀም', pts_off:'ነጥብ አልተጠቀምኩም', pts_need:'ለመጠቀም ተጨማሪ {n} ነጥቦች ያስፈልጋሉ', pts_applied:'⭐ ነጥቦች', pts_how:'እንዴት ይሰራል', pts_earn:'በደረሰ ትዕዛዝ ለእያንዳንዱ ETB 10 ዕቃ 1 ነጥብ ያገኛሉ — ቅዳሜና እሁድ እጥፍ።', pts_spend:'100 ነጥብ ሲኖርዎት 10 ነጥብ = ETB 1 ቅናሽ።', pts_recent:'የቅርብ ጊዜ እንቅስቃሴ', pts_none:'እስካሁን እንቅስቃሴ የለም — የመጀመሪያ የደረሰ ትዕዛዝዎ ነጥብ ያስገኛል።', pts_worth:'ዋጋ', push_on:'🔔 የትዕዛዝ ማሳወቂያ አብራ', push_enabled:'የትዕዛዝ ማሳወቂያ በርቷል', push_blocked:'ማሳወቂያዎች በአሳሽ ቅንብር ታግደዋል', reorder_btn:'እንደገና አዝዝ', reorder_home:'እንደገና ይራብዎታል?', reorder_none:'እነዚህ ዕቃዎች አሁን አይገኙም', reorder_added:'በዛሬ ዋጋ ወደ ጋሪዎ ተጨምረዋል', reorder_skipped:'አይገኝም፣ ተዘሏል', reorder_fail:'ትዕዛዙን መጫን አልተቻለም', cart_view:'ጋሪ ይመልከቱ →', cart_items_one:'ዕቃ', cart_items_many:'ዕቃዎች', filter_none:'ለእነዚህ ማጣሪያዎች ውጤት የለም', filter_clear:'ማጣሪያ አጽዳ',
+        trk_title:'ትዕዛዝዎ', trk_pending:'ትዕዛዝ ተቀብሏል', trk_assigned:'ሹፌር ተመድቧል', trk_picked_up:'ተነስቷል', trk_in_transit:'በመንገድ ላይ', trk_track:'ተከታተል', trk_more:'ተጨማሪ', menu_all:'ሁሉም', menu_popular:'🔥 ተወዳጅ', menu_deals:'🏷️ ቅናሽ', menu_quick:'⚡ ፈጣን', pop_badge:'🔥 ተወዳጅ', promo_have:'የቅናሽ ኮድ አለዎት?', promo_ph:'ኮድ ያስገቡ', promo_apply:'ተግብር', promo_remove:'አስወግድ', promo_discount:'ቅናሽ', promo_saved:'ይቆጥባሉ', rate_title:'ትዕዛዝዎን ይገምግሙ', rate_overall:'አጠቃላይ', rate_food:'የትዕዛዝ ጥራት', rate_courier:'ሹፌር', rate_tags:'ምን ጎልቶ ታየ?', rate_comment:'ተጨማሪ ይንገሩን (አማራጭ)…', rate_submit:'ግምገማ ላክ', rate_pick:'እባክዎ አጠቃላይ ደረጃ ይምረጡ', rate_thanks:'ለግምገማዎ እናመሰግናለን!', rate_yours:'የእርስዎ ደረጃ', rate_reply:'የሱቁ መልስ', tag_fast_delivery:'⚡ ፈጣን ማድረሻ', tag_great_taste:'😋 ጣፋጭ', tag_well_packed:'📦 በደንብ የታሸገ', tag_friendly_courier:'🙂 ተግባቢ ሹፌር', tag_good_value:'💰 ጥሩ ዋጋ', tag_late:'🐢 ዘግይቷል', tag_cold:'🥶 ቀዝቅዞ ደረሰ', tag_wrong_item:'❌ የተሳሳተ ዕቃ', pts_title:'ነጥቦችዎ', pts_use:'ነጥቤን ተጠቀም', pts_off:'ነጥብ አልተጠቀምኩም', pts_need:'ለመጠቀም ተጨማሪ {n} ነጥቦች ያስፈልጋሉ', pts_applied:'⭐ ነጥቦች', pts_how:'እንዴት ይሰራል', pts_earn:'በደረሰ ትዕዛዝ ለእያንዳንዱ ETB 10 ዕቃ 1 ነጥብ ያገኛሉ — ቅዳሜና እሁድ እጥፍ።', pts_spend:'100 ነጥብ ሲኖርዎት 10 ነጥብ = ETB 1 ቅናሽ።', pts_recent:'የቅርብ ጊዜ እንቅስቃሴ', pts_none:'እስካሁን እንቅስቃሴ የለም — የመጀመሪያ የደረሰ ትዕዛዝዎ ነጥብ ያስገኛል።', pts_worth:'ዋጋ', push_on:'🔔 የትዕዛዝ ማሳወቂያ አብራ', push_enabled:'የትዕዛዝ ማሳወቂያ በርቷል', push_blocked:'ማሳወቂያዎች በአሳሽ ቅንብር ታግደዋል', reorder_btn:'እንደገና አዝዝ', reorder_home:'እንደገና ይራብዎታል?', reorder_none:'እነዚህ ዕቃዎች አሁን አይገኙም', reorder_added:'በዛሬ ዋጋ ወደ ጋሪዎ ተጨምረዋል', reorder_skipped:'አይገኝም፣ ተዘሏል', reorder_fail:'ትዕዛዙን መጫን አልተቻለም', cart_view:'ጋሪ ይመልከቱ →', cart_items_one:'ዕቃ', cart_items_many:'ዕቃዎች', filter_none:'ለእነዚህ ማጣሪያዎች ውጤት የለም', filter_clear:'ማጣሪያ አጽዳ',
         greet_morning:'እንደምን አደሩ', greet_afternoon:'እንደምን ዋሉ', greet_evening:'እንደምን አመሹ', greet_sub:'ዛሬ ምን ይፈልጋሉ?',
         svc_food:'ምግብ', svc_groceries:'ግሮሰሪ', svc_pharmacy:'ፋርማሲ', svc_ride:'ጉዞ', shop_min:'ደቂቃ', shop_from:'ከ', shop_items:'ዕቃዎች', shop_no_rating:'አዲስ',
         search_placeholder:'ምግብ ቤቶችን፣ ምግብን ይፈልጉ…',
@@ -541,8 +541,10 @@ async function loadShopReviews(sgId) {
                 '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">' +
                 '<span style="color:#F0CA58;font-size:13px">' + '★'.repeat(r.stars) + '☆'.repeat(5 - r.stars) + '</span>' +
                 '<span style="font-size:10.5px;color:rgba(247,241,223,.4)">' + fmtDate(r.rated_at) + '</span></div>' +
+                (r.tags ? '<div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:6px">' + String(r.tags).split(',').map(function(k){ return '<span style="padding:3px 8px;border-radius:999px;font-size:10.5px;font-weight:700;background:rgba(212,175,55,.14);color:var(--text)">' + escapeHtml(ETEL_I18N.t('tag_' + k)) + '</span>'; }).join('') + '</div>' : '') +
                 (r.comment ? '<div style="font-size:12.5px;color:rgba(247,241,223,.75);margin-bottom:4px">' + escapeHtml(r.comment) + '</div>' : '') +
-                '<div style="font-size:11px;color:rgba(247,241,223,.4)">— ' + escapeHtml(r.reviewer_first_name || 'Customer') + '</div></div>';
+                '<div style="font-size:11px;color:rgba(247,241,223,.4)">— ' + escapeHtml(r.reviewer_first_name || 'Customer') + '</div>' +
+                (r.shop_reply ? '<div style="margin-top:9px;padding:9px 11px;border-left:3px solid #D4AF37;background:rgba(212,175,55,.08);border-radius:0 8px 8px 0;font-size:12.5px"><div style="font-size:10.5px;font-weight:800;opacity:.7;margin-bottom:3px">' + escapeHtml(ETEL_I18N.t('rate_reply')) + '</div>' + escapeHtml(r.shop_reply) + '</div>' : '') + '</div>';
         }).join('');
     }
     el.innerHTML = html;
@@ -1885,7 +1887,7 @@ async function loadOrders() {
             '<span style="font-weight:700;color:#D4AF37;font-size:14px">ETB ' + parseFloat(o.fare_total||0).toFixed(2) + '</span></div>' +
             (o.status !== 'cancelled' && o.status !== 'delivered' ? '<button onclick="openTrackOrder('+o.id+')" style="margin-top:10px;width:100%;padding:8px;background:rgba(212,175,55,.12);border:1.5px solid rgba(212,175,55,.35);border-radius:8px;color:#F0CA58;font-size:12px;font-weight:700;cursor:pointer">🛵 Track Order</button>' : '') +
             ((isDelivered || o.status === 'cancelled') ? '<button onclick="reorderOrder('+o.id+')" class="reorder-btn" style="margin-top:10px;width:100%;padding:9px;background:linear-gradient(135deg,#F0CA58,#D4AF37);border:none;border-radius:8px;color:#1a1400;font-size:12.5px;font-weight:800;cursor:pointer">🔁 ' + escapeHtml(ETEL_I18N.t('reorder_btn')) + '</button>' : '') +
-            (isDelivered ? '<button onclick="openRating('+o.id+')" style="margin-top:10px;width:100%;padding:8px;background:#fff;border:1.5px solid #D4AF37;border-radius:8px;color:#D4AF37;font-size:12px;font-weight:700;cursor:pointer">⭐ Rate this order</button>' : '') +
+            (isDelivered ? (o.my_rating ? '<div style="margin-top:10px;text-align:center;font-size:12.5px;color:#F0CA58">' + '★'.repeat(o.my_rating) + '☆'.repeat(5 - o.my_rating) + ' <span style="opacity:.7">' + escapeHtml(ETEL_I18N.t('rate_yours')) + '</span></div>' : '<button onclick="openRating('+o.id+')" style="margin-top:10px;width:100%;padding:8px;background:#fff;border:1.5px solid #D4AF37;border-radius:8px;color:#D4AF37;font-size:12px;font-weight:700;cursor:pointer">⭐ Rate this order</button>') : '') +
             (o.status !== 'cancelled' ? '<button onclick="openOrderIssue('+o.id+',\''+o.order_code+'\')" style="margin-top:8px;width:100%;padding:8px;background:#fff;border:1.5px solid #B8B0A0;border-radius:8px;color:rgba(247,241,223,.5);font-size:12px;font-weight:700;cursor:pointer">⚠️ Report an issue</button>' : '') +
             '</div>';
     }).join('');
@@ -2215,34 +2217,55 @@ setInterval(function() {
 }, 12000);
 
 // ── ORDER RATING ─────────────────────────────────────────────────
+// ── RATE AN ORDER: overall (required) + order quality + courier (optional), quick tags, comment.
+// Tag keys are whitelisted on the server (api/lib/reviews.php).
+const REVIEW_TAGS_POS = ['fast_delivery', 'great_taste', 'well_packed', 'friendly_courier', 'good_value'];
+const REVIEW_TAGS_NEG = ['late', 'cold', 'wrong_item'];
+let _rate = {overall: 0, food: 0, courier: 0, tags: []};
+function _rateStarRow(key, label, required) {
+    return '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">' +
+        '<span style="font-size:13px;font-weight:700;color:var(--text)">' + escapeHtml(label) + (required ? '' : ' <span style="font-weight:500;opacity:.5;font-size:11px">(optional)</span>') + '</span>' +
+        '<span class="rate-stars" data-row="' + key + '" style="display:flex;gap:4px;font-size:26px">' +
+        [1,2,3,4,5].map(function(n){ return '<span role="button" onclick="setRateStar(\'' + key + '\',' + n + ')" data-n="' + n + '" style="cursor:pointer;opacity:.28;transition:opacity .15s">⭐</span>'; }).join('') +
+        '</span></div>';
+}
 function openRating(orderId) {
+    _rate = {overall: 0, food: 0, courier: 0, tags: []};
+    const tagBtn = function(k) {
+        return '<button type="button" class="rate-tag" data-tag="' + k + '" onclick="toggleRateTag(\'' + k + '\')" style="padding:7px 11px;border-radius:999px;border:1.5px solid rgba(212,175,55,.3);background:transparent;color:var(--text);font-size:12px;font-weight:600;cursor:pointer">' + escapeHtml(ETEL_I18N.t('tag_' + k)) + '</button>';
+    };
     openModal(
-        '<h3 style="margin:0 0 16px;color:#F7F1DF">⭐ Rate Your Order</h3>' +
-        '<p style="font-size:13px;color:rgba(247,241,223,.55);margin-bottom:14px">How was your experience?</p>' +
-        '<div id="star-row" style="display:flex;gap:8px;justify-content:center;margin-bottom:16px;font-size:28px">' +
-        [1,2,3,4,5].map(function(s){
-            return '<span onclick="setStars('+s+')" data-star="'+s+'" style="cursor:pointer;opacity:.3;transition:opacity .15s">⭐</span>';
-        }).join('') +
-        '</div>' +
-        '<textarea id="rating-comment" placeholder="Tell us more (optional)…" style="width:100%;padding:10px;border:1.5px solid rgba(212,175,55,.25);border-radius:8px;font-size:13px;min-height:70px;resize:none;box-sizing:border-box;margin-bottom:14px"></textarea>' +
-        '<button onclick="submitRating('+orderId+')" style="width:100%;padding:12px;background:#D4AF37;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer">Submit Rating</button>'
+        '<h3 style="margin:0 0 14px;color:var(--text)">⭐ ' + escapeHtml(ETEL_I18N.t('rate_title')) + '</h3>' +
+        _rateStarRow('overall', ETEL_I18N.t('rate_overall'), true) +
+        _rateStarRow('food', ETEL_I18N.t('rate_food'), false) +
+        _rateStarRow('courier', ETEL_I18N.t('rate_courier'), false) +
+        '<div style="font-size:12px;font-weight:700;margin:12px 0 8px;color:var(--text)">' + escapeHtml(ETEL_I18N.t('rate_tags')) + '</div>' +
+        '<div style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:14px">' + REVIEW_TAGS_POS.concat(REVIEW_TAGS_NEG).map(tagBtn).join('') + '</div>' +
+        '<textarea id="rating-comment" maxlength="500" placeholder="' + escapeHtml(ETEL_I18N.t('rate_comment')) + '" style="width:100%;padding:10px;border:1.5px solid rgba(212,175,55,.25);border-radius:8px;font-size:13px;min-height:64px;resize:none;box-sizing:border-box;margin-bottom:12px"></textarea>' +
+        '<button onclick="submitRating(' + orderId + ')" style="width:100%;padding:12px;background:#D4AF37;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer">' + escapeHtml(ETEL_I18N.t('rate_submit')) + '</button>'
     );
 }
-let ratingStars = 0;
-function setStars(n) {
-    ratingStars = n;
-    document.querySelectorAll('[data-star]').forEach(function(el) {
-        el.style.opacity = parseInt(el.dataset.star) <= n ? '1' : '.3';
+function setRateStar(key, n) {
+    _rate[key] = (_rate[key] === n && key !== 'overall') ? 0 : n;   // tap the same star again to clear an optional row
+    document.querySelectorAll('.rate-stars[data-row="' + key + '"] [data-n]').forEach(function(el) {
+        el.style.opacity = parseInt(el.dataset.n, 10) <= _rate[key] ? '1' : '.28';
     });
 }
+function toggleRateTag(k) {
+    const i = _rate.tags.indexOf(k);
+    if (i === -1) _rate.tags.push(k); else _rate.tags.splice(i, 1);
+    const btn = document.querySelector('.rate-tag[data-tag="' + k + '"]');
+    if (btn) { const on = i === -1; btn.style.background = on ? 'rgba(212,175,55,.25)' : 'transparent'; btn.style.borderColor = on ? '#D4AF37' : 'rgba(212,175,55,.3)'; }
+}
 async function submitRating(orderId) {
-    if (!ratingStars) { showToast('Please select a star rating', 'err'); return; }
-    const comment = document.getElementById('rating-comment').value.trim();
-    const res = await api('rate_order', { order_id: orderId, stars: ratingStars, comment: comment });
+    if (!_rate.overall) { showToast(ETEL_I18N.t('rate_pick'), 'err'); return; }
+    const comment = (document.getElementById('rating-comment') || {}).value || '';
+    const res = await api('rate_order', {order_id: orderId, stars: _rate.overall, food_rating: _rate.food || null, courier_rating: _rate.courier || null, tags: _rate.tags, comment: comment.trim()});
     if (res && res.success) {
-        showToast('Thanks for your rating! ⭐'.repeat(ratingStars));
+        showToast(ETEL_I18N.t('rate_thanks'));
         closeModal();
-        ratingStars = 0;
+        _rate = {overall: 0, food: 0, courier: 0, tags: []};
+        if (currentView === 'orders') loadOrders();
     } else {
         showToast((res && res.message) || 'Rating failed', 'err');
     }
@@ -2865,6 +2888,9 @@ subscribeCustomerPush();
 (function () {
     try {
         const id = parseInt(new URLSearchParams(location.search).get('order'), 10);
-        if (id > 0 && Auth.getToken()) setTimeout(function () { openTrackOrder(id); }, 600);
+        if (id > 0 && Auth.getToken()) {
+            const rate = new URLSearchParams(location.search).get('rate') === '1';
+            setTimeout(function () { if (rate) openRating(id); else openTrackOrder(id); }, 600);
+        }
     } catch (e) {}
 })();

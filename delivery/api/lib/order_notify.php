@@ -72,7 +72,7 @@ function etel_notify_order_status($pdo, $order_id, $event = null) {
         require_once __DIR__ . '/../push.php';
         return etel_push_send($pdo, intval($o['customer_id']), $text[0], $text[1], array(
             'type' => 'order_' . $event, 'order_id' => $order_id, 'tag' => 'order-' . $order_id,
-            'url'  => '/delivery/customer.html?order=' . $order_id,
+            'url'  => '/delivery/customer.html?order=' . $order_id . ($event === 'delivered' ? '&rate=1' : ''),
         ));
     } catch (Exception $e) {
         error_log('[ETEL] order push failed (non-fatal): ' . $e->getMessage());
