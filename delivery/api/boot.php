@@ -1111,6 +1111,46 @@ switch ($action) {
         ok(array('orders' => $orders, 'count' => count($orders)));
         break;
     }
+    case 'admin_platform_pulse': {
+        // GET/POST days=1|7|30 -> platform-wide snapshot for the admin Dashboard (read-only, see lib/platform_pulse.php).
+        $pdo = db(); require_admin($pdo);
+        require_once __DIR__ . '/lib/platform_pulse.php';
+        $d = isset($_GET['days']) ? $_GET['days'] : (isset($body['days']) ? $body['days'] : 7);
+        try { ok(etel_platform_pulse($pdo, $d)); } catch (Exception $e) { fail_ex($e, 'Could not build the platform snapshot', 500); }
+        break;
+    }
+    case 'admin_chat_threads': {
+        // GET/POST [q] [filter=all|waiting] -> orders that have chat messages, newest activity first, for the admin
+        // "Order chats" screen. "waiting" = the last message is from the customer, is over 10 minutes old, and the
+        // order is still open for chat - i.e. a customer who may be waiting for an answer.
+        $pdo = db(); require_admin($pdo, 'orders.view');
+        require_once __DIR__ . '/lib/order_chat.php';
+        etel_ensure_chat_tables($pdo);
+        $q = trim(isset($_GET['q']) ? $_GET['q'] : (isset($body['q']) ? $body['q'] : ''));
+        $filter = isset($_GET['filter']) ? $_GET['filter'] : (isset($body['filter']) ? $body['filter'] : 'all');
+        $where = '1=1'; $params = array();
+        if ($q !== '') { $where .= ' AND o.order_code LIKE ?'; $params[] = '%' . $q . '%'; }
+        try {
+            $st = $pdo->prepare("SELECT o.id, o.order_code, o.status, o.delivered_at, COUNT(m.id) AS msgs, MAX(m.id) AS last_id
+                                 FROM order_messages m JOIN orders o ON o.id = m.order_id
+                                 WHERE $where GROUP BY o.id, o.order_code, o.status, o.delivered_at ORDER BY last_id DESC LIMIT 60");
+            $st->execute($params);
+            $rows = $st->fetchAll(PDO::FETCH_ASSOC);
+            $threads = array();
+            foreach ($rows as $r) {
+                $lm = $pdo->prepare('SELECT body, sender_role, created_at FROM order_messages WHERE id = ?');
+                $lm->execute(array($r['last_id']));
+                $last = $lm->fetch(PDO::FETCH_ASSOC);
+                $open = etel_chat_is_open($r['status'], $r['delivered_at']);
+                $waiting = $last && $last['sender_role'] === 'customer' && $open && (time() - strtotime($last['created_at'])) > 600;
+                if ($filter === 'waiting' && !$waiting) continue;
+                $threads[] = array('order_id' => intval($r['id']), 'order_code' => $r['order_code'], 'status' => $r['status'],
+                                   'messages' => intval($r['msgs']), 'open' => $open, 'waiting' => $waiting, 'last' => $last ? $last : null);
+            }
+        } catch (Exception $e) { fail_ex($e, 'Could not load the chats', 500); }
+        ok(array('threads' => $threads));
+        break;
+    }
     case 'admin_dashboard_stats': {
         $pdo = db(); require_admin($pdo);
         $stats = array('orders'=>0,'pending'=>0,'delivered'=>0,'users'=>0,'couriers'=>0,'revenue'=>0.0,'service_givers'=>0);

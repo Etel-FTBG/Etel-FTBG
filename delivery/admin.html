@@ -83,7 +83,40 @@
          container hides all of them too - nothing else needs touching. -->
     <style>
       #nav-item-finance, #panel-finance { display: none !important; }
-    </style>
+    
+/* Platform pulse + order chats */
+.pp-wrap { margin-bottom: 22px; }
+.pp-head { display:flex; justify-content:space-between; align-items:flex-start; gap:12px; flex-wrap:wrap; margin-bottom:14px; }
+.pp-title { font-size:17px; font-weight:800; } .pp-sub { font-size:12px; opacity:.65; margin-top:2px; }
+.pp-range { display:flex; gap:6px; }
+.pp-range button, .oc-pill { padding:7px 14px; border-radius:999px; border:1px solid rgba(212,175,55,.35); background:transparent; color:inherit; font-weight:700; font-size:12.5px; cursor:pointer; }
+.pp-range button.active, .oc-pill.active { background:linear-gradient(135deg,#F0CA58,#D4AF37); color:#1a1400; border-color:transparent; }
+.pp-kpis { display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:12px; margin-bottom:14px; }
+.pp-kpi { background:rgba(255,255,255,.04); border:1px solid rgba(212,175,55,.18); border-radius:14px; padding:14px; }
+.pp-kpi span { display:block; font-size:10.5px; text-transform:uppercase; letter-spacing:.08em; opacity:.65; font-weight:700; }
+.pp-kpi b { display:block; font-size:22px; margin:5px 0 2px; color:#D4AF37; }
+.pp-kpi em { font-style:normal; font-size:11.5px; font-weight:700; opacity:.9; }
+.pp-up { color:#2ECC71; } .pp-down { color:#E63946; } .pp-flat { opacity:.55; }
+.pp-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:14px; }
+.pp-box { background:rgba(255,255,255,.04); border:1px solid rgba(212,175,55,.18); border-radius:14px; padding:14px 16px; }
+.pp-box h4 { margin:0 0 10px; font-size:13px; }
+.pp-row { display:flex; justify-content:space-between; align-items:center; gap:10px; padding:7px 0; border-bottom:1px solid rgba(212,175,55,.12); font-size:13px; }
+.pp-row:last-child { border-bottom:none; }
+.pp-row .n { font-weight:800; } .pp-row.alert .n { color:#E63946; } .pp-row.ok .n { color:#2ECC71; }
+.pp-link { cursor:pointer; } .pp-link:hover { background:rgba(212,175,55,.08); }
+.oc-tools { display:flex; gap:8px; flex-wrap:wrap; align-items:center; padding:0 16px 12px; }
+.oc-row { display:flex; align-items:center; gap:12px; padding:12px 14px; margin-bottom:8px; border:1px solid rgba(212,175,55,.2); border-radius:12px; cursor:pointer; }
+.oc-row:hover { background:rgba(212,175,55,.08); }
+.oc-row .t { flex:1; min-width:0; } .oc-row .t b { font-size:13.5px; } .oc-row .t span { display:block; font-size:12px; opacity:.7; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-top:2px; }
+.oc-tag { font-size:10.5px; font-weight:800; padding:3px 9px; border-radius:999px; background:rgba(212,175,55,.18); white-space:nowrap; }
+.oc-tag.warn { background:rgba(230,57,70,.18); color:#E63946; }
+body.etel-light .pp-kpi, body.etel-light .pp-box { background:#FFFFFF !important; border-color:rgba(20,17,8,.1) !important; }
+body.etel-light .pp-kpi b { color:#8A6500; }
+body.etel-light .pp-up { color:#178A4A; }
+body.etel-light .pp-range button:not(.active), body.etel-light .oc-pill:not(.active) { color:#4A4536; border-color:rgba(160,120,20,.45); }
+body.etel-light .oc-row { background:#FFFFFF; border-color:rgba(20,17,8,.12); }
+body.etel-light .pp-row { border-color:rgba(20,17,8,.08); }
+</style>
     <!-- ══════ END TEMP: INSA AUDIT LOCKDOWN ══════ -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>if(typeof Chart==='undefined'){document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"><\/script>');}</script>
@@ -261,6 +294,9 @@ html{color-scheme:light}
             <div class="nav-item" data-page="support" onclick="switchPage('support',this)">
                 <span class="nav-icon">🎧</span><span>Support</span>
             </div>
+            <div class="nav-item" data-page="orderchats" onclick="switchPage('orderchats',this); if(typeof loadOrderChats==='function') loadOrderChats();">
+                <span class="nav-icon">💬</span><span>Order chats</span><span id="oc-badge" style="display:none;background:#e74c3c;color:#fff;font-size:10px;font-weight:800;border-radius:10px;padding:1px 7px;margin-left:6px">0</span>
+            </div>
             <div class="nav-item" data-page="launch" onclick="switchPage('launch',this)">
                 <span class="nav-icon">🚀</span><span>Launch</span>
             </div>
@@ -332,6 +368,19 @@ html{color-scheme:light}
                         </div>
                         <div id="sys-test-results-delivery" style="margin-top:14px;display:none"></div>
                     </div>
+                    <!-- ══ PLATFORM PULSE ══ -->
+                    <div class="pp-wrap" id="pp-wrap">
+                        <div class="pp-head">
+                            <div><div class="pp-title">📊 Platform pulse</div><div class="pp-sub">Everything across customers, shops and couriers — compared with the previous period</div></div>
+                            <div class="pp-range" id="pp-range">
+                                <button type="button" data-days="1" onclick="loadPlatformPulse(1)">Today</button>
+                                <button type="button" data-days="7" class="active" onclick="loadPlatformPulse(7)">7 days</button>
+                                <button type="button" data-days="30" onclick="loadPlatformPulse(30)">30 days</button>
+                            </div>
+                        </div>
+                        <div id="pp-body"><div style="padding:18px;opacity:.6">Loading…</div></div>
+                    </div>
+
                     <div class="stats-grid" id="dash-stats">
                         <div class="stat-card"><div class="stat-icon">📦</div><div class="stat-content"><div class="stat-label">Total Orders</div><div class="stat-value" id="s-orders">…</div></div></div>
                         <div class="stat-card"><div class="stat-icon">⏳</div><div class="stat-content"><div class="stat-label">Pending Orders</div><div class="stat-value" id="s-pending">…</div></div></div>
@@ -1245,6 +1294,20 @@ html{color-scheme:light}
                     <div class="data-section"><div class="section-title">All promo codes</div><div id="promo-list" style="padding:0 16px 16px"></div></div>
                 </div><!-- /panel-promos -->
 
+                <div class="panel" id="panel-orderchats" style="display:none">
+                    <div class="data-section">
+                        <div class="section-title">Order chats</div>
+                        <div style="padding:0 16px 8px;font-size:12px;opacity:.75">Group chats between customers, shops and couriers. Open one to read it or to answer as <b>ETEL Support</b> (everyone on the order sees your reply).</div>
+                        <div class="oc-tools">
+                            <input id="oc-search" class="filter-sel" placeholder="Search order code…" oninput="ocSearchDebounced()" style="width:200px">
+                            <button type="button" id="oc-f-all" class="oc-pill active" onclick="loadOrderChats('all')">All chats</button>
+                            <button type="button" id="oc-f-waiting" class="oc-pill" onclick="loadOrderChats('waiting')">⏳ Customer waiting</button>
+                            <button class="btn btn-secondary" onclick="loadOrderChats()" style="padding:8px 14px">🔄 Refresh</button>
+                        </div>
+                        <div id="oc-list" style="padding:0 16px 16px"></div>
+                    </div>
+                </div><!-- /panel-orderchats -->
+
                 <div class="panel" id="panel-telebirr" style="display:none">
                     <div class="page-title">💳 Payments</div>
                     <div class="page-subtitle">Manual verification only — check your Telebirr merchant SMS/dashboard and bank statement yourself, then confirm or reject each one below</div>
@@ -1381,7 +1444,7 @@ html{color-scheme:light}
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script><!-- PPTX slide-text preview (PPTX is a zip of XML), Documents tab -->
     <script src="js/admin-documents.js?v=1.5"></script><!-- Documents library: view/edit/version PDFs, Office files, Markdown, XML, etc -->
 
-<script src="js/admin.js?v=6.9"></script>
+<script src="js/admin.js?v=7.0"></script>
 <script src="js/admin-confirmations-premium.js?v=1.1"></script><!-- Pending Confirmations + GLOBAL modal-box fix for entire admin system -->
 <script src="js/admin-couriers-premium.js?v=1.4"></script><!-- Premium Couriers Management: 3D cards + edit modal + live map -->
     <script src="js/admin-premium.js?v=4.1"></script><!-- KPI count-ups + card motion -->
@@ -1421,5 +1484,6 @@ html{color-scheme:light}
     </script>
     <script>loadGoogleMaps('geometry,places,marker', 'initAdminMaps');</script>
 <script src="js/apk-download-badge.js?v=2" data-role="admin"></script>
+<script src="js/order-chat.js?v=1" data-mode="layer"></script>
 </body>
 </html>
