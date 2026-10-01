@@ -796,8 +796,8 @@ function renderItemsGrid(items, targetId) {
             (discounted ? '<div style="position:absolute;top:10px;left:10px;background:#EF4444;color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:6px">SALE</div>' : '') +
             (parseInt(item.times_ordered, 10) >= 3 ? '<div class="pop-badge">' + escapeHtml(ETEL_I18N.t('pop_badge')) + '</div>' : '') +
             '<div class="offer-card-body">' +
-                '<div class="offer-card-name">' + escapeHtml(displayName) + '</div>' +
-                '<div class="offer-card-shop">' + escapeHtml(item.business_name||'') + (item.preparation_time ? ' · ⏱ ' + parseInt(item.preparation_time, 10) + ' min' : '') + '</div>' +
+                '<div class="offer-card-name">' + escapeHtml(displayName) + ((item.quality === 'special' || item.quality === 'premium') ? ' <span style="font-size:10px;font-weight:800;text-transform:uppercase;color:#D4AF37;letter-spacing:.04em">' + (item.quality === 'premium' ? '★ Premium' : 'Special') + '</span>' : '') + '</div>' +
+                '<div class="offer-card-shop">' + escapeHtml(item.business_name||'') + (item.portion ? ' · ' + escapeHtml(item.portion) : '') + (item.preparation_time ? ' · ⏱ ' + parseInt(item.preparation_time, 10) + ' min' : '') + '</div>' +
                 '<div class="offer-card-footer">' +
                     '<div class="offer-card-price">ETB ' + parseFloat(item.price).toFixed(0) + '</div>' +
                     '<button class="add-btn" onclick="event.stopPropagation();addToCart('+item.id+',\''+safeN+'\','+item.price+','+item.service_giver_id+',\''+safeB+'\')">+</button>' +

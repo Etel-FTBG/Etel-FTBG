@@ -27,6 +27,7 @@ New since the first checklist:
 | 064 `loyalty_points` | points ledger, `orders.points_used/points_discount/discount` |
 | 065 `review_replies_tags` | review tags + shop replies, and backfills each shop's rating |
 | 066 `order_chat` | order chat tables |
+| 067 `menu_catalog` | shared menu catalog (+ about 67 starter dishes), items.catalog_id / quality / portion |
 
 - [ ] All seven show as applied. (The code also creates its tables/columns on first use, so a missed
       migration usually fixes itself — but run them anyway so the admin tools show everything.)
@@ -94,6 +95,13 @@ step by step if you don't want to walk it through with real devices.
 - [ ] Admin → Dashboard → **📊 Platform pulse**: Today / 7 / 30 days. Orders and sales match what you know; the "Needs attention" counts link to the right pages.
 - [ ] Admin → **💬 Order chats**: orders with messages are listed; "⏳ Customer waiting" shows chats where the customer wrote last more than 10 minutes ago. Open one and reply — it shows as **ETEL Support** to the customer, shop and courier.
 
+### 5.11 Menu catalog
+- [ ] Run migration 067 (Admin → Migrations). Admin → **📚 Menu catalog** lists about 67 starter dishes; edit, add, hide as you like.
+- [ ] Service app → My Services → **📚 Pick from catalog**: tick dishes, type prices, **Add**. They appear in the item list with the shop's own price. Dishes already on the menu show "✓ On your menu".
+- [ ] "Quick start" chips (e.g. ethiopian restaurant) + **Tick all shown** select a whole starter menu; shops then only type prices.
+- [ ] Add custom item → tick "Suggest this dish for the shared catalog" → it shows under Admin → Menu catalog → ⏳ Suggested → **Approve**.
+- [ ] Customer app: items marked Special / Premium show a small label, and the portion appears next to the shop name.
+
 ## 6. Tell shop owners
 - [ ] Use the **Online** switch when open; closed shops show as Closed to customers.
 - [ ] Reply to reviews in the new Reviews page; keep chat messages short and polite.
@@ -101,5 +109,5 @@ step by step if you don't want to walk it through with real devices.
 ## Rollback
 - Customer / Service / Admin files: re-upload the previous files (every PR is a clean revert of its merge commit).
 - Driver / Ride / Courier bundles: flip stable back to the previous version in Admin → Releases.
-- Migrations 060–066 only add tables/columns and are safe to leave in place.
+- Migrations 060–067 only add tables/columns and are safe to leave in place.
 - Known limit: orders auto-assigned to a courier before the courier-id fix (PR 354) still hold the old id; only new orders are corrected.
