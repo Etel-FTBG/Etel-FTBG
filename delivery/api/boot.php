@@ -704,6 +704,26 @@ switch ($action) {
         ok(array('users' => $users, 'count' => count($users)));
         break;
     }
+    case 'customer_loyalty': {
+        // GET -> points balance, what it is worth, simple stats and recent activity for the signed-in customer.
+        $GLOBALS['ETEL_LIMITED_BLOCK'] = true;
+        $pdo = db(); $au = require_auth($pdo);
+        require_once __DIR__ . '/lib/loyalty.php';
+        etel_ensure_loyalty_tables($pdo);
+        try {
+            $bal = etel_loyalty_balance($pdo, $au['id']);
+            $c = $pdo->prepare("SELECT COUNT(*) AS orders, COALESCE(SUM(COALESCE(discount,0) + COALESCE(points_discount,0)),0) AS saved FROM orders WHERE customer_id = ? AND status <> 'cancelled'");
+            $c->execute(array($au['id']));
+            $st = $c->fetch(PDO::FETCH_ASSOC);
+            $h = $pdo->prepare('SELECT points, kind, note, created_at FROM loyalty_points WHERE user_id = ? ORDER BY id DESC LIMIT 15');
+            $h->execute(array($au['id']));
+            $hist = $h->fetchAll(PDO::FETCH_ASSOC);
+        } catch (Exception $e) { fail_ex($e, 'Could not load your points', 500); }
+        ok(array('points' => $bal, 'value_etb' => round($bal / ETEL_POINTS_STEP, 2),
+                 'min_redeem' => ETEL_POINTS_MIN_REDEEM, 'step' => ETEL_POINTS_STEP,
+                 'orders' => intval($st['orders']), 'saved_etb' => round(floatval($st['saved']), 2), 'history' => $hist));
+        break;
+    }
     case 'customer_validate_promo': {
         // POST: code, subtotal, delivery_fee  -> live preview for the checkout box. Read-only:
         // the real discount is recomputed from the actual basket when the order is placed.

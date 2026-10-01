@@ -198,6 +198,30 @@ function delivery_execute_order_creation($pdo, $auth_user, $body) {
             $fare_total = round($fare_total - $discount, 2);
         }
 
+        // Optional: spend loyalty points. The client only says "use my points" - the server
+        // decides the amount from the real balance and basket (api/lib/loyalty.php).
+        $points_used = 0; $points_disc = 0.0; $redeem_id = 0;
+        if (!empty($body['use_points'])) {
+            require_once __DIR__ . '/promo.php';   // EtelPromoException
+            require_once __DIR__ . '/loyalty.php';
+            etel_ensure_loyalty_tables($pdo);
+            $promo_items_disc = ($promo_row && $promo_row['discount_type'] !== 'free_delivery') ? $discount : 0.0;
+            $plan = etel_loyalty_redeem_plan(etel_loyalty_balance($pdo, $auth_user['id']), $items_subtotal - $promo_items_disc);
+            if ($plan > 0) {
+                $pdo->prepare("INSERT INTO loyalty_points (user_id, order_id, points, kind, note) VALUES (?, NULL, ?, 'redeem', 'Used at checkout')")
+                    ->execute(array($auth_user['id'], -$plan));
+                $redeem_id = intval($pdo->lastInsertId());
+                if (etel_loyalty_balance($pdo, $auth_user['id']) < 0) { // a parallel order spent them first
+                    $pdo->prepare('DELETE FROM loyalty_points WHERE id = ?')->execute(array($redeem_id));
+                    $redeem_id = 0;
+                    throw new EtelPromoException('Not enough points for that order');
+                }
+                $points_used = $plan;
+                $points_disc = $plan / ETEL_POINTS_STEP;
+                $fare_total = round($fare_total - $points_disc, 2);
+            }
+        }
+
         // Generate order code
         $order_code = 'ETD-' . strtoupper(bin2hex(random_bytes(3)));
 
@@ -237,6 +261,12 @@ function delivery_execute_order_creation($pdo, $auth_user, $body) {
         
         $order_id = $pdo->lastInsertId();
 
+        if ($points_used > 0) {
+            try {
+                $pdo->prepare('UPDATE orders SET points_used = ?, points_discount = ? WHERE id = ?')->execute(array($points_used, $points_disc, $order_id));
+                $pdo->prepare('UPDATE loyalty_points SET order_id = ? WHERE id = ?')->execute(array($order_id, $redeem_id));
+            } catch (Exception $e) { error_log('[ETEL] points bookkeeping failed for order ' . $order_id . ': ' . $e->getMessage()); }
+        }
         if ($promo_row) {
             try {
                 $pdo->prepare('UPDATE orders SET promo_code = ?, discount = ? WHERE id = ?')->execute(array($promo_row['code'], $discount, $order_id));
@@ -408,6 +438,8 @@ function delivery_execute_order_creation($pdo, $auth_user, $body) {
             'total'            => $fare_total,
             'discount'         => $discount,
             'promo_code'       => $promo_row ? $promo_row['code'] : null,
+            'points_used'      => $points_used,
+            'points_discount'  => $points_disc,
             'payment_method'   => $payment_method,
             'items_count'      => count($item_details),
             'message'          => 'Order created and assigned to service giver',
@@ -416,6 +448,9 @@ function delivery_execute_order_creation($pdo, $auth_user, $body) {
     } catch (Exception $e) {
         if (!empty($claimed_promo_id) && empty($order_id)) {
             try { $pdo->prepare('UPDATE promo_codes SET used_count = GREATEST(used_count - 1, 0) WHERE id = ?')->execute(array($claimed_promo_id)); } catch (Exception $e2) {}
+        }
+        if (!empty($redeem_id) && empty($order_id)) {
+            try { $pdo->prepare('DELETE FROM loyalty_points WHERE id = ? AND order_id IS NULL')->execute(array($redeem_id)); } catch (Exception $e3) {}
         }
         if ($e instanceof EtelPromoException) throw new Exception($e->getMessage());
         error_log('[ETEL] Order creation failed: ' . $e->getMessage());

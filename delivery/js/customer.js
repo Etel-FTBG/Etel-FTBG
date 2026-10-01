@@ -54,7 +54,7 @@ ETEL_I18N.register('customer', {
     en: {
         nav_home:'Home', nav_favorites:'Favorites', nav_orders:'Orders', nav_messages:'Messages', nav_profile:'Profile',
         shop_open:'Open', shop_closed:'Closed', shop_fee_from:'Delivery from ETB', closed_warn:'appears closed right now. You can still order, but it may wait until they open. Continue?',
-        trk_title:'Your order', trk_pending:'Order placed', trk_assigned:'Courier assigned', trk_picked_up:'Picked up', trk_in_transit:'On the way', trk_track:'Track', trk_more:'more', menu_all:'All', menu_popular:'🔥 Popular', menu_deals:'🏷️ Deals', menu_quick:'⚡ Quick', pop_badge:'🔥 Popular', promo_have:'Have a promo code?', promo_ph:'Enter code', promo_apply:'Apply', promo_remove:'Remove', promo_discount:'Discount', promo_saved:'You save', push_on:'🔔 Turn on order alerts', push_enabled:'Order alerts are on', push_blocked:'Notifications are blocked in your browser settings', reorder_btn:'Order again', reorder_home:'Hungry again?', reorder_none:'Those items are no longer available', reorder_added:'added to your cart at today\'s prices', reorder_skipped:'unavailable, skipped', reorder_fail:'Could not load that order', cart_view:'View cart →', cart_items_one:'item', cart_items_many:'items', filter_none:'No matches for these filters', filter_clear:'Clear filters',
+        trk_title:'Your order', trk_pending:'Order placed', trk_assigned:'Courier assigned', trk_picked_up:'Picked up', trk_in_transit:'On the way', trk_track:'Track', trk_more:'more', menu_all:'All', menu_popular:'🔥 Popular', menu_deals:'🏷️ Deals', menu_quick:'⚡ Quick', pop_badge:'🔥 Popular', promo_have:'Have a promo code?', promo_ph:'Enter code', promo_apply:'Apply', promo_remove:'Remove', promo_discount:'Discount', promo_saved:'You save', pts_title:'Your points', pts_use:'Use my points', pts_off:'Not using points', pts_need:'Earn {n} more points to start spending them', pts_applied:'⭐ Points', pts_how:'How it works', pts_earn:'Earn 1 point for every ETB 10 of items on delivered orders — double on Saturdays and Sundays.', pts_spend:'Spend 10 points = ETB 1 off your items at checkout, once you have 100 points.', pts_recent:'Recent activity', pts_none:'No activity yet — your first delivered order earns points.', pts_worth:'worth', push_on:'🔔 Turn on order alerts', push_enabled:'Order alerts are on', push_blocked:'Notifications are blocked in your browser settings', reorder_btn:'Order again', reorder_home:'Hungry again?', reorder_none:'Those items are no longer available', reorder_added:'added to your cart at today\'s prices', reorder_skipped:'unavailable, skipped', reorder_fail:'Could not load that order', cart_view:'View cart →', cart_items_one:'item', cart_items_many:'items', filter_none:'No matches for these filters', filter_clear:'Clear filters',
         greet_morning:'Good morning', greet_afternoon:'Good afternoon', greet_evening:'Good evening', greet_sub:'What would you like today?',
         svc_food:'Food', svc_groceries:'Groceries', svc_pharmacy:'Pharmacy', svc_ride:'Ride', shop_min:'min', shop_from:'From', shop_items:'items', shop_no_rating:'New',
         search_placeholder:'Search restaurants, food, cuisines…',
@@ -86,7 +86,7 @@ ETEL_I18N.register('customer', {
     am: {
         nav_home:'ቤት', nav_favorites:'ተወዳጆች', nav_orders:'ትዕዛዞች', nav_messages:'መልዕክቶች', nav_profile:'መገለጫ',
         shop_open:'ክፍት', shop_closed:'ዝግ', shop_fee_from:'ማድረሻ ከ ETB', closed_warn:'አሁን ዝግ ይመስላል። አሁንም ማዘዝ ይችላሉ፤ እስኪከፈት ሊዘገይ ይችላል። ይቀጥሉ?',
-        trk_title:'ትዕዛዝዎ', trk_pending:'ትዕዛዝ ተቀብሏል', trk_assigned:'ሹፌር ተመድቧል', trk_picked_up:'ተነስቷል', trk_in_transit:'በመንገድ ላይ', trk_track:'ተከታተል', trk_more:'ተጨማሪ', menu_all:'ሁሉም', menu_popular:'🔥 ተወዳጅ', menu_deals:'🏷️ ቅናሽ', menu_quick:'⚡ ፈጣን', pop_badge:'🔥 ተወዳጅ', promo_have:'የቅናሽ ኮድ አለዎት?', promo_ph:'ኮድ ያስገቡ', promo_apply:'ተግብር', promo_remove:'አስወግድ', promo_discount:'ቅናሽ', promo_saved:'ይቆጥባሉ', push_on:'🔔 የትዕዛዝ ማሳወቂያ አብራ', push_enabled:'የትዕዛዝ ማሳወቂያ በርቷል', push_blocked:'ማሳወቂያዎች በአሳሽ ቅንብር ታግደዋል', reorder_btn:'እንደገና አዝዝ', reorder_home:'እንደገና ይራብዎታል?', reorder_none:'እነዚህ ዕቃዎች አሁን አይገኙም', reorder_added:'በዛሬ ዋጋ ወደ ጋሪዎ ተጨምረዋል', reorder_skipped:'አይገኝም፣ ተዘሏል', reorder_fail:'ትዕዛዙን መጫን አልተቻለም', cart_view:'ጋሪ ይመልከቱ →', cart_items_one:'ዕቃ', cart_items_many:'ዕቃዎች', filter_none:'ለእነዚህ ማጣሪያዎች ውጤት የለም', filter_clear:'ማጣሪያ አጽዳ',
+        trk_title:'ትዕዛዝዎ', trk_pending:'ትዕዛዝ ተቀብሏል', trk_assigned:'ሹፌር ተመድቧል', trk_picked_up:'ተነስቷል', trk_in_transit:'በመንገድ ላይ', trk_track:'ተከታተል', trk_more:'ተጨማሪ', menu_all:'ሁሉም', menu_popular:'🔥 ተወዳጅ', menu_deals:'🏷️ ቅናሽ', menu_quick:'⚡ ፈጣን', pop_badge:'🔥 ተወዳጅ', promo_have:'የቅናሽ ኮድ አለዎት?', promo_ph:'ኮድ ያስገቡ', promo_apply:'ተግብር', promo_remove:'አስወግድ', promo_discount:'ቅናሽ', promo_saved:'ይቆጥባሉ', pts_title:'ነጥቦችዎ', pts_use:'ነጥቤን ተጠቀም', pts_off:'ነጥብ አልተጠቀምኩም', pts_need:'ለመጠቀም ተጨማሪ {n} ነጥቦች ያስፈልጋሉ', pts_applied:'⭐ ነጥቦች', pts_how:'እንዴት ይሰራል', pts_earn:'በደረሰ ትዕዛዝ ለእያንዳንዱ ETB 10 ዕቃ 1 ነጥብ ያገኛሉ — ቅዳሜና እሁድ እጥፍ።', pts_spend:'100 ነጥብ ሲኖርዎት 10 ነጥብ = ETB 1 ቅናሽ።', pts_recent:'የቅርብ ጊዜ እንቅስቃሴ', pts_none:'እስካሁን እንቅስቃሴ የለም — የመጀመሪያ የደረሰ ትዕዛዝዎ ነጥብ ያስገኛል።', pts_worth:'ዋጋ', push_on:'🔔 የትዕዛዝ ማሳወቂያ አብራ', push_enabled:'የትዕዛዝ ማሳወቂያ በርቷል', push_blocked:'ማሳወቂያዎች በአሳሽ ቅንብር ታግደዋል', reorder_btn:'እንደገና አዝዝ', reorder_home:'እንደገና ይራብዎታል?', reorder_none:'እነዚህ ዕቃዎች አሁን አይገኙም', reorder_added:'በዛሬ ዋጋ ወደ ጋሪዎ ተጨምረዋል', reorder_skipped:'አይገኝም፣ ተዘሏል', reorder_fail:'ትዕዛዙን መጫን አልተቻለም', cart_view:'ጋሪ ይመልከቱ →', cart_items_one:'ዕቃ', cart_items_many:'ዕቃዎች', filter_none:'ለእነዚህ ማጣሪያዎች ውጤት የለም', filter_clear:'ማጣሪያ አጽዳ',
         greet_morning:'እንደምን አደሩ', greet_afternoon:'እንደምን ዋሉ', greet_evening:'እንደምን አመሹ', greet_sub:'ዛሬ ምን ይፈልጋሉ?',
         svc_food:'ምግብ', svc_groceries:'ግሮሰሪ', svc_pharmacy:'ፋርማሲ', svc_ride:'ጉዞ', shop_min:'ደቂቃ', shop_from:'ከ', shop_items:'ዕቃዎች', shop_no_rating:'አዲስ',
         search_placeholder:'ምግብ ቤቶችን፣ ምግብን ይፈልጉ…',
@@ -925,6 +925,11 @@ function updateCartCount() {
 function toggleCart() {
     if (!cart.length) { showToast('Cart is empty — add some items first', 'err'); return; }
     renderCartDrawer();
+    loadLoyalty().then(function(d){
+        // Re-render only if nothing has been typed yet (a re-render would blank the form fields).
+        const typed = ['co-name','co-phone','co-notes'].some(function(i){ const e = document.getElementById(i); return e && e.value; });
+        if (d && !typed && document.getElementById('cart-overlay').style.display === 'block') renderCartDrawer();
+    });
     document.getElementById('cart-overlay').style.display = 'block';
     loadDeliveryTiers();
     loadBankAccounts();
@@ -1050,7 +1055,7 @@ async function applyPromo(codeIn) {
     let res = null;
     try { res = await api('customer_validate_promo', {code: code, subtotal: b.subtotal, delivery_fee: b.fee}); } catch (e) { res = null; }
     if (res && res.success) {
-        _promo = {code: res.data.code, discount: parseFloat(res.data.discount) || 0};
+        _promo = {code: res.data.code, discount: parseFloat(res.data.discount) || 0, type: res.data.type || ''};
         _promoBasketKey = b.subtotal + '|' + b.fee;
         renderCartDrawer();
     } else {
@@ -1078,6 +1083,58 @@ function promoCardTap(code) {
     setTimeout(function(){ applyPromo(code); }, 120);
 }
 
+// ── LOYALTY POINTS ──────────────────────────────────────────────
+// Rules live on the server (api/lib/loyalty.php): earn 1 point per ETB 10 of items on a delivered
+// order (x2 on weekends); 10 points = ETB 1 off items, needs 100 points. The checkout box only
+// PREVIEWS - the server recomputes the real amount when the order is placed.
+let _loyalty = null;       // last customer_loyalty reply
+let _usePoints = false;    // "Use my points" switch in the cart
+async function loadLoyalty() {
+    try {
+        if (!Auth.getToken()) return null;
+        const res = await apiGet('customer_loyalty', {});
+        if (res && res.success) { _loyalty = res.data; return _loyalty; }
+    } catch (e) {}
+    return _loyalty;
+}
+async function fillProfileStats() {
+    const d = await loadLoyalty();
+    if (!d) return;
+    const set = function(id, v) { const el = document.getElementById(id); if (el) el.textContent = v; };
+    set('pf-orders', String(d.orders));
+    set('pf-points', Number(d.points).toLocaleString());
+    set('pf-saved', 'ETB ' + Math.round(d.saved_etb).toLocaleString());
+}
+// How many points the basket could use right now (mirrors etel_loyalty_redeem_plan on the server).
+function pointsPlanFor(capEtb) {
+    if (!_loyalty) return 0;
+    const bal = parseInt(_loyalty.points, 10) || 0, min = parseInt(_loyalty.min_redeem, 10) || 100, step = parseInt(_loyalty.step, 10) || 10;
+    if (bal < min) return 0;
+    let n = Math.min(bal, Math.floor(Math.max(0, capEtb) * step));
+    n -= n % step;
+    return n >= step ? n : 0;
+}
+function togglePointsUse(on) { _usePoints = !!on; renderCartDrawer(); }
+async function openPointsSheet() {
+    const d = await loadLoyalty();
+    if (!d) { showToast('Could not load your points', 'err'); return; }
+    const t = function(k) { return escapeHtml(ETEL_I18N.t(k)); };
+    const kindLabel = {earn:'Earned', redeem:'Used', refund:'Refunded', adjust:'Adjusted'};
+    const rows = (d.history || []).map(function(h) {
+        const p = parseInt(h.points, 10);
+        return '<div style="display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.06);font-size:13px"><span>' + escapeHtml(kindLabel[h.kind] || h.kind) +
+            ' <span style="opacity:.5;font-size:11px">' + escapeHtml(fmtDate(h.created_at)) + '</span></span><b style="color:' + (p >= 0 ? '#2ECC71' : '#F0CA58') + '">' + (p >= 0 ? '+' : '') + p + '</b></div>';
+    }).join('');
+    custShowModal(
+        '<div style="font-size:17px;font-weight:800;color:#D4AF37;margin-bottom:6px">⭐ ' + t('pts_title') + '</div>' +
+        '<div style="font-size:34px;font-weight:800;color:#FFD700">' + Number(d.points).toLocaleString() + '</div>' +
+        '<div style="font-size:12.5px;opacity:.7;margin-bottom:16px">' + t('pts_worth') + ' ETB ' + Number(d.value_etb).toFixed(0) + '</div>' +
+        '<div style="font-size:12px;font-weight:700;margin-bottom:6px">' + t('pts_how') + '</div>' +
+        '<div style="font-size:12.5px;opacity:.8;line-height:1.55;margin-bottom:16px">' + t('pts_earn') + '<br>' + t('pts_spend') + '</div>' +
+        '<div style="font-size:12px;font-weight:700;margin-bottom:4px">' + t('pts_recent') + '</div>' +
+        (rows || '<div style="font-size:12.5px;opacity:.6;padding:8px 0">' + t('pts_none') + '</div>'));
+}
+
 function renderCartDrawer() {
     // Any full re-render of this drawer (tier selection, photo upload, etc.)
     // used to reset the address input back to the stale _deliveryAddr value,
@@ -1091,7 +1148,12 @@ function renderCartDrawer() {
     const deliveryFee = getDeliveryFee(selectedZone);
     const serviceCharge = Math.round(subtotal * SERVICE_CHARGE_PCT / 100 * 100) / 100;
     const promoDisc = _promo ? Math.min(_promo.discount, subtotal + deliveryFee) : 0;
-    const grand = subtotal + deliveryFee + serviceCharge - promoDisc;
+    const promoItemDisc = (_promo && _promo.type !== 'free_delivery') ? promoDisc : 0;
+    const pointsCap = Math.max(0, subtotal - promoItemDisc);
+    const pointsAvail = pointsPlanFor(pointsCap);
+    const pointsUsed = _usePoints ? pointsAvail : 0;
+    const pointsDisc = pointsUsed / ((_loyalty && parseInt(_loyalty.step, 10)) || 10);
+    const grand = subtotal + deliveryFee + serviceCharge - promoDisc - pointsDisc;
     document.getElementById('cart-items').innerHTML = cart.map(function(c, i) {
         return '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.06)">' +
             '<div style="flex:1"><div style="font-weight:600;font-size:13px;color:#F7F1DF">' + c.name + '</div>' +
@@ -1108,6 +1170,7 @@ function renderCartDrawer() {
         '<div style="display:flex;justify-content:space-between;font-size:13px;color:rgba(247,241,223,.55);margin-bottom:6px"><span>' + ETEL_I18N.t('lbl_subtotal') + '</span><span>ETB ' + subtotal.toFixed(2) + '</span></div>' +
         '<div style="display:flex;justify-content:space-between;font-size:13px;color:rgba(247,241,223,.55);margin-bottom:6px"><span>' + ETEL_I18N.t('lbl_delivery_fee') + '' + (selectedZone ? ' (' + estTime + ' min)' : '') + '</span><span>ETB ' + deliveryFee.toFixed(2) + '</span></div>' +
         '<div style="display:flex;justify-content:space-between;font-size:13px;color:rgba(247,241,223,.55);margin-bottom:12px"><span>' + ETEL_I18N.t('lbl_service_charge') + ' (' + SERVICE_CHARGE_PCT + '%)</span><span>ETB ' + serviceCharge.toFixed(2) + '</span></div>' +
+        (pointsDisc > 0 ? '<div class="co-discount" style="display:flex;justify-content:space-between;font-size:13px;font-weight:700;color:#2ECC71;margin:-6px 0 12px"><span>' + escapeHtml(ETEL_I18N.t('pts_applied')) + ' (' + pointsUsed + ')</span><span>−ETB ' + pointsDisc.toFixed(2) + '</span></div>' : '') +
         (promoDisc > 0 ? '<div class="co-discount" style="display:flex;justify-content:space-between;font-size:13px;font-weight:700;color:#2ECC71;margin:-6px 0 12px"><span>🏷️ ' + escapeHtml(_promo.code) + ' <button type="button" onclick="removePromo()" style="background:none;border:none;color:inherit;text-decoration:underline;font-size:11px;cursor:pointer;padding:0 0 0 6px">' + escapeHtml(ETEL_I18N.t('promo_remove')) + '</button></span><span>−ETB ' + promoDisc.toFixed(2) + '</span></div>' : '') +
         '<div style="display:flex;justify-content:space-between;font-size:16px;font-weight:700;color:#F7F1DF"><span>' + ETEL_I18N.t('lbl_total') + '</span><span>ETB ' + grand.toFixed(2) + '</span></div></div>';
 
@@ -1117,6 +1180,14 @@ function renderCartDrawer() {
             '<input type="text" id="co-promo-input" autocomplete="off" autocapitalize="characters" placeholder="🏷️ ' + escapeHtml(ETEL_I18N.t('promo_have')) + '" style="flex:1;min-width:0;padding:10px;border:1.5px solid rgba(212,175,55,.25);border-radius:8px;font-size:13px;text-transform:uppercase;box-sizing:border-box;background:rgba(255,255,255,.04);color:inherit" onkeydown="if(event.key===\'Enter\'){event.preventDefault();applyPromo();}">' +
             '<button type="button" onclick="applyPromo()" style="padding:10px 16px;background:rgba(212,175,55,.15);border:1.5px solid rgba(212,175,55,.45);border-radius:8px;color:#F0CA58;font-size:12.5px;font-weight:800;cursor:pointer">' + escapeHtml(ETEL_I18N.t('promo_apply')) + '</button></div>' +
             '<div id="co-promo-msg" style="font-size:11.5px;margin-top:6px;min-height:14px"></div></div>');
+    }
+    if (_loyalty && (pointsAvail > 0 || (_loyalty.points > 0 && _loyalty.points < _loyalty.min_redeem))) {
+        const factor = (parseInt(_loyalty.step, 10) || 10);
+        document.getElementById('cart-total').insertAdjacentHTML('beforeend', pointsAvail > 0
+            ? '<label class="co-points" style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:12px;padding:11px 12px;border:1.5px solid rgba(212,175,55,.35);border-radius:10px;cursor:pointer;font-size:13px;font-weight:700">' +
+              '<span>⭐ ' + escapeHtml(ETEL_I18N.t('pts_use')) + ' <span style="font-weight:600;opacity:.7">(' + pointsAvail + ' = −ETB ' + (pointsAvail / factor).toFixed(0) + ')</span></span>' +
+              '<input type="checkbox" ' + (_usePoints ? 'checked' : '') + ' onchange="togglePointsUse(this.checked)" style="width:20px;height:20px;accent-color:#D4AF37"></label>'
+            : '<div class="co-points" style="margin-top:12px;font-size:12px;opacity:.65">⭐ ' + escapeHtml(ETEL_I18N.t('pts_need').replace('{n}', String(_loyalty.min_redeem - _loyalty.points))) + '</div>');
     }
     setTimeout(_promoRecheck, 0);
 
@@ -1570,6 +1641,7 @@ async function placeOrder(zone, name, phone, notes) {
     for (let attempt = 1; attempt <= 2; attempt++) {
         res = await api('customer_create_order', {
             promo_code: _promo ? _promo.code : '',
+            use_points: _usePoints ? 1 : 0,
             items: cart.map(function(c){ return {item_id:c.item_id, quantity:c.quantity}; }),
             to_zone: zone, recipient_name: name, recipient_phone: phone, notes: notes,
             payment_method: selectedPayment,
@@ -1583,7 +1655,7 @@ async function placeOrder(zone, name, phone, notes) {
     if (btn) btn.disabled = false;
     if (res && res.success) {
         currentOrderId = res.data.order_id;
-        _promo = null; cart = []; selectedZone = ''; _deliveryAddr = ''; _deliveryLat = null; _deliveryLng = null; _deliveryAC = null; _deliveryPhotoUrl = '';
+        _promo = null; _usePoints = false; _loyalty = null; cart = []; selectedZone = ''; _deliveryAddr = ''; _deliveryLat = null; _deliveryLng = null; _deliveryAC = null; _deliveryPhotoUrl = '';
         updateCartCount();
         closeCart();
         showToast('Order placed! Track at: /track?code=' + res.data.order_code, 'ok');
@@ -1631,7 +1703,7 @@ async function scheduleOrderFromCart(zone, name, phone, notes, scheduledAt) {
     const res = await api('schedule_order', {scheduled_at: scheduledAt, order_template: template});
     if (btn) btn.disabled = false;
     if (res && res.success) {
-        _promo = null; cart = []; selectedZone = ''; _deliveryAddr = ''; _deliveryLat = null; _deliveryLng = null; _deliveryAC = null; _deliveryPhotoUrl = ''; _scheduleEnabled = false;
+        _promo = null; _usePoints = false; _loyalty = null; cart = []; selectedZone = ''; _deliveryAddr = ''; _deliveryLat = null; _deliveryLng = null; _deliveryAC = null; _deliveryPhotoUrl = ''; _scheduleEnabled = false;
         updateCartCount();
         closeCart();
         showToast('Order scheduled for ' + scheduledAt, 'ok');
@@ -1648,6 +1720,7 @@ async function placeOrderThenPay(zone, name, phone, notes, tbPhone) {
 
     const orderRes = await api('customer_create_order', {
             promo_code: _promo ? _promo.code : '',
+            use_points: _usePoints ? 1 : 0,
         items: cart.map(function(c){ return {item_id:c.item_id, quantity:c.quantity}; }),
         to_zone: zone, recipient_name: name, recipient_phone: phone, notes: notes,
         payment_method: 'telebirr',
@@ -1683,7 +1756,7 @@ async function placeOrderThenPay(zone, name, phone, notes, tbPhone) {
         document.getElementById('co-msg').style.display          = 'none';
         if (btn) btn.style.display = 'none';
         startTelebirrPolling(currentPaymentId, orderRes.data.order_code);
-        _promo = null; cart = []; selectedZone = ''; _deliveryAddr = ''; _deliveryLat = null; _deliveryLng = null; _deliveryAC = null; _deliveryPhotoUrl = '';
+        _promo = null; _usePoints = false; _loyalty = null; cart = []; selectedZone = ''; _deliveryAddr = ''; _deliveryLat = null; _deliveryLng = null; _deliveryAC = null; _deliveryPhotoUrl = '';
         updateCartCount();
     } else {
         showCoMsg('Telebirr error: ' + ((payRes && payRes.message) || 'Unknown error. Try Cash payment.'));
@@ -1723,6 +1796,7 @@ async function placeOrderThenBank(zone, name, phone, notes, reference) {
 
     const orderRes = await api('customer_create_order', {
             promo_code: _promo ? _promo.code : '',
+            use_points: _usePoints ? 1 : 0,
         items: cart.map(function(c){ return {item_id:c.item_id, quantity:c.quantity}; }),
         to_zone: zone, recipient_name: name, recipient_phone: phone, notes: notes,
         payment_method: selectedPayment,
@@ -1746,7 +1820,7 @@ async function placeOrderThenBank(zone, name, phone, notes, reference) {
     });
 
     if (btn) btn.disabled = false;
-    _promo = null; cart = []; selectedZone = ''; _deliveryAddr = ''; _deliveryLat = null; _deliveryLng = null; _deliveryAC = null; _deliveryPhotoUrl = '';
+    _promo = null; _usePoints = false; _loyalty = null; cart = []; selectedZone = ''; _deliveryAddr = ''; _deliveryLat = null; _deliveryLng = null; _deliveryAC = null; _deliveryPhotoUrl = '';
     updateCartCount();
     closeCart();
     if (bankRes && bankRes.success) {
@@ -2611,9 +2685,9 @@ function toggleProfile() {
 
     <!-- Stats -->
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:20px;position:relative">
-      ${[['Orders','0','#FFD700'],['Points','0','#FFD700'],['Saved','ETB 0','#22C55E']].map(function(s){return `
-      <div style="text-align:center;padding:12px 8px;background:rgba(255,215,0,.06);border:1px solid rgba(255,215,0,.1);border-radius:12px">
-        <div style="font-size:17px;font-weight:800;color:${s[2]};line-height:1">${s[1]}</div>
+      ${[['Orders','0','#FFD700','pf-orders'],['Points','0','#FFD700','pf-points'],['Saved','ETB 0','#22C55E','pf-saved']].map(function(s){return `
+      <div ${s[3]==='pf-points'?'onclick="closeProfile();openPointsSheet()" role="button" ':''}style="text-align:center;padding:12px 8px;background:rgba(255,215,0,.06);border:1px solid rgba(255,215,0,.1);border-radius:12px;${s[3]==='pf-points'?'cursor:pointer':''}">
+        <div id="${s[3]}" style="font-size:17px;font-weight:800;color:${s[2]};line-height:1">${s[1]}</div>
         <div style="font-size:10px;color:rgba(255,248,231,.38);margin-top:4px;font-weight:500">${s[0]}</div>
       </div>`;}).join('')}
     </div>
@@ -2678,6 +2752,7 @@ function toggleProfile() {
   <div style="text-align:center;padding:20px 14px 8px;font-size:10px;color:rgba(255,248,231,.18);letter-spacing:.05em">ETEL DELIVERY v3.7 · ሐዋሳ</div>
 </div>`;
         drop.style.display = 'block';
+        fillProfileStats();
     } else {
         drop.style.display = 'none';
     }

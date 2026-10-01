@@ -42,6 +42,14 @@ function etel_notify_order_status($pdo, $order_id, $event = null) {
             $event = $map[$o['status']];
         }
 
+        // Loyalty bookkeeping happens whatever the customer's notification settings are.
+        $earned = 0;
+        if ($event === 'delivered' || $event === 'cancelled') {
+            require_once __DIR__ . '/loyalty.php';
+            if ($event === 'delivered') $earned = etel_loyalty_award_for_order($pdo, $order_id);
+            else etel_loyalty_refund_for_order($pdo, $order_id);
+        }
+
         $settings = $o['settings_json'] ? json_decode($o['settings_json'], true) : array();
         if (!is_array($settings)) $settings = array();
         if (isset($settings['notif_order_updates']) && !$settings['notif_order_updates']) return false;
@@ -60,6 +68,7 @@ function etel_notify_order_status($pdo, $order_id, $event = null) {
         $ins->execute(array($order_id, $event));
         if ($ins->rowCount() < 1) return false; // already sent for this order + event
 
+        if ($earned > 0) $text[1] .= ($lang === 'am' ? ' +' . $earned . ' ነጥቦች አግኝተዋል ⭐' : ' You earned ' . $earned . ' points ⭐');
         require_once __DIR__ . '/../push.php';
         return etel_push_send($pdo, intval($o['customer_id']), $text[0], $text[1], array(
             'type' => 'order_' . $event, 'order_id' => $order_id, 'tag' => 'order-' . $order_id,
