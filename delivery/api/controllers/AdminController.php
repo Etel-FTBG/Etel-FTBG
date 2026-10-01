@@ -760,6 +760,7 @@ case 'admin_update_order': {
     try {
         $extra = ($status === 'delivered') ? ', delivered_at=NOW()' : '';
         $pdo->prepare("UPDATE orders SET status=? $extra WHERE id=?")->execute(array($status, $order_id));
+        if (function_exists('etel_notify_order_status')) etel_notify_order_status($pdo, $order_id);
         ok(array('message' => 'Order updated', 'order_id' => $order_id, 'status' => $status));
     } catch (Exception $e) { fail_ex($e, 'Update failed', 500); }
     break;
@@ -957,9 +958,11 @@ case 'admin_force_confirm': {
         if ($conf['type'] === 'pickup') {
             $pdo->prepare("UPDATE orders SET status='picked_up' WHERE id=? AND status='assigned'")->execute(array($conf['order_id']));
             $pdo->prepare("UPDATE order_assignments SET status='picked_up' WHERE order_id=?")->execute(array($conf['order_id']));
+        if (function_exists('etel_notify_order_status')) etel_notify_order_status($pdo, $conf['order_id']);
         } else {
             $pdo->prepare("UPDATE orders SET status='delivered', delivered_at=NOW() WHERE id=?")->execute(array($conf['order_id']));
             $pdo->prepare("UPDATE order_assignments SET status='delivered' WHERE order_id=?")->execute(array($conf['order_id']));
+        if (function_exists('etel_notify_order_status')) etel_notify_order_status($pdo, $conf['order_id']);
         }
         $pdo->commit();
         ok(array('message' => 'Confirmation forced by admin'));

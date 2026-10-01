@@ -1453,3 +1453,8 @@ body:not(.dark-theme) .shop-chip.active { background: linear-gradient(135deg,#F0
 body:not(.dark-theme) #cart-overlay .cart-drawer .co-discount:not(.x),
 body:not(.dark-theme) #cart-overlay .cart-drawer .co-discount *:not(.x) { color: #178A4A !important; }
 body:not(.dark-theme) #cart-overlay .cart-drawer .co-promo input { background: #FFFFFF !important; }
+
+/* Order alerts opt-in button inside the home order tracker */
+.trk-push { display: block; width: 100%; margin-top: 10px; padding: 9px; border-radius: 10px; font-size: 12.5px; font-weight: 800; cursor: pointer;
+  background: rgba(212,175,55,.14); border: 1.5px solid rgba(212,175,55,.45); color: #F0CA58; }
+body:not(.dark-theme) .trk-push { color: #7A5500; background: rgba(212,175,55,.2); border-color: rgba(160,120,20,.45); }

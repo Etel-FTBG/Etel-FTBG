@@ -465,6 +465,7 @@ case 'nfc_confirm_pickup': {
             ->execute(array($order_id));
         $pdo->prepare("UPDATE order_assignments SET status='picked_up' WHERE order_id=?")
             ->execute(array($order_id));
+        if (function_exists('etel_notify_order_status')) etel_notify_order_status($pdo, $order_id);
         $pdo->commit();
         ok(array('message' => 'Pickup confirmed via NFC card.'));
     } catch (Exception $e) {
@@ -515,6 +516,7 @@ case 'nfc_confirm_delivery': {
             ->execute(array($order_id));
         $pdo->prepare("UPDATE order_assignments SET status='delivered' WHERE order_id=?")
             ->execute(array($order_id));
+        if (function_exists('etel_notify_order_status')) etel_notify_order_status($pdo, $order_id);
         $pdo->commit();
         if (function_exists('etel_maybe_pay_referral_reward')) {
             etel_maybe_pay_referral_reward($pdo, $confirmer_user['id']);

@@ -7,7 +7,7 @@
  *   - Navigation    → Network-first, fallback to offline.html
  */
 
-const CACHE_NAME   = 'etel-v78';
+const CACHE_NAME   = 'etel-v79';
 const API_CACHE    = 'etel-api-v7';
 const IMG_CACHE    = 'etel-img-v8';
 
@@ -162,6 +162,8 @@ self.addEventListener('push', e => {
             icon:    './icons/icon-192.png',
             badge:   './icons/icon-72.png',
             vibrate: [200, 100, 200],
+            tag:     (d.data && d.data.tag) || undefined,
+            renotify: !!(d.data && d.data.tag),
             data:    d.url || './',
             actions: d.actions || []
         })
