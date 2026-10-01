@@ -704,6 +704,26 @@ switch ($action) {
         ok(array('users' => $users, 'count' => count($users)));
         break;
     }
+    case 'customer_loyalty': {
+        // GET -> points balance, what it is worth, simple stats and recent activity for the signed-in customer.
+        $GLOBALS['ETEL_LIMITED_BLOCK'] = true;
+        $pdo = db(); $au = require_auth($pdo);
+        require_once __DIR__ . '/lib/loyalty.php';
+        etel_ensure_loyalty_tables($pdo);
+        try {
+            $bal = etel_loyalty_balance($pdo, $au['id']);
+            $c = $pdo->prepare("SELECT COUNT(*) AS orders, COALESCE(SUM(COALESCE(discount,0) + COALESCE(points_discount,0)),0) AS saved FROM orders WHERE customer_id = ? AND status <> 'cancelled'");
+            $c->execute(array($au['id']));
+            $st = $c->fetch(PDO::FETCH_ASSOC);
+            $h = $pdo->prepare('SELECT points, kind, note, created_at FROM loyalty_points WHERE user_id = ? ORDER BY id DESC LIMIT 15');
+            $h->execute(array($au['id']));
+            $hist = $h->fetchAll(PDO::FETCH_ASSOC);
+        } catch (Exception $e) { fail_ex($e, 'Could not load your points', 500); }
+        ok(array('points' => $bal, 'value_etb' => round($bal / ETEL_POINTS_STEP, 2),
+                 'min_redeem' => ETEL_POINTS_MIN_REDEEM, 'step' => ETEL_POINTS_STEP,
+                 'orders' => intval($st['orders']), 'saved_etb' => round(floatval($st['saved']), 2), 'history' => $hist));
+        break;
+    }
     case 'customer_validate_promo': {
         // POST: code, subtotal, delivery_fee  -> live preview for the checkout box. Read-only:
         // the real discount is recomputed from the actual basket when the order is placed.
@@ -1113,7 +1133,7 @@ switch ($action) {
         $GLOBALS['ETEL_LIMITED_BLOCK'] = true; // limited (Ride-only) EtelIDs are refused here - see get_auth_user()
         require __DIR__ . '/controllers/OrderController.php';
         break;
-    case 'sg_profile': case 'sg_update_profile': case 'sg_orders': case 'sg_accept_order': case 'sg_update_order_status': case 'sg_get_kitchen_ticket': case 'sg_order_detail': case 'sg_scan_qr': case 'sg_complete_order': case 'sg_stats': case 'sg_set_online': case 'sg_notifications': case 'sg_add_item': case 'sg_get_my_items': case 'sg_update_item': case 'sg_delete_item': case 'sg_get_staff': case 'sg_add_staff': case 'sg_remove_staff': case 'sg_update_staff_role': case 'sg_list_roles': case 'sg_save_role': case 'sg_delete_role': case 'sg_my_role': case 'sg_financial_report': case 'sg_get_pending_payout_request': case 'admin_list_payout_requests': case 'admin_review_payout_request':
+    case 'sg_profile': case 'sg_update_profile': case 'sg_orders': case 'sg_accept_order': case 'sg_update_order_status': case 'sg_get_kitchen_ticket': case 'sg_order_detail': case 'sg_scan_qr': case 'sg_complete_order': case 'sg_stats': case 'sg_set_online': case 'sg_notifications': case 'sg_add_item': case 'sg_get_my_items': case 'sg_update_item': case 'sg_delete_item': case 'sg_get_staff': case 'sg_add_staff': case 'sg_remove_staff': case 'sg_update_staff_role': case 'sg_list_roles': case 'sg_save_role': case 'sg_delete_role': case 'sg_my_role': case 'sg_sales_report': case 'sg_reviews': case 'sg_reply_review': case 'sg_financial_report': case 'sg_get_pending_payout_request': case 'admin_list_payout_requests': case 'admin_review_payout_request':
         $GLOBALS['ETEL_LIMITED_BLOCK'] = true; // limited (Ride-only) EtelIDs are refused here - see get_auth_user()
         require __DIR__ . '/controllers/ServiceGiverController.php';
         break;

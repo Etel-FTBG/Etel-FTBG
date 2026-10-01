@@ -1535,6 +1535,164 @@ case 'sg_my_role': {
     break;
 }
 
+case 'sg_reviews': {
+    // GET -> this shop's customer reviews (newest first) with any reply, plus totals.
+    $pdo = db();
+    $auth_user = require_auth($pdo);
+    if ($auth_user['role'] !== 'service_giver' && $auth_user['role'] !== 'admin') fail('Not a service giver account', 403);
+    $target_sg_id = isset($_GET['sg_id']) ? intval($_GET['sg_id']) : (isset($body['sg_id']) ? intval($body['sg_id']) : 0);
+    if ($auth_user['role'] === 'admin' && $target_sg_id) {
+        $ctx = array('sg_id' => $target_sg_id, 'role' => 'owner', 'role_name' => 'Owner', 'capabilities' => array('*'));
+    } else {
+        $ctx = sg_get_context($pdo, $auth_user['id']);
+        sg_require_capability($auth_user, $ctx, 'orders.view');
+    }
+    if (!$ctx) fail('Service giver profile not found', 404);
+    require_once __DIR__ . '/../lib/reviews.php';
+    etel_ensure_review_columns($pdo);
+    try {
+        $s = $pdo->prepare("SELECT r.id, r.stars, r.comment, r.tags, r.food_rating, r.shop_reply, r.shop_replied_at, r.rated_at,
+                                   o.order_code, SUBSTRING_INDEX(u.name, ' ', 1) AS reviewer_first_name
+                            FROM order_ratings r
+                            JOIN order_assignments oa ON oa.order_id = r.order_id
+                            JOIN orders o ON o.id = r.order_id
+                            LEFT JOIN users u ON u.id = r.customer_id
+                            WHERE oa.service_giver_id = ?
+                            ORDER BY r.rated_at DESC LIMIT 50");
+        $s->execute(array($ctx['sg_id']));
+        $rows = $s->fetchAll(PDO::FETCH_ASSOC);
+        $a = $pdo->prepare("SELECT AVG(r.stars) AS avg, COUNT(*) AS total,
+                                   SUM(CASE WHEN r.shop_reply IS NULL OR r.shop_reply = '' THEN 1 ELSE 0 END) AS unreplied
+                            FROM order_ratings r JOIN order_assignments oa ON oa.order_id = r.order_id
+                            WHERE oa.service_giver_id = ?");
+        $a->execute(array($ctx['sg_id']));
+        $agg = $a->fetch(PDO::FETCH_ASSOC);
+    } catch (Exception $e) { fail_ex($e, 'Could not load reviews', 500); }
+    ok(array('reviews' => $rows, 'average' => round(floatval($agg['avg']), 2), 'total' => intval($agg['total']),
+             'unreplied' => intval($agg['unreplied']), 'can_reply' => ($auth_user['role'] === 'admin') || sg_has_capability($ctx, 'orders.manage')));
+    break;
+}
+
+case 'sg_reply_review': {
+    // POST rating_id, reply -> the shop answers one review (shown publicly under it). One reply per
+    // review; sending again edits it. Reply text is plain text, max 300 characters.
+    $pdo = db();
+    $auth_user = require_auth($pdo);
+    if ($auth_user['role'] !== 'service_giver' && $auth_user['role'] !== 'admin') fail('Not a service giver account', 403);
+    $ctx = sg_get_context($pdo, $auth_user['id']);
+    if ($auth_user['role'] !== 'admin') sg_require_capability($auth_user, $ctx, 'orders.manage');
+    if (!$ctx) fail('Service giver profile not found', 404);
+    $rating_id = isset($body['rating_id']) ? intval($body['rating_id']) : 0;
+    $reply = isset($body['reply']) ? trim($body['reply']) : '';
+    $reply = function_exists('mb_substr') ? mb_substr($reply, 0, 300) : substr($reply, 0, 300);
+    if ($rating_id <= 0) fail('rating_id required', 400);
+    if ($reply === '') fail('Write a reply first', 400);
+    require_once __DIR__ . '/../lib/reviews.php';
+    etel_ensure_review_columns($pdo);
+    try {
+        $c = $pdo->prepare('SELECT r.id, r.order_id, r.customer_id, o.order_code FROM order_ratings r JOIN order_assignments oa ON oa.order_id = r.order_id JOIN orders o ON o.id = r.order_id WHERE r.id = ? AND oa.service_giver_id = ?');
+        $c->execute(array($rating_id, $ctx['sg_id']));
+        $r = $c->fetch(PDO::FETCH_ASSOC);
+        if (!$r) fail('Review not found for your shop', 404);
+        $pdo->prepare('UPDATE order_ratings SET shop_reply = ?, shop_replied_at = NOW() WHERE id = ?')->execute(array($reply, $rating_id));
+    } catch (Exception $e) { fail_ex($e, 'Could not save the reply', 500); }
+    // Let the customer know (best effort; respects their "Order updates" switch).
+    try {
+        $us = $pdo->prepare('SELECT settings_json FROM users WHERE id = ?'); $us->execute(array($r['customer_id']));
+        $cfg = json_decode((string)$us->fetchColumn(), true);
+        if (!is_array($cfg) || !isset($cfg['notif_order_updates']) || $cfg['notif_order_updates']) {
+            require_once __DIR__ . '/../push.php';
+            $am = is_array($cfg) && isset($cfg['language']) && $cfg['language'] === 'am';
+            etel_push_send($pdo, intval($r['customer_id']), $am ? 'ሱቁ ለግምገማዎ መልስ ሰጥቷል' : 'The shop replied to your review',
+                mb_substr($reply, 0, 120), array('type' => 'review_reply', 'order_id' => intval($r['order_id']), 'tag' => 'review-' . $rating_id, 'url' => '/delivery/customer.html'));
+        }
+    } catch (Exception $e) { error_log('[ETEL] review reply push failed (non-fatal): ' . $e->getMessage()); }
+    ok(array('rating_id' => $rating_id, 'reply' => $reply));
+    break;
+}
+
+case 'sg_sales_report': {
+    // GET ?days=1|7|30  (owner / reports.view). days=1 means "today".
+    // Everything is computed LIVE from orders + order_items for THIS shop. Money figures are
+    // item revenue only (orders.subtotal of delivered orders) - delivery fee and service
+    // charge are not the shop's money. Without payments.view (e.g. a cashier) the revenue
+    // numbers are withheld and only the counts are returned.
+    $pdo = db();
+    $auth_user = require_auth($pdo);
+    if ($auth_user['role'] !== 'service_giver' && $auth_user['role'] !== 'admin') fail('Not a service giver account', 403);
+    $target_sg_id = isset($_GET['sg_id']) ? intval($_GET['sg_id']) : (isset($body['sg_id']) ? intval($body['sg_id']) : 0);
+    if ($auth_user['role'] === 'admin' && $target_sg_id) {
+        $ctx = array('sg_id' => $target_sg_id, 'role' => 'owner', 'role_name' => 'Owner', 'capabilities' => array('*'));
+    } else {
+        $ctx = sg_get_context($pdo, $auth_user['id']);
+        sg_require_capability($auth_user, $ctx, 'reports.view');
+    }
+    if (!$ctx) fail('Service giver profile not found', 404);
+    $showMoney = ($auth_user['role'] === 'admin') || sg_has_capability($ctx, 'payments.view');
+
+    $daysIn = isset($_GET['days']) ? $_GET['days'] : (isset($body['days']) ? $body['days'] : 7);
+    $days = in_array(intval($daysIn), array(1, 7, 30), true) ? intval($daysIn) : 7;
+    $sg = intval($ctx['sg_id']);
+    $money = 'COALESCE(o.subtotal, o.fare_total)';
+    $curFrom  = 'DATE_SUB(CURDATE(), INTERVAL ' . ($days - 1) . ' DAY)';
+    $prevFrom = 'DATE_SUB(CURDATE(), INTERVAL ' . (2 * $days - 1) . ' DAY)';
+
+    $summary = function ($from, $to) use ($pdo, $sg, $money) {
+        $s = $pdo->prepare("SELECT COUNT(*) AS orders,
+                SUM(CASE WHEN o.status='delivered' THEN 1 ELSE 0 END) AS delivered,
+                SUM(CASE WHEN o.status='cancelled' THEN 1 ELSE 0 END) AS cancelled,
+                COALESCE(SUM(CASE WHEN o.status='delivered' THEN $money ELSE 0 END),0) AS revenue
+            FROM order_assignments oa JOIN orders o ON o.id = oa.order_id
+            WHERE oa.service_giver_id = ? AND o.placed_at >= $from AND o.placed_at < $to");
+        $s->execute(array($sg));
+        $r = $s->fetch(PDO::FETCH_ASSOC);
+        return array('orders' => intval($r['orders']), 'delivered' => intval($r['delivered']),
+                     'cancelled' => intval($r['cancelled']), 'revenue' => round(floatval($r['revenue']), 2));
+    };
+
+    try {
+        $cur  = $summary($curFrom, 'DATE_ADD(CURDATE(), INTERVAL 1 DAY)');
+        $prev = $summary($prevFrom, $curFrom);
+
+        $d = $pdo->prepare("SELECT DATE(o.placed_at) AS d, COUNT(*) AS orders,
+                COALESCE(SUM(CASE WHEN o.status='delivered' THEN $money ELSE 0 END),0) AS revenue
+            FROM order_assignments oa JOIN orders o ON o.id = oa.order_id
+            WHERE oa.service_giver_id = ? AND o.status <> 'cancelled' AND o.placed_at >= $curFrom
+            GROUP BY DATE(o.placed_at) ORDER BY d");
+        $d->execute(array($sg));
+        $daily = array();
+        foreach ($d->fetchAll(PDO::FETCH_ASSOC) as $r) {
+            $daily[] = array('date' => $r['d'], 'orders' => intval($r['orders']), 'revenue' => round(floatval($r['revenue']), 2));
+        }
+
+        $h = $pdo->prepare("SELECT HOUR(o.placed_at) AS h, COUNT(*) AS c
+            FROM order_assignments oa JOIN orders o ON o.id = oa.order_id
+            WHERE oa.service_giver_id = ? AND o.status <> 'cancelled' AND o.placed_at >= $curFrom
+            GROUP BY HOUR(o.placed_at)");
+        $h->execute(array($sg));
+        $hours = array_fill(0, 24, 0);
+        foreach ($h->fetchAll(PDO::FETCH_ASSOC) as $r) { $hours[intval($r['h'])] = intval($r['c']); }
+
+        $t = $pdo->prepare("SELECT oi.item_name AS name, SUM(oi.quantity) AS qty, SUM(oi.subtotal) AS revenue
+            FROM order_assignments oa JOIN orders o ON o.id = oa.order_id JOIN order_items oi ON oi.order_id = o.id
+            WHERE oa.service_giver_id = ? AND o.status <> 'cancelled' AND o.placed_at >= $curFrom
+            GROUP BY oi.item_id, oi.item_name ORDER BY qty DESC, revenue DESC LIMIT 5");
+        $t->execute(array($sg));
+        $top = array();
+        foreach ($t->fetchAll(PDO::FETCH_ASSOC) as $r) {
+            $top[] = array('name' => $r['name'], 'qty' => intval($r['qty']), 'revenue' => $showMoney ? round(floatval($r['revenue']), 2) : null);
+        }
+    } catch (Exception $e) { fail_ex($e, 'Could not load the sales report', 500); }
+
+    if (!$showMoney) {
+        $cur['revenue'] = null; $prev['revenue'] = null;
+        foreach ($daily as $i => $r) $daily[$i]['revenue'] = null;
+    }
+    ok(array('days' => $days, 'show_money' => $showMoney, 'current' => $cur, 'previous' => $prev,
+             'daily' => $daily, 'hours' => $hours, 'top_items' => $top));
+    break;
+}
+
 case 'sg_financial_report': {
     // GET: (owner or payments.view capability)  ?days=7|30|90|all
     // Computed LIVE from order_assignments+orders, not from

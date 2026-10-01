@@ -688,6 +688,8 @@
             if (pageName === 'services') loadServices();
             if (pageName === 'orders') loadOrders();
             if (pageName === 'payments') loadSGFinancialReport();
+            if (pageName === 'analytics') loadSalesReport();
+            if (pageName === 'reviews') loadSgReviews();
             if (pageName === 'staff' && currentStaffRole === 'owner') { loadRoles(); loadStaff(); }
             closeSidebar();
         }
@@ -706,6 +708,8 @@
                     case 'orders':   await loadOrders(); break;
                     case 'services': await loadServices(); break;
                     case 'payments': await loadSGFinancialReport(); break;
+                    case 'analytics': await loadSalesReport(); break;
+                    case 'reviews': await loadSgReviews(); break;
                     case 'staff':
                         if (currentStaffRole === 'owner') { await loadRoles(); await loadStaff(); }
                         break;
@@ -1033,6 +1037,110 @@
         }
 
         // ── FINANCIAL REPORT (payments.view capability) ──────────────────
+        // ─── CUSTOMER REVIEWS (read + reply) ───────────────────────────
+        const SG_TAG_LABEL = { fast_delivery:'⚡ Fast delivery', great_taste:'😋 Great taste', well_packed:'📦 Well packed', friendly_courier:'🙂 Friendly courier',
+            good_value:'💰 Good value', late:'🐢 Late', cold:'🥶 Arrived cold', wrong_item:'❌ Wrong item' };
+        async function loadSgReviews() {
+            const body = document.getElementById('sg-reviews-body');
+            if (!body) return;
+            const d = await apiCall('sg_reviews', {});
+            if (!d) { body.innerHTML = '<p style="color:#e74c3c">Could not load reviews.</p>'; return; }
+            const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+            const badge = document.getElementById('sg-reviews-badge');
+            if (badge) { badge.textContent = d.unreplied || 0; badge.style.display = d.unreplied ? 'inline-block' : 'none'; }
+            const stars = n => '★'.repeat(n) + '☆'.repeat(5 - n);
+            let html = '<div class="sr-kpis">' +
+                '<div class="sr-kpi"><span>Average</span><b>' + (d.total ? d.average.toFixed(1) : '—') + '</b><em class="sr-flat rv-stars">' + (d.total ? stars(Math.round(d.average)) : '') + '</em></div>' +
+                '<div class="sr-kpi"><span>Reviews</span><b>' + d.total + '</b><em class="sr-flat">all time</em></div>' +
+                '<div class="sr-kpi"><span>Need a reply</span><b>' + d.unreplied + '</b><em class="sr-flat">' + (d.unreplied ? 'reply to build trust' : 'all answered') + '</em></div></div>';
+            if (!(d.reviews || []).length) {
+                html += '<div style="padding:24px;color:var(--text-dim);text-align:center">No reviews yet. They appear here after customers rate delivered orders.</div>';
+            }
+            (d.reviews || []).forEach(r => {
+                const when = r.rated_at ? new Date(r.rated_at.replace(' ', 'T')).toLocaleDateString() : '';
+                html += '<div class="rv-card" id="rv-' + r.id + '">' +
+                    '<div class="rv-top"><span class="rv-stars">' + stars(r.stars) + '</span><span style="color:var(--text-faint);font-size:11px">' + esc(r.order_code) + ' · ' + esc(when) + '</span></div>' +
+                    (r.tags ? '<div>' + String(r.tags).split(',').map(k => '<span class="rv-tag">' + esc(SG_TAG_LABEL[k] || k) + '</span>').join('') + '</div>' : '') +
+                    (r.comment ? '<div style="font-size:13px;color:var(--text);margin-bottom:4px">' + esc(r.comment) + '</div>' : '') +
+                    '<div style="font-size:11px;color:var(--text-faint)">— ' + esc(r.reviewer_first_name || 'Customer') + '</div>' +
+                    (r.shop_reply ? '<div class="rv-reply"><b style="font-size:10.5px;opacity:.7">Your reply</b><br>' + esc(r.shop_reply) + '</div>' : '') +
+                    (d.can_reply ? '<div class="rv-form"><textarea id="rv-text-' + r.id + '" maxlength="300" placeholder="' + (r.shop_reply ? 'Edit your reply…' : 'Write a short, polite reply…') + '">' + esc(r.shop_reply || '') + '</textarea>' +
+                        '<button type="button" onclick="replyToReview(' + r.id + ')">' + (r.shop_reply ? 'Update reply' : 'Reply') + '</button></div>' : '') +
+                    '</div>';
+            });
+            body.innerHTML = html;
+        }
+        async function replyToReview(id) {
+            const ta = document.getElementById('rv-text-' + id);
+            const text = ta ? ta.value.trim() : '';
+            if (!text) { showNotification('Write a reply first', 'error'); return; }
+            const res = await apiCall('sg_reply_review', { rating_id: id, reply: text });
+            if (res) { showNotification('Reply sent', 'success'); loadSgReviews(); }
+        }
+
+        // ─── SALES REPORT ───────────────────────────────────────────
+        // Live from sg_sales_report. Revenue = item sales of DELIVERED orders only
+        // (delivery fee and service charge are not the shop's money); orders / hours /
+        // top items count every order that wasn't cancelled.
+        async function loadSalesReport(days) {
+            const body = document.getElementById('sales-report-body');
+            if (!body) return;
+            days = days || parseInt((document.querySelector('#sr-range .sr-pill.active') || {}).dataset?.days || '7', 10);
+            document.querySelectorAll('#sr-range .sr-pill').forEach(b => b.classList.toggle('active', parseInt(b.dataset.days, 10) === days));
+            body.innerHTML = '<div style="padding:20px;color:var(--text-dim)">Loading…</div>';
+            const d = await apiCall('sg_sales_report', { days });
+            if (!d) { body.innerHTML = '<p style="color:#e74c3c">Could not load the report.</p>'; return; }
+            const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+            const cur = d.current || {}, prev = d.previous || {};
+            const label = days === 1 ? 'yesterday' : 'the previous ' + days + ' days';
+            const delta = (a, b) => {
+                if (a == null || b == null) return '';
+                if (!b && !a) return '<em class="sr-flat">no change</em>';
+                if (!b) return '<em class="sr-up">▲ new vs ' + label + '</em>';
+                const p = Math.round((a - b) / b * 100);
+                return p === 0 ? '<em class="sr-flat">same as ' + label + '</em>'
+                    : '<em class="' + (p > 0 ? 'sr-up">▲ ' : 'sr-down">▼ ') + Math.abs(p) + '% vs ' + label + '</em>';
+            };
+            const money = v => v == null ? '—' : 'ETB ' + Number(v).toLocaleString(undefined, { maximumFractionDigits: 0 });
+            const avg = (cur.delivered && cur.revenue != null) ? cur.revenue / cur.delivered : null;
+            let html = '<div class="sr-kpis">' +
+                '<div class="sr-kpi"><span>Orders</span><b>' + (cur.orders || 0) + '</b>' + delta(cur.orders, prev.orders) + '</div>' +
+                '<div class="sr-kpi"><span>Delivered</span><b>' + (cur.delivered || 0) + '</b><em class="sr-flat">' + (cur.cancelled || 0) + ' cancelled</em></div>' +
+                (d.show_money ? '<div class="sr-kpi"><span>Sales</span><b>' + money(cur.revenue) + '</b>' + delta(cur.revenue, prev.revenue) + '</div>' +
+                    '<div class="sr-kpi"><span>Avg order</span><b>' + money(avg) + '</b><em class="sr-flat">delivered orders</em></div>' : '') +
+                '</div>';
+
+            // daily bars (fill empty days so the chart is honest)
+            const byDate = {}; (d.daily || []).forEach(r => { byDate[r.date] = r; });
+            const dayList = [];
+            for (let i = days - 1; i >= 0; i--) { const dt = new Date(); dt.setDate(dt.getDate() - i); dayList.push(dt.toISOString().slice(0, 10)); }
+            if (days > 1) {
+                const vals = dayList.map(k => byDate[k] ? (d.show_money && byDate[k].revenue != null ? byDate[k].revenue : byDate[k].orders) : 0);
+                const max = Math.max.apply(null, vals.concat([1]));
+                html += '<div class="sr-card"><h4>' + (d.show_money ? 'Sales per day' : 'Orders per day') + '</h4><div class="sr-bars">' +
+                    vals.map((v, i) => '<div class="sr-bar" title="' + dayList[i] + ': ' + (d.show_money ? money(v) : v + ' orders') + '" style="height:' + Math.max(2, Math.round(v / max * 100)) + '%"></div>').join('') +
+                    '</div><div class="sr-axis"><span>' + dayList[0].slice(5) + '</span><span>' + dayList[dayList.length - 1].slice(5) + '</span></div></div>';
+            }
+
+            // busy hours
+            const hrs = d.hours || [];
+            const hmax = Math.max.apply(null, hrs.concat([0]));
+            if (hmax > 0) {
+                const peak = hrs.indexOf(hmax);
+                const fmt = h => (h % 12 === 0 ? 12 : h % 12) + (h < 12 ? ' AM' : ' PM');
+                html += '<div class="sr-card"><h4>Busy hours <span style="font-weight:600;color:var(--text-dim)">· busiest around ' + fmt(peak) + '</span></h4><div class="sr-bars">' +
+                    hrs.map((v, i) => '<div class="sr-bar' + (i === peak ? ' peak' : '') + '" title="' + fmt(i) + ': ' + v + ' orders" style="height:' + Math.max(2, Math.round(v / hmax * 100)) + '%"></div>').join('') +
+                    '</div><div class="sr-axis"><span>12 AM</span><span>6 AM</span><span>12 PM</span><span>6 PM</span><span>11 PM</span></div></div>';
+            }
+
+            // top items
+            const top = d.top_items || [];
+            html += '<div class="sr-card"><h4>Top items</h4>' + (top.length ? top.map((t, i) =>
+                '<div class="sr-top"><i>' + (i + 1) + '</i><span class="nm">' + esc(t.name) + '</span><span class="q">' + t.qty + ' sold' + (t.revenue != null ? ' · ' + money(t.revenue) : '') + '</span></div>').join('')
+                : '<div style="color:var(--text-dim);font-size:13px">No orders in this period yet.</div>') + '</div>';
+            body.innerHTML = html;
+        }
+
         async function loadSGFinancialReport() {
             const body = document.getElementById('sg-financial-report-body');
             const rangeSel = document.getElementById('sg-fr-range');
