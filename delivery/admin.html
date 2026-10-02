@@ -1329,6 +1329,17 @@ html{color-scheme:light}
                         </div>
                         <div id="mc-list" style="padding:0 16px 16px"></div>
                     </div>
+                    <div class="data-section" style="margin-top:18px">
+                        <div class="section-title">Copy a menu to another shop</div>
+                        <div style="padding:0 16px 8px;font-size:12px;opacity:.75">For a second branch or a new shop: copy every available dish from one shop to another. Dishes the target already has are skipped, and the target can change the prices later. Each login owns one shop, so branches are separate shops.</div>
+                        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;padding:0 16px 8px">
+                            <label style="font-size:12px">Copy from<select id="mc-copy-from" class="filter-sel" style="width:100%"></select></label>
+                            <label style="font-size:12px">Copy to<select id="mc-copy-to" class="filter-sel" style="width:100%"></select></label>
+                            <label style="font-size:12px">Change prices by (%)<input id="mc-copy-pct" type="number" min="-50" max="200" step="1" value="0" class="filter-sel" style="width:100%" placeholder="0"></label>
+                        </div>
+                        <label style="display:flex;gap:8px;align-items:center;padding:0 16px 10px;font-size:12px"><input type="checkbox" id="mc-copy-hidden"> Also copy hidden (unavailable) dishes</label>
+                        <div style="padding:0 16px 16px"><button class="btn btn-primary" onclick="mcCopyMenu()" style="padding:8px 16px">📋 Copy menu</button> <span id="mc-copy-msg" style="font-size:12px;margin-left:8px"></span></div>
+                    </div>
                 </div><!-- /panel-menucat -->
 
                 <div class="panel" id="panel-orderchats" style="display:none">
@@ -1481,7 +1492,7 @@ html{color-scheme:light}
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script><!-- PPTX slide-text preview (PPTX is a zip of XML), Documents tab -->
     <script src="js/admin-documents.js?v=1.5"></script><!-- Documents library: view/edit/version PDFs, Office files, Markdown, XML, etc -->
 
-<script src="js/admin.js?v=7.2"></script>
+<script src="js/admin.js?v=7.3"></script>
 <script src="js/admin-confirmations-premium.js?v=1.1"></script><!-- Pending Confirmations + GLOBAL modal-box fix for entire admin system -->
 <script src="js/admin-couriers-premium.js?v=1.4"></script><!-- Premium Couriers Management: 3D cards + edit modal + live map -->
     <script src="js/admin-premium.js?v=4.1"></script><!-- KPI count-ups + card motion -->

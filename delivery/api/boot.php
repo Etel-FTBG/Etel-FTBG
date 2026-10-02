@@ -179,7 +179,7 @@ define('ETEL_WRITE_ACTIONS', array(
     'admin_create_user','admin_add_item','admin_update_item','admin_delete_item',
     'admin_toggle_item','admin_create_service_giver','admin_verify_service_giver',
     'admin_suspend_service_giver','sg_update_order_status','sg_complete_order',
-    'sg_add_item','sg_update_item','sg_delete_item','sg_catalog_add','sg_catalog_import','admin_catalog_save','admin_catalog_delete','admin_purge_cache',
+    'sg_add_item','sg_update_item','sg_delete_item','sg_catalog_add','sg_catalog_import','admin_catalog_copy','admin_catalog_save','admin_catalog_delete','admin_purge_cache',
     'admin_update_courier',
     'admin_backfill_order_service_giver_ids',
     'courier_update_location',
@@ -1171,6 +1171,21 @@ switch ($action) {
             fail_ex($e, 'Could not save the dish', 500);
         }
         ok(array('id' => $id));
+        break;
+    }
+    case 'admin_catalog_copy': {
+        // POST from_sg, to_sg, [percent -50..200], [include_hidden] -> copies one shop's menu to another shop.
+        $pdo = db(); require_admin($pdo, 'items.manage');
+        require_once __DIR__ . '/lib/menu_catalog.php';
+        $from = isset($body['from_sg']) ? (int)$body['from_sg'] : 0;
+        $to   = isset($body['to_sg']) ? (int)$body['to_sg'] : 0;
+        if ($from <= 0 || $to <= 0) fail('Choose both shops', 400);
+        if ($from === $to) fail('Choose two different shops', 400);
+        try {
+            $chk = $pdo->prepare('SELECT COUNT(*) FROM service_givers WHERE id IN (?, ?)'); $chk->execute(array($from, $to));
+            if ((int)$chk->fetchColumn() !== 2) fail('Shop not found', 404);
+            ok(etel_catalog_copy_menu($pdo, $from, $to, array('percent' => isset($body['percent']) ? $body['percent'] : 0, 'include_hidden' => !empty($body['include_hidden']))));
+        } catch (Exception $e) { fail_ex($e, 'Could not copy the menu', 500); }
         break;
     }
     case 'admin_catalog_delete': {

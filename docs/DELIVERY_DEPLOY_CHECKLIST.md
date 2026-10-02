@@ -28,6 +28,7 @@ New since the first checklist:
 | 065 `review_replies_tags` | review tags + shop replies, and backfills each shop's rating |
 | 066 `order_chat` | order chat tables |
 | 067 `menu_catalog` | shared menu catalog (+ about 67 starter dishes), items.catalog_id / quality / portion |
+| 068 `catalog_items_stock_fix` | sets stock 100 on catalog / CSV dishes that were saved as sold out (stock 0) |
 
 - [ ] All seven show as applied. (The code also creates its tables/columns on first use, so a missed
       migration usually fixes itself — but run them anyway so the admin tools show everything.)
@@ -101,6 +102,9 @@ step by step if you don't want to walk it through with real devices.
 - [ ] "Quick start" chips (e.g. ethiopian restaurant) + **Tick all shown** select a whole starter menu; shops then only type prices.
 - [ ] Add custom item → tick "Suggest this dish for the shared catalog" → it shows under Admin → Menu catalog → ⏳ Suggested → **Approve**.
 - [ ] My Services → **⬇ CSV template**, fill it (name, price, optional quality / portion / category / Amharic name), then **⬆ Import CSV**: dishes that match the catalog by name are linked to it, the rest become custom items (and are suggested to Admin), already-listed dishes are skipped, bad rows are reported by row number.
+- [ ] Admin → Menu catalog → **Copy a menu to another shop**: pick two shops (and optionally a price change %), the target gets the available dishes (existing ones skipped).
+- [ ] Dishes added from the catalog / CSV / copy show as available in the customer app (stock 100, not sold out).
+- [ ] Courier: upload `js/releases/courier/v4/`, then Admin → Releases → set **canary** (or stable) for courier to `v4`. Job cards then show a live "Waiting mm:ss" timer (green, amber after 3 min, red after 8 min).
 - [ ] Customer app: items marked Special / Premium show a small label, and the portion appears next to the shop name.
 
 ## 6. Tell shop owners
