@@ -19,6 +19,7 @@
     <link rel="manifest" href="manifest.json">
     <link rel="icon" type="image/png" href="icons/icon-96.png">
     <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+    <script>window.ETEL_NO_THEME_FAB = true;</script>
     <script src="js/customer-bundle.js?v=3.1"></script>
     <script src="js/customer-bundle-extra.js?v=1.0" defer></script>
     <script>window.initCustomerMap = function(){}; loadGoogleMaps('geometry,places', 'initCustomerMap');</script>
@@ -40,19 +41,7 @@
 </div>
 <style>@keyframes etelSplashPulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.05);opacity:.88}}</style>
 
-<!-- Floating refresh button - re-fetches whichever view is currently
-     open. For when live/polled data stalls and the person has no
-     other obvious way to force a re-fetch. -->
-<button id="cust-refresh-btn" onclick="refreshCurrentView()" aria-label="Refresh"
-  style="position:fixed;left:16px;bottom:16px;z-index:9998;width:48px;height:48px;border-radius:50%;
-  background:linear-gradient(135deg,#E9C767,#D4AF37);border:none;box-shadow:0 4px 14px rgba(212,175,55,.5);
-  font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;">
-  <span id="cust-refresh-icon" style="display:inline-block;">🔄</span>
-</button>
-<style>
-#cust-refresh-btn.spinning #cust-refresh-icon{animation:custRefreshSpin .6s linear infinite;}
-@keyframes custRefreshSpin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
-</style>
+<!-- The floating refresh and theme buttons moved into the Profile menu (Refresh app, Light / Dark mode). -->
 
 <script>
 (function(){
@@ -535,7 +524,7 @@
 
     <script src="js/apk-download-badge.js?v=2" data-role="customer"></script>
 <script src="js/order-chat.js?v=1" data-mode="customer"></script>
-<script src="js/customer.js?v=4.47"></script>
+<script src="js/customer.js?v=4.48"></script>
 <script src="js/investor-nav-check.js"></script>
 </body>
 </html>

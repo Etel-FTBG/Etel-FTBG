@@ -195,7 +195,16 @@ function switchCategory(cat) {
     if (cat === 'home') loadHomeTracker();
 }
 
-// Single floating refresh button (see #cust-refresh-btn in the HTML)
+// Light / dark switch (Profile menu). The page used to carry a floating sun/moon button from core.js;
+// it covered shop cards, so the toggle lives in Profile now (ETEL_NO_THEME_FAB is set in customer.html).
+function customerToggleTheme() {
+    var dark = !document.body.classList.contains('dark-theme');
+    document.body.classList.toggle('dark-theme', dark);
+    try { localStorage.setItem('theme', dark ? 'dark' : 'light'); } catch (e) {}
+    if (typeof showToast === 'function') showToast(dark ? 'Dark mode' : 'Light mode');
+}
+
+// Refresh (Profile menu; there is no floating button any more)
 // re-fetches whichever view is currently open. loadItems() normally
 // only runs on 'home' if itemsCache is still empty (avoids a
 // redundant fetch on first load) - a manual refresh needs to bypass
@@ -2753,8 +2762,13 @@ function toggleProfile() {
       ['🎁','Referral & Rewards','Earn ETB with friends','referrals'],
       ['⚙️','Settings & Privacy','Account preferences','settings'],
       ['🔠','Display Size','Text, icons, buttons & logos','__display'],
+      ['🌓','Light / Dark mode','Switch the app appearance','__theme'],
+      ['🔄','Refresh app','Reload shops, orders and prices','__refresh'],
     ].map(function(m){
-      var onclick = m[3] === '__display' ? "closeProfile();EtelDisplay.open()" : (m[3] ? "closeProfile();switchCategory('"+m[3]+"')" : '');
+      var onclick = m[3] === '__display' ? "closeProfile();EtelDisplay.open()"
+                  : m[3] === '__theme' ? "customerToggleTheme();closeProfile()"
+                  : m[3] === '__refresh' ? "closeProfile();refreshCurrentView()"
+                  : (m[3] ? "closeProfile();switchCategory('"+m[3]+"')" : '');
       return `<button onclick="${onclick}" style="display:flex;align-items:center;gap:14px;padding:12px 10px;border-radius:12px;background:transparent;border:none;cursor:${m[3]?'pointer':'default'};width:100%;text-align:left;font-family:'Poppins',sans-serif;transition:background .15s" onmouseover="this.style.background='rgba(255,215,0,.07)'" onmouseout="this.style.background='transparent'">
         <div style="width:38px;height:38px;border-radius:10px;background:rgba(255,215,0,.08);border:1px solid rgba(255,215,0,.12);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0">${m[0]}</div>
         <div style="flex:1;min-width:0">
