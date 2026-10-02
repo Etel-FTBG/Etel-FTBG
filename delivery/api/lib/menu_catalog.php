@@ -140,11 +140,11 @@ function etel_catalog_add_picks($pdo, $sg_id, $picks) {
         $cs = $pdo->prepare("SELECT * FROM menu_catalog WHERE id = ? AND status = 'active'");
         $base_cols = 'service_giver_id, item_code, name, name_am, description, description_am, category, price, original_price, stock_quantity, preparation_time, image_url, is_available, catalog_id';
         try {
-            $ins = $pdo->prepare("INSERT INTO items ($base_cols, quality, portion) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, 1, ?, ?, ?)");
+            $ins = $pdo->prepare("INSERT INTO items ($base_cols, quality, portion) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 100, ?, ?, 1, ?, ?, ?)");
         } catch (Exception $e0) {
             error_log('[ETEL] etel_catalog_add_picks: quality/portion unavailable: ' . $e0->getMessage());
             $use_extra = false;
-            $ins = $pdo->prepare("INSERT INTO items ($base_cols) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, 1, ?)");
+            $ins = $pdo->prepare("INSERT INTO items ($base_cols) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 100, ?, ?, 1, ?)");
         }
     } catch (Exception $e) {
         error_log('[ETEL] etel_catalog_add_picks prepare: ' . $e->getMessage());
@@ -180,6 +180,9 @@ function etel_catalog_add_picks($pdo, $sg_id, $picks) {
     }
     return array('added' => $added, 'skipped' => $skipped, 'invalid' => $invalid, 'failed' => $failed);
 }
+
+// NOTE: stock_quantity is set to 100 on every insert here. A stock of 0 means "sold out" to the customer app
+// and to reorder (they treat stock <= 0 as unavailable), so 0 would hide the dish.
 
 // A shop's custom dish becomes a pending suggestion (admin approves it into the catalog). No-op if the
 // name already exists in that category. Returns true when a new suggestion was created.
@@ -266,7 +269,7 @@ function etel_catalog_import_rows($pdo, $sg_id, $rows, $user_id = 0) {
                 $cols = etel_table_columns($pdo, 'items');
                 $extra = in_array('quality', $cols, true) && in_array('portion', $cols, true);
                 $sql = 'INSERT INTO items (service_giver_id, item_code, name, name_am, description, category, price, original_price, stock_quantity, preparation_time, image_url, is_available'
-                     . ($extra ? ', quality, portion' : '') . ') VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, 20, ?, 1' . ($extra ? ', ?, ?' : '') . ')';
+                     . ($extra ? ', quality, portion' : '') . ') VALUES (?, ?, ?, ?, ?, ?, ?, ?, 100, 20, ?, 1' . ($extra ? ', ?, ?' : '') . ')';
                 $vals = array((int)$sg_id, etel_catalog_new_item_code($pdo, $r['category']), $r['name'], $r['name_am'] !== '' ? $r['name_am'] : null,
                               '', $r['category'], $r['price'], $r['price'], '');
                 if ($extra) { $vals[] = $r['quality']; $vals[] = $r['portion']; }
@@ -281,6 +284,54 @@ function etel_catalog_import_rows($pdo, $sg_id, $rows, $user_id = 0) {
             error_log('[ETEL] etel_catalog_import_rows row ' . $line . ': ' . $e->getMessage());
             $res['failed'][] = array('row' => $line, 'error' => substr($e->getMessage(), 0, 160));
         }
+    }
+    return $res;
+}
+
+
+// Copy one shop's menu to another (a second branch, a new shop of the same owner...). Admin-driven: the app
+// links one login to one shop, so branches are separate shops. Prices can be moved by a percentage (-50..+200),
+// dishes the target already has (same catalog dish or same name) are skipped, hidden items are skipped unless
+// $opts['include_hidden'] is set. Returns array('copied'=>n,'skipped'=>n,'failed'=>[{name,error}]).
+function etel_catalog_copy_menu($pdo, $from_sg, $to_sg, $opts = array()) {
+    etel_ensure_catalog_schema($pdo);
+    $res = array('copied' => 0, 'skipped' => 0, 'failed' => array());
+    $from_sg = (int)$from_sg; $to_sg = (int)$to_sg;
+    if ($from_sg <= 0 || $to_sg <= 0 || $from_sg === $to_sg) return $res;
+    $pct = isset($opts['percent']) ? (float)$opts['percent'] : 0.0;
+    if ($pct < -50) $pct = -50; if ($pct > 200) $pct = 200;
+    $factor = 1 + $pct / 100;
+    $hidden = !empty($opts['include_hidden']);
+
+    $cols = etel_table_columns($pdo, 'items');
+    $extra = in_array('quality', $cols, true) && in_array('portion', $cols, true) && in_array('catalog_id', $cols, true);
+
+    $have = array(); $haveCat = array();
+    $q = $pdo->prepare('SELECT name, catalog_id FROM items WHERE service_giver_id = ?');
+    $q->execute(array($to_sg));
+    foreach ($q->fetchAll(PDO::FETCH_ASSOC) as $it) {
+        $have[etel_catalog_norm($it['name'])] = true;
+        if (isset($it['catalog_id']) && $it['catalog_id'] !== null) $haveCat[(int)$it['catalog_id']] = true;
+    }
+    $src = $pdo->prepare('SELECT * FROM items WHERE service_giver_id = ?' . ($hidden ? '' : ' AND is_available = 1') . ' ORDER BY id');
+    $src->execute(array($from_sg));
+    $sql = 'INSERT INTO items (service_giver_id, item_code, name, name_am, description, description_am, category, price, original_price, stock_quantity, preparation_time, image_url, is_available'
+         . ($extra ? ', catalog_id, quality, portion' : '') . ') VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1' . ($extra ? ', ?, ?, ?' : '') . ')';
+    $ins = $pdo->prepare($sql);
+    foreach ($src->fetchAll(PDO::FETCH_ASSOC) as $it) {
+        $key = etel_catalog_norm($it['name']);
+        $cid = ($extra && isset($it['catalog_id']) && $it['catalog_id'] !== null) ? (int)$it['catalog_id'] : 0;
+        if (isset($have[$key]) || ($cid && isset($haveCat[$cid]))) { $res['skipped']++; continue; }
+        $price = round((float)$it['price'] * $factor, 2);
+        if ($price <= 0) { $res['failed'][] = array('name' => $it['name'], 'error' => 'price would be 0'); continue; }
+        $orig = ($it['original_price'] !== null && (float)$it['original_price'] > 0) ? round((float)$it['original_price'] * $factor, 2) : $price;
+        $stock = (int)$it['stock_quantity'] > 0 ? (int)$it['stock_quantity'] : 100;
+        $vals = array($to_sg, etel_catalog_new_item_code($pdo, $it['category']), $it['name'], $it['name_am'], (string)$it['description'], $it['description_am'],
+                      $it['category'], $price, $orig, $stock, (int)$it['preparation_time'] ?: 20, (string)$it['image_url']);
+        if ($extra) { $vals[] = $cid ?: null; $vals[] = isset($it['quality']) ? $it['quality'] : null; $vals[] = isset($it['portion']) ? $it['portion'] : null; }
+        try { $ins->execute($vals); $res['copied']++; $have[$key] = true; if ($cid) $haveCat[$cid] = true; }
+        catch (Exception $e) { error_log('[ETEL] etel_catalog_copy_menu ' . $it['name'] . ': ' . $e->getMessage()); $res['failed'][] = array('name' => $it['name'], 'error' => substr($e->getMessage(), 0, 140)); }
+        catch (Throwable $e) { $res['failed'][] = array('name' => $it['name'], 'error' => substr($e->getMessage(), 0, 140)); }
     }
     return $res;
 }

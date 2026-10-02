@@ -1421,3 +1421,13 @@ body.etel-light .job-card .job-info > .job-fee{background:rgba(22,163,74,.09);bo
 .job-card .job-actions .btn-primary, .action-bar .btn-primary{background:linear-gradient(135deg,#F3D56B,#D4AF37) !important;color:#1A1206 !important;text-shadow:none !important;border:none !important;box-shadow:0 8px 20px -10px rgba(212,175,55,.7) !important}
 body.etel-light .job-meta-item{background:#F4EFE3 !important;color:#5A4A2A !important;border:1px solid rgba(0,0,0,.08) !important}
 body.etel-light .job-card .job-address-icon{background-color:#F4EFE3 !important;border:1px solid rgba(0,0,0,.08) !important}
+
+/* Courier v4: waiting timer on job cards (needs the v4 courier bundle) */
+.job-card .job-wait{margin-left:auto;margin-right:8px;font-size:11px;font-weight:800;letter-spacing:.03em;font-variant-numeric:tabular-nums;padding:4px 9px;border-radius:999px;border:1px solid transparent}
+.job-card .job-wait.wait-ok{color:#2ECC71;background:rgba(46,204,113,.12);border-color:rgba(46,204,113,.3)}
+.job-card .job-wait.wait-warn{color:#F5A524;background:rgba(245,165,36,.12);border-color:rgba(245,165,36,.35)}
+.job-card .job-wait.wait-hot{color:#FF5C5C;background:rgba(255,92,92,.12);border-color:rgba(255,92,92,.4);animation:jobWaitPulse 1.2s ease-in-out infinite}
+@keyframes jobWaitPulse{0%,100%{opacity:1}50%{opacity:.6}}
+body.etel-light .job-card .job-wait.wait-ok{color:#15803D}
+body.etel-light .job-card .job-wait.wait-warn{color:#B45309}
+body.etel-light .job-card .job-wait.wait-hot{color:#B91C1C}
