@@ -916,6 +916,10 @@
             const picks = ids.map(id => ({ catalog_id: parseInt(id), price: parseFloat(catState.sel[id].price), quality: catState.sel[id].quality || '' }));
             const data = await apiCall('sg_catalog_add', { picks });
             if (!data) { catalogCount(); return; }
+            if (data.failed && data.failed.length) {
+                showNotification('Could not add ' + data.failed.length + ' dish(es): ' + data.failed[0].error, 'error');
+                if (!data.added) { catalogCount(); return; }
+            }
             showNotification('Added ' + data.added + ' dish' + (data.added === 1 ? '' : 'es') + (data.skipped && data.skipped.length ? ' (' + data.skipped.length + ' already on your menu)' : ''), 'success');
             closeCatalog();
             loadServices();
