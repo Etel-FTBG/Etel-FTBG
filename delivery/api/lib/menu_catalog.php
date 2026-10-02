@@ -34,13 +34,18 @@ function etel_ensure_catalog_schema($pdo) {
             KEY idx_catalog_status (status, category)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
         $cols = etel_table_columns($pdo, 'items');
-        if ($cols) {
-            if (!in_array('catalog_id', $cols, true)) $pdo->exec("ALTER TABLE items ADD COLUMN catalog_id INT NULL DEFAULT NULL");
-            if (!in_array('quality', $cols, true))    $pdo->exec("ALTER TABLE items ADD COLUMN quality VARCHAR(12) NULL DEFAULT NULL");
-            if (!in_array('portion', $cols, true))    $pdo->exec("ALTER TABLE items ADD COLUMN portion VARCHAR(40) NULL DEFAULT NULL");
-        }
     } catch (Exception $e) {
-        error_log('[ETEL] etel_ensure_catalog_schema: ' . $e->getMessage());
+        error_log('[ETEL] etel_ensure_catalog_schema (table): ' . $e->getMessage());
+    }
+    // One try per column so a failure on one never skips the others.
+    $adds = array('catalog_id' => 'INT NULL DEFAULT NULL', 'quality' => 'VARCHAR(12) NULL DEFAULT NULL', 'portion' => 'VARCHAR(40) NULL DEFAULT NULL');
+    try { $cols = etel_table_columns($pdo, 'items'); } catch (Exception $e) { $cols = array(); }
+    if ($cols) {
+        foreach ($adds as $col => $def) {
+            if (in_array($col, $cols, true)) continue;
+            try { $pdo->exec("ALTER TABLE items ADD COLUMN $col $def"); }
+            catch (Exception $e) { error_log('[ETEL] etel_ensure_catalog_schema (' . $col . '): ' . $e->getMessage()); }
+        }
     }
 }
 
@@ -125,13 +130,27 @@ function etel_catalog_for_shop($pdo, $sg_id, $category = '', $q = '') {
 // 'invalid'=>[catalog ids with bad price / not in the catalog], 'failed'=>[{catalog_id, error}] for rows the DB rejected).
 function etel_catalog_add_picks($pdo, $sg_id, $picks) {
     etel_ensure_catalog_schema($pdo);
-    $added = 0; $skipped = array(); $invalid = array();
-    $ex = $pdo->prepare('SELECT 1 FROM items WHERE service_giver_id = ? AND catalog_id = ? LIMIT 1');
-    $cs = $pdo->prepare("SELECT * FROM menu_catalog WHERE id = ? AND status = 'active'");
-    $ins = $pdo->prepare('INSERT INTO items (service_giver_id, item_code, name, name_am, description, description_am, category,
-                          price, original_price, stock_quantity, preparation_time, image_url, is_available, catalog_id, quality, portion)
-                          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, 1, ?, ?, ?)');
-    $failed = array();
+    $added = 0; $skipped = array(); $invalid = array(); $failed = array();
+    // Statements are prepared up front. The connection does real server-side prepares, so a missing column
+    // throws here (not per dish) - report it for every pick instead of a bare 500, and fall back to an INSERT
+    // without quality/portion when only those two are missing.
+    $use_extra = true;
+    try {
+        $ex = $pdo->prepare('SELECT 1 FROM items WHERE service_giver_id = ? AND catalog_id = ? LIMIT 1');
+        $cs = $pdo->prepare("SELECT * FROM menu_catalog WHERE id = ? AND status = 'active'");
+        $base_cols = 'service_giver_id, item_code, name, name_am, description, description_am, category, price, original_price, stock_quantity, preparation_time, image_url, is_available, catalog_id';
+        try {
+            $ins = $pdo->prepare("INSERT INTO items ($base_cols, quality, portion) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, 1, ?, ?, ?)");
+        } catch (Exception $e0) {
+            error_log('[ETEL] etel_catalog_add_picks: quality/portion unavailable: ' . $e0->getMessage());
+            $use_extra = false;
+            $ins = $pdo->prepare("INSERT INTO items ($base_cols) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, 1, ?)");
+        }
+    } catch (Exception $e) {
+        error_log('[ETEL] etel_catalog_add_picks prepare: ' . $e->getMessage());
+        foreach ($picks as $pk) $failed[] = array('catalog_id' => $pk[0], 'error' => substr($e->getMessage(), 0, 200));
+        return array('added' => 0, 'skipped' => array(), 'invalid' => array(), 'failed' => $failed);
+    }
     foreach ($picks as $pk) {
         list($cid, $price, $quality, $portion, $img, $orig) = $pk;
         if ($price === false || $orig === false) { $invalid[] = $cid; continue; }
@@ -142,12 +161,14 @@ function etel_catalog_add_picks($pdo, $sg_id, $picks) {
             $ex->execute(array((int)$sg_id, $cid));
             if ($ex->fetchColumn()) { $skipped[] = $cid; continue; }
             $prep = (int)$c['prep_time'];
-            $ins->execute(array(
+            $vals = array(
                 (int)$sg_id, etel_catalog_new_item_code($pdo, $c['category']), $c['name'], $c['name_am'] ? $c['name_am'] : null,
                 (string)$c['description'], $c['description_am'] ? $c['description_am'] : null, $c['category'],
                 $price, $orig === null ? $price : $orig, $prep ? $prep : 20,
-                $img !== null ? $img : (string)$c['image_url'], $cid, $quality, $portion
-            ));
+                $img !== null ? $img : (string)$c['image_url'], $cid
+            );
+            if ($use_extra) { $vals[] = $quality; $vals[] = $portion; }
+            $ins->execute($vals);
             $added++;
         } catch (Exception $e) {
             error_log('[ETEL] etel_catalog_add_picks #' . $cid . ': ' . $e->getMessage());
