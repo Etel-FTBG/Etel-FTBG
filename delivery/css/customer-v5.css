@@ -1472,3 +1472,21 @@ body:not(.dark-theme) #modal .modal-close { color: var(--lt-ink-2) !important; }
 .trk-chat-badge { min-width: 20px; height: 20px; padding: 0 6px; border-radius: 10px; background: #E63946; color: #fff; font-size: 11px; font-weight: 800; align-items: center; justify-content: center; }
 body:not(.dark-theme) .trk-chat { color: #7A5500; background: rgba(212,175,55,.2); border-color: rgba(160,120,20,.5); }
 body:not(.dark-theme) #orders-list button[onclick^="EtelOrderChat"] { color: #7A5500 !important; border-color: rgba(160,120,20,.5) !important; }
+
+/* ══ PREMIUM SLICE 1: line icons, calmer gold ═══════════════════════════ */
+.svc-ico svg { width: 26px; height: 26px; }
+.svc-ico { background: rgba(255,255,255,.06) !important; border: 1px solid rgba(255,255,255,.08); }
+.svc-ico-food  { color: #E4C25A; }
+.svc-ico-groc  { color: #5ED08A; }
+.svc-ico-pharm { color: #5CD6CC; }
+.svc-ico-ride  { color: #7DB5FA; }
+.svc-tile:hover, .svc-tile:active { border-color: rgba(255,255,255,.22); box-shadow: 0 10px 26px rgba(0,0,0,.28); }
+.promo-icon { width: 54px; height: 54px; border-radius: 16px; display: flex; align-items: center; justify-content: center;
+  background: rgba(255,255,255,.16); color: #fff; }
+.promo-icon svg { width: 30px; height: 30px; }
+.filter-pill { letter-spacing: .01em; }
+body:not(.dark-theme) .svc-ico { background: #F5F1E8 !important; border: 1px solid rgba(0,0,0,.05); }
+body:not(.dark-theme) .svc-ico-food  { color: #9A7410; }
+body:not(.dark-theme) .svc-ico-groc  { color: #15803D; }
+body:not(.dark-theme) .svc-ico-pharm { color: #0F766E; }
+body:not(.dark-theme) .svc-ico-ride  { color: #1D4ED8; }
