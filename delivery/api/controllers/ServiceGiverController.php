@@ -1095,6 +1095,7 @@ case 'sg_catalog_add': {
     if (!$picks) fail('Pick at least one dish and enter its price', 400);
     try { $res = etel_catalog_add_picks($pdo, $sg_ctx['sg_id'], $picks); }
     catch (Exception $e) { fail_ex($e, 'Could not add the dishes', 500); }
+    catch (Throwable $e) { error_log('[ServiceGiverController] sg_catalog_add: ' . $e->getMessage()); http_response_code(500); echo json_encode(array('success' => false, 'message' => 'Could not add the dishes: ' . substr($e->getMessage(), 0, 160))); exit; }
     ok($res);
     break;
 }

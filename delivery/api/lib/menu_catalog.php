@@ -122,7 +122,7 @@ function etel_catalog_for_shop($pdo, $sg_id, $category = '', $q = '') {
 }
 
 // Create the shop's items from its picks. Returns array('added'=>n,'skipped'=>[catalog ids already sold],
-// 'invalid'=>[catalog ids with bad price / not in the catalog]).
+// 'invalid'=>[catalog ids with bad price / not in the catalog], 'failed'=>[{catalog_id, error}] for rows the DB rejected).
 function etel_catalog_add_picks($pdo, $sg_id, $picks) {
     etel_ensure_catalog_schema($pdo);
     $added = 0; $skipped = array(); $invalid = array();
@@ -131,23 +131,33 @@ function etel_catalog_add_picks($pdo, $sg_id, $picks) {
     $ins = $pdo->prepare('INSERT INTO items (service_giver_id, item_code, name, name_am, description, description_am, category,
                           price, original_price, stock_quantity, preparation_time, image_url, is_available, catalog_id, quality, portion)
                           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, 1, ?, ?, ?)');
+    $failed = array();
     foreach ($picks as $pk) {
         list($cid, $price, $quality, $portion, $img, $orig) = $pk;
         if ($price === false || $orig === false) { $invalid[] = $cid; continue; }
-        $cs->execute(array($cid));
-        $c = $cs->fetch(PDO::FETCH_ASSOC);
-        if (!$c) { $invalid[] = $cid; continue; }
-        $ex->execute(array((int)$sg_id, $cid));
-        if ($ex->fetchColumn()) { $skipped[] = $cid; continue; }
-        $ins->execute(array(
-            (int)$sg_id, etel_catalog_new_item_code($pdo, $c['category']), $c['name'], $c['name_am'] ?: null,
-            (string)$c['description'], $c['description_am'] ?: null, $c['category'],
-            $price, $orig === null ? $price : $orig, (int)$c['prep_time'] ?: 20,
-            $img !== null ? $img : (string)$c['image_url'], $cid, $quality, $portion
-        ));
-        $added++;
+        try {
+            $cs->execute(array($cid));
+            $c = $cs->fetch(PDO::FETCH_ASSOC);
+            if (!$c) { $invalid[] = $cid; continue; }
+            $ex->execute(array((int)$sg_id, $cid));
+            if ($ex->fetchColumn()) { $skipped[] = $cid; continue; }
+            $prep = (int)$c['prep_time'];
+            $ins->execute(array(
+                (int)$sg_id, etel_catalog_new_item_code($pdo, $c['category']), $c['name'], $c['name_am'] ? $c['name_am'] : null,
+                (string)$c['description'], $c['description_am'] ? $c['description_am'] : null, $c['category'],
+                $price, $orig === null ? $price : $orig, $prep ? $prep : 20,
+                $img !== null ? $img : (string)$c['image_url'], $cid, $quality, $portion
+            ));
+            $added++;
+        } catch (Exception $e) {
+            error_log('[ETEL] etel_catalog_add_picks #' . $cid . ': ' . $e->getMessage());
+            $failed[] = array('catalog_id' => $cid, 'error' => substr($e->getMessage(), 0, 200));
+        } catch (Throwable $e) {
+            error_log('[ETEL] etel_catalog_add_picks #' . $cid . ': ' . $e->getMessage());
+            $failed[] = array('catalog_id' => $cid, 'error' => substr($e->getMessage(), 0, 200));
+        }
     }
-    return array('added' => $added, 'skipped' => $skipped, 'invalid' => $invalid);
+    return array('added' => $added, 'skipped' => $skipped, 'invalid' => $invalid, 'failed' => $failed);
 }
 
 // A shop's custom dish becomes a pending suggestion (admin approves it into the catalog). No-op if the
