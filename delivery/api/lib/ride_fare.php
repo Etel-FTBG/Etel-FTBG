@@ -445,3 +445,58 @@ function rides_complete_and_pay($pdo, $rideId, $driverId, $fare, $paymentMethod,
     }
 }
 }
+
+/* Safety floor for a GPS meter that under-reads. The meter can legitimately
+   read near zero when the phone only ever produced weak/network fixes, the
+   app was suspended with the screen off, or pings were stalled; billing that
+   as-is charges the passenger (and pays the driver) for a trip that clearly
+   happened. Compares the metered km against two conservative references:
+     - the booking-time estimate (fixed-destination rides only), and
+     - the straight line from pickup to the driver's last known position
+       (works for open trips too, which have no estimate).
+   Both are lower bounds on the real road distance. If the meter is under
+   half of the larger one, that reference is used instead and the ride is
+   flagged for review. Returns array(applied, km, floor_km, meter_km, basis). */
+if (!function_exists('rides_meter_shortfall_floor')) {
+function rides_meter_shortfall_floor($pdo, $ride, $driverId, $traveled) {
+    $traveled = floatval($traveled);
+    $out = array('applied' => false, 'km' => $traveled, 'floor_km' => 0.0, 'meter_km' => $traveled, 'basis' => '');
+    $floor = 0.0; $basis = '';
+    $est = isset($ride['distance_km']) ? floatval($ride['distance_km']) : 0.0;
+    if (intval($ride['open_trip']) !== 1 && $est > 0.3) { $floor = $est; $basis = 'booking_estimate'; }
+    try {
+        $plat = isset($ride['pickup_lat']) ? floatval($ride['pickup_lat']) : 0.0;
+        $plng = isset($ride['pickup_lng']) ? floatval($ride['pickup_lng']) : 0.0;
+        if ($plat && $plng) {
+            $q = $pdo->prepare("SELECT lat, lng FROM ride_drivers WHERE user_id=?");
+            $q->execute(array($driverId));
+            $pos = $q->fetch();
+            if ($pos && $pos['lat'] !== null && $pos['lng'] !== null) {
+                $chord = rides_haversine_km($plat, $plng, floatval($pos['lat']), floatval($pos['lng']));
+                if ($chord > 0.3 && $chord > $floor) { $floor = $chord; $basis = 'pickup_to_driver_position'; }
+            }
+        }
+    } catch (Exception $e) { /* position unavailable - estimate-only floor */ }
+    $out['floor_km'] = round($floor, 2);
+    if ($floor > 0 && $traveled < 0.5 * $floor) {
+        $out['applied'] = true;
+        $out['km'] = round($floor, 2);
+        $out['basis'] = $basis;
+    }
+    return $out;
+}
+}
+
+/* Writes the review flag for a ride billed through the shortfall floor. */
+if (!function_exists('rides_log_meter_shortfall')) {
+function rides_log_meter_shortfall($pdo, $rideId, $driverId, $floor) {
+    try {
+        $details = 'GPS meter read ' . round($floor['meter_km'], 2) . ' km, below half of the ' . $floor['basis']
+            . ' (' . $floor['floor_km'] . ' km) - billed ' . $floor['km'] . ' km instead. Review the route/path points if disputed.';
+        $pdo->prepare('INSERT INTO ride_issues (ride_id, reporter_id, category, details, status) VALUES (?, ?, ?, ?, "open")')
+            ->execute(array($rideId, $driverId, 'meter_shortfall', $details));
+    } catch (Exception $e) {
+        error_log('[ETEL][meter_shortfall] could not log for ride ' . $rideId . ': ' . $e->getMessage());
+    }
+}
+}
