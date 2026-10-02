@@ -19,11 +19,12 @@
     <link rel="manifest" href="manifest.json">
     <link rel="icon" type="image/png" href="icons/icon-96.png">
     <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+    <script>window.ETEL_NO_THEME_FAB = true;</script>
     <script src="js/customer-bundle.js?v=3.1"></script>
     <script src="js/customer-bundle-extra.js?v=1.0" defer></script>
     <script>window.initCustomerMap = function(){}; loadGoogleMaps('geometry,places', 'initCustomerMap');</script>
     <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/customer-v5.css?v=7.1">
+    <link rel="stylesheet" href="css/customer-v5.css?v=7.3">
 <script src="js/etel-display-settings.js?v=1.4" data-fab="off" defer></script>
 </head>
 <body>
@@ -40,19 +41,7 @@
 </div>
 <style>@keyframes etelSplashPulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.05);opacity:.88}}</style>
 
-<!-- Floating refresh button - re-fetches whichever view is currently
-     open. For when live/polled data stalls and the person has no
-     other obvious way to force a re-fetch. -->
-<button id="cust-refresh-btn" onclick="refreshCurrentView()" aria-label="Refresh"
-  style="position:fixed;left:16px;bottom:16px;z-index:9998;width:48px;height:48px;border-radius:50%;
-  background:linear-gradient(135deg,#E9C767,#D4AF37);border:none;box-shadow:0 4px 14px rgba(212,175,55,.5);
-  font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;">
-  <span id="cust-refresh-icon" style="display:inline-block;">🔄</span>
-</button>
-<style>
-#cust-refresh-btn.spinning #cust-refresh-icon{animation:custRefreshSpin .6s linear infinite;}
-@keyframes custRefreshSpin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
-</style>
+<!-- The floating refresh and theme buttons moved into the Profile menu (Refresh app, Light / Dark mode). -->
 
 <script>
 (function(){
@@ -116,11 +105,11 @@
 
         <!-- ONE FILTER ROW: sort pills, divider, then cuisine chips (both can be combined) -->
         <div class="chip-row" id="chip-row">
-            <button class="filter-pill active" data-i18n="filter_trending" onclick="applySortFilter('trending', this)">🔥 Trending</button>
-            <button class="filter-pill" data-i18n="filter_top_rated" onclick="applySortFilter('top_rated', this)">⭐ Top Rated</button>
-            <button class="filter-pill" data-i18n="filter_fast" onclick="applySortFilter('fast', this)">⚡ Fast</button>
-            <button class="filter-pill" data-i18n="filter_budget" onclick="applySortFilter('budget', this)">💰 Budget</button>
-            <button class="filter-pill" data-i18n="filter_new" onclick="applySortFilter('new', this)">✨ New</button>
+            <button class="filter-pill active" data-i18n="filter_trending" onclick="applySortFilter('trending', this)">Trending</button>
+            <button class="filter-pill" data-i18n="filter_top_rated" onclick="applySortFilter('top_rated', this)">Top Rated</button>
+            <button class="filter-pill" data-i18n="filter_fast" onclick="applySortFilter('fast', this)">Fast</button>
+            <button class="filter-pill" data-i18n="filter_budget" onclick="applySortFilter('budget', this)">Budget</button>
+            <button class="filter-pill" data-i18n="filter_new" onclick="applySortFilter('new', this)">New</button>
             <span class="chip-sep" aria-hidden="true"></span>
             <button class="cat-chip" onclick="applyCuisineFilter('pizza', this)"><span>🍕</span> <span data-i18n="cat_pizza">Pizza</span></button>
             <button class="cat-chip" onclick="applyCuisineFilter('burgers', this)"><span>🍔</span> <span data-i18n="cat_burgers">Burgers</span></button>
@@ -148,19 +137,19 @@
         <!-- SERVICE GRID: four equal tiles -->
         <div class="svc-grid">
             <button type="button" class="svc-tile" onclick="document.getElementById('sg-scroll').scrollIntoView({behavior:'smooth',block:'center'})">
-                <span class="svc-ico svc-ico-food">🍽️</span>
+                <span class="svc-ico svc-ico-food"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3v6.5a2.5 2.5 0 0 0 5 0V3"/><path d="M8.5 3v18"/><path d="M17 3c-2.2 1.6-3 4.2-3 7v3h3"/><path d="M17 3v18"/></svg></span>
                 <span class="svc-label" data-i18n="svc_food">Food</span>
             </button>
             <button type="button" class="svc-tile" onclick="openCategoryView('grocery','Groceries','🛒')">
-                <span class="svc-ico svc-ico-groc">🛒</span>
+                <span class="svc-ico svc-ico-groc"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9.5" cy="20" r="1.4"/><circle cx="17.5" cy="20" r="1.4"/><path d="M2.5 3.5h3l2.4 11.2a1.6 1.6 0 0 0 1.6 1.3h7.8a1.6 1.6 0 0 0 1.6-1.2L20.8 7H6.2"/></svg></span>
                 <span class="svc-label" data-i18n="svc_groceries">Groceries</span>
             </button>
             <button type="button" class="svc-tile" onclick="openCategoryView('pharmacy','Pharmacy','💊')">
-                <span class="svc-ico svc-ico-pharm">💊</span>
+                <span class="svc-ico svc-ico-pharm"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="4.5"/><path d="M12 8v8M8 12h8"/></svg></span>
                 <span class="svc-label" data-i18n="svc_pharmacy">Pharmacy</span>
             </button>
             <a href="ride/" class="svc-tile">
-                <span class="svc-ico svc-ico-ride">🚗</span>
+                <span class="svc-ico svc-ico-ride"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 16v-5l1.6-4.2A2 2 0 0 1 8.5 5.5h7a2 2 0 0 1 1.9 1.3L19 11v5"/><path d="M3.5 16h17v2.5a1 1 0 0 1-1 1H18a1 1 0 0 1-1-1V17H7v1.5a1 1 0 0 1-1 1H4.5a1 1 0 0 1-1-1z"/><circle cx="7.8" cy="13.2" r=".7"/><circle cx="16.2" cy="13.2" r=".7"/></svg></span>
                 <span class="svc-label" data-i18n="svc_ride">Ride</span>
             </a>
         </div>
@@ -174,7 +163,7 @@
         <div class="promo-track" id="promo-track">
             <div class="promo-card promo-gold">
                 <div class="promo-badge" data-i18n="promo_limited">LIMITED</div>
-                <div class="promo-icon">🎉</div>
+                <div class="promo-icon"><svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="8.5" width="17" height="4" rx="1"/><path d="M5 12.5V20h14v-7.5M12 8.5V20"/><path d="M12 8.5C9.8 8.5 8 7.8 8 6.3 8 5 9.2 4.2 10.4 4.6 11.5 5 12 6.6 12 8.5zM12 8.5c2.2 0 4-.7 4-2.2 0-1.3-1.2-2.1-2.4-1.7C12.5 5 12 6.6 12 8.5z"/></svg></div>
                 <div class="promo-body">
                     <div class="promo-headline" data-i18n="promo_50off">50% OFF</div>
                     <div class="promo-sub" data-i18n="promo_first_order">First Order Premium</div>
@@ -184,7 +173,7 @@
             </div>
             <div class="promo-card promo-teal">
                 <div class="promo-badge" data-i18n="promo_today">TODAY</div>
-                <div class="promo-icon">🚚</div>
+                <div class="promo-icon"><svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 6.5h11v10h-11z"/><path d="M13.5 10h4l3 3v3.5h-7"/><circle cx="7" cy="17.8" r="1.8"/><circle cx="17" cy="17.8" r="1.8"/></svg></div>
                 <div class="promo-body">
                     <div class="promo-headline" data-i18n="promo_free_delivery">FREE DELIVERY</div>
                     <div class="promo-sub" data-i18n="promo_orders_above">Orders above ETB 500</div>
@@ -194,7 +183,7 @@
             </div>
             <div class="promo-card promo-purple">
                 <div class="promo-badge" data-i18n="promo_weekend">WEEKEND</div>
-                <div class="promo-icon">💎</div>
+                <div class="promo-icon"><svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.8-5.2 2.8 1-5.8L3.5 9.7l5.9-.9z"/></svg></div>
                 <div class="promo-body">
                     <div class="promo-headline" data-i18n="promo_2x_points">2× POINTS</div>
                     <div class="promo-sub" data-i18n="promo_weekend_special">Weekend Special</div>
@@ -210,7 +199,7 @@
         <!-- RESTAURANTS SECTION -->
         <div class="section-header">
             <div class="section-title-wrap">
-                <div class="section-title" data-i18n="section_restaurants">🌟 Restaurants &amp; Shops</div>
+                <div class="section-title" data-i18n="section_restaurants">Restaurants &amp; Shops</div>
                 <div class="section-count" id="sg-count"></div>
             </div>
             <button class="see-all-btn" onclick="loadItems()" data-i18n="see_all">See all →</button>
@@ -535,7 +524,7 @@
 
     <script src="js/apk-download-badge.js?v=2" data-role="customer"></script>
 <script src="js/order-chat.js?v=1" data-mode="customer"></script>
-<script src="js/customer.js?v=4.45"></script>
+<script src="js/customer.js?v=4.48"></script>
 <script src="js/investor-nav-check.js"></script>
 </body>
 </html>

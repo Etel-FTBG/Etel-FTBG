@@ -194,3 +194,93 @@ function etel_catalog_suggest($pdo, $user_id, $name, $name_am, $category, $descr
         ->execute(array(substr($name, 0, 150), $name_am !== '' ? substr($name_am, 0, 150) : null, (string)$description, $category, (int)$user_id));
     return true;
 }
+
+
+// Pure: lower-case, trim and collapse spaces so "Doro  Wot " matches "doro wot".
+function etel_catalog_norm($s) {
+    $s = trim((string)$s);
+    $s = preg_replace('/\s+/u', ' ', $s);
+    return function_exists('mb_strtolower') ? mb_strtolower($s, 'UTF-8') : strtolower($s);
+}
+
+// Pure: tidy one imported row into array(ok(bool), clean(array)|reason(string)). Needs name + a valid price.
+function etel_catalog_clean_import_row($r) {
+    if (!is_array($r)) return array(false, 'not a row');
+    $name = isset($r['name']) ? trim((string)$r['name']) : '';
+    if ($name === '') return array(false, 'missing name');
+    if (strlen($name) > 150) $name = substr($name, 0, 150);
+    $price = function_exists('etel_validate_amount') ? etel_validate_amount(isset($r['price']) ? $r['price'] : null) : false;
+    if ($price === false) return array(false, 'invalid price');
+    $cat = isset($r['category']) ? strtolower(trim((string)$r['category'])) : '';
+    if (!in_array($cat, etel_catalog_categories(), true)) $cat = 'food';
+    $portion = isset($r['portion']) ? trim(substr((string)$r['portion'], 0, 40)) : '';
+    $name_am = isset($r['name_am']) ? trim(substr((string)$r['name_am'], 0, 150)) : '';
+    return array(true, array(
+        'name' => $name, 'name_am' => $name_am, 'price' => $price, 'category' => $cat,
+        'quality' => etel_catalog_clean_quality(isset($r['quality']) ? $r['quality'] : ''),
+        'portion' => $portion !== '' ? $portion : null,
+    ));
+}
+
+// Import a menu (rows from a CSV the shop uploaded). A row whose name (English or Amharic) matches an active
+// catalog dish becomes a catalog pick (so it is linked and gets the photo / descriptions); anything else is
+// created as a custom item. Dishes the shop already sells (same catalog dish or same name) are skipped.
+// Returns array('catalog'=>n,'custom'=>n,'skipped'=>n,'invalid'=>[{row,reason}],'failed'=>[{row,error}]).
+function etel_catalog_import_rows($pdo, $sg_id, $rows, $user_id = 0) {
+    etel_ensure_catalog_schema($pdo);
+    $res = array('catalog' => 0, 'custom' => 0, 'skipped' => 0, 'invalid' => array(), 'failed' => array());
+    if (!is_array($rows)) return $res;
+    $rows = array_slice($rows, 0, 300);
+
+    // lookup: normalised name (EN and AM) + category -> catalog id
+    $byName = array();
+    foreach ($pdo->query("SELECT id, name, name_am, category FROM menu_catalog WHERE status = 'active'")->fetchAll(PDO::FETCH_ASSOC) as $c) {
+        $byName[$c['category'] . '|' . etel_catalog_norm($c['name'])] = (int)$c['id'];
+        if ($c['name_am'] !== null && $c['name_am'] !== '') $byName[$c['category'] . '|' . etel_catalog_norm($c['name_am'])] = (int)$c['id'];
+    }
+    // what the shop already sells
+    $haveCat = array(); $haveName = array();
+    $q = $pdo->prepare('SELECT name, catalog_id FROM items WHERE service_giver_id = ?');
+    $q->execute(array((int)$sg_id));
+    foreach ($q->fetchAll(PDO::FETCH_ASSOC) as $it) {
+        $haveName[etel_catalog_norm($it['name'])] = true;
+        if ($it['catalog_id'] !== null) $haveCat[(int)$it['catalog_id']] = true;
+    }
+
+    foreach ($rows as $i => $raw) {
+        $line = $i + 1;
+        $c = etel_catalog_clean_import_row($raw);
+        if (!$c[0]) { $res['invalid'][] = array('row' => $line, 'reason' => $c[1]); continue; }
+        $r = $c[1];
+        $key = etel_catalog_norm($r['name']);
+        $cid = isset($byName[$r['category'] . '|' . $key]) ? $byName[$r['category'] . '|' . $key]
+             : (($r['name_am'] !== '' && isset($byName[$r['category'] . '|' . etel_catalog_norm($r['name_am'])])) ? $byName[$r['category'] . '|' . etel_catalog_norm($r['name_am'])] : 0);
+        if (($cid && isset($haveCat[$cid])) || isset($haveName[$key])) { $res['skipped']++; continue; }
+        try {
+            if ($cid) {
+                $one = etel_catalog_add_picks($pdo, $sg_id, array(array($cid, $r['price'], $r['quality'], $r['portion'], null, null)));
+                if ($one['added']) { $res['catalog']++; $haveCat[$cid] = true; $haveName[$key] = true; }
+                elseif ($one['failed']) { $res['failed'][] = array('row' => $line, 'error' => $one['failed'][0]['error']); }
+                else { $res['skipped']++; }
+            } else {
+                $cols = etel_table_columns($pdo, 'items');
+                $extra = in_array('quality', $cols, true) && in_array('portion', $cols, true);
+                $sql = 'INSERT INTO items (service_giver_id, item_code, name, name_am, description, category, price, original_price, stock_quantity, preparation_time, image_url, is_available'
+                     . ($extra ? ', quality, portion' : '') . ') VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, 20, ?, 1' . ($extra ? ', ?, ?' : '') . ')';
+                $vals = array((int)$sg_id, etel_catalog_new_item_code($pdo, $r['category']), $r['name'], $r['name_am'] !== '' ? $r['name_am'] : null,
+                              '', $r['category'], $r['price'], $r['price'], '');
+                if ($extra) { $vals[] = $r['quality']; $vals[] = $r['portion']; }
+                $pdo->prepare($sql)->execute($vals);
+                $res['custom']++; $haveName[$key] = true;
+                if ($user_id) { try { etel_catalog_suggest($pdo, $user_id, $r['name'], $r['name_am'], $r['category']); } catch (Exception $e) {} }
+            }
+        } catch (Exception $e) {
+            error_log('[ETEL] etel_catalog_import_rows row ' . $line . ': ' . $e->getMessage());
+            $res['failed'][] = array('row' => $line, 'error' => substr($e->getMessage(), 0, 160));
+        } catch (Throwable $e) {
+            error_log('[ETEL] etel_catalog_import_rows row ' . $line . ': ' . $e->getMessage());
+            $res['failed'][] = array('row' => $line, 'error' => substr($e->getMessage(), 0, 160));
+        }
+    }
+    return $res;
+}

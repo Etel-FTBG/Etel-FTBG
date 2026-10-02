@@ -742,7 +742,7 @@
         function renderServices(items) {
             const c = document.getElementById('services-container');
             if (!items.length) {
-                c.innerHTML = '<p style="color:#B8B0A0;text-align:center;padding:40px 20px">No items yet. Click "+ Add New Item" to get started.</p>';
+                c.innerHTML = '<p style="color:#B8B0A0;text-align:center;padding:40px 20px">No items yet. Use "Pick from catalog" or "Import CSV" to get started.</p>';
                 return;
             }
             const caps = currentCapabilities || [];
@@ -922,6 +922,79 @@
             }
             showNotification('Added ' + data.added + ' dish' + (data.added === 1 ? '' : 'es') + (data.skipped && data.skipped.length ? ' (' + data.skipped.length + ' already on your menu)' : ''), 'success');
             closeCatalog();
+            loadServices();
+        }
+
+
+        // ── MENU CSV IMPORT ──────────────────────────────────────
+        // A shop uploads its whole menu from a spreadsheet saved as CSV. Dishes whose name matches the shared
+        // catalog are linked to it; the rest become custom items (api/lib/menu_catalog.php: etel_catalog_import_rows).
+        function csvParse(text) {
+            text = String(text || '').replace(/^﻿/, '');
+            const first = text.split(/\r?\n/, 1)[0] || '';
+            const counts = { ',': (first.match(/,/g) || []).length, ';': (first.match(/;/g) || []).length, '\t': (first.match(/\t/g) || []).length };
+            const d = counts[';'] > counts[','] && counts[';'] >= counts['\t'] ? ';' : (counts['\t'] > counts[','] ? '\t' : ',');
+            const rows = []; let row = [], cur = '', q = false;
+            for (let i = 0; i < text.length; i++) {
+                const ch = text[i];
+                if (q) {
+                    if (ch === '"') { if (text[i + 1] === '"') { cur += '"'; i++; } else q = false; }
+                    else cur += ch;
+                } else if (ch === '"') q = true;
+                else if (ch === d) { row.push(cur); cur = ''; }
+                else if (ch === '\n' || ch === '\r') { if (ch === '\r' && text[i + 1] === '\n') i++; row.push(cur); cur = ''; if (row.some(c => c.trim() !== '')) rows.push(row); row = []; }
+                else cur += ch;
+            }
+            row.push(cur); if (row.some(c => c.trim() !== '')) rows.push(row);
+            return rows;
+        }
+
+        // Turn parsed CSV rows into [{name, price, ...}] using the header row. Returns {rows, error}.
+        function csvToMenuRows(table) {
+            if (table.length < 2) return { rows: [], error: 'The file needs a header row and at least one dish.' };
+            const alias = { name: ['name', 'dish', 'item', 'title', 'ስም'], price: ['price', 'cost', 'amount', 'ዋጋ'], quality: ['quality'], portion: ['portion', 'size'], category: ['category', 'type'], name_am: ['name_am', 'amharic', 'amharic name', 'አማርኛ'] };
+            const head = table[0].map(h => h.trim().toLowerCase());
+            const idx = {};
+            Object.keys(alias).forEach(k => { idx[k] = head.findIndex(h => alias[k].indexOf(h) !== -1); });
+            if (idx.name < 0 || idx.price < 0) return { rows: [], error: 'The first row must have "name" and "price" columns. Download the CSV template to see the format.' };
+            const rows = table.slice(1).map(r => {
+                const o = {};
+                Object.keys(idx).forEach(k => { if (idx[k] >= 0) o[k] = (r[idx[k]] || '').trim(); });
+                if (o.price != null) o.price = String(o.price).replace(/[^0-9.,]/g, '').replace(/,(?=\d{3}\b)/g, '').replace(',', '.');
+                return o;
+            });
+            return { rows, error: '' };
+        }
+
+        function downloadMenuTemplate() {
+            const csv = 'name,price,quality,portion,category,name_am\r\n' +
+                'Shiro,90,regular,,food,ሽሮ\r\n' +
+                'Doro Wot,220,special,Large,food,ዶሮ ወጥ\r\n' +
+                'Macchiato,35,,,food,ማኪያቶ\r\n';
+            const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob); a.download = 'etel-menu-template.csv';
+            document.body.appendChild(a); a.click();
+            setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500);
+        }
+
+        async function importMenuCsv(input) {
+            const file = input.files && input.files[0];
+            input.value = '';
+            if (!file) return;
+            let text;
+            try { text = await file.text(); } catch (e) { showNotification('Could not read that file', 'error'); return; }
+            const parsed = csvToMenuRows(csvParse(text));
+            if (parsed.error) { showNotification(parsed.error, 'error'); return; }
+            if (parsed.rows.length > 300) { showNotification('Please import at most 300 dishes at a time (this file has ' + parsed.rows.length + ').', 'error'); return; }
+            if (!confirm('Import ' + parsed.rows.length + ' dish' + (parsed.rows.length === 1 ? '' : 'es') + ' from "' + file.name + '"?\n\nDishes already on your menu are skipped.')) return;
+            const data = await apiCall('sg_catalog_import', { rows: parsed.rows });
+            if (!data) return;
+            let msg = 'Imported ' + (data.catalog + data.custom) + ' dishes (' + data.catalog + ' matched the catalog, ' + data.custom + ' custom)';
+            if (data.skipped) msg += ', ' + data.skipped + ' already on your menu';
+            showNotification(msg, 'success');
+            const problems = (data.invalid || []).map(x => 'Row ' + (x.row + 1) + ': ' + x.reason).concat((data.failed || []).map(x => 'Row ' + (x.row + 1) + ': ' + x.error));
+            if (problems.length) alert('Some rows were not imported:\n\n' + problems.slice(0, 10).join('\n') + (problems.length > 10 ? '\n…and ' + (problems.length - 10) + ' more' : ''));
             loadServices();
         }
 

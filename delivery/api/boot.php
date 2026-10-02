@@ -179,7 +179,7 @@ define('ETEL_WRITE_ACTIONS', array(
     'admin_create_user','admin_add_item','admin_update_item','admin_delete_item',
     'admin_toggle_item','admin_create_service_giver','admin_verify_service_giver',
     'admin_suspend_service_giver','sg_update_order_status','sg_complete_order',
-    'sg_add_item','sg_update_item','sg_delete_item','sg_catalog_add','admin_catalog_save','admin_catalog_delete','admin_purge_cache',
+    'sg_add_item','sg_update_item','sg_delete_item','sg_catalog_add','sg_catalog_import','admin_catalog_save','admin_catalog_delete','admin_purge_cache',
     'admin_update_courier',
     'admin_backfill_order_service_giver_ids',
     'courier_update_location',
@@ -1376,7 +1376,7 @@ switch ($action) {
         $GLOBALS['ETEL_LIMITED_BLOCK'] = true; // limited (Ride-only) EtelIDs are refused here - see get_auth_user()
         require __DIR__ . '/controllers/OrderController.php';
         break;
-    case 'sg_profile': case 'sg_update_profile': case 'sg_orders': case 'sg_accept_order': case 'sg_update_order_status': case 'sg_get_kitchen_ticket': case 'sg_order_detail': case 'sg_scan_qr': case 'sg_complete_order': case 'sg_stats': case 'sg_set_online': case 'sg_notifications': case 'sg_add_item': case 'sg_catalog_list': case 'sg_catalog_add': case 'sg_get_my_items': case 'sg_update_item': case 'sg_delete_item': case 'sg_get_staff': case 'sg_add_staff': case 'sg_remove_staff': case 'sg_update_staff_role': case 'sg_list_roles': case 'sg_save_role': case 'sg_delete_role': case 'sg_my_role': case 'sg_sales_report': case 'sg_reviews': case 'sg_reply_review': case 'sg_financial_report': case 'sg_get_pending_payout_request': case 'admin_list_payout_requests': case 'admin_review_payout_request':
+    case 'sg_profile': case 'sg_update_profile': case 'sg_orders': case 'sg_accept_order': case 'sg_update_order_status': case 'sg_get_kitchen_ticket': case 'sg_order_detail': case 'sg_scan_qr': case 'sg_complete_order': case 'sg_stats': case 'sg_set_online': case 'sg_notifications': case 'sg_add_item': case 'sg_catalog_list': case 'sg_catalog_add': case 'sg_catalog_import': case 'sg_get_my_items': case 'sg_update_item': case 'sg_delete_item': case 'sg_get_staff': case 'sg_add_staff': case 'sg_remove_staff': case 'sg_update_staff_role': case 'sg_list_roles': case 'sg_save_role': case 'sg_delete_role': case 'sg_my_role': case 'sg_sales_report': case 'sg_reviews': case 'sg_reply_review': case 'sg_financial_report': case 'sg_get_pending_payout_request': case 'admin_list_payout_requests': case 'admin_review_payout_request':
         $GLOBALS['ETEL_LIMITED_BLOCK'] = true; // limited (Ride-only) EtelIDs are refused here - see get_auth_user()
         require __DIR__ . '/controllers/ServiceGiverController.php';
         break;
