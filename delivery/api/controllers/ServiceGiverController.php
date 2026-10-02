@@ -376,6 +376,7 @@ case 'sg_orders': {
     // GET: (requires auth)  ?status=pending|accepted|picked_up|delivered|cancelled
     // List assigned orders with filtering
     $pdo = db();
+    try { require_once __DIR__ . '/../lib/courier_offers.php'; etel_offers_sweep($pdo); } catch (Exception $swe) {} catch (Throwable $swe) {}
     $auth_user = require_auth($pdo);
     
     if ($auth_user['role'] !== 'service_giver' && $auth_user['role'] !== 'admin') fail('Not a service giver account', 403);

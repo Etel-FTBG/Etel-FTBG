@@ -179,7 +179,7 @@ define('ETEL_WRITE_ACTIONS', array(
     'admin_create_user','admin_add_item','admin_update_item','admin_delete_item',
     'admin_toggle_item','admin_create_service_giver','admin_verify_service_giver',
     'admin_suspend_service_giver','sg_update_order_status','sg_complete_order',
-    'sg_add_item','sg_update_item','sg_delete_item','sg_catalog_add','sg_catalog_import','admin_catalog_copy','admin_catalog_save','admin_catalog_delete','admin_purge_cache',
+    'sg_add_item','sg_update_item','sg_delete_item','sg_catalog_add','sg_catalog_import','admin_catalog_copy','courier_accept_offer','courier_decline_offer','admin_save_courier_offers','admin_catalog_save','admin_catalog_delete','admin_purge_cache',
     'admin_update_courier',
     'admin_backfill_order_service_giver_ids',
     'courier_update_location',
@@ -1173,6 +1173,28 @@ switch ($action) {
         ok(array('id' => $id));
         break;
     }
+    case 'admin_get_courier_offers': {
+        // GET -> {seconds, max_attempts, pending, recent:{accepted,declined,expired}} for the Couriers screen.
+        $pdo = db(); require_admin($pdo, 'orders.manage');
+        require_once __DIR__ . '/lib/courier_offers.php';
+        $st = etel_offer_settings($pdo);
+        $recent = array('accepted' => 0, 'declined' => 0, 'expired' => 0); $pending = 0;
+        try {
+            foreach ($pdo->query("SELECT response, COUNT(*) n FROM order_courier_offers WHERE offered_at > DATE_SUB(NOW(), INTERVAL 7 DAY) GROUP BY response")->fetchAll(PDO::FETCH_ASSOC) as $r) {
+                if ($r['response'] === 'pending') $pending = (int)$r['n']; elseif (isset($recent[$r['response']])) $recent[$r['response']] = (int)$r['n'];
+            }
+        } catch (Exception $e) {}
+        ok(array('seconds' => $st['seconds'], 'max_attempts' => $st['max_attempts'], 'pending' => $pending, 'recent' => $recent));
+        break;
+    }
+    case 'admin_save_courier_offers': {
+        // POST seconds (0 = off, else 15..300), max_attempts (1..10)
+        $pdo = db(); require_admin($pdo, 'orders.manage');
+        require_once __DIR__ . '/lib/courier_offers.php';
+        try { ok(etel_offer_save_settings($pdo, isset($body['seconds']) ? $body['seconds'] : 0, isset($body['max_attempts']) ? $body['max_attempts'] : 3)); }
+        catch (Exception $e) { fail_ex($e, 'Could not save the job offer settings', 500); }
+        break;
+    }
     case 'admin_catalog_copy': {
         // POST from_sg, to_sg, [percent -50..200], [include_hidden] -> copies one shop's menu to another shop.
         $pdo = db(); require_admin($pdo, 'items.manage');
@@ -1386,7 +1408,7 @@ switch ($action) {
         $GLOBALS['ETEL_LIMITED_BLOCK'] = true; // limited (Ride-only) EtelIDs are refused here - see get_auth_user()
         require __DIR__ . '/controllers/CourierFuelController.php';
         break;
-    case 'customer_create_order': case 'customer_get_orders': case 'customer_reorder_items': case 'submit_order_issue': case 'customer_get_order_issues': case 'courier_get_available_orders': case 'courier_accept_order': case 'courier_update_order_status': case 'courier_get_my_orders': case 'courier_get_profile': case 'courier_go_online': case 'courier_go_offline': case 'courier_update_location': case 'courier_get_kpi_summary': case 'rate_order': case 'get_order_ratings': case 'track_order': case 'get_shop_reviews': case 'schedule_order': case 'get_scheduled_orders': case 'cancel_scheduled_order': case 'request_pickup_confirmation': case 'check_pickup_confirmation': case 'sg_pending_confirmations': case 'sg_confirm_pickup': case 'request_delivery_confirmation': case 'check_delivery_confirmation': case 'customer_pending_confirmations': case 'customer_confirm_delivery': case 'customer_wallet_history': case 'initiate_telebirr_payment': case 'check_telebirr_payment': case 'admin_list_telebirr_payments': case 'admin_confirm_telebirr_payment': case 'confirm_bank_payment': case 'admin_list_bank_payments': case 'admin_confirm_bank_payment': case 'admin_financial_report': case 'get_payment_method_logos': case 'admin_set_payment_logo':
+    case 'customer_create_order': case 'customer_get_orders': case 'customer_reorder_items': case 'submit_order_issue': case 'customer_get_order_issues': case 'courier_get_available_orders': case 'courier_accept_order': case 'courier_accept_offer': case 'courier_decline_offer': case 'courier_update_order_status': case 'courier_get_my_orders': case 'courier_get_profile': case 'courier_go_online': case 'courier_go_offline': case 'courier_update_location': case 'courier_get_kpi_summary': case 'rate_order': case 'get_order_ratings': case 'track_order': case 'get_shop_reviews': case 'schedule_order': case 'get_scheduled_orders': case 'cancel_scheduled_order': case 'request_pickup_confirmation': case 'check_pickup_confirmation': case 'sg_pending_confirmations': case 'sg_confirm_pickup': case 'request_delivery_confirmation': case 'check_delivery_confirmation': case 'customer_pending_confirmations': case 'customer_confirm_delivery': case 'customer_wallet_history': case 'initiate_telebirr_payment': case 'check_telebirr_payment': case 'admin_list_telebirr_payments': case 'admin_confirm_telebirr_payment': case 'confirm_bank_payment': case 'admin_list_bank_payments': case 'admin_confirm_bank_payment': case 'admin_financial_report': case 'get_payment_method_logos': case 'admin_set_payment_logo':
     case 'customer_get_favorites': case 'customer_toggle_favorite': case 'customer_get_addresses': case 'customer_add_address': case 'customer_update_address': case 'customer_delete_address': case 'customer_get_messages': case 'customer_send_message': case 'customer_get_referral_info': case 'customer_get_settings': case 'customer_update_settings':
         $GLOBALS['ETEL_LIMITED_BLOCK'] = true; // limited (Ride-only) EtelIDs are refused here - see get_auth_user()
         require __DIR__ . '/controllers/OrderController.php';

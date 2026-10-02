@@ -29,6 +29,7 @@ New since the first checklist:
 | 066 `order_chat` | order chat tables |
 | 067 `menu_catalog` | shared menu catalog (+ about 67 starter dishes), items.catalog_id / quality / portion |
 | 068 `catalog_items_stock_fix` | sets stock 100 on catalog / CSV dishes that were saved as sold out (stock 0) |
+| 069 `courier_offers` | expiring courier job offers (off by default): offers table, settings, order / courier columns |
 
 - [ ] All seven show as applied. (The code also creates its tables/columns on first use, so a missed
       migration usually fixes itself — but run them anyway so the admin tools show everything.)
@@ -106,6 +107,13 @@ step by step if you don't want to walk it through with real devices.
 - [ ] Dishes added from the catalog / CSV / copy show as available in the customer app (stock 100, not sold out).
 - [ ] Courier: upload `js/releases/courier/v4/`, then Admin → Releases → set **canary** (or stable) for courier to `v4`. Job cards then show a live "Waiting mm:ss" timer (green, amber after 3 min, red after 8 min).
 - [ ] Customer app: items marked Special / Premium show a small label, and the portion appears next to the shop name.
+
+### 5.12 Expiring courier job offers (off by default)
+- [ ] Run migration 069, upload the files, then upload `js/releases/courier/v5/` and set Courier **canary** to `v5` (v5 includes the v4 "Waiting" timer).
+- [ ] Admin → Couriers → **Job offers**: leave at 0 until a canary courier is on v5. Then set e.g. 45 seconds / 3 couriers and Save.
+- [ ] Place a test order with a v5 courier online: the courier gets a "NEW JOB OFFER" card (countdown, Accept / Decline) in the Active tab with a ring. Accept → normal flow. Let it run out (or Decline) → the order is offered to the next v5 courier; with nobody else it returns to the open Jobs list.
+- [ ] A courier on an older app (v3 / v4) never receives an offer and keeps the old behaviour.
+- [ ] To switch off instantly: set seconds to 0 (running offers are still finished or timed out normally). To roll the app back: set Courier stable to `v3`.
 
 ## 6. Tell shop owners
 - [ ] Use the **Online** switch when open; closed shops show as Closed to customers.

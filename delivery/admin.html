@@ -509,6 +509,15 @@ html{color-scheme:light}
 
                 <!-- ══ COURIERS PANEL ══ -->
                 <div id="panel-couriers" class="panel" style="display:none">
+                    <div class="co-offers-box" style="margin-bottom:18px;border:1px solid rgba(212,175,55,.25);border-radius:14px;padding:6px 0" id="co-offers-card">
+                        <div class="section-title" style="margin:8px 16px">⏱ Job offers (time limit)</div>
+                        <div style="padding:0 16px 8px;font-size:12px;opacity:.75">When on, a courier who is auto-assigned an order must tap <b>Accept</b> within the time limit. If they decline or time runs out, the order goes to the next nearest courier. When nobody takes it, it returns to the open job list. Works only for couriers on the newest Courier app (v5); others keep the normal behaviour. <b>0 = off.</b></div>
+                        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;padding:0 16px 8px">
+                            <label style="font-size:12px">Seconds to accept (0 = off, else 15-300)<input id="co-offer-sec" type="number" min="0" max="300" step="5" class="filter-sel" style="width:100%"></label>
+                            <label style="font-size:12px">Try up to this many couriers (1-10)<input id="co-offer-max" type="number" min="1" max="10" class="filter-sel" style="width:100%"></label>
+                        </div>
+                        <div style="padding:0 16px 16px;display:flex;gap:10px;align-items:center;flex-wrap:wrap"><button class="btn btn-primary" onclick="saveCourierOffers()" style="padding:8px 16px">💾 Save</button><span id="co-offer-msg" style="font-size:12px"></span></div>
+                    </div>
                     <div style="display:flex;gap:10px;margin-bottom:18px;flex-wrap:wrap;align-items:center">
                         <input type="text" id="courier-search" class="filter-sel" placeholder="Search name/phone/code…" oninput="filterCourierTable()" style="width:220px">
                         <button class="btn btn-secondary" onclick="loadCouriers()" style="padding:8px 14px">🔄 Refresh</button>
@@ -1492,7 +1501,7 @@ html{color-scheme:light}
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script><!-- PPTX slide-text preview (PPTX is a zip of XML), Documents tab -->
     <script src="js/admin-documents.js?v=1.5"></script><!-- Documents library: view/edit/version PDFs, Office files, Markdown, XML, etc -->
 
-<script src="js/admin.js?v=7.3"></script>
+<script src="js/admin.js?v=7.4"></script>
 <script src="js/admin-confirmations-premium.js?v=1.1"></script><!-- Pending Confirmations + GLOBAL modal-box fix for entire admin system -->
 <script src="js/admin-couriers-premium.js?v=1.4"></script><!-- Premium Couriers Management: 3D cards + edit modal + live map -->
     <script src="js/admin-premium.js?v=4.1"></script><!-- KPI count-ups + card motion -->
