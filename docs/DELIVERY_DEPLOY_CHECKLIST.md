@@ -100,6 +100,7 @@ step by step if you don't want to walk it through with real devices.
 - [ ] Service app → My Services → **📚 Pick from catalog**: tick dishes, type prices, **Add**. They appear in the item list with the shop's own price. Dishes already on the menu show "✓ On your menu".
 - [ ] "Quick start" chips (e.g. ethiopian restaurant) + **Tick all shown** select a whole starter menu; shops then only type prices.
 - [ ] Add custom item → tick "Suggest this dish for the shared catalog" → it shows under Admin → Menu catalog → ⏳ Suggested → **Approve**.
+- [ ] My Services → **⬇ CSV template**, fill it (name, price, optional quality / portion / category / Amharic name), then **⬆ Import CSV**: dishes that match the catalog by name are linked to it, the rest become custom items (and are suggested to Admin), already-listed dishes are skipped, bad rows are reported by row number.
 - [ ] Customer app: items marked Special / Premium show a small label, and the portion appears next to the shop name.
 
 ## 6. Tell shop owners
