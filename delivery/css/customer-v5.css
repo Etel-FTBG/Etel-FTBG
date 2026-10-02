@@ -1490,3 +1490,24 @@ body:not(.dark-theme) .svc-ico-food  { color: #9A7410; }
 body:not(.dark-theme) .svc-ico-groc  { color: #15803D; }
 body:not(.dark-theme) .svc-ico-pharm { color: #0F766E; }
 body:not(.dark-theme) .svc-ico-ride  { color: #1D4ED8; }
+/* ══ PREMIUM SLICE 2: shop cards ═══════════════════════════════════════ */
+.restaurant-card-image { height: 150px; }
+.rc-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+.rc-top .restaurant-card-name { margin-bottom: 2px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rc-rating { flex: none; display: inline-flex; align-items: center; gap: 3px; font-size: 12px; font-weight: 800; line-height: 1;
+  padding: 5px 8px; border-radius: 999px; background: rgba(255,255,255,.08); color: var(--text); }
+.rc-rating svg { color: #F5C542; }
+.rc-rating-new { color: var(--text-muted); font-weight: 700; }
+.rc-facts { display: flex; flex-wrap: wrap; gap: 4px 12px; margin-top: 7px; font-size: 12px; font-weight: 600; color: var(--text-muted); }
+.rc-fact { display: inline-flex; align-items: center; gap: 4px; }
+.rc-fact svg { opacity: .8; }
+.restaurant-card-info { font-size: 11.5px; font-weight: 500; color: var(--text-muted); margin-top: 5px; }
+.rc-fav svg { display: block; }
+.rc-fav.on { background: #fff; color: #E11D48; }
+.rc-fav.on svg { fill: currentColor; }
+.rc-closed-badge { position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%); z-index: 2; padding: 7px 16px; border-radius: 999px;
+  font-size: 12px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: #fff; background: rgba(15,15,18,.78);
+  -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); border: 1px solid rgba(255,255,255,.2); }
+body:not(.dark-theme) .rc-rating { background: #F3EFE6; color: var(--lt-ink, #1A1200); }
+body:not(.dark-theme) .rc-facts, body:not(.dark-theme) .rc-rating-new, body:not(.dark-theme) .restaurant-card-info { color: var(--lt-ink-3, #6B6350) !important; }
+body:not(.dark-theme) .rc-fav { background: rgba(255,255,255,.9); color: #1A1200; border-color: rgba(0,0,0,.08); }

@@ -238,6 +238,13 @@ async function loadItems(category) {
     renderItemsGrid(itemsCache);
 }
 
+// Shop-card icons (line icons, inherit colour)
+const RC_ICO = function (d) { return '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + d + '</svg>'; };
+const RC_CLOCK = RC_ICO('<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>');
+const RC_BIKE  = RC_ICO('<circle cx="6" cy="17" r="3"/><circle cx="18" cy="17" r="3"/><path d="M6 17l3-7h5l4 7M9 10l-1-3H6M14 10l-1-3"/>');
+const RC_STAR  = '<svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor" aria-hidden="true"><path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.8-5.2 2.8 1-5.8L3.5 9.7l5.9-.9z"/></svg>';
+const RC_HEART = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20s-7-4.4-9-9.2C1.8 7.6 3.7 4.5 7 4.5c2 0 3.4 1.1 5 3 1.6-1.9 3-3 5-3 3.3 0 5.2 3.1 4 6.3-2 4.8-9 9.2-9 9.2z"/></svg>';
+
 function renderSGScroll(items) {
     const bySG = {};
     items.forEach(function(item) {
@@ -281,26 +288,25 @@ function renderSGScroll(items) {
         const bg = bgMap[sg.type]||'sg-bg-default';
         // Honest, data-backed facts only: rating and prep time come from the items API;
         // travel time is a flat +10..20 min estimate on top of the shop's own prep time.
-        const eta = isFinite(sg.minPrep) ? '<span class="rc-eta">' + (sg.minPrep + 10) + '–' + (sg.minPrep + 20) + ' ' + escapeHtml(tMin) + '</span>' : '';
-        const rate = sg.rating > 0 ? '<span class="rc-rate">★ ' + sg.rating.toFixed(1) + '</span>' : '<span class="rc-rate rc-rate-new">' + escapeHtml(tNew) + '</span>';
+        const eta = isFinite(sg.minPrep) ? '<span class="rc-fact">' + RC_CLOCK + (sg.minPrep + 10) + '–' + (sg.minPrep + 20) + ' ' + escapeHtml(tMin) + '</span>' : '';
+        const rate = sg.rating > 0 ? '<span class="rc-rating">' + RC_STAR + sg.rating.toFixed(1) + '</span>' : '<span class="rc-rating rc-rating-new">' + escapeHtml(tNew) + '</span>';
         const coverSrc = sg.cover || sg.img;
         const cover = coverSrc
             ? '<span class="rc-ph">' + ic + '</span><img class="rc-cover" src="' + escUrl(coverSrc) + '" alt="" loading="lazy" onerror="this.onerror=null;this.style.display=\'none\'">'
             : '<span class="rc-ph rc-ph-solo">' + ic + '</span>';
         const from = isFinite(sg.minPrice) ? escapeHtml(tFrom) + ' ETB ' + Math.round(sg.minPrice) + ' · ' : '';
-        const status = sg.online === true ? '<span class="rc-status rc-status-open">● ' + escapeHtml(tOpen) + '</span>'
-                     : (sg.online === false ? '<span class="rc-status rc-status-closed">● ' + escapeHtml(tClosed) + '</span>' : '');
+        // Only a closed shop gets a label on the photo; an open shop needs no badge.
+        const closedBadge = sg.online === false ? '<span class="rc-closed-badge">' + escapeHtml(tClosed) + '</span>' : '';
         return '<div class="restaurant-card' + (sg.online === false ? ' rc-closed' : '') + '" onclick="openShopDetail('+sg.id+')">' +
-            '<div class="restaurant-card-image ' + bg + '">' + cover + '<span class="rc-shade"></span>' + status +
-                '<button class="rc-fav" onclick="event.stopPropagation();toggleFavorite('+sg.id+')" aria-label="Favorite">☆</button>' +
-                rate + eta +
+            '<div class="restaurant-card-image ' + bg + '">' + cover + '<span class="rc-shade"></span>' + closedBadge +
+                '<button class="rc-fav" onclick="event.stopPropagation();toggleFavorite('+sg.id+', this)" aria-label="Favorite">' + RC_HEART + '</button>' +
             '</div>' +
             '<div class="restaurant-card-body' + (sg.logo ? ' has-logo' : '') + '">' +
                 (sg.logo ? '<img class="rc-logo" src="' + escUrl(sg.logo) + '" alt="" loading="lazy" onerror="this.parentNode.classList.remove(\'has-logo\');this.remove()">' : '') +
-                '<div class="restaurant-card-name">' + escapeHtml(sg.name) + '</div>' +
+                '<div class="rc-top"><div class="restaurant-card-name">' + escapeHtml(sg.name) + '</div>' + rate + '</div>' +
                 '<div class="restaurant-card-meta">' + escapeHtml(sg.type||'Shop') + ' · ' + escapeHtml(sg.zone||'Hawassa') + '</div>' +
+                '<div class="rc-facts">' + eta + '<span class="rc-fact">' + RC_BIKE + escapeHtml(tFee) + ' ' + minFee + '</span></div>' +
                 '<div class="restaurant-card-info">' + from + sg.count + ' ' + escapeHtml(tItems) + '</div>' +
-                '<div class="restaurant-card-fee">🛵 ' + escapeHtml(tFee) + ' ' + minFee + '</div>' +
             '</div></div>';
     }).join('');
 }
@@ -2412,6 +2418,7 @@ async function loadFavorites() {
 async function toggleFavorite(sgId, btnEl) {
     const res = await api('customer_toggle_favorite', { service_giver_id: sgId });
     if (res && res.success) {
+        if (btnEl && btnEl.classList) btnEl.classList.toggle('on', !!res.data.favorited);
         showToast(res.data.favorited ? 'Added to favorites ⭐' : 'Removed from favorites');
         if (currentView === 'favorites') loadFavorites();
     } else {
