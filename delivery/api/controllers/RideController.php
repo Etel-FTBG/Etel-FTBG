@@ -1461,11 +1461,24 @@ case 'driver_update_location': {
             // against, before the meter-only branch below decides
             // whether to bill that same raw distance.
             $d = null; $isFirstPoint = ($r['last_lat'] === null || $r['last_lng'] === null);
-            $maxPlausibleKm = 2.0;
+            // Plausible-distance ceiling = a 120 km/h drive over the time since
+            // the last accepted point, plus 50 m of slack. This used to be
+            // floored at a flat 2.0 km, which is ~1400 km/h for a normal 5 s
+            // ping - so a phone whose position wandered by up to 2 km (WiFi/
+            // cell fixes, or a stationary phone bouncing between two
+            // providers) had every wander billed as real driving. 2.0 km is
+            // kept only as the cap when there is no timestamp to judge by.
+            $maxPlausibleKm = 0.5;
             if (!empty($r['last_location_at'])) {
-                $elapsedSeconds = max(0, time() - strtotime($r['last_location_at']));
-                $maxPlausibleKm = max(2.0, $elapsedSeconds * (120.0 / 3600.0));
+                $elapsedSeconds = max(1, time() - strtotime($r['last_location_at']));
+                $maxPlausibleKm = 0.05 + $elapsedSeconds * (120.0 / 3600.0);
             }
+            // Smallest hop worth crediting: the larger of 20 m and 3x this
+            // fix's own reported error radius. Simulated: a parked phone's
+            // jitter at 1x the radius still billed ~14 km/hour of phantom
+            // driving; at 3x, with the reference point held fixed (see
+            // refMoves below), it bills ~0 while real driving is unaffected.
+            $creditFloorKm = max(0.02, 3.0 * ($accuracy !== null ? $accuracy : 0) / 1000.0);
             if (!$isFirstPoint) {
                 $d = rides_haversine_km(floatval($r['last_lat']), floatval($r['last_lng']), $lat, $lng);
             }
@@ -1506,15 +1519,15 @@ case 'driver_update_location': {
             $waitMinutes = rides_current_wait_minutes($r);
             $rideVtype = !empty($r['vehicle_type']) ? $r['vehicle_type'] : rides_driver_own_vtype($pdo, $u['id']);
 
-            // Weak-but-real fix (75-500 m): used to be discarded outright, so a
+            // Weak-but-real fix (75-150 m): used to be discarded outright, so a
             // phone that never reports better than ~100 m (common in city
             // traffic) froze the meter at 0.00 km for the whole trip. Now
             // credited once the movement from the last trusted point clearly
-            // exceeds the fix's own error radius (2x), which a stationary
-            // phone's drift can't produce. Network-only fixes (>500 m) are
+            // exceeds 3x the fix's own error radius, which a stationary
+            // phone's drift can't produce. Anything worse than 150 m is
             // still never credited - see the shortfall floor in driver_arrived.
-            $weakCreditable = $lowAccuracy && $accuracy <= 500 && $d !== null
-                && $d < $maxPlausibleKm && $d > 2 * ($accuracy / 1000.0);
+            $weakCreditable = $lowAccuracy && $accuracy <= 150 && $d !== null
+                && $d < $maxPlausibleKm && $d > $creditFloorKm;
             if ($lowAccuracy && !$weakCreditable) {
                 // Distance itself still is NOT credited from a fix this
                 // poor - see the restructuring note above for why that
@@ -1537,25 +1550,17 @@ case 'driver_update_location': {
                                'low_accuracy' => true), rides_fare_breakdown_for_ui($liveFareCalc));
             } else {
                 $add = 0;
-                // The ceiling used to be a flat 2.0 km regardless of how
-                // long it had been since the last accepted point - fine
-                // for normal ~5s pings, but it silently discarded real
-                // distance whenever the app was backgrounded for several
-                // minutes and genuinely covered more ground before the
-                // next ping landed. Now scales with actual elapsed time:
-                // up to a generous 120 km/h plausible-driving ceiling,
-                // with a floor of the original 2.0 km so ordinary rapid
-                // pings behave exactly as before - this only ever makes
-                // the ceiling MORE permissive after a real gap, never
-                // less permissive than the original behavior.
-                if ($d !== null && $d > 0.005 && $d < $maxPlausibleKm) $add = $d;
+                // Ceiling (see $maxPlausibleKm above) scales with the time
+                // since the last accepted point, so a long background gap
+                // still catches up while a 5 s ping can't claim kilometres.
+                if ($d !== null && $d > $creditFloorKm && $d < $maxPlausibleKm) $add = $d;
                 $newKm = floatval($r['traveled_km']) + $add;
                 // The reference point only advances on real movement (or the
                 // first point / a rejected glitch jump). Previously it
                 // advanced on every ping, so crawling in traffic at <5 m per
                 // 5 s ping never accumulated: each tiny hop was discarded AND
-                // forgotten. Now sub-5 m hops pile up against the unchanged
-                // reference until they cross the floor.
+                // forgotten. Now sub-floor hops pile up against the unchanged
+                // reference until they cross the credit floor.
                 // last_location_at is stamped with PHP's clock, not MySQL
                 // NOW(): it is read back with time()/strtotime() above, and
                 // the two zones differ on this host (same bug already fixed
