@@ -790,7 +790,26 @@
         }
 
         // ─── COURIERS ─────────────────────────────────────────────────
+        // Courier job offers (api/lib/courier_offers.php): time limit to accept an auto-assigned order.
+        async function loadCourierOffers() {
+            const res = await adm('admin_get_courier_offers', {}, true);
+            const msg = document.getElementById('co-offer-msg');
+            if (!res || !res.success) { if (msg) msg.textContent = (res && res.message) || ''; return; }
+            document.getElementById('co-offer-sec').value = res.data.seconds;
+            document.getElementById('co-offer-max').value = res.data.max_attempts;
+            const r = res.data.recent || {};
+            if (msg) msg.textContent = (res.data.seconds > 0 ? 'On. ' : 'Off. ') + 'Last 7 days: ' + (r.accepted || 0) + ' accepted, ' + (r.declined || 0) + ' declined, ' + (r.expired || 0) + ' timed out.';
+        }
+        async function saveCourierOffers() {
+            const msg = document.getElementById('co-offer-msg');
+            const res = await adm('admin_save_courier_offers', { seconds: document.getElementById('co-offer-sec').value, max_attempts: document.getElementById('co-offer-max').value }, false);
+            if (!res || !res.success) { msg.textContent = (res && res.message) || 'Could not save.'; return; }
+            document.getElementById('co-offer-sec').value = res.data.seconds;
+            document.getElementById('co-offer-max').value = res.data.max_attempts;
+            msg.textContent = res.data.seconds > 0 ? 'Saved. Couriers have ' + res.data.seconds + ' s to accept, up to ' + res.data.max_attempts + ' couriers per order.' : 'Saved. Job offers are off.';
+        }
         async function loadCouriers() {
+            loadCourierOffers();
             const tbody = document.getElementById('couriers-tbody');
             tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:30px;">' + UI.loading('Loading couriers...') + '</td></tr>';
             try {

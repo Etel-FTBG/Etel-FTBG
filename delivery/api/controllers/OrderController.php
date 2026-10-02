@@ -37,6 +37,7 @@ case 'customer_get_orders': {
     // GET: (requires customer auth)  ?status=pending|accepted|picked_up|delivered
     // Get customer's orders
     $pdo = db();
+    try { require_once __DIR__ . '/../lib/courier_offers.php'; etel_offers_sweep($pdo); } catch (Exception $swe) {} catch (Throwable $swe) {}
     $auth_user = require_auth($pdo);
     
     // Role check removed - any authenticated EtelID can now use the
@@ -222,6 +223,7 @@ case 'courier_get_available_orders': {
     $courier_user = require_courier($pdo);
     $courier = get_or_create_courier_profile($pdo, $courier_user['id']);
     if (!$courier) fail('Courier profile could not be created. Contact admin.', 500);
+    try { require_once __DIR__ . '/../lib/courier_offers.php'; etel_offers_sweep($pdo); } catch (Exception $swe) {} catch (Throwable $swe) {}
 
     // Ensure order_assignments exists and has needed columns
     try {
@@ -301,6 +303,7 @@ case 'courier_accept_order': {
         
         $upd = $pdo->prepare('UPDATE orders SET courier_id=?, status="assigned" WHERE id=?');
         $upd->execute(array($courier['id'], $order_id));
+        try { require_once __DIR__ . '/../lib/courier_offers.php'; etel_offer_mark_accepted($pdo, $order_id); } catch (Exception $oe) {} catch (Throwable $oe) {}
 
         // Mark assignment as courier-assigned (distinct from SG-accepted)
         $upd_asgn = $pdo->prepare('UPDATE order_assignments SET status="assigned" WHERE order_id=?');
@@ -314,6 +317,38 @@ case 'courier_accept_order': {
         $pdo->rollBack();
         fail_ex($e, 'Failed to accept order', 500);
     }
+    break;
+}
+case 'courier_accept_offer': {
+    // POST order_id -> the courier accepts the order that was offered to them (before the offer runs out).
+    $pdo = db();
+    $courier_user = require_courier($pdo);
+    $order_id = isset($body['order_id']) ? intval($body['order_id']) : 0;
+    if (!$order_id) fail('order_id is required', 400);
+    $courier = get_or_create_courier_profile($pdo, $courier_user['id']);
+    if (!$courier) fail('Courier profile could not be created. Contact admin.', 500);
+    try {
+        require_once __DIR__ . '/../lib/courier_offers.php';
+        etel_offers_sweep($pdo);
+        $r = etel_offer_accept($pdo, $order_id, $courier['id']);
+    } catch (Exception $e) { fail_ex($e, 'Could not accept the offer', 500); }
+    if ($r !== 'accepted') fail('This offer has expired or was given to another courier', 409);
+    ok(array('message' => 'Offer accepted', 'order_id' => $order_id));
+    break;
+}
+case 'courier_decline_offer': {
+    // POST order_id -> the courier declines; the order is offered to the next courier.
+    $pdo = db();
+    $courier_user = require_courier($pdo);
+    $order_id = isset($body['order_id']) ? intval($body['order_id']) : 0;
+    if (!$order_id) fail('order_id is required', 400);
+    $courier = get_or_create_courier_profile($pdo, $courier_user['id']);
+    if (!$courier) fail('Courier profile could not be created. Contact admin.', 500);
+    try {
+        require_once __DIR__ . '/../lib/courier_offers.php';
+        etel_offer_decline($pdo, $order_id, $courier['id']);
+    } catch (Exception $e) { fail_ex($e, 'Could not decline the offer', 500); }
+    ok(array('message' => 'Offer declined', 'order_id' => $order_id));
     break;
 }
 case 'courier_update_order_status': {
@@ -342,6 +377,8 @@ case 'courier_update_order_status': {
     
     if (!$order) fail('Order not found', 404);
     if ($order['courier_id'] != $courier['id']) fail('You are not assigned to this order', 403);
+    // Moving the order forward counts as accepting it (an expiring offer can no longer be taken back).
+    try { require_once __DIR__ . '/../lib/courier_offers.php'; etel_offer_mark_accepted($pdo, $order_id); } catch (Exception $oe) {} catch (Throwable $oe) {}
     
     // Update order status
     try {
@@ -538,6 +575,12 @@ case 'courier_get_my_orders': {
     $courier_user = require_courier($pdo);
     $courier = get_or_create_courier_profile($pdo, $courier_user['id']);
     if (!$courier) fail('Courier profile could not be created. Contact admin.', 500);
+    // The v5 courier app sends offers=1 on every poll: it can show Accept / Decline, so it may receive expiring offers.
+    try {
+        require_once __DIR__ . '/../lib/courier_offers.php';
+        if (!empty($_GET['offers'])) etel_offer_mark_capable($pdo, $courier['id']);
+        etel_offers_sweep($pdo);
+    } catch (Exception $oe) {} catch (Throwable $oe) {}
     $status = isset($_GET['status']) ? trim($_GET['status']) : '';
     $where = 'WHERE o.courier_id = ?';
     $params = array($courier['id']);
@@ -614,6 +657,7 @@ case 'courier_get_my_orders': {
         } catch (Exception $e2) { fail_ex($e2, 'Query failed', 500); }
     }
     etel_mask_recipient_for_courier($orders);
+    try { require_once __DIR__ . '/../lib/courier_offers.php'; $orders = etel_offer_attach($pdo, $orders); } catch (Exception $oe) {} catch (Throwable $oe) {}
     ok(array('orders' => $orders, 'count' => count($orders)));
     break;
 }

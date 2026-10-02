@@ -1431,3 +1431,17 @@ body.etel-light .job-card .job-address-icon{background-color:#F4EFE3 !important;
 body.etel-light .job-card .job-wait.wait-ok{color:#15803D}
 body.etel-light .job-card .job-wait.wait-warn{color:#B45309}
 body.etel-light .job-card .job-wait.wait-hot{color:#B91C1C}
+
+/* Courier v5: expiring job offer card */
+.offer-card{border:1.5px solid rgba(46,204,113,.55) !important;box-shadow:0 0 0 0 rgba(46,204,113,.5);animation:offerGlow 1.6s ease-in-out infinite !important}
+@keyframes offerGlow{0%,100%{box-shadow:0 0 0 0 rgba(46,204,113,.35)}50%{box-shadow:0 0 0 7px rgba(46,204,113,0)}}
+.offer-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.offer-tag{font-size:11px;font-weight:800;letter-spacing:.08em;color:#2ECC71}
+.offer-count{font-size:22px;font-weight:800;font-variant-numeric:tabular-nums;color:#F5F5F7}
+.offer-bar{height:6px;border-radius:99px;background:rgba(255,255,255,.1);overflow:hidden;margin-bottom:14px}
+.offer-bar-fill{display:block;height:100%;width:100%;border-radius:99px;background:linear-gradient(90deg,#2ECC71,#F3D56B);transition:width 1s linear}
+.offer-card.offer-urgent{border-color:rgba(255,92,92,.7) !important}
+.offer-card.offer-urgent .offer-count{color:#FF5C5C}
+.offer-card.offer-urgent .offer-bar-fill{background:#FF5C5C}
+body.etel-light .offer-count{color:#1A1200}
+body.etel-light .offer-bar{background:rgba(0,0,0,.1)}
