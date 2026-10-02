@@ -15,7 +15,7 @@
 <link rel="icon" type="image/png" href="../icons/driver-icon-96.png">
 <link rel="apple-touch-icon" href="../icons/driver-apple-touch-icon.png">
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Outfit:wght@400;500;600;700;800;900&family=Noto+Sans+Ethiopic:wght@400;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="../css/driver-bundle.css?v=1.4">
+<link rel="stylesheet" href="../css/driver-bundle.css?v=1.5">
 <style>
 .etl-truck-layer,.etl-truck-layer-2,.etl-pin,.etl-pin-1,.etl-pin-2,.etl-pin-3,.etl-pin-4,.etl-speedlines{display:none!important}
 
@@ -236,6 +236,19 @@
 .nav-tab.active .nl{color:var(--gold-lt)}
 .nav-tab.active .ni{filter:drop-shadow(0 0 6px rgba(212,175,55,.6))}
 
+
+/* ── Premium slice: line icons in the bottom nav, theme switch in the top bar ── */
+.nav-tab .ni{display:flex;align-items:center;justify-content:center}
+.driver-bottom-nav .nav-tab .ni{color:#9E9CB4 !important;filter:none !important}
+.driver-bottom-nav .nav-tab .nl{color:#C4C1D2 !important}
+.driver-bottom-nav .nav-tab.active .ni,.driver-bottom-nav .nav-tab.active .nl{color:#F3D56B !important}
+body.light-mode .driver-bottom-nav .nav-tab .ni{color:#6B6350 !important}
+body.light-mode .driver-bottom-nav .nav-tab .nl{color:#5A5650 !important}
+body.light-mode .driver-bottom-nav .nav-tab.active .ni,body.light-mode .driver-bottom-nav .nav-tab.active .nl{color:#8A6500 !important}
+.ei.ei-svg{display:flex;justify-content:center;color:#8D8DA3;margin:4px 0 6px}
+body.light-mode .ei.ei-svg{color:#7A7466}
+.drv-topbar .theme-toggle-btn{position:static;margin-left:auto;width:38px;height:38px;flex:none;box-shadow:none}
+.drv-topbar #poweroff-btn{margin-left:0}
 /* ── Status bar (top, replaces old .driver-statusbar) ── */
 .drv-topbar{
   position:fixed;top:0;left:0;right:0;z-index:16;
@@ -1043,7 +1056,7 @@ body.light-mode [style*="color:#D4AF37"],body.light-mode [style*="color:#FFD700"
 
       <!-- Nearby requests list -->
       <div id="requests-list">
-        <div class="empty-state state-empty"><div class="state-empty-header state-empty-header--offline">Offline</div><div class="ei">📴</div><p>Go online to see nearby ride requests</p></div>
+        <div class="empty-state state-empty"><div class="state-empty-header state-empty-header--offline">Offline</div><div class="ei ei-svg"><svg viewBox="0 0 24 24" width="44" height="44" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v8"/><path d="M6.3 6.8a8 8 0 1 0 11.4 0"/></svg></div><p>Go online to see nearby ride requests</p></div>
       </div>
 
       <!-- Today's performance: priority + trips/earnings strip, and a
@@ -1493,16 +1506,16 @@ body.light-mode [style*="color:#D4AF37"],body.light-mode [style*="color:#FFD700"
 <!-- BOTTOM NAV -->
 <nav class="driver-bottom-nav">
   <button class="nav-tab active" data-page="requests" onclick="switchPage('requests')">
-    <span class="ni">▶</span><span class="nl" data-i18n="nav_requests">Requests</span>
+    <span class="ni"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-6-5.2-6-10a6 6 0 0 1 12 0c0 4.8-6 10-6 10z"/><circle cx="12" cy="11" r="2.2"/></svg></span><span class="nl" data-i18n="nav_requests">Requests</span>
   </button>
   <button class="nav-tab" data-page="money" onclick="switchPage('money')">
-    <span class="ni">💳</span><span class="nl" data-i18n="nav_money">Earnings</span>
+    <span class="ni"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5.5" width="18" height="13" rx="2.5"/><path d="M3 10h18M7 15h3"/></svg></span><span class="nl" data-i18n="nav_money">Earnings</span>
   </button>
   <button class="nav-tab" data-page="chats" onclick="switchPage('chats')">
-    <span class="ni">💬</span><span class="nl" data-i18n="nav_chats">Chats</span>
+    <span class="ni"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12a8 7 0 0 1-11.7 6.4L4 19.5l1.2-3.6A8 7 0 1 1 20 12z"/></svg></span><span class="nl" data-i18n="nav_chats">Chats</span>
   </button>
   <button class="nav-tab" data-page="profile" onclick="switchPage('profile')">
-    <span class="ni">👤</span><span class="nl" data-i18n="nav_profile">Profile</span>
+    <span class="ni"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.6"/><path d="M4.5 20c.8-3.6 3.7-5.5 7.5-5.5s6.7 1.9 7.5 5.5"/></svg></span><span class="nl" data-i18n="nav_profile">Profile</span>
   </button>
 </nav>
 
@@ -1746,6 +1759,10 @@ body.light-mode [style*="color:#D4AF37"],body.light-mode [style*="color:#FFD700"
 </script>
   <!-- Light/dark mode toggle — for outdoor use -->
   <button class="theme-toggle-btn" id="theme-toggle-btn" onclick="toggleDriverTheme()" title="Toggle light/dark mode">🌙</button>
+<script>
+// The light/dark switch used to float over the content; keep the same button but seat it in the top bar.
+(function () { var tb = document.querySelector('.drv-topbar'), b = document.getElementById('theme-toggle-btn'); if (tb && b) tb.appendChild(b); })();
+</script>
 <script src="../js/apk-download-badge.js?v=2" data-role="driver"></script>
 <script src="../js/investor-nav-check.js"></script>
 </body>

@@ -399,6 +399,12 @@ function delivery_execute_order_creation($pdo, $auth_user, $body) {
         if (function_exists('etel_notify_order_status')) etel_notify_order_status($pdo, $order_id);
                 $pdo->prepare("UPDATE couriers SET status='busy' WHERE user_id=?")
                     ->execute(array($best_id['user_id']));
+                // Expiring job offers (off unless the admin turned them on, and only for couriers whose app supports them).
+                try {
+                    require_once __DIR__ . '/courier_offers.php';
+                    etel_offer_after_dispatch($pdo, $order_id, $best_id['id']);
+                } catch (Exception $oe) { error_log('[ETEL] offer start failed for order_id=' . $order_id . ': ' . $oe->getMessage()); }
+                  catch (Throwable $oe) { error_log('[ETEL] offer start failed for order_id=' . $order_id . ': ' . $oe->getMessage()); }
                 // Notify courier via notifications table
                 try {
                     $notifTitle = 'New Delivery Job!';

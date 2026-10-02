@@ -61,7 +61,7 @@ ETEL_I18N.register('customer', {
         quick_ride_title:'ETEL Ride', quick_ride_sub:'From ETB 120',
         quick_hail_title:'Street Hail', quick_hail_sub:'Instant pickup',
         quick_driver_title:'Be a Driver', quick_driver_sub:'Earn with ETEL',
-        section_restaurants:'🌟 Restaurants & Shops', see_all:'See all →',
+        section_restaurants:'Restaurants & Shops', see_all:'See all →',
         section_items:'💎 Available Items', view_all:'View all →',
         footer_partner:'Become a Partner', footer_courier:'Become a Courier',
         footer_contact:'Contact', footer_privacy:'Privacy',
@@ -76,7 +76,7 @@ ETEL_I18N.register('customer', {
         ph_address:'Search address, shop, landmark…', ph_full_name:'Full name', ph_notes:'Special instructions…',
         pay_telebirr_sub:'Recommended · Instant', pay_wallet_sub:'Ethiopian Wallet',
         pay_cash:'Cash', pay_cash_sub:'Pay courier on delivery', pay_bank_sub:'Bank transfer',
-        filter_trending:'🔥 Trending', filter_top_rated:'⭐ Top Rated', filter_fast:'⚡ Fast', filter_budget:'💰 Budget', filter_new:'✨ New',
+        filter_trending:'Trending', filter_top_rated:'Top Rated', filter_fast:'Fast', filter_budget:'Budget', filter_new:'New',
         cat_pizza:'Pizza', cat_burgers:'Burgers', cat_noodles:'Noodles', cat_ethiopian:'Ethiopian', cat_healthy:'Healthy', cat_sushi:'Sushi', cat_coffee:'Coffee', cat_bakery:'Bakery',
         promo_limited:'LIMITED', promo_50off:'50% OFF', promo_first_order:'First Order Premium',
         promo_today:'TODAY', promo_free_delivery:'FREE DELIVERY', promo_orders_above:'Orders above ETB 500',
@@ -86,14 +86,14 @@ ETEL_I18N.register('customer', {
     am: {
         nav_home:'ቤት', nav_favorites:'ተወዳጆች', nav_orders:'ትዕዛዞች', nav_messages:'መልዕክቶች', nav_profile:'መገለጫ',
         shop_open:'ክፍት', shop_closed:'ዝግ', shop_fee_from:'ማድረሻ ከ ETB', closed_warn:'አሁን ዝግ ይመስላል። አሁንም ማዘዝ ይችላሉ፤ እስኪከፈት ሊዘገይ ይችላል። ይቀጥሉ?',
-        trk_title:'ትዕዛዝዎ', trk_pending:'ትዕዛዝ ተቀብሏል', trk_assigned:'ሹፌር ተመድቧል', trk_picked_up:'ተነስቷል', trk_in_transit:'በመንገድ ላይ', trk_track:'ተከታተል', trk_more:'ተጨማሪ', menu_all:'ሁሉም', menu_popular:'🔥 ተወዳጅ', menu_deals:'🏷️ ቅናሽ', menu_quick:'⚡ ፈጣን', pop_badge:'🔥 ተወዳጅ', promo_have:'የቅናሽ ኮድ አለዎት?', promo_ph:'ኮድ ያስገቡ', promo_apply:'ተግብር', promo_remove:'አስወግድ', promo_discount:'ቅናሽ', promo_saved:'ይቆጥባሉ', rate_title:'ትዕዛዝዎን ይገምግሙ', rate_overall:'አጠቃላይ', rate_food:'የትዕዛዝ ጥራት', rate_courier:'ሹፌር', rate_tags:'ምን ጎልቶ ታየ?', rate_comment:'ተጨማሪ ይንገሩን (አማራጭ)…', rate_submit:'ግምገማ ላክ', rate_pick:'እባክዎ አጠቃላይ ደረጃ ይምረጡ', rate_thanks:'ለግምገማዎ እናመሰግናለን!', rate_yours:'የእርስዎ ደረጃ', rate_reply:'የሱቁ መልስ', tag_fast_delivery:'⚡ ፈጣን ማድረሻ', tag_great_taste:'😋 ጣፋጭ', tag_well_packed:'📦 በደንብ የታሸገ', tag_friendly_courier:'🙂 ተግባቢ ሹፌር', tag_good_value:'💰 ጥሩ ዋጋ', tag_late:'🐢 ዘግይቷል', tag_cold:'🥶 ቀዝቅዞ ደረሰ', tag_wrong_item:'❌ የተሳሳተ ዕቃ', pts_title:'ነጥቦችዎ', pts_use:'ነጥቤን ተጠቀም', pts_off:'ነጥብ አልተጠቀምኩም', pts_need:'ለመጠቀም ተጨማሪ {n} ነጥቦች ያስፈልጋሉ', pts_applied:'⭐ ነጥቦች', pts_how:'እንዴት ይሰራል', pts_earn:'በደረሰ ትዕዛዝ ለእያንዳንዱ ETB 10 ዕቃ 1 ነጥብ ያገኛሉ — ቅዳሜና እሁድ እጥፍ።', pts_spend:'100 ነጥብ ሲኖርዎት 10 ነጥብ = ETB 1 ቅናሽ።', pts_recent:'የቅርብ ጊዜ እንቅስቃሴ', pts_none:'እስካሁን እንቅስቃሴ የለም — የመጀመሪያ የደረሰ ትዕዛዝዎ ነጥብ ያስገኛል።', pts_worth:'ዋጋ', chat_btn:'💬 ከሱቁ እና ከሹፌሩ ጋር ይወያዩ', chat_btn_short:'💬 ውይይት', push_on:'🔔 የትዕዛዝ ማሳወቂያ አብራ', push_enabled:'የትዕዛዝ ማሳወቂያ በርቷል', push_blocked:'ማሳወቂያዎች በአሳሽ ቅንብር ታግደዋል', reorder_btn:'እንደገና አዝዝ', reorder_home:'እንደገና ይራብዎታል?', reorder_none:'እነዚህ ዕቃዎች አሁን አይገኙም', reorder_added:'በዛሬ ዋጋ ወደ ጋሪዎ ተጨምረዋል', reorder_skipped:'አይገኝም፣ ተዘሏል', reorder_fail:'ትዕዛዙን መጫን አልተቻለም', cart_view:'ጋሪ ይመልከቱ →', cart_items_one:'ዕቃ', cart_items_many:'ዕቃዎች', filter_none:'ለእነዚህ ማጣሪያዎች ውጤት የለም', filter_clear:'ማጣሪያ አጽዳ',
+        trk_title:'ትዕዛዝዎ', trk_pending:'ትዕዛዝ ተቀብሏል', trk_assigned:'ሹፌር ተመድቧል', trk_picked_up:'ተነስቷል', trk_in_transit:'በመንገድ ላይ', trk_track:'ተከታተል', trk_more:'ተጨማሪ', menu_all:'ሁሉም', menu_popular:'ተወዳጅ', menu_deals:'🏷️ ቅናሽ', menu_quick:'ፈጣን', pop_badge:'🔥 ተወዳጅ', promo_have:'የቅናሽ ኮድ አለዎት?', promo_ph:'ኮድ ያስገቡ', promo_apply:'ተግብር', promo_remove:'አስወግድ', promo_discount:'ቅናሽ', promo_saved:'ይቆጥባሉ', rate_title:'ትዕዛዝዎን ይገምግሙ', rate_overall:'አጠቃላይ', rate_food:'የትዕዛዝ ጥራት', rate_courier:'ሹፌር', rate_tags:'ምን ጎልቶ ታየ?', rate_comment:'ተጨማሪ ይንገሩን (አማራጭ)…', rate_submit:'ግምገማ ላክ', rate_pick:'እባክዎ አጠቃላይ ደረጃ ይምረጡ', rate_thanks:'ለግምገማዎ እናመሰግናለን!', rate_yours:'የእርስዎ ደረጃ', rate_reply:'የሱቁ መልስ', tag_fast_delivery:'⚡ ፈጣን ማድረሻ', tag_great_taste:'😋 ጣፋጭ', tag_well_packed:'📦 በደንብ የታሸገ', tag_friendly_courier:'🙂 ተግባቢ ሹፌር', tag_good_value:'💰 ጥሩ ዋጋ', tag_late:'🐢 ዘግይቷል', tag_cold:'🥶 ቀዝቅዞ ደረሰ', tag_wrong_item:'❌ የተሳሳተ ዕቃ', pts_title:'ነጥቦችዎ', pts_use:'ነጥቤን ተጠቀም', pts_off:'ነጥብ አልተጠቀምኩም', pts_need:'ለመጠቀም ተጨማሪ {n} ነጥቦች ያስፈልጋሉ', pts_applied:'⭐ ነጥቦች', pts_how:'እንዴት ይሰራል', pts_earn:'በደረሰ ትዕዛዝ ለእያንዳንዱ ETB 10 ዕቃ 1 ነጥብ ያገኛሉ — ቅዳሜና እሁድ እጥፍ።', pts_spend:'100 ነጥብ ሲኖርዎት 10 ነጥብ = ETB 1 ቅናሽ።', pts_recent:'የቅርብ ጊዜ እንቅስቃሴ', pts_none:'እስካሁን እንቅስቃሴ የለም — የመጀመሪያ የደረሰ ትዕዛዝዎ ነጥብ ያስገኛል።', pts_worth:'ዋጋ', chat_btn:'💬 ከሱቁ እና ከሹፌሩ ጋር ይወያዩ', chat_btn_short:'💬 ውይይት', push_on:'🔔 የትዕዛዝ ማሳወቂያ አብራ', push_enabled:'የትዕዛዝ ማሳወቂያ በርቷል', push_blocked:'ማሳወቂያዎች በአሳሽ ቅንብር ታግደዋል', reorder_btn:'እንደገና አዝዝ', reorder_home:'እንደገና ይራብዎታል?', reorder_none:'እነዚህ ዕቃዎች አሁን አይገኙም', reorder_added:'በዛሬ ዋጋ ወደ ጋሪዎ ተጨምረዋል', reorder_skipped:'አይገኝም፣ ተዘሏል', reorder_fail:'ትዕዛዙን መጫን አልተቻለም', cart_view:'ጋሪ ይመልከቱ →', cart_items_one:'ዕቃ', cart_items_many:'ዕቃዎች', filter_none:'ለእነዚህ ማጣሪያዎች ውጤት የለም', filter_clear:'ማጣሪያ አጽዳ',
         greet_morning:'እንደምን አደሩ', greet_afternoon:'እንደምን ዋሉ', greet_evening:'እንደምን አመሹ', greet_sub:'ዛሬ ምን ይፈልጋሉ?',
         svc_food:'ምግብ', svc_groceries:'ግሮሰሪ', svc_pharmacy:'ፋርማሲ', svc_ride:'ጉዞ', shop_min:'ደቂቃ', shop_from:'ከ', shop_items:'ዕቃዎች', shop_no_rating:'አዲስ',
         search_placeholder:'ምግብ ቤቶችን፣ ምግብን ይፈልጉ…',
         quick_ride_title:'ኢቴል ጉዞ', quick_ride_sub:'ከ ETB 120 ጀምሮ',
         quick_hail_title:'የመንገድ ጥሪ', quick_hail_sub:'ፈጣን መነሳት',
         quick_driver_title:'ሹፌር ይሁኑ', quick_driver_sub:'ከኢቴል ጋር ያግኙ',
-        section_restaurants:'🌟 ምግብ ቤቶች እና ሱቆች', see_all:'ሁሉንም ይመልከቱ →',
+        section_restaurants:'ምግብ ቤቶች እና ሱቆች', see_all:'ሁሉንም ይመልከቱ →',
         section_items:'💎 የሚገኙ እቃዎች', view_all:'ሁሉንም ይመልከቱ →',
         footer_partner:'አጋር ይሁኑ', footer_courier:'ተላላኪ ይሁኑ',
         footer_contact:'ያግኙን', footer_privacy:'ግላዊነት',
@@ -108,7 +108,7 @@ ETEL_I18N.register('customer', {
         ph_address:'አድራሻ፣ ሱቅ፣ ምልክት ይፈልጉ…', ph_full_name:'ሙሉ ስም', ph_notes:'ልዩ መመሪያዎች…',
         pay_telebirr_sub:'የሚመከር · ፈጣን', pay_wallet_sub:'የኢትዮጵያ ቦርሳ',
         pay_cash:'ጥሬ ገንዘብ', pay_cash_sub:'ለተላላኪው በማድረስ ላይ ይክፈሉ', pay_bank_sub:'የባንክ ዝውውር',
-        filter_trending:'🔥 ተወዳጅ', filter_top_rated:'⭐ ከፍተኛ ደረጃ', filter_fast:'⚡ ፈጣን', filter_budget:'💰 ርካሽ', filter_new:'✨ አዲስ',
+        filter_trending:'🔥 ተወዳጅ', filter_top_rated:'ከፍተኛ ደረጃ', filter_fast:'⚡ ፈጣን', filter_budget:'ርካሽ', filter_new:'አዲስ',
         cat_pizza:'ፒዛ', cat_burgers:'በርገር', cat_noodles:'ኑድልስ', cat_ethiopian:'ኢትዮጵያዊ', cat_healthy:'ጤናማ', cat_sushi:'ሱሺ', cat_coffee:'ቡና', cat_bakery:'ዳቦ ቤት',
         promo_limited:'የተወሰነ', promo_50off:'50% ቅናሽ', promo_first_order:'የመጀመሪያ ትዕዛዝ ፕሪሚየም',
         promo_today:'ዛሬ', promo_free_delivery:'ነፃ ማድረስ', promo_orders_above:'ከ ETB 500 በላይ ትዕዛዞች',
@@ -195,7 +195,16 @@ function switchCategory(cat) {
     if (cat === 'home') loadHomeTracker();
 }
 
-// Single floating refresh button (see #cust-refresh-btn in the HTML)
+// Light / dark switch (Profile menu). The page used to carry a floating sun/moon button from core.js;
+// it covered shop cards, so the toggle lives in Profile now (ETEL_NO_THEME_FAB is set in customer.html).
+function customerToggleTheme() {
+    var dark = !document.body.classList.contains('dark-theme');
+    document.body.classList.toggle('dark-theme', dark);
+    try { localStorage.setItem('theme', dark ? 'dark' : 'light'); } catch (e) {}
+    if (typeof showToast === 'function') showToast(dark ? 'Dark mode' : 'Light mode');
+}
+
+// Refresh (Profile menu; there is no floating button any more)
 // re-fetches whichever view is currently open. loadItems() normally
 // only runs on 'home' if itemsCache is still empty (avoids a
 // redundant fetch on first load) - a manual refresh needs to bypass
@@ -237,6 +246,13 @@ async function loadItems(category) {
     renderSGScroll(itemsCache);
     renderItemsGrid(itemsCache);
 }
+
+// Shop-card icons (line icons, inherit colour)
+const RC_ICO = function (d) { return '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + d + '</svg>'; };
+const RC_CLOCK = RC_ICO('<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>');
+const RC_BIKE  = RC_ICO('<circle cx="6" cy="17" r="3"/><circle cx="18" cy="17" r="3"/><path d="M6 17l3-7h5l4 7M9 10l-1-3H6M14 10l-1-3"/>');
+const RC_STAR  = '<svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor" aria-hidden="true"><path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.8-5.2 2.8 1-5.8L3.5 9.7l5.9-.9z"/></svg>';
+const RC_HEART = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20s-7-4.4-9-9.2C1.8 7.6 3.7 4.5 7 4.5c2 0 3.4 1.1 5 3 1.6-1.9 3-3 5-3 3.3 0 5.2 3.1 4 6.3-2 4.8-9 9.2-9 9.2z"/></svg>';
 
 function renderSGScroll(items) {
     const bySG = {};
@@ -281,26 +297,25 @@ function renderSGScroll(items) {
         const bg = bgMap[sg.type]||'sg-bg-default';
         // Honest, data-backed facts only: rating and prep time come from the items API;
         // travel time is a flat +10..20 min estimate on top of the shop's own prep time.
-        const eta = isFinite(sg.minPrep) ? '<span class="rc-eta">' + (sg.minPrep + 10) + '–' + (sg.minPrep + 20) + ' ' + escapeHtml(tMin) + '</span>' : '';
-        const rate = sg.rating > 0 ? '<span class="rc-rate">★ ' + sg.rating.toFixed(1) + '</span>' : '<span class="rc-rate rc-rate-new">' + escapeHtml(tNew) + '</span>';
+        const eta = isFinite(sg.minPrep) ? '<span class="rc-fact">' + RC_CLOCK + (sg.minPrep + 10) + '–' + (sg.minPrep + 20) + ' ' + escapeHtml(tMin) + '</span>' : '';
+        const rate = sg.rating > 0 ? '<span class="rc-rating">' + RC_STAR + sg.rating.toFixed(1) + '</span>' : '<span class="rc-rating rc-rating-new">' + escapeHtml(tNew) + '</span>';
         const coverSrc = sg.cover || sg.img;
         const cover = coverSrc
             ? '<span class="rc-ph">' + ic + '</span><img class="rc-cover" src="' + escUrl(coverSrc) + '" alt="" loading="lazy" onerror="this.onerror=null;this.style.display=\'none\'">'
             : '<span class="rc-ph rc-ph-solo">' + ic + '</span>';
         const from = isFinite(sg.minPrice) ? escapeHtml(tFrom) + ' ETB ' + Math.round(sg.minPrice) + ' · ' : '';
-        const status = sg.online === true ? '<span class="rc-status rc-status-open">● ' + escapeHtml(tOpen) + '</span>'
-                     : (sg.online === false ? '<span class="rc-status rc-status-closed">● ' + escapeHtml(tClosed) + '</span>' : '');
+        // Only a closed shop gets a label on the photo; an open shop needs no badge.
+        const closedBadge = sg.online === false ? '<span class="rc-closed-badge">' + escapeHtml(tClosed) + '</span>' : '';
         return '<div class="restaurant-card' + (sg.online === false ? ' rc-closed' : '') + '" onclick="openShopDetail('+sg.id+')">' +
-            '<div class="restaurant-card-image ' + bg + '">' + cover + '<span class="rc-shade"></span>' + status +
-                '<button class="rc-fav" onclick="event.stopPropagation();toggleFavorite('+sg.id+')" aria-label="Favorite">☆</button>' +
-                rate + eta +
+            '<div class="restaurant-card-image ' + bg + '">' + cover + '<span class="rc-shade"></span>' + closedBadge +
+                '<button class="rc-fav" onclick="event.stopPropagation();toggleFavorite('+sg.id+', this)" aria-label="Favorite">' + RC_HEART + '</button>' +
             '</div>' +
             '<div class="restaurant-card-body' + (sg.logo ? ' has-logo' : '') + '">' +
                 (sg.logo ? '<img class="rc-logo" src="' + escUrl(sg.logo) + '" alt="" loading="lazy" onerror="this.parentNode.classList.remove(\'has-logo\');this.remove()">' : '') +
-                '<div class="restaurant-card-name">' + escapeHtml(sg.name) + '</div>' +
+                '<div class="rc-top"><div class="restaurant-card-name">' + escapeHtml(sg.name) + '</div>' + rate + '</div>' +
                 '<div class="restaurant-card-meta">' + escapeHtml(sg.type||'Shop') + ' · ' + escapeHtml(sg.zone||'Hawassa') + '</div>' +
+                '<div class="rc-facts">' + eta + '<span class="rc-fact">' + RC_BIKE + escapeHtml(tFee) + ' ' + minFee + '</span></div>' +
                 '<div class="restaurant-card-info">' + from + sg.count + ' ' + escapeHtml(tItems) + '</div>' +
-                '<div class="restaurant-card-fee">🛵 ' + escapeHtml(tFee) + ' ' + minFee + '</div>' +
             '</div></div>';
     }).join('');
 }
@@ -2412,6 +2427,7 @@ async function loadFavorites() {
 async function toggleFavorite(sgId, btnEl) {
     const res = await api('customer_toggle_favorite', { service_giver_id: sgId });
     if (res && res.success) {
+        if (btnEl && btnEl.classList) btnEl.classList.toggle('on', !!res.data.favorited);
         showToast(res.data.favorited ? 'Added to favorites ⭐' : 'Removed from favorites');
         if (currentView === 'favorites') loadFavorites();
     } else {
@@ -2746,8 +2762,13 @@ function toggleProfile() {
       ['🎁','Referral & Rewards','Earn ETB with friends','referrals'],
       ['⚙️','Settings & Privacy','Account preferences','settings'],
       ['🔠','Display Size','Text, icons, buttons & logos','__display'],
+      ['🌓','Light / Dark mode','Switch the app appearance','__theme'],
+      ['🔄','Refresh app','Reload shops, orders and prices','__refresh'],
     ].map(function(m){
-      var onclick = m[3] === '__display' ? "closeProfile();EtelDisplay.open()" : (m[3] ? "closeProfile();switchCategory('"+m[3]+"')" : '');
+      var onclick = m[3] === '__display' ? "closeProfile();EtelDisplay.open()"
+                  : m[3] === '__theme' ? "customerToggleTheme();closeProfile()"
+                  : m[3] === '__refresh' ? "closeProfile();refreshCurrentView()"
+                  : (m[3] ? "closeProfile();switchCategory('"+m[3]+"')" : '');
       return `<button onclick="${onclick}" style="display:flex;align-items:center;gap:14px;padding:12px 10px;border-radius:12px;background:transparent;border:none;cursor:${m[3]?'pointer':'default'};width:100%;text-align:left;font-family:'Poppins',sans-serif;transition:background .15s" onmouseover="this.style.background='rgba(255,215,0,.07)'" onmouseout="this.style.background='transparent'">
         <div style="width:38px;height:38px;border-radius:10px;background:rgba(255,215,0,.08);border:1px solid rgba(255,215,0,.12);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0">${m[0]}</div>
         <div style="flex:1;min-width:0">

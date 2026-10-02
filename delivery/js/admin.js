@@ -586,7 +586,33 @@
         // Shared dishes shops pick from (api/lib/menu_catalog.php). Pending rows are shop suggestions.
         let _mcFilter = 'all', _mcTimer = null, _mcRows = [];
         function mcSearchDebounced() { clearTimeout(_mcTimer); _mcTimer = setTimeout(() => loadMenuCatalog(), 350); }
+
+        // Copy a shop's menu to another shop (api/lib/menu_catalog.php: etel_catalog_copy_menu).
+        let _mcShopsLoaded = false;
+        async function mcLoadCopyShops() {
+            if (_mcShopsLoaded) return;
+            const res = await adm('admin_get_service_givers', {}, true);
+            if (!res || !res.success) return;
+            const opts = (res.data.service_givers || []).map(sg => '<option value="' + sg.id + '">' + escapeHtml(sg.business_name || ('Shop #' + sg.id)) + (sg.zone ? ' · ' + escapeHtml(sg.zone) : '') + '</option>').join('');
+            ['mc-copy-from', 'mc-copy-to'].forEach(id => { const el = document.getElementById(id); if (el) el.innerHTML = '<option value="">Choose a shop…</option>' + opts; });
+            _mcShopsLoaded = true;
+        }
+        async function mcCopyMenu() {
+            const from = document.getElementById('mc-copy-from').value, to = document.getElementById('mc-copy-to').value;
+            const msg = document.getElementById('mc-copy-msg');
+            if (!from || !to) { msg.textContent = 'Choose both shops.'; return; }
+            if (from === to) { msg.textContent = 'Choose two different shops.'; return; }
+            const pct = parseFloat(document.getElementById('mc-copy-pct').value) || 0;
+            const fromName = document.getElementById('mc-copy-from').selectedOptions[0].textContent, toName = document.getElementById('mc-copy-to').selectedOptions[0].textContent;
+            if (!confirm('Copy the menu of "' + fromName + '" to "' + toName + '"' + (pct ? ' with prices ' + (pct > 0 ? '+' : '') + pct + '%' : '') + '?')) return;
+            msg.textContent = 'Copying…';
+            const res = await adm('admin_catalog_copy', { from_sg: from, to_sg: to, percent: pct, include_hidden: document.getElementById('mc-copy-hidden').checked ? 1 : 0 }, false);
+            if (!res || !res.success) { msg.textContent = (res && res.message) || 'Could not copy the menu.'; return; }
+            const d = res.data;
+            msg.textContent = 'Copied ' + d.copied + ' dishes' + (d.skipped ? ', ' + d.skipped + ' already there' : '') + (d.failed && d.failed.length ? ', ' + d.failed.length + ' failed (' + d.failed[0].name + ': ' + d.failed[0].error + ')' : '') + '.';
+        }
         async function loadMenuCatalog(filter) {
+            mcLoadCopyShops();
             const box = document.getElementById('mc-list');
             if (!box) return;
             if (filter) _mcFilter = filter;
@@ -764,7 +790,26 @@
         }
 
         // ─── COURIERS ─────────────────────────────────────────────────
+        // Courier job offers (api/lib/courier_offers.php): time limit to accept an auto-assigned order.
+        async function loadCourierOffers() {
+            const res = await adm('admin_get_courier_offers', {}, true);
+            const msg = document.getElementById('co-offer-msg');
+            if (!res || !res.success) { if (msg) msg.textContent = (res && res.message) || ''; return; }
+            document.getElementById('co-offer-sec').value = res.data.seconds;
+            document.getElementById('co-offer-max').value = res.data.max_attempts;
+            const r = res.data.recent || {};
+            if (msg) msg.textContent = (res.data.seconds > 0 ? 'On. ' : 'Off. ') + 'Last 7 days: ' + (r.accepted || 0) + ' accepted, ' + (r.declined || 0) + ' declined, ' + (r.expired || 0) + ' timed out.';
+        }
+        async function saveCourierOffers() {
+            const msg = document.getElementById('co-offer-msg');
+            const res = await adm('admin_save_courier_offers', { seconds: document.getElementById('co-offer-sec').value, max_attempts: document.getElementById('co-offer-max').value }, false);
+            if (!res || !res.success) { msg.textContent = (res && res.message) || 'Could not save.'; return; }
+            document.getElementById('co-offer-sec').value = res.data.seconds;
+            document.getElementById('co-offer-max').value = res.data.max_attempts;
+            msg.textContent = res.data.seconds > 0 ? 'Saved. Couriers have ' + res.data.seconds + ' s to accept, up to ' + res.data.max_attempts + ' couriers per order.' : 'Saved. Job offers are off.';
+        }
         async function loadCouriers() {
+            loadCourierOffers();
             const tbody = document.getElementById('couriers-tbody');
             tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:30px;">' + UI.loading('Loading couriers...') + '</td></tr>';
             try {

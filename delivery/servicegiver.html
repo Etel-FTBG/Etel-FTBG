@@ -661,6 +661,9 @@ body.etel-light .cat-chip.on{background:#f3e3b0;color:#4a3300}
                             <div style="display:flex;gap:8px;flex-wrap:wrap">
                                 <button class="btn btn-primary btn-small" data-sg-cap="menu.manage" style="display:none" onclick="openCatalog()">📚 Pick from catalog</button>
                                 <button class="btn btn-secondary btn-small" data-sg-cap="menu.manage" style="display:none" onclick="openAddItemModal()">+ Add custom item</button>
+                                <button class="btn btn-secondary btn-small" data-sg-cap="menu.manage" style="display:none" onclick="document.getElementById('menu-csv-file').click()">⬆ Import CSV</button>
+                                <button class="btn btn-secondary btn-small" data-sg-cap="menu.manage" style="display:none" onclick="downloadMenuTemplate()">⬇ CSV template</button>
+                                <input type="file" id="menu-csv-file" accept=".csv,text/csv,text/plain" style="display:none" onchange="importMenuCsv(this)">
                             </div>
                         </div>
                         <div class="card-body" id="services-container">
@@ -1106,7 +1109,7 @@ body.etel-light .cat-chip.on{background:#f3e3b0;color:#4a3300}
         </div>
     </div>
 
-    <script src="js/servicegiver.js?v=3.9"></script>
+    <script src="js/servicegiver.js?v=4.0"></script>
     <script src="js/servicegiver-premium.js?v=1.9"></script>
     <script src="js/servicegiver-3d-premium.js?v=1.1"></script><!-- 3D visual upgrade: glass depth, glowing sweep borders, rating ring -->
     <script>

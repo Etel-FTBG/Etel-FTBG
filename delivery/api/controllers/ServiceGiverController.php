@@ -376,6 +376,7 @@ case 'sg_orders': {
     // GET: (requires auth)  ?status=pending|accepted|picked_up|delivered|cancelled
     // List assigned orders with filtering
     $pdo = db();
+    try { require_once __DIR__ . '/../lib/courier_offers.php'; etel_offers_sweep($pdo); } catch (Exception $swe) {} catch (Throwable $swe) {}
     $auth_user = require_auth($pdo);
     
     if ($auth_user['role'] !== 'service_giver' && $auth_user['role'] !== 'admin') fail('Not a service giver account', 403);
@@ -1080,6 +1081,23 @@ case 'sg_catalog_list': {
     $q = isset($_GET['q']) ? trim($_GET['q']) : '';
     try { ok(etel_catalog_for_shop($pdo, $sg_ctx['sg_id'], $category, $q)); }
     catch (Exception $e) { fail_ex($e, 'Could not load the menu catalog', 500); }
+    break;
+}
+case 'sg_catalog_import': {
+    // POST rows:[{name, price, [quality], [portion], [category], [name_am]}] (max 300) -> matches the catalog by name,
+    // creates catalog-linked items for matches and custom items for the rest (custom dishes are also suggested to the admin).
+    $pdo = db();
+    $auth_user = require_auth($pdo);
+    if ($auth_user['role'] !== 'service_giver' && $auth_user['role'] !== 'admin') fail('Service giver access required', 403);
+    $sg_ctx = sg_get_context($pdo, $auth_user['id']);
+    if (!$sg_ctx) fail('Service giver profile not found', 404);
+    sg_require_capability($auth_user, $sg_ctx, 'menu.manage');
+    require_once __DIR__ . '/../lib/menu_catalog.php';
+    $rows = isset($body['rows']) ? $body['rows'] : null;
+    if (!is_array($rows) || !count($rows)) fail('The file has no rows to import', 400);
+    try { ok(etel_catalog_import_rows($pdo, $sg_ctx['sg_id'], $rows, $auth_user['id'])); }
+    catch (Exception $e) { error_log('[ServiceGiverController] sg_catalog_import: ' . $e->getMessage()); http_response_code(500); echo json_encode(array('success' => false, 'message' => 'Could not import the menu: ' . substr($e->getMessage(), 0, 160))); exit; }
+    catch (Throwable $e) { error_log('[ServiceGiverController] sg_catalog_import: ' . $e->getMessage()); http_response_code(500); echo json_encode(array('success' => false, 'message' => 'Could not import the menu: ' . substr($e->getMessage(), 0, 160))); exit; }
     break;
 }
 case 'sg_catalog_add': {
