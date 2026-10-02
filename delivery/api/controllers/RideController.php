@@ -1506,7 +1506,16 @@ case 'driver_update_location': {
             $waitMinutes = rides_current_wait_minutes($r);
             $rideVtype = !empty($r['vehicle_type']) ? $r['vehicle_type'] : rides_driver_own_vtype($pdo, $u['id']);
 
-            if ($lowAccuracy) {
+            // Weak-but-real fix (75-500 m): used to be discarded outright, so a
+            // phone that never reports better than ~100 m (common in city
+            // traffic) froze the meter at 0.00 km for the whole trip. Now
+            // credited once the movement from the last trusted point clearly
+            // exceeds the fix's own error radius (2x), which a stationary
+            // phone's drift can't produce. Network-only fixes (>500 m) are
+            // still never credited - see the shortfall floor in driver_arrived.
+            $weakCreditable = $lowAccuracy && $accuracy <= 500 && $d !== null
+                && $d < $maxPlausibleKm && $d > 2 * ($accuracy / 1000.0);
+            if ($lowAccuracy && !$weakCreditable) {
                 // Distance itself still is NOT credited from a fix this
                 // poor - see the restructuring note above for why that
                 // stays separate from the wait-auto-stop check just run.
@@ -1541,8 +1550,22 @@ case 'driver_update_location': {
                 // less permissive than the original behavior.
                 if ($d !== null && $d > 0.005 && $d < $maxPlausibleKm) $add = $d;
                 $newKm = floatval($r['traveled_km']) + $add;
-                $pdo->prepare("UPDATE rides SET last_lat=?, last_lng=?, last_location_at=NOW(), traveled_km=? WHERE id=?")
-                    ->execute(array($lat, $lng, $newKm, $r['id']));
+                // The reference point only advances on real movement (or the
+                // first point / a rejected glitch jump). Previously it
+                // advanced on every ping, so crawling in traffic at <5 m per
+                // 5 s ping never accumulated: each tiny hop was discarded AND
+                // forgotten. Now sub-5 m hops pile up against the unchanged
+                // reference until they cross the floor.
+                // last_location_at is stamped with PHP's clock, not MySQL
+                // NOW(): it is read back with time()/strtotime() above, and
+                // the two zones differ on this host (same bug already fixed
+                // for wait_started_at), which inflated the plausible-distance
+                // ceiling to hundreds of km and disabled the glitch guard.
+                $refMoves = $isFirstPoint || $add > 0 || ($d !== null && $d >= $maxPlausibleKm);
+                if ($refMoves) {
+                    $pdo->prepare("UPDATE rides SET last_lat=?, last_lng=?, last_location_at=?, traveled_km=? WHERE id=?")
+                        ->execute(array($lat, $lng, date('Y-m-d H:i:s'), $newKm, $r['id']));
+                }
 
                 // Record this point in the trip's breadcrumb trail - either
                 // real movement was detected ($add>0, same jitter floor as
@@ -3307,9 +3330,9 @@ case 'driver_start_ride': {
     } catch (Exception $e) {}
     $n = $pdo->prepare(
         "UPDATE rides SET status='in_progress', started_at=NOW(),
-                traveled_km=0, last_lat=?, last_lng=?
+                traveled_km=0, last_lat=?, last_lng=?, last_location_at=?
          WHERE id=? AND driver_id=? AND status='accepted'");
-    $n->execute(array($pos ? $pos['lat'] : null, $pos ? $pos['lng'] : null, $rid, $u['id']));
+    $n->execute(array($pos ? $pos['lat'] : null, $pos ? $pos['lng'] : null, $pos ? date('Y-m-d H:i:s') : null, $rid, $u['id']));
     if (!$n->rowCount()) fail('Ride not in accepted state');
     ok(array('started' => true));
     break;
@@ -3377,7 +3400,7 @@ case 'driver_arrived': {
     $rid = isset($body['ride_id']) ? intval($body['ride_id']) : 0;
     $vtypeCol = rides_has_vehicle_type_column($pdo) ? ', vehicle_type' : '';
     rides_ensure_wait_columns($pdo);
-    $s = $pdo->prepare("SELECT id, open_trip, traveled_km, distance_km, fare_final, wait_active, wait_started_at, wait_seconds_total" . $vtypeCol . "
+    $s = $pdo->prepare("SELECT id, open_trip, traveled_km, distance_km, fare_final, pickup_lat, pickup_lng, wait_active, wait_started_at, wait_seconds_total" . $vtypeCol . "
                         FROM rides WHERE id=? AND driver_id=? AND status='in_progress'");
     $s->execute(array($rid, $u['id']));
     $r = $s->fetch();
@@ -3410,6 +3433,11 @@ case 'driver_arrived': {
     // clearly an estimate only (see ride/index.html's fare-card wording).
     $isOpenTrip = intval($r['open_trip']) === 1;
     $traveled = round(floatval($r['traveled_km']), 2);
+    // Meter-shortfall floor: a meter that read far below the straight-line
+    // trip (weak/network-only GPS, app suspended, stalled pings) is billed
+    // at the floor distance and flagged for review rather than at ~0 km.
+    $shortfall = rides_meter_shortfall_floor($pdo, $r, $u['id'], $traveled);
+    if ($shortfall['applied']) $traveled = $shortfall['km'];
     $finalSurge = null; // null = don't touch the existing stored value (fallback branch)
     $waitEtb = 0;
     $breakdownForUi = null;
@@ -3420,6 +3448,12 @@ case 'driver_arrived': {
         $finalSurge = $fareResult['surge'] ? 1 : 0;
         $waitEtb = $fareResult['breakdown']['wait_etb'];
         $breakdownForUi = rides_fare_breakdown_for_ui($fareResult);
+        if ($shortfall['applied']) {
+            $breakdownForUi['meter_shortfall'] = true;
+            $breakdownForUi['meter_km'] = $shortfall['meter_km'];
+            $breakdownForUi['meter_floor_basis'] = $shortfall['basis'];
+            rides_log_meter_shortfall($pdo, $rid, $u['id'], $shortfall);
+        }
     } else {
         // Safety net only: GPS never reported anything usable (app was
         // killed mid-trip, location permission revoked, or a trip so short
@@ -3530,7 +3564,7 @@ case 'driver_complete_ride': {
     rides_require_onboarded($pdo, $u['id']);
     $rid = isset($body['ride_id']) ? intval($body['ride_id']) : 0;
     $vtypeCol2 = rides_has_vehicle_type_column($pdo) ? ', vehicle_type' : '';
-    $s = $pdo->prepare("SELECT id, open_trip, traveled_km, distance_km, fare_final" . $vtypeCol2 . "
+    $s = $pdo->prepare("SELECT id, open_trip, traveled_km, distance_km, fare_final, pickup_lat, pickup_lng" . $vtypeCol2 . "
                         FROM rides WHERE id=? AND driver_id=? AND status='in_progress'");
     $s->execute(array($rid, $u['id']));
     $r = $s->fetch();
@@ -3538,6 +3572,8 @@ case 'driver_complete_ride': {
     $vtype2 = !empty($r['vehicle_type']) ? $r['vehicle_type'] : rides_driver_own_vtype($pdo, $u['id']);
     $isOpenTrip2 = intval($r['open_trip']) === 1;
     $traveled2 = round(floatval($r['traveled_km']), 2);
+    $shortfall2 = rides_meter_shortfall_floor($pdo, $r, $u['id'], $traveled2);
+    if ($shortfall2['applied']) $traveled2 = $shortfall2['km'];
     $finalSurge2 = null;
     $breakdownForUi2 = null;
     if ($traveled2 > 0.1) {
@@ -3546,6 +3582,12 @@ case 'driver_complete_ride': {
         $fare = $fareCalc['fare'];
         $finalSurge2 = $fareCalc['surge'] ? 1 : 0;
         $breakdownForUi2 = rides_fare_breakdown_for_ui($fareCalc);
+        if ($shortfall2['applied']) {
+            $breakdownForUi2['meter_shortfall'] = true;
+            $breakdownForUi2['meter_km'] = $shortfall2['meter_km'];
+            $breakdownForUi2['meter_floor_basis'] = $shortfall2['basis'];
+            rides_log_meter_shortfall($pdo, $rid, $u['id'], $shortfall2);
+        }
     } else {
         $km   = floatval($r['distance_km']);
         $fare = floatval($r['fare_final']) > 0 ? floatval($r['fare_final']) : rides_calc_fare_simple($pdo, $km);
