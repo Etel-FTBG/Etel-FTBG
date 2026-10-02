@@ -1046,16 +1046,19 @@ case 'sg_get_my_items': {
         $params[] = $category;
     }
     
+    // catalog_id / quality / portion come from migration 067; if they are not there yet (and could not be
+    // added on the fly) fall back to the original column list so the item list never breaks.
+    $base_cols = 'id, item_code, name, name_am, description, description_am, category, price, original_price,
+                image_url, stock_quantity, preparation_time, is_available, created_at';
     try {
-        $s = $pdo->prepare("
-            SELECT 
-                id, item_code, name, name_am, description, description_am, category, price, original_price,
-                image_url, stock_quantity, preparation_time, is_available, created_at, catalog_id, quality, portion
-            FROM items
-            $where
-            ORDER BY created_at DESC
-        ");
-        $s->execute($params);
+        try {
+            $s = $pdo->prepare("SELECT $base_cols, catalog_id, quality, portion FROM items $where ORDER BY created_at DESC");
+            $s->execute($params);
+        } catch (Exception $e0) {
+            error_log('[ServiceGiverController] sg_get_my_items: new columns unavailable: ' . $e0->getMessage());
+            $s = $pdo->prepare("SELECT $base_cols FROM items $where ORDER BY created_at DESC");
+            $s->execute($params);
+        }
         $items = $s->fetchAll();
     } catch (Exception $e) {
         fail_ex($e, 'Query failed', 500);
