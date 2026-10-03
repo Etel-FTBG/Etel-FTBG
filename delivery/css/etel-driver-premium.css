@@ -104,3 +104,43 @@ body:not(.light-mode) .drv-main{background:transparent}
 .req-stop-dot.pickup{border-color:#D4AF37!important;background:#D4AF37!important}
 .req-stop-dot.dropoff{border-color:#60B4FF!important;background:transparent!important}
 #wait-toggle-btn{background:linear-gradient(135deg,#F4D56A,#C89A24)!important}
+
+/* ── Profile cover: the location chip sat on top of the Invite button ── */
+.profile-location-chip{top:auto!important;bottom:10px;right:16px}
+
+/* ── SOS stays reachable but off the content on the non-map pages ── */
+body[data-page]:not([data-page="requests"]) #sos-fab{
+  top:auto!important;bottom:calc(var(--tab-h,64px) + 14px + env(safe-area-inset-bottom,0px))!important;
+  width:48px!important;height:48px!important}
+
+/* ── Light mode ──
+   The gold stylesheet paints secondary text in pale cream (made for the dark
+   theme) and the pages keep a dark ground, so in light mode captions and
+   subtitles went invisible and the cards turned a muddy grey. */
+body.light-mode .drv-page{background:#F0EDE6}
+body.light-mode .drv-main [class*="-sub"],body.light-mode .drv-main [class*="-desc"],
+body.light-mode .drv-main [class*="-hint"],body.light-mode .drv-main [class*="-note"],
+body.light-mode .drv-main [class*="-meta"],body.light-mode .drv-main [class*="-lbl"],
+body.light-mode .drv-main [class*="-caption"],body.light-mode .drv-main small,
+body.light-mode .drv-main .money-label,body.light-mode .drv-main .profile-section-label{color:#5A5650!important}
+body.light-mode .drv-topbar .drv-gps-quality,body.light-mode .drv-topbar .drv-gps-quality *{color:#5A5650!important}
+body.light-mode .drv-topbar .drv-online-pill{color:#136B3A!important;background:rgba(46,204,113,.14)!important}
+body.light-mode #battery-tip-help-btn{opacity:1!important;color:#5A5650!important;border-color:rgba(0,0,0,.18)!important;background:rgba(0,0,0,.04)!important}
+body.light-mode .profile-location-chip{background:rgba(255,255,255,.7);color:#5A5650}
+body.light-mode .profile-cover{background:
+  radial-gradient(120% 100% at 15% 0%,rgba(212,175,55,.28) 0%,transparent 55%),linear-gradient(180deg,#F7F4EE,#F0EDE6)}
+body.light-mode .profile-section,body.light-mode .pstat{background:#FFFFFF;border:1px solid rgba(0,0,0,.08);box-shadow:0 1px 2px rgba(0,0,0,.04)}
+/* Pages paint var(--bg); light mode never redefined it, so the page ground
+   stayed near-black under light cards. */
+body.light-mode{--bg:#F0EDE6}
+/* The page ground behind the cards: html keeps the dark colour, so give the
+   scrolling container the light one on the pages that hide the map. */
+body.light-mode[data-page]:not([data-page="requests"]) .drv-main{background:#F0EDE6}
+body.light-mode #page-money.active,body.light-mode #page-chats.active,body.light-mode #page-profile.active{background:#F0EDE6}
+/* Earnings hero and performance in light mode */
+body.light-mode .money-hero{background:linear-gradient(180deg,#FFFFFF,#F7F4EE)!important;border:1px solid rgba(0,0,0,.08)!important;box-shadow:0 1px 2px rgba(0,0,0,.04)!important}
+body.light-mode .money-amount{color:#8A6500!important}
+body.light-mode .qstat-card{background:#FFFFFF!important;border:1px solid rgba(0,0,0,.08)!important}
+body.light-mode .qstat-val{color:#1A1206!important}
+body.light-mode .date-strip button,body.light-mode .date-strip [class*="day"]{color:#5A5650}
+body.light-mode .kpi-ring-label{color:#F3D56B!important}
