@@ -10,7 +10,9 @@
  *    `styles` entirely and left the rider map in default light Google colours
  *    under a dark gold UI. All markers in this app are classic
  *    google.maps.Marker, which does not need a mapId.
- * 4. EtelUI.vehicleMarker(type, opts) - google.maps.Marker icon (round carbon
+ * 4. EtelUI.glideMarker(marker, pos, {type}) eases a marker to a new fix and
+ *    turns the badge to its heading.
+ *    EtelUI.vehicleMarker(type, opts) - google.maps.Marker icon (round carbon
  *    badge, gold ring, vehicle glyph) replacing emoji-on-circle pins.
  */
 (function () {
@@ -140,18 +142,95 @@
         var ring = opts.ring || GOLD;
         var size = opts.size || 44;
         var inner = P[norm(type)];
+        var hasHeading = typeof opts.heading === "number" && isFinite(opts.heading);
+        // With a heading the canvas grows by 12px a side so a gold chevron
+        // can sit outside the ring and point where the vehicle is going.
+        var pad = hasHeading ? 12 : 0;
+        var box = size + pad * 2;
+        var k = size / 44;
         var markup =
-            '<svg xmlns="http://www.w3.org/2000/svg" width="' + size + '" height="' + size + '" viewBox="0 0 44 44">' +
+            '<svg xmlns="http://www.w3.org/2000/svg" width="' + box + '" height="' + box + '" viewBox="0 0 ' + box + ' ' + box + '">' +
+            '<g transform="translate(' + pad + ' ' + pad + ') scale(' + k + ')">' +
             '<circle cx="22" cy="22" r="19" fill="' + CARBON + '" stroke="' + ring + '" stroke-width="2.5"/>' +
             '<g transform="translate(9 9) scale(1.1)" fill="none" stroke="' + GOLD + '" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">' + inner + '</g>' +
+            '</g>' +
+            (hasHeading
+                ? '<g transform="rotate(' + Math.round(opts.heading) + ' ' + box / 2 + ' ' + box / 2 + ')">' +
+                  '<path d="M' + box / 2 + ' 1.5 L' + (box / 2 + 6.5) + ' 11 L' + box / 2 + ' 8 L' + (box / 2 - 6.5) + ' 11 Z" fill="' + GOLD + '" stroke="' + CARBON + '" stroke-width="1.2" stroke-linejoin="round"/></g>'
+                : '') +
             '</svg>';
         var url = "data:image/svg+xml;charset=UTF-8," + encodeURIComponent(markup);
         var out = { url: url };
         if (window.google && google.maps && google.maps.Size) {
-            out.scaledSize = new google.maps.Size(size, size);
-            out.anchor = new google.maps.Point(size / 2, size / 2);
+            out.scaledSize = new google.maps.Size(box, box);
+            out.anchor = new google.maps.Point(box / 2, box / 2);
         }
         return out;
+    }
+
+    /* ---- Gliding markers --------------------------------------------------
+       Position updates arrive every few seconds; setPosition() makes the
+       vehicle teleport. glideMarker() eases it from where it is to the new
+       fix and, for the drawn badge, turns the chevron to the direction of
+       travel (smoothed, ignoring jitter under ~4 m). Jumps over 600 m snap,
+       and users who ask for reduced motion get the plain jump. */
+    var RAD = Math.PI / 180;
+    function metres(a, b) {
+        var dLat = (b.lat - a.lat) * 111320;
+        var dLng = (b.lng - a.lng) * 111320 * Math.cos(a.lat * RAD);
+        return Math.sqrt(dLat * dLat + dLng * dLng);
+    }
+    function bearing(a, b) {
+        var dLng = (b.lng - a.lng) * Math.cos(a.lat * RAD);
+        var dLat = b.lat - a.lat;
+        return (Math.atan2(dLng, dLat) / RAD + 360) % 360;
+    }
+    function turnToward(from, to, t) {
+        var d = ((to - from + 540) % 360) - 180;
+        return (from + d * t + 360) % 360;
+    }
+    function ease(t) { return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2; }
+    function reducedMotion() {
+        try { return window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches; } catch (e) { return false; }
+    }
+    var headingIcons = {};
+
+    function glideMarker(marker, to, opts) {
+        opts = opts || {};
+        var g = marker.__eg || (marker.__eg = {});
+        var cur = marker.getPosition && marker.getPosition();
+        var target = { lat: to.lat, lng: to.lng };
+        if (g.raf) { (window.cancelAnimationFrame || clearTimeout)(g.raf); g.raf = 0; }
+        if (!cur) { marker.setPosition(target); return; }
+        var from = { lat: cur.lat(), lng: cur.lng() };
+        var dist = metres(from, target);
+
+        // Turn the badge chevron only when the marker is the drawn badge
+        // (a photo icon has no front), and only for real movement.
+        var icon = marker.getIcon && marker.getIcon();
+        var drawn = icon && typeof icon.url === "string" && icon.url.indexOf("data:image/svg+xml") === 0;
+        if (opts.type && drawn && dist >= 4 && dist < 600) {
+            g.h = g.h == null ? bearing(from, target) : turnToward(g.h, bearing(from, target), 0.6);
+            var bucket = (Math.round(g.h / 15) * 15) % 360;
+            if (g.bucket !== bucket || g.type !== opts.type) {
+                g.bucket = bucket; g.type = opts.type;
+                var key = norm(opts.type) + "|" + bucket + "|" + (opts.size || 44) + "|" + (opts.ring || "");
+                marker.setIcon(headingIcons[key] || (headingIcons[key] = vehicleMarker(opts.type, { heading: bucket, size: opts.size, ring: opts.ring })));
+            }
+        }
+
+        if (dist < 0.5) return;
+        if (dist >= 600 || reducedMotion()) { marker.setPosition(target); return; }
+
+        var dur = Math.max(400, Math.min(2500, opts.duration || 1400));
+        var t0 = (window.performance && performance.now) ? performance.now() : Date.now();
+        var raf = window.requestAnimationFrame || function (f) { return setTimeout(function () { f(Date.now()); }, 16); };
+        (function step(now) {
+            var t = Math.min(1, ((typeof now === "number" ? now : Date.now()) - t0) / dur);
+            var e = ease(t);
+            marker.setPosition({ lat: from.lat + (target.lat - from.lat) * e, lng: from.lng + (target.lng - from.lng) * e });
+            g.raf = t < 1 ? raf(step) : 0;
+        })(t0);
     }
 
     /* Replaces `<span data-ei="car" data-size="18"></span>` placeholders, so
@@ -277,6 +356,7 @@
         vehicleType: norm,
         mapStyles: mapStyles,
         vehicleMarker: vehicleMarker,
+        glideMarker: glideMarker,
         hydrate: hydrate,
         upgradeEmoji: upgradeEmoji,
         GOLD: GOLD

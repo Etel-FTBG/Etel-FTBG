@@ -1178,7 +1178,10 @@
     var pos = { lat: parseFloat(rd.driver_lat), lng: parseFloat(rd.driver_lng) };
     try {
       if (RIDE.driverMarker) {
-        RIDE.driverMarker.setPosition(pos);
+        // Glide to the new fix (turning the badge to its heading) instead of
+        // teleporting; falls back to a plain jump without the UI kit.
+        if (window.EtelUI && EtelUI.glideMarker) EtelUI.glideMarker(RIDE.driverMarker, pos, { type: rd.vehicle_type || RIDE._driverMarkerVtype || 'bajaj' });
+        else RIDE.driverMarker.setPosition(pos);
         // The vehicle type isn't always present on the very first status
         // poll (driver just accepted, profile join still loading) - once
         // it does show up, or if it changes, swap the icon in rather than
