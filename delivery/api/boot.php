@@ -443,6 +443,11 @@ function db() {
                 PDO::ATTR_EMULATE_PREPARES   => false,
             )
         );
+    // Align MySQL's NOW() with PHP's Africa/Addis_Ababa clock (the host's
+    // MySQL runs on server time, ~2 h behind), so every timestamp the app
+    // writes and every PHP time()/strtotime() comparison use one clock.
+    // Set ETEL_DB_TZ_SYNC=false in config to switch this off.
+    try { if (!defined('ETEL_DB_TZ_SYNC') || ETEL_DB_TZ_SYNC) $pdo->exec("SET time_zone = '" . date('P') . "'"); } catch (Exception $e) { /* keep the server zone */ }
     } catch (PDOException $e) {
         // Log real error to server log, never expose to browser
         error_log('[ETEL] DB connect failed: ' . $e->getMessage());

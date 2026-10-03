@@ -31,6 +31,7 @@ function cs_reply($arr, $code = 200) {
 }
 
 require_once __DIR__ . '/env_loader.php';
+date_default_timezone_set('Africa/Addis_Ababa');
 $_cs_env = etel_parse_env_file(__DIR__ . '/.env');
 function cs_env($key, $default = '') {
     global $_cs_env;
@@ -51,6 +52,11 @@ try {
         cs_env('DB_USER', ''), cs_env('DB_PASS', ''),
         array(PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC)
     );
+    // Align MySQL's NOW() with PHP's Africa/Addis_Ababa clock (the host's
+    // MySQL runs on server time, ~2 h behind), so every timestamp the app
+    // writes and every PHP time()/strtotime() comparison use one clock.
+    // Set ETEL_DB_TZ_SYNC=false in config to switch this off.
+    try { if (!defined('ETEL_DB_TZ_SYNC') || ETEL_DB_TZ_SYNC) $pdo->exec("SET time_zone = '" . date('P') . "'"); } catch (Exception $e) { /* keep the server zone */ }
 } catch (Exception $e) {
     error_log('[ETEL][cron_close_stuck] DB connect failed: ' . $e->getMessage());
     cs_reply(array('success' => false, 'message' => 'Server unavailable'), 503);
