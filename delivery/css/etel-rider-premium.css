@@ -32,10 +32,9 @@ body.dark-page{font-family:'Outfit',system-ui,sans-serif!important;background:ra
   border-bottom:1px solid rgba(212,175,55,.28)!important;
   box-shadow:0 8px 28px rgba(0,0,0,.28)!important;backdrop-filter:blur(12px)!important;
 }
-.ride-logo-box{width:44px!important;height:44px!important;border-radius:14px!important;border:1px solid rgba(212,175,55,.5)!important;box-shadow:0 8px 24px rgba(212,175,55,.18)!important}
-.ride-header-title{font-family:'Sora',sans-serif!important;font-weight:800!important;letter-spacing:.02em!important;font-size:16px!important;
-  background:linear-gradient(180deg,#fff2ad,#d4af37 75%)!important;-webkit-background-clip:text!important;background-clip:text!important;color:transparent!important}
-.ride-header-sub{color:var(--r-gold2)!important;font-size:10px!important;font-weight:700!important;letter-spacing:.08em!important}
+.ride-logo-box{width:44px!important;height:44px!important;border-radius:14px!important;border:1px solid rgba(212,175,55,.5)!important;box-shadow:0 8px 24px rgba(0,0,0,.45)!important}
+.ride-header-title{font-family:'Sora',sans-serif!important;font-weight:800!important;letter-spacing:.02em!important;font-size:16px!important;;color:#E5C76B!important}
+.ride-header-sub{color:var(--r-gold2)!important;font-size:11px!important;font-weight:700!important;letter-spacing:.08em!important}
 .ride-header-user button{min-height:34px!important}
 .ride-header-user button:last-child{background:rgba(255,255,255,.06)!important;border-color:rgba(255,255,255,.14)!important;color:#D6D8E2!important}
 .ride-sheet{
@@ -53,14 +52,14 @@ body.dark-page{font-family:'Outfit',system-ui,sans-serif!important;background:ra
 .ride-tabs{order:99!important;margin:10px -14px -14px!important;padding:6px 8px 4px!important;
   background:rgba(8,9,15,.96)!important;border:0!important;border-top:1px solid rgba(212,175,55,.18)!important;border-radius:0!important;flex-shrink:0!important}
 .ride-tab{flex:1!important;min-width:0!important;border:0!important;border-radius:10px!important;background:transparent!important;color:#8F92A0!important;padding:10px 4px!important;font-weight:800!important;font-size:11px!important;white-space:nowrap!important;box-shadow:none!important}
-.ride-tab.active{background:transparent!important;color:var(--r-gold2)!important;box-shadow:inset 0 2px 0 var(--r-gold)!important;text-shadow:0 0 12px rgba(212,175,55,.35)}
+.ride-tab.active{background:transparent!important;color:var(--r-gold2)!important;box-shadow:inset 0 2px 0 var(--r-gold)!important;text-shadow:none}
 /* Vehicles as a wrapping 3-column grid instead of a sideways-scrolling
    row that clipped the last type (QUTE) off-screen. */
 .vtype-row{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:8px!important;overflow:visible!important;padding:2px 1px 8px!important}
 .vtype-chip{min-width:0!important;background:linear-gradient(180deg,#151823,#10121A)!important;border:1px solid #292D39!important;border-radius:16px!important;padding:10px 6px!important;box-shadow:0 8px 24px rgba(0,0,0,.18)!important}
 .vt-unavailable-badge{white-space:normal!important;text-align:center;line-height:1.2}
-.vtype-chip.active{background:linear-gradient(180deg,rgba(212,175,55,.18),rgba(212,175,55,.05))!important;border-color:var(--r-gold)!important;box-shadow:0 10px 28px rgba(212,175,55,.12)!important}
-.vtype-chip .vt-icon{font-size:25px!important}.vtype-chip .vt-name{color:#E8E7E1!important;font-size:12px!important}.vtype-chip.active .vt-name{color:var(--r-gold2)!important}.vtype-chip .vt-eta{color:#75798A!important;font-size:10.5px!important}.vtype-chip .vt-price{color:var(--r-gold2)!important;font-weight:900!important}
+.vtype-chip.active{background:linear-gradient(180deg,rgba(212,175,55,.18),rgba(212,175,55,.05))!important;border-color:var(--r-gold)!important;box-shadow:0 10px 28px rgba(0,0,0,.45)!important}
+.vtype-chip .vt-icon{font-size:25px!important}.vtype-chip .vt-name{color:#E8E7E1!important;font-size:12px!important}.vtype-chip.active .vt-name{color:var(--r-gold2)!important}.vtype-chip .vt-eta{color:#75798A!important;font-size:11px!important}.vtype-chip .vt-price{color:var(--r-gold2)!important;font-weight:900!important}
 .loc-card,.fare-card,.pay-row,.driver-card,.info-rows,.mp-section,.mp-stat,.reason-chip{
   background:linear-gradient(180deg,#141722,#10121A)!important;border-color:#292D39!important;box-shadow:0 8px 24px rgba(0,0,0,.16)!important
 }
@@ -70,13 +69,12 @@ body.dark-page{font-family:'Outfit',system-ui,sans-serif!important;background:ra
 .loc-icon.pickup{background:rgba(212,175,55,.14)!important;border-color:rgba(212,175,55,.4)!important}
 .loc-icon.dropoff{background:rgba(96,180,255,.14)!important;border-color:rgba(96,180,255,.4)!important}
 .pay-row{display:grid!important;grid-template-columns:1fr 1fr!important;gap:8px!important;padding:5px!important;border-radius:16px!important;margin-top:10px!important}
-.pay-opt{border-radius:12px!important;padding:12px!important}.pay-opt.active{background:rgba(212,175,55,.15)!important;box-shadow:inset 0 0 0 1px rgba(212,175,55,.4)!important;color:var(--r-gold2)!important}
+.pay-opt{border-radius:12px!important;padding:12px!important}.pay-opt.active{background:rgba(212,175,55,.15)!important;box-shadow:inset 0 0 0 1px rgba(0,0,0,.45)!important;color:var(--r-gold2)!important}
 .fare-card{border-radius:18px!important;margin-top:10px!important;padding:15px!important}
-.fare-amount{font-family:'Sora',sans-serif!important;font-size:27px!important;font-weight:900!important;
-  background:linear-gradient(180deg,#fff3b0,#d4af37)!important;-webkit-background-clip:text!important;background-clip:text!important;color:transparent!important}
+.fare-amount{font-family:'Sora',sans-serif!important;font-size:27px!important;font-weight:900!important;;color:#E5C76B!important}
 .fare-label{color:#8D91A0!important}.fare-type-badge{background:rgba(212,175,55,.12)!important;color:var(--r-gold2)!important;border-color:rgba(212,175,55,.25)!important}
-.slide-book-wrap{width:100%!important;max-width:none!important;margin:14px auto 0!important}.slide-book-track{height:58px!important;border-radius:17px!important;background:linear-gradient(135deg,#EFD064,#C89A24)!important;border:1px solid rgba(255,233,168,.55)!important;box-shadow:0 14px 34px rgba(212,175,55,.22)!important}.slide-book-label{color:#17130A!important;font-weight:900!important}.slide-book-thumb{background:#151820!important;color:var(--r-gold2)!important;border:1px solid rgba(255,255,255,.1)!important;width:50px!important;height:50px!important}
-.btn-outline,.ride-book-btn{border-radius:15px!important;min-height:48px!important;font-weight:800!important}.ride-book-btn{background:linear-gradient(135deg,#F7D66D,#C49422)!important;color:#16120A!important;border:0!important;box-shadow:0 10px 25px rgba(212,175,55,.16)!important}
+.slide-book-wrap{width:100%!important;max-width:none!important;margin:14px auto 0!important}.slide-book-track{height:58px!important;border-radius:17px!important;background:linear-gradient(135deg,#EFD064,#C89A24)!important;border:1px solid rgba(255,233,168,.55)!important;box-shadow:0 14px 34px rgba(0,0,0,.45)!important}.slide-book-label{color:#17130A!important;font-weight:900!important}.slide-book-thumb{background:#151820!important;color:var(--r-gold2)!important;border:1px solid rgba(255,255,255,.1)!important;width:50px!important;height:50px!important}
+.btn-outline,.ride-book-btn{border-radius:15px!important;min-height:48px!important;font-weight:800!important}.ride-book-btn{background:linear-gradient(135deg,#F7D66D,#C49422)!important;color:#16120A!important;border:0!important;box-shadow:0 10px 25px rgba(0,0,0,.45)!important}
 .btn-danger{border-color:rgba(239,83,80,.38)!important;color:#FF7773!important;background:rgba(239,83,80,.07)!important}
 .arriving-header,.sheet-title{font-family:'Sora',sans-serif!important;font-weight:800!important;color:#fff!important}.arriving-sub{color:#9498A8!important}
 .driver-card{padding:15px!important;border-radius:19px!important}.driver-avatar{background:linear-gradient(135deg,rgba(212,175,55,.2),rgba(212,175,55,.04))!important;border-color:rgba(212,175,55,.42)!important}.driver-name{font-family:'Sora',sans-serif!important}.driver-rating,.info-row-right{color:var(--r-gold2)!important}
@@ -89,7 +87,7 @@ body.dark-page{font-family:'Outfit',system-ui,sans-serif!important;background:ra
 .mp-avatar{background:linear-gradient(135deg,#FFE9A8,#D4AF37)!important;color:#181208!important}
 .mp-badge{color:var(--r-gold2)!important;background:rgba(212,175,55,.10)!important;border-color:rgba(212,175,55,.28)!important}
 .reason-chip.selected{border-color:var(--r-gold)!important;background:rgba(212,175,55,.12)!important;color:var(--r-gold2)!important}
-@media(max-width:520px){.ride-header-user a{display:none}.ride-sheet{padding-left:12px!important;padding-right:12px!important}.ride-tab{font-size:10px!important;padding:10px 2px!important}.ride-tabs{margin-left:-12px!important;margin-right:-12px!important}}
+@media(max-width:520px){.ride-header-user a{display:none}.ride-sheet{padding-left:12px!important;padding-right:12px!important}.ride-tab{font-size:11px!important;padding:10px 2px!important}.ride-tabs{margin-left:-12px!important;margin-right:-12px!important}}
 /* core.js's floating theme toggle sits at bottom:24px, which now lands
    on top of the bottom nav's History tab - lift it clear, level with
    the SOS button on the other side. */
@@ -98,6 +96,7 @@ body.dark-page{font-family:'Outfit',system-ui,sans-serif!important;background:ra
    SOS button (sos-button.js, shared with Driver - overridden only here)
    sat at bottom:90px and covered the fare/price once the sheet scrolled. */
 #sos-fab,#sos-sent-badge{top:calc(env(safe-area-inset-top,0px) + 84px)!important;bottom:auto!important;left:14px!important}
+#sos-sent-badge{top:calc(env(safe-area-inset-top,0px) + 138px)!important}
 #sos-fab{width:46px!important;height:46px!important}
 .dark-toggle-btn{top:calc(env(safe-area-inset-top,0px) + 136px)!important;bottom:auto!important;right:14px!important;width:42px!important;height:42px!important;font-size:19px!important}
 /* Delivery cross-sell card rendered in off-brand blue link color. */
@@ -119,7 +118,7 @@ body.dark-page{font-family:'Outfit',system-ui,sans-serif!important;background:ra
   .ride-header{left:0!important;right:0!important;margin:0 auto!important;max-width:760px!important}
 }
 
-.searching-timer{font-size:32px!important;text-shadow:0 0 20px rgba(212,175,55,.18)!important}
+.searching-timer{font-size:32px!important;text-shadow:none}
 .star-btn{filter:drop-shadow(0 4px 10px rgba(212,175,55,.2))}
 
 /* ── Two-step Book flow (see bookSteps() in ride/index.html) ──
@@ -149,3 +148,12 @@ body.dark-page{font-family:'Outfit',system-ui,sans-serif!important;background:ra
 #book-route-summary .brs-text{font-size:13px;color:var(--r-text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #book-route-summary .brs-change{flex-shrink:0;min-height:36px;padding:0 14px;border-radius:12px;cursor:pointer;
   background:rgba(212,175,55,.10);border:1px solid rgba(212,175,55,.35);color:var(--r-gold2);font-weight:800;font-size:12px}
+
+/* ── Refinement 2026-10-03: icon family, type floor, calmer surfaces ── */
+.ei{display:inline-flex;align-items:center;justify-content:center;line-height:0;flex:none}
+.ride-tab{display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;gap:4px!important;font-size:11px!important;letter-spacing:.01em!important}
+.ride-tab .ei svg{width:22px;height:22px}
+.action-bar-btn .ab-icon{color:var(--r-gold2,#E5C76B);display:inline-flex}
+.action-bar-btn .ab-label{font-size:12px!important;color:#C4C6D0!important}
+.action-bar-btn.call-btn-ab .ab-icon,.action-bar-btn.call-btn-ab .ab-label{color:#35D17C!important}
+.vt-icon .ei,.nc .ei{color:var(--r-gold2,#E5C76B)}

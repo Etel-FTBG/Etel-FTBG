@@ -18,7 +18,7 @@
     if (document.getElementById('dn-panel')) return;
     var p = document.createElement('div'); p.id = 'dn-panel'; p.className = 'dn-panel';
     p.innerHTML =
-      '<div class="dn-icon" id="dn-icon">🧭</div>' +
+      '<div class="dn-icon" id="dn-icon" data-ei="route" data-size="22"></div>' +
       '<div class="dn-body">' +
         '<div class="dn-label" id="dn-label">Waiting for ride request</div>' +
         '<div class="dn-dist" id="dn-dist">Go online to receive requests</div>' +
@@ -34,7 +34,12 @@
   }
 
   function setNavPanel(icon, label, dist, showOpen) {
-    var el = document.getElementById('dn-icon');   if (el) el.textContent = icon;
+    var el = document.getElementById('dn-icon');
+    if (el) {
+      // Callers pass the legacy emoji; render the matching drawn icon instead.
+      var iconName = { '\uD83D\uDCCD': 'pin', '\uD83C\uDFC1': 'flag', '\u2705': 'check', '\uD83E\uDDED': 'route' }[icon];
+      if (window.EtelUI && iconName) el.innerHTML = EtelUI.icon(iconName, 22); else el.textContent = icon;
+    }
     var ll = document.getElementById('dn-label');  if (ll) ll.textContent = label;
     var dl = document.getElementById('dn-dist');   if (dl) dl.textContent = dist;
     var op = document.getElementById('dn-open');   if (op) op.style.display = showOpen ? 'flex' : 'none';

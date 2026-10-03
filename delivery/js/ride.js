@@ -128,9 +128,9 @@
     RIDE.selectedVtype = vtype;
     document.querySelectorAll('.vtype-chip').forEach(function (c) { c.classList.remove('active'); });
     if (el) el.classList.add('active');
-    var badges = { bajaj: '🛺 Bajaj', moto: '🛵 Moto', car: '🚗 Car', minibus: '🚐 Minibus', qute: '🚙 Qute' };
+    var badges = { bajaj: 'Bajaj', moto: 'Moto', car: 'Car', minibus: 'Minibus', qute: 'Qute' };
     var fb = document.getElementById('fare-type-badge');
-    if (fb) fb.textContent = badges[vtype] || '🚗 Ride';
+    if (fb) fb.textContent = badges[vtype] || 'Ride';
     refreshFareDisplay();
     if (RIDE.driverMapFilterMode !== 'all') loadNearbyDrivers();
   };
@@ -145,7 +145,10 @@
         'width:100%;height:' + vh + 'px;z-index:0;background:#10101c;';
     RIDE.map = new google.maps.Map(_rm, {
       center: { lat: 7.0621, lng: 38.4761 }, zoom: 14,
-      mapId: 'ETEL_RIDE_MAP',
+      /* No mapId: a Cloud mapId makes Google ignore `styles`, which left this
+         map in default light colours under the dark gold UI. Markers here are
+         classic google.maps.Marker and do not need one. */
+      styles: window.EtelUI ? EtelUI.mapStyles(false) : undefined,
       disableDefaultUI: false, mapTypeId: 'roadmap',
       backgroundColor: '#10101c',
       mapTypeControl: true, zoomControl: true, fullscreenControl: true,
@@ -157,10 +160,11 @@
     RIDE.directionsService  = new google.maps.DirectionsService();
     RIDE.directionsRenderer = new google.maps.DirectionsRenderer({
       suppressMarkers: true,
-      polylineOptions: { strokeColor: '#E5C76B', strokeWeight: 4, strokeOpacity: .85 }
+      polylineOptions: { strokeColor: '#E5C76B', strokeWeight: 5, strokeOpacity: .95 }
     });
     RIDE.directionsRenderer.setMap(RIDE.map);
     RIDE.geocoder = new google.maps.Geocoder();
+    _probeVehicleImages();
 
     _setupAutocomplete();
     _setupMapClick();
@@ -1145,30 +1149,29 @@
     else if (t.indexOf('car') !== -1 || t.indexOf('sedan') !== -1) imgUrl = RIDE.vtypeImages.car;
     else if (t.indexOf('qute') !== -1) imgUrl = RIDE.vtypeImages.qute;
     else imgUrl = RIDE.vtypeImages.bajaj; // default, matches driver.js's own _driverVtypeImage() fallback
-    if (imgUrl) {
+    if (imgUrl && RIDE._vimgOk && RIDE._vimgOk[imgUrl]) {
       return {
         url: imgUrl,
         scaledSize: new google.maps.Size(60, 60),
         anchor: new google.maps.Point(30, 30)
       };
     }
-    // Fallback only if RIDE.vtypeImages itself somehow isn't populated -
-    // keeps the marker from silently failing to render at all.
-    var emoji = '🛺', bg = '#E5C76B';
-    if (t.indexOf('moto') !== -1 || t.indexOf('bike') !== -1 || t.indexOf('motor') !== -1) {
-      emoji = '🛵'; bg = '#60B4FF';
-    } else if (t.indexOf('car') !== -1) {
-      emoji = '🚗'; bg = '#7ED957';
-    }
-    var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="44" height="44">' +
-      '<circle cx="22" cy="22" r="19" fill="' + bg + '" stroke="#fff" stroke-width="2.5"/>' +
-      '<text x="22" y="29" font-size="20" text-anchor="middle">' + emoji + '</text>' +
-      '</svg>';
-    return {
-      url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svg),
-      scaledSize: new google.maps.Size(44, 44),
-      anchor: new google.maps.Point(22, 22)
-    };
+    // The vehicle photos (img/vehicles/*.png) are not part of the repo, so a
+    // missing file would leave an invisible marker. Until a photo is verified
+    // to load (see _probeVehicleImages), draw the carbon/gold vehicle badge.
+    if (window.EtelUI) return EtelUI.vehicleMarker(t);
+    return { url: imgUrl || '', scaledSize: new google.maps.Size(44, 44), anchor: new google.maps.Point(22, 22) };
+  }
+  RIDE._vimgOk = {};
+  function _probeVehicleImages() {
+    var map = RIDE.vtypeImages || {};
+    Object.keys(map).forEach(function (k) {
+      var u = map[k]; if (!u) return;
+      var im = new Image();
+      im.onload = function () { RIDE._vimgOk[u] = true; };
+      im.onerror = function () { RIDE._vimgOk[u] = false; };
+      im.src = u;
+    });
   }
   function updateDriverMarker(rd) {
     if (!rd.driver_lat || !rd.driver_lng || !RIDE.map || !window.google) return;

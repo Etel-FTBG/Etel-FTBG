@@ -29,9 +29,9 @@ const BUNDLES = {
   'customer-bundle.js':    ['core.js'],
   'customer-bundle-extra.js': ['jsQR.js'],
   'courier-bundle.js':     ['courier.js', 'courier-premium.js'],
-  'driver-bundle.js':      ['core.js', 'ride_chat.js', 'driver.js'],
+  'driver-bundle.js':      ['core.js', 'ride_chat.js', 'etel-ui.js', 'driver.js'],
   'driver-bundle-extra.js':['driver-premium.js', 'driver-nav.js'],
-  'ride-bundle.js':        ['core.js', 'ride_chat.js', 'ride.js'],
+  'ride-bundle.js':        ['core.js', 'ride_chat.js', 'etel-ui.js', 'ride.js'],
   'ride-bundle-extra.js':  ['ride-premium.js', 'ride-fix.js'],
   'servicegiver-bundle.js':['servicegiver.js', 'servicegiver-premium.js'],
 };

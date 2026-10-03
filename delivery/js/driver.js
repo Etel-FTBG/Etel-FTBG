@@ -65,7 +65,10 @@ function initDriverMap() {
     DRV.map = new google.maps.Map(_dm, {
         center: { lat: 7.0621, lng: 38.4761 },
         zoom: 14,
-        mapId: 'ETEL_DRIVER_MAP',
+        /* No mapId: a Cloud mapId makes Google ignore `styles`. Markers here are
+           classic google.maps.Marker and do not need one. Style follows the
+           app's light/dark mode (see toggleDriverTheme). */
+        styles: window.EtelUI ? EtelUI.mapStyles(document.body.classList.contains('light-mode')) : undefined,
         backgroundColor: '#10101c',
         mapTypeId: google.maps.MapTypeId.ROADMAP,
         disableDefaultUI: true,
@@ -78,7 +81,7 @@ function initDriverMap() {
         zoomControl: true
     });
     DRV.directionsService  = new google.maps.DirectionsService();
-    DRV.directionsRenderer = new google.maps.DirectionsRenderer({ suppressMarkers: true, polylineOptions: { strokeColor: '#4ECDC4', strokeWeight: 4 } });
+    DRV.directionsRenderer = new google.maps.DirectionsRenderer({ suppressMarkers: true, polylineOptions: { strokeColor: '#E5C76B', strokeWeight: 5, strokeOpacity: .95 } });
     DRV.directionsRenderer.setMap(DRV.map);
 
     // Load profile
@@ -107,7 +110,7 @@ function applyDriverTheme(isLight) {
     if (meta) meta.setAttribute('content', isLight ? '#F0EDE6' : '#08080f');
     var btn = document.getElementById('theme-toggle-btn');
     if (btn) {
-        btn.textContent = isLight ? '🌙' : '☀️';
+        btn.innerHTML = window.EtelUI ? EtelUI.icon(isLight ? 'moon' : 'sun', 20) : (isLight ? '\u263E' : '\u2600');
         btn.title = isLight ? 'Switch to dark mode' : 'Switch to light mode';
         btn.setAttribute('aria-label', btn.title);
     }
@@ -118,7 +121,12 @@ function toggleDriverTheme() {
     try { localStorage.setItem('etel_driver_theme', isLight ? 'light' : 'dark'); } catch(e) {}
     /* Tell Google Maps to repaint after theme change */
     setTimeout(function() {
-        try { if (DRV.map) google.maps.event.trigger(DRV.map, 'resize'); } catch(e) {}
+        try {
+            if (DRV.map) {
+                if (window.EtelUI) DRV.map.setOptions({ styles: EtelUI.mapStyles(isLight) });
+                google.maps.event.trigger(DRV.map, 'resize');
+            }
+        } catch(e) {}
     }, 100);
 }
 

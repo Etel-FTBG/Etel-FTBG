@@ -153,7 +153,7 @@
     if(!loc||document.getElementById('zone-pick')) return;
     var box=document.createElement('div'); box.id='zone-pick'; box.className='zone-pick';
     var chips=ZONES.map(function(z,i){ return '<button type="button" class="zchip" data-i="'+i+'">'+z.n+'</button>'; }).join('');
-    box.innerHTML='<div class="zp-head"><span class="zp-title">📍 Quick zones <span style="opacity:.6;font-weight:500">· no GPS needed</span></span><div class="zp-toggle"><button type="button" class="zt-btn on" data-t="pickup">Set pickup</button><button type="button" class="zt-btn" data-t="dropoff">Set drop-off</button></div></div><div class="zp-chips">'+chips+'</div>';
+    box.innerHTML='<div class="zp-head"><span class="zp-title">Quick zones <span style="opacity:.6;font-weight:500">· no GPS needed</span></span><div class="zp-toggle"><button type="button" class="zt-btn on" data-t="pickup">Set pickup</button><button type="button" class="zt-btn" data-t="dropoff">Set drop-off</button></div></div><div class="zp-chips">'+chips+'</div>';
     loc.parentNode.insertBefore(box,loc.nextSibling);
     box.querySelectorAll('.zt-btn').forEach(function(b){ b.addEventListener('click',function(){ activeTarget=b.getAttribute('data-t'); box.querySelectorAll('.zt-btn').forEach(function(x){ x.classList.toggle('on',x===b); }); }); });
     box.querySelectorAll('.zchip').forEach(function(c){ c.addEventListener('click',function(){

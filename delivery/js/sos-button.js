@@ -13,13 +13,12 @@
         var s = document.createElement("style");
         s.id = "sos-css";
         s.textContent =
-            "#sos-fab{position:fixed;left:16px;bottom:calc(env(safe-area-inset-bottom,0px) + 90px);" +
-            "width:52px;height:52px;border-radius:50%;z-index:9500;border:2px solid rgba(255,255,255,.85);" +
-            "background:linear-gradient(135deg,#E63946,#B0262F);color:#fff;font-weight:800;font-size:11px;" +
-            "font-family:'Outfit',sans-serif;letter-spacing:.02em;cursor:pointer;" +
-            "box-shadow:0 6px 18px -4px rgba(230,57,70,.7);display:flex;align-items:center;justify-content:center;" +
-            "line-height:1.1;text-align:center;animation:sosPulse 1.8s ease-in-out infinite}" +
-            "@keyframes sosPulse{0%,100%{box-shadow:0 6px 18px -4px rgba(230,57,70,.7)}50%{box-shadow:0 6px 26px -2px rgba(230,57,70,1)}}" +
+            "#sos-fab{position:fixed;left:14px;top:calc(env(safe-area-inset-top,0px) + 84px);" +
+            "width:46px;height:46px;border-radius:50%;z-index:9500;border:2px solid rgba(255,255,255,.85);" +
+            "background:#C62832;color:#fff;font-weight:800;font-size:11px;" +
+            "font-family:'Outfit',sans-serif;letter-spacing:.04em;cursor:pointer;" +
+            "box-shadow:0 4px 12px rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;" +
+            "line-height:1;text-align:center;gap:1px}" +
             "#sos-overlay{display:none;position:fixed;inset:0;z-index:99997;background:rgba(10,0,0,.72);" +
             "backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:20px}" +
             "#sos-overlay.open{display:flex}" +
@@ -40,7 +39,7 @@
             // fab it belongs to - clear of both the header and (on pages
             // that have one) a bottom tab bar, and still an easy thumb
             // reach in an emergency.
-            "#sos-sent-badge{position:fixed;left:16px;bottom:calc(env(safe-area-inset-bottom,0px) + 90px);" +
+            "#sos-sent-badge{position:fixed;left:14px;top:calc(env(safe-area-inset-top,0px) + 138px);" +
             "z-index:9501;background:#2ECC71;color:#06210f;font-weight:800;font-size:11px;padding:8px 12px;" +
             "border-radius:12px;display:none;font-family:'Outfit',sans-serif;box-shadow:0 6px 16px rgba(0,0,0,.4)}";
         document.head.appendChild(s);
@@ -67,7 +66,7 @@
         css();
         var fab = document.createElement("button");
         fab.id = "sos-fab";
-        fab.innerHTML = "\uD83C\uDD98<br>SOS";
+        fab.innerHTML = "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.9\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M12 3.5l7 2.6v5.4c0 4.2-2.9 7.3-7 9-4.1-1.7-7-4.8-7-9V6.1z\"/><path d=\"M12 8.5v4M12 15.2v.1\"/></svg><span>SOS</span>";
         fab.style.flexDirection = "column";
         fab.setAttribute("aria-label", "Emergency SOS");
         fab.onclick = openModal;
@@ -75,14 +74,14 @@
 
         var badge = document.createElement("div");
         badge.id = "sos-sent-badge";
-        badge.textContent = "\u2705 Alert sent to ETEL support";
+        badge.textContent = "Alert sent to ETEL support";
         document.body.appendChild(badge);
 
         var overlay = document.createElement("div");
         overlay.id = "sos-overlay";
         overlay.innerHTML =
             '<div id="sos-box">' +
-            '<div class="sos-icn">\uD83C\uDD98</div>' +
+            '<div class="sos-icn" style="color:#FF6B6B"><svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5l7 2.6v5.4c0 4.2-2.9 7.3-7 9-4.1-1.7-7-4.8-7-9V6.1z"/><path d="M12 8.5v4M12 15.2v.1"/></svg></div>' +
             "<h3>Send emergency alert?</h3>" +
             "<p>This immediately notifies ETEL support with your role, location, and current trip (if any). Use this if you feel unsafe or something is wrong right now.</p>" +
             '<button id="sos-send">Send SOS Now</button>' +
