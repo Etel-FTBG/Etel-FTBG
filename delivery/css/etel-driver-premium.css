@@ -1,0 +1,65 @@
+/* ETEL DRIVER finish pass - loads after driver-bundle.css and the inline
+   page styles. Visual only: no markup, JS or API behaviour changes. */
+
+/* One voice. The shared gold stylesheet sets every *-label, *-badge, label
+   and a few titles in uppercase monospace; mono belongs to codes and
+   measurements, so buttons, rows and captions go back to the interface sans. */
+.drv-main [class*="-label"],.drv-main label,.drv-main [class*="-badge"],.drv-main [class*="-chip"],
+.driver-bottom-nav [class*="-label"],.driver-sidebar [class*="-label"],.driver-sidebar .si-label,
+.dn-label,.drv-subtitle,.kpi-ring-label,.reg-overlay [class*="-label"],.reg-overlay label,
+.slide-online-label span,.slide-accept-wrap [class*="-label"]{
+  font-family:'Outfit',system-ui,sans-serif!important;text-transform:none!important;letter-spacing:.01em!important}
+.drv-main label,.reg-overlay label{font-size:12px!important;font-weight:600!important}
+.kpi-ring-label{text-transform:none!important;line-height:1.25}
+.profile-verified-badge{text-transform:none!important}
+.drv-main [class*="-price"],.drv-main [class*="-amount"],.drv-main [class*="-total"],.gc-trips{
+  font-variant-numeric:tabular-nums}
+/* The plate is a code: it stays monospace. */
+.vehicle-plate-box,[class*="plate"]{font-family:'JetBrains Mono',monospace!important;letter-spacing:.08em!important}
+/* Row titles ("Payment & earnings", "Update Vehicle Info") */
+.profile-row-label,.money-label{font-size:15px!important;font-weight:700!important;color:var(--text,#F7F5EE)!important}
+.profile-row-label+*,.money-label+*{font-size:13px}
+
+/* Top bar: carbon, like the rider app, instead of the brown gold wash. */
+body:not(.light-mode) .drv-topbar{
+  background:linear-gradient(180deg,rgba(9,10,15,.97),rgba(9,10,15,.88))!important;
+  border-bottom:1px solid rgba(212,175,55,.28)!important;box-shadow:0 8px 28px rgba(0,0,0,.28)!important;
+  backdrop-filter:blur(12px)}
+.drv-title{font-family:'Sora',sans-serif!important;letter-spacing:.02em!important;font-size:16px!important}
+/* The sidebar toggle belongs to wide screens (the sidebar is hidden on a
+   phone); below 900px it showed as an unstyled white pill. */
+@media (max-width:899px){.topbar-sidebar-btn{display:none!important}}
+
+/* Bottom nav: carbon with the same gold hairline, no brown cast. */
+body:not(.light-mode) .driver-bottom-nav{
+  background:rgba(8,9,15,.97)!important;background-image:none!important;
+  border-top:1px solid rgba(212,175,55,.18)!important}
+.nav-tab .nl{font-size:11.5px!important;font-weight:700!important;letter-spacing:.01em!important}
+.driver-bottom-nav .nav-tab.active{box-shadow:inset 0 2px 0 #D4AF37}
+
+/* Page ground: the same near-black as the rider app (it read navy here). */
+body:not(.light-mode) .drv-main{background:transparent}
+
+/* Waiting card */
+.dn-label{font-size:15px!important;font-weight:700!important}
+
+/* Go-online slider: sans label, a drawn chevron on the thumb instead of a
+   text glyph, and no glow. */
+.slide-online-label,.slide-online-label span{font-family:'Outfit',system-ui,sans-serif!important}
+.slide-online-label{font-size:14px!important;font-weight:600!important}
+.slide-online-arrow{font-size:0!important;width:8px;height:8px;border-left:2px solid currentColor;border-bottom:2px solid currentColor;
+  transform:rotate(45deg);display:inline-block}
+@keyframes slide-arrow-left{0%,100%{transform:translateX(0) rotate(45deg);opacity:.3}60%{transform:translateX(-6px) rotate(45deg);opacity:.9}}
+.slide-online-thumb{font-size:0!important;box-shadow:0 6px 16px -6px rgba(0,0,0,.6)!important;position:absolute}
+.slide-online-thumb::before{content:"";width:11px;height:11px;border-left:3px solid #fff;border-bottom:3px solid #fff;
+  transform:rotate(45deg);margin-left:4px}
+.slide-online-track{box-shadow:none!important}
+
+/* Section captions ("MY VEHICLES") */
+.profile-section-label,.section-label,.money-section-label{font-size:12px!important;font-weight:700!important;color:var(--dim,#9A9AAE)!important}
+
+/* Motion: one calm entrance per page, none for reduced-motion users. */
+@keyframes etel-rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.drv-page.active{animation:etel-rise .32s cubic-bezier(.22,1,.36,1) both}
+@media (prefers-reduced-motion:reduce){.drv-page.active{animation:none}}
+.driver-bottom-nav .nav-tab{border-radius:0!important}
