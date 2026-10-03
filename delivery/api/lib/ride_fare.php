@@ -109,6 +109,31 @@ function rides_fare_rule($pdo, $vehicleType) {
     return $rule;
 }
 
+/* Generic numeric setting from pricing_rules (key/value table), cached per
+   request. Falls back to $default when the table or row does not exist yet,
+   so a fresh install behaves exactly like the defaults below. */
+function rides_rule_value($pdo, $key, $default) {
+    static $cache = array();
+    if (array_key_exists($key, $cache)) return $cache[$key];
+    $val = $default;
+    try {
+        $s = $pdo->prepare("SELECT rule_value FROM pricing_rules WHERE rule_key=? LIMIT 1");
+        $s->execute(array($key));
+        $v = $s->fetchColumn();
+        if ($v !== false && $v !== null && $v !== '') $val = floatval($v);
+    } catch (Exception $e) { /* table may not exist yet - keep default */ }
+    $cache[$key] = $val;
+    return $val;
+}
+
+/* Most minutes of waiting that are ever BILLED on one ride (pricing_rules
+   key 'ride_wait_cap_minutes'; 0 disables the cap). Without a cap, a wait
+   clock left running - or a trip nobody closed - billed the waiting rate for
+   hours: ride #283 (7 km moto) was charged ETB 4,808 for 23 h of waiting. */
+function rides_wait_cap_minutes($pdo) {
+    return max(0, rides_rule_value($pdo, 'ride_wait_cap_minutes', 30));
+}
+
 /* Admin-configurable peak-hour surge multiplier (pricing_rules table, key
    'ride_surge_multiplier'). Falls back to the old hardcoded 1.3 if the
    table/row doesn't exist yet. */
@@ -208,6 +233,11 @@ function rides_calc_fare($pdo, $distKm, $vehicleType = 'bajaj', $openTrip = fals
     $is_peak = $activeMultiplier !== null;
     $surge = $is_peak ? $activeMultiplier : 1.0;
     $per_km = $openTrip ? $rule['per_km_rate_open'] : $rule['per_km_rate'];
+    // Billable waiting time is capped (see rides_wait_cap_minutes).
+    $waitMinutesRaw = $waitMinutes;
+    $waitCap = rides_wait_cap_minutes($pdo);
+    $waitCapped = ($waitCap > 0 && $waitMinutes > $waitCap);
+    if ($waitCapped) $waitMinutes = $waitCap;
     /* Matches the customer-facing promise shown in the app:
        "ETB <base> base + ETB <per_km_rate_open> per km" for open trips -
        keep in sync with the client-side display formula in js/ride.js if
@@ -219,6 +249,7 @@ function rides_calc_fare($pdo, $distKm, $vehicleType = 'bajaj', $openTrip = fals
     return array('fare'=>$final,'surge'=>$is_peak,'breakdown'=>array(
         'base'=>$rule['base_fare'], 'dist_etb'=>round($per_km*$distKm,2),
         'wait_etb'=>round($rule['wait_rate_per_min']*$waitMinutes,2), 'wait_minutes'=>$waitMinutes,
+        'wait_minutes_raw'=>$waitMinutesRaw, 'wait_capped'=>$waitCapped,
         'vehicle_type'=>$vehicleType, 'surge_mult'=>$surge, 'floor'=>$floor, 'final'=>$final,
     ));
 }
@@ -397,6 +428,8 @@ function rides_fare_breakdown_for_ui($fareCalc) {
         // recomputes wait_minutes fresh from wait_seconds_total each
         // time) ever had the real number.
         'wait_minutes'     => isset($b['wait_minutes']) ? $b['wait_minutes'] : 0,
+        'wait_minutes_raw' => isset($b['wait_minutes_raw']) ? $b['wait_minutes_raw'] : (isset($b['wait_minutes']) ? $b['wait_minutes'] : 0),
+        'wait_capped'      => !empty($b['wait_capped']),
         'fare_subtotal'    => $subtotal,
         'fare_surge_mult'  => $b['surge_mult'],
         'fare_surge_etb'   => $surgeEtb,
@@ -418,13 +451,18 @@ if (!function_exists('rides_complete_and_pay')) {
    first (wallet verification, ownership, status checks - those differ
    between call sites, so they stay at the call site, not in here). */
 function rides_complete_and_pay($pdo, $rideId, $driverId, $fare, $paymentMethod, $walletTxRef = null) {
+    /* Idempotent: the status flip is the claim. If the ride is already
+       completed (a double tap, or the auto-close sweeper racing the
+       customer's confirm), rowCount() is 0 and NOTHING is paid out a second
+       time. Returns true when this call completed the ride. */
     if ($walletTxRef) {
-        $pdo->prepare("UPDATE rides SET status='completed', completed_at=NOW(), fare_paid=?, payment_method=?, wallet_tx_ref=? WHERE id=?")
-            ->execute(array($fare, $paymentMethod, $walletTxRef, $rideId));
+        $claim = $pdo->prepare("UPDATE rides SET status='completed', completed_at=NOW(), fare_paid=?, payment_method=?, wallet_tx_ref=? WHERE id=? AND status <> 'completed'");
+        $claim->execute(array($fare, $paymentMethod, $walletTxRef, $rideId));
     } else {
-        $pdo->prepare("UPDATE rides SET status='completed', completed_at=NOW(), fare_paid=?, payment_method=? WHERE id=?")
-            ->execute(array($fare, $paymentMethod, $rideId));
+        $claim = $pdo->prepare("UPDATE rides SET status='completed', completed_at=NOW(), fare_paid=?, payment_method=? WHERE id=? AND status <> 'completed'");
+        $claim->execute(array($fare, $paymentMethod, $rideId));
     }
+    if ($claim->rowCount() < 1) return false;
     if ($driverId) {
         rides_add_missing_cols($pdo, 'ride_drivers', array(
             'commission_owed'    => "commission_owed DECIMAL(12,2) DEFAULT 0",
@@ -443,6 +481,7 @@ function rides_complete_and_pay($pdo, $rideId, $driverId, $fare, $paymentMethod,
                 ->execute(array($fare, $commissionAmt, $driverId));
         }
     }
+    return true;
 }
 }
 
