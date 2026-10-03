@@ -137,7 +137,7 @@ foreach ($rows as $row) {
         $nearbyDrivers = $pdo->prepare(
             // Same vehicle-type filter fix as book_ride's own broadcast -
             // was pushing every online driver regardless of type.
-            "SELECT user_id, lat, lng FROM ride_drivers WHERE online = 1 AND lat IS NOT NULL AND lng IS NOT NULL AND (vehicle_type = ? OR vehicle_type IS NULL)"
+            "SELECT user_id, lat, lng FROM ride_drivers WHERE online = 1 AND lat IS NOT NULL AND lng IS NOT NULL AND last_seen >= DATE_SUB(NOW(), INTERVAL 30 MINUTE) AND (vehicle_type = ? OR vehicle_type IS NULL)"
         );
         $nearbyDrivers->execute(array($vtype));
         foreach ($nearbyDrivers->fetchAll() as $rd) {

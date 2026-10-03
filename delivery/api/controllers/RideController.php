@@ -808,7 +808,7 @@ case 'book_ride': {
            requested vehicle type here too, so drivers only get woken up
            for requests actually meant for them. */
         $nearbyDrivers = $pdo->prepare(
-            "SELECT user_id, lat, lng FROM ride_drivers WHERE online = 1 AND lat IS NOT NULL AND lng IS NOT NULL AND (LOWER(vehicle_type) = LOWER(?) OR vehicle_type IS NULL)"
+            "SELECT user_id, lat, lng FROM ride_drivers WHERE online = 1 AND lat IS NOT NULL AND lng IS NOT NULL AND last_seen >= DATE_SUB(NOW(), INTERVAL 30 MINUTE) AND (LOWER(vehicle_type) = LOWER(?) OR vehicle_type IS NULL)"
         );
         $nearbyDrivers->execute(array($vtype));
         foreach ($nearbyDrivers->fetchAll() as $rd) {
