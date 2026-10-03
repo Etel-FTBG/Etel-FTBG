@@ -2004,13 +2004,16 @@ switch ($action) {
                 $dp->execute(array($u['id']));
                 $driver = $dp->fetch();
                 $myVtype = ($driver && !empty($driver['vehicle_type'])) ? $driver['vehicle_type'] : 'bajaj';
+                require_once __DIR__ . '/lib/ride_fare.php';
+                rides_ensure_exclusions_table($pdo);
                 $nr = $pdo->prepare('SELECT r.id, r.pickup_lat, r.pickup_lng, r.pickup_address,
                     r.dropoff_address, r.distance_km, r.fare_final, r.expires_at,
                     u.name AS pname FROM rides r JOIN users u ON u.id=r.passenger_id
                     WHERE r.status=\'searching\' AND r.passenger_id!=?
                           AND (LOWER(r.vehicle_type) = LOWER(?) OR r.vehicle_type IS NULL)
+                          AND NOT EXISTS (SELECT 1 FROM ride_driver_exclusions x WHERE x.ride_id = r.id AND x.driver_id = ?)
                     ORDER BY r.id DESC LIMIT 20');
-                $nr->execute(array($u['id'], $myVtype));
+                $nr->execute(array($u['id'], $myVtype, $u['id']));
                 $requests = $nr->fetchAll();
 
                 $nearby = array();

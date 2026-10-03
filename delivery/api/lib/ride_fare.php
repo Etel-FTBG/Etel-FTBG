@@ -500,3 +500,21 @@ function rides_log_meter_shortfall($pdo, $rideId, $driverId, $floor) {
     }
 }
 }
+
+/* Drivers who cancelled a ride after accepting it. When the ride goes back to
+   'searching' for other drivers, these are filtered out of every request
+   list (polling, the SSE stream) and blocked from re-accepting, so the
+   driver who just walked away isn't rung again for the same ride. */
+if (!function_exists('rides_ensure_exclusions_table')) {
+function rides_ensure_exclusions_table($pdo) {
+    static $done = false;
+    if ($done) return;
+    $pdo->exec("CREATE TABLE IF NOT EXISTS ride_driver_exclusions (
+        ride_id INT NOT NULL,
+        driver_id INT NOT NULL,
+        created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (ride_id, driver_id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+    $done = true;
+}
+}

@@ -2329,6 +2329,7 @@ case 'driver_get_nearby_requests': {
        already implies. Falls back to 'bajaj' if the driver's own
        vehicle_type is somehow unset, matching book_ride's own default. */
     $myVtype = ($me && !empty($me['vehicle_type'])) ? $me['vehicle_type'] : 'bajaj';
+    rides_ensure_exclusions_table($pdo);
     $s = $pdo->prepare(
         "SELECT r.id, r.pickup_lat, r.pickup_lng, r.dropoff_lat, r.dropoff_lng,
                 r.pickup_address, r.dropoff_address, r.distance_km, r.fare_final,
@@ -2336,8 +2337,9 @@ case 'driver_get_nearby_requests': {
          FROM rides r JOIN users u ON u.id = r.passenger_id
          WHERE r.status='searching' AND r.passenger_id != ?
                AND (LOWER(r.vehicle_type) = LOWER(?) OR r.vehicle_type IS NULL)
+               AND NOT EXISTS (SELECT 1 FROM ride_driver_exclusions x WHERE x.ride_id = r.id AND x.driver_id = ?)
          ORDER BY r.id DESC LIMIT 30");
-    $s->execute(array($u['id'], $myVtype));
+    $s->execute(array($u['id'], $myVtype, $u['id']));
     $rows = $s->fetchAll();
 
     // Hex pre-filter: this candidate set is already small (status +
@@ -3189,10 +3191,12 @@ case 'driver_accept_ride': {
     $rid = isset($body['request_id']) ? intval($body['request_id']) : 0;
     if (!$rid) fail('request_id required');
     if (rides_get_active_for_driver($pdo, $u['id'])) fail('Finish your current ride first');
+    rides_ensure_exclusions_table($pdo);
     $n = $pdo->prepare(
         "UPDATE rides SET driver_id=?, status='accepted', assigned_at=NOW()
-         WHERE id=? AND status='searching'");
-    $n->execute(array($u['id'], $rid));
+         WHERE id=? AND status='searching'
+           AND NOT EXISTS (SELECT 1 FROM ride_driver_exclusions x WHERE x.ride_id = rides.id AND x.driver_id = ?)");
+    $n->execute(array($u['id'], $rid, $u['id']));
     if (!$n->rowCount()) fail('Ride was already taken or cancelled', 409);
     rides_driver_profile($pdo, $u['id']);
     $acceptedRide = rides_get_active_for_driver($pdo, $u['id']);
@@ -3618,13 +3622,43 @@ case 'driver_complete_ride': {
 
 case 'driver_cancel_ride': {
     $rid = isset($body['ride_id']) ? intval($body['ride_id']) : 0;
+    $s = $pdo->prepare("SELECT id, status, passenger_id, pickup_address FROM rides
+                        WHERE id=? AND driver_id=? AND status IN ('accepted','in_progress')");
+    $s->execute(array($rid, $u['id']));
+    $r = $s->fetch();
+    if (!$r) fail('Active ride not found');
+    /* Used to put EVERY cancelled ride back to 'searching' for new drivers.
+       Wrong in two cases, both seen live:
+       - a street hail (the driver created it for a rider standing next to
+         them): re-dispatching it showed the rider "Finding your driver..."
+         and rang the very driver who had just cancelled it;
+       - a trip already in progress (passenger on board): there is nothing to
+         re-dispatch mid-trip.
+       Both now end as 'cancelled', which the rider page already handles.
+       Only a normal app-booked ride cancelled before pickup goes back to
+       'searching', and the cancelling driver is excluded from seeing it. */
+    $isStreetHail = ($r['pickup_address'] === 'Street hail');
+    if ($isStreetHail || $r['status'] === 'in_progress') {
+        $pdo->prepare("UPDATE rides SET status='cancelled', cancelled_at=NOW() WHERE id=? AND driver_id=? AND status IN ('accepted','in_progress')")
+            ->execute(array($rid, $u['id']));
+        try {
+            etel_push_send($pdo, intval($r['passenger_id']), 'Ride cancelled',
+                'Your driver cancelled this ride.',
+                array('action' => 'ride_cancelled', 'ride_id' => $rid, 'url' => '/delivery/ride/'));
+        } catch (Exception $e) { /* push is best-effort */ }
+        ok(array('cancelled' => true, 'redispatched' => false));
+        break;
+    }
+    rides_ensure_exclusions_table($pdo);
+    $pdo->prepare("INSERT IGNORE INTO ride_driver_exclusions (ride_id, driver_id) VALUES (?, ?)")
+        ->execute(array($rid, $u['id']));
     $n = $pdo->prepare(
         "UPDATE rides SET status='searching', driver_id=NULL, assigned_at=NULL,
                 expires_at=DATE_ADD(NOW(), INTERVAL 10 MINUTE)
-         WHERE id=? AND driver_id=? AND status IN ('accepted','in_progress')");
+         WHERE id=? AND driver_id=? AND status='accepted'");
     $n->execute(array($rid, $u['id']));
     if (!$n->rowCount()) fail('Active ride not found');
-    ok(array('cancelled' => true));
+    ok(array('cancelled' => true, 'redispatched' => true));
     break;
 }
 
