@@ -14,8 +14,8 @@
 <link rel="icon" type="image/png" href="../icons/ride-icon-96.png">
 <link rel="apple-touch-icon" href="../icons/ride-apple-touch-icon.png">
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Outfit:wght@400;500;600;700;800;900&family=Noto+Sans+Ethiopic:wght@400;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="../css/ride-bundle.css?v=1.3">
-<link rel="stylesheet" href="../css/etel-rider-premium.css?v=20260927">
+<link rel="stylesheet" href="../css/ride-bundle.css?v=1.4">
+<link rel="stylesheet" href="../css/etel-rider-premium.css?v=20261003">
 <style>
 .etl-truck-layer,.etl-truck-layer-2,.etl-pin,.etl-pin-1,.etl-pin-2,.etl-pin-3,.etl-pin-4,.etl-speedlines{display:none!important}
 
@@ -34,7 +34,7 @@
 .ride-logo-wrap{display:flex;align-items:center;gap:10px}
 .ride-logo-box{width:40px;height:40px;border-radius:12px;overflow:hidden;
   border:1px solid rgba(212,175,55,.3);
-  box-shadow:0 4px 14px -4px rgba(212,175,55,.5);flex-shrink:0}
+  box-shadow:0 4px 14px -4px rgba(0,0,0,.45);flex-shrink:0}
 .ride-logo-box img{width:100%;height:100%;object-fit:cover;display:block}
 
 /* Vehicle type chips */
@@ -48,7 +48,7 @@
 .vtype-chip .vt-icon-img{width:32px;height:32px;object-fit:contain;filter:drop-shadow(0 2px 6px rgba(212,175,55,.35))}
 .vtype-chip .vt-name{font-size:11px;font-weight:700;color:var(--dim)}
 .vtype-chip.active .vt-name{color:var(--gold-lt)}
-.vtype-chip .vt-eta{font-size:10px;color:var(--dim);margin-top:1px}
+.vtype-chip .vt-eta{font-size:11px;color:var(--dim);margin-top:1px}
 .vtype-chip .vt-price{font-size:11px;font-weight:800;color:var(--gold-lt)}
 
 /* Searching: timer + counter */
@@ -82,7 +82,7 @@
   background:rgba(255,255,255,.03);font-family:var(--f);transition:all .18s}
 .action-bar-btn:active{transform:scale(.96)}
 .action-bar-btn .ab-icon{font-size:18px}
-.action-bar-btn .ab-label{font-size:10px;font-weight:700;color:var(--dim)}
+.action-bar-btn .ab-label{font-size:11px;font-weight:700;color:var(--dim)}
 .action-bar-btn.call-btn-ab{background:rgba(46,204,113,.12);border-color:rgba(46,204,113,.35)}
 .action-bar-btn.call-btn-ab .ab-label{color:#2ECC71}
 
@@ -143,19 +143,19 @@
   background:linear-gradient(135deg,var(--gold-br),var(--gold));
   border:3px solid rgba(212,175,55,.35);display:flex;align-items:center;justify-content:center;
   font-family:var(--f-d);font-size:26px;font-weight:800;color:#1a1206;
-  box-shadow:0 10px 26px -8px rgba(212,175,55,.55)}
+  box-shadow:0 10px 26px -8px rgba(0,0,0,.45)}
 .mp-avatar-dot{position:absolute;bottom:2px;right:2px;width:15px;height:15px;border-radius:50%;
   background:var(--green);border:3px solid var(--sheet)}
 .mp-name{font-family:var(--f-d);font-size:20px;font-weight:800;color:var(--text);text-align:center}
 .mp-phone{font-size:12px;color:var(--dim);text-align:center;margin-top:3px}
 .mp-badge{display:flex;align-items:center;gap:6px;justify-content:center;margin:10px auto 18px;
   width:fit-content;padding:5px 13px;border-radius:999px;background:rgba(212,175,55,.12);
-  border:1px solid rgba(212,175,55,.3);color:var(--gold-lt);font-size:10.5px;font-weight:700;letter-spacing:.02em}
+  border:1px solid rgba(212,175,55,.3);color:var(--gold-lt);font-size:11px;font-weight:700;letter-spacing:.02em}
 .mp-stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px}
 .mp-stat{background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:14px;
   padding:12px 8px;text-align:center}
 .mp-stat-val{font-family:var(--f-d);font-size:16px;font-weight:800;color:var(--gold-lt)}
-.mp-stat-lbl{font-size:9.5px;color:var(--dim);text-transform:uppercase;letter-spacing:.05em;margin-top:2px}
+.mp-stat-lbl{font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:.05em;margin-top:2px}
 .mp-section{background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:16px;
   overflow:hidden;margin-bottom:12px}
 .mp-row{display:flex;align-items:center;gap:12px;padding:14px 16px;
@@ -169,7 +169,7 @@
 .mp-logout{width:100%;padding:13px;background:rgba(230,57,70,.12);
   border:1px solid rgba(230,57,70,.35);color:#E63946;border-radius:12px;
   font-size:13.5px;font-weight:700;cursor:pointer;font-family:var(--f)}
-.mp-version{text-align:center;font-size:10.5px;color:rgba(255,255,255,.3);margin-top:14px}
+.mp-version{text-align:center;font-size:11px;color:rgba(255,255,255,.3);margin-top:14px}
 
 /* Cancel reason chips */
 .reason-section{margin-bottom:14px}
@@ -202,7 +202,7 @@
   position:relative;width:100%;height:56px;border-radius:15px;
   background:rgba(212,175,55,.08);border:1.5px solid rgba(212,175,55,.3);
   overflow:hidden;user-select:none;cursor:pointer;
-  box-shadow:0 14px 32px -14px rgba(212,175,55,.5);
+  box-shadow:0 14px 32px -14px rgba(0,0,0,.45);
 }
 .slide-book-label{
   position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
@@ -217,7 +217,7 @@
   background:linear-gradient(135deg,var(--gold-br),var(--gold-lt),var(--gold));
   display:flex;align-items:center;justify-content:center;
   font-size:20px;color:#1a1206;
-  box-shadow:0 8px 20px -6px rgba(212,175,55,.8);
+  box-shadow:0 8px 20px -6px rgba(0,0,0,.45);
   transition:transform .08s;touch-action:none;
 }
 .slide-book-fill{
@@ -235,10 +235,10 @@
   background:radial-gradient(circle,rgba(212,175,55,.28) 0%,rgba(168,134,10,.12) 100%);
   color:#FFD700;font-size:18px;display:flex;align-items:center;justify-content:center;
   cursor:pointer;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
-  box-shadow:0 4px 16px -4px rgba(212,175,55,.35);
+  box-shadow:0 4px 16px -4px rgba(0,0,0,.45);
   transition:transform .2s,box-shadow .2s;
 }
-#ride-map-expand-btn:hover{transform:scale(1.08);box-shadow:0 4px 22px -4px rgba(212,175,55,.55)}
+#ride-map-expand-btn:hover{transform:scale(1.08);box-shadow:0 4px 22px -4px rgba(0,0,0,.45)}
 #ride-map-expand-btn:active{transform:scale(.94)}
 </style>
     <!-- etel-phase5.css, etel-design-v4.css, etel-responsive.css now folded into css/ride-bundle.css above -->
@@ -304,10 +304,10 @@
        always-visible control - not just a restyle of that bar. -->
   <button type="button" id="sheet-toggle-btn" class="sheet-toggle-btn" onclick="toggleSheet()" aria-label="Expand or collapse ride panel">▼</button>
   <div class="ride-tabs" style="display:flex;gap:0;overflow-x:auto;scrollbar-width:none">
-    <button class="ride-tab" data-tab="book" onclick="switchRideTab('book')">🚗 Book</button>
-    <button class="ride-tab" data-tab="hail" onclick="switchRideTab('hail')">🚖 Street Hail</button>
-    <button class="ride-tab" data-tab="active" onclick="switchRideTab('active')">📍 Active</button>
-    <button class="ride-tab" data-tab="history" onclick="switchRideTab('history')">📋 History</button>
+    <button class="ride-tab" data-tab="book" onclick="switchRideTab('book')"><span class="ei" data-ei="car" data-size="20"></span><span class="ei-label">Book</span></button>
+    <button class="ride-tab" data-tab="hail" onclick="switchRideTab('hail')"><span class="ei" data-ei="hail" data-size="20"></span><span class="ei-label">Street Hail</span></button>
+    <button class="ride-tab" data-tab="active" onclick="switchRideTab('active')"><span class="ei" data-ei="pin" data-size="20"></span><span class="ei-label">Active</span></button>
+    <button class="ride-tab" data-tab="history" onclick="switchRideTab('history')"><span class="ei" data-ei="history" data-size="20"></span><span class="ei-label">History</span></button>
   </div>
 
   <!-- VIEW: BOOK -->
@@ -316,7 +316,7 @@
     <!-- Vehicle type selector -->
     <div class="vtype-row" id="vtype-row">
       <div class="vtype-chip active" data-vtype="bajaj" onclick="selectVtype(this,'bajaj')">
-        <div class="vt-icon">🛺</div>
+        <div class="vt-icon"><span class="ei" data-ei="vehicle:bajaj" data-size="30"></span></div>
         <div class="vt-name">Bajaj</div>
         <div class="vt-eta">~2 min</div>
         <div class="vt-price">fr ETB 120</div>
@@ -328,7 +328,7 @@
         <div class="vt-price">fr ETB 100</div>
       </div>
       <div class="vtype-chip" data-vtype="car" onclick="selectVtype(this,'car')">
-        <div class="vt-icon">🚗</div>
+        <div class="vt-icon"><span class="ei" data-ei="vehicle:car" data-size="30"></span></div>
         <div class="vt-name">Car</div>
         <div class="vt-eta">~3 min</div>
         <div class="vt-price">fr ETB 150</div>
@@ -344,13 +344,13 @@
     <!-- Location inputs -->
     <div class="loc-card">
       <div class="loc-row">
-        <div class="loc-icon pickup">📍</div>
+        <div class="loc-icon pickup"><span class="ei" data-ei="pin" data-size="18"></span></div>
         <input id="pickup-input" class="loc-input" type="text" placeholder="Pickup — or tap the map" autocomplete="off"/>
-        <button type="button" onclick="useMyCurrentLocationForPickup(this)" title="Use my current location" style="flex-shrink:0;width:34px;height:34px;border-radius:11px;background:rgba(229,199,107,.12);border:1px solid rgba(229,199,107,.3);color:var(--gold-lt);font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center">🎯</button>
+        <button type="button" onclick="useMyCurrentLocationForPickup(this)" title="Use my current location" style="flex-shrink:0;width:34px;height:34px;border-radius:11px;background:rgba(229,199,107,.12);border:1px solid rgba(229,199,107,.3);color:var(--gold-lt);font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center"><span data-ei="locate" data-size="20"></span></button>
         <div class="loc-line"></div>
       </div>
       <div class="loc-row">
-        <div class="loc-icon dropoff">🏁</div>
+        <div class="loc-icon dropoff"><span class="ei" data-ei="flag" data-size="18"></span></div>
         <input id="dropoff-input" class="loc-input" type="text" placeholder="Where to?" autocomplete="off"/>
       </div>
     </div>
@@ -386,10 +386,10 @@
         <div class="fare-label">Estimated Fare</div>
         <div class="fare-amount" id="fare-amount">ETB —</div>
         <div class="fare-dist" id="fare-dist">—</div>
-        <span id="fare-surge-badge" style="display:none;align-items:center;gap:4px;background:rgba(255,152,0,.15);border:1px solid rgba(255,152,0,.4);color:#FFB74D;font-size:10.5px;font-weight:700;padding:3px 9px;border-radius:999px;margin-top:6px">⚡ Peak-hour pricing</span>
-        <div style="font-size:10.5px;color:var(--dim);margin-top:3px;max-width:220px;line-height:1.4">Final fare is based on the actual distance your driver travels, from pickup to drop-off — this is just an estimate.</div>
+        <span id="fare-surge-badge" style="display:none;align-items:center;gap:4px;background:rgba(255,152,0,.15);border:1px solid rgba(255,152,0,.4);color:#FFB74D;font-size:11px;font-weight:700;padding:3px 9px;border-radius:999px;margin-top:6px">⚡ Peak-hour pricing</span>
+        <div style="font-size:11px;color:var(--dim);margin-top:3px;max-width:220px;line-height:1.4">Final fare is based on the actual distance your driver travels, from pickup to drop-off — this is just an estimate.</div>
       </div>
-      <span class="fare-type-badge" id="fare-type-badge">🛺 Bajaj</span>
+      <span class="fare-type-badge" id="fare-type-badge">Bajaj</span>
     </div>
 
     <!-- Payment row -->
@@ -421,10 +421,10 @@
     <div class="arriving-sub">This usually takes a few seconds</div>
 
     <div class="nearby-cars">
-      <div class="nc n1">🛺</div>
-      <div class="nc n2">🛺</div>
-      <div class="nc n3">🛺</div>
-      <div class="nc n4">🛺</div>
+      <div class="nc n1"><span class="ei" data-ei="vehicle:bajaj" data-size="22"></span></div>
+      <div class="nc n2"><span class="ei" data-ei="vehicle:bajaj" data-size="22"></span></div>
+      <div class="nc n3"><span class="ei" data-ei="vehicle:bajaj" data-size="22"></span></div>
+      <div class="nc n4"><span class="ei" data-ei="vehicle:bajaj" data-size="22"></span></div>
     </div>
 
     <div class="searching-timer" id="searching-timer">00:00</div>
@@ -477,13 +477,13 @@
       <!-- Action bar: Call / Chat / Issues -->
       <div class="action-bar">
         <button class="action-bar-btn call-btn-ab" id="drv-call-btn" onclick="callDriver()">
-          <span class="ab-icon">📞</span><span class="ab-label">Call</span>
+          <span class="ab-icon"><span class="ei" data-ei="phone" data-size="20"></span></span><span class="ab-label">Call</span>
         </button>
         <button class="action-bar-btn" onclick="RideChat.open(RIDE.currentRideId || RIDE.currentRequestId, 'passenger')">
-          <span class="ab-icon">💬</span><span class="ab-label">Chat</span>
+          <span class="ab-icon"><span class="ei" data-ei="chat" data-size="20"></span></span><span class="ab-label">Chat</span>
         </button>
         <button class="action-bar-btn" onclick="showRideIssues()">
-          <span class="ab-icon">⚠️</span><span class="ab-label">Issues</span>
+          <span class="ab-icon"><span class="ei" data-ei="alert" data-size="20"></span></span><span class="ab-label">Issues</span>
         </button>
       </div>
     </div>
@@ -541,7 +541,7 @@
 
   <!-- VIEW: STREET HAIL -->
   <div class="ride-view" id="view-hail">
-    <div class="arriving-header" style="margin-bottom:6px">🚖 Street Hail</div>
+    <div class="arriving-header" style="margin-bottom:6px">Street Hail</div>
     <div class="arriving-sub" style="margin-bottom:18px">A driver will link you directly — no booking needed</div>
 
     <div style="background:rgba(212,175,55,.08);border:1.5px solid rgba(212,175,55,.3);border-radius:16px;padding:18px;margin-bottom:14px">
@@ -555,7 +555,7 @@
     </div>
 
     <div id="hail-status" style="text-align:center;padding:20px">
-      <div style="font-size:40px;margin-bottom:10px">🚖</div>
+      <div style="margin-bottom:10px;color:var(--gold-lt)"><span class="ei" data-ei="hail" data-size="44"></span></div>
       <div style="font-size:14px;font-weight:700;color:var(--text)">Waiting for driver to link your ride</div>
       <div style="font-size:12px;color:var(--dim);margin-top:6px">This page checks every 5 seconds</div>
       <div style="width:40px;height:4px;border-radius:2px;background:rgba(212,175,55,.2);margin:14px auto 0">
@@ -979,7 +979,7 @@ function loadRideAddresses() {
       return '<div class="ra-row">' +
         '<div class="ra-row-icon">' + (a.is_default ? '🏠' : '📍') + '</div>' +
         '<div style="flex:1;min-width:0">' +
-        '<div style="font-weight:700;font-size:13.5px;color:var(--text)">' + a.label + (a.is_default ? ' <span style="font-size:10px;color:var(--gold-lt)">· DEFAULT</span>' : '') + '</div>' +
+        '<div style="font-weight:700;font-size:13.5px;color:var(--text)">' + a.label + (a.is_default ? ' <span style="font-size:11px;color:var(--gold-lt)">· DEFAULT</span>' : '') + '</div>' +
         '<div style="font-size:12.5px;color:var(--dim);margin-top:2px">' + a.address_line + '</div>' +
         (a.zone ? '<div style="font-size:11px;color:var(--dim);opacity:.7;margin-top:2px">' + a.zone + '</div>' : '') +
         '</div>' +
@@ -1253,7 +1253,7 @@ function loadRideMessages() {
         '<div style="font-size:18px;flex-shrink:0">' + (senderIcon[m.sender] || '💬') + '</div>' +
         '<div style="flex:1;min-width:0">' +
         '<div style="display:flex;justify-content:space-between;gap:8px"><div style="font-weight:700;font-size:12.5px;color:var(--text)">' + (m.subject || 'Message') + '</div>' +
-        '<div style="font-size:10.5px;color:var(--dim);white-space:nowrap">' + _rideFmtDate(m.created_at) + '</div></div>' +
+        '<div style="font-size:11px;color:var(--dim);white-space:nowrap">' + _rideFmtDate(m.created_at) + '</div></div>' +
         '<div style="font-size:12.5px;color:var(--dim);margin-top:2px">' + (m.body || '') + '</div></div>' +
         '</div>';
     }).join('');
@@ -1441,9 +1441,9 @@ function useMyCurrentLocationForPickup(btnEl) {
      admin Releases panel instead. -->
 <script>window.ETEL_APP = 'ride';</script>
 <script src="../js/release-loader.js"></script>
-<script src="../js/ride-extra-features.js?v=1.0" defer></script>
+<script src="../js/ride-extra-features.js?v=1.1" defer></script>
 <script src="../js/ride-fare-self-heal.js?v=1.0" defer></script>
-<script src="../js/sos-button.js?v=1.1" defer></script>
+<script src="../js/sos-button.js?v=1.2" defer></script>
 <script src="../js/ride-hex-search-overlay.js?v=1.0" defer></script>
 <script>
   window.gm_authFailure = function () {

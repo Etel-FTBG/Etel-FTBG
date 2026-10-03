@@ -108,9 +108,10 @@
     var btn = document.createElement("button");
     btn.id = "etel-share-trip-btn";
     btn.className = "action-bar-btn";
-    btn.innerHTML = '<span class="ab-icon">📍</span><span class="ab-label">Share</span>';
+    btn.innerHTML = '<span class="ab-icon" data-ei="share" data-size="20"></span><span class="ab-label">Share</span>';
     btn.onclick = window.shareCurrentTrip;
     bar.appendChild(btn);
+    if (window.EtelUI) EtelUI.hydrate(btn); // else etel-ui.js hydrates on etel:bundle-ready
   }
 
   /* ---------- Scheduled rides ---------- */
