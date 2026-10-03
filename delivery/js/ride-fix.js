@@ -42,8 +42,7 @@
         center:{lat:7.0621,lng:38.4761}, zoom:14,
         mapId:'ETEL_RIDE_MAP', backgroundColor:'#10101c',
         disableDefaultUI:false, mapTypeId:'roadmap',
-        mapTypeControl:true, zoomControl:true, fullscreenControl:true,
-        mapTypeControlOptions:{position:google.maps.ControlPosition.TOP_RIGHT,mapTypeIds:['roadmap','hybrid']}
+        mapTypeControl:false, zoomControl:false, fullscreenControl:false, streetViewControl:false
       });
       RIDE.directionsService  = new google.maps.DirectionsService();
       RIDE.directionsRenderer = new google.maps.DirectionsRenderer({suppressMarkers:true,
@@ -128,8 +127,7 @@
     function enhance(){
       try{
         /* styles: this used to reset to null, wiping the carbon/gold map style set in ride.js */
-        RIDE.map.setOptions({styles:window.EtelUI?EtelUI.mapStyles(false):null,disableDefaultUI:false,zoomControl:true,fullscreenControl:true,mapTypeControl:true,
-          mapTypeControlOptions:{position:google.maps.ControlPosition.TOP_RIGHT,mapTypeIds:['roadmap','hybrid']}});
+        RIDE.map.setOptions({styles:window.EtelUI?EtelUI.mapStyles(false):null,disableDefaultUI:false,zoomControl:false,fullscreenControl:false,mapTypeControl:false,streetViewControl:false});
         RIDE.map.setMapTypeId('roadmap');
       }catch(e){}
       _geolocateUser();
