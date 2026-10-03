@@ -212,6 +212,7 @@ function rides_etelid_lookup($identifier) {
    switch/default and unconditional require_auth() call below would
    break a request meant for a different controller. */
 require_once __DIR__ . '/../lib/ride_fare.php';
+require_once __DIR__ . '/../lib/ride_sweeper.php';
 
 function rides_driver_profile($pdo, $uid) {
     $pdo->prepare("INSERT IGNORE INTO ride_drivers (user_id, online, last_seen) VALUES (?, 0, NOW())")
@@ -966,6 +967,8 @@ case 'ride_status': {
 }
 
 case 'my_active_ride': {
+    // Close stuck trips (at most one sweep per 5 min across all requests; no cron needed).
+    rides_sweep_maybe($pdo);
     $s = $pdo->prepare(
         "SELECT r.*, r.vehicle_type AS ride_booked_vehicle_type,
                 d.name AS driver_name, d.phone AS driver_phone,
@@ -1516,6 +1519,20 @@ case 'driver_update_location': {
                     ->execute(array($r['wait_seconds_total'], $r['id']));
                 $waitAutoStopped = true;
             }
+            // A wait clock that has already run past the billable cap earns
+            // nothing more, so stop it (the driver sees it stop) instead of
+            // leaving it ticking for hours.
+            $waitCapReached = false;
+            $capMin = rides_wait_cap_minutes($pdo);
+            if ($capMin > 0 && intval($r['wait_active']) === 1 && rides_current_wait_minutes($r) >= $capMin) {
+                $elapsedCap = $r['wait_started_at'] ? max(0, time() - strtotime($r['wait_started_at'])) : 0;
+                $r['wait_seconds_total'] = intval($r['wait_seconds_total']) + $elapsedCap;
+                $r['wait_active'] = 0;
+                $r['wait_started_at'] = null;
+                $pdo->prepare("UPDATE rides SET wait_active=0, wait_started_at=NULL, wait_seconds_total=? WHERE id=?")
+                    ->execute(array($r['wait_seconds_total'], $r['id']));
+                $waitCapReached = true;
+            }
             $waitMinutes = rides_current_wait_minutes($r);
             $rideVtype = !empty($r['vehicle_type']) ? $r['vehicle_type'] : rides_driver_own_vtype($pdo, $u['id']);
 
@@ -1547,6 +1564,7 @@ case 'driver_update_location': {
                                'wait_active' => (bool) $r['wait_active'],
                                'wait_minutes' => round($waitMinutes, 2),
                                'wait_auto_stopped' => $waitAutoStopped,
+                               'wait_cap_reached' => $waitCapReached,
                                'low_accuracy' => true), rides_fare_breakdown_for_ui($liveFareCalc));
             } else {
                 $add = 0;
@@ -1609,7 +1627,8 @@ case 'driver_update_location': {
                                'meter_fare' => $liveFareCalc['fare'],
                                'wait_active' => (bool) $r['wait_active'],
                                'wait_minutes' => round($waitMinutes, 2),
-                               'wait_auto_stopped' => $waitAutoStopped), rides_fare_breakdown_for_ui($liveFareCalc));
+                               'wait_auto_stopped' => $waitAutoStopped,
+                               'wait_cap_reached' => $waitCapReached), rides_fare_breakdown_for_ui($liveFareCalc));
             }
         }
     } catch (Exception $e) { error_log('[ETEL][meter] ' . $e->getMessage()); }
@@ -2416,6 +2435,8 @@ case 'driver_get_goal_tiers': {
 }
 
 case 'driver_get_profile': {
+    // Close stuck trips (at most one sweep per 5 min across all requests; no cron needed).
+    rides_sweep_maybe($pdo);
     $d = rides_driver_profile($pdo, $u['id']);
     $usr = $pdo->prepare("SELECT name, phone FROM users WHERE id=?");
     $usr->execute(array($u['id']));
@@ -3472,7 +3493,9 @@ case 'driver_arrived': {
         $km = floatval($r['distance_km']);
         $baseFare = floatval($r['fare_final']) > 0 ? floatval($r['fare_final']) : rides_calc_fare_simple($pdo, $km);
         $waitRule = rides_fare_rule($pdo, $vtype);
-        $waitEtb = round($waitRule['wait_rate_per_min'] * $waitMinutes, 2);
+        $waitCapMin = rides_wait_cap_minutes($pdo);
+        $billableWait = ($waitCapMin > 0) ? min($waitMinutes, $waitCapMin) : $waitMinutes;
+        $waitEtb = round($waitRule['wait_rate_per_min'] * $billableWait, 2);
         $fare = $baseFare + $waitEtb;
         // No live surge/base/distance split available in this fallback
         // path (booking-time estimate already has surge baked in, if
