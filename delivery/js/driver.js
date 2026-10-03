@@ -401,6 +401,13 @@ function _updateLowAccuracyBadge(isLow,accuracyMeters){
   }
 }
 
+/* The drawn carbon/gold badge (the vehicle photos under img/vehicles are not
+   shipped with the app, so a photo marker can silently be invisible). */
+function _selfMarkerIcon() {
+    if (window.EtelUI) return EtelUI.vehicleMarker((DRV.driverProfile && DRV.driverProfile.vehicle_type) || 'bajaj', { size: 48 });
+    return { url: _driverVtypeImage(), scaledSize: new google.maps.Size(52, 52), anchor: new google.maps.Point(26, 26) };
+}
+
 function updateSelfMarker() {
     if (!DRV.currentLat || !DRV.map) return;
     var pos = { lat: DRV.currentLat, lng: DRV.currentLng };
@@ -417,10 +424,13 @@ function updateSelfMarker() {
         // dependent on a follow-up call landing at the right time.
         DRV.selfMarker = new google.maps.Marker({
             position: pos, map: DRV.map,
-            icon: { url: _driverVtypeImage(), scaledSize: new google.maps.Size(52, 52), anchor: new google.maps.Point(26, 26) },
+            icon: _selfMarkerIcon(),
             title: 'You'
         });
         DRV.map.setCenter(pos);
+    } else if (window.EtelUI && EtelUI.glideMarker) {
+        // Ease between GPS fixes and turn the badge to the heading.
+        EtelUI.glideMarker(DRV.selfMarker, pos, { type: (DRV.driverProfile && DRV.driverProfile.vehicle_type) || 'bajaj', size: 48, duration: 1200 });
     } else {
         DRV.selfMarker.setPosition(pos);
     }
@@ -3537,7 +3547,7 @@ function openVehicleInfoEdit(){
   loadVehicleTypeOptionsFor("vi-vtype-grid",VI.vtype,function(vt){VI.vtype=vt});
 }
 
-function refreshSelfMarkerIcon(){if(DRV.selfMarker)DRV.selfMarker.setIcon({url:_driverVtypeImage(),scaledSize:new google.maps.Size(52,52),anchor:new google.maps.Point(26,26)})}
+function refreshSelfMarkerIcon(){if(DRV.selfMarker){if(DRV.selfMarker.__eg){DRV.selfMarker.__eg.bucket=null;DRV.selfMarker.__eg.type=null}DRV.selfMarker.setIcon(_selfMarkerIcon())}}
 
 function saveVehicleInfoEdit(){
   var btn=document.getElementById("vi-save-btn");

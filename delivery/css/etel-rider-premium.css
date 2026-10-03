@@ -157,3 +157,48 @@ body.dark-page{font-family:'Outfit',system-ui,sans-serif!important;background:ra
 .action-bar-btn .ab-label{font-size:12px!important;color:#C4C6D0!important}
 .action-bar-btn.call-btn-ab .ab-icon,.action-bar-btn.call-btn-ab .ab-label{color:#35D17C!important}
 .vt-icon .ei,.nc .ei{color:var(--r-gold2,#E5C76B)}
+
+/* ── Finish pass: one voice for labels, calmer fields, quiet chrome ──
+   The shared gold stylesheet sets every *-label, label and *-badge in
+   uppercase monospace. Mono is for codes and measurements; buttons, tabs
+   and captions read as the interface voice, so give them back the sans. */
+.ride-sheet [class*="-label"],.ride-tabs [class*="-label"],.ride-subsheet [class*="-label"],
+.ride-sheet label,.ride-subsheet label,
+.ride-sheet [class*="-badge"],.ride-sheet [class*="-chip"],.ride-sheet [class*="-status"]{
+  font-family:'Outfit',system-ui,sans-serif!important;text-transform:none!important;letter-spacing:.01em!important}
+.ride-sheet label,.ride-subsheet label{font-size:12px!important;font-weight:600!important;color:var(--r-muted)!important}
+.ride-sheet [class*="-amount"],.ride-sheet [class*="-price"],.ride-sheet [class*="-total"],.ride-sheet [class*="-eta"],
+.searching-timer{font-variant-numeric:tabular-nums}
+/* The plate stays monospace: it is a code. */
+.driver-plate,.vehicle-plate,[class*="plate"]{font-family:var(--g-fm,'JetBrains Mono',monospace)!important;letter-spacing:.08em!important}
+/* Address fields: the row is already the field, so drop the pill drawn
+   inside it (card inside card inside pill). */
+.loc-row .loc-input{background:transparent!important;border:0!important;box-shadow:none!important;border-radius:0!important;padding:0 2px!important;min-height:40px}
+.loc-row .loc-input:focus{background:transparent!important;box-shadow:none!important}
+.loc-row:focus-within{background:linear-gradient(90deg,rgba(212,175,55,.06),transparent);border-radius:12px}
+/* The decorative grab bar is the handle; the full-width button over it only
+   supplies the tap target, so the arrow glyph goes. */
+.sheet-toggle-btn{font-size:0!important;color:transparent!important;min-height:26px!important}
+/* Secondary link under the arrival headline */
+button[title="Why did my ride reminder stop?"]{opacity:.7!important;font-weight:500!important;font-size:12px!important;
+  text-decoration:underline;text-underline-offset:3px;text-decoration-color:rgba(255,255,255,.25);color:var(--r-muted)!important;
+  display:block;margin:2px auto 12px!important}
+.arriving-header,.sheet-title,#book-step-title{text-wrap:balance}
+.arriving-header{font-size:26px!important;line-height:1.15!important;letter-spacing:-.01em!important}
+/* Headline rhythm: more air above a heading than below it */
+.sheet-title{margin:14px 0 10px!important}
+.driver-card .driver-name{font-size:18px!important}
+/* Motion: one calm entrance for a view, none for reduced-motion users */
+@keyframes etel-rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.ride-view.active,.ride-view[style*="display: block"]{animation:etel-rise .32s cubic-bezier(.22,1,.36,1) both}
+@media (prefers-reduced-motion:reduce){.ride-view.active,.ride-view[style*="display: block"]{animation:none}}
+/* Rating stars: the earlier drop-shadow rule replaced the dim filter, which
+   left unselected stars solid black on a black sheet. Dim until chosen. */
+.star-btn{filter:none!important;color:#3F4150;transition:color .15s,transform .15s}
+.star-btn.active{color:#F4D56A;filter:drop-shadow(0 4px 10px rgba(212,175,55,.35))!important}
+/* Address fields (needs the specificity to beat the global input rule) */
+.loc-row input.loc-input:not([type=radio]):not([type=checkbox]):not([type=range]){
+  background:transparent!important;border:0!important;box-shadow:none!important;border-radius:0!important;padding:0 2px!important}
+.loc-row input.loc-input:not([type=radio]):not([type=checkbox]):not([type=range]):focus{background:transparent!important;box-shadow:none!important}
+/* Tighter gap between the grab bar and the first heading */
+.sheet-toggle-btn{min-height:16px!important;padding:0!important;margin:-6px 0 0!important}
