@@ -257,8 +257,7 @@
             fetch(apiBase(), { method: 'POST', headers: authHeader(),
               body: JSON.stringify({ action: 'cancel_ride', id: rid, reason: 'Customer cancelled' }) })
               .catch(function () {});
-            if (hdr) hdr.textContent = 'No Active Ride';
-            if (sub) sub.textContent = 'Book a new ride from the Book tab';
+            _showNoActiveRide();
             return;
           }
           RIDE.currentRideId = rid;
@@ -272,12 +271,10 @@
           } else if (st === 'completed') {
             showView('rating');
           } else {
-            if (hdr) hdr.textContent = 'No Active Ride';
-            if (sub) sub.textContent = 'Book a new ride from the Book tab';
+            _showNoActiveRide();
           }
         } else {
-          if (hdr) hdr.textContent = 'No Active Ride';
-          if (sub) sub.textContent = 'Book a new ride from the Book tab';
+          _showNoActiveRide();
         }
       })
       .catch(function () {
@@ -820,7 +817,38 @@
       .catch(function() {});
   }
 
+  /* The Active view holds the driver card, ETA/fare rows and the Cancel
+     button all in one container. When the server says there is no ride, only
+     the header text used to change, so the last driver's card stayed on
+     screen looking like a live trip (seen after a driver cancelled).
+     This hides everything but the header when there is no ride and brings it
+     back the next time a ride is rendered. */
+  function _setActiveViewHasRide(has) {
+    var view = document.getElementById('view-active');
+    if (!view) return;
+    var keep = { 'arriving-header': 1, 'arriving-sub': 1, 'ride-offline-badge': 1 };
+    Array.prototype.forEach.call(view.children, function (el) {
+      if (keep[el.id]) return;
+      el.style.display = has ? '' : 'none';
+    });
+  }
+
+  function _showNoActiveRide() {
+    RIDE.currentRideId = null;
+    RIDE.currentRequestId = null;
+    RIDE.activeRideData = null;
+    stopPolling();
+    RIDE._lastReminderStatus = null;
+    try { _clearRideReminder(); } catch (e) {}
+    _setActiveViewHasRide(false);
+    var hdr = document.getElementById('arriving-header');
+    var sub = document.getElementById('arriving-sub');
+    if (hdr) hdr.textContent = 'No Active Ride';
+    if (sub) sub.textContent = 'Book a new ride from the Book tab';
+  }
+
   function renderActiveRide(rd) {
+    _setActiveViewHasRide(true);
     var status = rd.status || '';
     var isArriving = (status === 'accepted');
     var isMoving   = (status === 'in_progress' || status === 'active');
