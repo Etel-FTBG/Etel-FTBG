@@ -137,8 +137,41 @@
     /* ---- Vehicle marker ---------------------------------------------------
        A 44px carbon badge with a gold ring and the vehicle glyph in gold.
        opts.ring overrides the ring colour (e.g. the selected driver). */
+    /* ---- Blue car (Qute) ---------------------------------------------------
+       A top-down car in blue instead of the gold badge, so Qute drivers read
+       as their own thing on the map. It turns with the heading (nose up when
+       there is none yet), so no separate chevron is needed. */
+    var BLUE = "#3B8CFF";
+    function isQute(type) { return /qute/i.test(String(type || "")); }
+    function blueCarMarker(opts) {
+        var size = opts.size || 44;
+        var hasHeading = typeof opts.heading === "number" && isFinite(opts.heading);
+        var rot = hasHeading ? Math.round(opts.heading) : 0;
+        var box = Math.round(size * 1.25);
+        var markup =
+            '<svg xmlns="http://www.w3.org/2000/svg" width="' + box + '" height="' + box + '" viewBox="0 0 64 64">' +
+            '<g transform="rotate(' + rot + ' 32 32)">' +
+            '<ellipse cx="32" cy="35" rx="15" ry="26" fill="rgba(0,0,0,.28)"/>' +
+            '<rect x="19" y="6" width="26" height="52" rx="11" fill="' + BLUE + '" stroke="#0A1B3D" stroke-width="2.2"/>' +
+            '<path d="M23.5 20.5c2.6-2.4 14.4-2.4 17 0l-1.6 7.2h-13.8z" fill="#0A1B3D"/>' +
+            '<rect x="24" y="31" width="16" height="9" rx="2.5" fill="#79B5FF"/>' +
+            '<path d="M24.5 44h15l1.2 5.4c-4.6 1.6-12.8 1.6-17.4 0z" fill="#0A1B3D"/>' +
+            '<rect x="14.5" y="22" width="5" height="7" rx="2.5" fill="#1F6FE0" stroke="#0A1B3D" stroke-width="1.4"/>' +
+            '<rect x="44.5" y="22" width="5" height="7" rx="2.5" fill="#1F6FE0" stroke="#0A1B3D" stroke-width="1.4"/>' +
+            '<rect x="22.5" y="8.2" width="5" height="2.6" rx="1.3" fill="#FFE9A8"/><rect x="36.5" y="8.2" width="5" height="2.6" rx="1.3" fill="#FFE9A8"/>' +
+            '<rect x="23" y="53.6" width="5" height="2.2" rx="1.1" fill="#FF5A5F"/><rect x="36" y="53.6" width="5" height="2.2" rx="1.1" fill="#FF5A5F"/>' +
+            '</g></svg>';
+        var out = { url: "data:image/svg+xml;charset=UTF-8," + encodeURIComponent(markup) };
+        if (window.google && google.maps && google.maps.Size) {
+            out.scaledSize = new google.maps.Size(box, box);
+            out.anchor = new google.maps.Point(box / 2, box / 2);
+        }
+        return out;
+    }
+
     function vehicleMarker(type, opts) {
         opts = opts || {};
+        if (isQute(type)) return blueCarMarker(opts);
         var ring = opts.ring || GOLD;
         var size = opts.size || 44;
         var inner = P[norm(type)];
@@ -214,7 +247,7 @@
             var bucket = (Math.round(g.h / 15) * 15) % 360;
             if (g.bucket !== bucket || g.type !== opts.type) {
                 g.bucket = bucket; g.type = opts.type;
-                var key = norm(opts.type) + "|" + bucket + "|" + (opts.size || 44) + "|" + (opts.ring || "");
+                var key = (isQute(opts.type) ? "qute" : norm(opts.type)) + "|" + bucket + "|" + (opts.size || 44) + "|" + (opts.ring || "");
                 marker.setIcon(headingIcons[key] || (headingIcons[key] = vehicleMarker(opts.type, { heading: bucket, size: opts.size, ring: opts.ring })));
             }
         }
