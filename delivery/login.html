@@ -200,8 +200,7 @@ body { font-family:var(--ff-b); background:#0a0a14; overflow:hidden; }
 }
 .del-mock-card::before {
   content:''; position:absolute; top:0; left:0; right:0; height:3px;
-  background:linear-gradient(90deg,#ff6b6b,#ffd93d,#6bcb77,#4d96ff,#ff6b6b,#ffd93d);
-  background-size:300%; animation:holo 3s linear infinite;
+  background:linear-gradient(90deg,#8a6a12,#d4af37,#f2cc6b,#d4af37,#8a6a12);
 }
 .del-mock-inner { position:absolute; top:16px; left:14px; right:14px; }
 .del-mock-label { font-family:var(--ff-m); font-size:7px; letter-spacing:1.5px; text-transform:uppercase; color:rgba(253,246,216,.45); }
@@ -270,8 +269,7 @@ body { font-family:var(--ff-b); background:#0a0a14; overflow:hidden; }
 }
 .del-auth-holo {
   height:3px;
-  background:linear-gradient(90deg,#ff6b6b,#ffd93d,#6bcb77,#4d96ff,#ff6b6b,#ffd93d,#6bcb77,#4d96ff);
-  background-size:300%; animation:holo 3s linear infinite;
+  background:linear-gradient(90deg,#8a6a12,#d4af37,#f2cc6b,#d4af37,#8a6a12);
 }
 .del-auth-head {
   padding:26px 22px 16px;
@@ -407,16 +405,12 @@ body { font-family:var(--ff-b); background:#0a0a14; overflow:hidden; }
 /* Forgot link */
 .del-forgot-wrap { text-align:right; margin-bottom:16px; }
 .del-forgot-link {
-  display:inline-block;
-  padding:6px 14px; border-radius:20px;
-  background:linear-gradient(135deg,var(--g9) 0%,var(--g7) 25%,var(--g5) 50%,var(--g4) 65%,var(--g3) 78%,var(--g4) 90%,var(--g5) 100%);
-  background-size:200%;
-  font-family:var(--ff-d); font-size:12px; font-weight:800; letter-spacing:.3px;
-  color:#000; text-shadow:0 1px 0 rgba(255,255,255,.25);
-  box-shadow:0 3px 0 var(--g9),0 5px 14px rgba(80,40,0,.3);
-  cursor:pointer; transition:transform .15s,box-shadow .15s;
+  display:inline-block; padding:8px 2px; min-height:24px;
+  font-family:var(--ff-d); font-size:13px; font-weight:700; letter-spacing:.2px;
+  color:var(--g3,#B8860B); text-decoration:underline; text-underline-offset:3px; text-decoration-thickness:1px;
+  cursor:pointer; transition:color .15s;
 }
-.del-forgot-link:hover { transform:translateY(-1px); box-shadow:0 4px 0 var(--g9),0 7px 18px rgba(80,40,0,.4); color:#fff; text-shadow:0 1px 2px rgba(0,0,0,.5); }
+.del-forgot-link:hover, .del-forgot-link:focus-visible { color:var(--g1,#7A5600); }
 
 /* Spinner */
 .del-spin { display:inline-block; width:14px; height:14px; border:2px solid rgba(253,246,216,.3); border-top-color:var(--g1); border-radius:50%; animation:_spin .7s linear infinite; vertical-align:middle; margin-right:5px; }
@@ -486,7 +480,8 @@ body { font-family:var(--ff-b); background:#0a0a14; overflow:hidden; }
     <link rel="stylesheet" href="css/etel-responsive.css?v=1.0">
     <link rel="stylesheet" href="css/etel-system.css?v=1.0">
 <style>/* keep the EN/አማ switch out of the header text when the display size is enlarged */
-html[data-etel-on] .del-lang-switch{position:static!important;margin:0 0 10px auto;width:max-content}</style>
+html[data-etel-on] .del-lang-switch{position:static!important;margin:0 0 10px auto;width:max-content}
+@media(max-width:560px){.del-lang-switch{position:static!important;margin:14px 16px 6px auto!important;width:max-content}}</style>
 <script src="js/etel-display-settings.js?v=1.4" defer></script>
 </head>
 <body>
