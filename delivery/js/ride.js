@@ -151,11 +151,7 @@
       styles: window.EtelUI ? EtelUI.mapStyles(false) : undefined,
       disableDefaultUI: false, mapTypeId: 'roadmap',
       backgroundColor: '#10101c',
-      mapTypeControl: true, zoomControl: true, fullscreenControl: true,
-      mapTypeControlOptions: {
-        position: google.maps.ControlPosition.TOP_RIGHT,
-        mapTypeIds: ['roadmap', 'hybrid']
-      }
+      mapTypeControl: false, zoomControl: false, fullscreenControl: false, streetViewControl: false
     });
     RIDE.directionsService  = new google.maps.DirectionsService();
     RIDE.directionsRenderer = new google.maps.DirectionsRenderer({

@@ -72,13 +72,13 @@ function initDriverMap() {
         backgroundColor: '#10101c',
         mapTypeId: google.maps.MapTypeId.ROADMAP,
         disableDefaultUI: true,
-        mapTypeControl: true,
-        mapTypeControlOptions: {
-            style: google.maps.MapTypeControlStyle.HORIZONTAL_BAR,
-            position: google.maps.ControlPosition.TOP_RIGHT,
-            mapTypeIds: [google.maps.MapTypeId.ROADMAP, google.maps.MapTypeId.HYBRID]
-        },
-        zoomControl: true
+        /* Map-first: pinch to zoom. The default white Map/Hybrid switch and
+           zoom buttons clashed with the carbon UI and sat on top of the
+           full-map button. */
+        mapTypeControl: false,
+        zoomControl: false,
+        streetViewControl: false,
+        fullscreenControl: false
     });
     DRV.directionsService  = new google.maps.DirectionsService();
     DRV.directionsRenderer = new google.maps.DirectionsRenderer({ suppressMarkers: true, polylineOptions: { strokeColor: '#E5C76B', strokeWeight: 5, strokeOpacity: .95 } });
@@ -998,7 +998,7 @@ function renderNearbyRequests(requests) {
                 '<div class="req-connector"></div>' +
                 '<div class="req-stop"><div class="req-stop-dot dropoff"></div><div class="req-addr">' + esc(r.dropoff_address || 'Drop-off') + ' <small>· ' + parseFloat(r.distance_km).toFixed(1) + ' km</small></div></div>' +
             '</div>' +
-            (expiryLeft ? '<div class="req-expiry-text" style="font-size:11px;color:var(--dim);margin-bottom:10px">⏱ Expires in ' + expiryLeft + 's</div>' : '') +
+            (expiryLeft ? '<div class="req-expiry-text" style="font-size:11px;color:var(--dim);margin-bottom:10px">⏱ Expires in ' + _fmtSecs(expiryLeft) + '</div>' : '') +
             '<div class="slide-accept-wrap">' +
               '<div class="slide-accept-track" data-ride-id="' + r.id + '">' +
                 '<div class="slide-accept-fill"></div>' +
@@ -1132,7 +1132,7 @@ function _tickRequestExpiries() {
             return;
         }
         var label = card.querySelector('.req-expiry-text');
-        if (label) label.textContent = '⏱ Expires in ' + secondsLeft + 's';
+        if (label) label.textContent = '⏱ Expires in ' + _fmtSecs(secondsLeft);
     });
 }
 /* Started exactly once when this script first loads, guarded so a
@@ -1226,6 +1226,12 @@ function _applyActiveRideUpdate(newRide) {
 }
 
 /* ── Render active ride ── */
+/* 577 -> "9:37" so a long offer window reads as a clock, not a big number. */
+function _fmtSecs(n) {
+    n = Math.max(0, Math.round(n));
+    return n >= 60 ? Math.floor(n / 60) + ':' + ('0' + (n % 60)).slice(-2) : n + 's';
+}
+
 function renderActiveRide(ride) {
     var container = document.getElementById('active-ride-container');
     _updateSheetFocus();
@@ -1324,7 +1330,7 @@ function renderActiveRide(ride) {
 
     container.innerHTML = '<div class="active-ride-card">'
         + (stateHeader ? '<div class="ride-state-header">' + stateHeader + '</div>' : '')
-        + '<div class="active-ride-header"><span class="active-ride-code">🔑 ' + esc(ride.ride_code || '') + '</span>' + statusPill + '</div>'
+        + '<div class="active-ride-header">' + (ride.ride_code ? '<span class="active-ride-code">🔑 ' + esc(ride.ride_code) + '</span>' : '') + statusPill + '</div>'
         + '<div class="passenger-info">'
         +   '<div class="passenger-avatar">🧑</div>'
         +   '<div><div class="passenger-name">' + esc(ride.passenger_name || (ride.passenger && ride.passenger.name) || '—') + '</div><div class="passenger-phone">' + esc(phone) + '</div></div>'
@@ -1336,10 +1342,10 @@ function renderActiveRide(ride) {
         + '</div>'
         + '<div class="route-eta-badge" id="route-eta-badge" style="display:none"></div>'
         + extra
-        + '<div style="display:flex;gap:8px;margin-bottom:12px">'
+        + ((ride.status === 'driver_assigned' || ride.status === 'accepted') ? ('<div style="display:flex;gap:8px;margin-bottom:12px">'
         +   '<div class="ride-info-box" style="flex:1;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:10px;text-align:center"><div class="ride-info-k">Fare</div><div style="font-size:18px;font-weight:800;color:var(--gold-lt)">ETB ' + parseFloat(ride.status === 'in_progress' && ride.meter_fare != null ? ride.meter_fare : (ride.fare_final || ride.fare_estimate || ride.fare || 0)).toFixed(0) + '</div></div>'
         +   '<div class="ride-info-box" style="flex:1;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:10px;text-align:center"><div class="ride-info-k">Distance</div><div style="font-size:18px;font-weight:800;color:var(--teal)">' + parseFloat(ride.status === 'in_progress' && ride.traveled_km != null ? ride.traveled_km : (ride.distance_km || 0)).toFixed(1) + ' km</div></div>'
-        + '</div>'
+        + '</div>') : '')
         + '<div class="ride-actions">' + primaryBtn + '<button class="action-btn more-toggle" onclick="document.getElementById(\'ride-more-panel\').classList.toggle(\'open\')">⋯ More</button></div>'
         + morePanel
         + '</div>';

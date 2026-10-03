@@ -269,7 +269,7 @@
         "🚪": "logout", "⛽": "fuel", "➕": "plus", "🔧": "tool", "⚙": "tool",
         "🔄": "refresh", "📡": "signal", "🏅": "medal", "🏆": "trophy",
         "🚫": "ban", "📵": "ban", "🎁": "gift", "✉": "mail", "🎯": "locate",
-        "📟": "phone", "📲": "phone", "📱": "phone", "📦": "box",
+        "📟": "route", "📲": "phone", "📱": "phone", "📦": "box",
         "🏠": "home", "🔒": "lock", "🔐": "lock", "🎧": "headset",
         "☰": "menu", "📈": "chart", "📊": "chart", "🌐": "globe",
         "🪪": "id", "❤": "heart"
