@@ -1139,6 +1139,8 @@
     // separate marker system on the customer side that was never
     // updated to match. RIDE.vtypeImages already has the same image
     // paths driver.js/driver-premium.js use.
+    /* Drawn markers only: gold badge per vehicle type, blue car for Qute. */
+    if (window.EtelUI) return EtelUI.vehicleMarker(t);
     var imgUrl = null;
     if (t.indexOf('moto') !== -1 || t.indexOf('bike') !== -1 || t.indexOf('motor') !== -1) imgUrl = RIDE.vtypeImages.moto;
     else if (t.indexOf('mini') !== -1 || t.indexOf('van') !== -1 || t.indexOf('bus') !== -1) imgUrl = RIDE.vtypeImages.minibus;

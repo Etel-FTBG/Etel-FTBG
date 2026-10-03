@@ -1014,8 +1014,8 @@ body.light-mode [style*="color:#D4AF37"],body.light-mode [style*="color:#FFD700"
   </div>
   <button id="battery-tip-help-btn" onclick="_showBatteryTipModal(_detectBatteryAggressiveOEM() || {brand:'your phone', steps:['Open your phone\'s Settings \u2192 Battery, find this browser app, and allow it to run in the background / remove it from any battery-saving or auto-close list.','Open your recent-apps switcher, find this browser, and lock or pin its card so the system does not close it.']})" style="display:none;background:none;border:none;color:inherit;opacity:.55;font-size:13px;cursor:pointer;padding:4px 8px" title="Why did my online reminder stop?">Reminder not showing?</button>
   <!-- Power-off button (shown when online) -->
-  <button class="drv-poweroff-btn" id="poweroff-btn" onclick="confirmGoOffline()" style="display:none" title="Go offline">
-    ⏻
+  <button class="drv-poweroff-btn" id="poweroff-btn" onclick="confirmGoOffline()" style="display:none" title="Go offline" aria-label="Go offline">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 3v8"/><path d="M6.3 6.8a8 8 0 1 0 11.4 0"/></svg>
   </button>
 </div>
 
