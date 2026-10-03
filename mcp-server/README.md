@@ -109,6 +109,17 @@ etelid_check_role: member_id="ET-00123", company_slug="etel-transport"
 system_health: system="all"
 ```
 
+## Authenticating from claude.ai custom connectors
+
+The claude.ai "Add custom connector" form (choose **No sign-in**) only lets
+you add request headers; non-standard header names need Anthropic approval.
+Use a standard name instead - this server accepts the key in
+`Authorization: Bearer <MCP_SHARED_KEY>` or `X-API-Key: <MCP_SHARED_KEY>`
+(as well as the original `X-Mcp-Key`). Enter the value in the form itself; it
+is stored securely and never shown again. Keep `.htaccess` deployed with the
+rest of the folder: it passes the `Authorization` header through on hosts
+whose FastCGI strips it.
+
 ## Security notes
 
 - `_query` tools are hard-capped to `SELECT` only - see `lib/db.php`. They

@@ -8,4 +8,8 @@
     RewriteEngine On
     RewriteCond %{REQUEST_URI} ^/lib/
     RewriteRule .* - [F,L]
+    # Pass the Authorization header through to PHP on hosts whose FastCGI
+    # strips it (it then arrives as REDIRECT_HTTP_AUTHORIZATION).
+    RewriteCond %{HTTP:Authorization} .
+    RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
 </IfModule>

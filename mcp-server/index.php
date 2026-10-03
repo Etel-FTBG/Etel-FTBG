@@ -17,6 +17,16 @@ header('Content-Type: application/json');
 
 mcp_require_auth();
 
+// Streamable HTTP: this server only answers POST. Clients may probe with GET
+// (server-initiated stream) or DELETE (end session); the spec says to answer
+// those with 405 rather than a parse error.
+if (isset($_SERVER['REQUEST_METHOD']) && $_SERVER['REQUEST_METHOD'] !== 'POST') {
+    http_response_code(405);
+    header('Allow: POST');
+    echo json_encode(array('error' => array('code' => -32000, 'message' => 'Method not allowed - use POST')));
+    exit;
+}
+
 $raw = file_get_contents('php://input');
 $request = json_decode($raw, true);
 
@@ -43,11 +53,19 @@ function mcp_respond_error($id, $code, $message) {
 try {
     switch ($method) {
         case 'initialize':
+            // Echo the client's protocol version when we know it; otherwise
+            // offer the oldest one this server was written against.
+            $known = array('2024-11-05', '2025-03-26', '2025-06-18');
+            $wanted = isset($params['protocolVersion']) ? $params['protocolVersion'] : '';
             mcp_respond($id, array(
-                'protocolVersion' => '2024-11-05',
+                'protocolVersion' => in_array($wanted, $known, true) ? $wanted : '2024-11-05',
                 'capabilities' => array('tools' => new stdClass()),
                 'serverInfo' => array('name' => 'etel-group-mcp', 'version' => '1.0.0'),
             ));
+            break;
+
+        case 'ping':
+            mcp_respond($id, new stdClass());
             break;
 
         case 'notifications/initialized':
@@ -76,6 +94,11 @@ try {
             break;
 
         default:
+            // Any other notification (no id) just gets acknowledged.
+            if ($id === null && strpos($method, 'notifications/') === 0) {
+                http_response_code(202);
+                exit;
+            }
             mcp_respond_error($id, -32601, "Method not found: $method");
     }
 } catch (Throwable $e) {
