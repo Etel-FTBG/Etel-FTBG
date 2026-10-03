@@ -215,14 +215,73 @@ function etel_send_web_push($subscription, $payload) {
 }
 
 /**
+ * Send a single push to an Expo push token - used by the native ETEL
+ * Drive app (React Native/Expo), which has no Web Push API. Expo's own
+ * push service forwards this to FCM/APNs; no Google service account or
+ * Firebase project needed server-side.
+ * Returns the same array('ok','http_code','error') shape as
+ * etel_send_web_push, so etel_push_to_user can treat both uniformly -
+ * http_code is set to 410 on a dead/uninstalled token (Expo's
+ * "DeviceNotRegistered" error) to reuse the existing dead-subscription
+ * cleanup path below.
+ */
+function etel_send_expo_push($token, $payload) {
+    if (!$token) return array('ok' => false, 'http_code' => 0, 'error' => 'Missing Expo push token');
+    $message = array(
+        'to'       => $token,
+        'title'    => isset($payload['title']) ? $payload['title'] : '',
+        'body'     => isset($payload['body']) ? $payload['body'] : '',
+        'data'     => isset($payload['data']) ? $payload['data'] : array(),
+        'sound'    => 'default',
+        'priority' => 'high',
+    );
+    $ch = curl_init('https://exp.host/--/api/v2/push/send');
+    curl_setopt_array($ch, array(
+        CURLOPT_POST           => true,
+        CURLOPT_POSTFIELDS     => json_encode($message),
+        CURLOPT_HTTPHEADER     => array(
+            'Content-Type: application/json',
+            'Accept: application/json',
+            'Accept-Encoding: gzip, deflate',
+        ),
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_TIMEOUT        => 10,
+        CURLOPT_SSL_VERIFYPEER => true,
+    ));
+    $response = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $curlErr  = curl_error($ch);
+    curl_close($ch);
+
+    if ($curlErr) {
+        return array('ok' => false, 'http_code' => 0, 'error' => 'cURL: ' . $curlErr);
+    }
+    $decoded = json_decode($response, true);
+    $status  = isset($decoded['data']['status']) ? $decoded['data']['status'] : null;
+    $ok      = ($httpCode >= 200 && $httpCode < 300) && $status === 'ok';
+    $deadToken = ($status === 'error')
+              && isset($decoded['data']['details']['error'])
+              && $decoded['data']['details']['error'] === 'DeviceNotRegistered';
+    $errMsg = $ok ? null : (
+        isset($decoded['data']['message']) ? $decoded['data']['message']
+        : (isset($decoded['errors']) ? json_encode($decoded['errors']) : ('HTTP ' . $httpCode))
+    );
+    return array('ok' => $ok, 'http_code' => $deadToken ? 410 : $httpCode, 'error' => $errMsg);
+}
+
+/**
  * Send a push to every subscription a user has (they may have installed
- * the PWA on more than one device), removing any that come back dead.
- * $pdo: active PDO connection. $userId: int. $payload: assoc array.
+ * the PWA on more than one device, or the native app on another), removing
+ * any that come back dead. $pdo: active PDO connection. $userId: int.
+ * $payload: assoc array. Branches on the `type` column (migration 059) -
+ * 'expo' rows go through etel_send_expo_push, everything else (including
+ * pre-migration rows with no type set) goes through the existing Web Push
+ * path unchanged.
  */
 function etel_push_to_user($pdo, $userId, $payload) {
     $results = array();
     try {
-        $s = $pdo->prepare('SELECT id, endpoint, p256dh, auth FROM push_subscriptions WHERE user_id = ?');
+        $s = $pdo->prepare('SELECT id, type, endpoint, p256dh, auth FROM push_subscriptions WHERE user_id = ?');
         $s->execute(array($userId));
         $subs = $s->fetchAll(PDO::FETCH_ASSOC);
     } catch (Exception $e) {
@@ -230,15 +289,20 @@ function etel_push_to_user($pdo, $userId, $payload) {
         return $results;
     }
     foreach ($subs as $sub) {
-        $subscription = array('endpoint' => $sub['endpoint'], 'keys' => array('p256dh' => $sub['p256dh'], 'auth' => $sub['auth']));
-        $r = etel_send_web_push($subscription, $payload);
+        $type = isset($sub['type']) ? $sub['type'] : 'webpush';
+        if ($type === 'expo') {
+            $r = etel_send_expo_push($sub['endpoint'], $payload);
+        } else {
+            $subscription = array('endpoint' => $sub['endpoint'], 'keys' => array('p256dh' => $sub['p256dh'], 'auth' => $sub['auth']));
+            $r = etel_send_web_push($subscription, $payload);
+        }
         $results[] = $r;
         if (!$r['ok'] && in_array($r['http_code'], array(404, 410), true)) {
             try {
                 $pdo->prepare('DELETE FROM push_subscriptions WHERE id = ?')->execute(array($sub['id']));
             } catch (Exception $e) {}
         } elseif (!$r['ok']) {
-            error_log('[ETEL webpush] send failed for user ' . $userId . ': ' . $r['error']);
+            error_log('[ETEL webpush] send failed for user ' . $userId . ' (' . $type . '): ' . $r['error']);
         }
     }
     return $results;
