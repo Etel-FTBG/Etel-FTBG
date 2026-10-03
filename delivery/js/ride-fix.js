@@ -127,7 +127,8 @@
     var t=0;(function w(){ if(window.RIDE&&RIDE.map&&window.google&&google.maps){ enhance(); } else if(t++<60) setTimeout(w,200); })();
     function enhance(){
       try{
-        RIDE.map.setOptions({styles:null,disableDefaultUI:false,zoomControl:true,fullscreenControl:true,mapTypeControl:true,
+        /* styles: this used to reset to null, wiping the carbon/gold map style set in ride.js */
+        RIDE.map.setOptions({styles:window.EtelUI?EtelUI.mapStyles(false):null,disableDefaultUI:false,zoomControl:true,fullscreenControl:true,mapTypeControl:true,
           mapTypeControlOptions:{position:google.maps.ControlPosition.TOP_RIGHT,mapTypeIds:['roadmap','hybrid']}});
         RIDE.map.setMapTypeId('roadmap');
       }catch(e){}
@@ -324,7 +325,9 @@
       var w = el.offsetWidth, h = el.offsetHeight;
       console.log('[ETEL][map] ' + divId + ' size: ' + w + 'x' + h + ', map=' + (m ? 'created' : 'MISSING'));
       if (!m) return;
-      var hasTiles = el.querySelector('img[src*="googleapis"], img[src*="gstatic"], canvas');
+      // .gm-style exists as soon as Google has built the map; raster tiles (no mapId) can still be
+    // downloading at the 3 s check on a slow connection, which used to trigger a false "blank map" banner.
+    var hasTiles = el.querySelector('img[src*="googleapis"], img[src*="gstatic"], canvas, .gm-style');
       if (w === 0 || h === 0 || !hasTiles) {
         console.warn('[ETEL][map] blank map detected — forcing resize + recenter');
         try {

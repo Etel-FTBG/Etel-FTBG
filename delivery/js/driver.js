@@ -2813,7 +2813,9 @@ setTimeout(function () {
     var w = el.offsetWidth, h = el.offsetHeight;
     console.log('[ETEL][map] driver-map size: ' + w + 'x' + h + ', map=' + (DRV.map ? 'created' : 'MISSING'));
     if (!DRV.map) return;
-    var hasTiles = el.querySelector('img[src*="googleapis"], img[src*="gstatic"], canvas');
+    // .gm-style exists as soon as Google has built the map; raster tiles (no mapId) can still be
+    // downloading at the 3 s check on a slow connection, which used to trigger a false "blank map" banner.
+    var hasTiles = el.querySelector('img[src*="googleapis"], img[src*="gstatic"], canvas, .gm-style');
     if (w === 0 || h === 0 || !hasTiles) {
         console.warn('[ETEL][map] blank map detected - forcing resize + recenter');
         try {
