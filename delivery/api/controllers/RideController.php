@@ -1333,6 +1333,26 @@ case 'ride_history': {
     break;
 }
 
+case 'driver_get_ride_history': {
+    /* Driver-side equivalent of ride_history above - no such endpoint
+       existed for drivers before (only the passenger direction), so the
+       native app's Earnings/Trip History list had nothing real to read.
+       Mirrors that query exactly, just filtered by driver_id and joined
+       against the passenger instead of the driver. */
+    $s = $pdo->prepare(
+        "SELECT r.id, r.pickup_address, r.dropoff_address, r.distance_km, r.fare_paid, r.fare_final,
+                r.status, r.rating, r.created_at, r.completed_at, r.assigned_at,
+                r.payment_method, r.open_trip, r.traveled_km,
+                p.name AS passenger_name, p.phone AS passenger_phone
+         FROM rides r
+         LEFT JOIN users p ON p.id = r.passenger_id
+         WHERE r.driver_id=? AND r.status IN ('completed','cancelled')
+         ORDER BY r.id DESC LIMIT 30");
+    $s->execute(array($u['id']));
+    ok(array('rides' => $s->fetchAll()));
+    break;
+}
+
 /* ========== DRIVER ========== */
 
 case 'driver_go_online': {

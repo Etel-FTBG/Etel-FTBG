@@ -61,6 +61,45 @@ case 'remove_push_subscription': {
     break;
 }
 
+case 'save_push_token': {
+    // Expo push token variant of save_push_subscription above - used by
+    // the native ETEL Drive app, which has no Web Push API. The token
+    // itself is stored in the existing `endpoint` column (hashed the same
+    // way for the same one-row-per-install uniqueness), with type='expo'
+    // so etel_push_to_user (webpush.php) knows to send it through Expo's
+    // push service instead of Web Push encryption. See migration 059.
+    $token = isset($body['token']) ? trim($body['token']) : '';
+    if (!$token) fail('token is required', 400);
+    $endpointHash = hash('sha256', $token);
+    $ua = isset($_SERVER['HTTP_USER_AGENT']) ? substr($_SERVER['HTTP_USER_AGENT'], 0, 255) : null;
+    try {
+        $s = $pdo->prepare(
+            "INSERT INTO push_subscriptions (user_id, type, endpoint, endpoint_hash, p256dh, auth, user_agent)
+             VALUES (?, 'expo', ?, ?, NULL, NULL, ?)
+             ON DUPLICATE KEY UPDATE type = 'expo', endpoint = VALUES(endpoint), user_agent = VALUES(user_agent)"
+        );
+        $s->execute(array($u['id'], $token, $endpointHash, $ua));
+        ok(array('message' => 'Push token saved'));
+    } catch (Exception $e) {
+        fail_ex($e, 'Could not save push token', 500);
+    }
+    break;
+}
+
+case 'remove_push_token': {
+    $token = isset($body['token']) ? trim($body['token']) : '';
+    if (!$token) fail('token is required', 400);
+    $endpointHash = hash('sha256', $token);
+    try {
+        $pdo->prepare("DELETE FROM push_subscriptions WHERE user_id = ? AND endpoint_hash = ? AND type = 'expo'")
+            ->execute(array($u['id'], $endpointHash));
+        ok(array('message' => 'Push token removed'));
+    } catch (Exception $e) {
+        fail_ex($e, 'Could not remove push token', 500);
+    }
+    break;
+}
+
 case 'test_send_push': {
     // Self-test: sends a push to the calling user's own account, so the
     // whole pipeline (subscription -> encryption -> delivery) can be
