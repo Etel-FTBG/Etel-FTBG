@@ -55,11 +55,12 @@ function rides_sweeper_push($pdo, $userId, $title, $body, $rideId) {
 function rides_sweep_stuck($pdo, $opts = array()) {
     $limit = isset($opts['limit']) ? max(1, intval($opts['limit'])) : 50;
     $push  = !isset($opts['push']) || $opts['push'];
-    $out = array('completed' => array(), 'flagged' => array(), 'ended' => array(), 'waits_stopped' => array());
+    $out = array('completed' => array(), 'flagged' => array(), 'ended' => array(), 'waits_stopped' => array(), 'drivers_offlined' => array());
 
     $autoMin = rides_rule_value($pdo, 'ride_auto_complete_minutes', 30);
     $idleMin = rides_rule_value($pdo, 'ride_idle_end_minutes', 180);
     $capMin  = rides_wait_cap_minutes($pdo);
+    $ghostMin = rides_rule_value($pdo, 'ride_driver_ghost_minutes', 120);
 
     // Make sure wait columns exist before any SELECT below names them.
     try { rides_ensure_wait_columns($pdo); } catch (Exception $e) { /* handled per rule */ }
@@ -192,6 +193,34 @@ function rides_sweep_stuck($pdo, $opts = array()) {
             }
         } catch (Exception $e) {
             error_log('[ETEL][sweeper] rule D failed: ' . $e->getMessage());
+        }
+    }
+
+    // E. drivers still flagged online but silent for a long time (app killed,
+    //    phone off) -> offline, and close their open shift so the working-hours
+    //    KPI is not inflated. Drivers on an active ride are never touched.
+    if ($ghostMin > 0) {
+        try {
+            $q = $pdo->prepare(
+                "SELECT d.user_id FROM ride_drivers d
+                 WHERE d.online=1 AND (d.last_seen IS NULL OR d.last_seen < DATE_SUB(NOW(), INTERVAL ? MINUTE))
+                   AND NOT EXISTS (SELECT 1 FROM rides r WHERE r.driver_id=d.user_id AND r.status IN ('accepted','in_progress','arrived'))
+                 LIMIT " . $limit);
+            $q->execute(array(intval($ghostMin)));
+            foreach ($q->fetchAll() as $g) {
+                $uid = intval($g['user_id']);
+                $u = $pdo->prepare("UPDATE ride_drivers SET online=0 WHERE user_id=? AND online=1 AND (last_seen IS NULL OR last_seen < DATE_SUB(NOW(), INTERVAL ? MINUTE))");
+                $u->execute(array($uid, intval($ghostMin)));
+                if ($u->rowCount() < 1) continue;
+                $out['drivers_offlined'][] = $uid;
+                try {
+                    $pdo->prepare("UPDATE driver_shifts SET ended_at=(SELECT last_seen FROM ride_drivers WHERE user_id=?),
+                                          online_seconds=GREATEST(0, TIMESTAMPDIFF(SECOND, started_at, (SELECT last_seen FROM ride_drivers WHERE user_id=?)))
+                                   WHERE driver_user_id=? AND ended_at IS NULL")->execute(array($uid, $uid, $uid));
+                } catch (Exception $e) { /* shifts table is additive */ }
+            }
+        } catch (Exception $e) {
+            error_log('[ETEL][sweeper] rule E failed: ' . $e->getMessage());
         }
     }
     return $out;
