@@ -1,0 +1,80 @@
+{
+  "expo": {
+    "name": "ETEL Drive",
+    "slug": "etel-drive",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#0a0703",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.etelgroup.driver",
+      "infoPlist": {
+        "UIBackgroundModes": ["location", "fetch", "remote-notification"],
+        "NSLocationWhenInUseUsageDescription": "ETEL Drive needs your location to match you with nearby ride and delivery requests.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "ETEL Drive needs background location so riders and dispatch can track your position while you are online, even when the app is in the background.",
+        "NSCameraUsageDescription": "ETEL Drive needs camera access to photograph compliance documents.",
+        "NSPhotoLibraryUsageDescription": "ETEL Drive needs photo library access to attach receipt images."
+      }
+    },
+    "android": {
+      "package": "com.etelgroup.driver",
+      "adaptiveIcon": {
+        "backgroundColor": "#0a0703",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false,
+      "allowBackup": false,
+      "blockedPermissions": [
+        "android.permission.SYSTEM_ALERT_WINDOW",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE"
+      ],
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_BACKGROUND_LOCATION",
+        "FOREGROUND_SERVICE",
+        "FOREGROUND_SERVICE_LOCATION",
+        "POST_NOTIFICATIONS",
+        "WAKE_LOCK",
+        "CAMERA"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-secure-store",
+      "expo-font",
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "ETEL Drive needs background location so riders and dispatch can track your position while you are online, even when the app is in the background.",
+          "isAndroidForegroundServiceEnabled": true,
+          "isAndroidBackgroundLocationEnabled": true
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/android-icon-foreground.png",
+          "color": "#D4AF37"
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "cameraPermission": "ETEL Drive needs camera access to photograph compliance documents.",
+          "photosPermission": "ETEL Drive needs photo library access to attach receipt images."
+        }
+      ]
+    ],
+    "extra": {
+      "etelApiBaseUrl": "https://ethelmarket.com/delivery/api/boot.php"
+    }
+  }
+}
