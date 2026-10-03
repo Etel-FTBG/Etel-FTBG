@@ -2238,6 +2238,9 @@ window.showRoutePath = showRoutePath;
 /* ── Page switching (4 bottom nav tabs) ── */
 function switchPage(page) {
     DRV.currentPage = page;
+    /* CSS hook: the SOS button sits top-left over the map but would cover the
+       profile avatar / page titles on the other pages. */
+    document.body.setAttribute('data-page', page);
     document.querySelectorAll('.drv-page').forEach(function (p) { p.classList.remove('active'); });
     document.querySelectorAll('.nav-tab').forEach(function (b) { b.classList.remove('active'); });
     var pg = document.getElementById('page-' + page);
