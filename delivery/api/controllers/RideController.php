@@ -1155,6 +1155,77 @@ case 'rate_rider': {
     break;
 }
 
+case 'ride_safety_get': case 'ride_safety_save': {
+    /* The rider's trusted contacts (up to 3: name + phone) and whether trip
+       safety check-ins are on. One row per rider, contacts kept as JSON.
+       The contacts are only ever used by the rider's own phone (a one-tap
+       SMS / WhatsApp message with the live trip link); the server never
+       sends them anything. */
+    $pdo->exec("CREATE TABLE IF NOT EXISTS ride_safety_settings (
+        user_id      INT NOT NULL PRIMARY KEY,
+        contacts_json TEXT NULL,
+        checkins     TINYINT(1) NOT NULL DEFAULT 1,
+        updated_at   DATETIME NULL
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+    if ($action === 'ride_safety_save') {
+        $in = isset($body['contacts']) && is_array($body['contacts']) ? $body['contacts'] : array();
+        $clean = array();
+        foreach ($in as $c) {
+            if (count($clean) >= 3) break;
+            if (!is_array($c)) continue;
+            $nm = isset($c['name']) ? trim(preg_replace('/[\x00-\x1F<>]/', '', (string) $c['name'])) : '';
+            $ph = isset($c['phone']) ? preg_replace('/[^0-9+]/', '', (string) $c['phone']) : '';
+            if ($nm === '' && $ph === '') continue;
+            if ($nm === '') fail('Give each contact a name', 400);
+            $digits = preg_replace('/\D/', '', $ph);
+            if (strlen($digits) < 9 || strlen($digits) > 15) fail('Phone number for ' . $nm . ' does not look right', 400);
+            $clean[] = array('name' => (function_exists('mb_substr') ? mb_substr($nm, 0, 40) : substr($nm, 0, 40)), 'phone' => $ph);
+        }
+        $chk = (!isset($body['checkins']) || $body['checkins']) ? 1 : 0;
+        $pdo->prepare("INSERT INTO ride_safety_settings (user_id, contacts_json, checkins, updated_at) VALUES (?, ?, ?, NOW())
+                       ON DUPLICATE KEY UPDATE contacts_json=VALUES(contacts_json), checkins=VALUES(checkins), updated_at=NOW()")
+            ->execute(array(intval($u['id']), json_encode($clean), $chk));
+    }
+    $q = $pdo->prepare('SELECT contacts_json, checkins FROM ride_safety_settings WHERE user_id=?');
+    $q->execute(array(intval($u['id'])));
+    $row = $q->fetch();
+    $contacts = $row ? json_decode((string) $row['contacts_json'], true) : array();
+    ok(array('contacts' => is_array($contacts) ? $contacts : array(), 'checkins' => $row ? intval($row['checkins']) === 1 : true));
+    break;
+}
+
+case 'ride_safety_checkin_missed': {
+    /* The rider's phone asked "Are you OK?" during a trip and got no answer
+       for a minute. Raises ONE open 'safety_checkin_missed' issue per ride
+       (shows in Ride issue reports and, as critical, in the Live trip watch)
+       and pushes the admins straight away. Only for the rider's own live trip. */
+    $id = isset($body['ride_id']) ? intval($body['ride_id']) : 0;
+    if (!$id) fail('ride_id required');
+    $s = $pdo->prepare("SELECT r.id, r.status, p.name AS pname, p.phone AS pphone FROM rides r JOIN users p ON p.id = r.passenger_id
+                        WHERE r.id=? AND r.passenger_id=? AND r.status IN ('accepted','in_progress','arrived')");
+    $s->execute(array($id, intval($u['id'])));
+    $r = $s->fetch();
+    if (!$r) fail('Ride not found', 404);
+    $d = $pdo->prepare("SELECT id FROM ride_issues WHERE ride_id=? AND category='safety_checkin_missed' AND status='open' LIMIT 1");
+    $d->execute(array($id));
+    if ($d->fetch()) ok(array('recorded' => true, 'duplicate' => true));
+    $pdo->prepare("INSERT INTO ride_issues (ride_id, reporter_id, category, details, status) VALUES (?, ?, 'safety_checkin_missed', ?, 'open')")
+        ->execute(array($id, intval($u['id']),
+            'Rider did not answer the safety check-in during the trip. Call them: ' . ($r['pphone'] ? $r['pphone'] : 'no phone on file') . '.'));
+    if (function_exists('etel_push_send')) {
+        try {
+            $admins = $pdo->query("SELECT id FROM users WHERE role='admin'")->fetchAll(PDO::FETCH_COLUMN);
+            foreach ($admins as $aid) {
+                etel_push_send($pdo, intval($aid), 'Safety check not answered',
+                    '#' . $id . ' ' . ($r['pname'] ? $r['pname'] : 'Rider') . ' did not answer "Are you OK?" - call ' . ($r['pphone'] ? $r['pphone'] : 'them'),
+                    array('action' => 'ride_safety', 'ride_id' => $id, 'url' => '/delivery/admin.html'));
+            }
+        } catch (Exception $e) { /* best-effort */ }
+    }
+    ok(array('recorded' => true));
+    break;
+}
+
 case 'ride_get_share_link': {
     /* Generates (or returns the existing) public share token for an
        active ride, and the full URL to hand to a trusted contact. The

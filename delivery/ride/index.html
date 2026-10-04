@@ -724,6 +724,11 @@
         <div><div class="mp-row-label">Referral &amp; Rewards</div><div class="mp-row-sub">Earn ETB with friends</div></div>
         <div class="mp-row-arrow">›</div>
       </div>
+      <div class="mp-row" data-etel-safety-open onclick="closeMyProfile()">
+        <div class="mp-row-icon">🛟</div>
+        <div><div class="mp-row-label">Safety contacts</div><div class="mp-row-sub">Share your trip, check-ins, SOS contacts</div></div>
+        <div class="mp-row-arrow">›</div>
+      </div>
       <div class="mp-row" data-etel-2fa-open onclick="closeMyProfile()">
         <div class="mp-row-icon">🛡️</div>
         <div><div class="mp-row-label">Two-step sign-in</div><div class="mp-row-sub">A code from your phone when you sign in</div></div>
@@ -1451,6 +1456,7 @@ function useMyCurrentLocationForPickup(btnEl) {
 <script src="../js/ride-extra-features.js?v=1.1" defer></script>
 <script src="../js/ride-fare-self-heal.js?v=1.0" defer></script>
 <script src="../js/sos-button.js?v=1.2" defer></script>
+<script src="../js/ride-safety.js?v=1" defer></script>
 <script src="../js/ride-hex-search-overlay.js?v=1.0" defer></script>
 <script>
   window.gm_authFailure = function () {

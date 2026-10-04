@@ -61,7 +61,7 @@ function rideWatchLoad(){
         var c=x.severity==='critical'?'#FF6B6B':'#F0B84A';
         var who=[x.passenger?('Rider '+esc(x.passenger)+(x.passenger_phone?' '+esc(x.passenger_phone):'')):'',
                  x.driver?('Driver '+esc(x.driver)+(x.driver_phone?' '+esc(x.driver_phone):'')):''].filter(Boolean).join(' · ');
-        var canCancel=x.ride_id>0&&x.rule!=='issue'&&x.status!=='arrived';
+        var canCancel=x.ride_id>0&&x.rule!=='issue'&&x.rule!=='safety'&&x.status!=='arrived';
         return '<div style="display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-top:1px solid rgba(255,255,255,.07)">'+
           '<span style="flex:none;margin-top:2px;padding:3px 8px;border-radius:6px;font-size:11px;font-weight:800;text-transform:uppercase;color:#1a1408;background:'+c+'">'+x.severity+'</span>'+
           '<div style="flex:1;min-width:0"><div style="color:#f1ece0;font-weight:700">'+(x.ride_id>0?'#'+x.ride_id+' · ':'')+esc(x.title)+' <span style="color:#9A9AAE;font-weight:400">· '+rwFmt(x.minutes)+'</span></div>'+
