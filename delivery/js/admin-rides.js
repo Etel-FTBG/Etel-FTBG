@@ -56,7 +56,7 @@ function systemHealthLoad(){
       return '<div style="display:flex;gap:10px;align-items:flex-start;padding:7px 0;border-top:1px solid rgba(255,255,255,.07)">'+
         '<span style="flex:none;width:10px;height:10px;border-radius:50%;margin-top:5px;background:'+(SH_DOT[c.status]||SH_DOT.ok)+'"></span>'+
         '<div style="flex:none;width:130px;color:#f1ece0;font-weight:700">'+esc(c.name)+'</div>'+
-        '<div style="flex:1;min-width:0;color:#B8B0A0">'+esc(c.detail)+'</div></div>';
+        '<div style="flex:1;min-width:0;color:#B8B0A0">'+esc(c.detail)+(c.download?' <button class="rides-filter-btn" style="margin-left:6px" onclick="downloadLatestBackup(this)">Download</button>':'')+'</div></div>';
     }).join('');
   },function(m){box.textContent='Could not load: '+m;});
   if(!SH.timer){
@@ -68,6 +68,27 @@ function systemHealthLoad(){
   }
 }
 window.systemHealthLoad=systemHealthLoad;
+/* Download the newest backup (owner admins). A plain link cannot send the sign-in header, so fetch it and save the blob. */
+function downloadLatestBackup(btn){
+  var token=typeof Auth!=='undefined'?Auth.getToken():'';
+  var apiUrl=(window.ETEL&&window.ETEL.api)?window.ETEL.api:'/delivery/api/boot.php';
+  var old=btn.textContent; btn.disabled=true; btn.textContent='Preparing...';
+  fetch(apiUrl,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({action:'admin_backup_download'})})
+  .then(function(r){
+    var ct=r.headers.get('Content-Type')||'';
+    if(!r.ok||ct.indexOf('json')!==-1){return r.json().then(function(d){throw new Error(d.message||'Could not download');});}
+    var cd=r.headers.get('Content-Disposition')||'', m=/filename="([^"]+)"/.exec(cd);
+    var name=m?m[1]:'etel-backup.sql.gz';
+    return r.blob().then(function(b){
+      var a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download=name; document.body.appendChild(a); a.click();
+      setTimeout(function(){URL.revokeObjectURL(a.href); a.remove();},1000);
+    });
+  })
+  .then(function(){btn.disabled=false;btn.textContent=old;})
+  .catch(function(e){btn.disabled=false;btn.textContent=old;alert(e.message);});
+}
+window.downloadLatestBackup=downloadLatestBackup;
+
 
 /* ── Live trip watch: stuck trips right now (admin_ride_watch, read-only). Refreshes every 30 s while the Rides tab is on screen. ── */
 var RW={timer:null};

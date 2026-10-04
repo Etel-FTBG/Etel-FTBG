@@ -1798,6 +1798,19 @@ case 'admin_get_rides': {
     break;
 }
 
+case 'admin_backup_download': {
+    /* The newest database backup as a file, so a copy can be kept off the server.
+       Owner-level admins only (the new 'system.backup' permission is held by full
+       admins; managed staff would need it listed). Every download is logged. */
+    if ($u['role'] !== 'admin' || !user_has_capability($pdo, $u, 'system.backup')) fail('Owner admins only', 403);
+    require_once __DIR__ . '/../lib/system_health.php';
+    $bk = etel_backup_latest();
+    if (!$bk) fail('No backup found yet', 404);
+    error_log('[ETEL][backup] admin ' . intval($u['id']) . ' downloaded ' . $bk['name']);
+    if (!etel_backup_send($bk)) fail('The backup file does not match its checksum - do not use it. Run a new backup.', 500);
+    break;
+}
+
 case 'admin_system_health': {
     if ($u['role'] !== 'admin' || !user_has_capability($pdo, $u, 'rides.view')) fail('Admin only', 403);
     require_once __DIR__ . '/../lib/ride_monitor.php';

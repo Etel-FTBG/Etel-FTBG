@@ -34,8 +34,8 @@ function etel_health_heartbeat($pdo, $name, $detail) {
     } catch (Exception $e) { error_log('[ETEL][health] heartbeat failed: ' . $e->getMessage()); }
 }
 
-function etel_health_item($name, $status, $detail) {
-    return array('name' => $name, 'status' => $status, 'detail' => $detail);
+function etel_health_item($name, $status, $detail, $extra = array()) {
+    return array_merge(array('name' => $name, 'status' => $status, 'detail' => $detail), $extra);
 }
 
 function etel_health_ago($min) {
@@ -55,6 +55,41 @@ function etel_health_backup_dirs() {
     $dirs[] = dirname(dirname(dirname($api))) . '/etel_backups';
     $dirs[] = $api . '/_backups';
     return $dirs;
+}
+
+/* The newest complete backup: array(path, name, created (unix), bytes, sha256) or null.
+   "Complete" = both the .sql.gz and its .json record exist. */
+function etel_backup_latest() {
+    $best = null;
+    foreach (etel_health_backup_dirs() as $d) {
+        if (!is_dir($d)) continue;
+        foreach ((array) glob($d . '/etel-*.json') as $f) {
+            $m = @json_decode((string) @file_get_contents($f), true);
+            if (!is_array($m) || empty($m['created']) || empty($m['file'])) continue;
+            $path = $d . '/' . basename($m['file']); // basename: never trust a path from a file
+            if (!is_file($path)) continue;
+            $t = strtotime($m['created']);
+            if ($t && (!$best || $t > $best['created'])) {
+                $best = array('path' => $path, 'name' => basename($path), 'created' => $t,
+                              'bytes' => filesize($path), 'sha256' => isset($m['sha256']) ? $m['sha256'] : '');
+            }
+        }
+    }
+    return $best;
+}
+
+/* Sends the backup as a download and stops. The caller has already checked who is asking.
+   Refuses a file whose checksum no longer matches its record. */
+function etel_backup_send($b) {
+    if ($b['sha256'] !== '' && !hash_equals($b['sha256'], (string) hash_file('sha256', $b['path']))) return false;
+    while (ob_get_level()) { @ob_end_clean(); }
+    header('Content-Type: application/gzip');
+    header('Content-Disposition: attachment; filename="' . $b['name'] . '"');
+    header('Content-Length: ' . filesize($b['path']));
+    header('Cache-Control: no-store');
+    header('X-Content-Type-Options: nosniff');
+    readfile($b['path']);
+    exit;
 }
 
 function etel_health_backup() {
@@ -131,7 +166,9 @@ function etel_system_health($pdo, $adminId = 0) {
     }
 
     // Backups
-    $checks[] = etel_health_backup();
+    $bk = etel_health_backup();
+    if (etel_backup_latest()) $bk['download'] = true; // the admin card shows a Download button
+    $checks[] = $bk;
 
     // Disk
     if (function_exists('disk_free_space')) {
