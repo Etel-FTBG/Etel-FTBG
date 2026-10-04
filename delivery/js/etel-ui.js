@@ -383,6 +383,155 @@
         }).observe(document.body, { childList: true, subtree: true, characterData: true });
     }
 
+    /* ---- Version and diagnostics --------------------------------------------
+       "Which version am I actually running?" is the first question whenever
+       a screen looks old. Releases, CSS and HTML are uploaded separately by
+       hand, so any of the three can lag. This panel shows the release that
+       is loaded, the one the server wants this user on, whether the design
+       stylesheet matches its HTML, and whether Google Maps is healthy.
+       Open it from the version line in the driver's Profile, the rider's
+       Settings, or by tapping the logo five times. */
+    function deliveryRoot() {
+        var loc = window.location.pathname, marker = "/delivery/", idx = loc.indexOf(marker);
+        var dir = idx >= 0 ? loc.substring(0, idx + marker.length) : loc.substring(0, loc.lastIndexOf("/") + 1);
+        return window.location.protocol + "//" + window.location.host + dir;
+    }
+    function cssInfo() {
+        var out = [], links = document.querySelectorAll('link[rel="stylesheet"]');
+        for (var i = 0; i < links.length; i++) {
+            try {
+                var u = new URL(links[i].href, window.location.href);
+                if (u.origin !== window.location.origin) continue;
+                out.push({ name: u.pathname.split("/").pop(), v: u.searchParams.get("v") || "-" });
+            } catch (e) {}
+        }
+        return out;
+    }
+    function cssSentinel() {
+        // Each design stylesheet declares --etel-css-<app>: "<its ?v= value>".
+        // Empty means the file was not uploaded (or an old copy is cached).
+        try {
+            var key = (window.ETEL_APP === "ride") ? "rider" : (window.ETEL_APP || "");
+            var v = getComputedStyle(document.documentElement).getPropertyValue("--etel-css-" + key);
+            return String(v || "").replace(/["'\s]/g, "");
+        } catch (e) { return ""; }
+    }
+    function designCssLink() {
+        var all = cssInfo();
+        for (var i = 0; i < all.length; i++) if (/premium\.css$/.test(all[i].name)) return all[i];
+        return null;
+    }
+    function versionInfo(cb) {
+        var app = window.ETEL_APP || "";
+        var info = {
+            app: app, loaded: window.__ETEL_LOADED_VERSION || "unknown", expected: null, checked: false,
+            css: cssInfo(), sentinel: cssSentinel(), design: designCssLink(),
+            mapsOk: !window.ETEL_MAPS_FAILED, mapsError: window.ETEL_MAPS_ERROR || null,
+            online: navigator.onLine !== false, page: window.location.origin + window.location.pathname
+        };
+        var token = null;
+        try { token = localStorage.getItem("etel_token"); } catch (e) {}
+        if (!token || !window.fetch || !app) { cb(info); return; }
+        fetch(deliveryRoot() + "api/boot.php?action=get_patch_info&app=" + encodeURIComponent(app) +
+              "&current_version=" + encodeURIComponent(info.loaded) + "&t=" + Date.now(),
+              { headers: { "Authorization": "Bearer " + token } })
+            .then(function (r) { return r.json(); })
+            .then(function (d) {
+                if (d && d.success && d.data && d.data.version) { info.expected = d.data.version; info.checked = true; }
+                cb(info);
+            })
+            .catch(function () { cb(info); });
+    }
+    function versionText(i) {
+        var lines = ["ETEL " + i.app + " diagnostics", "Release loaded: " + i.loaded,
+            "Release on server for you: " + (i.expected || "could not check"),
+            "Design CSS: " + (i.design ? i.design.name + " ?v=" + i.design.v : "none") + ", file says " + (i.sentinel || "NOT LOADED"),
+            "Stylesheets: " + i.css.map(function (c) { return c.name + "?v=" + c.v; }).join(", "),
+            "Maps: " + (i.mapsOk ? "ok" : "FAILED " + (i.mapsError ? i.mapsError.code : "")),
+            "Online: " + i.online, "Page: " + i.page, "Device time: " + new Date().toString()];
+        if (i.mapsError && i.mapsError.url) lines.push("Maps URL to authorize: " + i.mapsError.url);
+        return lines.join("\n");
+    }
+    function showVersion() {
+        var old = document.getElementById("etel-ver-overlay");
+        if (old) old.remove();
+        var el = document.createElement("div");
+        el.id = "etel-ver-overlay";
+        el.setAttribute("role", "dialog");
+        el.setAttribute("aria-label", "About this version");
+        el.style.cssText = "position:fixed;inset:0;z-index:100000;background:rgba(0,0,0,.62);display:flex;align-items:flex-end;justify-content:center;font-family:Outfit,system-ui,sans-serif";
+        var card = document.createElement("div");
+        card.style.cssText = "width:100%;max-width:520px;max-height:86vh;overflow:auto;background:#11131C;color:#F7F5EE;border:1px solid rgba(212,175,55,.3);border-bottom:0;border-radius:22px 22px 0 0;padding:18px 18px calc(18px + env(safe-area-inset-bottom,0px));box-shadow:0 -20px 50px rgba(0,0,0,.5)";
+        card.innerHTML = '<div style="font-weight:800;font-size:18px;margin-bottom:12px">About this version</div><div id="etel-ver-body" style="font-size:14px;color:#C4C6D0">Checking…</div>';
+        el.appendChild(card);
+        el.addEventListener("click", function (e) { if (e.target === el) el.remove(); });
+        document.body.appendChild(el);
+
+        versionInfo(function (i) {
+            var body = card.querySelector("#etel-ver-body");
+            if (!body) return;
+            function chip(ok, text) {
+                return '<span style="display:inline-block;padding:2px 10px;border-radius:999px;font-size:12px;font-weight:700;background:' + (ok ? "rgba(53,209,124,.16)" : "rgba(239,83,80,.18)") + ';color:' + (ok ? "#35D17C" : "#FF7773") + '">' + text + "</span>";
+            }
+            function row(k, v) {
+                return '<div style="display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.08)"><span style="color:#9A9AAE">' + k + '</span><span style="text-align:right;color:#F7F5EE;word-break:break-word">' + v + "</span></div>";
+            }
+            function esc(t) { return String(t).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+            var upToDate = i.checked && i.expected === i.loaded;
+            var rel = esc(i.loaded) + " " + (i.checked ? chip(upToDate, upToDate ? "Up to date" : "Newer: " + esc(i.expected)) : chip(false, "Could not check"));
+            var cssOk = !!i.sentinel && (!i.design || i.sentinel === String(i.design.v));
+            var cssTxt = !i.sentinel ? "Design file not loaded " + chip(false, "Re-upload the CSS")
+                : (i.design && i.sentinel !== String(i.design.v) ? esc(i.sentinel) + " " + chip(false, "Page expects " + esc(i.design.v))
+                : esc(i.sentinel) + " " + chip(true, "Matches"));
+            var maps = i.mapsOk ? chip(true, "Working") : chip(false, "Failed" + (i.mapsError ? ": " + esc(i.mapsError.code) : ""));
+            var html = row("App", esc(i.app || "?")) + row("Release loaded", rel) + row("Design stylesheet", cssTxt) +
+                row("Google Maps", maps) + row("Network", i.online ? "Online" : "Offline");
+            if (!i.mapsOk) {
+                var hint = i.mapsError && i.mapsError.url ? "Add this exact address to the key's website restrictions in Google Cloud: <b style=\"color:#F4D56A\">" + esc(i.mapsError.url) + "</b>" :
+                    "Check the Maps key: website restrictions, billing and the Maps JavaScript API in Google Cloud.";
+                html += '<div style="margin:10px 0;padding:10px 12px;border-radius:12px;background:rgba(239,83,80,.1);color:#FFB4B2;font-size:13px;line-height:1.5">' + hint + "</div>";
+            }
+            if (!upToDate && i.checked) html += '<div style="margin:10px 0;color:#F4D56A;font-size:13px">Tap Reload to pick up the newer release.</div>';
+            if (!cssOk) html += '<div style="margin:10px 0;color:#F4D56A;font-size:13px">The page and its stylesheet are from different uploads, so parts of the design may look old.</div>';
+            html += '<div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">' +
+                '<button id="etel-ver-reload" style="flex:1;min-height:46px;border:0;border-radius:14px;background:linear-gradient(135deg,#F4D56A,#C89A24);color:#16120A;font-weight:800;font-size:15px">Reload</button>' +
+                '<button id="etel-ver-copy" style="flex:1;min-height:46px;border-radius:14px;border:1px solid rgba(255,255,255,.16);background:transparent;color:#F7F5EE;font-weight:700;font-size:14px">Copy details</button>' +
+                '<button id="etel-ver-clear" style="flex:1 1 100%;min-height:44px;border-radius:14px;border:1px solid rgba(255,255,255,.16);background:transparent;color:#C4C6D0;font-size:13px">Clear cache and reload</button>' +
+                '<button id="etel-ver-close" style="flex:1 1 100%;min-height:44px;border:0;background:transparent;color:#9A9AAE;font-size:14px">Close</button></div>';
+            body.innerHTML = html;
+            body.querySelector("#etel-ver-reload").onclick = function () { window.location.reload(); };
+            body.querySelector("#etel-ver-close").onclick = function () { el.remove(); };
+            body.querySelector("#etel-ver-copy").onclick = function (e) {
+                var t = versionText(i), b = e.currentTarget;
+                function done() { b.textContent = "Copied"; }
+                if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(done, function () { window.prompt("Copy:", t); });
+                else window.prompt("Copy:", t);
+            };
+            body.querySelector("#etel-ver-clear").onclick = function () {
+                if (typeof window.etelForceClearCacheAndReload === "function") {
+                    if (window.confirm("This clears everything cached on THIS device, then reloads. You will be logged out and need to sign in again. Continue?")) window.etelForceClearCacheAndReload();
+                } else window.location.reload();
+            };
+        });
+    }
+    // Five quick taps on the app logo open the panel (no visible clutter).
+    function wireVersionTap() {
+        var els = document.querySelectorAll(".ride-logo-box,.drv-logo-box");
+        for (var i = 0; i < els.length; i++) {
+            if (els[i].getAttribute("data-ver-tap")) continue;
+            els[i].setAttribute("data-ver-tap", "1");
+            (function (el) {
+                var n = 0, t0 = 0;
+                el.addEventListener("click", function () {
+                    var now = Date.now();
+                    if (now - t0 > 2500) n = 0;
+                    t0 = now; n++;
+                    if (n >= 5) { n = 0; showVersion(); }
+                });
+            })(els[i]);
+        }
+    }
+
     window.EtelUI = {
         icon: icon,
         vehicleGlyph: vehicleGlyph,
@@ -390,6 +539,8 @@
         mapStyles: mapStyles,
         vehicleMarker: vehicleMarker,
         glideMarker: glideMarker,
+        showVersion: showVersion,
+        versionInfo: versionInfo,
         hydrate: hydrate,
         upgradeEmoji: upgradeEmoji,
         GOLD: GOLD
@@ -399,5 +550,6 @@
     else { hydrate(); startEmojiObserver(); }
     // Pages load this bundle asynchronously (release-loader.js); anything
     // injected before it finished gets its icons filled in here.
-    window.addEventListener("etel:bundle-ready", function () { hydrate(); });
+    window.addEventListener("etel:bundle-ready", function () { hydrate(); wireVersionTap(); });
+    if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", wireVersionTap); else wireVersionTap();
 })();

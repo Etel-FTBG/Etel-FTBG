@@ -202,3 +202,6 @@ button[title="Why did my ride reminder stop?"]{opacity:.7!important;font-weight:
 .loc-row input.loc-input:not([type=radio]):not([type=checkbox]):not([type=range]):focus{background:transparent!important;box-shadow:none!important}
 /* Tighter gap between the grab bar and the first heading */
 .sheet-toggle-btn{min-height:16px!important;padding:0!important;margin:-6px 0 0!important}
+
+/* Read by the version panel: must equal the ?v= on this file's <link>. */
+:root{--etel-css-rider:"20261005"}

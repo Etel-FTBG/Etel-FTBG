@@ -151,3 +151,6 @@ body:not(.light-mode) .drv-topbar{background:rgba(9,10,15,.98)!important}
 body.light-mode .drv-topbar .drv-status-line,body.light-mode .drv-topbar .drv-subtitle{color:#3F3A30!important}
 body.light-mode .drv-online-pill .dot{background:#1FA45B}
 body.light-mode .drv-topbar .drv-poweroff-btn{color:#C62828}
+
+/* Read by the version panel: must equal the ?v= on this file's <link>. */
+:root{--etel-css-driver:"20261005"}

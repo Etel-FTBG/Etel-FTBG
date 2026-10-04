@@ -40,7 +40,7 @@
       _rm.style.cssText += ';position:fixed;top:0;left:0;right:0;bottom:0;width:100vw;height:100vh;z-index:0;';
       RIDE.map = new google.maps.Map(_rm, {
         center:{lat:7.0621,lng:38.4761}, zoom:14,
-        mapId:'ETEL_RIDE_MAP', backgroundColor:'#10101c',
+        backgroundColor:'#10101c',
         disableDefaultUI:false, mapTypeId:'roadmap',
         mapTypeControl:false, zoomControl:false, fullscreenControl:false, streetViewControl:false
       });
@@ -135,7 +135,13 @@
   }
 
   /* ── Auth failure ── */
-  function overrideAuthFailure(){ window.gm_authFailure = function(){ mapUnavailable(); }; }
+  /* Chain, don't replace: core.js sets ETEL_MAPS_FAILED and records Google's reason
+     in its own gm_authFailure, and replacing it here lost both. */
+  function overrideAuthFailure(){
+    var prev = window.gm_authFailure;
+    window.__etelMapUnavailable = mapUnavailable;
+    window.gm_authFailure = function(){ try{ if(typeof prev==='function') prev(); }catch(e){} mapUnavailable(); };
+  }
   function mapUnavailable(){
     var m=document.getElementById('ride-map');
     if(m&&!m.dataset.fallback){ m.dataset.fallback='1';
