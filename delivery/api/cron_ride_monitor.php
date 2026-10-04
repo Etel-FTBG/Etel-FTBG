@@ -76,6 +76,7 @@ require_once __DIR__ . '/lib/schema_helpers.php';
 require_once __DIR__ . '/lib/ride_fare.php';
 require_once __DIR__ . '/lib/ride_sweeper.php';
 require_once __DIR__ . '/lib/ride_monitor.php';
+require_once __DIR__ . '/lib/system_health.php';
 require_once __DIR__ . '/push.php';
 
 // Keep the piggy-back throttle in step so both paths do not double up.
@@ -84,4 +85,5 @@ try { $pdo->exec("UPDATE ride_sweeper_state SET last_run=NOW() WHERE id=1"); } c
 $swept = rides_sweep_stuck($pdo, array('limit' => 50, 'push' => true));
 $noPush = $isCli ? (isset($argv) && in_array('push=0', $argv, true)) : (isset($_GET['push']) && $_GET['push'] === '0');
 $watch = rides_monitor_run($pdo, !$noPush);
+etel_health_heartbeat($pdo, 'ride_monitor', 'swept ' . count($swept['completed']) . ' closed, ' . $watch['findings'] . ' findings');
 cs_reply(array('success' => true, 'swept' => $swept, 'watch' => $watch));

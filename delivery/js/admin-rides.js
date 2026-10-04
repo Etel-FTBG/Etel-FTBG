@@ -40,6 +40,35 @@ function loadStats(){
   });
 }
 
+/* ── System health: is everything that should be running actually running? (admin_system_health, read-only) ── */
+var SH={timer:null};
+var SH_DOT={ok:'#2ECC71',info:'#7AA7FF',warn:'#F0B84A',bad:'#FF6B6B'};
+function systemHealthLoad(){
+  var box=document.getElementById('sys-health-list');
+  if(!box)return;
+  api('admin_system_health',{},function(d){
+    var sum=document.getElementById('sys-health-sum');
+    if(sum){
+      sum.style.color=d.overall==='bad'?'#FF6B6B':(d.overall==='warn'?'#F0B84A':'#2ECC71');
+      sum.textContent=d.overall==='ok'?'All good':(d.problems?d.problems+' problem'+(d.problems===1?'':'s'):'')+(d.problems&&d.warnings?' · ':'')+(d.warnings?d.warnings+' to check':'');
+    }
+    box.innerHTML=(d.checks||[]).map(function(c){
+      return '<div style="display:flex;gap:10px;align-items:flex-start;padding:7px 0;border-top:1px solid rgba(255,255,255,.07)">'+
+        '<span style="flex:none;width:10px;height:10px;border-radius:50%;margin-top:5px;background:'+(SH_DOT[c.status]||SH_DOT.ok)+'"></span>'+
+        '<div style="flex:none;width:130px;color:#f1ece0;font-weight:700">'+esc(c.name)+'</div>'+
+        '<div style="flex:1;min-width:0;color:#B8B0A0">'+esc(c.detail)+'</div></div>';
+    }).join('');
+  },function(m){box.textContent='Could not load: '+m;});
+  if(!SH.timer){
+    SH.timer=setInterval(function(){
+      var el=document.getElementById('sys-health-list');
+      if(document.hidden||!el||!el.offsetParent)return;
+      systemHealthLoad();
+    },60000);
+  }
+}
+window.systemHealthLoad=systemHealthLoad;
+
 /* ── Live trip watch: stuck trips right now (admin_ride_watch, read-only). Refreshes every 30 s while the Rides tab is on screen. ── */
 var RW={timer:null};
 var RW_TITLE={searching:'No driver',pickup:'Driver not at pickup',gps:'GPS silent',long:'Long trip',arrived:'Not confirmed',issue:'Needs review'};
@@ -82,6 +111,7 @@ window.rideWatchLoad=rideWatchLoad;
 
 function ridesLoad(){
   if(!RS.statsLoaded)loadStats();
+  systemHealthLoad();
   rideWatchLoad();
   loadRideIssues();
   loadVehicleChanges();

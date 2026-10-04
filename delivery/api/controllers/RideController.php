@@ -1798,6 +1798,15 @@ case 'admin_get_rides': {
     break;
 }
 
+case 'admin_system_health': {
+    if ($u['role'] !== 'admin' || !user_has_capability($pdo, $u, 'rides.view')) fail('Admin only', 403);
+    require_once __DIR__ . '/../lib/ride_monitor.php';
+    require_once __DIR__ . '/../lib/totp.php';
+    require_once __DIR__ . '/../lib/system_health.php';
+    ok(etel_system_health($pdo, intval($u['id'])));
+    break;
+}
+
 case 'admin_ride_watch': {
     if ($u['role'] !== 'admin' || !user_has_capability($pdo, $u, 'rides.view')) fail('Admin only', 403);
     require_once __DIR__ . '/../lib/ride_monitor.php';
