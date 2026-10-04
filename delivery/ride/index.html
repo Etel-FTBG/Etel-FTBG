@@ -1452,6 +1452,11 @@ function useMyCurrentLocationForPickup(btnEl) {
      js/releases/ride/{version}/ folder and get pointed to from the
      admin Releases panel instead. -->
 <script>window.ETEL_APP = 'ride';</script>
+<script>
+/* The map's self-check flashes a grey "[map] ... recovering..." note while tiles load; hide it (the recovery still runs). */
+(function () { try { new MutationObserver(function (ms) { ms.forEach(function (m) { [].forEach.call(m.addedNodes, function (n) {
+  if (n.nodeType === 1 && n.style && n.style.position === 'fixed' && /^\[map\] /.test(n.textContent || '')) n.style.display = 'none'; }); }); }).observe(document.body || document.documentElement, { childList: true }); } catch (e) {} })();
+</script>
 <script src="../js/release-loader.js"></script>
 <script src="../js/ride-extra-features.js?v=1.1" defer></script>
 <script src="../js/ride-fare-self-heal.js?v=1.0" defer></script>
