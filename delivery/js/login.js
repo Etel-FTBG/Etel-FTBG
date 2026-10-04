@@ -123,7 +123,13 @@ async function doLogin(e){
     ? { identifier: phone, password: pw }
     : { phone, password: pw };
   try {
-    const res=await api(action,payload);
+    let res=await api(action,payload);
+    while(res && res.requires_2fa && window.Etel2FA){
+      const code=await Etel2FA.ask(res.message);
+      if(!code) break;
+      payload.totp_code=code;
+      res=await api(action,payload);
+    }
     if(btn) btn.disabled=false; 
     if(btnTxt) btnTxt.textContent='Sign In →';
     if(!res.success){showAlert(res.message||'Invalid phone or password.');return;}
