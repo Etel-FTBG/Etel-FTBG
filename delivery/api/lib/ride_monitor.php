@@ -181,7 +181,20 @@ function rides_monitor_scan($pdo, $limit = 40) {
     $active = 0; $last = null;
     try { $active = intval($pdo->query("SELECT COUNT(*) FROM rides WHERE status IN ('searching','accepted','in_progress','arrived')")->fetchColumn()); } catch (Exception $e) {}
     try { $v = $pdo->query("SELECT last_run FROM ride_sweeper_state WHERE id=1")->fetchColumn(); if ($v) $last = $v; } catch (Exception $e) {}
-    return array('findings' => $out, 'thresholds' => $t, 'active' => $active, 'sweeper_last_run' => $last);
+    // API health (lib/api_perf.php): slow or failing server, same alert path.
+    $apiStats = null;
+    if (is_file(__DIR__ . '/api_perf.php')) {
+        require_once __DIR__ . '/api_perf.php';
+        $perf = etel_perf_scan($pdo);
+        $apiStats = $perf['stats'];
+        foreach ($perf['findings'] as $pf) $out[] = $pf;
+        usort($out, function ($a, $b) {
+            $sa = $a['severity'] === 'critical' ? 0 : 1; $sb = $b['severity'] === 'critical' ? 0 : 1;
+            if ($sa !== $sb) return $sa - $sb;
+            return $b['minutes'] - $a['minutes'];
+        });
+    }
+    return array('findings' => $out, 'thresholds' => $t, 'active' => $active, 'sweeper_last_run' => $last, 'api' => $apiStats);
 }
 
 function rides_monitor_ensure_table($pdo) {
@@ -246,9 +259,9 @@ function rides_monitor_notify($pdo, $due) {
     $crit = 0;
     foreach ($due as $f) if ($f['severity'] === 'critical') $crit++;
     $n = count($due);
-    $title = ($crit > 0 ? 'Trip alert: ' : 'Trip watch: ') . $n . ($n === 1 ? ' trip needs' : ' trips need') . ' attention';
+    $title = ($crit > 0 ? 'Trip alert: ' : 'Trip watch: ') . $n . ($n === 1 ? ' problem needs' : ' problems need') . ' attention';
     $lines = array();
-    foreach (array_slice($due, 0, 3) as $f) $lines[] = '#' . $f['ride_id'] . ' ' . $f['title'] . ' (' . rides_monitor_fmt($f['minutes']) . ')';
+    foreach (array_slice($due, 0, 3) as $f) $lines[] = ($f['ride_id'] ? '#' . $f['ride_id'] . ' ' : '') . $f['title'] . ' (' . rides_monitor_fmt($f['minutes']) . ')';
     if ($n > 3) $lines[] = '+' . ($n - 3) . ' more';
     $body = implode(' - ', $lines);
     $sent = 0;
