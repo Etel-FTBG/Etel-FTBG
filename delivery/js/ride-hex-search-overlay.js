@@ -207,20 +207,17 @@
           } else {
             el.textContent = vehicleEmoji(d.vehicle_type);
           }
-          let marker;
-          if (google.maps.marker && google.maps.marker.AdvancedMarkerElement) {
-            marker = new google.maps.marker.AdvancedMarkerElement({
-              position: { lat: d.lat, lng: d.lng }, map: RIDE.map, content: el, zIndex: 5,
-            });
-          } else {
-            marker = new google.maps.Marker({
-              position: { lat: d.lat, lng: d.lng }, map: RIDE.map,
-              icon: imgUrl ? { url: imgUrl, scaledSize: new google.maps.Size(56, 56), anchor: new google.maps.Point(28, 28) }
-                           : { path: google.maps.SymbolPath.CIRCLE, scale: 0.01, },
-              label: imgUrl ? undefined : { text: vehicleEmoji(d.vehicle_type), fontSize: '28px' },
-              zIndex: 5,
-            });
-          }
+          // Classic google.maps.Marker only. The ride map is created WITHOUT a Cloud mapId on
+          // purpose (a mapId makes Google ignore our dark/light `styles`), and an
+          // AdvancedMarkerElement on a map with no valid mapId logs "initialized without a valid
+          // Map ID" on every refresh and may not draw at all.
+          const marker = new google.maps.Marker({
+            position: { lat: d.lat, lng: d.lng }, map: RIDE.map,
+            icon: imgUrl ? { url: imgUrl, scaledSize: new google.maps.Size(56, 56), anchor: new google.maps.Point(28, 28) }
+                         : { path: google.maps.SymbolPath.CIRCLE, scale: 0.01, },
+            label: imgUrl ? undefined : { text: vehicleEmoji(d.vehicle_type), fontSize: '28px' },
+            zIndex: 5,
+          });
           driverMarkers.push(marker);
           // Fade in - purely cosmetic polish, the marker/data itself
           // is already real by this point.
