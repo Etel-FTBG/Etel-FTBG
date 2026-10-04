@@ -1066,6 +1066,15 @@ html{color-scheme:light}
                 <!-- ═══════════ RIDES PANEL ═══════════ -->
                 <div class="panel" id="panel-rides" style="display:none">
 
+                  <div id="ride-watch" style="margin-bottom:20px;border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;background:rgba(255,255,255,.03)">
+                    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px">
+                      <h3 style="color:#f0cf5a;font-size:15px;margin:0;flex:1">Live trip watch</h3>
+                      <span id="ride-watch-note" style="font-size:12px;color:#9A9AAE"></span>
+                      <button class="rides-filter-btn" onclick="rideWatchLoad()">Refresh</button>
+                    </div>
+                    <div id="ride-watch-list" style="font-size:13px;color:#B8B0A0">Checking...</div>
+                  </div>
+
                   <div id="rides-stats-strip" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin-bottom:20px"></div>
 
                   <div class="chart-card" style="margin-bottom:20px">
@@ -1507,7 +1516,7 @@ html{color-scheme:light}
 <script src="js/admin-couriers-premium.js?v=1.4"></script><!-- Premium Couriers Management: 3D cards + edit modal + live map -->
     <script src="js/admin-premium.js?v=4.1"></script><!-- KPI count-ups + card motion -->
         <script src="js/admin-updater-ext.js?v=4.3"></script>
-        <script src="js/admin-rides.js?v=4.16"></script><!-- Rides tab - Phase 4, + ride issue reports, + manual GPS-lost completion, + live map picker, + stops -->
+        <script src="js/admin-rides.js?v=4.17"></script><!-- Rides tab - Phase 4, + ride issue reports, + manual GPS-lost completion, + live map picker, + stops -->
     <script src="js/admin-sos.js?v=1.0"></script><!-- SOS / intruder-alert monitor for driver & rider panic button -->
     <script src="js/admin/servicegiver-ext.js?v=4.2"></script>
     <script src="js/admin-audit.js?v=1.6"></script><!-- One-click code audit (Settings tab) -->

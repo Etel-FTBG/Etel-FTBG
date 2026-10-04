@@ -1727,6 +1727,13 @@ case 'admin_get_rides': {
     break;
 }
 
+case 'admin_ride_watch': {
+    if ($u['role'] !== 'admin' || !user_has_capability($pdo, $u, 'rides.view')) fail('Admin only', 403);
+    require_once __DIR__ . '/../lib/ride_monitor.php';
+    ok(rides_monitor_scan($pdo));
+    break;
+}
+
 case 'admin_get_ride_stats': {
     if ($u['role'] !== 'admin' || !user_has_capability($pdo, $u, 'rides.view')) fail('Admin only', 403);
     $today = date('Y-m-d');
