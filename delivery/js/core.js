@@ -1560,8 +1560,31 @@ async function loadGoogleMaps(libraries, callbackName) {
 
   // Google calls this global when the key/referrer is rejected
   // (RefererNotAllowedMapError, InvalidKey, BillingNotEnabled, etc.)
+  // Google writes the real reason (RefererNotAllowedMapError, InvalidKeyMapError,
+  // BillingNotEnabledMapError, ...) and the exact URL it wants authorized to the
+  // console only. Keep it so the version panel can show it on the phone.
+  if (!window.__etelMapsConsoleHook) {
+    window.__etelMapsConsoleHook = true;
+    ['error', 'warn'].forEach(function (level) {
+      var orig = console[level];
+      console[level] = function () {
+        try {
+          var msg = Array.prototype.slice.call(arguments).join(' ');
+          var m = /Google Maps JavaScript API (?:error|warning): (\w+)/.exec(msg);
+          if (m) {
+            var u = /URL to be authorized: (\S+)/.exec(msg);
+            window.ETEL_MAPS_ERROR = { code: m[1], url: u ? u[1] : (window.location.origin + '/*'), level: level };
+          }
+        } catch (e) {}
+        return orig.apply(console, arguments);
+      };
+    });
+  }
+  var __prevAuthFailure = window.gm_authFailure;
   window.gm_authFailure = function () {
     window.ETEL_MAPS_FAILED = true;
+    try { if (typeof __prevAuthFailure === 'function') __prevAuthFailure(); } catch (e) {}
+    try { if (typeof window.__etelMapUnavailable === 'function') window.__etelMapUnavailable(); } catch (e) {}
     console.error('[ETEL] Google Maps auth failed — check API key referrer restrictions in Google Cloud Console (use https://ethelmarket.com/* and https://www.ethelmarket.com/*).');
     try { document.dispatchEvent(new CustomEvent('etel:maps-failed', { detail: { reason: 'auth' } })); } catch (e) {}
   };

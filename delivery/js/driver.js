@@ -2096,7 +2096,11 @@ function openTopupHistoryModal() {
 
 function renderProfilePage() {
     var lbl = document.getElementById('app-version-lbl');
-    if (lbl) lbl.textContent = 'App version 3.7.1 (ETEL Delivery)';
+    if (lbl) {
+        lbl.textContent = 'ETEL Driver \u00b7 release ' + (window.__ETEL_LOADED_VERSION || '?') + ' \u00b7 tap for details';
+        lbl.style.cursor = 'pointer';
+        lbl.onclick = function () { if (window.EtelUI && EtelUI.showVersion) EtelUI.showVersion(); };
+    }
     /* Populate immediately from whatever we already have (instant paint,
        no flash of placeholder text), then always refresh from the server
        so the page is never silently stuck waiting on an earlier, unrelated
