@@ -735,7 +735,7 @@ html[data-etel-on] .del-lang-switch{position:static!important;margin:0 0 10px au
 
 <!-- Core scripts (same as original login.html) -->
 <script src="js/core.js?v=5.13"></script>
-<script src="js/login.js?v=4.3"></script>
+<script src="js/login.js?v=4.4"></script>
 <script src="js/etel-2fa.js?v=1"></script>
 
 <script>
@@ -1178,7 +1178,15 @@ async function doEtelIdLogin() {
     // additionally recognizes Etel-Group-assigned staff roles (see
     // EtelGroup admin's Employees panel) - see admin_etelid_login.
     var action = (_role === 'admin') ? 'admin_etelid_login' : 'etelid_login';
-    var res = await api(action, { identifier: ident.replace(/\s/g,''), password: pw, role: _role });
+    var eidBody = { identifier: ident.replace(/\s/g,''), password: pw, role: _role };
+    var res = await api(action, eidBody);
+    // Two-step sign-in (admin accounts): ask for the authenticator/backup code and resend.
+    while (res && res.requires_2fa && window.Etel2FA) {
+      var eidCode = await Etel2FA.ask(res.message);
+      if (!eidCode) break;
+      eidBody.totp_code = eidCode;
+      res = await api(action, eidBody);
+    }
     if (btn) { btn.disabled = false; btn.innerHTML = '<span class="del-etelid-mark">ኢE</span><span>Sign in with EtelID</span>'; }
     if (!res.success) { showAlert(res.message || 'EtelID authentication failed.'); return; }
     Auth.save(res.data);
