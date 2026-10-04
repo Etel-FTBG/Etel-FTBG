@@ -38,8 +38,15 @@ a.back{color:var(--dim);font-size:14px}
 <main>
   <a class="back" href="admin.html">&larr; Back to admin</a>
   <h1>Two-step sign-in</h1>
-  <p class="sub">Add a 6-digit code from your phone on top of your password, so a stolen password alone cannot open the admin.</p>
+  <p class="sub">Add a 6-digit code from your phone on top of your password, so a stolen password alone cannot open the admin. Every other role can switch it on from their own profile.</p>
   <div id="view" class="card">Loading&hellip;</div>
+  <div class="card" id="reset-card">
+    <b>Help someone who lost their phone</b>
+    <p style="color:var(--dim);font-size:14px;margin:6px 0 12px">If a customer, rider, driver, courier or service giver lost their phone <i>and</i> their backup codes, type their phone number to switch off their two-step sign-in. They can then sign in with their password and set it up again.</p>
+    <input type="text" id="reset-phone" inputmode="tel" placeholder="+2519..." aria-label="Phone number" style="font-size:18px;letter-spacing:.05em">
+    <div class="row" style="margin-top:12px"><span></span><button class="danger" id="reset-go">Reset their two-step sign-in</button></div>
+    <div id="reset-msg" class="msg"></div>
+  </div>
 </main>
 <script src="js/core.js?v=5.13"></script>
 <script>
@@ -109,6 +116,16 @@ a.back{color:var(--dim);font-size:14px}
     document.getElementById('pr').onclick = function () { window.print(); };
     document.getElementById('done').onclick = load;
   }
+
+  document.getElementById('reset-go').onclick = function () {
+    var ph = document.getElementById('reset-phone').value.trim(), m = document.getElementById('reset-msg');
+    if (!ph) { m.className = 'msg err'; m.textContent = 'Type their phone number.'; return; }
+    if (!confirm('Switch off two-step sign-in for ' + ph + '? Their account will be protected by the password only until they set it up again.')) return;
+    api('admin_reset_user_2fa', { phone: ph }).then(function (r) {
+      if (r && r.success) { m.className = 'msg ok'; m.textContent = r.data.reset ? ('Done. ' + (r.data.name || ph) + ' (' + r.data.role + ') can now sign in with the password.') : ((r.data.name || ph) + ' did not have two-step sign-in on.'); }
+      else { m.className = 'msg err'; m.textContent = (r && r.message) || 'Could not reset.'; }
+    });
+  };
 
   document.addEventListener('DOMContentLoaded', function () {
     var u = (typeof Auth !== 'undefined' && Auth.getUser) ? Auth.getUser() : null;

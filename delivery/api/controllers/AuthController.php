@@ -246,7 +246,7 @@ case 'login': {
         }
     }
 
-    etel_2fa_gate($pdo, $u, $body); // admin accounts with two-step sign-in on must also pass the code
+    etel_2fa_gate($pdo, $u, $body); // any account with two-step sign-in on must also pass the code
     $token = gen_token($u['id'], $hasVer ? intval($u['token_version']) : 0);
     ok(array(
         'token' => $token,
@@ -292,6 +292,7 @@ case 'sg_login': {
     // Admin accounts have no service_giver profile row - skip that lookup
     // entirely and issue a plain admin session instead.
     if ($u['role'] === 'admin') {
+        etel_2fa_gate($pdo, $u, $body);
         $token = gen_token($u['id'], $hasVer ? intval($u['token_version']) : 0);
         ok(array(
             'token' => $token,
@@ -314,6 +315,7 @@ case 'sg_login': {
     if ($sg['status'] === 'suspended') fail('Your account is suspended. Contact admin.', 403);
     if ($sg['status'] === 'pending') fail('Your account is pending verification', 403);
     
+    etel_2fa_gate($pdo, $u, $body);
     $token   = gen_token($u['id'], $hasVer ? intval($u['token_version']) : 0);
     $user    = array('id'=>$u['id'],'name'=>$u['name'],'phone'=>$u['phone'],'role'=>$u['role']);
     
@@ -529,11 +531,14 @@ case 'admin_etelid_login': {
     break;
 }
 
-case 'admin_2fa_status': case 'admin_2fa_begin': case 'admin_2fa_enable': case 'admin_2fa_disable': case 'admin_2fa_backup_codes': {
-    /* Self-service set-up of two-step sign-in for the signed-in admin. */
+case 'admin_2fa_status': case 'admin_2fa_begin': case 'admin_2fa_enable': case 'admin_2fa_disable': case 'admin_2fa_backup_codes':
+case 'user_2fa_status': case 'user_2fa_begin': case 'user_2fa_enable': case 'user_2fa_disable': case 'user_2fa_backup_codes': {
+    /* Self-service set-up of two-step sign-in for the signed-in account, any
+       role. admin_2fa_* is the original name (kept so the deployed admin page
+       keeps working); user_2fa_* is what the profile screens call. */
+    $action = str_replace('user_2fa_', 'admin_2fa_', $action);
     $pdo = db();
     $au  = require_auth($pdo);
-    if ($au['role'] !== 'admin') fail('Admins only', 403);
     $uid = intval($au['id']);
     $row = etel_2fa_row($pdo, $uid);
     $enabled = $row && intval($row['enabled']) === 1;
@@ -554,7 +559,7 @@ case 'admin_2fa_status': case 'admin_2fa_begin': case 'admin_2fa_enable': case '
                        VALUES (?, ?, 0, NULL, 0, NOW())
                        ON DUPLICATE KEY UPDATE secret_enc=VALUES(secret_enc), enabled=0, backup_codes=NULL, last_step=0, created_at=NOW()")
             ->execute(array($uid, etel_2fa_encrypt($secret)));
-        $label = rawurlencode('ETEL Delivery:' . ($au['phone'] ? $au['phone'] : ('admin' . $uid)));
+        $label = rawurlencode('ETEL Delivery:' . ($au['phone'] ? $au['phone'] : ('user' . $uid)));
         $uri = 'otpauth://totp/' . $label . '?secret=' . $secret . '&issuer=' . rawurlencode('ETEL Delivery') . '&algorithm=SHA1&digits=6&period=30';
         ok(array('secret' => implode(' ', str_split($secret, 4)), 'secret_raw' => $secret, 'otpauth' => $uri));
         break;
@@ -594,6 +599,24 @@ case 'admin_2fa_status': case 'admin_2fa_begin': case 'admin_2fa_enable': case '
     foreach ($codes as $c) $hashes[] = etel_2fa_hash_backup($c);
     $pdo->prepare('UPDATE admin_2fa SET backup_codes=? WHERE user_id=?')->execute(array(json_encode($hashes), $uid));
     ok(array('backup_codes' => $codes));
+    break;
+}
+case 'admin_reset_user_2fa': {
+    /* For someone who lost their phone AND their backup codes. Removes their
+       two-step sign-in so they can sign in with the password and set it up
+       again. Identified by phone number; admins only. */
+    $pdo = db();
+    $admin = require_admin($pdo, 'users.manage');
+    $phone = isset($body['phone']) ? preg_replace('/[^0-9+]/', '', trim($body['phone'])) : '';
+    if (!$phone) fail('Phone number is required', 400);
+    $target = etel_find_user_by_phone($pdo, $phone, 'id,name,phone,role');
+    if (!$target) fail('No account with that phone number', 404);
+    etel_2fa_ensure_table($pdo);
+    $d = $pdo->prepare('DELETE FROM admin_2fa WHERE user_id=?');
+    $d->execute(array(intval($target['id'])));
+    etel_2fa_clear_failures($pdo, intval($target['id']));
+    error_log('[ETEL][2fa] admin ' . intval($admin['id']) . ' reset two-step sign-in for user ' . intval($target['id']));
+    ok(array('reset' => $d->rowCount() > 0, 'name' => $target['name'], 'role' => $target['role']));
     break;
 }
 }
