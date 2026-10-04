@@ -736,6 +736,7 @@ html[data-etel-on] .del-lang-switch{position:static!important;margin:0 0 10px au
 <!-- Core scripts (same as original login.html) -->
 <script src="js/core.js?v=5.13"></script>
 <script src="js/login.js?v=4.3"></script>
+<script src="js/etel-2fa.js?v=1"></script>
 
 <script>
 // ── LANGUAGE (English / Amharic) ─────────────────────────────────
@@ -1231,7 +1232,16 @@ async function doLogin() {
   clearAlert();
   var action = _role==='service_giver' ? 'sg_login' : 'login';
   try {
-    var res = await api(action, { phone: phone, password: pw, role: _role });
+    var loginBody = { phone: phone, password: pw, role: _role };
+    var res = await api(action, loginBody);
+    // Admin accounts with two-step sign-in switched on answer { requires_2fa: true }:
+    // ask for the authenticator (or backup) code and send it with the same request.
+    while (res && res.requires_2fa && window.Etel2FA) {
+      var code = await Etel2FA.ask(res.message);
+      if (!code) break;
+      loginBody.totp_code = code;
+      res = await api(action, loginBody);
+    }
     if(btn) btn.disabled = false; if(txt) txt.textContent = 'Sign In →';
     if (!res.success) { showAlert(res.message || 'Invalid phone or password.'); return; }
     Auth.save(res.data);

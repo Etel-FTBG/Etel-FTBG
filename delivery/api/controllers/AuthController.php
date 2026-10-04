@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/../lib/totp.php';
 switch ($action) {
 case 'register': {
     $pdo   = db();
@@ -173,6 +174,9 @@ case 'login': {
     if (!$phone) fail('Phone is required');
     if (!$pw)    fail('Password is required');
     rate_limit_check($pdo, 'login:' . $phone);
+    // Looser ceiling per address across ALL numbers (credential stuffing). Generous on purpose:
+    // mobile carriers put thousands of people behind a few shared addresses.
+    rate_limit_check($pdo, 'login_ip', 100, 600, 600);
     $hasVer = in_array('token_version', etel_table_columns($pdo, 'users'), true);
     // staff_role wasn't selected/returned by this plain login path at
     // all - only admin_etelid_login had it. That meant a staff account
@@ -186,10 +190,11 @@ case 'login': {
     // Exact match first; a number written in another form (0924.. vs +251924..) still
     // finds its one account, but is never allowed to pick between two duplicates.
     $u = etel_find_user_by_phone($pdo, $phone, 'id,name,phone,role,password_hash' . ($hasVer ? ',token_version' : '') . ($hasStaffRole ? ',staff_role' : ''));
-    if (!$u) { rate_limit_fail($pdo, 'login:' . $phone); fail('No account found with that phone', 404); }
+    if (!$u) { rate_limit_fail($pdo, 'login:' . $phone); rate_limit_fail($pdo, 'login_ip'); fail('No account found with that phone', 404); }
     if (!isset($u['password_hash']) || !$u['password_hash']) fail('Account misconfigured  contact admin', 403);
     if (!password_verify($pw, $u['password_hash'])) {
         rate_limit_fail($pdo, 'login:' . $phone);
+        rate_limit_fail($pdo, 'login_ip');
         fail('Incorrect password', 401);
     }
     rate_limit_clear($pdo, 'login:' . $phone);
@@ -241,6 +246,7 @@ case 'login': {
         }
     }
 
+    etel_2fa_gate($pdo, $u, $body); // admin accounts with two-step sign-in on must also pass the code
     $token = gen_token($u['id'], $hasVer ? intval($u['token_version']) : 0);
     ok(array(
         'token' => $token,
@@ -264,6 +270,7 @@ case 'sg_login': {
     if (!$phone) fail('Phone number is required');
     if (!$pw)    fail('Password is required');
     rate_limit_check($pdo, 'sg_login:' . $phone);
+    rate_limit_check($pdo, 'login_ip', 100, 600, 600);
     $hasVer = in_array('token_version', etel_table_columns($pdo, 'users'), true);
 
     // Fetch user with service_giver role - OR an admin account, which is
@@ -273,10 +280,11 @@ case 'sg_login': {
         $u = etel_find_user_by_phone($pdo, $phone, 'id,name,phone,role,password_hash' . ($hasVer ? ',token_version' : ''), "role IN ('service_giver','admin')");
     } catch (Exception $e) { $u = null; }
     
-    if (!$u) { rate_limit_fail($pdo, 'sg_login:' . $phone); fail('No service giver account found with that phone number', 404); }
+    if (!$u) { rate_limit_fail($pdo, 'sg_login:' . $phone); rate_limit_fail($pdo, 'login_ip'); fail('No service giver account found with that phone number', 404); }
     if (!isset($u['password_hash']) || !$u['password_hash']) fail('Account has no password set  contact admin', 403);
     if (!password_verify($pw, $u['password_hash'])) {
         rate_limit_fail($pdo, 'sg_login:' . $phone);
+        rate_limit_fail($pdo, 'login_ip');
         fail('Incorrect password', 401);
     }
     rate_limit_clear($pdo, 'sg_login:' . $phone);
@@ -330,10 +338,12 @@ case 'etelid_login': {
     if (!$pw)    fail('Password is required');
 
     rate_limit_check($pdo, 'etelid:' . substr($ident, 0, 60));
+    rate_limit_check($pdo, 'login_ip', 100, 600, 600);
 
     $auth = etelid_bridge_authenticate($ident, $pw);
     if (isset($auth['error'])) {
         rate_limit_fail($pdo, 'etelid:' . substr($ident, 0, 60));
+        rate_limit_fail($pdo, 'login_ip');
         fail($auth['error'], isset($auth['code']) ? $auth['code'] : 401);
     }
     $member = $auth['member'];
@@ -374,6 +384,7 @@ case 'etelid_login': {
         fail("This EtelID is registered as $actual. Select the \"$actual\" tab instead.", 403);
     }
 
+    etel_2fa_gate($pdo, $u, $body);
     $token = gen_token($u['id'], isset($u['token_version']) ? intval($u['token_version']) : 0);
     ok(array(
         'token'   => $token,
@@ -415,9 +426,11 @@ case 'admin_etelid_login': {
     if (!$pw)    fail('Password is required');
 
     rate_limit_check($pdo, 'admin_etelid:' . substr($ident, 0, 60));
+    rate_limit_check($pdo, 'login_ip', 100, 600, 600);
     $auth = etelid_bridge_authenticate($ident, $pw);
     if (isset($auth['error'])) {
         rate_limit_fail($pdo, 'admin_etelid:' . substr($ident, 0, 60));
+        rate_limit_fail($pdo, 'login_ip');
         fail($auth['error'], isset($auth['code']) ? $auth['code'] : 401);
     }
     $member = $auth['member'];
@@ -507,11 +520,80 @@ case 'admin_etelid_login': {
         fail('No admin account found for this EtelID. Ask a super admin to add you first.', 403);
     }
 
+    etel_2fa_gate($pdo, $u, $body);
     $token = gen_token($u['id'], $hasVer ? intval($u['token_version']) : 0);
     ok(array(
         'token' => $token,
         'user'  => array('id' => $u['id'], 'name' => $u['name'], 'phone' => $u['phone'], 'role' => $u['role'], 'staff_role' => $u['staff_role'] ?? null),
     ));
+    break;
+}
+
+case 'admin_2fa_status': case 'admin_2fa_begin': case 'admin_2fa_enable': case 'admin_2fa_disable': case 'admin_2fa_backup_codes': {
+    /* Self-service set-up of two-step sign-in for the signed-in admin. */
+    $pdo = db();
+    $au  = require_auth($pdo);
+    if ($au['role'] !== 'admin') fail('Admins only', 403);
+    $uid = intval($au['id']);
+    $row = etel_2fa_row($pdo, $uid);
+    $enabled = $row && intval($row['enabled']) === 1;
+    $code = isset($body['code']) ? trim((string) $body['code']) : '';
+
+    if ($action === 'admin_2fa_status') {
+        $left = 0;
+        if ($row && $enabled) { $c = json_decode((string) $row['backup_codes'], true); $left = is_array($c) ? count($c) : 0; }
+        ok(array('enabled' => $enabled, 'pending' => ($row && !$enabled), 'backup_codes_left' => $left));
+        break;
+    }
+
+    if ($action === 'admin_2fa_begin') {
+        if ($enabled) fail('Two-step sign-in is already on. Turn it off first if you want to set it up again.', 409);
+        $secret = etel_2fa_new_secret();
+        etel_2fa_ensure_table($pdo);
+        $pdo->prepare("INSERT INTO admin_2fa (user_id, secret_enc, enabled, backup_codes, last_step, created_at)
+                       VALUES (?, ?, 0, NULL, 0, NOW())
+                       ON DUPLICATE KEY UPDATE secret_enc=VALUES(secret_enc), enabled=0, backup_codes=NULL, last_step=0, created_at=NOW()")
+            ->execute(array($uid, etel_2fa_encrypt($secret)));
+        $label = rawurlencode('ETEL Delivery:' . ($au['phone'] ? $au['phone'] : ('admin' . $uid)));
+        $uri = 'otpauth://totp/' . $label . '?secret=' . $secret . '&issuer=' . rawurlencode('ETEL Delivery') . '&algorithm=SHA1&digits=6&period=30';
+        ok(array('secret' => implode(' ', str_split($secret, 4)), 'secret_raw' => $secret, 'otpauth' => $uri));
+        break;
+    }
+
+    // The remaining actions all need a correct current code.
+    if (etel_2fa_failures($pdo, $uid) >= 5) fail('Too many wrong codes. Try again in 10 minutes.', 429);
+
+    if ($action === 'admin_2fa_enable') {
+        if ($enabled) fail('Already on', 409);
+        if (!$row) fail('Start the set-up first', 400);
+        $secret = etel_2fa_decrypt($row['secret_enc']);
+        $step = ($secret !== '') ? etel_totp_match($secret, $code) : false;
+        if ($step === false) { etel_2fa_record_failure($pdo, $uid); fail('That code is not right. Check the time on your phone and try again.', 401); }
+        $codes = etel_2fa_new_backup_codes();
+        $hashes = array();
+        foreach ($codes as $c) $hashes[] = etel_2fa_hash_backup($c);
+        $pdo->prepare('UPDATE admin_2fa SET enabled=1, backup_codes=?, last_step=0, enabled_at=NOW() WHERE user_id=?')
+            ->execute(array(json_encode($hashes), $uid));
+        etel_2fa_clear_failures($pdo, $uid);
+        ok(array('enabled' => true, 'backup_codes' => $codes));
+        break;
+    }
+
+    if (!$enabled) fail('Two-step sign-in is not on', 409);
+    if (!etel_2fa_check_code($pdo, $uid, $code)) { etel_2fa_record_failure($pdo, $uid); fail('That code is not right.', 401); }
+    etel_2fa_clear_failures($pdo, $uid);
+
+    if ($action === 'admin_2fa_disable') {
+        $pdo->prepare('DELETE FROM admin_2fa WHERE user_id=?')->execute(array($uid));
+        ok(array('enabled' => false));
+        break;
+    }
+    // admin_2fa_backup_codes: replace all backup codes with 8 fresh ones
+    $codes = etel_2fa_new_backup_codes();
+    $hashes = array();
+    foreach ($codes as $c) $hashes[] = etel_2fa_hash_backup($c);
+    $pdo->prepare('UPDATE admin_2fa SET backup_codes=? WHERE user_id=?')->execute(array(json_encode($hashes), $uid));
+    ok(array('backup_codes' => $codes));
     break;
 }
 }

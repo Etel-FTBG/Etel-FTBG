@@ -666,7 +666,7 @@ switch ($action) {
         ok(array('accounts' => $accounts));
         break;
     }
-    case 'register': case 'login': case 'sg_login': case 'etelid_login': case 'admin_etelid_login': case 'change_password':
+    case 'register': case 'login': case 'sg_login': case 'etelid_login': case 'admin_etelid_login': case 'change_password': case 'admin_2fa_status': case 'admin_2fa_begin': case 'admin_2fa_enable': case 'admin_2fa_disable': case 'admin_2fa_backup_codes':
         require __DIR__ . '/controllers/AuthController.php';
         break;
     case 'set_user_language': {

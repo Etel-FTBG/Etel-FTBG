@@ -306,6 +306,7 @@ body { font-family:var(--ff-b); background:#0a0a14; overflow:hidden; }
 </div>
 
 <script src="js/core.js?v=5.13"></script>
+<script src="js/etel-2fa.js?v=1"></script>
 <script>
 /* This page's identity is fixed - always admin, never a tab choice - so
    the redirect target is always admin.html (plus an optional staff
@@ -355,7 +356,15 @@ async function doEtelIdLogin() {
     // it only ever grants the admin dashboard, and only when an existing
     // 'admin' users row already matches this phone or EtelGroup's own
     // Employees panel has assigned this phone a role at 'etel-delivery'.
-    var res = await api('admin_etelid_login', { identifier: ident.replace(/\s/g, ''), password: pw, role: 'admin' });
+    var loginBody = { identifier: ident.replace(/\s/g, ''), password: pw, role: 'admin' };
+    var res = await api('admin_etelid_login', loginBody);
+    // Two-step sign-in: the server asks for the authenticator (or backup) code.
+    while (res && res.requires_2fa && window.Etel2FA) {
+      var code = await Etel2FA.ask(res.message);
+      if (!code) break;
+      loginBody.totp_code = code;
+      res = await api('admin_etelid_login', loginBody);
+    }
     if (btn) { btn.disabled = false; btn.innerHTML = '<span class="del-etelid-mark">ኢE</span><span>Sign in with EtelID</span>'; }
     if (!res.success) { showAlert(res.message || 'EtelID authentication failed.'); return; }
     Auth.save(res.data);
