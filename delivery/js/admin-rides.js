@@ -40,8 +40,49 @@ function loadStats(){
   });
 }
 
+/* ── Live trip watch: stuck trips right now (admin_ride_watch, read-only). Refreshes every 30 s while the Rides tab is on screen. ── */
+var RW={timer:null};
+var RW_TITLE={searching:'No driver',pickup:'Driver not at pickup',gps:'GPS silent',long:'Long trip',arrived:'Not confirmed',issue:'Needs review'};
+function rwFmt(m){m=parseInt(m,10)||0;return m<60?m+' min':Math.floor(m/60)+' h '+(m%60)+' min';}
+function rideWatchLoad(){
+  var box=document.getElementById('ride-watch-list');
+  if(!box)return;
+  api('admin_ride_watch',{},function(d){
+    var f=d.findings||[];
+    var note=document.getElementById('ride-watch-note');
+    var crit=f.filter(function(x){return x.severity==='critical';}).length;
+    if(note)note.textContent=(d.active||0)+' active trips'+(d.sweeper_last_run?' · sweeper last ran '+String(d.sweeper_last_run).slice(11,16):'');
+    if(!f.length){
+      box.innerHTML='<div style="color:#2ECC71;font-weight:700">✓ All clear</div><div style="font-size:12px;color:#9A9AAE;margin-top:2px">No stuck trips right now.</div>';
+      return;
+    }
+    box.innerHTML='<div style="margin-bottom:8px;font-weight:700;color:'+(crit?'#FF6B6B':'#F0B84A')+'">'+f.length+' trip'+(f.length===1?'':'s')+' need attention'+(crit?' · '+crit+' critical':'')+'</div>'+
+      f.map(function(x){
+        var c=x.severity==='critical'?'#FF6B6B':'#F0B84A';
+        var who=[x.passenger?('Rider '+esc(x.passenger)+(x.passenger_phone?' '+esc(x.passenger_phone):'')):'',
+                 x.driver?('Driver '+esc(x.driver)+(x.driver_phone?' '+esc(x.driver_phone):'')):''].filter(Boolean).join(' · ');
+        var canCancel=x.rule!=='issue'&&x.status!=='arrived';
+        return '<div style="display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-top:1px solid rgba(255,255,255,.07)">'+
+          '<span style="flex:none;margin-top:2px;padding:3px 8px;border-radius:6px;font-size:11px;font-weight:800;text-transform:uppercase;color:#1a1408;background:'+c+'">'+x.severity+'</span>'+
+          '<div style="flex:1;min-width:0"><div style="color:#f1ece0;font-weight:700">#'+x.ride_id+' · '+esc(x.title)+' <span style="color:#9A9AAE;font-weight:400">· '+rwFmt(x.minutes)+'</span></div>'+
+          '<div style="font-size:12px;color:#B8B0A0">'+esc(x.detail)+'</div>'+
+          (who?'<div style="font-size:12px;color:#9A9AAE;margin-top:2px">'+who+'</div>':'')+'</div>'+
+          (canCancel?'<button class="rides-filter-btn" onclick="ridesCancel('+x.ride_id+');setTimeout(rideWatchLoad,800)">Cancel ride</button>':'')+
+          '</div>';
+      }).join('');
+  },function(m){box.textContent='Could not load: '+m;});
+  if(!RW.timer){
+    RW.timer=setInterval(function(){
+      if(document.hidden||!document.getElementById('ride-watch-list')||!document.getElementById('ride-watch-list').offsetParent)return;
+      rideWatchLoad();
+    },30000);
+  }
+}
+window.rideWatchLoad=rideWatchLoad;
+
 function ridesLoad(){
   if(!RS.statsLoaded)loadStats();
+  rideWatchLoad();
   loadRideIssues();
   loadVehicleChanges();
   loadFlaggedIdentities();
