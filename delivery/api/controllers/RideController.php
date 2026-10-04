@@ -2426,6 +2426,80 @@ case 'admin_reject_compliance_document': {
     break;
 }
 
+case 'driver_get_demand': {
+    /* "Hot areas" for drivers: where ride requests have been piling up in the last
+       45 minutes compared with how many idle drivers are there. Only counts per
+       area (about 700 m cells) and the area's centre - never a rider, address or
+       phone. An area is worth showing when it has 2+ requests or someone is
+       waiting right now. Score = (requests + 2 x waiting) / (idle drivers + 1). */
+    if ($u['role'] !== 'driver' && $u['role'] !== 'admin') fail('Drivers only', 403);
+    $size = 700.0;
+    $myLat = isset($body['lat']) && is_numeric($body['lat']) ? floatval($body['lat']) : null;
+    $myLng = isset($body['lng']) && is_numeric($body['lng']) ? floatval($body['lng']) : null;
+    if ($myLat === null) {
+        try {
+            $m = $pdo->prepare('SELECT lat, lng FROM ride_drivers WHERE user_id=?');
+            $m->execute(array(intval($u['id'])));
+            $mr = $m->fetch();
+            if ($mr && $mr['lat'] !== null) { $myLat = floatval($mr['lat']); $myLng = floatval($mr['lng']); }
+        } catch (Exception $e) {}
+    }
+    $cells = array();
+    $idleDrivers = array();
+    try {
+        $q = $pdo->query("SELECT status, pickup_lat, pickup_lng FROM rides
+                          WHERE created_at > DATE_SUB(NOW(), INTERVAL 45 MINUTE)
+                            AND pickup_lat IS NOT NULL AND pickup_lng IS NOT NULL AND pickup_lat <> 0
+                            AND (scheduled_at IS NULL OR scheduled_at <= NOW())
+                          LIMIT 2000");
+        foreach ($q->fetchAll() as $r) {
+            list($cq, $cr) = hexgrid_cell_for($r['pickup_lat'], $r['pickup_lng'], $size);
+            $k = $cq . ':' . $cr;
+            if (!isset($cells[$k])) $cells[$k] = array('n' => 0, 'waiting' => 0, 'idle' => 0, 'sl' => 0.0, 'sg' => 0.0);
+            $cells[$k]['n']++;
+            $cells[$k]['sl'] += floatval($r['pickup_lat']);
+            $cells[$k]['sg'] += floatval($r['pickup_lng']);
+            if ($r['status'] === 'searching') $cells[$k]['waiting']++;
+        }
+        $dq = $pdo->query("SELECT d.lat, d.lng FROM ride_drivers d
+                           WHERE d.online=1 AND d.lat IS NOT NULL AND d.lng IS NOT NULL
+                             AND d.last_seen > DATE_SUB(NOW(), INTERVAL 5 MINUTE)
+                             AND NOT EXISTS (SELECT 1 FROM rides r WHERE r.driver_id=d.user_id AND r.status IN ('accepted','in_progress','arrived'))
+                           LIMIT 500");
+        $idleDrivers = $dq->fetchAll(); // counted per area below, by distance, so a driver just across a cell edge still counts
+    } catch (Exception $e) {
+        fail_ex($e, 'Could not load demand', 500);
+    }
+    $out = array();
+    foreach ($cells as $c) {
+        if ($c['n'] < 2 && $c['waiting'] < 1) continue;
+        $lat = $c['sl'] / $c['n']; $lng = $c['sg'] / $c['n'];
+        $c['idle'] = 0; // free drivers within 600 m of the area's centre
+        foreach ($idleDrivers as $d) {
+            $dl = deg2rad(floatval($d['lat']) - $lat); $dg = deg2rad(floatval($d['lng']) - $lng);
+            $h = sin($dl / 2) * sin($dl / 2) + cos(deg2rad($lat)) * cos(deg2rad(floatval($d['lat']))) * sin($dg / 2) * sin($dg / 2);
+            if (6371 * 2 * atan2(sqrt($h), sqrt(1 - $h)) <= 0.6) $c['idle']++;
+        }
+        $score = ($c['n'] + 2 * $c['waiting']) / ($c['idle'] + 1);
+        $level = ($score >= 4 || ($c['waiting'] >= 1 && $c['idle'] == 0)) ? 'high' : ($score >= 2 ? 'med' : 'low');
+        $km = null;
+        if ($myLat !== null) {
+            $dLat = deg2rad($lat - $myLat); $dLng = deg2rad($lng - $myLng);
+            $a = sin($dLat / 2) * sin($dLat / 2) + cos(deg2rad($myLat)) * cos(deg2rad($lat)) * sin($dLng / 2) * sin($dLng / 2);
+            $km = round(6371 * 2 * atan2(sqrt($a), sqrt(1 - $a)), 1);
+        }
+        $out[] = array('lat' => round($lat, 5), 'lng' => round($lng, 5), 'requests' => $c['n'], 'waiting' => $c['waiting'],
+                       'idle_drivers' => $c['idle'], 'score' => round($score, 1), 'level' => $level, 'distance_km' => $km);
+    }
+    usort($out, function ($a, $b) {
+        if ($a['score'] != $b['score']) return $a['score'] < $b['score'] ? 1 : -1;
+        if ($a['distance_km'] === null || $b['distance_km'] === null || $a['distance_km'] == $b['distance_km']) return 0;
+        return $a['distance_km'] < $b['distance_km'] ? -1 : 1;
+    });
+    ok(array('areas' => array_slice($out, 0, 8), 'window_min' => 45));
+    break;
+}
+
 case 'driver_get_nearby_requests': {
     $radius = isset($body['radius_km']) ? floatval($body['radius_km']) : 8;
     if ($radius <= 0 || $radius > 50) $radius = 8;
