@@ -1,7 +1,8 @@
 <?php
-/* Two-step sign-in for admin accounts (TOTP, RFC 6238).
+/* Two-step sign-in for every account (TOTP, RFC 6238): customer, rider,
+   driver, courier, service giver and admin.
 
-   Opt-in per admin: an admin who has not switched it on signs in exactly as
+   Opt-in per account: someone who has not switched it on signs in exactly as
    before. Once on, a password alone is not enough - the 6-digit code from an
    authenticator app (Google Authenticator, Authy, Aegis, Microsoft
    Authenticator...) or one of 8 single-use backup codes is also required.
@@ -9,8 +10,11 @@
    Safety rails so this can never lock the owner out:
    - it is opt-in, never forced;
    - backup codes are shown once at set-up and can be regenerated;
+   - an admin can reset any account's two-step sign-in (Admin Security page,
+     action admin_reset_user_2fa) when someone loses phone AND backup codes;
    - as a last resort the row can be switched off in phpMyAdmin:
        UPDATE admin_2fa SET enabled = 0 WHERE user_id = <id>;
+   (The table keeps its original name admin_2fa; it now holds every role.)
    PHP 5-style, ASCII only, like the rest of the API. */
 
 if (!defined('APP_VER')) { http_response_code(403); exit; } // direct access guard
@@ -194,10 +198,10 @@ if (!function_exists('etel_2fa_respond')) {
 }
 
 /* The sign-in gate. Call it after the password (or EtelID) is verified and
-   before a token is issued. Returns normally when the account has no 2FA or the
+   before a token is issued, for any role. Returns normally when the account has no 2FA or the
    code is right; otherwise it answers the request and exits. */
 function etel_2fa_gate($pdo, $user, $body) {
-    if (!$user || !isset($user['role']) || $user['role'] !== 'admin') return;
+    if (!$user || !isset($user['id'])) return;
     if (!etel_2fa_is_enabled($pdo, $user['id'])) return;
     $code = isset($body['totp_code']) ? trim((string) $body['totp_code']) : '';
     if ($code === '') {

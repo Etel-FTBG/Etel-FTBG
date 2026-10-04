@@ -2762,10 +2762,12 @@ function toggleProfile() {
       ['🎁','Referral & Rewards','Earn ETB with friends','referrals'],
       ['⚙️','Settings & Privacy','Account preferences','settings'],
       ['🔠','Display Size','Text, icons, buttons & logos','__display'],
+      ['🛡️','Two-step sign-in','A code from your phone when you sign in','__2fa'],
       ['🌓','Light / Dark mode','Switch the app appearance','__theme'],
       ['🔄','Refresh app','Reload shops, orders and prices','__refresh'],
     ].map(function(m){
       var onclick = m[3] === '__display' ? "closeProfile();EtelDisplay.open()"
+                  : m[3] === '__2fa' ? "closeProfile();Etel2FASettings.open()"
                   : m[3] === '__theme' ? "customerToggleTheme();closeProfile()"
                   : m[3] === '__refresh' ? "closeProfile();refreshCurrentView()"
                   : (m[3] ? "closeProfile();switchCategory('"+m[3]+"')" : '');

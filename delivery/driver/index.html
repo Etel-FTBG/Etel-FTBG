@@ -863,6 +863,7 @@ body.light-mode .ei.ei-svg{color:#7A7466}
 </style>
     <!-- etel-phase5.css, etel-design-v4.css, etel-responsive.css now folded into css/driver-bundle.css above -->
 <script src="../js/etel-display-settings.js?v=1.4" data-fab="off" defer></script>
+<script src="../js/etel-2fa-settings.js?v=1" defer></script>
 <style id="drv-light-theme">
 /* Driver light mode (outdoor use). Loaded last so it beats the dark surfaces
    hard-coded above; only active while body.light-mode is set. */
@@ -1467,6 +1468,14 @@ body.light-mode [style*="color:#D4AF37"],body.light-mode [style*="color:#FFD700"
       </div>
 
       <div class="profile-section">
+        <div class="profile-row" data-etel-2fa-open>
+          <div class="profile-row-icon">🛡️</div>
+          <div>
+            <div class="profile-row-label">Two-step sign-in</div>
+            <div class="profile-row-sub">Ask for a code from your phone when you sign in</div>
+          </div>
+          <div class="profile-row-arrow">›</div>
+        </div>
         <div class="profile-row" data-etel-display-open onclick="EtelDisplay.open()">
           <div class="profile-row-icon">🔠</div>
           <div>
