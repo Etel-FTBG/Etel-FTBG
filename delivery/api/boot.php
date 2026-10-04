@@ -7,6 +7,7 @@
 /*  CRITICAL: Buffer everything, show NO errors  */
 if (ob_get_level()) ob_end_clean();
 ob_start();
+$GLOBALS['_etel_t0'] = microtime(true); // request start, for lib/api_perf.php
 error_reporting(0);
 ini_set('display_errors', '0');
 ini_set('display_startup_errors', '0');
@@ -192,6 +193,10 @@ $body   = $raw ? @json_decode($raw, true) : array();
 if (!$body || !is_array($body)) $body = array();
 $action = isset($body['action'])   ? trim($body['action'])
         : (isset($_GET['action'])  ? trim($_GET['action'])  : '');
+
+/* API health counters (one cheap row update per request, see lib/api_perf.php).
+   Never allowed to break a request. */
+try { require_once __DIR__ . '/lib/api_perf.php'; etel_perf_install($action); } catch (Exception $e) {} catch (Throwable $e) {}
 
 /* Auto-purge LiteSpeed cache for write actions */
 if ($action && in_array($action, ETEL_WRITE_ACTIONS, true)) {
@@ -448,6 +453,7 @@ function db() {
     // writes and every PHP time()/strtotime() comparison use one clock.
     // Set ETEL_DB_TZ_SYNC=false in config to switch this off.
     try { if (!defined('ETEL_DB_TZ_SYNC') || ETEL_DB_TZ_SYNC) $pdo->exec("SET time_zone = '" . date('P') . "'"); } catch (Exception $e) { /* keep the server zone */ }
+    $GLOBALS['_etel_pdo'] = $pdo; // lets the API health counter reuse this connection
     } catch (PDOException $e) {
         // Log real error to server log, never expose to browser
         error_log('[ETEL] DB connect failed: ' . $e->getMessage());
