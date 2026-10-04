@@ -69,7 +69,9 @@
       '.etel-account-btn:last-child{margin-bottom:0}' +
       '.etel-account-btn:active{transform:scale(.98)}' +
       '#etel-profile-investor-btn{background:linear-gradient(135deg,#C8960C,#F2CC6B);color:#100b02}' +
-      '#etel-profile-equb-btn{background:linear-gradient(135deg,#5aa9ff,#1f6fd1);color:#fff}';
+      // Gold outline, so it belongs to the design but stays different from the solid-gold Investor button.
+      '#etel-profile-equb-btn{background:rgba(212,175,55,.12);border:1px solid rgba(212,175,55,.5);color:#F4D56A}' +
+      'body.light-mode #etel-profile-equb-btn,body.etel-light #etel-profile-equb-btn{background:rgba(160,120,20,.1);border-color:rgba(160,120,20,.55);color:#6B4E00}';
     document.head.appendChild(css);
   }
 
