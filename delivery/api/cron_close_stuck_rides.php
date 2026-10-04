@@ -62,11 +62,12 @@ try {
     cs_reply(array('success' => false, 'message' => 'Server unavailable'), 503);
 }
 
+// schema_helpers.php and push.php refuse to load (blank 403) unless APP_VER is already
+// defined, the same guard every controller satisfies - so define it BEFORE any require.
+if (!defined('APP_VER')) { define('APP_VER', 'cron-close-stuck'); }
 require_once __DIR__ . '/lib/schema_helpers.php';
 require_once __DIR__ . '/lib/ride_fare.php';
 require_once __DIR__ . '/lib/ride_sweeper.php';
-// push.php exits unless APP_VER is defined (same guard every controller uses).
-if (!defined('APP_VER')) { define('APP_VER', 'cron-close-stuck'); }
 require_once __DIR__ . '/push.php';
 
 // Keep the piggy-back throttle in step so both paths do not double up.

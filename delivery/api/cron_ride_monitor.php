@@ -10,10 +10,13 @@
  *      new (rides_monitor_run in lib/ride_monitor.php). Read-only: it never
  *      changes a ride itself beyond what the sweeper already does.
  *
- * cPanel -> Cron Jobs -> every 5 minutes:
+ * cPanel -> Cron Jobs -> every 5 minutes. Best (runs on the server itself, no
+ * key, not affected by the host's web firewall):
+ *   /usr/local/bin/php -q /home/ACCOUNT/public_html/delivery/api/cron_ride_monitor.php >/dev/null 2>&1
+ * Or over the web (needs CRON_DISPATCH_KEY from api/.env):
  *   wget -q -O /dev/null "https://ethelmarket.com/delivery/api/cron_ride_monitor.php?key=YOUR_CRON_KEY"
- * Same CRON_DISPATCH_KEY as the other crons. Add &push=0 to look without
- * alerting. The result (counts) is returned as JSON.
+ * Add push=0 (CLI) or &push=0 (web) to look without alerting. The result
+ * (counts) is returned as JSON.
  */
 
 if (ob_get_level()) ob_end_clean();
@@ -40,9 +43,13 @@ function cs_env($key, $default = '') {
     return ($g !== false && $g !== '') ? $g : $default;
 }
 
+// From the command line (cPanel cron running php directly) no key is needed: only
+// the server itself can start it, and the web firewall never sees it. Over the
+// web the key is still required.
+$isCli = (PHP_SAPI === 'cli');
 $expectedKey = cs_env('CRON_DISPATCH_KEY', '');
 $givenKey    = isset($_GET['key']) ? $_GET['key'] : '';
-if ($expectedKey === '' || !hash_equals($expectedKey, $givenKey)) {
+if (!$isCli && ($expectedKey === '' || !hash_equals($expectedKey, $givenKey))) {
     cs_reply(array('success' => false, 'message' => 'Missing or wrong ?key= - set CRON_DISPATCH_KEY in api/.env first'), 403);
 }
 
@@ -62,17 +69,19 @@ try {
     cs_reply(array('success' => false, 'message' => 'Server unavailable'), 503);
 }
 
+// schema_helpers.php and push.php refuse to load (blank 403) unless APP_VER is already
+// defined, the same guard every controller satisfies - so define it BEFORE any require.
+if (!defined('APP_VER')) { define('APP_VER', 'cron-ride-monitor'); }
 require_once __DIR__ . '/lib/schema_helpers.php';
 require_once __DIR__ . '/lib/ride_fare.php';
 require_once __DIR__ . '/lib/ride_sweeper.php';
 require_once __DIR__ . '/lib/ride_monitor.php';
-// push.php exits unless APP_VER is defined (same guard every controller uses).
-if (!defined('APP_VER')) { define('APP_VER', 'cron-ride-monitor'); }
 require_once __DIR__ . '/push.php';
 
 // Keep the piggy-back throttle in step so both paths do not double up.
 try { $pdo->exec("UPDATE ride_sweeper_state SET last_run=NOW() WHERE id=1"); } catch (Exception $e) { /* table not created yet */ }
 
 $swept = rides_sweep_stuck($pdo, array('limit' => 50, 'push' => true));
-$watch = rides_monitor_run($pdo, !isset($_GET['push']) || $_GET['push'] !== '0');
+$noPush = $isCli ? (isset($argv) && in_array('push=0', $argv, true)) : (isset($_GET['push']) && $_GET['push'] === '0');
+$watch = rides_monitor_run($pdo, !$noPush);
 cs_reply(array('success' => true, 'swept' => $swept, 'watch' => $watch));
