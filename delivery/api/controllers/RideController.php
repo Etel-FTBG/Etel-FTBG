@@ -3763,9 +3763,62 @@ case 'send_ride_message': {
     if (intval($ride['passenger_id']) === intval($u['id'])) $role = 'passenger';
     if (!$role && $u['role'] !== 'admin') fail('Not a participant of this ride', 403);
     if (!$role) $role = 'driver';
+    // Spam guard: at most 20 messages a minute per sender.
+    try {
+        $rl = $pdo->prepare("SELECT COUNT(*) FROM ride_messages WHERE sender_id=? AND sent_at > DATE_SUB(NOW(), INTERVAL 1 MINUTE)");
+        $rl->execute(array($u['id']));
+        if (intval($rl->fetchColumn()) >= 20) fail('You are sending messages too fast. Wait a moment.', 429);
+    } catch (Exception $e) { /* never block chat on the guard */ }
+    // Was anything from this sender still unread by the other side in the last 30 s? Then they
+    // were already alerted, so don't ping again for every line of a burst.
+    $alreadyAlerted = false;
+    try {
+        $aa = $pdo->prepare("SELECT 1 FROM ride_messages WHERE ride_id=? AND sender_id=? AND read_at IS NULL AND sent_at > DATE_SUB(NOW(), INTERVAL 30 SECOND) LIMIT 1");
+        $aa->execute(array($ride_id, $u['id']));
+        $alreadyAlerted = (bool) $aa->fetchColumn();
+    } catch (Exception $e) {}
     $ins = $pdo->prepare("INSERT INTO ride_messages (ride_id, sender_id, sender_role, body) VALUES (?,?,?,?)");
     $ins->execute(array($ride_id, $u['id'], $role, $msg_body));
-    ok(array('id' => $pdo->lastInsertId(), 'role' => $role, 'body' => $msg_body, 'sent_at' => date('Y-m-d H:i:s'), 'read_at' => null));
+    $newMsgId = $pdo->lastInsertId();
+    // Tell the other party (push) so a message is not missed while the chat is closed.
+    if (!$alreadyAlerted && function_exists('etel_push_send')) {
+        $otherId = ($role === 'driver') ? intval($ride['passenger_id']) : intval($ride['driver_id']);
+        if ($otherId > 0 && $otherId !== intval($u['id'])) {
+            try {
+                $preview = mb_strlen($msg_body) > 80 ? mb_substr($msg_body, 0, 77) . '...' : $msg_body;
+                etel_push_send($pdo, $otherId, ($role === 'driver' ? 'Message from your driver' : 'Message from your passenger'), $preview,
+                    array('action' => 'ride_chat', 'ride_id' => intval($ride_id), 'url' => ($role === 'driver' ? '/delivery/ride/' : '/delivery/driver/')));
+            } catch (Exception $e) { /* best-effort */ }
+        }
+    }
+    ok(array('id' => $newMsgId, 'role' => $role, 'body' => $msg_body, 'sent_at' => date('Y-m-d H:i:s'), 'read_at' => null));
+    break;
+}
+
+case 'ride_chat_unread': {
+    /* Cheap poll for the badge on the Chat buttons: how many messages from the other
+       side are still unread on this ride. */
+    $ride_id = isset($_GET['ride_id']) ? intval($_GET['ride_id']) : (isset($body['ride_id']) ? intval($body['ride_id']) : 0);
+    if (!$ride_id) fail('ride_id required');
+    $rc = $pdo->prepare("SELECT driver_id, passenger_id FROM rides WHERE id=?");
+    $rc->execute(array($ride_id));
+    $ride = $rc->fetch();
+    if (!$ride) fail('Ride not found', 404);
+    if (intval($ride['driver_id']) !== intval($u['id']) && intval($ride['passenger_id']) !== intval($u['id'])) fail('Not a participant of this ride', 403);
+    $unread = 0; $latest = 0; $preview = '';
+    try {
+        $q = $pdo->prepare("SELECT COUNT(*) AS n, MAX(id) AS last_id FROM ride_messages WHERE ride_id=? AND sender_id<>? AND read_at IS NULL");
+        $q->execute(array($ride_id, $u['id']));
+        $row = $q->fetch();
+        $unread = intval($row['n']); $latest = intval($row['last_id']);
+        if ($latest) {
+            $pv = $pdo->prepare("SELECT body FROM ride_messages WHERE id=?");
+            $pv->execute(array($latest));
+            $b = (string) $pv->fetchColumn();
+            $preview = mb_strlen($b) > 60 ? mb_substr($b, 0, 57) . '...' : $b;
+        }
+    } catch (Exception $e) { /* table not created yet = no messages */ }
+    ok(array('unread' => $unread, 'latest_id' => $latest, 'preview' => $preview));
     break;
 }
 

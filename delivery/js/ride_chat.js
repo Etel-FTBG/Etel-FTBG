@@ -657,8 +657,84 @@ const RideChat = (function () {
         }
     }
 
+    /* ---- Unread badge ----------------------------------------------------
+       The other party's messages used to be invisible until the chat was
+       opened. Every 12 s (only while the page is visible and a ride is
+       active) ask the server how many are unread, show it on every control
+       that opens the chat plus the driver's Chats tab, and give a short
+       beep/buzz when the count goes up. The server also pushes a
+       notification, so this covers the in-app case. */
+    var _unread = 0, _unreadTimer = null;
+    function activeRideInfo() {
+        try {
+            if (window.RIDE && (RIDE.currentRideId || RIDE.currentRequestId) && !window.DRV)
+                return { id: RIDE.currentRideId || RIDE.currentRequestId };
+            if (window.DRV && DRV.activeRide && DRV.activeRide.id) return { id: DRV.activeRide.id };
+        } catch (e) {}
+        return null;
+    }
+    function badgeTargets() {
+        var out = [].slice.call(document.querySelectorAll('[onclick*="RideChat.open"]'));
+        var tab = document.querySelectorAll('.nav-tab[data-page="chats"],.sidebar-item[data-page="chats"]');
+        for (var i = 0; i < tab.length; i++) out.push(tab[i]);
+        return out;
+    }
+    function setUnread(n) {
+        n = Math.max(0, parseInt(n, 10) || 0);
+        injectBadgeCSS();
+        badgeTargets().forEach(function (el) {
+            var b = el.querySelector(':scope > .rc-unread');
+            if (!n) { if (b) b.remove(); return; }
+            if (!b) { b = document.createElement('span'); b.className = 'rc-unread'; b.setAttribute('aria-label', 'unread messages'); el.style.position = el.style.position || 'relative'; el.appendChild(b); }
+            b.textContent = n > 9 ? '9+' : String(n);
+        });
+    }
+    function injectBadgeCSS() {
+        if (document.getElementById('rc-unread-css')) return;
+        var st = document.createElement('style');
+        st.id = 'rc-unread-css';
+        st.textContent = '.rc-unread{position:absolute;top:4px;right:6px;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:#EF5350;color:#fff;font:700 11px/18px Outfit,system-ui,sans-serif;text-align:center;pointer-events:none;box-shadow:0 0 0 2px #0B0B13}';
+        document.head.appendChild(st);
+    }
+    function alertNew() {
+        try { if (navigator.vibrate) navigator.vibrate([60, 40, 60]); } catch (e) {}
+        try {
+            var Ctx = window.AudioContext || window.webkitAudioContext;
+            if (!Ctx) return;
+            var ctx = new Ctx(), o = ctx.createOscillator(), g = ctx.createGain();
+            o.type = 'sine'; o.frequency.value = 880; g.gain.value = 0.05;
+            o.connect(g); g.connect(ctx.destination); o.start();
+            setTimeout(function () { try { o.stop(); ctx.close(); } catch (e) {} }, 140);
+        } catch (e) {}
+    }
+    function pollUnread() {
+        if (document.hidden) return;
+        var info = activeRideInfo();
+        if (!info) { if (_unread) { _unread = 0; setUnread(0); } return; }
+        var ol = document.getElementById('rc-overlay');
+        if (ol && ol.classList.contains('rc-open')) { if (_unread) { _unread = 0; setUnread(0); } return; }
+        fetch(getAPI() + '?action=ride_chat_unread&ride_id=' + encodeURIComponent(info.id), {
+            headers: { 'Authorization': 'Bearer ' + getToken() }
+        }).then(function (r) { return r.json(); }).then(function (d) {
+            if (!(d.success || d.ok) || !d.data) return;
+            var n = parseInt(d.data.unread, 10) || 0;
+            if (n > _unread) alertNew();
+            _unread = n; setUnread(n);
+        }).catch(function () {});
+    }
+    function startUnreadPolling() {
+        if (_unreadTimer) return;
+        _unreadTimer = setInterval(pollUnread, 12000);
+        setTimeout(pollUnread, 2500);
+        document.addEventListener('visibilitychange', function () { if (!document.hidden) pollUnread(); });
+    }
+    startUnreadPolling();
+
     return {
+        setUnread: setUnread,
+        _pollUnread: pollUnread,
         open: function (rideId, role, otherPartyName) {
+            _unread = 0; setUnread(0);
             injectCSS(); injectHTML();
             _rideId = rideId; _role = role; _otherName = otherPartyName || '';
             _seen = {}; _pendingTemp = {}; _lastRole = null; _lastDayKey = null; _failStreak = 0; _newCount = 0; _atBottom = true;
