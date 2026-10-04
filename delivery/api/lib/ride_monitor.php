@@ -171,6 +171,20 @@ function rides_monitor_scan($pdo, $limit = 40) {
         });
     }
 
+    // 6b. a rider who did not answer "Are you OK?" during a trip: immediate and critical,
+    //     for as long as the issue is open and recent (an admin resolves it after calling).
+    $run("SELECT $cols, TIMESTAMPDIFF(MINUTE, i.created_at, NOW()) AS mins
+          FROM ride_issues i JOIN rides r ON r.id = i.ride_id
+          LEFT JOIN users p ON p.id = r.passenger_id
+          LEFT JOIN users d ON d.id = r.driver_id
+          WHERE i.status='open' AND i.category='safety_checkin_missed'
+            AND i.created_at > DATE_SUB(NOW(), INTERVAL 6 HOUR)
+          ORDER BY i.id ASC LIMIT " . $limit, array(), function ($r) {
+        $m = intval($r['mins']);
+        return rides_monitor_item('safety', $r, $m, 'critical', 'Rider did not answer safety check',
+            'Asked "Are you OK?" ' . rides_monitor_fmt($m) . ' ago, no answer. Call the rider now, then mark the issue resolved.');
+    });
+
     // Worst first, then oldest.
     usort($out, function ($a, $b) {
         $sa = $a['severity'] === 'critical' ? 0 : 1; $sb = $b['severity'] === 'critical' ? 0 : 1;
