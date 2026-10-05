@@ -1,3 +1,5 @@
+# NOTE: each smoke test owns distinct phone prefixes (security 911-944, business 951-988, open_meter 961-962)
+# so tests started within the same second (as in CI) can never collide on a number.
 """
 ETEL Delivery -- Order / ride / service-giver business-logic smoke test
 
@@ -29,6 +31,8 @@ import sys
 import time
 import urllib.error
 import urllib.request
+
+import etel_test_db
 
 API_URL = "http://127.0.0.1:8765/api/boot.php"
 SUFFIX = str(int(time.time()))
@@ -76,11 +80,16 @@ def skip(name, reason):
     print(f"  SKIP {name}  ({reason})")
 
 
+LAST_REG = {}
+
+
 def register(phone, role, name_prefix="User"):
+    global LAST_REG
     status, res = call("register", {
         "name": f"{name_prefix} {SUFFIX}", "phone": phone,
         "password": "testpass123", "role": role,
     })
+    LAST_REG = {"http": status, "phone": phone, "res": res}
     return res.get("success"), (res.get("data") or {}).get("token"), (res.get("data") or {}).get("user_id")
 
 
@@ -128,9 +137,10 @@ def main():
               res.get("success") is True and any(str(i.get("id")) == str(item_id) for i in items),
               res)
 
+        etel_test_db.park_couriers()   # no leftover online courier may auto-grab the order
         cust_phone = f"+251966{SUFFIX[-6:]}"
         ok_reg, cust_token, _ = register(cust_phone, "customer", "Order Cust")
-        check("customer registration for order test succeeds", ok_reg)
+        check("customer registration for order test succeeds", ok_reg, LAST_REG)
 
         status, res = call("customer_create_order", {
             "items": [{"item_id": item_id, "quantity": 2}],
@@ -142,7 +152,7 @@ def main():
 
         courier_phone = f"+251977{SUFFIX[-6:]}"
         ok_reg, courier_token, _ = register(courier_phone, "courier", "Order Courier")
-        check("courier registration for order test succeeds", ok_reg)
+        check("courier registration for order test succeeds", ok_reg, LAST_REG)
 
         status, res = call("courier_get_available_orders", {}, token=courier_token)
         avail = (res.get("data") or {}).get("orders", [])
@@ -182,13 +192,17 @@ def main():
     #    accepts, ride is cancellable before acceptance, not after.
     # ---------------------------------------------------------------
     print("2. Ride lifecycle (customer book_ride -> driver_accept_ride)")
-    cust_phone = f"+251911{SUFFIX[-6:]}"
+    cust_phone = f"+251951{SUFFIX[-6:]}"
     ok_reg, cust_token, _ = register(cust_phone, "customer", "Ride Cust")
-    check("customer registration for ride test succeeds", ok_reg)
+    check("customer registration for ride test succeeds", ok_reg, LAST_REG)
 
-    drv_phone = f"+251933{SUFFIX[-6:]}"
-    ok_reg, drv_token, _ = register(drv_phone, "courier", "Ride Driver")
-    check("driver registration for ride test succeeds", ok_reg)
+    drv_phone = f"+251953{SUFFIX[-6:]}"
+    ok_reg, drv_token, drv_id = register(drv_phone, "courier", "Ride Driver")
+    check("driver registration for ride test succeeds", ok_reg, LAST_REG)
+    # Drivers must be onboarded before they can go online / accept rides (deliberate
+    # gate). Flip the flag in the TEST database; skip the accept step if that is not possible.
+    call("driver_get_profile", {}, token=drv_token)   # creates the ride_drivers row
+    drv_onboarded = bool(drv_id) and etel_test_db.onboard_driver(drv_id)
     call("driver_go_online", {"lat": 7.05, "lng": 38.49}, token=drv_token)
 
     status, res = call("book_ride", {
@@ -207,7 +221,11 @@ def main():
           res.get("success") is False and status == 409, f"status={status} res={res}")
 
     status, res = call("driver_accept_ride", {"request_id": ride_id}, token=drv_token)
-    check("driver_accept_ride succeeds", res.get("success") is True, res)
+    if drv_onboarded:
+        check("driver_accept_ride succeeds", res.get("success") is True, res)
+    else:
+        check("driver_accept_ride is refused for a driver who has not onboarded (gate works)",
+              res.get("success") is False and "verified" in str(res.get("message", "")).lower(), res)
 
     status, res = call("cancel_ride", {"id": ride_id}, token=cust_token)
     check("cancel_ride succeeds on an accepted-but-not-arrived ride",
@@ -223,9 +241,9 @@ def main():
     #    round trip, then login with the new password.
     # ---------------------------------------------------------------
     print("3. Password reset flow (dev-fallback OTP)")
-    reset_phone = f"+251944{SUFFIX[-6:]}"
+    reset_phone = f"+251954{SUFFIX[-6:]}"
     ok_reg, _, _ = register(reset_phone, "customer", "Reset Cust")
-    check("customer registration for reset test succeeds", ok_reg)
+    check("customer registration for reset test succeeds", ok_reg, LAST_REG)
 
     status, res = call("reset_request", {"phone": reset_phone})
     check("reset_request succeeds", res.get("success") is True, res)

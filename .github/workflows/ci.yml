@@ -1,0 +1,78 @@
+name: Delivery CI
+
+# Runs on every pull request and every push to main. A red check here means
+# the change would have broken something the tests cover - fix before merging.
+on:
+  pull_request:
+    paths: ['delivery/**', '.github/workflows/ci.yml']
+  push:
+    branches: [main]
+    paths: ['delivery/**', '.github/workflows/ci.yml']
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with: { php-version: '8.3' }
+      - name: PHP syntax
+        run: |
+          find delivery -name '*.php' -not -path '*/backup*' -not -path '*/vendor/*' -print0 \
+            | xargs -0 -n1 -P4 php -l >/dev/null
+      - name: JavaScript syntax
+        run: |
+          find delivery -name '*.js' -not -path '*/releases/*' -not -path '*/backup*' \
+            -not -name '*.min.js' -print0 | xargs -0 -n1 node --check
+      - name: Migration numbering and XSS ratchet
+        run: |
+          python3 delivery/tests/ci/check_migrations.py
+          python3 delivery/tests/ci/check_xss_sinks.py
+      # check_reserved_columns.py needs the built database, so it runs in the
+      # integration job (via run_integration.sh).
+
+  integration:
+    runs-on: ubuntu-latest
+    services:
+      mariadb:
+        image: mariadb:10.11
+        env:
+          MARIADB_ROOT_PASSWORD: root_pw
+          MARIADB_DATABASE: etel_delivery
+          MARIADB_USER: etel
+          MARIADB_PASSWORD: etel_test_pw
+        ports: ['3306:3306']
+        options: >-
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=5s --health-timeout=5s --health-retries=20
+    env:
+      MYSQL_PWD: root_pw
+      MYSQL_ADMIN_ARGS: -h127.0.0.1 -uroot
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: pdo_mysql, curl, mbstring
+      - name: Test configuration (throwaway values, never real secrets)
+        run: |
+          mysql $MYSQL_ADMIN_ARGS -e "GRANT ALL ON *.* TO 'etel'@'%'; FLUSH PRIVILEGES;"
+          cat > delivery/api/.env <<ENV
+          DB_HOST=127.0.0.1
+          DB_NAME=etel_delivery
+          DB_USER=etel
+          DB_PASS=etel_test_pw
+          TOKEN_SECRET=ci_token_secret_not_real_0123456789abcdef
+          ETEL_OS_KEY=ci_os_key
+          APP_ENV=development
+          CRON_DISPATCH_KEY=test_cron_key
+          UPDATER_PASSWORD=ci_updater_pw
+          ENV
+      - name: Build DB from the repo and run every test
+        working-directory: delivery
+        env:
+          FRESH_DB: '1'
+          ETEL_TEST_DB_NAME: etel_delivery
+        run: |
+          # root creates/drops the schema; tests connect as 'etel' from api/.env
+          ./tests/ci/run_integration.sh

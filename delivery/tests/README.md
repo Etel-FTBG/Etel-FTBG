@@ -1,3 +1,17 @@
+# Running everything (recommended)
+
+```bash
+# throwaway MariaDB + api/.env (APP_ENV=development, CRON_DISPATCH_KEY=test_cron_key,
+# UPDATER_PASSWORD=anything) -- NEVER the live database
+FRESH_DB=1 ./tests/ci/run_integration.sh
+```
+This is the same script GitHub CI runs (`.github/workflows/ci.yml`): migration
+checks, reserved-word check, XSS ratchet, security / business-logic /
+open-meter / week-1 hardening smoke tests. `tests/load_test.py` is the load
+test (staging only, see `STAGING_GUIDE.md`).
+
+---
+
 # ETEL Delivery — Local Test Harness
 
 The project ships with **zero** runtime test dependencies. Everything runs on

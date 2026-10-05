@@ -15,4 +15,4 @@
 -- line-based statement splitter parses this correctly.
 
 ALTER TABLE `service_givers`
-  ADD COLUMN `bank_account` VARCHAR(100) DEFAULT '' AFTER `identification_number`;
+  ADD COLUMN IF NOT EXISTS `bank_account` VARCHAR(100) DEFAULT '' AFTER `identification_number`;

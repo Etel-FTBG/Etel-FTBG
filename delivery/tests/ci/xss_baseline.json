@@ -1,0 +1,14 @@
+{
+ "admin-rides.js": 1,
+ "admin.js": 16,
+ "core.js": 0,
+ "courier.js": 3,
+ "customer.js": 1,
+ "driver-demand.js": 0,
+ "driver.js": 0,
+ "order-chat.js": 0,
+ "ride-receipt.js": 0,
+ "ride.js": 0,
+ "ride_chat.js": 0,
+ "servicegiver.js": 0
+}
