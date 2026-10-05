@@ -114,9 +114,12 @@
     function start() {
         new MutationObserver(function (ms) {
             ms.forEach(function (mu) { [].forEach.call(mu.addedNodes, function (n) {
-                if (n.nodeType === 1 && n.id === 'ride-detail-overlay') enhance(n);
+                if (n.nodeType !== 1) return;
+                // The app wraps the card in a plain <div> before adding it to the page, so look inside too.
+                var o = n.id === 'ride-detail-overlay' ? n : (n.querySelector ? n.querySelector('#ride-detail-overlay') : null);
+                if (o) enhance(o);
             }); });
-        }).observe(doc.body, { childList: true });
+        }).observe(doc.body, { childList: true, subtree: true });
     }
     window.EtelReceipt = { open: open, _enhance: enhance };
     if (doc.readyState === 'loading') doc.addEventListener('DOMContentLoaded', start); else start();
