@@ -270,7 +270,7 @@ if ($action === '') fail('No action specified.', 400);
 
 switch ($action) {
     case 'driver_register': case 'driver_login': case 'driver_get_status':
-    case 'driver_submit_payment': case 'driver_get_payment_history':
+    case 'driver_submit_payment': case 'driver_chapa_status': case 'driver_get_payment_history':
     case 'driver_get_bank_accounts': case 'public_verify_permit':
     case 'driver_list_associations': case 'driver_register_push_token':
     case 'driver_etelid_login': case 'driver_complete_etelid_registration':

@@ -473,7 +473,9 @@ function rides_complete_and_pay($pdo, $rideId, $driverId, $fare, $paymentMethod,
         $commissionAmt = round($fare * $commissionRate, 2);
         $pdo->prepare("UPDATE ride_drivers SET etel_money_balance=etel_money_balance-? WHERE user_id=?")
             ->execute(array($commissionAmt, $driverId));
-        if ($paymentMethod === 'wallet') {
+        // 'chapa' counts as platform-collected ONLY with a verified tx ref
+        // (chapa_settle passes one); a bare client-supplied 'chapa' stays cash-like.
+        if ($paymentMethod === 'wallet' || ($paymentMethod === 'chapa' && $walletTxRef)) {
             $pdo->prepare("UPDATE ride_drivers SET total_earnings=total_earnings+?, total_rides=total_rides+1 WHERE user_id=?")
                 ->execute(array($fare, $driverId));
         } else {

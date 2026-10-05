@@ -193,6 +193,7 @@ async function loadStatus() {
 }
 
 const TAXI_PAY_METHODS = [
+  { key: 'chapa',          icon: '💳', label: 'Chapa (pay online)' },
   { key: 'telebirr',       icon: '📱', label: 'Telebirr' },
   { key: 'cbe',             icon: '🏦', label: 'CBE Transfer' },
   { key: 'abysinia',        icon: '🏛️', label: 'Abysinia Bank' },
@@ -232,6 +233,11 @@ function renderBankInfo() {
   const method = document.getElementById('pay-method').value;
   const infoEl = document.getElementById('bank-info');
   const refField = document.getElementById('ref-field');
+  if (method === 'chapa') {
+    infoEl.textContent = 'Pay securely online with Telebirr, CBE Birr, a bank or card. Your dues are marked paid automatically.';
+    refField.style.display = 'none';
+    return;
+  }
   if (method === 'cash') {
     infoEl.textContent = 'Pay in person at your association office and ask staff to mark it verified.';
     refField.style.display = 'none';
@@ -252,11 +258,12 @@ function renderBankInfo() {
 async function submitPayment() {
   const payment_method = document.getElementById('pay-method').value;
   const reference_number = document.getElementById('pay-ref').value.trim();
-  if (payment_method !== 'cash' && payment_method !== 'etelpay_wallet' && !reference_number) {
+  if (payment_method !== 'cash' && payment_method !== 'etelpay_wallet' && payment_method !== 'chapa' && !reference_number) {
     return taxiToast('Enter the reference/transaction number', 'err');
   }
   const res = await taxiApi('driver_submit_payment', { payment_method, reference_number });
   if (!res.ok) return taxiToast(res.error, 'err');
+  if (res.data.redirect_url) { location.href = res.data.redirect_url; return; }
   taxiToast(res.data.message, 'ok');
   showView('status');
 }
@@ -303,6 +310,19 @@ function taxiPrintDriverReceipt(i) {
   });
 }
 
+// Back from Chapa: ask the server to verify the payment, retrying a few
+// times in case Chapa is still confirming.
+async function checkChapaReturn(ref, tries) {
+  const res = await taxiApi('driver_chapa_status', { ref });
+  const r = res.ok && res.data.result;
+  if (r === 'verified' || r === 'already') return taxiToast('Payment received - your dues are marked paid.', 'ok');
+  if (r === 'failed') return taxiToast('Chapa payment was not completed.', 'err');
+  if (tries < 6) setTimeout(() => checkChapaReturn(ref, tries + 1), 4000);
+  else taxiToast('Still waiting for Chapa. Your dues update automatically once it confirms.', '');
+}
+
 (function init() {
   if (taxiGetToken('driver')) showView('status');
+  const chapaRef = new URLSearchParams(location.search).get('chapa_ref');
+  if (chapaRef && taxiGetToken('driver')) checkChapaReturn(chapaRef, 0);
 })();

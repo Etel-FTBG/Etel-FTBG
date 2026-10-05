@@ -78,6 +78,11 @@ if (!defined('ETELTAXI_SERVICE_KEY')) define('ETELTAXI_SERVICE_KEY', etel_taxi_e
 // rather than signing with a guessable fallback.
 if (!defined('TAXI_QR_SIGNING_KEY')) define('TAXI_QR_SIGNING_KEY', etel_taxi_env('TAXI_QR_SIGNING_KEY', ''));
 
+// Chapa (https://developer.chapa.co) - online dues payment. Optional:
+// the "Chapa" method just reports "not configured" until the key is set.
+if (!defined('CHAPA_SECRET_KEY')) define('CHAPA_SECRET_KEY', etel_taxi_env('CHAPA_SECRET_KEY', ''));
+if (!defined('TAXI_BASE_URL'))    define('TAXI_BASE_URL',    rtrim(etel_taxi_env('TAXI_BASE_URL', 'https://ethelmarket.com/EtelTaxi'), '/'));
+
 // Push notifications - standard Web Push (RFC 8291/8292), same VAPID
 // identity Delivery & Ride already uses. Optional: reminders just won't
 // send until these are set, same "no working default" rule as every
