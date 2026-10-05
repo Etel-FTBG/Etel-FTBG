@@ -60,7 +60,7 @@
     }
     function close() { if (host) host.style.display = 'none'; }
     function view(inner) { build(); host.style.display = 'block'; shadow.getElementById('body').innerHTML = inner; var x = shadow.getElementById('x'); if (x) x.onclick = close; }
-    var HEAD = '<div class="top"><h2>Receipt</h2><button class="x" id="x" aria-label="Close">&#10005;</button></div>';
+    var HEAD = '<div class="top"><h2 style="display:flex;align-items:center;gap:10px"><img src="' + logoUrl() + '" alt="" style="width:34px;height:34px;border-radius:50%" onerror="this.style.display=\'none\'">Receipt</h2><button class="x" id="x" aria-label="Close">&#10005;</button></div>';
 
     function render(r) {
         current = r;
@@ -83,11 +83,60 @@
         function done(ok) { msg.textContent = ok ? 'Copied.' : 'Could not copy. Use Share or Print.'; }
         try { navigator.clipboard.writeText(t).then(function () { done(true); }, function () { done(false); }); } catch (e) { done(false); }
     }
+    function logoUrl() { return apiUrl().replace('api/boot.php', 'icons/etel-ride-coin.png'); }
+
+    /* The designed, printable receipt (A4, colour). Opens in its own window and prints / saves as PDF. */
+    function receiptHtml(r) {
+        var rows = (r.lines || []).map(function (l) {
+            return '<tr><td>' + esc(l.label) + '</td><td class="n">' + money(l.etb) + '</td></tr>';
+        }).join('') || '<tr><td>Trip fare</td><td class="n">' + money(r.total) + '</td></tr>';
+        var veh = [r.vehicle, r.plate].filter(Boolean).join('  ·  ');
+        return '<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">' +
+        '<title>' + esc(r.receipt_no) + '</title><style>' +
+        '@page{size:A4;margin:0}*{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact}' +
+        'html,body{margin:0;background:#EDE7D6}body{font-family:Helvetica,Arial,sans-serif;color:#1A1712}' +
+        '.page{width:210mm;min-height:297mm;margin:0 auto;background:#fff;position:relative;overflow:hidden}' +
+        '.top{background:linear-gradient(135deg,#14110A 0%,#2A2210 100%);color:#F7F1DE;padding:14mm 16mm 12mm;position:relative}' +
+        '.top:after{content:"";position:absolute;left:0;right:0;bottom:0;height:2.2mm;background:linear-gradient(90deg,#8A6A12,#F4D56A 45%,#B8891B 70%,#8A6A12)}' +
+        '.brand{display:flex;align-items:center;gap:6mm}.brand img{width:26mm;height:26mm;border-radius:50%;box-shadow:0 0 0 .8mm rgba(244,213,106,.55)}' +
+        '.brand h1{margin:0;font-size:22pt;letter-spacing:.04em;font-weight:800;color:#F4D56A}.brand .sub{font-size:9.5pt;letter-spacing:.32em;text-transform:uppercase;color:#D9CFAE;margin-top:1.5mm}' +
+        '.meta{position:absolute;right:16mm;top:15mm;text-align:right}.meta .k{font-size:8pt;letter-spacing:.22em;text-transform:uppercase;color:#BFB58F}.meta .v{font-size:12pt;font-weight:700;color:#F4D56A;margin:.5mm 0 3mm}' +
+        '.body{padding:11mm 16mm 0}' +
+        '.paid{display:inline-block;border:.6mm solid #2E8B57;color:#2E8B57;font-weight:800;letter-spacing:.2em;font-size:9pt;padding:1.2mm 4mm;border-radius:2mm}' +
+        '.hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:7mm}.hd h2{margin:0;font-size:15pt;letter-spacing:.02em}' +
+        '.route{position:relative;padding-left:9mm;margin-bottom:8mm}.route:before{content:"";position:absolute;left:2.2mm;top:3mm;bottom:3mm;border-left:.5mm dashed #C9A94A}' +
+        '.stop{position:relative;margin-bottom:5mm}.stop:last-child{margin-bottom:0}.dot{position:absolute;left:-9mm;top:.6mm;width:5mm;height:5mm;border-radius:50%;background:#fff;border:1.2mm solid #B8891B}.stop.end .dot{background:#B8891B}' +
+        '.lab{font-size:7.5pt;letter-spacing:.2em;text-transform:uppercase;color:#8C8466}.val{font-size:12pt;font-weight:700;margin-top:.5mm}' +
+        '.grid{display:flex;gap:6mm;margin-bottom:8mm}.card{flex:1;border:.3mm solid #E4D9B6;border-radius:3mm;padding:4mm 5mm;background:#FBF8EE}.card .val{font-size:11.5pt}.card .s{font-size:9.5pt;color:#6F6850;margin-top:1mm}' +
+        'table{width:100%;border-collapse:collapse;margin-bottom:2mm}td{padding:3mm 0;border-bottom:.25mm solid #ECE4CA;font-size:11pt}td.n{text-align:right;font-variant-numeric:tabular-nums}' +
+        '.total{display:flex;justify-content:space-between;align-items:center;background:linear-gradient(135deg,#14110A,#2A2210);color:#F4D56A;border-radius:3mm;padding:5mm 6mm;margin-top:4mm}.total .l{font-size:10pt;letter-spacing:.22em;text-transform:uppercase;color:#D9CFAE}.total .a{font-size:21pt;font-weight:800}' +
+        '.pay{text-align:right;font-size:9.5pt;color:#6F6850;margin-top:2.5mm}' +
+        '.thanks{text-align:center;margin:14mm 0 0}.thanks b{font-size:13pt;color:#8A6A12}.thanks div{font-size:9.5pt;color:#6F6850;margin-top:1.5mm}' +
+        '.foot{position:absolute;left:0;right:0;bottom:0;padding:5mm 16mm;background:#14110A;color:#BFB58F;font-size:8pt;display:flex;justify-content:space-between;letter-spacing:.04em}.foot b{color:#F4D56A}' +
+        '@media screen{.page{margin:0 auto;box-shadow:0 4px 24px rgba(0,0,0,.25)}}' +
+        '@media print{html,body{background:#fff}.page{margin:0;box-shadow:none}}' +
+        '</style></head><body><div class="page">' +
+        '<div class="top"><div class="brand"><img id="lg" src="' + esc(logoUrl()) + '" alt="ETEL Ride"><div><h1>ETEL RIDE</h1><div class="sub">Trip receipt</div></div></div>' +
+        '<div class="meta"><div class="k">Receipt no.</div><div class="v">' + esc(r.receipt_no) + '</div><div class="k">Date</div><div class="v" style="margin-bottom:0">' + esc(when(r.completed_at)) + '</div></div></div>' +
+        '<div class="body"><div class="hd"><h2>Your trip</h2><span class="paid">PAID</span></div>' +
+        '<div class="route"><div class="stop"><span class="dot"></span><div class="lab">Pick-up</div><div class="val">' + esc(r.pickup || '-') + '</div></div>' +
+        '<div class="stop end"><span class="dot"></span><div class="lab">Drop-off</div><div class="val">' + esc(r.dropoff || '-') + '</div></div></div>' +
+        '<div class="grid"><div class="card"><div class="lab">Driver</div><div class="val">' + esc(r.driver || '-') + '</div><div class="s">' + esc(veh || ' ') + '</div></div>' +
+        '<div class="card"><div class="lab">Distance</div><div class="val">' + esc(r.distance_km) + ' km</div><div class="s">Paid by ' + esc(r.payment) + '</div></div></div>' +
+        '<div class="lab" style="margin-bottom:1mm">Fare details</div><table>' + rows + '</table>' +
+        '<div class="total"><span class="l">Total paid</span><span class="a">' + money(r.total) + '</span></div>' +
+        '<div class="thanks"><b>Thank you for riding with ETEL</b><div>Safe rides across Hawassa, fast and fair.</div></div></div>' +
+        '<div class="foot"><span><b>ETEL Group</b> &middot; Hawassa, Ethiopia</span><span>ethelmarket.com</span></div>' +
+        '</div></body></html>';
+    }
     function printIt(r) {
         var w = window.open('', '_blank');
         if (!w) return;
-        w.document.write('<!doctype html><meta charset="utf-8"><title>' + esc(r.receipt_no) + '</title><body style="font-family:Arial,sans-serif;max-width:420px;margin:24px auto;color:#111"><pre style="white-space:pre-wrap;font:15px/1.6 Arial,sans-serif">' + esc(asText(r)) + '</pre></body>');
-        w.document.close(); try { w.focus(); w.print(); } catch (e) {}
+        w.document.open(); w.document.write(receiptHtml(r)); w.document.close();
+        var go = function () { try { w.focus(); w.print(); } catch (e) {} };
+        var img = w.document.getElementById('lg');
+        var fired = false; function once() { if (!fired) { fired = true; setTimeout(go, 150); } }
+        if (img && !img.complete) { img.onload = once; img.onerror = once; setTimeout(once, 2500); } else once();
     }
 
     function open(id) {
@@ -121,6 +170,6 @@
             }); });
         }).observe(doc.body, { childList: true, subtree: true });
     }
-    window.EtelReceipt = { open: open, _enhance: enhance };
+    window.EtelReceipt = { open: open, _enhance: enhance, _html: receiptHtml };
     if (doc.readyState === 'loading') doc.addEventListener('DOMContentLoaded', start); else start();
 })();
