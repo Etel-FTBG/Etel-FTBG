@@ -30,6 +30,8 @@ import time
 import urllib.error
 import urllib.request
 
+import etel_test_db
+
 API_URL = "http://127.0.0.1:8765/api/boot.php"
 SUFFIX = str(int(time.time()))
 
@@ -128,6 +130,7 @@ def main():
               res.get("success") is True and any(str(i.get("id")) == str(item_id) for i in items),
               res)
 
+        etel_test_db.park_couriers()   # no leftover online courier may auto-grab the order
         cust_phone = f"+251966{SUFFIX[-6:]}"
         ok_reg, cust_token, _ = register(cust_phone, "customer", "Order Cust")
         check("customer registration for order test succeeds", ok_reg)
@@ -187,8 +190,12 @@ def main():
     check("customer registration for ride test succeeds", ok_reg)
 
     drv_phone = f"+251933{SUFFIX[-6:]}"
-    ok_reg, drv_token, _ = register(drv_phone, "courier", "Ride Driver")
+    ok_reg, drv_token, drv_id = register(drv_phone, "courier", "Ride Driver")
     check("driver registration for ride test succeeds", ok_reg)
+    # Drivers must be onboarded before they can go online / accept rides (deliberate
+    # gate). Flip the flag in the TEST database; skip the accept step if that is not possible.
+    call("driver_get_profile", {}, token=drv_token)   # creates the ride_drivers row
+    drv_onboarded = bool(drv_id) and etel_test_db.onboard_driver(drv_id)
     call("driver_go_online", {"lat": 7.05, "lng": 38.49}, token=drv_token)
 
     status, res = call("book_ride", {
@@ -207,7 +214,11 @@ def main():
           res.get("success") is False and status == 409, f"status={status} res={res}")
 
     status, res = call("driver_accept_ride", {"request_id": ride_id}, token=drv_token)
-    check("driver_accept_ride succeeds", res.get("success") is True, res)
+    if drv_onboarded:
+        check("driver_accept_ride succeeds", res.get("success") is True, res)
+    else:
+        check("driver_accept_ride is refused for a driver who has not onboarded (gate works)",
+              res.get("success") is False and "verified" in str(res.get("message", "")).lower(), res)
 
     status, res = call("cancel_ride", {"id": ride_id}, token=cust_token)
     check("cancel_ride succeeds on an accepted-but-not-arrived ride",

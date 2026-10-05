@@ -41,16 +41,17 @@ drv_id = drv_res["user_id"]
 print(f"   Driver registered successfully (id={drv_id}, phone={drv_phone})")
 
 print("2. Onboarding driver...")
-call_api("driver_update_profile", {
-    "vehicle_type": "Bajaj",
-    "vehicle_make": "TVS",
-    "vehicle_color": "Blue",
-    "vehicle_year": "2024",
-    "vehicle_plate": f"AA-{suffix[-4:]}",
-    "license_number": f"LIC-{suffix[-5:]}",
-    "license_name": f"Driver {suffix}"
-}, token=drv_token)
-print("   Driver onboarded!")
+# Real onboarding needs a selfie, licence photo and identity check (a deliberate gate),
+# so mark the driver onboarded directly in the TEST database instead of faking uploads.
+import os
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import etel_test_db
+call_api("driver_get_profile", {}, token=drv_token)   # creates the ride_drivers row
+if not etel_test_db.onboard_driver(drv_id):
+    print("SKIP: cannot reach the test database to mark the driver onboarded "
+          "(set ETEL_TEST_DB_* or api/.env). Nothing was tested.")
+    sys.exit(0)
+print("   Driver onboarded (test database)!")
 
 print("3. Going online as driver...")
 call_api("driver_go_online", {"lat": 7.05, "lng": 38.49}, token=drv_token)
@@ -76,6 +77,10 @@ d_lng = 0.00452
 accumulated_km = 0.0
 for i in range(1, 5):
     lng = lng0 + d_lng * i
+    # The meter rejects pings that imply an impossible speed (anti GPS-glitch rule: 120 km/h
+    # plus slack over the time since the last accepted ping). These test pings are sent
+    # back to back, so back-date the previous ping by 90 s: ~0.5 km in 90 s = 20 km/h.
+    etel_test_db.run_sql("UPDATE rides SET last_location_at = NOW() - INTERVAL 90 SECOND WHERE id = %d" % int(ride_id))
     ping_res = call_api("driver_update_location", {"lat": lat0, "lng": lng}, token=drv_token)
     meter = ping_res.get("meter")
     if meter:

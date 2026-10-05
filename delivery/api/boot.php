@@ -1492,7 +1492,7 @@ switch ($action) {
                 COALESCE(i.original_price,i.price) AS original_price,i.image_url,
                 COALESCE(i.stock_quantity,i.stock_qty,100) AS stock_quantity,
                 COALESCE(i.preparation_time,i.prep_time_min,15) AS preparation_time,
-                COALESCE(i.is_available,i.active,1) AS is_available, i.quality, i.portion,
+                COALESCE(i.is_available,i.active,1) AS is_available, i.quality, i.`portion`,
                 i.service_giver_id,sg.business_name,COALESCE(sg.zone,'') AS zone,
                 COALESCE(sg.service_type,sg.category,'general') AS service_type,
                 COALESCE(sg.average_rating,sg.rating,0) AS rating,

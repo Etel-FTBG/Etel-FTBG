@@ -140,7 +140,7 @@ function etel_catalog_add_picks($pdo, $sg_id, $picks) {
         $cs = $pdo->prepare("SELECT * FROM menu_catalog WHERE id = ? AND status = 'active'");
         $base_cols = 'service_giver_id, item_code, name, name_am, description, description_am, category, price, original_price, stock_quantity, preparation_time, image_url, is_available, catalog_id';
         try {
-            $ins = $pdo->prepare("INSERT INTO items ($base_cols, quality, portion) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 100, ?, ?, 1, ?, ?, ?)");
+            $ins = $pdo->prepare("INSERT INTO items ($base_cols, quality, `portion`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 100, ?, ?, 1, ?, ?, ?)");
         } catch (Exception $e0) {
             error_log('[ETEL] etel_catalog_add_picks: quality/portion unavailable: ' . $e0->getMessage());
             $use_extra = false;
@@ -269,7 +269,7 @@ function etel_catalog_import_rows($pdo, $sg_id, $rows, $user_id = 0) {
                 $cols = etel_table_columns($pdo, 'items');
                 $extra = in_array('quality', $cols, true) && in_array('portion', $cols, true);
                 $sql = 'INSERT INTO items (service_giver_id, item_code, name, name_am, description, category, price, original_price, stock_quantity, preparation_time, image_url, is_available'
-                     . ($extra ? ', quality, portion' : '') . ') VALUES (?, ?, ?, ?, ?, ?, ?, ?, 100, 20, ?, 1' . ($extra ? ', ?, ?' : '') . ')';
+                     . ($extra ? ', quality, `portion`' : '') . ') VALUES (?, ?, ?, ?, ?, ?, ?, ?, 100, 20, ?, 1' . ($extra ? ', ?, ?' : '') . ')';
                 $vals = array((int)$sg_id, etel_catalog_new_item_code($pdo, $r['category']), $r['name'], $r['name_am'] !== '' ? $r['name_am'] : null,
                               '', $r['category'], $r['price'], $r['price'], '');
                 if ($extra) { $vals[] = $r['quality']; $vals[] = $r['portion']; }
@@ -316,7 +316,7 @@ function etel_catalog_copy_menu($pdo, $from_sg, $to_sg, $opts = array()) {
     $src = $pdo->prepare('SELECT * FROM items WHERE service_giver_id = ?' . ($hidden ? '' : ' AND is_available = 1') . ' ORDER BY id');
     $src->execute(array($from_sg));
     $sql = 'INSERT INTO items (service_giver_id, item_code, name, name_am, description, description_am, category, price, original_price, stock_quantity, preparation_time, image_url, is_available'
-         . ($extra ? ', catalog_id, quality, portion' : '') . ') VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1' . ($extra ? ', ?, ?, ?' : '') . ')';
+         . ($extra ? ', catalog_id, quality, `portion`' : '') . ') VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1' . ($extra ? ', ?, ?, ?' : '') . ')';
     $ins = $pdo->prepare($sql);
     foreach ($src->fetchAll(PDO::FETCH_ASSOC) as $it) {
         $key = etel_catalog_norm($it['name']);

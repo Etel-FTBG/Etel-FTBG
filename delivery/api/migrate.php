@@ -227,7 +227,16 @@ function mig_apply_file(PDO $pdo, array $mig): array {
     }
     try {
         foreach ($statements as $stmt) {
-            $pdo->exec($stmt);
+            // query() + drain, not exec(): a statement that returns a result
+            // set (e.g. the 'SELECT 1' branch of the idempotent
+            // "add column if missing" migrations, via EXECUTE) left an unread
+            // cursor on the connection, so the NEXT statement failed with
+            // "Cannot execute queries while other unbuffered queries are active".
+            $res = $pdo->query($stmt);
+            if ($res instanceof PDOStatement) {
+                if ($res->columnCount() > 0) { $res->fetchAll(); }
+                $res->closeCursor();
+            }
         }
         $pdo->prepare(
             'INSERT INTO schema_migrations (version, name, duration_ms) VALUES (?, ?, ?)

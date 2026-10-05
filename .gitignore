@@ -48,3 +48,8 @@ EtelGebeya/public/config.php
 # password that may well still be live if nobody's changed it since setup.
 **/LOGIN_CREDENTIALS.md
 node_modules/
+
+# runtime marker written by rides_ensure_schema(); must not ship with the repo
+# (a tracked copy makes fresh installs skip their schema upgrade)
+delivery/api/.schema_done
+api/.schema_done

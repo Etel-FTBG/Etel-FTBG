@@ -1,4 +1,6 @@
--- Migration 040: adds rides.cancel_reason - the reason chip/text a
+-- Migration 072 (was numbered 040 - it shared that version with 040_equb_system, and the
+-- runner tracks by version number, so this one was silently never applied on live):
+-- adds rides.cancel_reason - the reason chip/text a
 -- passenger selects when cancelling (js/ride.js's showCancelReasons /
 -- doCancel already sends this as body.reason on cancel_ride, but
 -- RideController.php's cancel_ride handler was discarding it: the
@@ -9,4 +11,4 @@
 -- unrelated customer changes of mind, since the data was never kept.
 
 ALTER TABLE `rides`
-    ADD COLUMN `cancel_reason` VARCHAR(255) NULL DEFAULT NULL;
+    ADD COLUMN IF NOT EXISTS `cancel_reason` VARCHAR(255) NULL DEFAULT NULL;

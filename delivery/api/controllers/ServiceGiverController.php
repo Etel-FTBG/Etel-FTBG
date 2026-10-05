@@ -997,7 +997,7 @@ case 'sg_add_item': {
         $ins = $pdo->prepare("
             INSERT INTO items (
                 service_giver_id, item_code, name, name_am, description, description_am, category,
-                price, original_price, stock_quantity, preparation_time, image_url, is_available, quality, portion
+                price, original_price, stock_quantity, preparation_time, image_url, is_available, quality, `portion`
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)
         ");
         $ins->execute(array(
@@ -1053,7 +1053,7 @@ case 'sg_get_my_items': {
                 image_url, stock_quantity, preparation_time, is_available, created_at';
     try {
         try {
-            $s = $pdo->prepare("SELECT $base_cols, catalog_id, quality, portion FROM items $where ORDER BY created_at DESC");
+            $s = $pdo->prepare("SELECT $base_cols, catalog_id, quality, `portion` FROM items $where ORDER BY created_at DESC");
             $s->execute($params);
         } catch (Exception $e0) {
             error_log('[ServiceGiverController] sg_get_my_items: new columns unavailable: ' . $e0->getMessage());
@@ -1169,7 +1169,7 @@ case 'sg_update_item': {
         require_once __DIR__ . '/../lib/menu_catalog.php';
         etel_ensure_catalog_schema($pdo);
         if (array_key_exists('quality', $body)) { $updates[] = 'quality = ?'; $params[] = etel_catalog_clean_quality($body['quality']); }
-        if (array_key_exists('portion', $body)) { $pt = trim(substr((string)$body['portion'], 0, 40)); $updates[] = 'portion = ?'; $params[] = ($pt !== '' ? $pt : null); }
+        if (array_key_exists('portion', $body)) { $pt = trim(substr((string)$body['portion'], 0, 40)); $updates[] = '`portion` = ?'; $params[] = ($pt !== '' ? $pt : null); }
     }
     if (isset($body['price'])) {
         $vp = etel_validate_amount($body['price']);

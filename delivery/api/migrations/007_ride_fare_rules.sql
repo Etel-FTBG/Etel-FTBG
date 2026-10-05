@@ -89,6 +89,30 @@ CREATE TABLE IF NOT EXISTS `delivery_zones` (
     UNIQUE KEY `uq_name` (`name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- A delivery_zones table created earlier by seeds/complete_migration.sql has no
+-- est_minutes column, and the CREATE TABLE IF NOT EXISTS above is a no-op on it.
+-- Add the column first (same idempotent pattern as migration 008) so this seed
+-- insert works on a fresh install built from complete_migration.sql + migrations.
+SET @col_exists = (
+    SELECT COUNT(*)
+    FROM information_schema.COLUMNS
+    WHERE TABLE_SCHEMA = DATABASE()
+      AND TABLE_NAME = 'delivery_zones'
+      AND COLUMN_NAME = 'est_minutes'
+);
+
+SET @ddl = IF(
+    @col_exists = 0,
+    'ALTER TABLE `delivery_zones` ADD COLUMN `est_minutes` INT(4) NOT NULL DEFAULT 20 AFTER `base_fare`',
+    'SELECT 1'
+);
+
+PREPARE stmt FROM @ddl;
+
+EXECUTE stmt;
+
+DEALLOCATE PREPARE stmt;
+
 INSERT INTO `delivery_zones` (name, base_fare, est_minutes, sort_order, active) VALUES
     ('Mehal Ketema',         50, 20,  1, 1),
     ('Tabor',                50, 20,  2, 1),
