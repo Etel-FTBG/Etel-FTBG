@@ -1435,6 +1435,9 @@ switch ($action) {
     case 'driver_add_fuel_log': case 'driver_list_fuel_logs': case 'driver_delete_fuel_log': case 'driver_get_fuel_summary':
         require __DIR__ . '/controllers/DriverFuelController.php';
         break;
+    case 'chapa_init': case 'chapa_status':
+        require __DIR__ . '/controllers/ChapaController.php';
+        break;
     case 'courier_add_fuel_log': case 'courier_list_fuel_logs': case 'courier_delete_fuel_log': case 'courier_get_fuel_summary':
         $GLOBALS['ETEL_LIMITED_BLOCK'] = true; // limited (Ride-only) EtelIDs are refused here - see get_auth_user()
         require __DIR__ . '/controllers/CourierFuelController.php';

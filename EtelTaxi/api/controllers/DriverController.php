@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../lib/taxi_payments.php';
+require_once __DIR__ . '/../lib/taxi_chapa.php';
 
 switch ($action) {
 
@@ -258,8 +259,11 @@ case 'driver_submit_payment': {
     $driver = require_driver_auth($pdo);
     $method = isset($body['payment_method']) ? trim($body['payment_method']) : '';
     $ref    = isset($body['reference_number']) ? trim($body['reference_number']) : '';
-    if (!in_array($method, array('etelpay_wallet', 'telebirr', 'cbe', 'abysinia', 'cash'), true)) {
-        fail('payment_method must be one of: etelpay_wallet, telebirr, cbe, abysinia, cash.');
+    if (!in_array($method, array('etelpay_wallet', 'telebirr', 'cbe', 'abysinia', 'cash', 'chapa'), true)) {
+        fail('payment_method must be one of: etelpay_wallet, telebirr, cbe, abysinia, cash, chapa.');
+    }
+    if ($method === 'chapa' && !taxi_chapa_enabled()) {
+        fail('Chapa is not set up on this server yet. Please use another payment method.', 503);
     }
     if ($method === 'etelpay_wallet') {
         // Honest placeholder: no EtelPay codebase to integrate against
@@ -279,8 +283,36 @@ case 'driver_submit_payment': {
     $exists = $pdo->prepare('SELECT id, status FROM ' . tbl('taxi_dues_payments') . ' WHERE driver_id = ? AND period_month = ?');
     $exists->execute(array($driver['id'], $period));
     $existingRow = $exists->fetch();
-    if ($existingRow && $existingRow['status'] !== 'rejected') {
+    // An unfinished Chapa attempt ('awaiting_chapa') never blocks a retry.
+    if ($existingRow && !in_array($existingRow['status'], array('rejected', 'awaiting_chapa'), true)) {
         fail('A payment for this period has already been submitted or verified.', 409);
+    }
+
+    if ($method === 'chapa') {
+        // Chapa tx_ref doubles as reference_number so webhook/return can find this row.
+        $txRef = 'TAXI-' . strtoupper(bin2hex(random_bytes(8)));
+        if ($existingRow) {
+            $pdo->prepare('UPDATE ' . tbl('taxi_dues_payments') . '
+                SET amount=?, penalty_amount=?, payment_method="chapa", reference_number=?, status="awaiting_chapa",
+                    submitted_at=NOW(), verified_by=NULL, verified_at=NULL, notes=NULL WHERE id=?')
+                ->execute(array($amount, $penalty, $txRef, $existingRow['id']));
+            $paymentId = $existingRow['id'];
+        } else {
+            $pdo->prepare('INSERT INTO ' . tbl('taxi_dues_payments') . '
+                (driver_id, period_month, amount, penalty_amount, payment_method, reference_number, status, submitted_at)
+                VALUES (?, ?, ?, ?, "chapa", ?, "awaiting_chapa", NOW())')
+                ->execute(array($driver['id'], $period, $amount, $penalty, $txRef));
+            $paymentId = intval($pdo->lastInsertId());
+        }
+        $url = taxi_chapa_initialize(
+            $txRef, (float)$amount + (float)$penalty, $driver,
+            TAXI_BASE_URL . '/driver.html?chapa_ref=' . rawurlencode($txRef),
+            TAXI_BASE_URL . '/api/chapa-callback.php'
+        );
+        if (!$url) fail('Could not reach Chapa right now. Please try again or use another method.', 502);
+        ok(array('payment_id' => $paymentId, 'period_month' => $period, 'amount' => $amount, 'penalty_amount' => $penalty,
+                 'status' => 'awaiting_chapa', 'redirect_url' => $url, 'message' => 'Redirecting to Chapa...'));
+        break;
     }
 
     if ($existingRow) {
@@ -304,6 +336,19 @@ case 'driver_submit_payment': {
         'status' => 'pending_verification',
         'message' => 'Payment submitted - your association will verify it shortly.',
     ));
+    break;
+}
+
+// Driver came back from Chapa: verify now rather than waiting for the webhook.
+case 'driver_chapa_status': {
+    $pdo = db();
+    $driver = require_driver_auth($pdo);
+    $ref = isset($body['ref']) ? trim($body['ref']) : '';
+    if ($ref === '') fail('ref is required.');
+    $own = $pdo->prepare('SELECT id FROM ' . tbl('taxi_dues_payments') . ' WHERE reference_number = ? AND driver_id = ? AND payment_method = "chapa"');
+    $own->execute(array($ref, $driver['id']));
+    if (!$own->fetch()) fail('Payment not found.', 404);
+    ok(array('result' => taxi_chapa_settle($pdo, $ref)));
     break;
 }
 

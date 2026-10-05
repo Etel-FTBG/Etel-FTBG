@@ -3828,6 +3828,9 @@ case 'customer_confirm_arrival': {
     if (!$r) fail('No arrived ride waiting for your confirmation', 404);
     $fare = floatval($r['fare_final']);
     $wallet_tx_ref = null;
+    // Chapa rides settle through chapa_init/chapa_status (chapa_bridge.php),
+    // never on the client's say-so here.
+    if ($pm === 'chapa') fail('Pay with Chapa through the Chapa checkout (chapa_init), then the ride completes automatically.', 400);
     if ($pm === 'wallet') {
         /* The rider already transferred the fare to Etel Delivery's Etel
            Pay merchant account client-side (with their own PIN). We only
