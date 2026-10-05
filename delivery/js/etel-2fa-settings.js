@@ -146,6 +146,19 @@
     function close() { if (host) host.style.display = 'none'; }
 
     window.Etel2FASettings = { open: open, close: close };
+    /* When the server says two-step sign-in is required for admins, open the set-up panel. */
+    if (window.fetch && !window.__etel2faFetchWrapped) {
+        window.__etel2faFetchWrapped = true;
+        var realFetch = window.fetch;
+        window.fetch = function () {
+            return realFetch.apply(this, arguments).then(function (r) {
+                try {
+                    if (r && r.status === 403) r.clone().json().then(function (d) { if (d && d.code === '2fa_setup_required') open(); }).catch(function () {});
+                } catch (e) {}
+                return r;
+            });
+        };
+    }
     doc.addEventListener('click', function (e) {
         var t = e.target && e.target.closest ? e.target.closest('[data-etel-2fa-open]') : null;
         if (t) { e.preventDefault(); open(); }

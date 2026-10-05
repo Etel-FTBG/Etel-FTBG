@@ -56,7 +56,7 @@ function systemHealthLoad(){
       return '<div style="display:flex;gap:10px;align-items:flex-start;padding:7px 0;border-top:1px solid rgba(255,255,255,.07)">'+
         '<span style="flex:none;width:10px;height:10px;border-radius:50%;margin-top:5px;background:'+(SH_DOT[c.status]||SH_DOT.ok)+'"></span>'+
         '<div style="flex:none;width:130px;color:#f1ece0;font-weight:700">'+esc(c.name)+'</div>'+
-        '<div style="flex:1;min-width:0;color:#B8B0A0">'+esc(c.detail)+(c.download?' <button class="rides-filter-btn" style="margin-left:6px" onclick="downloadLatestBackup(this)">Download</button>':'')+'</div></div>';
+        '<div style="flex:1;min-width:0;color:#B8B0A0">'+esc(c.detail)+(c.download?' <button class="rides-filter-btn" style="margin-left:6px" onclick="downloadLatestBackup(this)">Download</button>':'')+(c.require_toggle?' <button class="rides-filter-btn" style="margin-left:6px" onclick="toggleRequire2fa(this,'+(c.require_toggle==='on'?'false':'true')+')">'+(c.require_toggle==='on'?'Turn off':'Require for admins')+'</button>':'')+'</div></div>';
     }).join('');
   },function(m){box.textContent='Could not load: '+m;});
   if(!SH.timer){
@@ -88,6 +88,12 @@ function downloadLatestBackup(btn){
   .catch(function(e){btn.disabled=false;btn.textContent=old;alert(e.message);});
 }
 window.downloadLatestBackup=downloadLatestBackup;
+function toggleRequire2fa(btn,on){
+  if(on&&!confirm('Require two-step sign-in for every admin? Admins without it will be asked to set it up before they can open admin pages. Make sure everyone has saved their backup codes.'))return;
+  btn.disabled=true;
+  api('admin_set_2fa_required',{required:on},function(){systemHealthLoad();},function(m){btn.disabled=false;alert(m);});
+}
+window.toggleRequire2fa=toggleRequire2fa;
 
 
 /* ── Live trip watch: stuck trips right now (admin_ride_watch, read-only). Refreshes every 30 s while the Rides tab is on screen. ── */
