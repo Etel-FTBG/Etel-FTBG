@@ -245,7 +245,8 @@
 <script src="../js/etel-display-settings.js?v=1.4" data-fab="off" defer></script>
 <script src="../js/etel-2fa-settings.js?v=1" defer></script>
 <script src="../js/ride-pin.js?v=1" defer></script>
-<script src="../js/ride-receipt.js?v=3" defer></script>
+<script src="../js/ride-receipt.js?v=4" defer></script>
+<script src="../js/ride-printer.js?v=1" defer></script>
 </head>
 <body class="dark-page" style="background:#08080f;margin:0;padding:0">
 
@@ -734,6 +735,11 @@
       <div class="mp-row" data-etel-2fa-open onclick="closeMyProfile()">
         <div data-no-emoji-icons class="mp-row-icon">🛡️</div>
         <div><div class="mp-row-label">Two-step sign-in</div><div class="mp-row-sub">A code from your phone when you sign in</div></div>
+        <div class="mp-row-arrow">›</div>
+      </div>
+      <div class="mp-row" data-etel-printer-open onclick="closeMyProfile()">
+        <div data-no-emoji-icons class="mp-row-icon">🖨️</div>
+        <div><div class="mp-row-label">Receipt printer</div><div class="mp-row-sub" data-etel-printer-sub>Bluetooth thermal printer</div></div>
         <div class="mp-row-arrow">›</div>
       </div>
       <div class="mp-row" data-etel-display-open onclick="closeMyProfile();EtelDisplay.open()">
