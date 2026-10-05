@@ -482,6 +482,20 @@ body { font-family:var(--ff-b); background:#0a0a14; overflow:hidden; }
 <style>/* keep the EN/አማ switch out of the header text when the display size is enlarged */
 html[data-etel-on] .del-lang-switch{position:static!important;margin:0 0 10px auto;width:max-content}
 @media(max-width:560px){.del-lang-switch{position:static!important;margin:14px 16px 6px auto!important;width:max-content}}</style>
+<style id="etel-login-polish">
+/* Week 2 polish (additive): the login screen had 7-9px text and a "Create account" button
+   that looked disabled. Real tap targets and readable sizes; no layout or logic changes. */
+.del-auth-org, .del-auth-sub { font-size:11px; }
+.del-rtab { font-size:11px; min-height:58px; padding:9px 2px; gap:3px; }
+.del-rtab-icon { font-size:19px; }
+.del-af-label { font-size:11px; letter-spacing:1px; }
+.del-forgot-link { min-height:40px; display:inline-flex; align-items:center; }
+.del-auth-ghost { background:rgba(244,213,106,.12); border:1.5px solid #D4AF37; color:#FFE9A8; font-size:14px; padding:13px; min-height:46px; }
+.del-auth-ghost:hover { background:rgba(244,213,106,.22); border-color:#F0CA58; color:#FFFFFF; }
+/* side padding keeps the footer text clear of the two floating buttons (Aa / theme) */
+.del-auth-foot { font-size:11px; letter-spacing:.3px; padding-left:60px; padding-right:60px; }
+@media (max-width:340px) { .del-role-tabs { padding:14px 10px 0; gap:3px; } .del-rtab { flex:1 1 0; min-width:0; font-size:9.5px; padding:9px 0; } }
+</style>
 <script src="js/etel-display-settings.js?v=1.4" defer></script>
 </head>
 <body>

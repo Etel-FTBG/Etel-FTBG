@@ -237,7 +237,11 @@ case 'courier_get_available_orders': {
             KEY(order_id)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
     } catch (Exception $e) {}
-    try { $pdo->query("ALTER TABLE order_assignments ADD COLUMN status VARCHAR(30) NOT NULL DEFAULT 'pending'"); } catch(Exception $e){}
+    // Same fix as courier_get_my_orders: check first, alter only if missing.
+    try {
+        require_once __DIR__ . '/../lib/schema_helpers.php';
+        rides_add_missing_cols($pdo, 'order_assignments', array('status' => "`status` VARCHAR(30) NOT NULL DEFAULT 'pending'"));
+    } catch (Exception $e) {}
 
     // Try full query with order_assignments join first
     try {
@@ -602,12 +606,17 @@ case 'courier_get_my_orders': {
             'lng' => 'DECIMAL(10,7) NULL',
         ),
     );
+    // Was: one "ALTER TABLE ... ADD COLUMN" per column on EVERY poll, each
+    // failing with "duplicate column" once the column exists. A failing ALTER
+    // still takes a metadata lock on the table, which is why this action
+    // averaged ~620 ms (worst 2.4 s) in the live API timings with only a few
+    // couriers. rides_add_missing_cols() does one cheap SHOW COLUMNS per table
+    // and only alters when a column is genuinely missing.
+    require_once __DIR__ . '/../lib/schema_helpers.php';
     foreach ($cols_to_add as $tbl => $cols) {
-        foreach ($cols as $col => $def) {
-            try {
-                $pdo->query("ALTER TABLE `$tbl` ADD COLUMN `$col` $def");
-            } catch (Exception $e) { /* already exists  ignore */ }
-        }
+        $ddl = array();
+        foreach ($cols as $col => $def) { $ddl[$col] = "`$col` $def"; }
+        try { rides_add_missing_cols($pdo, $tbl, $ddl); } catch (Exception $e) { /* table missing: same as the old per-ALTER try/catch */ }
     }
 
     // Also ensure order_assignments table exists

@@ -1,0 +1,48 @@
+# ============================================================
+# ETEL Delivery & Ride - compression and image caching (Week 2)
+#
+# HOW TO USE (cPanel File Manager, no SSH):
+#   1. Open public_html/delivery/.htaccess (create it if missing).
+#      If it already has content, APPEND this block - do NOT replace the file.
+#   2. Check it worked: open the customer app, DevTools > Network, click
+#      customer.js. Response Headers should show  content-encoding: gzip  (or br).
+#      Before: about 210 KB over the wire.  After: roughly 45-60 KB.
+#   3. If the site shows a 500 error after saving, remove the block (it means
+#      the host does not allow one of these modules) and tell me which line failed.
+#
+# Why: customer.js, driver.js, admin.js, jsQR.js and the CSS are large text
+# files. If the server is not compressing them, every first visit downloads
+# them in full on mobile data. Compression is the cheapest speed-up there is.
+# ============================================================
+
+# --- 1. Compress text assets -----------------------------------------------
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/css text/plain text/xml
+  AddOutputFilterByType DEFLATE application/javascript application/x-javascript text/javascript
+  AddOutputFilterByType DEFLATE application/json application/manifest+json application/xml
+  AddOutputFilterByType DEFLATE image/svg+xml
+</IfModule>
+<IfModule mod_brotli.c>
+  AddOutputFilterByType BROTLI_COMPRESS text/html text/css text/plain application/javascript text/javascript application/json image/svg+xml
+</IfModule>
+
+# --- 2. Cache images and fonts for a month ----------------------------------
+# JS / CSS / HTML are deliberately NOT given a long cache here: some of them
+# (release-loader.js, sw.js, manifests) are loaded without a ?v= version, and
+# the service worker already caches the app shell for repeat visits.
+<IfModule mod_expires.c>
+  ExpiresActive On
+  ExpiresByType image/png  "access plus 30 days"
+  ExpiresByType image/jpeg "access plus 30 days"
+  ExpiresByType image/webp "access plus 30 days"
+  ExpiresByType image/gif  "access plus 30 days"
+  ExpiresByType image/svg+xml "access plus 30 days"
+  ExpiresByType image/x-icon "access plus 30 days"
+  ExpiresByType font/woff2 "access plus 365 days"
+  ExpiresByType font/woff  "access plus 365 days"
+</IfModule>
+<IfModule mod_headers.c>
+  <FilesMatch "\.(png|jpe?g|webp|gif|svg|ico|woff2?)$">
+    Header set Cache-Control "public, max-age=2592000"
+  </FilesMatch>
+</IfModule>
