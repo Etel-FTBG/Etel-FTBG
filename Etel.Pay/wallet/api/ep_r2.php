@@ -328,6 +328,27 @@ case 'ep_topup_initiate': {
     $pdo->prepare('INSERT INTO ' . EP_TBL_TOPUP . ' (user_id, ref, amount, method, expires_at) VALUES (?,?,?,?,?)')
         ->execute(array($uid, $ref, $amount, $method, $expires));
 
+    if ($method === 'chapa' && !ep_chapa_enabled()) {
+        $pdo->prepare('UPDATE ' . EP_TBL_TOPUP . ' SET status="failed" WHERE ref=?')->execute(array($ref));
+        ep_err('Chapa is not configured yet', 503);
+    }
+    // ── Chapa hosted checkout (cards, Telebirr, CBE Birr, banks) ──
+    if ($method === 'chapa' && ep_chapa_enabled()) {
+        $base = defined('EP_BASE_URL') ? EP_BASE_URL : 'https://ethelmarket.com';
+        $me   = ep_auth();
+        $url  = ep_chapa_initialize(
+            $ref, $amount, $me,
+            rtrim($base, '/') . '/Etel.Pay/wallet/topup?chapa_ref=' . rawurlencode($ref),
+            rtrim($base, '/') . '/Etel.Pay/wallet/api/v2_verify.php?action=ep_chapa_webhook'
+        );
+        if ($url) {
+            $pdo->prepare('UPDATE ' . EP_TBL_TOPUP . ' SET status="processing", gateway_ref=? WHERE ref=?')->execute(array($ref, $ref));
+            ep_ok(array('ref'=>$ref,'method'=>'chapa','redirect_url'=>$url,'amount'=>$amount), 'Redirecting to Chapa');
+        }
+        $pdo->prepare('UPDATE ' . EP_TBL_TOPUP . ' SET status="failed" WHERE ref=?')->execute(array($ref));
+        ep_err('Chapa is unavailable right now. Please try another method.', 502);
+    }
+
     // ── Telebirr integration (ready-to-wire) ──────────────────
     // Replace these with your live credentials from Ethio Telecom developer portal
     $TELEBIRR_APP_ID     = defined('TELEBIRR_APP_ID')     ? TELEBIRR_APP_ID     : (getenv('TELEBIRR_APP_ID')     ?: '');
@@ -395,6 +416,33 @@ case 'ep_topup_initiate': {
         ),
         'confirm_url' => 'After payment, tap Confirm to notify us',
     ), 'Top-up request created');
+}
+
+/* ── 1a. Chapa: webhook (no session; trust comes from HMAC + verify API) ── */
+case 'ep_chapa_webhook': {
+    $secret = ep_chapa_secret();
+    $raw    = file_get_contents('php://input') ?: '';
+    $sig    = isset($_SERVER['HTTP_CHAPA_SIGNATURE']) ? $_SERVER['HTTP_CHAPA_SIGNATURE']
+            : (isset($_SERVER['HTTP_X_CHAPA_SIGNATURE']) ? $_SERVER['HTTP_X_CHAPA_SIGNATURE'] : '');
+    if ($secret === '' || $sig === '') ep_err('Chapa webhook not configured', 503);
+    if (!hash_equals(hash_hmac('sha256', $raw, $secret), (string)$sig)) ep_err('Invalid signature', 401);
+    $evt = json_decode($raw, true);
+    $ref = is_array($evt) && isset($evt['tx_ref']) ? (string)$evt['tx_ref'] : '';
+    if ($ref === '') ep_err('Missing tx_ref', 422);
+    ep_ok(array('result' => ep_chapa_settle($ref)));
+}
+
+/* ── 1a'. Chapa: customer came back -- verify now, don't wait for webhook ── */
+case 'ep_topup_chapa_status': {
+    $uid = ep_auth_id();
+    $ref = in_str('ref');
+    if (!$ref) ep_err('Ref required');
+    $stmt = ep_db()->prepare('SELECT user_id FROM ' . EP_TBL_TOPUP . ' WHERE ref=? LIMIT 1');
+    $stmt->execute(array($ref));
+    $row = $stmt->fetch();
+    if (!$row || (int)$row['user_id'] !== $uid) ep_err('Top-up request not found', 404);
+    $result = ep_chapa_settle($ref);
+    ep_ok(array('ref' => $ref, 'result' => $result));
 }
 
 /* ── 1b. Confirm top-up (user submits proof) ─────────────────── */
