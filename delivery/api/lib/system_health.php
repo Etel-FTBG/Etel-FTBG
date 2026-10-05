@@ -187,6 +187,13 @@ function etel_system_health($pdo, $adminId = 0) {
         } catch (Exception $e) {}
     }
 
+    // Is two-step sign-in required for every admin?
+    try {
+        $rq = $pdo->query("SELECT rule_value FROM pricing_rules WHERE rule_key='require_admin_2fa' LIMIT 1")->fetchColumn();
+        $req = intval($rq) === 1;
+        $checks[] = etel_health_item('Admin 2FA rule', $req ? 'ok' : 'info', $req ? 'Required: admins without two-step sign-in cannot open admin pages.' : 'Optional. Turn it on once every admin has saved their backup codes.', array('require_toggle' => $req ? 'on' : 'off'));
+    } catch (Exception $e) {}
+
     $rank = array('ok' => 0, 'info' => 0, 'warn' => 1, 'bad' => 2);
     $worst = 0; $bad = 0; $warns = 0;
     foreach ($checks as $c) {

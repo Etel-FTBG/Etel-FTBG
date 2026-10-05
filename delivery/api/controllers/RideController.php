@@ -1820,6 +1820,19 @@ case 'admin_system_health': {
     break;
 }
 
+case 'admin_set_2fa_required': {
+    /* Owner-level admins only. Turning it ON needs the caller's own 2FA to be on (no self lock-out). */
+    if ($u['role'] !== 'admin' || !user_has_capability($pdo, $u, 'system.backup')) fail('Owner admins only', 403);
+    require_once __DIR__ . '/../lib/totp.php';
+    $on = !empty($body['required']) ? 1 : 0;
+    if ($on && !etel_2fa_is_enabled($pdo, intval($u['id']))) fail('Turn on your own two-step sign-in first, then require it for everyone.', 409);
+    $pdo->prepare("INSERT INTO pricing_rules (rule_key, rule_value, description) VALUES ('require_admin_2fa', ?, 'Admins must have two-step sign-in on to use the admin pages (1 = required)')
+                   ON DUPLICATE KEY UPDATE rule_value = VALUES(rule_value)")->execute(array((string) $on));
+    error_log('[ETEL][2fa] admin ' . intval($u['id']) . ' set require_admin_2fa=' . $on);
+    ok(array('required' => $on));
+    break;
+}
+
 case 'admin_ride_watch': {
     if ($u['role'] !== 'admin' || !user_has_capability($pdo, $u, 'rides.view')) fail('Admin only', 403);
     require_once __DIR__ . '/../lib/ride_monitor.php';

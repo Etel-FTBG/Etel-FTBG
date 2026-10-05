@@ -208,9 +208,9 @@ function ok($data = null) {
     echo json_encode(array('success' => true, 'data' => $data, 'v' => APP_VER));
     exit;
 }
-function fail($msg, $code = 400) {
+function fail($msg, $code = 400, $extra = array()) {
     http_response_code($code);
-    echo json_encode(array('success' => false, 'message' => $msg, 'v' => APP_VER));
+    echo json_encode(array_merge(array('success' => false, 'message' => $msg, 'v' => APP_VER), $extra));
     exit;
 }
 /* Like fail(), but for exceptions: logs the real exception message/trace
@@ -368,7 +368,27 @@ function etel_limited_refuse() {
 function require_auth($pdo) {
     $u = get_auth_user($pdo);
     if (!$u) fail('Unauthorized  please login again', 401);
+    etel_admin_2fa_enforce($pdo, $u);
     return $u;
+}
+
+/* Optional rule (pricing_rules 'require_admin_2fa' = 1, set from Admin > Rides > System health):
+   an admin who has not turned on two-step sign-in cannot use the admin_* actions until they do.
+   Everything else (sign-in, the 2FA set-up screens, the rider/driver apps) is untouched, so nobody
+   is locked out of setting it up. Fails open on any error. */
+function etel_admin_2fa_enforce($pdo, $u) {
+    global $action;
+    if (empty($u['role']) || $u['role'] !== 'admin') return;
+    $a = isset($action) ? (string) $action : '';
+    if (strpos($a, 'admin_') !== 0 || strpos($a, 'admin_2fa_') === 0 || $a === 'admin_system_health' || $a === 'admin_set_2fa_required') return;
+    try {
+        $s = $pdo->prepare("SELECT rule_value FROM pricing_rules WHERE rule_key='require_admin_2fa' LIMIT 1");
+        $s->execute();
+        if (intval($s->fetchColumn()) !== 1) return;
+        require_once __DIR__ . '/lib/totp.php';
+        if (etel_2fa_is_enabled($pdo, intval($u['id']))) return;
+    } catch (Exception $e) { return; }
+    fail('Your organisation requires two-step sign-in for admins. Open the Two-step sign-in menu item and turn it on first.', 403, array('code' => '2fa_setup_required'));
 }
 
 // Loads the capability list for a user.
@@ -1431,7 +1451,7 @@ switch ($action) {
     case 'agent_ride_quote': case 'agent_book_ride': case 'agent_search_items': case 'agent_order_quote': case 'agent_place_order': case 'agent_ride_status': case 'agent_cancel_ride': case 'agent_order_status': case 'agent_find_and_quote':
         require __DIR__ . '/controllers/AgentController.php';
         break;
-    case 'book_ride': case 'ride_status': case 'my_active_ride': case 'cancel_ride': case 'rate_ride': case 'ride_history': case 'driver_get_ride_history': case 'driver_go_online': case 'driver_go_offline': case 'driver_update_location': case 'driver_get_demand': case 'driver_get_nearby_requests': case 'driver_get_profile': case 'driver_get_earnings_for_date': case 'driver_get_kpi_summary': case 'driver_beacon_ping': case 'driver_accept_ride': case 'driver_start_ride': case 'driver_complete_ride': case 'driver_cancel_ride': case 'passenger_get_ride_history': case 'driver_hail_customer': case 'driver_arrived': case 'customer_confirm_arrival': case 'driver_update_profile': case 'driver_cashout': case 'driver_topup_etel_money': case 'driver_submit_manual_topup': case 'driver_get_topup_history': case 'get_etelpay_merchant': case 'admin_get_rides': case 'admin_backup_download': case 'admin_system_health': case 'admin_ride_watch': case 'admin_get_ride_stats': case 'admin_cancel_ride': case 'admin_manual_complete_ride': case 'admin_get_drivers': case 'admin_get_live_drivers': case 'admin_get_suspended_drivers': case 'admin_suspend_driver': case 'admin_unsuspend_driver': case 'send_ride_message': case 'get_ride_messages': case 'ping_ride_typing': case 'driver_get_announcements': case 'driver_mark_announcement_read': case 'driver_get_referral_info': case 'submit_ride_issue': case 'sos_trigger': case 'ride_chat_unread': case 'ride_safety_get': case 'ride_safety_save': case 'ride_safety_checkin_missed': case 'ride_get_favorite_routes': case 'ride_add_favorite_route': case 'ride_delete_favorite_route': case 'ride_get_messages': case 'ride_estimate_fare': case 'passenger_get_nearby_drivers': case 'ride_get_vehicle_types': case 'driver_toggle_wait': case 'driver_get_goal_tiers': case 'get_ride_path': case 'driver_get_pending_vehicle_change': case 'admin_get_pending_vehicle_changes': case 'admin_approve_vehicle_change': case 'admin_reject_vehicle_change': case 'admin_get_flagged_identities': case 'admin_approve_driver_identity': case 'admin_reject_driver_identity':
+    case 'book_ride': case 'ride_status': case 'my_active_ride': case 'cancel_ride': case 'rate_ride': case 'ride_history': case 'driver_get_ride_history': case 'driver_go_online': case 'driver_go_offline': case 'driver_update_location': case 'driver_get_demand': case 'driver_get_nearby_requests': case 'driver_get_profile': case 'driver_get_earnings_for_date': case 'driver_get_kpi_summary': case 'driver_beacon_ping': case 'driver_accept_ride': case 'driver_start_ride': case 'driver_complete_ride': case 'driver_cancel_ride': case 'passenger_get_ride_history': case 'driver_hail_customer': case 'driver_arrived': case 'customer_confirm_arrival': case 'driver_update_profile': case 'driver_cashout': case 'driver_topup_etel_money': case 'driver_submit_manual_topup': case 'driver_get_topup_history': case 'get_etelpay_merchant': case 'admin_get_rides': case 'admin_backup_download': case 'admin_system_health': case 'admin_set_2fa_required': case 'admin_ride_watch': case 'admin_get_ride_stats': case 'admin_cancel_ride': case 'admin_manual_complete_ride': case 'admin_get_drivers': case 'admin_get_live_drivers': case 'admin_get_suspended_drivers': case 'admin_suspend_driver': case 'admin_unsuspend_driver': case 'send_ride_message': case 'get_ride_messages': case 'ping_ride_typing': case 'driver_get_announcements': case 'driver_mark_announcement_read': case 'driver_get_referral_info': case 'submit_ride_issue': case 'sos_trigger': case 'ride_chat_unread': case 'ride_safety_get': case 'ride_safety_save': case 'ride_safety_checkin_missed': case 'ride_get_favorite_routes': case 'ride_add_favorite_route': case 'ride_delete_favorite_route': case 'ride_get_messages': case 'ride_estimate_fare': case 'passenger_get_nearby_drivers': case 'ride_get_vehicle_types': case 'driver_toggle_wait': case 'driver_get_goal_tiers': case 'get_ride_path': case 'driver_get_pending_vehicle_change': case 'admin_get_pending_vehicle_changes': case 'admin_approve_vehicle_change': case 'admin_reject_vehicle_change': case 'admin_get_flagged_identities': case 'admin_approve_driver_identity': case 'admin_reject_driver_identity':
     case 'admin_list_driver_compliance': case 'admin_update_driver_compliance':
     case 'driver_get_compliance_status': case 'driver_submit_compliance_document':
     case 'admin_get_pending_compliance_requests': case 'admin_approve_compliance_document': case 'admin_reject_compliance_document':
