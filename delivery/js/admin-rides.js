@@ -35,7 +35,7 @@ function loadStats(){
     el.innerHTML=cards.map(function(c){
       return '<div class="rides-stat-card"><div class="rides-stat-label">'+c.label+'</div>'+
         '<div class="rides-stat-val" style="color:'+c.color+'">'+(c.val||0)+'</div>'+
-        '<div class="rides-stat-sub">'+c.sub+'</div></div>';
+        '<div class="rides-stat-sub">'+c.sub+(c.pin_toggle?' <button class="rides-filter-btn" style="margin-left:6px" onclick="toggleRidePin(this,'+(c.pin_toggle==='on'?'false':'true')+')">'+(c.pin_toggle==='on'?'Turn off':'Turn on')+'</button>':'')+'</div></div>';
     }).join('');
   });
 }
@@ -94,6 +94,12 @@ function toggleRequire2fa(btn,on){
   api('admin_set_2fa_required',{required:on},function(){systemHealthLoad();},function(m){btn.disabled=false;alert(m);});
 }
 window.toggleRequire2fa=toggleRequire2fa;
+function toggleRidePin(btn,on){
+  if(on&&!confirm('Turn on the trip start PIN? Riders will see a 4-digit PIN and drivers must type it to start a trip. Drivers need to have refreshed the app (Fix app not updating) first.'))return;
+  btn.disabled=true;
+  api('admin_set_ride_pin_required',{required:on},function(){systemHealthLoad();},function(m){btn.disabled=false;alert(m);});
+}
+window.toggleRidePin=toggleRidePin;
 
 
 /* ── Live trip watch: stuck trips right now (admin_ride_watch, read-only). Refreshes every 30 s while the Rides tab is on screen. ── */
