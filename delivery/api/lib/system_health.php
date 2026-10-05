@@ -194,6 +194,13 @@ function etel_system_health($pdo, $adminId = 0) {
         $checks[] = etel_health_item('Admin 2FA rule', $req ? 'ok' : 'info', $req ? 'Required: admins without two-step sign-in cannot open admin pages.' : 'Optional. Turn it on once every admin has saved their backup codes.', array('require_toggle' => $req ? 'on' : 'off'));
     } catch (Exception $e) {}
 
+    // Trip start PIN
+    try {
+        $pq = $pdo->query("SELECT rule_value FROM pricing_rules WHERE rule_key='ride_pin_required' LIMIT 1")->fetchColumn();
+        $pon = intval($pq) === 1;
+        $checks[] = etel_health_item('Trip start PIN', $pon ? 'ok' : 'info', $pon ? 'Required: drivers type the rider\'s 4-digit PIN to start a trip (street hails exempt).' : 'Off. When on, riders see a 4-digit PIN and the driver must type it to start the trip.', array('pin_toggle' => $pon ? 'on' : 'off'));
+    } catch (Exception $e) {}
+
     $rank = array('ok' => 0, 'info' => 0, 'warn' => 1, 'bad' => 2);
     $worst = 0; $bad = 0; $warns = 0;
     foreach ($checks as $c) {

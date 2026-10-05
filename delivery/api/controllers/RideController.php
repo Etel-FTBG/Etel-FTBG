@@ -1820,6 +1820,28 @@ case 'admin_system_health': {
     break;
 }
 
+case 'ride_pin_get': {
+    /* The rider's own trip PIN (only while a driver has accepted and not yet started). */
+    require_once __DIR__ . '/../lib/ride_pin.php';
+    if (!etel_ride_pin_required($pdo)) ok(array('required' => false));
+    $s = $pdo->prepare("SELECT id, pickup_address FROM rides WHERE passenger_id=? AND status='accepted' ORDER BY id DESC LIMIT 1");
+    $s->execute(array($u['id']));
+    $r = $s->fetch();
+    if (!$r || $r['pickup_address'] === 'Street hail') ok(array('required' => true, 'pin' => null));
+    ok(array('required' => true, 'pin' => etel_ride_pin($r['id'], $u['id']), 'ride_id' => intval($r['id'])));
+    break;
+}
+
+case 'admin_set_ride_pin_required': {
+    if ($u['role'] !== 'admin' || !user_has_capability($pdo, $u, 'system.backup')) fail('Owner admins only', 403);
+    $on = !empty($body['required']) ? 1 : 0;
+    $pdo->prepare("INSERT INTO pricing_rules (rule_key, rule_value, description) VALUES ('ride_pin_required', ?, 'Driver must type the rider 4-digit trip PIN to start a trip (1 = required)')
+                   ON DUPLICATE KEY UPDATE rule_value = VALUES(rule_value)")->execute(array((string) $on));
+    error_log('[ETEL][pin] admin ' . intval($u['id']) . ' set ride_pin_required=' . $on);
+    ok(array('required' => $on));
+    break;
+}
+
 case 'admin_set_2fa_required': {
     /* Owner-level admins only. Turning it ON needs the caller's own 2FA to be on (no self lock-out). */
     if ($u['role'] !== 'admin' || !user_has_capability($pdo, $u, 'system.backup')) fail('Owner admins only', 403);
@@ -3559,6 +3581,8 @@ case 'driver_hail_customer': {
 case 'driver_start_ride': {
     rides_require_onboarded($pdo, $u['id']);
     $rid = isset($body['ride_id']) ? intval($body['ride_id']) : 0;
+    require_once __DIR__ . '/../lib/ride_pin.php';
+    etel_ride_pin_gate($pdo, $rid, $u['id'], isset($body['pin']) ? $body['pin'] : '');
     $pos = null;
     try {
         $q = $pdo->prepare("SELECT lat, lng FROM ride_drivers WHERE user_id=?");
