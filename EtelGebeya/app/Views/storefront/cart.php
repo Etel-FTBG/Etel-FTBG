@@ -210,6 +210,11 @@ ob_start();
         <a href="<?= View::url('/checkout') ?>" class="checkout-btn">
           <i class="bi bi-lock"></i> <?= e(t('storefront.cart.proceed_to_checkout')) ?>
         </a>
+        <?php if ((new \App\Core\ChapaClient())->isConfigured()): ?>
+        <div style="margin-top:12px;font-size:12px;text-align:center;color:var(--eg-text-dim,#9a9588)">
+          <i class="bi bi-credit-card"></i> <?= e(t('storefront.cart.pay_online_chapa')) ?>
+        </div>
+        <?php endif; ?>
         <a href="<?= View::url('/') ?>" class="continue-link">
           <i class="bi bi-arrow-left"></i> <?= e(t('storefront.cart.continue_shopping')) ?>
         </a>
