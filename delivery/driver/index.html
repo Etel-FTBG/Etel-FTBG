@@ -867,6 +867,8 @@ body.light-mode .ei.ei-svg{color:#7A7466}
 <script src="../js/etel-2fa-settings.js?v=1" defer></script>
 <script src="../js/etel-refresh.js?v=1" defer></script>
 <script src="../js/ride-pin.js?v=1" defer></script>
+<script src="../js/ride-receipt.js?v=4" defer></script>
+<script src="../js/ride-printer.js?v=1" defer></script>
 <style id="drv-light-theme">
 /* Driver light mode (outdoor use). Loaded last so it beats the dark surfaces
    hard-coded above; only active while body.light-mode is set. */
@@ -1476,6 +1478,14 @@ body.light-mode [style*="color:#D4AF37"],body.light-mode [style*="color:#FFD700"
           <div>
             <div class="profile-row-label">Two-step sign-in</div>
             <div class="profile-row-sub">Ask for a code from your phone when you sign in</div>
+          </div>
+          <div class="profile-row-arrow">›</div>
+        </div>
+        <div class="profile-row" data-etel-printer-open>
+          <div data-no-emoji-icons class="profile-row-icon">🖨️</div>
+          <div>
+            <div class="profile-row-label">Receipt printer</div>
+            <div class="profile-row-sub" data-etel-printer-sub>Bluetooth thermal printer for trip receipts</div>
           </div>
           <div class="profile-row-arrow">›</div>
         </div>

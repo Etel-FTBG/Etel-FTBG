@@ -1412,18 +1412,19 @@ case 'ride_history': {
 }
 
 case 'ride_receipt': {
-    /* A receipt for one of the rider's own completed rides. No driver phone, no coordinates. */
+    /* A receipt for a completed ride the caller took (rider) or drove (driver). No phone numbers, no coordinates. */
     $id = isset($body['id']) ? intval($body['id']) : 0;
     if (!$id) fail('Ride id required');
     $s = $pdo->prepare(
         "SELECT r.id, r.status, r.pickup_address, r.dropoff_address, r.distance_km, r.traveled_km, r.fare_paid, r.fare_final,
                 r.payment_method, r.created_at, r.completed_at, r.fare_breakdown_json,
-                d.name AS driver_name, rd.vehicle_plate, rd.vehicle_type, rd.vehicle_color
+                d.name AS driver_name, p.name AS passenger_name, rd.vehicle_plate, rd.vehicle_type, rd.vehicle_color
          FROM rides r
          LEFT JOIN users d ON d.id = r.driver_id
+         LEFT JOIN users p ON p.id = r.passenger_id
          LEFT JOIN ride_drivers rd ON rd.user_id = r.driver_id
-         WHERE r.id=? AND r.passenger_id=? LIMIT 1");
-    $s->execute(array($id, $u['id']));
+         WHERE r.id=? AND (r.passenger_id=? OR r.driver_id=?) LIMIT 1");
+    $s->execute(array($id, $u['id'], $u['id']));
     $r = $s->fetch();
     if (!$r) fail('Ride not found', 404);
     if ($r['status'] !== 'completed') fail('A receipt is only available for completed rides', 409);
@@ -1440,7 +1441,7 @@ case 'ride_receipt': {
     ok(array(
         'receipt_no' => 'ETEL-R' . str_pad((string) intval($r['id']), 6, '0', STR_PAD_LEFT),
         'ride_id'    => intval($r['id']),
-        'rider'      => isset($u['name']) ? $u['name'] : '',
+        'rider'      => $r['passenger_name'],
         'completed_at' => $r['completed_at'],
         'pickup'     => $r['pickup_address'],
         'dropoff'    => $r['dropoff_address'],
