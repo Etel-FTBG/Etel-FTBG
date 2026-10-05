@@ -59,6 +59,11 @@
       <!-- Method -->
       <div class="ep-label mb-8">Payment Method</div>
       <div class="tu-method">
+        <div class="tu-opt" id="m-chapa" onclick="selectMethod('chapa')">
+          <div class="tu-opt-icon">💳</div>
+          <div class="tu-opt-info"><h4>Chapa</h4><p>Pay online: Telebirr, CBE Birr, banks, cards</p></div>
+          <span class="tu-badge">INSTANT</span>
+        </div>
         <div class="tu-opt active" id="m-telebirr" onclick="selectMethod('telebirr')">
           <div class="tu-opt-icon">📱</div>
           <div class="tu-opt-info"><h4>Telebirr</h4><p>*127*6*2# or Telebirr app</p></div>
@@ -121,13 +126,35 @@ EP_CORE.onReady(function() {
   if (!EP_CORE.requireAuth()) return;
   _lang = EP_CORE.getLang();
   EP_CORE.initLangToggle();
+  var cref = new URLSearchParams(window.location.search).get('chapa_ref');
+  if (cref) checkChapa(cref, 0);
 });
+
+// Back from Chapa: ask the server to verify with Chapa and credit the wallet.
+async function checkChapa(ref, tries) {
+  try {
+    var j = await EP_API.call('ep_topup_chapa_status', {ref: ref});
+    var r = j.success && j.data && j.data.result;
+    if (r === 'credited' || r === 'already') {
+      document.getElementById('tu-btn').style.display = 'none';
+      document.getElementById('tu-success').style.display = 'block';
+      document.querySelector('#tu-success h3').textContent = 'Top-up Complete!';
+      document.querySelector('#tu-success p').textContent = 'Chapa confirmed your payment and your wallet has been credited.';
+      return;
+    }
+    if (r === 'failed') { EP_CORE.toast('Chapa payment was not completed','err'); return; }
+    if (tries < 6) setTimeout(function(){ checkChapa(ref, tries + 1); }, 4000);
+    else EP_CORE.toast('Still waiting for Chapa. Your wallet is credited automatically once it confirms.');
+  } catch (e) {
+    if (tries < 6) setTimeout(function(){ checkChapa(ref, tries + 1); }, 4000);
+  }
+}
 
 function setAmt(v) { document.getElementById('tu-amount').value = v; }
 
 function selectMethod(m) {
   _method = m;
-  ['telebirr','cbe','bank','etelpay'].forEach(function(x){
+  ['chapa','telebirr','cbe','bank','etelpay'].forEach(function(x){
     document.getElementById('m-'+x).classList.toggle('active', x===m);
   });
 }
@@ -141,6 +168,7 @@ async function initTopup() {
     var j = await EP_API.call('ep_topup_initiate', {amount: amt, method: _method});
     restore();
     if (!j.success) { EP_CORE.toast((j.data&&j.data.message)||'Error','err'); return; }
+    if (j.data.redirect_url) { window.location.href = j.data.redirect_url; return; }
     _ref = j.data.ref;
     document.getElementById('ref-text').textContent = _ref;
     var ins = j.data.instructions && j.data.instructions[_method];

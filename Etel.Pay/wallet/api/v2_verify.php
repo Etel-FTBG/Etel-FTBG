@@ -401,6 +401,7 @@ function ep_gen_ref() {
 
 /* ── Load route handlers ─────────────────────────────────────── */
 require_once __DIR__ . '/etelid_kyc.php';   // EtelID bridge (must load before ep_r3)
+require_once __DIR__ . '/chapa_lib.php';
 require_once __DIR__ . '/ep_r1.php';
 require_once __DIR__ . '/ep_r2.php';
 require_once __DIR__ . '/ep_r3.php';
