@@ -86,6 +86,8 @@ require_once __DIR__ . '/lib/ride_fare.php';
 // require ran. Define it here first so push.php's guard passes.
 if (!defined('APP_VER')) { define('APP_VER', 'cron-dispatch'); }
 require_once __DIR__ . '/push.php';
+require_once __DIR__ . '/lib/schema_helpers.php';
+require_once __DIR__ . '/lib/ride_reminders.php';
 
 $dispatched = array();
 $errors = array();
@@ -166,10 +168,15 @@ foreach ($rows as $row) {
     }
 }
 
+// One reminder per pre-booked ride starting within the next 30 minutes (never breaks the dispatch result).
+$reminded = array();
+try { $reminded = rides_send_scheduled_reminders($pdo, 'etel_push_send', 30); } catch (Exception $e) { error_log('[ETEL][cron_dispatch] reminders: ' . $e->getMessage()); }
+
 cd_reply(array(
     'success'    => true,
     'checked'    => count($rows),
     'dispatched' => $dispatched,
+    'reminded'   => $reminded,
     'skipped'    => $errors,
     'ts'         => date('Y-m-d H:i:s')
 ));
