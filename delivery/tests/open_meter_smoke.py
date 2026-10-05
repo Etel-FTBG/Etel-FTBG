@@ -28,13 +28,13 @@ def call_api(action, body, token=None):
         sys.exit(1)
 
 print(f"1. Registering customer (cust_{suffix}) + driver (drv_{suffix})...")
-cust_phone = f"+251911{suffix[-6:]}"
+cust_phone = f"+251961{suffix[-6:]}"
 cust_res = call_api("register", {"name": f"Cust {suffix}", "phone": cust_phone, "password": "test1234", "role": "customer"})
 cust_token = cust_res["token"]
 cust_id = cust_res["user_id"]
 print(f"   Customer registered successfully (id={cust_id}, phone={cust_phone})")
 
-drv_phone = f"+251922{suffix[-6:]}"
+drv_phone = f"+251962{suffix[-6:]}"
 drv_res = call_api("register", {"name": f"Drv {suffix}", "phone": drv_phone, "password": "test1234", "role": "courier"})
 drv_token = drv_res["token"]
 drv_id = drv_res["user_id"]

@@ -1,3 +1,5 @@
+# NOTE: each smoke test owns distinct phone prefixes (security 911-944, business 951-988, open_meter 961-962)
+# so tests started within the same second (as in CI) can never collide on a number.
 """
 ETEL Delivery -- Order / ride / service-giver business-logic smoke test
 
@@ -78,11 +80,16 @@ def skip(name, reason):
     print(f"  SKIP {name}  ({reason})")
 
 
+LAST_REG = {}
+
+
 def register(phone, role, name_prefix="User"):
+    global LAST_REG
     status, res = call("register", {
         "name": f"{name_prefix} {SUFFIX}", "phone": phone,
         "password": "testpass123", "role": role,
     })
+    LAST_REG = {"http": status, "phone": phone, "res": res}
     return res.get("success"), (res.get("data") or {}).get("token"), (res.get("data") or {}).get("user_id")
 
 
@@ -133,7 +140,7 @@ def main():
         etel_test_db.park_couriers()   # no leftover online courier may auto-grab the order
         cust_phone = f"+251966{SUFFIX[-6:]}"
         ok_reg, cust_token, _ = register(cust_phone, "customer", "Order Cust")
-        check("customer registration for order test succeeds", ok_reg)
+        check("customer registration for order test succeeds", ok_reg, LAST_REG)
 
         status, res = call("customer_create_order", {
             "items": [{"item_id": item_id, "quantity": 2}],
@@ -145,7 +152,7 @@ def main():
 
         courier_phone = f"+251977{SUFFIX[-6:]}"
         ok_reg, courier_token, _ = register(courier_phone, "courier", "Order Courier")
-        check("courier registration for order test succeeds", ok_reg)
+        check("courier registration for order test succeeds", ok_reg, LAST_REG)
 
         status, res = call("courier_get_available_orders", {}, token=courier_token)
         avail = (res.get("data") or {}).get("orders", [])
@@ -185,13 +192,13 @@ def main():
     #    accepts, ride is cancellable before acceptance, not after.
     # ---------------------------------------------------------------
     print("2. Ride lifecycle (customer book_ride -> driver_accept_ride)")
-    cust_phone = f"+251911{SUFFIX[-6:]}"
+    cust_phone = f"+251951{SUFFIX[-6:]}"
     ok_reg, cust_token, _ = register(cust_phone, "customer", "Ride Cust")
-    check("customer registration for ride test succeeds", ok_reg)
+    check("customer registration for ride test succeeds", ok_reg, LAST_REG)
 
-    drv_phone = f"+251933{SUFFIX[-6:]}"
+    drv_phone = f"+251953{SUFFIX[-6:]}"
     ok_reg, drv_token, drv_id = register(drv_phone, "courier", "Ride Driver")
-    check("driver registration for ride test succeeds", ok_reg)
+    check("driver registration for ride test succeeds", ok_reg, LAST_REG)
     # Drivers must be onboarded before they can go online / accept rides (deliberate
     # gate). Flip the flag in the TEST database; skip the accept step if that is not possible.
     call("driver_get_profile", {}, token=drv_token)   # creates the ride_drivers row
@@ -234,9 +241,9 @@ def main():
     #    round trip, then login with the new password.
     # ---------------------------------------------------------------
     print("3. Password reset flow (dev-fallback OTP)")
-    reset_phone = f"+251944{SUFFIX[-6:]}"
+    reset_phone = f"+251954{SUFFIX[-6:]}"
     ok_reg, _, _ = register(reset_phone, "customer", "Reset Cust")
-    check("customer registration for reset test succeeds", ok_reg)
+    check("customer registration for reset test succeeds", ok_reg, LAST_REG)
 
     status, res = call("reset_request", {"phone": reset_phone})
     check("reset_request succeeds", res.get("success") is True, res)
