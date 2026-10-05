@@ -13,6 +13,11 @@ $flash     = $flash ?? null;
 $token     = $csrfToken ?? Auth::getInstance()->csrfToken();
 $addresses = $addresses ?? [];
 $payments  = $GLOBALS['__config']['payments'] ?? [];
+// Chapa is only offered once a real secret key is set; otherwise the
+// customer would pick it and get an order with no payment page.
+if (!empty($payments['chapa']['enabled']) && !(new \App\Core\ChapaClient())->isConfigured()) {
+    $payments['chapa']['enabled'] = false;
+}
 ob_start();
 ?>
 <style>
