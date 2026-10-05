@@ -1276,6 +1276,7 @@ function renderCartDrawer() {
         '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">' +
         paymentOptionBtn('telebirr', '📱 Telebirr', ETEL_I18N.t('pay_telebirr_sub')) +
         paymentOptionBtn('wallet',   '💰 ኢE Pay',   ETEL_I18N.t('pay_wallet_sub'), !etelPayLive) +
+        paymentOptionBtn('chapa',    '💳 Chapa',    'Telebirr, CBE, bank or card') +
         paymentOptionBtn('cash',     '💵 ' + ETEL_I18N.t('pay_cash'), ETEL_I18N.t('pay_cash_sub')) +
         paymentOptionBtn('abysinia', '🏦 Abysinia', ETEL_I18N.t('pay_bank_sub')) +
         paymentOptionBtn('cbe',      '🏛️ CBE',      ETEL_I18N.t('pay_bank_sub')) +
@@ -1283,6 +1284,10 @@ function renderCartDrawer() {
         '<div id="wallet-info" style="display:none;background:rgba(201,169,97,.1);padding:14px;border-radius:10px;margin-bottom:14px;border-left:4px solid #D4AF37">' +
         '<p style="font-size:12px;font-weight:600;margin-bottom:4px;color:#C8960C">💰 ኢE Pay — Ethiopian Wallet</p>' +
         '<p style="font-size:12px;color:#e8e2d4;margin:0">You\'ll confirm and pay with your ኢE Pay PIN when your order arrives — instant and cashless, just like handing over cash but nothing to carry.</p>' +
+        '</div>' +
+        '<div id="chapa-info" style="display:none;background:rgba(16,185,129,.1);padding:14px;border-radius:10px;margin-bottom:14px;border-left:4px solid #10B981">' +
+        '<p style="font-size:12px;font-weight:600;margin-bottom:4px;color:#10B981">💳 Chapa — pay online now</p>' +
+        '<p style="font-size:12px;color:#e8e2d4;margin:0">You\'ll be taken to Chapa\'s secure page to pay with Telebirr, CBE Birr, a bank or a card. Your order is confirmed once payment goes through.</p>' +
         '</div>' +
         '<div id="telebirr-form" style="display:none;background:rgba(51,149,255,.1);padding:14px;border-radius:10px;margin-bottom:14px;border-left:4px solid #3395FF;color:#e8e2d4">' +
         '<p style="font-size:12px;font-weight:600;margin-bottom:8px;color:#1565c0">📱 Telebirr USSD Payment</p>' +
@@ -1317,6 +1322,7 @@ function renderCartDrawer() {
     highlightPaymentBtn(selectedPayment);
     if (selectedPayment === 'telebirr') document.getElementById('telebirr-form').style.display = 'block';
     if (selectedPayment === 'wallet') document.getElementById('wallet-info').style.display = 'block';
+    if (selectedPayment === 'chapa') document.getElementById('chapa-info').style.display = 'block';
     if (selectedPayment === 'abysinia' || selectedPayment === 'cbe') {
         document.getElementById('bank-form').style.display = 'block';
         updateBankForm(selectedPayment);
@@ -1459,6 +1465,7 @@ function selectPayment(method) {
     document.getElementById('telebirr-form').style.display = method === 'telebirr' ? 'block' : 'none';
     document.getElementById('bank-form').style.display     = (method === 'abysinia' || method === 'cbe') ? 'block' : 'none';
     document.getElementById('wallet-info').style.display   = method === 'wallet' ? 'block' : 'none';
+    document.getElementById('chapa-info').style.display    = method === 'chapa' ? 'block' : 'none';
     if (method === 'abysinia' || method === 'cbe') updateBankForm(method);
 }
 
@@ -1639,6 +1646,7 @@ async function handleCheckout() {
     if (!phone) { showCoMsg('Recipient phone is required.'); return; }
 
     if (_scheduleEnabled && _promo) { showCoMsg('Promo codes can\'t be used on scheduled orders - remove the code or turn off "Schedule for later".'); return; }
+    if (_scheduleEnabled && selectedPayment === 'chapa') { showCoMsg('Chapa can\'t be used for scheduled orders yet - choose another payment method or turn off "Schedule for later".'); return; }
     if (_scheduleEnabled) {
         const d = (document.getElementById('co-schedule-date') || {}).value;
         const t = (document.getElementById('co-schedule-time') || {}).value;
@@ -1653,6 +1661,8 @@ async function handleCheckout() {
         const tbPhone = (document.getElementById('tb-phone') ? document.getElementById('tb-phone').value : '').trim();
         if (!tbPhone || tbPhone.length < 9) { showCoMsg('Enter valid Telebirr phone number (9 digits).'); return; }
         await placeOrderThenPay(zone, name, phone, notes, tbPhone);
+    } else if (selectedPayment === 'chapa') {
+        await placeOrderThenChapa(zone, name, phone, notes);
     } else if (selectedPayment === 'abysinia' || selectedPayment === 'cbe') {
         const acctAvailable = _bankAccounts.some(function(a){ return a.bank_key === selectedPayment; });
         if (!acctAvailable) { showCoMsg('This bank transfer option is currently unavailable — please choose Cash or Telebirr.'); return; }
@@ -1793,6 +1803,47 @@ async function placeOrderThenPay(zone, name, phone, notes, tbPhone) {
     } else {
         showCoMsg('Telebirr error: ' + ((payRes && payRes.message) || 'Unknown error. Try Cash payment.'));
     }
+}
+
+// Chapa: create the order, then hand the customer to Chapa's hosted page.
+// chapa-return.php verifies the payment and sends them back to this app.
+async function placeOrderThenChapa(zone, name, phone, notes) {
+    showCoMsg('Creating order…', '#888');
+    const btn = document.getElementById('checkout-btn');
+    if (btn) btn.disabled = true;
+
+    const orderRes = await api('customer_create_order', {
+        promo_code: _promo ? _promo.code : '',
+        use_points: _usePoints ? 1 : 0,
+        items: cart.map(function(c){ return {item_id:c.item_id, quantity:c.quantity}; }),
+        to_zone: zone, recipient_name: name, recipient_phone: phone, notes: notes,
+        payment_method: 'chapa',
+        delivery_tier: selectedTier,
+        delivery_photo_url: _deliveryPhotoUrl,
+        delivery_lat: _deliveryLat, delivery_lng: _deliveryLng
+    });
+    if (!orderRes || !orderRes.success) {
+        if (btn) btn.disabled = false;
+        showCoMsg((orderRes && orderRes.message) || 'Order failed. Please try again.');
+        return;
+    }
+
+    currentOrderId = orderRes.data.order_id;
+    const orderCode = orderRes.data.order_code;
+    // The order exists now, so the cart is spent whatever happens next.
+    _promo = null; _usePoints = false; _loyalty = null; cart = []; selectedZone = ''; _deliveryAddr = ''; _deliveryLat = null; _deliveryLng = null; _deliveryAC = null; _deliveryPhotoUrl = '';
+    updateCartCount();
+
+    showCoMsg('Opening Chapa…', '#888');
+    const payRes = await api('chapa_init', { kind: 'order', id: currentOrderId });
+    if (payRes && payRes.success && payRes.data && payRes.data.checkout_url) {
+        window.location.href = payRes.data.checkout_url;
+        return;
+    }
+    if (btn) btn.disabled = false;
+    closeCart();
+    showToast('Order ' + orderCode + ' placed, but Chapa could not start: ' + ((payRes && payRes.message) || 'try again') + '. You can pay when it arrives.', 'err');
+    setTimeout(function(){ switchCategory('orders'); }, 1200);
 }
 
 function startTelebirrPolling(paymentId, orderCode) {

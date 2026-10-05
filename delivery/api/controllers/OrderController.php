@@ -25,6 +25,7 @@ case 'customer_create_order': {
     $pdo = db();
     $auth_user = require_auth($pdo);
     try {
+        $body['_allow_chapa'] = true; // checkout UI follows up with chapa_init
         $result = delivery_execute_order_creation($pdo, $auth_user, $body);
         ok($result);
     } catch (Exception $e) {

@@ -114,7 +114,12 @@
     (function check() {
       call('chapa_status', { tx_ref: ref }).then(function (d) {
         var r = d && d.data && d.data.result;
-        if (r === 'completed' || r === 'already') { toast('Payment received through Chapa. Thank you!', 'success'); return; }
+        if (r === 'completed' || r === 'already') {
+          toast('Payment received through Chapa. Thank you!', 'success');
+          // Orders paid at checkout: land on the customer's orders list.
+          try { if (/^EDO-/.test(ref) && typeof switchCategory === 'function') switchCategory('orders'); } catch (e) {}
+          return;
+        }
         if (r === 'failed') { toast('Your Chapa payment was not completed.', 'err'); return; }
         if (tries++ < 5) setTimeout(check, 4000);
         else toast('Still waiting for Chapa to confirm. It will update automatically.');
