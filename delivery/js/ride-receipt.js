@@ -30,6 +30,7 @@
     function asText(r) {
         var L = ['ETEL Ride receipt', r.receipt_no, when(r.completed_at), '',
             'From: ' + (r.pickup || '-'), 'To: ' + (r.dropoff || '-'), r.distance_km + ' km', ''];
+        if (r.rider) L.push('Rider: ' + r.rider);
         if (r.driver) L.push('Driver: ' + r.driver + (r.plate ? ' (' + r.plate + ')' : ''));
         (r.lines || []).forEach(function (l) { L.push(l.label + ': ' + money(l.etb)); });
         L.push('Total: ' + money(r.total) + ' (' + r.payment + ')', '', 'Thank you for riding with ETEL.');
@@ -67,7 +68,7 @@
         var lines = (r.lines || []).map(function (l) { return '<div class="ln"><span>' + esc(l.label) + '</span><span>' + money(l.etb) + '</span></div>'; }).join('');
         view(HEAD + '<div class="no">' + esc(r.receipt_no) + '</div><div class="dim">' + esc(when(r.completed_at)) + '</div>' +
             '<div class="sec"><div class="k">From</div>' + esc(r.pickup || '-') + '<div class="k" style="margin-top:6px">To</div>' + esc(r.dropoff || '-') + '<div class="dim" style="margin-top:4px">' + esc(r.distance_km) + ' km</div></div>' +
-            (r.driver ? '<div class="sec"><div class="k">Driver</div>' + esc(r.driver) + (r.plate ? ' &middot; ' + esc(r.plate) : '') + (r.vehicle ? '<div class="dim">' + esc(r.vehicle) + '</div>' : '') + '</div>' : '') +
+            (r.rider ? '<div class="sec"><div class="k">Rider</div>' + esc(r.rider) + '</div>' : '') + (r.driver ? '<div class="sec"><div class="k">Driver</div>' + esc(r.driver) + (r.plate ? ' &middot; ' + esc(r.plate) : '') + (r.vehicle ? '<div class="dim">' + esc(r.vehicle) + '</div>' : '') + '</div>' : '') +
             '<div class="sec">' + lines + '<div class="tot"><span>Total</span><span>' + money(r.total) + '</span></div><div class="dim" style="text-align:right">Paid by ' + esc(r.payment) + '</div></div>' +
             '<div class="row"><button class="b" id="copy">Copy</button><button class="b" id="print">Print / PDF</button><button class="b p" id="share">Share</button></div>' +
             (window.EtelRidePrinter && window.EtelRidePrinter.isSupported() ? '<div class="row"><button class="b" id="thermal">Print on receipt printer</button></div>' : '') + '<div class="dim" id="msg" style="min-height:18px;margin-top:8px;text-align:center"></div>');
@@ -129,7 +130,7 @@
         '<div class="route"><div class="stop"><span class="dot"></span><div class="lab">Pick-up</div><div class="val">' + esc(r.pickup || '-') + '</div></div>' +
         '<div class="stop end"><span class="dot"></span><div class="lab">Drop-off</div><div class="val">' + esc(r.dropoff || '-') + '</div></div></div>' +
         '<div class="grid"><div class="card"><div class="lab">Driver</div><div class="val">' + esc(r.driver || '-') + '</div><div class="s">' + esc(veh || ' ') + '</div></div>' +
-        '<div class="card"><div class="lab">Distance</div><div class="val">' + esc(r.distance_km) + ' km</div><div class="s">Paid by ' + esc(r.payment) + '</div></div></div>' +
+        '<div class="card"><div class="lab">Distance</div><div class="val">' + esc(r.distance_km) + ' km</div><div class="s">Paid by ' + esc(r.payment) + (r.rider ? ' &middot; Rider: ' + esc(r.rider) : '') + '</div></div></div>' +
         '<div class="lab" style="margin-bottom:1mm">Fare details</div><table>' + rows + '</table>' +
         '<div class="total"><span class="l">Total paid</span><span class="a">' + money(r.total) + '</span></div>' +
         '<div class="thanks"><b>Thank you for riding with ETEL</b><div>Safe rides across Hawassa, fast and fair.</div></div></div>' +

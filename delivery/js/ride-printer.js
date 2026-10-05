@@ -1,8 +1,8 @@
-/* ETEL Ride - Bluetooth thermal receipt printer (additive script for ride/index.html).
+/* ETEL Ride - Bluetooth thermal receipt printer (additive script for ride/index.html and driver/index.html).
 
    Same approach as js/admin/admin-printer.js (a paired 58 mm ESC/POS printer such as the P58E,
    over Web Bluetooth - no bridge app). Adds:
-   - a "Receipt printer" row in the rider profile (opens a small panel: Connect / Print test / Forget),
+   - a "Receipt printer" row in the rider and driver profile (opens a small panel: Connect / Print test / Forget),
    - window.EtelRidePrinter.printReceipt(receipt) - used by the Receipt panel's "Printer" button.
 
    The browser forgets a Bluetooth connection when you leave a page, so every page has to find the
@@ -141,6 +141,7 @@
             T(b, DASH);
             wrap(b, 'From: ', r.pickup || '-'); wrap(b, 'To:   ', r.dropoff || '-');
             T(b, pair('Distance', (r.distance_km || 0) + ' km'));
+            if (r.rider) wrap(b, 'Rider: ', r.rider);
             if (r.driver) { wrap(b, 'Driver: ', r.driver); if (r.plate || r.vehicle) T(b, '        ' + ascii([r.vehicle, r.plate].filter(Boolean).join(' ')) + '\n'); }
             T(b, DASH);
             (r.lines || []).forEach(function (l) { T(b, pair(l.label, etb(l.etb))); });
