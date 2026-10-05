@@ -69,7 +69,8 @@
             '<div class="sec"><div class="k">From</div>' + esc(r.pickup || '-') + '<div class="k" style="margin-top:6px">To</div>' + esc(r.dropoff || '-') + '<div class="dim" style="margin-top:4px">' + esc(r.distance_km) + ' km</div></div>' +
             (r.driver ? '<div class="sec"><div class="k">Driver</div>' + esc(r.driver) + (r.plate ? ' &middot; ' + esc(r.plate) : '') + (r.vehicle ? '<div class="dim">' + esc(r.vehicle) + '</div>' : '') + '</div>' : '') +
             '<div class="sec">' + lines + '<div class="tot"><span>Total</span><span>' + money(r.total) + '</span></div><div class="dim" style="text-align:right">Paid by ' + esc(r.payment) + '</div></div>' +
-            '<div class="row"><button class="b" id="copy">Copy</button><button class="b" id="print">Print / PDF</button><button class="b p" id="share">Share</button></div><div class="dim" id="msg" style="min-height:18px;margin-top:8px;text-align:center"></div>');
+            '<div class="row"><button class="b" id="copy">Copy</button><button class="b" id="print">Print / PDF</button><button class="b p" id="share">Share</button></div>' +
+            (window.EtelRidePrinter && window.EtelRidePrinter.isSupported() ? '<div class="row"><button class="b" id="thermal">Print on receipt printer</button></div>' : '') + '<div class="dim" id="msg" style="min-height:18px;margin-top:8px;text-align:center"></div>');
         var msg = shadow.getElementById('msg');
         shadow.getElementById('share').onclick = function () {
             var t = asText(r);
@@ -78,6 +79,12 @@
         };
         shadow.getElementById('copy').onclick = function () { copy(asText(r), msg); };
         shadow.getElementById('print').onclick = function () { printIt(r); };
+        var th = shadow.getElementById('thermal');
+        if (th) th.onclick = function () {
+            msg.textContent = 'Connecting to the printer...';
+            window.EtelRidePrinter.printReceipt(r).then(function () { msg.textContent = 'Sent to the printer.'; },
+                function (e) { msg.textContent = (e && e.message) || 'Could not reach the printer.'; });
+        };
     }
     function copy(t, msg) {
         function done(ok) { msg.textContent = ok ? 'Copied.' : 'Could not copy. Use Share or Print.'; }
