@@ -36,9 +36,9 @@ main text colours (all pass WCAG AA, about 5-7 to 1).
 
 ## Do by hand
 
-- Append `performance.htaccess.txt` to `public_html/delivery/.htaccess` (compression + image caching), then check
-  `content-encoding: gzip` on `customer.js` in DevTools > Network. This is the biggest first-visit saving
-  (about 210 KB -> 45-60 KB) if the server is not already compressing.
+- Compression and image caching are **already on** in `delivery/.htaccess` (confirmed live: `customer.js` is served
+  with `content-encoding: br` at about 51 KB instead of about 210 KB). The extra snippet file I first suggested was
+  unnecessary and has been removed.
 - After uploading, tell me and I will re-read the live timings to confirm `courier_get_my_orders` dropped.
 - Optional: delete `delivery/icons/master-logo-icons.zip` (9 MB, publicly downloadable, not used by the apps).
 
@@ -48,4 +48,4 @@ main text colours (all pass WCAG AA, about 5-7 to 1).
 - `ride_path_points` is the largest table (about 8,900 rows after a few days): add a retention job before launch.
 - EtelID legacy password hashes (plain SHA-256 with a salt in the source) still accepted for old accounts:
   force a reset/upgrade.
-- Minify `customer.js` / `admin.js` (about 210 KB / 178 KB readable source) once compression is confirmed.
+- Minify `customer.js` / `admin.js`: compression is confirmed (br, about 51 KB for customer.js), so this is now a small win; low priority.

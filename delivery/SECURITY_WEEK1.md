@@ -24,15 +24,19 @@
    HTTP referrers `https://ethelmarket.com/*` and only the APIs you use. A key is also written
    in `js/courier.js` as a fallback - treat it as public and rotate it after restricting.
 5. **Rotate secrets that appeared in screenshots or chats** (for example `CRON_DISPATCH_KEY`).
-6. **Browser security headers.** Follow the steps in `security-headers.htaccess.txt`
-   (Report-Only first, enforce after a clean day).
+6. **Browser security headers: nothing to add.** `delivery/.htaccess` already sends an enforced Content-Security-Policy,
+   HSTS (preload), X-Frame-Options, nosniff, Referrer-Policy and Permissions-Policy. (An earlier version of this note
+   wrongly said Delivery had no CSP, and offered a snippet to paste; that snippet was removed because it would have
+   replaced the stronger existing headers.) One fix was needed: `Permissions-Policy` had `camera=()`, which blocks the
+   camera for every page including our own QR scanners; it is now `camera=(self)`. After uploading `.htaccess`,
+   purge the LiteSpeed cache and confirm the response header shows `camera=(self)`.
 7. **Optional cleanup on the server:** delete `api/debug-geocode.php`, `api/seed-zone-coords.php`,
    `api/list-zones.php`, and the unused old `delivery/servicegiver.js` (the live one is `js/servicegiver.js`).
 
 ## Still open (later weeks)
 
 - Login token is kept in browser storage; moving it to an HttpOnly cookie removes the token-theft risk entirely (bigger change).
-- Remove `'unsafe-inline'` from the CSP (needs the inline `onclick` handlers refactored).
+- Remove `'unsafe-inline'` from the existing CSP (needs the inline `onclick` handlers refactored).
 - Mask phone numbers in calls (`tel:` links reveal real numbers).
 - The app changes database structure while serving requests; use migrations only and give the app a lower-privilege database user.
 - Courier app bundle and admin messages still insert some server text without escaping (low risk); fix in the next courier release.
