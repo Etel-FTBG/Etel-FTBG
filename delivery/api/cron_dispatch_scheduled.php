@@ -88,6 +88,7 @@ if (!defined('APP_VER')) { define('APP_VER', 'cron-dispatch'); }
 require_once __DIR__ . '/push.php';
 require_once __DIR__ . '/lib/schema_helpers.php';
 require_once __DIR__ . '/lib/ride_reminders.php';
+require_once __DIR__ . '/lib/system_health.php';
 
 $dispatched = array();
 $errors = array();
@@ -171,6 +172,9 @@ foreach ($rows as $row) {
 // One reminder per pre-booked ride starting within the next 30 minutes (never breaks the dispatch result).
 $reminded = array();
 try { $reminded = rides_send_scheduled_reminders($pdo, 'etel_push_send', 30); } catch (Exception $e) { error_log('[ETEL][cron_dispatch] reminders: ' . $e->getMessage()); }
+
+// Leave a heartbeat so Admin > Rides > System health can tell whether this cron is running.
+etel_health_heartbeat($pdo, 'dispatch_scheduled', count($rows) . ' due, ' . count($dispatched) . ' started, ' . count($reminded) . ' reminded');
 
 cd_reply(array(
     'success'    => true,
