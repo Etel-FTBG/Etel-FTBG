@@ -33,6 +33,8 @@ case 'chapa_init': {
     }
     if ($amount <= 0) fail('Nothing to pay for this ' . $kind);
 
+    rate_limit_check($pdo, 'chapa_init:' . $u['id'], 15, 600, 600);
+    rate_limit_fail($pdo, 'chapa_init:' . $u['id']);
     chapa_ensure_table($pdo);
     $txRef = 'ED' . strtoupper(substr($kind, 0, 1)) . '-' . $id . '-' . strtoupper(bin2hex(random_bytes(5)));
     $pdo->prepare("INSERT INTO chapa_payments (tx_ref, kind, target_id, user_id, amount) VALUES (?,?,?,?,?)")

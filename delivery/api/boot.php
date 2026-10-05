@@ -2294,24 +2294,41 @@ switch ($action) {
 
         $pdo = db();
 
+        // reset_verify caps wrong guesses at 5 per code, but this final step
+        // used to check the OTP with no counter at all - so the cap could be
+        // bypassed by guessing straight against reset_password (6 digits =
+        // only 900,000 possibilities). Same cap + rate limits apply here now.
+        rate_limit_check($pdo, 'reset_pw:' . $phone, 5, 900, 1800);
+        rate_limit_check($pdo, 'reset_ip', 30, 600, 900);
+
         // Accept either credential produced by reset_verify above: the raw
         // OTP (what login.html's live "Forgot password?" flow resends) or
         // the derived reset_token (what a future/alternate frontend can
         // carry forward instead). Whichever the caller sent is checked
         // against the still-unconsumed password_resets row.
         $rows = $pdo->prepare(
-            'SELECT id, otp_hash FROM password_resets
+            'SELECT id, otp_hash, attempts FROM password_resets
              WHERE phone=? AND used=0 AND expires_at > NOW() ORDER BY id DESC LIMIT 5'
         );
         $rows->execute(array($phone));
         $match = null;
         foreach ($rows->fetchAll(PDO::FETCH_ASSOC) as $r) {
+            if ((int)$r['attempts'] >= 5) {
+                $pdo->prepare('UPDATE password_resets SET used=1 WHERE id=?')->execute(array($r['id']));
+                continue;
+            }
             if ($otp && hash_equals($r['otp_hash'], hash('sha256', $otp))) { $match = $r; break; }
             if ($reset_token && hash_equals(
                 hash('sha256', 'RESET:' . $r['id'] . ':' . $r['otp_hash']), $reset_token
             )) { $match = $r; break; }
         }
-        if (!$match) fail('Reset session expired or invalid. Please start over.');
+        if (!$match) {
+            $pdo->prepare('UPDATE password_resets SET attempts=attempts+1 WHERE phone=? AND used=0 AND expires_at > NOW()')
+                ->execute(array($phone));
+            rate_limit_fail($pdo, 'reset_pw:' . $phone);
+            rate_limit_fail($pdo, 'reset_ip');
+            fail('Reset session expired or invalid. Please start over.');
+        }
 
         // Bug fix from the orphaned draft: it updated a `password` column
         // that doesn't exist anywhere in the live schema  every reset would

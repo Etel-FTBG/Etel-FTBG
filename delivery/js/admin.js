@@ -1258,7 +1258,7 @@
                     ${cap('Earnings', 'ETB ' + earnings.toFixed(0))}
                 </div>
                 <div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:12px 14px;margin-bottom:14px;font-size:12.5px;line-height:1.8">
-                    <div><b style="color:#B8B0A0">Owner</b> &nbsp; ${sg.name} · ${sg.phone}</div>
+                    <div><b style="color:#B8B0A0">Owner</b> &nbsp; ${escapeHtml(sg.name)} · ${escapeHtml(sg.phone)}</div>
                     ${ratingCount ? `<div><b style="color:#B8B0A0">Reviews</b> &nbsp; ${ratingCount} rating${ratingCount===1?'':'s'}${failed?` · ${failed} failed deliveries`:''}</div>` : ''}
                 </div>
                 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
@@ -1336,8 +1336,8 @@
                     <div style="display:flex;align-items:center;gap:10px;min-width:0">
                         <div style="width:32px;height:32px;border-radius:8px;background:rgba(212,175,55,.12);border:1px solid rgba(212,175,55,.25);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:#D4AF37;flex-shrink:0">${stInitial}</div>
                         <div style="min-width:0">
-                            <div style="font-weight:700;font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${st.name}</div>
-                            <div style="font-size:11px;color:#B8B0A0">${st.phone}</div>
+                            <div style="font-weight:700;font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(st.name)}</div>
+                            <div style="font-size:11px;color:#B8B0A0">${escapeHtml(st.phone)}</div>
                         </div>
                     </div>
                     <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
@@ -1908,8 +1908,8 @@
             document.getElementById('modal-content').innerHTML = `
                 <div class="modal-title">✏ Edit Item</div>
                 <input type="hidden" id="aei-id" value="${it.id}">
-                <div class="modal-field"><label>Item Name *</label><input id="aei-name" value="${it.name||''}"></div>
-                <div class="modal-field"><label>Description</label><textarea id="aei-desc" rows="2" style="width:100%;padding:10px 12px;border:1.5px solid #e0e0e0;border-radius:8px;font-size:13px;font-family:'Poppins',sans-serif;resize:vertical;box-sizing:border-box">${it.description||''}</textarea></div>
+                <div class="modal-field"><label>Item Name *</label><input id="aei-name" value="${escapeHtml(it.name||'')}"></div>
+                <div class="modal-field"><label>Description</label><textarea id="aei-desc" rows="2" style="width:100%;padding:10px 12px;border:1.5px solid #e0e0e0;border-radius:8px;font-size:13px;font-family:'Poppins',sans-serif;resize:vertical;box-sizing:border-box">${escapeHtml(it.description||'')}</textarea></div>
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
                     <div class="modal-field"><label>Category *</label><select id="aei-cat"><option value="food" ${it.category==='food'?'selected':''}>Food</option><option value="grocery" ${it.category==='grocery'?'selected':''}>Grocery</option><option value="pharmacy" ${it.category==='pharmacy'?'selected':''}>Pharmacy</option><option value="package" ${it.category==='package'?'selected':''}>Package</option><option value="flower" ${it.category==='flower'?'selected':''}>Flower</option></select></div>
                     <div class="modal-field"><label>Stock Qty</label><input id="aei-stock" type="number" value="${it.stock_quantity||0}" min="0"></div>
