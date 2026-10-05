@@ -6,6 +6,7 @@
  * Checks (each: name, status ok|warn|bad|info, detail):
  *   Database       - answers, and how fast
  *   Cron job       - cron_ride_monitor.php left a heartbeat in the last 15 min
+ *   Scheduled-ride cron - cron_dispatch_scheduled.php ran recently (only matters when rides are pre-booked)
  *   Trip watch     - stuck trips / safety alerts / API problems from ride_monitor.php
  *   API speed      - average answer time and 5xx rate, last 10 min (api_perf.php)
  *   Backups        - newest backup is recent (daily cron), its size and age
@@ -140,6 +141,26 @@ function etel_system_health($pdo, $adminId = 0) {
     } catch (Exception $e) {
         $checks[] = etel_health_item('Cron job', 'warn', 'Has not run yet. Add the 5-minute cron for cron_ride_monitor.php in cPanel.');
     }
+
+    // Scheduled-ride cron (cron_dispatch_scheduled.php): it starts the driver search for pre-booked rides
+    // and sends the reminder push, so it only matters once someone has pre-booked a ride.
+    try {
+        $due = intval($pdo->query("SELECT COUNT(*) FROM rides WHERE status='scheduled' AND scheduled_at IS NOT NULL AND scheduled_at <= DATE_SUB(NOW(), INTERVAL 5 MINUTE)")->fetchColumn());
+        $wait = intval($pdo->query("SELECT COUNT(*) FROM rides WHERE status='scheduled' AND scheduled_at IS NOT NULL")->fetchColumn());
+        $hb = null;
+        try { $hb = $pdo->query("SELECT TIMESTAMPDIFF(MINUTE, last_run, NOW()) AS mins FROM etel_heartbeat WHERE name='dispatch_scheduled'")->fetch(); } catch (Exception $e) {}
+        $mins = $hb ? intval($hb['mins']) : null;
+        $setup = 'Add the 1-2 minute cron for cron_dispatch_scheduled.php in cPanel.';
+        if ($due > 0 && ($mins === null || $mins > 10)) {
+            $checks[] = etel_health_item('Scheduled-ride cron', 'bad', $due . ' pre-booked ride(s) are past their start time and nobody has started them. ' . ($mins === null ? 'The cron has never run. ' : 'Last ran ' . etel_health_ago($mins) . '. ') . $setup);
+        } elseif ($mins === null) {
+            $checks[] = etel_health_item('Scheduled-ride cron', $wait > 0 ? 'warn' : 'info', $wait > 0 ? $wait . ' pre-booked ride(s) are waiting but the cron has never run. ' . $setup : 'Has not run. Not needed until riders pre-book a ride. ' . $setup);
+        } elseif ($mins > 10) {
+            $checks[] = etel_health_item('Scheduled-ride cron', $wait > 0 ? 'warn' : 'info', 'Last ran ' . etel_health_ago($mins) . ($wait > 0 ? ' with ' . $wait . ' pre-booked ride(s) waiting.' : '. Nothing is waiting right now.'));
+        } else {
+            $checks[] = etel_health_item('Scheduled-ride cron', 'ok', 'Ran ' . etel_health_ago($mins) . '. ' . ($wait > 0 ? $wait . ' pre-booked ride(s) waiting.' : 'No pre-booked rides waiting.'));
+        }
+    } catch (Exception $e) { /* rides table not ready: skip */ }
 
     // Trip watch + API speed (the same scan the Live trip watch uses)
     $api = null; $critical = 0; $warn = 0; $apiFindings = 0;
