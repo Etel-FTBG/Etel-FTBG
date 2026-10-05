@@ -5,14 +5,16 @@
    idle drivers are there (api: driver_get_demand - counts only, never riders),
    as a ranked list with distances, and as coloured circles on the map.
    Red = high, amber = medium, grey = low. Tap an area to show it on the map or to
-   open directions to it in the maps app. Refreshes every 60 s while circles are shown.
+   open directions to it in the maps app. Refreshes every 60 s while circles are shown. The circles also appear by themselves when the driver goes online (hide them from the panel; that choice is remembered).
    Reads DRV (driver.js) and google.maps only if they exist; fails quietly otherwise. */
 (function () {
     'use strict';
     if (window.EtelDemand) return;
     var doc = document;
     var host = null, shadow = null, body = null, chip = null;
-    var circles = [], shown = false, timer = 0, last = [];
+    var circles = [], shown = false, timer = 0, last = [], autoDone = false;
+    var PREF = 'etel_demand_circles'; // 'off' once the driver hides the circles; otherwise they show by themselves
+    function pref(v) { try { if (v === undefined) return localStorage.getItem(PREF); localStorage.setItem(PREF, v); } catch (e) {} return null; }
 
     function apiUrl() {
         var path = window.location.pathname, mk = '/delivery/', i = path.indexOf(mk);
@@ -106,7 +108,7 @@
         body.innerHTML = html;
         shadow.getElementById('x').onclick = closePanel;
         shadow.getElementById('refresh').onclick = openPanel;
-        shadow.getElementById('toggle').onclick = function () { if (shown) { setShown(false); } else { drawCircles(last); setShown(true); } closePanel(); };
+        shadow.getElementById('toggle').onclick = function () { if (shown) { setShown(false); pref('off'); } else { drawCircles(last); setShown(true); pref('on'); } closePanel(); };
         [].forEach.call(shadow.querySelectorAll('[data-show]'), function (b) {
             b.onclick = function () { var a = last[parseInt(b.getAttribute('data-show'), 10)]; drawCircles(last); setShown(true); focusArea(a); closePanel(); };
         });
@@ -149,6 +151,12 @@
         var on = wantChip();
         chip.style.display = on ? 'inline-flex' : 'none';
         if (!on && shown) setShown(false);
+        if (!on) { autoDone = false; return; }
+        // Show the busy-area circles on the map by themselves once per online session (the driver can hide them; that is remembered)
+        if (!autoDone && !shown && pref() !== 'off' && window.DRV && DRV.map && window.google && google.maps && google.maps.Circle) {
+            autoDone = true;
+            fetchAreas().then(function (a) { if (a && a.length && wantChip() && pref() !== 'off') { last = a; drawCircles(a); setShown(true); } });
+        }
     }
 
     window.EtelDemand = { open: openPanel, _tick: tick };
