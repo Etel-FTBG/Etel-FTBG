@@ -49,14 +49,42 @@ define('ETEL_ROOT', __DIR__ . '/');   // path to your etel folder
 define('BACKUP_DIR', __DIR__ . '/backups/');
 
 header('Content-Type: application/json');
-header('Access-Control-Allow-Origin: *');
+// Was "*" - any website could call this deploy tool from a visitor's browser.
+$_upd_origin = isset($_SERVER['HTTP_ORIGIN']) ? $_SERVER['HTTP_ORIGIN'] : '';
+if (in_array($_upd_origin, array('https://ethelmarket.com', 'https://www.ethelmarket.com'), true)) {
+    header('Access-Control-Allow-Origin: ' . $_upd_origin);
+    header('Vary: Origin');
+}
 header('Access-Control-Allow-Methods: GET, POST');
 header('Access-Control-Allow-Headers: Content-Type, X-Auth');
 
 //  AUTH CHECK 
+// This tool can write and extract files on the server, so a guessed password
+// means full code execution. Wrong attempts are counted per IP in a temp file
+// (no DB dependency here): 8 misses in 15 minutes locks that IP out, and the
+// password is compared in constant time.
+function upd_fail_file() {
+    $ip = isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : '0';
+    return rtrim(sys_get_temp_dir(), '/\\') . '/etel_upd_fail_' . md5($ip);
+}
+function upd_recent_failures() {
+    $f = upd_fail_file();
+    if (!is_file($f)) return [];
+    $d = json_decode((string) @file_get_contents($f), true);
+    if (!is_array($d)) return [];
+    $cut = time() - 900;
+    return array_values(array_filter($d, function ($t) use ($cut) { return is_int($t) && $t > $cut; }));
+}
 function checkAuth() {
+    $fails = upd_recent_failures();
+    if (count($fails) >= 8) {
+        http_response_code(429);
+        die(json_encode(['ok' => false, 'error' => 'Too many failed attempts. Try again in 15 minutes.']));
+    }
     $auth = $_SERVER['HTTP_X_AUTH'] ?? $_POST['auth'] ?? $_GET['auth'] ?? '';
-    if ($auth !== UPDATER_PASSWORD) {
+    if (!is_string($auth) || $auth === '' || !hash_equals(UPDATER_PASSWORD, $auth)) {
+        $fails[] = time();
+        @file_put_contents(upd_fail_file(), json_encode($fails), LOCK_EX);
         http_response_code(401);
         die(json_encode(['ok' => false, 'error' => 'Unauthorized. Wrong password.']));
     }

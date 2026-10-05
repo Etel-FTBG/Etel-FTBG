@@ -767,7 +767,7 @@
                         <td style="padding:10px 8px">
                             ${it.image_url ? `<img src="${escUrl(it.image_url)}" style="width:48px;height:48px;object-fit:cover;border-radius:8px;border:1px solid #e0e0e0">` : '<div style="width:48px;height:48px;background:rgba(255,255,255,.06);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:20px">🛍️</div>'}
                         </td>
-                        <td style="padding:10px 8px;font-weight:600;color:#1a1a2e">${it.name}${it.quality ? ' <span style="font-size:10px;font-weight:800;text-transform:uppercase;color:#D4AF37">' + escapeHtml(it.quality) + '</span>' : ''}${it.portion ? '<div style="font-size:11px;font-weight:500;color:#B8B0A0">' + escapeHtml(it.portion) + '</div>' : ''}</td>
+                        <td style="padding:10px 8px;font-weight:600;color:#1a1a2e">${escapeHtml(it.name)}${it.quality ? ' <span style="font-size:10px;font-weight:800;text-transform:uppercase;color:#D4AF37">' + escapeHtml(it.quality) + '</span>' : ''}${it.portion ? '<div style="font-size:11px;font-weight:500;color:#B8B0A0">' + escapeHtml(it.portion) + '</div>' : ''}</td>
                         <td style="padding:10px 8px"><span style="background:rgba(212,175,55,.15);color:#D4AF37;border:1px solid rgba(212,175,55,.3);padding:3px 8px;border-radius:20px;font-size:11px;font-weight:700;text-transform:uppercase">${it.category}</span></td>
                         <td style="padding:10px 8px;font-weight:600">ETB ${parseFloat(it.price).toFixed(2)}</td>
                         <td style="padding:10px 8px">${it.stock_quantity}</td>
@@ -780,7 +780,7 @@
                         ${canManageMenu ? `
                         <td style="padding:10px 8px;display:flex;gap:6px;align-items:center;flex-wrap:wrap">
                             <button onclick="openEditItemModal(${it.id})" style="padding:5px 12px;background:#C9A961;color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer">✏ Edit</button>
-                            <button onclick="deleteItem(${it.id},'${it.name.replace(/'/g,"\\'")}' )" style="padding:5px 12px;background:#e63946;color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer">🗑 Del</button>
+                            <button data-name="${escapeHtml(it.name)}" onclick="deleteItem(${it.id}, this.dataset.name)" style="padding:5px 12px;background:#e63946;color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer">🗑 Del</button>
                         </td>` : ''}
                     </tr>`).join('')}
                 </tbody>

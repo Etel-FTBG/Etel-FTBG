@@ -1188,7 +1188,7 @@ function renderCartDrawer() {
     const grand = subtotal + deliveryFee + serviceCharge - promoDisc - pointsDisc;
     document.getElementById('cart-items').innerHTML = cart.map(function(c, i) {
         return '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.06)">' +
-            '<div style="flex:1"><div style="font-weight:600;font-size:13px;color:#F7F1DF">' + c.name + '</div>' +
+            '<div style="flex:1"><div style="font-weight:600;font-size:13px;color:#F7F1DF">' + escapeHtml(c.name) + '</div>' +
             '<div style="font-size:11px;color:rgba(247,241,223,.55)">ETB ' + c.price.toFixed(2) + ' each</div></div>' +
             '<div style="display:flex;align-items:center;gap:8px">' +
             '<button onclick="changeQty(' + i + ',-1)" style="width:26px;height:26px;border:1.5px solid #ddd;border-radius:50%;background:#fff;cursor:pointer;font-size:14px">-</button>' +
@@ -2109,8 +2109,8 @@ function renderConfirmCard(c) {
 
     return '<div style="background:linear-gradient(135deg,#2ECC71,#27ae60);color:#fff;border-radius:16px;padding:20px;margin-bottom:12px;box-shadow:0 4px 20px rgba(46,204,113,.35)">' +
         '<div style="font-size:14px;font-weight:700;margin-bottom:4px">🚪 Your order has been delivered!</div>' +
-        '<div style="font-size:13px;opacity:.9;margin-bottom:2px">Order <strong>' + c.order_code + '</strong> · ETB ' + fare.toFixed(2) + '</div>' +
-        '<div style="font-size:12px;opacity:.8;margin-bottom:14px">Courier: ' + (c.courier_name || 'Courier') + '</div>' +
+        '<div style="font-size:13px;opacity:.9;margin-bottom:2px">Order <strong>' + escapeHtml(c.order_code) + '</strong> · ETB ' + fare.toFixed(2) + '</div>' +
+        '<div style="font-size:12px;opacity:.8;margin-bottom:14px">Courier: ' + escapeHtml(c.courier_name || 'Courier') + '</div>' +
         methodToggle +
         '<div id="wallet-pay-status-' + orderId + '" style="font-size:12px;margin-bottom:8px;min-height:14px"></div>' +
         actionBlock +
@@ -2567,8 +2567,8 @@ async function loadAddresses() {
         return '<div style="display:flex;align-items:flex-start;gap:12px;padding:14px;margin-bottom:10px;background:rgba(255,255,255,.04);border:1px solid rgba(212,175,55,.15);border-radius:14px">' +
             '<div style="font-size:20px;flex-shrink:0">' + (a.is_default ? '🏠' : '📍') + '</div>' +
             '<div style="flex:1;min-width:0">' +
-            '<div style="font-weight:700;font-size:14px">' + a.label + (a.is_default ? ' <span style="font-size:10px;color:#FFD700;font-weight:700">· DEFAULT</span>' : '') + '</div>' +
-            '<div style="font-size:13px;color:rgba(240,237,216,.7);margin-top:2px">' + a.address_line + '</div>' +
+            '<div style="font-weight:700;font-size:14px">' + escapeHtml(a.label) + (a.is_default ? ' <span style="font-size:10px;color:#FFD700;font-weight:700">· DEFAULT</span>' : '') + '</div>' +
+            '<div style="font-size:13px;color:rgba(240,237,216,.7);margin-top:2px">' + escapeHtml(a.address_line) + '</div>' +
             (a.zone ? '<div style="font-size:11.5px;color:rgba(240,237,216,.4);margin-top:2px">' + a.zone + '</div>' : '') +
             '</div>' +
             '<div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0">' +
@@ -2584,7 +2584,7 @@ function addressFormHtml(existing) {
         '<div style="font-weight:700;font-size:15px;margin-bottom:12px">' + (a.id ? '📍 Edit Address' : '📍 Add Address') + '</div>' +
         '<input type="hidden" id="addr-id" value="' + (a.id || '') + '">' +
         '<label style="display:block;font-weight:600;margin-bottom:6px;font-size:13px">Label</label>' +
-        '<input id="addr-label" placeholder="Home, Work, etc." value="' + (a.label || '') + '" style="width:100%;padding:10px;border:1.5px solid rgba(212,175,55,.3);background:rgba(0,0,0,.25);color:#fff;border-radius:8px;font-size:13px;margin-bottom:12px;box-sizing:border-box">' +
+        '<input id="addr-label" placeholder="Home, Work, etc." value="' + escapeHtml(a.label || '') + '" style="width:100%;padding:10px;border:1.5px solid rgba(212,175,55,.3);background:rgba(0,0,0,.25);color:#fff;border-radius:8px;font-size:13px;margin-bottom:12px;box-sizing:border-box">' +
         '<label style="display:block;font-weight:600;margin-bottom:6px;font-size:13px">Address</label>' +
         '<textarea id="addr-line" placeholder="Building, street, landmark…" style="width:100%;padding:10px;border:1.5px solid rgba(212,175,55,.3);background:rgba(0,0,0,.25);color:#fff;border-radius:8px;font-size:13px;min-height:70px;resize:none;box-sizing:border-box;margin-bottom:12px">' + (a.address_line || '') + '</textarea>' +
         '<label style="display:block;font-weight:600;margin-bottom:6px;font-size:13px">Zone (optional)</label>' +
@@ -2780,8 +2780,8 @@ function toggleProfile() {
         <div style="position:absolute;bottom:2px;right:2px;width:14px;height:14px;border-radius:50%;background:#22C55E;border:2px solid #0E0A00;box-shadow:0 0 6px rgba(34,197,94,.6)"></div>
       </div>
       <div style="flex:1;min-width:0">
-        <div style="font-size:16px;font-weight:700;color:#FFF8E7;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:-.01em">${u.name||'Guest'}</div>
-        <div style="font-size:12px;color:rgba(255,248,231,.45);margin-top:3px;letter-spacing:.01em">${u.phone||'No phone'}</div>
+        <div style="font-size:16px;font-weight:700;color:#FFF8E7;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:-.01em">${escapeHtml(u.name||'Guest')}</div>
+        <div style="font-size:12px;color:rgba(255,248,231,.45);margin-top:3px;letter-spacing:.01em">${escapeHtml(u.phone||'No phone')}</div>
         <div style="margin-top:9px;display:inline-flex;align-items:center;gap:5px;padding:4px 10px;background:rgba(255,215,0,.1);border:1px solid rgba(255,215,0,.22);border-radius:20px">
           <span style="font-size:9px">⭐</span>
           <span style="font-size:10px;font-weight:700;color:#FFD700;letter-spacing:.06em">PREMIUM MEMBER</span>
