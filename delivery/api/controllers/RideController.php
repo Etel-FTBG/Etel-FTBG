@@ -1404,6 +1404,51 @@ case 'ride_history': {
     break;
 }
 
+case 'ride_receipt': {
+    /* A receipt for one of the rider's own completed rides. No driver phone, no coordinates. */
+    $id = isset($body['id']) ? intval($body['id']) : 0;
+    if (!$id) fail('Ride id required');
+    $s = $pdo->prepare(
+        "SELECT r.id, r.status, r.pickup_address, r.dropoff_address, r.distance_km, r.traveled_km, r.fare_paid, r.fare_final,
+                r.payment_method, r.created_at, r.completed_at, r.fare_breakdown_json,
+                d.name AS driver_name, rd.vehicle_plate, rd.vehicle_type, rd.vehicle_color
+         FROM rides r
+         LEFT JOIN users d ON d.id = r.driver_id
+         LEFT JOIN ride_drivers rd ON rd.user_id = r.driver_id
+         WHERE r.id=? AND r.passenger_id=? LIMIT 1");
+    $s->execute(array($id, $u['id']));
+    $r = $s->fetch();
+    if (!$r) fail('Ride not found', 404);
+    if ($r['status'] !== 'completed') fail('A receipt is only available for completed rides', 409);
+    $b = !empty($r['fare_breakdown_json']) ? json_decode($r['fare_breakdown_json'], true) : null;
+    if (!is_array($b)) $b = array();
+    $lines = array();
+    $add = function ($label, $v) use (&$lines) { if ($v !== null && floatval($v) != 0) $lines[] = array('label' => $label, 'etb' => round(floatval($v), 2)); };
+    $add('Base fare', isset($b['fare_base']) ? $b['fare_base'] : null);
+    $add('Distance', isset($b['fare_distance']) ? $b['fare_distance'] : null);
+    $add('Waiting time', isset($b['fare_wait']) ? $b['fare_wait'] : null);
+    $add('Peak-hour surge', isset($b['fare_surge_etb']) ? $b['fare_surge_etb'] : null);
+    $add('Minimum fare top-up', isset($b['fare_floor_topup']) ? $b['fare_floor_topup'] : null);
+    $total = floatval($r['fare_paid']) > 0 ? floatval($r['fare_paid']) : floatval($r['fare_final']);
+    ok(array(
+        'receipt_no' => 'ETEL-R' . str_pad((string) intval($r['id']), 6, '0', STR_PAD_LEFT),
+        'ride_id'    => intval($r['id']),
+        'rider'      => isset($u['name']) ? $u['name'] : '',
+        'completed_at' => $r['completed_at'],
+        'pickup'     => $r['pickup_address'],
+        'dropoff'    => $r['dropoff_address'],
+        'distance_km' => round(floatval($r['distance_km'] ? $r['distance_km'] : $r['traveled_km']), 2),
+        'driver'     => $r['driver_name'],
+        'vehicle'    => trim(($r['vehicle_color'] ? $r['vehicle_color'] . ' ' : '') . ($r['vehicle_type'] ? $r['vehicle_type'] : '')),
+        'plate'      => $r['vehicle_plate'],
+        'payment'    => $r['payment_method'] ? $r['payment_method'] : 'cash',
+        'lines'      => $lines,
+        'total'      => round($total, 2),
+        'currency'   => 'ETB',
+    ));
+    break;
+}
+
 case 'driver_get_ride_history': {
     /* Driver-side equivalent of ride_history above - no such endpoint
        existed for drivers before (only the passenger direction), so the
