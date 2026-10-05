@@ -220,10 +220,11 @@ final class PaymentController
             [$order['id'], 'paid']
         );
         if ($updated > 0) {
-            // Keep the admin Transactions tab in step with the order row.
+            // Keep the admin Transactions tab in step with the order row
+            // (live transactions.status is pending|completed|failed|reversed).
             try {
                 $this->db->query(
-                    "UPDATE transactions SET status = 'paid', updated_at = ? WHERE order_id = ? AND method = ?",
+                    "UPDATE transactions SET status = 'completed', updated_at = ? WHERE order_id = ? AND method = ?",
                     [date('Y-m-d H:i:s'), $order['id'], $gateway === 'chapa' ? 'bank_transfer' : $gateway]
                 );
             } catch (\Throwable $e) {
