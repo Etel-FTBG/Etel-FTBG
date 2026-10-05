@@ -456,7 +456,7 @@ final class CheckoutController
                 'amount'       => $grand,
                 'currency'     => 'ETB',
                 'status'       => 'pending',
-                'gateway_ref'  => $walletPaidAt ? ($shippingTxRef ?? $firstHoldRef) : null,
+                'gateway_ref'  => $walletPaidAt ? ($shippingTxRef ?? $firstHoldRef) : ($rawPayment === 'chapa' ? $code : null),
                 'notes'        => 'Etel Gebeya order ' . $code,
                 'created_at'   => $now,
                 'updated_at'   => $now,
@@ -477,6 +477,35 @@ final class CheckoutController
 
         // Clear cart
         unset($_SESSION['cart']);
+
+        // Chapa: send the customer to Chapa's hosted checkout page. The
+        // order already exists as payment_status=pending; it is only
+        // marked paid once Chapa's verify API confirms it (webhook or
+        // return). If Chapa can't be reached, fall through to the normal
+        // success page -- the order stays pending and an admin can
+        // confirm it manually, same as before this integration.
+        if ($rawPayment === 'chapa') {
+            $chapa = new \App\Core\ChapaClient();
+            if ($chapa->isConfigured()) {
+                $user  = $this->auth->user();
+                $parts = preg_split('/\s+/', $name, 2) ?: [$name];
+                $base  = rtrim($GLOBALS['__config']['app']['url'] ?? '', '/');
+                $init  = $chapa->initialize([
+                    'amount'       => $grand,
+                    'tx_ref'       => $code,
+                    'email'        => $user['email'] ?? '',
+                    'first_name'   => $parts[0],
+                    'last_name'    => $parts[1] ?? '',
+                    'phone'        => $phone,
+                    'callback_url' => $base . '/payments/chapa/notify',
+                    'return_url'   => $base . '/payments/chapa/return?tx_ref=' . rawurlencode($code),
+                ]);
+                if ($init) {
+                    header('Location: ' . $init['checkout_url']);
+                    exit;
+                }
+            }
+        }
 
         redirect('/checkout/success/' . $code);
     }
