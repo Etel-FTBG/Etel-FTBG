@@ -24,11 +24,12 @@ jobs:
         run: |
           find delivery -name '*.js' -not -path '*/releases/*' -not -path '*/backup*' \
             -not -name '*.min.js' -print0 | xargs -0 -n1 node --check
-      - name: Migration numbering, reserved words, XSS ratchet
+      - name: Migration numbering and XSS ratchet
         run: |
           python3 delivery/tests/ci/check_migrations.py
-          python3 delivery/tests/ci/check_reserved_columns.py
           python3 delivery/tests/ci/check_xss_sinks.py
+      # check_reserved_columns.py needs the built database, so it runs in the
+      # integration job (via run_integration.sh).
 
   integration:
     runs-on: ubuntu-latest
