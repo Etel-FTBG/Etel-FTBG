@@ -38,7 +38,26 @@ function delivery_execute_order_creation($pdo, $auth_user, $body) {
     if ($delivery_photo_url && !preg_match('#^https?://[a-zA-Z0-9.\-]+/.*uploads/items/[a-zA-Z0-9_\.\-]+\.(jpg|jpeg|png|gif|webp)$#i', $delivery_photo_url)) {
         $delivery_photo_url = '';
     }
-    if (!in_array($payment_method, array('cash','telebirr','abysinia','cbe','wallet'))) $payment_method = 'cash';
+    // 'chapa' is only accepted from the customer checkout wrapper
+    // (customer_create_order sets _allow_chapa), which immediately follows
+    // up with chapa_init - never from callers like the EtelAI agent that
+    // have no way to complete the Chapa payment.
+    $allowed_methods = array('cash','telebirr','abysinia','cbe','wallet');
+    if (!empty($body['_allow_chapa'])) $allowed_methods[] = 'chapa';
+    if (!in_array($payment_method, $allowed_methods)) $payment_method = 'cash';
+    if ($payment_method === 'chapa') {
+        // orders.payment_method is an ENUM on most installs: add 'chapa' once
+        // (DDL, so it must happen before any transaction below starts).
+        try {
+            $col = $pdo->query("SHOW COLUMNS FROM `orders` LIKE 'payment_method'")->fetch();
+            if ($col && stripos($col['Type'], 'enum(') === 0 && stripos($col['Type'], "'chapa'") === false) {
+                $pdo->exec("ALTER TABLE `orders` MODIFY COLUMN `payment_method` ENUM('cash','telebirr','abysinia','cbe','wallet','chapa') DEFAULT 'cash'");
+            }
+        } catch (Exception $e) {
+            error_log('[ETEL][chapa] could not extend orders.payment_method: ' . $e->getMessage());
+            throw new Exception('Chapa payment is not ready on this server yet. Please choose another payment method.');
+        }
+    }
     
     // Validate required fields
     if (empty($items) || !is_array($items)) throw new Exception('items array is required');
