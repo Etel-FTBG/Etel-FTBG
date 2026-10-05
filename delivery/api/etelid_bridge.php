@@ -37,7 +37,7 @@ function etelid_bridge_service_key() {
     return $k ? $k : '';
 }
 
-function etelid_bridge_service_call($path, $payload) {
+function etelid_bridge_service_call($path, $payload, $timeout = 5) {
     $key = etelid_bridge_service_key();
     if (!$key) return null;                       /* not configured -> fallback */
     // NEVER build this URL from $_SERVER['HTTP_HOST'] -- that header is
@@ -52,17 +52,25 @@ function etelid_bridge_service_call($path, $payload) {
     $body = json_encode($payload);
     $resp = null;
     if (function_exists('curl_init')) {
-        $ch = curl_init($url);
-        curl_setopt_array($ch, array(
-            CURLOPT_POST           => true,
-            CURLOPT_POSTFIELDS     => $body,
-            CURLOPT_HTTPHEADER     => array('Content-Type: application/json',
-                                            'X-Etel-Service-Key: ' . $key),
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_TIMEOUT        => 5,
-        ));
-        $resp = curl_exec($ch);
-        curl_close($ch);
+        // One quick retry if the connection itself could not be made (DNS or
+        // connect failure on a busy shared host). A request that connected
+        // but is slow is NOT retried - the password was already sent once.
+        for ($attempt = 0; $attempt < 2; $attempt++) {
+            $ch = curl_init($url);
+            curl_setopt_array($ch, array(
+                CURLOPT_POST           => true,
+                CURLOPT_POSTFIELDS     => $body,
+                CURLOPT_HTTPHEADER     => array('Content-Type: application/json',
+                                                'X-Etel-Service-Key: ' . $key),
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_CONNECTTIMEOUT => 4,
+                CURLOPT_TIMEOUT        => $timeout,
+            ));
+            $resp = curl_exec($ch);
+            $errno = curl_errno($ch);
+            curl_close($ch);
+            if ($resp !== false || !in_array($errno, array(6, 7), true)) break;   // 6 = resolve, 7 = connect
+        }
     } else {
         $ctx = stream_context_create(array('http' => array(
             'method'  => 'POST',
@@ -400,8 +408,11 @@ function etelid_bridge_member_from_sso_token($pdo, $token) {
 }
 
 function etelid_bridge_authenticate($identifier, $password) {
+    // Sign-in gets a longer timeout than the other lookups: live timings showed
+    // it averaging ~1.2 s with a worst case of 5.2 s, i.e. exactly the old
+    // 5 s cut-off, so the slowest sign-ins were failing instead of finishing.
     $svc = etelid_bridge_service_call('authenticate',
-        array('identifier' => $identifier, 'password' => $password, 'create_session' => true));
+        array('identifier' => $identifier, 'password' => $password, 'create_session' => true), 10);
     if ($svc !== null) {
         $m = etelid_bridge_member_from_service($svc);
         if ($m) {

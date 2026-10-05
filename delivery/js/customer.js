@@ -797,7 +797,7 @@ function renderItemsGrid(items, targetId) {
         const ic = catIcons[item.category] || catEmoji[item.category] || catIcons.default;
         const imgHtml = item.image_url
             ? '<span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:38px;opacity:.4">' + ic + '</span>'
-              + '<img src="' + escUrl(item.image_url) + '" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover" onerror="this.onerror=null;this.style.display=\'none\'">'
+              + '<img loading="lazy" decoding="async" src="' + escUrl(item.image_url) + '" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover" onerror="this.onerror=null;this.style.display=\'none\'">'
             : '<span style="font-size:52px;filter:drop-shadow(0 4px 12px rgba(212,175,55,.3))">' + ic + '</span>';
         const displayName = (ETEL_I18N.current() === 'am' && item.name_am) ? item.name_am : (item.name || '');
         // Stripped (not just apostrophe-escaped): this string ends up both
@@ -871,7 +871,7 @@ function openItemDetail(itemId) {
     const discounted = item.original_price && parseFloat(item.original_price) > parseFloat(item.price);
     const ic = (catEmoji[item.category]) || '🍴';
     const imgHtml = item.image_url
-        ? '<img src="' + escUrl(item.image_url) + '" alt="" style="width:100%;height:100%;object-fit:cover" onerror="this.onerror=null;this.style.display=\'none\'">'
+        ? '<img loading="lazy" decoding="async" src="' + escUrl(item.image_url) + '" alt="" style="width:100%;height:100%;object-fit:cover" onerror="this.onerror=null;this.style.display=\'none\'">'
         : '<span style="font-size:80px">' + ic + '</span>';
     const stock = parseInt(item.stock_quantity, 10);
     const available = item.is_available == 1 && (isNaN(stock) || stock > 0);
