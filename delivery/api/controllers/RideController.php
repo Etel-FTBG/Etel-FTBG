@@ -1400,7 +1400,14 @@ case 'ride_history': {
          WHERE r.passenger_id=? AND r.status IN ('completed','cancelled')
          ORDER BY r.id DESC LIMIT 30");
     $s->execute(array($u['id']));
-    ok(array('rides' => $s->fetchAll()));
+    $rows = $s->fetchAll();
+    /* A cancelled trip is never charged (there is no cancellation fee), but fare_final keeps the
+       estimate from booking time. Showing it made riders think they were billed, so report zero. */
+    foreach ($rows as &$row) {
+        if ($row['status'] === 'cancelled') { $row['fare_final'] = 0; $row['fare_paid'] = 0; $row['not_charged'] = true; }
+    }
+    unset($row);
+    ok(array('rides' => $rows));
     break;
 }
 
@@ -1465,7 +1472,12 @@ case 'driver_get_ride_history': {
          WHERE r.driver_id=? AND r.status IN ('completed','cancelled')
          ORDER BY r.id DESC LIMIT 30");
     $s->execute(array($u['id']));
-    ok(array('rides' => $s->fetchAll()));
+    $rows = $s->fetchAll();
+    foreach ($rows as &$row) { // cancelled trips earn nothing; do not show the booking-time estimate (see ride_history)
+        if ($row['status'] === 'cancelled') { $row['fare_final'] = 0; $row['fare_paid'] = 0; $row['not_charged'] = true; }
+    }
+    unset($row);
+    ok(array('rides' => $rows));
     break;
 }
 
