@@ -65,6 +65,18 @@ final class PaymentController
     public function chapaReturn(): void
     {
         // Chapa's own hosted-checkout return redirect appends tx_ref.
+        // The redirect itself proves nothing, but the webhook can lag the
+        // customer's browser -- so ask Chapa directly (verify API, using
+        // the secret key) and settle here too. Idempotent with the
+        // webhook via settleOrder()'s payment_status guard.
+        $ref = trim((string)($_GET['tx_ref'] ?? ''));
+        $chapa = new \App\Core\ChapaClient();
+        if ($ref !== '' && $chapa->isConfigured()) {
+            $v = $chapa->verify($ref);
+            if ($v && $v['status'] === 'success' && $v['currency'] === 'ETB') {
+                $this->applySettlement('chapa', $ref, $v['amount'], true);
+            }
+        }
         $this->genericReturn(['tx_ref', 'order_ref', 'ref', 'code']);
     }
 
@@ -154,6 +166,15 @@ final class PaymentController
         $amount = (float)($body['amount'] ?? 0);
         $status = strtolower((string)($body['status'] ?? ''));
 
+        // Signature proves the sender; verify API proves the money. Use
+        // Chapa's own amount, not the webhook body's.
+        if ($status === 'success') {
+            $v = (new \App\Core\ChapaClient())->verify($ref);
+            if (!$v || $v['status'] !== 'success' || $v['currency'] !== 'ETB') {
+                $this->jsonResponse(422, ['ok' => false, 'message' => 'Chapa verification failed']);
+            }
+            $amount = $v['amount'];
+        }
         $this->settleOrder('chapa', $ref, $amount, $status === 'success');
     }
 
@@ -168,21 +189,28 @@ final class PaymentController
      */
     private function settleOrder(string $gateway, string $ref, float $amount, bool $success): void
     {
+        [$code, $data] = $this->applySettlement($gateway, $ref, $amount, $success);
+        $this->jsonResponse($code, $data);
+    }
+
+    /** Same checks as settleOrder() but returns [httpCode, body] instead of exiting. */
+    private function applySettlement(string $gateway, string $ref, float $amount, bool $success): array
+    {
         if ($ref === '') {
-            $this->jsonResponse(422, ['ok' => false, 'message' => 'Missing order reference']);
+            return [422, ['ok' => false, 'message' => 'Missing order reference']];
         }
         $order = $this->db->fetch(
             "SELECT id, total_amount, payment_status FROM orders WHERE order_ref = ? LIMIT 1",
             [$ref]
         );
         if (!$order) {
-            $this->jsonResponse(404, ['ok' => false, 'message' => 'Order not found']);
+            return [404, ['ok' => false, 'message' => 'Order not found']];
         }
         if (!$success) {
-            $this->jsonResponse(200, ['ok' => true, 'message' => 'Acknowledged (payment not successful)']);
+            return [200, ['ok' => true, 'message' => 'Acknowledged (payment not successful)']];
         }
         if (abs((float)$order['total_amount'] - $amount) > 0.5) {
-            $this->jsonResponse(422, ['ok' => false, 'message' => 'Amount mismatch']);
+            return [422, ['ok' => false, 'message' => 'Amount mismatch']];
         }
 
         $updated = $this->db->update(
@@ -191,7 +219,18 @@ final class PaymentController
             'id = ? AND payment_status != ?',
             [$order['id'], 'paid']
         );
-        $this->jsonResponse(200, ['ok' => true, 'updated' => $updated > 0]);
+        if ($updated > 0) {
+            // Keep the admin Transactions tab in step with the order row.
+            try {
+                $this->db->query(
+                    "UPDATE transactions SET status = 'paid', updated_at = ? WHERE order_id = ? AND method = ?",
+                    [date('Y-m-d H:i:s'), $order['id'], $gateway === 'chapa' ? 'bank_transfer' : $gateway]
+                );
+            } catch (\Throwable $e) {
+                error_log('[EG-Payment] transactions sync: ' . $e->getMessage());
+            }
+        }
+        return [200, ['ok' => true, 'updated' => $updated > 0]];
     }
 
     private function parseBody(): array
