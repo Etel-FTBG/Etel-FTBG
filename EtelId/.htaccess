@@ -1,0 +1,22 @@
+# EtelID plugin folder: never serve backups, notes, dumps or logs over the web.
+# (Live site had ~90 *.bak* copies of plugin source and a SETUP-SSO-KEY.txt
+# readable at a guessable URL. PHP files keep working; they are guarded by ABSPATH.)
+<IfModule mod_authz_core.c>
+  <FilesMatch "(\.bak[^/]*|\.(txt|md|sql|log|zip|tar|gz|orig|old|swp|dist|ini|sh))$">
+    Require all denied
+  </FilesMatch>
+</IfModule>
+<IfModule !mod_authz_core.c>
+  <FilesMatch "(\.bak[^/]*|\.(txt|md|sql|log|zip|tar|gz|orig|old|swp|dist|ini|sh))$">
+    Order allow,deny
+    Deny from all
+  </FilesMatch>
+</IfModule>
+# no directory listings
+Options -Indexes
+# the standalone tests are for developers, not the web
+<IfModule mod_authz_core.c>
+  <FilesMatch "^security_unit\.php$">
+    Require all denied
+  </FilesMatch>
+</IfModule>
