@@ -256,11 +256,13 @@ class EtelID_Auth {
             'expires_at' => $expires,
         ));
 
-        /* Session cap (prune_member_sessions) is DISABLED for now: "Sign in with
-         * EtelID" returned a WordPress critical error right after the SSO
-         * password check on the live site and this call is the main suspect.
-         * It will be re-enabled, guarded, once the real error is known. The
-         * method itself stays so password-change cleanup keeps working. */
+        /* Session cap: keep only the newest MAX_SESSIONS_PER_MEMBER sessions.
+         * Housekeeping only - it must never break a sign-in, so it is guarded. */
+        try {
+            self::prune_member_sessions( (int) $member_id, self::MAX_SESSIONS_PER_MEMBER );
+        } catch ( \Throwable $e ) {
+            /* ignore: the new session is already stored */
+        }
 
         /* Set secure cookie */
         $secure = is_ssl();
@@ -406,7 +408,7 @@ class EtelID_Auth {
         $keep  = max( 1, (int) $keep );
         $ids   = $wpdb->get_col( $wpdb->prepare(
             "SELECT id FROM {$table} WHERE member_id = %d ORDER BY id DESC LIMIT 1000 OFFSET %d",
-            (int) $member_id, $keep - 1   /* room for the session about to be created */
+            (int) $member_id, $keep   /* newest $keep rows stay (incl. the one just created) */
         ));
         if ( $ids ) {
             $ids = array_map( 'intval', $ids );
