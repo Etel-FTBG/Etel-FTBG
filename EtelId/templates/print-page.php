@@ -24,7 +24,7 @@ if ( ! $member ) {
 $companies = EtelID_DB::get_companies( $member->id );
 $org_name  = get_option('etelid_org_name',    'Etel Group');
 $org_site  = get_option('etelid_org_website', 'etelgroup.com');
-$logo_src  = defined('ETELID_LOGO_B64') ? ETELID_LOGO_B64 : ETELID_URL.'public/images/etel-logo.png';
+$logo_src  = ETELID_URL.'public/images/etel-master-coin-128.webp';
 $card_css  = file_get_contents(ETELID_PATH.'public/css/etelid-card.css');
 $print_css = file_get_contents(ETELID_PATH.'public/css/etelid-print.css');
 
@@ -41,7 +41,8 @@ $status_class = 'eid-print-status-' . ($member->status === 'active' ? 'active' :
 <title>Print · <?php echo esc_html($member->etel_id); ?> · <?php echo esc_html($org_name); ?></title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=JetBrains+Mono:wght@400;500;600;700&family=Cormorant+Garamond:wght@400;600;700&family=Noto+Sans+Ethiopic:wght@400;600;700&family=Noto+Sans:wght@400;600;700&family=Oswald:wght@500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
+<style><?php echo file_get_contents(ETELID_PATH.'public/css/etelid-icons.css'); ?>
+.eid-print-nav-logo,.v-nav-logo,.af-nav-logo{width:36px!important;height:36px!important;filter:drop-shadow(0 2px 8px rgba(0,0,0,.5))!important}</style>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 :root{
