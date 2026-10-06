@@ -80,7 +80,7 @@ class Etelid_Nfc {
        through again just because this file is now wired in. Cheap
        option check keeps this from running dbDelta() on every request. */
     public static function maybe_install() {
-        if ('1.0' !== get_option('etelid_nfc_db_version')) {
+        if ('1.1' !== get_option('etelid_nfc_db_version')) {
             self::install();
         }
     }
@@ -103,6 +103,7 @@ class Etelid_Nfc {
             issued_at DATETIME NOT NULL,
             last_tapped_at DATETIME NULL DEFAULT NULL,
             tap_count BIGINT UNSIGNED NOT NULL DEFAULT 0,
+            sun_counter BIGINT UNSIGNED NOT NULL DEFAULT 0,
             PRIMARY KEY  (id),
             UNIQUE KEY token (token),
             KEY member_id (member_id)
@@ -111,7 +112,7 @@ class Etelid_Nfc {
         require_once ABSPATH . 'wp-admin/includes/upgrade.php';
         dbDelta($sql);
 
-        update_option('etelid_nfc_db_version', '1.0');
+        update_option('etelid_nfc_db_version', '1.1');
     }
 
     /* ---------------------------------------------------------------
@@ -210,6 +211,69 @@ class Etelid_Nfc {
      * Public route: /m/{token}
      * ------------------------------------------------------------- */
 
+    /* ---------------------------------------------------------------
+     * NTAG 424 DNA signed taps (see class-etelid-sun.php)
+     *
+     * Mode (wp-config.php constant ETELID_SUN_MODE, or option etelid_sun_mode):
+     *   off     (default) static links keep working exactly as before
+     *   log     signed taps are verified and recorded, nothing is blocked
+     *   enforce a card link only works with a genuine, fresh chip tap
+     * Keys: ETELID_SUN_META_KEY (+ optional ETELID_SUN_FILE_KEY), 32 hex chars.
+     * ------------------------------------------------------------- */
+
+    public static function sun_mode() {
+        $m = defined('ETELID_SUN_MODE') ? ETELID_SUN_MODE : get_option('etelid_sun_mode', 'off');
+        return in_array($m, array('log', 'enforce'), true) ? $m : 'off';
+    }
+
+    protected static function sun_keys() {
+        $meta = defined('ETELID_SUN_META_KEY') ? ETELID_SUN_META_KEY : '';
+        $file = defined('ETELID_SUN_FILE_KEY') ? ETELID_SUN_FILE_KEY : '';
+        return array((string) $meta, (string) $file);
+    }
+
+    protected static function tap_proof_key($token) {
+        return 'etelid_tap_' . md5((string) $token);
+    }
+
+    /* A card link is allowed to act (pay, confirm, reveal) only while a
+       genuine tap is fresh. Off/log mode: always allowed. */
+    public static function has_tap_proof($token) {
+        if ('enforce' !== self::sun_mode()) return true;
+        return (bool) get_transient(self::tap_proof_key($token));
+    }
+
+    /* Check the e/c parameters of one tap against a card row.
+       Returns: 'ok', 'none' (no signed data in the URL), 'bad' (bad
+       signature / keys missing), 'uid' (chip is not the one bound to this
+       card) or 'replay' (an old tap was re-sent). */
+    public static function sun_evaluate($card, $e, $c) {
+        if ('' === (string) $e && '' === (string) $c) return 'none';
+        list($meta, $file) = self::sun_keys();
+        if ('' === $meta) return 'bad';
+        $r = EtelID_SUN::verify($e, $c, $meta, $file);
+        if (!$r) return 'bad';
+
+        $bound = isset($card->card_uid) ? (string) $card->card_uid : '';
+        if ('' !== $bound && 0 !== strcasecmp($bound, $r['uid'])) return 'uid';
+
+        $last = isset($card->sun_counter) ? (int) $card->sun_counter : 0;
+        if ($r['counter'] <= $last) {
+            /* Same counter = the page was reloaded; fine only while that tap is still fresh. */
+            if ($r['counter'] === $last && $last > 0 && get_transient(self::tap_proof_key($card->token))) return 'ok';
+            return 'replay';
+        }
+
+        global $wpdb;
+        $table = $wpdb->prefix . self::TABLE;
+        $wpdb->query($wpdb->prepare(
+            "UPDATE {$table} SET sun_counter = %d, card_uid = %s WHERE id = %d",
+            $r['counter'], $r['uid'], $card->id
+        ));
+        set_transient(self::tap_proof_key($card->token), 1, 15 * 60);
+        return 'ok';
+    }
+
     public static function register_rewrite() {
         add_rewrite_rule('^m/([A-Za-z0-9_-]+)/?$', 'index.php?' . self::QUERY_VAR . '=$matches[1]', 'top');
     }
@@ -230,8 +294,21 @@ class Etelid_Nfc {
 
         $card = self::get_card_row($token);
 
+        $sun = 'off';
+        if ($card && 'active' === $card->status && 'off' !== self::sun_mode()) {
+            $e   = isset($_GET['e']) ? sanitize_text_field(wp_unslash($_GET['e'])) : '';
+            $c   = isset($_GET['c']) ? sanitize_text_field(wp_unslash($_GET['c'])) : '';
+            $sun = self::sun_evaluate($card, $e, $c);
+            if ('ok' !== $sun && class_exists('EtelID_DB')) {
+                EtelID_DB::log($card->member_id, '', 'nfc_sun', 'Unsigned or invalid tap: ' . $sun . ' (mode ' . self::sun_mode() . ')');
+            }
+        }
+
         if (!$card || 'active' !== $card->status) {
             status_header(404);
+            $member = null;
+        } elseif ('enforce' === self::sun_mode() && 'ok' !== $sun) {
+            status_header(403);
             $member = null;
         } else {
             $member = self::get_member($card->member_id);
@@ -377,6 +454,7 @@ class Etelid_Nfc {
     public static function resolve_token($token) {
         $card = self::get_card_row($token);
         if (!$card || 'active' !== $card->status) return null;
+        if (!self::has_tap_proof($token)) return null;
         $member = self::get_member($card->member_id);
         if (!$member) return null;
         return array('card' => $card, 'member' => $member);
