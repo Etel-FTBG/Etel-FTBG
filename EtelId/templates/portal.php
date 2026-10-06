@@ -2565,6 +2565,7 @@ document.getElementById('eid-fayda-modal').addEventListener('click', function(e)
       <p style="font-size:13px;color:#aaa;line-height:1.6;margin-bottom:16px;">
         This uses your device's own built-in biometric sensor. Your face or fingerprint never leaves your device and is never sent to or stored on our servers — only a secure cryptographic key is saved.
       </p>
+      <div id="eap-bio-devices" style="text-align:left;margin-bottom:14px;"></div>
       <div id="eap-bio-status" style="font-size:13px;margin-bottom:14px;min-height:18px;"></div>
       <button class="eap-btn-gold" id="eap-bio-register-btn" onclick="eapBioRegister()">Register This Device</button>
     </div>

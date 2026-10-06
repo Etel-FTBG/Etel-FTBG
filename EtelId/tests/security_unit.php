@@ -198,10 +198,24 @@ check( 'a different chip on this card is rejected', Etelid_Nfc::sun_evaluate( $c
 check( 'forged signature is rejected', Etelid_Nfc::sun_evaluate( $card, $e2, '0000000000000000' ) === 'bad' );
 
 echo "passkey / device sign-in (WebAuthn)\n";
-class FakeWpdb4 extends FakeWpdb { public $owner = 0; public $updates = array();
-    function get_var( $q ) { $this->queries[] = $q; return $this->owner; }
-    function update( $t, $d, $w ) { $this->updates[] = $d; return 1; }
-    function insert( $t, $d ) { return 1; } }
+class FakeWpdb4 extends FakeWpdb { public $pk = array(); public $updates = array(); public $deletes = array();
+    function get_var( $q ) { $this->queries[] = $q; return 0; }
+    function get_charset_collate() { return ''; }
+    function get_row( $q ) { $this->queries[] = $q;
+        if ( preg_match( "/FROM wp_etelid_passkeys WHERE credential_id = '([^']*)'/", $q, $m ) ) { foreach ( $this->pk as $r ) if ( $r->credential_id === $m[1] ) return clone $r; return null; }
+        if ( preg_match( "/FROM wp_bio WHERE webauthn_credential_id = '([^']*)'/", $q, $m ) ) { foreach ( $GLOBALS['__bio'] as $mid => $b ) if ( $b->webauthn_credential_id === $m[1] ) { $c = clone $b; $c->member_id = $mid; return $c; } return null; }
+        return null; }
+    function get_results( $q ) { $this->queries[] = $q;
+        if ( preg_match( '/FROM wp_etelid_passkeys WHERE member_id = (\d+)/', $q, $m ) ) { $o = array(); foreach ( $this->pk as $r ) if ( (int) $r->member_id === (int) $m[1] ) $o[] = clone $r; return $o; }
+        return array(); }
+    function update( $t, $d, $w ) { $this->updates[] = array( $t, $d, $w );
+        if ( $t === 'wp_bio' ) { foreach ( $d as $k => $v ) $GLOBALS['__bio'][ $w['member_id'] ]->$k = $v; }
+        if ( $t === 'wp_etelid_passkeys' ) { foreach ( $this->pk as $r ) if ( $r->credential_id === $w['credential_id'] ) foreach ( $d as $k => $v ) $r->$k = $v; }
+        return 1; }
+    function insert( $t, $d ) { if ( $t === 'wp_etelid_passkeys' ) { $this->pk[] = (object) $d; } return 1; }
+    function delete( $t, $w ) { $this->deletes[] = array( $t, $w );
+        if ( $t === 'wp_etelid_passkeys' ) { $this->pk = array_values( array_filter( $this->pk, function ( $r ) use ( $w ) { return ! ( (int) $r->member_id === (int) $w['member_id'] && ( ! isset( $w['credential_id'] ) || $r->credential_id === $w['credential_id'] ) ); } ) ); }
+        return 1; } }
 $wdb = new FakeWpdb4(); $GLOBALS['wpdb'] = $wdb;
 $key = openssl_pkey_new( array( 'curve_name' => 'prime256v1', 'private_key_type' => OPENSSL_KEYTYPE_EC ) );
 $pem = openssl_pkey_get_details( $key )['key'];
@@ -220,7 +234,6 @@ set_error_handler( function () { return true; } );   /* create_session sets a co
 
 $o = EtelID_WebAuthn::login_options_discoverable();
 check( 'passkey-first options list no credentials (device picks) and require verification', $o['allowCredentials'] === array() && $o['userVerification'] === 'required' && strlen( $o['_ses'] ) >= 16 );
-$wdb->owner = 7;
 check( 'account is found from the credential id', EtelID_WebAuthn::member_id_for_credential( $cred_id ) === 7 );
 check( 'oversized/empty credential ids are refused', EtelID_WebAuthn::member_id_for_credential( '' ) === 0 && EtelID_WebAuthn::member_id_for_credential( str_repeat( 'a', 2000 ) ) === 0 );
 
@@ -250,6 +263,32 @@ $GLOBALS['__bio'][7]->webauthn_sign_count = 5;
 $o = EtelID_WebAuthn::login_options_discoverable();
 $r = EtelID_WebAuthn::verify_login( 7, make_assertion( $key, $cred_id, $o['challenge'], 0x05, 5 ), 'dlogin_' . $o['_ses'] );
 check( 'a counter that did not increase (cloned key) is refused', is_wp_error( $r ) && $r->get_error_code() === 'clone_detected' );
+
+/* ---- more than one device per member ---- */
+$GLOBALS['__bio'][7]->webauthn_sign_count = 0;
+$key2 = openssl_pkey_new( array( 'curve_name' => 'prime256v1', 'private_key_type' => OPENSSL_KEYTYPE_EC ) );
+$cred2 = EtelID_WebAuthn::b64url_encode( random_bytes( 16 ) );
+$wdb->insert( 'wp_etelid_passkeys', array( 'member_id' => 7, 'credential_id' => $cred2, 'public_key' => openssl_pkey_get_details( $key2 )['key'], 'sign_count' => 0, 'label' => 'Work phone', 'created_at' => '2026-01-01 00:00:00' ) );
+check( 'device list shows the first device and the added one', count( EtelID_WebAuthn::devices_for_member( 7 ) ) === 2 );
+$GLOBALS['__members'][8] = (object) array( 'id' => 8, 'etel_id' => 'EG-2026-00008', 'status' => 'active' );
+check( "another member sees none of member 7's devices", EtelID_WebAuthn::devices_for_member( 8 ) === array() );
+$o = EtelID_WebAuthn::login_options_discoverable();
+$r = EtelID_WebAuthn::verify_login( 7, make_assertion( $key2, $cred2, $o['challenge'], 0x05, 0 ), 'dlogin_' . $o['_ses'] );
+check( 'the second device signs in', is_array( $r ) && $r['member']->id === 7 );
+check( 'the second device is found from its credential id', EtelID_WebAuthn::member_id_for_credential( $cred2 ) === 7 );
+$o = EtelID_WebAuthn::login_options_discoverable();
+$r = EtelID_WebAuthn::verify_login( 7, make_assertion( $key, $cred2, $o['challenge'], 0x05, 0 ), 'dlogin_' . $o['_ses'] );
+check( "device 1's key cannot sign for device 2's credential id", is_wp_error( $r ) && $r->get_error_code() === 'bad_signature' );
+$GLOBALS['__members'][8]->id = 8;
+$o = EtelID_WebAuthn::login_options_discoverable();
+$r = EtelID_WebAuthn::verify_login( 8, make_assertion( $key2, $cred2, $o['challenge'], 0x05, 0 ), 'dlogin_' . $o['_ses'] );
+check( "a credential cannot be used to sign in as a different member", is_wp_error( $r ) && $r->get_error_code() === 'wrong_credential' );
+check( 'removing a device that is not yours does nothing', EtelID_WebAuthn::remove_device( 8, $cred2 ) === false && count( EtelID_WebAuthn::devices_for_member( 7 ) ) === 2 );
+check( 'removing your own extra device works', EtelID_WebAuthn::remove_device( 7, $cred2 ) === true && count( EtelID_WebAuthn::devices_for_member( 7 ) ) === 1 );
+$o = EtelID_WebAuthn::login_options_discoverable();
+$r = EtelID_WebAuthn::verify_login( 7, make_assertion( $key2, $cred2, $o['challenge'], 0x05, 1 ), 'dlogin_' . $o['_ses'] );
+check( 'a removed device can no longer sign in', is_wp_error( $r ) && $r->get_error_code() === 'wrong_credential' );
+check( 'removing the first device clears the old biometric row', EtelID_WebAuthn::remove_device( 7, $cred_id ) === true && $GLOBALS['__bio'][7]->webauthn_credential_id === '' && EtelID_WebAuthn::devices_for_member( 7 ) === array() );
 restore_error_handler();
 
 check( 'unknown account and not-enrolled give the same message (no account enumeration)',

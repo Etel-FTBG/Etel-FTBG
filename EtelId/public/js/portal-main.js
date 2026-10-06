@@ -159,8 +159,49 @@ async function openBioRegisterModal(e){
   } catch(e) {}
   btn.style.display = '';
   statusEl.textContent = '';
+  eapBioLoadDevices();
 }
 function closeBioRegisterModal(){ _eapClose('eap-bio-register-modal'); }
+
+/* My devices: every phone or laptop that can sign in with Face / Fingerprint */
+async function eapBioLoadDevices(){
+  var box = document.getElementById('eap-bio-devices');
+  if (!box) return;
+  box.textContent = '';
+  try {
+    var res = await _eidPanel('etelid_webauthn_devices', {});
+    if (!res.success) return;
+    var list = (res.data && res.data.devices) || [];
+    if (!list.length) return;
+    var head = document.createElement('div');
+    head.style.cssText = 'font-size:11px;letter-spacing:1px;text-transform:uppercase;color:#C8922A;margin-bottom:6px;';
+    head.textContent = 'Your devices (' + list.length + ' of ' + ((res.data && res.data.max) || 5) + ')';
+    box.appendChild(head);
+    list.forEach(function(d){
+      var row = document.createElement('div');
+      row.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 10px;border:1px solid rgba(212,175,55,.18);border-radius:8px;margin-bottom:6px;font-size:13px;';
+      var info = document.createElement('div');
+      var name = document.createElement('div'); name.textContent = d.label || 'Device';
+      var sub = document.createElement('div'); sub.style.cssText = 'font-size:11px;color:#999;';
+      sub.textContent = d.last_used_at ? ('Last used ' + d.last_used_at) : (d.created_at ? ('Added ' + d.created_at) : '');
+      info.appendChild(name); info.appendChild(sub);
+      var del = document.createElement('button');
+      del.className = 'eap-btn-ghost'; del.style.cssText = 'padding:4px 10px;font-size:11px;'; del.textContent = 'Remove';
+      del.onclick = function(){ eapBioRemoveDevice(d.id); };
+      row.appendChild(info); row.appendChild(del); box.appendChild(row);
+    });
+  } catch(e) {}
+}
+async function eapBioRemoveDevice(id){
+  if (!confirm('Remove this device? It will no longer be able to sign in with Face / Fingerprint.')) return;
+  var statusEl = document.getElementById('eap-bio-status');
+  try {
+    var res = await _eidPanel('etelid_webauthn_remove', { credential_id: id });
+    statusEl.style.color = res.success ? '#6ee7a0' : '#f66';
+    statusEl.textContent = (res.data && res.data.message) || (res.success ? 'Removed.' : 'Could not remove.');
+  } catch(e) { statusEl.style.color = '#f66'; statusEl.textContent = 'Could not remove.'; }
+  eapBioLoadDevices();
+}
 
 async function eapBioRegister(){
   var statusEl = document.getElementById('eap-bio-status');
@@ -203,6 +244,7 @@ async function eapBioRegister(){
 
     statusEl.style.color = '#6ee7a0';
     statusEl.textContent = (verifyRes.data && verifyRes.data.message) || 'Registered!';
+    eapBioLoadDevices();
     setTimeout(closeBioRegisterModal, 1600);
   } catch (err) {
     statusEl.style.color = '#f66';
