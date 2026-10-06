@@ -94,6 +94,15 @@ check( 'FIN shows last 4 only', $v->fin === '********9012' );
 check( 'card number shows last 4 only', $v->card_number === '************3456' );
 check( 'name / status / id kept so a real card still verifies', $v->full_name === 'Abebe K' && $v->status === 'active' && $v->etel_id === 'EG-2026-00001' );
 
+echo "limited-account helpers work on installs without the feature (EtelID_DB has no is_limited)\n";
+check( 'test stub really lacks EtelID_DB::is_limited (simulates the older live class)', ! method_exists( 'EtelID_DB', 'is_limited' ) );
+check( 'member_is_limited: flag 0 -> false', EtelID_Security::member_is_limited( (object) array( 'profile_limited' => 0 ) ) === false );
+check( 'member_is_limited: flag 1 -> true', EtelID_Security::member_is_limited( (object) array( 'profile_limited' => 1 ) ) === true );
+check( 'member_is_limited: no column at all -> false (nothing is limited)', EtelID_Security::member_is_limited( (object) array( 'id' => 1 ) ) === false );
+check( 'member_missing_items lists the 3 missing documents',
+    EtelID_Security::member_missing_items( (object) array( 'photo_url' => '', 'fayda_front_image' => 'x' ) ) === array( 'photo', 'fayda_back' ) );
+check( 'member_refresh_limited is a harmless true when the feature is absent', EtelID_Security::member_refresh_limited( 5 ) === true );
+
 echo "personal pages are kept out of page caches\n";
 EtelID_Security::no_cache();
 check( 'DONOTCACHEPAGE is set (SpeedyCache / WP cache plugins honour it)', defined( 'DONOTCACHEPAGE' ) && DONOTCACHEPAGE === true );

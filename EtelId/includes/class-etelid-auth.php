@@ -256,11 +256,11 @@ class EtelID_Auth {
             'expires_at' => $expires,
         ));
 
-        /* Keep only the newest MAX_SESSIONS_PER_MEMBER sessions per person.
-         * Every app SSO login mints a session; live data held ~47 valid
-         * sessions per member, so one stolen token stayed useful for weeks
-         * and nothing ever aged the old ones out. */
-        self::prune_member_sessions( (int) $member_id, self::MAX_SESSIONS_PER_MEMBER );
+        /* Session cap (prune_member_sessions) is DISABLED for now: "Sign in with
+         * EtelID" returned a WordPress critical error right after the SSO
+         * password check on the live site and this call is the main suspect.
+         * It will be re-enabled, guarded, once the real error is known. The
+         * method itself stays so password-change cleanup keeps working. */
 
         /* Set secure cookie */
         $secure = is_ssl();
