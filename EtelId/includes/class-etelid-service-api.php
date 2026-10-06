@@ -261,12 +261,10 @@ class EtelID_Service_API {
        without each app inventing its own separate, disconnected
        session system the way Delivery/Ride's etel_token and EtelAI's
        unused etelid_auth key currently do. */
-    /* ---- TEMPORARY DIAGNOSTIC (remove once the SSO crash is fixed) ------
-     * "Sign in with EtelID" hit a WordPress critical error on the live site.
-     * authenticate() now runs inside a try/catch that returns the real
-     * exception text to the (service-key authenticated) caller, and a
-     * shutdown hook saves any uncatchable fatal plus the last stage reached
-     * into the option "etelid_last_fatal" so it can be read from the DB. */
+    /* Crash guard: authenticate() never lets an unexpected error escape as a
+     * WordPress "critical error" page. The real reason goes to the option
+     * "etelid_last_fatal" (admin-readable only) and the caller gets a generic
+     * message - internal paths and method names are not sent over the API. */
     private static $stage = 'start';
 
     public static function capture_fatal() {
@@ -279,7 +277,7 @@ class EtelID_Service_API {
     private static function diag_error( $e ) {
         $msg = 'stage=' . self::$stage . ' ' . get_class( $e ) . ': ' . $e->getMessage() . ' @ ' . basename( $e->getFile() ) . ':' . $e->getLine();
         update_option( 'etelid_last_fatal', date( 'c' ) . ' ' . $msg, false );
-        return new WP_Error( 'sso_internal_error', 'EtelID SSO error - ' . $msg, array( 'status' => 500 ) );
+        return new WP_Error( 'sso_internal_error', 'EtelID could not complete the sign-in. Please try again; if it keeps happening contact support.', array( 'status' => 500 ) );
     }
 
     public static function authenticate( $request ) {

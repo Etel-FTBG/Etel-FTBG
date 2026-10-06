@@ -141,7 +141,7 @@ $q = end( $GLOBALS['wpdb']->queries );
 check( 'password change: keeps only the caller session (by hash)', strpos( $q, "token <> '" . hash( 'sha256', 'RAWTOKEN' ) . "'" ) !== false && strpos( $q, 'member_id = 7' ) !== false, $q );
 EtelID_Auth::prune_member_sessions( 7, 15 );
 $all = implode( "\n", $GLOBALS['wpdb']->queries );
-check( 'cap: selects sessions beyond the newest 14 and deletes them', strpos( $all, 'OFFSET 14' ) !== false && strpos( $all, 'DELETE FROM wp_etelid_sessions WHERE id IN (3,2)' ) !== false, $all );
+check( 'cap: selects sessions beyond the newest 15 and deletes them', strpos( $all, 'OFFSET 15' ) !== false && strpos( $all, 'DELETE FROM wp_etelid_sessions WHERE id IN (3,2)' ) !== false, $all );
 
 echo "NFC: a new card revokes the old ones\n";
 $GLOBALS['wpdb'] = new FakeWpdb2();
