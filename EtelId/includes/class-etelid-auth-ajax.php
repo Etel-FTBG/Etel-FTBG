@@ -322,7 +322,7 @@ class EtelID_Auth_Ajax {
          * Quick Register is name + phone (+ optional email) only, to make
          * signing up fast. An account created without them is a "limited"
          * account: Ride only, until the photo and both Fayda sides are added
-         * from the portal (see EtelID_DB::refresh_limited()). An older cached
+         * from the portal (see EtelID_Security::member_refresh_limited()). An older cached
          * form that still sends them is honoured, but only when they are real
          * images; anything else is dropped rather than stored. */
         foreach ( array( 'photo_url', 'fayda_front_image', 'fayda_back_image' ) as $img_key ) {
@@ -703,9 +703,9 @@ class EtelID_Auth_Ajax {
         /* Both sides are now on file - if a profile photo is too, the
          * limited (Ride-only) account is unlocked straight away. The admin
          * review that follows is only for the second pass (Etel Pay). */
-        $now_unlimited = EtelID_DB::refresh_limited( $member->id );
+        $now_unlimited = EtelID_Security::member_refresh_limited( $member->id );
         $msg = 'Submitted! An admin will review your Fayda ID shortly.';
-        if ( EtelID_DB::is_limited( $member ) ) {
+        if ( EtelID_Security::member_is_limited( $member ) ) {
             $msg = $now_unlimited
                 ? 'Submitted! Your account is now unlocked for all Etel services. An admin will review your Fayda ID for Etel Pay.'
                 : 'Submitted! Add your profile photo too and your account will be fully unlocked.';
@@ -859,9 +859,9 @@ class EtelID_Auth_Ajax {
 
         /* A photo added here may be the last thing a limited (Ride-only)
          * account was missing. */
-        $now_unlimited = EtelID_DB::refresh_limited( $member->id );
+        $now_unlimited = EtelID_Security::member_refresh_limited( $member->id );
         $msg = 'Profile updated successfully! Your card now reflects the changes.';
-        if ( EtelID_DB::is_limited( $member ) && $now_unlimited ) {
+        if ( EtelID_Security::member_is_limited( $member ) && $now_unlimited ) {
             $msg .= ' Your account is now fully unlocked for all Etel services.';
         }
 

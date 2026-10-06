@@ -211,20 +211,20 @@ class EtelID_Service_API {
     private static $limited_apps = array( 'ride' );
 
     private static function app_allowed_for( $m, $app ) {
-        if ( ! EtelID_DB::is_limited( $m ) ) return true;
+        if ( ! EtelID_Security::member_is_limited( $m ) ) return true;
         $app = strtolower( trim( (string) $app ) );
         return in_array( $app, self::$limited_apps, true );
     }
 
     private static function member_payload( $m ) {
-        $limited = EtelID_DB::is_limited( $m );
+        $limited = EtelID_Security::member_is_limited( $m );
         return array(
             /* Limited (Ride-only) accounts: every consuming app must check
              * profile_limited and refuse anything that is not Ride. */
             'kyc_level'       => isset( $m->kyc_level ) ? (int) $m->kyc_level : 0,
             'profile_limited' => $limited,
             'allowed_apps'    => $limited ? self::$limited_apps : array( '*' ),
-            'missing_items'   => $limited ? EtelID_DB::missing_profile_items( $m ) : array(),
+            'missing_items'   => $limited ? EtelID_Security::member_missing_items( $m ) : array(),
             'etel_id'    => $m->etel_id,
             'full_name'  => $m->full_name,
             'phone'      => $m->phone,

@@ -149,6 +149,37 @@ class EtelID_Security {
         return $peer;
     }
 
+    /* ---- "Limited account" helpers that work on older installs ----------
+     * is_limited / missing_profile_items / refresh_limited live in
+     * EtelID_DB only from plugin "Upgrade 9" on. A server whose
+     * class-etelid-db.php predates that (the live site did) crashed with
+     * "Call to undefined method EtelID_DB::is_limited()" as soon as a newer
+     * file called it. These wrappers use the EtelID_DB method when it exists
+     * and otherwise behave like an install with no limited accounts. */
+    public static function member_is_limited( $m ) {
+        if ( method_exists( 'EtelID_DB', 'is_limited' ) ) return EtelID_DB::is_limited( $m );
+        if ( is_array( $m ) ) return ! empty( $m['profile_limited'] );
+        return is_object( $m ) && ! empty( $m->profile_limited );
+    }
+
+    public static function member_missing_items( $m ) {
+        if ( method_exists( 'EtelID_DB', 'missing_profile_items' ) ) return EtelID_DB::missing_profile_items( $m );
+        $g = function ( $k ) use ( $m ) {
+            if ( is_array( $m ) ) return isset( $m[ $k ] ) ? $m[ $k ] : '';
+            return isset( $m->$k ) ? $m->$k : '';
+        };
+        $missing = array();
+        if ( '' === trim( (string) $g( 'photo_url' ) ) )         $missing[] = 'photo';
+        if ( '' === trim( (string) $g( 'fayda_front_image' ) ) ) $missing[] = 'fayda_front';
+        if ( '' === trim( (string) $g( 'fayda_back_image' ) ) )  $missing[] = 'fayda_back';
+        return $missing;
+    }
+
+    public static function member_refresh_limited( $member_id ) {
+        if ( method_exists( 'EtelID_DB', 'refresh_limited' ) ) return EtelID_DB::refresh_limited( $member_id );
+        return true;   /* no limited-account feature installed: nothing to lift */
+    }
+
     /* ---- Keep personal pages out of page caches ----------------------
      * EtelID sign-ins are NOT WordPress logins, so a page cache (SpeedyCache
      * is active on the live site; LiteSpeed's cache can be too) sees every
