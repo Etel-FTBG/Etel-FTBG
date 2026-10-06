@@ -38,6 +38,7 @@ class FakeWpdb { public $prefix = 'wp_'; public $queries = array();
 require __DIR__ . '/../includes/class-etelid-security.php';
 require __DIR__ . '/../includes/class-etelid-service-api.php';
 require __DIR__ . '/../includes/class-etelid-auth.php';
+require __DIR__ . '/../includes/class-etelid-sun.php';
 require __DIR__ . '/../includes/class-etelid-nfc.php';
 function current_time( $t ) { return '2026-10-06 00:00:00'; }
 function random_bytes_stub() {}
@@ -153,6 +154,39 @@ Etelid_Nfc::issue_card( 4, false );
 check( 'keep_old issues an extra card without revoking', strpos( implode( "\n", $GLOBALS['wpdb']->queries ), 'revoked' ) === false );
 Etelid_Nfc::revoke_all_for_member( 4 );
 check( 'lost-card button revokes every active card', strpos( end( $GLOBALS['wpdb']->queries ), "member_id = 4 AND status = 'active'" ) !== false );
+
+echo "NTAG 424 DNA signed taps (SUN)\n";
+$rfc = hex2bin( '2b7e151628aed2a6abf7158809cf4f3c' );
+check( 'AES-CMAC matches RFC 4493 (empty message)', strtoupper( bin2hex( EtelID_SUN::cmac( $rfc, '' ) ) ) === 'BB1D6929E95937287FA37D129B756746' );
+check( 'AES-CMAC matches RFC 4493 (16-byte message)', strtoupper( bin2hex( EtelID_SUN::cmac( $rfc, hex2bin( '6bc1bee22e409f96e93d7e117393172a' ) ) ) ) === '070A16B46B4D4144F79BDD9DD04A287C' );
+$zero = str_repeat( '0', 32 );
+$real = EtelID_SUN::verify( 'EF963FF7828658A599F3041510671E88', '94EED9EE65337086', $zero );
+check( 'a real NXP demo tap verifies (UID 04DE5F1EACC040, counter 61)', $real && $real['uid'] === '04DE5F1EACC040' && $real['counter'] === 61 );
+check( 'a flipped signature bit is rejected', EtelID_SUN::verify( 'EF963FF7828658A599F3041510671E88', '94EED9EE65337087', $zero ) === false );
+check( 'the wrong key is rejected', EtelID_SUN::verify( 'EF963FF7828658A599F3041510671E88', '94EED9EE65337086', str_repeat( '1', 32 ) ) === false );
+check( 'malformed input is rejected', EtelID_SUN::verify( 'zz', 'zz', $zero ) === false && EtelID_SUN::verify( 'EF963FF7828658A599F3041510671E88', '94EED9EE65337086', 'short' ) === false );
+
+define( 'ETELID_SUN_MODE', 'enforce' );
+define( 'ETELID_SUN_META_KEY', '00112233445566778899AABBCCDDEEFF' );
+class FakeWpdb3 extends FakeWpdb { function query( $q ) { $this->queries[] = $q; return 1; } }
+$GLOBALS['wpdb'] = new FakeWpdb3();
+$card = (object) array( 'id' => 9, 'member_id' => 4, 'token' => 'TOK123', 'card_uid' => null, 'sun_counter' => 0 );
+list( $e1, $c1 ) = EtelID_SUN::simulate_tap( '04AABBCCDDEE80', 1, ETELID_SUN_META_KEY );
+check( 'no signed data = none', Etelid_Nfc::sun_evaluate( $card, '', '' ) === 'none' );
+check( 'enforce: no tap proof yet, so card actions are refused', Etelid_Nfc::has_tap_proof( 'TOK123' ) === false );
+check( 'first genuine tap is ok', Etelid_Nfc::sun_evaluate( $card, $e1, $c1 ) === 'ok' );
+check( 'tap stores counter and binds the chip UID', strpos( end( $GLOBALS['wpdb']->queries ), "sun_counter = 1, card_uid = '04AABBCCDDEE80'" ) !== false );
+check( 'a genuine tap grants a tap proof', Etelid_Nfc::has_tap_proof( 'TOK123' ) === true );
+$card->card_uid = '04AABBCCDDEE80'; $card->sun_counter = 1;
+check( 'reloading the same tap while fresh is still ok', Etelid_Nfc::sun_evaluate( $card, $e1, $c1 ) === 'ok' );
+delete_transient( 'etelid_tap_' . md5( 'TOK123' ) );
+check( 'replaying an old tap after the window is rejected', Etelid_Nfc::sun_evaluate( $card, $e1, $c1 ) === 'replay' );
+list( $e2, $c2 ) = EtelID_SUN::simulate_tap( '04AABBCCDDEE80', 2, ETELID_SUN_META_KEY );
+check( 'the next tap (counter 2) is ok', Etelid_Nfc::sun_evaluate( $card, $e2, $c2 ) === 'ok' );
+$card->sun_counter = 2;
+list( $e3, $c3 ) = EtelID_SUN::simulate_tap( '04112233445566', 3, ETELID_SUN_META_KEY );
+check( 'a different chip on this card is rejected', Etelid_Nfc::sun_evaluate( $card, $e3, $c3 ) === 'uid' );
+check( 'forged signature is rejected', Etelid_Nfc::sun_evaluate( $card, $e2, '0000000000000000' ) === 'bad' );
 
 echo "\n" . ( $fails ? "FAILED: $fails" : 'All EtelID security unit tests passed' ) . "\n";
 exit( $fails ? 1 : 0 );
