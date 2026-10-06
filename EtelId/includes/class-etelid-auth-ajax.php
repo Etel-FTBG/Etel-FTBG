@@ -35,6 +35,7 @@ class EtelID_Auth_Ajax {
             'etelid_webauthn_login_options'    => 'webauthn_login_options',
             'etelid_webauthn_login_verify'     => 'webauthn_login_verify',
             'etelid_webauthn_devices'          => 'webauthn_devices',
+            'etelid_csp_report'                => 'csp_report',
             'etelid_webauthn_remove'           => 'webauthn_remove',
         );
         foreach ( $map as $action => $method ) {
@@ -587,6 +588,17 @@ class EtelID_Auth_Ajax {
         }
         EtelID_DB::log( $member->id, $member->etel_id, 'bio_enrolled', 'Device sign-in removed by the member' );
         wp_send_json_success( array( 'message' => 'Device removed.' ) );
+    }
+
+    /* ── Browser CSP violation reports (no login, no nonce: the browser sends them) ── */
+    public static function csp_report() {
+        $ip = EtelID_Security::get_ip();
+        if ( EtelID_Security::rate_limit( 'csp_report_' . $ip, 60, 600 ) ) {
+            $raw = file_get_contents( 'php://input', false, null, 0, 8192 );
+            EtelID_Security::record_csp_report( $raw );
+        }
+        status_header( 204 );
+        exit;
     }
 
     /* ── Logout ─────────────────────────────────────────── */

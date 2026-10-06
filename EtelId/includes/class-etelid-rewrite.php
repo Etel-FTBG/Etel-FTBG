@@ -85,6 +85,9 @@ class EtelID_Rewrite {
         if ( $print || $page ) {
             EtelID_Security::no_cache();
         }
+        if ( $print || $page || $verify ) {
+            EtelID_Security::security_headers();
+        }
 
         /* ── Verify page ── */
         if ( $verify ) {
