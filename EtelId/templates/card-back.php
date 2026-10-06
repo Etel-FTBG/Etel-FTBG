@@ -5,7 +5,7 @@
  */
 if ( ! defined( 'ABSPATH' ) ) exit;
 
-$logo      = defined('ETELID_LOGO_B64') ? ETELID_LOGO_B64 : ETELID_URL.'public/images/etel-logo.png';
+$logo = defined('ETELID_URL') ? ETELID_URL.'public/images/etel-master-coin-128.webp' : ( defined('ETELID_LOGO_B64') ? ETELID_LOGO_B64 : '' );
 $org_site  = get_option('etelid_org_website', 'ethelmarket.com');
 $qr_img    = EtelID_QR::img($member->etel_id, 120);
 $companies = isset($companies) ? $companies : EtelID_DB::get_companies($member->id);
@@ -15,7 +15,7 @@ $companies = isset($companies) ? $companies : EtelID_DB::get_companies($member->
   <div class="ecb-watermark">ኢE</div>
 
   <!-- ── ETEL COIN WATERMARK ── -->
-  <?php $coin_src = defined('ETELID_LOGO_COIN_B64') ? ETELID_LOGO_COIN_B64 : ''; ?>
+  <?php $coin_src = defined('ETELID_URL') ? ETELID_URL . 'public/images/etel-master-coin-256.webp' : ( defined('ETELID_LOGO_COIN_B64') ? ETELID_LOGO_COIN_B64 : '' ); ?>
   <?php if ($coin_src): ?>
   <div class="ecb-coin-watermark" id="ecb-coin-back">
     <img src="<?php echo esc_attr($coin_src); ?>" alt="" draggable="false">

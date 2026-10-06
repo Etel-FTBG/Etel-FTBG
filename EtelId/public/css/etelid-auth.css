@@ -587,3 +587,44 @@
 .eid-cam-btn:disabled { opacity: .5; cursor: not-allowed; transform: none; }
 .eid-cam-btn-ghost { background: rgba(212,175,55,.06); color: var(--g6); margin-top: 8px; }
 .eid-cam-btn-ghost:hover { background: rgba(212,175,55,.14); color: var(--g5); }
+
+/* ════════════════════════════════════════════════
+   BRAND REFRESH v5 - master coin, forest-green field
+   (overrides earlier rules; see BRANDING.md)
+════════════════════════════════════════════════ */
+.eid-auth-left {
+  background:
+    radial-gradient(ellipse at 50% 38%, rgba(60,120,80,.55) 0%, rgba(0,0,0,0) 60%),
+    linear-gradient(160deg, #0E2A1C 0%, #0A1F15 55%, #07140E 100%);
+}
+.eid-auth-left::before {
+  background-image:
+    repeating-linear-gradient(30deg,  transparent 0,transparent 22px,rgba(212,175,55,.045) 22px,rgba(212,175,55,.045) 23px),
+    repeating-linear-gradient(-30deg, transparent 0,transparent 22px,rgba(212,175,55,.045) 22px,rgba(212,175,55,.045) 23px);
+}
+.eid-auth-brand { gap: 14px; }
+.eid-auth-coin {
+  width: min(300px, 64%); height: auto; aspect-ratio: 1; display: block;
+  filter: drop-shadow(0 18px 36px rgba(0,0,0,.55)) drop-shadow(0 0 40px rgba(212,175,55,.18));
+}
+.eid-auth-brand-name { font-size: 24px; letter-spacing: .2px; color: #FDF6D8; margin-top: 6px; }
+.eid-auth-brand-sub  { color: #D4AF37; letter-spacing: 1.6px; }
+.eid-auth-features { list-style: none; margin-top: 10px; gap: 4px; align-items: stretch; }
+.eid-auth-feature {
+  background: transparent; border: 0; border-radius: 0; backdrop-filter: none;
+  padding: 7px 2px; font-size: 14px; color: rgba(253,246,216,.82);
+  border-bottom: 1px solid rgba(212,175,55,.16); text-align: left;
+}
+.eid-auth-feature:last-child { border-bottom: 0; }
+.eid-auth-feature .ti { color: #D4AF37; font-size: 18px; }
+.eid-auth-feature span { font-size: inherit; }
+.eid-auth-holo { height: 3px; animation: none; background: linear-gradient(90deg, #078930 0 33.3%, #FCDD09 33.3% 66.6%, #DA121A 66.6% 100%); }
+.eid-af-input-icon { color: var(--g6); }
+@media (max-width: 820px) {
+  .eid-auth-coin { width: 112px; }
+  .eid-auth-brand-sub { display: none; }
+  .eid-auth-left { padding: 22px 20px 18px; }
+}
+@media (prefers-reduced-motion: reduce) { .ti-loader, .eid-auth-card, .eid-auth-brand { animation: none; } }
+.eid-auth-notice:not(.show) { margin: 0; padding-top: 0; padding-bottom: 0; border-width: 0; }
+.eid-af-label .ti { display: none; }
