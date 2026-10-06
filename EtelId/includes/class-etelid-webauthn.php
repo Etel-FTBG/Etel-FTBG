@@ -154,15 +154,20 @@ class EtelID_WebAuthn {
      *  LOGIN (use an already-enrolled device to sign in, no password)
      * ================================================================ */
 
+    /* Same message whether the account does not exist or just has no device
+       sign-in set up, so this endpoint cannot be used to find out which phone
+       numbers have an Etel-ID. */
+    const NO_DEVICE_MSG = 'Device sign-in is not set up for that account. Please sign in with your password.';
+
     /** Options for navigator.credentials.get() -- identifier is phone or Etel-ID, entered before the prompt. */
     public static function login_options( $identifier ) {
         $member = EtelID_DB::get_by_etel_id( strtoupper( $identifier ) );
         if ( ! $member ) $member = EtelID_DB::find_by_phone( $identifier );
-        if ( ! $member ) return new WP_Error( 'not_found', 'No account found for that phone/Etel-ID.' );
+        if ( ! $member ) return new WP_Error( 'no_device', self::NO_DEVICE_MSG );
 
         $bio = EtelID_DB::get_biometric( $member->id );
         if ( ! $bio || empty( $bio->webauthn_credential_id ) ) {
-            return new WP_Error( 'not_enrolled', 'No device biometric registered for this account yet.' );
+            return new WP_Error( 'no_device', self::NO_DEVICE_MSG );
         }
 
         $challenge = self::new_challenge( 'login_' . $member->id );
@@ -180,8 +185,34 @@ class EtelID_WebAuthn {
         );
     }
 
+    /** Passkey-first: options with no account entered. The device offers the
+     *  passkeys it holds for this site; the server finds the account from the
+     *  credential id that comes back. `_ses` ties the challenge to this attempt. */
+    public static function login_options_discoverable() {
+        $ses = self::b64url_encode( function_exists( 'random_bytes' ) ? random_bytes( 16 ) : openssl_random_pseudo_bytes( 16 ) );
+        $challenge = self::new_challenge( 'dlogin_' . $ses );
+        return array(
+            'challenge'        => self::b64url_encode( $challenge ),
+            'rpId'             => self::rp_id(),
+            'timeout'          => 60000,
+            'userVerification' => 'required',
+            'allowCredentials' => array(),
+            '_ses'             => $ses,
+        );
+    }
+
+    /** Find the member that owns a credential id (base64url). 0 if none. */
+    public static function member_id_for_credential( $credential_id ) {
+        global $wpdb;
+        if ( ! is_string( $credential_id ) || $credential_id === '' || strlen( $credential_id ) > 1024 ) return 0;
+        return (int) $wpdb->get_var( $wpdb->prepare(
+            'SELECT member_id FROM ' . EtelID_DB::t_biometric() . ' WHERE webauthn_credential_id = %s LIMIT 1',
+            $credential_id
+        ) );
+    }
+
     /** Verify the browser's assertion response; on success, starts a real login session. */
-    public static function verify_login( $member_id, $credential ) {
+    public static function verify_login( $member_id, $credential, $challenge_key = '' ) {
         $member = EtelID_DB::get_member( (int) $member_id );
         if ( ! $member ) return new WP_Error( 'not_found', 'Account not found.' );
 
@@ -199,7 +230,7 @@ class EtelID_WebAuthn {
             return new WP_Error( 'bad_client_data', 'Invalid sign-in response.' );
         }
 
-        $expected_challenge = self::consume_challenge( 'login_' . $member->id );
+        $expected_challenge = self::consume_challenge( $challenge_key !== '' ? $challenge_key : 'login_' . $member->id );
         if ( ! $expected_challenge || self::b64url_decode( $client_data['challenge'] ) !== $expected_challenge ) {
             return new WP_Error( 'bad_challenge', 'Sign-in expired -- please try again.' );
         }
@@ -216,6 +247,11 @@ class EtelID_WebAuthn {
         }
         if ( ! $auth_data['user_present'] ) {
             return new WP_Error( 'no_presence', 'Biometric presence was not confirmed.' );
+        }
+        /* We ask for userVerification=required, so the device must say the
+           person really passed Face ID / fingerprint / PIN - not just touched it. */
+        if ( empty( $auth_data['user_verified'] ) ) {
+            return new WP_Error( 'no_verification', 'Biometric verification was not confirmed.' );
         }
 
         /* The actual cryptographic proof: authenticatorData || SHA256(clientDataJSON),
