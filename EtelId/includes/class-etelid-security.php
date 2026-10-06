@@ -80,29 +80,115 @@ class EtelID_Security {
         return true;
     }
 
-    /* HARDENING: previously trusted CF-Connecting-IP/X-Forwarded-For
-     * unconditionally - both are ordinary client-settable HTTP headers
-     * unless something in front of this server (a CDN, a reverse proxy)
-     * strips any inbound copy before setting its own. This code has no
-     * way to confirm that's actually happening, so a request that
-     * reaches the origin directly can set either header to any value it
-     * wants and rotate through them, bypassing every per-IP rate limit
-     * in the system (login, password reset, Service API auth all key
-     * off this). Validating the header as a real IP at least blocks
-     * garbage/injection values; it does NOT by itself prove the header
-     * wasn't spoofed by the client - full protection also requires the
-     * server firewall to only accept inbound traffic from the CDN's own
-     * IP ranges (an infra-level setting, not something this code can
-     * enforce). REMOTE_ADDR is never spoofable (it's the actual TCP
-     * peer), so it stays last and always wins if nothing else validates. */
-    public static function get_ip() {
-        $keys = array( 'HTTP_CF_CONNECTING_IP', 'HTTP_X_FORWARDED_FOR' );
-        foreach ( $keys as $k ) {
-            if ( ! empty( $_SERVER[ $k ] ) ) {
-                $candidate = trim( explode( ',', sanitize_text_field( wp_unslash( $_SERVER[ $k ] ) ) )[0] );
-                if ( filter_var( $candidate, FILTER_VALIDATE_IP ) ) return $candidate;
-            }
+    /* Cloudflare's published proxy ranges (https://www.cloudflare.com/ips/).
+     * CF-Connecting-IP is only believed when the TCP peer (REMOTE_ADDR) is
+     * one of these, so a client hitting the origin directly cannot forge it. */
+    private static $cloudflare_ranges = array(
+        '173.245.48.0/20', '103.21.244.0/22', '103.22.200.0/22', '103.31.4.0/22',
+        '141.101.64.0/18', '108.162.192.0/18', '190.93.240.0/20', '188.114.96.0/20',
+        '197.234.240.0/22', '198.41.128.0/17', '162.158.0.0/15', '104.16.0.0/13',
+        '104.24.0.0/14', '172.64.0.0/13', '131.0.72.0/22',
+        '2400:cb00::/32', '2606:4700::/32', '2803:f800::/32', '2405:b500::/32',
+        '2405:8100::/32', '2a06:98c0::/29', '2c0f:f248::/32',
+    );
+
+    /* True when $ip falls inside the CIDR block (IPv4 or IPv6). */
+    public static function ip_in_cidr( $ip, $cidr ) {
+        $parts = explode( '/', $cidr );
+        if ( count( $parts ) !== 2 ) return false;
+        $a = @inet_pton( $ip );
+        $b = @inet_pton( $parts[0] );
+        if ( false === $a || false === $b || strlen( $a ) !== strlen( $b ) ) return false;
+        $bits = (int) $parts[1];
+        $full = (int) floor( $bits / 8 );
+        if ( $full > 0 && substr( $a, 0, $full ) !== substr( $b, 0, $full ) ) return false;
+        $rem = $bits % 8;
+        if ( $rem === 0 ) return true;
+        $mask = ( 0xFF << ( 8 - $rem ) ) & 0xFF;
+        return ( ord( $a[ $full ] ) & $mask ) === ( ord( $b[ $full ] ) & $mask );
+    }
+
+    /* Is $ip a proxy we trust to tell us the real client address?
+     * Cloudflare always; anything else only if listed in the
+     * ETELID_TRUSTED_PROXIES constant (comma-separated IPs or CIDRs). */
+    public static function is_trusted_proxy( $ip, $cloudflare_only = false ) {
+        foreach ( self::$cloudflare_ranges as $range ) {
+            if ( self::ip_in_cidr( $ip, $range ) ) return true;
         }
-        return isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : '';
+        if ( $cloudflare_only || ! defined( 'ETELID_TRUSTED_PROXIES' ) ) return false;
+        foreach ( explode( ',', (string) ETELID_TRUSTED_PROXIES ) as $entry ) {
+            $entry = trim( $entry );
+            if ( $entry === '' ) continue;
+            if ( strpos( $entry, '/' ) !== false ? self::ip_in_cidr( $ip, $entry ) : $entry === $ip ) return true;
+        }
+        return false;
+    }
+
+    /* HARDENING (v2): CF-Connecting-IP / X-Forwarded-For are ordinary
+     * client-settable headers, so every per-IP rate limit (login, password
+     * reset, NFC tap, Service API) could be bypassed by rotating them.
+     * They are now honoured ONLY when the TCP peer (REMOTE_ADDR, which
+     * cannot be spoofed) is a trusted proxy: Cloudflare's own ranges for
+     * CF-Connecting-IP, or an address listed in ETELID_TRUSTED_PROXIES for
+     * X-Forwarded-For. Otherwise the real peer address is used. If the site
+     * is not behind a proxy this simply returns REMOTE_ADDR. */
+    public static function get_ip() {
+        $peer = isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : '';
+        if ( $peer === '' || ! filter_var( $peer, FILTER_VALIDATE_IP ) ) return $peer;
+
+        if ( ! empty( $_SERVER['HTTP_CF_CONNECTING_IP'] ) && self::is_trusted_proxy( $peer, true ) ) {
+            $candidate = trim( sanitize_text_field( wp_unslash( $_SERVER['HTTP_CF_CONNECTING_IP'] ) ) );
+            if ( filter_var( $candidate, FILTER_VALIDATE_IP ) ) return $candidate;
+        }
+        if ( ! empty( $_SERVER['HTTP_X_FORWARDED_FOR'] ) && self::is_trusted_proxy( $peer ) ) {
+            $chain = explode( ',', sanitize_text_field( wp_unslash( $_SERVER['HTTP_X_FORWARDED_FOR'] ) ) );
+            /* the right-most address was added by our own trusted proxy */
+            $candidate = trim( end( $chain ) );
+            if ( filter_var( $candidate, FILTER_VALIDATE_IP ) ) return $candidate;
+        }
+        return $peer;
+    }
+
+    /* ---- Public (unauthenticated) view of a member ------------------
+     * The public verify page / QR scan is for answering "is this a real,
+     * active Etel-ID and whose?" - not for handing out the whole identity.
+     * Returns a COPY with the sensitive fields masked: date of birth keeps
+     * the year only, phone / FIN / card number keep the last digits, blood
+     * type is hidden. Name, photo, tier, status, company and validity dates
+     * stay so a genuine card still verifies. */
+    public static function public_view( $member ) {
+        $m = clone $member;
+        $mask = function ( $v, $keep ) {
+            $v = (string) $v;
+            if ( $v === '' ) return '';
+            $n = strlen( $v );
+            if ( $n <= $keep ) return str_repeat( '*', $n );
+            return str_repeat( '*', $n - $keep ) . substr( $v, -$keep );
+        };
+        if ( isset( $m->dob ) )         $m->dob         = substr( (string) $m->dob, 0, 4 );
+        if ( isset( $m->dob_eth ) )     $m->dob_eth     = '';
+        if ( isset( $m->blood_type ) )  $m->blood_type  = '';
+        if ( isset( $m->phone ) )       $m->phone       = $mask( $m->phone, 3 );
+        if ( isset( $m->email ) )       $m->email       = '';
+        if ( isset( $m->fin ) )         $m->fin         = $mask( $m->fin, 4 );
+        if ( isset( $m->card_number ) ) $m->card_number = $mask( $m->card_number, 4 );
+        return $m;
+    }
+
+    /* ---- Failed-attempt lockouts ------------------------------------
+     * rate_limit() above counts EVERY call, which is wrong for password
+     * checks (a courier who taps many times with the right password would
+     * lock themselves out). These count only FAILURES, per account: call
+     * fail_blocked() before checking a password, fail_hit() after a wrong
+     * one, fail_clear() after a right one. */
+    public static function fail_blocked( $key, $max = 8, $window = 900 ) {
+        return (int) get_transient( 'etelid_fl_' . md5( $key ) ) >= $max;
+    }
+    public static function fail_hit( $key, $window = 900 ) {
+        $t = 'etelid_fl_' . md5( $key );
+        set_transient( $t, (int) get_transient( $t ) + 1, $window );
+    }
+    public static function fail_clear( $key ) {
+        delete_transient( 'etelid_fl_' . md5( $key ) );
     }
 }

@@ -40,6 +40,7 @@ class Etelid_Nfc {
 
         add_action('wp_ajax_etelid_nfc_issue', array(__CLASS__, 'ajax_issue'));
         add_action('wp_ajax_etelid_nfc_revoke', array(__CLASS__, 'ajax_revoke'));
+        add_action('wp_ajax_etelid_nfc_revoke_member', array(__CLASS__, 'ajax_revoke_member'));
         add_action('wp_ajax_etelid_nfc_lookup_member', array(__CLASS__, 'ajax_lookup_member'));
 
         /* Public flow on the /m/{token} page - the scanning person
@@ -123,7 +124,7 @@ class Etelid_Nfc {
         return $token;
     }
 
-    public static function issue_card($member_id) {
+    public static function issue_card($member_id, $revoke_previous = true) {
         global $wpdb;
         $table = $wpdb->prefix . self::TABLE;
         $member_id = (int) $member_id;
@@ -148,6 +149,19 @@ class Etelid_Nfc {
 
         if (false === $inserted) {
             return new WP_Error('db_error', 'Could not issue card token.');
+        }
+
+        /* A new card replaces the old one: every EARLIER active card for
+           this member is revoked, so a lost / replaced / test card stops
+           working the moment a new one is issued (live data had 21 active
+           cards for 4 people). Pass $revoke_previous=false only to issue
+           an additional physical card on purpose. */
+        if ($revoke_previous) {
+            $wpdb->query($wpdb->prepare(
+                "UPDATE {$table} SET status = 'revoked' WHERE member_id = %d AND status = 'active' AND token <> %s",
+                $member_id,
+                $token
+            ));
         }
 
         return $token;
@@ -258,7 +272,8 @@ class Etelid_Nfc {
         }
 
         $member_id = isset($_POST['member_id']) ? (int) $_POST['member_id'] : 0;
-        $token = self::issue_card($member_id);
+        $keep_old = !empty($_POST['keep_old']);
+        $token = self::issue_card($member_id, !$keep_old);
 
         if (is_wp_error($token)) {
             wp_send_json_error(array('message' => $token->get_error_message()), 400);
@@ -281,6 +296,29 @@ class Etelid_Nfc {
         self::revoke_card($token);
 
         wp_send_json_success();
+    }
+
+    /* Lost-card button: revoke every active card a member holds. */
+    public static function revoke_all_for_member($member_id) {
+        global $wpdb;
+        $table = $wpdb->prefix . self::TABLE;
+        return $wpdb->query($wpdb->prepare(
+            "UPDATE {$table} SET status = 'revoked' WHERE member_id = %d AND status = 'active'",
+            (int) $member_id
+        ));
+    }
+
+    public static function ajax_revoke_member() {
+        check_ajax_referer('etelid_auth', 'nonce');
+
+        if (!current_user_can(ETELID_NFC_ADMIN_CAP)) {
+            wp_send_json_error(array('message' => 'Not allowed.'), 403);
+        }
+
+        $member_id = isset($_POST['member_id']) ? (int) $_POST['member_id'] : 0;
+        if ($member_id <= 0) wp_send_json_error(array('message' => 'Invalid member.'), 400);
+        $n = self::revoke_all_for_member($member_id);
+        wp_send_json_success(array('revoked' => (int) $n));
     }
 
     public static function ajax_lookup_member() {
@@ -311,6 +349,28 @@ class Etelid_Nfc {
     /* ---------------------------------------------------------------
      * Public flow: /m/{token} page - "confirm pickup" / "confirm delivery"
      * ------------------------------------------------------------- */
+
+    /* Password check for every NFC step, with a per-ACCOUNT lockout.
+       The old limit was per (IP + card token), so a guesser could rotate
+       IPs or cards and hammer one account's password; and these accounts
+       authorize real payments and payouts. After 8 wrong passwords the
+       account is locked for 15 minutes on this endpoint (whatever IP or
+       card is used); a correct password clears the count. */
+    protected static function verify_member_password($member, $plain) {
+        $lock_key = 'nfc_acct_' . strtolower((string) $member->etel_id);
+        if (class_exists('EtelID_Security') && EtelID_Security::fail_blocked($lock_key, 8, 900)) {
+            if (class_exists('EtelID_DB')) {
+                EtelID_DB::log($member->id, $member->etel_id, 'login_rate_limited', 'NFC password attempts blocked - too many wrong passwords');
+            }
+            wp_send_json_error(array('message' => 'Too many wrong passwords for this account. Please wait 15 minutes, or reset the password.'));
+        }
+        if (empty($member->pin_hash) || !EtelID_Auth::verify_password($plain, $member->pin_hash)) {
+            if (class_exists('EtelID_Security')) EtelID_Security::fail_hit($lock_key, 900);
+            return false;
+        }
+        if (class_exists('EtelID_Security')) EtelID_Security::fail_clear($lock_key);
+        return true;
+    }
 
     public static function resolve_token($token) {
         $card = self::get_card_row($token);
@@ -508,7 +568,7 @@ class Etelid_Nfc {
         if (!$confirmer) $confirmer = EtelID_DB::find_by_phone($ident);
         if (!$confirmer) wp_send_json_error(array('message' => 'No EtelID account found for that phone/Etel-ID.'));
 
-        if (empty($confirmer->pin_hash) || !EtelID_Auth::verify_password($pass, $confirmer->pin_hash)) {
+        if (!self::verify_member_password($confirmer, $pass)) {
             wp_send_json_error(array('message' => 'Incorrect password.'));
         }
         if ('suspended' === $confirmer->status || 'revoked' === $confirmer->status) {
@@ -816,7 +876,7 @@ class Etelid_Nfc {
             wp_send_json_error(array('message' => 'That is not the cardholder\'s account. Enter the tapped card owner\'s own phone/Etel-ID.'));
         }
 
-        if (empty($payer->pin_hash) || !EtelID_Auth::verify_password($password, $payer->pin_hash)) {
+        if (!self::verify_member_password($payer, $password)) {
             wp_send_json_error(array('message' => 'Incorrect password.'));
         }
         if ('suspended' === $payer->status || 'revoked' === $payer->status) {
@@ -912,7 +972,7 @@ class Etelid_Nfc {
         if (!$confirmer) $confirmer = EtelID_DB::find_by_phone($ident);
         if (!$confirmer) wp_send_json_error(array('message' => 'No EtelID account found for that phone/Etel-ID.'));
 
-        if (empty($confirmer->pin_hash) || !EtelID_Auth::verify_password($pass, $confirmer->pin_hash)) {
+        if (!self::verify_member_password($confirmer, $pass)) {
             wp_send_json_error(array('message' => 'Incorrect password.'));
         }
         if ('suspended' === $confirmer->status || 'revoked' === $confirmer->status) {

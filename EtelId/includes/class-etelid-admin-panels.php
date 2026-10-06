@@ -292,11 +292,12 @@ class EtelID_Admin_Panels {
         $member   = $id ? EtelID_DB::get_member( $id ) : null;
 
         if ( ! $member ) wp_send_json_error( array( 'message' => 'Member not found.' ) );
-        if ( strlen( $new_pass ) < 6 ) wp_send_json_error( array( 'message' => 'Password must be at least 6 characters.' ) );
+        if ( strlen( $new_pass ) < 8 ) wp_send_json_error( array( 'message' => 'Password must be at least 8 characters.' ) );
         if ( $new_pass !== $confirm ) wp_send_json_error( array( 'message' => 'Passwords do not match.' ) );
 
         EtelID_DB::update_member( $id, array( 'pin_hash' => EtelID_Auth::hash_password( $new_pass ) ) );
         EtelID_DB::log( $id, $member->etel_id, 'updated', 'Password reset by admin: ' . $admin->full_name );
+        EtelID_Auth::revoke_all_sessions( $id );
         wp_send_json_success( array( 'message' => 'Password reset for ' . $member->full_name . ' (' . $member->etel_id . ').' ) );
     }
 

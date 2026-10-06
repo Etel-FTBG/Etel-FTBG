@@ -205,10 +205,18 @@ def main():
     drv_onboarded = bool(drv_id) and etel_test_db.onboard_driver(drv_id)
     call("driver_go_online", {"lat": 7.05, "lng": 38.49}, token=drv_token)
 
+    # During a peak-hour surge window book_ride refuses (409) unless the client
+    # sends the price-lock token it got from ride_estimate_fare (the customer has
+    # "seen and accepted the real number"). Real clients always do, and CI runs at
+    # any hour, so the test does too - otherwise it only passed outside peak hours.
+    status, est = call("ride_estimate_fare", {"distance_km": 2.6, "vehicle_type": "bajaj"}, token=cust_token)
+    quote_token = ((est.get("data") or {}).get("quote_token")) if isinstance(est, dict) else None
+    check("ride_estimate_fare returns a price-lock token", bool(quote_token), est)
+
     status, res = call("book_ride", {
         "pickup_lat": 7.0500, "pickup_lng": 38.4900,
         "dropoff_lat": 7.0700, "dropoff_lng": 38.5000,
-        "payment_method": "cash",
+        "payment_method": "cash", "quote_token": quote_token,
     }, token=cust_token)
     check("book_ride succeeds with pickup and dropoff set", res.get("success") is True, res)
     ride_id = (res.get("data") or {}).get("request_id")
@@ -216,6 +224,7 @@ def main():
     status, res = call("book_ride", {
         "pickup_lat": 7.0500, "pickup_lng": 38.4900,
         "dropoff_lat": 7.0700, "dropoff_lng": 38.5000,
+        "quote_token": quote_token,
     }, token=cust_token)
     check("book_ride rejects a second active ride for the same customer",
           res.get("success") is False and status == 409, f"status={status} res={res}")

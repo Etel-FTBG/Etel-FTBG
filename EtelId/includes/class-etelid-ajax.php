@@ -124,6 +124,9 @@ class EtelID_Ajax {
         }
         $q = isset( $_POST['query'] ) ? sanitize_text_field( wp_unslash( $_POST['query'] ) ) : '';
         if ( ! $q ) wp_send_json_error( array( 'message' => 'Please enter an ID or FIN.' ) );
+        if ( ! EtelID_Security::rate_limit( 'verify_ajax_' . EtelID_Security::get_ip(), 30, 900 ) ) {
+            wp_send_json_error( array( 'message' => 'Too many lookups. Please wait a few minutes and try again.' ) );
+        }
         $member = EtelID_DB::get_by_etel_id( $q );
         if ( ! $member ) $member = EtelID_DB::get_by_fin( $q );
         if ( ! $member ) wp_send_json_error( array( 'message' => 'ID not found.' ) );

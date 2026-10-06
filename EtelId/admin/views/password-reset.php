@@ -21,8 +21,8 @@ if ( isset( $_POST['action_reset_member'] ) &&
 
     if ( ! $member_id ) {
         $message = 'Please select a member.'; $msg_type = 'err';
-    } elseif ( strlen( $new_pass ) < 6 ) {
-        $message = 'Password must be at least 6 characters.'; $msg_type = 'err';
+    } elseif ( strlen( $new_pass ) < 8 ) {
+        $message = 'Password must be at least 8 characters.'; $msg_type = 'err';
     } elseif ( $new_pass !== $confirm ) {
         $message = 'Passwords do not match.'; $msg_type = 'err';
     } else {
@@ -33,6 +33,7 @@ if ( isset( $_POST['action_reset_member'] ) &&
             ) );
             EtelID_DB::log( $member_id, $member->etel_id, 'updated',
                 'Password reset by admin: ' . wp_get_current_user()->display_name );
+            EtelID_Auth::revoke_all_sessions( $member_id );
             $message  = 'Password reset for ' . esc_html( $member->full_name ) . ' (' . $member->etel_id . ') successfully.';
             $msg_type = 'ok';
         } else {
@@ -50,10 +51,11 @@ if ( isset( $_POST['action_send_reset_email'] ) &&
 
     if ( $member && $member->email ) {
         /* Generate a temp password */
-        $temp_pass = strtoupper( substr( md5( uniqid( '', true ) ), 0, 8 ) );
+        $temp_pass = strtoupper( bin2hex( function_exists( 'random_bytes' ) ? random_bytes( 5 ) : openssl_random_pseudo_bytes( 5 ) ) );
         EtelID_DB::update_member( $member_id, array(
             'pin_hash' => EtelID_Auth::hash_password( $temp_pass )
         ) );
+        EtelID_Auth::revoke_all_sessions( $member_id );
 
         $subject = 'Your Etel-ID Password Has Been Reset';
         $body    = "Dear " . $member->full_name . ",\n\n"

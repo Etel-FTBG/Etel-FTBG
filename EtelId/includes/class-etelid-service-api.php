@@ -36,84 +36,131 @@ class EtelID_Service_API {
         add_action( 'rest_api_init', array( __CLASS__, 'register_routes' ) );
     }
 
+    /* route => method name. Each route is also a SCOPE name: a per-app key
+     * only works on the routes listed in its "scopes". */
+    private static $routes = array(
+        'resolve'             => 'resolve',
+        'authenticate'        => 'authenticate',
+        'company_admin'       => 'company_admin',
+        'check_role'          => 'check_role',
+        'list_company_roles'  => 'list_company_roles',
+        'set_company_role'    => 'set_company_role',
+        'remove_company_role' => 'remove_company_role',
+        'member_count'        => 'member_count',
+        'list_companies'      => 'list_companies',
+    );
+
     public static function register_routes() {
-        register_rest_route( 'etelid/v1', '/service/resolve', array(
-            'methods'             => 'POST',
-            'callback'            => array( __CLASS__, 'resolve' ),
-            'permission_callback' => array( __CLASS__, 'check_service_key' ),
-        ));
-        register_rest_route( 'etelid/v1', '/service/authenticate', array(
-            'methods'             => 'POST',
-            'callback'            => array( __CLASS__, 'authenticate' ),
-            'permission_callback' => array( __CLASS__, 'check_service_key' ),
-        ));
-        register_rest_route( 'etelid/v1', '/service/company_admin', array(
-            'methods'             => 'POST',
-            'callback'            => array( __CLASS__, 'company_admin' ),
-            'permission_callback' => array( __CLASS__, 'check_service_key' ),
-        ));
-        register_rest_route( 'etelid/v1', '/service/check_role', array(
-            'methods'             => 'POST',
-            'callback'            => array( __CLASS__, 'check_role' ),
-            'permission_callback' => array( __CLASS__, 'check_service_key' ),
-        ));
-        register_rest_route( 'etelid/v1', '/service/list_company_roles', array(
-            'methods'             => 'POST',
-            'callback'            => array( __CLASS__, 'list_company_roles' ),
-            'permission_callback' => array( __CLASS__, 'check_service_key' ),
-        ));
-        register_rest_route( 'etelid/v1', '/service/set_company_role', array(
-            'methods'             => 'POST',
-            'callback'            => array( __CLASS__, 'set_company_role' ),
-            'permission_callback' => array( __CLASS__, 'check_service_key' ),
-        ));
-        register_rest_route( 'etelid/v1', '/service/remove_company_role', array(
-            'methods'             => 'POST',
-            'callback'            => array( __CLASS__, 'remove_company_role' ),
-            'permission_callback' => array( __CLASS__, 'check_service_key' ),
-        ));
-        register_rest_route( 'etelid/v1', '/service/member_count', array(
-            'methods'             => 'POST',
-            'callback'            => array( __CLASS__, 'member_count' ),
-            'permission_callback' => array( __CLASS__, 'check_service_key' ),
-        ));
-        register_rest_route( 'etelid/v1', '/service/list_companies', array(
-            'methods'             => 'POST',
-            'callback'            => array( __CLASS__, 'list_companies' ),
-            'permission_callback' => array( __CLASS__, 'check_service_key' ),
-        ));
+        foreach ( self::$routes as $scope => $method ) {
+            register_rest_route( 'etelid/v1', '/service/' . $scope, array(
+                'methods'             => 'POST',
+                'callback'            => array( __CLASS__, $method ),
+                'permission_callback' => self::permission_for( $scope ),
+            ));
+        }
     }
 
-    /* ---- Shared-secret check (fail closed) ---------------------- */
-    public static function check_service_key( $request ) {
-    $expected = defined('ETELID_SERVICE_KEY') 
-        ? ETELID_SERVICE_KEY 
-        : get_option('etelid_service_key', '');
-
-    if (!$expected) {
-        return new WP_Error('no_key', 
-            'Service API key not configured.', 
-            array('status' => 503));
+    private static function permission_for( $scope ) {
+        return function ( $request ) use ( $scope ) {
+            return EtelID_Service_API::check_service_key( $request, $scope );
+        };
     }
 
-    $given = $request->get_header('x-etel-service-key');
-    if (!$given) {
-        return new WP_Error('forbidden', 
-            'Missing X-Etel-Service-Key header.', 
-            array('status' => 403));
+    /* ---- Service-key check (fail closed) -------------------------------
+     * Two kinds of key:
+     *   - the legacy MASTER key (ETELID_SERVICE_KEY): works on every route,
+     *     exactly as before, so nothing breaks while apps are migrated;
+     *   - PER-APP keys (ETELID_SERVICE_KEYS in wp-config.php, JSON), each
+     *     limited to the routes ("scopes") that app really needs and
+     *     optionally to its server's IPs, e.g.
+     *     define('ETELID_SERVICE_KEYS', '[
+     *       {"app":"delivery","key":"<random>","scopes":["resolve","authenticate","check_role","company_admin"]},
+     *       {"app":"etelgroup","key":"<random>","scopes":["list_company_roles","set_company_role","remove_company_role","member_count","list_companies"]}
+     *     ]');
+     * One compromised sibling app then exposes only its own scopes, and the
+     * audit log shows WHICH app made each call. Guessing keys is throttled
+     * per IP (20 misses / 15 min). To retire the master key once every app
+     * has its own key: define('ETELID_DISABLE_MASTER_KEY', true). */
+    private static $caller = array( 'app' => '', 'scopes' => array() );
+
+    public static function caller_label() {
+        return self::$caller['app'] !== '' ? self::$caller['app'] : 'unknown';
     }
 
-    // Primary key check
-    if (hash_equals($expected, $given)) return true;
+    private static function configured_keys() {
+        $raw = defined( 'ETELID_SERVICE_KEYS' ) ? ETELID_SERVICE_KEYS : get_option( 'etelid_service_keys', '' );
+        $list = is_array( $raw ) ? $raw : json_decode( (string) $raw, true );
+        if ( ! is_array( $list ) ) return array();
+        $out = array();
+        foreach ( $list as $e ) {
+            if ( ! is_array( $e ) || empty( $e['key'] ) || empty( $e['app'] ) ) continue;
+            if ( strlen( (string) $e['key'] ) < 24 ) continue;   /* refuse weak keys */
+            $out[] = array(
+                'app'    => sanitize_key( (string) $e['app'] ),
+                'key'    => (string) $e['key'],
+                'scopes' => isset( $e['scopes'] ) && is_array( $e['scopes'] ) ? array_map( 'strval', $e['scopes'] ) : array(),
+                'ips'    => isset( $e['ips'] ) && is_array( $e['ips'] ) ? array_map( 'strval', $e['ips'] ) : array(),
+            );
+        }
+        return $out;
+    }
 
-    // Grace period: also accept old key during rotation
-    $old_key = defined('ETELID_SERVICE_KEY_OLD') ? ETELID_SERVICE_KEY_OLD : '';
-    if ($old_key && hash_equals($old_key, $given)) return true;
+    public static function check_service_key( $request, $scope = '' ) {
+        $master = defined( 'ETELID_SERVICE_KEY' ) ? ETELID_SERVICE_KEY : get_option( 'etelid_service_key', '' );
+        if ( defined( 'ETELID_DISABLE_MASTER_KEY' ) && ETELID_DISABLE_MASTER_KEY ) $master = '';
+        $keys = self::configured_keys();
 
-    return new WP_Error('forbidden', 
-        'Invalid service key.', 
-        array('status' => 403));
-}
+        if ( ! $master && ! $keys ) {
+            return new WP_Error( 'no_key', 'Service API key not configured.', array( 'status' => 503 ) );
+        }
+
+        $ip = EtelID_Security::get_ip();
+        if ( EtelID_Security::fail_blocked( 'svc_key_' . $ip, 20, 900 ) ) {
+            return new WP_Error( 'rate_limited', 'Too many invalid service keys. Try again later.', array( 'status' => 429 ) );
+        }
+
+        $given = $request->get_header( 'x-etel-service-key' );
+        if ( ! $given ) {
+            return new WP_Error( 'forbidden', 'Missing X-Etel-Service-Key header.', array( 'status' => 403 ) );
+        }
+
+        /* Per-app keys first */
+        foreach ( $keys as $k ) {
+            if ( ! hash_equals( $k['key'], $given ) ) continue;
+            if ( $k['ips'] ) {
+                $ok_ip = false;
+                foreach ( $k['ips'] as $allowed ) {
+                    if ( strpos( $allowed, '/' ) !== false ? EtelID_Security::ip_in_cidr( $ip, $allowed ) : $allowed === $ip ) { $ok_ip = true; break; }
+                }
+                if ( ! $ok_ip ) {
+                    EtelID_DB::log( 0, '', 'service_key_denied', 'Key for app ' . $k['app'] . ' used from non-allowed IP ' . substr( $ip, 0, 45 ) );
+                    return new WP_Error( 'forbidden', 'This key is not valid from this address.', array( 'status' => 403 ) );
+                }
+            }
+            if ( $scope !== '' && ! in_array( $scope, $k['scopes'], true ) && ! in_array( '*', $k['scopes'], true ) ) {
+                EtelID_DB::log( 0, '', 'service_key_denied', 'App ' . $k['app'] . ' tried route outside its scope: ' . $scope );
+                return new WP_Error( 'forbidden', 'This key is not allowed to use that endpoint.', array( 'status' => 403 ) );
+            }
+            self::$caller = array( 'app' => $k['app'], 'scopes' => $k['scopes'] );
+            return true;
+        }
+
+        /* Legacy master key (full access) */
+        if ( $master && hash_equals( $master, $given ) ) {
+            self::$caller = array( 'app' => 'master-key', 'scopes' => array( '*' ) );
+            return true;
+        }
+
+        /* Grace period: also accept old master key during rotation */
+        $old_key = defined( 'ETELID_SERVICE_KEY_OLD' ) ? ETELID_SERVICE_KEY_OLD : '';
+        if ( $old_key && hash_equals( $old_key, $given ) ) {
+            self::$caller = array( 'app' => 'master-key-old', 'scopes' => array( '*' ) );
+            return true;
+        }
+
+        EtelID_Security::fail_hit( 'svc_key_' . $ip, 900 );
+        return new WP_Error( 'forbidden', 'Invalid service key.', array( 'status' => 403 ) );
+    }
 
 
     /* ---- Identifier -> member ----------------------------------- */
@@ -201,7 +248,7 @@ class EtelID_Service_API {
         $m = self::find_member( $ident );
         if ( ! $m ) return new WP_Error( 'not_found', 'No EtelID member matches that identifier.', array( 'status' => 404 ) );
 
-        EtelID_DB::log( $m->id, $m->etel_id, 'service_resolve', 'Service API lookup' );
+        EtelID_DB::log( $m->id, $m->etel_id, 'service_resolve', 'Service API lookup (app: ' . self::caller_label() . ')' );
         return rest_ensure_response( array( 'ok' => true, 'member' => self::member_payload( $m ) ) );
     }
 
@@ -238,10 +285,10 @@ class EtelID_Service_API {
          * password with no ceiling at all. Add the same per-identifier
          * cap here, checked before the DB lookup so a flood against a
          * non-existent identifier still costs nothing extra. */
-        if ( ! EtelID_Security::rate_limit( 'svc_auth_ident_' . md5( strtolower( $ident ) ), 8, 900 ) ) {
-            EtelID_DB::log( 0, '', 'login_rate_limited', 'Service API SSO blocked - too many attempts for identifier in the last 15 minutes' );
-            return new WP_Error( 'rate_limited', 'Too many attempts for this account. Please wait a few minutes, or reset the password.', array( 'status' => 429 ) );
-        }
+        /* Per-account protection is the failed-password lockout further down
+         * (8 wrong passwords -> 15 min). It replaced a limiter that counted
+         * every call, successful or not, and so could lock out a person who
+         * simply signed in to several Etel apps in a row. */
 
         $m = self::find_member( $ident );
         if ( ! $m ) return new WP_Error( 'not_found', 'No EtelID account found for that identifier.', array( 'status' => 404 ) );
@@ -250,7 +297,12 @@ class EtelID_Service_API {
         if ( $m->status === 'revoked' )   return new WP_Error( 'revoked', 'This EtelID has been revoked.', array( 'status' => 403 ) );
         if ( empty( $m->pin_hash ) )      return new WP_Error( 'no_password', 'No password set on this EtelID. Reset it at the EtelID portal first.', array( 'status' => 403 ) );
 
+        $lock_key = 'nfc_acct_' . strtolower( (string) $m->etel_id );   /* shared with the NFC steps */
+        if ( EtelID_Security::fail_blocked( $lock_key, 8, 900 ) ) {
+            return new WP_Error( 'rate_limited', 'Too many wrong passwords for this account. Please wait 15 minutes, or reset the password.', array( 'status' => 429 ) );
+        }
         if ( ! EtelID_Auth::verify_password( $pass, $m->pin_hash ) ) {
+            EtelID_Security::fail_hit( $lock_key, 900 );
             EtelID_DB::log( $m->id, $m->etel_id, 'login_failed', 'Service API SSO - wrong password' );
             return new WP_Error( 'wrong_password', 'Incorrect EtelID password.', array( 'status' => 401 ) );
         }
@@ -259,6 +311,8 @@ class EtelID_Service_API {
          * with a clear reason. Checked only AFTER the password is verified so
          * this can never reveal an account's state to someone who does not
          * know its password. The calling app names itself with `app`. */
+        EtelID_Security::fail_clear( $lock_key );
+
         $app = (string) $request->get_param( 'app' );
         if ( '' !== $app && ! self::app_allowed_for( $m, $app ) ) {
             EtelID_DB::log( $m->id, $m->etel_id, 'limited_blocked', 'Limited account refused by ' . substr( sanitize_key( $app ), 0, 30 ) );
@@ -267,7 +321,7 @@ class EtelID_Service_API {
                 array( 'status' => 403 ) );
         }
 
-        EtelID_DB::log( $m->id, $m->etel_id, 'login', 'Service API SSO (' . substr( $ip, 0, 45 ) . ')' );
+        EtelID_DB::log( $m->id, $m->etel_id, 'login', 'Service API SSO (' . substr( $ip, 0, 45 ) . ', app: ' . self::caller_label() . ')' );
 
         $payload = array( 'ok' => true, 'member' => self::member_payload( $m ) );
 
@@ -394,7 +448,7 @@ class EtelID_Service_API {
         $company_name = isset( $canonical[ $slug ] ) ? $canonical[ $slug ]['name'] : ucfirst( str_replace( '-', ' ', $slug ) );
 
         EtelID_DB::set_company_role( $member->id, $slug, $company_name, $role );
-        EtelID_DB::log( $member->id, $member->etel_id, 'company_role_set', "Set role '{$role}' for company '{$slug}' via EtelGroup admin" );
+        EtelID_DB::log( $member->id, $member->etel_id, 'company_role_set', "Set role '{$role}' for company '{$slug}' via EtelGroup admin (app: " . self::caller_label() . ')' );
 
         return rest_ensure_response( array(
             'ok' => true,
@@ -428,7 +482,7 @@ class EtelID_Service_API {
         $member = EtelID_DB::get_member( $link->member_id );
         if ( $member ) {
             EtelID_DB::log( $member->id, $member->etel_id, 'company_role_removed',
-                "Removed role '{$link->role_at}' for company '{$slug}' via EtelGroup admin" );
+                "Removed role '{$link->role_at}' for company '{$slug}' via EtelGroup admin (app: " . self::caller_label() . ')' );
         }
 
         return rest_ensure_response( array( 'ok' => true, 'message' => 'Role removed.' ) );

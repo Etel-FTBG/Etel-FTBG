@@ -5,6 +5,12 @@
  */
 if ( ! defined( 'ABSPATH' ) ) exit;
 
+/* Anti-harvesting: at most 60 verify-page lookups per IP per 15 minutes. */
+if ( get_query_var('etelid_verify') && ! EtelID_Security::rate_limit( 'verify_page_' . EtelID_Security::get_ip(), 60, 900 ) ) {
+    status_header( 429 );
+    wp_die( 'Too many verification requests. Please try again in a few minutes.', 'Too many requests', array( 'response' => 429 ) );
+}
+
 /* Clean the ID from the URL — strip non-ASCII for safety */
 $raw_id  = get_query_var('etelid_verify');
 /* Decode URL-encoded Ethiopic characters (e.g. %E1%A4%A4 → ኤ) */
@@ -20,6 +26,13 @@ if ( ! $member && $etel_id ) {
 if ( $member && $member->status === 'active' ) {
     EtelID_DB::increment_scan( $member->id );
     EtelID_DB::log( $member->id, $member->etel_id, 'verified', 'QR scan' );
+}
+
+/* SECURITY: this page is public and Etel-IDs are sequential. Mask the
+ * sensitive fields (see EtelID_Security::public_view) and throttle lookups
+ * so the verify page cannot be used to harvest the member list. */
+if ( $member ) {
+    $member = EtelID_Security::public_view( $member );
 }
 
 $org_name    = get_option('etelid_org_name',    'Etel Group');
