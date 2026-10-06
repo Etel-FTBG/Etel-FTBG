@@ -255,5 +255,23 @@ restore_error_handler();
 check( 'unknown account and not-enrolled give the same message (no account enumeration)',
     EtelID_WebAuthn::login_options( '+251900000000' )->get_error_message() === EtelID_WebAuthn::NO_DEVICE_MSG );
 
+echo "front-end assets are self-hosted (no third-party CSS/fonts in the critical path)\n";
+$root = dirname( __DIR__ );
+$bad = array(); $icon_css = file_get_contents( $root . '/public/css/etelid-icons.css' ); $used = array();
+foreach ( array_merge( glob( $root . '/templates/*.php' ), glob( $root . '/includes/*.php' ), glob( $root . '/public/css/*.css' ), glob( $root . '/admin/css/*.css' ), array( $root . '/etel-id.php' ) ) as $f ) {
+    $c = file_get_contents( $f );
+    if ( preg_match( '#fonts\.googleapis\.com|fonts\.gstatic\.com|tabler-icons-webfont|cdn\.jsdelivr\.net/npm/@tabler#', $c ) ) $bad[] = basename( $f );
+    if ( substr( $f, -4 ) === '.php' && basename( $f ) !== 'etel-logo-b64.php' && basename( $f ) !== 'etel-coin-b64.php' ) {
+        preg_match_all( '/\bti-([a-z0-9]+(?:-[a-z0-9]+)*)/', $c, $m ); foreach ( $m[1] as $n ) $used[ $n ] = 1;
+    }
+}
+check( 'no Google Fonts / icon-font CDN left in templates, includes or css', ! $bad, implode( ', ', $bad ) );
+$missing = array(); foreach ( array_keys( $used ) as $n ) { if ( $n !== 'spin' && strpos( $icon_css, '.ti-' . $n . '{' ) === false ) $missing[] = $n; }
+check( 'every ti-* icon used anywhere has a rule in etelid-icons.css', ! $missing, implode( ', ', $missing ) );
+foreach ( array( 'syne-latin-wght-normal', 'jetbrains-mono-latin-wght-normal', 'noto-sans-latin-wght-normal', 'cormorant-garamond-latin-wght-normal', 'noto-sans-ethiopic-ethiopic-wght-normal', 'oswald-latin-600-normal' ) as $ff ) {
+    if ( ! file_exists( $root . '/public/fonts/' . $ff . '.woff2' ) ) $missing[] = $ff;
+}
+check( 'all self-hosted font files exist', ! $missing, implode( ', ', $missing ) );
+
 echo "\n" . ( $fails ? "FAILED: $fails" : 'All EtelID security unit tests passed' ) . "\n";
 exit( $fails ? 1 : 0 );

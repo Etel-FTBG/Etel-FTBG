@@ -89,6 +89,7 @@ function etelid_boot() {
 }
 
 function etelid_frontend_assets() {
+    wp_enqueue_style( 'etelid-fonts', ETELID_URL . 'public/css/etelid-fonts.css', array(), ETELID_VERSION );
     wp_enqueue_style(
         'etelid-card',
         ETELID_URL . 'public/css/etelid-card.css',
@@ -132,6 +133,7 @@ function etelid_frontend_assets() {
 
 function etelid_admin_assets( $hook ) {
     if ( strpos( $hook, 'etel-id' ) === false ) return;
+    wp_enqueue_style( 'etelid-fonts', ETELID_URL . 'public/css/etelid-fonts.css', array(), ETELID_VERSION );
     wp_enqueue_style(
         'etelid-admin',
         ETELID_URL . 'admin/css/etelid-admin.css',

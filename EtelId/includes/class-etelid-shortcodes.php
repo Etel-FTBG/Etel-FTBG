@@ -31,6 +31,7 @@ class EtelID_Shortcodes {
 
     /* ── [etelid_apply] ──────────────────────────────── */
     public static function sc_apply( $atts ) {
+        wp_enqueue_style( 'etelid-fonts', ETELID_URL . 'public/css/etelid-fonts.css', array(), ETELID_VERSION );
         wp_enqueue_style(  'etelid-card',   ETELID_URL . 'public/css/etelid-card.css',   array(), ETELID_VERSION );
         wp_enqueue_style(  'etelid-public', ETELID_URL . 'public/css/etelid-public.css', array('etelid-card'), ETELID_VERSION );
         wp_enqueue_script( 'etelid-front',  ETELID_URL . 'public/js/etelid-front.js',    array(), ETELID_VERSION, true );
@@ -61,6 +62,7 @@ class EtelID_Shortcodes {
         $member = EtelID_DB::get_by_etel_id( $etelid );
         if ( ! $member ) return '<p style="color:#ef4444">Etel-ID not found: ' . esc_html( $etelid ) . '</p>';
 
+        wp_enqueue_style( 'etelid-fonts', ETELID_URL . 'public/css/etelid-fonts.css', array(), ETELID_VERSION );
         wp_enqueue_style(  'etelid-card',   ETELID_URL . 'public/css/etelid-card.css',   array(), ETELID_VERSION );
         wp_enqueue_script( 'etelid-front',  ETELID_URL . 'public/js/etelid-front.js',    array(), ETELID_VERSION, true );
 
@@ -81,7 +83,7 @@ class EtelID_Shortcodes {
         $cos    = count( EtelID_Generator::companies() );
 
         ob_start(); ?>
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
+        <link rel="stylesheet" href="<?php echo esc_url( ETELID_URL . 'public/css/etelid-icons.css?v=' . filemtime( ETELID_PATH . 'public/css/etelid-icons.css' ) ); ?>">
         <style>
         .eid-stats-widget{display:flex;flex-wrap:wrap;gap:14px;font-family:'Rajdhani',sans-serif;margin:20px 0}
         .eid-sw-card{background:#13151c;border:1px solid rgba(200,146,42,.2);border-radius:10px;padding:16px 20px;min-width:130px;flex:1;position:relative;overflow:hidden}
@@ -117,6 +119,7 @@ class EtelID_Shortcodes {
         if ( ! $member ) {
             return '<p style="color:#a89060;font-family:Rajdhani,sans-serif;font-size:15px">Please <a href="' . esc_url( home_url('/login/') ) . '" style="color:#e8b84b;font-weight:700">sign in to your Etel-ID account</a> to view your card.</p>';
         }
+        wp_enqueue_style( 'etelid-fonts', ETELID_URL . 'public/css/etelid-fonts.css', array(), ETELID_VERSION );
         wp_enqueue_style(  'etelid-card',  ETELID_URL . 'public/css/etelid-card.css', array(), ETELID_VERSION );
         wp_enqueue_script( 'etelid-front', ETELID_URL . 'public/js/etelid-front.js',  array(), ETELID_VERSION, true );
         $companies = EtelID_DB::get_companies( $member->id );

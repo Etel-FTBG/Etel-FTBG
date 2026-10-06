@@ -97,10 +97,9 @@ if ( $is_valid ) {
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Etel-ID Verify · <?php echo esc_html($etel_id ?: 'Check ID'); ?></title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=JetBrains+Mono:wght@400;600;700&family=Cormorant+Garamond:wght@400;600;700&family=Noto+Sans+Ethiopic:wght@400;600;700&family=Noto+Sans:wght@400;600;700&display=swap" rel="stylesheet">
-<style><?php echo file_get_contents(ETELID_PATH.'public/css/etelid-icons.css'); ?>
-.eid-print-nav-logo,.v-nav-logo,.af-nav-logo{width:36px!important;height:36px!important;filter:drop-shadow(0 2px 8px rgba(0,0,0,.5))!important}</style>
+<link rel="stylesheet" href="<?php echo esc_url( ETELID_URL . 'public/css/etelid-fonts.css?v=' . filemtime( ETELID_PATH . 'public/css/etelid-fonts.css' ) ); ?>">
+<link rel="stylesheet" href="<?php echo esc_url( ETELID_URL . 'public/css/etelid-icons.css?v=' . filemtime( ETELID_PATH . 'public/css/etelid-icons.css' ) ); ?>">
+<style>.eid-print-nav-logo,.v-nav-logo,.af-nav-logo{width:36px!important;height:36px!important;filter:drop-shadow(0 2px 8px rgba(0,0,0,.5))!important}</style>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 <?php echo $card_css; ?>
@@ -461,7 +460,7 @@ body::before{
     <span class="v-nav-sub">Official <?php echo esc_html($org_name); ?> · ኢትኤል ቡድን Identity Check</span>
   </div>
   <a href="<?php echo esc_url(home_url('/apply/')); ?>" class="v-nav-apply">
-    <i class="ti ti-id-card" aria-hidden="true"></i> Get Your ID
+    <i class="ti ti-id" aria-hidden="true"></i> Get Your ID
   </a>
 </nav>
 
@@ -510,7 +509,7 @@ body::before{
   <!-- ══ 3D CARD VIEWER ══ -->
   <div class="v-card-section">
     <div class="v-card-head">
-      <div class="v-card-head-icon"><i class="ti ti-id-card" style="color:#FDF6D8" aria-hidden="true"></i></div>
+      <div class="v-card-head-icon"><i class="ti ti-id" style="color:#FDF6D8" aria-hidden="true"></i></div>
       <h3><?php echo esc_html($member->full_name); ?></h3>
       <span class="v-card-tip">CLICK TO FLIP</span>
     </div>
