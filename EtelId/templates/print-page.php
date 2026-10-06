@@ -39,10 +39,9 @@ $status_class = 'eid-print-status-' . ($member->status === 'active' ? 'active' :
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Print · <?php echo esc_html($member->etel_id); ?> · <?php echo esc_html($org_name); ?></title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=JetBrains+Mono:wght@400;500;600;700&family=Cormorant+Garamond:wght@400;600;700&family=Noto+Sans+Ethiopic:wght@400;600;700&family=Noto+Sans:wght@400;600;700&family=Oswald:wght@500;600;700&display=swap" rel="stylesheet">
-<style><?php echo file_get_contents(ETELID_PATH.'public/css/etelid-icons.css'); ?>
-.eid-print-nav-logo,.v-nav-logo,.af-nav-logo{width:36px!important;height:36px!important;filter:drop-shadow(0 2px 8px rgba(0,0,0,.5))!important}</style>
+<link rel="stylesheet" href="<?php echo esc_url( ETELID_URL . 'public/css/etelid-fonts.css?v=' . (int) @filemtime( ETELID_PATH . 'public/css/etelid-fonts.css' ) ); ?>">
+<link rel="stylesheet" href="<?php echo esc_url( ETELID_URL . 'public/css/etelid-icons.css?v=' . (int) @filemtime( ETELID_PATH . 'public/css/etelid-icons.css' ) ); ?>">
+<style>.eid-print-nav-logo,.v-nav-logo,.af-nav-logo{width:36px!important;height:36px!important;filter:drop-shadow(0 2px 8px rgba(0,0,0,.5))!important}</style>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 :root{
@@ -123,7 +122,7 @@ body{font-family:'Cormorant Garamond',serif;}
           <i class="ti ti-id"></i> Front
         </button>
         <button class="eid-orient-btn" id="btn-back" onclick="showFace('back')">
-          <i class="ti ti-rotate-180"></i> Back
+          <i class="ti ti-rotate-2"></i> Back
         </button>
         <button class="eid-orient-btn" id="btn-both" onclick="showFace('both')">
           <i class="ti ti-layout-rows"></i> Both
