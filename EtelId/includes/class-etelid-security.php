@@ -149,6 +149,27 @@ class EtelID_Security {
         return $peer;
     }
 
+    /* ---- Keep personal pages out of page caches ----------------------
+     * EtelID sign-ins are NOT WordPress logins, so a page cache (SpeedyCache
+     * is active on the live site; LiteSpeed's cache can be too) sees every
+     * visitor as anonymous and may store the page it rendered for a signed-in
+     * member - then serve that member's card or portal to the next visitor.
+     * Call this before rendering anything personal: it sets the "do not
+     * cache" constants the common cache plugins honour plus private/no-store
+     * headers for browsers, proxies and LiteSpeed. */
+    public static function no_cache() {
+        foreach ( array( 'DONOTCACHEPAGE', 'DONOTCACHEOBJECT', 'DONOTCACHEDB', 'DONOTMINIFY', 'DONOTCDN', 'DONOTCACHE' ) as $c ) {
+            if ( ! defined( $c ) ) define( $c, true );
+        }
+        if ( function_exists( 'nocache_headers' ) ) nocache_headers();
+        if ( ! headers_sent() ) {
+            header( 'Cache-Control: private, no-store, no-cache, must-revalidate, max-age=0' );
+            header( 'Pragma: no-cache' );
+            header( 'X-LiteSpeed-Cache-Control: no-cache, no-store' );
+            header( 'X-Robots-Tag: noindex, nofollow' );
+        }
+    }
+
     /* ---- Public (unauthenticated) view of a member ------------------
      * The public verify page / QR scan is for answering "is this a real,
      * active Etel-ID and whose?" - not for handing out the whole identity.

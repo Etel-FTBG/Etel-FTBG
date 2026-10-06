@@ -94,6 +94,11 @@ check( 'FIN shows last 4 only', $v->fin === '********9012' );
 check( 'card number shows last 4 only', $v->card_number === '************3456' );
 check( 'name / status / id kept so a real card still verifies', $v->full_name === 'Abebe K' && $v->status === 'active' && $v->etel_id === 'EG-2026-00001' );
 
+echo "personal pages are kept out of page caches\n";
+EtelID_Security::no_cache();
+check( 'DONOTCACHEPAGE is set (SpeedyCache / WP cache plugins honour it)', defined( 'DONOTCACHEPAGE' ) && DONOTCACHEPAGE === true );
+check( 'DONOTMINIFY / DONOTCDN set', defined( 'DONOTMINIFY' ) && defined( 'DONOTCDN' ) );
+
 echo "service API keys and scopes\n";
 define( 'ETELID_SERVICE_KEY', 'MASTER_master_master_master_1234' );
 define( 'ETELID_SERVICE_KEYS', json_encode( array(

@@ -1,5 +1,24 @@
 # EtelID - Week 1 security hardening
 
+> **WHERE THE FILES GO (important).** The live EtelID site is WordPress at
+> `public_html/EtelId/` and its active plugin folder is
+> **`public_html/EtelId/wp-content/plugins/etel-id-v3/`** (confirmed from the
+> site's `active_plugins` setting). Everything under this repo's `EtelId/`
+> folder belongs INSIDE that plugin folder - not next to `wp-config.php`.
+> The deploy zip is therefore laid out as
+> `EtelId/wp-content/plugins/etel-id-v3/...` so extracting it at `public_html`
+> lands each file in the right place.
+>
+> **How to tell the new code is live:** sign in to Delivery with EtelID, then
+> look at the EtelID audit log: new "Service API SSO" lines end with
+> `app: master-key` (or your per-app name). Old code has no `app:` part.
+>
+> **Page cache (SpeedyCache is active).** After uploading: SpeedyCache ->
+> Delete Cache. Also add these to SpeedyCache's *Exclude* list so personal
+> pages are never cached: `/print/`, `/portal/`, `/login/`, `/profile/`,
+> `/m/`, `/reset-password/`, `/verify-pass2/`. (The code now also sends
+> do-not-cache signals for these pages, but exclude them as a second lock.)
+
 What changed, and the few things only YOU can do on the server.
 Nothing here changes how the card, login or portal look.
 
@@ -14,6 +33,7 @@ Nothing here changes how the card, login or portal look.
 | 5 | Old/lost NFC cards stayed valid forever (21 active cards for 4 people) | Issuing a new card revokes the member's earlier cards (tick "keep old" to add a second physical card on purpose). New `etelid_nfc_revoke_member` action = lost-card button |
 | 6 | Resetting a password did not log other devices out; ~47 live sessions per person | Password change/reset (self-service, portal, admin) ends the other sessions. Each person keeps at most 15 sessions |
 | 7 | Code-patching endpoint secret could be guessed without limit; a stray EtelPay `updater-api.php` sat in the plugin | Secret guesses locked per IP (8 misses / 15 min). `updater-api.php` removed from the repo |
+| 8 | Personal pages (print, portal, NFC) could be stored by the page cache and served to other visitors, because EtelID sign-ins are not WordPress logins | These pages now send do-not-cache constants and private/no-store headers |
 | - | Admin password reset allowed 6 chars; emailed temp password used `md5(uniqid())` | 8-char minimum; temp password from a secure random source; admin reset also ends sessions |
 
 ## Do these on the server (cPanel, ~15 minutes)
