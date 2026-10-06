@@ -290,7 +290,7 @@ class Etelid_Nfc {
             return;
         }
 
-        if (class_exists('EtelID_Security')) EtelID_Security::no_cache();
+        if (class_exists('EtelID_Security')) { EtelID_Security::no_cache(); EtelID_Security::security_headers(); }
 
         $card = self::get_card_row($token);
 

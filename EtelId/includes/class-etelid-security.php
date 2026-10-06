@@ -201,6 +201,72 @@ class EtelID_Security {
         }
     }
 
+    /* ---- Browser security headers for EtelID's own pages --------------
+     * Always on (safe): nosniff, referrer trimming, no microphone/payment/usb.
+     * Content-Security-Policy follows ETELID_CSP_MODE (wp-config.php):
+     *   'report'  (default) - the browser only REPORTS what it would block
+     *   'enforce'           - the browser blocks it
+     *   'off'               - no CSP header
+     * The pages still use inline scripts and styles, so script-src keeps
+     * 'unsafe-inline'; the policy locks down everything else (which hosts may
+     * serve scripts, frames, forms, plugins and the base URL). */
+    public static function csp_mode() {
+        $m = defined( 'ETELID_CSP_MODE' ) ? ETELID_CSP_MODE : 'report';
+        return in_array( $m, array( 'off', 'enforce' ), true ) ? $m : 'report';
+    }
+
+    public static function csp_policy( $report_uri = '' ) {
+        $p = array(
+            "default-src 'self'",
+            "script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' blob: https://ethelmarket.com https://cdn.jsdelivr.net",
+            "worker-src 'self' blob: https://cdn.jsdelivr.net",
+            "style-src 'self' 'unsafe-inline'",
+            "img-src 'self' data: blob: https:",
+            "media-src 'self' blob:",
+            "font-src 'self' data:",
+            "connect-src 'self' https://cdn.jsdelivr.net https://tessdata.projectnaptha.com https://ethelmarket.com",
+            "frame-src 'self'",
+            "frame-ancestors 'self'",
+            "form-action 'self'",
+            "base-uri 'self'",
+            "object-src 'none'",
+        );
+        if ( $report_uri !== '' ) $p[] = 'report-uri ' . $report_uri;
+        return implode( '; ', $p );
+    }
+
+    public static function security_headers() {
+        if ( headers_sent() ) return;
+        header( 'X-Content-Type-Options: nosniff' );
+        header( 'Referrer-Policy: strict-origin-when-cross-origin' );
+        header( 'Permissions-Policy: microphone=(), payment=(), usb=()' );
+        $mode = self::csp_mode();
+        if ( $mode === 'off' ) return;
+        $uri = function_exists( 'admin_url' ) ? admin_url( 'admin-ajax.php?action=etelid_csp_report' ) : '';
+        header( ( $mode === 'enforce' ? 'Content-Security-Policy: ' : 'Content-Security-Policy-Report-Only: ' ) . self::csp_policy( $uri ) );
+    }
+
+    /* Record one browser CSP report (called by the etelid_csp_report ajax
+       action). Only the first report of each kind per hour is stored, and
+       only a handful of fields, so a noisy page or a hostile sender cannot
+       fill the log. */
+    public static function record_csp_report( $raw ) {
+        $j = json_decode( (string) $raw, true );
+        $r = is_array( $j ) && isset( $j['csp-report'] ) && is_array( $j['csp-report'] ) ? $j['csp-report'] : null;
+        if ( ! $r ) return false;
+        $dir = isset( $r['effective-directive'] ) ? $r['effective-directive'] : ( isset( $r['violated-directive'] ) ? $r['violated-directive'] : '' );
+        $blk = isset( $r['blocked-uri'] ) ? $r['blocked-uri'] : '';
+        $doc = isset( $r['document-uri'] ) ? $r['document-uri'] : '';
+        $clean = function ( $v ) { return substr( preg_replace( '/[^\x20-\x7E]/', '', (string) $v ), 0, 160 ); };
+        $dir = $clean( $dir ); $blk = $clean( $blk ); $doc = $clean( strtok( $doc, '?' ) );
+        if ( $dir === '' ) return false;
+        $sig = 'etelid_csp_' . md5( $dir . '|' . $blk . '|' . $doc );
+        if ( get_transient( $sig ) ) return false;
+        set_transient( $sig, 1, 3600 );
+        EtelID_DB::log( 0, '', 'csp_report', 'mode ' . self::csp_mode() . ' | ' . $dir . ' | blocked: ' . $blk . ' | page: ' . $doc );
+        return true;
+    }
+
     /* ---- Public (unauthenticated) view of a member ------------------
      * The public verify page / QR scan is for answering "is this a real,
      * active Etel-ID and whose?" - not for handing out the whole identity.

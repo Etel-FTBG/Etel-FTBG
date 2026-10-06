@@ -299,7 +299,7 @@ $root = dirname( __DIR__ );
 $bad = array(); $icon_css = file_get_contents( $root . '/public/css/etelid-icons.css' ); $used = array();
 foreach ( array_merge( glob( $root . '/templates/*.php' ), glob( $root . '/includes/*.php' ), glob( $root . '/admin/views/*.php' ), glob( $root . '/public/css/*.css' ), glob( $root . '/admin/css/*.css' ), array( $root . '/etel-id.php' ) ) as $f ) {
     $c = file_get_contents( $f );
-    if ( preg_match( '#fonts\.googleapis\.com|fonts\.gstatic\.com|tabler-icons-webfont|cdn\.jsdelivr\.net|unpkg\.com|cdnjs\.cloudflare\.com#', $c ) ) $bad[] = basename( $f );
+    if ( basename( $f ) !== 'class-etelid-security.php' /* its CSP allow-list names the hosts on purpose */ && preg_match( '#fonts\.googleapis\.com|fonts\.gstatic\.com|tabler-icons-webfont|cdn\.jsdelivr\.net|unpkg\.com|cdnjs\.cloudflare\.com#', $c ) ) $bad[] = basename( $f );
     if ( substr( $f, -4 ) === '.php' && basename( $f ) !== 'etel-logo-b64.php' && basename( $f ) !== 'etel-coin-b64.php' ) {
         preg_match_all( '/\bti-([a-z0-9]+(?:-[a-z0-9]+)*)/', $c, $m ); foreach ( $m[1] as $n ) $used[ $n ] = 1;
     }
@@ -311,6 +311,20 @@ foreach ( array( 'syne-latin-wght-normal', 'jetbrains-mono-latin-wght-normal', '
     if ( ! file_exists( $root . '/public/fonts/' . $ff . '.woff2' ) ) $missing[] = $ff;
 }
 check( 'all self-hosted font files exist', ! $missing, implode( ', ', $missing ) );
+
+echo "browser security headers and CSP reports\n";
+check( 'default CSP mode is report-only (nothing is blocked until you choose enforce)', EtelID_Security::csp_mode() === 'report' );
+$pol = EtelID_Security::csp_policy( 'https://x/y' );
+check( 'policy forbids plugins, foreign frames, foreign forms and a changed base URL',
+    strpos( $pol, "object-src 'none'" ) !== false && strpos( $pol, "frame-ancestors 'self'" ) !== false && strpos( $pol, "form-action 'self'" ) !== false && strpos( $pol, "base-uri 'self'" ) !== false );
+check( 'policy allows no Google Fonts or other font/icon hosts', strpos( $pol, 'googleapis' ) === false && strpos( $pol, 'gstatic' ) === false && strpos( $pol, "font-src 'self' data:" ) !== false );
+check( 'policy carries the report address', substr( $pol, -18 ) === 'report-uri https://x/y' || strpos( $pol, 'report-uri https://x/y' ) !== false );
+$GLOBALS['__log'] = array();
+$rep = json_encode( array( 'csp-report' => array( 'effective-directive' => 'script-src-elem', 'blocked-uri' => 'https://evil.example/a.js', 'document-uri' => 'https://ethelmarket.com/EtelId/login/?token=SECRET' ) ) );
+check( 'a CSP report is stored once', EtelID_Security::record_csp_report( $rep ) === true && count( $GLOBALS['__log'] ) === 1 );
+check( 'the same report again within the hour is ignored (log cannot be flooded)', EtelID_Security::record_csp_report( $rep ) === false && count( $GLOBALS['__log'] ) === 1 );
+check( 'the stored report drops the query string of the page address', strpos( $GLOBALS['__log'][0][1], 'SECRET' ) === false && strpos( $GLOBALS['__log'][0][1], 'script-src-elem' ) !== false );
+check( 'junk reports are refused', EtelID_Security::record_csp_report( 'not json' ) === false && EtelID_Security::record_csp_report( '{"csp-report":{}}' ) === false );
 
 echo "\n" . ( $fails ? "FAILED: $fails" : 'All EtelID security unit tests passed' ) . "\n";
 exit( $fails ? 1 : 0 );
