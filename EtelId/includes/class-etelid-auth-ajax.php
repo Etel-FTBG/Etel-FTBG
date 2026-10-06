@@ -36,6 +36,11 @@ class EtelID_Auth_Ajax {
             'etelid_webauthn_login_verify'     => 'webauthn_login_verify',
             'etelid_webauthn_devices'          => 'webauthn_devices',
             'etelid_csp_report'                => 'csp_report',
+            'etelid_2fa_status'                => 'twofa_status',
+            'etelid_2fa_begin'                 => 'twofa_begin',
+            'etelid_2fa_enable'                => 'twofa_enable',
+            'etelid_2fa_disable'               => 'twofa_disable',
+            'etelid_2fa_backup_codes'          => 'twofa_backup_codes',
             'etelid_webauthn_remove'           => 'webauthn_remove',
         );
         foreach ( $map as $action => $method ) {
@@ -411,11 +416,15 @@ class EtelID_Auth_Ajax {
             wp_send_json_error( array( 'message' => 'Phone number and password are required.' ) );
         }
 
+        $totp = isset( $_POST['totp_code'] ) ? sanitize_text_field( wp_unslash( $_POST['totp_code'] ) ) : '';
+
         EtelID_Auth::purge_expired();
-        $result = EtelID_Auth::login( $phone, $password );
+        $result = EtelID_Auth::login( $phone, $password, $totp );
 
         if ( is_wp_error( $result ) ) {
-            wp_send_json_error( array( 'message' => $result->get_error_message() ) );
+            $err = array( 'message' => $result->get_error_message() );
+            if ( in_array( $result->get_error_code(), array( 'requires_2fa', 'bad_2fa' ), true ) ) $err['requires_2fa'] = true;
+            wp_send_json_error( $err );
         }
 
         self::finish_login( $result['member'], $phone, $result['token'] );
@@ -588,6 +597,62 @@ class EtelID_Auth_Ajax {
         }
         EtelID_DB::log( $member->id, $member->etel_id, 'bio_enrolled', 'Device sign-in removed by the member' );
         wp_send_json_success( array( 'message' => 'Device removed.' ) );
+    }
+
+    /* ── Two-step sign-in set-up (member must be signed in) ─────────── */
+    private static function twofa_member() {
+        check_ajax_referer( 'etelid_auth', 'nonce' );
+        $member = EtelID_Auth::get_current_member();
+        if ( ! $member ) wp_send_json_error( array( 'message' => 'Please sign in first.' ) );
+        if ( ! EtelID_Security::rate_limit( 'twofa_' . $member->id, 30, 600 ) ) {
+            wp_send_json_error( array( 'message' => 'Too many attempts. Please wait a few minutes.' ) );
+        }
+        return $member;
+    }
+    private static function twofa_code() {
+        return isset( $_POST['code'] ) ? sanitize_text_field( wp_unslash( $_POST['code'] ) ) : '';
+    }
+
+    public static function twofa_status() {
+        $member = self::twofa_member();
+        wp_send_json_success( array(
+            'enabled'      => EtelID_2FA::is_enabled( $member->id ),
+            'backup_left'  => EtelID_2FA::backup_codes_left( $member->id ),
+        ) );
+    }
+
+    /* Starting set-up asks for the current password, so a stolen browser
+       session alone cannot lock the real owner out behind a new code. */
+    public static function twofa_begin() {
+        $member = self::twofa_member();
+        $pw = isset( $_POST['password'] ) ? wp_unslash( $_POST['password'] ) : '';
+        if ( $pw === '' || empty( $member->pin_hash ) || ! EtelID_Auth::verify_password( $pw, $member->pin_hash ) ) {
+            wp_send_json_error( array( 'message' => 'Enter your current password to continue.' ) );
+        }
+        $r = EtelID_2FA::begin( $member );
+        if ( is_wp_error( $r ) ) wp_send_json_error( array( 'message' => $r->get_error_message() ) );
+        wp_send_json_success( $r );
+    }
+
+    public static function twofa_enable() {
+        $member = self::twofa_member();
+        $r = EtelID_2FA::enable( $member, self::twofa_code() );
+        if ( is_wp_error( $r ) ) wp_send_json_error( array( 'message' => $r->get_error_message() ) );
+        wp_send_json_success( array( 'backup_codes' => $r ) );
+    }
+
+    public static function twofa_disable() {
+        $member = self::twofa_member();
+        $r = EtelID_2FA::disable( $member, self::twofa_code() );
+        if ( is_wp_error( $r ) ) wp_send_json_error( array( 'message' => $r->get_error_message() ) );
+        wp_send_json_success( array( 'message' => 'Two-step sign-in is off.' ) );
+    }
+
+    public static function twofa_backup_codes() {
+        $member = self::twofa_member();
+        $r = EtelID_2FA::regenerate_backup( $member, self::twofa_code() );
+        if ( is_wp_error( $r ) ) wp_send_json_error( array( 'message' => $r->get_error_message() ) );
+        wp_send_json_success( array( 'backup_codes' => $r ) );
     }
 
     /* ── Browser CSP violation reports (no login, no nonce: the browser sends them) ── */

@@ -37,6 +37,7 @@ $includes = array(
     'includes/class-etelid-security.php',
     'includes/class-etelid-mailer.php',
     'includes/class-etelid-smtp.php',           /* NEW — real Gmail SMTP delivery, see wp-config.php setup note in the file itself */
+    'includes/class-etelid-2fa.php',           /* two-step sign-in (authenticator app) */
     'includes/class-etelid-auth.php',
     'includes/class-etelid-auth-ajax.php',
     'includes/class-etelid-admin-panels.php',  /* NEW v3.11.0 — in-portal Members/Pages/Media/Menus/Branding controller */

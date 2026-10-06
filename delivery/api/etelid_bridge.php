@@ -407,12 +407,12 @@ function etelid_bridge_member_from_sso_token($pdo, $token) {
     }
 }
 
-function etelid_bridge_authenticate($identifier, $password) {
+function etelid_bridge_authenticate($identifier, $password, $totpCode = '') {
     // Sign-in gets a longer timeout than the other lookups: live timings showed
     // it averaging ~1.2 s with a worst case of 5.2 s, i.e. exactly the old
     // 5 s cut-off, so the slowest sign-ins were failing instead of finishing.
     $svc = etelid_bridge_service_call('authenticate',
-        array('identifier' => $identifier, 'password' => $password, 'create_session' => true), 10);
+        array('identifier' => $identifier, 'password' => $password, 'create_session' => true, 'totp_code' => (string) $totpCode), 10);
     if ($svc !== null) {
         $m = etelid_bridge_member_from_service($svc);
         if ($m) {
@@ -422,11 +422,18 @@ function etelid_bridge_authenticate($identifier, $password) {
             // Group app (EtelAI, future ones) that checks that table
             // recognizes this login too, not just Delivery/Ride locally.
             if (!empty($svc['session_token'])) $result['sso_token'] = $svc['session_token'];
+            // EtelID checked the member's authenticator code itself (two-step
+            // sign-in is on for them): no second prompt from this app's own gate.
+            if (!empty($svc['twofa_verified'])) $result['twofa_verified'] = true;
             return $result;
         }
         $msg  = isset($svc['message']) ? $svc['message'] : 'EtelID sign-in failed';
         $code = (isset($svc['data']['status'])) ? intval($svc['data']['status']) : 401;
-        return array('error' => $msg, 'code' => $code);
+        $res  = array('error' => $msg, 'code' => $code);
+        // The password was right but this member has two-step sign-in on and
+        // the code was missing or wrong: the sign-in screen must ask for it.
+        if (!empty($svc['data']['requires_2fa'])) $res['requires_2fa'] = true;
+        return $res;
     }
     // Service API unreachable/not configured - fail closed instead of the
     // old direct-DB/wp-config.php fallback (a 2026-07-22 audit flagged

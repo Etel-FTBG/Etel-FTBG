@@ -346,6 +346,16 @@ class EtelID_Service_API {
         self::$stage = 'password_ok';
         EtelID_Security::fail_clear( $lock_key );
 
+        /* Two-step sign-in (members who switched it on): the calling app passes
+         * `totp_code`. Without it the app is told to ask for one. This is after
+         * the password check, so it never reveals anything to a stranger. */
+        $twofa_on = false;
+        if ( class_exists( 'EtelID_2FA' ) && EtelID_2FA::is_enabled( $m->id ) ) {
+            $twofa_on = true;
+            $g = EtelID_2FA::gate( $m, (string) $request->get_param( 'totp_code' ) );
+            if ( is_wp_error( $g ) ) return $g;
+        }
+
         $app = (string) $request->get_param( 'app' );
         if ( '' !== $app && ! self::app_allowed_for( $m, $app ) ) {
             EtelID_DB::log( $m->id, $m->etel_id, 'limited_blocked', 'Limited account refused by ' . substr( sanitize_key( $app ), 0, 30 ) );
@@ -358,7 +368,7 @@ class EtelID_Service_API {
         EtelID_DB::log( $m->id, $m->etel_id, 'login', 'Service API SSO (' . substr( $ip, 0, 45 ) . ', app: ' . self::caller_label() . ')' );
 
         self::$stage = 'member_payload';
-        $payload = array( 'ok' => true, 'member' => self::member_payload( $m ) );
+        $payload = array( 'ok' => true, 'member' => self::member_payload( $m ), 'twofa_verified' => $twofa_on );
 
         $wantSession = filter_var( $request->get_param( 'create_session' ), FILTER_VALIDATE_BOOLEAN );
         if ( $wantSession ) {

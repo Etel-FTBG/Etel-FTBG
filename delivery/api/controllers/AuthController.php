@@ -342,7 +342,12 @@ case 'etelid_login': {
     rate_limit_check($pdo, 'etelid:' . substr($ident, 0, 60));
     rate_limit_check($pdo, 'login_ip', 100, 600, 600);
 
-    $auth = etelid_bridge_authenticate($ident, $pw);
+    $totp = isset($body['totp_code']) ? trim((string) $body['totp_code']) : '';
+    $auth = etelid_bridge_authenticate($ident, $pw, $totp);
+    if (isset($auth['requires_2fa'])) {
+        // password was right; EtelID wants the authenticator code (not a failed password)
+        etel_2fa_respond(array('success' => false, 'requires_2fa' => true, 'message' => $auth['error'], 'v' => APP_VER), 401);
+    }
     if (isset($auth['error'])) {
         rate_limit_fail($pdo, 'etelid:' . substr($ident, 0, 60));
         rate_limit_fail($pdo, 'login_ip');
@@ -386,7 +391,7 @@ case 'etelid_login': {
         fail("This EtelID is registered as $actual. Select the \"$actual\" tab instead.", 403);
     }
 
-    etel_2fa_gate($pdo, $u, $body);
+    if (empty($auth['twofa_verified'])) etel_2fa_gate($pdo, $u, $body); // EtelID already checked the member's code
     $token = gen_token($u['id'], isset($u['token_version']) ? intval($u['token_version']) : 0);
     ok(array(
         'token'   => $token,
@@ -429,7 +434,11 @@ case 'admin_etelid_login': {
 
     rate_limit_check($pdo, 'admin_etelid:' . substr($ident, 0, 60));
     rate_limit_check($pdo, 'login_ip', 100, 600, 600);
-    $auth = etelid_bridge_authenticate($ident, $pw);
+    $totp = isset($body['totp_code']) ? trim((string) $body['totp_code']) : '';
+    $auth = etelid_bridge_authenticate($ident, $pw, $totp);
+    if (isset($auth['requires_2fa'])) {
+        etel_2fa_respond(array('success' => false, 'requires_2fa' => true, 'message' => $auth['error'], 'v' => APP_VER), 401);
+    }
     if (isset($auth['error'])) {
         rate_limit_fail($pdo, 'admin_etelid:' . substr($ident, 0, 60));
         rate_limit_fail($pdo, 'login_ip');
@@ -522,7 +531,7 @@ case 'admin_etelid_login': {
         fail('No admin account found for this EtelID. Ask a super admin to add you first.', 403);
     }
 
-    etel_2fa_gate($pdo, $u, $body);
+    if (empty($auth['twofa_verified'])) etel_2fa_gate($pdo, $u, $body); // EtelID already checked the member's code
     $token = gen_token($u['id'], $hasVer ? intval($u['token_version']) : 0);
     ok(array(
         'token' => $token,

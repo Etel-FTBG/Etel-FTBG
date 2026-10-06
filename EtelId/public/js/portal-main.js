@@ -1,7 +1,7 @@
 /* ── Generic modal helpers ── */
 function _eapOpen(id){ document.getElementById(id).style.display='flex'; document.body.style.overflow='hidden'; }
 function _eapClose(id){ document.getElementById(id).style.display='none'; document.body.style.overflow=''; }
-['eap-members-modal','eap-pages-modal','eap-media-modal','eap-menus-modal','eap-branding-modal','eap-resetpw-modal','eap-nfc-modal','eap-company-roles-modal','eap-bio-register-modal','eap-biometric-modal','eap-platform-logos-modal'].forEach(function(id){
+['eap-members-modal','eap-pages-modal','eap-media-modal','eap-menus-modal','eap-branding-modal','eap-resetpw-modal','eap-nfc-modal','eap-company-roles-modal','eap-bio-register-modal','eap-2fa-modal','eap-biometric-modal','eap-platform-logos-modal'].forEach(function(id){
   document.getElementById(id).addEventListener('click', function(e){ if (e.target === this) _eapClose(id); });
 });
 
@@ -1030,4 +1030,72 @@ async function eapRpSubmit(){
   });
   _eidPanelMsg('eap-rp-msg', res.data.message || '', res.success);
   if (res.success) { document.getElementById('eap-rp-pass').value=''; document.getElementById('eap-rp-confirm').value=''; }
+}
+
+
+/* ════════ TWO-STEP SIGN-IN (authenticator app) ════════ */
+function _tf(id){ return document.getElementById(id); }
+function _tfView(which){
+  ['off','setup','codes','on'].forEach(function(v){ _tf('eap-2fa-'+v).style.display = (v===which) ? '' : 'none'; });
+}
+function _tfMsg(text, ok){
+  var el = _tf('eap-2fa-status'); el.style.color = ok ? '#6ee7a0' : '#f66'; el.textContent = text || '';
+}
+async function openTwoFaModal(e){
+  if (e) e.preventDefault();
+  _eapOpen('eap-2fa-modal');
+  _tfMsg('', true);
+  var res = await _eidPanel('etelid_2fa_status', {});
+  if (!res.success) { _tfMsg((res.data && res.data.message) || 'Could not load.', false); _tfView(''); return; }
+  if (res.data.enabled) {
+    _tf('eap-2fa-left').textContent = res.data.backup_left + ' of 8 backup codes left.';
+    _tfView('on');
+  } else { _tfView('off'); }
+}
+function closeTwoFaModal(){ _eapClose('eap-2fa-modal'); _tf('eap-2fa-pw').value=''; _tf('eap-2fa-code').value=''; _tf('eap-2fa-manage-code').value=''; _tf('eap-2fa-secret').textContent=''; _tf('eap-2fa-qr').textContent=''; }
+async function eapTwoFaBegin(){
+  var res = await _eidPanel('etelid_2fa_begin', { password: _tf('eap-2fa-pw').value });
+  if (!res.success) { _tfMsg((res.data && res.data.message) || 'Could not start.', false); return; }
+  _tf('eap-2fa-pw').value = '';
+  _tfMsg('', true);
+  /* the QR is drawn here in the browser: the key never goes to any outside service */
+  var box = _tf('eap-2fa-qr'); box.textContent = '';
+  try { var qr = qrcode(0, 'M'); qr.addData(res.data.uri); qr.make(); box.innerHTML = qr.createSvgTag({ cellSize: 4, margin: 2 }); } catch (e) {}
+  _tf('eap-2fa-secret').textContent = res.data.secret.replace(/(.{4})/g, '$1 ').trim();
+  _tfView('setup');
+}
+function _tfShowCodes(codes){
+  _tf('eap-2fa-codes-list').textContent = codes.join('\n');
+  _tfView('codes');
+}
+async function eapTwoFaEnable(){
+  var res = await _eidPanel('etelid_2fa_enable', { code: _tf('eap-2fa-code').value });
+  if (!res.success) { _tfMsg((res.data && res.data.message) || 'That code is not right.', false); return; }
+  _tf('eap-2fa-code').value = ''; _tfMsg('Two-step sign-in is on.', true);
+  _tfShowCodes(res.data.backup_codes);
+}
+function eapTwoFaCodesDone(){
+  _tf('eap-2fa-codes-list').textContent = '';
+  _tf('eap-2fa-left').textContent = '8 of 8 backup codes left.';
+  _tfView('on');
+}
+async function eapTwoFaNewCodes(){
+  var res = await _eidPanel('etelid_2fa_backup_codes', { code: _tf('eap-2fa-manage-code').value });
+  if (!res.success) { _tfMsg((res.data && res.data.message) || 'That code is not right.', false); return; }
+  _tf('eap-2fa-manage-code').value = ''; _tfMsg('New backup codes created. The old ones no longer work.', true);
+  _tfShowCodes(res.data.backup_codes);
+}
+async function eapTwoFaDisable(){
+  if (!confirm('Turn off two-step sign-in? Your account will be protected by the password only.')) return;
+  var res = await _eidPanel('etelid_2fa_disable', { code: _tf('eap-2fa-manage-code').value });
+  if (!res.success) { _tfMsg((res.data && res.data.message) || 'That code is not right.', false); return; }
+  _tf('eap-2fa-manage-code').value = ''; _tfMsg('Two-step sign-in is off.', true);
+  _tfView('off');
+}
+/* admin, in the Reset Password panel: member lost phone AND backup codes */
+async function eapRpReset2fa(){
+  var id = _tf('eap-rp-id').value;
+  if (!id || !confirm('Reset this member\'s two-step sign-in? They will sign in with the password only until they set it up again.')) return;
+  var res = await _eidPanel('etelid_panel_reset_2fa', { member_id: id });
+  _eidPanelMsg('eap-rp-msg', (res.data && res.data.message) || '', res.success);
 }

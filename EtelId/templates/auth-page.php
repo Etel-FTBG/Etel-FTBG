@@ -137,6 +137,17 @@ $features = array(
             </div>
           </div>
         </div>
+        <!-- Two-step sign-in code: shown only when the account has it on -->
+        <div class="eid-af-row-1" id="login-2fa-row" style="display:none;">
+          <div class="eid-af-field">
+            <label class="eid-af-label">Verification code <span class="req">*</span></label>
+            <div class="eid-af-input-wrap">
+              <i class="ti ti-shield-lock eid-af-input-icon"></i>
+              <input type="text" id="login-totp" class="eid-af-input" inputmode="numeric" autocomplete="one-time-code" maxlength="12" placeholder="6-digit code">
+            </div>
+            <div style="font-size:12px;color:var(--ink3);margin-top:6px;">From your authenticator app. Lost your phone? Type one of your backup codes.</div>
+          </div>
+        </div>
         <!-- Remember Me -->
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;">
           <input type="checkbox" id="login-remember" style="width:16px;height:16px;accent-color:var(--g5);cursor:pointer;">
@@ -451,7 +462,9 @@ function doLogin() {
   var btn = document.getElementById('login-btn');
   btn.disabled=true; btn.innerHTML='<i class="ti ti-loader" style="margin-right:6px"></i> Signing in…';
   var _redirect = (typeof _WPADMIN_REDIRECT !== 'undefined' && _WPADMIN_REDIRECT) ? 'wpadmin' : '';
-  post({action:'etelid_auth_login',phone:phone,password:pw,remember:remember?'1':'0',redirect:_redirect},function(r){
+  var totpEl = document.getElementById('login-totp');
+  var totp = totpEl ? totpEl.value.trim() : '';
+  post({action:'etelid_auth_login',phone:phone,password:pw,totp_code:totp,remember:remember?'1':'0',redirect:_redirect},function(r){
     if(r.success){
       /* Save phone for Remember Me auto-fill */
       if (r.data.remember) {
@@ -473,6 +486,11 @@ function doLogin() {
       showErr(r.data.message);
       btn.disabled=false;
       btn.innerHTML='<i class="ti ti-login" style="margin-right:6px"></i> Sign In';
+      if (r.data && r.data.requires_2fa) {
+        /* password was right, this account also needs the code */
+        var row = document.getElementById('login-2fa-row');
+        if (row) { row.style.display = ''; var t = document.getElementById('login-totp'); if (t) { t.focus(); t.select(); } }
+      }
     }
   });
 }
