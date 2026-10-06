@@ -55,9 +55,22 @@ class EtelID_Updater {
         }
 
         if ( ! empty( $_POST['updater_secret'] ) && defined( 'ETELID_UPDATER_SECRET' ) ) {
-            if ( hash_equals( ETELID_UPDATER_SECRET, sanitize_text_field( wp_unslash( $_POST['updater_secret'] ) ) ) ) return true;
+            if ( self::secret_matches( sanitize_text_field( wp_unslash( $_POST['updater_secret'] ) ) ) ) return true;
         }
 
+        return false;
+    }
+
+    /* The updater can write PHP files, so a guessed secret is full takeover.
+     * Wrong guesses are counted per IP: 8 misses -> 15 minute lockout. */
+    private static function secret_matches( $given ) {
+        $key = 'upd_secret_' . EtelID_Security::get_ip();
+        if ( EtelID_Security::fail_blocked( $key, 8, 900 ) ) return false;
+        if ( hash_equals( ETELID_UPDATER_SECRET, $given ) ) {
+            EtelID_Security::fail_clear( $key );
+            return true;
+        }
+        EtelID_Security::fail_hit( $key, 900 );
         return false;
     }
 
@@ -126,7 +139,7 @@ class EtelID_Updater {
 
         /* Check 4: shared updater secret (define ETELID_UPDATER_SECRET in wp-config.php) */
         if ( ! $authorized && ! empty( $_POST['updater_secret'] ) && defined( 'ETELID_UPDATER_SECRET' ) ) {
-            if ( hash_equals( ETELID_UPDATER_SECRET, sanitize_text_field( wp_unslash( $_POST['updater_secret'] ) ) ) ) {
+            if ( self::secret_matches( sanitize_text_field( wp_unslash( $_POST['updater_secret'] ) ) ) ) {
                 $authorized = true;
             }
         }

@@ -20,6 +20,7 @@ class EtelID_Auth {
 
     const SESSION_COOKIE  = 'etelid_session';
     const SESSION_SECONDS = 2592000; /* 30 days */
+    const MAX_SESSIONS_PER_MEMBER = 15;
     const TABLE_SESSIONS  = 'etelid_sessions';
 
     /* ─── Install session table ──────────────────────────── */
@@ -255,6 +256,12 @@ class EtelID_Auth {
             'expires_at' => $expires,
         ));
 
+        /* Keep only the newest MAX_SESSIONS_PER_MEMBER sessions per person.
+         * Every app SSO login mints a session; live data held ~47 valid
+         * sessions per member, so one stolen token stayed useful for weeks
+         * and nothing ever aged the old ones out. */
+        self::prune_member_sessions( (int) $member_id, self::MAX_SESSIONS_PER_MEMBER );
+
         /* Set secure cookie */
         $secure = is_ssl();
         /* HARDENING: previously used the old positional-args setcookie()
@@ -374,6 +381,37 @@ class EtelID_Auth {
 
     public static function is_logged_in() {
         return (bool) self::get_current_member();
+    }
+
+    /* Delete every session of a member (optionally keeping one, identified
+     * by the RAW token held in the caller's cookie). Called whenever the
+     * password changes or is reset, so a stolen / forgotten session cannot
+     * outlive the password change. */
+    public static function revoke_all_sessions( $member_id, $keep_raw_token = '' ) {
+        global $wpdb;
+        $table = $wpdb->prefix . self::TABLE_SESSIONS;
+        if ( $keep_raw_token !== '' ) {
+            return $wpdb->query( $wpdb->prepare(
+                "DELETE FROM {$table} WHERE member_id = %d AND token <> %s",
+                (int) $member_id, hash( 'sha256', $keep_raw_token )
+            ));
+        }
+        return $wpdb->query( $wpdb->prepare( "DELETE FROM {$table} WHERE member_id = %d", (int) $member_id ) );
+    }
+
+    /* Keep only the newest $keep sessions of a member. */
+    public static function prune_member_sessions( $member_id, $keep ) {
+        global $wpdb;
+        $table = $wpdb->prefix . self::TABLE_SESSIONS;
+        $keep  = max( 1, (int) $keep );
+        $ids   = $wpdb->get_col( $wpdb->prepare(
+            "SELECT id FROM {$table} WHERE member_id = %d ORDER BY id DESC LIMIT 1000 OFFSET %d",
+            (int) $member_id, $keep - 1   /* room for the session about to be created */
+        ));
+        if ( $ids ) {
+            $ids = array_map( 'intval', $ids );
+            $wpdb->query( "DELETE FROM {$table} WHERE id IN (" . implode( ',', $ids ) . ")" );
+        }
     }
 
     /* ─── Purge expired sessions (run on login) ──────────── */

@@ -4,12 +4,23 @@ name: Delivery CI
 # the change would have broken something the tests cover - fix before merging.
 on:
   pull_request:
-    paths: ['delivery/**', '.github/workflows/ci.yml']
+    paths: ['delivery/**', 'EtelId/**', '.github/workflows/ci.yml']
   push:
     branches: [main]
-    paths: ['delivery/**', '.github/workflows/ci.yml']
+    paths: ['delivery/**', 'EtelId/**', '.github/workflows/ci.yml']
 
 jobs:
+  etelid:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with: { php-version: '8.3' }
+      - name: PHP syntax (EtelID plugin)
+        run: find EtelId -name '*.php' -print0 | xargs -0 -n1 -P4 php -l >/dev/null
+      - name: Security unit tests
+        run: php EtelId/tests/security_unit.php
+
   lint:
     runs-on: ubuntu-latest
     steps:

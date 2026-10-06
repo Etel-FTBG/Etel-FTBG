@@ -255,6 +255,9 @@ class EtelID_Password_Reset {
             'pin_hash' => EtelID_Auth::hash_password( $new_pass ),
         ));
         EtelID_DB::log( $member->id, $member->etel_id, 'password_reset', 'Password reset via self-service (' . $match->channel . ' code)' );
+        /* Sign the member out everywhere: whoever may have held a session
+         * (stolen cookie, forgotten device) loses it with the old password. */
+        EtelID_Auth::revoke_all_sessions( $member->id );
         // Successful reset - the escalating attempt schedule no longer
         // applies, so the next time (if ever) this member needs a reset,
         // they start fresh at try #1 rather than wherever they left off.

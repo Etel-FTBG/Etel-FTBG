@@ -93,6 +93,22 @@ class EtelID_Rewrite {
                 /* Try URL-decoded version */
                 $member = EtelID_DB::get_by_etel_id( rawurldecode( $print ) );
             }
+            /* SECURITY: the print page renders the FULL card (date of birth,
+             * phone, region, FIN, card number ...) and Etel-IDs are
+             * sequential, so it used to be readable by anyone who typed
+             * /print/EG-2026-00001. Only the card's owner (EtelID session)
+             * or an administrator may open it now. */
+            if ( $member ) {
+                $viewer   = EtelID_Auth::get_current_member();
+                $is_owner = $viewer && (int) $viewer->id === (int) $member->id;
+                $is_admin = ( $viewer && EtelID_Auth::is_site_admin( $viewer ) )
+                         || ( function_exists( 'current_user_can' ) && current_user_can( 'manage_options' ) );
+                if ( ! $is_owner && ! $is_admin ) {
+                    status_header( 403 );
+                    wp_safe_redirect( home_url( '/login/' ) );
+                    exit;
+                }
+            }
             if ( $member ) {
                 /* Make member available to template */
                 $GLOBALS['etelid_print_member'] = $member;

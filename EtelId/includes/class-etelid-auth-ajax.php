@@ -622,6 +622,9 @@ class EtelID_Auth_Ajax {
             'must_change_password' => 0,
         ));
         EtelID_DB::log( $member->id, $member->etel_id, 'updated', 'Password changed via portal' );
+        /* End every OTHER session; keep the one making this change. */
+        $keep_tok = isset( $_COOKIE[ EtelID_Auth::SESSION_COOKIE ] ) ? sanitize_text_field( wp_unslash( $_COOKIE[ EtelID_Auth::SESSION_COOKIE ] ) ) : '';
+        EtelID_Auth::revoke_all_sessions( $member->id, $keep_tok );
         wp_send_json_success( array( 'message' => 'Password changed successfully.' ) );
     }
 
