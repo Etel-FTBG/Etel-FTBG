@@ -261,7 +261,39 @@ class EtelID_Service_API {
        without each app inventing its own separate, disconnected
        session system the way Delivery/Ride's etel_token and EtelAI's
        unused etelid_auth key currently do. */
+    /* ---- TEMPORARY DIAGNOSTIC (remove once the SSO crash is fixed) ------
+     * "Sign in with EtelID" hit a WordPress critical error on the live site.
+     * authenticate() now runs inside a try/catch that returns the real
+     * exception text to the (service-key authenticated) caller, and a
+     * shutdown hook saves any uncatchable fatal plus the last stage reached
+     * into the option "etelid_last_fatal" so it can be read from the DB. */
+    private static $stage = 'start';
+
+    public static function capture_fatal() {
+        $e = error_get_last();
+        if ( $e && in_array( $e['type'], array( E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR, E_USER_ERROR, E_RECOVERABLE_ERROR ), true ) ) {
+            update_option( 'etelid_last_fatal', date( 'c' ) . ' stage=' . self::$stage . ' ' . $e['message'] . ' @ ' . $e['file'] . ':' . $e['line'], false );
+        }
+    }
+
+    private static function diag_error( $e ) {
+        $msg = 'stage=' . self::$stage . ' ' . get_class( $e ) . ': ' . $e->getMessage() . ' @ ' . basename( $e->getFile() ) . ':' . $e->getLine();
+        update_option( 'etelid_last_fatal', date( 'c' ) . ' ' . $msg, false );
+        return new WP_Error( 'sso_internal_error', 'EtelID SSO error - ' . $msg, array( 'status' => 500 ) );
+    }
+
     public static function authenticate( $request ) {
+        register_shutdown_function( array( __CLASS__, 'capture_fatal' ) );
+        try {
+            return self::authenticate_inner( $request );
+        } catch ( Exception $e ) {
+            return self::diag_error( $e );
+        } catch ( Throwable $e ) {
+            return self::diag_error( $e );
+        }
+    }
+
+    private static function authenticate_inner( $request ) {
         /* Brute-force shield: per-IP sliding window */
         $ip  = EtelID_Security::get_ip();
         $key = 'etelid_svc_auth_' . md5( $ip );
@@ -290,6 +322,7 @@ class EtelID_Service_API {
          * every call, successful or not, and so could lock out a person who
          * simply signed in to several Etel apps in a row. */
 
+        self::$stage = 'find_member';
         $m = self::find_member( $ident );
         if ( ! $m ) return new WP_Error( 'not_found', 'No EtelID account found for that identifier.', array( 'status' => 404 ) );
 
@@ -297,6 +330,7 @@ class EtelID_Service_API {
         if ( $m->status === 'revoked' )   return new WP_Error( 'revoked', 'This EtelID has been revoked.', array( 'status' => 403 ) );
         if ( empty( $m->pin_hash ) )      return new WP_Error( 'no_password', 'No password set on this EtelID. Reset it at the EtelID portal first.', array( 'status' => 403 ) );
 
+        self::$stage = 'lockout';
         $lock_key = 'nfc_acct_' . strtolower( (string) $m->etel_id );   /* shared with the NFC steps */
         if ( EtelID_Security::fail_blocked( $lock_key, 8, 900 ) ) {
             return new WP_Error( 'rate_limited', 'Too many wrong passwords for this account. Please wait 15 minutes, or reset the password.', array( 'status' => 429 ) );
@@ -311,6 +345,7 @@ class EtelID_Service_API {
          * with a clear reason. Checked only AFTER the password is verified so
          * this can never reveal an account's state to someone who does not
          * know its password. The calling app names itself with `app`. */
+        self::$stage = 'password_ok';
         EtelID_Security::fail_clear( $lock_key );
 
         $app = (string) $request->get_param( 'app' );
@@ -321,14 +356,17 @@ class EtelID_Service_API {
                 array( 'status' => 403 ) );
         }
 
+        self::$stage = 'log_login';
         EtelID_DB::log( $m->id, $m->etel_id, 'login', 'Service API SSO (' . substr( $ip, 0, 45 ) . ', app: ' . self::caller_label() . ')' );
 
+        self::$stage = 'member_payload';
         $payload = array( 'ok' => true, 'member' => self::member_payload( $m ) );
 
         $wantSession = filter_var( $request->get_param( 'create_session' ), FILTER_VALIDATE_BOOLEAN );
         if ( $wantSession ) {
             /* Same table, same token format as the portal's own login -
                this IS the shared cross-app session, not a lookalike. */
+        self::$stage = 'create_session';
             $payload['session_token'] = EtelID_Auth::create_session( $m->id );
         }
 
