@@ -5,7 +5,7 @@
  */
 if ( ! defined( 'ABSPATH' ) ) exit;
 
-$logo = defined('ETELID_LOGO_B64') ? ETELID_LOGO_B64 : ETELID_URL.'public/images/etel-logo.png';
+$logo = defined('ETELID_URL') ? ETELID_URL.'public/images/etel-master-coin-128.webp' : ( defined('ETELID_LOGO_B64') ? ETELID_LOGO_B64 : '' );
 $org  = get_option('etelid_org_name', 'Etel Group');
 
 /* ── Local Code128 barcode — pure PHP, no external request ──
@@ -25,7 +25,7 @@ $init   = substr($init, 0, 2);
   <div class="efc-guilloche"></div>
 
   <!-- ── ETEL COIN WATERMARK — centered behind all content ── -->
-  <?php $coin_src = defined('ETELID_LOGO_COIN_B64') ? ETELID_LOGO_COIN_B64 : ''; ?>
+  <?php $coin_src = defined('ETELID_URL') ? ETELID_URL . 'public/images/etel-master-coin-256.webp' : ( defined('ETELID_LOGO_COIN_B64') ? ETELID_LOGO_COIN_B64 : '' ); ?>
   <?php if ($coin_src): ?>
   <div class="efc-coin-watermark" id="efc-coin-front">
     <img src="<?php echo esc_attr($coin_src); ?>" alt="" draggable="false">

@@ -36,57 +36,32 @@ $init_tab  = ( get_query_var('etelid_page') === 'signup' ) ? 'signup' : 'login';
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Etel-ID — <?php echo $init_tab === 'signup' ? 'Create Account' : 'Sign In'; ?> · <?php echo esc_html($org_name); ?></title>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
-<style><?php echo file_get_contents(ETELID_PATH.'public/css/etelid-auth.css'); ?></style>
+<style><?php echo file_get_contents(ETELID_PATH.'public/css/etelid-icons.css'); echo file_get_contents(ETELID_PATH.'public/css/etelid-auth.css'); ?></style>
 </head>
 <body>
 
 <?php
-$logo_src = defined('ETELID_LOGO_B64') ? ETELID_LOGO_B64 : ETELID_URL . 'public/images/etel-logo.png';
+$coin_src = ETELID_URL . 'public/images/etel-master-coin-512.webp';
 $features = array(
-  array('🪪', 'Official Etel Group Corporate ID'),
-  array('🔐', 'Biometric-grade security'),
-  array('🏢', 'Linked across all 8 companies'),
-  array('📱', 'Digital & printable card'),
+  array('shield-lock', 'Bank-grade account security'),
+  array('building',    'One ID across every Etel company'),
+  array('nfc',         'Tap-to-verify NFC card'),
+  array('device',      'Digital and printable card'),
 );
 ?>
 <div class="eid-auth-page">
 
-  <!-- ── LEFT PANEL ── -->
+  <!-- LEFT PANEL: the master coin, shown once -->
   <div class="eid-auth-left">
-    <div class="eid-auth-orb eid-auth-orb-1"></div>
-    <div class="eid-auth-orb eid-auth-orb-2"></div>
     <div class="eid-auth-brand">
-      <img src="<?php echo esc_attr($logo_src); ?>" alt="" class="eid-auth-brand-logo">
-      <div class="eid-auth-brand-sig">ኢE</div>
+      <img src="<?php echo esc_attr($coin_src); ?>" alt="Etel Family Technology and Business Group" class="eid-auth-coin" width="512" height="512">
       <div class="eid-auth-brand-name"><?php echo esc_html($org_name); ?></div>
-      <div class="eid-auth-brand-sub">ኢትኤል ቡድን · Corporate ID System</div>
-      <div class="eid-auth-brand-desc">
-        The official digital identity card for all Etel Group employees, customers and partners across Ethiopia.
-      </div>
-      <!-- Animated mock card -->
-      <div class="eid-auth-mock-card">
-        <div class="eid-auth-mock-inner">
-          <div class="eid-auth-mock-photo">👤</div>
-          <div class="eid-auth-mock-lines">
-            <div class="eid-auth-mock-line gold"></div>
-            <div class="eid-auth-mock-line med"></div>
-            <div class="eid-auth-mock-line long"></div>
-            <div class="eid-auth-mock-line short"></div>
-            <div class="eid-auth-mock-line med"></div>
-          </div>
-        </div>
-        <div class="eid-auth-mock-footer"></div>
-      </div>
-      <!-- Feature pills -->
-      <div class="eid-auth-features">
+      <div class="eid-auth-brand-sub">Etel-ID &middot; One identity for every service</div>
+      <ul class="eid-auth-features">
         <?php foreach ($features as $f): ?>
-        <div class="eid-auth-feature">
-          <span><?php echo $f[0]; ?></span>
-          <span><?php echo esc_html($f[1]); ?></span>
-        </div>
+        <li class="eid-auth-feature"><i class="ti ti-<?php echo esc_attr($f[0]); ?>" aria-hidden="true"></i><span><?php echo esc_html($f[1]); ?></span></li>
         <?php endforeach; ?>
-      </div>
+      </ul>
     </div>
   </div>
 
@@ -94,24 +69,19 @@ $features = array(
   <div class="eid-auth-right">
   <div class="eid-auth-card">
 
-    <!-- Holographic top strip -->
     <div class="eid-auth-holo"></div>
 
     <!-- Card header -->
     <div class="eid-auth-head">
       <?php if ( $is_wpadmin_redirect ) : ?>
       <div style="background:rgba(212,175,55,.12);border:1px solid rgba(212,175,55,.35);border-radius:8px;padding:10px 14px;margin-bottom:14px;display:flex;align-items:center;gap:10px;text-align:left;">
-        <span style="font-size:20px;flex-shrink:0;">🔐</span>
+        <i class="ti ti-shield-lock" style="font-size:22px;flex-shrink:0;color:var(--g5)" aria-hidden="true"></i>
         <div>
           <div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:800;color:var(--ink);">Admin Access Required</div>
           <div style="font-size:12px;color:var(--ink3);">Sign in with your admin Etel-ID to access WP Admin.</div>
         </div>
       </div>
       <?php endif; ?>
-      <div class="eid-auth-logo">
-        <img src="<?php echo esc_attr($logo_src); ?>" alt="" class="eid-auth-logo-img">
-        <span class="eid-auth-org">ኢትኤል ቡድን · Etel Group</span>
-      </div>
       <div class="eid-auth-title" id="auth-title">
         <?php echo $init_tab === 'signup' ? 'Create Your Etel-ID' : 'Welcome Back'; ?>
       </div>

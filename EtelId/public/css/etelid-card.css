@@ -560,3 +560,9 @@
   }
   * { animation: none !important; transition: none !important; }
 }
+
+/* Brand refresh: transparent master coin as watermark (no rectangle, no blend hack) */
+.efc-coin-watermark { opacity: .13; mix-blend-mode: normal; filter: saturate(.8); }
+.ecb-coin-watermark { opacity: .12; mix-blend-mode: normal; filter: saturate(.8); }
+.efc-header-logo { height: 38px; width: 38px; margin: 0; align-self: center; filter: drop-shadow(0 1px 4px rgba(0,0,0,.45)); }
+.efc-footer-logo, .ecb-footer-logo { height: 24px; width: 24px; filter: drop-shadow(0 1px 3px rgba(0,0,0,.4)); }

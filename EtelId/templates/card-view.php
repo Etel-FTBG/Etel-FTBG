@@ -20,7 +20,6 @@ $uid = 'eid_' . $member->id . '_' . substr(md5($member->etel_id), 0, 6);
   width:460px; height:290px; position:relative;
   transform-style:preserve-3d;
   transition:transform .8s cubic-bezier(.4,.2,.2,1);
-  filter:drop-shadow(0 12px 32px rgba(0,0,0,.35));
 }
 @media(max-width:500px){ .eid-cv-wrap{ width:320px; height:202px; } }
 .eid-cv-wrap.flipped { transform:rotateY(180deg); }
@@ -29,6 +28,7 @@ $uid = 'eid_' . $member->id . '_' . substr(md5($member->etel_id), 0, 6);
   border-radius:10px; overflow:hidden;
   backface-visibility:hidden;
   -webkit-backface-visibility:hidden;
+  box-shadow:0 12px 32px rgba(0,0,0,.35);
 }
 .eid-cv-face-back { transform:rotateY(180deg); }
 .eid-cv-face .eid-card-front,
