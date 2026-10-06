@@ -274,8 +274,8 @@ if ( ! defined( 'ABSPATH' ) ) exit;
 .fayda-shot-box.has-image{border-style:solid;border-color:#D4AF37;}
 </style>
 
-<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+<script src="<?php echo esc_url( ETELID_URL . 'public/vendor/jsQR.js' ); ?>"></script>
+<script src="<?php echo esc_url( ETELID_URL . 'public/vendor/tesseract.min.js' ); ?>"></script>
 <script>
 (function(){
   var shots = { front: null, back: null }; /* dataURLs */

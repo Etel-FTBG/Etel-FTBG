@@ -1359,7 +1359,7 @@ function apfLoadFaceApiScript() {
   _apfFaceApiScriptPromise = new Promise(function(resolve, reject) {
     if (typeof faceapi !== 'undefined') { resolve(); return; }
     var s = document.createElement('script');
-    s.src = 'https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js';
+    s.src = '<?php echo esc_url( ETELID_URL . 'public/vendor/face-api.min.js' ); ?>';
     s.onload = function() { resolve(); };
     s.onerror = function() { reject(new Error('face-api.js script failed to load')); };
     document.head.appendChild(s);
@@ -1370,7 +1370,7 @@ var _apfFaceModelsPromise = null;
 function apfLoadFaceModels() {
   if (_apfFaceModelsPromise) return _apfFaceModelsPromise;
   _apfFaceModelsPromise = apfLoadFaceApiScript().then(function() {
-    var MODEL_URL = 'https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/weights';
+    var MODEL_URL = '<?php echo esc_url( ETELID_URL . 'public/vendor/face-models' ); ?>';
     return faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
   });
   return _apfFaceModelsPromise;

@@ -2141,7 +2141,7 @@ function openFaydaModal(e) {
   document.body.style.overflow = 'hidden';
   if (!_pfScriptsLoaded) {
     _pfScriptsLoaded = true;
-    var s2 = document.createElement('script'); s2.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
+    var s2 = document.createElement('script'); s2.src = '<?php echo esc_url( ETELID_URL . 'public/vendor/tesseract.min.js' ); ?>';
     document.body.appendChild(s2);
   }
 }
