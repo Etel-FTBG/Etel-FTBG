@@ -75,6 +75,7 @@ class EtelID_Admin_Panels {
             'etelid_panel_biometric_get'     => 'biometric_get',
             'etelid_panel_biometric_nfc_save'   => 'biometric_nfc_save',
             'etelid_panel_biometric_webauthn_revoke' => 'biometric_webauthn_revoke',
+            'etelid_panel_reset_2fa'                 => 'admin_reset_2fa',
         );
         foreach ( $map as $action => $method ) {
             add_action( 'wp_ajax_'        . $action, array( __CLASS__, $method ) );
@@ -780,6 +781,19 @@ class EtelID_Admin_Panels {
         EtelID_DB::upsert_biometric( $m->id, $m->etel_id, array( 'nfc_uid' => $clean ) );
         EtelID_DB::log( $m->id, $m->etel_id, 'bio_enrolled', 'NFC card linked by admin: ' . $clean );
         wp_send_json_success( array( 'message' => 'NFC card linked.' ) );
+    }
+
+    /* Member lost the phone AND the backup codes: an admin switches their
+       two-step sign-in off so they can sign in with the password and set it
+       up again. Logged in the audit log. */
+    public static function admin_reset_2fa() {
+        self::guard();
+        $mid = isset( $_POST['member_id'] ) ? (int) $_POST['member_id'] : 0;
+        $m = $mid ? EtelID_DB::get_member( $mid ) : null;
+        if ( ! $m ) wp_send_json_error( array( 'message' => 'Member not found.' ) );
+        EtelID_2FA::admin_reset( $m->id );
+        EtelID_DB::log( $m->id, $m->etel_id, 'updated', 'Two-step sign-in reset by admin' );
+        wp_send_json_success( array( 'message' => 'Two-step sign-in reset. They can sign in with their password and set it up again.' ) );
     }
 
     public static function biometric_webauthn_revoke() {

@@ -842,6 +842,10 @@ $etelid_profile_incomplete = empty( $member->dob ) || '0000-00-00' === $member->
       <div class="p-action-icon">🆔</div>
       <span class="p-action-lbl">Face / Fingerprint</span>
     </div>
+    <div class="p-action" onclick="openTwoFaModal(event)">
+      <div class="p-action-icon">🔐</div>
+      <span class="p-action-lbl">Two-step sign-in</span>
+    </div>
     <div class="p-action" onclick="openTelegramLink()">
       <div class="p-action-icon">📲</div>
       <span class="p-action-lbl"><?php echo empty($member->tg_chat_id) ? 'Link Telegram' : 'Telegram Linked ✓'; ?></span>
@@ -2572,6 +2576,51 @@ document.getElementById('eid-fayda-modal').addEventListener('click', function(e)
   </div>
 </div>
 
+<!-- ── Two-step sign-in (authenticator app) ── -->
+<div id="eap-2fa-modal" class="eap-modal">
+  <div class="eap-box eid-gold-box" style="width:min(94vw,460px);max-height:92vh;overflow:auto;">
+    <div class="eap-head">
+      <div><div class="eap-title">🔐 Two-step sign-in</div><div class="eap-sub">A code from your phone, on top of your password</div></div>
+      <button class="eap-close" onclick="closeTwoFaModal()">✕</button>
+    </div>
+    <div class="eap-body" style="padding:16px;">
+      <div id="eap-2fa-status" style="font-size:13px;margin-bottom:12px;min-height:18px;"></div>
+
+      <div id="eap-2fa-off" style="display:none;">
+        <p style="font-size:13px;color:#aaa;line-height:1.6;margin-bottom:12px;">
+          Turn this on and signing in needs your password AND a 6-digit code from an authenticator app
+          (Google Authenticator, Microsoft Authenticator, Authy). Even if someone learns your password, they cannot get in.
+        </p>
+        <div class="eap-field"><label>Your current password</label><input type="password" id="eap-2fa-pw" class="eap-input" autocomplete="current-password"></div>
+        <button class="eap-btn-gold" onclick="eapTwoFaBegin()">Start set-up</button>
+      </div>
+
+      <div id="eap-2fa-setup" style="display:none;">
+        <p style="font-size:13px;color:#aaa;line-height:1.6;margin-bottom:10px;">1. Open your authenticator app and scan this code (or type the key). 2. Type the 6-digit code it shows.</p>
+        <div id="eap-2fa-qr" style="background:#fff;border-radius:10px;padding:8px;width:fit-content;margin:0 auto 10px;"></div>
+        <div style="text-align:center;font-size:12px;color:#999;">Or type this key in the app:</div>
+        <div id="eap-2fa-secret" style="text-align:center;font-family:monospace;font-size:14px;letter-spacing:2px;color:#F2CC6B;margin:4px 0 12px;word-break:break-all;"></div>
+        <div class="eap-field"><label>6-digit code</label><input type="text" id="eap-2fa-code" class="eap-input" inputmode="numeric" autocomplete="one-time-code" maxlength="8"></div>
+        <button class="eap-btn-gold" onclick="eapTwoFaEnable()">Turn on</button>
+      </div>
+
+      <div id="eap-2fa-codes" style="display:none;">
+        <p style="font-size:13px;color:#F2CC6B;line-height:1.6;margin-bottom:8px;"><strong>Save these 8 backup codes now.</strong> Each works once if you lose your phone. They are shown only this one time.</p>
+        <pre id="eap-2fa-codes-list" style="background:#0b0b0b;border:1px solid rgba(212,175,55,.25);border-radius:8px;padding:12px;font-size:14px;letter-spacing:1px;line-height:1.8;text-align:center;user-select:all;"></pre>
+        <button class="eap-btn-gold" onclick="eapTwoFaCodesDone()">I saved them</button>
+      </div>
+
+      <div id="eap-2fa-on" style="display:none;">
+        <p style="font-size:13px;color:#6ee7a0;margin-bottom:6px;">Two-step sign-in is ON.</p>
+        <p id="eap-2fa-left" style="font-size:12px;color:#999;margin-bottom:12px;"></p>
+        <div class="eap-field"><label>A code from your app (or a backup code), to change anything below</label><input type="text" id="eap-2fa-manage-code" class="eap-input" inputmode="numeric" autocomplete="one-time-code" maxlength="12"></div>
+        <button class="eap-btn-ghost" onclick="eapTwoFaNewCodes()">Get new backup codes</button>
+        <button class="eap-btn-ghost" style="margin-left:8px;" onclick="eapTwoFaDisable()">Turn off</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ── Biometric Center ── -->
 <div id="eap-biometric-modal" class="eap-modal">
   <div class="eap-box eid-gold-box" style="width:min(98vw,900px);max-height:96vh;">
@@ -2765,6 +2814,7 @@ document.getElementById('eid-fayda-modal').addEventListener('click', function(e)
         <div class="eap-field"><label>New Password</label><input type="password" id="eap-rp-pass" class="eap-input" placeholder="Min 6 characters"></div>
         <div class="eap-field"><label>Confirm Password</label><input type="password" id="eap-rp-confirm" class="eap-input"></div>
         <button class="eap-btn-gold" onclick="eapRpSubmit()">Set Password</button>
+        <button class="eap-btn-ghost" style="margin-left:8px;" onclick="eapRpReset2fa()" title="For a member who lost their phone and backup codes">Reset two-step sign-in</button>
       </div>
       <div id="eap-rp-msg"></div>
     </div>
@@ -2810,6 +2860,7 @@ document.getElementById('eid-fayda-modal').addEventListener('click', function(e)
   </div>
 </div>
 
+<script src="<?php echo esc_url( ETELID_URL . 'public/vendor/qrcode.js' ); ?>"></script>
 <script src="<?php echo esc_url( ETELID_URL . 'public/js/portal-main.js?v=' . (int) @filemtime( ETELID_PATH . 'public/js/portal-main.js' ) ); ?>"></script>
 
 <!-- ══ EtelID Diagnostic Console ═══════════════════════════════ -->

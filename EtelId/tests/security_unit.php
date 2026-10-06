@@ -34,6 +34,7 @@ class EtelID_DB { static function log( $mid, $eid, $ev, $detail = '' ) { $GLOBAL
 function wp_parse_url( $u, $c = -1 ) { return parse_url( $u, $c ); }
 function home_url( $p = '' ) { return 'https://ethelmarket.com' . $p; }
 function is_ssl() { return true; }
+function wp_json_encode( $v ) { return json_encode( $v ); }
 define( 'COOKIEPATH', '/' ); define( 'COOKIE_DOMAIN', '' ); define( 'ETELID_COOKIE_NAME', 'etelid_sess' );
 class FakeRequest { private $h; function __construct( $h ) { $this->h = $h; }
     function get_header( $n ) { return isset( $this->h[ $n ] ) ? $this->h[ $n ] : null; } }
@@ -47,6 +48,7 @@ require __DIR__ . '/../includes/class-etelid-security.php';
 require __DIR__ . '/../includes/class-etelid-service-api.php';
 require __DIR__ . '/../includes/class-etelid-auth.php';
 require __DIR__ . '/../includes/class-etelid-sun.php';
+require __DIR__ . '/../includes/class-etelid-2fa.php';
 require __DIR__ . '/../includes/class-etelid-webauthn.php';
 require __DIR__ . '/../includes/class-etelid-nfc.php';
 function current_time( $t ) { return '2026-10-06 00:00:00'; }
@@ -325,6 +327,58 @@ check( 'a CSP report is stored once', EtelID_Security::record_csp_report( $rep )
 check( 'the same report again within the hour is ignored (log cannot be flooded)', EtelID_Security::record_csp_report( $rep ) === false && count( $GLOBALS['__log'] ) === 1 );
 check( 'the stored report drops the query string of the page address', strpos( $GLOBALS['__log'][0][1], 'SECRET' ) === false && strpos( $GLOBALS['__log'][0][1], 'script-src-elem' ) !== false );
 check( 'junk reports are refused', EtelID_Security::record_csp_report( 'not json' ) === false && EtelID_Security::record_csp_report( '{"csp-report":{}}' ) === false );
+
+echo "two-step sign-in (authenticator app)\n";
+/* RFC 6238 test vectors (secret = ASCII "12345678901234567890", 6-digit tail of the 8-digit values) */
+$rfc = '12345678901234567890';
+foreach ( array( array( 59, '287082' ), array( 1111111109, '081804' ), array( 1111111111, '050471' ), array( 1234567890, '005924' ), array( 2000000000, '279037' ) ) as $v ) {
+    check( 'TOTP matches RFC 6238 at t=' . $v[0], EtelID_2FA::code_for_step( $rfc, (int) floor( $v[0] / 30 ) ) === $v[1] );
+}
+check( 'base32 round-trips', EtelID_2FA::b32_decode( EtelID_2FA::b32_encode( $rfc ) ) === $rfc && EtelID_2FA::b32_encode( 'foobar' ) === 'MZXW6YTBOI' );
+$enc = EtelID_2FA::encrypt( 'JBSWY3DPEHPK3PXP' );
+check( 'the secret is encrypted at rest and decrypts back', strpos( $enc, 'JBSWY' ) === false && EtelID_2FA::decrypt( $enc ) === 'JBSWY3DPEHPK3PXP' && EtelID_2FA::decrypt( 'garbage' ) === '' );
+
+class FakeWpdb5 extends FakeWpdb { public $rows = array();
+    function get_charset_collate() { return ''; }
+    function get_row( $q ) { if ( preg_match( '/member_id = (\d+)/', $q, $m ) && isset( $this->rows[ (int) $m[1] ] ) ) return (object) $this->rows[ (int) $m[1] ]; return null; }
+    function query( $q ) { $this->queries[] = $q;
+        if ( preg_match( "/^REPLACE INTO wp_etelid_2fa .*VALUES \((\d+), '([^']*)', 0, NULL, 0, '([^']*)'\)/", $q, $m ) ) {
+            $this->rows[ (int) $m[1] ] = array( 'member_id' => (int) $m[1], 'secret_enc' => $m[2], 'enabled' => 0, 'backup_codes' => null, 'last_step' => 0 ); }
+        if ( preg_match( '/^UPDATE wp_etelid_2fa SET last_step = (\d+) WHERE member_id = (\d+)/', $q, $m ) && isset( $this->rows[ (int) $m[2] ] ) ) $this->rows[ (int) $m[2] ]['last_step'] = (int) $m[1];
+        return 1; }
+    function update( $t, $d, $w ) { foreach ( $d as $k => $v ) $this->rows[ (int) $w['member_id'] ][ $k ] = $v; return 1; }
+    function delete( $t, $w ) { unset( $this->rows[ (int) $w['member_id'] ] ); return 1; } }
+$GLOBALS['wpdb'] = new FakeWpdb5();
+$tm = (object) array( 'id' => 21, 'etel_id' => 'EG-2026-00021', 'status' => 'active' );
+check( 'no two-step sign-in: the gate lets a password-only login through', EtelID_2FA::gate( $tm, '' ) === true );
+$b = EtelID_2FA::begin( $tm );
+check( 'set-up gives a secret and an otpauth link', strlen( $b['secret'] ) === 32 && strpos( $b['uri'], 'otpauth://totp/' ) === 0 && strpos( $b['uri'], 'secret=' . $b['secret'] ) !== false );
+check( 'not active until the first code is confirmed', EtelID_2FA::is_enabled( 21 ) === false && EtelID_2FA::gate( $tm, '' ) === true );
+$sec = EtelID_2FA::b32_decode( $b['secret'] ); $step = (int) floor( time() / 30 );
+$bad = EtelID_2FA::enable( $tm, '000000' );
+check( 'a wrong first code does not turn it on', is_wp_error( $bad ) && EtelID_2FA::is_enabled( 21 ) === false );
+$codes = EtelID_2FA::enable( $tm, EtelID_2FA::code_for_step( $sec, $step ) );
+check( 'the right first code turns it on and returns 8 backup codes', is_array( $codes ) && count( $codes ) === 8 && EtelID_2FA::is_enabled( 21 ) === true );
+check( 'only hashes of the backup codes are stored', strpos( $GLOBALS['wpdb']->rows[21]['backup_codes'], str_replace( '-', '', $codes[0] ) ) === false );
+$g = EtelID_2FA::gate( $tm, '' );
+check( 'password alone is no longer enough: the gate asks for a code', is_wp_error( $g ) && $g->get_error_code() === 'requires_2fa' );
+check( 'the code used to turn it on cannot be replayed to sign in', is_wp_error( EtelID_2FA::gate( $tm, EtelID_2FA::code_for_step( $sec, $step ) ) ) );
+check( 'the next valid code signs in', EtelID_2FA::gate( $tm, EtelID_2FA::code_for_step( $sec, $step + 1 ) ) === true );
+check( 'that code cannot be used a second time', is_wp_error( EtelID_2FA::gate( $tm, EtelID_2FA::code_for_step( $sec, $step + 1 ) ) ) );
+check( 'a backup code signs in once', EtelID_2FA::gate( $tm, $codes[0] ) === true && is_wp_error( EtelID_2FA::gate( $tm, $codes[0] ) ) );
+check( 'a backup code works with different spacing and case', EtelID_2FA::gate( $tm, strtolower( str_replace( '-', ' ', $codes[1] ) ) ) === true );
+for ( $i = 0; $i < 5; $i++ ) EtelID_2FA::gate( $tm, '111111' );
+$lock = EtelID_2FA::gate( $tm, EtelID_2FA::code_for_step( $sec, $step + 1 ) );
+check( 'after 5 wrong codes the account is locked, even for a right code', is_wp_error( $lock ) && $lock->get_error_code() === 'twofa_locked' );
+EtelID_Security::fail_clear( 'totp_21' );
+$tm2 = (object) array( 'id' => 22, 'etel_id' => 'EG-2026-00022', 'status' => 'active' );
+check( 'another member is not affected by the first member\'s two-step sign-in or lock', EtelID_2FA::gate( $tm2, '' ) === true );
+check( 'turning off needs a valid code', is_wp_error( EtelID_2FA::disable( $tm, '123456' ) ) && EtelID_2FA::is_enabled( 21 ) === true );
+$new = EtelID_2FA::regenerate_backup( $tm, $codes[2] );
+check( 'new backup codes replace the old ones', is_array( $new ) && count( $new ) === 8 && is_wp_error( EtelID_2FA::gate( $tm, $codes[3] ) ) );
+check( 'turning off with a backup code works', EtelID_2FA::disable( $tm, $new[0] ) === true && EtelID_2FA::is_enabled( 21 ) === false );
+EtelID_2FA::begin( $tm ); $b2 = EtelID_2FA::row( 21 );
+check( 'an admin reset removes it so the member can sign in with the password again', ( EtelID_2FA::admin_reset( 21 ) || true ) && EtelID_2FA::row( 21 ) === null && EtelID_2FA::gate( $tm, '' ) === true );
 
 echo "\n" . ( $fails ? "FAILED: $fails" : 'All EtelID security unit tests passed' ) . "\n";
 exit( $fails ? 1 : 0 );

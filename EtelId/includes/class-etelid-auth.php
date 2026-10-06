@@ -167,7 +167,7 @@ class EtelID_Auth {
     /**
      * Authenticate with phone + password. Returns member object or WP_Error.
      */
-    public static function login( $phone, $password ) {
+    public static function login( $phone, $password, $totp_code = '' ) {
         $phone  = preg_replace( '/\s+/', '', $phone );
 
         /* BRUTE-FORCE PROTECTION — this endpoint previously had ZERO rate
@@ -206,6 +206,13 @@ class EtelID_Auth {
         if ( ! self::verify_password( $password, $member->pin_hash ) ) {
             EtelID_DB::log( $member->id, $member->etel_id, 'login_failed', 'Wrong password' );
             return new WP_Error( 'wrong_password', 'Incorrect password. Please try again.' );
+        }
+
+        /* Two-step sign-in (only for members who switched it on): the password
+         * is right, now the code. Checked BEFORE a session exists. */
+        if ( class_exists( 'EtelID_2FA' ) ) {
+            $gate = EtelID_2FA::gate( $member, $totp_code );
+            if ( is_wp_error( $gate ) ) return $gate;
         }
 
         /* Transparent bcrypt upgrade: if the stored hash is still the legacy
