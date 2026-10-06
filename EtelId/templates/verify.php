@@ -97,8 +97,8 @@ if ( $is_valid ) {
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Etel-ID Verify · <?php echo esc_html($etel_id ?: 'Check ID'); ?></title>
-<link rel="stylesheet" href="<?php echo esc_url( ETELID_URL . 'public/css/etelid-fonts.css?v=' . filemtime( ETELID_PATH . 'public/css/etelid-fonts.css' ) ); ?>">
-<link rel="stylesheet" href="<?php echo esc_url( ETELID_URL . 'public/css/etelid-icons.css?v=' . filemtime( ETELID_PATH . 'public/css/etelid-icons.css' ) ); ?>">
+<link rel="stylesheet" href="<?php echo esc_url( ETELID_URL . 'public/css/etelid-fonts.css?v=' . (int) @filemtime( ETELID_PATH . 'public/css/etelid-fonts.css' ) ); ?>">
+<link rel="stylesheet" href="<?php echo esc_url( ETELID_URL . 'public/css/etelid-icons.css?v=' . (int) @filemtime( ETELID_PATH . 'public/css/etelid-icons.css' ) ); ?>">
 <style>.eid-print-nav-logo,.v-nav-logo,.af-nav-logo{width:36px!important;height:36px!important;filter:drop-shadow(0 2px 8px rgba(0,0,0,.5))!important}</style>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}

@@ -36,8 +36,8 @@ $init_tab  = ( get_query_var('etelid_page') === 'signup' ) ? 'signup' : 'login';
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Etel-ID — <?php echo $init_tab === 'signup' ? 'Create Account' : 'Sign In'; ?> · <?php echo esc_html($org_name); ?></title>
-<link rel="stylesheet" href="<?php echo esc_url( ETELID_URL . 'public/css/etelid-fonts.css?v=' . filemtime( ETELID_PATH . 'public/css/etelid-fonts.css' ) ); ?>">
-<link rel="stylesheet" href="<?php echo esc_url( ETELID_URL . 'public/css/etelid-icons.css?v=' . filemtime( ETELID_PATH . 'public/css/etelid-icons.css' ) ); ?>">
+<link rel="stylesheet" href="<?php echo esc_url( ETELID_URL . 'public/css/etelid-fonts.css?v=' . (int) @filemtime( ETELID_PATH . 'public/css/etelid-fonts.css' ) ); ?>">
+<link rel="stylesheet" href="<?php echo esc_url( ETELID_URL . 'public/css/etelid-icons.css?v=' . (int) @filemtime( ETELID_PATH . 'public/css/etelid-icons.css' ) ); ?>">
 <style><?php echo file_get_contents(ETELID_PATH.'public/css/etelid-auth.css'); ?></style>
 </head>
 <body>

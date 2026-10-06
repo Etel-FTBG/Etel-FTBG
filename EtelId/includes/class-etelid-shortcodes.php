@@ -83,7 +83,7 @@ class EtelID_Shortcodes {
         $cos    = count( EtelID_Generator::companies() );
 
         ob_start(); ?>
-        <link rel="stylesheet" href="<?php echo esc_url( ETELID_URL . 'public/css/etelid-icons.css?v=' . filemtime( ETELID_PATH . 'public/css/etelid-icons.css' ) ); ?>">
+        <link rel="stylesheet" href="<?php echo esc_url( ETELID_URL . 'public/css/etelid-icons.css?v=' . (int) @filemtime( ETELID_PATH . 'public/css/etelid-icons.css' ) ); ?>">
         <style>
         .eid-stats-widget{display:flex;flex-wrap:wrap;gap:14px;font-family:'Rajdhani',sans-serif;margin:20px 0}
         .eid-sw-card{background:#13151c;border:1px solid rgba(200,146,42,.2);border-radius:10px;padding:16px 20px;min-width:130px;flex:1;position:relative;overflow:hidden}

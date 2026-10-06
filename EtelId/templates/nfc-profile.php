@@ -42,9 +42,9 @@ $logo_madeya   = $site_root . '/Etel-Madeya/assets/images/etel-madeya-logo-sm.we
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>EtelID</title>
-<link rel="stylesheet" href="<?php echo esc_url( ETELID_URL . 'public/css/etelid-fonts.css?v=' . filemtime( ETELID_PATH . 'public/css/etelid-fonts.css' ) ); ?>">
+<link rel="stylesheet" href="<?php echo esc_url( ETELID_URL . 'public/css/etelid-fonts.css?v=' . (int) @filemtime( ETELID_PATH . 'public/css/etelid-fonts.css' ) ); ?>">
 <?php if (defined('ETELID_URL')) : ?>
-<link rel="stylesheet" href="<?php echo esc_url( ETELID_URL . 'public/css/etelid-card.css?v=' . filemtime( ETELID_PATH . 'public/css/etelid-card.css' ) ); ?>">
+<link rel="stylesheet" href="<?php echo esc_url( ETELID_URL . 'public/css/etelid-card.css?v=' . (int) @filemtime( ETELID_PATH . 'public/css/etelid-card.css' ) ); ?>">
 <?php endif; ?>
 <style>
   :root {

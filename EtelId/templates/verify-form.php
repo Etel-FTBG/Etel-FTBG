@@ -25,9 +25,9 @@ if ($query) {
     }
 }
 ?>
-<link rel="stylesheet" href="<?php echo esc_url( ETELID_URL . 'public/css/etelid-public.css?v=' . filemtime( ETELID_PATH . 'public/css/etelid-public.css' ) ); ?>">
-<link rel="stylesheet" href="<?php echo esc_url( ETELID_URL . 'public/css/etelid-fonts.css?v=' . filemtime( ETELID_PATH . 'public/css/etelid-fonts.css' ) ); ?>">
-<link rel="stylesheet" href="<?php echo esc_url( ETELID_URL . 'public/css/etelid-icons.css?v=' . filemtime( ETELID_PATH . 'public/css/etelid-icons.css' ) ); ?>">
+<link rel="stylesheet" href="<?php echo esc_url( ETELID_URL . 'public/css/etelid-public.css?v=' . (int) @filemtime( ETELID_PATH . 'public/css/etelid-public.css' ) ); ?>">
+<link rel="stylesheet" href="<?php echo esc_url( ETELID_URL . 'public/css/etelid-fonts.css?v=' . (int) @filemtime( ETELID_PATH . 'public/css/etelid-fonts.css' ) ); ?>">
+<link rel="stylesheet" href="<?php echo esc_url( ETELID_URL . 'public/css/etelid-icons.css?v=' . (int) @filemtime( ETELID_PATH . 'public/css/etelid-icons.css' ) ); ?>">
 
 <div class="eid-pub-page" style="padding-bottom:0">
   <div class="eid-pub-wrap" style="padding-top:24px">
