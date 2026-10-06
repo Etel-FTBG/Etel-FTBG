@@ -79,6 +79,13 @@ class EtelID_Rewrite {
         $verify = get_query_var( 'etelid_verify' );
         $print  = get_query_var( 'etelid_print' );
 
+        /* Personal pages (card print, portal, login, profile ...) must never
+         * be stored by a page cache - see EtelID_Security::no_cache(). The
+         * public /verify/ page is masked and may be cached. */
+        if ( $print || $page ) {
+            EtelID_Security::no_cache();
+        }
+
         /* ── Verify page ── */
         if ( $verify ) {
             $tpl = ETELID_PATH . 'templates/verify.php';
