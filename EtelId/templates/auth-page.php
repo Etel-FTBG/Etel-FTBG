@@ -493,14 +493,25 @@ function _waBufToB64url(buf){
   if (!btn || !window.PublicKeyCredential) return;
   try {
     var available = await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
-    if (available) btn.style.display = '';
+    if (available) {
+      /* Passkey-first: the device sign-in goes on top as the main action,
+         the password form below it is the fallback. */
+      var panel = document.getElementById('panel-login');
+      btn.style.cssText = 'margin:0 0 6px;';
+      btn.className = 'eid-auth-submit';
+      panel.insertBefore(btn, panel.firstChild);
+      var hint = document.createElement('div');
+      hint.className = 'eid-auth-divider';
+      hint.innerHTML = '<span>or use your password</span>';
+      panel.insertBefore(hint, btn.nextSibling);
+    }
   } catch(e) {}
 })();
 
 async function doBioLogin(){
   hideNotices(); clearFieldErrs();
+  /* Phone is optional: empty = the device offers its own passkeys for this site. */
   var phone = document.getElementById('login-phone').value.trim();
-  if (!phone) { showErr('Enter your phone number first, then tap this button.'); return; }
 
   var btn = document.getElementById('bio-login-btn');
   btn.disabled = true;
@@ -533,7 +544,7 @@ async function doBioLogin(){
 
     btn.innerHTML = '<i class="ti ti-loader" style="margin-right:6px"></i> Signing in…';
     var loginRes = await new Promise(function(resolve){
-      post({ action:'etelid_webauthn_login_verify', member_id: opt._member_id, credential: JSON.stringify(payload) }, resolve);
+      post({ action:'etelid_webauthn_login_verify', member_id: opt._member_id || 0, ses: opt._ses || '', credential: JSON.stringify(payload) }, resolve);
     });
     if (!loginRes.success) throw new Error(loginRes.data.message);
 

@@ -508,11 +508,15 @@ class EtelID_Auth_Ajax {
     public static function webauthn_login_options() {
         check_ajax_referer( 'etelid_auth', 'nonce' );
         $identifier = isset( $_POST['identifier'] ) ? sanitize_text_field( wp_unslash( $_POST['identifier'] ) ) : '';
-        if ( ! $identifier ) wp_send_json_error( array( 'message' => 'Enter your phone number or Etel-ID first.' ) );
 
         $ip = EtelID_Security::get_ip();
         if ( ! EtelID_Security::rate_limit( 'wa_login_' . $ip, 15, 600 ) ) {
             wp_send_json_error( array( 'message' => 'Too many attempts. Please wait a few minutes.' ) );
+        }
+
+        /* Passkey-first: nothing typed = let the device offer its own passkeys. */
+        if ( $identifier === '' ) {
+            wp_send_json_success( EtelID_WebAuthn::login_options_discoverable() );
         }
 
         $options = EtelID_WebAuthn::login_options( $identifier );
@@ -523,11 +527,31 @@ class EtelID_Auth_Ajax {
     public static function webauthn_login_verify() {
         check_ajax_referer( 'etelid_auth', 'nonce' );
 
-        $member_id  = isset( $_POST['member_id'] ) ? (int) $_POST['member_id'] : 0;
-        $credential = isset( $_POST['credential'] ) ? json_decode( wp_unslash( $_POST['credential'] ), true ) : null;
-        if ( ! $member_id || ! $credential ) wp_send_json_error( array( 'message' => 'Malformed response from device.' ) );
+        $ip = EtelID_Security::get_ip();
+        if ( ! EtelID_Security::rate_limit( 'wa_verify_' . $ip, 30, 600 ) ) {
+            wp_send_json_error( array( 'message' => 'Too many attempts. Please wait a few minutes.' ) );
+        }
 
-        $result = EtelID_WebAuthn::verify_login( $member_id, $credential );
+        $member_id  = isset( $_POST['member_id'] ) ? (int) $_POST['member_id'] : 0;
+        $ses        = isset( $_POST['ses'] ) ? sanitize_text_field( wp_unslash( $_POST['ses'] ) ) : '';
+        $credential = isset( $_POST['credential'] ) ? json_decode( wp_unslash( $_POST['credential'] ), true ) : null;
+        if ( ! is_array( $credential ) || ! isset( $credential['id'], $credential['response'] ) ) {
+            wp_send_json_error( array( 'message' => 'Malformed response from device.' ) );
+        }
+
+        $chal_key = '';
+        if ( $ses !== '' ) {
+            /* Passkey-first: the account is whoever owns the credential that signed. */
+            if ( ! preg_match( '/^[A-Za-z0-9_-]{16,32}$/', $ses ) ) {
+                wp_send_json_error( array( 'message' => 'Sign-in failed. Please sign in with your password.' ) );
+            }
+            $member_id = EtelID_WebAuthn::member_id_for_credential( (string) $credential['id'] );
+            $chal_key  = 'dlogin_' . $ses;
+            if ( ! $member_id ) wp_send_json_error( array( 'message' => 'Sign-in failed. Please sign in with your password.' ) );
+        }
+        if ( ! $member_id ) wp_send_json_error( array( 'message' => 'Malformed response from device.' ) );
+
+        $result = EtelID_WebAuthn::verify_login( $member_id, $credential, $chal_key );
         if ( is_wp_error( $result ) ) wp_send_json_error( array( 'message' => $result->get_error_message() ) );
 
         self::finish_login( $result['member'], '', $result['token'] );

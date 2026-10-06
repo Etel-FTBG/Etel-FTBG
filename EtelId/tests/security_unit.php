@@ -26,7 +26,15 @@ function is_wp_error( $x ) { return $x instanceof WP_Error; }
 class WP_Error { public $code; public $msg; public $data;
     function __construct( $c = '', $m = '', $d = array() ) { $this->code = $c; $this->msg = $m; $this->data = $d; }
     function get_error_code() { return $this->code; } function get_error_message() { return $this->msg; } }
-class EtelID_DB { static function log( $mid, $eid, $ev, $detail = '' ) { $GLOBALS['__log'][] = array( $ev, $detail ); } }
+class EtelID_DB { static function log( $mid, $eid, $ev, $detail = '' ) { $GLOBALS['__log'][] = array( $ev, $detail ); }
+    static function get_member( $id ) { return isset( $GLOBALS['__members'][ $id ] ) ? $GLOBALS['__members'][ $id ] : null; }
+    static function get_biometric( $id ) { return isset( $GLOBALS['__bio'][ $id ] ) ? $GLOBALS['__bio'][ $id ] : null; }
+    static function get_by_etel_id( $e ) { return null; } static function find_by_phone( $p ) { return null; }
+    static function t_biometric() { return 'wp_bio'; } }
+function wp_parse_url( $u, $c = -1 ) { return parse_url( $u, $c ); }
+function home_url( $p = '' ) { return 'https://ethelmarket.com' . $p; }
+function is_ssl() { return true; }
+define( 'COOKIEPATH', '/' ); define( 'COOKIE_DOMAIN', '' ); define( 'ETELID_COOKIE_NAME', 'etelid_sess' );
 class FakeRequest { private $h; function __construct( $h ) { $this->h = $h; }
     function get_header( $n ) { return isset( $this->h[ $n ] ) ? $this->h[ $n ] : null; } }
 class FakeWpdb { public $prefix = 'wp_'; public $queries = array();
@@ -39,6 +47,7 @@ require __DIR__ . '/../includes/class-etelid-security.php';
 require __DIR__ . '/../includes/class-etelid-service-api.php';
 require __DIR__ . '/../includes/class-etelid-auth.php';
 require __DIR__ . '/../includes/class-etelid-sun.php';
+require __DIR__ . '/../includes/class-etelid-webauthn.php';
 require __DIR__ . '/../includes/class-etelid-nfc.php';
 function current_time( $t ) { return '2026-10-06 00:00:00'; }
 function random_bytes_stub() {}
@@ -187,6 +196,64 @@ $card->sun_counter = 2;
 list( $e3, $c3 ) = EtelID_SUN::simulate_tap( '04112233445566', 3, ETELID_SUN_META_KEY );
 check( 'a different chip on this card is rejected', Etelid_Nfc::sun_evaluate( $card, $e3, $c3 ) === 'uid' );
 check( 'forged signature is rejected', Etelid_Nfc::sun_evaluate( $card, $e2, '0000000000000000' ) === 'bad' );
+
+echo "passkey / device sign-in (WebAuthn)\n";
+class FakeWpdb4 extends FakeWpdb { public $owner = 0; public $updates = array();
+    function get_var( $q ) { $this->queries[] = $q; return $this->owner; }
+    function update( $t, $d, $w ) { $this->updates[] = $d; return 1; }
+    function insert( $t, $d ) { return 1; } }
+$wdb = new FakeWpdb4(); $GLOBALS['wpdb'] = $wdb;
+$key = openssl_pkey_new( array( 'curve_name' => 'prime256v1', 'private_key_type' => OPENSSL_KEYTYPE_EC ) );
+$pem = openssl_pkey_get_details( $key )['key'];
+$cred_id = EtelID_WebAuthn::b64url_encode( random_bytes( 16 ) );
+$GLOBALS['__members'][7] = (object) array( 'id' => 7, 'etel_id' => 'EG-2026-00007', 'status' => 'active' );
+$GLOBALS['__bio'][7]     = (object) array( 'webauthn_credential_id' => $cred_id, 'webauthn_public_key' => $pem, 'webauthn_sign_count' => 0 );
+function make_assertion( $key, $cred_id, $challenge_b64, $flags, $counter, $type = 'webauthn.get' ) {
+    $cd   = json_encode( array( 'type' => $type, 'challenge' => $challenge_b64, 'origin' => 'https://ethelmarket.com' ) );
+    $auth = hash( 'sha256', 'ethelmarket.com', true ) . chr( $flags ) . pack( 'N', $counter );
+    openssl_sign( $auth . hash( 'sha256', $cd, true ), $sig, $key, OPENSSL_ALGO_SHA256 );
+    return array( 'id' => $cred_id, 'response' => array(
+        'clientDataJSON' => EtelID_WebAuthn::b64url_encode( $cd ), 'authenticatorData' => EtelID_WebAuthn::b64url_encode( $auth ),
+        'signature' => EtelID_WebAuthn::b64url_encode( $sig ) ) );
+}
+set_error_handler( function () { return true; } );   /* create_session sets a cookie; CLI has no headers */
+
+$o = EtelID_WebAuthn::login_options_discoverable();
+check( 'passkey-first options list no credentials (device picks) and require verification', $o['allowCredentials'] === array() && $o['userVerification'] === 'required' && strlen( $o['_ses'] ) >= 16 );
+$wdb->owner = 7;
+check( 'account is found from the credential id', EtelID_WebAuthn::member_id_for_credential( $cred_id ) === 7 );
+check( 'oversized/empty credential ids are refused', EtelID_WebAuthn::member_id_for_credential( '' ) === 0 && EtelID_WebAuthn::member_id_for_credential( str_repeat( 'a', 2000 ) ) === 0 );
+
+$r = EtelID_WebAuthn::verify_login( 7, make_assertion( $key, $cred_id, $o['challenge'], 0x05, 0 ), 'dlogin_' . $o['_ses'] );
+check( 'valid passkey assertion signs in', is_array( $r ) && $r['member']->id === 7 );
+
+$o = EtelID_WebAuthn::login_options_discoverable();
+$r = EtelID_WebAuthn::verify_login( 7, make_assertion( $key, $cred_id, $o['challenge'], 0x01, 0 ), 'dlogin_' . $o['_ses'] );
+check( 'no user-verification flag (touch only) is refused', is_wp_error( $r ) && $r->get_error_code() === 'no_verification' );
+
+$o = EtelID_WebAuthn::login_options_discoverable();
+$c = make_assertion( $key, $cred_id, $o['challenge'], 0x05, 0 );
+EtelID_WebAuthn::verify_login( 7, $c, 'dlogin_' . $o['_ses'] );
+$r = EtelID_WebAuthn::verify_login( 7, $c, 'dlogin_' . $o['_ses'] );
+check( 'a challenge works only once (replay refused)', is_wp_error( $r ) && $r->get_error_code() === 'bad_challenge' );
+
+$other = openssl_pkey_new( array( 'curve_name' => 'prime256v1', 'private_key_type' => OPENSSL_KEYTYPE_EC ) );
+$o = EtelID_WebAuthn::login_options_discoverable();
+$r = EtelID_WebAuthn::verify_login( 7, make_assertion( $other, $cred_id, $o['challenge'], 0x05, 0 ), 'dlogin_' . $o['_ses'] );
+check( 'assertion signed by a different key is refused', is_wp_error( $r ) && $r->get_error_code() === 'bad_signature' );
+
+$o = EtelID_WebAuthn::login_options_discoverable();
+$r = EtelID_WebAuthn::verify_login( 7, make_assertion( $key, $cred_id, EtelID_WebAuthn::b64url_encode( 'wrong-challenge-wrong-challenge-12' ), 0x05, 0 ), 'dlogin_' . $o['_ses'] );
+check( 'wrong challenge is refused', is_wp_error( $r ) && $r->get_error_code() === 'bad_challenge' );
+
+$GLOBALS['__bio'][7]->webauthn_sign_count = 5;
+$o = EtelID_WebAuthn::login_options_discoverable();
+$r = EtelID_WebAuthn::verify_login( 7, make_assertion( $key, $cred_id, $o['challenge'], 0x05, 5 ), 'dlogin_' . $o['_ses'] );
+check( 'a counter that did not increase (cloned key) is refused', is_wp_error( $r ) && $r->get_error_code() === 'clone_detected' );
+restore_error_handler();
+
+check( 'unknown account and not-enrolled give the same message (no account enumeration)',
+    EtelID_WebAuthn::login_options( '+251900000000' )->get_error_message() === EtelID_WebAuthn::NO_DEVICE_MSG );
 
 echo "\n" . ( $fails ? "FAILED: $fails" : 'All EtelID security unit tests passed' ) . "\n";
 exit( $fails ? 1 : 0 );
