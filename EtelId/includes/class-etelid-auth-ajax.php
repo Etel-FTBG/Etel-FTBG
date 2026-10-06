@@ -34,6 +34,8 @@ class EtelID_Auth_Ajax {
             'etelid_webauthn_register_verify'  => 'webauthn_register_verify',
             'etelid_webauthn_login_options'    => 'webauthn_login_options',
             'etelid_webauthn_login_verify'     => 'webauthn_login_verify',
+            'etelid_webauthn_devices'          => 'webauthn_devices',
+            'etelid_webauthn_remove'           => 'webauthn_remove',
         );
         foreach ( $map as $action => $method ) {
             add_action( 'wp_ajax_'        . $action, array( __CLASS__, $method ) );
@@ -555,6 +557,36 @@ class EtelID_Auth_Ajax {
         if ( is_wp_error( $result ) ) wp_send_json_error( array( 'message' => $result->get_error_message() ) );
 
         self::finish_login( $result['member'], '', $result['token'] );
+    }
+
+    /* ── My devices: list and remove (member must be signed in) ─────── */
+    public static function webauthn_devices() {
+        check_ajax_referer( 'etelid_auth', 'nonce' );
+        $member = EtelID_Auth::get_current_member();
+        if ( ! $member ) wp_send_json_error( array( 'message' => 'Please sign in first.' ) );
+        $list = array();
+        foreach ( EtelID_WebAuthn::devices_for_member( $member->id ) as $d ) {
+            $list[] = array(
+                'id'           => $d->credential_id,
+                'label'        => $d->label !== '' ? $d->label : 'Device',
+                'created_at'   => $d->created_at,
+                'last_used_at' => $d->last_used_at,
+            );
+        }
+        wp_send_json_success( array( 'devices' => $list, 'max' => EtelID_WebAuthn::MAX_DEVICES ) );
+    }
+
+    public static function webauthn_remove() {
+        check_ajax_referer( 'etelid_auth', 'nonce' );
+        $member = EtelID_Auth::get_current_member();
+        if ( ! $member ) wp_send_json_error( array( 'message' => 'Please sign in first.' ) );
+        $cred = isset( $_POST['credential_id'] ) ? sanitize_text_field( wp_unslash( $_POST['credential_id'] ) ) : '';
+        if ( $cred === '' ) wp_send_json_error( array( 'message' => 'Missing device.' ) );
+        if ( ! EtelID_WebAuthn::remove_device( $member->id, $cred ) ) {
+            wp_send_json_error( array( 'message' => 'That device was not found.' ) );
+        }
+        EtelID_DB::log( $member->id, $member->etel_id, 'bio_enrolled', 'Device sign-in removed by the member' );
+        wp_send_json_success( array( 'message' => 'Device removed.' ) );
     }
 
     /* ── Logout ─────────────────────────────────────────── */

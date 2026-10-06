@@ -25,6 +25,7 @@ if ( ! defined( 'ABSPATH' ) ) exit;
 class EtelID_WebAuthn {
 
     const CHALLENGE_TTL = 120; // seconds
+    const MAX_DEVICES   = 5;
 
     /* ── RP identity ─────────────────────────────────────────── */
     private static function rp_id() {
@@ -60,19 +61,125 @@ class EtelID_WebAuthn {
     }
 
     /* ================================================================
+     *  DEVICE STORE - one member can register several devices
+     *
+     *  The first device lives where it always did (the etelid_biometric row,
+     *  so the admin Biometric Center keeps working). Every further device
+     *  goes into etelid_passkeys. All lookups below merge the two.
+     * ================================================================ */
+
+    const TABLE = 'etelid_passkeys';
+    const DB_VERSION = '1.0';
+
+    private static function table() {
+        global $wpdb;
+        return $wpdb->prefix . self::TABLE;
+    }
+
+    /** Create the table once per version (cheap option check on every call). */
+    public static function ensure_table() {
+        if ( get_option( 'etelid_passkeys_db_version' ) === self::DB_VERSION ) return;
+        if ( ! defined( 'ABSPATH' ) || ! file_exists( ABSPATH . 'wp-admin/includes/upgrade.php' ) ) return;
+        global $wpdb;
+        require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+        dbDelta( "CREATE TABLE " . self::table() . " (
+            id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+            member_id BIGINT UNSIGNED NOT NULL,
+            credential_id VARCHAR(500) NOT NULL,
+            public_key TEXT NOT NULL,
+            sign_count BIGINT UNSIGNED NOT NULL DEFAULT 0,
+            label VARCHAR(100) NOT NULL DEFAULT '',
+            created_at DATETIME NOT NULL,
+            last_used_at DATETIME NULL DEFAULT NULL,
+            PRIMARY KEY  (id),
+            UNIQUE KEY credential_id (credential_id(190)),
+            KEY member_id (member_id)
+        ) " . $wpdb->get_charset_collate() . ";" );
+        update_option( 'etelid_passkeys_db_version', self::DB_VERSION );
+    }
+
+    /** Every registered device of a member: array of objects
+     *  { member_id, credential_id, public_key, sign_count, label, created_at, last_used_at, legacy }. */
+    public static function devices_for_member( $member_id ) {
+        global $wpdb;
+        self::ensure_table();
+        $out = array();
+        $bio = EtelID_DB::get_biometric( (int) $member_id );
+        if ( $bio && ! empty( $bio->webauthn_credential_id ) && ! empty( $bio->webauthn_public_key ) ) {
+            $out[ $bio->webauthn_credential_id ] = (object) array(
+                'member_id' => (int) $member_id, 'credential_id' => $bio->webauthn_credential_id,
+                'public_key' => $bio->webauthn_public_key, 'sign_count' => (int) $bio->webauthn_sign_count,
+                'label' => isset( $bio->webauthn_label ) && $bio->webauthn_label !== '' ? $bio->webauthn_label : 'First device',
+                'created_at' => isset( $bio->enrolled_at ) ? $bio->enrolled_at : '', 'last_used_at' => null, 'legacy' => true,
+            );
+        }
+        $rows = $wpdb->get_results( $wpdb->prepare( 'SELECT * FROM ' . self::table() . ' WHERE member_id = %d ORDER BY id ASC', (int) $member_id ) );
+        foreach ( (array) $rows as $r ) {
+            $r->sign_count = (int) $r->sign_count; $r->legacy = false;
+            $out[ $r->credential_id ] = $r;
+        }
+        return array_values( $out );
+    }
+
+    /** One device by credential id (any member). null when unknown. */
+    public static function find_device( $credential_id ) {
+        global $wpdb;
+        if ( ! is_string( $credential_id ) || $credential_id === '' || strlen( $credential_id ) > 1024 ) return null;
+        self::ensure_table();
+        $r = $wpdb->get_row( $wpdb->prepare( 'SELECT * FROM ' . self::table() . ' WHERE credential_id = %s LIMIT 1', $credential_id ) );
+        if ( $r ) { $r->sign_count = (int) $r->sign_count; $r->legacy = false; return $r; }
+        $b = $wpdb->get_row( $wpdb->prepare( 'SELECT * FROM ' . EtelID_DB::t_biometric() . ' WHERE webauthn_credential_id = %s LIMIT 1', $credential_id ) );
+        if ( $b && ! empty( $b->webauthn_public_key ) ) {
+            return (object) array( 'member_id' => (int) $b->member_id, 'credential_id' => $b->webauthn_credential_id,
+                'public_key' => $b->webauthn_public_key, 'sign_count' => (int) $b->webauthn_sign_count,
+                'label' => '', 'created_at' => '', 'last_used_at' => null, 'legacy' => true );
+        }
+        return null;
+    }
+
+    private static function touch_device( $device, $sign_count ) {
+        global $wpdb;
+        if ( $device->legacy ) {
+            $wpdb->update( EtelID_DB::t_biometric(), array( 'webauthn_sign_count' => (int) $sign_count ), array( 'member_id' => (int) $device->member_id ) );
+        } else {
+            $wpdb->update( self::table(), array( 'sign_count' => (int) $sign_count, 'last_used_at' => gmdate( 'Y-m-d H:i:s' ) ), array( 'credential_id' => $device->credential_id ) );
+        }
+    }
+
+    /** Remove one device of a member. True if something was removed. */
+    public static function remove_device( $member_id, $credential_id ) {
+        global $wpdb;
+        foreach ( self::devices_for_member( $member_id ) as $d ) {
+            if ( ! hash_equals( (string) $d->credential_id, (string) $credential_id ) ) continue;
+            if ( $d->legacy ) {
+                $wpdb->update( EtelID_DB::t_biometric(),
+                    array( 'webauthn_credential_id' => '', 'webauthn_public_key' => '', 'webauthn_sign_count' => 0 ),
+                    array( 'member_id' => (int) $member_id ) );
+            } else {
+                $wpdb->delete( self::table(), array( 'member_id' => (int) $member_id, 'credential_id' => $d->credential_id ) );
+            }
+            return true;
+        }
+        return false;
+    }
+
+    /** Remove every extra device of a member (admin "revoke" and similar). */
+    public static function remove_all_extra_devices( $member_id ) {
+        global $wpdb;
+        self::ensure_table();
+        $wpdb->delete( self::table(), array( 'member_id' => (int) $member_id ) );
+    }
+
+    /* ================================================================
      *  REGISTRATION (enroll THIS device's Face ID / fingerprint / etc.)
      * ================================================================ */
 
     /** Options for navigator.credentials.create() -- member must already be logged in. */
     public static function registration_options( $member ) {
         $challenge = self::new_challenge( 'reg_' . $member->id );
-        $bio = EtelID_DB::get_biometric( $member->id );
         $exclude = array();
-        if ( $bio && ! empty( $bio->webauthn_credential_id ) ) {
-            $exclude[] = array(
-                'type' => 'public-key',
-                'id'   => $bio->webauthn_credential_id, // already base64url
-            );
+        foreach ( self::devices_for_member( $member->id ) as $d ) {
+            $exclude[] = array( 'type' => 'public-key', 'id' => $d->credential_id ); // already base64url
         }
         return array(
             'challenge' => self::b64url_encode( $challenge ),
@@ -88,7 +195,8 @@ class EtelID_WebAuthn {
             'authenticatorSelection' => array(
                 'authenticatorAttachment' => 'platform',   // this device's own sensor, not a USB key
                 'userVerification'        => 'required',   // forces the biometric/PIN prompt
-                'residentKey'             => 'preferred',
+                'residentKey'             => 'required',    // discoverable passkey: sign in without typing a phone number
+                'requireResidentKey'      => true,
             ),
             'attestation' => 'none', // we don't need vendor attestation chains, just the key
             'timeout'     => 60000,
@@ -136,14 +244,33 @@ class EtelID_WebAuthn {
 
         $cred_id_b64url = self::b64url_encode( $auth_data['credential_id'] );
 
-        $result = EtelID_DB::upsert_biometric( $member->id, $member->etel_id, array(
-            'webauthn_credential_id' => $cred_id_b64url,
-            'webauthn_public_key'    => $pem,
-            'webauthn_sign_count'    => $auth_data['sign_count'],
-            'liveness_level'         => 3,
-            'liveness_confidence'    => 100,
-            'enrolled_by'            => 'Self (device biometric)',
-        ));
+        $existing = self::devices_for_member( $member->id );
+        foreach ( $existing as $d ) {
+            if ( hash_equals( (string) $d->credential_id, $cred_id_b64url ) ) {
+                return new WP_Error( 'already_registered', 'This device is already registered.' );
+            }
+        }
+        if ( ! $existing ) {
+            /* first device: stored where it always was, so the admin Biometric Center still shows it */
+            $result = EtelID_DB::upsert_biometric( $member->id, $member->etel_id, array(
+                'webauthn_credential_id' => $cred_id_b64url,
+                'webauthn_public_key'    => $pem,
+                'webauthn_sign_count'    => $auth_data['sign_count'],
+                'liveness_level'         => 3,
+                'liveness_confidence'    => 100,
+                'enrolled_by'            => 'Self (device biometric)',
+            ));
+        } else {
+            global $wpdb;
+            if ( count( $existing ) >= self::MAX_DEVICES ) {
+                return new WP_Error( 'too_many', 'You can register up to ' . self::MAX_DEVICES . ' devices. Remove one first.' );
+            }
+            $result = $wpdb->insert( self::table(), array(
+                'member_id' => (int) $member->id, 'credential_id' => $cred_id_b64url, 'public_key' => $pem,
+                'sign_count' => (int) $auth_data['sign_count'], 'label' => self::guess_device_label(),
+                'created_at' => gmdate( 'Y-m-d H:i:s' ),
+            ) );
+        }
         if ( false === $result ) return new WP_Error( 'db_error', 'Could not save credential.' );
 
         EtelID_DB::log( $member->id, $member->etel_id, 'bio_enrolled', 'Device biometric (WebAuthn/' . self::guess_device_label() . ') registered' );
@@ -165,10 +292,11 @@ class EtelID_WebAuthn {
         if ( ! $member ) $member = EtelID_DB::find_by_phone( $identifier );
         if ( ! $member ) return new WP_Error( 'no_device', self::NO_DEVICE_MSG );
 
-        $bio = EtelID_DB::get_biometric( $member->id );
-        if ( ! $bio || empty( $bio->webauthn_credential_id ) ) {
-            return new WP_Error( 'no_device', self::NO_DEVICE_MSG );
+        $allow = array();
+        foreach ( self::devices_for_member( $member->id ) as $d ) {
+            $allow[] = array( 'type' => 'public-key', 'id' => $d->credential_id, 'transports' => array( 'internal' ) );
         }
+        if ( ! $allow ) return new WP_Error( 'no_device', self::NO_DEVICE_MSG );
 
         $challenge = self::new_challenge( 'login_' . $member->id );
         return array(
@@ -176,11 +304,7 @@ class EtelID_WebAuthn {
             'rpId'             => self::rp_id(),
             'timeout'          => 60000,
             'userVerification' => 'required',
-            'allowCredentials' => array( array(
-                'type'       => 'public-key',
-                'id'         => $bio->webauthn_credential_id,
-                'transports' => array( 'internal' ),
-            ) ),
+            'allowCredentials' => $allow,
             '_member_id' => $member->id, // returned to the client only to echo back on verify
         );
     }
@@ -203,12 +327,8 @@ class EtelID_WebAuthn {
 
     /** Find the member that owns a credential id (base64url). 0 if none. */
     public static function member_id_for_credential( $credential_id ) {
-        global $wpdb;
-        if ( ! is_string( $credential_id ) || $credential_id === '' || strlen( $credential_id ) > 1024 ) return 0;
-        return (int) $wpdb->get_var( $wpdb->prepare(
-            'SELECT member_id FROM ' . EtelID_DB::t_biometric() . ' WHERE webauthn_credential_id = %s LIMIT 1',
-            $credential_id
-        ) );
+        $d = self::find_device( $credential_id );
+        return $d ? (int) $d->member_id : 0;
     }
 
     /** Verify the browser's assertion response; on success, starts a real login session. */
@@ -216,11 +336,11 @@ class EtelID_WebAuthn {
         $member = EtelID_DB::get_member( (int) $member_id );
         if ( ! $member ) return new WP_Error( 'not_found', 'Account not found.' );
 
-        $bio = EtelID_DB::get_biometric( $member->id );
-        if ( ! $bio || empty( $bio->webauthn_public_key ) ) {
-            return new WP_Error( 'not_enrolled', 'No device biometric registered for this account.' );
+        $device = null;
+        foreach ( self::devices_for_member( $member->id ) as $d ) {
+            if ( hash_equals( (string) $d->credential_id, (string) $credential['id'] ) ) { $device = $d; break; }
         }
-        if ( $credential['id'] !== $bio->webauthn_credential_id ) {
+        if ( ! $device ) {
             return new WP_Error( 'wrong_credential', 'This device is not registered to this account.' );
         }
 
@@ -259,7 +379,7 @@ class EtelID_WebAuthn {
         $signed_data = $auth_data_raw . hash( 'sha256', $client_data_json, true );
         $signature   = self::b64url_decode( $credential['response']['signature'] );
 
-        $ok = openssl_verify( $signed_data, $signature, $bio->webauthn_public_key, OPENSSL_ALGO_SHA256 );
+        $ok = openssl_verify( $signed_data, $signature, $device->public_key, OPENSSL_ALGO_SHA256 );
         if ( $ok !== 1 ) {
             EtelID_DB::log( $member->id, $member->etel_id, 'login_failed', 'WebAuthn signature verification failed' );
             return new WP_Error( 'bad_signature', 'Biometric verification failed.' );
@@ -270,13 +390,12 @@ class EtelID_WebAuthn {
            track state internally instead) -- only enforce the check when
            the stored counter is non-zero, matching common relying-party
            practice for resident platform keys. */
-        if ( (int) $bio->webauthn_sign_count > 0 && $auth_data['sign_count'] <= (int) $bio->webauthn_sign_count ) {
+        if ( (int) $device->sign_count > 0 && $auth_data['sign_count'] <= (int) $device->sign_count ) {
             EtelID_DB::log( $member->id, $member->etel_id, 'login_failed', 'WebAuthn possible cloned credential (counter did not increase)' );
             return new WP_Error( 'clone_detected', 'Security check failed. Please contact support.' );
         }
 
-        global $wpdb;
-        $wpdb->update( EtelID_DB::t_biometric(), array( 'webauthn_sign_count' => $auth_data['sign_count'] ), array( 'member_id' => $member->id ) );
+        self::touch_device( $device, $auth_data['sign_count'] );
 
         if ( $member->status === 'suspended' ) return new WP_Error( 'suspended', 'This account has been suspended.' );
         if ( $member->status === 'revoked' )   return new WP_Error( 'revoked', 'This account has been revoked.' );

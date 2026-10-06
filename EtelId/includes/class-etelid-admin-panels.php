@@ -792,6 +792,7 @@ class EtelID_Admin_Panels {
             'webauthn_credential_id' => '', 'webauthn_public_key' => '', 'webauthn_sign_count' => 0,
             'liveness_level' => 0, 'liveness_confidence' => 0,
         ) );
+        if ( class_exists( 'EtelID_WebAuthn' ) ) EtelID_WebAuthn::remove_all_extra_devices( $m->id );
         EtelID_DB::log( $m->id, $m->etel_id, 'bio_enrolled', 'Device biometric revoked by admin' );
         wp_send_json_success( array( 'message' => 'Device biometric revoked. They will need to register again.' ) );
     }
