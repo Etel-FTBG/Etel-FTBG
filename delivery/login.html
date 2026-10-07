@@ -1192,7 +1192,7 @@ async function doEtelIdLogin() {
     // additionally recognizes Etel-Group-assigned staff roles (see
     // EtelGroup admin's Employees panel) - see admin_etelid_login.
     var action = (_role === 'admin') ? 'admin_etelid_login' : 'etelid_login';
-    var eidBody = { identifier: ident.replace(/\s/g,''), password: pw, role: _role };
+    var eidBody = { identifier: ident.replace(/\s/g,''), password: pw, role: _role, app: _forceRideRedirect ? 'ride' : _role };
     var res = await api(action, eidBody);
     // Two-step sign-in (admin accounts): ask for the authenticator/backup code and resend.
     while (res && res.requires_2fa && window.Etel2FA) {
@@ -1215,6 +1215,8 @@ async function doEtelIdLogin() {
     // straight back to their own app, which would silently undo the
     // whole point of allowing the login through in the first place.
     var target = (_role === 'customer') ? 'customer.html' : ((ur === 'admin' && map[_role]) ? map[_role] : (map[ur] || 'customer.html'));
+    // Ride-only accounts (audit test users) on the Driver tab go to the Driver app if they are drivers, else the Ride app - never the Delivery customer page.
+    if (u && u.ride_scoped && _role === 'driver') target = (ur === 'driver') ? 'driver/' : 'ride/';
     // Staff signing in via admin_etelid_login carry a staff_role from
     // EtelGroup's Employees panel (Dispatcher, Finance, Traffic Officer,
     // Manager, etc.) - land them on the admin page most relevant to that
@@ -1254,7 +1256,7 @@ async function doLogin() {
   clearAlert();
   var action = _role==='service_giver' ? 'sg_login' : 'login';
   try {
-    var loginBody = { phone: phone, password: pw, role: _role };
+    var loginBody = { phone: phone, password: pw, role: _role, app: _forceRideRedirect ? 'ride' : _role };
     var res = await api(action, loginBody);
     // Admin accounts with two-step sign-in switched on answer { requires_2fa: true }:
     // ask for the authenticator (or backup) code and send it with the same request.
@@ -1285,6 +1287,8 @@ async function doLogin() {
     // straight back to their own app, which would silently undo the
     // whole point of allowing the login through in the first place.
     var target = (_role === 'customer') ? 'customer.html' : ((ur === 'admin' && map[_role]) ? map[_role] : (map[ur] || 'index.html'));
+    // Ride-only accounts (audit test users) on the Driver tab go to the Driver app if they are drivers, else the Ride app - never the Delivery customer page.
+    if (u && u.ride_scoped && _role === 'driver') target = (ur === 'driver') ? 'driver/' : 'ride/';
     // Same staff-role landing as the EtelID path (doEtelIdLogin above) -
     // now that the backend also returns staff_role for a plain
     // phone+password login, not just admin_etelid_login, this needs the

@@ -223,7 +223,10 @@ case 'login': {
     $requestedRole = isset($body['role']) ? trim((string)$body['role']) : '';
     // A Ride-only admin (limited staff role) must not enter the Courier, Driver or Service-giver apps.
     if ($requestedRole !== '' && etel_ride_scoped($pdo, $u)) {
-        $blockedTabs = array('customer', 'courier', 'service_giver');
+        // The login page sends the Ride tab as role=customer plus app=ride (the backend only knows five roles).
+        $appHint = isset($body['app']) ? trim((string)$body['app']) : '';
+        $blockedTabs = array('courier', 'service_giver');
+        if ($appHint !== 'ride') $blockedTabs[] = 'customer';
         if ($u['role'] === 'admin') $blockedTabs[] = 'driver';
         if (in_array($requestedRole, $blockedTabs, true)) {
             fail('This account is limited to the Ride system. Use the Ride or Driver tab.', 403);
@@ -262,6 +265,7 @@ case 'login': {
             'id'    => $u['id'],
             'name'  => $u['name'],
             'phone' => $u['phone'],
+            'ride_scoped' => etel_ride_scoped($pdo, $u),
             'role'  => $u['role'],
             'staff_role' => $hasStaffRole ? $u['staff_role'] : null
         )
@@ -395,7 +399,10 @@ case 'etelid_login': {
     $requestedRole = isset($body['role']) ? trim((string)$body['role']) : '';
     // A Ride-only admin (limited staff role) must not enter the Courier, Driver or Service-giver apps.
     if ($requestedRole !== '' && etel_ride_scoped($pdo, $u)) {
-        $blockedTabs = array('customer', 'courier', 'service_giver');
+        // The login page sends the Ride tab as role=customer plus app=ride (the backend only knows five roles).
+        $appHint = isset($body['app']) ? trim((string)$body['app']) : '';
+        $blockedTabs = array('courier', 'service_giver');
+        if ($appHint !== 'ride') $blockedTabs[] = 'customer';
         if ($u['role'] === 'admin') $blockedTabs[] = 'driver';
         if (in_array($requestedRole, $blockedTabs, true)) {
             fail('This account is limited to the Ride system. Use the Ride or Driver tab.', 403);
@@ -416,7 +423,8 @@ case 'etelid_login': {
             'id'    => $u['id'],
             'name'  => $u['name'],
             'phone' => $u['phone'],
-            'role'  => $u['role']
+            'role'  => $u['role'],
+            'ride_scoped' => etel_ride_scoped($pdo, $u)
         ),
         'etel_id'    => $member['etel_id'],
         'etelid_limited' => !empty($member['profile_limited']),
