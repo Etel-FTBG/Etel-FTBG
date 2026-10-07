@@ -219,7 +219,14 @@ const Auth = {
   logout() {
     ['etel_token','etel_user','etel_courier','etel_service_giver','etel_sso'].forEach(k => localStorage.removeItem(k));
     const base = ETEL.api.replace('api/boot.php','');
-    window.location.href = base + 'login.html';
+    // Send people back to the sign-in page of the app they were in (Ride / Driver / Courier / Service),
+    // not the generic page with all the tabs.
+    var p = location.pathname, q = '';
+    if (/\/ride(\/|$|\.html)/.test(p)) q = '?redirect=ride%2F';
+    else if (/\/driver(\/|$|\.html)/.test(p)) q = '?role=driver&redirect=driver%2F';
+    else if (/\/courier(\/|$)/.test(p)) q = '?role=courier&redirect=courier%2F';
+    else if (/servicegiver\.html/.test(p)) q = '?role=service_giver&redirect=servicegiver.html';
+    window.location.href = base + 'login.html' + q;
   },
 };
 
