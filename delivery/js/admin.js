@@ -96,8 +96,14 @@
                 // payment confirmations (Telebirr + bank) without having
                 // to click into that tab first - doesn't block or slow
                 // down the main dashboard stats load below.
-                if (typeof updatePaymentsBadge === 'function') updatePaymentsBadge().catch(() => {});
-                loadPlatformPulse().catch(() => {});
+                // Ride-only roles have no Delivery payments or platform pulse - don't ask for what the server refuses.
+                const _caps = window.ETEL_CAPS || await window.ETEL_CAPS_PROMISE || [];
+                const _rideOnly = !_caps.includes('*') && _caps.some(c => c.indexOf('rides.') === 0) &&
+                    !['orders.view','orders.manage','items.view','items.manage','service_givers.view','service_givers.manage','analytics.view','finance.view','finance.manage'].some(c => _caps.includes(c));
+                if (!_rideOnly) {
+                    if (typeof updatePaymentsBadge === 'function') updatePaymentsBadge().catch(() => {});
+                    loadPlatformPulse().catch(() => {});
+                }
                 const res = await adm('admin_dashboard_stats', {}, true);
                 if (res && res.success && res.data) {
                     const d = res.data;
