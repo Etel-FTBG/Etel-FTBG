@@ -102,6 +102,11 @@
                 if (res && res.success && res.data) {
                     const d = res.data;
                     const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+                    if (d.ride_only) {
+                        const lab = (id, t) => { const el = document.getElementById(id); const l = el && el.parentNode && el.parentNode.querySelector('.stat-label'); if (l) l.textContent = t; };
+                        lab('s-orders', 'Total Rides'); lab('s-pending', 'Searching / Active Rides'); lab('s-delivered', 'Completed Rides');
+                        lab('s-users', 'Total Users'); lab('s-couriers', 'Ride Drivers'); lab('s-revenue', 'Ride Fares Paid (ETB)');
+                    }
                     set('s-orders',    (d.orders||0).toLocaleString());
                     set('s-pending',   (d.pending||0).toLocaleString());
                     set('s-delivered', (d.delivered||0).toLocaleString());
@@ -120,7 +125,7 @@
             }
             // recent orders (last 10)
             try {
-            const ro = await adm('admin_get_orders', {}, true);
+            const ro = window.ETEL_RIDE_ONLY ? null : await adm('admin_get_orders', {}, true);
             if (ro && ro.success) {
                 // Render dashboard charts using all orders
                 renderDashboardCharts(ro.data.orders);

@@ -544,6 +544,31 @@ function etel_maybe_pay_referral_reward($pdo, $completed_user_id) {
     }
 }
 
+// Delivery-only admin data (orders, couriers, shops/items, promos, chats, payments).
+// These actions used to need only "is an admin", so a ride-only role could read every
+// Delivery record through the API even with the tabs hidden. They now need at least one
+// Delivery/commerce capability (roles holding * are unaffected).
+$ETEL_DELIVERY_ONLY_ACTIONS = array(
+    'admin_get_orders','get_orders','admin_get_couriers','admin_get_live_couriers','admin_update_courier',
+    'admin_get_service_givers','admin_get_service_givers_list','admin_get_service_giver','admin_get_service_giver_statistics',
+    'admin_create_service_giver','admin_verify_service_giver','admin_suspend_service_giver','admin_assign_service_giver',
+    'admin_get_all_items','admin_add_item','admin_update_item','admin_delete_item','admin_toggle_item',
+    'admin_catalog_list','admin_catalog_save','admin_catalog_delete','admin_catalog_copy',
+    'admin_list_promos','admin_save_promo','admin_toggle_promo','admin_chat_threads',
+    'admin_get_order_issues','admin_resolve_order_issue','admin_get_order_receipt','admin_update_order',
+    'admin_get_confirmations','admin_force_confirm','admin_list_telebirr_payments','admin_list_bank_payments',
+    'admin_confirm_telebirr_payment','admin_confirm_bank_payment','admin_list_support_threads','admin_get_support_thread',
+    'admin_reply_support_message','admin_financial_report','admin_analytics'
+);
+if (in_array($action, $ETEL_DELIVERY_ONLY_ACTIONS, true)) {
+    $pdo = db(); $u = require_admin($pdo);
+    $ok = false;
+    foreach (array('orders.view','orders.manage','items.view','items.manage','service_givers.view','service_givers.manage','analytics.view','finance.view','finance.manage') as $c) {
+        if (user_has_capability($pdo, $u, $c)) { $ok = true; break; }
+    }
+    if (!$ok) fail("You don't have permission to do this (Delivery data)", 403);
+}
+
 switch ($action) {
     case 'admin_purge_cache': {
         $pdo = db(); require_admin($pdo);
@@ -1302,7 +1327,24 @@ switch ($action) {
         break;
     }
     case 'admin_dashboard_stats': {
-        $pdo = db(); require_admin($pdo);
+        $pdo = db(); $u = require_admin($pdo);
+        $deliveryCaps = array('orders.view','orders.manage','items.view','items.manage','service_givers.view','service_givers.manage','analytics.view','finance.view','finance.manage');
+        $hasDelivery = false;
+        foreach ($deliveryCaps as $c) { if (user_has_capability($pdo, $u, $c)) { $hasDelivery = true; break; } }
+        if (!$hasDelivery) {
+            // Ride-only staff get Ride figures only - never the Delivery order/courier/revenue numbers.
+            $rs = array('ride_only'=>true,'orders'=>0,'pending'=>0,'delivered'=>0,'users'=>0,'couriers'=>0,'revenue'=>0.0,'service_givers'=>0);
+            try {
+                $rs['orders']    = intval($pdo->query('SELECT COUNT(*) FROM rides')->fetchColumn());
+                $rs['pending']   = intval($pdo->query("SELECT COUNT(*) FROM rides WHERE status IN ('searching','accepted','in_progress','arrived')")->fetchColumn());
+                $rs['delivered'] = intval($pdo->query("SELECT COUNT(*) FROM rides WHERE status='completed'")->fetchColumn());
+                $rs['revenue']   = round(floatval($pdo->query("SELECT COALESCE(SUM(fare_paid),0) FROM rides WHERE status='completed'")->fetchColumn()),2);
+                $rs['users']     = intval($pdo->query('SELECT COUNT(*) FROM users')->fetchColumn());
+                $rs['couriers']  = intval($pdo->query('SELECT COUNT(*) FROM ride_drivers')->fetchColumn());
+            } catch(Exception $e){ error_log('[ETEL] admin_dashboard_stats ride query failed: ' . $e->getMessage()); }
+            ok($rs);
+            break;
+        }
         $stats = array('orders'=>0,'pending'=>0,'delivered'=>0,'users'=>0,'couriers'=>0,'revenue'=>0.0,'service_givers'=>0);
         try {
             $stats['orders']    = intval($pdo->query('SELECT COUNT(*) FROM orders')->fetchColumn());
