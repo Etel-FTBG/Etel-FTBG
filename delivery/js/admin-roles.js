@@ -222,6 +222,9 @@ function etelHasCap(caps, required) {
     window.ETEL_RIDE_ONLY = rideOnly;
     if (rideOnly) {
       document.body.classList.add('etel-ride-only');
+      // Ride-only staff get the ETEL Ride coin in the header instead of the Delivery one.
+      var _pic = document.querySelector('.header-left picture');
+      if (_pic) _pic.innerHTML = '<img src="icons/etel-ride-coin.png" alt="ETEL Ride" loading="lazy" style="width:44px;height:44px;border-radius:12px;object-fit:cover;border:1px solid rgba(51,149,255,.35);box-shadow:0 6px 18px -6px rgba(51,149,255,.5)">';
       ['orders', 'couriers', 'servicegivers', 'items', 'menucat', 'promos', 'orderchats',
        'support', 'telebirr', 'launch', 'reports'].forEach(page => {
         const navEl = document.querySelector(`.nav-item[data-page="${page}"]`);
