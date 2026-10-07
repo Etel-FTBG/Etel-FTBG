@@ -179,7 +179,7 @@ function _appendEndMarkerToAllPanels(){
     marker.innerHTML =
       '<div style="display:flex;align-items:center;justify-content:center;gap:40px;padding:44px 20px;margin-top:8px">' +
         '<img src="assets/images/etel-delivery-coin.png" alt="ETEL Delivery" style="width:200px;height:200px;object-fit:contain;filter:drop-shadow(0 10px 30px rgba(212,175,55,.45))">' +
-        '<img class="etel-driver-coin" src="icons/driver-icon-512.png" alt="ETEL Driver" style="display:none;width:200px;height:200px;object-fit:contain;filter:drop-shadow(0 10px 30px rgba(212,175,55,.45))">' +
+        '<img class="etel-driver-coin" src="icons/etel-driver-coin.webp" alt="ETEL Driver" style="display:none;width:200px;height:200px;object-fit:contain;filter:drop-shadow(0 10px 30px rgba(212,175,55,.45))">' +
         '<img src="assets/images/etel-ride-coin.png" alt="ETEL Ride" style="width:200px;height:200px;object-fit:contain;filter:drop-shadow(0 10px 30px rgba(51,149,255,.45))">' +
       '</div>' +
       '<div style="text-align:center;font-size:11px;color:#B8B0A0;padding-bottom:24px">— End — ETEL Group —</div>';

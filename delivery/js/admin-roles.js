@@ -224,8 +224,8 @@ function etelHasCap(caps, required) {
       document.body.classList.add('etel-ride-only');
       // Ride-only staff get the ETEL Ride coin in the header instead of the Delivery one.
       var _pic = document.querySelector('.header-left picture');
-      if (_pic) { var _w = document.createElement('span'); _w.style.cssText = 'display:flex;align-items:center'; _w.innerHTML = '<img src="icons/etel-ride-coin.png" alt="ETEL Ride" loading="lazy" style="width:44px;height:44px;border-radius:12px;object-fit:cover;border:1px solid rgba(51,149,255,.35);box-shadow:0 6px 18px -6px rgba(51,149,255,.5)">'
-        + '<img src="icons/driver-icon-192.png" alt="ETEL Driver" loading="lazy" style="width:44px;height:44px;border-radius:12px;object-fit:cover;margin-left:6px;border:1px solid rgba(212,175,55,.35);box-shadow:0 6px 18px -6px rgba(212,175,55,.5)">'; _pic.replaceWith(_w); }
+      if (_pic) { var _w = document.createElement('span'); _w.style.cssText = 'display:flex;align-items:center'; _w.innerHTML = '<img src="icons/etel-ride-coin.webp" alt="ETEL Ride" loading="lazy" style="width:44px;height:44px;border-radius:12px;object-fit:cover;border:1px solid rgba(51,149,255,.35);box-shadow:0 6px 18px -6px rgba(51,149,255,.5)">'
+        + '<img src="icons/etel-driver-coin.webp" alt="ETEL Driver" loading="lazy" style="width:44px;height:44px;border-radius:12px;object-fit:cover;margin-left:6px;border:1px solid rgba(212,175,55,.35);box-shadow:0 6px 18px -6px rgba(212,175,55,.5)">'; _pic.replaceWith(_w); }
       ['orders', 'couriers', 'servicegivers', 'items', 'menucat', 'promos', 'orderchats',
        'support', 'telebirr', 'launch', 'reports'].forEach(page => {
         const navEl = document.querySelector(`.nav-item[data-page="${page}"]`);
