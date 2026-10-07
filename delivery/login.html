@@ -1238,7 +1238,7 @@ async function doEtelIdLogin() {
         if (landing) target += '?landing=' + encodeURIComponent(landing);
     }
     showAlert('Welcome! Signing in via EtelID...', 'ok');
-    setTimeout(function() { location.href = safeRedirectTarget() || target; }, 600);
+    setTimeout(function() { location.href = ((ur === 'admin' && _role === 'customer') ? 'admin.html' : (safeRedirectTarget() || target)); }, 600);
   } catch(err) {
     if (btn) { btn.disabled = false; btn.innerHTML = '<span class="del-etelid-mark">ኢE</span><span>Sign in with EtelID</span>'; }
     showAlert('Server connection error. Please try again.');
@@ -1308,7 +1308,7 @@ async function doLogin() {
         if (landing2) target += '?landing=' + encodeURIComponent(landing2);
     }
     showAlert('Welcome! Redirecting...', 'ok');
-    setTimeout(function() { location.href = safeRedirectTarget() || target; }, 600);
+    setTimeout(function() { location.href = ((ur === 'admin' && _role === 'customer') ? 'admin.html' : (safeRedirectTarget() || target)); }, 600);
   } catch(err) {
     if(btn) btn.disabled = false; if(txt) txt.textContent = 'Sign In →';
     showAlert('Server connection error. Please try again.');

@@ -226,8 +226,11 @@ case 'login': {
         // The login page sends the Ride tab as role=customer plus app=ride (the backend only knows five roles).
         $appHint = isset($body['app']) ? trim((string)$body['app']) : '';
         $blockedTabs = array('courier', 'service_giver');
-        if ($appHint !== 'ride') $blockedTabs[] = 'customer';
-        if ($u['role'] === 'admin') $blockedTabs[] = 'driver';
+        if ($u['role'] === 'admin') {
+            $blockedTabs[] = 'driver'; // an admin signing in on Customer/Ride is sent to the admin page by the login page
+        } elseif ($appHint !== 'ride') {
+            $blockedTabs[] = 'customer';
+        }
         if (in_array($requestedRole, $blockedTabs, true)) {
             fail('This account is limited to the Ride system. Use the Ride or Driver tab.', 403);
         }
@@ -402,8 +405,11 @@ case 'etelid_login': {
         // The login page sends the Ride tab as role=customer plus app=ride (the backend only knows five roles).
         $appHint = isset($body['app']) ? trim((string)$body['app']) : '';
         $blockedTabs = array('courier', 'service_giver');
-        if ($appHint !== 'ride') $blockedTabs[] = 'customer';
-        if ($u['role'] === 'admin') $blockedTabs[] = 'driver';
+        if ($u['role'] === 'admin') {
+            $blockedTabs[] = 'driver'; // an admin signing in on Customer/Ride is sent to the admin page by the login page
+        } elseif ($appHint !== 'ride') {
+            $blockedTabs[] = 'customer';
+        }
         if (in_array($requestedRole, $blockedTabs, true)) {
             fail('This account is limited to the Ride system. Use the Ride or Driver tab.', 403);
         }
