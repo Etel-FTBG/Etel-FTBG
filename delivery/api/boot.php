@@ -1257,7 +1257,13 @@ switch ($action) {
     }
     case 'admin_platform_pulse': {
         // GET/POST days=1|7|30 -> platform-wide snapshot for the admin Dashboard (read-only, see lib/platform_pulse.php).
-        $pdo = db(); require_admin($pdo);
+        // Platform-wide order/sales/courier/shop numbers: needs an order or analytics capability.
+        // This used to check only "is an admin", so a ride-only role (e.g. one holding just
+        // rides.view) could read every Delivery figure on the dashboard.
+        $pdo = db(); $u = require_admin($pdo);
+        if (!user_has_capability($pdo, $u, 'orders.view') && !user_has_capability($pdo, $u, 'analytics.view')) {
+            fail("You don't have permission to do this (requires: orders.view or analytics.view)", 403);
+        }
         require_once __DIR__ . '/lib/platform_pulse.php';
         $d = isset($_GET['days']) ? $_GET['days'] : (isset($body['days']) ? $body['days'] : 7);
         try { ok(etel_platform_pulse($pdo, $d)); } catch (Exception $e) { fail_ex($e, 'Could not build the platform snapshot', 500); }
