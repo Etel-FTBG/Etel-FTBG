@@ -221,6 +221,20 @@ case 'login': {
     // app) - this only stops the Customer tab specifically from
     // rejecting the login attempt in the first place.
     $requestedRole = isset($body['role']) ? trim((string)$body['role']) : '';
+    // A Ride-only admin (limited staff role) must not enter the Courier, Driver or Service-giver apps.
+    if ($requestedRole !== '' && etel_ride_scoped($pdo, $u)) {
+        // The login page sends the Ride tab as role=customer plus app=ride (the backend only knows five roles).
+        $appHint = isset($body['app']) ? trim((string)$body['app']) : '';
+        $blockedTabs = array('courier', 'service_giver');
+        if ($u['role'] === 'admin') {
+            $blockedTabs[] = 'driver'; // an admin signing in on Customer/Ride is sent to the admin page by the login page
+        } elseif ($appHint !== 'ride') {
+            $blockedTabs[] = 'customer';
+        }
+        if (in_array($requestedRole, $blockedTabs, true)) {
+            fail('This account is limited to the Ride system. Use the Ride or Driver tab.', 403);
+        }
+    }
     $assignedRoles = array('courier', 'driver', 'service_giver', 'admin');
     if ($u['role'] !== 'admin' && $requestedRole !== '' && $requestedRole !== 'customer' && in_array($u['role'], $assignedRoles, true) && $u['role'] !== $requestedRole) {
         $labels = array('customer' => 'Customer', 'courier' => 'Courier', 'driver' => 'Driver', 'service_giver' => 'Service Giver', 'admin' => 'Admin');
@@ -254,6 +268,7 @@ case 'login': {
             'id'    => $u['id'],
             'name'  => $u['name'],
             'phone' => $u['phone'],
+            'ride_scoped' => etel_ride_scoped($pdo, $u),
             'role'  => $u['role'],
             'staff_role' => $hasStaffRole ? $u['staff_role'] : null
         )
@@ -288,6 +303,7 @@ case 'sg_login': {
         fail('Incorrect password', 401);
     }
     rate_limit_clear($pdo, 'sg_login:' . $phone);
+    if (etel_ride_scoped($pdo, $u)) fail('This account is limited to the Ride system. Use the Ride or Driver tab.', 403);
 
     // Admin accounts have no service_giver profile row - skip that lookup
     // entirely and issue a plain admin session instead.
@@ -384,6 +400,20 @@ case 'etelid_login': {
     // which tab was used to sign in, so there's no confusion risk the
     // way there would be for exempting Customer.
     $requestedRole = isset($body['role']) ? trim((string)$body['role']) : '';
+    // A Ride-only admin (limited staff role) must not enter the Courier, Driver or Service-giver apps.
+    if ($requestedRole !== '' && etel_ride_scoped($pdo, $u)) {
+        // The login page sends the Ride tab as role=customer plus app=ride (the backend only knows five roles).
+        $appHint = isset($body['app']) ? trim((string)$body['app']) : '';
+        $blockedTabs = array('courier', 'service_giver');
+        if ($u['role'] === 'admin') {
+            $blockedTabs[] = 'driver'; // an admin signing in on Customer/Ride is sent to the admin page by the login page
+        } elseif ($appHint !== 'ride') {
+            $blockedTabs[] = 'customer';
+        }
+        if (in_array($requestedRole, $blockedTabs, true)) {
+            fail('This account is limited to the Ride system. Use the Ride or Driver tab.', 403);
+        }
+    }
     $assignedRoles = array('courier', 'driver', 'service_giver', 'admin');
     if ($u['role'] !== 'admin' && $requestedRole !== '' && $requestedRole !== 'customer' && in_array($u['role'], $assignedRoles, true) && $u['role'] !== $requestedRole) {
         $labels = array('customer' => 'Customer', 'courier' => 'Courier', 'driver' => 'Driver', 'service_giver' => 'Service Giver', 'admin' => 'Admin');
@@ -399,7 +429,8 @@ case 'etelid_login': {
             'id'    => $u['id'],
             'name'  => $u['name'],
             'phone' => $u['phone'],
-            'role'  => $u['role']
+            'role'  => $u['role'],
+            'ride_scoped' => etel_ride_scoped($pdo, $u)
         ),
         'etel_id'    => $member['etel_id'],
         'etelid_limited' => !empty($member['profile_limited']),

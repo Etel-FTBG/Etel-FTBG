@@ -930,7 +930,7 @@ case 'check_pickup_confirmation': {
 case 'sg_pending_confirmations': {
     $pdo      = db();
     $sg_user  = require_auth($pdo);
-    if ($sg_user['role'] !== 'service_giver' && $sg_user['role'] !== 'admin') fail('Service giver access required', 403);
+    if ($sg_user['role'] !== 'service_giver' && ($sg_user['role'] !== 'admin' || etel_is_ride_only(db(), $sg_user))) fail('Service giver access required', 403);
 
     $sgs = $pdo->prepare('SELECT id, zone FROM service_givers WHERE user_id=?');
     $sgs->execute(array($sg_user['id']));
@@ -1010,7 +1010,7 @@ case 'sg_pending_confirmations': {
 case 'sg_confirm_pickup': {
     $pdo     = db();
     $sg_user = require_auth($pdo);
-    if ($sg_user['role'] !== 'service_giver' && $sg_user['role'] !== 'admin') fail('Service giver access required', 403);
+    if ($sg_user['role'] !== 'service_giver' && ($sg_user['role'] !== 'admin' || etel_is_ride_only(db(), $sg_user))) fail('Service giver access required', 403);
 
     $order_id = isset($body['order_id']) ? intval($body['order_id']) : 0;
     if (!$order_id) fail('order_id required', 400);
