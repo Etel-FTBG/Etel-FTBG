@@ -221,6 +221,10 @@ case 'login': {
     // app) - this only stops the Customer tab specifically from
     // rejecting the login attempt in the first place.
     $requestedRole = isset($body['role']) ? trim((string)$body['role']) : '';
+    // A Ride-only admin (limited staff role) must not enter the Courier, Driver or Service-giver apps.
+    if ($u['role'] === 'admin' && in_array($requestedRole, array('courier', 'driver', 'service_giver'), true) && etel_is_ride_only($pdo, $u)) {
+        fail('This admin account is limited to the Ride system and cannot sign in to that app.', 403);
+    }
     $assignedRoles = array('courier', 'driver', 'service_giver', 'admin');
     if ($u['role'] !== 'admin' && $requestedRole !== '' && $requestedRole !== 'customer' && in_array($u['role'], $assignedRoles, true) && $u['role'] !== $requestedRole) {
         $labels = array('customer' => 'Customer', 'courier' => 'Courier', 'driver' => 'Driver', 'service_giver' => 'Service Giver', 'admin' => 'Admin');
@@ -288,6 +292,7 @@ case 'sg_login': {
         fail('Incorrect password', 401);
     }
     rate_limit_clear($pdo, 'sg_login:' . $phone);
+    if ($u['role'] === 'admin' && etel_is_ride_only($pdo, $u)) fail('This admin account is limited to the Ride system and cannot sign in to the Service app.', 403);
 
     // Admin accounts have no service_giver profile row - skip that lookup
     // entirely and issue a plain admin session instead.
@@ -384,6 +389,10 @@ case 'etelid_login': {
     // which tab was used to sign in, so there's no confusion risk the
     // way there would be for exempting Customer.
     $requestedRole = isset($body['role']) ? trim((string)$body['role']) : '';
+    // A Ride-only admin (limited staff role) must not enter the Courier, Driver or Service-giver apps.
+    if ($u['role'] === 'admin' && in_array($requestedRole, array('courier', 'driver', 'service_giver'), true) && etel_is_ride_only($pdo, $u)) {
+        fail('This admin account is limited to the Ride system and cannot sign in to that app.', 403);
+    }
     $assignedRoles = array('courier', 'driver', 'service_giver', 'admin');
     if ($u['role'] !== 'admin' && $requestedRole !== '' && $requestedRole !== 'customer' && in_array($u['role'], $assignedRoles, true) && $u['role'] !== $requestedRole) {
         $labels = array('customer' => 'Customer', 'courier' => 'Courier', 'driver' => 'Driver', 'service_giver' => 'Service Giver', 'admin' => 'Admin');

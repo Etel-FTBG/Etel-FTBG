@@ -126,7 +126,7 @@ switch ($action) {
 case 'sg_profile': {
     $pdo = db();
     $auth_user = require_auth($pdo);
-    if ($auth_user['role'] !== 'service_giver' && $auth_user['role'] !== 'admin') fail('Not a service giver account', 403);
+    if ($auth_user['role'] !== 'service_giver' && ($auth_user['role'] !== 'admin' || etel_is_ride_only(db(), $auth_user))) fail('Not a service giver account', 403);
 
     etel_ensure_sg_branding_columns($pdo);
     $ctx = sg_get_context($pdo, $auth_user['id']);
@@ -195,7 +195,7 @@ case 'sg_update_profile': {
     $pdo = db();
     $auth_user = require_auth($pdo);
     
-    if ($auth_user['role'] !== 'service_giver' && $auth_user['role'] !== 'admin') fail('Not a service giver account', 403);
+    if ($auth_user['role'] !== 'service_giver' && ($auth_user['role'] !== 'admin' || etel_is_ride_only(db(), $auth_user))) fail('Not a service giver account', 403);
 
     // A platform admin editing a business from the admin panel has no
     // service_givers/sg_staff row of their own to resolve a context from
@@ -379,7 +379,7 @@ case 'sg_orders': {
     try { require_once __DIR__ . '/../lib/courier_offers.php'; etel_offers_sweep($pdo); } catch (Exception $swe) {} catch (Throwable $swe) {}
     $auth_user = require_auth($pdo);
     
-    if ($auth_user['role'] !== 'service_giver' && $auth_user['role'] !== 'admin') fail('Not a service giver account', 403);
+    if ($auth_user['role'] !== 'service_giver' && ($auth_user['role'] !== 'admin' || etel_is_ride_only(db(), $auth_user))) fail('Not a service giver account', 403);
     
     // Fetch service giver ID
     try {
@@ -438,7 +438,7 @@ case 'sg_accept_order': {
     $pdo = db();
     $auth_user = require_auth($pdo);
     
-    if ($auth_user['role'] !== 'service_giver' && $auth_user['role'] !== 'admin') fail('Not a service giver account', 403);
+    if ($auth_user['role'] !== 'service_giver' && ($auth_user['role'] !== 'admin' || etel_is_ride_only(db(), $auth_user))) fail('Not a service giver account', 403);
     
     $order_id = isset($body['order_id']) ? intval($body['order_id']) : 0;
     if (!$order_id) fail('order_id is required', 400);
@@ -480,7 +480,7 @@ case 'sg_get_kitchen_ticket': {
     // sale is in a normal POS system.
     $pdo = db();
     $auth_user = require_auth($pdo);
-    if ($auth_user['role'] !== 'service_giver' && $auth_user['role'] !== 'admin') fail('Not a service giver account', 403);
+    if ($auth_user['role'] !== 'service_giver' && ($auth_user['role'] !== 'admin' || etel_is_ride_only(db(), $auth_user))) fail('Not a service giver account', 403);
 
     $ctx = sg_get_context($pdo, $auth_user['id']);
     sg_require_capability($auth_user, $ctx, 'orders.manage');
@@ -512,7 +512,7 @@ case 'sg_update_order_status': {
     // SG advances: pendingpreparing (Start Preparing) or preparingaccepted (Mark Ready for Pickup)
     $pdo = db();
     $auth_user = require_auth($pdo);
-    if ($auth_user['role'] !== 'service_giver' && $auth_user['role'] !== 'admin') fail('Not a service giver account', 403);
+    if ($auth_user['role'] !== 'service_giver' && ($auth_user['role'] !== 'admin' || etel_is_ride_only(db(), $auth_user))) fail('Not a service giver account', 403);
 
     $order_id   = isset($body['order_id'])   ? intval($body['order_id'])  : 0;
     $new_status = isset($body['new_status']) ? trim($body['new_status'])  : '';
@@ -645,7 +645,7 @@ case 'sg_order_detail': {
     $pdo = db();
     $auth_user = require_auth($pdo);
     
-    if ($auth_user['role'] !== 'service_giver' && $auth_user['role'] !== 'admin') fail('Not a service giver account', 403);
+    if ($auth_user['role'] !== 'service_giver' && ($auth_user['role'] !== 'admin' || etel_is_ride_only(db(), $auth_user))) fail('Not a service giver account', 403);
     
     $order_id = isset($_GET['order_id']) ? intval($_GET['order_id']) : 0;
     if (!$order_id) fail('order_id is required', 400);
@@ -701,7 +701,7 @@ case 'sg_scan_qr': {
     $pdo = db();
     $auth_user = require_auth($pdo);
     
-    if ($auth_user['role'] !== 'service_giver' && $auth_user['role'] !== 'admin') fail('Not a service giver account', 403);
+    if ($auth_user['role'] !== 'service_giver' && ($auth_user['role'] !== 'admin' || etel_is_ride_only(db(), $auth_user))) fail('Not a service giver account', 403);
     
     $order_id = isset($body['order_id']) ? intval($body['order_id']) : 0;
     $qr_type  = isset($body['qr_type'])  ? trim($body['qr_type'])  : '';
@@ -763,7 +763,7 @@ case 'sg_complete_order': {
     $pdo = db();
     $auth_user = require_auth($pdo);
     
-    if ($auth_user['role'] !== 'service_giver' && $auth_user['role'] !== 'admin') fail('Not a service giver account', 403);
+    if ($auth_user['role'] !== 'service_giver' && ($auth_user['role'] !== 'admin' || etel_is_ride_only(db(), $auth_user))) fail('Not a service giver account', 403);
     
     $order_id = isset($body['order_id']) ? intval($body['order_id']) : 0;
     if (!$order_id) fail('order_id is required', 400);
@@ -812,7 +812,7 @@ case 'sg_stats': {
     $pdo = db();
     $auth_user = require_auth($pdo);
     
-    if ($auth_user['role'] !== 'service_giver' && $auth_user['role'] !== 'admin') fail('Not a service giver account', 403);
+    if ($auth_user['role'] !== 'service_giver' && ($auth_user['role'] !== 'admin' || etel_is_ride_only(db(), $auth_user))) fail('Not a service giver account', 403);
     
     try {
         $sg_ctx = sg_get_context($pdo, $auth_user['id']);
@@ -887,7 +887,7 @@ case 'sg_set_online': {
     $pdo = db();
     $auth_user = require_auth($pdo);
     
-    if ($auth_user['role'] !== 'service_giver' && $auth_user['role'] !== 'admin') fail('Not a service giver account', 403);
+    if ($auth_user['role'] !== 'service_giver' && ($auth_user['role'] !== 'admin' || etel_is_ride_only(db(), $auth_user))) fail('Not a service giver account', 403);
 
     // Going online/offline is a normal day-to-day action, gated to
     // orders.manage rather than owner-only - but it must resolve through
@@ -916,7 +916,7 @@ case 'sg_notifications': {
     $pdo = db();
     $auth_user = require_auth($pdo);
     
-    if ($auth_user['role'] !== 'service_giver' && $auth_user['role'] !== 'admin') fail('Not a service giver account', 403);
+    if ($auth_user['role'] !== 'service_giver' && ($auth_user['role'] !== 'admin' || etel_is_ride_only(db(), $auth_user))) fail('Not a service giver account', 403);
     
     try {
         $sg_ctx = sg_get_context($pdo, $auth_user['id']);
@@ -955,7 +955,7 @@ case 'sg_add_item': {
     $pdo = db();
     $auth_user = require_auth($pdo);
     
-    if ($auth_user['role'] !== 'service_giver' && $auth_user['role'] !== 'admin') fail('Service giver access required', 403);
+    if ($auth_user['role'] !== 'service_giver' && ($auth_user['role'] !== 'admin' || etel_is_ride_only(db(), $auth_user))) fail('Service giver access required', 403);
     
     // Get service giver ID
     try {
@@ -1026,7 +1026,7 @@ case 'sg_get_my_items': {
     $pdo = db();
     $auth_user = require_auth($pdo);
     
-    if ($auth_user['role'] !== 'service_giver' && $auth_user['role'] !== 'admin') fail('Service giver access required', 403);
+    if ($auth_user['role'] !== 'service_giver' && ($auth_user['role'] !== 'admin' || etel_is_ride_only(db(), $auth_user))) fail('Service giver access required', 403);
     
     try {
         $sg_ctx = sg_get_context($pdo, $auth_user['id']);
@@ -1072,7 +1072,7 @@ case 'sg_catalog_list': {
     // GET ?category= &q=  -> shared dishes the shop can pick from, which ones it already sells, and the starter packs.
     $pdo = db();
     $auth_user = require_auth($pdo);
-    if ($auth_user['role'] !== 'service_giver' && $auth_user['role'] !== 'admin') fail('Service giver access required', 403);
+    if ($auth_user['role'] !== 'service_giver' && ($auth_user['role'] !== 'admin' || etel_is_ride_only(db(), $auth_user))) fail('Service giver access required', 403);
     $sg_ctx = sg_get_context($pdo, $auth_user['id']);
     if (!$sg_ctx) fail('Service giver profile not found', 404);
     sg_require_capability($auth_user, $sg_ctx, 'menu.view');
@@ -1088,7 +1088,7 @@ case 'sg_catalog_import': {
     // creates catalog-linked items for matches and custom items for the rest (custom dishes are also suggested to the admin).
     $pdo = db();
     $auth_user = require_auth($pdo);
-    if ($auth_user['role'] !== 'service_giver' && $auth_user['role'] !== 'admin') fail('Service giver access required', 403);
+    if ($auth_user['role'] !== 'service_giver' && ($auth_user['role'] !== 'admin' || etel_is_ride_only(db(), $auth_user))) fail('Service giver access required', 403);
     $sg_ctx = sg_get_context($pdo, $auth_user['id']);
     if (!$sg_ctx) fail('Service giver profile not found', 404);
     sg_require_capability($auth_user, $sg_ctx, 'menu.manage');
@@ -1104,7 +1104,7 @@ case 'sg_catalog_add': {
     // POST picks:[{catalog_id, price, [original_price], [quality], [portion], [image_url]}]  -> creates the shop's items.
     $pdo = db();
     $auth_user = require_auth($pdo);
-    if ($auth_user['role'] !== 'service_giver' && $auth_user['role'] !== 'admin') fail('Service giver access required', 403);
+    if ($auth_user['role'] !== 'service_giver' && ($auth_user['role'] !== 'admin' || etel_is_ride_only(db(), $auth_user))) fail('Service giver access required', 403);
     $sg_ctx = sg_get_context($pdo, $auth_user['id']);
     if (!$sg_ctx) fail('Service giver profile not found', 404);
     sg_require_capability($auth_user, $sg_ctx, 'menu.manage');
@@ -1123,7 +1123,7 @@ case 'sg_update_item': {
     $pdo = db();
     $auth_user = require_auth($pdo);
     
-    if ($auth_user['role'] !== 'service_giver' && $auth_user['role'] !== 'admin') fail('Service giver access required', 403);
+    if ($auth_user['role'] !== 'service_giver' && ($auth_user['role'] !== 'admin' || etel_is_ride_only(db(), $auth_user))) fail('Service giver access required', 403);
     
     try {
         $sg_ctx = sg_get_context($pdo, $auth_user['id']);
@@ -1220,7 +1220,7 @@ case 'sg_delete_item': {
     $pdo = db();
     $auth_user = require_auth($pdo);
     
-    if ($auth_user['role'] !== 'service_giver' && $auth_user['role'] !== 'admin') fail('Service giver access required', 403);
+    if ($auth_user['role'] !== 'service_giver' && ($auth_user['role'] !== 'admin' || etel_is_ride_only(db(), $auth_user))) fail('Service giver access required', 403);
     
     try {
         $sg_ctx = sg_get_context($pdo, $auth_user['id']);
@@ -1284,7 +1284,7 @@ case 'sg_get_staff': {
     // check above technically allowing admin through).
     $pdo = db();
     $auth_user = require_auth($pdo);
-    if ($auth_user['role'] !== 'service_giver' && $auth_user['role'] !== 'admin') fail('Not a service giver account', 403);
+    if ($auth_user['role'] !== 'service_giver' && ($auth_user['role'] !== 'admin' || etel_is_ride_only(db(), $auth_user))) fail('Not a service giver account', 403);
     $target_sg_id = isset($body['sg_id']) ? intval($body['sg_id']) : (isset($_GET['sg_id']) ? intval($_GET['sg_id']) : 0);
     if ($auth_user['role'] === 'admin' && $target_sg_id) {
         $ctx = array('sg_id' => $target_sg_id, 'role' => 'owner', 'role_name' => 'Owner', 'capabilities' => array('*'));
@@ -1317,7 +1317,7 @@ case 'sg_add_staff': {
     // this file treats them as staff, not the business owner.
     $pdo = db();
     $auth_user = require_auth($pdo);
-    if ($auth_user['role'] !== 'service_giver' && $auth_user['role'] !== 'admin') fail('Not a service giver account', 403);
+    if ($auth_user['role'] !== 'service_giver' && ($auth_user['role'] !== 'admin' || etel_is_ride_only(db(), $auth_user))) fail('Not a service giver account', 403);
     $ctx = sg_get_context($pdo, $auth_user['id']);
     sg_require_capability($auth_user, $ctx, 'staff.manage');
     if (!$ctx) fail('Service giver profile not found', 404);
@@ -1394,7 +1394,7 @@ case 'sg_remove_staff': {
     // to resolve a scoping context from in the first place.
     $pdo = db();
     $auth_user = require_auth($pdo);
-    if ($auth_user['role'] !== 'service_giver' && $auth_user['role'] !== 'admin') fail('Not a service giver account', 403);
+    if ($auth_user['role'] !== 'service_giver' && ($auth_user['role'] !== 'admin' || etel_is_ride_only(db(), $auth_user))) fail('Not a service giver account', 403);
     $isPlatformAdmin = $auth_user['role'] === 'admin';
     $ctx = $isPlatformAdmin ? null : sg_get_context($pdo, $auth_user['id']);
     if (!$isPlatformAdmin) {
@@ -1430,7 +1430,7 @@ case 'sg_update_staff_role': {
     // the legacy default capability set)
     $pdo = db();
     $auth_user = require_auth($pdo);
-    if ($auth_user['role'] !== 'service_giver' && $auth_user['role'] !== 'admin') fail('Not a service giver account', 403);
+    if ($auth_user['role'] !== 'service_giver' && ($auth_user['role'] !== 'admin' || etel_is_ride_only(db(), $auth_user))) fail('Not a service giver account', 403);
     $ctx = sg_get_context($pdo, $auth_user['id']);
     sg_require_capability($auth_user, $ctx, 'staff.manage');
     if (!$ctx) fail('Service giver profile not found', 404);
@@ -1465,7 +1465,7 @@ case 'sg_list_roles': {
     // for capabilities that don't have a role yet.
     $pdo = db();
     $auth_user = require_auth($pdo);
-    if ($auth_user['role'] !== 'service_giver' && $auth_user['role'] !== 'admin') fail('Not a service giver account', 403);
+    if ($auth_user['role'] !== 'service_giver' && ($auth_user['role'] !== 'admin' || etel_is_ride_only(db(), $auth_user))) fail('Not a service giver account', 403);
     $ctx = sg_get_context($pdo, $auth_user['id']);
     sg_require_capability($auth_user, $ctx, 'staff.manage');
     if (!$ctx) fail('Service giver profile not found', 404);
@@ -1494,7 +1494,7 @@ case 'sg_save_role': {
     // grant a capability that doesn't correspond to any real check.
     $pdo = db();
     $auth_user = require_auth($pdo);
-    if ($auth_user['role'] !== 'service_giver' && $auth_user['role'] !== 'admin') fail('Not a service giver account', 403);
+    if ($auth_user['role'] !== 'service_giver' && ($auth_user['role'] !== 'admin' || etel_is_ride_only(db(), $auth_user))) fail('Not a service giver account', 403);
     $ctx = sg_get_context($pdo, $auth_user['id']);
     sg_require_capability($auth_user, $ctx, 'staff.manage');
     if (!$ctx) fail('Service giver profile not found', 404);
@@ -1542,7 +1542,7 @@ case 'sg_delete_role': {
     // or deactivate those staff first.
     $pdo = db();
     $auth_user = require_auth($pdo);
-    if ($auth_user['role'] !== 'service_giver' && $auth_user['role'] !== 'admin') fail('Not a service giver account', 403);
+    if ($auth_user['role'] !== 'service_giver' && ($auth_user['role'] !== 'admin' || etel_is_ride_only(db(), $auth_user))) fail('Not a service giver account', 403);
     $ctx = sg_get_context($pdo, $auth_user['id']);
     sg_require_capability($auth_user, $ctx, 'staff.manage');
     if (!$ctx) fail('Service giver profile not found', 404);
@@ -1572,7 +1572,7 @@ case 'sg_my_role': {
     // not just the owner)
     $pdo = db();
     $auth_user = require_auth($pdo);
-    if ($auth_user['role'] !== 'service_giver' && $auth_user['role'] !== 'admin') fail('Not a service giver account', 403);
+    if ($auth_user['role'] !== 'service_giver' && ($auth_user['role'] !== 'admin' || etel_is_ride_only(db(), $auth_user))) fail('Not a service giver account', 403);
     $ctx = sg_get_context($pdo, $auth_user['id']);
     if (!$ctx) fail('Service giver profile not found', 404);
 
@@ -1611,7 +1611,7 @@ case 'sg_reviews': {
     // GET -> this shop's customer reviews (newest first) with any reply, plus totals.
     $pdo = db();
     $auth_user = require_auth($pdo);
-    if ($auth_user['role'] !== 'service_giver' && $auth_user['role'] !== 'admin') fail('Not a service giver account', 403);
+    if ($auth_user['role'] !== 'service_giver' && ($auth_user['role'] !== 'admin' || etel_is_ride_only(db(), $auth_user))) fail('Not a service giver account', 403);
     $target_sg_id = isset($_GET['sg_id']) ? intval($_GET['sg_id']) : (isset($body['sg_id']) ? intval($body['sg_id']) : 0);
     if ($auth_user['role'] === 'admin' && $target_sg_id) {
         $ctx = array('sg_id' => $target_sg_id, 'role' => 'owner', 'role_name' => 'Owner', 'capabilities' => array('*'));
@@ -1650,7 +1650,7 @@ case 'sg_reply_review': {
     // review; sending again edits it. Reply text is plain text, max 300 characters.
     $pdo = db();
     $auth_user = require_auth($pdo);
-    if ($auth_user['role'] !== 'service_giver' && $auth_user['role'] !== 'admin') fail('Not a service giver account', 403);
+    if ($auth_user['role'] !== 'service_giver' && ($auth_user['role'] !== 'admin' || etel_is_ride_only(db(), $auth_user))) fail('Not a service giver account', 403);
     $ctx = sg_get_context($pdo, $auth_user['id']);
     if ($auth_user['role'] !== 'admin') sg_require_capability($auth_user, $ctx, 'orders.manage');
     if (!$ctx) fail('Service giver profile not found', 404);
@@ -1691,7 +1691,7 @@ case 'sg_sales_report': {
     // numbers are withheld and only the counts are returned.
     $pdo = db();
     $auth_user = require_auth($pdo);
-    if ($auth_user['role'] !== 'service_giver' && $auth_user['role'] !== 'admin') fail('Not a service giver account', 403);
+    if ($auth_user['role'] !== 'service_giver' && ($auth_user['role'] !== 'admin' || etel_is_ride_only(db(), $auth_user))) fail('Not a service giver account', 403);
     $target_sg_id = isset($_GET['sg_id']) ? intval($_GET['sg_id']) : (isset($body['sg_id']) ? intval($body['sg_id']) : 0);
     if ($auth_user['role'] === 'admin' && $target_sg_id) {
         $ctx = array('sg_id' => $target_sg_id, 'role' => 'owner', 'role_name' => 'Owner', 'capabilities' => array('*'));
@@ -1775,7 +1775,7 @@ case 'sg_financial_report': {
     // Givers" report in AdminController.php already uses successfully.
     $pdo = db();
     $auth_user = require_auth($pdo);
-    if ($auth_user['role'] !== 'service_giver' && $auth_user['role'] !== 'admin') fail('Not a service giver account', 403);
+    if ($auth_user['role'] !== 'service_giver' && ($auth_user['role'] !== 'admin' || etel_is_ride_only(db(), $auth_user))) fail('Not a service giver account', 403);
     $target_sg_id = isset($body['sg_id']) ? intval($body['sg_id']) : (isset($_GET['sg_id']) ? intval($_GET['sg_id']) : 0);
     if ($auth_user['role'] === 'admin' && $target_sg_id) {
         $ctx = array('sg_id' => $target_sg_id, 'role' => 'owner', 'role_name' => 'Owner', 'capabilities' => array('*'));
@@ -1828,7 +1828,7 @@ case 'sg_get_pending_payout_request': {
     // explanation.
     $pdo = db();
     $auth_user = require_auth($pdo);
-    if ($auth_user['role'] !== 'service_giver' && $auth_user['role'] !== 'admin') fail('Not a service giver account', 403);
+    if ($auth_user['role'] !== 'service_giver' && ($auth_user['role'] !== 'admin' || etel_is_ride_only(db(), $auth_user))) fail('Not a service giver account', 403);
     $target_sg_id = isset($body['sg_id']) ? intval($body['sg_id']) : (isset($_GET['sg_id']) ? intval($_GET['sg_id']) : 0);
     if ($auth_user['role'] === 'admin' && $target_sg_id) {
         $sgId = $target_sg_id;

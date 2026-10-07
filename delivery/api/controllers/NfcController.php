@@ -251,7 +251,7 @@ case 'nfc_start_ride': {
 
     $driver_user = nfc_find_or_create_user($pdo, $driver_etel_id, $driver_phone, '', false);
     if (!$driver_user) fail('No Delivery driver account found for this EtelID. Sign in once in the Driver app first.', 404);
-    if ($driver_user['role'] !== 'driver' && $driver_user['role'] !== 'admin') {
+    if ($driver_user['role'] !== 'driver' && ($driver_user['role'] !== 'admin' || etel_is_ride_only(db(), $driver_user))) {
         fail('This EtelID is not registered as a Driver on Delivery.', 403);
     }
 
@@ -360,7 +360,7 @@ case 'nfc_list_courier_orders': {
     if ($stage === 'pickup') {
         $confirmer_user = nfc_find_or_create_user($pdo, $confirmer_etel_id, $confirmer_phone, $confirmer_name, false);
         if (!$confirmer_user) fail('No Delivery account found for this EtelID. Sign in once in the Service Giver app first.', 404);
-        if ($confirmer_user['role'] !== 'service_giver' && $confirmer_user['role'] !== 'admin') {
+        if ($confirmer_user['role'] !== 'service_giver' && ($confirmer_user['role'] !== 'admin' || etel_is_ride_only(db(), $confirmer_user))) {
             fail('This EtelID is not registered as a Service Giver on Delivery.', 403);
         }
         $sgs = $pdo->prepare('SELECT id, zone FROM service_givers WHERE user_id = ? ORDER BY id DESC LIMIT 1');
@@ -430,7 +430,7 @@ case 'nfc_confirm_pickup': {
     $confirmer_name    = isset($body['confirmer_name'])    ? trim($body['confirmer_name'])    : '';
     $confirmer_user = nfc_find_or_create_user($pdo, $confirmer_etel_id, $confirmer_phone, $confirmer_name, false);
     if (!$confirmer_user) fail('No Delivery account found for this EtelID. Sign in once in the Service Giver app first.', 404);
-    if ($confirmer_user['role'] !== 'service_giver' && $confirmer_user['role'] !== 'admin') {
+    if ($confirmer_user['role'] !== 'service_giver' && ($confirmer_user['role'] !== 'admin' || etel_is_ride_only(db(), $confirmer_user))) {
         fail('This EtelID is not registered as a Service Giver on Delivery.', 403);
     }
 

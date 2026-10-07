@@ -422,6 +422,17 @@ function user_has_capability($pdo, $u, $capability) {
 
 // True for staff whose only scope is the Ride system: a rides.* capability and no Delivery/commerce capability.
 function etel_is_ride_only($pdo, $u) {
+    // Some callers hold a trimmed user row (id/name/phone/role only); load the staff fields so a
+    // limited admin is never mistaken for a legacy unrestricted one.
+    if (!is_array($u)) return false;
+    if (!array_key_exists('is_etelgroup_managed', $u) && !empty($u['id'])) {
+        try {
+            $q = $pdo->prepare('SELECT is_etelgroup_managed, staff_role FROM users WHERE id=? LIMIT 1');
+            $q->execute(array(intval($u['id'])));
+            $row = $q->fetch(PDO::FETCH_ASSOC);
+            if ($row) $u = array_merge($u, $row);
+        } catch (Exception $e) { /* columns not present: legacy install, unrestricted */ }
+    }
     $caps = user_capabilities($pdo, $u);
     if (in_array('*', $caps, true)) return false;
     $ride = false;
@@ -443,7 +454,7 @@ function require_admin($pdo, $capability = null) {
 }
 function require_courier($pdo) {
     $u = require_auth($pdo);
-    if ($u['role'] !== 'courier' && $u['role'] !== 'admin') fail('Courier access required', 403);
+    if ($u['role'] !== 'courier' && ($u['role'] !== 'admin' || etel_is_ride_only($pdo, $u))) fail('Courier access required', 403);
     return $u;
 }
 function get_or_create_courier_profile($pdo, $user_id) {

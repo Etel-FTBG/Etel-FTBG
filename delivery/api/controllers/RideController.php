@@ -2547,7 +2547,7 @@ case 'driver_get_demand': {
        area (about 700 m cells) and the area's centre - never a rider, address or
        phone. An area is worth showing when it has 2+ requests or someone is
        waiting right now. Score = (requests + 2 x waiting) / (idle drivers + 1). */
-    if ($u['role'] !== 'driver' && $u['role'] !== 'admin') fail('Drivers only', 403);
+    if ($u['role'] !== 'driver' && ($u['role'] !== 'admin' || etel_is_ride_only(db(), $u))) fail('Drivers only', 403);
     $size = 700.0;
     $myLat = isset($body['lat']) && is_numeric($body['lat']) ? floatval($body['lat']) : null;
     $myLng = isset($body['lng']) && is_numeric($body['lng']) ? floatval($body['lng']) : null;
