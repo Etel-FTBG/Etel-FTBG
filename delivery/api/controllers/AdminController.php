@@ -419,6 +419,11 @@ case 'admin_create_user': {
     $phone_raw = isset($body['phone']) ? trim($body['phone']) : '';
     $pw    = isset($body['password']) ? $body['password'] : '';
     $role  = isset($body['role']) ? trim($body['role']) : 'customer';
+    // Only known roles. Creating an admin hands out an unrestricted account (a new admin is not
+    // EtelGroup-managed, so it holds '*'), so it needs '*' itself; Ride-only staff may only add riders/drivers.
+    if (!in_array($role, array('customer','driver','courier','service_giver','admin'), true)) fail('Unknown role', 400);
+    if ($role === 'admin' && !user_has_capability($pdo, $admin, '*')) fail('Only an owner can create admin accounts', 403);
+    if (etel_is_ride_only($pdo, $admin) && !in_array($role, array('customer','driver'), true)) fail('You can only create rider or driver accounts', 403);
 
     if (!$phone_raw) fail('Phone is required');
     // New account - safe to enforce the strict Ethiopian mobile format here.

@@ -61,6 +61,7 @@ async function toggleEtelPayLive(nextValue) {
 async function loadEtelPayOverrides() {
     const tbody = document.getElementById('etelpay-overrides-tbody');
     if (!tbody) return;
+    if (window.ETEL_RIDE_ONLY) { tbody.innerHTML = '<tr><td colspan="5" style="color:#B8B0A0">Not available for your role</td></tr>'; return; }
     tbody.innerHTML = '<tr><td colspan="5" style="color:#B8B0A0">Loading…</td></tr>';
     try {
         const res = await adm('admin_list_etelpay_overrides', {}, true);

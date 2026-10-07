@@ -420,6 +420,19 @@ function user_has_capability($pdo, $u, $capability) {
     return in_array('*', $caps, true) || in_array($capability, $caps, true);
 }
 
+// True for staff whose only scope is the Ride system: a rides.* capability and no Delivery/commerce capability.
+function etel_is_ride_only($pdo, $u) {
+    $caps = user_capabilities($pdo, $u);
+    if (in_array('*', $caps, true)) return false;
+    $ride = false;
+    foreach ($caps as $c) { if (strpos($c, 'rides.') === 0) { $ride = true; break; } }
+    if (!$ride) return false;
+    foreach (array('orders.view','orders.manage','items.view','items.manage','service_givers.view','service_givers.manage','analytics.view','finance.view','finance.manage') as $c) {
+        if (in_array($c, $caps, true)) return false;
+    }
+    return true;
+}
+
 function require_admin($pdo, $capability = null) {
     $u = require_auth($pdo);
     if ($u['role'] !== 'admin') fail('Admin access required', 403);
@@ -559,7 +572,7 @@ $ETEL_DELIVERY_ONLY_ACTIONS = array(
     'admin_get_confirmations','admin_force_confirm','admin_list_telebirr_payments','admin_list_bank_payments',
     'admin_confirm_telebirr_payment','admin_confirm_bank_payment','admin_list_support_threads','admin_get_support_thread',
     'admin_reply_support_message','admin_financial_report','admin_analytics',
-    'admin_list_payout_requests','admin_review_payout_request'
+    'admin_list_payout_requests','admin_review_payout_request','admin_duplicate_phones'
 );
 if (in_array($action, $ETEL_DELIVERY_ONLY_ACTIONS, true)) {
     $pdo = db(); $u = require_admin($pdo);
@@ -752,11 +765,13 @@ switch ($action) {
         break;
     }
     case 'admin_get_users': {
-        $pdo = db(); require_admin($pdo);
+        $pdo = db(); $u = require_admin($pdo);
         $role  = isset($_GET['role'])  ? trim($_GET['role'])  : '';
         $limit = isset($_GET['limit']) ? intval($_GET['limit']) : 200;
         $where = 'WHERE 1=1'; $params = array();
         if ($role && in_array($role, array('customer','courier','admin','service_giver'))) { $where .= ' AND role = ?'; $params[] = $role; }
+        // Ride-only staff see rider and driver accounts only - not couriers, shop owners or other admins.
+        if (etel_is_ride_only($pdo, $u)) { $where .= " AND role IN ('customer','driver')"; }
         try { $s = $pdo->prepare("SELECT id,name,phone,role,active,created_at FROM users $where ORDER BY created_at DESC LIMIT $limit"); $s->execute($params); $users = $s->fetchAll(PDO::FETCH_ASSOC); } catch(Exception $e) { $users = array(); }
         ok(array('users' => $users, 'count' => count($users)));
         break;
