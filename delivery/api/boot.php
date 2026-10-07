@@ -444,6 +444,20 @@ function etel_is_ride_only($pdo, $u) {
     return true;
 }
 
+// True when the account is scoped to the Ride system only: a limited (Ride-only) admin, or a user listed in
+// ride_scoped_accounts (the audit test passengers/drivers). Such accounts are refused on the Delivery
+// customer / courier / service-giver sign-in tabs and cannot place or read Delivery orders. Fails open (false)
+// if the table does not exist, so nothing changes until the audit set-up SQL has been run.
+function etel_ride_scoped($pdo, $u) {
+    if (!is_array($u) || empty($u['id'])) return false;
+    if (isset($u['role']) && $u['role'] === 'admin' && etel_is_ride_only($pdo, $u)) return true;
+    try {
+        $q = $pdo->prepare('SELECT 1 FROM ride_scoped_accounts WHERE user_id=? LIMIT 1');
+        $q->execute(array(intval($u['id'])));
+        return (bool)$q->fetchColumn();
+    } catch (Exception $e) { return false; }
+}
+
 function require_admin($pdo, $capability = null) {
     $u = require_auth($pdo);
     if ($u['role'] !== 'admin') fail('Admin access required', 403);
@@ -592,6 +606,18 @@ if (in_array($action, $ETEL_DELIVERY_ONLY_ACTIONS, true)) {
         if (user_has_capability($pdo, $u, $c)) { $ok = true; break; }
     }
     if (!$ok) fail("You don't have permission to do this (Delivery data)", 403);
+}
+
+// Delivery order actions a Ride-scoped account (limited admin or audit test user) must not use.
+$ETEL_DELIVERY_CUSTOMER_ACTIONS = array(
+    'customer_create_order','agent_place_order','agent_order_quote','agent_order_status','schedule_order',
+    'cancel_scheduled_order','get_scheduled_orders','customer_reorder_items','customer_get_orders',
+    'customer_get_order_issues','submit_order_issue','track_order','rate_order','get_order_ratings',
+    'order_chat_get','order_chat_inbox','order_chat_send'
+);
+if (in_array($action, $ETEL_DELIVERY_CUSTOMER_ACTIONS, true)) {
+    $pdo = db(); $au = get_auth_user($pdo);
+    if ($au && etel_ride_scoped($pdo, $au)) fail('This account is limited to the Ride system.', 403);
 }
 
 switch ($action) {

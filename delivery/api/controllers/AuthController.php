@@ -222,8 +222,12 @@ case 'login': {
     // rejecting the login attempt in the first place.
     $requestedRole = isset($body['role']) ? trim((string)$body['role']) : '';
     // A Ride-only admin (limited staff role) must not enter the Courier, Driver or Service-giver apps.
-    if ($u['role'] === 'admin' && in_array($requestedRole, array('courier', 'driver', 'service_giver'), true) && etel_is_ride_only($pdo, $u)) {
-        fail('This admin account is limited to the Ride system and cannot sign in to that app.', 403);
+    if ($requestedRole !== '' && etel_ride_scoped($pdo, $u)) {
+        $blockedTabs = array('customer', 'courier', 'service_giver');
+        if ($u['role'] === 'admin') $blockedTabs[] = 'driver';
+        if (in_array($requestedRole, $blockedTabs, true)) {
+            fail('This account is limited to the Ride system. Use the Ride or Driver tab.', 403);
+        }
     }
     $assignedRoles = array('courier', 'driver', 'service_giver', 'admin');
     if ($u['role'] !== 'admin' && $requestedRole !== '' && $requestedRole !== 'customer' && in_array($u['role'], $assignedRoles, true) && $u['role'] !== $requestedRole) {
@@ -292,7 +296,7 @@ case 'sg_login': {
         fail('Incorrect password', 401);
     }
     rate_limit_clear($pdo, 'sg_login:' . $phone);
-    if ($u['role'] === 'admin' && etel_is_ride_only($pdo, $u)) fail('This admin account is limited to the Ride system and cannot sign in to the Service app.', 403);
+    if (etel_ride_scoped($pdo, $u)) fail('This account is limited to the Ride system. Use the Ride or Driver tab.', 403);
 
     // Admin accounts have no service_giver profile row - skip that lookup
     // entirely and issue a plain admin session instead.
@@ -390,8 +394,12 @@ case 'etelid_login': {
     // way there would be for exempting Customer.
     $requestedRole = isset($body['role']) ? trim((string)$body['role']) : '';
     // A Ride-only admin (limited staff role) must not enter the Courier, Driver or Service-giver apps.
-    if ($u['role'] === 'admin' && in_array($requestedRole, array('courier', 'driver', 'service_giver'), true) && etel_is_ride_only($pdo, $u)) {
-        fail('This admin account is limited to the Ride system and cannot sign in to that app.', 403);
+    if ($requestedRole !== '' && etel_ride_scoped($pdo, $u)) {
+        $blockedTabs = array('customer', 'courier', 'service_giver');
+        if ($u['role'] === 'admin') $blockedTabs[] = 'driver';
+        if (in_array($requestedRole, $blockedTabs, true)) {
+            fail('This account is limited to the Ride system. Use the Ride or Driver tab.', 403);
+        }
     }
     $assignedRoles = array('courier', 'driver', 'service_giver', 'admin');
     if ($u['role'] !== 'admin' && $requestedRole !== '' && $requestedRole !== 'customer' && in_array($u['role'], $assignedRoles, true) && $u['role'] !== $requestedRole) {
