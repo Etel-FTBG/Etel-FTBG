@@ -2,7 +2,6 @@
 <html lang="en">
 <head>
 <script>window.ETEL_LIGHT_LAYER = true;</script>
-<script>window.ETEL_NO_REFRESH_FAB = true; /* admin already has its own refresh button and Settings > Force clear cache */</script>
     <meta name="referrer" content="no-referrer-when-downgrade">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -147,6 +146,14 @@ body:not(.dark-theme) #modal-box label, body:not(.dark-theme) #modal-box p, body
 body:not(.dark-theme) #modal-box input, body:not(.dark-theme) #modal-box select, body:not(.dark-theme) #modal-box textarea { background:#FFFFFF !important; color:#1B1606 !important; -webkit-text-fill-color:#1B1606 !important; border:1px solid rgba(20,17,8,.4) !important; }
 body:not(.dark-theme) #modal-box button[onclick="closeModal()"] { color:#4A4536 !important; }
 body.etel-ride-only [onclick*="loadDuplicatePhones"] { display:none !important; }
+/* Pricing tab in light mode: its panels were built dark-only (hard-coded #1a1a1a boxes, gold text), which left
+   dark text on dark boxes and gold on cream. Make the boxes light and the text dark. */
+body:not(.dark-theme) #panel-pricing [style*="background:#1a1a1a"], body:not(.dark-theme) #pricing-peak-windows .pw-row { background:#FFF6D8 !important; border:1px solid rgba(20,17,8,.3) !important; }
+body:not(.dark-theme) #panel-pricing h3, body:not(.dark-theme) #panel-pricing [style*="color:#f0cf5a"], body:not(.dark-theme) #panel-pricing label { color:#4A3300 !important; -webkit-text-fill-color:#4A3300 !important; }
+body:not(.dark-theme) #panel-pricing [style*="color:#ccc"], body:not(.dark-theme) #panel-pricing [style*="color:#9A9AAE"], body:not(.dark-theme) #panel-pricing [style*="color:#B8B0A0"], body:not(.dark-theme) #pricing-peak-windows .pw-row span, body:not(.dark-theme) #panel-pricing div { color:#2A2412; }
+body:not(.dark-theme) #panel-pricing [style*="color:#ccc"], body:not(.dark-theme) #panel-pricing [style*="color:#9A9AAE"] { -webkit-text-fill-color:#2A2412 !important; color:#2A2412 !important; }
+body:not(.dark-theme) #pricing-peak-windows .pw-day-btn:not(.active) { background:#EADFB8 !important; color:#3A3322 !important; border-color:rgba(20,17,8,.4) !important; }
+body:not(.dark-theme) #pricing-peak-windows .pw-mult-input { background:#FFFFFF !important; color:#1B1606 !important; -webkit-text-fill-color:#1B1606 !important; border-color:rgba(20,17,8,.4) !important; }
 /* Ride-only roles: Delivery-only dashboard blocks are removed */
 body.etel-ride-only .charts-grid, body.etel-ride-only #dash-orders-section { display:none !important; }
 </style>
@@ -191,7 +198,7 @@ html{color-scheme:light}
     <link rel="stylesheet" href="css/admin-group2.min.css?v=1.1"><!-- merged: etel-phase5, etel-design-v4, etel-gold-theme, etel-responsive, etel-system, etel-dashboard -->
 <script src="js/etel-display-settings.js?v=1.4" data-fab="off" defer></script>
 <script src="js/etel-2fa-settings.js?v=2" defer></script>
-<script src="js/etel-refresh.js?v=1.1" defer></script>
+<script src="js/etel-refresh.js?v=1.2" defer></script>
 </head>
 <body class="dark-page">
 <!-- Custom splash overlay - shows the group master logo briefly on
@@ -210,12 +217,7 @@ html{color-scheme:light}
 <!-- Floating refresh button - re-fetches whichever panel is currently
      open, in case live data or a background sync ever stalls without
      the founder noticing. -->
-<button id="admin-refresh-btn" onclick="refreshCurrentPage()" aria-label="Refresh"
-  style="position:fixed;left:16px;bottom:16px;z-index:9998;width:48px;height:48px;border-radius:50%;
-  background:linear-gradient(135deg,#E9C767,#D4AF37);border:none;box-shadow:0 4px 14px rgba(212,175,55,.5);
-  font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;">
-  <span id="admin-refresh-icon" style="display:inline-block;">🔄</span>
-</button>
+<!-- bottom-left #admin-refresh-btn removed: the round refresh button on the right edge (etel-refresh.js) does this -->
 <style>
 #admin-refresh-btn.spinning #admin-refresh-icon{animation:adminRefreshSpin .6s linear infinite;}
 @keyframes adminRefreshSpin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
