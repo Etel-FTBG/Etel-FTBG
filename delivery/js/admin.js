@@ -1483,9 +1483,9 @@
                     <div class="modal-field"><label>Password * (min 6)</label><input type="password" id="mu-pw" placeholder="Password"></div>
                     <div class="modal-field"><label>Role</label>
                         <select id="mu-role">
-                            <option value="customer">Customer</option>
-                            <option value="courier">Courier</option>
-                            <option value="admin">Admin</option>
+                            ${window.ETEL_RIDE_ONLY
+                                ? '<option value="customer">Rider (customer)</option><option value="driver">Driver</option>'
+                                : '<option value="customer">Customer</option><option value="courier">Courier</option><option value="admin">Admin</option>'}
                         </select>
                     </div>
                     <div class="modal-msg" id="mu-msg"></div>
