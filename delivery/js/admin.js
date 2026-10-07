@@ -28,66 +28,6 @@
 
         let ordersData = [], usersData = [], couriersData = [], sgData = [];
 
-        // "Test as..." quick-switch - lets an already-signed-in admin
-        // jump straight into another role's app for testing/support
-        // without logging out and back in. Uses the SAME token already
-        // in localStorage - every page's requireRole() already lets an
-        // admin account stay on any role's interface regardless of the
-        // page's own role gate (see login.html's doLogin/doEtelIdLogin
-        // comments for the matching login-time half of this), so simply
-        // navigating there is enough; no re-auth needed. Injected via JS
-        // rather than added to admin.html's markup directly, since that
-        // file wasn't available to edit directly this session - safe to
-        // move into the real markup later if preferred.
-        (function () {
-            function inject() {
-                if (document.getElementById('test-as-panel')) return; // don't double-inject on a re-run
-                var apiBase = (window.ETEL && ETEL.api) ? ETEL.api.replace('api/boot.php', '') : './';
-                var targets = [
-                    { label: '📦 Customer', href: apiBase + 'customer.html' },
-                    { label: '🚕 Ride',     href: apiBase + 'ride/' },
-                    { label: '🛵 Courier',  href: apiBase + 'courier/' },
-                    { label: '🚗 Driver',   href: apiBase + 'driver/' },
-                    { label: '🏪 Service',  href: apiBase + 'servicegiver.html' }
-                ];
-                var wrap = document.createElement('div');
-                wrap.id = 'test-as-panel';
-                wrap.style.cssText = 'position:fixed;bottom:18px;left:18px;z-index:9998;font-family:inherit';
-                var btn = document.createElement('button');
-                btn.textContent = '🧪 Test as…';
-                btn.style.cssText = 'padding:10px 16px;border-radius:10px;border:1px solid rgba(212,175,55,.4);' +
-                    'background:linear-gradient(135deg,#2a1a06,#4a3210);color:#E5C76B;font-weight:700;' +
-                    'font-size:12.5px;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.35)';
-                var menu = document.createElement('div');
-                menu.style.cssText = 'display:none;position:absolute;bottom:calc(100% + 8px);left:0;' +
-                    'background:#1a1206;border:1px solid rgba(212,175,55,.35);border-radius:10px;' +
-                    'padding:6px;min-width:150px;box-shadow:0 8px 24px rgba(0,0,0,.45)';
-                targets.forEach(function (t) {
-                    var a = document.createElement('a');
-                    a.href = t.href;
-                    a.textContent = t.label;
-                    a.style.cssText = 'display:block;padding:8px 10px;border-radius:7px;color:#EDEDF5;' +
-                        'font-size:12.5px;text-decoration:none;white-space:nowrap';
-                    a.onmouseenter = function () { a.style.background = 'rgba(212,175,55,.12)'; };
-                    a.onmouseleave = function () { a.style.background = 'transparent'; };
-                    menu.appendChild(a);
-                });
-                btn.onclick = function (e) {
-                    e.stopPropagation();
-                    menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
-                };
-                document.addEventListener('click', function () { menu.style.display = 'none'; });
-                wrap.appendChild(menu);
-                wrap.appendChild(btn);
-                document.body.appendChild(wrap);
-            }
-            if (document.readyState === 'loading') {
-                document.addEventListener('DOMContentLoaded', inject);
-            } else {
-                inject();
-            }
-        })();
-
         // Chart logic extracted to admin-charts.js
 
         async function loadDashboard() {
