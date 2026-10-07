@@ -734,6 +734,14 @@ const DiagPanel = {
       body #_diag_panel .dstat-l { color:#C9C9DA !important; -webkit-text-fill-color:#C9C9DA !important; }
       body #_diag_panel #_diag_con > div > span:nth-child(1) { color:#B7B7C9 !important; -webkit-text-fill-color:#B7B7C9 !important; }
       body #_diag_panel #_diag_con > div > span:nth-child(3) { color:#EDE7D8 !important; -webkit-text-fill-color:#EDE7D8 !important; }
+      /* Tag badges (OK / ER / WN / IN / RN / NT): the light layer turned their text dark on dark chips - match each chip's own colour. */
+      body #_diag_panel #_diag_con > div > span:nth-child(2) { font-weight:700 !important; }
+      body #_diag_panel #_diag_con span[style*="#1a2a0a"] { color:#8CE04B !important; -webkit-text-fill-color:#8CE04B !important; }
+      body #_diag_panel #_diag_con span[style*="#3a1010"] { color:#FF7B7A !important; -webkit-text-fill-color:#FF7B7A !important; }
+      body #_diag_panel #_diag_con span[style*="#2a1a00"] { color:#F0C94A !important; -webkit-text-fill-color:#F0C94A !important; }
+      body #_diag_panel #_diag_con span[style*="#0a1a2a"] { color:#7CC4FF !important; -webkit-text-fill-color:#7CC4FF !important; }
+      body #_diag_panel #_diag_con span[style*="#151515"] { color:#B5B5B5 !important; -webkit-text-fill-color:#B5B5B5 !important; }
+      body #_diag_panel #_diag_con span[style*="#0a2a26"] { color:#6FE5DA !important; -webkit-text-fill-color:#6FE5DA !important; }
       body #_diag_panel #_diag_con pre { color:#EDE7D8 !important; -webkit-text-fill-color:#EDE7D8 !important; background:#050505 !important; }
     `;
     document.head.appendChild(style);
