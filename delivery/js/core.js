@@ -720,6 +720,21 @@ const DiagPanel = {
       .dstat-n{font-size:15px;font-weight:700;color:#D4AF37;line-height:1}
       .dstat-l{font-size:9px;color:#9A9AAE;margin-top:2px}
       .dok .dstat-n{color:#639922} .derr .dstat-n{color:#E24B4A} .dwn .dstat-n{color:#D4AF37}
+      /* The panel is always dark. The light-theme layer forces dark ink on everything else, which made
+         the log text, title and stats unreadable in light mode - pin the panel's own colours with ids. */
+      body #_diag_panel, body #_diag_panel #_diag_hdr { background:#07050a !important; }
+      body #_diag_panel #_diag_title { color:#D4AF37 !important; -webkit-text-fill-color:#D4AF37 !important; }
+      body #_diag_panel #_diag_page { color:#B7B7C9 !important; -webkit-text-fill-color:#B7B7C9 !important; }
+      body #_diag_panel #_diag_hdr button { background:#111 !important; color:#E8E2D4 !important; -webkit-text-fill-color:#E8E2D4 !important; border:1px solid #555 !important; }
+      body #_diag_panel #_diag_toolbar button { background:#0f0f0f !important; color:#E8E2D4 !important; -webkit-text-fill-color:#E8E2D4 !important; border:1px solid rgba(255,255,255,.3) !important; }
+      body #_diag_panel .dstat { background:#0f0f0f !important; border-color:#2a2a2a !important; }
+      body #_diag_panel .dstat-n { color:#F0C94A !important; -webkit-text-fill-color:#F0C94A !important; }
+      body #_diag_panel .dok .dstat-n { color:#7BD13F !important; -webkit-text-fill-color:#7BD13F !important; }
+      body #_diag_panel .derr .dstat-n { color:#FF6B6A !important; -webkit-text-fill-color:#FF6B6A !important; }
+      body #_diag_panel .dstat-l { color:#C9C9DA !important; -webkit-text-fill-color:#C9C9DA !important; }
+      body #_diag_panel #_diag_con > div > span:nth-child(1) { color:#B7B7C9 !important; -webkit-text-fill-color:#B7B7C9 !important; }
+      body #_diag_panel #_diag_con > div > span:nth-child(3) { color:#EDE7D8 !important; -webkit-text-fill-color:#EDE7D8 !important; }
+      body #_diag_panel #_diag_con pre { color:#EDE7D8 !important; -webkit-text-fill-color:#EDE7D8 !important; background:#050505 !important; }
     `;
     document.head.appendChild(style);
 
