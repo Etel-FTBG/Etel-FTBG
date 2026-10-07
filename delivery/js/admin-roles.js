@@ -213,6 +213,21 @@ function etelHasCap(caps, required) {
         if (navEl) navEl.classList.add('etel-cap-hidden');
       }
     });
+    // Ride-only staff (a ride capability but no Delivery/commerce capability at all):
+    // hide every Delivery-only tab and dashboard block so the console shows the Ride
+    // system alone. The server enforces the same rule (see the delivery gate in boot.php).
+    const DELIVERY_CAPS = ['orders.view', 'orders.manage', 'items.view', 'items.manage',
+      'service_givers.view', 'service_givers.manage', 'analytics.view', 'finance.view', 'finance.manage'];
+    const rideOnly = caps.some(c => c.indexOf('rides.') === 0) && !caps.some(c => DELIVERY_CAPS.includes(c));
+    window.ETEL_RIDE_ONLY = rideOnly;
+    if (rideOnly) {
+      document.body.classList.add('etel-ride-only');
+      ['orders', 'couriers', 'servicegivers', 'items', 'menucat', 'promos', 'orderchats',
+       'support', 'telebirr', 'launch', 'reports'].forEach(page => {
+        const navEl = document.querySelector(`.nav-item[data-page="${page}"]`);
+        if (navEl) navEl.classList.add('etel-cap-hidden');
+      });
+    }
     // Roles panel is owner-only (separate id, not a plain data-page lookup).
     const rolesNav = document.getElementById('nav-item-roles');
     if (rolesNav && !etelHasCap(caps, 'owner.only')) rolesNav.classList.add('etel-cap-hidden');

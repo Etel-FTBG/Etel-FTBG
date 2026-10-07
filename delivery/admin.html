@@ -116,6 +116,25 @@ body.etel-light .pp-up { color:#178A4A; }
 body.etel-light .pp-range button:not(.active), body.etel-light .oc-pill:not(.active) { color:#4A4536; border-color:rgba(160,120,20,.45); }
 body.etel-light .oc-row { background:#FFFFFF; border-color:rgba(20,17,8,.12); }
 body.etel-light .pp-row { border-color:rgba(20,17,8,.08); }
+/* Bright-light legibility: in light mode, force dark ink on the cream/white surfaces so
+   labels, headings, placeholders and chart text stay readable outdoors. Dark mode untouched. */
+body:not(.dark-theme) .section-title, body:not(.dark-theme) .chart-title, body:not(.dark-theme) .content-title,
+body:not(.dark-theme) .pp-title, body:not(.dark-theme) .data-section h3, body:not(.dark-theme) .etel-card h3 { color:#1B1606 !important; -webkit-text-fill-color:#1B1606 !important; }
+body:not(.dark-theme) .stat-label, body:not(.dark-theme) .pp-sub, body:not(.dark-theme) .pp-kpi span,
+body:not(.dark-theme) th, body:not(.dark-theme) label, body:not(.dark-theme) .form-label { color:#3A3322 !important; }
+body:not(.dark-theme) .stat-value, body:not(.dark-theme) .pp-kpi b { color:#1B1606 !important; -webkit-text-fill-color:#1B1606 !important; }
+body:not(.dark-theme) td, body:not(.dark-theme) .pp-row, body:not(.dark-theme) .oc-row .t b { color:#1B1606; }
+body:not(.dark-theme) .oc-row .t span { opacity:1; color:#4A4536; }
+body:not(.dark-theme) input::placeholder, body:not(.dark-theme) textarea::placeholder { color:#6B6350 !important; opacity:1 !important; }
+body:not(.dark-theme) input, body:not(.dark-theme) select, body:not(.dark-theme) textarea { color:#1B1606 !important; border-color:rgba(20,17,8,.35) !important; }
+body:not(.dark-theme) .btn-secondary, body:not(.dark-theme) .etel-btn-ghost { color:#1B1606 !important; border-color:rgba(20,17,8,.4) !important; background:#FFFFFF !important; }
+body:not(.dark-theme) .nav-item { color:#2A2412 !important; }
+body:not(.dark-theme) .nav-item.active { color:#1B1606 !important; font-weight:700; }
+body:not(.dark-theme) [style*="color:#B8B0A0"], body:not(.dark-theme) [style*="color: #B8B0A0"] { color:#4A4536 !important; }
+body:not(.dark-theme) [style*="var(--etel-ink-dim)"] { color:#4A4536 !important; }
+body:not(.dark-theme) .stat-icon { opacity:.9; }
+/* Ride-only roles: Delivery-only dashboard blocks are removed */
+body.etel-ride-only .charts-grid, body.etel-ride-only #dash-orders-section { display:none !important; }
 </style>
     <!-- ══════ END TEMP: INSA AUDIT LOCKDOWN ══════ -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
@@ -421,7 +440,7 @@ html{color-scheme:light}
                         </div>
                     </div>
 
-                    <div class="data-section">
+                    <div class="data-section" id="dash-orders-section">
                         <div class="section-title">Recent Orders</div>
                         <div class="table-wrapper"><table><thead><tr><th>Order Code</th><th>From</th><th>To</th><th>Type</th><th>Amount (ETB)</th><th>Status</th><th>Placed</th><th>Action</th></tr></thead>
                         <tbody id="dash-orders-tbody"><tr><td colspan="8" style="text-align:center;padding:30px;color:#B8B0A0">Loading…</td></tr></tbody></table></div>
