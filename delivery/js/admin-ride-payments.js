@@ -13,14 +13,14 @@ function api(action,body,ok,fail){
 function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function etb(n){return 'ETB '+parseFloat(n||0).toLocaleString('en-ET',{maximumFractionDigits:2});}
 var METHOD={cash:'Cash',etelpay:'Etel Pay wallet',wallet:'Etel Pay wallet',etel_money:'Etel Money'};
-function card(label,val){return '<div class="rp-card"><div class="rp-k">'+esc(label)+'</div><div class="rp-v">'+val+'</div></div>';}
+function card(label,val){return '<div class="rp-tile"><div class="rp-k">'+esc(label)+'</div><div class="rp-v">'+val+'</div></div>';}
 function table(head,rows,empty){
   if(!rows.length) return '<div class="rp-empty">'+esc(empty)+'</div>';
   return '<div class="rp-scroll"><table class="rp-t"><thead><tr>'+head.map(function(h){return '<th>'+esc(h)+'</th>';}).join('')+'</tr></thead><tbody>'+rows.join('')+'</tbody></table></div>';
 }
 function render(d){
   var t=d.totals||{}, el=document.getElementById('ridepay-body'); if(!el) return;
-  var h='<div class="rp-cards">'+
+  var h='<div class="rp-tiles">'+
     card('Today',etb(t.today))+card('Last 7 days',etb(t.week))+card('Last 30 days',etb(t.month))+card('All time',etb(t.total))+
     card('Completed trips',parseInt(t.trips||0,10))+card('Driver earnings',etb(t.earnings))+card('Paid out to drivers',etb(t.paid_out))+
     card('Commission owed',etb(t.commission_owed))+card('Driver Etel Money',etb(t.etel_money))+'</div>';
