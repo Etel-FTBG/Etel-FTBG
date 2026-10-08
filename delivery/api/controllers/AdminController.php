@@ -1296,7 +1296,7 @@ case 'admin_ride_growth': {
        (ride_drivers has no signup timestamp of its own, so this joins
        to users.created_at, which every account has). */
     $pdo = db();
-    require_admin($pdo, 'analytics.view');
+    etel_require_ride_pay($pdo, 'analytics.view', 'rides.view');
 
     // Optional custom date range (📅 date picker on the dashboard) - when
     // both dates are given, also return a daily breakdown bounded to that
