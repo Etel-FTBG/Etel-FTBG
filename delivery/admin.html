@@ -125,6 +125,7 @@ body:not(.dark-theme) th, body:not(.dark-theme) label, body:not(.dark-theme) .fo
 body:not(.dark-theme) .stat-value, body:not(.dark-theme) .pp-kpi b { color:#1B1606 !important; -webkit-text-fill-color:#1B1606 !important; }
 body:not(.dark-theme) td, body:not(.dark-theme) .pp-row, body:not(.dark-theme) .oc-row .t b { color:#1B1606; }
 body:not(.dark-theme) .oc-row .t span { opacity:1; color:#4A4536; }
+body input, body select, body textarea, body button { font-family: inherit; }
 body:not(.dark-theme) input::placeholder, body:not(.dark-theme) textarea::placeholder { color:#6B6350 !important; opacity:1 !important; }
 body:not(.dark-theme) input, body:not(.dark-theme) select, body:not(.dark-theme) textarea { color:#1B1606 !important; border-color:rgba(20,17,8,.35) !important; }
 body:not(.dark-theme) .btn-secondary, body:not(.dark-theme) .etel-btn-ghost { color:#1B1606 !important; border-color:rgba(20,17,8,.4) !important; background:#FFFFFF !important; }
@@ -1437,7 +1438,7 @@ html{color-scheme:light}
                 <div class="panel" id="panel-ridepay" style="display:none">
                     <div class="page-title">💳 Ride Payments</div>
                     <div class="page-subtitle">Fare revenue, driver earnings and payouts, and driver Etel Money top-up approvals for the Ride system</div>
-                    <style>.rp-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin:16px 0}.rp-card{background:var(--card-bg,rgba(255,255,255,.04));border:1px solid rgba(212,175,55,.25);border-radius:12px;padding:14px}.rp-k{font-size:11px;text-transform:uppercase;letter-spacing:.04em;opacity:.7}.rp-v{font-size:18px;font-weight:800;margin-top:4px}.rp-h{margin:22px 0 8px;font-size:15px}.rp-scroll{overflow-x:auto}.rp-t{width:100%;border-collapse:collapse;font-size:13px}.rp-t th,.rp-t td{text-align:left;padding:9px 10px;border-bottom:1px solid rgba(128,128,128,.25)}.rp-s{font-size:11px;opacity:.65}.rp-empty{padding:16px;opacity:.7}</style>
+                    <style>.rp-tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin:16px 0}.rp-tile{background:var(--card-bg,rgba(255,255,255,.04));border:1px solid rgba(212,175,55,.25);border-radius:12px;padding:14px}.rp-k{font-size:11px;text-transform:uppercase;letter-spacing:.04em;opacity:.7}.rp-v{font-size:18px;font-weight:800;margin-top:4px}.rp-h{margin:22px 0 8px;font-size:15px}.rp-scroll{overflow-x:auto}.rp-t{width:100%;border-collapse:collapse;font-size:13px}.rp-t th,.rp-t td{text-align:left;padding:9px 10px;border-bottom:1px solid rgba(128,128,128,.25)}.rp-s{font-size:11px;opacity:.65}.rp-empty{padding:16px;opacity:.7}</style>
                     <div id="ridepay-body"></div>
                 </div><!-- /panel-ridepay -->
 
@@ -1588,6 +1589,7 @@ html{color-scheme:light}
     <script src="js/admin/servicegiver-ext.js?v=4.2"></script>
     <script src="js/admin-audit.js?v=1.6"></script><!-- One-click code audit (Settings tab) -->
     <script src="js/admin-migrations.js?v=1.2"></script><!-- Database migrations (Settings tab) -->
+    <script src="js/etel-contrast-guard.js?v=1"></script>
     <script src="js/admin-announcements.js?v=1.1"></script><!-- Driver announcements + push (Settings tab) -->
     <script src="js/admin-launch-checklist.js?v=1.0"></script><!-- Launch Readiness tab -->
     <script src="js/admin-releases.js?v=1.0"></script><!-- Releases tab - canary release management -->
