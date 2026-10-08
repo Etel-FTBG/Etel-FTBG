@@ -871,9 +871,9 @@ html{color-scheme:light}
                         <div id="migrations-report"></div>
                     </div>
 
-                    <div class="data-section" data-cap="settings.manage">
-                        <div class="section-title">📣 Driver Announcements</div>
-                        <p style="font-size:13px;color:#B8B0A0;margin-bottom:14px;max-width:640px">Posts to every driver's app (Chats &gt; From Etel Group / Support notifications / Pro news, depending on category) and sends a real push notification to all registered drivers at the same time - so time-sensitive messages don't just sit unseen in a tab nobody opens.</p>
+                    <div class="data-section" data-cap="settings.manage,rides.manage">
+                        <div class="section-title">📣 Announcements (Drivers &amp; Riders)</div>
+                        <p style="font-size:13px;color:#B8B0A0;margin-bottom:14px;max-width:640px">Choose the audience below. Driver announcements post to every driver's app (Chats &gt; From Etel Group / Support notifications / Pro news, depending on category) and sends a real push notification to all registered drivers at the same time - so time-sensitive messages don't just sit unseen in a tab nobody opens.</p>
                         <div style="display:flex;flex-direction:column;gap:10px;max-width:640px;margin-bottom:14px">
                             <input type="text" id="announce-title" class="filter-sel" placeholder="Title (e.g. How your earnings & cash out work)" style="width:100%">
                             <select id="announce-category" class="filter-sel" style="width:220px">
@@ -881,9 +881,14 @@ html{color-scheme:light}
                                 <option value="notification">Notification (Support notifications)</option>
                                 <option value="partner">Partner (From Etel Group)</option>
                             </select>
+                            <select id="announce-audience" class="filter-sel" style="width:220px">
+                                <option value="drivers">Audience: Drivers</option>
+                                <option value="riders">Audience: Riders</option>
+                                <option value="all">Audience: Drivers and Riders</option>
+                            </select>
                             <textarea id="announce-body" class="filter-sel" rows="5" placeholder="Full message body…" style="width:100%;resize:vertical;font-family:inherit"></textarea>
                         </div>
-                        <button class="btn btn-primary" onclick="postDriverAnnouncement()">📨 Post &amp; Notify All Drivers</button>
+                        <button class="btn btn-primary" onclick="postDriverAnnouncement()">📨 Post &amp; Notify</button>
                         <div id="announce-post-report" style="margin-top:12px"></div>
 
                         <div style="border-top:1px solid rgba(212,175,55,.15);padding-top:16px;margin-top:20px">
@@ -1583,7 +1588,7 @@ html{color-scheme:light}
     <script src="js/admin/servicegiver-ext.js?v=4.2"></script>
     <script src="js/admin-audit.js?v=1.6"></script><!-- One-click code audit (Settings tab) -->
     <script src="js/admin-migrations.js?v=1.2"></script><!-- Database migrations (Settings tab) -->
-    <script src="js/admin-announcements.js?v=1.0"></script><!-- Driver announcements + push (Settings tab) -->
+    <script src="js/admin-announcements.js?v=1.1"></script><!-- Driver announcements + push (Settings tab) -->
     <script src="js/admin-launch-checklist.js?v=1.0"></script><!-- Launch Readiness tab -->
     <script src="js/admin-releases.js?v=1.0"></script><!-- Releases tab - canary release management -->
     <script>

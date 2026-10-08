@@ -9,6 +9,8 @@ async function postDriverAnnouncement() {
     const title = document.getElementById('announce-title').value.trim();
     const body = document.getElementById('announce-body').value.trim();
     const category = document.getElementById('announce-category').value;
+    const audEl = document.getElementById('announce-audience');
+    const audience = audEl ? audEl.value : 'drivers';
     const reportEl = document.getElementById('announce-post-report');
     if (!title || !body) {
         reportEl.innerHTML = '<div style="color:#e74c3c">Title and message body are both required.</div>';
@@ -16,9 +18,9 @@ async function postDriverAnnouncement() {
     }
     reportEl.innerHTML = '<div style="color:#B8B0A0">Posting…</div>';
     try {
-        const res = await adm('admin_create_announcement', { title: title, body: body, category: category });
+        const res = await adm('admin_create_announcement', { title: title, body: body, category: category, audience: audience });
         if (res && res.success) {
-            reportEl.innerHTML = '<div style="color:#27ae60">✅ Posted and pushed to all registered drivers.</div>';
+            reportEl.innerHTML = '<div style="color:#27ae60">✅ Posted and pushed to the selected audience.</div>';
             document.getElementById('announce-title').value = '';
             document.getElementById('announce-body').value = '';
             loadDriverAnnouncements();
@@ -42,7 +44,7 @@ async function loadDriverAnnouncements() {
         }
         const catLabel = { news: 'News', notification: 'Notification', partner: 'Partner' };
         listEl.innerHTML = rows.map(function (r) {
-            const cat = catLabel[r.category] || r.category;
+            const cat = (catLabel[r.category] || r.category) + ' · ' + ({ riders: 'Riders', all: 'Drivers + Riders' }[r.audience] || 'Drivers');
             const activeBadge = parseInt(r.active, 10)
                 ? '<span style="color:#27ae60">Active</span>'
                 : '<span style="color:#B8B0A0">Removed</span>';
