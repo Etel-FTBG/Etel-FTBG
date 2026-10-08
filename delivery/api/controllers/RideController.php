@@ -2876,19 +2876,51 @@ case 'driver_get_announcements': {
        currently, but kept for a future "All" view). */
     $filterCat = isset($body['category']) ? trim($body['category']) : (isset($_GET['category']) ? trim($_GET['category']) : '');
     if ($filterCat !== '' && !in_array($filterCat, array('news', 'notification', 'partner'), true)) $filterCat = '';
-    $sql = 'SELECT a.id, a.category, a.title, a.body, a.created_at,
-                (r.id IS NOT NULL) AS is_read
-         FROM driver_announcements a
-         LEFT JOIN driver_announcement_reads r ON r.announcement_id = a.id AND r.user_id = ?
-         WHERE a.active = 1';
-    $params = array($u['id']);
-    if ($filterCat !== '') { $sql .= ' AND a.category = ?'; $params[] = $filterCat; }
-    $sql .= ' ORDER BY a.created_at DESC LIMIT 100';
-    $rows = $pdo->prepare($sql);
-    $rows->execute($params);
-    $list = $rows->fetchAll(PDO::FETCH_ASSOC);
+    $list = null;
+    foreach (array(" AND a.audience IN ('drivers','all')", '') as $audSql) { // '' = fallback before the audience column exists
+        try {
+            $sql = 'SELECT a.id, a.category, a.title, a.body, a.created_at,
+                    (r.id IS NOT NULL) AS is_read
+             FROM driver_announcements a
+             LEFT JOIN driver_announcement_reads r ON r.announcement_id = a.id AND r.user_id = ?
+             WHERE a.active = 1' . $audSql;
+            $params = array($u['id']);
+            if ($filterCat !== '') { $sql .= ' AND a.category = ?'; $params[] = $filterCat; }
+            $sql .= ' ORDER BY a.created_at DESC LIMIT 100';
+            $rows = $pdo->prepare($sql);
+            $rows->execute($params);
+            $list = $rows->fetchAll(PDO::FETCH_ASSOC);
+            break;
+        } catch (Exception $e) { $list = null; }
+    }
+    if ($list === null) fail('Could not load announcements', 500);
     foreach ($list as &$row) { $row['is_read'] = (bool) intval($row['is_read']); }
     ok(array('announcements' => $list));
+    break;
+}
+
+case 'rider_get_announcements': {
+    /* Announcements an admin addressed to riders (audience riders/all), newest first. */
+    try {
+        $st = $pdo->prepare("SELECT a.id, a.category, a.title, a.body, a.created_at, (r.id IS NOT NULL) AS is_read
+             FROM driver_announcements a
+             LEFT JOIN driver_announcement_reads r ON r.announcement_id = a.id AND r.user_id = ?
+             WHERE a.active = 1 AND a.audience IN ('riders','all') ORDER BY a.created_at DESC LIMIT 20");
+        $st->execute(array($u['id']));
+        $list = $st->fetchAll(PDO::FETCH_ASSOC);
+    } catch (Exception $e) { $list = array(); } // audience column not created yet = nothing addressed to riders
+    foreach ($list as &$row) { $row['is_read'] = (bool) intval($row['is_read']); }
+    ok(array('announcements' => $list));
+    break;
+}
+
+case 'rider_mark_announcement_read': {
+    $aid = isset($body['announcement_id']) ? intval($body['announcement_id']) : 0;
+    if (!$aid) fail('announcement_id required', 400);
+    try {
+        $pdo->prepare('INSERT IGNORE INTO driver_announcement_reads (announcement_id, user_id) VALUES (?, ?)')->execute(array($aid, $u['id']));
+        ok(array('message' => 'Marked read'));
+    } catch (Exception $e) { fail_ex($e, 'Could not mark as read', 500); }
     break;
 }
 

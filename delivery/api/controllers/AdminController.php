@@ -1097,7 +1097,7 @@ case 'admin_topup_etel_money': {
        'etelpay'), so both routes show up together in one place if a
        top-up history view gets built later. */
     $pdo = db();
-    $admin = require_admin($pdo, 'finance.manage');
+    $admin = etel_require_ride_pay($pdo, 'finance.manage', 'rides.manage');
     $driverId = isset($body['driver_id']) ? intval($body['driver_id']) : 0;
     if (!$driverId) fail('driver_id required');
     $amount = etel_validate_amount(isset($body['amount']) ? $body['amount'] : null);
@@ -1994,37 +1994,43 @@ case 'admin_update_bank_account': {
 
 case 'admin_create_announcement': {
     $pdo = db();
-    $admin = require_admin($pdo, 'settings.manage');
+    $admin = etel_require_ride_pay($pdo, 'settings.manage', 'rides.manage');
     $title = isset($body['title']) ? trim($body['title']) : '';
     $bodytxt = isset($body['body']) ? trim($body['body']) : '';
     $category = isset($body['category']) ? trim($body['category']) : 'news';
     if (!in_array($category, array('news', 'notification', 'partner'), true)) $category = 'news';
+    $audience = isset($body['audience']) ? trim($body['audience']) : 'drivers';
+    if (!in_array($audience, array('drivers', 'riders', 'all'), true)) $audience = 'drivers';
     if (!$title || !$bodytxt) fail('title and body are required', 400);
     try {
-        $s = $pdo->prepare('INSERT INTO driver_announcements (category, title, body, created_by, active) VALUES (?, ?, ?, ?, 1)');
-        $s->execute(array($category, $title, $bodytxt, $admin['id']));
+        rides_add_missing_cols($pdo, 'driver_announcements', array(
+            'audience' => "audience VARCHAR(10) NOT NULL DEFAULT 'drivers'"
+        ));
+        $s = $pdo->prepare('INSERT INTO driver_announcements (category, title, body, created_by, active, audience) VALUES (?, ?, ?, ?, 1, ?)');
+        $s->execute(array($category, $title, $bodytxt, $admin['id'], $audience));
         $newAnnouncementId = intval($pdo->lastInsertId());
 
-        /* PUSH-ON-ANNOUNCEMENT: previously this was a plain DB insert
-           with nothing to actually surface it - the driver app only
-           shows announcements if a driver manually opens Chats and taps
-           one of three passive list rows, no badge/banner/push at all.
-           For anything time-sensitive (a policy change, an earnings
-           model update, etc.) that meant it could go unseen indefinitely.
-           Now pushes every registered driver a real notification too,
-           best-effort - a push failure never blocks the announcement
-           itself from being posted. */
+        /* Push the announcement (best-effort: a push failure never blocks posting). */
         try {
-            $driverIds = $pdo->query("SELECT DISTINCT user_id FROM ride_drivers")->fetchAll(PDO::FETCH_COLUMN);
-            if ($driverIds) {
-                etel_push_send_multi($pdo, $driverIds, $title, mb_substr($bodytxt, 0, 150),
-                    array('type' => 'announcement', 'announcement_id' => $newAnnouncementId, 'url' => '/delivery/driver/'));
+            if ($audience === 'drivers' || $audience === 'all') {
+                $driverIds = $pdo->query("SELECT DISTINCT user_id FROM ride_drivers")->fetchAll(PDO::FETCH_COLUMN);
+                if ($driverIds) {
+                    etel_push_send_multi($pdo, $driverIds, $title, mb_substr($bodytxt, 0, 150),
+                        array('type' => 'announcement', 'announcement_id' => $newAnnouncementId, 'url' => '/delivery/driver/'));
+                }
+            }
+            if ($audience === 'riders' || $audience === 'all') {
+                $riderIds = $pdo->query("SELECT DISTINCT passenger_id FROM rides")->fetchAll(PDO::FETCH_COLUMN);
+                if ($riderIds) {
+                    etel_push_send_multi($pdo, $riderIds, $title, mb_substr($bodytxt, 0, 150),
+                        array('type' => 'announcement', 'announcement_id' => $newAnnouncementId, 'url' => '/delivery/ride/'));
+                }
             }
         } catch (Exception $pushEx) {
             error_log('[ETEL][push] announcement push failed: ' . $pushEx->getMessage());
         }
 
-        ok(array('message' => 'Announcement posted', 'id' => $newAnnouncementId));
+        ok(array('message' => 'Announcement posted', 'id' => $newAnnouncementId, 'audience' => $audience));
     } catch (Exception $e) {
         fail_ex($e, 'Post failed', 500);
     }
@@ -2033,15 +2039,19 @@ case 'admin_create_announcement': {
 
 case 'admin_get_announcements': {
     $pdo = db();
-    require_admin($pdo, 'settings.view');
-    $rows = $pdo->query('SELECT id, category, title, body, active, created_at FROM driver_announcements ORDER BY created_at DESC LIMIT 100');
+    etel_require_ride_pay($pdo, 'settings.view', 'rides.view');
+    try {
+        $rows = $pdo->query('SELECT id, category, title, body, active, created_at, audience FROM driver_announcements ORDER BY created_at DESC LIMIT 100');
+    } catch (Exception $e) {
+        $rows = $pdo->query('SELECT id, category, title, body, active, created_at FROM driver_announcements ORDER BY created_at DESC LIMIT 100');
+    }
     ok(array('announcements' => $rows->fetchAll(PDO::FETCH_ASSOC)));
     break;
 }
 
 case 'admin_delete_announcement': {
     $pdo = db();
-    require_admin($pdo, 'settings.manage');
+    etel_require_ride_pay($pdo, 'settings.manage', 'rides.manage');
     $aid = isset($body['id']) ? intval($body['id']) : 0;
     if (!$aid) fail('id required', 400);
     $pdo->prepare('UPDATE driver_announcements SET active=0 WHERE id=?')->execute(array($aid));
