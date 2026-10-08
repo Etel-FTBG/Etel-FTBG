@@ -1149,6 +1149,40 @@ case 'admin_topup_etel_money': {
     break;
 }
 
+case 'admin_ride_payments': {
+    /* Ride Payments console: fare revenue by payment method, driver balances,
+       recent driver payouts and pending driver Etel Money top-ups. Ride data only. */
+    $pdo = db();
+    etel_require_ride_pay($pdo, 'finance.view', 'rides.view');
+    $out = array('by_method' => array(), 'totals' => array(), 'payouts' => array(), 'topups' => array());
+    try {
+        $out['by_method'] = $pdo->query("SELECT COALESCE(NULLIF(payment_method,''),'cash') AS method, COUNT(*) AS trips,
+                COALESCE(SUM(fare_paid),0) AS amount
+            FROM rides WHERE status='completed' GROUP BY 1 ORDER BY amount DESC")->fetchAll(PDO::FETCH_ASSOC);
+        $t = $pdo->query("SELECT
+                COALESCE(SUM(CASE WHEN DATE(completed_at)=CURDATE() THEN fare_paid END),0) AS today,
+                COALESCE(SUM(CASE WHEN completed_at >= DATE_SUB(NOW(), INTERVAL 7 DAY) THEN fare_paid END),0) AS week,
+                COALESCE(SUM(CASE WHEN completed_at >= DATE_SUB(NOW(), INTERVAL 30 DAY) THEN fare_paid END),0) AS month,
+                COALESCE(SUM(fare_paid),0) AS total, COUNT(*) AS trips
+            FROM rides WHERE status='completed'")->fetch(PDO::FETCH_ASSOC);
+        $d = $pdo->query("SELECT COALESCE(SUM(total_earnings),0) AS earnings, COALESCE(SUM(total_paid_out),0) AS paid_out,
+                COALESCE(SUM(commission_owed),0) AS commission_owed, COALESCE(SUM(etel_money_balance),0) AS etel_money
+            FROM ride_drivers")->fetch(PDO::FETCH_ASSOC);
+        $out['totals'] = array_merge($t ?: array(), $d ?: array());
+    } catch (Throwable $e) { error_log('[ETEL] admin_ride_payments totals: ' . $e->getMessage()); }
+    try {
+        $out['payouts'] = $pdo->query("SELECT p.id, p.amount, p.status, p.tx_ref, p.created_at, u.name AS driver_name, u.phone AS driver_phone
+            FROM driver_payouts p LEFT JOIN users u ON u.id = p.user_id ORDER BY p.id DESC LIMIT 50")->fetchAll(PDO::FETCH_ASSOC);
+    } catch (Throwable $e) { /* table is created on the first cash-out */ }
+    try {
+        $out['topups'] = $pdo->query("SELECT t.id, t.amount, t.tx_ref, t.source, t.created_at, u.name AS driver_name, u.phone AS driver_phone
+            FROM driver_etel_money_topups t JOIN users u ON u.id = t.user_id
+            WHERE t.status='pending' ORDER BY t.created_at ASC")->fetchAll(PDO::FETCH_ASSOC);
+    } catch (Throwable $e) { /* table is created on the first top-up */ }
+    ok($out);
+    break;
+}
+
 case 'admin_get_pending_etel_topups': {
     /* Driver-initiated top-ups waiting on an admin's explicit approval
        before they touch etel_money_balance - see driver_topup_etel_money
@@ -1160,7 +1194,7 @@ case 'admin_get_pending_etel_topups': {
        both kinds from one queue. receipt_image_url is included so the
        approval screen can show the driver's uploaded receipt photo. */
     $pdo = db();
-    require_admin($pdo, 'finance.view');
+    etel_require_ride_pay($pdo, 'finance.view', 'rides.view');
     $pdo->exec(
         "CREATE TABLE IF NOT EXISTS driver_etel_money_topups (
             id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -1200,7 +1234,7 @@ case 'admin_approve_etel_topup': {
        request. Row-locked so two admins clicking Approve on the same
        request at the same moment can't double-credit it. */
     $pdo = db();
-    $admin = require_admin($pdo, 'finance.manage');
+    $admin = etel_require_ride_pay($pdo, 'finance.manage', 'rides.manage');
     $topupId = isset($body['id']) ? intval($body['id']) : 0;
     if (!$topupId) fail('id required');
 
@@ -1230,7 +1264,7 @@ case 'admin_approve_etel_topup': {
 
 case 'admin_reject_etel_topup': {
     $pdo = db();
-    $admin = require_admin($pdo, 'finance.manage');
+    $admin = etel_require_ride_pay($pdo, 'finance.manage', 'rides.manage');
     $topupId = isset($body['id']) ? intval($body['id']) : 0;
     if (!$topupId) fail('id required');
     $reason = isset($body['reason']) ? mb_substr(trim($body['reason']), 0, 255) : '';

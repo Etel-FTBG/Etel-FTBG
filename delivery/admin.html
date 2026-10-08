@@ -315,6 +315,9 @@ html{color-scheme:light}
             <div class="nav-item" data-page="rides" onclick="switchPage('rides',this)">
                 <span class="nav-icon">🚖</span><span>Rides</span>
             </div>
+            <div class="nav-item" data-page="ridepay" onclick="switchPage('ridepay',this); if(typeof ridePaymentsLoad==='function') ridePaymentsLoad();">
+                <span class="nav-icon">💳</span><span>Ride Payments</span>
+            </div>
             <div class="nav-item" data-page="pricing" onclick="switchPage('pricing',this)">
                 <span class="nav-icon">💰</span><span>Pricing</span>
             </div>
@@ -1426,6 +1429,13 @@ html{color-scheme:light}
                     </div>
                 </div><!-- /panel-orderchats -->
 
+                <div class="panel" id="panel-ridepay" style="display:none">
+                    <div class="page-title">💳 Ride Payments</div>
+                    <div class="page-subtitle">Fare revenue, driver earnings and payouts, and driver Etel Money top-up approvals for the Ride system</div>
+                    <style>.rp-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin:16px 0}.rp-card{background:var(--card-bg,rgba(255,255,255,.04));border:1px solid rgba(212,175,55,.25);border-radius:12px;padding:14px}.rp-k{font-size:11px;text-transform:uppercase;letter-spacing:.04em;opacity:.7}.rp-v{font-size:18px;font-weight:800;margin-top:4px}.rp-h{margin:22px 0 8px;font-size:15px}.rp-scroll{overflow-x:auto}.rp-t{width:100%;border-collapse:collapse;font-size:13px}.rp-t th,.rp-t td{text-align:left;padding:9px 10px;border-bottom:1px solid rgba(128,128,128,.25)}.rp-s{font-size:11px;opacity:.65}.rp-empty{padding:16px;opacity:.7}</style>
+                    <div id="ridepay-body"></div>
+                </div><!-- /panel-ridepay -->
+
                 <div class="panel" id="panel-telebirr" style="display:none">
                     <div class="page-title">💳 Payments</div>
                     <div class="page-subtitle">Manual verification only — check your Telebirr merchant SMS/dashboard and bank statement yourself, then confirm or reject each one below</div>
@@ -1567,6 +1577,7 @@ html{color-scheme:light}
 <script src="js/admin-couriers-premium.js?v=1.4"></script><!-- Premium Couriers Management: 3D cards + edit modal + live map -->
     <script src="js/admin-premium.js?v=4.1"></script><!-- KPI count-ups + card motion -->
         <script src="js/admin-updater-ext.js?v=4.3"></script>
+        <script src="js/admin-ride-payments.js?v=1.0"></script>
         <script src="js/admin-rides.js?v=4.23"></script><!-- Rides tab - Phase 4, + ride issue reports, + manual GPS-lost completion, + live map picker, + stops -->
     <script src="js/admin-sos.js?v=1.0"></script><!-- SOS / intruder-alert monitor for driver & rider panic button -->
     <script src="js/admin/servicegiver-ext.js?v=4.2"></script>

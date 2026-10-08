@@ -186,6 +186,7 @@ function etelHasCap(caps, required) {
       orders: 'orders.view', users: 'users.view', couriers: 'users.view',
       servicegivers: 'service_givers.view', items: 'items.view',
       rides: ['rides.view', 'settings.view'],
+      ridepay: ['rides.view', 'finance.view'],
       pricing: ['pricing.manage', 'settings.view', 'finance.view'],
       reports: 'analytics.view',
       telebirr: ['finance.view', 'finance.manage'],
