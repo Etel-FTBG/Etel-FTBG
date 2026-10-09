@@ -1,6 +1,6 @@
 ---
 name: 'etel-delivery-ride-memory'
-description: 'Running project memory for the ETEL Delivery & Ride system (rider PWA delivery/ride, driver PWA delivery/driver, courier, customer, service-giver, admin, PHP API delivery/api) and for the ETEL marketing/office/brand-media work done around it (logos, Coming Soon poster/banner/video, office interior design and 3D renders, Higgsfield usage). Use at the start of ANY new chat about Delivery & Ride, ETEL Ride, ETEL Driver, trip PIN, receipts, Bluetooth receipt printer, refresh button, hot areas, scheduled rides, admin 2FA, system health, cron, the Hawassa launch, marketing plan, user/driver guides, office design, 3D views, Higgsfield, Coming Soon posters or videos, or when the user says continue / what did we do / remember. Read together with etel-group-ops (conventions) and etel-audit-fix-workflow (deploy-and-verify loop).'
+description: 'Running project memory for the ETEL Delivery & Ride system (rider PWA delivery/ride, driver PWA delivery/driver, courier, customer, service-giver, admin, PHP API delivery/api) and for the ETEL marketing/office/brand-media work done around it (logos, Coming Soon poster/banner/video, the navy/gold/blue ETEL brand look and new group logo, office interior design and 3D renders, Pinterest/Windsor notes, Higgsfield usage). Use at the start of ANY new chat about Delivery & Ride, ETEL Ride, ETEL Driver, trip PIN, receipts, Bluetooth receipt printer, refresh button, hot areas, scheduled rides, admin 2FA, system health, cron, the Hawassa launch, marketing plan, user/driver guides, office design, 3D views, Higgsfield, Coming Soon posters or videos, or when the user says continue / what did we do / remember. Read together with etel-group-ops (conventions) and etel-audit-fix-workflow (deploy-and-verify loop).'
 ---
 
 # ETEL Delivery & Ride - project memory (as of 2026-10-05)
@@ -60,37 +60,62 @@ Receipt API: `ride_receipt` (passenger or driver of that ride; `ETEL-R000123`; l
 - **Decision: do NOT show the "5% fee" in any marketing/office material.** Removed everywhere
   (poster, video, office renders). Do not reintroduce.
 
-## 4. Office interior (4 x 5 m one-room office, Hawassa)
-- Layout assumed: room 4 m x 5 m, door on south wall (right side), window on north wall,
-  ceiling 2.8 m. Brand wall west (master logo + six company logos + QR + "Become a driver /
-  sign up early"), service desk with SERVICE DESK sign, dispatcher desk with two monitors,
-  support desk, parcel shelf NE, TV watch screen, waiting seats, gold LED strips (ceiling
-  cove, wall frame, desk base, shelves, skirting). Palette: carbon black + gold + emerald.
-- STILL NEEDED: real door/window positions and ceiling height.
-- Deliverables: `ETEL_Office_Design_4x5m.pdf`; 3D views (three.js r149 via npm tarball,
-  SwiftShader) - latest `ETEL_Office_3D_all_sides_LED_v2.zip` (15 views, no 5% fee, six logos);
-  Higgsfield photoreal set (7 views) + versions with real logos overlaid
-  (`ETEL_Office_logos_on_desk_v3.zip`, logos in true perspective beside the SERVICE DESK
-  sign, 3 left / 3 right); videos `ETEL_Office_Brand_Video_v5.mp4` (Higgsfield views) and
-  `ETEL_Office_3D_Video.mp4` (3D views). Older zips still contain the fee - superseded.
+## 4. Office interior (Hawassa) - latest facts and designs
+- **Real room (from Dagi's panorama photo, taken at the entrance door, 2026-10-09):** old
+  off-white walls, patterned floor tile, a big burnt live-edge wooden slab table in the
+  foreground, clothes/bags/suitcase to clear out. Left wall: tall narrow window with a metal
+  grille and cream curtain near the far corner. Far (back) wall: blank, two small black
+  sockets/switches low down. Right wall: a DOOR (confirmed) near the far corner. The entrance
+  door is behind the camera. Size: Dagi writes "4*5" (once "square feet"); I treat it as
+  **4 m x 5 m**; ceiling height unknown (3D uses 2.8 m). Floor may or may not be covered.
+- **Pinterest board "Modern reception"** (Dagi's account `dagmawidikasso`, 14 pins). Seen via
+  screenshots: round backlit logo above a curved ribbed reception counter with gold underglow,
+  wood slat panels with thin LED lines, dark walls with warm amber light, backlit floating
+  shelves, "Our Culture" black wall with gold icons, live-edge shelf on black wall, LED decor
+  guide (warm ~2700K). Pinterest pages are blocked in the sandbox; Windsor.ai (pinterest_organic)
+  lists boards but not pins. **Dagi uploads screenshots.**
+- **Current design (decision 2026-10-09, "option 2"): navy + gold + blue look** with the new
+  ETEL group logo on a gold-framed panel on the back wall between navy slat panels with gold LED
+  lines; curved navy counter, pale stone top, gold edge/underglow, SERVICE DESK sign with the
+  six company medallions (3 left, 3 right, following the curve); dispatcher desk under the
+  window; amber-backlit parcel shelves; blue sofa + table + plant; dark glossy floor; gold LED
+  cove. Layout coordinates (x west->east 0..4, z north->south 0..5): window on west wall
+  z 0.35-1.15; door on east wall z 0.3-1.2; entrance door south wall x 2.9-3.8; counter
+  x 0.5-3.5, back edge z 1.7; shelves west wall z 3.0-4.6; sofa east wall z 2.9-4.5.
+- **Latest files (2026-10-09):** `ETEL_Office_3D_navy.zip` (15 views, navy look),
+  `ETEL_Office_Navy_Video.mp4` (40 s). Earlier black/gold sets (`ETEL_Office_3D_modern_reception.zip`,
+  `ETEL_Office_3D_all_sides_LED_v2.zip`, Higgsfield sets, `ETEL_Office_Brand_Video_v5.mp4`,
+  `ETEL_Office_3D_Video.mp4`) are the OLD palette - superseded. Higgsfield photoreal images are
+  AI images in the old black/gold style and were not regenerated.
+- Built with `office3d_v4.py` (three.js scene, 15 camera views, PNGs via Playwright). The
+  script lived in /tmp and is gone after the session; rebuild from the recipes in references/.
 
 ## 5. Brand assets (use these exact files, never redraw logos)
-- Master logo (Etel Family Technology and Business Group, Hawassa 2026 medallion) -
-  `Master logo.jpeg`. Company medallions: Ride (green "ETEL RIDE", traveller + pin - supplied
-  by Dagi as a 200x200 image; ask for a larger original), Driver (`logo-driver.webp`),
-  Courier (`courier.png`), Delivery (`Delivery.png`), Service (repo `delivery/icons/
-  service-icon-512.png` - **not yet confirmed by Dagi**), Pay (`logo.png`, blue/gold
-  EtelPay), Admin (`Admin.png`, internal only - keep off customer-facing material).
-- Brand colours: gold #f4d56a / #c89a24, carbon #0b0a07 / #14110a, emerald green, LED amber
-  #ffb83d. Fonts: Outfit (Latin), Noto Sans Ethiopic (Amharic) - fetch TTFs from
-  fonts.googleapis.com via curl and install to ~/.fonts.
-- The earlier gold "car coin" `etel-ride-coin.png` is NOT the rider logo. Use the green one.
+- **NEW group logo (supplied by Dagi 2026-10-09):** blue Ethiopic "ኢ" + gold "E" with a rising
+  arrow, wordmark "ETEL | ኢትኤል"; also a symbol-only version and a navy-background version with
+  the tagline **"Trust · Heritage · Modern Execution"**. The originals have a WHITE background:
+  make them transparent by alpha = clamp((1-min(r,g,b))/0.24) and un-premultiply against white
+  (plain `-transparent white` leaves a halo on dark backgrounds).
+- **Decision 2026-10-09: whole look switched to the logo's colours** - deep navy
+  (#061230 / #0a1d4d / #12337a), gold (#f6c22b, #f8c01a, #d99a06), blue (#1368e8, #1f7bff),
+  white/ice text (#c9d8ff, #9fb3e6). Gold LED lines stay. Fonts: Outfit (Latin), Noto Sans
+  Ethiopic (Amharic); fetch TTFs from fonts.googleapis.com via curl and install to ~/.fonts.
+- Old master medallion (Etel Family Technology and Business Group, Hawassa 2026; `Master logo.jpeg`)
+  is no longer the main mark in new material; the old black/gold/emerald palette is superseded.
+- **Six company medallions stay as they are (green + gold)** and sit in a row: Ride (green
+  "ETEL RIDE", traveller + pin; Dagi supplied only a 200x200 image - ask for a larger original),
+  Driver (`logo-driver.webp`), Courier (`courier.png`), Delivery (`Delivery.png`), Service (repo
+  `delivery/icons/service-icon-512.png` - **not yet confirmed by Dagi**), Pay (`logo.png`,
+  blue/gold EtelPay). Admin (`Admin.png`) is internal - keep off customer-facing material.
+  Dagi may supply blue versions to match the new look - ask before recolouring.
+- The gold "car coin" `etel-ride-coin.png` is NOT the rider logo. Use the green one.
 
-## 6. Coming Soon pack (done)
-`ETEL_ComingSoon_Pack.zip`: poster 1080x1350, banner 1500x500, social 1200x628, video
-1080x1920 (12.5 s, no sound). Amharic line "በቅርብ ቀን ይጠብቁን" is MY draft - verify. No launch
-date, no phone/link/QR yet (Dagi to supply). CTA reads "Drivers: sign up early".
-Built as HTML + Playwright screenshots (video = per-frame screenshots + ffmpeg).
+## 6. Coming Soon pack (done, navy version is current)
+`ETEL_ComingSoon_Navy_Pack.zip`: poster 1080x1350, banner 1500x500, social 1200x628, video
+1080x1920 (12.5 s, no sound), navy/gold/blue with the new logo and the tagline line. The earlier
+black/gold pack (`ETEL_ComingSoon_Pack.zip`) is superseded. Amharic line "በቅርብ ቀን ይጠብቁን" is MY
+draft - verify. No launch date, no phone/link/QR yet (Dagi to supply). CTA reads "Drivers: sign
+up early". Built as HTML + Playwright screenshots (video = per-frame screenshots + ffmpeg).
 
 ## 7. Higgsfield facts
 - Free plan, ~4.85-5.35 credits left. Premium models (`gpt_image_2_5`, `recraft_v4_1`,
@@ -112,11 +137,14 @@ Built as HTML + Playwright screenshots (video = per-frame screenshots + ffmpeg).
 
 ## 9. Open items (checklist for the next chat)
 1. Dagi to upload zips of merged PRs not yet deployed; confirm cron for scheduled rides.
-2. Marketing plan inputs (section 3). 3. Office door/window/ceiling facts.
-4. Confirm Service logo; supply larger Ride logo; native Amharic review.
+2. Marketing plan inputs (section 3).
+3. Office facts still missing: ceiling height, whether the floor can be covered, real
+   measured wall lengths / window and door sizes. Dagi to upload Pinterest screenshots.
+4. Confirm Service logo; supply larger Ride logo; native Amharic review; possibly blue company
+   medallions.
 5. Optional: real-phone screenshots for map screens; Higgsfield paid plan for AI video;
-   logos along the desk in the 3D renders; background music / 16:9 / Amharic video versions.
-6. Offer to commit this memory into the repo `.claude/skills/` if wanted.
+   regenerate Higgsfield office renders in the navy look; background music / 16:9 / Amharic
+   video versions.
 
 ## 10. Work by other sessions already on main (seen 2026-10-05, not done in this chat)
 - Chapa online payments were added in separate sessions: EtelGebeya checkout (#417), EtelPay

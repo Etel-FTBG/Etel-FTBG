@@ -28,3 +28,15 @@
 - Base office render (gpt_image_2): 1401a664-616f-4bde-917f-fe1a6583f1a0 (reference for views)
 - Views: NE a03c298f..., NW 79927918..., SE 00af673f..., SW 798c8067..., window c3e8240e...,
   overview 66b2d32d...
+
+## Added 2026-10-09
+- Transparent logo: `convert src.png -fx "1-min(min(r,g),b)" -level 0,24% mask.png`, then
+  `convert src.png mask.png -channel RGB -fx "(u-1+v)/max(v,0.004)" +channel -clamp tmp.png` and
+  `-compose CopyOpacity` with the mask.
+- Navy 3D scene (`office3d_v4.py`): walls 0x1a3068, back wall 0x0a1a45, slat texture #0d2150/#1a3a82,
+  floor #0b1636 with #223d78 grid, counter ExtrudeGeometry curved shape (quadratic front),
+  logos placed along the curve with frontZ(x)/frontAng(x), exposure 0.72, hemisphere 0.26.
+- Coming Soon navy: same HTML/Playwright pipeline; background radial #12337a -> #030818,
+  logo `etel.png` with a blue drop-shadow glow, gold text gradient #ffe98a/#f8c01a/#d99a06.
+- Pinterest: not reachable from the sandbox; Windsor.ai `get_data` on `pinterest_organic` only
+  returns board names/counts (pins come back empty); Windsor trial plan blocks `force_refresh`.
