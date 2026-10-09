@@ -117,6 +117,20 @@ black/gold pack (`ETEL_ComingSoon_Pack.zip`) is superseded. Amharic line "በቅ
 draft - verify. No launch date, no phone/link/QR yet (Dagi to supply). CTA reads "Drivers: sign
 up early". Built as HTML + Playwright screenshots (video = per-frame screenshots + ffmpeg).
 
+## 6b. Later campaign packs (all navy/gold, built as HTML + Playwright + ffmpeg, no sound)
+- Teaser: "Who is ኢE? Who is ETEL? Who is ኢትኤል?" with "?" for the six companies (poster, banner,
+  social, 14 s video). `ETEL_Teaser_Pack.zip`.
+- Driver recruitment: budget advice + 3-page plan PDF, A5 flyer (PNG/PDF), 30 s vertical video.
+- Rider: A5 flyer + 24 s video. `ETEL_Rider_Pack.zip`.
+- 4-week content calendar (28 days, EN captions, AM draft; PDF + CSV).
+- Countdown set 1080x1350: 7 days, 3 days, Tomorrow, Driver Meetup invite (date/time/place/phone
+  left blank). `ETEL_Countdown_Meetup_Posters.zip`.
+- Launch-day video 11 s 1080x1920 "ETEL IS HERE / ኢትኤል መጥቷል!" + six medallions + blank
+  QR/Telegram/phone box. `ETEL_Launch_Day_Video_1080x1920.mp4`.
+- Decision: company medallions stay as supplied (green/gold); blue hue-shift test was
+  inconsistent, so blue needs official artwork. Gold = branding, green = nature accent.
+- Every Amharic line is my draft and needs native review. QR / Telegram / phone / dates are blank.
+
 ## 7. Higgsfield facts
 - Free plan, ~4.85-5.35 credits left. Premium models (`gpt_image_2_5`, `recraft_v4_1`,
   Kling, Grok video, Seedance cost 35) are blocked or unaffordable -> no AI video made.
