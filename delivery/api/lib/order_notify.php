@@ -70,7 +70,7 @@ function etel_notify_order_status($pdo, $order_id, $event = null) {
 
         if ($earned > 0) $text[1] .= ($lang === 'am' ? ' +' . $earned . ' ነጥቦች አግኝተዋል ⭐' : ' You earned ' . $earned . ' points ⭐');
         require_once __DIR__ . '/../push.php';
-        return etel_push_send($pdo, intval($o['customer_id']), $text[0], $text[1], array(
+        return etel_push_send_async($pdo, intval($o['customer_id']), $text[0], $text[1], array(
             'type' => 'order_' . $event, 'order_id' => $order_id, 'tag' => 'order-' . $order_id,
             'url'  => '/delivery/customer.html?order=' . $order_id . ($event === 'delivered' ? '&rate=1' : ''),
         ));

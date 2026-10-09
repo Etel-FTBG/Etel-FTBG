@@ -198,10 +198,13 @@ function etel_offer_next($pdo, $order_id) {
     try {
         $title = 'New Delivery Job!';
         $body = 'Order ' . $ord['order_code'] . ' from ' . $ord['from_zone'] . ' to ' . $ord['to_zone'] . ' - ETB ' . number_format((float)$ord['fare_total'], 2) . ' - accept within ' . $st['seconds'] . 's';
-        $pdo->prepare('INSERT INTO notifications (user_id, title, body, type, data) VALUES (?,?,?,?,?)')
-            ->execute(array((int)$best['user_id'], $title, $body, 'new_order', json_encode(array('order_id' => $order_id, 'order_code' => $ord['order_code']))));
         require_once __DIR__ . '/../push.php';
-        etel_push_send($pdo, (int)$best['user_id'], $title, $body, array('type' => 'new_order', 'order_id' => $order_id, 'url' => '/delivery/courier/'));
+        try {
+            etel_ensure_notifications_table($pdo);
+            $pdo->prepare('INSERT INTO notifications (user_id, title, body, type, data) VALUES (?,?,?,?,?)')
+                ->execute(array((int)$best['user_id'], $title, $body, 'new_order', json_encode(array('order_id' => $order_id, 'order_code' => $ord['order_code']))));
+        } catch (Exception $ie) { error_log('[ETEL] offer in-app notification: ' . $ie->getMessage()); }
+        etel_push_send_async($pdo, (int)$best['user_id'], $title, $body, array('type' => 'new_order', 'order_id' => $order_id, 'url' => '/delivery/courier/'));
     } catch (Exception $e) { error_log('[ETEL] offer notify: ' . $e->getMessage()); }
       catch (Throwable $e) { error_log('[ETEL] offer notify: ' . $e->getMessage()); }
     return true;
