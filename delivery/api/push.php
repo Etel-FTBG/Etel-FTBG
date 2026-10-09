@@ -51,6 +51,63 @@ function etel_push_send($pdo, $user_id, $title, $body, $data = array()) {
 }
 
 /**
+ * Same as etel_push_send() but does not make the customer wait for it.
+ * A push has to reach a third-party push service; when that is slow or the
+ * server's DNS cannot resolve it, each attempt used to hold the HTTP
+ * response for the full cURL timeout (order creation took 27-40 s). This
+ * queues the push and sends it AFTER the response has gone out to the app.
+ * Falls back to a normal synchronous send on CLI/cron or when the host has
+ * no finish-request function, so nothing is ever dropped. Returns true when
+ * queued (or the sync result in the fallback case).
+ */
+function etel_push_send_async($pdo, $user_id, $title, $body, $data = array()) {
+    if (PHP_SAPI === 'cli' || (!function_exists('litespeed_finish_request') && !function_exists('fastcgi_finish_request'))) {
+        return etel_push_send($pdo, $user_id, $title, $body, $data);
+    }
+    static $queue = array();
+    static $registered = false;
+    $queue[] = array($user_id, $title, $body, $data);
+    if (!$registered) {
+        $registered = true;
+        ignore_user_abort(true);
+        register_shutdown_function(function () use ($pdo, &$queue) {
+            while (ob_get_level() > 0) { @ob_end_flush(); }
+            if (function_exists('litespeed_finish_request')) { @litespeed_finish_request(); }
+            elseif (function_exists('fastcgi_finish_request')) { @fastcgi_finish_request(); }
+            foreach ($queue as $q) {
+                try { etel_push_send($pdo, $q[0], $q[1], $q[2], $q[3]); }
+                catch (Exception $e) { error_log('[ETEL] deferred push failed: ' . $e->getMessage()); }
+                catch (Throwable $e) { error_log('[ETEL] deferred push failed: ' . $e->getMessage()); }
+            }
+        });
+    }
+    return true;
+}
+
+/**
+ * The in-app "notifications" table was inserted into by order dispatch but
+ * never created anywhere, so every insert threw and, because the courier
+ * push sat in the same try block, the courier's push was skipped too.
+ */
+function etel_ensure_notifications_table($pdo) {
+    static $done = false;
+    if ($done) return;
+    $pdo->exec("CREATE TABLE IF NOT EXISTS notifications (
+        id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+        user_id INT UNSIGNED NOT NULL,
+        title VARCHAR(160) NOT NULL,
+        body TEXT NULL,
+        type VARCHAR(40) NULL,
+        data TEXT NULL,
+        is_read TINYINT(1) NOT NULL DEFAULT 0,
+        created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (id),
+        KEY idx_user_read (user_id, is_read, created_at)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+    $done = true;
+}
+
+/**
  * Send push to multiple users at once.
  *
  * @param PDO    $pdo      Active DB connection

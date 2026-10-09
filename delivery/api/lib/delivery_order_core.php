@@ -424,10 +424,14 @@ function delivery_execute_order_creation($pdo, $auth_user, $body) {
                     etel_offer_after_dispatch($pdo, $order_id, $best_id['id']);
                 } catch (Exception $oe) { error_log('[ETEL] offer start failed for order_id=' . $order_id . ': ' . $oe->getMessage()); }
                   catch (Throwable $oe) { error_log('[ETEL] offer start failed for order_id=' . $order_id . ': ' . $oe->getMessage()); }
-                // Notify courier via notifications table
+                // Notify courier: in-app row first, then the real push. They are
+                // independent on purpose - a failure of the in-app table must not
+                // swallow the push that wakes a backgrounded courier app.
+                $notifTitle = 'New Delivery Job!';
+                $notifBody  = 'Order ' . $order_code . ' from ' . $from_zone . ' to ' . $to_zone . '  ETB ' . number_format($fare_total, 2);
                 try {
-                    $notifTitle = 'New Delivery Job!';
-                    $notifBody  = 'Order ' . $order_code . ' from ' . $from_zone . ' to ' . $to_zone . '  ETB ' . number_format($fare_total, 2);
+                    require_once __DIR__ . '/../push.php';
+                    etel_ensure_notifications_table($pdo);
                     $pdo->prepare("INSERT INTO notifications (user_id, title, body, type, data) VALUES (?,?,?,?,?)")
                         ->execute(array(
                             $best_id['user_id'],
@@ -436,15 +440,15 @@ function delivery_execute_order_creation($pdo, $auth_user, $body) {
                             'new_order',
                             json_encode(array('order_id' => $order_id, 'order_code' => $order_code))
                         ));
-                    // Real push too - this is what wakes the courier up even
-                    // if their app is backgrounded, unlike the notifications
-                    // table above, which only shows up the next time they
-                    // open the app and it happens to poll for it.
+                } catch (Exception $ne) {
+                    error_log('[ETEL] auto-dispatch in-app notification failed for order_id=' . $order_id . ': ' . $ne->getMessage());
+                }
+                try {
                     require_once __DIR__ . '/../push.php';
-                    etel_push_send($pdo, intval($best_id['user_id']), $notifTitle, $notifBody,
+                    etel_push_send_async($pdo, intval($best_id['user_id']), $notifTitle, $notifBody,
                         array('type' => 'new_order', 'order_id' => $order_id, 'url' => '/delivery/courier/'));
                 } catch (Exception $ne) {
-                    error_log('[ETEL] auto-dispatch notify failed for order_id=' . $order_id . ': ' . $ne->getMessage());
+                    error_log('[ETEL] auto-dispatch push failed for order_id=' . $order_id . ': ' . $ne->getMessage());
                 }
             }
         } catch (Exception $de) {

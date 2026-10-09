@@ -198,7 +198,8 @@ function etel_send_web_push($subscription, $payload) {
         CURLOPT_POSTFIELDS     => $body,
         CURLOPT_HTTPHEADER     => $headers,
         CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_TIMEOUT        => 10,
+        CURLOPT_CONNECTTIMEOUT => 3,
+        CURLOPT_TIMEOUT        => 6,
         CURLOPT_SSL_VERIFYPEER => true,
     ));
     $response = curl_exec($ch);
@@ -245,7 +246,8 @@ function etel_send_expo_push($token, $payload) {
             'Accept-Encoding: gzip, deflate',
         ),
         CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_TIMEOUT        => 10,
+        CURLOPT_CONNECTTIMEOUT => 3,
+        CURLOPT_TIMEOUT        => 6,
         CURLOPT_SSL_VERIFYPEER => true,
     ));
     $response = curl_exec($ch);
