@@ -238,8 +238,8 @@ class EtelID_DB {
         };
         $missing = array();
         if ( '' === trim( (string) $g( 'photo_url' ) ) )         $missing[] = 'photo';
-        if ( '' === trim( (string) $g( 'fayda_front_image' ) ) ) $missing[] = 'fayda_front';
-        if ( '' === trim( (string) $g( 'fayda_back_image' ) ) )  $missing[] = 'fayda_back';
+        if ( ! self::row_has_fayda( $m, 'front' ) ) $missing[] = 'fayda_front';
+        if ( ! self::row_has_fayda( $m, 'back' ) )  $missing[] = 'fayda_back';
         return $missing;
     }
 
@@ -523,24 +523,88 @@ class EtelID_DB {
     }
 
     /* ─── SELECT ──────────────────────────────────────────── */
-    public static function get_member( $id ) {
+    /* ---- Light member queries (performance) -------------------------
+     * The members table stores the Fayda ID front/back photos (and the OCR
+     * dump) as base64 text in the row itself - about 4 MB per member. A
+     * plain SELECT * dragged all of that into PHP on every signed-in request
+     * (member_from_token -> get_member) and on every admin list/search.
+     * member_cols() returns a column list WITHOUT those heavy columns, plus
+     * has_fayda_front / has_fayda_back / has_fayda_ocr flags computed inside
+     * MySQL so "is a photo on file?" checks keep working. Code that really
+     * needs the images (admin member detail) uses get_member_full(). If the
+     * column list cannot be read for any reason it falls back to '*', i.e.
+     * the old behaviour, so this can never break a lookup. */
+    private static $member_cols_cache = null;
+
+    public static function member_cols() {
+        if ( null !== self::$member_cols_cache ) return self::$member_cols_cache;
+        global $wpdb;
+        $heavy = array( 'fayda_front_image', 'fayda_back_image', 'fayda_ocr_raw' );
+        $cols  = $wpdb->get_col( "SHOW COLUMNS FROM " . self::t_members() );
+        if ( ! is_array( $cols ) || count( $cols ) < 5 ) {
+            self::$member_cols_cache = '*';
+            return self::$member_cols_cache;
+        }
+        $keep = array();
+        foreach ( $cols as $c ) {
+            if ( ! preg_match( '/^[A-Za-z0-9_]+$/', $c ) ) continue;
+            if ( in_array( $c, $heavy, true ) ) continue;
+            $keep[] = '`' . $c . '`';
+        }
+        if ( in_array( 'fayda_front_image', $cols, true ) ) {
+            $keep[] = "(`fayda_front_image` IS NOT NULL AND `fayda_front_image` <> '') AS has_fayda_front";
+        }
+        if ( in_array( 'fayda_back_image', $cols, true ) ) {
+            $keep[] = "(`fayda_back_image` IS NOT NULL AND `fayda_back_image` <> '') AS has_fayda_back";
+        }
+        if ( in_array( 'fayda_ocr_raw', $cols, true ) ) {
+            $keep[] = "(`fayda_ocr_raw` IS NOT NULL AND `fayda_ocr_raw` <> '') AS has_fayda_ocr";
+        }
+        self::$member_cols_cache = implode( ', ', $keep );
+        return self::$member_cols_cache;
+    }
+
+    /** One member INCLUDING the heavy Fayda photo columns (admin detail only). */
+    public static function get_member_full( $id ) {
         global $wpdb;
         return $wpdb->get_row( $wpdb->prepare(
             "SELECT * FROM " . self::t_members() . " WHERE id = %d LIMIT 1", (int) $id
         ));
     }
 
+    /** True when a Fayda photo is on file; works on light and full rows. */
+    public static function row_has_fayda( $m, $side ) {
+        $flag = 'has_fayda_' . $side;               /* front | back */
+        $img  = 'fayda_' . $side . '_image';
+        if ( is_array( $m ) ) {
+            if ( isset( $m[ $flag ] ) ) return ! empty( $m[ $flag ] );
+            return isset( $m[ $img ] ) && '' !== trim( (string) $m[ $img ] );
+        }
+        if ( is_object( $m ) ) {
+            if ( isset( $m->$flag ) ) return ! empty( $m->$flag );
+            return isset( $m->$img ) && '' !== trim( (string) $m->$img );
+        }
+        return false;
+    }
+
+    public static function get_member( $id ) {
+        global $wpdb;
+        return $wpdb->get_row( $wpdb->prepare(
+            "SELECT " . self::member_cols() . " FROM " . self::t_members() . " WHERE id = %d LIMIT 1", (int) $id
+        ));
+    }
+
     public static function get_by_etel_id( $etel_id ) {
         global $wpdb;
         return $wpdb->get_row( $wpdb->prepare(
-            "SELECT * FROM " . self::t_members() . " WHERE etel_id = %s LIMIT 1", $etel_id
+            "SELECT " . self::member_cols() . " FROM " . self::t_members() . " WHERE etel_id = %s LIMIT 1", $etel_id
         ));
     }
 
     public static function get_by_fin( $fin ) {
         global $wpdb;
         return $wpdb->get_row( $wpdb->prepare(
-            "SELECT * FROM " . self::t_members() . " WHERE fin = %s LIMIT 1", $fin
+            "SELECT " . self::member_cols() . " FROM " . self::t_members() . " WHERE fin = %s LIMIT 1", $fin
         ));
     }
 
@@ -548,7 +612,7 @@ class EtelID_DB {
         global $wpdb;
         $clean = preg_replace( '/\s+/', '', $card );
         return $wpdb->get_row( $wpdb->prepare(
-            "SELECT * FROM " . self::t_members() . " WHERE REPLACE(card_number,' ','') = %s LIMIT 1", $clean
+            "SELECT " . self::member_cols() . " FROM " . self::t_members() . " WHERE REPLACE(card_number,' ','') = %s LIMIT 1", $clean
         ));
     }
 
@@ -572,7 +636,7 @@ class EtelID_DB {
         $digits = preg_replace( '/[^0-9]/', '', $phone );
         $last9  = strlen( $digits ) >= 9 ? substr( $digits, -9 ) : $digits;
         return $wpdb->get_row( $wpdb->prepare(
-            "SELECT * FROM " . self::t_members() . "
+            "SELECT " . self::member_cols() . " FROM " . self::t_members() . "
              WHERE RIGHT(REPLACE(REPLACE(REPLACE(phone,' ',''),'-',''),'+',''), 9) = %s
              ORDER BY (email != '' OR tg_chat_id != '') DESC, id DESC
              LIMIT 1", $last9
@@ -592,7 +656,7 @@ class EtelID_DB {
         $name = trim( preg_replace( '/\s+/', ' ', (string) $full_name ) );
         if ( '' === $name || empty( $dob ) ) return null;
         return $wpdb->get_row( $wpdb->prepare(
-            "SELECT * FROM " . self::t_members() . "
+            "SELECT " . self::member_cols() . " FROM " . self::t_members() . "
              WHERE LOWER(TRIM(full_name)) = LOWER(%s) AND dob = %s
              LIMIT 1", $name, $dob
         ));
@@ -625,7 +689,7 @@ class EtelID_DB {
             $where[]  = 'full_name LIKE %s';
             $params[] = '%' . $wpdb->esc_like( $w ) . '%';
         }
-        $sql = "SELECT * FROM " . self::t_members() . " WHERE " . implode( ' AND ', $where ) . " LIMIT 1";
+        $sql = "SELECT " . self::member_cols() . " FROM " . self::t_members() . " WHERE " . implode( ' AND ', $where ) . " LIMIT 1";
         return $wpdb->get_row( $wpdb->prepare( $sql, $params ) );
     }
 
@@ -687,7 +751,7 @@ class EtelID_DB {
         $email = trim( (string) $email );
         if ( '' === $email ) return null;
         return $wpdb->get_row( $wpdb->prepare(
-            "SELECT * FROM " . self::t_members() . "
+            "SELECT " . self::member_cols() . " FROM " . self::t_members() . "
              WHERE email != '' AND LOWER(email) = LOWER(%s)
              LIMIT 1", $email
         ));
@@ -796,7 +860,7 @@ class EtelID_DB {
         if ( $tier )    { $where[] = 'tier = %s';            $params[] = $tier; }
 
         $where_sql = implode( ' AND ', $where );
-        $sql = "SELECT * FROM {$t} WHERE {$where_sql} ORDER BY {$orderby} {$order} LIMIT %d OFFSET %d";
+        $sql = "SELECT " . self::member_cols() . " FROM {$t} WHERE {$where_sql} ORDER BY {$orderby} {$order} LIMIT %d OFFSET %d";
         $params[] = $limit;
         $params[] = $offset;
 

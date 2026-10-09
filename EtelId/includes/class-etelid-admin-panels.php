@@ -139,7 +139,7 @@ class EtelID_Admin_Panels {
                 'fayda_fin'   => isset( $m->fayda_fin ) ? $m->fayda_fin : '',
                 'kyc_level'   => isset( $m->kyc_level ) ? (int) $m->kyc_level : 0,
                 'pass2_status' => isset( $m->pass2_status ) ? $m->pass2_status : '',
-                'has_fayda_photos' => ! empty( $m->fayda_front_image ) && ! empty( $m->fayda_back_image ),
+                'has_fayda_photos' => EtelID_DB::row_has_fayda( $m, 'front' ) && EtelID_DB::row_has_fayda( $m, 'back' ),
                 'created'  => $m->created_at,
             );
         }
@@ -158,7 +158,7 @@ class EtelID_Admin_Panels {
     public static function members_get() {
         self::guard();
         $id = absint( isset( $_POST['id'] ) ? $_POST['id'] : 0 );
-        $m  = $id ? EtelID_DB::get_member( $id ) : null;
+        $m  = $id ? EtelID_DB::get_member_full( $id ) : null;
         if ( ! $m ) wp_send_json_error( array( 'message' => 'Member not found.' ) );
         wp_send_json_success( array( 'member' => $m ) );
     }

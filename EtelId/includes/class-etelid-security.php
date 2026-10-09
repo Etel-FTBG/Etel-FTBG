@@ -170,8 +170,8 @@ class EtelID_Security {
         };
         $missing = array();
         if ( '' === trim( (string) $g( 'photo_url' ) ) )         $missing[] = 'photo';
-        if ( '' === trim( (string) $g( 'fayda_front_image' ) ) ) $missing[] = 'fayda_front';
-        if ( '' === trim( (string) $g( 'fayda_back_image' ) ) )  $missing[] = 'fayda_back';
+        if ( ! EtelID_DB::row_has_fayda( $m, 'front' ) ) $missing[] = 'fayda_front';
+        if ( ! EtelID_DB::row_has_fayda( $m, 'back' ) )  $missing[] = 'fayda_back';
         return $missing;
     }
 
