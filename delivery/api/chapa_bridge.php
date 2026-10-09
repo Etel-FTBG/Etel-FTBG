@@ -86,11 +86,17 @@ function chapa_initialize($txRef, $amount, $user, $returnUrl, $callbackUrl) {
         'tx_ref'       => $txRef,
         'callback_url' => $callbackUrl,
         'return_url'   => $returnUrl,
-        'customization' => array('title' => 'Etel Delivery', 'description' => 'Ride / order payment'),
+        // Chapa rejects the whole request if the title is over 16 characters or the
+        // description has anything but letters, numbers, spaces, - _ and . (e.g. a '/').
+        'customization' => array('title' => 'Etel Delivery', 'description' => 'Ride and order payment'),
     ));
     if (isset($res['status']) && $res['status'] === 'success' && !empty($res['data']['checkout_url'])) {
         return $res['data']['checkout_url'];
     }
+    // Say WHY in the server error log (Chapa's message has no secrets) so a
+    // failed checkout can be diagnosed without guessing.
+    $why = isset($res['message']) ? (is_array($res['message']) ? json_encode($res['message']) : (string)$res['message']) : 'no response from Chapa';
+    error_log('[Delivery-Chapa] initialize failed for ' . $txRef . ': ' . substr($why, 0, 300));
     return null;
 }
 
