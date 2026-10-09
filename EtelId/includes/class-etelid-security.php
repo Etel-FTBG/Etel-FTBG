@@ -169,9 +169,16 @@ class EtelID_Security {
             return isset( $m->$k ) ? $m->$k : '';
         };
         $missing = array();
-        if ( '' === trim( (string) $g( 'photo_url' ) ) )         $missing[] = 'photo';
-        if ( ! EtelID_DB::row_has_fayda( $m, 'front' ) ) $missing[] = 'fayda_front';
-        if ( ! EtelID_DB::row_has_fayda( $m, 'back' ) )  $missing[] = 'fayda_back';
+        /* Self-contained on purpose: this fallback runs when the live
+         * EtelID_DB is older than this file, so it must not call any newer
+         * EtelID_DB helper. Light member rows carry has_fayda_front/back
+         * flags instead of the (heavy) photo columns; full rows carry the
+         * photos themselves. Accept either. */
+        $has_front = '' !== (string) $g( 'has_fayda_front' ) ? (bool) $g( 'has_fayda_front' ) : ( '' !== trim( (string) $g( 'fayda_front_image' ) ) );
+        $has_back  = '' !== (string) $g( 'has_fayda_back' )  ? (bool) $g( 'has_fayda_back' )  : ( '' !== trim( (string) $g( 'fayda_back_image' ) ) );
+        if ( '' === trim( (string) $g( 'photo_url' ) ) ) $missing[] = 'photo';
+        if ( ! $has_front ) $missing[] = 'fayda_front';
+        if ( ! $has_back )  $missing[] = 'fayda_back';
         return $missing;
     }
 
