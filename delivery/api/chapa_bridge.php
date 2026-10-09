@@ -71,12 +71,18 @@ function chapa_ensure_table($pdo) {
 // Returns the hosted checkout URL, or null on failure.
 function chapa_initialize($txRef, $amount, $user, $returnUrl, $callbackUrl) {
     $parts = preg_split('/\s+/', trim(isset($user['name']) ? $user['name'] : ''), 2);
+    // Chapa wants a local mobile number (09xxxxxxxx / 07xxxxxxxx). Accounts store
+    // +2519..., 2519... or 09...; reduce to the last 9 digits, and send nothing
+    // rather than a value Chapa would reject (which fails the whole checkout).
+    $digits = preg_replace('/\D+/', '', isset($user['phone']) ? $user['phone'] : '');
+    $last9  = strlen($digits) >= 9 ? substr($digits, -9) : '';
+    $phone  = preg_match('/^[79]\d{8}$/', $last9) ? '0' . $last9 : '';
     $res = chapa_request('POST', '/transaction/initialize', array(
         'amount'       => number_format((float)$amount, 2, '.', ''),
         'currency'     => 'ETB',
         'first_name'   => $parts[0] !== '' ? $parts[0] : 'Etel',
         'last_name'    => isset($parts[1]) ? $parts[1] : 'Customer',
-        'phone_number' => isset($user['phone']) ? $user['phone'] : '',
+        'phone_number' => $phone,
         'tx_ref'       => $txRef,
         'callback_url' => $callbackUrl,
         'return_url'   => $returnUrl,
