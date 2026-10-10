@@ -17,6 +17,12 @@
  */
 if ( ! defined( 'ABSPATH' ) ) exit;
 
+/* Private storage for Fayda ID photos (Stage 2). Guarded so that uploading this
+ * file without class-etelid-files.php just leaves the feature switched off. */
+if ( ! class_exists( 'EtelID_Files' ) && file_exists( dirname( __FILE__ ) . '/class-etelid-files.php' ) ) {
+    require_once dirname( __FILE__ ) . '/class-etelid-files.php';
+}
+
 class EtelID_DB {
 
     /* ─── Table name helpers ──────────────────────────────── */
@@ -217,6 +223,24 @@ class EtelID_DB {
                 "ALTER TABLE " . self::t_members() . "
                  ADD COLUMN profile_limited TINYINT(1) NOT NULL DEFAULT 0 COMMENT '1 = Quick Register account without photo/Fayda ID: Ride only until completed',
                  ADD KEY idx_profile_limited (profile_limited)"
+            );
+        }
+
+        /* Upgrade 12 - Fayda ID photos as private files (Stage 2). Additive only:
+         * file name + SHA-256 per side; the old base64 columns are not touched. */
+        $ff_col = $wpdb->get_row(
+            "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
+             WHERE TABLE_SCHEMA = DATABASE()
+               AND TABLE_NAME   = '" . self::t_members() . "'
+               AND COLUMN_NAME  = 'fayda_front_file'"
+        );
+        if ( ! $ff_col ) {
+            $wpdb->query(
+                "ALTER TABLE " . self::t_members() . "
+                 ADD COLUMN fayda_front_file VARCHAR(120) NULL COMMENT 'Private file (relative) holding the Fayda card front',
+                 ADD COLUMN fayda_back_file  VARCHAR(120) NULL COMMENT 'Private file (relative) holding the Fayda card back',
+                 ADD COLUMN fayda_front_sha  CHAR(64)     NULL COMMENT 'SHA-256 of the front photo bytes',
+                 ADD COLUMN fayda_back_sha   CHAR(64)     NULL COMMENT 'SHA-256 of the back photo bytes'"
             );
         }
     }
@@ -495,7 +519,9 @@ class EtelID_DB {
     public static function insert_member( $data ) {
         global $wpdb;
         $wpdb->insert( self::t_members(), $data );
-        return $wpdb->insert_id;
+        $new_id = $wpdb->insert_id;
+        if ( $new_id && class_exists( 'EtelID_Files' ) ) EtelID_Files::sync_after_write( $new_id, $data );
+        return $new_id;
     }
 
     public static function link_company( $member_id, $slug, $name, $role = 'Member' ) {
@@ -551,11 +577,16 @@ class EtelID_DB {
             if ( in_array( $c, $heavy, true ) ) continue;
             $keep[] = '`' . $c . '`';
         }
-        if ( in_array( 'fayda_front_image', $cols, true ) ) {
-            $keep[] = "(`fayda_front_image` IS NOT NULL AND `fayda_front_image` <> '') AS has_fayda_front";
-        }
-        if ( in_array( 'fayda_back_image', $cols, true ) ) {
-            $keep[] = "(`fayda_back_image` IS NOT NULL AND `fayda_back_image` <> '') AS has_fayda_back";
+        /* Stage 2: a photo counts as on file when the database copy OR the private file exists. */
+        foreach ( array( 'front', 'back' ) as $side ) {
+            $img  = 'fayda_' . $side . '_image';
+            $file = 'fayda_' . $side . '_file';
+            if ( ! in_array( $img, $cols, true ) ) continue;
+            $expr = "(`{$img}` IS NOT NULL AND `{$img}` <> '')";
+            if ( in_array( $file, $cols, true ) ) {
+                $expr = "({$expr} OR (`{$file}` IS NOT NULL AND `{$file}` <> ''))";
+            }
+            $keep[] = $expr . " AS has_fayda_{$side}";
         }
         if ( in_array( 'fayda_ocr_raw', $cols, true ) ) {
             $keep[] = "(`fayda_ocr_raw` IS NOT NULL AND `fayda_ocr_raw` <> '') AS has_fayda_ocr";
@@ -567,9 +598,12 @@ class EtelID_DB {
     /** One member INCLUDING the heavy Fayda photo columns (admin detail only). */
     public static function get_member_full( $id ) {
         global $wpdb;
-        return $wpdb->get_row( $wpdb->prepare(
+        $row = $wpdb->get_row( $wpdb->prepare(
             "SELECT * FROM " . self::t_members() . " WHERE id = %d LIMIT 1", (int) $id
         ));
+        /* Stage 2: photos that now live as private files are read back (and SHA-checked) here. */
+        if ( $row && class_exists( 'EtelID_Files' ) ) $row = EtelID_Files::hydrate( $row );
+        return $row;
     }
 
     /** True when a Fayda photo is on file; works on light and full rows. */
@@ -909,7 +943,9 @@ class EtelID_DB {
     /* ─── UPDATE ──────────────────────────────────────────── */
     public static function update_member( $id, $data ) {
         global $wpdb;
-        return $wpdb->update( self::t_members(), $data, array( 'id' => (int) $id ) );
+        $res = $wpdb->update( self::t_members(), $data, array( 'id' => (int) $id ) );
+        if ( $res !== false && class_exists( 'EtelID_Files' ) ) EtelID_Files::sync_after_write( $id, $data );
+        return $res;
     }
 
     public static function set_status( $id, $status ) {
@@ -932,7 +968,9 @@ class EtelID_DB {
         if ( ! $member ) return false;
         $wpdb->delete( self::t_companies(), array( 'member_id' => (int) $id ) );
         self::log( $id, $member->etel_id, 'deleted', 'Hard delete by admin' );
-        return $wpdb->delete( self::t_members(), array( 'id' => (int) $id ) );
+        $deleted = $wpdb->delete( self::t_members(), array( 'id' => (int) $id ) );
+        if ( $deleted && class_exists( 'EtelID_Files' ) ) EtelID_Files::delete_member( $id );
+        return $deleted;
     }
 
     /* ─── Helpers ─────────────────────────────────────────── */
