@@ -179,6 +179,8 @@ function etel_offer_next($pdo, $order_id) {
     $o->execute(array($order_id));
     $ord = $o->fetch(PDO::FETCH_ASSOC);
     if (!$ord || $ord['status'] !== 'pending' || $ord['courier_id']) return false;
+    require_once __DIR__ . '/order_dispatch.php';
+    if (etel_order_awaiting_chapa($pdo, $order_id)) return false; // unpaid Chapa orders are never offered
     $lat = $ord['sg_lat'] ? (float)$ord['sg_lat'] : 7.0559; $lng = $ord['sg_lng'] ? (float)$ord['sg_lng'] : 38.4762; // Hawassa centre if the shop has no pin
 
     $cs = $pdo->prepare("SELECT c.id, c.user_id, c.last_lat, c.last_lng, c.zone FROM couriers c

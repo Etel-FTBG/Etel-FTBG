@@ -42,6 +42,7 @@ case 'customer_get_orders': {
     // Get customer's orders
     $pdo = db();
     try { require_once __DIR__ . '/../lib/courier_offers.php'; etel_offers_sweep($pdo); } catch (Exception $swe) {} catch (Throwable $swe) {}
+    try { require_once __DIR__ . '/../lib/order_dispatch.php'; etel_cancel_unpaid_chapa_orders($pdo); } catch (Exception $swe) {} catch (Throwable $swe) {}
     $auth_user = require_auth($pdo);
     
     // Role check removed - any authenticated EtelID can now use the
@@ -228,6 +229,7 @@ case 'courier_get_available_orders': {
     $courier = get_or_create_courier_profile($pdo, $courier_user['id']);
     if (!$courier) fail('Courier profile could not be created. Contact admin.', 500);
     try { require_once __DIR__ . '/../lib/courier_offers.php'; etel_offers_sweep($pdo); } catch (Exception $swe) {} catch (Throwable $swe) {}
+    try { require_once __DIR__ . '/../lib/order_dispatch.php'; etel_cancel_unpaid_chapa_orders($pdo); } catch (Exception $swe) {} catch (Throwable $swe) {}
 
     // Ensure order_assignments exists and has needed columns
     try {
@@ -258,6 +260,7 @@ case 'courier_get_available_orders': {
             WHERE oa.status IN ('pending','preparing','assigned','accepted')
               AND (o.courier_id IS NULL OR o.courier_id = 0)
               AND o.status NOT IN ('cancelled','delivered')
+              AND NOT (o.payment_method = 'chapa' AND o.payment_status <> 'paid')
             ORDER BY o.placed_at ASC LIMIT 50
         ");
         $s->execute();
@@ -273,6 +276,7 @@ case 'courier_get_available_orders': {
                 FROM orders o
                 WHERE (o.courier_id IS NULL OR o.courier_id = 0)
                   AND o.status IN ('pending','assigned')
+                  AND NOT (o.payment_method = 'chapa' AND o.payment_status <> 'paid')
                 ORDER BY o.placed_at ASC LIMIT 50
             ");
             $s->execute();
@@ -304,6 +308,8 @@ case 'courier_accept_order': {
     
     if (!$order) fail('Order not found', 404);
     if ($order['courier_id']) fail('Order already assigned to another courier', 409);
+    require_once __DIR__ . '/../lib/order_dispatch.php';
+    if (in_array($order['status'], array('cancelled', 'delivered'), true) || etel_order_awaiting_chapa($pdo, $order_id)) fail('This order is not available', 409);
     
     // Assign courier to order
     try {

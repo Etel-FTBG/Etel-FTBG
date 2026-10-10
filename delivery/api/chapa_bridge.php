@@ -150,7 +150,16 @@ function chapa_settle($pdo, $txRef) {
                 rides_complete_and_pay($pdo, $target, $ride['driver_id'], (float)$p['amount'], 'chapa', substr($txRef, 0, 40));
             }
         } else {
-            $pdo->prepare("UPDATE orders SET payment_status='paid' WHERE id=? AND payment_status <> 'paid'")->execute(array($target));
+            $paid = $pdo->prepare("UPDATE orders SET payment_status='paid' WHERE id=? AND payment_status <> 'paid'");
+            $paid->execute(array($target));
+            if ($paid->rowCount() > 0) {
+                // Chapa orders were held without a courier until now (see order_dispatch.php).
+                try {
+                    require_once __DIR__ . '/lib/order_dispatch.php';
+                    etel_dispatch_order($pdo, $target);
+                } catch (Exception $de) { error_log('[Delivery-Chapa] dispatch after payment failed for order ' . $target . ': ' . $de->getMessage()); }
+                  catch (Throwable $de) { error_log('[Delivery-Chapa] dispatch after payment failed for order ' . $target . ': ' . $de->getMessage()); }
+            }
         }
         try {
             $pdo->prepare("UPDATE customer_referral_rewards SET status='paid', paid_at=NOW() WHERE referred_user_id=? AND status='pending'")
