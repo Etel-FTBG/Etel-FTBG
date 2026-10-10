@@ -75,7 +75,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--f);line-height:1.7
 <div class="hero">
   <div class="hero-eyebrow">Legal Document</div>
   <div class="hero-title">Privacy Policy</div>
-  <div class="hero-date">Effective: June 22, 2026 · Last updated: June 22, 2026</div>
+  <div class="hero-date">Effective: June 22, 2026 · Last updated: October 10, 2026</div>
 </div>
 
 <div class="content">
@@ -94,7 +94,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--f);line-height:1.7
       <p><strong>Account information:</strong> Your name, phone number, and password when you register.</p>
       <p><strong>Location data:</strong> GPS coordinates while using ETEL Ride or Delivery so we can match you with drivers or couriers and route your order. Drivers' locations are shared with passengers during active rides only.</p>
       <p><strong>Trip and order data:</strong> Pickup/drop-off addresses, fare amounts, timestamps, and payment method for each transaction.</p>
-      <p><strong>Payment data:</strong> ETEL Pay wallet balance and transaction history. We do not store card numbers — all card processing is handled by Telebirr or CBE Birr.</p>
+      <p><strong>Payment data:</strong> ETEL Pay wallet balance and transaction history. We do not store card numbers — all online payments are processed by our payment partners (Chapa and Telebirr).</p>
       <p><strong>Chat messages:</strong> In-ride messages between drivers and passengers. These are stored only for the duration of the active ride and permanently deleted within 24 hours of completion.</p>
       <p><strong>Device data:</strong> Browser type and approximate network location for security and fraud prevention.</p>
       <p class="am">እኛ የምንሰበስበው መረጃ፡ ስም፣ ስልክ ቁጥር፣ ቦታ (GPS)፣ ጉዞ እና ትዕዛዝ ታሪክ፣ እና የክፍያ ታሪክ ነው።</p>
@@ -128,14 +128,50 @@ body{background:var(--bg);color:var(--text);font-family:var(--f);line-height:1.7
   </div>
 
   <div class="section">
-    <div class="section-title">5. Data Retention</div>
+    <div class="section-title">5. Device Features and Permissions</div>
+    <div class="section-body">
+      <p>The ETEL apps ask your phone for permission before using these features. You can turn any of them off in your phone settings, but the related feature will stop working.</p>
+      <ul>
+        <li><strong>Location:</strong> to match rides and deliveries, show your position to your driver or courier, and let drivers and couriers receive nearby jobs while online. Used while the app is open and in use.</li>
+        <li><strong>Notifications:</strong> to alert you to ride requests, order updates and delivery jobs. We use standard web push for this.</li>
+        <li><strong>Camera:</strong> to scan QR codes, and for drivers and couriers to take the selfie and licence photo needed for registration. We do not use the microphone.</li>
+        <li><strong>Bluetooth:</strong> only if you choose to connect a receipt printer.</li>
+      </ul>
+      <p>Drivers and couriers also upload a selfie, licence photo and vehicle details. These are used only to verify and approve their account.</p>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">6. Services We Share Data With</div>
+    <div class="section-body">
+      <p>We use these services to run the apps. They receive only what they need to do their job:</p>
+      <ul>
+        <li><strong>Chapa and Telebirr</strong> for online payments (your payment details go to them, not to us).</li>
+        <li><strong>Google Maps</strong> and <strong>OpenStreetMap Nominatim</strong> for maps, address search and routes (addresses and coordinates).</li>
+        <li><strong>Browser push services</strong> (such as Google&rsquo;s) to deliver notifications to your device.</li>
+        <li><strong>Our hosting provider</strong> to store data and run our servers.</li>
+      </ul>
+      <p>We do not sell your data. We may also disclose information to Ethiopian authorities where the law requires it.</p>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">7. Deleting Your Account</div>
+    <div class="section-body">
+      <p>You can ask us to delete your account at any time: open your Profile or Settings in the app and tap <strong>Delete my account</strong>, or use the <a href="delete-account.html">account deletion page</a>, which also explains how to ask without the app. We reply within 5 business days to confirm it is you, then delete your account. We may keep order, trip and payment records for as long as the law or a dispute requires.</p>
+      <p class="am">መለያዎን በማንኛውም ጊዜ እንዲሰረዝ መጠየቅ ይችላሉ፡ በመተግበሪያው ውስጥ «መለያዬን ሰርዝ» ይንኩ ወይም የመለያ ማሰረዣ ገጹን ይጠቀሙ።</p>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">8. Data Retention</div>
     <div class="section-body">
       <p>Account data is retained as long as your account is active. Trip and order history is retained for 2 years to support dispute resolution. Chat messages are deleted within 24 hours of ride completion. SOS alerts are retained for 90 days. You may request full deletion of your account at any time.</p>
     </div>
   </div>
 
   <div class="section">
-    <div class="section-title">6. Your Rights</div>
+    <div class="section-title">9. Your Rights</div>
     <div class="section-body">
       <ul>
         <li><strong>Access:</strong> Request a copy of all data we hold about you</li>
@@ -148,21 +184,21 @@ body{background:var(--bg);color:var(--text);font-family:var(--f);line-height:1.7
   </div>
 
   <div class="section">
-    <div class="section-title">7. Security</div>
+    <div class="section-title">10. Security</div>
     <div class="section-body">
       <p>Passwords are stored using bcrypt hashing. All API calls require a signed bearer token. Sensitive configuration (database credentials, API keys) is stored in environment files excluded from backups. HTTPS is enforced on all endpoints. We conduct regular security audits of our codebase.</p>
     </div>
   </div>
 
   <div class="section">
-    <div class="section-title">8. Children</div>
+    <div class="section-title">11. Children</div>
     <div class="section-body">
       <p>ETEL services are intended for users aged 18 and above. We do not knowingly collect data from minors.</p>
     </div>
   </div>
 
   <div class="section">
-    <div class="section-title">9. Changes to This Policy</div>
+    <div class="section-title">12. Changes to This Policy</div>
     <div class="section-body">
       <p>We may update this policy as our services evolve. Material changes will be communicated via the app. Continued use of ETEL services after a policy update constitutes acceptance of the new terms.</p>
     </div>
