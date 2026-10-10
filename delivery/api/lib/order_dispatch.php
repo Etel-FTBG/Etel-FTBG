@@ -17,6 +17,27 @@ function etel_order_awaiting_chapa($pdo, $order_id) {
     return $o && $o['payment_method'] === 'chapa' && $o['payment_status'] !== 'paid';
 }
 
+/**
+ * Free couriers stuck on status 'busy' with no live delivery. Nothing resets a
+ * courier after a delivery is finished or cancelled, so without this they never
+ * receive another job until they toggle Go Online by hand. A courier seen in the
+ * last 30 minutes goes back to 'online'; otherwise 'offline' (they tap Go Online
+ * when they start work). Returns the number of couriers released. Never throws.
+ */
+function etel_release_idle_couriers($pdo) {
+    try {
+        $u = $pdo->prepare("UPDATE couriers c
+            SET c.status = IF(c.last_seen IS NOT NULL AND c.last_seen > (NOW() - INTERVAL 30 MINUTE), 'online', 'offline')
+            WHERE c.status = 'busy' AND c.active = 1
+              AND NOT EXISTS (SELECT 1 FROM orders o WHERE o.courier_id = c.id AND o.status IN ('assigned','picked_up','in_transit'))");
+        $u->execute();
+        return $u->rowCount();
+    } catch (Exception $e) {
+        error_log('[ETEL] release idle couriers failed: ' . $e->getMessage());
+        return 0;
+    }
+}
+
 /** Find the nearest online courier for an order and offer/assign it. Never throws. */
 function etel_dispatch_order($pdo, $order_id) {
     $order_id = (int)$order_id;
@@ -30,6 +51,7 @@ function etel_dispatch_order($pdo, $order_id) {
         return;
     }
     if (!$o || $o['status'] !== 'pending' || $o['courier_id']) return; // cancelled, or already dispatched
+    etel_release_idle_couriers($pdo); // so a courier who just finished a job is a candidate again
     $order_code = $o['order_code']; $from_zone = $o['from_zone']; $to_zone = $o['to_zone'];
     $fare_total = (float)$o['fare_total']; $service_giver_id = (int)$o['service_giver_id'];
 
