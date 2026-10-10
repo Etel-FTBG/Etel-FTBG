@@ -1,0 +1,16 @@
+[project]
+name = "etel_erp"
+authors = [
+    { name = "Etel Group", email = "info@etelgroup.com"}
+]
+description = "EtelERP - Etel Group's branded ERP on Frappe/ERPNext, signed in with EtelID"
+requires-python = ">=3.10"
+readme = "README.md"
+dynamic = ["version"]
+dependencies = [
+    # "frappe~=15.0.0" # installed and managed by bench.
+]
+
+[build-system]
+requires = ["flit_core >=3.4,<4"]
+build-backend = "flit_core.buildapi"

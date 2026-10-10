@@ -4,10 +4,10 @@ name: Delivery CI
 # the change would have broken something the tests cover - fix before merging.
 on:
   pull_request:
-    paths: ['delivery/**', 'EtelId/**', '.github/workflows/ci.yml']
+    paths: ['delivery/**', 'EtelId/**', 'EtelERP/**', '.github/workflows/ci.yml']
   push:
     branches: [main]
-    paths: ['delivery/**', 'EtelId/**', '.github/workflows/ci.yml']
+    paths: ['delivery/**', 'EtelId/**', 'EtelERP/**', '.github/workflows/ci.yml']
 
 jobs:
   etelid:
@@ -24,6 +24,19 @@ jobs:
         run: php EtelId/tests/fayda_files_unit.php
       - name: Profile photo shrinker tests
         run: php EtelId/tests/photos_unit.php
+
+  etelerp:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.11' }
+      - name: Python syntax (EtelERP app)
+        run: python -m compileall -q EtelERP/etel_erp
+      - name: EtelERP unit tests
+        run: python -I -m unittest discover -s EtelERP/tests -v
+      - name: Login script syntax
+        run: node --check EtelERP/etel_erp/public/js/etel_login.js
 
   lint:
     runs-on: ubuntu-latest
