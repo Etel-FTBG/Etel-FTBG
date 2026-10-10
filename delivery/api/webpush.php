@@ -292,6 +292,36 @@ function etel_send_expo_push($token, $payload) {
 }
 
 /**
+ * Stale-subscription pruning. A subscription that returns 404/410 is deleted at
+ * once. One that keeps failing for other reasons (unreachable endpoint, rejected
+ * keys) is counted in push_subscriptions.fail_count and deleted after
+ * ETEL_PUSH_MAX_FAILS failures in a row; any success resets the count. Transient
+ * push-service trouble (429, 5xx) is never counted.
+ */
+if (!defined('ETEL_PUSH_MAX_FAILS')) define('ETEL_PUSH_MAX_FAILS', 5);
+
+function etel_push_failure_counts($r) {
+    if (!empty($r['ok'])) return false;
+    $c = isset($r['http_code']) ? (int)$r['http_code'] : 0;
+    return $c === 0 || $c === 400 || $c === 401 || $c === 403;
+}
+
+function etel_ensure_push_fail_column($pdo) {
+    static $ok = null;
+    if ($ok !== null) return $ok;
+    $ok = false;
+    try {
+        $q = $pdo->query("SHOW COLUMNS FROM push_subscriptions LIKE 'fail_count'");
+        if ($q && $q->fetch()) { $ok = true; return $ok; }
+        $pdo->exec('ALTER TABLE push_subscriptions ADD COLUMN fail_count TINYINT UNSIGNED NOT NULL DEFAULT 0');
+        $ok = true;
+    } catch (Exception $e) {
+        error_log('[ETEL webpush] fail_count column unavailable: ' . $e->getMessage());
+    }
+    return $ok;
+}
+
+/**
  * Send a push to every subscription a user has (they may have installed
  * the PWA on more than one device, or the native app on another), removing
  * any that come back dead. $pdo: active PDO connection. $userId: int.
@@ -302,8 +332,9 @@ function etel_send_expo_push($token, $payload) {
  */
 function etel_push_to_user($pdo, $userId, $payload) {
     $results = array();
+    $track = etel_ensure_push_fail_column($pdo);
     try {
-        $s = $pdo->prepare('SELECT id, type, endpoint, p256dh, auth FROM push_subscriptions WHERE user_id = ?');
+        $s = $pdo->prepare('SELECT id, type, endpoint, p256dh, auth' . ($track ? ', fail_count' : '') . ' FROM push_subscriptions WHERE user_id = ?');
         $s->execute(array($userId));
         $subs = $s->fetchAll(PDO::FETCH_ASSOC);
     } catch (Exception $e) {
@@ -366,6 +397,18 @@ function etel_push_to_user($pdo, $userId, $payload) {
             } catch (Exception $e) {}
         } elseif (!$r['ok']) {
             error_log('[ETEL webpush] send failed for user ' . $userId . ' (' . $type . '): ' . $r['error']);
+            if ($track && etel_push_failure_counts($r)) {
+                try {
+                    if ((int)$sub['fail_count'] + 1 >= ETEL_PUSH_MAX_FAILS) {
+                        $pdo->prepare('DELETE FROM push_subscriptions WHERE id = ?')->execute(array($sub['id']));
+                        error_log('[ETEL webpush] removed stale subscription ' . $sub['id'] . ' for user ' . $userId);
+                    } else {
+                        $pdo->prepare('UPDATE push_subscriptions SET fail_count = fail_count + 1 WHERE id = ?')->execute(array($sub['id']));
+                    }
+                } catch (Exception $e) {}
+            }
+        } elseif ($track && !empty($sub['fail_count'])) {
+            try { $pdo->prepare('UPDATE push_subscriptions SET fail_count = 0 WHERE id = ?')->execute(array($sub['id'])); } catch (Exception $e) {}
         }
     }
     return $results;
