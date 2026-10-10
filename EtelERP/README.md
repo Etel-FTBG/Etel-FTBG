@@ -1,97 +1,60 @@
-# EtelERP
+# EtelERP (lean edition) - `ethelmarket.com/EtelERP`
 
-Etel Group's branded ERP: a custom Frappe app (`etel_erp`) that sits on top of stock
-ERPNext. It is **not** a fork, so ERPNext upgrades stay clean. It does two things:
+Sales, invoices, stock, customers, expenses and VAT for small businesses, built like the other Etel
+apps: plain PHP on the shared host, phone-first web app, sign in with **EtelID**. The heavier ERPNext
+edition for the VPS lives in `../EtelERP-Frappe`.
 
-1. **Brand** - Etel name, logo, gold-on-carbon colours, no links to ERPNext/Frappe docs, no self sign-up.
-2. **EtelID sign-in** - people sign in with their EtelID (number, phone or email) and password.
-   EtelID checks the password; the ERP never stores it. The person's company role in EtelID
-   (Employees panel) decides their ERP roles.
+## What is in this first slice
+Sign in with EtelID (password checked by EtelID) - create a business - team with roles (owner, manager,
+cashier) - customers - items and stock - one-tap **Sell** screen (cash, Telebirr, CBE, Chapa, bank, or
+pay later) - tax invoices with 15% VAT, numbered per business - part payments - cancel invoices and
+payments - expenses - dashboard (today, this month, who owes you, low stock, best sellers) - sales and
+VAT report - printable invoice - audit trail - plan limits (free / standard / business).
 
-Built for Frappe/ERPNext **version-15**. Subscription plans, the MCP link and the VPS
-install come in later steps.
+Not yet: selling while offline, Amharic screens, billing the plan through Chapa, purchases and
+suppliers, PDF download (printing to PDF works), SMS/Telegram receipts. These come in the next slices.
 
-## How sign-in works
+## Rules that are built in and tested
+* **Money is exact**: whole cents and thousandths, half-up rounding, VAT per line; the server always
+  recomputes totals (the phone's numbers are only a preview).
+* **Never oversold, never double-charged**: stock and invoice numbers are locked inside a database
+  transaction; every sale and payment carries a `client_ref`, so tapping twice on a slow connection
+  gives one invoice and one payment. Tested with 10 sales racing for 3 items and 8 payments racing for
+  one invoice (real parallel processes).
+* **Businesses are walled off**: every query filters on the business; tested that one business cannot
+  read, edit, issue, pay, cancel or adjust another's data.
+* **Roles are enforced on the server**: cashiers sell at list price only (no free-text lines or price
+  changes), cannot cancel invoices or payments, see no expenses or reports; only the owner manages the team.
+* Sessions are random 256-bit tokens stored only as a SHA-256 hash, in an HttpOnly SameSite=Strict
+  cookie; every POST needs the `X-Requested-With` header; sign-in is rate limited; wrong password and
+  unknown account give the same message; EtelID outages show a safe message.
+* An invoice, once issued, cannot be edited; it can be cancelled (reason required, stock returns) only
+  after its payments are cancelled. Nothing is deleted except discarded drafts.
 
-```
-/login page  --(etel_login.js)-->  POST /api/method/etel_erp.etelid.login.login
-   -> EtelID  POST /EtelId/wp-json/etelid/v1/service/authenticate   (password + optional 2-step code)
-   -> EtelID  POST .../service/check_role   (does this person have an active role at THIS company?)
-   -> create/update ERP user keyed by EtelID number, set roles from the role map, start a normal Frappe session
-```
+## Deploy on the shared host
+1. cPanel: create a MySQL database and user (give the user all privileges on it).
+2. Upload the folder so the files sit at `public_html/EtelERP/` (the `index.html` is directly inside).
+3. Copy `.env.example` to `.env` and fill in `DB_*`, `ETELID_SERVICE_KEY` and a random `INSTALL_KEY`.
+4. On the EtelID host, add a key for this app to `ETELID_SERVICE_KEYS` in `wp-config.php`
+   (scopes `authenticate` and `resolve`, 40+ random characters - the same value as in step 3).
+5. Open `https://ethelmarket.com/EtelERP/install.php?key=<INSTALL_KEY>` once. It says how many
+   statements ran. Then **delete `install.php`** and remove `INSTALL_KEY` from `.env`.
+6. Open `https://ethelmarket.com/EtelERP/` and sign in with an EtelID.
+7. `storage/` must stay writable only during the install; `.htaccess` blocks `app/`, `db/`, `tests/`,
+   `storage/` and `.env` from the web.
 
-Rules that are enforced and tested (`tests/`):
+Every PHP and JS file is under 30 KB (this host's firewall has deleted larger ones) and the PHP is pure ASCII.
 
-* ERP users are keyed **only** by EtelID number (`User.etel_id`), never by email. EtelID emails are
-  not verified, so linking by email would let anyone take over an ERP account by registering the
-  same email in EtelID.
-* The endpoint can only ever sign in an EtelID-linked user. `Administrator` and hand-made users keep
-  the normal Frappe login (this is your break-glass access if EtelID is down).
-* Fails closed: no key, unreachable EtelID, suspended / limited member, or no role at the company = no sign-in.
-* Wrong password and unknown account give the same message.
-* Roles are re-applied from EtelID at every sign-in; removing someone in the EtelID Employees panel
-  removes their access at their next sign-in (and disables the account). ERP-side role edits for
-  EtelID users are overwritten.
-* EtelID users have no ERP password at all, so the normal password form cannot be used to enter their account.
-
-## Configuration (per site, in `site_config.json` - never in the database)
-
-| key | meaning |
-|---|---|
-| `etelid_service_key` | **required.** Per-app key from EtelID (see below). |
-| `etelid_company_slug` | **required** unless `etelid_require_company_role` is 0. This site's company slug in EtelID. |
-| `etelid_host` | default `ethelmarket.com` |
-| `etelid_require_company_role` | default `1`: only people with an active role at that company may sign in |
-| `etelid_role_map` | optional JSON, EtelID role -> list of ERP roles. Default in `etelid/policy.py`. |
-
-```bash
-bench --site erp.example.com set-config etelid_service_key "<key>"
-bench --site erp.example.com set-config etelid_company_slug "my-company-slug"
-```
-
-### One-time EtelID change (wp-config.php on the EtelID host)
-
-Add a key for this app, limited to the routes it needs (generate 40+ random characters):
-
-```php
-define('ETELID_SERVICE_KEYS', '[
-  ... existing entries ...,
-  {"app":"etelerp","key":"<random 40+ chars>","scopes":["authenticate","check_role"]}
-]');
-```
-
-The key must be at least 24 characters. Optionally add `"ips":["<VPS ip>"]` to lock it to the server.
-
-## Install on a bench (Frappe v15 with ERPNext)
-
-```bash
-bench get-app etel_erp /path/to/Etel-FTBG/EtelERP      # or the git URL with --subdirectory-less checkout
-bench --site <site> install-app etel_erp
-bench --site <site> migrate
-bench build --app etel_erp && bench restart
-```
-
-`install-app` and every `migrate` add the `User.etel_id` field and apply the branding
-(`etel_erp/setup/install.py`). After install, open `/login`: the EtelID form is the normal form
-with an extra "Authenticator code" box.
+## Plans
+`app/Plans.php` holds the limits (free: 2 users, 30 invoices a month, 100 items; standard: 5 users;
+business: 25 users; both unlimited invoices and items). A business is on `free` until its `plan` column
+is changed; billing through Chapa is the next slice. A paid plan past `plan_expires_at` counts as free.
 
 ## Tests
-
 ```bash
-python3 -I -m unittest discover -s EtelERP/tests -v      # no Frappe or database needed
+# needs a THROWAWAY MariaDB/MySQL database - the tables are dropped and recreated
+TEST_DB_HOST=127.0.0.1 TEST_DB_NAME=etelerp_test TEST_DB_USER=etelerp TEST_DB_PASS=testpass php EtelERP/tests/run.php
+TEST_DB_HOST=127.0.0.1 TEST_DB_NAME=etelerp_test TEST_DB_USER=etelerp TEST_DB_PASS=testpass php EtelERP/tests/concurrency.php
 ```
-
-The tests cover the EtelID client, the role/user rules and the whole sign-in flow against a small
-fake of Frappe. They do **not** run inside a real bench: the install step, the branding settings,
-the login page script and the real session cookie need a bench (done on the VPS in step 5, see
-`docs` checklist below).
-
-### Check on a real bench (first install)
-
-1. `/login` shows the Etel logo and the gold theme; the field says "EtelID number, phone or email".
-2. Sign in as a person who has a role at the company: you land on `/app`; **User** list shows a new
-   user `<etel-id>@etelid.etelerp.app` with their roles.
-3. Sign in with a wrong password: "Invalid login credentials".
-4. Remove that person's role in EtelID, sign in again: refused, and the user is disabled.
-5. `Administrator` + the bench password still signs in.
-6. Help menu has no ERPNext/Frappe links.
+EtelID is faked in the tests, so nothing leaves the machine. The screens were also exercised end to end in a real
+browser (sell, pay, part-pay, cancel, stock, expenses, report, sign out) against a real database.
