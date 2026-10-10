@@ -3,7 +3,7 @@
   "name": "ETEL Service — Hawassa",
   "short_name": "ኢE_Service",
   "description": "Manage your shop, orders, and inventory for ETEL Delivery across Hawassa, Ethiopia.",
-  "start_url": "servicegiver.html",
+  "start_url": "/delivery/servicegiver.html?source=pwa",
   "scope": "./",
   "display": "standalone",
   "background_color": "#0a0703",
