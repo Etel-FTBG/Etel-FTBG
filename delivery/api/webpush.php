@@ -159,7 +159,8 @@ function etel_webpush_encrypt($payloadPlain, $p256dhB64, $authB64) {
  * A 404/410 http_code means the subscription is dead (uninstalled, permission
  * revoked, etc.) and the caller should delete it from push_subscriptions.
  */
-function etel_send_web_push($subscription, $payload) {
+function etel_webpush_make_handle($subscription, $payload, &$err) {
+    $err = null;
     $vapidPrivatePem = etel_env('VAPID_PRIVATE_KEY_PEM', 'CFG_VAPID_PRIVATE_KEY_PEM', '');
     $vapidPublicKey  = etel_env('VAPID_PUBLIC_KEY', 'CFG_VAPID_PUBLIC_KEY', '');
     $vapidSubject    = etel_env('VAPID_SUBJECT', 'CFG_VAPID_SUBJECT', 'mailto:admin@ethelmarket.com');
@@ -167,21 +168,25 @@ function etel_send_web_push($subscription, $payload) {
     $vapidPrivatePem = str_replace('\\n', "\n", $vapidPrivatePem);
 
     if (!$vapidPrivatePem || !$vapidPublicKey) {
-        return array('ok' => false, 'http_code' => 0, 'error' => 'VAPID keys not configured - run api/webpush-generate-keys.php and set them in .env');
+        $err = array('ok' => false, 'http_code' => 0, 'error' => 'VAPID keys not configured - run api/webpush-generate-keys.php and set them in .env');
+        return null;
     }
     if (empty($subscription['endpoint']) || empty($subscription['keys']['p256dh']) || empty($subscription['keys']['auth'])) {
-        return array('ok' => false, 'http_code' => 0, 'error' => 'Invalid subscription object');
+        $err = array('ok' => false, 'http_code' => 0, 'error' => 'Invalid subscription object');
+        return null;
     }
 
     $endpoint = $subscription['endpoint'];
     $body = etel_webpush_encrypt(json_encode($payload), $subscription['keys']['p256dh'], $subscription['keys']['auth']);
     if ($body === false) {
-        return array('ok' => false, 'http_code' => 0, 'error' => 'Encryption failed');
+        $err = array('ok' => false, 'http_code' => 0, 'error' => 'Encryption failed');
+        return null;
     }
 
     $vapidHeaders = etel_webpush_vapid_header($endpoint, $vapidPrivatePem, $vapidPublicKey, $vapidSubject);
     if (!$vapidHeaders) {
-        return array('ok' => false, 'http_code' => 0, 'error' => 'VAPID signing failed');
+        $err = array('ok' => false, 'http_code' => 0, 'error' => 'VAPID signing failed');
+        return null;
     }
 
     $headers = array(
@@ -202,17 +207,32 @@ function etel_send_web_push($subscription, $payload) {
         CURLOPT_TIMEOUT        => 6,
         CURLOPT_SSL_VERIFYPEER => true,
     ));
-    $response = curl_exec($ch);
+    return $ch;
+}
+
+// Turns a finished cURL handle into the array('ok','http_code','error') shape.
+function etel_webpush_result_from_handle($ch, $response, $curlCode = null) {
     $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     $curlErr  = curl_error($ch);
-    curl_close($ch);
-
+    // Handles run through curl_multi do not fill curl_error(); the per-handle
+    // result code comes from curl_multi_info_read() and is passed in here.
+    if ($curlErr === '' && $curlCode !== null && (int)$curlCode !== 0) $curlErr = curl_strerror((int)$curlCode);
     if ($curlErr) {
         return array('ok' => false, 'http_code' => 0, 'error' => 'cURL: ' . $curlErr);
     }
     // 200/201 = delivered to push service; 404/410 = subscription is dead
     $ok = ($httpCode >= 200 && $httpCode < 300);
-    return array('ok' => $ok, 'http_code' => $httpCode, 'error' => $ok ? null : ('Push service returned ' . $httpCode . ': ' . substr($response, 0, 300)));
+    return array('ok' => $ok, 'http_code' => $httpCode, 'error' => $ok ? null : ('Push service returned ' . $httpCode . ': ' . substr((string)$response, 0, 300)));
+}
+
+function etel_send_web_push($subscription, $payload) {
+    $err = null;
+    $ch = etel_webpush_make_handle($subscription, $payload, $err);
+    if (!$ch) return $err;
+    $response = curl_exec($ch);
+    $result = etel_webpush_result_from_handle($ch, $response);
+    curl_close($ch);
+    return $result;
 }
 
 /**
@@ -290,14 +310,55 @@ function etel_push_to_user($pdo, $userId, $payload) {
         error_log('[ETEL webpush] could not read subscriptions: ' . $e->getMessage());
         return $results;
     }
-    foreach ($subs as $sub) {
+    // Web Push to ALL of a user's devices at once. A user can have many stale
+    // subscriptions (one per reinstall/re-login); sending them one after another
+    // made the wait the SUM of every slow or unreachable push service. In parallel
+    // the wait is only the slowest single attempt (capped by the cURL timeouts).
+    $t0 = microtime(true);
+    $out = array();
+    $web = array();
+    foreach ($subs as $i => $sub) {
         $type = isset($sub['type']) ? $sub['type'] : 'webpush';
         if ($type === 'expo') {
-            $r = etel_send_expo_push($sub['endpoint'], $payload);
-        } else {
-            $subscription = array('endpoint' => $sub['endpoint'], 'keys' => array('p256dh' => $sub['p256dh'], 'auth' => $sub['auth']));
-            $r = etel_send_web_push($subscription, $payload);
+            $out[$i] = etel_send_expo_push($sub['endpoint'], $payload);
+            continue;
         }
+        $subscription = array('endpoint' => $sub['endpoint'], 'keys' => array('p256dh' => $sub['p256dh'], 'auth' => $sub['auth']));
+        $err = null;
+        $ch = etel_webpush_make_handle($subscription, $payload, $err);
+        if (!$ch) { $out[$i] = $err; continue; }
+        $web[$i] = $ch;
+    }
+    if (!empty($web)) {
+        $mh = curl_multi_init();
+        foreach ($web as $ch) curl_multi_add_handle($mh, $ch);
+        $running = 0;
+        do { $status = curl_multi_exec($mh, $running); } while ($status === CURLM_CALL_MULTI_PERFORM);
+        while ($running > 0 && $status === CURLM_OK) {
+            if (curl_multi_select($mh, 1.0) === -1) usleep(100000);
+            do { $status = curl_multi_exec($mh, $running); } while ($status === CURLM_CALL_MULTI_PERFORM);
+        }
+        $codes = array();
+        while (($info = curl_multi_info_read($mh)) !== false) {
+            if ($info['msg'] === CURLMSG_DONE) {
+                $hid = is_object($info['handle']) ? spl_object_id($info['handle']) : (int)$info['handle'];
+                $codes[$hid] = $info['result'];
+            }
+        }
+        foreach ($web as $i => $ch) {
+            $hid = is_object($ch) ? spl_object_id($ch) : (int)$ch;
+            $out[$i] = etel_webpush_result_from_handle($ch, curl_multi_getcontent($ch), isset($codes[$hid]) ? $codes[$hid] : null);
+            curl_multi_remove_handle($mh, $ch);
+            curl_close($ch);
+        }
+        curl_multi_close($mh);
+    }
+    $ms = (int)round((microtime(true) - $t0) * 1000);
+    if ($ms > 1500) error_log('[ETEL][timing] push to user ' . $userId . ': ' . count($subs) . ' subscription(s) took ' . $ms . ' ms');
+
+    foreach ($subs as $i => $sub) {
+        $type = isset($sub['type']) ? $sub['type'] : 'webpush';
+        $r = isset($out[$i]) ? $out[$i] : array('ok' => false, 'http_code' => 0, 'error' => 'no result');
         $results[] = $r;
         if (!$r['ok'] && in_array($r['http_code'], array(404, 410), true)) {
             try {

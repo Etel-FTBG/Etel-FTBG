@@ -62,6 +62,7 @@ function etel_push_send($pdo, $user_id, $title, $body, $data = array()) {
  */
 function etel_push_send_async($pdo, $user_id, $title, $body, $data = array()) {
     if (PHP_SAPI === 'cli' || (!function_exists('litespeed_finish_request') && !function_exists('fastcgi_finish_request'))) {
+        if (PHP_SAPI !== 'cli') error_log('[ETEL][timing] push sent inline: no finish-request function on this host (sapi=' . PHP_SAPI . ')');
         return etel_push_send($pdo, $user_id, $title, $body, $data);
     }
     static $queue = array();
