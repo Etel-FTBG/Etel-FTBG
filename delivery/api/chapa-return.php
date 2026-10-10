@@ -23,6 +23,10 @@ if ($ref !== '' && chapa_enabled()) {
         $pdo = new PDO('mysql:host=' . etel_env('DB_HOST', '', 'localhost') . ';dbname=' . etel_env('DB_NAME', '', 'etel_delivery') . ';charset=utf8mb4',
             etel_env('DB_USER', '', ''), etel_env('DB_PASS', '', ''),
             array(PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC));
+        // Same time zone as the main API (boot.php): without this NOW() ran in the
+        // database server's zone and completed_at landed 3 hours before created_at.
+        @date_default_timezone_set('Africa/Addis_Ababa');
+        try { $pdo->exec("SET time_zone = '" . date('P') . "'"); } catch (Exception $tz) { /* keep the server zone */ }
         $result = chapa_settle($pdo, $ref);
     } catch (Exception $e) {
         error_log('[Delivery-Chapa] return: ' . $e->getMessage());
