@@ -40,6 +40,8 @@ try {
     $pdo = new PDO('mysql:host=' . etel_env('DB_HOST', '', 'localhost') . ';dbname=' . etel_env('DB_NAME', '', 'etel_delivery') . ';charset=utf8mb4',
         etel_env('DB_USER', '', ''), etel_env('DB_PASS', '', ''),
         array(PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC));
+    @date_default_timezone_set('Africa/Addis_Ababa');
+    try { $pdo->exec("SET time_zone = '" . date('P') . "'"); } catch (Exception $tz) { /* keep the server zone */ }
     echo json_encode(array('ok' => true, 'result' => chapa_settle($pdo, $ref)));
 } catch (Exception $e) {
     error_log('[Delivery-Chapa] webhook: ' . $e->getMessage());
