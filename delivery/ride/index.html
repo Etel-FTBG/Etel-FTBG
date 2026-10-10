@@ -245,6 +245,7 @@
 <script src="../js/visibility-throttle.js?v=1.0"></script>
 <script src="../js/etel-display-settings.js?v=1.4" data-fab="off" defer></script>
 <script src="../js/etel-2fa-settings.js?v=1" defer></script>
+<script src="../js/etel-account-deletion.js?v=1" defer></script>
 <script src="../js/etel-refresh.js?v=1" defer></script>
 <script src="../js/ride-pin.js?v=1" defer></script>
 <script src="../js/ride-announcements.js?v=1" defer></script>
@@ -1132,7 +1133,8 @@ function loadRideSettings() {
       '<div style="font-weight:700;font-size:13.5px;margin-bottom:8px;color:var(--text)">🔐 Privacy</div>' +
       '<div style="font-size:12px;color:var(--dim);margin-bottom:12px">Request a copy of your data, or ask us to delete your account.</div>' +
       '<button class="ra-row-btn" onclick="requestRidePrivacyAction(\'export\')" style="margin-right:8px">Request My Data</button>' +
-      '<button class="ra-row-btn danger" onclick="requestRidePrivacyAction(\'delete\')">Delete My Account</button>' +
+      '<button class="ra-row-btn danger" onclick="EtelDeleteAccount.open()">Delete My Account</button>' +
+      '<div style="font-size:12px;margin-top:12px"><a href="../privacy.html" target="_blank" rel="noopener" style="color:var(--gold)">Privacy Policy</a> &middot; <a href="../terms.html" target="_blank" rel="noopener" style="color:var(--gold)">Terms</a></div>' +
       '</div>';
   });
 }

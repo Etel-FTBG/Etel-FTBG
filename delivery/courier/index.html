@@ -145,6 +145,7 @@
     <!-- premium.css, etel-phase5.css, etel-design-v4.css, etel-responsive.css now folded into css/courier-bundle.css above -->
 <script src="../js/etel-display-settings.js?v=1.4" data-fab="off" defer></script>
 <script src="../js/etel-2fa-settings.js?v=1" defer></script>
+<script src="../js/etel-account-deletion.js?v=1" defer></script>
 <script src="../js/etel-refresh.js?v=1" defer></script>
 <style>
 /* Profile drawer is always dark; the light theme was forcing dark text on it (unreadable). Pin its colours. */
@@ -392,6 +393,16 @@ body.etel-light #cp-profile-panel [style*="#E5C76B"] { color:#F0D27A !important;
                     <div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:700;color:#F5F5F7">Two-step sign-in</div><div style="font-size:11px;color:#A8A8B8;margin-top:1px">A code from your phone when you sign in</div></div>
                     <div style="color:#A8A8B8;font-size:15px">›</div>
                 </div>
+                <div data-etel-delete-account-open onclick="closeProfile()" style="display:flex;align-items:center;gap:12px;padding:14px 16px;cursor:pointer;border-top:1px solid rgba(255,255,255,.06)">
+                    <div style="width:34px;height:34px;border-radius:10px;background:rgba(230,57,70,.12);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0">🗑️</div>
+                    <div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:700;color:#F5F5F7">Delete my account</div><div style="font-size:11px;color:#A8A8B8;margin-top:1px">Ask ETEL to delete your account and data</div></div>
+                    <div style="color:#A8A8B8;font-size:15px">›</div>
+                </div>
+                <a href="../privacy.html" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:12px;padding:14px 16px;cursor:pointer;border-top:1px solid rgba(255,255,255,.06);text-decoration:none">
+                    <div style="width:34px;height:34px;border-radius:10px;background:rgba(212,175,55,.12);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0">🔒</div>
+                    <div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:700;color:#F5F5F7">Privacy Policy</div><div style="font-size:11px;color:#A8A8B8;margin-top:1px">How ETEL uses your data</div></div>
+                    <div style="color:#A8A8B8;font-size:15px">›</div>
+                </a>
                 <div data-etel-display-open onclick="closeProfile();EtelDisplay.open()" style="display:flex;align-items:center;gap:12px;padding:14px 16px;cursor:pointer;border-top:1px solid rgba(255,255,255,.06)">
                     <div style="width:34px;height:34px;border-radius:10px;background:rgba(212,175,55,.12);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0">🔠</div>
                     <div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:700;color:#F5F5F7">Display Size</div><div style="font-size:11px;color:#A8A8B8;margin-top:1px">Text, icons, buttons and logos</div></div>

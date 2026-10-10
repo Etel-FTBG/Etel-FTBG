@@ -365,6 +365,7 @@ body.etel-light .cat-chip.on{background:#f3e3b0;color:#4a3300}
 </style>
 <script src="js/etel-display-settings.js?v=1.4" data-fab="off" defer></script>
 <script src="js/etel-2fa-settings.js?v=1" defer></script>
+<script src="js/etel-account-deletion.js?v=1" defer></script>
 <script src="js/etel-refresh.js?v=1" defer></script>
 </head>
 <body>
@@ -460,6 +461,10 @@ body.etel-light .cat-chip.on{background:#f3e3b0;color:#4a3300}
                 <div class="menu-item" data-etel-2fa-open>
                     <div class="menu-icon">🛡️</div>
                     <div class="menu-label">Two-step sign-in</div>
+                </div>
+                <div class="menu-item" data-etel-delete-account-open>
+                    <div class="menu-icon">🗑️</div>
+                    <div class="menu-label">Delete my account</div>
                 </div>
                 <div class="menu-item" data-etel-display-open>
                     <div class="menu-icon">🔠</div>
@@ -921,7 +926,7 @@ body.etel-light .cat-chip.on{background:#f3e3b0;color:#4a3300}
                 </div>
                 <div class="etel-footer-bottom">
                   <span>© 2026 Etel Group · ኢትኤል ቡድን</span>
-                  <div class="etel-footer-bottom-right"><a href="#">Privacy</a> <a href="#">Terms</a> <span>v3.7.4</span></div>
+                  <div class="etel-footer-bottom-right"><a href="privacy.html" target="_blank" rel="noopener">Privacy</a> <a href="terms.html" target="_blank" rel="noopener">Terms</a> <a href="delete-account.html" target="_blank" rel="noopener">Delete account</a> <span>v3.7.4</span></div>
                 </div>
               </div>
             </footer>
