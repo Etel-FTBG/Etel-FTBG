@@ -4,10 +4,10 @@ name: Delivery CI
 # the change would have broken something the tests cover - fix before merging.
 on:
   pull_request:
-    paths: ['delivery/**', 'EtelId/**', 'EtelERP/**', '.github/workflows/ci.yml']
+    paths: ['delivery/**', 'EtelId/**', 'EtelERP/**', 'EtelERP-Frappe/**', '.github/workflows/ci.yml']
   push:
     branches: [main]
-    paths: ['delivery/**', 'EtelId/**', 'EtelERP/**', '.github/workflows/ci.yml']
+    paths: ['delivery/**', 'EtelId/**', 'EtelERP/**', 'EtelERP-Frappe/**', '.github/workflows/ci.yml']
 
 jobs:
   etelid:
@@ -32,11 +32,43 @@ jobs:
       - uses: actions/setup-python@v5
         with: { python-version: '3.11' }
       - name: Python syntax (EtelERP app)
-        run: python -m compileall -q EtelERP/etel_erp
+        run: python -m compileall -q EtelERP-Frappe/etel_erp
       - name: EtelERP unit tests
-        run: python -I -m unittest discover -s EtelERP/tests -v
+        run: python -I -m unittest discover -s EtelERP-Frappe/tests -v
       - name: Login script syntax
-        run: node --check EtelERP/etel_erp/public/js/etel_login.js
+        run: node --check EtelERP-Frappe/etel_erp/public/js/etel_login.js
+
+  etelerp-php:
+    runs-on: ubuntu-latest
+    services:
+      mariadb:
+        image: mariadb:10.11
+        env:
+          MARIADB_ROOT_PASSWORD: rootpass
+          MARIADB_DATABASE: etelerp_test
+          MARIADB_USER: etelerp
+          MARIADB_PASSWORD: testpass
+        ports: ['3306:3306']
+        options: >-
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=5s --health-timeout=5s --health-retries=20
+    env:
+      TEST_DB_HOST: 127.0.0.1
+      TEST_DB_NAME: etelerp_test
+      TEST_DB_USER: etelerp
+      TEST_DB_PASS: testpass
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with: { php-version: '8.3', extensions: 'pdo_mysql' }
+      - name: PHP syntax (EtelERP)
+        run: find EtelERP -name '*.php' -print0 | xargs -0 -n1 -P4 php -l >/dev/null
+      - name: Browser script syntax (EtelERP)
+        run: for f in EtelERP/assets/js/*.js EtelERP/sw.js; do node --check "$f"; done
+      - name: EtelERP tests (real database)
+        run: php EtelERP/tests/run.php
+      - name: EtelERP concurrency tests (parallel processes)
+        run: php EtelERP/tests/concurrency.php
 
   lint:
     runs-on: ubuntu-latest

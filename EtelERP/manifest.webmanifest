@@ -1,0 +1,11 @@
+{
+  "name": "EtelERP",
+  "short_name": "EtelERP",
+  "description": "Sales, invoices, stock and expenses for your business. Sign in with EtelID.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0d0d0d",
+  "theme_color": "#0a0703",
+  "icons": [{ "src": "assets/icons/logo.png", "sizes": "any", "type": "image/png", "purpose": "any" }]
+}

@@ -1,0 +1,41 @@
+/* EtelERP - gold on carbon, phone first. No external fonts or files. */
+:root{--bg:#0d0d0d;--card:#161208;--line:rgba(212,175,55,.3);--gold:#D4AF37;--gold-deep:#C8960C;--gold-light:#F2CC6B;--text:#f1ede2;--muted:#a79f8a;--red:#e5604f;--green:#58c27d;--amber:#e0a93a}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--text);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
+body{padding-bottom:76px;min-height:100vh}
+a{color:var(--gold-light)}
+h1{font-size:20px;margin:0 0 4px;color:var(--gold)}h2{font-size:16px;margin:18px 0 8px;color:var(--gold-light)}
+.wrap{max-width:720px;margin:0 auto;padding:14px}
+.top{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--line);background:#0a0703;position:sticky;top:0;z-index:5}
+.top img{height:30px}.top b{flex:1;color:var(--gold);font-size:16px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px;margin:10px 0}
+.list .grow,.item .grow{flex:1;min-width:0}
+.row{display:flex;gap:10px;align-items:center}.row>.grow{flex:1;min-width:0}
+.between{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.muted{color:var(--muted);font-size:13px}.right{text-align:right}.num{font-variant-numeric:tabular-nums}
+.big{font-size:24px;font-weight:700;color:var(--gold-light)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+button,.btn{background:var(--gold);color:#111;border:0;border-radius:10px;padding:11px 16px;font-weight:700;font-size:15px;cursor:pointer;min-height:44px}
+button.alt,.btn.alt{background:transparent;color:var(--gold-light);border:1px solid var(--line)}
+button.danger{background:var(--red);color:#fff}button.small{padding:6px 10px;min-height:34px;font-size:13px}
+button:disabled{opacity:.45;cursor:default}button.block{width:100%}
+input,select,textarea{width:100%;background:#0b0905;color:var(--text);border:1px solid #4a4128;border-radius:10px;padding:11px;font-size:16px;margin:4px 0 10px;min-height:44px}
+label{font-size:13px;color:var(--muted);display:block}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 10px}.chip{padding:8px 12px;border:1px solid var(--line);border-radius:999px;cursor:pointer;background:transparent;color:var(--text);min-height:38px;font-weight:600}
+.chip.on{background:var(--gold);color:#111;border-color:var(--gold)}
+.tag{display:inline-block;padding:2px 8px;border-radius:999px;font-size:12px;font-weight:700}
+.tag.paid{background:rgba(88,194,125,.15);color:var(--green)}.tag.partial{background:rgba(224,169,58,.15);color:var(--amber)}.tag.unpaid{background:rgba(229,96,79,.15);color:var(--red)}.tag.void{background:#2a2a2a;color:#999}.tag.draft{background:#26221a;color:var(--muted)}
+.list>.item{display:flex;gap:10px;align-items:center;padding:11px 0;border-bottom:1px solid #2a2415;cursor:pointer}
+.list>.item:last-child{border-bottom:0}
+nav.bottom{position:fixed;left:0;right:0;bottom:0;background:#0a0703;border-top:1px solid var(--line);display:flex;z-index:6;padding-bottom:env(safe-area-inset-bottom)}
+nav.bottom a{flex:1;text-align:center;padding:10px 4px;color:var(--muted);text-decoration:none;font-size:12px;font-weight:600}
+nav.bottom a.on{color:var(--gold)}nav.bottom a span{display:block;font-size:20px;line-height:1.1}
+.toast{position:fixed;left:12px;right:12px;bottom:84px;background:#1d1809;border:1px solid var(--gold);padding:12px;border-radius:10px;z-index:20;text-align:center}
+.toast.err{border-color:var(--red);color:#ffd6d0}
+.empty{text-align:center;color:var(--muted);padding:26px 8px}
+.bars{display:flex;align-items:flex-end;gap:4px;height:70px;margin-top:8px}.bars i{flex:1;background:linear-gradient(var(--gold-light),var(--gold-deep));border-radius:3px 3px 0 0;min-height:2px}
+.login{max-width:380px;margin:8vh auto 0;text-align:center}.login img{height:84px;margin-bottom:6px}
+.sheet{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:15;display:flex;align-items:flex-end}
+.sheet>div{background:var(--card);border-top:1px solid var(--gold);border-radius:16px 16px 0 0;padding:14px;width:100%;max-height:85vh;overflow:auto}
+.inv{background:#fff;color:#111;border-radius:8px;padding:16px}.inv table{width:100%;border-collapse:collapse;font-size:14px}.inv th,.inv td{padding:6px 4px;border-bottom:1px solid #ddd;text-align:left}.inv .r{text-align:right}.inv h3{margin:0 0 2px}
+@media print{body{background:#fff;padding:0}.top,nav.bottom,.noprint,.toast{display:none!important}.wrap{padding:0;max-width:none}.card{border:0;padding:0}.inv{padding:0}}

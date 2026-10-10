@@ -23,7 +23,7 @@ permissions:
 # Folders here are never deployable apps on their own (docs, CI config,
 # shared non-deployed token files) - changes to only these produce no zip.
 env:
-  SKIP_TOP_LEVEL_DIRS: ".github docs design-system"
+  SKIP_TOP_LEVEL_DIRS: ".github docs design-system EtelERP-Frappe"
 
 jobs:
   build-deploy-zips:
