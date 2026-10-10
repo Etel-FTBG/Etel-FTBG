@@ -1,0 +1,62 @@
+[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.etel.delivery",
+      "sha256_cert_fingerprints": [
+        "9A:AA:22:60:82:CB:C4:E2:93:39:EC:66:F4:0B:60:D3:35:05:0B:8A:A3:22:9A:29:AA:D5:B8:D2:1C:49:59:3B"
+      ]
+    }
+  },
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.etel.ride",
+      "sha256_cert_fingerprints": [
+        "9A:AA:22:60:82:CB:C4:E2:93:39:EC:66:F4:0B:60:D3:35:05:0B:8A:A3:22:9A:29:AA:D5:B8:D2:1C:49:59:3B"
+      ]
+    }
+  },
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.etel.driver",
+      "sha256_cert_fingerprints": [
+        "9A:AA:22:60:82:CB:C4:E2:93:39:EC:66:F4:0B:60:D3:35:05:0B:8A:A3:22:9A:29:AA:D5:B8:D2:1C:49:59:3B"
+      ]
+    }
+  },
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.etel.courier",
+      "sha256_cert_fingerprints": [
+        "9A:AA:22:60:82:CB:C4:E2:93:39:EC:66:F4:0B:60:D3:35:05:0B:8A:A3:22:9A:29:AA:D5:B8:D2:1C:49:59:3B"
+      ]
+    }
+  },
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.etel.service",
+      "sha256_cert_fingerprints": [
+        "9A:AA:22:60:82:CB:C4:E2:93:39:EC:66:F4:0B:60:D3:35:05:0B:8A:A3:22:9A:29:AA:D5:B8:D2:1C:49:59:3B"
+      ]
+    }
+  }
+]
