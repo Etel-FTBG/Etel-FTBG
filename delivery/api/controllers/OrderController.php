@@ -26,7 +26,10 @@ case 'customer_create_order': {
     $auth_user = require_auth($pdo);
     try {
         $body['_allow_chapa'] = true; // checkout UI follows up with chapa_init
+        $t_order = microtime(true);
         $result = delivery_execute_order_creation($pdo, $auth_user, $body);
+        $ms_order = (int)round((microtime(true) - $t_order) * 1000);
+        if ($ms_order > 1500) error_log('[ETEL][timing] customer_create_order took ' . $ms_order . ' ms (sapi=' . PHP_SAPI . ')');
         ok($result);
     } catch (Exception $e) {
         fail($e->getMessage(), 400);
