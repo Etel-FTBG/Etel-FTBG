@@ -1,0 +1,41 @@
+/* EtelERP brand: gold on carbon (same palette as the other Etel Group apps).
+   Colours only, so a Frappe upgrade cannot break the layout. */
+:root {
+	--etel-gold: #D4AF37;
+	--etel-gold-deep: #C8960C;
+	--etel-gold-light: #F2CC6B;
+	--etel-carbon: #0d0d0d;
+	--etel-carbon-warm: #130d05;
+}
+
+/* buttons and links */
+.btn-primary,
+.btn.btn-primary {
+	background-color: var(--etel-gold-deep) !important;
+	border-color: var(--etel-gold-deep) !important;
+	color: #111 !important;
+}
+.btn-primary:hover,
+.btn.btn-primary:hover {
+	background-color: var(--etel-gold) !important;
+	border-color: var(--etel-gold) !important;
+}
+
+/* sign-in page */
+body[data-path="login"] {
+	background: radial-gradient(ellipse at top, var(--etel-carbon-warm), var(--etel-carbon)) fixed;
+}
+body[data-path="login"] .page-card {
+	border: 1px solid rgba(212, 175, 55, 0.45);
+	box-shadow: 0 0 40px rgba(212, 175, 55, 0.12);
+}
+body[data-path="login"] .page-card-head .app-logo,
+body[data-path="login"] .page-card-head img {
+	max-height: 64px;
+}
+body[data-path="login"] .etel-note {
+	margin-top: 0.75rem;
+	font-size: 12px;
+	color: var(--text-muted, #888);
+	text-align: center;
+}
