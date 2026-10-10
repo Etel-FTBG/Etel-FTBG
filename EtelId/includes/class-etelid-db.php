@@ -22,6 +22,11 @@ if ( ! defined( 'ABSPATH' ) ) exit;
 if ( ! class_exists( 'EtelID_Files' ) && file_exists( dirname( __FILE__ ) . '/class-etelid-files.php' ) ) {
     require_once dirname( __FILE__ ) . '/class-etelid-files.php';
 }
+/* Profile photo shrinker (resizes oversized photo_url images on save). Same guard: a missing
+ * file just leaves the feature switched off. */
+if ( ! class_exists( 'EtelID_Photos' ) && file_exists( dirname( __FILE__ ) . '/class-etelid-photos.php' ) ) {
+    require_once dirname( __FILE__ ) . '/class-etelid-photos.php';
+}
 
 class EtelID_DB {
 
@@ -518,6 +523,7 @@ class EtelID_DB {
     /* ─── INSERT ──────────────────────────────────────────── */
     public static function insert_member( $data ) {
         global $wpdb;
+        if ( isset( $data['photo_url'] ) && class_exists( 'EtelID_Photos' ) ) $data['photo_url'] = EtelID_Photos::shrink( $data['photo_url'] );
         $wpdb->insert( self::t_members(), $data );
         $new_id = $wpdb->insert_id;
         if ( $new_id && class_exists( 'EtelID_Files' ) ) EtelID_Files::sync_after_write( $new_id, $data );
@@ -943,6 +949,7 @@ class EtelID_DB {
     /* ─── UPDATE ──────────────────────────────────────────── */
     public static function update_member( $id, $data ) {
         global $wpdb;
+        if ( isset( $data['photo_url'] ) && class_exists( 'EtelID_Photos' ) ) $data['photo_url'] = EtelID_Photos::shrink( $data['photo_url'] );
         $res = $wpdb->update( self::t_members(), $data, array( 'id' => (int) $id ) );
         if ( $res !== false && class_exists( 'EtelID_Files' ) ) EtelID_Files::sync_after_write( $id, $data );
         return $res;
