@@ -62,8 +62,16 @@ jobs:
           declare -A FOLDER_GROUPS=()
           for f in "${CHANGED[@]}"; do
             top="${f%%/*}"
-            # A root-level file (no "/" in path) has no system folder - skip it.
-            [ "$top" = "$f" ] && continue
+            # A root-level file (no "/" in path) has no system folder. Website
+            # files in the repo root (privacy.html, robots.txt, ...) go in one
+            # "site-root" zip for the domain's public_html; other root files
+            # (README, .gitignore, ...) are not deployable and are skipped.
+            if [ "$top" = "$f" ]; then
+              case "$f" in
+                *.html|robots.txt|sitemap.xml|.htaccess) FOLDER_GROUPS["(site root)"]+="$f"$'\n' ;;
+              esac
+              continue
+            fi
             skip=false
             for d in $SKIP_TOP_LEVEL_DIRS; do
               [ "$top" = "$d" ] && skip=true && break
@@ -81,15 +89,17 @@ jobs:
           SUMMARY=""
           for top in "${!FOLDER_GROUPS[@]}"; do
             safe_top="$(echo "$top" | tr '[:upper:]' '[:lower:]' | tr -c 'a-z0-9' '-' | sed 's/-\+/-/g;s/^-//;s/-$//')"
+            src_dir="$top"
+            if [ "$top" = "(site root)" ]; then safe_top="site-root"; src_dir="."; fi
             zipfile="$OUT_DIR/${safe_top}-deploy-${SHORT_SHA}.zip"
             rm -f "$zipfile"
             file_count=0
             (
-              cd "$top"
+              cd "$src_dir"
               rel_files=""
               while IFS= read -r f; do
                 [ -z "$f" ] && continue
-                rel_files+="${f#"$top"/}"$'\n'
+                if [ "$src_dir" = "." ]; then rel_files+="$f"$'\n'; else rel_files+="${f#"$top"/}"$'\n'; fi
               done <<< "${FOLDER_GROUPS[$top]}"
               printf '%s' "$rel_files" | grep -v '^$' | zip -X -D -q "$zipfile" -@
             )
