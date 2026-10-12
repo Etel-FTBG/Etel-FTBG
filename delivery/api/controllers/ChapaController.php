@@ -74,7 +74,8 @@ case 'admin_list_chapa_payments': {
     $days = isset($body['days']) ? max(1, min(90, intval($body['days']))) : 14;
     $st = $pdo->prepare("SELECT cp.id, cp.tx_ref, cp.kind, cp.target_id, cp.amount, cp.status, cp.created_at, cp.completed_at,
             u.name AS customer_name, u.phone AS customer_phone,
-            o.order_code, o.payment_status AS order_payment_status
+            o.order_code, o.payment_status AS order_payment_status,
+            EXISTS (SELECT 1 FROM chapa_payments d WHERE d.kind = cp.kind AND d.target_id = cp.target_id AND d.status = 'completed' AND d.id <> cp.id) AS sibling_paid
         FROM chapa_payments cp
         LEFT JOIN users u ON u.id = cp.user_id
         LEFT JOIN orders o ON cp.kind='order' AND o.id = cp.target_id
@@ -91,11 +92,14 @@ case 'admin_list_chapa_payments': {
             if ($r['kind'] === 'order' && $r['order_payment_status'] !== null && $r['order_payment_status'] !== 'paid') $flag = 'paid_but_order_unpaid';
         } elseif ($r['status'] === 'failed') {
             $sum['failed']++;
+        } elseif ($r['sibling_paid']) {
+            // The customer tapped Pay again and one of the attempts went through: this one is just an abandoned retry.
+            $flag = 'retry_unused';
         } else {
             $sum['pending']++;
             if ($now - strtotime($r['created_at']) > 1800) $flag = 'stuck_pending';
         }
-        if ($flag !== '') $sum['needs_attention']++;
+        if ($flag === 'stuck_pending' || $flag === 'paid_but_order_unpaid') $sum['needs_attention']++;
         $r['flag'] = $flag;
     }
     unset($r);

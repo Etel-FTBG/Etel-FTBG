@@ -163,7 +163,7 @@ function etel_system_health($pdo, $adminId = 0) {
             $checks[] = etel_health_item('Online payments (Chapa)', 'info', 'Not set up. Telebirr and bank payments are confirmed by hand until CHAPA_SECRET_KEY is added to api/.env.');
         } else {
             $stuck = 0; $hbm = null;
-            try { $stuck = intval($pdo->query("SELECT COUNT(*) FROM chapa_payments WHERE status='pending' AND created_at < DATE_SUB(NOW(), INTERVAL 30 MINUTE) AND created_at > DATE_SUB(NOW(), INTERVAL 3 DAY)")->fetchColumn()); } catch (Exception $e) { /* table not created yet */ }
+            try { $stuck = intval($pdo->query("SELECT COUNT(*) FROM chapa_payments cp WHERE cp.status='pending' AND cp.created_at < DATE_SUB(NOW(), INTERVAL 30 MINUTE) AND cp.created_at > DATE_SUB(NOW(), INTERVAL 3 DAY) AND NOT EXISTS (SELECT 1 FROM chapa_payments d WHERE d.kind = cp.kind AND d.target_id = cp.target_id AND d.status = 'completed')")->fetchColumn()); } catch (Exception $e) { /* table not created yet */ }
             try { $hb2 = $pdo->query("SELECT TIMESTAMPDIFF(MINUTE, last_run, NOW()) AS mins FROM etel_heartbeat WHERE name='chapa_reconcile'")->fetch(); $hbm = $hb2 ? intval($hb2['mins']) : null; } catch (Exception $e) {}
             if ($hbm === null) {
                 $checks[] = etel_health_item('Online payments (Chapa)', 'warn', 'Set up. Add the 5-minute cron for cron_chapa_reconcile.php so a payment whose webhook is lost still settles.' . ($stuck > 0 ? ' ' . $stuck . ' payment(s) are waiting over 30 minutes.' : ''));
