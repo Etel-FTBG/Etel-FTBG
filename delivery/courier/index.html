@@ -148,6 +148,14 @@
 <script src="../js/etel-account-deletion.js?v=1" defer></script>
 <script src="../js/etel-refresh.js?v=1" defer></script>
 <style>
+/* The map route card is always dark; light mode was forcing dark text on it (unreadable). Pin its colours. */
+body.etel-light #map-route-panel #map-route-time { color:#4ECDC4 !important; -webkit-text-fill-color:#4ECDC4 !important; }
+body.etel-light #map-route-panel #map-route-label { color:#F5F5F7 !important; -webkit-text-fill-color:#F5F5F7 !important; }
+body.etel-light #map-route-panel #map-route-dist,
+body.etel-light #map-route-panel div[style*="A8A8B8"] { color:#C9C6D6 !important; -webkit-text-fill-color:#C9C6D6 !important; }
+body.etel-light #map-route-panel button { color:#FF6B76 !important; -webkit-text-fill-color:#FF6B76 !important; }
+</style>
+<style>
 /* Profile drawer is always dark; the light theme was forcing dark text on it (unreadable). Pin its colours. */
 body.etel-light #cp-profile-panel :not(button):not([style*="#2ECC71"]):not([style*="#E5C76B"]):not([style*="#A8A8B8"]) { color:#F2ECE0 !important; -webkit-text-fill-color:#F2ECE0 !important; }
 body.etel-light #cp-profile-panel [style*="#A8A8B8"] { color:#CFC8B8 !important; -webkit-text-fill-color:#CFC8B8 !important; }
