@@ -142,6 +142,39 @@ function etel_system_health($pdo, $adminId = 0) {
         $checks[] = etel_health_item('Cron job', 'warn', 'Has not run yet. Add the 5-minute cron for cron_ride_monitor.php in cPanel.');
     }
 
+    // Delivery dispatch: jobs nobody has taken, and whether job offers are switched on.
+    try {
+        $open = intval($pdo->query("SELECT COUNT(*) FROM orders WHERE status='pending' AND courier_id IS NULL
+            AND placed_at < DATE_SUB(NOW(), INTERVAL 10 MINUTE) AND placed_at > DATE_SUB(NOW(), INTERVAL 1 DAY)
+            AND NOT (payment_method='chapa' AND payment_status <> 'paid')")->fetchColumn());
+        $online = intval($pdo->query("SELECT COUNT(*) FROM couriers WHERE status='online' AND active=1")->fetchColumn());
+        if ($open > 0) {
+            $checks[] = etel_health_item('Courier dispatch', $open >= 3 ? 'bad' : 'warn', $open . ' order(s) have waited over 10 minutes with no courier. ' . $online . ' courier(s) online. Call couriers or assign by hand in Admin > Orders.');
+        } else {
+            $checks[] = etel_health_item('Courier dispatch', 'ok', 'No order is waiting for a courier. ' . $online . ' courier(s) online.');
+        }
+    } catch (Exception $e) { /* delivery tables not present */ }
+
+    // Online payments (Chapa): is it set up, and is any paid-looking payment stuck unsettled?
+    try {
+        $_chk = ''; $envf = __DIR__ . '/../.env';
+        if (is_readable($envf)) { foreach ((array) @file($envf, FILE_IGNORE_NEW_LINES) as $_ln) { if (strpos(ltrim($_ln), 'CHAPA_SECRET_KEY=') === 0) { $_chk = trim(substr(ltrim($_ln), 17), " \t\"'"); } } }
+        if ($_chk === '' || stripos($_chk, 'change_me') === 0 || strpos($_chk, 'CHASECK_TEST-xxxx') === 0) {
+            $checks[] = etel_health_item('Online payments (Chapa)', 'info', 'Not set up. Telebirr and bank payments are confirmed by hand until CHAPA_SECRET_KEY is added to api/.env.');
+        } else {
+            $stuck = 0; $hbm = null;
+            try { $stuck = intval($pdo->query("SELECT COUNT(*) FROM chapa_payments WHERE status='pending' AND created_at < DATE_SUB(NOW(), INTERVAL 30 MINUTE) AND created_at > DATE_SUB(NOW(), INTERVAL 3 DAY)")->fetchColumn()); } catch (Exception $e) { /* table not created yet */ }
+            try { $hb2 = $pdo->query("SELECT TIMESTAMPDIFF(MINUTE, last_run, NOW()) AS mins FROM etel_heartbeat WHERE name='chapa_reconcile'")->fetch(); $hbm = $hb2 ? intval($hb2['mins']) : null; } catch (Exception $e) {}
+            if ($hbm === null) {
+                $checks[] = etel_health_item('Online payments (Chapa)', 'warn', 'Set up. Add the 5-minute cron for cron_chapa_reconcile.php so a payment whose webhook is lost still settles.' . ($stuck > 0 ? ' ' . $stuck . ' payment(s) are waiting over 30 minutes.' : ''));
+            } elseif ($hbm > 15) {
+                $checks[] = etel_health_item('Online payments (Chapa)', 'bad', 'The reconcile cron last ran ' . etel_health_ago($hbm) . '. Check cPanel > Cron Jobs.' . ($stuck > 0 ? ' ' . $stuck . ' payment(s) are waiting over 30 minutes.' : ''));
+            } else {
+                $checks[] = etel_health_item('Online payments (Chapa)', $stuck > 0 ? 'warn' : 'ok', $stuck > 0 ? $stuck . ' payment(s) still unconfirmed after 30 minutes (customer may not have paid). Reconcile ran ' . etel_health_ago($hbm) . '.' : 'Set up. Reconcile ran ' . etel_health_ago($hbm) . '; nothing stuck.');
+            }
+        }
+    } catch (Exception $e) { /* skip */ }
+
     // Scheduled-ride cron (cron_dispatch_scheduled.php): it starts the driver search for pre-booked rides
     // and sends the reminder push, so it only matters once someone has pre-booked a ride.
     try {
