@@ -110,14 +110,6 @@
 .oc-tools > * { flex:0 0 auto; max-width:100%; }
 .oc-tools .btn { white-space:nowrap; }
 #mc-search { flex:1 1 100% !important; width:100% !important; }
-@media (max-width:640px) {
-  #mc-list table th:nth-child(2), #mc-list table td:nth-child(2) { display:none; }
-  #mc-list td:last-child { white-space:normal !important; }
-  #mc-list td:last-child .btn { display:inline-block; margin:2px 4px 2px 0; letter-spacing:0; font-size:10.5px; padding:4px 7px; }
-}
-@media (max-width:480px) {
-  #mc-list table th:nth-child(3), #mc-list table td:nth-child(3) { display:none; }
-}
 .oc-row { display:flex; align-items:center; gap:12px; padding:12px 14px; margin-bottom:8px; border:1px solid rgba(212,175,55,.2); border-radius:12px; cursor:pointer; }
 .oc-row:hover { background:rgba(212,175,55,.08); }
 .oc-row .t { flex:1; min-width:0; } .oc-row .t b { font-size:13.5px; } .oc-row .t span { display:block; font-size:12px; opacity:.7; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-top:2px; }
@@ -1595,7 +1587,7 @@ html{color-scheme:light}
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script><!-- PPTX slide-text preview (PPTX is a zip of XML), Documents tab -->
     <script src="js/admin-documents.js?v=1.5"></script><!-- Documents library: view/edit/version PDFs, Office files, Markdown, XML, etc -->
 
-<script src="js/admin.js?v=7.9"></script>
+<script src="js/admin.js?v=8.0"></script>
 <script src="js/admin-confirmations-premium.js?v=1.1"></script><!-- Pending Confirmations + GLOBAL modal-box fix for entire admin system -->
 <script src="js/admin-couriers-premium.js?v=1.4"></script><!-- Premium Couriers Management: 3D cards + edit modal + live map -->
     <script src="js/admin-premium.js?v=4.1"></script><!-- KPI count-ups + card motion -->
@@ -1642,5 +1634,6 @@ html{color-scheme:light}
     <script src="js/admin-2fa-rule.js?v=1"></script>
     <script src="js/admin-cash-reconcile.js?v=1"></script>
     <script src="js/admin-photo-coverage.js?v=2"></script>
+    <script src="js/admin-menucat-list.js?v=1"></script>
 </body>
 </html>

@@ -576,7 +576,7 @@
             const badge = document.getElementById('mc-badge');
             if (badge) { badge.textContent = res.data.pending || 0; badge.style.display = res.data.pending ? 'inline-block' : 'none'; }
             if (!_mcRows.length) { box.innerHTML = '<div style="opacity:.65;padding:14px 0">No dishes here.</div>'; return; }
-            box.innerHTML = '<div style="overflow-x:auto"><table class="data-table" style="width:100%"><thead><tr><th>Dish</th><th>Category</th><th>Group</th><th>Shops</th><th>Status</th><th></th></tr></thead><tbody>' +
+            box.innerHTML = window.mcRenderRows ? window.mcRenderRows(_mcRows) : '<div style="overflow-x:auto"><table class="data-table" style="width:100%"><thead><tr><th>Dish</th><th>Category</th><th>Group</th><th>Shops</th><th>Status</th><th></th></tr></thead><tbody>' +
                 _mcRows.map(r =>
                     '<tr><td><b>' + escapeHtml(r.name) + '</b>' + (r.name_am ? '<div style="font-size:12px;opacity:.7">' + escapeHtml(r.name_am) + '</div>' : '') +
                     (r.status === 'pending' && r.suggested_by_name ? '<div style="font-size:11px;opacity:.7">Suggested by ' + escapeHtml(r.suggested_by_name) + '</div>' : '') + '</td>' +
