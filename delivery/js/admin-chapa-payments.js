@@ -4,7 +4,7 @@
 'use strict';
 function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function etb(n){return 'ETB '+parseFloat(n||0).toLocaleString('en-ET',{maximumFractionDigits:2});}
-var FLAG={retry_unused:'Customer paid on another attempt - nothing to do',stuck_pending:'Waiting over 30 min - check with Chapa',paid_but_order_unpaid:'Paid at Chapa but order not marked paid - needs attention'};
+var FLAG={paid_but_cancelled:'Paid at Chapa but the order was cancelled - refund this customer',retry_unused:'Customer paid on another attempt - nothing to do',stuck_pending:'Waiting over 30 min - check with Chapa',paid_but_order_unpaid:'Paid at Chapa but order not marked paid - needs attention'};
 function api(body,ok,fail){
   var token=typeof Auth!=='undefined'?Auth.getToken():'';
   var apiUrl=(window.ETEL&&window.ETEL.api)?window.ETEL.api:'/delivery/api/boot.php';
