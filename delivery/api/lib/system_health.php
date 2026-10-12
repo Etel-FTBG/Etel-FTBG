@@ -142,6 +142,19 @@ function etel_system_health($pdo, $adminId = 0) {
         $checks[] = etel_health_item('Cron job', 'warn', 'Has not run yet. Add the 5-minute cron for cron_ride_monitor.php in cPanel.');
     }
 
+    // Delivery dispatch: jobs nobody has taken, and whether job offers are switched on.
+    try {
+        $open = intval($pdo->query("SELECT COUNT(*) FROM orders WHERE status='pending' AND courier_id IS NULL
+            AND placed_at < DATE_SUB(NOW(), INTERVAL 10 MINUTE) AND placed_at > DATE_SUB(NOW(), INTERVAL 1 DAY)
+            AND NOT (payment_method='chapa' AND payment_status <> 'paid')")->fetchColumn());
+        $online = intval($pdo->query("SELECT COUNT(*) FROM couriers WHERE status='online' AND active=1")->fetchColumn());
+        if ($open > 0) {
+            $checks[] = etel_health_item('Courier dispatch', $open >= 3 ? 'bad' : 'warn', $open . ' order(s) have waited over 10 minutes with no courier. ' . $online . ' courier(s) online. Call couriers or assign by hand in Admin > Orders.');
+        } else {
+            $checks[] = etel_health_item('Courier dispatch', 'ok', 'No order is waiting for a courier. ' . $online . ' courier(s) online.');
+        }
+    } catch (Exception $e) { /* delivery tables not present */ }
+
     // Online payments (Chapa): is it set up, and is any paid-looking payment stuck unsettled?
     try {
         $_chk = ''; $envf = __DIR__ . '/../.env';
