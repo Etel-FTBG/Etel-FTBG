@@ -25,7 +25,7 @@ if (isset($argv[1]) && $argv[1] === 'worker') {
         if ($mode === 'sell') {
             Invoices::sell($ctx, array('lines' => array(array('item_id' => 1, 'qty' => '1'))));
         } else {   // pay: everyone pays the same invoice in full
-            Payments::add($ctx, array('invoice_id' => 1, 'amount' => '100', 'method' => 'cash'));
+            Payments::add($ctx, array('invoice_id' => (int) $argv[3], 'amount' => '100', 'method' => 'cash'));
         }
         echo "OK\n";
     } catch (ApiError $e) { echo 'REFUSED ' . $e->status . "\n"; } catch (Exception $e) { echo 'ERROR ' . $e->getMessage() . "\n"; }
@@ -40,10 +40,10 @@ $pdo->exec("INSERT INTO members (id, etel_id, full_name, created_at) VALUES (1, 
 $pdo->exec("INSERT INTO businesses (id, name, plan, created_by, created_at) VALUES (1, 'Race Shop', 'standard', 1, NOW())");
 $pdo->exec("INSERT INTO items (id, business_id, name, price, track_stock, stock_qty, created_at) VALUES (1, 1, 'Last items', 100.00, 1, 3.000, NOW())");
 
-function spawn($mode, $n) {
+function spawn($mode, $n, $arg = '') {
     $procs = array();
     for ($i = 0; $i < $n; $i++) {
-        $p = proc_open(array(PHP_BINARY, __FILE__, 'worker', $mode), array(1 => array('pipe', 'w'), 2 => array('pipe', 'w')), $pipes);
+        $p = proc_open(array(PHP_BINARY, __FILE__, 'worker', $mode, (string) $arg), array(1 => array('pipe', 'w'), 2 => array('pipe', 'w')), $pipes);
         $procs[] = array($p, $pipes);
     }
     $out = array();
@@ -69,13 +69,15 @@ check('exactly 3 stock moves', (int) $pdo->query("SELECT COUNT(*) FROM stock_mov
 
 echo "8 simultaneous full payments of the same 100.00 invoice\n";
 $pdo->exec("UPDATE items SET price = 100.00 WHERE id = 1");
-$res = spawn('pay', 8);
+// Invoice ids are handed out when the draft is made, and the losing sales delete their drafts, so id 1 may not exist.
+$payId = (int) $pdo->query("SELECT id FROM invoices WHERE status = 'issued' ORDER BY id LIMIT 1")->fetchColumn();
+$res = spawn('pay', 8, $payId);
 $ok = count(array_filter($res, function ($r) { return $r === 'OK'; }));
 $err = array_filter($res, function ($r) { return strpos($r, 'ERROR') === 0; });
 check('no unexpected errors (' . implode('|', $err) . ')', count($err) === 0);
 check('exactly one payment accepted', $ok === 1);
-check('invoice paid exactly once (100.00)', $pdo->query('SELECT paid_amount FROM invoices WHERE id = 1')->fetchColumn() === '100.00');
-check('one payment row', (int) $pdo->query('SELECT COUNT(*) FROM payments WHERE invoice_id = 1 AND voided = 0')->fetchColumn() === 1);
+check('invoice paid exactly once (100.00)', $pdo->query('SELECT paid_amount FROM invoices WHERE id = ' . $payId)->fetchColumn() === '100.00');
+check('one payment row', (int) $pdo->query('SELECT COUNT(*) FROM payments WHERE invoice_id = ' . $payId . ' AND voided = 0')->fetchColumn() === 1);
 
 echo $fail ? "\n$fail failed\n" : "\nall concurrency checks passed\n";
 exit($fail ? 1 : 0);
