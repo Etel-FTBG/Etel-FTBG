@@ -39,8 +39,10 @@ function etel_release_idle_couriers($pdo) {
 }
 
 /** Find the nearest online courier for an order and offer/assign it. Never throws. */
-function etel_dispatch_order($pdo, $order_id) {
+function etel_dispatch_order($pdo, $order_id, $exclude = array()) {
     $order_id = (int)$order_id;
+    $exclude = array_values(array_filter(array_map('intval', (array) $exclude)));
+    $excludeSql = $exclude ? (' AND c.id NOT IN (' . implode(',', $exclude) . ')') : '';
     try {
         $q = $pdo->prepare("SELECT o.order_code, o.from_zone, o.to_zone, o.fare_total, o.status, o.courier_id, oa.service_giver_id
                             FROM orders o LEFT JOIN order_assignments oa ON oa.order_id = o.id WHERE o.id = ? LIMIT 1");
@@ -101,6 +103,7 @@ function etel_dispatch_order($pdo, $order_id) {
             FROM couriers c
             WHERE c.status = 'online' AND c.active = 1
               AND $hexWhere
+              $excludeSql
               AND c.id NOT IN (
                 SELECT courier_id FROM orders
                 WHERE status IN ('assigned','picked_up','in_transit')
@@ -133,7 +136,7 @@ function etel_dispatch_order($pdo, $order_id) {
             $csFallback = $pdo->prepare("
                 SELECT c.id, c.user_id, c.last_lat, c.last_lng, c.zone
                 FROM couriers c
-                WHERE c.status = 'online' AND c.active = 1
+                WHERE c.status = 'online' AND c.active = 1 $excludeSql
                   AND c.id NOT IN (
                     SELECT courier_id FROM orders
                     WHERE status IN ('assigned','picked_up','in_transit')
@@ -150,7 +153,9 @@ function etel_dispatch_order($pdo, $order_id) {
             // orders.courier_id is a couriers.id everywhere else (joins, the courier's own order
             // lists, NFC, the "busy" filter above). This used to store the courier's users.id,
             // so an auto-assigned order could be missing from that courier's list.
-            $pdo->prepare("UPDATE orders SET courier_id=?, status='assigned' WHERE id=?")
+            $assignedAt = '';
+            try { require_once __DIR__ . '/courier_stale.php'; if (etel_stale_has_col($pdo)) $assignedAt = ', courier_assigned_at=NOW()'; } catch (Exception $ce) {}
+            $pdo->prepare("UPDATE orders SET courier_id=?, status='assigned'$assignedAt WHERE id=?")
                 ->execute(array($best_id['id'], $order_id));
     if (function_exists('etel_notify_order_status')) etel_notify_order_status($pdo, $order_id);
             $pdo->prepare("UPDATE couriers SET status='busy' WHERE user_id=?")

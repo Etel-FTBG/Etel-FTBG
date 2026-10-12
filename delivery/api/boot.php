@@ -613,7 +613,7 @@ $ETEL_DELIVERY_ONLY_ACTIONS = array(
     'admin_get_confirmations','admin_force_confirm','admin_list_telebirr_payments','admin_list_bank_payments',
     'admin_confirm_telebirr_payment','admin_confirm_bank_payment','admin_list_support_threads','admin_get_support_thread',
     'admin_reply_support_message','admin_financial_report','admin_analytics',
-    'admin_list_payout_requests','admin_review_payout_request','admin_duplicate_phones','admin_list_chapa_payments','admin_unpaid_delivered','admin_mark_order_paid','admin_photo_coverage','admin_set_shop_branding'
+    'admin_list_payout_requests','admin_review_payout_request','admin_duplicate_phones','admin_list_chapa_payments','admin_unpaid_delivered','admin_mark_order_paid','admin_photo_coverage','admin_set_shop_branding','admin_get_stale_assign','admin_save_stale_assign'
 );
 if (in_array($action, $ETEL_DELIVERY_ONLY_ACTIONS, true)) {
     $pdo = db(); $u = require_admin($pdo);
@@ -1571,6 +1571,9 @@ switch ($action) {
         break;
     case 'driver_add_fuel_log': case 'driver_list_fuel_logs': case 'driver_delete_fuel_log': case 'driver_get_fuel_summary':
         require __DIR__ . '/controllers/DriverFuelController.php';
+        break;
+    case 'admin_get_stale_assign': case 'admin_save_stale_assign':
+        require __DIR__ . '/controllers/DispatchController.php';
         break;
     case 'admin_photo_coverage': case 'admin_set_shop_branding':
         require __DIR__ . '/controllers/PhotoController.php';
