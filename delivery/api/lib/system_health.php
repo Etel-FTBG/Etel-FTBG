@@ -155,6 +155,19 @@ function etel_system_health($pdo, $adminId = 0) {
         }
     } catch (Exception $e) { /* delivery tables not present */ }
 
+    // Orders that need a person: stuck with a courier who never started, money not recorded, paid-then-cancelled.
+    try {
+        $stuck = intval($pdo->query("SELECT COUNT(*) FROM orders WHERE status='assigned' AND courier_accepted_at IS NULL
+            AND placed_at < DATE_SUB(NOW(), INTERVAL 30 MINUTE) AND placed_at > DATE_SUB(NOW(), INTERVAL 2 DAY)")->fetchColumn());
+        $checks[] = $stuck > 0
+            ? etel_health_item('Orders waiting on a courier', 'bad', $stuck . ' order(s) were handed to a courier over 30 minutes ago and nothing has happened. Call the courier or move the order to another one in Admin > Orders.')
+            : etel_health_item('Orders waiting on a courier', 'ok', 'No assigned order is stuck.');
+        $unpaid = $pdo->query("SELECT COUNT(*) AS n, COALESCE(SUM(fare_total),0) AS amt FROM orders WHERE status='delivered' AND payment_status <> 'paid' AND payment_method <> 'chapa'")->fetch(PDO::FETCH_ASSOC);
+        if (intval($unpaid['n']) > 0) $checks[] = etel_health_item('Delivered orders not marked paid', 'warn', intval($unpaid['n']) . ' delivered order(s), ETB ' . number_format(floatval($unpaid['amt']), 2) . ', have no payment record. Open Admin > Payments > Delivered orders not marked paid.');
+        $pc = intval($pdo->query("SELECT COUNT(*) FROM orders o JOIN chapa_payments cp ON cp.kind='order' AND cp.target_id=o.id AND cp.status='completed' WHERE o.status='cancelled'")->fetchColumn());
+        if ($pc > 0) $checks[] = etel_health_item('Paid but cancelled', 'bad', $pc . ' order(s) were paid online and then cancelled. The customer needs a refund (see Admin > Payments > Online payments).');
+    } catch (Exception $e) { /* tables not present yet */ }
+
     // Online payments (Chapa): is it set up, and is any paid-looking payment stuck unsettled?
     try {
         $_chk = ''; $envf = __DIR__ . '/../.env';
