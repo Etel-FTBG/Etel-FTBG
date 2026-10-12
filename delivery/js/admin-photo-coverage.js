@@ -63,6 +63,20 @@ function load(){
     .catch(function(e){el.innerHTML='<div style="color:#e74c3c">Photo coverage: '+esc(e.message)+'</div>';});
 }
 window.loadPhotoCoverage=load;
+// Menu catalog dish form: add an upload button next to the Photo URL box.
+function watchCatalogPhoto(){
+  var inp=document.getElementById('mc-img'); if(!inp||document.getElementById('mc-img-file')) return;
+  var lab=document.createElement('label'); lab.className='pc-pick'; lab.style.cssText='display:inline-block;margin-top:6px;padding:6px 12px;border:1px solid rgba(212,175,55,.6);border-radius:8px;cursor:pointer;font-size:12px';
+  lab.innerHTML='<span>Upload a photo</span><input id="mc-img-file" type="file" accept="image/*" style="display:none">';
+  inp.parentNode.appendChild(lab);
+  lab.querySelector('input').onchange=function(){
+    var f=this.files&&this.files[0]; if(!f) return; var span=lab.firstChild; span.textContent='Uploading…';
+    upload(f,'').then(function(u){ if(!u.success) throw new Error(u.message||'Upload failed'); inp.value=u.data.url; span.textContent='Photo added - press Save'; })
+      .catch(function(e){span.textContent='Upload a photo'; say(e.message,true);});
+  };
+}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',watchCatalogPhoto);else watchCatalogPhoto();
+
 function watch(){
   var panel=document.getElementById('panel-items'); if(!panel) return;
   if(!document.getElementById('photo-coverage')){var d=document.createElement('div'); d.id='photo-coverage'; panel.insertBefore(d,panel.firstChild);}

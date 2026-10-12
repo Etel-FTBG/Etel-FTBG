@@ -105,6 +105,19 @@
 .pp-row .n { font-weight:800; text-align:right; } .pp-row > span:first-child { min-width:0; } .pp-row.pp-bad .n { color:#E63946; } .pp-row.pp-good .n { color:#2ECC71; }
 .pp-link { cursor:pointer; } .pp-link:hover { background:rgba(212,175,55,.08); }
 .oc-tools { display:flex; gap:8px; flex-wrap:wrap; align-items:center; padding:0 16px 12px; }
+/* Menu catalog on phones: filter row wraps instead of squeezing the New dish button, actions stay inside the table. */
+.oc-tools { flex-wrap:wrap !important; overflow:visible !important; }
+.oc-tools > * { flex:0 0 auto; max-width:100%; }
+.oc-tools .btn { white-space:nowrap; }
+#mc-search { flex:1 1 100% !important; width:100% !important; }
+@media (max-width:640px) {
+  #mc-list table th:nth-child(2), #mc-list table td:nth-child(2) { display:none; }
+  #mc-list td:last-child { white-space:normal !important; }
+  #mc-list td:last-child .btn { display:inline-block; margin:2px 4px 2px 0; letter-spacing:0; font-size:10.5px; padding:4px 7px; }
+}
+@media (max-width:480px) {
+  #mc-list table th:nth-child(3), #mc-list table td:nth-child(3) { display:none; }
+}
 .oc-row { display:flex; align-items:center; gap:12px; padding:12px 14px; margin-bottom:8px; border:1px solid rgba(212,175,55,.2); border-radius:12px; cursor:pointer; }
 .oc-row:hover { background:rgba(212,175,55,.08); }
 .oc-row .t { flex:1; min-width:0; } .oc-row .t b { font-size:13.5px; } .oc-row .t span { display:block; font-size:12px; opacity:.7; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-top:2px; }
@@ -1499,7 +1512,7 @@ html{color-scheme:light}
     <script src="js/admin/admin-api.js?v=4.1"></script>
     <script src="js/admin/admin-charts.js?v=4.1"></script>
     <script src="js/admin/admin-growth-charts.js?v=2.5"></script>
-    <script src="js/admin/admin-ui.js?v=5.2"></script>
+    <script src="js/admin/admin-ui.js?v=5.3"></script>
     <script src="js/admin/admin-printer.js?v=1.0"></script><!-- Direct Bluetooth printer: order receipts, daily summary, verification slips -->
     <script src="js/admin-pricing.js?v=1.9"></script><!-- Pricing tab (fare rules, zones, delivery tiers, bank accounts) -->
     <script>
@@ -1628,6 +1641,6 @@ html{color-scheme:light}
     <script src="js/admin-chapa-payments.js?v=5"></script>
     <script src="js/admin-2fa-rule.js?v=1"></script>
     <script src="js/admin-cash-reconcile.js?v=1"></script>
-    <script src="js/admin-photo-coverage.js?v=1"></script>
+    <script src="js/admin-photo-coverage.js?v=2"></script>
 </body>
 </html>
