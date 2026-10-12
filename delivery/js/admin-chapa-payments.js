@@ -23,8 +23,8 @@ function render(d){
    '#chapa-online-payments .cp-bad{color:#e74c3c;font-weight:700}#chapa-online-payments .cp-ok{color:#27ae60;font-weight:700}#chapa-online-payments .cp-wait{color:#d68910;font-weight:700}'+
    '#chapa-online-payments .cp-mute{opacity:.65}#chapa-online-payments .cp-scroll{overflow-x:auto}</style>';
   h+='<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><h3 style="margin:0">Online payments (Chapa)</h3>'+
-     '<div><select id="cp-days" class="filter-sel"><option value="7">Last 7 days</option><option value="14" selected>Last 14 days</option><option value="30">Last 30 days</option><option value="90">Last 90 days</option></select> '+
-     '<button class="act-btn" id="cp-refresh">Refresh</button></div></div>';
+     '<div><select id="cp-days" class="filter-sel" style="padding:8px 10px;border-radius:8px;border:1px solid rgba(212,175,55,.5);background:rgba(128,128,128,.12);color:inherit"><option value="7">Last 7 days</option><option value="14" selected>Last 14 days</option><option value="30">Last 30 days</option><option value="90">Last 90 days</option></select> '+
+     '<button class="btn btn-secondary" id="cp-refresh" style="padding:8px 14px">🔄 Refresh</button></div></div>';
   if(!d.enabled) h+='<p class="cp-wait">Chapa is not switched on on this server yet (see the Chapa setup guide).</p>';
   h+='<div class="cp-tiles">'+tile('Paid',parseInt(s.completed||0,10))+tile('Paid amount',etb(s.completed_amount))+tile('Waiting',parseInt(s.pending||0,10))+tile('Failed',parseInt(s.failed||0,10))+tile('Needs attention','<span class="'+(s.needs_attention?'cp-bad':'cp-ok')+'">'+parseInt(s.needs_attention||0,10)+'</span>')+'</div>';
   if(!rows.length){h+='<p style="opacity:.75;text-align:center;padding:20px">No online payments in this period.</p>';}

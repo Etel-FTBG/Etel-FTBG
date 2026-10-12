@@ -1900,6 +1900,18 @@ case 'admin_set_ride_pin_required': {
     break;
 }
 
+case 'admin_get_2fa_rule': {
+    /* Read-only, any admin: is two-step sign-in required for admins, and is it on for me? Used by the Settings card. */
+    if ($u['role'] !== 'admin') fail('Admin only', 403);
+    require_once __DIR__ . '/../lib/totp.php';
+    $req = 0;
+    try { $req = intval($pdo->query("SELECT rule_value FROM pricing_rules WHERE rule_key='require_admin_2fa' LIMIT 1")->fetchColumn()); } catch (Exception $e) {}
+    $mine = false;
+    try { $mine = (bool) etel_2fa_is_enabled($pdo, intval($u['id'])); } catch (Exception $e) {}
+    ok(array('required' => $req === 1 ? 1 : 0, 'mine' => $mine ? 1 : 0, 'can_change' => user_has_capability($pdo, $u, 'system.backup') ? 1 : 0));
+    break;
+}
+
 case 'admin_set_2fa_required': {
     /* Owner-level admins only. Turning it ON needs the caller's own 2FA to be on (no self lock-out). */
     if ($u['role'] !== 'admin' || !user_has_capability($pdo, $u, 'system.backup')) fail('Owner admins only', 403);
