@@ -74,14 +74,16 @@ def new_order(code, assigned_min_ago, accepted=False):
 
 
 def order(oid):
-    return rows("SELECT status, IFNULL(courier_id,'') FROM orders WHERE id=%s" % oid)[0]
+    """(status, courier_id as text; '0' when the order has no courier)"""
+    r = rows("SELECT status, IFNULL(courier_id,0) FROM orders WHERE id=%s" % oid)[0]
+    return (r[0], r[1])
 
 
 # 1) 40 minutes old, never accepted -> taken from A, given to B or C (never A)
 o1 = new_order("STALE-1", 40)
 r = php("sweep")
 st, cur = order(o1)
-check("stale order is reassigned (still assigned, to a different courier)", st == "assigned" and cur != "" and cur != str(cid["STCA"]))
+check("stale order is reassigned (still assigned, to a different courier)", st == "assigned" and cur != "0" and cur != str(cid["STCA"]))
 check("the new courier is one of the free ones", cur in (str(cid["STCB"]), str(cid["STCC"])))
 check("the first courier got a 'stale' record", rows("SELECT COUNT(*) FROM order_courier_offers WHERE order_id=%s AND courier_id=%s AND response='stale'" % (o1, cid["STCA"]))[0][0] == "1")
 check("the first courier is no longer busy", rows("SELECT status FROM couriers WHERE id=%s" % cid["STCA"])[0][0] != "busy")
@@ -101,7 +103,7 @@ for c in ("STCB", "STCC"):
     sql("INSERT INTO order_courier_offers (order_id, courier_id, offered_at, expires_at, response) VALUES (%s, %s, NOW(), NOW(), 'declined')" % (o4, cid[c]))
 php("sweep")
 st, cur = order(o4)
-check("when every courier has had it, the order returns to the open list", st == "pending" and cur == "")
+check("when every courier has had it, the order returns to the open list", st == "pending" and cur == "0")
 
 # 4) switched off (0) -> nothing is touched
 sql("INSERT INTO pricing_rules (rule_key, rule_value, description) VALUES ('courier_stale_minutes', 0, 'test') ON DUPLICATE KEY UPDATE rule_value=0")
