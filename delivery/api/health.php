@@ -47,6 +47,9 @@ try {
         hc_env('DB_USER', ''), hc_env('DB_PASS', ''),
         array(PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_TIMEOUT => 5)
     );
+    // Same clock as the rest of the app: the cron heartbeat is written with MySQL's time zone set to
+    // Africa/Addis_Ababa, so reading it back in the host's own zone would show a wrong (even negative) age.
+    try { $pdo->exec("SET time_zone = '" . date('P') . "'"); } catch (Exception $e) { /* keep the server zone */ }
     $pdo->query('SELECT 1')->fetchColumn();
     $out['db'] = 'ok';
 } catch (Exception $e) {
@@ -74,7 +77,7 @@ if ($pdo) {
     try {
         $r = $pdo->query("SELECT TIMESTAMPDIFF(MINUTE, last_run, NOW()) AS mins FROM etel_heartbeat WHERE name='ride_monitor'")->fetch(PDO::FETCH_ASSOC);
         if ($r && $r['mins'] !== null) {
-            $out['cron_age_min'] = intval($r['mins']);
+            $out['cron_age_min'] = max(0, intval($r['mins']));
             if (intval($r['mins']) > 30) {
                 $out['cron'] = 'stale';
                 if ($out['status'] === 'ok') $out['status'] = 'degraded';
