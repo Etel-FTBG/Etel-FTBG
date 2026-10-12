@@ -77,7 +77,7 @@
         timer = null; var list = pending; pending = [];
         for (var i = 0; i < list.length; i++) { try { if (document.body.contains(list[i])) scan(list[i]); } catch (e) {} }
     }
-    function inMap(n) { try { return !!(n.closest && n.closest('.gm-style, .leaflet-container, [id$="map"], [class*="map-canvas"]')); } catch (e) { return false; } }
+    function inMap(n) { try { return !!(n.closest && n.closest('.gm-style, .leaflet-container')); } catch (e) { return false; } }
     function queue(n) { if (n && n.nodeType === 1 && !inMap(n)) { pending.push(n); if (!timer) timer = setTimeout(flush, 120); } }
     function rescanAll() { try { scan(document.body); } catch (e) {} }
     function start() {
