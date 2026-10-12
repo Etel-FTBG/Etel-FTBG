@@ -205,7 +205,13 @@ if ($action && in_array($action, ETEL_WRITE_ACTIONS, true)) {
 
 /*  HELPERS  */
 function ok($data = null) {
-    echo json_encode(array('success' => true, 'data' => $data, 'v' => APP_VER));
+    $json = json_encode(array('success' => true, 'data' => $data, 'v' => APP_VER));
+    // Licence photos, receipts and compliance documents are private: hand out signed, expiring links instead.
+    try {
+        require_once __DIR__ . '/lib/private_files.php';
+        if (defined('TOKEN_SECRET_FINAL')) $json = etel_pf_rewrite_json($json, TOKEN_SECRET_FINAL);
+    } catch (Exception $e) { /* serve the response unchanged */ }
+    echo $json;
     exit;
 }
 function fail($msg, $code = 400, $extra = array()) {

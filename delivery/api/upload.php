@@ -240,6 +240,9 @@ $type_map = [
     'driver_license' => ['folder' => 'driver_licenses', 'prefix' => 'license_'],
     'topup_receipt'  => ['folder' => 'topup_receipts', 'prefix' => 'receipt_'],
     'shop_cover'     => ['folder' => 'shop_covers', 'prefix' => 'cover_'],
+    'driver_insurance_photo'            => ['folder' => 'driver_documents', 'prefix' => 'doc_'],
+    'driver_technical_inspection_photo' => ['folder' => 'driver_documents', 'prefix' => 'doc_'],
+    'driver_road_fund_photo'            => ['folder' => 'driver_documents', 'prefix' => 'doc_'],
 ];
 $reqType = isset($_POST['type']) ? trim($_POST['type']) : '';
 $folder  = isset($type_map[$reqType]) ? $type_map[$reqType]['folder'] : 'items';

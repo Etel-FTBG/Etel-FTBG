@@ -95,6 +95,8 @@ RewriteRule ^assets/ - [L]
 RewriteRule ^css/ - [L]
 RewriteRule ^js/ - [L]
 RewriteRule ^icons/ - [L]
+# Private uploads (licence photos, receipts, compliance documents) are only served through api/private_file.php
+RewriteRule ^uploads/(driver_licenses|topup_receipts|driver_documents)/ - [F]
 RewriteRule ^uploads/ - [L]
 # courier/ has no index.html on disk (its real file is courier-index.html),
 # so the bare folder 403'd (no index found, directory listing off) and
