@@ -61,7 +61,7 @@ $err = array_filter($res, function ($r) { return strpos($r, 'ERROR') === 0; });
 check('no unexpected errors (' . implode('|', $err) . ')', count($err) === 0);
 check('exactly 3 sales succeeded', $ok === 3);
 check('stock is exactly 0, never negative', $pdo->query('SELECT stock_qty FROM items WHERE id = 1')->fetchColumn() === '0.000');
-$nums = $pdo->query("SELECT number FROM invoices WHERE status = 'issued' ORDER BY id")->fetchAll(PDO::FETCH_COLUMN);
+$nums = $pdo->query("SELECT number FROM invoices WHERE status = 'issued' ORDER BY number")->fetchAll(PDO::FETCH_COLUMN);
 check('3 issued invoices', count($nums) === 3);
 check('numbers unique and gapless (INV-000001..3)', $nums === array('INV-000001', 'INV-000002', 'INV-000003'));
 check('no half-made drafts left behind', (int) $pdo->query("SELECT COUNT(*) FROM invoices WHERE status = 'draft'")->fetchColumn() === 0);
