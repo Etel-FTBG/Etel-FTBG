@@ -66,8 +66,8 @@
     function scan(root) {
         if (!root || root.nodeType !== 1) return;
         var tag = root.tagName; if (tag === 'SCRIPT' || tag === 'STYLE' || tag === 'OPTION') return;
-        var w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT), t, seen = [];
-        while ((t = w.nextNode())) {
+        var w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT), t, seen = [], budget = 1500;
+        while ((t = w.nextNode()) && budget-- > 0) {
             if (!t.nodeValue || !t.nodeValue.trim()) continue;
             var p = t.parentElement; if (!p || seen.indexOf(p) > -1) continue;
             seen.push(p); fix(p);
@@ -77,7 +77,8 @@
         timer = null; var list = pending; pending = [];
         for (var i = 0; i < list.length; i++) { try { if (document.body.contains(list[i])) scan(list[i]); } catch (e) {} }
     }
-    function queue(n) { if (n && n.nodeType === 1) { pending.push(n); if (!timer) timer = setTimeout(flush, 120); } }
+    function inMap(n) { try { return !!(n.closest && n.closest('.gm-style, .leaflet-container, [id$="map"], [class*="map-canvas"]')); } catch (e) { return false; } }
+    function queue(n) { if (n && n.nodeType === 1 && !inMap(n)) { pending.push(n); if (!timer) timer = setTimeout(flush, 120); } }
     function rescanAll() { try { scan(document.body); } catch (e) {} }
     function start() {
         try {
