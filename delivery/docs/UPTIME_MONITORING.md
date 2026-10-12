@@ -28,10 +28,12 @@ It shows no private data and changes nothing, so it is safe to leave public.
    - `https://ethelmarket.com/delivery/ride/`
    - `https://ethelmarket.com/delivery/driver/`
    - `https://ethelmarket.com/delivery/customer.html`
-4. **Alert contacts** (My Settings, Alert Contacts, Add):
-   - Email: your Etel Group address.
-   - Telegram: choose Telegram, press the button, and start the UptimeRobot bot. (You can also add a group, so the whole team gets the alert.)
-   - SMS is paid on UptimeRobot; Telegram is free and faster in practice.
+4. **Alert contacts** (Integrations in the left menu). On the free plan these work:
+   - **Email**: your Etel Group address (added at sign-up).
+   - **Push notifications**: install the UptimeRobot app on your phone (Android or iPhone), sign in, and allow notifications. This is the fastest free alert.
+   - **Discord**: Integrations, Chat platforms, Discord, Add (a free Discord server with a channel for alerts also works for a team).
+   - Telegram, Slack and Teams are shown but locked: they need a paid plan (Solo or higher).
+   - The onboarding checklist offers 25 free SMS credits: finish its steps if you want a text message as a backup.
 5. Attach the contacts to all four monitors. Under each monitor set "send the alert after 2 failed checks" so one slow answer does not wake you.
 
 ## 3. Make sure the ride-watch job runs (cPanel)
@@ -49,7 +51,7 @@ Replace `ACCOUNT` with your cPanel account name (the same account folder you upl
 
 1. Open `https://ethelmarket.com/delivery/api/health.php` in your phone browser. You should see `"status":"ok"`.
 2. In UptimeRobot press **Pause**, then **Resume** on a monitor to confirm it turns green.
-3. To test the alert path, edit the `Etel API health` monitor URL to `.../health.php?x=1`, then change it to `.../nothing.php`: it should go red and a Telegram message should arrive within about 10 minutes. Change it back afterwards.
+3. To test the alert path, edit the `Etel API health` monitor URL to `.../health.php?x=1`, then change it to `.../nothing.php`: it should go red and a push notification should arrive within about 10 minutes. Change it back afterwards.
 
 ## 5. What to do when an alert arrives
 
