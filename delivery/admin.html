@@ -1446,6 +1446,8 @@ html{color-scheme:light}
                     <div class="page-title">💳 Payments</div>
                     <div class="page-subtitle">Manual verification only — check your Telebirr merchant SMS/dashboard and bank statement yourself, then confirm or reject each one below</div>
 
+                    <div id="chapa-online-payments" style="margin-bottom:24px"></div>
+
                     <div id="payments-report" style="margin-bottom:24px">
                         <div style="display:flex;gap:10px;align-items:center;margin-bottom:14px;flex-wrap:wrap">
                             <select id="pr-range" class="filter-sel" onchange="loadPaymentsReport()">
@@ -1621,5 +1623,6 @@ html{color-scheme:light}
     <script>loadGoogleMaps('geometry,places,marker', 'initAdminMaps');</script>
 <script src="js/apk-download-badge.js?v=2" data-role="admin"></script>
 <script src="js/order-chat.js?v=1" data-mode="layer"></script>
+    <script src="js/admin-chapa-payments.js?v=1"></script>
 </body>
 </html>

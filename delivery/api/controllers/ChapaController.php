@@ -67,4 +67,40 @@ case 'chapa_status': {
     break;
 }
 
+case 'admin_list_chapa_payments': {
+    $pdo = db();
+    require_admin($pdo, 'finance.view');
+    chapa_ensure_table($pdo);
+    $days = isset($body['days']) ? max(1, min(90, intval($body['days']))) : 14;
+    $st = $pdo->prepare("SELECT cp.id, cp.tx_ref, cp.kind, cp.target_id, cp.amount, cp.status, cp.created_at, cp.completed_at,
+            u.name AS customer_name, u.phone AS customer_phone,
+            o.order_code, o.payment_status AS order_payment_status
+        FROM chapa_payments cp
+        LEFT JOIN users u ON u.id = cp.user_id
+        LEFT JOIN orders o ON cp.kind='order' AND o.id = cp.target_id
+        WHERE cp.created_at >= DATE_SUB(NOW(), INTERVAL $days DAY)
+        ORDER BY cp.id DESC LIMIT 300");
+    $st->execute();
+    $rows = $st->fetchAll();
+    $now = time();
+    $sum = array('completed' => 0, 'completed_amount' => 0.0, 'pending' => 0, 'failed' => 0, 'needs_attention' => 0);
+    foreach ($rows as &$r) {
+        $flag = '';
+        if ($r['status'] === 'completed') {
+            $sum['completed']++; $sum['completed_amount'] += floatval($r['amount']);
+            if ($r['kind'] === 'order' && $r['order_payment_status'] !== null && $r['order_payment_status'] !== 'paid') $flag = 'paid_but_order_unpaid';
+        } elseif ($r['status'] === 'failed') {
+            $sum['failed']++;
+        } else {
+            $sum['pending']++;
+            if ($now - strtotime($r['created_at']) > 1800) $flag = 'stuck_pending';
+        }
+        if ($flag !== '') $sum['needs_attention']++;
+        $r['flag'] = $flag;
+    }
+    unset($r);
+    ok(array('payments' => $rows, 'summary' => $sum, 'days' => $days, 'enabled' => chapa_enabled()));
+    break;
+}
+
 }
