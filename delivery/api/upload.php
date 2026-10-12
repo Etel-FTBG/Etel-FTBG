@@ -245,9 +245,24 @@ $reqType = isset($_POST['type']) ? trim($_POST['type']) : '';
 $folder  = isset($type_map[$reqType]) ? $type_map[$reqType]['folder'] : 'items';
 $prefix  = isset($type_map[$reqType]) ? $type_map[$reqType]['prefix'] : 'item_';
 
+/* Per-user upload budget (30 per 10 minutes) so one account cannot fill the disk. Fails open if the table is missing. */
+try {
+    $upKey = substr('upload:' . $uid . '|' . (isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : '0.0.0.0'), 0, 120);
+    $upc = $pdo->prepare('SELECT COUNT(*) FROM login_attempts WHERE identifier = ? AND attempted_at > ?');
+    $upc->execute([$upKey, date('Y-m-d H:i:s', time() - 600)]);
+    if ((int) $upc->fetchColumn() >= 30) upfail('Too many uploads. Please wait a few minutes and try again.', 429);
+    $pdo->prepare('INSERT INTO login_attempts (identifier, attempted_at) VALUES (?, NOW())')->execute([$upKey]);
+} catch (Exception $e) { /* no throttle table - allow */ }
+
 $dir     = dirname(__DIR__) . '/uploads/' . $folder . '/';
 if (!is_dir($dir)) @mkdir($dir, 0755, true);
 if (!is_dir($dir)) upfail('Could not create uploads directory', 500);
+
+/* Defence in depth: nothing in an uploads folder may ever run as a script or be listed, even if a bad file got in. */
+$up_guard = dirname(__DIR__) . '/uploads/.htaccess';
+if (!is_file($up_guard)) {
+    @file_put_contents($up_guard, "Options -Indexes\n<FilesMatch \"\\.(php|phtml|php[0-9]|phar|pl|py|cgi|sh)$\">\n    Require all denied\n</FilesMatch>\n<IfModule mod_headers.c>\n    Header always set X-Content-Type-Options \"nosniff\"\n</IfModule>\n");
+}
 
 $fname = $prefix . $user['id'] . '_' . time() . '_' . bin2hex(random_bytes(4)) . '.' . $ext;
 $dest  = $dir . $fname;
