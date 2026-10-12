@@ -45,6 +45,15 @@ function load(){
   api({days:sel?parseInt(sel.value,10):14},render,function(m){el.innerHTML='<p class="cp-bad">Online payments: '+esc(m)+'</p>';});
 }
 window.loadChapaPayments=load;
+// Load whenever the Payments panel is shown, however the page switcher is built.
+function watchPanel(){
+  var panel=document.getElementById('panel-telebirr'); if(!panel) return;
+  var last=false;
+  function check(){var vis=panel.style.display!=='none'&&panel.offsetParent!==null; if(vis&&!last)load(); last=vis;}
+  new MutationObserver(check).observe(panel,{attributes:true,attributeFilter:['style','class']});
+  check();
+}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',watchPanel);else watchPanel();
 var orig=window.loadTelebirrPayments;
-if(typeof orig==='function'){window.loadTelebirrPayments=function(){load();return orig.apply(this,arguments);};}
+if(typeof orig==='function'){window.loadTelebirrPayments=function(){return orig.apply(this,arguments);};}
 })();
