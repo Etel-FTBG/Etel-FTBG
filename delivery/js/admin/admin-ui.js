@@ -17,7 +17,7 @@ function switchPage(page, el) {
         users:'Users Management', couriers:'Couriers Management',
         servicegivers:'Service Givers', items:'Items & Products',
         rides:'Rides Management', ridepay:'Ride Payments', pricing:'Pricing (Fares & Zones)', promos:'Promo codes', orderchats:'Order chats', menucat:'Menu catalog',
-        reports:'Analytics & Reports', updater:'File Updater', settings:'Settings', roles:'Roles & Permissions', support:'Support Inbox', launch:'Launch Readiness', documents:'Documents'
+        reports:'Analytics & Reports', telebirr:'Payments', updater:'File Updater', settings:'Settings', roles:'Roles & Permissions', support:'Support Inbox', launch:'Launch Readiness', documents:'Documents'
     };
     document.getElementById('page-title').textContent = titles[page] || page;
 
@@ -77,9 +77,16 @@ function switchPage(page, el) {
         ab.innerHTML = '';
     } else if (page === 'documents') {
         ab.innerHTML = '<button class="btn btn-primary" onclick="openDocsUploadModal()">⬆️ Upload Document</button>';
+    } else if (page === 'menucat') {
+        ab.innerHTML = '<button class="btn btn-primary" onclick="mcEdit(0)">➕ New dish</button>';
+    } else if (page === 'telebirr') {
+        ab.innerHTML = '<button class="btn btn-primary" onclick="loadTelebirrPayments();if(typeof loadBankPayments===\'function\')loadBankPayments();if(window.loadChapaPayments)loadChapaPayments();if(window.loadCashReconcile)loadCashReconcile()">🔄 Refresh</button>';
+    } else if (page === 'dashboard') {
+        ab.innerHTML = '<button class="btn btn-primary" onclick="openModal(\'new-user\')">➕ New User</button>';
     } else {
-        ab.innerHTML = '<button class="btn btn-secondary" onclick="doExport()">📥 Export CSV</button>' +
-                       '<button class="btn btn-primary" onclick="openModal(\'new-user\')">➕ New User</button>';
+        // Pages with no action of their own (promos, reports, settings, ...) get no buttons instead of a
+        // misleading Export CSV / New User pair.
+        ab.innerHTML = '';
     }
 
     // Scroll active tab into view on mobile (sidebar is fixed, need scrollLeft approach)
