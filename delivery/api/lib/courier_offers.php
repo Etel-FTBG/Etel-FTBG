@@ -227,6 +227,8 @@ function etel_offers_sweep($pdo, $force = false) {
             catch (Exception $e) { error_log('[ETEL] offer release #' . $r['id'] . ': ' . $e->getMessage()); }
         }
     } catch (Exception $e) { /* offers schema not created yet = nothing to sweep */ }
+    // Orders whose courier never started them are taken back too (api/lib/courier_stale.php).
+    try { require_once __DIR__ . '/courier_stale.php'; $n += etel_stale_sweep($pdo, $force); } catch (Exception $e) {} catch (Throwable $e) {}
     return $n;
 }
 
