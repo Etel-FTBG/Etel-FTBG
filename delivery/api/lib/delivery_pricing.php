@@ -63,6 +63,45 @@ function delivery_calc_service_charge($items_subtotal) {
     return round($items_subtotal * SERVICE_CHARGE_PERCENT / 100, 2);
 }
 
+// Distance-based delivery fee - computed straight from GPS, no zone name
+// needed at all. Uses the same pricing_rules table (base_fare,
+// per_km_rate, min_fare) that was seeded early on but never actually
+// wired into anything, since named zones were the only path until now.
+// Falls back to those same seeded values hardcoded if the table row is
+// ever missing, so this never silently breaks.
+function delivery_calc_fee_by_distance($pdo, $distanceKm) {
+    $get = function ($key, $default) use ($pdo) {
+        try {
+            $v = $pdo->prepare("SELECT rule_value FROM pricing_rules WHERE rule_key=? LIMIT 1");
+            $v->execute(array($key));
+            $row = $v->fetchColumn();
+            return $row !== false ? floatval($row) : $default;
+        } catch (Exception $e) {
+            return $default;
+        }
+    };
+    $baseFare  = $get('base_fare', 15.00);
+    $perKmRate = $get('per_km_rate', 8.00);
+    $minFare   = $get('min_fare', 30.00);
+
+    $fee = $baseFare + ($perKmRate * $distanceKm);
+    return array(
+        'delivery_fee' => round(max($fee, $minFare)),
+        'distance_km'  => round($distanceKm, 2),
+    );
+}
+
+// Straight-line distance from Hawassa's own center point - used as the
+// reference for distance-based fee calc when no zone name is given.
+function delivery_distance_from_center($lat, $lng) {
+    $centerLat = 7.0504; $centerLng = 38.4955;
+    $R = 6371;
+    $dLat = deg2rad($lat - $centerLat);
+    $dLng = deg2rad($lng - $centerLng);
+    $a = sin($dLat / 2) ** 2 + cos(deg2rad($centerLat)) * cos(deg2rad($lat)) * sin($dLng / 2) ** 2;
+    return $R * 2 * atan2(sqrt($a), sqrt(1 - $a));
+}
+
 // Matches a customer's GPS position to the nearest zone that has
 // coordinates (see seed-zone-coords.php), instead of requiring them to
 // already know the exact zone name. Returns the zone name string, or
