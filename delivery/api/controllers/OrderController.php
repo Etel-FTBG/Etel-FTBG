@@ -284,6 +284,8 @@ case 'courier_get_available_orders': {
         } catch (Exception $e2) { fail_ex($e2, 'Query failed', 500); }
     }
     etel_mask_recipient_for_courier($orders);
+    require_once __DIR__ . '/../lib/courier_earnings.php';
+    etel_apply_courier_tip($pdo, $orders);
     ok(array('orders' => $orders, 'count' => count($orders)));
     break;
 }
@@ -536,7 +538,9 @@ case 'courier_get_kpi_summary': {
     if (!in_array($period, array('today', 'week', 'month'), true)) fail('period must be today, week, or month', 400);
     $sinceExpr = $period === 'today' ? 'CURDATE()' : ($period === 'week' ? 'DATE_SUB(CURDATE(), INTERVAL 6 DAY)' : 'DATE_SUB(CURDATE(), INTERVAL 29 DAY)');
     try {
-        $s = $pdo->prepare("SELECT COUNT(*) AS n, COALESCE(SUM(delivery_fee),0) AS earnings
+        require_once __DIR__ . '/../lib/courier_earnings.php';
+        etel_ensure_tip_column($pdo);
+        $s = $pdo->prepare("SELECT COUNT(*) AS n, COALESCE(SUM(delivery_fee + courier_tip),0) AS earnings
             FROM orders WHERE courier_id=? AND status='delivered' AND delivered_at >= $sinceExpr");
         $s->execute(array($courier['id']));
         $r = $s->fetch();
@@ -676,6 +680,8 @@ case 'courier_get_my_orders': {
         } catch (Exception $e2) { fail_ex($e2, 'Query failed', 500); }
     }
     etel_mask_recipient_for_courier($orders);
+    require_once __DIR__ . '/../lib/courier_earnings.php';
+    etel_apply_courier_tip($pdo, $orders);
     try { require_once __DIR__ . '/../lib/courier_offers.php'; $orders = etel_offer_attach($pdo, $orders); } catch (Exception $oe) {} catch (Throwable $oe) {}
     ok(array('orders' => $orders, 'count' => count($orders)));
     break;

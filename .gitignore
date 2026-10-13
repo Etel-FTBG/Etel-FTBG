@@ -53,3 +53,5 @@ node_modules/
 # (a tracked copy makes fresh installs skip their schema upgrade)
 delivery/api/.schema_done
 api/.schema_done
+delivery/api/.tip_column_ok
+api/.tip_column_ok
