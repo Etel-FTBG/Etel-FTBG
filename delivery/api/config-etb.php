@@ -56,7 +56,7 @@ define('CBE_ACCOUNT_NO',         _etb_env('CBE_ACCOUNT_NO',        ''));
 // `delivery_zones` DB table (admin-editable via Admin -> Pricing).
 // OrderController.php reads that table first and only falls back to
 // this hardcoded array if the table is missing or the zone isn't in it.
-$HAWASSA_DELIVERY_FEES = array(
+$GLOBALS['HAWASSA_DELIVERY_FEES'] = $HAWASSA_DELIVERY_FEES = array(
     'Mehal Ketema'         => array('fee' => 50,  'time' => 20),
     'Tabor'                => array('fee' => 50,  'time' => 20),
     'Addis Ketema'         => array('fee' => 60,  'time' => 25),
@@ -76,7 +76,7 @@ $HAWASSA_DELIVERY_FEES = array(
 // `delivery_tiers` DB table (admin-editable via Admin -> Pricing).
 // OrderController.php reads that table first and only falls back to
 // this hardcoded array if the table is missing or the tier isn't in it.
-$DELIVERY_TIERS = array(
+$GLOBALS['DELIVERY_TIERS'] = $DELIVERY_TIERS = array(
     'moto'          => array('label' => 'Delivery by moto', 'icon' => '',  'multiplier' => 1.00, 'eta_delta' => 0),
     'car'           => array('label' => 'Delivery by car',  'icon' => '',  'multiplier' => 1.12, 'eta_delta' => -2),
     'express_cargo' => array('label' => 'Express Cargo',    'icon' => '',  'multiplier' => 1.60, 'eta_delta' => 5),
