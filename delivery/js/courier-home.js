@@ -16,6 +16,8 @@
     if (document.getElementById('ch-css')) return;
     var s = document.createElement('style'); s.id = 'ch-css';
     s.textContent =
+      '.earn-card,.earn-card *{font-variant-numeric:lining-nums tabular-nums;font-feature-settings:"lnum" 1,"tnum" 1}' +
+      '.earn-card .earn-amount,.ch-stat b,.ch-goal-row span{font-family:Sora,system-ui,sans-serif}' +
       '.ch-goal{margin-top:12px}' +
       '.ch-goal-row{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:12px;font-weight:700}' +
       '.ch-goal-row button{background:none;border:1px solid rgba(212,175,55,.45);color:#E5C76B;border-radius:8px;padding:3px 9px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit}' +
