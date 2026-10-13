@@ -646,6 +646,9 @@ html[data-etel-on] .del-lang-switch{position:static!important;margin:0 0 10px au
                EtelID sign-in entirely, not just the old plain login. -->
 
           <button class="del-auth-ghost" onclick="switchMode('register')" style="margin-top:4px" data-i18n="create_etelid_account">Create EtelID Account →</button>
+          <p id="auto-switch" style="display:none;text-align:center;font-size:12px;color:var(--ink3);margin:14px 0 0">
+            Need a specific app? <button type="button" onclick="showRoleTabs()" style="background:none;border:none;color:var(--g5);font-weight:700;font-size:12px;cursor:pointer;padding:0">Choose app</button>
+          </p>
         </div>
 
         <!-- REGISTER view -->
@@ -913,6 +916,24 @@ function showForgot(e, back) {
 
 var _role = 'customer';
 
+/* One sign-in for everyone. On a plain browser visit to login.html (no ?role=, no ?redirect=) the five
+   role tabs are hidden: the person types their EtelID/phone + password once and is sent to the app that
+   matches their account (the server already tells us the real role). "Choose app" below the form brings
+   the tabs back for the rare case of someone who needs a specific one. */
+var _autoRole = false;
+function autoTarget(u) {
+  var map = { customer:'customer.html', courier:'courier/', driver:'driver/', service_giver:'servicegiver.html', admin:'admin.html' };
+  var ur = u ? u.role : null;
+  if (u && u.ride_scoped) return (ur === 'driver') ? 'driver/' : (ur === 'admin' ? 'admin.html' : 'ride/');
+  return map[ur] || 'customer.html';
+}
+function showRoleTabs() {
+  _autoRole = false;
+  var tabs = document.querySelector('.del-role-tabs'); if (tabs) tabs.style.display = '';
+  var sw = document.getElementById('auto-switch'); if (sw) sw.style.display = 'none';
+  setRole('customer');
+}
+
 /* Where to send the user after a successful login, if they arrived here
    wanting to go somewhere specific (e.g. tapped "Ride" while logged out).
    Whitelisted against a fixed list of known local pages only - never
@@ -1086,7 +1107,10 @@ function updateCardHeader() {
   var t = document.getElementById('del-card-title');
   var s = document.getElementById('del-card-sub');
   var appName = appNameForContext();
-  if (_mode === 'login') {
+  if (_mode === 'login' && _autoRole) {
+    if(t) t.textContent = tr('welcome_back_auto', 'Welcome back');
+    if(s) s.textContent = tr('signin_auto_sub', 'One sign-in for every ETEL app. We open the right one for your account.');
+  } else if (_mode === 'login') {
     var word = welcomeRoleWord();
     if(t) t.textContent = tr('welcome_back_prefix', 'Welcome back, ') + word;
     if(s) s.textContent = tr('signin_account_prefix', 'Sign in to continue to your ') + word.toLowerCase() + tr('signin_account_suffix', ' account.');
@@ -1193,7 +1217,10 @@ async function doEtelIdLogin() {
     // EtelGroup admin's Employees panel) - see admin_etelid_login.
     var action = (_role === 'admin') ? 'admin_etelid_login' : 'etelid_login';
     var eidBody = { identifier: ident.replace(/\s/g,''), password: pw, role: _role, app: _forceRideRedirect ? 'ride' : _role };
+    if (_autoRole) eidBody.app = 'auto';
     var res = await api(action, eidBody);
+    // A Ride-only staff account is refused on the Customer path unless it says it is the Ride app: retry once as Ride.
+    if (_autoRole && res && !res.success && /limited to the Ride system/i.test(res.message || '')) { eidBody.app = 'ride'; res = await api(action, eidBody); }
     // Two-step sign-in (admin accounts): ask for the authenticator/backup code and resend.
     while (res && res.requires_2fa && window.Etel2FA) {
       var eidCode = await Etel2FA.ask(res.message);
@@ -1217,6 +1244,7 @@ async function doEtelIdLogin() {
     var target = (_role === 'customer') ? 'customer.html' : ((ur === 'admin' && map[_role]) ? map[_role] : (map[ur] || 'customer.html'));
     // Ride-only accounts (audit test users) on the Driver tab go to the Driver app if they are drivers, else the Ride app - never the Delivery customer page.
     if (u && u.ride_scoped && _role === 'driver') target = (ur === 'driver') ? 'driver/' : 'ride/';
+    if (_autoRole) target = autoTarget(u);
     // Staff signing in via admin_etelid_login carry a staff_role from
     // EtelGroup's Employees panel (Dispatcher, Finance, Traffic Officer,
     // Manager, etc.) - land them on the admin page most relevant to that
@@ -1289,6 +1317,7 @@ async function doLogin() {
     var target = (_role === 'customer') ? 'customer.html' : ((ur === 'admin' && map[_role]) ? map[_role] : (map[ur] || 'index.html'));
     // Ride-only accounts (audit test users) on the Driver tab go to the Driver app if they are drivers, else the Ride app - never the Delivery customer page.
     if (u && u.ride_scoped && _role === 'driver') target = (ur === 'driver') ? 'driver/' : 'ride/';
+    if (_autoRole) target = autoTarget(u);
     // Same staff-role landing as the EtelID path (doEtelIdLogin above) -
     // now that the backend also returns staff_role for a plain
     // phone+password login, not just admin_etelid_login, this needs the
@@ -1469,6 +1498,12 @@ document.addEventListener('DOMContentLoaded', function() {
     setRole('customer');
     var tabs2 = document.querySelector('.del-role-tabs');
     if (tabs2) tabs2.style.display = 'none';
+  } else if (launchedBareWithNoRoleHint && !params.get('mode')) {
+    // Plain browser visit: single sign-in, no role tabs (see autoTarget above).
+    _autoRole = true;
+    var tabs3 = document.querySelector('.del-role-tabs');
+    if (tabs3) tabs3.style.display = 'none';
+    var sw = document.getElementById('auto-switch'); if (sw) sw.style.display = '';
   }
 
   updateCardHeader();
