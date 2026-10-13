@@ -680,6 +680,15 @@ case 'courier_get_my_orders': {
     ok(array('orders' => $orders, 'count' => count($orders)));
     break;
 }
+case 'courier_earnings_summary': {
+    $pdo = db();
+    $courier_user = require_courier($pdo);
+    $courier = get_or_create_courier_profile($pdo, $courier_user['id']);
+    if (!$courier) fail('Courier profile could not be created. Contact admin.', 500);
+    require_once __DIR__ . '/../lib/courier_earnings.php';
+    ok(etel_courier_earnings($pdo, $courier['id']));
+    break;
+}
 case 'rate_order': {
     $pdo      = db();
     $u        = require_auth($pdo);
