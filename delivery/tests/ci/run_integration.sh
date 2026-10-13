@@ -34,5 +34,6 @@ run python3 tests/business_logic_smoke.py
 run python3 tests/open_meter_smoke.py
 run python3 tests/week1_hardening_smoke.py
 run python3 tests/stale_assignment_smoke.py
+run python3 tests/courier_earnings_smoke.py
 echo; [ $rc = 0 ] && echo "ALL CHECKS PASSED" || echo "SOME CHECKS FAILED"
 exit $rc
