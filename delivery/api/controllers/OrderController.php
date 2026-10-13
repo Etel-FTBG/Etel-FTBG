@@ -285,7 +285,7 @@ case 'courier_get_available_orders': {
     }
     etel_mask_recipient_for_courier($orders);
     require_once __DIR__ . '/../lib/courier_earnings.php';
-    etel_apply_courier_tip($pdo, $orders);
+    etel_apply_courier_tip($pdo, $orders, $courier['id'], false);   // offers: an estimate from this courier's position, not saved
     ok(array('orders' => $orders, 'count' => count($orders)));
     break;
 }
@@ -540,7 +540,7 @@ case 'courier_get_kpi_summary': {
     try {
         require_once __DIR__ . '/../lib/courier_earnings.php';
         etel_ensure_tip_column($pdo);
-        $s = $pdo->prepare("SELECT COUNT(*) AS n, COALESCE(SUM(delivery_fee + courier_tip),0) AS earnings
+        $s = $pdo->prepare("SELECT COUNT(*) AS n, COALESCE(SUM(COALESCE(courier_pay, delivery_fee) + courier_tip),0) AS earnings
             FROM orders WHERE courier_id=? AND status='delivered' AND delivered_at >= $sinceExpr");
         $s->execute(array($courier['id']));
         $r = $s->fetch();
@@ -681,7 +681,7 @@ case 'courier_get_my_orders': {
     }
     etel_mask_recipient_for_courier($orders);
     require_once __DIR__ . '/../lib/courier_earnings.php';
-    etel_apply_courier_tip($pdo, $orders);
+    etel_apply_courier_tip($pdo, $orders, $courier['id'], true);    // own orders: pay is saved the first time the app sees an active order
     try { require_once __DIR__ . '/../lib/courier_offers.php'; $orders = etel_offer_attach($pdo, $orders); } catch (Exception $oe) {} catch (Throwable $oe) {}
     ok(array('orders' => $orders, 'count' => count($orders)));
     break;

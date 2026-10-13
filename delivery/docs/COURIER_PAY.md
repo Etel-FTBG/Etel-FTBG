@@ -77,3 +77,15 @@ Rollout in safe steps:
 4. Weekly targets.
 
 Owner decisions needed before step 3: base amount, per-km rate, minimum, who funds the difference when courier pay is higher than the customer fee.
+
+
+## 7. Built: the admin controls everything (Admin > Pricing > Courier pay)
+
+Pay by distance ships **switched off**: until the admin turns it on, couriers are paid the delivery fee exactly as before.
+
+- **Switch and numbers** (all editable, saved in `pricing_rules`): base pay, pay per km, most km counted to the shop, minimum per order, road-distance factor, night multiplier and night hours.
+- **Tips:** the admin sets the tip buttons shown at checkout and the largest tip allowed (0 hides tips).
+- **Try a number:** a calculator shows the pay and every part of it for a given distance.
+- **Per order:** find an order by code, see what the customer paid and what the courier gets, and change that order's pay with a reason. Every change is logged (`order_pay_log`: who, old and new amount, reason).
+- **Pay is saved when the courier's app first sees the order** (`orders.courier_pay`), so changing the settings later never rewrites an order. Orders without a shop or customer position, or placed before pay by distance was on, are paid the delivery fee.
+- **Waiting pay** is not included: the app does not record when the courier arrives at the shop yet.

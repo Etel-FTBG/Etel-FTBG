@@ -243,7 +243,8 @@ function delivery_execute_order_creation($pdo, $auth_user, $body) {
 
         // Optional courier tip: 100% the courier's, never discounted by promos or points, never part of the service charge.
         require_once __DIR__ . '/courier_earnings.php';
-        $tip = etel_clean_tip(isset($body['tip']) ? $body['tip'] : 0);
+        $tipSettings = etel_cpay_settings($pdo);
+        $tip = etel_clean_tip(isset($body['tip']) ? $body['tip'] : 0, $tipSettings['tip_max']);
         if ($tip > 0) {
             etel_ensure_tip_column($pdo);
             $fare_total = round($fare_total + $tip, 2);
