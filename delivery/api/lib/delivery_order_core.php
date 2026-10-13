@@ -241,6 +241,14 @@ function delivery_execute_order_creation($pdo, $auth_user, $body) {
             }
         }
 
+        // Optional courier tip: 100% the courier's, never discounted by promos or points, never part of the service charge.
+        require_once __DIR__ . '/courier_earnings.php';
+        $tip = etel_clean_tip(isset($body['tip']) ? $body['tip'] : 0);
+        if ($tip > 0) {
+            etel_ensure_tip_column($pdo);
+            $fare_total = round($fare_total + $tip, 2);
+        }
+
         // Generate order code
         $order_code = 'ETD-' . strtoupper(bin2hex(random_bytes(3)));
 
@@ -279,6 +287,11 @@ function delivery_execute_order_creation($pdo, $auth_user, $body) {
         }
         
         $order_id = $pdo->lastInsertId();
+
+        if ($tip > 0) {
+            try { $pdo->prepare('UPDATE orders SET courier_tip = ? WHERE id = ?')->execute(array($tip, $order_id)); }
+            catch (Exception $e) { error_log('[ETEL] tip bookkeeping failed for order ' . $order_id . ': ' . $e->getMessage()); }
+        }
 
         if ($points_used > 0) {
             try {
@@ -335,6 +348,7 @@ function delivery_execute_order_creation($pdo, $auth_user, $body) {
             'delivery_photo_url' => $delivery_photo_url ?: null,
             'delivery_fee'     => $delivery_fee,
             'service_charge'   => $service_charge,
+            'tip'              => $tip,
             'total'            => $fare_total,
             'discount'         => $discount,
             'promo_code'       => $promo_row ? $promo_row['code'] : null,

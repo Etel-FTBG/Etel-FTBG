@@ -9,6 +9,7 @@ items subtotal            (what the shop charges)
 + delivery fee            (zone fare x tier multiplier, + zone surge if switched on)
 + service charge          (5% of the items subtotal)
 - promo / points discount (takes money off the total, never off the courier's fee)
++ courier tip             (optional, 100% to the courier)
 = order total
 ```
 
@@ -22,7 +23,7 @@ Real order ETD-AA39F4: items 340 + delivery 70 (Tabor, moto) + service charge 17
 | Delivery fee | **The courier, 100%** (`orders.delivery_fee`, shown as "You earn") |
 | Service charge (5% of items) | ETEL |
 | Promo / points discount | Paid by ETEL (the courier's fee is not reduced) |
-| Tips | Not supported |
+| Tip (optional, added at checkout: ETB 10 / 20 / 30 / 50 / custom, max 500) | **The courier, 100%.** Not discounted by promos or points, not part of the service charge (`orders.courier_tip`, included in the order total) |
 
 For cash orders the courier collects the order total from the customer. The Cash reconcile panel in Admin lists delivered cash orders and lets staff mark the money as received. How the shop is paid out of that cash is not enforced in code today.
 
@@ -42,7 +43,7 @@ Live numbers: 36 delivered orders, average delivery fee **ETB 54.9**, range 25 t
 - How far the shop is from the customer. Two orders to Tabor pay the same 70 whether the shop is 1 km or 6 km away.
 - Waiting at the shop for food.
 - Night, rain or rush-hour conditions (delivery has no peak windows; rides do).
-- Tips, bonuses, targets, a minimum per order, compensation when an order is cancelled after pickup.
+- Bonuses, targets, a minimum per order, compensation when an order is cancelled after pickup. (Tips were added: see section 2.)
 - Fuel: the courier fuel log exists, but pay does not consider it.
 
 ## 5. How other platforms pay couriers (general knowledge)
@@ -70,9 +71,9 @@ courier pay = base                      ETB 25
 Keep the customer's fee simple (zone based). Admin sees the margin per order (customer fee minus courier pay) and ETEL funds any shortfall from the 5% service charge and shop commission.
 
 Rollout in safe steps:
-1. Done here: fix the broken fallback and GPS functions, add a CI test, write this explainer.
+1. Done: fix the broken fallback and GPS functions, add a CI test, write this explainer. Done: tips at checkout.
 2. Show the courier a fee breakdown on every job card.
 3. Store the courier pay on each order when it is assigned (a snapshot, so later rate changes never alter history).
-4. Add tips, then weekly targets.
+4. Weekly targets.
 
 Owner decisions needed before step 3: base amount, per-km rate, minimum, who funds the difference when courier pay is higher than the customer fee.

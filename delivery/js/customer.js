@@ -71,6 +71,7 @@ ETEL_I18N.register('customer', {
         cart_title:'My Cart',
         courier_qr_title:"Scan Courier's QR Code", cancel_btn:'Cancel',
         lbl_subtotal:'Subtotal', lbl_delivery_fee:'Delivery Fee', lbl_service_charge:'Service Charge', lbl_total:'Total',
+        lbl_tip:'Courier tip', tip_title:'Tip your courier', tip_sub:'100% of your tip goes to the courier.', tip_none:'No tip', tip_custom:'Custom', tip_custom_ph:'Amount in ETB',
         lbl_delivery_address:'Delivery Address *', lbl_recipient_name:'Recipient Name *', lbl_recipient_phone:'Recipient Phone *',
         lbl_notes:'Notes (optional)', lbl_payment_method:'Payment Method', btn_place_order:'Place Order',
         ph_address:'Search address, shop, landmark…', ph_full_name:'Full name', ph_notes:'Special instructions…',
@@ -103,6 +104,7 @@ ETEL_I18N.register('customer', {
         cart_title:'የእኔ ጋሪ',
         courier_qr_title:'የተላላኪውን QR ኮድ ይቃኙ', cancel_btn:'ይቅር',
         lbl_subtotal:'ንዑስ ድምር', lbl_delivery_fee:'የማድረስ ክፍያ', lbl_service_charge:'የአገልግሎት ክፍያ', lbl_total:'ጠቅላላ',
+        lbl_tip:'የአስረካቢ ጉርሻ', tip_title:'ለአስረካቢው ጉርሻ ይስጡ', tip_sub:'ጉርሻዎ 100% ለአስረካቢው ይሄዳል።', tip_none:'ጉርሻ የለም', tip_custom:'ሌላ መጠን', tip_custom_ph:'መጠን በብር',
         lbl_delivery_address:'የማድረሻ አድራሻ *', lbl_recipient_name:'የተቀባይ ስም *', lbl_recipient_phone:'የተቀባይ ስልክ *',
         lbl_notes:'ማስታወሻ (አማራጭ)', lbl_payment_method:'የክፍያ ዘዴ', btn_place_order:'ትዕዛዝ ያስገቡ',
         ph_address:'አድራሻ፣ ሱቅ፣ ምልክት ይፈልጉ…', ph_full_name:'ሙሉ ስም', ph_notes:'ልዩ መመሪያዎች…',
@@ -1147,6 +1149,33 @@ function pointsPlanFor(capEtb) {
     return n >= step ? n : 0;
 }
 function togglePointsUse(on) { _usePoints = !!on; renderCartDrawer(); }
+
+// Courier tip (100% to the courier, never discounted). _tip is what the customer chose; the server re-checks it (max ETB 500).
+let _tip = 0;
+let _tipCustomOpen = false;
+const TIP_PRESETS = [10, 20, 30, 50];
+function cleanTip(v) { v = parseFloat(v); return (isFinite(v) && v > 0) ? Math.min(Math.round(v * 100) / 100, 500) : 0; }
+function setTip(v) { _tip = cleanTip(v); _tipCustomOpen = false; renderCartDrawer(); }
+function openTipCustom() { _tipCustomOpen = true; renderCartDrawer(); setTimeout(function () { var i = document.getElementById('co-tip-input'); if (i) i.focus(); }, 0); }
+function applyTipCustom() { var i = document.getElementById('co-tip-input'); _tip = cleanTip(i ? i.value : 0); _tipCustomOpen = false; renderCartDrawer(); }
+function tipBlockHtml() {
+    const t = function (k) { return escapeHtml(ETEL_I18N.t(k)); };
+    const chip = function (label, active, onclick) {
+        return '<button type="button" onclick="' + onclick + '" style="flex:1 1 0;min-width:64px;padding:10px 6px;border-radius:12px;font-size:13px;font-weight:800;cursor:pointer;font-family:inherit;border:1.5px solid ' +
+            (active ? '#D4AF37' : 'rgba(212,175,55,.3)') + ';background:' + (active ? '#D4AF37' : 'rgba(212,175,55,.08)') + ';color:' + (active ? '#14141f' : '#F0CA58') + '">' + label + '</button>';
+    };
+    const isPreset = TIP_PRESETS.indexOf(_tip) !== -1;
+    let chips = chip(t('tip_none'), _tip === 0 && !_tipCustomOpen, 'setTip(0)') +
+        TIP_PRESETS.map(function (v) { return chip('ETB ' + v, _tip === v && !_tipCustomOpen, 'setTip(' + v + ')'); }).join('') +
+        chip(_tip > 0 && !isPreset && !_tipCustomOpen ? 'ETB ' + _tip : t('tip_custom'), (_tip > 0 && !isPreset) || _tipCustomOpen, 'openTipCustom()');
+    return '<div class="co-tip" style="margin-top:14px;padding:12px;border:1.5px solid rgba(212,175,55,.3);border-radius:14px;background:rgba(212,175,55,.05)">' +
+        '<div style="font-size:13.5px;font-weight:800;color:#F7F1DF">🏍️ ' + t('tip_title') + '</div>' +
+        '<div style="font-size:11.5px;color:rgba(247,241,223,.6);margin:2px 0 10px">' + t('tip_sub') + '</div>' +
+        '<div style="display:flex;flex-wrap:wrap;gap:8px">' + chips + '</div>' +
+        (_tipCustomOpen ? '<div style="display:flex;gap:8px;margin-top:10px"><input id="co-tip-input" type="number" inputmode="decimal" min="0" max="500" step="1" placeholder="' + escapeHtml(ETEL_I18N.t('tip_custom_ph')) + '" value="' + (_tip > 0 && !isPreset ? _tip : '') + '" style="flex:1;min-width:0;padding:10px;border:1.5px solid rgba(212,175,55,.35);border-radius:10px;background:rgba(255,255,255,.04);color:#F7F1DF;font-size:14px">' +
+            '<button type="button" onclick="applyTipCustom()" style="padding:10px 16px;border:none;border-radius:10px;background:#D4AF37;color:#14141f;font-weight:800;cursor:pointer">OK</button></div>' : '') +
+        '</div>';
+}
 async function openPointsSheet() {
     const d = await loadLoyalty();
     if (!d) { showToast('Could not load your points', 'err'); return; }
@@ -1185,7 +1214,8 @@ function renderCartDrawer() {
     const pointsAvail = pointsPlanFor(pointsCap);
     const pointsUsed = _usePoints ? pointsAvail : 0;
     const pointsDisc = pointsUsed / ((_loyalty && parseInt(_loyalty.step, 10)) || 10);
-    const grand = subtotal + deliveryFee + serviceCharge - promoDisc - pointsDisc;
+    const tipAmt = _tip;
+    const grand = subtotal + deliveryFee + serviceCharge - promoDisc - pointsDisc + tipAmt;
     document.getElementById('cart-items').innerHTML = cart.map(function(c, i) {
         return '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.06)">' +
             '<div style="flex:1"><div style="font-weight:600;font-size:13px;color:#F7F1DF">' + escapeHtml(c.name) + '</div>' +
@@ -1204,7 +1234,9 @@ function renderCartDrawer() {
         '<div style="display:flex;justify-content:space-between;font-size:13px;color:rgba(247,241,223,.55);margin-bottom:12px"><span>' + ETEL_I18N.t('lbl_service_charge') + ' (' + SERVICE_CHARGE_PCT + '%)</span><span>ETB ' + serviceCharge.toFixed(2) + '</span></div>' +
         (pointsDisc > 0 ? '<div class="co-discount" style="display:flex;justify-content:space-between;font-size:13px;font-weight:700;color:#2ECC71;margin:-6px 0 12px"><span>' + escapeHtml(ETEL_I18N.t('pts_applied')) + ' (' + pointsUsed + ')</span><span>−ETB ' + pointsDisc.toFixed(2) + '</span></div>' : '') +
         (promoDisc > 0 ? '<div class="co-discount" style="display:flex;justify-content:space-between;font-size:13px;font-weight:700;color:#2ECC71;margin:-6px 0 12px"><span>🏷️ ' + escapeHtml(_promo.code) + ' <button type="button" onclick="removePromo()" style="background:none;border:none;color:inherit;text-decoration:underline;font-size:11px;cursor:pointer;padding:0 0 0 6px">' + escapeHtml(ETEL_I18N.t('promo_remove')) + '</button></span><span>−ETB ' + promoDisc.toFixed(2) + '</span></div>' : '') +
+        (tipAmt > 0 ? '<div style="display:flex;justify-content:space-between;font-size:13px;color:rgba(247,241,223,.55);margin:-6px 0 12px"><span>' + ETEL_I18N.t('lbl_tip') + '</span><span>ETB ' + tipAmt.toFixed(2) + '</span></div>' : '') +
         '<div style="display:flex;justify-content:space-between;font-size:16px;font-weight:700;color:#F7F1DF"><span>' + ETEL_I18N.t('lbl_total') + '</span><span>ETB ' + grand.toFixed(2) + '</span></div></div>';
+    document.getElementById('cart-total').insertAdjacentHTML('beforeend', tipBlockHtml());
 
     if (!_promo) {
         document.getElementById('cart-total').insertAdjacentHTML('beforeend',
@@ -1683,7 +1715,7 @@ async function placeOrder(zone, name, phone, notes) {
     for (let attempt = 1; attempt <= 2; attempt++) {
         res = await api('customer_create_order', {
             promo_code: _promo ? _promo.code : '',
-            use_points: _usePoints ? 1 : 0,
+            use_points: _usePoints ? 1 : 0, tip: _tip,
             items: cart.map(function(c){ return {item_id:c.item_id, quantity:c.quantity}; }),
             to_zone: zone, recipient_name: name, recipient_phone: phone, notes: notes,
             payment_method: selectedPayment,
@@ -1697,7 +1729,7 @@ async function placeOrder(zone, name, phone, notes) {
     if (btn) btn.disabled = false;
     if (res && res.success) {
         currentOrderId = res.data.order_id;
-        _promo = null; _usePoints = false; _loyalty = null; cart = []; selectedZone = ''; _deliveryAddr = ''; _deliveryLat = null; _deliveryLng = null; _deliveryAC = null; _deliveryPhotoUrl = '';
+        _promo = null; _usePoints = false; _tip = 0; _tipCustomOpen = false; _loyalty = null; cart = []; selectedZone = ''; _deliveryAddr = ''; _deliveryLat = null; _deliveryLng = null; _deliveryAC = null; _deliveryPhotoUrl = '';
         updateCartCount();
         closeCart();
         showToast('Order placed! Track at: /track?code=' + res.data.order_code, 'ok');
@@ -1745,7 +1777,7 @@ async function scheduleOrderFromCart(zone, name, phone, notes, scheduledAt) {
     const res = await api('schedule_order', {scheduled_at: scheduledAt, order_template: template});
     if (btn) btn.disabled = false;
     if (res && res.success) {
-        _promo = null; _usePoints = false; _loyalty = null; cart = []; selectedZone = ''; _deliveryAddr = ''; _deliveryLat = null; _deliveryLng = null; _deliveryAC = null; _deliveryPhotoUrl = ''; _scheduleEnabled = false;
+        _promo = null; _usePoints = false; _tip = 0; _tipCustomOpen = false; _loyalty = null; cart = []; selectedZone = ''; _deliveryAddr = ''; _deliveryLat = null; _deliveryLng = null; _deliveryAC = null; _deliveryPhotoUrl = ''; _scheduleEnabled = false;
         updateCartCount();
         closeCart();
         showToast('Order scheduled for ' + scheduledAt, 'ok');
@@ -1762,7 +1794,7 @@ async function placeOrderThenPay(zone, name, phone, notes, tbPhone) {
 
     const orderRes = await api('customer_create_order', {
             promo_code: _promo ? _promo.code : '',
-            use_points: _usePoints ? 1 : 0,
+            use_points: _usePoints ? 1 : 0, tip: _tip,
         items: cart.map(function(c){ return {item_id:c.item_id, quantity:c.quantity}; }),
         to_zone: zone, recipient_name: name, recipient_phone: phone, notes: notes,
         payment_method: 'telebirr',
@@ -1798,7 +1830,7 @@ async function placeOrderThenPay(zone, name, phone, notes, tbPhone) {
         document.getElementById('co-msg').style.display          = 'none';
         if (btn) btn.style.display = 'none';
         startTelebirrPolling(currentPaymentId, orderRes.data.order_code);
-        _promo = null; _usePoints = false; _loyalty = null; cart = []; selectedZone = ''; _deliveryAddr = ''; _deliveryLat = null; _deliveryLng = null; _deliveryAC = null; _deliveryPhotoUrl = '';
+        _promo = null; _usePoints = false; _tip = 0; _tipCustomOpen = false; _loyalty = null; cart = []; selectedZone = ''; _deliveryAddr = ''; _deliveryLat = null; _deliveryLng = null; _deliveryAC = null; _deliveryPhotoUrl = '';
         updateCartCount();
     } else {
         showCoMsg('Telebirr error: ' + ((payRes && payRes.message) || 'Unknown error. Try Cash payment.'));
@@ -1814,7 +1846,7 @@ async function placeOrderThenChapa(zone, name, phone, notes) {
 
     const orderRes = await api('customer_create_order', {
         promo_code: _promo ? _promo.code : '',
-        use_points: _usePoints ? 1 : 0,
+        use_points: _usePoints ? 1 : 0, tip: _tip,
         items: cart.map(function(c){ return {item_id:c.item_id, quantity:c.quantity}; }),
         to_zone: zone, recipient_name: name, recipient_phone: phone, notes: notes,
         payment_method: 'chapa',
@@ -1831,7 +1863,7 @@ async function placeOrderThenChapa(zone, name, phone, notes) {
     currentOrderId = orderRes.data.order_id;
     const orderCode = orderRes.data.order_code;
     // The order exists now, so the cart is spent whatever happens next.
-    _promo = null; _usePoints = false; _loyalty = null; cart = []; selectedZone = ''; _deliveryAddr = ''; _deliveryLat = null; _deliveryLng = null; _deliveryAC = null; _deliveryPhotoUrl = '';
+    _promo = null; _usePoints = false; _tip = 0; _tipCustomOpen = false; _loyalty = null; cart = []; selectedZone = ''; _deliveryAddr = ''; _deliveryLat = null; _deliveryLng = null; _deliveryAC = null; _deliveryPhotoUrl = '';
     updateCartCount();
 
     showCoMsg('Opening Chapa…', '#888');
@@ -1879,7 +1911,7 @@ async function placeOrderThenBank(zone, name, phone, notes, reference) {
 
     const orderRes = await api('customer_create_order', {
             promo_code: _promo ? _promo.code : '',
-            use_points: _usePoints ? 1 : 0,
+            use_points: _usePoints ? 1 : 0, tip: _tip,
         items: cart.map(function(c){ return {item_id:c.item_id, quantity:c.quantity}; }),
         to_zone: zone, recipient_name: name, recipient_phone: phone, notes: notes,
         payment_method: selectedPayment,
@@ -1903,7 +1935,7 @@ async function placeOrderThenBank(zone, name, phone, notes, reference) {
     });
 
     if (btn) btn.disabled = false;
-    _promo = null; _usePoints = false; _loyalty = null; cart = []; selectedZone = ''; _deliveryAddr = ''; _deliveryLat = null; _deliveryLng = null; _deliveryAC = null; _deliveryPhotoUrl = '';
+    _promo = null; _usePoints = false; _tip = 0; _tipCustomOpen = false; _loyalty = null; cart = []; selectedZone = ''; _deliveryAddr = ''; _deliveryLat = null; _deliveryLng = null; _deliveryAC = null; _deliveryPhotoUrl = '';
     updateCartCount();
     closeCart();
     if (bankRes && bankRes.success) {

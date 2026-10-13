@@ -13,7 +13,7 @@ DB="${ETEL_TEST_DB_NAME:-etel_delivery}"
 
 if [ "${FRESH_DB:-0}" = "1" ]; then
   mysql ${MYSQL_ADMIN_ARGS:-} -e "DROP DATABASE IF EXISTS \`$DB\`; CREATE DATABASE \`$DB\` CHARACTER SET utf8mb4;" || exit 1
-  rm -f api/.schema_done   # runtime marker; stale once the DB is rebuilt
+  rm -f api/.schema_done api/.tip_column_ok   # runtime markers; stale once the DB is rebuilt
   mysql ${MYSQL_ADMIN_ARGS:-} "$DB" < api/seeds/complete_migration.sql >/dev/null 2>&1 || true
   php api/migrate.php --apply || exit 1
   mysql ${MYSQL_ADMIN_ARGS:-} "$DB" < api/seeds/admin_demo_accounts.sql >/dev/null || exit 1
