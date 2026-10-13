@@ -149,6 +149,10 @@
 <script src="../js/etel-refresh.js?v=1" defer></script>
 <style>
 /* The map route card is always dark; light mode was forcing dark text on it (unreadable). Pin its colours. */
+/* Active order buttons: the Navigate button gets its own full row; the other two share the next row instead of all three squeezing into one. */
+.job-actions { flex-wrap:wrap !important; }
+.job-actions > .nav-btn { flex:1 1 100% !important; width:100% !important; }
+.job-actions > button:not(.nav-btn) { flex:1 1 140px !important; min-width:0 !important; width:auto !important; }
 body.etel-light #map-route-panel #map-route-time { color:#4ECDC4 !important; -webkit-text-fill-color:#4ECDC4 !important; }
 body.etel-light #map-route-panel #map-route-label { color:#F5F5F7 !important; -webkit-text-fill-color:#F5F5F7 !important; }
 body.etel-light #map-route-panel #map-route-dist,
