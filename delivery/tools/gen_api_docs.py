@@ -14,6 +14,13 @@ import sys
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
 API = os.path.join(ROOT, "api")
 OUT = os.path.join(ROOT, "docs", "api")
+# Optional: python3 tools/gen_api_docs.py --out DIR --exclude equity_,investor_portal_
+#   writes a copy without actions starting with those prefixes (e.g. a copy for an outside reviewer).
+EXCLUDE = ()
+if "--out" in sys.argv:
+    OUT = os.path.abspath(sys.argv[sys.argv.index("--out") + 1])
+if "--exclude" in sys.argv:
+    EXCLUDE = tuple(x for x in sys.argv[sys.argv.index("--exclude") + 1].split(",") if x)
 
 CASE_RE = re.compile(r"^[ \t]{0,4}case\s+'([A-Za-z0-9_]+)'\s*:\s*\{?\s*(?://.*)?$", re.M)
 BODY_RE = re.compile(r"\$body\[\s*'([A-Za-z0-9_]+)'\s*\]")
@@ -32,7 +39,7 @@ AUTH_RULES = [
 ]
 SKIP = {"default"}
 # actions that sign a user in (the code checks credentials, not a token) are public
-PUBLIC_RX = re.compile(r"login|register|otp|forgot|reset")
+PUBLIC_RX = re.compile(r"(^|_)(login|register|otp|forgot_password|reset_password)$")
 # order creation reads its fields in a shared helper
 LIB_PARAMS = {"customer_create_order": "lib/delivery_order_core.php"}
 
@@ -80,7 +87,7 @@ def parse_file(path):
             cm = re.search(r"user_has_capability\(\$pdo,\s*\$u,\s*'([a-z_.]+)'", block)
             if cm and re.search(r"role'\]\s*!==\s*'admin'", block):
                 auth, cap = "admin", cm.group(1)
-        if PUBLIC_RX.search(name):
+        if PUBLIC_RX.search(name) and (auth == "public" or name.endswith("login")):
             auth, cap = "public (this call signs you in)", None
         if name in LIB_PARAMS:
             lt = open(os.path.join(API, LIB_PARAMS[name]), encoding="utf-8", errors="replace").read()
@@ -99,7 +106,7 @@ def main():
             if name in actions and actions[name]["auth"] != "public":
                 continue
             actions[name] = info
-    names = sorted(actions)
+    names = sorted(n for n in actions if not (EXCLUDE and n.startswith(EXCLUDE)))
     if not names:
         print("no actions found")
         sys.exit(1)

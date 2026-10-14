@@ -7,11 +7,11 @@ Generated from the source by `tools/gen_api_docs.py` (409 actions). Machine-read
 
 | Who can call | Actions |
 |---|---|
-| admin | 181 |
+| admin | 187 |
 | any signed-in user | 175 |
 | courier | 16 |
 | public | 9 |
-| public (this call signs you in) | 12 |
+| public (this call signs you in) | 6 |
 | service key (X-Etel-Service-Key) | 16 |
 
 ## Admin
@@ -113,7 +113,7 @@ Generated from the source by `tools/gen_api_docs.py` (409 actions). Machine-read
 | Action | Auth | Fields | Query |
 |---|---|---|---|
 | `admin_etelid_login` | public (this call signs you in) | `code`, `identifier`, `password`, `phone`, `totp_code` | - |
-| `admin_reset_user_2fa` | public (this call signs you in) | `phone` | - |
+| `admin_reset_user_2fa` | admin · users.manage | `phone` | - |
 | `change_password` | any signed-in user | `current_password`, `new_password` | - |
 | `etelid_login` | public (this call signs you in) | `app`, `identifier`, `password`, `phone`, `role`, `totp_code` | - |
 | `login` | public (this call signs you in) | `app`, `password`, `phone`, `role` | - |
@@ -327,7 +327,7 @@ Generated from the source by `tools/gen_api_docs.py` (409 actions). Machine-read
 | `planning_delete_hire` | admin · planning.manage | `id` | - |
 | `planning_get_notes` | admin · planning.view | - | - |
 | `planning_list_hires` | admin · planning.view | - | - |
-| `planning_reset_and_seed_demo` | public (this call signs you in) | - | - |
+| `planning_reset_and_seed_demo` | admin · planning.manage | - | - |
 | `planning_save_notes` | admin · planning.manage | `content` | - |
 | `planning_update_hire` | admin · planning.manage | `headcount`, `id`, `monthly_salary`, `notes`, `role_name` | - |
 
@@ -338,7 +338,7 @@ Generated from the source by `tools/gen_api_docs.py` (409 actions). Machine-read
 | `platform_economics_get_costs` | admin · platform_economics.view | - | - |
 | `platform_economics_get_growth_assumptions` | admin · platform_economics.view | - | - |
 | `platform_economics_get_summary` | admin · platform_economics.view | `period` | - |
-| `platform_economics_reset_growth_assumptions` | public (this call signs you in) | - | - |
+| `platform_economics_reset_growth_assumptions` | admin · platform_economics.manage | - | - |
 | `platform_economics_save_growth_assumptions` | admin · platform_economics.manage | - | - |
 | `platform_economics_update_costs` | admin · platform_economics.manage | - | - |
 
@@ -489,9 +489,9 @@ Generated from the source by `tools/gen_api_docs.py` (409 actions). Machine-read
 
 | Action | Auth | Fields | Query |
 |---|---|---|---|
-| `system_reset_backup` | public (this call signs you in) | - | - |
-| `system_reset_execute` | public (this call signs you in) | `backup_token`, `confirm_phrase`, `keep_phones` | - |
-| `system_reset_preview` | public (this call signs you in) | `keep_phones` | - |
+| `system_reset_backup` | admin · system.reset | - | - |
+| `system_reset_execute` | admin · system.reset | `backup_token`, `confirm_phrase`, `keep_phones` | - |
+| `system_reset_preview` | admin · system.reset | `keep_phones` | - |
 
 ## boot
 
