@@ -24,6 +24,14 @@
   // actually written by anything - dead on arrival.
   const KEY      = 'etel_sso';
 
+  // ---- COMING SOON switch --------------------------------------------------
+  // true  = every Etel page shows the ETEL AI bubble with a "Soon" tag; tapping it opens a
+  //         "Coming Soon" card. No chat, no location lookup, no calls to the AI server.
+  // false = the normal chat widget. (Staff can test the live chat on any page by adding
+  //         ?etelai=live to the address.)
+  const COMING_SOON = true;
+  const _live = !COMING_SOON || /[?&]etelai=live\b/.test(location.search);
+
   const _getMember = () => {
     try {
       const d = JSON.parse(localStorage.getItem(KEY) || 'null');
@@ -183,6 +191,23 @@
     #etelai-clear{position:absolute;top:9px;right:52px;background:none;border:none;
       color:rgba(212,175,55,.5);font-size:14px;cursor:pointer;z-index:2;padding:4px;}
     #etelai-clear:hover{color:rgba(212,175,55,.9);}
+    #etelai-bubble .etelai-soon{position:absolute;top:-6px;right:-8px;background:#0a0703;color:#D4AF37;
+      border:1px solid rgba(212,175,55,.7);border-radius:9px;font:700 9px/1 system-ui,sans-serif;
+      letter-spacing:.06em;text-transform:uppercase;padding:3px 6px;box-shadow:0 2px 8px rgba(0,0,0,.4);}
+    #etelai-soon-card{position:fixed;bottom:90px;right:22px;width:300px;max-width:92vw;box-sizing:border-box;
+      background:linear-gradient(165deg,#130d05 0%,#0a0703 100%);border:1px solid rgba(212,175,55,.35);
+      border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,.65);z-index:99998;padding:22px 20px 20px;
+      text-align:center;color:#f3e7c0;font-family:system-ui,-apple-system,sans-serif;display:none;}
+    #etelai-soon-card.open{display:block;}
+    #etelai-soon-card .etelai-soon-logo{width:54px;height:54px;border-radius:50%;margin:0 auto 12px;
+      background:linear-gradient(135deg,#C8960C,#D4AF37);display:flex;align-items:center;justify-content:center;
+      font-size:26px;}
+    #etelai-soon-card h3{margin:0 0 4px;font-size:17px;color:#D4AF37;letter-spacing:.02em;}
+    #etelai-soon-card .etelai-soon-tag{display:inline-block;margin:2px 0 10px;padding:3px 10px;border-radius:10px;
+      border:1px solid rgba(212,175,55,.6);color:#D4AF37;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;}
+    #etelai-soon-card p{margin:0 0 6px;font-size:13px;line-height:1.5;color:rgba(243,231,192,.85);}
+    #etelai-soon-card .etelai-soon-x{position:absolute;top:8px;right:12px;background:none;border:none;
+      color:rgba(212,175,55,.6);font-size:16px;cursor:pointer;}
   `;
 
   const injectStyles = () => {
@@ -344,14 +369,43 @@
     showFreshGreeting();
   }
 
+  const openSoon = () => {
+    let card = document.getElementById('etelai-soon-card');
+    if (!card) {
+      card = document.createElement('div');
+      card.id = 'etelai-soon-card';
+      card.innerHTML = `
+        <button class="etelai-soon-x" aria-label="Close" onclick="document.getElementById('etelai-soon-card').classList.remove('open')">✕</button>
+        <div class="etelai-soon-logo">🤖</div>
+        <h3>ETEL AI</h3>
+        <div class="etelai-soon-tag">Coming Soon</div>
+        <p>Your smart ETEL assistant is on the way. We are putting the finishing touches on it.</p>
+        <p lang="am">ብልሁ የኢቴል ረዳትዎ በቅርቡ ይመጣል።</p>`;
+      document.body.appendChild(card);
+    }
+    card.classList.toggle('open');
+  };
+
   const init = () => {
     injectStyles();
-    _tryGetLocation();
     const bubble = document.createElement('div');
     bubble.id = 'etelai-bubble';
     bubble.textContent = '🤖';
-    bubble.title = 'Chat with ETEL AI';
-    bubble.onclick = open;
+    if (_live) {
+      _tryGetLocation();
+      bubble.title = 'Chat with ETEL AI';
+      bubble.onclick = open;
+    } else {
+      bubble.title = 'ETEL AI - Coming Soon';
+      bubble.setAttribute('role', 'button');
+      bubble.setAttribute('aria-label', 'ETEL AI - Coming Soon');
+      const tag = document.createElement('span');
+      tag.className = 'etelai-soon';
+      tag.textContent = 'Soon';
+      bubble.appendChild(tag);
+      bubble.style.position = 'fixed';
+      bubble.onclick = openSoon;
+    }
     document.body.appendChild(bubble);
   };
 
