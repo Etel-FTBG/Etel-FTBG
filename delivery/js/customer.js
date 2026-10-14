@@ -1153,12 +1153,27 @@ function togglePointsUse(on) { _usePoints = !!on; renderCartDrawer(); }
 // Courier tip (100% to the courier, never discounted). _tip is what the customer chose; the server re-checks it (max ETB 500).
 let _tip = 0;
 let _tipCustomOpen = false;
-const TIP_PRESETS = [10, 20, 30, 50];
-function cleanTip(v) { v = parseFloat(v); return (isFinite(v) && v > 0) ? Math.min(Math.round(v * 100) / 100, 500) : 0; }
+let TIP_PRESETS = [10, 20, 30, 50];   // replaced by the admin's buttons (Admin > Pricing > Courier pay) as soon as they load
+let TIP_MAX = 500;
+let _tipOptionsLoaded = false;
+function loadTipOptions() {
+    if (_tipOptionsLoaded) return;
+    _tipOptionsLoaded = true;
+    api('get_tip_options', {}).then(function (r) {
+        if (!r || !r.success || !r.data || !r.data.presets || !r.data.presets.length) return;
+        TIP_PRESETS = r.data.presets.map(Number).filter(function (v) { return v > 0; });
+        TIP_MAX = Number(r.data.max) || 500;
+        if (_tip > TIP_MAX) _tip = TIP_MAX;
+        renderCartDrawer();
+    }).catch(function () { _tipOptionsLoaded = false; });
+}
+function cleanTip(v) { v = parseFloat(v); return (isFinite(v) && v > 0) ? Math.min(Math.round(v * 100) / 100, TIP_MAX) : 0; }
 function setTip(v) { _tip = cleanTip(v); _tipCustomOpen = false; renderCartDrawer(); }
 function openTipCustom() { _tipCustomOpen = true; renderCartDrawer(); setTimeout(function () { var i = document.getElementById('co-tip-input'); if (i) i.focus(); }, 0); }
 function applyTipCustom() { var i = document.getElementById('co-tip-input'); _tip = cleanTip(i ? i.value : 0); _tipCustomOpen = false; renderCartDrawer(); }
 function tipBlockHtml() {
+    if (TIP_MAX <= 0) return '';   // the admin switched tips off
+    loadTipOptions();
     const t = function (k) { return escapeHtml(ETEL_I18N.t(k)); };
     const chip = function (label, active, onclick) {
         return '<button type="button" onclick="' + onclick + '" style="flex:1 1 0;min-width:64px;padding:10px 6px;border-radius:12px;font-size:13px;font-weight:800;cursor:pointer;font-family:inherit;border:1.5px solid ' +
@@ -1172,7 +1187,7 @@ function tipBlockHtml() {
         '<div style="font-size:13.5px;font-weight:800;color:#F7F1DF">🏍️ ' + t('tip_title') + '</div>' +
         '<div style="font-size:11.5px;color:rgba(247,241,223,.6);margin:2px 0 10px">' + t('tip_sub') + '</div>' +
         '<div style="display:flex;flex-wrap:wrap;gap:8px">' + chips + '</div>' +
-        (_tipCustomOpen ? '<div style="display:flex;gap:8px;margin-top:10px"><input id="co-tip-input" type="number" inputmode="decimal" min="0" max="500" step="1" placeholder="' + escapeHtml(ETEL_I18N.t('tip_custom_ph')) + '" value="' + (_tip > 0 && !isPreset ? _tip : '') + '" style="flex:1;min-width:0;padding:10px;border:1.5px solid rgba(212,175,55,.35);border-radius:10px;background:rgba(255,255,255,.04);color:#F7F1DF;font-size:14px">' +
+        (_tipCustomOpen ? '<div style="display:flex;gap:8px;margin-top:10px"><input id="co-tip-input" type="number" inputmode="decimal" min="0" max="' + TIP_MAX + '" step="1" placeholder="' + escapeHtml(ETEL_I18N.t('tip_custom_ph')) + '" value="' + (_tip > 0 && !isPreset ? _tip : '') + '" style="flex:1;min-width:0;padding:10px;border:1.5px solid rgba(212,175,55,.35);border-radius:10px;background:rgba(255,255,255,.04);color:#F7F1DF;font-size:14px">' +
             '<button type="button" onclick="applyTipCustom()" style="padding:10px 16px;border:none;border-radius:10px;background:#D4AF37;color:#14141f;font-weight:800;cursor:pointer">OK</button></div>' : '') +
         '</div>';
 }

@@ -55,3 +55,5 @@ delivery/api/.schema_done
 api/.schema_done
 delivery/api/.tip_column_ok
 api/.tip_column_ok
+delivery/api/.order_pay_columns_ok
+api/.order_pay_columns_ok
