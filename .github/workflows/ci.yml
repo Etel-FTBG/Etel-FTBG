@@ -91,6 +91,7 @@ jobs:
           python3 delivery/tests/ci/check_no_fake_stats.py
           python3 delivery/tests/ci/check_a11y_wiring.py
           python3 delivery/tests/ci/check_rate_card.py
+          python3 delivery/tests/ci/check_track_eta.py
           node delivery/tests/photo_match_test.js
       # check_reserved_columns.py needs the built database, so it runs in the
       # integration job (via run_integration.sh).

@@ -817,6 +817,7 @@ case 'track_order': {
                 sg.business_name as service_giver_name, sg.zone as sg_zone,
                 u_sg.phone as sg_phone,
                 c.vehicle_type as courier_vehicle, c.rating AS courier_avg_rating, c.last_lat as courier_lat, c.last_lng as courier_lng, c.last_seen as courier_last_seen,
+                TIMESTAMPDIFF(SECOND, c.last_seen, NOW()) AS courier_seen_sec,
                 u_c.name as courier_name, u_c.phone as courier_phone
             FROM orders o
             LEFT JOIN order_assignments oa ON o.id = oa.order_id
@@ -855,6 +856,8 @@ case 'track_order': {
         );
     }
 
+    // arrival estimate + hides a courier pin that has gone stale (api/lib/track_eta.php)
+    try { require_once __DIR__ . '/../lib/track_eta.php'; $order = etel_track_eta_apply($pdo, $order); } catch (Exception $te) {} catch (Throwable $te) {}
     ok(array('order' => $order, 'timeline' => $timeline));
     break;
 }

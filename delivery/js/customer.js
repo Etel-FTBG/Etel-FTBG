@@ -54,7 +54,7 @@ ETEL_I18N.register('customer', {
     en: {
         nav_home:'Home', nav_favorites:'Favorites', nav_orders:'Orders', nav_messages:'Messages', nav_profile:'Profile',
         shop_open:'Open', shop_closed:'Closed', shop_fee_from:'Delivery from ETB', closed_warn:'appears closed right now. You can still order, but it may wait until they open. Continue?',
-        trk_title:'Your order', trk_pending:'Order placed', trk_assigned:'Courier assigned', trk_picked_up:'Picked up', trk_in_transit:'On the way', trk_track:'Track', trk_more:'more', menu_all:'All', menu_popular:'🔥 Popular', menu_deals:'🏷️ Deals', menu_quick:'⚡ Quick', pop_badge:'🔥 Popular', promo_have:'Have a promo code?', promo_ph:'Enter code', promo_apply:'Apply', promo_remove:'Remove', promo_discount:'Discount', promo_saved:'You save', rate_title:'Rate your order', rate_overall:'Overall', rate_food:'Order quality', rate_courier:'Courier', rate_tags:'What stood out?', rate_comment:'Tell us more (optional)…', rate_submit:'Submit rating', rate_pick:'Please choose an overall rating', rate_thanks:'Thanks for your review!', rate_yours:'Your rating', rate_reply:'Reply from the shop', tag_fast_delivery:'⚡ Fast delivery', tag_great_taste:'😋 Great taste', tag_well_packed:'📦 Well packed', tag_friendly_courier:'🙂 Friendly courier', tag_good_value:'💰 Good value', tag_late:'🐢 Late', tag_cold:'🥶 Arrived cold', tag_wrong_item:'❌ Wrong item', pts_title:'Your points', pts_use:'Use my points', pts_off:'Not using points', pts_need:'Earn {n} more points to start spending them', pts_applied:'⭐ Points', pts_how:'How it works', pts_earn:'Earn 1 point for every ETB 10 of items on delivered orders — double on Saturdays and Sundays.', pts_spend:'Spend 10 points = ETB 1 off your items at checkout, once you have 100 points.', pts_recent:'Recent activity', pts_none:'No activity yet — your first delivered order earns points.', pts_worth:'worth', chat_btn:'💬 Chat with the shop & courier', chat_btn_short:'💬 Chat', push_on:'🔔 Turn on order alerts', push_enabled:'Order alerts are on', push_blocked:'Notifications are blocked in your browser settings', reorder_btn:'Order again', reorder_home:'Hungry again?', rate_card_q:'How was your order?', rate_card_sub:'Tap a star - it takes 10 seconds', rate_card_later:'Not now', reorder_none:'Those items are no longer available', reorder_added:'added to your cart at today\'s prices', reorder_skipped:'unavailable, skipped', reorder_fail:'Could not load that order', cart_view:'View cart →', cart_items_one:'item', cart_items_many:'items', filter_none:'No matches for these filters', filter_clear:'Clear filters',
+        trk_title:'Your order', trk_pending:'Order placed', trk_assigned:'Courier assigned', trk_picked_up:'Picked up', trk_in_transit:'On the way', trk_track:'Track', trk_more:'more', menu_all:'All', menu_popular:'🔥 Popular', menu_deals:'🏷️ Deals', menu_quick:'⚡ Quick', pop_badge:'🔥 Popular', promo_have:'Have a promo code?', promo_ph:'Enter code', promo_apply:'Apply', promo_remove:'Remove', promo_discount:'Discount', promo_saved:'You save', rate_title:'Rate your order', rate_overall:'Overall', rate_food:'Order quality', rate_courier:'Courier', rate_tags:'What stood out?', rate_comment:'Tell us more (optional)…', rate_submit:'Submit rating', rate_pick:'Please choose an overall rating', rate_thanks:'Thanks for your review!', rate_yours:'Your rating', rate_reply:'Reply from the shop', tag_fast_delivery:'⚡ Fast delivery', tag_great_taste:'😋 Great taste', tag_well_packed:'📦 Well packed', tag_friendly_courier:'🙂 Friendly courier', tag_good_value:'💰 Good value', tag_late:'🐢 Late', tag_cold:'🥶 Arrived cold', tag_wrong_item:'❌ Wrong item', pts_title:'Your points', pts_use:'Use my points', pts_off:'Not using points', pts_need:'Earn {n} more points to start spending them', pts_applied:'⭐ Points', pts_how:'How it works', pts_earn:'Earn 1 point for every ETB 10 of items on delivered orders — double on Saturdays and Sundays.', pts_spend:'Spend 10 points = ETB 1 off your items at checkout, once you have 100 points.', pts_recent:'Recent activity', pts_none:'No activity yet — your first delivered order earns points.', pts_worth:'worth', chat_btn:'💬 Chat with the shop & courier', chat_btn_short:'💬 Chat', push_on:'🔔 Turn on order alerts', push_enabled:'Order alerts are on', push_blocked:'Notifications are blocked in your browser settings', reorder_btn:'Order again', reorder_home:'Hungry again?', rate_card_q:'How was your order?', rate_card_sub:'Tap a star - it takes 10 seconds', rate_card_later:'Not now', eta_arrive:'Arriving in about {a}-{b} min', eta_live:'From the courier\'s live position - {km} km away', eta_typical:'Based on recent deliveries - approximate', eta_paused:'Courier location paused - it updates when their phone reconnects', reorder_none:'Those items are no longer available', reorder_added:'added to your cart at today\'s prices', reorder_skipped:'unavailable, skipped', reorder_fail:'Could not load that order', cart_view:'View cart →', cart_items_one:'item', cart_items_many:'items', filter_none:'No matches for these filters', filter_clear:'Clear filters',
         greet_morning:'Good morning', greet_afternoon:'Good afternoon', greet_evening:'Good evening', greet_sub:'What would you like today?',
         svc_food:'Food', svc_groceries:'Groceries', svc_pharmacy:'Pharmacy', svc_ride:'Ride', shop_min:'min', shop_from:'From', shop_items:'items', shop_no_rating:'New',
         search_placeholder:'Search restaurants, food, cuisines…',
@@ -87,7 +87,7 @@ ETEL_I18N.register('customer', {
     am: {
         nav_home:'ቤት', nav_favorites:'ተወዳጆች', nav_orders:'ትዕዛዞች', nav_messages:'መልዕክቶች', nav_profile:'መገለጫ',
         shop_open:'ክፍት', shop_closed:'ዝግ', shop_fee_from:'ማድረሻ ከ ETB', closed_warn:'አሁን ዝግ ይመስላል። አሁንም ማዘዝ ይችላሉ፤ እስኪከፈት ሊዘገይ ይችላል። ይቀጥሉ?',
-        trk_title:'ትዕዛዝዎ', trk_pending:'ትዕዛዝ ተቀብሏል', trk_assigned:'ሹፌር ተመድቧል', trk_picked_up:'ተነስቷል', trk_in_transit:'በመንገድ ላይ', trk_track:'ተከታተል', trk_more:'ተጨማሪ', menu_all:'ሁሉም', menu_popular:'ተወዳጅ', menu_deals:'🏷️ ቅናሽ', menu_quick:'ፈጣን', pop_badge:'🔥 ተወዳጅ', promo_have:'የቅናሽ ኮድ አለዎት?', promo_ph:'ኮድ ያስገቡ', promo_apply:'ተግብር', promo_remove:'አስወግድ', promo_discount:'ቅናሽ', promo_saved:'ይቆጥባሉ', rate_title:'ትዕዛዝዎን ይገምግሙ', rate_overall:'አጠቃላይ', rate_food:'የትዕዛዝ ጥራት', rate_courier:'ሹፌር', rate_tags:'ምን ጎልቶ ታየ?', rate_comment:'ተጨማሪ ይንገሩን (አማራጭ)…', rate_submit:'ግምገማ ላክ', rate_pick:'እባክዎ አጠቃላይ ደረጃ ይምረጡ', rate_thanks:'ለግምገማዎ እናመሰግናለን!', rate_yours:'የእርስዎ ደረጃ', rate_reply:'የሱቁ መልስ', tag_fast_delivery:'⚡ ፈጣን ማድረሻ', tag_great_taste:'😋 ጣፋጭ', tag_well_packed:'📦 በደንብ የታሸገ', tag_friendly_courier:'🙂 ተግባቢ ሹፌር', tag_good_value:'💰 ጥሩ ዋጋ', tag_late:'🐢 ዘግይቷል', tag_cold:'🥶 ቀዝቅዞ ደረሰ', tag_wrong_item:'❌ የተሳሳተ ዕቃ', pts_title:'ነጥቦችዎ', pts_use:'ነጥቤን ተጠቀም', pts_off:'ነጥብ አልተጠቀምኩም', pts_need:'ለመጠቀም ተጨማሪ {n} ነጥቦች ያስፈልጋሉ', pts_applied:'⭐ ነጥቦች', pts_how:'እንዴት ይሰራል', pts_earn:'በደረሰ ትዕዛዝ ለእያንዳንዱ ETB 10 ዕቃ 1 ነጥብ ያገኛሉ — ቅዳሜና እሁድ እጥፍ።', pts_spend:'100 ነጥብ ሲኖርዎት 10 ነጥብ = ETB 1 ቅናሽ።', pts_recent:'የቅርብ ጊዜ እንቅስቃሴ', pts_none:'እስካሁን እንቅስቃሴ የለም — የመጀመሪያ የደረሰ ትዕዛዝዎ ነጥብ ያስገኛል።', pts_worth:'ዋጋ', chat_btn:'💬 ከሱቁ እና ከሹፌሩ ጋር ይወያዩ', chat_btn_short:'💬 ውይይት', push_on:'🔔 የትዕዛዝ ማሳወቂያ አብራ', push_enabled:'የትዕዛዝ ማሳወቂያ በርቷል', push_blocked:'ማሳወቂያዎች በአሳሽ ቅንብር ታግደዋል', reorder_btn:'እንደገና አዝዝ', reorder_home:'እንደገና ይራብዎታል?', rate_card_q:'ትዕዛዝዎ እንዴት ነበር?', rate_card_sub:'ኮከብ ይንኩ - 10 ሰከንድ ብቻ', rate_card_later:'አሁን አይደለም', reorder_none:'እነዚህ ዕቃዎች አሁን አይገኙም', reorder_added:'በዛሬ ዋጋ ወደ ጋሪዎ ተጨምረዋል', reorder_skipped:'አይገኝም፣ ተዘሏል', reorder_fail:'ትዕዛዙን መጫን አልተቻለም', cart_view:'ጋሪ ይመልከቱ →', cart_items_one:'ዕቃ', cart_items_many:'ዕቃዎች', filter_none:'ለእነዚህ ማጣሪያዎች ውጤት የለም', filter_clear:'ማጣሪያ አጽዳ',
+        trk_title:'ትዕዛዝዎ', trk_pending:'ትዕዛዝ ተቀብሏል', trk_assigned:'ሹፌር ተመድቧል', trk_picked_up:'ተነስቷል', trk_in_transit:'በመንገድ ላይ', trk_track:'ተከታተል', trk_more:'ተጨማሪ', menu_all:'ሁሉም', menu_popular:'ተወዳጅ', menu_deals:'🏷️ ቅናሽ', menu_quick:'ፈጣን', pop_badge:'🔥 ተወዳጅ', promo_have:'የቅናሽ ኮድ አለዎት?', promo_ph:'ኮድ ያስገቡ', promo_apply:'ተግብር', promo_remove:'አስወግድ', promo_discount:'ቅናሽ', promo_saved:'ይቆጥባሉ', rate_title:'ትዕዛዝዎን ይገምግሙ', rate_overall:'አጠቃላይ', rate_food:'የትዕዛዝ ጥራት', rate_courier:'ሹፌር', rate_tags:'ምን ጎልቶ ታየ?', rate_comment:'ተጨማሪ ይንገሩን (አማራጭ)…', rate_submit:'ግምገማ ላክ', rate_pick:'እባክዎ አጠቃላይ ደረጃ ይምረጡ', rate_thanks:'ለግምገማዎ እናመሰግናለን!', rate_yours:'የእርስዎ ደረጃ', rate_reply:'የሱቁ መልስ', tag_fast_delivery:'⚡ ፈጣን ማድረሻ', tag_great_taste:'😋 ጣፋጭ', tag_well_packed:'📦 በደንብ የታሸገ', tag_friendly_courier:'🙂 ተግባቢ ሹፌር', tag_good_value:'💰 ጥሩ ዋጋ', tag_late:'🐢 ዘግይቷል', tag_cold:'🥶 ቀዝቅዞ ደረሰ', tag_wrong_item:'❌ የተሳሳተ ዕቃ', pts_title:'ነጥቦችዎ', pts_use:'ነጥቤን ተጠቀም', pts_off:'ነጥብ አልተጠቀምኩም', pts_need:'ለመጠቀም ተጨማሪ {n} ነጥቦች ያስፈልጋሉ', pts_applied:'⭐ ነጥቦች', pts_how:'እንዴት ይሰራል', pts_earn:'በደረሰ ትዕዛዝ ለእያንዳንዱ ETB 10 ዕቃ 1 ነጥብ ያገኛሉ — ቅዳሜና እሁድ እጥፍ።', pts_spend:'100 ነጥብ ሲኖርዎት 10 ነጥብ = ETB 1 ቅናሽ።', pts_recent:'የቅርብ ጊዜ እንቅስቃሴ', pts_none:'እስካሁን እንቅስቃሴ የለም — የመጀመሪያ የደረሰ ትዕዛዝዎ ነጥብ ያስገኛል።', pts_worth:'ዋጋ', chat_btn:'💬 ከሱቁ እና ከሹፌሩ ጋር ይወያዩ', chat_btn_short:'💬 ውይይት', push_on:'🔔 የትዕዛዝ ማሳወቂያ አብራ', push_enabled:'የትዕዛዝ ማሳወቂያ በርቷል', push_blocked:'ማሳወቂያዎች በአሳሽ ቅንብር ታግደዋል', reorder_btn:'እንደገና አዝዝ', reorder_home:'እንደገና ይራብዎታል?', rate_card_q:'ትዕዛዝዎ እንዴት ነበር?', rate_card_sub:'ኮከብ ይንኩ - 10 ሰከንድ ብቻ', rate_card_later:'አሁን አይደለም', eta_arrive:'በ{a}-{b} ደቂቃ ውስጥ ይደርሳል', eta_live:'ከሹፌሩ ቀጥታ አቀማመጥ - {km} ኪ.ሜ ይቀረዋል', eta_typical:'በቅርብ ጊዜ ማድረሶች ላይ የተመሰረተ - ግምት', eta_paused:'የሹፌሩ አቀማመጥ ቆሟል - ስልኩ ሲገናኝ ይታደሳል', reorder_none:'እነዚህ ዕቃዎች አሁን አይገኙም', reorder_added:'በዛሬ ዋጋ ወደ ጋሪዎ ተጨምረዋል', reorder_skipped:'አይገኝም፣ ተዘሏል', reorder_fail:'ትዕዛዙን መጫን አልተቻለም', cart_view:'ጋሪ ይመልከቱ →', cart_items_one:'ዕቃ', cart_items_many:'ዕቃዎች', filter_none:'ለእነዚህ ማጣሪያዎች ውጤት የለም', filter_clear:'ማጣሪያ አጽዳ',
         greet_morning:'እንደምን አደሩ', greet_afternoon:'እንደምን ዋሉ', greet_evening:'እንደምን አመሹ', greet_sub:'ዛሬ ምን ይፈልጋሉ?',
         svc_food:'ምግብ', svc_groceries:'ግሮሰሪ', svc_pharmacy:'ፋርማሲ', svc_ride:'ጉዞ', shop_min:'ደቂቃ', shop_from:'ከ', shop_items:'ዕቃዎች', shop_no_rating:'አዲስ',
         search_placeholder:'ምግብ ቤቶችን፣ ምግብን ይፈልጉ…',
@@ -647,7 +647,7 @@ function closeCategoryView() { document.getElementById('view-category').style.di
 // selected/exposed them until this change. ──
 let _trackOrderId = null;
 let _trackPollTimer = null;
-let _trackGMap = null, _trackDestMarker = null, _trackCourierMarker = null;
+let _trackGMap = null, _trackDestMarker = null, _trackCourierMarker = null, _trackRoute = null, _trackAnim = null;
 
 async function openTrackOrder(orderId) {
     _trackOrderId = orderId;
@@ -660,7 +660,8 @@ async function openTrackOrder(orderId) {
 function closeTrackOrder() {
     document.getElementById('view-track-order').style.display = 'none';
     if (_trackPollTimer) { clearInterval(_trackPollTimer); _trackPollTimer = null; }
-    _trackOrderId = null; _trackGMap = null; _trackDestMarker = null; _trackCourierMarker = null;
+    _trackOrderId = null; _trackGMap = null; _trackDestMarker = null; _trackCourierMarker = null; _trackRoute = null;
+    if (_trackAnim) { cancelAnimationFrame(_trackAnim); _trackAnim = null; }
 }
 async function refreshTrackOrder() {
     if (!_trackOrderId) return;
@@ -712,6 +713,14 @@ function renderTrackEta(o) {
     if (st === 'delivered') { el.innerHTML = '<div class="trk-eta-main">✅ Delivered</div>'; return; }
     if (st === 'cancelled') { el.innerHTML = '<div class="trk-eta-main">Order cancelled</div>'; return; }
     const onRoad = (st === 'picked_up' || st === 'in_transit');
+    if (o.eta && o.eta.minutes) {
+        const fill = function(k, v) { return ETEL_I18N.t(k).replace('{a}', v.a).replace('{b}', v.b).replace('{km}', v.km); };
+        const sub = o.eta.basis === 'live' ? fill('eta_live', {km: (o.eta.km === null ? '' : o.eta.km)}) : fill('eta_typical', {});
+        el.innerHTML = '<div class="trk-eta-main">' + (onRoad ? '🛵 ' : '⏱️ ') + escapeHtml(fill('eta_arrive', {a: o.eta.low, b: o.eta.high})) + '</div>' +
+            '<div class="trk-eta-sub">' + escapeHtml(sub) + '</div>' +
+            (o.courier_stale ? '<div class="trk-eta-sub trk-eta-paused">' + escapeHtml(ETEL_I18N.t('eta_paused')) + '</div>' : '');
+        return;
+    }
     if (onRoad && o.courier_lat && o.courier_lng && o.delivery_lat && o.delivery_lng) {
         const R = 6371, rad = Math.PI / 180;
         const dLat = (o.delivery_lat - o.courier_lat) * rad, dLng = (o.delivery_lng - o.courier_lng) * rad;
@@ -752,10 +761,30 @@ function updateTrackMap(o) {
     if (hasCourier) {
         const pos = {lat: +o.courier_lat, lng: +o.courier_lng};
         if (!_trackCourierMarker) _trackCourierMarker = new google.maps.Marker({map: _trackGMap, position: pos, label: {text: '🛵', fontSize: '18px'}});
-        else _trackCourierMarker.setPosition(pos);
+        else _glideMarker(_trackCourierMarker, pos);
         bounds.extend(pos);
+    } else if (_trackCourierMarker) {
+        // courier stopped reporting: a pin from 15 minutes ago would be a lie, so take it off the map
+        _trackCourierMarker.setMap(null); _trackCourierMarker = null;
     }
+    if (hasDest && hasCourier) {
+        const line = [{lat: +o.courier_lat, lng: +o.courier_lng}, {lat: +o.delivery_lat, lng: +o.delivery_lng}];
+        if (!_trackRoute) _trackRoute = new google.maps.Polyline({map: _trackGMap, path: line, strokeOpacity: 0, icons: [{icon: {path: 'M 0,-1 0,1', strokeOpacity: .85, strokeColor: '#D4AF37', scale: 3}, offset: '0', repeat: '14px'}]});
+        else _trackRoute.setPath(line);
+    } else if (_trackRoute) { _trackRoute.setMap(null); _trackRoute = null; }
     if (hasDest && hasCourier) _trackGMap.fitBounds(bounds, 40);
+}
+// Slides the courier pin to its new position over ~1 s instead of jumping every 8 s poll.
+function _glideMarker(marker, to) {
+    const from = marker.getPosition();
+    if (!from) { marker.setPosition(to); return; }
+    const a = {lat: from.lat(), lng: from.lng()}, t0 = performance.now(), dur = 1000;
+    if (_trackAnim) cancelAnimationFrame(_trackAnim);
+    (function step(now) {
+        const k = Math.min(1, (now - t0) / dur);
+        marker.setPosition({lat: a.lat + (to.lat - a.lat) * k, lng: a.lng + (to.lng - a.lng) * k});
+        _trackAnim = k < 1 ? requestAnimationFrame(step) : null;
+    })(t0);
 }
 
 // ── FILTER PILLS (Trending / Top Rated / Fast / Budget / New) ──────

@@ -1540,3 +1540,5 @@ body.dark-theme .rate-card-sub, body.dark-theme .rate-card-later { color:rgba(24
 body.dark-theme .rate-card .rate-card-star { color:#F0CA58 !important; }
 body:not(.dark-theme) .rate-card .rate-card-star { color: #946A00 !important; }
 body:not(.dark-theme) .rate-card .rate-card-later { color: #555 !important; }
+.trk-eta-paused { color: #B45309; font-weight: 700; }
+body.dark-theme .trk-eta-paused { color: #F0CA58; }
