@@ -145,3 +145,91 @@ function etel_job_age_filter($pdo) {
     return ' AND o.placed_at >= DATE_SUB(NOW(), INTERVAL ' . (int) $m . ' MINUTE) ';
 }
 
+// ---------------------------------------------------------------------------------------------------------------
+// Orders a courier ACCEPTED but never picked up.
+// The sweep above only covers orders nobody accepted. A courier can also tap Accept and then vanish (phone off, app
+// closed, asleep): order ETD-C3EC06 sat 'assigned' for about 21 hours that way and the customer waited with it.
+// After this many minutes (default 60, 0 = off, else 20..360) an accepted order that is still not picked up is taken
+// back and offered to the next courier - BUT only when its courier has also gone quiet (no location update for
+// ETEL_PICKUP_SILENT_MIN minutes). A courier who is online and simply waiting at a slow kitchen is left alone; staff
+// see those in Admin > Needs attention ("Accepted but not picked up"). The courier is told by push message.
+// ---------------------------------------------------------------------------------------------------------------
+define('ETEL_PICKUP_SILENT_MIN', 20);
+
+// Pure: 0 (off) or 20..360 minutes.
+function etel_pickup_clean($m) {
+    $m = (int) $m;
+    if ($m <= 0) return 0;
+    if ($m < 20) $m = 20;
+    if ($m > 360) $m = 360;
+    return $m;
+}
+
+function etel_pickup_minutes($pdo) {
+    try {
+        $s = $pdo->prepare("SELECT rule_value FROM pricing_rules WHERE rule_key='courier_pickup_max_minutes' LIMIT 1");
+        $s->execute();
+        $v = $s->fetchColumn();
+        if ($v === false || $v === null || $v === '') return 60;
+        return etel_pickup_clean($v);
+    } catch (Exception $e) { return 60; }
+}
+
+function etel_pickup_save($pdo, $minutes) {
+    $m = etel_pickup_clean($minutes);
+    $pdo->prepare("INSERT INTO pricing_rules (rule_key, rule_value, description) VALUES ('courier_pickup_max_minutes', ?, 'Minutes an accepted order may stay un-picked-up before it is taken back from a courier who has gone quiet (0 = off)')
+                   ON DUPLICATE KEY UPDATE rule_value = VALUES(rule_value)")->execute(array((string) $m));
+    return $m;
+}
+
+function etel_pickup_sweep($pdo, $force = false) {
+    static $ran = false;
+    if ($ran && !$force) return 0;
+    $ran = true;
+    $mins = etel_pickup_minutes($pdo);
+    if ($mins <= 0) return 0;
+    $n = 0;
+    try {
+        require_once __DIR__ . '/courier_offers.php';
+        require_once __DIR__ . '/order_dispatch.php';
+        etel_offers_ensure_schema($pdo);
+        $has = etel_stale_has_col($pdo);
+        $q = $pdo->prepare("SELECT o.id, o.courier_id, o.order_code, c.user_id AS courier_user
+            FROM orders o JOIN couriers c ON c.id = o.courier_id
+            WHERE o.status = 'assigned' AND o.courier_accepted_at IS NOT NULL
+              AND o.courier_accepted_at < DATE_SUB(NOW(), INTERVAL ? MINUTE)
+              AND (c.last_seen IS NULL OR c.last_seen < DATE_SUB(NOW(), INTERVAL " . (int) ETEL_PICKUP_SILENT_MIN . " MINUTE))
+              AND o.placed_at > DATE_SUB(NOW(), INTERVAL 2 DAY)
+            ORDER BY o.id LIMIT 10");
+        $q->execute(array($mins));
+        $max = 3;
+        $st = etel_offer_settings($pdo);
+        if (!empty($st['max_attempts'])) $max = (int) $st['max_attempts'];
+        foreach ($q->fetchAll(PDO::FETCH_ASSOC) as $o) {
+            $id = (int) $o['id']; $cid = (int) $o['courier_id'];
+            // Atomic: only if it is still assigned to this courier and not picked up (a pickup in the meantime wins).
+            $set = $has ? ", courier_assigned_at = NULL" : "";
+            $u = $pdo->prepare("UPDATE orders SET courier_id = NULL, status = 'pending', courier_accepted_at = NULL, courier_offer_expires_at = NULL$set
+                                WHERE id = ? AND courier_id = ? AND status = 'assigned' AND courier_accepted_at IS NOT NULL");
+            $u->execute(array($id, $cid));
+            if ($u->rowCount() !== 1) continue;
+            $n++;
+            try {
+                $pdo->prepare("INSERT INTO order_courier_offers (order_id, courier_id, offered_at, expires_at, response, responded_at) VALUES (?, ?, NOW(), NOW(), 'stale', NOW())")->execute(array($id, $cid));
+            } catch (Exception $e) {}
+            error_log('[ETEL] accepted-not-picked-up: order ' . $o['order_code'] . ' taken back from courier #' . $cid . ' after ' . $mins . ' min (courier silent)');
+            try {
+                if (function_exists('etel_push_send_async') && !empty($o['courier_user'])) {
+                    etel_push_send_async($pdo, intval($o['courier_user']), 'Order given to another courier',
+                        'Order ' . $o['order_code'] . ' was not picked up in time, so it was given to another courier.', array('type' => 'order_taken_back', 'order_id' => $id));
+                }
+            } catch (Exception $e) {} catch (Throwable $e) {}
+            etel_release_idle_couriers($pdo);
+            $tried = etel_stale_tried($pdo, $id);
+            if (count($tried) < $max) etel_dispatch_order($pdo, $id, $tried);
+        }
+    } catch (Exception $e) { error_log('[ETEL] etel_pickup_sweep: ' . $e->getMessage()); }
+      catch (Throwable $e) { error_log('[ETEL] etel_pickup_sweep: ' . $e->getMessage()); }
+    return $n;
+}
+

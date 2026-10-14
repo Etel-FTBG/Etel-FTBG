@@ -78,6 +78,8 @@ function etel_platform_pulse($pdo, $days) {
         'pending_payments' => intval(etel_pulse_one($pdo, "SELECT COUNT(*) FROM bank_payments WHERE status = 'pending'"))
                             + intval(etel_pulse_one($pdo, "SELECT COUNT(*) FROM telebirr_payments WHERE status IN ('pending','processing') AND created_at >= DATE_SUB(NOW(), INTERVAL 1 DAY)")),
         'stuck_orders'     => intval(etel_pulse_one($pdo, "SELECT COUNT(*) FROM orders WHERE status IN ('pending','assigned') AND placed_at < DATE_SUB(NOW(), INTERVAL 20 MINUTE) AND placed_at >= DATE_SUB(NOW(), INTERVAL 1 DAY)")),
+        // a courier accepted the order but it is still not picked up after 30 minutes (the courier may be waiting at a slow shop, or gone)
+        'accepted_idle'    => intval(etel_pulse_one($pdo, "SELECT COUNT(*) FROM orders WHERE status = 'assigned' AND courier_accepted_at IS NOT NULL AND courier_accepted_at < DATE_SUB(NOW(), INTERVAL 30 MINUTE) AND placed_at >= DATE_SUB(NOW(), INTERVAL 1 DAY)")),
     );
 
     $live = array(
