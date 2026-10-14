@@ -429,6 +429,9 @@
                             'style="margin-top:6px;width:100%;padding:8px;background:none;color:var(--primary);border:1px solid var(--primary);border-radius:8px;font-size:12px;font-weight:700;cursor:pointer">' +
                             '🖨️ Reprint Kitchen Ticket</button>';
                     }
+                    if (status === 'pending' || status === 'preparing') {
+                        actionBtn += '<button class="btn-decline" onclick="openDecline(' + orderId + ')">&#10006; Decline order</button>';
+                    }
                     return '<div style="padding:16px;border-bottom:1px solid var(--border-light);">' +
                         '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">' +
                             '<div style="font-weight:700;color:var(--text-dark);">' + escapeHtml(order.order_code || ('#' + orderId)) + '</div>' +
@@ -445,6 +448,47 @@
             } catch(e) {
                 container.innerHTML = UI.error('Error rendering orders');
             }
+        }
+
+        // Decline an order the shop cannot fill (sold out, too busy, closing). Same server rule as everywhere:
+        // only before the courier picks it up; the server frees the courier, tells the customer and flags a refund.
+        var _declineId = 0;
+        var DECLINE_REASONS = [
+            ['out_of_stock', 'An item is out of stock'],
+            ['too_busy', 'Too busy right now'],
+            ['closing', 'We are closing'],
+            ['other', 'Another reason']
+        ];
+        function openDecline(orderId) {
+            _declineId = orderId;
+            document.getElementById('decline-reasons').innerHTML = DECLINE_REASONS.map(function (r) {
+                return '<label class="decline-opt"><input type="radio" name="decline-reason" value="' + r[0] + '" onchange="declinePick()"> ' + escapeHtml(r[1]) + '</label>';
+            }).join('');
+            document.getElementById('decline-note').value = '';
+            document.getElementById('decline-msg').style.display = 'none';
+            document.getElementById('decline-go').disabled = false;
+            document.getElementById('decline-overlay').classList.add('show');
+        }
+        function declinePick() {
+            Array.prototype.forEach.call(document.querySelectorAll('.decline-opt'), function (l) {
+                l.classList.toggle('on', l.querySelector('input').checked);
+            });
+        }
+        function closeDecline() {
+            document.getElementById('decline-overlay').classList.remove('show');
+            _declineId = 0;
+        }
+        async function submitDecline() {
+            var chosen = document.querySelector('input[name="decline-reason"]:checked');
+            var msg = document.getElementById('decline-msg');
+            if (!chosen) { msg.textContent = 'Please choose a reason.'; msg.style.display = 'block'; return; }
+            var btn = document.getElementById('decline-go');
+            btn.disabled = true;
+            var res = await apiCall('sg_reject_order', { order_id: _declineId, reason: chosen.value, note: document.getElementById('decline-note').value });
+            if (!res) { btn.disabled = false; return; } // apiCall already showed the server message
+            closeDecline();
+            showNotification(res.refund_due ? 'Order declined. The customer will be refunded.' : 'Order declined.', 'success');
+            loadOrders();
         }
 
         async function sgUpdateStatus(orderId, newStatus) {

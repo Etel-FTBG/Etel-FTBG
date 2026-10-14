@@ -305,6 +305,16 @@ table tr:hover td { background:rgba(212,175,55,.04); }
 .modal-close { position:absolute; top:16px; right:18px; background:rgba(255,255,255,.06); border:1px solid var(--border); width:30px; height:30px; border-radius:50%; font-size:16px; cursor:pointer; color:var(--text-dim); }
 .modal-title { font-size:18px; font-weight:800; color:var(--gold-lt); margin-bottom:20px; }
 
+.decline-reasons { display:flex; flex-direction:column; gap:8px; margin-bottom:12px; }
+.decline-opt { display:flex; align-items:center; gap:10px; padding:11px 12px; border:1px solid var(--border-lt); border-radius:10px; cursor:pointer; color:var(--text); font-size:14px; }
+.decline-opt input { accent-color:#E63946; width:18px; height:18px; }
+.decline-opt.on { border-color:#E63946; background:rgba(230,57,70,.10); }
+.decline-msg { padding:10px 12px; border-radius:10px; font-size:13px; margin:10px 0; background:rgba(230,57,70,.12); border:1px solid rgba(230,57,70,.3); color:#ff8a93; }
+.decline-go { width:100%; justify-content:center; padding:13px; margin-top:12px; background:#E63946; color:#fff; border:none; font-weight:800; }
+.decline-go[disabled] { opacity:.5; }
+.decline-keep { width:100%; justify-content:center; padding:12px; margin-top:8px; background:none; color:var(--text-dim); border:1px solid var(--border-lt); }
+.btn-decline { margin-top:6px; width:100%; padding:9px; background:none; color:#ff8a93; border:1px solid rgba(230,57,70,.5); border-radius:8px; font-size:12px; font-weight:700; cursor:pointer; }
+
 /* ── Empty / loading state ─────────────────────────────── */
 .empty-msg { color:var(--text-faint); text-align:center; padding:40px 20px; font-size:13px; }
 
@@ -1017,6 +1027,20 @@ body.etel-light .cat-chip.on{background:#f3e3b0;color:#4a3300}
     </div>
 
 
+    <!-- ── DECLINE ORDER ─────────────────────────────────────── -->
+    <div id="decline-overlay" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="decline-title">
+        <div class="modal-box">
+            <button class="modal-close" onclick="closeDecline()" aria-label="Close">&#10005;</button>
+            <div id="decline-title" class="modal-title">Decline this order?</div>
+            <p class="cat-hint">The customer is told right away and gets their money back if they already paid. Pick the reason.</p>
+            <div id="decline-reasons" class="decline-reasons"></div>
+            <textarea id="decline-note" class="field-input" maxlength="200" rows="2" placeholder="Add a note for the customer (optional)"></textarea>
+            <div id="decline-msg" class="decline-msg" style="display:none"></div>
+            <button id="decline-go" class="btn decline-go" onclick="submitDecline()">Decline order</button>
+            <button class="btn decline-keep" onclick="closeDecline()">Keep the order</button>
+        </div>
+    </div>
+
     <!-- ── MENU CATALOG PICKER ───────────────────────────────── -->
     <div id="catalog-overlay" class="modal-overlay">
         <div class="modal-box cat-box">
@@ -1132,7 +1156,7 @@ body.etel-light .cat-chip.on{background:#f3e3b0;color:#4a3300}
         </div>
     </div>
 
-    <script src="js/servicegiver.js?v=4.4"></script>
+    <script src="js/servicegiver.js?v=4.5"></script>
     <script src="js/servicegiver-premium.js?v=1.9"></script>
     <script src="js/servicegiver-3d-premium.js?v=1.2"></script><!-- 3D visual upgrade: glass depth, glowing sweep borders, rating ring -->
     <script>
