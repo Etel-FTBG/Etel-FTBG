@@ -231,6 +231,9 @@ case 'courier_get_available_orders': {
     try { require_once __DIR__ . '/../lib/courier_offers.php'; etel_offers_sweep($pdo); } catch (Exception $swe) {} catch (Throwable $swe) {}
     try { require_once __DIR__ . '/../lib/order_dispatch.php'; etel_cancel_unpaid_chapa_orders($pdo); } catch (Exception $swe) {} catch (Throwable $swe) {}
 
+    require_once __DIR__ . '/../lib/courier_stale.php';
+    $old_jobs = etel_job_age_filter($pdo);   // hides jobs nobody took for hours (see lib/courier_stale.php)
+
     // Ensure order_assignments exists and has needed columns
     try {
         $pdo->query("CREATE TABLE IF NOT EXISTS order_assignments (
@@ -261,6 +264,7 @@ case 'courier_get_available_orders': {
               AND (o.courier_id IS NULL OR o.courier_id = 0)
               AND o.status NOT IN ('cancelled','delivered')
               AND NOT (o.payment_method = 'chapa' AND o.payment_status <> 'paid')
+              $old_jobs
             ORDER BY o.placed_at ASC LIMIT 50
         ");
         $s->execute();
@@ -277,6 +281,7 @@ case 'courier_get_available_orders': {
                 WHERE (o.courier_id IS NULL OR o.courier_id = 0)
                   AND o.status IN ('pending','assigned')
                   AND NOT (o.payment_method = 'chapa' AND o.payment_status <> 'paid')
+                  $old_jobs
                 ORDER BY o.placed_at ASC LIMIT 50
             ");
             $s->execute();
