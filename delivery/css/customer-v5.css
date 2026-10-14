@@ -1511,3 +1511,17 @@ body:not(.dark-theme) .svc-ico-ride  { color: #1D4ED8; }
 body:not(.dark-theme) .rc-rating { background: #F3EFE6; color: var(--lt-ink, #1A1200); }
 body:not(.dark-theme) .rc-facts, body:not(.dark-theme) .rc-rating-new, body:not(.dark-theme) .restaurant-card-info { color: var(--lt-ink-3, #6B6350) !important; }
 body:not(.dark-theme) .rc-fav { background: rgba(255,255,255,.9); color: #1A1200; border-color: rgba(0,0,0,.08); }
+
+/* Branded placeholder for shops / items without a photo (see shopPlaceholder / itemPlaceholder in customer.js) */
+.ph-brand { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: #f6c22b; overflow: hidden; }
+.ph-brand::after { content: ''; position: absolute; inset: 0; background: linear-gradient(135deg, transparent 55%, rgba(246,194,43,.16)); pointer-events: none; }
+.ph-v0 { background: radial-gradient(circle at 25% 20%, #1f4fb0 0, #0a1d4d 60%, #061230 100%); }
+.ph-v1 { background: radial-gradient(circle at 75% 20%, #12337a 0, #0a1d4d 55%, #061230 100%); }
+.ph-v2 { background: linear-gradient(135deg, #0a1d4d, #12337a); }
+.ph-v3 { background: radial-gradient(circle at 50% 0, #2a3f78 0, #0a1d4d 60%, #061230 100%); }
+.ph-ring { width: 64px; height: 64px; border-radius: 50%; border: 2px solid rgba(246,194,43,.8);
+  display: flex; align-items: center; justify-content: center; font: 800 30px/1 'Syne', system-ui, sans-serif; box-shadow: 0 0 24px rgba(246,194,43,.25); }
+.ph-ico { width: 46px; height: 46px; }
+.offer-card-image .ph-ico { width: 40px; height: 40px; }
+.restaurant-card.rc-closed .ph-brand { filter: grayscale(.85) brightness(.8); }
+

@@ -303,8 +303,8 @@ function renderSGScroll(items) {
         const rate = sg.rating > 0 ? '<span class="rc-rating">' + RC_STAR + sg.rating.toFixed(1) + '</span>' : '<span class="rc-rating rc-rating-new">' + escapeHtml(tNew) + '</span>';
         const coverSrc = sg.cover || sg.img;
         const cover = coverSrc
-            ? '<span class="rc-ph">' + ic + '</span><img class="rc-cover" src="' + escUrl(coverSrc) + '" alt="" loading="lazy" onerror="this.onerror=null;this.style.display=\'none\'">'
-            : '<span class="rc-ph rc-ph-solo">' + ic + '</span>';
+            ? shopPlaceholder(sg.name) + '<img class="rc-cover" src="' + escUrl(coverSrc) + '" alt="" loading="lazy" onerror="this.onerror=null;this.style.display=\'none\'">'
+            : shopPlaceholder(sg.name);
         const from = isFinite(sg.minPrice) ? escapeHtml(tFrom) + ' ETB ' + Math.round(sg.minPrice) + ' · ' : '';
         // Only a closed shop gets a label on the photo; an open shop needs no badge.
         const closedBadge = sg.online === false ? '<span class="rc-closed-badge">' + escapeHtml(tClosed) + '</span>' : '';
@@ -785,6 +785,26 @@ function applyCuisineFilter(key, btn) {
     applyFilters();
 }
 
+// Branded placeholder art for shops and items that have no photo yet. It replaces an emoji that looked different
+// (and identical for every shop) on each phone. Colours follow the ETEL navy/gold brand; the shade is picked from the name.
+function etelHash(str) { let h = 0; str = String(str || ''); for (let i = 0; i < str.length; i++) { h = (h * 31 + str.charCodeAt(i)) | 0; } return Math.abs(h); }
+function shopPlaceholder(name) {
+    const ch = (Array.from(String(name || '').trim())[0] || 'E').toUpperCase();
+    return '<span class="ph-brand ph-v' + (etelHash(name) % 4) + '" aria-hidden="true"><span class="ph-ring">' + escapeHtml(ch) + '</span></span>';
+}
+const ITEM_ICON_PATHS = {
+    food: '<path d="M7 3v8M5 3v5a2 2 0 0 0 4 0V3M7 11v10M17 3c-2 1.5-3 4-3 7 0 2 1 3 3 3V3zM17 13v8"/>',
+    grocery: '<path d="M3 4h2l2.4 11h10.2L20 7H6.2"/><circle cx="9" cy="19" r="1.4"/><circle cx="17" cy="19" r="1.4"/>',
+    pharmacy: '<rect x="4" y="9" width="16" height="6" rx="3" transform="rotate(-35 12 12)"/><path d="M9.5 14.5l5-5"/>',
+    drink: '<path d="M6 4h12l-1.5 16h-9z"/><path d="M6.5 9h11"/>',
+    box: '<path d="M3 7.5L12 3l9 4.5v9L12 21l-9-4.5z"/><path d="M3 7.5l9 4.5 9-4.5M12 12v9"/>'
+};
+function itemPlaceholder(category, name) {
+    const c = String(category || '').toLowerCase();
+    const kind = /food|bakery|snack|meat|restaurant|cafe|fastfood/.test(c) ? 'food' : /grocer|market/.test(c) ? 'grocery'
+               : /pharm/.test(c) ? 'pharmacy' : /bever|drink|juice|coffee/.test(c) ? 'drink' : (c ? 'box' : 'food');
+    return '<span class="ph-brand ph-v' + (etelHash(name) % 4) + '" aria-hidden="true"><svg class="ph-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">' + ITEM_ICON_PATHS[kind] + '</svg></span>';
+}
 const catEmoji = {food:'🍽️',grocery:'🛒',pharmacy:'💊',laundry:'👕',delivery:'📦'};
 function renderItemsGrid(items, targetId) {
     const grid = document.getElementById(targetId || 'items-grid');
@@ -798,9 +818,9 @@ function renderItemsGrid(items, targetId) {
         const discounted = item.original_price && parseFloat(item.original_price) > parseFloat(item.price);
         const ic = catIcons[item.category] || catEmoji[item.category] || catIcons.default;
         const imgHtml = item.image_url
-            ? '<span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:38px;opacity:.4">' + ic + '</span>'
+            ? itemPlaceholder(item.category, item.name)
               + '<img loading="lazy" decoding="async" src="' + escUrl(item.image_url) + '" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover" onerror="this.onerror=null;this.style.display=\'none\'">'
-            : '<span style="font-size:52px;filter:drop-shadow(0 4px 12px rgba(212,175,55,.3))">' + ic + '</span>';
+            : itemPlaceholder(item.category, item.name);
         const displayName = (ETEL_I18N.current() === 'am' && item.name_am) ? item.name_am : (item.name || '');
         // Stripped (not just apostrophe-escaped): this string ends up both
         // inside a JS string literal AND inside an HTML onclick="..."
@@ -874,7 +894,7 @@ function openItemDetail(itemId) {
     const ic = (catEmoji[item.category]) || '🍴';
     const imgHtml = item.image_url
         ? '<img loading="lazy" decoding="async" src="' + escUrl(item.image_url) + '" alt="" style="width:100%;height:100%;object-fit:cover" onerror="this.onerror=null;this.style.display=\'none\'">'
-        : '<span style="font-size:80px">' + ic + '</span>';
+        : itemPlaceholder(item.category, item.name);
     const stock = parseInt(item.stock_quantity, 10);
     const available = item.is_available == 1 && (isNaN(stock) || stock > 0);
     const safeN = displayName.replace(/[<>"'\\]/g, '');
@@ -895,7 +915,7 @@ function openItemDetail(itemId) {
             '<button onclick="closeItemDetail()" style="position:absolute;top:14px;right:14px;z-index:2;' +
                 'background:rgba(6,6,8,.6);color:var(--text);border:none;width:32px;height:32px;border-radius:50%;' +
                 'font-size:16px;cursor:pointer;">✕</button>' +
-            '<div style="width:100%;height:220px;background:var(--dark-3);display:flex;align-items:center;justify-content:center;' +
+            '<div style="position:relative;width:100%;height:220px;background:var(--dark-3);display:flex;align-items:center;justify-content:center;' +
                  'border-radius:20px 20px 0 0;overflow:hidden;">' + imgHtml + '</div>' +
             (discounted ? '<div style="position:absolute;top:14px;left:14px;background:var(--red);color:#fff;' +
                 'font-size:11px;font-weight:700;padding:3px 9px;border-radius:6px;">SALE</div>' : '') +
