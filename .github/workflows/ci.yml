@@ -97,6 +97,7 @@ jobs:
           python3 delivery/tests/ci/check_type_tokens.py
           python3 delivery/tests/ci/check_money_ledger.py
           python3 delivery/tests/ci/check_manual_dispatch.py
+          python3 delivery/tests/ci/check_package_prices_admin.py
           python3 delivery/tests/ci/check_order_cancel.py
           python3 delivery/tests/ci/check_customer_cancel.py
           python3 delivery/tests/ci/check_shop_decline.py
