@@ -260,6 +260,25 @@
             showNotification(data.is_online ? 'You are online — orders can reach you' : 'You are offline — no new orders will come in', 'success');
         }
 
+        // Opening hours: the server only lets customers order inside them (and only while the online switch is on).
+        async function saveSgHours() {
+            const o = (document.getElementById('sgp-opens') || {}).value || '';
+            const c = (document.getElementById('sgp-closes') || {}).value || '';
+            if (!o || !c) { showNotification('Enter both an opening and a closing time, or press Clear', 'error'); return; }
+            const data = await apiCall('sg_set_hours', { opens_at: o, closes_at: c });
+            if (!data) return;
+            currentServiceGiver.opens_at = data.opens_at; currentServiceGiver.closes_at = data.closes_at;
+            showNotification('Opening hours saved: ' + data.opens_at + ' to ' + data.closes_at, 'success');
+        }
+        async function clearSgHours() {
+            const data = await apiCall('sg_set_hours', { opens_at: '', closes_at: '' });
+            if (!data) return;
+            currentServiceGiver.opens_at = null; currentServiceGiver.closes_at = null;
+            const hOpen = document.getElementById('sgp-opens'), hClose = document.getElementById('sgp-closes');
+            if (hOpen) hOpen.value = ''; if (hClose) hClose.value = '';
+            showNotification('Opening hours cleared - you are open whenever your switch is on', 'success');
+        }
+
         function renderSgProfilePanel() {
             const setText = function(id, val){ var el = document.getElementById(id); if (el) el.textContent = val; };
             const sg = currentServiceGiver || {};
@@ -283,6 +302,9 @@
             setText('sgp-stat-revenue', currentStaffRole === 'cashier' ? '—' : 'ETB ' + Math.round(parseFloat(sg.total_earnings || 0)).toLocaleString());
             const dot = document.getElementById('sgp-dot');
             if (dot) dot.style.background = sg.is_online ? 'var(--success)' : 'var(--text-faint)';
+            const hOpen = document.getElementById('sgp-opens'), hClose = document.getElementById('sgp-closes');
+            if (hOpen) hOpen.value = sg.opens_at ? String(sg.opens_at).slice(0, 5) : '';
+            if (hClose) hClose.value = sg.closes_at ? String(sg.closes_at).slice(0, 5) : '';
         }
 
         function toggleSgProfile() {
@@ -804,6 +826,9 @@
                                 <input type="checkbox" ${it.is_available=='1'||it.is_available===true?'checked':''} ${canManageMenu ? `onchange="toggleItem(${it.id},this.checked)"` : 'disabled'} style="width:16px;height:16px;cursor:${canManageMenu ? 'pointer' : 'not-allowed'}">
                                 <span style="font-size:12px;color:${it.is_available=='1'||it.is_available===true?'#2ecc71':'#aaa'}">${it.is_available=='1'||it.is_available===true?'Available':'Hidden'}</span>
                             </label>
+                            ${(it.is_available=='1'||it.is_available===true) && canManageMenu ? (it.sold_out == 1
+                                ? `<button onclick="setSoldOut(${it.id},0)" style="margin-top:5px;padding:3px 9px;background:#fff3cd;color:#7a5b00;border:1px solid #e6c85a;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap">Sold out · Undo</button>`
+                                : `<button onclick="setSoldOut(${it.id},1)" style="margin-top:5px;padding:3px 9px;background:transparent;color:#7a5b00;border:1px solid #e6c85a;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap">Sold out today</button>`) : ''}
                         </td>
                         ${canManageMenu ? `
                         <td style="padding:10px 8px;display:flex;gap:6px;align-items:center;flex-wrap:wrap">
@@ -1140,6 +1165,13 @@
                 msgEl.textContent = editId ? '✓ Item updated!' : '✓ Item added!';
                 setTimeout(() => { closeItemModal(); loadServices(); }, 900);
             }
+        }
+
+        // "Sold out today": customers see it as unavailable until midnight, then it comes back by itself.
+        async function setSoldOut(id, soldOut) {
+            const data = await apiCall('sg_sold_out', { item_id: id, sold_out: soldOut ? 1 : 0 });
+            if (data) showNotification(soldOut ? 'Marked sold out for today - it returns tomorrow' : 'Back on sale', 'success');
+            await loadServices();
         }
 
         async function toggleItem(id, checked) {

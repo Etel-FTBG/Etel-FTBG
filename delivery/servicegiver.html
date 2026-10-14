@@ -1079,6 +1079,17 @@ body.etel-light .cat-chip.on{background:#f3e3b0;color:#4a3300}
                     <div style="width:34px;height:34px;border-radius:10px;background:rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0">🆔</div>
                     <div style="min-width:0"><div style="font-size:12.5px;font-weight:700;color:var(--text)">Business ID</div><div id="sgp-code" style="font-size:11px;color:var(--text-dim);margin-top:1px">—</div></div>
                 </div>
+                <div id="sgp-hours" style="padding:13px 16px;border-top:1px solid var(--border)">
+                    <div style="font-size:12.5px;font-weight:700;color:var(--text)">⏰ Opening hours</div>
+                    <div id="sgp-hours-note" style="font-size:11px;color:var(--text-dim);margin:2px 0 8px">Customers can only order inside these hours. Leave empty to be open whenever your switch is on.</div>
+                    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+                        <input type="time" id="sgp-opens" aria-label="Opens at" style="padding:7px 8px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:13px">
+                        <span style="font-size:12px;color:var(--text-dim)">to</span>
+                        <input type="time" id="sgp-closes" aria-label="Closes at" style="padding:7px 8px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:13px">
+                        <button type="button" onclick="saveSgHours()" style="padding:7px 14px;border-radius:8px;border:0;background:#D4AF37;color:#1A1200;font-weight:700;font-size:12.5px;cursor:pointer">Save</button>
+                        <button type="button" onclick="clearSgHours()" style="padding:7px 10px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--text-dim);font-size:12px;cursor:pointer">Clear</button>
+                    </div>
+                </div>
             </div>
 
             <div style="margin:0 20px 14px;background:var(--surface-lt);border:1px solid var(--border);border-radius:16px;overflow:hidden">
@@ -1121,7 +1132,7 @@ body.etel-light .cat-chip.on{background:#f3e3b0;color:#4a3300}
         </div>
     </div>
 
-    <script src="js/servicegiver.js?v=4.2"></script>
+    <script src="js/servicegiver.js?v=4.4"></script>
     <script src="js/servicegiver-premium.js?v=1.9"></script>
     <script src="js/servicegiver-3d-premium.js?v=1.2"></script><!-- 3D visual upgrade: glass depth, glowing sweep borders, rating ring -->
     <script>

@@ -1,6 +1,6 @@
 # ETEL Delivery & Ride API reference
 
-Generated from the source by `tools/gen_api_docs.py` (410 actions). Machine-readable: `openapi.json`.
+Generated from the source by `tools/gen_api_docs.py` (412 actions). Machine-readable: `openapi.json`.
 
 **Call:** `POST /delivery/api/boot.php` with JSON `{"action": "<name>", ...fields}`; header `Authorization: Bearer <token>` for everything except the *public* actions.
 **Reply:** `{success, data, message, v}`. **Login:** `login` / `etelid_login` (apps) or `admin_etelid_login` (admin; add `totp_code` when the reply says `requires_2fa`).
@@ -8,7 +8,7 @@ Generated from the source by `tools/gen_api_docs.py` (410 actions). Machine-read
 | Who can call | Actions |
 |---|---|
 | admin | 188 |
-| any signed-in user | 175 |
+| any signed-in user | 177 |
 | courier | 16 |
 | public | 9 |
 | public (this call signs you in) | 6 |
@@ -484,7 +484,9 @@ Generated from the source by `tools/gen_api_docs.py` (410 actions). Machine-read
 | `sg_sales_report` | any signed-in user | `days`, `sg_id` | `days`, `sg_id` |
 | `sg_save_role` | any signed-in user | `capabilities`, `role_id`, `role_name` | - |
 | `sg_scan_qr` | any signed-in user | `order_id`, `qr_type` | - |
+| `sg_set_hours` | any signed-in user | `closes_at`, `opens_at` | - |
 | `sg_set_online` | any signed-in user | `is_online` | - |
+| `sg_sold_out` | any signed-in user | `item_id`, `sold_out` | - |
 | `sg_stats` | any signed-in user | - | - |
 | `sg_update_item` | any signed-in user | `description`, `description_am`, `image_url`, `is_available`, `item_id`, `name`, `name_am`, `original_price`, `portion`, `preparation_time`, `price`, `quality`, `stock_quantity` | - |
 | `sg_update_order_status` | any signed-in user | `new_status`, `order_id` | - |

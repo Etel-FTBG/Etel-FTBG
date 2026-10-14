@@ -116,6 +116,11 @@ function delivery_execute_order_creation($pdo, $auth_user, $body) {
         $service_giver_id = $first_item['service_giver_id'];
         $package_type = $first_item['category'];
         
+        // Refuse hidden / sold-out items and shops outside their opening hours (api/lib/shop_hours.php)
+        require_once __DIR__ . '/shop_hours.php';
+        $blocked = etel_order_blockers($pdo, array_map(function ($ci) { return isset($ci['item_id']) ? $ci['item_id'] : 0; }, $items));
+        if ($blocked !== '') throw new Exception($blocked);
+
         // Calculate total
         $fare_total = 0;
         $item_details = array();
