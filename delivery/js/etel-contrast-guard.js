@@ -39,6 +39,16 @@
         for (var i = layers.length - 1; i >= 0; i--) acc = over(layers[i], acc);
         return acc;
     }
+    /* True when an ancestor paints its text with a clipped gradient (background-clip:text). Text inside it has a transparent fill on purpose:
+       the gradient shows through the letters. Judging it against the gradient as if that were a flat surface used to turn such titles dark on dark
+       (for example the Groceries page title in dark mode), so it is left alone. */
+    function inClippedText(el) {
+        for (var n = el.parentElement; n && n !== document.body; n = n.parentElement) {
+            var c = getComputedStyle(n);
+            if (c.webkitBackgroundClip === 'text' || c.backgroundClip === 'text') return true;
+        }
+        return false;
+    }
     function fix(el) {
         var cs = getComputedStyle(el);
         if (cs.display === 'none' || cs.visibility === 'hidden') return;
@@ -55,6 +65,7 @@
             }
             return;
         }
+        if (inClippedText(el)) return;
         var fg = parse(cs.webkitTextFillColor && cs.webkitTextFillColor.indexOf('rgb') === 0 ? cs.webkitTextFillColor : cs.color); if (!fg) return;
         var bg = backdrop(el), eff = over(fg, bg);
         if (ratio(eff, bg) >= MIN) return;

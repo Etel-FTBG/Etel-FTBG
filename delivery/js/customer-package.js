@@ -27,7 +27,7 @@
             pkg_err_size: 'Choose the package size.', pkg_err_weight: 'Enter the weight in kg.', pkg_err_desc: 'Say what is inside (a few words).', pkg_err_ack: 'Please confirm the package has no prohibited items.',
             pkg_err_vehicle: 'Choose a vehicle.', pkg_gps_fail: 'Could not get your location.',
             pkg_trk_title: 'Package details', pkg_trk_from: 'From', pkg_trk_to: 'To', pkg_trk_vehicle: 'Vehicle', pkg_trk_what: 'Package',
-            pkg_order_label: 'Package'
+            pkg_order_label: 'Package', pkg_theme: 'Light / Dark mode'
         },
         am: {
             pkg_tile_title: 'ጥቅል ላክ', pkg_tile_sub: 'በሃዋሳ ውስጥ በማንኛውም ቦታ · ተሽከርካሪውን እርስዎ ይመርጣሉ',
@@ -50,7 +50,7 @@
             pkg_err_size: 'የጥቅሉን መጠን ይምረጡ።', pkg_err_weight: 'ክብደቱን በኪ.ግ ያስገቡ።', pkg_err_desc: 'ውስጡ ምን እንደሆነ በጥቂት ቃላት ይግለጹ።', pkg_err_ack: 'እባክዎ ጥቅሉ የተከለከሉ ዕቃዎች እንደሌሉት ያረጋግጡ።',
             pkg_err_vehicle: 'ተሽከርካሪ ይምረጡ።', pkg_gps_fail: 'አካባቢዎን ማግኘት አልተቻለም።',
             pkg_trk_title: 'የጥቅሉ ዝርዝር', pkg_trk_from: 'ከ', pkg_trk_to: 'ወደ', pkg_trk_vehicle: 'ተሽከርካሪ', pkg_trk_what: 'ጥቅል',
-            pkg_order_label: 'ጥቅል'
+            pkg_order_label: 'ጥቅል', pkg_theme: 'ብርሃን / ጨለማ'
         }
     });
 
@@ -279,6 +279,7 @@
             S.busy = false; render();
         });
     };
+    window.pkgTheme = function () { try { customerToggleTheme(); } catch (e) {} };
     window.pkgTrack = function (id) { window.pkgClose(); try { openTrackOrder(id); } catch (e) {} };
     window.pkgDone = function () { window.pkgClose(); try { switchCategory('orders'); } catch (e) {} };
 
@@ -398,7 +399,10 @@
         v0.innerHTML =
             '<header class="app-header pkg-head"><div class="header-brand"><button class="header-btn" type="button" aria-label="' + esc(T('pkg_back')) + '"' + a('pkgBack') + '>' +
             '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg></button>' +
-            '<div class="brand-info"><div class="brand-name">📦 ' + esc(T('pkg_title')) + '</div></div></div></header>' +
+            '<span class="pkg-head-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 8l-9-5-9 5 9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg></span>' +
+            '<div class="brand-info"><div class="pkg-head-title">' + esc(T('pkg_title')) + '</div></div></div>' +
+            '<button class="header-btn pkg-theme" type="button" aria-label="' + esc(T('pkg_theme')) + '" title="' + esc(T('pkg_theme')) + '"' + a('pkgTheme') + '>' +
+            '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor"/></svg></button></header>' +
             '<div id="pkg-scroll" class="pkg-scroll">' + body + '</div><div class="pkg-foot">' + foot + '</div>';
         var sc = v0.querySelector('#pkg-scroll'); if (sc) sc.scrollTop = scroll;
         bindPlaces();
