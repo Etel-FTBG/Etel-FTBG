@@ -166,6 +166,12 @@ def main():
     status, res = call("driver_cashout", {"amount": -50}, token=drv_token)
     check("cashout rejects a negative amount", res.get("success") is False, res)
 
+    print("7. Admin ratings report is for admins only")
+    status, res = call("admin_ratings_report", {"days": 30})
+    check("ratings report without a token is refused (401)", res.get("success") is False and status == 401, f"status={status} res={res}")
+    status, res = call("admin_ratings_report", {"days": 30}, token=drv_token)
+    check("ratings report for a non-admin account is refused (403)", res.get("success") is False and status == 403, f"status={status} res={res}")
+
     print()
     print(f"{len(PASS)} passed, {len(FAIL)} failed")
     if FAIL:

@@ -29,6 +29,8 @@ function etel_pulse_delta($cur, $prev) {
 // speed and made the average read 397 minutes. They are left out and counted separately as 'avg_skipped'.
 define('ETEL_PULSE_MAX_DELIVERY_MIN', 180);
 
+require_once __DIR__ . '/ratings_report.php';
+
 function etel_pulse_period($pdo, $from, $to) {
     $base = "FROM orders o WHERE o.placed_at >= $from AND o.placed_at < $to";
     $r = array();
@@ -95,6 +97,8 @@ function etel_platform_pulse($pdo, $days) {
                             + intval(etel_pulse_one($pdo, "SELECT COUNT(*) FROM telebirr_payments WHERE status IN ('pending','processing') AND created_at >= DATE_SUB(NOW(), INTERVAL 1 DAY)")),
         'stuck_orders'     => intval(etel_pulse_one($pdo, "SELECT COUNT(*) FROM orders WHERE status IN ('pending','assigned') AND placed_at < DATE_SUB(NOW(), INTERVAL 20 MINUTE) AND placed_at >= DATE_SUB(NOW(), INTERVAL 1 DAY)")),
         // a courier accepted the order but it is still not picked up after 30 minutes (the courier may be waiting at a slow shop, or gone)
+        // customers who rated 1-2 stars (or the courier/food 1 star) in the last 7 days; opens Admin > Ratings
+        'low_ratings'      => (function_exists('etel_low_ratings_count') ? etel_low_ratings_count($pdo, 7) : 0),
         'accepted_idle'    => intval(etel_pulse_one($pdo, "SELECT COUNT(*) FROM orders WHERE status = 'assigned' AND courier_accepted_at IS NOT NULL AND courier_accepted_at < DATE_SUB(NOW(), INTERVAL 30 MINUTE) AND placed_at >= DATE_SUB(NOW(), INTERVAL 1 DAY)")),
     );
 

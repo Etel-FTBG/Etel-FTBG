@@ -604,6 +604,7 @@ function etel_maybe_pay_referral_reward($pdo, $completed_user_id) {
 // Delivery/commerce capability (roles holding * are unaffected).
 $ETEL_DELIVERY_ONLY_ACTIONS = array(
     'admin_get_orders','get_orders','admin_get_couriers','admin_get_live_couriers','admin_update_courier',
+    'admin_ratings_report',
     'admin_get_service_givers','admin_get_service_givers_list','admin_get_service_giver','admin_get_service_giver_statistics',
     'admin_create_service_giver','admin_verify_service_giver','admin_suspend_service_giver','admin_assign_service_giver',
     'admin_get_all_items','admin_add_item','admin_update_item','admin_delete_item','admin_toggle_item',
@@ -1574,6 +1575,9 @@ switch ($action) {
         break;
     case 'admin_get_stale_assign': case 'admin_save_stale_assign':
         require __DIR__ . '/controllers/DispatchController.php';
+        break;
+    case 'admin_ratings_report':
+        require __DIR__ . '/controllers/RatingsAdminController.php';
         break;
     case 'get_tip_options': case 'admin_get_courier_pay': case 'admin_save_courier_pay': case 'admin_preview_courier_pay': case 'admin_get_order_pay': case 'admin_set_order_pay':
         require __DIR__ . '/controllers/CourierPayController.php';

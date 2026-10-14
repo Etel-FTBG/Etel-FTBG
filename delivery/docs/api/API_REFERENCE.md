@@ -1,13 +1,13 @@
 # ETEL Delivery & Ride API reference
 
-Generated from the source by `tools/gen_api_docs.py` (409 actions). Machine-readable: `openapi.json`.
+Generated from the source by `tools/gen_api_docs.py` (410 actions). Machine-readable: `openapi.json`.
 
 **Call:** `POST /delivery/api/boot.php` with JSON `{"action": "<name>", ...fields}`; header `Authorization: Bearer <token>` for everything except the *public* actions.
 **Reply:** `{success, data, message, v}`. **Login:** `login` / `etelid_login` (apps) or `admin_etelid_login` (admin; add `totp_code` when the reply says `requires_2fa`).
 
 | Who can call | Actions |
 |---|---|
-| admin | 187 |
+| admin | 188 |
 | any signed-in user | 175 |
 | courier | 16 |
 | public | 9 |
@@ -160,7 +160,7 @@ Generated from the source by `tools/gen_api_docs.py` (409 actions). Machine-read
 | Action | Auth | Fields | Query |
 |---|---|---|---|
 | `admin_get_stale_assign` | admin · orders.manage | - | - |
-| `admin_save_stale_assign` | admin · orders.manage | `minutes` | - |
+| `admin_save_stale_assign` | admin · orders.manage | `job_max_age`, `minutes`, `pickup_minutes` | - |
 
 ## DisplayPrefs
 
@@ -352,6 +352,12 @@ Generated from the source by `tools/gen_api_docs.py` (409 actions). Machine-read
 | `save_push_token` | any signed-in user | `token` | - |
 | `test_send_push` | any signed-in user | - | - |
 
+## RatingsAdmin
+
+| Action | Auth | Fields | Query |
+|---|---|---|---|
+| `admin_ratings_report` | admin · orders.view | `days` | `days` |
+
 ## Ride
 
 | Action | Auth | Fields | Query |
@@ -502,7 +508,7 @@ Generated from the source by `tools/gen_api_docs.py` (409 actions). Machine-read
 | `admin_catalog_list` | admin · items.manage | - | `q`, `status` |
 | `admin_catalog_save` | admin · items.manage | `category`, `cuisine`, `description`, `description_am`, `id`, `image_url`, `name`, `name_am`, `packs`, `prep_time`, `status` | - |
 | `admin_chat_threads` | admin · orders.view | `filter`, `q` | `filter`, `q` |
-| `admin_create_service_giver` | admin | `address`, `business_name`, `identification_number`, `lat`, `lng`, `name`, `password`, `phone`, `service_type`, `vehicle_type`, `zone` | `category`, `q`, `service_giver_id` |
+| `admin_create_service_giver` | admin | `address`, `business_name`, `identification_number`, `lat`, `lng`, `name`, `password`, `phone`, `service_type`, `vehicle_type`, `zone` | - |
 | `admin_dashboard_stats` | admin | - | - |
 | `admin_delete_placeholder_shop` | admin · owner.only | `delete_items`, `inspect`, `shop_id` | - |
 | `admin_duplicate_phones` | admin | - | - |
