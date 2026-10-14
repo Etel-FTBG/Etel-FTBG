@@ -7,11 +7,12 @@ Generated from the source by `tools/gen_api_docs.py` (409 actions). Machine-read
 
 | Who can call | Actions |
 |---|---|
-| admin | 146 |
-| any signed-in user | 98 |
+| admin | 181 |
+| any signed-in user | 175 |
 | courier | 16 |
-| public | 137 |
+| public | 9 |
 | public (this call signs you in) | 12 |
+| service key (X-Etel-Service-Key) | 16 |
 
 ## Admin
 
@@ -22,13 +23,13 @@ Generated from the source by `tools/gen_api_docs.py` (409 actions). Machine-read
 | `admin_add_vehicle_type` | admin · pricing.manage | `base_fare`, `min_fare`, `min_fare_short_trip`, `per_km_rate`, `per_km_rate_open`, `vehicle_type`, `wait_rate_per_min` | - |
 | `admin_add_zone` | admin · settings.manage | `base_fare`, `est_minutes`, `name`, `sort_order` | - |
 | `admin_analytics` | admin · analytics.view | - | `period` |
-| `admin_approve_etel_topup` | public | `id` | - |
+| `admin_approve_etel_topup` | admin · finance.manage | `id` | - |
 | `admin_assign_service_giver` | admin · service_givers.manage | `order_id`, `service_giver_id` | - |
 | `admin_backfill_cash_commission` | admin · finance.manage | - | - |
 | `admin_backfill_order_service_giver_ids` | admin · orders.manage | - | - |
-| `admin_create_announcement` | public | `audience`, `body`, `category`, `title` | - |
+| `admin_create_announcement` | admin · settings.manage | `audience`, `body`, `category`, `title` | - |
 | `admin_create_user` | admin · users.manage | `name`, `password`, `phone`, `role` | - |
-| `admin_delete_announcement` | public | `id` | - |
+| `admin_delete_announcement` | admin · settings.manage | `id` | - |
 | `admin_delete_goal_tier` | admin · pricing.manage | `id` | - |
 | `admin_delete_item` | admin · items.manage | `item_id` | - |
 | `admin_delete_role_permissions` | admin · owner.only | `id` | - |
@@ -36,7 +37,7 @@ Generated from the source by `tools/gen_api_docs.py` (409 actions). Machine-read
 | `admin_delete_zone` | admin · settings.manage | `id` | - |
 | `admin_force_confirm` | admin · orders.manage | `conf_id` | - |
 | `admin_get_all_items` | admin · items.view | - | `category`, `service_giver_id` |
-| `admin_get_announcements` | public | - | - |
+| `admin_get_announcements` | admin · settings.view | - | - |
 | `admin_get_audit_settings` | admin · owner.only | - | - |
 | `admin_get_bank_accounts` | admin · finance.view | - | - |
 | `admin_get_confirmations` | admin · orders.view | - | - |
@@ -46,7 +47,7 @@ Generated from the source by `tools/gen_api_docs.py` (409 actions). Machine-read
 | `admin_get_my_capabilities` | admin | - | - |
 | `admin_get_order_issues` | admin · orders.view | - | `status` |
 | `admin_get_order_receipt` | admin · orders.view | `order_id` | `order_id` |
-| `admin_get_pending_etel_topups` | public | - | - |
+| `admin_get_pending_etel_topups` | admin · finance.view | - | - |
 | `admin_get_ride_fare_rules` | admin · pricing.manage | - | - |
 | `admin_get_ride_issues` | admin · rides.view | - | `status` |
 | `admin_get_ride_peak_windows` | admin · pricing.manage | - | - |
@@ -60,15 +61,15 @@ Generated from the source by `tools/gen_api_docs.py` (409 actions). Machine-read
 | `admin_list_role_permissions` | admin · owner.only | - | - |
 | `admin_list_support_threads` | admin · orders.view | `unread_only` | `unread_only` |
 | `admin_promote_canary_to_stable` | admin · owner.only | `app` | - |
-| `admin_reject_etel_topup` | public | `id`, `reason` | - |
+| `admin_reject_etel_topup` | admin · finance.manage | `id`, `reason` | - |
 | `admin_remove_canary_tester` | admin · owner.only | `app`, `user_id` | - |
 | `admin_remove_etelpay_override` | admin · owner.only | `user_id` | - |
 | `admin_reply_support_message` | admin · orders.view | `body`, `subject`, `user_id` | - |
 | `admin_resolve_order_issue` | admin · orders.manage | `id` | - |
 | `admin_resolve_ride_issue` | admin · rides.manage | `id` | - |
 | `admin_resolve_sos` | admin · sos.manage | `id` | - |
-| `admin_ride_growth` | public | `date_from`, `date_to` | - |
-| `admin_ride_payments` | public | - | - |
+| `admin_ride_growth` | admin · analytics.view | `date_from`, `date_to` | - |
+| `admin_ride_payments` | admin · finance.view | - | - |
 | `admin_rollback_stable` | admin · owner.only | `app` | - |
 | `admin_run_code_audit` | admin · owner.only | `provider` | - |
 | `admin_run_system_test` | admin · rides.manage | - | - |
@@ -80,7 +81,7 @@ Generated from the source by `tools/gen_api_docs.py` (409 actions). Machine-read
 | `admin_toggle_feature` | admin · owner.only | `flag`, `value` | - |
 | `admin_toggle_item` | admin · items.manage | `is_available`, `item_id` | - |
 | `admin_toggle_launch_checklist_item` | admin · settings.manage | `checked`, `item_key` | - |
-| `admin_topup_etel_money` | public | `amount`, `driver_id`, `note` | - |
+| `admin_topup_etel_money` | admin · finance.manage | `amount`, `driver_id`, `note` | - |
 | `admin_update_bank_account` | admin · finance.manage | `account_name`, `account_number`, `active`, `display_name`, `id` | - |
 | `admin_update_delivery_tier` | admin · settings.manage | `active`, `eta_delta_min`, `icon`, `id`, `label`, `multiplier`, `sort_order` | - |
 | `admin_update_item` | admin · items.manage | `item_id` | - |
@@ -97,15 +98,15 @@ Generated from the source by `tools/gen_api_docs.py` (409 actions). Machine-read
 
 | Action | Auth | Fields | Query |
 |---|---|---|---|
-| `agent_book_ride` | public | `destination_name`, `distance_km`, `etel_sso_token`, `payment_method`, `pickup_lat`, `pickup_lng`, `vehicle_type` | - |
-| `agent_cancel_ride` | public | - | - |
-| `agent_find_and_quote` | public | `items`, `pickup_lat`, `pickup_lng`, `to_zone` | - |
-| `agent_order_quote` | public | `items`, `pickup_lat`, `pickup_lng`, `to_zone` | - |
-| `agent_order_status` | public | - | - |
-| `agent_place_order` | public | `etel_sso_token`, `items`, `payment_method`, `pickup_lat`, `pickup_lng`, `recipient_name`, `recipient_phone`, `to_zone` | - |
-| `agent_ride_quote` | public | `destination_name`, `distance_km`, `pickup_lat`, `pickup_lng`, `vehicle_type` | - |
-| `agent_ride_status` | public | - | - |
-| `agent_search_items` | public | `limit`, `query` | - |
+| `agent_book_ride` | service key (X-Etel-Service-Key) | `destination_name`, `distance_km`, `etel_sso_token`, `payment_method`, `pickup_lat`, `pickup_lng`, `vehicle_type` | - |
+| `agent_cancel_ride` | service key (X-Etel-Service-Key) | - | - |
+| `agent_find_and_quote` | service key (X-Etel-Service-Key) | `items`, `pickup_lat`, `pickup_lng`, `to_zone` | - |
+| `agent_order_quote` | service key (X-Etel-Service-Key) | `items`, `pickup_lat`, `pickup_lng`, `to_zone` | - |
+| `agent_order_status` | service key (X-Etel-Service-Key) | - | - |
+| `agent_place_order` | service key (X-Etel-Service-Key) | `etel_sso_token`, `items`, `payment_method`, `pickup_lat`, `pickup_lng`, `recipient_name`, `recipient_phone`, `to_zone` | - |
+| `agent_ride_quote` | service key (X-Etel-Service-Key) | `destination_name`, `distance_km`, `pickup_lat`, `pickup_lng`, `vehicle_type` | - |
+| `agent_ride_status` | service key (X-Etel-Service-Key) | - | - |
+| `agent_search_items` | service key (X-Etel-Service-Key) | `limit`, `query` | - |
 
 ## Auth
 
@@ -138,10 +139,10 @@ Generated from the source by `tools/gen_api_docs.py` (409 actions). Machine-read
 
 | Action | Auth | Fields | Query |
 |---|---|---|---|
-| `courier_add_fuel_log` | public | `cost_etb`, `liters`, `odometer_km` | - |
-| `courier_delete_fuel_log` | public | `id` | - |
-| `courier_get_fuel_summary` | public | `period` | `period` |
-| `courier_list_fuel_logs` | public | - | - |
+| `courier_add_fuel_log` | any signed-in user | `cost_etb`, `liters`, `odometer_km` | - |
+| `courier_delete_fuel_log` | any signed-in user | `id` | - |
+| `courier_get_fuel_summary` | any signed-in user | `period` | `period` |
+| `courier_list_fuel_logs` | any signed-in user | - | - |
 
 ## CourierPay
 
@@ -165,8 +166,8 @@ Generated from the source by `tools/gen_api_docs.py` (409 actions). Machine-read
 
 | Action | Auth | Fields | Query |
 |---|---|---|---|
-| `get_display_prefs` | public | - | - |
-| `save_display_prefs` | public | `prefs` | - |
+| `get_display_prefs` | any signed-in user | - | - |
+| `save_display_prefs` | any signed-in user | `prefs` | - |
 
 ## Documents
 
@@ -184,10 +185,10 @@ Generated from the source by `tools/gen_api_docs.py` (409 actions). Machine-read
 
 | Action | Auth | Fields | Query |
 |---|---|---|---|
-| `driver_add_fuel_log` | public | `cost_etb`, `liters`, `odometer_km` | - |
-| `driver_delete_fuel_log` | public | `id` | - |
-| `driver_get_fuel_summary` | public | `period` | - |
-| `driver_list_fuel_logs` | public | - | - |
+| `driver_add_fuel_log` | any signed-in user | `cost_etb`, `liters`, `odometer_km` | - |
+| `driver_delete_fuel_log` | any signed-in user | `id` | - |
+| `driver_get_fuel_summary` | any signed-in user | `period` | - |
+| `driver_list_fuel_logs` | any signed-in user | - | - |
 
 ## Equb
 
@@ -246,11 +247,11 @@ Generated from the source by `tools/gen_api_docs.py` (409 actions). Machine-read
 
 | Action | Auth | Fields | Query |
 |---|---|---|---|
-| `nfc_confirm_delivery` | public | `confirmer_etel_id`, `confirmer_name`, `confirmer_phone`, `courier_etel_id`, `courier_phone`, `order_id` | - |
-| `nfc_confirm_pickup` | public | `confirmer_etel_id`, `confirmer_name`, `confirmer_phone`, `courier_etel_id`, `courier_phone`, `order_id` | - |
-| `nfc_driver_status` | public | `etel_id`, `phone` | - |
-| `nfc_list_courier_orders` | public | `confirmer_etel_id`, `confirmer_name`, `confirmer_phone`, `courier_etel_id`, `courier_phone`, `stage` | - |
-| `nfc_start_ride` | public | `customer_etel_id`, `customer_name`, `customer_phone`, `driver_etel_id`, `driver_phone` | - |
+| `nfc_confirm_delivery` | service key (X-Etel-Service-Key) | `confirmer_etel_id`, `confirmer_name`, `confirmer_phone`, `courier_etel_id`, `courier_phone`, `order_id` | - |
+| `nfc_confirm_pickup` | service key (X-Etel-Service-Key) | `confirmer_etel_id`, `confirmer_name`, `confirmer_phone`, `courier_etel_id`, `courier_phone`, `order_id` | - |
+| `nfc_driver_status` | service key (X-Etel-Service-Key) | `etel_id`, `phone` | - |
+| `nfc_list_courier_orders` | service key (X-Etel-Service-Key) | `confirmer_etel_id`, `confirmer_name`, `confirmer_phone`, `courier_etel_id`, `courier_phone`, `stage` | - |
+| `nfc_start_ride` | service key (X-Etel-Service-Key) | `customer_etel_id`, `customer_name`, `customer_phone`, `driver_etel_id`, `driver_phone` | - |
 
 ## Order
 
@@ -345,105 +346,105 @@ Generated from the source by `tools/gen_api_docs.py` (409 actions). Machine-read
 
 | Action | Auth | Fields | Query |
 |---|---|---|---|
-| `remove_push_subscription` | public | `endpoint` | - |
-| `remove_push_token` | public | `token` | - |
-| `save_push_subscription` | public | `subscription` | - |
-| `save_push_token` | public | `token` | - |
-| `test_send_push` | public | - | - |
+| `remove_push_subscription` | any signed-in user | `endpoint` | - |
+| `remove_push_token` | any signed-in user | `token` | - |
+| `save_push_subscription` | any signed-in user | `subscription` | - |
+| `save_push_token` | any signed-in user | `token` | - |
+| `test_send_push` | any signed-in user | - | - |
 
 ## Ride
 
 | Action | Auth | Fields | Query |
 |---|---|---|---|
-| `admin_approve_compliance_document` | public | `request_id` | - |
-| `admin_approve_driver_identity` | public | `user_id` | - |
-| `admin_approve_vehicle_change` | public | `request_id` | - |
-| `admin_backup_download` | public | - | - |
-| `admin_cancel_ride` | public | `ride_id` | - |
-| `admin_get_2fa_rule` | public | - | - |
-| `admin_get_drivers` | public | `q` | `q`, `search` |
-| `admin_get_flagged_identities` | public | - | - |
-| `admin_get_live_drivers` | public | `lat`, `lng` | - |
-| `admin_get_pending_compliance_requests` | public | - | - |
-| `admin_get_pending_vehicle_changes` | public | - | - |
-| `admin_get_ride_stats` | public | - | - |
-| `admin_get_rides` | public | `limit`, `offset`, `search`, `status` | - |
-| `admin_get_suspended_drivers` | public | - | - |
-| `admin_list_driver_compliance` | public | - | - |
-| `admin_manual_complete_ride` | public | `dropoff_address`, `dropoff_lat`, `dropoff_lng`, `note`, `payment_method`, `pickup_address`, `pickup_lat`, `pickup_lng`, `ride_id`, `waypoints` | - |
-| `admin_reject_compliance_document` | public | `reason`, `request_id` | - |
-| `admin_reject_driver_identity` | public | `reason`, `user_id` | - |
-| `admin_reject_vehicle_change` | public | `reason`, `request_id` | - |
-| `admin_ride_watch` | public | - | - |
-| `admin_set_2fa_required` | public | `required` | - |
-| `admin_set_ride_pin_required` | public | `required` | - |
-| `admin_suspend_driver` | public | `reason`, `user_id` | - |
-| `admin_system_health` | public | - | - |
-| `admin_unsuspend_driver` | public | `user_id` | - |
-| `admin_update_driver_compliance` | public | `user_id` | - |
-| `book_ride` | public | `dropoff_addr`, `dropoff_lat`, `dropoff_lng`, `manual_km`, `payment_method`, `pickup_addr`, `pickup_lat`, `pickup_lng`, `quote_token`, `route_km`, `vehicle_type` | - |
-| `cancel_ride` | public | `id`, `reason`, `ride_id` | - |
-| `customer_confirm_arrival` | public | `payment_method`, `ride_id`, `wallet_tx_ref` | - |
-| `driver_accept_ride` | public | `request_id` | - |
-| `driver_arrived` | public | `ride_id` | - |
-| `driver_beacon_ping` | public | `lat`, `lng` | - |
-| `driver_cancel_ride` | public | `ride_id` | - |
-| `driver_cashout` | public | `amount` | - |
-| `driver_complete_ride` | public | `ride_id` | - |
-| `driver_get_announcements` | public | `category` | `category` |
-| `driver_get_compliance_status` | public | - | - |
-| `driver_get_demand` | public | `lat`, `lng` | - |
-| `driver_get_earnings_for_date` | public | `date` | - |
-| `driver_get_goal_tiers` | public | - | - |
-| `driver_get_kpi_summary` | public | `period` | - |
-| `driver_get_nearby_requests` | public | `radius_km` | - |
-| `driver_get_pending_vehicle_change` | public | - | - |
-| `driver_get_profile` | public | - | - |
-| `driver_get_referral_info` | public | - | - |
-| `driver_get_ride_history` | public | - | - |
-| `driver_get_topup_history` | public | - | - |
-| `driver_go_offline` | public | - | - |
-| `driver_go_online` | public | `lat`, `lng` | - |
-| `driver_hail_customer` | public | `km`, `lat`, `lng`, `open`, `phone` | - |
-| `driver_mark_announcement_read` | public | `announcement_id` | - |
-| `driver_start_ride` | public | `pin`, `ride_id` | - |
-| `driver_submit_compliance_document` | public | `doc_type`, `expiry_date`, `receipt_url` | - |
-| `driver_submit_manual_topup` | public | `amount`, `note`, `receipt_image_url` | - |
-| `driver_toggle_wait` | public | `ride_id` | - |
-| `driver_topup_etel_money` | public | `amount`, `receipt_image_url`, `tx_ref` | - |
-| `driver_update_location` | public | `accuracy`, `lat`, `lng`, `ride_id` | - |
-| `driver_update_profile` | public | `license_dob`, `license_name`, `license_photo_url`, `selfie_url`, `vehicle_plate`, `vehicle_type` | - |
-| `get_etelpay_merchant` | public | - | - |
-| `get_ride_messages` | public | `ride_id`, `since_id` | `ride_id`, `since_id` |
-| `get_ride_path` | public | `ride_id` | - |
-| `my_active_ride` | public | - | - |
-| `passenger_get_nearby_drivers` | public | `lat`, `lng`, `radius_km`, `vehicle_type` | `lat`, `lng`, `radius_km`, `vehicle_type` |
-| `passenger_get_ride_history` | public | - | - |
-| `ping_ride_typing` | public | `ride_id` | - |
-| `rate_ride` | public | `comment`, `rating`, `ride_id` | - |
-| `rate_rider` | public | `checkins`, `comment`, `contacts`, `rating`, `ride_id` | - |
-| `ride_add_favorite_route` | public | `dropoff_address`, `dropoff_lat`, `dropoff_lng`, `label`, `pickup_address`, `pickup_lat`, `pickup_lng` | - |
-| `ride_cancel_scheduled` | public | `id` | - |
-| `ride_chat_unread` | public | `ride_id` | `ride_id` |
-| `ride_delete_favorite_route` | public | `id` | - |
-| `ride_estimate_fare` | public | `distance_km`, `open_trip`, `vehicle_type` | `distance_km`, `open_trip`, `vehicle_type` |
-| `ride_get_favorite_routes` | public | - | - |
-| `ride_get_messages` | public | - | - |
-| `ride_get_scheduled` | public | - | - |
+| `admin_approve_compliance_document` | admin · users.manage | `request_id` | - |
+| `admin_approve_driver_identity` | admin · users.manage | `user_id` | - |
+| `admin_approve_vehicle_change` | admin · rides.manage | `request_id` | - |
+| `admin_backup_download` | admin · system.backup | - | - |
+| `admin_cancel_ride` | admin · rides.manage | `ride_id` | - |
+| `admin_get_2fa_rule` | admin · system.backup | - | - |
+| `admin_get_drivers` | admin · users.view | `q` | `q`, `search` |
+| `admin_get_flagged_identities` | admin · users.manage | - | - |
+| `admin_get_live_drivers` | admin · users.view | `lat`, `lng` | - |
+| `admin_get_pending_compliance_requests` | admin · users.manage | - | - |
+| `admin_get_pending_vehicle_changes` | admin · rides.view | - | - |
+| `admin_get_ride_stats` | admin · rides.view | - | - |
+| `admin_get_rides` | admin · rides.view | `limit`, `offset`, `search`, `status` | - |
+| `admin_get_suspended_drivers` | admin · users.view | - | - |
+| `admin_list_driver_compliance` | admin · users.view | - | - |
+| `admin_manual_complete_ride` | admin · rides.manage | `dropoff_address`, `dropoff_lat`, `dropoff_lng`, `note`, `payment_method`, `pickup_address`, `pickup_lat`, `pickup_lng`, `ride_id`, `waypoints` | - |
+| `admin_reject_compliance_document` | admin · users.manage | `reason`, `request_id` | - |
+| `admin_reject_driver_identity` | admin · users.manage | `reason`, `user_id` | - |
+| `admin_reject_vehicle_change` | admin · rides.manage | `reason`, `request_id` | - |
+| `admin_ride_watch` | admin · rides.view | - | - |
+| `admin_set_2fa_required` | admin · system.backup | `required` | - |
+| `admin_set_ride_pin_required` | admin · system.backup | `required` | - |
+| `admin_suspend_driver` | admin · users.manage | `reason`, `user_id` | - |
+| `admin_system_health` | admin · rides.view | - | - |
+| `admin_unsuspend_driver` | admin · users.manage | `user_id` | - |
+| `admin_update_driver_compliance` | admin · users.manage | `user_id` | - |
+| `book_ride` | any signed-in user | `dropoff_addr`, `dropoff_lat`, `dropoff_lng`, `manual_km`, `payment_method`, `pickup_addr`, `pickup_lat`, `pickup_lng`, `quote_token`, `route_km`, `vehicle_type` | - |
+| `cancel_ride` | any signed-in user | `id`, `reason`, `ride_id` | - |
+| `customer_confirm_arrival` | any signed-in user | `payment_method`, `ride_id`, `wallet_tx_ref` | - |
+| `driver_accept_ride` | any signed-in user | `request_id` | - |
+| `driver_arrived` | any signed-in user | `ride_id` | - |
+| `driver_beacon_ping` | any signed-in user | `lat`, `lng` | - |
+| `driver_cancel_ride` | any signed-in user | `ride_id` | - |
+| `driver_cashout` | any signed-in user | `amount` | - |
+| `driver_complete_ride` | any signed-in user | `ride_id` | - |
+| `driver_get_announcements` | any signed-in user | `category` | `category` |
+| `driver_get_compliance_status` | any signed-in user | - | - |
+| `driver_get_demand` | any signed-in user | `lat`, `lng` | - |
+| `driver_get_earnings_for_date` | any signed-in user | `date` | - |
+| `driver_get_goal_tiers` | any signed-in user | - | - |
+| `driver_get_kpi_summary` | any signed-in user | `period` | - |
+| `driver_get_nearby_requests` | any signed-in user | `radius_km` | - |
+| `driver_get_pending_vehicle_change` | any signed-in user | - | - |
+| `driver_get_profile` | any signed-in user | - | - |
+| `driver_get_referral_info` | any signed-in user | - | - |
+| `driver_get_ride_history` | any signed-in user | - | - |
+| `driver_get_topup_history` | any signed-in user | - | - |
+| `driver_go_offline` | any signed-in user | - | - |
+| `driver_go_online` | any signed-in user | `lat`, `lng` | - |
+| `driver_hail_customer` | any signed-in user | `km`, `lat`, `lng`, `open`, `phone` | - |
+| `driver_mark_announcement_read` | any signed-in user | `announcement_id` | - |
+| `driver_start_ride` | any signed-in user | `pin`, `ride_id` | - |
+| `driver_submit_compliance_document` | any signed-in user | `doc_type`, `expiry_date`, `receipt_url` | - |
+| `driver_submit_manual_topup` | any signed-in user | `amount`, `note`, `receipt_image_url` | - |
+| `driver_toggle_wait` | any signed-in user | `ride_id` | - |
+| `driver_topup_etel_money` | any signed-in user | `amount`, `receipt_image_url`, `tx_ref` | - |
+| `driver_update_location` | any signed-in user | `accuracy`, `lat`, `lng`, `ride_id` | - |
+| `driver_update_profile` | any signed-in user | `license_dob`, `license_name`, `license_photo_url`, `selfie_url`, `vehicle_plate`, `vehicle_type` | - |
+| `get_etelpay_merchant` | any signed-in user | - | - |
+| `get_ride_messages` | any signed-in user | `ride_id`, `since_id` | `ride_id`, `since_id` |
+| `get_ride_path` | any signed-in user | `ride_id` | - |
+| `my_active_ride` | any signed-in user | - | - |
+| `passenger_get_nearby_drivers` | any signed-in user | `lat`, `lng`, `radius_km`, `vehicle_type` | `lat`, `lng`, `radius_km`, `vehicle_type` |
+| `passenger_get_ride_history` | any signed-in user | - | - |
+| `ping_ride_typing` | any signed-in user | `ride_id` | - |
+| `rate_ride` | any signed-in user | `comment`, `rating`, `ride_id` | - |
+| `rate_rider` | any signed-in user | `checkins`, `comment`, `contacts`, `rating`, `ride_id` | - |
+| `ride_add_favorite_route` | any signed-in user | `dropoff_address`, `dropoff_lat`, `dropoff_lng`, `label`, `pickup_address`, `pickup_lat`, `pickup_lng` | - |
+| `ride_cancel_scheduled` | any signed-in user | `id` | - |
+| `ride_chat_unread` | any signed-in user | `ride_id` | `ride_id` |
+| `ride_delete_favorite_route` | any signed-in user | `id` | - |
+| `ride_estimate_fare` | any signed-in user | `distance_km`, `open_trip`, `vehicle_type` | `distance_km`, `open_trip`, `vehicle_type` |
+| `ride_get_favorite_routes` | any signed-in user | - | - |
+| `ride_get_messages` | any signed-in user | - | - |
+| `ride_get_scheduled` | any signed-in user | - | - |
 | `ride_get_share_link` | any signed-in user | `ride_id` | `ride_id` |
-| `ride_get_vehicle_types` | public | - | - |
-| `ride_history` | public | - | - |
-| `ride_pin_get` | public | - | - |
-| `ride_receipt` | public | `id` | - |
-| `ride_safety_checkin_missed` | public | `ride_id` | - |
-| `ride_schedule` | public | `dropoff_addr`, `dropoff_lat`, `dropoff_lng`, `payment_method`, `pickup_addr`, `pickup_lat`, `pickup_lng`, `route_km`, `scheduled_at`, `vehicle_type` | - |
-| `ride_status` | public | `id` | `id` |
-| `ride_stop_sharing` | public | `ride_id` | - |
-| `rider_get_announcements` | public | - | - |
-| `rider_mark_announcement_read` | public | `announcement_id` | - |
-| `send_ride_message` | public | `body`, `ride_id` | - |
-| `sos_trigger` | public | `lat`, `lng`, `message`, `ride_id` | - |
-| `submit_ride_issue` | public | `category`, `details`, `ride_id` | - |
+| `ride_get_vehicle_types` | any signed-in user | - | - |
+| `ride_history` | any signed-in user | - | - |
+| `ride_pin_get` | any signed-in user | - | - |
+| `ride_receipt` | any signed-in user | `id` | - |
+| `ride_safety_checkin_missed` | any signed-in user | `ride_id` | - |
+| `ride_schedule` | any signed-in user | `dropoff_addr`, `dropoff_lat`, `dropoff_lng`, `payment_method`, `pickup_addr`, `pickup_lat`, `pickup_lng`, `route_km`, `scheduled_at`, `vehicle_type` | - |
+| `ride_status` | any signed-in user | `id` | `id` |
+| `ride_stop_sharing` | any signed-in user | `ride_id` | - |
+| `rider_get_announcements` | any signed-in user | - | - |
+| `rider_mark_announcement_read` | any signed-in user | `announcement_id` | - |
+| `send_ride_message` | any signed-in user | `body`, `ride_id` | - |
+| `sos_trigger` | any signed-in user | `lat`, `lng`, `message`, `ride_id` | - |
+| `submit_ride_issue` | any signed-in user | `category`, `details`, `ride_id` | - |
 
 ## ServiceGiver
 
@@ -521,8 +522,8 @@ Generated from the source by `tools/gen_api_docs.py` (409 actions). Machine-read
 | `admin_verify_service_giver` | admin | `id` | - |
 | `customer_loyalty` | any signed-in user | - | - |
 | `customer_validate_promo` | any signed-in user | `code`, `delivery_fee`, `subtotal` | - |
-| `etelid_member_detail` | public | `id` | `id`, `key` |
-| `etelid_members_list` | public | - | `limit` |
+| `etelid_member_detail` | service key (X-Etel-Service-Key) | `id` | `id`, `key` |
+| `etelid_members_list` | service key (X-Etel-Service-Key) | - | `limit` |
 | `get_bank_accounts` | public | - | - |
 | `get_config` | public | - | - |
 | `get_delivery_tiers` | public | - | - |
