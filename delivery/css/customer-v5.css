@@ -1525,3 +1525,18 @@ body:not(.dark-theme) .rc-fav { background: rgba(255,255,255,.9); color: #1A1200
 .offer-card-image .ph-ico { width: 40px; height: 40px; }
 .restaurant-card.rc-closed .ph-brand { filter: grayscale(.85) brightness(.8); }
 
+
+/* Home rate prompt: delivered order with no rating yet */
+.rate-card { display:flex; flex-wrap:wrap; align-items:center; gap:10px 14px; margin:0 0 16px; padding:14px 16px; border-radius:18px; background:#FFFFFF; border:1.5px solid #C8960C; box-shadow:0 4px 16px rgba(0,0,0,.08); }
+.rate-card-text { flex:1 1 160px; min-width:0; }
+.rate-card-q { font-weight:800; font-size:15px; color:#1a1a1a; }
+.rate-card-sub { font-size:12px; color:#555; margin-top:2px; }
+.rate-card-stars { display:flex; gap:2px; }
+.rate-card .rate-card-star { background:none !important; border:0; padding:4px 5px; font-size:28px; line-height:1; color:#946A00 !important; cursor:pointer; min-width:44px; min-height:44px; }
+.rate-card-later { background:none; border:0; color:#555; font-size:12px; text-decoration:underline; cursor:pointer; padding:8px; min-height:44px; }
+body.dark-theme .rate-card { background:rgba(255,255,255,.06); border-color:rgba(212,175,55,.4); box-shadow:none; }
+body.dark-theme .rate-card-q { color:#F7F1DF; }
+body.dark-theme .rate-card-sub, body.dark-theme .rate-card-later { color:rgba(247,241,223,.7); }
+body.dark-theme .rate-card .rate-card-star { color:#F0CA58 !important; }
+body:not(.dark-theme) .rate-card .rate-card-star { color: #946A00 !important; }
+body:not(.dark-theme) .rate-card .rate-card-later { color: #555 !important; }
