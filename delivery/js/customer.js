@@ -390,6 +390,24 @@ async function enableOrderPush() {
     return ok;
 }
 
+// Google Maps is loaded the first time a screen needs it (checkout address box, order tracking) instead of on every page
+// open: much less to download for someone who only browses the menu. initCustomerMap runs when Maps is ready.
+let _mapsRequested = false;
+function etelEnsureMaps() {
+    if (_mapsRequested) return;
+    _mapsRequested = true;
+    try { loadGoogleMaps('geometry,places', 'initCustomerMap'); } catch (e) { _mapsRequested = false; }
+}
+window.initCustomerMap = function () {
+    if (_trackOrderId) refreshTrackOrder();
+    const input = document.getElementById('co-address');
+    if (input && !_deliveryAC) {
+        const picker = document.getElementById('co-zone-picker');   // the zone-list fallback, if it was shown while Maps was loading
+        if (picker) picker.remove();
+        initDeliveryAutocomplete();
+    }
+};
+
 const _TRK_STEPS = ['pending','assigned','picked_up','in_transit'];
 // -- RATE PROMPT (home) -- newest delivered order from the last 3 days that has no
 // rating yet. Tapping a star opens the normal rating sheet with that star filled in.
@@ -653,6 +671,7 @@ let _trackGMap = null, _trackDestMarker = null, _trackCourierMarker = null, _tra
 
 async function openTrackOrder(orderId) {
     _trackOrderId = orderId;
+    etelEnsureMaps();
     document.getElementById('view-track-order').style.display = 'block';
     document.getElementById('track-map').innerHTML = 'Loading map…';
     await refreshTrackOrder();
@@ -1481,8 +1500,12 @@ function renderCartDrawer() {
         document.getElementById('bank-form').style.display = 'block';
         updateBankForm(selectedPayment);
     }
-    // Bind Google Places Autocomplete to the address input
-    setTimeout(initDeliveryAutocomplete, 80);
+    // Bind Google Places Autocomplete to the address input. Maps is loaded on demand (see etelEnsureMaps): when it is
+    // already there we bind straight away, otherwise window.initCustomerMap binds it the moment it arrives, and if it
+    // never arrives (offline, key blocked) the zone list appears after 6 s so the customer can still pick a place.
+    etelEnsureMaps();
+    setTimeout(function () { if (window.google && window.google.maps && window.google.maps.places) initDeliveryAutocomplete(); }, 80);
+    setTimeout(function () { if (!_deliveryAC && !(window.google && window.google.maps && window.google.maps.places)) initDeliveryAutocomplete(); }, 6000);
 }
 
 // Build a Google Maps LatLngBounds box of roughly radiusKm around a point,

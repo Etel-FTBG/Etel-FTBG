@@ -23,8 +23,11 @@
 <script>window.ETEL_NO_THEME_FAB = true;</script>
     <script src="js/customer-bundle.js?v=3.1"></script>
     <script src="js/customer-bundle-extra.js?v=1.0" defer></script>
-    <script>window.initCustomerMap = function(){}; loadGoogleMaps('geometry,places', 'initCustomerMap');</script>
-    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&display=swap" rel="stylesheet">
+    <!-- Google Maps (a large download) is no longer loaded at start-up. customer.js loads it the first time the
+         checkout address box or the order-tracking map needs it (etelEnsureMaps). -->
+    <script>window.initCustomerMap = function(){};</script>
+    <link rel="preload" href="fonts/syne-normal-latin.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="stylesheet" href="css/etel-fonts.css?v=1">
     <link rel="stylesheet" href="css/customer-v5.css?v=7.8">
 <script src="js/etel-display-settings.js?v=1.4" data-fab="off" defer></script>
 <script src="js/etel-2fa-settings.js?v=1" defer></script>
@@ -530,7 +533,7 @@
 
     <script src="js/apk-download-badge.js?v=2" data-role="customer"></script>
 <script src="js/order-chat.js?v=1" data-mode="customer"></script>
-<script src="js/customer.js?v=4.58"></script>
+<script src="js/customer.js?v=4.59"></script>
 <script src="js/investor-nav-check.js"></script>
 <script src="js/chapa-pay.js?v=1.0" defer></script>
 <script src="js/etel-contrast-guard.js?v=2" defer></script>
