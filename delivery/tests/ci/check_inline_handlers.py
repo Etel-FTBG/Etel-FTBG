@@ -35,6 +35,10 @@ for src in ('customer.html',):
     for mm in re.finditer(r"data-acts(?:-[a-z]+)?='(\[.*?\])'", t):
         for call in json.loads(mm.group(1)):
             used.add(call[0])
+# Actions that scripts build into markup with EtelActions.attrs (the package screens): every name must be exposed too.
+for src in ('js/customer-package.js',):
+    for mm in re.finditer(r"\ba\('([A-Za-z]+)'", read(src)):
+        used.add(mm.group(1))
 for n in sorted(used - allowed):
     bad.append('action "%s" is used in markup but not exposed in js/customer-actions.js' % n)
 for n in sorted(allowed - used):
@@ -47,7 +51,7 @@ if min(order) < 0 or order != sorted(order):
 
 # Scripts the page loads that still build markup with inline handlers. These numbers may only go down: write new
 # markup with EtelActions.attrs(...) or data-act attributes instead. When one reaches 0, remove it from this list.
-BASELINE = {'js/customer.js': 79, 'js/customer-bundle.js': 11}
+BASELINE = {'js/customer.js': 79, 'js/customer-bundle.js': 11, 'js/customer-package.js': 0}
 pat = re.compile(r"""\son(?:click|change|input|error|load|mouseover|mouseout|keydown|keyup|submit|focus|blur|keypress)\s*=\s*\\?["']""")
 for f, limit in sorted(BASELINE.items()):
     n = len(pat.findall(read(f)))
