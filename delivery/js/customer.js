@@ -926,7 +926,7 @@ function renderItemsGrid(items, targetId) {
         const safeB = (item.business_name||'').replace(/[<>"'\\]/g, '');
         return '<div class="offer-card" onclick="openItemDetail(' + item.id + ')" style="cursor:pointer">' +
             '<div class="offer-card-image" style="position:relative">' + imgHtml + '</div>' +
-            (discounted ? '<div style="position:absolute;top:10px;left:10px;background:#EF4444;color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:6px">SALE</div>' : '') +
+            (discounted ? '<div style="position:absolute;top:10px;left:10px;background:var(--red-solid);color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:6px">SALE</div>' : '') +
             (parseInt(item.times_ordered, 10) >= 3 ? '<div class="pop-badge">' + escapeHtml(ETEL_I18N.t('pop_badge')) + '</div>' : '') +
             '<div class="offer-card-body">' +
                 '<div class="offer-card-name">' + escapeHtml(displayName) + ((item.quality === 'special' || item.quality === 'premium') ? ' <span style="font-size:10px;font-weight:800;text-transform:uppercase;color:#D4AF37;letter-spacing:.04em">' + (item.quality === 'premium' ? '★ Premium' : 'Special') + '</span>' : '') + '</div>' +
@@ -1023,7 +1023,7 @@ function openItemDetail(itemId) {
                 'font-size:16px;cursor:pointer;">✕</button>' +
             '<div style="position:relative;width:100%;height:220px;background:var(--dark-3);display:flex;align-items:center;justify-content:center;' +
                  'border-radius:20px 20px 0 0;overflow:hidden;">' + imgHtml + '</div>' +
-            (discounted ? '<div style="position:absolute;top:14px;left:14px;background:var(--red);color:#fff;' +
+            (discounted ? '<div style="position:absolute;top:14px;left:14px;background:var(--red-solid);color:#fff;' +
                 'font-size:11px;font-weight:700;padding:3px 9px;border-radius:6px;">SALE</div>' : '') +
             '<div style="padding:20px;">' +
                 '<div style="font-family:var(--f-d,serif);font-size:22px;color:var(--text);margin-bottom:4px;">' + escapeHtml(displayName) + '</div>' +
