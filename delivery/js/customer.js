@@ -54,7 +54,7 @@ ETEL_I18N.register('customer', {
     en: {
         nav_home:'Home', nav_favorites:'Favorites', nav_orders:'Orders', nav_messages:'Messages', nav_profile:'Profile',
         shop_open:'Open', shop_closed:'Closed', shop_fee_from:'Delivery from ETB', closed_warn:'appears closed right now. You can still order, but it may wait until they open. Continue?',
-        trk_title:'Your order', trk_pending:'Order placed', trk_assigned:'Courier assigned', trk_picked_up:'Picked up', trk_in_transit:'On the way', trk_track:'Track', trk_more:'more', menu_all:'All', menu_popular:'🔥 Popular', menu_deals:'🏷️ Deals', menu_quick:'⚡ Quick', pop_badge:'🔥 Popular', promo_have:'Have a promo code?', promo_ph:'Enter code', promo_apply:'Apply', promo_remove:'Remove', promo_discount:'Discount', promo_saved:'You save', rate_title:'Rate your order', rate_overall:'Overall', rate_food:'Order quality', rate_courier:'Courier', rate_tags:'What stood out?', rate_comment:'Tell us more (optional)…', rate_submit:'Submit rating', rate_pick:'Please choose an overall rating', rate_thanks:'Thanks for your review!', rate_yours:'Your rating', rate_reply:'Reply from the shop', tag_fast_delivery:'⚡ Fast delivery', tag_great_taste:'😋 Great taste', tag_well_packed:'📦 Well packed', tag_friendly_courier:'🙂 Friendly courier', tag_good_value:'💰 Good value', tag_late:'🐢 Late', tag_cold:'🥶 Arrived cold', tag_wrong_item:'❌ Wrong item', pts_title:'Your points', pts_use:'Use my points', pts_off:'Not using points', pts_need:'Earn {n} more points to start spending them', pts_applied:'⭐ Points', pts_how:'How it works', pts_earn:'Earn 1 point for every ETB 10 of items on delivered orders — double on Saturdays and Sundays.', pts_spend:'Spend 10 points = ETB 1 off your items at checkout, once you have 100 points.', pts_recent:'Recent activity', pts_none:'No activity yet — your first delivered order earns points.', pts_worth:'worth', chat_btn:'💬 Chat with the shop & courier', chat_btn_short:'💬 Chat', push_on:'🔔 Turn on order alerts', push_enabled:'Order alerts are on', push_blocked:'Notifications are blocked in your browser settings', reorder_btn:'Order again', reorder_home:'Hungry again?', rate_card_q:'How was your order?', rate_card_sub:'Tap a star - it takes 10 seconds', rate_card_later:'Not now', eta_arrive:'Arriving in about {a}-{b} min', eta_live:'From the courier\'s live position - {km} km away', eta_typical:'Based on recent deliveries - approximate', eta_paused:'Courier location paused - it updates when their phone reconnects', reorder_none:'Those items are no longer available', reorder_added:'added to your cart at today\'s prices', reorder_skipped:'unavailable, skipped', reorder_fail:'Could not load that order', cart_view:'View cart →', cart_items_one:'item', cart_items_many:'items', filter_none:'No matches for these filters', filter_clear:'Clear filters',
+        trk_title:'Your order', trk_pending:'Order placed', trk_assigned:'Courier assigned', trk_picked_up:'Picked up', trk_in_transit:'On the way', trk_track:'Track', trk_more:'more', menu_all:'All', menu_popular:'🔥 Popular', menu_deals:'🏷️ Deals', menu_quick:'⚡ Quick', pop_badge:'🔥 Popular', promo_have:'Have a promo code?', promo_ph:'Enter code', promo_apply:'Apply', promo_remove:'Remove', promo_discount:'Discount', promo_saved:'You save', rate_title:'Rate your order', rate_overall:'Overall', rate_food:'Order quality', rate_courier:'Courier', rate_tags:'What stood out?', rate_comment:'Tell us more (optional)…', rate_submit:'Submit rating', rate_pick:'Please choose an overall rating', rate_thanks:'Thanks for your review!', rate_yours:'Your rating', rate_reply:'Reply from the shop', tag_fast_delivery:'⚡ Fast delivery', tag_great_taste:'😋 Great taste', tag_well_packed:'📦 Well packed', tag_friendly_courier:'🙂 Friendly courier', tag_good_value:'💰 Good value', tag_late:'🐢 Late', tag_cold:'🥶 Arrived cold', tag_wrong_item:'❌ Wrong item', pts_title:'Your points', pts_use:'Use my points', pts_off:'Not using points', pts_need:'Earn {n} more points to start spending them', pts_applied:'⭐ Points', pts_how:'How it works', pts_earn:'Earn 1 point for every ETB 10 of items on delivered orders — double on Saturdays and Sundays.', pts_spend:'Spend 10 points = ETB 1 off your items at checkout, once you have 100 points.', pts_recent:'Recent activity', pts_none:'No activity yet — your first delivered order earns points.', pts_worth:'worth', chat_btn:'💬 Chat with the shop & courier', chat_btn_short:'💬 Chat', push_on:'🔔 Turn on order alerts', push_enabled:'Order alerts are on', push_blocked:'Notifications are blocked in your browser settings', reorder_btn:'Order again', reorder_home:'Hungry again?', rate_card_q:'How was your order?', rate_card_sub:'Tap a star - it takes 10 seconds', rate_card_later:'Not now', sold_today:'Sold out today', item_unavail:'Unavailable', closed_hours:'is closed right now. Opens at {t}.', eta_arrive:'Arriving in about {a}-{b} min', eta_live:'From the courier\'s live position - {km} km away', eta_typical:'Based on recent deliveries - approximate', eta_paused:'Courier location paused - it updates when their phone reconnects', reorder_none:'Those items are no longer available', reorder_added:'added to your cart at today\'s prices', reorder_skipped:'unavailable, skipped', reorder_fail:'Could not load that order', cart_view:'View cart →', cart_items_one:'item', cart_items_many:'items', filter_none:'No matches for these filters', filter_clear:'Clear filters',
         greet_morning:'Good morning', greet_afternoon:'Good afternoon', greet_evening:'Good evening', greet_sub:'What would you like today?',
         svc_food:'Food', svc_groceries:'Groceries', svc_pharmacy:'Pharmacy', svc_ride:'Ride', shop_min:'min', shop_from:'From', shop_items:'items', shop_no_rating:'New',
         search_placeholder:'Search restaurants, food, cuisines…',
@@ -87,7 +87,7 @@ ETEL_I18N.register('customer', {
     am: {
         nav_home:'ቤት', nav_favorites:'ተወዳጆች', nav_orders:'ትዕዛዞች', nav_messages:'መልዕክቶች', nav_profile:'መገለጫ',
         shop_open:'ክፍት', shop_closed:'ዝግ', shop_fee_from:'ማድረሻ ከ ETB', closed_warn:'አሁን ዝግ ይመስላል። አሁንም ማዘዝ ይችላሉ፤ እስኪከፈት ሊዘገይ ይችላል። ይቀጥሉ?',
-        trk_title:'ትዕዛዝዎ', trk_pending:'ትዕዛዝ ተቀብሏል', trk_assigned:'ሹፌር ተመድቧል', trk_picked_up:'ተነስቷል', trk_in_transit:'በመንገድ ላይ', trk_track:'ተከታተል', trk_more:'ተጨማሪ', menu_all:'ሁሉም', menu_popular:'ተወዳጅ', menu_deals:'🏷️ ቅናሽ', menu_quick:'ፈጣን', pop_badge:'🔥 ተወዳጅ', promo_have:'የቅናሽ ኮድ አለዎት?', promo_ph:'ኮድ ያስገቡ', promo_apply:'ተግብር', promo_remove:'አስወግድ', promo_discount:'ቅናሽ', promo_saved:'ይቆጥባሉ', rate_title:'ትዕዛዝዎን ይገምግሙ', rate_overall:'አጠቃላይ', rate_food:'የትዕዛዝ ጥራት', rate_courier:'ሹፌር', rate_tags:'ምን ጎልቶ ታየ?', rate_comment:'ተጨማሪ ይንገሩን (አማራጭ)…', rate_submit:'ግምገማ ላክ', rate_pick:'እባክዎ አጠቃላይ ደረጃ ይምረጡ', rate_thanks:'ለግምገማዎ እናመሰግናለን!', rate_yours:'የእርስዎ ደረጃ', rate_reply:'የሱቁ መልስ', tag_fast_delivery:'⚡ ፈጣን ማድረሻ', tag_great_taste:'😋 ጣፋጭ', tag_well_packed:'📦 በደንብ የታሸገ', tag_friendly_courier:'🙂 ተግባቢ ሹፌር', tag_good_value:'💰 ጥሩ ዋጋ', tag_late:'🐢 ዘግይቷል', tag_cold:'🥶 ቀዝቅዞ ደረሰ', tag_wrong_item:'❌ የተሳሳተ ዕቃ', pts_title:'ነጥቦችዎ', pts_use:'ነጥቤን ተጠቀም', pts_off:'ነጥብ አልተጠቀምኩም', pts_need:'ለመጠቀም ተጨማሪ {n} ነጥቦች ያስፈልጋሉ', pts_applied:'⭐ ነጥቦች', pts_how:'እንዴት ይሰራል', pts_earn:'በደረሰ ትዕዛዝ ለእያንዳንዱ ETB 10 ዕቃ 1 ነጥብ ያገኛሉ — ቅዳሜና እሁድ እጥፍ።', pts_spend:'100 ነጥብ ሲኖርዎት 10 ነጥብ = ETB 1 ቅናሽ።', pts_recent:'የቅርብ ጊዜ እንቅስቃሴ', pts_none:'እስካሁን እንቅስቃሴ የለም — የመጀመሪያ የደረሰ ትዕዛዝዎ ነጥብ ያስገኛል።', pts_worth:'ዋጋ', chat_btn:'💬 ከሱቁ እና ከሹፌሩ ጋር ይወያዩ', chat_btn_short:'💬 ውይይት', push_on:'🔔 የትዕዛዝ ማሳወቂያ አብራ', push_enabled:'የትዕዛዝ ማሳወቂያ በርቷል', push_blocked:'ማሳወቂያዎች በአሳሽ ቅንብር ታግደዋል', reorder_btn:'እንደገና አዝዝ', reorder_home:'እንደገና ይራብዎታል?', rate_card_q:'ትዕዛዝዎ እንዴት ነበር?', rate_card_sub:'ኮከብ ይንኩ - 10 ሰከንድ ብቻ', rate_card_later:'አሁን አይደለም', eta_arrive:'በ{a}-{b} ደቂቃ ውስጥ ይደርሳል', eta_live:'ከሹፌሩ ቀጥታ አቀማመጥ - {km} ኪ.ሜ ይቀረዋል', eta_typical:'በቅርብ ጊዜ ማድረሶች ላይ የተመሰረተ - ግምት', eta_paused:'የሹፌሩ አቀማመጥ ቆሟል - ስልኩ ሲገናኝ ይታደሳል', reorder_none:'እነዚህ ዕቃዎች አሁን አይገኙም', reorder_added:'በዛሬ ዋጋ ወደ ጋሪዎ ተጨምረዋል', reorder_skipped:'አይገኝም፣ ተዘሏል', reorder_fail:'ትዕዛዙን መጫን አልተቻለም', cart_view:'ጋሪ ይመልከቱ →', cart_items_one:'ዕቃ', cart_items_many:'ዕቃዎች', filter_none:'ለእነዚህ ማጣሪያዎች ውጤት የለም', filter_clear:'ማጣሪያ አጽዳ',
+        trk_title:'ትዕዛዝዎ', trk_pending:'ትዕዛዝ ተቀብሏል', trk_assigned:'ሹፌር ተመድቧል', trk_picked_up:'ተነስቷል', trk_in_transit:'በመንገድ ላይ', trk_track:'ተከታተል', trk_more:'ተጨማሪ', menu_all:'ሁሉም', menu_popular:'ተወዳጅ', menu_deals:'🏷️ ቅናሽ', menu_quick:'ፈጣን', pop_badge:'🔥 ተወዳጅ', promo_have:'የቅናሽ ኮድ አለዎት?', promo_ph:'ኮድ ያስገቡ', promo_apply:'ተግብር', promo_remove:'አስወግድ', promo_discount:'ቅናሽ', promo_saved:'ይቆጥባሉ', rate_title:'ትዕዛዝዎን ይገምግሙ', rate_overall:'አጠቃላይ', rate_food:'የትዕዛዝ ጥራት', rate_courier:'ሹፌር', rate_tags:'ምን ጎልቶ ታየ?', rate_comment:'ተጨማሪ ይንገሩን (አማራጭ)…', rate_submit:'ግምገማ ላክ', rate_pick:'እባክዎ አጠቃላይ ደረጃ ይምረጡ', rate_thanks:'ለግምገማዎ እናመሰግናለን!', rate_yours:'የእርስዎ ደረጃ', rate_reply:'የሱቁ መልስ', tag_fast_delivery:'⚡ ፈጣን ማድረሻ', tag_great_taste:'😋 ጣፋጭ', tag_well_packed:'📦 በደንብ የታሸገ', tag_friendly_courier:'🙂 ተግባቢ ሹፌር', tag_good_value:'💰 ጥሩ ዋጋ', tag_late:'🐢 ዘግይቷል', tag_cold:'🥶 ቀዝቅዞ ደረሰ', tag_wrong_item:'❌ የተሳሳተ ዕቃ', pts_title:'ነጥቦችዎ', pts_use:'ነጥቤን ተጠቀም', pts_off:'ነጥብ አልተጠቀምኩም', pts_need:'ለመጠቀም ተጨማሪ {n} ነጥቦች ያስፈልጋሉ', pts_applied:'⭐ ነጥቦች', pts_how:'እንዴት ይሰራል', pts_earn:'በደረሰ ትዕዛዝ ለእያንዳንዱ ETB 10 ዕቃ 1 ነጥብ ያገኛሉ — ቅዳሜና እሁድ እጥፍ።', pts_spend:'100 ነጥብ ሲኖርዎት 10 ነጥብ = ETB 1 ቅናሽ።', pts_recent:'የቅርብ ጊዜ እንቅስቃሴ', pts_none:'እስካሁን እንቅስቃሴ የለም — የመጀመሪያ የደረሰ ትዕዛዝዎ ነጥብ ያስገኛል።', pts_worth:'ዋጋ', chat_btn:'💬 ከሱቁ እና ከሹፌሩ ጋር ይወያዩ', chat_btn_short:'💬 ውይይት', push_on:'🔔 የትዕዛዝ ማሳወቂያ አብራ', push_enabled:'የትዕዛዝ ማሳወቂያ በርቷል', push_blocked:'ማሳወቂያዎች በአሳሽ ቅንብር ታግደዋል', reorder_btn:'እንደገና አዝዝ', reorder_home:'እንደገና ይራብዎታል?', rate_card_q:'ትዕዛዝዎ እንዴት ነበር?', rate_card_sub:'ኮከብ ይንኩ - 10 ሰከንድ ብቻ', rate_card_later:'አሁን አይደለም', sold_today:'ዛሬ አልቋል', item_unavail:'አይገኝም', closed_hours:'አሁን ዝግ ነው። በ{t} ይከፈታል።', eta_arrive:'በ{a}-{b} ደቂቃ ውስጥ ይደርሳል', eta_live:'ከሹፌሩ ቀጥታ አቀማመጥ - {km} ኪ.ሜ ይቀረዋል', eta_typical:'በቅርብ ጊዜ ማድረሶች ላይ የተመሰረተ - ግምት', eta_paused:'የሹፌሩ አቀማመጥ ቆሟል - ስልኩ ሲገናኝ ይታደሳል', reorder_none:'እነዚህ ዕቃዎች አሁን አይገኙም', reorder_added:'በዛሬ ዋጋ ወደ ጋሪዎ ተጨምረዋል', reorder_skipped:'አይገኝም፣ ተዘሏል', reorder_fail:'ትዕዛዙን መጫን አልተቻለም', cart_view:'ጋሪ ይመልከቱ →', cart_items_one:'ዕቃ', cart_items_many:'ዕቃዎች', filter_none:'ለእነዚህ ማጣሪያዎች ውጤት የለም', filter_clear:'ማጣሪያ አጽዳ',
         greet_morning:'እንደምን አደሩ', greet_afternoon:'እንደምን ዋሉ', greet_evening:'እንደምን አመሹ', greet_sub:'ዛሬ ምን ይፈልጋሉ?',
         svc_food:'ምግብ', svc_groceries:'ግሮሰሪ', svc_pharmacy:'ፋርማሲ', svc_ride:'ጉዞ', shop_min:'ደቂቃ', shop_from:'ከ', shop_items:'ዕቃዎች', shop_no_rating:'አዲስ',
         search_placeholder:'ምግብ ቤቶችን፣ ምግብን ይፈልጉ…',
@@ -136,6 +136,7 @@ function toggleCustomerLanguage() {
 // ── STATE ───────────────────────────────────────────────────────
 let cart = [];       // [{item_id, name, price, quantity, sg_id, sg_name}]
 let itemsCache = [];
+let _sgHours = {};         // service_giver_id -> 'HH:MM' it opens, only while closed by its opening hours (the server refuses these orders)
 let _sgOnline = {};        // service_giver_id -> true/false (open) or null (unknown)
 let _closedWarned = {};    // shops we already warned about this session
 
@@ -268,6 +269,7 @@ function renderSGScroll(items) {
         if (!sg.cover && item.cover_url) sg.cover = item.cover_url;      // the shop's own cover photo wins
         if (!sg.logo && item.logo_url) sg.logo = item.logo_url;
         if (item.is_online !== undefined && item.is_online !== null) sg.online = (parseInt(item.is_online, 10) === 1);
+        if (item.closed_reason === 'hours' && item.opens_at) sg.hoursOpens = item.opens_at;
         const pr = parseFloat(item.price); if (pr > 0 && pr < sg.minPrice) sg.minPrice = pr;
         const pt = parseInt(item.preparation_time, 10); if (pt > 0 && pt < sg.minPrep) sg.minPrep = pt;
         const rt = parseFloat(item.rating); if (rt > sg.rating) sg.rating = rt;
@@ -276,8 +278,8 @@ function renderSGScroll(items) {
     // Remember who is open (for the add-to-cart warning) and, when at least one shop is open,
     // list open shops first. If none/unknown are open the original order is kept so a shop that
     // simply never flipped its switch is never buried.
-    _sgOnline = {};
-    sgs.forEach(function(g){ _sgOnline[g.id] = g.online; });
+    _sgOnline = {}; _sgHours = {};
+    sgs.forEach(function(g){ _sgOnline[g.id] = g.online; if (g.hoursOpens) _sgHours[g.id] = g.hoursOpens; });
     if (sgs.some(function(g){ return g.online === true; })) {
         sgs = sgs.map(function(g, i){ return {g: g, i: i}; })
                  .sort(function(a, b){ return ((b.g.online === true) - (a.g.online === true)) || (a.i - b.i); })
@@ -912,7 +914,9 @@ function renderItemsGrid(items, targetId) {
                 '<div class="offer-card-shop">' + escapeHtml(item.business_name||'') + (item.portion ? ' · ' + escapeHtml(item.portion) : '') + (item.preparation_time ? ' · ⏱ ' + parseInt(item.preparation_time, 10) + ' min' : '') + '</div>' +
                 '<div class="offer-card-footer">' +
                     '<div class="offer-card-price">ETB ' + parseFloat(item.price).toFixed(0) + '</div>' +
-                    '<button class="add-btn" onclick="event.stopPropagation();addToCart('+item.id+',\''+safeN+'\','+item.price+','+item.service_giver_id+',\''+safeB+'\')">+</button>' +
+                    ((item.is_available != 1 || parseInt(item.stock_quantity, 10) <= 0)
+                        ? '<span class="sold-chip">' + escapeHtml(ETEL_I18N.t(item.sold_out ? 'sold_today' : 'item_unavail')) + '</span>'
+                        : '<button class="add-btn" onclick="event.stopPropagation();addToCart('+item.id+',\''+safeN+'\','+item.price+','+item.service_giver_id+',\''+safeB+'\')">+</button>') +
                 '</div>' +
             '</div>' +
         '</div>';
@@ -920,7 +924,14 @@ function renderItemsGrid(items, targetId) {
 }
 
 // ── CART ────────────────────────────────────────────────────────
+// A shop that is outside its opening hours cannot take orders at all (the server refuses them), so say so instead of letting the cart fill up.
+function shopClosedByHours(sgId, sgName) {
+    if (!_sgHours[sgId]) return false;
+    showToast('"' + sgName + '" ' + ETEL_I18N.t('closed_hours').replace('{t}', _sgHours[sgId]), 'err');
+    return true;
+}
 function addToCart(itemId, name, price, sgId, sgName) {
+    if (shopClosedByHours(sgId, sgName)) return;
     if (_sgOnline[sgId] === false && !_closedWarned[sgId]) {
         if (!confirm('"' + sgName + '" ' + ETEL_I18N.t('closed_warn'))) return;
         _closedWarned[sgId] = true;
@@ -940,6 +951,7 @@ function addToCart(itemId, name, price, sgId, sgName) {
 // with a single toast - used by the item detail modal's quantity
 // stepper so choosing "3" doesn't fire three separate "Added" toasts.
 function addToCartWithQty(itemId, name, price, sgId, sgName, qty) {
+    if (shopClosedByHours(sgId, sgName)) return;
     if (_sgOnline[sgId] === false && !_closedWarned[sgId]) {
         if (!confirm('"' + sgName + '" ' + ETEL_I18N.t('closed_warn'))) return;
         _closedWarned[sgId] = true;
@@ -1008,7 +1020,7 @@ function openItemDetail(itemId) {
                              : '<div style="color:var(--text-dim);font-size:12.5px;font-style:italic;margin-bottom:16px;">No description provided yet.</div>') +
                 '<div style="display:flex;gap:16px;margin-bottom:20px;font-size:12px;color:var(--text-muted);">' +
                     (item.preparation_time ? '<div>⏱ ~' + item.preparation_time + ' min</div>' : '') +
-                    (!available ? '<div style="color:var(--red);font-weight:600;">Currently unavailable</div>' : '') +
+                    (!available ? '<div style="color:var(--red);font-weight:600;">' + escapeHtml(ETEL_I18N.t(item.sold_out ? 'sold_today' : 'item_unavail')) + '</div>' : '') +
                 '</div>' +
                 (available ?
                     '<div style="display:flex;align-items:center;gap:14px;margin-bottom:16px;">' +

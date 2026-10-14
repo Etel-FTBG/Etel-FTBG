@@ -172,6 +172,13 @@ def main():
     status, res = call("admin_ratings_report", {"days": 30}, token=drv_token)
     check("ratings report for a non-admin account is refused (403)", res.get("success") is False and status == 403, f"status={status} res={res}")
 
+    print("8. Shop hours and sold-out are for the shop's own staff only")
+    for act, body in (("sg_set_hours", {"opens_at": "08:00", "closes_at": "21:00"}), ("sg_sold_out", {"item_id": 1, "sold_out": 1})):
+        status, res = call(act, body)
+        check(act + " without a token is refused (401)", res.get("success") is False and status == 401, f"status={status} res={res}")
+        status, res = call(act, body, token=drv_token)
+        check(act + " for a courier account is refused (403)", res.get("success") is False and status == 403, f"status={status} res={res}")
+
     print()
     print(f"{len(PASS)} passed, {len(FAIL)} failed")
     if FAIL:

@@ -129,13 +129,15 @@ case 'sg_profile': {
     if ($auth_user['role'] !== 'service_giver' && ($auth_user['role'] !== 'admin' || etel_is_ride_only(db(), $auth_user))) fail('Not a service giver account', 403);
 
     etel_ensure_sg_branding_columns($pdo);
+    require_once __DIR__ . '/../lib/shop_hours.php';
+    etel_hours_ensure_columns($pdo);
     $ctx = sg_get_context($pdo, $auth_user['id']);
 
     // Try full column set first, fall back to minimal columns if schema is behind
     $sg = null;
     if ($ctx) {
         try {
-            $s = $pdo->prepare('SELECT id,service_giver_code,business_name,service_type,vehicle_type,vehicle_plate,zone,address,city,bank_account,payout_bank,telebirr_number,cbe_account,abysinia_account,cbe_account_name,abysinia_account_name,telebirr_account_name,status,is_online,average_rating,total_deliveries,completed_deliveries,failed_deliveries,total_earnings,rating_count,logo_url,cover_url,created_at FROM service_givers WHERE id=?');
+            $s = $pdo->prepare('SELECT id,service_giver_code,business_name,service_type,vehicle_type,vehicle_plate,zone,address,city,bank_account,payout_bank,telebirr_number,cbe_account,abysinia_account,cbe_account_name,abysinia_account_name,telebirr_account_name,status,is_online,average_rating,total_deliveries,completed_deliveries,failed_deliveries,total_earnings,rating_count,logo_url,cover_url,opens_at,closes_at,created_at FROM service_givers WHERE id=?');
             $s->execute(array($ctx['sg_id']));
             $sg = $s->fetch();
         } catch (Exception $e) {
@@ -911,6 +913,53 @@ case 'sg_set_online': {
     }
     break;
 }
+case 'sg_set_hours': {
+    // POST: opens_at, closes_at ('HH:MM'), or both empty to clear the hours. Orders are only taken inside the hours (and while the switch is on).
+    $pdo = db();
+    $auth_user = require_auth($pdo);
+    if ($auth_user['role'] !== 'service_giver' && ($auth_user['role'] !== 'admin' || etel_is_ride_only(db(), $auth_user))) fail('Not a service giver account', 403);
+    $ctx = sg_get_context($pdo, $auth_user['id']);
+    if (!$ctx) fail('Service giver profile not found', 404);
+    sg_require_capability($auth_user, $ctx, 'orders.manage');
+    require_once __DIR__ . '/../lib/shop_hours.php';
+    etel_hours_ensure_columns($pdo);
+    $o_raw = isset($body['opens_at']) ? trim($body['opens_at']) : '';
+    $c_raw = isset($body['closes_at']) ? trim($body['closes_at']) : '';
+    if ($o_raw === '' && $c_raw === '') { $o = null; $c = null; }
+    else {
+        $o = etel_hours_clean($o_raw); $c = etel_hours_clean($c_raw);
+        if ($o === null || $c === null) fail('Enter both times as HH:MM, for example 08:00 and 21:00', 400);
+        if ($o === $c) fail('Opening and closing time cannot be the same', 400);
+    }
+    try {
+        $pdo->prepare('UPDATE service_givers SET opens_at=?, closes_at=? WHERE id=?')->execute(array($o, $c, $ctx['sg_id']));
+        ok(array('opens_at' => $o, 'closes_at' => $c, 'message' => ($o === null ? 'Opening hours cleared' : 'Opening hours saved')));
+    } catch (Exception $e) { fail_ex($e, 'Update failed', 500); }
+    break;
+}
+case 'sg_sold_out': {
+    // POST: item_id, sold_out (1 = sold out for the rest of today, 0 = back on sale). Comes back by itself tomorrow.
+    $pdo = db();
+    $auth_user = require_auth($pdo);
+    if ($auth_user['role'] !== 'service_giver' && ($auth_user['role'] !== 'admin' || etel_is_ride_only(db(), $auth_user))) fail('Service giver access required', 403);
+    $ctx = sg_get_context($pdo, $auth_user['id']);
+    if (!$ctx) fail('Service giver profile not found', 404);
+    sg_require_capability($auth_user, $ctx, 'menu.manage');
+    require_once __DIR__ . '/../lib/shop_hours.php';
+    etel_hours_ensure_columns($pdo);
+    $item_id = isset($body['item_id']) ? intval($body['item_id']) : 0;
+    if (!$item_id) fail('item_id is required', 400);
+    $sold = !empty($body['sold_out']) ? 1 : 0;
+    try {
+        $upd = $pdo->prepare('UPDATE items SET sold_out_date = ' . ($sold ? 'CURDATE()' : 'NULL') . ' WHERE id=? AND service_giver_id=?');
+        $upd->execute(array($item_id, $ctx['sg_id']));
+        $chk = $pdo->prepare('SELECT id FROM items WHERE id=? AND service_giver_id=?');
+        $chk->execute(array($item_id, $ctx['sg_id']));
+        if (!$chk->fetch()) fail('Item not found or access denied', 404);
+        ok(array('item_id' => $item_id, 'sold_out' => $sold));
+    } catch (Exception $e) { fail_ex($e, 'Update failed', 500); }
+    break;
+}
 case 'sg_notifications': {
     // GET: (requires auth)
     // Get pending notifications (new order assignments, etc)
@@ -1039,6 +1088,8 @@ case 'sg_get_my_items': {
     
     require_once __DIR__ . '/../lib/menu_catalog.php';
     etel_ensure_catalog_schema($pdo);
+    require_once __DIR__ . '/../lib/shop_hours.php';
+    etel_hours_ensure_columns($pdo);
     $category = isset($_GET['category']) ? trim($_GET['category']) : '';
     $where = 'WHERE service_giver_id = ?';
     $params = array($sg['id']);
@@ -1054,7 +1105,7 @@ case 'sg_get_my_items': {
                 image_url, stock_quantity, preparation_time, is_available, created_at';
     try {
         try {
-            $s = $pdo->prepare("SELECT $base_cols, catalog_id, quality, `portion` FROM items $where ORDER BY created_at DESC");
+            $s = $pdo->prepare("SELECT $base_cols, catalog_id, quality, `portion`, (sold_out_date IS NOT NULL AND sold_out_date = CURDATE()) AS sold_out FROM items $where ORDER BY created_at DESC");
             $s->execute($params);
         } catch (Exception $e0) {
             error_log('[ServiceGiverController] sg_get_my_items: new columns unavailable: ' . $e0->getMessage());

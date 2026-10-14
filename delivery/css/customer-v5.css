@@ -1542,3 +1542,5 @@ body:not(.dark-theme) .rate-card .rate-card-star { color: #946A00 !important; }
 body:not(.dark-theme) .rate-card .rate-card-later { color: #555 !important; }
 .trk-eta-paused { color: #B45309; font-weight: 700; }
 body.dark-theme .trk-eta-paused { color: #F0CA58; }
+.sold-chip { display: inline-block; padding: 5px 10px; border-radius: 999px; font-size: 11px; font-weight: 800; background: rgba(0,0,0,.08); color: #6B5A00; border: 1px solid rgba(160,120,20,.4); }
+body.dark-theme .sold-chip { background: rgba(255,255,255,.08); color: #F0CA58; border-color: rgba(212,175,55,.4); }

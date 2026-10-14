@@ -1600,7 +1600,7 @@ switch ($action) {
         $GLOBALS['ETEL_LIMITED_BLOCK'] = true; // limited (Ride-only) EtelIDs are refused here - see get_auth_user()
         require __DIR__ . '/controllers/OrderController.php';
         break;
-    case 'sg_profile': case 'sg_update_profile': case 'sg_orders': case 'sg_accept_order': case 'sg_update_order_status': case 'sg_get_kitchen_ticket': case 'sg_order_detail': case 'sg_scan_qr': case 'sg_complete_order': case 'sg_stats': case 'sg_set_online': case 'sg_notifications': case 'sg_add_item': case 'sg_catalog_list': case 'sg_catalog_add': case 'sg_catalog_import': case 'sg_get_my_items': case 'sg_update_item': case 'sg_delete_item': case 'sg_get_staff': case 'sg_add_staff': case 'sg_remove_staff': case 'sg_update_staff_role': case 'sg_list_roles': case 'sg_save_role': case 'sg_delete_role': case 'sg_my_role': case 'sg_sales_report': case 'sg_reviews': case 'sg_reply_review': case 'sg_financial_report': case 'sg_get_pending_payout_request': case 'admin_list_payout_requests': case 'admin_review_payout_request':
+    case 'sg_profile': case 'sg_update_profile': case 'sg_orders': case 'sg_accept_order': case 'sg_update_order_status': case 'sg_get_kitchen_ticket': case 'sg_order_detail': case 'sg_scan_qr': case 'sg_complete_order': case 'sg_stats': case 'sg_set_online': case 'sg_set_hours': case 'sg_sold_out': case 'sg_notifications': case 'sg_add_item': case 'sg_catalog_list': case 'sg_catalog_add': case 'sg_catalog_import': case 'sg_get_my_items': case 'sg_update_item': case 'sg_delete_item': case 'sg_get_staff': case 'sg_add_staff': case 'sg_remove_staff': case 'sg_update_staff_role': case 'sg_list_roles': case 'sg_save_role': case 'sg_delete_role': case 'sg_my_role': case 'sg_sales_report': case 'sg_reviews': case 'sg_reply_review': case 'sg_financial_report': case 'sg_get_pending_payout_request': case 'admin_list_payout_requests': case 'admin_review_payout_request':
         $GLOBALS['ETEL_LIMITED_BLOCK'] = true; // limited (Ride-only) EtelIDs are refused here - see get_auth_user()
         require __DIR__ . '/controllers/ServiceGiverController.php';
         break;
@@ -1632,6 +1632,8 @@ switch ($action) {
         etel_ensure_sg_branding_columns($pdo);
         require_once __DIR__ . '/lib/menu_catalog.php';
         etel_ensure_catalog_schema($pdo);
+        require_once __DIR__ . '/lib/shop_hours.php';
+        etel_hours_ensure_columns($pdo);
         $cat = isset($_GET['category']) ? trim($_GET['category']) : '';
         $sgid = isset($_GET['service_giver_id']) ? intval($_GET['service_giver_id']) : 0;
         $q = isset($_GET['q']) ? trim($_GET['q']) : '';
@@ -1650,11 +1652,11 @@ switch ($action) {
                 COALESCE(sg.service_type,sg.category,'general') AS service_type,
                 COALESCE(sg.average_rating,sg.rating,0) AS rating,
                 COALESCE(sg.logo_url,'') AS logo_url, COALESCE(sg.cover_url,'') AS cover_url,
-                COALESCE(sg.is_online,0) AS is_online,
+                COALESCE(sg.is_online,0) AS is_online, sg.opens_at, sg.closes_at, i.sold_out_date,
                 (SELECT COALESCE(SUM(oi.quantity),0) FROM order_items oi WHERE oi.item_id=i.id) AS times_ordered
                 FROM items i JOIN service_givers sg ON i.service_giver_id=sg.id $w
                 ORDER BY rating DESC,i.id DESC LIMIT 200");
-            $st->execute($p); ok(array('items'=>$st->fetchAll(),'count'=>$st->rowCount()));
+            $st->execute($p); $feed = etel_shop_feed_apply($st->fetchAll(), date('H:i'), date('Y-m-d')); ok(array('items'=>$feed,'count'=>count($feed)));
         } catch(PDOException $e) {
             try {
                 $fb=$pdo->prepare("SELECT i.id,i.name,i.description,i.category,i.price,

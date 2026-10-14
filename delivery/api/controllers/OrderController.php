@@ -111,9 +111,11 @@ case 'customer_reorder_items': {
         $own = $pdo->prepare('SELECT id FROM orders WHERE id = ? AND customer_id = ?');
         $own->execute(array($order_id, $auth_user['id']));
         if (!$own->fetch()) fail('Order not found', 404);
+        require_once __DIR__ . '/../lib/shop_hours.php';
+        etel_hours_ensure_columns($pdo);
         $s = $pdo->prepare("
             SELECT oi.item_id, oi.item_name, oi.quantity,
-                   i.name AS cur_name, i.price AS cur_price, i.is_available, i.stock_quantity,
+                   i.name AS cur_name, i.price AS cur_price, i.is_available, i.stock_quantity, i.sold_out_date, sg.opens_at, sg.closes_at,
                    i.service_giver_id, sg.business_name, sg.status AS sg_status, COALESCE(sg.is_online,0) AS sg_online
             FROM order_items oi
             LEFT JOIN items i ON i.id = oi.item_id
@@ -127,7 +129,9 @@ case 'customer_reorder_items': {
     foreach ($rows as $r) {
         $stock = ($r['stock_quantity'] === null) ? null : intval($r['stock_quantity']);
         $orderable = $r['cur_price'] !== null && intval($r['is_available']) === 1
-                     && ($stock === null || $stock > 0) && $r['sg_status'] === 'verified';
+                     && ($stock === null || $stock > 0) && $r['sg_status'] === 'verified'
+                     && !etel_item_sold_out($r['sold_out_date'], date('Y-m-d'));
+        $shop = etel_shop_state(intval($r['sg_online']) === 1, $r['opens_at'], $r['closes_at'], date('H:i'));
         $lines[] = array(
             'item_id'          => intval($r['item_id']),
             'name'             => $r['cur_name'] !== null ? $r['cur_name'] : $r['item_name'],
@@ -135,7 +139,7 @@ case 'customer_reorder_items': {
             'price'            => $r['cur_price'] !== null ? floatval($r['cur_price']) : null,
             'service_giver_id' => $r['service_giver_id'] !== null ? intval($r['service_giver_id']) : null,
             'business_name'    => $r['business_name'],
-            'is_online'        => intval($r['sg_online']) === 1,
+            'is_online'        => $shop['open'],
             'orderable'        => $orderable,
         );
     }
