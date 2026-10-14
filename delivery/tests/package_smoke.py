@@ -105,6 +105,10 @@ def main():
     s, r = call("courier_accept_order", {"order_id": oid}, token=van)
     check("the van courier accepts it", r.get("success") is True, r)
 
+    s, r = call("customer_get_orders", {}, token=cust)
+    mine = [o for o in (r.get("data") or {}).get("orders", []) if o.get("id") == oid]
+    check("the order list marks it as a package", len(mine) == 1 and mine[0].get("order_kind") == "package", r)
+
     print("4. Tracking")
     s, r = call("track_order", {"order_id": oid}, token=cust)
     o = (r.get("data") or {}).get("order", {})

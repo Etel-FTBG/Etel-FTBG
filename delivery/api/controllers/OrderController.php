@@ -68,6 +68,8 @@ case 'customer_get_orders': {
     // though nothing actually logged them out. require_auth() above
     // still requires a valid, real session either way.
     
+    require_once __DIR__ . '/../lib/package_orders.php';
+    etel_package_ensure_schema($pdo);   // the package columns must exist before they are selected below
     $status = isset($_GET['status']) ? trim($_GET['status']) : '';
     $where = 'WHERE o.customer_id = ?';
     $params = array($auth_user['id']);
@@ -84,7 +86,7 @@ case 'customer_get_orders': {
                 o.order_code,
                 o.from_zone,
                 o.to_zone,
-                o.package_type, o.delivery_tier,
+                o.package_type, o.delivery_tier, o.order_kind,
                 o.recipient_name,
                 o.recipient_phone,
                 o.delivery_photo_url,

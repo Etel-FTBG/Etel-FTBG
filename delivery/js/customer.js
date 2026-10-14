@@ -710,6 +710,7 @@ async function refreshTrackOrder() {
     renderTrackEta(o);
     renderTrackChat(o);
     renderTrackCancel(o);
+    if (window.renderTrackPackage) window.renderTrackPackage(o);
     updateTrackMap(o);
 }
 // Cancel button on the tracking screen. The server decides (track_order returns can_cancel): only before the shop starts
@@ -2260,7 +2261,7 @@ async function loadOrders() {
             '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">' +
             '<div><span style="font-weight:700;font-size:14px;color:#F7F1DF">' + o.order_code + '</span>' + payBadge + '</div>' +
             '<span style="padding:4px 10px;border-radius:6px;font-size:11px;font-weight:700;background:' + col + '22;color:' + col + '">' + statusLabel.toUpperCase() + '</span></div>' +
-            '<div style="font-size:12px;color:rgba(247,241,223,.55);margin-bottom:8px">📍 ' + escapeHtml(o.to_zone||'—') + ' · 👤 ' + escapeHtml(o.recipient_name||'—') + '</div>' +
+            '<div style="font-size:12px;color:rgba(247,241,223,.55);margin-bottom:8px">' + (o.order_kind === 'package' ? '📦 ' + escapeHtml(ETEL_I18N.t('pkg_order_label')) + ' · ' : '') + '📍 ' + escapeHtml(o.to_zone||'—') + ' · 👤 ' + escapeHtml(o.recipient_name||'—') + '</div>' +
             (o.status !== 'cancelled' && o.status !== 'delivered' ? '<div style="margin-bottom:10px"><div style="background:rgba(255,255,255,.1);border-radius:6px;height:5px;overflow:hidden"><div style="background:linear-gradient(90deg,#D4AF37,#C8960C);height:100%;width:'+progressPct+'%;transition:width .4s"></div></div><div style="font-size:10px;color:rgba(247,241,223,.55);margin-top:3px">' + statusLabel + '</div></div>' : '') +
             '<div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;color:rgba(247,241,223,.55)">' +
             '<span>' + fmtDate(o.placed_at) + '</span>' +
