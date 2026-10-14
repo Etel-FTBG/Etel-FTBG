@@ -283,8 +283,8 @@ case 'courier_get_available_orders': {
                    o.payment_method,
                    oa.service_giver_id, oa.status AS assignment_status$pkg_cols
             FROM orders o
-            JOIN order_assignments oa ON o.id = oa.order_id
-            WHERE oa.status IN ('pending','preparing','assigned','accepted')
+            LEFT JOIN order_assignments oa ON o.id = oa.order_id
+            WHERE (oa.status IN ('pending','preparing','assigned','accepted') OR (oa.id IS NULL AND o.order_kind = 'package'))
               AND (o.courier_id IS NULL OR o.courier_id = 0)
               AND o.status NOT IN ('cancelled','delivered')
               AND NOT (o.payment_method = 'chapa' AND o.payment_status <> 'paid')

@@ -90,6 +90,14 @@ def main():
     oid = d.get("order_id")
     check("a van package is booked", r.get("success") and oid and d.get("order_code", "").startswith("ETP-"), r)
 
+    s, r = call("customer_package_create", dict(book, payment_method="chapa", weight_kg=30), token=cust)
+    cid = (r.get("data") or {}).get("order_id")
+    s, t = call("track_order", {"order_id": cid}, token=cust) if cid else (0, {})
+    check("an online (Chapa) package is booked and waits for payment, not handed to a courier",
+          r.get("success") and (t.get("data") or {}).get("order", {}).get("status") == "pending" and not (t.get("data") or {}).get("order", {}).get("courier_name"), r)
+    if cid:
+        call("customer_cancel_order", {"order_id": cid, "reason": "other"}, token=cust)
+
     print("3. Who sees the job")
     s, r = call("courier_get_available_orders", {}, token=moto)
     ids = [o["id"] for o in (r.get("data") or {}).get("orders", [])]

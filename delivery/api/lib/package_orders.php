@@ -5,8 +5,9 @@
 //   -> the order goes only to couriers who drive that kind of vehicle (bike, moto, car, van).
 //
 // A package is a normal row in `orders` with order_kind = 'package', so tracking, cancel, rating, payment, the courier list and the
-// admin dispatch board all work on it. It has a stand-in row in order_assignments (service_giver_id = 0, status 'pending') because
-// the courier job list and the cancel rules read that table; no shop ever sees it.
+// admin dispatch board all work on it. It has NO row in order_assignments: that table points at a shop (a foreign key on the live
+// database), and a package has none. The code that reads it for shop orders treats a missing row as "no shop involved"
+// (the courier job list lists packages by order_kind; the cancel rules take the order kind).
 // Prices come from `package_rates` (edited in Admin), never from the client. Never throws out of the public functions that say so.
 
 require_once __DIR__ . '/zones.php';
@@ -233,6 +234,7 @@ function etel_package_create($pdo, $user, $in) {
             }
         }
 
+        // orders.package_type is an ENUM('document','parcel','food','bulk') on the live database, so only those words fit; the real size is in pkg_size.
         $code = 'ETP-' . strtoupper(bin2hex(random_bytes(3)));
         $price = intval($chosen['price']);
         $pdo->beginTransaction();
@@ -242,13 +244,12 @@ function etel_package_create($pdo, $user, $in) {
                     order_kind, vehicle_class, pickup_address, pkg_size, pkg_weight_kg, pkg_desc, pkg_value, distance_km, pickup_pin, delivery_pin,
                     sender_name, sender_phone, pickup_lat, pickup_lng, placed_at)
                 VALUES (?,?,?,?,?,?,?,?,?,?, 0,?,0,?,?, 'unpaid','pending',?,?, 'package',?,?,?,?,?,?,?,?,?, ?,?,?,?, NOW())")
-                ->execute(array($code, $user['id'], $q['pickup']['zone'], $q['drop']['zone'], $q['details']['size'], $class,
+                ->execute(array($code, $user['id'], $q['pickup']['zone'], $q['drop']['zone'], ($q['details']['size'] === 'document' ? 'document' : 'parcel'), $class,
                     $rname, $rphone, $q['drop']['address'], $notes,
                     $price, $price, $method, $q['drop']['lat'], $q['drop']['lng'],
                     $class, $q['pickup']['address'], $q['details']['size'], $q['details']['weight'], $desc, $value, $q['distance_km'], etel_package_pin(), etel_package_pin(),
                     $sname, $sphone, $q['pickup']['lat'], $q['pickup']['lng']));
             $order_id = intval($pdo->lastInsertId());
-            $pdo->prepare("INSERT INTO order_assignments (order_id, service_giver_id, status, assigned_at) VALUES (?, 0, 'pending', NOW())")->execute(array($order_id));
             $pdo->commit();
         } catch (Exception $e) { if ($pdo->inTransaction()) $pdo->rollBack(); throw $e; }
 
