@@ -37,6 +37,7 @@ run python3 tests/stale_assignment_smoke.py
 run python3 tests/courier_earnings_smoke.py
 run php tests/pricing_fallback_test.php
 run php tests/courier_pay_test.php
+run php tests/etelid_role_verdict_test.php
 run python3 tests/courier_pay_smoke.py
 echo; [ $rc = 0 ] && echo "ALL CHECKS PASSED" || echo "SOME CHECKS FAILED"
 exit $rc

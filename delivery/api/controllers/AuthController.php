@@ -499,9 +499,14 @@ case 'admin_etelid_login': {
     // on the very next login here, matching the "revoke instantly"
     // promise) instead of only mattering the one time an account gets
     // auto-created.
-    $egRole = etelid_bridge_check_role('etel-delivery', $member['phone']);
+    $egCheck = etelid_bridge_check_role_state('etel-delivery', $member['phone']);
+    $egRole  = $egCheck['role'];
+    // EtelID not answering (or refusing our service key) says nothing about the role: never tell someone their role was removed because of that.
+    $egUnreachable = ($egCheck['state'] === 'unreachable');
+    $egUnreachableMsg = 'Could not confirm your Etel Group role right now (EtelID did not answer). Please try again in a minute.';
 
     if (!$u) {
+        if (!$egRole && $egUnreachable) fail($egUnreachableMsg, 503);
         if (!$egRole) fail('No admin account found for this EtelID. Ask a super admin to add you first.', 403);
         $placeholderHash = password_hash(bin2hex(random_bytes(32)), PASSWORD_DEFAULT);
         $fields = "name, phone, password_hash, role"
@@ -518,6 +523,7 @@ case 'admin_etelid_login': {
         $s->execute(array($digits, $last9));
         $u = $s->fetch();
     } elseif ($u['role'] !== 'admin') {
+        if (!$egRole && $egUnreachable) fail($egUnreachableMsg, 503);
         if (!$egRole) fail('No admin account found for this EtelID. Ask a super admin to add you first.', 403);
         $sets = array("role='admin'");
         $params = array();
@@ -540,6 +546,7 @@ case 'admin_etelid_login': {
         // is_etelgroup_managed existed).
         $wasManaged = $hasManaged && !empty($u['is_etelgroup_managed']);
         if ($wasManaged && !$egRole) {
+            if ($egUnreachable) fail($egUnreachableMsg, 503);
             fail('Your Etel Group role at Etel Delivery has been removed. Ask a super admin to reassign it.', 403);
         }
         if ($egRole) {

@@ -214,10 +214,28 @@ function etelid_bridge_company_admin_phone($company_slug) {
  * { ok, phone, full_name, etel_id, role_at } or null if none/unreachable.
  * Same fail-closed behavior as etelid_bridge_company_admin_phone.
  */
-function etelid_bridge_check_role($company_slug, $phone) {
+/**
+ * What EtelID's answer to check_role means. Pure, so it can be tested without the network.
+ *   'role'        the member has an active role at that company
+ *   'none'        EtelID answered and says there is no active role (HTTP 404 "not_found") - the role was removed or never given
+ *   'unreachable' anything else: no answer, a bad service key, a server error. This says NOTHING about the role.
+ */
+function etelid_bridge_role_verdict($svc) {
+    if (is_array($svc) && !empty($svc['ok'])) return 'role';
+    if (is_array($svc) && isset($svc['code']) && $svc['code'] === 'not_found') return 'none';
+    return 'unreachable';
+}
+
+/** Like etelid_bridge_check_role() but says WHY there is no role: array('state' => role|none|unreachable, 'role' => row|null). */
+function etelid_bridge_check_role_state($company_slug, $phone) {
     $svc = etelid_bridge_service_call('check_role', array('company_slug' => $company_slug, 'phone' => $phone));
-    if (is_array($svc) && !empty($svc['ok'])) return $svc;
-    return null;
+    $state = etelid_bridge_role_verdict($svc);
+    return array('state' => $state, 'role' => ($state === 'role') ? $svc : null);
+}
+
+function etelid_bridge_check_role($company_slug, $phone) {
+    $r = etelid_bridge_check_role_state($company_slug, $phone);
+    return $r['role'];
 }
 
 /**
