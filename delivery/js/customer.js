@@ -72,7 +72,7 @@ ETEL_I18N.register('customer', {
         courier_qr_title:"Scan Courier's QR Code", cancel_btn:'Cancel',
         lbl_subtotal:'Subtotal', lbl_delivery_fee:'Delivery Fee', lbl_service_charge:'Service Charge', lbl_total:'Total',
         lbl_tip:'Courier tip', tip_title:'Tip your courier', tip_sub:'100% of your tip goes to the courier.', tip_none:'No tip', tip_custom:'Custom', tip_custom_ph:'Amount in ETB',
-        lbl_delivery_address:'Delivery Address *', lbl_recipient_name:'Recipient Name *', lbl_recipient_phone:'Recipient Phone *',
+        saved_places:'Your saved places', save_this_addr:'★ Save this address', saved_addr_ok:'Address saved', saved_addr_fail:'Could not save the address', lbl_delivery_address:'Delivery Address *', lbl_recipient_name:'Recipient Name *', lbl_recipient_phone:'Recipient Phone *',
         lbl_notes:'Notes (optional)', lbl_payment_method:'Payment Method', btn_place_order:'Place Order',
         ph_address:'Search address, shop, landmark…', ph_full_name:'Full name', ph_notes:'Special instructions…',
         pay_telebirr_sub:'Recommended · Instant', pay_wallet_sub:'Ethiopian Wallet',
@@ -105,7 +105,7 @@ ETEL_I18N.register('customer', {
         courier_qr_title:'የተላላኪውን QR ኮድ ይቃኙ', cancel_btn:'ይቅር',
         lbl_subtotal:'ንዑስ ድምር', lbl_delivery_fee:'የማድረስ ክፍያ', lbl_service_charge:'የአገልግሎት ክፍያ', lbl_total:'ጠቅላላ',
         lbl_tip:'የአስረካቢ ጉርሻ', tip_title:'ለአስረካቢው ጉርሻ ይስጡ', tip_sub:'ጉርሻዎ 100% ለአስረካቢው ይሄዳል።', tip_none:'ጉርሻ የለም', tip_custom:'ሌላ መጠን', tip_custom_ph:'መጠን በብር',
-        lbl_delivery_address:'የማድረሻ አድራሻ *', lbl_recipient_name:'የተቀባይ ስም *', lbl_recipient_phone:'የተቀባይ ስልክ *',
+        saved_places:'የተቀመጡ አድራሻዎቼ', save_this_addr:'★ ይህን አድራሻ አስቀምጥ', saved_addr_ok:'አድራሻው ተቀምጧል', saved_addr_fail:'አድራሻውን ማስቀመጥ አልተቻለም', lbl_delivery_address:'የማድረሻ አድራሻ *', lbl_recipient_name:'የተቀባይ ስም *', lbl_recipient_phone:'የተቀባይ ስልክ *',
         lbl_notes:'ማስታወሻ (አማራጭ)', lbl_payment_method:'የክፍያ ዘዴ', btn_place_order:'ትዕዛዝ ያስገቡ',
         ph_address:'አድራሻ፣ ሱቅ፣ ምልክት ይፈልጉ…', ph_full_name:'ሙሉ ስም', ph_notes:'ልዩ መመሪያዎች…',
         pay_telebirr_sub:'የሚመከር · ፈጣን', pay_wallet_sub:'የኢትዮጵያ ቦርሳ',
@@ -1384,6 +1384,73 @@ async function openPointsSheet() {
         (rows || '<div style="font-size:12.5px;opacity:.6;padding:8px 0">' + t('pts_none') + '</div>'));
 }
 
+// Saved places at checkout: tap one to fill the address, the zone (so the delivery fee) and the map point in one go.
+// The default place fills itself in once per order when the address box is still empty. They come from the same
+// customer_get_addresses list as the Saved Addresses screen, so nothing new is stored on the server.
+let _savedPlaces = [], _savedPlacesState = '', _savedAutoApplied = false;
+function loadSavedPlaces() {
+    if (_savedPlacesState || !(typeof Auth !== 'undefined' && Auth.getToken && Auth.getToken())) return;
+    _savedPlacesState = 'loading';
+    apiGet('customer_get_addresses', {}).then(function(res) {
+        _savedPlaces = (res && res.success && res.data && res.data.addresses) ? res.data.addresses : [];
+        _savedPlacesState = 'done';
+        if (document.getElementById('cart-checkout')) renderCartDrawer();
+    }).catch(function() { _savedPlacesState = 'done'; });
+}
+function applySavedPlace(a) {
+    _deliveryAddr = a.address_line || '';
+    var la = parseFloat(a.lat), ln = parseFloat(a.lng);
+    _deliveryLat = isNaN(la) ? null : la;
+    _deliveryLng = isNaN(ln) ? null : ln;
+    if (a.zone) selectedZone = a.zone;
+    else if (_deliveryLat !== null && _deliveryLng !== null) selectedZone = getNearestHawassaZone(_deliveryLat, _deliveryLng);
+}
+function useSavedPlace(id) {
+    var a = _savedPlaces.find(function(x) { return x.id == id; });
+    if (!a) return;
+    applySavedPlace(a);
+    // renderCartDrawer keeps whatever is typed in the box, so put the chosen address there first or the old text wins.
+    var box = document.getElementById('co-address');
+    if (box) box.value = _deliveryAddr;
+    renderCartDrawer();
+    setTimeout(function() { var inp = document.getElementById('co-address'); if (inp) inp.value = _deliveryAddr; }, 10);
+}
+function _addrKnown(text) {
+    var t = (text || '').trim().toLowerCase();
+    return !!t && _savedPlaces.some(function(a) { return (a.address_line || '').trim().toLowerCase() === t; });
+}
+function savedPlacesRow() {
+    if (!_savedPlaces.length) return '';
+    var cur = (_deliveryAddr || '').trim().toLowerCase();
+    return '<div class="sp-title">' + escapeHtml(ETEL_I18N.t('saved_places')) + '</div><div class="sp-row">' +
+        _savedPlaces.slice(0, 6).map(function(a) {
+            var on = cur && (a.address_line || '').trim().toLowerCase() === cur;
+            return '<button type="button" class="sp-chip' + (on ? ' on' : '') + '" onclick="useSavedPlace(' + Number(a.id) + ')">' +
+                (a.is_default ? '🏠 ' : '📍 ') + escapeHtml(a.label || a.address_line) + '</button>';
+        }).join('') + '</div>';
+}
+function saveThisAddressRow() {
+    if (!(typeof Auth !== 'undefined' && Auth.getToken && Auth.getToken())) return '';
+    if (_savedPlacesState !== 'done' || !(_deliveryAddr || '').trim() || _addrKnown(_deliveryAddr)) return '';
+    return '<button type="button" class="sp-save" onclick="saveCurrentAddress()">' + escapeHtml(ETEL_I18N.t('save_this_addr')) + '</button>';
+}
+async function saveCurrentAddress() {
+    var inp = document.getElementById('co-address');
+    var line = ((inp && inp.value) || _deliveryAddr || '').trim();
+    if (!line) return;
+    _deliveryAddr = line;
+    var first = !_savedPlaces.length;
+    var res = await api('customer_add_address', { label: first ? 'Home' : 'Place ' + (_savedPlaces.length + 1), address_line: line, zone: selectedZone || '',
+        lat: _deliveryLat === null ? '' : _deliveryLat, lng: _deliveryLng === null ? '' : _deliveryLng, is_default: first });
+    if (res && res.success) {
+        showToast(ETEL_I18N.t('saved_addr_ok'));
+        _savedPlacesState = ''; _savedPlaces = [];
+        loadSavedPlaces();
+    } else {
+        showToast((res && res.message) || ETEL_I18N.t('saved_addr_fail'), 'err');
+    }
+}
+
 function renderCartDrawer() {
     // Any full re-render of this drawer (tier selection, photo upload, etc.)
     // used to reset the address input back to the stale _deliveryAddr value,
@@ -1393,6 +1460,12 @@ function renderCartDrawer() {
     // whatever's actually in the box first so re-renders can't lose it.
     var _addrInput = document.getElementById('co-address');
     if (_addrInput && _addrInput.value.trim()) _deliveryAddr = _addrInput.value;
+    loadSavedPlaces();
+    if (!_savedAutoApplied && _savedPlacesState === 'done' && !_deliveryAddr && !selectedZone) {
+        _savedAutoApplied = true;
+        var _dp = _savedPlaces.find(function(x) { return x.is_default; });
+        if (_dp) applySavedPlace(_dp);
+    }
     const subtotal = cart.reduce(function(s,c){ return s + c.price*c.quantity; }, 0);
     const deliveryFee = getDeliveryFee(selectedZone);
     const serviceCharge = Math.round(subtotal * SERVICE_CHARGE_PCT / 100 * 100) / 100;
@@ -1471,11 +1544,13 @@ function renderCartDrawer() {
         '<input type="time" id="co-schedule-time" style="width:100%;padding:10px;border:1.5px solid rgba(212,175,55,.25);border-radius:8px;font-size:13px;box-sizing:border-box;background:rgba(255,255,255,.03);color:var(--text)"></div>' +
         '</div>' +
         '<!-- DELIVERY ADDRESS (Google Places Autocomplete) -->' +
+        savedPlacesRow() +
         '<label style="display:block;font-size:11px;font-weight:700;color:rgba(247,241,223,.55);margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px">' + ETEL_I18N.t('lbl_delivery_address') + '</label>' +
         '<div style="display:flex;gap:8px;margin-bottom:4px">' +
         '<input type="text" id="co-address" autocomplete="off" placeholder="' + ETEL_I18N.t('ph_address') + '" value="' + _deliveryAddr.replace(/"/g,'&quot;') + '" style="flex:1;padding:10px;border:1.5px solid rgba(212,175,55,.25);border-radius:8px;font-size:13px;box-sizing:border-box;background:rgba(255,255,255,.03);color:var(--text)">' +
         '<button onclick="getMyLocation()" id="gps-btn" title="Use my current location" style="padding:10px 12px;background:#D4AF37;color:#fff;border:none;border-radius:8px;font-size:18px;cursor:pointer;white-space:nowrap">📍</button>' +
         '</div>' +
+        saveThisAddressRow() +
         '<div id="co-zone-hint" style="font-size:11px;color:' + (selectedZone?'#2ECC71':'#aaa') + ';margin-bottom:12px;padding:0 2px">' + zoneHint + '</div>' +
         '<!-- OPTIONAL GATE/ENTRANCE PHOTO -->' +
         '<input type="file" id="co-photo-file" accept="image/*" capture="environment" style="display:none" onchange="uploadDeliveryPhoto(this)">' +
@@ -1921,7 +1996,7 @@ async function placeOrder(zone, name, phone, notes) {
     if (btn) btn.disabled = false;
     if (res && res.success) {
         currentOrderId = res.data.order_id;
-        _promo = null; _usePoints = false; _tip = 0; _tipCustomOpen = false; _loyalty = null; cart = []; selectedZone = ''; _deliveryAddr = ''; _deliveryLat = null; _deliveryLng = null; _deliveryAC = null; _deliveryPhotoUrl = '';
+        _promo = null; _usePoints = false; _tip = 0; _tipCustomOpen = false; _loyalty = null; cart = []; selectedZone = ''; _deliveryAddr = ''; _savedAutoApplied = false; _deliveryLat = null; _deliveryLng = null; _deliveryAC = null; _deliveryPhotoUrl = '';
         updateCartCount();
         closeCart();
         showToast('Order placed! Track at: /track?code=' + res.data.order_code, 'ok');
@@ -1969,7 +2044,7 @@ async function scheduleOrderFromCart(zone, name, phone, notes, scheduledAt) {
     const res = await api('schedule_order', {scheduled_at: scheduledAt, order_template: template});
     if (btn) btn.disabled = false;
     if (res && res.success) {
-        _promo = null; _usePoints = false; _tip = 0; _tipCustomOpen = false; _loyalty = null; cart = []; selectedZone = ''; _deliveryAddr = ''; _deliveryLat = null; _deliveryLng = null; _deliveryAC = null; _deliveryPhotoUrl = ''; _scheduleEnabled = false;
+        _promo = null; _usePoints = false; _tip = 0; _tipCustomOpen = false; _loyalty = null; cart = []; selectedZone = ''; _deliveryAddr = ''; _savedAutoApplied = false; _deliveryLat = null; _deliveryLng = null; _deliveryAC = null; _deliveryPhotoUrl = ''; _scheduleEnabled = false;
         updateCartCount();
         closeCart();
         showToast('Order scheduled for ' + scheduledAt, 'ok');
@@ -2022,7 +2097,7 @@ async function placeOrderThenPay(zone, name, phone, notes, tbPhone) {
         document.getElementById('co-msg').style.display          = 'none';
         if (btn) btn.style.display = 'none';
         startTelebirrPolling(currentPaymentId, orderRes.data.order_code);
-        _promo = null; _usePoints = false; _tip = 0; _tipCustomOpen = false; _loyalty = null; cart = []; selectedZone = ''; _deliveryAddr = ''; _deliveryLat = null; _deliveryLng = null; _deliveryAC = null; _deliveryPhotoUrl = '';
+        _promo = null; _usePoints = false; _tip = 0; _tipCustomOpen = false; _loyalty = null; cart = []; selectedZone = ''; _deliveryAddr = ''; _savedAutoApplied = false; _deliveryLat = null; _deliveryLng = null; _deliveryAC = null; _deliveryPhotoUrl = '';
         updateCartCount();
     } else {
         showCoMsg('Telebirr error: ' + ((payRes && payRes.message) || 'Unknown error. Try Cash payment.'));
@@ -2055,7 +2130,7 @@ async function placeOrderThenChapa(zone, name, phone, notes) {
     currentOrderId = orderRes.data.order_id;
     const orderCode = orderRes.data.order_code;
     // The order exists now, so the cart is spent whatever happens next.
-    _promo = null; _usePoints = false; _tip = 0; _tipCustomOpen = false; _loyalty = null; cart = []; selectedZone = ''; _deliveryAddr = ''; _deliveryLat = null; _deliveryLng = null; _deliveryAC = null; _deliveryPhotoUrl = '';
+    _promo = null; _usePoints = false; _tip = 0; _tipCustomOpen = false; _loyalty = null; cart = []; selectedZone = ''; _deliveryAddr = ''; _savedAutoApplied = false; _deliveryLat = null; _deliveryLng = null; _deliveryAC = null; _deliveryPhotoUrl = '';
     updateCartCount();
 
     showCoMsg('Opening Chapa…', '#888');
@@ -2127,7 +2202,7 @@ async function placeOrderThenBank(zone, name, phone, notes, reference) {
     });
 
     if (btn) btn.disabled = false;
-    _promo = null; _usePoints = false; _tip = 0; _tipCustomOpen = false; _loyalty = null; cart = []; selectedZone = ''; _deliveryAddr = ''; _deliveryLat = null; _deliveryLng = null; _deliveryAC = null; _deliveryPhotoUrl = '';
+    _promo = null; _usePoints = false; _tip = 0; _tipCustomOpen = false; _loyalty = null; cart = []; selectedZone = ''; _deliveryAddr = ''; _savedAutoApplied = false; _deliveryLat = null; _deliveryLng = null; _deliveryAC = null; _deliveryPhotoUrl = '';
     updateCartCount();
     closeCart();
     if (bankRes && bankRes.success) {
