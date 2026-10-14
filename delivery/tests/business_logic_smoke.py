@@ -173,6 +173,9 @@ def main():
         status, res = call("courier_update_order_status",
                             {"order_id": order_id, "status": "picked_up"}, token=courier_token)
         check("courier_update_order_status(picked_up) succeeds", res.get("success") is True, res)
+        # the real pickup time is recorded (orders.picked_up_at) so courier speed can be measured
+        ok_q, out_q, err_q = etel_test_db.query_text("SELECT picked_up_at IS NOT NULL FROM orders WHERE id = %d" % int(order_id))
+        check("picking an order up records picked_up_at", ok_q and out_q.strip() == "1", (out_q, err_q))
 
         status, res = call("courier_update_order_status",
                             {"order_id": order_id, "status": "delivered"}, token=courier_token)
