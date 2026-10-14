@@ -248,12 +248,14 @@ $reqType = isset($_POST['type']) ? trim($_POST['type']) : '';
 $folder  = isset($type_map[$reqType]) ? $type_map[$reqType]['folder'] : 'items';
 $prefix  = isset($type_map[$reqType]) ? $type_map[$reqType]['prefix'] : 'item_';
 
-/* Per-user upload budget (30 per 10 minutes) so one account cannot fill the disk. Fails open if the table is missing. */
+/* Per-user upload budget (30 per 10 minutes, 150 for admins) so one account cannot fill the disk. Fails open if the table is missing. */
 try {
     $upKey = substr('upload:' . $uid . '|' . (isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : '0.0.0.0'), 0, 120);
     $upc = $pdo->prepare('SELECT COUNT(*) FROM login_attempts WHERE identifier = ? AND attempted_at > ?');
     $upc->execute([$upKey, date('Y-m-d H:i:s', time() - 600)]);
-    if ((int) $upc->fetchColumn() >= 30) upfail('Too many uploads. Please wait a few minutes and try again.', 429);
+    // Admins add menu photos in bulk (Admin > Menu items > Add many photos at once), so they get a larger budget.
+    $upMax = (isset($user['role']) && $user['role'] === 'admin') ? 150 : 30;
+    if ((int) $upc->fetchColumn() >= $upMax) upfail('Too many uploads. Please wait a few minutes and try again.', 429);
     $pdo->prepare('INSERT INTO login_attempts (identifier, attempted_at) VALUES (?, NOW())')->execute([$upKey]);
 } catch (Exception $e) { /* no throttle table - allow */ }
 
