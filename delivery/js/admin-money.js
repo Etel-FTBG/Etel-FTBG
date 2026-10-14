@@ -1,6 +1,7 @@
 /* ETEL Admin - Money page: refunds and courier cash.
    Refunds: cancelled orders the customer had already paid for, still to be refunded; record how the money was returned.
-   Courier cash: cash couriers collected on delivered cash orders, what they handed over, what they still hold.
+   Courier cash: cash couriers collected on delivered cash orders. They keep their own pay and tips from it, so what they owe the
+   company = collected - own pay and tips - handed over.
    Data: api actions admin_refunds_report, admin_refund_mark, admin_courier_cash_report, admin_cash_remit (api/lib/money_ledger.php).
    Standalone on purpose: it adds its own menu item and page, so no other admin file changes. */
 (function () {
@@ -88,17 +89,17 @@ function wireRefunds(el, d) {
 
 /* ---------- courier cash ---------- */
 function renderCash(d) {
-  var h = head('Courier cash', 'Cash couriers collected from customers on delivered cash orders, minus what they handed over to the company.');
+  var h = head('Courier cash', 'Couriers keep their own pay and tips from the cash they collect. They owe the company the rest.');
   h += '<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px">' +
-    kpi('Cash held by couriers', etb(d.holding_total), 'recorded, not yet handed over', Number(d.holding_total) > 0) +
-    kpi('Couriers holding cash', Number(d.holding_couriers), 'with a balance above zero') + '</div>';
+    kpi('Couriers owe the company', etb(d.holding_total), 'cash collected minus their own pay, not yet handed over', Number(d.holding_total) > 0) +
+    kpi('Couriers who owe cash', Number(d.holding_couriers), 'with a balance above zero') + '</div>';
   if (!(d.couriers || []).length) return h + '<div style="padding:14px;border:1px dashed rgba(128,128,128,.4);border-radius:12px;opacity:.8">No delivered cash orders yet.</div>';
   (d.couriers || []).forEach(function (c) {
     var holding = Number(c.holding);
     h += '<div style="border:1px solid ' + (holding > 0 ? '#e74c3c' : 'rgba(128,128,128,.3)') + ';border-radius:10px;padding:8px 10px;margin-bottom:8px">' +
-      '<div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:13px"><span><b>' + esc(c.name || 'Courier') + '</b> · ' + esc(c.courier_code || '') + (c.phone ? ' · ' + esc(c.phone) : '') + '</span><b style="' + (holding > 0 ? 'color:#e74c3c' : '') + '">Holding ' + etb(holding) + '</b></div>' +
-      '<div style="font-size:12px;opacity:.75;margin-top:3px">' + Number(c.cash_orders) + ' cash orders · collected ' + etb(c.collected) + ' · handed over ' + etb(c.handed_over) + '</div>' +
-      '<div style="font-size:12px;opacity:.65;margin-top:2px">Their own pay and tips on these orders: ' + etb(c.own_earnings) + (holding > 0 ? ' (if they keep it, they owe ' + etb(c.holding_after_own_pay) + ')' : '') + ' · last cash delivery ' + esc(when(c.last_cash_delivery)) + ' · last handover ' + esc(when(c.last_handover)) + '</div>' +
+      '<div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:13px"><span><b>' + esc(c.name || 'Courier') + '</b> · ' + esc(c.courier_code || '') + (c.phone ? ' · ' + esc(c.phone) : '') + '</span><b style="' + (holding > 0 ? 'color:#e74c3c' : '') + '">' + (holding < 0 ? 'Company owes courier ' + etb(-holding) : 'Owes ' + etb(holding)) + '</b></div>' +
+      '<div style="font-size:12px;opacity:.75;margin-top:3px">' + Number(c.cash_orders) + ' cash orders · collected ' + etb(c.collected) + ' − own pay and tips ' + etb(c.own_earnings) + ' − handed over ' + etb(c.handed_over) + '</div>' +
+      '<div style="font-size:12px;opacity:.65;margin-top:2px">Last cash delivery ' + esc(when(c.last_cash_delivery)) + ' · last handover ' + esc(when(c.last_handover)) + '</div>' +
       (holding > 0 ? '<div data-cashhost="' + c.courier_id + '"><button type="button" data-cash="' + c.courier_id + '" style="' + BTN2 + ';margin-top:8px">Record handover…</button></div>' : '') + '</div>';
   });
   return h;
@@ -118,7 +119,7 @@ function wireCash(el, d) {
         e.preventDefault();
         var fd = new FormData(f);
         api('admin_cash_remit', { courier_id: Number(id), amount: fd.get('amount'), note: fd.get('note') }).then(function (r) {
-          if (r && r.success) { load(function () { note('Handover recorded: ' + etb(r.data.amount) + ' · still holding ' + etb(r.data.holding_after), false); }); } else note((r && r.message) || 'Could not record the handover', true);
+          if (r && r.success) { load(function () { note('Handover recorded: ' + etb(r.data.amount) + ' · still owes ' + etb(r.data.holding_after), false); }); } else note((r && r.message) || 'Could not record the handover', true);
         }).catch(function (x) { note(x.message, true); });
       };
     };
