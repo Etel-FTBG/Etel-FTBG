@@ -3,6 +3,7 @@
 // way api/cron_ride_monitor.php does, and prints a one-line JSON result.
 //   php tests/stale_sweep_cli.php ensure   -> only make sure orders.courier_assigned_at exists
 //   php tests/stale_sweep_cli.php sweep    -> run the sweeps
+//   php tests/stale_sweep_cli.php jobs     -> order codes (STALE-%) the courier job list would show, using the same age filter
 require_once __DIR__ . '/../api/env_loader.php';
 date_default_timezone_set('Africa/Addis_Ababa');
 $env = etel_parse_env_file(__DIR__ . '/../api/.env');
@@ -19,6 +20,11 @@ $mode = isset($argv[1]) ? $argv[1] : 'sweep';
 if ($mode === 'ensure') {
     etel_offers_ensure_schema($pdo);
     echo json_encode(array('column' => etel_stale_has_col($pdo))), "\n";
+    exit(0);
+}
+if ($mode === 'jobs') {
+    $rows = $pdo->query("SELECT o.order_code FROM orders o WHERE o.order_code LIKE 'STALE-%' AND o.status IN ('pending','assigned') " . etel_job_age_filter($pdo) . ' ORDER BY o.order_code')->fetchAll(PDO::FETCH_COLUMN);
+    echo json_encode(array('visible' => $rows, 'max_age' => etel_job_age_minutes($pdo))), "\n";
     exit(0);
 }
 $n = etel_offers_sweep($pdo, true);

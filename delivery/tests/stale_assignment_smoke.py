@@ -111,10 +111,24 @@ o5 = new_order("STALE-5", 120)
 php("sweep")
 check("setting 0 turns the feature off", order(o5) == ("assigned", str(cid["STCA"])))
 
+
+# 5) old open jobs are hidden from the courier list (default 120 minutes), not cancelled
+sql("DELETE FROM pricing_rules WHERE rule_key='courier_job_max_age_minutes'")
+for code, mins in (("STALE-J1", 10), ("STALE-J2", 119), ("STALE-J3", 130), ("STALE-J4", 900)):
+    sql("INSERT INTO orders (order_code, customer_id, from_zone, to_zone, status, placed_at) VALUES ('%s', %s, 'Stadium', 'Tabor', 'pending', NOW() - INTERVAL %d MINUTE)" % (code, uid[0], mins))
+r = php("jobs")
+check("default hides jobs older than 2 hours", r["max_age"] == 120 and "STALE-J1" in r["visible"] and "STALE-J2" in r["visible"] and "STALE-J3" not in r["visible"] and "STALE-J4" not in r["visible"])
+check("a hidden job is not cancelled", rows("SELECT status FROM orders WHERE order_code='STALE-J4'")[0][0] == "pending")
+sql("INSERT INTO pricing_rules (rule_key, rule_value, description) VALUES ('courier_job_max_age_minutes', 0, 'test') ON DUPLICATE KEY UPDATE rule_value=0")
+check("setting 0 shows every open job", "STALE-J4" in php("jobs")["visible"])
+sql("UPDATE pricing_rules SET rule_value='5' WHERE rule_key='courier_job_max_age_minutes'")
+r = php("jobs")
+check("a too-small value is raised to 30 minutes", r["max_age"] == 30 and "STALE-J1" in r["visible"] and "STALE-J2" not in r["visible"])
+
 # cleanup
 sql("DELETE FROM order_courier_offers WHERE order_id IN (SELECT id FROM orders WHERE order_code LIKE 'STALE-%'); "
     "DELETE FROM orders WHERE order_code LIKE 'STALE-%'; DELETE FROM couriers WHERE courier_code LIKE 'STC%'; "
-    "DELETE FROM users WHERE phone LIKE '+2519990000%'; DELETE FROM pricing_rules WHERE rule_key='courier_stale_minutes'")
+    "DELETE FROM users WHERE phone LIKE '+2519990000%'; DELETE FROM pricing_rules WHERE rule_key IN ('courier_stale_minutes','courier_job_max_age_minutes')")
 
 print("FAILED: %d" % len(fails) if fails else "ALL PASSED")
 sys.exit(1 if fails else 0)

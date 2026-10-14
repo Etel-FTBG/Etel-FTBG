@@ -103,3 +103,45 @@ function etel_stale_sweep($pdo, $force = false) {
       catch (Throwable $e) { error_log('[ETEL] etel_stale_sweep: ' . $e->getMessage()); }
     return $n;
 }
+
+// ---------------------------------------------------------------------------------------------------------------
+// Old open jobs are hidden from the courier job list.
+// An order nobody picked up for hours (a test order, a shop that never prepared it) kept showing as a job to
+// every courier ("Waiting 846:49"). A courier cannot do a job that old, and showing it makes the app look broken.
+// After this many minutes (default 120, 0 = never hide, else 30..1440) an unaccepted order no longer appears in the
+// courier's list. It is NOT cancelled: it still shows in Admin as "needs attention" so staff can act on it.
+// ---------------------------------------------------------------------------------------------------------------
+
+// Pure: 0 (off) or 30..1440 minutes.
+function etel_job_age_clean($m) {
+    $m = (int) $m;
+    if ($m <= 0) return 0;
+    if ($m < 30) $m = 30;
+    if ($m > 1440) $m = 1440;
+    return $m;
+}
+
+function etel_job_age_minutes($pdo) {
+    try {
+        $s = $pdo->prepare("SELECT rule_value FROM pricing_rules WHERE rule_key='courier_job_max_age_minutes' LIMIT 1");
+        $s->execute();
+        $v = $s->fetchColumn();
+        if ($v === false || $v === null || $v === '') return 120;
+        return etel_job_age_clean($v);
+    } catch (Exception $e) { return 120; }
+}
+
+function etel_job_age_save($pdo, $minutes) {
+    $m = etel_job_age_clean($minutes);
+    $pdo->prepare("INSERT INTO pricing_rules (rule_key, rule_value, description) VALUES ('courier_job_max_age_minutes', ?, 'Minutes after which an unaccepted order is no longer shown in the courier job list (0 = never hide)')
+                   ON DUPLICATE KEY UPDATE rule_value = VALUES(rule_value)")->execute(array((string) $m));
+    return $m;
+}
+
+// SQL fragment for the courier job list query (orders aliased o). Safe to concatenate: the number is cast to int.
+function etel_job_age_filter($pdo) {
+    $m = etel_job_age_minutes($pdo);
+    if ($m <= 0) return '';
+    return ' AND o.placed_at >= DATE_SUB(NOW(), INTERVAL ' . (int) $m . ' MINUTE) ';
+}
+
