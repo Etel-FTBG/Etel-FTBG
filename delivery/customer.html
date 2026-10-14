@@ -20,12 +20,13 @@
     <link rel="icon" type="image/png" href="icons/icon-96.png">
     <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
     <script src="js/visibility-throttle.js?v=1.0"></script>
-<script>window.ETEL_NO_THEME_FAB = true;</script>
+<script src="js/customer-early.js?v=1"></script>
+    <script src="js/etel-actions.js?v=1"></script>
+    <script src="js/customer-actions.js?v=1"></script>
     <script src="js/customer-bundle.js?v=3.1"></script>
     <script src="js/customer-bundle-extra.js?v=1.0" defer></script>
     <!-- Google Maps (a large download) is no longer loaded at start-up. customer.js loads it the first time the
          checkout address box or the order-tracking map needs it (etelEnsureMaps). -->
-    <script>window.initCustomerMap = function(){};</script>
     <link rel="preload" href="fonts/syne-normal-latin.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="stylesheet" href="css/etel-fonts.css?v=1">
     <link rel="stylesheet" href="css/customer-v5.css?v=7.13">
@@ -49,18 +50,6 @@
 <style>@keyframes etelSplashPulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.05);opacity:.88}}</style>
 
 <!-- The floating refresh and theme buttons moved into the Profile menu (Refresh app, Light / Dark mode). -->
-
-<script>
-(function(){
-  setTimeout(function(){
-    var el = document.getElementById('etel-master-splash');
-    if (!el) return;
-    el.style.opacity = '0';
-    setTimeout(function(){ if (el.parentNode) el.parentNode.removeChild(el); }, 400);
-  }, 900);
-})();
-</script>
-
 
 <!-- ═══ AMBIENT BACKGROUND ═══ -->
 <div class="bg-ambient">
@@ -86,12 +75,12 @@
         </div>
     </div>
     <div class="header-actions">
-        <button class="header-btn" onclick="toggleCustomerLanguage()" title="English / አማርኛ" style="font-size:13px;font-weight:700">EN/አማ</button>
-        <button class="header-btn cart-btn" onclick="toggleCart()">
+        <button class="header-btn" data-act="toggleCustomerLanguage" title="English / አማርኛ" style="font-size:13px;font-weight:700">EN/አማ</button>
+        <button class="header-btn cart-btn" data-act="toggleCart">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
             <span class="cart-badge" id="cart-count">0</span>
         </button>
-        <button class="header-btn avatar-btn" onclick="toggleProfile()">
+        <button class="header-btn avatar-btn" data-act="toggleProfile">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
         </button>
     </div>
@@ -112,20 +101,20 @@
 
         <!-- ONE FILTER ROW: sort pills, divider, then cuisine chips (both can be combined) -->
         <div class="chip-row" id="chip-row">
-            <button class="filter-pill active" data-i18n="filter_trending" onclick="applySortFilter('trending', this)">Trending</button>
-            <button class="filter-pill" data-i18n="filter_top_rated" onclick="applySortFilter('top_rated', this)">Top Rated</button>
-            <button class="filter-pill" data-i18n="filter_fast" onclick="applySortFilter('fast', this)">Fast</button>
-            <button class="filter-pill" data-i18n="filter_budget" onclick="applySortFilter('budget', this)">Budget</button>
-            <button class="filter-pill" data-i18n="filter_new" onclick="applySortFilter('new', this)">New</button>
+            <button class="filter-pill active" data-i18n="filter_trending" data-act="applySortFilter" data-args='["trending",{"$":"el"}]'>Trending</button>
+            <button class="filter-pill" data-i18n="filter_top_rated" data-act="applySortFilter" data-args='["top_rated",{"$":"el"}]'>Top Rated</button>
+            <button class="filter-pill" data-i18n="filter_fast" data-act="applySortFilter" data-args='["fast",{"$":"el"}]'>Fast</button>
+            <button class="filter-pill" data-i18n="filter_budget" data-act="applySortFilter" data-args='["budget",{"$":"el"}]'>Budget</button>
+            <button class="filter-pill" data-i18n="filter_new" data-act="applySortFilter" data-args='["new",{"$":"el"}]'>New</button>
             <span class="chip-sep" aria-hidden="true"></span>
-            <button class="cat-chip" onclick="applyCuisineFilter('pizza', this)"><span>🍕</span> <span data-i18n="cat_pizza">Pizza</span></button>
-            <button class="cat-chip" onclick="applyCuisineFilter('burgers', this)"><span>🍔</span> <span data-i18n="cat_burgers">Burgers</span></button>
-            <button class="cat-chip" onclick="applyCuisineFilter('noodles', this)"><span>🍜</span> <span data-i18n="cat_noodles">Noodles</span></button>
-            <button class="cat-chip" onclick="applyCuisineFilter('ethiopian', this)"><span>🥘</span> <span data-i18n="cat_ethiopian">Ethiopian</span></button>
-            <button class="cat-chip" onclick="applyCuisineFilter('healthy', this)"><span>🥗</span> <span data-i18n="cat_healthy">Healthy</span></button>
-            <button class="cat-chip" onclick="applyCuisineFilter('sushi', this)"><span>🍣</span> <span data-i18n="cat_sushi">Sushi</span></button>
-            <button class="cat-chip" onclick="applyCuisineFilter('coffee', this)"><span>☕</span> <span data-i18n="cat_coffee">Coffee</span></button>
-            <button class="cat-chip" onclick="applyCuisineFilter('bakery', this)"><span>🧁</span> <span data-i18n="cat_bakery">Bakery</span></button>
+            <button class="cat-chip" data-act="applyCuisineFilter" data-args='["pizza",{"$":"el"}]'><span>🍕</span> <span data-i18n="cat_pizza">Pizza</span></button>
+            <button class="cat-chip" data-act="applyCuisineFilter" data-args='["burgers",{"$":"el"}]'><span>🍔</span> <span data-i18n="cat_burgers">Burgers</span></button>
+            <button class="cat-chip" data-act="applyCuisineFilter" data-args='["noodles",{"$":"el"}]'><span>🍜</span> <span data-i18n="cat_noodles">Noodles</span></button>
+            <button class="cat-chip" data-act="applyCuisineFilter" data-args='["ethiopian",{"$":"el"}]'><span>🥘</span> <span data-i18n="cat_ethiopian">Ethiopian</span></button>
+            <button class="cat-chip" data-act="applyCuisineFilter" data-args='["healthy",{"$":"el"}]'><span>🥗</span> <span data-i18n="cat_healthy">Healthy</span></button>
+            <button class="cat-chip" data-act="applyCuisineFilter" data-args='["sushi",{"$":"el"}]'><span>🍣</span> <span data-i18n="cat_sushi">Sushi</span></button>
+            <button class="cat-chip" data-act="applyCuisineFilter" data-args='["coffee",{"$":"el"}]'><span>☕</span> <span data-i18n="cat_coffee">Coffee</span></button>
+            <button class="cat-chip" data-act="applyCuisineFilter" data-args='["bakery",{"$":"el"}]'><span>🧁</span> <span data-i18n="cat_bakery">Bakery</span></button>
         </div>
     </div>
 
@@ -143,15 +132,15 @@
 
         <!-- SERVICE GRID: four equal tiles -->
         <div class="svc-grid">
-            <button type="button" class="svc-tile" onclick="document.getElementById('sg-scroll').scrollIntoView({behavior:'smooth',block:'center'})">
+            <button type="button" class="svc-tile" data-act="scrollToId" data-args='["sg-scroll"]'>
                 <span class="svc-ico svc-ico-food"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3v6.5a2.5 2.5 0 0 0 5 0V3"/><path d="M8.5 3v18"/><path d="M17 3c-2.2 1.6-3 4.2-3 7v3h3"/><path d="M17 3v18"/></svg></span>
                 <span class="svc-label" data-i18n="svc_food">Food</span>
             </button>
-            <button type="button" class="svc-tile" onclick="openCategoryView('grocery','Groceries','🛒')">
+            <button type="button" class="svc-tile" data-act="openCategoryView" data-args='["grocery","Groceries","🛒"]'>
                 <span class="svc-ico svc-ico-groc"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9.5" cy="20" r="1.4"/><circle cx="17.5" cy="20" r="1.4"/><path d="M2.5 3.5h3l2.4 11.2a1.6 1.6 0 0 0 1.6 1.3h7.8a1.6 1.6 0 0 0 1.6-1.2L20.8 7H6.2"/></svg></span>
                 <span class="svc-label" data-i18n="svc_groceries">Groceries</span>
             </button>
-            <button type="button" class="svc-tile" onclick="openCategoryView('pharmacy','Pharmacy','💊')">
+            <button type="button" class="svc-tile" data-act="openCategoryView" data-args='["pharmacy","Pharmacy","💊"]'>
                 <span class="svc-ico svc-ico-pharm"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="4.5"/><path d="M12 8v8M8 12h8"/></svg></span>
                 <span class="svc-label" data-i18n="svc_pharmacy">Pharmacy</span>
             </button>
@@ -174,7 +163,7 @@
                 <div class="promo-body">
                     <div class="promo-headline" data-i18n="promo_50off">50% OFF</div>
                     <div class="promo-sub" data-i18n="promo_first_order">First Order Premium</div>
-                    <div class="promo-code-tag" onclick="promoCardTap('PREMIUM50')" style="cursor:pointer">PREMIUM50</div>
+                    <div class="promo-code-tag" data-act="promoCardTap" data-args='["PREMIUM50"]' style="cursor:pointer">PREMIUM50</div>
                 </div>
                 <div class="promo-shine"></div>
             </div>
@@ -184,7 +173,7 @@
                 <div class="promo-body">
                     <div class="promo-headline" data-i18n="promo_free_delivery">FREE DELIVERY</div>
                     <div class="promo-sub" data-i18n="promo_orders_above">Orders above ETB 500</div>
-                    <div class="promo-code-tag" onclick="promoCardTap('FREEDEL')" style="cursor:pointer">FREEDEL</div>
+                    <div class="promo-code-tag" data-act="promoCardTap" data-args='["FREEDEL"]' style="cursor:pointer">FREEDEL</div>
                 </div>
                 <div class="promo-shine"></div>
             </div>
@@ -209,7 +198,7 @@
                 <div class="section-title" data-i18n="section_restaurants">Restaurants &amp; Shops</div>
                 <div class="section-count" id="sg-count"></div>
             </div>
-            <button class="see-all-btn" onclick="loadItems()" data-i18n="see_all">See all →</button>
+            <button class="see-all-btn" data-act="loadItems" data-i18n="see_all">See all →</button>
         </div>
         <div class="shops-scroll" id="sg-scroll">
             <div class="skeleton-card"></div>
@@ -261,11 +250,11 @@
     <div id="view-orders" class="view-section" style="display:none">
         <div class="section-header">
             <div class="section-title" data-i18n="orders_title">📦 My Orders</div>
-            <button class="see-all-btn" onclick="loadOrders()" data-i18n="orders_refresh">Refresh →</button>
+            <button class="see-all-btn" data-act="loadOrders" data-i18n="orders_refresh">Refresh →</button>
         </div>
         <div id="cust-delivery-banner" style="display:none;margin-bottom:14px"></div>
         <div id="scheduled-orders-section" style="display:none;margin-bottom:16px"></div>
-        <button onclick="openCourierQRScanner()" style="width:100%;padding:12px;margin-bottom:14px;background:rgba(212,175,55,.12);color:#D4AF37;border:1px solid rgba(212,175,55,.35);border-radius:12px;font-size:13px;font-weight:700;cursor:pointer" data-i18n="scan_qr_btn">📷 Scan Courier's QR to Confirm Delivery</button>
+        <button data-act="openCourierQRScanner" style="width:100%;padding:12px;margin-bottom:14px;background:rgba(212,175,55,.12);color:#D4AF37;border:1px solid rgba(212,175,55,.35);border-radius:12px;font-size:13px;font-weight:700;cursor:pointer" data-i18n="scan_qr_btn">📷 Scan Courier's QR to Confirm Delivery</button>
         <div id="orders-list">
             <div class="empty-state">
                 <div class="empty-icon">📦</div>
@@ -287,7 +276,7 @@
     <div id="view-favorites" class="view-section" style="display:none">
         <div class="section-header">
             <div class="section-title">⭐ My Favorites</div>
-            <button class="see-all-btn" onclick="loadFavorites()">Refresh →</button>
+            <button class="see-all-btn" data-act="loadFavorites">Refresh →</button>
         </div>
         <div id="favorites-list">
             <div class="empty-state"><div class="empty-icon">⭐</div><div class="empty-text">Loading your favorites…</div></div>
@@ -298,7 +287,7 @@
     <div id="view-messages" class="view-section" style="display:none">
         <div class="section-header">
             <div class="section-title">💬 Messages</div>
-            <button class="see-all-btn" onclick="openContactSupport()">✉️ Contact Support</button>
+            <button class="see-all-btn" data-act="openContactSupport">✉️ Contact Support</button>
         </div>
         <div id="messages-list">
             <div class="empty-state"><div class="empty-icon">💬</div><div class="empty-text">Loading messages…</div></div>
@@ -309,7 +298,7 @@
     <div id="view-addresses" class="view-section" style="display:none">
         <div class="section-header">
             <div class="section-title">📍 Saved Addresses</div>
-            <button class="see-all-btn" onclick="openAddAddressForm()">+ Add New</button>
+            <button class="see-all-btn" data-act="openAddAddressForm">+ Add New</button>
         </div>
         <div id="addresses-list">
             <div class="empty-state"><div class="empty-icon">📍</div><div class="empty-text">Loading your addresses…</div></div>
@@ -344,7 +333,7 @@
     <div id="view-notifications" class="view-section" style="display:none">
         <div class="section-header">
             <div class="section-title">🔔 Notifications</div>
-            <button class="see-all-btn" onclick="loadNotifications()">Refresh →</button>
+            <button class="see-all-btn" data-act="loadNotifications">Refresh →</button>
         </div>
         <div id="notifications-list">
             <div class="empty-state"><div class="empty-icon">🔔</div><div class="empty-text">Loading…</div></div>
@@ -358,7 +347,7 @@
 <div id="view-shop-detail" style="display:none;position:fixed;inset:0;z-index:350;background:var(--dark);overflow-y:auto;padding-bottom:40px">
     <header class="app-header" style="position:sticky;top:0">
         <div class="header-brand" style="min-width:0">
-            <button class="header-btn" onclick="closeShopDetail()" aria-label="Back" style="flex-shrink:0">
+            <button class="header-btn" data-act="closeShopDetail" aria-label="Back" style="flex-shrink:0">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
             </button>
             <div class="brand-info" style="min-width:0">
@@ -371,9 +360,9 @@
         <div id="shop-detail-hero" style="height:120px;border-radius:16px;display:flex;align-items:center;justify-content:center;margin-bottom:16px;position:relative;overflow:hidden;border:1px solid var(--glass-border)"></div>
         <div id="shop-toolbar" class="shop-toolbar">
             <div style="display:flex;gap:8px">
-                <button id="shop-tab-menu" class="filter-pill active" onclick="switchShopDetailTab('menu')" style="flex:1;text-align:center">Menu</button>
-                <button id="shop-tab-reviews" class="filter-pill" onclick="switchShopDetailTab('reviews')" style="flex:1;text-align:center">Reviews</button>
-                <button id="shop-tab-info" class="filter-pill" onclick="switchShopDetailTab('info')" style="flex:1;text-align:center">Info</button>
+                <button id="shop-tab-menu" class="filter-pill active" data-act="switchShopDetailTab" data-args='["menu"]' style="flex:1;text-align:center">Menu</button>
+                <button id="shop-tab-reviews" class="filter-pill" data-act="switchShopDetailTab" data-args='["reviews"]' style="flex:1;text-align:center">Reviews</button>
+                <button id="shop-tab-info" class="filter-pill" data-act="switchShopDetailTab" data-args='["info"]' style="flex:1;text-align:center">Info</button>
             </div>
             <div id="shop-menu-chips" class="shop-menu-chips"></div>
         </div>
@@ -391,7 +380,7 @@
 <div id="view-track-order" style="display:none;position:fixed;inset:0;z-index:350;background:var(--dark);overflow-y:auto;padding-bottom:40px">
     <header class="app-header" style="position:sticky;top:0">
         <div class="header-brand">
-            <button class="header-btn" onclick="closeTrackOrder()" aria-label="Back">
+            <button class="header-btn" data-act="closeTrackOrder" aria-label="Back">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
             </button>
             <div class="brand-info">
@@ -415,7 +404,7 @@
 <div id="view-category" style="display:none;position:fixed;inset:0;z-index:350;background:var(--dark);overflow-y:auto;padding-bottom:40px">
     <header class="app-header" style="position:sticky;top:0">
         <div class="header-brand">
-            <button class="header-btn" onclick="closeCategoryView()" aria-label="Back">
+            <button class="header-btn" data-act="closeCategoryView" aria-label="Back">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
             </button>
             <div class="brand-info">
@@ -426,7 +415,7 @@
     <div class="search-container" style="padding-top:12px">
         <div class="search-wrap">
             <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            <input type="text" class="search-input" id="category-search" placeholder="Search in this category…" oninput="filterCategoryView(this.value)">
+            <input type="text" class="search-input" id="category-search" placeholder="Search in this category…" data-act-input="filterCategoryView" data-args-input='[{"$":"value"}]'>
         </div>
     </div>
     <div style="padding:0 clamp(16px,3vw,40px)">
@@ -446,53 +435,53 @@
         <div style="font-size:22px;font-weight:800;color:#22C55E;margin-bottom:6px">Order Delivered!</div>
         <div style="font-size:13px;color:var(--text-muted);margin-bottom:24px">Your order has been delivered successfully. Enjoy your meal!</div>
         <div id="order-delivered-summary" style="background:var(--glass-2);border:1px solid var(--glass-border);border-radius:16px;padding:18px;text-align:left;margin-bottom:20px"></div>
-        <button onclick="closeOrderDeliveredScreen();switchCategory('orders')" style="width:100%;padding:13px;background:rgba(255,255,255,.05);border:1px solid var(--glass-border);color:var(--text);border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:10px">View Order Details</button>
-        <button id="order-delivered-rate-btn" onclick="" style="width:100%;padding:13px;background:var(--gold-grad);border:none;color:#1a1400;border-radius:12px;font-size:14px;font-weight:800;cursor:pointer">⭐ Rate Your Delivery</button>
+        <button data-acts='[["closeOrderDeliveredScreen"],["switchCategory","orders"]]' style="width:100%;padding:13px;background:rgba(255,255,255,.05);border:1px solid var(--glass-border);color:var(--text);border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:10px">View Order Details</button>
+        <button id="order-delivered-rate-btn" style="width:100%;padding:13px;background:var(--gold-grad);border:none;color:#1a1400;border-radius:12px;font-size:14px;font-weight:800;cursor:pointer">⭐ Rate Your Delivery</button>
     </div>
 </div>
 
 <!-- ═══ BOTTOM NAV ═══ -->
 <!-- CART BAR: slides up while the cart has items -->
-<button type="button" id="cart-bar" class="cart-bar" onclick="toggleCart()" aria-label="View cart" hidden>
+<button type="button" id="cart-bar" class="cart-bar" data-act="toggleCart" aria-label="View cart" hidden>
     <span class="cart-bar-count" id="cart-bar-count">0</span>
     <span class="cart-bar-label"><span id="cart-bar-items">0 items</span> · <b id="cart-bar-total">ETB 0</b></span>
     <span class="cart-bar-go" data-i18n="cart_view">View cart →</span>
 </button>
 
 <nav class="bottom-nav">
-    <button class="nav-item active" onclick="switchCategory('home')">
+    <button class="nav-item active" data-act="switchCategory" data-args='["home"]'>
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
         <span data-i18n="nav_home">Home</span>
     </button>
-    <button class="nav-item" onclick="switchCategory('favorites')">
+    <button class="nav-item" data-act="switchCategory" data-args='["favorites"]'>
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
         <span data-i18n="nav_favorites">Favorites</span>
     </button>
-    <button class="nav-item nav-center" onclick="switchCategory('orders')">
+    <button class="nav-item nav-center" data-act="switchCategory" data-args='["orders"]'>
         <div class="nav-center-btn">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
         </div>
         <span data-i18n="nav_orders">Orders</span>
     </button>
-    <button class="nav-item" onclick="switchCategory('messages')">
+    <button class="nav-item" data-act="switchCategory" data-args='["messages"]'>
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
         <span data-i18n="nav_messages">Messages</span>
     </button>
-    <button class="nav-item" onclick="toggleProfile()">
+    <button class="nav-item" data-act="toggleProfile">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
         <span data-i18n="nav_profile">Profile</span>
     </button>
 </nav>
 
 <!-- ═══ CART DRAWER ═══ -->
-<div id="cart-overlay" onclick="if(event.target===this)closeCart()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:400;backdrop-filter:blur(4px)">
+<div id="cart-overlay" data-act="closeCart" data-self="1" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:400;backdrop-filter:blur(4px)">
     <div class="cart-drawer">
         <div class="cart-header">
             <div class="cart-title">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
                 <span data-i18n="cart_title">My Cart</span>
             </div>
-            <button class="cart-close" onclick="closeCart()">✕</button>
+            <button class="cart-close" data-act="closeCart">✕</button>
         </div>
         <div id="cart-items"></div>
         <div id="cart-total"></div>
@@ -501,10 +490,10 @@
 </div>
 
 <!-- ═══ PROFILE PANEL ═══ -->
-<div id="profile-drop" onclick="if(event.target===this)closeProfile()" style="display:none;position:fixed;inset:0;z-index:400;backdrop-filter:blur(6px);background:rgba(0,0,0,.55)">
+<div id="profile-drop" data-act="closeProfile" data-self="1" style="display:none;position:fixed;inset:0;z-index:400;backdrop-filter:blur(6px);background:rgba(0,0,0,.55)">
     <div class="profile-panel-drawer">
         <div style="display:flex;justify-content:flex-end;padding:14px 14px 0">
-            <button class="profile-close-btn" onclick="closeProfile()">✕</button>
+            <button class="profile-close-btn" data-act="closeProfile">✕</button>
         </div>
         <div id="profile-info"></div>
     </div>
@@ -522,13 +511,13 @@
 <div id="modal"></div>
 
     <!-- COURIER QR SCAN MODAL -->
-    <div id="courier-qr-overlay" onclick="if(event.target===this)closeCourierQRScanner()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);backdrop-filter:blur(3px);z-index:500;align-items:center;justify-content:center;padding:20px">
+    <div id="courier-qr-overlay" data-act="closeCourierQRScanner" data-self="1" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);backdrop-filter:blur(3px);z-index:500;align-items:center;justify-content:center;padding:20px">
         <div style="background:#1c1c2e;border:1px solid rgba(212,175,55,.3);border-radius:18px;padding:22px;max-width:360px;width:100%;text-align:center;box-shadow:0 24px 70px rgba(0,0,0,.5)">
             <div style="font-size:15px;font-weight:700;color:#F5EAC8;margin-bottom:12px" data-i18n="courier_qr_title">Scan Courier's QR Code</div>
             <video id="courier-qr-video" playsinline muted style="width:100%;border-radius:12px;background:#000;margin-bottom:10px"></video>
             <canvas id="courier-qr-canvas" style="display:none"></canvas>
             <div id="courier-qr-result" style="font-size:13px;margin:8px 0;min-height:18px"></div>
-            <button onclick="closeCourierQRScanner()" style="width:100%;padding:11px;background:rgba(255,255,255,.06);color:#A8A8B8;border:1px solid rgba(255,255,255,.12);border-radius:10px;font-size:13px;font-weight:600;cursor:pointer" data-i18n="cancel_btn">Cancel</button>
+            <button data-act="closeCourierQRScanner" style="width:100%;padding:11px;background:rgba(255,255,255,.06);color:#A8A8B8;border:1px solid rgba(255,255,255,.12);border-radius:10px;font-size:13px;font-weight:600;cursor:pointer" data-i18n="cancel_btn">Cancel</button>
         </div>
     </div>
 
