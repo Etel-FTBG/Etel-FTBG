@@ -1313,28 +1313,28 @@
          }
         },
         "admin_approve_compliance_document": {
-         "summary": "admin_approve_compliance_document (public)",
+         "summary": "admin_approve_compliance_document (admin)",
          "value": {
           "action": "admin_approve_compliance_document",
           "request_id": "<request_id>"
          }
         },
         "admin_approve_driver_identity": {
-         "summary": "admin_approve_driver_identity (public)",
+         "summary": "admin_approve_driver_identity (admin)",
          "value": {
           "action": "admin_approve_driver_identity",
           "user_id": "<user_id>"
          }
         },
         "admin_approve_etel_topup": {
-         "summary": "admin_approve_etel_topup (public)",
+         "summary": "admin_approve_etel_topup (admin)",
          "value": {
           "action": "admin_approve_etel_topup",
           "id": "<id>"
          }
         },
         "admin_approve_vehicle_change": {
-         "summary": "admin_approve_vehicle_change (public)",
+         "summary": "admin_approve_vehicle_change (admin)",
          "value": {
           "action": "admin_approve_vehicle_change",
           "request_id": "<request_id>"
@@ -1361,13 +1361,13 @@
          }
         },
         "admin_backup_download": {
-         "summary": "admin_backup_download (public)",
+         "summary": "admin_backup_download (admin)",
          "value": {
           "action": "admin_backup_download"
          }
         },
         "admin_cancel_ride": {
-         "summary": "admin_cancel_ride (public)",
+         "summary": "admin_cancel_ride (admin)",
          "value": {
           "action": "admin_cancel_ride",
           "ride_id": "<ride_id>"
@@ -1433,7 +1433,7 @@
          }
         },
         "admin_create_announcement": {
-         "summary": "admin_create_announcement (public)",
+         "summary": "admin_create_announcement (admin)",
          "value": {
           "action": "admin_create_announcement",
           "audience": "<audience>",
@@ -1471,7 +1471,7 @@
          }
         },
         "admin_delete_announcement": {
-         "summary": "admin_delete_announcement (public)",
+         "summary": "admin_delete_announcement (admin)",
          "value": {
           "action": "admin_delete_announcement",
           "id": "<id>"
@@ -1613,7 +1613,7 @@
          }
         },
         "admin_get_2fa_rule": {
-         "summary": "admin_get_2fa_rule (public)",
+         "summary": "admin_get_2fa_rule (admin)",
          "value": {
           "action": "admin_get_2fa_rule"
          }
@@ -1625,7 +1625,7 @@
          }
         },
         "admin_get_announcements": {
-         "summary": "admin_get_announcements (public)",
+         "summary": "admin_get_announcements (admin)",
          "value": {
           "action": "admin_get_announcements"
          }
@@ -1673,14 +1673,14 @@
          }
         },
         "admin_get_drivers": {
-         "summary": "admin_get_drivers (public)",
+         "summary": "admin_get_drivers (admin)",
          "value": {
           "action": "admin_get_drivers",
           "q": "<q>"
          }
         },
         "admin_get_flagged_identities": {
-         "summary": "admin_get_flagged_identities (public)",
+         "summary": "admin_get_flagged_identities (admin)",
          "value": {
           "action": "admin_get_flagged_identities"
          }
@@ -1704,7 +1704,7 @@
          }
         },
         "admin_get_live_drivers": {
-         "summary": "admin_get_live_drivers (public)",
+         "summary": "admin_get_live_drivers (admin)",
          "value": {
           "action": "admin_get_live_drivers",
           "lat": "<lat>",
@@ -1745,19 +1745,19 @@
          }
         },
         "admin_get_pending_compliance_requests": {
-         "summary": "admin_get_pending_compliance_requests (public)",
+         "summary": "admin_get_pending_compliance_requests (admin)",
          "value": {
           "action": "admin_get_pending_compliance_requests"
          }
         },
         "admin_get_pending_etel_topups": {
-         "summary": "admin_get_pending_etel_topups (public)",
+         "summary": "admin_get_pending_etel_topups (admin)",
          "value": {
           "action": "admin_get_pending_etel_topups"
          }
         },
         "admin_get_pending_vehicle_changes": {
-         "summary": "admin_get_pending_vehicle_changes (public)",
+         "summary": "admin_get_pending_vehicle_changes (admin)",
          "value": {
           "action": "admin_get_pending_vehicle_changes"
          }
@@ -1781,13 +1781,13 @@
          }
         },
         "admin_get_ride_stats": {
-         "summary": "admin_get_ride_stats (public)",
+         "summary": "admin_get_ride_stats (admin)",
          "value": {
           "action": "admin_get_ride_stats"
          }
         },
         "admin_get_rides": {
-         "summary": "admin_get_rides (public)",
+         "summary": "admin_get_rides (admin)",
          "value": {
           "action": "admin_get_rides",
           "limit": "<limit>",
@@ -1828,7 +1828,7 @@
          }
         },
         "admin_get_suspended_drivers": {
-         "summary": "admin_get_suspended_drivers (public)",
+         "summary": "admin_get_suspended_drivers (admin)",
          "value": {
           "action": "admin_get_suspended_drivers"
          }
@@ -1859,7 +1859,7 @@
          }
         },
         "admin_list_driver_compliance": {
-         "summary": "admin_list_driver_compliance (public)",
+         "summary": "admin_list_driver_compliance (admin)",
          "value": {
           "action": "admin_list_driver_compliance"
          }
@@ -1908,7 +1908,7 @@
          }
         },
         "admin_manual_complete_ride": {
-         "summary": "admin_manual_complete_ride (public)",
+         "summary": "admin_manual_complete_ride (admin)",
          "value": {
           "action": "admin_manual_complete_ride",
           "dropoff_address": "<dropoff_address>",
@@ -1964,7 +1964,7 @@
          }
         },
         "admin_reject_compliance_document": {
-         "summary": "admin_reject_compliance_document (public)",
+         "summary": "admin_reject_compliance_document (admin)",
          "value": {
           "action": "admin_reject_compliance_document",
           "reason": "<reason>",
@@ -1972,7 +1972,7 @@
          }
         },
         "admin_reject_driver_identity": {
-         "summary": "admin_reject_driver_identity (public)",
+         "summary": "admin_reject_driver_identity (admin)",
          "value": {
           "action": "admin_reject_driver_identity",
           "reason": "<reason>",
@@ -1980,7 +1980,7 @@
          }
         },
         "admin_reject_etel_topup": {
-         "summary": "admin_reject_etel_topup (public)",
+         "summary": "admin_reject_etel_topup (admin)",
          "value": {
           "action": "admin_reject_etel_topup",
           "id": "<id>",
@@ -1988,7 +1988,7 @@
          }
         },
         "admin_reject_vehicle_change": {
-         "summary": "admin_reject_vehicle_change (public)",
+         "summary": "admin_reject_vehicle_change (admin)",
          "value": {
           "action": "admin_reject_vehicle_change",
           "reason": "<reason>",
@@ -2057,7 +2057,7 @@
          }
         },
         "admin_ride_growth": {
-         "summary": "admin_ride_growth (public)",
+         "summary": "admin_ride_growth (admin)",
          "value": {
           "action": "admin_ride_growth",
           "date_from": "<date_from>",
@@ -2065,13 +2065,13 @@
          }
         },
         "admin_ride_payments": {
-         "summary": "admin_ride_payments (public)",
+         "summary": "admin_ride_payments (admin)",
          "value": {
           "action": "admin_ride_payments"
          }
         },
         "admin_ride_watch": {
-         "summary": "admin_ride_watch (public)",
+         "summary": "admin_ride_watch (admin)",
          "value": {
           "action": "admin_ride_watch"
          }
@@ -2158,7 +2158,7 @@
          }
         },
         "admin_set_2fa_required": {
-         "summary": "admin_set_2fa_required (public)",
+         "summary": "admin_set_2fa_required (admin)",
          "value": {
           "action": "admin_set_2fa_required",
           "required": "<required>"
@@ -2201,7 +2201,7 @@
          }
         },
         "admin_set_ride_pin_required": {
-         "summary": "admin_set_ride_pin_required (public)",
+         "summary": "admin_set_ride_pin_required (admin)",
          "value": {
           "action": "admin_set_ride_pin_required",
           "required": "<required>"
@@ -2215,7 +2215,7 @@
          }
         },
         "admin_suspend_driver": {
-         "summary": "admin_suspend_driver (public)",
+         "summary": "admin_suspend_driver (admin)",
          "value": {
           "action": "admin_suspend_driver",
           "reason": "<reason>",
@@ -2230,7 +2230,7 @@
          }
         },
         "admin_system_health": {
-         "summary": "admin_system_health (public)",
+         "summary": "admin_system_health (admin)",
          "value": {
           "action": "admin_system_health"
          }
@@ -2268,7 +2268,7 @@
          }
         },
         "admin_topup_etel_money": {
-         "summary": "admin_topup_etel_money (public)",
+         "summary": "admin_topup_etel_money (admin)",
          "value": {
           "action": "admin_topup_etel_money",
           "amount": "<amount>",
@@ -2283,7 +2283,7 @@
          }
         },
         "admin_unsuspend_driver": {
-         "summary": "admin_unsuspend_driver (public)",
+         "summary": "admin_unsuspend_driver (admin)",
          "value": {
           "action": "admin_unsuspend_driver",
           "user_id": "<user_id>"
@@ -2325,7 +2325,7 @@
          }
         },
         "admin_update_driver_compliance": {
-         "summary": "admin_update_driver_compliance (public)",
+         "summary": "admin_update_driver_compliance (admin)",
          "value": {
           "action": "admin_update_driver_compliance",
           "user_id": "<user_id>"
@@ -2396,7 +2396,7 @@
          }
         },
         "agent_book_ride": {
-         "summary": "agent_book_ride (public)",
+         "summary": "agent_book_ride (service key (X-Etel-Service-Key))",
          "value": {
           "action": "agent_book_ride",
           "destination_name": "<destination_name>",
@@ -2408,13 +2408,13 @@
          }
         },
         "agent_cancel_ride": {
-         "summary": "agent_cancel_ride (public)",
+         "summary": "agent_cancel_ride (service key (X-Etel-Service-Key))",
          "value": {
           "action": "agent_cancel_ride"
          }
         },
         "agent_find_and_quote": {
-         "summary": "agent_find_and_quote (public)",
+         "summary": "agent_find_and_quote (service key (X-Etel-Service-Key))",
          "value": {
           "action": "agent_find_and_quote",
           "items": "<items>",
@@ -2424,7 +2424,7 @@
          }
         },
         "agent_order_quote": {
-         "summary": "agent_order_quote (public)",
+         "summary": "agent_order_quote (service key (X-Etel-Service-Key))",
          "value": {
           "action": "agent_order_quote",
           "items": "<items>",
@@ -2434,13 +2434,13 @@
          }
         },
         "agent_order_status": {
-         "summary": "agent_order_status (public)",
+         "summary": "agent_order_status (service key (X-Etel-Service-Key))",
          "value": {
           "action": "agent_order_status"
          }
         },
         "agent_place_order": {
-         "summary": "agent_place_order (public)",
+         "summary": "agent_place_order (service key (X-Etel-Service-Key))",
          "value": {
           "action": "agent_place_order",
           "etel_sso_token": "<etel_sso_token>",
@@ -2452,7 +2452,7 @@
          }
         },
         "agent_ride_quote": {
-         "summary": "agent_ride_quote (public)",
+         "summary": "agent_ride_quote (service key (X-Etel-Service-Key))",
          "value": {
           "action": "agent_ride_quote",
           "destination_name": "<destination_name>",
@@ -2463,13 +2463,13 @@
          }
         },
         "agent_ride_status": {
-         "summary": "agent_ride_status (public)",
+         "summary": "agent_ride_status (service key (X-Etel-Service-Key))",
          "value": {
           "action": "agent_ride_status"
          }
         },
         "agent_search_items": {
-         "summary": "agent_search_items (public)",
+         "summary": "agent_search_items (service key (X-Etel-Service-Key))",
          "value": {
           "action": "agent_search_items",
           "limit": "<limit>",
@@ -2477,7 +2477,7 @@
          }
         },
         "book_ride": {
-         "summary": "book_ride (public)",
+         "summary": "book_ride (any signed-in user)",
          "value": {
           "action": "book_ride",
           "dropoff_addr": "<dropoff_addr>",
@@ -2489,7 +2489,7 @@
          }
         },
         "cancel_ride": {
-         "summary": "cancel_ride (public)",
+         "summary": "cancel_ride (any signed-in user)",
          "value": {
           "action": "cancel_ride",
           "id": "<id>",
@@ -2573,7 +2573,7 @@
          }
         },
         "courier_add_fuel_log": {
-         "summary": "courier_add_fuel_log (public)",
+         "summary": "courier_add_fuel_log (any signed-in user)",
          "value": {
           "action": "courier_add_fuel_log",
           "cost_etb": "<cost_etb>",
@@ -2589,7 +2589,7 @@
          }
         },
         "courier_delete_fuel_log": {
-         "summary": "courier_delete_fuel_log (public)",
+         "summary": "courier_delete_fuel_log (any signed-in user)",
          "value": {
           "action": "courier_delete_fuel_log",
           "id": "<id>"
@@ -2608,7 +2608,7 @@
          }
         },
         "courier_get_fuel_summary": {
-         "summary": "courier_get_fuel_summary (public)",
+         "summary": "courier_get_fuel_summary (any signed-in user)",
          "value": {
           "action": "courier_get_fuel_summary",
           "period": "<period>"
@@ -2648,7 +2648,7 @@
          }
         },
         "courier_list_fuel_logs": {
-         "summary": "courier_list_fuel_logs (public)",
+         "summary": "courier_list_fuel_logs (any signed-in user)",
          "value": {
           "action": "courier_list_fuel_logs"
          }
@@ -2682,7 +2682,7 @@
          }
         },
         "customer_confirm_arrival": {
-         "summary": "customer_confirm_arrival (public)",
+         "summary": "customer_confirm_arrival (any signed-in user)",
          "value": {
           "action": "customer_confirm_arrival",
           "payment_method": "<payment_method>",
@@ -2829,14 +2829,14 @@
          }
         },
         "driver_accept_ride": {
-         "summary": "driver_accept_ride (public)",
+         "summary": "driver_accept_ride (any signed-in user)",
          "value": {
           "action": "driver_accept_ride",
           "request_id": "<request_id>"
          }
         },
         "driver_add_fuel_log": {
-         "summary": "driver_add_fuel_log (public)",
+         "summary": "driver_add_fuel_log (any signed-in user)",
          "value": {
           "action": "driver_add_fuel_log",
           "cost_etb": "<cost_etb>",
@@ -2845,14 +2845,14 @@
          }
         },
         "driver_arrived": {
-         "summary": "driver_arrived (public)",
+         "summary": "driver_arrived (any signed-in user)",
          "value": {
           "action": "driver_arrived",
           "ride_id": "<ride_id>"
          }
         },
         "driver_beacon_ping": {
-         "summary": "driver_beacon_ping (public)",
+         "summary": "driver_beacon_ping (any signed-in user)",
          "value": {
           "action": "driver_beacon_ping",
           "lat": "<lat>",
@@ -2860,48 +2860,48 @@
          }
         },
         "driver_cancel_ride": {
-         "summary": "driver_cancel_ride (public)",
+         "summary": "driver_cancel_ride (any signed-in user)",
          "value": {
           "action": "driver_cancel_ride",
           "ride_id": "<ride_id>"
          }
         },
         "driver_cashout": {
-         "summary": "driver_cashout (public)",
+         "summary": "driver_cashout (any signed-in user)",
          "value": {
           "action": "driver_cashout",
           "amount": "<amount>"
          }
         },
         "driver_complete_ride": {
-         "summary": "driver_complete_ride (public)",
+         "summary": "driver_complete_ride (any signed-in user)",
          "value": {
           "action": "driver_complete_ride",
           "ride_id": "<ride_id>"
          }
         },
         "driver_delete_fuel_log": {
-         "summary": "driver_delete_fuel_log (public)",
+         "summary": "driver_delete_fuel_log (any signed-in user)",
          "value": {
           "action": "driver_delete_fuel_log",
           "id": "<id>"
          }
         },
         "driver_get_announcements": {
-         "summary": "driver_get_announcements (public)",
+         "summary": "driver_get_announcements (any signed-in user)",
          "value": {
           "action": "driver_get_announcements",
           "category": "<category>"
          }
         },
         "driver_get_compliance_status": {
-         "summary": "driver_get_compliance_status (public)",
+         "summary": "driver_get_compliance_status (any signed-in user)",
          "value": {
           "action": "driver_get_compliance_status"
          }
         },
         "driver_get_demand": {
-         "summary": "driver_get_demand (public)",
+         "summary": "driver_get_demand (any signed-in user)",
          "value": {
           "action": "driver_get_demand",
           "lat": "<lat>",
@@ -2909,77 +2909,77 @@
          }
         },
         "driver_get_earnings_for_date": {
-         "summary": "driver_get_earnings_for_date (public)",
+         "summary": "driver_get_earnings_for_date (any signed-in user)",
          "value": {
           "action": "driver_get_earnings_for_date",
           "date": "<date>"
          }
         },
         "driver_get_fuel_summary": {
-         "summary": "driver_get_fuel_summary (public)",
+         "summary": "driver_get_fuel_summary (any signed-in user)",
          "value": {
           "action": "driver_get_fuel_summary",
           "period": "<period>"
          }
         },
         "driver_get_goal_tiers": {
-         "summary": "driver_get_goal_tiers (public)",
+         "summary": "driver_get_goal_tiers (any signed-in user)",
          "value": {
           "action": "driver_get_goal_tiers"
          }
         },
         "driver_get_kpi_summary": {
-         "summary": "driver_get_kpi_summary (public)",
+         "summary": "driver_get_kpi_summary (any signed-in user)",
          "value": {
           "action": "driver_get_kpi_summary",
           "period": "<period>"
          }
         },
         "driver_get_nearby_requests": {
-         "summary": "driver_get_nearby_requests (public)",
+         "summary": "driver_get_nearby_requests (any signed-in user)",
          "value": {
           "action": "driver_get_nearby_requests",
           "radius_km": "<radius_km>"
          }
         },
         "driver_get_pending_vehicle_change": {
-         "summary": "driver_get_pending_vehicle_change (public)",
+         "summary": "driver_get_pending_vehicle_change (any signed-in user)",
          "value": {
           "action": "driver_get_pending_vehicle_change"
          }
         },
         "driver_get_profile": {
-         "summary": "driver_get_profile (public)",
+         "summary": "driver_get_profile (any signed-in user)",
          "value": {
           "action": "driver_get_profile"
          }
         },
         "driver_get_referral_info": {
-         "summary": "driver_get_referral_info (public)",
+         "summary": "driver_get_referral_info (any signed-in user)",
          "value": {
           "action": "driver_get_referral_info"
          }
         },
         "driver_get_ride_history": {
-         "summary": "driver_get_ride_history (public)",
+         "summary": "driver_get_ride_history (any signed-in user)",
          "value": {
           "action": "driver_get_ride_history"
          }
         },
         "driver_get_topup_history": {
-         "summary": "driver_get_topup_history (public)",
+         "summary": "driver_get_topup_history (any signed-in user)",
          "value": {
           "action": "driver_get_topup_history"
          }
         },
         "driver_go_offline": {
-         "summary": "driver_go_offline (public)",
+         "summary": "driver_go_offline (any signed-in user)",
          "value": {
           "action": "driver_go_offline"
          }
         },
         "driver_go_online": {
-         "summary": "driver_go_online (public)",
+         "summary": "driver_go_online (any signed-in user)",
          "value": {
           "action": "driver_go_online",
           "lat": "<lat>",
@@ -2987,7 +2987,7 @@
          }
         },
         "driver_hail_customer": {
-         "summary": "driver_hail_customer (public)",
+         "summary": "driver_hail_customer (any signed-in user)",
          "value": {
           "action": "driver_hail_customer",
           "km": "<km>",
@@ -2998,20 +2998,20 @@
          }
         },
         "driver_list_fuel_logs": {
-         "summary": "driver_list_fuel_logs (public)",
+         "summary": "driver_list_fuel_logs (any signed-in user)",
          "value": {
           "action": "driver_list_fuel_logs"
          }
         },
         "driver_mark_announcement_read": {
-         "summary": "driver_mark_announcement_read (public)",
+         "summary": "driver_mark_announcement_read (any signed-in user)",
          "value": {
           "action": "driver_mark_announcement_read",
           "announcement_id": "<announcement_id>"
          }
         },
         "driver_start_ride": {
-         "summary": "driver_start_ride (public)",
+         "summary": "driver_start_ride (any signed-in user)",
          "value": {
           "action": "driver_start_ride",
           "pin": "<pin>",
@@ -3019,7 +3019,7 @@
          }
         },
         "driver_submit_compliance_document": {
-         "summary": "driver_submit_compliance_document (public)",
+         "summary": "driver_submit_compliance_document (any signed-in user)",
          "value": {
           "action": "driver_submit_compliance_document",
           "doc_type": "<doc_type>",
@@ -3028,7 +3028,7 @@
          }
         },
         "driver_submit_manual_topup": {
-         "summary": "driver_submit_manual_topup (public)",
+         "summary": "driver_submit_manual_topup (any signed-in user)",
          "value": {
           "action": "driver_submit_manual_topup",
           "amount": "<amount>",
@@ -3037,14 +3037,14 @@
          }
         },
         "driver_toggle_wait": {
-         "summary": "driver_toggle_wait (public)",
+         "summary": "driver_toggle_wait (any signed-in user)",
          "value": {
           "action": "driver_toggle_wait",
           "ride_id": "<ride_id>"
          }
         },
         "driver_topup_etel_money": {
-         "summary": "driver_topup_etel_money (public)",
+         "summary": "driver_topup_etel_money (any signed-in user)",
          "value": {
           "action": "driver_topup_etel_money",
           "amount": "<amount>",
@@ -3053,7 +3053,7 @@
          }
         },
         "driver_update_location": {
-         "summary": "driver_update_location (public)",
+         "summary": "driver_update_location (any signed-in user)",
          "value": {
           "action": "driver_update_location",
           "accuracy": "<accuracy>",
@@ -3063,7 +3063,7 @@
          }
         },
         "driver_update_profile": {
-         "summary": "driver_update_profile (public)",
+         "summary": "driver_update_profile (any signed-in user)",
          "value": {
           "action": "driver_update_profile",
           "license_dob": "<license_dob>",
@@ -3333,14 +3333,14 @@
          }
         },
         "etelid_member_detail": {
-         "summary": "etelid_member_detail (public)",
+         "summary": "etelid_member_detail (service key (X-Etel-Service-Key))",
          "value": {
           "action": "etelid_member_detail",
           "id": "<id>"
          }
         },
         "etelid_members_list": {
-         "summary": "etelid_members_list (public)",
+         "summary": "etelid_members_list (service key (X-Etel-Service-Key))",
          "value": {
           "action": "etelid_members_list"
          }
@@ -3364,13 +3364,13 @@
          }
         },
         "get_display_prefs": {
-         "summary": "get_display_prefs (public)",
+         "summary": "get_display_prefs (any signed-in user)",
          "value": {
           "action": "get_display_prefs"
          }
         },
         "get_etelpay_merchant": {
-         "summary": "get_etelpay_merchant (public)",
+         "summary": "get_etelpay_merchant (any signed-in user)",
          "value": {
           "action": "get_etelpay_merchant"
          }
@@ -3414,7 +3414,7 @@
          }
         },
         "get_ride_messages": {
-         "summary": "get_ride_messages (public)",
+         "summary": "get_ride_messages (any signed-in user)",
          "value": {
           "action": "get_ride_messages",
           "ride_id": "<ride_id>",
@@ -3422,7 +3422,7 @@
          }
         },
         "get_ride_path": {
-         "summary": "get_ride_path (public)",
+         "summary": "get_ride_path (any signed-in user)",
          "value": {
           "action": "get_ride_path",
           "ride_id": "<ride_id>"
@@ -3516,13 +3516,13 @@
          }
         },
         "my_active_ride": {
-         "summary": "my_active_ride (public)",
+         "summary": "my_active_ride (any signed-in user)",
          "value": {
           "action": "my_active_ride"
          }
         },
         "nfc_confirm_delivery": {
-         "summary": "nfc_confirm_delivery (public)",
+         "summary": "nfc_confirm_delivery (service key (X-Etel-Service-Key))",
          "value": {
           "action": "nfc_confirm_delivery",
           "confirmer_etel_id": "<confirmer_etel_id>",
@@ -3534,7 +3534,7 @@
          }
         },
         "nfc_confirm_pickup": {
-         "summary": "nfc_confirm_pickup (public)",
+         "summary": "nfc_confirm_pickup (service key (X-Etel-Service-Key))",
          "value": {
           "action": "nfc_confirm_pickup",
           "confirmer_etel_id": "<confirmer_etel_id>",
@@ -3546,7 +3546,7 @@
          }
         },
         "nfc_driver_status": {
-         "summary": "nfc_driver_status (public)",
+         "summary": "nfc_driver_status (service key (X-Etel-Service-Key))",
          "value": {
           "action": "nfc_driver_status",
           "etel_id": "<etel_id>",
@@ -3554,7 +3554,7 @@
          }
         },
         "nfc_list_courier_orders": {
-         "summary": "nfc_list_courier_orders (public)",
+         "summary": "nfc_list_courier_orders (service key (X-Etel-Service-Key))",
          "value": {
           "action": "nfc_list_courier_orders",
           "confirmer_etel_id": "<confirmer_etel_id>",
@@ -3566,7 +3566,7 @@
          }
         },
         "nfc_start_ride": {
-         "summary": "nfc_start_ride (public)",
+         "summary": "nfc_start_ride (service key (X-Etel-Service-Key))",
          "value": {
           "action": "nfc_start_ride",
           "customer_etel_id": "<customer_etel_id>",
@@ -3599,7 +3599,7 @@
          }
         },
         "passenger_get_nearby_drivers": {
-         "summary": "passenger_get_nearby_drivers (public)",
+         "summary": "passenger_get_nearby_drivers (any signed-in user)",
          "value": {
           "action": "passenger_get_nearby_drivers",
           "lat": "<lat>",
@@ -3609,13 +3609,13 @@
          }
         },
         "passenger_get_ride_history": {
-         "summary": "passenger_get_ride_history (public)",
+         "summary": "passenger_get_ride_history (any signed-in user)",
          "value": {
           "action": "passenger_get_ride_history"
          }
         },
         "ping_ride_typing": {
-         "summary": "ping_ride_typing (public)",
+         "summary": "ping_ride_typing (any signed-in user)",
          "value": {
           "action": "ping_ride_typing",
           "ride_id": "<ride_id>"
@@ -3724,7 +3724,7 @@
          }
         },
         "rate_ride": {
-         "summary": "rate_ride (public)",
+         "summary": "rate_ride (any signed-in user)",
          "value": {
           "action": "rate_ride",
           "comment": "<comment>",
@@ -3733,7 +3733,7 @@
          }
         },
         "rate_rider": {
-         "summary": "rate_rider (public)",
+         "summary": "rate_rider (any signed-in user)",
          "value": {
           "action": "rate_rider",
           "checkins": "<checkins>",
@@ -3756,14 +3756,14 @@
          }
         },
         "remove_push_subscription": {
-         "summary": "remove_push_subscription (public)",
+         "summary": "remove_push_subscription (any signed-in user)",
          "value": {
           "action": "remove_push_subscription",
           "endpoint": "<endpoint>"
          }
         },
         "remove_push_token": {
-         "summary": "remove_push_token (public)",
+         "summary": "remove_push_token (any signed-in user)",
          "value": {
           "action": "remove_push_token",
           "token": "<token>"
@@ -3794,7 +3794,7 @@
          }
         },
         "ride_add_favorite_route": {
-         "summary": "ride_add_favorite_route (public)",
+         "summary": "ride_add_favorite_route (any signed-in user)",
          "value": {
           "action": "ride_add_favorite_route",
           "dropoff_address": "<dropoff_address>",
@@ -3806,28 +3806,28 @@
          }
         },
         "ride_cancel_scheduled": {
-         "summary": "ride_cancel_scheduled (public)",
+         "summary": "ride_cancel_scheduled (any signed-in user)",
          "value": {
           "action": "ride_cancel_scheduled",
           "id": "<id>"
          }
         },
         "ride_chat_unread": {
-         "summary": "ride_chat_unread (public)",
+         "summary": "ride_chat_unread (any signed-in user)",
          "value": {
           "action": "ride_chat_unread",
           "ride_id": "<ride_id>"
          }
         },
         "ride_delete_favorite_route": {
-         "summary": "ride_delete_favorite_route (public)",
+         "summary": "ride_delete_favorite_route (any signed-in user)",
          "value": {
           "action": "ride_delete_favorite_route",
           "id": "<id>"
          }
         },
         "ride_estimate_fare": {
-         "summary": "ride_estimate_fare (public)",
+         "summary": "ride_estimate_fare (any signed-in user)",
          "value": {
           "action": "ride_estimate_fare",
           "distance_km": "<distance_km>",
@@ -3836,19 +3836,19 @@
          }
         },
         "ride_get_favorite_routes": {
-         "summary": "ride_get_favorite_routes (public)",
+         "summary": "ride_get_favorite_routes (any signed-in user)",
          "value": {
           "action": "ride_get_favorite_routes"
          }
         },
         "ride_get_messages": {
-         "summary": "ride_get_messages (public)",
+         "summary": "ride_get_messages (any signed-in user)",
          "value": {
           "action": "ride_get_messages"
          }
         },
         "ride_get_scheduled": {
-         "summary": "ride_get_scheduled (public)",
+         "summary": "ride_get_scheduled (any signed-in user)",
          "value": {
           "action": "ride_get_scheduled"
          }
@@ -3861,39 +3861,39 @@
          }
         },
         "ride_get_vehicle_types": {
-         "summary": "ride_get_vehicle_types (public)",
+         "summary": "ride_get_vehicle_types (any signed-in user)",
          "value": {
           "action": "ride_get_vehicle_types"
          }
         },
         "ride_history": {
-         "summary": "ride_history (public)",
+         "summary": "ride_history (any signed-in user)",
          "value": {
           "action": "ride_history"
          }
         },
         "ride_pin_get": {
-         "summary": "ride_pin_get (public)",
+         "summary": "ride_pin_get (any signed-in user)",
          "value": {
           "action": "ride_pin_get"
          }
         },
         "ride_receipt": {
-         "summary": "ride_receipt (public)",
+         "summary": "ride_receipt (any signed-in user)",
          "value": {
           "action": "ride_receipt",
           "id": "<id>"
          }
         },
         "ride_safety_checkin_missed": {
-         "summary": "ride_safety_checkin_missed (public)",
+         "summary": "ride_safety_checkin_missed (any signed-in user)",
          "value": {
           "action": "ride_safety_checkin_missed",
           "ride_id": "<ride_id>"
          }
         },
         "ride_schedule": {
-         "summary": "ride_schedule (public)",
+         "summary": "ride_schedule (any signed-in user)",
          "value": {
           "action": "ride_schedule",
           "dropoff_addr": "<dropoff_addr>",
@@ -3905,48 +3905,48 @@
          }
         },
         "ride_status": {
-         "summary": "ride_status (public)",
+         "summary": "ride_status (any signed-in user)",
          "value": {
           "action": "ride_status",
           "id": "<id>"
          }
         },
         "ride_stop_sharing": {
-         "summary": "ride_stop_sharing (public)",
+         "summary": "ride_stop_sharing (any signed-in user)",
          "value": {
           "action": "ride_stop_sharing",
           "ride_id": "<ride_id>"
          }
         },
         "rider_get_announcements": {
-         "summary": "rider_get_announcements (public)",
+         "summary": "rider_get_announcements (any signed-in user)",
          "value": {
           "action": "rider_get_announcements"
          }
         },
         "rider_mark_announcement_read": {
-         "summary": "rider_mark_announcement_read (public)",
+         "summary": "rider_mark_announcement_read (any signed-in user)",
          "value": {
           "action": "rider_mark_announcement_read",
           "announcement_id": "<announcement_id>"
          }
         },
         "save_display_prefs": {
-         "summary": "save_display_prefs (public)",
+         "summary": "save_display_prefs (any signed-in user)",
          "value": {
           "action": "save_display_prefs",
           "prefs": "<prefs>"
          }
         },
         "save_push_subscription": {
-         "summary": "save_push_subscription (public)",
+         "summary": "save_push_subscription (any signed-in user)",
          "value": {
           "action": "save_push_subscription",
           "subscription": "<subscription>"
          }
         },
         "save_push_token": {
-         "summary": "save_push_token (public)",
+         "summary": "save_push_token (any signed-in user)",
          "value": {
           "action": "save_push_token",
           "token": "<token>"
@@ -3962,7 +3962,7 @@
          }
         },
         "send_ride_message": {
-         "summary": "send_ride_message (public)",
+         "summary": "send_ride_message (any signed-in user)",
          "value": {
           "action": "send_ride_message",
           "body": "<body>",
@@ -4240,7 +4240,7 @@
          }
         },
         "sos_trigger": {
-         "summary": "sos_trigger (public)",
+         "summary": "sos_trigger (any signed-in user)",
          "value": {
           "action": "sos_trigger",
           "lat": "<lat>",
@@ -4285,7 +4285,7 @@
          }
         },
         "submit_ride_issue": {
-         "summary": "submit_ride_issue (public)",
+         "summary": "submit_ride_issue (any signed-in user)",
          "value": {
           "action": "submit_ride_issue",
           "category": "<category>",
@@ -4316,7 +4316,7 @@
          }
         },
         "test_send_push": {
-         "summary": "test_send_push (public)",
+         "summary": "test_send_push (any signed-in user)",
          "value": {
           "action": "test_send_push"
          }
@@ -4541,7 +4541,7 @@
       "description": "request field (type not declared in code)"
      }
     },
-    "description": "Auth: public. Source: api/controllers/RideController.php."
+    "description": "Auth: admin (capability users.manage). Source: api/controllers/RideController.php."
    },
    "admin_approve_driver_identity": {
     "type": "object",
@@ -4560,7 +4560,7 @@
       "description": "request field (type not declared in code)"
      }
     },
-    "description": "Auth: public. Source: api/controllers/RideController.php."
+    "description": "Auth: admin (capability users.manage). Source: api/controllers/RideController.php."
    },
    "admin_approve_etel_topup": {
     "type": "object",
@@ -4579,7 +4579,7 @@
       "description": "request field (type not declared in code)"
      }
     },
-    "description": "Auth: public. Source: api/controllers/AdminController.php."
+    "description": "Auth: admin (capability finance.manage). Source: api/controllers/AdminController.php."
    },
    "admin_approve_vehicle_change": {
     "type": "object",
@@ -4598,7 +4598,7 @@
       "description": "request field (type not declared in code)"
      }
     },
-    "description": "Auth: public. Source: api/controllers/RideController.php."
+    "description": "Auth: admin (capability rides.manage). Source: api/controllers/RideController.php."
    },
    "admin_assign_service_giver": {
     "type": "object",
@@ -4668,7 +4668,7 @@
       ]
      }
     },
-    "description": "Auth: public. Source: api/controllers/RideController.php."
+    "description": "Auth: admin (capability system.backup). Source: api/controllers/RideController.php."
    },
    "admin_cancel_ride": {
     "type": "object",
@@ -4687,7 +4687,7 @@
       "description": "request field (type not declared in code)"
      }
     },
-    "description": "Auth: public. Source: api/controllers/RideController.php."
+    "description": "Auth: admin (capability rides.manage). Source: api/controllers/RideController.php."
    },
    "admin_catalog_copy": {
     "type": "object",
@@ -4893,7 +4893,7 @@
       "description": "request field (type not declared in code)"
      }
     },
-    "description": "Auth: public. Source: api/controllers/AdminController.php."
+    "description": "Auth: admin (capability settings.manage). Source: api/controllers/AdminController.php."
    },
    "admin_create_service_giver": {
     "type": "object",
@@ -5005,7 +5005,7 @@
       "description": "request field (type not declared in code)"
      }
     },
-    "description": "Auth: public. Source: api/controllers/AdminController.php."
+    "description": "Auth: admin (capability settings.manage). Source: api/controllers/AdminController.php."
    },
    "admin_delete_goal_tier": {
     "type": "object",
@@ -5392,7 +5392,7 @@
       ]
      }
     },
-    "description": "Auth: public. Source: api/controllers/RideController.php."
+    "description": "Auth: admin (capability system.backup). Source: api/controllers/RideController.php."
    },
    "admin_get_all_items": {
     "type": "object",
@@ -5424,7 +5424,7 @@
       ]
      }
     },
-    "description": "Auth: public. Source: api/controllers/AdminController.php."
+    "description": "Auth: admin (capability settings.view). Source: api/controllers/AdminController.php."
    },
    "admin_get_audit_settings": {
     "type": "object",
@@ -5555,7 +5555,7 @@
       "description": "request field (type not declared in code)"
      }
     },
-    "description": "Auth: public. Source: api/controllers/RideController.php."
+    "description": "Auth: admin (capability users.view). Source: api/controllers/RideController.php."
    },
    "admin_get_flagged_identities": {
     "type": "object",
@@ -5571,7 +5571,7 @@
       ]
      }
     },
-    "description": "Auth: public. Source: api/controllers/RideController.php."
+    "description": "Auth: admin (capability users.manage). Source: api/controllers/RideController.php."
    },
    "admin_get_goal_tiers": {
     "type": "object",
@@ -5641,7 +5641,7 @@
       "description": "request field (type not declared in code)"
      }
     },
-    "description": "Auth: public. Source: api/controllers/RideController.php."
+    "description": "Auth: admin (capability users.view). Source: api/controllers/RideController.php."
    },
    "admin_get_my_capabilities": {
     "type": "object",
@@ -5746,7 +5746,7 @@
       ]
      }
     },
-    "description": "Auth: public. Source: api/controllers/RideController.php."
+    "description": "Auth: admin (capability users.manage). Source: api/controllers/RideController.php."
    },
    "admin_get_pending_etel_topups": {
     "type": "object",
@@ -5762,7 +5762,7 @@
       ]
      }
     },
-    "description": "Auth: public. Source: api/controllers/AdminController.php."
+    "description": "Auth: admin (capability finance.view). Source: api/controllers/AdminController.php."
    },
    "admin_get_pending_vehicle_changes": {
     "type": "object",
@@ -5778,7 +5778,7 @@
       ]
      }
     },
-    "description": "Auth: public. Source: api/controllers/RideController.php."
+    "description": "Auth: admin (capability rides.view). Source: api/controllers/RideController.php."
    },
    "admin_get_ride_fare_rules": {
     "type": "object",
@@ -5842,7 +5842,7 @@
       ]
      }
     },
-    "description": "Auth: public. Source: api/controllers/RideController.php."
+    "description": "Auth: admin (capability rides.view). Source: api/controllers/RideController.php."
    },
    "admin_get_rides": {
     "type": "object",
@@ -5870,7 +5870,7 @@
       "description": "request field (type not declared in code)"
      }
     },
-    "description": "Auth: public. Source: api/controllers/RideController.php."
+    "description": "Auth: admin (capability rides.view). Source: api/controllers/RideController.php."
    },
    "admin_get_service_giver": {
     "type": "object",
@@ -5969,7 +5969,7 @@
       ]
      }
     },
-    "description": "Auth: public. Source: api/controllers/RideController.php."
+    "description": "Auth: admin (capability users.view). Source: api/controllers/RideController.php."
    },
    "admin_get_users": {
     "type": "object",
@@ -6052,7 +6052,7 @@
       ]
      }
     },
-    "description": "Auth: public. Source: api/controllers/RideController.php."
+    "description": "Auth: admin (capability users.view). Source: api/controllers/RideController.php."
    },
    "admin_list_etelpay_overrides": {
     "type": "object",
@@ -6213,7 +6213,7 @@
       "description": "request field (type not declared in code)"
      }
     },
-    "description": "Auth: public. Source: api/controllers/RideController.php."
+    "description": "Auth: admin (capability rides.manage). Source: api/controllers/RideController.php."
    },
    "admin_mark_order_paid": {
     "type": "object",
@@ -6355,7 +6355,7 @@
       "description": "request field (type not declared in code)"
      }
     },
-    "description": "Auth: public. Source: api/controllers/RideController.php."
+    "description": "Auth: admin (capability users.manage). Source: api/controllers/RideController.php."
    },
    "admin_reject_driver_identity": {
     "type": "object",
@@ -6377,7 +6377,7 @@
       "description": "request field (type not declared in code)"
      }
     },
-    "description": "Auth: public. Source: api/controllers/RideController.php."
+    "description": "Auth: admin (capability users.manage). Source: api/controllers/RideController.php."
    },
    "admin_reject_etel_topup": {
     "type": "object",
@@ -6399,7 +6399,7 @@
       "description": "request field (type not declared in code)"
      }
     },
-    "description": "Auth: public. Source: api/controllers/AdminController.php."
+    "description": "Auth: admin (capability finance.manage). Source: api/controllers/AdminController.php."
    },
    "admin_reject_vehicle_change": {
     "type": "object",
@@ -6421,7 +6421,7 @@
       "description": "request field (type not declared in code)"
      }
     },
-    "description": "Auth: public. Source: api/controllers/RideController.php."
+    "description": "Auth: admin (capability rides.manage). Source: api/controllers/RideController.php."
    },
    "admin_remove_canary_tester": {
     "type": "object",
@@ -6610,7 +6610,7 @@
       "description": "request field (type not declared in code)"
      }
     },
-    "description": "Auth: public. Source: api/controllers/AdminController.php."
+    "description": "Auth: admin (capability analytics.view). Source: api/controllers/AdminController.php."
    },
    "admin_ride_payments": {
     "type": "object",
@@ -6626,7 +6626,7 @@
       ]
      }
     },
-    "description": "Auth: public. Source: api/controllers/AdminController.php."
+    "description": "Auth: admin (capability finance.view). Source: api/controllers/AdminController.php."
    },
    "admin_ride_watch": {
     "type": "object",
@@ -6642,7 +6642,7 @@
       ]
      }
     },
-    "description": "Auth: public. Source: api/controllers/RideController.php."
+    "description": "Auth: admin (capability rides.view). Source: api/controllers/RideController.php."
    },
    "admin_rollback_stable": {
     "type": "object",
@@ -6899,7 +6899,7 @@
       "description": "request field (type not declared in code)"
      }
     },
-    "description": "Auth: public. Source: api/controllers/RideController.php."
+    "description": "Auth: admin (capability system.backup). Source: api/controllers/RideController.php."
    },
    "admin_set_etelpay_override": {
     "type": "object",
@@ -7018,7 +7018,7 @@
       "description": "request field (type not declared in code)"
      }
     },
-    "description": "Auth: public. Source: api/controllers/RideController.php."
+    "description": "Auth: admin (capability system.backup). Source: api/controllers/RideController.php."
    },
    "admin_set_shop_branding": {
     "type": "object",
@@ -7059,7 +7059,7 @@
       "description": "request field (type not declared in code)"
      }
     },
-    "description": "Auth: public. Source: api/controllers/RideController.php."
+    "description": "Auth: admin (capability users.manage). Source: api/controllers/RideController.php."
    },
    "admin_suspend_service_giver": {
     "type": "object",
@@ -7094,7 +7094,7 @@
       ]
      }
     },
-    "description": "Auth: public. Source: api/controllers/RideController.php."
+    "description": "Auth: admin (capability rides.view). Source: api/controllers/RideController.php."
    },
    "admin_toggle_feature": {
     "type": "object",
@@ -7207,7 +7207,7 @@
       "description": "request field (type not declared in code)"
      }
     },
-    "description": "Auth: public. Source: api/controllers/AdminController.php."
+    "description": "Auth: admin (capability finance.manage). Source: api/controllers/AdminController.php."
    },
    "admin_unpaid_delivered": {
     "type": "object",
@@ -7242,7 +7242,7 @@
       "description": "request field (type not declared in code)"
      }
     },
-    "description": "Auth: public. Source: api/controllers/RideController.php."
+    "description": "Auth: admin (capability users.manage). Source: api/controllers/RideController.php."
    },
    "admin_update_bank_account": {
     "type": "object",
@@ -7363,7 +7363,7 @@
       "description": "request field (type not declared in code)"
      }
     },
-    "description": "Auth: public. Source: api/controllers/RideController.php."
+    "description": "Auth: admin (capability users.manage). Source: api/controllers/RideController.php."
    },
    "admin_update_item": {
     "type": "object",
@@ -7576,7 +7576,7 @@
       "description": "request field (type not declared in code)"
      }
     },
-    "description": "Auth: public. Source: api/controllers/AgentController.php."
+    "description": "Auth: service key (X-Etel-Service-Key). Source: api/controllers/AgentController.php."
    },
    "agent_cancel_ride": {
     "type": "object",
@@ -7592,7 +7592,7 @@
       ]
      }
     },
-    "description": "Auth: public. Source: api/controllers/AgentController.php."
+    "description": "Auth: service key (X-Etel-Service-Key). Source: api/controllers/AgentController.php."
    },
    "agent_find_and_quote": {
     "type": "object",
@@ -7620,7 +7620,7 @@
       "description": "request field (type not declared in code)"
      }
     },
-    "description": "Auth: public. Source: api/controllers/AgentController.php."
+    "description": "Auth: service key (X-Etel-Service-Key). Source: api/controllers/AgentController.php."
    },
    "agent_order_quote": {
     "type": "object",
@@ -7648,7 +7648,7 @@
       "description": "request field (type not declared in code)"
      }
     },
-    "description": "Auth: public. Source: api/controllers/AgentController.php."
+    "description": "Auth: service key (X-Etel-Service-Key). Source: api/controllers/AgentController.php."
    },
    "agent_order_status": {
     "type": "object",
@@ -7664,7 +7664,7 @@
       ]
      }
     },
-    "description": "Auth: public. Source: api/controllers/AgentController.php."
+    "description": "Auth: service key (X-Etel-Service-Key). Source: api/controllers/AgentController.php."
    },
    "agent_place_order": {
     "type": "object",
@@ -7704,7 +7704,7 @@
       "description": "request field (type not declared in code)"
      }
     },
-    "description": "Auth: public. Source: api/controllers/AgentController.php."
+    "description": "Auth: service key (X-Etel-Service-Key). Source: api/controllers/AgentController.php."
    },
    "agent_ride_quote": {
     "type": "object",
@@ -7735,7 +7735,7 @@
       "description": "request field (type not declared in code)"
      }
     },
-    "description": "Auth: public. Source: api/controllers/AgentController.php."
+    "description": "Auth: service key (X-Etel-Service-Key). Source: api/controllers/AgentController.php."
    },
    "agent_ride_status": {
     "type": "object",
@@ -7751,7 +7751,7 @@
       ]
      }
     },
-    "description": "Auth: public. Source: api/controllers/AgentController.php."
+    "description": "Auth: service key (X-Etel-Service-Key). Source: api/controllers/AgentController.php."
    },
    "agent_search_items": {
     "type": "object",
@@ -7773,7 +7773,7 @@
       "description": "request field (type not declared in code)"
      }
     },
-    "description": "Auth: public. Source: api/controllers/AgentController.php."
+    "description": "Auth: service key (X-Etel-Service-Key). Source: api/controllers/AgentController.php."
    },
    "book_ride": {
     "type": "object",
@@ -7822,7 +7822,7 @@
       "description": "request field (type not declared in code)"
      }
     },
-    "description": "Auth: public. Source: api/controllers/RideController.php."
+    "description": "Auth: any signed-in user. Source: api/controllers/RideController.php."
    },
    "cancel_ride": {
     "type": "object",
@@ -7847,7 +7847,7 @@
       "description": "request field (type not declared in code)"
      }
     },
-    "description": "Auth: public. Source: api/controllers/RideController.php."
+    "description": "Auth: any signed-in user. Source: api/controllers/RideController.php."
    },
    "cancel_scheduled_order": {
     "type": "object",
@@ -8077,7 +8077,7 @@
       "description": "request field (type not declared in code)"
      }
     },
-    "description": "Auth: public. Source: api/controllers/CourierFuelController.php."
+    "description": "Auth: any signed-in user. Source: api/controllers/CourierFuelController.php."
    },
    "courier_decline_offer": {
     "type": "object",
@@ -8115,7 +8115,7 @@
       "description": "request field (type not declared in code)"
      }
     },
-    "description": "Auth: public. Source: api/controllers/CourierFuelController.php."
+    "description": "Auth: any signed-in user. Source: api/controllers/CourierFuelController.php."
    },
    "courier_earnings_summary": {
     "type": "object",
@@ -8166,7 +8166,7 @@
       "description": "request field (type not declared in code)"
      }
     },
-    "description": "Auth: public. Source: api/controllers/CourierFuelController.php."
+    "description": "Auth: any signed-in user. Source: api/controllers/CourierFuelController.php."
    },
    "courier_get_kpi_summary": {
     "type": "object",
@@ -8271,7 +8271,7 @@
       ]
      }
     },
-    "description": "Auth: public. Source: api/controllers/CourierFuelController.php."
+    "description": "Auth: any signed-in user. Source: api/controllers/CourierFuelController.php."
    },
    "courier_update_location": {
     "type": "object",
@@ -8374,7 +8374,7 @@
       "description": "request field (type not declared in code)"
      }
     },
-    "description": "Auth: public. Source: api/controllers/RideController.php."
+    "description": "Auth: any signed-in user. Source: api/controllers/RideController.php."
    },
    "customer_confirm_delivery": {
     "type": "object",
@@ -8802,7 +8802,7 @@
       "description": "request field (type not declared in code)"
      }
     },
-    "description": "Auth: public. Source: api/controllers/RideController.php."
+    "description": "Auth: any signed-in user. Source: api/controllers/RideController.php."
    },
    "driver_add_fuel_log": {
     "type": "object",
@@ -8827,7 +8827,7 @@
       "description": "request field (type not declared in code)"
      }
     },
-    "description": "Auth: public. Source: api/controllers/DriverFuelController.php."
+    "description": "Auth: any signed-in user. Source: api/controllers/DriverFuelController.php."
    },
    "driver_arrived": {
     "type": "object",
@@ -8846,7 +8846,7 @@
       "description": "request field (type not declared in code)"
      }
     },
-    "description": "Auth: public. Source: api/controllers/RideController.php."
+    "description": "Auth: any signed-in user. Source: api/controllers/RideController.php."
    },
    "driver_beacon_ping": {
     "type": "object",
@@ -8868,7 +8868,7 @@
       "description": "request field (type not declared in code)"
      }
     },
-    "description": "Auth: public. Source: api/controllers/RideController.php."
+    "description": "Auth: any signed-in user. Source: api/controllers/RideController.php."
    },
    "driver_cancel_ride": {
     "type": "object",
@@ -8887,7 +8887,7 @@
       "description": "request field (type not declared in code)"
      }
     },
-    "description": "Auth: public. Source: api/controllers/RideController.php."
+    "description": "Auth: any signed-in user. Source: api/controllers/RideController.php."
    },
    "driver_cashout": {
     "type": "object",
@@ -8906,7 +8906,7 @@
       "description": "request field (type not declared in code)"
      }
     },
-    "description": "Auth: public. Source: api/controllers/RideController.php."
+    "description": "Auth: any signed-in user. Source: api/controllers/RideController.php."
    },
    "driver_complete_ride": {
     "type": "object",
@@ -8925,7 +8925,7 @@
       "description": "request field (type not declared in code)"
      }
     },
-    "description": "Auth: public. Source: api/controllers/RideController.php."
+    "description": "Auth: any signed-in user. Source: api/controllers/RideController.php."
    },
    "driver_delete_fuel_log": {
     "type": "object",
@@ -8944,7 +8944,7 @@
       "description": "request field (type not declared in code)"
      }
     },
-    "description": "Auth: public. Source: api/controllers/DriverFuelController.php."
+    "description": "Auth: any signed-in user. Source: api/controllers/DriverFuelController.php."
    },
    "driver_get_announcements": {
     "type": "object",
@@ -8963,7 +8963,7 @@
       "description": "request field (type not declared in code)"
      }
     },
-    "description": "Auth: public. Source: api/controllers/RideController.php."
+    "description": "Auth: any signed-in user. Source: api/controllers/RideController.php."
    },
    "driver_get_compliance_status": {
     "type": "object",
@@ -8979,7 +8979,7 @@
       ]
      }
     },
-    "description": "Auth: public. Source: api/controllers/RideController.php."
+    "description": "Auth: any signed-in user. Source: api/controllers/RideController.php."
    },
    "driver_get_demand": {
     "type": "object",
@@ -9001,7 +9001,7 @@
       "description": "request field (type not declared in code)"
      }
     },
-    "description": "Auth: public. Source: api/controllers/RideController.php."
+    "description": "Auth: any signed-in user. Source: api/controllers/RideController.php."
    },
    "driver_get_earnings_for_date": {
     "type": "object",
@@ -9020,7 +9020,7 @@
       "description": "request field (type not declared in code)"
      }
     },
-    "description": "Auth: public. Source: api/controllers/RideController.php."
+    "description": "Auth: any signed-in user. Source: api/controllers/RideController.php."
    },
    "driver_get_fuel_summary": {
     "type": "object",
@@ -9039,7 +9039,7 @@
       "description": "request field (type not declared in code)"
      }
     },
-    "description": "Auth: public. Source: api/controllers/DriverFuelController.php."
+    "description": "Auth: any signed-in user. Source: api/controllers/DriverFuelController.php."
    },
    "driver_get_goal_tiers": {
     "type": "object",
@@ -9055,7 +9055,7 @@
       ]
      }
     },
-    "description": "Auth: public. Source: api/controllers/RideController.php."
+    "description": "Auth: any signed-in user. Source: api/controllers/RideController.php."
    },
    "driver_get_kpi_summary": {
     "type": "object",
@@ -9074,7 +9074,7 @@
       "description": "request field (type not declared in code)"
      }
     },
-    "description": "Auth: public. Source: api/controllers/RideController.php."
+    "description": "Auth: any signed-in user. Source: api/controllers/RideController.php."
    },
    "driver_get_nearby_requests": {
     "type": "object",
@@ -9093,7 +9093,7 @@
       "description": "request field (type not declared in code)"
      }
     },
-    "description": "Auth: public. Source: api/controllers/RideController.php."
+    "description": "Auth: any signed-in user. Source: api/controllers/RideController.php."
    },
    "driver_get_pending_vehicle_change": {
     "type": "object",
@@ -9109,7 +9109,7 @@
       ]
      }
     },
-    "description": "Auth: public. Source: api/controllers/RideController.php."
+    "description": "Auth: any signed-in user. Source: api/controllers/RideController.php."
    },
    "driver_get_profile": {
     "type": "object",
@@ -9125,7 +9125,7 @@
       ]
      }
     },
-    "description": "Auth: public. Source: api/controllers/RideController.php."
+    "description": "Auth: any signed-in user. Source: api/controllers/RideController.php."
    },
    "driver_get_referral_info": {
     "type": "object",
@@ -9141,7 +9141,7 @@
       ]
      }
     },
-    "description": "Auth: public. Source: api/controllers/RideController.php."
+    "description": "Auth: any signed-in user. Source: api/controllers/RideController.php."
    },
    "driver_get_ride_history": {
     "type": "object",
@@ -9157,7 +9157,7 @@
       ]
      }
     },
-    "description": "Auth: public. Source: api/controllers/RideController.php."
+    "description": "Auth: any signed-in user. Source: api/controllers/RideController.php."
    },
    "driver_get_topup_history": {
     "type": "object",
@@ -9173,7 +9173,7 @@
       ]
      }
     },
-    "description": "Auth: public. Source: api/controllers/RideController.php."
+    "description": "Auth: any signed-in user. Source: api/controllers/RideController.php."
    },
    "driver_go_offline": {
     "type": "object",
@@ -9189,7 +9189,7 @@
       ]
      }
     },
-    "description": "Auth: public. Source: api/controllers/RideController.php."
+    "description": "Auth: any signed-in user. Source: api/controllers/RideController.php."
    },
    "driver_go_online": {
     "type": "object",
@@ -9211,7 +9211,7 @@
       "description": "request field (type not declared in code)"
      }
     },
-    "description": "Auth: public. Source: api/controllers/RideController.php."
+    "description": "Auth: any signed-in user. Source: api/controllers/RideController.php."
    },
    "driver_hail_customer": {
     "type": "object",
@@ -9242,7 +9242,7 @@
       "description": "request field (type not declared in code)"
      }
     },
-    "description": "Auth: public. Source: api/controllers/RideController.php."
+    "description": "Auth: any signed-in user. Source: api/controllers/RideController.php."
    },
    "driver_list_fuel_logs": {
     "type": "object",
@@ -9258,7 +9258,7 @@
       ]
      }
     },
-    "description": "Auth: public. Source: api/controllers/DriverFuelController.php."
+    "description": "Auth: any signed-in user. Source: api/controllers/DriverFuelController.php."
    },
    "driver_mark_announcement_read": {
     "type": "object",
@@ -9277,7 +9277,7 @@
       "description": "request field (type not declared in code)"
      }
     },
-    "description": "Auth: public. Source: api/controllers/RideController.php."
+    "description": "Auth: any signed-in user. Source: api/controllers/RideController.php."
    },
    "driver_start_ride": {
     "type": "object",
@@ -9299,7 +9299,7 @@
       "description": "request field (type not declared in code)"
      }
     },
-    "description": "Auth: public. Source: api/controllers/RideController.php."
+    "description": "Auth: any signed-in user. Source: api/controllers/RideController.php."
    },
    "driver_submit_compliance_document": {
     "type": "object",
@@ -9324,7 +9324,7 @@
       "description": "request field (type not declared in code)"
      }
     },
-    "description": "Auth: public. Source: api/controllers/RideController.php."
+    "description": "Auth: any signed-in user. Source: api/controllers/RideController.php."
    },
    "driver_submit_manual_topup": {
     "type": "object",
@@ -9349,7 +9349,7 @@
       "description": "request field (type not declared in code)"
      }
     },
-    "description": "Auth: public. Source: api/controllers/RideController.php."
+    "description": "Auth: any signed-in user. Source: api/controllers/RideController.php."
    },
    "driver_toggle_wait": {
     "type": "object",
@@ -9368,7 +9368,7 @@
       "description": "request field (type not declared in code)"
      }
     },
-    "description": "Auth: public. Source: api/controllers/RideController.php."
+    "description": "Auth: any signed-in user. Source: api/controllers/RideController.php."
    },
    "driver_topup_etel_money": {
     "type": "object",
@@ -9393,7 +9393,7 @@
       "description": "request field (type not declared in code)"
      }
     },
-    "description": "Auth: public. Source: api/controllers/RideController.php."
+    "description": "Auth: any signed-in user. Source: api/controllers/RideController.php."
    },
    "driver_update_location": {
     "type": "object",
@@ -9421,7 +9421,7 @@
       "description": "request field (type not declared in code)"
      }
     },
-    "description": "Auth: public. Source: api/controllers/RideController.php."
+    "description": "Auth: any signed-in user. Source: api/controllers/RideController.php."
    },
    "driver_update_profile": {
     "type": "object",
@@ -9455,7 +9455,7 @@
       "description": "request field (type not declared in code)"
      }
     },
-    "description": "Auth: public. Source: api/controllers/RideController.php."
+    "description": "Auth: any signed-in user. Source: api/controllers/RideController.php."
    },
    "equb_admin_add_member": {
     "type": "object",
@@ -10204,7 +10204,7 @@
       "description": "request field (type not declared in code)"
      }
     },
-    "description": "Auth: public. Source: api/boot.php."
+    "description": "Auth: service key (X-Etel-Service-Key). Source: api/boot.php."
    },
    "etelid_members_list": {
     "type": "object",
@@ -10220,7 +10220,7 @@
       ]
      }
     },
-    "description": "Auth: public. Source: api/boot.php."
+    "description": "Auth: service key (X-Etel-Service-Key). Source: api/boot.php."
    },
    "get_bank_accounts": {
     "type": "object",
@@ -10284,7 +10284,7 @@
       ]
      }
     },
-    "description": "Auth: public. Source: api/controllers/DisplayPrefsController.php."
+    "description": "Auth: any signed-in user. Source: api/controllers/DisplayPrefsController.php."
    },
    "get_etelpay_merchant": {
     "type": "object",
@@ -10300,7 +10300,7 @@
       ]
      }
     },
-    "description": "Auth: public. Source: api/controllers/RideController.php."
+    "description": "Auth: any signed-in user. Source: api/controllers/RideController.php."
    },
    "get_feature_flags": {
     "type": "object",
@@ -10424,7 +10424,7 @@
       "description": "request field (type not declared in code)"
      }
     },
-    "description": "Auth: public. Source: api/controllers/RideController.php."
+    "description": "Auth: any signed-in user. Source: api/controllers/RideController.php."
    },
    "get_ride_path": {
     "type": "object",
@@ -10443,7 +10443,7 @@
       "description": "request field (type not declared in code)"
      }
     },
-    "description": "Auth: public. Source: api/controllers/RideController.php."
+    "description": "Auth: any signed-in user. Source: api/controllers/RideController.php."
    },
    "get_scheduled_orders": {
     "type": "object",
@@ -10694,7 +10694,7 @@
       ]
      }
     },
-    "description": "Auth: public. Source: api/controllers/RideController.php."
+    "description": "Auth: any signed-in user. Source: api/controllers/RideController.php."
    },
    "nfc_confirm_delivery": {
     "type": "object",
@@ -10728,7 +10728,7 @@
       "description": "request field (type not declared in code)"
      }
     },
-    "description": "Auth: public. Source: api/controllers/NfcController.php."
+    "description": "Auth: service key (X-Etel-Service-Key). Source: api/controllers/NfcController.php."
    },
    "nfc_confirm_pickup": {
     "type": "object",
@@ -10762,7 +10762,7 @@
       "description": "request field (type not declared in code)"
      }
     },
-    "description": "Auth: public. Source: api/controllers/NfcController.php."
+    "description": "Auth: service key (X-Etel-Service-Key). Source: api/controllers/NfcController.php."
    },
    "nfc_driver_status": {
     "type": "object",
@@ -10784,7 +10784,7 @@
       "description": "request field (type not declared in code)"
      }
     },
-    "description": "Auth: public. Source: api/controllers/NfcController.php."
+    "description": "Auth: service key (X-Etel-Service-Key). Source: api/controllers/NfcController.php."
    },
    "nfc_list_courier_orders": {
     "type": "object",
@@ -10818,7 +10818,7 @@
       "description": "request field (type not declared in code)"
      }
     },
-    "description": "Auth: public. Source: api/controllers/NfcController.php."
+    "description": "Auth: service key (X-Etel-Service-Key). Source: api/controllers/NfcController.php."
    },
    "nfc_start_ride": {
     "type": "object",
@@ -10849,7 +10849,7 @@
       "description": "request field (type not declared in code)"
      }
     },
-    "description": "Auth: public. Source: api/controllers/NfcController.php."
+    "description": "Auth: service key (X-Etel-Service-Key). Source: api/controllers/NfcController.php."
    },
    "order_chat_get": {
     "type": "object",
@@ -10937,7 +10937,7 @@
       "description": "request field (type not declared in code)"
      }
     },
-    "description": "Auth: public. Source: api/controllers/RideController.php."
+    "description": "Auth: any signed-in user. Source: api/controllers/RideController.php."
    },
    "passenger_get_ride_history": {
     "type": "object",
@@ -10953,7 +10953,7 @@
       ]
      }
     },
-    "description": "Auth: public. Source: api/controllers/RideController.php."
+    "description": "Auth: any signed-in user. Source: api/controllers/RideController.php."
    },
    "ping_ride_typing": {
     "type": "object",
@@ -10972,7 +10972,7 @@
       "description": "request field (type not declared in code)"
      }
     },
-    "description": "Auth: public. Source: api/controllers/RideController.php."
+    "description": "Auth: any signed-in user. Source: api/controllers/RideController.php."
    },
    "planning_add_hire": {
     "type": "object",
@@ -11275,7 +11275,7 @@
       "description": "request field (type not declared in code)"
      }
     },
-    "description": "Auth: public. Source: api/controllers/RideController.php."
+    "description": "Auth: any signed-in user. Source: api/controllers/RideController.php."
    },
    "rate_rider": {
     "type": "object",
@@ -11306,7 +11306,7 @@
       "description": "request field (type not declared in code)"
      }
     },
-    "description": "Auth: public. Source: api/controllers/RideController.php."
+    "description": "Auth: any signed-in user. Source: api/controllers/RideController.php."
    },
    "register": {
     "type": "object",
@@ -11362,7 +11362,7 @@
       "description": "request field (type not declared in code)"
      }
     },
-    "description": "Auth: public. Source: api/controllers/PushController.php."
+    "description": "Auth: any signed-in user. Source: api/controllers/PushController.php."
    },
    "remove_push_token": {
     "type": "object",
@@ -11381,7 +11381,7 @@
       "description": "request field (type not declared in code)"
      }
     },
-    "description": "Auth: public. Source: api/controllers/PushController.php."
+    "description": "Auth: any signed-in user. Source: api/controllers/PushController.php."
    },
    "request_delivery_confirmation": {
     "type": "object",
@@ -11484,7 +11484,7 @@
       "description": "request field (type not declared in code)"
      }
     },
-    "description": "Auth: public. Source: api/controllers/RideController.php."
+    "description": "Auth: any signed-in user. Source: api/controllers/RideController.php."
    },
    "ride_cancel_scheduled": {
     "type": "object",
@@ -11503,7 +11503,7 @@
       "description": "request field (type not declared in code)"
      }
     },
-    "description": "Auth: public. Source: api/controllers/RideController.php."
+    "description": "Auth: any signed-in user. Source: api/controllers/RideController.php."
    },
    "ride_chat_unread": {
     "type": "object",
@@ -11522,7 +11522,7 @@
       "description": "request field (type not declared in code)"
      }
     },
-    "description": "Auth: public. Source: api/controllers/RideController.php."
+    "description": "Auth: any signed-in user. Source: api/controllers/RideController.php."
    },
    "ride_delete_favorite_route": {
     "type": "object",
@@ -11541,7 +11541,7 @@
       "description": "request field (type not declared in code)"
      }
     },
-    "description": "Auth: public. Source: api/controllers/RideController.php."
+    "description": "Auth: any signed-in user. Source: api/controllers/RideController.php."
    },
    "ride_estimate_fare": {
     "type": "object",
@@ -11566,7 +11566,7 @@
       "description": "request field (type not declared in code)"
      }
     },
-    "description": "Auth: public. Source: api/controllers/RideController.php."
+    "description": "Auth: any signed-in user. Source: api/controllers/RideController.php."
    },
    "ride_get_favorite_routes": {
     "type": "object",
@@ -11582,7 +11582,7 @@
       ]
      }
     },
-    "description": "Auth: public. Source: api/controllers/RideController.php."
+    "description": "Auth: any signed-in user. Source: api/controllers/RideController.php."
    },
    "ride_get_messages": {
     "type": "object",
@@ -11598,7 +11598,7 @@
       ]
      }
     },
-    "description": "Auth: public. Source: api/controllers/RideController.php."
+    "description": "Auth: any signed-in user. Source: api/controllers/RideController.php."
    },
    "ride_get_scheduled": {
     "type": "object",
@@ -11614,7 +11614,7 @@
       ]
      }
     },
-    "description": "Auth: public. Source: api/controllers/RideController.php."
+    "description": "Auth: any signed-in user. Source: api/controllers/RideController.php."
    },
    "ride_get_share_link": {
     "type": "object",
@@ -11649,7 +11649,7 @@
       ]
      }
     },
-    "description": "Auth: public. Source: api/controllers/RideController.php."
+    "description": "Auth: any signed-in user. Source: api/controllers/RideController.php."
    },
    "ride_history": {
     "type": "object",
@@ -11665,7 +11665,7 @@
       ]
      }
     },
-    "description": "Auth: public. Source: api/controllers/RideController.php."
+    "description": "Auth: any signed-in user. Source: api/controllers/RideController.php."
    },
    "ride_pin_get": {
     "type": "object",
@@ -11681,7 +11681,7 @@
       ]
      }
     },
-    "description": "Auth: public. Source: api/controllers/RideController.php."
+    "description": "Auth: any signed-in user. Source: api/controllers/RideController.php."
    },
    "ride_receipt": {
     "type": "object",
@@ -11700,7 +11700,7 @@
       "description": "request field (type not declared in code)"
      }
     },
-    "description": "Auth: public. Source: api/controllers/RideController.php."
+    "description": "Auth: any signed-in user. Source: api/controllers/RideController.php."
    },
    "ride_safety_checkin_missed": {
     "type": "object",
@@ -11719,7 +11719,7 @@
       "description": "request field (type not declared in code)"
      }
     },
-    "description": "Auth: public. Source: api/controllers/RideController.php."
+    "description": "Auth: any signed-in user. Source: api/controllers/RideController.php."
    },
    "ride_schedule": {
     "type": "object",
@@ -11765,7 +11765,7 @@
       "description": "request field (type not declared in code)"
      }
     },
-    "description": "Auth: public. Source: api/controllers/RideController.php."
+    "description": "Auth: any signed-in user. Source: api/controllers/RideController.php."
    },
    "ride_status": {
     "type": "object",
@@ -11784,7 +11784,7 @@
       "description": "request field (type not declared in code)"
      }
     },
-    "description": "Auth: public. Source: api/controllers/RideController.php."
+    "description": "Auth: any signed-in user. Source: api/controllers/RideController.php."
    },
    "ride_stop_sharing": {
     "type": "object",
@@ -11803,7 +11803,7 @@
       "description": "request field (type not declared in code)"
      }
     },
-    "description": "Auth: public. Source: api/controllers/RideController.php."
+    "description": "Auth: any signed-in user. Source: api/controllers/RideController.php."
    },
    "rider_get_announcements": {
     "type": "object",
@@ -11819,7 +11819,7 @@
       ]
      }
     },
-    "description": "Auth: public. Source: api/controllers/RideController.php."
+    "description": "Auth: any signed-in user. Source: api/controllers/RideController.php."
    },
    "rider_mark_announcement_read": {
     "type": "object",
@@ -11838,7 +11838,7 @@
       "description": "request field (type not declared in code)"
      }
     },
-    "description": "Auth: public. Source: api/controllers/RideController.php."
+    "description": "Auth: any signed-in user. Source: api/controllers/RideController.php."
    },
    "save_display_prefs": {
     "type": "object",
@@ -11857,7 +11857,7 @@
       "description": "request field (type not declared in code)"
      }
     },
-    "description": "Auth: public. Source: api/controllers/DisplayPrefsController.php."
+    "description": "Auth: any signed-in user. Source: api/controllers/DisplayPrefsController.php."
    },
    "save_push_subscription": {
     "type": "object",
@@ -11876,7 +11876,7 @@
       "description": "request field (type not declared in code)"
      }
     },
-    "description": "Auth: public. Source: api/controllers/PushController.php."
+    "description": "Auth: any signed-in user. Source: api/controllers/PushController.php."
    },
    "save_push_token": {
     "type": "object",
@@ -11895,7 +11895,7 @@
       "description": "request field (type not declared in code)"
      }
     },
-    "description": "Auth: public. Source: api/controllers/PushController.php."
+    "description": "Auth: any signed-in user. Source: api/controllers/PushController.php."
    },
    "schedule_order": {
     "type": "object",
@@ -11942,7 +11942,7 @@
       "description": "request field (type not declared in code)"
      }
     },
-    "description": "Auth: public. Source: api/controllers/RideController.php."
+    "description": "Auth: any signed-in user. Source: api/controllers/RideController.php."
    },
    "set_user_language": {
     "type": "object",
@@ -12792,7 +12792,7 @@
       "description": "request field (type not declared in code)"
      }
     },
-    "description": "Auth: public. Source: api/controllers/RideController.php."
+    "description": "Auth: any signed-in user. Source: api/controllers/RideController.php."
    },
    "sse_admin_delivery_system_test": {
     "type": "object",
@@ -12912,7 +12912,7 @@
       "description": "request field (type not declared in code)"
      }
     },
-    "description": "Auth: public. Source: api/controllers/RideController.php."
+    "description": "Auth: any signed-in user. Source: api/controllers/RideController.php."
    },
    "system_reset_backup": {
     "type": "object",
@@ -12988,7 +12988,7 @@
       ]
      }
     },
-    "description": "Auth: public. Source: api/controllers/PushController.php."
+    "description": "Auth: any signed-in user. Source: api/controllers/PushController.php."
    },
    "track_order": {
     "type": "object",
@@ -13112,8 +13112,8 @@
    "source": "api/controllers/AdminController.php"
   },
   "admin_approve_compliance_document": {
-   "auth": "public",
-   "capability": null,
+   "auth": "admin",
+   "capability": "users.manage",
    "body": [
     "request_id"
    ],
@@ -13121,8 +13121,8 @@
    "source": "api/controllers/RideController.php"
   },
   "admin_approve_driver_identity": {
-   "auth": "public",
-   "capability": null,
+   "auth": "admin",
+   "capability": "users.manage",
    "body": [
     "user_id"
    ],
@@ -13130,8 +13130,8 @@
    "source": "api/controllers/RideController.php"
   },
   "admin_approve_etel_topup": {
-   "auth": "public",
-   "capability": null,
+   "auth": "admin",
+   "capability": "finance.manage",
    "body": [
     "id"
    ],
@@ -13139,8 +13139,8 @@
    "source": "api/controllers/AdminController.php"
   },
   "admin_approve_vehicle_change": {
-   "auth": "public",
-   "capability": null,
+   "auth": "admin",
+   "capability": "rides.manage",
    "body": [
     "request_id"
    ],
@@ -13172,15 +13172,15 @@
    "source": "api/controllers/AdminController.php"
   },
   "admin_backup_download": {
-   "auth": "public",
-   "capability": null,
+   "auth": "admin",
+   "capability": "system.backup",
    "body": [],
    "query": [],
    "source": "api/controllers/RideController.php"
   },
   "admin_cancel_ride": {
-   "auth": "public",
-   "capability": null,
+   "auth": "admin",
+   "capability": "rides.manage",
    "body": [
     "ride_id"
    ],
@@ -13271,8 +13271,8 @@
    "source": "api/controllers/OrderController.php"
   },
   "admin_create_announcement": {
-   "auth": "public",
-   "capability": null,
+   "auth": "admin",
+   "capability": "settings.manage",
    "body": [
     "audience",
     "body",
@@ -13325,8 +13325,8 @@
    "source": "api/boot.php"
   },
   "admin_delete_announcement": {
-   "auth": "public",
-   "capability": null,
+   "auth": "admin",
+   "capability": "settings.manage",
    "body": [
     "id"
    ],
@@ -13509,8 +13509,8 @@
    "source": "api/controllers/AdminController.php"
   },
   "admin_get_2fa_rule": {
-   "auth": "public",
-   "capability": null,
+   "auth": "admin",
+   "capability": "system.backup",
    "body": [],
    "query": [],
    "source": "api/controllers/RideController.php"
@@ -13526,8 +13526,8 @@
    "source": "api/controllers/AdminController.php"
   },
   "admin_get_announcements": {
-   "auth": "public",
-   "capability": null,
+   "auth": "admin",
+   "capability": "settings.view",
    "body": [],
    "query": [],
    "source": "api/controllers/AdminController.php"
@@ -13584,8 +13584,8 @@
    "source": "api/controllers/AdminController.php"
   },
   "admin_get_drivers": {
-   "auth": "public",
-   "capability": null,
+   "auth": "admin",
+   "capability": "users.view",
    "body": [
     "q"
    ],
@@ -13596,8 +13596,8 @@
    "source": "api/controllers/RideController.php"
   },
   "admin_get_flagged_identities": {
-   "auth": "public",
-   "capability": null,
+   "auth": "admin",
+   "capability": "users.manage",
    "body": [],
    "query": [],
    "source": "api/controllers/RideController.php"
@@ -13624,8 +13624,8 @@
    "source": "api/boot.php"
   },
   "admin_get_live_drivers": {
-   "auth": "public",
-   "capability": null,
+   "auth": "admin",
+   "capability": "users.view",
    "body": [
     "lat",
     "lng"
@@ -13680,22 +13680,22 @@
    "source": "api/boot.php"
   },
   "admin_get_pending_compliance_requests": {
-   "auth": "public",
-   "capability": null,
+   "auth": "admin",
+   "capability": "users.manage",
    "body": [],
    "query": [],
    "source": "api/controllers/RideController.php"
   },
   "admin_get_pending_etel_topups": {
-   "auth": "public",
-   "capability": null,
+   "auth": "admin",
+   "capability": "finance.view",
    "body": [],
    "query": [],
    "source": "api/controllers/AdminController.php"
   },
   "admin_get_pending_vehicle_changes": {
-   "auth": "public",
-   "capability": null,
+   "auth": "admin",
+   "capability": "rides.view",
    "body": [],
    "query": [],
    "source": "api/controllers/RideController.php"
@@ -13724,15 +13724,15 @@
    "source": "api/controllers/AdminController.php"
   },
   "admin_get_ride_stats": {
-   "auth": "public",
-   "capability": null,
+   "auth": "admin",
+   "capability": "rides.view",
    "body": [],
    "query": [],
    "source": "api/controllers/RideController.php"
   },
   "admin_get_rides": {
-   "auth": "public",
-   "capability": null,
+   "auth": "admin",
+   "capability": "rides.view",
    "body": [
     "limit",
     "offset",
@@ -13786,8 +13786,8 @@
    "source": "api/controllers/AdminController.php"
   },
   "admin_get_suspended_drivers": {
-   "auth": "public",
-   "capability": null,
+   "auth": "admin",
+   "capability": "users.view",
    "body": [],
    "query": [],
    "source": "api/controllers/RideController.php"
@@ -13826,8 +13826,8 @@
    "source": "api/controllers/ChapaController.php"
   },
   "admin_list_driver_compliance": {
-   "auth": "public",
-   "capability": null,
+   "auth": "admin",
+   "capability": "users.view",
    "body": [],
    "query": [],
    "source": "api/controllers/RideController.php"
@@ -13886,8 +13886,8 @@
    "source": "api/controllers/OrderController.php"
   },
   "admin_manual_complete_ride": {
-   "auth": "public",
-   "capability": null,
+   "auth": "admin",
+   "capability": "rides.manage",
    "body": [
     "dropoff_address",
     "dropoff_lat",
@@ -13960,8 +13960,8 @@
    "source": "api/boot.php"
   },
   "admin_reject_compliance_document": {
-   "auth": "public",
-   "capability": null,
+   "auth": "admin",
+   "capability": "users.manage",
    "body": [
     "reason",
     "request_id"
@@ -13970,8 +13970,8 @@
    "source": "api/controllers/RideController.php"
   },
   "admin_reject_driver_identity": {
-   "auth": "public",
-   "capability": null,
+   "auth": "admin",
+   "capability": "users.manage",
    "body": [
     "reason",
     "user_id"
@@ -13980,8 +13980,8 @@
    "source": "api/controllers/RideController.php"
   },
   "admin_reject_etel_topup": {
-   "auth": "public",
-   "capability": null,
+   "auth": "admin",
+   "capability": "finance.manage",
    "body": [
     "id",
     "reason"
@@ -13990,8 +13990,8 @@
    "source": "api/controllers/AdminController.php"
   },
   "admin_reject_vehicle_change": {
-   "auth": "public",
-   "capability": null,
+   "auth": "admin",
+   "capability": "rides.manage",
    "body": [
     "reason",
     "request_id"
@@ -14077,8 +14077,8 @@
    "source": "api/controllers/ServiceGiverController.php"
   },
   "admin_ride_growth": {
-   "auth": "public",
-   "capability": null,
+   "auth": "admin",
+   "capability": "analytics.view",
    "body": [
     "date_from",
     "date_to"
@@ -14087,15 +14087,15 @@
    "source": "api/controllers/AdminController.php"
   },
   "admin_ride_payments": {
-   "auth": "public",
-   "capability": null,
+   "auth": "admin",
+   "capability": "finance.view",
    "body": [],
    "query": [],
    "source": "api/controllers/AdminController.php"
   },
   "admin_ride_watch": {
-   "auth": "public",
-   "capability": null,
+   "auth": "admin",
+   "capability": "rides.view",
    "body": [],
    "query": [],
    "source": "api/controllers/RideController.php"
@@ -14205,8 +14205,8 @@
    "source": "api/controllers/AdminController.php"
   },
   "admin_set_2fa_required": {
-   "auth": "public",
-   "capability": null,
+   "auth": "admin",
+   "capability": "system.backup",
    "body": [
     "required"
    ],
@@ -14258,8 +14258,8 @@
    "source": "api/controllers/AdminController.php"
   },
   "admin_set_ride_pin_required": {
-   "auth": "public",
-   "capability": null,
+   "auth": "admin",
+   "capability": "system.backup",
    "body": [
     "required"
    ],
@@ -14276,8 +14276,8 @@
    "source": "api/controllers/PhotoController.php"
   },
   "admin_suspend_driver": {
-   "auth": "public",
-   "capability": null,
+   "auth": "admin",
+   "capability": "users.manage",
    "body": [
     "reason",
     "user_id"
@@ -14295,8 +14295,8 @@
    "source": "api/boot.php"
   },
   "admin_system_health": {
-   "auth": "public",
-   "capability": null,
+   "auth": "admin",
+   "capability": "rides.view",
    "body": [],
    "query": [],
    "source": "api/controllers/RideController.php"
@@ -14342,8 +14342,8 @@
    "source": "api/boot.php"
   },
   "admin_topup_etel_money": {
-   "auth": "public",
-   "capability": null,
+   "auth": "admin",
+   "capability": "finance.manage",
    "body": [
     "amount",
     "driver_id",
@@ -14360,8 +14360,8 @@
    "source": "api/controllers/CashController.php"
   },
   "admin_unsuspend_driver": {
-   "auth": "public",
-   "capability": null,
+   "auth": "admin",
+   "capability": "users.manage",
    "body": [
     "user_id"
    ],
@@ -14418,8 +14418,8 @@
    "source": "api/controllers/AdminController.php"
   },
   "admin_update_driver_compliance": {
-   "auth": "public",
-   "capability": null,
+   "auth": "admin",
+   "capability": "users.manage",
    "body": [
     "user_id"
    ],
@@ -14507,7 +14507,7 @@
    "source": "api/boot.php"
   },
   "agent_book_ride": {
-   "auth": "public",
+   "auth": "service key (X-Etel-Service-Key)",
    "capability": null,
    "body": [
     "destination_name",
@@ -14522,14 +14522,14 @@
    "source": "api/controllers/AgentController.php"
   },
   "agent_cancel_ride": {
-   "auth": "public",
+   "auth": "service key (X-Etel-Service-Key)",
    "capability": null,
    "body": [],
    "query": [],
    "source": "api/controllers/AgentController.php"
   },
   "agent_find_and_quote": {
-   "auth": "public",
+   "auth": "service key (X-Etel-Service-Key)",
    "capability": null,
    "body": [
     "items",
@@ -14541,7 +14541,7 @@
    "source": "api/controllers/AgentController.php"
   },
   "agent_order_quote": {
-   "auth": "public",
+   "auth": "service key (X-Etel-Service-Key)",
    "capability": null,
    "body": [
     "items",
@@ -14553,14 +14553,14 @@
    "source": "api/controllers/AgentController.php"
   },
   "agent_order_status": {
-   "auth": "public",
+   "auth": "service key (X-Etel-Service-Key)",
    "capability": null,
    "body": [],
    "query": [],
    "source": "api/controllers/AgentController.php"
   },
   "agent_place_order": {
-   "auth": "public",
+   "auth": "service key (X-Etel-Service-Key)",
    "capability": null,
    "body": [
     "etel_sso_token",
@@ -14576,7 +14576,7 @@
    "source": "api/controllers/AgentController.php"
   },
   "agent_ride_quote": {
-   "auth": "public",
+   "auth": "service key (X-Etel-Service-Key)",
    "capability": null,
    "body": [
     "destination_name",
@@ -14589,14 +14589,14 @@
    "source": "api/controllers/AgentController.php"
   },
   "agent_ride_status": {
-   "auth": "public",
+   "auth": "service key (X-Etel-Service-Key)",
    "capability": null,
    "body": [],
    "query": [],
    "source": "api/controllers/AgentController.php"
   },
   "agent_search_items": {
-   "auth": "public",
+   "auth": "service key (X-Etel-Service-Key)",
    "capability": null,
    "body": [
     "limit",
@@ -14606,7 +14606,7 @@
    "source": "api/controllers/AgentController.php"
   },
   "book_ride": {
-   "auth": "public",
+   "auth": "any signed-in user",
    "capability": null,
    "body": [
     "dropoff_addr",
@@ -14625,7 +14625,7 @@
    "source": "api/controllers/RideController.php"
   },
   "cancel_ride": {
-   "auth": "public",
+   "auth": "any signed-in user",
    "capability": null,
    "body": [
     "id",
@@ -14735,7 +14735,7 @@
    "source": "api/controllers/OrderController.php"
   },
   "courier_add_fuel_log": {
-   "auth": "public",
+   "auth": "any signed-in user",
    "capability": null,
    "body": [
     "cost_etb",
@@ -14755,7 +14755,7 @@
    "source": "api/controllers/OrderController.php"
   },
   "courier_delete_fuel_log": {
-   "auth": "public",
+   "auth": "any signed-in user",
    "capability": null,
    "body": [
     "id"
@@ -14778,7 +14778,7 @@
    "source": "api/controllers/OrderController.php"
   },
   "courier_get_fuel_summary": {
-   "auth": "public",
+   "auth": "any signed-in user",
    "capability": null,
    "body": [
     "period"
@@ -14834,7 +14834,7 @@
    "source": "api/controllers/OrderController.php"
   },
   "courier_list_fuel_logs": {
-   "auth": "public",
+   "auth": "any signed-in user",
    "capability": null,
    "body": [],
    "query": [],
@@ -14875,7 +14875,7 @@
    "source": "api/controllers/OrderController.php"
   },
   "customer_confirm_arrival": {
-   "auth": "public",
+   "auth": "any signed-in user",
    "capability": null,
    "body": [
     "payment_method",
@@ -15066,7 +15066,7 @@
    "source": "api/controllers/OrderController.php"
   },
   "driver_accept_ride": {
-   "auth": "public",
+   "auth": "any signed-in user",
    "capability": null,
    "body": [
     "request_id"
@@ -15075,7 +15075,7 @@
    "source": "api/controllers/RideController.php"
   },
   "driver_add_fuel_log": {
-   "auth": "public",
+   "auth": "any signed-in user",
    "capability": null,
    "body": [
     "cost_etb",
@@ -15086,7 +15086,7 @@
    "source": "api/controllers/DriverFuelController.php"
   },
   "driver_arrived": {
-   "auth": "public",
+   "auth": "any signed-in user",
    "capability": null,
    "body": [
     "ride_id"
@@ -15095,7 +15095,7 @@
    "source": "api/controllers/RideController.php"
   },
   "driver_beacon_ping": {
-   "auth": "public",
+   "auth": "any signed-in user",
    "capability": null,
    "body": [
     "lat",
@@ -15105,7 +15105,7 @@
    "source": "api/controllers/RideController.php"
   },
   "driver_cancel_ride": {
-   "auth": "public",
+   "auth": "any signed-in user",
    "capability": null,
    "body": [
     "ride_id"
@@ -15114,7 +15114,7 @@
    "source": "api/controllers/RideController.php"
   },
   "driver_cashout": {
-   "auth": "public",
+   "auth": "any signed-in user",
    "capability": null,
    "body": [
     "amount"
@@ -15123,7 +15123,7 @@
    "source": "api/controllers/RideController.php"
   },
   "driver_complete_ride": {
-   "auth": "public",
+   "auth": "any signed-in user",
    "capability": null,
    "body": [
     "ride_id"
@@ -15132,7 +15132,7 @@
    "source": "api/controllers/RideController.php"
   },
   "driver_delete_fuel_log": {
-   "auth": "public",
+   "auth": "any signed-in user",
    "capability": null,
    "body": [
     "id"
@@ -15141,7 +15141,7 @@
    "source": "api/controllers/DriverFuelController.php"
   },
   "driver_get_announcements": {
-   "auth": "public",
+   "auth": "any signed-in user",
    "capability": null,
    "body": [
     "category"
@@ -15152,14 +15152,14 @@
    "source": "api/controllers/RideController.php"
   },
   "driver_get_compliance_status": {
-   "auth": "public",
+   "auth": "any signed-in user",
    "capability": null,
    "body": [],
    "query": [],
    "source": "api/controllers/RideController.php"
   },
   "driver_get_demand": {
-   "auth": "public",
+   "auth": "any signed-in user",
    "capability": null,
    "body": [
     "lat",
@@ -15169,7 +15169,7 @@
    "source": "api/controllers/RideController.php"
   },
   "driver_get_earnings_for_date": {
-   "auth": "public",
+   "auth": "any signed-in user",
    "capability": null,
    "body": [
     "date"
@@ -15178,7 +15178,7 @@
    "source": "api/controllers/RideController.php"
   },
   "driver_get_fuel_summary": {
-   "auth": "public",
+   "auth": "any signed-in user",
    "capability": null,
    "body": [
     "period"
@@ -15187,14 +15187,14 @@
    "source": "api/controllers/DriverFuelController.php"
   },
   "driver_get_goal_tiers": {
-   "auth": "public",
+   "auth": "any signed-in user",
    "capability": null,
    "body": [],
    "query": [],
    "source": "api/controllers/RideController.php"
   },
   "driver_get_kpi_summary": {
-   "auth": "public",
+   "auth": "any signed-in user",
    "capability": null,
    "body": [
     "period"
@@ -15203,7 +15203,7 @@
    "source": "api/controllers/RideController.php"
   },
   "driver_get_nearby_requests": {
-   "auth": "public",
+   "auth": "any signed-in user",
    "capability": null,
    "body": [
     "radius_km"
@@ -15212,49 +15212,49 @@
    "source": "api/controllers/RideController.php"
   },
   "driver_get_pending_vehicle_change": {
-   "auth": "public",
+   "auth": "any signed-in user",
    "capability": null,
    "body": [],
    "query": [],
    "source": "api/controllers/RideController.php"
   },
   "driver_get_profile": {
-   "auth": "public",
+   "auth": "any signed-in user",
    "capability": null,
    "body": [],
    "query": [],
    "source": "api/controllers/RideController.php"
   },
   "driver_get_referral_info": {
-   "auth": "public",
+   "auth": "any signed-in user",
    "capability": null,
    "body": [],
    "query": [],
    "source": "api/controllers/RideController.php"
   },
   "driver_get_ride_history": {
-   "auth": "public",
+   "auth": "any signed-in user",
    "capability": null,
    "body": [],
    "query": [],
    "source": "api/controllers/RideController.php"
   },
   "driver_get_topup_history": {
-   "auth": "public",
+   "auth": "any signed-in user",
    "capability": null,
    "body": [],
    "query": [],
    "source": "api/controllers/RideController.php"
   },
   "driver_go_offline": {
-   "auth": "public",
+   "auth": "any signed-in user",
    "capability": null,
    "body": [],
    "query": [],
    "source": "api/controllers/RideController.php"
   },
   "driver_go_online": {
-   "auth": "public",
+   "auth": "any signed-in user",
    "capability": null,
    "body": [
     "lat",
@@ -15264,7 +15264,7 @@
    "source": "api/controllers/RideController.php"
   },
   "driver_hail_customer": {
-   "auth": "public",
+   "auth": "any signed-in user",
    "capability": null,
    "body": [
     "km",
@@ -15277,14 +15277,14 @@
    "source": "api/controllers/RideController.php"
   },
   "driver_list_fuel_logs": {
-   "auth": "public",
+   "auth": "any signed-in user",
    "capability": null,
    "body": [],
    "query": [],
    "source": "api/controllers/DriverFuelController.php"
   },
   "driver_mark_announcement_read": {
-   "auth": "public",
+   "auth": "any signed-in user",
    "capability": null,
    "body": [
     "announcement_id"
@@ -15293,7 +15293,7 @@
    "source": "api/controllers/RideController.php"
   },
   "driver_start_ride": {
-   "auth": "public",
+   "auth": "any signed-in user",
    "capability": null,
    "body": [
     "pin",
@@ -15303,7 +15303,7 @@
    "source": "api/controllers/RideController.php"
   },
   "driver_submit_compliance_document": {
-   "auth": "public",
+   "auth": "any signed-in user",
    "capability": null,
    "body": [
     "doc_type",
@@ -15314,7 +15314,7 @@
    "source": "api/controllers/RideController.php"
   },
   "driver_submit_manual_topup": {
-   "auth": "public",
+   "auth": "any signed-in user",
    "capability": null,
    "body": [
     "amount",
@@ -15325,7 +15325,7 @@
    "source": "api/controllers/RideController.php"
   },
   "driver_toggle_wait": {
-   "auth": "public",
+   "auth": "any signed-in user",
    "capability": null,
    "body": [
     "ride_id"
@@ -15334,7 +15334,7 @@
    "source": "api/controllers/RideController.php"
   },
   "driver_topup_etel_money": {
-   "auth": "public",
+   "auth": "any signed-in user",
    "capability": null,
    "body": [
     "amount",
@@ -15345,7 +15345,7 @@
    "source": "api/controllers/RideController.php"
   },
   "driver_update_location": {
-   "auth": "public",
+   "auth": "any signed-in user",
    "capability": null,
    "body": [
     "accuracy",
@@ -15357,7 +15357,7 @@
    "source": "api/controllers/RideController.php"
   },
   "driver_update_profile": {
-   "auth": "public",
+   "auth": "any signed-in user",
    "capability": null,
    "body": [
     "license_dob",
@@ -15698,7 +15698,7 @@
    "source": "api/controllers/AuthController.php"
   },
   "etelid_member_detail": {
-   "auth": "public",
+   "auth": "service key (X-Etel-Service-Key)",
    "capability": null,
    "body": [
     "id"
@@ -15710,7 +15710,7 @@
    "source": "api/boot.php"
   },
   "etelid_members_list": {
-   "auth": "public",
+   "auth": "service key (X-Etel-Service-Key)",
    "capability": null,
    "body": [],
    "query": [
@@ -15740,14 +15740,14 @@
    "source": "api/boot.php"
   },
   "get_display_prefs": {
-   "auth": "public",
+   "auth": "any signed-in user",
    "capability": null,
    "body": [],
    "query": [],
    "source": "api/controllers/DisplayPrefsController.php"
   },
   "get_etelpay_merchant": {
-   "auth": "public",
+   "auth": "any signed-in user",
    "capability": null,
    "body": [],
    "query": [],
@@ -15806,7 +15806,7 @@
    "source": "api/controllers/OrderController.php"
   },
   "get_ride_messages": {
-   "auth": "public",
+   "auth": "any signed-in user",
    "capability": null,
    "body": [
     "ride_id",
@@ -15819,7 +15819,7 @@
    "source": "api/controllers/RideController.php"
   },
   "get_ride_path": {
-   "auth": "public",
+   "auth": "any signed-in user",
    "capability": null,
    "body": [
     "ride_id"
@@ -15938,14 +15938,14 @@
    "source": "api/boot.php"
   },
   "my_active_ride": {
-   "auth": "public",
+   "auth": "any signed-in user",
    "capability": null,
    "body": [],
    "query": [],
    "source": "api/controllers/RideController.php"
   },
   "nfc_confirm_delivery": {
-   "auth": "public",
+   "auth": "service key (X-Etel-Service-Key)",
    "capability": null,
    "body": [
     "confirmer_etel_id",
@@ -15959,7 +15959,7 @@
    "source": "api/controllers/NfcController.php"
   },
   "nfc_confirm_pickup": {
-   "auth": "public",
+   "auth": "service key (X-Etel-Service-Key)",
    "capability": null,
    "body": [
     "confirmer_etel_id",
@@ -15973,7 +15973,7 @@
    "source": "api/controllers/NfcController.php"
   },
   "nfc_driver_status": {
-   "auth": "public",
+   "auth": "service key (X-Etel-Service-Key)",
    "capability": null,
    "body": [
     "etel_id",
@@ -15983,7 +15983,7 @@
    "source": "api/controllers/NfcController.php"
   },
   "nfc_list_courier_orders": {
-   "auth": "public",
+   "auth": "service key (X-Etel-Service-Key)",
    "capability": null,
    "body": [
     "confirmer_etel_id",
@@ -15997,7 +15997,7 @@
    "source": "api/controllers/NfcController.php"
   },
   "nfc_start_ride": {
-   "auth": "public",
+   "auth": "service key (X-Etel-Service-Key)",
    "capability": null,
    "body": [
     "customer_etel_id",
@@ -16040,7 +16040,7 @@
    "source": "api/boot.php"
   },
   "passenger_get_nearby_drivers": {
-   "auth": "public",
+   "auth": "any signed-in user",
    "capability": null,
    "body": [
     "lat",
@@ -16057,14 +16057,14 @@
    "source": "api/controllers/RideController.php"
   },
   "passenger_get_ride_history": {
-   "auth": "public",
+   "auth": "any signed-in user",
    "capability": null,
    "body": [],
    "query": [],
    "source": "api/controllers/RideController.php"
   },
   "ping_ride_typing": {
-   "auth": "public",
+   "auth": "any signed-in user",
    "capability": null,
    "body": [
     "ride_id"
@@ -16195,7 +16195,7 @@
    "source": "api/controllers/OrderController.php"
   },
   "rate_ride": {
-   "auth": "public",
+   "auth": "any signed-in user",
    "capability": null,
    "body": [
     "comment",
@@ -16206,7 +16206,7 @@
    "source": "api/controllers/RideController.php"
   },
   "rate_rider": {
-   "auth": "public",
+   "auth": "any signed-in user",
    "capability": null,
    "body": [
     "checkins",
@@ -16234,7 +16234,7 @@
    "source": "api/controllers/AuthController.php"
   },
   "remove_push_subscription": {
-   "auth": "public",
+   "auth": "any signed-in user",
    "capability": null,
    "body": [
     "endpoint"
@@ -16243,7 +16243,7 @@
    "source": "api/controllers/PushController.php"
   },
   "remove_push_token": {
-   "auth": "public",
+   "auth": "any signed-in user",
    "capability": null,
    "body": [
     "token"
@@ -16282,7 +16282,7 @@
    "source": "api/boot.php"
   },
   "ride_add_favorite_route": {
-   "auth": "public",
+   "auth": "any signed-in user",
    "capability": null,
    "body": [
     "dropoff_address",
@@ -16297,7 +16297,7 @@
    "source": "api/controllers/RideController.php"
   },
   "ride_cancel_scheduled": {
-   "auth": "public",
+   "auth": "any signed-in user",
    "capability": null,
    "body": [
     "id"
@@ -16306,7 +16306,7 @@
    "source": "api/controllers/RideController.php"
   },
   "ride_chat_unread": {
-   "auth": "public",
+   "auth": "any signed-in user",
    "capability": null,
    "body": [
     "ride_id"
@@ -16317,7 +16317,7 @@
    "source": "api/controllers/RideController.php"
   },
   "ride_delete_favorite_route": {
-   "auth": "public",
+   "auth": "any signed-in user",
    "capability": null,
    "body": [
     "id"
@@ -16326,7 +16326,7 @@
    "source": "api/controllers/RideController.php"
   },
   "ride_estimate_fare": {
-   "auth": "public",
+   "auth": "any signed-in user",
    "capability": null,
    "body": [
     "distance_km",
@@ -16341,21 +16341,21 @@
    "source": "api/controllers/RideController.php"
   },
   "ride_get_favorite_routes": {
-   "auth": "public",
+   "auth": "any signed-in user",
    "capability": null,
    "body": [],
    "query": [],
    "source": "api/controllers/RideController.php"
   },
   "ride_get_messages": {
-   "auth": "public",
+   "auth": "any signed-in user",
    "capability": null,
    "body": [],
    "query": [],
    "source": "api/controllers/RideController.php"
   },
   "ride_get_scheduled": {
-   "auth": "public",
+   "auth": "any signed-in user",
    "capability": null,
    "body": [],
    "query": [],
@@ -16373,28 +16373,28 @@
    "source": "api/controllers/RideController.php"
   },
   "ride_get_vehicle_types": {
-   "auth": "public",
+   "auth": "any signed-in user",
    "capability": null,
    "body": [],
    "query": [],
    "source": "api/controllers/RideController.php"
   },
   "ride_history": {
-   "auth": "public",
+   "auth": "any signed-in user",
    "capability": null,
    "body": [],
    "query": [],
    "source": "api/controllers/RideController.php"
   },
   "ride_pin_get": {
-   "auth": "public",
+   "auth": "any signed-in user",
    "capability": null,
    "body": [],
    "query": [],
    "source": "api/controllers/RideController.php"
   },
   "ride_receipt": {
-   "auth": "public",
+   "auth": "any signed-in user",
    "capability": null,
    "body": [
     "id"
@@ -16403,7 +16403,7 @@
    "source": "api/controllers/RideController.php"
   },
   "ride_safety_checkin_missed": {
-   "auth": "public",
+   "auth": "any signed-in user",
    "capability": null,
    "body": [
     "ride_id"
@@ -16412,7 +16412,7 @@
    "source": "api/controllers/RideController.php"
   },
   "ride_schedule": {
-   "auth": "public",
+   "auth": "any signed-in user",
    "capability": null,
    "body": [
     "dropoff_addr",
@@ -16430,7 +16430,7 @@
    "source": "api/controllers/RideController.php"
   },
   "ride_status": {
-   "auth": "public",
+   "auth": "any signed-in user",
    "capability": null,
    "body": [
     "id"
@@ -16441,7 +16441,7 @@
    "source": "api/controllers/RideController.php"
   },
   "ride_stop_sharing": {
-   "auth": "public",
+   "auth": "any signed-in user",
    "capability": null,
    "body": [
     "ride_id"
@@ -16450,14 +16450,14 @@
    "source": "api/controllers/RideController.php"
   },
   "rider_get_announcements": {
-   "auth": "public",
+   "auth": "any signed-in user",
    "capability": null,
    "body": [],
    "query": [],
    "source": "api/controllers/RideController.php"
   },
   "rider_mark_announcement_read": {
-   "auth": "public",
+   "auth": "any signed-in user",
    "capability": null,
    "body": [
     "announcement_id"
@@ -16466,7 +16466,7 @@
    "source": "api/controllers/RideController.php"
   },
   "save_display_prefs": {
-   "auth": "public",
+   "auth": "any signed-in user",
    "capability": null,
    "body": [
     "prefs"
@@ -16475,7 +16475,7 @@
    "source": "api/controllers/DisplayPrefsController.php"
   },
   "save_push_subscription": {
-   "auth": "public",
+   "auth": "any signed-in user",
    "capability": null,
    "body": [
     "subscription"
@@ -16484,7 +16484,7 @@
    "source": "api/controllers/PushController.php"
   },
   "save_push_token": {
-   "auth": "public",
+   "auth": "any signed-in user",
    "capability": null,
    "body": [
     "token"
@@ -16504,7 +16504,7 @@
    "source": "api/controllers/OrderController.php"
   },
   "send_ride_message": {
-   "auth": "public",
+   "auth": "any signed-in user",
    "capability": null,
    "body": [
     "body",
@@ -16902,7 +16902,7 @@
    "source": "api/controllers/ServiceGiverController.php"
   },
   "sos_trigger": {
-   "auth": "public",
+   "auth": "any signed-in user",
    "capability": null,
    "body": [
     "lat",
@@ -16964,7 +16964,7 @@
    "source": "api/controllers/OrderController.php"
   },
   "submit_ride_issue": {
-   "auth": "public",
+   "auth": "any signed-in user",
    "capability": null,
    "body": [
     "category",
@@ -17002,7 +17002,7 @@
    "source": "api/controllers/SystemResetController.php"
   },
   "test_send_push": {
-   "auth": "public",
+   "auth": "any signed-in user",
    "capability": null,
    "body": [],
    "query": [],

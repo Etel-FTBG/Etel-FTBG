@@ -22,6 +22,8 @@ ISSET_BODY_RE = re.compile(r"isset\(\s*\$body\[\s*'([A-Za-z0-9_]+)'\s*\]")
 AUTH_RULES = [
     (re.compile(r"require_admin\(\s*\$pdo\s*(?:,\s*'([a-z_.]+)')?"), "admin"),
     (re.compile(r"require_capability\(\s*\$pdo\s*,\s*'([a-z_.]+)'"), "admin"),
+    (re.compile(r"etel_require_ride_pay\(\s*\$pdo\s*,\s*'([a-z_.]+)'"), "admin"),
+    (re.compile(r"nfc_require_service_key\("), "service key (X-Etel-Service-Key)"),
     (re.compile(r"require_courier\("), "courier"),
     (re.compile(r"require_driver\("), "driver"),
     (re.compile(r"require_service_giver\(|require_sg\("), "service_giver"),
@@ -47,6 +49,8 @@ def parse_file(path):
     marks = [(m.start(), m.group(1)) for m in CASE_RE.finditer(text)]
     out = {}
     pending = []
+    # a controller that calls require_auth() before its switch gates every action behind a login
+    file_auth = "any signed-in user" if re.search(r"^\$u\s*=\s*require_auth\(", text, re.M) else None
     for i, (pos, name) in enumerate(marks):
         end = marks[i + 1][0] if i + 1 < len(marks) else len(text)
         block = text[pos:end]
@@ -68,6 +72,14 @@ def parse_file(path):
                 auth = who
                 cap = m.group(1) if m.groups() and m.group(1) else None
                 break
+        if auth == "public" and file_auth:
+            auth = file_auth
+        if auth == "public" and re.search(r"agent_verify_service_key|HTTP_X_ETEL_SERVICE_KEY|X-Etel-Service-Key", block):
+            auth = "service key (X-Etel-Service-Key)"
+        if auth in ("public", "any signed-in user"):
+            cm = re.search(r"user_has_capability\(\$pdo,\s*\$u,\s*'([a-z_.]+)'", block)
+            if cm and re.search(r"role'\]\s*!==\s*'admin'", block):
+                auth, cap = "admin", cm.group(1)
         if PUBLIC_RX.search(name):
             auth, cap = "public (this call signs you in)", None
         if name in LIB_PARAMS:
