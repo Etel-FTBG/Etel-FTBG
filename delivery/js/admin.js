@@ -479,7 +479,7 @@
                 '<div class="pp-kpi"><span>Avg order</span><b>' + etb(aov) + '</b><em class="pp-flat">Fees kept: ' + etb(c.service_fees) + '</em></div>' +
                 '<div class="pp-kpi"><span>New customers</span><b>' + c.new_customers + '</b>' + delta(dl.new_customers) + '</div>' +
                 '<div class="pp-kpi"><span>Customers ordering</span><b>' + c.active_customers + '</b>' + delta(dl.active_customers) + '</div>' +
-                '<div class="pp-kpi"><span>Avg delivery time</span><b>' + (c.avg_minutes == null ? '—' : c.avg_minutes + ' min') + '</b><em class="pp-flat">order placed → delivered</em></div>' +
+                '<div class="pp-kpi"><span>Avg delivery time</span><b>' + (c.avg_minutes == null ? '—' : c.avg_minutes + ' min') + '</b><em class="pp-flat">' + (c.avg_minutes == null ? 'not enough valid orders yet' : 'placed → delivered · ' + (c.avg_n || 0) + ' orders') + ((c.avg_skipped || 0) > 0 ? ' · ' + c.avg_skipped + ' left out (over 3 h)' : '') + '</em></div>' +
                 '<div class="pp-kpi"><span>Discounts given</span><b>' + etb(c.discounts) + '</b><em class="pp-flat">promo codes + points</em></div></div>';
 
             const link = (page, n, text) => '<div class="pp-row pp-link ' + (n > 0 ? 'pp-bad' : 'pp-good') + '" onclick="switchPage(\'' + page + '\', document.querySelector(\'[data-page=' + page + ']\'))"><span>' + text + '</span><span class="n">' + n + '</span></div>';

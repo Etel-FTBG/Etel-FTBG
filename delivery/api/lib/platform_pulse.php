@@ -24,6 +24,11 @@ function etel_pulse_delta($cur, $prev) {
     return (int)round(($cur - $prev) / $prev * 100);
 }
 
+// A delivery time only counts when it is believable: delivered after it was placed and within this many minutes.
+// Orders marked delivered hours later (a courier forgot to tap, an admin closed it afterwards) say nothing about
+// speed and made the average read 397 minutes. They are left out and counted separately as 'avg_skipped'.
+define('ETEL_PULSE_MAX_DELIVERY_MIN', 180);
+
 function etel_pulse_period($pdo, $from, $to) {
     $base = "FROM orders o WHERE o.placed_at >= $from AND o.placed_at < $to";
     $r = array();
@@ -36,7 +41,9 @@ function etel_pulse_period($pdo, $from, $to) {
                 COALESCE(SUM(CASE WHEN o.status='delivered' THEN COALESCE(o.subtotal, o.fare_total) ELSE 0 END),0) AS item_sales,
                 COALESCE(SUM(CASE WHEN o.status='delivered' THEN COALESCE(o.service_charge,0) ELSE 0 END),0) AS service_fees,
                 COUNT(DISTINCT o.customer_id) AS active_customers,
-                AVG(CASE WHEN o.status='delivered' AND o.delivered_at IS NOT NULL THEN TIMESTAMPDIFF(MINUTE, o.placed_at, o.delivered_at) END) AS avg_minutes
+                AVG(CASE WHEN o.status='delivered' AND o.delivered_at IS NOT NULL AND TIMESTAMPDIFF(MINUTE, o.placed_at, o.delivered_at) BETWEEN 1 AND " . ETEL_PULSE_MAX_DELIVERY_MIN . " THEN TIMESTAMPDIFF(MINUTE, o.placed_at, o.delivered_at) END) AS avg_minutes,
+                SUM(CASE WHEN o.status='delivered' AND o.delivered_at IS NOT NULL AND TIMESTAMPDIFF(MINUTE, o.placed_at, o.delivered_at) BETWEEN 1 AND " . ETEL_PULSE_MAX_DELIVERY_MIN . " THEN 1 ELSE 0 END) AS avg_n,
+                SUM(CASE WHEN o.status='delivered' AND o.delivered_at IS NOT NULL AND NOT (TIMESTAMPDIFF(MINUTE, o.placed_at, o.delivered_at) BETWEEN 1 AND " . ETEL_PULSE_MAX_DELIVERY_MIN . ") THEN 1 ELSE 0 END) AS avg_skipped
             $base");
         $row = $s->fetch(PDO::FETCH_ASSOC);
     } catch (Exception $e) { $row = array(); }
@@ -47,6 +54,8 @@ function etel_pulse_period($pdo, $from, $to) {
     $r['item_sales']       = round(floatval(isset($row['item_sales']) ? $row['item_sales'] : 0), 2);
     $r['service_fees']     = round(floatval(isset($row['service_fees']) ? $row['service_fees'] : 0), 2);
     $r['active_customers'] = intval(isset($row['active_customers']) ? $row['active_customers'] : 0);
+    $r['avg_n']            = intval(isset($row['avg_n']) ? $row['avg_n'] : 0);
+    $r['avg_skipped']      = intval(isset($row['avg_skipped']) ? $row['avg_skipped'] : 0);
     $r['avg_minutes']      = (isset($row['avg_minutes']) && $row['avg_minutes'] !== null) ? (int)round(floatval($row['avg_minutes'])) : null;
     // discounts given on delivered orders (columns exist once promo codes / loyalty are in use)
     $r['discounts'] = round(floatval(etel_pulse_one($pdo, "SELECT COALESCE(SUM(COALESCE(o.discount,0) + COALESCE(o.points_discount,0)),0) $base AND o.status='delivered'")), 2);
