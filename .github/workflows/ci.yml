@@ -102,6 +102,7 @@ jobs:
           python3 delivery/tests/ci/check_shop_decline.py
           python3 delivery/tests/ci/check_saved_places.py
           python3 delivery/tests/ci/check_inline_handlers.py
+          python3 delivery/tests/ci/check_gradient_text.py
           node delivery/tests/photo_match_test.js
       # check_reserved_columns.py needs the built database, so it runs in the
       # integration job (via run_integration.sh).

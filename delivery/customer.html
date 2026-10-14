@@ -22,14 +22,14 @@
     <script src="js/visibility-throttle.js?v=1.0"></script>
 <script src="js/customer-early.js?v=1"></script>
     <script src="js/etel-actions.js?v=1"></script>
-    <script src="js/customer-actions.js?v=2"></script>
+    <script src="js/customer-actions.js?v=3"></script>
     <script src="js/customer-bundle.js?v=3.1"></script>
     <script src="js/customer-bundle-extra.js?v=1.0" defer></script>
     <!-- Google Maps (a large download) is no longer loaded at start-up. customer.js loads it the first time the
          checkout address box or the order-tracking map needs it (etelEnsureMaps). -->
     <link rel="preload" href="fonts/syne-normal-latin.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="stylesheet" href="css/etel-fonts.css?v=1">
-    <link rel="stylesheet" href="css/customer-v5.css?v=7.14">
+    <link rel="stylesheet" href="css/customer-v5.css?v=7.15">
 <script src="js/etel-display-settings.js?v=1.4" data-fab="off" defer></script>
 <script src="js/etel-2fa-settings.js?v=1" defer></script>
 <script src="js/etel-account-deletion.js?v=1" defer></script>
@@ -151,7 +151,7 @@
         </div>
         <!-- SEND A PACKAGE: pickup and drop-off anywhere, the customer picks the vehicle (js/customer-package.js) -->
         <button type="button" class="pkg-banner" data-act="pkgOpen">
-            <span class="pkg-banner-ico" aria-hidden="true">📦</span>
+            <span class="svc-ico svc-ico-food pkg-banner-ico" aria-hidden="true"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 8l-9-5-9 5 9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg></span>
             <span class="pkg-banner-txt"><span class="pkg-banner-title" data-i18n="pkg_tile_title">Send a package</span><span class="pkg-banner-sub" data-i18n="pkg_tile_sub">Anywhere in Hawassa · you pick the vehicle</span></span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg>
         </button>
@@ -534,10 +534,10 @@
     <script src="js/apk-download-badge.js?v=2" data-role="customer"></script>
 <script src="js/order-chat.js?v=1" data-mode="customer"></script>
 <script src="js/customer.js?v=4.63"></script>
-<script src="js/customer-package.js?v=2"></script>
+<script src="js/customer-package.js?v=3"></script>
 <script src="js/investor-nav-check.js"></script>
 <script src="js/chapa-pay.js?v=1.0" defer></script>
-<script src="js/etel-contrast-guard.js?v=2" defer></script>
+<script src="js/etel-contrast-guard.js?v=3" defer></script>
 <script src="js/etel-a11y.js?v=1" defer></script>
 </body>
 </html>

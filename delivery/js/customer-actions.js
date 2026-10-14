@@ -34,6 +34,7 @@ EtelActions.expose([
     "pkgSaved",
     "pkgSize",
     "pkgSubmit",
+    "pkgTheme",
     "pkgTrack",
     "pkgVehicle",
     "pkgWeight",
