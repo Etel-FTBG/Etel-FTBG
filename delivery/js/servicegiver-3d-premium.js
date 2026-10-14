@@ -126,7 +126,7 @@
         background: radial-gradient(circle at 35% 30%, #241804, #0a0703 75%);
         box-shadow: inset 0 3px 8px rgba(0,0,0,.6);
         display:flex; align-items:center; justify-content:center;
-        font-family:'JetBrains Mono',monospace; font-weight:800; font-size:11px; color:#FFE9A8;
+        font-family:'JetBrains Mono',monospace; font-weight:800; font-size:15px; color:#FFE9A8;
       }
     `;
     document.head.appendChild(css);
@@ -176,7 +176,8 @@
 
   function parseRating(text) {
     var v = parseFloat(text.replace(/[^0-9.]/g, '')) || 0;
-    return { display: v.toFixed(1), pct: (Math.max(0, Math.min(5, v)) / 5) * 100 };
+    // The big number beside the ring already shows the score, so the ring shows a star (no duplicate "0.0").
+    return { display: '\u2605', pct: (Math.max(0, Math.min(5, v)) / 5) * 100 };
   }
   function parsePercent(text) {
     var v = parseFloat(text.replace(/[^0-9.\-]/g, '')) || 0;
