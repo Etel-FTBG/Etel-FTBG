@@ -163,17 +163,19 @@
             if (!S) return;
             var s = S[which];
             s.lat = pos.coords.latitude; s.lng = pos.coords.longitude; s.zone = getNearestHawassaZone(s.lat, s.lng);
-            s.address = s.lat.toFixed(5) + ', ' + s.lng.toFixed(5); s.placeText = s.address;
+            // Show the area and the point at once; replace it with a street name when Google can give one (its address search is
+            // already allowed by the site's content policy, unlike other map services).
+            s.address = s.zone + ' (' + s.lat.toFixed(4) + ', ' + s.lng.toFixed(4) + ')'; s.placeText = s.address;
             render();
-            fetch('https://nominatim.openstreetmap.org/reverse?format=json&lat=' + s.lat + '&lon=' + s.lng, { headers: { 'Accept-Language': 'en' } })
-                .then(function (r) { return r.json(); })
-                .then(function (d) {
+            if (window.google && google.maps && google.maps.Geocoder) {
+                new google.maps.Geocoder().geocode({ location: { lat: s.lat, lng: s.lng } }, function (results, status) {
                     if (!S || S[which] !== s || s.address !== s.placeText) return;
-                    var ad = d.address || {};
-                    var parts = [ad.road || ad.pedestrian || ad.footway || ad.street, ad.suburb || ad.neighbourhood || ad.quarter, ad.city || ad.town || ad.village || ad.county].filter(Boolean);
-                    var txt = parts.join(', ') || d.display_name;
-                    if (txt) { s.address = txt; s.placeText = txt; var i = document.getElementById('pkg-' + which + '-addr'); if (i) i.value = txt; }
-                }).catch(function () {});
+                    if (status === 'OK' && results && results[0]) {
+                        s.address = results[0].formatted_address; s.placeText = s.address;
+                        var i = document.getElementById('pkg-' + which + '-addr'); if (i) i.value = s.address;
+                    }
+                });
+            }
         }, function () { showToast(T('pkg_gps_fail'), 'err'); }, { enableHighAccuracy: true, timeout: 10000 });
     };
     window.pkgSaved = function (which, id) {

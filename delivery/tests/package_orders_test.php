@@ -99,7 +99,10 @@ check('pickup, drop-off, details and sender are saved', $o['from_zone'] === 'Tab
     && $o['vehicle_class'] === 'car' && $o['pkg_size'] === 'small' && floatval($o['pkg_weight_kg']) == 2.0 && $o['pkg_desc'] === 'Books' && $o['sender_name'] === 'Sender Sam' && $o['sender_phone'] === '+251998500000');
 check('the recipient number is kept as it was typed once it passes the phone check', $o['recipient_phone'] === '0911223344');
 check('two 4-digit pins are made', preg_match('/^\d{4}$/', $o['pickup_pin']) === 1 && preg_match('/^\d{4}$/', $o['delivery_pin']) === 1);
-check('a stand-in assignment row exists and no shop owns it', $pdo->query("SELECT COUNT(*) FROM order_assignments WHERE order_id=" . $r['order_id'] . " AND service_giver_id=0 AND status='pending'")->fetchColumn() == 1);
+check('no assignment row is made: that table points at a shop (a foreign key on the live database) and a package has none', (int) $pdo->query("SELECT COUNT(*) FROM order_assignments WHERE order_id=" . $r['order_id'])->fetchColumn() === 0);
+check('package_type holds a word the live ENUM(document, parcel, food, bulk) accepts; the real size is in pkg_size', $o['package_type'] === 'parcel' && $o['pkg_size'] === 'small');
+$docr = etel_package_create($pdo, $user, array_merge($base, array('size' => 'document', 'vehicle_class' => 'van', 'weight_kg' => 1)));
+check('a document is stored as document', $docr['ok'] && $row($docr['order_id'])['package_type'] === 'document');
 check('a car package goes to the car courier, not the motorbike one', intval($o['courier_id']) === $cCar && $o['status'] === 'assigned');
 
 $moto2 = $base; $moto2['vehicle_class'] = 'moto';
