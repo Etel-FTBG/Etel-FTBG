@@ -3,8 +3,9 @@
 //   1. Refunds owed   - an order was PAID (wallet, Telebirr, Chapa, bank transfer) and then CANCELLED. Customers pay outside the
 //                       platform, so the money goes back outside it; this records that it did (who, how, reference, when) and
 //                       flips orders.payment_status to 'refunded' so the same order is never refunded twice.
-//   2. Courier cash   - on a CASH order the courier collects the customer's money. This shows, per courier, how much cash they
-//                       collected on delivered orders, how much they already handed over, and what they still hold.
+//   2. Courier cash   - on a CASH order the courier collects the customer's money and KEEPS their own pay and tips from it (company
+//                       rule). This shows, per courier, the cash collected on delivered orders, their own pay and tips on those orders,
+//                       what they already handed over, and what they still OWE the company = collected - own pay - handed over.
 // Never throws from the report functions; the record functions return array('ok' => bool, 'message' => string, ...).
 
 define('ETEL_MONEY_METHODS', 'wallet,telebirr,chapa,abysinia,cbe,cash,other');
@@ -130,8 +131,8 @@ function etel_refund_record($pdo, $order_id, $admin_id, $method, $reference, $no
     }
 }
 
-// Per courier: cash collected on delivered CASH orders, what they handed over, and what they still hold.
-// own_earnings = their pay + tips on those same orders, shown so staff can see the net figure if couriers keep their own pay.
+// Per courier: cash collected on delivered CASH orders, their own pay + tips on those orders (they keep it), what they handed over,
+// and what they still owe = collected - own_earnings - handed_over (negative means the company owes the courier).
 function etel_courier_cash_report($pdo) {
     etel_money_ensure_schema($pdo);
     $out = array('couriers' => array(), 'holding_total' => 0.0, 'holding_couriers' => 0);
@@ -154,10 +155,11 @@ function etel_courier_cash_report($pdo) {
             $cid = intval($r['courier_id']);
             $handed = isset($rem[$cid]) ? floatval($rem[$cid]['handed']) : 0.0;
             $collected = round(floatval($r['collected']), 2);
-            $holding = round($collected - $handed, 2);
+            $own = round(floatval($r['own_earnings']), 2);
+            $holding = round($collected - $own - $handed, 2);
             $out['couriers'][] = array('courier_id' => $cid, 'courier_code' => $r['courier_code'], 'name' => etel_money_first_name($r['name']), 'phone' => $r['phone'],
                 'cash_orders' => intval($r['cash_orders']), 'collected' => $collected, 'handed_over' => round($handed, 2), 'holding' => $holding,
-                'own_earnings' => round(floatval($r['own_earnings']), 2), 'holding_after_own_pay' => round($holding - floatval($r['own_earnings']), 2),
+                'own_earnings' => $own,
                 'last_cash_delivery' => $r['last_cash_delivery'], 'last_handover' => isset($rem[$cid]) ? $rem[$cid]['last_at'] : null);
             if ($holding > 0) { $out['holding_total'] += $holding; $out['holding_couriers']++; }
         }
@@ -167,7 +169,7 @@ function etel_courier_cash_report($pdo) {
     return $out;
 }
 
-// Staff received $amount of cash from a courier. Refuses an amount above what that courier is recorded as holding (a typo guard).
+// Staff received $amount of cash from a courier. Refuses an amount above what that courier still owes (a typo guard).
 function etel_cash_remit_record($pdo, $courier_id, $amount, $admin_id, $note) {
     etel_money_ensure_schema($pdo);
     $courier_id = intval($courier_id);
@@ -178,7 +180,7 @@ function etel_cash_remit_record($pdo, $courier_id, $amount, $admin_id, $note) {
         $row = null;
         foreach ($rep['couriers'] as $c) { if ($c['courier_id'] === $courier_id) { $row = $c; break; } }
         if (!$row) return array('ok' => false, 'message' => 'This courier has no recorded cash.');
-        if ($amount > $row['holding'] + 0.001) return array('ok' => false, 'message' => 'This courier is recorded as holding ETB ' . number_format($row['holding'], 2) . ', so ETB ' . number_format($amount, 2) . ' is too much.');
+        if ($amount > $row['holding'] + 0.001) return array('ok' => false, 'message' => 'This courier is recorded as owing ETB ' . number_format(max(0, $row['holding']), 2) . ' (cash collected minus their own pay), so ETB ' . number_format($amount, 2) . ' is too much.');
         $pdo->prepare("INSERT INTO courier_cash_remittances (courier_id, amount, note, admin_id) VALUES (?,?,?,?)")
             ->execute(array($courier_id, $amount, substr(trim((string) $note), 0, 255), $admin_id ? intval($admin_id) : null));
         return array('ok' => true, 'message' => 'Handover recorded.', 'courier_id' => $courier_id, 'amount' => $amount, 'holding_after' => round($row['holding'] - $amount, 2));

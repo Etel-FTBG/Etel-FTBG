@@ -91,24 +91,24 @@ $rep = etel_courier_cash_report($pdo);
 $me = null; foreach ($rep['couriers'] as $c) { if ($c['courier_id'] === $cid) $me = $c; }
 check('courier appears with 2 cash orders', $me && $me['cash_orders'] === 2);
 check('collected = 200 + 150 (online and cancelled orders left out)', $me && abs($me['collected'] - 350) < 0.001);
-check('holding = collected when nothing was handed over', $me && abs($me['holding'] - 350) < 0.001);
-check('own earnings on those orders = (40 + 5) + 30 = 75, net figure 275', $me && abs($me['own_earnings'] - 75) < 0.001 && abs($me['holding_after_own_pay'] - 275) < 0.001);
+check('owes = collected - own pay and tips = 350 - 75 = 275 when nothing was handed over', $me && abs($me['holding'] - 275) < 0.001);
+check('own pay and tips on those orders = (40 + 5) + 30 = 75', $me && abs($me['own_earnings'] - 75) < 0.001);
 check('name shown by first name only', $me && $me['name'] === 'Abebe');
 
 echo "recording a handover\n";
 $x = etel_cash_remit_record($pdo, $cid, 100, 1, 'MLT first');
-check('a handover of 100 is recorded, 250 still held', $x['ok'] === true && abs($x['holding_after'] - 250) < 0.001);
+check('a handover of 100 is recorded, 175 still owed', $x['ok'] === true && abs($x['holding_after'] - 175) < 0.001);
 $x = etel_cash_remit_record($pdo, $cid, 300, 1, 'MLT too much');
-check('more than the courier holds is refused', $x['ok'] === false && strpos($x['message'], 'too much') !== false);
+check('more than the courier owes is refused (even though 350 was collected)', $x['ok'] === false && strpos($x['message'], 'too much') !== false);
 foreach (array(0, -10, 'abc') as $bad) { $x = etel_cash_remit_record($pdo, $cid, $bad, 1, 'MLT bad'); if ($x['ok']) { check('bad amount refused', false); } }
 check('zero, negative and non-numeric amounts are refused', true);
 $x = etel_cash_remit_record($pdo, 99999999, 50, 1, 'MLT nobody');
 check('a courier with no cash on record is refused', $x['ok'] === false);
-$x = etel_cash_remit_record($pdo, $cid, 250, 1, 'MLT rest');
+$x = etel_cash_remit_record($pdo, $cid, 175, 1, 'MLT rest');
 check('handing over the rest brings it to zero', $x['ok'] === true && abs($x['holding_after']) < 0.001);
 $rep = etel_courier_cash_report($pdo);
 $me = null; foreach ($rep['couriers'] as $c) { if ($c['courier_id'] === $cid) $me = $c; }
-check('report shows handed over 350 and holding 0', $me && abs($me['handed_over'] - 350) < 0.001 && abs($me['holding']) < 0.001 && $me['last_handover'] !== null);
+check('report shows handed over 275 and owes 0', $me && abs($me['handed_over'] - 275) < 0.001 && abs($me['holding']) < 0.001 && $me['last_handover'] !== null);
 check('a courier holding nothing does not count in the total', true);
 
 $pdo->exec("DELETE FROM courier_cash_remittances WHERE note LIKE 'MLT%'");
