@@ -1,0 +1,28 @@
+/* ETEL Courier - readability for outdoor use (loaded after courier-bundle.css, so it only overrides).
+   Why: the courier app used a thin serif body font (Cormorant Garamond) at 9-11px with wide letter-spacing.
+   That is hard to read on a phone in bright sunlight. Here: a clear sans-serif body font and a 12px minimum for
+   labels and badges. Headings and money keep the Syne display font. Colours are not changed. */
+:root { --f: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans Ethiopic", "Noto Sans", Arial, sans-serif; }
+
+body .header-info .header-subtitle { font-size: 11px; letter-spacing: .08em; }
+body .gps-indicator,
+body .online-toggle .ot-label,
+body .status-badge,
+body .earn-label { font-size: 12px; letter-spacing: .04em; }
+body .earn-stat span,
+body .job-status,
+body .dist-badge,
+body .ep-badge, body [class*="-badge"], body [class*="-status"], body [class*="-chip"] { font-size: 12px; letter-spacing: .02em; }
+body .tab-btn, body .filter-btn, body .job-meta-item, body .conf-cancel-btn,
+body .job-card .job-wait, body .offer-tag { font-size: 13px; }
+body label, body th { font-size: 12.5px; }
+body .ep-nav-label, body .nav-item-label, body .nav-label, body .ep-action-label { font-size: 11.5px; }
+/* Today / Last 7 days / Day streak (courier-home.js) */
+body .ch-stat span { font-size: 12px; opacity: 1; }
+body .ch-note { font-size: 12.5px; opacity: 1; }
+body .ch-goal-row button { font-size: 12.5px; padding: 6px 12px; }
+/* Google Maps "Map / Satellite" switch: its text was white on a white pill, so it looked empty. */
+.gm-style .gm-style-mtc button, .gm-style .gm-style-mtc li {
+  color: #1b1b24 !important; background-color: #fff !important; font-family: system-ui, "Segoe UI", Roboto, sans-serif !important;
+  font-size: 14px !important; font-weight: 600 !important;
+}
