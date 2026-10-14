@@ -2020,7 +2020,7 @@
          }
         },
         "admin_reset_user_2fa": {
-         "summary": "admin_reset_user_2fa (public (this call signs you in))",
+         "summary": "admin_reset_user_2fa (admin)",
          "value": {
           "action": "admin_reset_user_2fa",
           "phone": "<phone>"
@@ -3651,7 +3651,7 @@
          }
         },
         "planning_reset_and_seed_demo": {
-         "summary": "planning_reset_and_seed_demo (public (this call signs you in))",
+         "summary": "planning_reset_and_seed_demo (admin)",
          "value": {
           "action": "planning_reset_and_seed_demo"
          }
@@ -3694,7 +3694,7 @@
          }
         },
         "platform_economics_reset_growth_assumptions": {
-         "summary": "platform_economics_reset_growth_assumptions (public (this call signs you in))",
+         "summary": "platform_economics_reset_growth_assumptions (admin)",
          "value": {
           "action": "platform_economics_reset_growth_assumptions"
          }
@@ -4294,13 +4294,13 @@
          }
         },
         "system_reset_backup": {
-         "summary": "system_reset_backup (public (this call signs you in))",
+         "summary": "system_reset_backup (admin)",
          "value": {
           "action": "system_reset_backup"
          }
         },
         "system_reset_execute": {
-         "summary": "system_reset_execute (public (this call signs you in))",
+         "summary": "system_reset_execute (admin)",
          "value": {
           "action": "system_reset_execute",
           "backup_token": "<backup_token>",
@@ -4309,7 +4309,7 @@
          }
         },
         "system_reset_preview": {
-         "summary": "system_reset_preview (public (this call signs you in))",
+         "summary": "system_reset_preview (admin)",
          "value": {
           "action": "system_reset_preview",
           "keep_phones": "<keep_phones>"
@@ -6506,7 +6506,7 @@
       "description": "request field (type not declared in code)"
      }
     },
-    "description": "Auth: public (this call signs you in). Source: api/controllers/AuthController.php."
+    "description": "Auth: admin (capability users.manage). Source: api/controllers/AuthController.php."
    },
    "admin_resolve_order_issue": {
     "type": "object",
@@ -11067,7 +11067,7 @@
       ]
      }
     },
-    "description": "Auth: public (this call signs you in). Source: api/controllers/PlanningController.php."
+    "description": "Auth: admin (capability planning.manage). Source: api/controllers/PlanningController.php."
    },
    "planning_save_notes": {
     "type": "object",
@@ -11184,7 +11184,7 @@
       ]
      }
     },
-    "description": "Auth: public (this call signs you in). Source: api/controllers/PlatformEconomicsController.php."
+    "description": "Auth: admin (capability platform_economics.manage). Source: api/controllers/PlatformEconomicsController.php."
    },
    "platform_economics_save_growth_assumptions": {
     "type": "object",
@@ -12928,7 +12928,7 @@
       ]
      }
     },
-    "description": "Auth: public (this call signs you in). Source: api/controllers/SystemResetController.php."
+    "description": "Auth: admin (capability system.reset). Source: api/controllers/SystemResetController.php."
    },
    "system_reset_execute": {
     "type": "object",
@@ -12953,7 +12953,7 @@
       "description": "request field (type not declared in code)"
      }
     },
-    "description": "Auth: public (this call signs you in). Source: api/controllers/SystemResetController.php."
+    "description": "Auth: admin (capability system.reset). Source: api/controllers/SystemResetController.php."
    },
    "system_reset_preview": {
     "type": "object",
@@ -12972,7 +12972,7 @@
       "description": "request field (type not declared in code)"
      }
     },
-    "description": "Auth: public (this call signs you in). Source: api/controllers/SystemResetController.php."
+    "description": "Auth: admin (capability system.reset). Source: api/controllers/SystemResetController.php."
    },
    "test_send_push": {
     "type": "object",
@@ -14030,8 +14030,8 @@
    "source": "api/controllers/AdminController.php"
   },
   "admin_reset_user_2fa": {
-   "auth": "public (this call signs you in)",
-   "capability": null,
+   "auth": "admin",
+   "capability": "users.manage",
    "body": [
     "phone"
    ],
@@ -16108,8 +16108,8 @@
    "source": "api/controllers/PlanningController.php"
   },
   "planning_reset_and_seed_demo": {
-   "auth": "public (this call signs you in)",
-   "capability": null,
+   "auth": "admin",
+   "capability": "planning.manage",
    "body": [],
    "query": [],
    "source": "api/controllers/PlanningController.php"
@@ -16160,8 +16160,8 @@
    "source": "api/controllers/PlatformEconomicsController.php"
   },
   "platform_economics_reset_growth_assumptions": {
-   "auth": "public (this call signs you in)",
-   "capability": null,
+   "auth": "admin",
+   "capability": "platform_economics.manage",
    "body": [],
    "query": [],
    "source": "api/controllers/PlatformEconomicsController.php"
@@ -16975,15 +16975,15 @@
    "source": "api/controllers/RideController.php"
   },
   "system_reset_backup": {
-   "auth": "public (this call signs you in)",
-   "capability": null,
+   "auth": "admin",
+   "capability": "system.reset",
    "body": [],
    "query": [],
    "source": "api/controllers/SystemResetController.php"
   },
   "system_reset_execute": {
-   "auth": "public (this call signs you in)",
-   "capability": null,
+   "auth": "admin",
+   "capability": "system.reset",
    "body": [
     "backup_token",
     "confirm_phrase",
@@ -16993,8 +16993,8 @@
    "source": "api/controllers/SystemResetController.php"
   },
   "system_reset_preview": {
-   "auth": "public (this call signs you in)",
-   "capability": null,
+   "auth": "admin",
+   "capability": "system.reset",
    "body": [
     "keep_phones"
    ],
