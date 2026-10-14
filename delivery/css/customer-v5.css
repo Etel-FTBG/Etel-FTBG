@@ -1564,3 +1564,11 @@ body.dark-theme .sold-chip { background: rgba(255,255,255,.08); color: #F0CA58; 
   .svc-tile { padding-left: 2px; padding-right: 2px; }
   .svc-label { font-size: 11px; letter-spacing: 0; }
 }
+/* Cancel order (tracking screen) */
+.trk-cancel { width: 100%; min-height: 44px; margin: 0 0 14px; padding: 10px 14px; border-radius: 12px; border: 1.5px solid #B42318; background: transparent; color: #B42318; font-size: 14px; font-weight: 700; cursor: pointer; }
+body.dark-theme .trk-cancel { border-color: #F87171; color: #F87171; }
+.cancel-opt { display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 6px 4px; font-size: 14px; color: var(--text); cursor: pointer; }
+.cancel-opt input { width: 20px; height: 20px; accent-color: #B42318; }
+.trk-cancel-go { width: 100%; min-height: 46px; margin-bottom: 8px; border: 0; border-radius: 12px; background: #B42318; color: #fff; font-size: 14px; font-weight: 700; cursor: pointer; }
+.trk-cancel-go:disabled { opacity: .6; cursor: default; }
+.trk-cancel-keep { width: 100%; min-height: 44px; border-radius: 12px; border: 1.5px solid rgba(212,175,55,.5); background: transparent; color: var(--text); font-size: 14px; font-weight: 700; cursor: pointer; }
