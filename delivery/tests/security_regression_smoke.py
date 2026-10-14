@@ -187,6 +187,13 @@ def main():
         status, res = call(act, body, token=drv_token)
         check(act + " for a courier account is refused (403)", res.get("success") is False and status == 403, f"status={status} res={res}")
 
+    print("10. Dispatch by hand is for admin staff only")
+    for act, body in (("admin_dispatch_board", {}), ("admin_assign_courier", {"order_id": 1, "courier_id": 1}), ("admin_take_back_order", {"order_id": 1})):
+        status, res = call(act, body)
+        check(act + " without a token is refused (401)", res.get("success") is False and status == 401, f"status={status} res={res}")
+        status, res = call(act, body, token=drv_token)
+        check(act + " for a courier account is refused (403)", res.get("success") is False and status == 403, f"status={status} res={res}")
+
     print()
     print(f"{len(PASS)} passed, {len(FAIL)} failed")
     if FAIL:

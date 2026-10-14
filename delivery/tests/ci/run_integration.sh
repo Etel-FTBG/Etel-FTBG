@@ -43,6 +43,7 @@ run php tests/ratings_report_test.php
 run php tests/track_eta_test.php
 run php tests/shop_hours_test.php
 run php tests/money_ledger_test.php
+run php tests/manual_dispatch_test.php
 run php tests/image_orient_test.php
 run php tests/etelid_role_verdict_test.php
 run python3 tests/courier_pay_smoke.py

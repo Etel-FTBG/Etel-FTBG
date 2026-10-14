@@ -1,13 +1,13 @@
 # ETEL Delivery & Ride API reference
 
-Generated from the source by `tools/gen_api_docs.py` (416 actions). Machine-readable: `openapi.json`.
+Generated from the source by `tools/gen_api_docs.py` (419 actions). Machine-readable: `openapi.json`.
 
 **Call:** `POST /delivery/api/boot.php` with JSON `{"action": "<name>", ...fields}`; header `Authorization: Bearer <token>` for everything except the *public* actions.
 **Reply:** `{success, data, message, v}`. **Login:** `login` / `etelid_login` (apps) or `admin_etelid_login` (admin; add `totp_code` when the reply says `requires_2fa`).
 
 | Who can call | Actions |
 |---|---|
-| admin | 192 |
+| admin | 195 |
 | any signed-in user | 177 |
 | courier | 16 |
 | public | 9 |
@@ -242,6 +242,14 @@ Generated from the source by `tools/gen_api_docs.py` (416 actions). Machine-read
 |---|---|---|---|
 | `investor_portal_get_growth_planner_data` | public | `token` | - |
 | `investor_portal_get_view` | public | `token` | - |
+
+## ManualDispatch
+
+| Action | Auth | Fields | Query |
+|---|---|---|---|
+| `admin_assign_courier` | admin · orders.manage | `courier_id`, `order_id` | - |
+| `admin_dispatch_board` | admin · orders.view | - | - |
+| `admin_take_back_order` | admin · orders.manage | `order_id` | - |
 
 ## MoneyLedger
 

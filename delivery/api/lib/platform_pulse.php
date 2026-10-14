@@ -31,6 +31,7 @@ define('ETEL_PULSE_MAX_DELIVERY_MIN', 180);
 
 require_once __DIR__ . '/ratings_report.php';
 require_once __DIR__ . '/money_ledger.php';
+require_once __DIR__ . '/manual_dispatch.php';
 
 function etel_pulse_period($pdo, $from, $to) {
     $base = "FROM orders o WHERE o.placed_at >= $from AND o.placed_at < $to";
@@ -102,6 +103,8 @@ function etel_platform_pulse($pdo, $days) {
         'low_ratings'      => (function_exists('etel_low_ratings_count') ? etel_low_ratings_count($pdo, 7) : 0),
         // cancelled orders the customer had already paid for and nobody has refunded yet; opens Admin > Money
         'refunds_owed'     => (function_exists('etel_refunds_owed_count') ? etel_refunds_owed_count($pdo) : 0),
+        // live orders staff should act on (no courier, courier silent, idle, slow); opens Admin > Dispatch
+        'dispatch_needs'   => (function_exists('etel_dispatch_needs_count') ? etel_dispatch_needs_count($pdo) : 0),
         'accepted_idle'    => intval(etel_pulse_one($pdo, "SELECT COUNT(*) FROM orders WHERE status = 'assigned' AND courier_accepted_at IS NOT NULL AND courier_accepted_at < DATE_SUB(NOW(), INTERVAL 30 MINUTE) AND placed_at >= DATE_SUB(NOW(), INTERVAL 1 DAY)")),
     );
 

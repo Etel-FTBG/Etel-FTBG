@@ -96,6 +96,7 @@ jobs:
           python3 delivery/tests/ci/check_speed_pass.py
           python3 delivery/tests/ci/check_type_tokens.py
           python3 delivery/tests/ci/check_money_ledger.py
+          python3 delivery/tests/ci/check_manual_dispatch.py
           node delivery/tests/photo_match_test.js
       # check_reserved_columns.py needs the built database, so it runs in the
       # integration job (via run_integration.sh).

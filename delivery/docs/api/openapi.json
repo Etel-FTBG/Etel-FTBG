@@ -3,7 +3,7 @@
  "info": {
   "title": "ETEL Delivery & Ride API",
   "version": "generated",
-  "description": "Every action is a JSON POST to /api/boot.php with an `action` field (a few read-only actions also accept GET query parameters). Responses are JSON: {success: true|false, data: {...}, message: '...', v: '<app version>'}. Send the session token as `Authorization: Bearer <token>`; get one from `login`, `etelid_login` (Delivery/Ride apps) or `admin_etelid_login` (admin). Admin accounts with two-step sign-in answer {requires_2fa: true}: repeat the same login request with `totp_code`. Errors use HTTP 400/401/403/404/409/429/500/503 with the same JSON shape. Throttled actions answer 429. This file is generated from the source by tools/gen_api_docs.py: 416 actions. Parameter names come from the handlers; types and limits are in the handler code."
+  "description": "Every action is a JSON POST to /api/boot.php with an `action` field (a few read-only actions also accept GET query parameters). Responses are JSON: {success: true|false, data: {...}, message: '...', v: '<app version>'}. Send the session token as `Authorization: Bearer <token>`; get one from `login`, `etelid_login` (Delivery/Ride apps) or `admin_etelid_login` (admin). Admin accounts with two-step sign-in answer {requires_2fa: true}: repeat the same login request with `totp_code`. Errors use HTTP 400/401/403/404/409/429/500/503 with the same JSON shape. Throttled actions answer 429. This file is generated from the source by tools/gen_api_docs.py: 419 actions. Parameter names come from the handlers; types and limits are in the handler code."
  },
  "servers": [
   {
@@ -57,6 +57,9 @@
          },
          {
           "$ref": "#/components/schemas/admin_approve_vehicle_change"
+         },
+         {
+          "$ref": "#/components/schemas/admin_assign_courier"
          },
          {
           "$ref": "#/components/schemas/admin_assign_service_giver"
@@ -132,6 +135,9 @@
          },
          {
           "$ref": "#/components/schemas/admin_delete_zone"
+         },
+         {
+          "$ref": "#/components/schemas/admin_dispatch_board"
          },
          {
           "$ref": "#/components/schemas/admin_docs_create_text"
@@ -441,6 +447,9 @@
          },
          {
           "$ref": "#/components/schemas/admin_system_health"
+         },
+         {
+          "$ref": "#/components/schemas/admin_take_back_order"
          },
          {
           "$ref": "#/components/schemas/admin_toggle_feature"
@@ -1361,6 +1370,14 @@
           "request_id": "<request_id>"
          }
         },
+        "admin_assign_courier": {
+         "summary": "admin_assign_courier (admin)",
+         "value": {
+          "action": "admin_assign_courier",
+          "courier_id": "<courier_id>",
+          "order_id": "<order_id>"
+         }
+        },
         "admin_assign_service_giver": {
          "summary": "admin_assign_service_giver (admin)",
          "value": {
@@ -1555,6 +1572,12 @@
          "value": {
           "action": "admin_delete_zone",
           "id": "<id>"
+         }
+        },
+        "admin_dispatch_board": {
+         "summary": "admin_dispatch_board (admin)",
+         "value": {
+          "action": "admin_dispatch_board"
          }
         },
         "admin_docs_create_text": {
@@ -2296,6 +2319,13 @@
          "summary": "admin_system_health (admin)",
          "value": {
           "action": "admin_system_health"
+         }
+        },
+        "admin_take_back_order": {
+         "summary": "admin_take_back_order (admin)",
+         "value": {
+          "action": "admin_take_back_order",
+          "order_id": "<order_id>"
          }
         },
         "admin_toggle_feature": {
@@ -4679,6 +4709,28 @@
     },
     "description": "Auth: admin (capability rides.manage). Source: api/controllers/RideController.php."
    },
+   "admin_assign_courier": {
+    "type": "object",
+    "title": "action: admin_assign_courier",
+    "required": [
+     "action"
+    ],
+    "properties": {
+     "action": {
+      "type": "string",
+      "enum": [
+       "admin_assign_courier"
+      ]
+     },
+     "courier_id": {
+      "description": "request field (type not declared in code)"
+     },
+     "order_id": {
+      "description": "request field (type not declared in code)"
+     }
+    },
+    "description": "Auth: admin (capability orders.manage). Source: api/controllers/ManualDispatchController.php."
+   },
    "admin_assign_service_giver": {
     "type": "object",
     "title": "action: admin_assign_service_giver",
@@ -5246,6 +5298,22 @@
      }
     },
     "description": "Auth: admin (capability settings.manage). Source: api/controllers/AdminController.php."
+   },
+   "admin_dispatch_board": {
+    "type": "object",
+    "title": "action: admin_dispatch_board",
+    "required": [
+     "action"
+    ],
+    "properties": {
+     "action": {
+      "type": "string",
+      "enum": [
+       "admin_dispatch_board"
+      ]
+     }
+    },
+    "description": "Auth: admin (capability orders.view). Source: api/controllers/ManualDispatchController.php."
    },
    "admin_docs_create_text": {
     "type": "object",
@@ -7290,6 +7358,25 @@
      }
     },
     "description": "Auth: admin (capability rides.view). Source: api/controllers/RideController.php."
+   },
+   "admin_take_back_order": {
+    "type": "object",
+    "title": "action: admin_take_back_order",
+    "required": [
+     "action"
+    ],
+    "properties": {
+     "action": {
+      "type": "string",
+      "enum": [
+       "admin_take_back_order"
+      ]
+     },
+     "order_id": {
+      "description": "request field (type not declared in code)"
+     }
+    },
+    "description": "Auth: admin (capability orders.manage). Source: api/controllers/ManualDispatchController.php."
    },
    "admin_toggle_feature": {
     "type": "object",
@@ -13386,6 +13473,16 @@
    "query": [],
    "source": "api/controllers/RideController.php"
   },
+  "admin_assign_courier": {
+   "auth": "admin",
+   "capability": "orders.manage",
+   "body": [
+    "courier_id",
+    "order_id"
+   ],
+   "query": [],
+   "source": "api/controllers/ManualDispatchController.php"
+  },
   "admin_assign_service_giver": {
    "auth": "admin",
    "capability": "service_givers.manage",
@@ -13641,6 +13738,13 @@
    ],
    "query": [],
    "source": "api/controllers/AdminController.php"
+  },
+  "admin_dispatch_board": {
+   "auth": "admin",
+   "capability": "orders.view",
+   "body": [],
+   "query": [],
+   "source": "api/controllers/ManualDispatchController.php"
   },
   "admin_docs_create_text": {
    "auth": "admin",
@@ -14590,6 +14694,15 @@
    "body": [],
    "query": [],
    "source": "api/controllers/RideController.php"
+  },
+  "admin_take_back_order": {
+   "auth": "admin",
+   "capability": "orders.manage",
+   "body": [
+    "order_id"
+   ],
+   "query": [],
+   "source": "api/controllers/ManualDispatchController.php"
   },
   "admin_toggle_feature": {
    "auth": "admin",
