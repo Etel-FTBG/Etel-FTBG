@@ -248,6 +248,13 @@ case 'courier_get_available_orders': {
 
     require_once __DIR__ . '/../lib/courier_stale.php';
     $old_jobs = etel_job_age_filter($pdo);   // hides jobs nobody took for hours (see lib/courier_stale.php)
+    // Package jobs show only to couriers whose vehicle is the one the customer chose (api/lib/package_orders.php).
+    require_once __DIR__ . '/../lib/package_orders.php';
+    etel_package_ensure_schema($pdo);
+    $vc = $pdo->prepare('SELECT vehicle_type FROM couriers WHERE id = ?'); $vc->execute(array($courier['id']));
+    $my_class = etel_vehicle_class_of($vc->fetchColumn());
+    $pkg_filter = " AND (o.order_kind <> 'package' OR o.vehicle_class = ?)";
+    $pkg_cols = ', o.order_kind, o.vehicle_class, o.pickup_address, o.pkg_size, o.pkg_weight_kg, o.pkg_desc, o.distance_km';
 
     // Ensure order_assignments exists and has needed columns
     try {
@@ -272,17 +279,17 @@ case 'courier_get_available_orders': {
             SELECT o.id, o.order_code, o.from_zone, o.to_zone, o.package_type, o.delivery_tier,
                    o.recipient_name, o.recipient_phone, o.delivery_photo_url, o.fare_total, o.delivery_fee, o.status, o.placed_at,
                    o.payment_method,
-                   oa.service_giver_id, oa.status AS assignment_status
+                   oa.service_giver_id, oa.status AS assignment_status$pkg_cols
             FROM orders o
             JOIN order_assignments oa ON o.id = oa.order_id
             WHERE oa.status IN ('pending','preparing','assigned','accepted')
               AND (o.courier_id IS NULL OR o.courier_id = 0)
               AND o.status NOT IN ('cancelled','delivered')
               AND NOT (o.payment_method = 'chapa' AND o.payment_status <> 'paid')
-              $old_jobs
+              $old_jobs$pkg_filter
             ORDER BY o.placed_at ASC LIMIT 50
         ");
-        $s->execute();
+        $s->execute(array($my_class));
         $orders = $s->fetchAll();
     } catch (Exception $e) {
         // Fallback: show all unassigned pending orders without the join
@@ -291,15 +298,15 @@ case 'courier_get_available_orders': {
                 SELECT o.id, o.order_code, o.from_zone, o.to_zone, o.package_type, o.delivery_tier,
                        o.recipient_name, o.recipient_phone, o.delivery_photo_url, o.fare_total, o.delivery_fee, o.status, o.placed_at,
                        o.payment_method,
-                       NULL AS service_giver_id, 'pending' AS assignment_status
+                       NULL AS service_giver_id, 'pending' AS assignment_status$pkg_cols
                 FROM orders o
                 WHERE (o.courier_id IS NULL OR o.courier_id = 0)
                   AND o.status IN ('pending','assigned')
                   AND NOT (o.payment_method = 'chapa' AND o.payment_status <> 'paid')
-                  $old_jobs
+                  $old_jobs$pkg_filter
                 ORDER BY o.placed_at ASC LIMIT 50
             ");
-            $s->execute();
+            $s->execute(array($my_class));
             $orders = $s->fetchAll();
         } catch (Exception $e2) { fail_ex($e2, 'Query failed', 500); }
     }
@@ -332,6 +339,13 @@ case 'courier_accept_order': {
     if ($order['courier_id']) fail('Order already assigned to another courier', 409);
     require_once __DIR__ . '/../lib/order_dispatch.php';
     if (in_array($order['status'], array('cancelled', 'delivered'), true) || etel_order_awaiting_chapa($pdo, $order_id)) fail('This order is not available', 409);
+    // A package goes only to a courier with the vehicle the customer chose.
+    require_once __DIR__ . '/../lib/package_orders.php';
+    etel_package_ensure_schema($pdo);
+    $pk = $pdo->prepare('SELECT o.order_kind, o.vehicle_class, c.vehicle_type FROM orders o JOIN couriers c ON c.id = ? WHERE o.id = ?');
+    $pk->execute(array($courier['id'], $order_id));
+    $pkr = $pk->fetch();
+    if ($pkr && $pkr['order_kind'] === 'package' && etel_vehicle_class_of($pkr['vehicle_type']) !== $pkr['vehicle_class']) fail('This package needs a different vehicle.', 403);
     
     // Assign courier to order
     try {
@@ -813,6 +827,8 @@ case 'track_order': {
     $order_id   = isset($_GET['order_id'])   ? intval($_GET['order_id'])   : (isset($body['order_id'])   ? intval($body['order_id'])   : 0);
     $order_code = isset($_GET['order_code']) ? trim($_GET['order_code'])   : (isset($body['order_code']) ? trim($body['order_code'])   : '');
 
+    require_once __DIR__ . '/../lib/package_orders.php';
+    etel_package_ensure_schema($pdo);
     $where  = 'WHERE (o.customer_id=? OR o.recipient_phone=?)';
     $params = array($u['id'], isset($u['phone']) ? $u['phone'] : '');
 
@@ -828,6 +844,7 @@ case 'track_order': {
                 o.placed_at, o.delivered_at, o.notes,
                 o.recipient_name, o.recipient_phone, o.recipient_address, o.delivery_photo_url,
                 o.delivery_lat, o.delivery_lng,
+                o.order_kind, o.vehicle_class, o.pickup_address, o.pkg_size, o.pkg_weight_kg, o.pkg_desc, o.distance_km, o.sender_name, o.pickup_pin, o.delivery_pin,
                 oa.status as assignment_status, oa.accepted_at, oa.pickup_qr_scanned,
                 sg.business_name as service_giver_name, sg.zone as sg_zone,
                 u_sg.phone as sg_phone,
@@ -851,8 +868,6 @@ case 'track_order': {
 
     // Build tracking timeline
     $statusOrder = array('pending', 'assigned', 'preparing', 'accepted', 'picked_up', 'in_transit', 'delivered');
-    $currentIdx  = array_search($order['status'], $statusOrder);
-    $timeline = array();
     $labels = array(
         'pending'    => 'Order placed',
         'assigned'   => 'Assigned to service giver',
@@ -862,6 +877,13 @@ case 'track_order': {
         'in_transit' => 'On the way',
         'delivered'  => 'Delivered',
     );
+    $is_package = (isset($order['order_kind']) && $order['order_kind'] === 'package');
+    if ($is_package) {   // no shop steps for a package
+        $statusOrder = array('pending', 'assigned', 'picked_up', 'in_transit', 'delivered');
+        $labels = array('pending' => 'Package booked', 'assigned' => 'Courier on the way to pick it up', 'picked_up' => 'Package picked up', 'in_transit' => 'On the way to the recipient', 'delivered' => 'Delivered');
+    }
+    $currentIdx  = array_search($order['status'], $statusOrder);
+    $timeline = array();
     foreach ($statusOrder as $idx => $st) {
         $timeline[] = array(
             'status'    => $st,
@@ -876,9 +898,11 @@ case 'track_order': {
     // can the customer still cancel it themselves, and which reasons to offer (api/lib/order_cancel.php)
     try {
         require_once __DIR__ . '/../lib/order_cancel.php';
-        $order['can_cancel'] = ((int) $order['_cid'] === (int) $u['id']) && etel_cancel_rule('customer', $order['status'], isset($order['assignment_status']) ? $order['assignment_status'] : null) === '';
+        $order['can_cancel'] = ((int) $order['_cid'] === (int) $u['id']) && etel_cancel_rule('customer', $order['status'], isset($order['assignment_status']) ? $order['assignment_status'] : null, $is_package ? 'package' : 'shop') === '';
         $order['cancel_reasons'] = etel_cancel_reasons('customer');
     } catch (Exception $ce) {} catch (Throwable $ce) {}
+    // The pins are for the sender only (the courier asks the sender for the pickup pin; the recipient gives the delivery pin).
+    if ((int) $order['_cid'] !== (int) $u['id'] || !$is_package) { unset($order['pickup_pin'], $order['delivery_pin']); }
     unset($order['_cid']);   // internal: used above to decide can_cancel, not sent to the app
     ok(array('order' => $order, 'timeline' => $timeline));
     break;

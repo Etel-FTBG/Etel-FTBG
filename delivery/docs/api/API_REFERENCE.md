@@ -1,14 +1,14 @@
 # ETEL Delivery & Ride API reference
 
-Generated from the source by `tools/gen_api_docs.py` (422 actions). Machine-readable: `openapi.json`.
+Generated from the source by `tools/gen_api_docs.py` (427 actions). Machine-readable: `openapi.json`.
 
 **Call:** `POST /delivery/api/boot.php` with JSON `{"action": "<name>", ...fields}`; header `Authorization: Bearer <token>` for everything except the *public* actions.
 **Reply:** `{success, data, message, v}`. **Login:** `login` / `etelid_login` (apps) or `admin_etelid_login` (admin; add `totp_code` when the reply says `requires_2fa`).
 
 | Who can call | Actions |
 |---|---|
-| admin | 196 |
-| any signed-in user | 179 |
+| admin | 198 |
+| any signed-in user | 182 |
 | courier | 16 |
 | public | 9 |
 | public (this call signs you in) | 6 |
@@ -330,6 +330,16 @@ Generated from the source by `tools/gen_api_docs.py` (422 actions). Machine-read
 | `sg_pending_confirmations` | any signed-in user | - | - |
 | `submit_order_issue` | any signed-in user | `category`, `details`, `order_id` | - |
 | `track_order` | any signed-in user | `order_code`, `order_id` | `order_code`, `order_id` |
+
+## Package
+
+| Action | Auth | Fields | Query |
+|---|---|---|---|
+| `admin_package_rates_get` | admin · orders.view | - | - |
+| `admin_package_rates_save` | admin · orders.manage | `vehicle_class` | - |
+| `customer_package_create` | any signed-in user | `_allow_chapa` | - |
+| `customer_package_options` | any signed-in user | - | - |
+| `customer_package_quote` | any signed-in user | `drop`, `pickup` | - |
 
 ## Photo
 

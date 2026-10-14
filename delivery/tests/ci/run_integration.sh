@@ -31,6 +31,7 @@ run python3 tests/ci/check_reserved_columns.py
 run python3 tests/ci/check_xss_sinks.py
 run python3 tests/security_regression_smoke.py
 run python3 tests/authz_matrix_smoke.py
+run python3 tests/package_smoke.py
 run python3 tests/business_logic_smoke.py
 run python3 tests/open_meter_smoke.py
 run python3 tests/week1_hardening_smoke.py
@@ -46,6 +47,7 @@ run php tests/shop_hours_test.php
 run php tests/money_ledger_test.php
 run php tests/manual_dispatch_test.php
 run php tests/order_cancel_test.php
+run php tests/package_orders_test.php
 run php tests/health_backup_test.php
 run php tests/image_orient_test.php
 run php tests/etelid_role_verdict_test.php

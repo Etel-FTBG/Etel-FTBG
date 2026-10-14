@@ -38,7 +38,8 @@ function etel_cancel_ensure_columns($pdo) {
 
 // Pure. Returns '' when $role may cancel an order in this state, otherwise the message to show.
 // $order_status = orders.status; $assign_status = order_assignments.status ('' / null count as 'pending').
-function etel_cancel_rule($role, $order_status, $assign_status) {
+// $kind = 'package' for a parcel sent without a shop: there is no shop to start on it, so the customer may cancel until the courier has it.
+function etel_cancel_rule($role, $order_status, $assign_status, $kind = 'shop') {
     if ($order_status === 'cancelled') return 'This order is already cancelled.';
     if ($order_status === 'delivered') return 'This order was already delivered.';
     $assign_status = ($assign_status === null || $assign_status === '') ? 'pending' : $assign_status;
@@ -46,6 +47,7 @@ function etel_cancel_rule($role, $order_status, $assign_status) {
     if ($role === 'admin') return '';
     if ($onTheWay) return 'This order is already on its way and cannot be cancelled here. Please contact support.';
     if ($role === 'customer') {
+        if ($kind === 'package') return '';
         if ($assign_status !== 'pending') return 'The shop has already started on your order, so it cannot be cancelled here. Please contact support.';
         return '';
     }
@@ -82,7 +84,9 @@ function etel_cancel_order($pdo, $order_id, $role, $actor_id, $reason, $note, $s
     etel_cancel_ensure_columns($pdo);
     try { require_once __DIR__ . '/manual_dispatch.php'; etel_dispatch_ensure_schema($pdo); } catch (Exception $e) {} catch (Throwable $e) {}
     try {
-        $s = $pdo->prepare("SELECT o.id, o.order_code, o.status, o.customer_id, o.courier_id, o.fare_total,
+        require_once __DIR__ . '/package_orders.php';
+        etel_package_ensure_schema($pdo);
+        $s = $pdo->prepare("SELECT o.id, o.order_code, o.status, o.customer_id, o.courier_id, o.fare_total, o.order_kind,
                 (SELECT oa.status FROM order_assignments oa WHERE oa.order_id = o.id ORDER BY oa.id DESC LIMIT 1) AS assign_status,
                 (SELECT oa.service_giver_id FROM order_assignments oa WHERE oa.order_id = o.id ORDER BY oa.id DESC LIMIT 1) AS assign_shop
             FROM orders o WHERE o.id = ? LIMIT 1");
@@ -91,7 +95,7 @@ function etel_cancel_order($pdo, $order_id, $role, $actor_id, $reason, $note, $s
         if (!$o) return array('ok' => false, 'message' => 'Order not found.');
         if ($role === 'customer' && intval($o['customer_id']) !== intval($actor_id)) return array('ok' => false, 'message' => 'Order not found.');
         if ($role === 'shop' && (intval($shop_id) <= 0 || intval($o['assign_shop']) !== intval($shop_id))) return array('ok' => false, 'message' => 'Order not found.');
-        $msg = etel_cancel_rule($role, $o['status'], $o['assign_status']);
+        $msg = etel_cancel_rule($role, $o['status'], $o['assign_status'], $o['order_kind'] === 'package' ? 'package' : 'shop');
         if ($msg !== '') return array('ok' => false, 'message' => $msg);
 
         $prevCourier = $o['courier_id'] ? intval($o['courier_id']) : 0;

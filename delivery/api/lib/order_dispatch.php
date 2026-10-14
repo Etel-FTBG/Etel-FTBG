@@ -44,7 +44,10 @@ function etel_dispatch_order($pdo, $order_id, $exclude = array()) {
     $exclude = array_values(array_filter(array_map('intval', (array) $exclude)));
     $excludeSql = $exclude ? (' AND c.id NOT IN (' . implode(',', $exclude) . ')') : '';
     try {
-        $q = $pdo->prepare("SELECT o.order_code, o.from_zone, o.to_zone, o.fare_total, o.status, o.courier_id, oa.service_giver_id
+        require_once __DIR__ . '/package_orders.php';
+        etel_package_ensure_schema($pdo);   // makes sure the package columns exist before they are read below
+        $q = $pdo->prepare("SELECT o.order_code, o.from_zone, o.to_zone, o.fare_total, o.status, o.courier_id, oa.service_giver_id,
+                                   o.order_kind, o.vehicle_class, o.pickup_lat, o.pickup_lng
                             FROM orders o LEFT JOIN order_assignments oa ON oa.order_id = o.id WHERE o.id = ? LIMIT 1");
         $q->execute(array($order_id));
         $o = $q->fetch(PDO::FETCH_ASSOC);
@@ -62,22 +65,18 @@ function etel_dispatch_order($pdo, $order_id, $exclude = array()) {
     // hardcoded zone-centroid table below - a real pin is more
     // accurate than a per-zone approximation. The zone table only
     // kicks in when service_givers.lat/lng genuinely isn't set.
-    $zone_coords = array(
-        'Stadium'              => array(7.0606, 38.4775),
-        'Mehal Ketema'         => array(7.0559, 38.4762),
-        'Tabor'                => array(7.0400, 38.4900),
-        'Liqe Mender'          => array(7.0700, 38.4800),
-        'Referral'             => array(7.0490, 38.4680),
-        'Addis Ketema'         => array(7.0450, 38.4750),
-        'University'           => array(7.0620, 38.5110),
-        'Misrak'               => array(7.0800, 38.4850),
-        'Haik Dar'             => array(7.0350, 38.5000),
-        'Tulu Dimtu'           => array(7.1000, 38.5000),
-        'Hawela Teklehaimanot' => array(7.0650, 38.4900),
-        'Dore Bafana'          => array(7.1200, 38.4700),
-    );
+    require_once __DIR__ . '/zones.php';
+    $zone_coords = etel_zone_centroids();
     $pickup_coord = isset($zone_coords[$from_zone]) ? $zone_coords[$from_zone] : array(7.0559, 38.4762);
+    // A package is picked up where the sender is, and only a courier with the vehicle the customer chose may get it.
+    $is_package = ($o['order_kind'] === 'package');
+    $vehSql = ''; $vehParams = array();
+    if ($is_package) {
+        if ($o['pickup_lat'] && $o['pickup_lng']) $pickup_coord = array((float)$o['pickup_lat'], (float)$o['pickup_lng']);
+        list($vehSql, $vehParams) = etel_vehicle_sql($o['vehicle_class'], 'c');
+    }
     try {
+        if ($is_package) throw new Exception('no shop');
         $sgCoordStmt = $pdo->prepare('SELECT lat, lng FROM service_givers WHERE id=? AND lat IS NOT NULL AND lng IS NOT NULL');
         $sgCoordStmt->execute(array($service_giver_id));
         $sgCoordRow = $sgCoordStmt->fetch();
@@ -104,13 +103,14 @@ function etel_dispatch_order($pdo, $order_id, $exclude = array()) {
             WHERE c.status = 'online' AND c.active = 1
               AND $hexWhere
               $excludeSql
+              $vehSql
               AND c.id NOT IN (
                 SELECT courier_id FROM orders
                 WHERE status IN ('assigned','picked_up','in_transit')
                 AND courier_id IS NOT NULL
               )
         ");
-        $cs->execute($hexParams);
+        $cs->execute(array_merge($hexParams, $vehParams));
         $candidates = $cs->fetchAll();
         $best_id = null; $best_dist = PHP_INT_MAX;
         foreach ($candidates as $c) {
@@ -136,7 +136,7 @@ function etel_dispatch_order($pdo, $order_id, $exclude = array()) {
             $csFallback = $pdo->prepare("
                 SELECT c.id, c.user_id, c.last_lat, c.last_lng, c.zone
                 FROM couriers c
-                WHERE c.status = 'online' AND c.active = 1 $excludeSql
+                WHERE c.status = 'online' AND c.active = 1 $excludeSql $vehSql
                   AND c.id NOT IN (
                     SELECT courier_id FROM orders
                     WHERE status IN ('assigned','picked_up','in_transit')
@@ -145,7 +145,7 @@ function etel_dispatch_order($pdo, $order_id, $exclude = array()) {
                 ORDER BY (c.zone = ?) DESC, c.last_seen DESC
                 LIMIT 1
             ");
-            $csFallback->execute(array($from_zone));
+            $csFallback->execute(array_merge($vehParams, array($from_zone)));
             $best_id = $csFallback->fetch();
         }
         if ($best_id) {
@@ -169,8 +169,8 @@ function etel_dispatch_order($pdo, $order_id, $exclude = array()) {
             // Notify courier: in-app row first, then the real push. They are
             // independent on purpose - a failure of the in-app table must not
             // swallow the push that wakes a backgrounded courier app.
-            $notifTitle = 'New Delivery Job!';
-            $notifBody  = 'Order ' . $order_code . ' from ' . $from_zone . ' to ' . $to_zone . '  ETB ' . number_format($fare_total, 2);
+            $notifTitle = $is_package ? 'New Package Job!' : 'New Delivery Job!';
+            $notifBody  = ($is_package ? 'Package ' : 'Order ') . $order_code . ' from ' . $from_zone . ' to ' . $to_zone . '  ETB ' . number_format($fare_total, 2);
             try {
                 require_once __DIR__ . '/../push.php';
                 etel_ensure_notifications_table($pdo);
