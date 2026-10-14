@@ -1572,3 +1572,10 @@ body.dark-theme .trk-cancel { border-color: #F87171; color: #F87171; }
 .trk-cancel-go { width: 100%; min-height: 46px; margin-bottom: 8px; border: 0; border-radius: 12px; background: #B42318; color: #fff; font-size: 14px; font-weight: 700; cursor: pointer; }
 .trk-cancel-go:disabled { opacity: .6; cursor: default; }
 .trk-cancel-keep { width: 100%; min-height: 44px; border-radius: 12px; border: 1.5px solid rgba(212,175,55,.5); background: transparent; color: var(--text); font-size: 14px; font-weight: 700; cursor: pointer; }
+.sp-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: var(--text); opacity: .75; margin: 0 0 6px; }
+.sp-row { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 6px; margin-bottom: 8px; }
+.sp-chip { flex: 0 0 auto; min-height: 40px; max-width: 70vw; padding: 8px 14px; border-radius: 20px; border: 1.5px solid rgba(212,175,55,.5); background: transparent; color: var(--text); font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sp-chip.on { background: rgba(212,175,55,.22); border-color: #946A00; }
+body.dark-theme .sp-chip.on { border-color: #F0CA58; }
+.sp-save { min-height: 40px; margin: 0 0 8px; padding: 6px 2px; background: none; border: 0; color: #946A00; font-size: 13px; font-weight: 700; cursor: pointer; }
+body.dark-theme .sp-save { color: #F0CA58; }
