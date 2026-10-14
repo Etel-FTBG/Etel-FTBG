@@ -125,10 +125,55 @@ sql("UPDATE pricing_rules SET rule_value='5' WHERE rule_key='courier_job_max_age
 r = php("jobs")
 check("a too-small value is raised to 30 minutes", r["max_age"] == 30 and "STALE-J1" in r["visible"] and "STALE-J2" not in r["visible"])
 
+# 6) accepted but never picked up: taken back only when the courier has also gone quiet
+sql("DELETE FROM pricing_rules WHERE rule_key IN ('courier_stale_minutes','courier_pickup_max_minutes')")   # defaults: stale 25 min, pickup 60 min
+sql("UPDATE couriers SET status='busy', last_seen=NOW() WHERE id=%s" % cid["STCA"])
+sql("UPDATE couriers SET status='online', last_seen=NOW() WHERE id IN (%s, %s)" % (cid["STCB"], cid["STCC"]))
+sql("DELETE FROM order_courier_offers WHERE order_id IN (SELECT id FROM orders WHERE order_code LIKE 'STALE-%')")
+
+
+def accepted_order(code, accepted_min_ago, courier_seen_min_ago, status="assigned"):
+    sql("UPDATE couriers SET last_seen = NOW() - INTERVAL %d MINUTE WHERE id=%s" % (courier_seen_min_ago, cid["STCA"]))
+    sql("INSERT INTO orders (order_code, customer_id, courier_id, from_zone, to_zone, status, placed_at, courier_assigned_at, courier_accepted_at) "
+        "VALUES ('%s', %s, %s, 'Stadium', 'Tabor', '%s', NOW() - INTERVAL %d MINUTE, NOW() - INTERVAL %d MINUTE, NOW() - INTERVAL %d MINUTE)"
+        % (code, uid[0], cid["STCA"], status, accepted_min_ago + 5, accepted_min_ago + 4, accepted_min_ago))
+    return rows("SELECT id FROM orders WHERE order_code='%s'" % code)[0][0]
+
+
+# a) accepted 90 min ago, courier silent for 40 min -> taken back, given to another courier (never A)
+p1 = accepted_order("STALE-P1", 90, 40)
+php("sweep")
+st, cur = order(p1)
+check("accepted, not picked up, courier silent: taken back and given to another courier", st == "assigned" and cur not in ("0", str(cid["STCA"])))
+check("the order no longer counts as accepted by the first courier", rows("SELECT courier_accepted_at IS NULL FROM orders WHERE id=%s" % p1)[0][0] == "1")
+check("the silent courier got a 'stale' record (never offered the same order twice)", rows("SELECT COUNT(*) FROM order_courier_offers WHERE order_id=%s AND courier_id=%s AND response='stale'" % (p1, cid["STCA"]))[0][0] == "1")
+
+# b) accepted 90 min ago but the courier was seen 2 min ago (waiting at the shop) -> left alone
+sql("UPDATE couriers SET status='busy' WHERE id=%s" % cid["STCA"])
+p2 = accepted_order("STALE-P2", 90, 2)
+php("sweep")
+check("accepted long ago but the courier is active: left alone", order(p2) == ("assigned", str(cid["STCA"])))
+
+# c) silent courier but accepted only 20 minutes ago -> too early
+p3 = accepted_order("STALE-P3", 20, 40)
+php("sweep")
+check("silent courier but accepted only 20 min ago: left alone", order(p3) == ("assigned", str(cid["STCA"])))
+
+# d) already picked up -> never touched
+p4 = accepted_order("STALE-P4", 120, 60, status="picked_up")
+php("sweep")
+check("a picked-up order is never taken back", order(p4) == ("picked_up", str(cid["STCA"])))
+
+# e) switched off (0)
+sql("INSERT INTO pricing_rules (rule_key, rule_value, description) VALUES ('courier_pickup_max_minutes', 0, 'test') ON DUPLICATE KEY UPDATE rule_value=0")
+p5 = accepted_order("STALE-P5", 200, 90)
+php("sweep")
+check("setting 0 turns this rule off", order(p5) == ("assigned", str(cid["STCA"])))
+
 # cleanup
 sql("DELETE FROM order_courier_offers WHERE order_id IN (SELECT id FROM orders WHERE order_code LIKE 'STALE-%'); "
     "DELETE FROM orders WHERE order_code LIKE 'STALE-%'; DELETE FROM couriers WHERE courier_code LIKE 'STC%'; "
-    "DELETE FROM users WHERE phone LIKE '+2519990000%'; DELETE FROM pricing_rules WHERE rule_key IN ('courier_stale_minutes','courier_job_max_age_minutes')")
+    "DELETE FROM users WHERE phone LIKE '+2519990000%'; DELETE FROM pricing_rules WHERE rule_key IN ('courier_stale_minutes','courier_job_max_age_minutes','courier_pickup_max_minutes')")
 
 print("FAILED: %d" % len(fails) if fails else "ALL PASSED")
 sys.exit(1 if fails else 0)
