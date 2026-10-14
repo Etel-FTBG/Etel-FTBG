@@ -9,12 +9,12 @@ Cost: free. Time: about 15 minutes. You need only a browser; nothing is installe
 
 | Answer | Meaning |
 |---|---|
-| HTTP 200 `{"status":"ok"}` | Database answers, disk has room, background jobs are running |
+| HTTP 200 `{"status":"ok"}` | Database answers, disk has room, background jobs are running, the newest database backup is under 36 hours old |
 | HTTP 503 `{"status":"down"}` | The database does not answer (the app cannot work) |
-| HTTP 503 `{"status":"degraded"}` | The app works but something needs attention: disk almost full (under 3% or 100 MB) or the ride-watch job has not run for 30 minutes |
+| HTTP 503 `{"status":"degraded"}` | The app works but something needs attention: disk almost full (under 3% or 100 MB), the ride-watch job has not run for 30 minutes, or the newest database backup is older than 36 hours |
 
 It shows no private data and changes nothing, so it is safe to leave public.
-`disk_free_pct` and `cron_age_min` in the answer tell you which part is the problem.
+`disk_free_pct`, `cron_age_min` and `backup_age_h` in the answer tell you which part is the problem.
 
 ## 2. Set up the free monitor (UptimeRobot)
 
@@ -47,6 +47,14 @@ cPanel, Cron Jobs, every 5 minutes:
 
 Replace `ACCOUNT` with your cPanel account name (the same account folder you upload to).
 
+The daily backup job (once a day, for example 02:30) uses the same cron screen. `health.php` goes red if it stops for more than 36 hours:
+
+```
+wget -q -O /dev/null "https://ethelmarket.com/delivery/api/cron_backup_db.php?key=YOUR_CRON_KEY"
+```
+
+Use the cron key from `api/.env` (`CRON_DISPATCH_KEY`). Until the first backup exists, `health.php` shows `"backup":"unknown"` and stays green.
+
 ## 4. Test it once
 
 1. Open `https://ethelmarket.com/delivery/api/health.php` in your phone browser. You should see `"status":"ok"`.
@@ -60,5 +68,6 @@ Replace `ACCOUNT` with your cPanel account name (the same account folder you upl
 | `down` on health.php | cPanel, MySQL Databases: is the database up? Is the hosting account suspended or over its limits? |
 | `degraded`, `disk: low` | cPanel, Disk Usage: delete old backups and logs under `api/` and `public_html` |
 | `degraded`, `cron: stale` | cPanel, Cron Jobs: is the line above still there and enabled? |
+| `degraded`, `backup: stale` | cPanel, Cron Jobs: is the daily backup line (`cron_backup_db.php`) still there? Run it once by hand, then check `?action=verify`. Also download the newest backup to your own computer now and then (Admin > System health > backup download). |
 | Only an app page is down | Reload it yourself; if the page is blank, check the latest deploy (restore the previous files) |
 | Everything down | The server or domain: check the hosting provider status page and domain expiry |

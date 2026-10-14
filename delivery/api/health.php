@@ -4,7 +4,7 @@
  *
  *   GET https://ethelmarket.com/delivery/api/health.php
  *
- * Answers HTTP 200 + {"status":"ok"} only when the database answers and the disk has room;
+ * Answers HTTP 200 + {"status":"ok"} only when the database answers, the disk has room and the daily backup is under 36 hours old;
  * HTTP 503 + {"status":"down"|"degraded"} otherwise, so a monitor needs no keyword set-up:
  * "any answer other than 200" = alert. It reveals nothing private (no versions, hosts, counts,
  * names) and writes nothing. The background-job age is reported as a number of minutes only.
@@ -90,6 +90,38 @@ if ($pdo) {
     } catch (Exception $e) {
         $out['cron'] = 'unknown';
     }
+}
+
+// 4. Backups: the daily backup cron writes a small record next to each dump. If the newest one is older than
+// 36 hours the backup job has stopped, which nobody would otherwise notice until the day they need a restore.
+// "No backup found" stays informational (like the job heartbeat above) so a fresh install is not red.
+// Only an age in hours is shown, never a file name or folder.
+$bkDirs = array();
+if (hc_env('BACKUP_DIR', '') !== '') $bkDirs[] = hc_env('BACKUP_DIR', '');
+$bkDirs[] = dirname(dirname(dirname(__DIR__))) . '/etel_backups';
+$bkDirs[] = __DIR__ . '/_backups';
+$bkNewest = 0;
+foreach ($bkDirs as $d) {
+    if (!is_dir($d)) continue;
+    foreach ((array) glob($d . '/etel-*.json') as $f) {
+        $m = @json_decode((string) @file_get_contents($f), true);
+        if (!is_array($m) || empty($m['created']) || empty($m['file'])) continue;
+        if (!is_file($d . '/' . basename($m['file']))) continue; // a record without its dump is not a backup
+        $t = strtotime($m['created']);
+        if ($t && $t > $bkNewest) $bkNewest = $t;
+    }
+}
+if ($bkNewest > 0) {
+    $ageH = max(0, (time() - $bkNewest) / 3600);
+    $out['backup_age_h'] = round($ageH, 1);
+    if ($ageH > 36) {
+        $out['backup'] = 'stale';
+        if ($out['status'] === 'ok') $out['status'] = 'degraded';
+    } else {
+        $out['backup'] = 'ok';
+    }
+} else {
+    $out['backup'] = 'unknown';
 }
 
 $out['ms'] = intval((microtime(true) - $t0) * 1000);
