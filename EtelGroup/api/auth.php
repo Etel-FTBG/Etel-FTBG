@@ -188,7 +188,7 @@ function eg_company_input(array $body): array {
 //   ETELID_API_BASE=https://ethelmarket.com/EtelId/wp-json/etelid/v1
 //   ETELID_SERVICE_KEY=<same value configured in EtelID's wp-config.php
 //                        as ETELID_SERVICE_KEY>
-//   ETELGROUP_COMPANY_SLUG=etelgroup   (must match the company_slug this
+//   ETELGROUP_COMPANY_SLUG=etel-group  (must match the company_slug this
 //                        admin is linked to in etelid_companies, with
 //                        role_at admin/owner/creator)
 // ============================================================
@@ -254,7 +254,13 @@ function egid_is_company_admin(string $memberPhone): bool {
     $slug = getenv('ETELGROUP_COMPANY_SLUG') ?: '';
     if ($slug === '') throw new Exception('ETELGROUP_COMPANY_SLUG is not configured in .env');
     $res = egid_post('/service/company_admin', array('company_slug' => $slug));
-    if ($res['status'] !== 200 || empty($res['body']['ok'])) return false;
+    if ($res['status'] === 404) {
+        // EtelID has no admin/owner/creator for this slug: almost always a wrong ETELGROUP_COMPANY_SLUG in .env
+        throw new Exception('EtelID has no admin linked for company slug "' . $slug . '". Check ETELGROUP_COMPANY_SLUG in .env (EtelID uses etel-group).');
+    }
+    if ($res['status'] !== 200 || empty($res['body']['ok'])) {
+        throw new Exception('Could not confirm the Etel Group admin with EtelID (HTTP ' . $res['status'] . '). Check the EtelID service key and its company_admin scope, then try again.');
+    }
     $adminPhone = (string)($res['body']['phone'] ?? '');
     // Compare last 9 digits so formatting differences (+251/0/dashes)
     // don't cause false negatives.
