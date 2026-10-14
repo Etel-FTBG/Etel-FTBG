@@ -3,7 +3,7 @@
  "info": {
   "title": "ETEL Delivery & Ride API",
   "version": "generated",
-  "description": "Every action is a JSON POST to /api/boot.php with an `action` field (a few read-only actions also accept GET query parameters). Responses are JSON: {success: true|false, data: {...}, message: '...', v: '<app version>'}. Send the session token as `Authorization: Bearer <token>`; get one from `login`, `etelid_login` (Delivery/Ride apps) or `admin_etelid_login` (admin). Admin accounts with two-step sign-in answer {requires_2fa: true}: repeat the same login request with `totp_code`. Errors use HTTP 400/401/403/404/409/429/500/503 with the same JSON shape. Throttled actions answer 429. This file is generated from the source by tools/gen_api_docs.py: 409 actions. Parameter names come from the handlers; types and limits are in the handler code."
+  "description": "Every action is a JSON POST to /api/boot.php with an `action` field (a few read-only actions also accept GET query parameters). Responses are JSON: {success: true|false, data: {...}, message: '...', v: '<app version>'}. Send the session token as `Authorization: Bearer <token>`; get one from `login`, `etelid_login` (Delivery/Ride apps) or `admin_etelid_login` (admin). Admin accounts with two-step sign-in answer {requires_2fa: true}: repeat the same login request with `totp_code`. Errors use HTTP 400/401/403/404/409/429/500/503 with the same JSON shape. Throttled actions answer 429. This file is generated from the source by tools/gen_api_docs.py: 410 actions. Parameter names come from the handlers; types and limits are in the handler code."
  },
  "servers": [
   {
@@ -321,6 +321,9 @@
          },
          {
           "$ref": "#/components/schemas/admin_purge_cache"
+         },
+         {
+          "$ref": "#/components/schemas/admin_ratings_report"
          },
          {
           "$ref": "#/components/schemas/admin_reject_compliance_document"
@@ -1963,6 +1966,13 @@
           "action": "admin_purge_cache"
          }
         },
+        "admin_ratings_report": {
+         "summary": "admin_ratings_report (admin)",
+         "value": {
+          "action": "admin_ratings_report",
+          "days": "<days>"
+         }
+        },
         "admin_reject_compliance_document": {
          "summary": "admin_reject_compliance_document (admin)",
          "value": {
@@ -2147,7 +2157,9 @@
          "summary": "admin_save_stale_assign (admin)",
          "value": {
           "action": "admin_save_stale_assign",
-          "minutes": "<minutes>"
+          "job_max_age": "<job_max_age>",
+          "minutes": "<minutes>",
+          "pickup_minutes": "<pickup_minutes>"
          }
         },
         "admin_search_canary_candidates": {
@@ -6335,6 +6347,25 @@
     },
     "description": "Auth: admin. Source: api/boot.php."
    },
+   "admin_ratings_report": {
+    "type": "object",
+    "title": "action: admin_ratings_report",
+    "required": [
+     "action"
+    ],
+    "properties": {
+     "action": {
+      "type": "string",
+      "enum": [
+       "admin_ratings_report"
+      ]
+     },
+     "days": {
+      "description": "request field (type not declared in code)"
+     }
+    },
+    "description": "Auth: admin (capability orders.view). Source: api/controllers/RatingsAdminController.php."
+   },
    "admin_reject_compliance_document": {
     "type": "object",
     "title": "action: admin_reject_compliance_document",
@@ -6857,7 +6888,13 @@
        "admin_save_stale_assign"
       ]
      },
+     "job_max_age": {
+      "description": "request field (type not declared in code)"
+     },
      "minutes": {
+      "description": "request field (type not declared in code)"
+     },
+     "pickup_minutes": {
       "description": "request field (type not declared in code)"
      }
     },
@@ -13298,11 +13335,7 @@
     "vehicle_type",
     "zone"
    ],
-   "query": [
-    "category",
-    "q",
-    "service_giver_id"
-   ],
+   "query": [],
    "source": "api/boot.php"
   },
   "admin_create_user": {
@@ -13959,6 +13992,17 @@
    "query": [],
    "source": "api/boot.php"
   },
+  "admin_ratings_report": {
+   "auth": "admin",
+   "capability": "orders.view",
+   "body": [
+    "days"
+   ],
+   "query": [
+    "days"
+   ],
+   "source": "api/controllers/RatingsAdminController.php"
+  },
   "admin_reject_compliance_document": {
    "auth": "admin",
    "capability": "users.manage",
@@ -14190,7 +14234,9 @@
    "auth": "admin",
    "capability": "orders.manage",
    "body": [
-    "minutes"
+    "job_max_age",
+    "minutes",
+    "pickup_minutes"
    ],
    "query": [],
    "source": "api/controllers/DispatchController.php"

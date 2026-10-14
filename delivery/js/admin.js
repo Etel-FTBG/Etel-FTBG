@@ -493,6 +493,7 @@
                     link('telebirr', at.pending_payments, 'Payments to confirm') +
                     link('orders', at.stuck_orders, 'Orders not picked up for 20+ min') +
                     link('orders', at.accepted_idle || 0, 'Accepted but not picked up for 30+ min') +
+                    link('ratings', at.low_ratings || 0, 'Low customer ratings (last 7 days)') +
                     link('orders', at.open_issues, 'Open order problems reported') + '</div>' +
                 '<div class="pp-box"><h4>🟢 Live right now</h4>' +
                     '<div class="pp-row"><span>Couriers online</span><span class="n">' + lv.couriers_online + ' / ' + lv.couriers_total + '</span></div>' +
