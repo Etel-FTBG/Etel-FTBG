@@ -49,6 +49,12 @@
   --danger:       #EF4444;
 
   /* ── RADII & EASING ── */
+  /* ── TYPE (one place to change fonts) ── */
+  --font-body:    system-ui, -apple-system, 'Segoe UI', Roboto, 'Noto Sans', 'Noto Sans Ethiopic', 'Nyala', sans-serif;
+  --font-display: 'Syne', system-ui, sans-serif;
+  --font-serif:   'Cormorant Garamond', Georgia, serif;
+  --red-solid:    #C81E1E;          /* white text on this passes 4.5:1 (the lighter --red does not) */
+
   --r:            18px;
   --r-sm:         12px;
   --r-xs:         8px;
@@ -62,7 +68,8 @@ body {
      display type below) so the customer app reads as the same product as
      ethelmarket.com instead of a different one. Matching Google Fonts
      <link> update needed in delivery/customer.html. */
-  font-family: 'Cormorant Garamond', serif;
+  font-family: var(--font-body);
+  font-variant-numeric: lining-nums;   /* prices and order codes were drawn with old-style figures (ET-1011 looked like ET-IOII) */
   background: var(--dark);
   color: var(--text);
   min-height: 100vh;
@@ -215,7 +222,7 @@ body {
 .search-icon { color: var(--text-muted); flex-shrink: 0; }
 .search-input {
   flex: 1; border: none; background: none; outline: none;
-  font-family: 'Cormorant Garamond', serif;
+  font-family: var(--font-body);
   font-size: 14px; color: var(--text);
   padding: 12px 0;
 }
@@ -243,7 +250,7 @@ body {
   font-size: 12px; font-weight: 600; color: var(--text-muted);
   cursor: pointer; white-space: nowrap;
   transition: all .2s var(--ease);
-  font-family: 'Cormorant Garamond', serif;
+  font-family: var(--font-body);
 }
 .filter-pill:hover { border-color: rgba(212,175,55,.45); color: var(--gold-light); }
 .filter-pill.active {
@@ -268,7 +275,7 @@ body {
   font-size: 13px; font-weight: 600; color: var(--text-muted);
   cursor: pointer; white-space: nowrap;
   transition: all .2s var(--ease);
-  font-family: 'Cormorant Garamond', serif;
+  font-family: var(--font-body);
 }
 .cat-chip span { font-size: 16px; }
 .cat-chip:hover { transform: translateY(-2px); border-color: rgba(212,175,55,.4); color: var(--text); }
@@ -413,7 +420,7 @@ body {
 .see-all-btn {
   font-size: 12px; font-weight: 700; color: var(--gold);
   background: none; border: 1px solid rgba(212,175,55,.2); cursor: pointer;
-  font-family: 'Cormorant Garamond', serif;
+  font-family: var(--font-body);
   padding: 5px 12px; border-radius: 20px;
   transition: all .2s;
   text-shadow: 0 0 8px rgba(212,175,55,.4);
@@ -563,7 +570,7 @@ body {
   flex: 1; display: flex; flex-direction: column;
   align-items: center; justify-content: center; gap: 4px;
   height: 100%; border: none; background: none; cursor: pointer;
-  font-family: 'Cormorant Garamond', serif;
+  font-family: var(--font-body);
   font-size: 10px; font-weight: 600; color: var(--text-dim);
   border-radius: 14px;
   transition: all .25s var(--ease);
@@ -657,7 +664,7 @@ body {
   background: rgba(239,68,68,.15); border: 1px solid rgba(239,68,68,.3);
   border-radius: 12px; font-size: 14px; font-weight: 600;
   color: #FCA5A5; cursor: pointer; margin-top: 16px;
-  font-family: 'Cormorant Garamond', serif;
+  font-family: var(--font-body);
   transition: all .2s;
 }
 .logout-btn:hover { background: rgba(239,68,68,.25); }
@@ -1544,3 +1551,16 @@ body:not(.dark-theme) .rate-card .rate-card-later { color: #555 !important; }
 body.dark-theme .trk-eta-paused { color: #F0CA58; }
 .sold-chip { display: inline-block; padding: 5px 10px; border-radius: 999px; font-size: 11px; font-weight: 800; background: rgba(0,0,0,.08); color: #6B5A00; border: 1px solid rgba(160,120,20,.4); }
 body.dark-theme .sold-chip { background: rgba(255,255,255,.08); color: #F0CA58; border-color: rgba(212,175,55,.4); }
+
+/* ── SHARED TYPE: big section headings keep the brand serif, everything else is the plain body font ── */
+.section-title { font-family: var(--font-serif); font-variant-numeric: lining-nums; }
+.offer-card-price, .restaurant-card-info, .trk-eta-main, .trk-title { font-variant-numeric: lining-nums tabular-nums; }
+/* The four service tiles must never be wider than their column (the plain body font is wider than the old serif). */
+.svc-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.svc-tile { min-width: 0; }
+.svc-label { max-width: 100%; overflow-wrap: anywhere; text-align: center; }
+@media (max-width: 340px) {
+  .svc-grid { gap: 6px; }
+  .svc-tile { padding-left: 2px; padding-right: 2px; }
+  .svc-label { font-size: 11px; letter-spacing: 0; }
+}
