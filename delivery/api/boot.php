@@ -176,7 +176,7 @@ function etel_purge_cache($tags = 'etel-html,etel-static') {
 }
 /* Write actions that should trigger a cache purge */
 define('ETEL_WRITE_ACTIONS', array(
-    'customer_create_order','courier_update_order_status','admin_update_order',
+    'customer_create_order','customer_package_create','admin_package_rates_save','courier_update_order_status','admin_update_order',
     'admin_create_user','admin_add_item','admin_update_item','admin_delete_item',
     'admin_toggle_item','admin_create_service_giver','admin_verify_service_giver',
     'admin_suspend_service_giver','sg_update_order_status','sg_complete_order',
@@ -607,6 +607,7 @@ $ETEL_DELIVERY_ONLY_ACTIONS = array(
     'admin_ratings_report',
     'admin_refunds_report','admin_refund_mark','admin_courier_cash_report','admin_cash_remit',
     'admin_dispatch_board','admin_assign_courier','admin_take_back_order','admin_cancel_order',
+    'admin_package_rates_get','admin_package_rates_save',
     'admin_get_service_givers','admin_get_service_givers_list','admin_get_service_giver','admin_get_service_giver_statistics',
     'admin_create_service_giver','admin_verify_service_giver','admin_suspend_service_giver','admin_assign_service_giver',
     'admin_get_all_items','admin_add_item','admin_update_item','admin_delete_item','admin_toggle_item',
@@ -630,6 +631,7 @@ if (in_array($action, $ETEL_DELIVERY_ONLY_ACTIONS, true)) {
 // Delivery order actions a Ride-scoped account (limited admin or audit test user) must not use.
 $ETEL_DELIVERY_CUSTOMER_ACTIONS = array(
     'customer_create_order','agent_place_order','agent_order_quote','agent_order_status','schedule_order',
+    'customer_package_options','customer_package_quote','customer_package_create',
     'cancel_scheduled_order','get_scheduled_orders','customer_reorder_items','customer_get_orders',
     'customer_get_order_issues','submit_order_issue','track_order','rate_order','get_order_ratings',
     'order_chat_get','order_chat_inbox','order_chat_send'
@@ -644,6 +646,7 @@ if (in_array($action, $ETEL_DELIVERY_CUSTOMER_ACTIONS, true)) {
 $ETEL_THROTTLED_ACTIONS = array(
     // action => array(max calls, window seconds)
     'customer_create_order' => array(20, 600), 'agent_place_order' => array(20, 600),
+    'customer_package_create' => array(20, 600), 'customer_package_quote' => array(60, 600),
     'customer_validate_promo' => array(30, 600), 'submit_order_issue' => array(10, 600),
     'order_chat_send' => array(60, 300), 'customer_reorder_items' => array(20, 600),
     'schedule_order' => array(20, 600), 'initiate_telebirr_payment' => array(15, 600),
@@ -1586,6 +1589,9 @@ switch ($action) {
         break;
     case 'admin_dispatch_board': case 'admin_assign_courier': case 'admin_take_back_order': case 'admin_cancel_order':
         require __DIR__ . '/controllers/ManualDispatchController.php';
+        break;
+    case 'customer_package_options': case 'customer_package_quote': case 'customer_package_create': case 'admin_package_rates_get': case 'admin_package_rates_save':
+        require __DIR__ . '/controllers/PackageController.php';
         break;
     case 'get_tip_options': case 'admin_get_courier_pay': case 'admin_save_courier_pay': case 'admin_preview_courier_pay': case 'admin_get_order_pay': case 'admin_set_order_pay':
         require __DIR__ . '/controllers/CourierPayController.php';

@@ -3,7 +3,7 @@
  "info": {
   "title": "ETEL Delivery & Ride API",
   "version": "generated",
-  "description": "Every action is a JSON POST to /api/boot.php with an `action` field (a few read-only actions also accept GET query parameters). Responses are JSON: {success: true|false, data: {...}, message: '...', v: '<app version>'}. Send the session token as `Authorization: Bearer <token>`; get one from `login`, `etelid_login` (Delivery/Ride apps) or `admin_etelid_login` (admin). Admin accounts with two-step sign-in answer {requires_2fa: true}: repeat the same login request with `totp_code`. Errors use HTTP 400/401/403/404/409/429/500/503 with the same JSON shape. Throttled actions answer 429. This file is generated from the source by tools/gen_api_docs.py: 422 actions. Parameter names come from the handlers; types and limits are in the handler code."
+  "description": "Every action is a JSON POST to /api/boot.php with an `action` field (a few read-only actions also accept GET query parameters). Responses are JSON: {success: true|false, data: {...}, message: '...', v: '<app version>'}. Send the session token as `Authorization: Bearer <token>`; get one from `login`, `etelid_login` (Delivery/Ride apps) or `admin_etelid_login` (admin). Admin accounts with two-step sign-in answer {requires_2fa: true}: repeat the same login request with `totp_code`. Errors use HTTP 400/401/403/404/409/429/500/503 with the same JSON shape. Throttled actions answer 429. This file is generated from the source by tools/gen_api_docs.py: 427 actions. Parameter names come from the handlers; types and limits are in the handler code."
  },
  "servers": [
   {
@@ -321,6 +321,12 @@
          },
          {
           "$ref": "#/components/schemas/admin_mark_order_paid"
+         },
+         {
+          "$ref": "#/components/schemas/admin_package_rates_get"
+         },
+         {
+          "$ref": "#/components/schemas/admin_package_rates_save"
          },
          {
           "$ref": "#/components/schemas/admin_photo_coverage"
@@ -657,6 +663,15 @@
          },
          {
           "$ref": "#/components/schemas/customer_loyalty"
+         },
+         {
+          "$ref": "#/components/schemas/customer_package_create"
+         },
+         {
+          "$ref": "#/components/schemas/customer_package_options"
+         },
+         {
+          "$ref": "#/components/schemas/customer_package_quote"
          },
          {
           "$ref": "#/components/schemas/customer_pending_confirmations"
@@ -2004,6 +2019,19 @@
           "order_ids": "<order_ids>"
          }
         },
+        "admin_package_rates_get": {
+         "summary": "admin_package_rates_get (admin)",
+         "value": {
+          "action": "admin_package_rates_get"
+         }
+        },
+        "admin_package_rates_save": {
+         "summary": "admin_package_rates_save (admin)",
+         "value": {
+          "action": "admin_package_rates_save",
+          "vehicle_class": "<vehicle_class>"
+         }
+        },
         "admin_photo_coverage": {
          "summary": "admin_photo_coverage (admin)",
          "value": {
@@ -2885,6 +2913,27 @@
          "summary": "customer_loyalty (any signed-in user)",
          "value": {
           "action": "customer_loyalty"
+         }
+        },
+        "customer_package_create": {
+         "summary": "customer_package_create (any signed-in user)",
+         "value": {
+          "action": "customer_package_create",
+          "_allow_chapa": "<_allow_chapa>"
+         }
+        },
+        "customer_package_options": {
+         "summary": "customer_package_options (any signed-in user)",
+         "value": {
+          "action": "customer_package_options"
+         }
+        },
+        "customer_package_quote": {
+         "summary": "customer_package_quote (any signed-in user)",
+         "value": {
+          "action": "customer_package_quote",
+          "drop": "<drop>",
+          "pickup": "<pickup>"
          }
         },
         "customer_pending_confirmations": {
@@ -6486,6 +6535,41 @@
     },
     "description": "Auth: admin (capability finance.manage). Source: api/controllers/CashController.php."
    },
+   "admin_package_rates_get": {
+    "type": "object",
+    "title": "action: admin_package_rates_get",
+    "required": [
+     "action"
+    ],
+    "properties": {
+     "action": {
+      "type": "string",
+      "enum": [
+       "admin_package_rates_get"
+      ]
+     }
+    },
+    "description": "Auth: admin (capability orders.view). Source: api/controllers/PackageController.php."
+   },
+   "admin_package_rates_save": {
+    "type": "object",
+    "title": "action: admin_package_rates_save",
+    "required": [
+     "action"
+    ],
+    "properties": {
+     "action": {
+      "type": "string",
+      "enum": [
+       "admin_package_rates_save"
+      ]
+     },
+     "vehicle_class": {
+      "description": "request field (type not declared in code)"
+     }
+    },
+    "description": "Auth: admin (capability orders.manage). Source: api/controllers/PackageController.php."
+   },
    "admin_photo_coverage": {
     "type": "object",
     "title": "action: admin_photo_coverage",
@@ -8982,6 +9066,63 @@
      }
     },
     "description": "Auth: any signed-in user. Source: api/boot.php."
+   },
+   "customer_package_create": {
+    "type": "object",
+    "title": "action: customer_package_create",
+    "required": [
+     "action"
+    ],
+    "properties": {
+     "action": {
+      "type": "string",
+      "enum": [
+       "customer_package_create"
+      ]
+     },
+     "_allow_chapa": {
+      "description": "request field (type not declared in code)"
+     }
+    },
+    "description": "Auth: any signed-in user. Source: api/controllers/PackageController.php."
+   },
+   "customer_package_options": {
+    "type": "object",
+    "title": "action: customer_package_options",
+    "required": [
+     "action"
+    ],
+    "properties": {
+     "action": {
+      "type": "string",
+      "enum": [
+       "customer_package_options"
+      ]
+     }
+    },
+    "description": "Auth: any signed-in user. Source: api/controllers/PackageController.php."
+   },
+   "customer_package_quote": {
+    "type": "object",
+    "title": "action: customer_package_quote",
+    "required": [
+     "action"
+    ],
+    "properties": {
+     "action": {
+      "type": "string",
+      "enum": [
+       "customer_package_quote"
+      ]
+     },
+     "drop": {
+      "description": "request field (type not declared in code)"
+     },
+     "pickup": {
+      "description": "request field (type not declared in code)"
+     }
+    },
+    "description": "Auth: any signed-in user. Source: api/controllers/PackageController.php."
    },
    "customer_pending_confirmations": {
     "type": "object",
@@ -14392,6 +14533,22 @@
    "query": [],
    "source": "api/controllers/CashController.php"
   },
+  "admin_package_rates_get": {
+   "auth": "admin",
+   "capability": "orders.view",
+   "body": [],
+   "query": [],
+   "source": "api/controllers/PackageController.php"
+  },
+  "admin_package_rates_save": {
+   "auth": "admin",
+   "capability": "orders.manage",
+   "body": [
+    "vehicle_class"
+   ],
+   "query": [],
+   "source": "api/controllers/PackageController.php"
+  },
   "admin_photo_coverage": {
    "auth": "admin",
    "capability": "items.view",
@@ -15523,6 +15680,32 @@
    "body": [],
    "query": [],
    "source": "api/boot.php"
+  },
+  "customer_package_create": {
+   "auth": "any signed-in user",
+   "capability": null,
+   "body": [
+    "_allow_chapa"
+   ],
+   "query": [],
+   "source": "api/controllers/PackageController.php"
+  },
+  "customer_package_options": {
+   "auth": "any signed-in user",
+   "capability": null,
+   "body": [],
+   "query": [],
+   "source": "api/controllers/PackageController.php"
+  },
+  "customer_package_quote": {
+   "auth": "any signed-in user",
+   "capability": null,
+   "body": [
+    "drop",
+    "pickup"
+   ],
+   "query": [],
+   "source": "api/controllers/PackageController.php"
   },
   "customer_pending_confirmations": {
    "auth": "any signed-in user",

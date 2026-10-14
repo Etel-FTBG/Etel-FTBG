@@ -172,7 +172,10 @@ function etel_offer_next($pdo, $order_id) {
     $n = $pdo->prepare('SELECT COUNT(*) FROM order_courier_offers WHERE order_id = ?'); $n->execute(array($order_id));
     if ((int)$n->fetchColumn() >= $st['max_attempts']) return false;
 
+    require_once __DIR__ . '/package_orders.php';
+    etel_package_ensure_schema($pdo);
     $o = $pdo->prepare("SELECT o.id, o.order_code, o.from_zone, o.to_zone, o.fare_total, o.status, o.courier_id,
+                               o.order_kind, o.vehicle_class, o.pickup_lat, o.pickup_lng,
                                sg.lat AS sg_lat, sg.lng AS sg_lng
                         FROM orders o LEFT JOIN order_assignments oa ON oa.order_id = o.id LEFT JOIN service_givers sg ON sg.id = oa.service_giver_id
                         WHERE o.id = ? LIMIT 1");
@@ -183,12 +186,17 @@ function etel_offer_next($pdo, $order_id) {
     if (etel_order_awaiting_chapa($pdo, $order_id)) return false; // unpaid Chapa orders are never offered
     etel_release_idle_couriers($pdo);
     $lat = $ord['sg_lat'] ? (float)$ord['sg_lat'] : 7.0559; $lng = $ord['sg_lng'] ? (float)$ord['sg_lng'] : 38.4762; // Hawassa centre if the shop has no pin
+    $vehSql = ''; $vehParams = array();
+    if ($ord['order_kind'] === 'package') {   // picked up where the sender is, and only by a courier with the vehicle the customer chose
+        if ($ord['pickup_lat'] && $ord['pickup_lng']) { $lat = (float)$ord['pickup_lat']; $lng = (float)$ord['pickup_lng']; }
+        list($vehSql, $vehParams) = etel_vehicle_sql($ord['vehicle_class'], 'c');
+    }
 
     $cs = $pdo->prepare("SELECT c.id, c.user_id, c.last_lat, c.last_lng, c.zone FROM couriers c
                          WHERE c.status = 'online' AND c.active = 1 AND c.offer_capable_until IS NOT NULL AND c.offer_capable_until > NOW()
                            AND c.id NOT IN (SELECT courier_id FROM orders WHERE status IN ('assigned','picked_up','in_transit') AND courier_id IS NOT NULL)
-                           AND c.id NOT IN (SELECT courier_id FROM order_courier_offers WHERE order_id = ?)");
-    $cs->execute(array($order_id));
+                           AND c.id NOT IN (SELECT courier_id FROM order_courier_offers WHERE order_id = ?)$vehSql");
+    $cs->execute(array_merge(array($order_id), $vehParams));
     $best = etel_offer_pick_nearest($cs->fetchAll(PDO::FETCH_ASSOC), $lat, $lng, $ord['from_zone']);
     if (!$best) return false;
 
