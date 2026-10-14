@@ -913,6 +913,21 @@ case 'sg_set_online': {
     }
     break;
 }
+case 'sg_reject_order': {
+    // POST: order_id, reason (out_of_stock|too_busy|closing|other), note?  -> the shop declines an order that is not on its way yet
+    // Releases the courier, tells the customer, and flags a paid order for refund in Admin > Money (api/lib/order_cancel.php).
+    $pdo = db();
+    $auth_user = require_auth($pdo);
+    if ($auth_user['role'] !== 'service_giver' && ($auth_user['role'] !== 'admin' || etel_is_ride_only(db(), $auth_user))) fail('Not a service giver account', 403);
+    $ctx = sg_get_context($pdo, $auth_user['id']);
+    if (!$ctx) fail('Service giver profile not found', 404);
+    sg_require_capability($auth_user, $ctx, 'orders.manage');
+    require_once __DIR__ . '/../lib/order_cancel.php';
+    $r = etel_cancel_order($pdo, isset($body['order_id']) ? $body['order_id'] : 0, 'shop', $auth_user['id'], isset($body['reason']) ? $body['reason'] : '', isset($body['note']) ? $body['note'] : '', $ctx['sg_id']);
+    if (!$r['ok']) fail($r['message'], 400);
+    ok(array('message' => $r['message'], 'order_id' => $r['order_id'], 'refund_due' => $r['refund_due']));
+    break;
+}
 case 'sg_set_hours': {
     // POST: opens_at, closes_at ('HH:MM'), or both empty to clear the hours. Orders are only taken inside the hours (and while the switch is on).
     $pdo = db();

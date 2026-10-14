@@ -762,6 +762,14 @@ case 'admin_update_order': {
     $status   = isset($body['status'])   ? trim($body['status'])   : '';
     if (!$order_id) fail('order_id required', 400);
     if (!in_array($status, array('pending','assigned','picked_up','in_transit','delivered','cancelled'))) fail('Invalid status', 400);
+    if ($status === 'cancelled') {
+        // cancelling goes through the one proper cancel (reason recorded, courier released, refund flagged); Admin > Dispatch asks for a real reason
+        require_once __DIR__ . '/../lib/order_cancel.php';
+        $au = require_admin($pdo, 'orders.manage');
+        $cr = etel_cancel_order($pdo, $order_id, 'admin', $au['id'], 'other', 'Set from the order status list');
+        if (!$cr['ok']) fail($cr['message'], 400);
+        ok(array('message' => $cr['message'], 'order_id' => $order_id, 'status' => 'cancelled'));
+    }
     try {
         $extra = ($status === 'delivered') ? ', delivered_at=NOW()' : '';
         $pdo->prepare("UPDATE orders SET status=? $extra WHERE id=?")->execute(array($status, $order_id));

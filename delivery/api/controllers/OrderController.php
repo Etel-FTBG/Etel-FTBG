@@ -37,6 +37,17 @@ case 'customer_create_order': {
     break;
 }
 
+case 'customer_cancel_order': {
+    // POST: order_id, reason (changed_mind|wrong_order|too_slow|other), note?  -> the customer cancels their own order
+    // Only before the shop starts preparing (api/lib/order_cancel.php decides). A paid order is then flagged for refund in Admin > Money.
+    $pdo = db();
+    $auth_user = require_auth($pdo);
+    require_once __DIR__ . '/../lib/order_cancel.php';
+    $r = etel_cancel_order($pdo, isset($body['order_id']) ? $body['order_id'] : 0, 'customer', $auth_user['id'], isset($body['reason']) ? $body['reason'] : '', isset($body['note']) ? $body['note'] : '');
+    if (!$r['ok']) fail($r['message'], 400);
+    ok(array('message' => $r['message'], 'order_id' => $r['order_id'], 'refund_due' => $r['refund_due']));
+    break;
+}
 case 'customer_get_orders': {
     // GET: (requires customer auth)  ?status=pending|accepted|picked_up|delivered
     // Get customer's orders
@@ -812,7 +823,7 @@ case 'track_order': {
     try {
         $s = $pdo->prepare("
             SELECT
-                o.id, o.order_code, o.status, o.payment_method, o.payment_status,
+                o.id, o.order_code, o.status, o.payment_method, o.payment_status, o.customer_id AS _cid,
                 o.from_zone, o.to_zone, o.fare_total, o.delivery_fee, o.service_charge,
                 o.placed_at, o.delivered_at, o.notes,
                 o.recipient_name, o.recipient_phone, o.recipient_address, o.delivery_photo_url,
@@ -862,6 +873,13 @@ case 'track_order': {
 
     // arrival estimate + hides a courier pin that has gone stale (api/lib/track_eta.php)
     try { require_once __DIR__ . '/../lib/track_eta.php'; $order = etel_track_eta_apply($pdo, $order); } catch (Exception $te) {} catch (Throwable $te) {}
+    // can the customer still cancel it themselves, and which reasons to offer (api/lib/order_cancel.php)
+    try {
+        require_once __DIR__ . '/../lib/order_cancel.php';
+        $order['can_cancel'] = ((int) $order['_cid'] === (int) $u['id']) && etel_cancel_rule('customer', $order['status'], isset($order['assignment_status']) ? $order['assignment_status'] : null) === '';
+        $order['cancel_reasons'] = etel_cancel_reasons('customer');
+    } catch (Exception $ce) {} catch (Throwable $ce) {}
+    unset($order['_cid']);   // internal: used above to decide can_cancel, not sent to the app
     ok(array('order' => $order, 'timeline' => $timeline));
     break;
 }
