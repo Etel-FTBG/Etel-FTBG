@@ -194,6 +194,16 @@ def main():
         status, res = call(act, body, token=drv_token)
         check(act + " for a courier account is refused (403)", res.get("success") is False and status == 403, f"status={status} res={res}")
 
+    print("11. Cancelling an order")
+    for act, body in (("admin_cancel_order", {"order_id": 1, "reason": "other"}), ("sg_reject_order", {"order_id": 1, "reason": "other"}), ("customer_cancel_order", {"order_id": 1, "reason": "other"})):
+        status, res = call(act, body)
+        check(act + " without a token is refused (401)", res.get("success") is False and status == 401, f"status={status} res={res}")
+    for act in ("admin_cancel_order", "sg_reject_order"):
+        status, res = call(act, {"order_id": 1, "reason": "other"}, token=drv_token)
+        check(act + " for a courier account is refused (403)", res.get("success") is False and status == 403, f"status={status} res={res}")
+    status, res = call("customer_cancel_order", {"order_id": 99999999, "reason": "changed_mind"}, token=drv_token)
+    check("customer_cancel_order for an order that is not yours looks like 'not found' (400)", res.get("success") is False and status == 400, f"status={status} res={res}")
+
     print()
     print(f"{len(PASS)} passed, {len(FAIL)} failed")
     if FAIL:

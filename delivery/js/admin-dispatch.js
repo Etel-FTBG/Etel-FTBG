@@ -12,6 +12,7 @@ var NEED = {
   not_picked_up: ['Accepted but not picked up', '#e67e22'],
   slow: ['On the way for a long time', '#e67e22']
 };
+var REASONS = [['customer_request', 'Customer asked us to'], ['shop_problem', 'Problem at the shop'], ['no_courier', 'No courier available'], ['fraud', 'Suspected fraud'], ['test_order', 'Test order'], ['other', 'Another reason']];
 var STATUS = { pending: 'Waiting', assigned: 'Courier assigned', picked_up: 'Picked up', in_transit: 'On the way' };
 
 function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
@@ -24,6 +25,7 @@ function panel() { return document.getElementById('panel-dispatch'); }
 function age(m) { m = Number(m) || 0; return m < 60 ? m + ' min' : Math.floor(m / 60) + ' h ' + (m % 60) + ' min'; }
 function note(msg, bad) { var n = document.getElementById('dispatch-note'); if (n) { n.textContent = msg; n.style.color = bad ? '#e74c3c' : '#2ecc71'; } }
 var BTN = 'padding:7px 14px;border-radius:8px;border:0;background:#D4AF37;color:#1A1200;font-weight:700;font-size:12.5px;cursor:pointer';
+var BTN_DANGER = 'padding:7px 14px;border-radius:8px;border:0;background:#c0392b;color:#fff;font-weight:700;font-size:12.5px;cursor:pointer';
 var BTN2 = 'padding:7px 12px;border-radius:8px;border:1px solid rgba(128,128,128,.4);background:transparent;color:inherit;font-size:12.5px;cursor:pointer';
 var FIELD = 'padding:7px 8px;border-radius:8px;border:1px solid rgba(128,128,128,.4);background:transparent;color:inherit;font-size:13px;min-width:200px;max-width:100%';
 
@@ -41,10 +43,10 @@ function card(o, d) {
     '<div style="font-size:12px;opacity:.75;margin-top:2px">' + esc(o.from_zone || '?') + ' → ' + esc(o.to_zone || '?') + ' · ' + (o.courier ? 'Courier: <b>' + esc(o.courier) + '</b> ' + esc(o.courier_code || '') + (o.accepted ? ' (accepted)' : ' (not accepted)') : 'No courier') + '</div>' +
     (need ? '<div style="font-size:12px;font-weight:700;margin-top:3px;color:' + need[1] + '">' + esc(need[0]) + '</div>' : '') +
     (o.awaiting_payment ? '<div style="font-size:12px;opacity:.7;margin-top:3px">Waiting for the customer to pay</div>' : '');
-  if (o.can_assign) {
-    h += '<div data-host="' + o.order_id + '" style="margin-top:8px"><button type="button" data-assign="' + o.order_id + '" style="' + BTN2 + '">' + (o.courier_id ? 'Change courier…' : 'Assign courier…') + '</button>' +
-      (o.status === 'assigned' && o.courier_id ? ' <button type="button" data-takeback="' + o.order_id + '" style="' + BTN2 + '">Take back</button>' : '') + '</div>';
-  }
+  h += '<div data-host="' + o.order_id + '" style="margin-top:8px">' +
+    (o.can_assign ? '<button type="button" data-assign="' + o.order_id + '" style="' + BTN2 + '">' + (o.courier_id ? 'Change courier…' : 'Assign courier…') + '</button>' : '') +
+    (o.can_assign && o.status === 'assigned' && o.courier_id ? ' <button type="button" data-takeback="' + o.order_id + '" style="' + BTN2 + '">Take back</button>' : '') +
+    ' <button type="button" data-cancel="' + o.order_id + '" style="' + BTN2 + ';color:#c0392b">Cancel order…</button></div>';
   return h + '</div>';
 }
 
@@ -80,6 +82,25 @@ function wire(el, d) {
         var cid = Number(host.querySelector('select').value);
         api('admin_assign_courier', { order_id: id, courier_id: cid }).then(function (r) {
           if (r && r.success) load(function () { note(r.data.message + ' (' + o.order_code + ')', false); }); else note((r && r.message) || 'Could not assign', true);
+        }).catch(function (x) { note(x.message, true); });
+      };
+    };
+  });
+  Array.prototype.forEach.call(el.querySelectorAll('[data-cancel]'), function (b) {
+    b.onclick = function () {
+      var id = Number(b.getAttribute('data-cancel')), o = byId[id], host = el.querySelector('[data-host="' + id + '"]');
+      host.innerHTML = '<form style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><select name="reason" required aria-label="Reason for cancelling" style="' + FIELD + '"><option value="">Choose a reason…</option>' +
+        REASONS.map(function (r) { return '<option value="' + r[0] + '">' + esc(r[1]) + '</option>'; }).join('') + '</select>' +
+        '<input name="note" maxlength="200" aria-label="Note (optional)" placeholder="Note (optional)" style="' + FIELD + ';flex:1;min-width:140px">' +
+        '<button type="submit" style="' + BTN_DANGER + '">Cancel this order</button><button type="button" data-cancelform style="' + BTN2 + '">Keep it</button></form>';
+      host.querySelector('[data-cancelform]').onclick = function () { load(); };
+      host.querySelector('form').onsubmit = function (e) {
+        e.preventDefault();
+        var fd = new FormData(host.querySelector('form'));
+        if (!fd.get('reason')) { note('Choose a reason first.', true); return; }
+        if ((o.status === 'picked_up' || o.status === 'in_transit') && !window.confirm(o.order_code + ' is already on its way. Cancel it anyway?')) return;
+        api('admin_cancel_order', { order_id: id, reason: fd.get('reason'), note: fd.get('note') }).then(function (r) {
+          if (r && r.success) load(function () { note(r.data.message + ' (' + o.order_code + ')', false); }); else note((r && r.message) || 'Could not cancel', true);
         }).catch(function (x) { note(x.message, true); });
       };
     };

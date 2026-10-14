@@ -1,14 +1,14 @@
 # ETEL Delivery & Ride API reference
 
-Generated from the source by `tools/gen_api_docs.py` (419 actions). Machine-readable: `openapi.json`.
+Generated from the source by `tools/gen_api_docs.py` (422 actions). Machine-readable: `openapi.json`.
 
 **Call:** `POST /delivery/api/boot.php` with JSON `{"action": "<name>", ...fields}`; header `Authorization: Bearer <token>` for everything except the *public* actions.
 **Reply:** `{success, data, message, v}`. **Login:** `login` / `etelid_login` (apps) or `admin_etelid_login` (admin; add `totp_code` when the reply says `requires_2fa`).
 
 | Who can call | Actions |
 |---|---|
-| admin | 195 |
-| any signed-in user | 177 |
+| admin | 196 |
+| any signed-in user | 179 |
 | courier | 16 |
 | public | 9 |
 | public (this call signs you in) | 6 |
@@ -248,6 +248,7 @@ Generated from the source by `tools/gen_api_docs.py` (419 actions). Machine-read
 | Action | Auth | Fields | Query |
 |---|---|---|---|
 | `admin_assign_courier` | admin · orders.manage | `courier_id`, `order_id` | - |
+| `admin_cancel_order` | admin · orders.manage | `note`, `order_id`, `reason` | - |
 | `admin_dispatch_board` | admin · orders.view | - | - |
 | `admin_take_back_order` | admin · orders.manage | `order_id` | - |
 
@@ -298,6 +299,7 @@ Generated from the source by `tools/gen_api_docs.py` (419 actions). Machine-read
 | `courier_update_location` | courier | `lat`, `lng` | - |
 | `courier_update_order_status` | courier | `order_id`, `status` | - |
 | `customer_add_address` | any signed-in user | `address_line`, `is_default`, `label`, `lat`, `lng`, `zone` | - |
+| `customer_cancel_order` | any signed-in user | `note`, `order_id`, `reason` | - |
 | `customer_confirm_delivery` | any signed-in user | `confirm_payment_method`, `order_id`, `payment_confirmed`, `wallet_tx_ref` | - |
 | `customer_create_order` | any signed-in user | `_allow_chapa`, `customer_lat`, `customer_lng`, `delivery_lat`, `delivery_lng`, `delivery_photo_url`, `delivery_tier`, `items`, `notes`, `payment_method`, `promo_code`, `recipient_name`, `recipient_phone`, `tip`, `to_zone`, `use_points` | - |
 | `customer_delete_address` | any signed-in user | `id` | - |
@@ -495,6 +497,7 @@ Generated from the source by `tools/gen_api_docs.py` (419 actions). Machine-read
 | `sg_order_detail` | any signed-in user | - | `order_id` |
 | `sg_orders` | any signed-in user | - | `status` |
 | `sg_profile` | any signed-in user | - | - |
+| `sg_reject_order` | any signed-in user | `note`, `order_id`, `reason` | - |
 | `sg_remove_staff` | any signed-in user | `active`, `staff_id` | - |
 | `sg_reply_review` | any signed-in user | `rating_id`, `reply` | - |
 | `sg_reviews` | any signed-in user | `sg_id` | `sg_id` |
