@@ -494,6 +494,7 @@
                     link('orders', at.stuck_orders, 'Orders not picked up for 20+ min') +
                     link('orders', at.accepted_idle || 0, 'Accepted but not picked up for 30+ min') +
                     link('ratings', at.low_ratings || 0, 'Low customer ratings (last 7 days)') +
+                    link('dispatch', at.dispatch_needs || 0, 'Live orders that need a courier or a push') +
                     link('money', at.refunds_owed || 0, 'Cancelled orders waiting for a refund') +
                     link('orders', at.open_issues, 'Open order problems reported') + '</div>' +
                 '<div class="pp-box"><h4>🟢 Live right now</h4>' +

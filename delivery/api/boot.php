@@ -606,6 +606,7 @@ $ETEL_DELIVERY_ONLY_ACTIONS = array(
     'admin_get_orders','get_orders','admin_get_couriers','admin_get_live_couriers','admin_update_courier',
     'admin_ratings_report',
     'admin_refunds_report','admin_refund_mark','admin_courier_cash_report','admin_cash_remit',
+    'admin_dispatch_board','admin_assign_courier','admin_take_back_order',
     'admin_get_service_givers','admin_get_service_givers_list','admin_get_service_giver','admin_get_service_giver_statistics',
     'admin_create_service_giver','admin_verify_service_giver','admin_suspend_service_giver','admin_assign_service_giver',
     'admin_get_all_items','admin_add_item','admin_update_item','admin_delete_item','admin_toggle_item',
@@ -1582,6 +1583,9 @@ switch ($action) {
         break;
     case 'admin_refunds_report': case 'admin_refund_mark': case 'admin_courier_cash_report': case 'admin_cash_remit':
         require __DIR__ . '/controllers/MoneyLedgerController.php';
+        break;
+    case 'admin_dispatch_board': case 'admin_assign_courier': case 'admin_take_back_order':
+        require __DIR__ . '/controllers/ManualDispatchController.php';
         break;
     case 'get_tip_options': case 'admin_get_courier_pay': case 'admin_save_courier_pay': case 'admin_preview_courier_pay': case 'admin_get_order_pay': case 'admin_set_order_pay':
         require __DIR__ . '/controllers/CourierPayController.php';
