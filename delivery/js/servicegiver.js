@@ -306,12 +306,40 @@
             const res = await apiCall('sg_orders');
             if (!res) return;
             const orders = res.assignments || res.orders || (Array.isArray(res) ? res : []);
-            const todayOrders = orders.filter(o => {
-                const ts = o.placed_at || o.assigned_at || o.created_at;
-                return ts && new Date(ts).toDateString() === new Date().toDateString();
-            }).length;
-            const completed = orders.filter(o => o.status === 'delivered').length;
-            const totalEarnings = orders.reduce((sum, o) => sum + parseFloat(o.fare_total || 0), 0);
+            // Real numbers only (demo or live): every figure and every
+            // "compared with" line comes from the shop's own orders. When
+            // there is nothing to compare with, the line says so instead
+            // of showing an invented percentage.
+            const orderTs = o => { const t = o.placed_at || o.assigned_at || o.created_at; const d = t ? new Date(String(t).replace(' ', 'T')) : null; return d && !isNaN(d) ? d : null; };
+            const now = new Date();
+            const dayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            const dayMs = 86400000;
+            const inRange = (o, from, to) => { const d = orderTs(o); return !!d && d >= from && d < to; };
+            const delivered = orders.filter(o => o.status === 'delivered');
+            const todayOrders = orders.filter(o => inRange(o, dayStart, new Date(dayStart.getTime() + dayMs))).length;
+            const yesterdayOrders = orders.filter(o => inRange(o, new Date(dayStart.getTime() - dayMs), dayStart)).length;
+            const weekFrom = new Date(dayStart.getTime() - 6 * dayMs);
+            const prevWeekFrom = new Date(weekFrom.getTime() - 7 * dayMs);
+            const doneWeek = delivered.filter(o => inRange(o, weekFrom, new Date(dayStart.getTime() + dayMs))).length;
+            const donePrevWeek = delivered.filter(o => inRange(o, prevWeekFrom, weekFrom)).length;
+            const monthFrom = new Date(now.getFullYear(), now.getMonth(), 1);
+            const prevMonthFrom = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+            const sumFare = list => list.reduce((sum, o) => sum + parseFloat(o.fare_total || 0), 0);
+            const earnMonth = sumFare(delivered.filter(o => inRange(o, monthFrom, new Date(dayStart.getTime() + dayMs))));
+            const earnPrevMonth = sumFare(delivered.filter(o => inRange(o, prevMonthFrom, monthFrom)));
+            const completed = delivered.length;
+            const totalEarnings = sumFare(delivered);
+            const setChange = (id, label, cur, prev) => {
+                const el = document.getElementById(id); if (!el) return;
+                el.classList.remove('down', 'kpi-flat');
+                if (!prev) { el.classList.add('kpi-flat'); el.textContent = label + ': ' + (cur ? 'nothing to compare yet' : 'no data yet'); return; }
+                const pct = Math.round((cur - prev) / prev * 100);
+                if (pct < 0) el.classList.add('down'); else if (pct === 0) el.classList.add('kpi-flat');
+                el.textContent = (pct > 0 ? '\u2191 ' : pct < 0 ? '\u2193 ' : '') + Math.abs(pct) + '% ' + label.toLowerCase();
+            };
+            setChange('kpi-today-change', 'vs yesterday', todayOrders, yesterdayOrders);
+            setChange('kpi-completed-change', 'vs last week', doneWeek, donePrevWeek);
+            setChange('kpi-earnings-change', 'vs last month', earnMonth, earnPrevMonth);
             document.getElementById('kpi-today-orders').textContent = todayOrders;
             document.getElementById('kpi-completed').textContent = completed;
             // Cashiers see order counts but not the earnings total - this
