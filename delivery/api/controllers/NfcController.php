@@ -467,6 +467,7 @@ case 'nfc_confirm_pickup': {
             ->execute(array($order_id));
         if (function_exists('etel_notify_order_status')) etel_notify_order_status($pdo, $order_id);
         $pdo->commit();
+        require_once __DIR__ . '/../lib/order_stamps.php'; etel_order_stamp_pickup($pdo, $order_id);
         ok(array('message' => 'Pickup confirmed via NFC card.'));
     } catch (Exception $e) {
         $pdo->rollBack();

@@ -970,6 +970,7 @@ case 'admin_force_confirm': {
         if (function_exists('etel_notify_order_status')) etel_notify_order_status($pdo, $conf['order_id']);
         }
         $pdo->commit();
+        if ($conf['type'] === 'pickup') { require_once __DIR__ . '/../lib/order_stamps.php'; etel_order_stamp_pickup($pdo, $conf['order_id']); }
         ok(array('message' => 'Confirmation forced by admin'));
     } catch (Exception $e) {
         $pdo->rollBack();

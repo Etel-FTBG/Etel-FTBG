@@ -57,6 +57,22 @@ function etel_pulse_period($pdo, $from, $to) {
     $r['avg_n']            = intval(isset($row['avg_n']) ? $row['avg_n'] : 0);
     $r['avg_skipped']      = intval(isset($row['avg_skipped']) ? $row['avg_skipped'] : 0);
     $r['avg_minutes']      = (isset($row['avg_minutes']) && $row['avg_minutes'] !== null) ? (int)round(floatval($row['avg_minutes'])) : null;
+    // Real courier timings (need orders.picked_up_at, migration 075 / api/lib/order_stamps.php; empty until orders carry it).
+    //   trip = picked up -> delivered     wait = courier accepted -> picked up
+    $r['avg_trip'] = null; $r['avg_trip_n'] = 0; $r['avg_wait'] = null; $r['avg_wait_n'] = 0;
+    try {
+        $tripOk = "o.status='delivered' AND o.picked_up_at IS NOT NULL AND o.delivered_at IS NOT NULL AND TIMESTAMPDIFF(MINUTE, o.picked_up_at, o.delivered_at) BETWEEN 1 AND " . ETEL_PULSE_MAX_DELIVERY_MIN;
+        $waitOk = "o.picked_up_at IS NOT NULL AND o.courier_accepted_at IS NOT NULL AND TIMESTAMPDIFF(MINUTE, o.courier_accepted_at, o.picked_up_at) BETWEEN 0 AND " . ETEL_PULSE_MAX_DELIVERY_MIN;
+        $t = $pdo->query("SELECT AVG(CASE WHEN $tripOk THEN TIMESTAMPDIFF(MINUTE, o.picked_up_at, o.delivered_at) END) AS trip,
+                SUM(CASE WHEN $tripOk THEN 1 ELSE 0 END) AS trip_n,
+                AVG(CASE WHEN $waitOk THEN TIMESTAMPDIFF(MINUTE, o.courier_accepted_at, o.picked_up_at) END) AS wait,
+                SUM(CASE WHEN $waitOk THEN 1 ELSE 0 END) AS wait_n
+            $base")->fetch(PDO::FETCH_ASSOC);
+        if ($t) {
+            $r['avg_trip'] = ($t['trip'] !== null) ? (int) round(floatval($t['trip'])) : null; $r['avg_trip_n'] = intval($t['trip_n']);
+            $r['avg_wait'] = ($t['wait'] !== null) ? (int) round(floatval($t['wait'])) : null; $r['avg_wait_n'] = intval($t['wait_n']);
+        }
+    } catch (Exception $e) { /* picked_up_at not created yet: nothing to measure */ }
     // discounts given on delivered orders (columns exist once promo codes / loyalty are in use)
     $r['discounts'] = round(floatval(etel_pulse_one($pdo, "SELECT COALESCE(SUM(COALESCE(o.discount,0) + COALESCE(o.points_discount,0)),0) $base AND o.status='delivered'")), 2);
     $r['new_customers'] = intval(etel_pulse_one($pdo, "SELECT COUNT(*) FROM users u WHERE u.role='customer' AND u.created_at >= $from AND u.created_at < $to"));
