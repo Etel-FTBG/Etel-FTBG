@@ -89,6 +89,7 @@ jobs:
           python3 delivery/tests/ci/check_migrations.py
           python3 delivery/tests/ci/check_xss_sinks.py
           python3 delivery/tests/ci/check_no_fake_stats.py
+          python3 delivery/tests/ci/check_a11y_wiring.py
       # check_reserved_columns.py needs the built database, so it runs in the
       # integration job (via run_integration.sh).
 
