@@ -133,6 +133,15 @@ function etel_package_ensure_schema($pdo) {
             per_kg_over DECIMAL(10,2) NOT NULL DEFAULT 0, min_fee DECIMAL(10,2) NOT NULL DEFAULT 0, max_weight_kg DECIMAL(8,2) NOT NULL DEFAULT 0,
             sort_order INT(11) NOT NULL DEFAULT 0, active TINYINT(1) NOT NULL DEFAULT 1, updated_at DATETIME NULL DEFAULT NULL,
             PRIMARY KEY (id), UNIQUE KEY uq_vehicle_class (vehicle_class)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+        // Which couriers' apps can run a package job (they send pkg=1 while open). Older apps cannot show the pickup address or ask for the PINs,
+        // so a package is never offered to them: it would be accepted and then be stuck.
+        $courierCols = array();
+        foreach ($pdo->query('SHOW COLUMNS FROM couriers')->fetchAll() as $c) $courierCols[$c['Field']] = true;
+        if (empty($courierCols['package_capable_until'])) $pdo->exec('ALTER TABLE couriers ADD COLUMN package_capable_until DATETIME NULL DEFAULT NULL');
+        // Wrong PIN tries at the door: 5 wrong in a row lock that step for 15 minutes.
+        $pdo->exec("CREATE TABLE IF NOT EXISTS package_pin_tries (
+            order_id INT NOT NULL, kind VARCHAR(10) NOT NULL, tries INT NOT NULL DEFAULT 0, locked_until DATETIME NULL DEFAULT NULL,
+            PRIMARY KEY (order_id, kind)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
         // Small settings staff change in Admin (Package prices): for now the fee for cancelling after a courier has accepted.
         $pdo->exec("CREATE TABLE IF NOT EXISTS package_settings (
             setting_key VARCHAR(40) NOT NULL, setting_value VARCHAR(100) NOT NULL DEFAULT '', updated_at DATETIME NULL DEFAULT NULL,
@@ -465,4 +474,75 @@ function etel_package_save_setting($pdo, $key, $value) {
             ->execute(array($key, (string) $v));
     } catch (Exception $e) { error_log('[ETEL] package setting save: ' . $e->getMessage()); return array('ok' => false, 'message' => 'Could not save.'); }
     return array('ok' => true, 'message' => 'Saved.');
+}
+
+// ---------- the courier's side of a package: who can take it, and the PIN steps at pickup and delivery ----------
+
+// The courier's app reported (pkg=1 on its polls) that it can run package jobs. Valid for 90 seconds, like offers.
+function etel_package_mark_capable($pdo, $courier_id) {
+    try { etel_package_ensure_schema($pdo); $pdo->prepare('UPDATE couriers SET package_capable_until = DATE_ADD(NOW(), INTERVAL 90 SECOND) WHERE id = ?')->execute(array(intval($courier_id))); }
+    catch (Exception $e) { error_log('[ETEL] package mark capable: ' . $e->getMessage()); }
+}
+
+function etel_package_courier_capable($pdo, $courier_id) {
+    try {
+        etel_package_ensure_schema($pdo);
+        $q = $pdo->prepare('SELECT 1 FROM couriers WHERE id = ? AND package_capable_until IS NOT NULL AND package_capable_until > NOW()');
+        $q->execute(array(intval($courier_id)));
+        return (bool) $q->fetchColumn();
+    } catch (Exception $e) { return false; }
+}
+
+// SQL piece for the courier picks: only couriers whose app can run packages.
+function etel_package_capable_sql($alias = 'c') {
+    return ' AND ' . $alias . '.package_capable_until IS NOT NULL AND ' . $alias . '.package_capable_until > NOW()';
+}
+
+// Pure: is $given the PIN? Digits only, constant-time.
+function etel_package_pin_matches($stored, $given) {
+    $stored = preg_replace('/\D/', '', (string) $stored);
+    $given = preg_replace('/\D/', '', (string) $given);
+    return $stored !== '' && strlen($given) === strlen($stored) && hash_equals($stored, $given);
+}
+
+// One PIN step by the courier. $kind = 'pickup' (the sender's PIN, order goes assigned -> picked_up) or 'delivery' (the recipient's PIN,
+// picked_up / in_transit -> delivered). 5 wrong PINs in a row lock the step for 15 minutes. Returns array(ok, message, status?).
+function etel_package_courier_step($pdo, $courier_id, $order_id, $kind, $pin) {
+    $order_id = intval($order_id); $courier_id = intval($courier_id);
+    if (!in_array($kind, array('pickup', 'delivery'), true)) return array('ok' => false, 'message' => 'Unknown step.');
+    try {
+        etel_package_ensure_schema($pdo);
+        $q = $pdo->prepare("SELECT id, status, courier_id, order_kind, pickup_pin, delivery_pin, customer_id FROM orders WHERE id = ? LIMIT 1");
+        $q->execute(array($order_id));
+        $o = $q->fetch();
+        if (!$o || $o['order_kind'] !== 'package' || intval($o['courier_id']) !== $courier_id) return array('ok' => false, 'message' => 'This package is not yours.');
+        $from = $kind === 'pickup' ? array('assigned') : array('picked_up', 'in_transit');
+        if (!in_array($o['status'], $from, true)) {
+            return array('ok' => false, 'message' => $kind === 'pickup' ? 'This package is not waiting for pickup.' : 'Pick the package up first, then deliver it.');
+        }
+        $t = $pdo->prepare('SELECT tries, locked_until, (locked_until IS NOT NULL AND locked_until > NOW()) AS locked FROM package_pin_tries WHERE order_id = ? AND kind = ?');
+        $t->execute(array($order_id, $kind));
+        $tr = $t->fetch();
+        if ($tr && intval($tr['locked']) === 1) return array('ok' => false, 'message' => 'Too many wrong PINs. Try again in 15 minutes, or call support.');
+        $stored = $kind === 'pickup' ? $o['pickup_pin'] : $o['delivery_pin'];
+        if (!etel_package_pin_matches($stored, $pin)) {
+            $pdo->prepare('INSERT INTO package_pin_tries (order_id, kind, tries) VALUES (?,?,1) ON DUPLICATE KEY UPDATE tries = IF(locked_until IS NOT NULL AND locked_until <= NOW(), 1, tries + 1)')->execute(array($order_id, $kind));
+            $pdo->prepare('UPDATE package_pin_tries SET locked_until = IF(tries >= 5, DATE_ADD(NOW(), INTERVAL 15 MINUTE), NULL) WHERE order_id = ? AND kind = ?')->execute(array($order_id, $kind));
+            return array('ok' => false, 'message' => $kind === 'pickup' ? 'That is not the sender\'s pickup PIN. Ask the sender to open the package in their app.' : 'That is not the recipient\'s delivery PIN. Ask the recipient for it.');
+        }
+        $to = $kind === 'pickup' ? 'picked_up' : 'delivered';
+        $extra = $kind === 'delivery' ? ', delivered_at = NOW()' : '';
+        $u = $pdo->prepare("UPDATE orders SET status = ?$extra WHERE id = ? AND courier_id = ? AND status IN ('" . implode("','", $from) . "')");
+        $u->execute(array($to, $order_id, $courier_id));
+        if ($u->rowCount() !== 1) return array('ok' => false, 'message' => 'The package changed while you were entering the PIN. Refresh and try again.');
+        $pdo->prepare('DELETE FROM package_pin_tries WHERE order_id = ? AND kind = ?')->execute(array($order_id, $kind));
+        try { require_once __DIR__ . '/courier_offers.php'; etel_offer_mark_accepted($pdo, $order_id); } catch (Exception $e) {} catch (Throwable $e) {}
+        if ($to === 'picked_up') { try { require_once __DIR__ . '/order_stamps.php'; etel_order_stamp_pickup($pdo, $order_id); } catch (Exception $e) {} catch (Throwable $e) {} }
+        if (function_exists('etel_notify_order_status')) { try { etel_notify_order_status($pdo, $order_id); } catch (Exception $e) {} catch (Throwable $e) {} }
+        if ($to === 'delivered' && function_exists('etel_maybe_pay_referral_reward')) { try { etel_maybe_pay_referral_reward($pdo, intval($o['customer_id'])); } catch (Exception $e) {} catch (Throwable $e) {} }
+        return array('ok' => true, 'status' => $to, 'message' => $to === 'picked_up' ? 'Package picked up. Now take it to the recipient.' : 'Delivered. Well done!');
+    } catch (Exception $e) {
+        error_log('[ETEL] package courier step: ' . $e->getMessage());
+        return array('ok' => false, 'message' => 'Could not save that. Please try again.');
+    }
 }

@@ -255,7 +255,9 @@ case 'courier_get_available_orders': {
     etel_package_ensure_schema($pdo);
     $vc = $pdo->prepare('SELECT vehicle_type FROM couriers WHERE id = ?'); $vc->execute(array($courier['id']));
     $my_class = etel_vehicle_class_of($vc->fetchColumn(), $pdo);
-    $pkg_filter = " AND (o.order_kind <> 'package' OR o.vehicle_class = ?)";
+    if (!empty($_GET['pkg'])) etel_package_mark_capable($pdo, $courier['id']);   // this app can run package jobs
+    // An app that cannot run packages (no pickup address, no PIN step) is never shown one: it would accept it and be stuck.
+    $pkg_filter = etel_package_courier_capable($pdo, $courier['id']) ? " AND (o.order_kind <> 'package' OR o.vehicle_class = ?)" : " AND (o.order_kind <> 'package' OR o.vehicle_class = ? AND 1 = 0)";
     $pkg_cols = ', o.order_kind, o.vehicle_class, o.pickup_address, o.pkg_size, o.pkg_weight_kg, o.pkg_desc, o.distance_km';
 
     // Ensure order_assignments exists and has needed columns
@@ -348,6 +350,7 @@ case 'courier_accept_order': {
     $pk->execute(array($courier['id'], $order_id));
     $pkr = $pk->fetch();
     if ($pkr && $pkr['order_kind'] === 'package' && etel_vehicle_class_of($pkr['vehicle_type'], $pdo) !== $pkr['vehicle_class']) fail('This package needs a different vehicle.', 403);
+    if ($pkr && $pkr['order_kind'] === 'package' && !etel_package_courier_capable($pdo, $courier['id'])) fail('Update your courier app to take package jobs.', 403);
     
     // Assign courier to order
     try {
@@ -382,6 +385,9 @@ case 'courier_accept_offer': {
     try {
         require_once __DIR__ . '/../lib/courier_offers.php';
         etel_offers_sweep($pdo);
+        require_once __DIR__ . '/../lib/package_orders.php';
+        $pk = $pdo->prepare("SELECT order_kind FROM orders WHERE id = ?"); $pk->execute(array($order_id));
+        if ($pk->fetchColumn() === 'package' && !etel_package_courier_capable($pdo, $courier['id'])) fail('Update your courier app to take package jobs.', 403);
         $r = etel_offer_accept($pdo, $order_id, $courier['id']);
     } catch (Exception $e) { fail_ex($e, 'Could not accept the offer', 500); }
     if ($r !== 'accepted') fail('This offer has expired or was given to another courier', 409);
@@ -422,13 +428,17 @@ case 'courier_update_order_status': {
 
     // Verify courier is assigned to this order
     try {
-        $o = $pdo->prepare('SELECT id, courier_id FROM orders WHERE id=?');
+        $o = $pdo->prepare('SELECT id, courier_id, order_kind FROM orders WHERE id=?');
         $o->execute(array($order_id));
         $order = $o->fetch();
     } catch (Exception $e) { $order = null; }
     
     if (!$order) fail('Order not found', 404);
     if ($order['courier_id'] != $courier['id']) fail('You are not assigned to this order', 403);
+    // A package is picked up and delivered only with the PINs (courier_package_pickup / courier_package_deliver), never by a plain status change.
+    if (isset($order['order_kind']) && $order['order_kind'] === 'package' && in_array($status, array('picked_up', 'delivered'), true)) {
+        fail('Packages are picked up and delivered with the PIN. Use the package buttons in the app.', 400);
+    }
     // Moving the order forward counts as accepting it (an expiring offer can no longer be taken back).
     try { require_once __DIR__ . '/../lib/courier_offers.php'; etel_offer_mark_accepted($pdo, $order_id); } catch (Exception $oe) {} catch (Throwable $oe) {}
     
@@ -680,6 +690,11 @@ case 'courier_get_my_orders': {
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
     } catch (Exception $e) {}
 
+    // Package columns for the courier (never the PINs): the app shows the pickup address, the sender and what is being sent.
+    require_once __DIR__ . '/../lib/package_orders.php';
+    etel_package_ensure_schema($pdo);
+    if (!empty($_GET['pkg'])) etel_package_mark_capable($pdo, $courier['id']);
+    $pkg_my_cols = ', o.order_kind, o.vehicle_class, o.pickup_address, o.pickup_lat, o.pickup_lng, o.pkg_size, o.pkg_weight_kg, o.pkg_desc, o.distance_km, o.sender_name, o.sender_phone';
     // Full query with service-giver GPS join
     try {
         $s = $pdo->prepare("
@@ -687,7 +702,7 @@ case 'courier_get_my_orders': {
                    o.recipient_name, o.recipient_phone, o.fare_total, o.delivery_fee, o.status,
                    o.placed_at, o.delivered_at, o.notes,
                    o.recipient_address, o.delivery_photo_url, o.payment_method,
-                   o.delivery_lat, o.delivery_lng,
+                   o.delivery_lat, o.delivery_lng$pkg_my_cols,
                    sg.lat  AS sg_lat,  sg.lng  AS sg_lng,
                    sg.business_name AS sg_business_name,
                    sg.address       AS sg_address

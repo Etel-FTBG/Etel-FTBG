@@ -11,6 +11,7 @@
 //   admin_package_rates_save  { vehicle_class, label, icon, base_fee, per_km, free_kg, per_kg_over, min_fee, max_weight_kg, active }
 //                                                       -> change one vehicle's price rules (orders.manage)
 //   admin_package_setting_save { key:'late_cancel_fee', value }  -> small settings, e.g. the cancel fee (orders.manage)
+//   courier_package_pickup / courier_package_deliver { order_id, pin } -> the courier's PIN steps (courier)
 //   admin_package_type_add    { label, icon, size_like, courier_names, base_fee, ... }
 //                                                       -> add a vehicle type of our own, e.g. a Bajaj (orders.manage)
 // pickup{} / drop{}: { address, lat?, lng?, zone? } - a map point, or a known zone name when there is no map.
@@ -87,6 +88,23 @@ case 'admin_package_setting_save': {
     $r = etel_package_save_setting($pdo, $key, isset($body['value']) ? $body['value'] : '');
     if (!$r['ok']) fail($r['message'], 400);
     ok(array('message' => $r['message'], 'settings' => etel_package_settings($pdo)));
+    break;
+}
+
+case 'courier_package_pickup':
+case 'courier_package_deliver': {
+    // POST order_id, pin -> the courier enters the sender's pickup PIN (pickup) or the recipient's delivery PIN (deliver).
+    $pdo = db();
+    $courier_user = require_courier($pdo);
+    $courier = get_or_create_courier_profile($pdo, $courier_user['id']);
+    if (!$courier) fail('Courier profile could not be created. Contact admin.', 500);
+    $order_id = isset($body['order_id']) ? intval($body['order_id']) : 0;
+    $pin = isset($body['pin']) ? (string) $body['pin'] : '';
+    if (!$order_id) fail('order_id is required', 400);
+    if (!preg_match('/^\d{4}$/', preg_replace('/\s+/', '', $pin))) fail('Enter the 4-digit PIN.', 400);
+    $r = etel_package_courier_step($pdo, $courier['id'], $order_id, $action === 'courier_package_pickup' ? 'pickup' : 'delivery', $pin);
+    if (!$r['ok']) fail($r['message'], 400);
+    ok(array('message' => $r['message'], 'status' => $r['status'], 'order_id' => $order_id));
     break;
 }
 

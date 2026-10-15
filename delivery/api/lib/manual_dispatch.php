@@ -152,6 +152,13 @@ function etel_admin_assign_courier($pdo, $order_id, $courier_id, $admin_id) {
         if (intval($cr['active']) !== 1) return array('ok' => false, 'message' => 'This courier is not active.');
         $prev = $o['courier_id'] ? intval($o['courier_id']) : 0;
         if ($prev === $courier_id) return array('ok' => false, 'message' => 'This courier already has the order.');
+        try {   // a package needs the courier's app to show the pickup address and ask for the PINs: an older app would strand it
+            require_once __DIR__ . '/package_orders.php';
+            $pk = $pdo->prepare("SELECT order_kind FROM orders WHERE id = ?"); $pk->execute(array($order_id));
+            if ($pk->fetchColumn() === 'package' && !etel_package_courier_capable($pdo, $courier_id)) {
+                return array('ok' => false, 'message' => 'This courier\'s app cannot run package jobs (they need the new courier app open and online). Choose another courier.');
+            }
+        } catch (Exception $e) { error_log('[ETEL] assign package check: ' . $e->getMessage()); }
 
         $assignedAt = '';
         try { require_once __DIR__ . '/courier_stale.php'; if (etel_stale_has_col($pdo)) $assignedAt = ', courier_assigned_at = NOW()'; } catch (Exception $e) {} catch (Throwable $e) {}
