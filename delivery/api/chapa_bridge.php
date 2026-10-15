@@ -6,7 +6,7 @@
 // (https://developer.chapa.co). Money is only ever treated as received
 // after Chapa's verify API confirms status, ETB currency and the exact
 // amount THIS server expects (never a client-supplied figure).
-// Secret key: CHAPA_SECRET_KEY in api/.env.
+// Secret key: saved in Admin -> Payments & banks, or CHAPA_SECRET_KEY in api/.env.
 //
 // Shared by controllers/ChapaController.php (chapa_init / chapa_status)
 // and chapa-callback.php (Chapa webhook) - both settle through
@@ -15,11 +15,13 @@
 
 require_once __DIR__ . '/lib/schema_helpers.php';
 require_once __DIR__ . '/lib/ride_fare.php';
+require_once __DIR__ . '/lib/integrations.php';
 
 function chapa_secret() {
-    $k = '';
-    if (function_exists('etel_env')) $k = etel_env('CHAPA_SECRET_KEY', 'CFG_CHAPA_SECRET_KEY', '');
-    elseif (defined('CHAPA_SECRET_KEY')) $k = CHAPA_SECRET_KEY;
+    // Saved in Admin (Payments & banks) first, then the old api/.env value.
+    $k = etel_integration_get('chapa', 'secret_key', '');
+    if ($k === '' && function_exists('etel_env')) $k = etel_env('CHAPA_SECRET_KEY', 'CFG_CHAPA_SECRET_KEY', '');
+    elseif ($k === '' && defined('CHAPA_SECRET_KEY')) $k = CHAPA_SECRET_KEY;
     if ($k === '' || strpos($k, 'CHASECK_TEST-xxxx') === 0 || strtolower($k) === 'change_me') return '';
     return $k;
 }

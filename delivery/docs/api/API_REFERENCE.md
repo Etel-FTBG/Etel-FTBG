@@ -1,13 +1,13 @@
 # ETEL Delivery & Ride API reference
 
-Generated from the source by `tools/gen_api_docs.py` (427 actions). Machine-readable: `openapi.json`.
+Generated from the source by `tools/gen_api_docs.py` (430 actions). Machine-readable: `openapi.json`.
 
 **Call:** `POST /delivery/api/boot.php` with JSON `{"action": "<name>", ...fields}`; header `Authorization: Bearer <token>` for everything except the *public* actions.
 **Reply:** `{success, data, message, v}`. **Login:** `login` / `etelid_login` (apps) or `admin_etelid_login` (admin; add `totp_code` when the reply says `requires_2fa`).
 
 | Who can call | Actions |
 |---|---|
-| admin | 198 |
+| admin | 201 |
 | any signed-in user | 182 |
 | courier | 16 |
 | public | 9 |
@@ -235,6 +235,14 @@ Generated from the source by `tools/gen_api_docs.py` (427 actions). Machine-read
 | `investor_portal_am_i_investor` | any signed-in user | - | - |
 | `investor_portal_get_my_growth_planner_data` | any signed-in user | - | - |
 | `investor_portal_get_my_view` | any signed-in user | - | - |
+
+## Integration
+
+| Action | Auth | Fields | Query |
+|---|---|---|---|
+| `admin_integrations_get` | admin · integrations.manage | - | - |
+| `admin_integrations_save` | admin · integrations.manage | `provider`, `values` | - |
+| `admin_integrations_test` | admin · integrations.manage | `provider` | - |
 
 ## InvestorPortal
 

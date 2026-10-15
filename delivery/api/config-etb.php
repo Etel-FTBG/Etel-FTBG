@@ -29,9 +29,19 @@ if (!function_exists('_etb_env')) {
         return $default;
     }
 }
-define('TELEBIRR_MERCHANT_ID',   _etb_env('TELEBIRR_MERCHANT_ID',  ''));
-define('TELEBIRR_API_KEY',       _etb_env('TELEBIRR_API_KEY',      ''));
-define('TELEBIRR_SECRET_KEY',    _etb_env('TELEBIRR_SECRET_KEY',   ''));
+/* Keys saved in Admin (Payments & banks) win; the .env values above are the fallback (lib/integrations.php). */
+if (!function_exists('_etb_cfg')) {
+    function _etb_cfg($key, $envName) {
+        if (defined('APP_VER') && is_file(__DIR__ . '/lib/integrations.php')) {
+            require_once __DIR__ . '/lib/integrations.php';
+            return etel_integration_get('telebirr', $key, _etb_env($envName, ''));
+        }
+        return _etb_env($envName, '');
+    }
+}
+define('TELEBIRR_MERCHANT_ID',   _etb_cfg('merchant_id', 'TELEBIRR_MERCHANT_ID'));
+define('TELEBIRR_API_KEY',       _etb_cfg('api_key',     'TELEBIRR_API_KEY'));
+define('TELEBIRR_SECRET_KEY',    _etb_cfg('secret_key',  'TELEBIRR_SECRET_KEY'));
 define('TELEBIRR_BASE_URL',      'https://api.telebirr.com/api/v1');
 define('TELEBIRR_MERCHANT_NAME', 'ETEL Delivery Hawassa');
 

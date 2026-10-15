@@ -3,7 +3,7 @@
  "info": {
   "title": "ETEL Delivery & Ride API",
   "version": "generated",
-  "description": "Every action is a JSON POST to /api/boot.php with an `action` field (a few read-only actions also accept GET query parameters). Responses are JSON: {success: true|false, data: {...}, message: '...', v: '<app version>'}. Send the session token as `Authorization: Bearer <token>`; get one from `login`, `etelid_login` (Delivery/Ride apps) or `admin_etelid_login` (admin). Admin accounts with two-step sign-in answer {requires_2fa: true}: repeat the same login request with `totp_code`. Errors use HTTP 400/401/403/404/409/429/500/503 with the same JSON shape. Throttled actions answer 429. This file is generated from the source by tools/gen_api_docs.py: 427 actions. Parameter names come from the handlers; types and limits are in the handler code."
+  "description": "Every action is a JSON POST to /api/boot.php with an `action` field (a few read-only actions also accept GET query parameters). Responses are JSON: {success: true|false, data: {...}, message: '...', v: '<app version>'}. Send the session token as `Authorization: Bearer <token>`; get one from `login`, `etelid_login` (Delivery/Ride apps) or `admin_etelid_login` (admin). Admin accounts with two-step sign-in answer {requires_2fa: true}: repeat the same login request with `totp_code`. Errors use HTTP 400/401/403/404/409/429/500/503 with the same JSON shape. Throttled actions answer 429. This file is generated from the source by tools/gen_api_docs.py: 430 actions. Parameter names come from the handlers; types and limits are in the handler code."
  },
  "servers": [
   {
@@ -285,6 +285,15 @@
          },
          {
           "$ref": "#/components/schemas/admin_get_zones"
+         },
+         {
+          "$ref": "#/components/schemas/admin_integrations_get"
+         },
+         {
+          "$ref": "#/components/schemas/admin_integrations_save"
+         },
+         {
+          "$ref": "#/components/schemas/admin_integrations_test"
          },
          {
           "$ref": "#/components/schemas/admin_list_bank_payments"
@@ -1935,6 +1944,27 @@
          "summary": "admin_get_zones (admin)",
          "value": {
           "action": "admin_get_zones"
+         }
+        },
+        "admin_integrations_get": {
+         "summary": "admin_integrations_get (admin)",
+         "value": {
+          "action": "admin_integrations_get"
+         }
+        },
+        "admin_integrations_save": {
+         "summary": "admin_integrations_save (admin)",
+         "value": {
+          "action": "admin_integrations_save",
+          "provider": "<provider>",
+          "values": "<values>"
+         }
+        },
+        "admin_integrations_test": {
+         "summary": "admin_integrations_test (admin)",
+         "value": {
+          "action": "admin_integrations_test",
+          "provider": "<provider>"
          }
         },
         "admin_list_bank_payments": {
@@ -6300,6 +6330,63 @@
      }
     },
     "description": "Auth: admin (capability settings.view). Source: api/controllers/AdminController.php."
+   },
+   "admin_integrations_get": {
+    "type": "object",
+    "title": "action: admin_integrations_get",
+    "required": [
+     "action"
+    ],
+    "properties": {
+     "action": {
+      "type": "string",
+      "enum": [
+       "admin_integrations_get"
+      ]
+     }
+    },
+    "description": "Auth: admin (capability integrations.manage). Source: api/controllers/IntegrationController.php."
+   },
+   "admin_integrations_save": {
+    "type": "object",
+    "title": "action: admin_integrations_save",
+    "required": [
+     "action"
+    ],
+    "properties": {
+     "action": {
+      "type": "string",
+      "enum": [
+       "admin_integrations_save"
+      ]
+     },
+     "provider": {
+      "description": "request field (type not declared in code)"
+     },
+     "values": {
+      "description": "request field (type not declared in code)"
+     }
+    },
+    "description": "Auth: admin (capability integrations.manage). Source: api/controllers/IntegrationController.php."
+   },
+   "admin_integrations_test": {
+    "type": "object",
+    "title": "action: admin_integrations_test",
+    "required": [
+     "action"
+    ],
+    "properties": {
+     "action": {
+      "type": "string",
+      "enum": [
+       "admin_integrations_test"
+      ]
+     },
+     "provider": {
+      "description": "request field (type not declared in code)"
+     }
+    },
+    "description": "Auth: admin (capability integrations.manage). Source: api/controllers/IntegrationController.php."
    },
    "admin_list_bank_payments": {
     "type": "object",
@@ -14428,6 +14515,32 @@
    "body": [],
    "query": [],
    "source": "api/controllers/AdminController.php"
+  },
+  "admin_integrations_get": {
+   "auth": "admin",
+   "capability": "integrations.manage",
+   "body": [],
+   "query": [],
+   "source": "api/controllers/IntegrationController.php"
+  },
+  "admin_integrations_save": {
+   "auth": "admin",
+   "capability": "integrations.manage",
+   "body": [
+    "provider",
+    "values"
+   ],
+   "query": [],
+   "source": "api/controllers/IntegrationController.php"
+  },
+  "admin_integrations_test": {
+   "auth": "admin",
+   "capability": "integrations.manage",
+   "body": [
+    "provider"
+   ],
+   "query": [],
+   "source": "api/controllers/IntegrationController.php"
   },
   "admin_list_bank_payments": {
    "auth": "any signed-in user",
