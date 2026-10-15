@@ -50,6 +50,15 @@ function etel_money_has_wallet_col($pdo) {
     return $has;
 }
 
+// SQL piece for the cancel fee kept from a refund (0 when the column is not there yet): "IFNULL(o.cancel_fee, 0)" or "0".
+function etel_money_fee_sql($pdo, $alias = 'o') {
+    static $has = null;
+    if ($has === null) {
+        try { $has = (bool) $pdo->query("SHOW COLUMNS FROM orders LIKE 'cancel_fee'")->fetch(); } catch (Exception $e) { $has = false; }
+    }
+    return $has ? ('IFNULL(' . $alias . '.cancel_fee, 0)') : '0';
+}
+
 function etel_money_paid_cond($pdo, $alias = 'o') {
     return etel_money_has_wallet_col($pdo) ? etel_money_paid_sql($alias) : ("(" . $alias . ".payment_status = 'paid')");
 }
@@ -61,15 +70,17 @@ function etel_refunds_report($pdo, $days = 30) {
     $out = array('owed' => array(), 'owed_count' => 0, 'owed_total' => 0.0, 'refunded' => array(), 'refunded_count' => 0, 'refunded_total' => 0.0, 'days' => $days);
     try {
         $paid = etel_money_paid_cond($pdo, 'o');
-        $s = $pdo->query("SELECT o.id, o.order_code, o.fare_total, o.payment_method, o.placed_at, u.name AS customer_name, u.phone AS customer_phone
+        $fee = etel_money_fee_sql($pdo, 'o');
+        $s = $pdo->query("SELECT o.id, o.order_code, o.fare_total, $fee AS cancel_fee, o.payment_method, o.placed_at, u.name AS customer_name, u.phone AS customer_phone
             FROM orders o LEFT JOIN users u ON u.id = o.customer_id
-            WHERE o.status = 'cancelled' AND $paid AND o.payment_status <> 'refunded'
+            WHERE o.status = 'cancelled' AND $paid AND o.payment_status <> 'refunded' AND o.fare_total > $fee
               AND NOT EXISTS (SELECT 1 FROM order_refunds r WHERE r.order_id = o.id)
             ORDER BY o.placed_at ASC LIMIT 200");
         foreach ($s->fetchAll() as $r) {
-            $out['owed'][] = array('order_id' => intval($r['id']), 'order_code' => $r['order_code'], 'amount' => round(floatval($r['fare_total']), 2),
+            $net = round(floatval($r['fare_total']) - floatval($r['cancel_fee']), 2);   // what is really owed back: the total less any cancel fee kept
+            $out['owed'][] = array('order_id' => intval($r['id']), 'order_code' => $r['order_code'], 'amount' => $net, 'fee_kept' => round(floatval($r['cancel_fee']), 2),
                 'method' => $r['payment_method'], 'placed_at' => $r['placed_at'], 'customer' => etel_money_first_name($r['customer_name']), 'customer_phone' => $r['customer_phone']);
-            $out['owed_total'] += floatval($r['fare_total']);
+            $out['owed_total'] += $net;
         }
         $out['owed_count'] = count($out['owed']); $out['owed_total'] = round($out['owed_total'], 2);
         $q = $pdo->prepare("SELECT r.order_id, r.amount, r.method, r.reference, r.note, r.created_at, o.order_code
@@ -102,17 +113,19 @@ function etel_refund_record($pdo, $order_id, $admin_id, $method, $reference, $no
     $note = substr(trim((string) $note), 0, 255);
     try {
         $paid = etel_money_paid_cond($pdo, 'o');
-        $s = $pdo->prepare("SELECT o.id, o.status, o.fare_total, o.payment_status, ($paid) AS was_paid FROM orders o WHERE o.id = ? LIMIT 1");
+        $feeSql = etel_money_fee_sql($pdo, 'o');
+        $s = $pdo->prepare("SELECT o.id, o.status, o.fare_total, $feeSql AS cancel_fee, o.payment_status, ($paid) AS was_paid FROM orders o WHERE o.id = ? LIMIT 1");
         $s->execute(array($order_id));
         $o = $s->fetch();
         if (!$o) return array('ok' => false, 'message' => 'Order not found.');
         if ($o['status'] !== 'cancelled') return array('ok' => false, 'message' => 'Only a cancelled order can be refunded.');
         if (intval($o['was_paid']) !== 1 && $o['payment_status'] !== 'refunded') return array('ok' => false, 'message' => 'No payment was taken for this order, so there is nothing to refund.');
-        $total = round(floatval($o['fare_total']), 2);
+        $total = round(floatval($o['fare_total']) - floatval($o['cancel_fee']), 2);   // the cancel fee the sender agreed to stays with us
+        if ($total <= 0) return array('ok' => false, 'message' => 'The cancel fee covers the whole payment, so there is nothing to refund.');
         if ($amount === null || $amount === '') $amount = $total;
         if (!is_numeric($amount) || floatval($amount) <= 0) return array('ok' => false, 'message' => 'Enter an amount above zero.');
         $amount = round(floatval($amount), 2);
-        if ($amount > $total) return array('ok' => false, 'message' => 'The refund cannot be more than the order total (ETB ' . number_format($total, 2) . ').');
+        if ($amount > $total) return array('ok' => false, 'message' => 'The refund cannot be more than ETB ' . number_format($total, 2) . ($o['cancel_fee'] > 0 ? ' (the order total less the cancel fee).' : ' (the order total).'));
         $pdo->beginTransaction();
         try {
             $pdo->prepare("INSERT INTO order_refunds (order_id, amount, method, reference, note, admin_id) VALUES (?,?,?,?,?,?)")

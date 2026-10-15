@@ -15,6 +15,17 @@ if not re.search(r"case 'admin_package_rates_get': \{\s*\$pdo = db\(\);\s*requir
     bad.append('admin_package_rates_get must require orders.view')
 if not re.search(r"case 'admin_package_rates_save': \{\s*\$pdo = db\(\);\s*require_admin\(\$pdo, 'orders\.manage'\)", ctl):
     bad.append('admin_package_rates_save must require orders.manage')
+if 'admin_package_setting_save' not in js:
+    bad.append('admin-packages.js has no cancel fee save call')
+if not re.search(r"case 'admin_package_setting_save': \{\s*\$pdo = db\(\);\s*require_admin\(\$pdo, 'orders\.manage'\)", ctl):
+    bad.append('admin_package_setting_save must require orders.manage')
+if 'require_courier($pdo)' not in read('api/controllers/CourierFuelController.php'):
+    bad.append('the courier fuel log must be couriers only (require_courier)')
+oc = read('api/lib/order_cancel.php')
+if 'confirm_fee' not in oc or "etel_cancel_fee_for" not in oc:
+    bad.append('the late-cancel fee must need the sender to confirm it')
+if 'etel_money_fee_sql' not in read('api/lib/money_ledger.php'):
+    bad.append('refunds must keep the cancel fee out of the amount owed')
 if re.search(r'\bon[a-z]+="|innerHTML\s*=\s*[^;]*\bres\.message', js):
     bad.append('admin-packages.js writes unescaped server text or inline handlers')
 if bad:

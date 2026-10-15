@@ -1,11 +1,12 @@
 /* ETEL Admin - Package prices: what each vehicle charges for a package delivery.
    Staff change the base fee, price per km, free weight, price per extra kg, minimum fee, maximum weight, name, icon,
    and can switch a vehicle off. A calculator shows the price a customer would see before saving.
-   Data: api actions admin_package_rates_get, admin_package_rates_save, admin_package_type_add (api/controllers/PackageController.php).
+   Data: api actions admin_package_rates_get, admin_package_rates_save, admin_package_type_add, admin_package_setting_save (api/controllers/PackageController.php).
    Standalone on purpose: it adds its own menu item and page, so no other admin file changes. */
 (function () {
 'use strict';
 var RATES = [];
+var SETTINGS = { late_cancel_fee: 30 };
 var BTN = 'padding:7px 14px;border-radius:8px;border:0;background:#D4AF37;color:#1A1200;font-weight:700;font-size:12.5px;cursor:pointer';
 var BTN2 = 'padding:7px 12px;border-radius:8px;border:1px solid rgba(128,128,128,.4);background:transparent;color:inherit;font-size:12.5px;cursor:pointer';
 var FIELD = 'padding:7px 8px;border-radius:8px;border:1px solid rgba(128,128,128,.4);background:transparent;color:inherit;font-size:13px;width:100%;box-sizing:border-box';
@@ -69,6 +70,11 @@ function render() {
     '<label style="font-size:12px">Try a distance (km)<input id="pkg-calc-km" type="number" min="1" step="any" value="5" style="' + FIELD + ';width:120px"></label>' +
     '<label style="font-size:12px">Try a weight (kg)<input id="pkg-calc-kg" type="number" min="0" step="any" value="3" style="' + FIELD + ';width:120px"></label>' +
     '<div style="font-size:12px;opacity:.7;padding-bottom:7px">Each card shows the price a customer would see.</div></div>';
+  h += '<form data-setting="late_cancel_fee" style="border:1px solid rgba(128,128,128,.3);border-radius:12px;padding:12px;margin-bottom:12px">' +
+    '<div style="font-weight:800;margin-bottom:2px">Cancelling after a courier accepted</div>' +
+    '<div style="font-size:12px;opacity:.75;margin-bottom:8px">A sender can cancel for free until a courier accepts. After that, if they paid online, this fee is kept out of their refund to pay for the courier\'s trip. Cash packages are never charged. Put 0 to keep cancelling always free.</div>' +
+    '<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end"><label style="font-size:12px">Cancel fee (ETB)<input name="value" type="number" inputmode="decimal" min="0" max="5000" step="any" value="' + esc(SETTINGS.late_cancel_fee) + '" style="' + FIELD + ';width:140px"></label>' +
+    '<button type="submit" style="' + BTN + '">Save fee</button></div><div data-note role="status" style="font-size:12.5px;min-height:18px;margin-top:6px"></div></form>';
   h += '<div style="margin-bottom:12px"><button type="button" data-add style="' + BTN + '">＋ Add a vehicle type</button>' +
     '<div data-add-host></div></div>';
   if (!RATES.length) h += '<div style="padding:14px;border:1px dashed rgba(128,128,128,.4);border-radius:12px;opacity:.8">No vehicle prices found.</div>';
@@ -83,6 +89,16 @@ function render() {
   }
   if (!el._wired) { el._wired = true; el.addEventListener('input', function (e) { var t = e.target; if (t && ((t.closest && t.closest('form[data-class]')) || t.id === 'pkg-calc-km' || t.id === 'pkg-calc-kg')) refreshAll(); }); }
   refreshAll();
+  var sf = el.querySelector('form[data-setting]');
+  if (sf) sf.onsubmit = function (e) {
+    e.preventDefault();
+    var b = sf.querySelector('button[type=submit]'); b.disabled = true; note(sf, 'Saving…');
+    api('admin_package_setting_save', { key: sf.getAttribute('data-setting'), value: sf.elements.value.value }).then(function (res) {
+      b.disabled = false;
+      if (res && res.success !== false && !res.error) { var d = res.data || res; if (d.settings) SETTINGS = d.settings; note(sf, d.message || 'Saved.', false); }
+      else note(sf, (res && (res.message || res.error)) || 'Could not save.', true);
+    }).catch(function () { b.disabled = false; note(sf, 'Could not reach the server. Try again.', true); });
+  };
   var addBtn = el.querySelector('[data-add]');
   if (addBtn) addBtn.onclick = function () { openAdd(el); };
   Array.prototype.forEach.call(el.querySelectorAll('form[data-class]'), function (f) {
@@ -145,7 +161,7 @@ function load() {
   el.innerHTML = '<div style="padding:14px;opacity:.7">Loading…</div>';
   api('admin_package_rates_get').then(function (res) {
     if (!res || res.success === false || res.error) { el.innerHTML = '<div style="padding:14px;color:#e74c3c">' + esc((res && (res.message || res.error)) || 'Could not load prices.') + '</div>'; return; }
-    RATES = (res.data || res).rates || []; render();
+    var dd = res.data || res; RATES = dd.rates || []; if (dd.settings) SETTINGS = dd.settings; render();
   }).catch(function (e) { el.innerHTML = '<div style="padding:14px;color:#e74c3c">Package prices: ' + esc(e.message) + '</div>'; });
 }
 

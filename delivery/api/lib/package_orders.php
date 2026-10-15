@@ -133,6 +133,10 @@ function etel_package_ensure_schema($pdo) {
             per_kg_over DECIMAL(10,2) NOT NULL DEFAULT 0, min_fee DECIMAL(10,2) NOT NULL DEFAULT 0, max_weight_kg DECIMAL(8,2) NOT NULL DEFAULT 0,
             sort_order INT(11) NOT NULL DEFAULT 0, active TINYINT(1) NOT NULL DEFAULT 1, updated_at DATETIME NULL DEFAULT NULL,
             PRIMARY KEY (id), UNIQUE KEY uq_vehicle_class (vehicle_class)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+        // Small settings staff change in Admin (Package prices): for now the fee for cancelling after a courier has accepted.
+        $pdo->exec("CREATE TABLE IF NOT EXISTS package_settings (
+            setting_key VARCHAR(40) NOT NULL, setting_value VARCHAR(100) NOT NULL DEFAULT '', updated_at DATETIME NULL DEFAULT NULL,
+            PRIMARY KEY (setting_key)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
         // Added vehicle types (Admin -> Package prices -> Add): where each sits in the size order and which courier vehicle names serve it.
         $rateCols = array();
         foreach ($pdo->query('SHOW COLUMNS FROM package_rates')->fetchAll() as $c) $rateCols[$c['Field']] = true;
@@ -425,4 +429,40 @@ function etel_package_add_type($pdo, $r) {
     } catch (Exception $e) { error_log('[ETEL] package add type: ' . $e->getMessage()); return array('ok' => false, 'message' => 'Could not add the vehicle type.'); }
     etel_package_custom_defs(null, true);
     return array('ok' => true, 'message' => 'Added. Couriers whose vehicle is set to ' . implode(' or ', $n['names']) . ' will now get these jobs.', 'vehicle_class' => $key);
+}
+
+// Package settings staff can change. key => default. late_cancel_fee = ETB the sender pays for cancelling after a courier accepted
+// (only taken when the package was paid online: it is kept out of the refund). 0 = cancelling is always free.
+function etel_package_setting_defaults() { return array('late_cancel_fee' => 30); }
+
+function etel_package_setting($pdo, $key) {
+    $def = etel_package_setting_defaults();
+    if (!isset($def[$key])) return null;
+    try {
+        etel_package_ensure_schema($pdo);
+        $q = $pdo->prepare('SELECT setting_value FROM package_settings WHERE setting_key = ?'); $q->execute(array($key));
+        $v = $q->fetchColumn();
+        if ($v !== false && is_numeric($v)) return floatval($v);
+    } catch (Exception $e) { error_log('[ETEL] package setting: ' . $e->getMessage()); }
+    return floatval($def[$key]);
+}
+
+function etel_package_settings($pdo) {
+    $out = array();
+    foreach (etel_package_setting_defaults() as $k => $d) $out[$k] = etel_package_setting($pdo, $k);
+    return $out;
+}
+
+// Admin: save one setting. Returns array(ok, message).
+function etel_package_save_setting($pdo, $key, $value) {
+    $def = etel_package_setting_defaults();
+    if (!isset($def[$key])) return array('ok' => false, 'message' => 'Unknown setting.');
+    if (!is_numeric($value) || floatval($value) < 0 || floatval($value) > 5000) return array('ok' => false, 'message' => 'The fee must be a number from 0 to 5000 (0 = always free).');
+    $v = round(floatval($value), 2);
+    try {
+        etel_package_ensure_schema($pdo);
+        $pdo->prepare('INSERT INTO package_settings (setting_key, setting_value, updated_at) VALUES (?,?,NOW()) ON DUPLICATE KEY UPDATE setting_value=VALUES(setting_value), updated_at=NOW()')
+            ->execute(array($key, (string) $v));
+    } catch (Exception $e) { error_log('[ETEL] package setting save: ' . $e->getMessage()); return array('ok' => false, 'message' => 'Could not save.'); }
+    return array('ok' => true, 'message' => 'Saved.');
 }

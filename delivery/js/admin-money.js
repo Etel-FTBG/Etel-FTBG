@@ -57,7 +57,7 @@ function renderRefunds(d) {
   if (!(d.owed || []).length) h += '<div style="padding:14px;border:1px dashed rgba(128,128,128,.4);border-radius:12px;opacity:.8;margin-bottom:14px">Nothing waiting. Every paid order that was cancelled has been refunded.</div>';
   (d.owed || []).forEach(function (o) {
     h += '<div style="border:1px solid #e74c3c;border-radius:10px;padding:8px 10px;margin-bottom:8px" data-owed="' + o.order_id + '">' +
-      '<div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:13px"><span><b>' + esc(o.order_code) + '</b> · ' + esc(o.customer || 'Customer') + (o.customer_phone ? ' · ' + esc(o.customer_phone) : '') + '</span><b>' + etb(o.amount) + '</b></div>' +
+      '<div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:13px"><span><b>' + esc(o.order_code) + '</b> · ' + esc(o.customer || 'Customer') + (o.customer_phone ? ' · ' + esc(o.customer_phone) : '') + '</span><b>' + etb(o.amount) + '</b>' + (Number(o.fee_kept) > 0 ? ' <span style="opacity:.7;font-size:11px">(cancel fee ' + etb(o.fee_kept) + ' kept)</span>' : '') + '</div>' +
       '<div style="font-size:12px;opacity:.7;margin-top:2px">Paid by ' + esc(METHOD_LABEL[o.method] || o.method) + ' · ordered ' + esc(when(o.placed_at)) + '</div>' +
       '<div data-formhost="' + o.order_id + '"><button type="button" data-open="' + o.order_id + '" style="' + BTN2 + ';margin-top:8px">Record refund…</button></div></div>';
   });

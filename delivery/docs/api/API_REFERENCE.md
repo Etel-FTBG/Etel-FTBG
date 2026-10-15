@@ -1,16 +1,16 @@
 # ETEL Delivery & Ride API reference
 
-Generated from the source by `tools/gen_api_docs.py` (433 actions). Machine-readable: `openapi.json`.
+Generated from the source by `tools/gen_api_docs.py` (434 actions). Machine-readable: `openapi.json`.
 
 **Call:** `POST /delivery/api/boot.php` with JSON `{"action": "<name>", ...fields}`; header `Authorization: Bearer <token>` for everything except the *public* actions.
 **Reply:** `{success, data, message, v}`. **Login:** `login` / `etelid_login` (apps) or `admin_etelid_login` (admin; add `totp_code` when the reply says `requires_2fa`).
 
 | Who can call | Actions |
 |---|---|
-| admin | 204 |
-| any signed-in user | 182 |
+| admin | 205 |
+| any signed-in user | 178 |
 | courier | 16 |
-| public | 9 |
+| public | 13 |
 | public (this call signs you in) | 6 |
 | service key (X-Etel-Service-Key) | 16 |
 
@@ -139,10 +139,10 @@ Generated from the source by `tools/gen_api_docs.py` (433 actions). Machine-read
 
 | Action | Auth | Fields | Query |
 |---|---|---|---|
-| `courier_add_fuel_log` | any signed-in user | `cost_etb`, `liters`, `odometer_km` | - |
-| `courier_delete_fuel_log` | any signed-in user | `id` | - |
-| `courier_get_fuel_summary` | any signed-in user | `period` | `period` |
-| `courier_list_fuel_logs` | any signed-in user | - | - |
+| `courier_add_fuel_log` | public | `cost_etb`, `liters`, `odometer_km` | - |
+| `courier_delete_fuel_log` | public | `id` | - |
+| `courier_get_fuel_summary` | public | `period` | `period` |
+| `courier_list_fuel_logs` | public | - | - |
 
 ## CourierPay
 
@@ -309,7 +309,7 @@ Generated from the source by `tools/gen_api_docs.py` (433 actions). Machine-read
 | `courier_update_location` | courier | `lat`, `lng` | - |
 | `courier_update_order_status` | courier | `order_id`, `status` | - |
 | `customer_add_address` | any signed-in user | `address_line`, `is_default`, `label`, `lat`, `lng`, `zone` | - |
-| `customer_cancel_order` | any signed-in user | `note`, `order_id`, `reason` | - |
+| `customer_cancel_order` | any signed-in user | `confirm_fee`, `note`, `order_id`, `reason` | - |
 | `customer_confirm_delivery` | any signed-in user | `confirm_payment_method`, `order_id`, `payment_confirmed`, `wallet_tx_ref` | - |
 | `customer_create_order` | any signed-in user | `_allow_chapa`, `customer_lat`, `customer_lng`, `delivery_lat`, `delivery_lng`, `delivery_photo_url`, `delivery_tier`, `items`, `notes`, `payment_method`, `promo_code`, `recipient_name`, `recipient_phone`, `tip`, `to_zone`, `use_points` | - |
 | `customer_delete_address` | any signed-in user | `id` | - |
@@ -347,6 +347,7 @@ Generated from the source by `tools/gen_api_docs.py` (433 actions). Machine-read
 |---|---|---|---|
 | `admin_package_rates_get` | admin · orders.view | - | - |
 | `admin_package_rates_save` | admin · orders.manage | `vehicle_class` | - |
+| `admin_package_setting_save` | admin · orders.manage | `key`, `value` | - |
 | `admin_package_type_add` | admin · orders.manage | - | - |
 | `customer_package_create` | any signed-in user | `_allow_chapa` | - |
 | `customer_package_options` | any signed-in user | - | - |

@@ -181,6 +181,36 @@ check('the courier is freed', $pdo->query("SELECT status FROM couriers WHERE id=
 $pdo->exec("UPDATE orders SET status='picked_up' WHERE id=" . $r3['order_id']);
 check('once picked up the sender cannot cancel', etel_cancel_order($pdo, $r3['order_id'], 'customer', $ids[0], 'changed_mind', '', 0)['ok'] === false);
 
+echo "cancel fee after a courier accepted (paid online only)\n";
+require_once __DIR__ . '/../api/lib/money_ledger.php';
+$oid = $r3['order_id'];
+$pdo->exec("UPDATE orders SET status='assigned', courier_id=$cCar, courier_accepted_at=NOW(), payment_method='chapa', payment_status='paid', fare_total=200 WHERE id=$oid");
+$pdo->exec("UPDATE order_assignments SET status='assigned' WHERE order_id=$oid");
+check('default fee is ETB 30', etel_package_setting($pdo, 'late_cancel_fee') === 30.0 && etel_cancel_fee_for($pdo, $oid) === 30.0);
+$pdo->exec("UPDATE orders SET payment_method='cash', payment_status='unpaid' WHERE id=$oid");
+check('a cash package is never charged', etel_cancel_fee_for($pdo, $oid) === 0.0);
+$pdo->exec("UPDATE orders SET payment_method='chapa', payment_status='paid', courier_accepted_at=NULL WHERE id=$oid");
+check('no fee before a courier has accepted', etel_cancel_fee_for($pdo, $oid) === 0.0);
+$pdo->exec("UPDATE orders SET courier_accepted_at=NOW() WHERE id=$oid");
+$noConfirm = etel_cancel_order($pdo, $oid, 'customer', $ids[0], 'changed_mind', '', 0);
+check('cancelling without agreeing to the fee is refused and tells the amount', $noConfirm['ok'] === false && $noConfirm['fee'] === 30.0 && strpos($noConfirm['message'], '30') !== false && $row($oid)['status'] === 'assigned');
+$yes = etel_cancel_order($pdo, $oid, 'customer', $ids[0], 'changed_mind', '', 0, true);
+check('agreeing cancels it and records the fee', $yes['ok'] === true && $yes['fee'] === 30.0 && floatval($pdo->query("SELECT cancel_fee FROM orders WHERE id=$oid")->fetchColumn()) === 30.0);
+$rep = etel_refunds_report($pdo); $mine = null; foreach ($rep['owed'] as $x) { if ($x['order_id'] == $oid) $mine = $x; }
+check('the refund owed is the total less the fee (170) and shows the fee kept', $mine && $mine['amount'] === 170.0 && $mine['fee_kept'] === 30.0);
+check('a refund above that is refused', etel_refund_record($pdo, $oid, 1, 'cash', '', '', 180)['ok'] === false);
+$rr = etel_refund_record($pdo, $oid, 1, 'cash', '', '');
+check('the default refund is the net amount', $rr['ok'] === true && $rr['amount'] === 170.0);
+$pdo->exec("UPDATE orders SET status='assigned', cancel_fee=0, payment_status='paid', courier_id=$cCar, courier_accepted_at=NOW() WHERE id=$oid");
+check('with the setting back at 30 it is charged again', etel_cancel_fee_for($pdo, $oid) === 30.0);
+etel_package_save_setting($pdo, 'late_cancel_fee', 0);
+check('a fee of 0 means always free', etel_cancel_fee_for($pdo, $oid) === 0.0);
+etel_package_save_setting($pdo, 'late_cancel_fee', 500);
+check('the fee never exceeds the order total', etel_cancel_fee_for($pdo, $oid) === 200.0);
+check('a bad fee is refused', etel_package_save_setting($pdo, 'late_cancel_fee', -1)['ok'] === false && etel_package_save_setting($pdo, 'late_cancel_fee', 'abc')['ok'] === false && etel_package_save_setting($pdo, 'nope', 5)['ok'] === false);
+etel_package_save_setting($pdo, 'late_cancel_fee', 30);
+$pdo->exec("DELETE FROM order_refunds WHERE order_id=$oid");
+
 $pdo->exec("DELETE FROM order_admin_actions WHERE order_id IN (SELECT id FROM orders WHERE order_kind='package')");
 $pdo->exec("DELETE FROM order_assignments WHERE order_id IN (SELECT id FROM orders WHERE order_kind='package')");
 $pdo->exec("DELETE FROM orders WHERE order_kind = 'package'");

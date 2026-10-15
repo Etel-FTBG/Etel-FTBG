@@ -5,7 +5,7 @@
 if (!defined('ETEL_FUEL_FALLBACK_RATE_PER_KM')) define('ETEL_FUEL_FALLBACK_RATE_PER_KM', 8.0);
 
 $pdo = db();
-$u = require_auth($pdo);
+$u = require_courier($pdo);   // couriers only (a customer or shop account has no fuel log to keep)
 
 switch ($action) {
 
