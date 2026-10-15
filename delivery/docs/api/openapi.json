@@ -3,7 +3,7 @@
  "info": {
   "title": "ETEL Delivery & Ride API",
   "version": "generated",
-  "description": "Every action is a JSON POST to /api/boot.php with an `action` field (a few read-only actions also accept GET query parameters). Responses are JSON: {success: true|false, data: {...}, message: '...', v: '<app version>'}. Send the session token as `Authorization: Bearer <token>`; get one from `login`, `etelid_login` (Delivery/Ride apps) or `admin_etelid_login` (admin). Admin accounts with two-step sign-in answer {requires_2fa: true}: repeat the same login request with `totp_code`. Errors use HTTP 400/401/403/404/409/429/500/503 with the same JSON shape. Throttled actions answer 429. This file is generated from the source by tools/gen_api_docs.py: 434 actions. Parameter names come from the handlers; types and limits are in the handler code."
+  "description": "Every action is a JSON POST to /api/boot.php with an `action` field (a few read-only actions also accept GET query parameters). Responses are JSON: {success: true|false, data: {...}, message: '...', v: '<app version>'}. Send the session token as `Authorization: Bearer <token>`; get one from `login`, `etelid_login` (Delivery/Ride apps) or `admin_etelid_login` (admin). Admin accounts with two-step sign-in answer {requires_2fa: true}: repeat the same login request with `totp_code`. Errors use HTTP 400/401/403/404/409/429/500/503 with the same JSON shape. Throttled actions answer 429. This file is generated from the source by tools/gen_api_docs.py: 436 actions. Parameter names come from the handlers; types and limits are in the handler code."
  },
  "servers": [
   {
@@ -636,6 +636,12 @@
          },
          {
           "$ref": "#/components/schemas/courier_list_fuel_logs"
+         },
+         {
+          "$ref": "#/components/schemas/courier_package_deliver"
+         },
+         {
+          "$ref": "#/components/schemas/courier_package_pickup"
          },
          {
           "$ref": "#/components/schemas/courier_update_location"
@@ -2861,6 +2867,22 @@
          "summary": "courier_list_fuel_logs (public)",
          "value": {
           "action": "courier_list_fuel_logs"
+         }
+        },
+        "courier_package_deliver": {
+         "summary": "courier_package_deliver (courier)",
+         "value": {
+          "action": "courier_package_deliver",
+          "order_id": "<order_id>",
+          "pin": "<pin>"
+         }
+        },
+        "courier_package_pickup": {
+         "summary": "courier_package_pickup (courier)",
+         "value": {
+          "action": "courier_package_pickup",
+          "order_id": "<order_id>",
+          "pin": "<pin>"
          }
         },
         "courier_update_location": {
@@ -8907,6 +8929,50 @@
      }
     },
     "description": "Auth: public. Source: api/controllers/CourierFuelController.php."
+   },
+   "courier_package_deliver": {
+    "type": "object",
+    "title": "action: courier_package_deliver",
+    "required": [
+     "action"
+    ],
+    "properties": {
+     "action": {
+      "type": "string",
+      "enum": [
+       "courier_package_deliver"
+      ]
+     },
+     "order_id": {
+      "description": "request field (type not declared in code)"
+     },
+     "pin": {
+      "description": "request field (type not declared in code)"
+     }
+    },
+    "description": "Auth: courier. Source: api/controllers/PackageController.php."
+   },
+   "courier_package_pickup": {
+    "type": "object",
+    "title": "action: courier_package_pickup",
+    "required": [
+     "action"
+    ],
+    "properties": {
+     "action": {
+      "type": "string",
+      "enum": [
+       "courier_package_pickup"
+      ]
+     },
+     "order_id": {
+      "description": "request field (type not declared in code)"
+     },
+     "pin": {
+      "description": "request field (type not declared in code)"
+     }
+    },
+    "description": "Auth: courier. Source: api/controllers/PackageController.php."
    },
    "courier_update_location": {
     "type": "object",
@@ -15729,7 +15795,9 @@
    "auth": "courier",
    "capability": null,
    "body": [],
-   "query": [],
+   "query": [
+    "pkg"
+   ],
    "source": "api/controllers/OrderController.php"
   },
   "courier_get_fuel_summary": {
@@ -15760,6 +15828,7 @@
    "body": [],
    "query": [
     "offers",
+    "pkg",
     "status"
    ],
    "source": "api/controllers/OrderController.php"
@@ -15794,6 +15863,26 @@
    "body": [],
    "query": [],
    "source": "api/controllers/CourierFuelController.php"
+  },
+  "courier_package_deliver": {
+   "auth": "courier",
+   "capability": null,
+   "body": [
+    "order_id",
+    "pin"
+   ],
+   "query": [],
+   "source": "api/controllers/PackageController.php"
+  },
+  "courier_package_pickup": {
+   "auth": "courier",
+   "capability": null,
+   "body": [
+    "order_id",
+    "pin"
+   ],
+   "query": [],
+   "source": "api/controllers/PackageController.php"
   },
   "courier_update_location": {
    "auth": "courier",

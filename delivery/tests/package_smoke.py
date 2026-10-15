@@ -19,13 +19,13 @@ SUFFIX = str(int(time.time()))
 PASS, FAIL = [], []
 
 
-def call(action, body=None, token=None):
+def call(action, body=None, token=None, qs=""):
     body = dict(body or {})
     body["action"] = action
     headers = {"Content-Type": "application/json"}
     if token:
         headers["Authorization"] = "Bearer " + token
-    req = urllib.request.Request(API_URL, data=json.dumps(body).encode("utf-8"), headers=headers, method="POST")
+    req = urllib.request.Request(API_URL + qs, data=json.dumps(body).encode("utf-8"), headers=headers, method="POST")
     try:
         with urllib.request.urlopen(req, timeout=15) as f:
             return f.status, json.loads(f.read().decode("utf-8"))
@@ -107,11 +107,19 @@ def main():
     van = register("+251917%06d" % n, "courier", {"vehicle": "van"})
     etel_test_db.park_couriers()
     s, r = call("courier_get_available_orders", {}, token=van)
+    check("an app that does not say it can run packages (no pkg=1) is never shown one", r.get("success") and oid not in [o["id"] for o in (r.get("data") or {}).get("orders", [])], r)
+    s, r = call("courier_accept_order", {"order_id": oid}, token=van)
+    check("and cannot accept one either", r.get("success") is False and s == 403 and "app" in str(r.get("message")).lower(), r)
+    s, r = call("courier_get_available_orders", {}, token=van, qs="?pkg=1")
     jobs = (r.get("data") or {}).get("orders", [])
     mine = [o for o in jobs if o["id"] == oid]
     check("a van courier sees it, with the package details", len(mine) == 1 and mine[0].get("order_kind") == "package" and mine[0].get("vehicle_class") == "van" and mine[0].get("pkg_desc") == "Books" and mine[0].get("pickup_address") == "Tabor, Hawassa", jobs[:1])
     s, r = call("courier_accept_order", {"order_id": oid}, token=van)
     check("the van courier accepts it", r.get("success") is True, r)
+    s, r = call("courier_get_my_orders", {}, token=van, qs="?pkg=1")
+    mo = [o for o in (r.get("data") or {}).get("orders", []) if o.get("id") == oid]
+    check("the courier's own list carries the package details and the sender, but never the PINs",
+          len(mo) == 1 and mo[0].get("order_kind") == "package" and mo[0].get("pickup_address") and mo[0].get("sender_phone") and "pickup_pin" not in mo[0] and "delivery_pin" not in mo[0], mo)
 
     s, r = call("customer_get_orders", {}, token=cust)
     mine = [o for o in (r.get("data") or {}).get("orders", []) if o.get("id") == oid]
@@ -126,6 +134,40 @@ def main():
     check("the sender may still cancel it", o.get("can_cancel") is True, o.get("can_cancel"))
     s, r = call("track_order", {"order_id": oid}, token=other)
     check("another customer cannot track it", r.get("success") is False)
+
+    print("4b. PIN steps at the door")
+    s, r = call("customer_package_create", dict(book, vehicle_class="van"), token=cust)
+    pid = (r.get("data") or {}).get("order_id")
+    s, r = call("courier_accept_order", {"order_id": pid}, token=van) if pid else (0, {})
+    if pid and not r.get("success"):   # auto-dispatch may already have given it to the van courier
+        pass
+    s, t = call("track_order", {"order_id": pid}, token=cust)
+    po = (t.get("data") or {}).get("order", {})
+    pp, dp = str(po.get("pickup_pin")), str(po.get("delivery_pin"))
+    wrong = "0000" if pp != "0000" else "1111"
+    s, r = call("courier_update_order_status", {"order_id": pid, "status": "picked_up"}, token=van)
+    check("a plain status change cannot pick a package up (the PIN is needed)", r.get("success") is False and s == 400, r)
+    s, r = call("courier_update_order_status", {"order_id": pid, "status": "delivered"}, token=van)
+    check("nor deliver it", r.get("success") is False and s == 400, r)
+    s, r = call("courier_package_pickup", {"order_id": pid, "pin": wrong}, token=van)
+    check("a wrong pickup PIN is refused", r.get("success") is False, r)
+    s, r = call("courier_package_pickup", {"order_id": pid, "pin": "12"}, token=van)
+    check("a PIN that is not 4 digits is refused", r.get("success") is False and s == 400, r)
+    s, r = call("courier_package_pickup", {"order_id": pid, "pin": pp}, token=cust)
+    check("the sender cannot do the courier's PIN step", r.get("success") is False, r)
+    s, r = call("courier_package_pickup", {"order_id": pid, "pin": pp}, token=moto)
+    check("another courier cannot do it either", r.get("success") is False, r)
+    s, r = call("courier_package_pickup", {"order_id": pid, "pin": pp}, token=van)
+    check("the sender's PIN picks it up", r.get("success") is True and (r.get("data") or {}).get("status") == "picked_up", r)
+    s, t = call("track_order", {"order_id": pid}, token=cust)
+    check("the sender sees it picked up and can no longer cancel", (t.get("data") or {}).get("order", {}).get("status") == "picked_up" and (t.get("data") or {}).get("order", {}).get("can_cancel") is False, t)
+    if dp != pp:
+        s, r = call("courier_package_deliver", {"order_id": pid, "pin": pp}, token=van)
+        check("the pickup PIN does not deliver it", r.get("success") is False, r)
+    s, r = call("courier_package_deliver", {"order_id": pid, "pin": dp}, token=van)
+    check("the recipient's PIN delivers it", r.get("success") is True and (r.get("data") or {}).get("status") == "delivered", r)
+    s, r = call("courier_package_deliver", {"order_id": pid, "pin": dp}, token=van)
+    check("it cannot be delivered twice", r.get("success") is False, r)
 
     print("5. Cancel")
     s, r = call("customer_cancel_order", {"order_id": oid, "reason": "other"}, token=other)

@@ -1652,6 +1652,10 @@ body.dark-theme .pkg-done-ico { color: #4ADE80; }
 .pkg-done-s { margin: 0 0 18px; font-size: 14px; color: var(--text-muted); }
 .pkg-code { display: inline-block; padding: 8px 18px; border-radius: 12px; border: 1.5px dashed rgba(212,175,55,.6); font-size: 18px; font-weight: 800; letter-spacing: 1px; color: var(--text); margin-bottom: 12px; }
 .pkg-trk { margin-top: 12px; }
+.pkg-pin { margin: 8px 0 10px; padding: 10px 12px; border-radius: 12px; border: 1.5px solid var(--gold, #D4AF37); background: var(--glass-2, rgba(212,175,55,.08)); text-align: center; }
+.pkg-pin-k { font-size: 11.5px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--text-muted); }
+.pkg-pin-v { font-size: 30px; font-weight: 800; letter-spacing: .35em; padding-left: .35em; color: var(--text); font-variant-numeric: tabular-nums; }
+.pkg-pin-h { font-size: 12px; color: var(--text-muted); }
 .pkg-trk-row { display: flex; gap: 10px; padding: 5px 0; font-size: 13px; }
 .pkg-trk-k { flex: 0 0 64px; color: var(--text-muted); }
 .pkg-trk-v { flex: 1; min-width: 0; color: var(--text); overflow-wrap: anywhere; }
