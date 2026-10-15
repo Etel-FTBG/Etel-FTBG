@@ -4,7 +4,8 @@
  * Telebirr calls this URL when payment status changes
  */
 
-/* Load credentials from .env (same bulletproof reader as api.php) */
+/* Load credentials: keys saved in Admin first, then .env (same bulletproof reader as api.php) */
+if (!defined('APP_VER')) define('APP_VER', 'telebirr-callback'); // satisfies the lib/ direct-access guard
 require_once __DIR__ . '/config-etb.php';
 $_cb_env = array();
 $_cb_env_file = __DIR__ . '/.env';

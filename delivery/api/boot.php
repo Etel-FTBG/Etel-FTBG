@@ -1593,6 +1593,10 @@ switch ($action) {
     case 'customer_package_options': case 'customer_package_quote': case 'customer_package_create': case 'admin_package_rates_get': case 'admin_package_rates_save':
         require __DIR__ . '/controllers/PackageController.php';
         break;
+
+    case 'admin_integrations_get': case 'admin_integrations_save': case 'admin_integrations_test':
+        require __DIR__ . '/controllers/IntegrationController.php';
+        break;
     case 'get_tip_options': case 'admin_get_courier_pay': case 'admin_save_courier_pay': case 'admin_preview_courier_pay': case 'admin_get_order_pay': case 'admin_set_order_pay':
         require __DIR__ . '/controllers/CourierPayController.php';
         break;
