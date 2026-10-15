@@ -91,6 +91,10 @@ $user = array('id' => $ids[0], 'name' => 'Sender Sam', 'phone' => '+251998500000
 $base = array('pickup' => $A, 'drop' => $B, 'size' => 'small', 'weight_kg' => 2, 'vehicle_class' => 'car', 'description' => 'Books', 'recipient_name' => 'PKG Test Rita', 'recipient_phone' => '0911223344', 'ack_prohibited' => true);
 $row = function ($id) use ($pdo) { return $pdo->query("SELECT * FROM orders WHERE id=$id")->fetch(); };
 
+$rn = etel_package_create($pdo, $user, $base);
+check('no courier whose app can run packages: the package waits instead of going to an old app', $rn['ok'] === true && $row($rn['order_id'])['courier_id'] === null && $row($rn['order_id'])['status'] === 'pending');
+$pdo->exec("UPDATE orders SET status='cancelled' WHERE id=" . $rn['order_id']);
+$pdo->exec("UPDATE couriers SET package_capable_until = DATE_ADD(NOW(), INTERVAL 1 HOUR) WHERE id IN ($cMoto, $cCar)");   // their apps send pkg=1
 $r = etel_package_create($pdo, $user, $base);
 $o = $r['ok'] ? $row($r['order_id']) : array();
 check('a package is booked', $r['ok'] === true && strpos($r['order_code'], 'ETP-') === 0 && $o['order_kind'] === 'package');
@@ -210,6 +214,37 @@ check('the fee never exceeds the order total', etel_cancel_fee_for($pdo, $oid) =
 check('a bad fee is refused', etel_package_save_setting($pdo, 'late_cancel_fee', -1)['ok'] === false && etel_package_save_setting($pdo, 'late_cancel_fee', 'abc')['ok'] === false && etel_package_save_setting($pdo, 'nope', 5)['ok'] === false);
 etel_package_save_setting($pdo, 'late_cancel_fee', 30);
 $pdo->exec("DELETE FROM order_refunds WHERE order_id=$oid");
+
+echo "the courier's side: app capability and the PIN steps\n";
+$pdo->exec("UPDATE couriers SET package_capable_until = NULL WHERE id IN ($cMoto, $cCar)");
+check('a courier whose app never sent pkg=1 cannot take packages', etel_package_courier_capable($pdo, $cCar) === false);
+etel_package_mark_capable($pdo, $cCar);
+check('after pkg=1 the courier counts as capable, a courier who did not is still not', etel_package_courier_capable($pdo, $cCar) === true && etel_package_courier_capable($pdo, $cMoto) === false);
+check('the dispatch filter is only for couriers who are capable', strpos(etel_package_capable_sql('c'), 'package_capable_until > NOW()') !== false);
+$pdo->exec("UPDATE couriers SET package_capable_until = DATE_SUB(NOW(), INTERVAL 5 MINUTE) WHERE id = $cCar");
+check('the capability expires (an app that stopped polling is not capable)', etel_package_courier_capable($pdo, $cCar) === false);
+$oid = $r3['order_id'];
+$pdo->exec("UPDATE orders SET status='assigned', courier_id=$cCar, courier_accepted_at=NOW(), cancel_fee=0 WHERE id=$oid");
+$pins = $pdo->query("SELECT pickup_pin, delivery_pin FROM orders WHERE id=$oid")->fetch();
+check('both PINs exist and are 4 digits', preg_match('/^\d{4}$/', $pins['pickup_pin']) && preg_match('/^\d{4}$/', $pins['delivery_pin']));
+check('the PIN check ignores spaces and compares exactly', etel_package_pin_matches('0420', '0 4 2 0') === true && etel_package_pin_matches('0420', '420') === false && etel_package_pin_matches('0420', '0421') === false && etel_package_pin_matches('', '') === false);
+check('another courier cannot use the PIN steps on it', etel_package_courier_step($pdo, $cMoto, $oid, 'pickup', $pins['pickup_pin'])['ok'] === false);
+check('delivering before pickup is refused', etel_package_courier_step($pdo, $cCar, $oid, 'delivery', $pins['delivery_pin'])['ok'] === false && $row($oid)['status'] === 'assigned');
+$bad = ($pins['pickup_pin'] === '0000') ? '1111' : '0000';
+$w = etel_package_courier_step($pdo, $cCar, $oid, 'pickup', $bad);
+check('a wrong pickup PIN is refused and the package stays put', $w['ok'] === false && $row($oid)['status'] === 'assigned');
+for ($i = 0; $i < 4; $i++) etel_package_courier_step($pdo, $cCar, $oid, 'pickup', $bad);
+$locked = etel_package_courier_step($pdo, $cCar, $oid, 'pickup', $pins['pickup_pin']);
+check('5 wrong PINs lock the step, even the right PIN is then refused', $locked['ok'] === false && strpos($locked['message'], '15 minutes') !== false && $row($oid)['status'] === 'assigned');
+$pdo->exec("UPDATE package_pin_tries SET locked_until = DATE_SUB(NOW(), INTERVAL 1 MINUTE) WHERE order_id=$oid AND kind='pickup'");
+$ok1 = etel_package_courier_step($pdo, $cCar, $oid, 'pickup', $pins['pickup_pin']);
+check('after the lock ends the right PIN picks it up', $ok1['ok'] === true && $ok1['status'] === 'picked_up' && $row($oid)['status'] === 'picked_up');
+check('the wrong-PIN counter is cleared after success', (int) $pdo->query("SELECT COUNT(*) FROM package_pin_tries WHERE order_id=$oid AND kind='pickup'")->fetchColumn() === 0);
+check('the pickup PIN cannot be used twice', etel_package_courier_step($pdo, $cCar, $oid, 'pickup', $pins['pickup_pin'])['ok'] === false);
+if ($pins['pickup_pin'] !== $pins['delivery_pin']) check('the sender\'s pickup PIN does not deliver it', etel_package_courier_step($pdo, $cCar, $oid, 'delivery', $pins['pickup_pin'])['ok'] === false && $row($oid)['status'] === 'picked_up');
+$ok2 = etel_package_courier_step($pdo, $cCar, $oid, 'delivery', $pins['delivery_pin']);
+check('the recipient\'s PIN delivers it, with a delivery time', $ok2['ok'] === true && $ok2['status'] === 'delivered' && $row($oid)['status'] === 'delivered' && $pdo->query("SELECT delivered_at FROM orders WHERE id=$oid")->fetchColumn() !== null);
+check('a delivered package cannot be delivered again', etel_package_courier_step($pdo, $cCar, $oid, 'delivery', $pins['delivery_pin'])['ok'] === false);
 
 $pdo->exec("DELETE FROM order_admin_actions WHERE order_id IN (SELECT id FROM orders WHERE order_kind='package')");
 $pdo->exec("DELETE FROM order_assignments WHERE order_id IN (SELECT id FROM orders WHERE order_kind='package')");

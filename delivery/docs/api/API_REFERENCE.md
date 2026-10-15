@@ -1,6 +1,6 @@
 # ETEL Delivery & Ride API reference
 
-Generated from the source by `tools/gen_api_docs.py` (434 actions). Machine-readable: `openapi.json`.
+Generated from the source by `tools/gen_api_docs.py` (436 actions). Machine-readable: `openapi.json`.
 
 **Call:** `POST /delivery/api/boot.php` with JSON `{"action": "<name>", ...fields}`; header `Authorization: Bearer <token>` for everything except the *public* actions.
 **Reply:** `{success, data, message, v}`. **Login:** `login` / `etelid_login` (apps) or `admin_etelid_login` (admin; add `totp_code` when the reply says `requires_2fa`).
@@ -9,7 +9,7 @@ Generated from the source by `tools/gen_api_docs.py` (434 actions). Machine-read
 |---|---|
 | admin | 205 |
 | any signed-in user | 178 |
-| courier | 16 |
+| courier | 18 |
 | public | 13 |
 | public (this call signs you in) | 6 |
 | service key (X-Etel-Service-Key) | 16 |
@@ -300,9 +300,9 @@ Generated from the source by `tools/gen_api_docs.py` (434 actions). Machine-read
 | `courier_accept_order` | courier | `order_id` | - |
 | `courier_decline_offer` | courier | `order_id` | - |
 | `courier_earnings_summary` | courier | - | - |
-| `courier_get_available_orders` | courier | - | - |
+| `courier_get_available_orders` | courier | - | `pkg` |
 | `courier_get_kpi_summary` | courier | `period` | `period` |
-| `courier_get_my_orders` | courier | - | `offers`, `status` |
+| `courier_get_my_orders` | courier | - | `offers`, `pkg`, `status` |
 | `courier_get_profile` | courier | - | - |
 | `courier_go_offline` | courier | - | - |
 | `courier_go_online` | courier | `lat`, `lng` | - |
@@ -349,6 +349,8 @@ Generated from the source by `tools/gen_api_docs.py` (434 actions). Machine-read
 | `admin_package_rates_save` | admin · orders.manage | `vehicle_class` | - |
 | `admin_package_setting_save` | admin · orders.manage | `key`, `value` | - |
 | `admin_package_type_add` | admin · orders.manage | - | - |
+| `courier_package_deliver` | courier | `order_id`, `pin` | - |
+| `courier_package_pickup` | courier | `order_id`, `pin` | - |
 | `customer_package_create` | any signed-in user | `_allow_chapa` | - |
 | `customer_package_options` | any signed-in user | - | - |
 | `customer_package_quote` | any signed-in user | `drop`, `pickup` | - |

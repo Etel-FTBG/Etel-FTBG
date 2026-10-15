@@ -27,6 +27,7 @@
             pkg_err_size: 'Choose the package size.', pkg_err_weight: 'Enter the weight in kg.', pkg_err_desc: 'Say what is inside (a few words).', pkg_err_ack: 'Please confirm the package has no prohibited items.',
             pkg_err_vehicle: 'Choose a vehicle.', pkg_gps_fail: 'Could not get your location.',
             pkg_trk_title: 'Package details', pkg_trk_from: 'From', pkg_trk_to: 'To', pkg_trk_vehicle: 'Vehicle', pkg_trk_what: 'Package',
+            pkg_pin_pick: 'Pickup PIN', pkg_pin_pick_hint: 'Show this to the courier when they come to collect the package.', pkg_pin_drop: 'Delivery PIN', pkg_pin_drop_hint: 'Give this to the recipient. They tell it to the courier, and the package is handed over only with it.',
             pkg_order_label: 'Package', pkg_theme: 'Light / Dark mode'
         },
         am: {
@@ -50,6 +51,7 @@
             pkg_err_size: 'የጥቅሉን መጠን ይምረጡ።', pkg_err_weight: 'ክብደቱን በኪ.ግ ያስገቡ።', pkg_err_desc: 'ውስጡ ምን እንደሆነ በጥቂት ቃላት ይግለጹ።', pkg_err_ack: 'እባክዎ ጥቅሉ የተከለከሉ ዕቃዎች እንደሌሉት ያረጋግጡ።',
             pkg_err_vehicle: 'ተሽከርካሪ ይምረጡ።', pkg_gps_fail: 'አካባቢዎን ማግኘት አልተቻለም።',
             pkg_trk_title: 'የጥቅሉ ዝርዝር', pkg_trk_from: 'ከ', pkg_trk_to: 'ወደ', pkg_trk_vehicle: 'ተሽከርካሪ', pkg_trk_what: 'ጥቅል',
+            pkg_pin_pick: 'የመረከቢያ ፒን', pkg_pin_pick_hint: 'ሹፌሩ ጥቅሉን ለመውሰድ ሲመጣ ይህን ያሳዩት።', pkg_pin_drop: 'የማስረከቢያ ፒን', pkg_pin_drop_hint: 'ይህንን ለተቀባዩ ይስጡ። ተቀባዩ ለሹፌሩ ይነግራል፤ ጥቅሉ የሚሰጠው በዚህ ፒን ብቻ ነው።',
             pkg_order_label: 'ጥቅል', pkg_theme: 'ብርሃን / ጨለማ'
         }
     });
@@ -446,7 +448,17 @@
             [T('pkg_trk_what'), [size, o.pkg_weight_kg ? parseFloat(o.pkg_weight_kg) + ' kg' : '', o.pkg_desc].filter(Boolean).join(' · ')],
             [T('pkg_trk_vehicle'), o.vehicle_class ? vehicleLabel(o) : '']
         ].filter(function (r) { return r[1]; });
-        box.innerHTML = '<section class="pkg-card pkg-trk"><h3 class="pkg-h">📦 ' + esc(T('pkg_trk_title')) + '</h3>' +
+        // The sender's two 4-digit PINs (the server only sends them to the sender): the pickup PIN goes to the courier at collection,
+        // the delivery PIN goes to the recipient, who tells it to the courier at the door. Each is shown only while it is still needed.
+        var live = o.status !== 'delivered' && o.status !== 'cancelled';
+        var onTheWay = o.status === 'picked_up' || o.status === 'in_transit';
+        function pinBlock(label, pin, hint) {
+            return '<div class="pkg-pin"><div class="pkg-pin-k">' + esc(label) + '</div><div class="pkg-pin-v" aria-label="' + esc(label) + ' ' + esc(String(pin).split('').join(' ')) + '">' + esc(pin) + '</div><div class="pkg-pin-h">' + esc(hint) + '</div></div>';
+        }
+        var pins = '';
+        if (live && o.pickup_pin && !onTheWay) pins += pinBlock(T('pkg_pin_pick'), o.pickup_pin, T('pkg_pin_pick_hint'));
+        if (live && o.delivery_pin) pins += pinBlock(T('pkg_pin_drop'), o.delivery_pin, T('pkg_pin_drop_hint'));
+        box.innerHTML = '<section class="pkg-card pkg-trk"><h3 class="pkg-h">📦 ' + esc(T('pkg_trk_title')) + '</h3>' + pins +
             rows.map(function (r) { return '<div class="pkg-trk-row"><span class="pkg-trk-k">' + esc(r[0]) + '</span><span class="pkg-trk-v">' + esc(r[1]) + '</span></div>'; }).join('') + '</section>';
     };
 })();
