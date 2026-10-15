@@ -73,7 +73,7 @@ function etel_dispatch_order($pdo, $order_id, $exclude = array()) {
     $vehSql = ''; $vehParams = array();
     if ($is_package) {
         if ($o['pickup_lat'] && $o['pickup_lng']) $pickup_coord = array((float)$o['pickup_lat'], (float)$o['pickup_lng']);
-        list($vehSql, $vehParams) = etel_vehicle_sql($o['vehicle_class'], 'c');
+        list($vehSql, $vehParams) = etel_vehicle_sql($o['vehicle_class'], 'c', $pdo);
     }
     try {
         if ($is_package) throw new Exception('no shop');

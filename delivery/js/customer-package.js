@@ -421,6 +421,20 @@
     }
 
     // Package details on the tracking screen (called from customer.js refreshTrackOrder).
+    // The tracking data carries the vehicle's code (moto, car, x1...). Show its name instead, from the same list the booking screen uses.
+    var _vehLabels = null, _vehLoading = false;
+    function vehicleLabel(o) {
+        if (_vehLabels && _vehLabels[o.vehicle_class]) return _vehLabels[o.vehicle_class];
+        if (!_vehLabels && !_vehLoading) {
+            _vehLoading = true;
+            apiGet('customer_package_options', {}).then(function (res) {
+                _vehLabels = {};
+                if (res && res.success && res.data && res.data.vehicles) res.data.vehicles.forEach(function (v) { _vehLabels[v.vehicle_class] = v.label; });
+                try { window.renderTrackPackage(o); } catch (e) {}
+            }).catch(function () { _vehLoading = false; });
+        }
+        return o.vehicle_class;
+    }
     window.renderTrackPackage = function (o) {
         var box = document.getElementById('track-package-card');
         if (!box) return;
@@ -430,7 +444,7 @@
             [T('pkg_trk_from'), o.pickup_address || o.from_zone],
             [T('pkg_trk_to'), (o.recipient_address || o.to_zone) + (o.recipient_name ? ' · ' + o.recipient_name : '')],
             [T('pkg_trk_what'), [size, o.pkg_weight_kg ? parseFloat(o.pkg_weight_kg) + ' kg' : '', o.pkg_desc].filter(Boolean).join(' · ')],
-            [T('pkg_trk_vehicle'), o.vehicle_class ? o.vehicle_class : '']
+            [T('pkg_trk_vehicle'), o.vehicle_class ? vehicleLabel(o) : '']
         ].filter(function (r) { return r[1]; });
         box.innerHTML = '<section class="pkg-card pkg-trk"><h3 class="pkg-h">📦 ' + esc(T('pkg_trk_title')) + '</h3>' +
             rows.map(function (r) { return '<div class="pkg-trk-row"><span class="pkg-trk-k">' + esc(r[0]) + '</span><span class="pkg-trk-v">' + esc(r[1]) + '</span></div>'; }).join('') + '</section>';

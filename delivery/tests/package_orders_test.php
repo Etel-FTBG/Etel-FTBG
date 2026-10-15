@@ -136,6 +136,39 @@ etel_package_save_rate($pdo, 'van', array('label' => 'Van / pickup', 'icon' => '
 check('switching a vehicle off removes it from the options', etel_package_quote($pdo, $A, $B, array('size' => 'small', 'weight_kg' => 2))['options'][2]['vehicle_class'] === 'car' && count(etel_package_quote($pdo, $A, $B, array('size' => 'small', 'weight_kg' => 2))['options']) === 3);
 check('but staff still see it in their list', count(etel_package_rates($pdo, false)) === 4);
 
+echo "adding a vehicle type of our own (Admin -> Add)\n";
+$pdo->exec("DELETE FROM package_rates WHERE vehicle_class NOT IN ('bike','moto','car','van')"); etel_package_custom_defs(null, true);
+$base = array('label' => 'Bajaj', 'icon' => 'B', 'size_like' => 'moto', 'courier_names' => 'Bajaj, Tuk-Tuk', 'base_fee' => 90, 'per_km' => 15, 'free_kg' => 10, 'per_kg_over' => 4, 'min_fee' => 120, 'max_weight_kg' => 200, 'active' => 1);
+$add = etel_package_add_type($pdo, $base);
+check('a new type is added with a short key', $add['ok'] === true && $add['vehicle_class'] === 'x1');
+check('it counts as a class, sitting at the size of a motorbike', etel_package_classes($pdo)['x1'] === 2);
+check('couriers saying bajaj or tuk-tuk (any case) map to it', etel_vehicle_class_of('BAJAJ', $pdo) === 'x1' && etel_vehicle_class_of('tuk-tuk', $pdo) === 'x1' && etel_vehicle_class_of('car', $pdo) === 'car');
+$vx1 = etel_vehicle_sql('x1', 'c', $pdo); $vmo = etel_vehicle_sql('moto', 'c', $pdo);
+check('its job filter lists only its own words, and does not take the empty-vehicle default', in_array('bajaj', $vx1[1], true) && in_array('tuk-tuk', $vx1[1], true) && strpos($vx1[0], "= ''") === false && !in_array('bajaj', $vmo[1], true));
+$qx = etel_package_quote($pdo, $A, $B, array('size' => 'small', 'weight_kg' => 2));
+$keys = array(); foreach ($qx['options'] as $o) $keys[] = $o['vehicle_class'];
+check('customers are offered it with its own price, in size order', in_array('x1', $keys, true) && array_search('x1', $keys) > array_search('bike', $keys));
+$p1 = 0; foreach ($qx['options'] as $o) { if ($o['vehicle_class'] === 'x1') $p1 = $o['price']; }
+check('price uses its own rates (90 + 15/km, min 120)', $p1 >= 120 && $p1 === etel_package_price(array('base_fee' => 90, 'per_km' => 15, 'free_kg' => 10, 'per_kg_over' => 4, 'min_fee' => 120), $qx['distance_km'], 2));
+$ks = function ($q) { return empty($q['options']) ? array() : array_map(function ($o) { return $o['vehicle_class']; }, $q['options']); };
+check('a parcel over its limit does not offer it (200 kg is fine, 201 kg is not)', in_array('x1', $ks(etel_package_quote($pdo, $A, $B, array('size' => 'small', 'weight_kg' => 200))), true) && !in_array('x1', $ks(etel_package_quote($pdo, $A, $B, array('size' => 'small', 'weight_kg' => 201))), true));
+check('a large parcel (needs a car) does not offer a motorbike-size type', !in_array('x1', $ks(etel_package_quote($pdo, $A, $B, array('size' => 'large', 'weight_kg' => 5))), true));
+check('a word that already means another vehicle is refused', etel_package_add_type($pdo, array_merge($base, array('label' => 'Truck2', 'courier_names' => 'truck')))['ok'] === false
+    && etel_package_add_type($pdo, array_merge($base, array('label' => 'Again', 'courier_names' => 'bajaj')))['ok'] === false);
+check('no words, bad words, no size are refused', etel_package_add_type($pdo, array_merge($base, array('courier_names' => '')))['ok'] === false
+    && etel_package_add_type($pdo, array_merge($base, array('courier_names' => 'a')))['ok'] === false
+    && etel_package_add_type($pdo, array_merge($base, array('courier_names' => 'x<y', 'label' => 'Q')))['ok'] === false
+    && etel_package_add_type($pdo, array_merge($base, array('size_like' => 'boat', 'courier_names' => 'boat')))['ok'] === false);
+check('a missing or bad price is refused', etel_package_add_type($pdo, array_merge($base, array('courier_names' => 'rickshaw', 'base_fee' => -5)))['ok'] === false);
+$ed = etel_package_save_rate($pdo, 'x1', array_merge($base, array('label' => 'Bajaj Plus', 'size_like' => 'car', 'courier_names' => 'bajaj, auto', 'per_km' => 20)));
+check('an added type can be edited: new size and words', $ed['ok'] === true && etel_package_classes($pdo)['x1'] === 3 && etel_vehicle_class_of('auto', $pdo) === 'x1' && etel_vehicle_class_of('tuk-tuk', $pdo) === '');
+check('built-in vehicles ignore size and words if sent', etel_package_save_rate($pdo, 'moto', array('label' => 'Motorbike', 'icon' => 'M', 'base_fee' => 100, 'per_km' => 12, 'free_kg' => 5, 'per_kg_over' => 6, 'min_fee' => 80, 'max_weight_kg' => 25, 'active' => 1, 'size_like' => 'van', 'courier_names' => 'x1word'))['ok'] === true
+    && etel_package_classes($pdo)['moto'] === 2 && etel_vehicle_class_of('x1word', $pdo) === '');
+$bk = etel_package_add_type($pdo, array_merge($base, array('label' => 'Mini truck', 'size_like' => 'van', 'courier_names' => 'mini truck')));
+check('a second type gets the next key and its words work with a space', $bk['ok'] === true && $bk['vehicle_class'] === 'x2' && etel_vehicle_class_of('Mini Truck', $pdo) === 'x2');
+$pdo->exec("DELETE FROM package_rates WHERE vehicle_class NOT IN ('bike','moto','car','van')"); etel_package_custom_defs(null, true);
+check('after removal the words mean nothing again', etel_vehicle_class_of('bajaj', $pdo) === '');
+
 echo "cancelling a package\n";
 $pdo->exec("UPDATE orders SET status='assigned' WHERE id=" . $r['order_id']);
 $pdo->exec("UPDATE order_assignments SET status='assigned' WHERE order_id=" . $r['order_id']);

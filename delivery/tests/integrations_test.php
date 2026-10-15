@@ -62,6 +62,20 @@ check('an https API address is accepted', etel_integration_save($pdo, 'santimpay
 check('hidden characters are refused', etel_integration_save($pdo, 'santimpay', array('api_key' => "abc\ndef"), 1)['ok'] === false);
 check('a provider with no automatic test says so', strpos(etel_integration_test('santimpay')['message'], 'no automatic test') !== false && etel_integration_test('santimpay')['ok'] === false);
 
+echo "adding a company or bank of our own\n";
+$pdo->exec('DELETE FROM integration_custom'); etel_integration_providers(true);
+$ad = etel_integration_add_custom($pdo, 'Awash Bank', 'bank', 1);
+check('a company is added with a short key', $ad['ok'] === true && $ad['provider'] === 'c1');
+$aw = null; foreach (etel_integration_overview($pdo) as $p) { if ($p['provider'] === 'c1') $aw = $p; }
+check('it shows in the overview as a bank, not wired, removable, with the standard four fields', $aw && $aw['name'] === 'Awash Bank' && $aw['wired'] === false && $aw['custom'] === true && count($aw['fields']) === 4);
+check('keys can be saved for it and are used', etel_integration_save($pdo, 'c1', array('merchant_id' => 'AW-1', 'secret_key' => 'sk-awash-777'), 1)['ok'] === true && etel_integration_get('c1', 'secret_key') === 'sk-awash-777' && etel_integration_get('c1', 'merchant_id') === 'AW-1');
+check('the secret is not in the overview', strpos(json_encode(etel_integration_overview($pdo)), 'sk-awash-777') === false);
+check('the same name twice, or a built-in name, is refused', etel_integration_add_custom($pdo, 'awash bank', 'bank', 1)['ok'] === false && etel_integration_add_custom($pdo, 'Chapa', 'payment', 1)['ok'] === false);
+check('empty, too long, or markup names are refused', etel_integration_add_custom($pdo, '  ', 'bank', 1)['ok'] === false && etel_integration_add_custom($pdo, str_repeat('a', 61), 'bank', 1)['ok'] === false && etel_integration_add_custom($pdo, '<b>x</b>', 'bank', 1)['ok'] === false);
+check('a built-in company cannot be removed', etel_integration_remove_custom($pdo, 'chapa', 1)['ok'] === false && etel_integration_get('chapa', 'secret_key') === 'CHASECK_TEST-realkey999');
+check('removing an added company also deletes its keys', etel_integration_remove_custom($pdo, 'c1', 1)['ok'] === true && etel_integration_get('c1', 'secret_key') === ''
+    && (int) $pdo->query("SELECT COUNT(*) FROM integration_settings WHERE provider='c1'")->fetchColumn() === 0 && etel_integration_field('c1', 'secret_key') === null);
+
 echo "an unreadable saved value (the server secret changed)\n";
 putenv('INTEGRATIONS_KEY=test-key-two');
 etel_integration_saved($pdo, true);
@@ -74,7 +88,7 @@ echo "audit trail\n";
 $n = (int) $pdo->query("SELECT COUNT(*) FROM integration_changes WHERE provider='chapa' AND action='saved'")->fetchColumn();
 check('every change is recorded (who, what, when) without the value', $n >= 1 && $pdo->query("SHOW COLUMNS FROM integration_changes LIKE 'value%'")->fetch() === false);
 
-$pdo->exec('DELETE FROM integration_settings'); $pdo->exec('DELETE FROM integration_changes');
+$pdo->exec('DELETE FROM integration_settings'); $pdo->exec('DELETE FROM integration_changes'); $pdo->exec('DELETE FROM integration_custom');
 $done = true;
 echo $fails ? "FAILED: $fails check(s)\n" : "ALL PASSED\n";
 exit($fails ? 1 : 0);

@@ -254,7 +254,7 @@ case 'courier_get_available_orders': {
     require_once __DIR__ . '/../lib/package_orders.php';
     etel_package_ensure_schema($pdo);
     $vc = $pdo->prepare('SELECT vehicle_type FROM couriers WHERE id = ?'); $vc->execute(array($courier['id']));
-    $my_class = etel_vehicle_class_of($vc->fetchColumn());
+    $my_class = etel_vehicle_class_of($vc->fetchColumn(), $pdo);
     $pkg_filter = " AND (o.order_kind <> 'package' OR o.vehicle_class = ?)";
     $pkg_cols = ', o.order_kind, o.vehicle_class, o.pickup_address, o.pkg_size, o.pkg_weight_kg, o.pkg_desc, o.distance_km';
 
@@ -347,7 +347,7 @@ case 'courier_accept_order': {
     $pk = $pdo->prepare('SELECT o.order_kind, o.vehicle_class, c.vehicle_type FROM orders o JOIN couriers c ON c.id = ? WHERE o.id = ?');
     $pk->execute(array($courier['id'], $order_id));
     $pkr = $pk->fetch();
-    if ($pkr && $pkr['order_kind'] === 'package' && etel_vehicle_class_of($pkr['vehicle_type']) !== $pkr['vehicle_class']) fail('This package needs a different vehicle.', 403);
+    if ($pkr && $pkr['order_kind'] === 'package' && etel_vehicle_class_of($pkr['vehicle_type'], $pdo) !== $pkr['vehicle_class']) fail('This package needs a different vehicle.', 403);
     
     // Assign courier to order
     try {

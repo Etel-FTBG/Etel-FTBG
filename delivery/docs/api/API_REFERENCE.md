@@ -1,13 +1,13 @@
 # ETEL Delivery & Ride API reference
 
-Generated from the source by `tools/gen_api_docs.py` (430 actions). Machine-readable: `openapi.json`.
+Generated from the source by `tools/gen_api_docs.py` (433 actions). Machine-readable: `openapi.json`.
 
 **Call:** `POST /delivery/api/boot.php` with JSON `{"action": "<name>", ...fields}`; header `Authorization: Bearer <token>` for everything except the *public* actions.
 **Reply:** `{success, data, message, v}`. **Login:** `login` / `etelid_login` (apps) or `admin_etelid_login` (admin; add `totp_code` when the reply says `requires_2fa`).
 
 | Who can call | Actions |
 |---|---|
-| admin | 201 |
+| admin | 204 |
 | any signed-in user | 182 |
 | courier | 16 |
 | public | 9 |
@@ -240,7 +240,9 @@ Generated from the source by `tools/gen_api_docs.py` (430 actions). Machine-read
 
 | Action | Auth | Fields | Query |
 |---|---|---|---|
+| `admin_integrations_add` | admin · integrations.manage | `kind`, `name` | - |
 | `admin_integrations_get` | admin · integrations.manage | - | - |
+| `admin_integrations_remove` | admin · integrations.manage | `provider` | - |
 | `admin_integrations_save` | admin · integrations.manage | `provider`, `values` | - |
 | `admin_integrations_test` | admin · integrations.manage | `provider` | - |
 
@@ -345,6 +347,7 @@ Generated from the source by `tools/gen_api_docs.py` (430 actions). Machine-read
 |---|---|---|---|
 | `admin_package_rates_get` | admin · orders.view | - | - |
 | `admin_package_rates_save` | admin · orders.manage | `vehicle_class` | - |
+| `admin_package_type_add` | admin · orders.manage | - | - |
 | `customer_package_create` | any signed-in user | `_allow_chapa` | - |
 | `customer_package_options` | any signed-in user | - | - |
 | `customer_package_quote` | any signed-in user | `drop`, `pickup` | - |

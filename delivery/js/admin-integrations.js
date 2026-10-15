@@ -1,6 +1,6 @@
 /* ETEL Admin - Payments & banks: connect a payment company or bank by pasting its keys once, no server files to edit.
    Keys are stored encrypted on the server and are never shown again (only "Saved"). Only the main admin can open this page.
-   Data: api actions admin_integrations_get, admin_integrations_save, admin_integrations_test (api/lib/integrations.php).
+   Data: api actions admin_integrations_get, admin_integrations_save, admin_integrations_test, admin_integrations_add, admin_integrations_remove (api/lib/integrations.php).
    Standalone on purpose: it adds its own menu item and page, so no other admin file changes. */
 (function () {
 'use strict';
@@ -44,7 +44,8 @@ function card(p) {
   p.fields.forEach(function (f) { h += '<div>' + fieldRow(p, f) + '</div>'; });
   h += '</div><div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:10px">' +
     '<button type="submit" style="' + BTN + '">Save keys</button>' +
-    (p.testable ? '<button type="button" data-test style="' + BTN2 + '">Test connection</button>' : '') + '</div>' +
+    (p.testable ? '<button type="button" data-test style="' + BTN2 + '">Test connection</button>' : '') +
+    (p.custom ? '<button type="button" data-remove-co style="' + LINK + '">Remove this company</button>' : '') + '</div>' +
     '<div data-note role="status" style="font-size:12.5px;min-height:18px;margin-top:6px"></div></form>';
   return h;
 }
@@ -53,8 +54,19 @@ function render() {
   var el = panel(); if (!el) return;
   var h = '<div style="margin:0 0 10px;padding:6px 4px 0;font-size:12.5px;opacity:.8">Connect a payment company or bank here when the deal is signed: paste its keys once and press Save. ' +
     'Keys are stored encrypted and are never shown again. Leave a box empty to keep what is saved. Every change is logged.</div>';
+  h += '<div style="margin-bottom:12px"><button type="button" data-add style="' + BTN + '">＋ Add a payment company or bank</button><div data-add-host></div></div>';
   DATA.forEach(function (p) { h += card(p); });
   el.innerHTML = h;
+  var addBtn = el.querySelector('[data-add]'); if (addBtn) addBtn.onclick = function () { openAdd(el); };
+  Array.prototype.forEach.call(el.querySelectorAll('[data-remove-co]'), function (b) {
+    b.onclick = function () {
+      var f = b.closest('form');
+      if (!window.confirm('Remove this company and its saved keys?')) return;
+      api('admin_integrations_remove', { provider: f.getAttribute('data-provider') }).then(function (res) {
+        if (res && res.success !== false && res.data) { DATA = res.data.providers || DATA; render(); } else note(f, failText(res, 'Could not remove.'), true);
+      }).catch(function () { note(f, 'Could not reach the server. Try again.', true); });
+    };
+  });
   Array.prototype.forEach.call(el.querySelectorAll('form[data-provider]'), function (f) {
     var id = f.getAttribute('data-provider');
     f.onsubmit = function (e) {
@@ -78,6 +90,32 @@ function render() {
       }).catch(function () { t.disabled = false; note(f, 'Could not reach the server. Try again.', true); });
     };
   });
+}
+
+function openAdd(el) {
+  var host = el.querySelector('[data-add-host]'); if (!host) return;
+  if (host.firstChild) { host.innerHTML = ''; return; }
+  host.innerHTML = '<form data-new autocomplete="off" style="border:1px solid #D4AF37;border-radius:12px;padding:12px;margin-top:10px">' +
+    '<div style="font-weight:800;margin-bottom:4px">Add a payment company or bank</div>' +
+    '<div style="font-size:12px;opacity:.75;margin-bottom:8px">For a company that is not in the list. Add it, then paste its keys on its card. Its checkout is connected when the deal is signed.</div>' +
+    '<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">' +
+    '<label style="font-size:12px;flex:2 1 220px">Name<input name="name" maxlength="60" placeholder="Awash Bank" style="' + FIELD + '"></label>' +
+    '<label style="font-size:12px;flex:1 1 160px">Type<select name="kind" style="' + FIELD + '"><option value="bank">Bank</option><option value="payment">Payment company / wallet</option></select></label>' +
+    '<button type="submit" style="' + BTN + '">Add</button><button type="button" data-cancel-add style="' + BTN2 + '">Cancel</button></div>' +
+    '<div data-note role="status" style="font-size:12.5px;min-height:18px;margin-top:6px"></div></form>';
+  var f = host.querySelector('form');
+  f.querySelector('[data-cancel-add]').onclick = function () { host.innerHTML = ''; };
+  f.onsubmit = function (e) {
+    e.preventDefault();
+    var btn = f.querySelector('button[type=submit]'); btn.disabled = true; note(f, 'Adding…');
+    api('admin_integrations_add', { name: f.elements.name.value, kind: f.elements.kind.value }).then(function (res) {
+      btn.disabled = false;
+      if (res && res.success !== false && res.data) {
+        DATA = res.data.providers || DATA; render();
+        var c = panel() && panel().querySelector('form[data-provider="' + res.data.provider + '"]'); if (c) { note(c, res.data.message, false); c.scrollIntoView({ block: 'center' }); }
+      } else note(f, failText(res, 'Could not add.'), true);
+    }).catch(function () { btn.disabled = false; note(f, 'Could not reach the server. Try again.', true); });
+  };
 }
 
 function send(f, id, values) {

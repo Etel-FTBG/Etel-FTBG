@@ -14,14 +14,28 @@ if (!defined('APP_VER')) { http_response_code(403); exit('Direct access not perm
 
 // Providers and the settings each one takes. 'env' is the old api/.env name, kept as the fallback.
 // wired = the server can already take payments with it; false = the keys are stored for when its checkout is built.
-function etel_integration_providers() {
+function etel_integration_providers($reset = false) {
+    static $custom = null;
+    if ($reset) { $custom = null; return array(); }
     $std = array(
         array('key' => 'merchant_id', 'label' => 'Merchant / shop ID', 'secret' => false),
         array('key' => 'api_key', 'label' => 'API key', 'secret' => true),
         array('key' => 'secret_key', 'label' => 'Secret key', 'secret' => true),
         array('key' => 'base_url', 'label' => 'API address (URL)', 'secret' => false),
     );
-    return array(
+    if ($custom === null) {
+        $custom = array();
+        try {
+            $pdo = etel_integ_pdo();
+            etel_integration_ensure_schema($pdo);
+            foreach ($pdo->query('SELECT provider, name, kind FROM integration_custom ORDER BY created_at, provider')->fetchAll(PDO::FETCH_ASSOC) as $r) {
+                $custom[$r['provider']] = array('name' => $r['name'], 'icon' => $r['kind'] === 'bank' ? '🏦' : '💰', 'wired' => false, 'testable' => false, 'custom' => true,
+                    'help' => 'Added by you. Keys are saved safely now; checkout for this ' . ($r['kind'] === 'bank' ? 'bank' : 'company') . ' is connected when the deal is signed.', 'fields' => $std);
+            }
+        } catch (Exception $e) { error_log('[ETEL] integrations custom: ' . $e->getMessage()); }
+        catch (Throwable $e) { error_log('[ETEL] integrations custom: ' . $e->getMessage()); }
+    }
+    $built = array(
         'chapa' => array('name' => 'Chapa', 'icon' => '💳', 'wired' => true, 'testable' => true,
             'help' => 'Card, Telebirr and bank payments through Chapa. Copy the Secret key from your Chapa dashboard (Settings → API).',
             'fields' => array(array('key' => 'secret_key', 'label' => 'Secret key', 'secret' => true, 'env' => 'CHAPA_SECRET_KEY'))),
@@ -35,8 +49,8 @@ function etel_integration_providers() {
         'arifpay' => array('name' => 'ArifPay', 'icon' => '🏦', 'wired' => false, 'testable' => false, 'help' => 'Keys are saved safely now. Checkout for this company is connected when you sign the deal.', 'fields' => $std),
         'yaya' => array('name' => 'YaYa Wallet', 'icon' => '👛', 'wired' => false, 'testable' => false, 'help' => 'Keys are saved safely now. Checkout for this company is connected when you sign the deal.', 'fields' => $std),
         'cbe_birr' => array('name' => 'CBE Birr', 'icon' => '🏦', 'wired' => false, 'testable' => false, 'help' => 'Keys are saved safely now. Checkout for this bank is connected when you sign the deal.', 'fields' => $std),
-        'other' => array('name' => 'Another bank or company', 'icon' => '➕', 'wired' => false, 'testable' => false, 'help' => 'For a company not in the list. Save the keys now; checkout is connected when the deal is signed.', 'fields' => $std),
     );
+    return array_merge($built, $custom);
 }
 
 function etel_integration_field($provider, $key) {
@@ -99,6 +113,14 @@ function etel_integration_ensure_schema($pdo) {
         updated_by INT UNSIGNED NULL,
         updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
         PRIMARY KEY (provider, setting_key)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+    $pdo->exec("CREATE TABLE IF NOT EXISTS integration_custom (
+        provider VARCHAR(30) NOT NULL,
+        name VARCHAR(60) NOT NULL,
+        kind VARCHAR(10) NOT NULL DEFAULT 'payment',
+        created_by INT UNSIGNED NULL,
+        created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (provider)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
     $pdo->exec("CREATE TABLE IF NOT EXISTS integration_changes (
         id INT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -179,7 +201,7 @@ function etel_integration_overview($pdo) {
                 'unreadable' => isset($unreadable[$id . '.' . $f['key']]));
         }
         $out[] = array('provider' => $id, 'name' => $p['name'], 'icon' => $p['icon'], 'help' => $p['help'], 'wired' => $p['wired'],
-            'testable' => $p['testable'], 'fields' => $fields, 'state' => $all ? 'ready' : ($any ? 'partial' : 'empty'));
+            'testable' => $p['testable'], 'custom' => !empty($p['custom']), 'fields' => $fields, 'state' => $all ? 'ready' : ($any ? 'partial' : 'empty'));
     }
     return $out;
 }
@@ -231,4 +253,41 @@ function etel_integration_test($provider) {
     if ($code === 200) return array('ok' => true, 'message' => 'Chapa accepted the key. Connection works.');
     if ($code === 401 || $code === 403) return array('ok' => false, 'message' => 'Chapa refused this key. Check you copied the whole Secret key.');
     return array('ok' => false, 'message' => 'Chapa answered with an unexpected error (HTTP ' . $code . '). Try again in a minute.');
+}
+
+// Admin: add a payment company or bank that is not in the list. $kind = 'payment' | 'bank'. Gets the key c1, c2, ...
+// Returns array(ok, message, provider).
+function etel_integration_add_custom($pdo, $name, $kind, $admin_id) {
+    etel_integration_ensure_schema($pdo);
+    $name = trim((string) $name);
+    if ($name === '' || strlen($name) > 60 || preg_match('/[\x00-\x1F<>]/', $name)) return array('ok' => false, 'message' => 'Type the name of the company or bank (up to 60 letters).');
+    $kind = $kind === 'bank' ? 'bank' : 'payment';
+    foreach (etel_integration_providers() as $p) {
+        if (strcasecmp($p['name'], $name) === 0) return array('ok' => false, 'message' => 'There is already a connection called ' . $p['name'] . '.');
+    }
+    $count = intval($pdo->query('SELECT COUNT(*) FROM integration_custom')->fetchColumn());
+    if ($count >= 30) return array('ok' => false, 'message' => 'You already added 30. Remove one you do not use first.');
+    $key = '';
+    for ($i = $count + 1; $i <= $count + 40; $i++) {
+        $ex = $pdo->prepare('SELECT 1 FROM integration_custom WHERE provider=?'); $ex->execute(array('c' . $i));
+        if (!$ex->fetchColumn()) { $key = 'c' . $i; break; }
+    }
+    if ($key === '') return array('ok' => false, 'message' => 'Could not add it.');
+    $pdo->prepare('INSERT INTO integration_custom (provider, name, kind, created_by) VALUES (?,?,?,?)')->execute(array($key, $name, $kind, $admin_id ? intval($admin_id) : null));
+    $pdo->prepare('INSERT INTO integration_changes (provider, setting_key, action, admin_id) VALUES (?,?,?,?)')->execute(array($key, '-', 'added', $admin_id ? intval($admin_id) : null));
+    etel_integration_providers(true);
+    return array('ok' => true, 'message' => $name . ' added. Now paste its keys and press Save.', 'provider' => $key);
+}
+
+// Admin: remove an added company and its saved keys. Built-in providers cannot be removed.
+function etel_integration_remove_custom($pdo, $provider, $admin_id) {
+    etel_integration_ensure_schema($pdo);
+    $st = $pdo->prepare('SELECT 1 FROM integration_custom WHERE provider=?'); $st->execute(array($provider));
+    if (!$st->fetchColumn()) return array('ok' => false, 'message' => 'Only companies you added can be removed.');
+    $pdo->prepare('DELETE FROM integration_settings WHERE provider=?')->execute(array($provider));
+    $pdo->prepare('DELETE FROM integration_custom WHERE provider=?')->execute(array($provider));
+    $pdo->prepare('INSERT INTO integration_changes (provider, setting_key, action, admin_id) VALUES (?,?,?,?)')->execute(array($provider, '-', 'removed', $admin_id ? intval($admin_id) : null));
+    etel_integration_providers(true);
+    etel_integration_saved($pdo, true);
+    return array('ok' => true, 'message' => 'Removed, with its saved keys.');
 }
