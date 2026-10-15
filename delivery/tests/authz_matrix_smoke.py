@@ -73,11 +73,8 @@ def action_names():
 # Actions that are meant to be reachable by the role they start with, before sign-in, or by design.
 # admin_2fa_* is self-service two-step sign-in for the signed-in account, any role (AuthController): each caller only
 # touches their own row, so these are reachable by every signed-in role on purpose.
-# courier_*fuel* (CourierFuelController) is every query keyed on the caller's own user id: any signed-in role only ever
-# reads or writes their own rows, so nothing of anyone else's is reachable. Not role-gated, not a data leak.
 PUBLIC_BY_DESIGN = set(["sg_login", "courier_login", "admin_login", "sg_register", "courier_register", "admin_2fa_verify",
-                        "admin_2fa_status", "admin_2fa_begin", "admin_2fa_enable", "admin_2fa_disable", "admin_2fa_backup_codes",
-                        "courier_add_fuel_log", "courier_list_fuel_logs", "courier_delete_fuel_log", "courier_get_fuel_summary"])
+                        "admin_2fa_status", "admin_2fa_begin", "admin_2fa_enable", "admin_2fa_disable", "admin_2fa_backup_codes"])
 
 
 def refused(status, res):

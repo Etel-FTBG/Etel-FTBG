@@ -32,6 +32,7 @@ function etel_cancel_ensure_columns($pdo) {
         if (empty($have['cancelled_by']))  $add[] = "ADD COLUMN cancelled_by VARCHAR(10) NULL DEFAULT NULL";
         if (empty($have['cancel_note']))   $add[] = "ADD COLUMN cancel_note VARCHAR(200) NULL DEFAULT NULL";
         if (empty($have['cancelled_at']))  $add[] = "ADD COLUMN cancelled_at DATETIME NULL DEFAULT NULL";
+        if (empty($have['cancel_fee']))    $add[] = "ADD COLUMN cancel_fee DECIMAL(10,2) NOT NULL DEFAULT 0";
         if ($add) $pdo->exec("ALTER TABLE orders " . implode(', ', $add));
     } catch (Exception $e) { error_log('[ETEL] cancel columns: ' . $e->getMessage()); }
 }
@@ -58,6 +59,26 @@ function etel_cancel_rule($role, $order_status, $assign_status, $kind = 'shop') 
     return 'You cannot cancel this order.';
 }
 
+// What the sender would pay to cancel this order right now (ETB, 0 = free). Only a package, after a courier accepted it and before pickup,
+// and only when it was paid online (that is the one case where the fee can really be kept: it comes out of the refund). The amount is the
+// Admin setting (Package prices -> cancel fee). Never throws.
+function etel_cancel_fee_for($pdo, $order_id) {
+    try {
+        require_once __DIR__ . '/package_orders.php';
+        require_once __DIR__ . '/money_ledger.php';
+        etel_package_ensure_schema($pdo); etel_cancel_ensure_columns($pdo);
+        $paid = etel_money_paid_cond($pdo, 'o');
+        $q = $pdo->prepare("SELECT o.status, o.order_kind, o.courier_id, o.courier_accepted_at, o.fare_total, ($paid) AS was_paid FROM orders o WHERE o.id = ? LIMIT 1");
+        $q->execute(array(intval($order_id)));
+        $o = $q->fetch();
+        if (!$o || $o['order_kind'] !== 'package' || !intval($o['courier_id']) || empty($o['courier_accepted_at'])) return 0.0;
+        if (!in_array($o['status'], array('pending', 'assigned', 'accepted'), true) || intval($o['was_paid']) !== 1) return 0.0;
+        $fee = etel_package_setting($pdo, 'late_cancel_fee');
+        return $fee > 0 ? round(min($fee, floatval($o['fare_total'])), 2) : 0.0;
+    } catch (Exception $e) { error_log('[ETEL] cancel fee: ' . $e->getMessage()); } catch (Throwable $e) {}
+    return 0.0;
+}
+
 function etel_cancel_notify_courier($pdo, $user_id, $order_id, $order_code) {
     $title = 'Order cancelled';
     $body = 'Order ' . $order_code . ' was cancelled. You do not need to deliver it.';
@@ -74,7 +95,7 @@ function etel_cancel_notify_courier($pdo, $user_id, $order_id, $order_code) {
 }
 
 // $actor_id = the users.id doing it. $shop_id (shop role only) = the service_givers.id, which must be the shop on the order.
-function etel_cancel_order($pdo, $order_id, $role, $actor_id, $reason, $note, $shop_id = 0) {
+function etel_cancel_order($pdo, $order_id, $role, $actor_id, $reason, $note, $shop_id = 0, $confirm_fee = false) {
     $order_id = intval($order_id);
     $reasons = etel_cancel_reasons($role);
     if (!$reasons) return array('ok' => false, 'message' => 'You cannot cancel this order.');
@@ -98,15 +119,20 @@ function etel_cancel_order($pdo, $order_id, $role, $actor_id, $reason, $note, $s
         $msg = etel_cancel_rule($role, $o['status'], $o['assign_status'], $o['order_kind'] === 'package' ? 'package' : 'shop');
         if ($msg !== '') return array('ok' => false, 'message' => $msg);
 
+        // A customer cancelling a paid package after a courier accepted it pays a small fee (kept out of the refund). They must agree to it first.
+        $fee = ($role === 'customer') ? etel_cancel_fee_for($pdo, $order_id) : 0.0;
+        if ($fee > 0 && !$confirm_fee) {
+            return array('ok' => false, 'fee' => $fee, 'message' => 'A courier has already accepted your package, so cancelling now costs ETB ' . rtrim(rtrim(number_format($fee, 2, '.', ''), '0'), '.') . ', taken from your refund. Please confirm to cancel.');
+        }
         $prevCourier = $o['courier_id'] ? intval($o['courier_id']) : 0;
         $assignedAt = '';
         try { require_once __DIR__ . '/courier_stale.php'; if (etel_stale_has_col($pdo)) $assignedAt = ', courier_assigned_at = NULL'; } catch (Exception $e) {} catch (Throwable $e) {}
         $pdo->beginTransaction();
         try {
             $u = $pdo->prepare("UPDATE orders SET status = 'cancelled', courier_id = NULL, courier_accepted_at = NULL, courier_offer_expires_at = NULL$assignedAt,
-                    cancel_reason = ?, cancelled_by = ?, cancel_note = ?, cancelled_at = NOW()
+                    cancel_reason = ?, cancelled_by = ?, cancel_note = ?, cancelled_at = NOW(), cancel_fee = ?
                 WHERE id = ? AND status NOT IN ('delivered','cancelled')");
-            $u->execute(array($reason, $role, $note, $order_id));
+            $u->execute(array($reason, $role, $note, $fee, $order_id));
             if ($u->rowCount() !== 1) { $pdo->rollBack(); return array('ok' => false, 'message' => 'The order changed while you were looking at it. Refresh and try again.'); }
             try { $pdo->prepare("UPDATE order_assignments SET status = 'cancelled' WHERE order_id = ?")->execute(array($order_id)); } catch (Exception $e) { error_log('[ETEL] cancel assignment: ' . $e->getMessage()); }
             try { $pdo->prepare("UPDATE order_courier_offers SET response = 'cancelled', responded_at = NOW() WHERE order_id = ? AND response = 'pending'")->execute(array($order_id)); } catch (Exception $e) {}
@@ -118,7 +144,7 @@ function etel_cancel_order($pdo, $order_id, $role, $actor_id, $reason, $note, $s
         }
         try {
             require_once __DIR__ . '/manual_dispatch.php';
-            etel_dispatch_log($pdo, $order_id, $actor_id, 'cancel', $role . ': ' . $reason . ($note !== '' ? ' - ' . $note : '') . ($prevCourier ? ' (courier #' . $prevCourier . ' released)' : ''));
+            etel_dispatch_log($pdo, $order_id, $actor_id, 'cancel', $role . ': ' . $reason . ($note !== '' ? ' - ' . $note : '') . ($fee > 0 ? ' (fee ETB ' . $fee . ')' : '') . ($prevCourier ? ' (courier #' . $prevCourier . ' released)' : ''));
         } catch (Exception $e) {} catch (Throwable $e) {}
         if (function_exists('etel_notify_order_status')) { try { etel_notify_order_status($pdo, $order_id, 'cancelled'); } catch (Exception $e) {} catch (Throwable $e) {} }
         if ($prevCourier) {
@@ -136,8 +162,8 @@ function etel_cancel_order($pdo, $order_id, $role, $actor_id, $reason, $note, $s
             $refund = (intval($q->fetchColumn()) === 1);
         } catch (Exception $e) {} catch (Throwable $e) {}
         return array('ok' => true, 'order_id' => $order_id, 'order_code' => $o['order_code'], 'refund_due' => $refund, 'amount' => $amount,
-            'courier_released' => $prevCourier ?: null,
-            'message' => 'Order cancelled.' . ($refund && $role === 'admin' ? ' The customer paid for it, so it now shows under Money > Refunds.' : ''));
+            'courier_released' => $prevCourier ?: null, 'fee' => $fee,
+            'message' => 'Order cancelled.' . ($fee > 0 ? ' A cancel fee of ETB ' . rtrim(rtrim(number_format($fee, 2, '.', ''), '0'), '.') . ' was kept from your refund.' : '') . ($refund && $role === 'admin' ? ' The customer paid for it, so it now shows under Money > Refunds.' : ''));
     } catch (Exception $e) {
         error_log('[ETEL] cancel order: ' . $e->getMessage());
         return array('ok' => false, 'message' => 'Could not cancel the order. Please try again.');

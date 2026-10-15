@@ -10,6 +10,7 @@
 //   admin_package_rates_get   {}                        -> every vehicle's price rules (orders.view)
 //   admin_package_rates_save  { vehicle_class, label, icon, base_fee, per_km, free_kg, per_kg_over, min_fee, max_weight_kg, active }
 //                                                       -> change one vehicle's price rules (orders.manage)
+//   admin_package_setting_save { key:'late_cancel_fee', value }  -> small settings, e.g. the cancel fee (orders.manage)
 //   admin_package_type_add    { label, icon, size_like, courier_names, base_fee, ... }
 //                                                       -> add a vehicle type of our own, e.g. a Bajaj (orders.manage)
 // pickup{} / drop{}: { address, lat?, lng?, zone? } - a map point, or a known zone name when there is no map.
@@ -56,7 +57,7 @@ case 'customer_package_create': {
 case 'admin_package_rates_get': {
     $pdo = db();
     require_admin($pdo, 'orders.view');
-    ok(array('rates' => etel_package_rates($pdo, false)));
+    ok(array('rates' => etel_package_rates($pdo, false), 'settings' => etel_package_settings($pdo)));
     break;
 }
 
@@ -76,6 +77,16 @@ case 'admin_package_type_add': {
     $r = etel_package_add_type($pdo, $body);
     if (!$r['ok']) fail($r['message'], 400);
     ok(array('message' => $r['message'], 'vehicle_class' => $r['vehicle_class'], 'rates' => etel_package_rates($pdo, false)));
+    break;
+}
+
+case 'admin_package_setting_save': {
+    $pdo = db();
+    require_admin($pdo, 'orders.manage');
+    $key = isset($body['key']) ? strtolower(trim((string) $body['key'])) : '';
+    $r = etel_package_save_setting($pdo, $key, isset($body['value']) ? $body['value'] : '');
+    if (!$r['ok']) fail($r['message'], 400);
+    ok(array('message' => $r['message'], 'settings' => etel_package_settings($pdo)));
     break;
 }
 

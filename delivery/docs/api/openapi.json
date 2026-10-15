@@ -3,7 +3,7 @@
  "info": {
   "title": "ETEL Delivery & Ride API",
   "version": "generated",
-  "description": "Every action is a JSON POST to /api/boot.php with an `action` field (a few read-only actions also accept GET query parameters). Responses are JSON: {success: true|false, data: {...}, message: '...', v: '<app version>'}. Send the session token as `Authorization: Bearer <token>`; get one from `login`, `etelid_login` (Delivery/Ride apps) or `admin_etelid_login` (admin). Admin accounts with two-step sign-in answer {requires_2fa: true}: repeat the same login request with `totp_code`. Errors use HTTP 400/401/403/404/409/429/500/503 with the same JSON shape. Throttled actions answer 429. This file is generated from the source by tools/gen_api_docs.py: 433 actions. Parameter names come from the handlers; types and limits are in the handler code."
+  "description": "Every action is a JSON POST to /api/boot.php with an `action` field (a few read-only actions also accept GET query parameters). Responses are JSON: {success: true|false, data: {...}, message: '...', v: '<app version>'}. Send the session token as `Authorization: Bearer <token>`; get one from `login`, `etelid_login` (Delivery/Ride apps) or `admin_etelid_login` (admin). Admin accounts with two-step sign-in answer {requires_2fa: true}: repeat the same login request with `totp_code`. Errors use HTTP 400/401/403/404/409/429/500/503 with the same JSON shape. Throttled actions answer 429. This file is generated from the source by tools/gen_api_docs.py: 434 actions. Parameter names come from the handlers; types and limits are in the handler code."
  },
  "servers": [
   {
@@ -342,6 +342,9 @@
          },
          {
           "$ref": "#/components/schemas/admin_package_rates_save"
+         },
+         {
+          "$ref": "#/components/schemas/admin_package_setting_save"
          },
          {
           "$ref": "#/components/schemas/admin_package_type_add"
@@ -2086,6 +2089,14 @@
           "vehicle_class": "<vehicle_class>"
          }
         },
+        "admin_package_setting_save": {
+         "summary": "admin_package_setting_save (admin)",
+         "value": {
+          "action": "admin_package_setting_save",
+          "key": "<key>",
+          "value": "<value>"
+         }
+        },
         "admin_package_type_add": {
          "summary": "admin_package_type_add (admin)",
          "value": {
@@ -2772,7 +2783,7 @@
          }
         },
         "courier_add_fuel_log": {
-         "summary": "courier_add_fuel_log (any signed-in user)",
+         "summary": "courier_add_fuel_log (public)",
          "value": {
           "action": "courier_add_fuel_log",
           "cost_etb": "<cost_etb>",
@@ -2788,7 +2799,7 @@
          }
         },
         "courier_delete_fuel_log": {
-         "summary": "courier_delete_fuel_log (any signed-in user)",
+         "summary": "courier_delete_fuel_log (public)",
          "value": {
           "action": "courier_delete_fuel_log",
           "id": "<id>"
@@ -2807,7 +2818,7 @@
          }
         },
         "courier_get_fuel_summary": {
-         "summary": "courier_get_fuel_summary (any signed-in user)",
+         "summary": "courier_get_fuel_summary (public)",
          "value": {
           "action": "courier_get_fuel_summary",
           "period": "<period>"
@@ -2847,7 +2858,7 @@
          }
         },
         "courier_list_fuel_logs": {
-         "summary": "courier_list_fuel_logs (any signed-in user)",
+         "summary": "courier_list_fuel_logs (public)",
          "value": {
           "action": "courier_list_fuel_logs"
          }
@@ -2884,6 +2895,7 @@
          "summary": "customer_cancel_order (any signed-in user)",
          "value": {
           "action": "customer_cancel_order",
+          "confirm_fee": "<confirm_fee>",
           "note": "<note>",
           "order_id": "<order_id>",
           "reason": "<reason>"
@@ -6728,6 +6740,28 @@
     },
     "description": "Auth: admin (capability orders.manage). Source: api/controllers/PackageController.php."
    },
+   "admin_package_setting_save": {
+    "type": "object",
+    "title": "action: admin_package_setting_save",
+    "required": [
+     "action"
+    ],
+    "properties": {
+     "action": {
+      "type": "string",
+      "enum": [
+       "admin_package_setting_save"
+      ]
+     },
+     "key": {
+      "description": "request field (type not declared in code)"
+     },
+     "value": {
+      "description": "request field (type not declared in code)"
+     }
+    },
+    "description": "Auth: admin (capability orders.manage). Source: api/controllers/PackageController.php."
+   },
    "admin_package_type_add": {
     "type": "object",
     "title": "action: admin_package_type_add",
@@ -8678,7 +8712,7 @@
       "description": "request field (type not declared in code)"
      }
     },
-    "description": "Auth: any signed-in user. Source: api/controllers/CourierFuelController.php."
+    "description": "Auth: public. Source: api/controllers/CourierFuelController.php."
    },
    "courier_decline_offer": {
     "type": "object",
@@ -8716,7 +8750,7 @@
       "description": "request field (type not declared in code)"
      }
     },
-    "description": "Auth: any signed-in user. Source: api/controllers/CourierFuelController.php."
+    "description": "Auth: public. Source: api/controllers/CourierFuelController.php."
    },
    "courier_earnings_summary": {
     "type": "object",
@@ -8767,7 +8801,7 @@
       "description": "request field (type not declared in code)"
      }
     },
-    "description": "Auth: any signed-in user. Source: api/controllers/CourierFuelController.php."
+    "description": "Auth: public. Source: api/controllers/CourierFuelController.php."
    },
    "courier_get_kpi_summary": {
     "type": "object",
@@ -8872,7 +8906,7 @@
       ]
      }
     },
-    "description": "Auth: any signed-in user. Source: api/controllers/CourierFuelController.php."
+    "description": "Auth: public. Source: api/controllers/CourierFuelController.php."
    },
    "courier_update_location": {
     "type": "object",
@@ -8964,6 +8998,9 @@
       "enum": [
        "customer_cancel_order"
       ]
+     },
+     "confirm_fee": {
+      "description": "request field (type not declared in code)"
      },
      "note": {
       "description": "request field (type not declared in code)"
@@ -14768,6 +14805,16 @@
    "query": [],
    "source": "api/controllers/PackageController.php"
   },
+  "admin_package_setting_save": {
+   "auth": "admin",
+   "capability": "orders.manage",
+   "body": [
+    "key",
+    "value"
+   ],
+   "query": [],
+   "source": "api/controllers/PackageController.php"
+  },
   "admin_package_type_add": {
    "auth": "admin",
    "capability": "orders.manage",
@@ -15643,7 +15690,7 @@
    "source": "api/controllers/OrderController.php"
   },
   "courier_add_fuel_log": {
-   "auth": "any signed-in user",
+   "auth": "public",
    "capability": null,
    "body": [
     "cost_etb",
@@ -15663,7 +15710,7 @@
    "source": "api/controllers/OrderController.php"
   },
   "courier_delete_fuel_log": {
-   "auth": "any signed-in user",
+   "auth": "public",
    "capability": null,
    "body": [
     "id"
@@ -15686,7 +15733,7 @@
    "source": "api/controllers/OrderController.php"
   },
   "courier_get_fuel_summary": {
-   "auth": "any signed-in user",
+   "auth": "public",
    "capability": null,
    "body": [
     "period"
@@ -15742,7 +15789,7 @@
    "source": "api/controllers/OrderController.php"
   },
   "courier_list_fuel_logs": {
-   "auth": "any signed-in user",
+   "auth": "public",
    "capability": null,
    "body": [],
    "query": [],
@@ -15786,6 +15833,7 @@
    "auth": "any signed-in user",
    "capability": null,
    "body": [
+    "confirm_fee",
     "note",
     "order_id",
     "reason"

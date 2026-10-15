@@ -43,9 +43,9 @@ case 'customer_cancel_order': {
     $pdo = db();
     $auth_user = require_auth($pdo);
     require_once __DIR__ . '/../lib/order_cancel.php';
-    $r = etel_cancel_order($pdo, isset($body['order_id']) ? $body['order_id'] : 0, 'customer', $auth_user['id'], isset($body['reason']) ? $body['reason'] : '', isset($body['note']) ? $body['note'] : '');
+    $r = etel_cancel_order($pdo, isset($body['order_id']) ? $body['order_id'] : 0, 'customer', $auth_user['id'], isset($body['reason']) ? $body['reason'] : '', isset($body['note']) ? $body['note'] : '', 0, !empty($body['confirm_fee']));
     if (!$r['ok']) fail($r['message'], 400);
-    ok(array('message' => $r['message'], 'order_id' => $r['order_id'], 'refund_due' => $r['refund_due']));
+    ok(array('message' => $r['message'], 'order_id' => $r['order_id'], 'refund_due' => $r['refund_due'], 'fee' => isset($r['fee']) ? $r['fee'] : 0));
     break;
 }
 case 'customer_get_orders': {
@@ -902,6 +902,7 @@ case 'track_order': {
         require_once __DIR__ . '/../lib/order_cancel.php';
         $order['can_cancel'] = ((int) $order['_cid'] === (int) $u['id']) && etel_cancel_rule('customer', $order['status'], isset($order['assignment_status']) ? $order['assignment_status'] : null, $is_package ? 'package' : 'shop') === '';
         $order['cancel_reasons'] = etel_cancel_reasons('customer');
+        $order['cancel_fee'] = $order['can_cancel'] ? etel_cancel_fee_for($pdo, $order['id']) : 0;   // ETB the sender pays to cancel right now (0 = free)
     } catch (Exception $ce) {} catch (Throwable $ce) {}
     // The pins are for the sender only (the courier asks the sender for the pickup pin; the recipient gives the delivery pin).
     if ((int) $order['_cid'] !== (int) $u['id'] || !$is_package) { unset($order['pickup_pin'], $order['delivery_pin']); }

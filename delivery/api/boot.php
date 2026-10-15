@@ -176,7 +176,7 @@ function etel_purge_cache($tags = 'etel-html,etel-static') {
 }
 /* Write actions that should trigger a cache purge */
 define('ETEL_WRITE_ACTIONS', array(
-    'customer_create_order','customer_package_create','admin_package_rates_save','admin_package_type_add','courier_update_order_status','admin_update_order',
+    'customer_create_order','customer_package_create','admin_package_rates_save','admin_package_type_add','admin_package_setting_save','courier_update_order_status','admin_update_order',
     'admin_create_user','admin_add_item','admin_update_item','admin_delete_item',
     'admin_toggle_item','admin_create_service_giver','admin_verify_service_giver',
     'admin_suspend_service_giver','sg_update_order_status','sg_complete_order',
@@ -607,7 +607,7 @@ $ETEL_DELIVERY_ONLY_ACTIONS = array(
     'admin_ratings_report',
     'admin_refunds_report','admin_refund_mark','admin_courier_cash_report','admin_cash_remit',
     'admin_dispatch_board','admin_assign_courier','admin_take_back_order','admin_cancel_order',
-    'admin_package_rates_get','admin_package_rates_save','admin_package_type_add',
+    'admin_package_rates_get','admin_package_rates_save','admin_package_type_add','admin_package_setting_save',
     'admin_get_service_givers','admin_get_service_givers_list','admin_get_service_giver','admin_get_service_giver_statistics',
     'admin_create_service_giver','admin_verify_service_giver','admin_suspend_service_giver','admin_assign_service_giver',
     'admin_get_all_items','admin_add_item','admin_update_item','admin_delete_item','admin_toggle_item',
@@ -1590,7 +1590,7 @@ switch ($action) {
     case 'admin_dispatch_board': case 'admin_assign_courier': case 'admin_take_back_order': case 'admin_cancel_order':
         require __DIR__ . '/controllers/ManualDispatchController.php';
         break;
-    case 'customer_package_options': case 'customer_package_quote': case 'customer_package_create': case 'admin_package_rates_get': case 'admin_package_rates_save': case 'admin_package_type_add':
+    case 'customer_package_options': case 'customer_package_quote': case 'customer_package_create': case 'admin_package_rates_get': case 'admin_package_rates_save': case 'admin_package_type_add': case 'admin_package_setting_save':
         require __DIR__ . '/controllers/PackageController.php';
         break;
 
