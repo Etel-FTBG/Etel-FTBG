@@ -10,6 +10,8 @@
 //   admin_package_rates_get   {}                        -> every vehicle's price rules (orders.view)
 //   admin_package_rates_save  { vehicle_class, label, icon, base_fee, per_km, free_kg, per_kg_over, min_fee, max_weight_kg, active }
 //                                                       -> change one vehicle's price rules (orders.manage)
+//   admin_package_type_add    { label, icon, size_like, courier_names, base_fee, ... }
+//                                                       -> add a vehicle type of our own, e.g. a Bajaj (orders.manage)
 // pickup{} / drop{}: { address, lat?, lng?, zone? } - a map point, or a known zone name when there is no map.
 // ============================================================
 require_once __DIR__ . '/../lib/package_orders.php';
@@ -65,6 +67,15 @@ case 'admin_package_rates_save': {
     $r = etel_package_save_rate($pdo, $class, $body);
     if (!$r['ok']) fail($r['message'], 400);
     ok(array('message' => $r['message'], 'rates' => etel_package_rates($pdo, false)));
+    break;
+}
+
+case 'admin_package_type_add': {
+    $pdo = db();
+    require_admin($pdo, 'orders.manage');
+    $r = etel_package_add_type($pdo, $body);
+    if (!$r['ok']) fail($r['message'], 400);
+    ok(array('message' => $r['message'], 'vehicle_class' => $r['vehicle_class'], 'rates' => etel_package_rates($pdo, false)));
     break;
 }
 

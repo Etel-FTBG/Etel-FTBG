@@ -189,7 +189,7 @@ function etel_offer_next($pdo, $order_id) {
     $vehSql = ''; $vehParams = array();
     if ($ord['order_kind'] === 'package') {   // picked up where the sender is, and only by a courier with the vehicle the customer chose
         if ($ord['pickup_lat'] && $ord['pickup_lng']) { $lat = (float)$ord['pickup_lat']; $lng = (float)$ord['pickup_lng']; }
-        list($vehSql, $vehParams) = etel_vehicle_sql($ord['vehicle_class'], 'c');
+        list($vehSql, $vehParams) = etel_vehicle_sql($ord['vehicle_class'], 'c', $pdo);
     }
 
     $cs = $pdo->prepare("SELECT c.id, c.user_id, c.last_lat, c.last_lng, c.zone FROM couriers c

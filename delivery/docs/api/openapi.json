@@ -3,7 +3,7 @@
  "info": {
   "title": "ETEL Delivery & Ride API",
   "version": "generated",
-  "description": "Every action is a JSON POST to /api/boot.php with an `action` field (a few read-only actions also accept GET query parameters). Responses are JSON: {success: true|false, data: {...}, message: '...', v: '<app version>'}. Send the session token as `Authorization: Bearer <token>`; get one from `login`, `etelid_login` (Delivery/Ride apps) or `admin_etelid_login` (admin). Admin accounts with two-step sign-in answer {requires_2fa: true}: repeat the same login request with `totp_code`. Errors use HTTP 400/401/403/404/409/429/500/503 with the same JSON shape. Throttled actions answer 429. This file is generated from the source by tools/gen_api_docs.py: 430 actions. Parameter names come from the handlers; types and limits are in the handler code."
+  "description": "Every action is a JSON POST to /api/boot.php with an `action` field (a few read-only actions also accept GET query parameters). Responses are JSON: {success: true|false, data: {...}, message: '...', v: '<app version>'}. Send the session token as `Authorization: Bearer <token>`; get one from `login`, `etelid_login` (Delivery/Ride apps) or `admin_etelid_login` (admin). Admin accounts with two-step sign-in answer {requires_2fa: true}: repeat the same login request with `totp_code`. Errors use HTTP 400/401/403/404/409/429/500/503 with the same JSON shape. Throttled actions answer 429. This file is generated from the source by tools/gen_api_docs.py: 433 actions. Parameter names come from the handlers; types and limits are in the handler code."
  },
  "servers": [
   {
@@ -287,7 +287,13 @@
           "$ref": "#/components/schemas/admin_get_zones"
          },
          {
+          "$ref": "#/components/schemas/admin_integrations_add"
+         },
+         {
           "$ref": "#/components/schemas/admin_integrations_get"
+         },
+         {
+          "$ref": "#/components/schemas/admin_integrations_remove"
          },
          {
           "$ref": "#/components/schemas/admin_integrations_save"
@@ -336,6 +342,9 @@
          },
          {
           "$ref": "#/components/schemas/admin_package_rates_save"
+         },
+         {
+          "$ref": "#/components/schemas/admin_package_type_add"
          },
          {
           "$ref": "#/components/schemas/admin_photo_coverage"
@@ -1946,10 +1955,25 @@
           "action": "admin_get_zones"
          }
         },
+        "admin_integrations_add": {
+         "summary": "admin_integrations_add (admin)",
+         "value": {
+          "action": "admin_integrations_add",
+          "kind": "<kind>",
+          "name": "<name>"
+         }
+        },
         "admin_integrations_get": {
          "summary": "admin_integrations_get (admin)",
          "value": {
           "action": "admin_integrations_get"
+         }
+        },
+        "admin_integrations_remove": {
+         "summary": "admin_integrations_remove (admin)",
+         "value": {
+          "action": "admin_integrations_remove",
+          "provider": "<provider>"
          }
         },
         "admin_integrations_save": {
@@ -2060,6 +2084,12 @@
          "value": {
           "action": "admin_package_rates_save",
           "vehicle_class": "<vehicle_class>"
+         }
+        },
+        "admin_package_type_add": {
+         "summary": "admin_package_type_add (admin)",
+         "value": {
+          "action": "admin_package_type_add"
          }
         },
         "admin_photo_coverage": {
@@ -6331,6 +6361,28 @@
     },
     "description": "Auth: admin (capability settings.view). Source: api/controllers/AdminController.php."
    },
+   "admin_integrations_add": {
+    "type": "object",
+    "title": "action: admin_integrations_add",
+    "required": [
+     "action"
+    ],
+    "properties": {
+     "action": {
+      "type": "string",
+      "enum": [
+       "admin_integrations_add"
+      ]
+     },
+     "kind": {
+      "description": "request field (type not declared in code)"
+     },
+     "name": {
+      "description": "request field (type not declared in code)"
+     }
+    },
+    "description": "Auth: admin (capability integrations.manage). Source: api/controllers/IntegrationController.php."
+   },
    "admin_integrations_get": {
     "type": "object",
     "title": "action: admin_integrations_get",
@@ -6343,6 +6395,25 @@
       "enum": [
        "admin_integrations_get"
       ]
+     }
+    },
+    "description": "Auth: admin (capability integrations.manage). Source: api/controllers/IntegrationController.php."
+   },
+   "admin_integrations_remove": {
+    "type": "object",
+    "title": "action: admin_integrations_remove",
+    "required": [
+     "action"
+    ],
+    "properties": {
+     "action": {
+      "type": "string",
+      "enum": [
+       "admin_integrations_remove"
+      ]
+     },
+     "provider": {
+      "description": "request field (type not declared in code)"
      }
     },
     "description": "Auth: admin (capability integrations.manage). Source: api/controllers/IntegrationController.php."
@@ -6653,6 +6724,22 @@
      },
      "vehicle_class": {
       "description": "request field (type not declared in code)"
+     }
+    },
+    "description": "Auth: admin (capability orders.manage). Source: api/controllers/PackageController.php."
+   },
+   "admin_package_type_add": {
+    "type": "object",
+    "title": "action: admin_package_type_add",
+    "required": [
+     "action"
+    ],
+    "properties": {
+     "action": {
+      "type": "string",
+      "enum": [
+       "admin_package_type_add"
+      ]
      }
     },
     "description": "Auth: admin (capability orders.manage). Source: api/controllers/PackageController.php."
@@ -14516,10 +14603,29 @@
    "query": [],
    "source": "api/controllers/AdminController.php"
   },
+  "admin_integrations_add": {
+   "auth": "admin",
+   "capability": "integrations.manage",
+   "body": [
+    "kind",
+    "name"
+   ],
+   "query": [],
+   "source": "api/controllers/IntegrationController.php"
+  },
   "admin_integrations_get": {
    "auth": "admin",
    "capability": "integrations.manage",
    "body": [],
+   "query": [],
+   "source": "api/controllers/IntegrationController.php"
+  },
+  "admin_integrations_remove": {
+   "auth": "admin",
+   "capability": "integrations.manage",
+   "body": [
+    "provider"
+   ],
    "query": [],
    "source": "api/controllers/IntegrationController.php"
   },
@@ -14659,6 +14765,13 @@
    "body": [
     "vehicle_class"
    ],
+   "query": [],
+   "source": "api/controllers/PackageController.php"
+  },
+  "admin_package_type_add": {
+   "auth": "admin",
+   "capability": "orders.manage",
+   "body": [],
    "query": [],
    "source": "api/controllers/PackageController.php"
   },

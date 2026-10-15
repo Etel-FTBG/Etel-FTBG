@@ -12,9 +12,55 @@
 
 require_once __DIR__ . '/zones.php';
 
-function etel_package_classes() {
+function etel_package_builtin_classes() {
     // order = size of vehicle, smallest first
     return array('bike' => 1, 'moto' => 2, 'car' => 3, 'van' => 4);
+}
+
+// Courier vehicle names each built-in class covers.
+function etel_package_builtin_names() {
+    return array(
+        'bike' => array('bicycle', 'bike', 'cycle', 'on_foot', 'foot', 'walking'),
+        'moto' => array('motorcycle', 'motorbike', 'moto', 'scooter'),
+        'car'  => array('car', 'sedan', 'taxi', 'vehicle'),
+        'van'  => array('van', 'pickup', 'pick-up', 'truck', 'minibus', 'lorry', 'cargo'),
+    );
+}
+
+// The database to read added vehicle types from when the caller did not pass one: the last one the schema check saw, else db().
+function etel_package_pdo($set = null) {
+    static $last = null;
+    if ($set) $last = $set;
+    if ($last) return $last;
+    return function_exists('db') ? db() : null;
+}
+
+// Vehicle types staff added in Admin (Package prices -> Add): class => array('rank' => int, 'names' => array of lowercase courier vehicle names).
+// Read once per request. $reset = true forgets it (after an add or edit, and in tests). Never throws: no database = none.
+function etel_package_custom_defs($pdo = null, $reset = false) {
+    static $cache = null;
+    if ($reset) { $cache = null; return array(); }
+    if ($cache !== null) return $cache;
+    $cache = array();
+    try {
+        if (!$pdo) $pdo = etel_package_pdo();
+        if (!$pdo) { $cache = null; return array(); }
+        etel_package_ensure_schema($pdo);
+        $builtin = etel_package_builtin_classes();
+        foreach ($pdo->query('SELECT vehicle_class, size_rank, courier_names FROM package_rates')->fetchAll(PDO::FETCH_ASSOC) as $r) {
+            if (isset($builtin[$r['vehicle_class']])) continue;
+            $names = array();
+            foreach (explode(',', (string) $r['courier_names']) as $n) { $n = strtolower(trim($n)); if ($n !== '') $names[] = $n; }
+            $cache[$r['vehicle_class']] = array('rank' => max(1, intval($r['size_rank'])), 'names' => $names);
+        }
+    } catch (Exception $e) { error_log('[ETEL] package custom types: ' . $e->getMessage()); $cache = null; return array(); }
+    return $cache;
+}
+
+function etel_package_classes($pdo = null) {
+    $out = etel_package_builtin_classes();
+    foreach (etel_package_custom_defs($pdo) as $k => $d) $out[$k] = $d['rank'];
+    return $out;
 }
 
 // Smallest vehicle that can carry a package of this size.
@@ -28,27 +74,21 @@ function etel_package_sizes() {
 }
 
 // What a courier's free-text vehicle_type means for packages. Unknown or empty = motorbike (the default on sign-up).
-function etel_vehicle_class_of($vehicle_type) {
+function etel_vehicle_class_of($vehicle_type, $pdo = null) {
     $v = strtolower(trim((string) $vehicle_type));
     if ($v === '') return 'moto';
-    $map = array(
-        'bike' => array('bicycle', 'bike', 'cycle', 'on_foot', 'foot', 'walking'),
-        'moto' => array('motorcycle', 'motorbike', 'moto', 'scooter'),
-        'car'  => array('car', 'sedan', 'taxi', 'vehicle'),
-        'van'  => array('van', 'pickup', 'pick-up', 'truck', 'minibus', 'lorry', 'cargo'),
-    );
-    foreach ($map as $class => $names) { if (in_array($v, $names, true)) return $class; }
+    foreach (etel_package_builtin_names() as $class => $names) { if (in_array($v, $names, true)) return $class; }
+    foreach (etel_package_custom_defs($pdo) as $class => $d) { if (in_array($v, $d['names'], true)) return $class; }
     return '';
 }
 
 // SQL piece that keeps only couriers of one vehicle class: array(sql, params). $alias = the couriers table alias.
-function etel_vehicle_sql($class, $alias = 'c') {
-    $names = array(
-        'bike' => array('bicycle', 'bike', 'cycle', 'on_foot', 'foot', 'walking'),
-        'moto' => array('motorcycle', 'motorbike', 'moto', 'scooter'),
-        'car'  => array('car', 'sedan', 'taxi', 'vehicle'),
-        'van'  => array('van', 'pickup', 'pick-up', 'truck', 'minibus', 'lorry', 'cargo'),
-    );
+function etel_vehicle_sql($class, $alias = 'c', $pdo = null) {
+    $names = etel_package_builtin_names();
+    if (!isset($names[$class])) {
+        $custom = etel_package_custom_defs($pdo);
+        if (isset($custom[$class]) && $custom[$class]['names']) $names[$class] = $custom[$class]['names'];
+    }
     if (!isset($names[$class])) return array(' AND 1 = 0', array());
     $marks = implode(',', array_fill(0, count($names[$class]), '?'));
     $sql = $alias . '.vehicle_type IS NOT NULL AND LOWER(' . $alias . '.vehicle_type) IN (' . $marks . ')';
@@ -70,6 +110,7 @@ function etel_package_ensure_schema($pdo) {
     static $done = false;
     if ($done) return;
     $done = true;
+    etel_package_pdo($pdo);
     try {
         $have = array();
         foreach ($pdo->query('SHOW COLUMNS FROM orders')->fetchAll() as $c) $have[$c['Field']] = true;
@@ -92,6 +133,11 @@ function etel_package_ensure_schema($pdo) {
             per_kg_over DECIMAL(10,2) NOT NULL DEFAULT 0, min_fee DECIMAL(10,2) NOT NULL DEFAULT 0, max_weight_kg DECIMAL(8,2) NOT NULL DEFAULT 0,
             sort_order INT(11) NOT NULL DEFAULT 0, active TINYINT(1) NOT NULL DEFAULT 1, updated_at DATETIME NULL DEFAULT NULL,
             PRIMARY KEY (id), UNIQUE KEY uq_vehicle_class (vehicle_class)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+        // Added vehicle types (Admin -> Package prices -> Add): where each sits in the size order and which courier vehicle names serve it.
+        $rateCols = array();
+        foreach ($pdo->query('SHOW COLUMNS FROM package_rates')->fetchAll() as $c) $rateCols[$c['Field']] = true;
+        if (empty($rateCols['size_rank'])) $pdo->exec('ALTER TABLE package_rates ADD COLUMN size_rank TINYINT NOT NULL DEFAULT 0');
+        if (empty($rateCols['courier_names'])) $pdo->exec("ALTER TABLE package_rates ADD COLUMN courier_names VARCHAR(200) NOT NULL DEFAULT ''");
         if (intval($pdo->query('SELECT COUNT(*) FROM package_rates')->fetchColumn()) === 0) {
             $ins = $pdo->prepare('INSERT IGNORE INTO package_rates (vehicle_class, label, icon, base_fee, per_km, free_kg, per_kg_over, min_fee, max_weight_kg, sort_order, active) VALUES (?,?,?,?,?,?,?,?,?,?,1)');
             foreach (etel_package_default_rates() as $r) $ins->execute($r);
@@ -103,11 +149,11 @@ function etel_package_ensure_schema($pdo) {
 function etel_package_rates($pdo, $only_active = true) {
     etel_package_ensure_schema($pdo);
     try {
-        $sql = 'SELECT vehicle_class, label, icon, base_fee, per_km, free_kg, per_kg_over, min_fee, max_weight_kg, sort_order, active FROM package_rates'
+        $sql = 'SELECT vehicle_class, label, icon, base_fee, per_km, free_kg, per_kg_over, min_fee, max_weight_kg, sort_order, active, size_rank, courier_names FROM package_rates'
              . ($only_active ? ' WHERE active = 1' : '') . ' ORDER BY sort_order, id';
         $rows = $pdo->query($sql)->fetchAll(PDO::FETCH_ASSOC);
     } catch (Exception $e) { return array(); }
-    $classes = etel_package_classes();
+    $classes = etel_package_classes($pdo);
     $out = array();
     foreach ($rows as $r) { if (isset($classes[$r['vehicle_class']])) $out[] = $r; }
     return $out;
@@ -174,7 +220,7 @@ function etel_package_quote($pdo, $pickup_in, $drop_in, $details_in) {
     if (is_string($det)) return array('ok' => false, 'message' => $det);
     $km = etel_package_distance_km($p['lat'], $p['lng'], $d['lat'], $d['lng']);
     if ($km > 60) return array('ok' => false, 'message' => 'Packages go within Hawassa and nearby (up to 60 km). This trip is about ' . $km . ' km.');
-    $classes = etel_package_classes();
+    $classes = etel_package_classes($pdo);
     $sizes = etel_package_sizes();
     $minRank = $classes[$sizes[$det['size']]['min_class']];
     $options = array();
@@ -273,11 +319,8 @@ function etel_package_public_fields($order) {
     return $out;
 }
 
-// Admin: save one vehicle's rate. $r keys: label, icon, base_fee, per_km, free_kg, per_kg_over, min_fee, max_weight_kg, active. Returns array(ok, message).
-function etel_package_save_rate($pdo, $class, $r) {
-    etel_package_ensure_schema($pdo);
-    $classes = etel_package_classes();
-    if (!isset($classes[$class])) return array('ok' => false, 'message' => 'Unknown vehicle.');
+// Admin: the price fields shared by "save" and "add". Returns array(ok, vals) or array(ok=false, message).
+function etel_package_rate_fields($r) {
     $num = function ($k, $max) use ($r) {
         if (!isset($r[$k]) || !is_numeric($r[$k])) return false;
         $v = round(floatval($r[$k]), 2);
@@ -293,10 +336,93 @@ function etel_package_save_rate($pdo, $class, $r) {
     if ($label === '' || strlen($label) > 60) return array('ok' => false, 'message' => 'Give the vehicle a name (up to 60 characters).');
     $icon = isset($r['icon']) ? trim((string) $r['icon']) : '';
     if (strlen($icon) > 8) $icon = '';
-    $active = !empty($r['active']) ? 1 : 0;
+    return array('ok' => true, 'base' => $base, 'km' => $km, 'free' => $free, 'over' => $over, 'min' => $min, 'max' => $max,
+        'label' => $label, 'icon' => $icon, 'active' => !empty($r['active']) ? 1 : 0);
+}
+
+// Courier vehicle names for an added type: "bajaj, tuk-tuk" -> array. $class = the type being edited (its own names may stay).
+// Returns array(ok, names) or array(ok=false, message). Every name must be new: a name that already means another vehicle would send jobs to the wrong couriers.
+function etel_package_parse_names($pdo, $text, $class = '') {
+    $names = array();
+    foreach (preg_split('/[,\n]+/', (string) $text) as $n) {
+        $n = strtolower(trim($n));
+        if ($n === '') continue;
+        if (!preg_match('/^[a-z0-9][a-z0-9 _-]{1,29}$/', $n)) return array('ok' => false, 'message' => '"' . $n . '" is not a usable vehicle word (2 to 30 letters or numbers).');
+        $names[$n] = true;
+    }
+    $names = array_keys($names);
+    if (!$names) return array('ok' => false, 'message' => 'Type at least one vehicle word, the one couriers choose for their vehicle (for example: bajaj).');
+    if (count($names) > 8) return array('ok' => false, 'message' => 'Use up to 8 vehicle words.');
+    $taken = array();
+    foreach (etel_package_builtin_names() as $k => $list) foreach ($list as $n) $taken[$n] = $k;
+    foreach (etel_package_custom_defs($pdo) as $k => $d) { if ($k !== $class) foreach ($d['names'] as $n) $taken[$n] = $k; }
+    foreach ($names as $n) {
+        if (isset($taken[$n])) return array('ok' => false, 'message' => '"' . $n . '" already belongs to another vehicle type. Use a different word.');
+    }
+    return array('ok' => true, 'names' => $names);
+}
+
+// $like = which built-in vehicle the new type carries about as much as: bike | moto | car | van. Returns its rank, or 0.
+function etel_package_rank_of($like) {
+    $b = etel_package_builtin_classes();
+    $like = strtolower(trim((string) $like));
+    return isset($b[$like]) ? $b[$like] : 0;
+}
+
+// Admin: save one vehicle's rate. $r keys: label, icon, base_fee, per_km, free_kg, per_kg_over, min_fee, max_weight_kg, active
+// (and, for a vehicle type staff added: size_like, courier_names). Returns array(ok, message).
+function etel_package_save_rate($pdo, $class, $r) {
+    etel_package_ensure_schema($pdo);
+    $classes = etel_package_classes($pdo);
+    if (!isset($classes[$class])) return array('ok' => false, 'message' => 'Unknown vehicle.');
+    $f = etel_package_rate_fields($r);
+    if (!$f['ok']) return $f;
+    $custom = !isset(etel_package_builtin_classes()[$class]);
+    $extraSql = ''; $extra = array();
+    if ($custom) {
+        if (isset($r['courier_names'])) {
+            $n = etel_package_parse_names($pdo, $r['courier_names'], $class);
+            if (!$n['ok']) return $n;
+            $extraSql .= ', courier_names=?'; $extra[] = implode(', ', $n['names']);
+        }
+        if (isset($r['size_like'])) {
+            $rank = etel_package_rank_of($r['size_like']);
+            if (!$rank) return array('ok' => false, 'message' => 'Pick which vehicle it is closest in size to.');
+            $extraSql .= ', size_rank=?, sort_order=?'; $extra[] = $rank; $extra[] = $rank;
+        }
+    }
     try {
-        $pdo->prepare('UPDATE package_rates SET label=?, icon=?, base_fee=?, per_km=?, free_kg=?, per_kg_over=?, min_fee=?, max_weight_kg=?, active=?, updated_at=NOW() WHERE vehicle_class=?')
-            ->execute(array($label, $icon, $base, $km, $free, $over, $min, $max, $active, $class));
+        $pdo->prepare('UPDATE package_rates SET label=?, icon=?, base_fee=?, per_km=?, free_kg=?, per_kg_over=?, min_fee=?, max_weight_kg=?, active=?, updated_at=NOW()' . $extraSql . ' WHERE vehicle_class=?')
+            ->execute(array_merge(array($f['label'], $f['icon'], $f['base'], $f['km'], $f['free'], $f['over'], $f['min'], $f['max'], $f['active']), $extra, array($class)));
     } catch (Exception $e) { error_log('[ETEL] package rate save: ' . $e->getMessage()); return array('ok' => false, 'message' => 'Could not save the price.'); }
+    etel_package_custom_defs(null, true);
     return array('ok' => true, 'message' => 'Saved.');
+}
+
+// Admin: add a vehicle type of our own (for example a Bajaj or a mini truck). $r: the price fields plus size_like and courier_names.
+// The new type gets the class key x1, x2, ... (short, never reused). Returns array(ok, message, vehicle_class).
+function etel_package_add_type($pdo, $r) {
+    etel_package_ensure_schema($pdo);
+    $f = etel_package_rate_fields($r);
+    if (!$f['ok']) return $f;
+    $rank = etel_package_rank_of(isset($r['size_like']) ? $r['size_like'] : '');
+    if (!$rank) return array('ok' => false, 'message' => 'Pick which vehicle it is closest in size to.');
+    $n = etel_package_parse_names($pdo, isset($r['courier_names']) ? $r['courier_names'] : '');
+    if (!$n['ok']) return $n;
+    try {
+        $count = intval($pdo->query("SELECT COUNT(*) FROM package_rates WHERE vehicle_class NOT IN ('bike','moto','car','van')")->fetchColumn());
+        if ($count >= 12) return array('ok' => false, 'message' => 'You already have 12 added vehicle types. Switch one off instead.');
+        $key = '';
+        for ($i = $count + 1; $i <= $count + 30; $i++) {
+            $try = 'x' . $i;
+            $ex = $pdo->prepare('SELECT 1 FROM package_rates WHERE vehicle_class=?'); $ex->execute(array($try));
+            if (!$ex->fetchColumn()) { $key = $try; break; }
+        }
+        if ($key === '') return array('ok' => false, 'message' => 'Could not add the vehicle type.');
+        $pdo->prepare('INSERT INTO package_rates (vehicle_class, label, icon, base_fee, per_km, free_kg, per_kg_over, min_fee, max_weight_kg, sort_order, active, size_rank, courier_names, updated_at)
+                       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,NOW())')
+            ->execute(array($key, $f['label'], $f['icon'], $f['base'], $f['km'], $f['free'], $f['over'], $f['min'], $f['max'], $rank, $f['active'], $rank, implode(', ', $n['names'])));
+    } catch (Exception $e) { error_log('[ETEL] package add type: ' . $e->getMessage()); return array('ok' => false, 'message' => 'Could not add the vehicle type.'); }
+    etel_package_custom_defs(null, true);
+    return array('ok' => true, 'message' => 'Added. Couriers whose vehicle is set to ' . implode(' or ', $n['names']) . ' will now get these jobs.', 'vehicle_class' => $key);
 }
