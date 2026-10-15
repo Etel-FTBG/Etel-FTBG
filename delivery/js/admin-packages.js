@@ -48,7 +48,7 @@ function card(r) {
     h += '<label style="font-size:12px">' + f[1] + '<input name="' + f[0] + '" type="number" inputmode="decimal" min="0" step="any" value="' + esc(r[f[0]]) + '" style="' + FIELD + '"></label>';
   });
   h += '</div><div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:10px">' +
-    '<button type="submit" style="' + BTN + '">Save ' + esc(r.vehicle_class) + '</button>' +
+    '<button type="submit" style="' + BTN + '">Save ' + esc(BUILTIN[r.vehicle_class] ? r.vehicle_class : r.label) + '</button>' +
     '<span data-preview style="font-size:12.5px;opacity:.85"></span></div>' +
     '<div data-note role="status" style="font-size:12.5px;min-height:18px;margin-top:6px"></div></form>';
   return h;
