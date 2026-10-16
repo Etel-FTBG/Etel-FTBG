@@ -85,8 +85,17 @@ def main():
     check("booking needs the prohibited-items tick", r.get("success") is False)
     s, r = call("customer_package_create", book, token=None)
     check("booking needs a sign-in", r.get("success") is False)
-    s, r = call("customer_package_create", book, token=moto)
-    check("a courier login is told to use a customer account (403, plain words)", s == 403 and "courier account" in (r.get("message") or "") and "customer account" in (r.get("message") or ""), r)
+    # Every EtelID is also a customer: a courier books from the same account, but never delivers their own order.
+    s, r = call("customer_package_create", dict(book, weight_kg=1, vehicle_class="moto"), token=moto)
+    own = (r.get("data") or {}).get("order_id")
+    check("a courier account can book a package (every EtelID is also a customer)", r.get("success") and own, r)
+    s, r = call("courier_get_available_orders", {}, token=moto, qs="?pkg=1")
+    listed = [o.get("id") for o in ((r.get("data") or {}).get("orders") or [])]
+    check("the courier does not see the package they booked themselves", own not in listed, listed)
+    if own:
+        s, r = call("courier_accept_order", {"order_id": own}, token=moto, qs="?pkg=1")
+        check("the courier cannot accept their own package (403)", s == 403 and "yourself" in (r.get("message") or ""), r)
+        call("customer_cancel_order", {"order_id": own, "reason": "other"}, token=moto)
     s, r = call("customer_package_create", book, token=cust)
     d = r.get("data") or {}
     oid = d.get("order_id")

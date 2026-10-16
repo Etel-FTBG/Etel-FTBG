@@ -15,7 +15,8 @@
 function delivery_execute_order_creation($pdo, $auth_user, $body) {
     // POST: (requires customer auth)  items (array of {item_id, quantity}), to_zone, recipient_name, recipient_phone, notes
     // Create a new order with items and assign to the service giver who owns those items
-    if ($auth_user['role'] !== 'customer' && $auth_user['role'] !== 'admin') throw new Exception(etel_customer_only_message($auth_user));
+    // Every EtelID is also a customer: a driver, courier or shop owner orders from the same account.
+    if (!in_array($auth_user['role'], array('customer', 'driver', 'courier', 'service_giver', 'admin'), true)) throw new Exception('Sign in to place an order');
     
     require_once __DIR__ . '/../config-etb.php';
     global $HAWASSA_DELIVERY_FEES, $DELIVERY_TIERS;

@@ -175,7 +175,7 @@ function etel_offer_next($pdo, $order_id) {
     require_once __DIR__ . '/package_orders.php';
     etel_package_ensure_schema($pdo);
     $o = $pdo->prepare("SELECT o.id, o.order_code, o.from_zone, o.to_zone, o.fare_total, o.status, o.courier_id,
-                               o.order_kind, o.vehicle_class, o.pickup_lat, o.pickup_lng,
+                               o.order_kind, o.vehicle_class, o.pickup_lat, o.pickup_lng, o.customer_id,
                                sg.lat AS sg_lat, sg.lng AS sg_lng
                         FROM orders o LEFT JOIN order_assignments oa ON oa.order_id = o.id LEFT JOIN service_givers sg ON sg.id = oa.service_giver_id
                         WHERE o.id = ? LIMIT 1");
@@ -192,6 +192,7 @@ function etel_offer_next($pdo, $order_id) {
         list($vehSql, $vehParams) = etel_vehicle_sql($ord['vehicle_class'], 'c', $pdo);
         $vehSql .= etel_package_capable_sql('c');   // only couriers whose app can run a package (pickup address, PINs)
     }
+    $vehSql .= etel_not_own_order_sql($ord['customer_id'], 'c');   // never the courier who placed it
 
     $cs = $pdo->prepare("SELECT c.id, c.user_id, c.last_lat, c.last_lng, c.zone FROM couriers c
                          WHERE c.status = 'online' AND c.active = 1 AND c.offer_capable_until IS NOT NULL AND c.offer_capable_until > NOW()
