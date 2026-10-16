@@ -38,8 +38,11 @@ if not m or (int(m.group(1)), int(m.group(2))) < (7, 19):
     bad.append('customer.html must load customer-v5.css?v=7.19 or newer')
 if not re.search(r"customer-package\.js\?v=(\d+)", html) or int(re.search(r"customer-package\.js\?v=(\d+)", html).group(1)) < 7:
     bad.append('customer.html must load customer-package.js?v=7 or newer')
-if int(re.search(r"etel-v(\d+)", sw).group(1)) < 166:
-    bad.append('sw.js cache version must be bumped (etel-v166+)')
+m2 = re.search(r"customer-actions\.js\?v=(\d+)", html)
+if not m2 or int(m2.group(1)) < 5:
+    bad.append('customer.html must load customer-actions.js?v=5 or newer (phones keep the old allow-list otherwise)')
+if int(re.search(r"etel-v(\d+)", sw).group(1)) < 167:
+    bad.append('sw.js cache version must be bumped (etel-v167+)')
 if bad:
     print('check_package_form FAILED:')
     for b in bad:
