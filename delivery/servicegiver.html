@@ -273,6 +273,9 @@ table tr:hover td { background:rgba(212,175,55,.04); }
 .modal-close { position:absolute; top:16px; right:18px; background:rgba(255,255,255,.06); border:1px solid var(--border); width:30px; height:30px; border-radius:50%; font-size:16px; cursor:pointer; color:var(--text-dim); }
 .modal-title { font-size:18px; font-weight:800; color:var(--gold-lt); margin-bottom:20px; }
 
+.sg-lang { display:inline-flex; padding:3px; border-radius:999px; background:rgba(255,255,255,.06); border:1px solid rgba(212,175,55,.35); }
+.sg-lang-b { min-width:38px; min-height:32px; padding:0 9px; border:0; border-radius:999px; background:transparent; color:var(--text-dim,#9A9AAE); font-size:12px; font-weight:800; font-family:inherit; cursor:pointer; }
+.sg-lang-b.on { background:linear-gradient(135deg,#D4AF37,#B8860B); color:#1a1400; }
 .decline-reasons { display:flex; flex-direction:column; gap:8px; margin-bottom:12px; }
 .decline-opt { display:flex; align-items:center; gap:10px; padding:11px 12px; border:1px solid var(--border-lt); border-radius:10px; cursor:pointer; color:var(--text); font-size:14px; }
 .decline-opt input { accent-color:#E63946; width:18px; height:18px; }
@@ -398,52 +401,52 @@ body.etel-light .cat-chip.on{background:#f3e3b0;color:#4a3300}
             <nav class="sidebar-menu">
                 <div class="menu-item active" data-page="dashboard" data-act="switchPage" data-args='["dashboard"]'>
                     <div class="menu-icon">📊</div>
-                    <div class="menu-label">Dashboard</div>
+                    <div class="menu-label" data-i18n="sg_dashboard">Dashboard</div>
                 </div>
                 <div class="menu-item" data-page="orders" data-sg-cap="orders.view" data-act="switchPage" data-args='["orders"]' style="display:none">
                     <div class="menu-icon">📦</div>
-                    <div class="menu-label">Orders</div>
+                    <div class="menu-label" data-i18n="sg_orders">Orders</div>
                     <div class="menu-badge" id="orders-badge">0</div>
                 </div>
                 <div class="menu-item" data-page="services" data-sg-cap="menu.view" data-act="switchPage" data-args='["services"]' style="display:none">
                     <div class="menu-icon">🛍️</div>
-                    <div class="menu-label">My Services</div>
+                    <div class="menu-label" data-i18n="sg_services">My Services</div>
                 </div>
                 <div class="menu-item" data-page="qr-scanner" data-sg-cap="orders.manage" data-act="switchPage" data-args='["qr-scanner"]' style="display:none">
                     <div class="menu-icon">📷</div>
-                    <div class="menu-label">QR Scanner</div>
+                    <div class="menu-label" data-i18n="sg_qr">QR Scanner</div>
                 </div>
                 <div class="menu-item" data-page="analytics" data-sg-cap="reports.view" data-act="switchPage" data-args='["analytics"]' style="display:none">
                     <div class="menu-icon">📈</div>
-                    <div class="menu-label">Analytics</div>
+                    <div class="menu-label" data-i18n="sg_analytics">Analytics</div>
                 </div>
                 <div class="menu-item" data-page="reviews" data-sg-cap="orders.view" data-act="switchPage" data-args='["reviews"]' style="display:none">
                     <div class="menu-icon">⭐</div>
-                    <div class="menu-label">Reviews <span id="sg-reviews-badge" style="display:none;background:#e74c3c;color:#fff;font-size:10px;font-weight:800;border-radius:10px;padding:1px 7px;margin-left:6px">0</span></div>
+                    <div class="menu-label"><span data-i18n="sg_reviews">Reviews</span> <span id="sg-reviews-badge" style="display:none;background:#e74c3c;color:#fff;font-size:10px;font-weight:800;border-radius:10px;padding:1px 7px;margin-left:6px">0</span></div>
                 </div>
                 <div class="menu-item" data-page="payments" data-sg-cap="payments.view" data-act="switchPage" data-args='["payments"]' style="display:none">
                     <div class="menu-icon">💰</div>
-                    <div class="menu-label">Payments</div>
+                    <div class="menu-label" data-i18n="sg_payments">Payments</div>
                 </div>
                 <div class="menu-item" data-page="settings" data-act="switchPage" data-args='["settings"]'>
                     <div class="menu-icon">⚙️</div>
-                    <div class="menu-label">Settings</div>
+                    <div class="menu-label" data-i18n="sg_settings">Settings</div>
                 </div>
                 <div class="menu-item" data-etel-2fa-open>
                     <div class="menu-icon">🛡️</div>
-                    <div class="menu-label">Two-step sign-in</div>
+                    <div class="menu-label" data-i18n="sg_2fa">Two-step sign-in</div>
                 </div>
                 <div class="menu-item" data-etel-delete-account-open>
                     <div class="menu-icon">🗑️</div>
-                    <div class="menu-label">Delete my account</div>
+                    <div class="menu-label" data-i18n="sg_delete">Delete my account</div>
                 </div>
                 <div class="menu-item" data-etel-display-open>
                     <div class="menu-icon">🔠</div>
-                    <div class="menu-label">Display Size</div>
+                    <div class="menu-label" data-i18n="sg_display">Display Size</div>
                 </div>
                 <div class="menu-item" data-page="staff" data-sg-cap="staff.manage" data-act="switchPage" data-args='["staff"]' style="display:none">
                     <div class="menu-icon">👥</div>
-                    <div class="menu-label">Staff &amp; Roles</div>
+                    <div class="menu-label" data-i18n="sg_staff">Staff &amp; Roles</div>
                 </div>
             </nav>
 
@@ -452,10 +455,10 @@ body.etel-light .cat-chip.on{background:#f3e3b0;color:#4a3300}
                     <div class="user-avatar-small" id="user-avatar">A</div>
                     <div>
                         <div class="user-card-name" id="user-card-name">Loading...</div>
-                        <div class="user-card-role">Service Provider</div>
+                        <div class="user-card-role" data-i18n="sg_provider">Service Provider</div>
                     </div>
                 </div>
-                <button class="btn btn-ghost" style="width: 100%; justify-content: center;" data-act="logout">Logout</button>
+                <button class="btn btn-ghost" style="width: 100%; justify-content: center;" data-act="logout" data-i18n="sg_logout">Logout</button>
             </div>
         </aside>
 
@@ -471,12 +474,13 @@ body.etel-light .cat-chip.on{background:#f3e3b0;color:#4a3300}
                         <div class="logo-icon">🎯</div>
                         <div>
                             <div class="logo-main">ETEL Pro</div>
-                            <div class="logo-sub">Service Dashboard</div>
+                            <div class="logo-sub" data-i18n="sg_logo_sub">Service Dashboard</div>
                         </div>
                     </div>
                 </div>
 
                 <div class="header-right">
+                    <div class="sg-lang" role="group" aria-label="Language"><button type="button" class="sg-lang-b on" data-lang="en" aria-pressed="true" data-act="sgSwitchLang" data-args='["en"]'>EN</button><button type="button" class="sg-lang-b" data-lang="am" aria-pressed="false" data-act="sgSwitchLang" data-args='["am"]'>አማ</button></div>
                     <div class="user-profile" data-act="toggleSgProfile" style="cursor:pointer">
                         <div class="user-avatar" id="profile-avatar">A</div>
                         <div>
@@ -494,8 +498,8 @@ body.etel-light .cat-chip.on{background:#f3e3b0;color:#4a3300}
 
                 <!-- DASHBOARD -->
                 <div id="page-dashboard">
-                    <div class="page-title">Welcome Back</div>
-                    <div class="page-subtitle">Here's what's happening with your business today</div>
+                    <div class="page-title" data-i18n="sg_welcome">Welcome Back</div>
+                    <div class="page-subtitle" data-i18n="sg_welcome_sub">Here's what's happening with your business today</div>
 
                     <div id="sg-my-role-card" style="display:none;background:linear-gradient(135deg,rgba(212,175,55,.10),rgba(212,175,55,.03));border:1px solid rgba(212,175,55,.25);border-radius:14px;padding:18px 20px;margin-bottom:20px">
                         <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
@@ -510,45 +514,45 @@ body.etel-light .cat-chip.on{background:#f3e3b0;color:#4a3300}
 
                     <div class="kpi-grid">
                         <div class="kpi-card">
-                            <div class="kpi-label">📦 Today's Orders</div>
+                            <div class="kpi-label" data-i18n="sg_kpi_orders">📦 Today's Orders</div>
                             <div class="kpi-value" id="kpi-today-orders">0</div>
                             <div class="kpi-change kpi-flat" id="kpi-today-change">Compared with yesterday: —</div>
                         </div>
                         <div class="kpi-card">
-                            <div class="kpi-label">✅ Completed</div>
+                            <div class="kpi-label" data-i18n="sg_kpi_done">✅ Completed</div>
                             <div class="kpi-value" id="kpi-completed">0</div>
                             <div class="kpi-change kpi-flat" id="kpi-completed-change">Compared with last week: —</div>
                         </div>
                         <div class="kpi-card">
-                            <div class="kpi-label">💰 Total Earnings</div>
+                            <div class="kpi-label" data-i18n="sg_kpi_earn">💰 Total Earnings</div>
                             <div class="kpi-value" id="kpi-earnings" style="font-size: 24px;">Br 0</div>
                             <div class="kpi-change kpi-flat" id="kpi-earnings-change">Compared with last month: —</div>
                         </div>
                         <div class="kpi-card">
-                            <div class="kpi-label">⭐ Rating</div>
+                            <div class="kpi-label" data-i18n="sg_kpi_rating">⭐ Rating</div>
                             <div class="kpi-value" id="kpi-rating">0.0</div>
-                            <div class="kpi-change">Based on <span id="kpi-reviews">0</span> reviews</div>
+                            <div class="kpi-change"><span data-i18n="sg_based_on">Based on</span> <span id="kpi-reviews">0</span> <span data-i18n="sg_reviews_lc">reviews</span></div>
                         </div>
                     </div>
 
                     <div class="card">
                         <div class="card-header">
-                            <div class="card-title">📋 Recent Orders</div>
-                            <button class="btn btn-secondary btn-small" data-act="switchPage" data-args='["orders"]'>View All</button>
+                            <div class="card-title" data-i18n="sg_recent">📋 Recent Orders</div>
+                            <button class="btn btn-secondary btn-small" data-act="switchPage" data-args='["orders"]' data-i18n="sg_viewall">View All</button>
                         </div>
                         <div class="card-body" id="recent-orders-container">
-                            <p class="empty-msg">No orders yet</p>
+                            <p class="empty-msg" data-i18n="sg_no_orders">No orders yet</p>
                         </div>
                     </div>
                 </div>
 
                 <!-- ORDERS -->
                 <div id="page-orders" style="display: none;">
-                    <div class="page-title">Orders Management</div>
-                    <div class="page-subtitle">Track and manage all your orders</div>
+                    <div class="page-title" data-i18n="sg_orders_title">Orders Management</div>
+                    <div class="page-subtitle" data-i18n="sg_orders_sub">Track and manage all your orders</div>
                     <div class="card">
                         <div class="card-body" id="orders-container">
-                            <p class="empty-msg">Loading orders...</p>
+                            <p class="empty-msg" data-i18n="sg_orders_loading">Loading orders...</p>
                         </div>
                     </div>
                 </div>
@@ -991,13 +995,13 @@ body.etel-light .cat-chip.on{background:#f3e3b0;color:#4a3300}
     <div id="decline-overlay" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="decline-title">
         <div class="modal-box">
             <button class="modal-close" data-act="closeDecline" aria-label="Close">&#10005;</button>
-            <div id="decline-title" class="modal-title">Decline this order?</div>
-            <p class="cat-hint">The customer is told right away and gets their money back if they already paid. Pick the reason.</p>
+            <div id="decline-title" class="modal-title" data-i18n="sg_dec_title">Decline this order?</div>
+            <p class="cat-hint" data-i18n="sg_dec_hint">The customer is told right away and gets their money back if they already paid. Pick the reason.</p>
             <div id="decline-reasons" class="decline-reasons"></div>
-            <textarea id="decline-note" class="field-input" maxlength="200" rows="2" placeholder="Add a note for the customer (optional)"></textarea>
+            <textarea id="decline-note" class="field-input" maxlength="200" rows="2" placeholder="Add a note for the customer (optional)" data-i18n-ph="sg_dec_note"></textarea>
             <div id="decline-msg" class="decline-msg" style="display:none"></div>
-            <button id="decline-go" class="btn decline-go" data-act="submitDecline">Decline order</button>
-            <button class="btn decline-keep" data-act="closeDecline">Keep the order</button>
+            <button id="decline-go" class="btn decline-go" data-act="submitDecline" data-i18n="sg_dec_go">Decline order</button>
+            <button class="btn decline-keep" data-act="closeDecline" data-i18n="sg_dec_keep">Keep the order</button>
         </div>
     </div>
 
@@ -1116,8 +1120,9 @@ body.etel-light .cat-chip.on{background:#f3e3b0;color:#4a3300}
         </div>
     </div>
 
-    <script src="js/servicegiver-actions.js?v=1"></script>
-    <script src="js/servicegiver.js?v=4.6"></script>
+    <script src="js/servicegiver-i18n.js?v=1"></script>
+    <script src="js/servicegiver-actions.js?v=2"></script>
+    <script src="js/servicegiver.js?v=4.7"></script>
     <script src="js/servicegiver-premium.js?v=1.9"></script>
     <script src="js/servicegiver-3d-premium.js?v=1.2"></script><!-- 3D visual upgrade: glass depth, glowing sweep borders, rating ring -->
     <script src="js/servicegiver-qr.js?v=1"></script>

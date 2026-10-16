@@ -69,6 +69,7 @@ EtelActions.expose([
     "setSoldOut",
     "sgConfirmPickup",
     "sgReprintTicket",
+    "sgSwitchLang",
     "sgUpdateStatus",
     "startQRScanner",
     "submitDecline",

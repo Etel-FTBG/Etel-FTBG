@@ -243,7 +243,7 @@
             const online = !!(currentServiceGiver && parseInt(currentServiceGiver.is_online, 10) === 1);
             const statusEl = document.getElementById('profile-status');
             if (statusEl) {
-                statusEl.textContent = online ? '● Online — accepting orders' : '○ Offline — tap to go online';
+                statusEl.textContent = online ? sgT('sg_online') : sgT('sg_offline');
                 statusEl.style.color = online ? 'var(--success, #2ecc71)' : 'var(--text-faint, #9A9AAE)';
             }
             const dot = document.getElementById('sgp-dot');
@@ -357,14 +357,14 @@
             const setChange = (id, label, cur, prev) => {
                 const el = document.getElementById(id); if (!el) return;
                 el.classList.remove('down', 'kpi-flat');
-                if (!prev) { el.classList.add('kpi-flat'); el.textContent = label + ': ' + (cur ? 'nothing to compare yet' : 'no data yet'); return; }
+                if (!prev) { el.classList.add('kpi-flat'); el.textContent = sgT(label) + ': ' + sgT(cur ? 'sg_nothing_cmp' : 'sg_no_data'); return; }
                 const pct = Math.round((cur - prev) / prev * 100);
                 if (pct < 0) el.classList.add('down'); else if (pct === 0) el.classList.add('kpi-flat');
-                el.textContent = (pct > 0 ? '\u2191 ' : pct < 0 ? '\u2193 ' : '') + Math.abs(pct) + '% ' + label.toLowerCase();
+                el.textContent = (pct > 0 ? '\u2191 ' : pct < 0 ? '\u2193 ' : '') + Math.abs(pct) + '% ' + sgT(label).toLowerCase();
             };
-            setChange('kpi-today-change', 'vs yesterday', todayOrders, yesterdayOrders);
-            setChange('kpi-completed-change', 'vs last week', doneWeek, donePrevWeek);
-            setChange('kpi-earnings-change', 'vs last month', earnMonth, earnPrevMonth);
+            setChange('kpi-today-change', 'sg_vs_yesterday', todayOrders, yesterdayOrders);
+            setChange('kpi-completed-change', 'sg_vs_week', doneWeek, donePrevWeek);
+            setChange('kpi-earnings-change', 'sg_vs_month', earnMonth, earnPrevMonth);
             document.getElementById('kpi-today-orders').textContent = todayOrders;
             document.getElementById('kpi-completed').textContent = completed;
             // Cashiers see order counts but not the earnings total - this
@@ -378,6 +378,7 @@
                 document.getElementById('kpi-reviews').textContent = currentServiceGiver.rating_count || 0;
             }
             document.getElementById('orders-badge').textContent = orders.filter(o => o.status !== 'delivered').length;
+            window._sgOrders = orders;
             renderRecentOrders(orders.slice(0, 5));
             renderAllOrders(orders);
         }
@@ -385,7 +386,7 @@
         function renderRecentOrders(orders) {
             const container = document.getElementById('recent-orders-container');
             if (!orders || orders.length === 0) {
-                container.innerHTML = '<p style="color: #B8B0A0; text-align: center; padding: 40px 20px;">No orders yet</p>';
+                container.innerHTML = '<p style="color: #B8B0A0; text-align: center; padding: 40px 20px;">'+sgT('sg_no_orders')+'</p>';
                 return;
             }
             try {
@@ -402,14 +403,14 @@
                     '</div>'
                 ).join('');
             } catch(e) {
-                container.innerHTML = '<p style="color:#B8B0A0;text-align:center;padding:20px">No orders yet</p>';
+                container.innerHTML = '<p style="color:#B8B0A0;text-align:center;padding:20px">'+sgT('sg_no_orders')+'</p>';
             }
         }
 
         function renderAllOrders(orders) {
             const container = document.getElementById('orders-container');
             if (!orders || orders.length === 0) {
-                container.innerHTML = '<p style="color: #B8B0A0; text-align: center; padding: 40px 20px;">No orders yet</p>';
+                container.innerHTML = '<p style="color: #B8B0A0; text-align: center; padding: 40px 20px;">'+sgT('sg_no_orders')+'</p>';
                 return;
             }
             try {
@@ -420,20 +421,20 @@
                     if (status === 'pending') {
                         actionBtn = '<button ' + _ea('sgUpdateStatus', [orderId, 'preparing']) + ' ' +
                             'style="margin-top:10px;width:100%;padding:9px;background:var(--primary);color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer">' +
-                            '🍳 Start Preparing</button>';
+                            sgT('sg_start_prep') + '</button>';
                     } else if (status === 'preparing') {
                         actionBtn = '<button ' + _ea('sgUpdateStatus', [orderId, 'accepted']) + ' ' +
                             'style="margin-top:10px;width:100%;padding:9px;background:#2ECC71;color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer">' +
-                            '✅ Done Preparing — Notify Courier &amp; Customer</button>' +
+                            escapeHtml(sgT('sg_done_prep')) + '</button>' +
                             // Owner-only - hidden for cashier via the .owner-only-btn CSS
                             // rule (applyStaffRoleUI); the backend enforces this too, so
                             // this is a UI convenience, not the actual security boundary.
                             '<button class="owner-only-btn" ' + _ea('sgReprintTicket', [orderId]) + ' ' +
                             'style="margin-top:6px;width:100%;padding:8px;background:none;color:var(--primary);border:1px solid var(--primary);border-radius:8px;font-size:12px;font-weight:700;cursor:pointer">' +
-                            '🖨️ Reprint Kitchen Ticket</button>';
+                            escapeHtml(sgT('sg_reprint')) + '</button>';
                     }
                     if (status === 'pending' || status === 'preparing') {
-                        actionBtn += '<button class="btn-decline" ' + _ea('openDecline', [orderId]) + '>&#10006; Decline order</button>';
+                        actionBtn += '<button class="btn-decline" ' + _ea('openDecline', [orderId]) + '>' + escapeHtml(sgT('sg_decline')) + '</button>';
                     }
                     return '<div style="padding:16px;border-bottom:1px solid var(--border-light);">' +
                         '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">' +
@@ -441,7 +442,7 @@
                             '<div>' + getStatusBadge(status) + '</div>' +
                         '</div>' +
                         '<div style="font-size:12px;color:#B8B0A0;">' +
-                            (order.from_zone ? 'From: ' + escapeHtml(order.from_zone) + ' → ' : '') + escapeHtml(order.to_zone || '') +
+                            (order.from_zone ? sgT('sg_from') + escapeHtml(order.from_zone) + ' → ' : '') + escapeHtml(order.to_zone || '') +
                             (order.recipient_name ? ' · ' + escapeHtml(order.recipient_name) : '') +
                         '</div>' +
                         '<div style="font-size:13px;font-weight:700;color:var(--primary);margin-top:4px">Br ' + parseFloat(order.fare_total||0).toFixed(2) + '</div>' +
@@ -465,7 +466,7 @@
         function openDecline(orderId) {
             _declineId = orderId;
             document.getElementById('decline-reasons').innerHTML = DECLINE_REASONS.map(function (r) {
-                return '<label class="decline-opt"><input type="radio" name="decline-reason" value="' + r[0] + '" ' + _ea('declinePick', [], { event: 'change' }) + '> ' + escapeHtml(r[1]) + '</label>';
+                return '<label class="decline-opt"><input type="radio" name="decline-reason" value="' + r[0] + '" ' + _ea('declinePick', [], { event: 'change' }) + '> ' + escapeHtml(sgT('sg_dec_' + r[0])) + '</label>';
             }).join('');
             document.getElementById('decline-note').value = '';
             document.getElementById('decline-msg').style.display = 'none';
@@ -702,18 +703,18 @@
 
         function getStatusBadge(status) {
             const badges = {
-                'pending':    '<span style="padding:3px 8px;border-radius:6px;font-size:11px;font-weight:700;background:#FF7A4522;color:#FF7A45">⏳ Pending</span>',
-                'preparing':  '<span style="padding:3px 8px;border-radius:6px;font-size:11px;font-weight:700;background:#4ECDC422;color:#2AA59D">🍳 Preparing</span>',
-                'accepted':   '<span style="padding:3px 8px;border-radius:6px;font-size:11px;font-weight:700;background:#C9A96122;color:#8B6E3A">✅ Accepted</span>',
-                'ready':      '<span style="padding:3px 8px;border-radius:6px;font-size:11px;font-weight:700;background:#C9A96122;color:#8B6E3A">📦 Ready for Pickup</span>',
-                'rejected':   '<span style="padding:3px 8px;border-radius:6px;font-size:11px;font-weight:700;background:#E6394622;color:#E63946">🚫 Rejected</span>',
-                'assigned':   '<span style="padding:3px 8px;border-radius:6px;font-size:11px;font-weight:700;background:#9B59B622;color:#9B59B6">🚴 Courier On Way</span>',
-                'picked_up':  '<span style="padding:3px 8px;border-radius:6px;font-size:11px;font-weight:700;background:#E9760022;color:#E97600">🚚 Picked Up</span>',
-                'in_transit': '<span style="padding:3px 8px;border-radius:6px;font-size:11px;font-weight:700;background:#E9760022;color:#E97600">🚚 In Transit</span>',
-                'delivered':  '<span style="padding:3px 8px;border-radius:6px;font-size:11px;font-weight:700;background:#2ECC7122;color:#27AE60">✅ Delivered</span>',
-                'cancelled':  '<span style="padding:3px 8px;border-radius:6px;font-size:11px;font-weight:700;background:#E6394622;color:#E63946">❌ Cancelled</span>'
+                'pending':    '<span style="padding:3px 8px;border-radius:6px;font-size:11px;font-weight:700;background:#FF7A4522;color:#FF7A45">' + sgT('sg_st_pending') + '</span>',
+                'preparing':  '<span style="padding:3px 8px;border-radius:6px;font-size:11px;font-weight:700;background:#4ECDC422;color:#2AA59D">' + sgT('sg_st_preparing') + '</span>',
+                'accepted':   '<span style="padding:3px 8px;border-radius:6px;font-size:11px;font-weight:700;background:#C9A96122;color:#8B6E3A">' + sgT('sg_st_accepted') + '</span>',
+                'ready':      '<span style="padding:3px 8px;border-radius:6px;font-size:11px;font-weight:700;background:#C9A96122;color:#8B6E3A">' + sgT('sg_st_ready') + '</span>',
+                'rejected':   '<span style="padding:3px 8px;border-radius:6px;font-size:11px;font-weight:700;background:#E6394622;color:#E63946">' + sgT('sg_st_rejected') + '</span>',
+                'assigned':   '<span style="padding:3px 8px;border-radius:6px;font-size:11px;font-weight:700;background:#9B59B622;color:#9B59B6">' + sgT('sg_st_assigned') + '</span>',
+                'picked_up':  '<span style="padding:3px 8px;border-radius:6px;font-size:11px;font-weight:700;background:#E9760022;color:#E97600">' + sgT('sg_st_picked_up') + '</span>',
+                'in_transit': '<span style="padding:3px 8px;border-radius:6px;font-size:11px;font-weight:700;background:#E9760022;color:#E97600">' + sgT('sg_st_in_transit') + '</span>',
+                'delivered':  '<span style="padding:3px 8px;border-radius:6px;font-size:11px;font-weight:700;background:#2ECC7122;color:#27AE60">' + sgT('sg_st_delivered') + '</span>',
+                'cancelled':  '<span style="padding:3px 8px;border-radius:6px;font-size:11px;font-weight:700;background:#E6394622;color:#E63946">' + sgT('sg_st_cancelled') + '</span>'
             };
-            return badges[status] || '<span style="padding:3px 8px;border-radius:6px;font-size:11px;font-weight:700;background:rgba(255,255,255,.1);color:#B8B0A0">' + (status||'unknown') + '</span>';
+            return badges[status] || '<span style="padding:3px 8px;border-radius:6px;font-size:11px;font-weight:700;background:rgba(255,255,255,.1);color:#B8B0A0">' + (status ? escapeHtml(status) : sgT('sg_st_unknown')) + '</span>';
         }
 
         // ── PICKUP CONFIRMATION POLLING ────────────────────────────────
