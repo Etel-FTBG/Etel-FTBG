@@ -1,0 +1,82 @@
+/* Every action the Service Giver page may run from a data-act attribute (see etel-actions.js).
+   Add a name here when new markup uses it; tests/ci/check_inline_handlers.py fails if one is missing. */
+function clickById(id) {
+    var el = document.getElementById(id);
+    if (el) el.click();
+}
+function deleteItemFromButton(id, btn) {
+    deleteItem(id, btn && btn.dataset ? btn.dataset.name : '');
+}
+function confirmClearCache() {
+    if (confirm('This clears everything cached on THIS device - app data, cached files - then reloads. You will be logged out and need to sign in again. Continue?')) etelForceClearCacheAndReload();
+}
+EtelActions.expose([
+    "DiagPanel._clear",
+    "DiagPanel._close",
+    "DiagPanel.runAll",
+    "DiagPanel.testAuth",
+    "DiagPanel.testDB",
+    "DiagPanel.testNetwork",
+    "DiagPanel.testPing",
+    "DiagPanel.testReset",
+    "addCashierUI",
+    "cancelEditRoleUI",
+    "catalogField",
+    "catalogRender",
+    "catalogSetCat",
+    "catalogSetPack",
+    "catalogSubmit",
+    "catalogTickAll",
+    "catalogToggle",
+    "clearSgHours",
+    "clickById",
+    "closeCatalog",
+    "closeDecline",
+    "closeItemModal",
+    "closeModal",
+    "closeSidebar",
+    "confirmClearCache",
+    "connectPrinterUI",
+    "declinePick",
+    "deleteItemFromButton",
+    "deleteRoleUI",
+    "downloadMenuTemplate",
+    "editRoleUI",
+    "forgetPrinterUI",
+    "importMenuCsv",
+    "loadOrders",
+    "loadSGFinancialReport",
+    "loadSalesReport",
+    "logout",
+    "openAddItemModal",
+    "openCatalog",
+    "openDecline",
+    "openEditItemModal",
+    "previewItemImage",
+    "previewSettingsCover",
+    "previewSettingsLogo",
+    "reassignStaffRoleUI",
+    "refreshCurrentPage",
+    "removeSettingsCover",
+    "replyToReview",
+    "saveAbysiniaAccount",
+    "saveBusinessSettings",
+    "saveCbeAccount",
+    "saveRoleUI",
+    "saveSgHours",
+    "saveTelebirrNumber",
+    "setQrType",
+    "setSoldOut",
+    "sgConfirmPickup",
+    "sgReprintTicket",
+    "sgUpdateStatus",
+    "startQRScanner",
+    "submitDecline",
+    "submitItem",
+    "switchPage",
+    "toggleItem",
+    "toggleSgOnline",
+    "toggleSgProfile",
+    "toggleSidebar",
+    "toggleStaffUI"
+]);

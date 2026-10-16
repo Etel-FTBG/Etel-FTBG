@@ -1,6 +1,9 @@
         // Auth guard — redirect non-service-giver users
         if (!requireRole(['service_giver'])) { throw new Error('Access denied'); }
 
+        // Button/field actions without inline JavaScript (js/etel-actions.js; the allow-list is js/servicegiver-actions.js).
+        function _ea(name, args, opts) { return EtelActions.attrs(name, args, opts); }
+
         let currentUser = null;
         let currentServiceGiver = null;
         let currentStaffRole = 'owner'; // 'owner' | 'staff' - set from sg_profile, see applyStaffRoleUI()
@@ -415,22 +418,22 @@
                     const orderId = order.order_id || order.id;
                     let actionBtn = '';
                     if (status === 'pending') {
-                        actionBtn = '<button onclick="sgUpdateStatus(' + orderId + ',\'preparing\')" ' +
+                        actionBtn = '<button ' + _ea('sgUpdateStatus', [orderId, 'preparing']) + ' ' +
                             'style="margin-top:10px;width:100%;padding:9px;background:var(--primary);color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer">' +
                             '🍳 Start Preparing</button>';
                     } else if (status === 'preparing') {
-                        actionBtn = '<button onclick="sgUpdateStatus(' + orderId + ',\'accepted\')" ' +
+                        actionBtn = '<button ' + _ea('sgUpdateStatus', [orderId, 'accepted']) + ' ' +
                             'style="margin-top:10px;width:100%;padding:9px;background:#2ECC71;color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer">' +
                             '✅ Done Preparing — Notify Courier &amp; Customer</button>' +
                             // Owner-only - hidden for cashier via the .owner-only-btn CSS
                             // rule (applyStaffRoleUI); the backend enforces this too, so
                             // this is a UI convenience, not the actual security boundary.
-                            '<button class="owner-only-btn" onclick="sgReprintTicket(' + orderId + ')" ' +
+                            '<button class="owner-only-btn" ' + _ea('sgReprintTicket', [orderId]) + ' ' +
                             'style="margin-top:6px;width:100%;padding:8px;background:none;color:var(--primary);border:1px solid var(--primary);border-radius:8px;font-size:12px;font-weight:700;cursor:pointer">' +
                             '🖨️ Reprint Kitchen Ticket</button>';
                     }
                     if (status === 'pending' || status === 'preparing') {
-                        actionBtn += '<button class="btn-decline" onclick="openDecline(' + orderId + ')">&#10006; Decline order</button>';
+                        actionBtn += '<button class="btn-decline" ' + _ea('openDecline', [orderId]) + '>&#10006; Decline order</button>';
                     }
                     return '<div style="padding:16px;border-bottom:1px solid var(--border-light);">' +
                         '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">' +
@@ -462,7 +465,7 @@
         function openDecline(orderId) {
             _declineId = orderId;
             document.getElementById('decline-reasons').innerHTML = DECLINE_REASONS.map(function (r) {
-                return '<label class="decline-opt"><input type="radio" name="decline-reason" value="' + r[0] + '" onchange="declinePick()"> ' + escapeHtml(r[1]) + '</label>';
+                return '<label class="decline-opt"><input type="radio" name="decline-reason" value="' + r[0] + '" ' + _ea('declinePick', [], { event: 'change' }) + '> ' + escapeHtml(r[1]) + '</label>';
             }).join('');
             document.getElementById('decline-note').value = '';
             document.getElementById('decline-msg').style.display = 'none';
@@ -688,7 +691,7 @@
             container.innerHTML = UI.loading('Loading orders...');
             const res = await apiCall('sg_orders');
             if (!res) {
-                container.innerHTML = '<p style="color:#E63946;text-align:center;padding:20px">Failed to load orders. <button onclick="loadOrders()" style="background:none;border:none;color:var(--primary);cursor:pointer;font-weight:700">Retry</button></p>';
+                container.innerHTML = '<p style="color:#E63946;text-align:center;padding:20px">Failed to load orders. <button ' + _ea('loadOrders') + ' style="background:none;border:none;color:var(--primary);cursor:pointer;font-weight:700">Retry</button></p>';
                 return;
             }
             const orders = res.orders || res.assignments || [];
@@ -735,7 +738,7 @@
                         '<div style="font-size:13px;opacity:.9;margin-bottom:2px"><strong>' + escapeHtml(c.courier_name || 'Courier') + '</strong> is waiting to pick up order <strong>' + escapeHtml(c.order_code || '') + '</strong></div>' +
                         '<div style="font-size:11px;opacity:.7">Waiting ' + (ago < 1 ? 'just now' : ago + ' min ago') + ' · ETB ' + parseFloat(c.fare_total||0).toFixed(2) + '</div>' +
                         '<div style="margin-top:12px;display:flex;gap:8px">' +
-                        '<button onclick="sgConfirmPickup(' + c.order_id + ')" style="padding:9px 20px;background:#fff;color:#8e44ad;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;flex:1">✅ Confirm Pickup</button>' +
+                        '<button ' + _ea('sgConfirmPickup', [c.order_id]) + ' style="padding:9px 20px;background:#fff;color:#8e44ad;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;flex:1">✅ Confirm Pickup</button>' +
                         '</div></div></div></div>';
                 }).join('');
             } catch(e) { /* ignore polling errors */ }
@@ -857,7 +860,7 @@
                 </thead>
                 <tbody>
                 ${items.map(it => `
-                    <tr style="border-bottom:1px solid #f0f0f0;transition:background .2s" onmouseover="this.style.background='#faf9f7'" onmouseout="this.style.background=''">
+                    <tr class="sg-item-row" style="border-bottom:1px solid #f0f0f0;transition:background .2s">
                         <td style="padding:10px 8px">
                             ${it.image_url ? `<img src="${escUrl(it.image_url)}" style="width:48px;height:48px;object-fit:cover;border-radius:8px;border:1px solid #e0e0e0">` : '<div style="width:48px;height:48px;background:rgba(255,255,255,.06);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:20px">🛍️</div>'}
                         </td>
@@ -867,17 +870,17 @@
                         <td style="padding:10px 8px">${it.stock_quantity}</td>
                         <td style="padding:10px 8px">
                             <label style="display:flex;align-items:center;gap:6px;cursor:${canManageMenu ? 'pointer' : 'default'}">
-                                <input type="checkbox" ${it.is_available=='1'||it.is_available===true?'checked':''} ${canManageMenu ? `onchange="toggleItem(${it.id},this.checked)"` : 'disabled'} style="width:16px;height:16px;cursor:${canManageMenu ? 'pointer' : 'not-allowed'}">
+                                <input type="checkbox" ${it.is_available=='1'||it.is_available===true?'checked':''} ${canManageMenu ? `${_ea('toggleItem', [it.id, EtelActions.CHECKED], { event: 'change' })}` : 'disabled'} style="width:16px;height:16px;cursor:${canManageMenu ? 'pointer' : 'not-allowed'}">
                                 <span style="font-size:12px;color:${it.is_available=='1'||it.is_available===true?'#2ecc71':'#aaa'}">${it.is_available=='1'||it.is_available===true?'Available':'Hidden'}</span>
                             </label>
                             ${(it.is_available=='1'||it.is_available===true) && canManageMenu ? (it.sold_out == 1
-                                ? `<button onclick="setSoldOut(${it.id},0)" style="margin-top:5px;padding:3px 9px;background:#fff3cd;color:#7a5b00;border:1px solid #e6c85a;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap">Sold out · Undo</button>`
-                                : `<button onclick="setSoldOut(${it.id},1)" style="margin-top:5px;padding:3px 9px;background:transparent;color:#7a5b00;border:1px solid #e6c85a;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap">Sold out today</button>`) : ''}
+                                ? `<button ${_ea('setSoldOut', [it.id, 0])} style="margin-top:5px;padding:3px 9px;background:#fff3cd;color:#7a5b00;border:1px solid #e6c85a;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap">Sold out · Undo</button>`
+                                : `<button ${_ea('setSoldOut', [it.id, 1])} style="margin-top:5px;padding:3px 9px;background:transparent;color:#7a5b00;border:1px solid #e6c85a;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap">Sold out today</button>`) : ''}
                         </td>
                         ${canManageMenu ? `
                         <td style="padding:10px 8px;display:flex;gap:6px;align-items:center;flex-wrap:wrap">
-                            <button onclick="openEditItemModal(${it.id})" style="padding:5px 12px;background:#C9A961;color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer">✏ Edit</button>
-                            <button data-name="${escapeHtml(it.name)}" onclick="deleteItem(${it.id}, this.dataset.name)" style="padding:5px 12px;background:#e63946;color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer">🗑 Del</button>
+                            <button ${_ea('openEditItemModal', [it.id])} style="padding:5px 12px;background:#C9A961;color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer">✏ Edit</button>
+                            <button data-name="${escapeHtml(it.name)}" ${_ea('deleteItemFromButton', [it.id, EtelActions.EL])} style="padding:5px 12px;background:#e63946;color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer">🗑 Del</button>
                         </td>` : ''}
                     </tr>`).join('')}
                 </tbody>
@@ -931,12 +934,12 @@
             const cats = {};
             catState.rows.forEach(r => { cats[r.category] = 1; });
             document.getElementById('cat-tabs').innerHTML = Object.keys(cats).map(c =>
-                `<button type="button" class="cat-chip${c === catState.cat ? ' on' : ''}" onclick="catalogSetCat('${c}')">${CAT_LABELS[c] || c}</button>`).join('');
+                `<button type="button" class="cat-chip${c === catState.cat ? ' on' : ''}" ${_ea('catalogSetCat', [c])}>${CAT_LABELS[c] || c}</button>`).join('');
             const packNames = Object.keys(catState.packs);
             document.getElementById('cat-packs').innerHTML = packNames.length
                 ? '<span class="cat-qs">Quick start:</span>' + packNames.map(pk =>
-                    `<button type="button" class="cat-chip${pk === catState.pack ? ' on' : ''}" onclick="catalogSetPack('${pk}')">${catAttr(pk.replace(/_/g, ' '))} · ${catState.packs[pk]}</button>`).join('') +
-                  (catState.pack ? '<button type="button" class="cat-chip" onclick="catalogTickAll()">✓ Tick all shown</button>' : '')
+                    `<button type="button" class="cat-chip${pk === catState.pack ? ' on' : ''}" ${_ea('catalogSetPack', [pk])}>${catAttr(pk.replace(/_/g, ' '))} · ${catState.packs[pk]}</button>`).join('') +
+                  (catState.pack ? '<button type="button" class="cat-chip"' + _ea('catalogTickAll') + '>✓ Tick all shown</button>' : '')
                 : '';
             const rows = catalogVisible();
             if (!rows.length) { document.getElementById('cat-list').innerHTML = '<p class="empty-msg" style="padding:24px;text-align:center">No dishes match.</p>'; catalogCount(); return; }
@@ -948,15 +951,15 @@
                 const sel = catState.sel[r.id];
                 const img = r.image_url ? `<img class="cat-img" src="${catAttr(r.image_url)}" alt="" loading="lazy">` : '<div class="cat-img">🍽️</div>';
                 html += `<div class="cat-row${sold ? ' sold' : ''}" data-id="${r.id}">
-                    <input type="checkbox" ${sold ? 'checked disabled' : ''} ${sel ? 'checked' : ''} onchange="catalogToggle(${r.id}, this.checked)">
+                    <input type="checkbox" ${sold ? 'checked disabled' : ''} ${sel ? 'checked' : ''} ${_ea('catalogToggle', [r.id, EtelActions.CHECKED], { event: 'change' })}>
                     ${img}
                     <div class="cat-name">${escapeHtml(r.name)}${r.name_am ? '<small>' + escapeHtml(r.name_am) + '</small>' : ''}${sold ? '<span class="cat-tag">✓ On your menu</span>' : ''}</div>
-                    ${sold ? '' : `<select class="field-input cat-q" ${sel ? '' : 'disabled'} onchange="catalogField(${r.id},'quality',this.value)">
+                    ${sold ? '' : `<select class="field-input cat-q" ${sel ? '' : 'disabled'} ${_ea('catalogField', [r.id, 'quality', EtelActions.VALUE], { event: 'change' })}>
                         <option value=""${sel && !sel.quality ? ' selected' : ''}>Quality</option>
                         <option value="regular"${sel && sel.quality === 'regular' ? ' selected' : ''}>Regular</option>
                         <option value="special"${sel && sel.quality === 'special' ? ' selected' : ''}>Special</option>
                         <option value="premium"${sel && sel.quality === 'premium' ? ' selected' : ''}>Premium</option></select>
-                    <input type="number" class="field-input cat-price" min="0" step="0.01" placeholder="Price ETB" value="${sel ? catAttr(sel.price) : ''}" ${sel ? '' : 'disabled'} oninput="catalogField(${r.id},'price',this.value)">`}
+                    <input type="number" class="field-input cat-price" min="0" step="0.01" placeholder="Price ETB" value="${sel ? catAttr(sel.price) : ''}" ${sel ? '' : 'disabled'} ${_ea('catalogField', [r.id, 'price', EtelActions.VALUE], { event: 'input' })}>`}
                 </div>`;
             });
             document.getElementById('cat-list').innerHTML = html;
@@ -1389,7 +1392,7 @@
                     '<div style="font-size:11px;color:var(--text-faint)">— ' + esc(r.reviewer_first_name || 'Customer') + '</div>' +
                     (r.shop_reply ? '<div class="rv-reply"><b style="font-size:10.5px;opacity:.7">Your reply</b><br>' + esc(r.shop_reply) + '</div>' : '') +
                     (d.can_reply ? '<div class="rv-form"><textarea id="rv-text-' + r.id + '" maxlength="300" placeholder="' + (r.shop_reply ? 'Edit your reply…' : 'Write a short, polite reply…') + '">' + esc(r.shop_reply || '') + '</textarea>' +
-                        '<button type="button" onclick="replyToReview(' + r.id + ')">' + (r.shop_reply ? 'Update reply' : 'Reply') + '</button></div>' : '') +
+                        '<button type="button" ' + _ea('replyToReview', [r.id]) + '>' + (r.shop_reply ? 'Update reply' : 'Reply') + '</button></div>' : '') +
                     '</div>';
             });
             body.innerHTML = html;
@@ -1540,8 +1543,8 @@
                         '<div style="font-size:11.5px;color:#B8B0A0">' + escapeHtml(caps) + '</div>' +
                     '</div>' +
                     '<div style="display:flex;gap:6px">' +
-                        '<button class="btn" style="padding:6px 12px;font-size:12px;background:none;border:1px solid var(--border-light)" onclick="editRoleUI(' + r.id + ')">Edit</button>' +
-                        '<button class="btn" style="padding:6px 12px;font-size:12px;background:none;border:1px solid var(--border-light);color:#E63946" onclick="deleteRoleUI(' + r.id + ')">Delete</button>' +
+                        '<button class="btn" style="padding:6px 12px;font-size:12px;background:none;border:1px solid var(--border-light)" ' + _ea('editRoleUI', [r.id]) + '>Edit</button>' +
+                        '<button class="btn" style="padding:6px 12px;font-size:12px;background:none;border:1px solid var(--border-light);color:#E63946" ' + _ea('deleteRoleUI', [r.id]) + '>Delete</button>' +
                     '</div>' +
                 '</div>';
             }).join('');
@@ -1629,8 +1632,8 @@
                         '<div style="font-size:12px;color:#B8B0A0">' + escapeHtml(s.phone || '') + ' · ' + escapeHtml(s.role_name || 'Cashier') + ' · ' + (active ? 'Active' : 'Deactivated') + '</div>' +
                     '</div>' +
                     '<div style="display:flex;gap:6px;align-items:center">' +
-                        '<select class="field-input" style="padding:6px 8px;font-size:12px;width:auto" onchange="reassignStaffRoleUI(' + s.id + ', this.value)">' + roleOptions(s.role_id) + '</select>' +
-                        '<button class="btn" style="padding:6px 12px;font-size:12px;background:none;border:1px solid var(--border-light);color:' + (active ? '#E63946' : '#2ECC71') + '" onclick="toggleStaffUI(' + s.id + ',' + (active ? 0 : 1) + ')">' +
+                        '<select class="field-input" style="padding:6px 8px;font-size:12px;width:auto" ' + _ea('reassignStaffRoleUI', [s.id, EtelActions.VALUE], { event: 'change' }) + '>' + roleOptions(s.role_id) + '</select>' +
+                        '<button class="btn" style="padding:6px 12px;font-size:12px;background:none;border:1px solid var(--border-light);color:' + (active ? '#E63946' : '#2ECC71') + '" ' + _ea('toggleStaffUI', [s.id, active ? 0 : 1]) + '>' +
                             (active ? 'Deactivate' : 'Reactivate') +
                         '</button>' +
                     '</div>' +
