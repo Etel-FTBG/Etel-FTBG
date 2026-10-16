@@ -4,7 +4,7 @@
 Why not rebuild from js/courier.js: the shipped bundles (v5 and later) carry code that is not in the plain source files any more, so a rebuild
 from source would silently drop it. A release is therefore "previous release + a readable add-on file".
 
-    python3 tools/build_courier_release.py --from v5 --to v6
+    python3 tools/build_courier_release.py --from v5 --to v7   (v6 = v5 + the first version of the add-on; v7 = v5 + the current one)
 
 Writes js/releases/courier/<to>/courier-bundle.js. Then (no SSH needed): upload the folder, Admin > Releases > set it as the CANARY for the
 courier app, add a few testers, check, and only then promote it to stable. A release folder is never overwritten once it exists.

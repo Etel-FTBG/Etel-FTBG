@@ -182,6 +182,11 @@ def main():
     s, t2 = call("track_order", {"order_id": pid}, token=cust)
     pt = ((t2.get("data") or {}).get("order") or {}).get("pkg_times") or {}
     check("after pickup the pickup time is set and in order", isinstance(pt.get("picked_up"), int) and pt["picked_up"] >= pt["accepted"] >= pt["booked"] and pt.get("delivered") is None, pt)
+    s, r = call("courier_get_my_orders", {}, token=van, qs="?pkg=1")
+    mine = [o for o in ((r.get("data") or {}).get("orders") or []) if o.get("id") == pid]
+    cpt = (mine[0].get("pkg_times") if mine else None) or {}
+    check("the courier's own order list carries the stage times for the timers (and still no PINs)",
+          isinstance(cpt.get("accepted"), int) and isinstance(cpt.get("picked_up"), int) and cpt.get("delivered") is None and "pickup_pin" not in mine[0] and "delivery_pin" not in mine[0], cpt)
     s, r = call("courier_package_deliver", {"order_id": pid, "pin": dp}, token=van)
     check("the recipient's PIN delivers it", r.get("success") is True and (r.get("data") or {}).get("status") == "delivered", r)
     s, t3 = call("track_order", {"order_id": pid}, token=cust)
