@@ -830,7 +830,7 @@
         let servicesCache = [];
 
         async function loadServices() {
-            document.getElementById('services-container').innerHTML = UI.loading('Loading menu items...');
+            document.getElementById('services-container').innerHTML = UI.loading(sgT('sg_it_loading2'));
             const data = await apiCall('sg_get_my_items');
             if (!data) return;
             servicesCache = data.items || [];
@@ -840,7 +840,7 @@
         function renderServices(items) {
             const c = document.getElementById('services-container');
             if (!items.length) {
-                c.innerHTML = '<p style="color:#B8B0A0;text-align:center;padding:40px 20px">No items yet. Use "Pick from catalog" or "Import CSV" to get started.</p>';
+                c.innerHTML = '<p style="color:#B8B0A0;text-align:center;padding:40px 20px">' + escapeHtml(sgT('sg_it_empty')) + '</p>';
                 return;
             }
             const caps = currentCapabilities || [];
@@ -850,13 +850,13 @@
             <table style="width:100%;border-collapse:collapse;font-size:13px">
                 <thead>
                     <tr style="border-bottom:2px solid #e0e0e0;text-align:left">
-                        <th style="padding:10px 8px;color:#B8B0A0;font-weight:600">Image</th>
-                        <th style="padding:10px 8px;color:#B8B0A0;font-weight:600">Name</th>
-                        <th style="padding:10px 8px;color:#B8B0A0;font-weight:600">Category</th>
-                        <th style="padding:10px 8px;color:#B8B0A0;font-weight:600">Price</th>
-                        <th style="padding:10px 8px;color:#B8B0A0;font-weight:600">Stock</th>
-                        <th style="padding:10px 8px;color:#B8B0A0;font-weight:600">Status</th>
-                        ${canManageMenu ? '<th style="padding:10px 8px;color:#B8B0A0;font-weight:600">Actions</th>' : ''}
+                        <th style="padding:10px 8px;color:#B8B0A0;font-weight:600">${sgT('sg_th_image')}</th>
+                        <th style="padding:10px 8px;color:#B8B0A0;font-weight:600">${sgT('sg_th_name')}</th>
+                        <th style="padding:10px 8px;color:#B8B0A0;font-weight:600">${sgT('sg_th_cat')}</th>
+                        <th style="padding:10px 8px;color:#B8B0A0;font-weight:600">${sgT('sg_th_price')}</th>
+                        <th style="padding:10px 8px;color:#B8B0A0;font-weight:600">${sgT('sg_th_stock')}</th>
+                        <th style="padding:10px 8px;color:#B8B0A0;font-weight:600">${sgT('sg_th_status')}</th>
+                        ${canManageMenu ? '<th style="padding:10px 8px;color:#B8B0A0;font-weight:600">' + sgT('sg_th_actions') + '</th>' : ''}
                     </tr>
                 </thead>
                 <tbody>
@@ -872,16 +872,16 @@
                         <td style="padding:10px 8px">
                             <label style="display:flex;align-items:center;gap:6px;cursor:${canManageMenu ? 'pointer' : 'default'}">
                                 <input type="checkbox" ${it.is_available=='1'||it.is_available===true?'checked':''} ${canManageMenu ? `${_ea('toggleItem', [it.id, EtelActions.CHECKED], { event: 'change' })}` : 'disabled'} style="width:16px;height:16px;cursor:${canManageMenu ? 'pointer' : 'not-allowed'}">
-                                <span style="font-size:12px;color:${it.is_available=='1'||it.is_available===true?'#2ecc71':'#aaa'}">${it.is_available=='1'||it.is_available===true?'Available':'Hidden'}</span>
+                                <span style="font-size:12px;color:${it.is_available=='1'||it.is_available===true?'#2ecc71':'#aaa'}">${it.is_available=='1'||it.is_available===true?sgT('sg_it_available'):sgT('sg_it_hidden')}</span>
                             </label>
                             ${(it.is_available=='1'||it.is_available===true) && canManageMenu ? (it.sold_out == 1
-                                ? `<button ${_ea('setSoldOut', [it.id, 0])} style="margin-top:5px;padding:3px 9px;background:#fff3cd;color:#7a5b00;border:1px solid #e6c85a;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap">Sold out · Undo</button>`
-                                : `<button ${_ea('setSoldOut', [it.id, 1])} style="margin-top:5px;padding:3px 9px;background:transparent;color:#7a5b00;border:1px solid #e6c85a;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap">Sold out today</button>`) : ''}
+                                ? `<button ${_ea('setSoldOut', [it.id, 0])} style="margin-top:5px;padding:3px 9px;background:#fff3cd;color:#7a5b00;border:1px solid #e6c85a;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap">${sgT('sg_it_undo')}</button>`
+                                : `<button ${_ea('setSoldOut', [it.id, 1])} style="margin-top:5px;padding:3px 9px;background:transparent;color:#7a5b00;border:1px solid #e6c85a;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap">${sgT('sg_it_soldout')}</button>`) : ''}
                         </td>
                         ${canManageMenu ? `
                         <td style="padding:10px 8px;display:flex;gap:6px;align-items:center;flex-wrap:wrap">
-                            <button ${_ea('openEditItemModal', [it.id])} style="padding:5px 12px;background:#C9A961;color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer">✏ Edit</button>
-                            <button data-name="${escapeHtml(it.name)}" ${_ea('deleteItemFromButton', [it.id, EtelActions.EL])} style="padding:5px 12px;background:#e63946;color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer">🗑 Del</button>
+                            <button ${_ea('openEditItemModal', [it.id])} style="padding:5px 12px;background:#C9A961;color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer">${sgT('sg_it_edit')}</button>
+                            <button data-name="${escapeHtml(it.name)}" ${_ea('deleteItemFromButton', [it.id, EtelActions.EL])} style="padding:5px 12px;background:#e63946;color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer">${sgT('sg_it_del')}</button>
                         </td>` : ''}
                     </tr>`).join('')}
                 </tbody>
@@ -1372,28 +1372,28 @@
             const body = document.getElementById('sg-reviews-body');
             if (!body) return;
             const d = await apiCall('sg_reviews', {});
-            if (!d) { body.innerHTML = '<p style="color:#e74c3c">Could not load reviews.</p>'; return; }
+            if (!d) { body.innerHTML = '<p style="color:#e74c3c">' + sgT('sg_rv_fail') + '</p>'; return; }
             const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
             const badge = document.getElementById('sg-reviews-badge');
             if (badge) { badge.textContent = d.unreplied || 0; badge.style.display = d.unreplied ? 'inline-block' : 'none'; }
             const stars = n => '★'.repeat(n) + '☆'.repeat(5 - n);
             let html = '<div class="sr-kpis">' +
-                '<div class="sr-kpi"><span>Average</span><b>' + (d.total ? d.average.toFixed(1) : '—') + '</b><em class="sr-flat rv-stars">' + (d.total ? stars(Math.round(d.average)) : '') + '</em></div>' +
-                '<div class="sr-kpi"><span>Reviews</span><b>' + d.total + '</b><em class="sr-flat">all time</em></div>' +
-                '<div class="sr-kpi"><span>Need a reply</span><b>' + d.unreplied + '</b><em class="sr-flat">' + (d.unreplied ? 'reply to build trust' : 'all answered') + '</em></div></div>';
+                '<div class="sr-kpi"><span>' + sgT('sg_rv_avg') + '</span><b>' + (d.total ? d.average.toFixed(1) : '—') + '</b><em class="sr-flat rv-stars">' + (d.total ? stars(Math.round(d.average)) : '') + '</em></div>' +
+                '<div class="sr-kpi"><span>' + sgT('sg_rv_reviews') + '</span><b>' + d.total + '</b><em class="sr-flat">' + sgT('sg_rv_all_time') + '</em></div>' +
+                '<div class="sr-kpi"><span>' + sgT('sg_rv_need') + '</span><b>' + d.unreplied + '</b><em class="sr-flat">' + sgT(d.unreplied ? 'sg_rv_reply_build' : 'sg_rv_answered') + '</em></div></div>';
             if (!(d.reviews || []).length) {
-                html += '<div style="padding:24px;color:var(--text-dim);text-align:center">No reviews yet. They appear here after customers rate delivered orders.</div>';
+                html += '<div style="padding:24px;color:var(--text-dim);text-align:center">' + sgT('sg_rv_none') + '</div>';
             }
             (d.reviews || []).forEach(r => {
                 const when = r.rated_at ? new Date(r.rated_at.replace(' ', 'T')).toLocaleDateString() : '';
                 html += '<div class="rv-card" id="rv-' + r.id + '">' +
                     '<div class="rv-top"><span class="rv-stars">' + stars(r.stars) + '</span><span style="color:var(--text-faint);font-size:11px">' + esc(r.order_code) + ' · ' + esc(when) + '</span></div>' +
-                    (r.tags ? '<div>' + String(r.tags).split(',').map(k => '<span class="rv-tag">' + esc(SG_TAG_LABEL[k] || k) + '</span>').join('') + '</div>' : '') +
+                    (r.tags ? '<div>' + String(r.tags).split(',').map(k => '<span class="rv-tag">' + esc(sgT('sg_tag_' + k) !== 'sg_tag_' + k ? sgT('sg_tag_' + k) : (SG_TAG_LABEL[k] || k)) + '</span>').join('') + '</div>' : '') +
                     (r.comment ? '<div style="font-size:13px;color:var(--text);margin-bottom:4px">' + esc(r.comment) + '</div>' : '') +
-                    '<div style="font-size:11px;color:var(--text-faint)">— ' + esc(r.reviewer_first_name || 'Customer') + '</div>' +
-                    (r.shop_reply ? '<div class="rv-reply"><b style="font-size:10.5px;opacity:.7">Your reply</b><br>' + esc(r.shop_reply) + '</div>' : '') +
-                    (d.can_reply ? '<div class="rv-form"><textarea id="rv-text-' + r.id + '" maxlength="300" placeholder="' + (r.shop_reply ? 'Edit your reply…' : 'Write a short, polite reply…') + '">' + esc(r.shop_reply || '') + '</textarea>' +
-                        '<button type="button" ' + _ea('replyToReview', [r.id]) + '>' + (r.shop_reply ? 'Update reply' : 'Reply') + '</button></div>' : '') +
+                    '<div style="font-size:11px;color:var(--text-faint)">— ' + esc(r.reviewer_first_name || sgT('sg_rv_customer')) + '</div>' +
+                    (r.shop_reply ? '<div class="rv-reply"><b style="font-size:10.5px;opacity:.7">' + sgT('sg_rv_your_reply') + '</b><br>' + esc(r.shop_reply) + '</div>' : '') +
+                    (d.can_reply ? '<div class="rv-form"><textarea id="rv-text-' + r.id + '" maxlength="300" placeholder="' + (r.shop_reply ? sgT('sg_rv_edit_ph') : sgT('sg_rv_write_ph')) + '">' + esc(r.shop_reply || '') + '</textarea>' +
+                        '<button type="button" ' + _ea('replyToReview', [r.id]) + '>' + (r.shop_reply ? sgT('sg_rv_update') : sgT('sg_rv_reply')) + '</button></div>' : '') +
                     '</div>';
             });
             body.innerHTML = html;
@@ -1401,9 +1401,9 @@
         async function replyToReview(id) {
             const ta = document.getElementById('rv-text-' + id);
             const text = ta ? ta.value.trim() : '';
-            if (!text) { showNotification('Write a reply first', 'error'); return; }
+            if (!text) { showNotification(sgT('sg_rv_write_first'), 'error'); return; }
             const res = await apiCall('sg_reply_review', { rating_id: id, reply: text });
-            if (res) { showNotification('Reply sent', 'success'); loadSgReviews(); }
+            if (res) { showNotification(sgT('sg_rv_sent'), 'success'); loadSgReviews(); }
         }
 
         // ─── SALES REPORT ───────────────────────────────────────────
@@ -1415,27 +1415,27 @@
             if (!body) return;
             days = days || parseInt((document.querySelector('#sr-range .sr-pill.active') || {}).dataset?.days || '7', 10);
             document.querySelectorAll('#sr-range .sr-pill').forEach(b => b.classList.toggle('active', parseInt(b.dataset.days, 10) === days));
-            body.innerHTML = '<div style="padding:20px;color:var(--text-dim)">Loading…</div>';
+            body.innerHTML = '<div style="padding:20px;color:var(--text-dim)">' + sgT('sg_loading_dots') + '</div>';
             const d = await apiCall('sg_sales_report', { days });
-            if (!d) { body.innerHTML = '<p style="color:#e74c3c">Could not load the report.</p>'; return; }
+            if (!d) { body.innerHTML = '<p style="color:#e74c3c">' + sgT('sg_sr_fail') + '</p>'; return; }
             const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
             const cur = d.current || {}, prev = d.previous || {};
-            const label = days === 1 ? 'yesterday' : 'the previous ' + days + ' days';
+            const label = days === 1 ? sgT('sg_yesterday') : sgT('sg_prev_days').replace('{n}', days);
             const delta = (a, b) => {
                 if (a == null || b == null) return '';
-                if (!b && !a) return '<em class="sr-flat">no change</em>';
-                if (!b) return '<em class="sr-up">▲ new vs ' + label + '</em>';
+                if (!b && !a) return '<em class="sr-flat">' + sgT('sg_no_change') + '</em>';
+                if (!b) return '<em class="sr-up">' + sgT('sg_new_vs').replace('{l}', label) + '</em>';
                 const p = Math.round((a - b) / b * 100);
-                return p === 0 ? '<em class="sr-flat">same as ' + label + '</em>'
-                    : '<em class="' + (p > 0 ? 'sr-up">▲ ' : 'sr-down">▼ ') + Math.abs(p) + '% vs ' + label + '</em>';
+                return p === 0 ? '<em class="sr-flat">' + sgT('sg_same_as').replace('{l}', label) + '</em>'
+                    : '<em class="' + (p > 0 ? 'sr-up">▲ ' : 'sr-down">▼ ') + sgT('sg_pct_vs').replace('{p}', Math.abs(p)).replace('{l}', label) + '</em>';
             };
             const money = v => v == null ? '—' : 'ETB ' + Number(v).toLocaleString(undefined, { maximumFractionDigits: 0 });
             const avg = (cur.delivered && cur.revenue != null) ? cur.revenue / cur.delivered : null;
             let html = '<div class="sr-kpis">' +
-                '<div class="sr-kpi"><span>Orders</span><b>' + (cur.orders || 0) + '</b>' + delta(cur.orders, prev.orders) + '</div>' +
-                '<div class="sr-kpi"><span>Delivered</span><b>' + (cur.delivered || 0) + '</b><em class="sr-flat">' + (cur.cancelled || 0) + ' cancelled</em></div>' +
-                (d.show_money ? '<div class="sr-kpi"><span>Sales</span><b>' + money(cur.revenue) + '</b>' + delta(cur.revenue, prev.revenue) + '</div>' +
-                    '<div class="sr-kpi"><span>Avg order</span><b>' + money(avg) + '</b><em class="sr-flat">delivered orders</em></div>' : '') +
+                '<div class="sr-kpi"><span>' + sgT('sg_sr_orders') + '</span><b>' + (cur.orders || 0) + '</b>' + delta(cur.orders, prev.orders) + '</div>' +
+                '<div class="sr-kpi"><span>' + sgT('sg_sr_delivered') + '</span><b>' + (cur.delivered || 0) + '</b><em class="sr-flat">' + (cur.cancelled || 0) + ' ' + sgT('sg_sr_cancelled') + '</em></div>' +
+                (d.show_money ? '<div class="sr-kpi"><span>' + sgT('sg_sr_sales') + '</span><b>' + money(cur.revenue) + '</b>' + delta(cur.revenue, prev.revenue) + '</div>' +
+                    '<div class="sr-kpi"><span>' + sgT('sg_sr_avg') + '</span><b>' + money(avg) + '</b><em class="sr-flat">' + sgT('sg_sr_delivered_orders') + '</em></div>' : '') +
                 '</div>';
 
             // daily bars (fill empty days so the chart is honest)
@@ -1445,8 +1445,8 @@
             if (days > 1) {
                 const vals = dayList.map(k => byDate[k] ? (d.show_money && byDate[k].revenue != null ? byDate[k].revenue : byDate[k].orders) : 0);
                 const max = Math.max.apply(null, vals.concat([1]));
-                html += '<div class="sr-card"><h4>' + (d.show_money ? 'Sales per day' : 'Orders per day') + '</h4><div class="sr-bars">' +
-                    vals.map((v, i) => '<div class="sr-bar" title="' + dayList[i] + ': ' + (d.show_money ? money(v) : v + ' orders') + '" style="height:' + Math.max(2, Math.round(v / max * 100)) + '%"></div>').join('') +
+                html += '<div class="sr-card"><h4>' + sgT(d.show_money ? 'sg_sr_sales_day' : 'sg_sr_orders_day') + '</h4><div class="sr-bars">' +
+                    vals.map((v, i) => '<div class="sr-bar" title="' + dayList[i] + ': ' + (d.show_money ? money(v) : v + ' ' + sgT('sg_sr_orders_n')) + '" style="height:' + Math.max(2, Math.round(v / max * 100)) + '%"></div>').join('') +
                     '</div><div class="sr-axis"><span>' + dayList[0].slice(5) + '</span><span>' + dayList[dayList.length - 1].slice(5) + '</span></div></div>';
             }
 
@@ -1456,16 +1456,16 @@
             if (hmax > 0) {
                 const peak = hrs.indexOf(hmax);
                 const fmt = h => (h % 12 === 0 ? 12 : h % 12) + (h < 12 ? ' AM' : ' PM');
-                html += '<div class="sr-card"><h4>Busy hours <span style="font-weight:600;color:var(--text-dim)">· busiest around ' + fmt(peak) + '</span></h4><div class="sr-bars">' +
-                    hrs.map((v, i) => '<div class="sr-bar' + (i === peak ? ' peak' : '') + '" title="' + fmt(i) + ': ' + v + ' orders" style="height:' + Math.max(2, Math.round(v / hmax * 100)) + '%"></div>').join('') +
+                html += '<div class="sr-card"><h4>' + sgT('sg_sr_busy') + ' <span style="font-weight:600;color:var(--text-dim)">· ' + sgT('sg_sr_busiest') + ' ' + fmt(peak) + '</span></h4><div class="sr-bars">' +
+                    hrs.map((v, i) => '<div class="sr-bar' + (i === peak ? ' peak' : '') + '" title="' + fmt(i) + ': ' + v + ' ' + sgT('sg_sr_orders_n') + '" style="height:' + Math.max(2, Math.round(v / hmax * 100)) + '%"></div>').join('') +
                     '</div><div class="sr-axis"><span>12 AM</span><span>6 AM</span><span>12 PM</span><span>6 PM</span><span>11 PM</span></div></div>';
             }
 
             // top items
             const top = d.top_items || [];
-            html += '<div class="sr-card"><h4>Top items</h4>' + (top.length ? top.map((t, i) =>
-                '<div class="sr-top"><i>' + (i + 1) + '</i><span class="nm">' + esc(t.name) + '</span><span class="q">' + t.qty + ' sold' + (t.revenue != null ? ' · ' + money(t.revenue) : '') + '</span></div>').join('')
-                : '<div style="color:var(--text-dim);font-size:13px">No orders in this period yet.</div>') + '</div>';
+            html += '<div class="sr-card"><h4>' + sgT('sg_sr_top') + '</h4>' + (top.length ? top.map((t, i) =>
+                '<div class="sr-top"><i>' + (i + 1) + '</i><span class="nm">' + esc(t.name) + '</span><span class="q">' + t.qty + ' ' + sgT('sg_sr_sold') + (t.revenue != null ? ' · ' + money(t.revenue) : '') + '</span></div>').join('')
+                : '<div style="color:var(--text-dim);font-size:13px">' + sgT('sg_sr_none') + '</div>') + '</div>';
             body.innerHTML = html;
         }
 
@@ -1473,12 +1473,12 @@
             const body = document.getElementById('sg-financial-report-body');
             const rangeSel = document.getElementById('sg-fr-range');
             if (!body) return;
-            body.innerHTML = 'Loading…';
+            body.innerHTML = sgT('sg_loading_dots');
             const days = rangeSel ? rangeSel.value : '30';
             const data = await apiCall('sg_financial_report', { days });
-            if (!data) { body.innerHTML = '<p style="color:#e74c3c">Could not load report.</p>'; return; }
+            if (!data) { body.innerHTML = '<p style="color:#e74c3c">' + sgT('sg_fin_fail') + '</p>'; return; }
 
-            const methodLabel = { cash: '💵 Cash', telebirr: '📱 Telebirr', abysinia: '🏦 Abysinia', cbe: '🏛️ CBE', wallet: '👛 Wallet' };
+            const methodLabel = { cash: sgT('sg_m_cash'), telebirr: sgT('sg_m_telebirr'), abysinia: sgT('sg_m_abysinia'), cbe: sgT('sg_m_cbe'), wallet: sgT('sg_m_wallet') };
             const cap = (label, value, sub) => `<div style="background:rgba(255,255,255,.05);border:1px solid rgba(212,175,55,.15);border-radius:10px;padding:12px;text-align:center">
                 <div style="font-size:17px;font-weight:800;color:#D4AF37">${value}</div>
                 <div style="font-size:10.5px;color:#9A9AAE;margin-top:2px;text-transform:uppercase">${label}</div>
@@ -1490,16 +1490,16 @@
                 const s = methods[m];
                 return cap(methodLabel[m] || m,
                     'ETB ' + s.paid_total.toFixed(0),
-                    s.paid_count + ' paid' + (s.unpaid_count ? ` · ${s.unpaid_count} unpaid (ETB ${s.unpaid_total.toFixed(0)})` : ''));
+                    s.paid_count + ' ' + sgT('sg_fin_paid') + (s.unpaid_count ? ` · ${s.unpaid_count} ${sgT('sg_fin_unpaid')} (ETB ${s.unpaid_total.toFixed(0)})` : ''));
             }).join('');
 
             body.innerHTML = `
                 <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:14px">
-                    ${cap('Confirmed revenue', 'ETB ' + data.paid_total.toFixed(0))}
-                    ${cap('Awaiting payment', 'ETB ' + data.unpaid_total.toFixed(0))}
+                    ${cap(sgT('sg_fin_confirmed'), 'ETB ' + data.paid_total.toFixed(0))}
+                    ${cap(sgT('sg_fin_awaiting'), 'ETB ' + data.unpaid_total.toFixed(0))}
                 </div>
                 ${methodCards ? `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px">${methodCards}</div>`
-                              : '<p style="color:#9A9AAE;font-size:13px;text-align:center;padding:16px">No orders in this period yet.</p>'}
+                              : '<p style="color:#9A9AAE;font-size:13px;text-align:center;padding:16px">' + sgT('sg_sr_none') + '</p>'}
             `;
         }
 

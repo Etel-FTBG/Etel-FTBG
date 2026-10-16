@@ -559,18 +559,18 @@ body.etel-light .cat-chip.on{background:#f3e3b0;color:#4a3300}
 
                 <!-- QR SCANNER -->
                 <div id="page-qr-scanner" style="display: none;">
-                    <div class="page-title">QR Code Scanner</div>
-                    <div class="page-subtitle">Scan pickup and delivery QR codes</div>
+                    <div class="page-title" data-i18n="sg_qr_title">QR Code Scanner</div>
+                    <div class="page-subtitle" data-i18n="sg_qr_sub">Scan pickup and delivery QR codes</div>
                     <div class="card">
                         <div class="card-body" style="text-align: center;">
                             <div class="qr-frame">
                                 <video id="qr-video" playsinline muted></video>
                                 <canvas id="qr-canvas" style="display:none"></canvas>
                                 <div style="display:flex;gap:10px;margin-bottom:14px">
-                                    <button class="btn btn-secondary" style="flex:1;justify-content:center" id="qr-type-pickup" data-act="setQrType" data-args='["pickup"]'>📥 Pickup</button>
-                                    <button class="btn btn-secondary" style="flex:1;justify-content:center" id="qr-type-delivery" data-act="setQrType" data-args='["delivery"]'>📤 Delivery</button>
+                                    <button class="btn btn-secondary" style="flex:1;justify-content:center" id="qr-type-pickup" data-act="setQrType" data-args='["pickup"]' data-i18n="sg_qr_pickup">📥 Pickup</button>
+                                    <button class="btn btn-secondary" style="flex:1;justify-content:center" id="qr-type-delivery" data-act="setQrType" data-args='["delivery"]' data-i18n="sg_qr_delivery">📤 Delivery</button>
                                 </div>
-                                <button class="btn btn-primary" data-act="startQRScanner" style="width: 100%; justify-content:center;">📷 Start Camera &amp; Scan</button>
+                                <button class="btn btn-primary" data-act="startQRScanner" style="width: 100%; justify-content:center;" data-i18n="sg_qr_start">📷 Start Camera &amp; Scan</button>
                                 <div class="qr-result" id="qr-result"></div>
                                 <p style="font-size:11px;color:var(--text-faint);margin-top:14px">Point the camera at the customer's or courier's QR code. Expects the order ID encoded as plain text or JSON (<code>{"order_id":123}</code>).</p>
                             </div>
@@ -580,41 +580,41 @@ body.etel-light .cat-chip.on{background:#f3e3b0;color:#4a3300}
 
                 <!-- ANALYTICS -->
                 <div id="page-analytics" style="display: none;">
-                    <div class="page-title">Sales Report</div>
-                    <div class="page-subtitle">How your shop is doing — live from your orders</div>
+                    <div class="page-title" data-i18n="sg_sr_title">Sales Report</div>
+                    <div class="page-subtitle" data-i18n="sg_sr_sub">How your shop is doing — live from your orders</div>
                     <div id="sr-range" style="display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap">
-                        <button type="button" class="sr-pill" data-days="1" data-act="loadSalesReport" data-args='[1]'>Today</button>
-                        <button type="button" class="sr-pill active" data-days="7" data-act="loadSalesReport" data-args='[7]'>Last 7 days</button>
-                        <button type="button" class="sr-pill" data-days="30" data-act="loadSalesReport" data-args='[30]'>Last 30 days</button>
+                        <button type="button" class="sr-pill" data-days="1" data-act="loadSalesReport" data-args='[1]' data-i18n="sg_today">Today</button>
+                        <button type="button" class="sr-pill active" data-days="7" data-act="loadSalesReport" data-args='[7]' data-i18n="sg_7d">Last 7 days</button>
+                        <button type="button" class="sr-pill" data-days="30" data-act="loadSalesReport" data-args='[30]' data-i18n="sg_30d">Last 30 days</button>
                     </div>
                     <div id="sales-report-body"><div style="padding:20px;color:var(--text-dim)">Loading…</div></div>
                 </div>
 
                 <!-- REVIEWS -->
                 <div id="page-reviews" style="display: none;">
-                    <div class="page-title">Customer Reviews</div>
-                    <div class="page-subtitle">What customers say about your shop — reply to build trust</div>
+                    <div class="page-title" data-i18n="sg_rv_title">Customer Reviews</div>
+                    <div class="page-subtitle" data-i18n="sg_rv_sub">What customers say about your shop — reply to build trust</div>
                     <div id="sg-reviews-body"><div style="padding:20px;color:var(--text-dim)">Loading…</div></div>
                 </div>
 
                 <!-- PAYMENTS -->
                 <div id="page-payments" style="display: none;">
-                    <div class="page-title">Payment Management</div>
-                    <div class="page-subtitle">View earnings, commissions, and payment history</div>
+                    <div class="page-title" data-i18n="sg_pay_title">Payment Management</div>
+                    <div class="page-subtitle" data-i18n="sg_pay_sub">View earnings, commissions, and payment history</div>
 
                     <div class="card">
                         <div class="card-header">
-                            <div class="card-title">📊 Financial Report</div>
+                            <div class="card-title" data-i18n="sg_fin_title">📊 Financial Report</div>
                         </div>
                         <div class="card-body">
                             <div style="display:flex;gap:10px;align-items:center;margin-bottom:16px;flex-wrap:wrap">
                                 <select id="sg-fr-range" class="field-input" style="width:auto" data-act-change="loadSGFinancialReport">
-                                    <option value="7">Last 7 days</option>
-                                    <option value="30" selected>Last 30 days</option>
-                                    <option value="90">Last 90 days</option>
-                                    <option value="all">All time</option>
+                                    <option value="7" data-i18n="sg_7d">Last 7 days</option>
+                                    <option value="30" selected data-i18n="sg_30d">Last 30 days</option>
+                                    <option value="90" data-i18n="sg_90d">Last 90 days</option>
+                                    <option value="all" data-i18n="sg_all_time">All time</option>
                                 </select>
-                                <button class="btn btn-secondary btn-small" data-act="loadSGFinancialReport">🔄 Refresh</button>
+                                <button class="btn btn-secondary btn-small" data-act="loadSGFinancialReport" data-i18n="sg_refresh">🔄 Refresh</button>
                             </div>
                             <div id="sg-financial-report-body">Loading…</div>
                         </div>
@@ -622,13 +622,13 @@ body.etel-light .cat-chip.on{background:#f3e3b0;color:#4a3300}
 
                     <div class="card">
                         <div class="card-header">
-                            <div class="card-title">💳 Payment Method</div>
+                            <div class="card-title" data-i18n="sg_pm_title">💳 Payment Method</div>
                         </div>
                         <div class="card-body">
                             <div style="padding: 20px; background: rgba(255,255,255,.04); border-radius: 12px;">
-                                <p style="color: var(--text-faint); margin-bottom: 12px;">Bank Account</p>
-                                <p id="payment-bank-account" style="font-size: 18px; font-weight: 700; color: var(--text);">Not configured</p>
-                                <button class="btn btn-secondary btn-small" data-sg-cap="settings.manage" style="margin-top: 16px;display:none" data-act="switchPage" data-args='["settings"]'>Update Payment Method</button>
+                                <p style="color: var(--text-faint); margin-bottom: 12px;" data-i18n="sg_pm_bank">Bank Account</p>
+                                <p id="payment-bank-account" style="font-size: 18px; font-weight: 700; color: var(--text);" data-i18n="sg_pm_none">Not configured</p>
+                                <button class="btn btn-secondary btn-small" data-sg-cap="settings.manage" style="margin-top: 16px;display:none" data-act="switchPage" data-args='["settings"]' data-i18n="sg_pm_update">Update Payment Method</button>
                                 <p data-sg-cap-inverse="settings.manage" style="margin-top:14px;font-size:12.5px;color:var(--text-faint,#9A9AAE)">
                                     You can see this business's payment details, but only someone with the settings.manage capability can change them.
                                 </p>
@@ -639,21 +639,21 @@ body.etel-light .cat-chip.on{background:#f3e3b0;color:#4a3300}
 
                 <!-- SERVICES / MENU ITEMS -->
                 <div id="page-services" style="display: none;">
-                    <div class="page-title">My Services &amp; Items</div>
-                    <div class="page-subtitle">Add and manage the products or services you offer</div>
+                    <div class="page-title" data-i18n="sg_it_title">My Services &amp; Items</div>
+                    <div class="page-subtitle" data-i18n="sg_it_sub">Add and manage the products or services you offer</div>
                     <div class="card">
                         <div class="card-header">
-                            <div class="card-title">📋 Item List</div>
+                            <div class="card-title" data-i18n="sg_it_list">📋 Item List</div>
                             <div style="display:flex;gap:8px;flex-wrap:wrap">
-                                <button class="btn btn-primary btn-small" data-sg-cap="menu.manage" style="display:none" data-act="openCatalog">📚 Pick from catalog</button>
-                                <button class="btn btn-secondary btn-small" data-sg-cap="menu.manage" style="display:none" data-act="openAddItemModal">+ Add custom item</button>
-                                <button class="btn btn-secondary btn-small" data-sg-cap="menu.manage" style="display:none" data-act="clickById" data-args='["menu-csv-file"]'>⬆ Import CSV</button>
-                                <button class="btn btn-secondary btn-small" data-sg-cap="menu.manage" style="display:none" data-act="downloadMenuTemplate">⬇ CSV template</button>
+                                <button class="btn btn-primary btn-small" data-sg-cap="menu.manage" style="display:none" data-act="openCatalog" data-i18n="sg_it_catalog">📚 Pick from catalog</button>
+                                <button class="btn btn-secondary btn-small" data-sg-cap="menu.manage" style="display:none" data-act="openAddItemModal" data-i18n="sg_it_add">+ Add custom item</button>
+                                <button class="btn btn-secondary btn-small" data-sg-cap="menu.manage" style="display:none" data-act="clickById" data-args='["menu-csv-file"]' data-i18n="sg_it_import">⬆ Import CSV</button>
+                                <button class="btn btn-secondary btn-small" data-sg-cap="menu.manage" style="display:none" data-act="downloadMenuTemplate" data-i18n="sg_it_template">⬇ CSV template</button>
                                 <input type="file" id="menu-csv-file" accept=".csv,text/csv,text/plain" style="display:none" data-act-change="importMenuCsv" data-args-change='[{"$":"el"}]'>
                             </div>
                         </div>
                         <div class="card-body" id="services-container">
-                            <p class="empty-msg">Loading items…</p>
+                            <p class="empty-msg" data-i18n="sg_it_loading">Loading items…</p>
                         </div>
                     </div>
                 </div>
@@ -1120,9 +1120,9 @@ body.etel-light .cat-chip.on{background:#f3e3b0;color:#4a3300}
         </div>
     </div>
 
-    <script src="js/servicegiver-i18n.js?v=1"></script>
+    <script src="js/servicegiver-i18n.js?v=2"></script>
     <script src="js/servicegiver-actions.js?v=2"></script>
-    <script src="js/servicegiver.js?v=4.7"></script>
+    <script src="js/servicegiver.js?v=4.8"></script>
     <script src="js/servicegiver-premium.js?v=1.9"></script>
     <script src="js/servicegiver-3d-premium.js?v=1.2"></script><!-- 3D visual upgrade: glass depth, glowing sweep borders, rating ring -->
     <script src="js/servicegiver-qr.js?v=1"></script>
