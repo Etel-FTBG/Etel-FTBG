@@ -305,17 +305,17 @@ function renderSGScroll(items) {
         const rate = sg.rating > 0 ? '<span class="rc-rating">' + RC_STAR + sg.rating.toFixed(1) + '</span>' : '<span class="rc-rating rc-rating-new">' + escapeHtml(tNew) + '</span>';
         const coverSrc = sg.cover || sg.img;
         const cover = coverSrc
-            ? shopPlaceholder(sg.name) + '<img class="rc-cover" src="' + escUrl(coverSrc) + '" alt="" loading="lazy" onerror="this.onerror=null;this.style.display=\'none\'">'
+            ? shopPlaceholder(sg.name) + '<img class="rc-cover" src="' + escUrl(coverSrc) + '" alt="" loading="lazy" data-fallback="hide">'
             : shopPlaceholder(sg.name);
         const from = isFinite(sg.minPrice) ? escapeHtml(tFrom) + ' ETB ' + Math.round(sg.minPrice) + ' · ' : '';
         // Only a closed shop gets a label on the photo; an open shop needs no badge.
         const closedBadge = sg.online === false ? '<span class="rc-closed-badge">' + escapeHtml(tClosed) + '</span>' : '';
-        return '<div class="restaurant-card' + (sg.online === false ? ' rc-closed' : '') + '" onclick="openShopDetail('+sg.id+')">' +
+        return '<div class="restaurant-card' + (sg.online === false ? ' rc-closed' : '') + '"' + _ea('openShopDetail', [Number(sg.id)]) + '>' +
             '<div class="restaurant-card-image ' + bg + '">' + cover + '<span class="rc-shade"></span>' + closedBadge +
-                '<button class="rc-fav" onclick="event.stopPropagation();toggleFavorite('+sg.id+', this)" aria-label="Favorite">' + RC_HEART + '</button>' +
+                '<button class="rc-fav"' + _ea('toggleFavorite', [Number(sg.id), EtelActions.EL], {stop: true}) + ' aria-label="Favorite">' + RC_HEART + '</button>' +
             '</div>' +
             '<div class="restaurant-card-body' + (sg.logo ? ' has-logo' : '') + '">' +
-                (sg.logo ? '<img class="rc-logo" src="' + escUrl(sg.logo) + '" alt="" loading="lazy" onerror="this.parentNode.classList.remove(\'has-logo\');this.remove()">' : '') +
+                (sg.logo ? '<img class="rc-logo" src="' + escUrl(sg.logo) + '" alt="" loading="lazy" data-fallback="logo">' : '') +
                 '<div class="rc-top"><div class="restaurant-card-name">' + escapeHtml(sg.name) + '</div>' + rate + '</div>' +
                 '<div class="restaurant-card-meta">' + escapeHtml(sg.type||'Shop') + ' · ' + escapeHtml(sg.zone||'Hawassa') + '</div>' +
                 '<div class="rc-facts">' + eta + '<span class="rc-fact">' + RC_BIKE + escapeHtml(tFee) + ' ' + minFee + '</span></div>' +
@@ -436,13 +436,13 @@ function renderHomeRateCard(orders) {
     }
     let stars = '';
     for (let n = 1; n <= 5; n++) {
-        stars += '<button type="button" class="rate-card-star" aria-label="' + n + '" onclick="startHomeRating(' + parseInt(target.id, 10) + ',' + n + ')">&#9733;</button>';
+        stars += '<button type="button" class="rate-card-star" aria-label="' + n + '"' + _ea('startHomeRating', [parseInt(target.id, 10), n]) + '>&#9733;</button>';
     }
     card.innerHTML =
         '<div class="rate-card-text"><div class="rate-card-q">' + escapeHtml(ETEL_I18N.t('rate_card_q')) + '</div>' +
         '<div class="rate-card-sub">' + escapeHtml(target.order_code || '') + ' - ' + escapeHtml(ETEL_I18N.t('rate_card_sub')) + '</div></div>' +
         '<div class="rate-card-stars">' + stars + '</div>' +
-        '<button type="button" class="rate-card-later" onclick="skipHomeRating(' + parseInt(target.id, 10) + ')">' + escapeHtml(ETEL_I18N.t('rate_card_later')) + '</button>';
+        '<button type="button" class="rate-card-later"' + _ea('skipHomeRating', [parseInt(target.id, 10)]) + '>' + escapeHtml(ETEL_I18N.t('rate_card_later')) + '</button>';
 }
 function startHomeRating(orderId, n) {
     openRating(orderId);
@@ -470,7 +470,7 @@ async function loadHomeTracker() {
                 '<div class="trk-top"><span class="trk-ico">🍽️</span>' +
                 '<div class="trk-text"><div class="trk-title">' + escapeHtml(ETEL_I18N.t('reorder_home')) + '</div>' +
                 '<div class="trk-status">' + escapeHtml(last.order_code || '') + ' · ETB ' + parseFloat(last.fare_total || 0).toFixed(0) + '</div></div>' +
-                '<button type="button" class="trk-btn" onclick="reorderOrder(' + parseInt(last.id, 10) + ')">' + escapeHtml(ETEL_I18N.t('reorder_btn')) + '</button></div>';
+                '<button type="button" class="trk-btn"' + _ea('reorderOrder', [parseInt(last.id, 10)]) + '>' + escapeHtml(ETEL_I18N.t('reorder_btn')) + '</button></div>';
             box.style.display = 'block';
             return;
         }
@@ -482,9 +482,9 @@ async function loadHomeTracker() {
             '<div class="trk-top"><span class="trk-ico">🛵</span>' +
             '<div class="trk-text"><div class="trk-title">' + escapeHtml(ETEL_I18N.t('trk_title')) + ' · ' + escapeHtml(o.order_code || '') + escapeHtml(more) + '</div>' +
             '<div class="trk-status">' + escapeHtml(ETEL_I18N.t('trk_' + o.status)) + '</div></div>' +
-            '<button type="button" class="trk-btn" onclick="openTrackOrder(' + parseInt(o.id, 10) + ')">' + escapeHtml(ETEL_I18N.t('trk_track')) + '</button></div>' +
+            '<button type="button" class="trk-btn"' + _ea('openTrackOrder', [parseInt(o.id, 10)]) + '>' + escapeHtml(ETEL_I18N.t('trk_track')) + '</button></div>' +
             '<div class="trk-bar"><span style="width:' + pct + '%"></span></div>' +
-            (('Notification' in window && Notification.permission === 'default') ? '<button type="button" class="trk-push" onclick="enableOrderPush()">' + escapeHtml(ETEL_I18N.t('push_on')) + '</button>' : '');
+            (('Notification' in window && Notification.permission === 'default') ? '<button type="button" class="trk-push"' + _ea('enableOrderPush', []) + '>' + escapeHtml(ETEL_I18N.t('push_on')) + '</button>' : '');
         box.style.display = 'block';
     } catch (e) { /* tracker is decoration - never break the home page */ }
 }
@@ -531,12 +531,12 @@ function openShopDetail(sgId) {
     document.getElementById('shop-detail-hero').innerHTML = heroPhoto
         ? '<div style="position:absolute;inset:0;background:radial-gradient(circle at 30% 30%,rgba(212,175,55,.18),transparent 65%),var(--dark-2)"></div>' +
           '<span style="font-size:56px;position:relative;opacity:.4">' + ic + '</span>' +
-          '<img src="' + escUrl(heroPhoto) + '" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover" onerror="this.onerror=null;this.style.display=\'none\'">' +
+          '<img src="' + escUrl(heroPhoto) + '" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover" data-fallback="hide">' +
           '<span class="rc-shade"></span>' +
-          (heroLogo ? '<img class="hero-logo" src="' + escUrl(heroLogo) + '" alt="" onerror="this.remove()">' : '')
+          (heroLogo ? '<img class="hero-logo" src="' + escUrl(heroLogo) + '" alt="" data-fallback="remove">' : '')
         : '<div style="position:absolute;inset:0;background:radial-gradient(circle at 30% 30%,rgba(212,175,55,.18),transparent 65%),var(--dark-2)"></div>' +
           '<span style="font-size:56px;position:relative;filter:drop-shadow(0 4px 14px rgba(212,175,55,.35))">' + ic + '</span>' +
-          (heroLogo ? '<img class="hero-logo" src="' + escUrl(heroLogo) + '" alt="" onerror="this.remove()">' : '');
+          (heroLogo ? '<img class="hero-logo" src="' + escUrl(heroLogo) + '" alt="" data-fallback="remove">' : '');
     _shopMenuItems = items; _shopMenuFilter = 'all';
     renderShopMenuChips();
     renderShopMenu();
@@ -571,7 +571,7 @@ function renderShopMenuChips() {
     const shown = defs.filter(function(d){ return d[0] === 'all' || _shopMenuItems.some(function(i){ return _shopMenuMatch(i, d[0]); }); });
     box.style.display = shown.length > 1 ? 'flex' : 'none';
     box.innerHTML = shown.map(function(d) {
-        return '<button type="button" class="shop-chip' + (d[0] === _shopMenuFilter ? ' active' : '') + '" onclick="setShopMenuFilter(\'' + d[0] + '\')">' + escapeHtml(d[1]) + '</button>';
+        return '<button type="button" class="shop-chip' + (d[0] === _shopMenuFilter ? ' active' : '') + '"' + _ea('setShopMenuFilter', [String(d[0])]) + '>' + escapeHtml(d[1]) + '</button>';
     }).join('');
 }
 function renderShopMenu() {
@@ -720,7 +720,7 @@ function renderTrackCancel(o) {
     if (!row) return;
     if (!o.can_cancel) { row.innerHTML = ''; return; }
     if (!row.firstChild) {
-        row.innerHTML = '<button type="button" class="trk-cancel" onclick="openCancelOrder()">' + escapeHtml(ETEL_I18N.t('cancel_btn_order')) + '</button>';
+        row.innerHTML = '<button type="button" class="trk-cancel"' + _ea('openCancelOrder', []) + '>' + escapeHtml(ETEL_I18N.t('cancel_btn_order')) + '</button>';
     }
     _cancelReasons = o.cancel_reasons || {};
     _cancelFee = parseFloat(o.cancel_fee) || 0;
@@ -740,8 +740,8 @@ function openCancelOrder() {
         '<div id="cancel-opts">' + radios + '</div>' +
         '<textarea id="cancel-note" maxlength="200" placeholder="' + escapeHtml(ETEL_I18N.t('cancel_note')) + '" style="width:100%;padding:10px;border:1.5px solid rgba(212,175,55,.25);border-radius:8px;font-size:13px;min-height:56px;resize:none;box-sizing:border-box;margin:10px 0"></textarea>' +
         '<div id="cancel-err" role="alert" style="color:#e63946;font-size:12.5px;min-height:16px;margin-bottom:6px"></div>' +
-        '<button type="button" id="cancel-go" onclick="submitCancelOrder()" class="trk-cancel-go">' + escapeHtml(ETEL_I18N.t('cancel_confirm')) + '</button>' +
-        '<button type="button" onclick="closeModal()" class="trk-cancel-keep">' + escapeHtml(ETEL_I18N.t('cancel_keep')) + '</button>'
+        '<button type="button" id="cancel-go"' + _ea('submitCancelOrder', []) + ' class="trk-cancel-go">' + escapeHtml(ETEL_I18N.t('cancel_confirm')) + '</button>' +
+        '<button type="button"' + _ea('closeModal', []) + ' class="trk-cancel-keep">' + escapeHtml(ETEL_I18N.t('cancel_keep')) + '</button>'
     );
 }
 async function submitCancelOrder() {
@@ -771,7 +771,7 @@ function renderTrackChat(o) {
     if (!row) return;
     if (!window.EtelOrderChat || o.status === 'cancelled') { row.innerHTML = ''; return; }
     if (!row.firstChild) {
-        row.innerHTML = '<button type="button" class="trk-chat" onclick="EtelOrderChat.open(' + parseInt(_trackOrderId, 10) + ')">' + escapeHtml(ETEL_I18N.t('chat_btn')) + ' <span class="trk-chat-badge" style="display:none"></span></button>';
+        row.innerHTML = '<button type="button" class="trk-chat"' + _ea('EtelOrderChat.open', [parseInt(_trackOrderId, 10)]) + '>' + escapeHtml(ETEL_I18N.t('chat_btn')) + ' <span class="trk-chat-badge" style="display:none"></span></button>';
     }
     EtelOrderChat.unread(parseInt(_trackOrderId, 10)).then(function(n) {
         const b = row.querySelector('.trk-chat-badge');
@@ -897,7 +897,7 @@ function applyFilters() {
     // 'trending' (default) - leave in the API's own order, already rating-first.
     if (!list.length && itemsCache.length) {
         const empty = '<div class="filter-empty">' + escapeHtml(ETEL_I18N.t('filter_none')) +
-            ' <button type="button" onclick="clearFilters()">' + escapeHtml(ETEL_I18N.t('filter_clear')) + '</button></div>';
+            ' <button type="button"' + _ea('clearFilters', []) + '>' + escapeHtml(ETEL_I18N.t('filter_clear')) + '</button></div>';
         document.getElementById('items-grid').innerHTML = empty;
         document.getElementById('sg-scroll').innerHTML = '';
         const c = document.getElementById('sg-count'); if (c) c.textContent = '';
@@ -968,16 +968,16 @@ function renderItemsGrid(items, targetId) {
         const ic = catIcons[item.category] || catEmoji[item.category] || catIcons.default;
         const imgHtml = item.image_url
             ? itemPlaceholder(item.category, item.name)
-              + '<img loading="lazy" decoding="async" src="' + escUrl(item.image_url) + '" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover" onerror="this.onerror=null;this.style.display=\'none\'">'
+              + '<img loading="lazy" decoding="async" src="' + escUrl(item.image_url) + '" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover" data-fallback="hide">'
             : itemPlaceholder(item.category, item.name);
         const displayName = (ETEL_I18N.current() === 'am' && item.name_am) ? item.name_am : (item.name || '');
         // Stripped (not just apostrophe-escaped): this string ends up both
-        // inside a JS string literal AND inside an HTML onclick="..."
+        // inside a JS string literal AND inside an HTML attribute
         // attribute below, so a quote or angle bracket in an item/shop name
         // could otherwise break out of either context.
         const safeN = displayName.replace(/[<>"'\\]/g, '');
         const safeB = (item.business_name||'').replace(/[<>"'\\]/g, '');
-        return '<div class="offer-card" onclick="openItemDetail(' + item.id + ')" style="cursor:pointer">' +
+        return '<div class="offer-card"' + _ea('openItemDetail', [Number(item.id)]) + ' style="cursor:pointer">' +
             '<div class="offer-card-image" style="position:relative">' + imgHtml + '</div>' +
             (discounted ? '<div style="position:absolute;top:10px;left:10px;background:var(--red-solid);color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:6px">SALE</div>' : '') +
             (parseInt(item.times_ordered, 10) >= 3 ? '<div class="pop-badge">' + escapeHtml(ETEL_I18N.t('pop_badge')) + '</div>' : '') +
@@ -988,7 +988,7 @@ function renderItemsGrid(items, targetId) {
                     '<div class="offer-card-price">ETB ' + parseFloat(item.price).toFixed(0) + '</div>' +
                     ((item.is_available != 1 || parseInt(item.stock_quantity, 10) <= 0)
                         ? '<span class="sold-chip">' + escapeHtml(ETEL_I18N.t(item.sold_out ? 'sold_today' : 'item_unavail')) + '</span>'
-                        : '<button class="add-btn" onclick="event.stopPropagation();addToCart('+item.id+',\''+safeN+'\','+item.price+','+item.service_giver_id+',\''+safeB+'\')">+</button>') +
+                        : '<button class="add-btn"' + _ea('addToCart', [Number(item.id), safeN, Number(item.price), Number(item.service_giver_id), safeB], {stop: true}) + '>+</button>') +
                 '</div>' +
             '</div>' +
         '</div>';
@@ -1052,7 +1052,7 @@ function openItemDetail(itemId) {
     const discounted = item.original_price && parseFloat(item.original_price) > parseFloat(item.price);
     const ic = (catEmoji[item.category]) || '🍴';
     const imgHtml = item.image_url
-        ? '<img loading="lazy" decoding="async" src="' + escUrl(item.image_url) + '" alt="" style="width:100%;height:100%;object-fit:cover" onerror="this.onerror=null;this.style.display=\'none\'">'
+        ? '<img loading="lazy" decoding="async" src="' + escUrl(item.image_url) + '" alt="" style="width:100%;height:100%;object-fit:cover" data-fallback="hide">'
         : itemPlaceholder(item.category, item.name);
     const stock = parseInt(item.stock_quantity, 10);
     const available = item.is_available == 1 && (isNaN(stock) || stock > 0);
@@ -1071,7 +1071,7 @@ function openItemDetail(itemId) {
     modal.innerHTML =
         '<div style="background:var(--dark-2);width:100%;max-width:480px;max-height:88vh;overflow-y:auto;' +
              'border-radius:20px 20px 0 0;border:1px solid var(--glass-border);position:relative;">' +
-            '<button onclick="closeItemDetail()" style="position:absolute;top:14px;right:14px;z-index:2;' +
+            '<button' + _ea('closeItemDetail', []) + ' style="position:absolute;top:14px;right:14px;z-index:2;' +
                 'background:rgba(6,6,8,.6);color:var(--text);border:none;width:32px;height:32px;border-radius:50%;' +
                 'font-size:16px;cursor:pointer;">✕</button>' +
             '<div style="position:relative;width:100%;height:220px;background:var(--dark-3);display:flex;align-items:center;justify-content:center;' +
@@ -1096,13 +1096,13 @@ function openItemDetail(itemId) {
                 '</div>' +
                 (available ?
                     '<div style="display:flex;align-items:center;gap:14px;margin-bottom:16px;">' +
-                        '<button onclick="_detailQtyChange(-1)" style="width:36px;height:36px;border-radius:50%;border:1px solid var(--glass-border);' +
+                        '<button' + _ea('_detailQtyChange', [-1]) + ' style="width:36px;height:36px;border-radius:50%;border:1px solid var(--glass-border);' +
                             'background:var(--glass);color:var(--text);font-size:18px;cursor:pointer;">−</button>' +
                         '<span id="detail-qty" style="font-size:16px;font-weight:600;color:var(--text);min-width:20px;text-align:center;">1</span>' +
-                        '<button onclick="_detailQtyChange(1)" style="width:36px;height:36px;border-radius:50%;border:1px solid var(--glass-border);' +
+                        '<button' + _ea('_detailQtyChange', [1]) + ' style="width:36px;height:36px;border-radius:50%;border:1px solid var(--glass-border);' +
                             'background:var(--glass);color:var(--text);font-size:18px;cursor:pointer;">+</button>' +
                     '</div>' +
-                    '<button onclick="addToCartWithQty(' + item.id + ',\'' + safeN + '\',' + item.price + ',' + item.service_giver_id + ',\'' + safeB + '\',_detailQty);closeItemDetail();" ' +
+                    '<button' + _ea('detailAddToCart', [Number(item.id), safeN, Number(item.price), Number(item.service_giver_id), safeB]) + ' ' +
                         'style="width:100%;padding:14px;border:none;border-radius:12px;background:var(--gold-grad);' +
                         'color:var(--dark);font-weight:700;font-size:15px;cursor:pointer;">Add to Cart</button>'
                     : '') +
@@ -1111,6 +1111,18 @@ function openItemDetail(itemId) {
 
     modal.style.display = 'flex';
 }
+// The shared scripts declare DiagPanel with const, which is not a property of window: make it reachable by name for the diagnostics buttons (data-act).
+try { if (typeof DiagPanel !== 'undefined' && !window.DiagPanel) window.DiagPanel = DiagPanel; } catch (e) { /* no diagnostics panel on this page */ }
+// Markup attributes for a button/field action (see js/etel-actions.js): _ea('openShopDetail', [id]) gives ' data-act="openShopDetail" data-args="[3]"'.
+// Written this way, rather than as an inline event attribute, so the page can run under a Content-Security-Policy without 'unsafe-inline'.
+function _ea(name, args, opts) { return EtelActions.attrs(name, args, opts); }
+// Add from the item detail sheet: the chosen quantity, then close the sheet.
+function detailAddToCart(itemId, name, price, sgId, sgName) {
+    addToCartWithQty(itemId, name, price, sgId, sgName, _detailQty);
+    closeItemDetail();
+}
+// A button that opens a file picker or presses another control.
+function clickById(id) { var el = document.getElementById(id); if (el) el.click(); }
 function _detailQtyChange(delta) {
     _detailQty = Math.max(1, _detailQty + delta);
     const el = document.getElementById('detail-qty');
@@ -1354,20 +1366,20 @@ function tipBlockHtml() {
     if (TIP_MAX <= 0) return '';   // the admin switched tips off
     loadTipOptions();
     const t = function (k) { return escapeHtml(ETEL_I18N.t(k)); };
-    const chip = function (label, active, onclick) {
-        return '<button type="button" onclick="' + onclick + '" style="flex:1 1 0;min-width:64px;padding:10px 6px;border-radius:12px;font-size:13px;font-weight:800;cursor:pointer;font-family:inherit;border:1.5px solid ' +
+    const chip = function (label, active, action) {
+        return '<button type="button"' + _ea(action[0], action.slice(1)) + ' style="flex:1 1 0;min-width:64px;padding:10px 6px;border-radius:12px;font-size:13px;font-weight:800;cursor:pointer;font-family:inherit;border:1.5px solid ' +
             (active ? '#D4AF37' : 'rgba(212,175,55,.3)') + ';background:' + (active ? '#D4AF37' : 'rgba(212,175,55,.08)') + ';color:' + (active ? '#14141f' : '#F0CA58') + '">' + label + '</button>';
     };
     const isPreset = TIP_PRESETS.indexOf(_tip) !== -1;
-    let chips = chip(t('tip_none'), _tip === 0 && !_tipCustomOpen, 'setTip(0)') +
-        TIP_PRESETS.map(function (v) { return chip('ETB ' + v, _tip === v && !_tipCustomOpen, 'setTip(' + v + ')'); }).join('') +
-        chip(_tip > 0 && !isPreset && !_tipCustomOpen ? 'ETB ' + _tip : t('tip_custom'), (_tip > 0 && !isPreset) || _tipCustomOpen, 'openTipCustom()');
+    let chips = chip(t('tip_none'), _tip === 0 && !_tipCustomOpen, ['setTip', 0]) +
+        TIP_PRESETS.map(function (v) { return chip('ETB ' + v, _tip === v && !_tipCustomOpen, ['setTip', v]); }).join('') +
+        chip(_tip > 0 && !isPreset && !_tipCustomOpen ? 'ETB ' + _tip : t('tip_custom'), (_tip > 0 && !isPreset) || _tipCustomOpen, ['openTipCustom']);
     return '<div class="co-tip" style="margin-top:14px;padding:12px;border:1.5px solid rgba(212,175,55,.3);border-radius:14px;background:rgba(212,175,55,.05)">' +
         '<div style="font-size:13.5px;font-weight:800;color:#F7F1DF">🏍️ ' + t('tip_title') + '</div>' +
         '<div style="font-size:11.5px;color:rgba(247,241,223,.6);margin:2px 0 10px">' + t('tip_sub') + '</div>' +
         '<div style="display:flex;flex-wrap:wrap;gap:8px">' + chips + '</div>' +
         (_tipCustomOpen ? '<div style="display:flex;gap:8px;margin-top:10px"><input id="co-tip-input" type="number" inputmode="decimal" min="0" max="' + TIP_MAX + '" step="1" placeholder="' + escapeHtml(ETEL_I18N.t('tip_custom_ph')) + '" value="' + (_tip > 0 && !isPreset ? _tip : '') + '" style="flex:1;min-width:0;padding:10px;border:1.5px solid rgba(212,175,55,.35);border-radius:10px;background:rgba(255,255,255,.04);color:#F7F1DF;font-size:14px">' +
-            '<button type="button" onclick="applyTipCustom()" style="padding:10px 16px;border:none;border-radius:10px;background:#D4AF37;color:#14141f;font-weight:800;cursor:pointer">OK</button></div>' : '') +
+            '<button type="button"' + _ea('applyTipCustom', []) + ' style="padding:10px 16px;border:none;border-radius:10px;background:#D4AF37;color:#14141f;font-weight:800;cursor:pointer">OK</button></div>' : '') +
         '</div>';
 }
 async function openPointsSheet() {
@@ -1431,14 +1443,14 @@ function savedPlacesRow() {
     return '<div class="sp-title">' + escapeHtml(ETEL_I18N.t('saved_places')) + '</div><div class="sp-row">' +
         _savedPlaces.slice(0, 6).map(function(a) {
             var on = cur && (a.address_line || '').trim().toLowerCase() === cur;
-            return '<button type="button" class="sp-chip' + (on ? ' on' : '') + '" onclick="useSavedPlace(' + Number(a.id) + ')">' +
+            return '<button type="button" class="sp-chip' + (on ? ' on' : '') + '"' + _ea('useSavedPlace', [Number(a.id)]) + '>' +
                 (a.is_default ? '🏠 ' : '📍 ') + escapeHtml(a.label || a.address_line) + '</button>';
         }).join('') + '</div>';
 }
 function saveThisAddressRow() {
     if (!(typeof Auth !== 'undefined' && Auth.getToken && Auth.getToken())) return '';
     if (_savedPlacesState !== 'done' || !(_deliveryAddr || '').trim() || _addrKnown(_deliveryAddr)) return '';
-    return '<button type="button" class="sp-save" onclick="saveCurrentAddress()">' + escapeHtml(ETEL_I18N.t('save_this_addr')) + '</button>';
+    return '<button type="button" class="sp-save"' + _ea('saveCurrentAddress', []) + '>' + escapeHtml(ETEL_I18N.t('save_this_addr')) + '</button>';
 }
 async function saveCurrentAddress() {
     var inp = document.getElementById('co-address');
@@ -1488,9 +1500,9 @@ function renderCartDrawer() {
             '<div style="flex:1"><div style="font-weight:600;font-size:13px;color:#F7F1DF">' + escapeHtml(c.name) + '</div>' +
             '<div style="font-size:11px;color:rgba(247,241,223,.55)">ETB ' + c.price.toFixed(2) + ' each</div></div>' +
             '<div style="display:flex;align-items:center;gap:8px">' +
-            '<button onclick="changeQty(' + i + ',-1)" style="width:26px;height:26px;border:1.5px solid #ddd;border-radius:50%;background:#fff;cursor:pointer;font-size:14px">-</button>' +
+            '<button' + _ea('changeQty', [i, -1]) + ' style="width:26px;height:26px;border:1.5px solid #ddd;border-radius:50%;background:#fff;cursor:pointer;font-size:14px">-</button>' +
             '<span style="font-weight:700;font-size:14px;min-width:18px;text-align:center">' + c.quantity + '</span>' +
-            '<button onclick="changeQty(' + i + ',1)" style="width:26px;height:26px;border:none;border-radius:50%;background:#D4AF37;color:#fff;cursor:pointer;font-size:14px">+</button>' +
+            '<button' + _ea('changeQty', [i, 1]) + ' style="width:26px;height:26px;border:none;border-radius:50%;background:#D4AF37;color:#fff;cursor:pointer;font-size:14px">+</button>' +
             '</div><div style="margin-left:10px;font-weight:700;color:#F7F1DF;font-size:13px;min-width:70px;text-align:right">ETB ' + (c.price*c.quantity).toFixed(2) + '</div></div>';
     }).join('');
     const estTime = getEstimatedTime(selectedZone);
@@ -1500,7 +1512,7 @@ function renderCartDrawer() {
         '<div style="display:flex;justify-content:space-between;font-size:13px;color:rgba(247,241,223,.55);margin-bottom:6px"><span>' + ETEL_I18N.t('lbl_delivery_fee') + '' + (selectedZone ? ' (' + estTime + ' min)' : '') + '</span><span>ETB ' + deliveryFee.toFixed(2) + '</span></div>' +
         '<div style="display:flex;justify-content:space-between;font-size:13px;color:rgba(247,241,223,.55);margin-bottom:12px"><span>' + ETEL_I18N.t('lbl_service_charge') + ' (' + SERVICE_CHARGE_PCT + '%)</span><span>ETB ' + serviceCharge.toFixed(2) + '</span></div>' +
         (pointsDisc > 0 ? '<div class="co-discount" style="display:flex;justify-content:space-between;font-size:13px;font-weight:700;color:#2ECC71;margin:-6px 0 12px"><span>' + escapeHtml(ETEL_I18N.t('pts_applied')) + ' (' + pointsUsed + ')</span><span>−ETB ' + pointsDisc.toFixed(2) + '</span></div>' : '') +
-        (promoDisc > 0 ? '<div class="co-discount" style="display:flex;justify-content:space-between;font-size:13px;font-weight:700;color:#2ECC71;margin:-6px 0 12px"><span>🏷️ ' + escapeHtml(_promo.code) + ' <button type="button" onclick="removePromo()" style="background:none;border:none;color:inherit;text-decoration:underline;font-size:11px;cursor:pointer;padding:0 0 0 6px">' + escapeHtml(ETEL_I18N.t('promo_remove')) + '</button></span><span>−ETB ' + promoDisc.toFixed(2) + '</span></div>' : '') +
+        (promoDisc > 0 ? '<div class="co-discount" style="display:flex;justify-content:space-between;font-size:13px;font-weight:700;color:#2ECC71;margin:-6px 0 12px"><span>🏷️ ' + escapeHtml(_promo.code) + ' <button type="button"' + _ea('removePromo', []) + ' style="background:none;border:none;color:inherit;text-decoration:underline;font-size:11px;cursor:pointer;padding:0 0 0 6px">' + escapeHtml(ETEL_I18N.t('promo_remove')) + '</button></span><span>−ETB ' + promoDisc.toFixed(2) + '</span></div>' : '') +
         (tipAmt > 0 ? '<div style="display:flex;justify-content:space-between;font-size:13px;color:rgba(247,241,223,.55);margin:-6px 0 12px"><span>' + ETEL_I18N.t('lbl_tip') + '</span><span>ETB ' + tipAmt.toFixed(2) + '</span></div>' : '') +
         '<div style="display:flex;justify-content:space-between;font-size:16px;font-weight:700;color:#F7F1DF"><span>' + ETEL_I18N.t('lbl_total') + '</span><span>ETB ' + grand.toFixed(2) + '</span></div></div>';
     document.getElementById('cart-total').insertAdjacentHTML('beforeend', tipBlockHtml());
@@ -1508,8 +1520,8 @@ function renderCartDrawer() {
     if (!_promo) {
         document.getElementById('cart-total').insertAdjacentHTML('beforeend',
             '<div class="co-promo" style="margin-top:14px"><div style="display:flex;gap:8px">' +
-            '<input type="text" id="co-promo-input" autocomplete="off" autocapitalize="characters" placeholder="🏷️ ' + escapeHtml(ETEL_I18N.t('promo_have')) + '" style="flex:1;min-width:0;padding:10px;border:1.5px solid rgba(212,175,55,.25);border-radius:8px;font-size:13px;text-transform:uppercase;box-sizing:border-box;background:rgba(255,255,255,.04);color:inherit" onkeydown="if(event.key===\'Enter\'){event.preventDefault();applyPromo();}">' +
-            '<button type="button" onclick="applyPromo()" style="padding:10px 16px;background:rgba(212,175,55,.15);border:1.5px solid rgba(212,175,55,.45);border-radius:8px;color:#F0CA58;font-size:12.5px;font-weight:800;cursor:pointer">' + escapeHtml(ETEL_I18N.t('promo_apply')) + '</button></div>' +
+            '<input type="text" id="co-promo-input" autocomplete="off" autocapitalize="characters" placeholder="🏷️ ' + escapeHtml(ETEL_I18N.t('promo_have')) + '" style="flex:1;min-width:0;padding:10px;border:1.5px solid rgba(212,175,55,.25);border-radius:8px;font-size:13px;text-transform:uppercase;box-sizing:border-box;background:rgba(255,255,255,.04);color:inherit"' + _ea('applyPromo', [], {event: 'keydown', key: 'Enter', prevent: true}) + '>' +
+            '<button type="button"' + _ea('applyPromo', []) + ' style="padding:10px 16px;background:rgba(212,175,55,.15);border:1.5px solid rgba(212,175,55,.45);border-radius:8px;color:#F0CA58;font-size:12.5px;font-weight:800;cursor:pointer">' + escapeHtml(ETEL_I18N.t('promo_apply')) + '</button></div>' +
             '<div id="co-promo-msg" style="font-size:11.5px;margin-top:6px;min-height:14px"></div></div>');
     }
     if (_loyalty && (pointsAvail > 0 || (_loyalty.points > 0 && _loyalty.points < _loyalty.min_redeem))) {
@@ -1517,7 +1529,7 @@ function renderCartDrawer() {
         document.getElementById('cart-total').insertAdjacentHTML('beforeend', pointsAvail > 0
             ? '<label class="co-points" style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:12px;padding:11px 12px;border:1.5px solid rgba(212,175,55,.35);border-radius:10px;cursor:pointer;font-size:13px;font-weight:700">' +
               '<span>⭐ ' + escapeHtml(ETEL_I18N.t('pts_use')) + ' <span style="font-weight:600;opacity:.7">(' + pointsAvail + ' = −ETB ' + (pointsAvail / factor).toFixed(0) + ')</span></span>' +
-              '<input type="checkbox" ' + (_usePoints ? 'checked' : '') + ' onchange="togglePointsUse(this.checked)" style="width:20px;height:20px;accent-color:#D4AF37"></label>'
+              '<input type="checkbox" ' + (_usePoints ? 'checked' : '') + '' + _ea('togglePointsUse', [EtelActions.CHECKED], {event: 'change'}) + ' style="width:20px;height:20px;accent-color:#D4AF37"></label>'
             : '<div class="co-points" style="margin-top:12px;font-size:12px;opacity:.65">⭐ ' + escapeHtml(ETEL_I18N.t('pts_need').replace('{n}', String(_loyalty.min_redeem - _loyalty.points))) + '</div>');
     }
     setTimeout(_promoRecheck, 0);
@@ -1539,7 +1551,7 @@ function renderCartDrawer() {
         '<div style="display:flex;align-items:center;justify-content:space-between;padding:12px;background:rgba(255,255,255,.03);border:1px solid var(--glass-border);border-radius:12px;margin-bottom:14px">' +
         '<div><div style="font-size:13px;font-weight:700;color:var(--text)">🕐 Schedule for later</div><div style="font-size:11px;color:rgba(247,241,223,.5);margin-top:2px">Choose a date &amp; time for this order</div></div>' +
         '<label style="position:relative;display:inline-block;width:44px;height:24px;flex-shrink:0">' +
-        '<input type="checkbox" id="co-schedule-toggle" onchange="toggleScheduleDelivery(this.checked)" style="opacity:0;width:0;height:0" ' + (_scheduleEnabled ? 'checked' : '') + '>' +
+        '<input type="checkbox" id="co-schedule-toggle"' + _ea('toggleScheduleDelivery', [EtelActions.CHECKED], {event: 'change'}) + ' style="opacity:0;width:0;height:0" ' + (_scheduleEnabled ? 'checked' : '') + '>' +
         '<span style="position:absolute;inset:0;background:' + (_scheduleEnabled ? '#D4AF37' : 'rgba(255,255,255,.15)') + ';border-radius:24px;transition:.2s"></span>' +
         '<span style="position:absolute;top:3px;left:' + (_scheduleEnabled ? '23px' : '3px') + ';width:18px;height:18px;background:#fff;border-radius:50%;transition:.2s"></span>' +
         '</label></div>' +
@@ -1554,16 +1566,16 @@ function renderCartDrawer() {
         '<label style="display:block;font-size:11px;font-weight:700;color:rgba(247,241,223,.55);margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px">' + ETEL_I18N.t('lbl_delivery_address') + '</label>' +
         '<div style="display:flex;gap:8px;margin-bottom:4px">' +
         '<input type="text" id="co-address" autocomplete="off" placeholder="' + ETEL_I18N.t('ph_address') + '" value="' + _deliveryAddr.replace(/"/g,'&quot;') + '" style="flex:1;padding:10px;border:1.5px solid rgba(212,175,55,.25);border-radius:8px;font-size:13px;box-sizing:border-box;background:rgba(255,255,255,.03);color:var(--text)">' +
-        '<button onclick="getMyLocation()" id="gps-btn" title="Use my current location" style="padding:10px 12px;background:#D4AF37;color:#fff;border:none;border-radius:8px;font-size:18px;cursor:pointer;white-space:nowrap">📍</button>' +
+        '<button' + _ea('getMyLocation', []) + ' id="gps-btn" title="Use my current location" style="padding:10px 12px;background:#D4AF37;color:#fff;border:none;border-radius:8px;font-size:18px;cursor:pointer;white-space:nowrap">📍</button>' +
         '</div>' +
         saveThisAddressRow() +
         '<div id="co-zone-hint" style="font-size:11px;color:' + (selectedZone?'#2ECC71':'#aaa') + ';margin-bottom:12px;padding:0 2px">' + zoneHint + '</div>' +
         '<!-- OPTIONAL GATE/ENTRANCE PHOTO -->' +
-        '<input type="file" id="co-photo-file" accept="image/*" capture="environment" style="display:none" onchange="uploadDeliveryPhoto(this)">' +
+        '<input type="file" id="co-photo-file" accept="image/*" capture="environment" style="display:none"' + _ea('uploadDeliveryPhoto', [EtelActions.EL], {event: 'change'}) + '>' +
         '<div id="co-photo-row" style="margin-bottom:14px">' +
         (_deliveryPhotoUrl
-            ? '<div style="display:flex;align-items:center;gap:8px"><img src="' + escUrl(_deliveryPhotoUrl) + '" style="width:44px;height:44px;object-fit:cover;border-radius:8px;border:1px solid rgba(212,175,55,.25)"><span style="font-size:12px;color:#2ECC71;flex:1">Photo added</span><button onclick="removeDeliveryPhoto()" style="padding:6px 10px;background:rgba(255,255,255,.06);border:none;border-radius:8px;font-size:11px;cursor:pointer;color:rgba(247,241,223,.4)">Remove</button></div>'
-            : '<button onclick="document.getElementById(\'co-photo-file\').click()" style="width:100%;padding:9px;background:rgba(255,255,255,.03);border:1.5px dashed rgba(212,175,55,.3);border-radius:8px;font-size:12px;color:#F0CA58;cursor:pointer">📷 Add a photo of your gate/entrance (optional — helps the courier find you)</button>') +
+            ? '<div style="display:flex;align-items:center;gap:8px"><img src="' + escUrl(_deliveryPhotoUrl) + '" style="width:44px;height:44px;object-fit:cover;border-radius:8px;border:1px solid rgba(212,175,55,.25)"><span style="font-size:12px;color:#2ECC71;flex:1">Photo added</span><button' + _ea('removeDeliveryPhoto', []) + ' style="padding:6px 10px;background:rgba(255,255,255,.06);border:none;border-radius:8px;font-size:11px;cursor:pointer;color:rgba(247,241,223,.4)">Remove</button></div>'
+            : '<button' + _ea('clickById', ['co-photo-file']) + ' style="width:100%;padding:9px;background:rgba(255,255,255,.03);border:1.5px dashed rgba(212,175,55,.3);border-radius:8px;font-size:12px;color:#F0CA58;cursor:pointer">📷 Add a photo of your gate/entrance (optional — helps the courier find you)</button>') +
         '</div>' +
         '<!-- RECIPIENT -->' +
         '<label style="display:block;font-size:11px;font-weight:700;color:rgba(247,241,223,.55);margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px">' + ETEL_I18N.t('lbl_recipient_name') + '</label>' +
@@ -1616,7 +1628,7 @@ function renderCartDrawer() {
         '<p style="font-size:13px;color:#4ADE80;margin-bottom:4px">Dial <strong>*150#</strong> on your phone</p>' +
         '<p id="tb-poll-msg" style="font-size:12px;color:rgba(247,241,223,.55)">Waiting for confirmation… <span id="tb-counter">120</span>s</p>' +
         '</div>' +
-        '<button onclick="handleCheckout()" id="checkout-btn" style="width:100%;padding:14px;background:linear-gradient(135deg,#D4AF37,#C8960C);color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer">' + ETEL_I18N.t('btn_place_order') + ' — ETB ' + grand.toFixed(2) + '</button>' +
+        '<button' + _ea('handleCheckout', []) + ' id="checkout-btn" style="width:100%;padding:14px;background:linear-gradient(135deg,#D4AF37,#C8960C);color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer">' + ETEL_I18N.t('btn_place_order') + ' — ETB ' + grand.toFixed(2) + '</button>' +
         '</div>';
 
     // Restore payment selection UI state
@@ -1723,7 +1735,7 @@ function tierOptionBtn(tier, zone) {
     const fee = Math.round((HAWASSA_FEES[zone] ? HAWASSA_FEES[zone].fee : 50) * Number(tier.multiplier));
     const baseTime = HAWASSA_FEES[zone] ? HAWASSA_FEES[zone].time : 25;
     const eta = Math.max(3, baseTime + Number(tier.eta_delta_min));
-    return '<button data-tier="'+tier.tier_key+'" onclick="selectTier(\''+tier.tier_key+'\')" style="padding:10px 6px;border:2px solid '+(active?'#D4AF37':'rgba(212,175,55,.18)')+';border-radius:10px;background:'+(active?'linear-gradient(145deg,rgba(212,175,55,.22),rgba(212,175,55,.08))':'rgba(255,255,255,.03)')+';box-shadow:'+(active?'0 0 16px rgba(212,175,55,.35)':'none')+';cursor:pointer;text-align:center;transition:all .2s">' +
+    return '<button data-tier="'+tier.tier_key+'"' + _ea('selectTier', [String(tier.tier_key)]) + ' style="padding:10px 6px;border:2px solid '+(active?'#D4AF37':'rgba(212,175,55,.18)')+';border-radius:10px;background:'+(active?'linear-gradient(145deg,rgba(212,175,55,.22),rgba(212,175,55,.08))':'rgba(255,255,255,.03)')+';box-shadow:'+(active?'0 0 16px rgba(212,175,55,.35)':'none')+';cursor:pointer;text-align:center;transition:all .2s">' +
         '<span style="display:block;font-size:20px;margin-bottom:2px">'+(tier.icon||'📦')+'</span>' +
         '<span style="display:block;font-weight:700;font-size:11px;color:'+(active?'#F0CA58':'#F7F1DF')+'">'+tier.label+'</span>' +
         '<span style="display:block;font-size:10px;color:rgba(247,241,223,.55);margin-top:2px">'+eta+' min · ETB '+fee+'</span>' +
@@ -1749,7 +1761,7 @@ function paymentOptionBtn(method, label, sub, disabled) {
             '</button>';
     }
     const active = selectedPayment === method;
-    return '<button data-pay="'+method+'" onclick="selectPayment(\''+method+'\')" style="padding:10px 8px;border:2px solid '+(active?'#D4AF37':'rgba(212,175,55,.18)')+';border-radius:10px;background:'+(active?'linear-gradient(145deg,rgba(212,175,55,.22),rgba(212,175,55,.08))':'rgba(255,255,255,.03)')+';box-shadow:'+(active?'0 0 16px rgba(212,175,55,.35)':'none')+';cursor:pointer;text-align:left;transition:all .2s">' +
+    return '<button data-pay="'+method+'"' + _ea('selectPayment', [String(method)]) + ' style="padding:10px 8px;border:2px solid '+(active?'#D4AF37':'rgba(212,175,55,.18)')+';border-radius:10px;background:'+(active?'linear-gradient(145deg,rgba(212,175,55,.22),rgba(212,175,55,.08))':'rgba(255,255,255,.03)')+';box-shadow:'+(active?'0 0 16px rgba(212,175,55,.35)':'none')+';cursor:pointer;text-align:left;transition:all .2s">' +
         '<span style="display:block;font-weight:700;font-size:12px;color:'+(active?'#F0CA58':'#F7F1DF')+'">'+label+'</span>' +
         '<span style="display:block;font-size:10px;color:rgba(247,241,223,.55);margin-top:2px">'+sub+'</span>' +
         '</button>';
@@ -2028,7 +2040,7 @@ async function loadScheduledOrders() {
             return '<div style="display:flex;justify-content:space-between;align-items:center;padding:12px;margin-bottom:8px;background:rgba(212,175,55,.08);border:1px solid rgba(212,175,55,.25);border-radius:12px">' +
                 '<div><div style="font-size:13px;font-weight:700;color:#F0CA58">' + fmtDate(s.scheduled_at) + '</div>' +
                 '<div style="font-size:11px;color:rgba(247,241,223,.5);margin-top:2px">' + (s.repeat_daily ? 'Repeats daily' : 'One-time') + '</div></div>' +
-                '<button onclick="cancelScheduledOrder(' + s.id + ')" style="padding:7px 12px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);color:#FCA5A5;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer">Cancel</button></div>';
+                '<button' + _ea('cancelScheduledOrder', [Number(s.id)]) + ' style="padding:7px 12px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);color:#FCA5A5;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer">Cancel</button></div>';
         }).join('');
 }
 async function cancelScheduledOrder(id) {
@@ -2249,7 +2261,7 @@ async function loadOrders() {
             '<div style="font-size:48px;margin-bottom:16px">📦</div>' +
             '<div style="font-size:16px;font-weight:600;color:rgba(247,241,223,.55);margin-bottom:8px">No orders yet</div>' +
             '<div style="font-size:13px">Start browsing to place your first order!</div>' +
-            '<button onclick="switchCategory(\'home\')" style="margin-top:20px;padding:12px 24px;background:#D4AF37;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer">Browse Items</button>' +
+            '<button' + _ea('switchCategory', ['home']) + ' style="margin-top:20px;padding:12px 24px;background:#D4AF37;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer">Browse Items</button>' +
             '</div>';
         return;
     }
@@ -2271,11 +2283,11 @@ async function loadOrders() {
             '<div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;color:rgba(247,241,223,.55)">' +
             '<span>' + fmtDate(o.placed_at) + '</span>' +
             '<span style="font-weight:700;color:#D4AF37;font-size:14px">ETB ' + parseFloat(o.fare_total||0).toFixed(2) + '</span></div>' +
-            (o.status !== 'cancelled' && o.status !== 'delivered' ? '<button onclick="openTrackOrder('+o.id+')" style="margin-top:10px;width:100%;padding:8px;background:rgba(212,175,55,.12);border:1.5px solid rgba(212,175,55,.35);border-radius:8px;color:#F0CA58;font-size:12px;font-weight:700;cursor:pointer">🛵 Track Order</button>' : '') +
-            (o.status !== 'cancelled' && o.status !== 'delivered' && window.EtelOrderChat ? '<button onclick="EtelOrderChat.open('+o.id+')" style="margin-top:8px;width:100%;padding:8px;background:transparent;border:1.5px solid rgba(212,175,55,.35);border-radius:8px;color:#F0CA58;font-size:12px;font-weight:700;cursor:pointer">' + escapeHtml(ETEL_I18N.t('chat_btn_short')) + '</button>' : '') +
-            ((isDelivered || o.status === 'cancelled') ? '<button onclick="reorderOrder('+o.id+')" class="reorder-btn" style="margin-top:10px;width:100%;padding:9px;background:linear-gradient(135deg,#F0CA58,#D4AF37);border:none;border-radius:8px;color:#1a1400;font-size:12.5px;font-weight:800;cursor:pointer">🔁 ' + escapeHtml(ETEL_I18N.t('reorder_btn')) + '</button>' : '') +
-            (isDelivered ? (o.my_rating ? '<div style="margin-top:10px;text-align:center;font-size:12.5px;color:#F0CA58">' + '★'.repeat(o.my_rating) + '☆'.repeat(5 - o.my_rating) + ' <span style="opacity:.7">' + escapeHtml(ETEL_I18N.t('rate_yours')) + '</span></div>' : '<button onclick="openRating('+o.id+')" style="margin-top:10px;width:100%;padding:8px;background:#fff;border:1.5px solid #D4AF37;border-radius:8px;color:#D4AF37;font-size:12px;font-weight:700;cursor:pointer">⭐ Rate this order</button>') : '') +
-            (o.status !== 'cancelled' ? '<button onclick="openOrderIssue('+o.id+',\''+o.order_code+'\')" style="margin-top:8px;width:100%;padding:8px;background:#fff;border:1.5px solid #B8B0A0;border-radius:8px;color:rgba(247,241,223,.5);font-size:12px;font-weight:700;cursor:pointer">⚠️ Report an issue</button>' : '') +
+            (o.status !== 'cancelled' && o.status !== 'delivered' ? '<button' + _ea('openTrackOrder', [Number(o.id)]) + ' style="margin-top:10px;width:100%;padding:8px;background:rgba(212,175,55,.12);border:1.5px solid rgba(212,175,55,.35);border-radius:8px;color:#F0CA58;font-size:12px;font-weight:700;cursor:pointer">🛵 Track Order</button>' : '') +
+            (o.status !== 'cancelled' && o.status !== 'delivered' && window.EtelOrderChat ? '<button' + _ea('EtelOrderChat.open', [Number(o.id)]) + ' style="margin-top:8px;width:100%;padding:8px;background:transparent;border:1.5px solid rgba(212,175,55,.35);border-radius:8px;color:#F0CA58;font-size:12px;font-weight:700;cursor:pointer">' + escapeHtml(ETEL_I18N.t('chat_btn_short')) + '</button>' : '') +
+            ((isDelivered || o.status === 'cancelled') ? '<button' + _ea('reorderOrder', [Number(o.id)]) + ' class="reorder-btn" style="margin-top:10px;width:100%;padding:9px;background:linear-gradient(135deg,#F0CA58,#D4AF37);border:none;border-radius:8px;color:#1a1400;font-size:12.5px;font-weight:800;cursor:pointer">🔁 ' + escapeHtml(ETEL_I18N.t('reorder_btn')) + '</button>' : '') +
+            (isDelivered ? (o.my_rating ? '<div style="margin-top:10px;text-align:center;font-size:12.5px;color:#F0CA58">' + '★'.repeat(o.my_rating) + '☆'.repeat(5 - o.my_rating) + ' <span style="opacity:.7">' + escapeHtml(ETEL_I18N.t('rate_yours')) + '</span></div>' : '<button' + _ea('openRating', [Number(o.id)]) + ' style="margin-top:10px;width:100%;padding:8px;background:#fff;border:1.5px solid #D4AF37;border-radius:8px;color:#D4AF37;font-size:12px;font-weight:700;cursor:pointer">⭐ Rate this order</button>') : '') +
+            (o.status !== 'cancelled' ? '<button' + _ea('openOrderIssue', [Number(o.id), String(o.order_code)]) + ' style="margin-top:8px;width:100%;padding:8px;background:#fff;border:1.5px solid #B8B0A0;border-radius:8px;color:rgba(247,241,223,.5);font-size:12px;font-weight:700;cursor:pointer">⚠️ Report an issue</button>' : '') +
             '</div>';
     }).join('');
 }
@@ -2399,18 +2411,18 @@ function renderConfirmCard(c) {
 
     const methodToggle =
         '<div style="display:flex;gap:6px;margin-bottom:12px">' +
-        '<button onclick="setConfirmPayMethod(' + orderId + ',\'cash\')" style="flex:1;padding:8px;border-radius:8px;border:1.5px solid ' + (method === 'cash' ? '#fff' : 'rgba(255,255,255,.35)') + ';background:' + (method === 'cash' ? 'rgba(255,255,255,.22)' : 'transparent') + ';color:#fff;font-size:12px;font-weight:700;cursor:pointer">💵 Cash</button>' +
-        '<button onclick="setConfirmPayMethod(' + orderId + ',\'wallet\')" style="flex:1;padding:8px;border-radius:8px;border:1.5px solid ' + (method === 'wallet' ? '#fff' : 'rgba(255,255,255,.35)') + ';background:' + (method === 'wallet' ? 'rgba(255,255,255,.22)' : 'transparent') + ';color:#fff;font-size:12px;font-weight:700;cursor:pointer">💰 ኢE Pay</button>' +
+        '<button' + _ea('setConfirmPayMethod', [Number(orderId), 'cash']) + ' style="flex:1;padding:8px;border-radius:8px;border:1.5px solid ' + (method === 'cash' ? '#fff' : 'rgba(255,255,255,.35)') + ';background:' + (method === 'cash' ? 'rgba(255,255,255,.22)' : 'transparent') + ';color:#fff;font-size:12px;font-weight:700;cursor:pointer">💵 Cash</button>' +
+        '<button' + _ea('setConfirmPayMethod', [Number(orderId), 'wallet']) + ' style="flex:1;padding:8px;border-radius:8px;border:1.5px solid ' + (method === 'wallet' ? '#fff' : 'rgba(255,255,255,.35)') + ';background:' + (method === 'wallet' ? 'rgba(255,255,255,.22)' : 'transparent') + ';color:#fff;font-size:12px;font-weight:700;cursor:pointer">💰 ኢE Pay</button>' +
         '</div>';
 
     const actionBlock = method === 'wallet'
-        ? '<button onclick="customerPayWalletOrder(' + orderId + ',' + fare + ')" style="width:100%;padding:10px;background:rgba(255,255,255,.92);color:#27ae60;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer">💰 Pay ETB ' + fare.toFixed(2) + ' with ኢE Pay</button>'
+        ? '<button' + _ea('customerPayWalletOrder', [Number(orderId), Number(fare)]) + ' style="width:100%;padding:10px;background:rgba(255,255,255,.92);color:#27ae60;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer">💰 Pay ETB ' + fare.toFixed(2) + ' with ኢE Pay</button>'
         : '<div style="background:rgba(255,255,255,.2);border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:12px">' +
           '<label style="display:flex;align-items:center;gap:8px;cursor:pointer">' +
           '<input type="checkbox" id="cust-pay-conf-' + orderId + '" style="width:16px;height:16px;cursor:pointer">' +
           '<span>I confirm I paid <strong>ETB ' + fare.toFixed(2) + '</strong> cash to the courier</span>' +
           '</label></div>' +
-          '<button onclick="customerConfirmDelivery(' + orderId + ',1)" style="width:100%;padding:10px;background:rgba(255,255,255,.92);color:#27ae60;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer">✅ Confirm I Received My Order</button>';
+          '<button' + _ea('customerConfirmDelivery', [Number(orderId), 1]) + ' style="width:100%;padding:10px;background:rgba(255,255,255,.92);color:#27ae60;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer">✅ Confirm I Received My Order</button>';
 
     return '<div style="background:linear-gradient(135deg,#2ECC71,#27ae60);color:#fff;border-radius:16px;padding:20px;margin-bottom:12px;box-shadow:0 4px 20px rgba(46,204,113,.35)">' +
         '<div style="font-size:14px;font-weight:700;margin-bottom:4px">🚪 Your order has been delivered!</div>' +
@@ -2613,13 +2625,13 @@ function _rateStarRow(key, label, required) {
     return '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">' +
         '<span style="font-size:13px;font-weight:700;color:var(--text)">' + escapeHtml(label) + (required ? '' : ' <span style="font-weight:500;opacity:.5;font-size:11px">(optional)</span>') + '</span>' +
         '<span class="rate-stars" data-row="' + key + '" style="display:flex;gap:4px;font-size:26px">' +
-        [1,2,3,4,5].map(function(n){ return '<span role="button" onclick="setRateStar(\'' + key + '\',' + n + ')" data-n="' + n + '" style="cursor:pointer;opacity:.28;transition:opacity .15s">⭐</span>'; }).join('') +
+        [1,2,3,4,5].map(function(n){ return '<span role="button"' + _ea('setRateStar', [String(key), n]) + ' data-n="' + n + '" style="cursor:pointer;opacity:.28;transition:opacity .15s">⭐</span>'; }).join('') +
         '</span></div>';
 }
 function openRating(orderId) {
     _rate = {overall: 0, food: 0, courier: 0, tags: []};
     const tagBtn = function(k) {
-        return '<button type="button" class="rate-tag" data-tag="' + k + '" onclick="toggleRateTag(\'' + k + '\')" style="padding:7px 11px;border-radius:999px;border:1.5px solid rgba(212,175,55,.3);background:transparent;color:var(--text);font-size:12px;font-weight:600;cursor:pointer">' + escapeHtml(ETEL_I18N.t('tag_' + k)) + '</button>';
+        return '<button type="button" class="rate-tag" data-tag="' + k + '"' + _ea('toggleRateTag', [String(k)]) + ' style="padding:7px 11px;border-radius:999px;border:1.5px solid rgba(212,175,55,.3);background:transparent;color:var(--text);font-size:12px;font-weight:600;cursor:pointer">' + escapeHtml(ETEL_I18N.t('tag_' + k)) + '</button>';
     };
     openModal(
         '<h3 style="margin:0 0 14px;color:var(--text)">⭐ ' + escapeHtml(ETEL_I18N.t('rate_title')) + '</h3>' +
@@ -2629,7 +2641,7 @@ function openRating(orderId) {
         '<div style="font-size:12px;font-weight:700;margin:12px 0 8px;color:var(--text)">' + escapeHtml(ETEL_I18N.t('rate_tags')) + '</div>' +
         '<div style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:14px">' + REVIEW_TAGS_POS.concat(REVIEW_TAGS_NEG).map(tagBtn).join('') + '</div>' +
         '<textarea id="rating-comment" maxlength="500" placeholder="' + escapeHtml(ETEL_I18N.t('rate_comment')) + '" style="width:100%;padding:10px;border:1.5px solid rgba(212,175,55,.25);border-radius:8px;font-size:13px;min-height:64px;resize:none;box-sizing:border-box;margin-bottom:12px"></textarea>' +
-        '<button onclick="submitRating(' + orderId + ')" style="width:100%;padding:12px;background:#D4AF37;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer">' + escapeHtml(ETEL_I18N.t('rate_submit')) + '</button>'
+        '<button' + _ea('submitRating', [Number(orderId)]) + ' style="width:100%;padding:12px;background:#D4AF37;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer">' + escapeHtml(ETEL_I18N.t('rate_submit')) + '</button>'
     );
 }
 function setRateStar(key, n) {
@@ -2677,7 +2689,7 @@ function openOrderIssue(orderId, orderCode) {
         ORDER_ISSUE_CATEGORIES.map(function(c) { return '<option value="'+c[0]+'">'+c[1]+'</option>'; }).join('') +
         '</select>' +
         '<textarea id="oi-details" placeholder="Describe what happened…" style="width:100%;padding:10px;border:1.5px solid rgba(212,175,55,.25);border-radius:8px;font-size:13px;min-height:80px;resize:none;box-sizing:border-box;margin-bottom:14px"></textarea>' +
-        '<button onclick="submitOrderIssue('+orderId+')" style="width:100%;padding:12px;background:#D4AF37;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer">Submit Report</button>'
+        '<button' + _ea('submitOrderIssue', [Number(orderId)]) + ' style="width:100%;padding:12px;background:#D4AF37;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer">Submit Report</button>'
     );
 }
 async function submitOrderIssue(orderId) {
@@ -2749,7 +2761,7 @@ function custShowModal(bodyHtml) {
     bg.addEventListener('click', function(e) { if (e.target === bg) custCloseModal(); });
     const box = document.createElement('div');
     box.style.cssText = 'width:min(440px,100%);max-height:85vh;overflow-y:auto;background:linear-gradient(180deg,#171006,#0a0703);border:1px solid rgba(212,175,55,.25);border-radius:18px;padding:22px;color:#F5EDD8;position:relative;font-family:"Poppins",sans-serif';
-    box.innerHTML = bodyHtml + '<button onclick="custCloseModal()" style="position:absolute;top:14px;right:14px;background:none;border:none;color:rgba(245,237,216,.5);font-size:20px;cursor:pointer;line-height:1">✕</button>';
+    box.innerHTML = bodyHtml + '<button' + _ea('custCloseModal', []) + ' style="position:absolute;top:14px;right:14px;background:none;border:none;color:rgba(245,237,216,.5);font-size:20px;cursor:pointer;line-height:1">✕</button>';
     bg.appendChild(box);
     document.body.appendChild(bg);
 }
@@ -2773,11 +2785,11 @@ async function loadFavorites() {
     const emoji = {restaurant:'🍽️',grocery:'🛒',pharmacy:'💊',laundry:'👕',delivery:'📦',cafe:'☕',fastfood:'🍔',electronics:'📱',bakery:'🧁',general:'🏪'};
     el.innerHTML = favs.map(function(f) {
         const ic = emoji[f.service_type] || '🏪';
-        return '<div style="display:flex;align-items:center;gap:14px;padding:14px;margin-bottom:10px;background:rgba(255,255,255,.04);border:1px solid rgba(212,175,55,.15);border-radius:14px;cursor:pointer" onclick="filterBySGAndGoHome(' + f.service_giver_id + ')">' +
+        return '<div style="display:flex;align-items:center;gap:14px;padding:14px;margin-bottom:10px;background:rgba(255,255,255,.04);border:1px solid rgba(212,175,55,.15);border-radius:14px;cursor:pointer"' + _ea('filterBySGAndGoHome', [Number(f.service_giver_id)]) + '>' +
             '<div style="width:46px;height:46px;border-radius:12px;background:rgba(255,215,0,.08);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">' + ic + '</div>' +
             '<div style="flex:1;min-width:0"><div style="font-weight:700;font-size:14px">' + (f.business_name || 'Shop') + '</div>' +
             '<div style="font-size:12px;color:rgba(240,237,216,.5)">' + (f.service_type || '') + ' · ' + (f.zone || 'Hawassa') + '</div></div>' +
-            '<button onclick="event.stopPropagation();toggleFavorite(' + f.service_giver_id + ', this)" style="background:none;border:none;font-size:20px;cursor:pointer;color:#FFD700">★</button>' +
+            '<button' + _ea('toggleFavorite', [Number(f.service_giver_id), EtelActions.EL], {stop: true}) + ' style="background:none;border:none;font-size:20px;cursor:pointer;color:#FFD700">★</button>' +
         '</div>';
     }).join('');
 }
@@ -2829,7 +2841,7 @@ function contactSupportHtml() {
         '<input id="support-subject" placeholder="What\'s this about?" style="width:100%;padding:10px;border:1.5px solid rgba(212,175,55,.3);background:rgba(0,0,0,.25);color:#fff;border-radius:8px;font-size:13px;margin-bottom:12px;box-sizing:border-box">' +
         '<label style="display:block;font-weight:600;margin-bottom:6px;font-size:13px">Message</label>' +
         '<textarea id="support-body" placeholder="Tell us what\'s going on…" style="width:100%;padding:10px;border:1.5px solid rgba(212,175,55,.3);background:rgba(0,0,0,.25);color:#fff;border-radius:8px;font-size:13px;min-height:100px;resize:none;box-sizing:border-box;margin-bottom:14px"></textarea>' +
-        '<button onclick="submitSupportMessage()" style="width:100%;padding:12px;background:#D4AF37;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer">Send to Support</button>' +
+        '<button' + _ea('submitSupportMessage', []) + ' style="width:100%;padding:12px;background:#D4AF37;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer">Send to Support</button>' +
     '</div>';
 }
 function showContactSupportFallback() {
@@ -2878,8 +2890,8 @@ async function loadAddresses() {
             (a.zone ? '<div style="font-size:11.5px;color:rgba(240,237,216,.4);margin-top:2px">' + a.zone + '</div>' : '') +
             '</div>' +
             '<div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0">' +
-            '<button onclick="openEditAddressForm(' + a.id + ')" style="background:none;border:1px solid rgba(212,175,55,.3);color:#D4AF37;border-radius:8px;padding:5px 10px;font-size:11px;cursor:pointer">Edit</button>' +
-            '<button onclick="deleteAddress(' + a.id + ')" style="background:none;border:1px solid rgba(239,68,68,.3);color:#FCA5A5;border-radius:8px;padding:5px 10px;font-size:11px;cursor:pointer">Delete</button>' +
+            '<button' + _ea('openEditAddressForm', [Number(a.id)]) + ' style="background:none;border:1px solid rgba(212,175,55,.3);color:#D4AF37;border-radius:8px;padding:5px 10px;font-size:11px;cursor:pointer">Edit</button>' +
+            '<button' + _ea('deleteAddress', [Number(a.id)]) + ' style="background:none;border:1px solid rgba(239,68,68,.3);color:#FCA5A5;border-radius:8px;padding:5px 10px;font-size:11px;cursor:pointer">Delete</button>' +
             '</div>' +
         '</div>';
     }).join('');
@@ -2896,7 +2908,7 @@ function addressFormHtml(existing) {
         '<label style="display:block;font-weight:600;margin-bottom:6px;font-size:13px">Zone (optional)</label>' +
         '<input id="addr-zone" placeholder="e.g. Tabor" value="' + (a.zone || '') + '" style="width:100%;padding:10px;border:1.5px solid rgba(212,175,55,.3);background:rgba(0,0,0,.25);color:#fff;border-radius:8px;font-size:13px;margin-bottom:12px;box-sizing:border-box">' +
         '<label style="display:flex;align-items:center;gap:8px;font-size:13px;margin-bottom:14px;cursor:pointer"><input type="checkbox" id="addr-default"' + (a.is_default ? ' checked' : '') + '> Set as default address</label>' +
-        '<button onclick="submitAddressForm()" style="width:100%;padding:12px;background:#D4AF37;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer">Save Address</button>' +
+        '<button' + _ea('submitAddressForm', []) + ' style="width:100%;padding:12px;background:#D4AF37;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer">Save Address</button>' +
     '</div>';
 }
 function openAddAddressForm() {
@@ -2947,7 +2959,7 @@ async function loadReferralInfo() {
         '<div style="padding:20px;background:linear-gradient(160deg,#1C1400,#241A00);border:1px solid rgba(212,175,55,.25);border-radius:16px;margin-bottom:16px;text-align:center">' +
         '<div style="font-size:13px;color:rgba(255,248,231,.6);margin-bottom:8px">Your referral code</div>' +
         '<div style="font-size:26px;font-weight:800;color:#FFD700;letter-spacing:.06em;margin-bottom:14px">' + d.referral_code + '</div>' +
-        '<button onclick="copyReferralLink(\'' + link.replace(/'/g, "\\'") + '\')" style="padding:10px 18px;background:linear-gradient(135deg,#FFD700,#D4AF37);color:#1a1206;border:none;border-radius:10px;font-weight:700;font-size:13px;cursor:pointer">📋 Copy Invite Link</button>' +
+        '<button' + _ea('copyReferralLink', [String(link)]) + ' style="padding:10px 18px;background:linear-gradient(135deg,#FFD700,#D4AF37);color:#1a1206;border:none;border-radius:10px;font-weight:700;font-size:13px;cursor:pointer">📋 Copy Invite Link</button>' +
         '</div>' +
         '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">' +
         '<div style="text-align:center;padding:14px;background:rgba(255,215,0,.06);border:1px solid rgba(255,215,0,.1);border-radius:12px"><div style="font-size:20px;font-weight:800;color:#FFD700">' + d.referred_count + '</div><div style="font-size:11px;color:rgba(255,248,231,.5);margin-top:4px">Friends Joined</div></div>' +
@@ -3005,21 +3017,21 @@ async function loadSettingsView() {
     el.innerHTML =
         '<div style="padding:16px;background:rgba(255,255,255,.04);border:1px solid rgba(212,175,55,.15);border-radius:14px;margin-bottom:14px">' +
         '<div style="font-weight:700;font-size:14px;margin-bottom:12px">🔔 Notifications</div>' +
-        '<label style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;font-size:13px;cursor:pointer">Order updates <input type="checkbox" id="set-notif-orders" onchange="saveSettingToggle(\'notif_order_updates\', this.checked)"' + (s.notif_order_updates ? ' checked' : '') + '></label>' +
-        '<label style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;font-size:13px;cursor:pointer">Promotions &amp; offers <input type="checkbox" id="set-notif-promos" onchange="saveSettingToggle(\'notif_promotions\', this.checked)"' + (s.notif_promotions ? ' checked' : '') + '></label>' +
+        '<label style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;font-size:13px;cursor:pointer">Order updates <input type="checkbox" id="set-notif-orders"' + _ea('saveSettingToggle', ['notif_order_updates', EtelActions.CHECKED], {event: 'change'}) + '' + (s.notif_order_updates ? ' checked' : '') + '></label>' +
+        '<label style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;font-size:13px;cursor:pointer">Promotions &amp; offers <input type="checkbox" id="set-notif-promos"' + _ea('saveSettingToggle', ['notif_promotions', EtelActions.CHECKED], {event: 'change'}) + '' + (s.notif_promotions ? ' checked' : '') + '></label>' +
         '</div>' +
         '<div style="padding:16px;background:rgba(255,255,255,.04);border:1px solid rgba(212,175,55,.15);border-radius:14px;margin-bottom:14px">' +
         '<div style="font-weight:700;font-size:14px;margin-bottom:12px">🔒 Change Password</div>' +
         '<input type="password" id="set-cur-pw" placeholder="Current password" style="width:100%;padding:10px;border:1.5px solid rgba(212,175,55,.3);background:rgba(0,0,0,.2);color:#fff;border-radius:8px;font-size:13px;margin-bottom:10px;box-sizing:border-box">' +
         '<input type="password" id="set-new-pw" placeholder="New password (min 8 characters)" style="width:100%;padding:10px;border:1.5px solid rgba(212,175,55,.3);background:rgba(0,0,0,.2);color:#fff;border-radius:8px;font-size:13px;margin-bottom:12px;box-sizing:border-box">' +
-        '<button onclick="submitCustomerPasswordChange()" style="width:100%;padding:11px;background:linear-gradient(135deg,#FFD700,#D4AF37);color:#1a1206;border:none;border-radius:10px;font-weight:700;font-size:13px;cursor:pointer">Update Password</button>' +
+        '<button' + _ea('submitCustomerPasswordChange', []) + ' style="width:100%;padding:11px;background:linear-gradient(135deg,#FFD700,#D4AF37);color:#1a1206;border:none;border-radius:10px;font-weight:700;font-size:13px;cursor:pointer">Update Password</button>' +
         '<div id="set-pw-msg" style="margin-top:10px;font-size:12.5px"></div>' +
         '</div>' +
         '<div style="padding:16px;background:rgba(255,255,255,.04);border:1px solid rgba(212,175,55,.15);border-radius:14px">' +
         '<div style="font-weight:700;font-size:14px;margin-bottom:10px">🔐 Privacy</div>' +
         '<div style="font-size:12.5px;color:rgba(240,237,216,.55);margin-bottom:12px">Request a copy of your data or ask us to delete your account. We\'ll follow up by message within a few business days.</div>' +
-        '<button onclick="requestPrivacyAction(\'export\')" style="padding:9px 14px;border:1px solid rgba(212,175,55,.3);background:none;color:#D4AF37;border-radius:8px;font-size:12.5px;cursor:pointer;margin-right:8px">Request My Data</button>' +
-        '<button onclick="requestPrivacyAction(\'delete\')" style="padding:9px 14px;border:1px solid rgba(239,68,68,.3);background:none;color:#FCA5A5;border-radius:8px;font-size:12.5px;cursor:pointer">Delete My Account</button>' +
+        '<button' + _ea('requestPrivacyAction', ['export']) + ' style="padding:9px 14px;border:1px solid rgba(212,175,55,.3);background:none;color:#D4AF37;border-radius:8px;font-size:12.5px;cursor:pointer;margin-right:8px">Request My Data</button>' +
+        '<button' + _ea('requestPrivacyAction', ['delete']) + ' style="padding:9px 14px;border:1px solid rgba(239,68,68,.3);background:none;color:#FCA5A5;border-radius:8px;font-size:12.5px;cursor:pointer">Delete My Account</button>' +
         '</div>';
 }
 async function saveSettingToggle(key, value) {
@@ -3098,7 +3110,7 @@ function toggleProfile() {
     <!-- Stats -->
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:20px;position:relative">
       ${[['Orders','0','#FFD700','pf-orders'],['Points','0','#FFD700','pf-points'],['Saved','ETB 0','#22C55E','pf-saved']].map(function(s){return `
-      <div ${s[3]==='pf-points'?'onclick="closeProfile();openPointsSheet()" role="button" ':''}style="text-align:center;padding:12px 8px;background:rgba(255,215,0,.06);border:1px solid rgba(255,215,0,.1);border-radius:12px;${s[3]==='pf-points'?'cursor:pointer':''}">
+      <div ${s[3]==='pf-points'?'data-acts=\'[["closeProfile"],["openPointsSheet"]]\' role="button" ':''}style="text-align:center;padding:12px 8px;background:rgba(255,215,0,.06);border:1px solid rgba(255,215,0,.1);border-radius:12px;${s[3]==='pf-points'?'cursor:pointer':''}">
         <div id="${s[3]}" style="font-size:17px;font-weight:800;color:${s[2]};line-height:1">${s[1]}</div>
         <div style="font-size:10px;color:rgba(255,248,231,.38);margin-top:4px;font-weight:500">${s[0]}</div>
       </div>`;}).join('')}
@@ -3123,12 +3135,14 @@ function toggleProfile() {
       ['🌓','Light / Dark mode','Switch the app appearance','__theme'],
       ['🔄','Refresh app','Reload shops, orders and prices','__refresh'],
     ].map(function(m){
-      var onclick = m[3] === '__display' ? "closeProfile();EtelDisplay.open()"
-                  : m[3] === '__2fa' ? "closeProfile();Etel2FASettings.open()"
-                  : m[3] === '__theme' ? "customerToggleTheme();closeProfile()"
-                  : m[3] === '__refresh' ? "closeProfile();refreshCurrentView()"
-                  : (m[3] ? "closeProfile();switchCategory('"+m[3]+"')" : '');
-      return `<button onclick="${onclick}" style="display:flex;align-items:center;gap:14px;padding:12px 10px;border-radius:12px;background:transparent;border:none;cursor:${m[3]?'pointer':'default'};width:100%;text-align:left;font-family:'Poppins',sans-serif;transition:background .15s" onmouseover="this.style.background='rgba(255,215,0,.07)'" onmouseout="this.style.background='transparent'">
+      // What a tap does, as a list of calls run in order (data-acts, see js/etel-actions.js): no inline JavaScript in the markup.
+      var acts = m[3] === '__display' ? [['closeProfile'], ['EtelDisplay.open']]
+               : m[3] === '__2fa' ? [['closeProfile'], ['Etel2FASettings.open']]
+               : m[3] === '__theme' ? [['customerToggleTheme'], ['closeProfile']]
+               : m[3] === '__refresh' ? [['closeProfile'], ['refreshCurrentView']]
+               : (m[3] ? [['closeProfile'], ['switchCategory', m[3]]] : null);
+      var actAttr = acts ? " data-acts='" + JSON.stringify(acts) + "'" : '';
+      return `<button${actAttr} class="prof-row" style="display:flex;align-items:center;gap:14px;padding:12px 10px;border-radius:12px;background:transparent;border:none;cursor:${m[3]?'pointer':'default'};width:100%;text-align:left;font-family:'Poppins',sans-serif;transition:background .15s">
         <div style="width:38px;height:38px;border-radius:10px;background:rgba(255,215,0,.08);border:1px solid rgba(255,215,0,.12);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0">${m[0]}</div>
         <div style="flex:1;min-width:0">
           <div style="font-size:13px;font-weight:600;color:#FFF8E7;line-height:1.3">${m[1]}</div>
@@ -3161,7 +3175,7 @@ function toggleProfile() {
 
   <!-- ── LOGOUT ── -->
   <div style="padding:4px 14px">
-    <button onclick="doLogout()" class="prof-logout" style="width:100%;padding:13px;border-radius:12px;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.18);color:#FCA5A5;font-size:13px;font-weight:600;cursor:pointer;font-family:'Poppins',sans-serif;display:flex;align-items:center;justify-content:center;gap:10px;transition:all .2s;letter-spacing:.01em" onmouseover="this.style.background='rgba(239,68,68,.16)'" onmouseout="this.style.background='rgba(239,68,68,.08)'">
+    <button data-act="doLogout" class="prof-logout" style="width:100%;padding:13px;border-radius:12px;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.18);color:#FCA5A5;font-size:13px;font-weight:600;cursor:pointer;font-family:'Poppins',sans-serif;display:flex;align-items:center;justify-content:center;gap:10px;transition:all .2s;letter-spacing:.01em">
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
       Sign Out
     </button>

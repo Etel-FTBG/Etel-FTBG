@@ -1667,3 +1667,8 @@ body:not(.dark-theme) .pkg-size.on, body:not(.dark-theme) .pkg-veh.on, body:not(
 body:has(#view-package[style*="flex"]) #etel-refresh-btn { display: none !important; }
 /* Emoji inside gold gradient heading text lose their colour (the text is painted transparent over a clipped gradient, so the emoji turned into a flat gold blob). Give them their own paint. */
 .brand-name .brand-emoji, .brand-name #category-icon { -webkit-text-fill-color: initial; background: none; filter: none; }
+
+/* profile sheet: the hover colours used to be set by onmouseover/onmouseout attributes in the markup (not allowed under a strict
+   Content-Security-Policy). !important is needed because the rows carry an inline background. */
+#profile-info .prof-row:hover, #profile-info .prof-row:focus-visible { background: rgba(255, 215, 0, .07) !important; }
+#profile-info .prof-logout:hover, #profile-info .prof-logout:focus-visible { background: rgba(239, 68, 68, .16) !important; }
