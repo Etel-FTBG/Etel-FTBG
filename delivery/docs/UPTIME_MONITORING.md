@@ -16,6 +16,13 @@ Cost: free. Time: about 15 minutes. You need only a browser; nothing is installe
 It shows no private data and changes nothing, so it is safe to leave public.
 `disk_free_pct`, `cron_age_min` and `backup_age_h` in the answer tell you which part is the problem.
 
+## 1b. The public status page
+
+`https://ethelmarket.com/delivery/status.html` shows customers and partners whether ordering, rides and dispatch are working.
+It reads the same health check every minute and shows only what matters to them (can people order or ride, is dispatch running).
+Disk space and backup age are owner-only warnings: they stay in the health check and Admin, not on this page.
+Add it as a fifth UptimeRobot monitor if you want to know the page itself is up.
+
 ## 2. Set up the free monitor (UptimeRobot)
 
 1. Create a free account at uptimerobot.com.

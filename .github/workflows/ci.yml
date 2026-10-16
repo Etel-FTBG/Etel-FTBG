@@ -100,6 +100,7 @@ jobs:
           python3 delivery/tests/ci/check_package_prices_admin.py
           python3 delivery/tests/ci/check_integrations_admin.py
           python3 delivery/tests/ci/check_customers_admin.py
+          python3 delivery/tests/ci/check_status_page.py
           python3 delivery/tests/ci/check_courier_packages.py
           python3 delivery/tests/ci/check_admin_footer.py
           python3 delivery/tests/ci/check_customer_csp.py
