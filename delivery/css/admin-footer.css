@@ -18,7 +18,9 @@ body.dark-theme .admin-footer { background: #14141f; color: #D9D2C0; border-top-
 /* make room for the bar */
 .main-container { height: calc(100vh - 72px - var(--af-h)) !important; }
 @media (max-width: 768px) {
-    .main-container { bottom: var(--af-h) !important; height: auto !important; }
+    /* follow the real header height (js/admin-footer.js sets --af-header-h / --af-nav-h); 56px / 52px are the normal-size values */
+    .sidebar { top: var(--af-header-h, 56px) !important; }
+    .main-container { top: calc(var(--af-header-h, 56px) + var(--af-nav-h, 52px)) !important; bottom: var(--af-h) !important; height: auto !important; }
     .admin-footer { padding: 0 10px; gap: 8px; font-size: 11px; }
     .admin-footer .af-copy { display: none; }
     .admin-footer .af-links { gap: 10px; overflow: hidden; }
