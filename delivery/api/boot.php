@@ -427,6 +427,15 @@ function user_has_capability($pdo, $u, $capability) {
 }
 
 // True for staff whose only scope is the Ride system: a rides.* capability and no Delivery/commerce capability.
+// Why a non-customer login cannot place an order or book a package, in plain words (so a courier, shop owner or ride driver who is
+// testing with their own phone number understands what to do instead of seeing a bare "access required").
+function etel_customer_only_message($u) {
+    $labels = array('driver' => 'ETEL Ride driver', 'courier' => 'courier', 'service_giver' => 'shop (service giver)');
+    $role = is_array($u) && isset($u['role']) ? (string) $u['role'] : '';
+    $who = isset($labels[$role]) ? ('You are signed in with a ' . $labels[$role] . ' account. ') : '';
+    return $who . 'Orders and packages can only be placed from a customer account. Sign out and sign in with a customer account, or create one with a different phone number.';
+}
+
 function etel_is_ride_only($pdo, $u) {
     // Some callers hold a trimmed user row (id/name/phone/role only); load the staff fields so a
     // limited admin is never mistaken for a legacy unrestricted one.
