@@ -740,6 +740,14 @@ case 'courier_get_my_orders': {
     require_once __DIR__ . '/../lib/courier_earnings.php';
     etel_apply_courier_tip($pdo, $orders, $courier['id'], true);    // own orders: pay is saved the first time the app sees an active order
     try { require_once __DIR__ . '/../lib/courier_offers.php'; $orders = etel_offer_attach($pdo, $orders); } catch (Exception $oe) {} catch (Throwable $oe) {}
+    // Stage times of a package on the database clock (the app's timers): only for the few packages that are still in progress or just finished.
+    $pkgN = 0;
+    foreach ($orders as $pi => $po) {
+        if ($pkgN >= 10) break;
+        if (isset($po['order_kind']) && $po['order_kind'] === 'package' && in_array($po['status'], array('assigned', 'picked_up', 'in_transit', 'delivered'), true)) {
+            try { $orders[$pi]['pkg_times'] = etel_package_times($pdo, $po['id']); $pkgN++; } catch (Exception $pe) {} catch (Throwable $pe) {}
+        }
+    }
     ok(array('orders' => $orders, 'count' => count($orders)));
     break;
 }

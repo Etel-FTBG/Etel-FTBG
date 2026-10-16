@@ -7,10 +7,20 @@ root = __file__.rsplit('/tests/', 1)[0]
 read = lambda p: open(root + '/' + p, encoding='utf-8').read()
 bad = []
 addon = read('js/courier-packages.js')
+v7 = read('js/releases/courier/v7/courier-bundle.js')
 v6 = read('js/releases/courier/v6/courier-bundle.js')
 v5 = read('js/releases/courier/v5/courier-bundle.js')
-if addon.strip() not in v6 or not v6.startswith(v5.rstrip('\n')[:2000]):
-    bad.append('release v6 must be release v5 plus js/courier-packages.js (run tools/build_courier_release.py)')
+# A release folder is never overwritten: v6 stays as it was released, v7 is v5 plus the CURRENT add-on.
+if not v6.startswith(v5.rstrip('\n')[:2000]):
+    bad.append('release v6 must start with release v5')
+if addon.strip() not in v7 or not v7.startswith(v5.rstrip('\n')[:2000]):
+    bad.append('release v7 must be release v5 plus js/courier-packages.js (run tools/build_courier_release.py --from v5 --to v7)')
+if "'v7'" not in addon or 'navigateToCustomer' not in addon:
+    bad.append('the v7 add-on must navigate inside the app (navigateToCustomer), not open an external map')
+if re.search(r'google\.com/maps|maps\.google|geo:', addon):
+    bad.append('the package screens must not open an external map')
+if 'pkg_times' not in addon or 'data-pt-from' not in addon:
+    bad.append('the v7 add-on must show the stage timers from order.pkg_times')
 if "pkg: 1" not in addon:
     bad.append('the add-on must tell the server the app can run packages (pkg=1)')
 if re.search(r'\bon[a-z]+="', addon):
@@ -29,6 +39,8 @@ if "etel_package_courier_capable($pdo, $courier['id'])" not in orders:
 if "Packages are picked up and delivered with the PIN" not in orders:
     bad.append('courier_update_order_status must refuse picked_up / delivered for a package')
 my = orders.split("case 'courier_get_my_orders'", 1)[1].split("case 'courier_earnings_summary'", 1)[0]
+if "etel_package_times(" not in my:
+    bad.append('the courier order list must carry pkg_times for the timers')
 if 'pickup_pin' in my or 'delivery_pin' in my:
     bad.append('the courier order list must never carry the PINs')
 avail = orders.split("case 'courier_get_available_orders'", 1)[1].split("case 'courier_accept_order'", 1)[0]
