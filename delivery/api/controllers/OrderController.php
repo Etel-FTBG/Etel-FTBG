@@ -258,6 +258,7 @@ case 'courier_get_available_orders': {
     if (!empty($_GET['pkg'])) etel_package_mark_capable($pdo, $courier['id']);   // this app can run package jobs
     // An app that cannot run packages (no pickup address, no PIN step) is never shown one: it would accept it and be stuck.
     $pkg_filter = etel_package_courier_capable($pdo, $courier['id']) ? " AND (o.order_kind <> 'package' OR o.vehicle_class = ?)" : " AND (o.order_kind <> 'package' OR o.vehicle_class = ? AND 1 = 0)";
+    $pkg_filter .= ' AND o.customer_id <> ' . intval($courier_user['id']);   // a courier never sees an order they placed themselves
     $pkg_cols = ', o.order_kind, o.vehicle_class, o.pickup_address, o.pkg_size, o.pkg_weight_kg, o.pkg_desc, o.distance_km';
 
     // Ensure order_assignments exists and has needed columns
@@ -351,6 +352,8 @@ case 'courier_accept_order': {
     $pkr = $pk->fetch();
     if ($pkr && $pkr['order_kind'] === 'package' && etel_vehicle_class_of($pkr['vehicle_type'], $pdo) !== $pkr['vehicle_class']) fail('This package needs a different vehicle.', 403);
     if ($pkr && $pkr['order_kind'] === 'package' && !etel_package_courier_capable($pdo, $courier['id'])) fail('Update your courier app to take package jobs.', 403);
+    $own = $pdo->prepare('SELECT customer_id FROM orders WHERE id = ?'); $own->execute(array($order_id));
+    if (intval($own->fetchColumn()) === intval($courier_user['id'])) fail('You cannot deliver an order you placed yourself.', 403);
     
     // Assign courier to order
     try {
@@ -386,8 +389,10 @@ case 'courier_accept_offer': {
         require_once __DIR__ . '/../lib/courier_offers.php';
         etel_offers_sweep($pdo);
         require_once __DIR__ . '/../lib/package_orders.php';
-        $pk = $pdo->prepare("SELECT order_kind FROM orders WHERE id = ?"); $pk->execute(array($order_id));
-        if ($pk->fetchColumn() === 'package' && !etel_package_courier_capable($pdo, $courier['id'])) fail('Update your courier app to take package jobs.', 403);
+        $pk = $pdo->prepare("SELECT order_kind, customer_id FROM orders WHERE id = ?"); $pk->execute(array($order_id));
+        $pkRow = $pk->fetch(PDO::FETCH_ASSOC);
+        if ($pkRow && intval($pkRow['customer_id']) === intval($courier_user['id'])) fail('You cannot deliver an order you placed yourself.', 403);
+        if ($pkRow && $pkRow['order_kind'] === 'package' && !etel_package_courier_capable($pdo, $courier['id'])) fail('Update your courier app to take package jobs.', 403);
         $r = etel_offer_accept($pdo, $order_id, $courier['id']);
     } catch (Exception $e) { fail_ex($e, 'Could not accept the offer', 500); }
     if ($r !== 'accepted') fail('This offer has expired or was given to another courier', 409);

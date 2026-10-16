@@ -494,6 +494,11 @@ function etel_package_courier_capable($pdo, $courier_id) {
 }
 
 // SQL piece for the courier picks: only couriers whose app can run packages.
+// SQL piece: leave out the courier whose own account placed the order (an EtelID can be a customer and a courier at once).
+function etel_not_own_order_sql($customer_id, $alias = 'c') {
+    return ' AND ' . $alias . '.user_id <> ' . intval($customer_id);
+}
+
 function etel_package_capable_sql($alias = 'c') {
     return ' AND ' . $alias . '.package_capable_until IS NOT NULL AND ' . $alias . '.package_capable_until > NOW()';
 }

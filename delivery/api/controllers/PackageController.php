@@ -47,7 +47,8 @@ case 'customer_package_quote': {
 case 'customer_package_create': {
     $pdo = db();
     $u = require_auth($pdo);
-    if ($u['role'] !== 'customer' && $u['role'] !== 'admin') fail(etel_customer_only_message($u), 403);
+    // Every EtelID is also a customer (and a rider): a driver, courier or shop owner books from the same account.
+    if (!in_array($u['role'], array('customer', 'driver', 'courier', 'service_giver', 'admin'), true)) fail('Sign in to book a package', 403);
     $body['_allow_chapa'] = true;   // the checkout follows up with chapa_init, like shop orders
     $r = etel_package_create($pdo, $u, $body);
     if (!$r['ok']) fail($r['message'], 400);

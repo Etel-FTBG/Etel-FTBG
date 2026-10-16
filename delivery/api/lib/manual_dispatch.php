@@ -136,7 +136,7 @@ function etel_admin_assign_courier($pdo, $order_id, $courier_id, $admin_id) {
     etel_dispatch_ensure_schema($pdo);
     $order_id = intval($order_id); $courier_id = intval($courier_id);
     try {
-        $s = $pdo->prepare("SELECT id, order_code, status, courier_id, from_zone, to_zone, fare_total FROM orders WHERE id = ? LIMIT 1");
+        $s = $pdo->prepare("SELECT id, order_code, status, courier_id, from_zone, to_zone, fare_total, customer_id FROM orders WHERE id = ? LIMIT 1");
         $s->execute(array($order_id));
         $o = $s->fetch();
         if (!$o) return array('ok' => false, 'message' => 'Order not found.');
@@ -150,6 +150,7 @@ function etel_admin_assign_courier($pdo, $order_id, $courier_id, $admin_id) {
         $cr = $c->fetch();
         if (!$cr) return array('ok' => false, 'message' => 'Courier not found.');
         if (intval($cr['active']) !== 1) return array('ok' => false, 'message' => 'This courier is not active.');
+        if (intval($cr['user_id']) === intval($o['customer_id'])) return array('ok' => false, 'message' => 'This courier placed this order themselves, so they cannot deliver it. Choose another courier.');
         $prev = $o['courier_id'] ? intval($o['courier_id']) : 0;
         if ($prev === $courier_id) return array('ok' => false, 'message' => 'This courier already has the order.');
         try {   // a package needs the courier's app to show the pickup address and ask for the PINs: an older app would strand it

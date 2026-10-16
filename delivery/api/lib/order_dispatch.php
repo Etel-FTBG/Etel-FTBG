@@ -47,7 +47,7 @@ function etel_dispatch_order($pdo, $order_id, $exclude = array()) {
         require_once __DIR__ . '/package_orders.php';
         etel_package_ensure_schema($pdo);   // makes sure the package columns exist before they are read below
         $q = $pdo->prepare("SELECT o.order_code, o.from_zone, o.to_zone, o.fare_total, o.status, o.courier_id, oa.service_giver_id,
-                                   o.order_kind, o.vehicle_class, o.pickup_lat, o.pickup_lng
+                                   o.order_kind, o.vehicle_class, o.pickup_lat, o.pickup_lng, o.customer_id
                             FROM orders o LEFT JOIN order_assignments oa ON oa.order_id = o.id WHERE o.id = ? LIMIT 1");
         $q->execute(array($order_id));
         $o = $q->fetch(PDO::FETCH_ASSOC);
@@ -76,6 +76,7 @@ function etel_dispatch_order($pdo, $order_id, $exclude = array()) {
         list($vehSql, $vehParams) = etel_vehicle_sql($o['vehicle_class'], 'c', $pdo);
         $vehSql .= etel_package_capable_sql('c');   // only couriers whose app can run a package (pickup address, PINs)
     }
+    $vehSql .= etel_not_own_order_sql($o['customer_id'], 'c');   // never the courier who placed it
     try {
         if ($is_package) throw new Exception('no shop');
         $sgCoordStmt = $pdo->prepare('SELECT lat, lng FROM service_givers WHERE id=? AND lat IS NOT NULL AND lng IS NOT NULL');
