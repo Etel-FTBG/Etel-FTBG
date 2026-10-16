@@ -3,7 +3,7 @@
  "info": {
   "title": "ETEL Delivery & Ride API",
   "version": "generated",
-  "description": "Every action is a JSON POST to /api/boot.php with an `action` field (a few read-only actions also accept GET query parameters). Responses are JSON: {success: true|false, data: {...}, message: '...', v: '<app version>'}. Send the session token as `Authorization: Bearer <token>`; get one from `login`, `etelid_login` (Delivery/Ride apps) or `admin_etelid_login` (admin). Admin accounts with two-step sign-in answer {requires_2fa: true}: repeat the same login request with `totp_code`. Errors use HTTP 400/401/403/404/409/429/500/503 with the same JSON shape. Throttled actions answer 429. This file is generated from the source by tools/gen_api_docs.py: 436 actions. Parameter names come from the handlers; types and limits are in the handler code."
+  "description": "Every action is a JSON POST to /api/boot.php with an `action` field (a few read-only actions also accept GET query parameters). Responses are JSON: {success: true|false, data: {...}, message: '...', v: '<app version>'}. Send the session token as `Authorization: Bearer <token>`; get one from `login`, `etelid_login` (Delivery/Ride apps) or `admin_etelid_login` (admin). Admin accounts with two-step sign-in answer {requires_2fa: true}: repeat the same login request with `totp_code`. Errors use HTTP 400/401/403/404/409/429/500/503 with the same JSON shape. Throttled actions answer 429. This file is generated from the source by tools/gen_api_docs.py: 438 actions. Parameter names come from the handlers; types and limits are in the handler code."
  },
  "servers": [
   {
@@ -114,6 +114,12 @@
          },
          {
           "$ref": "#/components/schemas/admin_create_user"
+         },
+         {
+          "$ref": "#/components/schemas/admin_customer_get"
+         },
+         {
+          "$ref": "#/components/schemas/admin_customers_list"
          },
          {
           "$ref": "#/components/schemas/admin_dashboard_stats"
@@ -1575,6 +1581,22 @@
           "password": "<password>",
           "phone": "<phone>",
           "role": "<role>"
+         }
+        },
+        "admin_customer_get": {
+         "summary": "admin_customer_get (admin)",
+         "value": {
+          "action": "admin_customer_get",
+          "id": "<id>"
+         }
+        },
+        "admin_customers_list": {
+         "summary": "admin_customers_list (admin)",
+         "value": {
+          "action": "admin_customers_list",
+          "limit": "<limit>",
+          "q": "<q>",
+          "sort": "<sort>"
          }
         },
         "admin_dashboard_stats": {
@@ -5347,6 +5369,50 @@
      }
     },
     "description": "Auth: admin (capability users.manage). Source: api/controllers/AdminController.php."
+   },
+   "admin_customer_get": {
+    "type": "object",
+    "title": "action: admin_customer_get",
+    "required": [
+     "action"
+    ],
+    "properties": {
+     "action": {
+      "type": "string",
+      "enum": [
+       "admin_customer_get"
+      ]
+     },
+     "id": {
+      "description": "request field (type not declared in code)"
+     }
+    },
+    "description": "Auth: admin (capability users.view). Source: api/controllers/CustomerAdminController.php."
+   },
+   "admin_customers_list": {
+    "type": "object",
+    "title": "action: admin_customers_list",
+    "required": [
+     "action"
+    ],
+    "properties": {
+     "action": {
+      "type": "string",
+      "enum": [
+       "admin_customers_list"
+      ]
+     },
+     "limit": {
+      "description": "request field (type not declared in code)"
+     },
+     "q": {
+      "description": "request field (type not declared in code)"
+     },
+     "sort": {
+      "description": "request field (type not declared in code)"
+     }
+    },
+    "description": "Auth: admin (capability users.view). Source: api/controllers/CustomerAdminController.php."
    },
    "admin_dashboard_stats": {
     "type": "object",
@@ -14206,6 +14272,32 @@
    ],
    "query": [],
    "source": "api/controllers/AdminController.php"
+  },
+  "admin_customer_get": {
+   "auth": "admin",
+   "capability": "users.view",
+   "body": [
+    "id"
+   ],
+   "query": [
+    "id"
+   ],
+   "source": "api/controllers/CustomerAdminController.php"
+  },
+  "admin_customers_list": {
+   "auth": "admin",
+   "capability": "users.view",
+   "body": [
+    "limit",
+    "q",
+    "sort"
+   ],
+   "query": [
+    "limit",
+    "q",
+    "sort"
+   ],
+   "source": "api/controllers/CustomerAdminController.php"
   },
   "admin_dashboard_stats": {
    "auth": "admin",
