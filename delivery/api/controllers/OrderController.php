@@ -926,6 +926,7 @@ case 'track_order': {
     } catch (Exception $ce) {} catch (Throwable $ce) {}
     // The pins are for the sender only (the courier asks the sender for the pickup pin; the recipient gives the delivery pin).
     if ((int) $order['_cid'] !== (int) $u['id'] || !$is_package) { unset($order['pickup_pin'], $order['delivery_pin']); }
+    if ($is_package) { try { $order['pkg_times'] = etel_package_times($pdo, $order['id']); } catch (Exception $te2) {} catch (Throwable $te2) {} }   // stage times for the app's timers
     unset($order['_cid']);   // internal: used above to decide can_cancel, not sent to the app
     ok(array('order' => $order, 'timeline' => $timeline));
     break;

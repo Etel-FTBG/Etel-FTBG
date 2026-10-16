@@ -99,6 +99,10 @@ def main():
         dd = r.get("data") or {}
         check("detail shows the customer and the orders", r.get("success") and dd.get("customer", {}).get("orders_total") == 3 and len(dd.get("orders", [])) == 3, r)
         check("newest order first", dd.get("orders") and dd["orders"][0]["order_code"].endswith("-3"), dd)
+        etel_test_db.run_sql("UPDATE orders SET order_kind = 'package' WHERE order_code = 'CS%s-1'" % SUFFIX)
+        s, r = call("admin_customer_get", {"id": cid}, token=admin)
+        kinds = dict((o["order_code"], o["kind"]) for o in (r.get("data") or {}).get("orders", []))
+        check("a package is labelled as a package in the customer's orders", kinds.get("CS%s-1" % SUFFIX) == "package" and kinds.get("CS%s-2" % SUFFIX) != "package", kinds)
     else:
         print("  SKIP no test database for the order totals")
 
