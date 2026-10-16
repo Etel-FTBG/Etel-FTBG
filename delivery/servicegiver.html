@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<script>window.ETEL_LIGHT_LAYER = true;</script>
+<script src="js/servicegiver-boot.js?v=1"></script>
     <meta name="referrer" content="no-referrer-when-downgrade">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -12,41 +12,9 @@
     <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Poppins:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script defer src="js/jsQR.js?v=1.4.0"></script>
     <script defer src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-    <script src="js/core.js?v=5.16"></script>
-    <script>
-      /* Auth gate - previously missing entirely, meaning unauthenticated
-         visitors saw service-giver page content with no redirect. Also
-         carries role=service_giver so the login page can identify this
-         app specifically (same pattern driver/index.html already used)
-         rather than falling through to the generic bare-launch case.
-
-         BUG FIX: this only ever checked Auth.isLoggedIn() - true for ANY
-         signed-in role, not just service_giver - so a customer/driver/
-         courier account with a valid session could load this page's full
-         content too (same class of gap found and fixed on admin.html).
-         Now uses core.js's shared requireRole() helper instead of a
-         hand-rolled login-only check - it already does exactly this
-         (verifies the session's real role, not just that one exists,
-         with admin exempted from every role gate by design) and was
-         built specifically for this, per login.html's own comment
-         referencing it ("requireRole() on every page ... lets an admin
-         account stay there") - it just was never actually wired into
-         any page's own gate until now. */
-      document.addEventListener('DOMContentLoaded', function () {
-        if (typeof requireRole === 'undefined') return; // core.js failed to load - nothing to gate with
-        requireRole(['service_giver']);
-        // requireRole() above lets an admin session through (admin bypasses
-        // every role gate by design), so an admin account CAN end up
-        // browsing this app - but a real service_giver has no route back
-        // to the dashboard from here. Show the shortcut only for that
-        // admin case; every genuine service_giver never sees it.
-        var u = (typeof Auth !== 'undefined' && Auth.getUser) ? Auth.getUser() : null;
-        if (u && u.role === 'admin') {
-          var row = document.getElementById('sgp-admin-row');
-          if (row) row.style.display = 'block';
-        }
-      });
-    </script>
+    <script src="js/core.js?v=5.19"></script>
+    <script src="js/etel-actions.js?v=2"></script>
+    <script src="js/servicegiver-gate.js?v=1"></script>
 
 <style>
 /* ═══════════════════════════════════════════════════════════════
@@ -373,6 +341,7 @@ body.etel-light .cat-box .modal-title{color:#5a4200}
 body.etel-light .cat-box .cat-hint,body.etel-light .cat-box .cat-qs,body.etel-light .cat-row .cat-name small{color:#6b5a3a}
 body.etel-light .cat-chip{background:#f4efe6;color:#5a4a2a}
 body.etel-light .cat-chip.on{background:#f3e3b0;color:#4a3300}
+    .sg-item-row:hover { background: #faf9f7; }
 </style>
 <script src="js/etel-display-settings.js?v=1.4" data-fab="off" defer></script>
 <script src="js/etel-2fa-settings.js?v=1" defer></script>
@@ -396,7 +365,7 @@ body.etel-light .cat-chip.on{background:#f3e3b0;color:#4a3300}
 <!-- Floating refresh button - re-fetches whatever page is currently
      open. For when live/polled data stalls and the person has no
      other obvious way to force a re-fetch. -->
-<button id="sg-refresh-btn" onclick="refreshCurrentPage()" aria-label="Refresh"
+<button id="sg-refresh-btn" data-act="refreshCurrentPage" aria-label="Refresh"
   style="position:fixed;left:16px;bottom:16px;z-index:9998;width:48px;height:48px;border-radius:50%;
   background:linear-gradient(135deg,#E9C767,#D4AF37);border:none;box-shadow:0 4px 14px rgba(212,175,55,.5);
   font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;">
@@ -407,20 +376,11 @@ body.etel-light .cat-chip.on{background:#f3e3b0;color:#4a3300}
 @keyframes sgRefreshSpin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
 </style>
 
-<script>
-(function(){
-  setTimeout(function(){
-    var el = document.getElementById('etel-master-splash');
-    if (!el) return;
-    el.style.opacity = '0';
-    setTimeout(function(){ if (el.parentNode) el.parentNode.removeChild(el); }, 400);
-  }, 900);
-})();
-</script>
+<script src="js/servicegiver-splash.js?v=1"></script>
 
 
     <!-- Mobile sidebar overlay -->
-    <div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
+    <div class="sidebar-overlay" id="sidebar-overlay" data-act="closeSidebar"></div>
 
     <div class="app-container">
         <!-- SIDEBAR -->
@@ -436,36 +396,36 @@ body.etel-light .cat-chip.on{background:#f3e3b0;color:#4a3300}
             </div>
 
             <nav class="sidebar-menu">
-                <div class="menu-item active" data-page="dashboard" onclick="switchPage('dashboard')">
+                <div class="menu-item active" data-page="dashboard" data-act="switchPage" data-args='["dashboard"]'>
                     <div class="menu-icon">📊</div>
                     <div class="menu-label">Dashboard</div>
                 </div>
-                <div class="menu-item" data-page="orders" data-sg-cap="orders.view" onclick="switchPage('orders')" style="display:none">
+                <div class="menu-item" data-page="orders" data-sg-cap="orders.view" data-act="switchPage" data-args='["orders"]' style="display:none">
                     <div class="menu-icon">📦</div>
                     <div class="menu-label">Orders</div>
                     <div class="menu-badge" id="orders-badge">0</div>
                 </div>
-                <div class="menu-item" data-page="services" data-sg-cap="menu.view" onclick="switchPage('services')" style="display:none">
+                <div class="menu-item" data-page="services" data-sg-cap="menu.view" data-act="switchPage" data-args='["services"]' style="display:none">
                     <div class="menu-icon">🛍️</div>
                     <div class="menu-label">My Services</div>
                 </div>
-                <div class="menu-item" data-page="qr-scanner" data-sg-cap="orders.manage" onclick="switchPage('qr-scanner')" style="display:none">
+                <div class="menu-item" data-page="qr-scanner" data-sg-cap="orders.manage" data-act="switchPage" data-args='["qr-scanner"]' style="display:none">
                     <div class="menu-icon">📷</div>
                     <div class="menu-label">QR Scanner</div>
                 </div>
-                <div class="menu-item" data-page="analytics" data-sg-cap="reports.view" onclick="switchPage('analytics')" style="display:none">
+                <div class="menu-item" data-page="analytics" data-sg-cap="reports.view" data-act="switchPage" data-args='["analytics"]' style="display:none">
                     <div class="menu-icon">📈</div>
                     <div class="menu-label">Analytics</div>
                 </div>
-                <div class="menu-item" data-page="reviews" data-sg-cap="orders.view" onclick="switchPage('reviews')" style="display:none">
+                <div class="menu-item" data-page="reviews" data-sg-cap="orders.view" data-act="switchPage" data-args='["reviews"]' style="display:none">
                     <div class="menu-icon">⭐</div>
                     <div class="menu-label">Reviews <span id="sg-reviews-badge" style="display:none;background:#e74c3c;color:#fff;font-size:10px;font-weight:800;border-radius:10px;padding:1px 7px;margin-left:6px">0</span></div>
                 </div>
-                <div class="menu-item" data-page="payments" data-sg-cap="payments.view" onclick="switchPage('payments')" style="display:none">
+                <div class="menu-item" data-page="payments" data-sg-cap="payments.view" data-act="switchPage" data-args='["payments"]' style="display:none">
                     <div class="menu-icon">💰</div>
                     <div class="menu-label">Payments</div>
                 </div>
-                <div class="menu-item" data-page="settings" onclick="switchPage('settings')">
+                <div class="menu-item" data-page="settings" data-act="switchPage" data-args='["settings"]'>
                     <div class="menu-icon">⚙️</div>
                     <div class="menu-label">Settings</div>
                 </div>
@@ -481,7 +441,7 @@ body.etel-light .cat-chip.on{background:#f3e3b0;color:#4a3300}
                     <div class="menu-icon">🔠</div>
                     <div class="menu-label">Display Size</div>
                 </div>
-                <div class="menu-item" data-page="staff" data-sg-cap="staff.manage" onclick="switchPage('staff')" style="display:none">
+                <div class="menu-item" data-page="staff" data-sg-cap="staff.manage" data-act="switchPage" data-args='["staff"]' style="display:none">
                     <div class="menu-icon">👥</div>
                     <div class="menu-label">Staff &amp; Roles</div>
                 </div>
@@ -495,7 +455,7 @@ body.etel-light .cat-chip.on{background:#f3e3b0;color:#4a3300}
                         <div class="user-card-role">Service Provider</div>
                     </div>
                 </div>
-                <button class="btn btn-ghost" style="width: 100%; justify-content: center;" onclick="logout()">Logout</button>
+                <button class="btn btn-ghost" style="width: 100%; justify-content: center;" data-act="logout">Logout</button>
             </div>
         </aside>
 
@@ -504,7 +464,7 @@ body.etel-light .cat-chip.on{background:#f3e3b0;color:#4a3300}
             <!-- HEADER -->
             <header class="header">
                 <div class="header-left">
-                    <button class="hamburger" onclick="toggleSidebar()" aria-label="Menu">
+                    <button class="hamburger" data-act="toggleSidebar" aria-label="Menu">
                         <span></span><span></span><span></span>
                     </button>
                     <div class="logo-section">
@@ -517,11 +477,11 @@ body.etel-light .cat-chip.on{background:#f3e3b0;color:#4a3300}
                 </div>
 
                 <div class="header-right">
-                    <div class="user-profile" onclick="toggleSgProfile()" style="cursor:pointer">
+                    <div class="user-profile" data-act="toggleSgProfile" style="cursor:pointer">
                         <div class="user-avatar" id="profile-avatar">A</div>
                         <div>
                             <div class="user-name" id="profile-name">Loading...</div>
-                            <div class="user-status" id="profile-status" onclick="toggleSgOnline(event)" style="cursor:pointer" title="Tap to go online/offline">● Online</div>
+                            <div class="user-status" id="profile-status" data-act="toggleSgOnline" data-stop="1" style="cursor:pointer" title="Tap to go online/offline">● Online</div>
                         </div>
                     </div>
                 </div>
@@ -574,7 +534,7 @@ body.etel-light .cat-chip.on{background:#f3e3b0;color:#4a3300}
                     <div class="card">
                         <div class="card-header">
                             <div class="card-title">📋 Recent Orders</div>
-                            <button class="btn btn-secondary btn-small" onclick="switchPage('orders')">View All</button>
+                            <button class="btn btn-secondary btn-small" data-act="switchPage" data-args='["orders"]'>View All</button>
                         </div>
                         <div class="card-body" id="recent-orders-container">
                             <p class="empty-msg">No orders yet</p>
@@ -603,10 +563,10 @@ body.etel-light .cat-chip.on{background:#f3e3b0;color:#4a3300}
                                 <video id="qr-video" playsinline muted></video>
                                 <canvas id="qr-canvas" style="display:none"></canvas>
                                 <div style="display:flex;gap:10px;margin-bottom:14px">
-                                    <button class="btn btn-secondary" style="flex:1;justify-content:center" id="qr-type-pickup" onclick="setQrType('pickup')">📥 Pickup</button>
-                                    <button class="btn btn-secondary" style="flex:1;justify-content:center" id="qr-type-delivery" onclick="setQrType('delivery')">📤 Delivery</button>
+                                    <button class="btn btn-secondary" style="flex:1;justify-content:center" id="qr-type-pickup" data-act="setQrType" data-args='["pickup"]'>📥 Pickup</button>
+                                    <button class="btn btn-secondary" style="flex:1;justify-content:center" id="qr-type-delivery" data-act="setQrType" data-args='["delivery"]'>📤 Delivery</button>
                                 </div>
-                                <button class="btn btn-primary" onclick="startQRScanner()" style="width: 100%; justify-content:center;">📷 Start Camera &amp; Scan</button>
+                                <button class="btn btn-primary" data-act="startQRScanner" style="width: 100%; justify-content:center;">📷 Start Camera &amp; Scan</button>
                                 <div class="qr-result" id="qr-result"></div>
                                 <p style="font-size:11px;color:var(--text-faint);margin-top:14px">Point the camera at the customer's or courier's QR code. Expects the order ID encoded as plain text or JSON (<code>{"order_id":123}</code>).</p>
                             </div>
@@ -619,9 +579,9 @@ body.etel-light .cat-chip.on{background:#f3e3b0;color:#4a3300}
                     <div class="page-title">Sales Report</div>
                     <div class="page-subtitle">How your shop is doing — live from your orders</div>
                     <div id="sr-range" style="display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap">
-                        <button type="button" class="sr-pill" data-days="1" onclick="loadSalesReport(1)">Today</button>
-                        <button type="button" class="sr-pill active" data-days="7" onclick="loadSalesReport(7)">Last 7 days</button>
-                        <button type="button" class="sr-pill" data-days="30" onclick="loadSalesReport(30)">Last 30 days</button>
+                        <button type="button" class="sr-pill" data-days="1" data-act="loadSalesReport" data-args='[1]'>Today</button>
+                        <button type="button" class="sr-pill active" data-days="7" data-act="loadSalesReport" data-args='[7]'>Last 7 days</button>
+                        <button type="button" class="sr-pill" data-days="30" data-act="loadSalesReport" data-args='[30]'>Last 30 days</button>
                     </div>
                     <div id="sales-report-body"><div style="padding:20px;color:var(--text-dim)">Loading…</div></div>
                 </div>
@@ -644,13 +604,13 @@ body.etel-light .cat-chip.on{background:#f3e3b0;color:#4a3300}
                         </div>
                         <div class="card-body">
                             <div style="display:flex;gap:10px;align-items:center;margin-bottom:16px;flex-wrap:wrap">
-                                <select id="sg-fr-range" class="field-input" style="width:auto" onchange="loadSGFinancialReport()">
+                                <select id="sg-fr-range" class="field-input" style="width:auto" data-act-change="loadSGFinancialReport">
                                     <option value="7">Last 7 days</option>
                                     <option value="30" selected>Last 30 days</option>
                                     <option value="90">Last 90 days</option>
                                     <option value="all">All time</option>
                                 </select>
-                                <button class="btn btn-secondary btn-small" onclick="loadSGFinancialReport()">🔄 Refresh</button>
+                                <button class="btn btn-secondary btn-small" data-act="loadSGFinancialReport">🔄 Refresh</button>
                             </div>
                             <div id="sg-financial-report-body">Loading…</div>
                         </div>
@@ -664,7 +624,7 @@ body.etel-light .cat-chip.on{background:#f3e3b0;color:#4a3300}
                             <div style="padding: 20px; background: rgba(255,255,255,.04); border-radius: 12px;">
                                 <p style="color: var(--text-faint); margin-bottom: 12px;">Bank Account</p>
                                 <p id="payment-bank-account" style="font-size: 18px; font-weight: 700; color: var(--text);">Not configured</p>
-                                <button class="btn btn-secondary btn-small" data-sg-cap="settings.manage" style="margin-top: 16px;display:none" onclick="switchPage('settings')">Update Payment Method</button>
+                                <button class="btn btn-secondary btn-small" data-sg-cap="settings.manage" style="margin-top: 16px;display:none" data-act="switchPage" data-args='["settings"]'>Update Payment Method</button>
                                 <p data-sg-cap-inverse="settings.manage" style="margin-top:14px;font-size:12.5px;color:var(--text-faint,#9A9AAE)">
                                     You can see this business's payment details, but only someone with the settings.manage capability can change them.
                                 </p>
@@ -681,11 +641,11 @@ body.etel-light .cat-chip.on{background:#f3e3b0;color:#4a3300}
                         <div class="card-header">
                             <div class="card-title">📋 Item List</div>
                             <div style="display:flex;gap:8px;flex-wrap:wrap">
-                                <button class="btn btn-primary btn-small" data-sg-cap="menu.manage" style="display:none" onclick="openCatalog()">📚 Pick from catalog</button>
-                                <button class="btn btn-secondary btn-small" data-sg-cap="menu.manage" style="display:none" onclick="openAddItemModal()">+ Add custom item</button>
-                                <button class="btn btn-secondary btn-small" data-sg-cap="menu.manage" style="display:none" onclick="document.getElementById('menu-csv-file').click()">⬆ Import CSV</button>
-                                <button class="btn btn-secondary btn-small" data-sg-cap="menu.manage" style="display:none" onclick="downloadMenuTemplate()">⬇ CSV template</button>
-                                <input type="file" id="menu-csv-file" accept=".csv,text/csv,text/plain" style="display:none" onchange="importMenuCsv(this)">
+                                <button class="btn btn-primary btn-small" data-sg-cap="menu.manage" style="display:none" data-act="openCatalog">📚 Pick from catalog</button>
+                                <button class="btn btn-secondary btn-small" data-sg-cap="menu.manage" style="display:none" data-act="openAddItemModal">+ Add custom item</button>
+                                <button class="btn btn-secondary btn-small" data-sg-cap="menu.manage" style="display:none" data-act="clickById" data-args='["menu-csv-file"]'>⬆ Import CSV</button>
+                                <button class="btn btn-secondary btn-small" data-sg-cap="menu.manage" style="display:none" data-act="downloadMenuTemplate">⬇ CSV template</button>
+                                <input type="file" id="menu-csv-file" accept=".csv,text/csv,text/plain" style="display:none" data-act-change="importMenuCsv" data-args-change='[{"$":"el"}]'>
                             </div>
                         </div>
                         <div class="card-body" id="services-container">
@@ -702,10 +662,10 @@ body.etel-light .cat-chip.on{background:#f3e3b0;color:#4a3300}
                     <div class="card" data-owner-only="1" style="overflow:hidden">
                         <div style="background:linear-gradient(135deg,rgba(212,175,55,.14),rgba(212,175,55,.02));padding:24px 20px;display:flex;align-items:center;gap:18px;flex-wrap:wrap;border-bottom:1px solid rgba(212,175,55,.15)">
                             <div style="position:relative;flex-shrink:0">
-                                <img id="settings-logo-preview" style="width:84px;height:84px;border-radius:18px;object-fit:cover;border:2px solid rgba(212,175,55,.4);background:#fff;box-shadow:0 6px 18px rgba(0,0,0,.35)" src="" onerror="this.style.display='none'">
+                                <img id="settings-logo-preview" style="width:84px;height:84px;border-radius:18px;object-fit:cover;border:2px solid rgba(212,175,55,.4);background:#fff;box-shadow:0 6px 18px rgba(0,0,0,.35)" src="" data-fallback="hide">
                                 <div id="settings-logo-fallback" style="width:84px;height:84px;border-radius:18px;background:rgba(212,175,55,.12);border:2px solid rgba(212,175,55,.4);display:flex;align-items:center;justify-content:center;font-size:32px">🏪</div>
                                 <label for="settings-logo-file" style="position:absolute;bottom:-4px;right:-4px;width:30px;height:30px;border-radius:50%;background:#D4AF37;display:flex;align-items:center;justify-content:center;font-size:14px;cursor:pointer;border:2px solid var(--bg-card,#1a1410);box-shadow:0 2px 8px rgba(0,0,0,.4)">📷</label>
-                                <input type="file" id="settings-logo-file" accept="image/*" style="display:none" onchange="previewSettingsLogo(this)">
+                                <input type="file" id="settings-logo-file" accept="image/*" style="display:none" data-act-change="previewSettingsLogo" data-args-change='[{"$":"el"}]'>
                             </div>
                             <div style="min-width:0;flex:1">
                                 <div id="settings-header-name" style="font-size:19px;font-weight:800;color:var(--text,#f0e6cc);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Loading…</div>
@@ -726,8 +686,8 @@ body.etel-light .cat-chip.on{background:#f3e3b0;color:#4a3300}
                             </div>
                             <div style="display:flex;gap:10px;align-items:center;margin-top:10px;flex-wrap:wrap">
                                 <label for="settings-cover-file" class="btn btn-secondary" style="cursor:pointer;margin:0">📷 Choose cover photo</label>
-                                <input type="file" id="settings-cover-file" accept="image/*" style="display:none" onchange="previewSettingsCover(this)">
-                                <button type="button" id="settings-cover-remove" class="btn btn-secondary" style="display:none" onclick="removeSettingsCover()">Remove</button>
+                                <input type="file" id="settings-cover-file" accept="image/*" style="display:none" data-act-change="previewSettingsCover" data-args-change='[{"$":"el"}]'>
+                                <button type="button" id="settings-cover-remove" class="btn btn-secondary" style="display:none" data-act="removeSettingsCover">Remove</button>
                                 <span style="font-size:11px;color:var(--text-faint,#9A9AAE)">Best size 1200 × 600 (2:1), JPG or PNG, up to 5 MB. Saved with "Save" below.</span>
                             </div>
                         </div>
@@ -759,7 +719,7 @@ body.etel-light .cat-chip.on{background:#f3e3b0;color:#4a3300}
                                 <input type="text" id="settings-zone" class="field-input" placeholder="Your service zone">
                             </div>
                             <p style="font-size:11.5px;color:var(--text-faint,#9A9AAE);margin:14px 0 0;">Square logo images print best on kitchen tickets — tap the camera icon above to change it.</p>
-                            <button class="btn btn-primary" style="margin-top: 22px;" onclick="saveBusinessSettings()">💾 Save Changes</button>
+                            <button class="btn btn-primary" style="margin-top: 22px;" data-act="saveBusinessSettings">💾 Save Changes</button>
                         </div>
                     </div>
 
@@ -784,7 +744,7 @@ body.etel-light .cat-chip.on{background:#f3e3b0;color:#4a3300}
                                 <input type="text" id="settings-cbe-account-name" class="field-input" placeholder="Name as it appears on the account" style="margin-bottom:10px">
                                 <label class="field-label">Account Number</label>
                                 <input type="text" id="settings-cbe-account" class="field-input" placeholder="e.g. 1000123456789" inputmode="numeric">
-                                <button class="btn btn-primary" style="margin-top: 14px; width: 100%; justify-content:center;" onclick="saveCbeAccount()">💾 Save CBE Account</button>
+                                <button class="btn btn-primary" style="margin-top: 14px; width: 100%; justify-content:center;" data-act="saveCbeAccount">💾 Save CBE Account</button>
                             </div>
 
                             <div style="border:1px solid rgba(52,152,219,.3);border-radius:14px;padding:16px;margin-bottom:14px;background:rgba(52,152,219,.05)">
@@ -799,7 +759,7 @@ body.etel-light .cat-chip.on{background:#f3e3b0;color:#4a3300}
                                 <input type="text" id="settings-abysinia-account-name" class="field-input" placeholder="Name as it appears on the account" style="margin-bottom:10px">
                                 <label class="field-label">Account Number</label>
                                 <input type="text" id="settings-abysinia-account" class="field-input" placeholder="e.g. 1000123456789" inputmode="numeric">
-                                <button class="btn btn-primary" style="margin-top: 14px; width: 100%; justify-content:center;" onclick="saveAbysiniaAccount()">💾 Save Abysinia Account</button>
+                                <button class="btn btn-primary" style="margin-top: 14px; width: 100%; justify-content:center;" data-act="saveAbysiniaAccount">💾 Save Abysinia Account</button>
                             </div>
 
                             <div style="border:1px solid rgba(230,126,34,.35);border-radius:14px;padding:16px;margin-bottom:14px;background:rgba(230,126,34,.06)">
@@ -815,7 +775,7 @@ body.etel-light .cat-chip.on{background:#f3e3b0;color:#4a3300}
                                 <label class="field-label">Telebirr Phone Number</label>
                                 <input type="tel" id="settings-telebirr-number" class="field-input" placeholder="e.g. 0912345678" inputmode="tel">
                                 <div id="settings-telebirr-err" style="display:none;color:#e74c3c;font-size:11.5px;margin-top:6px"></div>
-                                <button class="btn btn-primary" style="margin-top: 14px; width: 100%; justify-content:center;" onclick="saveTelebirrNumber()">💾 Save Telebirr Number</button>
+                                <button class="btn btn-primary" style="margin-top: 14px; width: 100%; justify-content:center;" data-act="saveTelebirrNumber">💾 Save Telebirr Number</button>
                             </div>
 
                             <div style="border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:14px;text-align:center;opacity:.55;max-width:200px">
@@ -839,8 +799,8 @@ body.etel-light .cat-chip.on{background:#f3e3b0;color:#4a3300}
                             <div id="printer-status" style="font-size: 13px; font-weight: 700; margin-bottom: 14px; color: var(--text-faint, #9A9AAE);">
                                 ○ Not connected
                             </div>
-                            <button class="btn btn-primary" style="width: 100%; justify-content:center;" onclick="connectPrinterUI()">🔗 Connect Printer</button>
-                            <button class="btn" style="margin-top: 10px; width: 100%; justify-content:center; background:none; border:1px solid var(--border-light); color: var(--text-faint, #9A9AAE);" onclick="forgetPrinterUI()">Forget Printer</button>
+                            <button class="btn btn-primary" style="width: 100%; justify-content:center;" data-act="connectPrinterUI">🔗 Connect Printer</button>
+                            <button class="btn" style="margin-top: 10px; width: 100%; justify-content:center; background:none; border:1px solid var(--border-light); color: var(--text-faint, #9A9AAE);" data-act="forgetPrinterUI">Forget Printer</button>
                         </div>
                     </div>
                 </div><!-- /page-settings -->
@@ -866,8 +826,8 @@ body.etel-light .cat-chip.on{background:#f3e3b0;color:#4a3300}
                                     <input type="text" id="role-name" class="field-input" placeholder="Role name (e.g. Kitchen)" style="max-width:280px">
                                 </div>
                                 <div id="role-cap-checkboxes" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px;margin-bottom:14px"></div>
-                                <button class="btn btn-primary" onclick="saveRoleUI()">💾 Save Role</button>
-                                <button class="btn" id="role-cancel-btn" style="display:none;background:none;border:1px solid var(--border-light)" onclick="cancelEditRoleUI()">Cancel edit</button>
+                                <button class="btn btn-primary" data-act="saveRoleUI">💾 Save Role</button>
+                                <button class="btn" id="role-cancel-btn" style="display:none;background:none;border:1px solid var(--border-light)" data-act="cancelEditRoleUI">Cancel edit</button>
                                 <div id="role-msg" style="margin-top:10px;font-size:13px;"></div>
                             </div>
                         </div>
@@ -890,7 +850,7 @@ body.etel-light .cat-chip.on{background:#f3e3b0;color:#4a3300}
                                 <input type="password" id="staff-password" class="field-input" placeholder="Password (only if new EtelID)">
                                 <select id="staff-role-select" class="field-input"><option value="">No role (view-only defaults)</option></select>
                             </div>
-                            <button class="btn btn-primary" onclick="addCashierUI()">➕ Add Staff</button>
+                            <button class="btn btn-primary" data-act="addCashierUI">➕ Add Staff</button>
                             <div id="staff-msg" style="margin-top:10px;font-size:13px;"></div>
                         </div>
                     </div>
@@ -947,7 +907,7 @@ body.etel-light .cat-chip.on{background:#f3e3b0;color:#4a3300}
     <!-- ── ITEM MODAL ─────────────────────────────────────────── -->
     <div id="item-modal-overlay" class="modal-overlay">
         <div class="modal-box">
-            <button class="modal-close" onclick="closeItemModal()">✕</button>
+            <button class="modal-close" data-act="closeItemModal">✕</button>
             <div id="item-modal-title" class="modal-title">Add New Item</div>
             <input type="hidden" id="item-edit-id" value="">
             <div style="margin-bottom:14px">
@@ -1014,15 +974,15 @@ body.etel-light .cat-chip.on{background:#f3e3b0;color:#4a3300}
             </label>
             <div style="margin-bottom:20px">
                 <label class="field-label">Item Image</label>
-                <input type="file" id="item-image-file" accept="image/*" style="display:none" onchange="previewItemImage(this)">
+                <input type="file" id="item-image-file" accept="image/*" style="display:none" data-act-change="previewItemImage" data-args-change='[{"$":"el"}]'>
                 <div style="display:flex;gap:10px;align-items:center">
-                    <button type="button" class="btn btn-secondary btn-small" onclick="document.getElementById('item-image-file').click()">📷 Choose Image</button>
+                    <button type="button" class="btn btn-secondary btn-small" data-act="clickById" data-args='["item-image-file"]'>📷 Choose Image</button>
                     <input type="text" id="item-image-url" class="field-input" placeholder="or paste image URL">
                 </div>
                 <img id="item-image-preview" src="" alt="" style="margin-top:10px;max-height:100px;border-radius:8px;display:none">
             </div>
             <div id="item-modal-msg" style="font-size:13px;margin-bottom:10px;padding:8px 12px;border-radius:8px;display:none"></div>
-            <button class="btn btn-primary" style="width:100%;justify-content:center;padding:13px" onclick="submitItem()">💾 Save Item</button>
+            <button class="btn btn-primary" style="width:100%;justify-content:center;padding:13px" data-act="submitItem">💾 Save Item</button>
         </div>
     </div>
 
@@ -1030,37 +990,37 @@ body.etel-light .cat-chip.on{background:#f3e3b0;color:#4a3300}
     <!-- ── DECLINE ORDER ─────────────────────────────────────── -->
     <div id="decline-overlay" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="decline-title">
         <div class="modal-box">
-            <button class="modal-close" onclick="closeDecline()" aria-label="Close">&#10005;</button>
+            <button class="modal-close" data-act="closeDecline" aria-label="Close">&#10005;</button>
             <div id="decline-title" class="modal-title">Decline this order?</div>
             <p class="cat-hint">The customer is told right away and gets their money back if they already paid. Pick the reason.</p>
             <div id="decline-reasons" class="decline-reasons"></div>
             <textarea id="decline-note" class="field-input" maxlength="200" rows="2" placeholder="Add a note for the customer (optional)"></textarea>
             <div id="decline-msg" class="decline-msg" style="display:none"></div>
-            <button id="decline-go" class="btn decline-go" onclick="submitDecline()">Decline order</button>
-            <button class="btn decline-keep" onclick="closeDecline()">Keep the order</button>
+            <button id="decline-go" class="btn decline-go" data-act="submitDecline">Decline order</button>
+            <button class="btn decline-keep" data-act="closeDecline">Keep the order</button>
         </div>
     </div>
 
     <!-- ── MENU CATALOG PICKER ───────────────────────────────── -->
     <div id="catalog-overlay" class="modal-overlay">
         <div class="modal-box cat-box">
-            <button class="modal-close" onclick="closeCatalog()">✕</button>
+            <button class="modal-close" data-act="closeCatalog">✕</button>
             <div class="modal-title">📚 Pick dishes from the catalog</div>
             <p class="cat-hint">Tick the dishes you sell and type <b>your own price</b>. Names, Amharic names and descriptions are filled in for you.</p>
             <div id="cat-packs" class="cat-chips"></div>
-            <input type="text" id="cat-search" class="field-input" placeholder="🔎 Search dishes (English or አማርኛ)" oninput="catalogRender()">
+            <input type="text" id="cat-search" class="field-input" placeholder="🔎 Search dishes (English or አማርኛ)" data-act-input="catalogRender">
             <div id="cat-tabs" class="cat-chips"></div>
             <div id="cat-list" class="cat-list"><p class="empty-msg">Loading catalog…</p></div>
             <div id="cat-msg" style="display:none"></div>
-            <button id="cat-submit" class="btn btn-primary" style="width:100%;justify-content:center;padding:13px" onclick="catalogSubmit()" disabled>Add dishes</button>
+            <button id="cat-submit" class="btn btn-primary" style="width:100%;justify-content:center;padding:13px" data-act="catalogSubmit" disabled>Add dishes</button>
         </div>
     </div>
 
     <!-- PROFILE PANEL -->
-    <div id="sg-profile-overlay" onclick="if(event.target===this)toggleSgProfile()" style="display:none;position:fixed;inset:0;z-index:900;background:rgba(10,6,0,.55);backdrop-filter:blur(3px)">
+    <div id="sg-profile-overlay" data-act="toggleSgProfile" data-self="1" style="display:none;position:fixed;inset:0;z-index:900;background:rgba(10,6,0,.55);backdrop-filter:blur(3px)">
         <div id="sg-profile-panel" style="position:absolute;top:0;right:0;bottom:0;width:min(380px,100vw);background:linear-gradient(180deg,#1c1204 0%,#100a02 100%);border-left:1px solid var(--border-lt);box-shadow:-20px 0 60px -20px rgba(0,0,0,.6);transform:translateX(100%);transition:transform .34s var(--ease);overflow-y:auto">
             <div style="display:flex;justify-content:flex-end;padding:14px 14px 0">
-                <button onclick="toggleSgProfile()" aria-label="Close" style="width:32px;height:32px;border-radius:50%;border:1px solid var(--border-lt);background:rgba(255,255,255,.06);color:var(--text-dim);font-size:15px;cursor:pointer">✕</button>
+                <button data-act="toggleSgProfile" aria-label="Close" style="width:32px;height:32px;border-radius:50%;border:1px solid var(--border-lt);background:rgba(255,255,255,.06);color:var(--text-dim);font-size:15px;cursor:pointer">✕</button>
             </div>
 
             <div style="display:flex;flex-direction:column;align-items:center;padding:6px 24px 22px;text-align:center">
@@ -1110,24 +1070,24 @@ body.etel-light .cat-chip.on{background:#f3e3b0;color:#4a3300}
                         <input type="time" id="sgp-opens" aria-label="Opens at" style="padding:7px 8px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:13px">
                         <span style="font-size:12px;color:var(--text-dim)">to</span>
                         <input type="time" id="sgp-closes" aria-label="Closes at" style="padding:7px 8px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:13px">
-                        <button type="button" onclick="saveSgHours()" style="padding:7px 14px;border-radius:8px;border:0;background:#D4AF37;color:#1A1200;font-weight:700;font-size:12.5px;cursor:pointer">Save</button>
-                        <button type="button" onclick="clearSgHours()" style="padding:7px 10px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--text-dim);font-size:12px;cursor:pointer">Clear</button>
+                        <button type="button" data-act="saveSgHours" style="padding:7px 14px;border-radius:8px;border:0;background:#D4AF37;color:#1A1200;font-weight:700;font-size:12.5px;cursor:pointer">Save</button>
+                        <button type="button" data-act="clearSgHours" style="padding:7px 10px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--text-dim);font-size:12px;cursor:pointer">Clear</button>
                     </div>
                 </div>
             </div>
 
             <div style="margin:0 20px 14px;background:var(--surface-lt);border:1px solid var(--border);border-radius:16px;overflow:hidden">
-                <div onclick="toggleSgProfile();switchPage('orders')" style="display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid var(--border);cursor:pointer">
+                <div data-acts='[["toggleSgProfile"],["switchPage","orders"]]' style="display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid var(--border);cursor:pointer">
                     <div style="width:34px;height:34px;border-radius:10px;background:rgba(212,175,55,.12);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0">📦</div>
                     <div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:700;color:var(--text)">Orders</div><div style="font-size:11px;color:var(--text-dim);margin-top:1px">Track and manage orders</div></div>
                     <div style="color:var(--text-faint);font-size:15px">›</div>
                 </div>
-                <div onclick="toggleSgProfile();switchPage('services')" style="display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid var(--border);cursor:pointer">
+                <div data-acts='[["toggleSgProfile"],["switchPage","services"]]' style="display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid var(--border);cursor:pointer">
                     <div style="width:34px;height:34px;border-radius:10px;background:rgba(96,180,255,.12);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0">🍽️</div>
                     <div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:700;color:var(--text)">My Services &amp; Items</div><div style="font-size:11px;color:var(--text-dim);margin-top:1px">Manage your catalog</div></div>
                     <div style="color:var(--text-faint);font-size:15px">›</div>
                 </div>
-                <div onclick="toggleSgProfile();switchPage('settings')" style="display:flex;align-items:center;gap:12px;padding:14px 16px;cursor:pointer">
+                <div data-acts='[["toggleSgProfile"],["switchPage","settings"]]' style="display:flex;align-items:center;gap:12px;padding:14px 16px;cursor:pointer">
                     <div style="width:34px;height:34px;border-radius:10px;background:rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0">⚙️</div>
                     <div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:700;color:var(--text)">Settings &amp; Payment</div><div style="font-size:11px;color:var(--text-dim);margin-top:1px">Business info, bank account</div></div>
                     <div style="color:var(--text-faint);font-size:15px">›</div>
@@ -1149,97 +1109,18 @@ body.etel-light .cat-chip.on{background:#f3e3b0;color:#4a3300}
             </div>
 
             <div style="padding:0 20px 10px">
-                <button onclick="if(confirm('This clears everything cached on THIS device - app data, cached files - then reloads. You will be logged out and need to sign in again. Continue?')) etelForceClearCacheAndReload()" style="width:100%;padding:13px;background:rgba(142,68,173,.12);border:1px solid rgba(142,68,173,.35);color:#a569bd;border-radius:12px;font-size:13.5px;font-weight:700;cursor:pointer;margin-bottom:10px">🧹 Fix app not updating</button>
-                <button onclick="logout()" style="width:100%;padding:13px;background:rgba(230,57,70,.12);border:1px solid rgba(230,57,70,.35);color:var(--danger);border-radius:12px;font-size:13.5px;font-weight:700;cursor:pointer">🚪 Logout</button>
+                <button data-act="confirmClearCache" style="width:100%;padding:13px;background:rgba(142,68,173,.12);border:1px solid rgba(142,68,173,.35);color:#a569bd;border-radius:12px;font-size:13.5px;font-weight:700;cursor:pointer;margin-bottom:10px">🧹 Fix app not updating</button>
+                <button data-act="logout" style="width:100%;padding:13px;background:rgba(230,57,70,.12);border:1px solid rgba(230,57,70,.35);color:var(--danger);border-radius:12px;font-size:13.5px;font-weight:700;cursor:pointer">🚪 Logout</button>
             </div>
             <div style="text-align:center;font-size:10.5px;color:var(--text-faint);padding:6px 0 22px">ETEL Pro · Service Dashboard</div>
         </div>
     </div>
 
-    <script src="js/servicegiver.js?v=4.5"></script>
+    <script src="js/servicegiver-actions.js?v=1"></script>
+    <script src="js/servicegiver.js?v=4.6"></script>
     <script src="js/servicegiver-premium.js?v=1.9"></script>
     <script src="js/servicegiver-3d-premium.js?v=1.2"></script><!-- 3D visual upgrade: glass depth, glowing sweep borders, rating ring -->
-    <script>
-    /* ── Real QR decode loop (was camera-preview-only before) ──
-       Draws each video frame to a canvas, runs jsQR against the pixel
-       data, and on a decoded result calls the real sg_scan_qr backend
-       action -- this used to just show a live camera feed and do
-       nothing else. */
-    var _qrType = 'pickup';
-    var _qrScanning = false;
-    function setQrType(type) {
-        _qrType = type;
-        document.getElementById('qr-type-pickup').style.opacity = type === 'pickup' ? 1 : .5;
-        document.getElementById('qr-type-delivery').style.opacity = type === 'delivery' ? 1 : .5;
-    }
-    setQrType('pickup');
-
-    function _qrExtractOrderId(text) {
-        try {
-            var obj = JSON.parse(text);
-            if (obj && obj.order_id) return parseInt(obj.order_id);
-        } catch (e) {}
-        var m = String(text).match(/order_id=(\d+)/) || String(text).match(/(\d{2,})/);
-        return m ? parseInt(m[1]) : null;
-    }
-
-    async function startQRScanner() {
-        var video = document.getElementById('qr-video');
-        var canvas = document.getElementById('qr-canvas');
-        var ctx = canvas.getContext('2d', { willReadFrequently: true });
-        var resultEl = document.getElementById('qr-result');
-        resultEl.className = 'qr-result'; resultEl.style.display = 'none';
-
-        try {
-            var stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-            video.srcObject = stream;
-            await video.play();
-        } catch (error) {
-            showNotification(cameraAccessMessage(error), 'error');
-            return;
-        }
-
-        _qrScanning = true;
-        requestAnimationFrame(_qrTick);
-
-        function _qrTick() {
-            if (!_qrScanning) return;
-            if (video.readyState === video.HAVE_ENOUGH_DATA) {
-                canvas.width = video.videoWidth;
-                canvas.height = video.videoHeight;
-                ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-                var img = ctx.getImageData(0, 0, canvas.width, canvas.height);
-                var code = window.jsQR ? jsQR(img.data, img.width, img.height) : null;
-                if (code && code.data) {
-                    _qrScanning = false;
-                    (video.srcObject.getTracks() || []).forEach(function (t) { t.stop(); });
-                    _qrHandleDecoded(code.data);
-                    return;
-                }
-            }
-            requestAnimationFrame(_qrTick);
-        }
-    }
-
-    async function _qrHandleDecoded(text) {
-        var resultEl = document.getElementById('qr-result');
-        var orderId = _qrExtractOrderId(text);
-        if (!orderId) {
-            resultEl.className = 'qr-result err'; resultEl.textContent = '❌ Could not read an order ID from that QR code.';
-            return;
-        }
-        resultEl.className = 'qr-result'; resultEl.style.display = 'block'; resultEl.textContent = 'Confirming…';
-        var data = await apiCall('sg_scan_qr', { order_id: orderId, qr_type: _qrType });
-        if (data) {
-            resultEl.className = 'qr-result ok';
-            resultEl.textContent = '✅ Order #' + orderId + ' ' + _qrType + ' confirmed!';
-            if (typeof loadDashboardData === 'function') loadDashboardData();
-        } else {
-            resultEl.className = 'qr-result err';
-            resultEl.textContent = '❌ Could not confirm order #' + orderId + '.';
-        }
-    }
-    </script>
+    <script src="js/servicegiver-qr.js?v=1"></script>
 <script src="js/apk-download-badge.js?v=2" data-role="service"></script>
 <script src="js/order-chat.js?v=1" data-mode="layer" data-fab="1"></script>
 <script src="js/investor-nav-check.js"></script>

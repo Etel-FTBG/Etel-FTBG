@@ -447,9 +447,14 @@ function cameraAccessMessage(err) {
 }
 
 // ── MODAL ────────────────────────────────────────────────────
+// Button actions without inline JavaScript: a page that loads js/etel-actions.js gets data-act markup (strict-policy ready),
+// every other page keeps the inline handler exactly as before. `call` is the inline code, `name` the exposed action name.
+function _etelAct(call, name, args) {
+  return window.EtelActions ? window.EtelActions.attrs(name, args || []) : ' onclick="' + call + '"';
+}
 function openModal(html) {
   const m = document.getElementById('modal'); if (!m) return;
-  m.innerHTML = `<div class="modal-bg" onclick="closeModal()"></div><div class="modal-box">${html}<button class="modal-close" onclick="closeModal()">✕</button></div>`;
+  m.innerHTML = `<div class="modal-bg"${_etelAct('closeModal()', 'closeModal')}></div><div class="modal-box">${html}<button class="modal-close"${_etelAct('closeModal()', 'closeModal')}>✕</button></div>`;
   m.classList.add('open');
 }
 function closeModal() {
@@ -767,8 +772,8 @@ const DiagPanel = {
       <div id="_diag_hdr">
         <span id="_diag_title">ኢE Diagnostic</span>
         <span id="_diag_page">${location.pathname.split('/').pop()||'index'}</span>
-        <button onclick="DiagPanel._clear()" style="padding:2px 7px;font-size:10px;border:1px solid #333;background:#111;color:#B8B0A0;border-radius:4px;cursor:pointer;margin-left:6px">Clear</button>
-        <button onclick="DiagPanel._close()" style="padding:2px 7px;font-size:10px;border:1px solid #333;background:#111;color:#B8B0A0;border-radius:4px;cursor:pointer;margin-left:4px">✕</button>
+        <button${_etelAct('DiagPanel._clear()', 'DiagPanel._clear')} style="padding:2px 7px;font-size:10px;border:1px solid #333;background:#111;color:#B8B0A0;border-radius:4px;cursor:pointer;margin-left:6px">Clear</button>
+        <button${_etelAct('DiagPanel._close()', 'DiagPanel._close')} style="padding:2px 7px;font-size:10px;border:1px solid #333;background:#111;color:#B8B0A0;border-radius:4px;cursor:pointer;margin-left:4px">✕</button>
       </div>
       <div id="_diag_stats">
         <div class="dstat" id="_ds_api"><div class="dstat-n">—</div><div class="dstat-l">API</div></div>
@@ -777,12 +782,12 @@ const DiagPanel = {
         <div class="dstat" id="_ds_er"><div class="dstat-n">0</div><div class="dstat-l">Errors</div></div>
       </div>
       <div id="_diag_toolbar">
-        <button onclick="DiagPanel.runAll()">▶ All</button>
-        <button onclick="DiagPanel.testPing()">⚡ Ping</button>
-        <button onclick="DiagPanel.testDB()">🗄 DB</button>
-        <button onclick="DiagPanel.testAuth()">🔐 Auth</button>
-        <button onclick="DiagPanel.testReset()">🔑 Reset</button>
-        <button onclick="DiagPanel.testNetwork()">🌐 Net</button>
+        <button${_etelAct('DiagPanel.runAll()', 'DiagPanel.runAll')}>▶ All</button>
+        <button${_etelAct('DiagPanel.testPing()', 'DiagPanel.testPing')}>⚡ Ping</button>
+        <button${_etelAct('DiagPanel.testDB()', 'DiagPanel.testDB')}>🗄 DB</button>
+        <button${_etelAct('DiagPanel.testAuth()', 'DiagPanel.testAuth')}>🔐 Auth</button>
+        <button${_etelAct('DiagPanel.testReset()', 'DiagPanel.testReset')}>🔑 Reset</button>
+        <button${_etelAct('DiagPanel.testNetwork()', 'DiagPanel.testNetwork')}>🌐 Net</button>
       </div>
       <div id="_diag_con"></div>
     `;
@@ -923,6 +928,7 @@ const DiagPanel = {
     setTimeout(() => { if (!this._open) this.testPing().then(()=>this.testDB()); }, 2000);
   }
 };
+window.DiagPanel = DiagPanel; // so data-act actions (js/etel-actions.js) can reach it
 
 window.addEventListener('load',()=>{initReveal();silentPatchCheck();pwaInit();PWAInstall.init();DarkMode.injectToggle();
   // Admin-only: checks the real, server-verified role from login (Auth.getUser().role),
@@ -1551,7 +1557,7 @@ const UI = {
     </div>`;
   },
   error(msg, retryFnName) {
-    const btn = retryFnName ? `<button class="btn btn-secondary" style="margin-top:12px;padding:6px 12px;font-size:11px;" onclick="${retryFnName}">🔄 Retry</button>` : '';
+    const btn = retryFnName ? `<button class="btn btn-secondary" style="margin-top:12px;padding:6px 12px;font-size:11px;" ${_etelAct(retryFnName, String(retryFnName).replace(/\(.*$/, ''))}>🔄 Retry</button>` : '';
     return `<div class="etel-loading-container" style="color:#e63946;">
       <div style="font-size:24px;margin-bottom:8px;">⚠️</div>
       <div>${msg}</div>
