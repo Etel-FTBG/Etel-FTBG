@@ -30,8 +30,10 @@ if '"sgSwitchLang"' not in read('js/servicegiver-actions.js'):
 v = lambda name: re.search(re.escape(name) + r'\?v=([0-9.]+)', html)
 if not v('servicegiver-actions.js') or float(v('servicegiver-actions.js').group(1)) < 2:
     bad.append('servicegiver-actions.js must be loaded as ?v=2 or newer')
-if not v('servicegiver.js') or float(v('servicegiver.js').group(1)) < 4.7:
-    bad.append('servicegiver.js must be loaded as ?v=4.7 or newer')
+if not v('servicegiver.js') or float(v('servicegiver.js').group(1)) < 4.8:
+    bad.append('servicegiver.js must be loaded as ?v=4.8 or newer')
+if not v('servicegiver-i18n.js') or float(v('servicegiver-i18n.js').group(1)) < 2:
+    bad.append('servicegiver-i18n.js must be loaded as ?v=2 or newer')
 if bad:
     print('check_servicegiver_i18n FAILED:')
     for b in bad:
