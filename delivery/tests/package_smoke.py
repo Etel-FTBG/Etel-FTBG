@@ -155,6 +155,10 @@ def main():
     s, t = call("track_order", {"order_id": pid}, token=cust)
     po = (t.get("data") or {}).get("order", {})
     pp, dp = str(po.get("pickup_pin")), str(po.get("delivery_pin"))
+    pt = po.get("pkg_times") or {}
+    check("tracking carries the stage times: booked and accepted set, nothing later yet, and the database clock",
+          isinstance(pt.get("booked"), int) and isinstance(pt.get("accepted"), int) and pt.get("accepted") >= pt.get("booked")
+          and pt.get("picked_up") is None and pt.get("delivered") is None and pt.get("now") >= pt.get("accepted"), pt)
     wrong = "0000" if pp != "0000" else "1111"
     s, r = call("courier_update_order_status", {"order_id": pid, "status": "picked_up"}, token=van)
     check("a plain status change cannot pick a package up (the PIN is needed)", r.get("success") is False and s == 400, r)
@@ -175,8 +179,14 @@ def main():
     if dp != pp:
         s, r = call("courier_package_deliver", {"order_id": pid, "pin": pp}, token=van)
         check("the pickup PIN does not deliver it", r.get("success") is False, r)
+    s, t2 = call("track_order", {"order_id": pid}, token=cust)
+    pt = ((t2.get("data") or {}).get("order") or {}).get("pkg_times") or {}
+    check("after pickup the pickup time is set and in order", isinstance(pt.get("picked_up"), int) and pt["picked_up"] >= pt["accepted"] >= pt["booked"] and pt.get("delivered") is None, pt)
     s, r = call("courier_package_deliver", {"order_id": pid, "pin": dp}, token=van)
     check("the recipient's PIN delivers it", r.get("success") is True and (r.get("data") or {}).get("status") == "delivered", r)
+    s, t3 = call("track_order", {"order_id": pid}, token=cust)
+    pt = ((t3.get("data") or {}).get("order") or {}).get("pkg_times") or {}
+    check("after delivery all four times are set and in order", all(isinstance(pt.get(k), int) for k in ("booked", "accepted", "picked_up", "delivered")) and pt["delivered"] >= pt["picked_up"] >= pt["accepted"] >= pt["booked"], pt)
     s, r = call("courier_package_deliver", {"order_id": pid, "pin": dp}, token=van)
     check("it cannot be delivered twice", r.get("success") is False, r)
 

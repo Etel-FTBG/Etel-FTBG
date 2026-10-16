@@ -28,6 +28,10 @@
             pkg_err_vehicle: 'Choose a vehicle.', pkg_gps_fail: 'Could not get your location.',
             pkg_trk_title: 'Package details', pkg_trk_from: 'From', pkg_trk_to: 'To', pkg_trk_vehicle: 'Vehicle', pkg_trk_what: 'Package',
             pkg_pin_pick: 'Pickup PIN', pkg_pin_pick_hint: 'Show this to the courier when they come to collect the package.', pkg_pin_drop: 'Delivery PIN', pkg_pin_drop_hint: 'Give this to the recipient. They tell it to the courier, and the package is handed over only with it.',
+            pkg_j_title: 'Delivery journey', pkg_j_finding: 'Finding a courier', pkg_j_enroute: 'Courier is heading to pick it up', pkg_j_carry: 'On the way to the recipient',
+            pkg_j_done: 'Delivered', pkg_j_cancel: 'Cancelled', pkg_j_booked: 'Package booked', pkg_j_accepted: 'Courier accepted', pkg_j_picked: 'Picked up', pkg_j_delivered: 'Delivered',
+            pkg_j_since: 'since you booked', pkg_j_total: 'Total time', pkg_j_found: 'Courier found in', pkg_j_reached: 'Reached the pickup in', pkg_j_trip: 'The trip took',
+            pkg_j_now: 'running now', pkg_j_min: 'min', pkg_j_hr: 'h', pkg_j_sec: 's',
             pkg_order_label: 'Package', pkg_theme: 'Light / Dark mode'
         },
         am: {
@@ -52,6 +56,10 @@
             pkg_err_vehicle: 'ተሽከርካሪ ይምረጡ።', pkg_gps_fail: 'አካባቢዎን ማግኘት አልተቻለም።',
             pkg_trk_title: 'የጥቅሉ ዝርዝር', pkg_trk_from: 'ከ', pkg_trk_to: 'ወደ', pkg_trk_vehicle: 'ተሽከርካሪ', pkg_trk_what: 'ጥቅል',
             pkg_pin_pick: 'የመረከቢያ ፒን', pkg_pin_pick_hint: 'ሹፌሩ ጥቅሉን ለመውሰድ ሲመጣ ይህን ያሳዩት።', pkg_pin_drop: 'የማስረከቢያ ፒን', pkg_pin_drop_hint: 'ይህንን ለተቀባዩ ይስጡ። ተቀባዩ ለሹፌሩ ይነግራል፤ ጥቅሉ የሚሰጠው በዚህ ፒን ብቻ ነው።',
+            pkg_j_title: 'የጉዞ ሂደት', pkg_j_finding: 'ሹፌር በመፈለግ ላይ', pkg_j_enroute: 'ሹፌሩ ጥቅሉን ለመውሰድ እየመጣ ነው', pkg_j_carry: 'ወደ ተቀባዩ በመሄድ ላይ',
+            pkg_j_done: 'ተደርሷል', pkg_j_cancel: 'ተሰርዟል', pkg_j_booked: 'ጥቅሉ ተመዝግቧል', pkg_j_accepted: 'ሹፌሩ ተቀብሏል', pkg_j_picked: 'ተወስዷል', pkg_j_delivered: 'ተደርሷል',
+            pkg_j_since: 'ከተመዘገበ ጀምሮ', pkg_j_total: 'ጠቅላላ ጊዜ', pkg_j_found: 'ሹፌር የተገኘው በ', pkg_j_reached: 'መውሰጃው የደረሰው በ', pkg_j_trip: 'ጉዞው የፈጀው',
+            pkg_j_now: 'አሁን እየሄደ ነው', pkg_j_min: 'ደቂቃ', pkg_j_hr: 'ሰዓት', pkg_j_sec: 'ሰከንድ',
             pkg_order_label: 'ጥቅል', pkg_theme: 'ብርሃን / ጨለማ'
         }
     });
@@ -437,28 +445,89 @@
         }
         return o.vehicle_class;
     }
+    // ── Delivery journey: the four moments of a package with their clock times, how long each part took, and a running timer for the part
+    // that is happening now. All times come from the database clock (order.pkg_times, epoch seconds) so the phone's own clock never matters.
+    var JT = { timer: null, offset: 0 };
+    function nowSec() { return Math.floor(Date.now() / 1000) - JT.offset; }
+    function pad2(n) { return (n < 10 ? '0' : '') + n; }
+    function clockText(sec) { sec = Math.max(0, sec); var h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60), x = sec % 60; return (h ? h + ':' + pad2(m) : pad2(m)) + ':' + pad2(x); }
+    function durText(sec) {
+        sec = Math.max(0, Math.round(sec));
+        if (sec < 60) return sec + ' ' + T('pkg_j_sec');
+        var m = Math.floor(sec / 60);
+        if (m < 60) return m + ' ' + T('pkg_j_min') + (m < 10 ? ' ' + pad2(sec % 60) + ' ' + T('pkg_j_sec') : '');
+        return Math.floor(m / 60) + ' ' + T('pkg_j_hr') + ' ' + pad2(m % 60) + ' ' + T('pkg_j_min');
+    }
+    function wallClock(sec) { try { return new Date(sec * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); } catch (e) { return ''; } }
+    function tickJourney() {
+        var card = document.getElementById('track-package-card');
+        var tv = document.getElementById('view-track-order');
+        if (!card || !card.querySelector('[data-pt-from]') || (tv && tv.style.display === 'none')) { clearInterval(JT.timer); JT.timer = null; return; }
+        Array.prototype.forEach.call(card.querySelectorAll('[data-pt-from]'), function (el) {
+            el.textContent = clockText(nowSec() - parseInt(el.getAttribute('data-pt-from'), 10));
+        });
+    }
+    function journeyHtml(o) {
+        var t = o.pkg_times;
+        if (!t || !t.booked) return '';
+        JT.offset = Math.floor(Date.now() / 1000) - (t.now || Math.floor(Date.now() / 1000));
+        var st = o.status;
+        var cancelled = st === 'cancelled', delivered = st === 'delivered';
+        // which part is happening now: 1 = waiting for a courier, 2 = courier heading to the pickup, 3 = on the way to the recipient
+        var phase = cancelled || delivered ? 0 : (t.picked_up || st === 'picked_up' || st === 'in_transit') ? 3 : (t.accepted || st === 'assigned') ? 2 : 1;
+        var from = phase === 3 ? (t.picked_up || t.accepted || t.booked) : phase === 2 ? (t.accepted || t.booked) : t.booked;
+        var head = cancelled ? T('pkg_j_cancel') : delivered ? T('pkg_j_done') : phase === 3 ? T('pkg_j_carry') : phase === 2 ? T('pkg_j_enroute') : T('pkg_j_finding');
+        var big, sub;
+        if (delivered && t.delivered) { big = durText(t.delivered - t.booked); sub = T('pkg_j_total'); }
+        else if (cancelled) { big = t.cancelled ? wallClock(t.cancelled) : '—'; sub = ''; }
+        else { big = '<span data-pt-from="' + from + '">' + clockText(nowSec() - from) + '</span>'; sub = phase === 1 ? T('pkg_j_since') : T('pkg_j_now'); }
+        var steps = [
+            { k: 'booked', at: t.booked, label: T('pkg_j_booked'), dur: '' },
+            { k: 'accepted', at: t.accepted, label: T('pkg_j_accepted'), dur: t.accepted ? T('pkg_j_found') + ' ' + durText(t.accepted - t.booked) : '' },
+            { k: 'picked', at: t.picked_up, label: T('pkg_j_picked'), dur: t.picked_up && t.accepted ? T('pkg_j_reached') + ' ' + durText(t.picked_up - t.accepted) : '' },
+            { k: 'delivered', at: t.delivered, label: T('pkg_j_delivered'), dur: t.delivered && t.picked_up ? T('pkg_j_trip') + ' ' + durText(t.delivered - t.picked_up) : '' }
+        ];
+        // the step being waited for is the one after the last finished step
+        var activeIdx = cancelled || delivered ? -1 : phase; // phase 1 -> step 1 (accepted), 2 -> step 2 (picked), 3 -> step 3 (delivered)
+        var doneUpTo = delivered ? 3 : cancelled ? 0 : phase - 1;   // a step counts as done from the status too, in case an older server has no time for it
+        var list = steps.map(function (sp, i) {
+            var done = !!sp.at || i <= doneUpTo, active = i === activeIdx, cls = 'pkg-j-step' + (done ? ' is-done' : '') + (active ? ' is-active' : '');
+            var right = done && sp.at ? '<span class="pkg-j-clock">' + esc(wallClock(sp.at)) + '</span>' : (active ? '<span class="pkg-j-clock pkg-j-live" data-pt-from="' + from + '">' + clockText(nowSec() - from) + '</span>' : '');
+            return '<li class="' + cls + '"><span class="pkg-j-dot" aria-hidden="true">' + (done ? '✓' : '') + '</span><div class="pkg-j-body"><div class="pkg-j-name">' + esc(sp.label) + '</div>' +
+                (sp.dur ? '<div class="pkg-j-dur">' + esc(sp.dur) + '</div>' : '') + '</div>' + right + '</li>';
+        }).join('');
+        return '<section class="pkg-card pkg-journey' + (cancelled ? ' is-cancelled' : delivered ? ' is-delivered' : '') + '"><div class="pkg-j-hero"><div class="pkg-j-k">' + esc(head) + '</div>' +
+            '<div class="pkg-j-timer" aria-live="off">' + big + '</div>' + (sub ? '<div class="pkg-j-sub">' + esc(sub) + '</div>' : '') + '</div>' +
+            '<h3 class="pkg-h pkg-j-h">' + esc(T('pkg_j_title')) + '</h3><ol class="pkg-j-steps">' + list + '</ol></section>';
+    }
+    var DETAIL_ICON = ['📍', '🏁', '📦', '🛵'];
     window.renderTrackPackage = function (o) {
         var box = document.getElementById('track-package-card');
         if (!box) return;
-        if (!o || o.order_kind !== 'package') { box.innerHTML = ''; return; }
+        var tl = document.getElementById('track-timeline');
+        if (!o || o.order_kind !== 'package') { box.innerHTML = ''; if (tl) tl.style.display = ''; return; }
+        var journey = journeyHtml(o);
+        if (tl) tl.style.display = journey ? 'none' : '';   // the journey card replaces the generic list of steps
         var size = o.pkg_size ? T('pkg_size_' + o.pkg_size) : '';
         var rows = [
             [T('pkg_trk_from'), o.pickup_address || o.from_zone],
             [T('pkg_trk_to'), (o.recipient_address || o.to_zone) + (o.recipient_name ? ' · ' + o.recipient_name : '')],
             [T('pkg_trk_what'), [size, o.pkg_weight_kg ? parseFloat(o.pkg_weight_kg) + ' kg' : '', o.pkg_desc].filter(Boolean).join(' · ')],
             [T('pkg_trk_vehicle'), o.vehicle_class ? vehicleLabel(o) : '']
-        ].filter(function (r) { return r[1]; });
+        ].map(function (r, i) { return r[1] ? [r[0], r[1], DETAIL_ICON[i]] : null; }).filter(Boolean);
         // The sender's two 4-digit PINs (the server only sends them to the sender): the pickup PIN goes to the courier at collection,
         // the delivery PIN goes to the recipient, who tells it to the courier at the door. Each is shown only while it is still needed.
         var live = o.status !== 'delivered' && o.status !== 'cancelled';
         var onTheWay = o.status === 'picked_up' || o.status === 'in_transit';
         function pinBlock(label, pin, hint) {
-            return '<div class="pkg-pin"><div class="pkg-pin-k">' + esc(label) + '</div><div class="pkg-pin-v" aria-label="' + esc(label) + ' ' + esc(String(pin).split('').join(' ')) + '">' + esc(pin) + '</div><div class="pkg-pin-h">' + esc(hint) + '</div></div>';
+            var digits = String(pin).split('').map(function (d) { return '<span class="pkg-pin-d">' + esc(d) + '</span>'; }).join('');
+            return '<div class="pkg-pin"><div class="pkg-pin-k">' + esc(label) + '</div><div class="pkg-pin-v" role="img" aria-label="' + esc(label) + ' ' + esc(String(pin).split('').join(' ')) + '">' + digits + '</div><div class="pkg-pin-h">' + esc(hint) + '</div></div>';
         }
         var pins = '';
         if (live && o.pickup_pin && !onTheWay) pins += pinBlock(T('pkg_pin_pick'), o.pickup_pin, T('pkg_pin_pick_hint'));
         if (live && o.delivery_pin) pins += pinBlock(T('pkg_pin_drop'), o.delivery_pin, T('pkg_pin_drop_hint'));
-        box.innerHTML = '<section class="pkg-card pkg-trk"><h3 class="pkg-h">📦 ' + esc(T('pkg_trk_title')) + '</h3>' + pins +
-            rows.map(function (r) { return '<div class="pkg-trk-row"><span class="pkg-trk-k">' + esc(r[0]) + '</span><span class="pkg-trk-v">' + esc(r[1]) + '</span></div>'; }).join('') + '</section>';
+        box.innerHTML = journey + '<section class="pkg-card pkg-trk"><h3 class="pkg-h">📦 ' + esc(T('pkg_trk_title')) + '</h3>' + pins +
+            rows.map(function (r) { return '<div class="pkg-trk-row"><span class="pkg-trk-ic" aria-hidden="true">' + r[2] + '</span><span class="pkg-trk-k">' + esc(r[0]) + '</span><span class="pkg-trk-v">' + esc(r[1]) + '</span></div>'; }).join('') + '</section>';
+        if (box.querySelector('[data-pt-from]') && !JT.timer) JT.timer = setInterval(tickJourney, 1000);
     };
 })();

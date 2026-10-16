@@ -10,7 +10,7 @@
 function etel_cust_has_col($pdo, $col) {
     static $c = array();
     if (!isset($c[$col])) {
-        try { $q = $pdo->prepare('SHOW COLUMNS FROM orders LIKE ?'); $q->execute(array($col)); $c[$col] = (bool) $q->fetch(); } catch (Exception $e) { $c[$col] = false; }
+        try { $c[$col] = (bool) $pdo->query("SHOW COLUMNS FROM orders LIKE '" . preg_replace('/[^a-z_]/', '', $col) . "'")->fetch(); } catch (Exception $e) { $c[$col] = false; }
     }
     return $c[$col];
 }

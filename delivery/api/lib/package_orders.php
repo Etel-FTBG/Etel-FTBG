@@ -494,6 +494,30 @@ function etel_package_courier_capable($pdo, $courier_id) {
 }
 
 // SQL piece for the courier picks: only couriers whose app can run packages.
+// When each stage of a package happened, as epoch seconds on the DATABASE clock (no time-zone maths in the apps), plus the database's own
+// "now", so a running timer in an app never depends on the phone's clock. Missing stages are null. Safe on installs without the newer columns.
+function etel_package_times($pdo, $order_id) {
+    static $has = array();
+    foreach (array('courier_accepted_at', 'courier_assigned_at', 'picked_up_at', 'cancelled_at') as $c) {
+        if (!isset($has[$c])) {
+            try { $has[$c] = (bool) $pdo->query("SHOW COLUMNS FROM orders LIKE '" . $c . "'")->fetch(); } catch (Exception $e) { $has[$c] = false; }   // $c is one of the constants above
+        }
+    }
+    $acc = array();
+    if ($has['courier_accepted_at']) $acc[] = 'courier_accepted_at';
+    if ($has['courier_assigned_at']) $acc[] = 'courier_assigned_at';
+    $accSql = $acc ? ('UNIX_TIMESTAMP(' . (count($acc) > 1 ? 'COALESCE(' . implode(', ', $acc) . ')' : $acc[0]) . ')') : 'NULL';
+    $pickSql = $has['picked_up_at'] ? 'UNIX_TIMESTAMP(picked_up_at)' : 'NULL';
+    $cancSql = $has['cancelled_at'] ? 'UNIX_TIMESTAMP(cancelled_at)' : 'NULL';
+    $q = $pdo->prepare("SELECT UNIX_TIMESTAMP(placed_at) AS booked, $accSql AS accepted, $pickSql AS picked_up, UNIX_TIMESTAMP(delivered_at) AS delivered, $cancSql AS cancelled, UNIX_TIMESTAMP() AS now FROM orders WHERE id = ? LIMIT 1");
+    $q->execute(array(intval($order_id)));
+    $r = $q->fetch(PDO::FETCH_ASSOC);
+    if (!$r) return null;
+    $out = array();
+    foreach ($r as $k => $v) $out[$k] = ($v === null || $v === '') ? null : intval($v);
+    return $out;
+}
+
 // SQL piece: leave out the courier whose own account placed the order (an EtelID can be a customer and a courier at once).
 function etel_not_own_order_sql($customer_id, $alias = 'c') {
     return ' AND ' . $alias . '.user_id <> ' . intval($customer_id);

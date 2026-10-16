@@ -1656,6 +1656,39 @@ body.dark-theme .pkg-done-ico { color: #4ADE80; }
 .pkg-pin-k { font-size: 11.5px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--text-muted); }
 .pkg-pin-v { font-size: 30px; font-weight: 800; letter-spacing: .35em; padding-left: .35em; color: var(--text); font-variant-numeric: tabular-nums; }
 .pkg-pin-h { font-size: 12px; color: var(--text-muted); }
+/* Delivery journey (tracking screen): hero timer + the four moments with clock times and how long each part took */
+.pkg-journey { padding: 0; overflow: hidden; margin-top: 12px; }
+.pkg-j-hero { padding: 18px 16px 16px; text-align: center; background: linear-gradient(160deg, rgba(212, 175, 55, .24), rgba(212, 175, 55, .05)); border-bottom: 1px solid var(--glass-border); }
+.pkg-journey.is-delivered .pkg-j-hero { background: linear-gradient(160deg, rgba(46, 204, 113, .22), rgba(46, 204, 113, .05)); }
+.pkg-journey.is-cancelled .pkg-j-hero { background: linear-gradient(160deg, rgba(150, 150, 160, .2), rgba(150, 150, 160, .04)); }
+.pkg-j-k { font-size: 12px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--gold, #D4AF37); }
+.pkg-journey.is-delivered .pkg-j-k { color: #2ECC71; }
+.pkg-j-timer { font-size: 40px; font-weight: 800; letter-spacing: .02em; line-height: 1.15; margin: 4px 0 2px; color: var(--text); font-variant-numeric: tabular-nums; }
+.pkg-j-sub { font-size: 12px; color: var(--text-muted); }
+.pkg-j-h { margin: 14px 16px 2px; }
+.pkg-j-steps { list-style: none; margin: 0; padding: 6px 16px 10px; }
+.pkg-j-step { position: relative; display: flex; align-items: flex-start; gap: 12px; padding: 8px 0 14px; }
+.pkg-j-step::before { content: ''; position: absolute; left: 11px; top: 32px; bottom: -4px; width: 2px; background: var(--glass-border); }
+.pkg-j-step:last-child { padding-bottom: 6px; }
+.pkg-j-step:last-child::before { display: none; }
+.pkg-j-step.is-done::before { background: var(--gold, #D4AF37); }
+.pkg-j-dot { flex: 0 0 24px; width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--glass-border); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; color: #1a1200; box-sizing: border-box; }
+.pkg-j-step.is-done .pkg-j-dot { background: var(--gold, #D4AF37); border-color: var(--gold, #D4AF37); }
+.pkg-j-step.is-active .pkg-j-dot { border-color: var(--gold, #D4AF37); animation: pkgJPulse 1.8s ease-out infinite; }
+@keyframes pkgJPulse { 0% { box-shadow: 0 0 0 0 rgba(212, 175, 55, .55); } 70%, 100% { box-shadow: 0 0 0 10px rgba(212, 175, 55, 0); } }
+@media (prefers-reduced-motion: reduce) { .pkg-j-step.is-active .pkg-j-dot { animation: none; } }
+.pkg-j-body { flex: 1; min-width: 0; }
+.pkg-j-name { font-size: 14px; font-weight: 700; color: var(--text); }
+.pkg-j-step:not(.is-done):not(.is-active) .pkg-j-name { color: var(--text-muted); font-weight: 500; }
+.pkg-j-dur { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+.pkg-j-clock { font-size: 13px; font-weight: 700; color: var(--text); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.pkg-j-live { color: var(--gold, #D4AF37); }
+body:not(.dark-theme) .pkg-j-k, body:not(.dark-theme) .pkg-j-live { color: #7a5f00; }
+body:not(.dark-theme) .pkg-journey.is-delivered .pkg-j-k { color: #1b7f46; }
+/* the PIN as four boxes */
+.pkg-pin-v { display: flex; justify-content: center; gap: 8px; padding: 8px 0 6px; letter-spacing: 0; }
+.pkg-pin-d { width: 46px; height: 56px; display: flex; align-items: center; justify-content: center; border-radius: 12px; border: 1.5px solid var(--gold, #D4AF37); background: var(--glass-2); font-size: 30px; font-weight: 800; color: var(--text); font-variant-numeric: tabular-nums; }
+.pkg-trk-ic { flex: 0 0 20px; text-align: center; }
 .pkg-trk-row { display: flex; gap: 10px; padding: 5px 0; font-size: 13px; }
 .pkg-trk-k { flex: 0 0 64px; color: var(--text-muted); }
 .pkg-trk-v { flex: 1; min-width: 0; color: var(--text); overflow-wrap: anywhere; }
