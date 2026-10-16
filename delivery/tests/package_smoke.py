@@ -85,6 +85,8 @@ def main():
     check("booking needs the prohibited-items tick", r.get("success") is False)
     s, r = call("customer_package_create", book, token=None)
     check("booking needs a sign-in", r.get("success") is False)
+    s, r = call("customer_package_create", book, token=moto)
+    check("a courier login is told to use a customer account (403, plain words)", s == 403 and "courier account" in (r.get("message") or "") and "customer account" in (r.get("message") or ""), r)
     s, r = call("customer_package_create", book, token=cust)
     d = r.get("data") or {}
     oid = d.get("order_id")

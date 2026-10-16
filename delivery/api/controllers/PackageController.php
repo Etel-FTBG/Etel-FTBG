@@ -47,7 +47,7 @@ case 'customer_package_quote': {
 case 'customer_package_create': {
     $pdo = db();
     $u = require_auth($pdo);
-    if ($u['role'] !== 'customer' && $u['role'] !== 'admin') fail('Customer access required', 403);
+    if ($u['role'] !== 'customer' && $u['role'] !== 'admin') fail(etel_customer_only_message($u), 403);
     $body['_allow_chapa'] = true;   // the checkout follows up with chapa_init, like shop orders
     $r = etel_package_create($pdo, $u, $body);
     if (!$r['ok']) fail($r['message'], 400);
