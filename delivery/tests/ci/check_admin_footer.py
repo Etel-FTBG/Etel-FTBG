@@ -22,6 +22,8 @@ if 'css/admin-footer.css' not in html or 'js/admin-footer.js' not in html:
     bad.append('admin.html must load admin-footer.css and admin-footer.js')
 if '--af-h' not in css or 'calc(100vh - 72px - var(--af-h))' not in css or 'bottom: var(--af-h)' not in css:
     bad.append('the page area must be shortened by the footer height (desktop and mobile)')
+if '--af-header-h' not in css or '--af-header-h' not in js or '--af-nav-h' not in css:
+    bad.append('the phone menu strip and page area must follow the real header height (--af-header-h / --af-nav-h), or a large Display Size hides the menu')
 if 'sys-status' not in js:
     bad.append('the footer status must mirror the header status')
 for f in ('privacy.html', 'terms.html', 'customer.html', 'servicegiver.html'):
