@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>System status · ETEL</title>
+<link rel="icon" href="icons/icon-192.png">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#f6f4ee;--card:#fff;--text:#1b1606;--dim:#5c5640;--line:rgba(0,0,0,.12);--gold:#8a6d00;--ok:#14733f;--warn:#9a5b00;--bad:#b3261e}
+@media (prefers-color-scheme:dark){:root{--bg:#0b0b12;--card:#15151f;--text:#ededf5;--dim:#a6a6b8;--line:rgba(255,255,255,.12);--gold:#e5c76b;--ok:#4cd68a;--warn:#f0b24a;--bad:#ff7b72}}
+body{background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,'Segoe UI',Roboto,'Noto Sans Ethiopic',sans-serif;line-height:1.5;min-height:100vh}
+main{max-width:640px;margin:0 auto;padding:max(24px,env(safe-area-inset-top)) 16px 40px}
+header{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:22px}
+h1{font-size:20px;font-weight:800;color:var(--gold)}
+.lang{border:1px solid var(--line);background:transparent;color:inherit;border-radius:8px;padding:6px 12px;font-size:13px;cursor:pointer}
+.hero{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:22px 18px;display:flex;gap:14px;align-items:center}
+.dot{width:16px;height:16px;border-radius:50%;flex:none;background:var(--dim)}
+.hero[data-state=ok] .dot{background:var(--ok)}.hero[data-state=warn] .dot{background:var(--warn)}.hero[data-state=bad] .dot{background:var(--bad)}
+.hero[data-state=ok] h2{color:var(--ok)}.hero[data-state=warn] h2{color:var(--warn)}.hero[data-state=bad] h2{color:var(--bad)}
+h2{font-size:21px;font-weight:800}
+.sub{color:var(--dim);font-size:14px;margin-top:2px}
+ul{list-style:none;margin-top:14px;background:var(--card);border:1px solid var(--line);border-radius:16px}
+li{display:flex;justify-content:space-between;gap:12px;padding:14px 18px;border-top:1px solid var(--line);font-size:15px}
+li:first-child{border-top:0}
+li b{font-weight:700}
+li span{font-weight:700}
+li[data-state=ok] span{color:var(--ok)}li[data-state=warn] span{color:var(--warn)}li[data-state=bad] span{color:var(--bad)}li[data-state=none] span{color:var(--dim)}
+.foot{margin-top:18px;color:var(--dim);font-size:13px;text-align:center}
+.foot a{color:inherit}
+</style>
+</head>
+<body>
+<main>
+  <header><h1>ETEL · <span data-i="title">System status</span></h1><button type="button" class="lang" id="lang">አማርኛ</button></header>
+  <section class="hero" id="hero" data-state="none" role="status" aria-live="polite">
+    <div class="dot" aria-hidden="true"></div>
+    <div><h2 id="head">…</h2><p class="sub" id="sub"></p></div>
+  </section>
+  <ul>
+    <li id="row-core" data-state="none"><b data-i="core">Ordering, rides and payments</b><span id="v-core">…</span></li>
+    <li id="row-live" data-state="none"><b data-i="live">Dispatch and live updates</b><span id="v-live">…</span></li>
+  </ul>
+  <p class="foot"><span data-i="checked">Checked</span> <span id="when">…</span> · <span data-i="auto">refreshes every minute</span><br>
+  <a href="customer.html" data-i="back">Back to ETEL Delivery</a></p>
+</main>
+<script src="js/status.js?v=1"></script>
+</body>
+</html>
