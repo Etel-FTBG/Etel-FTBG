@@ -104,5 +104,21 @@
         return s;
     }
 
+    // Images that fail to load: a handler cannot be written into markup (a strict policy refuses it), so the markup says what to do:
+    //   data-fallback="hide"   hide the picture (the placeholder behind it shows)
+    //   data-fallback="remove" take the picture out
+    //   data-fallback="logo"   take the picture out and clear "has-logo" on its parent (shop cards)
+    // The "error" event does not bubble, so this listens in the capture phase.
+    document.addEventListener('error', function (ev) {
+        var t = ev.target;
+        if (!t || t.nodeType !== 1 || t.tagName !== 'IMG') return;
+        var mode = t.getAttribute('data-fallback');
+        if (!mode) return;
+        t.removeAttribute('data-fallback');   // once only (what this.onerror=null did)
+        if (mode === 'hide') t.style.display = 'none';
+        else if (mode === 'remove') t.remove();
+        else if (mode === 'logo') { if (t.parentNode && t.parentNode.classList) t.parentNode.classList.remove('has-logo'); t.remove(); }
+    }, true);
+
     window.EtelActions = { expose: expose, attrs: attrs, EL: { $: 'el' }, VALUE: { $: 'value' }, CHECKED: { $: 'checked' }, _resolve: resolve };
 })();

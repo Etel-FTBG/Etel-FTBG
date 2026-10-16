@@ -39,6 +39,19 @@ for src in ('customer.html',):
 for src in ('js/customer-package.js',):
     for mm in re.finditer(r"\ba\('([A-Za-z]+)'", read(src)):
         used.add(mm.group(1))
+# Names the other scripts build into markup: _ea('name', ...) in customer.js, the tip chips, the profile sheet's data-acts lists, and the
+# data-act names in the shared bundle. Every one must be exposed too.
+cust = read('js/customer.js')
+for mm in re.finditer(r"_ea\('([A-Za-z_$][\w$.]*)'", cust):
+    used.add(mm.group(1))
+for mm in re.finditer(r"\[\['(\w+)'\](?:, \['([\w$.]+)'[^\]]*\])?", cust):
+    used.add(mm.group(1))
+    if mm.group(2):
+        used.add(mm.group(2))
+for mm in re.finditer(r"\['(setTip|openTipCustom)'", cust):
+    used.add(mm.group(1))
+for mm in re.finditer(r'data-act="([A-Za-z_$][\w$.]*)"', cust + read('js/customer-bundle.js')):
+    used.add(mm.group(1))
 for n in sorted(used - allowed):
     bad.append('action "%s" is used in markup but not exposed in js/customer-actions.js' % n)
 for n in sorted(allowed - used):
@@ -51,8 +64,9 @@ if min(order) < 0 or order != sorted(order):
 
 # Scripts the page loads that still build markup with inline handlers. These numbers may only go down: write new
 # markup with EtelActions.attrs(...) or data-act attributes instead. When one reaches 0, remove it from this list.
-BASELINE = {'js/customer.js': 79, 'js/customer-bundle.js': 11, 'js/customer-package.js': 0}
-pat = re.compile(r"""\son(?:click|change|input|error|load|mouseover|mouseout|keydown|keyup|submit|focus|blur|keypress)\s*=\s*\\?["']""")
+BASELINE = {'js/customer.js': 0, 'js/customer-bundle.js': 0, 'js/customer-package.js': 0}
+# Also catches a handler that starts right after a quote or a backtick (for example inside a template literal).
+pat = re.compile(r"""[\s'"`>]on(?:click|change|input|error|load|mouseover|mouseout|keydown|keyup|submit|focus|blur|keypress|touchstart|touchend)\s*=\s*\\?["']""")
 for f, limit in sorted(BASELINE.items()):
     n = len(pat.findall(read(f)))
     if n > limit:

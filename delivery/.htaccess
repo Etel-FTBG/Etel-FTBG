@@ -55,6 +55,15 @@ AddDefaultCharset UTF-8
     Header always unset X-Powered-By
 </IfModule>
 
+<Files "customer.html">
+    <IfModule mod_headers.c>
+        # customer.html only: the SAME policy as above but WITHOUT 'unsafe-inline' for scripts, in report-only mode. The browser still runs
+        # the page exactly as before; it just reports anything a strict policy would have blocked to api/csp-report.php. Once the reports
+        # stay empty for a while, this policy replaces the enforced one above for this page. Styles keep 'unsafe-inline' (only scripts are tightened).
+        Header always set Content-Security-Policy-Report-Only "default-src 'self'; script-src 'self' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://unpkg.com https://esm.sh https://maps.googleapis.com https://maps.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://ethelmarket.com https://maps.googleapis.com https://maps.gstatic.com https://lh3.googleusercontent.com; connect-src 'self' https://ethelmarket.com https://www.ethelmarket.com https://api.telebirr.com https://maps.googleapis.com https://maps.gstatic.com https://fcm.googleapis.com https://cdn.jsdelivr.net https://nominatim.openstreetmap.org; worker-src 'self'; manifest-src 'self'; frame-ancestors 'none'; report-uri /delivery/api/csp-report.php"
+    </IfModule>
+</Files>
+
 <Files "admin.html">
     <IfModule mod_headers.c>
         # admin.html only: EtelGroup admin's Finance & Planning tab embeds

@@ -32,6 +32,7 @@ run python3 tests/ci/check_xss_sinks.py
 run python3 tests/security_regression_smoke.py
 run python3 tests/authz_matrix_smoke.py
 run python3 tests/package_smoke.py
+run python3 tests/csp_report_smoke.py
 run python3 tests/business_logic_smoke.py
 run python3 tests/open_meter_smoke.py
 run python3 tests/week1_hardening_smoke.py
