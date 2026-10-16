@@ -1594,6 +1594,10 @@ switch ($action) {
         require __DIR__ . '/controllers/PackageController.php';
         break;
 
+    case 'admin_customers_list': case 'admin_customer_get':
+        require __DIR__ . '/controllers/CustomerAdminController.php';
+        break;
+
     case 'admin_integrations_get': case 'admin_integrations_save': case 'admin_integrations_test': case 'admin_integrations_add': case 'admin_integrations_remove':
         require __DIR__ . '/controllers/IntegrationController.php';
         break;

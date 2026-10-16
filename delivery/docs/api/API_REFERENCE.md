@@ -1,13 +1,13 @@
 # ETEL Delivery & Ride API reference
 
-Generated from the source by `tools/gen_api_docs.py` (436 actions). Machine-readable: `openapi.json`.
+Generated from the source by `tools/gen_api_docs.py` (438 actions). Machine-readable: `openapi.json`.
 
 **Call:** `POST /delivery/api/boot.php` with JSON `{"action": "<name>", ...fields}`; header `Authorization: Bearer <token>` for everything except the *public* actions.
 **Reply:** `{success, data, message, v}`. **Login:** `login` / `etelid_login` (apps) or `admin_etelid_login` (admin; add `totp_code` when the reply says `requires_2fa`).
 
 | Who can call | Actions |
 |---|---|
-| admin | 205 |
+| admin | 207 |
 | any signed-in user | 178 |
 | courier | 18 |
 | public | 13 |
@@ -154,6 +154,13 @@ Generated from the source by `tools/gen_api_docs.py` (436 actions). Machine-read
 | `admin_save_courier_pay` | admin · pricing.manage | - | - |
 | `admin_set_order_pay` | admin · pricing.manage | `amount`, `order_id`, `reason` | - |
 | `get_tip_options` | any signed-in user | - | - |
+
+## CustomerAdmin
+
+| Action | Auth | Fields | Query |
+|---|---|---|---|
+| `admin_customer_get` | admin · users.view | `id` | `id` |
+| `admin_customers_list` | admin · users.view | `limit`, `q`, `sort` | `limit`, `q`, `sort` |
 
 ## Dispatch
 
