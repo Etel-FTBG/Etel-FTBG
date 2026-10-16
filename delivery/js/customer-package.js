@@ -32,7 +32,18 @@
             pkg_j_done: 'Delivered', pkg_j_cancel: 'Cancelled', pkg_j_booked: 'Package booked', pkg_j_accepted: 'Courier accepted', pkg_j_picked: 'Picked up', pkg_j_delivered: 'Delivered',
             pkg_j_since: 'since you booked', pkg_j_total: 'Total time', pkg_j_found: 'Courier found in', pkg_j_reached: 'Reached the pickup in', pkg_j_trip: 'The trip took',
             pkg_j_now: 'running now', pkg_j_min: 'min', pkg_j_hr: 'h', pkg_j_sec: 's',
-            pkg_order_label: 'Package', pkg_theme: 'Light / Dark mode'
+            pkg_order_label: 'Package', pkg_theme: 'Light / Dark mode',
+            pkg_lang_label: 'Language', pkg_map_choose: 'Choose on map', pkg_map_title_pickup: 'Set the pickup point', pkg_map_title_drop: 'Set the drop-off point',
+            pkg_map_search: 'Search a street or place', pkg_map_confirm_pickup: 'Confirm pickup here', pkg_map_confirm_drop: 'Confirm drop-off here',
+            pkg_map_locating: 'Finding the address…', pkg_map_move: 'Move the map to place the pin', pkg_map_loading: 'Loading the map…',
+            pkg_map_unavail: 'The map could not load. Check your connection.', pkg_map_mylocation: 'My location', pkg_map_close: 'Close',
+            pkg_map_outside: 'This spot is outside Hawassa. Move the pin closer to the city.', pkg_route_km: 'About {km} km apart',
+            pkg_sender: 'Sender', pkg_recipient: 'Recipient', pkg_pinned: 'Pinned on the map',
+            pkg_q_docs: 'Documents', pkg_q_clothes: 'Clothes', pkg_q_food: 'Food', pkg_q_electronics: 'Electronics', pkg_q_gift: 'Gift',
+            pkg_w_less: 'Less weight', pkg_w_more: 'More weight',
+            pkg_pins_title: 'Safe hand-over with PINs', pkg_pins_note: 'After booking you get two 4-digit PINs. The courier needs the pickup PIN to collect the package and the recipient\'s delivery PIN to hand it over.',
+            pkg_best_price: 'Best price',
+            pkg_done_next_t: 'What happens next', pkg_done_next1: 'A nearby courier accepts your package.', pkg_done_next2: 'Give the pickup PIN to the courier when they arrive.', pkg_done_next3: 'Give the delivery PIN to the recipient to confirm the hand-over.'
         },
         am: {
             pkg_tile_title: 'ጥቅል ላክ', pkg_tile_sub: 'በሃዋሳ ውስጥ በማንኛውም ቦታ · ተሽከርካሪውን እርስዎ ይመርጣሉ',
@@ -60,7 +71,18 @@
             pkg_j_done: 'ተደርሷል', pkg_j_cancel: 'ተሰርዟል', pkg_j_booked: 'ጥቅሉ ተመዝግቧል', pkg_j_accepted: 'ሹፌሩ ተቀብሏል', pkg_j_picked: 'ተወስዷል', pkg_j_delivered: 'ተደርሷል',
             pkg_j_since: 'ከተመዘገበ ጀምሮ', pkg_j_total: 'ጠቅላላ ጊዜ', pkg_j_found: 'ሹፌር የተገኘው በ', pkg_j_reached: 'መውሰጃው የደረሰው በ', pkg_j_trip: 'ጉዞው የፈጀው',
             pkg_j_now: 'አሁን እየሄደ ነው', pkg_j_min: 'ደቂቃ', pkg_j_hr: 'ሰዓት', pkg_j_sec: 'ሰከንድ',
-            pkg_order_label: 'ጥቅል', pkg_theme: 'ብርሃን / ጨለማ'
+            pkg_order_label: 'ጥቅል', pkg_theme: 'ብርሃን / ጨለማ',
+            pkg_lang_label: 'ቋንቋ', pkg_map_choose: 'በካርታ ምረጥ', pkg_map_title_pickup: 'የሚወሰድበትን ቦታ ምረጥ', pkg_map_title_drop: 'የሚደርስበትን ቦታ ምረጥ',
+            pkg_map_search: 'መንገድ ወይም ቦታ ፈልግ', pkg_map_confirm_pickup: 'እዚህ ቦታ ይወሰድ', pkg_map_confirm_drop: 'እዚህ ቦታ ይድረስ',
+            pkg_map_locating: 'አድራሻ በመፈለግ ላይ…', pkg_map_move: 'ፒኑን ለማስቀመጥ ካርታውን ያንቀሳቅሱ', pkg_map_loading: 'ካርታ በመጫን ላይ…',
+            pkg_map_unavail: 'ካርታው መጫን አልቻለም። የበይነመረብ ግንኙነትዎን ይፈትሹ።', pkg_map_mylocation: 'የእኔ አካባቢ', pkg_map_close: 'ዝጋ',
+            pkg_map_outside: 'ይህ ቦታ ከሃዋሳ ውጭ ነው። ፒኑን ወደ ከተማው ያቅርቡ።', pkg_route_km: 'ወደ {km} ኪ.ሜ ርቀት',
+            pkg_sender: 'ላኪ', pkg_recipient: 'ተቀባይ', pkg_pinned: 'በካርታ ላይ ተመርጧል',
+            pkg_q_docs: 'ሰነዶች', pkg_q_clothes: 'ልብስ', pkg_q_food: 'ምግብ', pkg_q_electronics: 'ኤሌክትሮኒክስ', pkg_q_gift: 'ስጦታ',
+            pkg_w_less: 'ክብደት ቀንስ', pkg_w_more: 'ክብደት ጨምር',
+            pkg_pins_title: 'በፒን የተጠበቀ ርክክብ', pkg_pins_note: 'ከተያዘ በኋላ ሁለት ባለ 4 አሃዝ ፒኖች ያገኛሉ። ሹፌሩ ጥቅሉን ለመውሰድ የመረከቢያ ፒን፣ ለማስረከብ ደግሞ የተቀባዩን የማስረከቢያ ፒን ይፈልጋል።',
+            pkg_best_price: 'ርካሽ',
+            pkg_done_next_t: 'ቀጥሎ ምን ይሆናል', pkg_done_next1: 'አቅራቢያ ያለ ሹፌር ጥቅልዎን ይቀበላል።', pkg_done_next2: 'ሹፌሩ ሲመጣ የመረከቢያ ፒኑን ይስጡት።', pkg_done_next3: 'ርክክቡን ለማረጋገጥ የማስረከቢያ ፒኑን ለተቀባዩ ይስጡ።'
         }
     });
 
@@ -102,6 +124,7 @@
         }, 500);
     };
     window.pkgClose = function () {
+        try { window.pkgMapCancel(); } catch (e) {}
         var v = view(); if (v) v.style.display = 'none';
         if (placesTimer) { clearInterval(placesTimer); placesTimer = null; }
         S = null;
@@ -139,6 +162,7 @@
             } else { sd[parts[1]] = val; }
         } else { S[f] = val; }
         S.err = '';
+        if (el.classList) el.classList.remove('pkg-bad');
         var e2 = document.getElementById('pkg-err'); if (e2) e2.textContent = '';
         if (f === 'weight') { S.vehicle = ''; S.quote = null; }
     }
@@ -206,6 +230,17 @@
     window.pkgWeight = function (kg) { if (S) { S.weight = String(kg); S.vehicle = ''; S.quote = null; S.err = ''; render(); } };
     window.pkgVehicle = function (cls) { if (S) { S.vehicle = cls; S.err = ''; render(); } };
     window.pkgPay = function (m) { if (S) { S.payment = m; render(); } };
+    window.pkgWeightStep = function (dir) {
+        if (!S) return;
+        var cur = parseFloat(S.weight) || 0, step = cur < 5 ? 0.5 : 1;
+        var next = cur === 0 && dir > 0 ? 1 : Math.max(0.5, Math.round((cur + dir * step) * 10) / 10);
+        S.weight = String(next); S.vehicle = ''; S.quote = null; S.err = ''; render();
+    };
+    window.pkgDesc = function (k) { if (S) { S.desc = T('pkg_q_' + k); S.err = ''; render(); } };
+    window.pkgLang = function (l) {
+        try { if (ETEL_I18N.current() !== l) { if (typeof toggleCustomerLanguage === 'function') toggleCustomerLanguage(); else ETEL_I18N.apply(l); } } catch (e) {}
+        if (S) render();
+    };
 
     // ---------- steps ----------
     function validate(step) {
@@ -233,10 +268,13 @@
         if (step === 3 && !S.vehicle) return 'pkg_err_vehicle';
         return '';
     }
+    var ERR_FIELD = { pkg_err_addr_pickup: 'pkg-pickup-addr', pkg_err_addr_drop: 'pkg-drop-addr', pkg_err_area_pickup: 'pkg-pickup-addr', pkg_err_area_drop: 'pkg-drop-addr',
+        pkg_err_sname: 'pkg-f-sender_name', pkg_err_sphone: 'pkg-f-sender_phone', pkg_err_rname: 'pkg-f-recipient_name', pkg_err_rphone: 'pkg-f-recipient_phone',
+        pkg_err_size: 'pkg-sizes', pkg_err_weight: 'pkg-f-weight', pkg_err_desc: 'pkg-f-desc', pkg_err_ack: 'pkg-ackbox' };
     window.pkgNext = function () {
         if (!S || S.busy) return;
         var e = validate(S.step);
-        if (e) { S.err = T(e); render(); return; }
+        if (e) { S.err = T(e); S.errField = ERR_FIELD[e] || ''; render(); return; }
         S.err = '';
         if (S.step === 2) { S.step = 3; S.quote = null; S.top = true; render(); loadQuote(); return; }
         if (S.step < 4) { S.step++; S.top = true; render(); }
@@ -300,7 +338,13 @@
             '<input class="pkg-input" id="pkg-f-' + name + '" data-f="' + name + '" type="' + (opts.type || 'text') + '" value="' + esc(value) + '"' +
             (opts.ph ? ' placeholder="' + esc(opts.ph) + '"' : '') + (opts.mode ? ' inputmode="' + opts.mode + '"' : '') + (opts.auto ? ' autocomplete="' + opts.auto + '"' : '') + '>';
     }
-    function placeCard(which, title) {
+    function fld(label, name, value, opts) { return '<div class="pkg-fld">' + field(label, name, value, opts) + '</div>'; }
+    function km(a1, o1, a2, o2) {
+        var R = 6371, rad = Math.PI / 180, dl = (a2 - a1) * rad, dg = (o2 - o1) * rad;
+        var h = Math.sin(dl / 2) * Math.sin(dl / 2) + Math.cos(a1 * rad) * Math.cos(a2 * rad) * Math.sin(dg / 2) * Math.sin(dg / 2);
+        return 2 * R * Math.asin(Math.min(1, Math.sqrt(h)));
+    }
+    function stop(which, title, who, nameKey, phoneKey, nameLbl, phoneLbl, phoneAuto) {
         var s = S[which];
         var saved = '';
         try {
@@ -311,19 +355,27 @@
             }
         } catch (e) {}
         var zones = '<option value="">' + esc(T('pkg_area_pick')) + '</option>' + ZONES.map(function (z) { return '<option value="' + esc(z) + '"' + (s.zone === z ? ' selected' : '') + '>' + esc(z) + '</option>'; }).join('');
-        return '<section class="pkg-card"><h3 class="pkg-h">' + esc(title) + '</h3>' + saved +
-            '<div class="pkg-row"><input class="pkg-input" id="pkg-' + which + '-addr" data-f="' + which + '.address" type="text" autocomplete="off" value="' + esc(s.address) + '" placeholder="' + esc(T('pkg_addr_ph')) + '" aria-label="' + esc(title) + '">' +
-            '<button type="button" class="pkg-gps" title="' + esc(T('pkg_gps')) + '" aria-label="' + esc(T('pkg_gps')) + '"' + a('pkgGps', [which]) + '>📍</button></div>' +
-            '<label class="pkg-lbl" for="pkg-' + which + '-zone">' + esc(T('pkg_area')) + '</label>' +
-            '<select class="pkg-input" id="pkg-' + which + '-zone" data-f="' + which + '.zone">' + zones + '</select>' +
-            (s.lat !== null ? '<div class="pkg-ok">✓ ' + esc(s.zone) + '</div>' : '') +
-            '</section>';
+        var pinned = s.lat !== null;
+        return '<div class="pkg-stop pkg-stop-' + which + '"><div class="pkg-rail" aria-hidden="true"><span class="pkg-dot ' + (which === 'pickup' ? 'a' : 'b') + '">' + (which === 'pickup' ? 'A' : 'B') + '</span><span class="pkg-line"></span></div>' +
+            '<div class="pkg-stop-main"><div class="pkg-stop-k">' + esc(title) + '</div>' +
+            '<input class="pkg-input pkg-addr" id="pkg-' + which + '-addr" data-f="' + which + '.address" type="text" autocomplete="off" value="' + esc(s.address) + '" placeholder="' + esc(T('pkg_addr_ph')) + '" aria-label="' + esc(title) + '">' +
+            '<div class="pkg-acts"><button type="button" class="pkg-act pkg-act-map"' + a('pkgMapOpen', [which]) + '><span aria-hidden="true">🗺️</span> ' + esc(T('pkg_map_choose')) + '</button>' +
+            '<button type="button" class="pkg-act"' + a('pkgGps', [which]) + '><span aria-hidden="true">📍</span> ' + esc(T('pkg_gps')) + '</button></div>' +
+            (pinned ? '<div class="pkg-ok">✓ ' + esc(T('pkg_pinned')) + ' · ' + esc(s.zone) + '</div>' : '') + saved +
+            '<details class="pkg-more"' + (!pinned && (s.zone || s.address) ? ' open' : '') + '><summary>' + esc(T('pkg_area')) + '</summary>' +
+            '<select class="pkg-input" id="pkg-' + which + '-zone" data-f="' + which + '.zone" aria-label="' + esc(T('pkg_area')) + '">' + zones + '</select></details>' +
+            '<div class="pkg-who"><span class="pkg-who-k">' + esc(who) + '</span></div>' +
+            '<div class="pkg-grid2">' + fld(nameLbl, nameKey, S[nameKey], phoneAuto === 'tel' ? { auto: 'name' } : {}) + fld(phoneLbl, phoneKey, S[phoneKey], { type: 'tel', mode: 'tel', auto: phoneAuto }) + '</div>' +
+            '</div></div>';
     }
     function stepWhere() {
-        return placeCard('pickup', T('pkg_pickup')) +
-            '<section class="pkg-card">' + field(T('pkg_sender_name'), 'sender_name', S.sender_name, { auto: 'name' }) + field(T('pkg_sender_phone'), 'sender_phone', S.sender_phone, { type: 'tel', mode: 'tel', auto: 'tel' }) + '</section>' +
-            placeCard('drop', T('pkg_drop')) +
-            '<section class="pkg-card">' + field(T('pkg_rcpt_name'), 'recipient_name', S.recipient_name) + field(T('pkg_rcpt_phone'), 'recipient_phone', S.recipient_phone, { type: 'tel', mode: 'tel' }) + '</section>';
+        var d = '';
+        if (S.pickup.lat !== null && S.drop.lat !== null) {
+            d = '<div class="pkg-dist" role="status">↔ ' + esc(T('pkg_route_km').replace('{km}', km(S.pickup.lat, S.pickup.lng, S.drop.lat, S.drop.lng).toFixed(1))) + '</div>';
+        }
+        return '<section class="pkg-card pkg-route">' +
+            stop('pickup', T('pkg_pickup'), T('pkg_sender'), 'sender_name', 'sender_phone', T('pkg_sender_name'), T('pkg_sender_phone'), 'tel') +
+            stop('drop', T('pkg_drop'), T('pkg_recipient'), 'recipient_name', 'recipient_phone', T('pkg_rcpt_name'), T('pkg_rcpt_phone'), 'off') + d + '</section>';
     }
     function stepPackage() {
         var sizes = (S.opts && S.opts.sizes) ? S.opts.sizes : [{ size: 'document' }, { size: 'small' }, { size: 'medium' }, { size: 'large' }];
@@ -333,48 +385,64 @@
                 '<span class="pkg-size-ico" aria-hidden="true">' + (SIZE_ICON[z.size] || '📦') + '</span><span>' + esc(T('pkg_size_' + z.size)) + '</span></button>';
         }).join('');
         var quick = [1, 5, 10, 20].map(function (k) { return '<button type="button" class="pkg-chip' + (String(S.weight) === String(k) ? ' on' : '') + '"' + a('pkgWeight', [k]) + '>' + k + ' kg</button>'; }).join('');
-        return '<section class="pkg-card"><h3 class="pkg-h">' + esc(T('pkg_size')) + '</h3><div class="pkg-sizes">' + cards + '</div></section>' +
-            '<section class="pkg-card">' + field(T('pkg_weight'), 'weight', S.weight, { type: 'number', mode: 'decimal' }) + '<div class="pkg-chips">' + quick + '</div>' +
-            field(T('pkg_desc'), 'desc', S.desc, { ph: T('pkg_desc_ph') }) + field(T('pkg_value'), 'value', S.value, { type: 'number', mode: 'decimal' }) + field(T('pkg_notes'), 'notes', S.notes) +
-            '<label class="pkg-ack"><input type="checkbox" data-f="ack"' + (S.ack ? ' checked' : '') + '> <span>' + esc(T('pkg_ack')) + '</span></label></section>';
+        var qd = ['docs', 'clothes', 'food', 'electronics', 'gift'].map(function (k) {
+            return '<button type="button" class="pkg-chip' + (S.desc === T('pkg_q_' + k) ? ' on' : '') + '"' + a('pkgDesc', [k]) + '>' + esc(T('pkg_q_' + k)) + '</button>';
+        }).join('');
+        return '<section class="pkg-card"><h3 class="pkg-h">' + esc(T('pkg_size')) + '</h3><div class="pkg-sizes" id="pkg-sizes">' + cards + '</div></section>' +
+            '<section class="pkg-card"><label class="pkg-lbl" for="pkg-f-weight">' + esc(T('pkg_weight')) + '</label>' +
+            '<div class="pkg-stepper"><button type="button" class="pkg-pm" aria-label="' + esc(T('pkg_w_less')) + '"' + a('pkgWeightStep', [-1]) + '>−</button>' +
+            '<input class="pkg-input pkg-wval" id="pkg-f-weight" data-f="weight" type="number" inputmode="decimal" min="0" step="0.5" value="' + esc(S.weight) + '"><button type="button" class="pkg-pm" aria-label="' + esc(T('pkg_w_more')) + '"' + a('pkgWeightStep', [1]) + '>+</button></div>' +
+            '<div class="pkg-chips">' + quick + '</div></section>' +
+            '<section class="pkg-card">' + field(T('pkg_desc'), 'desc', S.desc, { ph: T('pkg_desc_ph') }) + '<div class="pkg-chips">' + qd + '</div>' +
+            field(T('pkg_value'), 'value', S.value, { type: 'number', mode: 'decimal' }) + field(T('pkg_notes'), 'notes', S.notes) + '</section>' +
+            '<label class="pkg-ack" id="pkg-ackbox"><input type="checkbox" id="pkg-f-ack" data-f="ack"' + (S.ack ? ' checked' : '') + '> <span><b aria-hidden="true">⚠️</b> ' + esc(T('pkg_ack')) + '</span></label>';
+    }
+    function routeLine() {
+        return '<div class="pkg-mini"><span class="pkg-dot a">A</span><span class="pkg-mini-t">' + esc(S.pickup.address) + '</span></div>' +
+            '<div class="pkg-mini"><span class="pkg-dot b">B</span><span class="pkg-mini-t">' + esc(S.drop.address) + '</span></div>';
     }
     function stepVehicle() {
         if (S.busy && !S.quote) return '<div class="pkg-loading" role="status">' + esc(T('pkg_loading')) + '</div>';
         if (!S.quote) return '';
         var q = S.quote;
-        var head = '<div class="pkg-trip">' + esc(T('pkg_trip').replace('{km}', q.distance_km).replace('{min}', q.eta_min)) + '</div>';
+        var head = '<section class="pkg-card pkg-hero">' + routeLine() + '<div class="pkg-trip">' + esc(T('pkg_trip').replace('{km}', q.distance_km).replace('{min}', q.eta_min)) + '</div></section>';
+        var cheapest = null;
+        q.options.forEach(function (o) { if (cheapest === null || parseFloat(o.price) < cheapest) cheapest = parseFloat(o.price); });
         var list = q.options.map(function (o) {
             var on = S.vehicle === o.vehicle_class;
+            var best = q.options.length > 1 && parseFloat(o.price) === cheapest;
             return '<button type="button" class="pkg-veh' + (on ? ' on' : '') + '" aria-pressed="' + (on ? 'true' : 'false') + '"' + a('pkgVehicle', [o.vehicle_class]) + '>' +
                 '<span class="pkg-veh-ico" aria-hidden="true">' + esc(o.icon || '🚚') + '</span>' +
-                '<span class="pkg-veh-txt"><span class="pkg-veh-name">' + esc(o.label) + '</span><span class="pkg-veh-sub">' + esc(T('pkg_up_to').replace('{kg}', o.max_weight_kg)) + '</span></span>' +
-                '<span class="pkg-veh-price">ETB ' + esc(o.price) + '</span></button>';
+                '<span class="pkg-veh-txt"><span class="pkg-veh-name">' + esc(o.label) + (best ? ' <i class="pkg-badge">' + esc(T('pkg_best_price')) + '</i>' : '') + '</span><span class="pkg-veh-sub">' + esc(T('pkg_up_to').replace('{kg}', o.max_weight_kg)) + '</span></span>' +
+                '<span class="pkg-veh-price">ETB ' + esc(o.price) + '</span><span class="pkg-check" aria-hidden="true">' + (on ? '✓' : '') + '</span></button>';
         }).join('');
         return head + '<div class="pkg-vehicles" role="group" aria-label="' + esc(T('pkg_choose_vehicle')) + '">' + list + '</div>';
     }
-    function payOpt(m, title, sub) {
+    function payOpt(m, ico, title, sub) {
         var on = S.payment === m;
-        return '<button type="button" class="pkg-pay' + (on ? ' on' : '') + '" aria-pressed="' + (on ? 'true' : 'false') + '"' + a('pkgPay', [m]) + '><span class="pkg-pay-t">' + esc(title) + '</span><span class="pkg-pay-s">' + esc(sub) + '</span></button>';
+        return '<button type="button" class="pkg-pay' + (on ? ' on' : '') + '" aria-pressed="' + (on ? 'true' : 'false') + '"' + a('pkgPay', [m]) + '><span class="pkg-pay-ico" aria-hidden="true">' + ico + '</span>' +
+            '<span class="pkg-pay-txt"><span class="pkg-pay-t">' + esc(title) + '</span><span class="pkg-pay-s">' + esc(sub) + '</span></span><span class="pkg-check" aria-hidden="true">' + (on ? '✓' : '') + '</span></button>';
     }
     function stepPay() {
         var c = chosen();
-        var sum = '<section class="pkg-card"><h3 class="pkg-h">' + esc(T('pkg_summary')) + '</h3>' +
-            '<div class="pkg-sum"><span>📍</span><span>' + esc(S.pickup.address) + '</span></div>' +
-            '<div class="pkg-sum"><span>🏁</span><span>' + esc(S.drop.address) + ' · ' + esc(S.recipient_name) + '</span></div>' +
+        var sum = '<section class="pkg-card"><h3 class="pkg-h">' + esc(T('pkg_summary')) + '</h3>' + routeLine() +
             '<div class="pkg-sum"><span>' + esc(SIZE_ICON[S.size] || '📦') + '</span><span>' + esc(T('pkg_size_' + S.size)) + ' · ' + esc(S.weight) + ' kg · ' + esc(S.desc) + '</span></div>' +
+            '<div class="pkg-sum"><span>👤</span><span>' + esc(S.recipient_name) + '</span></div>' +
             (c ? '<div class="pkg-sum"><span>' + esc(c.icon || '') + '</span><span>' + esc(c.label) + '</span></div>' : '') +
             '<div class="pkg-total"><span>' + esc(T('pkg_total')) + '</span><span>ETB ' + esc(c ? c.price : '') + '</span></div></section>';
         var pays = '<section class="pkg-card"><h3 class="pkg-h">' + esc(T('pkg_pay_title')) + '</h3><div class="pkg-pays">' +
-            payOpt('cash', T('pkg_pay_cash'), T('pkg_pay_cash_sub')) +
-            (typeof etelPayLive !== 'undefined' && etelPayLive ? payOpt('wallet', T('pkg_pay_wallet'), T('pkg_pay_wallet_sub')) : '') +
-            payOpt('chapa', T('pkg_pay_chapa'), T('pkg_pay_chapa_sub')) + '</div></section>';
-        return sum + pays;
+            payOpt('cash', '💵', T('pkg_pay_cash'), T('pkg_pay_cash_sub')) +
+            (typeof etelPayLive !== 'undefined' && etelPayLive ? payOpt('wallet', '👛', T('pkg_pay_wallet'), T('pkg_pay_wallet_sub')) : '') +
+            payOpt('chapa', '💳', T('pkg_pay_chapa'), T('pkg_pay_chapa_sub')) + '</div></section>';
+        var pin = '<section class="pkg-card pkg-safe"><span class="pkg-safe-ico" aria-hidden="true">🔐</span><div><div class="pkg-safe-t">' + esc(T('pkg_pins_title')) + '</div><div class="pkg-safe-s">' + esc(T('pkg_pins_note')) + '</div></div></section>';
+        return sum + pays + pin;
     }
     function stepDone() {
         var d = S.done;
         return '<div class="pkg-done"><div class="pkg-done-ico" aria-hidden="true">✓</div><h2 class="pkg-done-t">' + esc(T('pkg_done_title')) + '</h2>' +
             '<p class="pkg-done-s">' + esc(T('pkg_done_sub')) + '</p>' +
-            '<div class="pkg-code">' + esc(d.order_code) + '</div><div class="pkg-total" style="justify-content:center;gap:10px"><span>' + esc(T('pkg_total')) + '</span><span>ETB ' + esc(d.total) + '</span></div></div>';
+            '<div class="pkg-code">' + esc(d.order_code) + '</div><div class="pkg-total pkg-done-total"><span>' + esc(T('pkg_total')) + '</span><span>ETB ' + esc(d.total) + '</span></div></div>' +
+            '<section class="pkg-card pkg-next"><h3 class="pkg-h">' + esc(T('pkg_done_next_t')) + '</h3><ol class="pkg-next-l"><li>' + esc(T('pkg_done_next1')) + '</li><li>' + esc(T('pkg_done_next2')) + '</li><li>' + esc(T('pkg_done_next3')) + '</li></ol></section>';
     }
 
     function stepper() {
@@ -383,6 +451,11 @@
             var n = i + 1, cls = n < S.step ? ' done' : (n === S.step ? ' now' : '');
             return '<li class="pkg-step' + cls + '"' + (n === S.step ? ' aria-current="step"' : '') + '><span class="pkg-step-n">' + (n < S.step ? '✓' : n) + '</span><span class="pkg-step-l">' + esc(T(k)) + '</span></li>';
         }).join('') + '</ol>';
+    }
+    function langSwitch() {
+        var cur = 'en'; try { cur = ETEL_I18N.current(); } catch (e) {}
+        function b(l, txt) { return '<button type="button" class="pkg-lang-b' + (cur === l ? ' on' : '') + '" aria-pressed="' + (cur === l ? 'true' : 'false') + '"' + a('pkgLang', [l]) + '>' + txt + '</button>'; }
+        return '<div class="pkg-lang" role="group" aria-label="' + esc(T('pkg_lang_label')) + '">' + b('en', 'EN') + b('am', 'አማ') + '</div>';
     }
 
     function render() {
@@ -401,8 +474,8 @@
             body = stepper() + (S.step === 1 ? stepWhere() : S.step === 2 ? stepPackage() : S.step === 3 ? stepVehicle() : stepPay());
             var last = S.step === 4;
             foot = '<div id="pkg-err" class="pkg-err" role="alert">' + esc(S.err) + '</div>' +
-                '<button type="button" class="pkg-primary"' + (S.busy ? ' disabled' : '') + a(last ? 'pkgSubmit' : 'pkgNext') + '>' + esc(last ? (S.busy ? T('pkg_booking') : T('pkg_book') + (chosen() ? ' · ETB ' + chosen().price : '')) : T('pkg_next')) + '</button>' +
-                   (S.step > 1 ? '<button type="button" class="pkg-secondary"' + a('pkgBack') + '>' + esc(T('pkg_back')) + '</button>' : '');
+                '<div class="pkg-btns">' + (S.step > 1 ? '<button type="button" class="pkg-secondary pkg-back"' + a('pkgBack') + '>' + esc(T('pkg_back')) + '</button>' : '') +
+                '<button type="button" class="pkg-primary"' + (S.busy ? ' disabled' : '') + a(last ? 'pkgSubmit' : 'pkgNext') + '>' + esc(last ? (S.busy ? T('pkg_booking') : T('pkg_book') + (chosen() ? ' · ETB ' + chosen().price : '')) : T('pkg_next')) + '</button></div>';
         }
         var scroll = (!S.top && v0.querySelector('#pkg-scroll')) ? v0.querySelector('#pkg-scroll').scrollTop : 0;
         S.top = false;
@@ -410,13 +483,128 @@
             '<header class="app-header pkg-head"><div class="header-brand"><button class="header-btn" type="button" aria-label="' + esc(T('pkg_back')) + '"' + a('pkgBack') + '>' +
             '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg></button>' +
             '<span class="pkg-head-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 8l-9-5-9 5 9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg></span>' +
-            '<div class="brand-info"><div class="pkg-head-title">' + esc(T('pkg_title')) + '</div></div></div>' +
+            '<div class="brand-info"><div class="pkg-head-title">' + esc(T('pkg_title')) + '</div></div></div>' + langSwitch() +
             '<button class="header-btn pkg-theme" type="button" aria-label="' + esc(T('pkg_theme')) + '" title="' + esc(T('pkg_theme')) + '"' + a('pkgTheme') + '>' +
             '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor"/></svg></button></header>' +
             '<div id="pkg-scroll" class="pkg-scroll">' + body + '</div><div class="pkg-foot">' + foot + '</div>';
         var sc = v0.querySelector('#pkg-scroll'); if (sc) sc.scrollTop = scroll;
         bindPlaces();
+        if (S.errField) {
+            var bad = document.getElementById(S.errField);
+            if (bad) { bad.classList.add('pkg-bad'); try { bad.scrollIntoView({ block: 'center' }); if (bad.focus && bad.tagName !== 'DIV' && bad.tagName !== 'LABEL') bad.focus({ preventScroll: true }); } catch (e) {} }
+            S.errField = '';
+        }
     }
+
+    // ---------- map picker: a full-screen map with a pin fixed in the middle; move the map, the address under the pin follows ----------
+    var M = null;
+    var HAWASSA = { lat: 7.0504, lng: 38.4955 };
+    function mapView() { return document.getElementById('pkg-mapview'); }
+    function mapReady() { return !!(window.google && google.maps && google.maps.Map); }
+    function setMapSheet(addr, state) {
+        var el = document.getElementById('pkg-map-addr'), ok = document.getElementById('pkg-map-ok');
+        if (el) { el.textContent = addr; el.className = 'pkg-map-addr' + (state === 'bad' ? ' bad' : ''); }
+        if (ok) ok.disabled = state !== 'ok';
+    }
+    function drawMap() {
+        var el = mapView(); if (!el || !M) return;
+        var pick = M.which === 'pickup';
+        el.innerHTML =
+            '<header class="pkg-map-head"><button type="button" class="header-btn" aria-label="' + esc(T('pkg_map_close')) + '"' + a('pkgMapCancel') + '>✕</button>' +
+            '<div class="pkg-map-title">' + esc(T(pick ? 'pkg_map_title_pickup' : 'pkg_map_title_drop')) + '</div></header>' +
+            '<div class="pkg-map-body"><div id="pkg-map-canvas" class="pkg-map-canvas"></div>' +
+            '<div class="pkg-map-search"><input id="pkg-map-search" class="pkg-input" type="text" autocomplete="off" placeholder="' + esc(T('pkg_map_search')) + '" aria-label="' + esc(T('pkg_map_search')) + '"></div>' +
+            '<div class="pkg-mappin" aria-hidden="true"><span class="pkg-mappin-h ' + (pick ? 'a' : 'b') + '">' + (pick ? 'A' : 'B') + '</span><span class="pkg-mappin-s"></span></div>' +
+            '<button type="button" class="pkg-map-loc" aria-label="' + esc(T('pkg_map_mylocation')) + '" title="' + esc(T('pkg_map_mylocation')) + '"' + a('pkgMapGps') + '>◎</button>' +
+            '<div class="pkg-map-load" id="pkg-map-load" role="status">' + esc(T('pkg_map_loading')) + '</div></div>' +
+            '<div class="pkg-map-sheet"><div id="pkg-map-addr" class="pkg-map-addr" role="status">' + esc(T('pkg_map_move')) + '</div>' +
+            '<button type="button" id="pkg-map-ok" class="pkg-primary" disabled' + a('pkgMapOk') + '>' + esc(T(pick ? 'pkg_map_confirm_pickup' : 'pkg_map_confirm_drop')) + '</button></div>';
+    }
+    function startMap(tries) {
+        if (!M) return;
+        tries = tries || 0;
+        if (!mapReady()) {
+            if (tries > 60) { var l = document.getElementById('pkg-map-load'); if (l) { l.textContent = T('pkg_map_unavail'); l.className = 'pkg-map-load fail'; } return; }
+            setTimeout(function () { startMap(tries + 1); }, 250);
+            return;
+        }
+        var canvas = document.getElementById('pkg-map-canvas');
+        if (!canvas) return;
+        var load = document.getElementById('pkg-map-load'); if (load) load.style.display = 'none';
+        var dark = document.body.classList.contains('dark-theme');
+        var map = new google.maps.Map(canvas, {
+            center: { lat: M.lat, lng: M.lng }, zoom: 16, disableDefaultUI: true, gestureHandling: 'greedy', clickableIcons: false,
+            styles: dark ? [{ elementType: 'geometry', stylers: [{ color: '#1d2230' }] }, { elementType: 'labels.text.fill', stylers: [{ color: '#9aa3b5' }] }, { elementType: 'labels.text.stroke', stylers: [{ color: '#1d2230' }] },
+                { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#2c3347' }] }, { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#0f1420' }] }, { featureType: 'poi', stylers: [{ visibility: 'off' }] }] : [{ featureType: 'poi', stylers: [{ visibility: 'off' }] }]
+        });
+        M.map = map;
+        var other = S && S[M.which === 'pickup' ? 'drop' : 'pickup'];
+        if (other && other.lat !== null) { try { new google.maps.Marker({ map: map, position: { lat: other.lat, lng: other.lng }, label: M.which === 'pickup' ? 'B' : 'A' }); } catch (e) {} }
+        map.addListener('dragstart', function () { if (M) setMapSheet(T('pkg_map_locating'), 'wait'); });
+        map.addListener('idle', function () { onMapIdle(); });
+        try {
+            var input = document.getElementById('pkg-map-search');
+            var opts = { componentRestrictions: { country: 'et' }, fields: ['geometry', 'formatted_address', 'name'] };
+            var b = _latLngBoundsAround(HAWASSA.lat, HAWASSA.lng, 25); if (b) { opts.bounds = b; opts.strictBounds = true; }
+            var ac = new google.maps.places.Autocomplete(input, opts);
+            ac.addListener('place_changed', function () {
+                var p = ac.getPlace();
+                if (!M || !p || !p.geometry) return;
+                M.hint = { addr: p.formatted_address || p.name || input.value, lat: p.geometry.location.lat(), lng: p.geometry.location.lng() };
+                map.setZoom(17); map.panTo({ lat: M.hint.lat, lng: M.hint.lng });
+                onMapIdle();
+            });
+        } catch (e) {}
+        onMapIdle();
+    }
+    function onMapIdle() {
+        if (!M || !M.map) return;
+        var c = M.map.getCenter(); if (!c) return;
+        M.lat = c.lat(); M.lng = c.lng();
+        var token = M.seq = (M.seq || 0) + 1;
+        M.zone = getNearestHawassaZone(M.lat, M.lng);
+        if (km(M.lat, M.lng, HAWASSA.lat, HAWASSA.lng) > 25) { M.address = ''; setMapSheet(T('pkg_map_outside'), 'bad'); return; }
+        var fallback = M.zone + ' (' + M.lat.toFixed(4) + ', ' + M.lng.toFixed(4) + ')';
+        if (M.hint && km(M.lat, M.lng, M.hint.lat, M.hint.lng) < 0.05) { M.address = M.hint.addr; setMapSheet(M.address, 'ok'); return; }
+        M.hint = null;
+        setMapSheet(T('pkg_map_locating'), 'wait');
+        if (!(google.maps.Geocoder)) { M.address = fallback; setMapSheet(M.address, 'ok'); return; }
+        new google.maps.Geocoder().geocode({ location: { lat: M.lat, lng: M.lng } }, function (results, status) {
+            if (!M || M.seq !== token) return;
+            M.address = (status === 'OK' && results && results[0]) ? results[0].formatted_address : fallback;
+            setMapSheet(M.address, 'ok');
+        });
+    }
+    window.pkgMapOpen = function (which) {
+        if (!S) return;
+        try { etelEnsureMaps(); } catch (e) {}
+        var s = S[which];
+        var el = mapView();
+        if (!el) { el = document.createElement('div'); el.id = 'pkg-mapview'; el.className = 'pkg-mapview'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); document.body.appendChild(el); }
+        M = { which: which, lat: s.lat !== null ? s.lat : HAWASSA.lat, lng: s.lng !== null ? s.lng : HAWASSA.lng, address: '', zone: '', map: null, seq: 0 };
+        el.style.display = 'flex';
+        drawMap();
+        startMap(0);
+    };
+    function closeMap() { var el = mapView(); if (el) { el.style.display = 'none'; el.innerHTML = ''; } M = null; }
+    window.pkgMapCancel = closeMap;
+    window.pkgMapGps = function () {
+        if (!M) return;
+        if (!navigator.geolocation) { showToast(T('pkg_gps_fail'), 'err'); return; }
+        navigator.geolocation.getCurrentPosition(function (pos) {
+            if (!M || !M.map) return;
+            M.map.setZoom(17); M.map.panTo({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+        }, function () { showToast(T('pkg_gps_fail'), 'err'); }, { enableHighAccuracy: true, timeout: 10000 });
+    };
+    window.pkgMapOk = function () {
+        if (!M || !S || !M.address) return;
+        var s = S[M.which];
+        s.lat = M.lat; s.lng = M.lng; s.zone = M.zone; s.address = M.address; s.placeText = M.address;
+        S.err = '';
+        closeMap();
+        render();
+    };
+    document.addEventListener('keydown', function (ev) { if (ev.key === 'Escape' && M) closeMap(); });
 
     // one listener each; the view node is stable, its content is redrawn
     document.addEventListener('DOMContentLoaded', function () {
