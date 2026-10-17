@@ -44,7 +44,7 @@
         async function loadUserProfile() {
             const data = await apiCall('sg_profile');
             if (!data) {
-                showNotification('Could not load profile. Please refresh.', 'error');
+                showNotification(sgT('sg_d_err_profile'), 'error');
                 return;
             }
             currentUser = data.user || {};
@@ -86,16 +86,15 @@
             // status badge that actually reflects real backend states
             // (pending/verified/suspended), not a static "Active" label.
             setText('settings-header-name', currentServiceGiver.business_name || 'Your Business');
-            const typeLabels = { restaurant:'Restaurant', pharmacy:'Pharmacy', grocery:'Grocery', electronics:'Electronics',
-                                  retail:'Retail Store', cafe:'Cafe', fastfood:'Fast Food', laundry:'Laundry', fuel:'Fuel Station', custom:'Custom / Other' };
+            const typeLabels = {}; ['restaurant','pharmacy','grocery','electronics','retail','cafe','fastfood','laundry','fuel','custom'].forEach(function (k) { typeLabels[k] = sgT('sg_d_ty_' + k); });
             setText('settings-header-type', typeLabels[currentServiceGiver.service_type] || currentServiceGiver.service_type || '—');
             const statusEl = document.getElementById('settings-header-status');
             if (statusEl) {
                 const statusStyles = {
-                    verified:  { bg: 'rgba(46,204,113,.15)',  border: 'rgba(46,204,113,.3)',  color: '#2ecc71', label: '✓ Verified' },
-                    pending:   { bg: 'rgba(212,175,55,.15)',  border: 'rgba(212,175,55,.3)',  color: '#D4AF37', label: '⏳ Pending Verification' },
-                    suspended: { bg: 'rgba(231,76,60,.15)',   border: 'rgba(231,76,60,.3)',   color: '#e74c3c', label: '⛔ Suspended' },
-                    inactive:  { bg: 'rgba(154,154,174,.15)', border: 'rgba(154,154,174,.3)', color: '#9A9AAE', label: 'Inactive' },
+                    verified:  { bg: 'rgba(46,204,113,.15)',  border: 'rgba(46,204,113,.3)',  color: '#2ecc71', label: sgT('sg_d_vf') },
+                    pending:   { bg: 'rgba(212,175,55,.15)',  border: 'rgba(212,175,55,.3)',  color: '#D4AF37', label: sgT('sg_d_pv') },
+                    suspended: { bg: 'rgba(231,76,60,.15)',   border: 'rgba(231,76,60,.3)',   color: '#e74c3c', label: sgT('sg_d_sp') },
+                    inactive:  { bg: 'rgba(154,154,174,.15)', border: 'rgba(154,154,174,.3)', color: '#9A9AAE', label: sgT('sg_d_in') },
                 };
                 const s = statusStyles[currentServiceGiver.status] || statusStyles.pending;
                 statusEl.style.background = s.bg; statusEl.style.border = '1px solid ' + s.border; statusEl.style.color = s.color;
@@ -103,18 +102,18 @@
             }
             const cbeStatusEl = document.getElementById('settings-cbe-status');
             if (cbeStatusEl) {
-                if (currentServiceGiver.cbe_account) { cbeStatusEl.textContent = '● Active'; cbeStatusEl.style.color = '#2ecc71'; }
-                else { cbeStatusEl.textContent = '○ Not configured yet'; cbeStatusEl.style.color = '#9A9AAE'; }
+                if (currentServiceGiver.cbe_account) { cbeStatusEl.textContent = sgT('sg_d_acc_active'); cbeStatusEl.style.color = '#2ecc71'; }
+                else { cbeStatusEl.textContent = sgT('sg_d_acc_none'); cbeStatusEl.style.color = '#9A9AAE'; }
             }
             const abysiniaStatusEl = document.getElementById('settings-abysinia-status');
             if (abysiniaStatusEl) {
-                if (currentServiceGiver.abysinia_account) { abysiniaStatusEl.textContent = '● Active'; abysiniaStatusEl.style.color = '#2ecc71'; }
-                else { abysiniaStatusEl.textContent = '○ Not configured yet'; abysiniaStatusEl.style.color = '#9A9AAE'; }
+                if (currentServiceGiver.abysinia_account) { abysiniaStatusEl.textContent = sgT('sg_d_acc_active'); abysiniaStatusEl.style.color = '#2ecc71'; }
+                else { abysiniaStatusEl.textContent = sgT('sg_d_acc_none'); abysiniaStatusEl.style.color = '#9A9AAE'; }
             }
             const telebirrStatusEl = document.getElementById('settings-telebirr-status');
             if (telebirrStatusEl) {
-                if (currentServiceGiver.telebirr_number) { telebirrStatusEl.textContent = '● Active'; telebirrStatusEl.style.color = '#2ecc71'; }
-                else { telebirrStatusEl.textContent = '○ Not configured yet'; telebirrStatusEl.style.color = '#9A9AAE'; }
+                if (currentServiceGiver.telebirr_number) { telebirrStatusEl.textContent = sgT('sg_d_acc_active'); telebirrStatusEl.style.color = '#2ecc71'; }
+                else { telebirrStatusEl.textContent = sgT('sg_d_acc_none'); telebirrStatusEl.style.color = '#9A9AAE'; }
             }
             applyPaymentMethodLogos();
             checkPendingPayoutRequest();
@@ -170,9 +169,9 @@
             const cbeStatusEl = document.getElementById('settings-cbe-status');
             const abysiniaStatusEl = document.getElementById('settings-abysinia-status');
             const telebirrStatusEl = document.getElementById('settings-telebirr-status');
-            if (p.new_cbe_account !== null && cbeStatusEl) { cbeStatusEl.textContent = '⏳ Change pending approval'; cbeStatusEl.style.color = '#D4AF37'; }
-            if (p.new_abysinia_account !== null && abysiniaStatusEl) { abysiniaStatusEl.textContent = '⏳ Change pending approval'; abysiniaStatusEl.style.color = '#D4AF37'; }
-            if (p.new_telebirr_number !== null && telebirrStatusEl) { telebirrStatusEl.textContent = '⏳ Change pending approval'; telebirrStatusEl.style.color = '#D4AF37'; }
+            if (p.new_cbe_account !== null && cbeStatusEl) { cbeStatusEl.textContent = sgT('sg_d_acc_pending'); cbeStatusEl.style.color = '#D4AF37'; }
+            if (p.new_abysinia_account !== null && abysiniaStatusEl) { abysiniaStatusEl.textContent = sgT('sg_d_acc_pending'); abysiniaStatusEl.style.color = '#D4AF37'; }
+            if (p.new_telebirr_number !== null && telebirrStatusEl) { telebirrStatusEl.textContent = sgT('sg_d_acc_pending'); telebirrStatusEl.style.color = '#D4AF37'; }
         }
 
         // Hides owner-only settings cards/buttons for any non-owner login via
@@ -260,18 +259,18 @@
             if (!data) { updateOnlineStatusUI(); return; } // apiCall already toasted the error; restore previous text
             currentServiceGiver.is_online = data.is_online;
             updateOnlineStatusUI();
-            showNotification(data.is_online ? 'You are online — orders can reach you' : 'You are offline — no new orders will come in', 'success');
+            showNotification(sgT(data.is_online ? 'sg_d_online' : 'sg_d_offline'), 'success');
         }
 
         // Opening hours: the server only lets customers order inside them (and only while the online switch is on).
         async function saveSgHours() {
             const o = (document.getElementById('sgp-opens') || {}).value || '';
             const c = (document.getElementById('sgp-closes') || {}).value || '';
-            if (!o || !c) { showNotification('Enter both an opening and a closing time, or press Clear', 'error'); return; }
+            if (!o || !c) { showNotification(sgT('sg_d_hours_both'), 'error'); return; }
             const data = await apiCall('sg_set_hours', { opens_at: o, closes_at: c });
             if (!data) return;
             currentServiceGiver.opens_at = data.opens_at; currentServiceGiver.closes_at = data.closes_at;
-            showNotification('Opening hours saved: ' + data.opens_at + ' to ' + data.closes_at, 'success');
+            showNotification(sgT('sg_d_hours_saved').replace('{a}', data.opens_at).replace('{b}', data.closes_at), 'success');
         }
         async function clearSgHours() {
             const data = await apiCall('sg_set_hours', { opens_at: '', closes_at: '' });
@@ -279,7 +278,7 @@
             currentServiceGiver.opens_at = null; currentServiceGiver.closes_at = null;
             const hOpen = document.getElementById('sgp-opens'), hClose = document.getElementById('sgp-closes');
             if (hOpen) hOpen.value = ''; if (hClose) hClose.value = '';
-            showNotification('Opening hours cleared - you are open whenever your switch is on', 'success');
+            showNotification(sgT('sg_d_hours_cleared'), 'success');
         }
 
         function renderSgProfilePanel() {
@@ -450,7 +449,7 @@
                     '</div>';
                 }).join('');
             } catch(e) {
-                container.innerHTML = UI.error('Error rendering orders');
+                container.innerHTML = UI.error(sgT('sg_d_orders_err'));
             }
         }
 
@@ -491,15 +490,15 @@
             var res = await apiCall('sg_reject_order', { order_id: _declineId, reason: chosen.value, note: document.getElementById('decline-note').value });
             if (!res) { btn.disabled = false; return; } // apiCall already showed the server message
             closeDecline();
-            showNotification(res.refund_due ? 'Order declined. The customer will be refunded.' : 'Order declined.', 'success');
+            showNotification(sgT(res.refund_due ? 'sg_d_declined_refund' : 'sg_d_declined'), 'success');
             loadOrders();
         }
 
         async function sgUpdateStatus(orderId, newStatus) {
-            const labels = { preparing: 'preparing', accepted: 'ready for pickup — courier and customer notified' };
+            const labels = { preparing: sgT('sg_d_mk_preparing'), accepted: sgT('sg_d_mk_accepted') };
             const res = await apiCall('sg_update_order_status', { order_id: orderId, new_status: newStatus });
             if (!res) return; // apiCall shows error notification on failure
-            showNotification('Order marked as ' + (labels[newStatus] || newStatus) + '!', 'success');
+            showNotification(sgT('sg_d_marked').replace('{s}', labels[newStatus] || newStatus), 'success');
             // Reflect the change immediately from what we already know,
             // rather than waiting on a full re-fetch that could momentarily
             // show a stale status on a slow connection.
@@ -689,7 +688,7 @@
 
         async function loadOrders() {
             const container = document.getElementById('orders-container');
-            container.innerHTML = UI.loading('Loading orders...');
+            container.innerHTML = UI.loading(sgT('sg_orders_loading'));
             const res = await apiCall('sg_orders');
             if (!res) {
                 container.innerHTML = '<p style="color:#E63946;text-align:center;padding:20px">Failed to load orders. <button ' + _ea('loadOrders') + ' style="background:none;border:none;color:var(--primary);cursor:pointer;font-weight:700">Retry</button></p>';
@@ -746,10 +745,10 @@
         }
 
         async function sgConfirmPickup(orderId) {
-            if (!confirm('Confirm that the courier has picked up this order?')) return;
+            if (!confirm(sgT('sg_d_confirm_pickup'))) return;
             const res = await apiCall('sg_confirm_pickup', { order_id: orderId });
             if (res) {
-                showNotification('Pickup confirmed! Order is now in transit.', 'success');
+                showNotification(sgT('sg_d_pickup_ok'), 'success');
                 checkPickupConfirmations();
                 loadOrders();
             }
@@ -818,9 +817,9 @@
                         await loadDashboardData();
                 }
                 await loadUserProfile();
-                showNotification('Refreshed', 'success');
+                showNotification(sgT('sg_d_refreshed'), 'success');
             } catch (e) {
-                showNotification('Could not refresh - check your connection', 'error');
+                showNotification(sgT('sg_d_refresh_fail'), 'error');
             } finally {
                 if (btn) setTimeout(() => btn.classList.remove('spinning'), 400);
             }
@@ -991,7 +990,7 @@
             const n = Object.keys(catState.sel).length;
             const btn = document.getElementById('cat-submit');
             btn.disabled = n === 0;
-            btn.textContent = n ? 'Add ' + n + ' dish' + (n === 1 ? '' : 'es') + ' to my menu' : 'Tick dishes to add';
+            btn.textContent = n ? sgT('sg_d_cat_add').replace('{n}', n) : sgT('sg_d_cat_tick');
         }
 
         async function catalogSubmit() {
@@ -1013,7 +1012,7 @@
             }
             msg.style.display = 'none';
             const btn = document.getElementById('cat-submit');
-            btn.disabled = true; btn.textContent = 'Adding…';
+            btn.disabled = true; btn.textContent = sgT('sg_d_cat_adding');
             const picks = ids.map(id => ({ catalog_id: parseInt(id), price: parseFloat(catState.sel[id].price), quality: catState.sel[id].quality || '' }));
             const data = await apiCall('sg_catalog_add', { picks });
             if (!data) { catalogCount(); return; }
@@ -1021,7 +1020,7 @@
                 showNotification('Could not add ' + data.failed.length + ' dish(es): ' + data.failed[0].error, 'error');
                 if (!data.added) { catalogCount(); return; }
             }
-            showNotification('Added ' + data.added + ' dish' + (data.added === 1 ? '' : 'es') + (data.skipped && data.skipped.length ? ' (' + data.skipped.length + ' already on your menu)' : ''), 'success');
+            showNotification(sgT('sg_d_cat_added').replace('{n}', data.added) + (data.skipped && data.skipped.length ? sgT('sg_d_cat_skipped').replace('{n}', data.skipped.length) : ''), 'success');
             closeCatalog();
             loadServices();
         }
@@ -1101,7 +1100,7 @@
 
         function openAddItemModal() {
             document.getElementById('item-edit-id').value = '';
-            document.getElementById('item-modal-title').textContent = 'Add New Item';
+            document.getElementById('item-modal-title').textContent = sgT('sg_d_item_add');
             document.getElementById('item-name').value = '';
             document.getElementById('item-name-am').value = '';
             document.getElementById('item-desc').value = '';
@@ -1126,7 +1125,7 @@
             const it = servicesCache.find(x => x.id == id);
             if (!it) return;
             document.getElementById('item-edit-id').value = it.id;
-            document.getElementById('item-modal-title').textContent = 'Edit Item';
+            document.getElementById('item-modal-title').textContent = sgT('sg_d_item_edit');
             document.getElementById('item-name').value = it.name || '';
             document.getElementById('item-name-am').value = it.name_am || '';
             document.getElementById('item-desc').value = it.description || '';
@@ -1218,7 +1217,7 @@
         // "Sold out today": customers see it as unavailable until midnight, then it comes back by itself.
         async function setSoldOut(id, soldOut) {
             const data = await apiCall('sg_sold_out', { item_id: id, sold_out: soldOut ? 1 : 0 });
-            if (data) showNotification(soldOut ? 'Marked sold out for today - it returns tomorrow' : 'Back on sale', 'success');
+            if (data) showNotification(sgT(soldOut ? 'sg_d_soldout_on' : 'sg_d_soldout_off'), 'success');
             await loadServices();
         }
 
@@ -1228,9 +1227,9 @@
         }
 
         async function deleteItem(id, name) {
-            if (!confirm('Delete "' + name + '"? This cannot be undone.')) return;
+            if (!confirm(sgT('sg_d_confirm_delete').replace('{n}', name))) return;
             const data = await apiCall('sg_delete_item', { item_id: id });
-            if (data) { showNotification('Item deleted', 'success'); loadServices(); }
+            if (data) { showNotification(sgT('sg_d_item_deleted'), 'success'); loadServices(); }
         }
 
         function previewSettingsLogo(input) {
@@ -1311,7 +1310,7 @@
             if (data) {
                 _coverRemoved = false;
                 if (coverInput) coverInput.value = '';
-                showNotification('Settings saved!', 'success');
+                showNotification(sgT('sg_d_settings_saved'), 'success');
                 await loadUserProfile();
             }
         }
@@ -1322,7 +1321,7 @@
                 cbe_account_name: document.getElementById('settings-cbe-account-name').value
             });
             if (data) {
-                showNotification(data.payout_pending ? 'Submitted for admin approval' : 'CBE account updated!', 'success');
+                showNotification(sgT(data.payout_pending ? 'sg_d_pending_admin' : 'sg_d_cbe_ok'), 'success');
                 await loadUserProfile();
             }
         }
@@ -1333,7 +1332,7 @@
                 abysinia_account_name: document.getElementById('settings-abysinia-account-name').value
             });
             if (data) {
-                showNotification(data.payout_pending ? 'Submitted for admin approval' : 'Abysinia account updated!', 'success');
+                showNotification(sgT(data.payout_pending ? 'sg_d_pending_admin' : 'sg_d_aby_ok'), 'success');
                 await loadUserProfile();
             }
         }
@@ -1359,7 +1358,7 @@
                 telebirr_account_name: document.getElementById('settings-telebirr-account-name').value
             });
             if (data) {
-                showNotification(data.payout_pending ? 'Submitted for admin approval' : 'Telebirr number updated!', 'success');
+                showNotification(sgT(data.payout_pending ? 'sg_d_pending_admin' : 'sg_d_tele_ok'), 'success');
                 await loadUserProfile();
             }
         }
@@ -1509,9 +1508,9 @@
         async function loadRoles() {
             const listEl = document.getElementById('sg-roles-list');
             if (!listEl) return;
-            listEl.innerHTML = 'Loading…';
+            listEl.innerHTML = sgT('sg_loading_dots');
             const data = await apiCall('sg_list_roles');
-            if (!data) { listEl.innerHTML = '<p style="color:#B8B0A0">Could not load roles.</p>'; return; }
+            if (!data) { listEl.innerHTML = '<p style="color:#B8B0A0">' + sgT('sg_d_roles_fail') + '</p>'; return; }
             rolesCache = data.roles || [];
             renderCapabilityCheckboxes(data.capability_catalog || {});
             renderRolesList(rolesCache);
@@ -1533,19 +1532,19 @@
             const listEl = document.getElementById('sg-roles-list');
             if (!listEl) return;
             if (!roles.length) {
-                listEl.innerHTML = '<p style="color:#B8B0A0;font-size:13px">No custom roles yet - define one below, then assign it to staff.</p>';
+                listEl.innerHTML = '<p style="color:#B8B0A0;font-size:13px">' + sgT('sg_d_no_roles') + '</p>';
                 return;
             }
             listEl.innerHTML = roles.map((r) => {
                 const caps = (r.capabilities || []).join(', ');
                 return '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border-light)">' +
                     '<div>' +
-                        '<div style="font-weight:700">' + escapeHtml(r.role_name) + ' <span style="font-weight:400;color:#B8B0A0;font-size:12px">(' + (r.staff_count || 0) + ' staff)</span></div>' +
+                        '<div style="font-weight:700">' + escapeHtml(r.role_name) + ' <span style="font-weight:400;color:#B8B0A0;font-size:12px">' + sgT('sg_d_staff_count').replace('{n}', r.staff_count || 0) + '</span></div>' +
                         '<div style="font-size:11.5px;color:#B8B0A0">' + escapeHtml(caps) + '</div>' +
                     '</div>' +
                     '<div style="display:flex;gap:6px">' +
-                        '<button class="btn" style="padding:6px 12px;font-size:12px;background:none;border:1px solid var(--border-light)" ' + _ea('editRoleUI', [r.id]) + '>Edit</button>' +
-                        '<button class="btn" style="padding:6px 12px;font-size:12px;background:none;border:1px solid var(--border-light);color:#E63946" ' + _ea('deleteRoleUI', [r.id]) + '>Delete</button>' +
+                        '<button class="btn" style="padding:6px 12px;font-size:12px;background:none;border:1px solid var(--border-light)" ' + _ea('editRoleUI', [r.id]) + '>' + sgT('sg_d_edit') + '</button>' +
+                        '<button class="btn" style="padding:6px 12px;font-size:12px;background:none;border:1px solid var(--border-light);color:#E63946" ' + _ea('deleteRoleUI', [r.id]) + '>' + sgT('sg_d_delete') + '</button>' +
                     '</div>' +
                 '</div>';
             }).join('');
@@ -1576,24 +1575,24 @@
             const capabilities = Array.from(document.querySelectorAll('.role-cap-checkbox:checked')).map((cb) => cb.value);
             const msgEl = document.getElementById('role-msg');
             if (msgEl) { msgEl.style.color = ''; msgEl.textContent = ''; }
-            if (!roleName) { if (msgEl) { msgEl.style.color = '#E63946'; msgEl.textContent = 'Role name is required.'; } return; }
-            if (!capabilities.length) { if (msgEl) { msgEl.style.color = '#E63946'; msgEl.textContent = 'Select at least one capability.'; } return; }
+            if (!roleName) { if (msgEl) { msgEl.style.color = '#E63946'; msgEl.textContent = sgT('sg_d_role_name_req'); } return; }
+            if (!capabilities.length) { if (msgEl) { msgEl.style.color = '#E63946'; msgEl.textContent = sgT('sg_d_role_cap_req'); } return; }
 
             const payload = { role_name: roleName, capabilities };
             if (roleId) payload.role_id = Number(roleId);
             const data = await apiCall('sg_save_role', payload);
             if (data) {
-                showNotification(roleId ? 'Role updated' : 'Role created', 'success');
+                showNotification(sgT(roleId ? 'sg_d_role_updated' : 'sg_d_role_created'), 'success');
                 cancelEditRoleUI();
                 loadRoles();
             }
         }
 
         async function deleteRoleUI(roleId) {
-            if (!confirm('Delete this role? Staff currently assigned to it will fall back to view-only access.')) return;
+            if (!confirm(sgT('sg_d_confirm_role_del'))) return;
             const data = await apiCall('sg_delete_role', { role_id: roleId });
             if (data) {
-                showNotification('Role deleted', 'success');
+                showNotification(sgT('sg_d_role_deleted'), 'success');
                 loadRoles();
             }
         }
@@ -1602,7 +1601,7 @@
             const sel = document.getElementById('staff-role-select');
             if (!sel) return;
             const current = sel.value;
-            sel.innerHTML = '<option value="">No role (view-only defaults)</option>' +
+            sel.innerHTML = '<option value="">' + escapeHtml(sgT('sg_d_no_role_long')) + '</option>' +
                 roles.map((r) => '<option value="' + r.id + '">' + escapeHtml(r.role_name) + '</option>').join('');
             sel.value = current;
         }
@@ -1610,9 +1609,9 @@
         async function loadStaff() {
             const listEl = document.getElementById('sg-staff-list');
             if (!listEl) return;
-            listEl.innerHTML = 'Loading…';
+            listEl.innerHTML = sgT('sg_loading_dots');
             const data = await apiCall('sg_get_staff');
-            if (!data) { listEl.innerHTML = '<p style="color:#B8B0A0">Could not load staff list.</p>'; return; }
+            if (!data) { listEl.innerHTML = '<p style="color:#B8B0A0">' + sgT('sg_d_staff_fail') + '</p>'; return; }
             renderStaffList(data.staff || []);
         }
 
@@ -1620,22 +1619,22 @@
             const listEl = document.getElementById('sg-staff-list');
             if (!listEl) return;
             if (!staff.length) {
-                listEl.innerHTML = '<p style="color:#B8B0A0;font-size:13px">No staff accounts yet.</p>';
+                listEl.innerHTML = '<p style="color:#B8B0A0;font-size:13px">' + sgT('sg_d_no_staff') + '</p>';
                 return;
             }
-            const roleOptions = (selectedRoleId) => '<option value="">No role</option>' +
+            const roleOptions = (selectedRoleId) => '<option value="">' + escapeHtml(sgT('sg_d_no_role')) + '</option>' +
                 rolesCache.map((r) => '<option value="' + r.id + '"' + (String(r.id) === String(selectedRoleId) ? ' selected' : '') + '>' + escapeHtml(r.role_name) + '</option>').join('');
             listEl.innerHTML = staff.map(function (s) {
                 const active = !!parseInt(s.active, 10);
                 return '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border-light);gap:10px;flex-wrap:wrap">' +
                     '<div>' +
                         '<div style="font-weight:700">' + escapeHtml(s.name || '') + '</div>' +
-                        '<div style="font-size:12px;color:#B8B0A0">' + escapeHtml(s.phone || '') + ' · ' + escapeHtml(s.role_name || 'Cashier') + ' · ' + (active ? 'Active' : 'Deactivated') + '</div>' +
+                        '<div style="font-size:12px;color:#B8B0A0">' + escapeHtml(s.phone || '') + ' · ' + escapeHtml(s.role_name || sgT('sg_d_cashier')) + ' · ' + sgT(active ? 'sg_d_active' : 'sg_d_deactivated') + '</div>' +
                     '</div>' +
                     '<div style="display:flex;gap:6px;align-items:center">' +
                         '<select class="field-input" style="padding:6px 8px;font-size:12px;width:auto" ' + _ea('reassignStaffRoleUI', [s.id, EtelActions.VALUE], { event: 'change' }) + '>' + roleOptions(s.role_id) + '</select>' +
                         '<button class="btn" style="padding:6px 12px;font-size:12px;background:none;border:1px solid var(--border-light);color:' + (active ? '#E63946' : '#2ECC71') + '" ' + _ea('toggleStaffUI', [s.id, active ? 0 : 1]) + '>' +
-                            (active ? 'Deactivate' : 'Reactivate') +
+                            sgT(active ? 'sg_d_deactivate' : 'sg_d_reactivate') +
                         '</button>' +
                     '</div>' +
                 '</div>';
@@ -1644,7 +1643,7 @@
 
         async function reassignStaffRoleUI(staffId, roleId) {
             const data = await apiCall('sg_update_staff_role', { staff_id: staffId, role_id: roleId ? Number(roleId) : 0 });
-            if (data) showNotification('Role updated', 'success');
+            if (data) showNotification(sgT('sg_d_role_updated'), 'success');
         }
 
         async function addCashierUI() {
@@ -1657,7 +1656,7 @@
             if (msgEl) { msgEl.style.color = ''; msgEl.textContent = ''; }
 
             if (!name || !phone) {
-                if (msgEl) { msgEl.style.color = '#E63946'; msgEl.textContent = 'Name and phone are required.'; }
+                if (msgEl) { msgEl.style.color = '#E63946'; msgEl.textContent = sgT('sg_d_staff_req'); }
                 return;
             }
             // Password is only required if this phone turns out to have no
@@ -1668,7 +1667,7 @@
             if (roleId) payload.role_id = roleId;
             const data = await apiCall('sg_add_staff', payload);
             if (data) {
-                showNotification(data.linked_existing ? 'Existing EtelID linked as staff!' : 'New staff account created!', 'success');
+                showNotification(sgT(data.linked_existing ? 'sg_d_staff_linked' : 'sg_d_staff_new'), 'success');
                 document.getElementById('staff-name').value = '';
                 document.getElementById('staff-phone').value = '';
                 document.getElementById('staff-password').value = '';
@@ -1680,7 +1679,7 @@
         async function toggleStaffUI(staffId, nextActive) {
             const data = await apiCall('sg_remove_staff', { staff_id: staffId, active: nextActive });
             if (data) {
-                showNotification(nextActive ? 'Staff reactivated' : 'Staff deactivated', 'success');
+                showNotification(sgT(nextActive ? 'sg_d_staff_react' : 'sg_d_staff_deact'), 'success');
                 loadStaff();
             }
         }
@@ -2084,14 +2083,14 @@
             const statusEl = document.getElementById('printer-status');
             if (!BLEPrinter.isSupported()) {
                 if (statusEl) { statusEl.textContent = '✕ This browser does not support direct printer connections (use Chrome)'; }
-                showNotification('Direct printing needs Chrome on Android or desktop.', 'error');
+                showNotification(sgT('sg_d_print_chrome'), 'error');
                 return;
             }
             if (statusEl) statusEl.textContent = 'Connecting…';
             try {
                 await BLEPrinter.connect();
                 if (statusEl) statusEl.textContent = '● Printer connected';
-                showNotification('Printer connected! Kitchen tickets will print directly to it.', 'success');
+                showNotification(sgT('sg_d_print_ok'), 'success');
             } catch (e) {
                 if (statusEl) statusEl.textContent = '○ Not connected';
                 showNotification('Could not connect: ' + e.message, 'error');
@@ -2102,5 +2101,5 @@
             BLEPrinter.forget();
             const statusEl = document.getElementById('printer-status');
             if (statusEl) statusEl.textContent = '○ Not connected';
-            showNotification('Printer forgotten. Connect again to pair.', 'success');
+            showNotification(sgT('sg_d_print_forgot'), 'success');
         }
