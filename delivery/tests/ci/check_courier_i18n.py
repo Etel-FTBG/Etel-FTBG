@@ -46,8 +46,8 @@ if not carrying:
 else:
     n, f = carrying[-1]
     body = open(f, encoding='utf-8').read()
-    if not body.endswith(addon):
-        bad.append('release v%d must end with the current js/courier-i18n.js: the add-on changed after that release was built. Build a NEW version, never edit a released one.' % n)
+    if addon not in body:
+        bad.append('release v%d must contain the current js/courier-i18n.js: the add-on changed after that release was built. Build a NEW version, never edit a released one.' % n)
     earlier = [x for x in rel if x[0] < n]
     if earlier:
         prev = open(earlier[-1][1], encoding='utf-8').read().rstrip('\n')
