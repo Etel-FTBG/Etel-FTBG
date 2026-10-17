@@ -106,6 +106,7 @@ jobs:
           python3 delivery/tests/ci/check_package_journey.py
           python3 delivery/tests/ci/check_package_form.py
           python3 delivery/tests/ci/check_courier_packages.py
+          python3 delivery/tests/ci/check_courier_i18n.py
           python3 delivery/tests/ci/check_admin_footer.py
           python3 delivery/tests/ci/check_customer_csp.py
           python3 delivery/tests/ci/check_order_cancel.py
