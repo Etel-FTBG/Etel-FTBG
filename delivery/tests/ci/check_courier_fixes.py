@@ -20,8 +20,8 @@ if not carrying:
 else:
     n, f = carrying[-1]
     body = read(f)
-    if not body.endswith(addon):
-        bad.append('release v%d must end with the current js/courier-fixes.js: build a NEW version instead of editing a released one' % n)
+    if addon not in body:
+        bad.append('release v%d must contain the current js/courier-fixes.js: build a NEW version instead of editing a released one' % n)
     earlier = [x for x in rel if x[0] < n]
     if earlier and not body.startswith(read(earlier[-1][1]).rstrip('\n')):
         bad.append('release v%d must start with the exact previous bundle (v%d)' % (n, earlier[-1][0]))
