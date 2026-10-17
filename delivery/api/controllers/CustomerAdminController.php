@@ -3,6 +3,7 @@
 // ETEL Delivery - Admin -> Customers (read only)
 //   admin_customers_list { q?, sort?: recent|orders|spent|name, limit? } -> customers with order count, money spent, last order
 //   admin_customer_get   { id }                                          -> one customer: summary + their last 25 orders
+//   admin_customer_set_active { id, active: 0|1, reason? }               -> suspend / restore ordering (needs users.manage)
 // Needs users.view. Staff who may only see ride accounts do not get delivery orders here.
 // ============================================================
 
@@ -34,7 +35,7 @@ case 'admin_customers_list': {
         $where .= ' AND (u.name LIKE ? OR u.phone LIKE ?)'; $params[] = $like; $params[] = $like;
     }
     try {
-        $s = $pdo->prepare("SELECT u.id, u.name, u.phone, u.created_at, " .
+        $s = $pdo->prepare("SELECT u.id, u.name, u.phone, u.created_at, u.active, " .
             "COUNT(o.id) AS orders_total, " .
             "SUM(o.status = 'delivered') AS delivered, SUM(o.status = 'cancelled') AS cancelled, " .
             "IFNULL(SUM(CASE WHEN o.status = 'delivered' THEN o.fare_total ELSE 0 END), 0) AS spent, " .
@@ -49,7 +50,7 @@ case 'admin_customers_list': {
     foreach ($rows as &$r) {
         $r['id'] = intval($r['id']); $r['orders_total'] = intval($r['orders_total']);
         $r['delivered'] = intval($r['delivered']); $r['cancelled'] = intval($r['cancelled']);
-        $r['spent'] = round(floatval($r['spent']), 2);
+        $r['spent'] = round(floatval($r['spent']), 2); $r['suspended'] = intval($r['active']) === 0; unset($r['active']);
     }
     unset($r);
     ok(array('customers' => $rows, 'count' => count($rows),
@@ -64,7 +65,7 @@ case 'admin_customer_get': {
     $id = isset($body['id']) ? intval($body['id']) : (isset($_GET['id']) ? intval($_GET['id']) : 0);
     if ($id <= 0) fail('id required', 400);
     try {
-        $s = $pdo->prepare("SELECT id, name, phone, created_at FROM users WHERE id = ? AND role = 'customer' LIMIT 1");
+        $s = $pdo->prepare("SELECT id, name, phone, created_at, active FROM users WHERE id = ? AND role = 'customer' LIMIT 1");
         $s->execute(array($id));
         $c = $s->fetch(PDO::FETCH_ASSOC);
         if (!$c) fail('Customer not found', 404);
@@ -80,10 +81,30 @@ case 'admin_customer_get': {
     } catch (PDOException $e) { fail_ex($e, 'Could not load the customer', 500); }
     foreach ($orders as &$r) { $r['id'] = intval($r['id']); $r['fare_total'] = round(floatval($r['fare_total']), 2); }
     unset($r);
-    ok(array('customer' => array('id' => intval($c['id']), 'name' => $c['name'], 'phone' => $c['phone'], 'created_at' => $c['created_at'],
+    ok(array('customer' => array('id' => intval($c['id']), 'name' => $c['name'], 'phone' => $c['phone'], 'created_at' => $c['created_at'], 'suspended' => intval($c['active']) === 0,
                                  'orders_total' => intval($sum['n']), 'delivered' => intval($sum['d']), 'cancelled' => intval($sum['x']),
                                  'spent' => round(floatval($sum['spent']), 2), 'last_order_at' => $sum['last_at']),
              'orders' => $orders));
+    break;
+}
+
+case 'admin_customer_set_active': {
+    $pdo = db();
+    $u = require_admin($pdo, 'users.manage');
+    if (etel_is_ride_only($pdo, $u)) fail('You can only see ride accounts', 403);
+    $id = isset($body['id']) ? intval($body['id']) : 0;
+    if ($id <= 0) fail('id required', 400);
+    $active = !empty($body['active']) ? 1 : 0;
+    $reason = isset($body['reason']) ? trim(substr((string) $body['reason'], 0, 200)) : '';
+    try {
+        $s = $pdo->prepare("SELECT id, name FROM users WHERE id = ? AND role = 'customer' LIMIT 1");
+        $s->execute(array($id));
+        $c = $s->fetch(PDO::FETCH_ASSOC);
+        if (!$c) fail('Customer not found', 404);
+        $pdo->prepare('UPDATE users SET active = ? WHERE id = ?')->execute(array($active, $id));
+    } catch (PDOException $e) { fail_ex($e, 'Could not update the customer', 500); }
+    error_log('[ETEL][admin] customer ' . $id . ($active ? ' restored' : ' suspended') . ' by admin ' . intval($u['id']) . ($reason !== '' ? ' (' . $reason . ')' : ''));
+    ok(array('id' => $id, 'suspended' => $active === 0));
     break;
 }
 

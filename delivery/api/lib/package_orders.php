@@ -257,6 +257,8 @@ function etel_package_pin() {
 function etel_package_create($pdo, $user, $in) {
     require_once __DIR__ . '/../validate.php';
     try {
+        require_once __DIR__ . '/customer_suspend.php';
+        if (etel_customer_suspended($pdo, $user['id'])) return array('ok' => false, 'message' => etel_customer_suspended_message());
         etel_package_ensure_schema($pdo);
         if (!is_array($in)) return array('ok' => false, 'message' => 'Missing package details.');
         if (empty($in['ack_prohibited'])) return array('ok' => false, 'message' => 'Please confirm the package has no prohibited items.');

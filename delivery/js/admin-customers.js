@@ -24,7 +24,7 @@ function failText(res, dflt) { return (res && (res.message || res.error)) || dfl
 function rows() {
   if (!DATA.length) return '<tr><td colspan="6" style="padding:24px;text-align:center;opacity:.7">No customers found</td></tr>';
   return DATA.map(function (c) {
-    return '<tr data-id="' + c.id + '" style="cursor:pointer"><td style="' + TD + '"><strong>' + esc(c.name) + '</strong></td><td style="' + TD + '">' + esc(c.phone) + '</td>' +
+    return '<tr data-id="' + c.id + '" style="cursor:pointer"><td style="' + TD + '"><strong>' + esc(c.name) + '</strong>' + (c.suspended ? ' <span style="color:#e74c3c;font-size:11px;font-weight:700">SUSPENDED</span>' : '') + '</td><td style="' + TD + '">' + esc(c.phone) + '</td>' +
       '<td style="' + TD + '">' + c.orders_total + (c.cancelled ? ' <span style="opacity:.6">(' + c.cancelled + ' cancelled)</span>' : '') + '</td>' +
       '<td style="' + TD + '">' + money(c.spent) + '</td><td style="' + TD + '">' + day(c.last_order_at) + '</td><td style="' + TD + '">' + day(c.created_at) + '</td></tr>';
   }).join('');
@@ -63,8 +63,8 @@ function openDetail(el, id) {
     if (!res || res.success === false || !res.data) { host.innerHTML = '<div style="padding:14px;color:#e74c3c">' + esc(failText(res, 'Could not load this customer.')) + '</div>'; return; }
     var c = res.data.customer, o = res.data.orders || [];
     var h = '<div style="border:1px solid #D4AF37;border-radius:12px;padding:14px;margin-top:16px"><div style="display:flex;justify-content:space-between;gap:8px;align-items:center">' +
-      '<div style="font-size:16px;font-weight:800">' + esc(c.name) + ' <span style="font-weight:400;opacity:.75">· ' + esc(c.phone) + '</span></div>' +
-      '<button type="button" data-close style="' + BTN2 + '">Close</button></div>' +
+      '<div style="font-size:16px;font-weight:800">' + esc(c.name) + ' <span style="font-weight:400;opacity:.75">· ' + esc(c.phone) + '</span>' + (c.suspended ? ' <span style="color:#e74c3c;font-size:12px">· suspended from ordering</span>' : '') + '</div>' +
+      '<div style="display:flex;gap:8px"><button type="button" data-suspend style="' + BTN2 + '">' + (c.suspended ? 'Restore ordering' : 'Suspend ordering') + '</button><button type="button" data-close style="' + BTN2 + '">Close</button></div></div>' +
       '<div style="font-size:13px;margin:6px 0 10px;opacity:.85">' + c.orders_total + ' orders · ' + c.delivered + ' delivered · ' + c.cancelled + ' cancelled · ' + money(c.spent) + ' spent · joined ' + day(c.created_at) + '</div>';
     h += o.length ? '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse"><thead><tr>' +
       ['Code', 'Type', 'Status', 'Payment', 'Total', 'Placed'].map(function (x) { return '<th style="' + TH + '">' + x + '</th>'; }).join('') + '</tr></thead><tbody>' +
@@ -73,6 +73,15 @@ function openDetail(el, id) {
           '<td style="' + TD + '">' + esc(r.payment_method) + '</td><td style="' + TD + '">' + money(r.fare_total) + '</td><td style="' + TD + '">' + esc(String(r.placed_at || '').slice(0, 16)) + '</td></tr>';
       }).join('') + '</tbody></table></div>' : '<div style="opacity:.7">No orders yet.</div>';
     host.innerHTML = h + '</div>';
+    host.querySelector('[data-suspend]').addEventListener('click', function () {
+      var on = !c.suspended, reason = '';
+      if (on) { reason = window.prompt('Suspend ' + c.name + ' from ordering? They can still sign in. Reason (optional):'); if (reason === null) return; }
+      else if (!window.confirm('Let ' + c.name + ' order again?')) return;
+      api('admin_customer_set_active', { id: c.id, active: on ? 0 : 1, reason: reason }).then(function (r) {
+        if (!r || r.success === false) { window.alert(failText(r, 'Could not update.')); return; }
+        load(true); openDetail(el, c.id);
+      });
+    });
     host.querySelector('[data-close]').addEventListener('click', function () { host.innerHTML = ''; });
     host.scrollIntoView({ block: 'nearest' });
   }).catch(function () { host.innerHTML = '<div style="padding:14px;color:#e74c3c">Could not reach the server. Try again.</div>'; });

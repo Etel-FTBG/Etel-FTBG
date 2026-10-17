@@ -18,6 +18,9 @@ function delivery_execute_order_creation($pdo, $auth_user, $body) {
     // Every EtelID is also a customer: a driver, courier or shop owner orders from the same account.
     if (!in_array($auth_user['role'], array('customer', 'driver', 'courier', 'service_giver', 'admin'), true)) throw new Exception('Sign in to place an order');
     
+    require_once __DIR__ . '/customer_suspend.php';
+    if (etel_customer_suspended($pdo, $auth_user['id'])) throw new Exception(etel_customer_suspended_message());
+
     require_once __DIR__ . '/../config-etb.php';
     global $HAWASSA_DELIVERY_FEES, $DELIVERY_TIERS;
 
