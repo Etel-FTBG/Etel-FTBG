@@ -58,9 +58,9 @@ if (!$data) {
 // With no secret configured the HMAC below would be computed over an empty key,
 // which anyone can reproduce - refuse to process callbacks until it is set.
 if (!defined('TELEBIRR_SECRET_KEY') || (string)TELEBIRR_SECRET_KEY === '' || TELEBIRR_SECRET_KEY === 'CHANGE_ME') {
-    http_response_code(503);
+    http_response_code(401);
     error_log('Telebirr callback: rejected, TELEBIRR_SECRET_KEY is not configured');
-    echo json_encode(array('error' => 'Not configured'));
+    echo json_encode(array('error' => 'Invalid signature'));
     exit;
 }
 

@@ -16,7 +16,8 @@ if "require_admin($pdo, 'system.backup')" not in read('api/updater-api.php'):
     bad.append('updater-api.php must require the system.backup capability')
 
 tb = read('api/telebirr-callback.php')
-if "TELEBIRR_SECRET_KEY === ''" not in tb.replace('(string)', '') or tb.index('503') > tb.index('hash_hmac'):
+guard = tb.replace('(string)', '').find("TELEBIRR_SECRET_KEY === ''")
+if guard < 0 or guard > tb.index('hash_hmac'):
     bad.append('telebirr-callback.php must refuse an empty secret before computing the HMAC')
 if '$callbackAmount === null' not in tb:
     bad.append('telebirr-callback.php must reject a callback with no amount')
