@@ -1,0 +1,73 @@
+/* ETEL Admin - design pass (loaded last, CSS only, so it can be removed by deleting one <link>).
+ * Fixes what made the admin feel crowded rather than "enterprise": a header of seven big pills, floating buttons that sat on top of the
+ * content, form fields in the browser's default serif font, stat cards leaving gaps, a long sidebar with tall rows, and no keyboard focus ring.
+ * It only changes spacing, sizes, fonts and focus. No colours of its own beyond the gold accent (works in light and dark mode). */
+
+/* ---- 1. Header: one calm row ---- */
+.header .header-right { gap: 8px; align-items: center; }
+.header .header-stat {
+    padding: 6px 12px !important; min-height: 34px; border-radius: 999px !important;
+    font-size: 12px !important; font-weight: 600; gap: 6px !important; white-space: nowrap; line-height: 1.1;
+}
+.header .header-stat > span:last-child { max-width: 150px; overflow: hidden; text-overflow: ellipsis; }
+.header .user-btn { width: 36px !important; height: 36px !important; font-size: 17px !important; border-radius: 10px !important; }
+@media (max-width: 1500px) { .header .header-stat[href] > span:last-child { display: none; } .header .header-stat[href] { padding: 6px 10px !important; } }
+
+/* ---- 2. Sidebar: tighter rows so more of the menu fits without scrolling ---- */
+.sidebar .nav-item { padding: 9px 14px !important; font-size: 13.5px !important; }
+.sidebar .nav-item .nav-icon { width: 22px; text-align: center; flex: 0 0 22px; }
+.sidebar .nav-item:hover { background: rgba(212, 175, 55, .1) !important; }
+.sidebar .nav-item.active { box-shadow: inset 3px 0 0 #D4AF37; }
+
+/* ---- 3. Page title row ---- */
+.content-header { align-items: center; gap: 12px; min-height: 64px; }
+.content-title { line-height: 1.15; }
+.action-buttons { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.action-buttons .btn { width: auto !important; min-height: 38px; padding: 8px 16px; font-size: 13px; }
+
+/* ---- 4. Form fields: the page's own font, one height, a visible gold focus ---- */
+.content input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=file]):not([type=color]),
+.content select, .content textarea, .content button { font-family: inherit; }
+.content input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=file]):not([type=color]),
+.content select { min-height: 38px; border-radius: 10px; }
+.content input:focus-visible, .content select:focus-visible, .content textarea:focus-visible,
+.content button:focus-visible, .sidebar .nav-item:focus-visible, .header a:focus-visible, .header button:focus-visible {
+    outline: 2px solid #D4AF37; outline-offset: 2px;
+}
+
+/* ---- 5. Stat cards: 3 across for six cards, no orphan gaps; numbers line up ---- */
+#dash-stats.stats-grid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)) !important; gap: 14px !important; }
+.content td, .content th, .stat-value, .stat-card [id^="kpi-"] { font-variant-numeric: tabular-nums; }
+
+/* ---- 6. Tables: readable rows, a hover, no clipped wide tables ---- */
+.content-scroll .panel { max-width: 100%; overflow-x: auto; }
+.content table tbody tr { transition: background .15s; }
+.content table tbody tr:hover { background: rgba(212, 175, 55, .08); }
+.content table th { white-space: nowrap; }
+
+/* ---- 7. Test/diagnostic card on the dashboard: compact, so the numbers come first ---- */
+#panel-dashboard > .etel-card:first-child { padding: 12px 16px !important; margin-bottom: 14px !important; }
+
+/* ---- 8. Floating buttons: one tidy stack in the corner, never over the page content ---- */
+#etel-refresh-btn, #_diag_fab, #dark-theme-toggle {
+    width: 40px !important; height: 40px !important; right: 14px !important; left: auto !important; font-size: 17px !important; z-index: 900;
+}
+#dark-theme-toggle { bottom: 50px !important; }
+#_diag_fab { bottom: 98px !important; }
+#etel-refresh-btn { bottom: 146px !important; top: auto !important; }
+.content-scroll { padding-bottom: 72px; }
+
+/* ---- 9. Phones ---- */
+@media (max-width: 700px) {
+    .content-header { min-height: 0; padding-top: 6px; }
+    .content-title { font-size: 22px !important; }
+    .action-buttons { width: 100%; }
+    .action-buttons .btn { flex: 1 1 auto; }
+    #etel-refresh-btn, #_diag_fab, #dark-theme-toggle { right: 8px !important; }
+    #dark-theme-toggle { bottom: 46px !important; }
+    #_diag_fab { bottom: 92px !important; }
+    #etel-refresh-btn { bottom: 138px !important; }
+    #dash-stats.stats-grid { grid-template-columns: 1fr 1fr !important; }
+}
+
+@media (prefers-reduced-motion: reduce) { .sidebar .nav-item, .content table tbody tr { transition: none !important; } }
