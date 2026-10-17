@@ -1305,6 +1305,7 @@ case 'customer_confirm_delivery': {
 
         $tx = etel_pay_verify_tx($tx_ref, $auth_user['phone'], floatval($order['fare_total']));
         if (!$tx) fail('Could not verify Etel Pay payment. If money left your account, contact support with reference ' . $tx_ref, 402);
+        if (!etel_pay_claim_tx($pdo, $tx_ref, 'order')) fail('This payment has already been used', 409);
 
         $pdo->prepare("UPDATE orders SET payment_method='wallet', wallet_tx_ref=? WHERE id=?")->execute(array($tx_ref, $order_id));
     } elseif ($chosen_method !== $order['payment_method']) {

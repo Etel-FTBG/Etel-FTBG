@@ -74,7 +74,7 @@ function rides_sweep_stuck($pdo, $opts = array()) {
                    AND r.arrived_at < DATE_SUB(NOW(), INTERVAL ? MINUTE)
                    AND r.driver_id IS NOT NULL
                    AND (r.payment_method IS NULL OR r.payment_method='' OR r.payment_method='cash')
-                   AND NOT EXISTS (SELECT 1 FROM ride_issues i WHERE i.ride_id=r.id AND i.category='auto_ended')
+                   AND NOT EXISTS (SELECT 1 FROM ride_issues i WHERE i.ride_id=r.id AND i.category IN ('auto_ended','fare_review'))
                  ORDER BY r.id ASC LIMIT " . $limit);
             $q->execute(array(intval($autoMin)));
             foreach ($q->fetchAll() as $r) {
@@ -83,6 +83,10 @@ function rides_sweep_stuck($pdo, $opts = array()) {
                     rides_sweeper_issue($pdo, $r['id'], $r['driver_id'], 'auto_close_skipped',
                         'Arrived ride has no fare to settle - needs an admin.', 'open');
                     $out['flagged'][] = intval($r['id']);
+                    continue;
+                }
+                if (rides_flag_fare_review($pdo, $r['id'], $r['driver_id'], $fare, 0)) {
+                    $out['flagged'][] = intval($r['id']); // high fare: an admin looks before anything is auto-settled
                     continue;
                 }
                 if (rides_complete_and_pay($pdo, intval($r['id']), intval($r['driver_id']), $fare, 'cash')) {

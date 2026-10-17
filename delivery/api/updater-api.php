@@ -338,7 +338,10 @@ function etel_prune_backups_keep_latest($backup_dir, $keep_per_file = 8) {
 etel_prune_backups_keep_latest($BACKUP_DIR, 3); // was 8 - 3 rollback points per file is enough and keeps the folder small
 
 $pdo   = db();
-$admin = require_admin($pdo);
+/* The updater can overwrite any PHP file (including boot.php), so a plain
+   role=admin is not enough: it needs the owner-level 'system.backup'
+   capability (held by full owner admins and legacy unrestricted admins). */
+$admin = require_admin($pdo, 'system.backup');
 
 /*  Shared ZIP deploy function (no goto, fixes PHP fatal)  */
 function etel_do_zip_deploy($zf, $BASE_DIR, $BACKUP_DIR, $ALLOWED_EXTENSIONS, $PROTECTED_FILES, $pdo, $admin_id) {

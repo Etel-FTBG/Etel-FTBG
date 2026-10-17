@@ -55,6 +55,15 @@ if (!$data) {
     exit;
 }
 
+// With no secret configured the HMAC below would be computed over an empty key,
+// which anyone can reproduce - refuse to process callbacks until it is set.
+if (!defined('TELEBIRR_SECRET_KEY') || (string)TELEBIRR_SECRET_KEY === '' || TELEBIRR_SECRET_KEY === 'CHANGE_ME') {
+    http_response_code(503);
+    error_log('Telebirr callback: rejected, TELEBIRR_SECRET_KEY is not configured');
+    echo json_encode(array('error' => 'Not configured'));
+    exit;
+}
+
 // Verify HMAC signature - REQUIRED. A missing header must be rejected, not skipped.
 $signature    = isset($_SERVER['HTTP_X_TELEBIRR_SIGNATURE']) ? $_SERVER['HTTP_X_TELEBIRR_SIGNATURE'] : '';
 $expectedSig  = hash_hmac('sha256', $payload, TELEBIRR_SECRET_KEY);
@@ -93,10 +102,11 @@ if ($status === 'COMPLETED') {
 
     // Cross-check the amount Telebirr reports against what we expected for this transaction.
     $callbackAmount = isset($data['amount']) ? (float)$data['amount'] : null;
-    if ($callbackAmount !== null && abs($callbackAmount - (float)$payment['amount']) > 0.01) {
+    // A callback with no amount cannot be cross-checked, so it is rejected too.
+    if ($callbackAmount === null || abs($callbackAmount - (float)$payment['amount']) > 0.01) {
         http_response_code(409);
         error_log('Telebirr callback: amount mismatch for ' . $merchantTxId .
-                   ' expected=' . $payment['amount'] . ' got=' . $callbackAmount);
+                   ' expected=' . $payment['amount'] . ' got=' . ($callbackAmount === null ? 'missing' : $callbackAmount));
         echo json_encode(array('error' => 'Amount mismatch'));
         exit;
     }
