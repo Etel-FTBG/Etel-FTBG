@@ -359,8 +359,8 @@ case 'courier_accept_order': {
     try {
         $pdo->beginTransaction();
         
-        $upd = $pdo->prepare('UPDATE orders SET courier_id=?, status="assigned" WHERE id=?');
-        $upd->execute(array($courier['id'], $order_id));
+        // First courier to claim wins: the update only matches while nobody else has the order.
+        if (!etel_claim_order($pdo, $order_id, $courier['id'])) { $pdo->rollBack(); fail('Another courier already took this job.', 409); }
         try { require_once __DIR__ . '/../lib/courier_offers.php'; etel_offer_mark_accepted($pdo, $order_id); } catch (Exception $oe) {} catch (Throwable $oe) {}
 
         // Mark assignment as courier-assigned (distinct from SG-accepted)

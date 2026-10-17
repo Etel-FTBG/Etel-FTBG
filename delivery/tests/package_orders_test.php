@@ -107,11 +107,17 @@ check('no assignment row is made: that table points at a shop (a foreign key on 
 check('package_type holds a word the live ENUM(document, parcel, food, bulk) accepts; the real size is in pkg_size', $o['package_type'] === 'parcel' && $o['pkg_size'] === 'small');
 $docr = etel_package_create($pdo, $user, array_merge($base, array('size' => 'document', 'vehicle_class' => 'van', 'weight_kg' => 1)));
 check('a document is stored as document', $docr['ok'] && $row($docr['order_id'])['package_type'] === 'document');
-check('a car package goes to the car courier, not the motorbike one', intval($o['courier_id']) === $cCar && $o['status'] === 'assigned');
+check('a package is not handed to one courier: it stays open (pending, nobody assigned)', $o['courier_id'] === null && $o['status'] === 'pending');
+$notified = function ($orderId, $userId) use ($pdo) { $q = $pdo->prepare("SELECT COUNT(*) FROM notifications WHERE user_id = ? AND type = 'new_order' AND data LIKE ?"); $q->execute(array($userId, '%"order_id":' . intval($orderId) . ',%')); return (int) $q->fetchColumn(); };
+check('the car courier is told about the car package, the motorbike courier is not', $notified($r['order_id'], $ids[3]) === 1 && $notified($r['order_id'], $ids[2]) === 0);
+check('first courier to claim it gets it', etel_claim_order($pdo, $r['order_id'], $cCar) === true && intval($row($r['order_id'])['courier_id']) === $cCar && $row($r['order_id'])['status'] === 'assigned');
+check('a second courier cannot take it any more', etel_claim_order($pdo, $r['order_id'], $cMoto) === false && intval($row($r['order_id'])['courier_id']) === $cCar);
+$pdo->exec("UPDATE orders SET courier_id = NULL, status = 'pending' WHERE id = " . $r['order_id']);   // back to open for the checks below
 
 $moto2 = $base; $moto2['vehicle_class'] = 'moto';
 $r2 = etel_package_create($pdo, $user, $moto2); $o2 = $row($r2['order_id']);
-check('a motorbike package goes to the motorbike courier', intval($o2['courier_id']) === $cMoto);
+check('a motorbike package is shown to the motorbike courier, still open', $o2['courier_id'] === null && $o2['status'] === 'pending' && $notified($r2['order_id'], $ids[2]) === 1 && $notified($r2['order_id'], $ids[3]) === 0);
+$pdo->exec("UPDATE orders SET courier_id = $cMoto, status = 'assigned' WHERE id = " . $r2['order_id']);   // the motorbike courier took it, as before
 $van = $base; $van['vehicle_class'] = 'van';
 $r3 = etel_package_create($pdo, $user, $van); $o3 = $row($r3['order_id']);
 check('a van package with no van courier online waits, unassigned', $r3['ok'] && $o3['courier_id'] === null && $o3['status'] === 'pending');
@@ -174,7 +180,7 @@ $pdo->exec("DELETE FROM package_rates WHERE vehicle_class NOT IN ('bike','moto',
 check('after removal the words mean nothing again', etel_vehicle_class_of('bajaj', $pdo) === '');
 
 echo "cancelling a package\n";
-$pdo->exec("UPDATE orders SET status='assigned' WHERE id=" . $r['order_id']);
+$pdo->exec("UPDATE orders SET status='assigned', courier_id=$cCar WHERE id=" . $r['order_id']);   // a courier took it
 $pdo->exec("UPDATE order_assignments SET status='assigned' WHERE order_id=" . $r['order_id']);
 $pdo->exec("UPDATE couriers SET status='busy' WHERE id=$cCar");
 check('another customer cannot cancel it', etel_cancel_order($pdo, $r['order_id'], 'customer', $ids[1], 'changed_mind', '', 0)['ok'] === false);

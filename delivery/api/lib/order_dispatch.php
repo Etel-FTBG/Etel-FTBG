@@ -77,6 +77,12 @@ function etel_dispatch_order($pdo, $order_id, $exclude = array()) {
         $vehSql .= etel_package_capable_sql('c');   // only couriers whose app can run a package (pickup address, PINs)
     }
     $vehSql .= etel_not_own_order_sql($o['customer_id'], 'c');   // never the courier who placed it
+    // A package is NOT handed to one courier. Every online courier with the chosen vehicle sees it in the Jobs tab, is told, and the first
+    // one to accept gets it (courier_accept_order claims it atomically). The order stays 'pending' until someone does.
+    if ($is_package) {
+        etel_package_broadcast($pdo, $order_id, $o, $vehSql, $vehParams, $excludeSql, $pickup_coord);
+        return;
+    }
     try {
         if ($is_package) throw new Exception('no shop');
         $sgCoordStmt = $pdo->prepare('SELECT lat, lng FROM service_givers WHERE id=? AND lat IS NOT NULL AND lng IS NOT NULL');
@@ -229,4 +235,51 @@ function etel_cancel_unpaid_chapa_orders($pdo) {
         }
     } catch (Exception $e) { /* chapa_payments missing = Chapa never used, nothing to cancel */ }
     return $n;
+}
+
+
+/** Tell every eligible courier about an open package job (nearest first, at most 40). They accept it from the Jobs tab. Returns how many were told. Never throws. */
+function etel_package_broadcast($pdo, $order_id, $o, $vehSql, $vehParams, $excludeSql, $pickup_coord) {
+    $told = 0;
+    try {
+        $cs = $pdo->prepare("SELECT c.id, c.user_id, c.last_lat, c.last_lng, c.zone FROM couriers c
+            WHERE c.status = 'online' AND c.active = 1 $excludeSql $vehSql
+              AND c.id NOT IN (SELECT courier_id FROM orders WHERE status IN ('assigned','picked_up','in_transit') AND courier_id IS NOT NULL)");
+        $cs->execute($vehParams);
+        $list = $cs->fetchAll(PDO::FETCH_ASSOC);
+        foreach ($list as $k => $c) {
+            if ($c['last_lat'] && $c['last_lng']) {
+                $dlat = deg2rad($c['last_lat'] - $pickup_coord[0]); $dlng = deg2rad($c['last_lng'] - $pickup_coord[1]);
+                $a = sin($dlat/2)*sin($dlat/2) + cos(deg2rad($pickup_coord[0]))*cos(deg2rad($c['last_lat']))*sin($dlng/2)*sin($dlng/2);
+                $list[$k]['d'] = 6371 * 2 * atan2(sqrt($a), sqrt(1-$a));
+            } else { $list[$k]['d'] = 9999; }
+        }
+        usort($list, function ($x, $y) { return $x['d'] <=> $y['d']; });
+        $list = array_slice($list, 0, 40);
+        $title = 'New Package Job!';
+        $body = 'Package ' . $o['order_code'] . ' from ' . $o['from_zone'] . ' to ' . $o['to_zone'] . '  ETB ' . number_format((float) $o['fare_total'], 2) . ' - open Jobs to accept';
+        foreach ($list as $c) {
+            try {
+                require_once __DIR__ . '/../push.php';
+                etel_ensure_notifications_table($pdo);
+                $pdo->prepare("INSERT INTO notifications (user_id, title, body, type, data) VALUES (?,?,?,?,?)")
+                    ->execute(array($c['user_id'], $title, $body, 'new_order', json_encode(array('order_id' => (int) $order_id, 'order_code' => $o['order_code']))));
+            } catch (Exception $ne) { error_log('[ETEL] package broadcast notification failed for order_id=' . $order_id . ': ' . $ne->getMessage()); }
+            try {
+                require_once __DIR__ . '/../push.php';
+                etel_push_send_async($pdo, intval($c['user_id']), $title, $body, array('type' => 'new_order', 'order_id' => (int) $order_id, 'url' => '/delivery/courier/'));
+            } catch (Exception $ne) { error_log('[ETEL] package broadcast push failed for order_id=' . $order_id . ': ' . $ne->getMessage()); }
+            $told++;
+        }
+    } catch (Exception $e) { error_log('[ETEL] package broadcast failed for order_id=' . $order_id . ': ' . $e->getMessage()); }
+    return $told;
+}
+
+/** The first courier to claim an open order gets it. Atomic: false when someone else already has it or it is cancelled/delivered. */
+function etel_claim_order($pdo, $order_id, $courier_id) {
+    $set = '';
+    try { require_once __DIR__ . '/courier_stale.php'; if (etel_stale_has_col($pdo)) $set = ', courier_assigned_at = NOW()'; } catch (Exception $e) {}
+    $u = $pdo->prepare("UPDATE orders SET courier_id = ?, status = 'assigned'$set WHERE id = ? AND (courier_id IS NULL OR courier_id = 0) AND status IN ('pending','assigned')");
+    $u->execute(array((int) $courier_id, (int) $order_id));
+    return $u->rowCount() === 1;
 }
