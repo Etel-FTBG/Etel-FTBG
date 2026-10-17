@@ -34,9 +34,13 @@
         if (document.getElementById('etel-sound-chip')) return;
         var b = document.createElement('button');
         b.type = 'button'; b.id = 'etel-sound-chip';
-        b.style.cssText = 'position:fixed;left:12px;bottom:12px;z-index:99999;padding:9px 14px;border-radius:22px;border:1px solid #D4AF37;background:#0B1E3F;color:#F5D77A;font-size:13px;font-weight:700;box-shadow:0 4px 16px rgba(0,0,0,.35);cursor:pointer';
+        b.style.cssText = 'position:fixed;left:10px;bottom:46px;z-index:99999;width:40px;height:40px;padding:0;border-radius:50%;border:1.5px solid #D4AF37;background:#0B1E3F;color:#F5D77A;font-size:18px;line-height:1;box-shadow:0 4px 14px rgba(0,0,0,.35);cursor:pointer';
         function paint() {
-            b.textContent = ES.isMuted() ? '🔕 Order bell off' : ES.locked() ? '🔔 Tap to turn order bell on' : '🔔 Order bell on';
+            var off = ES.isMuted(), lock = !off && ES.locked();
+            b.textContent = off ? '🔕' : '🔔';
+            b.style.boxShadow = lock ? '0 0 0 4px rgba(212,175,55,.45), 0 4px 14px rgba(0,0,0,.35)' : '0 4px 14px rgba(0,0,0,.35)';
+            var label = off ? 'Order bell off. Tap to turn on' : lock ? 'Tap to turn the order bell on' : 'Order bell on. Tap to turn off';
+            b.title = label; b.setAttribute('aria-label', label);
         }
         b.addEventListener('click', function () {
             if (ES.isMuted()) ES.setMuted(false); else if (ES.locked()) { ES.unlock(); ES.test('order'); } else ES.setMuted(true);
