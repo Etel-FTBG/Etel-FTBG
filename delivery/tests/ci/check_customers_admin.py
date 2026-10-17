@@ -1,4 +1,4 @@
-"""Guards Admin -> Customers: read only, needs users.view, routed, page and script loaded, no inline handlers or raw message injection."""
+"""Guards Admin -> Customers: lists are read only (users.view); the one write is suspend/restore ordering (users.manage), routed, page and script loaded, no inline handlers or raw message injection."""
 import re
 import sys
 
@@ -18,8 +18,16 @@ for a in ('admin_customers_list', 'admin_customer_get'):
         bad.append(a + ' is not routed in boot.php')
     if not re.search(r"case '" + a + r"': \{\s*\$pdo = db\(\);\s*\$u = require_admin\(\$pdo, 'users\.view'\)", ctl):
         bad.append(a + " must require 'users.view'")
-if re.search(r'\b(INSERT|UPDATE|DELETE)\b', ctl):
-    bad.append('Customers is read only: the controller must not write')
+if 'admin_customer_set_active' not in js or "case 'admin_customer_set_active'" not in boot:
+    bad.append('suspend action is not wired in admin-customers.js and boot.php')
+if not re.search(r"case 'admin_customer_set_active': \{\s*\$pdo = db\(\);\s*\$u = require_admin\(\$pdo, 'users\.manage'\)", ctl):
+    bad.append("admin_customer_set_active must require 'users.manage'")
+head = ctl.split("case 'admin_customer_set_active'")[0]
+if re.search(r'\b(INSERT|UPDATE|DELETE)\b', head):
+    bad.append('the Customers lists must stay read only: only admin_customer_set_active may write')
+for f in ('api/lib/delivery_order_core.php', 'api/lib/package_orders.php'):
+    if 'etel_customer_suspended(' not in read(f):
+        bad.append(f + ' must refuse suspended customers')
 if re.search(r'\bon[a-z]+="|\.innerHTML\s*=[^;]*res\.message', js):
     bad.append('admin-customers.js must not use inline handlers or put server messages into innerHTML unescaped')
 if bad:

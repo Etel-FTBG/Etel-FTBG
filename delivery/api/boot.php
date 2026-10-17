@@ -1594,7 +1594,7 @@ switch ($action) {
         require __DIR__ . '/controllers/PackageController.php';
         break;
 
-    case 'admin_customers_list': case 'admin_customer_get':
+    case 'admin_customers_list': case 'admin_customer_get': case 'admin_customer_set_active':
         require __DIR__ . '/controllers/CustomerAdminController.php';
         break;
 
