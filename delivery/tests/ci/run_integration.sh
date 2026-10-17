@@ -50,6 +50,7 @@ run php tests/money_ledger_test.php
 run php tests/manual_dispatch_test.php
 run php tests/order_cancel_test.php
 run php tests/package_orders_test.php
+run php tests/own_shop_test.php
 run php tests/integrations_test.php
 run php tests/health_backup_test.php
 run php tests/image_orient_test.php
