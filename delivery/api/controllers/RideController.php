@@ -214,6 +214,20 @@ function rides_etelid_lookup($identifier) {
 require_once __DIR__ . '/../lib/ride_fare.php';
 require_once __DIR__ . '/../lib/ride_sweeper.php';
 
+/* True only if $url points at a file THIS user uploaded through upload.php for
+   the given type: upload.php names files "<prefix><userId>_<time>_<hex>.<ext>"
+   inside uploads/<folder>/, so the user id in the name plus the file existing
+   on disk proves ownership. Stops onboarding with made-up or someone else's
+   photo URLs. */
+function rides_owned_upload_url($url, $uid, $folder, $prefix) {
+    $url = trim((string)$url);
+    if ($url === '') return false;
+    $path = parse_url($url, PHP_URL_PATH);
+    if (!is_string($path)) return false;
+    if (!preg_match('#/uploads/' . preg_quote($folder, '#') . '/(' . preg_quote($prefix, '#') . intval($uid) . '_\d+_[0-9a-f]{8}\.(?:jpg|png|gif|webp))$#', $path, $m)) return false;
+    return is_file(dirname(dirname(__DIR__)) . '/uploads/' . $folder . '/' . $m[1]);
+}
+
 function rides_driver_profile($pdo, $uid) {
     $pdo->prepare("INSERT IGNORE INTO ride_drivers (user_id, online, last_seen) VALUES (?, 0, NOW())")
         ->execute(array($uid));
@@ -1087,6 +1101,7 @@ case 'cancel_ride': {
             $pdo->prepare("UPDATE rides SET status='arrived', arrived_at=NOW(), distance_km=?, fare_final=?, fare_breakdown_json=? WHERE id=?")
                 ->execute(array($km, $fare, $breakdownJson, $id));
         }
+        rides_flag_fare_review($pdo, $id, $u['id'], $fare, $km);
         ok(array('cancelled' => true, 'ended_early' => true, 'fare_final' => $fare,
                  'message' => 'Trip ended early - billed for the ' . $km . ' km actually travelled (ETB ' . round($fare, 2) . '), not the full planned distance.'));
         break;
@@ -3190,6 +3205,7 @@ case 'driver_topup_etel_money': {
     require_once __DIR__ . '/../etel_pay_bridge.php';
     $tx = etel_pay_verify_tx($tx_ref, $urow['phone'], $amount);
     if (!$tx) fail('Could not verify Etel Pay payment. If money left your account, contact support with reference ' . $tx_ref, 402);
+    if (!etel_pay_claim_tx($pdo, $tx_ref, 'topup')) fail('This payment has already been used', 409);
 
     try {
         $pdo->prepare("INSERT INTO driver_etel_money_topups (user_id, amount, tx_ref, source, status, receipt_image_url) VALUES (?, ?, ?, 'etelpay', 'pending', ?)")
@@ -3343,6 +3359,23 @@ case 'driver_update_profile': {
         foreach ($vehicleFields as $vf) unset($body[$vf]);
     }
 
+    // Photo URLs must be files this driver really uploaded (see rides_owned_upload_url).
+    // A URL identical to the one already stored is accepted as-is so an existing driver
+    // re-saving their profile is never blocked by an older/moved file.
+    $storedPhotos = array('selfie_url' => '', 'license_photo_url' => '');
+    try {
+        $sp = $pdo->prepare("SELECT selfie_url, license_photo_url FROM ride_drivers WHERE user_id=?");
+        $sp->execute(array($u['id']));
+        $spr = $sp->fetch();
+        if ($spr) $storedPhotos = array('selfie_url' => (string)$spr['selfie_url'], 'license_photo_url' => (string)$spr['license_photo_url']);
+    } catch (Exception $e) { /* columns missing: nothing stored to compare */ }
+    if (isset($body['selfie_url']) && trim($body['selfie_url']) !== '' && trim($body['selfie_url']) !== $storedPhotos['selfie_url'] && !rides_owned_upload_url($body['selfie_url'], $u['id'], 'driver_selfies', 'selfie_')) {
+        fail('Please upload your selfie photo again.', 400);
+    }
+    if (isset($body['license_photo_url']) && trim($body['license_photo_url']) !== '' && trim($body['license_photo_url']) !== $storedPhotos['license_photo_url'] && !rides_owned_upload_url($body['license_photo_url'], $u['id'], 'driver_licenses', 'license_')) {
+        fail('Please upload your license photo again.', 400);
+    }
+
     $allowed = array('vehicle_type','vehicle_make','vehicle_color','vehicle_year',
                      'vehicle_plate','license_number','license_name','license_dob',
                      'selfie_url','license_photo_url');
@@ -3431,7 +3464,10 @@ case 'driver_update_profile': {
        unreachable-EtelID result leaves onboarded=0 so the driver shows
        up as pending in admin_get_drivers rather than being silently
        blocked with an error. */
-    $effectiveMatch = ($newLicName && $newLicDob) ? $identityMatch : 'matched';
+    // No license name/DOB claim means nothing was cross-checked against EtelID, so the
+    // driver stays pending for admin approval (admin_approve_driver_identity) instead
+    // of being auto-onboarded with no verification at all.
+    $effectiveMatch = ($newLicName && $newLicDob) ? $identityMatch : 'unverified';
     $justOnboarded = false;
     if ($newType && $newPlate && $newSelfie && $newLicPhoto && $effectiveMatch === 'matched') { $sets[] = 'onboarded=1'; $justOnboarded = true; }
 
@@ -3855,6 +3891,7 @@ case 'driver_arrived': {
         $pdo->prepare("UPDATE rides SET status='arrived', arrived_at=NOW(), distance_km=?, fare_final=?, fare_breakdown_json=? WHERE id=?")
             ->execute(array($km, $fare, $breakdownJson, $rid));
     }
+    rides_flag_fare_review($pdo, $rid, $u['id'], $fare, $km);
     ok(array_merge(array('arrived' => true, 'distance_km' => $km, 'fare' => $fare,
              'surge' => (bool)($finalSurge !== null ? $finalSurge : !empty($r['surge_applied'])),
              'wait_minutes' => round($waitMinutes, 2), 'wait_etb' => $waitEtb,
@@ -3871,6 +3908,8 @@ case 'customer_confirm_arrival': {
     $r = $s->fetch();
     if (!$r) fail('No arrived ride waiting for your confirmation', 404);
     $fare = floatval($r['fare_final']);
+    // A trip with no fare must never complete as "paid ETB 0" - leave it for support.
+    if ($fare <= 0) fail('This trip has no fare yet. Please contact support so it can be corrected.', 409);
     $wallet_tx_ref = null;
     // Chapa rides settle through chapa_init/chapa_status (chapa_bridge.php),
     // never on the client's say-so here.
@@ -3893,6 +3932,7 @@ case 'customer_confirm_arrival': {
 
         $tx = etel_pay_verify_tx($tx_ref, $u['phone'], $fare);
         if (!$tx) fail('Could not verify Etel Pay payment. If money left your account, contact support with reference ' . $tx_ref, 402);
+        if (!etel_pay_claim_tx($pdo, $tx_ref, 'ride')) fail('This payment has already been used', 409);
         $wallet_tx_ref = $tx_ref;
     }
     /* PAYOUT: only wallet-paid rides credit total_earnings (the driver's
@@ -3973,6 +4013,7 @@ case 'driver_complete_ride': {
         $pdo->prepare("UPDATE rides SET status='arrived', arrived_at=NOW(), distance_km=?, fare_final=?, fare_breakdown_json=? WHERE id=?")
             ->execute(array($km, $fare, $breakdownJson2, $rid));
     }
+    rides_flag_fare_review($pdo, $rid, $u['id'], $fare, $km);
     ok(array('arrived' => true, 'distance_km' => $km, 'fare' => $fare,
              'surge' => (bool)($finalSurge2 !== null ? $finalSurge2 : !empty($r['surge_applied'])),
              'message' => 'Waiting for customer confirmation'));

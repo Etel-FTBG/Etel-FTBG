@@ -258,6 +258,33 @@ function rides_calc_fare_simple($pdo, $distKm, $vehicleType='bajaj') {
     return $r['fare'];
 }
 
+/* Fare review threshold (pricing_rules key 'ride_review_fare_cap', ETB; 0 turns
+   it off). A fare above it is never settled automatically: the trip is flagged
+   in ride_issues ('fare_review') for an admin, the auto-complete sweeper skips
+   it, and the passenger can still confirm it themselves. There used to be only
+   a floor, so a runaway meter or a forgotten trip (e.g. ride #283, ETB 5,153 for
+   7 km) was billed without anyone looking. */
+function rides_fare_review_cap($pdo) {
+    return max(0, rides_rule_value($pdo, 'ride_review_fare_cap', 2000));
+}
+function rides_fare_needs_review($pdo, $fare) {
+    $cap = rides_fare_review_cap($pdo);
+    return $cap > 0 && floatval($fare) > $cap;
+}
+/* Records one open 'fare_review' issue per ride (no duplicates). */
+function rides_flag_fare_review($pdo, $rideId, $driverId, $fare, $km) {
+    if (!rides_fare_needs_review($pdo, $fare) || !function_exists('rides_sweeper_issue')) return false;
+    try {
+        $q = $pdo->prepare("SELECT 1 FROM ride_issues WHERE ride_id=? AND category='fare_review' LIMIT 1");
+        $q->execute(array(intval($rideId)));
+        if ($q->fetchColumn()) return true;
+    } catch (Exception $e) { return false; }
+    rides_sweeper_issue($pdo, $rideId, $driverId, 'fare_review',
+        'Fare ETB ' . number_format(floatval($fare), 2) . ' for ' . round(floatval($km), 2)
+        . ' km is above the review limit (ETB ' . rides_fare_review_cap($pdo) . '). Check the trip before it is settled.', 'open');
+    return true;
+}
+
 } // end function_exists guard
 
 /* Both extracted from RideController.php (was defined right next to it,

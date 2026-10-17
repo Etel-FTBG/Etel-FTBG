@@ -197,8 +197,15 @@ function etel_webpush_make_handle($subscription, $payload, &$err) {
         'Content-Length: ' . strlen($body),
     );
 
+    if (!etel_push_endpoint_allowed($endpoint)) {
+        $err = array('ok' => false, 'http_code' => 0, 'error' => 'Push endpoint is not an allowed push service');
+        return null;
+    }
     $ch = curl_init($endpoint);
     curl_setopt_array($ch, array(
+        CURLOPT_PROTOCOLS      => CURLPROTO_HTTPS,
+        CURLOPT_REDIR_PROTOCOLS => CURLPROTO_HTTPS,
+        CURLOPT_FOLLOWLOCATION => false,
         CURLOPT_POST           => true,
         CURLOPT_POSTFIELDS     => $body,
         CURLOPT_HTTPHEADER     => $headers,
@@ -208,6 +215,23 @@ function etel_webpush_make_handle($subscription, $payload, &$err) {
         CURLOPT_SSL_VERIFYPEER => true,
     ));
     return $ch;
+}
+
+// Only real browser push services may be called. A subscription endpoint is
+// user-supplied, so without this check the server could be pointed at internal
+// addresses (blind SSRF / port-scan oracle through the test-push action).
+function etel_push_endpoint_allowed($endpoint) {
+    $p = parse_url((string)$endpoint);
+    if (!is_array($p) || empty($p['scheme']) || strtolower($p['scheme']) !== 'https' || empty($p['host'])) return false;
+    if (!empty($p['user']) || !empty($p['pass'])) return false;
+    if (!empty($p['port']) && intval($p['port']) !== 443) return false;
+    $host = strtolower($p['host']);
+    $suffixes = array('fcm.googleapis.com', 'android.googleapis.com', 'push.services.mozilla.com',
+                      'push.apple.com', 'notify.windows.com');
+    foreach ($suffixes as $sfx) {
+        if ($host === $sfx || substr($host, -strlen('.' . $sfx)) === '.' . $sfx) return true;
+    }
+    return false;
 }
 
 // Turns a finished cURL handle into the array('ok','http_code','error') shape.

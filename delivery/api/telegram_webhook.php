@@ -17,7 +17,7 @@
  *      and hijacking OTP delivery for that phone number.
  *
  * User flow:
- *   /start +251XXXXXXXXX   links phone to chat_id in EtelID
+ *   /start  then tap "Share my phone number" - links the verified phone to chat_id
  *   /unlink                removes link
  *   /status                shows current link status
  */
@@ -95,12 +95,14 @@ function eid_db() {
 }
 
 /*  Send Telegram message  */
-function tg_send($chat_id, $text) {
+function tg_send($chat_id, $text, $reply_markup = null) {
     global $TG_TOKEN;
+    $body = array('chat_id'=>$chat_id,'text'=>$text,'parse_mode'=>'HTML');
+    if ($reply_markup !== null) $body['reply_markup'] = $reply_markup;
     $ch=curl_init('https://api.telegram.org/bot'.$TG_TOKEN.'/sendMessage');
     curl_setopt_array($ch,array(
         CURLOPT_POST=>true,
-        CURLOPT_POSTFIELDS=>json_encode(array('chat_id'=>$chat_id,'text'=>$text,'parse_mode'=>'HTML')),
+        CURLOPT_POSTFIELDS=>json_encode($body),
         CURLOPT_RETURNTRANSFER=>true, CURLOPT_TIMEOUT=>8,
         CURLOPT_HTTPHEADER=>array('Content-Type: application/json'),
     ));
@@ -129,21 +131,37 @@ $from     = $msg['from'];
 $tg_user  = isset($from['username']) ? $from['username'] : '';
 $fname    = isset($from['first_name']) ? $from['first_name'] : 'there';
 
-/*  /start [phone]  */
-if (strpos($text,'/start')===0) {
-    $parts = preg_split('/\s+/',$text,2);
-    $raw_phone = isset($parts[1]) ? trim($parts[1]) : '';
-    $phone = $raw_phone ? normalise_phone($raw_phone) : '';
+/* Account linking needs proof that the Telegram user owns the phone number.
+   A typed "/start +251..." proves nothing (anyone can type a victim's number
+   and receive their reset OTP), so it is NOT used to link. The only trusted
+   source is Telegram's own contact share: the "Share my phone" button sends
+   the sender's verified number, and contact.user_id must equal the sender's
+   own Telegram id (a forwarded/other person's contact is refused). */
+$verified_phone = '';
+if (isset($msg['contact'])) {
+    $c = $msg['contact'];
+    if (isset($c['user_id'], $from['id']) && (string)$c['user_id'] === (string)$from['id'] && !empty($c['phone_number'])) {
+        $verified_phone = normalise_phone($c['phone_number']);
+    } else {
+        tg_send($chat_id, "Please share <b>your own</b> phone number using the button - a contact that is not yours cannot be linked.");
+        echo '{"ok":true}'; exit;
+    }
+}
+
+/*  /start [phone]  or verified contact share  */
+if ($verified_phone !== '' || strpos($text,'/start')===0) {
+    $phone = $verified_phone;
 
     if (!$phone) {
         tg_send($chat_id,
-            " <b>! Welcome to ETEL Group Bot</b>\n\n".
-            " Link your phone to receive free OTPs for:\n".
-            "   ETEL Delivery   ETEL Ride\n".
-            "   E Pay   EtelID Portal\n\n".
-            "Send your registered phone:\n".
-            "<code>/start +251XXXXXXXXX</code>\n\n".
-            "    Hawassa ");
+            "<b>Welcome to ETEL Group Bot</b>\n\n".
+            "To link your account and receive free OTPs for ETEL Delivery, ETEL Ride, E Pay and EtelID, tap the button below to share your phone number.\n\n".
+            "For your security, a number typed by hand cannot be linked - only the number on this Telegram account can.",
+            array(
+                'keyboard' => array(array(array('text' => 'Share my phone number', 'request_contact' => true))),
+                'resize_keyboard' => true,
+                'one_time_keyboard' => true,
+            ));
         echo '{"ok":true}'; exit;
     }
 
@@ -290,7 +308,7 @@ if ($text==='/status') {
             " ".$linked_phone."\n\n".
             "Send /unlink to remove.");
     } else {
-        tg_send($chat_id," No account linked. Send <code>/start +251XXXXXXXXX</code> to link.");
+        tg_send($chat_id," No account linked. Send <code>/start</code> and tap the Share phone number button to link.");
     }
     echo '{"ok":true}'; exit;
 }
@@ -298,7 +316,7 @@ if ($text==='/status') {
 /*  Default help  */
 tg_send($chat_id,
     " <b>ETEL Group OTP Bot</b>  @".$TG_NAME."\n\n".
-    "/start +251XXXXXXXXX  link your phone\n".
+    "/start  link your phone (share your number)\n".
     "/status  check linked account\n".
     "/unlink  remove link\n\n".
     "Free OTP delivery for all Etel Group apps.\n".

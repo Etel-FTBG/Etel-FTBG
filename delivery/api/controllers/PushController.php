@@ -29,6 +29,8 @@ case 'save_push_subscription': {
         fail('Invalid subscription object', 400);
     }
     $endpoint = trim($sub['endpoint']);
+    require_once __DIR__ . '/../webpush.php';
+    if (!etel_push_endpoint_allowed($endpoint)) fail('Invalid subscription endpoint', 400);
     $endpointHash = hash('sha256', $endpoint);
     $p256dh = trim($sub['keys']['p256dh']);
     $auth   = trim($sub['keys']['auth']);

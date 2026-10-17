@@ -109,6 +109,31 @@ function etel_pay_call($tx_ref) {
     return is_array($data) ? $data : null;
 }
 
+/* Claim a verified Etel Pay tx_ref for exactly ONE purpose (ride, order or
+   driver top-up). The per-feature "already used?" SELECTs only look at their
+   own table and are racy, so the same transfer could settle a ride AND an
+   order AND a top-up. payment_claims.tx_ref is a PRIMARY KEY, so the INSERT is
+   the atomic gate: the first caller wins, every other gets false.
+   Returns true if this call claimed it, false if it was already claimed. */
+function etel_pay_claim_tx($pdo, $tx_ref, $kind) {
+    try {
+        $pdo->exec("CREATE TABLE IF NOT EXISTS payment_claims (
+            tx_ref VARCHAR(64) NOT NULL,
+            kind VARCHAR(20) NOT NULL,
+            claimed_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (tx_ref)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+    } catch (Exception $e) { /* already exists or no DDL rights - the INSERT below decides */ }
+    try {
+        $pdo->prepare("INSERT INTO payment_claims (tx_ref, kind) VALUES (?, ?)")->execute(array($tx_ref, $kind));
+        return true;
+    } catch (Exception $e) {
+        if ($e instanceof PDOException && $e->getCode() === '23000') return false; // duplicate key = already claimed
+        error_log('[ETEL][etel_pay_bridge] claim failed: ' . $e->getMessage());
+        return false; // fail closed: never settle money on an unrecorded claim
+    }
+}
+
 /* Verify a tx_ref actually happened and matches the expected sender/receiver/amount.
    Returns the transaction array on success, or false on any mismatch/failure.
    Every false path is logged with which specific check failed, since this
