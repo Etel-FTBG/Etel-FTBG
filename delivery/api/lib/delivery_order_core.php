@@ -115,6 +115,8 @@ function delivery_execute_order_creation($pdo, $auth_user, $body) {
         
         $from_zone = $first_item['from_zone'];
         $service_giver_id = $first_item['service_giver_id'];
+        require_once __DIR__ . '/own_shop.php';
+        if (etel_user_runs_shop($pdo, $auth_user['id'], $service_giver_id)) throw new Exception('You cannot order from your own shop.');
         $package_type = $first_item['category'];
         
         // Refuse hidden / sold-out items and shops outside their opening hours (api/lib/shop_hours.php)
