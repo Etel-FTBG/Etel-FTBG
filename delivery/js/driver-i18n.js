@@ -67,6 +67,11 @@
         'Trip ended by rider — you are available again': 'ተሳፋሪው ጉዞውን አብቅቷል — እንደገና ዝግጁ ነዎት',
         'Enable location to go online': 'መስመር ላይ ለመግባት አካባቢን ያብሩ', 'Location not available': 'አካባቢ አይገኝም', 'Copied to clipboard': 'ተቀድቷል',
         'Driver account required': 'የሾፌር አካውንት ያስፈልጋል', 'No available balance to cash out': 'ለማውጣት የሚገኝ ቀሪ ሂሳብ የለም', 'Enter a valid amount': 'ትክክለኛ መጠን ያስገቡ',
+        'Take a selfie to verify your identity': 'ማንነትዎን ለማረጋገጥ ሴልፊ ያንሱ', 'Take a photo of your driving license': 'የመንጃ ፈቃድዎን ፎቶ ያንሱ', 'Submitted for admin review ✓': 'ለአስተዳዳሪ ግምገማ ተልኳል ✓',
+        'Enter your license number': 'የመንጃ ፈቃድ ቁጥርዎን ያስገቡ', 'Enter your date of birth as shown on your license': 'የትውልድ ቀንዎን በመንጃ ፈቃድዎ ላይ እንዳለ ያስገቡ', 'Enter the vehicle plate number': 'የተሽከርካሪውን ታርጋ ቁጥር ያስገቡ', 'Enter the name on your license': 'በመንጃ ፈቃድዎ ላይ ያለውን ስም ያስገቡ',
+        'Amount exceeds your available balance': 'መጠኑ ከሚገኘው ቀሪ ሂሳብዎ በላይ ነው', 'Attach a photo of the document': 'የሰነዱን ፎቶ ያያይዙ', 'Pick the expiry date printed on the document': 'በሰነዱ ላይ የታተመውን የሚያበቃበት ቀን ይምረጡ',
+        'No response from customer — trip closed, contact support if unpaid': 'ከደንበኛው ምላሽ የለም — ጉዞው ተዘግቷል፣ ክፍያ ካልተከፈለ ድጋፍን ያግኙ', 'By-distance ride — passenger will direct you 🧭': 'በርቀት የሚታሰብ ጉዞ — ተሳፋሪው ይመራዎታል 🧭',
+        'Trip resolved — you are available again': 'ጉዞው ተፈትቷል — እንደገና ዝግጁ ነዎት', 'Photo selected': 'ፎቶ ተመርጧል', 'License photo selected': 'የመንጃ ፈቃድ ፎቶ ተመርጧል', 'Geolocation not supported': 'የአካባቢ መለያ አይደገፍም', 'Share not supported on this browser': 'ማጋራት በዚህ ብሮውዘር አይደገፍም',
         'Top-up submitted — pending admin approval': 'ሙሌቱ ተልኳል — የአስተዳዳሪ ማጽደቂያ በመጠበቅ ላይ'
     };
     var ATTRS = {

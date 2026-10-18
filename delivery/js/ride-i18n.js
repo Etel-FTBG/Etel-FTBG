@@ -71,6 +71,18 @@
         'See the price first': 'መጀመሪያ ዋጋውን ይመልከቱ', 'Pick Bajaj, Moto or Car and see the fare for your trip before you book. Pay cash, wallet or Chapa.': 'ባጃጅ፣ ሞተር ወይም መኪና ይምረጡና ከመያዝዎ በፊት የጉዞዎን ዋጋ ይመልከቱ። በጥሬ ገንዘብ፣ በዋሌት ወይም በቻፓ ይክፈሉ።',
         'Ride safely': 'በሰላም ይጓዙ', "Check the driver's name and plate, share your trip, and use SOS any time.": 'የሾፌሩን ስምና ታርጋ ያረጋግጡ፣ ጉዞዎን ያጋሩ፣ እንዲሁም በማንኛውም ጊዜ SOS ይጠቀሙ።',
         'Next': 'ቀጣይ', 'Get started': 'ጀምር',
+        /* messages the app builds while booking and during a trip */
+        'Checking your ride…': 'ጉዞዎን በማረጋገጥ ላይ…', 'Could not load ride': 'ጉዞውን መጫን አልተቻለም', 'Check your connection and try again': 'ግንኙነትዎን ይፈትሹና እንደገና ይሞክሩ',
+        'No Active Ride': 'ንቁ ጉዞ የለም', 'Book a new ride from the Book tab': 'ከ«ጉዞ ይዘዙ» ትር አዲስ ጉዞ ይዘዙ', 'Arriving in ~1 min': 'በ~1 ደቂቃ ውስጥ ይደርሳል', 'On the way to destination': 'ወደ መድረሻ በመሄድ ላይ',
+        'Booking…': 'በመያዝ ላይ…', 'Book Ride': 'ጉዞ ይዘዙ', 'Submitting…': 'በመላክ ላይ…', 'Processing...': 'በመስራት ላይ...', 'Network error - try again': 'የኔትወርክ ችግር - እንደገና ይሞክሩ',
+        'Re-checking your previous payment…': 'ቀዳሚ ክፍያዎን እንደገና በመፈተሽ ላይ…', 'Looking up payment account…': 'የክፍያ አካውንት በመፈለግ ላይ…', 'Sending payment…': 'ክፍያ በመላክ ላይ…',
+        'Could not load route.': 'መንገዱን መጫን አልተቻለም።',
+        'Please select a rating': 'እባክዎ ደረጃ ይምረጡ', 'Please select what happened': 'እባክዎ የሆነውን ይምረጡ', 'Please set your pickup location': 'እባክዎ የመነሻ ቦታዎን ያዘጋጁ',
+        'Ride cancelled': 'ጉዞ ተሰርዟል', 'Ride was cancelled': 'ጉዞው ተሰርዟል', 'Driver phone not available': 'የሾፌሩ ስልክ አይገኝም',
+        'Thanks for riding with ETEL!': 'ከኢቴል ጋር ስለተጓዙ እናመሰግናለን!', 'Thanks for riding with ETEL! 🚗': 'ከኢቴል ጋር ስለተጓዙ እናመሰግናለን! 🚗',
+        'Old ride cancelled — booking new one…': 'የቀድሞው ጉዞ ተሰርዟል — አዲስ በመያዝ ላይ…', 'Network error — could not cancel. Please try again.': 'የኔትወርክ ችግር — መሰረዝ አልተቻለም። እባክዎ እንደገና ይሞክሩ።',
+        'Could not find your phone number. Please pay cash.': 'ስልክ ቁጥርዎን ማግኘት አልተቻለም። እባክዎ በጥሬ ገንዘብ ይክፈሉ።',
+        'Set a drop-off place, or choose a distance in km': 'መድረሻ ያዘጋጁ ወይም ርቀቱን በኪ.ሜ ይምረጡ', 'No coordinates for this location': 'ለዚህ ቦታ መጋጠሚያ የለም',
         'Add Address': 'አድራሻ ጨምር', 'Contact Support': 'ድጋፍን ያግኙ', 'Send to Support': 'ወደ ድጋፍ ላክ'
     };
     var AM_ATTR = {
