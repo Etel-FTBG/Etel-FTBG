@@ -231,3 +231,8 @@ html[data-etel-theme="light"] [style*="background: rgb(22, 18, 26)"],
 html[data-etel-theme="light"] [style*="background: rgb(17, 19, 28)"],
 html[data-etel-theme="light"] [style*="background: rgb(27, 28, 40)"],
 html[data-etel-theme="light"] [style*="background: rgb(11, 12, 18)"]{background:#FFFFFF!important;color:var(--text)!important}
+
+/* SOS dialog: the dialog is always dark, but the page-wide "div/p inherit" rule made its text follow the light page colour */
+html[data-etel-theme="light"] #sos-box{color:#F5EDE8!important}
+html[data-etel-theme="light"] #sos-box p{color:rgba(245,237,232,.82)!important}
+html[data-etel-theme="light"] #sos-status{color:#FFB199!important}
