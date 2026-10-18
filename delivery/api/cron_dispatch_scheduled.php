@@ -78,6 +78,9 @@ try {
     cd_reply(array('success' => false, 'message' => 'Server unavailable'), 503);
 }
 
+require_once __DIR__ . '/lib/cron_lock.php';
+if (!etel_cron_lock($pdo, 'dispatch_scheduled')) cd_reply(array('success' => true, 'skipped' => 'the previous run of this job is still going'));
+
 require_once __DIR__ . '/lib/ride_fare.php';
 // push.php direct-access-guards on APP_VER being defined (same pattern
 // every controller uses) - this script is intentionally standalone and

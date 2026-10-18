@@ -58,6 +58,9 @@ try {
     cr_reply(array('success' => false, 'message' => 'Server unavailable'), 503);
 }
 
+require_once __DIR__ . '/lib/cron_lock.php';
+if (!etel_cron_lock($pdo, 'chapa_reconcile')) cr_reply(array('success' => true, 'skipped' => 'the previous run of this job is still going'));
+
 require_once __DIR__ . '/lib/system_health.php';
 chapa_ensure_table($pdo);
 $rows = $pdo->query("SELECT tx_ref FROM chapa_payments
