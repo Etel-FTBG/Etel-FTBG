@@ -2097,6 +2097,7 @@ switch ($action) {
         header('Cache-Control: no-cache');
         header('X-Accel-Buffering: no');
         header('Connection: keep-alive');
+        $once  = !empty($_GET['once']);
         $ticks = 0;
         while ($ticks < 150) {
             if (connection_aborted()) break;
@@ -2160,6 +2161,10 @@ switch ($action) {
                 ), $breakdown)) . "\n\n";
                 if (in_array($row['status'], array('completed','cancelled'), true)) break;
             }
+            if ($once) {   // polling client (js/etel-sse-poll.js): one answer, then free the PHP worker and the DB connection
+                if ($row && in_array($row['status'], array('completed','cancelled'), true)) echo "event: close\ndata: {}\n\n";
+                @ob_flush(); flush(); exit;
+            }
             @ob_flush(); flush(); sleep(2); $ticks++;
         }
         echo "event: close\ndata: {}\n\n";
@@ -2186,6 +2191,7 @@ switch ($action) {
         header('Cache-Control: no-cache');
         header('X-Accel-Buffering: no');
         header('Connection: keep-alive');
+        $once  = !empty($_GET['once']);
         $ticks = 0;
         while ($ticks < 300) {
             if (connection_aborted()) break;
@@ -2290,6 +2296,7 @@ switch ($action) {
                    driver's own stream, not a public endpoint. */
                 echo 'data: ' . json_encode(array('error'=>'db','detail'=>$e->getMessage())) . "\n\n";
             }
+            if ($once) { @ob_flush(); flush(); exit; }   // polling client (js/etel-sse-poll.js): one answer, then free the worker
             @ob_flush(); flush(); sleep(3); $ticks++;
         }
         echo "event: close\ndata: {}\n\n";

@@ -1768,6 +1768,7 @@ body.light-mode [style*="color:#D4AF37"],body.light-mode [style*="color:#FFD700"
 (function () { try { new MutationObserver(function (ms) { ms.forEach(function (m) { [].forEach.call(m.addedNodes, function (n) {
   if (n.nodeType === 1 && n.style && n.style.position === 'fixed' && /^\[map\] /.test(n.textContent || '')) n.style.display = 'none'; }); }); }).observe(document.body || document.documentElement, { childList: true }); } catch (e) {} })();
 </script>
+<script src="../js/etel-sse-poll.js?v=1"></script>
 <script src="../js/release-loader.js"></script>
 <script>
   window.gm_authFailure = function () {
