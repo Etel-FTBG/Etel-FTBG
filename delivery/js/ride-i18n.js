@@ -69,6 +69,7 @@
         'Logout': 'ውጣ', 'Label': 'መለያ', 'Address': 'አድራሻ', 'Subject': 'ርዕስ', 'Message': 'መልዕክት',
         'Set your trip': 'ጉዞዎን ያዘጋጁ', "Tap the map or type where you are and where you're going. No GPS? Use the Quick zones.": 'ያሉበትንና የሚሄዱበትን ቦታ ካርታው ላይ ይንኩ ወይም ይጻፉ። ጂፒኤስ የለም? ፈጣን ቦታዎችን ይጠቀሙ።',
         'See the price first': 'መጀመሪያ ዋጋውን ይመልከቱ', 'Pick Bajaj, Moto or Car and see the fare for your trip before you book. Pay cash, wallet or Chapa.': 'ባጃጅ፣ ሞተር ወይም መኪና ይምረጡና ከመያዝዎ በፊት የጉዞዎን ዋጋ ይመልከቱ። በጥሬ ገንዘብ፣ በዋሌት ወይም በቻፓ ይክፈሉ።',
+        'Coming soon': 'በቅርቡ ይመጣል',
         'Send emergency alert?': 'የአደጋ ጊዜ ማንቂያ ይላክ?', 'This immediately notifies ETEL support with your role, location, and current trip (if any). Use this if you feel unsafe or something is wrong right now.': 'ይህ ወዲያውኑ የእርስዎን ሚና፣ አካባቢና የአሁኑን ጉዞ (ካለ) ለኢቴል ድጋፍ ያሳውቃል። ደህንነት ካልተሰማዎት ወይም አሁን የሆነ ችግር ካለ ይህን ይጠቀሙ።',
         'Send SOS Now': 'አሁኑኑ SOS ላክ', 'Sending…': 'በመላክ ላይ…', 'Sending your location…': 'አካባቢዎ በመላክ ላይ…', 'Could not send - try again': 'መላክ አልተቻለም - እንደገና ይሞክሩ', 'Network error - try again': 'የአውታረ መረብ ስህተት - እንደገና ይሞክሩ',
         'Ride safely': 'በሰላም ይጓዙ', "Check the driver's name and plate, share your trip, and use SOS any time.": 'የሾፌሩን ስምና ታርጋ ያረጋግጡ፣ ጉዞዎን ያጋሩ፣ እንዲሁም በማንኛውም ጊዜ SOS ይጠቀሙ።',

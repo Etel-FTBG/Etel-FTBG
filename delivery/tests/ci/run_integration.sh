@@ -39,6 +39,7 @@ run python3 tests/open_meter_smoke.py
 run python3 tests/ride_dispatch_smoke.py
 run python3 tests/ride_offer_smoke.py
 run python3 tests/ride_vehicle_types_smoke.py
+run python3 tests/ride_wallet_soon_smoke.py
 run python3 tests/week1_hardening_smoke.py
 run python3 tests/stale_assignment_smoke.py
 run python3 tests/courier_earnings_smoke.py

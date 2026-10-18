@@ -657,6 +657,7 @@ case 'book_ride': {
     $paddr = isset($body['pickup_addr'])  ? mb_substr(trim($body['pickup_addr']), 0, 255)  : '';
     $daddr = isset($body['dropoff_addr']) ? mb_substr(trim($body['dropoff_addr']), 0, 255) : '';
     $pm    = isset($body['payment_method']) ? substr(preg_replace('/[^a-z_]/', '', strtolower($body['payment_method'])), 0, 20) : 'cash';
+    if ($pm === 'wallet' && !rides_wallet_enabled($pdo)) { $pdo->prepare('SELECT RELEASE_LOCK(?)')->execute(array($bookLockKey)); fail(RIDES_WALLET_SOON_MSG, 400); }
     $vtype = isset($body['vehicle_type']) ? strtolower(trim($body['vehicle_type'])) : 'bajaj';
     $vtype = rides_normalize_vehicle_type($pdo, $vtype);
 
@@ -1357,6 +1358,7 @@ case 'ride_schedule': {
     $paddr = isset($body['pickup_addr'])  ? mb_substr(trim($body['pickup_addr']), 0, 255)  : '';
     $daddr = isset($body['dropoff_addr']) ? mb_substr(trim($body['dropoff_addr']), 0, 255) : '';
     $pm    = isset($body['payment_method']) ? substr(preg_replace('/[^a-z_]/', '', strtolower($body['payment_method'])), 0, 20) : 'cash';
+    if ($pm === 'wallet' && !rides_wallet_enabled($pdo)) fail(RIDES_WALLET_SOON_MSG, 400);
     $vtype = isset($body['vehicle_type']) ? strtolower(trim($body['vehicle_type'])) : 'bajaj';
     $vtype = rides_normalize_vehicle_type($pdo, $vtype);
 
@@ -3984,6 +3986,7 @@ case 'driver_arrived': {
 case 'customer_confirm_arrival': {
     $rid = isset($body['ride_id']) ? intval($body['ride_id']) : 0;
     $pm  = isset($body['payment_method']) ? substr(preg_replace('/[^a-z_]/', '', strtolower($body['payment_method'])), 0, 20) : 'cash';
+    if ($pm === 'wallet' && !rides_wallet_enabled($pdo)) fail(RIDES_WALLET_SOON_MSG, 400);
     $s = $pdo->prepare("SELECT id, driver_id, fare_final, distance_km FROM rides
                         WHERE id=? AND passenger_id=? AND status='arrived'");
     $s->execute(array($rid, $u['id']));

@@ -19,3 +19,9 @@ html[data-etel-theme="light"] #view-book[data-step="2"] .vtype-chip .vt-name,
 html[data-etel-theme="light"] #view-book[data-step="2"] .vtype-chip .vt-price{text-shadow:none}
 /* offline vehicles stay clearly gold, just a little softer, and still not tappable */
 html #view-book[data-step="2"] .vtype-chip.vtype-chip-disabled{opacity:.82!important}
+
+/* Wallet payment is coming soon: shown, dimmed, not selectable */
+.pay-opt.pay-soon{opacity:.55;cursor:not-allowed!important;position:relative}
+.pay-opt.pay-soon:active{transform:none}
+.pay-soon-tag{font-size:9px;font-weight:800;letter-spacing:.02em;line-height:1;padding:3px 6px;border-radius:999px;background:rgba(247,208,92,.16);color:var(--gold-text,#F7D05C);white-space:nowrap}
+.mp-row.mp-row-soon{opacity:.6;cursor:default!important}

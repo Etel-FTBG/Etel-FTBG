@@ -126,6 +126,12 @@ function rides_rule_value($pdo, $key, $default) {
     return $val;
 }
 
+/* Paying a ride from the Etel Pay wallet is "coming soon": off unless a pricing_rules row ride_wallet_enabled = 1 is added. */
+if (!defined('RIDES_WALLET_SOON_MSG')) define('RIDES_WALLET_SOON_MSG', 'Wallet payment is coming soon. Please pay with cash or Chapa.');
+function rides_wallet_enabled($pdo) {
+    return intval(rides_rule_value($pdo, 'ride_wallet_enabled', 0)) === 1;
+}
+
 /* Most minutes of waiting that are ever BILLED on one ride (pricing_rules
    key 'ride_wait_cap_minutes'; 0 disables the cap). Without a cap, a wait
    clock left running - or a trip nobody closed - billed the waiting rate for
