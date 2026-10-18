@@ -1,0 +1,24 @@
+name: Post-deploy check
+
+# Run by hand after uploading a zip to the live site (Actions > Post-deploy check > Run workflow).
+# It only reads: health.php, the API version, every page and the scripts and styles they load. See delivery/tests/post_deploy_check.py.
+on:
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: "Site address"
+        required: true
+        default: "https://ethelmarket.com"
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check the live site
+        env:
+          BASE_URL: ${{ inputs.base_url }}
+        run: python3 delivery/tests/post_deploy_check.py "$BASE_URL"
