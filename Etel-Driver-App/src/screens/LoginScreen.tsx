@@ -1,17 +1,6 @@
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  Pressable,
-  StyleSheet,
-  ActivityIndicator,
-  Image,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  Linking,
-} from 'react-native';
+import { View, Pressable, StyleSheet, ActivityIndicator, Image, KeyboardAvoidingView, Platform, ScrollView, Linking } from 'react-native';
+import { Text, TextInput, useLanguage } from '../i18n';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../context/AuthContext';
@@ -25,6 +14,7 @@ const APPLY_URL = 'https://ethelmarket.com/EtelId/';
 
 export default function LoginScreen() {
   const { login } = useAuth();
+  const { lang, toggle: toggleLang } = useLanguage();
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -113,6 +103,9 @@ export default function LoginScreen() {
               onPress={() => Linking.openURL(RESET_PASSWORD_URL).catch(() => {})}
             >
               <Text style={styles.forgotLinkText}>Forgot password?</Text>
+            </Pressable>
+            <Pressable style={[styles.forgotLink, { alignSelf: 'center' }]} onPress={toggleLang} accessibilityRole="button" accessibilityLabel="Language">
+              <Text style={styles.forgotLinkText}>{lang === 'am' ? 'English' : 'አማርኛ'}</Text>
             </Pressable>
 
             {error ? (

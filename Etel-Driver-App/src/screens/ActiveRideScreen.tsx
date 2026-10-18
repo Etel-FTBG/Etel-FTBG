@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { View, Text, StyleSheet, Pressable, ActivityIndicator, Alert, Linking } from 'react-native';
+import { View, StyleSheet, Pressable, ActivityIndicator, Linking } from 'react-native';
+import { Text, Alert } from '../i18n';
 import MapView, { Marker } from 'react-native-maps';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/types';

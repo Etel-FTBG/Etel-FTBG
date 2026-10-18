@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { AppState, View, Text, Pressable, StyleSheet } from 'react-native';
+import { AppState, View, Pressable, StyleSheet } from 'react-native';
+import { Text } from '../i18n';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, typography } from '../theme/colors';
 import { useAuth } from '../context/AuthContext';

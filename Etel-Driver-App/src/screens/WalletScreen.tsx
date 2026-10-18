@@ -1,15 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  Pressable,
-  ActivityIndicator,
-  TextInput,
-  Alert,
-  Image,
-} from 'react-native';
+import { View, StyleSheet, ScrollView, Pressable, ActivityIndicator, Image } from 'react-native';
+import { Text, TextInput, Alert } from '../i18n';
 import * as ImagePicker from 'expo-image-picker';
 import { colors, typography } from '../theme/colors';
 import { getDriverProfile, DriverProfile } from '../api/driver';

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, Pressable, ScrollView, Switch, Alert } from 'react-native';
+import { View, StyleSheet, ActivityIndicator, Pressable, ScrollView, Switch } from 'react-native';
+import { Text, Alert, useLanguage } from '../i18n';
 import { isLockEnabled, isLockSupported, setLockEnabled } from '../security/appLock';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -16,6 +17,7 @@ export default function ProfileScreen() {
   const navigation = useNavigation<Nav>();
   const { user, logout } = useAuth();
   const { nightMode, toggle } = useNightMode();
+  const { lang, toggle: toggleLang } = useLanguage();
   const [driver, setDriver] = useState<DriverProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [lockSupported, setLockSupported] = useState(false);
@@ -75,6 +77,10 @@ export default function ProfileScreen() {
 
           <GoldBoxCard style={styles.sectionWrap}>
             <Text style={styles.sectionTitle}>Settings</Text>
+            <Pressable style={styles.row} onPress={toggleLang} accessibilityRole="button" accessibilityLabel="Language">
+              <Text style={styles.rowLabel}>Language</Text>
+              <Text style={styles.rowValue}>{lang === 'am' ? 'አማርኛ · English' : 'English · አማርኛ'}</Text>
+            </Pressable>
             <View style={styles.row}>
               <Text style={styles.rowLabel}>Night Mode — better visibility at night</Text>
               <Switch

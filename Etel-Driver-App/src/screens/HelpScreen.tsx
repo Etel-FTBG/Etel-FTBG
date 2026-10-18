@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { View, StyleSheet, ScrollView } from 'react-native';
+import { Text } from '../i18n';
 import { colors, typography } from '../theme/colors';
 
 // No support phone/email/Telegram handle was found anywhere in the

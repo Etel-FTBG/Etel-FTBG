@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, RefreshControl, ScrollView } from 'react-native';
+import { View, StyleSheet, ActivityIndicator, RefreshControl, ScrollView } from 'react-native';
+import { Text } from '../i18n';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, typography } from '../theme/colors';
 import { getKpiSummary, KpiSummary, getDriverRideHistory, DriverRideHistoryItem } from '../api/driver';

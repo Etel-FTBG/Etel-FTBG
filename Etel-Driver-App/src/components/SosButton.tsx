@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Pressable, Text, StyleSheet, Alert } from 'react-native';
+import { Pressable, StyleSheet } from 'react-native';
+import { Text, Alert } from '../i18n';
 import * as Location from 'expo-location';
 import { colors } from '../theme/colors';
 import { triggerSos } from '../api/extras';

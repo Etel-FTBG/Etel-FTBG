@@ -1,15 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  FlatList,
-  TextInput,
-  Pressable,
-  KeyboardAvoidingView,
-  Platform,
-  ActivityIndicator,
-} from 'react-native';
+import { View, StyleSheet, FlatList, Pressable, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
+import { Text, TextInput } from '../i18n';
 import { colors, typography } from '../theme/colors';
 import { getMyActiveRide } from '../api/ride';
 import { getRideMessages, sendRideMessage, pingTyping, RideMessage } from '../api/chat';
