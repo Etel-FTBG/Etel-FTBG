@@ -215,6 +215,7 @@ require_once __DIR__ . '/../lib/ride_fare.php';
 require_once __DIR__ . '/../lib/ride_sweeper.php';
 require_once __DIR__ . '/../lib/ride_offer.php';
 require_once __DIR__ . '/../lib/ride_promo.php';
+require_once __DIR__ . '/../lib/ride_tip.php';
 
 /* True only if $url points at a file THIS user uploaded through upload.php for
    the given type: upload.php names files "<prefix><userId>_<time>_<hex>.<ext>"
@@ -514,6 +515,119 @@ case 'ride_get_vehicle_types': {
 // the one source of truth for both the live estimate shown here and
 // the actual bill at the end of the ride, so they can never drift
 // apart the way two separate hardcoded formulas eventually would.
+/* ---------------------------------------------------------------------------------------------------------------
+   RIDE TIPS (lib/ride_tip.php). The rider sends the tip to an Etel bank account and enters the reference; an admin
+   approves it once the money has arrived; then the driver gets all of it (no commission).
+   --------------------------------------------------------------------------------------------------------------- */
+case 'ride_tip_info': {
+    // POST: ride_id -> can this rider tip, the bank accounts to pay into, and the tip already left (if any)
+    $rid = isset($body['ride_id']) ? intval($body['ride_id']) : 0;
+    if ($rid <= 0) fail('ride_id required', 400);
+    $e = rides_tip_eligible($pdo, $rid, $u['id']);
+    $q = $pdo->prepare("SELECT amount, status, payment_ref FROM ride_tips WHERE ride_id=? LIMIT 1");
+    $q->execute(array($rid));
+    $existing = $q->fetch(PDO::FETCH_ASSOC);
+    $accounts = array();
+    try { $accounts = $pdo->query("SELECT bank_key, display_name, account_name, account_number FROM bank_accounts WHERE active=1")->fetchAll(PDO::FETCH_ASSOC); } catch (Exception $ex) { /* none set up */ }
+    $driverName = '';
+    if ($e['ride'] && $e['ride']['driver_id']) {
+        $dn = $pdo->prepare("SELECT name FROM users WHERE id=?");
+        $dn->execute(array($e['ride']['driver_id']));
+        $driverName = (string)$dn->fetchColumn();
+    }
+    ok(array('eligible' => $e['ok'] && !$existing, 'reason' => $existing ? 'You already left a tip for this trip' : $e['error'],
+             'existing' => $existing ? array('amount' => floatval($existing['amount']), 'status' => $existing['status']) : null,
+             'accounts' => $accounts, 'max' => rides_tip_max($pdo), 'presets' => array(10, 20, 50, 100), 'driver_name' => $driverName));
+    break;
+}
+
+case 'ride_tip_give': {
+    // POST: ride_id, amount, bank_key?, payment_ref (the transfer reference), note?
+    $rid = isset($body['ride_id']) ? intval($body['ride_id']) : 0;
+    $amount = isset($body['amount']) ? round(floatval($body['amount']), 2) : 0;
+    $ref = isset($body['payment_ref']) ? trim($body['payment_ref']) : '';
+    $bank = isset($body['bank_key']) ? substr(preg_replace('/[^a-z0-9_-]/i', '', $body['bank_key']), 0, 30) : '';
+    $note = isset($body['note']) ? mb_substr(trim($body['note']), 0, 255) : '';
+    if ($rid <= 0) fail('ride_id required', 400);
+    $max = rides_tip_max($pdo);
+    if ($amount < 5 || $amount > $max) fail('A tip must be between ETB 5 and ETB ' . intval($max), 400);
+    if (strlen($ref) < 4 || strlen($ref) > 60) fail('Enter the transfer reference from your bank (4-60 characters)', 400);
+    rate_limit_check($pdo, 'ride_tip:' . intval($u['id']), 10, 3600, 3600);
+    $e = rides_tip_eligible($pdo, $rid, $u['id']);
+    if (!$e['ok']) fail($e['error'], 409);
+    try {
+        $pdo->prepare("INSERT INTO ride_tips (ride_id, rider_id, driver_id, amount, bank_key, payment_ref, note, status) VALUES (?,?,?,?,?,?,?, 'pending')")
+            ->execute(array($rid, $u['id'], intval($e['ride']['driver_id']), $amount, $bank, $ref, $note));
+    } catch (PDOException $ex) {
+        rate_limit_fail($pdo, 'ride_tip:' . intval($u['id']));
+        if ($ex->getCode() === '23000') {
+            $m = (string)$ex->getMessage();
+            if (strpos($m, 'uq_ride_tip_ride') !== false) fail('You already left a tip for this trip', 409);
+            fail('That transfer reference was already used for another tip', 409);
+        }
+        fail_ex($ex, 'Could not save the tip', 500);
+    }
+    ok(array('id' => intval($pdo->lastInsertId()), 'status' => 'pending',
+             'message' => 'Thank you! The tip reaches your driver once Etel confirms the transfer.'));
+    break;
+}
+
+case 'driver_get_tips': {
+    // the driver's own tips: approved ones are already in total_earnings
+    rides_tip_ensure($pdo);
+    $q = $pdo->prepare("SELECT t.ride_id, t.amount, t.created_at, t.reviewed_at FROM ride_tips t WHERE t.driver_id=? AND t.status='approved' ORDER BY t.id DESC LIMIT 50");
+    $q->execute(array($u['id']));
+    $rows = $q->fetchAll(PDO::FETCH_ASSOC);
+    $tot = 0.0; foreach ($rows as $r) $tot += floatval($r['amount']);
+    ok(array('tips' => $rows, 'total' => round($tot, 2)));
+    break;
+}
+
+case 'admin_ride_tip_list': {
+    if ($u['role'] !== 'admin' || !user_has_capability($pdo, $u, 'rides.view')) fail('Admin only', 403);
+    rides_tip_ensure($pdo);
+    $st = isset($body['status']) ? $body['status'] : '';
+    $where = in_array($st, array('pending', 'approved', 'rejected'), true) ? "WHERE t.status = " . $pdo->quote($st) : '';
+    $rows = $pdo->query("SELECT t.*, r.name AS rider_name, r.phone AS rider_phone, d.name AS driver_name, d.phone AS driver_phone
+                         FROM ride_tips t LEFT JOIN users r ON r.id=t.rider_id LEFT JOIN users d ON d.id=t.driver_id
+                         $where ORDER BY FIELD(t.status,'pending','approved','rejected'), t.id DESC LIMIT 300")->fetchAll(PDO::FETCH_ASSOC);
+    $pendingCount = intval($pdo->query("SELECT COUNT(*) FROM ride_tips WHERE status='pending'")->fetchColumn());
+    ok(array('tips' => $rows, 'pending_count' => $pendingCount));
+    break;
+}
+
+case 'admin_ride_tip_review': {
+    // POST: id, decision (approve|reject), note?   approve = the money arrived: the driver gets all of it
+    if ($u['role'] !== 'admin' || !user_has_capability($pdo, $u, 'rides.manage')) fail('Admin only', 403);
+    rides_tip_ensure($pdo);
+    $id = isset($body['id']) ? intval($body['id']) : 0;
+    $decision = isset($body['decision']) ? $body['decision'] : '';
+    $note = isset($body['note']) ? mb_substr(trim($body['note']), 0, 255) : null;
+    if ($id <= 0 || !in_array($decision, array('approve', 'reject'), true)) fail('id and a decision (approve or reject) are required', 400);
+    $q = $pdo->prepare("SELECT * FROM ride_tips WHERE id=?");
+    $q->execute(array($id));
+    $t = $q->fetch(PDO::FETCH_ASSOC);
+    if (!$t) fail('Tip not found', 404);
+    if ($t['status'] !== 'pending') fail('This tip was already decided', 409);
+    $pdo->beginTransaction();
+    try {
+        // the status flip is the claim: a double click credits the driver once
+        $c = $pdo->prepare("UPDATE ride_tips SET status=?, reviewed_by=?, reviewed_at=NOW(), review_note=? WHERE id=? AND status='pending'");
+        $c->execute(array($decision === 'approve' ? 'approved' : 'rejected', $u['id'], $note, $id));
+        if ($c->rowCount() < 1) { $pdo->rollBack(); fail('This tip was already decided', 409); }
+        if ($decision === 'approve') {
+            rides_add_missing_cols($pdo, 'ride_drivers', array('total_earnings' => "total_earnings DECIMAL(12,2) DEFAULT 0"));
+            $pdo->prepare("UPDATE ride_drivers SET total_earnings = total_earnings + ? WHERE user_id=?")->execute(array($t['amount'], $t['driver_id']));
+        }
+        $pdo->commit();
+    } catch (Exception $ex) {
+        if ($pdo->inTransaction()) $pdo->rollBack();
+        fail_ex($ex, 'Could not save the decision', 500);
+    }
+    ok(array('id' => $id, 'status' => $decision === 'approve' ? 'approved' : 'rejected'));
+    break;
+}
+
 /* ---------------------------------------------------------------------------------------------------------------
    RIDE PROMO CODES (lib/ride_promo.php). Anyone signed in can propose a code; it works only after an admin approves it.
    --------------------------------------------------------------------------------------------------------------- */
