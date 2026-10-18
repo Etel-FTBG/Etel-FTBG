@@ -3116,8 +3116,18 @@ case 'driver_cashout': {
     require_once __DIR__ . '/../etel_pay_bridge.php';
     $result = etel_pay_partner_credit($urow['phone'], $amount, $partner_ref, 'ETEL Delivery driver payout');
 
+    if (isset($result['error']) && !empty($result['uncertain'])) {
+        // Outcome unknown (timeout / unreachable / garbled reply): Etel Pay may
+        // already have credited this payout. Rolling the balance back here let a
+        // driver retry with a new reference and be paid twice, so the amount stays
+        // reserved and the payout is parked as 'unknown' for an admin to settle
+        // against Etel Pay using the same partner_ref.
+        $pdo->prepare("UPDATE driver_payouts SET status='unknown' WHERE partner_ref=?")->execute(array($partner_ref));
+        error_log('[ETEL][cashout] outcome unknown for ' . $partner_ref . ' (user ' . $u['id'] . ', ETB ' . $amount . '): ' . $result['error']);
+        fail('Your cashout is being confirmed with Etel Pay. Please check your Etel Pay wallet in a few minutes and do not try again yet. If it has not arrived within an hour, contact support with reference ' . $partner_ref . '.', 202);
+    }
     if (isset($result['error'])) {
-        // Roll back the reservation -- the money never actually moved.
+        // Etel Pay explicitly refused -- the money never actually moved, so release the reservation.
         $pdo->prepare("UPDATE ride_drivers SET total_paid_out = total_paid_out - ? WHERE user_id=?")
             ->execute(array($amount, $u['id']));
         $pdo->prepare("UPDATE driver_payouts SET status='failed' WHERE partner_ref=?")->execute(array($partner_ref));
@@ -3603,6 +3613,10 @@ case 'driver_accept_ride': {
 
 case 'driver_hail_customer': {
     rides_require_onboarded($pdo, $u['id']);
+    // A street hail is created in the customer's name without them tapping anything, so
+    // cap how many one driver can start per hour (stops spraying phone numbers).
+    rate_limit_check($pdo, 'hail:' . $u['id'], 12, 3600, 3600);
+    rate_limit_fail($pdo, 'hail:' . $u['id']);
     $raw_id = isset($body['phone']) ? trim($body['phone']) : '';
     $mkm    = isset($body['km'])  ? floatval($body['km'])  : 0;
     $open   = (isset($body['open']) && intval($body['open']) === 1) || $mkm <= 0;
@@ -3652,12 +3666,9 @@ case 'driver_hail_customer': {
     $s2->execute(array($cust['id']));
     $theirs = $s2->fetch();
     if ($theirs) {
-        if ($theirs['status'] === 'searching') {
-            $pdo->prepare("UPDATE rides SET status='cancelled', cancelled_at=NOW() WHERE id=? AND status='searching'")
-                ->execute(array($theirs['id']));
-        } else {
-            fail($cust['name'] . ' already has an active ride #' . $theirs['id'] . ' (' . $theirs['status'] . '). Ask them to cancel it first.');
-        }
+        // A hail must never cancel a booking the customer made themselves (it used to cancel a
+        // 'searching' one) - the customer cancels it, then the driver hails again.
+        fail($cust['name'] . ' already has a ride #' . $theirs['id'] . ' (' . $theirs['status'] . '). Ask them to cancel it first.');
     }
 
     $driverProfile = rides_driver_profile($pdo, $u['id']);
@@ -3712,6 +3723,14 @@ case 'driver_hail_customer': {
         $vals  = array_merge($vals, $extraVals);
     }
     $pdo->prepare("INSERT INTO rides ($cols) VALUES ($ph)")->execute($vals);
+    // Tell the customer so a hail they did not agree to is visible straight away and can be cancelled.
+    if (function_exists('etel_push_send')) {
+        try {
+            etel_push_send($pdo, intval($cust['id']), 'Street hail started',
+                'A driver started a trip with you. If this is not you, open ETEL Ride and cancel it now.',
+                array('action' => 'ride_street_hail', 'url' => '/delivery/ride/'));
+        } catch (Exception $e) { /* best-effort */ }
+    }
     ok(rides_get_active_for_driver($pdo, $u['id']));
     break;
 }

@@ -174,6 +174,7 @@ case 'login': {
     if (!$phone) fail('Phone is required');
     if (!$pw)    fail('Password is required');
     rate_limit_check($pdo, 'login:' . $phone);
+    rate_limit_account_check($pdo, 'login:' . $phone);
     // Looser ceiling per address across ALL numbers (credential stuffing). Generous on purpose:
     // mobile carriers put thousands of people behind a few shared addresses.
     rate_limit_check($pdo, 'login_ip', 100, 600, 600);
@@ -190,12 +191,19 @@ case 'login': {
     // Exact match first; a number written in another form (0924.. vs +251924..) still
     // finds its one account, but is never allowed to pick between two duplicates.
     $u = etel_find_user_by_phone($pdo, $phone, 'id,name,phone,role,password_hash' . ($hasVer ? ',token_version' : '') . ($hasStaffRole ? ',staff_role' : ''));
-    if (!$u) { rate_limit_fail($pdo, 'login:' . $phone); rate_limit_fail($pdo, 'login_ip'); fail('No account found with that phone', 404); }
+    // Unknown number and wrong password get the SAME answer (and similar timing), so the login
+    // form can't be used to find out which phone numbers have an account.
+    if (!$u) {
+        password_verify($pw, '$2y$10$abcdefghijklmnopqrstuuABCDEFGHIJKLMNOPQRSTUVWXYZ01234');
+        rate_limit_fail($pdo, 'login:' . $phone); rate_limit_account_fail($pdo, 'login:' . $phone); rate_limit_fail($pdo, 'login_ip');
+        fail('Incorrect phone number or password', 401);
+    }
     if (!isset($u['password_hash']) || !$u['password_hash']) fail('Account misconfigured  contact admin', 403);
     if (!password_verify($pw, $u['password_hash'])) {
         rate_limit_fail($pdo, 'login:' . $phone);
+        rate_limit_account_fail($pdo, 'login:' . $phone);
         rate_limit_fail($pdo, 'login_ip');
-        fail('Incorrect password', 401);
+        fail('Incorrect phone number or password', 401);
     }
     rate_limit_clear($pdo, 'login:' . $phone);
 
@@ -285,6 +293,7 @@ case 'sg_login': {
     if (!$phone) fail('Phone number is required');
     if (!$pw)    fail('Password is required');
     rate_limit_check($pdo, 'sg_login:' . $phone);
+    rate_limit_account_check($pdo, 'sg_login:' . $phone);
     rate_limit_check($pdo, 'login_ip', 100, 600, 600);
     $hasVer = in_array('token_version', etel_table_columns($pdo, 'users'), true);
 
@@ -295,12 +304,17 @@ case 'sg_login': {
         $u = etel_find_user_by_phone($pdo, $phone, 'id,name,phone,role,password_hash' . ($hasVer ? ',token_version' : ''), "role IN ('service_giver','admin')");
     } catch (Exception $e) { $u = null; }
     
-    if (!$u) { rate_limit_fail($pdo, 'sg_login:' . $phone); rate_limit_fail($pdo, 'login_ip'); fail('No service giver account found with that phone number', 404); }
+    if (!$u) {
+        password_verify($pw, '$2y$10$abcdefghijklmnopqrstuuABCDEFGHIJKLMNOPQRSTUVWXYZ01234');
+        rate_limit_fail($pdo, 'sg_login:' . $phone); rate_limit_account_fail($pdo, 'sg_login:' . $phone); rate_limit_fail($pdo, 'login_ip');
+        fail('Incorrect phone number or password', 401);
+    }
     if (!isset($u['password_hash']) || !$u['password_hash']) fail('Account has no password set  contact admin', 403);
     if (!password_verify($pw, $u['password_hash'])) {
         rate_limit_fail($pdo, 'sg_login:' . $phone);
+        rate_limit_account_fail($pdo, 'sg_login:' . $phone);
         rate_limit_fail($pdo, 'login_ip');
-        fail('Incorrect password', 401);
+        fail('Incorrect phone number or password', 401);
     }
     rate_limit_clear($pdo, 'sg_login:' . $phone);
     if (etel_ride_scoped($pdo, $u)) fail('This account is limited to the Ride system. Use the Ride or Driver tab.', 403);

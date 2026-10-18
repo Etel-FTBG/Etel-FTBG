@@ -249,9 +249,12 @@ function etel_pay_partner_credit($phone, $amount, $partner_ref, $note = 'ETEL De
         'ignore_errors' => true,
     )));
     $resp = @file_get_contents(ETEL_PAY_URL . '?action=ep_partner_credit', false, $ctx);
-    if ($resp === false) return array('error' => 'Etel Pay unreachable');
+    // 'uncertain' = we do not know whether Etel Pay credited the money (timeout,
+    // dropped connection, garbled reply). The caller must NOT treat that as a
+    // failure and give the balance back - the credit may already have happened.
+    if ($resp === false) return array('error' => 'Etel Pay unreachable', 'uncertain' => true);
     $data = json_decode($resp, true);
-    if (!$data) return array('error' => 'Etel Pay returned an invalid response');
+    if (!$data) return array('error' => 'Etel Pay returned an invalid response', 'uncertain' => true);
     if (empty($data['success'])) {
         return array('error' => (isset($data['data']['message']) ? $data['data']['message'] : 'Credit failed'));
     }

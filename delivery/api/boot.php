@@ -578,6 +578,32 @@ function rate_limit_clear($pdo, $identifier) {
     } catch (Exception $e) { error_log('[ETEL] rate_limit_clear failed: ' . $e->getMessage()); }
 }
 
+/* Account-only lockout. rate_limit_check()/rate_limit_fail() above key on
+   "identifier|IP", so an attacker who rotates IPs gets a fresh allowance per
+   address and can keep guessing one account's password or reset code. These
+   two key on the account alone (no IP). The cap is deliberately generous
+   (30 failures/hour by default) so it stops sustained guessing without
+   letting a stranger lock a real user out after a handful of tries. */
+function rate_limit_account_check($pdo, $identifier, $max_attempts = 30, $window_seconds = 3600, $lockout_seconds = 3600) {
+    try {
+        $key = substr('acct:' . $identifier, 0, 120);
+        $now = time();
+        $s = $pdo->prepare('SELECT COUNT(*) as cnt, MAX(attempted_at) as last_attempt FROM login_attempts WHERE identifier = ? AND attempted_at > ?');
+        $s->execute(array($key, date('Y-m-d H:i:s', $now - $window_seconds)));
+        $row = $s->fetch();
+        if ((int)$row['cnt'] >= $max_attempts) {
+            $wait = max(0, (strtotime($row['last_attempt']) + $lockout_seconds) - $now);
+            fail('Too many failed attempts for this account. Try again in ' . ceil($wait / 60) . ' minute(s).', 429);
+        }
+    } catch (Exception $e) { /* table not yet created -- allow through */ }
+}
+function rate_limit_account_fail($pdo, $identifier) {
+    try {
+        $pdo->prepare('INSERT INTO login_attempts (identifier, attempted_at) VALUES (?, NOW())')
+            ->execute(array(substr('acct:' . $identifier, 0, 120)));
+    } catch (Exception $e) { error_log('[ETEL] rate_limit_account_fail failed: ' . $e->getMessage()); }
+}
+
 /* 
    ROUTES
  */
@@ -1827,7 +1853,7 @@ switch ($action) {
             if ($row) { $custId = $row['id']; }
             else {
                 $pdo->prepare("INSERT INTO users (name, phone, role, password_hash, created_at) VALUES ('Demo Customer (System Test)', '0900000001', 'customer', ?, NOW())")
-                    ->execute(array(password_hash('demotest1234', PASSWORD_DEFAULT)));
+                    ->execute(array(password_hash(bin2hex(random_bytes(16)), PASSWORD_DEFAULT)));
                 $custId = $pdo->lastInsertId();
             }
             $s->execute(array('0900000003'));
@@ -1835,7 +1861,7 @@ switch ($action) {
             if ($row) { $sgUserId = $row['id']; }
             else {
                 $pdo->prepare("INSERT INTO users (name, phone, role, password_hash, created_at) VALUES ('Demo Shop Owner (System Test)', '0900000003', 'service_giver', ?, NOW())")
-                    ->execute(array(password_hash('demotest1234', PASSWORD_DEFAULT)));
+                    ->execute(array(password_hash(bin2hex(random_bytes(16)), PASSWORD_DEFAULT)));
                 $sgUserId = $pdo->lastInsertId();
             }
             $s->execute(array('0900000004'));
@@ -1843,7 +1869,7 @@ switch ($action) {
             if ($row) { $courierUserId = $row['id']; }
             else {
                 $pdo->prepare("INSERT INTO users (name, phone, role, password_hash, created_at) VALUES ('Demo Courier (System Test)', '0900000004', 'courier', ?, NOW())")
-                    ->execute(array(password_hash('demotest1234', PASSWORD_DEFAULT)));
+                    ->execute(array(password_hash(bin2hex(random_bytes(16)), PASSWORD_DEFAULT)));
                 $courierUserId = $pdo->lastInsertId();
             }
             $courier = get_or_create_courier_profile($pdo, $courierUserId);
@@ -1968,7 +1994,7 @@ switch ($action) {
             if ($row) { $custId = $row['id']; }
             else {
                 $pdo->prepare("INSERT INTO users (name, phone, role, password_hash, created_at) VALUES ('Demo Customer (System Test)', '0900000001', 'customer', ?, NOW())")
-                    ->execute(array(password_hash('demotest1234', PASSWORD_DEFAULT)));
+                    ->execute(array(password_hash(bin2hex(random_bytes(16)), PASSWORD_DEFAULT)));
                 $custId = $pdo->lastInsertId();
             }
             $s->execute(array('0900000002'));
@@ -1976,7 +2002,7 @@ switch ($action) {
             if ($row) { $drvId = $row['id']; }
             else {
                 $pdo->prepare("INSERT INTO users (name, phone, role, password_hash, created_at) VALUES ('Demo Driver (System Test)', '0900000002', 'driver', ?, NOW())")
-                    ->execute(array(password_hash('demotest1234', PASSWORD_DEFAULT)));
+                    ->execute(array(password_hash(bin2hex(random_bytes(16)), PASSWORD_DEFAULT)));
                 $drvId = $pdo->lastInsertId();
             }
             $pdo->prepare("INSERT INTO ride_drivers (user_id, online, vehicle_type, vehicle_plate, vehicle_make, vehicle_color, last_seen)
@@ -2422,6 +2448,16 @@ switch ($action) {
         if (strlen($otp) !== 6) fail('OTP must be 6 digits');
 
         $pdo = db();
+        rate_limit_account_check($pdo, 'reset_otp:' . $phone, 30, 3600, 3600);
+        // Spend one of the code's 5 guesses BEFORE comparing, in a single atomic UPDATE.
+        // Counting after the comparison let parallel requests all test the code before any
+        // of them was counted, so the 5-guess cap could be exceeded. A correct code gets its
+        // guess refunded below, so the normal verify -> reset_password flow is unaffected.
+        $spend = $pdo->prepare(
+            'UPDATE password_resets SET attempts = attempts + 1
+             WHERE phone=? AND used=0 AND expires_at > NOW() AND attempts < 5 ORDER BY id DESC LIMIT 1'
+        );
+        $spend->execute(array($phone));
         $s = $pdo->prepare(
             'SELECT id, otp_hash, attempts FROM password_resets
              WHERE phone=? AND used=0 AND expires_at > NOW() ORDER BY id DESC LIMIT 1'
@@ -2430,17 +2466,17 @@ switch ($action) {
         $row = $s->fetch();
         if (!$row) fail('OTP expired or not found. Please request a new one.');
 
-        if ((int)$row['attempts'] >= 5) {
+        if ($spend->rowCount() < 1) {
             $pdo->prepare('UPDATE password_resets SET used=1 WHERE id=?')->execute(array($row['id']));
             fail('Too many wrong attempts. Please request a new OTP.');
         }
 
         if (!hash_equals($row['otp_hash'], hash('sha256', $otp))) {
-            $pdo->prepare('UPDATE password_resets SET attempts=attempts+1 WHERE id=?')
-                ->execute(array($row['id']));
-            $left = 4 - (int)$row['attempts'];
+            rate_limit_account_fail($pdo, 'reset_otp:' . $phone);
+            $left = 5 - (int)$row['attempts'];
             fail('Incorrect OTP. ' . max(0, $left) . ' attempt(s) remaining.');
         }
+        $pdo->prepare('UPDATE password_resets SET attempts = attempts - 1 WHERE id=? AND attempts > 0')->execute(array($row['id']));
 
         // This step is intentionally read-only (no `used` flag set, no
         // rotation of otp_hash): the two frontends in this codebase reach
@@ -2477,6 +2513,12 @@ switch ($action) {
         // only 900,000 possibilities). Same cap + rate limits apply here now.
         rate_limit_check($pdo, 'reset_pw:' . $phone, 5, 900, 1800);
         rate_limit_check($pdo, 'reset_ip', 30, 600, 900);
+        rate_limit_account_check($pdo, 'reset_otp:' . $phone, 30, 3600, 3600);
+        // Spend a guess on every live code before comparing (atomic, see reset_verify), and
+        // never let a code that already used its 5 guesses be tested again.
+        $pdo->prepare('UPDATE password_resets SET used=1 WHERE phone=? AND used=0 AND attempts >= 5')->execute(array($phone));
+        $pdo->prepare('UPDATE password_resets SET attempts = attempts + 1 WHERE phone=? AND used=0 AND expires_at > NOW() AND attempts < 5')
+            ->execute(array($phone));
 
         // Accept either credential produced by reset_verify above: the raw
         // OTP (what login.html's live "Forgot password?" flow resends) or
@@ -2490,7 +2532,7 @@ switch ($action) {
         $rows->execute(array($phone));
         $match = null;
         foreach ($rows->fetchAll(PDO::FETCH_ASSOC) as $r) {
-            if ((int)$r['attempts'] >= 5) {
+            if ((int)$r['attempts'] > 5) {
                 $pdo->prepare('UPDATE password_resets SET used=1 WHERE id=?')->execute(array($r['id']));
                 continue;
             }
@@ -2500,8 +2542,7 @@ switch ($action) {
             )) { $match = $r; break; }
         }
         if (!$match) {
-            $pdo->prepare('UPDATE password_resets SET attempts=attempts+1 WHERE phone=? AND used=0 AND expires_at > NOW()')
-                ->execute(array($phone));
+            rate_limit_account_fail($pdo, 'reset_otp:' . $phone);
             rate_limit_fail($pdo, 'reset_pw:' . $phone);
             rate_limit_fail($pdo, 'reset_ip');
             fail('Reset session expired or invalid. Please start over.');
