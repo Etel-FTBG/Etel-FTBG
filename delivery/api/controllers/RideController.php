@@ -216,6 +216,7 @@ require_once __DIR__ . '/../lib/ride_sweeper.php';
 require_once __DIR__ . '/../lib/ride_offer.php';
 require_once __DIR__ . '/../lib/ride_promo.php';
 require_once __DIR__ . '/../lib/ride_tip.php';
+require_once __DIR__ . '/../lib/ride_statement.php';
 
 /* True only if $url points at a file THIS user uploaded through upload.php for
    the given type: upload.php names files "<prefix><userId>_<time>_<hex>.<ext>"
@@ -569,6 +570,24 @@ case 'ride_tip_give': {
     }
     ok(array('id' => intval($pdo->lastInsertId()), 'status' => 'pending',
              'message' => 'Thank you! The tip reaches your driver once Etel confirms the transfer.'));
+    break;
+}
+
+case 'driver_get_statement': {
+    // POST: week_start? (any date; the week is Monday to Sunday, default this week, up to 12 weeks back)
+    // The driver's own weekly statement: every trip with Etel's 5% shown, totals, tips and hours online.
+    $today = date('Y-m-d');
+    $want = isset($body['week_start']) ? trim($body['week_start']) : $today;
+    if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $want) || rides_statement_monday($want) === null) fail('Invalid date format, expected YYYY-MM-DD', 400);
+    $thisMonday = rides_statement_monday($today);
+    $monday = rides_statement_monday($want);
+    if ($monday > $thisMonday) $monday = $thisMonday;
+    $oldest = date('Y-m-d', strtotime($thisMonday . ' -84 days'));
+    if ($monday < $oldest) fail('Statements go back 12 weeks', 400);
+    $st = rides_statement_week($pdo, $u['id'], $monday);
+    $st['prev_week'] = $monday > $oldest ? date('Y-m-d', strtotime($monday . ' -7 days')) : null;
+    $st['next_week'] = $monday < $thisMonday ? date('Y-m-d', strtotime($monday . ' +7 days')) : null;
+    ok($st);
     break;
 }
 
@@ -1801,7 +1820,7 @@ case 'driver_get_ride_history': {
     $s = $pdo->prepare(
         "SELECT r.id, r.pickup_address, r.dropoff_address, r.distance_km, r.fare_paid, r.fare_final,
                 r.status, r.rating, r.created_at, r.completed_at, r.assigned_at,
-                r.payment_method, r.open_trip, r.traveled_km,
+                r.payment_method, r.open_trip, r.traveled_km, r.promo_code, r.promo_discount, " . rides_statement_ref_col($pdo) . ",
                 p.name AS passenger_name, p.phone AS passenger_phone
          FROM rides r
          LEFT JOIN users p ON p.id = r.passenger_id
@@ -1811,6 +1830,8 @@ case 'driver_get_ride_history': {
     $rows = $s->fetchAll();
     foreach ($rows as &$row) { // cancelled trips earn nothing; do not show the booking-time estimate (see ride_history)
         if ($row['status'] === 'cancelled') { $row['fare_final'] = 0; $row['fare_paid'] = 0; $row['not_charged'] = true; }
+        else $row['money'] = rides_trip_money($row);   // fare, promo, Etel's 5% and what the driver keeps
+        unset($row['wallet_tx_ref']);
     }
     unset($row);
     ok(array('rides' => $rows));
