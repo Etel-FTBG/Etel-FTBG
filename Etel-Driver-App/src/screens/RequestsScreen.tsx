@@ -11,7 +11,7 @@ import SosButton from '../components/SosButton';
 import StreetHailModal from '../components/StreetHailModal';
 import { useAuth } from '../context/AuthContext';
 import { useNightMode, DAY_MAP_STYLE, NIGHT_MAP_STYLE } from '../context/NightModeContext';
-import { acceptRide, getMyActiveRide, getNearbyRequests, goOffline, goOnline } from '../api/ride';
+import { acceptRide, declineRide, getMyActiveRide, getNearbyRequests, goOffline, goOnline } from '../api/ride';
 import { getDriverProfile } from '../api/driver';
 import { NearbyRideRequest } from '../types/ride';
 import {
@@ -200,6 +200,8 @@ export default function RequestsScreen() {
 
   function handleDecline(requestId: number) {
     setRequests((rs) => rs.filter((r) => r.id !== requestId));
+    // Best effort: if this fails the card is still hidden locally, the request just may reappear.
+    declineRide(requestId).catch(() => {});
   }
 
   function handleHailed(rideId: number) {

@@ -60,6 +60,11 @@ export async function acceptRide(requestId: number) {
   return boot('driver_accept_ride', { request_id: requestId });
 }
 
+// Tells the server this driver declined the request, so it stops coming back in their list.
+export async function declineRide(requestId: number) {
+  return boot('driver_decline_ride', { request_id: requestId });
+}
+
 export async function startRide(rideId: number) {
   return boot('driver_start_ride', { ride_id: rideId });
 }
