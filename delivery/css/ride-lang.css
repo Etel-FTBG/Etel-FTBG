@@ -1,0 +1,4 @@
+/* ETEL Ride - language switch button and Amharic text rendering (see js/ride-i18n.js). */
+.ride-lang-btn{font-family:Outfit,sans-serif;font-size:12px;font-weight:800;letter-spacing:0}
+html[lang="am"] body,html[lang="am"] button,html[lang="am"] input,html[lang="am"] textarea{font-family:"Noto Sans Ethiopic","Abyssinica SIL",Nyala,"Outfit",sans-serif}
+html[lang="am"] *{font-style:normal!important}
