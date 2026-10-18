@@ -60,7 +60,7 @@ function rides_sweep_stuck($pdo, $opts = array()) {
     $autoMin = rides_rule_value($pdo, 'ride_auto_complete_minutes', 30);
     $idleMin = rides_rule_value($pdo, 'ride_idle_end_minutes', 180);
     $capMin  = rides_wait_cap_minutes($pdo);
-    $ghostMin = rides_rule_value($pdo, 'ride_driver_ghost_minutes', 120);
+    $ghostMin = rides_rule_value($pdo, 'ride_driver_ghost_minutes', 10);
 
     // Make sure wait columns exist before any SELECT below names them.
     try { rides_ensure_wait_columns($pdo); } catch (Exception $e) { /* handled per rule */ }
