@@ -1,0 +1,29 @@
+/* ETEL Ride - welcome cards and loading skeletons (see js/ride-onboarding.js). */
+.etel-wel{position:fixed;inset:0;z-index:100000;display:flex;align-items:flex-end;justify-content:center;background:rgba(5,6,10,.62);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);padding:0 12px 12px;animation:etel-wel-in .22s ease-out}
+.etel-wel .etel-wel-card{position:relative;width:100%;max-width:440px;box-sizing:border-box;background:#14141F!important;color:#EDEDF5!important;border:1px solid rgba(229,199,107,.35)!important;border-radius:26px;padding:34px 24px 22px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+.etel-wel .etel-wel-skip{position:absolute;top:12px;right:14px;background:none!important;border:0!important;color:#B4B4C8!important;font:600 14px/1 inherit;font-family:inherit;padding:10px;min-height:44px;cursor:pointer}
+.etel-wel .etel-wel-ico{width:76px;height:76px;margin:6px auto 14px;border-radius:22px;display:flex;align-items:center;justify-content:center;color:#F3D87E!important;background:rgba(229,199,107,.12)!important;border:1px solid rgba(229,199,107,.35)!important}
+.etel-wel .etel-wel-title{margin:0 0 8px;font-size:22px;font-weight:800;color:#F3D87E!important}
+.etel-wel .etel-wel-body{margin:0 auto 18px;max-width:330px;font-size:15px;line-height:1.5;color:#EDEDF5!important}
+.etel-wel-dots{display:flex;gap:7px;justify-content:center;margin-bottom:16px}
+.etel-wel-dot{width:8px;height:8px;border-radius:50%;background:rgba(229,199,107,.28)}
+.etel-wel-dot.on{width:22px;border-radius:6px;background:var(--gold-lt,#E5C76B)}
+.etel-wel .etel-wel-next{width:100%;min-height:52px;border:0!important;border-radius:16px;font:800 16px/1 inherit;font-family:inherit;color:#1A1405!important;background:linear-gradient(180deg,#F3D87E,#C9A227)!important;cursor:pointer}
+.etel-wel-next:active{transform:scale(.985)}
+.etel-wel-skip:focus-visible,.etel-wel-next:focus-visible{outline:2px solid var(--gold-lt,#E5C76B);outline-offset:2px}
+html[data-etel-theme="light"] .etel-wel{background:rgba(40,30,10,.38)}
+html[data-etel-theme="light"] .etel-wel .etel-wel-card{background:#FFFFFF!important;color:#1F1A0E!important;border-color:rgba(110,84,20,.28)!important;box-shadow:0 20px 50px rgba(60,45,10,.25)}
+html[data-etel-theme="light"] .etel-wel .etel-wel-title,html[data-etel-theme="light"] .etel-wel .etel-wel-ico{color:#7E5900!important}
+html[data-etel-theme="light"] .etel-wel .etel-wel-body{color:#1F1A0E!important}
+html[data-etel-theme="light"] .etel-wel .etel-wel-skip{color:#5C5546!important}
+html[data-etel-theme="light"] .etel-wel-dot{background:rgba(126,89,0,.25)}
+html[data-etel-theme="light"] .etel-wel-dot.on{background:#7E5900}
+@keyframes etel-wel-in{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+
+.etel-skel{padding:14px 4px!important;text-align:left!important}
+.etel-skel .etel-skel-row{height:58px;margin:0 0 10px;border-radius:16px;background:linear-gradient(100deg,rgba(229,199,107,.10) 30%,rgba(229,199,107,.24) 50%,rgba(229,199,107,.10) 70%);background-size:300% 100%;animation:etel-skel 1.3s ease-in-out infinite}
+.etel-skel-row:nth-child(2){opacity:.75}
+.etel-skel-row:nth-child(3){opacity:.5}
+html[data-etel-theme="light"] .etel-skel-row{background:linear-gradient(100deg,rgba(110,84,20,.06) 30%,rgba(110,84,20,.14) 50%,rgba(110,84,20,.06) 70%);background-size:300% 100%}
+@keyframes etel-skel{from{background-position:100% 0}to{background-position:0 0}}
+@media (prefers-reduced-motion:reduce){.etel-wel{animation:none}.etel-skel-row{animation:none}}
