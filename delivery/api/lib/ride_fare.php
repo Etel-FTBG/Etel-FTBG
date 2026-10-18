@@ -285,6 +285,25 @@ function rides_flag_fare_review($pdo, $rideId, $driverId, $fare, $km) {
     return true;
 }
 
+/* Vehicle types a rider may quote and book: the five built-in ones plus every ACTIVE type in
+   ride_fare_rules. The booking, quote and nearby-driver actions each had their own fixed list of
+   five names, so a type an admin added in the Pricing panel (ev_car, which riders already see in
+   the vehicle list) was silently quoted and booked as a bajaj. Unknown names still fall back to
+   bajaj, as before. */
+function rides_normalize_vehicle_type($pdo, $vtype) {
+    static $allowed = null;
+    $vtype = strtolower(trim((string)$vtype));
+    if ($allowed === null) {
+        $allowed = array('bajaj', 'moto', 'car', 'minibus', 'qute');
+        try {
+            foreach ($pdo->query("SELECT LOWER(vehicle_type) FROM ride_fare_rules WHERE active=1")->fetchAll(PDO::FETCH_COLUMN) as $t) {
+                if ($t !== '' && !in_array($t, $allowed, true)) $allowed[] = $t;
+            }
+        } catch (Exception $e) { /* table missing: the built-in five only */ }
+    }
+    return in_array($vtype, $allowed, true) ? $vtype : 'bajaj';
+}
+
 } // end function_exists guard
 
 /* Both extracted from RideController.php (was defined right next to it,
