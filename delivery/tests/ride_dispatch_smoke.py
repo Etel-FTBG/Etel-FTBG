@@ -66,6 +66,9 @@ if not (drvA_tok and drvB_tok and cust1_tok and cust2_tok):
     check("test users registered", False, (drvA_tok, drvB_tok, cust1_tok, cust2_tok))
     sys.exit(1)
 
+# this test is about ordering and decline, not offer waves (tests/ride_offer_smoke.py): show every request to everyone
+etel_test_db.run_sql("INSERT INTO pricing_rules (rule_key, rule_value, description) VALUES ('ride_offer_wave_secs', 0, 'test') ON DUPLICATE KEY UPDATE rule_value=0")
+
 for tok, uid in ((drvA_tok, drvA), (drvB_tok, drvB)):
     call("driver_get_profile", {}, tok)  # creates the ride_drivers row
     if not etel_test_db.onboard_driver(uid):
@@ -117,6 +120,7 @@ check("accepting driver B has no exclusion row", ok_q and out.strip() == "0", ou
 
 call("cancel_ride", {"id": near_id}, cust1_tok)
 call("cancel_ride", {"id": far_id}, cust2_tok)
+etel_test_db.run_sql("UPDATE pricing_rules SET rule_value=20 WHERE rule_key='ride_offer_wave_secs'")
 
 print("\nFAILED: %d" % len(fails) if fails else "\nAll ride dispatch checks passed")
 sys.exit(1 if fails else 0)
