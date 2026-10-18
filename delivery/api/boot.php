@@ -2114,6 +2114,10 @@ switch ($action) {
                 $s->execute(array($rid));
                 $row = $s->fetch();
             } catch (Exception $e) { break; }
+            if ($row && $row['status'] === 'searching') {
+                require_once __DIR__ . '/lib/ride_offer.php';
+                rides_offer_escalate($pdo, $rid);   // wakes the wider wave of drivers once the ride has waited a wave length
+            }
             if ($row) {
                 /* Same live-meter fix as the other ride-status endpoints -
                    prefer an actual GPS-distance-based fare over the static
@@ -2243,8 +2247,10 @@ switch ($action) {
                 $myVtype = ($driver && !empty($driver['vehicle_type'])) ? $driver['vehicle_type'] : 'bajaj';
                 require_once __DIR__ . '/lib/ride_fare.php';
                 rides_ensure_exclusions_table($pdo);
+                require_once __DIR__ . '/lib/ride_offer.php';
                 $nr = $pdo->prepare('SELECT r.id, r.pickup_lat, r.pickup_lng, r.pickup_address,
                     r.dropoff_address, r.distance_km, r.fare_final, r.expires_at,
+                    TIMESTAMPDIFF(SECOND, r.created_at, NOW()) AS age_s,
                     u.name AS pname FROM rides r JOIN users u ON u.id=r.passenger_id
                     WHERE r.status=\'searching\' AND r.passenger_id!=?
                           AND (LOWER(r.vehicle_type) = LOWER(?) OR r.vehicle_type IS NULL)
@@ -2265,6 +2271,8 @@ switch ($action) {
                     }
                     $nearby[] = $r;
                 }
+                // Offer waves, same as driver_get_nearby_requests (lib/ride_offer.php).
+                if ($driver) $nearby = rides_offer_filter($pdo, $u['id'], $driver['lat'], $driver['lng'], $myVtype, $nearby);
                 // Nearest pickup first, same as driver_get_nearby_requests.
                 usort($nearby, function ($a, $b) {
                     $da = isset($a['distance_from_driver_km']) ? $a['distance_from_driver_km'] : 0;

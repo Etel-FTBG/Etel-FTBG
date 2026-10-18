@@ -213,6 +213,7 @@ function rides_etelid_lookup($identifier) {
    break a request meant for a different controller. */
 require_once __DIR__ . '/../lib/ride_fare.php';
 require_once __DIR__ . '/../lib/ride_sweeper.php';
+require_once __DIR__ . '/../lib/ride_offer.php';
 
 /* True only if $url points at a file THIS user uploaded through upload.php for
    the given type: upload.php names files "<prefix><userId>_<time>_<hex>.<ext>"
@@ -855,13 +856,17 @@ case 'book_ride': {
             "SELECT user_id, lat, lng FROM ride_drivers WHERE online = 1 AND lat IS NOT NULL AND lng IS NOT NULL AND last_seen >= DATE_SUB(NOW(), INTERVAL 30 MINUTE) AND (LOWER(vehicle_type) = LOWER(?) OR vehicle_type IS NULL)"
         );
         $nearbyDrivers->execute(array($vtype));
+        $inRange = array();
         foreach ($nearbyDrivers->fetchAll() as $rd) {
             $d = rides_haversine_km($plat, $plng, floatval($rd['lat']), floatval($rd['lng']));
-            if ($d <= 8) {
-                etel_push_send($pdo, intval($rd['user_id']), 'New ride request nearby!',
-                    'ETB ' . number_format($fare, 0) . ' \u2022 ' . round($d, 1) . ' km away',
-                    array('type' => 'new_ride_request', 'ride_id' => $new_ride_id, 'url' => '/delivery/driver/'));
-            }
+            if ($d <= 8) { $rd['km'] = $d; $inRange[] = $rd; }
+        }
+        // Offer waves: wake the nearest drivers now; the rest are woken once the ride has been open a wave length
+        // (rides_offer_escalate, from the passenger's status poll).
+        foreach (rides_offer_first_push_targets($pdo, $inRange, $plat, $plng) as $rd) {
+            etel_push_send($pdo, intval($rd['user_id']), 'New ride request nearby!',
+                'ETB ' . number_format($fare, 0) . ' \u2022 ' . round($rd['km'], 1) . ' km away',
+                array('type' => 'new_ride_request', 'ride_id' => $new_ride_id, 'url' => '/delivery/driver/'));
         }
     } catch (Exception $e) { error_log('[ETEL][push] nearby-driver push failed: ' . $e->getMessage()); }
 
@@ -965,6 +970,7 @@ case 'ride_status': {
             ->execute(array($id));
         $r['status'] = 'cancelled';
     }
+    if ($r['status'] === 'searching') rides_offer_escalate($pdo, $id);   // wake the wider wave of drivers (once per ride)
     /* Same live-meter fix as the driver side (rides_get_active_for_driver)
        - the customer's active-ride screen was falling back to the static
        fare_estimate before the first real GPS tick too. */
@@ -2696,7 +2702,7 @@ case 'driver_get_nearby_requests': {
     $s = $pdo->prepare(
         "SELECT r.id, r.pickup_lat, r.pickup_lng, r.dropoff_lat, r.dropoff_lng,
                 r.pickup_address, r.dropoff_address, r.distance_km, r.fare_final,
-                r.expires_at, r.created_at, u.name AS passenger_name
+                r.expires_at, r.created_at, TIMESTAMPDIFF(SECOND, r.created_at, NOW()) AS age_s, u.name AS passenger_name
          FROM rides r JOIN users u ON u.id = r.passenger_id
          WHERE r.status='searching' AND r.passenger_id != ?
                AND (LOWER(r.vehicle_type) = LOWER(?) OR r.vehicle_type IS NULL)
@@ -2735,6 +2741,10 @@ case 'driver_get_nearby_requests': {
         }
         $r['distance_from_driver_km'] = $dist !== null ? round($dist, 2) : 0;
         $out[] = $r;
+    }
+    // Offer waves (lib/ride_offer.php): the nearest drivers see a new request first, the rest a few seconds later.
+    if ($me && $me['lat'] !== null && $me['lng'] !== null) {
+        $out = rides_offer_filter($pdo, $u['id'], $me['lat'], $me['lng'], $myVtype, $out);
     }
     // Nearest pickup first (the list used to be newest first, which put a far request above a close one).
     usort($out, function ($a, $b) {

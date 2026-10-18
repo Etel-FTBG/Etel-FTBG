@@ -103,6 +103,7 @@ jobs:
           python3 delivery/tests/ci/check_status_page.py
           python3 delivery/tests/ci/check_phase0_security.py
           python3 delivery/tests/ci/check_phase1_dispatch.py
+          python3 delivery/tests/ci/check_ride_offer.py
           python3 delivery/tests/ci/check_rider_vehicle_list.py
           python3 delivery/tests/ci/check_ride_address_fix.py
           python3 delivery/tests/ci/check_ride_i18n.py
