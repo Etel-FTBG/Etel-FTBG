@@ -1,4 +1,4 @@
-"""Guards the Phase 0 security fixes: Telegram linking needs a verified contact, updater needs an owner capability, Telebirr refuses an empty secret, Etel Pay tx_ref is claimed once, driver photos must be the driver's own uploads, push endpoints are allow-listed, high fares are flagged."""
+"""Guards the Phase 0 security fixes (part 2 at the end: street hail, cashout, demo accounts, login/OTP lockouts): Telegram linking needs a verified contact, updater needs an owner capability, Telebirr refuses an empty secret, Etel Pay tx_ref is claimed once, driver photos must be the driver's own uploads, push endpoints are allow-listed, high fares are flagged."""
 import re
 import sys
 
@@ -46,6 +46,38 @@ if 'function rides_flag_fare_review' not in fare or "'fare_review'" not in read(
     bad.append('high fares must be flagged and skipped by the auto-complete sweeper')
 if 'This trip has no fare yet' not in ride:
     bad.append('customer_confirm_arrival must refuse a zero fare')
+
+# ---- part 2 ----
+if "rate_limit_check($pdo, 'hail:'" not in ride:
+    bad.append('driver_hail_customer must be rate limited per driver')
+hail = ride.split("case 'driver_hail_customer'", 1)[1].split("case 'driver_start_ride'", 1)[0]
+if "SET status='cancelled'" in hail:
+    bad.append('driver_hail_customer must never cancel a ride the customer booked')
+if 'ride_street_hail' not in hail:
+    bad.append('driver_hail_customer must notify the customer')
+
+cash = ride.split("case 'driver_cashout'", 1)[1].split("case 'driver_topup_etel_money'", 1)[0]
+if "!empty($result['uncertain'])" not in cash or "status='unknown'" not in cash:
+    bad.append('driver_cashout must keep the amount reserved when the Etel Pay outcome is unknown')
+if "'uncertain' => true" not in bridge:
+    bad.append('etel_pay_partner_credit must flag an unknown outcome as uncertain')
+
+boot = read('api/boot.php')
+admin = read('api/controllers/AdminController.php')
+if 'demotest1234' in boot or 'demotest1234' in admin:
+    bad.append('the System Test demo accounts must not use a fixed, known password')
+if 'password_hash' not in read('api/migrations/085_lock_demo_accounts.sql'):
+    bad.append('migration 085 must lock the existing demo accounts')
+
+if 'function rate_limit_account_check' not in boot:
+    bad.append('boot.php needs the account-only rate limit')
+auth = read('api/controllers/AuthController.php')
+if 'No account found with that phone' in auth or "fail('Incorrect password'" in auth or 'No service giver account found' in auth:
+    bad.append('login must give the same answer for an unknown number and a wrong password')
+if auth.count('rate_limit_account_check') < 2:
+    bad.append('login and sg_login must use the account-only lockout')
+if "AND attempts < 5 ORDER BY id DESC LIMIT 1" not in boot:
+    bad.append('reset_verify must spend an OTP guess atomically before comparing')
 
 if bad:
     print('check_phase0_security FAILED:\n  ' + '\n  '.join(bad))

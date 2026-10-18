@@ -1674,7 +1674,7 @@ case 'admin_run_system_test': {
         if ($row) { $custId = $row['id']; }
         else {
             $pdo->prepare("INSERT INTO users (name, phone, role, password_hash, created_at) VALUES ('Demo Customer (System Test)', '0900000001', 'customer', ?, NOW())")
-                ->execute(array(password_hash('demotest1234', PASSWORD_DEFAULT)));
+                ->execute(array(password_hash(bin2hex(random_bytes(16)), PASSWORD_DEFAULT)));
             $custId = $pdo->lastInsertId();
         }
         $s->execute(array('0900000002'));
@@ -1682,14 +1682,14 @@ case 'admin_run_system_test': {
         if ($row) { $drvId = $row['id']; }
         else {
             $pdo->prepare("INSERT INTO users (name, phone, role, password_hash, created_at) VALUES ('Demo Driver (System Test)', '0900000002', 'driver', ?, NOW())")
-                ->execute(array(password_hash('demotest1234', PASSWORD_DEFAULT)));
+                ->execute(array(password_hash(bin2hex(random_bytes(16)), PASSWORD_DEFAULT)));
             $drvId = $pdo->lastInsertId();
         }
         $pdo->prepare("INSERT INTO ride_drivers (user_id, online, vehicle_type, vehicle_plate, vehicle_make, vehicle_color, last_seen)
                        VALUES (?, 1, 'bajaj', 'DEMO-001', 'Demo Bajaj', 'Gold', NOW())
                        ON DUPLICATE KEY UPDATE online=1, last_seen=NOW()")
             ->execute(array($drvId));
-        $pass('Demo accounts ready', "Customer #$custId · Driver #$drvId (phone 0900000001 / 0900000002, password: demotest1234)");
+        $pass('Demo accounts ready', "Customer #$custId · Driver #$drvId (phone 0900000001 / 0900000002, sign-in disabled)");
     } catch (Exception $e) {
         $fail_step('Demo accounts ready', $e->getMessage());
         ok(array('steps' => $steps, 'passed' => false));
