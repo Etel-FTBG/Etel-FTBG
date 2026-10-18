@@ -515,24 +515,34 @@ function rides_complete_and_pay($pdo, $rideId, $driverId, $fare, $paymentMethod,
         $claim->execute(array($fare, $paymentMethod, $rideId));
     }
     if ($claim->rowCount() < 1) return false;
+    require_once __DIR__ . '/ride_promo.php';
+    $promoDiscount = rides_promo_settle($pdo, $rideId); // 0 when the ride had no promo; records the use once
     if ($driverId) {
         rides_add_missing_cols($pdo, 'ride_drivers', array(
             'commission_owed'    => "commission_owed DECIMAL(12,2) DEFAULT 0",
             'cash_fares_total'   => "cash_fares_total DECIMAL(12,2) DEFAULT 0",
             'etel_money_balance' => "etel_money_balance DECIMAL(12,2) DEFAULT 0"
         ));
+        /* PROMO: $fare is what the rider paid. A promo discount is funded by Etel (lib/ride_promo.php), so the
+           commission is still 5% of the FULL fare and, for a cash trip, the discount is credited to the driver's
+           Etel money balance (the rider handed over less cash). A platform-collected trip earns the full fare. */
+        $grossFare = $fare + $promoDiscount;
         $commissionRate = 0.05; // ETEL platform commission - activated 2026-08-18
-        $commissionAmt = round($fare * $commissionRate, 2);
+        $commissionAmt = round($grossFare * $commissionRate, 2);
         $pdo->prepare("UPDATE ride_drivers SET etel_money_balance=etel_money_balance-? WHERE user_id=?")
             ->execute(array($commissionAmt, $driverId));
         // 'chapa' counts as platform-collected ONLY with a verified tx ref
         // (chapa_settle passes one); a bare client-supplied 'chapa' stays cash-like.
         if ($paymentMethod === 'wallet' || ($paymentMethod === 'chapa' && $walletTxRef)) {
             $pdo->prepare("UPDATE ride_drivers SET total_earnings=total_earnings+?, total_rides=total_rides+1 WHERE user_id=?")
-                ->execute(array($fare, $driverId));
+                ->execute(array($grossFare, $driverId));
         } else {
             $pdo->prepare("UPDATE ride_drivers SET cash_fares_total=cash_fares_total+?, commission_owed=commission_owed+?, total_rides=total_rides+1 WHERE user_id=?")
                 ->execute(array($fare, $commissionAmt, $driverId));
+            if ($promoDiscount > 0) {
+                $pdo->prepare("UPDATE ride_drivers SET etel_money_balance=etel_money_balance+? WHERE user_id=?")
+                    ->execute(array($promoDiscount, $driverId));
+            }
         }
     }
     return true;

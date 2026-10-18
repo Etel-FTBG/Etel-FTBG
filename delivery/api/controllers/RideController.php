@@ -214,6 +214,7 @@ function rides_etelid_lookup($identifier) {
 require_once __DIR__ . '/../lib/ride_fare.php';
 require_once __DIR__ . '/../lib/ride_sweeper.php';
 require_once __DIR__ . '/../lib/ride_offer.php';
+require_once __DIR__ . '/../lib/ride_promo.php';
 
 /* True only if $url points at a file THIS user uploaded through upload.php for
    the given type: upload.php names files "<prefix><userId>_<time>_<hex>.<ext>"
@@ -513,6 +514,156 @@ case 'ride_get_vehicle_types': {
 // the one source of truth for both the live estimate shown here and
 // the actual bill at the end of the ride, so they can never drift
 // apart the way two separate hardcoded formulas eventually would.
+/* ---------------------------------------------------------------------------------------------------------------
+   RIDE PROMO CODES (lib/ride_promo.php). Anyone signed in can propose a code; it works only after an admin approves it.
+   --------------------------------------------------------------------------------------------------------------- */
+case 'ride_promo_check': {
+    // POST: code, fare (the fare shown on the Book screen, used only for the preview) -> what the code would take off
+    rate_limit_check($pdo, 'ride_promo:' . intval($u['id']), 20, 600, 600);
+    $r = rides_promo_check($pdo, isset($body['code']) ? $body['code'] : '', $u['id'], isset($body['fare']) ? floatval($body['fare']) : 0);
+    if (!$r['ok']) { rate_limit_fail($pdo, 'ride_promo:' . intval($u['id'])); fail($r['error'], 422); }
+    ok(array('code' => $r['promo']['code'], 'discount' => $r['discount'], 'type' => $r['promo']['discount_type'],
+             'value' => floatval($r['promo']['value']), 'description' => $r['promo']['description'],
+             'min_fare' => floatval($r['promo']['min_fare'])));
+    break;
+}
+
+case 'ride_promo_propose': {
+    // POST: code, discount_type (percent|fixed), value, max_discount?, min_fare?, expires_at?, max_uses?, per_rider_limit?, description?
+    rides_promo_ensure($pdo);
+    $code = rides_promo_normalize(isset($body['code']) ? $body['code'] : '');
+    if (strlen($code) < 3 || strlen($code) > 20) fail('Code must be 3-20 letters or numbers', 400);
+    $type = isset($body['discount_type']) ? $body['discount_type'] : 'percent';
+    if (!in_array($type, array('percent', 'fixed'), true)) fail('Discount must be a percent or a fixed amount', 400);
+    $value = isset($body['value']) ? floatval($body['value']) : 0;
+    if ($type === 'percent' && ($value < 1 || $value > 50)) fail('A proposed percent must be between 1 and 50', 400);
+    if ($type === 'fixed' && ($value < 1 || $value > 300)) fail('A proposed amount must be between ETB 1 and ETB 300', 400);
+    $max = (isset($body['max_discount']) && $body['max_discount'] !== '') ? floatval($body['max_discount']) : null;
+    if ($max !== null && ($max < 1 || $max > 300)) fail('Largest discount must be between ETB 1 and ETB 300', 400);
+    $minFare = (isset($body['min_fare']) && $body['min_fare'] !== '') ? floatval($body['min_fare']) : 0;
+    if ($minFare < 0 || $minFare > 2000) fail('Minimum fare must be between 0 and 2000', 400);
+    $exp = (isset($body['expires_at']) && $body['expires_at'] !== '') ? trim($body['expires_at']) : null;
+    if ($exp !== null) { $ts = strtotime($exp); if ($ts === false || $ts < time()) fail('Expiry date must be in the future', 400); $exp = date('Y-m-d H:i:s', $ts); }
+    $maxUses = (isset($body['max_uses']) && $body['max_uses'] !== '') ? intval($body['max_uses']) : 50;
+    if ($maxUses < 1 || $maxUses > 1000) fail('Number of uses must be between 1 and 1000', 400);
+    $perRider = (isset($body['per_rider_limit']) && $body['per_rider_limit'] !== '') ? intval($body['per_rider_limit']) : 1;
+    if ($perRider < 1 || $perRider > 5) fail('Uses per rider must be between 1 and 5', 400);
+    $desc = isset($body['description']) ? mb_substr(trim($body['description']), 0, 255) : null;
+    $pend = $pdo->prepare("SELECT COUNT(*) FROM ride_promo_codes WHERE created_by=? AND status='pending'");
+    $pend->execute(array($u['id']));
+    if (intval($pend->fetchColumn()) >= 5) fail('You already have 5 codes waiting for approval. Wait for a decision first.', 429);
+    try {
+        $pdo->prepare("INSERT INTO ride_promo_codes (code, description, discount_type, value, max_discount, min_fare, expires_at, max_uses, per_rider_limit, status, created_by, created_by_role)
+                       VALUES (?,?,?,?,?,?,?,?,?, 'pending', ?, ?)")
+            ->execute(array($code, $desc, $type, $value, $max, $minFare, $exp, $maxUses, $perRider, $u['id'], $u['role']));
+    } catch (PDOException $e) {
+        if ($e->getCode() === '23000') fail('That code already exists - pick another', 409);
+        fail_ex($e, 'Could not save the promo code', 500);
+    }
+    ok(array('id' => intval($pdo->lastInsertId()), 'code' => $code, 'status' => 'pending',
+             'message' => 'Sent for approval. It works once an admin approves it.'));
+    break;
+}
+
+case 'ride_promo_mine': {
+    rides_promo_ensure($pdo);
+    $q = $pdo->prepare("SELECT id, code, description, discount_type, value, max_discount, min_fare, expires_at, max_uses, used_count, per_rider_limit, status, review_note, created_at
+                        FROM ride_promo_codes WHERE created_by=? ORDER BY id DESC LIMIT 50");
+    $q->execute(array($u['id']));
+    ok(array('promos' => $q->fetchAll(PDO::FETCH_ASSOC)));
+    break;
+}
+
+case 'admin_ride_promo_list': {
+    if ($u['role'] !== 'admin' || !user_has_capability($pdo, $u, 'rides.view')) fail('Admin only', 403);
+    rides_promo_ensure($pdo);
+    $st = isset($body['status']) ? $body['status'] : (isset($_GET['status']) ? $_GET['status'] : '');
+    $where = in_array($st, array('pending', 'approved', 'rejected', 'disabled'), true) ? "WHERE p.status = " . $pdo->quote($st) : '';
+    $rows = $pdo->query("SELECT p.*, u.name AS creator_name, u.phone AS creator_phone,
+                                COALESCE((SELECT SUM(r.discount) FROM ride_promo_redemptions r WHERE r.promo_id=p.id),0) AS total_discount
+                         FROM ride_promo_codes p LEFT JOIN users u ON u.id = p.created_by
+                         $where ORDER BY FIELD(p.status,'pending','approved','disabled','rejected'), p.id DESC LIMIT 300")->fetchAll(PDO::FETCH_ASSOC);
+    $pendingCount = intval($pdo->query("SELECT COUNT(*) FROM ride_promo_codes WHERE status='pending'")->fetchColumn());
+    ok(array('promos' => $rows, 'pending_count' => $pendingCount));
+    break;
+}
+
+case 'admin_ride_promo_review': {
+    // POST: id, decision (approve|reject|disable|enable), note?, and on approve optional adjustments:
+    //       value, max_discount, min_fare, expires_at, max_uses, per_rider_limit
+    if ($u['role'] !== 'admin' || !user_has_capability($pdo, $u, 'rides.manage')) fail('Admin only', 403);
+    rides_promo_ensure($pdo);
+    $id = isset($body['id']) ? intval($body['id']) : 0;
+    $decision = isset($body['decision']) ? $body['decision'] : '';
+    $note = isset($body['note']) ? mb_substr(trim($body['note']), 0, 255) : null;
+    if ($id <= 0 || !in_array($decision, array('approve', 'reject', 'disable', 'enable'), true)) fail('id and a decision (approve, reject, disable, enable) are required', 400);
+    $q = $pdo->prepare("SELECT * FROM ride_promo_codes WHERE id=?");
+    $q->execute(array($id));
+    $p = $q->fetch(PDO::FETCH_ASSOC);
+    if (!$p) fail('Promo code not found', 404);
+    if ($decision === 'approve' && $p['status'] !== 'pending') fail('Only a code waiting for approval can be approved', 409);
+    if ($decision === 'reject' && $p['status'] !== 'pending') fail('Only a code waiting for approval can be rejected', 409);
+    if ($decision === 'disable' && $p['status'] !== 'approved') fail('Only an approved code can be disabled', 409);
+    if ($decision === 'enable' && $p['status'] !== 'disabled') fail('Only a disabled code can be enabled', 409);
+    $newStatus = array('approve' => 'approved', 'reject' => 'rejected', 'disable' => 'disabled', 'enable' => 'approved');
+    $set = "status=?, reviewed_by=?, reviewed_at=NOW(), review_note=?";
+    $args = array($newStatus[$decision], $u['id'], $note);
+    if ($decision === 'approve') {
+        // the admin may tighten or correct the proposal when approving
+        if (isset($body['value']) && $body['value'] !== '') {
+            $v = floatval($body['value']);
+            if ($v <= 0 || ($p['discount_type'] === 'percent' && $v > 80)) fail('Percent must be between 1 and 80', 400);
+            $set .= ", value=?"; $args[] = $v;
+        }
+        if (isset($body['max_discount'])) { $set .= ", max_discount=?"; $args[] = ($body['max_discount'] === '' ? null : max(0, floatval($body['max_discount']))); }
+        if (isset($body['min_fare']) && $body['min_fare'] !== '') { $set .= ", min_fare=?"; $args[] = max(0, floatval($body['min_fare'])); }
+        if (isset($body['max_uses']) && $body['max_uses'] !== '') { $set .= ", max_uses=?"; $args[] = max(1, intval($body['max_uses'])); }
+        if (isset($body['per_rider_limit']) && $body['per_rider_limit'] !== '') { $set .= ", per_rider_limit=?"; $args[] = max(1, intval($body['per_rider_limit'])); }
+        if (isset($body['expires_at'])) {
+            $e = trim($body['expires_at']);
+            if ($e === '') { $set .= ", expires_at=?"; $args[] = null; }
+            else { $ts = strtotime($e); if ($ts === false) fail('Invalid expiry date', 400); $set .= ", expires_at=?"; $args[] = date('Y-m-d H:i:s', $ts); }
+        }
+    }
+    $args[] = $id;
+    $pdo->prepare("UPDATE ride_promo_codes SET $set WHERE id=?")->execute($args);
+    ok(array('id' => $id, 'status' => $newStatus[$decision]));
+    break;
+}
+
+case 'admin_ride_promo_save': {
+    // POST: code, discount_type, value, max_discount?, min_fare?, starts_at?, expires_at?, max_uses?, per_rider_limit?, description?  -> approved at once
+    if ($u['role'] !== 'admin' || !user_has_capability($pdo, $u, 'rides.manage')) fail('Admin only', 403);
+    rides_promo_ensure($pdo);
+    $code = rides_promo_normalize(isset($body['code']) ? $body['code'] : '');
+    if (strlen($code) < 3 || strlen($code) > 40) fail('Code must be 3-40 letters or numbers', 400);
+    $type = isset($body['discount_type']) ? $body['discount_type'] : 'percent';
+    if (!in_array($type, array('percent', 'fixed'), true)) fail('Discount must be a percent or a fixed amount', 400);
+    $value = isset($body['value']) ? floatval($body['value']) : 0;
+    if ($type === 'percent' && ($value < 1 || $value > 80)) fail('Percent must be between 1 and 80', 400);
+    if ($type === 'fixed' && $value < 1) fail('Amount must be at least ETB 1', 400);
+    $nn = function ($k) use ($body) { return (isset($body[$k]) && $body[$k] !== '' && $body[$k] !== null) ? $body[$k] : null; };
+    $max = $nn('max_discount') !== null ? max(0, floatval($body['max_discount'])) : null;
+    $minFare = $nn('min_fare') !== null ? max(0, floatval($body['min_fare'])) : 0;
+    $starts = $nn('starts_at'); $exp = $nn('expires_at');
+    foreach (array($starts, $exp) as $dt) { if ($dt !== null && strtotime($dt) === false) fail('Invalid date', 400); }
+    if ($starts !== null) $starts = date('Y-m-d H:i:s', strtotime($starts));
+    if ($exp !== null) $exp = date('Y-m-d H:i:s', strtotime($exp));
+    $maxUses = $nn('max_uses') !== null ? max(1, intval($body['max_uses'])) : null;
+    $perRider = max(1, intval($nn('per_rider_limit') !== null ? $body['per_rider_limit'] : 1));
+    $desc = isset($body['description']) ? mb_substr(trim($body['description']), 0, 255) : null;
+    try {
+        $pdo->prepare("INSERT INTO ride_promo_codes (code, description, discount_type, value, max_discount, min_fare, starts_at, expires_at, max_uses, per_rider_limit, status, created_by, created_by_role, reviewed_by, reviewed_at)
+                       VALUES (?,?,?,?,?,?,?,?,?,?, 'approved', ?, 'admin', ?, NOW())")
+            ->execute(array($code, $desc, $type, $value, $max, $minFare, $starts, $exp, $maxUses, $perRider, $u['id'], $u['id']));
+    } catch (PDOException $e) {
+        if ($e->getCode() === '23000') fail('That code already exists', 409);
+        fail_ex($e, 'Could not save the promo code', 500);
+    }
+    ok(array('id' => intval($pdo->lastInsertId()), 'code' => $code, 'status' => 'approved'));
+    break;
+}
+
 case 'ride_estimate_fare': {
     $km = isset($body['distance_km']) ? floatval($body['distance_km'])
         : (isset($_GET['distance_km']) ? floatval($_GET['distance_km']) : 0);
@@ -763,6 +914,16 @@ case 'book_ride': {
     $fare = ($lockedFare !== null) ? $lockedFare : $fareResult['fare'];
     $fare_surge = $fareResult['surge'] ? 1 : 0;
 
+    /* PROMO CODE (lib/ride_promo.php): checked now so the rider hears about a bad code before booking; the real
+       discount is worked out on the final fare when the trip ends. */
+    $promoRow = null;
+    $promoIn = isset($body['promo_code']) ? rides_promo_normalize($body['promo_code']) : '';
+    if ($promoIn !== '') {
+        $pc = rides_promo_check($pdo, $promoIn, $u['id'], $fare);
+        if (!$pc['ok']) { $pdo->prepare('SELECT RELEASE_LOCK(?)')->execute(array($bookLockKey)); fail($pc['error'], 422); }
+        $promoRow = $pc['promo'];
+    }
+
     /* TEMP DIAGNOSTIC v2 (remove once confirmed): full picture in one
        line - was a token sent at all, did it validate, what route_km
        arrived, what distance actually got used, and the final fare. */
@@ -837,6 +998,12 @@ case 'book_ride': {
         $cols .= ', ' . implode(', ', $extraCols);
         $ph   .= str_repeat(', ?', count($extraCols));
         $vals  = array_merge($vals, $extraVals);
+    }
+    if ($promoRow) {
+        $cols .= ', promo_id, promo_code';
+        $ph   .= ', ?, ?';
+        $vals[] = intval($promoRow['id']);
+        $vals[] = $promoRow['code'];
     }
     $pdo->prepare("INSERT INTO rides ($cols) VALUES ($ph)")->execute($vals);
     $new_ride_id = intval($pdo->lastInsertId());
@@ -1139,6 +1306,7 @@ case 'cancel_ride': {
                 ->execute(array($km, $fare, $breakdownJson, $id));
         }
         rides_flag_fare_review($pdo, $id, $u['id'], $fare, $km);
+        $fare = rides_promo_apply_to_arrived($pdo, $id);
         ok(array('cancelled' => true, 'ended_early' => true, 'fare_final' => $fare,
                  'message' => 'Trip ended early - billed for the ' . $km . ' km actually travelled (ETB ' . round($fare, 2) . '), not the full planned distance.'));
         break;
@@ -3976,6 +4144,7 @@ case 'driver_arrived': {
             ->execute(array($km, $fare, $breakdownJson, $rid));
     }
     rides_flag_fare_review($pdo, $rid, $u['id'], $fare, $km);
+    $fare = rides_promo_apply_to_arrived($pdo, $rid);
     ok(array_merge(array('arrived' => true, 'distance_km' => $km, 'fare' => $fare,
              'surge' => (bool)($finalSurge !== null ? $finalSurge : !empty($r['surge_applied'])),
              'wait_minutes' => round($waitMinutes, 2), 'wait_etb' => $waitEtb,
@@ -4099,6 +4268,7 @@ case 'driver_complete_ride': {
             ->execute(array($km, $fare, $breakdownJson2, $rid));
     }
     rides_flag_fare_review($pdo, $rid, $u['id'], $fare, $km);
+    $fare = rides_promo_apply_to_arrived($pdo, $rid);
     ok(array('arrived' => true, 'distance_km' => $km, 'fare' => $fare,
              'surge' => (bool)($finalSurge2 !== null ? $finalSurge2 : !empty($r['surge_applied'])),
              'message' => 'Waiting for customer confirmation'));
