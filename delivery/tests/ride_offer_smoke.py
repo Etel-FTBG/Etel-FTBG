@@ -90,6 +90,20 @@ if not rid:
     sys.exit(1)
 
 
+# The API keeps its database session in the server's own time zone, this script's connection does not. Read the
+# zone off the ride itself so "n seconds old" means the same thing to both.
+ok_q, out, _ = etel_test_db.query_text("SELECT ROUND(TIMESTAMPDIFF(SECOND, UTC_TIMESTAMP(), created_at)/900)*900 FROM rides WHERE id=%d" % rid)
+try:
+    off = int(float(out.strip().splitlines()[-1]))
+except Exception:
+    off = 0
+TZ = "%s%02d:%02d" % ("-" if off < 0 else "+", abs(off) // 3600, (abs(off) % 3600) // 60)
+
+
+def set_age(seconds):
+    etel_test_db.run_sql("SET time_zone='%s'; UPDATE rides SET created_at=DATE_SUB(NOW(), INTERVAL %d SECOND) WHERE id=%d" % (TZ, seconds, rid))
+
+
 def sees(tok):
     st, res = call("driver_get_nearby_requests", {}, tok)
     return rid in [int(r["id"]) for r in (res.get("data") or {}).get("requests", [])]
@@ -99,19 +113,25 @@ now = [sees(t) for t, _ in drivers]
 check("wave 1: the nearest three see the new request", now[:3] == [True, True, True], now)
 check("the fourth and fifth do not see it yet", now[3:] == [False, False], now)
 
-etel_test_db.run_sql("UPDATE rides SET created_at=DATE_SUB(NOW(), INTERVAL 25 SECOND) WHERE id=%d" % rid)
+set_age(25)
 later = [sees(t) for t, _ in drivers]
 check("wave 2: after 25 s all five see it", later == [True] * 5, later)
 
+# the passenger's status poll sends the wider wake-up push once, and remembers it did
+call("ride_status", {"id": rid}, cust_tok)
+call("ride_status", {"id": rid}, cust_tok)
+ok_q, out, _ = etel_test_db.query_text("SELECT COUNT(*) FROM ride_offer_log WHERE ride_id=%d" % rid)
+check("the wider push is claimed once for the ride", ok_q and out.strip().splitlines()[-1] == "1", out)
+
 # a driver who declines is not counted, so the next one moves up
-etel_test_db.run_sql("UPDATE rides SET created_at=NOW() WHERE id=%d" % rid)
+set_age(0)
 call("driver_decline_ride", {"request_id": rid}, drivers[0][0])
 now = [sees(t) for t, _ in drivers]
 check("after the nearest declines the fourth driver is in wave 1", now[0] is False and now[3] is True and now[4] is False, now)
 
 # waves off: everyone at once
 etel_test_db.run_sql("UPDATE pricing_rules SET rule_value=0 WHERE rule_key='ride_offer_wave_secs'")
-etel_test_db.run_sql("UPDATE rides SET created_at=NOW() WHERE id=%d" % rid)
+set_age(0)
 off = [sees(t) for t, _ in drivers]
 check("with waves off every driver (who has not declined) sees it", off[1:] == [True] * 4, off)
 
