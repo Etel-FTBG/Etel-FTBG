@@ -2418,6 +2418,31 @@ case 'admin_system_health': {
     break;
 }
 
+case 'admin_client_errors': {
+    // The browser errors the rider and driver apps reported (api/client-error.php), newest first. Read-only.
+    if ($u['role'] !== 'admin' || !user_has_capability($pdo, $u, 'rides.view')) fail('Admin only', 403);
+    $days = isset($body['days']) ? max(1, min(30, intval($body['days']))) : 7;
+    try {
+        $q = $pdo->prepare("SELECT id, app, kind, page, message, source, line_no, rid, ua, user_id, hits, first_seen, last_seen
+                            FROM client_errors WHERE last_seen >= DATE_SUB(NOW(), INTERVAL ? DAY) ORDER BY last_seen DESC LIMIT 100");
+        $q->execute(array($days));
+        $rows = $q->fetchAll(PDO::FETCH_ASSOC);
+    } catch (Exception $e) { $rows = array(); }   // table not created yet: nothing has been reported
+    ok(array('errors' => $rows, 'days' => $days));
+    break;
+}
+
+case 'admin_client_errors_clear': {
+    // POST: id? (one error) or nothing (all of them). Needs rides.manage.
+    if ($u['role'] !== 'admin' || !user_has_capability($pdo, $u, 'rides.manage')) fail('Admin only', 403);
+    try {
+        if (!empty($body['id'])) $pdo->prepare("DELETE FROM client_errors WHERE id=?")->execute(array(substr(preg_replace('/[^a-f0-9]/', '', (string)$body['id']), 0, 32)));
+        else $pdo->exec("DELETE FROM client_errors");
+    } catch (Exception $e) { /* nothing to clear */ }
+    ok(array('cleared' => true));
+    break;
+}
+
 case 'ride_pin_get': {
     /* The rider's own trip PIN (only while a driver has accepted and not yet started). */
     require_once __DIR__ . '/../lib/ride_pin.php';
