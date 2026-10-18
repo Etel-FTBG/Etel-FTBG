@@ -60,8 +60,8 @@ if not ok:
 
 print("ride vehicle types: rates, ETA, admin-added type")
 tail = SUFFIX[-6:]
-drv_tok, drv_id = register("+251981%s" % tail, "courier", "VT Driver")
-cust_tok, _ = register("+251982%s" % tail, "customer", "VT Cust")
+drv_tok, drv_id = register("+251976%s" % tail, "courier", "VT Driver")
+cust_tok, _ = register("+251975%s" % tail, "customer", "VT Cust")
 if not (drv_tok and cust_tok):
     check("test users registered", False)
     sys.exit(1)
