@@ -1916,6 +1916,7 @@ case 'admin_backup_download': {
     $bk = etel_backup_latest();
     if (!$bk) fail('No backup found yet', 404);
     error_log('[ETEL][backup] admin ' . intval($u['id']) . ' downloaded ' . $bk['name']);
+    etel_health_heartbeat($pdo, 'backup_download', 'admin #' . intval($u['id']) . ' ' . $bk['name']);   // the health card reminds owners to keep fetching copies
     if (!etel_backup_send($bk)) fail('The backup file does not match its checksum - do not use it. Run a new backup.', 500);
     break;
 }

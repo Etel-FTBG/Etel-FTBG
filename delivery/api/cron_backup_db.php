@@ -188,7 +188,21 @@ try {
             @unlink($dir . '/' . preg_replace('/\.sql\.gz$/', '.json', $old['file']));
             $pruned++;
         }
-        bk_reply(array('success' => true, 'file' => basename($path), 'bytes' => $manifest['bytes'], 'tables' => count($tables),
+        // Optional automatic copy to an S3-compatible bucket (lib/backup_offsite.php). Never stops the backup itself.
+        $offsite = array('off', 'not set up');
+        try {
+            require_once __DIR__ . '/lib/backup_offsite.php';
+            $offsite = etel_backup_push_offsite(array(
+                'endpoint' => bk_env('BACKUP_S3_ENDPOINT'), 'region' => bk_env('BACKUP_S3_REGION'), 'bucket' => bk_env('BACKUP_S3_BUCKET'),
+                'key' => bk_env('BACKUP_S3_KEY'), 'secret' => bk_env('BACKUP_S3_SECRET'), 'prefix' => bk_env('BACKUP_S3_PREFIX'),
+                'passphrase' => bk_env('BACKUP_ENC_PASSPHRASE')), $path);
+            if ($offsite[0] !== 'off') {
+                if (!defined('APP_VER')) define('APP_VER', 'cron-backup');
+                require_once __DIR__ . '/lib/system_health.php';
+                etel_health_heartbeat($pdo, 'backup_offsite', $offsite[0] . ': ' . $offsite[1]);
+            }
+        } catch (Exception $e) { $offsite = array('failed', 'unexpected error'); error_log('[ETEL][backup] off-site copy: ' . $e->getMessage()); }
+        bk_reply(array('success' => true, 'offsite' => $offsite[0] . ': ' . $offsite[1], 'file' => basename($path), 'bytes' => $manifest['bytes'], 'tables' => count($tables),
             'rows' => $total, 'kept' => min($keep, count($all)), 'pruned' => $pruned, 'folder_in_web_tree' => $inWeb,
             'warning' => $inWeb ? 'Backups are inside the web folder (blocked by .htaccess). Set BACKUP_DIR to a folder outside public_html.' : null));
     }
