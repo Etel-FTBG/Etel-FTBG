@@ -54,10 +54,10 @@ def main():
         print("  SKIP no seeded demo admin")
         return 0
     n = int(SUFFIX) % 1000000
-    phone = "+251915%06d" % n
+    phone = "+251981%06d" % n
     name = "Cust Smoke %s" % SUFFIX
     cust, cid = register(phone, "customer", name)
-    other, _ = register("+251916%06d" % n, "courier", "Cour Smoke %s" % SUFFIX)
+    other, _ = register("+251982%06d" % n, "courier", "Cour Smoke %s" % SUFFIX)
     check("a customer was created", bool(cust) and bool(cid))
 
     print("1. Who may open it")
