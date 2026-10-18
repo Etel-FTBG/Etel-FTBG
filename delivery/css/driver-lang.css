@@ -1,0 +1,5 @@
+/* ETEL Driver - language switch button in the top bar and Amharic text rendering (see js/driver-i18n.js). */
+.drv-topbar .drv-lang-btn{position:static;margin-left:auto;width:auto;min-width:38px;height:38px;padding:0 10px;flex:none;box-shadow:none;font-family:"Noto Sans Ethiopic",Outfit,sans-serif;font-size:12px;font-weight:800;letter-spacing:0}
+.drv-topbar .drv-lang-btn + .theme-toggle-btn{margin-left:8px}
+html[lang="am"] body,html[lang="am"] button,html[lang="am"] input,html[lang="am"] textarea{font-family:"Noto Sans Ethiopic","Abyssinica SIL",Nyala,"Outfit",sans-serif}
+html[lang="am"] *{font-style:normal!important}
