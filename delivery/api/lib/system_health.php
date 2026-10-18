@@ -113,6 +113,30 @@ function etel_health_backup() {
     return etel_health_item('Backups', 'ok', $txt);
 }
 
+/* Is there a copy of the backups somewhere other than this server? Either the automatic off-site push worked
+   recently, or an owner downloaded the newest backup in the last 7 days. */
+function etel_health_backup_copy($pdo) {
+    $row = function ($name) use ($pdo) {
+        try {
+            $s = $pdo->prepare("SELECT TIMESTAMPDIFF(MINUTE, last_run, NOW()) AS mins, detail FROM etel_heartbeat WHERE name=?");
+            $s->execute(array($name));
+            return $s->fetch();
+        } catch (Exception $e) { return false; }
+    };
+    $off = $row('backup_offsite'); $dl = $row('backup_download');
+    if ($off && strpos((string) $off['detail'], 'ok') === 0 && intval($off['mins']) <= 2160) {
+        return etel_health_item('Backup copy elsewhere', 'ok', 'Sent off the server ' . etel_health_ago($off['mins']) . '.');
+    }
+    $why = ($off && strpos((string) $off['detail'], 'failed') === 0) ? ' The automatic off-site copy is failing (' . substr($off['detail'], 8) . ').' : '';
+    if ($dl && intval($dl['mins']) <= 10080) {
+        return etel_health_item('Backup copy elsewhere', 'ok', 'A copy was downloaded ' . etel_health_ago($dl['mins']) . '.' . $why);
+    }
+    if ($dl) {
+        return etel_health_item('Backup copy elsewhere', 'warn', 'No one has downloaded a backup for ' . floor(intval($dl['mins']) / 1440) . ' days. Download one and keep it off the server.' . $why);
+    }
+    return etel_health_item('Backup copy elsewhere', 'warn', 'The backups only exist on this server. Download a copy with the button above and keep it somewhere else, or set up the automatic off-site copy.' . $why);
+}
+
 /* $adminId: the signed-in admin (for the 2FA nudge), or 0. */
 function etel_system_health($pdo, $adminId = 0) {
     $checks = array();
@@ -236,6 +260,7 @@ function etel_system_health($pdo, $adminId = 0) {
     $bk = etel_health_backup();
     if (etel_backup_latest()) $bk['download'] = true; // the admin card shows a Download button
     $checks[] = $bk;
+    $checks[] = etel_health_backup_copy($pdo);
 
     // Disk
     if (function_exists('disk_free_space')) {
