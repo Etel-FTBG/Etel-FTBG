@@ -1,0 +1,21 @@
+/* ETEL Ride - rich gold for the search boxes, vehicle names and prices.
+   Loaded last, so it wins over ride-step2.css and ride-light.css without touching them.
+   Dark theme: bright gold. Light theme: deep gold, so it stays readable on white (>= 5:1). */
+:root{--gold-text:#F7D05C;--gold-text-hi:#FFE08A;--gold-ph:rgba(247,208,92,.5)}
+html[data-etel-theme="light"]{--gold-text:#7E5900;--gold-text-hi:#6A4A00;--gold-ph:rgba(126,89,0,.5)}
+
+html body.dark-page .loc-row input.loc-input:not([type=radio]):not([type=checkbox]):not([type=range]),
+html[data-etel-theme="light"] body.dark-page .loc-row input.loc-input:not([type=radio]):not([type=checkbox]):not([type=range]){
+  color:var(--gold-text)!important;-webkit-text-fill-color:var(--gold-text)!important;font-weight:700;letter-spacing:.1px;caret-color:var(--gold-text)}
+html body.dark-page .loc-row input.loc-input::placeholder{color:var(--gold-ph)!important;-webkit-text-fill-color:var(--gold-ph)!important;font-weight:500}
+
+html #view-book[data-step="2"] .vtype-chip .vt-name,
+html[data-etel-theme="light"] #view-book[data-step="2"] .vtype-chip .vt-name,
+html[data-etel-theme="light"] #view-book[data-step="2"] .vtype-chip.active .vt-name{color:var(--gold-text)!important;font-weight:800;text-shadow:0 0 12px rgba(247,208,92,.18)}
+html #view-book[data-step="2"] .vtype-chip .vt-price,
+html[data-etel-theme="light"] #view-book[data-step="2"] .vtype-chip .vt-price,
+html[data-etel-theme="light"] #view-book[data-step="2"] .vtype-chip.active .vt-price{color:var(--gold-text)!important;font-weight:900;letter-spacing:.3px}
+html[data-etel-theme="light"] #view-book[data-step="2"] .vtype-chip .vt-name,
+html[data-etel-theme="light"] #view-book[data-step="2"] .vtype-chip .vt-price{text-shadow:none}
+/* offline vehicles stay clearly gold, just a little softer, and still not tappable */
+html #view-book[data-step="2"] .vtype-chip.vtype-chip-disabled{opacity:.82!important}
