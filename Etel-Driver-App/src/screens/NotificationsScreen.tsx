@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, ActivityIndicator } from 'react-native';
+import { View, StyleSheet, ScrollView, Pressable, ActivityIndicator } from 'react-native';
+import { Text } from '../i18n';
 import { colors, typography } from '../theme/colors';
 import { getAnnouncements, markAnnouncementRead, Announcement } from '../api/extras';
 

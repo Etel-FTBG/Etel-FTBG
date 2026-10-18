@@ -8,6 +8,7 @@ import { JetBrainsMono_700Bold, JetBrainsMono_500Medium } from '@expo-google-fon
 import { CormorantGaramond_600SemiBold } from '@expo-google-fonts/cormorant-garamond';
 import { AuthProvider, useAuth } from './src/context/AuthContext';
 import { NightModeProvider } from './src/context/NightModeContext';
+import { LanguageProvider } from './src/i18n';
 import LoginScreen from './src/screens/LoginScreen';
 import BottomTabs from './src/navigation/BottomTabs';
 import ActiveRideScreen from './src/screens/ActiveRideScreen';
@@ -76,6 +77,7 @@ export default function App() {
   }
 
   return (
+    <LanguageProvider>
     <ErrorBoundary>
       <AuthProvider>
         <NightModeProvider>
@@ -86,5 +88,6 @@ export default function App() {
         </NightModeProvider>
       </AuthProvider>
     </ErrorBoundary>
+    </LanguageProvider>
   );
 }
