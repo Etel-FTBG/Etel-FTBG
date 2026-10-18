@@ -2706,6 +2706,11 @@ case 'driver_get_nearby_requests': {
         $r['distance_from_driver_km'] = $dist !== null ? round($dist, 2) : 0;
         $out[] = $r;
     }
+    // Nearest pickup first (the list used to be newest first, which put a far request above a close one).
+    usort($out, function ($a, $b) {
+        if ($a['distance_from_driver_km'] == $b['distance_from_driver_km']) return intval($b['id']) - intval($a['id']);
+        return ($a['distance_from_driver_km'] < $b['distance_from_driver_km']) ? -1 : 1;
+    });
     ok(array('requests' => $out));
     break;
 }
@@ -3581,6 +3586,23 @@ case 'admin_reject_vehicle_change': {
             array('action' => 'vehicle_change_rejected'));
     }
     ok(array('rejected' => true));
+    break;
+}
+
+case 'driver_decline_ride': {
+    /* The driver tapped Decline on a request card. Until now that only hid the card on
+       their own phone, so the same request came back on the next refresh and kept ringing.
+       Recording it in ride_driver_exclusions (the table the reassign path already uses)
+       makes every list and push for this driver skip that ride from now on, while other
+       drivers still see it. Only a ride that is still searching is recorded. */
+    rides_require_onboarded($pdo, $u['id']);
+    $rid = isset($body['request_id']) ? intval($body['request_id']) : 0;
+    if (!$rid) fail('request_id required');
+    rides_ensure_exclusions_table($pdo);
+    $pdo->prepare("INSERT IGNORE INTO ride_driver_exclusions (ride_id, driver_id)
+                   SELECT id, ? FROM rides WHERE id=? AND status='searching' AND passenger_id != ?")
+        ->execute(array($u['id'], $rid, $u['id']));
+    ok(array('declined' => true));
     break;
 }
 
