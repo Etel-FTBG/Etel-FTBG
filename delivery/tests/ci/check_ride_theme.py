@@ -72,6 +72,13 @@ for fg, bg, need in (('text', 'sheet', 7), ('dim', 'sheet', 4.5), ('dim', 'bg', 
 if 'body.dark-page input:not([type=radio])' not in css or 'pac-container' not in css:
     bad.append('ride-light.css must outrank the dark body.dark-page input rules and restyle .pac-container')
 
+g = open(root + '/css/ride-gold.css', encoding='utf-8').read()
+for sel in ('.loc-input', '.vt-name', '.vt-price'):
+    if sel not in g:
+        bad.append('ride-gold.css must style ' + sel)
+if 'ride-gold.css' not in read('ride/index.html'):
+    bad.append('ride/index.html must link ride-gold.css')
+
 if bad:
     print('check_ride_theme FAILED:\n  ' + '\n  '.join(bad))
     sys.exit(1)
