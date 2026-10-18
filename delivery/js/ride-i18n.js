@@ -169,7 +169,32 @@
         "Make a code for riders": "ለተሳፋሪዎች ኮድ ይፍጠሩ",
         "Could not send the code. Try again.": "ኮዱን መላክ አልተቻለም። እንደገና ይሞክሩ።",
         "Code must be 3-20 letters or numbers": "ኮዱ ከ3-20 ፊደላት ወይም ቁጥሮች መሆን አለበት",
-        "That code already exists - pick another": "ይህ ኮድ አስቀድሞ አለ - ሌላ ይምረጡ"
+        "That code already exists - pick another": "ይህ ኮድ አስቀድሞ አለ - ሌላ ይምረጡ",
+        "Tip your driver": "ሾፌርዎን ይሸልሙ",
+        "For your last trip": "ለመጨረሻው ጉዞዎ",
+        "Tip after a completed trip.": "ጉዞ ከተጠናቀቀ በኋላ ይሸልሙ።",
+        "Could not load": "መጫን አልተቻለም",
+        "Could not load. Try again.": "መጫን አልተቻለም። እንደገና ይሞክሩ።",
+        "Or another amount (ETB)": "ወይም ሌላ መጠን (ብር)",
+        "1. Send it to one of these accounts": "1. ከእነዚህ አካውንቶች ወደ አንዱ ይላኩ",
+        "2. Transfer reference": "2. የዝውውር ማጣቀሻ ቁጥር",
+        "Copied": "ተቀድቷል",
+        "Send tip": "ሽልማት ላክ",
+        "Your driver gets all of it, after Etel confirms your transfer.": "ሾፌርዎ ሙሉውን ያገኛል፣ ኢቴል ዝውውርዎን ካረጋገጠ በኋላ።",
+        "Etel has not set up a bank account for tips yet.": "ኢቴል ለሽልማት የባንክ አካውንት እስካሁን አላዘጋጀም።",
+        "Choose an amount of at least ETB 5": "ቢያንስ 5 ብር ይምረጡ",
+        "Enter the transfer reference from your bank": "ከባንክዎ የዝውውር ማጣቀሻ ቁጥር ያስገቡ",
+        "Could not send the tip": "ሽልማቱን መላክ አልተቻለም",
+        "Could not send the tip. Try again.": "ሽልማቱን መላክ አልተቻለም። እንደገና ይሞክሩ።",
+        "Thank you! The tip reaches your driver once Etel confirms the transfer.": "እናመሰግናለን! ኢቴል ዝውውሩን ካረጋገጠ በኋላ ሽልማቱ ሾፌርዎ ጋር ይደርሳል።",
+        "Waiting for Etel to confirm your transfer": "ኢቴል ዝውውርዎን እስኪያረጋግጥ በመጠበቅ ላይ",
+        "Sent to your driver. Thank you!": "ለሾፌርዎ ተልኳል። እናመሰግናለን!",
+        "Etel could not find the transfer": "ኢቴል ዝውውሩን ማግኘት አልቻለም",
+        "No completed trip to tip for yet.": "ለመሸለም የተጠናቀቀ ጉዞ እስካሁን የለም።",
+        "You can tip once the trip is completed": "ጉዞው ከተጠናቀቀ በኋላ መሸለም ይችላሉ",
+        "It is too late to tip for this trip": "ለዚህ ጉዞ ለመሸለም ጊዜው አልፏል",
+        "You already left a tip for this trip": "ለዚህ ጉዞ ቀድሞ ሽልማት ትተዋል",
+        "That transfer reference was already used for another tip": "ይህ የዝውውር ማጣቀሻ ቁጥር ለሌላ ሽልማት ቀድሞ ጥቅም ላይ ውሏል"
     };
     var AM_ATTR = {
         'Pickup — or tap the map': 'መነሻ — ወይም ካርታውን ይንኩ', 'Where to?': 'ወዴት?', 'Use my current location': 'አሁን ያለሁበትን ተጠቀም',
@@ -195,7 +220,10 @@
         "Emergency SOS": "የአደጋ ጊዜ SOS",
         "Promo code": "የማስተዋወቂያ ኮድ",
         "Remove": "አስወግድ",
-        "Close": "ዝጋ"
+        "Close": "ዝጋ",
+        "Tip your driver": "ሾፌርዎን ይሸልሙ",
+        "Tip amount": "የሽልማት መጠን",
+        "From your bank message": "ከባንክዎ መልእክት"
     };
     var RULES = [   // [pattern, replacement] for text with numbers in it
         [/^about ETB (\d+) off$/, 'ወደ ETB $1 ቅናሽ'],

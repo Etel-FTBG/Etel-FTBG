@@ -56,3 +56,24 @@ html[data-etel-theme="light"] .rp-dlg .rp-st-rejected{color:#B3261E}
 html[data-etel-theme="light"] .rp-dlg .rp-lbl{color:#5C5546!important}
 html[data-etel-theme="light"] .rp-dlg .rp-seg button{background:#FAF7F0!important;border-color:rgba(110,84,20,.35)!important;color:#1C1A15!important}
 html[data-etel-theme="light"] .rp-dlg .rp-seg button.on{background:#FFF1C2!important;border-color:#B88A10!important;color:#6B4D00!important}
+
+/* tip your driver (js/ride-tip.js): the button on the rating screen and the tip dialog (shares .rp-dlg / .rp-card) */
+.tp-open{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:50px;margin-top:10px;border-radius:14px;border:1px solid rgba(229,199,107,.55)!important;background:rgba(229,199,107,.1)!important;color:var(--gold-text,#F7D05C)!important;font-weight:800;font-size:15px;font-family:inherit;cursor:pointer}
+html[data-etel-theme="light"] .tp-open{background:#FFF6D8!important;border-color:rgba(126,89,0,.5)!important;color:#7E5900!important}
+.rp-dlg .tp-chips{display:flex;gap:8px;flex-wrap:wrap;margin:4px 0 10px}
+.rp-dlg .tp-chip{flex:1 1 70px;min-height:44px;padding:6px 8px;border-radius:12px;border:1px solid rgba(229,199,107,.4)!important;background:rgba(255,255,255,.05)!important;color:#EDEDF5!important;font-weight:700;font-size:14px;font-family:inherit;cursor:pointer}
+.rp-dlg .tp-chip.on{background:rgba(229,199,107,.2)!important;border-color:#E5C76B!important;color:#F3D87E!important}
+.rp-dlg .tp-lbl{display:block;margin:12px 0 4px;font-size:12px;color:#B4B4C8!important}
+.rp-dlg .tp-input{display:block;width:100%;box-sizing:border-box;min-height:44px;margin-top:4px;padding:8px 10px;border-radius:12px;border:1px solid rgba(229,199,107,.4)!important;background:rgba(255,255,255,.06)!important;color:#EDEDF5!important;-webkit-text-fill-color:#EDEDF5!important;font-weight:600;font-size:15px;font-family:inherit}
+.rp-dlg .tp-acc{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;margin:6px 0;border-radius:12px;border:1px solid rgba(229,199,107,.3);background:rgba(255,255,255,.04)}
+.rp-dlg .tp-num{margin-top:2px;font-family:monospace;font-size:15px;letter-spacing:.04em;color:#F3D87E;word-break:break-all}
+.rp-dlg .tp-copy{min-height:40px;padding:0 14px;border-radius:10px;border:1px solid rgba(229,199,107,.5)!important;background:transparent!important;color:#F3D87E!important;font-weight:800;font-size:13px;font-family:inherit;cursor:pointer}
+html[data-etel-theme="light"] .rp-dlg .tp-chip{background:#FAF7F0!important;border-color:rgba(110,84,20,.35)!important;color:#1C1A15!important}
+html[data-etel-theme="light"] .rp-dlg .tp-chip.on{background:#FFF1C2!important;border-color:#B88A10!important;color:#6B4D00!important}
+html[data-etel-theme="light"] .rp-dlg .tp-lbl{color:#5C5546!important}
+html[data-etel-theme="light"] .rp-dlg .tp-input{background:#FAF7F0!important;border-color:rgba(110,84,20,.35)!important;color:#1C1A15!important;-webkit-text-fill-color:#1C1A15!important}
+html[data-etel-theme="light"] .rp-dlg .tp-acc{border-color:rgba(110,84,20,.25);background:#FAF7F0}
+html[data-etel-theme="light"] .rp-dlg .tp-num{color:#7E5900}
+html[data-etel-theme="light"] .rp-dlg .tp-copy{border-color:rgba(126,89,0,.5)!important;color:#7E5900!important}
+.rp-dlg .tp-who{margin:0 0 4px;font-size:17px;font-weight:800;color:#F3D87E}
+html[data-etel-theme="light"] .rp-dlg .tp-who{color:#7E5900}
