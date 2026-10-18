@@ -67,6 +67,10 @@
         'Settings & Privacy': 'ቅንብርና ግላዊነት', 'Notifications and password': 'ማሳወቂያዎችና የይለፍ ቃል',
         'Balance and payments': 'ቀሪ ሂሳብና ክፍያዎች', 'Become a Driver': 'ሾፌር ይሁኑ', 'Earn with ETEL Ride': 'በኢቴል ራይድ ገቢ ያግኙ',
         'Logout': 'ውጣ', 'Label': 'መለያ', 'Address': 'አድራሻ', 'Subject': 'ርዕስ', 'Message': 'መልዕክት',
+        'Set your trip': 'ጉዞዎን ያዘጋጁ', "Tap the map or type where you are and where you're going. No GPS? Use the Quick zones.": 'ያሉበትንና የሚሄዱበትን ቦታ ካርታው ላይ ይንኩ ወይም ይጻፉ። ጂፒኤስ የለም? ፈጣን ቦታዎችን ይጠቀሙ።',
+        'See the price first': 'መጀመሪያ ዋጋውን ይመልከቱ', 'Pick Bajaj, Moto or Car and see the fare for your trip before you book. Pay cash, wallet or Chapa.': 'ባጃጅ፣ ሞተር ወይም መኪና ይምረጡና ከመያዝዎ በፊት የጉዞዎን ዋጋ ይመልከቱ። በጥሬ ገንዘብ፣ በዋሌት ወይም በቻፓ ይክፈሉ።',
+        'Ride safely': 'በሰላም ይጓዙ', "Check the driver's name and plate, share your trip, and use SOS any time.": 'የሾፌሩን ስምና ታርጋ ያረጋግጡ፣ ጉዞዎን ያጋሩ፣ እንዲሁም በማንኛውም ጊዜ SOS ይጠቀሙ።',
+        'Next': 'ቀጣይ', 'Get started': 'ጀምር',
         'Add Address': 'አድራሻ ጨምር', 'Contact Support': 'ድጋፍን ያግኙ', 'Send to Support': 'ወደ ድጋፍ ላክ'
     };
     var AM_ATTR = {
