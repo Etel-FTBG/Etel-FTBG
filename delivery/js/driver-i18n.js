@@ -78,6 +78,13 @@
         'Tips from riders': 'ከተሳፋሪዎች የተገኘ ሽልማት', 'Tips received': 'የተቀበሉት ሽልማት', 'No tips yet.': 'እስካሁን ሽልማት የለም።',
         "Each tip is added to your cash-out balance in full, with no commission, once Etel confirms the rider's transfer.": 'እያንዳንዱ ሽልማት ኢቴል የተሳፋሪውን ዝውውር ካረጋገጠ በኋላ ያለ ኮሚሽን ሙሉ በሙሉ ወደ ገንዘብ ማውጫ ቀሪ ሂሳብዎ ይጨመራል።',
         'Promo discounts are paid by Etel: when a rider uses a promo code, the discount is added to your ኢE Money balance.': 'የማስተዋወቂያ ቅናሽ የሚከፍለው ኢቴል ነው፦ ተሳፋሪ የማስተዋወቂያ ኮድ ሲጠቀም ቅናሹ ወደ ኢE ገንዘብ ቀሪ ሂሳብዎ ይጨመራል።',
+        'Weekly statement': 'ሳምንታዊ መግለጫ', 'You keep this week': 'በዚህ ሳምንት የሚቀርልዎት', 'Trips': 'ጉዞዎች', 'Online hours': 'የመስመር ላይ ሰዓት',
+        'Paid by riders': 'ተሳፋሪዎች የከፈሉት', 'Promo paid by Etel': 'ኢቴል የከፈለው ቅናሽ', 'Etel commission (5%)': 'የኢቴል ኮሚሽን (5%)',
+        'Kept from trips': 'ከጉዞዎች የቀረልዎት', 'Collected in cash': 'በጥሬ ገንዘብ የተሰበሰበ', 'Collected by Etel': 'በኢቴል የተሰበሰበ',
+        'Trips this week': 'የዚህ ሳምንት ጉዞዎች', 'No trips this week.': 'በዚህ ሳምንት ጉዞ የለም።', 'Share statement': 'መግለጫውን አጋራ',
+        'Rider paid': 'ተሳፋሪው የከፈለው', 'You keep': 'የሚቀርልዎት', 'Etel collected this fare for you.': 'ይህን ክፍያ ኢቴል ሰብስቦልዎታል።',
+        'You collected this fare in cash.': 'ይህን ክፍያ በጥሬ ገንዘብ ሰብስበዋል።',
+        'Etel takes 5% of each fare, including the part a promo code paid. Tips are yours in full.': 'ኢቴል ከእያንዳንዱ ክፍያ 5% ይወስዳል፣ በማስተዋወቂያ ኮድ የተከፈለውንም ጨምሮ። ሽልማት ሙሉ በሙሉ የእርስዎ ነው።',
     };
     var ATTRS = {
         'Requests': 'ጥያቄዎች', 'Earnings': 'ገቢ', 'Chats': 'መልዕክቶች', 'Profile': 'መገለጫ', 'Exit': 'ውጣ', 'Go offline': 'ከመስመር ውጣ',

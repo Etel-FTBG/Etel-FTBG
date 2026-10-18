@@ -43,6 +43,7 @@ run python3 tests/ride_wallet_soon_smoke.py
 run python3 tests/ride_promo_smoke.py
 run python3 tests/ride_tip_smoke.py
 run python3 tests/ride_sse_once_smoke.py
+run python3 tests/ride_statement_smoke.py
 run python3 tests/week1_hardening_smoke.py
 run python3 tests/stale_assignment_smoke.py
 run python3 tests/courier_earnings_smoke.py
