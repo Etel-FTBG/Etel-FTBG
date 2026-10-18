@@ -69,6 +69,9 @@ try {
     cs_reply(array('success' => false, 'message' => 'Server unavailable'), 503);
 }
 
+require_once __DIR__ . '/lib/cron_lock.php';
+if (!etel_cron_lock($pdo, 'ride_monitor')) cs_reply(array('success' => true, 'skipped' => 'the previous run of this job is still going'));
+
 // schema_helpers.php and push.php refuse to load (blank 403) unless APP_VER is already
 // defined, the same guard every controller satisfies - so define it BEFORE any require.
 if (!defined('APP_VER')) { define('APP_VER', 'cron-ride-monitor'); }
