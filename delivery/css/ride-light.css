@@ -1,0 +1,214 @@
+/* ETEL Ride - light theme. Active only when <html data-etel-theme="light"> (js/ride-theme.js). Loaded last.
+   Warm paper background, white cards, ink text; the gold brand colour is kept, darkened where it is used for
+   text so it stays readable in sunlight (AA contrast on white). Dark theme is untouched. */
+html[data-etel-theme="light"]{
+  color-scheme:light;
+  --bg:#F6F3EC;--sheet:#FFFFFF;--sheet2:#FAF7F0;--line:rgba(110,84,20,.18);
+  --gold:#B88A10;--gold-lt:#80600A;--gold-br:#F3D87E;--teal:#12797A;--blue:#1F6FD1;
+  --text:#1C1A15;--dim:#5C5546;--green:#17784A;--red:#C62828;
+  --r-gold:#B88A10;--r-gold2:#80600A;--r-gold3:#F3D87E;
+  --r-bg:#F6F3EC;--r-panel:#FFFFFF;--r-panel2:#FAF7F0;--r-line:rgba(110,84,20,.2);
+  --r-text:#1C1A15;--r-muted:#5C5546;--r-green:#17784A;--r-red:#C62828;
+  --r-shadow:0 14px 40px rgba(60,45,10,.14);
+}
+html[data-etel-theme="light"],html[data-etel-theme="light"] body,html[data-etel-theme="light"] body.dark-page{
+  background:#F6F3EC!important;color:var(--text)!important}
+
+/* map veil + header */
+html[data-etel-theme="light"] #ride-map{background:#E9E4D8;filter:none}
+html[data-etel-theme="light"] #ride-map::after{background:linear-gradient(180deg,rgba(246,243,236,.55),transparent 22%,transparent 70%,rgba(246,243,236,.5))}
+html[data-etel-theme="light"] .ride-header{
+  background:linear-gradient(180deg,rgba(255,255,255,.97),rgba(255,255,255,.9))!important;
+  border-bottom:1px solid rgba(110,84,20,.2)!important;box-shadow:0 6px 22px rgba(60,45,10,.1)!important}
+html[data-etel-theme="light"] .ride-logo-box{border-color:rgba(184,138,16,.55)!important;box-shadow:0 6px 18px rgba(60,45,10,.18)!important;background:#14151C}
+html[data-etel-theme="light"] .ride-header-title{color:#80600A!important}
+html[data-etel-theme="light"] .ride-header-sub{color:#80600A!important}
+html[data-etel-theme="light"] .ride-header-user button{background:rgba(110,84,20,.08)!important;border-color:rgba(110,84,20,.28)!important;color:#3A3426!important}
+html[data-etel-theme="light"] .ride-header-user a button{background:rgba(184,138,16,.12)!important;border-color:rgba(184,138,16,.45)!important;color:#80600A!important}
+html[data-etel-theme="light"] #ride-map-expand-btn{background:rgba(255,255,255,.95)!important;color:#80600A!important;border-color:rgba(184,138,16,.5)!important;box-shadow:0 4px 14px rgba(60,45,10,.18)!important}
+
+/* sheet + tabs */
+html[data-etel-theme="light"] .ride-sheet{
+  background:linear-gradient(180deg,#FFFFFF,#FBF9F4)!important;border-top:1px solid rgba(110,84,20,.24)!important;
+  box-shadow:0 -14px 40px rgba(60,45,10,.16)!important}
+html[data-etel-theme="light"] .ride-sheet::before{background:rgba(60,45,10,.22)}
+html[data-etel-theme="light"] .sheet-toggle-btn{color:#5C5546}
+html[data-etel-theme="light"] .ride-tabs{background:#FFFFFF!important;border-top:1px solid rgba(110,84,20,.18)!important}
+html[data-etel-theme="light"] .ride-tab{color:#5C5546!important}
+html[data-etel-theme="light"] .ride-tab.active{color:#80600A!important;box-shadow:inset 0 2px 0 #B88A10!important}
+html[data-etel-theme="light"] .arriving-header,html[data-etel-theme="light"] .sheet-title{color:var(--text)!important}
+html[data-etel-theme="light"] .arriving-sub{color:var(--dim)!important}
+
+/* cards, inputs */
+html[data-etel-theme="light"] .loc-card,html[data-etel-theme="light"] .fare-card,html[data-etel-theme="light"] .pay-row,
+html[data-etel-theme="light"] .driver-card,html[data-etel-theme="light"] .info-rows,html[data-etel-theme="light"] .mp-section,
+html[data-etel-theme="light"] .mp-stat,html[data-etel-theme="light"] .reason-chip,html[data-etel-theme="light"] #book-route-summary{
+  background:#FFFFFF!important;border:1px solid rgba(110,84,20,.18)!important;box-shadow:0 4px 16px rgba(60,45,10,.07)!important;color:var(--text)!important}
+html[data-etel-theme="light"] .loc-row:first-child{border-color:rgba(110,84,20,.18)!important}
+html[data-etel-theme="light"] .loc-line{background:rgba(110,84,20,.3)}
+html[data-etel-theme="light"] .loc-input,html[data-etel-theme="light"] input,html[data-etel-theme="light"] textarea,html[data-etel-theme="light"] select{
+  color:var(--text)!important;background:transparent}
+html[data-etel-theme="light"] input[style*="background"],html[data-etel-theme="light"] #bykm-input{background:#FAF7F0!important;border-color:rgba(110,84,20,.28)!important;color:var(--text)!important}
+html[data-etel-theme="light"] input::placeholder,html[data-etel-theme="light"] textarea::placeholder{color:#8A8372!important}
+html[data-etel-theme="light"] .loc-icon.pickup{background:rgba(184,138,16,.14);border-color:rgba(184,138,16,.4);color:#80600A}
+html[data-etel-theme="light"] .loc-icon.dropoff{background:rgba(31,111,209,.1);border-color:rgba(31,111,209,.35);color:#1F6FD1}
+html[data-etel-theme="light"] .zchip{background:#F4EFE3!important;border:1px solid rgba(110,84,20,.22)!important;color:var(--text)!important}
+html[data-etel-theme="light"] .zchip.active,html[data-etel-theme="light"] .zchip.on{background:linear-gradient(135deg,#F7E19A,#E3B93E)!important;color:#1C1405!important}
+html[data-etel-theme="light"] .fare-label,html[data-etel-theme="light"] .fare-dist,html[data-etel-theme="light"] .info-row-label{color:var(--dim)!important}
+html[data-etel-theme="light"] .info-row-val,html[data-etel-theme="light"] .driver-name{color:var(--text)!important}
+html[data-etel-theme="light"] .fare-amount{color:#80600A!important}
+html[data-etel-theme="light"] .fare-type-badge{background:rgba(184,138,16,.14)!important;color:#80600A!important;border-color:rgba(184,138,16,.4)!important}
+
+/* vehicle rows, payment */
+html[data-etel-theme="light"] .vtype-chip{background:#FFFFFF!important;border:1px solid rgba(110,84,20,.2)!important;box-shadow:0 3px 12px rgba(60,45,10,.06)!important}
+html[data-etel-theme="light"] .vtype-chip.active{background:linear-gradient(180deg,#FFF6D8,#FFFDF5)!important;border-color:#B88A10!important;box-shadow:0 6px 18px rgba(184,138,16,.22)!important}
+html[data-etel-theme="light"] .vtype-chip .vt-name{color:var(--text)!important}
+html[data-etel-theme="light"] .vtype-chip.active .vt-name{color:#4F3A04!important}
+html[data-etel-theme="light"] #view-book[data-step="2"] .vtype-chip .vt-icon{background:rgba(184,138,16,.1);border-color:rgba(184,138,16,.28);color:#80600A}
+html[data-etel-theme="light"] #view-book[data-step="2"] .vtype-chip.active .vt-icon{background:rgba(184,138,16,.2);border-color:rgba(184,138,16,.55)}
+html[data-etel-theme="light"] #view-book[data-step="2"] .vtype-chip .vt-price{color:var(--text)!important}
+html[data-etel-theme="light"] #view-book[data-step="2"] .vtype-chip.active .vt-price{color:#80600A!important}
+html[data-etel-theme="light"] .vt-tag-cheap{background:rgba(27,143,82,.12);color:#146B3E;border-color:rgba(27,143,82,.4)}
+html[data-etel-theme="light"] .vt-tag-fast{background:rgba(18,121,122,.12);color:#0E5F60;border-color:rgba(18,121,122,.4)}
+html[data-etel-theme="light"] .vt-unavailable-badge{color:#B3261E!important}
+html[data-etel-theme="light"] .pay-row{background:#F4EFE3!important}
+html[data-etel-theme="light"] .pay-opt{background:#FFFFFF!important;border:1px solid rgba(110,84,20,.2)!important}
+html[data-etel-theme="light"] .pay-opt .pol{color:var(--dim)!important}
+html[data-etel-theme="light"] .pay-opt.selected,html[data-etel-theme="light"] .pay-opt.active{background:#FFF6D8!important;border-color:#B88A10!important;box-shadow:0 0 0 1px #B88A10 inset!important}
+html[data-etel-theme="light"] .pay-opt.selected .pol,html[data-etel-theme="light"] .pay-opt.active .pol{color:#80600A!important}
+html[data-etel-theme="light"] .pay-opt .poi{color:var(--dim)}
+html[data-etel-theme="light"] .pay-opt.selected .poi,html[data-etel-theme="light"] .pay-opt.active .poi{color:#80600A}
+html[data-etel-theme="light"] #driver-map-filter-btn,html[data-etel-theme="light"] #etel-schedule-btn{background:rgba(184,138,16,.1)!important;border-color:rgba(184,138,16,.45)!important;color:#80600A!important}
+html[data-etel-theme="light"] .brs-change{background:rgba(184,138,16,.12);border-color:rgba(184,138,16,.45);color:#80600A}
+html[data-etel-theme="light"] .brs-text{color:var(--text)}
+
+/* quick-zones switch, vehicle subtitle, slide thumb */
+html[data-etel-theme="light"] .zp-toggle{background:#EAE3D2!important}
+html[data-etel-theme="light"] .zt-btn{color:#5C5546!important}
+html[data-etel-theme="light"] .zt-btn.active,html[data-etel-theme="light"] .zt-btn.on{color:#1C1405!important}
+html[data-etel-theme="light"] #view-book[data-step="2"] .vtype-chip .vt-eta{color:#5C5546!important}
+html[data-etel-theme="light"] .slide-book-thumb{color:#F3D87E!important}
+
+/* request button + other actions */
+html[data-etel-theme="light"] .slide-book-wrap,html[data-etel-theme="light"] #view-book[data-step="2"] .slide-book-wrap{background:linear-gradient(180deg,rgba(255,255,255,0),rgba(255,255,255,.97) 30%)}
+html[data-etel-theme="light"] .ride-book-btn{color:#1C1405!important}
+html[data-etel-theme="light"] .btn-outline{background:#FFFFFF!important;color:var(--text)!important;border-color:rgba(110,84,20,.3)!important}
+html[data-etel-theme="light"] .btn-danger{background:#FDECEA!important;color:#B3261E!important;border-color:rgba(198,40,40,.4)!important}
+html[data-etel-theme="light"] .action-bar-btn{background:#FFFFFF!important;border:1px solid rgba(110,84,20,.2)!important;color:var(--text)!important}
+html[data-etel-theme="light"] .action-bar-btn .ab-label{color:var(--text)!important}
+html[data-etel-theme="light"] .action-bar-btn .ab-icon{color:#80600A!important}
+html[data-etel-theme="light"] .action-bar-btn.call-btn-ab{background:#E7F5EC!important;border-color:rgba(23,120,74,.45)!important}
+html[data-etel-theme="light"] .action-bar-btn.call-btn-ab .ab-icon,html[data-etel-theme="light"] .action-bar-btn.call-btn-ab .ab-label{color:#17784A!important}
+html[data-etel-theme="light"] .searching-label{color:var(--dim)!important}
+html[data-etel-theme="light"] .star-btn{color:#C9C2AE!important}
+html[data-etel-theme="light"] .star-btn.active{color:#D49A00!important}
+
+/* modals + profile */
+html[data-etel-theme="light"] #driver-modal,html[data-etel-theme="light"] #my-profile-modal{background:#FFFFFF!important;color:var(--text)!important}
+
+/* profile and detail modals (their inline styles use white tints that disappear on light) */
+html[data-etel-theme="light"] #my-profile-modal-bg{background:rgba(40,30,10,.45)}
+html[data-etel-theme="light"] #my-profile-modal{border-top-color:rgba(184,138,16,.3)}
+html[data-etel-theme="light"] .mp-cover{background-image:linear-gradient(180deg,rgba(255,255,255,.12) 0%,#FFFFFF 92%),url('../img/hero/ride-home.jpg')!important}
+html[data-etel-theme="light"] .mp-row{border-bottom-color:rgba(110,84,20,.12)}
+html[data-etel-theme="light"] .mp-row-sub,html[data-etel-theme="light"] .mp-phone,html[data-etel-theme="light"] .mp-stat-lbl{color:var(--dim)!important}
+html[data-etel-theme="light"] .mp-row-label,html[data-etel-theme="light"] .mp-name{color:var(--text)!important}
+html[data-etel-theme="light"] .mp-row-icon{background:rgba(184,138,16,.1);border-color:rgba(184,138,16,.28)}
+html[data-etel-theme="light"] .mp-stat-val{color:#80600A!important}
+html[data-etel-theme="light"] .mp-badge{background:rgba(184,138,16,.12);border-color:rgba(184,138,16,.4);color:#80600A!important}
+html[data-etel-theme="light"] .mp-logout{background:#FDECEA;border-color:rgba(198,40,40,.4);color:#B3261E}
+html[data-etel-theme="light"] .mp-version{color:rgba(60,45,10,.5)}
+html[data-etel-theme="light"] .modal-rows{background:#FAF7F0;border-color:rgba(110,84,20,.18)}
+html[data-etel-theme="light"] .modal-row{border-bottom-color:rgba(110,84,20,.12)}
+html[data-etel-theme="light"] .modal-copy{background:rgba(184,138,16,.12);color:#80600A}
+html[data-etel-theme="light"] .reason-chip.selected{background:#FFF6D8!important;border-color:#B88A10!important;color:#80600A!important}
+
+/* the floating round buttons stay gold; make sure their icon contrast holds */
+html[data-etel-theme="light"] #etel-refresh-btn{box-shadow:0 6px 18px rgba(60,45,10,.28)}
+
+/* theme toggle button (header) */
+.ride-theme-btn{width:36px;height:36px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer;
+  background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.16);color:#E5C76B;padding:0}
+.ride-theme-btn:focus-visible{outline:2px solid var(--gold-lt,#E5C76B);outline-offset:2px}
+html[data-etel-theme="light"] .ride-theme-btn{background:rgba(110,84,20,.08);border-color:rgba(110,84,20,.28);color:#80600A}
+
+/* core.js adds its own round dark/light button (#dark-theme-toggle) to every page; on the rider page it changed
+   nothing visible. The header button above replaces it. */
+#dark-theme-toggle{display:none!important}
+
+/* Inline styles written by ride.js and the other rider scripts use dark-theme colours directly. These attribute rules
+   remap the common ones; the exact colour strings are the ones those scripts contain. */
+html[data-etel-theme="light"] [style*="color:#EDEDF5" i],
+html[data-etel-theme="light"] [style*="color:#F7F5EE" i],
+html[data-etel-theme="light"] [style*="color:#C4C6D0" i],
+html[data-etel-theme="light"] [style*="color:#F5E7B8" i],
+html[data-etel-theme="light"] [style*="color:#F7EFD9" i]{color:var(--text)!important}
+html[data-etel-theme="light"] [style*="color:#9A9AAE" i],
+html[data-etel-theme="light"] [style*="color:#B8B0A0" i],
+html[data-etel-theme="light"] [style*="color:#8A8AA8" i],
+html[data-etel-theme="light"] [style*="color:#6B6E82" i],
+html[data-etel-theme="light"] [style*="color:#4B4F5E" i],
+html[data-etel-theme="light"] [style*="color:#6F6850" i]{color:var(--dim)!important}
+html[data-etel-theme="light"] [style*="color:#E5C76B" i],
+html[data-etel-theme="light"] [style*="color:#F4D56A" i],
+html[data-etel-theme="light"] [style*="color:#E8C84A" i],
+html[data-etel-theme="light"] [style*="color:#D4AF37" i]{color:#80600A!important}
+html[data-etel-theme="light"] [style*="color:#FF8A80" i],
+html[data-etel-theme="light"] [style*="color:#FF9C98" i],
+html[data-etel-theme="light"] [style*="color:#e88" i],
+html[data-etel-theme="light"] [style*="color:#FF6B6B" i],
+html[data-etel-theme="light"] [style*="color:#E63946" i]{color:#B3261E!important}
+html[data-etel-theme="light"] [style*="color:#2ECC71" i]{color:#17784A!important}
+html[data-etel-theme="light"] [style*="color:#FFB74D" i]{color:#A85F00!important}
+html[data-etel-theme="light"] [style*="color:#60B4FF" i]{color:#1F6FD1!important}
+html[data-etel-theme="light"] [style*="background:rgba(255,255,255,.02)"],
+html[data-etel-theme="light"] [style*="background:rgba(255,255,255,.03)"],
+html[data-etel-theme="light"] [style*="background:rgba(255,255,255,.04)"],
+html[data-etel-theme="light"] [style*="background:rgba(255,255,255,.05)"],
+html[data-etel-theme="light"] [style*="background:rgba(255,255,255,.06)"],
+html[data-etel-theme="light"] [style*="background:rgba(255,255,255,.07)"],
+html[data-etel-theme="light"] [style*="background:rgba(255,255,255,.08)"]{background:rgba(60,45,10,.045)!important}
+html[data-etel-theme="light"] [style*="border:1px solid rgba(255,255,255"],
+html[data-etel-theme="light"] [style*="border-bottom:1px solid rgba(255,255,255"],
+html[data-etel-theme="light"] [style*="border-top:1px solid rgba(255,255,255"]{border-color:rgba(110,84,20,.18)!important}
+html[data-etel-theme="light"] [style*="background:#16121a" i],
+html[data-etel-theme="light"] [style*="background:#11131C" i],
+html[data-etel-theme="light"] [style*="background:#1b1c28" i],
+html[data-etel-theme="light"] [style*="background:#0B0C12" i],
+html[data-etel-theme="light"] [style*="background:rgba(5,5,10,.72)"]{background:#FFFFFF!important;color:var(--text)!important}
+html[data-etel-theme="light"] [style*="background:rgba(212,175,55,.08)"],
+html[data-etel-theme="light"] [style*="background:rgba(212,175,55,.1)"],
+html[data-etel-theme="light"] [style*="background:rgba(212,175,55,.12)"]{background:rgba(184,138,16,.12)!important}
+
+/* Same colours when a script set them through element.style (the browser then writes rgb(...) in the style attribute). */
+html[data-etel-theme="light"] [style*="color: rgb(237, 237, 245)"],
+html[data-etel-theme="light"] [style*="color: rgb(247, 245, 238)"],
+html[data-etel-theme="light"] [style*="color: rgb(196, 198, 208)"],
+html[data-etel-theme="light"] [style*="color: rgb(245, 231, 184)"],
+html[data-etel-theme="light"] [style*="color: rgb(247, 239, 217)"]{color:var(--text)!important}
+html[data-etel-theme="light"] [style*="color: rgb(154, 154, 174)"],
+html[data-etel-theme="light"] [style*="color: rgb(184, 176, 160)"],
+html[data-etel-theme="light"] [style*="color: rgb(138, 138, 168)"],
+html[data-etel-theme="light"] [style*="color: rgb(107, 110, 130)"],
+html[data-etel-theme="light"] [style*="color: rgb(75, 79, 94)"],
+html[data-etel-theme="light"] [style*="color: rgb(111, 104, 80)"]{color:var(--dim)!important}
+html[data-etel-theme="light"] [style*="color: rgb(229, 199, 107)"],
+html[data-etel-theme="light"] [style*="color: rgb(244, 213, 106)"],
+html[data-etel-theme="light"] [style*="color: rgb(232, 200, 74)"],
+html[data-etel-theme="light"] [style*="color: rgb(212, 175, 55)"]{color:#80600A!important}
+html[data-etel-theme="light"] [style*="color: rgb(255, 138, 128)"],
+html[data-etel-theme="light"] [style*="color: rgb(255, 156, 152)"],
+html[data-etel-theme="light"] [style*="color: rgb(238, 136, 136)"],
+html[data-etel-theme="light"] [style*="color: rgb(255, 107, 107)"],
+html[data-etel-theme="light"] [style*="color: rgb(230, 57, 70)"]{color:#B3261E!important}
+html[data-etel-theme="light"] [style*="background: rgba(255, 255, 255, 0.02)"],
+html[data-etel-theme="light"] [style*="background: rgba(255, 255, 255, 0.03)"],
+html[data-etel-theme="light"] [style*="background: rgba(255, 255, 255, 0.04)"],
+html[data-etel-theme="light"] [style*="background: rgba(255, 255, 255, 0.05)"],
+html[data-etel-theme="light"] [style*="background: rgba(255, 255, 255, 0.06)"],
+html[data-etel-theme="light"] [style*="background: rgba(255, 255, 255, 0.07)"],
+html[data-etel-theme="light"] [style*="background: rgba(255, 255, 255, 0.08)"]{background:rgba(60,45,10,.045)!important}
+html[data-etel-theme="light"] [style*="background: rgb(22, 18, 26)"],
+html[data-etel-theme="light"] [style*="background: rgb(17, 19, 28)"],
+html[data-etel-theme="light"] [style*="background: rgb(27, 28, 40)"],
+html[data-etel-theme="light"] [style*="background: rgb(11, 12, 18)"]{background:#FFFFFF!important;color:var(--text)!important}
