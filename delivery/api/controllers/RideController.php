@@ -217,6 +217,7 @@ require_once __DIR__ . '/../lib/ride_offer.php';
 require_once __DIR__ . '/../lib/ride_promo.php';
 require_once __DIR__ . '/../lib/ride_tip.php';
 require_once __DIR__ . '/../lib/ride_statement.php';
+require_once __DIR__ . '/../lib/ride_price_offer.php';
 
 /* True only if $url points at a file THIS user uploaded through upload.php for
    the given type: upload.php names files "<prefix><userId>_<time>_<hex>.<ext>"
@@ -570,6 +571,170 @@ case 'ride_tip_give': {
     }
     ok(array('id' => intval($pdo->lastInsertId()), 'status' => 'pending',
              'message' => 'Thank you! The tip reaches your driver once Etel confirms the transfer.'));
+    break;
+}
+
+/* ========== PRICE OFFER AND COUNTER-OFFERS (lib/ride_price_offer.php) ========== */
+
+case 'ride_offer_bounds': {
+    // POST: fare   What a rider may offer for a trip quoted at this fare (the Book screen asks before showing the offer box).
+    $fare = isset($body['fare']) ? floatval($body['fare']) : 0;
+    if ($fare <= 0) fail('fare is required', 400);
+    $b = rides_offer_bounds($pdo, $fare);
+    ok(array('enabled' => rides_offer_price_enabled($pdo), 'min' => $b['min'], 'max' => $b['max']));
+    break;
+}
+
+case 'driver_counter_offer': {
+    // POST: request_id, price   One counter per driver per ride, above the rider's offer and inside the allowed band.
+    rides_require_onboarded($pdo, $u['id']);
+    rate_limit_check($pdo, 'counter:' . $u['id'], 40, 300, 300);
+    rate_limit_fail($pdo, 'counter:' . $u['id']);
+    rides_offer_price_ensure($pdo);
+    $rid = isset($body['request_id']) ? intval($body['request_id']) : 0;
+    $price = isset($body['price']) ? round(floatval($body['price'])) : 0;
+    if ($rid <= 0 || $price <= 0) fail('request_id and price are required', 400);
+    if (rides_get_active_for_driver($pdo, $u['id'])) fail('Finish your current ride first', 409);
+    $q = $pdo->prepare("SELECT id, passenger_id, status, vehicle_type, rider_offer, fare_estimate, fare_final FROM rides WHERE id=? LIMIT 1");
+    $q->execute(array($rid));
+    $r = $q->fetch(PDO::FETCH_ASSOC);
+    if (!$r || $r['status'] !== 'searching') fail('Ride was already taken or cancelled', 409);
+    if (floatval($r['rider_offer']) <= 0) fail('This rider did not ask for price offers', 409);
+    if (intval($r['passenger_id']) === intval($u['id'])) fail('You cannot answer your own request', 400);
+    rides_ensure_exclusions_table($pdo);
+    $ex = $pdo->prepare("SELECT 1 FROM ride_driver_exclusions WHERE ride_id=? AND driver_id=? LIMIT 1");
+    $ex->execute(array($rid, $u['id']));
+    if ($ex->fetchColumn()) fail('Ride was already taken or cancelled', 409);
+    $me = rides_driver_profile($pdo, $u['id']);
+    $myV = (!empty($me['vehicle_type'])) ? $me['vehicle_type'] : 'bajaj';
+    if (!empty($r['vehicle_type']) && strtolower($r['vehicle_type']) !== strtolower($myV)) fail('This request is for another vehicle type', 409);
+    $bnd = rides_offer_bounds($pdo, floatval($r['fare_estimate']) > 0 ? $r['fare_estimate'] : $r['fare_final']);
+    if ($price <= floatval($r['rider_offer'])) fail('A counter-offer must be higher than the rider\'s offer. To take the rider\'s price, accept the ride.', 422);
+    if ($price > $bnd['max']) fail('The most you can ask for this trip is ETB ' . $bnd['max'], 422);
+    $mine = $pdo->prepare("SELECT status FROM ride_counter_offers WHERE ride_id=? AND driver_id=? LIMIT 1");
+    $mine->execute(array($rid, $u['id']));
+    $prev = $mine->fetchColumn();
+    if ($prev === 'declined') fail('The rider declined your offer for this trip', 409);
+    if ($prev === false) {
+        $cnt = $pdo->prepare("SELECT COUNT(*) FROM ride_counter_offers WHERE ride_id=? AND status='pending'");
+        $cnt->execute(array($rid));
+        if (intval($cnt->fetchColumn()) >= max(1, intval(rides_rule_value($pdo, 'ride_counter_max', 5)))) fail('This rider already has enough offers', 409);
+    }
+    $pdo->prepare("INSERT INTO ride_counter_offers (ride_id, driver_id, price, status, updated_at) VALUES (?,?,?,'pending',NOW())
+                   ON DUPLICATE KEY UPDATE price=VALUES(price), status='pending', updated_at=NOW()")->execute(array($rid, $u['id'], $price));
+    try {
+        etel_push_send($pdo, intval($r['passenger_id']), 'New price offer',
+            'A driver offers ETB ' . number_format($price, 0) . ' for your trip. Open the app to choose.',
+            array('action' => 'ride_counter', 'ride_id' => $rid, 'url' => '/delivery/ride/'));
+    } catch (Exception $e) { /* push is best effort */ }
+    ok(array('request_id' => $rid, 'price' => $price, 'status' => 'pending'));
+    break;
+}
+
+case 'ride_counter_list': {
+    // POST: ride_id   The rider's own searching trip: the offer, the allowed band and the drivers' counters.
+    rides_offer_price_ensure($pdo);
+    $rid = isset($body['ride_id']) ? intval($body['ride_id']) : 0;
+    $q = $pdo->prepare("SELECT id, status, rider_offer, fare_estimate, fare_final, pickup_lat, pickup_lng FROM rides WHERE id=? AND passenger_id=? LIMIT 1");
+    $q->execute(array($rid, $u['id']));
+    $r = $q->fetch(PDO::FETCH_ASSOC);
+    if (!$r) fail('Ride not found', 404);
+    $quote = floatval($r['fare_estimate']) > 0 ? $r['fare_estimate'] : $r['fare_final'];
+    $bnd = rides_offer_bounds($pdo, $quote);
+    $out = array();
+    if ($r['status'] === 'searching' && floatval($r['rider_offer']) > 0) {
+        $ttl = max(20, intval(rides_rule_value($pdo, 'ride_counter_ttl_secs', 90)));
+        $c = $pdo->prepare(
+            "SELECT c.id, c.price, TIMESTAMPDIFF(SECOND, c.updated_at, NOW()) AS age_s, u.name AS driver_name,
+                    rd.vehicle_type, rd.vehicle_make, rd.vehicle_color, rd.vehicle_plate, rd.selfie_url AS driver_photo, rd.lat, rd.lng,
+                    CASE WHEN rd.rating_count > 0 THEN ROUND(rd.rating_sum/rd.rating_count,1) ELSE 0 END AS driver_rating
+             FROM ride_counter_offers c
+             JOIN users u ON u.id = c.driver_id
+             LEFT JOIN ride_drivers rd ON rd.user_id = c.driver_id
+             WHERE c.ride_id=? AND c.status='pending' AND c.updated_at >= DATE_SUB(NOW(), INTERVAL ? SECOND)
+             ORDER BY c.price ASC, c.id ASC LIMIT 10");
+        $c->execute(array($rid, $ttl));
+        foreach ($c->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            $km = ($row['lat'] !== null && $row['lng'] !== null && $r['pickup_lat'] !== null)
+                ? round(rides_haversine_km(floatval($r['pickup_lat']), floatval($r['pickup_lng']), floatval($row['lat']), floatval($row['lng'])), 1) : null;
+            $out[] = array('id' => intval($row['id']), 'price' => floatval($row['price']), 'age_s' => intval($row['age_s']), 'ttl_s' => $ttl,
+                'driver_name' => $row['driver_name'], 'driver_rating' => floatval($row['driver_rating']), 'vehicle_type' => $row['vehicle_type'],
+                'vehicle' => trim($row['vehicle_make'] . ' ' . $row['vehicle_color']), 'plate' => $row['vehicle_plate'],
+                'driver_photo' => $row['driver_photo'], 'km_away' => $km);
+        }
+    }
+    ok(array('ride_id' => $rid, 'status' => $r['status'], 'rider_offer' => floatval($r['rider_offer']) > 0 ? floatval($r['rider_offer']) : null,
+             'min' => $bnd['min'], 'max' => $bnd['max'], 'counters' => $out));
+    break;
+}
+
+case 'ride_counter_accept': {
+    // POST: ride_id, counter_id   The rider picks a driver's price: the driver gets the trip and the price is fixed.
+    rides_offer_price_ensure($pdo);
+    $rid = isset($body['ride_id']) ? intval($body['ride_id']) : 0;
+    $cid = isset($body['counter_id']) ? intval($body['counter_id']) : 0;
+    $q = $pdo->prepare("SELECT c.id, c.driver_id, c.price, c.status, c.updated_at FROM ride_counter_offers c
+                        JOIN rides r ON r.id = c.ride_id WHERE c.id=? AND c.ride_id=? AND r.passenger_id=? LIMIT 1");
+    $q->execute(array($cid, $rid, $u['id']));
+    $c = $q->fetch(PDO::FETCH_ASSOC);
+    if (!$c) fail('Offer not found', 404);
+    if ($c['status'] !== 'pending') fail('That offer is no longer open', 409);
+    $ttl = max(20, intval(rides_rule_value($pdo, 'ride_counter_ttl_secs', 90)));
+    if (!$c['updated_at'] || strtotime($c['updated_at']) < time() - $ttl - 5) fail('That offer has expired', 409);
+    if (rides_get_active_for_driver($pdo, intval($c['driver_id']))) {
+        $pdo->prepare("UPDATE ride_counter_offers SET status='declined', updated_at=NOW() WHERE id=?")->execute(array($cid));
+        fail('That driver is no longer available. Choose another offer.', 409);
+    }
+    rides_ensure_exclusions_table($pdo);
+    $claim = $pdo->prepare(
+        "UPDATE rides SET driver_id=?, status='accepted', assigned_at=NOW(), agreed_fare=?, fare_final=?
+         WHERE id=? AND passenger_id=? AND status='searching'
+           AND NOT EXISTS (SELECT 1 FROM ride_driver_exclusions x WHERE x.ride_id = rides.id AND x.driver_id = ?)");
+    $claim->execute(array(intval($c['driver_id']), $c['price'], $c['price'], $rid, $u['id'], intval($c['driver_id'])));
+    if (!$claim->rowCount()) fail('This trip was already taken or cancelled', 409);
+    $pdo->prepare("UPDATE ride_counter_offers SET status = IF(id=?, 'accepted', 'declined'), updated_at=NOW() WHERE ride_id=? AND status='pending'")
+        ->execute(array($cid, $rid));
+    try {
+        etel_push_send($pdo, intval($c['driver_id']), 'Your price was accepted',
+            'The rider accepted ETB ' . number_format(floatval($c['price']), 0) . '. Head to the pickup.',
+            array('action' => 'ride_accepted', 'ride_id' => $rid, 'url' => '/delivery/driver/'));
+    } catch (Exception $e) { /* push is best effort */ }
+    ok(array('ride_id' => $rid, 'driver_id' => intval($c['driver_id']), 'agreed_fare' => floatval($c['price'])));
+    break;
+}
+
+case 'ride_counter_decline': {
+    // POST: ride_id, counter_id
+    rides_offer_price_ensure($pdo);
+    $rid = isset($body['ride_id']) ? intval($body['ride_id']) : 0;
+    $cid = isset($body['counter_id']) ? intval($body['counter_id']) : 0;
+    $d = $pdo->prepare("UPDATE ride_counter_offers c JOIN rides r ON r.id = c.ride_id SET c.status='declined', c.updated_at=NOW()
+                        WHERE c.id=? AND c.ride_id=? AND r.passenger_id=? AND c.status='pending'");
+    $d->execute(array($cid, $rid, $u['id']));
+    if (!$d->rowCount()) fail('Offer not found', 404);
+    ok(array('declined' => true));
+    break;
+}
+
+case 'ride_raise_offer': {
+    // POST: ride_id, offer   The rider raises their own offer while still searching (never lowers it).
+    rides_offer_price_ensure($pdo);
+    $rid = isset($body['ride_id']) ? intval($body['ride_id']) : 0;
+    $offer = isset($body['offer']) ? round(floatval($body['offer'])) : 0;
+    $q = $pdo->prepare("SELECT id, status, rider_offer, fare_estimate, fare_final FROM rides WHERE id=? AND passenger_id=? LIMIT 1");
+    $q->execute(array($rid, $u['id']));
+    $r = $q->fetch(PDO::FETCH_ASSOC);
+    if (!$r) fail('Ride not found', 404);
+    if ($r['status'] !== 'searching' || floatval($r['rider_offer']) <= 0) fail('You can only raise the offer while drivers are being found', 409);
+    $bnd = rides_offer_bounds($pdo, floatval($r['fare_estimate']) > 0 ? $r['fare_estimate'] : $r['fare_final']);
+    if ($offer <= floatval($r['rider_offer'])) fail('The new offer must be higher than your current offer', 422);
+    if ($offer > $bnd['max']) fail('The most you can offer for this trip is ETB ' . $bnd['max'], 422);
+    $up = $pdo->prepare("UPDATE rides SET rider_offer=?, fare_final=? WHERE id=? AND passenger_id=? AND status='searching'");
+    $up->execute(array($offer, $offer, $rid, $u['id']));
+    if (!$up->rowCount()) fail('You can only raise the offer while drivers are being found', 409);
+    // a counter at or below the new offer is moot: the driver can simply accept the ride at the new price
+    $pdo->prepare("UPDATE ride_counter_offers SET status='expired', updated_at=NOW() WHERE ride_id=? AND status='pending' AND price <= ?")->execute(array($rid, $offer));
+    ok(array('ride_id' => $rid, 'rider_offer' => $offer));
     break;
 }
 
@@ -1057,6 +1222,19 @@ case 'book_ride': {
         $promoRow = $pc['promo'];
     }
 
+    /* PRICE OFFER (lib/ride_price_offer.php): the rider may name their own price for a trip with a destination. It must
+       sit inside the allowed band around the quote; drivers then accept it or counter it. */
+    $offerIn = (isset($body['offer_fare']) && $body['offer_fare'] !== '') ? round(floatval($body['offer_fare'])) : 0;
+    if ($offerIn > 0) {
+        if (!rides_offer_price_enabled($pdo)) { $pdo->prepare('SELECT RELEASE_LOCK(?)')->execute(array($bookLockKey)); fail('Price offers are not available right now', 422); }
+        $bnd = rides_offer_bounds($pdo, $fare);
+        if ($offerIn < $bnd['min'] || $offerIn > $bnd['max']) {
+            $pdo->prepare('SELECT RELEASE_LOCK(?)')->execute(array($bookLockKey));
+            fail('Your offer must be between ETB ' . $bnd['min'] . ' and ETB ' . $bnd['max'], 422);
+        }
+        rides_offer_price_ensure($pdo);
+    }
+
     /* TEMP DIAGNOSTIC v2 (remove once confirmed): full picture in one
        line - was a token sent at all, did it validate, what route_km
        arrived, what distance actually got used, and the final fare. */
@@ -1140,6 +1318,11 @@ case 'book_ride': {
     }
     $pdo->prepare("INSERT INTO rides ($cols) VALUES ($ph)")->execute($vals);
     $new_ride_id = intval($pdo->lastInsertId());
+    if ($offerIn > 0) {
+        // fare_final carries the offer, so every driver screen already shows the offered price; fare_estimate keeps the quote
+        $pdo->prepare("UPDATE rides SET rider_offer=?, fare_final=? WHERE id=?")->execute(array($offerIn, $offerIn, $new_ride_id));
+        $fare = $offerIn;
+    }
 
     /* Push nearby online drivers - this is what actually wakes a driver up
        even if the app is backgrounded or the phone is asleep, unlike the
@@ -3005,16 +3188,18 @@ case 'driver_get_nearby_requests': {
        vehicle_type is somehow unset, matching book_ride's own default. */
     $myVtype = ($me && !empty($me['vehicle_type'])) ? $me['vehicle_type'] : 'bajaj';
     rides_ensure_exclusions_table($pdo);
+    rides_offer_price_ensure($pdo);
     $s = $pdo->prepare(
         "SELECT r.id, r.pickup_lat, r.pickup_lng, r.dropoff_lat, r.dropoff_lng,
-                r.pickup_address, r.dropoff_address, r.distance_km, r.fare_final,
+                r.pickup_address, r.dropoff_address, r.distance_km, r.fare_final, r.rider_offer, r.fare_estimate,
+                (SELECT c.price FROM ride_counter_offers c WHERE c.ride_id = r.id AND c.driver_id = ? AND c.status = 'pending') AS my_counter,
                 r.expires_at, r.created_at, TIMESTAMPDIFF(SECOND, r.created_at, NOW()) AS age_s, u.name AS passenger_name
          FROM rides r JOIN users u ON u.id = r.passenger_id
          WHERE r.status='searching' AND r.passenger_id != ?
                AND (LOWER(r.vehicle_type) = LOWER(?) OR r.vehicle_type IS NULL)
                AND NOT EXISTS (SELECT 1 FROM ride_driver_exclusions x WHERE x.ride_id = r.id AND x.driver_id = ?)
          ORDER BY r.id DESC LIMIT 30");
-    $s->execute(array($u['id'], $myVtype, $u['id']));
+    $s->execute(array($u['id'], $u['id'], $myVtype, $u['id']));
     $rows = $s->fetchAll();
 
     // Hex pre-filter: this candidate set is already small (status +
@@ -3046,6 +3231,10 @@ case 'driver_get_nearby_requests': {
             if ($dist > $radius) continue;
         }
         $r['distance_from_driver_km'] = $dist !== null ? round($dist, 2) : 0;
+        if (floatval($r['rider_offer']) > 0) {   // the most a driver may ask for this trip (price offers, lib/ride_price_offer.php)
+            $ob = rides_offer_bounds($pdo, floatval($r['fare_estimate']) > 0 ? $r['fare_estimate'] : $r['fare_final']);
+            $r['offer_max'] = $ob['max'];
+        }
         $out[] = $r;
     }
     // Offer waves (lib/ride_offer.php): the nearest drivers see a new request first, the rest a few seconds later.
@@ -3958,8 +4147,10 @@ case 'driver_accept_ride': {
     if (!$rid) fail('request_id required');
     if (rides_get_active_for_driver($pdo, $u['id'])) fail('Finish your current ride first');
     rides_ensure_exclusions_table($pdo);
+    rides_offer_price_ensure($pdo);
     $n = $pdo->prepare(
-        "UPDATE rides SET driver_id=?, status='accepted', assigned_at=NOW()
+        "UPDATE rides SET driver_id=?, status='accepted', assigned_at=NOW(),
+                agreed_fare=IF(rider_offer IS NOT NULL AND rider_offer > 0, fare_final, NULL)
          WHERE id=? AND status='searching'
            AND NOT EXISTS (SELECT 1 FROM ride_driver_exclusions x WHERE x.ride_id = rides.id AND x.driver_id = ?)");
     $n->execute(array($u['id'], $rid, $u['id']));
@@ -4278,6 +4469,7 @@ case 'driver_arrived': {
         $pdo->prepare("UPDATE rides SET status='arrived', arrived_at=NOW(), distance_km=?, fare_final=?, fare_breakdown_json=? WHERE id=?")
             ->execute(array($km, $fare, $breakdownJson, $rid));
     }
+    $fare = rides_agreed_apply($pdo, $rid, $fare);   // a trip with an agreed price is billed at exactly that price
     rides_flag_fare_review($pdo, $rid, $u['id'], $fare, $km);
     $fare = rides_promo_apply_to_arrived($pdo, $rid);
     ok(array_merge(array('arrived' => true, 'distance_km' => $km, 'fare' => $fare,
@@ -4402,6 +4594,7 @@ case 'driver_complete_ride': {
         $pdo->prepare("UPDATE rides SET status='arrived', arrived_at=NOW(), distance_km=?, fare_final=?, fare_breakdown_json=? WHERE id=?")
             ->execute(array($km, $fare, $breakdownJson2, $rid));
     }
+    $fare = rides_agreed_apply($pdo, $rid, $fare);
     rides_flag_fare_review($pdo, $rid, $u['id'], $fare, $km);
     $fare = rides_promo_apply_to_arrived($pdo, $rid);
     ok(array('arrived' => true, 'distance_km' => $km, 'fare' => $fare,

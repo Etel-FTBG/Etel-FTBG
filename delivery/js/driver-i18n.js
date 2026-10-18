@@ -85,6 +85,9 @@
         'Rider paid': 'ተሳፋሪው የከፈለው', 'You keep': 'የሚቀርልዎት', 'Etel collected this fare for you.': 'ይህን ክፍያ ኢቴል ሰብስቦልዎታል።',
         'You collected this fare in cash.': 'ይህን ክፍያ በጥሬ ገንዘብ ሰብስበዋል።',
         'Etel takes 5% of each fare, including the part a promo code paid. Tips are yours in full.': 'ኢቴል ከእያንዳንዱ ክፍያ 5% ይወስዳል፣ በማስተዋወቂያ ኮድ የተከፈለውንም ጨምሮ። ሽልማት ሙሉ በሙሉ የእርስዎ ነው።',
+        "Rider's offer": 'የተሳፋሪው ዋጋ', 'Counter-offer': 'ሌላ ዋጋ አቅርብ', 'Change counter-offer': 'የአቅርቦት ዋጋ ቀይር', 'Send counter-offer': 'ዋጋ አቅርብ',
+        'Your counter-offer': 'ያቀረቡት ዋጋ', 'waiting for the rider': 'ተሳፋሪውን በመጠበቅ ላይ',
+        'The rider offered': 'ተሳፋሪው ያቀረበው', 'Highest price you can ask': 'መጠየቅ የሚችሉት ከፍተኛ ዋጋ', "Or slide the request to accept the rider's price.": 'ወይም የተሳፋሪውን ዋጋ ለመቀበል ጥያቄውን ያንሸራትቱ።',
     };
     var ATTRS = {
         'Requests': 'ጥያቄዎች', 'Earnings': 'ገቢ', 'Chats': 'መልዕክቶች', 'Profile': 'መገለጫ', 'Exit': 'ውጣ', 'Go offline': 'ከመስመር ውጣ',
