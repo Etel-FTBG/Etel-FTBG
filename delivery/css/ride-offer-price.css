@@ -1,0 +1,45 @@
+/* ETEL Ride + Driver - price offers (js/ride-offer-price.js on the rider app, js/driver-counter.js on the driver app). */
+#rop-box{margin:10px 2px 0}
+#rop-box .rop-link{display:flex;align-items:center;gap:8px;width:100%;min-height:44px;padding:8px 12px;background:transparent!important;border:1px dashed rgba(229,199,107,.5)!important;border-radius:12px;color:var(--gold-text,#F7D05C)!important;font-weight:700;font-size:14px;line-height:1.2;font-family:inherit;cursor:pointer;text-align:left}
+#rop-box .rop-panel{padding:12px;border-radius:14px;border:1px solid rgba(229,199,107,.45)!important;background:rgba(229,199,107,.07)!important;color:var(--text,#EDEDF5)!important}
+#rop-box .rop-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;font-size:14px}
+#rop-box .rop-x{width:36px;height:36px;border:0!important;border-radius:50%;background:transparent!important;color:var(--dim,#B4B4C8)!important;font-size:22px;line-height:1;cursor:pointer}
+.rop-step{display:flex;align-items:center;gap:10px;justify-content:center}
+.rop-step button{width:48px;height:48px;border-radius:50%;border:1px solid rgba(229,199,107,.55)!important;background:rgba(229,199,107,.12)!important;color:#F3D87E!important;font-size:24px;font-weight:700;line-height:1;font-family:inherit;cursor:pointer}
+.rop-val{display:flex;align-items:baseline;gap:6px;min-width:130px;justify-content:center}
+.rop-val span{font-size:14px;font-weight:700;opacity:.8}
+.rop-val input{width:96px;border:0!important;border-bottom:2px solid rgba(229,199,107,.6)!important;background:transparent!important;color:var(--text,#EDEDF5)!important;-webkit-text-fill-color:var(--text,#EDEDF5)!important;font-size:30px;font-weight:800;text-align:center;font-family:inherit;padding:2px 0;-moz-appearance:textfield}
+.rop-val input::-webkit-outer-spin-button,.rop-val input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+#rop-box .rop-hint{margin-top:8px;font-size:12px;color:var(--dim,#B4B4C8);text-align:center;line-height:1.4}
+
+#rop-offers{margin:4px 0 12px;padding:12px;border-radius:14px;border:1px solid rgba(229,199,107,.4)!important;background:rgba(229,199,107,.06)!important;color:var(--text,#EDEDF5)!important;text-align:left}
+#rop-offers .rop-head{display:flex;justify-content:space-between;align-items:center;gap:10px}
+#rop-offers .rop-sub{font-size:12px;color:var(--dim,#B4B4C8);line-height:1.4}
+#rop-offers .rop-price{font-size:20px;font-weight:800;color:#F3D87E}
+#rop-offers .rop-raise{min-height:44px;padding:0 14px;border-radius:12px;border:1px solid rgba(229,199,107,.55)!important;background:transparent!important;color:#F3D87E!important;font-weight:800;font-size:13px;font-family:inherit;cursor:pointer}
+#rop-offers .rop-wait{margin-top:10px;font-size:13px;color:var(--dim,#B4B4C8)}
+#rop-offers .rop-title{margin:12px 0 6px;font-size:14px;font-weight:800}
+#rop-offers .rop-offer{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 0;border-top:1px solid rgba(255,255,255,.1)}
+#rop-offers .rop-act{text-align:right;white-space:nowrap}
+#rop-offers .rop-ok{min-height:44px;padding:0 16px;border:0!important;border-radius:12px;font-weight:800;font-size:14px;font-family:inherit;color:#1A1405!important;background:linear-gradient(180deg,#F3D87E,#C9A227)!important;cursor:pointer}
+#rop-offers .rop-no{width:44px;min-height:44px;margin-left:6px;border-radius:12px;border:1px solid rgba(255,255,255,.2)!important;background:transparent!important;color:var(--dim,#B4B4C8)!important;font-size:20px;font-family:inherit;cursor:pointer}
+#rop-offers button:disabled{opacity:.55}
+#rop-offers .rop-fixed{margin-top:8px}
+
+.drc-bar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0 0 10px}
+.drc-bar .drc-tag{padding:3px 9px;border-radius:999px;background:rgba(229,199,107,.18);border:1px solid rgba(229,199,107,.5);color:#F3D87E;font-size:11px;font-weight:800}
+.drc-bar .drc-mine{font-size:12px;color:#9BE3B0}
+.drc-bar .drc-btn{margin-left:auto;min-height:44px;padding:0 14px;border-radius:12px;border:1px solid rgba(229,199,107,.6)!important;background:transparent!important;color:#F3D87E!important;font-weight:800;font-size:13px;font-family:inherit;cursor:pointer}
+.rp-dlg .rop-step{margin:6px 0 4px}
+.rp-dlg .rop-step button{color:#F3D87E!important}
+.rp-dlg .rop-val input{color:#EDEDF5!important;-webkit-text-fill-color:#EDEDF5!important}
+
+html[data-etel-theme="light"] #rop-box .rop-link{border-color:rgba(126,89,0,.45)!important;color:#7E5900!important}
+html[data-etel-theme="light"] #rop-box .rop-panel,html[data-etel-theme="light"] #rop-offers{background:#FFF8E0!important;border-color:rgba(110,84,20,.35)!important;color:#1C1A15!important}
+html[data-etel-theme="light"] #rop-box .rop-hint,html[data-etel-theme="light"] #rop-box .rop-x,html[data-etel-theme="light"] #rop-offers .rop-sub,html[data-etel-theme="light"] #rop-offers .rop-wait,html[data-etel-theme="light"] #rop-offers .rop-no{color:#5C5546!important}
+html[data-etel-theme="light"] .rop-step button,html[data-etel-theme="light"] #rop-offers .rop-price,html[data-etel-theme="light"] #rop-offers .rop-raise{color:#7E5900!important}
+html[data-etel-theme="light"] .rop-val input{color:#1C1A15!important;-webkit-text-fill-color:#1C1A15!important;border-bottom-color:rgba(126,89,0,.6)!important}
+html[data-etel-theme="light"] #rop-offers .rop-offer{border-top-color:rgba(110,84,20,.2)}
+html[data-etel-theme="light"] #rop-offers .rop-no{border-color:rgba(110,84,20,.3)!important}
+html[data-etel-theme="light"] .rp-dlg .rop-val input{color:#1C1A15!important;-webkit-text-fill-color:#1C1A15!important}
+html[data-etel-theme="light"] .rp-dlg .rop-step button{color:#7E5900!important}

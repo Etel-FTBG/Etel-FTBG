@@ -53,6 +53,9 @@ function Poll(url) {
           }
           if (!data.length) continue;
           fire(type, data.join('\n'));
+          if (type === 'message') {   // other scripts (price offers) read the same answers instead of asking again
+            try { document.dispatchEvent(new CustomEvent('etel:stream', { detail: { kind: ride ? 'ride' : 'driver', data: JSON.parse(data.join('\n')) } })); } catch (x) {}
+          }
           if (type === 'close') closed = true;
         }
         if (closed) { self.readyState = 2; return; }
