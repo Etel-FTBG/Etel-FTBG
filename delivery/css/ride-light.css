@@ -82,6 +82,25 @@ html[data-etel-theme="light"] #driver-map-filter-btn,html[data-etel-theme="light
 html[data-etel-theme="light"] .brs-change{background:rgba(184,138,16,.12);border-color:rgba(184,138,16,.45);color:#80600A}
 html[data-etel-theme="light"] .brs-text{color:var(--text)}
 
+/* text fields: the dark theme paints them with !important rules that are more specific than the plain ones above */
+html[data-etel-theme="light"] body.dark-page input:not([type=radio]):not([type=checkbox]):not([type=range]),
+html[data-etel-theme="light"] body.dark-page select,
+html[data-etel-theme="light"] body.dark-page textarea{
+  color:var(--text)!important;-webkit-text-fill-color:var(--text)!important;background:#FAF7F0!important;border-color:rgba(110,84,20,.28)!important}
+html[data-etel-theme="light"] body.dark-page input:focus,html[data-etel-theme="light"] body.dark-page select:focus,html[data-etel-theme="light"] body.dark-page textarea:focus{
+  background:#FFFFFF!important;border-color:#B88A10!important;box-shadow:0 0 0 2px rgba(184,138,16,.22)!important}
+html[data-etel-theme="light"] body.dark-page .loc-row input.loc-input:not([type=radio]):not([type=checkbox]):not([type=range]),
+html[data-etel-theme="light"] body.dark-page .loc-row input.loc-input:not([type=radio]):not([type=checkbox]):not([type=range]):focus{
+  background:transparent!important;border:0!important;box-shadow:none!important}
+
+/* Google address suggestions (appended to <body> by Google) */
+html[data-etel-theme="light"] .pac-container{background:#FFFFFF!important;border-color:rgba(184,138,16,.45)!important;box-shadow:0 14px 34px rgba(60,45,10,.2)!important}
+html[data-etel-theme="light"] .pac-item{color:var(--dim)!important;border-top-color:rgba(110,84,20,.12)!important}
+html[data-etel-theme="light"] .pac-item-query{color:var(--text)!important}
+html[data-etel-theme="light"] .pac-matched{color:#80600A!important}
+html[data-etel-theme="light"] .pac-icon{filter:none!important;opacity:.8!important}
+html[data-etel-theme="light"] .pac-logo:after{filter:none!important;opacity:.6!important}
+
 /* quick-zones switch, vehicle subtitle, slide thumb */
 html[data-etel-theme="light"] .zp-toggle{background:#EAE3D2!important}
 html[data-etel-theme="light"] .zt-btn{color:#5C5546!important}

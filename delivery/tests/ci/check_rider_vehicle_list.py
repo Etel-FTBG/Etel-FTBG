@@ -30,6 +30,12 @@ if 'rides_normalize_vehicle_type' not in read('api/lib/ride_fare.php'):
 if re.search(r"in_array\(\$vtype, array\('bajaj',\s*'moto',\s*'car',\s*'minibus',\s*'qute'\), true\)\) \$vtype = 'bajaj'", ctl):
     bad.append('RideController.php still has a fixed list of vehicle types that turns admin-added types into bajaj')
 
+for fn in ('syncFareCard', 'syncMeterRate'):
+    if fn not in read('js/ride-vehicle-list.js'):
+        bad.append('ride-vehicle-list.js is missing ' + fn)
+if 'id="bykm-rate"' not in read('ride/index.html'):
+    bad.append('ride/index.html is missing #bykm-rate')
+
 if bad:
     print('check_rider_vehicle_list FAILED:\n  ' + '\n  '.join(bad))
     sys.exit(1)

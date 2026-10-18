@@ -56,11 +56,43 @@
         if (!key || key === fareKey) return;
         fareKey = key; fares = {};
         var types = [].map.call(document.querySelectorAll('#vtype-row .vtype-chip'), function (c) { return c.getAttribute('data-vtype'); }).filter(Boolean);
-        types.forEach(function (t) {
+        var sel = r.selectedVtype || 'bajaj';
+        types.sort(function (a, b) { return (a === sel ? -1 : 0) - (b === sel ? -1 : 0); });
+        // One at a time, the selected vehicle first: seven requests at once can trip the host's connection limit,
+        // and a refused request used to leave the old guess on screen.
+        (function next(i) {
+            if (i >= types.length || fareKey !== key) return;
+            var t = types[i];
             getJson(apiBase() + '?action=ride_estimate_fare&distance_km=' + encodeURIComponent(r.lastRouteKm) + '&vehicle_type=' + encodeURIComponent(t) + (r.lastRouteIsManual ? '&open_trip=1' : '')).then(function (d) {
-                if (d && fareKey === key) { fares[t] = d.fare; decorate(); }
+                if (d && fareKey === key) { fares[t] = d.fare; decorate(); syncFareCard(); }
+                next(i + 1);
             });
-        });
+        })(0);
+    }
+
+    /* The big "Estimated Fare" card is first filled with a quick guess from a price table built into ride.js, and replaced
+       by the server's number when that request comes back. If that request is refused or slow, the guess stays, and it
+       can disagree with the vehicle rows (which always show the server's number). Keep the card equal to the selected
+       vehicle's server fare. */
+    function syncFareCard() {
+        var r = R(); if (!r) return;
+        var t = r.selectedVtype || 'bajaj';
+        if (!routeKey() || routeKey() !== fareKey || fares[t] == null) return;
+        var el = document.getElementById('fare-amount');
+        if (!el) return;
+        var want = 'ETB ' + Number(fares[t]).toFixed(2);
+        if (el.textContent !== want) el.textContent = want;
+    }
+
+    /* Open meter: show the selected vehicle's real rate instead of the fixed text in the page. */
+    function syncMeterRate() {
+        var r = R(), el = document.getElementById('bykm-rate');
+        if (!r || !el) return;
+        var rt = info.rates[r.selectedVtype || 'bajaj'];
+        if (rt && rt.base != null && rt.per_km_open != null) {
+            var txt = 'ETB ' + Math.round(parseFloat(rt.base)) + ' + ' + (Math.round(parseFloat(rt.per_km_open) * 10) / 10) + '/km';
+            if (el.textContent !== txt) el.textContent = txt;
+        }
     }
 
     function decorate() {
@@ -87,6 +119,7 @@
                 var disabled = c.classList.contains('vtype-chip-disabled');
                 var nameEl = c.querySelector('.vt-name');
                 var name = c.getAttribute('data-vt-name') || (nameEl ? nameEl.textContent : t);
+                name = name.replace(/^Ev\b/, 'EV');
                 var base = c.getAttribute('data-vt-base') || (c.querySelector('.vt-price') ? c.querySelector('.vt-price').textContent : '');
                 c.setAttribute('data-vt-name', name); c.setAttribute('data-vt-base', base);
                 var seats = SEATS[t] || 4;
@@ -109,6 +142,7 @@
                 c.setAttribute('aria-label', name + ', ' + sub + (price ? ', ' + price : ''));
                 c.setAttribute('tabindex', disabled ? '-1' : (c.classList.contains('active') ? '0' : '-1'));
             }
+            syncMeterRate(); syncFareCard();
             row.setAttribute('role', 'radiogroup');
             row.setAttribute('aria-label', 'Choose a vehicle');
         } finally { decorating = false; }
@@ -156,6 +190,9 @@
         var view = document.getElementById('view-book');
         if (view) new MutationObserver(function () { if (step2()) { loadInfo(); loadFares(); } }).observe(view, { attributes: true, attributeFilter: ['data-step'] });
         setInterval(function () { if (step2() && !document.hidden) { loadInfo(); loadFares(); } }, 20000);
+        var fa = document.getElementById('fare-amount');
+        if (fa) new MutationObserver(function () { syncFareCard(); }).observe(fa, { childList: true, characterData: true, subtree: true });
+        loadInfo();
         decorate();
     }
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();

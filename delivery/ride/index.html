@@ -18,7 +18,7 @@
 <link rel="stylesheet" href="../css/ride-bundle.css?v=1.4">
 <link rel="stylesheet" href="../css/etel-rider-premium.css?v=20261005">
 <link rel="stylesheet" href="../css/ride-step2.css?v=1">
-<link rel="stylesheet" href="../css/ride-light.css?v=1">
+<link rel="stylesheet" href="../css/ride-light.css?v=2">
 <style>
 .etl-truck-layer,.etl-truck-layer-2,.etl-pin,.etl-pin-1,.etl-pin-2,.etl-pin-3,.etl-pin-4,.etl-speedlines{display:none!important}
 
@@ -387,7 +387,7 @@
         <input id="bykm-input" type="number" min="1" max="100" step="0.5" placeholder="km"
                style="width:74px;padding:8px 10px;border-radius:10px;border:1px solid var(--line);background:var(--sheet2);color:var(--text);font-family:var(--f);font-size:13px"
                oninput="setManualKm(this.value)"/>
-        <span style="font-size:11px;color:var(--dim)">ETB 120 + 30/km</span>
+        <span id="bykm-rate" style="font-size:11px;color:var(--dim)">ETB 120 + 30/km</span>
       </div>
     </div>
 
@@ -1483,7 +1483,7 @@ function useMyCurrentLocationForPickup(btnEl) {
 <script src="../js/ride-safety.js?v=1" defer></script>
 <script src="../js/chapa-pay.js?v=1.0" defer></script>
 <script src="../js/ride-hex-search-overlay.js?v=1.1" defer></script>
-<script src="../js/ride-vehicle-list.js?v=1" defer></script>
+<script src="../js/ride-vehicle-list.js?v=2" defer></script>
 <script>
   window.gm_authFailure = function () {
     document.getElementById('ride-map').innerHTML =

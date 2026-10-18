@@ -69,6 +69,9 @@ for fg, bg, need in (('text', 'sheet', 7), ('dim', 'sheet', 4.5), ('dim', 'bg', 
     if fg in vars_ and bg in vars_ and ratio(vars_[fg], vars_[bg]) < need:
         bad.append('light palette: %s on %s is %.2f:1, needs %s:1' % (fg, bg, ratio(vars_[fg], vars_[bg]), need))
 
+if 'body.dark-page input:not([type=radio])' not in css or 'pac-container' not in css:
+    bad.append('ride-light.css must outrank the dark body.dark-page input rules and restyle .pac-container')
+
 if bad:
     print('check_ride_theme FAILED:\n  ' + '\n  '.join(bad))
     sys.exit(1)
