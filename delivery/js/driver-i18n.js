@@ -72,7 +72,9 @@
         'Amount exceeds your available balance': 'መጠኑ ከሚገኘው ቀሪ ሂሳብዎ በላይ ነው', 'Attach a photo of the document': 'የሰነዱን ፎቶ ያያይዙ', 'Pick the expiry date printed on the document': 'በሰነዱ ላይ የታተመውን የሚያበቃበት ቀን ይምረጡ',
         'No response from customer — trip closed, contact support if unpaid': 'ከደንበኛው ምላሽ የለም — ጉዞው ተዘግቷል፣ ክፍያ ካልተከፈለ ድጋፍን ያግኙ', 'By-distance ride — passenger will direct you 🧭': 'በርቀት የሚታሰብ ጉዞ — ተሳፋሪው ይመራዎታል 🧭',
         'Trip resolved — you are available again': 'ጉዞው ተፈትቷል — እንደገና ዝግጁ ነዎት', 'Photo selected': 'ፎቶ ተመርጧል', 'License photo selected': 'የመንጃ ፈቃድ ፎቶ ተመርጧል', 'Geolocation not supported': 'የአካባቢ መለያ አይደገፍም', 'Share not supported on this browser': 'ማጋራት በዚህ ብሮውዘር አይደገፍም',
-        'Top-up submitted — pending admin approval': 'ሙሌቱ ተልኳል — የአስተዳዳሪ ማጽደቂያ በመጠበቅ ላይ'
+        'Top-up submitted — pending admin approval': 'ሙሌቱ ተልኳል — የአስተዳዳሪ ማጽደቂያ በመጠበቅ ላይ',
+        'Send emergency alert?': 'የአደጋ ጊዜ ማንቂያ ይላክ?', 'This immediately notifies ETEL support with your role, location, and current trip (if any). Use this if you feel unsafe or something is wrong right now.': 'ይህ ወዲያውኑ የእርስዎን ሚና፣ አካባቢና የአሁኑን ጉዞ (ካለ) ለኢቴል ድጋፍ ያሳውቃል። ደህንነት ካልተሰማዎት ወይም አሁን የሆነ ችግር ካለ ይህን ይጠቀሙ።',
+        'Send SOS Now': 'አሁኑኑ SOS ላክ', 'Sending…': 'በመላክ ላይ…', 'Sending your location…': 'አካባቢዎ በመላክ ላይ…', 'Could not send - try again': 'መላክ አልተቻለም - እንደገና ይሞክሩ', 'Network error - try again': 'የአውታረ መረብ ስህተት - እንደገና ይሞክሩ',
     };
     var ATTRS = {
         'Requests': 'ጥያቄዎች', 'Earnings': 'ገቢ', 'Chats': 'መልዕክቶች', 'Profile': 'መገለጫ', 'Exit': 'ውጣ', 'Go offline': 'ከመስመር ውጣ',
