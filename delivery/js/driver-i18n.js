@@ -88,6 +88,7 @@
         "Rider's offer": 'የተሳፋሪው ዋጋ', 'Counter-offer': 'ሌላ ዋጋ አቅርብ', 'Change counter-offer': 'የአቅርቦት ዋጋ ቀይር', 'Send counter-offer': 'ዋጋ አቅርብ',
         'Your counter-offer': 'ያቀረቡት ዋጋ', 'waiting for the rider': 'ተሳፋሪውን በመጠበቅ ላይ',
         'The rider offered': 'ተሳፋሪው ያቀረበው', 'Highest price you can ask': 'መጠየቅ የሚችሉት ከፍተኛ ዋጋ', "Or slide the request to accept the rider's price.": 'ወይም የተሳፋሪውን ዋጋ ለመቀበል ጥያቄውን ያንሸራትቱ።',
+        'Navigate with': 'በዚህ ያስሱ', 'Always use this app': 'ሁልጊዜ ይህን መተግበሪያ ተጠቀም', 'Other map app': 'ሌላ የካርታ መተግበሪያ',
     };
     var ATTRS = {
         'Requests': 'ጥያቄዎች', 'Earnings': 'ገቢ', 'Chats': 'መልዕክቶች', 'Profile': 'መገለጫ', 'Exit': 'ውጣ', 'Go offline': 'ከመስመር ውጣ',

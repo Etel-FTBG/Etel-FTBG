@@ -43,3 +43,15 @@ html[data-etel-theme="light"] #rop-offers .rop-offer{border-top-color:rgba(110,8
 html[data-etel-theme="light"] #rop-offers .rop-no{border-color:rgba(110,84,20,.3)!important}
 html[data-etel-theme="light"] .rp-dlg .rop-val input{color:#1C1A15!important;-webkit-text-fill-color:#1C1A15!important}
 html[data-etel-theme="light"] .rp-dlg .rop-step button{color:#7E5900!important}
+
+/* choose the navigation app (js/driver-nav-choice.js, driver app; shares .rp-dlg / .rp-card) */
+.rp-dlg .dnc-list{display:flex;flex-direction:column;gap:10px;margin:10px 0 12px}
+.rp-dlg .dnc-app{min-height:54px;padding:8px 14px;border-radius:14px;border:1px solid rgba(229,199,107,.45)!important;background:rgba(255,255,255,.05)!important;color:#EDEDF5!important;font-weight:800;font-size:16px;font-family:inherit;text-align:left;cursor:pointer}
+.rp-dlg .dnc-app.on{background:rgba(229,199,107,.2)!important;border-color:#E5C76B!important;color:#F3D87E!important}
+.rp-dlg .dnc-keep{display:flex;align-items:center;gap:10px;min-height:44px;font-size:14px;color:#C9C9D8}
+.rp-dlg .dnc-keep input{width:22px;height:22px}
+.dn-panel .dnc-change{flex-shrink:0;align-items:center;justify-content:center;width:34px;height:30px;margin-left:-6px;border:1px solid rgba(229,199,107,.5)!important;border-radius:10px;background:transparent!important;color:#F3D87E!important;font-size:14px;cursor:pointer}
+
+/* the driver app's dark-page rule (body.dark-page [class*="-card"]) blanks any class ending in "-card": keep the dialog card solid, and above the SOS and refresh buttons */
+body.dark-page .rp-dlg .rp-card{background:#14141F!important;color:#EDEDF5!important;border:1px solid rgba(229,199,107,.35)!important;box-shadow:0 20px 60px rgba(0,0,0,.5)!important}
+#dnc-dlg,#drc-dlg{z-index:2147483647}
