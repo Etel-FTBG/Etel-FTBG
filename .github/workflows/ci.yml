@@ -114,6 +114,7 @@ jobs:
           python3 delivery/tests/ci/check_ride_wallet_soon.py
           python3 delivery/tests/ci/check_ride_promo.py
           python3 delivery/tests/ci/check_ride_tips.py
+          python3 delivery/tests/ci/check_driver_tips.py
           python3 delivery/tests/ci/check_ride_theme.py
           python3 delivery/tests/ci/check_servicegiver_csp.py
           python3 delivery/tests/ci/check_servicegiver_i18n.py

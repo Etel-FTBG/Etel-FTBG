@@ -75,6 +75,9 @@
         'Top-up submitted — pending admin approval': 'ሙሌቱ ተልኳል — የአስተዳዳሪ ማጽደቂያ በመጠበቅ ላይ',
         'Send emergency alert?': 'የአደጋ ጊዜ ማንቂያ ይላክ?', 'This immediately notifies ETEL support with your role, location, and current trip (if any). Use this if you feel unsafe or something is wrong right now.': 'ይህ ወዲያውኑ የእርስዎን ሚና፣ አካባቢና የአሁኑን ጉዞ (ካለ) ለኢቴል ድጋፍ ያሳውቃል። ደህንነት ካልተሰማዎት ወይም አሁን የሆነ ችግር ካለ ይህን ይጠቀሙ።',
         'Send SOS Now': 'አሁኑኑ SOS ላክ', 'Sending…': 'በመላክ ላይ…', 'Sending your location…': 'አካባቢዎ በመላክ ላይ…', 'Could not send - try again': 'መላክ አልተቻለም - እንደገና ይሞክሩ', 'Network error - try again': 'የአውታረ መረብ ስህተት - እንደገና ይሞክሩ',
+        'Tips from riders': 'ከተሳፋሪዎች የተገኘ ሽልማት', 'Tips received': 'የተቀበሉት ሽልማት', 'No tips yet.': 'እስካሁን ሽልማት የለም።',
+        "Each tip is added to your cash-out balance in full, with no commission, once Etel confirms the rider's transfer.": 'እያንዳንዱ ሽልማት ኢቴል የተሳፋሪውን ዝውውር ካረጋገጠ በኋላ ያለ ኮሚሽን ሙሉ በሙሉ ወደ ገንዘብ ማውጫ ቀሪ ሂሳብዎ ይጨመራል።',
+        'Promo discounts are paid by Etel: when a rider uses a promo code, the discount is added to your ኢE Money balance.': 'የማስተዋወቂያ ቅናሽ የሚከፍለው ኢቴል ነው፦ ተሳፋሪ የማስተዋወቂያ ኮድ ሲጠቀም ቅናሹ ወደ ኢE ገንዘብ ቀሪ ሂሳብዎ ይጨመራል።',
     };
     var ATTRS = {
         'Requests': 'ጥያቄዎች', 'Earnings': 'ገቢ', 'Chats': 'መልዕክቶች', 'Profile': 'መገለጫ', 'Exit': 'ውጣ', 'Go offline': 'ከመስመር ውጣ',
