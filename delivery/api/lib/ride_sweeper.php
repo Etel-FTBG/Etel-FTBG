@@ -190,6 +190,8 @@ function rides_sweep_stuck($pdo, $opts = array()) {
                      WHERE id=? AND status='in_progress'");
                 $claim->execute(array($km, $fare, json_encode($breakdown), intval(round($waitMin * 60)), $rid));
                 if ($claim->rowCount() < 1) continue; // someone else closed it first
+                require_once __DIR__ . '/ride_promo.php';
+                $fare = rides_promo_apply_to_arrived($pdo, $rid); // the rider pays the discounted fare
                 rides_sweeper_issue($pdo, $rid, $driverId, 'auto_ended',
                     'No movement for ' . intval($idleMin) . ' min, so the trip was ended automatically at ' . round($km, 2)
                     . ' km, fare ETB ' . number_format($fare, 2) . '. Review before collecting; complete it with admin_manual_complete_ride.', 'open');
