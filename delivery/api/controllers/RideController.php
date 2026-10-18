@@ -467,7 +467,37 @@ case 'ride_get_vehicle_types': {
                                         fall back to "allow everything" rather than
                                         reading the seeded zeros as real unavailability */
     }
-    ok(array('vehicle_types' => $types, 'base_fares' => $baseFares,
+    /* Per-type rates, so the booking screen can show what a trip will cost for EACH vehicle
+       without keeping its own copy of the numbers (the client's built-in table drifts whenever an
+       admin edits a rate). Same source the fare engine uses, fallbacks included. */
+    $rates = array();
+    foreach ($types as $t) {
+        $fr = rides_fare_rule($pdo, strtolower($t));
+        $rates[$t] = array('base' => $fr['base_fare'], 'per_km' => $fr['per_km_rate'], 'per_km_open' => $fr['per_km_rate_open'],
+                           'min_fare' => $fr['min_fare'], 'min_fare_short' => $fr['min_fare_short_trip']);
+    }
+    /* Pickup-to-nearest-driver estimate per type (only when the caller sends the pickup point).
+       Same freshness rule as the rider's nearby-drivers map: online and seen in the last 3 minutes.
+       About 20 km/h through town plus a minute to get moving; shown to riders as "~N min". */
+    $eta = array();
+    $plat = isset($_GET['pickup_lat']) ? floatval($_GET['pickup_lat']) : (isset($body['pickup_lat']) ? floatval($body['pickup_lat']) : 0);
+    $plng = isset($_GET['pickup_lng']) ? floatval($_GET['pickup_lng']) : (isset($body['pickup_lng']) ? floatval($body['pickup_lng']) : 0);
+    if ($plat && $plng) {
+        try {
+            $ds = $pdo->query("SELECT LOWER(vehicle_type) AS vt, lat, lng FROM ride_drivers
+                               WHERE online=1 AND lat IS NOT NULL AND lng IS NOT NULL
+                                 AND last_seen >= DATE_SUB(NOW(), INTERVAL 3 MINUTE)");
+            $nearest = array();
+            foreach ($ds->fetchAll(PDO::FETCH_ASSOC) as $d) {
+                $km = rides_haversine_km($plat, $plng, floatval($d['lat']), floatval($d['lng']));
+                if (!isset($nearest[$d['vt']]) || $km < $nearest[$d['vt']]) $nearest[$d['vt']] = $km;
+            }
+            foreach ($nearest as $vt => $km) {
+                if ($km <= 15) $eta[$vt] = max(1, (int)ceil($km * 3) + 1);
+            }
+        } catch (Exception $e) { /* no ETA: the screen just omits it */ }
+    }
+    ok(array('vehicle_types' => $types, 'base_fares' => $baseFares, 'rates' => $rates, 'eta_min' => $eta,
              'driver_availability' => $availability, 'availability_known' => $availabilityKnown));
     break;
 }
@@ -489,7 +519,7 @@ case 'ride_estimate_fare': {
     if ($km > 100) $km = 100;
     $vtype = isset($body['vehicle_type']) ? strtolower(trim($body['vehicle_type']))
         : (isset($_GET['vehicle_type']) ? strtolower(trim($_GET['vehicle_type'])) : 'bajaj');
-    if (!in_array($vtype, array('bajaj', 'moto', 'car', 'minibus', 'qute'), true)) $vtype = 'bajaj';
+    $vtype = rides_normalize_vehicle_type($pdo, $vtype);
     $openTrip = !empty($body['open_trip']) || !empty($_GET['open_trip']);
     $result = rides_calc_fare($pdo, $km, $vtype, $openTrip);
     /* PRICE-LOCK: package this exact quote (fare + the inputs that
@@ -553,7 +583,7 @@ case 'passenger_get_nearby_drivers': {
               AND last_seen >= DATE_SUB(NOW(), INTERVAL 3 MINUTE)
               AND $hexWhere";
     $params = $hexParams;
-    if ($vtype !== 'all' && in_array($vtype, array('bajaj', 'moto', 'car', 'minibus', 'qute'), true)) {
+    if ($vtype !== 'all' && $vtype === rides_normalize_vehicle_type($pdo, $vtype)) {
         // ride_drivers.vehicle_type stores "Bajaj"/"Motorcycle"/"Car"/"Minibus"
         // (see driver onboarding's <select>), matched loosely here since
         // that's the same normalization driverIconForVehicleType() uses
@@ -627,7 +657,7 @@ case 'book_ride': {
     $daddr = isset($body['dropoff_addr']) ? mb_substr(trim($body['dropoff_addr']), 0, 255) : '';
     $pm    = isset($body['payment_method']) ? substr(preg_replace('/[^a-z_]/', '', strtolower($body['payment_method'])), 0, 20) : 'cash';
     $vtype = isset($body['vehicle_type']) ? strtolower(trim($body['vehicle_type'])) : 'bajaj';
-    if (!in_array($vtype, array('bajaj','moto','car','minibus','qute'), true)) $vtype = 'bajaj';
+    $vtype = rides_normalize_vehicle_type($pdo, $vtype);
 
     /* One active ride at a time */
     $s = $pdo->prepare(
@@ -1322,7 +1352,7 @@ case 'ride_schedule': {
     $daddr = isset($body['dropoff_addr']) ? mb_substr(trim($body['dropoff_addr']), 0, 255) : '';
     $pm    = isset($body['payment_method']) ? substr(preg_replace('/[^a-z_]/', '', strtolower($body['payment_method'])), 0, 20) : 'cash';
     $vtype = isset($body['vehicle_type']) ? strtolower(trim($body['vehicle_type'])) : 'bajaj';
-    if (!in_array($vtype, array('bajaj', 'moto', 'car', 'minibus', 'qute'), true)) $vtype = 'bajaj';
+    $vtype = rides_normalize_vehicle_type($pdo, $vtype);
 
     $when = isset($body['scheduled_at']) ? trim($body['scheduled_at']) : '';
     $ts   = $when !== '' ? strtotime($when) : false;
