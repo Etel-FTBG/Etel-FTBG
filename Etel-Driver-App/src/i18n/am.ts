@@ -3,6 +3,7 @@
 // so "🧭 Navigate" is found under 'Navigate'. Text with no entry stays English.
 export const AM: Record<string, string> = {
   // ETEL hub
+  'Good morning': 'እንደምን አደሩ', 'Good afternoon': 'እንደምን ዋሉ', 'Good evening': 'እንደምን አመሹ',
   'Mobility': 'ጉዞ', 'Delivery and services': 'ማድረስ እና አገልግሎቶች', 'Identity and finance': 'መታወቂያ እና ፋይናንስ',
   'Coming soon': 'በቅርብ ቀን', 'One account. One ecosystem.': 'አንድ አካውንት። አንድ ኢኮሲስተም።',
   'Go online everywhere': 'በሁሉም ቦታ መስመር ላይ ይግቡ', 'You are online': 'በመስመር ላይ ነዎት',

@@ -21,6 +21,7 @@ import HelpScreen from './src/screens/HelpScreen';
 import HubScreen from './src/screens/HubScreen';
 import WebAppScreen from './src/screens/WebAppScreen';
 import BackgroundBadge from './src/online/BackgroundBadge';
+import IntroSplash from './src/components/IntroSplash';
 import { RootStackParamList } from './src/navigation/types';
 import { colors } from './src/theme/colors';
 import ErrorBoundary from './src/components/ErrorBoundary';
@@ -50,7 +51,7 @@ function RootNavigator() {
     <NavigationContainer>
       <Stack.Navigator initialRouteName="Hub" screenOptions={{ headerShown: false }}>
         <Stack.Screen name="Hub" component={HubScreen} />
-        <Stack.Screen name="WebApp" component={WebAppScreen} />
+        <Stack.Screen name="WebApp" component={WebAppScreen} options={{ animation: 'fade_from_bottom' }} />
         {user ? (
           <>
             <Stack.Screen name="MainTabs" component={BottomTabs} />
@@ -98,6 +99,7 @@ export default function App() {
             </AppLockGate>
             <OfflineBanner />
             <BackgroundBadge />
+            <IntroSplash />
           </ThemeProvider>
         </NightModeProvider>
       </AuthProvider>

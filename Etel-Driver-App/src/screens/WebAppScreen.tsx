@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, BackHandler, Linking, Pressable, StyleSheet, View } from 'react-native';
+import { BackHandler, Linking, Pressable, StyleSheet, View } from 'react-native';
 import { WebView as RNWebView, WebViewMessageEvent } from 'react-native-webview';
 import { Ionicons } from '@expo/vector-icons';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -9,6 +9,7 @@ import { RootStackParamList } from '../navigation/types';
 import { HUB_APPS, ALLOWED_ORIGINS } from '../hub/apps';
 import { BRIDGE_JS, prefsJs } from '../hub/webBridge';
 import { useTheme } from '../theme/ThemeContext';
+import BrandLoader from '../components/BrandLoader';
 import { useLanguage } from '../i18n';
 import { setToken } from '../api/client';
 import { setOnlineState } from '../online/onlineState';
@@ -134,7 +135,7 @@ export default function WebAppScreen({ route, navigation }: Props) {
       )}
       {loading && !failed ? (
         <View style={styles.loading} pointerEvents="none">
-          <ActivityIndicator color={p.gold} size="large" />
+          <BrandLoader />
         </View>
       ) : null}
     </View>
