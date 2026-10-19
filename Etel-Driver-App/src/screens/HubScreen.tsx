@@ -82,7 +82,7 @@ export default function HubScreen({ navigation }: Props) {
           <Image source={require('../../assets/etel-master.png')} style={styles.master} accessibilityLabel="ETEL" />
         </View>
         <Text style={[styles.wordmark, { color: p.gold }]}>ETEL</Text>
-        <Text style={[styles.tagline, { color: p.textSecondary }]}>One account. One ecosystem.</Text>
+        <Text style={[styles.tagline, { color: p.textSecondary }]}>One account. One ecosystem. ✦ Live update works</Text>
         <Text style={[styles.greet, { color: p.goldStrong }]}>{greeting()}</Text>
       </Reveal>
 
