@@ -63,4 +63,32 @@ function rides_tip_eligible($pdo, $rideId, $riderId) {
     return array('ok' => true, 'error' => '', 'ride' => $r);
 }
 
+// A tip paid through Chapa: Chapa has already confirmed the money (chapa_settle verified it), so the tip is saved as
+// approved and the driver gets all of it at once. One tip per trip: if a tip row already exists for the ride, the driver
+// is still paid (the rider's money was taken) and the case is logged for the admin.
+function rides_tip_settle_chapa($pdo, $rideId, $riderId, $amount, $txRef) {
+    rides_tip_ensure($pdo);
+    $r = $pdo->prepare("SELECT driver_id FROM rides WHERE id=? LIMIT 1");
+    $r->execute(array($rideId));
+    $driverId = intval($r->fetchColumn());
+    if ($driverId <= 0) throw new Exception('tip ride has no driver');
+    $pdo->beginTransaction();
+    try {
+        $dup = false;
+        try {
+            $pdo->prepare("INSERT INTO ride_tips (ride_id, rider_id, driver_id, amount, bank_key, payment_ref, note, status, reviewed_at, review_note) VALUES (?,?,?,?,?,?,?, 'approved', NOW(), ?)")
+                ->execute(array($rideId, $riderId, $driverId, $amount, 'chapa', substr($txRef, 0, 60), '', 'Paid with Chapa'));
+        } catch (PDOException $ex) {
+            if ($ex->getCode() !== '23000') throw $ex;
+            $dup = true;
+            error_log('[Delivery-Chapa] tip ' . $txRef . ' paid but ride ' . $rideId . ' already has a tip; driver credited, no tip row');
+        }
+        $pdo->prepare("UPDATE ride_drivers SET total_earnings = total_earnings + ? WHERE user_id=?")->execute(array($amount, $driverId));
+        $pdo->commit();
+    } catch (Exception $e) {
+        if ($pdo->inTransaction()) $pdo->rollBack();
+        throw $e;
+    }
+}
+
 }

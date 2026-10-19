@@ -73,6 +73,7 @@
             '<p class="rp-p">Your driver gets all of it, after Etel confirms your transfer.</p>' +
             '<div class="tp-chips" role="radiogroup" aria-label="Tip amount">' + chips + '</div>' +
             '<label class="tp-lbl">Or another amount (ETB)<input id="tp-amount" class="tp-input" type="number" min="5" max="' + esc(d.max) + '" step="any" placeholder="25"></label>' +
+            (d.chapa ? '<button type="button" class="rp-send" id="tp-chapa">Pay with Chapa</button><div class="tp-lbl">Or send it by bank transfer</div>' : '') +
             '<div class="tp-lbl">1. Send it to one of these accounts</div>' + accs +
             '<label class="tp-lbl">2. Transfer reference<input id="tp-ref" class="tp-input" type="text" maxlength="60" autocomplete="off" placeholder="From your bank message"></label>' +
             '<div class="rp-note" id="tp-note" role="status"></div>' +
@@ -87,6 +88,15 @@
         document.getElementById('tp-amount').oninput = function () { amount = parseFloat(this.value) || 0; for (var j = 0; j < cs.length; j++) cs[j].className = 'tp-chip'; };
         var cp = o.querySelectorAll('.tp-copy');
         for (i = 0; i < cp.length; i++) cp[i].onclick = function () { bank = this.getAttribute('data-k'); copy(this.getAttribute('data-n'), this); };
+        var cb = document.getElementById('tp-chapa');
+        if (cb) cb.onclick = function () {
+            if (!(amount >= 5)) { note('Choose an amount of at least ETB 5', true); return; }
+            var b = this; b.disabled = true; note('Opening Chapa...');
+            api('ride_tip_chapa_init', { ride_id: rideId, amount: amount }).then(function (r) {
+                if (r && r.success && r.data && r.data.checkout_url) { window.location.href = r.data.checkout_url; return; }
+                note((r && r.message) || 'Could not open Chapa', true); b.disabled = false;
+            }).catch(function () { note('Could not open Chapa. Try again.', true); b.disabled = false; });
+        };
         document.getElementById('tp-send').onclick = function () {
             var ref = document.getElementById('tp-ref').value.trim();
             if (!(amount >= 5)) { note('Choose an amount of at least ETB 5', true); return; }

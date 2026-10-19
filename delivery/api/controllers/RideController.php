@@ -522,6 +522,7 @@ case 'ride_get_vehicle_types': {
    approves it once the money has arrived; then the driver gets all of it (no commission).
    --------------------------------------------------------------------------------------------------------------- */
 case 'ride_tip_info': {
+    require_once __DIR__ . '/../chapa_bridge.php';
     // POST: ride_id -> can this rider tip, the bank accounts to pay into, and the tip already left (if any)
     $rid = isset($body['ride_id']) ? intval($body['ride_id']) : 0;
     if ($rid <= 0) fail('ride_id required', 400);
@@ -539,7 +540,39 @@ case 'ride_tip_info': {
     }
     ok(array('eligible' => $e['ok'] && !$existing, 'reason' => $existing ? 'You already left a tip for this trip' : $e['error'],
              'existing' => $existing ? array('amount' => floatval($existing['amount']), 'status' => $existing['status']) : null,
-             'accounts' => $accounts, 'max' => rides_tip_max($pdo), 'presets' => array(10, 20, 50, 100), 'driver_name' => $driverName));
+             'accounts' => $accounts, 'chapa' => chapa_enabled(), 'max' => rides_tip_max($pdo), 'presets' => array(10, 20, 50, 100), 'driver_name' => $driverName));
+    break;
+}
+
+case 'ride_tip_chapa_init': {
+    // POST: ride_id, amount   Start a Chapa checkout for a tip. The driver is paid when Chapa confirms (chapa_settle).
+    require_once __DIR__ . '/../chapa_bridge.php';
+    if (!chapa_enabled()) fail('Chapa is not set up on this server yet. Please tip by bank transfer.', 503);
+    $rid = isset($body['ride_id']) ? intval($body['ride_id']) : 0;
+    $amount = isset($body['amount']) ? round(floatval($body['amount']), 2) : 0;
+    if ($rid <= 0) fail('ride_id required', 400);
+    $max = rides_tip_max($pdo);
+    if ($amount < 5 || $amount > $max) fail('A tip must be between ETB 5 and ETB ' . intval($max), 400);
+    rate_limit_check($pdo, 'ride_tip_chapa:' . intval($u['id']), 10, 3600, 3600);
+    rate_limit_fail($pdo, 'ride_tip_chapa:' . intval($u['id']));
+    $e = rides_tip_eligible($pdo, $rid, $u['id']);
+    if (!$e['ok']) fail($e['error'], 409);
+    $x = $pdo->prepare("SELECT 1 FROM ride_tips WHERE ride_id=? LIMIT 1");
+    $x->execute(array($rid));
+    if ($x->fetchColumn()) fail('You already left a tip for this trip', 409);
+    chapa_ensure_table($pdo);
+    $txRef = 'EDT-' . $rid . '-' . strtoupper(bin2hex(random_bytes(5)));
+    $pdo->prepare("INSERT INTO chapa_payments (tx_ref, kind, target_id, user_id, amount) VALUES (?,?,?,?,?)")
+        ->execute(array($txRef, 'tip', $rid, $u['id'], $amount));
+    $base = chapa_base_url();
+    $url = chapa_initialize($txRef, $amount, $u,
+        $base . '/api/chapa-return.php?tx_ref=' . rawurlencode($txRef) . '&kind=tip',
+        $base . '/api/chapa-callback.php');
+    if (!$url) {
+        $pdo->prepare("UPDATE chapa_payments SET status='failed' WHERE tx_ref=?")->execute(array($txRef));
+        fail('Could not reach Chapa right now. Please try again or tip by bank transfer.', 502);
+    }
+    ok(array('checkout_url' => $url, 'tx_ref' => $txRef, 'amount' => $amount));
     break;
 }
 

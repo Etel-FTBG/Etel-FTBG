@@ -103,6 +103,7 @@ function chapa_initialize($txRef, $amount, $user, $returnUrl, $callbackUrl) {
 }
 
 // Returns array(status, amount, currency) or null.
+if (!function_exists('chapa_verify')) {
 function chapa_verify($txRef) {
     $res = chapa_request('GET', '/transaction/verify/' . rawurlencode($txRef));
     if (!isset($res['status']) || $res['status'] !== 'success' || !isset($res['data'])) return null;
@@ -111,6 +112,7 @@ function chapa_verify($txRef) {
         'amount'   => (float)(isset($res['data']['amount']) ? $res['data']['amount'] : 0),
         'currency' => strtoupper((string)(isset($res['data']['currency']) ? $res['data']['currency'] : '')),
     );
+}
 }
 
 // Verify with Chapa, then settle the ride/order exactly once.
@@ -151,6 +153,9 @@ function chapa_settle($pdo, $txRef) {
                 // credit the driver as a platform-collected (non-cash) fare.
                 rides_complete_and_pay($pdo, $target, $ride['driver_id'], (float)$p['amount'], 'chapa', substr($txRef, 0, 40));
             }
+        } elseif ($p['kind'] === 'tip') {
+            require_once __DIR__ . '/lib/ride_tip.php';
+            rides_tip_settle_chapa($pdo, $target, (int)$p['user_id'], (float)$p['amount'], $txRef);
         } else {
             $paid = $pdo->prepare("UPDATE orders SET payment_status='paid' WHERE id=? AND payment_status <> 'paid'");
             $paid->execute(array($target));

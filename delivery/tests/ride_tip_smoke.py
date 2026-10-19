@@ -116,6 +116,11 @@ check("a completed trip can be tipped", data(res).get("eligible") is True and da
 check("the tip limit is shown", float(data(res).get("max", 0)) >= 10, res)
 st, res = call("ride_tip_info", {"ride_id": rid1}, rider2)
 check("another rider cannot tip for it", data(res).get("eligible") is False, res)
+check("the tip screen says whether Chapa is on", data(call("ride_tip_info", {"ride_id": rid1}, rider)[1]).get("chapa") in (True, False), res)
+st, res = call("ride_tip_chapa_init", {"ride_id": rid1, "amount": 20}, rider)
+check("a Chapa tip is refused while Chapa is not set up", res.get("success") is False and st in (503, 502), (st, res))
+st, res = call("ride_tip_chapa_init", {"ride_id": rid1, "amount": 20}, rider2)
+check("another rider cannot start a Chapa tip for it", res.get("success") is False, (st, res))
 
 bal0 = q1("SELECT total_earnings FROM ride_drivers WHERE user_id=%d" % int(drv_id))
 st, res = call("ride_tip_give", {"ride_id": rid1, "amount": 3, "payment_ref": "REF-A-%s" % TAIL}, rider)
