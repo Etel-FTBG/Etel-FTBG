@@ -2,7 +2,7 @@
   "expo": {
     "name": "ETEL",
     "slug": "etel",
-    "version": "1.1.0",
+    "version": "1.2.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
@@ -61,7 +61,7 @@
       [
         "expo-notifications",
         {
-          "icon": "./assets/android-icon-foreground.png",
+          "icon": "./assets/android-icon-monochrome.png",
           "color": "#D4AF37"
         }
       ],

@@ -2,6 +2,7 @@ import * as Location from 'expo-location';
 import * as TaskManager from 'expo-task-manager';
 import Constants, { ExecutionEnvironment } from 'expo-constants';
 import { updateLocation } from '../api/ride';
+import { boot } from '../api/client';
 import { setOnlineState } from '../online/onlineState';
 
 export const LOCATION_TASK_NAME = 'etel-driver-location-task';
@@ -22,6 +23,12 @@ const isExpoGo = Constants.executionEnvironment === ExecutionEnvironment.StoreCl
 // LIMIT 1" when ride_id is omitted, which is fragile with a stale ride lying
 // around — always send it explicitly when we have one.
 let currentRideId: number | undefined;
+
+// Set by the hub's master online switch: also keep the delivery (courier) position fresh in the background.
+let courierLocation = false;
+export function setCourierLocationEnabled(on: boolean) {
+  courierLocation = on;
+}
 export function setActiveRideIdForLocationTask(rideId: number | undefined) {
   currentRideId = rideId;
 }
@@ -47,6 +54,9 @@ TaskManager.defineTask(LOCATION_TASK_NAME, async ({ data, error }) => {
     // (Matches the web app's tolerance for gaps: RideController.php caps
     // implausible jumps by elapsed time instead of rejecting them outright.)
     console.warn('[locationTask] update failed', e);
+  }
+  if (courierLocation) {
+    boot('courier_update_location', { lat: last.coords.latitude, lng: last.coords.longitude }).catch(() => {});
   }
 });
 
@@ -87,6 +97,7 @@ export async function startDriverLocationTracking() {
 }
 
 export async function stopDriverLocationTracking() {
+  courierLocation = false;
   setOnlineState(false);
   if (isExpoGo) {
     currentRideId = undefined;

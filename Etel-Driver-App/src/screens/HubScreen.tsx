@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { ActivityIndicator, Alert, Image, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Text } from '../i18n';
 import { colors, typography } from '../theme/colors';
 import { RootStackParamList } from '../navigation/types';
 import { HUB_APPS } from '../hub/apps';
+import { goOfflineEverywhere, goOnlineEverywhere } from '../hub/masterOnline';
+import SlideToConfirm from '../components/SlideToConfirm';
 import { useAuth } from '../context/AuthContext';
 import { isOnline, subscribeOnline } from '../online/onlineState';
 
@@ -14,20 +15,61 @@ type Props = NativeStackScreenProps<RootStackParamList, 'Hub'>;
 export default function HubScreen({ navigation }: Props) {
   const { user } = useAuth();
   const [online, setOnline] = useState(isOnline());
+  const [busy, setBusy] = useState(false);
+  const [where, setWhere] = useState<string[]>([]);
   useEffect(() => subscribeOnline(setOnline), []);
+
+  async function goOnline() {
+    setBusy(true);
+    try {
+      setWhere(await goOnlineEverywhere());
+    } catch (e) {
+      Alert.alert('Could not go online', e instanceof Error ? e.message : 'Please try again.');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function goOffline() {
+    setBusy(true);
+    try {
+      await goOfflineEverywhere();
+      setWhere([]);
+    } finally {
+      setBusy(false);
+    }
+  }
 
   return (
     <ScrollView style={styles.root} contentContainerStyle={styles.content}>
       <View style={styles.head}>
-        <Text style={styles.brand}>ETEL</Text>
+        <Image source={require('../../assets/etel-master.png')} style={styles.master} accessibilityLabel="ETEL" />
         <View style={[styles.pill, online && styles.pillOn]}>
           <View style={[styles.dot, online && styles.dotOn]} />
           <Text style={[styles.pillText, online && styles.pillTextOn]}>{online ? 'Online' : 'Offline'}</Text>
         </View>
       </View>
-      <Text style={styles.sub}>
-        Open any ETEL app here. Stay online while you use your phone: the golden ETEL light shows it is still running.
-      </Text>
+
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>{online ? 'You are online' : 'Go online everywhere'}</Text>
+        <Text style={styles.cardSub}>
+          {online
+            ? where.length
+              ? 'Online in: ' + where.join(', ') + '. The golden ETEL light shows while you use other apps.'
+              : 'The golden ETEL light shows while you use other apps.'
+            : 'One slide puts you online in every ETEL company you belong to: Ride, Delivery and Services.'}
+        </Text>
+        <View style={styles.slider}>
+          {busy ? (
+            <ActivityIndicator color={colors.gold} />
+          ) : online ? (
+            <SlideToConfirm label="Slide to go offline" onConfirm={goOffline} trackColor={colors.surface3} />
+          ) : (
+            <SlideToConfirm label="Slide to go online" onConfirm={goOnline} trackColor={colors.surface3} />
+          )}
+        </View>
+      </View>
+
       <View style={styles.grid}>
         {HUB_APPS.map((a) => (
           <Pressable
@@ -37,7 +79,7 @@ export default function HubScreen({ navigation }: Props) {
             accessibilityRole="button"
             accessibilityLabel={a.title}
           >
-            <Ionicons name={a.icon as keyof typeof Ionicons.glyphMap} size={30} color={colors.gold} />
+            <Image source={a.logo} style={styles.logo} />
             <Text style={styles.tileTitle}>{a.title}</Text>
             <Text style={styles.tileSub}>{a.subtitle}</Text>
           </Pressable>
@@ -46,9 +88,9 @@ export default function HubScreen({ navigation }: Props) {
           style={styles.tile}
           onPress={() => navigation.navigate(user ? 'MainTabs' : 'Login')}
           accessibilityRole="button"
-          accessibilityLabel="Native driver"
+          accessibilityLabel="Driver (native)"
         >
-          <Ionicons name="navigate" size={30} color={colors.gold} />
+          <Image source={require('../../assets/etel-master.png')} style={styles.logo} />
           <Text style={styles.tileTitle}>Driver (native)</Text>
           <Text style={styles.tileSub}>{user ? 'Open' : 'Sign in'}</Text>
         </Pressable>
@@ -59,9 +101,9 @@ export default function HubScreen({ navigation }: Props) {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.bg },
-  content: { padding: 20, paddingTop: 56, paddingBottom: 40 },
+  content: { padding: 20, paddingTop: 52, paddingBottom: 40 },
   head: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  brand: { color: colors.gold, fontSize: 30, letterSpacing: 4, fontFamily: typography.h1.fontFamily },
+  master: { width: 72, height: 72, resizeMode: 'contain' },
   pill: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -76,19 +118,32 @@ const styles = StyleSheet.create({
   dotOn: { backgroundColor: colors.gold },
   pillText: { color: colors.textMuted, fontSize: 13, fontWeight: '700' },
   pillTextOn: { color: colors.goldLight },
-  sub: { color: colors.textSecondary, marginTop: 14, marginBottom: 22, lineHeight: 20 },
+  card: {
+    marginTop: 18,
+    marginBottom: 20,
+    padding: 16,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+  },
+  cardTitle: { color: colors.text, fontSize: 18, fontFamily: typography.h2.fontFamily },
+  cardSub: { color: colors.textSecondary, marginTop: 6, marginBottom: 14, lineHeight: 19, fontSize: 13 },
+  slider: { minHeight: 60, justifyContent: 'center' },
   grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
   tile: {
     width: '48%',
-    minHeight: 130,
+    minHeight: 150,
     marginBottom: 14,
-    padding: 16,
+    padding: 14,
+    alignItems: 'center',
     justifyContent: 'center',
     borderRadius: 18,
     borderWidth: 1,
     borderColor: colors.border,
     backgroundColor: colors.surface,
   },
-  tileTitle: { color: colors.text, fontSize: 16, marginTop: 10, fontFamily: typography.h2.fontFamily },
-  tileSub: { color: colors.textMuted, fontSize: 12, marginTop: 2 },
+  logo: { width: 76, height: 76, resizeMode: 'contain' },
+  tileTitle: { color: colors.text, fontSize: 15, marginTop: 8, textAlign: 'center', fontFamily: typography.h2.fontFamily },
+  tileSub: { color: colors.textMuted, fontSize: 12, marginTop: 2, textAlign: 'center' },
 });
