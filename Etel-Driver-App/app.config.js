@@ -23,7 +23,7 @@ module.exports = {
       ...base.extra,
       etelApiBaseUrl: process.env.ETEL_API_BASE_URL || base.extra.etelApiBaseUrl,
       eas: {
-        projectId: 'facee9c3-0696-4bbc-a0dd-332240b0e200',
+        projectId: '42a8959a-b67c-4a3c-b95c-630c6f5acb36',
       },
     },
     owner: 'etel-ftbg',
