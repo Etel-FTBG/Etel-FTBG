@@ -58,7 +58,10 @@ rtok = (res.get("data") or {}).get("token")
 check("rider registered", bool(rtok), res)
 if not rtok:
     sys.exit(1)
-st, res = call("book_ride", {"pickup_lat": 7.0500, "pickup_lng": 38.49, "dropoff_lat": 7.09, "dropoff_lng": 38.52, "payment_method": "cash"}, rtok)
+# a quote token: during peak hours the server refuses a booking that was not quoted (the test must pass at any hour)
+st, est = call("ride_estimate_fare", {"distance_km": 2.6, "vehicle_type": "bajaj"}, rtok)
+st, res = call("book_ride", {"pickup_lat": 7.0500, "pickup_lng": 38.49, "dropoff_lat": 7.09, "dropoff_lng": 38.52, "payment_method": "cash",
+                             "quote_token": (est.get("data") or {}).get("quote_token")}, rtok)
 rid = (res.get("data") or {}).get("request_id")
 check("ride booked", bool(rid), res)
 if not rid:
