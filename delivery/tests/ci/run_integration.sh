@@ -58,6 +58,7 @@ run php tests/ratings_report_test.php
 run php tests/track_eta_test.php
 run php tests/shop_hours_test.php
 run php tests/money_ledger_test.php
+run php tests/ride_tip_chapa_test.php
 run php tests/manual_dispatch_test.php
 run php tests/order_cancel_test.php
 run php tests/package_orders_test.php

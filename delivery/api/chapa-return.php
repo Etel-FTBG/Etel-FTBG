@@ -16,7 +16,7 @@ if (!defined('APP_VER')) define('APP_VER', 'chapa'); // satisfies the lib/ direc
 require_once __DIR__ . '/chapa_bridge.php';
 
 $ref  = isset($_GET['tx_ref']) ? trim($_GET['tx_ref']) : '';
-$kind = (isset($_GET['kind']) && $_GET['kind'] === 'order') ? 'order' : 'ride';
+$kind = (isset($_GET['kind']) && $_GET['kind'] === 'order') ? 'order' : ((isset($_GET['kind']) && $_GET['kind'] === 'tip') ? 'tip' : 'ride');
 $result = 'unknown';
 if ($ref !== '' && chapa_enabled()) {
     try {
