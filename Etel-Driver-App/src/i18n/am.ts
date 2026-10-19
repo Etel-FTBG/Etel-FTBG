@@ -2,6 +2,18 @@
 // Keys are the exact English text shown in the app. Leading/trailing emoji and arrows are ignored when matching,
 // so "🧭 Navigate" is found under 'Navigate'. Text with no entry stays English.
 export const AM: Record<string, string> = {
+  // ETEL hub
+  'Mobility': 'ጉዞ', 'Delivery and services': 'ማድረስ እና አገልግሎቶች', 'Identity and finance': 'መታወቂያ እና ፋይናንስ',
+  'Coming soon': 'በቅርብ ቀን', 'One account. One ecosystem.': 'አንድ አካውንት። አንድ ኢኮሲስተም።',
+  'Go online everywhere': 'በሁሉም ቦታ መስመር ላይ ይግቡ', 'You are online': 'በመስመር ላይ ነዎት',
+  'One slide puts you online in every ETEL company you belong to.': 'አንድ ማንሸራተት በሚገኙበት ሁሉም የኢቴል ኩባንያዎች መስመር ላይ ያደርግዎታል።',
+  'The golden ETEL light shows while you use other apps.': 'ሌሎች አፕሊኬሽኖችን ሲጠቀሙ ወርቃማው የኢቴል ብርሃን ይታያል።',
+  'Online in: ': 'መስመር ላይ የሚገኙበት፦ ', 'Ride': 'ጉዞ', 'Delivery': 'ማድረስ', 'Services': 'አገልግሎቶች',
+  'Slide to go offline': 'ከመስመር ለመውጣት ያንሸራትቱ', 'Could not go online': 'መስመር ላይ መግባት አልተቻለም', 'Please try again.': 'እባክዎ እንደገና ይሞክሩ።',
+  'Book a ride': 'ጉዞ ይዘዙ', 'Drive and earn': 'ይንዱ ይቀበሉ', 'Deliver orders': 'ትዕዛዞችን ያድርሱ', 'Order anything': 'ማንኛውንም ይዘዙ',
+  'Service givers': 'አገልግሎት ሰጪዎች', 'Your digital identity': 'ዲጂታል መታወቂያዎ', 'Wallet and payments': 'የኪስ ቦርሳ እና ክፍያዎች',
+  'Marketplace': 'የገበያ ቦታ', 'Shops and trade': 'ሱቆች እና ንግድ', 'ETEL Family Technology and Business Group': 'ኢቴል ቤተሰብ ቴክኖሎጂ እና ንግድ ግሩፕ',
+  'Could not load. Check your connection.': 'መጫን አልተቻለም። ግንኙነትዎን ያረጋግጡ።',
   // shared words
   'Cancel': 'ሰርዝ', 'Back': 'ተመለስ', 'Done': 'ተጠናቋል', 'Send': 'ላክ', 'Submit': 'ላክ', 'Settings': 'ቅንብሮች', 'Language': 'ቋንቋ',
   'Today': 'ዛሬ', 'History': 'ታሪክ', 'Loading…': 'በመጫን ላይ…', 'Error': 'ስህተት',

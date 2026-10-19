@@ -6,8 +6,10 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Text } from '../i18n';
 import { colors, typography } from '../theme/colors';
 import { RootStackParamList } from '../navigation/types';
-import { HUB_APPS, SITE_ORIGIN } from '../hub/apps';
-import { BRIDGE_JS } from '../hub/webBridge';
+import { HUB_APPS, ALLOWED_ORIGINS } from '../hub/apps';
+import { BRIDGE_JS, prefsJs } from '../hub/webBridge';
+import { useTheme } from '../theme/ThemeContext';
+import { useLanguage } from '../i18n';
 import { setToken } from '../api/client';
 import { setOnlineState } from '../online/onlineState';
 import { startDriverLocationTracking, stopDriverLocationTracking } from '../location/backgroundLocationTask';
@@ -23,6 +25,8 @@ type Props = NativeStackScreenProps<RootStackParamList, 'WebApp'>;
 export default function WebAppScreen({ route, navigation }: Props) {
   const app = HUB_APPS.find((a) => a.key === route.params.appKey) || HUB_APPS[0];
   const web = useRef<WebHandle>(null);
+  const { p } = useTheme();
+  const { lang } = useLanguage();
   const [canGoBack, setCanGoBack] = useState(false);
   const [loading, setLoading] = useState(true);
   const [failed, setFailed] = useState(false);
@@ -64,19 +68,19 @@ export default function WebAppScreen({ route, navigation }: Props) {
   }, []);
 
   return (
-    <View style={styles.root}>
-      <View style={styles.bar}>
+    <View style={[styles.root, { backgroundColor: p.bg }]}>
+      <View style={[styles.bar, { backgroundColor: p.surface, borderBottomColor: p.border }]}>
         <Pressable onPress={() => navigation.goBack()} style={styles.barBtn} accessibilityLabel="Back to ETEL">
-          <Ionicons name="grid" size={20} color={colors.gold} />
+          <Ionicons name="grid" size={20} color={p.gold} />
         </Pressable>
-        <Text style={styles.title}>{app.title}</Text>
+        <Text style={[styles.title, { color: p.text }]}>{app.title}</Text>
         <Pressable onPress={() => web.current?.reload()} style={styles.barBtn} accessibilityLabel="Reload">
-          <Ionicons name="refresh" size={20} color={colors.gold} />
+          <Ionicons name="refresh" size={20} color={p.gold} />
         </Pressable>
       </View>
       {failed ? (
         <View style={styles.center}>
-          <Text style={styles.msg}>Could not load. Check your connection.</Text>
+          <Text style={[styles.msg, { color: p.textSecondary }]}>Could not load. Check your connection.</Text>
           <Pressable
             style={styles.retry}
             onPress={() => {
@@ -92,8 +96,8 @@ export default function WebAppScreen({ route, navigation }: Props) {
         <WebView
           ref={web}
           source={{ uri: app.url }}
-          style={styles.web}
-          injectedJavaScriptBeforeContentLoaded={BRIDGE_JS}
+          style={[styles.web, { backgroundColor: p.bg }]}
+          injectedJavaScriptBeforeContentLoaded={(app.syncPrefs ? prefsJs(lang, p.mode) : '') + BRIDGE_JS}
           onMessage={onMessage}
           onNavigationStateChange={(s: { canGoBack: boolean }) => setCanGoBack(s.canGoBack)}
           onLoadEnd={() => setLoading(false)}
@@ -103,7 +107,7 @@ export default function WebAppScreen({ route, navigation }: Props) {
           }}
           onShouldStartLoadWithRequest={(req: { url: string }) => {
             // Stay inside ETEL; phone, mail and maps links open their own apps.
-            if (req.url.startsWith(SITE_ORIGIN) || req.url.startsWith('about:') || req.url.startsWith('blob:') || req.url.startsWith('data:')) return true;
+            if (ALLOWED_ORIGINS.some((o) => req.url.startsWith(o)) || req.url.startsWith('about:') || req.url.startsWith('blob:') || req.url.startsWith('data:')) return true;
             if (/^(tel:|mailto:|sms:|geo:|intent:|https:\/\/(www\.)?(google\.com\/maps|maps\.google\.com|waze\.com|wa\.me|t\.me))/.test(req.url)) {
               Linking.openURL(req.url).catch(() => {});
               return false;
@@ -130,7 +134,7 @@ export default function WebAppScreen({ route, navigation }: Props) {
       )}
       {loading && !failed ? (
         <View style={styles.loading} pointerEvents="none">
-          <ActivityIndicator color={colors.gold} size="large" />
+          <ActivityIndicator color={p.gold} size="large" />
         </View>
       ) : null}
     </View>

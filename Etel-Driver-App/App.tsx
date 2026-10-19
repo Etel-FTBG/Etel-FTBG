@@ -8,6 +8,7 @@ import { JetBrainsMono_700Bold, JetBrainsMono_500Medium } from '@expo-google-fon
 import { CormorantGaramond_600SemiBold } from '@expo-google-fonts/cormorant-garamond';
 import { AuthProvider, useAuth } from './src/context/AuthContext';
 import { NightModeProvider } from './src/context/NightModeContext';
+import { ThemeProvider, useTheme } from './src/theme/ThemeContext';
 import { LanguageProvider } from './src/i18n';
 import LoginScreen from './src/screens/LoginScreen';
 import BottomTabs from './src/navigation/BottomTabs';
@@ -28,6 +29,11 @@ import AppLockGate from './src/security/AppLockGate';
 import './src/location/backgroundLocationTask'; // registers the TaskManager task
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
+
+function ThemedStatusBar() {
+  const { mode } = useTheme();
+  return <StatusBar style={mode === 'dark' ? 'light' : 'dark'} />;
+}
 
 function RootNavigator() {
   const { user, loading } = useAuth();
@@ -59,7 +65,7 @@ function RootNavigator() {
           <Stack.Screen name="Login" component={LoginScreen} />
         )}
       </Stack.Navigator>
-      <StatusBar style="light" />
+      <ThemedStatusBar />
     </NavigationContainer>
   );
 }
@@ -86,11 +92,13 @@ export default function App() {
     <ErrorBoundary>
       <AuthProvider>
         <NightModeProvider>
-          <AppLockGate>
-            <RootNavigator />
-          </AppLockGate>
-          <OfflineBanner />
-          <BackgroundBadge />
+          <ThemeProvider>
+            <AppLockGate>
+              <RootNavigator />
+            </AppLockGate>
+            <OfflineBanner />
+            <BackgroundBadge />
+          </ThemeProvider>
         </NightModeProvider>
       </AuthProvider>
     </ErrorBoundary>

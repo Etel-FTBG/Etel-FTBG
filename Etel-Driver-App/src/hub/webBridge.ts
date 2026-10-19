@@ -1,6 +1,11 @@
 // Injected into every web app before it loads. It tells the native shell two things:
 //  - the login token (so the background location and push notifications can run for that user), and
 //  - when the user goes online or offline in the web Driver app (so the shell keeps running in the background).
+// Language and theme chosen in the shell are written into the web app's own storage before it loads.
+export function prefsJs(lang: 'en' | 'am', mode: 'dark' | 'light'): string {
+  return `(function(){try{localStorage.setItem('etel_lang','${lang}');localStorage.setItem('etel_driver_lang','${lang}');localStorage.setItem('etel_ride_theme','${mode}');}catch(e){}})();true;`;
+}
+
 export const BRIDGE_JS = `
 (function () {
   if (window.__etelHubBridge) return;
