@@ -182,6 +182,9 @@ check("arrival bills the agreed price, not the meter", res.get("success") is Tru
 bal0 = q1("SELECT commission_owed FROM ride_drivers WHERE user_id=%d" % int(d2_id))
 st, res = call("customer_confirm_arrival", {"ride_id": rid, "payment_method": "cash"}, rider)
 check("the rider pays the agreed price", res.get("success") is True and abs(float(data(res).get("fare_paid", 0)) - c3) < 0.01, res)
+st, rr = call("ride_receipt", {"id": rid}, rider)
+rl = data(rr).get("lines", [])
+check("the receipt shows the agreed price and its lines add up to the total", abs(sum(l["etb"] for l in rl) - float(data(rr).get("total", 0))) < 0.02 and any(l["label"] == "Price agreed with driver" for l in rl), rl)
 bal1 = q1("SELECT commission_owed FROM ride_drivers WHERE user_id=%d" % int(d2_id))
 if bal0 is not None and bal1 is not None:
     check("Etel's 5% is on the agreed price", abs((float(bal1) - float(bal0)) - round(c3 * 0.05, 2)) < 0.02, (bal0, bal1))
