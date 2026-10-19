@@ -2,7 +2,7 @@
   "expo": {
     "name": "ETEL",
     "slug": "etel",
-    "version": "1.2.0",
+    "version": "1.3.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
@@ -11,7 +11,11 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.etelgroup.driver",
       "infoPlist": {
-        "UIBackgroundModes": ["location", "fetch", "remote-notification"],
+        "UIBackgroundModes": [
+          "location",
+          "fetch",
+          "remote-notification"
+        ],
         "NSLocationWhenInUseUsageDescription": "ETEL Drive needs your location to match you with nearby ride and delivery requests.",
         "NSLocationAlwaysAndWhenInUseUsageDescription": "ETEL Drive needs background location so riders and dispatch can track your position while you are online, even when the app is in the background.",
         "NSCameraUsageDescription": "ETEL Drive needs camera access to photograph compliance documents.",
@@ -50,6 +54,20 @@
     "plugins": [
       "expo-secure-store",
       "expo-font",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "enableMinifyInReleaseBuilds": true,
+            "enableShrinkResourcesInReleaseBuilds": true,
+            "enablePngCrunchInReleaseBuilds": false,
+            "buildArchs": [
+              "arm64-v8a",
+              "armeabi-v7a"
+            ]
+          }
+        }
+      ],
       [
         "expo-location",
         {
