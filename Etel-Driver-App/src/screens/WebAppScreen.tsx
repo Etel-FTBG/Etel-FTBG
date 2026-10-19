@@ -120,6 +120,11 @@ export default function WebAppScreen({ route, navigation }: Props) {
           setSupportMultipleWindows={false}
           pullToRefreshEnabled
           cacheEnabled
+          cacheMode="LOAD_DEFAULT"
+          androidLayerType="hardware"
+          overScrollMode="never"
+          textZoom={100}
+          startInLoadingState={false}
           originWhitelist={['https://*', 'http://localhost*']}
         />
       )}
