@@ -17,6 +17,9 @@ import DocumentsScreen from './src/screens/DocumentsScreen';
 import WalletScreen from './src/screens/WalletScreen';
 import NotificationsScreen from './src/screens/NotificationsScreen';
 import HelpScreen from './src/screens/HelpScreen';
+import HubScreen from './src/screens/HubScreen';
+import WebAppScreen from './src/screens/WebAppScreen';
+import BackgroundBadge from './src/online/BackgroundBadge';
 import { RootStackParamList } from './src/navigation/types';
 import { colors } from './src/theme/colors';
 import ErrorBoundary from './src/components/ErrorBoundary';
@@ -39,7 +42,9 @@ function RootNavigator() {
 
   return (
     <NavigationContainer>
-      <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Navigator initialRouteName="Hub" screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="Hub" component={HubScreen} />
+        <Stack.Screen name="WebApp" component={WebAppScreen} />
         {user ? (
           <>
             <Stack.Screen name="MainTabs" component={BottomTabs} />
@@ -85,6 +90,7 @@ export default function App() {
             <RootNavigator />
           </AppLockGate>
           <OfflineBanner />
+          <BackgroundBadge />
         </NightModeProvider>
       </AuthProvider>
     </ErrorBoundary>

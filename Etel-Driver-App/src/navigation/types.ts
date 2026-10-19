@@ -1,4 +1,6 @@
 export type RootStackParamList = {
+  Hub: undefined;
+  WebApp: { appKey: string };
   Login: undefined;
   MainTabs: undefined;
   ActiveRide: { rideId: number };

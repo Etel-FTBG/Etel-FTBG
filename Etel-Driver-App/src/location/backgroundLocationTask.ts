@@ -2,6 +2,7 @@ import * as Location from 'expo-location';
 import * as TaskManager from 'expo-task-manager';
 import Constants, { ExecutionEnvironment } from 'expo-constants';
 import { updateLocation } from '../api/ride';
+import { setOnlineState } from '../online/onlineState';
 
 export const LOCATION_TASK_NAME = 'etel-driver-location-task';
 
@@ -65,7 +66,10 @@ export async function startDriverLocationTracking() {
   if (bgStatus !== 'granted') throw new Error('Background location permission denied');
 
   const already = await Location.hasStartedLocationUpdatesAsync(LOCATION_TASK_NAME);
-  if (already) return;
+  if (already) {
+    setOnlineState(true);
+    return;
+  }
 
   await Location.startLocationUpdatesAsync(LOCATION_TASK_NAME, {
     accuracy: Location.Accuracy.High,
@@ -79,9 +83,11 @@ export async function startDriverLocationTracking() {
     },
     pausesUpdatesAutomatically: false,
   });
+  setOnlineState(true);
 }
 
 export async function stopDriverLocationTracking() {
+  setOnlineState(false);
   if (isExpoGo) {
     currentRideId = undefined;
     return;
