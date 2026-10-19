@@ -1954,7 +1954,7 @@ case 'ride_receipt': {
     if (!$id) fail('Ride id required');
     $s = $pdo->prepare(
         "SELECT r.id, r.status, r.pickup_address, r.dropoff_address, r.distance_km, r.traveled_km, r.fare_paid, r.fare_final,
-                r.payment_method, r.created_at, r.completed_at, r.fare_breakdown_json,
+                r.payment_method, r.created_at, r.completed_at, r.fare_breakdown_json, r.driver_id,
                 d.name AS driver_name, p.name AS passenger_name, rd.vehicle_plate, rd.vehicle_type, rd.vehicle_color
          FROM rides r
          LEFT JOIN users d ON d.id = r.driver_id
@@ -1974,8 +1974,20 @@ case 'ride_receipt': {
     $add('Waiting time', isset($b['fare_wait']) ? $b['fare_wait'] : null);
     $add('Peak-hour surge', isset($b['fare_surge_etb']) ? $b['fare_surge_etb'] : null);
     $add('Minimum fare top-up', isset($b['fare_floor_topup']) ? $b['fare_floor_topup'] : null);
+    // a price agreed with the driver (offer / counter-offer): the trip is billed at that price, not the meter's
+    if (isset($b['agreed_fare']) && isset($b['metered_fare'])) {
+        $add('Price agreed with driver', floatval($b['agreed_fare']) - floatval($b['metered_fare']));
+    }
     $total = floatval($r['fare_paid']) > 0 ? floatval($r['fare_paid']) : floatval($r['fare_final']);
+    $promo = rides_promo_info($pdo, $id);
+    $note = null;
+    if ($promo) {
+        $lines[] = array('label' => 'Promo ' . $promo['promo_code'], 'etb' => -1 * $promo['promo_discount']);
+        if (intval($r['driver_id']) === intval($u['id'])) $note = 'The promo discount was paid by Etel. Your earnings are not reduced.';
+        else $note = 'The promo discount was paid by Etel.';
+    }
     ok(array(
+        'note'       => $note,
         'receipt_no' => 'ETEL-R' . str_pad((string) intval($r['id']), 6, '0', STR_PAD_LEFT),
         'ride_id'    => intval($r['id']),
         'rider'      => $r['passenger_name'],
@@ -4500,7 +4512,7 @@ case 'driver_arrived': {
     ok(array_merge(array('arrived' => true, 'distance_km' => $km, 'fare' => $fare,
              'surge' => (bool)($finalSurge !== null ? $finalSurge : !empty($r['surge_applied'])),
              'wait_minutes' => round($waitMinutes, 2), 'wait_etb' => $waitEtb,
-             'message' => 'Waiting for customer confirmation'), $breakdownForUi));
+             'message' => 'Waiting for customer confirmation'), $breakdownForUi, rides_promo_info($pdo, $rid)));
     break;
 }
 
@@ -4622,9 +4634,9 @@ case 'driver_complete_ride': {
     $fare = rides_agreed_apply($pdo, $rid, $fare);
     rides_flag_fare_review($pdo, $rid, $u['id'], $fare, $km);
     $fare = rides_promo_apply_to_arrived($pdo, $rid);
-    ok(array('arrived' => true, 'distance_km' => $km, 'fare' => $fare,
+    ok(array_merge(array('arrived' => true, 'distance_km' => $km, 'fare' => $fare,
              'surge' => (bool)($finalSurge2 !== null ? $finalSurge2 : !empty($r['surge_applied'])),
-             'message' => 'Waiting for customer confirmation'));
+             'message' => 'Waiting for customer confirmation'), rides_promo_info($pdo, $rid)));
     break;
 }
 

@@ -121,6 +121,7 @@ jobs:
           python3 delivery/tests/ci/check_request_id_beacon.py
           python3 delivery/tests/ci/check_driver_nav_choice.py
           python3 delivery/tests/ci/check_releases.py
+          python3 delivery/tests/ci/check_promo_lines.py
           python3 delivery/tests/ci/check_ride_theme.py
           python3 delivery/tests/ci/check_servicegiver_csp.py
           python3 delivery/tests/ci/check_servicegiver_i18n.py

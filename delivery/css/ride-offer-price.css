@@ -55,3 +55,6 @@ html[data-etel-theme="light"] .rp-dlg .rop-step button{color:#7E5900!important}
 /* the driver app's dark-page rule (body.dark-page [class*="-card"]) blanks any class ending in "-card": keep the dialog card solid, and above the SOS and refresh buttons */
 body.dark-page .rp-dlg .rp-card{background:#14141F!important;color:#EDEDF5!important;border:1px solid rgba(229,199,107,.35)!important;box-shadow:0 20px 60px rgba(0,0,0,.5)!important}
 #dnc-dlg,#drc-dlg{z-index:2147483647}
+
+/* promo line on the trip-end screen (js/ride-promo-lines.js) */
+html[data-etel-theme="light"] .rpl-line{color:#146B3E!important}

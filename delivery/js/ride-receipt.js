@@ -24,7 +24,7 @@
             .then(function (t) { try { return JSON.parse(t); } catch (e) { return { success: false, message: 'Server error. Try again.' }; } })
             .catch(function () { return { success: false, message: 'Cannot reach the server. Check your connection.' }; });
     }
-    function money(n) { return 'ETB ' + (parseFloat(n) || 0).toFixed(2); }
+    function money(n) { var v = parseFloat(n) || 0; return (v < 0 ? '- ' : '') + 'ETB ' + Math.abs(v).toFixed(2); }
     function when(s) { return s ? String(s).replace('T', ' ').substring(0, 16) : ''; }
 
     function asText(r) {
@@ -33,7 +33,9 @@
         if (r.rider) L.push('Rider: ' + r.rider);
         if (r.driver) L.push('Driver: ' + r.driver + (r.plate ? ' (' + r.plate + ')' : ''));
         (r.lines || []).forEach(function (l) { L.push(l.label + ': ' + money(l.etb)); });
-        L.push('Total: ' + money(r.total) + ' (' + r.payment + ')', '', 'Thank you for riding with ETEL.');
+        L.push('Total: ' + money(r.total) + ' (' + r.payment + ')');
+        if (r.note) L.push(r.note);
+        L.push('', 'Thank you for riding with ETEL.');
         return L.join('\n');
     }
 
@@ -69,7 +71,7 @@
         view(HEAD + '<div class="no">' + esc(r.receipt_no) + '</div><div class="dim">' + esc(when(r.completed_at)) + '</div>' +
             '<div class="sec"><div class="k">From</div>' + esc(r.pickup || '-') + '<div class="k" style="margin-top:6px">To</div>' + esc(r.dropoff || '-') + '<div class="dim" style="margin-top:4px">' + esc(r.distance_km) + ' km</div></div>' +
             (r.rider ? '<div class="sec"><div class="k">Rider</div>' + esc(r.rider) + '</div>' : '') + (r.driver ? '<div class="sec"><div class="k">Driver</div>' + esc(r.driver) + (r.plate ? ' &middot; ' + esc(r.plate) : '') + (r.vehicle ? '<div class="dim">' + esc(r.vehicle) + '</div>' : '') + '</div>' : '') +
-            '<div class="sec">' + lines + '<div class="tot"><span>Total</span><span>' + money(r.total) + '</span></div><div class="dim" style="text-align:right">Paid by ' + esc(r.payment) + '</div></div>' +
+            '<div class="sec">' + lines + '<div class="tot"><span>Total</span><span>' + money(r.total) + '</span></div><div class="dim" style="text-align:right">Paid by ' + esc(r.payment) + '</div>' + (r.note ? '<div class="dim" style="margin-top:6px">' + esc(r.note) + '</div>' : '') + '</div>' +
             '<div class="row"><button class="b" id="copy">Copy</button><button class="b" id="print">Print / PDF</button><button class="b p" id="share">Share</button></div>' +
             (window.EtelRidePrinter && window.EtelRidePrinter.isSupported() ? '<div class="row"><button class="b" id="thermal">Print on receipt printer</button></div>' : '') + '<div class="dim" id="msg" style="min-height:18px;margin-top:8px;text-align:center"></div>');
         var msg = shadow.getElementById('msg');
@@ -132,7 +134,7 @@
         '<div class="grid"><div class="card"><div class="lab">Driver</div><div class="val">' + esc(r.driver || '-') + '</div><div class="s">' + esc(veh || ' ') + '</div></div>' +
         '<div class="card"><div class="lab">Distance</div><div class="val">' + esc(r.distance_km) + ' km</div><div class="s">Paid by ' + esc(r.payment) + (r.rider ? ' &middot; Rider: ' + esc(r.rider) : '') + '</div></div></div>' +
         '<div class="lab" style="margin-bottom:1mm">Fare details</div><table>' + rows + '</table>' +
-        '<div class="total"><span class="l">Total paid</span><span class="a">' + money(r.total) + '</span></div>' +
+        '<div class="total"><span class="l">Total paid</span><span class="a">' + money(r.total) + '</span></div>' + (r.note ? '<div class="lab" style="margin-top:2mm">' + esc(r.note) + '</div>' : '') +
         '<div class="thanks"><b>Thank you for riding with ETEL</b><div>Safe rides across Hawassa, fast and fair.</div></div></div>' +
         '<div class="foot"><span><b>ETEL Group</b> &middot; Hawassa, Ethiopia</span><span>ethelmarket.com</span></div>' +
         '</div></body></html>';

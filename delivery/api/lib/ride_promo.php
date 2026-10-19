@@ -174,6 +174,20 @@ function rides_promo_apply_to_arrived($pdo, $rideId) {
     }
 }
 
+// What the promo did to a ride, for the screens that show the fare: array() when the ride has no promo discount.
+function rides_promo_info($pdo, $rideId) {
+    try {
+        rides_promo_ensure($pdo);
+        $q = $pdo->prepare("SELECT promo_code, promo_discount, promo_net FROM rides WHERE id=? LIMIT 1");
+        $q->execute(array($rideId));
+        $r = $q->fetch(PDO::FETCH_ASSOC);
+        if (!$r || !$r['promo_code'] || floatval($r['promo_discount']) <= 0) return array();
+        $net = $r['promo_net'] !== null ? floatval($r['promo_net']) : 0.0;
+        return array('promo_code' => $r['promo_code'], 'promo_discount' => round(floatval($r['promo_discount']), 2),
+                     'fare_before_promo' => round($net + floatval($r['promo_discount']), 2));
+    } catch (Exception $e) { return array(); }
+}
+
 // At completion: the discount to fund, and the use is recorded once. Returns array(discount, passenger_id).
 function rides_promo_settle($pdo, $rideId) {
     rides_promo_ensure($pdo);
