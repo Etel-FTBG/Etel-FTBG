@@ -4,7 +4,8 @@ import Constants from 'expo-constants';
 const apiUrl: string =
   (Constants.expoConfig?.extra?.etelApiBaseUrl as string) || 'https://ethelmarket.com/delivery/api/boot.php';
 const SITE = apiUrl.replace(/\/api\/boot\.php.*$/, '');
-const ID_SITE = 'https://id.etelgroup.et';
+// EtelID is the WordPress plugin on the same domain (the delivery login pages link to it here).
+const ID_SITE = 'https://ethelmarket.com/EtelId';
 
 export interface HubApp {
   key: string;
