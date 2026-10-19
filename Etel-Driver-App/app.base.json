@@ -2,7 +2,7 @@
   "expo": {
     "name": "ኢE Etel",
     "slug": "etel",
-    "version": "1.5.2",
+    "version": "1.6.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
@@ -93,6 +93,12 @@
     ],
     "extra": {
       "etelApiBaseUrl": "https://ethelmarket.com/delivery/api/boot.php"
+    },
+    "runtimeVersion": "1",
+    "updates": {
+      "url": "https://u.expo.dev/42a8959a-b67c-4a3c-b95c-630c6f5acb36",
+      "checkAutomatically": "ON_LOAD",
+      "fallbackToCacheTimeout": 0
     }
   }
 }
