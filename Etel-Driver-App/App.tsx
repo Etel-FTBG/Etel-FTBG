@@ -22,6 +22,7 @@ import HubScreen from './src/screens/HubScreen';
 import WebAppScreen from './src/screens/WebAppScreen';
 import BackgroundBadge from './src/online/BackgroundBadge';
 import IntroSplash from './src/components/IntroSplash';
+import UpdateBanner from './src/components/UpdateBanner';
 import { RootStackParamList } from './src/navigation/types';
 import { colors } from './src/theme/colors';
 import ErrorBoundary from './src/components/ErrorBoundary';
@@ -99,6 +100,7 @@ export default function App() {
             </AppLockGate>
             <OfflineBanner />
             <BackgroundBadge />
+            <UpdateBanner />
             <IntroSplash />
           </ThemeProvider>
         </NightModeProvider>

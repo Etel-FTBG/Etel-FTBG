@@ -1,0 +1,17 @@
+name: Publish update (preview)
+
+# Sends the latest app code to every installed phone over the air. Runs on its own when the app folder changes on main,
+# and can also be run by hand from the Expo website (Workflows > Run workflow).
+on:
+  push:
+    branches: ['main']
+    paths:
+      - 'Etel-Driver-App/**'
+
+jobs:
+  update:
+    name: Publish OTA update
+    type: update
+    params:
+      branch: preview
+      message: 'Update from main'
