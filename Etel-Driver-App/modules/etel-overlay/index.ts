@@ -7,6 +7,7 @@ type EtelOverlayNative = {
   requestPermission(): void;
   show(): void;
   hide(): void;
+  update(trips: number, requests: number, orders: number, deliveries: number): void;
   isShowing(): boolean;
 };
 
@@ -18,3 +19,4 @@ export function canDrawOverlays(): boolean { return native ? native.canDrawOverl
 export function requestOverlayPermission(): void { native?.requestPermission(); }
 export function showOnlineBadge(): void { native?.show(); }
 export function hideOnlineBadge(): void { native?.hide(); }
+export function updateOverlayCounts(trips: number, requests: number, orders: number, deliveries: number): void { native?.update(trips, requests, orders, deliveries); }

@@ -4,6 +4,7 @@ import Constants, { ExecutionEnvironment } from 'expo-constants';
 import { updateLocation } from '../api/ride';
 import { boot } from '../api/client';
 import { setOnlineState } from '../online/onlineState';
+import { refreshCounts } from '../online/liveCounts';
 
 export const LOCATION_TASK_NAME = 'etel-driver-location-task';
 
@@ -58,6 +59,8 @@ TaskManager.defineTask(LOCATION_TASK_NAME, async ({ data, error }) => {
   if (courierLocation) {
     boot('courier_update_location', { lat: last.coords.latitude, lng: last.coords.longitude }).catch(() => {});
   }
+  // Keeps the golden light's trip / order / delivery counts fresh while the app is in the background (throttled).
+  refreshCounts().catch(() => {});
 });
 
 export async function startDriverLocationTracking() {
@@ -87,7 +90,7 @@ export async function startDriverLocationTracking() {
     distanceInterval: 0,
     showsBackgroundLocationIndicator: true,
     foregroundService: {
-      notificationTitle: 'ETEL Drive — Online',
+      notificationTitle: 'ETEL — Online',
       notificationBody: 'Sharing your location so riders and dispatch can find you.',
       notificationColor: '#D4AF37',
     },

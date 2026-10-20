@@ -15,6 +15,9 @@ import Reveal from '../components/Reveal';
 import UpdateStatus from '../components/UpdateStatus';
 import { success, tap } from '../utils/haptics';
 import { isOnline, subscribeOnline } from '../online/onlineState';
+import SignInCard from '../components/SignInCard';
+import ProfileCard from '../components/ProfileCard';
+import { canGoOnline, canOpen, useSession } from '../hub/session';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Hub'>;
 
@@ -29,6 +32,7 @@ export default function HubScreen({ navigation }: Props) {
   const [online, setOnline] = useState(isOnline());
   const [busy, setBusy] = useState(false);
   const [where, setWhere] = useState<string[]>([]);
+  const session = useSession();
   useEffect(() => subscribeOnline(setOnline), []);
 
   async function goOnline() {
@@ -55,6 +59,14 @@ export default function HubScreen({ navigation }: Props) {
 
   function open(a: HubApp) {
     if (a.status !== 'live') return;
+    if (a.key !== 'id' && !session) {
+      RNAlert.alert(translate('Sign in first'), translate('Sign in with your EtelID above to open this app.'));
+      return;
+    }
+    if (!canOpen(a.key, session?.role)) {
+      RNAlert.alert(translate('Not for your account'), translate('This app is for a different role. Your EtelID opens the apps that match your role.'));
+      return;
+    }
     tap();
     navigation.navigate('WebApp', { appKey: a.key });
   }
@@ -87,6 +99,11 @@ export default function HubScreen({ navigation }: Props) {
         <Text style={[styles.greet, { color: p.goldStrong }]}>{greeting()}</Text>
       </Reveal>
 
+      <Reveal delay={160}>
+        {session ? <ProfileCard session={session} /> : <SignInCard />}
+      </Reveal>
+
+      {session && canGoOnline(session.role) ? (
       <Reveal delay={160}>
       <LinearGradient
         colors={online ? [p.glow, p.surface] : [p.surface, p.surface]}
@@ -126,6 +143,7 @@ export default function HubScreen({ navigation }: Props) {
         </View>
       </LinearGradient>
       </Reveal>
+      ) : null}
 
       {HUB_GROUPS.map((g, gi) => (
         <Reveal key={g.title} delay={260 + gi * 120} style={styles.group}>
@@ -133,6 +151,8 @@ export default function HubScreen({ navigation }: Props) {
           <View style={styles.grid}>
             {g.apps.map((a) => {
               const soon = a.status === 'soon';
+              const allowed = a.key === 'id' || (!!session && canOpen(a.key, session.role));
+              const wrongRole = !soon && !!session && !allowed;
               return (
                 <Pressable
                   key={a.key}
@@ -148,7 +168,7 @@ export default function HubScreen({ navigation }: Props) {
                     pressed && !soon && { transform: [{ scale: 0.97 }] },
                   ]}
                 >
-                  <View style={soon ? styles.dim : undefined}>
+                  <View style={soon || wrongRole ? styles.dim : !allowed ? styles.faded : undefined}>
                     <Image source={a.logo} style={styles.logo} />
                   </View>
                   <Text style={[styles.tileTitle, { color: soon ? p.textMuted : p.text }]}>{a.title}</Text>
@@ -156,6 +176,11 @@ export default function HubScreen({ navigation }: Props) {
                     <View style={[styles.badge, { borderColor: p.borderSoft, backgroundColor: p.surfaceAlt }]}>
                       <Ionicons name="lock-closed" size={11} color={p.textMuted} />
                       <Text style={[styles.badgeText, { color: p.textMuted }]}>Coming soon</Text>
+                    </View>
+                  ) : wrongRole ? (
+                    <View style={[styles.badge, { borderColor: p.borderSoft, backgroundColor: p.surfaceAlt }]}>
+                      <Ionicons name="lock-closed" size={11} color={p.textMuted} />
+                      <Text style={[styles.badgeText, { color: p.textMuted }]}>Other role</Text>
                     </View>
                   ) : (
                     <Text style={[styles.tileSub, { color: p.textMuted }]}>{a.subtitle}</Text>
@@ -203,6 +228,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   dim: { opacity: 0.38 },
+  faded: { opacity: 0.7 },
   shadow: { shadowColor: '#8A6508', shadowOpacity: 0.16, shadowRadius: 10, shadowOffset: { width: 0, height: 4 }, elevation: 3 },
   logo: { width: 78, height: 78, resizeMode: 'contain' },
   tileTitle: { fontSize: 15, marginTop: 8, textAlign: 'center', fontFamily: typography.h2.fontFamily },

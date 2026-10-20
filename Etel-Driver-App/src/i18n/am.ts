@@ -16,6 +16,17 @@ export const AM: Record<string, string> = {
   'Service givers': 'አገልግሎት ሰጪዎች', 'Your digital identity': 'ዲጂታል መታወቂያዎ', 'Wallet and payments': 'የኪስ ቦርሳ እና ክፍያዎች',
   'Marketplace': 'የገበያ ቦታ', 'Shops and trade': 'ሱቆች እና ንግድ', 'ETEL Family Technology and Business Group': 'ኢቴል ቤተሰብ ቴክኖሎጂ እና ንግድ ግሩፕ',
   'Could not load. Check your connection.': 'መጫን አልተቻለም። ግንኙነትዎን ያረጋግጡ።',
+  // sign-in, roles, lock
+  'Sign in with EtelID': 'በኢቴል መታወቂያ ይግቡ', 'One sign-in opens every ETEL app that belongs to your account.': 'አንድ መግቢያ የአካውንትዎ የሆኑትን ሁሉንም የኢቴል አፕሊኬሽኖች ይከፍታል።',
+  'EtelID, FIN, card number or phone': 'የኢቴል መታወቂያ፣ FIN፣ የካርድ ቁጥር ወይም ስልክ', 'Authenticator code': 'የአረጋጋጭ ኮድ',
+  'Sign in': 'ግባ', 'Create an EtelID': 'የኢቴል መታወቂያ ይፍጠሩ',
+  'Enter your EtelID and password.': 'የኢቴል መታወቂያዎን እና የይለፍ ቃልዎን ያስገቡ።', 'Connection problem. Please try again.': 'የግንኙነት ችግር። እባክዎ እንደገና ይሞክሩ።',
+  'Customer': 'ደንበኛ', 'Driver': 'ሾፌር', 'Courier': 'መልእክተኛ', 'Service giver': 'አገልግሎት ሰጪ', 'Admin': 'አስተዳዳሪ',
+  'Sign in first': 'መጀመሪያ ይግቡ', 'Sign in with your EtelID above to open this app.': 'ይህን አፕሊኬሽን ለመክፈት ከላይ በኢቴል መታወቂያዎ ይግቡ።', 'Sign in with your EtelID first.': 'መጀመሪያ በኢቴል መታወቂያዎ ይግቡ።',
+  'Not for your account': 'ለአካውንትዎ አይደለም', 'This app is for a different role. Your EtelID opens the apps that match your role.': 'ይህ አፕሊኬሽን ለሌላ ሚና ነው። የኢቴል መታወቂያዎ ከሚናዎ ጋር የሚዛመዱትን አፕሊኬሽኖች ይከፍታል።',
+  'Other role': 'ሌላ ሚና', 'Sign out of ETEL?': 'ከኢቴል ይውጡ?', 'You will go offline and need to sign in again.': 'ከመስመር ይወጣሉ እና እንደገና መግባት ያስፈልግዎታል።',
+  'Fingerprint or face lock': 'የጣት አሻራ ወይም የፊት መቆለፊያ', 'On': 'በርቷል', 'Off': 'ጠፍቷል',
+  'Could not turn on the lock': 'መቆለፊያውን ማብራት አልተቻለም', 'Check that a fingerprint, face or screen lock is set up on this phone.': 'በዚህ ስልክ የጣት አሻራ፣ ፊት ወይም የስክሪን መቆለፊያ መዘጋጀቱን ያረጋግጡ።',
   // shared words
   'Cancel': 'ሰርዝ', 'Back': 'ተመለስ', 'Done': 'ተጠናቋል', 'Send': 'ላክ', 'Submit': 'ላክ', 'Settings': 'ቅንብሮች', 'Language': 'ቋንቋ',
   'Today': 'ዛሬ', 'History': 'ታሪክ', 'Loading…': 'በመጫን ላይ…', 'Error': 'ስህተት',
@@ -27,7 +38,7 @@ export const AM: Record<string, string> = {
   'The app hit an unexpected problem. Your online status and trips are safe.': 'አፕሊኬሽኑ ያልተጠበቀ ችግር አጋጥሞታል። የመስመር ላይ ሁኔታዎና ጉዞዎችዎ አስተማማኝ ናቸው።',
   'Try again': 'እንደገና ሞክር', 'No connection — retrying': 'ግንኙነት የለም — እንደገና በመሞከር ላይ',
   // app lock
-  'ETEL Drive is locked': 'ኢቴል ሾፌር ተቆልፏል', 'Use your fingerprint or screen lock to continue.': 'ለመቀጠል የጣት አሻራዎን ወይም የስክሪን መቆለፊያዎን ይጠቀሙ።', 'Sign out instead': 'በምትኩ ውጣ',
+  'ETEL is locked': 'ኢቴል ተቆልፏል', 'Use your fingerprint or screen lock to continue.': 'ለመቀጠል የጣት አሻራዎን ወይም የስክሪን መቆለፊያዎን ይጠቀሙ።', 'Sign out instead': 'በምትኩ ውጣ',
   // login
   'ETEL DRIVER': 'ኢቴል ሾፌር', 'Welcome back, Driver': 'እንኳን ደህና መጡ፣ ሾፌር', 'Sign in to continue.': 'ለመቀጠል ይግቡ።', 'Forgot password?': 'የይለፍ ቃል ረሱ?',
   'Unable to sign in': 'መግባት አልተቻለም', 'Signing in…': 'በመግባት ላይ…', 'SIGN IN': 'ግባ', "Don't have a driver account?": 'የሾፌር አካውንት የለዎትም?',

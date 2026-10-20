@@ -3,7 +3,7 @@ import { AppState, View, Pressable, StyleSheet } from 'react-native';
 import { Text } from '../i18n';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, typography } from '../theme/colors';
-import { useAuth } from '../context/AuthContext';
+import { useSession, hubSignOut } from '../hub/session';
 import { authenticate, isLockEnabled } from './appLock';
 
 // Re-lock only after the app has been away this long, so switching to a maps
@@ -11,7 +11,7 @@ import { authenticate, isLockEnabled } from './appLock';
 const RELOCK_AFTER_MS = 60 * 1000;
 
 export default function AppLockGate({ children }: { children: React.ReactNode }) {
-  const { user, logout } = useAuth();
+  const user = useSession();
   const [locked, setLocked] = useState(false);
   const [checking, setChecking] = useState(false);
   const backgroundedAt = useRef<number | null>(null);
@@ -63,12 +63,12 @@ export default function AppLockGate({ children }: { children: React.ReactNode })
       {locked && (
         <View style={styles.overlay}>
           <Ionicons name="lock-closed" size={52} color={colors.gold} />
-          <Text style={styles.title}>ETEL Drive is locked</Text>
+          <Text style={styles.title}>ETEL is locked</Text>
           <Text style={styles.body}>Use your fingerprint or screen lock to continue.</Text>
           <Pressable style={styles.button} onPress={unlock} disabled={checking}>
             <Text style={styles.buttonText}>{checking ? 'Checking…' : 'Unlock'}</Text>
           </Pressable>
-          <Pressable style={styles.link} onPress={() => logout()}>
+          <Pressable style={styles.link} onPress={() => hubSignOut()}>
             <Text style={styles.linkText}>Sign out instead</Text>
           </Pressable>
         </View>

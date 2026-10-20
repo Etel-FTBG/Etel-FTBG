@@ -2,7 +2,7 @@
   "expo": {
     "name": "ኢE Etel",
     "slug": "etel",
-    "version": "1.6.0",
+    "version": "1.7.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
@@ -54,6 +54,12 @@
     "plugins": [
       "expo-secure-store",
       "expo-font",
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "ETEL uses Face ID to unlock the app."
+        }
+      ],
       [
         "expo-build-properties",
         {

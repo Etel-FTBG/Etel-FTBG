@@ -8,6 +8,7 @@ import { colors, typography } from '../theme/colors';
 import { RootStackParamList } from '../navigation/types';
 import { HUB_APPS, ALLOWED_ORIGINS } from '../hub/apps';
 import { BRIDGE_JS, prefsJs } from '../hub/webBridge';
+import { getSession, sessionJs } from '../hub/session';
 import { useTheme } from '../theme/ThemeContext';
 import BrandLoader from '../components/BrandLoader';
 import { useLanguage } from '../i18n';
@@ -98,7 +99,7 @@ export default function WebAppScreen({ route, navigation }: Props) {
           ref={web}
           source={{ uri: app.url }}
           style={[styles.web, { backgroundColor: p.bg }]}
-          injectedJavaScriptBeforeContentLoaded={(app.syncPrefs ? prefsJs(lang, p.mode) : '') + BRIDGE_JS}
+          injectedJavaScriptBeforeContentLoaded={(app.syncPrefs ? sessionJs(getSession()) + prefsJs(lang, p.mode) : '') + BRIDGE_JS}
           onMessage={onMessage}
           onNavigationStateChange={(s: { canGoBack: boolean }) => setCanGoBack(s.canGoBack)}
           onLoadEnd={() => setLoading(false)}

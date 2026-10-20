@@ -35,7 +35,7 @@ export async function authenticate(): Promise<boolean> {
   if (!LA) return true;
   try {
     const res = await LA.authenticateAsync({
-      promptMessage: 'Unlock ETEL Drive',
+      promptMessage: 'Unlock ETEL',
       cancelLabel: 'Cancel',
     });
     return res.success;
