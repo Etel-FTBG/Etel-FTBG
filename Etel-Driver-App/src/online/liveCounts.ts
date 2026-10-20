@@ -13,7 +13,11 @@ export interface LiveCounts {
 const ZERO: LiveCounts = { trips: 0, requests: 0, orders: 0, deliveries: 0, total: 0 };
 const MIN_GAP_MS = 12000;
 
+// A sample set the profile card can switch on, so the golden light can be seen working without a live trip or order.
+const DEMO: LiveCounts = { trips: 1, requests: 2, orders: 1, deliveries: 1, total: 5 };
+
 let counts: LiveCounts = ZERO;
+let demo = false;
 let lastFetch = 0;
 let inflight = false;
 const listeners = new Set<(c: LiveCounts) => void>();
@@ -28,11 +32,21 @@ function set(next: LiveCounts) {
     return;
   }
   counts = next;
-  listeners.forEach((l) => l(counts));
+  listeners.forEach((l) => l(getCounts()));
 }
 
 export function getCounts(): LiveCounts {
-  return counts;
+  return demo ? DEMO : counts;
+}
+
+export function isDemo(): boolean {
+  return demo;
+}
+
+export function setDemo(on: boolean): void {
+  if (demo === on) return;
+  demo = on;
+  listeners.forEach((l) => l(getCounts()));
 }
 
 export function subscribeCounts(l: (c: LiveCounts) => void): () => void {

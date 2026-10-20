@@ -27,6 +27,7 @@ export const AM: Record<string, string> = {
   'Other role': 'ሌላ ሚና', 'Sign out of ETEL?': 'ከኢቴል ይውጡ?', 'You will go offline and need to sign in again.': 'ከመስመር ይወጣሉ እና እንደገና መግባት ያስፈልግዎታል።',
   'Fingerprint or face lock': 'የጣት አሻራ ወይም የፊት መቆለፊያ', 'On': 'በርቷል', 'Off': 'ጠፍቷል',
   'Could not turn on the lock': 'መቆለፊያውን ማብራት አልተቻለም', 'Check that a fingerprint, face or screen lock is set up on this phone.': 'በዚህ ስልክ የጣት አሻራ፣ ፊት ወይም የስክሪን መቆለፊያ መዘጋጀቱን ያረጋግጡ።',
+  'Preview the golden light': 'ወርቃማውን ብርሃን ቅድመ ተመልከት', 'Turn on, then leave the app to see it blink with sample counts.': 'ያብሩት፣ ከዚያ ከአፕሊኬሽኑ ይውጡ እና በናሙና ቁጥሮች ሲያበራ ይመልከቱ።',
   // shared words
   'Cancel': 'ሰርዝ', 'Back': 'ተመለስ', 'Done': 'ተጠናቋል', 'Send': 'ላክ', 'Submit': 'ላክ', 'Settings': 'ቅንብሮች', 'Language': 'ቋንቋ',
   'Today': 'ዛሬ', 'History': 'ታሪክ', 'Loading…': 'በመጫን ላይ…', 'Error': 'ስህተት',
