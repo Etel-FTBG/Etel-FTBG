@@ -489,9 +489,10 @@ body::before{
         <div class="pf-grid">
           <div class="pf-field">
             <label class="pf-label">Phone <span class="req">*</span></label>
-            <input type="tel" class="pf-input" name="phone"
+            <input type="tel" class="pf-input" name="phone" readonly
               value="<?php echo esc_attr($member->phone); ?>"
               placeholder="+251 9XX XXX XXX" required>
+            <div style="font-size:11px;opacity:.7;margin-top:4px">Your phone number identifies you in every Etel service, so it can only be changed by Etel support after they check it is really you.</div>
           </div>
           <div class="pf-field">
             <label class="pf-label">Email</label>
