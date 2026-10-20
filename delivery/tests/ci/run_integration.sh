@@ -31,6 +31,7 @@ run python3 tests/ci/check_reserved_columns.py
 run python3 tests/ci/check_xss_sinks.py
 run python3 tests/security_regression_smoke.py
 run python3 tests/authz_matrix_smoke.py
+run python3 tests/auditor_findings_smoke.py
 run python3 tests/package_smoke.py
 run python3 tests/csp_report_smoke.py
 run python3 tests/customers_admin_smoke.py
@@ -53,6 +54,7 @@ run python3 tests/stale_assignment_smoke.py
 run python3 tests/courier_earnings_smoke.py
 run php tests/pricing_fallback_test.php
 run php tests/courier_pay_test.php
+run php tests/upload_security_test.php
 run php tests/pulse_avg_test.php
 run php tests/order_stamps_test.php
 run php tests/ratings_report_test.php
