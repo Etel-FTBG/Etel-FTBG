@@ -34,7 +34,7 @@ define('PROJECT_VERSION', '1.0.0');
 
 function ok($d)            { ob_clean(); echo json_encode(['ok' => true,  'data' => $d]); exit; }
 function err($m, $c = 400) { ob_clean(); http_response_code($c); echo json_encode(['ok' => false, 'error' => $m]); exit; }
-function auth()  { $k = $_SERVER['HTTP_X_ETEL_KEY'] ?? $_GET['key'] ?? ''; if ($k !== ETEL_API_KEY) err('Unauthorized', 401); }
+function auth()  { $k = $_SERVER['HTTP_X_ETEL_KEY'] ?? $_GET['key'] ?? ''; if (!is_string($k) || !hash_equals((string) ETEL_API_KEY, $k)) err('Unauthorized', 401); }
 
 function db() {
     static $pdo = null;

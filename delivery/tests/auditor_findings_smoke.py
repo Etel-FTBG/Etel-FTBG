@@ -13,6 +13,10 @@ Runs against a real instance of boot.php, like authz_matrix_smoke.py:
    appended are refused; a real PNG is accepted.
 3. Duplicate phone numbers: the same number written another way cannot create a second account, and several
    sign-ups for one number sent at the same moment create exactly one.
+4. Round 2 (our own sweep): a disabled account (users.active = 0) cannot sign in and its old token stops working; a
+   staff role without finance permission (a dispatcher) is refused the money actions while a finance role is not;
+   a customer cannot mark an order delivered unless the courier asked them to; a courier cannot reopen a cancelled
+   or delivered order or move it backwards.
 
 Needs the seeded demo admin (api/seeds/admin_demo_accounts.sql). Creates real rows: throwaway database only.
 """
@@ -179,6 +183,89 @@ def main():
         check("...and exactly one account exists for that number", out.strip() == "1" or (out.strip() == "0" and sum(results) == 0), out)
     else:
         print("  SKIP could not count accounts: " + err)
+
+    print("4. Round 2")
+    # 4a. a disabled account
+    dp = phone_forms(base + 4)[0]
+    s, r = call("register", {"name": "Disabled Soon", "phone": dp, "password": "testpass123", "role": "customer"})
+    dtok = (r.get("data") or {}).get("token")
+    s, r = call("customer_get_orders", {}, token=dtok)
+    check("before: the account's token works", r.get("success") is True, (s, r))
+    etel_test_db.run_sql("UPDATE users SET active=0 WHERE RIGHT(REPLACE(REPLACE(phone,'+',''),' ',''),9)='9%08d'" % (base + 4))
+    s, r = call("customer_get_orders", {}, token=dtok)
+    check("a disabled account's old token stops working", r.get("success") is False and s == 401, (s, r))
+    s, r = call("login", {"phone": dp, "password": "testpass123"})
+    check("a disabled account cannot sign in", r.get("success") is False and not (r.get("data") or {}).get("token"), (s, r))
+
+    # 4b. money actions need the finance permission, not just 'staff'
+    money = ["admin_list_telebirr_payments", "admin_confirm_telebirr_payment", "admin_list_bank_payments", "admin_confirm_bank_payment",
+             "admin_financial_report", "admin_set_payment_logo", "admin_list_payout_requests", "admin_review_payout_request"]
+
+    def staff(offset, role, caps):
+        ph = phone_forms(base + offset)[0]
+        call("admin_create_user", {"name": role, "phone": ph, "password": "testpass123", "role": "admin"}, token=owner)
+        okr, _ = etel_test_db.run_sql("INSERT INTO role_permissions (role_name, capabilities) VALUES ('%s', '%s') ON DUPLICATE KEY UPDATE capabilities='%s'" % (role, caps, caps))
+        oku, _ = etel_test_db.run_sql("UPDATE users SET is_etelgroup_managed=1, staff_role='%s' WHERE RIGHT(REPLACE(REPLACE(phone,'+',''),' ',''),9)='9%08d'" % (role, base + offset))
+        if not (okr and oku):
+            return None
+        s2, r2 = call("login", {"phone": ph, "password": "testpass123"})
+        return (r2.get("data") or {}).get("token")
+    disp = staff(5, "Findings Dispatcher %d" % SUFFIX, '["orders.view","orders.manage","rides.view"]')
+    fin = staff(6, "Findings Finance %d" % SUFFIX, '["orders.view","finance.view","finance.manage"]')
+    if disp and fin:
+        leaks = []
+        for a in money:
+            s, r = call(a, {}, token=disp)
+            if not (s == 403 and r.get("success") is False):
+                leaks.append((a, s, str(r)[:80]))
+        check("a dispatcher (orders only) is refused every money action", not leaks, leaks)
+        s, r = call("admin_list_bank_payments", {}, token=fin)
+        check("a finance role can list bank payments", s != 403, (s, r))
+        s, r = call("admin_financial_report", {}, token=fin)
+        check("a finance role can open the financial report", s != 403, (s, r))
+    else:
+        print("  SKIP could not make staff roles in the test database")
+
+    # 4c. orders only move forward, and only the courier's request lets a customer confirm
+    sg_phone = "+25193%d%06d" % (7, SUFFIX % 1000000)
+    call("admin_create_service_giver", {"name": "Findings Shop", "phone": sg_phone, "password": "testpass123", "business_name": "Findings Kitchen",
+                                        "service_type": "food", "vehicle_type": "on_foot", "zone": "Mehal Ketema"}, token=owner)
+    s, r = call("sg_login", {"phone": sg_phone, "password": "testpass123"})
+    shop = (r.get("data") or {}).get("token")
+    s, r = call("sg_add_item", {"name": "Findings Meal", "category": "food", "price": 100, "stock_quantity": 50}, token=shop)
+    item = (r.get("data") or {}).get("item_id")
+    etel_test_db.park_couriers()
+    s, r = call("register", {"name": "Findings Courier", "phone": phone_forms(base + 8)[0], "password": "testpass123", "role": "courier"})
+    ctok, cuid = (r.get("data") or {}).get("token"), (r.get("data") or {}).get("user_id")
+    etel_test_db.park_couriers()
+    s, r = call("customer_create_order", {"items": [{"item_id": item, "quantity": 1}], "to_zone": "Tabor", "recipient_name": "A",
+                                          "recipient_phone": "+251911000098", "payment_method": "cash"}, token=cust)
+    oid = (r.get("data") or {}).get("order_id")
+    if not (shop and item and ctok and oid):
+        print("  SKIP could not set up the order flow: %s" % [bool(x) for x in (shop, item, ctok, oid)])
+    else:
+        s, r = call("customer_confirm_delivery", {"order_id": oid, "payment_confirmed": 1, "confirm_payment_method": "cash"}, token=cust)
+        check("a customer cannot confirm delivery of an order that is not out for delivery", r.get("success") is False and s in (409, 400), (s, r))
+        okc, out, err = etel_test_db.query_text("SELECT id FROM couriers WHERE user_id=%d" % int(cuid))
+        cid = out.strip() if okc else ""
+        if cid:
+            etel_test_db.run_sql("UPDATE orders SET courier_id=%s, status='cancelled' WHERE id=%d" % (cid, int(oid)))
+            s, r = call("courier_update_order_status", {"order_id": oid, "status": "picked_up"}, token=ctok)
+            check("a courier cannot reopen a cancelled order", r.get("success") is False and s == 409, (s, r))
+            etel_test_db.run_sql("UPDATE orders SET status='delivered' WHERE id=%d" % int(oid))
+            s, r = call("courier_update_order_status", {"order_id": oid, "status": "in_transit"}, token=ctok)
+            check("a delivered order cannot go back to in transit", r.get("success") is False and s == 409, (s, r))
+            s, r = call("courier_update_order_status", {"order_id": oid, "status": "delivered"}, token=ctok)
+            check("repeating 'delivered' changes nothing and is not an error", r.get("success") is True and (r.get("data") or {}).get("unchanged") is True, (s, r))
+            etel_test_db.run_sql("UPDATE orders SET status='picked_up' WHERE id=%d" % int(oid))
+            s, r = call("customer_confirm_delivery", {"order_id": oid, "payment_confirmed": 1, "confirm_payment_method": "cash"}, token=cust)
+            check("a customer still cannot confirm before the courier asks", r.get("success") is False and s == 409, (s, r))
+            s, r = call("request_delivery_confirmation", {"order_id": oid}, token=ctok)
+            check("the courier can ask for confirmation", r.get("success") is True, (s, r))
+            s, r = call("customer_confirm_delivery", {"order_id": oid, "payment_confirmed": 1, "confirm_payment_method": "cash"}, token=cust)
+            check("...and then the customer can confirm", r.get("success") is True, (s, r))
+        else:
+            print("  SKIP could not find the test courier")
 
     print("\n%d passed, %d failed" % (len(PASS), len(FAIL)))
     return 1 if FAIL else 0

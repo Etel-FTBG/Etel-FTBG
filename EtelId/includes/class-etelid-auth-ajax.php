@@ -962,6 +962,29 @@ class EtelID_Auth_Ajax {
             }
         }
 
+        /* The phone number is this person's identity across every Etel system (Delivery, Ride, Pay, EtelGroup find the
+         * account by it). It cannot be changed here: anyone could type another person's number and then sign in as them
+         * in the other systems. A change goes through Etel support, who check who is asking first. Sending the same
+         * number in a different written form (0924.. / +251924..) is fine and is simply ignored. */
+        if ( isset( $data['phone'] ) ) {
+            $new9 = substr( preg_replace( '/[^0-9]/', '', (string) $data['phone'] ), -9 );
+            $old9 = substr( preg_replace( '/[^0-9]/', '', (string) $member->phone ), -9 );
+            if ( $new9 !== $old9 ) {
+                wp_send_json_error( array( 'message' => 'For your security, a phone number can only be changed by Etel support after they check it is really you. Your other changes were not saved - please remove the phone change and save again.' ) );
+                return;
+            }
+            unset( $data['phone'] );
+        }
+
+        /* An email address belongs to one account (it is used to send password resets). */
+        if ( ! empty( $data['email'] ) && strtolower( $data['email'] ) !== strtolower( (string) $member->email ) ) {
+            $other = EtelID_DB::find_by_email( $data['email'] );
+            if ( $other && (int) $other->id !== (int) $member->id ) {
+                wp_send_json_error( array( 'message' => 'This email is already used by another account. Please use a different email.' ) );
+                return;
+            }
+        }
+
         /* Resolve company slug to name */
         if ( isset( $_POST['primary_company_slug'] ) ) {
             $companies = EtelID_Generator::companies();

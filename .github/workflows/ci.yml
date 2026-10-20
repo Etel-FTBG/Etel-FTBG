@@ -28,6 +28,8 @@ jobs:
         run: php EtelId/tests/duplicate_phone_unit.php
       - name: Public REST index and user list stay private (audit finding)
         run: php EtelId/tests/rest_hardening_unit.php
+      - name: A member cannot change their phone number or take another's email (our own sweep)
+        run: php EtelId/tests/profile_phone_unit.php
 
   etelerp:
     runs-on: ubuntu-latest

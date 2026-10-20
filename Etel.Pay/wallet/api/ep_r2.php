@@ -70,8 +70,29 @@ case 'ep_upload_avatar': {
     // matching the rigor already applied to the PNG case.
     elseif (substr($data, 0, 3) !== "\xFF\xD8\xFF") ep_err('Unsupported image format (PNG or JPEG only)');
     $ext    = ($mime === 'image/png') ? 'png' : 'jpg';
+    // The first bytes alone prove nothing (a script can start with them). It must decode as a real image of that type,
+    // and is rebuilt from its pixels so nothing hidden inside it is kept (audit, Oct 2026: unrestricted upload).
+    $info = function_exists('getimagesizefromstring') ? @getimagesizefromstring($data) : false;
+    if (!$info || $info['mime'] !== $mime) ep_err('That file is not a valid image');
+    if (preg_match('/<\?php|<\?=|<script[\s>]/i', $data)) ep_err('That file contains code and cannot be accepted');
+    if (function_exists('imagecreatefromstring') && function_exists('imagecreatetruecolor')) {
+        $src = @imagecreatefromstring($data);
+        if (!$src) ep_err('That image could not be processed');
+        $w = imagesx($src); $h = imagesy($src);
+        $out = imagecreatetruecolor($w, $h);
+        if ($mime === 'image/png') { imagealphablending($out, false); imagesavealpha($out, true); imagefilledrectangle($out, 0, 0, $w, $h, imagecolorallocatealpha($out, 0, 0, 0, 127)); }
+        imagecopy($out, $src, 0, 0, 0, 0, $w, $h);
+        ob_start();
+        $okEnc = ($mime === 'image/png') ? imagepng($out, null, 6) : imagejpeg($out, null, 88);
+        $clean = ob_get_clean();
+        imagedestroy($src); imagedestroy($out);
+        if (!$okEnc || !$clean) ep_err('That image could not be processed');
+        $data = $clean;
+    }
     $dir    = dirname(__DIR__) . '/uploads/avatars';
     if (!file_exists($dir)) @mkdir($dir, 0755, true);
+    $guard = dirname(__DIR__) . '/uploads/.htaccess';
+    if (!is_file($guard)) @file_put_contents($guard, "Options -Indexes\n<FilesMatch \"\\.(php|phtml|pht|phps|php[0-9]|phar|inc|pl|py|cgi|sh|jsp|asp|aspx|shtml|html?|svg|js)$\">\n    Require all denied\n</FilesMatch>\n");
     $fname  = 'av_' . $uid . '_' . time() . '.' . $ext;
     $fpath  = $dir . '/' . $fname;
     if (!file_put_contents($fpath, $data)) ep_err('Could not save avatar', 500);
