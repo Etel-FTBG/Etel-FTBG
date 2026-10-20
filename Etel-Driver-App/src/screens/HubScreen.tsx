@@ -12,6 +12,7 @@ import { goOfflineEverywhere, goOnlineEverywhere } from '../hub/masterOnline';
 import SlideToConfirm from '../components/SlideToConfirm';
 import PillSwitch from '../components/PillSwitch';
 import Reveal from '../components/Reveal';
+import UpdateStatus from '../components/UpdateStatus';
 import { success, tap } from '../utils/haptics';
 import { isOnline, subscribeOnline } from '../online/onlineState';
 
@@ -166,6 +167,7 @@ export default function HubScreen({ navigation }: Props) {
         </Reveal>
       ))}
 
+      <UpdateStatus />
       <Text style={[styles.foot, { color: p.textMuted }]}>ETEL Family Technology and Business Group</Text>
     </ScrollView>
   );
