@@ -53,6 +53,7 @@ $includes = array(
     'includes/class-etelid-ajax.php',
     'includes/class-etelid-password-reset.php',   /* self-service Forgot Password (email + Telegram) */
     'includes/class-etelid-rewrite.php',
+    'includes/class-etelid-rest-hardening.php',   /* audit Oct 2026: no public REST index / user list */
 );
 foreach ( $includes as $file ) {
     require_once ETELID_PATH . $file;

@@ -18,6 +18,8 @@
     <title>ETEL Delivery - Admin Dashboard Premium v9.0</title>
     <link rel="icon" type="image/x-icon" href="favicon.ico">
     <script src="js/core.js?v=5.18"></script>
+    <style>html.etel-admin-pending body{visibility:hidden}</style>
+    <script>document.documentElement.classList.add('etel-admin-pending');setTimeout(function(){document.documentElement.classList.remove('etel-admin-pending');},8000);</script>
     <script>
       /* Auth gate - previously missing entirely, meaning unauthenticated
          visitors saw the admin dashboard with no redirect. Sends signed-
@@ -59,6 +61,27 @@
           window.location.href = base + 'admin-login.html';
           return;
         }
+        // The role above comes from localStorage, which anyone can edit in their own browser. Ask the server who this
+        // really is before the dashboard is shown: a token that is not an admin's gets a 403 here and is sent away.
+        // (Network trouble only keeps the page as it was; every admin_* action is re-checked on the server anyway.)
+        fetch((typeof ETEL !== 'undefined' && ETEL.api) ? ETEL.api : '/delivery/api/boot.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + Auth.getToken() },
+          body: JSON.stringify({ action: 'admin_get_my_capabilities' })
+        }).then(function (r) {
+          if (r.status === 401 || r.status === 403) { throw new Error('not-admin'); }
+          return r.json();
+        }).then(function (j) {
+          if (j && j.success === false) { throw new Error('not-admin'); }
+          document.documentElement.classList.remove('etel-admin-pending');
+        }).catch(function (e) {
+          if (e && e.message === 'not-admin') {
+            ['etel_token','etel_user','etel_courier','etel_service_giver','etel_sso'].forEach(function (k) { localStorage.removeItem(k); });
+            window.location.href = base + 'admin-login.html';
+          } else {
+            document.documentElement.classList.remove('etel-admin-pending');
+          }
+        });
         // Deep link for embedders (e.g. EtelGroup admin's Finance & Planning
         // tab, loaded in an iframe) - only fires after the auth check above
         // has already passed, so it never bypasses anything. Still subject

@@ -24,6 +24,10 @@ jobs:
         run: php EtelId/tests/fayda_files_unit.php
       - name: Profile photo shrinker tests
         run: php EtelId/tests/photos_unit.php
+      - name: One phone number, one account (audit finding)
+        run: php EtelId/tests/duplicate_phone_unit.php
+      - name: Public REST index and user list stay private (audit finding)
+        run: php EtelId/tests/rest_hardening_unit.php
 
   etelerp:
     runs-on: ubuntu-latest

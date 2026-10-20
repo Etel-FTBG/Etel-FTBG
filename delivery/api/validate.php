@@ -95,6 +95,26 @@ function etel_phone_taken($pdo, $phone) {
     return (bool) $s->fetch();
 }
 
+/* Held while a sign-up path checks "is this number free?" and then creates the account, so two requests for the
+   same number (two parts of the app, or a double tap) cannot both pass the check and end up with two accounts.
+   One lock per person (last 9 digits, so every written form of the number shares it). It is released when the
+   request ends. Fails open if the database cannot give locks, so sign-up never breaks because of this guard. */
+function etel_phone_lock($pdo, $phone) {
+    $l9 = etel_phone_last9($phone);
+    if ($l9 === '') return true;
+    try {
+        $s = $pdo->prepare('SELECT GET_LOCK(?, 5)');
+        $s->execute(array('etel_phone_' . $l9));
+        $r = $s->fetchColumn();
+        return ($r === null || intval($r) === 1);
+    } catch (Exception $e) { return true; }
+}
+function etel_phone_unlock($pdo, $phone) {
+    $l9 = etel_phone_last9($phone);
+    if ($l9 === '') return;
+    try { $pdo->prepare('SELECT RELEASE_LOCK(?)')->execute(array('etel_phone_' . $l9)); } catch (Exception $e) { /* released at request end anyway */ }
+}
+
 /* Find ONE user for a number: an exact match always wins; otherwise a match
    written in a different form is accepted only if it is unambiguous (exactly
    one account). If several accounts match and none is exact, returns null, so

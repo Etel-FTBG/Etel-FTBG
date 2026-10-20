@@ -312,6 +312,23 @@ function etelid_bridge_local_user($pdo, $member) {
     }
 
     /* Auto-provision: one EtelID = access to the whole system */
+    /* Another sign-up for this same number may be running right now: take the per-number lock and look again before creating. */
+    if (function_exists('etel_phone_lock') && etel_phone_lock($pdo, $member['phone'])) {
+        $again = $pdo->prepare(
+            "SELECT id, name, phone, role" . ($hasVer ? ", token_version" : "") . " FROM users
+             WHERE REPLACE(REPLACE(phone,'+',''),' ','') = ?
+                OR RIGHT(REPLACE(REPLACE(phone,'+',''),' ',''), 9) = ?
+             ORDER BY id ASC LIMIT 1");
+        $again->execute(array($digits, $last9));
+        $raced = $again->fetch();
+        if ($raced) {
+            if ($isLimited) {
+                $GLOBALS['etelid_link_error'] = 'A Delivery/Ride account with this phone number already exists. Sign in with that account, or add your profile photo and Fayda ID to your Etel-ID first.';
+                return null;
+            }
+            return $raced;
+        }
+    }
     $hash = (strpos($member['pin_hash'], '$2') === 0)
         ? $member['pin_hash']                                   /* bcrypt: same password also works on classic login */
         : password_hash(bin2hex(openssl_random_pseudo_bytes(16)), PASSWORD_DEFAULT);

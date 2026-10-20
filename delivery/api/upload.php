@@ -149,6 +149,10 @@ $ftype = mime_content_type($file['tmp_name']);
 $allowed_mime = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
 if (!in_array($ftype, $allowed_mime)) upfail('Only JPG, PNG, GIF, WEBP images are allowed', 400);
 if ($file['size'] > 5 * 1024 * 1024) upfail('Max image size is 5 MB', 400);
+/* The type above comes from the file's own bytes, never from its name. It must also parse as a real image of that type
+   (a script that merely starts with image-like bytes does not), and it must carry no PHP/script code. */
+if (!up_image_is_real($file['tmp_name'], $ftype)) upfail('That file is not a valid image', 400);
+if (up_bytes_have_code($file['tmp_name'])) upfail('That file contains code and cannot be accepted', 400);
 
 /*  Save file  */
 $ext_map = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/gif' => 'gif', 'image/webp' => 'webp'];
@@ -190,8 +194,12 @@ if (!is_dir($dir)) upfail('Could not create uploads directory', 500);
 
 /* Defence in depth: nothing in an uploads folder may ever run as a script or be listed, even if a bad file got in. */
 $up_guard = dirname(__DIR__) . '/uploads/.htaccess';
-if (!is_file($up_guard)) {
-    @file_put_contents($up_guard, "Options -Indexes\n<FilesMatch \"\\.(php|phtml|php[0-9]|phar|pl|py|cgi|sh)$\">\n    Require all denied\n</FilesMatch>\n<IfModule mod_headers.c>\n    Header always set X-Content-Type-Options \"nosniff\"\n</IfModule>\n");
+$up_guard_txt = "# ETEL-UPLOAD-GUARD-2: nothing in this folder may ever run as code, be listed, or be shown as a web page.\n"
+    . "Options -Indexes\n"
+    . "<FilesMatch \"\\.(php|phtml|pht|phps|php[0-9]|phar|inc|pl|py|cgi|sh|jsp|asp|aspx|shtml|html?|svg|js|htaccess)$\">\n    Require all denied\n</FilesMatch>\n"
+    . "<IfModule mod_headers.c>\n    Header always set X-Content-Type-Options \"nosniff\"\n    Header always set Content-Security-Policy \"default-src 'none'; sandbox\"\n</IfModule>\n";
+if (!is_file($up_guard) || strpos((string) @file_get_contents($up_guard), 'ETEL-UPLOAD-GUARD-2') === false) {
+    @file_put_contents($up_guard, $up_guard_txt);
 }
 
 $fname = $prefix . $user['id'] . '_' . time() . '_' . bin2hex(random_bytes(4)) . '.' . $ext;
@@ -208,6 +216,14 @@ if (!move_uploaded_file($file['tmp_name'], $dest)) upfail('Failed to save file',
    GD isn't available or the resize fails for any reason - a working
    upload always matters more than a smaller one. */
 up_compress_image($dest, $ftype);
+
+/* Rebuild the saved image from its pixels so nothing hidden inside it survives. GD missing = keep the file (the folder
+   guard above still stops it running); GD present but unable to rebuild = refuse and remove the file. */
+$up_clean = up_reencode_clean($dest, $ftype);
+if ($up_clean === false) {
+    @unlink($dest);
+    upfail('That image could not be processed. Please use a normal photo.', 400);
+}
 
 // Build public URL
 $proto = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
