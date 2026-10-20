@@ -1703,8 +1703,7 @@ case 'admin_list_telebirr_payments': {
     // verification against the founder's own Telebirr merchant
     // SMS/dashboard - the whole point of this feature existing at all.
     $pdo = db();
-    $auth_user = require_auth($pdo);
-    if ($auth_user['role'] !== 'admin') fail('Admin only', 403);
+    $auth_user = require_admin($pdo, 'finance.view');
     try {
         $s = $pdo->query("SELECT tp.id, tp.order_id, tp.phone, tp.amount, tp.merchant_transaction_id, tp.status, tp.created_at,
                                   o.order_code, u.name AS customer_name, u.phone AS customer_phone
@@ -1735,8 +1734,7 @@ case 'admin_confirm_telebirr_payment': {
     // independent of payment state, exactly like a normal cash order
     // already works.
     $pdo = db();
-    $auth_user = require_auth($pdo);
-    if ($auth_user['role'] !== 'admin') fail('Admin only', 403);
+    $auth_user = require_admin($pdo, 'finance.manage');
     $payment_id = isset($body['payment_id']) ? intval($body['payment_id']) : 0;
     // Named "decision", not "action" - core.js's api() does
     // JSON.stringify({ action, ...body }), so a body parameter also
@@ -1817,8 +1815,7 @@ case 'admin_list_bank_payments': {
     // GET: (admin only) every pending bank transfer awaiting manual
     // verification against the founder's own bank statement/SMS alerts.
     $pdo = db();
-    $auth_user = require_auth($pdo);
-    if ($auth_user['role'] !== 'admin') fail('Admin only', 403);
+    $auth_user = require_admin($pdo, 'finance.view');
     try {
         $s = $pdo->query("SELECT bp.id, bp.order_id, bp.bank, bp.amount, bp.reference_no, bp.status, bp.created_at,
                                   o.order_code, u.name AS customer_name, u.phone AS customer_phone
@@ -1845,8 +1842,7 @@ case 'admin_confirm_bank_payment': {
     // version above - delivery lifecycle and payment state must stay
     // independent.
     $pdo = db();
-    $auth_user = require_auth($pdo);
-    if ($auth_user['role'] !== 'admin') fail('Admin only', 403);
+    $auth_user = require_admin($pdo, 'finance.manage');
     $payment_id = isset($body['payment_id']) ? intval($body['payment_id']) : 0;
     $decision = isset($body['decision']) ? trim($body['decision']) : '';
     if (!$payment_id) fail('payment_id is required', 400);
@@ -1889,8 +1885,7 @@ case 'admin_financial_report': {    // GET: (admin only, or any role with financ
     // sets payment_status='paid' at that point) so there's no separate
     // pending/confirmed split to show for it here.
     $pdo = db();
-    $auth_user = require_auth($pdo);
-    if ($auth_user['role'] !== 'admin') fail('Admin only', 403);
+    $auth_user = require_admin($pdo, 'finance.view');
     if (!user_has_capability($pdo, $auth_user, 'finance.view')) {
         fail("You don't have permission to do this (requires: finance.view)", 403);
     }
@@ -1975,8 +1970,7 @@ case 'admin_set_payment_logo': {
     // logo upload already uses - this just records which URL belongs
     // to which payment method, it doesn't handle the file upload itself.
     $pdo = db();
-    $auth_user = require_auth($pdo);
-    if ($auth_user['role'] !== 'admin') fail('Admin only', 403);
+    $auth_user = require_admin($pdo, 'finance.manage');
     $method_key = isset($body['method_key']) ? trim($body['method_key']) : '';
     $logo_url = isset($body['logo_url']) ? trim($body['logo_url']) : '';
     $validKeys = array('telebirr','cbe','abysinia','wallet','cash');

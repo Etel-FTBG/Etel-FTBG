@@ -1410,9 +1410,10 @@ case 'sg_add_staff': {
         // keeps working exactly as it always has; a password typed into
         // this form is silently ignored in that case, since it's not this
         // owner's account to set a password for.
-        $chk = $pdo->prepare('SELECT id, name FROM users WHERE phone=?');
-        $chk->execute(array($phone));
-        $existing = $chk->fetch();
+        // Any written form of the number is the same person; one lock per number so two requests cannot both create it.
+        if (!etel_phone_lock($pdo, $phone)) fail('Please try again in a moment', 429);
+        $existing = etel_find_user_by_phone($pdo, $phone, 'id,name,phone');
+        if (!$existing && etel_phone_taken($pdo, $phone)) fail('This number belongs to more than one account - ask an admin to merge the duplicates first', 409);
 
         if ($existing) {
             $user_id = intval($existing['id']);
@@ -1922,8 +1923,7 @@ case 'admin_list_payout_requests': {
     // GET: (admin only) every payout change awaiting review, across
     // every business - the actual approval queue.
     $pdo = db();
-    $auth_user = require_auth($pdo);
-    if ($auth_user['role'] !== 'admin') fail('Admin only', 403);
+    $auth_user = require_admin($pdo, 'finance.view');
     try {
         $s = $pdo->query("SELECT r.id, r.service_giver_id, r.old_bank_account, r.old_payout_bank, r.old_telebirr_number, r.old_cbe_account, r.old_abysinia_account,
                                   r.old_cbe_account_name, r.old_abysinia_account_name, r.old_telebirr_account_name,
@@ -1950,8 +1950,7 @@ case 'admin_review_payout_request': {
     // parameter also called "action" silently overwrites the real
     // routing action.
     $pdo = db();
-    $auth_user = require_auth($pdo);
-    if ($auth_user['role'] !== 'admin') fail('Admin only', 403);
+    $auth_user = require_admin($pdo, 'finance.manage');
     $request_id = isset($body['request_id']) ? intval($body['request_id']) : 0;
     $decision = isset($body['decision']) ? trim($body['decision']) : '';
     $note = isset($body['note']) ? trim($body['note']) : null;
