@@ -433,13 +433,19 @@ case 'courier_update_order_status': {
 
     // Verify courier is assigned to this order
     try {
-        $o = $pdo->prepare('SELECT id, courier_id, order_kind FROM orders WHERE id=?');
+        $o = $pdo->prepare('SELECT id, courier_id, order_kind, status FROM orders WHERE id=?');
         $o->execute(array($order_id));
         $order = $o->fetch();
     } catch (Exception $e) { $order = null; }
     
     if (!$order) fail('Order not found', 404);
     if ($order['courier_id'] != $courier['id']) fail('You are not assigned to this order', 403);
+    // An order only moves forward (assigned > picked up > in transit > delivered). A finished or cancelled order is
+    // never reopened, and repeating the status it already has changes nothing (no second stamp, no second notification).
+    $rank = array('pending' => 0, 'assigned' => 1, 'picked_up' => 2, 'in_transit' => 3, 'delivered' => 4);
+    if (in_array($order['status'], array('cancelled', 'refunded'), true)) fail('This order is ' . $order['status'] . ' and cannot be changed.', 409);
+    if ($order['status'] === $status) ok(array('message' => 'Order status updated', 'status' => $status, 'unchanged' => true));
+    if (isset($rank[$order['status']]) && $rank[$status] < $rank[$order['status']]) fail('This order is already ' . $order['status'] . '; it cannot go back to ' . $status . '.', 409);
     // A package is picked up and delivered only with the PINs (courier_package_pickup / courier_package_deliver), never by a plain status change.
     if (isset($order['order_kind']) && $order['order_kind'] === 'package' && in_array($status, array('picked_up', 'delivered'), true)) {
         fail('Packages are picked up and delivered with the PIN. Use the package buttons in the app.', 400);
@@ -1277,10 +1283,17 @@ case 'customer_confirm_delivery': {
     $payment_conf  = isset($body['payment_confirmed']) ? (intval(boolval($body['payment_confirmed']))) : 0;
     if (!$order_id) fail('order_id required', 400);
 
-    $s = $pdo->prepare('SELECT id, payment_method, fare_total FROM orders WHERE id=? AND customer_id=?');
+    $s = $pdo->prepare('SELECT id, payment_method, fare_total, status FROM orders WHERE id=? AND customer_id=?');
     $s->execute(array($order_id, $auth_user['id']));
     $order = $s->fetch();
     if (!$order) fail('Order not found', 403);
+    // A customer can only confirm a delivery the courier has asked them to confirm, for an order that is on its way.
+    // Without this a customer could mark their own pending, cancelled or never-delivered order as delivered
+    // (which pays the courier, unlocks the referral reward and counts as shop revenue).
+    if (!in_array($order['status'], array('picked_up', 'in_transit'), true)) fail('This order is not out for delivery, so there is nothing to confirm.', 409);
+    $askedQ = $pdo->prepare("SELECT id FROM order_confirmations WHERE order_id=? AND type='delivery' AND status='pending' LIMIT 1");
+    $askedQ->execute(array($order_id));
+    if (!$askedQ->fetch()) fail('The courier has not asked you to confirm delivery yet.', 409);
 
     // The customer can choose cash or ETEL Pay right at the door, independent
     // of whatever payment_method was picked back at checkout -- only allow

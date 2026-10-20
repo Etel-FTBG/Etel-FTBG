@@ -727,6 +727,7 @@ case 'sg_scan_qr': {
     } catch (Exception $e) { error_log('[ServiceGiverController] sg_scan_qr: assignment lookup failed: ' . $e->getMessage()); $assign = null; }
     
     if (!$assign) fail('Assignment not found', 404);
+    etel_order_assert_open($pdo, $order_id);   // a delivered or cancelled order is never moved again
     
     // Update scan records
     try {
@@ -787,6 +788,7 @@ case 'sg_complete_order': {
     } catch (Exception $e) { error_log('[ServiceGiverController] sg_complete_order: assignment lookup failed: ' . $e->getMessage()); $assign = null; }
     
     if (!$assign) fail('Assignment not found', 404);
+    etel_order_assert_open($pdo, $order_id);   // a delivered or cancelled order is never moved again
     
     // Mark delivered
     try {
