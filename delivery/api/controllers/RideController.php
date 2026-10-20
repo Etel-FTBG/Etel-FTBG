@@ -576,6 +576,44 @@ case 'ride_tip_chapa_init': {
     break;
 }
 
+case 'hub_counts': {
+    // POST: (no fields)   Small live counts for the ETEL app's golden light (trips, new requests, deliveries).
+    // Every count is its own guarded query, so a missing table or column reads as 0 instead of failing the call.
+    $one = function ($sql, $params) use ($pdo) {
+        try { $q = $pdo->prepare($sql); $q->execute($params); return intval($q->fetchColumn()); }
+        catch (Exception $e) { return 0; } catch (Throwable $e) { return 0; }
+    };
+    $uid = intval($u['id']);
+    $role = isset($u['role']) ? $u['role'] : '';
+    $trips = $one("SELECT COUNT(*) FROM rides WHERE passenger_id=? AND status IN ('searching','accepted','in_progress','arrived')", array($uid));
+    $requests = 0; $orders = 0; $deliveries = 0;
+
+    if ($role === 'driver') {
+        $trips += $one("SELECT COUNT(*) FROM rides WHERE driver_id=? AND status IN ('accepted','in_progress','arrived')", array($uid));
+        $vt = 'bajaj';
+        try { $me = rides_driver_profile($pdo, $uid); if ($me && !empty($me['vehicle_type'])) $vt = $me['vehicle_type']; } catch (Exception $e) {}
+        $requests = $one("SELECT COUNT(*) FROM rides WHERE status='searching' AND passenger_id != ? AND (expires_at IS NULL OR expires_at > NOW()) AND (LOWER(vehicle_type)=LOWER(?) OR vehicle_type IS NULL)", array($uid, $vt));
+    } elseif ($role === 'courier') {
+        $cid = $one("SELECT id FROM couriers WHERE user_id=? LIMIT 1", array($uid));
+        if ($cid) {
+            $orders = $one("SELECT COUNT(*) FROM order_courier_offers WHERE courier_id=? AND response='pending' AND expires_at > NOW()", array($cid));
+            $deliveries += $one("SELECT COUNT(*) FROM orders WHERE courier_id=? AND status IN ('assigned','picked_up','in_transit')", array($cid));
+        }
+    } elseif ($role === 'service_giver') {
+        $sid = $one("SELECT id FROM service_givers WHERE user_id=? LIMIT 1", array($uid));
+        if ($sid) {
+            $orders = $one("SELECT COUNT(*) FROM order_assignments WHERE service_giver_id=? AND status='pending'", array($sid));
+            $deliveries += $one("SELECT COUNT(*) FROM order_assignments WHERE service_giver_id=? AND status IN ('accepted','preparing','assigned','picked_up')", array($sid));
+        }
+    }
+    // Anyone can also be a customer: orders they placed that are still on their way.
+    $deliveries += $one("SELECT COUNT(*) FROM orders WHERE customer_id=? AND status IN ('pending','accepted','assigned','picked_up','in_transit')", array($uid));
+
+    ok(array('trips' => $trips, 'requests' => $requests, 'orders' => $orders, 'deliveries' => $deliveries,
+             'total' => $trips + $requests + $orders + $deliveries));
+    break;
+}
+
 case 'ride_tip_give': {
     // POST: ride_id, amount, bank_key?, payment_ref (the transfer reference), note?
     $rid = isset($body['ride_id']) ? intval($body['ride_id']) : 0;
