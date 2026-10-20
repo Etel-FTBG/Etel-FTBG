@@ -17,6 +17,7 @@ import { success, tap } from '../utils/haptics';
 import { isOnline, subscribeOnline } from '../online/onlineState';
 import SignInCard from '../components/SignInCard';
 import ProfileCard from '../components/ProfileCard';
+import CompaniesCard from '../components/CompaniesCard';
 import { canGoOnline, canOpen, useSession } from '../hub/session';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Hub'>;
@@ -143,6 +144,12 @@ export default function HubScreen({ navigation }: Props) {
         </View>
       </LinearGradient>
       </Reveal>
+      ) : null}
+
+      {session && canGoOnline(session.role) ? (
+        <Reveal delay={200}>
+          <CompaniesCard role={session.role} />
+        </Reveal>
       ) : null}
 
       {HUB_GROUPS.map((g, gi) => (

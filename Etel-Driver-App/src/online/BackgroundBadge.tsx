@@ -4,6 +4,7 @@ import * as SecureStore from 'expo-secure-store';
 import { subscribeOnline, isOnline } from './onlineState';
 import { getCounts, refreshCounts, resetCounts, subscribeCounts } from './liveCounts';
 import { subscribeSession, getSession } from '../hub/session';
+import { applyAlertPrefs, loadAlertPrefs } from '../hub/companies';
 import {
   overlaySupported,
   canDrawOverlays,
@@ -28,7 +29,7 @@ export default function BackgroundBadge() {
     let timer: ReturnType<typeof setInterval> | null = null;
 
     const sync = () => {
-      const c = getCounts();
+      const c = applyAlertPrefs(getCounts(), getSession()?.role);
       const away = appState.current !== 'active';
       if (away && canDrawOverlays() && (isOnline() || c.total > 0)) {
         updateOverlayCounts(c.trips, c.requests, c.orders, c.deliveries);
@@ -80,6 +81,7 @@ export default function BackgroundBadge() {
       else startPolling();
       sync();
     });
+    loadAlertPrefs().then(sync);
     sync();
     return () => {
       offOnline();
