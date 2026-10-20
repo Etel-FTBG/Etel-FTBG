@@ -14,6 +14,7 @@ import BrandLoader from '../components/BrandLoader';
 import { useLanguage } from '../i18n';
 import { setToken } from '../api/client';
 import { setOnlineState } from '../online/onlineState';
+import { markCompanyOnline } from '../hub/companies';
 import { startDriverLocationTracking, stopDriverLocationTracking } from '../location/backgroundLocationTask';
 import { registerForPushNotifications } from '../notifications/registerPush';
 
@@ -59,9 +60,11 @@ export default function WebAppScreen({ route, navigation }: Props) {
         registerForPushNotifications().catch(() => {});
       } else if (msg.type === 'online') {
         await startDriverLocationTracking();
+        markCompanyOnline('ride', true);
         setOnlineState(true);
       } else if (msg.type === 'offline') {
         await stopDriverLocationTracking();
+        markCompanyOnline('ride', false);
         setOnlineState(false);
       }
     } catch {
