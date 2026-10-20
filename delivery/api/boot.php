@@ -347,10 +347,12 @@ function get_auth_user($pdo) {
     $hasManagedCol = in_array('is_etelgroup_managed', $cols, true);
     $hasLimitedCol = in_array('etelid_limited', $cols, true);
     $hasEtelIdCol  = in_array('etel_id', $cols, true);
-    $s = $pdo->prepare('SELECT id,name,phone,role' . ($hasVersionCol ? ',token_version' : '') . ($hasStaffRole ? ',staff_role' : '') . ($hasManagedCol ? ',is_etelgroup_managed' : '') . ($hasLimitedCol ? ',etelid_limited' : '') . ($hasLimitedCol && $hasEtelIdCol ? ',etel_id' : '') . ' FROM users WHERE id=?');
+    $s = $pdo->prepare('SELECT id,name,phone,role' . ($hasVersionCol ? ',token_version' : '') . ($hasStaffRole ? ',staff_role' : '') . ($hasManagedCol ? ',is_etelgroup_managed' : '') . ($hasLimitedCol ? ',etelid_limited' : '') . ($hasLimitedCol && $hasEtelIdCol ? ',etel_id' : '') . (in_array('active', $cols, true) ? ',active' : '') . ' FROM users WHERE id=?');
     $s->execute(array($tok['uid']));
     $u = $s->fetch(PDO::FETCH_ASSOC);
     if (!$u) return null;
+    // A disabled account (users.active = 0) is signed out everywhere, even if it still holds an unexpired token.
+    if (array_key_exists('active', $u) && $u['active'] !== null && intval($u['active']) === 0) return null;
     // If the migration hasn't run yet, there's nothing to check the version
     // against - fail open on that specific gap rather than locking everyone
     // out, since a missing column is an ops issue, not a compromised token.
@@ -365,6 +367,29 @@ function get_auth_user($pdo) {
     }
     return $u;
 }
+/* Sign-in must refuse a disabled account (users.active = 0). Unset/NULL counts as enabled, so older rows are unaffected.
+   Call after the password / EtelID check has passed, so the answer does not reveal which numbers have accounts. */
+function etel_assert_account_enabled($pdo, $user_id) {
+    try {
+        if (!in_array('active', etel_table_columns($pdo, 'users'), true)) return;
+        $s = $pdo->prepare('SELECT active FROM users WHERE id=?');
+        $s->execute(array(intval($user_id)));
+        $a = $s->fetchColumn();
+        if ($a !== false && $a !== null && intval($a) === 0) fail('This account is disabled. Please contact support.', 403);
+    } catch (PDOException $e) { /* column or table missing: nothing to enforce */ }
+}
+
+/* A finished order (delivered, cancelled, refunded) is never moved again by a courier, shop or customer action.
+   Returns the order's current status. */
+function etel_order_assert_open($pdo, $order_id) {
+    $s = $pdo->prepare('SELECT status FROM orders WHERE id=?');
+    $s->execute(array(intval($order_id)));
+    $st = $s->fetchColumn();
+    if ($st === false) fail('Order not found', 404);
+    if (in_array($st, array('delivered', 'cancelled', 'refunded'), true)) fail('This order is already ' . $st . ' and cannot be changed.', 409);
+    return $st;
+}
+
 /* 403 for a limited (Ride-only) EtelID trying to use anything but Ride. */
 function etel_limited_refuse() {
     http_response_code(403);

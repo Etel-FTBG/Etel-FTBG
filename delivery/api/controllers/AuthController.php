@@ -270,6 +270,7 @@ case 'login': {
         }
     }
 
+    etel_assert_account_enabled($pdo, $u['id']);
     etel_2fa_gate($pdo, $u, $body); // any account with two-step sign-in on must also pass the code
     $token = gen_token($u['id'], $hasVer ? intval($u['token_version']) : 0);
     ok(array(
@@ -324,6 +325,7 @@ case 'sg_login': {
     // Admin accounts have no service_giver profile row - skip that lookup
     // entirely and issue a plain admin session instead.
     if ($u['role'] === 'admin') {
+        etel_assert_account_enabled($pdo, $u['id']);
         etel_2fa_gate($pdo, $u, $body);
         $token = gen_token($u['id'], $hasVer ? intval($u['token_version']) : 0);
         ok(array(
@@ -347,6 +349,7 @@ case 'sg_login': {
     if ($sg['status'] === 'suspended') fail('Your account is suspended. Contact admin.', 403);
     if ($sg['status'] === 'pending') fail('Your account is pending verification', 403);
     
+    etel_assert_account_enabled($pdo, $u['id']);
     etel_2fa_gate($pdo, $u, $body);
     $token   = gen_token($u['id'], $hasVer ? intval($u['token_version']) : 0);
     $user    = array('id'=>$u['id'],'name'=>$u['name'],'phone'=>$u['phone'],'role'=>$u['role']);
@@ -438,6 +441,7 @@ case 'etelid_login': {
     }
 
     if (empty($auth['twofa_verified'])) etel_2fa_gate($pdo, $u, $body); // EtelID already checked the member's code
+    etel_assert_account_enabled($pdo, $u['id']);
     $token = gen_token($u['id'], isset($u['token_version']) ? intval($u['token_version']) : 0);
     ok(array(
         'token'   => $token,
@@ -585,6 +589,7 @@ case 'admin_etelid_login': {
         fail('No admin account found for this EtelID. Ask a super admin to add you first.', 403);
     }
 
+    etel_assert_account_enabled($pdo, $u['id']);
     if (empty($auth['twofa_verified'])) etel_2fa_gate($pdo, $u, $body); // EtelID already checked the member's code
     $token = gen_token($u['id'], $hasVer ? intval($u['token_version']) : 0);
     ok(array(
