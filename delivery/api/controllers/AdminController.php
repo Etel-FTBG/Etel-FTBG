@@ -433,9 +433,9 @@ case 'admin_create_user': {
     if (!$pw || strlen($pw) < 8) fail('Password must be at least 8 characters');
     
     // Check duplicate
-    $chk = $pdo->prepare('SELECT id FROM users WHERE phone=?');
-    $chk->execute(array($phone));
-    if ($chk->fetch()) fail('Phone already registered');
+    // Any written form of the number counts (0924.., +251924.., 924..) and the check is serialised with every other sign-up path.
+    if (!etel_phone_lock($pdo, $phone)) fail('Please try again in a moment', 429);
+    if (etel_phone_taken($pdo, $phone)) fail('Phone already registered');
     
     $hash = password_hash($pw, PASSWORD_DEFAULT);
     // Build one INSERT from the actual schema instead of blindly trying

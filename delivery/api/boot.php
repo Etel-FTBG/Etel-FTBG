@@ -1515,6 +1515,7 @@ switch ($action) {
         if (!$phone) fail('Phone is required',400);
         if (!$pw || strlen($pw)<8) fail('Password must be at least 8 characters',400);
         // Any written form of the number counts (0924.., +251924.., 924..): same person, same account.
+        if (!etel_phone_lock($pdo, $phone)) fail('Please try again in a moment', 429);
         if (etel_phone_taken($pdo, $phone)) fail('Phone number already registered',409);
         try { $pdo->query('SELECT lat,lng FROM service_givers LIMIT 1'); } catch(Exception $e) { try { $pdo->exec('ALTER TABLE service_givers ADD COLUMN lat DECIMAL(10,7) NULL, ADD COLUMN lng DECIMAL(10,7) NULL'); } catch(Exception $e2){} }
         try {

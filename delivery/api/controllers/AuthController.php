@@ -35,6 +35,7 @@ case 'register': {
     rate_limit_fail($pdo, 'register:ip');
     // Check duplicate
     // Any written form of the number counts (0924.., +251924.., 924..): same person, same account.
+    if (!etel_phone_lock($pdo, $phone)) fail('Please try again in a moment', 429);
     if (etel_phone_taken($pdo, $phone)) fail('Phone number already registered');
     $hash = password_hash($pw, PASSWORD_DEFAULT);
     // Build one INSERT from the actual schema instead of trying several
@@ -62,6 +63,7 @@ case 'register': {
     } catch (Exception $e) {
         fail_ex($e, 'Registration failed', 500);
     }
+    etel_phone_unlock($pdo, $phone);
     if (!$uid) fail('Registration failed  could not insert user');
     // Courier profile
     if ($role === 'courier') {

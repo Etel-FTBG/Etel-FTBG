@@ -229,6 +229,32 @@ class EtelID_Generator {
      * @return int|WP_Error  Inserted member DB row id, or WP_Error on failure.
      */
     public static function create( $data ) {
+        /* One phone number = one EtelID, whichever sign-up door was used (the public apply form, Register, Quick Register,
+         * the Fayda form or the wp-admin Issue screen). Only Register and Quick Register used to check this, so the same
+         * number could get a second account through the apply form. The number is compared by its last 9 digits (so
+         * 0924.., +251924.. and 924.. are the same), and one lock per number makes two requests that arrive together
+         * create only one account. */
+        global $wpdb;
+        $phone_in = isset( $data['phone'] ) ? (string) $data['phone'] : '';
+        $digits   = preg_replace( '/[^0-9]/', '', $phone_in );
+        $lock     = '';
+        if ( $digits !== '' ) {
+            $lock = 'etelid_phone_' . substr( $digits, -9 );
+            $wpdb->get_var( $wpdb->prepare( 'SELECT GET_LOCK(%s, 5)', $lock ) );
+            if ( EtelID_DB::find_by_phone( $phone_in ) ) {
+                $wpdb->get_var( $wpdb->prepare( 'SELECT RELEASE_LOCK(%s)', $lock ) );
+                return new WP_Error( 'phone_exists', 'An account with this phone number already exists. Please sign in.' );
+            }
+        }
+        $result = self::create_member( $data );
+        if ( $lock !== '' ) {
+            $wpdb->get_var( $wpdb->prepare( 'SELECT RELEASE_LOCK(%s)', $lock ) );
+        }
+        return $result;
+    }
+
+    /* The real insert (create() above is the door that checks the phone number first). */
+    private static function create_member( $data ) {
         $etel_id      = self::make_etel_id();
         $fin          = self::make_fin();
         $card_number  = self::make_card_number();
