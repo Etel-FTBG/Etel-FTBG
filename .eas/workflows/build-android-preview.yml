@@ -1,5 +1,13 @@
 name: Android preview APK
 
+# Builds a fresh installable APK every time the app folder changes on main (that is, whenever a PR is merged),
+# and can still be run by hand from the Expo website (Workflows > Run workflow).
+on:
+  push:
+    branches: ['main']
+    paths:
+      - 'Etel-Driver-App/**'
+
 jobs:
   build_android:
     name: Build Android APK (preview)
