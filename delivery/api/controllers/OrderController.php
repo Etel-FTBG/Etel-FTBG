@@ -502,11 +502,22 @@ case 'courier_get_profile': {
     } catch (Exception $e2) {
         fail_ex($e2, 'Could not load courier profile', 500);
     }
+    // 'approved' for every courier an admin already knows; 'pending' / 'rejected' for a new sign-up (see etel_courier_assert_approved).
+    $approval = array('status' => 'approved', 'note' => null);
+    if (etel_courier_approval_ready($pdo)) {
+        try {
+            $ap = $pdo->prepare('SELECT approval_status, approval_note FROM couriers WHERE id = ?');
+            $ap->execute(array($courier['id']));
+            $ar = $ap->fetch();
+            if ($ar) $approval = array('status' => $ar['approval_status'], 'note' => $ar['approval_note']);
+        } catch (Exception $e) { /* keep approved: never lock a courier out because of a read error */ }
+    }
     ok(array(
         'courier_code' => $full['courier_code'], 'vehicle_type' => $full['vehicle_type'],
         'plate_number' => $full['plate_number'], 'zone' => $full['zone'] ?: $full['home_zone'],
         'status' => $full['status'], 'rating' => floatval($full['rating']),
         'total_deliveries' => intval($full['total_deliveries']), 'all_time_earnings' => $allTimeEarnings,
+        'approval_status' => $approval['status'], 'approval_note' => $approval['note'],
     ));
     break;
 }

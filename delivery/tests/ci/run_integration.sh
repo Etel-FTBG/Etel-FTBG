@@ -19,6 +19,10 @@ if [ "${FRESH_DB:-0}" = "1" ]; then
   mysql ${MYSQL_ADMIN_ARGS:-} "$DB" < api/seeds/admin_demo_accounts.sql >/dev/null || exit 1
 fi
 
+# The other smokes sign couriers up and put them straight to work, so approval is off for the run;
+# tests/courier_approval_smoke.py switches it on for itself and puts it back.
+(cd tests && python3 -c "import etel_test_db as t; print(t.run_sql(\"INSERT INTO pricing_rules (rule_key, rule_value, description) VALUES ('courier_require_approval', 0, 'CI: couriers start work without approval') ON DUPLICATE KEY UPDATE rule_value = 0\"))") || true
+
 PHP_CLI_SERVER_WORKERS=4 php -S 127.0.0.1:"$PORT" -t . >/tmp/etel-php.log 2>&1 &
 SRV=$!
 trap 'kill $SRV 2>/dev/null' EXIT
@@ -36,6 +40,7 @@ run python3 tests/package_smoke.py
 run python3 tests/csp_report_smoke.py
 run python3 tests/customers_admin_smoke.py
 run python3 tests/people_admin_smoke.py
+run python3 tests/courier_approval_smoke.py
 run python3 tests/business_logic_smoke.py
 run python3 tests/open_meter_smoke.py
 run python3 tests/ride_dispatch_smoke.py

@@ -61,13 +61,15 @@ function renderCourierTable(data) {
     const vehicleIcon = COURIER_VEHICLE_ICON[c.vehicle_type] || '📦';
     const statusKey = (c.status || 'offline');
     const st = COURIER_STATUS_STYLE[statusKey] || COURIER_STATUS_STYLE.offline;
+    const approvalTag = c.approval_status === 'pending' ? '<span style="padding:3px 9px;border-radius:20px;font-size:9px;font-weight:800;color:#ffce54;background:rgba(255,206,84,.15);border:1px solid rgba(255,206,84,.35);margin-left:6px">AWAITING APPROVAL</span>'
+      : c.approval_status === 'rejected' ? '<span style="padding:3px 9px;border-radius:20px;font-size:9px;font-weight:800;color:#ff9aa4;background:rgba(255,93,108,.15);border:1px solid rgba(255,93,108,.3);margin-left:6px">NOT APPROVED</span>' : '';
     const inactiveTag = c.active == 0 ? '<span style="padding:3px 9px;border-radius:20px;font-size:9px;font-weight:800;color:#ff9aa4;background:rgba(255,93,108,.15);border:1px solid rgba(255,93,108,.3);margin-left:6px">SUSPENDED</span>' : '';
     return `
     <div class="eq-card" style="margin-bottom:0;${c.active == 0 ? 'opacity:.55' : ''}">
       <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px">
         <div style="width:52px;height:52px;border-radius:16px;flex:none;background:linear-gradient(135deg, rgba(90,169,255,.18), rgba(90,169,255,.03));border:1px solid rgba(90,169,255,.3);display:flex;align-items:center;justify-content:center;font-size:24px;box-shadow:0 8px 18px -4px rgba(0,0,0,.4)">${vehicleIcon}</div>
         <div style="min-width:0;flex:1">
-          <div style="font-size:15px;font-weight:700;color:#f8f1e2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${cpEsc(c.name)}${inactiveTag}</div>
+          <div style="font-size:15px;font-weight:700;color:#f8f1e2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${cpEsc(c.name)}${inactiveTag}${approvalTag}</div>
           <div style="font-size:11px;color:#8a7f66;font-family:'JetBrains Mono',monospace">${cpEsc(c.courier_code || '—')}</div>
         </div>
         <span style="padding:4px 11px;border-radius:20px;font-size:9.5px;font-weight:800;letter-spacing:.04em;color:#0d0d0d;background:${st.grad};box-shadow:0 4px 12px ${st.glow};flex:none">${st.label}</span>
@@ -86,7 +88,23 @@ function renderCourierTable(data) {
     </div>`;
   }).join('') : '<div class="eq-empty" style="grid-column:1/-1"><span class="eq-emoji">🛵</span>No couriers found</div>';
 
+  const pending = data.filter(c => c.approval_status === 'pending');
+  const pendingHtml = pending.length ? `<div class="eq-card" style="margin-bottom:22px;border:1px solid rgba(255,206,84,.45)">
+      <div class="eq-card-head"><h2>⏳ Waiting for approval (${pending.length})</h2></div>
+      ${pending.map(c => `<div style="display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;padding:10px 0;border-top:1px solid rgba(255,255,255,.07)">
+        <div style="min-width:0"><b style="color:#f8f1e2">${cpEsc(c.name)}</b>
+          <div style="font-size:11.5px;color:#8a7f66">${cpEsc(c.phone)} · ${COURIER_VEHICLE_ICON[c.vehicle_type] || '📦'} ${cpEsc(c.vehicle_type || '—')} · ${cpEsc(c.zone || c.home_zone || '—')} · ${cpEsc(c.courier_code || '')}</div></div>
+        <div style="display:flex;gap:8px"><button class="eq-btn primary" style="font-size:12px" onclick="courierSetApproval(${Number(c.user_id) || 0},'approved')">✅ Approve</button>
+          <button class="eq-btn" style="font-size:12px" onclick="courierSetApproval(${Number(c.user_id) || 0},'rejected')">✖ Not approved</button></div></div>`).join('')}
+    </div>` : '';
   section.innerHTML = `
+    ${pendingHtml}
+    <div class="eq-card" style="margin-bottom:22px;padding:12px 16px">
+      <label style="display:flex;align-items:center;gap:10px;font-size:13px;color:#cabf9f;cursor:pointer;text-transform:none;letter-spacing:0;font-weight:500">
+        <input type="checkbox" id="courier-req-approval" style="width:auto;margin:0" onchange="courierApprovalMode(this.checked)">
+        New couriers must be approved by an admin before they can go online or take jobs
+      </label>
+    </div>
     <div class="eq-grid" style="margin-bottom:22px">
       <div class="eq-card eq-kpi"><div class="eq-icon">👥</div><div class="eq-label">Total Couriers</div><div class="eq-value">${total}</div></div>
       <div class="eq-card eq-kpi"><div class="eq-icon">🟢</div><div class="eq-label">Online</div><div class="eq-value">${online}</div></div>
@@ -110,6 +128,31 @@ function renderCourierTable(data) {
     <div class="eq-grid" style="grid-template-columns:repeat(auto-fill,minmax(270px,1fr))" id="courier-cards-grid">
       ${cardsHtml}
     </div>`;
+  if (typeof adm === 'function') {
+    adm('admin_courier_approval_mode', {}, true).then(r => {
+      const cb = document.getElementById('courier-req-approval');
+      if (cb && r && r.success && r.data) cb.checked = !!r.data.require;
+    }).catch(() => {});
+  }
+}
+
+async function courierSetApproval(userId, status) {
+  if (!userId) return;
+  let note = '';
+  if (status === 'rejected') {
+    note = window.prompt('Not approving this courier. Reason (optional, shown to them):');
+    if (note === null) return;
+  } else if (!window.confirm('Approve this courier? They can go online and take jobs straight away.')) return;
+  const res = await adm('admin_courier_set_approval', { id: userId, status: status, note: note });
+  if (!res || !res.success) { toast((res && res.message) || 'Could not update the courier', 'err'); return; }
+  toast(status === 'approved' ? '✓ Courier approved' : '✓ Courier not approved');
+  loadCouriers();
+}
+
+async function courierApprovalMode(on) {
+  const res = await adm('admin_courier_approval_mode', { require: on ? 1 : 0 });
+  if (!res || !res.success) { toast((res && res.message) || 'Could not save', 'err'); loadCouriers(); return; }
+  toast(on ? '✓ New couriers now need approval' : '✓ New couriers are approved automatically');
 }
 
 // filterCourierTable() in admin.js already calls renderCourierTable(filtered)

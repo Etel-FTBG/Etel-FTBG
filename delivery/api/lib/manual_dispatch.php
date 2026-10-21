@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/courier_approval.php';
 // Dispatch by hand for staff. Auto-dispatch picks the nearest free courier, but when nobody accepts (or the order is stuck) staff
 // had no way to act: Admin could only change an order's status. This adds:
 //   - a board of live orders that need attention (no courier, waiting for the courier to accept, accepted but not picked up, slow)
@@ -96,7 +97,7 @@ function etel_dispatch_board($pdo) {
         $cs = $pdo->query("SELECT c.id, c.courier_code, c.status, c.zone, u.name, u.phone, TIMESTAMPDIFF(MINUTE, c.last_seen, NOW()) AS seen_min,
                 (SELECT COUNT(*) FROM orders o WHERE o.courier_id = c.id AND o.status IN ('assigned','picked_up','in_transit')) AS live_jobs
             FROM couriers c LEFT JOIN users u ON u.id = c.user_id
-            WHERE c.active = 1 AND (c.status IN ('online','busy') OR c.last_seen > DATE_SUB(NOW(), INTERVAL 6 HOUR))
+            WHERE c.active = 1" . etel_courier_approved_sql($pdo) . " AND (c.status IN ('online','busy') OR c.last_seen > DATE_SUB(NOW(), INTERVAL 6 HOUR))
             ORDER BY (c.status = 'online') DESC, live_jobs ASC, c.last_seen DESC LIMIT 60");
         foreach ($cs->fetchAll() as $c) {
             $out['couriers'][] = array('courier_id' => intval($c['id']), 'courier_code' => $c['courier_code'], 'name' => etel_dispatch_first_name($c['name']), 'phone' => $c['phone'],
@@ -150,6 +151,10 @@ function etel_admin_assign_courier($pdo, $order_id, $courier_id, $admin_id) {
         $cr = $c->fetch();
         if (!$cr) return array('ok' => false, 'message' => 'Courier not found.');
         if (intval($cr['active']) !== 1) return array('ok' => false, 'message' => 'This courier is not active.');
+        if (etel_courier_approved_sql($pdo) !== '') {
+            $ap = $pdo->prepare("SELECT approval_status FROM couriers WHERE id = ?"); $ap->execute(array($courier_id));
+            if ($ap->fetchColumn() !== 'approved') return array('ok' => false, 'message' => 'This courier has not been approved yet.');
+        }
         if (intval($cr['user_id']) === intval($o['customer_id'])) return array('ok' => false, 'message' => 'This courier placed this order themselves, so they cannot deliver it. Choose another courier.');
         $prev = $o['courier_id'] ? intval($o['courier_id']) : 0;
         if ($prev === $courier_id) return array('ok' => false, 'message' => 'This courier already has the order.');

@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/courier_approval.php';
 // Expiring courier job offers.
 //
 // Until now auto-dispatch force-assigned the nearest courier ('assigned', courier marked busy) and nothing ever
@@ -195,7 +196,7 @@ function etel_offer_next($pdo, $order_id) {
     $vehSql .= etel_not_own_order_sql($ord['customer_id'], 'c');   // never the courier who placed it
 
     $cs = $pdo->prepare("SELECT c.id, c.user_id, c.last_lat, c.last_lng, c.zone FROM couriers c
-                         WHERE c.status = 'online' AND c.active = 1 AND c.offer_capable_until IS NOT NULL AND c.offer_capable_until > NOW()
+                         WHERE c.status = 'online' AND c.active = 1" . etel_courier_approved_sql($pdo) . " AND c.offer_capable_until IS NOT NULL AND c.offer_capable_until > NOW()
                            AND c.id NOT IN (SELECT courier_id FROM orders WHERE status IN ('assigned','picked_up','in_transit') AND courier_id IS NOT NULL)
                            AND c.id NOT IN (SELECT courier_id FROM order_courier_offers WHERE order_id = ?)$vehSql");
     $cs->execute(array_merge(array($order_id), $vehParams));
