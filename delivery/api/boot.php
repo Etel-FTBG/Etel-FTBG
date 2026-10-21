@@ -1654,6 +1654,9 @@ switch ($action) {
     case 'admin_customers_list': case 'admin_customer_get': case 'admin_customer_set_active':
         require __DIR__ . '/controllers/CustomerAdminController.php';
         break;
+    case 'admin_people_list': case 'admin_person_get': case 'admin_person_set_active': case 'admin_person_force_logout':
+        require __DIR__ . '/controllers/UserAdminController.php';
+        break;
 
     case 'admin_integrations_get': case 'admin_integrations_save': case 'admin_integrations_test': case 'admin_integrations_add': case 'admin_integrations_remove':
         require __DIR__ . '/controllers/IntegrationController.php';

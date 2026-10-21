@@ -576,27 +576,7 @@ html{color-scheme:light}
                 </div>
 
                 <!-- ══ USERS PANEL ══ -->
-                <div id="panel-users" class="panel" style="display:none">
-                    <div style="display:flex;gap:10px;margin-bottom:18px;flex-wrap:wrap;align-items:center">
-                        <select id="user-role-filter" class="filter-sel" onchange="loadUsers()">
-                            <option value="">All Roles</option>
-                            <option value="customer">Customer</option>
-                            <option value="courier">Courier</option>
-                            <option value="service_giver">Service Giver</option>
-                            <option value="admin">Admin</option>
-                        </select>
-                        <input type="text" id="user-search" class="filter-sel" placeholder="Search name/phone…" oninput="filterUserTable()" style="width:200px">
-                        <button class="btn btn-secondary" onclick="loadUsers()" style="padding:8px 14px">🔄 Refresh</button>
-                        <button class="btn btn-secondary" onclick="loadDuplicatePhones()" style="padding:8px 14px" title="Accounts that share one number written two ways (0924... / +251924...)">📞 Duplicate phones</button>
-                        <button class="btn btn-primary" onclick="openModal('new-user')" style="padding:8px 14px">➕ New User</button>
-                    </div>
-                    <div id="dup-phones-box" class="data-section" style="display:none;margin-bottom:18px"></div>
-                    <div class="data-section">
-                        <div class="section-title">All Users</div>
-                        <div class="table-wrapper"><table><thead><tr><th>ID</th><th>Name</th><th>Phone</th><th>Role</th><th>Joined</th></tr></thead>
-                        <tbody id="users-tbody"><tr><td colspan="5" style="text-align:center;padding:30px;color:#B8B0A0">Loading…</td></tr></tbody></table></div>
-                    </div>
-                </div>
+                <div id="panel-users" class="panel" style="display:none"><!-- built by js/admin-people.js --></div>
 
                 <!-- ══ COURIERS PANEL ══ -->
                 <div id="panel-couriers" class="panel" style="display:none">
@@ -1696,7 +1676,7 @@ html{color-scheme:light}
     <script src="js/admin-dispatch.js?v=2"></script>
     <script src="js/admin-packages.js?v=3"></script>
     <script src="js/admin-integrations.js?v=2"></script>
-    <script src="js/admin-customers.js?v=2"></script>
+    <script src="js/admin-people.js?v=1"></script><!-- Users + Customers: counts, search, cards/table, profile drawer, account controls -->
     <script src="js/admin-footer.js?v=2"></script>
     <script src="js/admin-courier-pay.js?v=1"></script>
     <script src="js/admin-ride-promos.js?v=1"></script><!-- Promo codes page: ride promo codes (propose, approve) -->
