@@ -79,7 +79,7 @@ def main():
     d = r.get("data") or {}
     ids = [p["id"] for p in d.get("people", [])]
     check("search by name finds both new accounts", r.get("success") and cid in ids and kid in ids, r)
-    s, r = call("admin_people_list", {"q": SUFFIX, "role": "courier"}, token=admin)
+    s, r = call("admin_people_list", {"q": kname, "role": "courier"}, token=admin)
     ppl = (r.get("data") or {}).get("people", [])
     check("the role filter keeps only couriers", [p["id"] for p in ppl] == [kid] and ppl[0]["role"] == "courier", r)
     s, r = call("admin_people_list", {"q": str(cid)}, token=admin)
