@@ -52,6 +52,7 @@ $includes = array(
     'includes/class-etelid-shortcodes.php',
     'includes/class-etelid-ajax.php',
     'includes/class-etelid-password-reset.php',   /* self-service Forgot Password (email + Telegram) */
+    'includes/class-etelid-phone-verify.php',     /* prove a new member owns their phone number (code by SMS / WhatsApp) */
     'includes/class-etelid-rewrite.php',
     'includes/class-etelid-rest-hardening.php',   /* audit Oct 2026: no public REST index / user list */
 );

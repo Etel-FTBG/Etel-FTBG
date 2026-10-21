@@ -81,6 +81,8 @@ class EtelID_Admin {
                 $message = 'error:' . $result->get_error_message();
             } else {
                 $new_member = EtelID_DB::get_member( $result );
+                /* Issued by staff who have the person in front of them: the number counts as verified. */
+                if ( $new_member && class_exists( 'EtelID_Phone_Verify' ) ) EtelID_Phone_Verify::mark_verified( $new_member, 'issued by staff' );
                 $message    = 'success:' . $new_member->etel_id;
                 if ( $new_member ) EtelID_Mailer::send_welcome( $new_member );
             }

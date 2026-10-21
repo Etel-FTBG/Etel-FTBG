@@ -36,6 +36,7 @@ class EtelID_Admin_Panels {
             'etelid_panel_ext_user_status'         => 'ext_user_status',
             'etelid_panel_members_update'  => 'members_update',
             'etelid_panel_members_status'  => 'members_status',
+            'etelid_panel_members_verify_phone' => 'members_verify_phone',
             'etelid_panel_members_delete'  => 'members_delete',
             'etelid_panel_reset_password'  => 'reset_password',
             'etelid_panel_fayda_id_upload' => 'fayda_id_upload',
@@ -272,6 +273,17 @@ class EtelID_Admin_Panels {
         EtelID_DB::set_status( $id, $status );
         EtelID_DB::log( $id, $member->etel_id, 'status_changed', 'Status set to ' . $status . ' by ' . $admin->full_name );
         wp_send_json_success( array( 'message' => 'Status updated to ' . $status . '.' ) );
+    }
+
+    /** Staff confirm a member's phone number themselves (they checked in person or by calling the number). */
+    public static function members_verify_phone() {
+        $admin = self::guard();
+        $id = absint( isset( $_POST['id'] ) ? $_POST['id'] : 0 );
+        $member = $id ? EtelID_DB::get_member( $id ) : null;
+        if ( ! $member ) wp_send_json_error( array( 'message' => 'Member not found.' ) );
+        if ( EtelID_Phone_Verify::is_verified( $member ) ) wp_send_json_success( array( 'message' => 'This phone number is already verified.' ) );
+        EtelID_Phone_Verify::mark_verified( $member, 'confirmed by ' . $admin->full_name );
+        wp_send_json_success( array( 'message' => 'Phone number marked as verified.' ) );
     }
 
     public static function members_delete() {

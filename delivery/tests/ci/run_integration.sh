@@ -79,6 +79,7 @@ run php tests/integrations_test.php
 run php tests/health_backup_test.php
 run php tests/image_orient_test.php
 run php tests/etelid_role_verdict_test.php
+run php tests/etelid_phone_trust_test.php
 run python3 tests/courier_pay_smoke.py
 echo; [ $rc = 0 ] && echo "ALL CHECKS PASSED" || echo "SOME CHECKS FAILED"
 exit $rc

@@ -315,7 +315,7 @@ class EtelID_Password_Reset {
      *   define('ETELID_WA_TEMPLATE_NAME', 'otp_code'); // your template's name
      *   define('ETELID_WA_TEMPLATE_LANG', 'en_US');    // must match template's language
      * ── */
-    private static function send_via_whatsapp( $member, $code ) {
+    public static function send_via_whatsapp( $member, $code ) {
         $token    = defined( 'ETELID_WA_ACCESS_TOKEN' ) ? ETELID_WA_ACCESS_TOKEN : getenv( 'ETELID_WA_ACCESS_TOKEN' );
         $phone_id = defined( 'ETELID_WA_PHONE_ID' )     ? ETELID_WA_PHONE_ID     : getenv( 'ETELID_WA_PHONE_ID' );
         $template = defined( 'ETELID_WA_TEMPLATE_NAME' ) ? ETELID_WA_TEMPLATE_NAME : ( getenv( 'ETELID_WA_TEMPLATE_NAME' ) ?: 'otp_code' );
@@ -372,7 +372,7 @@ class EtelID_Password_Reset {
      *    relies on - one integration, both carriers, no separate
      *    Ethio-Telecom-specific vs Safaricom-specific code path needed
      *    or available. ── */
-    private static function send_via_sms( $member, $code ) {
+    public static function send_via_sms( $member, $code, $what = 'password reset code', $minutes = 15 ) {
         $at_key  = defined('ETELID_AT_API_KEY') ? ETELID_AT_API_KEY : getenv('ETELID_AT_API_KEY');
         $at_user = defined('ETELID_AT_USERNAME') ? ETELID_AT_USERNAME : (getenv('ETELID_AT_USERNAME') ?: 'sandbox');
         if ( ! $at_key || empty( $member->phone ) ) return false;
@@ -384,7 +384,7 @@ class EtelID_Password_Reset {
             'body'    => array(
                 'username' => $at_user,
                 'to'       => '+' . $to,
-                'message'  => "Your Etel-ID password reset code is: {$code} (expires in 15 minutes)",
+                'message'  => "Your Etel-ID {$what} is: {$code} (expires in " . (int) $minutes . " minutes)",
                 'from'     => 'ETEL',
             ),
         ));

@@ -87,6 +87,8 @@ class EtelID_Fayda {
         ));
 
         $member = EtelID_DB::get_member( $member_id );
+        /* Only staff reach this (admin Fayda quick-register): the number counts as verified. */
+        if ( $member && class_exists( 'EtelID_Phone_Verify' ) ) EtelID_Phone_Verify::mark_verified( $member, 'issued by staff' );
 
         $registrar = wp_get_current_user();
         $registrar_label = $registrar && $registrar->display_name
