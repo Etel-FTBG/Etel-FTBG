@@ -106,6 +106,7 @@ jobs:
           python3 delivery/tests/ci/check_package_prices_admin.py
           python3 delivery/tests/ci/check_integrations_admin.py
           python3 delivery/tests/ci/check_customers_admin.py
+          python3 delivery/tests/ci/check_people_admin.py
           python3 delivery/tests/ci/check_status_page.py
           python3 delivery/tests/ci/check_phase0_security.py
           python3 delivery/tests/ci/check_phase1_dispatch.py
