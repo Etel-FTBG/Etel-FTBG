@@ -130,7 +130,7 @@ function css() {
     '.ppl-pill{display:inline-flex;gap:4px;align-items:center;font-size:10.5px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;padding:2px 9px;border-radius:20px;margin-top:3px;color:#fff}',
     '.ppl-st{flex:none;font-size:10.5px;font-weight:800;padding:3px 9px;border-radius:20px;display:inline-flex;gap:5px;align-items:center}',
     '.ppl-st::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}',
-    '.ppl-st.on{color:var(--green);background:rgba(31,164,99,.12)}.ppl-st.off{color:var(--red);background:rgba(214,54,74,.12)}',
+    '.ppl-st.wait{color:#b57b00;background:rgba(240,180,41,.18)}.ppl-st.on{color:var(--green);background:rgba(31,164,99,.12)}.ppl-st.off{color:var(--red);background:rgba(214,54,74,.12)}',
     '.ppl-ph{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:12px;padding:8px 10px;border-radius:11px;background:var(--soft);font-family:ui-monospace,Menlo,monospace;font-size:12.5px}',
     '.ppl-ph button{border:0;background:transparent;cursor:pointer;font-size:14px;padding:2px 4px;color:var(--mute)}',
     '.ppl-stats{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;min-height:24px}',
@@ -207,7 +207,12 @@ function pill(p) {
   var r = role(p.role);
   return '<span class="ppl-pill" style="background:linear-gradient(135deg,' + r.a + ',' + r.b + ')">' + r.icon + ' ' + esc(r.label) + '</span>';
 }
-function stateTag(p) { return p.suspended ? '<span class="ppl-st off">Disabled</span>' : '<span class="ppl-st on">Active</span>'; }
+function stateTag(p) {
+  if (p.suspended) return '<span class="ppl-st off">Disabled</span>';
+  if (p.approval === 'pending') return '<span class="ppl-st wait">Awaiting approval</span>';
+  if (p.approval === 'rejected') return '<span class="ppl-st off">Not approved</span>';
+  return '<span class="ppl-st on">Active</span>';
+}
 
 function statsFor(p, v) {
   var out = [];
@@ -250,6 +255,7 @@ function filtered(v) {
   return v.data.filter(function (p) {
     if (v.status === 'active' && p.suspended) return false;
     if (v.status === 'suspended' && !p.suspended) return false;
+    if (v.status === 'pending' && p.approval !== 'pending') return false;
     if (v.role && p.role !== v.role) return false;
     if (v.q) { var q = v.q.toLowerCase(); if (String(p.name || '').toLowerCase().indexOf(q) < 0 && String(p.phone || '').indexOf(v.q) < 0 && String(p.id) !== v.q) return false; }
     return true;
@@ -262,6 +268,7 @@ function kpisHtml(v) {
   if (v.key === 'users') {
     tiles.push({ id: '', icon: '👥', n: t, label: 'Everyone', share: 1 });
     ROLE_ORDER.forEach(function (r) { if (by[r] != null) tiles.push({ id: r, icon: role(r).icon, n: by[r], label: role(r).plural, share: t ? by[r] / t : 0 }); });
+    if (s.pending_couriers) tiles.push({ id: '!pending', icon: '⏳', n: s.pending_couriers, label: 'Couriers to approve', share: t ? s.pending_couriers / t : 0 });
     tiles.push({ id: '!off', icon: '⛔', n: s.suspended || 0, label: 'Disabled', share: t ? (s.suspended || 0) / t : 0 });
     tiles.push({ id: '!new', icon: '✨', n: s.new_7d || 0, label: 'New this week', share: t ? (s.new_7d || 0) / t : 0, st: 1 });
   } else {
@@ -274,7 +281,7 @@ function kpisHtml(v) {
     tiles.push({ id: '!rev', icon: '💰', n: Math.round(rev).toLocaleString(), label: 'Spent (ETB, delivered)', share: 0, st: 1 });
   }
   return '<div class="ppl-kpis">' + tiles.map(function (k) {
-    var on = (k.id === '!off' ? v.status === 'suspended' : (k.id === '' ? (!v.role && !v.status) : k.id === v.role && !v.status));
+    var on = (k.id === '!off' ? v.status === 'suspended' : k.id === '!pending' ? v.status === 'pending' : (k.id === '' ? (!v.role && !v.status) : k.id === v.role && !v.status));
     return '<button type="button" class="ppl-kpi' + (on ? ' on' : '') + (k.st ? ' static' : '') + '" data-kpi="' + esc(k.id) + '"' + (k.st ? ' tabindex="-1"' : '') + '><i>' + k.icon + '</i><b>' + esc(k.n) + '</b><span>' + esc(k.label) + '</span>' +
       (k.share ? '<div class="ppl-bar"><em style="width:' + Math.max(3, Math.round(k.share * 100)) + '%"></em></div>' : '') + '</button>';
   }).join('') + '</div>';
@@ -307,7 +314,7 @@ function paintCount(el, v) {
   var n = filtered(v).length, c = el.querySelector('[data-count]');
   var chips = '';
   if (v.role && v.key === 'users') chips += '<span class="ppl-chip">' + esc(role(v.role).plural) + ' <button type="button" data-clr="role" aria-label="Remove filter">✕</button></span>';
-  if (v.status) chips += '<span class="ppl-chip">' + (v.status === 'suspended' ? 'Disabled' : 'Active') + ' <button type="button" data-clr="status" aria-label="Remove filter">✕</button></span>';
+  if (v.status) chips += '<span class="ppl-chip">' + (v.status === 'suspended' ? 'Disabled' : v.status === 'pending' ? 'Awaiting approval' : 'Active') + ' <button type="button" data-clr="status" aria-label="Remove filter">✕</button></span>';
   c.innerHTML = '<span>Showing <b>' + num(n) + '</b> of ' + num(v.data.length) + '</span>' + chips;
 }
 function paint(el, v) {
@@ -379,6 +386,7 @@ function wire(panel, v) {
     if (k && !k.classList.contains('static')) {
       var id = k.getAttribute('data-kpi');
       if (id === '!off') { v.status = v.status === 'suspended' ? '' : 'suspended'; v.role = ''; }
+      else if (id === '!pending') { v.status = v.status === 'pending' ? '' : 'pending'; v.role = ''; }
       else { v.role = id; v.status = ''; }
       paint(el, v); syncSeg(el, v); return;
     }
@@ -434,7 +442,7 @@ function ask(o) {
   return new Promise(function (resolve) {
     var ov = document.createElement('div'); ov.className = 'ppl-ov in'; ov.style.zIndex = '9099';
     var md = document.createElement('div'); md.className = 'ppl-md'; md.setAttribute('role', 'dialog'); md.setAttribute('aria-modal', 'true');
-    md.innerHTML = '<h3>' + esc(o.title) + '</h3><p>' + esc(o.body) + '</p>' + (o.reason ? '<textarea data-reason maxlength="200" placeholder="Reason (optional, kept in the log)"></textarea>' : '') +
+    md.innerHTML = '<h3>' + esc(o.title) + '</h3><p>' + esc(o.body) + '</p>' + (o.reason ? '<textarea data-reason maxlength="200" placeholder="Reason (optional)"></textarea>' : '') +
       '<div class="row"><button type="button" class="ppl-btn" data-no>Cancel</button><button type="button" class="ppl-btn ' + (o.danger ? 'danger solid' : 'gold') + '" data-yes>' + esc(o.yes || 'Confirm') + '</button></div>';
     function close(ok) { var r = md.querySelector('[data-reason]'); var val = r ? r.value : ''; document.body.removeChild(ov); document.body.removeChild(md); document.removeEventListener('keydown', onKey, true); resolve(ok ? { ok: true, reason: val } : { ok: false }); }
     function onKey(e) { if (e.key === 'Escape') { e.stopPropagation(); close(false); } }
@@ -485,7 +493,7 @@ function renderDrawer(dr, d, v) {
   var p = d.person, r = role(p.role), det = p.detail || {};
   var phone = String(p.phone || '').replace(/[^0-9+]/g, '');
   var roleStats = [];
-  if (p.role === 'courier') { roleStats = [['Courier code', esc(det.courier_code || '—')], ['Vehicle', esc(det.vehicle_type || '—')], ['Deliveries', num(det.total_deliveries)], ['Rating', det.rating ? '⭐ ' + Number(det.rating).toFixed(2) : '—']]; }
+  if (p.role === 'courier') { roleStats = [['Courier code', esc(det.courier_code || '—')], ['Vehicle', esc(det.vehicle_type || '—')], ['Deliveries', num(det.total_deliveries)], ['Rating', det.rating ? '⭐ ' + Number(det.rating).toFixed(2) : '—'], ['Approval', esc(det.approval_status === 'pending' ? '⏳ Waiting' : det.approval_status === 'rejected' ? '✖ Not approved' : '✅ Approved')]]; }
   else if (p.role === 'driver') { roleStats = [['Plate', esc(det.vehicle_plate || '—')], ['Vehicle', esc([det.vehicle_color, det.vehicle_make].filter(Boolean).join(' ') || '—')], ['Rides driven', num(det.total_rides)], ['Rating', det.rating ? '⭐ ' + Number(det.rating).toFixed(2) : '—']]; }
   else if (p.role === 'service_giver') { roleStats = [['Business', esc(det.business_name || '—')], ['Type', esc(det.service_type || '—')], ['Completed', num(det.completed_deliveries)], ['Status', esc(det.status || '—')]]; }
   else if (p.role === 'admin') { roleStats = [['Staff role', esc(det.staff_role || 'Owner / full access')], ['Two-step sign-in', p.two_step ? '✅ On' : 'Off']]; }
@@ -511,6 +519,8 @@ function renderDrawer(dr, d, v) {
         ? '<button type="button" class="ppl-btn" data-ctl="restore">✅ <span>Restore account<small>They can sign in and use the apps again.</small></span></button>'
         : '<button type="button" class="ppl-btn danger" data-ctl="disable">⛔ <span>Disable account<small>Signs them out everywhere and blocks sign-in, ordering and rides.</small></span></button>') +
       '<button type="button" class="ppl-btn" data-ctl="logout">🚪 <span>Sign out of all devices<small>Their current sessions stop working. They can sign in again.</small></span></button>' +
+      (p.role === 'courier' && det.approval_status && det.approval_status !== 'approved' ? '<button type="button" class="ppl-btn" data-ctl="approve">✅ <span>Approve courier<small>They can go online and take jobs straight away.</small></span></button>' : '') +
+      (p.role === 'courier' && det.approval_status === 'pending' ? '<button type="button" class="ppl-btn danger" data-ctl="reject">✖ <span>Do not approve<small>They stay out of the work and are told why.</small></span></button>' : '') +
       (p.two_step ? '<button type="button" class="ppl-btn" data-ctl="twostep">🔑 <span>Reset two-step sign-in<small>For someone who lost their phone and backup codes.</small></span></button>' : '') + '</div>';
   }
   h += '</div></div>';
@@ -529,6 +539,14 @@ function control(kind, p, v) {
   } else if (kind === 'restore') {
     ask({ title: 'Restore ' + name + '?', body: 'They will be able to sign in and use the apps again.', yes: 'Restore account' }).then(function (a) {
       if (a.ok) api('admin_person_set_active', { id: p.id, active: 1 }).then(function (r) { (r && r.success !== false) ? done(name + ' is active again') : oops(r); });
+    });
+  } else if (kind === 'approve') {
+    ask({ title: 'Approve ' + name + '?', body: 'They can go online and take jobs straight away.', yes: 'Approve courier' }).then(function (a) {
+      if (a.ok) api('admin_courier_set_approval', { id: p.id, status: 'approved' }).then(function (r) { (r && r.success !== false) ? done(name + ' is approved') : oops(r); });
+    });
+  } else if (kind === 'reject') {
+    ask({ title: 'Do not approve ' + name + '?', body: 'They cannot go online or take jobs. The reason below is shown to them.', danger: true, yes: 'Do not approve', reason: true }).then(function (a) {
+      if (a.ok) api('admin_courier_set_approval', { id: p.id, status: 'rejected', note: a.reason }).then(function (r) { (r && r.success !== false) ? done(name + ' was not approved') : oops(r); });
     });
   } else if (kind === 'logout') {
     ask({ title: 'Sign ' + name + ' out everywhere?', body: 'Every phone and browser they are signed in on stops working. They can sign in again with their password.', yes: 'Sign out' }).then(function (a) {

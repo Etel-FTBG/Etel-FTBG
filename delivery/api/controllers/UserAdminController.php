@@ -6,6 +6,8 @@
 //   admin_person_get    { id }                          -> one account: profile, role details, orders, rides      (users.view)
 //   admin_person_set_active { id, active: 0|1, reason? } -> disable / restore an account (users.manage)
 //   admin_person_force_logout { id }                    -> sign the person out of every device (users.manage)
+//   admin_courier_set_approval { id, status: approved|rejected|pending, note? } -> approve or turn down a courier who signed up (users.manage)
+//   admin_courier_approval_mode { require?: 0|1 }       -> read / set whether new couriers must be approved first (users.view / users.manage)
 // Staff who may only see Ride accounts get customers and drivers only. Only an owner admin (full access) may change
 // another admin. Nobody can disable or sign out their own account from here.
 // ============================================================
@@ -72,9 +74,11 @@ case 'admin_people_list': {
     $ord = etel_people_counts($pdo, 'SELECT customer_id AS k, COUNT(*) AS n, MAX(placed_at) AS last_at FROM orders WHERE customer_id IN ({IDS}) GROUP BY customer_id', $ids);
     $ridesP = etel_people_counts($pdo, 'SELECT passenger_id AS k, COUNT(*) AS n FROM rides WHERE passenger_id IN ({IDS}) GROUP BY passenger_id', $ids);
     $ridesD = etel_people_counts($pdo, 'SELECT driver_id AS k, COUNT(*) AS n FROM rides WHERE driver_id IN ({IDS}) GROUP BY driver_id', $ids);
+    $apr = etel_courier_approval_ready($pdo) ? etel_people_counts($pdo, "SELECT user_id AS k, approval_status AS st FROM couriers WHERE user_id IN ({IDS})", $ids) : array();
     foreach ($rows as &$r) {
         $id = intval($r['id']);
         $r['id'] = $id;
+        if ($r['role'] === 'courier') $r['approval'] = isset($apr[$id]) ? $apr[$id]['st'] : 'approved';
         $r['suspended'] = intval($r['active']) === 0; unset($r['active']);
         $r['orders_total'] = isset($ord[$id]) ? intval($ord[$id]['n']) : 0;
         $r['last_order_at'] = isset($ord[$id]) ? $ord[$id]['last_at'] : null;
@@ -84,8 +88,12 @@ case 'admin_people_list': {
     if ($sort === 'orders') usort($rows, function ($a, $b) { return ($b['orders_total'] + $b['rides_total']) - ($a['orders_total'] + $a['rides_total']); });
     $byRole = array(); $total = 0; $off = 0;
     foreach ($sum as $x) { $byRole[$x['role']] = intval($x['n']); $total += intval($x['n']); $off += intval($x['off']); }
+    $pendingCouriers = 0;
+    if (!$rideOnly && etel_courier_approval_ready($pdo)) {
+        try { $pendingCouriers = intval($pdo->query("SELECT COUNT(*) FROM couriers WHERE approval_status = 'pending'")->fetchColumn()); } catch (Exception $e) { /* none */ }
+    }
     ok(array('people' => $rows, 'count' => count($rows),
-             'summary' => array('total' => $total, 'by_role' => $byRole, 'suspended' => $off, 'new_7d' => $new)));
+             'summary' => array('total' => $total, 'by_role' => $byRole, 'suspended' => $off, 'new_7d' => $new, 'pending_couriers' => $pendingCouriers)));
     break;
 }
 
@@ -108,6 +116,10 @@ case 'admin_person_get': {
     $detail = array();
     if ($p['role'] === 'courier') {
         $detail = $one('SELECT courier_code, vehicle_type, zone, status, rating, total_deliveries FROM couriers WHERE user_id = ? LIMIT 1', array($id)) ?: array();
+        if (etel_courier_approval_ready($pdo)) {
+            $ap = $one('SELECT approval_status, approval_note, approval_at FROM couriers WHERE user_id = ? LIMIT 1', array($id));
+            if ($ap) $detail = array_merge($detail, array('approval_status' => $ap['approval_status'], 'approval_note' => $ap['approval_note'], 'approval_at' => $ap['approval_at']));
+        }
     } elseif ($p['role'] === 'driver') {
         $detail = $one('SELECT vehicle_plate, vehicle_make, vehicle_color, online, total_rides, rating_sum, rating_count FROM ride_drivers WHERE user_id = ? LIMIT 1', array($id)) ?: array();
         if ($detail) { $detail['rating'] = intval($detail['rating_count']) > 0 ? round($detail['rating_sum'] / $detail['rating_count'], 2) : null; unset($detail['rating_sum'], $detail['rating_count']); }
@@ -172,6 +184,40 @@ case 'admin_person_force_logout': {
     $done = etel_bump_token_version($pdo, $id);
     error_log('[ETEL][admin] account ' . $id . ' signed out of every device by admin ' . intval($u['id']));
     ok(array('id' => $id, 'signed_out' => (bool) $done));
+    break;
+}
+
+case 'admin_courier_set_approval': {
+    $pdo = db();
+    $u = require_admin($pdo, 'users.manage');
+    $id = isset($body['id']) ? intval($body['id']) : 0;
+    $status = isset($body['status']) ? (string) $body['status'] : '';
+    $note = isset($body['note']) ? trim(substr((string) $body['note'], 0, 200)) : '';
+    if (!in_array($status, array('approved', 'rejected', 'pending'), true)) fail('status must be approved, rejected or pending', 400);
+    $t = etel_people_target($pdo, $u, $id, false);
+    if ($t['role'] !== 'courier') fail('That account is not a courier', 400);
+    if (!etel_courier_approval_ready($pdo)) fail('Courier approval is not available on this install yet', 500);
+    try {
+        $pdo->prepare('UPDATE couriers SET approval_status = ?, approval_note = ?, approval_at = NOW() WHERE user_id = ?')->execute(array($status, $note !== '' ? $note : null, $id));
+        if ($status !== 'approved') $pdo->prepare("UPDATE couriers SET status = 'offline' WHERE user_id = ?")->execute(array($id));
+    } catch (PDOException $e) { fail_ex($e, 'Could not update the courier', 500); }
+    error_log('[ETEL][admin] courier ' . $id . ' ' . $status . ' by admin ' . intval($u['id']) . ($note !== '' ? ' (' . $note . ')' : ''));
+    ok(array('id' => $id, 'approval_status' => $status));
+    break;
+}
+
+case 'admin_courier_approval_mode': {
+    $pdo = db();
+    $set = array_key_exists('require', $body);
+    $u = require_admin($pdo, $set ? 'users.manage' : 'users.view');
+    if ($set) {
+        $v = !empty($body['require']) ? 1 : 0;
+        try {
+            $pdo->prepare("INSERT INTO pricing_rules (rule_key, rule_value, description) VALUES ('courier_require_approval', ?, 'New couriers must be approved by an admin before they can work (1 = on, 0 = off)') ON DUPLICATE KEY UPDATE rule_value = VALUES(rule_value)")->execute(array($v));
+        } catch (PDOException $e) { fail_ex($e, 'Could not save the setting', 500); }
+        error_log('[ETEL][admin] courier approval ' . ($v ? 'switched on' : 'switched off') . ' by admin ' . intval($u['id']));
+    }
+    ok(array('require' => etel_courier_requires_approval($pdo)));
     break;
 }
 

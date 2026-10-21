@@ -66,6 +66,7 @@ case 'register': {
     etel_phone_unlock($pdo, $phone);
     if (!$uid) fail('Registration failed  could not insert user');
     // Courier profile
+    $courier_pending = false;
     if ($role === 'courier') {
         $vehicle = isset($body['vehicle']) ? $body['vehicle'] : 'motorcycle';
         $zone    = isset($body['zone'])    ? $body['zone']    : 'Mehal Ketema';
@@ -85,6 +86,11 @@ case 'register': {
         $cSql = 'INSERT INTO couriers (' . implode(',', $cFields) . ') VALUES (' . implode(',', $cMarks) . ')';
         try {
             $pdo->prepare($cSql)->execute($cValues);
+            // A courier who signs up on their own waits for an admin to approve them (switch: pricing_rules.courier_require_approval).
+            if (etel_courier_requires_approval($pdo) && etel_courier_approval_ready($pdo)) {
+                $pdo->prepare("UPDATE couriers SET approval_status = 'pending', status = 'offline' WHERE user_id = ?")->execute(array($uid));
+                $courier_pending = true;
+            }
         } catch (Exception $ce) {
             // Non-fatal: the user account was already created successfully above.
             error_log('[ETEL][auth] courier profile creation failed for uid=' . $uid . ': ' . $ce->getMessage());
@@ -111,7 +117,7 @@ case 'register': {
     } catch (Exception $e) { /* referral tables may not be migrated yet - non-fatal */ }
 
     $token = gen_token($uid);
-    ok(array('user_id' => $uid, 'token' => $token, 'role' => $role, 'phone' => $phone));
+    ok(array('user_id' => $uid, 'token' => $token, 'role' => $role, 'phone' => $phone, 'courier_approval' => $courier_pending ? 'pending' : 'approved'));
     break;
 }
 case 'change_password': {

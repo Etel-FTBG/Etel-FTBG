@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/courier_approval.php';
 /**
  * Courier auto-dispatch and unpaid-Chapa-order cleanup for delivery orders.
  *
@@ -108,7 +109,7 @@ function etel_dispatch_order($pdo, $order_id, $exclude = array()) {
         $cs = $pdo->prepare("
             SELECT c.id, c.user_id, c.last_lat, c.last_lng, c.zone
             FROM couriers c
-            WHERE c.status = 'online' AND c.active = 1
+            WHERE c.status = 'online' AND c.active = 1" . etel_courier_approved_sql($pdo) . "
               AND $hexWhere
               $excludeSql
               $vehSql
@@ -144,7 +145,7 @@ function etel_dispatch_order($pdo, $order_id, $exclude = array()) {
             $csFallback = $pdo->prepare("
                 SELECT c.id, c.user_id, c.last_lat, c.last_lng, c.zone
                 FROM couriers c
-                WHERE c.status = 'online' AND c.active = 1 $excludeSql $vehSql
+                WHERE c.status = 'online' AND c.active = 1" . etel_courier_approved_sql($pdo) . " $excludeSql $vehSql
                   AND c.id NOT IN (
                     SELECT courier_id FROM orders
                     WHERE status IN ('assigned','picked_up','in_transit')
@@ -243,7 +244,7 @@ function etel_package_broadcast($pdo, $order_id, $o, $vehSql, $vehParams, $exclu
     $told = 0;
     try {
         $cs = $pdo->prepare("SELECT c.id, c.user_id, c.last_lat, c.last_lng, c.zone FROM couriers c
-            WHERE c.status = 'online' AND c.active = 1 $excludeSql $vehSql
+            WHERE c.status = 'online' AND c.active = 1" . etel_courier_approved_sql($pdo) . " $excludeSql $vehSql
               AND c.id NOT IN (SELECT courier_id FROM orders WHERE status IN ('assigned','picked_up','in_transit') AND courier_id IS NOT NULL)");
         $cs->execute($vehParams);
         $list = $cs->fetchAll(PDO::FETCH_ASSOC);

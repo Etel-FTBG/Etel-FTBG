@@ -512,9 +512,24 @@ function require_admin($pdo, $capability = null) {
     }
     return $u;
 }
+require_once __DIR__ . '/lib/courier_approval.php';   // etel_courier_approval_ready / _approved_sql / _requires_approval
+/* Refuses a courier whose account is not approved. courier_get_profile and going offline stay open so the app can say why. */
+function etel_courier_assert_approved($pdo, $u) {
+    global $action;
+    if (!etel_courier_approval_ready($pdo)) return;
+    if (in_array($action, array('courier_get_profile', 'courier_go_offline'), true)) return;
+    try {
+        $q = $pdo->prepare('SELECT approval_status FROM couriers WHERE user_id = ? ORDER BY id DESC LIMIT 1');
+        $q->execute(array(intval($u['id'])));
+        $st = $q->fetchColumn();
+    } catch (Exception $e) { return; }
+    if ($st === 'pending') fail('Your courier account is waiting for approval. We will let you know as soon as it is approved.', 403);
+    if ($st === 'rejected') fail('Your courier application was not approved. Please contact support.', 403);
+}
 function require_courier($pdo) {
     $u = require_auth($pdo);
     if ($u['role'] !== 'courier' && ($u['role'] !== 'admin' || etel_is_ride_only($pdo, $u))) fail('Courier access required', 403);
+    if ($u['role'] === 'courier') etel_courier_assert_approved($pdo, $u);
     return $u;
 }
 function get_or_create_courier_profile($pdo, $user_id) {
@@ -1239,7 +1254,8 @@ switch ($action) {
     case 'admin_get_couriers': {
         $pdo = db(); require_admin($pdo);
         $limit = isset($_GET['limit']) ? intval($_GET['limit']) : 100;
-        try { $s = $pdo->prepare("SELECT c.id,c.courier_code,c.vehicle_type,c.plate_number,c.home_zone,c.zone,c.status,c.rating,c.total_deliveries,c.active,c.created_at,u.name,u.phone FROM couriers c JOIN users u ON c.user_id=u.id ORDER BY c.created_at DESC LIMIT $limit"); $s->execute(array()); $couriers = $s->fetchAll(PDO::FETCH_ASSOC); } catch(Exception $e) { $couriers = array(); }
+        $apx = etel_courier_approval_ready($pdo) ? ',c.approval_status,c.approval_note,c.user_id' : '';
+        try { $s = $pdo->prepare("SELECT c.id,c.courier_code,c.vehicle_type,c.plate_number,c.home_zone,c.zone,c.status,c.rating,c.total_deliveries,c.active,c.created_at,u.name,u.phone$apx FROM couriers c JOIN users u ON c.user_id=u.id ORDER BY " . ($apx ? "(c.approval_status = 'pending') DESC, " : '') . "c.created_at DESC LIMIT $limit"); $s->execute(array()); $couriers = $s->fetchAll(PDO::FETCH_ASSOC); } catch(Exception $e) { $couriers = array(); }
         ok(array('couriers' => $couriers, 'count' => count($couriers)));
         break;
     }
@@ -1654,7 +1670,7 @@ switch ($action) {
     case 'admin_customers_list': case 'admin_customer_get': case 'admin_customer_set_active':
         require __DIR__ . '/controllers/CustomerAdminController.php';
         break;
-    case 'admin_people_list': case 'admin_person_get': case 'admin_person_set_active': case 'admin_person_force_logout':
+    case 'admin_people_list': case 'admin_person_get': case 'admin_person_set_active': case 'admin_person_force_logout': case 'admin_courier_set_approval': case 'admin_courier_approval_mode':
         require __DIR__ . '/controllers/UserAdminController.php';
         break;
 
