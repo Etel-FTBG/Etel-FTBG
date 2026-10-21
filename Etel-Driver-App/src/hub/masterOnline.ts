@@ -2,6 +2,7 @@ import { setOnlineState } from '../online/onlineState';
 import { stopDriverLocationTracking, setCourierLocationEnabled } from '../location/backgroundLocationTask';
 import { COMPANIES, companiesFor, markAllOffline, setCompanyOnline } from './companies';
 import { getSession } from './session';
+import { setDemo } from '../online/liveCounts';
 
 // One online switch for everything the account works in: puts it online in each of its companies at once.
 export async function goOnlineEverywhere(): Promise<string[]> {
@@ -18,7 +19,15 @@ export async function goOnlineEverywhere(): Promise<string[]> {
   return on;
 }
 
+// An admin or customer account has no company to go online in. Sliding online there turns on a preview: the golden
+// light shows with sample counts when the app is left, so it can be seen working.
+export function goOnlinePreview(): void {
+  setDemo(true);
+  setOnlineState(true);
+}
+
 export async function goOfflineEverywhere(): Promise<void> {
+  setDemo(false);
   await Promise.allSettled((Object.keys(COMPANIES) as (keyof typeof COMPANIES)[]).map((k) => COMPANIES[k].goOffline()));
   markAllOffline();
   setCourierLocationEnabled(false);

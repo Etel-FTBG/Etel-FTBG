@@ -8,7 +8,7 @@ import { typography } from '../theme/colors';
 import { useTheme } from '../theme/ThemeContext';
 import { RootStackParamList } from '../navigation/types';
 import { HUB_GROUPS, HubApp } from '../hub/apps';
-import { goOfflineEverywhere, goOnlineEverywhere } from '../hub/masterOnline';
+import { goOfflineEverywhere, goOnlineEverywhere, goOnlinePreview } from '../hub/masterOnline';
 import SlideToConfirm from '../components/SlideToConfirm';
 import PillSwitch from '../components/PillSwitch';
 import Reveal from '../components/Reveal';
@@ -34,9 +34,15 @@ export default function HubScreen({ navigation }: Props) {
   const [busy, setBusy] = useState(false);
   const [where, setWhere] = useState<string[]>([]);
   const session = useSession();
+  const working = canGoOnline(session?.role);
   useEffect(() => subscribeOnline(setOnline), []);
 
   async function goOnline() {
+    if (!working) {
+      goOnlinePreview();
+      success();
+      return;
+    }
     setBusy(true);
     try {
       setWhere(await goOnlineEverywhere());
@@ -104,7 +110,7 @@ export default function HubScreen({ navigation }: Props) {
         {session ? <ProfileCard session={session} /> : <SignInCard />}
       </Reveal>
 
-      {session && canGoOnline(session.role) ? (
+      {session ? (
       <Reveal delay={160}>
       <LinearGradient
         colors={online ? [p.glow, p.surface] : [p.surface, p.surface]}
@@ -112,14 +118,18 @@ export default function HubScreen({ navigation }: Props) {
       >
         <View style={styles.cardHead}>
           <View style={[styles.dot, { backgroundColor: online ? p.gold : p.textMuted }]} />
-          <Text style={[styles.cardTitle, { color: p.text }]}>{online ? 'You are online' : 'Go online everywhere'}</Text>
+          <Text style={[styles.cardTitle, { color: p.text }]}>{online ? 'You are online' : working ? 'Go online everywhere' : 'Try going online'}</Text>
         </View>
         <Text style={[styles.cardSub, { color: p.textSecondary }]}>
-          {online
-            ? where.length
-              ? translate('Online in: ') + where.map((w) => translate(w)).join(', ')
-              : 'The golden ETEL light shows while you use other apps.'
-            : 'One slide puts you online in every ETEL company you belong to.'}
+          {!working
+            ? online
+              ? 'Preview: the golden light shows with sample counts while you use other apps.'
+              : 'Preview mode. Your account is not a driver, courier or service giver, so this only shows the golden light with sample counts.'
+            : online
+              ? where.length
+                ? translate('Online in: ') + where.map((w) => translate(w)).join(', ')
+                : 'The golden ETEL light shows while you use other apps.'
+              : 'One slide puts you online in every ETEL company you belong to.'}
         </Text>
         <View style={styles.slider}>
           {busy ? (
@@ -128,8 +138,8 @@ export default function HubScreen({ navigation }: Props) {
             <SlideToConfirm
               label={translate('Slide to go offline')}
               onConfirm={goOffline}
-              trackColor={p.surfaceAlt}
-              thumbColor={p.gold}
+              trackColor={'rgba(229,72,77,0.22)'}
+              thumbColor={'#E5484D'}
               textColor={p.text}
             />
           ) : (
