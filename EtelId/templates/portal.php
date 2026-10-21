@@ -678,6 +678,64 @@ $etelid_profile_incomplete = empty( $member->dob ) || '0000-00-00' === $member->
   <a href="<?php echo esc_url( home_url('/profile/') ); ?>" style="background:linear-gradient(135deg,#E8C84A,#C8922A);color:#1A0E00;font-weight:700;font-size:12px;padding:9px 16px;border-radius:8px;text-decoration:none;white-space:nowrap;">Add photo &amp; Fayda ID</a>
 </div>
 <?php endif; ?>
+<?php
+/* Phone verification: a self-service member proves they receive messages on their number (code by SMS or WhatsApp). Until
+ * they do, the other Etel apps may refuse their sign-in (see EtelID_Phone_Verify). */
+$etelid_pv = class_exists( 'EtelID_Phone_Verify' ) ? EtelID_Phone_Verify::portal_state( $member ) : null;
+if ( $etelid_pv && ! $etelid_pv['verified'] && ( $etelid_pv['channels'] || $etelid_pv['required'] ) ):
+    $etelid_pv_labels = array( 'sms' => 'SMS', 'whatsapp' => 'WhatsApp' );
+?>
+<div id="etelid-pv-banner" style="position:relative;z-index:42;max-width:1100px;margin:14px auto 0;padding:14px 18px;border-radius:12px;background:rgba(52,152,219,.13);border:1px solid rgba(52,152,219,.5);font-family:'JetBrains Mono',monospace;">
+  <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+    <div style="color:#FFFEF8;font-size:13px;line-height:1.5;">
+      <strong style="color:#7FC4F5;">Verify your phone number.</strong>
+      <?php if ( $etelid_pv['required'] ) : ?>Delivery, Ride, Pay and the other Etel apps stay locked until you confirm that <b><?php echo esc_html( $etelid_pv['masked'] ); ?></b> is yours.<?php else : ?>Confirm that <b><?php echo esc_html( $etelid_pv['masked'] ); ?></b> is yours. It keeps your account safe.<?php endif; ?>
+    </div>
+    <div id="etelid-pv-send" style="display:flex;gap:8px;flex-wrap:wrap;">
+      <?php if ( $etelid_pv['channels'] ) : foreach ( $etelid_pv['channels'] as $etelid_ch ) : ?>
+        <button type="button" data-pv-send="<?php echo esc_attr( $etelid_ch ); ?>" style="background:linear-gradient(135deg,#E8C84A,#C8922A);color:#1A0E00;font-weight:700;font-size:12px;padding:9px 16px;border:0;border-radius:8px;cursor:pointer;white-space:nowrap;">Send code by <?php echo esc_html( isset( $etelid_pv_labels[ $etelid_ch ] ) ? $etelid_pv_labels[ $etelid_ch ] : $etelid_ch ); ?></button>
+      <?php endforeach; else : ?>
+        <span style="color:#cbbf9a;font-size:12px;">Codes cannot be sent yet. Please contact Etel support to verify your number.</span>
+      <?php endif; ?>
+    </div>
+  </div>
+  <div id="etelid-pv-code" style="display:none;margin-top:12px;gap:8px;align-items:center;flex-wrap:wrap;">
+    <input type="text" id="etelid-pv-input" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="6-digit code" aria-label="6-digit code" style="width:150px;background:rgba(255,255,255,.08);border:1px solid rgba(127,196,245,.5);border-radius:8px;padding:9px 12px;color:#fff;font-family:inherit;font-size:15px;letter-spacing:.2em;">
+    <button type="button" id="etelid-pv-check" style="background:linear-gradient(135deg,#E8C84A,#C8922A);color:#1A0E00;font-weight:700;font-size:12px;padding:9px 16px;border:0;border-radius:8px;cursor:pointer;">Confirm</button>
+  </div>
+  <div id="etelid-pv-msg" role="status" style="margin-top:8px;font-size:12px;color:#cbbf9a;min-height:16px;"></div>
+</div>
+<script>
+(function(){
+  var box=document.getElementById('etelid-pv-banner'); if(!box) return;
+  var msg=document.getElementById('etelid-pv-msg'), codeRow=document.getElementById('etelid-pv-code'), input=document.getElementById('etelid-pv-input');
+  function say(t,bad){ msg.textContent=t; msg.style.color=bad?'#ff9a8a':'#9be3a6'; }
+  function call(action,extra){
+    var body='action='+encodeURIComponent(action)+'&nonce='+encodeURIComponent(_P.nonce);
+    Object.keys(extra||{}).forEach(function(k){ body+='&'+encodeURIComponent(k)+'='+encodeURIComponent(extra[k]); });
+    return fetch(_P.ajax,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:body}).then(function(r){return r.json();}).catch(function(){return {success:false,data:{message:'Network problem. Please try again.'}};});
+  }
+  Array.prototype.forEach.call(box.querySelectorAll('[data-pv-send]'),function(b){
+    b.addEventListener('click',function(){
+      b.disabled=true; say('Sending…',false);
+      call('etelid_phone_verify_send',{channel:b.getAttribute('data-pv-send')}).then(function(res){
+        var d=res&&res.data||{};
+        if(res.success&&d.already){ location.reload(); return; }
+        say(d.message||(res.success?'Code sent.':'Could not send the code.'),!res.success);
+        if(res.success){ codeRow.style.display='flex'; input.focus(); setTimeout(function(){ b.disabled=false; },60000); } else { b.disabled=false; }
+      });
+    });
+  });
+  document.getElementById('etelid-pv-check').addEventListener('click',function(){
+    var c=(input.value||'').replace(/\D/g,''); if(c.length!==6){ say('Enter the 6-digit code.',true); return; }
+    call('etelid_phone_verify_check',{code:c}).then(function(res){
+      var d=res&&res.data||{};
+      if(res.success){ say(d.message||'Verified.',false); setTimeout(function(){ location.reload(); },900); } else { say(d.message||'That code is not right.',true); }
+    });
+  });
+})();
+</script>
+<?php endif; ?>
 <?php if ( $etelid_profile_incomplete ): ?>
 <div id="etelid-complete-profile-banner" style="position:relative;z-index:40;max-width:1100px;margin:14px auto 0;padding:12px 18px;border-radius:12px;background:rgba(212,175,55,.12);border:1px solid rgba(212,175,55,.35);display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;font-family:'JetBrains Mono',monospace;">
   <div style="display:flex;align-items:center;gap:10px;color:#FFFEF8;font-size:13px;">

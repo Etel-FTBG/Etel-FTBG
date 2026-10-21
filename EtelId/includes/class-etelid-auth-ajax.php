@@ -714,6 +714,7 @@ class EtelID_Auth_Ajax {
                 'kyc_level'           => isset( $member->kyc_level ) ? (int) $member->kyc_level : 0,
                 'profile_limited'     => ! empty( $member->profile_limited ) ? 1 : 0,
                 'must_change_password'=> isset( $member->must_change_password ) ? (int) $member->must_change_password : 0,
+                'phone_verify'        => class_exists( 'EtelID_Phone_Verify' ) ? EtelID_Phone_Verify::portal_state( $member ) : null,
                 'pass2_completed_at'  => isset( $member->pass2_completed_at ) ? $member->pass2_completed_at : null,
             ),
             'companies'    => $companies,

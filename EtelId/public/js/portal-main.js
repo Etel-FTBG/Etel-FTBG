@@ -698,6 +698,9 @@ async function eapMemOpenDetail(id){
     + '<button class="eap-btn-gold" onclick="eapMemSave(' + id + ')">Save Changes</button>'
     + '<button class="eap-btn-ghost" onclick="eapMemStatus(' + id + ',\'active\')">Activate</button>'
     + '<button class="eap-btn-ghost" onclick="eapMemStatus(' + id + ',\'suspended\')">Suspend</button>'
+    + (m.phone_verified_at && String(m.phone_verified_at).indexOf('0000') !== 0
+        ? '<span class="eap-btn-ghost" style="cursor:default;opacity:.8">Phone verified</span>'
+        : '<button class="eap-btn-ghost" onclick="eapMemVerifyPhone(' + id + ')">Verify phone</button>')
     + '<button class="eap-btn-ghost" onclick="openResetPwModal(null,' + id + ',\'' + m.full_name.replace(/'/g,"\\'") + '\')">Reset Password</button>'
     + '<button class="eap-btn-danger" onclick="eapMemDelete(' + id + ')">Delete</button>'
     + '</div><div id="eap-em-msg"></div>';
@@ -810,6 +813,12 @@ async function eapMemStatus(id, status){
   var res = await _eidPanel('etelid_panel_members_status', { id: id, status: status });
   _eidPanelMsg('eap-em-msg', res.data.message || '', res.success);
   if (res.success) eapMemLoad(_eapMemPage);
+}
+async function eapMemVerifyPhone(id){
+  if (!confirm('Mark this phone number as verified? Only do this after you have confirmed the person owns it.')) return;
+  var res = await _eidPanel('etelid_panel_members_verify_phone', { id: id });
+  _eidPanelMsg('eap-em-msg', (res.data && res.data.message) || '', res.success);
+  if (res.success) eapMemOpenDetail(id);
 }
 async function eapMemDelete(id){
   if (!confirm('Permanently delete this member? This cannot be undone.')) return;

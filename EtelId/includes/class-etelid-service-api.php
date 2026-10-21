@@ -225,6 +225,10 @@ class EtelID_Service_API {
             'profile_limited' => $limited,
             'allowed_apps'    => $limited ? self::$limited_apps : array( '*' ),
             'missing_items'   => $limited ? EtelID_Security::member_missing_items( $m ) : array(),
+            /* phone_verified: the member proved they own this number. phone_trusted: what the other apps may rely on - the
+             * number is verified, or verification is not required yet (see EtelID_Phone_Verify). */
+            'phone_verified' => class_exists( 'EtelID_Phone_Verify' ) ? EtelID_Phone_Verify::is_verified( $m ) : true,
+            'phone_trusted'  => class_exists( 'EtelID_Phone_Verify' ) ? EtelID_Phone_Verify::trusted( $m ) : true,
             'etel_id'    => $m->etel_id,
             'full_name'  => $m->full_name,
             'phone'      => $m->phone,
@@ -354,6 +358,16 @@ class EtelID_Service_API {
             $twofa_on = true;
             $g = EtelID_2FA::gate( $m, (string) $request->get_param( 'totp_code' ) );
             if ( is_wp_error( $g ) ) return $g;
+        }
+
+        /* A number nobody has proved they own cannot be used to sign in to the other Etel apps: they find the person's account
+         * by that number. Checked after the password (and two-step code), so it never tells a stranger anything. The member
+         * can verify the number in the EtelID portal, which they can still sign in to. */
+        if ( class_exists( 'EtelID_Phone_Verify' ) && ! EtelID_Phone_Verify::trusted( $m ) ) {
+            EtelID_DB::log( $m->id, $m->etel_id, 'phone_unverified_blocked', 'Sign-in to ' . substr( sanitize_key( (string) $request->get_param( 'app' ) ), 0, 30 ) . ' refused: phone number not verified' );
+            return new WP_Error( 'phone_unverified',
+                'Please verify your phone number first. Sign in to your Etel-ID portal and enter the code we send you, then try again.',
+                array( 'status' => 403 ) );
         }
 
         $app = (string) $request->get_param( 'app' );

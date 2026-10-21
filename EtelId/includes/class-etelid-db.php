@@ -248,6 +248,26 @@ class EtelID_DB {
                  ADD COLUMN fayda_back_sha   CHAR(64)     NULL COMMENT 'SHA-256 of the back photo bytes'"
             );
         }
+
+        /* Upgrade 13 - phone verification (see EtelID_Phone_Verify). When this member proved they receive messages on
+         * the number they signed up with (a code sent by SMS or WhatsApp). Every member that exists when the column is
+         * added counts as verified: they have been using their account, and only NEW self-service sign-ups have to
+         * prove their number. Idempotent - runs the grandfathering only in the request that adds the column. */
+        $pv_col = $wpdb->get_row(
+            "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
+             WHERE TABLE_SCHEMA = DATABASE()
+               AND TABLE_NAME   = '" . self::t_members() . "'
+               AND COLUMN_NAME  = 'phone_verified_at'"
+        );
+        if ( ! $pv_col ) {
+            $added = $wpdb->query(
+                "ALTER TABLE " . self::t_members() . "
+                 ADD COLUMN phone_verified_at DATETIME NULL DEFAULT NULL COMMENT 'When the member proved they own this phone number (code by SMS or WhatsApp)'"
+            );
+            if ( false !== $added ) {
+                $wpdb->query( "UPDATE " . self::t_members() . " SET phone_verified_at = NOW() WHERE phone_verified_at IS NULL" );
+            }
+        }
     }
 
     /* ---- Limited (Ride-only) accounts ---------------------------- */

@@ -100,7 +100,16 @@ function etelid_bridge_member_from_service($d) {
         /* Limited (Ride-only) EtelID: created by the simplified Quick
            Register, no profile photo / Fayda ID on file yet. */
         'profile_limited' => !empty($m['profile_limited']),
+        /* Did the member prove they own this phone number, or is verification not required yet? An EtelID that does not
+           send the field (older plugin) is treated as trusted: nothing changes until it is updated. */
+        'phone_trusted' => array_key_exists('phone_trusted', $m) ? !empty($m['phone_trusted']) : true,
     );
+}
+
+/* True when EtelID says this member's phone number is NOT verified and verification is required. Such a member must not
+   be matched to, or given, a Delivery/Ride account by that number: anyone can sign up with someone else's number. */
+function etelid_bridge_phone_untrusted($member) {
+    return is_array($member) && array_key_exists('phone_trusted', $member) && empty($member['phone_trusted']);
 }
 
 /* Makes sure users.etelid_limited exists (migration 061 adds it; this is the
@@ -276,16 +285,16 @@ function etelid_bridge_local_user($pdo, $member) {
     $s->execute(array($digits, $last9));
     $u = $s->fetch();
     $isLimited = !empty($member['profile_limited']);
+    $untrusted = etelid_bridge_phone_untrusted($member);
     /* Only the Service API payload carries profile_limited. The agent
        connector's direct SSO-token lookup does not, and must never be
        mistaken for "not limited" - so the local flag is only ever written
        when the member data actually says which it is. */
     $limitKnown = array_key_exists('profile_limited', $member);
-    if ($u && $isLimited) {
-        /* A limited (Ride-only) EtelID has no ID documents on file and its
-           phone number is not verified at sign-up, so it must NOT be able to
-           take over a pre-existing Delivery/Ride account that merely shares
-           that phone number. Only an account already linked to this same
+    if ($u && ($isLimited || $untrusted)) {
+        /* A limited (Ride-only) EtelID has no ID documents on file, and an EtelID whose phone number nobody has
+           verified could belong to anyone, so neither may take over a pre-existing Delivery/Ride account that merely
+           shares that phone number. Only an account already linked to this same
            EtelID may be used; anything else is refused. */
         $linked = false;
         if ($hasEtelId && !empty($member['etel_id'])) {
@@ -294,9 +303,15 @@ function etelid_bridge_local_user($pdo, $member) {
             $linked = ($ck->fetchColumn() === $member['etel_id']);
         }
         if (!$linked) {
-            $GLOBALS['etelid_link_error'] = 'A Delivery/Ride account with this phone number already exists. Sign in with that account, or add your profile photo and Fayda ID to your Etel-ID first to link them.';
+            $GLOBALS['etelid_link_error'] = $untrusted
+                ? 'Please verify your phone number in your Etel-ID portal first, then sign in again.'
+                : 'A Delivery/Ride account with this phone number already exists. Sign in with that account, or add your profile photo and Fayda ID to your Etel-ID first to link them.';
             return null;
         }
+    }
+    if (!$u && $untrusted) {
+        $GLOBALS['etelid_link_error'] = 'Please verify your phone number in your Etel-ID portal first, then sign in again.';
+        return null;
     }
     if ($u) {
         if ($limitKnown) etelid_bridge_set_limited($pdo, $u['id'], $isLimited);
@@ -322,7 +337,7 @@ function etelid_bridge_local_user($pdo, $member) {
         $again->execute(array($digits, $last9));
         $raced = $again->fetch();
         if ($raced) {
-            if ($isLimited) {
+            if ($isLimited || $untrusted) {
                 $GLOBALS['etelid_link_error'] = 'A Delivery/Ride account with this phone number already exists. Sign in with that account, or add your profile photo and Fayda ID to your Etel-ID first.';
                 return null;
             }
@@ -426,15 +441,26 @@ function etelid_bridge_member_from_sso_token($pdo, $token) {
         // unqualified table name would never resolve even though the
         // table genuinely exists. Fully-qualifying with the database
         // name is what was still missing.
-        $stmt = $pdo->prepare(
-            'SELECT m.id, m.etel_id, m.full_name, m.phone, m.pin_hash, m.status
+        $sql = 'SELECT m.id, m.etel_id, m.full_name, m.phone, m.pin_hash, m.status%s
              FROM etelid.Etelid_etelid_sessions s
              JOIN etelid.Etelid_etelid_members m ON m.id = s.member_id
-             WHERE s.token = ? AND s.expires_at > NOW() LIMIT 1'
-        );
-        $stmt->execute(array($token));
+             WHERE s.token = ? AND s.expires_at > NOW() LIMIT 1';
+        try {
+            $stmt = $pdo->prepare(sprintf($sql, ', m.phone_verified_at'));
+            $stmt->execute(array($token));
+        } catch (Exception $noCol) {   // EtelID not updated yet: no phone_verified_at column
+            $stmt = $pdo->prepare(sprintf($sql, ''));
+            $stmt->execute(array($token));
+        }
         $m = $stmt->fetch(PDO::FETCH_ASSOC);
         if (!$m || $m['status'] !== 'active') return null;
+        /* A member whose number nobody verified: ask EtelID whether verification is required (it owns that setting). */
+        if (array_key_exists('phone_verified_at', $m) && empty($m['phone_verified_at'])) {
+            $svc = etelid_bridge_service_call('resolve', array('identifier' => $m['etel_id']), 5);
+            if (is_array($svc) && !empty($svc['ok']) && !empty($svc['member']) && array_key_exists('phone_trusted', $svc['member'])) {
+                $m['phone_trusted'] = !empty($svc['member']['phone_trusted']);
+            }
+        }
         return $m;
     } catch (Exception $e) {
         error_log('[ETEL] etelid_bridge_member_from_sso_token query failed: ' . $e->getMessage());
