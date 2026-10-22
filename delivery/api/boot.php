@@ -1269,7 +1269,7 @@ switch ($action) {
         // stray isGet=true frontend call shouldn't hard-fail with a
         // confusing "required" error if the value was actually sent
         // as a query param instead.
-        $pdo = db(); require_admin($pdo);
+        $pdo = db(); require_admin($pdo, 'users.manage');
         $courierId = isset($body['courier_id']) ? intval($body['courier_id']) : (isset($_GET['courier_id']) ? intval($_GET['courier_id']) : 0);
         if ($courierId <= 0) fail('courier_id is required', 400);
         $fields = array(); $params = array();
@@ -1526,14 +1526,14 @@ switch ($action) {
         break;
     }
     case 'admin_verify_service_giver': {
-        $pdo = db(); require_admin($pdo);
+        $pdo = db(); require_admin($pdo, 'service_givers.manage');
         $sg_id = isset($body['id']) ? intval($body['id']) : 0;
         if (!$sg_id) fail('Service giver ID required', 400);
         try { $u = $pdo->prepare('UPDATE service_givers SET status="verified" WHERE id=?'); $u->execute(array($sg_id)); if ($u->rowCount()===0) fail('Service giver not found',404); ok(array('message'=>'Verified','id'=>$sg_id)); } catch(Exception $e){ fail_ex($e, 'Update failed', 500); }
         break;
     }
     case 'admin_suspend_service_giver': {
-        $pdo = db(); require_admin($pdo);
+        $pdo = db(); require_admin($pdo, 'service_givers.manage');
         $sg_id = isset($body['id']) ? intval($body['id']) : 0;
         if (!$sg_id) fail('Service giver ID required', 400);
         try { $u = $pdo->prepare('UPDATE service_givers SET status="suspended",is_online=0 WHERE id=?'); $u->execute(array($sg_id)); if ($u->rowCount()===0) fail('Not found',404); ok(array('message'=>'Suspended','id'=>$sg_id)); } catch(Exception $e){ fail_ex($e, 'Operation failed', 500); }
@@ -1665,6 +1665,13 @@ switch ($action) {
         break;
     case 'customer_package_options': case 'customer_package_quote': case 'customer_package_create': case 'admin_package_rates_get': case 'admin_package_rates_save': case 'admin_package_type_add': case 'admin_package_setting_save': case 'courier_package_pickup': case 'courier_package_deliver':
         require __DIR__ . '/controllers/PackageController.php';
+        break;
+
+    case 'admin_orders_board': case 'admin_order_detail':
+        require __DIR__ . '/controllers/OrderAdminController.php';
+        break;
+    case 'admin_couriers_board': case 'admin_courier_detail': case 'admin_service_givers_board': case 'admin_service_giver_detail':
+        require __DIR__ . '/controllers/PartnerAdminController.php';
         break;
 
     case 'admin_customers_list': case 'admin_customer_get': case 'admin_customer_set_active':

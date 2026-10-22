@@ -515,6 +515,7 @@ html{color-scheme:light}
 
                 <!-- ══ ORDERS PANEL ══ -->
                 <div id="panel-orders" class="panel" style="display:none">
+                    <div id="ord-pro"><!-- built by js/admin-orders-pro.js --></div>
 
                     <!-- ── Pending Confirmations section ── -->
                     <div class="data-section" style="margin-bottom:20px">
@@ -546,7 +547,8 @@ html{color-scheme:light}
                         </div>
                     </div>
 
-                    <!-- ── Orders list ── -->
+                    <!-- ── Orders list (old table: kept hidden, the live board above replaces it) ── -->
+                    <div id="ord-legacy" style="display:none">
                     <div style="display:flex;gap:10px;margin-bottom:18px;flex-wrap:wrap;align-items:center">
                         <select id="order-filter" class="filter-sel" onchange="loadOrders()">
                             <option value="">All Statuses</option>
@@ -564,6 +566,7 @@ html{color-scheme:light}
                         <div class="section-title">All Orders</div>
                         <div class="table-wrapper"><table><thead><tr><th>Code</th><th>From</th><th>To</th><th>Type</th><th>Amount</th><th>Status</th><th>Confirmations</th><th>Date</th><th>Actions</th></tr></thead>
                         <tbody id="orders-tbody"><tr><td colspan="9" style="text-align:center;padding:30px;color:#B8B0A0">Loading…</td></tr></tbody></table></div>
+                    </div>
                     </div>
 
                     <div class="section-title" style="margin-top:24px">Order issue reports</div>
@@ -589,6 +592,8 @@ html{color-scheme:light}
                         </div>
                         <div style="padding:0 16px 16px;display:flex;gap:10px;align-items:center;flex-wrap:wrap"><button class="btn btn-primary" onclick="saveCourierOffers()" style="padding:8px 16px">💾 Save</button><span id="co-offer-msg" style="font-size:12px"></span></div>
                     </div>
+                    <div id="cou-pro"><!-- built by js/admin-couriers-pro.js --></div>
+                    <div id="cou-legacy" style="display:none"><!-- old table, kept hidden: the control room above replaces it -->
                     <div style="display:flex;gap:10px;margin-bottom:18px;flex-wrap:wrap;align-items:center">
                         <input type="text" id="courier-search" class="filter-sel" placeholder="Search name/phone/code…" oninput="filterCourierTable()" style="width:220px">
                         <button class="btn btn-secondary" onclick="loadCouriers()" style="padding:8px 14px">🔄 Refresh</button>
@@ -599,10 +604,13 @@ html{color-scheme:light}
                         <div class="table-wrapper"><table><thead><tr><th>Code</th><th>Name</th><th>Phone</th><th>Vehicle</th><th>Zone</th><th>Status</th><th>Rating</th><th>Deliveries</th><th>Print</th></tr></thead>
                         <tbody id="couriers-tbody"><tr><td colspan="9" style="text-align:center;padding:30px;color:#B8B0A0">Loading…</td></tr></tbody></table></div>
                     </div>
+                    </div>
                 </div>
 
                 <!-- ══ SERVICE GIVERS PANEL ══ -->
                 <div id="panel-servicegivers" class="panel" style="display:none">
+                    <div id="sg-pro"><!-- built by js/admin-sg-pro.js --></div>
+                    <div id="sg-legacy" style="display:none"><!-- old strip, filters and table: kept hidden, the directory above replaces them -->
                     <div id="sg-stat-strip" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:18px">
                         <div class="stat-card"><div class="stat-icon">🏪</div><div class="stat-content"><div class="stat-label">Total Businesses</div><div class="stat-value" id="sg-stat-total">…</div></div></div>
                         <div class="stat-card"><div class="stat-icon">✅</div><div class="stat-content"><div class="stat-label">Verified</div><div class="stat-value" id="sg-stat-verified">…</div></div></div>
@@ -635,6 +643,7 @@ html{color-scheme:light}
                         </table>
                     </div>
                     <div id="sg-cards-grid" style="display:none;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px"></div>
+                    </div>
                 </div>
 
                 <!-- ══ ITEMS PANEL ══ -->
@@ -1674,8 +1683,12 @@ html{color-scheme:light}
     <script src="js/admin-ratings.js?v=1"></script>
     <script src="js/admin-money.js?v=3"></script>
     <script src="js/admin-dispatch.js?v=2"></script>
-    <script src="js/admin-packages.js?v=3"></script>
+    <script src="js/admin-kit.js?v=1"></script><!-- shared look + pieces for the premium Orders, Couriers, Service givers and Package prices screens -->
+    <script src="js/admin-packages.js?v=4"></script>
     <script src="js/admin-integrations.js?v=2"></script>
+    <script src="js/admin-orders-pro.js?v=1"></script><!-- Orders: live board, order drawer with controls -->
+    <script src="js/admin-couriers-pro.js?v=1"></script><!-- Couriers: control room, approval, drawer -->
+    <script src="js/admin-sg-pro.js?v=1"></script><!-- Service givers: directory, verification, drawer -->
     <script src="js/admin-people.js?v=1"></script><!-- Users + Customers: counts, search, cards/table, profile drawer, account controls -->
     <script src="js/admin-footer.js?v=2"></script>
     <script src="js/admin-courier-pay.js?v=1"></script>
