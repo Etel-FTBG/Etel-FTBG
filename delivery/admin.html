@@ -1171,7 +1171,7 @@ html{color-scheme:light}
                     <div id="ride-watch-list" style="font-size:13px;color:#B8B0A0">Checking...</div>
                   </div>
 
-                  <div id="rides-stats-strip" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin-bottom:20px"></div>
+                  <div id="rides-stats-strip" style="display:none;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin-bottom:20px"></div>
 
                   <div class="chart-card" style="margin-bottom:20px">
                     <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:4px">
@@ -1288,6 +1288,8 @@ html{color-scheme:light}
                     </div>
                   </div>
 
+                  <div id="rides-pro"><!-- built by js/admin-rides-pro.js --></div>
+                  <div id="rides-legacy" style="display:none"><!-- old status buttons, search, table and pager: hidden, the board above replaces them -->
                   <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:16px">
                     <div style="display:flex;gap:6px;flex-wrap:wrap">
                       <button class="rides-filter-btn active" onclick="ridesFilter('all',this)">All</button>
@@ -1326,6 +1328,7 @@ html{color-scheme:light}
                   </div>
 
                   <div id="rides-pagination" style="display:flex;gap:8px;align-items:center;justify-content:center;margin-top:16px;flex-wrap:wrap"></div>
+                  </div>
 
                   <h3 style="color:#f0cf5a;font-size:15px;margin:28px 0 12px">Ride issue reports</h3>
                   <div style="display:flex;gap:6px;margin-bottom:12px">
@@ -1389,7 +1392,7 @@ html{color-scheme:light}
 
                 <div class="panel" id="panel-promos" style="display:none">
                     <div id="promo-pro"><!-- built by js/admin-promos-pro.js --></div>
-                    <div class="data-section" style="margin-bottom:18px">
+                    <div class="data-section" style="margin-bottom:18px;display:none"><!-- old form: hidden, the guided form in js/admin-promos-pro.js replaces it -->
                         <div class="section-title" id="promo-form-title">New promo code</div>
                         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;padding:0 16px 8px">
                             <input type="hidden" id="promo-id">
@@ -1414,6 +1417,8 @@ html{color-scheme:light}
                 </div><!-- /panel-promos -->
 
                                 <div class="panel" id="panel-menucat" style="display:none">
+                    <div id="mc-pro"><!-- built by js/admin-menucat-pro.js --></div>
+                    <div id="mc-legacy" style="display:none"><!-- old list, form and copy section: hidden, the board above replaces them -->
                     <div class="data-section">
                         <div class="section-title">Menu catalog</div>
                         <div style="padding:0 16px 8px;font-size:12px;opacity:.75">Common dishes every shop can pick from, so restaurants only type their own price. Shops can <b>suggest</b> new dishes - approve them here to add them to the catalog.</div>
@@ -1456,6 +1461,7 @@ html{color-scheme:light}
                         <label style="display:flex;gap:8px;align-items:center;padding:0 16px 10px;font-size:12px"><input type="checkbox" id="mc-copy-hidden"> Also copy hidden (unavailable) dishes</label>
                         <div style="padding:0 16px 16px"><button class="btn btn-primary" onclick="mcCopyMenu()" style="padding:8px 16px">📋 Copy menu</button> <span id="mc-copy-msg" style="font-size:12px;margin-left:8px"></span></div>
                     </div>
+                    </div><!-- /mc-legacy -->
                 </div><!-- /panel-menucat -->
 
                 <div class="panel" id="panel-orderchats" style="display:none">
@@ -1687,14 +1693,16 @@ html{color-scheme:light}
     <script src="js/admin-ratings.js?v=1"></script>
     <script src="js/admin-money.js?v=3"></script>
     <script src="js/admin-dispatch.js?v=2"></script>
-    <script src="js/admin-kit.js?v=1"></script><!-- shared look + pieces for the premium Orders, Couriers, Service givers and Package prices screens -->
+    <script src="js/admin-kit.js?v=2"></script><!-- shared look + pieces for the premium Orders, Couriers, Service givers and Package prices screens -->
     <script src="js/admin-packages.js?v=4"></script>
     <script src="js/admin-integrations.js?v=2"></script>
     <script src="js/admin-orders-pro.js?v=1"></script><!-- Orders: live board, order drawer with controls -->
     <script src="js/admin-couriers-pro.js?v=1"></script><!-- Couriers: control room, approval, drawer -->
     <script src="js/admin-sg-pro.js?v=1"></script><!-- Service givers: directory, verification, drawer -->
     <script src="js/admin-items-pro.js?v=1"></script><!-- Items & products: board, stock warnings, quick controls -->
-    <script src="js/admin-promos-pro.js?v=1"></script><!-- Promo codes: board with status and usage -->
+    <script src="js/admin-promos-pro.js?v=2"></script><!-- Promo codes: board with status and usage -->
+    <script src="js/admin-rides-pro.js?v=1"></script><!-- Rides: trip board + drawer -->
+    <script src="js/admin-menucat-pro.js?v=1"></script><!-- Menu catalog: board + guided dish form + copy a menu -->
     <script src="js/admin-home.js?v=1"></script><!-- Dashboard: "Needs your attention" -->
     <script src="js/admin-people.js?v=1"></script><!-- Users + Customers: counts, search, cards/table, profile drawer, account controls -->
     <script src="js/admin-nav.js?v=1"></script><!-- Grouped menu, find-a-page box, keyboard + screen reader support; loads last so it can move every item -->

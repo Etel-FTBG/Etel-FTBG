@@ -155,6 +155,20 @@ function css() {
     '.ak-box .ak-acts{justify-content:flex-end;margin-top:14px}',
     '.ak-toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);background:#1A1A2E;color:#fff;padding:11px 18px;border-radius:14px;font-size:13px;z-index:10001;box-shadow:0 10px 30px rgba(0,0,0,.4);transition:opacity .4s}',
     '.ak-toast.bad{background:var(--red,#d6364a)}.ak-toast.out{opacity:0}',
+    '.ak-fg{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px}',
+    '.ak-fl{display:block;font-size:12px;font-weight:700;color:var(--mute)}',
+    '.ak-fl .ak-in{margin-top:5px;color:var(--ink)}',
+    '.ak-fh{font-size:11px;font-weight:400;color:var(--mute);margin-top:4px}',
+    '.ak-opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px}',
+    '.ak-opt{border:1.5px solid var(--line);background:var(--card);color:var(--ink);border-radius:14px;padding:11px 10px;text-align:left;font:inherit;cursor:pointer}',
+    '.ak-opt:hover{border-color:var(--gold)}.ak-opt.on{border-color:var(--gold);background:linear-gradient(160deg,rgba(212,175,55,.18),var(--card))}',
+    '.ak-opt i{font-style:normal;font-size:20px;display:block}.ak-opt b{display:block;font-size:13px;margin-top:3px}.ak-opt span{display:block;font-size:11px;color:var(--mute);margin-top:2px}',
+    '.ak-sw{display:flex;gap:10px;align-items:center;padding:10px 12px;border:1.5px solid var(--line);border-radius:12px;background:var(--soft);font-size:13px;cursor:pointer}',
+    '.ak-sw input{width:auto;margin:0}',
+    '.ak-prev{border:1.5px dashed var(--gold);border-radius:14px;padding:12px 14px;background:rgba(212,175,55,.08);font-size:13px}',
+    '.ak-prev b{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--mute);margin-bottom:4px}',
+    '.ak-dr-foot{display:flex;gap:8px;justify-content:flex-end;align-items:center;padding:12px 18px;border-top:1px solid var(--line);background:var(--card)}',
+    '.ak-err{color:var(--red);font-size:12.5px;min-height:18px;margin-right:auto}',
     '.ak-live{display:inline-block;width:8px;height:8px;border-radius:50%;background:#1fa463;margin-right:6px;animation:ak-pulse 1.6s infinite}',
     '@keyframes ak-pulse{0%{box-shadow:0 0 0 0 rgba(31,164,99,.6)}100%{box-shadow:0 0 0 9px rgba(31,164,99,0)}}',
     '@media(max-width:600px){.ak-hero{padding:15px}.ak-kv{grid-template-columns:100px 1fr}.ak-grid{grid-template-columns:1fr}}',
@@ -201,12 +215,12 @@ function closeDrawer() {
   if (d.prev && d.prev.focus) { try { d.prev.focus(); } catch (e) { /* element gone */ } }
 }
 /* openDrawer(headHtml, bodyHtml) -> the drawer element; click [data-close] or the dimmed area or press Esc to close */
-function openDrawer(headHtml, bodyHtml) {
+function openDrawer(headHtml, bodyHtml, footHtml) {
   css();
   if (DR) closeDrawer();
   var ov = document.createElement('div'); ov.className = 'ak-ov';
   var dr = document.createElement('aside'); dr.className = 'ak ak-dr'; dr.setAttribute('role', 'dialog'); dr.setAttribute('aria-modal', 'true');
-  dr.innerHTML = '<div class="ak-dr-head">' + headHtml + '<button type="button" class="ak-x" data-close aria-label="Close">✕</button></div><div class="ak-dr-body">' + bodyHtml + '</div>';
+  dr.innerHTML = '<div class="ak-dr-head">' + headHtml + '<button type="button" class="ak-x" data-close aria-label="Close">✕</button></div><div class="ak-dr-body">' + bodyHtml + '</div>' + (footHtml ? '<div class="ak-dr-foot">' + footHtml + '</div>' : '');
   document.body.appendChild(ov); document.body.appendChild(dr);
   var key = function (e) { if (e.key === 'Escape') closeDrawer(); };
   document.addEventListener('keydown', key);
@@ -249,6 +263,24 @@ function confirmBox(opts) {
   });
 }
 
+/* Form pieces for drawers. field(label, inputHtml, hint?) ; opts(name, [[value,icon,title,sub]], current) -> option cards ; sw(id, label, checked) */
+function field(label, inputHtml, hint) { return '<label class="ak-fl">' + esc(label) + inputHtml + (hint ? '<div class="ak-fh">' + esc(hint) + '</div>' : '') + '</label>'; }
+function opts(name, list, cur) {
+  return '<div class="ak-opts" role="radiogroup">' + list.map(function (o) {
+    return '<button type="button" role="radio" aria-checked="' + (String(cur) === String(o[0]) ? 'true' : 'false') + '" class="ak-opt' + (String(cur) === String(o[0]) ? ' on' : '') + '" data-opt="' + esc(name) + '" data-val="' + esc(o[0]) + '"><i>' + esc(o[1]) + '</i><b>' + esc(o[2]) + '</b>' + (o[3] ? '<span>' + esc(o[3]) + '</span>' : '') + '</button>';
+  }).join('') + '</div>';
+}
+function sw(id, label, checked) { return '<label class="ak-sw"><input type="checkbox" id="' + esc(id) + '"' + (checked ? ' checked' : '') + '><span>' + esc(label) + '</span></label>'; }
+/* Wire option cards inside a container: clicking one marks it on and calls fn(name, value). */
+function wireOpts(root, fn) {
+  root.addEventListener('click', function (e) {
+    var b = e.target.closest ? e.target.closest('[data-opt]') : null; if (!b) return;
+    var name = b.getAttribute('data-opt');
+    Array.prototype.forEach.call(root.querySelectorAll('[data-opt="' + name + '"]'), function (x) { var on = x === b; x.classList.toggle('on', on); x.setAttribute('aria-checked', on ? 'true' : 'false'); });
+    fn(name, b.getAttribute('data-val'));
+  });
+}
+
 /* Debounce for search boxes. */
 function debounce(fn, ms) { var t; return function () { var a = arguments, c = this; clearTimeout(t); t = setTimeout(function () { fn.apply(c, a); }, ms || 250); }; }
 
@@ -278,6 +310,6 @@ window.AdminKit = {
   api: api, okRes: okRes, data: data, failText: failText, toast: toast, css: css,
   pill: pill, hero: hero, kpis: kpis, seg: seg, skeleton: skeleton, empty: empty, kv: kv,
   openDrawer: openDrawer, closeDrawer: closeDrawer, drawerBody: drawerBody, drawerEl: drawerEl,
-  confirm: confirmBox, debounce: debounce, ensurePanel: ensurePanel
+  confirm: confirmBox, debounce: debounce, ensurePanel: ensurePanel, field: field, opts: opts, sw: sw, wireOpts: wireOpts
 };
 })();
