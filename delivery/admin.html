@@ -648,6 +648,8 @@ html{color-scheme:light}
 
                 <!-- ══ ITEMS PANEL ══ -->
                 <div id="panel-items" class="panel" style="display:none">
+                    <div id="items-pro"><!-- built by js/admin-items-pro.js --></div>
+                    <div id="items-legacy" style="display:none"><!-- old filters and table: kept hidden, the board above replaces them -->
                     <div style="display:flex;gap:10px;margin-bottom:18px;flex-wrap:wrap;align-items:center">
                         <select id="item-cat-filter" class="filter-sel" onchange="loadItems()">
                             <option value="">All Categories</option>
@@ -674,6 +676,7 @@ html{color-scheme:light}
                             <tbody id="items-tbody"><tr><td colspan="8" style="text-align:center;padding:30px;color:#B8B0A0">Loading…</td></tr></tbody>
                             </table>
                         </div>
+                    </div>
                     </div>
                 </div>
 
@@ -1385,6 +1388,7 @@ html{color-scheme:light}
                 </div><!-- /panel-pricing -->
 
                 <div class="panel" id="panel-promos" style="display:none">
+                    <div id="promo-pro"><!-- built by js/admin-promos-pro.js --></div>
                     <div class="data-section" style="margin-bottom:18px">
                         <div class="section-title" id="promo-form-title">New promo code</div>
                         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;padding:0 16px 8px">
@@ -1406,7 +1410,7 @@ html{color-scheme:light}
                             <button class="btn btn-secondary" onclick="resetPromoForm()">Clear</button>
                         </div>
                     </div>
-                    <div class="data-section"><div class="section-title">All promo codes</div><div id="promo-list" style="padding:0 16px 16px"></div></div>
+                    <div class="data-section" style="display:none"><div class="section-title">All promo codes</div><div id="promo-list" style="padding:0 16px 16px"></div></div><!-- old list: hidden, the board above replaces it -->
                 </div><!-- /panel-promos -->
 
                                 <div class="panel" id="panel-menucat" style="display:none">
@@ -1689,6 +1693,8 @@ html{color-scheme:light}
     <script src="js/admin-orders-pro.js?v=1"></script><!-- Orders: live board, order drawer with controls -->
     <script src="js/admin-couriers-pro.js?v=1"></script><!-- Couriers: control room, approval, drawer -->
     <script src="js/admin-sg-pro.js?v=1"></script><!-- Service givers: directory, verification, drawer -->
+    <script src="js/admin-items-pro.js?v=1"></script><!-- Items & products: board, stock warnings, quick controls -->
+    <script src="js/admin-promos-pro.js?v=1"></script><!-- Promo codes: board with status and usage -->
     <script src="js/admin-home.js?v=1"></script><!-- Dashboard: "Needs your attention" -->
     <script src="js/admin-people.js?v=1"></script><!-- Users + Customers: counts, search, cards/table, profile drawer, account controls -->
     <script src="js/admin-nav.js?v=1"></script><!-- Grouped menu, find-a-page box, keyboard + screen reader support; loads last so it can move every item -->
