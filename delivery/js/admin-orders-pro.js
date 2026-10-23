@@ -59,7 +59,8 @@ function paint() {
     { key: 'on_way', icon: '🛵', label: 'On the way', value: K.num(s.on_way) },
     { key: 'delivered', icon: '✅', label: 'Delivered', value: K.num(s.delivered) },
     { key: 'cancelled', icon: '✕', label: 'Cancelled', value: K.num(s.cancelled) },
-    { key: 'late', icon: '⏰', label: 'Late', value: K.num(s.late), warn: true }
+    { key: 'late', icon: '⏰', label: 'Late', value: K.num(s.late), warn: true },
+    { key: 'unassigned', icon: '🛵', label: 'No courier', value: K.num(V.rows.filter(function (r) { return r.unassigned; }).length), warn: true }
   ];
   var cur = V.status === '' ? '' : V.status;
   var h = '<div class="ak">' +
@@ -75,6 +76,8 @@ function paint() {
   var rows = V.rows;
   if (V.status === 'on_way') rows = rows.filter(function (r) { return r.status === 'picked_up' || r.status === 'in_transit'; });
   if (V.status === 'late') rows = rows.filter(function (r) { return r.late; });
+  if (V.status === 'unassigned') rows = rows.filter(function (r) { return r.unassigned; });
+  if (V.status === 'confirm') rows = rows.filter(function (r) { return r.pickup_conf === 'pending' || r.delivery_conf === 'pending'; });
   h += '<div class="ak-count"><span class="ak-live"></span>' + K.num(rows.length) + ' order' + (rows.length === 1 ? '' : 's') + ' shown' + (V.rows.length >= 300 ? ' (latest 300 — narrow the search)' : '') + '</div>';
   if (!rows.length) h += K.empty('🧾', 'No orders here', V.q ? 'Nothing matches your search.' : 'Orders will appear as customers place them.');
   else h += V.mode === 'table' ? table(rows) : '<div class="ak-grid">' + rows.map(card).join('') + '</div>';
@@ -217,7 +220,7 @@ function wire(el) {
   if (el._ordWired) return; el._ordWired = true;
   el.addEventListener('click', function (e) {
     var t = e.target, b;
-    if ((b = t.closest('[data-kpi]'))) { var k = b.getAttribute('data-kpi'); V.status = (V.status === k ? '' : k); if (V.status === 'late' || V.status === 'on_way') paint(); else load(true); return; }
+    if ((b = t.closest('[data-kpi]'))) { var k = b.getAttribute('data-kpi'); V.status = (V.status === k ? '' : k); if (['late', 'on_way', 'unassigned', 'confirm'].indexOf(V.status) >= 0) paint(); else load(true); return; }
     if ((b = t.closest('[data-seg]'))) {
       var n = b.getAttribute('data-seg'), v = b.getAttribute('data-val');
       if (n === 'period') { V.period = v; load(true); } else { V.mode = v; try { localStorage.setItem('ord-mode', v); } catch (x) { /* ignore */ } paint(); }
@@ -232,6 +235,11 @@ function wire(el) {
   el.addEventListener('input', function (e) { if (e.target.id === 'ord-q') { V.q = e.target.value.trim(); search(); } });
 }
 document.addEventListener('click', function (e) { onDrawerClick(e); });
+/* "Needs your attention" on the dashboard opens this page already filtered (js/admin-nav.js sends the event before switching) */
+document.addEventListener('admin:filter', function (e) {
+  var d = e.detail || {}; if (d.page !== 'orders') return;
+  V.status = d.filter || ''; if (d.period) V.period = d.period; V.q = '';
+});
 
 function visible() { var el = document.getElementById('panel-orders'); return el && el.style.display !== 'none' && !document.hidden; }
 function tick() { if (visible() && !K.drawerEl()) load(true); }
