@@ -134,6 +134,18 @@ def main():
     s, r = call("admin_service_giver_detail", {"id": 999999999}, admin)
     check("unknown service giver is a 404", s == 404, (s, r))
 
+    print("5. Needs your attention (dashboard)")
+    s1, _ = call("admin_attention", {})
+    s2, _ = call("admin_attention", {}, cust)
+    s3, _ = call("admin_attention", {}, cour)
+    check("attention: no login, customer and courier refused", s1 in (401, 403) and s2 in (401, 403) and s3 in (401, 403), (s1, s2, s3))
+    s, r = call("admin_attention", {}, admin)
+    d = r.get("data") or {}
+    check("attention answers with a list and an all_clear flag", s == 200 and isinstance(d.get("items"), list) and isinstance(d.get("all_clear"), bool), r)
+    check("all_clear matches the list", d.get("all_clear") == (len(d.get("items") or []) == 0), d)
+    for it in d.get("items") or []:
+        check("attention line %s is complete and positive" % it.get("key"), all(k in it for k in ("key", "label", "count", "page", "filter")) and it["count"] > 0, it)
+
     print("\n%d passed, %d failed" % (len(PASS), len(FAIL)))
     return 1 if FAIL else 0
 

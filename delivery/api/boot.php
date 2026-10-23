@@ -1667,6 +1667,9 @@ switch ($action) {
         require __DIR__ . '/controllers/PackageController.php';
         break;
 
+    case 'admin_attention':
+        require __DIR__ . '/controllers/AdminAttentionController.php';
+        break;
     case 'admin_orders_board': case 'admin_order_detail':
         require __DIR__ . '/controllers/OrderAdminController.php';
         break;

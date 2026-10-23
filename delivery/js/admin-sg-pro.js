@@ -180,6 +180,10 @@ function wire(el) {
   });
 }
 document.addEventListener('click', onDrawerClick);
+document.addEventListener('admin:filter', function (e) {   // opened from the dashboard's "Needs your attention"
+  var d = e.detail || {}; if (d.page !== 'servicegivers') return;
+  V.filter = d.filter || ''; V.q = '';
+});
 
 function install() {
   var el = root(); if (!el) return;
