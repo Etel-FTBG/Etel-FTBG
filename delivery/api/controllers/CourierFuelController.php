@@ -15,6 +15,11 @@ case 'courier_add_fuel_log': {
     $cost = isset($body['cost_etb']) ? etel_validate_amount($body['cost_etb'], false) : false;
     if ($cost === false || $cost <= 0) fail('cost_etb must be a positive amount', 400);
     $odometer = isset($body['odometer_km']) && $body['odometer_km'] !== '' ? floatval($body['odometer_km']) : null;
+    // Sent from the offline queue: a resend of an entry already saved must not add it twice.
+    if (!empty($body['client_req_id'])) {
+        require_once __DIR__ . '/../lib/offline_sync.php';
+        if (etel_offline_seen($pdo, $u['id'], $body['client_req_id'])) ok(array('message' => 'Fuel log added', 'duplicate' => true));
+    }
     try {
         $s = $pdo->prepare('INSERT INTO courier_fuel_logs (courier_user_id, liters, cost_etb, odometer_km, logged_at) VALUES (?,?,?,?,NOW())');
         $s->execute(array($u['id'], $liters, $cost, $odometer));

@@ -7,7 +7,7 @@
  *   - Navigation    → Network-first, fallback to offline.html
  */
 
-const CACHE_NAME   = 'etel-v190';
+const CACHE_NAME   = 'etel-v191';
 const API_CACHE    = 'etel-api-v7';
 const IMG_CACHE    = 'etel-img-v8';
 
@@ -75,6 +75,16 @@ self.addEventListener('fetch', e => {
 
     // Skip non-GET requests
     if (request.method !== 'GET') return;
+    // The two QR scripts the courier app needs to show a code with no signal: keep a copy (cache-first, refreshed in the
+    // background). Opaque cross-origin responses are fine for <script> tags.
+    if (url.href === 'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js' || url.href === 'https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js') {
+        e.respondWith(caches.open(CACHE_NAME).then(async c => {
+            const hit = await c.match(request);
+            const net = fetch(request).then(r => { if (r && (r.ok || r.type === 'opaque')) c.put(request, r.clone()); return r; }).catch(() => null);
+            return hit || (await net) || new Response('', {status:503});
+        }));
+        return;
+    }
     // Skip ALL cross-origin requests — let the browser fetch CDN scripts,
     // Google Fonts, and Maps tiles directly. Intercepting them risks
     // returning a 503 when the SW cache-fetch hiccups.
@@ -106,6 +116,10 @@ self.addEventListener('fetch', e => {
 });
 
 async function networkFirstAPI(req) {
+    // The courier's own order list is personal data and the app keeps its own saved copy (js/courier-offline.js):
+    // never store it here, and when there is no signal let the request fail so the app knows it is offline.
+    const own = /[?&]action=courier_get_my_orders(&|$)/.test(req.url);
+    if (own) { try { return await fetch(req); } catch { return Response.error(); } }
     try {
         const net = await fetch(req.clone());
         if (net.ok) {

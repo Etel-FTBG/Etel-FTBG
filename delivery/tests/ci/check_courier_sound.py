@@ -27,7 +27,8 @@ for f, t in (('js/etel-sounds.js', engine), ('js/courier-sound.js', addon)):
     if re.search(r"""[\s'"`>]on[a-z]+\s*=\s*\\?["']""", t):
         bad.append(f + ' must not use inline handlers')
 rel = sorted((int(re.search(r'/v(\d+)/', f).group(1)), f) for f in glob.glob(root + '/js/releases/courier/v*/courier-bundle.js'))
-carrying = [(n, f) for n, f in rel if 'courier-sound.js (added to' in read(f)]
+# the release that introduced the add-on (its own header line), not later releases that merely build on it
+carrying = [(n, f) for n, f in rel if 'release v%d: js/courier-sound.js (added to' % n in read(f)]
 if not carrying:
     bad.append('no courier release carries the ring add-on yet (tools/build_courier_release.py --addons js/etel-sounds.js,js/courier-sound.js)')
 else:
