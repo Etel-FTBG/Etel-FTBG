@@ -823,6 +823,7 @@ html{color-scheme:light}
                 </div>
 
                 <div id="panel-settings" class="panel" style="display:none">
+                    <div id="set-pro"><!-- built by js/admin-settings-pro.js: the boxes below are moved into its tabs --></div>
                     <div class="data-section">
                         <div class="section-title">Account Settings</div>
                         <div style="max-width:420px">
@@ -981,7 +982,8 @@ html{color-scheme:light}
 
                 <!-- ═══════════ ROLES & PERMISSIONS PANEL ═══════════ -->
                 <div class="panel" id="panel-roles" style="display:none">
-                    <div class="data-section">
+                    <div id="roles-pro"><!-- built by js/admin-roles-pro.js --></div>
+                    <div class="data-section" id="roles-legacy" style="display:none"><!-- old list: hidden, the cards above replace it -->
                         <div class="section-title">🔐 Roles &amp; Permissions</div>
                         <p style="font-size:13px;color:#B8B0A0;margin-bottom:14px;max-width:640px">
                             Staff signed in via "Sign in with EtelID" get access based on the role assigned to them
@@ -1714,6 +1716,8 @@ html{color-scheme:light}
     <script src="js/admin-promos-pro.js?v=2"></script><!-- Promo codes: board with status and usage -->
     <script src="js/admin-rides-pro.js?v=2"></script><!-- Rides: trip board + drawer -->
     <script src="js/admin-menucat-pro.js?v=1"></script><!-- Menu catalog: board + guided dish form + copy a menu -->
+    <script src="js/admin-settings-pro.js?v=1"></script><!-- Settings: tabs for account, devices, announcements, owner tools -->
+    <script src="js/admin-roles-pro.js?v=1"></script><!-- Roles: cards + permission matrix -->
     <script src="js/admin-rides-desk.js?v=1"></script><!-- Rides: operations pulse (health + live watch) and review desk -->
     <script src="js/admin-home.js?v=1"></script><!-- Dashboard: "Needs your attention" -->
     <script src="js/admin-people.js?v=1"></script><!-- Users + Customers: counts, search, cards/table, profile drawer, account controls -->
