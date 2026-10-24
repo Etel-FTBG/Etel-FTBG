@@ -1049,7 +1049,8 @@ html{color-scheme:light}
 
                 <!-- ═══════════ EQUB PANEL ═══════════ -->
                 <div class="panel" id="panel-equb" style="display:none">
-                    <div class="data-section eq-shell">
+                    <div id="eqb-pro"><!-- built by js/admin-equb-pro.js --></div>
+                    <div class="data-section eq-shell" id="eqb-legacy" style="display:none"><!-- old tables: hidden, the board above replaces them -->
                         <div class="section-title">🤝 Equb (Rotating Savings)</div>
                         <p style="font-size:13px;color:#B8B0A0;margin-bottom:16px;max-width:660px">
                             Real money moves automatically between participants' wallets. Only you can
@@ -1718,6 +1719,8 @@ html{color-scheme:light}
     <script src="js/admin-menucat-pro.js?v=1"></script><!-- Menu catalog: board + guided dish form + copy a menu -->
     <script src="js/admin-settings-pro.js?v=1"></script><!-- Settings: tabs for account, devices, announcements, owner tools -->
     <script src="js/admin-roles-pro.js?v=1"></script><!-- Roles: cards + permission matrix -->
+    <script src="js/admin-equb-pro.js?v=1"></script><!-- Equb: groups board, packages, people -->
+    <script src="js/admin-finance-pro.js?v=1"></script><!-- Finance hub: headline figures and tab bar -->
     <script src="js/admin-rides-desk.js?v=1"></script><!-- Rides: operations pulse (health + live watch) and review desk -->
     <script src="js/admin-home.js?v=1"></script><!-- Dashboard: "Needs your attention" -->
     <script src="js/admin-people.js?v=1"></script><!-- Users + Customers: counts, search, cards/table, profile drawer, account controls -->

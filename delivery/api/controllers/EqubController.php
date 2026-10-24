@@ -250,14 +250,47 @@ case 'equb_admin_create_package': {
 }
 
 case 'equb_admin_update_package': {
+    // {id, active} switches a package on/off. Any of name, tier, description, contribution_amount, frequency,
+    // max_members, payout_order edits the terms; groups already spun up from the package keep the terms they started with.
     $pdo = db();
     require_admin($pdo, 'equb.manage');
     $id = isset($body['id']) ? intval($body['id']) : 0;
-    $active = isset($body['active']) ? (bool) $body['active'] : true;
     if ($id <= 0) fail('id is required', 400);
+    $sets = array(); $vals = array();
+    if (isset($body['active'])) { $sets[] = 'active=?'; $vals[] = $body['active'] ? 1 : 0; }
+    if (isset($body['name'])) {
+        $n = trim($body['name']);
+        if ($n === '') fail('Package name is required', 400);
+        $sets[] = 'name=?'; $vals[] = $n;
+    }
+    if (isset($body['tier'])) {
+        if (!in_array($body['tier'], array('bronze', 'silver', 'gold', 'platinum'), true)) fail('Invalid tier', 400);
+        $sets[] = 'tier=?'; $vals[] = $body['tier'];
+    }
+    if (isset($body['description'])) { $sets[] = 'description=?'; $vals[] = trim($body['description']); }
+    if (isset($body['contribution_amount'])) {
+        $a = etel_validate_amount($body['contribution_amount'], false);
+        if ($a === false || $a <= 0) fail('contribution_amount must be a positive amount', 400);
+        $sets[] = 'contribution_amount=?'; $vals[] = $a;
+    }
+    if (isset($body['frequency'])) {
+        if (!in_array($body['frequency'], array('weekly', 'biweekly', 'monthly'), true)) fail('Invalid frequency', 400);
+        $sets[] = 'frequency=?'; $vals[] = $body['frequency'];
+    }
+    if (isset($body['max_members'])) {
+        $m = intval($body['max_members']);
+        if ($m < 2 || $m > 50) fail('max_members must be between 2 and 50', 400);
+        $sets[] = 'max_members=?'; $vals[] = $m;
+    }
+    if (isset($body['payout_order'])) {
+        if (!in_array($body['payout_order'], array('lottery', 'join_order'), true)) fail('Invalid payout_order', 400);
+        $sets[] = 'payout_order=?'; $vals[] = $body['payout_order'];
+    }
+    if (!$sets) fail('Nothing to update', 400);
     try {
-        $pdo->prepare('UPDATE equb_packages SET active=? WHERE id=?')->execute(array($active ? 1 : 0, $id));
-        ok(array('message' => $active ? 'Package activated' : 'Package deactivated'));
+        $vals[] = $id;
+        $pdo->prepare('UPDATE equb_packages SET ' . implode(', ', $sets) . ' WHERE id=?')->execute($vals);
+        ok(array('message' => 'Package updated'));
     } catch (Exception $e) {
         fail_ex($e, 'Could not update package', 500);
     }
@@ -481,6 +514,37 @@ case 'equb_admin_force_process_round': {
     if ($groupId <= 0) fail('group_id is required', 400);
     $log = equb_process_group_round($pdo, $groupId);
     ok(array('log' => $log));
+    break;
+}
+
+case 'equb_admin_group_detail': {
+    // Read-only look inside one group for staff: who is in it, who has paid this round, the payout schedule and what has been paid out.
+    $pdo = db();
+    require_admin($pdo, 'equb.view');
+    $groupId = isset($body['group_id']) ? intval($body['group_id']) : (isset($_GET['group_id']) ? intval($_GET['group_id']) : 0);
+    if ($groupId <= 0) fail('group_id is required', 400);
+    try {
+        $g = $pdo->prepare('SELECT g.*, u.name AS creator_name FROM equb_groups g JOIN users u ON u.id=g.created_by WHERE g.id=?');
+        $g->execute(array($groupId));
+        $group = $g->fetch(PDO::FETCH_ASSOC);
+        if (!$group) fail('Group not found', 404);
+        $m = $pdo->prepare("SELECT em.id, em.user_id, u.name, u.phone, em.join_order, em.payout_round, em.status, em.joined_at,
+            (SELECT status FROM equb_contributions WHERE group_id=? AND member_id=em.id AND round_number=? LIMIT 1) AS current_round_status,
+            (SELECT COUNT(*) FROM equb_contributions WHERE group_id=? AND member_id=em.id AND status='paid') AS rounds_paid,
+            (SELECT COUNT(*) FROM equb_contributions WHERE group_id=? AND member_id=em.id AND status='missed') AS rounds_missed
+            FROM equb_members em JOIN users u ON u.id=em.user_id WHERE em.group_id=? ORDER BY em.join_order ASC");
+        $m->execute(array($groupId, $group['current_round'], $groupId, $groupId, $groupId));
+        $members = $m->fetchAll(PDO::FETCH_ASSOC);
+        $p = $pdo->prepare('SELECT ep.round_number, ep.amount, ep.paid_at, u.name AS recipient_name FROM equb_payouts ep
+            JOIN equb_members em ON em.id=ep.recipient_member_id JOIN users u ON u.id=em.user_id
+            WHERE ep.group_id=? ORDER BY ep.round_number ASC');
+        $p->execute(array($groupId));
+        $paid = $pdo->prepare("SELECT COALESCE(SUM(amount),0) FROM equb_contributions WHERE group_id=? AND status='paid'");
+        $paid->execute(array($groupId));
+        ok(array('group' => $group, 'members' => $members, 'payouts' => $p->fetchAll(PDO::FETCH_ASSOC), 'collected_total' => floatval($paid->fetchColumn())));
+    } catch (Exception $e) {
+        fail_ex($e, 'Could not load group', 500);
+    }
     break;
 }
 

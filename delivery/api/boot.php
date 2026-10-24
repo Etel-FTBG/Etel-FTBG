@@ -1604,7 +1604,7 @@ switch ($action) {
         // sequence this enforces.
         require __DIR__ . '/controllers/SystemResetController.php';
         break;
-    case 'equb_create_group': case 'equb_join_group': case 'equb_leave_group': case 'equb_start_group': case 'equb_get_my_groups': case 'equb_get_group_detail': case 'equb_admin_list_groups': case 'equb_am_i_permitted': case 'equb_list_open_groups': case 'equb_admin_grant_access': case 'equb_admin_revoke_access': case 'equb_admin_list_participants': case 'equb_admin_force_process_round': case 'equb_admin_add_member': case 'equb_admin_create_package': case 'equb_admin_update_package': case 'equb_admin_list_packages': case 'equb_list_packages': case 'equb_select_package':
+    case 'equb_create_group': case 'equb_join_group': case 'equb_leave_group': case 'equb_start_group': case 'equb_get_my_groups': case 'equb_get_group_detail': case 'equb_admin_list_groups': case 'equb_admin_group_detail': case 'equb_am_i_permitted': case 'equb_list_open_groups': case 'equb_admin_grant_access': case 'equb_admin_revoke_access': case 'equb_admin_list_participants': case 'equb_admin_force_process_round': case 'equb_admin_add_member': case 'equb_admin_create_package': case 'equb_admin_update_package': case 'equb_admin_list_packages': case 'equb_list_packages': case 'equb_select_package':
         // Group creation and starting are admin-only (equb.manage) -
         // regular permitted users can only join/leave/browse. The
         // actual per-round money movement lives in
