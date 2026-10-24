@@ -143,8 +143,8 @@ function drawer(d, row, dr) {
   acts += '<button type="button" class="ak-btn" data-slip>🖨 ID slip</button>';
   acts += r.suspended ? '<button type="button" class="ak-btn good" data-active="1">Restore courier</button>' : '<button type="button" class="ak-btn danger" data-active="0">Suspend courier…</button>';
   h += '<div class="ak-sec"><h4>Controls</h4><div class="ak-acts">' + acts + '</div></div>';
-  h += '<div class="ak-sec"><h4>Edit details</h4><div style="display:grid;gap:8px"><select class="ak-in" data-f="vehicle_type">' + Object.keys(VEH).map(function (k) { return '<option value="' + k + '"' + (c.vehicle_type === k ? ' selected' : '') + '>' + VEH[k][1] + '</option>'; }).join('') + '</select>' +
-    '<input class="ak-in" data-f="plate_number" maxlength="30" placeholder="Plate number" value="' + esc(c.plate_number || '') + '"><input class="ak-in" data-f="zone" maxlength="60" placeholder="Zone" value="' + esc(c.zone || c.home_zone || '') + '">' +
+  h += '<div class="ak-sec"><h4>Edit details</h4><div style="display:grid;gap:8px"><select class="ak-in" data-f="vehicle_type" aria-label="Vehicle type">' + Object.keys(VEH).map(function (k) { return '<option value="' + k + '"' + (c.vehicle_type === k ? ' selected' : '') + '>' + VEH[k][1] + '</option>'; }).join('') + '</select>' +
+    '<input class="ak-in" data-f="plate_number" aria-label="Plate number" maxlength="30" placeholder="Plate number" value="' + esc(c.plate_number || '') + '"><input class="ak-in" data-f="zone" aria-label="Zone" maxlength="60" placeholder="Zone" value="' + esc(c.zone || c.home_zone || '') + '">' +
     '<div><button type="button" class="ak-btn gold" data-save>Save changes</button></div></div></div>';
   if (d.recent && d.recent.length) {
     h += '<div class="ak-sec"><h4>Recent jobs</h4><table class="ak-items">' + d.recent.map(function (o) {

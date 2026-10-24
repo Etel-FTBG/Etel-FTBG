@@ -44,12 +44,21 @@ function okRes(res) { return !!res && res.success !== false && !res.error; }
 function data(res) { return (res && res.data) || res || {}; }
 function failText(res, dflt) { return (res && (res.message || res.error)) || dflt || 'Something went wrong.'; }
 
+function live(msg, bad) {
+  var id = bad ? 'ak-live-bad' : 'ak-live', el = document.getElementById(id);
+  if (!el) {
+    el = document.createElement('div'); el.id = id; el.setAttribute('aria-live', bad ? 'assertive' : 'polite'); el.setAttribute('role', bad ? 'alert' : 'status');
+    el.style.cssText = 'position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap'; document.body.appendChild(el);
+  }
+  el.textContent = ''; setTimeout(function () { el.textContent = msg; }, 30);
+}
 function toast(msg, bad) {
   var t = document.createElement('div');
   t.className = 'ak-toast' + (bad ? ' bad' : '');
-  t.setAttribute('role', 'status');
+  t.setAttribute('aria-hidden', 'true');
   t.textContent = msg;
   document.body.appendChild(t);
+  live(msg, bad);
   setTimeout(function () { t.classList.add('out'); }, 2800);
   setTimeout(function () { if (t.parentNode) t.parentNode.removeChild(t); }, 3300);
 }
@@ -58,8 +67,8 @@ function css() {
   if (document.getElementById('ak-css')) return;
   var s = document.createElement('style'); s.id = 'ak-css';
   s.textContent = [
-    '.ak{--ink:#1A1A2E;--mute:#6b6b82;--line:#ece5d2;--card:#fff;--soft:#faf6ea;--gold:#D4AF37;--gold2:#8B7230;--red:#d6364a;--green:#1fa463;--amber:#d98e04;--blue:#2f6fd0;--shadow:0 6px 22px rgba(60,45,10,.09);color:var(--ink);font-family:inherit}',
-    'body.dark-theme .ak{--ink:#f4efe0;--mute:#a9a38f;--line:#34324a;--card:#1b1b2a;--soft:#232337;--shadow:0 8px 26px rgba(0,0,0,.45)}',
+    '.ak{--ink:#1A1A2E;--mute:#5f5f78;--line:#ece5d2;--card:#fff;--soft:#faf6ea;--gold:#D4AF37;--gold2:#8B7230;--red:#b3203a;--green:#0b6b3a;--amber:#7a5300;--blue:#1f55b0;--violet:#6a2f9c;--on-red:#fff;--focus:#8a6500;--shadow:0 6px 22px rgba(60,45,10,.09);color:var(--ink);font-family:inherit}',
+    'body.dark-theme .ak{--ink:#f4efe0;--mute:#b4ae9a;--gold2:#d4b75a;--red:#ff8a98;--green:#4ad28c;--amber:#f2c14e;--blue:#8fb4ff;--violet:#c79bff;--on-red:#2a0008;--focus:#F2CC6B;--line:#34324a;--card:#1b1b2a;--soft:#232337;--shadow:0 8px 26px rgba(0,0,0,.45)}',
     '.ak *{box-sizing:border-box}',
     '.ak-hero{position:relative;overflow:hidden;border-radius:20px;padding:18px 20px;margin-bottom:14px;color:#fff;background:linear-gradient(120deg,#1a1630 0%,#2b2147 55%,#6d5413 130%);box-shadow:var(--shadow)}',
     '.ak-hero::after{content:"";position:absolute;right:-40px;top:-60px;width:220px;height:220px;border-radius:50%;background:radial-gradient(circle,rgba(212,175,55,.45),rgba(212,175,55,0) 70%)}',
@@ -93,7 +102,7 @@ function css() {
     '.ak-in{font-weight:500;width:100%;outline:none}.ak-in:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(212,175,55,.22)}',
     '.ak-btn.gold{background:linear-gradient(135deg,var(--gold),var(--gold2));color:#1c1500;border-color:transparent}',
     '.ak-btn.danger{color:var(--red);border-color:rgba(214,54,74,.45)}',
-    '.ak-btn.danger.solid{background:var(--red);color:#fff;border-color:transparent}',
+    '.ak-btn.danger.solid{background:var(--red);color:var(--on-red);border-color:transparent}',
     '.ak-btn.good{color:var(--green);border-color:rgba(31,164,99,.45)}',
     '.ak-btn[disabled]{opacity:.5;cursor:not-allowed}',
     '.ak-count{font-size:12px;color:var(--mute);margin:2px 2px 10px}',
@@ -109,9 +118,9 @@ function css() {
     '.ak-nm small{display:block;font-size:11.5px;color:var(--mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
     '.ak-pill{display:inline-flex;gap:5px;align-items:center;font-size:10.5px;font-weight:800;padding:3px 9px;border-radius:20px;white-space:nowrap;background:var(--soft);color:var(--mute)}',
     '.ak-pill::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}',
-    '.ak-pill.green{color:var(--green);background:rgba(31,164,99,.12)}.ak-pill.amber{color:#b57b00;background:rgba(240,180,41,.18)}',
+    '.ak-pill.green{color:var(--green);background:rgba(31,164,99,.12)}.ak-pill.amber{color:var(--amber);background:rgba(240,180,41,.18)}',
     '.ak-pill.red{color:var(--red);background:rgba(214,54,74,.12)}.ak-pill.blue{color:var(--blue);background:rgba(47,111,208,.12)}',
-    '.ak-pill.violet{color:#7b3fb0;background:rgba(123,63,176,.12)}.ak-pill.grey{color:var(--mute)}',
+    '.ak-pill.violet{color:var(--violet);background:rgba(123,63,176,.12)}.ak-pill.grey{color:var(--mute)}',
     '.ak-row{display:flex;justify-content:space-between;gap:8px;align-items:center;margin-top:10px;font-size:12px;color:var(--mute)}',
     '.ak-row b{color:var(--ink)}',
     '.ak-chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}',
@@ -172,6 +181,10 @@ function css() {
     '.ak-live{display:inline-block;width:8px;height:8px;border-radius:50%;background:#1fa463;margin-right:6px;animation:ak-pulse 1.6s infinite}',
     '@keyframes ak-pulse{0%{box-shadow:0 0 0 0 rgba(31,164,99,.6)}100%{box-shadow:0 0 0 9px rgba(31,164,99,0)}}',
     '@media(max-width:600px){.ak-hero{padding:15px}.ak-kv{grid-template-columns:100px 1fr}.ak-grid{grid-template-columns:1fr}}',
+    '.ak :is(button,input,select,textarea,summary,[tabindex],[role=button],label.ak-sw):focus-visible,.ak-dr :is(button,input,select,textarea,[tabindex]):focus-visible,.ak-modal :is(button,input,select,textarea):focus-visible{outline:3px solid var(--focus);outline-offset:2px}',
+    '.ak-sw input:focus-visible+span{outline:3px solid var(--focus);outline-offset:2px;border-radius:6px}',
+    '@media(pointer:coarse){.ak-btn,.ak-seg button,.ak-opt,.ak-kpi,.ak-x{min-height:44px}.ak-x{min-width:44px}.ak-sw{min-height:44px}}',
+    '@media(forced-colors:active){.ak-pill,.ak-chip,.ak-kpi,.ak-btn,.ak-card,.ak-opt{border:1px solid CanvasText}.ak-kpi.on,.ak-opt.on,.ak-seg button.on{outline:2px solid Highlight}}',
     '@media(prefers-reduced-motion:reduce){.ak *{animation:none!important;transition:none!important}.ak-dr,.ak-ov{transition:none}}'
   ].join('\n');
   document.head.appendChild(s);
@@ -189,13 +202,13 @@ function hero(title, sub, bigs) {
 /* items: [{key, icon, label, value, warn}] ; activeKey highlights one; static tiles are not filters */
 function kpis(items, activeKey, isStatic) {
   return '<div class="ak-kpis">' + items.map(function (k) {
-    return '<button type="button" class="ak-kpi' + (k.key === activeKey ? ' on' : '') + (k.warn && Number(k.value) > 0 ? ' warn' : '') + (isStatic ? ' static' : '') + '" data-kpi="' + esc(k.key) + '">' +
-      '<i>' + esc(k.icon) + '</i><b>' + esc(k.value) + '</b><span>' + esc(k.label) + '</span></button>';
+    return '<button type="button" class="ak-kpi' + (k.key === activeKey ? ' on' : '') + (k.warn && Number(k.value) > 0 ? ' warn' : '') + (isStatic ? ' static' : '') + '" data-kpi="' + esc(k.key) + '"' + (isStatic ? '' : ' aria-pressed="' + (k.key === activeKey ? 'true' : 'false') + '"') + '>' +
+      '<i aria-hidden="true">' + esc(k.icon) + '</i><b>' + esc(k.value) + '</b><span>' + esc(k.label) + '</span></button>';
   }).join('') + '</div>';
 }
 function seg(name, options, cur) {
   return '<div class="ak-seg" role="group">' + options.map(function (o) {
-    return '<button type="button" data-seg="' + esc(name) + '" data-val="' + esc(o[0]) + '" class="' + (String(cur) === String(o[0]) ? 'on' : '') + '">' + esc(o[1]) + '</button>';
+    return '<button type="button" data-seg="' + esc(name) + '" data-val="' + esc(o[0]) + '" aria-pressed="' + (String(cur) === String(o[0]) ? 'true' : 'false') + '" class="' + (String(cur) === String(o[0]) ? 'on' : '') + '">' + esc(o[1]) + '</button>';
   }).join('') + '</div>';
 }
 function skeleton(n) { var h = '<div class="ak-grid">'; for (var i = 0; i < (n || 6); i++) h += '<div class="ak-skel"></div>'; return h + '</div>'; }
@@ -214,15 +227,25 @@ function closeDrawer() {
   setTimeout(function () { if (d.dr.parentNode) d.dr.parentNode.removeChild(d.dr); if (d.ov.parentNode) d.ov.parentNode.removeChild(d.ov); }, 260);
   if (d.prev && d.prev.focus) { try { d.prev.focus(); } catch (e) { /* element gone */ } }
 }
+/* keep Tab and Shift+Tab inside an open dialog */
+function trapTab(box, e) {
+  var list = Array.prototype.filter.call(box.querySelectorAll('button,a[href],input,select,textarea,[tabindex]'), function (x) { return !x.disabled && x.tabIndex >= 0 && x.offsetParent !== null; });
+  if (!list.length) { e.preventDefault(); return; }
+  var first = list[0], last = list[list.length - 1], at = document.activeElement;
+  if (e.shiftKey && (at === first || !box.contains(at))) { e.preventDefault(); last.focus(); }
+  else if (!e.shiftKey && (at === last || !box.contains(at))) { e.preventDefault(); first.focus(); }
+}
 /* openDrawer(headHtml, bodyHtml) -> the drawer element; click [data-close] or the dimmed area or press Esc to close */
 function openDrawer(headHtml, bodyHtml, footHtml) {
   css();
   if (DR) closeDrawer();
   var ov = document.createElement('div'); ov.className = 'ak-ov';
-  var dr = document.createElement('aside'); dr.className = 'ak ak-dr'; dr.setAttribute('role', 'dialog'); dr.setAttribute('aria-modal', 'true');
+  var dr = document.createElement('div'); dr.className = 'ak ak-dr'; dr.setAttribute('role', 'dialog'); dr.setAttribute('aria-modal', 'true');
   dr.innerHTML = '<div class="ak-dr-head">' + headHtml + '<button type="button" class="ak-x" data-close aria-label="Close">✕</button></div><div class="ak-dr-body">' + bodyHtml + '</div>' + (footHtml ? '<div class="ak-dr-foot">' + footHtml + '</div>' : '');
   document.body.appendChild(ov); document.body.appendChild(dr);
-  var key = function (e) { if (e.key === 'Escape') closeDrawer(); };
+  var ttl = dr.querySelector('.ak-dr-head .ak-nm b'); if (ttl) { ttl.id = 'ak-dr-title'; dr.setAttribute('aria-labelledby', 'ak-dr-title'); } else dr.setAttribute('aria-label', 'Details');
+  var bodyEl = dr.querySelector('.ak-dr-body'); if (bodyEl) { bodyEl.setAttribute('tabindex', '0'); bodyEl.setAttribute('role', 'region'); bodyEl.setAttribute('aria-label', 'Details'); }
+  var key = function (e) { if (e.key === 'Escape') closeDrawer(); else if (e.key === 'Tab') trapTab(dr, e); };
   document.addEventListener('keydown', key);
   ov.addEventListener('click', closeDrawer);
   dr.addEventListener('click', function (e) { if (e.target.closest && e.target.closest('[data-close]')) closeDrawer(); });
@@ -238,24 +261,25 @@ function drawerEl() { return DR ? DR.dr : null; }
 function confirmBox(opts) {
   css();
   return new Promise(function (resolve) {
-    var m = document.createElement('div'); m.className = 'ak ak-modal'; m.setAttribute('role', 'alertdialog'); m.setAttribute('aria-modal', 'true');
-    var h = '<div class="ak-box"><h3>' + esc(opts.title) + '</h3><p>' + esc(opts.text || '') + '</p>';
+    var m = document.createElement('div'); m.className = 'ak ak-modal'; m.setAttribute('role', 'alertdialog'); m.setAttribute('aria-modal', 'true'); m.setAttribute('aria-labelledby', 'ak-cf-title'); m.setAttribute('aria-describedby', 'ak-cf-text');
+    var h = '<div class="ak-box"><h3 id="ak-cf-title">' + esc(opts.title) + '</h3><p id="ak-cf-text">' + esc(opts.text || '') + '</p>';
     if (opts.choices) {
-      h += '<select class="ak-in" data-choice>' + opts.choices.map(function (c) { return '<option value="' + esc(c[0]) + '">' + esc(c[1]) + '</option>'; }).join('') + '</select><div style="height:8px"></div>';
+      h += '<select class="ak-in" data-choice aria-label="' + esc(opts.title) + '">' + opts.choices.map(function (c) { return '<option value="' + esc(c[0]) + '">' + esc(c[1]) + '</option>'; }).join('') + '</select><div style="height:8px"></div>';
     }
-    if (opts.reason) h += '<textarea class="ak-in" data-reason rows="3" maxlength="240" placeholder="' + esc(opts.reason) + '"></textarea>';
+    if (opts.reason) h += '<textarea class="ak-in" data-reason rows="3" maxlength="240" aria-label="' + esc(opts.reason) + '" placeholder="' + esc(opts.reason) + '"></textarea>';
     h += '<div class="ak-acts"><button type="button" class="ak-btn" data-no>Cancel</button><button type="button" class="ak-btn ' + (opts.danger ? 'danger solid' : 'gold') + '" data-yes>' + esc(opts.label || 'Confirm') + '</button></div></div>';
     m.innerHTML = h;
     document.body.appendChild(m);
-    var done = function (v) { document.removeEventListener('keydown', key); if (m.parentNode) m.parentNode.removeChild(m); resolve(v); };
-    var key = function (e) { if (e.key === 'Escape') done(null); };
+    var prevFocus = document.activeElement;
+    var done = function (v) { document.removeEventListener('keydown', key); if (m.parentNode) m.parentNode.removeChild(m); if (prevFocus && prevFocus.focus && document.contains(prevFocus)) { try { prevFocus.focus(); } catch (e) { /* gone */ } } resolve(v); };
+    var key = function (e) { if (e.key === 'Escape') done(null); else if (e.key === 'Tab') trapTab(m, e); };
     document.addEventListener('keydown', key);
     m.addEventListener('click', function (e) {
       if (e.target === m || (e.target.closest && e.target.closest('[data-no]'))) return done(null);
       if (e.target.closest && e.target.closest('[data-yes]')) {
         var r = m.querySelector('[data-reason]'), c = m.querySelector('[data-choice]');
         var reason = r ? r.value.trim() : '';
-        if (opts.reason && opts.required && !reason) { r.focus(); r.style.borderColor = '#d6364a'; return; }
+        if (opts.reason && opts.required && !reason) { r.focus(); r.style.borderColor = 'var(--red)'; r.setAttribute('aria-invalid', 'true'); return; }
         done({ ok: true, reason: reason, choice: c ? c.value : '' });
       }
     });
@@ -304,6 +328,30 @@ function ensurePanel(id, navPage, navIcon, navLabel, afterPage) {
   }
   return p;
 }
+
+/* Small fixes applied to everything the screens draw: section titles get a heading level that follows the page title, decorative
+   icons are hidden from screen readers, and result counts are announced when they change. */
+function tidy(root) {
+  var n, list;
+  list = root.querySelectorAll('.ak-sec > h4:not([aria-level])');
+  for (n = 0; n < list.length; n++) list[n].setAttribute('aria-level', '3');
+  list = root.querySelectorAll('.ak-dr-head .ak-nm b:not([role])');
+  for (n = 0; n < list.length; n++) { list[n].setAttribute('role', 'heading'); list[n].setAttribute('aria-level', '2'); }
+  list = root.querySelectorAll('.ak-av:not([aria-hidden]),.ak-kpi i:not([aria-hidden])');
+  for (n = 0; n < list.length; n++) list[n].setAttribute('aria-hidden', 'true');
+  list = root.querySelectorAll('.ak-count:not([aria-live])');
+  for (n = 0; n < list.length; n++) { list[n].setAttribute('aria-live', 'polite'); list[n].setAttribute('role', 'status'); }
+}
+var tidyQueued = false;
+function watch() {
+  if (!window.MutationObserver || !document.body) return;
+  tidy(document.body);
+  new MutationObserver(function () {
+    if (tidyQueued) return; tidyQueued = true;
+    (window.requestAnimationFrame || setTimeout)(function () { tidyQueued = false; tidy(document.body); });
+  }).observe(document.body, { childList: true, subtree: true });
+}
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', watch); else watch();
 
 window.AdminKit = {
   esc: esc, num: num, money: money, ago: ago, minutes: minutes, fullDate: fullDate, initials: initials,
