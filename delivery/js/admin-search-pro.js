@@ -18,32 +18,33 @@ var ICON = { orders: '🧾', couriers: '🛵', customers: '👤', servicegivers:
 function t(s) { return (window.AdminI18n && window.AdminI18n.t) ? window.AdminI18n.t(s) : s; }
 
 function css() {
-  if (document.getElementById('sx-css')) return;
-  var s = document.createElement('style'); s.id = 'sx-css';
+  if (document.getElementById('gsr-css')) return;
+  var s = document.createElement('style'); s.id = 'gsr-css';
   s.textContent = [
-    '.sx-btn{display:inline-flex;align-items:center;gap:8px;margin:0 8px;padding:8px 12px;border-radius:12px;border:1.5px solid rgba(128,128,128,.35);background:transparent;color:inherit;font:inherit;font-size:13px;font-weight:600;cursor:pointer}',
-    '.sx-btn:hover{border-color:#D4AF37}.sx-btn kbd{font:inherit;font-size:11px;opacity:.7;border:1px solid rgba(128,128,128,.45);border-radius:6px;padding:1px 6px}',
-    '.sx-btn:focus-visible{outline:3px solid #D4AF37;outline-offset:2px}',
-    '@media(max-width:700px){.sx-btn kbd,.sx-btn .sx-lbl{display:none}.sx-btn{padding:9px 11px}}',
-    '.sx-ov{position:fixed;inset:0;z-index:10050;background:rgba(10,8,25,.6);display:flex;justify-content:center;align-items:flex-start;padding:min(12vh,90px) 14px 14px}',
-    '.sx-box{width:min(640px,100%);max-height:min(72vh,640px);display:flex;flex-direction:column;border-radius:20px;overflow:hidden;box-shadow:0 24px 70px rgba(0,0,0,.55)}',
-    '.sx-in{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--line)}',
-    '.sx-in input{flex:1;min-width:0;border:0;outline:0;background:transparent;color:var(--ink);font:inherit;font-size:16px}',
-    '.sx-in input::placeholder{color:var(--mute)}',
-    '.sx-x{border:1.5px solid var(--line);background:var(--soft);color:var(--ink);border-radius:9px;padding:4px 9px;font:inherit;font-size:12px;cursor:pointer}',
-    '.sx-list{overflow-y:auto;padding:6px 8px 10px;margin:0;list-style:none}',
-    '.sx-h{margin:10px 8px 4px;font-size:11px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--mute)}',
-    '.sx-r{display:flex;align-items:center;gap:12px;padding:9px 10px;border-radius:12px;cursor:pointer;color:var(--ink)}',
-    '.sx-r[aria-selected=true],.sx-r:hover{background:rgba(212,175,55,.16)}',
-    '.sx-r i{font-style:normal;font-size:18px;width:28px;text-align:center;flex:none}',
-    '.sx-r .sx-t{min-width:0;flex:1}.sx-r b{display:block;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
-    '.sx-r small{display:block;font-size:12px;color:var(--mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
-    '.sx-m{font-size:12px;color:var(--mute);white-space:nowrap}',
-    '.sx-empty{padding:26px 16px;text-align:center;color:var(--mute);font-size:13.5px}',
-    '.sx-foot{padding:8px 16px;border-top:1px solid var(--line);font-size:11.5px;color:var(--mute);display:flex;gap:14px;flex-wrap:wrap}',
-    '.sx-foot kbd{font:inherit;border:1px solid var(--line);border-radius:5px;padding:0 5px}',
-    '.sx-vh{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}',
-    '@media(prefers-reduced-motion:reduce){.sx-ov{transition:none}}'
+    '.gsr-btn{display:inline-flex;align-items:center;gap:8px;margin:0 8px;padding:8px 12px;border-radius:12px;border:1.5px solid rgba(128,128,128,.35);background:transparent;color:inherit;font:inherit;font-size:13px;font-weight:600;cursor:pointer}',
+    '.gsr-btn:hover{border-color:#D4AF37}.gsr-btn kbd{font:inherit;font-size:11px;opacity:.7;border:1px solid rgba(128,128,128,.45);border-radius:6px;padding:1px 6px}',
+    '.gsr-btn:focus-visible{outline:3px solid #D4AF37;outline-offset:2px}',
+    '@media(max-width:700px){.gsr-btn kbd,.gsr-btn .gsr-lbl{display:none}.gsr-btn{padding:9px 11px}}',
+    '.gsr-ov{position:fixed;inset:0;z-index:10050;background:rgba(10,8,25,.6);display:flex;justify-content:center;align-items:flex-start;padding:min(12vh,90px) 14px 14px}',
+    '.gsr-box{width:min(640px,100%);max-height:min(72vh,640px);display:flex;flex-direction:column;border-radius:20px;overflow:hidden;box-shadow:0 24px 70px rgba(0,0,0,.55)}',
+    '.gsr-in{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--line)}',
+    '.gsr-in input{flex:1;min-width:0;border:0 !important;border-radius:0 !important;outline:0 !important;box-shadow:none !important;background:transparent !important;color:var(--ink);font-family:inherit !important;font-size:16px;padding:6px 0 !important;margin:0;width:auto}',
+    '.gsr-in:focus-within{box-shadow:inset 0 -3px 0 var(--focus)}',
+    '.gsr-in input::placeholder{color:var(--mute)}',
+    '.gsr-x{border:1.5px solid var(--line);background:var(--soft);color:var(--ink);border-radius:9px;padding:4px 9px;font:inherit;font-size:12px;cursor:pointer}',
+    '.gsr-list{overflow-y:auto;padding:6px 8px 10px;margin:0;list-style:none}',
+    '.gsr-h{margin:10px 8px 4px;font-size:11px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--mute)}',
+    '.gsr-r{display:flex;align-items:center;gap:12px;padding:9px 10px;border-radius:12px;cursor:pointer;color:var(--ink)}',
+    '.gsr-r[aria-selected=true],.gsr-r:hover{background:rgba(212,175,55,.16)}',
+    '.gsr-r i{font-style:normal;font-size:18px;width:28px;text-align:center;flex:none}',
+    '.gsr-r .gsr-t{min-width:0;flex:1}.gsr-r b{display:block;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
+    '.gsr-r small{display:block;font-size:12px;color:var(--mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
+    '.gsr-m{font-size:12px;color:var(--mute);white-space:nowrap}',
+    '.gsr-empty{padding:26px 16px;text-align:center;color:var(--mute);font-size:13.5px}',
+    '.gsr-foot{padding:8px 16px;border-top:1px solid var(--line);font-size:11.5px;color:var(--mute);display:flex;gap:14px;flex-wrap:wrap}',
+    '.gsr-foot kbd{font:inherit;border:1px solid var(--line);border-radius:5px;padding:0 5px}',
+    '.gsr-vh{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}',
+    '@media(prefers-reduced-motion:reduce){.gsr-ov{transition:none}}'
   ].join('\n');
   document.head.appendChild(s);
 }
@@ -90,20 +91,20 @@ function build() {
 }
 
 function paint(msg) {
-  var ov = document.getElementById('sx-ov'); if (!ov) return;
-  var rows = build(), list = ov.querySelector('.sx-list'), n = 0, h = '';
+  var ov = document.getElementById('gsr-ov'); if (!ov) return;
+  var rows = build(), list = ov.querySelector('.gsr-list'), n = 0, h = '';
   rows.forEach(function (r) {
-    if (r.header) { h += '<li class="sx-h" role="presentation">' + esc(r.header) + '</li>'; return; }
-    h += '<li class="sx-r" role="option" id="sx-o' + n + '" data-i="' + n + '" aria-selected="' + (n === S.act ? 'true' : 'false') + '"><i aria-hidden="true">' + esc(r.icon) + '</i><div class="sx-t"><b>' + esc(r.title) + '</b>' +
-      (r.sub ? '<small>' + esc(r.sub) + '</small>' : '') + '</div>' + (r.badge ? K.pill(r.badge, 'grey') : '') + (r.meta ? '<span class="sx-m">' + esc(r.meta) + '</span>' : '') + '</li>';
+    if (r.header) { h += '<li class="gsr-h" role="presentation">' + esc(r.header) + '</li>'; return; }
+    h += '<li class="gsr-r" role="option" id="gsr-o' + n + '" data-i="' + n + '" aria-selected="' + (n === S.act ? 'true' : 'false') + '"><i aria-hidden="true">' + esc(r.icon) + '</i><div class="gsr-t"><b>' + esc(r.title) + '</b>' +
+      (r.sub ? '<small>' + esc(r.sub) + '</small>' : '') + '</div>' + (r.badge ? K.pill(r.badge, 'grey') : '') + (r.meta ? '<span class="gsr-m">' + esc(r.meta) + '</span>' : '') + '</li>';
     n++;
   });
-  if (!n) h = '<li class="sx-empty" role="presentation">' + esc(msg || (S.q ? (S.busy ? t('Searching…') : t('Nothing found. Try a phone number, a code or part of a name.')) : t('Type to search pages, orders, people, shops and codes.'))) + '</li>';
+  if (!n) h = '<li class="gsr-empty" role="presentation">' + esc(msg || (S.q ? (S.busy ? t('Searching…') : t('Nothing found. Try a phone number, a code or part of a name.')) : t('Type to search pages, orders, people, shops and codes.'))) + '</li>';
   list.innerHTML = h;
   var inp = ov.querySelector('input');
   inp.setAttribute('aria-expanded', n ? 'true' : 'false');
-  if (S.act >= 0 && S.act < n) { inp.setAttribute('aria-activedescendant', 'sx-o' + S.act); var el = document.getElementById('sx-o' + S.act); if (el && el.scrollIntoView) el.scrollIntoView({ block: 'nearest' }); } else inp.removeAttribute('aria-activedescendant');
-  var live = ov.querySelector('.sx-live');
+  if (S.act >= 0 && S.act < n) { inp.setAttribute('aria-activedescendant', 'gsr-o' + S.act); var el = document.getElementById('gsr-o' + S.act); if (el && el.scrollIntoView) el.scrollIntoView({ block: 'nearest' }); } else inp.removeAttribute('aria-activedescendant');
+  var live = ov.querySelector('.gsr-live');
   if (live) live.textContent = S.q ? (n ? n + ' ' + t('results') : (S.busy ? '' : t('No results'))) : '';
 }
 
@@ -123,22 +124,22 @@ function openBox() {
   if (S.open) return;
   K.css(); css();
   S.open = true; S.q = ''; S.remote = []; S.act = -1; S.pages = collectPages(); S.prev = document.activeElement;
-  var ov = document.createElement('div'); ov.id = 'sx-ov'; ov.className = 'ak sx-ov';
-  ov.innerHTML = '<div class="sx-box" role="dialog" aria-modal="true" aria-label="' + esc(t('Search')) + '" style="background:var(--card);color:var(--ink)">' +
-    '<div class="sx-in"><span aria-hidden="true">🔎</span><input type="text" role="combobox" aria-expanded="false" aria-controls="sx-list" aria-autocomplete="list" aria-label="' + esc(t('Search pages, orders, people, shops and codes')) + '" placeholder="' + esc(t('Search pages, orders, people, shops…')) + '" autocomplete="off" autocapitalize="off" spellcheck="false">' +
-    '<button type="button" class="sx-x" data-sx-close aria-label="' + esc(t('Close search')) + '">Esc</button></div>' +
-    '<ul class="sx-list" id="sx-list" role="listbox" aria-label="' + esc(t('Results')) + '"></ul>' +
-    '<div class="sx-foot" aria-hidden="true"><span><kbd>↑</kbd> <kbd>↓</kbd> ' + esc(t('move')) + '</span><span><kbd>Enter</kbd> ' + esc(t('open')) + '</span><span><kbd>Esc</kbd> ' + esc(t('close')) + '</span></div>' +
-    '<div class="sx-vh sx-live" role="status" aria-live="polite"></div></div>';
+  var ov = document.createElement('div'); ov.id = 'gsr-ov'; ov.className = 'ak gsr-ov';
+  ov.innerHTML = '<div class="gsr-box" role="dialog" aria-modal="true" aria-label="' + esc(t('Search')) + '" style="background:var(--card);color:var(--ink)">' +
+    '<div class="gsr-in"><span aria-hidden="true">🔎</span><input type="text" role="combobox" aria-expanded="false" aria-controls="gsr-list" aria-autocomplete="list" aria-label="' + esc(t('Search pages, orders, people, shops and codes')) + '" placeholder="' + esc(t('Search pages, orders, people, shops…')) + '" autocomplete="off" autocapitalize="off" spellcheck="false">' +
+    '<button type="button" class="gsr-x" data-gsr-close aria-label="' + esc(t('Close search')) + '">Esc</button></div>' +
+    '<ul class="gsr-list" id="gsr-list" role="listbox" aria-label="' + esc(t('Results')) + '"></ul>' +
+    '<div class="gsr-foot" aria-hidden="true"><span><kbd>↑</kbd> <kbd>↓</kbd> ' + esc(t('move')) + '</span><span><kbd>Enter</kbd> ' + esc(t('open')) + '</span><span><kbd>Esc</kbd> ' + esc(t('close')) + '</span></div>' +
+    '<div class="gsr-vh gsr-live" role="status" aria-live="polite"></div></div>';
   document.body.appendChild(ov);
   var inp = ov.querySelector('input');
   inp.addEventListener('input', function () { S.q = inp.value.trim(); S.act = -1; S.remote = S.q.length < 2 ? [] : S.remote; paint(); fetchRemote(); if (S.rows.length && S.q) { S.act = 0; paint(); } });
   ov.addEventListener('mousedown', function (e) { if (e.target === ov) closeBox(); });
   ov.addEventListener('click', function (e) {
-    if (e.target.closest && e.target.closest('[data-sx-close]')) { closeBox(); return; }
-    var li = e.target.closest && e.target.closest('.sx-r'); if (li) pick(parseInt(li.getAttribute('data-i'), 10));
+    if (e.target.closest && e.target.closest('[data-gsr-close]')) { closeBox(); return; }
+    var li = e.target.closest && e.target.closest('.gsr-r'); if (li) pick(parseInt(li.getAttribute('data-i'), 10));
   });
-  ov.addEventListener('mousemove', function (e) { var li = e.target.closest && e.target.closest('.sx-r'); if (li) { var i = parseInt(li.getAttribute('data-i'), 10); if (i !== S.act) { S.act = i; var all = ov.querySelectorAll('.sx-r'); Array.prototype.forEach.call(all, function (x) { x.setAttribute('aria-selected', x.getAttribute('data-i') === String(i) ? 'true' : 'false'); }); inp.setAttribute('aria-activedescendant', 'sx-o' + i); } } });
+  ov.addEventListener('mousemove', function (e) { var li = e.target.closest && e.target.closest('.gsr-r'); if (li) { var i = parseInt(li.getAttribute('data-i'), 10); if (i !== S.act) { S.act = i; var all = ov.querySelectorAll('.gsr-r'); Array.prototype.forEach.call(all, function (x) { x.setAttribute('aria-selected', x.getAttribute('data-i') === String(i) ? 'true' : 'false'); }); inp.setAttribute('aria-activedescendant', 'gsr-o' + i); } } });
   ov.addEventListener('keydown', function (e) {
     if (e.key === 'Escape') { e.preventDefault(); closeBox(); return; }
     if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
@@ -147,7 +148,7 @@ function openBox() {
     }
     if (e.key === 'Enter') { e.preventDefault(); if (S.act < 0 && S.rows.length) S.act = 0; if (S.act >= 0) pick(S.act); return; }
     if (e.key === 'Tab') {   // keep focus inside: the field and the close button
-      var f = [inp, ov.querySelector('[data-sx-close]')], at = document.activeElement, i = f.indexOf(at);
+      var f = [inp, ov.querySelector('[data-gsr-close]')], at = document.activeElement, i = f.indexOf(at);
       e.preventDefault(); f[(i + (e.shiftKey ? -1 : 1) + f.length) % f.length].focus();
     }
   });
@@ -155,7 +156,7 @@ function openBox() {
 }
 
 function closeBox() {
-  var ov = document.getElementById('sx-ov'); if (ov && ov.parentNode) ov.parentNode.removeChild(ov);
+  var ov = document.getElementById('gsr-ov'); if (ov && ov.parentNode) ov.parentNode.removeChild(ov);
   S.open = false; S.seq++;
   if (S.prev && S.prev.focus && document.contains(S.prev)) { try { S.prev.focus(); } catch (e) { /* gone */ } }
 }
@@ -185,12 +186,12 @@ function pick(i) {
 }
 
 function addButton() {
-  if (document.getElementById('sx-open')) return;
+  if (document.getElementById('gsr-open')) return;
   var title = document.getElementById('page-title'); if (!title || !title.parentNode) return;
   css();
-  var b = document.createElement('button'); b.type = 'button'; b.id = 'sx-open'; b.className = 'sx-btn';
+  var b = document.createElement('button'); b.type = 'button'; b.id = 'gsr-open'; b.className = 'gsr-btn';
   b.setAttribute('aria-haspopup', 'dialog'); b.setAttribute('aria-keyshortcuts', 'Control+K Meta+K');
-  b.innerHTML = '<span aria-hidden="true">🔎</span><span class="sx-lbl">' + esc(t('Search')) + '</span><kbd aria-hidden="true">Ctrl K</kbd>';
+  b.innerHTML = '<span aria-hidden="true">🔎</span><span class="gsr-lbl">' + esc(t('Search')) + '</span><kbd aria-hidden="true">Ctrl K</kbd>';
   b.addEventListener('click', openBox);
   title.parentNode.insertBefore(b, title.nextSibling);
 }
