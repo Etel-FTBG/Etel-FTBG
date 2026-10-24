@@ -53,6 +53,15 @@ for cap in ('orders.view', 'users.view', 'service_givers.view', 'items.view', 'r
         bad.append('GlobalSearchController must gate a group on ' + cap)
 if 'etel_is_ride_only' not in search:
     bad.append('GlobalSearchController must keep Delivery results from Ride-only staff')
+ids = {}
+for name in sorted(__import__('os').listdir(root + '/js')):
+    if not name.endswith('.js'):
+        continue
+    for sid in set(re.findall(r"\.id\s*=\s*'([a-z0-9-]+-css)'", read('js/' + name))):
+        ids.setdefault(sid, []).append(name)
+for sid, owners in ids.items():
+    if len(owners) > 1:
+        bad.append('two scripts add a <style id="' + sid + '"> (' + ', '.join(owners) + '): the second would never get its styles')
 for f in files:
     js = read('js/' + f)
     if re.search(r'\bon[a-z]+="|\.innerHTML\s*=\s*[^;]*\b(res|r)\.message', js):
