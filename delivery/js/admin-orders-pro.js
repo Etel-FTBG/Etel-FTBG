@@ -161,7 +161,7 @@ function drawer(d, dr) {
   /* controls */
   var acts = '';
   if (c.can_assign && d.couriers && d.couriers.length) {
-    acts += '<div style="flex:1 1 100%"><select class="ak-in" data-courier>' + d.couriers.map(function (cr) {
+    acts += '<div style="flex:1 1 100%"><select class="ak-in" data-courier aria-label="Courier to assign">' + d.couriers.map(function (cr) {
       return '<option value="' + esc(cr.id) + '"' + (d.courier && String(d.courier.id) === String(cr.id) ? ' selected' : '') + '>' + esc((cr.name || 'Courier') + ' · ' + cr.courier_code + ' · ' + cr.status + (cr.zone ? ' · ' + cr.zone : '')) + '</option>';
     }).join('') + '</select></div><button type="button" class="ak-btn gold" data-assign>' + (d.courier ? 'Reassign courier' : 'Assign courier') + '</button>';
   } else if (c.can_assign) acts += '<span class="ak-chip warn">No approved courier is available to assign.</span>';
