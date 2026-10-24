@@ -146,6 +146,21 @@ def main():
     for it in d.get("items") or []:
         check("attention line %s is complete and positive" % it.get("key"), all(k in it for k in ("key", "label", "count", "page", "filter")) and it["count"] > 0, it)
 
+    print("6. Equb oversight")
+    for act, body in (("equb_admin_group_detail", {"group_id": 1}), ("equb_admin_update_package", {"id": 1, "active": 0})):
+        s1, _ = call(act, body)
+        s2, _ = call(act, body, cust)
+        s3, _ = call(act, body, cour)
+        check(act + ": no login, customer and courier refused", s1 in (401, 403) and s2 in (401, 403) and s3 in (401, 403), (s1, s2, s3))
+    s, r = call("equb_admin_group_detail", {}, admin)
+    check("group detail needs a group_id", s == 400, (s, r))
+    s, r = call("equb_admin_update_package", {}, admin)
+    check("package update needs an id", s == 400, (s, r))
+    s, r = call("equb_admin_update_package", {"id": 1}, admin)
+    check("package update with nothing to change is refused", s == 400, (s, r))
+    s, r = call("equb_admin_update_package", {"id": 1, "tier": "diamond"}, admin)
+    check("package update refuses an unknown tier", s == 400, (s, r))
+
     print("\n%d passed, %d failed" % (len(PASS), len(FAIL)))
     return 1 if FAIL else 0
 
