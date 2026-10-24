@@ -24,7 +24,7 @@ for name, ctl in (('OrderAdminController', orders), ('PartnerAdminController', p
 for a, cap in (('admin_verify_service_giver', 'service_givers.manage'), ('admin_suspend_service_giver', 'service_givers.manage'), ('admin_update_courier', 'users.manage')):
     if not re.search(r"case '" + a + r"': \{\s*(//[^\n]*\n\s*)*\$pdo = db\(\); require_admin\(\$pdo, '" + re.escape(cap) + r"'\)", boot):
         bad.append(a + " must require '" + cap + "'")
-files = ('admin-kit.js', 'admin-orders-pro.js', 'admin-couriers-pro.js', 'admin-sg-pro.js', 'admin-packages.js', 'admin-items-pro.js', 'admin-promos-pro.js', 'admin-rides-pro.js', 'admin-menucat-pro.js', 'admin-rides-desk.js', 'admin-settings-pro.js', 'admin-roles-pro.js', 'admin-equb-pro.js', 'admin-finance-pro.js', 'admin-launch-pro.js', 'admin-releases-pro.js', 'admin-branding-pro.js')
+files = ('admin-kit.js', 'admin-orders-pro.js', 'admin-couriers-pro.js', 'admin-sg-pro.js', 'admin-packages.js', 'admin-items-pro.js', 'admin-promos-pro.js', 'admin-rides-pro.js', 'admin-menucat-pro.js', 'admin-rides-desk.js', 'admin-settings-pro.js', 'admin-roles-pro.js', 'admin-equb-pro.js', 'admin-finance-pro.js', 'admin-launch-pro.js', 'admin-releases-pro.js', 'admin-branding-pro.js', 'admin-search-pro.js')
 pos = dict((f, html.find('src="js/' + f)) for f in files)
 if min(pos.values()) < 0:
     bad.append('admin.html must load ' + ', '.join(f for f in files if pos[f] < 0))
@@ -43,6 +43,16 @@ for a, cap in (('equb_admin_group_detail', 'equb.view'), ('equb_admin_update_pac
 detail = re.search(r"case 'equb_admin_group_detail': \{.*?\n\}\n", read('api/controllers/EqubController.php'), re.S)
 if detail and re.search(r'\b(INSERT|UPDATE|DELETE)\b', detail.group(0)):
     bad.append('equb_admin_group_detail must stay read only')
+search = read('api/controllers/GlobalSearchController.php')
+if "case 'admin_global_search'" not in boot:
+    bad.append('admin_global_search is not routed in boot.php')
+if re.search(r'\b(INSERT|UPDATE|DELETE|ALTER|DROP)\b\s+(INTO|TABLE|FROM|`?\w+`?\s+SET)', search):
+    bad.append('GlobalSearchController must stay read only')
+for cap in ('orders.view', 'users.view', 'service_givers.view', 'items.view', 'rides.view'):
+    if "'" + cap + "'" not in search:
+        bad.append('GlobalSearchController must gate a group on ' + cap)
+if 'etel_is_ride_only' not in search:
+    bad.append('GlobalSearchController must keep Delivery results from Ride-only staff')
 for f in files:
     js = read('js/' + f)
     if re.search(r'\bon[a-z]+="|\.innerHTML\s*=\s*[^;]*\b(res|r)\.message', js):
