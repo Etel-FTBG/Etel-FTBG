@@ -24,7 +24,7 @@ for name, ctl in (('OrderAdminController', orders), ('PartnerAdminController', p
 for a, cap in (('admin_verify_service_giver', 'service_givers.manage'), ('admin_suspend_service_giver', 'service_givers.manage'), ('admin_update_courier', 'users.manage')):
     if not re.search(r"case '" + a + r"': \{\s*(//[^\n]*\n\s*)*\$pdo = db\(\); require_admin\(\$pdo, '" + re.escape(cap) + r"'\)", boot):
         bad.append(a + " must require '" + cap + "'")
-files = ('admin-kit.js', 'admin-orders-pro.js', 'admin-couriers-pro.js', 'admin-sg-pro.js', 'admin-packages.js', 'admin-items-pro.js', 'admin-promos-pro.js', 'admin-rides-pro.js', 'admin-menucat-pro.js', 'admin-rides-desk.js', 'admin-settings-pro.js', 'admin-roles-pro.js', 'admin-equb-pro.js', 'admin-finance-pro.js')
+files = ('admin-kit.js', 'admin-orders-pro.js', 'admin-couriers-pro.js', 'admin-sg-pro.js', 'admin-packages.js', 'admin-items-pro.js', 'admin-promos-pro.js', 'admin-rides-pro.js', 'admin-menucat-pro.js', 'admin-rides-desk.js', 'admin-settings-pro.js', 'admin-roles-pro.js', 'admin-equb-pro.js', 'admin-finance-pro.js', 'admin-launch-pro.js', 'admin-releases-pro.js', 'admin-branding-pro.js')
 pos = dict((f, html.find('src="js/' + f)) for f in files)
 if min(pos.values()) < 0:
     bad.append('admin.html must load ' + ', '.join(f for f in files if pos[f] < 0))
@@ -32,7 +32,7 @@ elif any(pos['admin-kit.js'] > pos[f] for f in files):
     bad.append('admin.html must load admin-kit.js before the four screens')
 if html.find('src="js/admin-kit.js') < html.find('src="js/admin.js'):
     bad.append('the screens must load after admin.js so they can replace its loaders')
-for host in ('ord-pro', 'cou-pro', 'sg-pro', 'ord-legacy', 'cou-legacy', 'sg-legacy', 'items-pro', 'items-legacy', 'promo-pro', 'promo-list', 'rides-pro', 'rides-legacy', 'mc-pro', 'mc-legacy', 'rides-ops-pro', 'rides-ops-legacy', 'rides-desk-pro', 'rides-desk-legacy', 'set-pro', 'roles-pro', 'roles-legacy', 'eqb-pro', 'eqb-legacy'):
+for host in ('ord-pro', 'cou-pro', 'sg-pro', 'ord-legacy', 'cou-legacy', 'sg-legacy', 'items-pro', 'items-legacy', 'promo-pro', 'promo-list', 'rides-pro', 'rides-legacy', 'mc-pro', 'mc-legacy', 'rides-ops-pro', 'rides-ops-legacy', 'rides-desk-pro', 'rides-desk-legacy', 'set-pro', 'roles-pro', 'roles-legacy', 'eqb-pro', 'eqb-legacy', 'brand-pro', 'launch-root', 'releases-root'):
     if 'id="' + host + '"' not in html:
         bad.append('admin.html lost #' + host)
 for a, cap in (('equb_admin_group_detail', 'equb.view'), ('equb_admin_update_package', 'equb.manage')):

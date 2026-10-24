@@ -818,7 +818,7 @@ html{color-scheme:light}
 
                 <!-- ══ RELEASES PANEL (canary release management) ══ -->
                 <div id="panel-releases" class="panel" style="display:none">
-                    <h2 style="color:#F5E7B8;margin-bottom:14px">🐤 Releases</h2>
+                    <h2 style="display:none"><!-- title is in the header built by js/admin-releases-pro.js -->🐤 Releases</h2>
                     <div id="releases-root"></div>
                 </div>
 
@@ -1076,7 +1076,8 @@ html{color-scheme:light}
 
                 <!-- ═══════════ BRANDING & ICONS ═══════════ -->
                 <div class="panel" id="panel-branding" style="display:none">
-                    <div class="data-section"></div>
+                    <div id="brand-pro"><!-- built by js/admin-branding-pro.js --></div>
+                    <div class="data-section" style="display:none"><!-- old slot grid: hidden, the cards above replace it --></div>
                 </div>
 
                 <!-- ═══════════ DANGER ZONE: FULL SYSTEM RESET ═══════════ -->
@@ -1719,6 +1720,9 @@ html{color-scheme:light}
     <script src="js/admin-menucat-pro.js?v=1"></script><!-- Menu catalog: board + guided dish form + copy a menu -->
     <script src="js/admin-settings-pro.js?v=1"></script><!-- Settings: tabs for account, devices, announcements, owner tools -->
     <script src="js/admin-roles-pro.js?v=1"></script><!-- Roles: cards + permission matrix -->
+    <script src="js/admin-launch-pro.js?v=1"></script><!-- Launch readiness: gauge, do-next list, sections -->
+    <script src="js/admin-releases-pro.js?v=1"></script><!-- Releases: stable and canary cards -->
+    <script src="js/admin-branding-pro.js?v=1"></script><!-- Branding: preview first, then replace -->
     <script src="js/admin-equb-pro.js?v=1"></script><!-- Equb: groups board, packages, people -->
     <script src="js/admin-finance-pro.js?v=1"></script><!-- Finance hub: headline figures and tab bar -->
     <script src="js/admin-rides-desk.js?v=1"></script><!-- Rides: operations pulse (health + live watch) and review desk -->
