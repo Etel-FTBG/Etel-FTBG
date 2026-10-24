@@ -165,12 +165,10 @@ function visible() { var p = document.getElementById('panel-rides'); return p &&
 function install() {
   var el = root(); if (!el) return;
   wire(el);
-  var orig = window.ridesLoad;
-  window.ridesLoad = function () {
-    var r = typeof orig === 'function' ? orig.apply(this, arguments) : undefined;   // keeps health, live watch, growth, issues and driver checks loading
-    load(V.loaded);
-    return r;
-  };
+  /* The trip board replaces the old table; the sections below it (health, live watch, issues, vehicle / identity /
+     document review) are rebuilt in admin-rides-desk.js, so the old loader is no longer called (no double requests). */
+  window.ridesLoad = function () { load(V.loaded); };
+  window.ridesFilter = window.ridesGoPage = window.ridesSearchDebounce = function () { load(V.loaded); };
   if (!V.timer) V.timer = setInterval(function () { if (visible() && !K.drawerEl()) load(true); }, 30000);
 }
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', install); else install();
