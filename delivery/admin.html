@@ -1153,6 +1153,8 @@ html{color-scheme:light}
                 <!-- ═══════════ RIDES PANEL ═══════════ -->
                 <div class="panel" id="panel-rides" style="display:none">
 
+                  <div id="rides-ops-pro"><!-- built by js/admin-rides-desk.js --></div>
+                  <div id="rides-ops-legacy" style="display:none"><!-- old health + live watch boxes: hidden, the cards above replace them -->
                   <div id="sys-health" style="margin-bottom:16px;border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;background:rgba(255,255,255,.03)">
                     <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
                       <h3 style="color:#f0cf5a;font-size:15px;margin:0;flex:1">System health</h3>
@@ -1171,8 +1173,54 @@ html{color-scheme:light}
                     <div id="ride-watch-list" style="font-size:13px;color:#B8B0A0">Checking...</div>
                   </div>
 
+                  </div>
+
                   <div id="rides-stats-strip" style="display:none;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin-bottom:20px"></div>
 
+                  <div id="rides-stats-anchor"></div>
+                  <div id="rides-pro"><!-- built by js/admin-rides-pro.js --></div>
+                  <div id="rides-legacy" style="display:none"><!-- old status buttons, search, table and pager: hidden, the board above replaces them -->
+                  <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:16px">
+                    <div style="display:flex;gap:6px;flex-wrap:wrap">
+                      <button class="rides-filter-btn active" onclick="ridesFilter('all',this)">All</button>
+                      <button class="rides-filter-btn" onclick="ridesFilter('searching',this)">Searching</button>
+                      <button class="rides-filter-btn" onclick="ridesFilter('accepted',this)">Accepted</button>
+                      <button class="rides-filter-btn" onclick="ridesFilter('in_progress',this)">In Progress</button>
+                      <button class="rides-filter-btn" onclick="ridesFilter('arrived',this)">Arrived</button>
+                      <button class="rides-filter-btn" onclick="ridesFilter('completed',this)">Completed</button>
+                      <button class="rides-filter-btn" onclick="ridesFilter('cancelled',this)">Cancelled</button>
+                    </div>
+                    <input id="rides-search" type="text" placeholder="Search name, phone, plate..."
+                      style="flex:1;min-width:160px;padding:8px 12px;border-radius:10px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.05);color:#EDEDF5;font-size:13px;outline:none"
+                      oninput="ridesSearchDebounce()"/>
+                    <button onclick="ridesLoad()" style="padding:8px 14px;border-radius:10px;border:none;background:rgba(212,175,55,.15);color:#E5C76B;font-size:13px;cursor:pointer">Refresh</button>
+                    <button onclick="ridesExport()" style="padding:8px 14px;border-radius:10px;border:none;background:rgba(255,255,255,.07);color:#EDEDF5;font-size:13px;cursor:pointer">Export CSV</button>
+                  </div>
+
+                  <div style="overflow-x:auto;border-radius:14px;border:1px solid rgba(255,255,255,.08)">
+                    <table style="width:100%;border-collapse:collapse;font-size:13px;font-family:Outfit,sans-serif">
+                      <thead>
+                        <tr style="border-bottom:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04)">
+                          <th style="padding:12px 14px;text-align:left;color:#9A9AAE;font-weight:700">#</th>
+                          <th style="padding:12px 14px;text-align:left;color:#9A9AAE;font-weight:700">Status</th>
+                          <th style="padding:12px 14px;text-align:left;color:#9A9AAE;font-weight:700">Passenger</th>
+                          <th style="padding:12px 14px;text-align:left;color:#9A9AAE;font-weight:700">Driver</th>
+                          <th style="padding:12px 14px;text-align:left;color:#9A9AAE;font-weight:700">Route</th>
+                          <th style="padding:12px 14px;text-align:right;color:#9A9AAE;font-weight:700">Fare</th>
+                          <th style="padding:12px 14px;text-align:left;color:#9A9AAE;font-weight:700">Time</th>
+                          <th style="padding:12px 14px;text-align:center;color:#9A9AAE;font-weight:700">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody id="rides-tbody">
+                        <tr><td colspan="8" style="padding:40px;text-align:center;color:#B8B0A0">Loading rides...</td></tr>
+                      </tbody>
+                    </table>
+                  </div>
+
+                  <div id="rides-pagination" style="display:flex;gap:8px;align-items:center;justify-content:center;margin-top:16px;flex-wrap:wrap"></div>
+                  </div>
+
+                  <h3 class="rdk-h">📈 Growth &amp; driver wallets</h3>
                   <div class="chart-card" style="margin-bottom:20px">
                     <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:4px">
                       <div class="chart-title" id="growth-chart-title">📈 Trips & Drivers Growth — Daily</div>
@@ -1288,48 +1336,9 @@ html{color-scheme:light}
                     </div>
                   </div>
 
-                  <div id="rides-pro"><!-- built by js/admin-rides-pro.js --></div>
-                  <div id="rides-legacy" style="display:none"><!-- old status buttons, search, table and pager: hidden, the board above replaces them -->
-                  <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:16px">
-                    <div style="display:flex;gap:6px;flex-wrap:wrap">
-                      <button class="rides-filter-btn active" onclick="ridesFilter('all',this)">All</button>
-                      <button class="rides-filter-btn" onclick="ridesFilter('searching',this)">Searching</button>
-                      <button class="rides-filter-btn" onclick="ridesFilter('accepted',this)">Accepted</button>
-                      <button class="rides-filter-btn" onclick="ridesFilter('in_progress',this)">In Progress</button>
-                      <button class="rides-filter-btn" onclick="ridesFilter('arrived',this)">Arrived</button>
-                      <button class="rides-filter-btn" onclick="ridesFilter('completed',this)">Completed</button>
-                      <button class="rides-filter-btn" onclick="ridesFilter('cancelled',this)">Cancelled</button>
-                    </div>
-                    <input id="rides-search" type="text" placeholder="Search name, phone, plate..."
-                      style="flex:1;min-width:160px;padding:8px 12px;border-radius:10px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.05);color:#EDEDF5;font-size:13px;outline:none"
-                      oninput="ridesSearchDebounce()"/>
-                    <button onclick="ridesLoad()" style="padding:8px 14px;border-radius:10px;border:none;background:rgba(212,175,55,.15);color:#E5C76B;font-size:13px;cursor:pointer">Refresh</button>
-                    <button onclick="ridesExport()" style="padding:8px 14px;border-radius:10px;border:none;background:rgba(255,255,255,.07);color:#EDEDF5;font-size:13px;cursor:pointer">Export CSV</button>
-                  </div>
 
-                  <div style="overflow-x:auto;border-radius:14px;border:1px solid rgba(255,255,255,.08)">
-                    <table style="width:100%;border-collapse:collapse;font-size:13px;font-family:Outfit,sans-serif">
-                      <thead>
-                        <tr style="border-bottom:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04)">
-                          <th style="padding:12px 14px;text-align:left;color:#9A9AAE;font-weight:700">#</th>
-                          <th style="padding:12px 14px;text-align:left;color:#9A9AAE;font-weight:700">Status</th>
-                          <th style="padding:12px 14px;text-align:left;color:#9A9AAE;font-weight:700">Passenger</th>
-                          <th style="padding:12px 14px;text-align:left;color:#9A9AAE;font-weight:700">Driver</th>
-                          <th style="padding:12px 14px;text-align:left;color:#9A9AAE;font-weight:700">Route</th>
-                          <th style="padding:12px 14px;text-align:right;color:#9A9AAE;font-weight:700">Fare</th>
-                          <th style="padding:12px 14px;text-align:left;color:#9A9AAE;font-weight:700">Time</th>
-                          <th style="padding:12px 14px;text-align:center;color:#9A9AAE;font-weight:700">Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody id="rides-tbody">
-                        <tr><td colspan="8" style="padding:40px;text-align:center;color:#B8B0A0">Loading rides...</td></tr>
-                      </tbody>
-                    </table>
-                  </div>
-
-                  <div id="rides-pagination" style="display:flex;gap:8px;align-items:center;justify-content:center;margin-top:16px;flex-wrap:wrap"></div>
-                  </div>
-
+                  <div id="rides-desk-pro"><!-- built by js/admin-rides-desk.js --></div>
+                  <div id="rides-desk-legacy" style="display:none"><!-- old issue / vehicle / identity / document sections: hidden, the review desk above replaces them -->
                   <h3 style="color:#f0cf5a;font-size:15px;margin:28px 0 12px">Ride issue reports</h3>
                   <div style="display:flex;gap:6px;margin-bottom:12px">
                     <button class="rides-filter-btn active" data-issue-filter="all" onclick="ridesIssuesFilter('all',this)">All</button>
@@ -1353,6 +1362,8 @@ html{color-scheme:light}
                   <h3 style="color:#f0cf5a;font-size:15px;margin:28px 0 12px">Driver compliance (insurance / technical inspection / road fund)</h3>
                   <div style="font-size:12px;color:#9A9AAE;margin-bottom:12px">Feeds the Traffic Officer NFC card check. Set each document's real expiry date and attach a photo of the sticker/certificate - valid/expired is computed automatically from the date. Association dues are not set here - they're checked live against EtelTaxi's own records.</div>
                   <div id="driver-compliance-wrap"></div>
+
+                  </div>
 
                 </div><!-- /panel-rides -->
 
@@ -1693,7 +1704,7 @@ html{color-scheme:light}
     <script src="js/admin-ratings.js?v=1"></script>
     <script src="js/admin-money.js?v=3"></script>
     <script src="js/admin-dispatch.js?v=2"></script>
-    <script src="js/admin-kit.js?v=2"></script><!-- shared look + pieces for the premium Orders, Couriers, Service givers and Package prices screens -->
+    <script src="js/admin-kit.js?v=3"></script><!-- shared look + pieces for the premium Orders, Couriers, Service givers and Package prices screens -->
     <script src="js/admin-packages.js?v=4"></script>
     <script src="js/admin-integrations.js?v=2"></script>
     <script src="js/admin-orders-pro.js?v=1"></script><!-- Orders: live board, order drawer with controls -->
@@ -1701,8 +1712,9 @@ html{color-scheme:light}
     <script src="js/admin-sg-pro.js?v=1"></script><!-- Service givers: directory, verification, drawer -->
     <script src="js/admin-items-pro.js?v=1"></script><!-- Items & products: board, stock warnings, quick controls -->
     <script src="js/admin-promos-pro.js?v=2"></script><!-- Promo codes: board with status and usage -->
-    <script src="js/admin-rides-pro.js?v=1"></script><!-- Rides: trip board + drawer -->
+    <script src="js/admin-rides-pro.js?v=2"></script><!-- Rides: trip board + drawer -->
     <script src="js/admin-menucat-pro.js?v=1"></script><!-- Menu catalog: board + guided dish form + copy a menu -->
+    <script src="js/admin-rides-desk.js?v=1"></script><!-- Rides: operations pulse (health + live watch) and review desk -->
     <script src="js/admin-home.js?v=1"></script><!-- Dashboard: "Needs your attention" -->
     <script src="js/admin-people.js?v=1"></script><!-- Users + Customers: counts, search, cards/table, profile drawer, account controls -->
     <script src="js/admin-nav.js?v=1"></script><!-- Grouped menu, find-a-page box, keyboard + screen reader support; loads last so it can move every item -->
