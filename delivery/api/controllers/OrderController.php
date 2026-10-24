@@ -458,8 +458,15 @@ case 'courier_update_order_status': {
         $pdo->beginTransaction();
         
         if ($status === 'delivered') {
-            $upd = $pdo->prepare('UPDATE orders SET status=?, delivered_at=NOW() WHERE id=?');
-            $upd->execute(array($status, $order_id));
+            // Sent late from the courier's offline queue: stamp the time it really happened (checked, else now).
+            require_once __DIR__ . '/../lib/offline_sync.php';
+            $when = null;
+            if (isset($body['occurred_at'])) {
+                $pl = $pdo->prepare('SELECT placed_at FROM orders WHERE id=?'); $pl->execute(array($order_id));
+                $when = etel_offline_when($body['occurred_at'], $pl->fetchColumn());
+            }
+            if ($when) { $upd = $pdo->prepare('UPDATE orders SET status=?, delivered_at=? WHERE id=?'); $upd->execute(array($status, $when, $order_id)); }
+            else { $upd = $pdo->prepare('UPDATE orders SET status=?, delivered_at=NOW() WHERE id=?'); $upd->execute(array($status, $order_id)); }
             $pdo->prepare('UPDATE order_assignments SET status="delivered" WHERE order_id=?')->execute(array($order_id));
         } elseif ($status === 'picked_up') {
             $upd = $pdo->prepare('UPDATE orders SET status=? WHERE id=?');
