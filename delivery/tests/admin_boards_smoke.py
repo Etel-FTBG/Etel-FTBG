@@ -161,6 +161,23 @@ def main():
     s, r = call("equb_admin_update_package", {"id": 1, "tier": "diamond"}, admin)
     check("package update refuses an unknown tier", s == 400, (s, r))
 
+    print("7. Search everything")
+    s1, _ = call("admin_global_search", {"q": "ab"})
+    s2, _ = call("admin_global_search", {"q": "ab"}, cust)
+    s3, _ = call("admin_global_search", {"q": "ab"}, cour)
+    check("search: no login, customer and courier refused", s1 in (401, 403) and s2 in (401, 403) and s3 in (401, 403), (s1, s2, s3))
+    s, r = call("admin_global_search", {"q": "a"}, admin)
+    check("a one-letter search returns nothing", s == 200 and (r.get("data") or {}).get("groups") == [], r)
+    s, r = call("admin_global_search", {"q": kname}, admin)
+    d = r.get("data") or {}
+    check("search answers with groups", s == 200 and isinstance(d.get("groups"), list), r)
+    cou = [g for g in d.get("groups") or [] if g.get("key") == "couriers"]
+    check("the new courier is found by name", bool(cou) and any(i.get("title") == kname for i in cou[0]["items"]), d)
+    for g in d.get("groups") or []:
+        check("group %s has a page and items" % g.get("key"), bool(g.get("page")) and isinstance(g.get("items"), list) and len(g["items"]) <= 8, g)
+    s, r = call("admin_global_search", {"q": "50%_\\'\""}, admin)
+    check("search with wildcard and quote characters is safe", s == 200, r)
+
     print("\n%d passed, %d failed" % (len(PASS), len(FAIL)))
     return 1 if FAIL else 0
 

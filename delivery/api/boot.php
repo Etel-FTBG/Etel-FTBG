@@ -1670,6 +1670,9 @@ switch ($action) {
     case 'admin_attention':
         require __DIR__ . '/controllers/AdminAttentionController.php';
         break;
+    case 'admin_global_search':
+        require __DIR__ . '/controllers/GlobalSearchController.php';
+        break;
     case 'admin_orders_board': case 'admin_order_detail':
         require __DIR__ . '/controllers/OrderAdminController.php';
         break;
