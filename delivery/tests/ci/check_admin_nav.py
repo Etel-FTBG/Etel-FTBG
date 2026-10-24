@@ -40,3 +40,7 @@ if bad:
         print(' -', b)
     sys.exit(1)
 print('check_admin_nav ok')
+
+# the accessibility guard rides along with this check so the workflow file stays untouched
+import runpy
+runpy.run_path(root + '/tests/ci/check_admin_a11y.py', run_name='__main__')

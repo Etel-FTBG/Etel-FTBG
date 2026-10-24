@@ -112,7 +112,6 @@ jobs:
           python3 delivery/tests/ci/check_courier_approval.py
           python3 delivery/tests/ci/check_admin_boards.py
           python3 delivery/tests/ci/check_admin_nav.py
-          python3 delivery/tests/ci/check_admin_a11y.py
           python3 delivery/tests/ci/check_status_page.py
           python3 delivery/tests/ci/check_phase0_security.py
           python3 delivery/tests/ci/check_phase1_dispatch.py
