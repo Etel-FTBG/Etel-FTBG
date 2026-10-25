@@ -94,7 +94,7 @@ function etel_sgb_state($pdo, $sgId) {
         $s->execute(array($sgId));
         $items = $s->fetchAll(PDO::FETCH_ASSOC);
     } catch (Exception $e) { error_log('[ETEL] sg business state items: ' . $e->getMessage()); }
-    $today = array('sales' => 0, 'sales_total' => 0.0, 'cash_sales' => 0.0, 'expenses' => 0.0);
+    $today = array('sales' => 0, 'sales_total' => 0.0, 'cash_sales' => 0.0, 'expenses' => 0.0, 'cash_expenses' => 0.0, 'cash_day' => null, 'last_counted' => null);
     try {
         $s = $pdo->prepare("SELECT COUNT(*) n, COALESCE(SUM(total),0) t, COALESCE(SUM(CASE WHEN payment_method='cash' THEN total ELSE 0 END),0) c
                             FROM sg_pos_sales WHERE service_giver_id=? AND status<>'void' AND DATE(occurred_at)=CURDATE()");
@@ -104,6 +104,19 @@ function etel_sgb_state($pdo, $sgId) {
         $s = $pdo->prepare("SELECT COALESCE(SUM(amount),0) FROM sg_expenses WHERE service_giver_id=? AND DATE(occurred_at)=CURDATE()");
         $s->execute(array($sgId));
         $today['expenses'] = round(floatval($s->fetchColumn()), 2);
+        $s = $pdo->prepare("SELECT COALESCE(SUM(amount),0) FROM sg_expenses WHERE service_giver_id=? AND paid_with='cash' AND DATE(occurred_at)=CURDATE()");
+        $s->execute(array($sgId));
+        $today['cash_expenses'] = round(floatval($s->fetchColumn()), 2);
+        // today's closed day (if the till was already counted) and the figure counted last time, to suggest tomorrow's float
+        $s = $pdo->prepare("SELECT business_date, opening_float, expected_cash, counted_cash, difference FROM sg_cash_days WHERE service_giver_id=? AND business_date=CURDATE()");
+        $s->execute(array($sgId));
+        $day = $s->fetch(PDO::FETCH_ASSOC);
+        $today['cash_day'] = $day ? array('business_date' => $day['business_date'], 'opening_float' => floatval($day['opening_float']), 'expected_cash' => floatval($day['expected_cash']),
+                                           'counted_cash' => floatval($day['counted_cash']), 'difference' => floatval($day['difference'])) : null;
+        $s = $pdo->prepare("SELECT counted_cash FROM sg_cash_days WHERE service_giver_id=? ORDER BY business_date DESC LIMIT 1");
+        $s->execute(array($sgId));
+        $last = $s->fetchColumn();
+        $today['last_counted'] = $last === false ? null : floatval($last);
     } catch (Exception $e) { error_log('[ETEL] sg business state totals: ' . $e->getMessage()); }
     return array('items' => $items, 'today' => $today, 'server_now' => gmdate('c'));
 }

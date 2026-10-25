@@ -69,8 +69,8 @@ for a in sorted(used):
         bad.append('data-sgb action %s has no handler' % a)
 if not re.search(r"post\('sg_pos_sync'", ui) or 'sg_business_state' not in ui:
     bad.append('the counter must send sales with sg_pos_sync and read sg_business_state')
-if 'currentServiceGiver.business_tools' not in ui or '!enabled() || !can(def.cap)' not in ui or "cap: 'pos.sell'" not in ui or "cap: 'stock.manage'" not in ui:
-    bad.append('the screens must only show when the tools are on and the person has the right (pos.sell for Sell, stock.manage for Stock)')
+if 'currentServiceGiver.business_tools' not in ui or '!enabled() || !can(def.cap)' not in ui or "cap: 'pos.sell'" not in ui or "cap: 'stock.manage'" not in ui or "cap: 'expenses.manage'" not in ui or "cap: 'cashup.manage'" not in ui:
+    bad.append('the screens must only show when the tools are on and the person has the right (pos.sell, stock.manage, expenses.manage, cashup.manage)')
 if "id = 'sgb-css'" not in ui:
     bad.append('style id sgb-css expected')
 html = read('servicegiver.html')
