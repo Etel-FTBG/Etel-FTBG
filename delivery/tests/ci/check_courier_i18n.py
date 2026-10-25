@@ -40,7 +40,8 @@ import glob
 import os
 # the newest release that carries this add-on must end with the current add-on text; the release just before it must be a prefix of it
 rel = sorted((int(re.search(r'/v(\d+)/', f).group(1)), f) for f in glob.glob(root + '/js/releases/courier/v*/courier-bundle.js'))
-carrying = [(n, f) for n, f in rel if 'courier-i18n.js (added to' in open(f, encoding='utf-8').read()]
+# the release that introduced the add-on (its own header line), not later releases that merely build on it
+carrying = [(n, f) for n, f in rel if 'release v%d: js/courier-i18n.js (added to' % n in open(f, encoding='utf-8').read()]
 if not carrying:
     bad.append('no courier release carries the Amharic add-on yet (build one with tools/build_courier_release.py --addons js/courier-i18n.js)')
 else:
