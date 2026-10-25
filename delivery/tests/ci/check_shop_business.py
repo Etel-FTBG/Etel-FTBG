@@ -42,6 +42,20 @@ for a in ('sg_business_state', 'sg_pos_sync', 'admin_sg_set_business_tools'):
         bad.append(a + ' is not routed in boot.php')
 if "'admin_sg_set_business_tools','sg_pos_sync'" not in boot:
     bad.append('the two write actions must be in ETEL_WRITE_ACTIONS (cache purge)')
+# stock: online orders, history, hooks
+block = ctl.split("case 'sg_stock_history':")[1].split('\ncase ')[0]
+if "'stock.manage'" not in block or 'etel_sgb_enabled' not in block or 'service_giver_id' not in lib.split('function etel_sgb_history')[1]:
+    bad.append('sg_stock_history must need stock.manage + Etel Business and read only this shop')
+if ctl.count('etel_sgb_order_accepted(') < 2:
+    bad.append('both accept_order and update_order_status must call etel_sgb_order_accepted')
+if 'etel_sgb_order_cancelled' not in read('api/lib/order_cancel.php'):
+    bad.append('cancelling an order must put its stock back (etel_sgb_order_cancelled)')
+acc = lib.split('function etel_sgb_order_accepted')[1].split('function etel_sgb_order_cancelled')[0]
+if 'etel_sgb_enabled' not in acc or "FOR UPDATE" not in acc or "reason='online_order'" not in acc:
+    bad.append('etel_sgb_order_accepted must do nothing for shops without the tools and must be applied once per order (lock + ledger check)')
+if "case 'sg_stock_history'" not in boot_txt if (boot_txt := read('api/boot.php')) else True:
+    bad.append('sg_stock_history is not routed in boot.php')
+
 # the counter screen (js/servicegiver-business.js)
 ui = read('js/servicegiver-business.js')
 import subprocess
@@ -55,8 +69,8 @@ for a in sorted(used):
         bad.append('data-sgb action %s has no handler' % a)
 if not re.search(r"post\('sg_pos_sync'", ui) or 'sg_business_state' not in ui:
     bad.append('the counter must send sales with sg_pos_sync and read sg_business_state')
-if 'currentServiceGiver.business_tools' not in ui or "can('pos.sell')" not in ui:
-    bad.append('the counter must only show when the tools are on and the person has pos.sell')
+if 'currentServiceGiver.business_tools' not in ui or '!enabled() || !can(def.cap)' not in ui or "cap: 'pos.sell'" not in ui or "cap: 'stock.manage'" not in ui:
+    bad.append('the screens must only show when the tools are on and the person has the right (pos.sell for Sell, stock.manage for Stock)')
 if "id = 'sgb-css'" not in ui:
     bad.append('style id sgb-css expected')
 html = read('servicegiver.html')

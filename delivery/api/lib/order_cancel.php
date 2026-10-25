@@ -139,6 +139,9 @@ function etel_cancel_order($pdo, $order_id, $role, $actor_id, $reason, $note, $s
             $pdo->commit();
         } catch (Exception $e) { if ($pdo->inTransaction()) $pdo->rollBack(); throw $e; }
 
+        // a shop with Etel Business had these items taken off its stock when it accepted the order: put them back
+        try { require_once __DIR__ . '/sg_business.php'; etel_sgb_order_cancelled($pdo, $order_id); } catch (Exception $e) {} catch (Throwable $e) {}
+
         if ($prevCourier) {
             try { require_once __DIR__ . '/manual_dispatch.php'; etel_dispatch_free_courier($pdo, $prevCourier); } catch (Exception $e) {} catch (Throwable $e) {}
         }

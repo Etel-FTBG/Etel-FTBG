@@ -42,7 +42,7 @@ function etel_sgb_ensure_schema($pdo) {
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
         $pdo->exec("CREATE TABLE IF NOT EXISTS sg_stock_events (
             id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY, service_giver_id INT NOT NULL, item_id INT NOT NULL,
-            delta INT NOT NULL, reason ENUM('sale','online_order','delivery','waste','count','void') NOT NULL,
+            delta INT NOT NULL, reason ENUM('sale','online_order','online_cancel','delivery','waste','count','void') NOT NULL,
             ref_id INT UNSIGNED NULL, client_req_id VARCHAR(64) NULL, user_id INT NULL, occurred_at DATETIME NOT NULL,
             KEY ix_stock_item (service_giver_id, item_id), KEY ix_stock_req (service_giver_id, client_req_id)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
@@ -59,6 +59,11 @@ function etel_sgb_ensure_schema($pdo) {
             closed_by_user_id INT NULL, closed_at DATETIME NOT NULL, client_req_id VARCHAR(64) NULL,
             UNIQUE KEY uq_cash_day (service_giver_id, business_date)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+        // later versions add 'online_cancel' (an accepted online order that was cancelled puts its items back)
+        $col = $pdo->query("SHOW COLUMNS FROM sg_stock_events LIKE 'reason'")->fetch(PDO::FETCH_ASSOC);
+        if ($col && strpos($col['Type'], 'online_cancel') === false) {
+            $pdo->exec("ALTER TABLE sg_stock_events MODIFY COLUMN reason ENUM('sale','online_order','online_cancel','delivery','waste','count','void') NOT NULL");
+        }
     } catch (Exception $e) { error_log('[ETEL] sg business schema: ' . $e->getMessage()); }
 }
 
@@ -269,4 +274,58 @@ function etel_sgb_cashup($pdo, $ctx, $sg, $userId, $reqId, $when, $d) {
     $pdo->prepare('INSERT INTO sg_cash_days (service_giver_id, business_date, opening_float, expected_cash, counted_cash, difference, closed_by_user_id, closed_at, client_req_id) VALUES (?,?,?,?,?,?,?,NOW(),?)')
         ->execute(array($sg, $date, $float, $expected, $counted, round($counted - $expected, 2), $userId, $reqId));
     return array('status' => 'ok', 'message' => 'Day closed', 'expected_cash' => $expected, 'difference' => round($counted - $expected, 2));
+}
+
+
+/* ---- online orders ----
+   When a shop that has Etel Business accepts an online order, the items leave its stock; if that order is later cancelled they go back.
+   Both are applied once per order (the ledger is checked under a lock on the order row), never throw, and do nothing for shops
+   without the business tools, so every other shop keeps behaving exactly as before. */
+function etel_sgb_order_accepted($pdo, $orderId, $sgId) {
+    try {
+        $orderId = intval($orderId); $sgId = intval($sgId);
+        if ($orderId < 1 || $sgId < 1 || !etel_sgb_enabled($pdo, $sgId)) return;
+        $pdo->beginTransaction();
+        $pdo->prepare('SELECT id FROM orders WHERE id=? FOR UPDATE')->execute(array($orderId));
+        $done = $pdo->prepare("SELECT 1 FROM sg_stock_events WHERE service_giver_id=? AND reason='online_order' AND ref_id=? LIMIT 1");
+        $done->execute(array($sgId, $orderId));
+        if ($done->fetchColumn()) { $pdo->commit(); return; }
+        $li = $pdo->prepare('SELECT item_id, SUM(quantity) q FROM order_items WHERE order_id=? GROUP BY item_id');
+        $li->execute(array($orderId));
+        $when = date('Y-m-d H:i:s');
+        foreach ($li->fetchAll(PDO::FETCH_ASSOC) as $l) {
+            if (intval($l['q']) > 0) etel_sgb_move_stock($pdo, $sgId, intval($l['item_id']), -intval($l['q']), 'online_order', $orderId, null, null, $when);
+        }
+        $pdo->commit();
+    } catch (Exception $e) { if ($pdo->inTransaction()) $pdo->rollBack(); error_log('[ETEL] sg business order accepted: ' . $e->getMessage()); }
+}
+
+function etel_sgb_order_cancelled($pdo, $orderId) {
+    try {
+        $orderId = intval($orderId); if ($orderId < 1) return;
+        $has = $pdo->prepare("SELECT DISTINCT service_giver_id FROM sg_stock_events WHERE reason='online_order' AND ref_id=?");
+        $has->execute(array($orderId));
+        $shops = $has->fetchAll(PDO::FETCH_COLUMN);
+        if (!$shops) return;
+        $pdo->beginTransaction();
+        $pdo->prepare('SELECT id FROM orders WHERE id=? FOR UPDATE')->execute(array($orderId));
+        $when = date('Y-m-d H:i:s');
+        foreach ($shops as $sg) {
+            $back = $pdo->prepare("SELECT 1 FROM sg_stock_events WHERE service_giver_id=? AND reason='online_cancel' AND ref_id=? LIMIT 1");
+            $back->execute(array($sg, $orderId));
+            if ($back->fetchColumn()) continue;
+            $ev = $pdo->prepare("SELECT item_id, SUM(-delta) q FROM sg_stock_events WHERE service_giver_id=? AND reason='online_order' AND ref_id=? GROUP BY item_id");
+            $ev->execute(array($sg, $orderId));
+            foreach ($ev->fetchAll(PDO::FETCH_ASSOC) as $l) etel_sgb_move_stock($pdo, intval($sg), intval($l['item_id']), intval($l['q']), 'online_cancel', $orderId, null, null, $when);
+        }
+        $pdo->commit();
+    } catch (Exception $e) { if ($pdo->inTransaction()) $pdo->rollBack(); error_log('[ETEL] sg business order cancelled: ' . $e->getMessage()); }
+}
+
+/* the last movements of one item (newest first), for the Stock screen */
+function etel_sgb_history($pdo, $sgId, $itemId) {
+    etel_sgb_ensure_schema($pdo);
+    $s = $pdo->prepare('SELECT delta, reason, ref_id, occurred_at FROM sg_stock_events WHERE service_giver_id=? AND item_id=? ORDER BY occurred_at DESC, id DESC LIMIT 50');
+    $s->execute(array($sgId, $itemId));
+    return $s->fetchAll(PDO::FETCH_ASSOC);
 }

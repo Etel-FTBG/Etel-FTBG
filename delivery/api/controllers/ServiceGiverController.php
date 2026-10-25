@@ -478,6 +478,8 @@ case 'sg_accept_order': {
     try {
         $upd = $pdo->prepare('UPDATE order_assignments SET status="accepted", accepted_at=NOW() WHERE id=?');
         $upd->execute(array($assign['id']));
+        require_once __DIR__ . '/../lib/sg_business.php';
+        etel_sgb_order_accepted($pdo, $order_id, $sg['id']);   // only does anything for shops with Etel Business
         ok(array('message' => 'Order accepted', 'order_id' => $order_id, 'status' => 'accepted'));
     } catch (Exception $e) {
         fail_ex($e, 'Update failed', 500);
@@ -595,6 +597,8 @@ case 'sg_update_order_status': {
         // correctly stays 'pending' through the whole prep pipeline; it
         // moves to 'assigned' for real when a courier accepts the job.
         $pdo->commit();
+        require_once __DIR__ . '/../lib/sg_business.php';
+        etel_sgb_order_accepted($pdo, $order_id, $sg['id']);   // only does anything for shops with Etel Business
 
         // Notify the customer (and courier, if one already accepted this
         // job) the moment prep is actually done -- this is the "ready for
@@ -2033,6 +2037,25 @@ case 'sg_pos_sync': {
         $results[] = $r;
     }
     ok(array('results' => $results, 'server_now' => gmdate('c')));
+    break;
+}
+
+case 'sg_stock_history': {
+    // POST: item_id. The last 50 stock movements of one item (needs stock.manage and Etel Business).
+    $pdo = db();
+    $auth_user = require_auth($pdo);
+    if ($auth_user['role'] !== 'service_giver') fail('Service giver access required', 403);
+    $ctx = sg_get_context($pdo, $auth_user['id']);
+    if (!$ctx) fail('Service giver profile not found', 404);
+    sg_require_capability($auth_user, $ctx, 'stock.manage');
+    require_once __DIR__ . '/../lib/sg_business.php';
+    if (!etel_sgb_enabled($pdo, $ctx['sg_id'])) fail('Etel Business is not switched on for this shop. Ask Etel to turn it on.', 403);
+    $item_id = isset($body['item_id']) ? intval($body['item_id']) : 0;
+    if ($item_id < 1) fail('item_id is required', 400);
+    $own = $pdo->prepare('SELECT id FROM items WHERE id=? AND service_giver_id=?');
+    $own->execute(array($item_id, $ctx['sg_id']));
+    if (!$own->fetchColumn()) fail('Item not found', 404);
+    ok(array('item_id' => $item_id, 'movements' => etel_sgb_history($pdo, $ctx['sg_id'], $item_id)));
     break;
 }
 
