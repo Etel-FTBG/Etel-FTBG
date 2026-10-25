@@ -43,8 +43,9 @@ d = os.path.join(root, 'img', 'vehicles')
 for f in sorted(os.listdir(d)) if os.path.isdir(d) else []:
     if not f.endswith('.png'):
         continue
-    if f[:-4] not in types:
-        bad.append('img/vehicles/%s is not a known vehicle type (%s)' % (f, ', '.join(types)))
+    base = f[:-4][:-5] if f.endswith('_left.png') else f[:-4]
+    if base not in types:
+        bad.append('img/vehicles/%s is not a known vehicle type or <type>_left.png (%s)' % (f, ', '.join(types)))
     b = open(os.path.join(d, f), 'rb').read()
     if b[:8] != b'\x89PNG\r\n\x1a\n':
         bad.append('img/vehicles/%s is not a PNG' % f)

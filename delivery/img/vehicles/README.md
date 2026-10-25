@@ -13,11 +13,14 @@ you can add them one at a time. Nothing needs to be rebuilt or released: upload 
 | `ev_car.png`  | Electric car (optional: uses `car.png`)   |
 | `minibus.png` | Minibus / van                             |
 
+Optional: `<name>_left.png` (for example `bajaj_left.png`) is the same vehicle **facing left**. On the map a vehicle that drives west
+uses it. Without one the right-facing picture is mirrored, which works but flips any lettering or logo on the vehicle.
+
 Requirements for each picture:
 
 - **PNG with a transparent background** (no white or coloured box around the vehicle).
 - **Three-quarter front view from the front-right, the vehicle facing RIGHT.** On the map a vehicle that moves west is mirrored so it
   always faces the way it travels, which only works if every picture faces the same way.
-- **Square, about 512 x 512 px**, the whole vehicle visible with a little empty margin on every side, centred.
+- **Square, about 448 x 448 px** (anything from 256 to 1024), the whole vehicle visible with a little empty margin on every side, centred.
 - Under 250 KB each (they load on a phone connection). Keep the same viewing angle and light for all of them so they look like a set.
 - No text, plates or people in the picture.

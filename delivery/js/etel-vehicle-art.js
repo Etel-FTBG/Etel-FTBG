@@ -8,8 +8,9 @@
    A type with no picture (or one that fails to load) keeps exactly what the app showed before, so adding or removing a file can never
    leave an empty icon. ev_car uses car.png when it has no picture of its own.
 
-   Pictures: transparent PNG, 3/4 front view, the vehicle facing RIGHT, centred, about 512 x 512 (see img/vehicles/README.md).
-   On the map a vehicle that moves west is mirrored, so it always faces the way it travels. Nothing here uses inline handlers. */
+   Pictures: transparent PNG, 3/4 front view, the vehicle facing RIGHT, centred, about 448 x 448 (see img/vehicles/README.md).
+   Optional: <type>_left.png, the same vehicle facing LEFT. On the map a vehicle that moves west uses it; without one the right-facing
+   picture is mirrored, so it always faces the way it travels. Nothing here uses inline handlers. */
 (function () {
     'use strict';
     if (window.EtelVehicleArt) return;
@@ -17,7 +18,8 @@
     var TYPES = ['bajaj', 'qute', 'moto', 'car', 'ev_car', 'minibus'];
     var src = (document.currentScript && document.currentScript.src) || '';
     var BASE = src ? src.split('?')[0].replace(/js\/[^\/]*$/, 'img/vehicles/') : '../img/vehicles/';
-    var ok = {};        // type -> loaded Image
+    var ok = {};        // type -> loaded Image (facing right)
+    var okL = {};       // type -> loaded Image (facing left, optional)
     var cache = {};     // "type|size|flip" -> icon
     var byUrl = {};     // icon url -> { type, size, flip } (so a marker's icon can be recognised again)
 
@@ -40,6 +42,12 @@
         if (ok[n]) return n;
         return (n === 'ev_car' && ok.car) ? 'car' : null;
     }
+    /* the picture to draw: the left-facing one when asked for and there is one, else the right-facing one (mirrored when left was asked for) */
+    function pickImage(type, left) {
+        var n = pick(type); if (!n) return null;
+        if (left && okL[n]) return { img: okL[n], mirror: false };
+        return { img: ok[n], mirror: !!left };
+    }
     function ready(type) { return !!pick(type); }
     function url(type) { var n = pick(type); return n ? ok[n].src : null; }
     function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
@@ -53,14 +61,15 @@
     function marker(type, opts) {
         var n = pick(type); if (!n || !window.google || !google.maps) return null;
         opts = opts || {};
+        if (opts.flip) wantLeft();
         var size = Math.max(32, Math.round(opts.size || 60)), flip = !!opts.flip, key = n + '|' + size + '|' + (flip ? 1 : 0);
         if (cache[key]) return cache[key];
         try {
-            var img = ok[n], S = size * 2, c = document.createElement('canvas'); c.width = S; c.height = S;
+            var pk = pickImage(n, flip), img = pk.img, S = size * 2, c = document.createElement('canvas'); c.width = S; c.height = S;
             var g = c.getContext('2d'), pad = S * 0.08, box = S - pad * 2, k = Math.min(box / img.naturalWidth, box / img.naturalHeight);
             var w = img.naturalWidth * k, h = img.naturalHeight * k;
             g.shadowColor = 'rgba(0,0,0,.45)'; g.shadowBlur = S * 0.05; g.shadowOffsetY = S * 0.02;
-            if (flip) { g.translate(S, 0); g.scale(-1, 1); }
+            if (pk.mirror) { g.translate(S, 0); g.scale(-1, 1); }
             g.drawImage(img, (S - w) / 2, (S - h) / 2, w, h);
             var u = c.toDataURL('image/png');
             byUrl[u] = { type: n, size: size, flip: flip };
@@ -106,18 +115,22 @@
     })();
 
     /* ---- the pictures themselves ---- */
-    function probe() {
-        TYPES.forEach(function (t) {
-            var im = new Image();
-            im.onload = function () {
-                if (!im.naturalWidth) return;
-                ok[t] = im;
-                try { document.dispatchEvent(new CustomEvent('etel:vehicle-art', { detail: { type: t } })); } catch (e) {}
-            };
-            im.onerror = function () { delete ok[t]; };
-            im.src = BASE + t + '.png';
-        });
+    /* The right-facing pictures load once the page itself has finished (they are the ones the list and the map need). The left-facing ones are
+       bigger in total than they are useful, so they are fetched only when a vehicle first moves west; until they arrive it is mirrored. */
+    var leftStarted = false;
+    function load(t, left) {
+        var im = new Image(), reg = left ? okL : ok;
+        im.onload = function () {
+            if (!im.naturalWidth) return;
+            reg[t] = im;
+            if (left) { Object.keys(cache).forEach(function (k) { if (/\|1$/.test(k)) delete cache[k]; }); }   // mirrored icons made meanwhile are replaced next time
+            try { document.dispatchEvent(new CustomEvent('etel:vehicle-art', { detail: { type: t, left: left } })); } catch (e) {}
+        };
+        im.onerror = function () { delete reg[t]; };
+        im.src = BASE + t + (left ? '_left' : '') + '.png';
     }
+    function probe() { TYPES.forEach(function (t) { load(t, false); }); }
+    function wantLeft() { if (leftStarted) return; leftStarted = true; TYPES.forEach(function (t) { if (ok[t]) load(t, true); }); }
     function css() {
         if (document.getElementById('etel-vart-css')) return;
         var s = document.createElement('style'); s.id = 'etel-vart-css';
@@ -128,7 +141,9 @@
             '.vtype-chip.vt-art .vt-icon{width:64px;height:48px}';
         (document.head || document.documentElement).appendChild(s);
     }
-    css(); probe();
+    css();
+    if (document.readyState === 'complete') setTimeout(probe, 300);
+    else window.addEventListener('load', function () { setTimeout(probe, 300); });
 
     window.EtelVehicleArt = { ready: ready, url: url, html: html, marker: marker, types: TYPES.slice() };
 })();
