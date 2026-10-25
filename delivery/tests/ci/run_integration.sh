@@ -54,6 +54,7 @@ run python3 tests/ride_tip_smoke.py
 run python3 tests/hub_counts_smoke.py
 run python3 tests/ride_sse_once_smoke.py
 run python3 tests/ride_statement_smoke.py
+run python3 tests/ride_meter_smoke.py
 run python3 tests/ride_payments_smoke.py
 run python3 tests/ride_offer_price_smoke.py
 run python3 tests/request_id_beacon_smoke.py

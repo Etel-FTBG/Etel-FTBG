@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { Animated, Pressable, StyleSheet, View } from 'react-native';
 import * as Updates from 'expo-updates';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text } from '../i18n';
 import { useTheme } from '../theme/ThemeContext';
 import { success } from '../utils/haptics';
@@ -9,6 +10,7 @@ import { success } from '../utils/haptics';
 // When a new version has been downloaded in the background, offer a one-tap restart into it.
 export default function UpdateBanner() {
   const { p } = useTheme();
+  const insets = useSafeAreaInsets();
   const { isUpdatePending } = Updates.useUpdates();
   const y = useRef(new Animated.Value(-80)).current;
 
@@ -21,7 +23,7 @@ export default function UpdateBanner() {
 
   if (!isUpdatePending) return null;
   return (
-    <Animated.View style={[styles.wrap, { transform: [{ translateY: y }] }]}>
+    <Animated.View style={[styles.wrap, { top: Math.max(insets.top, 24) + 20, transform: [{ translateY: y }] }]}>
       <View style={[styles.bar, { backgroundColor: p.surface, borderColor: p.gold }]}>
         <Ionicons name="sparkles" size={18} color={p.gold} />
         <Text style={[styles.msg, { color: p.text }]}>A new version is ready</Text>

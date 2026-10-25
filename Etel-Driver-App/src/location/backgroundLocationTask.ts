@@ -30,6 +30,13 @@ let courierLocation = false;
 export function setCourierLocationEnabled(on: boolean) {
   courierLocation = on;
 }
+// True while the web Driver app is open on screen. It reports its own position every 5 s (with the phone's GPS speed), so the native task
+// stays quiet then: two different position sources interleaved on one trip made the meter count kilometres and stop the waiting clock
+// while the vehicle stood still. When the app goes to the background the web page stops, and the native task takes over again.
+let webDriverForeground = false;
+export function setWebDriverForeground(on: boolean) {
+  webDriverForeground = on;
+}
 export function setActiveRideIdForLocationTask(rideId: number | undefined) {
   currentRideId = rideId;
 }
@@ -44,12 +51,14 @@ TaskManager.defineTask(LOCATION_TASK_NAME, async ({ data, error }) => {
   if (!last) return;
 
   try {
-    await updateLocation(
-      last.coords.latitude,
-      last.coords.longitude,
-      last.coords.accuracy ?? 999,
-      currentRideId
-    );
+    if (!webDriverForeground) {
+      await updateLocation(
+        last.coords.latitude,
+        last.coords.longitude,
+        last.coords.accuracy ?? 999,
+        currentRideId
+      );
+    }
   } catch (e) {
     // Swallow — a single missed ping isn't fatal, the next ~5s tick will retry.
     // (Matches the web app's tolerance for gaps: RideController.php caps
