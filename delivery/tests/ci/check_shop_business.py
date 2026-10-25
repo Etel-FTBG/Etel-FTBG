@@ -8,7 +8,7 @@ read = lambda p: open(root + '/' + p, encoding='utf-8').read()
 bad = []
 lib = read('api/lib/sg_business.php')
 ctl = read('api/controllers/ServiceGiverController.php')
-mig = read('api/migrations/093_sg_business.sql') + read('api/migrations/094_sg_business_audit.sql')
+mig = read('api/migrations/093_sg_business.sql') + read('api/migrations/094_sg_business_audit.sql') + read('api/migrations/095_sg_expense_void.sql')
 
 if re.search(r"\$(body|_GET|_POST|_REQUEST)\b", lib):
     bad.append('sg_business.php must not read the request: the shop id comes from the account (sg_get_context)')
@@ -41,12 +41,20 @@ if re.search(r"(UPDATE|DELETE\s+FROM)\s+`?sg_business_audit`?\b", lib + ctl, re.
 for must in ('etel_sgb_throttle($pdo, $auth_user[\'id\'], \'sync\'', 'etel_sgb_throttle($pdo, $auth_user[\'id\'], \'report\''):
     if must not in ctl:
         bad.append('missing request limit: ' + must)
-for fn in ('etel_sgb_void', 'etel_sgb_cashup', 'etel_sgb_stock'):
+for fn in ('etel_sgb_void', 'etel_sgb_expense_void', 'etel_sgb_cashup', 'etel_sgb_stock'):
     m = re.search(r'function %s\(.*?\n}\n' % fn, lib, re.S)
     if not m or 'etel_sgb_audit(' not in m.group(0):
         bad.append(fn + ' must write to the activity log')
 if "etel_sgb_audit($pdo, $id, $u['id']" not in ctl:
     bad.append('switching the business tools must be written to the activity log')
+m = re.search(r'function etel_sgb_expense_void\(.*?\n}\n', lib, re.S)
+if not m or "etel_sgb_cap($ctx, 'expenses.manage')" not in m.group(0) or 'etel_sgb_day_closed' not in m.group(0):
+    bad.append('etel_sgb_expense_void must need expenses.manage and refuse counted days')
+if re.search(r"DELETE\s+FROM\s+`?sg_expenses", lib, re.I):
+    bad.append('expenses are cancelled (status=void), never deleted')
+for q in re.findall(r'SUM\(amount\)[^"]*FROM sg_expenses[^"]*', lib):
+    if "status='active'" not in q:
+        bad.append('every sum over sg_expenses must count only active rows: ' + q[:60])
 boot = read('api/boot.php')
 rep = ctl.split("case 'sg_business_report':")[1].split('\ncase ')[0]
 if "'reports.view'" not in rep or "'payments.view'" not in rep:

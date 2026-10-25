@@ -32,7 +32,9 @@ var I18N = {
     norep: 'Nothing recorded in this period.', repfail: 'Could not load the report (needs internet).', vdisc: 'Discounts given', vvoid: 'Cancelled sales', repnote: 'Online orders count item prices of delivered orders only.', orders_n: 'orders',
     activity: 'Activity log', activitysub: 'What was cancelled, discounted, counted or refused. Entries cannot be edited or deleted.', noact: 'Nothing to show yet.', by_: 'by',
     a_sale_void: 'Sale cancelled', a_big_discount: 'Big discount', a_stock_waste: 'Waste recorded', a_stock_count: 'Stock counted', a_stock_delivery: 'Delivery received', a_cashup: 'Day closed', a_big_expense: 'Big expense',
-    a_late_entry: 'Added to a counted day', a_denied: 'Not allowed', a_limit: 'Daily limit reached', a_tools_on: 'Etel Business switched on', a_tools_off: 'Etel Business switched off' },
+    a_late_entry: 'Added to a counted day', a_denied: 'Not allowed', a_limit: 'Daily limit reached', a_tools_on: 'Etel Business switched on', a_tools_off: 'Etel Business switched off', a_expense_void: 'Expense cancelled',
+    cancelexp: 'Cancel', fixexp: 'Correct', confirmexpvoid: 'Cancel this expense? It stays in the activity log.', fixing: 'You are correcting the expense of', fixing2: 'Saving replaces it.', stopfix: 'Keep the old one',
+    exprecent: 'Recent expenses' },
   am: { sell: 'ሽያጭ', sub: 'ለቆጣሪ ሽያጭ። ያለ ኢንተርኔት ይሰራል።', search: 'ዕቃ ፈልግ', other: 'ሌላ መጠን', cart: 'አሁን ያለው ሽያጭ', empty: 'ለመጨመር ዕቃ ይንኩ።',
     subtotal: 'ንዑስ ድምር', discount: 'ቅናሽ (ብር)', total: 'ጠቅላላ', pay: 'ክፍያ', cash: 'ጥሬ ገንዘብ', mobile: 'ሞባይል ገንዘብ', credit: 'በኋላ የሚከፈል', cname: 'የደንበኛ ስም',
     cphone: 'የደንበኛ ስልክ (አማራጭ)', charge: 'ክፈል', clear: 'አጥፋ', recent: 'የዛሬ ሽያጮች', none: 'ዛሬ ገና ሽያጭ የለም።', void: 'ሽያጩን ሰርዝ', voided: 'ተሰርዟል',
@@ -54,7 +56,9 @@ var I18N = {
     norep: 'በዚህ ጊዜ ምንም አልተመዘገበም።', repfail: 'ሪፖርቱን መጫን አልተቻለም (ኢንተርኔት ያስፈልጋል)።', vdisc: 'የተሰጠ ቅናሽ', vvoid: 'የተሰረዙ ሽያጮች', repnote: 'የመስመር ላይ ትዕዛዞች የደረሱትን ትዕዛዝ የዕቃ ዋጋ ብቻ ይቆጥራሉ።', orders_n: 'ትዕዛዞች',
     activity: 'የእንቅስቃሴ መዝገብ', activitysub: 'የተሰረዘ፣ የተቀነሰ፣ የተቆጠረ ወይም ውድቅ የተደረገ። ግቤቶች ሊስተካከሉ ወይም ሊሰረዙ አይችሉም።', noact: 'ገና የሚታይ ነገር የለም።', by_: 'በ',
     a_sale_void: 'ሽያጭ ተሰርዟል', a_big_discount: 'ትልቅ ቅናሽ', a_stock_waste: 'ብክነት ተመዝግቧል', a_stock_count: 'ክምችት ተቆጥሯል', a_stock_delivery: 'ዕቃ ተቀብሏል', a_cashup: 'ቀኑ ተዘግቷል', a_big_expense: 'ትልቅ ወጪ',
-    a_late_entry: 'ወደ ተቆጠረ ቀን ተጨመረ', a_denied: 'አልተፈቀደም', a_limit: 'የቀን ገደብ ደርሷል', a_tools_on: 'Etel Business ተከፍቷል', a_tools_off: 'Etel Business ተዘግቷል' }
+    a_late_entry: 'ወደ ተቆጠረ ቀን ተጨመረ', a_denied: 'አልተፈቀደም', a_limit: 'የቀን ገደብ ደርሷል', a_tools_on: 'Etel Business ተከፍቷል', a_tools_off: 'Etel Business ተዘግቷል', a_expense_void: 'ወጪ ተሰርዟል',
+    cancelexp: 'ሰርዝ', fixexp: 'አስተካክል', confirmexpvoid: 'ይህን ወጪ ይሰርዙ? በእንቅስቃሴ መዝገብ ውስጥ ይቀራል።', fixing: 'እያስተካከሉ ያሉት የወጪ መጠን', fixing2: 'ሲያስቀምጡ ይተካዋል።', stopfix: 'አሮጌውን ይተው',
+    exprecent: 'የቅርብ ጊዜ ወጪዎች' }
 };
 function t(k) { var l = 'en'; try { l = (typeof ETEL_I18N !== 'undefined' && ETEL_I18N.current()) || 'en'; } catch (e) {} return (I18N[l] && I18N[l][k]) || I18N.en[k] || k; }
 function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
@@ -69,7 +73,7 @@ function key(n) { return 'etel_biz_' + n + '_' + me(); }
 function load(n, dflt) { var k = key(n); if (mem[k] !== undefined) return mem[k]; try { var v = localStorage.getItem(k); if (v) { mem[k] = JSON.parse(v); return mem[k]; } } catch (e) {} mem[k] = dflt; return dflt; }
 function save(n, v) { var k = key(n); mem[k] = v; try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
 
-var S = { cart: [], pay: 'cash', discount: '', cname: '', cphone: '', q: '', flushing: false, offset: 0, msg: '', other: false, sq: '', stockEdit: null, hist: null, ex: { cat: 'supplies', amount: '', paid: 'cash', note: '' }, cf: '', cc: '', rep: { range: '7', group: 'day', data: null, at: 0, loading: false, err: '', stale: false } };
+var S = { cart: [], pay: 'cash', discount: '', cname: '', cphone: '', q: '', flushing: false, offset: 0, msg: '', other: false, sq: '', stockEdit: null, hist: null, ex: { cat: 'supplies', amount: '', paid: 'cash', note: '' }, fixOf: '', cf: '', cc: '', rep: { range: '7', group: 'day', data: null, at: 0, loading: false, err: '', stale: false } };
 function outbox() { return load('outbox', []); }
 function recent() { return load('recent', []); }
 function cache() { return load('state', { at: 0, items: [], today: null }); }
@@ -227,7 +231,7 @@ function css() {
     '.sgb-bar.warn{border-color:var(--warning)}.sgb-bar.bad{border-color:var(--danger)}.sgb-x{color:#ff8a98;font-size:12.5px}' +
     '.sgb-field{display:block;width:100%;margin:6px 0}.sgb-pay{display:flex;gap:6px;margin:8px 0}.sgb-pay label{flex:1;text-align:center;border:1.5px solid var(--border-lt);border-radius:var(--r-sm);padding:9px 4px;cursor:pointer;font-size:13px}' +
     '.sgb-pay input{position:absolute;opacity:0}.sgb-pay input:checked+span{color:var(--gold-lt);font-weight:800}.sgb-pay label:focus-within{outline:2px solid var(--gold-lt)}' +
-    '.sgb-rec{display:flex;justify-content:space-between;gap:8px;padding:8px 0;border-bottom:1px solid var(--border);font-size:13.5px;align-items:center}.sgb-rec.v{opacity:.55;text-decoration:line-through}' +
+    '.sgb-rec{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px;padding:8px 0;border-bottom:1px solid var(--border);font-size:13.5px;align-items:center}.sgb-rec.v{color:var(--text-dim);text-decoration:line-through}' +
     '#sgb-rc{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px}.sgb-rcbox{background:#1c1204;color:var(--text);border:1px solid var(--border-lt);border-radius:14px;padding:18px;max-width:380px;width:100%;max-height:90vh;overflow:auto}' +
     '.sgb-srow{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;padding:10px 0;border-bottom:1px solid var(--border)}.sgb-srow .n{flex:1;min-width:140px}.sgb-srow .n small{display:block;color:var(--text-dim)}.sgb-srow .lv{min-width:90px}' +
     '.sgb-sed{padding:8px 0 12px;border-bottom:1px solid var(--border)}.sgb-chip{font-size:11.5px;border:1px solid var(--border-lt);border-radius:99px;padding:1px 8px}.sgb-chip.low{border-color:var(--warning);color:var(--warning)}.sgb-chip.out{border-color:var(--danger);color:var(--danger)}.sgb-lv{font-size:18px}.sgb-lv.low{color:var(--warning)}.sgb-lv.out{color:var(--danger)}' +
@@ -346,6 +350,11 @@ function cashNow() {
     else if (e.type === 'expense' && e.data.paid_with === 'cash') exp += Number(e.data.amount) || 0;
   });
   outbox().forEach(function (e) {
+    if (e.type !== 'expense_void') return;
+    var r = expList().filter(function (x) { return x.req_id === e.data.expense_req_id; })[0];
+    if (r && r.paid === 'cash' && new Date(r.at).toDateString() === today) exp -= r.amount;
+  });
+  outbox().forEach(function (e) {
     if (e.type !== 'void') return;
     var s = recent().filter(function (r) { return r.req_id === e.data.sale_req_id; })[0];
     if (s && s.method === 'cash' && new Date(s.at).toDateString() === today) cash -= s.total;
@@ -366,16 +375,22 @@ function paintExpenses() {
   var root = document.getElementById('sgb-exp'); if (!root) return;
   css();
   var cats = ['supplies', 'rent', 'electricity', 'wages', 'transport', 'other'], today = new Date().toDateString();
-  var list = expList().filter(function (r) { return new Date(r.at).toDateString() === today; }), total = list.reduce(function (a, r) { return a + r.amount; }, 0);
+  var all = expList().filter(function (r) { return Date.now() - r.at < 3 * 86400000; }), total = all.filter(function (r) { return !r.voided && new Date(r.at).toDateString() === today; }).reduce(function (a, r) { return a + r.amount; }, 0);
+  var fixRow = S.fixOf ? expList().filter(function (r) { return r.req_id === S.fixOf; })[0] : null;
   root.innerHTML = syncBar() + '<div class="sgb-wrap"><div class="card"><div class="card-body">' +
     '<label for="sgb-ec">' + esc(t('category')) + '</label><select id="sgb-ec" class="field-input sgb-field">' + cats.map(function (c) { return '<option value="' + c + '"' + (S.ex.cat === c ? ' selected' : '') + '>' + esc(t('c_' + c)) + '</option>'; }).join('') + '</select>' +
     '<label for="sgb-ea">' + esc(t('amount')) + '</label><input id="sgb-ea" class="field-input sgb-field" inputmode="decimal" value="' + esc(S.ex.amount) + '">' +
     '<div class="sgb-pay" role="radiogroup" aria-label="' + esc(t('paidwith')) + '">' + ['cash', 'mobile'].map(function (m) { return '<label><input type="radio" name="sgb-ep" value="' + m + '"' + (S.ex.paid === m ? ' checked' : '') + '><span>' + esc(t(m)) + '</span></label>'; }).join('') + '</div>' +
     '<label for="sgb-en">' + esc(t('note')) + '</label><input id="sgb-en" class="field-input sgb-field" maxlength="200" value="' + esc(S.ex.note) + '">' +
     (S.msg && !outbox().length ? '<p class="sgb-x" role="alert">' + esc(S.msg) + '</p>' : '') +
+    (fixRow ? '<p class="sgb-bar warn" role="status">' + esc(t('fixing') + ' ETB ' + money(fixRow.amount) + '. ' + t('fixing2')) + ' <button type="button" class="btn btn-secondary sgb-btn" data-sgb="ex-nofix">' + esc(t('stopfix')) + '</button></p>' : '') +
     '<div class="sgb-row" style="margin-top:12px"><button type="button" class="btn btn-primary" style="flex:1;min-height:48px" data-sgb="ex-add">' + esc(t('addexp')) + '</button></div></div></div>' +
-    '<div class="card"><div class="card-body"><h3 style="margin:0 0 8px">' + esc(t('exptoday')) + ' · ETB ' + esc(money(total)) + '</h3>' +
-    (list.length ? list.map(function (r) { return '<div class="sgb-rec"><span>' + esc(hhmm(r.at)) + ' · ' + esc(t('c_' + r.cat)) + ' · ' + esc(t(r.paid)) + (r.note ? ' · ' + esc(r.note) : '') + ' · ' + esc(r.synced ? t('sentok') : t('unsent')) + '</span><b>ETB ' + esc(money(r.amount)) + '</b></div>'; }).join('') : '<p class="empty-msg">' + esc(t('noexp')) + '</p>') +
+    '<div class="card"><div class="card-body"><h3 style="margin:0 0 8px">' + esc(t('exptoday')) + ' · ETB ' + esc(money(total)) + '</h3><p class="sgb-x" style="color:var(--text-dim);margin:0 0 6px">' + esc(t('exprecent')) + '</p>' +
+    (all.length ? all.map(function (r) {
+      var day = new Date(r.at).toDateString() === today ? '' : new Date(r.at).toLocaleDateString() + ' ';
+      return '<div class="sgb-rec' + (r.voided ? ' v' : '') + '"><span>' + esc(day + hhmm(r.at)) + ' · ' + esc(t('c_' + r.cat)) + ' · ' + esc(t(r.paid)) + (r.note ? ' · ' + esc(r.note) : '') + ' · ' + esc(r.voided ? t('voided') : (r.synced ? t('sentok') : t('unsent'))) + '</span><span><b>ETB ' + esc(money(r.amount)) + '</b>' +
+        (r.voided ? '' : ' <button type="button" class="btn btn-secondary sgb-btn" data-sgb="ex-fix" data-id="' + esc(r.req_id) + '">' + esc(t('fixexp')) + '</button> <button type="button" class="btn btn-secondary sgb-btn" data-sgb="ex-void" data-id="' + esc(r.req_id) + '">' + esc(t('cancelexp')) + '</button>') + '</span></div>';
+    }).join('') : '<p class="empty-msg">' + esc(t('noexp')) + '</p>') +
     '</div></div></div>';
 }
 function addExpense() {
@@ -384,7 +399,21 @@ function addExpense() {
   var ev = { type: 'expense', req_id: uid(), occurred_at: nowIso(), data: { category: S.ex.cat, amount: Math.round(a * 100) / 100, paid_with: S.ex.paid, note: S.ex.note.trim() } };
   var ob = outbox(); ob.push(ev); save('outbox', ob);
   var l = expList(); l.unshift({ req_id: ev.req_id, at: Date.now(), cat: ev.data.category, amount: ev.data.amount, paid: ev.data.paid_with, note: ev.data.note, synced: 0 }); save('exp', l.slice(0, 80));
+  if (S.fixOf) { voidExpense(S.fixOf, true); S.fixOf = ''; }
   S.ex.amount = ''; S.ex.note = ''; S.msg = ''; paint(); flush(false);
+}
+/* cancels an expense. One that was never sent just disappears from the phone; a sent one is cancelled in Etel's books (and stays in the activity log) */
+function voidExpense(reqId, quiet) {
+  var l = expList(), row = l.filter(function (r) { return r.req_id === reqId; })[0]; if (!row || row.voided) return;
+  if (!quiet && !window.confirm(t('confirmexpvoid'))) return;
+  var ob = outbox(), pending = ob.filter(function (e) { return e.type === 'expense' && e.req_id === reqId; })[0];
+  if (pending && (!S.flushing || pending.failed)) {
+    save('outbox', ob.filter(function (e) { return e.req_id !== reqId; })); save('exp', l.filter(function (r) { return r.req_id !== reqId; }));
+  } else {
+    ob.push({ type: 'expense_void', req_id: uid(), occurred_at: nowIso(), data: { expense_req_id: reqId } }); save('outbox', ob);
+    row.voided = 1; save('exp', l);
+  }
+  if (!quiet) { paint(); flush(false); }
 }
 function paintCashup() {
   var root = document.getElementById('sgb-cash'); if (!root) return;
@@ -549,6 +578,12 @@ function onClick(e) {
   else if (a === 'st-cancel') { S.stockEdit = null; paint(); }
   else if (a === 'st-hist') showHist(id);
   else if (a === 'ex-add') addExpense();
+  else if (a === 'ex-void') voidExpense(id);
+  else if (a === 'ex-nofix') { S.fixOf = ''; paint(); }
+  else if (a === 'ex-fix') {
+    var fr = expList().filter(function (r) { return r.req_id === id; })[0];
+    if (fr) { S.fixOf = id; S.ex = { cat: fr.cat, amount: String(fr.amount), paid: fr.paid, note: fr.note || '' }; paint(); var fa = document.getElementById('sgb-ea'); if (fa) { fa.focus(); try { fa.select(); } catch (x) {} } }
+  }
   else if (a === 'close-day') closeDay();
   else if (a === 'rep-range') { S.rep.range = b.getAttribute('data-v'); loadReport(); }
   else if (a === 'rep-group') { S.rep.group = b.getAttribute('data-v'); paintReport(); }

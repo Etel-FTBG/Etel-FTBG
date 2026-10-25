@@ -54,6 +54,7 @@ function etel_sgb_ensure_schema($pdo) {
             id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY, service_giver_id INT NOT NULL, client_req_id VARCHAR(64) NOT NULL,
             category VARCHAR(30) NOT NULL, amount DECIMAL(12,2) NOT NULL, paid_with ENUM('cash','mobile') NOT NULL DEFAULT 'cash',
             note VARCHAR(200) NULL, user_id INT NULL, occurred_at DATETIME NOT NULL,
+            status ENUM('active','void') NOT NULL DEFAULT 'active', voided_at DATETIME NULL, voided_by_user_id INT NULL,
             UNIQUE KEY uq_exp_req (service_giver_id, client_req_id), KEY ix_exp_day (service_giver_id, occurred_at)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
         $pdo->exec("CREATE TABLE IF NOT EXISTS sg_cash_days (
@@ -63,6 +64,10 @@ function etel_sgb_ensure_schema($pdo) {
             closed_by_user_id INT NULL, closed_at DATETIME NOT NULL, client_req_id VARCHAR(64) NULL,
             UNIQUE KEY uq_cash_day (service_giver_id, business_date)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+        // expenses can be cancelled (never deleted) since the corrections release
+        if (!$pdo->query("SHOW COLUMNS FROM sg_expenses LIKE 'status'")->fetch()) {
+            $pdo->exec("ALTER TABLE sg_expenses ADD COLUMN status ENUM('active','void') NOT NULL DEFAULT 'active', ADD COLUMN voided_at DATETIME NULL, ADD COLUMN voided_by_user_id INT NULL");
+        }
         // the activity log: append-only, nothing in the code updates or deletes a row
         $pdo->exec("CREATE TABLE IF NOT EXISTS sg_business_audit (
             id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY, service_giver_id INT NOT NULL, user_id INT NULL,
@@ -111,10 +116,10 @@ function etel_sgb_state($pdo, $sgId) {
         $s->execute(array($sgId));
         $r = $s->fetch(PDO::FETCH_ASSOC);
         $today['sales'] = intval($r['n']); $today['sales_total'] = round(floatval($r['t']), 2); $today['cash_sales'] = round(floatval($r['c']), 2);
-        $s = $pdo->prepare("SELECT COALESCE(SUM(amount),0) FROM sg_expenses WHERE service_giver_id=? AND DATE(occurred_at)=CURDATE()");
+        $s = $pdo->prepare("SELECT COALESCE(SUM(amount),0) FROM sg_expenses WHERE service_giver_id=? AND status='active' AND DATE(occurred_at)=CURDATE()");
         $s->execute(array($sgId));
         $today['expenses'] = round(floatval($s->fetchColumn()), 2);
-        $s = $pdo->prepare("SELECT COALESCE(SUM(amount),0) FROM sg_expenses WHERE service_giver_id=? AND paid_with='cash' AND DATE(occurred_at)=CURDATE()");
+        $s = $pdo->prepare("SELECT COALESCE(SUM(amount),0) FROM sg_expenses WHERE service_giver_id=? AND status='active' AND paid_with='cash' AND DATE(occurred_at)=CURDATE()");
         $s->execute(array($sgId));
         $today['cash_expenses'] = round(floatval($s->fetchColumn()), 2);
         // today's closed day (if the till was already counted) and the figure counted last time, to suggest tomorrow's float
@@ -146,6 +151,7 @@ function etel_sgb_apply_event($pdo, $ctx, $userId, $ev) {
             case 'sale':    $r = etel_sgb_sale($pdo, $ctx, $sg, $userId, $reqId, $when, $d); break;
             case 'void':    $r = etel_sgb_void($pdo, $ctx, $sg, $userId, $reqId, $when, $d); break;
             case 'stock':   $r = etel_sgb_stock($pdo, $ctx, $sg, $userId, $reqId, $when, $d); break;
+            case 'expense_void': $r = etel_sgb_expense_void($pdo, $ctx, $sg, $userId, $reqId, $when, $d); break;
             case 'expense': $r = etel_sgb_expense($pdo, $ctx, $sg, $userId, $reqId, $when, $d); break;
             case 'cashup':  $r = etel_sgb_cashup($pdo, $ctx, $sg, $userId, $reqId, $when, $d); break;
             default:        $r = array('status' => 'error', 'message' => 'Unknown event type');
@@ -325,6 +331,21 @@ function etel_sgb_expense($pdo, $ctx, $sg, $userId, $reqId, $when, $d) {
     return array('status' => 'ok', 'message' => 'Expense saved');
 }
 
+/* cancels an expense (the row stays, marked void, so the books and the activity log keep the whole story) */
+function etel_sgb_expense_void($pdo, $ctx, $sg, $userId, $reqId, $when, $d) {
+    if (!etel_sgb_cap($ctx, 'expenses.manage')) return etel_sgb_denied('expenses.manage');
+    $target = isset($d['expense_req_id']) ? (string) $d['expense_req_id'] : '';
+    $s = $pdo->prepare('SELECT id, status, category, amount, occurred_at FROM sg_expenses WHERE service_giver_id=? AND client_req_id=? FOR UPDATE');
+    $s->execute(array($sg, $target));
+    $e = $s->fetch(PDO::FETCH_ASSOC);
+    if (!$e) return array('status' => 'error', 'message' => 'That expense was not found (it may not have synced yet)');
+    if ($e['status'] === 'void') return array('status' => 'dup', 'message' => 'Already cancelled');
+    if (etel_sgb_day_closed($pdo, $sg, $e['occurred_at'])) return array('status' => 'error', 'message' => 'That day is already counted, so its expenses can no longer be cancelled. Ask Etel to correct it.');
+    $pdo->prepare("UPDATE sg_expenses SET status='void', voided_at=?, voided_by_user_id=? WHERE id=?")->execute(array($when, $userId, $e['id']));
+    etel_sgb_audit($pdo, $sg, $userId, 'expense_void', $target, 'Cancelled ' . $e['category'] . ' expense of ETB ' . number_format(floatval($e['amount']), 2), $when);
+    return array('status' => 'ok', 'message' => 'Expense cancelled');
+}
+
 function etel_sgb_cashup($pdo, $ctx, $sg, $userId, $reqId, $when, $d) {
     if (!etel_sgb_cap($ctx, 'cashup.manage')) return etel_sgb_denied('cashup.manage');
     $date = isset($d['business_date']) ? (string) $d['business_date'] : '';
@@ -338,7 +359,7 @@ function etel_sgb_cashup($pdo, $ctx, $sg, $userId, $reqId, $when, $d) {
     if ($existing) return array('status' => $existing['client_req_id'] === $reqId ? 'dup' : 'error', 'message' => $existing['client_req_id'] === $reqId ? 'Already saved' : 'That day is already closed');
     $cs = $pdo->prepare("SELECT COALESCE(SUM(total),0) FROM sg_pos_sales WHERE service_giver_id=? AND payment_method='cash' AND status='paid' AND DATE(occurred_at)=?");
     $cs->execute(array($sg, $date));
-    $ce = $pdo->prepare("SELECT COALESCE(SUM(amount),0) FROM sg_expenses WHERE service_giver_id=? AND paid_with='cash' AND DATE(occurred_at)=?");
+    $ce = $pdo->prepare("SELECT COALESCE(SUM(amount),0) FROM sg_expenses WHERE service_giver_id=? AND status='active' AND paid_with='cash' AND DATE(occurred_at)=?");
     $ce->execute(array($sg, $date));
     $expected = round($float + floatval($cs->fetchColumn()) - floatval($ce->fetchColumn()), 2);
     $pdo->prepare('INSERT INTO sg_cash_days (service_giver_id, business_date, opening_float, expected_cash, counted_cash, difference, closed_by_user_id, closed_at, client_req_id) VALUES (?,?,?,?,?,?,?,NOW(),?)')
@@ -432,7 +453,7 @@ function etel_sgb_report($pdo, $sgId, $from, $to) {
         $k = $day($r['d']); $days[$k]['online_orders'] += intval($r['n']); $days[$k]['online'] += floatval($r['t']);
         $tot['online_orders'] += intval($r['n']); $tot['online'] += floatval($r['t']);
     }
-    $s = $pdo->prepare("SELECT DATE(occurred_at) d, category, SUM(amount) t FROM sg_expenses WHERE service_giver_id=? AND occurred_at>=? AND occurred_at<? GROUP BY DATE(occurred_at), category");
+    $s = $pdo->prepare("SELECT DATE(occurred_at) d, category, SUM(amount) t FROM sg_expenses WHERE service_giver_id=? AND status='active' AND occurred_at>=? AND occurred_at<? GROUP BY DATE(occurred_at), category");
     $s->execute(array($sgId, $from, $to1));
     $cats = array();
     foreach ($s->fetchAll(PDO::FETCH_ASSOC) as $r) {
