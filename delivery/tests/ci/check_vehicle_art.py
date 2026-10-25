@@ -32,6 +32,13 @@ for page in ('ride/index.html', 'driver/index.html'):
 ride = read('ride/index.html')
 if ride.find('etel-vehicle-art.js') > ride.find('ride-vehicle-list.js'):
     bad.append('etel-vehicle-art.js must load before ride-vehicle-list.js')
+adm = read('js/admin/admin-growth-charts.js')
+if 'js/etel-vehicle-art.js' not in read('admin.html'):
+    bad.append('admin.html does not load js/etel-vehicle-art.js (Phone Dispatch shows the vehicle pictures)')
+if 'EtelVehicleArt.html' not in adm or 'EtelVehicleArt.marker' not in adm or "'etel:vehicle-art'" not in adm:
+    bad.append('Phone Dispatch (admin-growth-charts.js) must show the vehicle pictures on its cards and driver markers, and redraw when they arrive')
+if 'v.icon' not in adm or 'path: google.maps.SymbolPath.CIRCLE' not in adm:
+    bad.append('Phone Dispatch must keep the emoji and the dot as the fallback when there is no picture')
 lst = read('js/ride-vehicle-list.js')
 if 'EtelVehicleArt' not in lst or 'EtelUI.vehicleGlyph' not in lst:
     bad.append('the vehicle list must use the picture when there is one and the drawn icon otherwise')

@@ -129,7 +129,7 @@
                 var price = fares[t] != null ? money(fares[t]) : (base || '');
                 var tag = (t === cheapest) ? '<span class="vt-tag vt-tag-cheap">Cheapest</span>' : (t === fastest ? '<span class="vt-tag vt-tag-fast">Fastest</span>' : '');
                 // a real 3D picture (js/etel-vehicle-art.js, img/vehicles/*.png) when there is one for this type, else the drawn icon
-                var art = (window.EtelVehicleArt && EtelVehicleArt.ready(t)) ? EtelVehicleArt.html(t, 96, 64) : '';
+                var art = (window.EtelVehicleArt && EtelVehicleArt.ready(t)) ? EtelVehicleArt.html(t, 104, 70) : '';
                 var glyph = art || ((window.EtelUI && EtelUI.vehicleGlyph) ? EtelUI.vehicleGlyph(t, 30) : '');
                 c.classList.toggle('vt-art', !!art);
                 var sig = [t, name, sub, price, tag, disabled ? 1 : 0, art || (glyph ? 'g' : 'n')].join('~');   // the picture's own markup (it names the file), so a type that first borrowed another picture is redrawn when its own arrives

@@ -19,6 +19,7 @@
     var src = (document.currentScript && document.currentScript.src) || '';
     var BASE = src ? src.split('?')[0].replace(/js\/[^\/]*$/, 'img/vehicles/') : '../img/vehicles/';
     var ok = {};        // type -> loaded Image (facing right)
+    var IMG_V = '2';    // change when the picture files change, so phones do not keep showing the old ones
     var okL = {};       // type -> loaded Image (facing left, optional)
     var cache = {};     // "type|size|flip" -> icon
     var byUrl = {};     // icon url -> { type, size, flip } (so a marker's icon can be recognised again)
@@ -127,7 +128,7 @@
             try { document.dispatchEvent(new CustomEvent('etel:vehicle-art', { detail: { type: t, left: left } })); } catch (e) {}
         };
         im.onerror = function () { delete reg[t]; };
-        im.src = BASE + t + (left ? '_left' : '') + '.png';
+        im.src = BASE + t + (left ? '_left' : '') + '.png?v=' + IMG_V;
     }
     function probe() { TYPES.forEach(function (t) { load(t, false); }); }
     function wantLeft() { if (leftStarted) return; leftStarted = true; TYPES.forEach(function (t) { if (ok[t]) load(t, true); }); }
@@ -135,8 +136,8 @@
         if (document.getElementById('etel-vart-css')) return;
         var s = document.createElement('style'); s.id = 'etel-vart-css';
         s.textContent = '.etel-vimg{display:block;width:100%;height:100%;object-fit:contain;pointer-events:none;filter:drop-shadow(0 4px 6px rgba(0,0,0,.35))}' +
-            '#view-book[data-step="2"] .vtype-chip.vt-art{grid-template-columns:96px minmax(0,1fr) auto}' +
-            '#view-book[data-step="2"] .vtype-chip.vt-art .vt-icon,#view-book[data-step="2"] .vtype-chip.vt-art.active .vt-icon{width:96px;height:64px;border:0!important;background:none!important;border-radius:0}' +
+            '#view-book[data-step="2"] .vtype-chip.vt-art{grid-template-columns:104px minmax(0,1fr) auto}' +
+            '#view-book[data-step="2"] .vtype-chip.vt-art .vt-icon,#view-book[data-step="2"] .vtype-chip.vt-art.active .vt-icon{width:104px;height:70px;border:0!important;background:none!important;border-radius:0}' +
             '#view-book[data-step="2"] .vtype-chip.vt-art.vtype-chip-disabled .vt-icon{filter:grayscale(1)}' +
             '.vtype-chip.vt-art .vt-icon{width:64px;height:48px}';
         (document.head || document.documentElement).appendChild(s);
