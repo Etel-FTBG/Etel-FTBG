@@ -6,7 +6,8 @@
    - shows one small bar: "No connection", "saved at HH:MM", "N waiting to send" (+ Send now / Discard).
    Everything else (money, PINs, anything not whitelisted) goes straight to the network and fails normally.
    Config: { name, api, userKey(), token(), reads(action, body)->bool, queueable(action, body)->bool, overlay(action, data, waiting)->data,
-             describe(entry)->string, onSent(count), toast(msg, isError) }
+             describe(entry)->string, onSent(count), onReconnect(), toast(msg, isError),
+             queueKey / savedKey (storage keys; default etel_outbox_<name> / etel_saved_<name>), isApi(url)->bool (default: url === api), getAction(url)->action|null (opt in to GET reads: the query string becomes body._q), savedWhat (banner noun) }
    Storage is localStorage with an in-memory fallback. Every server value shown goes through esc(). */
 (function () {
 'use strict';
@@ -20,7 +21,7 @@ function netDown(e) { return !!e && (e.name === 'TypeError' || /fetch|network|lo
 
 function install(cfg) {
   var origFetch = window.fetch.bind(window);
-  var KQ = 'etel_outbox_' + cfg.name, KC = 'etel_saved_' + cfg.name;
+  var KQ = cfg.queueKey || ('etel_outbox_' + cfg.name), KC = cfg.savedKey || ('etel_saved_' + cfg.name);
   var memQ = null, memC = {}, flushing = false, staleAt = 0, barId = 'eof-bar', cssId = 'eof-css';
 
   function lsGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
@@ -75,7 +76,7 @@ function install(cfg) {
     var q = mine(), off = navigator.onLine === false;
     if (!q.length && !off && !staleAt) { bar.className = ''; bar.innerHTML = ''; return; }
     var head = off ? '📡 <b>No connection.</b> ' : '';
-    if (staleAt) head += 'Showing saved data from <b>' + esc(hhmm(staleAt)) + '</b>. ';
+    if (staleAt) head += 'Showing ' + esc(cfg.savedWhat || 'saved data') + ' from <b>' + esc(hhmm(staleAt)) + '</b>. ';
     var html = '<div class="r"><span>' + head + (q.length ? q.length + ' waiting to send' : (off ? 'Your work is saved on this phone.' : '')) + '</span>' +
       (waiting().length ? '<button type="button" data-eof="send">Send now</button>' : '') + '</div>';
     if (q.length) {
@@ -122,9 +123,15 @@ function install(cfg) {
   window.fetch = function (input, init) {
     var url = typeof input === 'string' ? input : (input && input.url) || '';
     var method = ((init && init.method) || (input && input.method) || 'GET').toUpperCase();
-    if (url !== cfg.api || method !== 'POST' || !init || typeof init.body !== 'string') return origFetch(input, init);
-    var body = null; try { body = JSON.parse(init.body); } catch (e) {}
-    var action = body && body.action;
+    if (!(cfg.isApi ? cfg.isApi(url) : url === cfg.api)) return origFetch(input, init);
+    var body = null, action = null;
+    if (method === 'GET' && cfg.getAction) {
+      action = cfg.getAction(url);
+      body = { _q: url.replace(/^[^?]*\??/, '') };
+    } else if (method === 'POST' && init && typeof init.body === 'string') {
+      try { body = JSON.parse(init.body); } catch (e) {}
+      action = body && body.action;
+    }
     if (!action) return origFetch(input, init);
 
     if (cfg.reads && cfg.reads(action, body)) {
