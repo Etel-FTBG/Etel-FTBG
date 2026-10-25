@@ -135,8 +135,8 @@
         if (document.getElementById('etel-vart-css')) return;
         var s = document.createElement('style'); s.id = 'etel-vart-css';
         s.textContent = '.etel-vimg{display:block;width:100%;height:100%;object-fit:contain;pointer-events:none;filter:drop-shadow(0 4px 6px rgba(0,0,0,.35))}' +
-            '#view-book[data-step="2"] .vtype-chip.vt-art{grid-template-columns:96px minmax(0,1fr) auto}' +
-            '#view-book[data-step="2"] .vtype-chip.vt-art .vt-icon,#view-book[data-step="2"] .vtype-chip.vt-art.active .vt-icon{width:96px;height:64px;border:0!important;background:none!important;border-radius:0}' +
+            '#view-book[data-step="2"] .vtype-chip.vt-art{grid-template-columns:104px minmax(0,1fr) auto}' +
+            '#view-book[data-step="2"] .vtype-chip.vt-art .vt-icon,#view-book[data-step="2"] .vtype-chip.vt-art.active .vt-icon{width:104px;height:70px;border:0!important;background:none!important;border-radius:0}' +
             '#view-book[data-step="2"] .vtype-chip.vt-art.vtype-chip-disabled .vt-icon{filter:grayscale(1)}' +
             '.vtype-chip.vt-art .vt-icon{width:64px;height:48px}';
         (document.head || document.documentElement).appendChild(s);

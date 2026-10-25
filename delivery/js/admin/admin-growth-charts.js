@@ -474,12 +474,14 @@ function pdRefreshDrivers(point) {
             const countEl = document.getElementById('pd-driver-count');
             drivers.forEach(dr => {
                 const nearby = point ? dr.distance_km <= 8 : true;
+                // the vehicle's own picture when there is one for its type, else the dot
+                const art = (window.EtelVehicleArt && EtelVehicleArt.marker) ? EtelVehicleArt.marker(dr.vehicle_type, { size: 48 }) : null;
                 const marker = new google.maps.Marker({
                     position: { lat: dr.lat, lng: dr.lng },
                     map: _pdMap,
                     title: (dr.name || 'Driver') + ' — ' + (dr.vehicle_type || '') + (dr.distance_km != null ? ' · ' + dr.distance_km + ' km' : ''),
                     opacity: nearby ? 1 : 0.35,
-                    icon: {
+                    icon: art || {
                         path: google.maps.SymbolPath.CIRCLE,
                         fillColor: nearby ? '#4ECDC4' : '#6B6455',
                         fillOpacity: 1,
@@ -537,13 +539,30 @@ function pdRenderVtypeCards() {
     const wrap = document.getElementById('pd-vtype-cards');
     if (!wrap || wrap.dataset.built) return;
     wrap.dataset.built = '1';
+    const pic = v => (window.EtelVehicleArt && EtelVehicleArt.ready(v.id)) ? EtelVehicleArt.html(v.id, 64, 44) : v.icon;
     wrap.innerHTML = PD_VTYPES.map((v, i) => `
         <div class="pd-vtype-card" data-vtype="${v.id}" onclick="pdSelectVtype('${v.id}')"
             style="text-align:center;padding:10px 4px;border-radius:10px;cursor:pointer;border:1px solid ${i === 0 ? 'rgba(78,205,196,.55)' : 'rgba(255,255,255,.12)'};background:${i === 0 ? 'rgba(78,205,196,.14)' : 'rgba(255,255,255,.03)'}">
-            <div style="font-size:20px">${v.icon}</div>
+            <div class="pd-vtype-icon" style="font-size:20px;height:44px;display:flex;align-items:center;justify-content:center">${pic(v)}</div>
             <div style="font-size:10.5px;font-weight:700;color:${i === 0 ? '#7FE8DC' : '#9A9AAE'};margin-top:3px">${v.label}</div>
         </div>`).join('');
 }
+
+// The 3D vehicle pictures (js/etel-vehicle-art.js) load after the page; swap them in for the emoji as they arrive.
+function pdPaintVtypeArt() {
+    document.querySelectorAll('.pd-vtype-card').forEach(card => {
+        const id = card.getAttribute('data-vtype'), v = PD_VTYPES.find(x => x.id === id), icon = card.querySelector('.pd-vtype-icon');
+        if (!v || !icon) return;
+        icon.innerHTML = (window.EtelVehicleArt && EtelVehicleArt.ready(id)) ? EtelVehicleArt.html(id, 64, 44) : v.icon;
+    });
+}
+let _pdArtTimer = null;
+document.addEventListener('etel:vehicle-art', () => {
+    pdPaintVtypeArt();
+    // markers drawn before the pictures arrived are dots: redraw them once the pictures are in
+    clearTimeout(_pdArtTimer);
+    _pdArtTimer = setTimeout(() => { if (typeof _pdMap !== 'undefined' && _pdMap) pdRefreshDrivers(_pdLastPoint || undefined); }, 700);
+});
 
 function pdSelectVtype(id) {
     document.getElementById('pd-vtype').value = id;
