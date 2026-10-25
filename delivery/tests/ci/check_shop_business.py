@@ -8,7 +8,7 @@ read = lambda p: open(root + '/' + p, encoding='utf-8').read()
 bad = []
 lib = read('api/lib/sg_business.php')
 ctl = read('api/controllers/ServiceGiverController.php')
-mig = read('api/migrations/093_sg_business.sql')
+mig = read('api/migrations/093_sg_business.sql') + read('api/migrations/094_sg_business_audit.sql')
 
 if re.search(r"\$(body|_GET|_POST|_REQUEST)\b", lib):
     bad.append('sg_business.php must not read the request: the shop id comes from the account (sg_get_context)')
@@ -36,6 +36,17 @@ if "require_admin($pdo, 'service_givers.manage')" not in block:
     bad.append('only platform admins with service_givers.manage may switch the business tools')
 if "ETEL_SGB_MAX_EVENTS" not in ctl:
     bad.append('sg_pos_sync must limit the batch size')
+if re.search(r"(UPDATE|DELETE\s+FROM)\s+`?sg_business_audit`?\b", lib + ctl, re.I):
+    bad.append('the activity log is append-only: no code may update or delete its rows')
+for must in ('etel_sgb_throttle($pdo, $auth_user[\'id\'], \'sync\'', 'etel_sgb_throttle($pdo, $auth_user[\'id\'], \'report\''):
+    if must not in ctl:
+        bad.append('missing request limit: ' + must)
+for fn in ('etel_sgb_void', 'etel_sgb_cashup', 'etel_sgb_stock'):
+    m = re.search(r'function %s\(.*?\n}\n' % fn, lib, re.S)
+    if not m or 'etel_sgb_audit(' not in m.group(0):
+        bad.append(fn + ' must write to the activity log')
+if "etel_sgb_audit($pdo, $id, $u['id']" not in ctl:
+    bad.append('switching the business tools must be written to the activity log')
 boot = read('api/boot.php')
 rep = ctl.split("case 'sg_business_report':")[1].split('\ncase ')[0]
 if "'reports.view'" not in rep or "'payments.view'" not in rep:

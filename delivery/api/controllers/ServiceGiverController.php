@@ -2033,6 +2033,7 @@ case 'sg_business_report': {
     $okd = function ($d) { return preg_match('/^\d{4}-\d{2}-\d{2}$/', $d) && strtotime($d) !== false && date('Y-m-d', strtotime($d)) === $d; };
     if (!$okd($from) || !$okd($to) || $from > $to) fail('Choose a valid range of dates', 400);
     if ((strtotime($to) - strtotime($from)) / 86400 > 365) fail('Choose at most one year at a time', 400);
+    etel_sgb_throttle($pdo, $auth_user['id'], 'report', 40);
     try { ok(etel_sgb_report($pdo, $ctx['sg_id'], $from, $to)); }
     catch (Exception $e) { fail_ex($e, 'Could not build the report', 500); }
     break;
@@ -2048,6 +2049,7 @@ case 'sg_pos_sync': {
     if (!$ctx) fail('Service giver profile not found', 404);
     require_once __DIR__ . '/../lib/sg_business.php';
     if (!etel_sgb_enabled($pdo, $ctx['sg_id'])) fail('Etel Business is not switched on for this shop. Ask Etel to turn it on.', 403);
+    etel_sgb_throttle($pdo, $auth_user['id'], 'sync', 120);
     $events = isset($body['events']) && is_array($body['events']) ? $body['events'] : null;
     if ($events === null) fail('events is required', 400);
     if (count($events) > ETEL_SGB_MAX_EVENTS) fail('Send at most ' . ETEL_SGB_MAX_EVENTS . ' events at a time', 400);
@@ -2095,6 +2097,7 @@ case 'admin_sg_set_business_tools': {
         $c->execute(array($id));
         if (!$c->fetchColumn()) fail('Service giver not found', 404);
         $pdo->prepare('UPDATE service_givers SET business_tools=? WHERE id=?')->execute(array($on, $id));
+        etel_sgb_audit($pdo, $id, $u['id'], $on ? 'tools_on' : 'tools_off', null, 'Switched by Etel staff', date('Y-m-d H:i:s'));
     } catch (Exception $e) { fail_ex($e, 'Could not change the business tools', 500); }
     ok(array('id' => $id, 'business_tools' => $on, 'message' => $on ? 'Etel Business switched on' : 'Etel Business switched off'));
     break;

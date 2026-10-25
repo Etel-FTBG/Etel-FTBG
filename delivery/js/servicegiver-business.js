@@ -29,7 +29,10 @@ var I18N = {
     rep: 'Report', repsub: 'How the shop is doing: sales, spending and what is left.', r7: 'Last 7 days', r30: 'Last 30 days', r90: 'Last 90 days', rmonth: 'This month', by: 'Show by', gday: 'Day', gweek: 'Week', gmonth: 'Month',
     income: 'Money in', spent: 'Money out', net: 'What is left', netnote: 'Sales minus expenses. It does not subtract what the goods cost you.', counter: 'Counter sales', online: 'Online orders', paylater: 'of it still to be paid (pay later)',
     nosales: 'Sales', period: 'Period', best: 'Best sellers', slow: 'Slowest on your menu', sold_n: 'sold', byexp: 'Where the money went', csv: 'Download CSV', loading: 'Loading…', saved: 'Showing the report saved on this phone from',
-    norep: 'Nothing recorded in this period.', repfail: 'Could not load the report (needs internet).', vdisc: 'Discounts given', vvoid: 'Cancelled sales', repnote: 'Online orders count item prices of delivered orders only.', orders_n: 'orders' },
+    norep: 'Nothing recorded in this period.', repfail: 'Could not load the report (needs internet).', vdisc: 'Discounts given', vvoid: 'Cancelled sales', repnote: 'Online orders count item prices of delivered orders only.', orders_n: 'orders',
+    activity: 'Activity log', activitysub: 'What was cancelled, discounted, counted or refused. Entries cannot be edited or deleted.', noact: 'Nothing to show yet.', by_: 'by',
+    a_sale_void: 'Sale cancelled', a_big_discount: 'Big discount', a_stock_waste: 'Waste recorded', a_stock_count: 'Stock counted', a_stock_delivery: 'Delivery received', a_cashup: 'Day closed', a_big_expense: 'Big expense',
+    a_late_entry: 'Added to a counted day', a_denied: 'Not allowed', a_limit: 'Daily limit reached', a_tools_on: 'Etel Business switched on', a_tools_off: 'Etel Business switched off' },
   am: { sell: 'ሽያጭ', sub: 'ለቆጣሪ ሽያጭ። ያለ ኢንተርኔት ይሰራል።', search: 'ዕቃ ፈልግ', other: 'ሌላ መጠን', cart: 'አሁን ያለው ሽያጭ', empty: 'ለመጨመር ዕቃ ይንኩ።',
     subtotal: 'ንዑስ ድምር', discount: 'ቅናሽ (ብር)', total: 'ጠቅላላ', pay: 'ክፍያ', cash: 'ጥሬ ገንዘብ', mobile: 'ሞባይል ገንዘብ', credit: 'በኋላ የሚከፈል', cname: 'የደንበኛ ስም',
     cphone: 'የደንበኛ ስልክ (አማራጭ)', charge: 'ክፈል', clear: 'አጥፋ', recent: 'የዛሬ ሽያጮች', none: 'ዛሬ ገና ሽያጭ የለም።', void: 'ሽያጩን ሰርዝ', voided: 'ተሰርዟል',
@@ -48,7 +51,10 @@ var I18N = {
     rep: 'ሪፖርት', repsub: 'ሱቁ እንዴት እየሄደ ነው፦ ሽያጭ፣ ወጪ እና የቀረው።', r7: 'ያለፉት 7 ቀናት', r30: 'ያለፉት 30 ቀናት', r90: 'ያለፉት 90 ቀናት', rmonth: 'ይህ ወር', by: 'በ… አሳይ', gday: 'ቀን', gweek: 'ሳምንት', gmonth: 'ወር',
     income: 'የገባ ገንዘብ', spent: 'የወጣ ገንዘብ', net: 'የቀረው', netnote: 'ሽያጭ ሲቀነስ ወጪ። የዕቃዎቹን ግዢ ዋጋ አይቀንስም።', counter: 'የቆጣሪ ሽያጭ', online: 'የመስመር ላይ ትዕዛዞች', paylater: 'ከዚህ ውስጥ ገና ያልተከፈለ (በኋላ የሚከፈል)',
     nosales: 'ሽያጭ', period: 'ጊዜ', best: 'በደንብ የሚሸጡ', slow: 'በዝግታ የሚሸጡ', sold_n: 'ተሸጧል', byexp: 'ገንዘቡ የት ሄደ', csv: 'CSV አውርድ', loading: 'በመጫን ላይ…', saved: 'በዚህ ስልክ ላይ የተቀመጠውን ሪፖርት እያሳየ ነው፣ ከ',
-    norep: 'በዚህ ጊዜ ምንም አልተመዘገበም።', repfail: 'ሪፖርቱን መጫን አልተቻለም (ኢንተርኔት ያስፈልጋል)።', vdisc: 'የተሰጠ ቅናሽ', vvoid: 'የተሰረዙ ሽያጮች', repnote: 'የመስመር ላይ ትዕዛዞች የደረሱትን ትዕዛዝ የዕቃ ዋጋ ብቻ ይቆጥራሉ።', orders_n: 'ትዕዛዞች' }
+    norep: 'በዚህ ጊዜ ምንም አልተመዘገበም።', repfail: 'ሪፖርቱን መጫን አልተቻለም (ኢንተርኔት ያስፈልጋል)።', vdisc: 'የተሰጠ ቅናሽ', vvoid: 'የተሰረዙ ሽያጮች', repnote: 'የመስመር ላይ ትዕዛዞች የደረሱትን ትዕዛዝ የዕቃ ዋጋ ብቻ ይቆጥራሉ።', orders_n: 'ትዕዛዞች',
+    activity: 'የእንቅስቃሴ መዝገብ', activitysub: 'የተሰረዘ፣ የተቀነሰ፣ የተቆጠረ ወይም ውድቅ የተደረገ። ግቤቶች ሊስተካከሉ ወይም ሊሰረዙ አይችሉም።', noact: 'ገና የሚታይ ነገር የለም።', by_: 'በ',
+    a_sale_void: 'ሽያጭ ተሰርዟል', a_big_discount: 'ትልቅ ቅናሽ', a_stock_waste: 'ብክነት ተመዝግቧል', a_stock_count: 'ክምችት ተቆጥሯል', a_stock_delivery: 'ዕቃ ተቀብሏል', a_cashup: 'ቀኑ ተዘግቷል', a_big_expense: 'ትልቅ ወጪ',
+    a_late_entry: 'ወደ ተቆጠረ ቀን ተጨመረ', a_denied: 'አልተፈቀደም', a_limit: 'የቀን ገደብ ደርሷል', a_tools_on: 'Etel Business ተከፍቷል', a_tools_off: 'Etel Business ተዘግቷል' }
 };
 function t(k) { var l = 'en'; try { l = (typeof ETEL_I18N !== 'undefined' && ETEL_I18N.current()) || 'en'; } catch (e) {} return (I18N[l] && I18N[l][k]) || I18N.en[k] || k; }
 function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
@@ -119,7 +125,7 @@ function flush(manual) {
     S.flushing = false;
     if (r.status === 401) return;
     if (!r.json || !r.json.success) {
-      if (r.status === 403 || r.status === 400) S.msg = (r.json && r.json.message) || '';
+      if (r.status === 403 || r.status === 400 || r.status === 429) S.msg = (r.json && r.json.message) || '';
       paint(); return;
     }
     S.msg = '';
@@ -458,6 +464,13 @@ function downloadCsv() {
   var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'etel-report-' + d.from + '_' + d.to + '.csv';
   document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); if (a.parentNode) a.parentNode.removeChild(a); }, 500);
 }
+function activityCard(rows) {
+  return '<div class="card"><div class="card-body"><h3 style="margin:0 0 4px">' + esc(t('activity')) + '</h3><p class="sgb-x" style="color:var(--text-dim);margin:0 0 8px">' + esc(t('activitysub')) + '</p>' +
+    (rows.length ? rows.map(function (a) {
+      var when = new Date(String(a.occurred_at).replace(' ', 'T'));
+      return '<div class="sgb-rec"><span><b>' + esc(t('a_' + a.action)) + '</b>' + (a.who ? ' · ' + esc(t('by_')) + ' ' + esc(a.who) : '') + (a.detail ? '<br><small>' + esc(a.detail) + '</small>' : '') + '</span><span>' + esc(isNaN(when) ? '' : when.toLocaleString()) + '</span></div>';
+    }).join('') : '<p class="empty-msg">' + esc(t('noact')) + '</p>') + '</div></div>';
+}
 function paintReport() {
   var root = document.getElementById('sgb-rep'); if (!root) return;
   css();
@@ -493,6 +506,7 @@ function paintReport() {
       body += '<div class="sgb-wrap"><div class="card"><div class="card-body"><h3 style="margin:0 0 8px">' + esc(t('best')) + '</h3>' + (d.best.length ? d.best.map(function (b) { return '<div class="sgb-rec"><span>' + esc(b.name) + ' · ' + esc(b.qty) + ' ' + esc(t('sold_n')) + '</span><b>ETB ' + esc(money(b.revenue)) + '</b></div>'; }).join('') : '<p class="empty-msg">—</p>') +
         '<h3 style="margin:14px 0 8px">' + esc(t('slow')) + '</h3>' + (d.slow.length ? d.slow.map(function (b) { return '<div class="sgb-rec"><span>' + esc(b.name) + '</span><span>' + esc(b.qty) + ' ' + esc(t('sold_n')) + '</span></div>'; }).join('') : '<p class="empty-msg">—</p>') + '</div></div>' +
         '<div class="card"><div class="card-body"><h3 style="margin:0 0 8px">' + esc(t('byexp')) + '</h3>' + (d.expense_categories.length ? d.expense_categories.map(function (c) { return '<div class="sgb-rec"><span>' + esc(t('c_' + c.category)) + '</span><b>ETB ' + esc(money(c.amount)) + '</b></div>'; }).join('') : '<p class="empty-msg">—</p>') + '</div></div></div>';
+      body += activityCard(d.audit || []);
       body += '<div class="sgb-row" style="margin-top:12px"><button type="button" class="btn btn-secondary" data-sgb="rep-csv">' + esc(t('csv')) + '</button></div>';
     }
     if (R.err && !R.stale) body += '<p class="sgb-x" role="alert">' + esc(R.err) + '</p>';

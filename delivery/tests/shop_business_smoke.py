@@ -292,6 +292,43 @@ def main():
     st, res = call("sg_business_report", {"from": today, "to": today}, token=tok)
     check("the report is refused once the tools are off", st == 403, res)
 
+    print("11. Limits and the activity log")
+    call("admin_sg_set_business_tools", {"id": sg_id, "enabled": 1}, token=admin)
+    _, res = call("sg_business_report", {"from": today, "to": today}, token=tok)
+    audit = (res.get("data") or {}).get("audit") or []
+    acts = [x["action"] for x in audit]
+    check("the report carries the activity log", res.get("success") is True and len(audit) > 0, res)
+    cnt = lambda act: int(sql(f"SELECT COUNT(*) FROM sg_business_audit WHERE service_giver_id={sg_id} AND action='{act}'") or 0)
+    check("a cancelled sale is logged", cnt("sale_void") >= 1, acts)
+    check("a big discount is logged", cnt("big_discount") >= 1, acts)
+    check("waste and counts are logged", cnt("stock_waste") >= 1 and cnt("stock_count") >= 1, acts)
+    check("the cash-up result is logged", cnt("cashup") >= 1, acts)
+    check("a refused action is logged (staff without the right)", cnt("denied") >= 1, acts)
+    check("a sale added to a day already counted is logged", cnt("late_entry") >= 1, acts)
+    check("switching the tools is logged against the admin", int(sql(f"SELECT COUNT(*) FROM sg_business_audit WHERE service_giver_id={sg_id} AND action IN ('tools_on','tools_off') AND user_id IS NOT NULL") or 0) >= 1)
+    check("the log says who did it", any(x.get("who") for x in audit), audit[:2])
+    _, res = call("sg_pos_sync", {"events": [ev("void", "lc" + SUFFIX, {"sale_req_id": "s2" + SUFFIX})]}, token=tok)
+    r = results(res)
+    check("a sale from a day that is already counted cannot be cancelled", r and r[0]["status"] == "error" and "counted" in r[0]["message"], res)
+    _, res = call("sg_pos_sync", {"events": [ev("sale", "big" + SUFFIX, {"items": [{"name": "Truck", "unit_price": 6000000, "qty": 2}]})]}, token=tok)
+    r = results(res)
+    check("one sale above ETB 10,000,000 is refused", r and r[0]["status"] == "error", res)
+    sql(f"INSERT INTO sg_pos_sales (service_giver_id, client_req_id, sold_by_user_id, occurred_at, subtotal, discount, total, payment_method, status, created_at) "
+        f"SELECT {sg_id}, CONCAT('lim{SUFFIX}_', seq), 1, NOW(), 1, 0, 1, 'cash', 'paid', NOW() FROM seq_1_to_2000")
+    _, res = call("sg_pos_sync", {"events": [ev("sale", "over" + SUFFIX, {"items": [{"name": "One too many", "unit_price": 1, "qty": 1}]})]}, token=tok)
+    r = results(res)
+    check("the 2001st sale of a day is refused with a clear message", r and r[0]["status"] == "error" and "2000" in r[0]["message"], res)
+    check("the limit is written to the log", cnt("limit") >= 1)
+    sql(f"DELETE FROM sg_pos_sales WHERE service_giver_id={sg_id} AND client_req_id LIKE 'lim{SUFFIX}\\_%'")
+    sql("DELETE FROM login_attempts WHERE identifier LIKE 'acct:sgb\\_%'")
+    codes = []
+    for _ in range(125):
+        st, _r = call("sg_pos_sync", {"events": []}, token=tok)
+        codes.append(st)
+    check("more than 120 syncs in ten minutes get a 429", 429 in codes and codes[:120].count(429) == 0, codes[-6:])
+    sql("DELETE FROM login_attempts WHERE identifier LIKE 'acct:sgb\\_%'")
+    call("admin_sg_set_business_tools", {"id": sg_id, "enabled": 0}, token=admin)
+
     print()
     print(f"{len(PASS)} passed, {len(FAIL)} failed")
     return 1 if FAIL else 0
