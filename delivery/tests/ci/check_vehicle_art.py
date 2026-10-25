@@ -37,6 +37,8 @@ if 'js/etel-vehicle-art.js' not in read('admin.html'):
     bad.append('admin.html does not load js/etel-vehicle-art.js (Phone Dispatch shows the vehicle pictures)')
 if 'EtelVehicleArt.html' not in adm or 'EtelVehicleArt.marker' not in adm or "'etel:vehicle-art'" not in adm:
     bad.append('Phone Dispatch (admin-growth-charts.js) must show the vehicle pictures on its cards and driver markers, and redraw when they arrive')
+if re.search(r'class="[^"]*-card[^"]*"', adm.split('function pdRenderVtypeCards')[1].split('function pdSelectVtype')[0]):
+    bad.append('the dispatch vehicle options must not have a class containing "-card": admin-group1.min.css paints a moving white glare over every [class*="-card"] (it washed out the pictures)')
 if 'v.icon' not in adm or 'path: google.maps.SymbolPath.CIRCLE' not in adm:
     bad.append('Phone Dispatch must keep the emoji and the dot as the fallback when there is no picture')
 lst = read('js/ride-vehicle-list.js')
