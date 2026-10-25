@@ -28,7 +28,7 @@
         'Choose vehicle': 'ተሽከርካሪ ይምረጡ',
         'Tap the map to set pickup & drop-off, or type above': 'መነሻና መድረሻ ለማዘጋጀት ካርታውን ይንኩ ወይም ከላይ ይጻፉ',
         'Change': 'ቀይር',
-        'Bajaj': 'ባጃጅ', 'Moto': 'ሞተር', 'Car': 'መኪና', 'Minibus': 'ሚኒባስ', 'EV Car': 'የኤሌክትሪክ መኪና',
+        'Bajaj': 'ባጃጅ', 'Moto': 'ሞተር', 'Car': 'መኪና', 'Minibus': 'ሚኒባስ', 'EV Car': 'የኤሌክትሪክ መኪና', 'EV Bajaj': 'የኤሌክትሪክ ባጃጅ',
         'Cheapest': 'በጣም ርካሽ', 'Fastest': 'በጣም ፈጣን',
         'No drivers online': 'ሾፌር በመስመር ላይ የለም', 'Drivers available': 'ሾፌሮች አሉ',
         'See All Types on Map': 'ሁሉንም ዓይነቶች በካርታ ይመልከቱ',

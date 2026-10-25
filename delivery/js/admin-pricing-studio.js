@@ -24,7 +24,7 @@ function root() { return document.getElementById('pricing-studio'); }
 function f(n) { return parseFloat(n) || 0; }
 function etb(n) { return 'ETB ' + (Math.round(f(n) * 100) / 100).toLocaleString(undefined, { maximumFractionDigits: 2 }); }
 function can(cap) { if (cap instanceof Array) return cap.some(can); return S.caps.indexOf('*') !== -1 || S.caps.indexOf(cap) !== -1; }
-function vlabel(vt) { return vt === 'ev_car' ? 'EV Car' : String(vt).charAt(0).toUpperCase() + String(vt).slice(1).replace(/_/g, ' '); }
+function vlabel(vt) { return vt === 'ev_car' ? 'EV Bajaj' : String(vt).charAt(0).toUpperCase() + String(vt).slice(1).replace(/_/g, ' '); }
 function slug(raw) { return String(raw || '').toLowerCase().replace(/[^a-z0-9\s_-]/g, '').replace(/[\s-]+/g, '_').replace(/_+/g, '_').replace(/^_+|_+$/g, '').replace(/^[^a-z]+/, '').slice(0, 20); }
 function vpic(vt) {
   return ART.indexOf(vt) >= 0 ? '<img src="img/vehicles/' + esc(vt) + '.png" alt="" loading="lazy" data-emoji="' + esc(ICON[vt] || '🚘') + '">' : (ICON[vt] || '🚘');
@@ -46,7 +46,7 @@ function css() {
     '.ps-out .big{font-size:30px;font-weight:800;color:var(--ink);line-height:1.1}.ps-out table{width:100%;font-size:12.5px;margin-top:8px;border-collapse:collapse}.ps-out td{padding:3px 0;color:var(--mute)}.ps-out td:last-child{text-align:right;color:var(--ink);font-weight:700}',
     '.ps-vs{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:12px}',
     '.ps-v{background:var(--card);border:1.5px solid var(--line);border-radius:18px;padding:14px;box-shadow:var(--shadow)}.ps-v.off{border-style:dashed;opacity:.8}.ps-v.dirty{border-color:var(--gold)}',
-    '.ps-vh{display:flex;gap:12px;align-items:center;margin-bottom:12px}.ps-pic{flex:none;width:76px;height:52px;display:flex;align-items:center;justify-content:center;font-size:30px;border-radius:12px;background:var(--soft)}.ps-pic img{max-width:100%;max-height:100%;object-fit:contain}',
+    '.ps-vh{display:flex;gap:12px;align-items:center;margin-bottom:12px}.ps-pic{flex:none;width:104px;height:70px;display:flex;align-items:center;justify-content:center;font-size:30px;border-radius:12px;background:var(--soft)}.ps-pic img{max-width:100%;max-height:100%;object-fit:contain}',
     '.ps-vh b{display:block;font-size:15px}.ps-vh small{color:var(--mute);font-size:11.5px}',
     '.ps-fg{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 10px}',
     '.ps-win{display:grid;grid-template-columns:minmax(140px,1.2fr) auto auto minmax(90px,.5fr) auto;gap:10px;align-items:end;background:var(--soft);border:1.5px solid var(--line);border-radius:14px;padding:12px;margin-bottom:10px}',
