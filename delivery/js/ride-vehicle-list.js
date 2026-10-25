@@ -119,7 +119,7 @@
                 var disabled = c.classList.contains('vtype-chip-disabled');
                 var nameEl = c.querySelector('.vt-name');
                 var name = c.getAttribute('data-vt-name') || (nameEl ? nameEl.textContent : t);
-                name = name.replace(/^Ev\b/, 'EV');
+                name = name.replace(/^Ev\b/, 'EV').replace(/^EV Car$/, 'EV Bajaj');   // ev_car is the electric bajaj
                 var base = c.getAttribute('data-vt-base') || (c.querySelector('.vt-price') ? c.querySelector('.vt-price').textContent : '');
                 c.setAttribute('data-vt-name', name); c.setAttribute('data-vt-base', base);
                 var seats = SEATS[t] || 4;
