@@ -175,6 +175,9 @@ def main():
     check("resending the close changes nothing", results(res)[0]["status"] == "dup", results(res))
     _, res = call("sg_business_state", {}, token=tok)
     t = res["data"]["today"]
+    cd = t.get("cash_day") or {}
+    check("the state tells the app the day is closed, with the figures", cd.get("expected_cash") == 50 and cd.get("counted_cash") == 150 and cd.get("difference") == 100, t)
+    check("the state separates cash expenses from the rest, and remembers the last count", t.get("cash_expenses") == 50 and t.get("last_counted") == 150, t)
     check("today's totals count live sales only", t["sales"] == 2 and abs(t["sales_total"] - 220) < 0.01 and abs(t["expenses"] - 120) < 0.01, t)
 
     print("6. A counter-only staff role")
