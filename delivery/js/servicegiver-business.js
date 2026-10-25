@@ -25,7 +25,11 @@ var I18N = {
     c_transport: 'Transport', c_other: 'Other', paidwith: 'Paid with', note: 'Note (optional)', addexp: 'Save expense', exptoday: 'Spent today', noexp: 'No expenses yet today.',
     cashup: 'Cash-up', cashsub: 'Count the till at the end of the day and see if it matches the books.', openfloat: 'Cash in the till this morning (ETB)', cashsales: 'Cash sales', cashexp: 'Cash expenses',
     expected: 'The till should have', counted: 'Cash you counted (ETB)', diff: 'Difference', over: 'more than expected', under: 'less than expected', match: 'It matches.', closeday: 'Close the day',
-    dayclosed: 'The day is closed', estimate: 'This is an estimate from this phone; Etel recalculates it when it receives your count.', unsentwarn: 'Some entries have not been sent yet, so the total may be incomplete. Close the day anyway?', closedat: 'Counted' },
+    dayclosed: 'The day is closed', estimate: 'This is an estimate from this phone; Etel recalculates it when it receives your count.', unsentwarn: 'Some entries have not been sent yet, so the total may be incomplete. Close the day anyway?', closedat: 'Counted',
+    rep: 'Report', repsub: 'How the shop is doing: sales, spending and what is left.', r7: 'Last 7 days', r30: 'Last 30 days', r90: 'Last 90 days', rmonth: 'This month', by: 'Show by', gday: 'Day', gweek: 'Week', gmonth: 'Month',
+    income: 'Money in', spent: 'Money out', net: 'What is left', netnote: 'Sales minus expenses. It does not subtract what the goods cost you.', counter: 'Counter sales', online: 'Online orders', paylater: 'of it still to be paid (pay later)',
+    nosales: 'Sales', period: 'Period', best: 'Best sellers', slow: 'Slowest on your menu', sold_n: 'sold', byexp: 'Where the money went', csv: 'Download CSV', loading: 'Loading…', saved: 'Showing the report saved on this phone from',
+    norep: 'Nothing recorded in this period.', repfail: 'Could not load the report (needs internet).', vdisc: 'Discounts given', vvoid: 'Cancelled sales', repnote: 'Online orders count item prices of delivered orders only.', orders_n: 'orders' },
   am: { sell: 'ሽያጭ', sub: 'ለቆጣሪ ሽያጭ። ያለ ኢንተርኔት ይሰራል።', search: 'ዕቃ ፈልግ', other: 'ሌላ መጠን', cart: 'አሁን ያለው ሽያጭ', empty: 'ለመጨመር ዕቃ ይንኩ።',
     subtotal: 'ንዑስ ድምር', discount: 'ቅናሽ (ብር)', total: 'ጠቅላላ', pay: 'ክፍያ', cash: 'ጥሬ ገንዘብ', mobile: 'ሞባይል ገንዘብ', credit: 'በኋላ የሚከፈል', cname: 'የደንበኛ ስም',
     cphone: 'የደንበኛ ስልክ (አማራጭ)', charge: 'ክፈል', clear: 'አጥፋ', recent: 'የዛሬ ሽያጮች', none: 'ዛሬ ገና ሽያጭ የለም።', void: 'ሽያጩን ሰርዝ', voided: 'ተሰርዟል',
@@ -40,7 +44,11 @@ var I18N = {
     paidwith: 'የተከፈለበት', note: 'ማስታወሻ (አማራጭ)', addexp: 'ወጪውን አስቀምጥ', exptoday: 'የዛሬ ወጪ', noexp: 'ዛሬ ገና ወጪ የለም።',
     cashup: 'የገንዘብ ቆጠራ', cashsub: 'በቀኑ መጨረሻ ሣጥኑን ቆጥረው ከመዝገቡ ጋር እንደሚስማማ ይመልከቱ።', openfloat: 'ጠዋት በሣጥኑ ውስጥ የነበረ ገንዘብ (ብር)', cashsales: 'የጥሬ ገንዘብ ሽያጭ', cashexp: 'የጥሬ ገንዘብ ወጪ',
     expected: 'ሣጥኑ ውስጥ መኖር ያለበት', counted: 'የቆጠሩት ገንዘብ (ብር)', diff: 'ልዩነት', over: 'ከሚጠበቀው በላይ', under: 'ከሚጠበቀው ያነሰ', match: 'ይስማማል።', closeday: 'ቀኑን ዝጋ',
-    dayclosed: 'ቀኑ ተዘግቷል', estimate: 'ይህ ከዚህ ስልክ የተገመተ ነው፤ ቆጠራዎን ሲቀበል ኢትዮ እንደገና ያሰላል።', unsentwarn: 'አንዳንድ ግቤቶች ገና አልተላኩም፤ ድምሩ ያልተሟላ ሊሆን ይችላል። ቀኑን ቢሆንም ይዝጉ?', closedat: 'የተቆጠረ' }
+    dayclosed: 'ቀኑ ተዘግቷል', estimate: 'ይህ ከዚህ ስልክ የተገመተ ነው፤ ቆጠራዎን ሲቀበል ኢትዮ እንደገና ያሰላል።', unsentwarn: 'አንዳንድ ግቤቶች ገና አልተላኩም፤ ድምሩ ያልተሟላ ሊሆን ይችላል። ቀኑን ቢሆንም ይዝጉ?', closedat: 'የተቆጠረ',
+    rep: 'ሪፖርት', repsub: 'ሱቁ እንዴት እየሄደ ነው፦ ሽያጭ፣ ወጪ እና የቀረው።', r7: 'ያለፉት 7 ቀናት', r30: 'ያለፉት 30 ቀናት', r90: 'ያለፉት 90 ቀናት', rmonth: 'ይህ ወር', by: 'በ… አሳይ', gday: 'ቀን', gweek: 'ሳምንት', gmonth: 'ወር',
+    income: 'የገባ ገንዘብ', spent: 'የወጣ ገንዘብ', net: 'የቀረው', netnote: 'ሽያጭ ሲቀነስ ወጪ። የዕቃዎቹን ግዢ ዋጋ አይቀንስም።', counter: 'የቆጣሪ ሽያጭ', online: 'የመስመር ላይ ትዕዛዞች', paylater: 'ከዚህ ውስጥ ገና ያልተከፈለ (በኋላ የሚከፈል)',
+    nosales: 'ሽያጭ', period: 'ጊዜ', best: 'በደንብ የሚሸጡ', slow: 'በዝግታ የሚሸጡ', sold_n: 'ተሸጧል', byexp: 'ገንዘቡ የት ሄደ', csv: 'CSV አውርድ', loading: 'በመጫን ላይ…', saved: 'በዚህ ስልክ ላይ የተቀመጠውን ሪፖርት እያሳየ ነው፣ ከ',
+    norep: 'በዚህ ጊዜ ምንም አልተመዘገበም።', repfail: 'ሪፖርቱን መጫን አልተቻለም (ኢንተርኔት ያስፈልጋል)።', vdisc: 'የተሰጠ ቅናሽ', vvoid: 'የተሰረዙ ሽያጮች', repnote: 'የመስመር ላይ ትዕዛዞች የደረሱትን ትዕዛዝ የዕቃ ዋጋ ብቻ ይቆጥራሉ።', orders_n: 'ትዕዛዞች' }
 };
 function t(k) { var l = 'en'; try { l = (typeof ETEL_I18N !== 'undefined' && ETEL_I18N.current()) || 'en'; } catch (e) {} return (I18N[l] && I18N[l][k]) || I18N.en[k] || k; }
 function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
@@ -55,7 +63,7 @@ function key(n) { return 'etel_biz_' + n + '_' + me(); }
 function load(n, dflt) { var k = key(n); if (mem[k] !== undefined) return mem[k]; try { var v = localStorage.getItem(k); if (v) { mem[k] = JSON.parse(v); return mem[k]; } } catch (e) {} mem[k] = dflt; return dflt; }
 function save(n, v) { var k = key(n); mem[k] = v; try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
 
-var S = { cart: [], pay: 'cash', discount: '', cname: '', cphone: '', q: '', flushing: false, offset: 0, msg: '', other: false, sq: '', stockEdit: null, hist: null, ex: { cat: 'supplies', amount: '', paid: 'cash', note: '' }, cf: '', cc: '' };
+var S = { cart: [], pay: 'cash', discount: '', cname: '', cphone: '', q: '', flushing: false, offset: 0, msg: '', other: false, sq: '', stockEdit: null, hist: null, ex: { cat: 'supplies', amount: '', paid: 'cash', note: '' }, cf: '', cc: '', rep: { range: '7', group: 'day', data: null, at: 0, loading: false, err: '', stale: false } };
 function outbox() { return load('outbox', []); }
 function recent() { return load('recent', []); }
 function cache() { return load('state', { at: 0, items: [], today: null }); }
@@ -217,6 +225,7 @@ function css() {
     '#sgb-rc{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px}.sgb-rcbox{background:#1c1204;color:var(--text);border:1px solid var(--border-lt);border-radius:14px;padding:18px;max-width:380px;width:100%;max-height:90vh;overflow:auto}' +
     '.sgb-srow{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;padding:10px 0;border-bottom:1px solid var(--border)}.sgb-srow .n{flex:1;min-width:140px}.sgb-srow .n small{display:block;color:var(--text-dim)}.sgb-srow .lv{min-width:90px}' +
     '.sgb-sed{padding:8px 0 12px;border-bottom:1px solid var(--border)}.sgb-chip{font-size:11.5px;border:1px solid var(--border-lt);border-radius:99px;padding:1px 8px}.sgb-chip.low{border-color:var(--warning);color:var(--warning)}.sgb-chip.out{border-color:var(--danger);color:var(--danger)}.sgb-lv{font-size:18px}.sgb-lv.low{color:var(--warning)}.sgb-lv.out{color:var(--danger)}' +
+    '.sgb-tbl{width:100%;border-collapse:collapse;font-size:13px}.sgb-tbl th,.sgb-tbl td{padding:6px 4px;text-align:left;border-bottom:1px solid var(--border)}.sgb-tbl td:nth-child(2),.sgb-tbl td:nth-child(3),.sgb-tbl td:nth-child(4){text-align:right}.sgb-tbl td:last-child{width:28%}.sgb-bar1{display:block;height:6px;border-radius:3px;margin:2px 0;min-width:1px}.sgb-bar1.in{background:var(--gold-lt)}.sgb-bar1.out{background:var(--danger)}' +
     '.sgb-rcbox pre{white-space:pre-wrap;font:13px/1.45 monospace;margin:10px 0}';
   document.head.appendChild(s);
 }
@@ -402,9 +411,98 @@ function closeDay() {
   S.cc = ''; S.msg = ''; paint(); flush(false);
 }
 
+/* ---- the report ---- */
+function ymd(d) { return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
+function repRange() {
+  var now = new Date(Date.now() + S.offset), to = ymd(now), r = S.rep.range, from;
+  if (r === 'month') from = ymd(new Date(now.getFullYear(), now.getMonth(), 1));
+  else { var d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - (Number(r) - 1)); from = ymd(d); }
+  return { from: from, to: to };
+}
+function loadReport() {
+  var rg = repRange(), ck = 'rep_' + S.rep.range;
+  S.rep.loading = true; S.rep.err = ''; paintReport();
+  return post('sg_business_report', rg).then(function (r) {
+    S.rep.loading = false;
+    if (r.json && r.json.success) { S.rep.data = r.json.data; S.rep.at = Date.now(); S.rep.stale = false; save(ck, { at: S.rep.at, data: r.json.data }); }
+    else { S.rep.err = (r.json && r.json.message) || t('repfail'); useSaved(ck); }
+    paintReport();
+  }, function () { S.rep.loading = false; S.rep.err = t('repfail'); useSaved(ck); paintReport(); });
+}
+function useSaved(ck) { var c = load(ck, null); if (c && c.data) { S.rep.data = c.data; S.rep.at = c.at; S.rep.stale = true; } else { S.rep.data = null; } }
+/* the day rows grouped by day, week (Monday) or month */
+function groupRows(days, g) {
+  var out = {}, order = [];
+  days.forEach(function (d) {
+    var k = d.date;
+    if (g !== 'day') {
+      var dt = new Date(d.date + 'T00:00:00');
+      if (g === 'month') k = d.date.slice(0, 7);
+      else { var back = (dt.getDay() + 6) % 7; k = ymd(new Date(dt.getFullYear(), dt.getMonth(), dt.getDate() - back)); }
+    }
+    if (!out[k]) { out[k] = { key: k, sales: 0, counter: 0, online: 0, expenses: 0 }; order.push(k); }
+    out[k].sales += d.sales + d.online_orders; out[k].counter += d.counter; out[k].online += d.online; out[k].expenses += d.expenses;
+  });
+  return order.sort().map(function (k) { return out[k]; });
+}
+function csvCell(v) { var x = String(v == null ? '' : v); if (/^[=+\-@\t\r]/.test(x)) x = "'" + x; return '"' + x.replace(/"/g, '""') + '"'; }
+function downloadCsv() {
+  var d = S.rep.data; if (!d) return;
+  var rows = [['Period', 'Sales', 'Counter sales', 'Online orders', 'Money in', 'Expenses', 'Left']];
+  groupRows(d.days, S.rep.group).forEach(function (r) { rows.push([r.key, r.sales, r.counter.toFixed(2), r.online.toFixed(2), (r.counter + r.online).toFixed(2), r.expenses.toFixed(2), (r.counter + r.online - r.expenses).toFixed(2)]); });
+  rows.push([]); rows.push(['Item', 'Sold', 'Revenue']);
+  d.best.forEach(function (b) { rows.push([b.name, b.qty, b.revenue.toFixed(2)]); });
+  rows.push([]); rows.push(['Expense', 'Amount']);
+  d.expense_categories.forEach(function (c) { rows.push([c.category, c.amount.toFixed(2)]); });
+  var blob = new Blob(['﻿' + rows.map(function (r) { return r.map(csvCell).join(','); }).join('\r\n')], { type: 'text/csv;charset=utf-8' });
+  var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'etel-report-' + d.from + '_' + d.to + '.csv';
+  document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); if (a.parentNode) a.parentNode.removeChild(a); }, 500);
+}
+function paintReport() {
+  var root = document.getElementById('sgb-rep'); if (!root) return;
+  css();
+  var R = S.rep, d = R.data, tabs = '';
+  tabs = '<div class="sgb-row" role="group" aria-label="' + esc(t('period')) + '">' + [['7', 'r7'], ['30', 'r30'], ['90', 'r90'], ['month', 'rmonth']].map(function (x) {
+    return '<button type="button" class="btn ' + (R.range === x[0] ? 'btn-primary' : 'btn-secondary') + ' sgb-btn" data-sgb="rep-range" data-v="' + x[0] + '" aria-pressed="' + (R.range === x[0]) + '">' + esc(t(x[1])) + '</button>';
+  }).join('') + '</div><div class="sgb-row" style="margin-top:8px" role="group" aria-label="' + esc(t('by')) + '"><span>' + esc(t('by')) + ':</span>' + [['day', 'gday'], ['week', 'gweek'], ['month', 'gmonth']].map(function (x) {
+    return '<button type="button" class="btn ' + (R.group === x[0] ? 'btn-primary' : 'btn-secondary') + ' sgb-btn" data-sgb="rep-group" data-v="' + x[0] + '" aria-pressed="' + (R.group === x[0]) + '">' + esc(t(x[1])) + '</button>';
+  }).join('') + '</div>';
+  var body = '';
+  if (R.loading && !d) body = '<p class="empty-msg">' + esc(t('loading')) + '</p>';
+  else if (!d) body = '<p class="sgb-x" role="alert">' + esc(R.err || t('repfail')) + '</p>';
+  else {
+    var T = d.totals, rows = groupRows(d.days, R.group), max = rows.reduce(function (m, r) { return Math.max(m, r.counter + r.online, r.expenses); }, 0) || 1;
+    var empty = !T.sales && !T.online_orders && !T.expenses;
+    body = (R.stale ? '<div class="sgb-bar warn" role="status">' + esc(t('saved')) + ' ' + esc(hhmm(R.at)) + '</div>' : '') +
+      '<div class="sgb-wrap"><div class="card"><div class="card-body"><div class="sgb-rec"><span>' + esc(t('income')) + '</span><b>ETB ' + esc(money(T.income)) + '</b></div>' +
+      '<div class="sgb-rec"><span>' + esc(t('spent')) + '</span><b>ETB ' + esc(money(T.expenses)) + '</b></div>' +
+      '<div class="sgb-tot"><span>' + esc(t('net')) + '</span><span>ETB ' + esc(money(T.net)) + '</span></div><p class="sgb-x" style="color:var(--text-dim)">' + esc(t('netnote')) + '</p></div></div>' +
+      '<div class="card"><div class="card-body"><div class="sgb-rec"><span>' + esc(t('counter')) + ' (' + esc(T.sales) + ')</span><b>ETB ' + esc(money(T.gross)) + '</b></div>' +
+      '<div class="sgb-rec"><span>· ' + esc(t('cash')) + '</span><span>ETB ' + esc(money(T.cash)) + '</span></div><div class="sgb-rec"><span>· ' + esc(t('mobile')) + '</span><span>ETB ' + esc(money(T.mobile)) + '</span></div>' +
+      '<div class="sgb-rec"><span>· ' + esc(t('credit')) + '</span><span>ETB ' + esc(money(T.credit)) + '</span></div>' +
+      '<div class="sgb-rec"><span>' + esc(t('online')) + ' (' + esc(T.online_orders) + ')</span><b>ETB ' + esc(money(T.online)) + '</b></div>' +
+      '<div class="sgb-rec"><span>' + esc(t('vdisc')) + '</span><span>ETB ' + esc(money(T.discounts)) + '</span></div>' +
+      (T.voided ? '<div class="sgb-rec"><span>' + esc(t('vvoid')) + '</span><span>' + esc(T.voided) + '</span></div>' : '') + '<p class="sgb-x" style="color:var(--text-dim)">' + esc(t('repnote')) + '</p></div></div></div>';
+    if (empty) body += '<p class="empty-msg">' + esc(t('norep')) + '</p>';
+    else {
+      body += '<div class="card"><div class="card-body"><table class="sgb-tbl"><caption class="sr-only" style="position:absolute;left:-9999px">' + esc(t('period')) + '</caption><thead><tr><th scope="col">' + esc(t('period')) + '</th><th scope="col">' + esc(t('nosales')) + '</th><th scope="col">' + esc(t('income')) + '</th><th scope="col">' + esc(t('spent')) + '</th><th scope="col" aria-hidden="true"></th></tr></thead><tbody>' +
+        rows.map(function (r) {
+          var inc = r.counter + r.online;
+          return '<tr><th scope="row">' + esc(r.key) + '</th><td>' + esc(r.sales) + '</td><td>' + esc(money(inc)) + '</td><td>' + esc(money(r.expenses)) + '</td><td aria-hidden="true"><span class="sgb-bar1 in" style="width:' + Math.round(inc / max * 100) + '%"></span><span class="sgb-bar1 out" style="width:' + Math.round(r.expenses / max * 100) + '%"></span></td></tr>';
+        }).join('') + '</tbody></table></div></div>';
+      body += '<div class="sgb-wrap"><div class="card"><div class="card-body"><h3 style="margin:0 0 8px">' + esc(t('best')) + '</h3>' + (d.best.length ? d.best.map(function (b) { return '<div class="sgb-rec"><span>' + esc(b.name) + ' · ' + esc(b.qty) + ' ' + esc(t('sold_n')) + '</span><b>ETB ' + esc(money(b.revenue)) + '</b></div>'; }).join('') : '<p class="empty-msg">—</p>') +
+        '<h3 style="margin:14px 0 8px">' + esc(t('slow')) + '</h3>' + (d.slow.length ? d.slow.map(function (b) { return '<div class="sgb-rec"><span>' + esc(b.name) + '</span><span>' + esc(b.qty) + ' ' + esc(t('sold_n')) + '</span></div>'; }).join('') : '<p class="empty-msg">—</p>') + '</div></div>' +
+        '<div class="card"><div class="card-body"><h3 style="margin:0 0 8px">' + esc(t('byexp')) + '</h3>' + (d.expense_categories.length ? d.expense_categories.map(function (c) { return '<div class="sgb-rec"><span>' + esc(t('c_' + c.category)) + '</span><b>ETB ' + esc(money(c.amount)) + '</b></div>'; }).join('') : '<p class="empty-msg">—</p>') + '</div></div></div>';
+      body += '<div class="sgb-row" style="margin-top:12px"><button type="button" class="btn btn-secondary" data-sgb="rep-csv">' + esc(t('csv')) + '</button></div>';
+    }
+    if (R.err && !R.stale) body += '<p class="sgb-x" role="alert">' + esc(R.err) + '</p>';
+  }
+  root.innerHTML = '<div class="card"><div class="card-body">' + tabs + '</div></div>' + body;
+}
+
 function paint() {
   var keep = document.activeElement && document.activeElement.id;
-  paintSell(); paintStock(); paintExpenses(); paintCashup();
+  paintSell(); paintStock(); paintExpenses(); paintCashup(); paintReport();
   if (keep) { var el = document.getElementById(keep); if (el && el.focus) { el.focus(); try { el.setSelectionRange(el.value.length, el.value.length); } catch (e) {} } }
   var bd = document.getElementById('sgb-badge'), n = outbox().length;
   if (bd) { bd.textContent = n; bd.style.display = n ? '' : 'none'; }
@@ -438,6 +536,9 @@ function onClick(e) {
   else if (a === 'st-hist') showHist(id);
   else if (a === 'ex-add') addExpense();
   else if (a === 'close-day') closeDay();
+  else if (a === 'rep-range') { S.rep.range = b.getAttribute('data-v'); loadReport(); }
+  else if (a === 'rep-group') { S.rep.group = b.getAttribute('data-v'); paintReport(); }
+  else if (a === 'rep-csv') downloadCsv();
   else if (a === 'rc-close') closeReceipt();
   else if (a === 'rc-print') printText(document.getElementById('sgb-rc')._text);
   else if (a === 'rc-share') { try { navigator.share({ text: document.getElementById('sgb-rc')._text }); } catch (x) {} }
@@ -473,12 +574,13 @@ var PAGES = [
   { id: 'sell', cap: 'pos.sell', icon: '🧾', label: 'sell', sub: 'sub', root: 'sgb-root', menu: 'sgb-menu', badge: 'sgb-badge' },
   { id: 'stock', cap: 'stock.manage', icon: '📦', label: 'stock', sub: 'stocksub', root: 'sgb-stock', menu: 'sgb-menu-stock', badge: 'sgb-badge-stock' },
   { id: 'exp', cap: 'expenses.manage', icon: '🧮', label: 'expenses', sub: 'expsub', root: 'sgb-exp', menu: 'sgb-menu-exp', badge: 'sgb-badge-exp' },
-  { id: 'cash', cap: 'cashup.manage', icon: '💵', label: 'cashup', sub: 'cashsub', root: 'sgb-cash', menu: 'sgb-menu-cash', badge: 'sgb-badge-cash' }
+  { id: 'cash', cap: 'cashup.manage', icon: '💵', label: 'cashup', sub: 'cashsub', root: 'sgb-cash', menu: 'sgb-menu-cash', badge: 'sgb-badge-cash' },
+  { id: 'rep', cap: 'reports.view', cap2: 'payments.view', icon: '📊', label: 'rep', sub: 'repsub', root: 'sgb-rep', menu: 'sgb-menu-rep', badge: 'sgb-badge-rep' }
 ];
 var wired = false;
 function mountPage(def) {
   var m = document.getElementById(def.menu);
-  if (!enabled() || !can(def.cap)) { if (m) m.style.display = 'none'; return; }
+  if (!enabled() || !can(def.cap) || (def.cap2 && !can(def.cap2))) { if (m) m.style.display = 'none'; return; }
   if (m) { m.style.display = ''; return; }
   var orders = document.querySelector('.menu-item[data-page="orders"]'); var host = document.getElementById('page-orders'); if (!orders || !host) return;
   var mi = document.createElement('div'); mi.className = 'menu-item'; mi.id = def.menu; mi.setAttribute('data-page', 'biz-' + def.id); mi.setAttribute('role', 'button'); mi.tabIndex = 0;
@@ -491,7 +593,7 @@ function mountPage(def) {
   var go = function () {
     if (typeof switchPage === 'function') { try { switchPage('biz-' + def.id); } catch (x) { show(); } } else show();
     if (typeof closeSidebar === 'function') { try { closeSidebar(); } catch (x) {} }
-    openScreen();
+    openScreen(def);
   };
   mi.addEventListener('click', go);
   mi.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(); } });
@@ -504,7 +606,7 @@ function mount() {
   if (!wired) { wired = true; document.addEventListener('click', function (e) { if (e.target.closest && e.target.closest('#sgb-rc')) onClick(e); }); }
   paint();
 }
-function openScreen() { paint(); flush(false); refreshState(); }
+function openScreen(def) { paint(); flush(false); refreshState(); if (def && def.id === 'rep') loadReport(); }
 
 var origApply = window.applyStaffRoleUI;
 if (typeof origApply === 'function') {

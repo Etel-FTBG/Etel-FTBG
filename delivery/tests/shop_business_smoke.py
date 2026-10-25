@@ -265,6 +265,33 @@ def main():
     check("...but not another shop's item", res.get("success") is False, res)
     call("admin_sg_set_business_tools", {"id": mine_id, "enabled": 0}, token=admin)
 
+    print("10. The report")
+    call("admin_sg_set_business_tools", {"id": sg_id, "enabled": 1}, token=admin)
+    today = datetime.now().strftime("%Y-%m-%d")
+    _, res = call("sg_business_report", {"from": today, "to": today}, token=tok)
+    d = res.get("data") or {}
+    t = d.get("totals") or {}
+    check("the owner gets a report", res.get("success") is True and "net" in t, res)
+    exp_sales = sql(f"SELECT COALESCE(SUM(total),0) FROM sg_pos_sales WHERE service_giver_id={sg_id} AND status<>'void' AND DATE(occurred_at)=CURDATE()")
+    exp_exp = sql(f"SELECT COALESCE(SUM(amount),0) FROM sg_expenses WHERE service_giver_id={sg_id} AND DATE(occurred_at)=CURDATE()")
+    check("counter sales in the report match the books", abs(float(t.get("gross", -1)) - float(exp_sales)) < 0.01, (t, exp_sales))
+    check("expenses in the report match the books", abs(float(t.get("expenses", -1)) - float(exp_exp)) < 0.01, (t, exp_exp))
+    check("net is money in minus money out", abs(float(t.get("net", 0)) - (float(t.get("income", 0)) - float(t.get("expenses", 0)))) < 0.01, t)
+    check("voided sales are not counted as sales", t.get("voided", 0) >= 0 and int(t.get("sales", -1)) == int(sql(f"SELECT COUNT(*) FROM sg_pos_sales WHERE service_giver_id={sg_id} AND status<>'void' AND DATE(occurred_at)=CURDATE()")), t)
+    check("the best sellers list is ordered", [x["qty"] for x in d.get("best", [])] == sorted([x["qty"] for x in d.get("best", [])], reverse=True), d.get("best"))
+    check("the slowest list comes from the shop's own menu", all(x["name"] in ("Tibs", "Injera") for x in d.get("slow", [])), d.get("slow"))
+    st, res = call("sg_business_report", {"from": "2024-01-01", "to": today}, token=tok)
+    check("more than a year at once is refused", st == 400, res)
+    st, res = call("sg_business_report", {"from": "nonsense", "to": today}, token=tok)
+    check("a bad date is refused", st == 400, res)
+    st, res = call("sg_business_report", {"from": today, "to": "2000-01-01"}, token=tok)
+    check("a range that ends before it starts is refused", st == 400, res)
+    st, res = call("sg_business_report", {"sg_id": 999999, "from": today, "to": today}, token=tok)
+    check("the shop always comes from the account, never the request", res.get("success") is True and "sg_id" not in json.dumps(res.get("data")), res)
+    call("admin_sg_set_business_tools", {"id": sg_id, "enabled": 0}, token=admin)
+    st, res = call("sg_business_report", {"from": today, "to": today}, token=tok)
+    check("the report is refused once the tools are off", st == 403, res)
+
     print()
     print(f"{len(PASS)} passed, {len(FAIL)} failed")
     return 1 if FAIL else 0
