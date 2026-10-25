@@ -43,6 +43,7 @@ run python3 tests/people_admin_smoke.py
 run python3 tests/courier_approval_smoke.py
 run python3 tests/admin_boards_smoke.py
 run python3 tests/business_logic_smoke.py
+run python3 tests/shop_business_smoke.py
 run python3 tests/open_meter_smoke.py
 run python3 tests/ride_dispatch_smoke.py
 run python3 tests/ride_offer_smoke.py

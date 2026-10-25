@@ -1,0 +1,212 @@
+# NOTE: phone prefix owned by this test: +251 931 / +251 932 (other smokes use 911-988; pick unique ones)
+"""
+ETEL Delivery -- Etel Business (the shop's own books) smoke test
+
+Covers api/lib/sg_business.php through the real API: the per-shop switch, walk-in sales, the stock ledger, voids, expenses, the daily
+cash-up, permissions of a counter-only staff role, resends (must change nothing) and the checks on time, amounts and batch size.
+
+Usage (same convention as the other smoke tests):
+    php -S 127.0.0.1:8765 -t . > /tmp/etel-php.log 2>&1 &
+    python3 tests/shop_business_smoke.py
+Needs the seeded admin (api/seeds/admin_demo_accounts.sql); SKIPS when it is missing.
+"""
+import json
+import subprocess
+import sys
+import time
+import urllib.error
+import urllib.request
+from datetime import datetime, timedelta, timezone
+
+import etel_test_db
+
+API_URL = "http://127.0.0.1:8765/api/boot.php"
+SUFFIX = str(int(time.time()))
+PASS, FAIL = [], []
+
+
+def call(action, body=None, token=None):
+    body = dict(body or {})
+    body["action"] = action
+    headers = {"Content-Type": "application/json"}
+    if token:
+        headers["Authorization"] = "Bearer " + token
+    req = urllib.request.Request(API_URL, data=json.dumps(body).encode(), headers=headers, method="POST")
+    try:
+        with urllib.request.urlopen(req, timeout=15) as f:
+            return f.status, json.loads(f.read().decode())
+    except urllib.error.HTTPError as e:
+        try:
+            return e.code, json.loads(e.read().decode())
+        except Exception:
+            return e.code, {"success": False, "message": "(non-JSON error body)"}
+
+
+def check(name, cond, detail=""):
+    (PASS if cond else FAIL).append(name)
+    print(("  OK   " if cond else "  FAIL ") + name + ("" if cond else "  " + str(detail)))
+
+
+def sql(q):
+    c = etel_test_db._cfg()
+    r = subprocess.run(["mysql", "-N", "-h", c["host"], "-u", c["user"], c["name"], "-e", q], capture_output=True, text=True,
+                       env=dict(__import__("os").environ, MYSQL_PWD=c["pass"]), timeout=30)
+    return r.stdout.strip()
+
+
+def iso(delta_seconds=-60):
+    return (datetime.now(timezone.utc) + timedelta(seconds=delta_seconds)).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def ev(kind, req, data, when=None):
+    return {"type": kind, "req_id": req, "occurred_at": when or iso(), "data": data}
+
+
+def results(res):
+    return (res.get("data") or {}).get("results", [])
+
+
+def stock_of(token, item_id):
+    _, res = call("sg_business_state", {}, token=token)
+    for it in (res.get("data") or {}).get("items", []):
+        if str(it["id"]) == str(item_id):
+            return it["stock_quantity"]
+    return None
+
+
+def main():
+    _, res = call("login", {"phone": "0900000000", "password": "admin1234"})
+    admin = (res.get("data") or {}).get("token")
+    if not admin:
+        print("  SKIP no seeded admin account in this database")
+        return 0
+    phone = f"+251931{SUFFIX[-6:]}"
+    _, res = call("admin_create_service_giver", {"name": f"Biz SG {SUFFIX}", "phone": phone, "password": "testpass123",
+                  "business_name": "Biz Smoke Kitchen", "service_type": "food", "vehicle_type": "on_foot", "zone": "Mehal Ketema"}, token=admin)
+    check("admin creates a shop", res.get("success") is True, res)
+    sg_id = (res.get("data") or {}).get("service_giver_id") or (res.get("data") or {}).get("id")
+    _, res = call("sg_login", {"phone": phone, "password": "testpass123"})
+    tok = (res.get("data") or {}).get("token")
+    _, res = call("sg_add_item", {"name": "Tibs", "category": "food", "price": 100, "stock_quantity": 10}, token=tok)
+    a = (res.get("data") or {}).get("item_id")
+    _, res = call("sg_add_item", {"name": "Injera", "category": "food", "price": 20, "stock_quantity": 50}, token=tok)
+    b = (res.get("data") or {}).get("item_id")
+    check("two items created", bool(a and b), res)
+    if not sg_id:
+        sg_id = sql(f"SELECT id FROM service_givers WHERE user_id=(SELECT id FROM users WHERE phone='{phone}')")
+
+    print("1. The switch")
+    st, res = call("sg_pos_sync", {"events": []}, token=tok)
+    check("sync is refused while the tools are off", st == 403 and res.get("success") is False, res)
+    st, res = call("sg_business_state", {}, token=tok)
+    check("state is refused while the tools are off", st == 403, res)
+    st, res = call("admin_sg_set_business_tools", {"id": sg_id, "enabled": 1}, token=tok)
+    check("a shop cannot switch its own tools on", st == 403, res)
+    st, res = call("admin_sg_set_business_tools", {"id": sg_id, "enabled": 1}, token=admin)
+    check("admin switches the tools on", res.get("success") is True and res["data"]["business_tools"] == 1, res)
+    _, res = call("sg_profile", {}, token=tok)
+    check("profile tells the app the tools are on", (res.get("data") or {}).get("service_giver", {}).get("business_tools") == 1, res)
+    st, res = call("sg_business_state", {}, token=tok)
+    check("state lists the items", res.get("success") is True and len(res["data"]["items"]) >= 2, res)
+
+    print("2. Walk-in sales")
+    sale = ev("sale", "s1" + SUFFIX, {"items": [{"item_id": a, "name": "Tibs", "unit_price": 100, "qty": 2}, {"item_id": a, "name": "Tibs", "unit_price": 100, "qty": 1},
+                                                {"item_id": b, "name": "Injera", "unit_price": 20, "qty": 5}], "payment_method": "cash"})
+    _, res = call("sg_pos_sync", {"events": [sale]}, token=tok)
+    check("a sale is saved", results(res) and results(res)[0]["status"] == "ok" and results(res)[0]["total"] == 400, res)
+    check("stock went down (same item on two lines adds up)", stock_of(tok, a) == 7 and stock_of(tok, b) == 45, (stock_of(tok, a), stock_of(tok, b)))
+    _, res = call("sg_pos_sync", {"events": [sale]}, token=tok)
+    check("resending the same sale changes nothing", results(res)[0]["status"] == "dup" and stock_of(tok, a) == 7, res)
+    big = ev("sale", "s2" + SUFFIX, {"items": [{"name": "Special order", "unit_price": 500, "qty": 1}], "discount": 300, "payment_method": "mobile"})
+    _, res = call("sg_pos_sync", {"events": [big]}, token=tok)
+    check("owner may give a big discount; a quick (not-in-menu) line needs no item", results(res)[0]["status"] == "ok" and results(res)[0]["total"] == 200, res)
+    credit_bad = ev("sale", "s3" + SUFFIX, {"items": [{"item_id": b, "name": "Injera", "unit_price": 20, "qty": 1}], "payment_method": "credit"})
+    credit_ok = ev("sale", "s4" + SUFFIX, {"items": [{"item_id": b, "name": "Injera", "unit_price": 20, "qty": 1}], "payment_method": "credit", "customer_name": "Abebe"})
+    _, res = call("sg_pos_sync", {"events": [credit_bad, credit_ok]}, token=tok)
+    r = results(res)
+    check("a credit sale needs a name; one bad event does not block the next", r[0]["status"] == "error" and r[1]["status"] == "ok", r)
+    bad_events = [ev("sale", "s5" + SUFFIX, {"items": [{"item_id": a, "name": "Tibs", "unit_price": 100, "qty": 0}]}),
+                  ev("sale", "s6" + SUFFIX, {"items": [{"item_id": a, "name": "Tibs", "unit_price": -5, "qty": 1}]}),
+                  ev("sale", "s7" + SUFFIX, {"items": [{"item_id": a, "name": "Tibs", "unit_price": 100, "qty": 1}], "discount": 5000}),
+                  ev("sale", "s8" + SUFFIX, {"items": [{"item_id": a, "name": "Tibs", "unit_price": 100, "qty": 1}]}, when=iso(-8 * 86400)),
+                  ev("sale", "s9" + SUFFIX, {"items": [{"item_id": a, "name": "Tibs", "unit_price": 100, "qty": 1}]}, when=iso(3600)),
+                  {"type": "sale", "req_id": "bad id!", "occurred_at": iso(), "data": {}}]
+    _, res = call("sg_pos_sync", {"events": bad_events}, token=tok)
+    check("zero qty, negative price, over-discount, 8-day-old, future and malformed events are all refused",
+          all(x["status"] == "error" for x in results(res)) and len(results(res)) == 6, results(res))
+    check("refused events did not touch stock", stock_of(tok, a) == 7, stock_of(tok, a))
+    st, res = call("sg_pos_sync", {"events": [ev("expense", f"x{i}{SUFFIX}", {}) for i in range(201)]}, token=tok)
+    check("more than 200 events in one request is refused", st == 400, res)
+
+    print("3. Void")
+    _, res = call("sg_pos_sync", {"events": [ev("void", "v1" + SUFFIX, {"sale_req_id": "s1" + SUFFIX})]}, token=tok)
+    check("a void is saved and the stock comes back", results(res)[0]["status"] == "ok" and stock_of(tok, a) == 10 and stock_of(tok, b) == 49, (results(res), stock_of(tok, a), stock_of(tok, b)))
+    _, res = call("sg_pos_sync", {"events": [ev("void", "v2" + SUFFIX, {"sale_req_id": "s1" + SUFFIX})]}, token=tok)
+    check("voiding twice changes nothing", results(res)[0]["status"] == "dup" and stock_of(tok, a) == 10, results(res))
+    _, res = call("sg_pos_sync", {"events": [ev("void", "v3" + SUFFIX, {"sale_req_id": "nope"})]}, token=tok)
+    check("voiding an unknown sale is an error", results(res)[0]["status"] == "error", res)
+
+    print("4. Stock")
+    evs = [ev("stock", "k1" + SUFFIX, {"item_id": a, "kind": "delivery", "qty": 5}), ev("stock", "k2" + SUFFIX, {"item_id": a, "kind": "waste", "qty": 2}),
+           ev("stock", "k3" + SUFFIX, {"item_id": b, "kind": "count", "qty": 30}), ev("stock", "k4" + SUFFIX, {"item_id": a, "kind": "waste", "qty": 0})]
+    _, res = call("sg_pos_sync", {"events": evs}, token=tok)
+    r = results(res)
+    check("delivery, waste and count are saved; a zero quantity is refused", [x["status"] for x in r] == ["ok", "ok", "ok", "error"], r)
+    check("stock levels follow the movements", stock_of(tok, a) == 13 and stock_of(tok, b) == 30, (stock_of(tok, a), stock_of(tok, b)))
+    _, res = call("sg_pos_sync", {"events": evs[:1]}, token=tok)
+    check("resending a stock entry changes nothing", results(res)[0]["status"] == "dup" and stock_of(tok, a) == 13, results(res))
+    ledger = sql(f"SELECT COALESCE(SUM(delta),0) FROM sg_stock_events WHERE service_giver_id={sg_id} AND item_id={a}")
+    check("the ledger adds up to the change in stock", ledger == "3", ledger)
+
+    print("5. Expenses and cash-up")
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    evs = [ev("expense", "e1" + SUFFIX, {"category": "supplies", "amount": 50, "paid_with": "cash", "note": "onions"}),
+           ev("expense", "e2" + SUFFIX, {"category": "electricity", "amount": 70, "paid_with": "mobile"}),
+           ev("expense", "e3" + SUFFIX, {"category": "snacks", "amount": 10}), ev("expense", "e4" + SUFFIX, {"category": "rent", "amount": 0})]
+    _, res = call("sg_pos_sync", {"events": evs}, token=tok)
+    check("expenses saved; unknown category and zero amount refused", [x["status"] for x in results(res)] == ["ok", "ok", "error", "error"], results(res))
+    _, res = call("sg_pos_sync", {"events": [ev("cashup", "c1" + SUFFIX, {"business_date": today, "opening_float": 100, "counted_cash": 150})]}, token=tok)
+    r = results(res)[0]
+    # cash sales left after the void: only the credit sale was not cash; s2 was mobile; s1 voided -> 0 cash sales. expected = 100 + 0 - 50
+    check("cash-up works out what the till should hold", r["status"] == "ok" and r["expected_cash"] == 50 and r["difference"] == 100, r)
+    _, res = call("sg_pos_sync", {"events": [ev("cashup", "c2" + SUFFIX, {"business_date": today, "opening_float": 0, "counted_cash": 0})]}, token=tok)
+    check("a closed day cannot be closed again with other figures", results(res)[0]["status"] == "error", results(res))
+    _, res = call("sg_pos_sync", {"events": [ev("cashup", "c1" + SUFFIX, {"business_date": today, "opening_float": 100, "counted_cash": 150})]}, token=tok)
+    check("resending the close changes nothing", results(res)[0]["status"] == "dup", results(res))
+    _, res = call("sg_business_state", {}, token=tok)
+    t = res["data"]["today"]
+    check("today's totals count live sales only", t["sales"] == 2 and abs(t["sales_total"] - 220) < 0.01 and abs(t["expenses"] - 120) < 0.01, t)
+
+    print("6. A counter-only staff role")
+    _, res = call("sg_save_role", {"role_name": "Counter", "capabilities": ["pos.sell", "orders.view"]}, token=tok)
+    role_id = (res.get("data") or {}).get("role_id") or (res.get("data") or {}).get("id")
+    check("owner creates a counter role", res.get("success") is True and role_id, res)
+    sp = f"+251932{SUFFIX[-6:]}"
+    _, res = call("sg_add_staff", {"name": "Counter Kid", "phone": sp, "password": "testpass123", "role_id": role_id}, token=tok)
+    check("owner adds the staff login", res.get("success") is True, res)
+    _, res = call("login", {"phone": sp, "password": "testpass123"})
+    ctok = (res.get("data") or {}).get("token")
+    evs = [ev("sale", "t1" + SUFFIX, {"items": [{"item_id": b, "name": "Injera", "unit_price": 20, "qty": 2}]}),
+           ev("sale", "t2" + SUFFIX, {"items": [{"item_id": a, "name": "Tibs", "unit_price": 100, "qty": 1}], "discount": 50}),
+           ev("void", "t3" + SUFFIX, {"sale_req_id": "t1" + SUFFIX}), ev("stock", "t4" + SUFFIX, {"item_id": a, "kind": "delivery", "qty": 5}),
+           ev("expense", "t5" + SUFFIX, {"category": "other", "amount": 5}), ev("cashup", "t6" + SUFFIX, {"business_date": "2000-01-01", "counted_cash": 1})]
+    _, res = call("sg_pos_sync", {"events": evs}, token=ctok)
+    r = [x["status"] for x in results(res)]
+    check("staff can sell, but not give a big discount, void, move stock, spend or close the day", r == ["ok", "error", "error", "error", "error", "error"], results(res))
+    st, res = call("sg_business_state", {}, token=ctok)
+    check("staff with only the sell right can open the counter", res.get("success") is True, res)
+
+    print("7. Switched off again")
+    call("admin_sg_set_business_tools", {"id": sg_id, "enabled": 0}, token=admin)
+    st, res = call("sg_pos_sync", {"events": []}, token=tok)
+    check("sync is refused again once the tools are off", st == 403, res)
+    st, res = call("sg_pos_sync", {"events": []}, token=admin)
+    check("a platform admin cannot enter a shop's sales", st in (403, 404), (st, res))
+
+    print()
+    print(f"{len(PASS)} passed, {len(FAIL)} failed")
+    return 1 if FAIL else 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
