@@ -416,6 +416,7 @@ const PD_VTYPES = [
     { id: 'moto', label: 'Moto', icon: '🛵' },
     { id: 'car', label: 'Car', icon: '🚗' },
     { id: 'minibus', label: 'Minibus', icon: '🚐' },
+    { id: 'ev_car', label: 'EV Bajaj', icon: '⚡' },
 ];
 let _pdMode = 'open';
 
@@ -541,7 +542,7 @@ function pdRenderVtypeCards() {
     wrap.dataset.built = '1';
     const pic = v => (window.EtelVehicleArt && EtelVehicleArt.ready(v.id)) ? EtelVehicleArt.html(v.id, 64, 44) : v.icon;
     wrap.innerHTML = PD_VTYPES.map((v, i) => `
-        <div class="pd-vtype-card" data-vtype="${v.id}" onclick="pdSelectVtype('${v.id}')"
+        <div class="pd-vtype-opt" data-vtype="${v.id}" onclick="pdSelectVtype('${v.id}')"
             style="text-align:center;padding:10px 4px;border-radius:10px;cursor:pointer;border:1px solid ${i === 0 ? 'rgba(78,205,196,.55)' : 'rgba(255,255,255,.12)'};background:${i === 0 ? 'rgba(78,205,196,.14)' : 'rgba(255,255,255,.03)'}">
             <div class="pd-vtype-icon" style="font-size:20px;height:44px;display:flex;align-items:center;justify-content:center">${pic(v)}</div>
             <div style="font-size:10.5px;font-weight:700;color:${i === 0 ? '#7FE8DC' : '#9A9AAE'};margin-top:3px">${v.label}</div>
@@ -550,7 +551,7 @@ function pdRenderVtypeCards() {
 
 // The 3D vehicle pictures (js/etel-vehicle-art.js) load after the page; swap them in for the emoji as they arrive.
 function pdPaintVtypeArt() {
-    document.querySelectorAll('.pd-vtype-card').forEach(card => {
+    document.querySelectorAll('.pd-vtype-opt').forEach(card => {
         const id = card.getAttribute('data-vtype'), v = PD_VTYPES.find(x => x.id === id), icon = card.querySelector('.pd-vtype-icon');
         if (!v || !icon) return;
         icon.innerHTML = (window.EtelVehicleArt && EtelVehicleArt.ready(id)) ? EtelVehicleArt.html(id, 64, 44) : v.icon;
@@ -566,7 +567,7 @@ document.addEventListener('etel:vehicle-art', () => {
 
 function pdSelectVtype(id) {
     document.getElementById('pd-vtype').value = id;
-    document.querySelectorAll('.pd-vtype-card').forEach(card => {
+    document.querySelectorAll('.pd-vtype-opt').forEach(card => {
         const active = card.getAttribute('data-vtype') === id;
         card.style.border = active ? '1px solid rgba(78,205,196,.55)' : '1px solid rgba(255,255,255,.12)';
         card.style.background = active ? 'rgba(78,205,196,.14)' : 'rgba(255,255,255,.03)';
