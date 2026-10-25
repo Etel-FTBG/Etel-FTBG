@@ -1159,15 +1159,17 @@ case 'admin_topup_etel_money': {
 }
 
 case 'admin_ride_payments': {
-    /* Ride Payments console: fare revenue by payment method, driver balances,
-       recent driver payouts and pending driver Etel Money top-ups. Ride data only. */
+    /* Ride Payments console: fare revenue by payment method and day for a chosen
+       window (7/30/90/365 days), fixed today/7/30/all-time totals, per-driver
+       balances, recent payouts, pending driver Etel Money top-ups (with receipt
+       photo) and the last decided top-ups. Ride data only. */
     $pdo = db();
     etel_require_ride_pay($pdo, 'finance.view', 'rides.view');
-    $out = array('by_method' => array(), 'totals' => array(), 'payouts' => array(), 'topups' => array());
+    $days = isset($body['days']) ? intval($body['days']) : 30;
+    if (!in_array($days, array(7, 30, 90, 365), true)) $days = 30;
+    $out = array('days' => $days, 'by_method' => array(), 'totals' => array(), 'period' => array(), 'trend' => array(),
+                 'drivers' => array(), 'payouts' => array(), 'topups' => array(), 'topup_history' => array());
     try {
-        $out['by_method'] = $pdo->query("SELECT COALESCE(NULLIF(payment_method,''),'cash') AS method, COUNT(*) AS trips,
-                COALESCE(SUM(fare_paid),0) AS amount
-            FROM rides WHERE status='completed' GROUP BY 1 ORDER BY amount DESC")->fetchAll(PDO::FETCH_ASSOC);
         $t = $pdo->query("SELECT
                 COALESCE(SUM(CASE WHEN DATE(completed_at)=CURDATE() THEN fare_paid END),0) AS today,
                 COALESCE(SUM(CASE WHEN completed_at >= DATE_SUB(NOW(), INTERVAL 7 DAY) THEN fare_paid END),0) AS week,
@@ -1180,13 +1182,32 @@ case 'admin_ride_payments': {
         $out['totals'] = array_merge($t ?: array(), $d ?: array());
     } catch (Throwable $e) { error_log('[ETEL] admin_ride_payments totals: ' . $e->getMessage()); }
     try {
+        $win = "status='completed' AND completed_at >= DATE_SUB(CURDATE(), INTERVAL " . ($days - 1) . " DAY)";
+        $out['by_method'] = $pdo->query("SELECT COALESCE(NULLIF(payment_method,''),'cash') AS method, COUNT(*) AS trips,
+                COALESCE(SUM(fare_paid),0) AS amount FROM rides WHERE $win GROUP BY 1 ORDER BY amount DESC")->fetchAll(PDO::FETCH_ASSOC);
+        $out['trend'] = $pdo->query("SELECT DATE(completed_at) AS d, COUNT(*) AS trips, COALESCE(SUM(fare_paid),0) AS amount
+            FROM rides WHERE $win GROUP BY 1 ORDER BY 1")->fetchAll(PDO::FETCH_ASSOC);
+        $out['period'] = $pdo->query("SELECT COUNT(*) AS trips, COALESCE(SUM(fare_paid),0) AS amount, COALESCE(AVG(fare_paid),0) AS avg_fare
+            FROM rides WHERE $win")->fetch(PDO::FETCH_ASSOC) ?: array();
+    } catch (Throwable $e) { error_log('[ETEL] admin_ride_payments period: ' . $e->getMessage()); }
+    try {
+        $out['drivers'] = $pdo->query("SELECT d.user_id AS id, u.name, u.phone, d.total_earnings, d.total_paid_out, d.commission_owed, d.etel_money_balance
+            FROM ride_drivers d LEFT JOIN users u ON u.id = d.user_id
+            ORDER BY d.total_earnings DESC LIMIT 200")->fetchAll(PDO::FETCH_ASSOC);
+    } catch (Throwable $e) { error_log('[ETEL] admin_ride_payments drivers: ' . $e->getMessage()); }
+    try {
         $out['payouts'] = $pdo->query("SELECT p.id, p.amount, p.status, p.tx_ref, p.created_at, u.name AS driver_name, u.phone AS driver_phone
             FROM driver_payouts p LEFT JOIN users u ON u.id = p.user_id ORDER BY p.id DESC LIMIT 50")->fetchAll(PDO::FETCH_ASSOC);
     } catch (Throwable $e) { /* table is created on the first cash-out */ }
     try {
-        $out['topups'] = $pdo->query("SELECT t.id, t.amount, t.tx_ref, t.source, t.created_at, u.name AS driver_name, u.phone AS driver_phone
+        $out['topups'] = $pdo->query("SELECT t.id, t.amount, t.tx_ref, t.source, t.note, t.receipt_image_url, t.created_at, u.name AS driver_name, u.phone AS driver_phone
             FROM driver_etel_money_topups t JOIN users u ON u.id = t.user_id
             WHERE t.status='pending' ORDER BY t.created_at ASC")->fetchAll(PDO::FETCH_ASSOC);
+    } catch (Throwable $e) { /* table or receipt column is created on the first top-up */ }
+    try {
+        $out['topup_history'] = $pdo->query("SELECT t.id, t.amount, t.tx_ref, t.source, t.status, t.note, t.approved_at, t.created_at, u.name AS driver_name
+            FROM driver_etel_money_topups t JOIN users u ON u.id = t.user_id
+            WHERE t.status IN ('approved','rejected') ORDER BY t.approved_at DESC, t.id DESC LIMIT 30")->fetchAll(PDO::FETCH_ASSOC);
     } catch (Throwable $e) { /* table is created on the first top-up */ }
     ok($out);
     break;
