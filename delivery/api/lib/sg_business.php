@@ -17,6 +17,10 @@ require_once __DIR__ . '/offline_sync.php';
 
 const ETEL_SGB_MAX_EVENTS = 200;
 const ETEL_SGB_MAX_AGE = 604800;   // 7 days
+const ETEL_SGB_MAX_SALES_DAY = 2000;      // counter sales per shop per business day
+const ETEL_SGB_MAX_EXPENSES_DAY = 200;    // expenses per shop per business day
+const ETEL_SGB_BIG_EXPENSE = 5000;        // an expense at or above this (ETB) is written to the activity log
+const ETEL_SGB_MAX_SALE = 10000000;       // one sale, ETB
 
 function etel_sgb_ensure_schema($pdo) {
     static $done = false;
@@ -58,6 +62,12 @@ function etel_sgb_ensure_schema($pdo) {
             counted_cash DECIMAL(12,2) NOT NULL DEFAULT 0, difference DECIMAL(12,2) NOT NULL DEFAULT 0,
             closed_by_user_id INT NULL, closed_at DATETIME NOT NULL, client_req_id VARCHAR(64) NULL,
             UNIQUE KEY uq_cash_day (service_giver_id, business_date)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+        // the activity log: append-only, nothing in the code updates or deletes a row
+        $pdo->exec("CREATE TABLE IF NOT EXISTS sg_business_audit (
+            id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY, service_giver_id INT NOT NULL, user_id INT NULL,
+            action VARCHAR(40) NOT NULL, ref VARCHAR(64) NULL, detail VARCHAR(255) NULL, occurred_at DATETIME NOT NULL, created_at DATETIME NOT NULL,
+            KEY ix_audit_shop (service_giver_id, id)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
         // later versions add 'online_cancel' (an accepted online order that was cancelled puts its items back)
         $col = $pdo->query("SHOW COLUMNS FROM sg_stock_events LIKE 'reason'")->fetch(PDO::FETCH_ASSOC);
@@ -141,6 +151,9 @@ function etel_sgb_apply_event($pdo, $ctx, $userId, $ev) {
             default:        $r = array('status' => 'error', 'message' => 'Unknown event type');
         }
         if ($r['status'] === 'ok') $pdo->commit(); else $pdo->rollBack();
+        // refusals are written after the rollback, so the log keeps them
+        if ($r['status'] === 'error' && isset($r['log'])) { etel_sgb_audit($pdo, $sg, $userId, $r['log'][0], $r['log'][1], $r['log'][2], $when); unset($r['log']); }
+        elseif ($r['status'] === 'error' && strpos($r['message'], "doesn't have permission") !== false) etel_sgb_audit($pdo, $sg, $userId, 'denied', $ev['type'], $r['message'], $when);
         return $r;
     } catch (Exception $e) {
         if ($pdo->inTransaction()) $pdo->rollBack();
@@ -151,6 +164,34 @@ function etel_sgb_apply_event($pdo, $ctx, $userId, $ev) {
 
 function etel_sgb_cap($ctx, $cap) { return function_exists('sg_has_capability') && sg_has_capability($ctx, $cap); }
 function etel_sgb_denied($cap) { return array('status' => 'error', 'message' => "This account doesn't have permission to do this (requires: $cap)"); }
+
+/* One line in the shop's activity log. Never throws and never blocks the books: a log that cannot be written is reported to the server log only. */
+function etel_sgb_audit($pdo, $sg, $userId, $action, $ref, $detail, $when = null) {
+    try {
+        $pdo->prepare('INSERT INTO sg_business_audit (service_giver_id, user_id, action, ref, detail, occurred_at, created_at) VALUES (?,?,?,?,?,?,NOW())')
+            ->execute(array($sg, $userId ?: null, mb_substr($action, 0, 40), $ref === null ? null : mb_substr((string) $ref, 0, 64), $detail === null ? null : mb_substr((string) $detail, 0, 255), $when ?: date('Y-m-d H:i:s')));
+    } catch (Exception $e) { error_log('[ETEL] sg business audit: ' . $e->getMessage()); }
+}
+
+/* has the shop already counted the till for the day of this moment? (its figures are then frozen) */
+function etel_sgb_day_closed($pdo, $sg, $when) {
+    $s = $pdo->prepare('SELECT 1 FROM sg_cash_days WHERE service_giver_id=? AND business_date=DATE(?)');
+    $s->execute(array($sg, $when));
+    return $s->fetchColumn() !== false;
+}
+
+/* how many rows of $table the shop already has on the business day of $when ($col is the time column) */
+function etel_sgb_count_day($pdo, $table, $col, $sg, $when) {
+    $s = $pdo->prepare("SELECT COUNT(*) FROM $table WHERE service_giver_id=? AND $col>=DATE(?) AND $col<DATE(?)+INTERVAL 1 DAY");
+    $s->execute(array($sg, $when, $when));
+    return intval($s->fetchColumn());
+}
+
+/* at most $max calls of one kind per person in 10 minutes; answers 429 (the phone keeps its entries and tries again later) */
+function etel_sgb_throttle($pdo, $userId, $kind, $max) {
+    rate_limit_account_check($pdo, 'sgb_' . $kind . '_' . intval($userId), $max, 600, 600);
+    rate_limit_account_fail($pdo, 'sgb_' . $kind . '_' . intval($userId));
+}
 
 /* adjusts the ledger and the items cache; $delta may be negative. Item must belong to the shop. */
 function etel_sgb_move_stock($pdo, $sg, $itemId, $delta, $reason, $refId, $reqId, $userId, $when) {
@@ -188,6 +229,10 @@ function etel_sgb_sale($pdo, $ctx, $sg, $userId, $reqId, $when, $d) {
         $subtotal += $price * $qty;
     }
     $subtotal = round($subtotal, 2);
+    if ($subtotal > ETEL_SGB_MAX_SALE) return array('status' => 'error', 'message' => 'A single sale cannot be more than ETB ' . number_format(ETEL_SGB_MAX_SALE));
+    if (etel_sgb_count_day($pdo, 'sg_pos_sales', 'occurred_at', $sg, $when) >= ETEL_SGB_MAX_SALES_DAY) {
+        return array('status' => 'error', 'log' => array('limit', 'sale', 'More than ' . ETEL_SGB_MAX_SALES_DAY . ' sales in one day'), 'message' => 'This shop reached ' . ETEL_SGB_MAX_SALES_DAY . ' sales for that day. Ask Etel if this is right.');
+    }
     $discount = isset($d['discount']) && $d['discount'] !== '' ? etel_sgb_money($d['discount'], true) : 0.0;
     if ($discount === false || $discount > $subtotal) return array('status' => 'error', 'message' => 'The discount is not valid');
     if ($discount > 0 && $discount > $subtotal * 0.2 && !etel_sgb_cap($ctx, 'pos.discount')) return etel_sgb_denied('pos.discount (discounts over 20%)');
@@ -213,21 +258,25 @@ function etel_sgb_sale($pdo, $ctx, $sg, $userId, $reqId, $when, $d) {
         $ins->execute(array($saleId, $itemId, $c['name'], $c['price'], $c['qty']));
         if ($itemId) etel_sgb_move_stock($pdo, $sg, $itemId, -$c['qty'], 'sale', $saleId, $reqId, $userId, $when);
     }
+    if ($discount > 0 && $discount > $subtotal * 0.2) etel_sgb_audit($pdo, $sg, $userId, 'big_discount', $reqId, 'Discount ETB ' . number_format($discount, 2) . ' on ETB ' . number_format($subtotal, 2), $when);
+    if (etel_sgb_day_closed($pdo, $sg, $when)) etel_sgb_audit($pdo, $sg, $userId, 'late_entry', $reqId, 'Sale of ETB ' . number_format($total, 2) . ' added to a day that was already counted', $when);
     return array('status' => 'ok', 'message' => 'Sale saved', 'id' => $saleId, 'total' => $total);
 }
 
 function etel_sgb_void($pdo, $ctx, $sg, $userId, $reqId, $when, $d) {
     if (!etel_sgb_cap($ctx, 'pos.void')) return etel_sgb_denied('pos.void');
     $target = isset($d['sale_req_id']) ? (string) $d['sale_req_id'] : '';
-    $s = $pdo->prepare('SELECT id, status FROM sg_pos_sales WHERE service_giver_id=? AND client_req_id=? FOR UPDATE');
+    $s = $pdo->prepare('SELECT id, status, total, occurred_at FROM sg_pos_sales WHERE service_giver_id=? AND client_req_id=? FOR UPDATE');
     $s->execute(array($sg, $target));
     $sale = $s->fetch(PDO::FETCH_ASSOC);
     if (!$sale) return array('status' => 'error', 'message' => 'That sale was not found (it may not have synced yet)');
     if ($sale['status'] === 'void') return array('status' => 'dup', 'message' => 'Already voided');
+    if (etel_sgb_day_closed($pdo, $sg, $sale['occurred_at'])) return array('status' => 'error', 'message' => 'That day is already counted, so its sales can no longer be cancelled. Ask Etel to correct it.');
     $pdo->prepare("UPDATE sg_pos_sales SET status='void', voided_at=?, voided_by_user_id=? WHERE id=?")->execute(array($when, $userId, $sale['id']));
     $li = $pdo->prepare('SELECT item_id, qty FROM sg_pos_sale_items WHERE sale_id=? AND item_id IS NOT NULL');
     $li->execute(array($sale['id']));
     foreach ($li->fetchAll(PDO::FETCH_ASSOC) as $l) etel_sgb_move_stock($pdo, $sg, intval($l['item_id']), intval($l['qty']), 'void', intval($sale['id']), $reqId, $userId, $when);
+    etel_sgb_audit($pdo, $sg, $userId, 'sale_void', $target, 'Cancelled a sale of ETB ' . number_format(floatval($sale['total']), 2), $when);
     return array('status' => 'ok', 'message' => 'Sale voided');
 }
 
@@ -252,6 +301,9 @@ function etel_sgb_stock($pdo, $ctx, $sg, $userId, $reqId, $when, $d) {
         $delta = $kind === 'delivery' ? $qty : -$qty;
     }
     if (!etel_sgb_move_stock($pdo, $sg, $itemId, $delta, $kind, null, $reqId, $userId, $when)) return array('status' => 'error', 'message' => 'Item not found');
+    $nm = $pdo->prepare('SELECT name FROM items WHERE id=? AND service_giver_id=?');
+    $nm->execute(array($itemId, $sg));
+    etel_sgb_audit($pdo, $sg, $userId, 'stock_' . $kind, $reqId, ($nm->fetchColumn() ?: 'Item ' . $itemId) . ': ' . ($delta > 0 ? '+' : '') . $delta, $when);
     return array('status' => 'ok', 'message' => 'Stock saved');
 }
 
@@ -263,8 +315,13 @@ function etel_sgb_expense($pdo, $ctx, $sg, $userId, $reqId, $when, $d) {
     $paid = isset($d['paid_with']) ? $d['paid_with'] : 'cash';
     if ($amount === false || !in_array($cat, array('supplies', 'rent', 'electricity', 'wages', 'transport', 'other'), true) || !in_array($paid, array('cash', 'mobile'), true)) return array('status' => 'error', 'message' => 'The expense is not valid');
     $note = isset($d['note']) ? mb_substr(trim(strip_tags((string) $d['note'])), 0, 200) : null;
+    if (etel_sgb_count_day($pdo, 'sg_expenses', 'occurred_at', $sg, $when) >= ETEL_SGB_MAX_EXPENSES_DAY) {
+        return array('status' => 'error', 'log' => array('limit', 'expense', 'More than ' . ETEL_SGB_MAX_EXPENSES_DAY . ' expenses in one day'), 'message' => 'This shop reached ' . ETEL_SGB_MAX_EXPENSES_DAY . ' expenses for that day. Ask Etel if this is right.');
+    }
     $pdo->prepare('INSERT INTO sg_expenses (service_giver_id, client_req_id, category, amount, paid_with, note, user_id, occurred_at) VALUES (?,?,?,?,?,?,?,?)')
         ->execute(array($sg, $reqId, $cat, $amount, $paid, $note ?: null, $userId, $when));
+    if ($amount >= ETEL_SGB_BIG_EXPENSE) etel_sgb_audit($pdo, $sg, $userId, 'big_expense', $reqId, ucfirst($cat) . ' ETB ' . number_format($amount, 2) . ($note ? ' - ' . $note : ''), $when);
+    if (etel_sgb_day_closed($pdo, $sg, $when)) etel_sgb_audit($pdo, $sg, $userId, 'late_entry', $reqId, 'Expense of ETB ' . number_format($amount, 2) . ' added to a day that was already counted', $when);
     return array('status' => 'ok', 'message' => 'Expense saved');
 }
 
@@ -286,6 +343,8 @@ function etel_sgb_cashup($pdo, $ctx, $sg, $userId, $reqId, $when, $d) {
     $expected = round($float + floatval($cs->fetchColumn()) - floatval($ce->fetchColumn()), 2);
     $pdo->prepare('INSERT INTO sg_cash_days (service_giver_id, business_date, opening_float, expected_cash, counted_cash, difference, closed_by_user_id, closed_at, client_req_id) VALUES (?,?,?,?,?,?,?,NOW(),?)')
         ->execute(array($sg, $date, $float, $expected, $counted, round($counted - $expected, 2), $userId, $reqId));
+    $diff = round($counted - $expected, 2);
+    etel_sgb_audit($pdo, $sg, $userId, 'cashup', $date, 'Expected ETB ' . number_format($expected, 2) . ', counted ETB ' . number_format($counted, 2) . ($diff == 0 ? ', it matched' : ', difference ETB ' . number_format($diff, 2)), $when);
     return array('status' => 'ok', 'message' => 'Day closed', 'expected_cash' => $expected, 'difference' => round($counted - $expected, 2));
 }
 
@@ -418,5 +477,8 @@ function etel_sgb_report($pdo, $sgId, $from, $to) {
     foreach ($cats as $c => $v) $byCat[] = array('category' => $c, 'amount' => $r2($v));
     usort($byCat, function ($a, $b) { return $b['amount'] <=> $a['amount']; });
     foreach ($best as &$b) $b['revenue'] = $r2($b['revenue']); unset($b);
-    return array('from' => $from, 'to' => $to, 'totals' => $tot, 'days' => array_values($days), 'expense_categories' => $byCat, 'best' => $best, 'slow' => $slow);
+    $au = $pdo->prepare('SELECT a.id, a.action, a.ref, a.detail, a.occurred_at, u.name AS who FROM sg_business_audit a LEFT JOIN users u ON u.id=a.user_id WHERE a.service_giver_id=? ORDER BY a.id DESC LIMIT 30');
+    $au->execute(array($sgId));
+    $audit = $au->fetchAll(PDO::FETCH_ASSOC);
+    return array('from' => $from, 'to' => $to, 'audit' => $audit, 'totals' => $tot, 'days' => array_values($days), 'expense_categories' => $byCat, 'best' => $best, 'slow' => $slow);
 }
