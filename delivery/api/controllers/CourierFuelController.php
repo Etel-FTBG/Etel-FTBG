@@ -25,6 +25,7 @@ case 'courier_add_fuel_log': {
         $s->execute(array($u['id'], $liters, $cost, $odometer));
         ok(array('message' => 'Fuel log added', 'id' => $pdo->lastInsertId()));
     } catch (Exception $e) {
+        if (!empty($body['client_req_id'])) etel_offline_forget($pdo, $u['id'], $body['client_req_id']);
         fail_ex($e, 'Could not save fuel log - has migration 044_courier_fuel_logs.sql been applied?', 500);
     }
     break;

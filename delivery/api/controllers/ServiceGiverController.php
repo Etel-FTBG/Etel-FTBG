@@ -461,6 +461,8 @@ case 'sg_accept_order': {
     } catch (Exception $e) { error_log('[ServiceGiverController] sg_accept_order: assignment lookup failed: ' . $e->getMessage()); $assign = null; }
     
     if (!$assign) fail('Order assignment not found', 404);
+    // Sent again from the shop's offline queue after the first answer was lost: already accepted = done.
+    if ($assign['status'] === 'accepted' && !empty($body['client_req_id'])) ok(array('message' => 'Order accepted', 'order_id' => $order_id, 'status' => 'accepted', 'unchanged' => true));
     if ($assign['status'] !== 'pending') fail('Order is already ' . $assign['status'], 409);
     
     // Update status to accepted
@@ -564,6 +566,8 @@ case 'sg_update_order_status': {
         } catch (Exception $e) { error_log('[ServiceGiverController] status heal update failed (non-fatal): ' . $e->getMessage()); }
     }
 
+    // Sent again from the shop's offline queue after the first answer was lost: already at that step = done.
+    if ($current_status === $new_status && !empty($body['client_req_id'])) ok(array('message' => 'Status updated', 'order_id' => $order_id, 'status' => $new_status, 'unchanged' => true));
     // Only allow valid forward transitions
     $allowed = array('pending' => 'preparing', 'preparing' => 'accepted');
     if (!isset($allowed[$current_status]) || $allowed[$current_status] !== $new_status) {
