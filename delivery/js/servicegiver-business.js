@@ -14,15 +14,23 @@ var I18N = {
   en: { sell: 'Sell', sub: 'Walk-in sales. Works without internet.', search: 'Search items', other: 'Other amount', cart: 'Current sale', empty: 'Tap an item to add it.',
     subtotal: 'Subtotal', discount: 'Discount (ETB)', total: 'Total', pay: 'Payment', cash: 'Cash', mobile: 'Mobile money', credit: 'Pay later', cname: 'Customer name',
     cphone: 'Customer phone (optional)', charge: 'Charge', clear: 'Clear', recent: 'Sales today', none: 'No sales yet today.', void: 'Cancel sale', voided: 'cancelled',
-    receipt: 'Receipt', share: 'Share', print: 'Print', close: 'Close', synced: 'All sales are saved to Etel.', waiting: 'sales waiting to be sent', offline: 'No connection. Sales are saved on this phone.',
+    receipt: 'Receipt', share: 'Share', print: 'Print', close: 'Close', synced: 'Everything is saved to Etel.', waiting: 'entries waiting to be sent', offline: 'No connection. Your work is saved on this phone.',
     send: 'Send now', discard: 'Discard', backup: 'Download backup', sold: 'sold out', left: 'left', name: 'What was sold', amount: 'Amount (ETB)', add: 'Add', thanks: 'Thank you!',
-    needname: 'Write the customer name for a sale to pay later.', bad: 'Check the amount.', confirmvoid: 'Cancel this sale and put the items back in stock?', unsent: 'not sent yet', sentok: 'sent' },
+    needname: 'Write the customer name for a sale to pay later.', bad: 'Check the amount.', confirmvoid: 'Cancel this sale and put the items back in stock?', unsent: 'not sent yet', sentok: 'sent',
+    stock: 'Stock', stocksub: 'What you have on the shelf. Deliveries, waste and counts work without internet.', lowlimit: 'Warn me when an item is down to', low: 'low', outlbl: 'out',
+    untracked: 'not tracked', received: 'Received', waste: 'Waste', count: 'Count', history: 'History', qty: 'How many', save: 'Save', cancel: 'Cancel', kdelivery: 'Delivery received',
+    kwaste: 'Waste or damage', kcount: 'I counted', lowitems: 'Low or out of stock:', allgood: 'Nothing is running low.', nohist: 'No movements yet.', loadfail: 'Could not load (needs internet).',
+    r_sale: 'Counter sale', r_online_order: 'Online order', r_online_cancel: 'Online order cancelled', r_delivery: 'Delivery', r_waste: 'Waste', r_count: 'Count', r_void: 'Sale cancelled' },
   am: { sell: 'ሽያጭ', sub: 'ለቆጣሪ ሽያጭ። ያለ ኢንተርኔት ይሰራል።', search: 'ዕቃ ፈልግ', other: 'ሌላ መጠን', cart: 'አሁን ያለው ሽያጭ', empty: 'ለመጨመር ዕቃ ይንኩ።',
     subtotal: 'ንዑስ ድምር', discount: 'ቅናሽ (ብር)', total: 'ጠቅላላ', pay: 'ክፍያ', cash: 'ጥሬ ገንዘብ', mobile: 'ሞባይል ገንዘብ', credit: 'በኋላ የሚከፈል', cname: 'የደንበኛ ስም',
     cphone: 'የደንበኛ ስልክ (አማራጭ)', charge: 'ክፈል', clear: 'አጥፋ', recent: 'የዛሬ ሽያጮች', none: 'ዛሬ ገና ሽያጭ የለም።', void: 'ሽያጩን ሰርዝ', voided: 'ተሰርዟል',
-    receipt: 'ደረሰኝ', share: 'አጋራ', print: 'አትም', close: 'ዝጋ', synced: 'ሁሉም ሽያጮች ኢትዮ ላይ ተቀምጠዋል።', waiting: 'ሽያጮች ለመላክ እየጠበቁ ናቸው', offline: 'ግንኙነት የለም። ሽያጮች በዚህ ስልክ ላይ ተቀምጠዋል።',
+    receipt: 'ደረሰኝ', share: 'አጋራ', print: 'አትም', close: 'ዝጋ', synced: 'ሁሉም ነገር ተቀምጧል።', waiting: 'ግቤቶች ለመላክ እየጠበቁ ናቸው', offline: 'ግንኙነት የለም። ሥራዎ በዚህ ስልክ ላይ ተቀምጧል።',
     send: 'አሁን ላክ', discard: 'ጣል', backup: 'ቅጂ አውርድ', sold: 'አልቋል', left: 'ቀርቷል', name: 'የተሸጠው ምን ነበር', amount: 'መጠን (ብር)', add: 'ጨምር', thanks: 'እናመሰግናለን!',
-    needname: 'በኋላ ለሚከፈል ሽያጭ የደንበኛውን ስም ይጻፉ።', bad: 'መጠኑን ያረጋግጡ።', confirmvoid: 'ይህን ሽያጭ ሰርዘው ዕቃዎቹን ወደ ክምችት ይመልሱ?', unsent: 'ገና አልተላከም', sentok: 'ተልኳል' }
+    needname: 'በኋላ ለሚከፈል ሽያጭ የደንበኛውን ስም ይጻፉ።', bad: 'መጠኑን ያረጋግጡ።', confirmvoid: 'ይህን ሽያጭ ሰርዘው ዕቃዎቹን ወደ ክምችት ይመልሱ?', unsent: 'ገና አልተላከም', sentok: 'ተልኳል',
+    stock: 'ክምችት', stocksub: 'በመደርደሪያ ላይ ያለዎት። መቀበል፣ ብክነት እና ቆጠራ ያለ ኢንተርኔት ይሰራሉ።', lowlimit: 'ዕቃ ሲቀነስ አስጠንቅቀኝ እስከ', low: 'ዝቅተኛ', outlbl: 'አልቋል',
+    untracked: 'አይከታተልም', received: 'ተቀብያለሁ', waste: 'ብክነት', count: 'ቆጠራ', history: 'ታሪክ', qty: 'ስንት', save: 'አስቀምጥ', cancel: 'ተው', kdelivery: 'የተቀበልኩት ዕቃ',
+    kwaste: 'ብክነት ወይም ጉዳት', kcount: 'ቆጠርኩ', lowitems: 'ዝቅተኛ ወይም ያለቁ ዕቃዎች:', allgood: 'ምንም እየተቀነሰ አይደለም።', nohist: 'ገና እንቅስቃሴ የለም።', loadfail: 'መጫን አልተቻለም (ኢንተርኔት ያስፈልጋል)።',
+    r_sale: 'የቆጣሪ ሽያጭ', r_online_order: 'የመስመር ላይ ትዕዛዝ', r_online_cancel: 'የመስመር ላይ ትዕዛዝ ተሰርዟል', r_delivery: 'መቀበል', r_waste: 'ብክነት', r_count: 'ቆጠራ', r_void: 'ሽያጭ ተሰርዟል' }
 };
 function t(k) { var l = 'en'; try { l = (typeof ETEL_I18N !== 'undefined' && ETEL_I18N.current()) || 'en'; } catch (e) {} return (I18N[l] && I18N[l][k]) || I18N.en[k] || k; }
 function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
@@ -37,7 +45,7 @@ function key(n) { return 'etel_biz_' + n + '_' + me(); }
 function load(n, dflt) { var k = key(n); if (mem[k] !== undefined) return mem[k]; try { var v = localStorage.getItem(k); if (v) { mem[k] = JSON.parse(v); return mem[k]; } } catch (e) {} mem[k] = dflt; return dflt; }
 function save(n, v) { var k = key(n); mem[k] = v; try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
 
-var S = { cart: [], pay: 'cash', discount: '', cname: '', cphone: '', q: '', flushing: false, offset: 0, msg: '', other: false };
+var S = { cart: [], pay: 'cash', discount: '', cname: '', cphone: '', q: '', flushing: false, offset: 0, msg: '', other: false, sq: '', stockEdit: null, hist: null };
 function outbox() { return load('outbox', []); }
 function recent() { return load('recent', []); }
 function cache() { return load('state', { at: 0, items: [], today: null }); }
@@ -52,16 +60,19 @@ function shopName() { try { return (currentServiceGiver && currentServiceGiver.b
 function itemsNow() {
   var items = JSON.parse(JSON.stringify(cache().items || []));
   var byId = {}; items.forEach(function (i) { byId[String(i.id)] = i; });
-  var voidedBy = {};
-  outbox().forEach(function (e) {
-    if (e.type === 'sale') (e.data.items || []).forEach(function (l) { var i = l.item_id && byId[String(l.item_id)]; if (i && i.stock_quantity !== null) i.stock_quantity = Math.max(0, Number(i.stock_quantity) - l.qty); });
-    if (e.type === 'void') voidedBy[e.data.sale_req_id] = true;
-  });
-  var inBox = {}; outbox().forEach(function (e) { if (e.type === 'sale') inBox[e.req_id] = true; });
-  outbox().forEach(function (e) {
-    // a void whose sale was already sent: put its items back on the shelf here until Etel's own figures arrive
-    if (e.type === 'void' && !inBox[e.data.sale_req_id]) (e._restore || []).forEach(function (l) { var i = byId[String(l.item_id)]; if (i && i.stock_quantity !== null) i.stock_quantity = Number(i.stock_quantity) + l.qty; });
-    if (e.type === 'sale' && voidedBy[e.req_id]) (e.data.items || []).forEach(function (l) { var i = l.item_id && byId[String(l.item_id)]; if (i && i.stock_quantity !== null) i.stock_quantity = Number(i.stock_quantity) + l.qty; });
+  var ob = outbox(), saleLines = {};
+  ob.forEach(function (e) { if (e.type === 'sale') saleLines[e.req_id] = e.data.items || []; });
+  function move(id, d) { var i = id && byId[String(id)]; if (i && i.stock_quantity !== null) i.stock_quantity = Math.max(0, Number(i.stock_quantity) + d); }
+  // in the order they were made: a count replaces the level, a delivery adds, waste and sales take away, a cancelled sale gives back
+  ob.forEach(function (e) {
+    if (e.type === 'sale') (e.data.items || []).forEach(function (l) { move(l.item_id, -l.qty); });
+    else if (e.type === 'void') (saleLines[e.data.sale_req_id] || e._restore || []).forEach(function (l) { move(l.item_id, l.qty); });
+    else if (e.type === 'stock') {
+      var i = byId[String(e.data.item_id)]; if (!i) return;
+      if (e.data.kind === 'delivery') { i.stock_quantity = Number(i.stock_quantity || 0) + e.data.qty; }
+      else if (e.data.kind === 'waste') move(e.data.item_id, -e.data.qty);
+      else if (e.data.kind === 'count') i.stock_quantity = e.data.qty;
+    }
   });
   return items;
 }
@@ -194,6 +205,8 @@ function css() {
     '.sgb-pay input{position:absolute;opacity:0}.sgb-pay input:checked+span{color:var(--gold-lt);font-weight:800}.sgb-pay label:focus-within{outline:2px solid var(--gold-lt)}' +
     '.sgb-rec{display:flex;justify-content:space-between;gap:8px;padding:8px 0;border-bottom:1px solid var(--border);font-size:13.5px;align-items:center}.sgb-rec.v{opacity:.55;text-decoration:line-through}' +
     '#sgb-rc{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px}.sgb-rcbox{background:#1c1204;color:var(--text);border:1px solid var(--border-lt);border-radius:14px;padding:18px;max-width:380px;width:100%;max-height:90vh;overflow:auto}' +
+    '.sgb-srow{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;padding:10px 0;border-bottom:1px solid var(--border)}.sgb-srow .n{flex:1;min-width:140px}.sgb-srow .n small{display:block;color:var(--text-dim)}.sgb-srow .lv{min-width:90px}' +
+    '.sgb-sed{padding:8px 0 12px;border-bottom:1px solid var(--border)}.sgb-chip{font-size:11.5px;border:1px solid var(--border-lt);border-radius:99px;padding:1px 8px}.sgb-chip.low{border-color:var(--warning);color:var(--warning)}.sgb-chip.out{border-color:var(--danger);color:var(--danger)}.sgb-lv{font-size:18px}.sgb-lv.low{color:var(--warning)}.sgb-lv.out{color:var(--danger)}' +
     '.sgb-rcbox pre{white-space:pre-wrap;font:13px/1.45 monospace;margin:10px 0}';
   document.head.appendChild(s);
 }
@@ -210,9 +223,8 @@ function syncBar() {
   });
   return h;
 }
-function paint() {
+function paintSell() {
   var root = document.getElementById('sgb-root'); if (!root) return;
-  css();
   var q = S.q.toLowerCase(), items = itemsNow().filter(function (i) { return !q || String(i.name).toLowerCase().indexOf(q) !== -1; });
   var sub = subtotal(), disc = S.discount === '' ? 0 : Math.min(Number(S.discount) || 0, sub);
   var grid = items.map(function (i) {
@@ -228,7 +240,6 @@ function paint() {
     return '<div class="sgb-rec' + (s.voided ? ' v' : '') + '"><span>' + esc(hhmm(s.at)) + ' · ' + esc(s.n) + ' · ' + esc(t(s.method)) + ' · ' + esc(s.synced ? t('sentok') : t('unsent')) + '</span><span><b>ETB ' + esc(money(s.total)) + '</b> ' +
       (s.voided ? esc(t('voided')) : (can('pos.void') ? '<button type="button" class="btn btn-secondary sgb-btn" data-sgb="void" data-id="' + esc(s.req_id) + '">' + esc(t('void')) + '</button>' : '')) + '</span></div>';
   }).join('') : '<p class="empty-msg">' + esc(t('none')) + '</p>';
-  var keep = document.activeElement && document.activeElement.id;
   root.innerHTML = syncBar() + '<div class="sgb-wrap"><div class="card"><div class="card-body"><label class="sr-only" for="sgb-q" style="position:absolute;left:-9999px">' + esc(t('search')) + '</label>' +
     '<input id="sgb-q" class="field-input" type="search" placeholder="' + esc(t('search')) + '" value="' + esc(S.q) + '"><div class="sgb-grid">' + grid +
     '<button type="button" class="sgb-item" data-sgb="other"><b>＋ ' + esc(t('other')) + '</b><span>&nbsp;</span></button></div>' +
@@ -241,10 +252,69 @@ function paint() {
     (S.msg && !outbox().length ? '<p class="sgb-x" role="alert">' + esc(S.msg) + '</p>' : '') +
     '<div class="sgb-row" style="margin-top:12px"><button type="button" class="btn btn-primary" style="flex:1;min-height:48px" data-sgb="charge"' + (S.cart.length ? '' : ' disabled') + '>' + esc(t('charge')) + ' · ETB ' + esc(money(sub - disc)) + '</button><button type="button" class="btn btn-secondary" data-sgb="clear">' + esc(t('clear')) + '</button></div></div></div></div>' +
     '<div class="card"><div class="card-body"><h3 style="margin:0 0 8px">' + esc(t('recent')) + '</h3>' + rec + '</div></div>';
-  if (keep) { var el = document.getElementById(keep); if (el && el.focus) { el.focus(); try { el.setSelectionRange(el.value.length, el.value.length); } catch (e) {} } }
-  var bd = document.getElementById('sgb-badge'); var n = outbox().filter(function (e) { return !e.failed; }).length + outbox().filter(function (e) { return e.failed; }).length;
-  if (bd) { bd.textContent = n; bd.style.display = n ? '' : 'none'; }
 }
+
+/* ---- the stock screen ---- */
+function lowLimit() { var v = load('low', 5); return isFinite(Number(v)) ? Number(v) : 5; }
+function lowItems() { var lim = lowLimit(); return itemsNow().filter(function (i) { return Number(i.is_available) && i.stock_quantity !== null && Number(i.stock_quantity) <= lim; }); }
+function levelOf(i) {
+  if (i.stock_quantity === null) return '<span class="sgb-chip">' + esc(t('untracked')) + '</span>';
+  var n = Number(i.stock_quantity);
+  return '<b class="sgb-lv' + (n <= 0 ? ' out' : (n <= lowLimit() ? ' low' : '')) + '">' + esc(n) + '</b>' + (n <= 0 ? ' <span class="sgb-chip out">' + esc(t('outlbl')) + '</span>' : (n <= lowLimit() ? ' <span class="sgb-chip low">' + esc(t('low')) + '</span>' : ''));
+}
+function paintStock() {
+  var root = document.getElementById('sgb-stock'); if (!root) return;
+  css();
+  var q = S.sq.toLowerCase(), all = itemsNow(), items = all.filter(function (i) { return !q || String(i.name).toLowerCase().indexOf(q) !== -1; }), low = lowItems().length;
+  var rows = items.map(function (i) {
+    var ed = S.stockEdit && String(S.stockEdit.id) === String(i.id) ? S.stockEdit : null, h = S.hist && String(S.hist.id) === String(i.id) ? S.hist : null;
+    var r = '<div class="sgb-srow"><div class="n"><b>' + esc(i.name) + '</b><small>ETB ' + esc(money(i.price)) + '</small></div><div class="lv">' + levelOf(i) + '</div><div class="sgb-row">' +
+      '<button type="button" class="btn btn-secondary sgb-btn" data-sgb="st-open" data-kind="delivery" data-id="' + esc(i.id) + '">' + esc(t('received')) + '</button>' +
+      '<button type="button" class="btn btn-secondary sgb-btn" data-sgb="st-open" data-kind="waste" data-id="' + esc(i.id) + '">' + esc(t('waste')) + '</button>' +
+      '<button type="button" class="btn btn-secondary sgb-btn" data-sgb="st-open" data-kind="count" data-id="' + esc(i.id) + '">' + esc(t('count')) + '</button>' +
+      '<button type="button" class="btn btn-secondary sgb-btn" data-sgb="st-hist" data-id="' + esc(i.id) + '">' + esc(t('history')) + '</button></div></div>';
+    if (ed) r += '<div class="sgb-sed sgb-row"><label for="sgb-sqty">' + esc(t('k' + ed.kind)) + ' · ' + esc(t('qty')) + '</label><input id="sgb-sqty" class="field-input" style="max-width:120px" inputmode="numeric" value="' + esc(ed.qty) + '">' +
+      '<button type="button" class="btn btn-primary sgb-btn" data-sgb="st-save">' + esc(t('save')) + '</button><button type="button" class="btn btn-secondary sgb-btn" data-sgb="st-cancel">' + esc(t('cancel')) + '</button></div>';
+    if (h) r += '<div class="sgb-sed">' + (h.rows === null ? '…' : (h.rows === false ? '<span class="sgb-x">' + esc(t('loadfail')) + '</span>' : (h.rows.length ? h.rows.map(function (m) {
+      return '<div class="sgb-rec"><span>' + esc(new Date(String(m.occurred_at).replace(' ', 'T')).toLocaleString()) + ' · ' + esc(t('r_' + m.reason)) + '</span><b>' + (Number(m.delta) > 0 ? '+' : '') + esc(m.delta) + '</b></div>';
+    }).join('') : '<p class="empty-msg">' + esc(t('nohist')) + '</p>'))) + '</div>';
+    return r;
+  }).join('') || '<p class="empty-msg">—</p>';
+  root.innerHTML = syncBar() + '<div class="card"><div class="card-body"><div class="sgb-bar ' + (low ? 'warn' : '') + '" role="status"><span>' + (low ? esc(t('lowitems') + ' ' + low) : '✓ ' + esc(t('allgood'))) + '</span>' +
+    '<span class="sgb-row"><label for="sgb-lim">' + esc(t('lowlimit')) + '</label><input id="sgb-lim" class="field-input" style="width:80px" inputmode="numeric" value="' + esc(lowLimit()) + '"></span></div>' +
+    '<label class="sr-only" for="sgb-sf" style="position:absolute;left:-9999px">' + esc(t('search')) + '</label><input id="sgb-sf" class="field-input" type="search" placeholder="' + esc(t('search')) + '" value="' + esc(S.sq) + '">' + rows + '</div></div>';
+}
+function openStock(id, kind) {
+  var it = itemsNow().filter(function (i) { return String(i.id) === String(id); })[0];
+  S.stockEdit = { id: id, kind: kind, qty: kind === 'count' && it && it.stock_quantity !== null ? String(it.stock_quantity) : '' }; S.hist = null; paint();
+  var f = document.getElementById('sgb-sqty'); if (f) { f.focus(); try { f.select(); } catch (e) {} }
+}
+function saveStock() {
+  var ed = S.stockEdit; if (!ed) return;
+  var f = document.getElementById('sgb-sqty'), n = Number(f ? f.value : ed.qty);
+  if (!isFinite(n) || n < 0 || Math.floor(n) !== n || n > 1000000 || (ed.kind !== 'count' && n < 1)) { S.msg = t('bad'); paint(); return; }
+  var ob = outbox(); ob.push({ type: 'stock', req_id: uid(), occurred_at: nowIso(), data: { item_id: Number(ed.id), kind: ed.kind, qty: n } }); save('outbox', ob);
+  S.stockEdit = null; S.msg = ''; paint(); flush(false);
+}
+function showHist(id) {
+  if (S.hist && String(S.hist.id) === String(id)) { S.hist = null; paint(); return; }
+  S.hist = { id: id, rows: null }; S.stockEdit = null; paint();
+  post('sg_stock_history', { item_id: Number(id) }).then(function (r) {
+    if (!S.hist || String(S.hist.id) !== String(id)) return;
+    S.hist.rows = r.json && r.json.success ? (r.json.data.movements || []) : false; paint();
+  }, function () { if (S.hist && String(S.hist.id) === String(id)) { S.hist.rows = false; paint(); } });
+}
+
+function paint() {
+  var keep = document.activeElement && document.activeElement.id;
+  paintSell(); paintStock();
+  if (keep) { var el = document.getElementById(keep); if (el && el.focus) { el.focus(); try { el.setSelectionRange(el.value.length, el.value.length); } catch (e) {} } }
+  var bd = document.getElementById('sgb-badge'), n = outbox().length;
+  if (bd) { bd.textContent = n; bd.style.display = n ? '' : 'none'; }
+  var sb = document.getElementById('sgb-badge-stock'), lo = lowItems().length;
+  if (sb) { sb.textContent = lo; sb.style.display = lo ? '' : 'none'; }
+}
+
 
 /* ---- wiring ---- */
 function onClick(e) {
@@ -265,6 +335,10 @@ function onClick(e) {
   else if (a === 'backup') downloadBackup();
   else if (a === 'void') voidSale(id);
   else if (a === 'drop') { save('outbox', outbox().filter(function (x) { return x.req_id !== id; })); paint(); refreshState(); }
+  else if (a === 'st-open') openStock(id, b.getAttribute('data-kind'));
+  else if (a === 'st-save') saveStock();
+  else if (a === 'st-cancel') { S.stockEdit = null; paint(); }
+  else if (a === 'st-hist') showHist(id);
   else if (a === 'rc-close') closeReceipt();
   else if (a === 'rc-print') printText(document.getElementById('sgb-rc')._text);
   else if (a === 'rc-share') { try { navigator.share({ text: document.getElementById('sgb-rc')._text }); } catch (x) {} }
@@ -273,6 +347,8 @@ function onInput(e) {
   var t_ = e.target;
   if (t_.id === 'sgb-q') { S.q = t_.value; paint(); }
   else if (t_.id === 'sgb-disc') { S.discount = t_.value; paintTotalsOnly(); }
+  else if (t_.id === 'sgb-sf') { S.sq = t_.value; paint(); }
+  else if (t_.id === 'sgb-lim') { var v = Number(t_.value); if (isFinite(v) && v >= 0) { save('low', Math.floor(v)); paint(); } }
   else if (t_.id === 'sgb-cn') S.cname = t_.value;
   else if (t_.id === 'sgb-cp') S.cphone = t_.value;
   else if (t_.name === 'sgb-pay') { S.pay = t_.value; paint(); }
@@ -288,30 +364,37 @@ document.addEventListener('keydown', function (e) {
   else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
 });
 
-function mount() {
-  if (!enabled() || !can('pos.sell')) {
-    var m = document.getElementById('sgb-menu'); if (m) m.style.display = 'none';
-    return;
-  }
-  if (document.getElementById('sgb-menu')) { document.getElementById('sgb-menu').style.display = ''; return; }
+var PAGES = [
+  { id: 'sell', cap: 'pos.sell', icon: '🧾', label: 'sell', sub: 'sub', root: 'sgb-root', menu: 'sgb-menu', badge: 'sgb-badge' },
+  { id: 'stock', cap: 'stock.manage', icon: '📦', label: 'stock', sub: 'stocksub', root: 'sgb-stock', menu: 'sgb-menu-stock', badge: 'sgb-badge-stock' }
+];
+var wired = false;
+function mountPage(def) {
+  var m = document.getElementById(def.menu);
+  if (!enabled() || !can(def.cap)) { if (m) m.style.display = 'none'; return; }
+  if (m) { m.style.display = ''; return; }
   var orders = document.querySelector('.menu-item[data-page="orders"]'); var host = document.getElementById('page-orders'); if (!orders || !host) return;
-  var mi = document.createElement('div'); mi.className = 'menu-item'; mi.id = 'sgb-menu'; mi.setAttribute('data-page', 'biz-sell'); mi.setAttribute('role', 'button'); mi.tabIndex = 0;
-  mi.innerHTML = '<div class="menu-icon" aria-hidden="true">🧾</div><div class="menu-label">' + esc(t('sell')) + '</div><div class="menu-badge" id="sgb-badge" style="display:none">0</div>';
+  var mi = document.createElement('div'); mi.className = 'menu-item'; mi.id = def.menu; mi.setAttribute('data-page', 'biz-' + def.id); mi.setAttribute('role', 'button'); mi.tabIndex = 0;
+  mi.innerHTML = '<div class="menu-icon" aria-hidden="true">' + def.icon + '</div><div class="menu-label">' + esc(t(def.label)) + '</div><div class="menu-badge" id="' + def.badge + '" style="display:none">0</div>';
   orders.parentNode.insertBefore(mi, orders);
-  var pg = document.createElement('div'); pg.id = 'page-biz-sell'; pg.style.display = 'none';
-  pg.innerHTML = '<div class="page-title">' + esc(t('sell')) + '</div><div class="page-subtitle">' + esc(t('sub')) + '</div><div id="sgb-root"></div>';
+  var pg = document.createElement('div'); pg.id = 'page-biz-' + def.id; pg.style.display = 'none';
+  pg.innerHTML = '<div class="page-title">' + esc(t(def.label)) + '</div><div class="page-subtitle">' + esc(t(def.sub)) + '</div><div id="' + def.root + '"></div>';
   host.parentNode.insertBefore(pg, host);
+  var show = function () { document.querySelectorAll('[id^="page-"]').forEach(function (p) { p.style.display = 'none'; }); pg.style.display = 'block'; };
   var go = function () {
-    if (typeof switchPage === 'function') { try { switchPage('biz-sell'); } catch (x) { show(); } } else show();
+    if (typeof switchPage === 'function') { try { switchPage('biz-' + def.id); } catch (x) { show(); } } else show();
     if (typeof closeSidebar === 'function') { try { closeSidebar(); } catch (x) {} }
     openScreen();
   };
-  var show = function () { document.querySelectorAll('[id^="page-"]').forEach(function (p) { p.style.display = 'none'; }); pg.style.display = 'block'; };
   mi.addEventListener('click', go);
   mi.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(); } });
-  var root = pg.querySelector('#sgb-root');
+  var root = pg.querySelector('#' + def.root);
   root.addEventListener('click', onClick); root.addEventListener('input', onInput); root.addEventListener('change', onInput);
-  document.addEventListener('click', function (e) { if (e.target.closest && e.target.closest('#sgb-rc')) onClick(e); });
+  root.addEventListener('keydown', function (e) { if (e.key === 'Enter' && e.target && e.target.id === 'sgb-sqty') { e.preventDefault(); saveStock(); } });
+}
+function mount() {
+  PAGES.forEach(mountPage);
+  if (!wired) { wired = true; document.addEventListener('click', function (e) { if (e.target.closest && e.target.closest('#sgb-rc')) onClick(e); }); }
   paint();
 }
 function openScreen() { paint(); flush(false); refreshState(); }
