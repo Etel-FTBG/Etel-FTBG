@@ -245,6 +245,23 @@ def main():
     st, res = call("sg_pos_sync", {"events": []}, token=admin)
     check("a platform admin cannot enter a shop's sales", st in (403, 404), (st, res))
 
+    print("9. A platform admin testing as a shop (\"Test as...\")")
+    _, res = call("sg_profile", {}, token=admin)
+    mine_id = ((res.get("data") or {}).get("service_giver") or {}).get("id")
+    check("the admin has a test shop of their own", bool(mine_id), res)
+    call("admin_sg_set_business_tools", {"id": mine_id, "enabled": 1}, token=admin)
+    _, res = call("sg_add_item", {"name": "Admin Tibs", "category": "food", "price": 50, "stock_quantity": 10}, token=admin)
+    aid = (res.get("data") or {}).get("item_id")
+    check("the admin adds an item to the test shop", bool(aid), res)
+    _, res = call("sg_pos_sync", {"events": [ev("sale", "ad1" + SUFFIX, {"items": [{"item_id": aid, "name": "Admin Tibs", "unit_price": 50, "qty": 2}]}),
+                                             ev("stock", "ad2" + SUFFIX, {"item_id": aid, "kind": "delivery", "qty": 5})]}, token=admin)
+    check("the admin can sell and receive stock in their own test shop", [x["status"] for x in results(res)] == ["ok", "ok"], res)
+    _, res = call("sg_stock_history", {"item_id": aid}, token=admin)
+    check("the admin can read the stock history of their own test shop", res.get("success") is True and len((res.get("data") or {}).get("movements", [])) == 2, res)
+    _, res = call("sg_stock_history", {"item_id": a}, token=admin)
+    check("...but not another shop's item", res.get("success") is False, res)
+    call("admin_sg_set_business_tools", {"id": mine_id, "enabled": 0}, token=admin)
+
     print()
     print(f"{len(PASS)} passed, {len(FAIL)} failed")
     return 1 if FAIL else 0

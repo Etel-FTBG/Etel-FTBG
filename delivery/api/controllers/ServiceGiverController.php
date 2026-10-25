@@ -2024,7 +2024,6 @@ case 'sg_pos_sync': {
     if ($auth_user['role'] !== 'service_giver' && ($auth_user['role'] !== 'admin' || etel_is_ride_only(db(), $auth_user))) fail('Service giver access required', 403);
     $ctx = sg_get_context($pdo, $auth_user['id']);
     if (!$ctx) fail('Service giver profile not found', 404);
-    if ($auth_user['role'] === 'admin') fail('Platform admins cannot enter a shop\'s sales', 403);
     require_once __DIR__ . '/../lib/sg_business.php';
     if (!etel_sgb_enabled($pdo, $ctx['sg_id'])) fail('Etel Business is not switched on for this shop. Ask Etel to turn it on.', 403);
     $events = isset($body['events']) && is_array($body['events']) ? $body['events'] : null;
@@ -2044,7 +2043,7 @@ case 'sg_stock_history': {
     // POST: item_id. The last 50 stock movements of one item (needs stock.manage and Etel Business).
     $pdo = db();
     $auth_user = require_auth($pdo);
-    if ($auth_user['role'] !== 'service_giver') fail('Service giver access required', 403);
+    if ($auth_user['role'] !== 'service_giver' && ($auth_user['role'] !== 'admin' || etel_is_ride_only(db(), $auth_user))) fail('Service giver access required', 403);
     $ctx = sg_get_context($pdo, $auth_user['id']);
     if (!$ctx) fail('Service giver profile not found', 404);
     sg_require_capability($auth_user, $ctx, 'stock.manage');
