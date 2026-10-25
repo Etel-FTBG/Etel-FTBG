@@ -144,6 +144,7 @@ jobs:
           python3 delivery/tests/ci/check_courier_fixes.py
           python3 delivery/tests/ci/check_courier_sound.py
           python3 delivery/tests/ci/check_courier_offline.py
+          python3 delivery/tests/ci/check_servicegiver_offline.py
           python3 delivery/tests/ci/check_sounds.py
           python3 delivery/tests/ci/check_admin_polish.py
           python3 delivery/tests/ci/check_admin_footer.py

@@ -19,6 +19,11 @@ function etel_offline_seen($pdo, $userId, $reqId) {
     } catch (Exception $e) { return false; }
 }
 
+/* The action failed after etel_offline_seen() recorded it: forget it so the resend is tried again instead of being treated as done. */
+function etel_offline_forget($pdo, $userId, $reqId) {
+    try { $pdo->prepare('DELETE FROM offline_requests WHERE user_id=? AND req_id=?')->execute(array($userId, is_string($reqId) ? trim($reqId) : '')); } catch (Exception $e) {}
+}
+
 function etel_offline_when($occurredAt, $notBefore = null) {
     if (!is_string($occurredAt) || $occurredAt === '') return null;
     $t = strtotime($occurredAt);
