@@ -2158,6 +2158,9 @@ case 'driver_update_location': {
     $lat = isset($body['lat']) ? floatval($body['lat']) : null;
     $lng = isset($body['lng']) ? floatval($body['lng']) : null;
     $accuracy = isset($body['accuracy']) ? floatval($body['accuracy']) : null;
+    /* Ground speed in m/s as the phone's GPS chip reports it (browser coords.speed). Optional: older apps and
+       devices without a Doppler speed do not send it. Used only to recognise a vehicle that is standing still. */
+    $gpsSpeed = (isset($body['speed']) && is_numeric($body['speed']) && floatval($body['speed']) >= 0 && floatval($body['speed']) < 90) ? floatval($body['speed']) : null;
     $explicitRideId = isset($body['ride_id']) ? intval($body['ride_id']) : 0;
     if ($lat === null || $lng === null) fail('lat/lng required');
     rides_driver_profile($pdo, $u['id']);
@@ -2256,6 +2259,10 @@ case 'driver_update_location': {
             if (!$isFirstPoint) {
                 $d = rides_haversine_km(floatval($r['last_lat']), floatval($r['last_lng']), $lat, $lng);
             }
+            /* The GPS chip itself says the vehicle is standing still (under ~3 km/h) and the position moved less than
+               50 m: that is drift, not driving. Count it as no movement at all. The reference point stays where it is,
+               so a real crawl in traffic still adds up and is credited once it passes 50 m from that point. */
+            if ($d !== null && $gpsSpeed !== null && $gpsSpeed < 0.8 && $d < 0.05) $d = 0;
             $justMoved = false;
             if ($d !== null && $d < $maxPlausibleKm) {
                 // Good fix: the original tight 20m bar (a clear "actually
@@ -2268,7 +2275,10 @@ case 'driver_update_location': {
                 // floored at 150m) - comfortably past that device's own
                 // noise band, while still far below what a genuine drive-
                 // off covers within a few 5s pings at any real speed.
-                $moveFloorKm = $lowAccuracy ? max(0.15, ($accuracy / 1000.0) * 0.5) : 0.02;
+                /* A good fix used to count as "moving" after a flat 20 m, however large its own error radius was, so a
+                   parked phone drifting 20-40 m (accuracy 15-30 m is normal) stopped the waiting clock and billed
+                   phantom kilometres. The bar now also scales with the fix's own accuracy (twice its radius). */
+                $moveFloorKm = $lowAccuracy ? max(0.15, ($accuracy / 1000.0) * 0.5) : max(0.02, 2.0 * ($accuracy !== null ? $accuracy : 0) / 1000.0);
                 if ($d >= $moveFloorKm) $justMoved = true;
             }
             $waitAutoStopped = false;
@@ -2334,6 +2344,9 @@ case 'driver_update_location': {
                                'meter_fare' => $liveFareCalc['fare'],
                                'wait_active' => (bool) $r['wait_active'],
                                'wait_minutes' => round($waitMinutes, 2),
+                               'wait_etb' => $liveFareCalc['breakdown']['wait_etb'],
+                               'wait_rate_per_min' => floatval(rides_fare_rule($pdo, $rideVtype)['wait_rate_per_min']),
+                               'wait_cap_minutes' => rides_wait_cap_minutes($pdo),
                                'wait_auto_stopped' => $waitAutoStopped,
                                'wait_cap_reached' => $waitCapReached,
                                'low_accuracy' => true), rides_fare_breakdown_for_ui($liveFareCalc));
@@ -2398,6 +2411,9 @@ case 'driver_update_location': {
                                'meter_fare' => $liveFareCalc['fare'],
                                'wait_active' => (bool) $r['wait_active'],
                                'wait_minutes' => round($waitMinutes, 2),
+                               'wait_etb' => $liveFareCalc['breakdown']['wait_etb'],
+                               'wait_rate_per_min' => floatval(rides_fare_rule($pdo, $rideVtype)['wait_rate_per_min']),
+                               'wait_cap_minutes' => rides_wait_cap_minutes($pdo),
                                'wait_auto_stopped' => $waitAutoStopped,
                                'wait_cap_reached' => $waitCapReached), rides_fare_breakdown_for_ui($liveFareCalc));
             }
@@ -4475,6 +4491,8 @@ case 'driver_toggle_wait': {
         'wait_seconds_total'  => intval($r['wait_seconds_total']),
         'wait_minutes'        => round($waitMin, 2),
         'wait_etb'            => $fareCalc['breakdown']['wait_etb'],
+        'wait_rate_per_min'   => floatval(rides_fare_rule($pdo, $vtype)['wait_rate_per_min']),
+        'wait_cap_minutes'    => rides_wait_cap_minutes($pdo),
         'meter_fare'          => $fareCalc['fare'],
     ));
     break;

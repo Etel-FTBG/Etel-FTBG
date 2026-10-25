@@ -33,3 +33,23 @@ export const BRIDGE_JS = `
   true;
 })();
 `;
+
+// Run once the page has loaded: makes every web app fit the phone the same way. It pins the page to the phone's width (no zoomed-out or
+// sideways-scrolling page), stops sideways overflow, and marks the page as running inside the app so the apps can style for it.
+export const FIT_JS = `
+(function () {
+  try {
+    var c = 'width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover';
+    var m = document.querySelector('meta[name=viewport]');
+    if (!m) { m = document.createElement('meta'); m.name = 'viewport'; document.head.appendChild(m); }
+    if (m.content.indexOf('maximum-scale') < 0) m.content = c;
+    document.documentElement.classList.add('etel-in-app');
+    if (!document.getElementById('etel-in-app-fit')) {
+      var s = document.createElement('style'); s.id = 'etel-in-app-fit';
+      s.textContent = 'html,body{max-width:100vw;overflow-x:hidden}html{-webkit-text-size-adjust:100%}';
+      document.head.appendChild(s);
+    }
+  } catch (e) {}
+  true;
+})();
+`;

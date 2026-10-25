@@ -3,6 +3,7 @@ import { StatusBar } from 'expo-status-bar';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { ActivityIndicator, View } from 'react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useFonts, Syne_700Bold, Syne_800ExtraBold } from '@expo-google-fonts/syne';
 import { JetBrainsMono_700Bold, JetBrainsMono_500Medium } from '@expo-google-fonts/jetbrains-mono';
 import { CormorantGaramond_600SemiBold } from '@expo-google-fonts/cormorant-garamond';
@@ -90,6 +91,7 @@ export default function App() {
   }
 
   return (
+    <SafeAreaProvider>
     <LanguageProvider>
     <ErrorBoundary>
       <AuthProvider>
@@ -107,5 +109,6 @@ export default function App() {
       </AuthProvider>
     </ErrorBoundary>
     </LanguageProvider>
+    </SafeAreaProvider>
   );
 }

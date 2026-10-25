@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { BackHandler, Linking, Pressable, StyleSheet, View } from 'react-native';
+import { AppState, BackHandler, Linking, Pressable, StyleSheet, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { WebView as RNWebView, WebViewMessageEvent } from 'react-native-webview';
 import { Ionicons } from '@expo/vector-icons';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -7,7 +8,7 @@ import { Text } from '../i18n';
 import { colors, typography } from '../theme/colors';
 import { RootStackParamList } from '../navigation/types';
 import { HUB_APPS, ALLOWED_ORIGINS } from '../hub/apps';
-import { BRIDGE_JS, prefsJs } from '../hub/webBridge';
+import { BRIDGE_JS, FIT_JS, prefsJs } from '../hub/webBridge';
 import { getSession, sessionJs } from '../hub/session';
 import { useTheme } from '../theme/ThemeContext';
 import BrandLoader from '../components/BrandLoader';
@@ -15,7 +16,7 @@ import { useLanguage } from '../i18n';
 import { setToken } from '../api/client';
 import { setOnlineState } from '../online/onlineState';
 import { markCompanyOnline } from '../hub/companies';
-import { startDriverLocationTracking, stopDriverLocationTracking } from '../location/backgroundLocationTask';
+import { setWebDriverForeground, startDriverLocationTracking, stopDriverLocationTracking } from '../location/backgroundLocationTask';
 import { registerForPushNotifications } from '../notifications/registerPush';
 
 // react-native-webview's class typing does not line up with React 19's JSX types; the runtime component is fine.
@@ -30,6 +31,9 @@ export default function WebAppScreen({ route, navigation }: Props) {
   const web = useRef<WebHandle>(null);
   const { p } = useTheme();
   const { lang } = useLanguage();
+  const insets = useSafeAreaInsets();
+  // The app draws edge to edge, so the bar must clear the status bar and the page must stop above the system navigation bar.
+  const barTop = Math.max(insets.top, 24) + 4;
   const [canGoBack, setCanGoBack] = useState(false);
   const [loading, setLoading] = useState(true);
   const [failed, setFailed] = useState(false);
@@ -45,6 +49,17 @@ export default function WebAppScreen({ route, navigation }: Props) {
     });
     return () => sub.remove();
   }, [canGoBack]);
+
+  // While the web Driver app is on screen it reports the position itself; the native location task stays quiet (see backgroundLocationTask.ts).
+  useEffect(() => {
+    if (app.key !== 'driver') return;
+    setWebDriverForeground(AppState.currentState === 'active');
+    const sub = AppState.addEventListener('change', (st) => setWebDriverForeground(st === 'active'));
+    return () => {
+      sub.remove();
+      setWebDriverForeground(false);
+    };
+  }, [app.key]);
 
   const onMessage = useCallback(async (e: WebViewMessageEvent) => {
     let msg: { type?: string; token?: string } = {};
@@ -73,8 +88,8 @@ export default function WebAppScreen({ route, navigation }: Props) {
   }, []);
 
   return (
-    <View style={[styles.root, { backgroundColor: p.bg }]}>
-      <View style={[styles.bar, { backgroundColor: p.surface, borderBottomColor: p.border }]}>
+    <View style={[styles.root, { backgroundColor: p.bg, paddingBottom: insets.bottom }]}>
+      <View style={[styles.bar, { backgroundColor: p.surface, borderBottomColor: p.border, paddingTop: barTop }]}>
         <Pressable onPress={() => navigation.goBack()} style={styles.barBtn} accessibilityLabel="Back to ETEL">
           <Ionicons name="grid" size={20} color={p.gold} />
         </Pressable>
@@ -103,6 +118,7 @@ export default function WebAppScreen({ route, navigation }: Props) {
           source={{ uri: app.url }}
           style={[styles.web, { backgroundColor: p.bg }]}
           injectedJavaScriptBeforeContentLoaded={(app.syncPrefs ? sessionJs(getSession()) + prefsJs(lang, p.mode) : '') + BRIDGE_JS}
+          injectedJavaScript={FIT_JS}
           onMessage={onMessage}
           onNavigationStateChange={(s: { canGoBack: boolean }) => setCanGoBack(s.canGoBack)}
           onLoadEnd={() => setLoading(false)}
@@ -127,7 +143,16 @@ export default function WebAppScreen({ route, navigation }: Props) {
           allowsInlineMediaPlayback
           mediaPlaybackRequiresUserAction={false}
           setSupportMultipleWindows={false}
-          pullToRefreshEnabled
+          // Pull-to-refresh is off: it fought the map and the scrolling sheets, and could reload a page in the middle of a trip. The bar has Reload.
+          pullToRefreshEnabled={false}
+          scalesPageToFit={false}
+          setBuiltInZoomControls={false}
+          setDisplayZoomControls={false}
+          automaticallyAdjustContentInsets={false}
+          contentInsetAdjustmentBehavior="never"
+          nestedScrollEnabled
+          forceDarkOn={false}
+          onRenderProcessGone={() => web.current?.reload()}
           cacheEnabled
           cacheMode="LOAD_DEFAULT"
           androidLayerType="hardware"
@@ -138,7 +163,7 @@ export default function WebAppScreen({ route, navigation }: Props) {
         />
       )}
       {loading && !failed ? (
-        <View style={styles.loading} pointerEvents="none">
+        <View style={[styles.loading, { top: barTop + 48 }]} pointerEvents="none">
           <BrandLoader />
         </View>
       ) : null}
@@ -152,7 +177,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingTop: 36,
+    paddingTop: 36, // replaced at runtime by the real status bar height (see barTop)
     paddingBottom: 8,
     paddingHorizontal: 10,
     backgroundColor: colors.surface,

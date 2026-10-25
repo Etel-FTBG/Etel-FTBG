@@ -148,6 +148,7 @@ jobs:
           python3 delivery/tests/ci/check_ride_payments_ui.py
           python3 delivery/tests/ci/check_payments_hub_ui.py
           python3 delivery/tests/ci/check_pricing_studio_ui.py
+          python3 delivery/tests/ci/check_driver_meter_fix.py
           python3 delivery/tests/ci/check_servicegiver_offline.py
           python3 delivery/tests/ci/check_shop_business.py
           python3 delivery/tests/ci/check_sounds.py

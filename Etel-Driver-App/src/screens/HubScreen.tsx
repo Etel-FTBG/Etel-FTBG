@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert as RNAlert, Image, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Text, translate, useLanguage } from '../i18n';
@@ -28,6 +29,7 @@ function greeting(): string {
 }
 
 export default function HubScreen({ navigation }: Props) {
+  const insets = useSafeAreaInsets();
   const { p, mode, toggle: toggleTheme } = useTheme();
   const { lang, toggle: toggleLang } = useLanguage();
   const [online, setOnline] = useState(isOnline());
@@ -79,7 +81,7 @@ export default function HubScreen({ navigation }: Props) {
   }
 
   return (
-    <ScrollView style={[styles.root, { backgroundColor: p.bg }]} contentContainerStyle={styles.content}>
+    <ScrollView style={[styles.root, { backgroundColor: p.bg }]} contentContainerStyle={[styles.content, { paddingTop: Math.max(insets.top, 24) + 24, paddingBottom: insets.bottom + 40 }]}>
       <View style={styles.top}>
         <PillSwitch
           value={mode === 'light'}
