@@ -14,7 +14,8 @@ for must in ('window.__etelCourierFixes', 'MutationObserver', "'important'", 'pk
 if re.search(r"""[\s'"`>]on[a-z]+\s*=\s*\\?["']""", addon):
     bad.append('courier-fixes.js must not use inline handlers')
 rel = sorted((int(re.search(r'/v(\d+)/', f).group(1)), f) for f in glob.glob(root + '/js/releases/courier/v*/courier-bundle.js'))
-carrying = [(n, f) for n, f in rel if 'courier-fixes.js (added to' in read(f)]
+# the release that introduced the add-on (its own header line), not later releases that merely build on it
+carrying = [(n, f) for n, f in rel if 'release v%d: js/courier-fixes.js (added to' % n in read(f)]
 if not carrying:
     bad.append('no courier release carries courier-fixes.js yet (tools/build_courier_release.py --addons js/courier-fixes.js)')
 else:
