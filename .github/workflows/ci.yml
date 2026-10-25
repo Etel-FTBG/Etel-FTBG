@@ -145,6 +145,7 @@ jobs:
           python3 delivery/tests/ci/check_courier_sound.py
           python3 delivery/tests/ci/check_courier_offline.py
           python3 delivery/tests/ci/check_vehicle_art.py
+          python3 delivery/tests/ci/check_ride_payments_ui.py
           python3 delivery/tests/ci/check_servicegiver_offline.py
           python3 delivery/tests/ci/check_shop_business.py
           python3 delivery/tests/ci/check_sounds.py
