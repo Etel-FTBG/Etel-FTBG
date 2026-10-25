@@ -27,7 +27,7 @@ for t in re.findall(r'CREATE TABLE IF NOT EXISTS (sg_\w+)', lib):
 for t in re.findall(r'CREATE TABLE IF NOT EXISTS `(sg_\w+)`', mig):
     if 'CREATE TABLE IF NOT EXISTS %s ' % t not in lib:
         bad.append('table %s is in migration 093 but not created by the code' % t)
-for must in ('sg_pos_sync', 'sg_business_state'):
+for must in ('sg_pos_sync', 'sg_business_state', 'sg_business_report'):
     block = ctl.split("case '%s':" % must)[1].split('\ncase ')[0]
     if 'etel_sgb_enabled' not in block:
         bad.append(must + ' must refuse shops that do not have Etel Business switched on')
@@ -37,7 +37,12 @@ if "require_admin($pdo, 'service_givers.manage')" not in block:
 if "ETEL_SGB_MAX_EVENTS" not in ctl:
     bad.append('sg_pos_sync must limit the batch size')
 boot = read('api/boot.php')
-for a in ('sg_business_state', 'sg_pos_sync', 'admin_sg_set_business_tools'):
+rep = ctl.split("case 'sg_business_report':")[1].split('\ncase ')[0]
+if "'reports.view'" not in rep or "'payments.view'" not in rep:
+    bad.append('sg_business_report shows money: it must need reports.view and payments.view')
+if re.search(r"\$body\['sg_id'\]|\$_GET\['sg_id'\]", rep):
+    bad.append('sg_business_report must take the shop from the account, not from the request')
+for a in ('sg_business_report', 'sg_business_state', 'sg_pos_sync', 'admin_sg_set_business_tools'):
     if "case '%s'" % a not in boot:
         bad.append(a + ' is not routed in boot.php')
 if "'admin_sg_set_business_tools','sg_pos_sync'" not in boot:

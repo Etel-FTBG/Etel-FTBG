@@ -2016,6 +2016,28 @@ case 'sg_business_state': {
     break;
 }
 
+case 'sg_business_report': {
+    // POST: from, to (YYYY-MM-DD, at most 366 days, default the last 30). The shop's books: counter sales + delivered online orders,
+    // expenses, a row per day, best and slowest items. Needs reports.view and payments.view (it shows money) and Etel Business.
+    $pdo = db();
+    $auth_user = require_auth($pdo);
+    if ($auth_user['role'] !== 'service_giver' && ($auth_user['role'] !== 'admin' || etel_is_ride_only(db(), $auth_user))) fail('Service giver access required', 403);
+    $ctx = sg_get_context($pdo, $auth_user['id']);
+    if (!$ctx) fail('Service giver profile not found', 404);
+    sg_require_capability($auth_user, $ctx, 'reports.view');
+    sg_require_capability($auth_user, $ctx, 'payments.view');
+    require_once __DIR__ . '/../lib/sg_business.php';
+    if (!etel_sgb_enabled($pdo, $ctx['sg_id'])) fail('Etel Business is not switched on for this shop. Ask Etel to turn it on.', 403);
+    $to = isset($body['to']) ? (string)$body['to'] : date('Y-m-d');
+    $from = isset($body['from']) ? (string)$body['from'] : date('Y-m-d', strtotime($to . ' -29 days'));
+    $okd = function ($d) { return preg_match('/^\d{4}-\d{2}-\d{2}$/', $d) && strtotime($d) !== false && date('Y-m-d', strtotime($d)) === $d; };
+    if (!$okd($from) || !$okd($to) || $from > $to) fail('Choose a valid range of dates', 400);
+    if ((strtotime($to) - strtotime($from)) / 86400 > 365) fail('Choose at most one year at a time', 400);
+    try { ok(etel_sgb_report($pdo, $ctx['sg_id'], $from, $to)); }
+    catch (Exception $e) { fail_ex($e, 'Could not build the report', 500); }
+    break;
+}
+
 case 'sg_pos_sync': {
     // POST: events:[{type, req_id, occurred_at, data}] (max 200). Each event is applied once; the answer lists one result per event
     // ('ok', 'dup' = already saved, 'error' + message). One bad event never blocks the others.

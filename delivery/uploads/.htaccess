@@ -1,0 +1,9 @@
+# ETEL-UPLOAD-GUARD-2: nothing in this folder may ever run as code, be listed, or be shown as a web page.
+Options -Indexes
+<FilesMatch "\.(php|phtml|pht|phps|php[0-9]|phar|inc|pl|py|cgi|sh|jsp|asp|aspx|shtml|html?|svg|js|htaccess)$">
+    Require all denied
+</FilesMatch>
+<IfModule mod_headers.c>
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set Content-Security-Policy "default-src 'none'; sandbox"
+</IfModule>

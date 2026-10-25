@@ -342,3 +342,81 @@ function etel_sgb_history($pdo, $sgId, $itemId) {
     $s->execute(array($sgId, $itemId));
     return $s->fetchAll(PDO::FETCH_ASSOC);
 }
+
+/* The books for a range of days (both ends included, at most 366 days): money in from counter sales and delivered online orders (item
+   revenue only, as in the online sales report), money out from expenses, a row per day, the best sellers and the slowest items. */
+function etel_sgb_report($pdo, $sgId, $from, $to) {
+    etel_sgb_ensure_schema($pdo);
+    $to1 = date('Y-m-d', strtotime($to . ' +1 day'));
+    $days = array();
+    $day = function ($d) use (&$days) {
+        if (!isset($days[$d])) $days[$d] = array('date' => $d, 'sales' => 0, 'counter' => 0.0, 'online_orders' => 0, 'online' => 0.0, 'expenses' => 0.0);
+        return $d;
+    };
+    $tot = array('sales' => 0, 'gross' => 0.0, 'discounts' => 0.0, 'cash' => 0.0, 'mobile' => 0.0, 'credit' => 0.0, 'voided' => 0,
+                 'online_orders' => 0, 'online' => 0.0, 'expenses' => 0.0);
+    $s = $pdo->prepare("SELECT DATE(occurred_at) d, status, payment_method pm, COUNT(*) n, SUM(total) t, SUM(discount) disc FROM sg_pos_sales
+                        WHERE service_giver_id=? AND occurred_at>=? AND occurred_at<? GROUP BY DATE(occurred_at), status, payment_method");
+    $s->execute(array($sgId, $from, $to1));
+    foreach ($s->fetchAll(PDO::FETCH_ASSOC) as $r) {
+        if ($r['status'] === 'void') { $tot['voided'] += intval($r['n']); continue; }
+        $k = $day($r['d']); $t = floatval($r['t']);
+        $days[$k]['sales'] += intval($r['n']); $days[$k]['counter'] += $t;
+        $tot['sales'] += intval($r['n']); $tot['gross'] += $t; $tot['discounts'] += floatval($r['disc']);
+        $tot[$r['pm']] += $t;
+    }
+    $s = $pdo->prepare("SELECT DATE(o.placed_at) d, COUNT(*) n, COALESCE(SUM(COALESCE(o.subtotal, o.fare_total)),0) t
+                        FROM order_assignments oa JOIN orders o ON o.id=oa.order_id
+                        WHERE oa.service_giver_id=? AND o.status='delivered' AND o.placed_at>=? AND o.placed_at<? GROUP BY DATE(o.placed_at)");
+    $s->execute(array($sgId, $from, $to1));
+    foreach ($s->fetchAll(PDO::FETCH_ASSOC) as $r) {
+        $k = $day($r['d']); $days[$k]['online_orders'] += intval($r['n']); $days[$k]['online'] += floatval($r['t']);
+        $tot['online_orders'] += intval($r['n']); $tot['online'] += floatval($r['t']);
+    }
+    $s = $pdo->prepare("SELECT DATE(occurred_at) d, category, SUM(amount) t FROM sg_expenses WHERE service_giver_id=? AND occurred_at>=? AND occurred_at<? GROUP BY DATE(occurred_at), category");
+    $s->execute(array($sgId, $from, $to1));
+    $cats = array();
+    foreach ($s->fetchAll(PDO::FETCH_ASSOC) as $r) {
+        $k = $day($r['d']); $t = floatval($r['t']);
+        $days[$k]['expenses'] += $t; $tot['expenses'] += $t;
+        $cats[$r['category']] = (isset($cats[$r['category']]) ? $cats[$r['category']] : 0) + $t;
+    }
+    // items: counter lines (void sales left out) + delivered online lines, merged by item
+    $items = array();
+    $add = function ($key, $name, $qty, $rev) use (&$items) {
+        if (!isset($items[$key])) $items[$key] = array('name' => $name, 'qty' => 0, 'revenue' => 0.0);
+        $items[$key]['qty'] += $qty; $items[$key]['revenue'] += $rev;
+    };
+    $s = $pdo->prepare("SELECT i.item_id, i.name_snapshot n, SUM(i.qty) q, SUM(i.qty*i.unit_price) r FROM sg_pos_sale_items i JOIN sg_pos_sales s ON s.id=i.sale_id
+                        WHERE s.service_giver_id=? AND s.status<>'void' AND s.occurred_at>=? AND s.occurred_at<? GROUP BY i.item_id, i.name_snapshot");
+    $s->execute(array($sgId, $from, $to1));
+    foreach ($s->fetchAll(PDO::FETCH_ASSOC) as $r) $add($r['item_id'] ? 'i' . $r['item_id'] : 'n' . $r['n'], $r['n'], intval($r['q']), floatval($r['r']));
+    $s = $pdo->prepare("SELECT oi.item_id, oi.item_name n, SUM(oi.quantity) q, SUM(oi.subtotal) r FROM order_assignments oa JOIN orders o ON o.id=oa.order_id JOIN order_items oi ON oi.order_id=o.id
+                        WHERE oa.service_giver_id=? AND o.status='delivered' AND o.placed_at>=? AND o.placed_at<? GROUP BY oi.item_id, oi.item_name");
+    $s->execute(array($sgId, $from, $to1));
+    foreach ($s->fetchAll(PDO::FETCH_ASSOC) as $r) $add($r['item_id'] ? 'i' . $r['item_id'] : 'n' . $r['n'], $r['n'], intval($r['q']), floatval($r['r']));
+    $sold = $items;
+    uasort($sold, function ($a, $b) { return $b['qty'] <=> $a['qty'] ?: $b['revenue'] <=> $a['revenue']; });
+    $best = array_slice(array_values($sold), 0, 10);
+    // slowest: items on the menu that sold least (including none at all)
+    $m = $pdo->prepare('SELECT id, name FROM items WHERE service_giver_id=? AND is_available=1 LIMIT 1000');
+    $m->execute(array($sgId));
+    $slow = array();
+    foreach ($m->fetchAll(PDO::FETCH_ASSOC) as $r) {
+        $q = isset($items['i' . $r['id']]) ? $items['i' . $r['id']]['qty'] : 0;
+        $slow[] = array('name' => $r['name'], 'qty' => $q);
+    }
+    usort($slow, function ($a, $b) { return $a['qty'] <=> $b['qty'] ?: strcmp($a['name'], $b['name']); });
+    $slow = array_slice($slow, 0, 5);
+    $r2 = function ($v) { return round($v, 2); };
+    foreach ($days as &$d) { foreach (array('counter', 'online', 'expenses') as $f) $d[$f] = $r2($d[$f]); } unset($d);
+    ksort($days);
+    foreach ($tot as $k => $v) if (is_float($v)) $tot[$k] = $r2($v);
+    $tot['income'] = $r2($tot['gross'] + $tot['online']);
+    $tot['net'] = $r2($tot['income'] - $tot['expenses']);
+    $byCat = array();
+    foreach ($cats as $c => $v) $byCat[] = array('category' => $c, 'amount' => $r2($v));
+    usort($byCat, function ($a, $b) { return $b['amount'] <=> $a['amount']; });
+    foreach ($best as &$b) $b['revenue'] = $r2($b['revenue']); unset($b);
+    return array('from' => $from, 'to' => $to, 'totals' => $tot, 'days' => array_values($days), 'expense_categories' => $byCat, 'best' => $best, 'slow' => $slow);
+}
