@@ -1,0 +1,134 @@
+/* ETEL Ride - real 3D vehicle pictures (additive script, no bundle release).
+
+   Looks for one picture per vehicle type in img/vehicles/ (bajaj, qute, moto, car, ev_car, minibus .png) and, for each type that is
+   really there:
+     - EtelVehicleArt.html(type, px)    an <img> for the vehicle list on the Book screen (ride-vehicle-list.js uses it)
+     - EtelUI.vehicleMarker(type, opts) is wrapped so every map marker (nearby drivers, the driver on the way, the driver's own marker)
+                                        shows the picture instead of the drawn badge
+   A type with no picture (or one that fails to load) keeps exactly what the app showed before, so adding or removing a file can never
+   leave an empty icon. ev_car uses car.png when it has no picture of its own.
+
+   Pictures: transparent PNG, 3/4 front view, the vehicle facing RIGHT, centred, about 512 x 512 (see img/vehicles/README.md).
+   On the map a vehicle that moves west is mirrored, so it always faces the way it travels. Nothing here uses inline handlers. */
+(function () {
+    'use strict';
+    if (window.EtelVehicleArt) return;
+
+    var TYPES = ['bajaj', 'qute', 'moto', 'car', 'ev_car', 'minibus'];
+    var src = (document.currentScript && document.currentScript.src) || '';
+    var BASE = src ? src.split('?')[0].replace(/js\/[^\/]*$/, 'img/vehicles/') : '../img/vehicles/';
+    var ok = {};        // type -> loaded Image
+    var cache = {};     // "type|size|flip" -> icon
+    var byUrl = {};     // icon url -> { type, size, flip } (so a marker's icon can be recognised again)
+
+    /* the same loose matching the app already uses for vehicle names; null = not one of ours */
+    function norm(t) {
+        t = String(t == null ? '' : t).toLowerCase();
+        if (!t) return null;
+        if (TYPES.indexOf(t) !== -1) return t;
+        if (t.indexOf('qute') !== -1) return 'qute';
+        if (t.indexOf('moto') !== -1 || t.indexOf('bike') !== -1 || t.indexOf('scoot') !== -1) return 'moto';
+        if (t.indexOf('mini') !== -1 || t.indexOf('van') !== -1 || t.indexOf('bus') !== -1) return 'minibus';
+        if (t.indexOf('ev') === 0 || t.indexOf('electric') !== -1) return 'ev_car';
+        if (t.indexOf('car') !== -1 || t.indexOf('sedan') !== -1) return 'car';
+        if (t.indexOf('bajaj') !== -1 || t.indexOf('tuk') !== -1 || t.indexOf('rickshaw') !== -1) return 'bajaj';
+        return null;
+    }
+    function pick(type) {
+        var n = norm(type);
+        if (!n) return null;
+        if (ok[n]) return n;
+        return (n === 'ev_car' && ok.car) ? 'car' : null;
+    }
+    function ready(type) { return !!pick(type); }
+    function url(type) { var n = pick(type); return n ? ok[n].src : null; }
+    function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+
+    function html(type, w, h) {
+        var n = pick(type); if (!n) return '';
+        return '<img class="etel-vimg" src="' + esc(ok[n].src) + '" alt="" width="' + (w || 64) + '" height="' + (h || Math.round((w || 64) * 0.75)) + '" decoding="async" draggable="false">';
+    }
+
+    /* A Google Maps icon from the picture: drawn on a canvas (twice the size, for sharp screens) with a soft shadow, mirrored if asked. */
+    function marker(type, opts) {
+        var n = pick(type); if (!n || !window.google || !google.maps) return null;
+        opts = opts || {};
+        var size = Math.max(32, Math.round(opts.size || 60)), flip = !!opts.flip, key = n + '|' + size + '|' + (flip ? 1 : 0);
+        if (cache[key]) return cache[key];
+        try {
+            var img = ok[n], S = size * 2, c = document.createElement('canvas'); c.width = S; c.height = S;
+            var g = c.getContext('2d'), pad = S * 0.08, box = S - pad * 2, k = Math.min(box / img.naturalWidth, box / img.naturalHeight);
+            var w = img.naturalWidth * k, h = img.naturalHeight * k;
+            g.shadowColor = 'rgba(0,0,0,.45)'; g.shadowBlur = S * 0.05; g.shadowOffsetY = S * 0.02;
+            if (flip) { g.translate(S, 0); g.scale(-1, 1); }
+            g.drawImage(img, (S - w) / 2, (S - h) / 2, w, h);
+            var u = c.toDataURL('image/png');
+            byUrl[u] = { type: n, size: size, flip: flip };
+            return (cache[key] = { url: u, scaledSize: new google.maps.Size(size, size), anchor: new google.maps.Point(size / 2, size / 2) });
+        } catch (e) { return null; }   // a canvas that cannot be read: the drawn badge is used instead
+    }
+
+    /* ---- hooks, set up as soon as the things they wrap exist (the app's bundle and Google Maps load after this file) ---- */
+    function wrapMarkerFactory() {
+        var U = window.EtelUI;
+        if (!U || typeof U.vehicleMarker !== 'function' || U.vehicleMarker.__art) return !!(U && U.vehicleMarker && U.vehicleMarker.__art);
+        var orig = U.vehicleMarker;
+        U.vehicleMarker = function (type, opts) {
+            var o = opts || {}, m = ready(type) ? marker(type, { size: Math.round((o.size || 44) * 1.35), flip: !!o.flip }) : null;
+            return m || orig.apply(this, arguments);
+        };
+        U.vehicleMarker.__art = true;
+        return true;
+    }
+    /* Mirror the picture when the marker travels west, so the vehicle looks where it is going. */
+    function wrapMapsMarker() {
+        if (!window.google || !google.maps || !google.maps.Marker) return false;
+        var P = google.maps.Marker.prototype;
+        if (P.__etelArt) return true;
+        var orig = P.setPosition;
+        P.setPosition = function (pos) {
+            try {
+                var ic = this.getIcon && this.getIcon(), meta = ic && ic.url && byUrl[ic.url], old = this.getPosition && this.getPosition();
+                if (meta && old && pos) {
+                    var lng = typeof pos.lng === 'function' ? pos.lng() : pos.lng, dx = lng - old.lng();
+                    if (Math.abs(dx) > 0.00002 && (dx < 0) !== meta.flip) { var m = marker(meta.type, { size: meta.size, flip: dx < 0 }); if (m) this.setIcon(m); }
+                }
+            } catch (e) {}
+            return orig.apply(this, arguments);
+        };
+        P.__etelArt = true;
+        return true;
+    }
+    var tries = 0;
+    (function hook() {
+        var a = wrapMarkerFactory(), b = wrapMapsMarker();
+        if ((!a || !b) && ++tries < 240) setTimeout(hook, 500);
+    })();
+
+    /* ---- the pictures themselves ---- */
+    function probe() {
+        TYPES.forEach(function (t) {
+            var im = new Image();
+            im.onload = function () {
+                if (!im.naturalWidth) return;
+                ok[t] = im;
+                try { document.dispatchEvent(new CustomEvent('etel:vehicle-art', { detail: { type: t } })); } catch (e) {}
+            };
+            im.onerror = function () { delete ok[t]; };
+            im.src = BASE + t + '.png';
+        });
+    }
+    function css() {
+        if (document.getElementById('etel-vart-css')) return;
+        var s = document.createElement('style'); s.id = 'etel-vart-css';
+        s.textContent = '.etel-vimg{display:block;width:100%;height:100%;object-fit:contain;pointer-events:none;filter:drop-shadow(0 4px 6px rgba(0,0,0,.35))}' +
+            '#view-book[data-step="2"] .vtype-chip.vt-art{grid-template-columns:96px minmax(0,1fr) auto}' +
+            '#view-book[data-step="2"] .vtype-chip.vt-art .vt-icon,#view-book[data-step="2"] .vtype-chip.vt-art.active .vt-icon{width:96px;height:64px;border:0!important;background:none!important;border-radius:0}' +
+            '#view-book[data-step="2"] .vtype-chip.vt-art.vtype-chip-disabled .vt-icon{filter:grayscale(1)}' +
+            '.vtype-chip.vt-art .vt-icon{width:64px;height:48px}';
+        (document.head || document.documentElement).appendChild(s);
+    }
+    css(); probe();
+
+    window.EtelVehicleArt = { ready: ready, url: url, html: html, marker: marker, types: TYPES.slice() };
+})();

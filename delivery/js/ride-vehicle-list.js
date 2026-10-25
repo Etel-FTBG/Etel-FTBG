@@ -128,8 +128,11 @@
                 sub += ' · ' + seats + (seats === 1 ? ' seat' : ' seats');
                 var price = fares[t] != null ? money(fares[t]) : (base || '');
                 var tag = (t === cheapest) ? '<span class="vt-tag vt-tag-cheap">Cheapest</span>' : (t === fastest ? '<span class="vt-tag vt-tag-fast">Fastest</span>' : '');
-                var glyph = (window.EtelUI && EtelUI.vehicleGlyph) ? EtelUI.vehicleGlyph(t, 30) : '';
-                var sig = [t, name, sub, price, tag, disabled ? 1 : 0].join('~');
+                // a real 3D picture (js/etel-vehicle-art.js, img/vehicles/*.png) when there is one for this type, else the drawn icon
+                var art = (window.EtelVehicleArt && EtelVehicleArt.ready(t)) ? EtelVehicleArt.html(t, 96, 64) : '';
+                var glyph = art || ((window.EtelUI && EtelUI.vehicleGlyph) ? EtelUI.vehicleGlyph(t, 30) : '');
+                c.classList.toggle('vt-art', !!art);
+                var sig = [t, name, sub, price, tag, disabled ? 1 : 0, art ? 'a' : (glyph ? 'g' : 'n')].join('~');
                 if (c.getAttribute('data-vt-sig') !== sig) {
                     c.innerHTML = '<div class="vt-icon">' + glyph + '</div>' +
                         '<div class="vt-main"><div class="vt-name">' + esc(name) + tag + '</div><div class="vt-eta">' + esc(sub) + '</div></div>' +
@@ -195,5 +198,7 @@
         loadInfo();
         decorate();
     }
+    // a vehicle picture finished loading after the chips were first drawn: redraw them with it
+    document.addEventListener('etel:vehicle-art', function () { decorate(); });
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
 })();
