@@ -42,6 +42,27 @@ for a in ('sg_business_state', 'sg_pos_sync', 'admin_sg_set_business_tools'):
         bad.append(a + ' is not routed in boot.php')
 if "'admin_sg_set_business_tools','sg_pos_sync'" not in boot:
     bad.append('the two write actions must be in ETEL_WRITE_ACTIONS (cache purge)')
+# the counter screen (js/servicegiver-business.js)
+ui = read('js/servicegiver-business.js')
+import subprocess
+if subprocess.call(['node', '--check', root + '/js/servicegiver-business.js']) != 0:
+    bad.append('servicegiver-business.js does not parse')
+if re.search(r"""[\s'"`>]on[a-z]+\s*=\s*\\?["']""", ui):
+    bad.append('servicegiver-business.js must not use inline handlers')
+used = set(re.findall(r'data-sgb="([a-z-]+)"', ui))
+for a in sorted(used):
+    if "a === '%s'" % a not in ui:
+        bad.append('data-sgb action %s has no handler' % a)
+if not re.search(r"post\('sg_pos_sync'", ui) or 'sg_business_state' not in ui:
+    bad.append('the counter must send sales with sg_pos_sync and read sg_business_state')
+if 'currentServiceGiver.business_tools' not in ui or "can('pos.sell')" not in ui:
+    bad.append('the counter must only show when the tools are on and the person has pos.sell')
+if "id = 'sgb-css'" not in ui:
+    bad.append('style id sgb-css expected')
+html = read('servicegiver.html')
+order = [html.find(x) for x in ('js/servicegiver.js?', 'js/servicegiver-offline.js', 'js/servicegiver-business.js')]
+if -1 in order or order != sorted(order):
+    bad.append('servicegiver.html must load servicegiver.js, servicegiver-offline.js, servicegiver-business.js in that order')
 if bad:
     print('check_shop_business FAILED:')
     for b in bad:
