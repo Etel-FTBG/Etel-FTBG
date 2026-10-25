@@ -416,6 +416,7 @@ const PD_VTYPES = [
     { id: 'moto', label: 'Moto', icon: '🛵' },
     { id: 'car', label: 'Car', icon: '🚗' },
     { id: 'minibus', label: 'Minibus', icon: '🚐' },
+    { id: 'ev_car', label: 'EV Bajaj', icon: '⚡' },
 ];
 let _pdMode = 'open';
 
