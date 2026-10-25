@@ -166,14 +166,6 @@ body:not(.dark-theme) #modal-box label, body:not(.dark-theme) #modal-box p, body
 body:not(.dark-theme) #modal-box input, body:not(.dark-theme) #modal-box select, body:not(.dark-theme) #modal-box textarea { background:#FFFFFF !important; color:#1B1606 !important; -webkit-text-fill-color:#1B1606 !important; border:1px solid rgba(20,17,8,.4) !important; }
 body:not(.dark-theme) #modal-box button[onclick="closeModal()"] { color:#4A4536 !important; }
 body.etel-ride-only [onclick*="loadDuplicatePhones"] { display:none !important; }
-/* Pricing tab in light mode: its panels were built dark-only (hard-coded #1a1a1a boxes, gold text), which left
-   dark text on dark boxes and gold on cream. Make the boxes light and the text dark. */
-body:not(.dark-theme) #panel-pricing [style*="background:#1a1a1a"], body:not(.dark-theme) #pricing-peak-windows .pw-row { background:#FFF6D8 !important; border:1px solid rgba(20,17,8,.3) !important; }
-body:not(.dark-theme) #panel-pricing h3, body:not(.dark-theme) #panel-pricing [style*="color:#f0cf5a"], body:not(.dark-theme) #panel-pricing label { color:#4A3300 !important; -webkit-text-fill-color:#4A3300 !important; }
-body:not(.dark-theme) #panel-pricing [style*="color:#ccc"], body:not(.dark-theme) #panel-pricing [style*="color:#9A9AAE"], body:not(.dark-theme) #panel-pricing [style*="color:#B8B0A0"], body:not(.dark-theme) #pricing-peak-windows .pw-row span, body:not(.dark-theme) #panel-pricing div { color:#2A2412; }
-body:not(.dark-theme) #panel-pricing [style*="color:#ccc"], body:not(.dark-theme) #panel-pricing [style*="color:#9A9AAE"] { -webkit-text-fill-color:#2A2412 !important; color:#2A2412 !important; }
-body:not(.dark-theme) #pricing-peak-windows .pw-day-btn:not(.active) { background:#EADFB8 !important; color:#3A3322 !important; border-color:rgba(20,17,8,.4) !important; }
-body:not(.dark-theme) #pricing-peak-windows .pw-mult-input { background:#FFFFFF !important; color:#1B1606 !important; -webkit-text-fill-color:#1B1606 !important; border-color:rgba(20,17,8,.4) !important; }
 /* Ride-only roles: Delivery-only dashboard blocks are removed */
 body.etel-ride-only .charts-grid, body.etel-ride-only #dash-orders-section { display:none !important; }
 body.etel-ride-only .etel-end-marker img[alt="ETEL Delivery"] { display:none !important; }
@@ -1362,37 +1354,8 @@ html{color-scheme:light}
                 </div><!-- /panel-rides -->
 
                 <div class="panel" id="panel-pricing" style="display:none">
-
-                  <div data-cap="pricing.manage">
-                    <h3 style="color:#f0cf5a;font-size:15px;margin:0 0 12px">Ride fare rules (per vehicle type)</h3>
-                    <div id="pricing-fare-rules"></div>
-                  </div>
-
-                  <div data-cap="pricing.manage">
-                    <h3 style="color:#f0cf5a;font-size:15px;margin:28px 0 12px">Driver daily-goal tiers</h3>
-                    <div id="pricing-goal-tiers"></div>
-                  </div>
-
-                  <div data-cap="pricing.manage">
-                    <h3 style="color:#f0cf5a;font-size:15px;margin:28px 0 12px">Peak-hour schedule (when surge applies)</h3>
-                    <div id="pricing-peak-windows"></div>
-                  </div>
-
-                  <div data-cap="settings.view">
-                    <h3 style="color:#f0cf5a;font-size:15px;margin:28px 0 12px">Delivery zones</h3>
-                    <div id="pricing-zones"></div>
-                  </div>
-
-                  <div data-cap="settings.view">
-                    <h3 style="color:#f0cf5a;font-size:15px;margin:28px 0 12px">Delivery tiers (moto / car / express cargo)</h3>
-                    <div id="pricing-tiers"></div>
-                  </div>
-
-                  <div data-cap="finance.view">
-                    <h3 style="color:#f0cf5a;font-size:15px;margin:28px 0 12px">Bank transfer accounts</h3>
-                    <div id="pricing-bank-accounts"></div>
-                  </div>
-
+                    <div class="page-title" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">Pricing</div>
+                    <div id="pricing-studio"><!-- built by js/admin-pricing-studio.js --></div>
                 </div><!-- /panel-pricing -->
 
                 <div class="panel" id="panel-promos" style="display:none">
@@ -1527,7 +1490,6 @@ html{color-scheme:light}
     <script src="js/admin/admin-growth-charts.js?v=2.8"></script>
     <script src="js/admin/admin-ui.js?v=5.3"></script>
     <script src="js/admin/admin-printer.js?v=1.0"></script><!-- Direct Bluetooth printer: order receipts, daily summary, verification slips -->
-    <script src="js/admin-pricing.js?v=1.9"></script><!-- Pricing tab (fare rules, zones, delivery tiers, bank accounts) -->
     <script>
     var SYS_TEST_STEPS_RIDE = [
       'Demo accounts ready', 'Booking created', 'Driver accepted', 'Trip started',
@@ -1669,6 +1631,7 @@ html{color-scheme:light}
     <script src="js/admin-couriers-pro.js?v=1"></script><!-- Couriers: control room, approval, drawer -->
     <script src="js/admin-sg-pro.js?v=2"></script><!-- Service givers: directory, verification, drawer -->
     <script src="js/admin-items-pro.js?v=1"></script><!-- Items & products: board, stock warnings, quick controls -->
+    <script src="js/admin-pricing-studio.js?v=1"></script><!-- Pricing studio: premium controller screen -->
     <script src="js/admin-payments-hub.js?v=1"></script><!-- Payments hub: premium controller screen -->
     <script src="js/admin-ride-payments.js?v=2"></script><!-- Ride Payments: premium console -->
     <script src="js/admin-promos-pro.js?v=2"></script><!-- Promo codes: board with status and usage -->
@@ -1687,7 +1650,6 @@ html{color-scheme:light}
     <script src="js/admin-people.js?v=1"></script><!-- Users + Customers: counts, search, cards/table, profile drawer, account controls -->
     <script src="js/admin-nav.js?v=1"></script><!-- Grouped menu, find-a-page box, keyboard + screen reader support; loads last so it can move every item -->
     <script src="js/admin-footer.js?v=2"></script>
-    <script src="js/admin-courier-pay.js?v=1"></script>
     <script src="js/admin-ride-promos.js?v=1"></script><!-- Promo codes page: ride promo codes (propose, approve) -->
     <script src="js/admin-ride-tips.js?v=1"></script><!-- Rides page: ride tips waiting for approval -->
     <script src="js/admin-client-errors.js?v=1"></script><!-- Rides page: browser errors reported by the apps -->
