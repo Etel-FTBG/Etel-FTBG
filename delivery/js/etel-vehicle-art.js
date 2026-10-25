@@ -19,6 +19,7 @@
     var src = (document.currentScript && document.currentScript.src) || '';
     var BASE = src ? src.split('?')[0].replace(/js\/[^\/]*$/, 'img/vehicles/') : '../img/vehicles/';
     var ok = {};        // type -> loaded Image (facing right)
+    var IMG_V = '2';    // change when the picture files change, so phones do not keep showing the old ones
     var okL = {};       // type -> loaded Image (facing left, optional)
     var cache = {};     // "type|size|flip" -> icon
     var byUrl = {};     // icon url -> { type, size, flip } (so a marker's icon can be recognised again)
@@ -127,7 +128,7 @@
             try { document.dispatchEvent(new CustomEvent('etel:vehicle-art', { detail: { type: t, left: left } })); } catch (e) {}
         };
         im.onerror = function () { delete reg[t]; };
-        im.src = BASE + t + (left ? '_left' : '') + '.png';
+        im.src = BASE + t + (left ? '_left' : '') + '.png?v=' + IMG_V;
     }
     function probe() { TYPES.forEach(function (t) { load(t, false); }); }
     function wantLeft() { if (leftStarted) return; leftStarted = true; TYPES.forEach(function (t) { if (ok[t]) load(t, true); }); }
