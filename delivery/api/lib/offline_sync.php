@@ -24,12 +24,12 @@ function etel_offline_forget($pdo, $userId, $reqId) {
     try { $pdo->prepare('DELETE FROM offline_requests WHERE user_id=? AND req_id=?')->execute(array($userId, is_string($reqId) ? trim($reqId) : '')); } catch (Exception $e) {}
 }
 
-function etel_offline_when($occurredAt, $notBefore = null) {
+function etel_offline_when($occurredAt, $notBefore = null, $maxAge = 86400) {
     if (!is_string($occurredAt) || $occurredAt === '') return null;
     $t = strtotime($occurredAt);
     if ($t === false) return null;
     $now = time();
-    if ($t > $now + 120 || $t < $now - 86400) return null;
+    if ($t > $now + 120 || $t < $now - $maxAge) return null;
     if ($notBefore) { $nb = strtotime($notBefore); if ($nb !== false && $t < $nb) return null; }
     return date('Y-m-d H:i:s', min($t, $now));
 }

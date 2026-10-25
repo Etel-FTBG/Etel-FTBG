@@ -125,7 +125,7 @@ case 'admin_service_giver_detail': {
     $g = $one('SELECT sg.*, u.name, u.phone FROM service_givers sg JOIN users u ON u.id = sg.user_id WHERE sg.id = ? LIMIT 1', array($id));
     if (!$g) fail('Service giver not found', 404);
     $keep = array('id', 'user_id', 'service_giver_code', 'business_name', 'service_type', 'zone', 'address', 'name', 'phone', 'status', 'is_online', 'average_rating', 'rating_count',
-                  'completed_deliveries', 'total_deliveries', 'failed_deliveries', 'total_earnings', 'logo_url', 'created_at', 'lat', 'lng');
+                  'completed_deliveries', 'total_deliveries', 'failed_deliveries', 'total_earnings', 'logo_url', 'created_at', 'lat', 'lng', 'business_tools');
     $out = array();
     foreach ($keep as $k) { if (array_key_exists($k, $g)) $out[$k] = $g[$k]; }
     $st = $one("SELECT SUM(o.placed_at >= CURDATE()) AS today, SUM(o.placed_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)) AS d7, SUM(o.placed_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)) AS d30,

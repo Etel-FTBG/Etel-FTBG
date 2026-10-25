@@ -118,6 +118,13 @@ if (!function_exists('sg_capability_catalog')) {
             'staff.manage'   => 'Add or remove staff, define roles',
             'settings.manage'=> 'Edit business profile, hours, zone',
             'reports.view'   => 'See sales/performance reports',
+            // Etel Business (only used when the shop has the business tools switched on)
+            'pos.sell'       => 'Sell at the counter (walk-in sales)',
+            'pos.void'       => 'Cancel a walk-in sale',
+            'pos.discount'   => 'Give discounts over 20%',
+            'stock.manage'   => 'Record stock deliveries, waste and counts',
+            'expenses.manage'=> 'Record shop expenses',
+            'cashup.manage'  => 'Count the till and close the day',
         );
     }
 }
@@ -178,6 +185,8 @@ case 'sg_profile': {
     // Fill any missing optional fields with defaults
     $sg += array('average_rating'=>0,'rating_count'=>0,'total_deliveries'=>0,'total_earnings'=>0,'is_online'=>0);
 
+    require_once __DIR__ . '/../lib/sg_business.php';
+    $sg['business_tools'] = etel_sgb_enabled($pdo, intval($sg['id'])) ? 1 : 0;
     $staff_role = $ctx ? $ctx['role'] : 'owner';
     if ($ctx && !sg_has_capability($ctx, 'payments.view')) {
         // Staff without payments.view run the till day-to-day but don't
@@ -1987,4 +1996,64 @@ case 'admin_review_payout_request': {
     }
     break;
 }
+case 'sg_business_state': {
+    // GET/POST: the items (with stock) and today's totals the counter screens need, also kept on the phone for offline use.
+    $pdo = db();
+    $auth_user = require_auth($pdo);
+    if ($auth_user['role'] !== 'service_giver' && ($auth_user['role'] !== 'admin' || etel_is_ride_only(db(), $auth_user))) fail('Service giver access required', 403);
+    $ctx = sg_get_context($pdo, $auth_user['id']);
+    if (!$ctx) fail('Service giver profile not found', 404);
+    require_once __DIR__ . '/../lib/sg_business.php';
+    if (!etel_sgb_enabled($pdo, $ctx['sg_id'])) fail('Etel Business is not switched on for this shop. Ask Etel to turn it on.', 403);
+    $any = false;
+    foreach (array('pos.sell', 'stock.manage', 'expenses.manage', 'cashup.manage', 'reports.view') as $c) { if (sg_has_capability($ctx, $c)) { $any = true; break; } }
+    if (!$any) fail('Your role cannot use the business tools', 403);
+    ok(etel_sgb_state($pdo, $ctx['sg_id']));
+    break;
+}
+
+case 'sg_pos_sync': {
+    // POST: events:[{type, req_id, occurred_at, data}] (max 200). Each event is applied once; the answer lists one result per event
+    // ('ok', 'dup' = already saved, 'error' + message). One bad event never blocks the others.
+    $pdo = db();
+    $auth_user = require_auth($pdo);
+    if ($auth_user['role'] !== 'service_giver' && ($auth_user['role'] !== 'admin' || etel_is_ride_only(db(), $auth_user))) fail('Service giver access required', 403);
+    $ctx = sg_get_context($pdo, $auth_user['id']);
+    if (!$ctx) fail('Service giver profile not found', 404);
+    if ($auth_user['role'] === 'admin') fail('Platform admins cannot enter a shop\'s sales', 403);
+    require_once __DIR__ . '/../lib/sg_business.php';
+    if (!etel_sgb_enabled($pdo, $ctx['sg_id'])) fail('Etel Business is not switched on for this shop. Ask Etel to turn it on.', 403);
+    $events = isset($body['events']) && is_array($body['events']) ? $body['events'] : null;
+    if ($events === null) fail('events is required', 400);
+    if (count($events) > ETEL_SGB_MAX_EVENTS) fail('Send at most ' . ETEL_SGB_MAX_EVENTS . ' events at a time', 400);
+    $results = array();
+    foreach ($events as $ev) {
+        $r = etel_sgb_apply_event($pdo, $ctx, $auth_user['id'], $ev);
+        $r['req_id'] = is_array($ev) && isset($ev['req_id']) && is_string($ev['req_id']) ? $ev['req_id'] : '';
+        $results[] = $r;
+    }
+    ok(array('results' => $results, 'server_now' => gmdate('c')));
+    break;
+}
+
+case 'admin_sg_set_business_tools': {
+    // POST: id (service giver), enabled (0|1). Platform admins with service_givers.manage switch the paid business tools on or off for one shop.
+    $pdo = db();
+    $u = require_admin($pdo, 'service_givers.manage');
+    if (etel_is_ride_only($pdo, $u)) fail('You can only see ride accounts', 403);
+    $id = isset($body['id']) ? intval($body['id']) : 0;
+    if ($id <= 0) fail('id required', 400);
+    require_once __DIR__ . '/../lib/sg_business.php';
+    etel_sgb_ensure_schema($pdo);
+    $on = !empty($body['enabled']) ? 1 : 0;
+    try {
+        $c = $pdo->prepare('SELECT id FROM service_givers WHERE id=?');
+        $c->execute(array($id));
+        if (!$c->fetchColumn()) fail('Service giver not found', 404);
+        $pdo->prepare('UPDATE service_givers SET business_tools=? WHERE id=?')->execute(array($on, $id));
+    } catch (Exception $e) { fail_ex($e, 'Could not change the business tools', 500); }
+    ok(array('id' => $id, 'business_tools' => $on, 'message' => $on ? 'Etel Business switched on' : 'Etel Business switched off'));
+    break;
+}
+
 }

@@ -126,8 +126,11 @@ function drawer(d, dr) {
   if (g.status === 'pending') acts += '<button type="button" class="ak-btn good" data-verify>✓ Verify business</button>';
   if (g.status === 'suspended') acts += '<button type="button" class="ak-btn good" data-verify>Restore (verify)</button>';
   if (g.status !== 'suspended') acts += '<button type="button" class="ak-btn danger" data-suspend>Suspend…</button>';
+  var biz = Number(g.business_tools) === 1;
+  acts += '<button type="button" class="ak-btn ' + (biz ? '' : 'good') + '" data-biz="' + (biz ? 0 : 1) + '">' + (biz ? 'Switch off Etel Business' : 'Switch on Etel Business') + '</button>';
   acts += '<button type="button" class="ak-btn gold" data-full>Full profile, staff &amp; payouts…</button>';
-  h += '<div class="ak-sec"><h4>Controls</h4><div class="ak-acts">' + acts + '</div></div>';
+  h += '<div class="ak-sec"><h4>Controls</h4><div class="ak-acts">' + acts + '</div>' +
+    '<p style="font-size:12.5px;color:var(--mute);margin:10px 2px 0">Etel Business gives this shop its own books that work with no internet: walk-in sales, stock, expenses and the daily cash count. Currently <b>' + (biz ? 'on' : 'off') + '</b>.</p></div>';
   if (d.recent && d.recent.length) {
     h += '<div class="ak-sec"><h4>Recent orders</h4><table class="ak-items">' + d.recent.map(function (o) {
       return '<tr><td><b>' + esc(o.order_code) + '</b> <small>' + esc(String(o.status).replace(/_/g, ' ')) + ' · ' + esc(K.ago(o.placed_at)) + '</small></td><td>' + esc(K.money(o.fare_total)) + '</td></tr>';
@@ -138,8 +141,9 @@ function drawer(d, dr) {
   dr._d = d;
 }
 
-function act(action, id, msg) {
-  return K.api(action, { id: id }).then(function (res) {
+function act(action, id, msg, extra) {
+  var body = { id: id }; if (extra) Object.keys(extra).forEach(function (k) { body[k] = extra[k]; });
+  return K.api(action, body).then(function (res) {
     if (K.okRes(res)) { K.toast(msg); V.busy = false; load(true); if (V.openId === id && K.drawerEl()) openSG(id); return true; }
     K.toast(K.failText(res), true); return false;
   });
@@ -152,6 +156,12 @@ function onDrawerClick(e) {
   var g = dr._d.service_giver, t = e.target;
   if (t.closest('[data-verify]')) verify(g.id);
   else if (t.closest('[data-suspend]')) K.confirm({ title: 'Suspend ' + title(g) + '?', text: 'It is taken offline and stops receiving orders until you verify it again.', label: 'Suspend', danger: true }).then(function (r) { if (r) act('admin_suspend_service_giver', g.id, 'Business suspended'); });
+  else if (t.closest('[data-biz]')) {
+    var on = t.closest('[data-biz]').getAttribute('data-biz') === '1';
+    K.confirm({ title: (on ? 'Switch on' : 'Switch off') + ' Etel Business for ' + title(g) + '?', text: on ? 'The shop gets the counter, stock, expenses and cash-up screens. Their data stays if you switch it off later.' : 'The shop loses the business screens. Nothing is deleted; it comes back if you switch it on again.', label: on ? 'Switch on' : 'Switch off', danger: !on }).then(function (r) {
+      if (r) act('admin_sg_set_business_tools', g.id, on ? 'Etel Business switched on' : 'Etel Business switched off', { enabled: on ? 1 : 0 });
+    });
+  }
   else if (t.closest('[data-full]')) {
     K.closeDrawer();
     if (typeof openSGManageModal === 'function') openSGManageModal(g.id); else K.toast('The full profile editor is not available here.', true);
