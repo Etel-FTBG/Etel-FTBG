@@ -132,7 +132,7 @@
                 var art = (window.EtelVehicleArt && EtelVehicleArt.ready(t)) ? EtelVehicleArt.html(t, 96, 64) : '';
                 var glyph = art || ((window.EtelUI && EtelUI.vehicleGlyph) ? EtelUI.vehicleGlyph(t, 30) : '');
                 c.classList.toggle('vt-art', !!art);
-                var sig = [t, name, sub, price, tag, disabled ? 1 : 0, art ? 'a' : (glyph ? 'g' : 'n')].join('~');
+                var sig = [t, name, sub, price, tag, disabled ? 1 : 0, art || (glyph ? 'g' : 'n')].join('~');   // the picture's own markup (it names the file), so a type that first borrowed another picture is redrawn when its own arrives
                 if (c.getAttribute('data-vt-sig') !== sig) {
                     c.innerHTML = '<div class="vt-icon">' + glyph + '</div>' +
                         '<div class="vt-main"><div class="vt-name">' + esc(name) + tag + '</div><div class="vt-eta">' + esc(sub) + '</div></div>' +

@@ -10,7 +10,7 @@ you can add them one at a time. Nothing needs to be rebuilt or released: upload 
 | `qute.png`    | Bajaj Qute (small four-wheeler)           |
 | `moto.png`    | Motorcycle                                |
 | `car.png`     | Car                                       |
-| `ev_car.png`  | Electric car (optional: uses `car.png`)   |
+| `ev_car.png`  | Electric vehicle (currently the electric bajaj; optional: uses `car.png` when missing) |
 | `minibus.png` | Minibus / van                             |
 
 Optional: `<name>_left.png` (for example `bajaj_left.png`) is the same vehicle **facing left**. On the map a vehicle that drives west
