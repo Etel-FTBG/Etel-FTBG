@@ -15,6 +15,7 @@ var esc = K.esc;
 var S = { tab: '', caps: [], rules: [], surge: 1.3, windows: [], isDefault: false, goals: [], zones: [], tiers: [], banks: [], err: {}, cp: null, order: null, cpOut: '', loaded: false, calc: { vt: '', km: 5, wait: 0, open: false, peak: false } };
 var TABS = [['fares', 'Ride fares', 'pricing.manage'], ['peak', 'Peak hours', 'pricing.manage'], ['goals', 'Driver goals', 'pricing.manage'], ['delivery', 'Delivery', 'settings.view'], ['courier', 'Courier pay', ['pricing.manage', 'settings.view']], ['banks', 'Bank accounts', 'finance.view']];
 var BUILTIN = ['bajaj', 'moto', 'car', 'minibus'];
+var IMG_V = '2';    // same as IMG_V in etel-vehicle-art.js: bump both when the picture files change, so phones do not keep showing the old ones
 var ART = ['bajaj', 'qute', 'moto', 'car', 'ev_car', 'minibus'];
 var ICON = { bajaj: '🛺', moto: '🏍️', car: '🚗', minibus: '🚐', qute: '🛺', ev_car: '⚡' };
 var DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
@@ -27,7 +28,7 @@ function can(cap) { if (cap instanceof Array) return cap.some(can); return S.cap
 function vlabel(vt) { return vt === 'ev_car' ? 'EV Bajaj' : String(vt).charAt(0).toUpperCase() + String(vt).slice(1).replace(/_/g, ' '); }
 function slug(raw) { return String(raw || '').toLowerCase().replace(/[^a-z0-9\s_-]/g, '').replace(/[\s-]+/g, '_').replace(/_+/g, '_').replace(/^_+|_+$/g, '').replace(/^[^a-z]+/, '').slice(0, 20); }
 function vpic(vt) {
-  return ART.indexOf(vt) >= 0 ? '<img src="img/vehicles/' + esc(vt) + '.png" alt="" loading="lazy" data-emoji="' + esc(ICON[vt] || '🚘') + '">' : (ICON[vt] || '🚘');
+  return ART.indexOf(vt) >= 0 ? '<img src="img/vehicles/' + esc(vt) + '.png?v=' + IMG_V + '" alt="" loading="lazy" data-emoji="' + esc(ICON[vt] || '🚘') + '">' : (ICON[vt] || '🚘');
 }
 function inp(cls, field, val, extra) { return '<input class="ak-in ' + cls + '" data-f="' + field + '" value="' + esc(val == null ? '' : val) + '" ' + (extra || '') + '>'; }
 function numIn(cls, field, val, label, step, min) { return '<label class="ak-fl">' + esc(label) + inp(cls, field, val, 'type="number" inputmode="decimal" step="' + (step || '0.01') + '" min="' + (min == null ? '0' : min) + '"') + '</label>'; }

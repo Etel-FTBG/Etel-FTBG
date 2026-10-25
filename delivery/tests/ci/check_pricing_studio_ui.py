@@ -35,6 +35,11 @@ for formula in ('(v.base_fare + perKm * km + v.wait_rate_per_min * wait) * surge
 php = read('api/lib/ride_fare.php')
 if "($rule['base_fare'] + $per_km*$distKm + $rule['wait_rate_per_min']*$waitMinutes) * $surge" not in php:
     bad.append('rides_calc_fare changed: update the fare calculator in admin-pricing-studio.js and this guard')
+# the studio's vehicle pictures must carry the same cache version as the rider/map pictures, or a phone can keep showing an old file
+v_art = re.search(r"IMG_V = '([^']*)'", read('js/etel-vehicle-art.js'))
+v_studio = re.search(r"IMG_V = '([^']*)'", js)
+if not v_art or not v_studio or v_art.group(1) != v_studio.group(1):
+    bad.append('IMG_V in admin-pricing-studio.js must equal IMG_V in etel-vehicle-art.js')
 if 'innerHTML' in js and 'esc(' not in js:
     bad.append('server values must go through AdminKit.esc')
 
