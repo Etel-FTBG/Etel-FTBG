@@ -52,3 +52,25 @@ body.light-mode #hail-modal input{background:#FFFFFF !important;color:#1A1206 !i
 body.light-mode #hail-modal #hail-msg{color:#B3261E !important;background:rgba(192,57,43,.09) !important;border-color:rgba(192,57,43,.4) !important}
 body.light-mode #hail-modal #hail-fare{color:#8A6500 !important}
 body.light-mode #hail-modal #hail-go{color:#1a1a2e !important}
+
+/* The driver pop-up panel (Update Vehicle Info, Learning hub, announcements, referral code...): a dark panel with light text by
+   design, but the light theme darkened the text without lightening the panel. In the light theme the panel is light too. */
+body.light-mode #drv-modal-bg{background:rgba(30,24,12,.45) !important}
+body.light-mode #drv-modal-box{background:#FFFFFF !important;border-color:rgba(160,120,20,.4) !important;color:#1A1206 !important;box-shadow:0 -10px 40px rgba(0,0,0,.2)}
+body.light-mode #drv-modal-title{color:#8A6500 !important}
+body.light-mode #drv-modal-close{background:rgba(60,45,10,.08) !important;color:#1A1206 !important}
+body.light-mode #drv-modal-body{color:#3A342A !important}
+body.light-mode #drv-modal-body h4{color:#8A6500 !important}
+body.light-mode #drv-modal-body .reg-option{background:#F4EFE3 !important;border-color:#D9CFB8 !important}
+body.light-mode #drv-modal-body .reg-option .ro-label{color:#1A1206 !important}
+body.light-mode #drv-modal-body .reg-option .ro-sub{color:#8A6500 !important}
+body.light-mode #drv-modal-body .reg-option.selected{background:#FFF6D8 !important;border-color:#B88A10 !important;box-shadow:0 0 0 1px rgba(184,138,16,.35),0 6px 18px rgba(184,138,16,.15)}
+body.light-mode #drv-modal-body .reg-option.selected .ro-label{color:#8A6500 !important}
+body.light-mode #drv-modal-body .reg-field-label{color:#8A6500 !important}
+body.light-mode #drv-modal-body .reg-input,body.light-mode #drv-modal-body .reg-select{background:#FFFFFF !important;color:#1A1206 !important;border-color:rgba(110,84,20,.4) !important}
+body.light-mode #drv-modal-body .reg-input::placeholder{color:rgba(26,18,6,.45) !important}
+body.light-mode .drv-ann-item{border-bottom-color:rgba(110,84,20,.18) !important}
+body.light-mode .drv-ann-title{color:#1A1206 !important}
+body.light-mode .drv-ann-body{color:#4A443A !important}
+body.light-mode .drv-ann-date{color:#6B6558 !important}
+body.light-mode .drv-referral-code{color:#8A6500 !important;background:rgba(184,138,16,.1) !important;border-color:rgba(184,138,16,.5) !important}
