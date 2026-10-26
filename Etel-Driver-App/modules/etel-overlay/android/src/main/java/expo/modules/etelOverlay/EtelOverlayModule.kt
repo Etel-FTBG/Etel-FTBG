@@ -14,6 +14,8 @@ import android.os.Handler
 import android.os.Looper
 import android.provider.Settings
 import android.view.Gravity
+import android.view.MotionEvent
+import android.view.ViewConfiguration
 import android.view.View
 import android.view.WindowManager
 import android.view.animation.LinearInterpolator
@@ -28,7 +30,8 @@ import expo.modules.kotlin.modules.ModuleDefinition
 // The golden blinking ETEL logo shown at the top-left over other apps while the user is still online or has something
 // going on. A red bubble on the logo shows the total of live trips, new requests, new orders and deliveries in progress;
 // small pills beside it name each one. It blinks faster while there is something to attend to.
-// It needs the "Display over other apps" permission. Tapping it brings the ETEL app back to the front.
+// It needs the "Display over other apps" permission. Tapping it brings the ETEL app back to the front; dragging it moves it
+// anywhere on the screen, and the spot is remembered. The pills open towards the middle of the screen.
 class EtelOverlayModule : Module() {
   private val context: Context
     get() = appContext.reactContext ?: throw Exceptions.ReactContextLost()
@@ -39,6 +42,8 @@ class EtelOverlayModule : Module() {
   private var logoFrame: View? = null
   private var bubble: TextView? = null
   private var pillBox: LinearLayout? = null
+  private var params: WindowManager.LayoutParams? = null
+  private var rightSide = false
   // trips, new requests, new orders, deliveries in progress
   private var counts = intArrayOf(0, 0, 0, 0)
 
@@ -46,6 +51,94 @@ class EtelOverlayModule : Module() {
     Build.VERSION.SDK_INT < Build.VERSION_CODES.M || Settings.canDrawOverlays(context)
 
   private fun dp(v: Int): Int = (v * context.resources.displayMetrics.density).toInt()
+
+  private val prefs by lazy { context.getSharedPreferences("etel_overlay", Context.MODE_PRIVATE) }
+  private val windowManager: WindowManager
+    get() = context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
+
+  // Keeps the badge fully on screen, whatever its current width (the pills come and go).
+  private fun clamp(v: View, lp: WindowManager.LayoutParams) {
+    val dm = context.resources.displayMetrics
+    val w = if (v.width > 0) v.width else dp(60)
+    val h = if (v.height > 0) v.height else dp(60)
+    lp.x = lp.x.coerceIn(0, maxOf(0, dm.widthPixels - w))
+    lp.y = lp.y.coerceIn(0, maxOf(0, dm.heightPixels - h))
+  }
+
+  // The pills sit on the side of the logo that faces the middle of the screen, so they never run off the edge.
+  private fun layoutSide(root: LinearLayout, right: Boolean) {
+    val frame = logoFrame ?: return
+    val box = pillBox ?: return
+    root.removeAllViews()
+    val size = dp(46)
+    val boxLp = LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT)
+    if (right) {
+      boxLp.rightMargin = dp(6)
+      box.gravity = Gravity.END
+      root.addView(box, boxLp)
+      root.addView(frame, LinearLayout.LayoutParams(size, size))
+    } else {
+      boxLp.leftMargin = dp(6)
+      box.gravity = Gravity.START
+      root.addView(frame, LinearLayout.LayoutParams(size, size))
+      root.addView(box, boxLp)
+    }
+    rightSide = right
+  }
+
+  private fun savePosition() {
+    val lp = params ?: return
+    prefs.edit().putInt("x", lp.x).putInt("y", lp.y).apply()
+  }
+
+  private fun attachDrag(root: LinearLayout) {
+    val slop = ViewConfiguration.get(context).scaledTouchSlop
+    var downX = 0f
+    var downY = 0f
+    var startX = 0
+    var startY = 0
+    var dragging = false
+    root.setOnTouchListener { v, e ->
+      val lp = params ?: return@setOnTouchListener false
+      when (e.action) {
+        MotionEvent.ACTION_DOWN -> {
+          downX = e.rawX; downY = e.rawY; startX = lp.x; startY = lp.y; dragging = false
+          true
+        }
+        MotionEvent.ACTION_MOVE -> {
+          val dx = e.rawX - downX
+          val dy = e.rawY - downY
+          if (!dragging && (Math.abs(dx) > slop || Math.abs(dy) > slop)) dragging = true
+          if (dragging) {
+            lp.x = startX + dx.toInt()
+            lp.y = startY + dy.toInt()
+            clamp(v, lp)
+            try { windowManager.updateViewLayout(v, lp) } catch (ex: Exception) { }
+          }
+          true
+        }
+        MotionEvent.ACTION_UP -> {
+          if (dragging) {
+            savePosition()
+            val dm = context.resources.displayMetrics
+            val right = lp.x + v.width / 2 > dm.widthPixels / 2
+            if (right != rightSide) {
+              layoutSide(root, right)
+              v.post {
+                clamp(v, lp)
+                try { windowManager.updateViewLayout(v, lp) } catch (ex: Exception) { }
+                savePosition()
+              }
+            }
+          } else {
+            bringAppToFront()
+          }
+          true
+        }
+        else -> false
+      }
+    }
+  }
 
   private fun buildBadge(): View {
     val size = dp(46)
@@ -87,15 +180,11 @@ class EtelOverlayModule : Module() {
     val box = LinearLayout(context)
     box.orientation = LinearLayout.VERTICAL
 
-    root.addView(frame, LinearLayout.LayoutParams(size, size))
-    val boxLp = LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT)
-    boxLp.leftMargin = dp(6)
-    root.addView(box, boxLp)
-    root.setOnClickListener { bringAppToFront() }
-
     logoFrame = frame
     bubble = dot
     pillBox = box
+    layoutSide(root, rightSide)
+    attachDrag(root)
     return root
   }
 
@@ -147,6 +236,14 @@ class EtelOverlayModule : Module() {
       if (counts[i] > 0) box.addView(pill(labels[i] + " " + counts[i]))
     }
     startBlink(total > 0)
+    val v = badge
+    val lp = params
+    if (v != null && lp != null) {
+      v.post {
+        clamp(v, lp)
+        try { windowManager.updateViewLayout(v, lp) } catch (e: Exception) { }
+      }
+    }
   }
 
   private fun bringAppToFront() {
@@ -168,8 +265,9 @@ class EtelOverlayModule : Module() {
       PixelFormat.TRANSLUCENT
     )
     params.gravity = Gravity.TOP or Gravity.START
-    params.x = dp(8)
-    params.y = dp(32)
+    params.x = prefs.getInt("x", dp(8))
+    params.y = prefs.getInt("y", dp(32))
+    rightSide = params.x + dp(30) > context.resources.displayMetrics.widthPixels / 2
     val v = buildBadge()
     try {
       wm.addView(v, params)
@@ -177,6 +275,11 @@ class EtelOverlayModule : Module() {
       return
     }
     badge = v
+    this.params = params
+    v.post {
+      clamp(v, params)
+      try { wm.updateViewLayout(v, params) } catch (e: Exception) { }
+    }
     applyCounts()
   }
 
@@ -186,6 +289,7 @@ class EtelOverlayModule : Module() {
     logoFrame = null
     bubble = null
     pillBox = null
+    params = null
     val v = badge ?: return
     badge = null
     try {
