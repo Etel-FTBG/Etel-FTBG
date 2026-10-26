@@ -6,7 +6,10 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text } from '../i18n';
 import { useTheme } from '../theme/ThemeContext';
 import { success } from '../utils/haptics';
+import { isOnline } from '../online/onlineState';
 import { checkForUpdate, dismissUpdater, installUpdate, useUpdaterState } from '../updates/updater';
+
+const STARTED = Date.now();
 
 type Step = 'checking' | 'downloading' | 'ready' | 'installing' | 'current' | 'error' | null;
 
@@ -27,6 +30,12 @@ export default function UpdateBanner() {
   else if (u.phase === 'error') step = 'error';
   else if (isUpdatePending) step = 'ready';
   else if (u.phase === 'current') step = 'current';
+
+  // Fresh start (cleared storage, new install): the update that finishes downloading in the first moments installs by
+  // itself, so the driver opens straight into the new version. Later updates, or while online, still wait for the tap.
+  useEffect(() => {
+    if (step === 'ready' && Date.now() - STARTED < 30000 && !isOnline()) installUpdate();
+  }, [step]);
 
   useEffect(() => {
     if (step === 'ready') success();
