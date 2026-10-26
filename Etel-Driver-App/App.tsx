@@ -23,6 +23,7 @@ import HubScreen from './src/screens/HubScreen';
 import WebAppScreen from './src/screens/WebAppScreen';
 import BackgroundBadge from './src/online/BackgroundBadge';
 import IntroSplash from './src/components/IntroSplash';
+import WebHost from './src/components/WebHost';
 import UpdateBanner from './src/components/UpdateBanner';
 import { RootStackParamList } from './src/navigation/types';
 import { colors } from './src/theme/colors';
@@ -68,6 +69,7 @@ function RootNavigator() {
           <Stack.Screen name="Login" component={LoginScreen} />
         )}
       </Stack.Navigator>
+      <WebHost />
       <ThemedStatusBar />
     </NavigationContainer>
   );
