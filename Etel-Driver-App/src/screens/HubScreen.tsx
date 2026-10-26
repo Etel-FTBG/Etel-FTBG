@@ -14,6 +14,7 @@ import SlideToConfirm from '../components/SlideToConfirm';
 import PillSwitch from '../components/PillSwitch';
 import Reveal from '../components/Reveal';
 import UpdateStatus from '../components/UpdateStatus';
+import AppUpdateCard from '../components/AppUpdateCard';
 import { success, tap } from '../utils/haptics';
 import { isOnline, subscribeOnline } from '../online/onlineState';
 import SignInCard from '../components/SignInCard';
@@ -144,6 +145,7 @@ export default function HubScreen({ navigation }: Props) {
       </Reveal>
 
       <Reveal delay={160}>
+        <AppUpdateCard />
         {session ? <ProfileCard key={refreshKey} session={session} /> : <SignInCard />}
       </Reveal>
 

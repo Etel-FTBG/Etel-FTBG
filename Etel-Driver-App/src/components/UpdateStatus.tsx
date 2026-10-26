@@ -5,6 +5,7 @@ import { Text } from '../i18n';
 import { useTheme } from '../theme/ThemeContext';
 import { tap } from '../utils/haptics';
 import { checkForUpdate } from '../updates/updater';
+import { currentBuild } from '../updates/appUpdate';
 
 // Small footer line: which update this phone runs, and a tap to check for a new one right now.
 export default function UpdateStatus() {
@@ -20,7 +21,7 @@ export default function UpdateStatus() {
   };
 
   const line =
-    `v${currentlyRunning.runtimeVersion ?? '?'} · ${Updates.channel ?? 'no channel'} · ${id}` +
+    `v${currentlyRunning.runtimeVersion ?? '?'} · build ${currentBuild().code || '?'} · ${Updates.channel ?? 'no channel'} · ${id}` +
     (isUpdatePending ? ' · update ready' : isUpdateAvailable ? ' · update found' : '');
 
   return (
