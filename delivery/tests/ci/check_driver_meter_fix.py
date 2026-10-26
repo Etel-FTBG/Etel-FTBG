@@ -48,13 +48,14 @@ if "'wait_rate_per_min'" not in tog or "'wait_cap_minutes'" not in tog:
 
 app = repo + '/Etel-Driver-App/src'
 task = open(app + '/location/backgroundLocationTask.ts', encoding='utf-8').read()
-screen = open(app + '/screens/WebAppScreen.tsx', encoding='utf-8').read()
+# The web view itself lives in WebHost (kept alive across screens); WebAppScreen keeps the bar and the driver-foreground hook.
+screen = open(app + '/screens/WebAppScreen.tsx', encoding='utf-8').read() + open(app + '/components/WebHost.tsx', encoding='utf-8').read()
 bridge = open(app + '/hub/webBridge.ts', encoding='utf-8').read()
 if 'webDriverForeground' not in task or 'if (!webDriverForeground)' not in task or 'export function setWebDriverForeground' not in task:
     bad.append('the native location task must stay quiet while the web driver app is on screen')
 for must in ('setWebDriverForeground', 'useSafeAreaInsets', 'FIT_JS', 'pullToRefreshEnabled={false}', 'setBuiltInZoomControls={false}', 'onRenderProcessGone'):
     if must not in screen:
-        bad.append('WebAppScreen lost: ' + must)
+        bad.append('WebAppScreen/WebHost lost: ' + must)
 if 'export const FIT_JS' not in bridge or 'width=device-width' not in bridge:
     bad.append('webBridge lost FIT_JS')
 
