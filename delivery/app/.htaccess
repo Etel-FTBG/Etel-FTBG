@@ -1,0 +1,8 @@
+# The ETEL app reads version.json to learn if a newer APK exists, then downloads etel.apk from this folder.
+AddType application/vnd.android.package-archive .apk
+<FilesMatch "^version\.json$">
+  Header set Cache-Control "no-store, max-age=0"
+</FilesMatch>
+<FilesMatch "\.apk$">
+  Header set Cache-Control "no-cache"
+</FilesMatch>
