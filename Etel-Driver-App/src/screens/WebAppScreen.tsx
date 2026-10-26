@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { AppState, BackHandler, Linking, Pressable, StyleSheet, View } from 'react-native';
+import { Animated, AppState, BackHandler, Easing, Linking, Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { WebView as RNWebView, WebViewMessageEvent } from 'react-native-webview';
 import { Ionicons } from '@expo/vector-icons';
@@ -37,6 +37,22 @@ export default function WebAppScreen({ route, navigation }: Props) {
   const [canGoBack, setCanGoBack] = useState(false);
   const [loading, setLoading] = useState(true);
   const [failed, setFailed] = useState(false);
+  // The Reload button spins until the page has finished loading again.
+  const [reloading, setReloading] = useState(false);
+  const spin = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    if (!reloading) return;
+    spin.setValue(0);
+    const loop = Animated.loop(Animated.timing(spin, { toValue: 1, duration: 800, easing: Easing.linear, useNativeDriver: true }));
+    loop.start();
+    return () => loop.stop();
+  }, [reloading, spin]);
+  const reload = () => {
+    setReloading(true);
+    setFailed(false);
+    web.current?.reload();
+    setTimeout(() => setReloading(false), 8000);
+  };
 
   // Android back button: go back inside the web app first, then leave to the hub.
   useEffect(() => {
@@ -94,8 +110,10 @@ export default function WebAppScreen({ route, navigation }: Props) {
           <Ionicons name="grid" size={20} color={p.gold} />
         </Pressable>
         <Text style={[styles.title, { color: p.text }]}>{app.title}</Text>
-        <Pressable onPress={() => web.current?.reload()} style={styles.barBtn} accessibilityLabel="Reload">
-          <Ionicons name="refresh" size={20} color={p.gold} />
+        <Pressable onPress={reload} style={styles.barBtn} accessibilityLabel="Reload">
+          <Animated.View style={{ transform: [{ rotate: spin.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '360deg'] }) }] }}>
+            <Ionicons name="refresh" size={20} color={p.gold} />
+          </Animated.View>
         </Pressable>
       </View>
       {failed ? (
@@ -121,7 +139,10 @@ export default function WebAppScreen({ route, navigation }: Props) {
           injectedJavaScript={FIT_JS}
           onMessage={onMessage}
           onNavigationStateChange={(s: { canGoBack: boolean }) => setCanGoBack(s.canGoBack)}
-          onLoadEnd={() => setLoading(false)}
+          onLoadEnd={() => {
+            setLoading(false);
+            setReloading(false);
+          }}
           onError={() => setFailed(true)}
           onHttpError={(ev: { nativeEvent: { statusCode: number } }) => {
             if (ev.nativeEvent.statusCode >= 500) setFailed(true);
