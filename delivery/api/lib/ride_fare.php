@@ -553,20 +553,20 @@ function rides_complete_and_pay($pdo, $rideId, $driverId, $fare, $paymentMethod,
    read near zero when the phone only ever produced weak/network fixes, the
    app was suspended with the screen off, or pings were stalled; billing that
    as-is charges the passenger (and pays the driver) for a trip that clearly
-   happened. Compares the metered km against two conservative references:
-     - the booking-time estimate (fixed-destination rides only), and
-     - the straight line from pickup to the driver's last known position
-       (works for open trips too, which have no estimate).
-   Both are lower bounds on the real road distance. If the meter is under
-   half of the larger one, that reference is used instead and the ride is
-   flagged for review. Returns array(applied, km, floor_km, meter_km, basis). */
+   happened.
+   A rider pays for the distance actually driven, never for the distance they
+   booked: a trip booked at 2.75 km that really covered 1 km is billed 1 km.
+   So the booking-time estimate is NOT a floor. The only reference is the
+   straight line from the pickup to the driver's last known position, which is
+   a hard lower bound on the road distance really covered (the driver did get
+   there, so the trip was at least that long). If the meter is under half of
+   that line, the line is used instead and the ride is flagged for review.
+   Returns array(applied, km, floor_km, meter_km, basis). */
 if (!function_exists('rides_meter_shortfall_floor')) {
 function rides_meter_shortfall_floor($pdo, $ride, $driverId, $traveled) {
     $traveled = floatval($traveled);
     $out = array('applied' => false, 'km' => $traveled, 'floor_km' => 0.0, 'meter_km' => $traveled, 'basis' => '');
     $floor = 0.0; $basis = '';
-    $est = isset($ride['distance_km']) ? floatval($ride['distance_km']) : 0.0;
-    if (intval($ride['open_trip']) !== 1 && $est > 0.3) { $floor = $est; $basis = 'booking_estimate'; }
     try {
         $plat = isset($ride['pickup_lat']) ? floatval($ride['pickup_lat']) : 0.0;
         $plng = isset($ride['pickup_lng']) ? floatval($ride['pickup_lng']) : 0.0;
@@ -579,7 +579,7 @@ function rides_meter_shortfall_floor($pdo, $ride, $driverId, $traveled) {
                 if ($chord > 0.3 && $chord > $floor) { $floor = $chord; $basis = 'pickup_to_driver_position'; }
             }
         }
-    } catch (Exception $e) { /* position unavailable - estimate-only floor */ }
+    } catch (Exception $e) { /* position unavailable - no floor, the meter stands */ }
     $out['floor_km'] = round($floor, 2);
     if ($floor > 0 && $traveled < 0.5 * $floor) {
         $out['applied'] = true;
