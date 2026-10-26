@@ -97,13 +97,15 @@ export async function hubSignOut(): Promise<void> {
 // The apps each account may open. Customer, Ride and EtelID are open to every account (the backend lets any EtelID
 // reach the customer side); the working-role apps open only for that role. An admin opens everything.
 const OPEN_TO_ALL = ['ride', 'customer', 'id'];
-const ROLE_APP: Record<string, EtelRole> = { driver: 'driver', courier: 'courier', service: 'service_giver' };
+// Which account roles open each working-role app. The Driver app is also open to courier accounts, exactly as the Driver web app itself
+// (js/driver.js) lets in 'driver', 'courier' and 'admin': many bajaj drivers hold a courier-role account, and were shown "Other role".
+const ROLE_APP: Record<string, EtelRole[]> = { driver: ['driver', 'courier'], courier: ['courier'], service: ['service_giver'] };
 
 export function canOpen(appKey: string, role: EtelRole | undefined): boolean {
   if (OPEN_TO_ALL.includes(appKey)) return true;
   if (!role) return false;
   if (role === 'admin') return true;
-  return ROLE_APP[appKey] === role;
+  return (ROLE_APP[appKey] || []).includes(role);
 }
 
 export const ROLE_LABEL: Record<EtelRole, string> = {
