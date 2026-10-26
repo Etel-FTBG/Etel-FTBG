@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert as RNAlert, Image, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, Alert as RNAlert, Animated, Easing, Image, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -20,6 +20,7 @@ import SignInCard from '../components/SignInCard';
 import ProfileCard from '../components/ProfileCard';
 import CompaniesCard from '../components/CompaniesCard';
 import { canGoOnline, canOpen, useSession } from '../hub/session';
+import { checkForUpdate } from '../updates/updater';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Hub'>;
 
@@ -38,6 +39,26 @@ export default function HubScreen({ navigation }: Props) {
   const session = useSession();
   const working = canGoOnline(session?.role);
   useEffect(() => subscribeOnline(setOnline), []);
+
+  // Refresh: reloads the profile and company cards (new key = fresh fetch) and looks for a new app version.
+  const [refreshing, setRefreshing] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const spin = useRef(new Animated.Value(0)).current;
+  const refresh = useCallback(async () => {
+    if (refreshing) return;
+    tap();
+    setRefreshing(true);
+    setRefreshKey((k) => k + 1);
+    spin.setValue(0);
+    const loop = Animated.loop(Animated.timing(spin, { toValue: 1, duration: 800, easing: Easing.linear, useNativeDriver: true }));
+    loop.start();
+    try {
+      await Promise.all([checkForUpdate(), new Promise((r) => setTimeout(r, 700))]);
+    } finally {
+      loop.stop();
+      setRefreshing(false);
+    }
+  }, [refreshing, spin]);
 
   async function goOnline() {
     if (!working) {
@@ -81,7 +102,10 @@ export default function HubScreen({ navigation }: Props) {
   }
 
   return (
-    <ScrollView style={[styles.root, { backgroundColor: p.bg }]} contentContainerStyle={[styles.content, { paddingTop: Math.max(insets.top, 24) + 24, paddingBottom: insets.bottom + 40 }]}>
+    <ScrollView
+      style={[styles.root, { backgroundColor: p.bg }]}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={p.gold} colors={[p.gold]} progressBackgroundColor={p.surface} />}
+      contentContainerStyle={[styles.content, { paddingTop: Math.max(insets.top, 24) + 24, paddingBottom: insets.bottom + 40 }]}>
       <View style={styles.top}>
         <PillSwitch
           value={mode === 'light'}
@@ -90,6 +114,17 @@ export default function HubScreen({ navigation }: Props) {
           right={{ icon: 'sunny' }}
           accessibilityLabel="Light or dark"
         />
+        <Pressable
+          onPress={refresh}
+          disabled={refreshing}
+          accessibilityRole="button"
+          accessibilityLabel="Refresh"
+          style={[styles.refresh, { backgroundColor: p.surface, borderColor: p.border }]}
+        >
+          <Animated.View style={{ transform: [{ rotate: spin.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '360deg'] }) }] }}>
+            <Ionicons name="refresh" size={19} color={p.gold} />
+          </Animated.View>
+        </Pressable>
         <PillSwitch
           value={lang === 'am'}
           onToggle={() => { tap(); toggleLang(); }}
@@ -109,7 +144,7 @@ export default function HubScreen({ navigation }: Props) {
       </Reveal>
 
       <Reveal delay={160}>
-        {session ? <ProfileCard session={session} /> : <SignInCard />}
+        {session ? <ProfileCard key={refreshKey} session={session} /> : <SignInCard />}
       </Reveal>
 
       {session ? (
@@ -160,7 +195,7 @@ export default function HubScreen({ navigation }: Props) {
 
       {session && canGoOnline(session.role) ? (
         <Reveal delay={200}>
-          <CompaniesCard role={session.role} />
+          <CompaniesCard key={refreshKey} role={session.role} />
         </Reveal>
       ) : null}
 
@@ -220,7 +255,8 @@ export default function HubScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   root: { flex: 1 },
   content: { padding: 20, paddingTop: 48, paddingBottom: 40 },
-  top: { flexDirection: 'row', justifyContent: 'space-between' },
+  top: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  refresh: { width: 38, height: 38, borderRadius: 19, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
   brand: { alignItems: 'center', marginTop: 8, marginBottom: 20 },
   halo: { width: 132, height: 132, borderRadius: 66, alignItems: 'center', justifyContent: 'center' },
   master: { width: 112, height: 112, resizeMode: 'contain' },
