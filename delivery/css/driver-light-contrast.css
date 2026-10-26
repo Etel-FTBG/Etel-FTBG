@@ -1,0 +1,54 @@
+/* Driver app, light theme: readable text on the panels the app builds in JavaScript.
+   Many panels (Street Hail, the vehicle and profile forms, cards in the ride sheet...) are written with dark colours inline:
+   a dark surface (#191926, #12121d...) with light text (#EDEDF5, gold, grey). The light theme already turns that light text dark
+   (driver/index.html), but the dark surfaces stayed dark, so the text ended up dark on dark. Here the same dark surfaces become
+   light too, and the greys, reds, greens and blues that were chosen for a dark background are darkened to match.
+   Additive: only applies with body.light-mode, never changes the dark theme. Loaded after the light-theme block in driver/index.html. */
+
+/* surfaces */
+body.light-mode [style*="background:#12121d" i],
+body.light-mode [style*="background: #12121d" i],
+body.light-mode [style*="background:#0d0d1a" i],
+body.light-mode [style*="background:#10101c" i],
+body.light-mode [style*="background:#11131c" i],
+body.light-mode [style*="background:#16121a" i],
+body.light-mode [style*="background:#1b1c28" i]{background:#FFFFFF !important;border-color:rgba(110,84,20,.28) !important;color:#1A1206 !important}
+body.light-mode [style*="background:#191926" i],
+body.light-mode [style*="background: #191926" i]{background:#F4EFE3 !important;border-color:rgba(110,84,20,.28) !important;color:#1A1206 !important}
+body.light-mode [style*="background:rgba(255,255,255,.02)"],
+body.light-mode [style*="background:rgba(255,255,255,.03)"],
+body.light-mode [style*="background:rgba(255,255,255,.04)"],
+body.light-mode [style*="background:rgba(255,255,255,.05)"],
+body.light-mode [style*="background:rgba(255,255,255,.06)"],
+body.light-mode [style*="background:rgba(255,255,255,.07)"],
+body.light-mode [style*="background:rgba(255,255,255,.08)"]{background:rgba(60,45,10,.05) !important}
+body.light-mode [style*="border:1px solid rgba(255,255,255"],
+body.light-mode [style*="border-bottom:1px solid rgba(255,255,255"],
+body.light-mode [style*="border-top:1px solid rgba(255,255,255"]{border-color:rgba(110,84,20,.22) !important}
+
+/* text that was chosen for a dark background */
+body.light-mode [style*="color:#9A9AAE" i],
+body.light-mode [style*="color:#B8B0A0" i],
+body.light-mode [style*="color:#8A8AA8" i],
+body.light-mode [style*="color:#6B6E82" i],
+body.light-mode [style*="color:#4B4F5E" i],
+body.light-mode [style*="color:#C4C6D0" i]{color:#5A5650 !important}
+body.light-mode [style*="color:#F7F5EE" i],
+body.light-mode [style*="color:#F5EDD8" i]{color:#1A1206 !important}
+body.light-mode [style*="color:#e88" i],
+body.light-mode [style*="color:#ff6b6b" i],
+body.light-mode [style*="color:#FF8A80" i],
+body.light-mode [style*="color:#E63946" i]{color:#B3261E !important}
+body.light-mode [style*="color:#FFB74D" i]{color:#8A5200 !important}
+body.light-mode [style*="color:#60B4FF" i]{color:#1F6FD1 !important}
+body.light-mode [style*="color:#4ECDC4" i],
+body.light-mode [style*="color:#2ECC71" i]{color:#17784A !important}
+
+/* Street Hail: the buttons, the chips and the messages inside it */
+body.light-mode #hail-modal > div{background:#FFFFFF !important;border-color:rgba(160,120,20,.4) !important;box-shadow:0 18px 50px rgba(0,0,0,.28)}
+body.light-mode #hail-modal button:not(#hail-go){border-color:rgba(110,84,20,.35) !important}
+body.light-mode #hail-modal .hail-km,body.light-mode #hail-modal #hail-km-input{background:#F4EFE3 !important;color:#1A1206 !important}
+body.light-mode #hail-modal input{background:#FFFFFF !important;color:#1A1206 !important;border-color:rgba(110,84,20,.4) !important}
+body.light-mode #hail-modal #hail-msg{color:#B3261E !important;background:rgba(192,57,43,.09) !important;border-color:rgba(192,57,43,.4) !important}
+body.light-mode #hail-modal #hail-fare{color:#8A6500 !important}
+body.light-mode #hail-modal #hail-go{color:#1a1a2e !important}

@@ -109,9 +109,16 @@
         P.__etelArt = true;
         return true;
     }
-    var tries = 0;
+    /* The driver app puts its own marker on the map as soon as it has the driver's position, which can be before these pictures have
+       loaded (or before the wrap above is in place). That marker was then left as the drawn icon - for a Qute, the blue car - until the
+       next time the app happened to rebuild it. So whenever the pictures become usable, ask the app to rebuild its marker now. */
+    function refreshDriverMarker() {
+        try { if (typeof window.refreshSelfMarkerIcon === 'function') window.refreshSelfMarkerIcon(); } catch (e) {}
+    }
+    var tries = 0, wrapped = false;
     (function hook() {
         var a = wrapMarkerFactory(), b = wrapMapsMarker();
+        if (a && !wrapped) { wrapped = true; refreshDriverMarker(); }
         if ((!a || !b) && ++tries < 240) setTimeout(hook, 500);
     })();
 
@@ -124,6 +131,7 @@
         im.onload = function () {
             if (!im.naturalWidth) return;
             reg[t] = im;
+            if (!left) refreshDriverMarker();
             if (left) { Object.keys(cache).forEach(function (k) { if (/\|1$/.test(k)) delete cache[k]; }); }   // mirrored icons made meanwhile are replaced next time
             try { document.dispatchEvent(new CustomEvent('etel:vehicle-art', { detail: { type: t, left: left } })); } catch (e) {}
         };
