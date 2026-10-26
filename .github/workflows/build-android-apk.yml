@@ -1,0 +1,78 @@
+name: Build Android APK (GitHub)
+
+# Builds the same installable APK as the Expo cloud build, but on GitHub's machines, so it does not use the Expo free-plan
+# build quota. It signs with the app's existing Expo-managed key, so the APK installs over the current ETEL app and the in-app
+# updater accepts it. Run it by hand: GitHub > Actions > "Build Android APK (GitHub)" > Run workflow.
+#
+# One-time setup: GitHub > Settings > Secrets and variables > Actions > New repository secret
+#   EXPO_TOKEN            an access token from expo.dev > Account settings > Access tokens
+#   GOOGLE_MAPS_API_KEY   (optional) the same Google Maps key the Expo build uses
+# The finished APK is attached to a GitHub release named app-build-<run number>.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    defaults:
+      run:
+        working-directory: Etel-Driver-App
+    env:
+      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+      GOOGLE_MAPS_API_KEY: ${{ secrets.GOOGLE_MAPS_API_KEY }}
+      EAS_NO_VCS: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check the Expo token is set
+        run: |
+          if [ -z "$EXPO_TOKEN" ]; then
+            echo "::error::Add the EXPO_TOKEN secret first (GitHub > Settings > Secrets and variables > Actions)."
+            exit 1
+          fi
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: Etel-Driver-App/package-lock.json
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - name: Install app dependencies
+        run: npm ci
+      - name: Build the APK (preview profile, local build, existing signing key)
+        run: npx --yes eas-cli@latest build --platform android --profile preview --local --non-interactive --output "$GITHUB_WORKSPACE/etel.apk"
+      - name: Read the APK facts
+        id: apk
+        run: |
+          AAPT=$(ls "$ANDROID_HOME"/build-tools/*/aapt | sort -V | tail -1)
+          CODE=$("$AAPT" dump badging "$GITHUB_WORKSPACE/etel.apk" | sed -n "s/.*versionCode='\([0-9]*\)'.*/\1/p" | head -1)
+          NAME=$("$AAPT" dump badging "$GITHUB_WORKSPACE/etel.apk" | sed -n "s/.*versionName='\([^']*\)'.*/\1/p" | head -1)
+          SHA=$(sha256sum "$GITHUB_WORKSPACE/etel.apk" | cut -d' ' -f1)
+          SIZE=$(stat -c %s "$GITHUB_WORKSPACE/etel.apk")
+          echo "code=$CODE" >> "$GITHUB_OUTPUT"
+          echo "name=$NAME" >> "$GITHUB_OUTPUT"
+          echo "sha=$SHA" >> "$GITHUB_OUTPUT"
+          echo "size=$SIZE" >> "$GITHUB_OUTPUT"
+      - name: Publish the APK as a GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cat > "$GITHUB_WORKSPACE/notes.md" <<EOF
+          ETEL app build ${{ steps.apk.outputs.name }} (version code ${{ steps.apk.outputs.code }}).
+
+          Install: download etel.apk below on the phone and open it.
+
+          For the in-app updater, put these in delivery/app/version.json:
+          - versionCode: ${{ steps.apk.outputs.code }}
+          - versionName: ${{ steps.apk.outputs.name }}
+          - sha256: ${{ steps.apk.outputs.sha }}
+          - sizeBytes: ${{ steps.apk.outputs.size }}
+          EOF
+          gh release create "app-build-${{ github.run_number }}" "$GITHUB_WORKSPACE/etel.apk" \
+            --repo "${{ github.repository }}" --prerelease \
+            --title "ETEL app build ${{ github.run_number }}" --notes-file "$GITHUB_WORKSPACE/notes.md"
