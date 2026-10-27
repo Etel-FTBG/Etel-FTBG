@@ -3,9 +3,8 @@
    card or table view, quick verify on the card, and a drawer with the business's numbers (orders today / 7 / 30 days,
    open orders, sales, staff logins, rating) and recent orders, with the controls: verify, suspend, restore, and
    "Full profile…" which opens the existing profile / staff / payout editor.
-   "Pre-register a business" makes a waiting (pending) account with a spare phone number and a one-time claim link; the owner opens
-   claim.html, sets their own phone and password, and admin verifies. The drawer's "Hand-over" section edits owner name / phone and
-   makes a new claim link (admin_sg_update_owner, admin_sg_claim_invite, admin_create_service_giver with draft).
+   "Register a business" opens js/admin-sg-register.js (go live now, or pre-register and hand over with a claim link). The drawer's
+   "Hand-over" section edits owner name / phone and makes a new claim link (admin_sg_update_owner, admin_sg_claim_invite).
    Data: admin_service_givers_board, admin_service_giver_detail (api/controllers/PartnerAdminController.php); controls reuse
    admin_verify_service_giver / admin_suspend_service_giver (boot.php). Standalone: replaces loadServiceGivers() so
    admin.js is not edited. Every server value goes through AdminKit.esc; no inline handlers. */
@@ -81,7 +80,7 @@ function paint() {
     ]) + K.kpis(kp, V.filter) +
     '<div class="ak-tools"><label class="ak-search"><u>🔎</u><input id="sg-q" type="search" placeholder="Business, owner, phone, code, zone…" value="' + esc(V.q) + '" autocomplete="off"></label>' +
     '<select class="ak-sel" data-sel="type" aria-label="Type">' + topts + '</select><select class="ak-sel" data-sel="sort" aria-label="Sort">' + sopts + '</select>' +
-    K.seg('mode', [['cards', '🎴 Cards'], ['table', '☰ Table']], V.mode) + '<button type="button" class="ak-btn" data-act="refresh">🔄</button><button type="button" class="ak-btn gold" data-act="draft">➕ Pre-register a business</button></div>' +
+    K.seg('mode', [['cards', '🎴 Cards'], ['table', '☰ Table']], V.mode) + '<button type="button" class="ak-btn" data-act="refresh">🔄</button><button type="button" class="ak-btn gold" data-act="register">➕ Register a business</button></div>' +
     '<div class="ak-count">' + K.num(rows.length) + ' of ' + K.num(V.rows.length) + ' businesses</div>';
   if (!rows.length) h += K.empty('🏪', V.rows.length ? 'No businesses match' : 'No service givers yet', V.rows.length ? 'Try clearing the filters.' : 'Businesses appear here when they sign up.');
   else h += V.mode === 'table' ? table(rows) : '<div class="ak-grid">' + rows.map(card).join('') + '</div>';
@@ -121,34 +120,6 @@ function claimBox(code, expires) {
     '<div class="ak-acts" style="margin-top:8px"><button type="button" class="ak-btn gold" data-copy="' + esc(link) + '">Copy link</button>' +
     '<button type="button" class="ak-btn" data-copy="' + esc(code) + '">Copy code ' + esc(code) + '</button></div></div>';
 }
-function openDraft() {
-  var types = ['restaurant', 'cafe', 'fastfood', 'grocery', 'pharmacy', 'laundry', 'electronics', 'retail', 'custom', 'delivery'];
-  var head = '<div class="ak-av lg" style="--a:#E8C14A;--b:#9a7a1c">🏪</div><div class="ak-nm"><b>Pre-register a business</b><small>Waiting account, not live</small></div>';
-  var body = '<div class="ak-sec"><p class="ak-fh" style="margin:0 0 10px">Makes the account now but keeps it switched off: it cannot sign in and customers do not see it. When the owner agrees, send them the claim link and verify the business.</p>' +
-    K.field('Business name *', '<input id="sgd-biz" class="ak-in" type="text" autocomplete="off">') +
-    K.field('Owner name', '<input id="sgd-owner" class="ak-in" type="text" autocomplete="off">', 'Leave empty to use the business name for now.') +
-    K.field('Owner phone', '<input id="sgd-phone" class="ak-in" type="tel" autocomplete="off">', 'Leave empty to use a spare number. The owner types their real one when they claim it.') +
-    K.field('Type', '<select id="sgd-type" class="ak-in">' + types.map(function (t) { return '<option value="' + t + '">' + t + '</option>'; }).join('') + '</select>') +
-    K.field('Zone', '<input id="sgd-zone" class="ak-in" type="text" autocomplete="off">', 'Optional, for example Piazza.') +
-    K.field('Address', '<input id="sgd-addr" class="ak-in" type="text" autocomplete="off">', 'Optional.') + '</div><div id="sgd-out"></div>';
-  var foot = '<span class="ak-err" id="sgd-msg" role="status"></span><button type="button" class="ak-btn" data-close>Close</button><button type="button" class="ak-btn gold" data-draft-save>Pre-register</button>';
-  var dr = K.openDrawer(head, body, foot);
-  dr.querySelector('[data-draft-save]').addEventListener('click', function (e) {
-    var b = e.currentTarget, v = function (id) { return (document.getElementById(id).value || '').trim(); }, msg = document.getElementById('sgd-msg');
-    if (!v('sgd-biz')) { msg.textContent = 'Enter the business name.'; return; }
-    var payload = { draft: 1, business_name: v('sgd-biz'), name: v('sgd-owner'), phone: v('sgd-phone'), service_type: document.getElementById('sgd-type').value, address: v('sgd-addr') };
-    if (v('sgd-zone')) payload.zone = v('sgd-zone');
-    b.disabled = true; msg.textContent = 'Saving…';
-    K.api('admin_create_service_giver', payload).then(function (res) {
-      b.disabled = false;
-      if (!K.okRes(res)) { msg.textContent = K.failText(res); return; }
-      var d = K.data(res); msg.textContent = ''; b.hidden = true;
-      document.getElementById('sgd-out').innerHTML = '<div class="ak-sec"><h4>Done: ' + esc(d.code) + '</h4><p class="ak-fh" style="margin:0">The business is waiting in the list. Nothing is live.</p></div>' + (d.claim_code ? claimBox(d.claim_code, d.claim_expires_at) : '');
-      V.busy = false; load(true);
-    });
-  });
-}
-
 /* ---------- drawer ---------- */
 function openSG(id) {
   V.openId = id;
@@ -249,7 +220,7 @@ function wire(el) {
     if ((b = t.closest('[data-kpi]'))) { var k = b.getAttribute('data-kpi'); V.filter = (V.filter === k ? '' : k); paint(); return; }
     if ((b = t.closest('[data-seg]'))) { V.mode = b.getAttribute('data-val'); try { localStorage.setItem('sg-mode', V.mode); } catch (x) { /* ignore */ } paint(); return; }
     if (t.closest('[data-act="refresh"]')) { load(true); return; }
-    if (t.closest('[data-act="draft"]')) { openDraft(); return; }
+    if (t.closest('[data-act="register"]')) { if (window.EtelSgRegister) window.EtelSgRegister.open(); else K.toast('The registration panel is not available.', true); return; }
     if ((b = t.closest('[data-open]'))) openSG(parseInt(b.getAttribute('data-open'), 10));
   });
   el.addEventListener('keydown', function (e) {
@@ -272,6 +243,7 @@ function install() {
   var el = root(); if (!el) return;
   wire(el);
   window.loadServiceGivers = function () { return load(V.loaded); };
+  window.etelOpenServiceGiver = function (id) { V.busy = false; return load(true).then(function () { return openSG(id); }); };
   window.renderSGTable = window.renderSGCards = window.renderSGStatStrip = function () { if (V.loaded) paint(); };
   window.filterSGTable = window.renderSGTable;
 }
