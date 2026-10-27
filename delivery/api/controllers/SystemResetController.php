@@ -156,28 +156,58 @@ case 'system_reset_backup': {
     $pdo = db();
     $u = require_admin($pdo, 'system.reset');
     while (ob_get_level()) { @ob_end_clean(); }
-    $tmpZip = sys_get_temp_dir() . '/etel-reset-backup-' . time() . '.zip';
-    $zip = new ZipArchive();
-    if ($zip->open($tmpZip, ZipArchive::CREATE) !== true) fail('Could not create backup archive', 500);
-    $tables = array_merge(equity_reset_table_plan(), array('users'));
-    foreach ($tables as $t) {
-        try {
-            $rows = $pdo->query("SELECT * FROM `$t`")->fetchAll(PDO::FETCH_ASSOC);
-        } catch (Exception $e) {
-            continue; // table doesn't exist on this install
+    // The backup must work on a big live database and on shared hosting: rows are streamed one at a time into a temporary
+    // file per table (never held in memory), and every way it can fail says why, so the admin is not left with "HTTP 500".
+    if (!class_exists('ZipArchive')) fail('This server has no PHP zip support (the "zip" extension). Ask the host to enable it, then try again. Nothing was deleted.', 500);
+    @set_time_limit(0);
+    @ini_set('memory_limit', '512M');
+    $stamp = time() . '-' . bin2hex(random_bytes(3));
+    $tmpZip = sys_get_temp_dir() . '/etel-reset-backup-' . $stamp . '.zip';
+    $tmpFiles = array();
+    $cleanup = function () use (&$tmpFiles, $tmpZip) {
+        foreach ($tmpFiles as $f) @unlink($f);
+        @unlink($tmpZip);
+    };
+    $stage = 'starting';
+    try {
+        $zip = new ZipArchive();
+        if ($zip->open($tmpZip, ZipArchive::CREATE) !== true) {
+            fail('Could not create the backup file in the server temp folder (' . sys_get_temp_dir() . '). Check that it is writable. Nothing was deleted.', 500);
         }
-        $csv = '';
-        if (!empty($rows)) {
-            $csv .= implode(',', array_keys($rows[0])) . "\n";
-            foreach ($rows as $r) {
-                $csv .= implode(',', array_map(function ($v) {
-                    return '"' . str_replace('"', '""', (string) $v) . '"';
-                }, $r)) . "\n";
+        $pdo->setAttribute(PDO::MYSQL_ATTR_USE_BUFFERED_QUERY, false);
+        $tables = array_merge(equity_reset_table_plan(), array('users'));
+        foreach ($tables as $t) {
+            $stage = $t;
+            try {
+                $st = $pdo->query("SELECT * FROM `$t`");
+            } catch (Exception $e) {
+                continue; // table doesn't exist on this install
             }
+            $tmp = sys_get_temp_dir() . '/etel-reset-' . $stamp . '-' . $t . '.csv';
+            $fh = fopen($tmp, 'w');
+            if (!$fh) { $st->closeCursor(); fail('Could not write a temporary file for ' . $t . '. Nothing was deleted.', 500); }
+            $tmpFiles[] = $tmp;
+            $first = true;
+            $n = 0;
+            while ($r = $st->fetch(PDO::FETCH_ASSOC)) {
+                if ($first) { fputcsv($fh, array_keys($r)); $first = false; }
+                fputcsv($fh, array_map(function ($v) { return $v === null ? '' : (string) $v; }, array_values($r)));
+                $n++;
+            }
+            $st->closeCursor();
+            fclose($fh);
+            if ($n === 0) { @unlink($tmp); array_pop($tmpFiles); continue; }
+            $zip->addFile($tmp, $t . '.csv');
         }
-        $zip->addFromString($t . '.csv', $csv);
+        $pdo->setAttribute(PDO::MYSQL_ATTR_USE_BUFFERED_QUERY, true);
+        $stage = 'closing the zip';
+        if (!$zip->close()) { $cleanup(); fail('Could not finish the backup zip. Nothing was deleted.', 500); }
+    } catch (Throwable $e) {
+        error_log('[ETEL][system_reset_backup] failed at ' . $stage . ': ' . $e->getMessage());
+        try { $pdo->setAttribute(PDO::MYSQL_ATTR_USE_BUFFERED_QUERY, true); } catch (Throwable $e2) { }
+        $cleanup();
+        fail('The backup failed at "' . $stage . '". Nothing was deleted. Ask your developer to check the server error log (look for system_reset_backup).', 500);
     }
-    $zip->close();
     // Stamp a short-lived backup token (valid 60 minutes) so
     // system_reset_execute can verify a real backup was just taken in
     // this session before it will run - this is the mechanism that
@@ -193,7 +223,7 @@ case 'system_reset_backup': {
     header('Content-Disposition: attachment; filename="etel-full-backup-' . date('Y-m-d-His') . '.zip"');
     header('Content-Length: ' . filesize($tmpZip));
     readfile($tmpZip);
-    @unlink($tmpZip);
+    $cleanup();
     exit;
 }
 
