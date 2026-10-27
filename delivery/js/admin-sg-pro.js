@@ -3,6 +3,9 @@
    card or table view, quick verify on the card, and a drawer with the business's numbers (orders today / 7 / 30 days,
    open orders, sales, staff logins, rating) and recent orders, with the controls: verify, suspend, restore, and
    "Full profile…" which opens the existing profile / staff / payout editor.
+   "Pre-register a business" makes a waiting (pending) account with a spare phone number and a one-time claim link; the owner opens
+   claim.html, sets their own phone and password, and admin verifies. The drawer's "Hand-over" section edits owner name / phone and
+   makes a new claim link (admin_sg_update_owner, admin_sg_claim_invite, admin_create_service_giver with draft).
    Data: admin_service_givers_board, admin_service_giver_detail (api/controllers/PartnerAdminController.php); controls reuse
    admin_verify_service_giver / admin_suspend_service_giver (boot.php). Standalone: replaces loadServiceGivers() so
    admin.js is not edited. Every server value goes through AdminKit.esc; no inline handlers. */
@@ -78,7 +81,7 @@ function paint() {
     ]) + K.kpis(kp, V.filter) +
     '<div class="ak-tools"><label class="ak-search"><u>🔎</u><input id="sg-q" type="search" placeholder="Business, owner, phone, code, zone…" value="' + esc(V.q) + '" autocomplete="off"></label>' +
     '<select class="ak-sel" data-sel="type" aria-label="Type">' + topts + '</select><select class="ak-sel" data-sel="sort" aria-label="Sort">' + sopts + '</select>' +
-    K.seg('mode', [['cards', '🎴 Cards'], ['table', '☰ Table']], V.mode) + '<button type="button" class="ak-btn" data-act="refresh">🔄</button></div>' +
+    K.seg('mode', [['cards', '🎴 Cards'], ['table', '☰ Table']], V.mode) + '<button type="button" class="ak-btn" data-act="refresh">🔄</button><button type="button" class="ak-btn gold" data-act="draft">➕ Pre-register a business</button></div>' +
     '<div class="ak-count">' + K.num(rows.length) + ' of ' + K.num(V.rows.length) + ' businesses</div>';
   if (!rows.length) h += K.empty('🏪', V.rows.length ? 'No businesses match' : 'No service givers yet', V.rows.length ? 'Try clearing the filters.' : 'Businesses appear here when they sign up.');
   else h += V.mode === 'table' ? table(rows) : '<div class="ak-grid">' + rows.map(card).join('') + '</div>';
@@ -102,6 +105,50 @@ function table(rows) {
     }).join('') + '</tbody></table></div>';
 }
 
+/* ---------- claim link + pre-register ---------- */
+function claimLink(code) { return location.origin + location.pathname.replace(/[^\/]*$/, '') + 'claim.html?code=' + encodeURIComponent(code); }
+function copyText(text) {
+  var done = function () { K.toast('Copied'); };
+  if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(text).then(done, function () { K.toast('Select the text and copy it by hand', true); }); return; }
+  var t = document.createElement('textarea'); t.value = text; t.style.position = 'fixed'; t.style.opacity = '0'; document.body.appendChild(t); t.select();
+  try { document.execCommand('copy'); done(); } catch (e) { K.toast('Select the text and copy it by hand', true); } t.remove();
+}
+function claimBox(code, expires) {
+  var link = claimLink(code);
+  return '<div class="ak-sec"><h4>Claim link for the owner</h4>' +
+    '<p class="ak-fh" style="margin:0 0 8px">Shown only now. Send it to the owner: they open it, add their own phone number and password, then you verify the business. It works once' + (expires ? ' and until ' + esc(K.fullDate(expires)) : '') + '.</p>' +
+    '<input class="ak-in" readonly value="' + esc(link) + '" data-sel-all aria-label="Claim link">' +
+    '<div class="ak-acts" style="margin-top:8px"><button type="button" class="ak-btn gold" data-copy="' + esc(link) + '">Copy link</button>' +
+    '<button type="button" class="ak-btn" data-copy="' + esc(code) + '">Copy code ' + esc(code) + '</button></div></div>';
+}
+function openDraft() {
+  var types = ['restaurant', 'cafe', 'fastfood', 'grocery', 'pharmacy', 'laundry', 'electronics', 'retail', 'custom', 'delivery'];
+  var head = '<div class="ak-av lg" style="--a:#E8C14A;--b:#9a7a1c">🏪</div><div class="ak-nm"><b>Pre-register a business</b><small>Waiting account, not live</small></div>';
+  var body = '<div class="ak-sec"><p class="ak-fh" style="margin:0 0 10px">Makes the account now but keeps it switched off: it cannot sign in and customers do not see it. When the owner agrees, send them the claim link and verify the business.</p>' +
+    K.field('Business name *', '<input id="sgd-biz" class="ak-in" type="text" autocomplete="off">') +
+    K.field('Owner name', '<input id="sgd-owner" class="ak-in" type="text" autocomplete="off">', 'Leave empty to use the business name for now.') +
+    K.field('Owner phone', '<input id="sgd-phone" class="ak-in" type="tel" autocomplete="off">', 'Leave empty to use a spare number. The owner types their real one when they claim it.') +
+    K.field('Type', '<select id="sgd-type" class="ak-in">' + types.map(function (t) { return '<option value="' + t + '">' + t + '</option>'; }).join('') + '</select>') +
+    K.field('Zone', '<input id="sgd-zone" class="ak-in" type="text" autocomplete="off">', 'Optional, for example Piazza.') +
+    K.field('Address', '<input id="sgd-addr" class="ak-in" type="text" autocomplete="off">', 'Optional.') + '</div><div id="sgd-out"></div>';
+  var foot = '<span class="ak-err" id="sgd-msg" role="status"></span><button type="button" class="ak-btn" data-close>Close</button><button type="button" class="ak-btn gold" data-draft-save>Pre-register</button>';
+  var dr = K.openDrawer(head, body, foot);
+  dr.querySelector('[data-draft-save]').addEventListener('click', function (e) {
+    var b = e.currentTarget, v = function (id) { return (document.getElementById(id).value || '').trim(); }, msg = document.getElementById('sgd-msg');
+    if (!v('sgd-biz')) { msg.textContent = 'Enter the business name.'; return; }
+    var payload = { draft: 1, business_name: v('sgd-biz'), name: v('sgd-owner'), phone: v('sgd-phone'), service_type: document.getElementById('sgd-type').value, address: v('sgd-addr') };
+    if (v('sgd-zone')) payload.zone = v('sgd-zone');
+    b.disabled = true; msg.textContent = 'Saving…';
+    K.api('admin_create_service_giver', payload).then(function (res) {
+      b.disabled = false;
+      if (!K.okRes(res)) { msg.textContent = K.failText(res); return; }
+      var d = K.data(res); msg.textContent = ''; b.hidden = true;
+      document.getElementById('sgd-out').innerHTML = '<div class="ak-sec"><h4>Done: ' + esc(d.code) + '</h4><p class="ak-fh" style="margin:0">The business is waiting in the list. Nothing is live.</p></div>' + (d.claim_code ? claimBox(d.claim_code, d.claim_expires_at) : '');
+      V.busy = false; load(true);
+    });
+  });
+}
+
 /* ---------- drawer ---------- */
 function openSG(id) {
   V.openId = id;
@@ -122,6 +169,13 @@ function drawer(d, dr) {
   h += '<div class="ak-sec"><h4>Business</h4>' + K.kv([['Owner', g.name], ['Phone', '<a href="tel:' + esc(g.phone) + '">' + esc(g.phone) + '</a>', true], ['Type', g.service_type || ''], ['Zone', g.zone || ''], ['Address', g.address || ''],
     ['Rating', stars(Number(g.average_rating)) + (g.rating_count ? ' · ' + g.rating_count + ' reviews' : '')], ['Deliveries', total ? done + ' of ' + total + ' completed (' + Math.round(done / total * 100) + '%)' : ''],
     ['Total earnings', g.total_earnings == null ? '' : K.money(g.total_earnings)], ['Staff logins', s.staff == null ? '' : String(s.staff)]]) + '</div>';
+  var cl = d.claim || {}, hand = '';
+  if (cl.placeholder_phone) hand += '<p class="ak-fh" style="margin:0 0 8px;color:var(--amber,#d98e04)">This account has a spare phone number. The owner sets their real one when they claim it, or you can type it here.</p>';
+  hand += '<p class="ak-fh" style="margin:0 0 8px">' + (cl.claimed ? 'The owner has claimed this account and set their own phone and password.' : cl.invited ? 'A claim link is waiting (until ' + esc(K.fullDate(cl.expires_at)) + '). It is not shown again; make a new one to see it.' : 'No claim link is waiting.') + '</p>' +
+    K.field('Owner name', '<input id="sgo-name" class="ak-in" type="text" value="' + esc(g.name || '') + '">') +
+    K.field('Owner phone (sign-in)', '<input id="sgo-phone" class="ak-in" type="tel" value="' + esc(g.phone || '') + '">') +
+    '<div class="ak-acts" style="margin-top:8px"><button type="button" class="ak-btn" data-owner-save>Save owner details</button><button type="button" class="ak-btn gold" data-claim-new>📨 New claim link</button></div><div id="sgo-claim"></div>';
+  h += '<div class="ak-sec"><h4>Hand-over to the owner</h4>' + hand + '</div>';
   var acts = '';
   if (g.status === 'pending') acts += '<button type="button" class="ak-btn good" data-verify>✓ Verify business</button>';
   if (g.status === 'suspended') acts += '<button type="button" class="ak-btn good" data-verify>Restore (verify)</button>';
@@ -152,9 +206,26 @@ function verify(id) {
   return K.confirm({ title: 'Verify this business?', text: 'It will show to customers and can receive orders.', label: 'Verify' }).then(function (r) { if (r) return act('admin_verify_service_giver', id, 'Business verified'); });
 }
 function onDrawerClick(e) {
-  var dr = K.drawerEl(); if (!dr || !dr.contains(e.target) || !dr._d || !dr._d.service_giver) return;
+  var dr = K.drawerEl(); if (!dr || !dr.contains(e.target)) return;
+  var cp = e.target.closest('[data-copy]'); if (cp) { copyText(cp.getAttribute('data-copy')); return; }
+  if (!dr._d || !dr._d.service_giver) return;
   var g = dr._d.service_giver, t = e.target;
-  if (t.closest('[data-verify]')) verify(g.id);
+  if (t.closest('[data-owner-save]')) {
+    K.api('admin_sg_update_owner', { id: g.id, name: document.getElementById('sgo-name').value.trim(), phone: document.getElementById('sgo-phone').value.trim() }).then(function (res) {
+      if (K.okRes(res)) { K.toast('Owner details saved'); V.busy = false; load(true); openSG(g.id); } else K.toast(K.failText(res), true);
+    });
+  }
+  else if (t.closest('[data-claim-new]')) {
+    K.confirm({ title: 'Make a new claim link?', text: 'Any claim link made before stops working. The owner will be able to set their own phone and password with the new one.', label: 'Make link' }).then(function (r) {
+      if (!r) return;
+      K.api('admin_sg_claim_invite', { id: g.id }).then(function (res) {
+        if (!K.okRes(res)) { K.toast(K.failText(res), true); return; }
+        var d = K.data(res), box = document.getElementById('sgo-claim');
+        if (box) box.innerHTML = claimBox(d.claim_code, d.claim_expires_at);
+      });
+    });
+  }
+  else if (t.closest('[data-verify]')) verify(g.id);
   else if (t.closest('[data-suspend]')) K.confirm({ title: 'Suspend ' + title(g) + '?', text: 'It is taken offline and stops receiving orders until you verify it again.', label: 'Suspend', danger: true }).then(function (r) { if (r) act('admin_suspend_service_giver', g.id, 'Business suspended'); });
   else if (t.closest('[data-biz]')) {
     var on = t.closest('[data-biz]').getAttribute('data-biz') === '1';
@@ -178,6 +249,7 @@ function wire(el) {
     if ((b = t.closest('[data-kpi]'))) { var k = b.getAttribute('data-kpi'); V.filter = (V.filter === k ? '' : k); paint(); return; }
     if ((b = t.closest('[data-seg]'))) { V.mode = b.getAttribute('data-val'); try { localStorage.setItem('sg-mode', V.mode); } catch (x) { /* ignore */ } paint(); return; }
     if (t.closest('[data-act="refresh"]')) { load(true); return; }
+    if (t.closest('[data-act="draft"]')) { openDraft(); return; }
     if ((b = t.closest('[data-open]'))) openSG(parseInt(b.getAttribute('data-open'), 10));
   });
   el.addEventListener('keydown', function (e) {
@@ -190,6 +262,7 @@ function wire(el) {
   });
 }
 document.addEventListener('click', onDrawerClick);
+document.addEventListener('focusin', function (e) { if (e.target.matches && e.target.matches('[data-sel-all]')) e.target.select(); });
 document.addEventListener('admin:filter', function (e) {   // opened from the dashboard's "Needs your attention"
   var d = e.detail || {}; if (d.page !== 'servicegivers') return;
   V.filter = d.filter || ''; V.q = '';

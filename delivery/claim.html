@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Set up your business · ETEL</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#0b1020;--panel:rgba(255,255,255,.05);--line:rgba(255,255,255,.12);--text:#f0e6cc;--dim:#a9a595;--gold:#D4AF37;--err:#ff6b78;--ok:#3ad08a}
+body{background:radial-gradient(1200px 600px at 50% -10%,#1d2a55,var(--bg));color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans Ethiopic",sans-serif;min-height:100vh;line-height:1.5;padding:24px 16px}
+.wrap{max-width:440px;margin:0 auto}
+.logo{font-size:30px;font-weight:800;color:var(--gold);letter-spacing:.04em;text-align:center;margin:8px 0 4px}
+.sub{text-align:center;color:var(--dim);font-size:13px;margin-bottom:22px}
+.box{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:20px}
+h1{font-size:20px;margin-bottom:6px}
+p.lead{color:var(--dim);font-size:14px;margin-bottom:16px}
+label{display:block;font-size:12px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:.05em;margin:14px 0 6px}
+input{width:100%;padding:13px 14px;border-radius:10px;border:1px solid var(--line);background:rgba(255,255,255,.07);color:var(--text);font-size:16px}
+input:focus{outline:2px solid var(--gold);outline-offset:1px}
+small{display:block;color:var(--dim);font-size:12px;margin-top:5px}
+button{width:100%;margin-top:20px;padding:14px;border:0;border-radius:12px;font-size:16px;font-weight:800;color:#1a1405;background:linear-gradient(135deg,#E8C14A,#b8902a);cursor:pointer}
+button:disabled{opacity:.55;cursor:default}
+.msg{margin-top:14px;font-size:14px;min-height:20px}
+.msg.err{color:var(--err)}.msg.ok{color:var(--ok)}
+.biz{background:rgba(212,175,55,.12);border:1px solid rgba(212,175,55,.35);border-radius:12px;padding:12px 14px;margin-bottom:6px}
+.biz b{display:block;font-size:17px}.biz span{color:var(--dim);font-size:13px}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="logo">ETEL</div>
+  <div class="sub">ኢትኤል · Delivery &amp; Ride</div>
+
+  <div class="box" id="step-code">
+    <h1>Set up your business</h1>
+    <p class="lead">Enter the code ETEL gave you.</p>
+    <label for="code">Claim code</label>
+    <input id="code" type="text" inputmode="text" autocapitalize="characters" autocomplete="off" placeholder="XXXXX-XXXXX" maxlength="14">
+    <button type="button" id="go-code">Continue</button>
+    <div class="msg" id="msg-code" role="status" aria-live="polite"></div>
+  </div>
+
+  <div class="box" id="step-set" hidden>
+    <div class="biz"><b id="biz-name"></b><span id="biz-meta"></span></div>
+    <p class="lead">Add your own sign-in details. ETEL will check your business and switch it on; you can sign in after that.</p>
+    <label for="owner">Your name</label>
+    <input id="owner" type="text" autocomplete="name">
+    <label for="phone">Your phone number</label>
+    <input id="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="09XXXXXXXX">
+    <small>This is the number you will sign in with.</small>
+    <label for="pw">Choose a password</label>
+    <input id="pw" type="password" autocomplete="new-password">
+    <small>At least 8 characters.</small>
+    <label for="pw2">Type the password again</label>
+    <input id="pw2" type="password" autocomplete="new-password">
+    <button type="button" id="go-set">Save my details</button>
+    <div class="msg" id="msg-set" role="status" aria-live="polite"></div>
+  </div>
+
+  <div class="box" id="step-done" hidden>
+    <h1>All set ✓</h1>
+    <p class="lead" id="done-text"></p>
+  </div>
+</div>
+<script src="js/claim.js?v=1"></script>
+</body>
+</html>

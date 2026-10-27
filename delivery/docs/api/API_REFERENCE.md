@@ -1,16 +1,16 @@
 # ETEL Delivery & Ride API reference
 
-Generated from the source by `tools/gen_api_docs.py` (484 actions). Machine-readable: `openapi.json`.
+Generated from the source by `tools/gen_api_docs.py` (488 actions). Machine-readable: `openapi.json`.
 
 **Call:** `POST /delivery/api/boot.php` with JSON `{"action": "<name>", ...fields}`; header `Authorization: Bearer <token>` for everything except the *public* actions.
 **Reply:** `{success, data, message, v}`. **Login:** `login` / `etelid_login` (apps) or `admin_etelid_login` (admin; add `totp_code` when the reply says `requires_2fa`).
 
 | Who can call | Actions |
 |---|---|
-| admin | 241 |
+| admin | 243 |
 | any signed-in user | 190 |
 | courier | 18 |
-| public | 13 |
+| public | 15 |
 | public (this call signs you in) | 6 |
 | service key (X-Etel-Service-Key) | 16 |
 
@@ -603,6 +603,15 @@ Generated from the source by `tools/gen_api_docs.py` (484 actions). Machine-read
 | `sg_update_profile` | any signed-in user | `abysinia_account`, `abysinia_account_name`, `address`, `bank_account`, `business_name`, `cbe_account`, `cbe_account_name`, `city`, `cover_url`, `lat`, `lng`, `logo_url`, `payout_bank`, `service_type`, `sg_id`, `telebirr_account_name`, `telebirr_number`, `vehicle_plate`, `vehicle_type`, `zone` | `sg_id` |
 | `sg_update_staff_role` | any signed-in user | `role_id`, `staff_id` | - |
 
+## SgClaim
+
+| Action | Auth | Fields | Query |
+|---|---|---|---|
+| `admin_sg_claim_invite` | admin · service_givers.manage | `id` | - |
+| `admin_sg_update_owner` | admin · service_givers.manage | `id`, `name`, `phone` | - |
+| `sg_claim_complete` | public | `code`, `name`, `password`, `phone` | - |
+| `sg_claim_info` | public | `code` | `code` |
+
 ## SystemReset
 
 | Action | Auth | Fields | Query |
@@ -632,7 +641,7 @@ Generated from the source by `tools/gen_api_docs.py` (484 actions). Machine-read
 | `admin_catalog_list` | admin · items.manage | - | `q`, `status` |
 | `admin_catalog_save` | admin · items.manage | `category`, `cuisine`, `description`, `description_am`, `id`, `image_url`, `name`, `name_am`, `packs`, `prep_time`, `status` | - |
 | `admin_chat_threads` | admin · orders.view | `filter`, `q` | `filter`, `q` |
-| `admin_create_service_giver` | admin | `address`, `business_name`, `identification_number`, `lat`, `lng`, `name`, `password`, `phone`, `service_type`, `vehicle_type`, `zone` | - |
+| `admin_create_service_giver` | admin | `address`, `business_name`, `draft`, `identification_number`, `lat`, `lng`, `name`, `password`, `phone`, `service_type`, `vehicle_type`, `zone` | - |
 | `admin_dashboard_stats` | admin | - | - |
 | `admin_delete_placeholder_shop` | admin · owner.only | `delete_items`, `inspect`, `shop_id` | - |
 | `admin_duplicate_phones` | admin | - | - |

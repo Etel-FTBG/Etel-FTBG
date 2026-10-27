@@ -1,0 +1,119 @@
+<?php
+// ============================================================
+// ETEL Delivery - pre-registered businesses: admin hands one over, and its owner takes it over (public: the one-time claim code is the credential)
+//   admin_sg_update_owner  { id, name?, phone? }  -> change the owner's name / sign-in phone                       (service_givers.manage)
+//   admin_sg_claim_invite  { id }                 -> a new one-time claim code (shown once; older ones stop working) (service_givers.manage)
+//   sg_claim_info      { code }                              -> which business this code opens (so the page can greet the owner)
+//   sg_claim_complete  { code, phone, password, name? }      -> the owner sets their own phone number and password
+// The business stays "pending": it cannot sign in or show to customers until admin presses Verify. Wrong codes are rate limited.
+// ============================================================
+
+require_once __DIR__ . '/../lib/sg_claim.php';
+
+switch ($action) {
+
+case 'sg_claim_info': {
+    $pdo = db();
+    $code = isset($body['code']) ? trim($body['code']) : (isset($_GET['code']) ? trim($_GET['code']) : '');
+    if ($code === '') fail('Enter your claim code', 400);
+    rate_limit_check($pdo, 'sg_claim', 15, 600, 900);
+    try { $c = etel_sg_claim_find($pdo, $code); } catch (Exception $e) { fail_ex($e, 'Could not check the code', 500); }
+    if (!$c) { rate_limit_fail($pdo, 'sg_claim'); fail('This code is not valid, or it has expired. Ask ETEL for a new one.', 404); }
+    ok(array('business_name' => $c['business_name'], 'service_type' => $c['service_type'], 'zone' => $c['zone'],
+             'owner_name' => $c['owner_name'], 'expires_at' => $c['expires_at']));
+    break;
+}
+
+case 'sg_claim_complete': {
+    $pdo = db();
+    $code = isset($body['code']) ? trim($body['code']) : '';
+    $phone = isset($body['phone']) ? preg_replace('/[^0-9+]/', '', trim($body['phone'])) : '';
+    $pw = isset($body['password']) ? (string) $body['password'] : '';
+    $name = isset($body['name']) ? trim($body['name']) : '';
+    if ($code === '') fail('Enter your claim code', 400);
+    rate_limit_check($pdo, 'sg_claim', 15, 600, 900);
+    if (strlen(preg_replace('/[^0-9]/', '', $phone)) < 9) fail('Enter your full phone number', 400);
+    if (strlen($pw) < 8) fail('Password must be at least 8 characters', 400);
+    try { $c = etel_sg_claim_find($pdo, $code); } catch (Exception $e) { fail_ex($e, 'Could not check the code', 500); }
+    if (!$c) { rate_limit_fail($pdo, 'sg_claim'); fail('This code is not valid, or it has expired. Ask ETEL for a new one.', 404); }
+    if ($c['status'] === 'suspended') fail('This account is suspended. Contact ETEL.', 403);
+
+    if (!etel_phone_lock($pdo, $phone)) fail('Please try again in a moment', 429);
+    $v = etel_phone_variants($phone);
+    $q = $pdo->prepare('SELECT id FROM users WHERE id <> ? AND phone IN (' . implode(',', array_fill(0, count($v), '?')) . ') LIMIT 1');
+    $q->execute(array_merge(array(intval($c['user_id'])), $v));
+    if ($q->fetch()) fail('This phone number already has an ETEL account. Use a different number, or contact ETEL.', 409);
+
+    try {
+        $pdo->beginTransaction();
+        $mark = $pdo->prepare('UPDATE sg_claim_codes SET used_at = NOW() WHERE id = ? AND used_at IS NULL');
+        $mark->execute(array(intval($c['claim_id'])));
+        if ($mark->rowCount() !== 1) { $pdo->rollBack(); fail('This code was just used. Ask ETEL for a new one.', 409); }
+        $hash = password_hash($pw, PASSWORD_DEFAULT);
+        if ($name !== '') $pdo->prepare('UPDATE users SET name = ?, phone = ?, password_hash = ? WHERE id = ?')->execute(array($name, $phone, $hash, intval($c['user_id'])));
+        else $pdo->prepare('UPDATE users SET phone = ?, password_hash = ? WHERE id = ?')->execute(array($phone, $hash, intval($c['user_id'])));
+        $pdo->prepare('UPDATE sg_claim_codes SET phone_is_placeholder = 0 WHERE sg_id = ?')->execute(array(intval($c['sg_id'])));
+        $pdo->commit();
+    } catch (Exception $e) { if ($pdo->inTransaction()) $pdo->rollBack(); fail_ex($e, 'Could not save your details', 500); }
+    etel_bump_token_version($pdo, intval($c['user_id']));
+    rate_limit_clear($pdo, 'sg_claim');
+    ok(array('message' => 'Your details are saved. ETEL will check them and switch your business on; you can sign in after that.',
+             'business_name' => $c['business_name'], 'status' => $c['status']));
+    break;
+}
+
+case 'admin_sg_update_owner': {
+    $pdo = db();
+    $u = require_admin($pdo, 'service_givers.manage');
+    if (etel_is_ride_only($pdo, $u)) fail('You can only change ride accounts', 403);
+    require_once __DIR__ . '/../lib/sg_claim.php';
+    $id = isset($body['id']) ? intval($body['id']) : 0;
+    if ($id <= 0) fail('id required', 400);
+    $name = isset($body['name']) ? trim($body['name']) : '';
+    $phone = isset($body['phone']) ? preg_replace('/[^0-9+]/', '', trim($body['phone'])) : '';
+    if ($name === '' && $phone === '') fail('Nothing to change', 400);
+    if ($phone !== '' && strlen(preg_replace('/[^0-9]/', '', $phone)) < 9) fail('Enter a full phone number', 400);
+    $g = $pdo->prepare('SELECT sg.user_id FROM service_givers sg WHERE sg.id = ? LIMIT 1');
+    $g->execute(array($id));
+    $row = $g->fetch(PDO::FETCH_ASSOC);
+    if (!$row) fail('Service giver not found', 404);
+    $uid = intval($row['user_id']);
+    etel_sg_claim_ensure($pdo);
+    if ($phone !== '') {
+        if (!etel_phone_lock($pdo, $phone)) fail('Please try again in a moment', 429);
+        $v = etel_phone_variants($phone);
+        $q = $pdo->prepare('SELECT id FROM users WHERE id <> ? AND phone IN (' . implode(',', array_fill(0, count($v), '?')) . ') LIMIT 1');
+        $q->execute(array_merge(array($uid), $v));
+        if ($q->fetch()) fail('That phone number belongs to another account', 409);
+    }
+    try {
+        if ($name !== '') $pdo->prepare('UPDATE users SET name = ? WHERE id = ?')->execute(array($name, $uid));
+        if ($phone !== '') {
+            $pdo->prepare('UPDATE users SET phone = ? WHERE id = ?')->execute(array($phone, $uid));
+            $pdo->prepare('UPDATE sg_claim_codes SET phone_is_placeholder = 0 WHERE sg_id = ?')->execute(array($id));
+        }
+    } catch (Exception $e) { fail_ex($e, 'Could not save', 500); }
+    ok(array('message' => 'Saved', 'id' => $id));
+    break;
+}
+
+case 'admin_sg_claim_invite': {
+    $pdo = db();
+    $u = require_admin($pdo, 'service_givers.manage');
+    if (etel_is_ride_only($pdo, $u)) fail('You can only change ride accounts', 403);
+    require_once __DIR__ . '/../lib/sg_claim.php';
+    $id = isset($body['id']) ? intval($body['id']) : 0;
+    if ($id <= 0) fail('id required', 400);
+    $g = $pdo->prepare('SELECT sg.user_id, sg.status FROM service_givers sg WHERE sg.id = ? LIMIT 1');
+    $g->execute(array($id));
+    $row = $g->fetch(PDO::FETCH_ASSOC);
+    if (!$row) fail('Service giver not found', 404);
+    etel_sg_claim_ensure($pdo);
+    $was = etel_sg_claim_state($pdo, $id);
+    try { $c = etel_sg_claim_issue($pdo, $id, intval($row['user_id']), $was['placeholder_phone']); }
+    catch (Exception $e) { fail_ex($e, 'Could not make the claim link', 500); }
+    ok(array('message' => 'Claim code ready', 'id' => $id, 'claim_code' => $c['code'], 'claim_expires_at' => $c['expires_at']));
+    break;
+}
+
+}
