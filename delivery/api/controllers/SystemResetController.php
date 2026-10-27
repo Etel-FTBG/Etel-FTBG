@@ -36,6 +36,10 @@
 //   - patch_log, updater_logs : operational/audit history, not user data
 //   - audit_settings      : config (holds the code-audit proxy secret)
 //   - app_canary_testers, app_release_channels : canary/release config
+//   - bank_accounts, driver_goal_tiers, pricing_rules, ride_fare_rules, delivery_zones/tiers, promo codes, items/menu
+//     and the other admin-set configuration: that is how the business is set up, not demo activity. They were
+//     wiped before, which silently removed the company's own receiving bank accounts and the driver goals.
+//     tests/ci/check_reset_coverage.py lists every table as wiped or kept, so a new table must be classified.
 //   - geocode_cache       : just a lookup cache, safe either way but
 //     not user data, so left alone
 //   - rides_legacy_202606120827 : an old renamed backup table from a
@@ -58,24 +62,52 @@ function equity_reset_table_plan() {
         // Ride-related children first
         'ride_messages', 'ride_typing', 'ride_path_points', 'ride_issues',
         'ride_favorite_routes', 'ride_drivers', 'ride_requests', 'order_ratings',
-        'service_giver_ratings',
+        'service_giver_ratings', 'ride_counter_offers', 'ride_driver_exclusions', 'ride_offer_log',
+        'ride_pin_fails', 'ride_tips', 'ride_promo_redemptions', 'ride_monitor_alerts', 'sos_alerts',
         // Order-related children
         'order_items', 'order_confirmations', 'order_assignments', 'scheduled_orders',
+        'order_admin_actions', 'order_courier_offers', 'order_issues', 'order_message_reads', 'order_messages',
+        'order_pay_log', 'order_payment_log', 'order_push_log', 'order_refunds', 'package_pin_tries',
+        'promo_redemptions', 'loyalty_points', 'offline_requests',
         // Driver/service-giver related
         'driver_announcement_reads', 'driver_vehicle_change_requests',
-        'driver_etel_money_topups', 'driver_payouts', 'driver_goal_tiers',
-        'sg_staff', 'drivers',
+        'driver_etel_money_topups', 'driver_payouts', 'driver_compliance_requests',
+        'driver_shifts', 'driver_fuel_logs', 'courier_shifts', 'courier_fuel_logs', 'courier_cash_remittances',
+        'sg_staff', 'sg_payout_change_requests', 'sg_cash_days', 'sg_expenses', 'sg_pos_sale_items',
+        'sg_pos_sales', 'sg_stock_events', 'sg_business_audit', 'drivers',
         // Customer related
         'customer_addresses', 'customer_favorites', 'customer_messages', 'customer_referral_rewards',
+        'equb_contributions', 'equb_payouts', 'equb_members', 'equb_participants',
         // Financial records
-        'bank_accounts', 'etelpay_user_overrides', 'wallet_transactions', 'user_wallets',
-        'payment_retries', 'telebirr_payments', 'bank_payments',
+        'etelpay_user_overrides', 'wallet_transactions', 'user_wallets',
+        'payment_retries', 'payment_claims', 'telebirr_payments', 'bank_payments', 'chapa_payments',
         // Push/session/security noise
         'push_subscriptions', 'push_tokens', 'login_attempts', 'password_resets', 'tg_chat_ids',
+        'notifications', 'client_errors', 'csp_reports', 'user_display_prefs',
         // Parents last
         'rides', 'orders', 'service_givers', 'couriers',
         // users handled specially (partial delete, not full truncate)
     );
+}
+
+// Setup values that were never changed from the install seed. The reset leaves bank_accounts alone, so a placeholder
+// number must be replaced by hand before real customers are told to pay into it. Shown in the preview.
+function equity_reset_placeholder_warnings($pdo) {
+    $w = array();
+    try {
+        $rows = $pdo->query("SELECT display_name, account_number FROM bank_accounts WHERE active=1")->fetchAll(PDO::FETCH_ASSOC);
+        foreach ($rows as $r) {
+            $n = preg_replace('/\D/', '', (string) $r['account_number']);
+            if ($n === '' || $n === '1234567890' || $n === '9876543210') {
+                $w[] = 'Bank account "' . $r['display_name'] . '" still has a placeholder number (' . ($r['account_number'] === '' ? 'empty' : $r['account_number']) . '). Enter the real one in Pricing > Bank accounts before launch.';
+            }
+        }
+    } catch (Exception $e) { /* no bank_accounts table on this install */ }
+    try {
+        $demo = $pdo->query("SELECT COUNT(*) FROM users WHERE phone IN ('0900000000','+251911000001','+251911000002') OR name LIKE '%(System Test)%'")->fetchColumn();
+        if ((int) $demo > 0) $w[] = $demo . ' demo or system-test account(s) exist (for example the seed admin 0900000000). Do not list their phones under "keep", and change the password of any seed login you keep.';
+    } catch (Exception $e) { }
+    return $w;
 }
 
 switch ($action) {
@@ -113,6 +145,8 @@ case 'system_reset_preview': {
         'users_to_keep' => $keptUsers,
         'users_to_delete' => $totalUsers - count($keptUsers),
         'phones_not_found' => $notMatched,
+        'setup_warnings' => equity_reset_placeholder_warnings($pdo),
+        'admins_kept' => count(array_filter($keptUsers, function ($u) { return $u['role'] === 'admin'; })),
         'warning' => 'This is a preview only. Nothing has been deleted or backed up yet.',
     ));
     break;
@@ -189,6 +223,17 @@ case 'system_reset_execute': {
             $clean = preg_replace('/[^0-9+]/', '', trim((string) $p));
             if ($clean !== '') $keepPhones[] = $clean;
         }
+    }
+    // Never lock everyone out: at least one admin account must be among the phones to keep.
+    $keepAdmins = 0;
+    if (!empty($keepPhones)) {
+        $ph = implode(',', array_fill(0, count($keepPhones), '?'));
+        $q = $pdo->prepare("SELECT COUNT(*) FROM users WHERE role='admin' AND phone IN ($ph)");
+        $q->execute($keepPhones);
+        $keepAdmins = (int) $q->fetchColumn();
+    }
+    if ($keepAdmins < 1) {
+        fail('The phone numbers to keep must include at least one admin account, otherwise nobody could sign in to the admin after the reset. Nothing was deleted.', 400);
     }
     $log = array();
     try {

@@ -5,7 +5,7 @@
    never inside the installed APK/TWA (display-mode: standalone), and never for
    a role that has no .apk yet.
    Include with: <script src="../js/apk-download-badge.js" data-role="driver"></script>
-   Valid data-role values: customer | driver | courier | service | ride | admin
+   Valid data-role values: customer | driver | courier | service | ride | etel | admin
    Markup contract: any element with data-etel-apk is hidden until it can be
    used; its <a> links (itself or descendants) get the .apk URL. Optional
    data-etel-apk-display="flex|block" sets how it is shown (default block).
@@ -25,7 +25,8 @@
       driver:   'ኢE_Driver.apk',
       courier:  'ኢE_Courier.apk',
       service:  'ኢE_Service.apk',
-      ride:     'ኢE_Ride.apk'
+      ride:     'ኢE_Ride.apk',
+      etel:     'ETEL.apk'   // the all-in-one app
       // admin: not yet provided
     };
     var file = apkMap[role];

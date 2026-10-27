@@ -26,7 +26,7 @@ function loadDangerZone() {
     <div style="background:#191926;border:1px solid rgba(255,93,108,.25);border-radius:12px;padding:18px;margin-bottom:16px">
       <label style="display:block;font-size:12px;color:#B8B0A0;margin-bottom:6px">Real users' phone numbers to KEEP (comma or newline separated)</label>
       <textarea id="dz-keep-phones" placeholder="e.g. 0911223344, 0922334455" style="width:100%;min-height:70px;padding:11px;border-radius:10px;border:1px solid rgba(255,93,108,.3);background:#0d0d14;color:#EDEDF5;box-sizing:border-box;font-family:monospace"></textarea>
-      <div style="font-size:11.5px;color:#8a7f66;margin-top:6px">Everyone else's account will be permanently deleted. Leave blank to delete ALL user accounts including your own admin login — not recommended.</div>
+      <div style="font-size:11.5px;color:#8a7f66;margin-top:6px">Everyone else's account will be permanently deleted. You must keep at least one admin account (your own), or the reset will refuse to run. Settings such as prices, zones, bank accounts, driver goals, promo codes and the shop catalogue are NOT deleted.</div>
     </div>
     <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px">
       <button class="btn btn-secondary" onclick="dzRunPreview()">1️⃣ Preview (read-only)</button>
@@ -59,6 +59,12 @@ async function dzRunPreview() {
       d.users_to_keep.map(u => `<tr><td>${dzEsc(u.name)}</td><td class="mono">${dzEsc(u.phone)}</td><td>${dzEsc(u.role)}</td></tr>`).join('') +
       '</tbody></table>';
   }
+  if (!d.admins_kept) {
+    html += '<div style="color:#ff5d6c;margin-top:10px;font-size:13px">⛔ None of the phones to keep is an admin account. The reset will refuse to run, so you cannot lock yourself out. Add your own admin phone.</div>';
+  }
+  (d.setup_warnings || []).forEach(w => {
+    html += `<div style="color:#ffce54;margin-top:10px;font-size:13px">⚠️ ${dzEsc(w)}</div>`;
+  });
   if (d.phones_not_found && d.phones_not_found.length) {
     html += `<div style="color:#ffce54;margin-top:10px;font-size:13px">⚠️ These phone numbers didn't match any account and won't keep anyone: ${d.phones_not_found.map(dzEsc).join(', ')}</div>`;
   }
