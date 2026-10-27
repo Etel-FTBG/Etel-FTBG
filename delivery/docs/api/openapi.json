@@ -3,7 +3,7 @@
  "info": {
   "title": "ETEL Delivery & Ride API",
   "version": "generated",
-  "description": "Every action is a JSON POST to /api/boot.php with an `action` field (a few read-only actions also accept GET query parameters). Responses are JSON: {success: true|false, data: {...}, message: '...', v: '<app version>'}. Send the session token as `Authorization: Bearer <token>`; get one from `login`, `etelid_login` (Delivery/Ride apps) or `admin_etelid_login` (admin). Admin accounts with two-step sign-in answer {requires_2fa: true}: repeat the same login request with `totp_code`. Errors use HTTP 400/401/403/404/409/429/500/503 with the same JSON shape. Throttled actions answer 429. This file is generated from the source by tools/gen_api_docs.py: 484 actions. Parameter names come from the handlers; types and limits are in the handler code."
+  "description": "Every action is a JSON POST to /api/boot.php with an `action` field (a few read-only actions also accept GET query parameters). Responses are JSON: {success: true|false, data: {...}, message: '...', v: '<app version>'}. Send the session token as `Authorization: Bearer <token>`; get one from `login`, `etelid_login` (Delivery/Ride apps) or `admin_etelid_login` (admin). Admin accounts with two-step sign-in answer {requires_2fa: true}: repeat the same login request with `totp_code`. Errors use HTTP 400/401/403/404/409/429/500/503 with the same JSON shape. Throttled actions answer 429. This file is generated from the source by tools/gen_api_docs.py: 488 actions. Parameter names come from the handlers; types and limits are in the handler code."
  },
  "servers": [
   {
@@ -548,7 +548,13 @@
           "$ref": "#/components/schemas/admin_set_shop_branding"
          },
          {
+          "$ref": "#/components/schemas/admin_sg_claim_invite"
+         },
+         {
           "$ref": "#/components/schemas/admin_sg_set_business_tools"
+         },
+         {
+          "$ref": "#/components/schemas/admin_sg_update_owner"
          },
          {
           "$ref": "#/components/schemas/admin_suspend_driver"
@@ -1343,6 +1349,12 @@
           "$ref": "#/components/schemas/sg_catalog_list"
          },
          {
+          "$ref": "#/components/schemas/sg_claim_complete"
+         },
+         {
+          "$ref": "#/components/schemas/sg_claim_info"
+         },
+         {
           "$ref": "#/components/schemas/sg_complete_order"
          },
          {
@@ -1763,10 +1775,10 @@
           "action": "admin_create_service_giver",
           "address": "<address>",
           "business_name": "<business_name>",
+          "draft": "<draft>",
           "identification_number": "<identification_number>",
           "lat": "<lat>",
-          "lng": "<lng>",
-          "name": "<name>"
+          "lng": "<lng>"
          }
         },
         "admin_create_user": {
@@ -2779,12 +2791,28 @@
           "service_giver_id": "<service_giver_id>"
          }
         },
+        "admin_sg_claim_invite": {
+         "summary": "admin_sg_claim_invite (admin)",
+         "value": {
+          "action": "admin_sg_claim_invite",
+          "id": "<id>"
+         }
+        },
         "admin_sg_set_business_tools": {
          "summary": "admin_sg_set_business_tools (admin)",
          "value": {
           "action": "admin_sg_set_business_tools",
           "enabled": "<enabled>",
           "id": "<id>"
+         }
+        },
+        "admin_sg_update_owner": {
+         "summary": "admin_sg_update_owner (admin)",
+         "value": {
+          "action": "admin_sg_update_owner",
+          "id": "<id>",
+          "name": "<name>",
+          "phone": "<phone>"
          }
         },
         "admin_suspend_driver": {
@@ -4807,6 +4835,23 @@
           "action": "sg_catalog_list"
          }
         },
+        "sg_claim_complete": {
+         "summary": "sg_claim_complete (public)",
+         "value": {
+          "action": "sg_claim_complete",
+          "code": "<code>",
+          "name": "<name>",
+          "password": "<password>",
+          "phone": "<phone>"
+         }
+        },
+        "sg_claim_info": {
+         "summary": "sg_claim_info (public)",
+         "value": {
+          "action": "sg_claim_info",
+          "code": "<code>"
+         }
+        },
         "sg_complete_order": {
          "summary": "sg_complete_order (any signed-in user)",
          "value": {
@@ -5980,6 +6025,9 @@
       "description": "request field (type not declared in code)"
      },
      "business_name": {
+      "description": "request field (type not declared in code)"
+     },
+     "draft": {
       "description": "request field (type not declared in code)"
      },
      "identification_number": {
@@ -8810,6 +8858,25 @@
     },
     "description": "Auth: admin (capability items.manage). Source: api/controllers/PhotoController.php."
    },
+   "admin_sg_claim_invite": {
+    "type": "object",
+    "title": "action: admin_sg_claim_invite",
+    "required": [
+     "action"
+    ],
+    "properties": {
+     "action": {
+      "type": "string",
+      "enum": [
+       "admin_sg_claim_invite"
+      ]
+     },
+     "id": {
+      "description": "request field (type not declared in code)"
+     }
+    },
+    "description": "Auth: admin (capability service_givers.manage). Source: api/controllers/SgClaimController.php."
+   },
    "admin_sg_set_business_tools": {
     "type": "object",
     "title": "action: admin_sg_set_business_tools",
@@ -8831,6 +8898,31 @@
      }
     },
     "description": "Auth: admin (capability service_givers.manage). Source: api/controllers/ServiceGiverController.php."
+   },
+   "admin_sg_update_owner": {
+    "type": "object",
+    "title": "action: admin_sg_update_owner",
+    "required": [
+     "action"
+    ],
+    "properties": {
+     "action": {
+      "type": "string",
+      "enum": [
+       "admin_sg_update_owner"
+      ]
+     },
+     "id": {
+      "description": "request field (type not declared in code)"
+     },
+     "name": {
+      "description": "request field (type not declared in code)"
+     },
+     "phone": {
+      "description": "request field (type not declared in code)"
+     }
+    },
+    "description": "Auth: admin (capability service_givers.manage). Source: api/controllers/SgClaimController.php."
    },
    "admin_suspend_driver": {
     "type": "object",
@@ -14511,6 +14603,53 @@
     },
     "description": "Auth: any signed-in user. Source: api/controllers/ServiceGiverController.php."
    },
+   "sg_claim_complete": {
+    "type": "object",
+    "title": "action: sg_claim_complete",
+    "required": [
+     "action"
+    ],
+    "properties": {
+     "action": {
+      "type": "string",
+      "enum": [
+       "sg_claim_complete"
+      ]
+     },
+     "code": {
+      "description": "request field (type not declared in code)"
+     },
+     "name": {
+      "description": "request field (type not declared in code)"
+     },
+     "password": {
+      "description": "request field (type not declared in code)"
+     },
+     "phone": {
+      "description": "request field (type not declared in code)"
+     }
+    },
+    "description": "Auth: public. Source: api/controllers/SgClaimController.php."
+   },
+   "sg_claim_info": {
+    "type": "object",
+    "title": "action: sg_claim_info",
+    "required": [
+     "action"
+    ],
+    "properties": {
+     "action": {
+      "type": "string",
+      "enum": [
+       "sg_claim_info"
+      ]
+     },
+     "code": {
+      "description": "request field (type not declared in code)"
+     }
+    },
+    "description": "Auth: public. Source: api/controllers/SgClaimController.php."
+   },
    "sg_complete_order": {
     "type": "object",
     "title": "action: sg_complete_order",
@@ -15903,6 +16042,7 @@
    "body": [
     "address",
     "business_name",
+    "draft",
     "identification_number",
     "lat",
     "lng",
@@ -17217,6 +17357,15 @@
    "query": [],
    "source": "api/controllers/PhotoController.php"
   },
+  "admin_sg_claim_invite": {
+   "auth": "admin",
+   "capability": "service_givers.manage",
+   "body": [
+    "id"
+   ],
+   "query": [],
+   "source": "api/controllers/SgClaimController.php"
+  },
   "admin_sg_set_business_tools": {
    "auth": "admin",
    "capability": "service_givers.manage",
@@ -17226,6 +17375,17 @@
    ],
    "query": [],
    "source": "api/controllers/ServiceGiverController.php"
+  },
+  "admin_sg_update_owner": {
+   "auth": "admin",
+   "capability": "service_givers.manage",
+   "body": [
+    "id",
+    "name",
+    "phone"
+   ],
+   "query": [],
+   "source": "api/controllers/SgClaimController.php"
   },
   "admin_suspend_driver": {
    "auth": "admin",
@@ -19819,6 +19979,29 @@
     "q"
    ],
    "source": "api/controllers/ServiceGiverController.php"
+  },
+  "sg_claim_complete": {
+   "auth": "public",
+   "capability": null,
+   "body": [
+    "code",
+    "name",
+    "password",
+    "phone"
+   ],
+   "query": [],
+   "source": "api/controllers/SgClaimController.php"
+  },
+  "sg_claim_info": {
+   "auth": "public",
+   "capability": null,
+   "body": [
+    "code"
+   ],
+   "query": [
+    "code"
+   ],
+   "source": "api/controllers/SgClaimController.php"
   },
   "sg_complete_order": {
    "auth": "any signed-in user",

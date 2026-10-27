@@ -74,7 +74,7 @@ function equity_reset_table_plan() {
         'driver_etel_money_topups', 'driver_payouts', 'driver_compliance_requests',
         'driver_shifts', 'driver_fuel_logs', 'courier_shifts', 'courier_fuel_logs', 'courier_cash_remittances',
         'sg_staff', 'sg_payout_change_requests', 'sg_cash_days', 'sg_expenses', 'sg_pos_sale_items',
-        'sg_pos_sales', 'sg_stock_events', 'sg_business_audit', 'drivers',
+        'sg_pos_sales', 'sg_stock_events', 'sg_business_audit', 'sg_claim_codes', 'drivers',
         // Customer related
         'customer_addresses', 'customer_favorites', 'customer_messages', 'customer_referral_rewards',
         'equb_contributions', 'equb_payouts', 'equb_members', 'equb_participants',

@@ -183,7 +183,7 @@ function etel_purge_cache($tags = 'etel-html,etel-static') {
 define('ETEL_WRITE_ACTIONS', array(
     'customer_create_order','customer_package_create','admin_package_rates_save','admin_package_type_add','admin_package_setting_save','courier_update_order_status','courier_package_pickup','courier_package_deliver','admin_update_order',
     'admin_create_user','admin_add_item','admin_update_item','admin_delete_item',
-    'admin_toggle_item','admin_create_service_giver','admin_verify_service_giver',
+    'admin_toggle_item','admin_create_service_giver','admin_sg_update_owner','admin_sg_claim_invite','sg_claim_complete','admin_verify_service_giver',
     'admin_suspend_service_giver','admin_sg_set_business_tools','sg_pos_sync','sg_update_order_status','sg_complete_order',
     'sg_add_item','sg_update_item','sg_delete_item','sg_catalog_add','sg_catalog_import','admin_catalog_copy','admin_catalog_import','admin_items_import','courier_accept_offer','courier_decline_offer','admin_save_courier_offers','admin_catalog_save','admin_catalog_delete','admin_purge_cache',
     'admin_update_courier',
@@ -680,7 +680,7 @@ $ETEL_DELIVERY_ONLY_ACTIONS = array(
     'admin_dispatch_board','admin_assign_courier','admin_take_back_order','admin_cancel_order',
     'admin_package_rates_get','admin_package_rates_save','admin_package_type_add','admin_package_setting_save',
     'admin_get_service_givers','admin_get_service_givers_list','admin_get_service_giver','admin_get_service_giver_statistics',
-    'admin_create_service_giver','admin_verify_service_giver','admin_suspend_service_giver','admin_assign_service_giver',
+    'admin_create_service_giver','admin_sg_update_owner','admin_sg_claim_invite','admin_verify_service_giver','admin_suspend_service_giver','admin_assign_service_giver',
     'admin_get_all_items','admin_add_item','admin_update_item','admin_delete_item','admin_toggle_item',
     'admin_catalog_list','admin_catalog_save','admin_catalog_delete','admin_catalog_copy','admin_catalog_import','admin_items_import',
     'admin_list_promos','admin_save_promo','admin_toggle_promo','admin_chat_threads',
@@ -1565,6 +1565,17 @@ switch ($action) {
         $address = isset($body['address']) ? trim($body['address']) : '';
         $lat = (isset($body['lat']) && $body['lat']!=='') ? floatval($body['lat']) : null;
         $lng = (isset($body['lng']) && $body['lng']!=='') ? floatval($body['lng']) : null;
+        // A draft is a business pre-registered before its owner agrees: no password and no real phone yet, waiting
+        // (status "pending", so it can neither sign in nor show to customers) until the owner claims it and admin verifies it.
+        $draft = !empty($body['draft']);
+        require_once __DIR__ . '/lib/sg_claim.php';
+        $placeholder = false;
+        if ($draft) {
+            if (!$name) $name = $business_name;
+            if (!$phone) { $phone = etel_sg_placeholder_phone($pdo); $placeholder = true; if (!$phone) fail('Could not pick a spare number, try again',500); }
+            if (!$pw) $pw = bin2hex(random_bytes(16));
+            etel_sg_claim_ensure($pdo);   // creating a table commits, so it must not happen inside the transaction below
+        }
         if (!$name) fail('Name is required',400);
         if (!$phone) fail('Phone is required',400);
         if (!$pw || strlen($pw)<8) fail('Password must be at least 8 characters',400);
@@ -1580,12 +1591,14 @@ switch ($action) {
             $user_id = intval($pdo->lastInsertId());
             if (!$user_id) { $pdo->rollBack(); fail('Failed to create user',500); }
             $sg_code = 'SG-'.str_pad($user_id,5,'0',STR_PAD_LEFT);
-            $isg = $pdo->prepare('INSERT INTO service_givers (user_id,service_giver_code,business_name,service_type,vehicle_type,zone,address,identification_number,status,is_online,average_rating,total_deliveries,completed_deliveries,failed_deliveries,total_earnings,rating_count,created_at) VALUES (?,?,?,?,?,?,?,?,"verified",0,0.00,0,0,0,0.00,0,NOW())');
-            $isg->execute(array($user_id,$sg_code,$business_name,$service_type,$vehicle_type,$zone,$address,$id_number));
+            $isg = $pdo->prepare('INSERT INTO service_givers (user_id,service_giver_code,business_name,service_type,vehicle_type,zone,address,identification_number,status,is_online,average_rating,total_deliveries,completed_deliveries,failed_deliveries,total_earnings,rating_count,created_at) VALUES (?,?,?,?,?,?,?,?,?,0,0.00,0,0,0,0.00,0,NOW())');
+            $isg->execute(array($user_id,$sg_code,$business_name,$service_type,$vehicle_type,$zone,$address,$id_number,$draft ? 'pending' : 'verified'));
             $sg_id = intval($pdo->lastInsertId());
             if ($lat!==null && $lng!==null) { try { $pdo->prepare('UPDATE service_givers SET lat=?,lng=? WHERE id=?')->execute(array($lat,$lng,$sg_id)); } catch(Exception $e){ error_log('[ETEL] admin_create_service_giver lat/lng update failed for sg_id=' . $sg_id . ': ' . $e->getMessage()); } }
+            $claim = $draft ? etel_sg_claim_issue($pdo, $sg_id, $user_id, $placeholder) : null;
             $pdo->commit();
-            ok(array('message'=>'Service giver created','user_id'=>$user_id,'service_giver_id'=>$sg_id,'code'=>$sg_code));
+            ok(array('message'=>$draft ? 'Business pre-registered' : 'Service giver created','user_id'=>$user_id,'service_giver_id'=>$sg_id,'code'=>$sg_code,
+                     'draft'=>$draft,'claim_code'=>$claim ? $claim['code'] : null,'claim_expires_at'=>$claim ? $claim['expires_at'] : null));
         } catch(Exception $e) { $pdo->rollBack(); fail_ex($e, 'Creation failed', 500); }
         break;
     }
@@ -1691,6 +1704,10 @@ switch ($action) {
         break;
     case 'admin_couriers_board': case 'admin_courier_detail': case 'admin_service_givers_board': case 'admin_service_giver_detail':
         require __DIR__ . '/controllers/PartnerAdminController.php';
+        break;
+    case 'admin_sg_update_owner': case 'admin_sg_claim_invite': case 'sg_claim_info': case 'sg_claim_complete':
+        // The two sg_claim_* actions are public (the owner has no account yet): the one-time claim code is the credential. See lib/sg_claim.php.
+        require __DIR__ . '/controllers/SgClaimController.php';
         break;
 
     case 'admin_customers_list': case 'admin_customer_get': case 'admin_customer_set_active':

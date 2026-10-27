@@ -137,7 +137,9 @@ case 'admin_service_giver_detail': {
     foreach ($recent as &$r) { $r['fare_total'] = round(floatval($r['fare_total']), 2); }
     unset($r);
     $staff = $one('SELECT COUNT(*) AS n FROM sg_staff WHERE service_giver_id = ?', array($id));
-    ok(array('service_giver' => $out,
+    require_once __DIR__ . '/../lib/sg_claim.php';
+    try { $claim = etel_sg_claim_state($pdo, $id); } catch (Exception $e) { $claim = null; }
+    ok(array('service_giver' => $out, 'claim' => $claim,
              'stats' => array('today' => intval($st['today']), 'd7' => intval($st['d7']), 'd30' => intval($st['d30']), 'cancelled_30d' => intval($st['x30']), 'open' => intval($st['open_orders']),
                               'sales_30d' => round(floatval($st['sales_30d']), 2), 'staff' => $staff ? intval($staff['n']) : null),
              'recent' => $recent));
