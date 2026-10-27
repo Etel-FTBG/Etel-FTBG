@@ -110,6 +110,36 @@ function equity_reset_placeholder_warnings($pdo) {
     return $w;
 }
 
+// Writes a standard .zip (files stored, not compressed) without PHP's zip extension, which some shared hosts do not have.
+// $entries is name => path of a file on disk. Streams each file, so memory use stays flat. Returns true on success.
+function etel_zip_store($dest, $entries) {
+    $out = @fopen($dest, 'wb');
+    if (!$out) return false;
+    $dt = getdate();
+    $dosTime = (($dt['hours'] << 11) | ($dt['minutes'] << 5) | intval($dt['seconds'] / 2)) & 0xFFFF;
+    $dosDate = ((max(1980, $dt['year']) - 1980) << 9 | ($dt['mon'] << 5) | $dt['mday']) & 0xFFFF;
+    $central = '';
+    $count = 0;
+    $offset = 0;
+    foreach ($entries as $name => $path) {
+        $size = filesize($path);
+        $crc = hexdec(hash_file('crc32b', $path));
+        $nameLen = strlen($name);
+        $local = pack('VvvvvvVVVvv', 0x04034b50, 20, 0, 0, $dosTime, $dosDate, $crc, $size, $size, $nameLen, 0) . $name;
+        fwrite($out, $local);
+        $in = fopen($path, 'rb');
+        if (!$in) { fclose($out); return false; }
+        while (!feof($in)) { $chunk = fread($in, 1048576); if ($chunk === false) { fclose($in); fclose($out); return false; } fwrite($out, $chunk); }
+        fclose($in);
+        $central .= pack('VvvvvvvVVVvvvvvVV', 0x02014b50, 20, 20, 0, 0, $dosTime, $dosDate, $crc, $size, $size, $nameLen, 0, 0, 0, 0, 0, $offset) . $name;
+        $offset += strlen($local) + $size;
+        $count++;
+    }
+    fwrite($out, $central);
+    fwrite($out, pack('VvvvvVVv', 0x06054b50, 0, 0, $count, $count, strlen($central), $offset, 0));
+    return fclose($out);
+}
+
 switch ($action) {
 
 case 'system_reset_preview': {
@@ -158,7 +188,6 @@ case 'system_reset_backup': {
     while (ob_get_level()) { @ob_end_clean(); }
     // The backup must work on a big live database and on shared hosting: rows are streamed one at a time into a temporary
     // file per table (never held in memory), and every way it can fail says why, so the admin is not left with "HTTP 500".
-    if (!class_exists('ZipArchive')) fail('This server has no PHP zip support (the "zip" extension). Ask the host to enable it, then try again. Nothing was deleted.', 500);
     @set_time_limit(0);
     @ini_set('memory_limit', '512M');
     $stamp = time() . '-' . bin2hex(random_bytes(3));
@@ -170,10 +199,7 @@ case 'system_reset_backup': {
     };
     $stage = 'starting';
     try {
-        $zip = new ZipArchive();
-        if ($zip->open($tmpZip, ZipArchive::CREATE) !== true) {
-            fail('Could not create the backup file in the server temp folder (' . sys_get_temp_dir() . '). Check that it is writable. Nothing was deleted.', 500);
-        }
+        $entries = array();
         $pdo->setAttribute(PDO::MYSQL_ATTR_USE_BUFFERED_QUERY, false);
         $tables = array_merge(equity_reset_table_plan(), array('users'));
         foreach ($tables as $t) {
@@ -197,11 +223,28 @@ case 'system_reset_backup': {
             $st->closeCursor();
             fclose($fh);
             if ($n === 0) { @unlink($tmp); array_pop($tmpFiles); continue; }
-            $zip->addFile($tmp, $t . '.csv');
+            $entries[$t . '.csv'] = $tmp;
         }
         $pdo->setAttribute(PDO::MYSQL_ATTR_USE_BUFFERED_QUERY, true);
         $stage = 'closing the zip';
-        if (!$zip->close()) { $cleanup(); fail('Could not finish the backup zip. Nothing was deleted.', 500); }
+        if (empty($entries)) { $cleanup(); fail('There is nothing to back up. Nothing was deleted.', 500); }
+        // Uses PHP's zip extension when the server has it; otherwise writes the zip itself (some shared hosts have no extension).
+        $zipped = false;
+        if (class_exists('ZipArchive')) {
+            try {
+                $zip = new ZipArchive();
+                if ($zip->open($tmpZip, ZipArchive::CREATE) === true) {
+                    foreach ($entries as $n => $f) $zip->addFile($f, $n);
+                    $zipped = $zip->close();
+                }
+            } catch (Throwable $zipErr) {
+                error_log('[ETEL][system_reset_backup] ZipArchive failed, using the built-in zip writer: ' . $zipErr->getMessage());
+                @unlink($tmpZip);
+                $zipped = false;
+            }
+        }
+        if (!$zipped) $zipped = etel_zip_store($tmpZip, $entries);
+        if (!$zipped) { $cleanup(); fail('Could not write the backup zip in the server temp folder (' . sys_get_temp_dir() . '). Check that it is writable. Nothing was deleted.', 500); }
     } catch (Throwable $e) {
         error_log('[ETEL][system_reset_backup] failed at ' . $stage . ': ' . $e->getMessage());
         try { $pdo->setAttribute(PDO::MYSQL_ATTR_USE_BUFFERED_QUERY, true); } catch (Throwable $e2) { }

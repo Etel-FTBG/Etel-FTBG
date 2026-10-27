@@ -48,7 +48,7 @@ if "role='admin' AND phone IN" not in src or 'at least one admin account' not in
 bk = src[src.index("case 'system_reset_backup'"):src.index("case 'system_reset_execute'")]
 if 'fetchAll' in bk:
     bad.append('the backup must stream rows (fetch one at a time), not load whole tables into memory: a big live table made it fail with HTTP 500')
-for must in ("class_exists('ZipArchive')", 'fputcsv', 'MYSQL_ATTR_USE_BUFFERED_QUERY', 'catch (Throwable'):
+for must in ('etel_zip_store(', "class_exists('ZipArchive')", 'fputcsv', 'MYSQL_ATTR_USE_BUFFERED_QUERY', 'catch (Throwable'):
     if must not in bk:
         bad.append('the backup lost: ' + must)
 ui_src = read(root + '/js/admin-danger-zone.js')
