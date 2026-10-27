@@ -26,7 +26,7 @@
       courier:  'ኢE_Courier.apk',
       service:  'ኢE_Service.apk',
       ride:     'ኢE_Ride.apk',
-      etel:     'ETEL.apk'   // the all-in-one app
+      etel:     'ኢE_Etel.apk'   // the all-in-one app
       // admin: not yet provided
     };
     var file = apkMap[role];
