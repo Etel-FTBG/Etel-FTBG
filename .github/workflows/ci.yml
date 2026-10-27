@@ -152,6 +152,7 @@ jobs:
           python3 delivery/tests/ci/check_etel_app_access.py
           python3 delivery/tests/ci/check_reset_coverage.py
           python3 delivery/tests/ci/check_install_page.py
+          python3 delivery/tests/ci/check_csv_import_ui.py
           python3 delivery/tests/ci/check_servicegiver_offline.py
           python3 delivery/tests/ci/check_shop_business.py
           python3 delivery/tests/ci/check_sounds.py

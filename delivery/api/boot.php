@@ -185,7 +185,7 @@ define('ETEL_WRITE_ACTIONS', array(
     'admin_create_user','admin_add_item','admin_update_item','admin_delete_item',
     'admin_toggle_item','admin_create_service_giver','admin_verify_service_giver',
     'admin_suspend_service_giver','admin_sg_set_business_tools','sg_pos_sync','sg_update_order_status','sg_complete_order',
-    'sg_add_item','sg_update_item','sg_delete_item','sg_catalog_add','sg_catalog_import','admin_catalog_copy','courier_accept_offer','courier_decline_offer','admin_save_courier_offers','admin_catalog_save','admin_catalog_delete','admin_purge_cache',
+    'sg_add_item','sg_update_item','sg_delete_item','sg_catalog_add','sg_catalog_import','admin_catalog_copy','admin_catalog_import','admin_items_import','courier_accept_offer','courier_decline_offer','admin_save_courier_offers','admin_catalog_save','admin_catalog_delete','admin_purge_cache',
     'admin_update_courier',
     'admin_backfill_order_service_giver_ids',
     'courier_update_location',
@@ -682,7 +682,7 @@ $ETEL_DELIVERY_ONLY_ACTIONS = array(
     'admin_get_service_givers','admin_get_service_givers_list','admin_get_service_giver','admin_get_service_giver_statistics',
     'admin_create_service_giver','admin_verify_service_giver','admin_suspend_service_giver','admin_assign_service_giver',
     'admin_get_all_items','admin_add_item','admin_update_item','admin_delete_item','admin_toggle_item',
-    'admin_catalog_list','admin_catalog_save','admin_catalog_delete','admin_catalog_copy',
+    'admin_catalog_list','admin_catalog_save','admin_catalog_delete','admin_catalog_copy','admin_catalog_import','admin_items_import',
     'admin_list_promos','admin_save_promo','admin_toggle_promo','admin_chat_threads',
     'admin_get_order_issues','admin_resolve_order_issue','admin_get_order_receipt','admin_update_order',
     'admin_get_confirmations','admin_force_confirm','admin_list_telebirr_payments','admin_list_bank_payments',
@@ -1418,6 +1418,19 @@ switch ($action) {
         catch (Exception $e) { fail_ex($e, 'Could not save the job offer settings', 500); }
         break;
     }
+    case 'admin_catalog_import': {
+        // POST rows:[{name, [name_am], [description], [category], [cuisine], [packs], [prep_time], [status], [sort_order], [image_url|image_file]}] (max 500),
+        // [mode skip|update], [dry_run] -> adds many dishes at once. dry_run saves nothing and returns the same counts.
+        $pdo = db(); require_admin($pdo, 'items.manage');
+        require_once __DIR__ . '/lib/menu_catalog.php';
+        $rows = isset($body['rows']) ? $body['rows'] : null;
+        if (!is_array($rows) || !count($rows)) fail('The file has no rows to import', 400);
+        if (count($rows) > 500) fail('Import up to 500 dishes at a time', 400);
+        try { ok(etel_catalog_admin_import($pdo, $rows, isset($body['mode']) ? $body['mode'] : 'skip', !empty($body['dry_run']))); }
+        catch (Exception $e) { fail_ex($e, 'Could not import the dishes', 500); }
+        catch (Throwable $e) { fail_ex($e, 'Could not import the dishes', 500); }
+        break;
+    }
     case 'admin_catalog_copy': {
         // POST from_sg, to_sg, [percent -50..200], [include_hidden] -> copies one shop's menu to another shop.
         $pdo = db(); require_admin($pdo, 'items.manage');
@@ -1576,7 +1589,7 @@ switch ($action) {
         } catch(Exception $e) { $pdo->rollBack(); fail_ex($e, 'Creation failed', 500); }
         break;
     }
-    case 'admin_run_code_audit': case 'admin_get_audit_settings': case 'admin_save_audit_settings': case 'get_feature_flags': case 'admin_toggle_feature': case 'admin_list_etelpay_overrides': case 'admin_set_etelpay_override': case 'admin_remove_etelpay_override': case 'admin_list_support_threads': case 'admin_get_support_thread': case 'admin_reply_support_message': case 'admin_create_user': case 'admin_assign_service_giver': case 'admin_get_all_items': case 'admin_add_item': case 'admin_update_item': case 'admin_delete_item': case 'admin_toggle_item': case 'get_service_givers': case 'admin_get_service_giver': case 'admin_get_service_giver_statistics': case 'admin_get_confirmations': case 'admin_force_confirm': case 'admin_backfill_order_service_giver_ids': case 'admin_update_order': case 'admin_get_order_receipt': case 'admin_analytics': case 'admin_ride_growth': case 'admin_backfill_cash_commission': case 'admin_topup_etel_money': case 'admin_get_pending_etel_topups': case 'admin_ride_payments': case 'admin_approve_etel_topup': case 'admin_reject_etel_topup': case 'admin_get_ride_fare_rules': case 'admin_update_ride_fare_rule': case 'admin_add_vehicle_type': case 'admin_delete_vehicle_type': case 'admin_update_ride_surge_multiplier': case 'admin_get_ride_peak_windows': case 'admin_update_ride_peak_windows': case 'admin_get_zones': case 'admin_update_zone': case 'admin_add_zone': case 'admin_delete_zone': case 'admin_list_role_permissions': case 'admin_update_role_permissions': case 'admin_delete_role_permissions': case 'admin_get_my_capabilities':
+    case 'admin_run_code_audit': case 'admin_get_audit_settings': case 'admin_save_audit_settings': case 'get_feature_flags': case 'admin_toggle_feature': case 'admin_list_etelpay_overrides': case 'admin_set_etelpay_override': case 'admin_remove_etelpay_override': case 'admin_list_support_threads': case 'admin_get_support_thread': case 'admin_reply_support_message': case 'admin_create_user': case 'admin_assign_service_giver': case 'admin_get_all_items': case 'admin_add_item': case 'admin_items_import': case 'admin_update_item': case 'admin_delete_item': case 'admin_toggle_item': case 'get_service_givers': case 'admin_get_service_giver': case 'admin_get_service_giver_statistics': case 'admin_get_confirmations': case 'admin_force_confirm': case 'admin_backfill_order_service_giver_ids': case 'admin_update_order': case 'admin_get_order_receipt': case 'admin_analytics': case 'admin_ride_growth': case 'admin_backfill_cash_commission': case 'admin_topup_etel_money': case 'admin_get_pending_etel_topups': case 'admin_ride_payments': case 'admin_approve_etel_topup': case 'admin_reject_etel_topup': case 'admin_get_ride_fare_rules': case 'admin_update_ride_fare_rule': case 'admin_add_vehicle_type': case 'admin_delete_vehicle_type': case 'admin_update_ride_surge_multiplier': case 'admin_get_ride_peak_windows': case 'admin_update_ride_peak_windows': case 'admin_get_zones': case 'admin_update_zone': case 'admin_add_zone': case 'admin_delete_zone': case 'admin_list_role_permissions': case 'admin_update_role_permissions': case 'admin_delete_role_permissions': case 'admin_get_my_capabilities':
     case 'admin_get_delivery_tiers': case 'admin_update_delivery_tier':
     case 'admin_get_bank_accounts': case 'admin_update_bank_account': case 'admin_create_announcement': case 'admin_get_announcements': case 'admin_delete_announcement': case 'admin_get_launch_checklist_state': case 'admin_toggle_launch_checklist_item': case 'admin_get_ride_issues': case 'admin_resolve_ride_issue': case 'admin_get_order_issues': case 'admin_resolve_order_issue': case 'admin_get_sos_alerts': case 'admin_resolve_sos': case 'admin_get_goal_tiers': case 'admin_save_goal_tier': case 'admin_delete_goal_tier': case 'admin_run_system_test':
     case 'admin_list_release_channels': case 'admin_set_release_channel': case 'admin_promote_canary_to_stable': case 'admin_rollback_stable': case 'admin_add_canary_tester': case 'admin_remove_canary_tester': case 'admin_search_canary_candidates':

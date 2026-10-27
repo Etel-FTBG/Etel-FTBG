@@ -335,3 +335,96 @@ function etel_catalog_copy_menu($pdo, $from_sg, $to_sg, $opts = array()) {
     }
     return $res;
 }
+
+
+// ---- Admin bulk import of catalog dishes (Admin -> Menu catalog -> Import CSV) --------------------------------------
+// Pure: tidy one imported catalog row into array(ok(bool), clean(array)|reason(string)). Only a name is required.
+// Photo: image_url (an address starting with / or http) or image_file (a plain file name, kept in /delivery/img/menu/).
+function etel_catalog_clean_admin_row($r) {
+    if (!is_array($r)) return array(false, 'not a row');
+    $g = function ($k) use ($r) { return isset($r[$k]) ? trim((string)$r[$k]) : ''; };
+    $name = $g('name');
+    if ($name === '') return array(false, 'missing name');
+    $cat = strtolower($g('category'));
+    if ($cat === '') $cat = 'food';
+    if (!in_array($cat, etel_catalog_categories(), true)) return array(false, 'unknown category "' . substr($cat, 0, 20) . '"');
+    $status = strtolower($g('status'));
+    if ($status === '') $status = 'active';
+    if (!in_array($status, array('active', 'pending', 'hidden'), true)) return array(false, 'unknown status "' . substr($status, 0, 20) . '"');
+    $img = $g('image_url');
+    $photoMissing = false;
+    if ($img !== '' && !preg_match('#^(https?://|/)#i', $img)) return array(false, 'photo address must start with / or http');
+    if ($img === '' && $g('image_file') !== '') {
+        $f = $g('image_file');
+        if (!preg_match('/^[A-Za-z0-9][A-Za-z0-9._-]{0,80}\.(jpe?g|png|webp)$/i', $f)) return array(false, 'bad photo file name "' . substr($f, 0, 40) . '"');
+        // A photo is linked only when its file is really on the server, so shops never see a broken picture.
+        // Import again in "update" mode after uploading the photos to attach the rest.
+        if (is_file(dirname(__DIR__, 2) . '/img/menu/' . $f)) $img = '/delivery/img/menu/' . $f; else $photoMissing = true;
+    }
+    $prep = $g('prep_time');
+    $sort = $g('sort_order');
+    return array(true, array(
+        'name' => substr($name, 0, 150),
+        'name_am' => $g('name_am') !== '' ? substr($g('name_am'), 0, 150) : null,
+        'description' => $g('description'),
+        'description_am' => $g('description_am') !== '' ? $g('description_am') : null,
+        'category' => $cat,
+        'cuisine' => $g('cuisine') !== '' ? substr($g('cuisine'), 0, 40) : null,
+        'packs' => ($pk = etel_catalog_clean_packs($g('packs'))) !== '' ? $pk : null,
+        'image_url' => $img !== '' ? substr($img, 0, 500) : null,
+        'prep_time' => $prep !== '' ? max(1, min(240, (int)$prep)) : null,
+        'sort_order' => $sort !== '' && is_numeric($sort) ? max(0, min(100000, (int)$sort)) : null,
+        'status' => $status,
+        'photo_missing' => $photoMissing,
+    ));
+}
+
+// Adds many dishes at once. A dish already in the catalog (same name and category) is skipped, or updated when
+// $mode is 'update' (then only the columns the file filled in are changed). $dry = true does everything inside a
+// transaction and rolls it back, so the admin sees the exact result before anything is saved.
+// Returns array('added','updated','skipped','photos_missing','invalid'=>[{row,reason}],'dry_run').
+function etel_catalog_admin_import($pdo, $rows, $mode = 'skip', $dry = false) {
+    etel_ensure_catalog_schema($pdo);
+    $res = array('added' => 0, 'updated' => 0, 'skipped' => 0, 'photos_missing' => 0, 'invalid' => array(), 'dry_run' => (bool)$dry);
+    if (!is_array($rows)) return $res;
+    $rows = array_slice(array_values($rows), 0, 500);
+    $update = ($mode === 'update');
+    $find = $pdo->prepare('SELECT id FROM menu_catalog WHERE name = ? AND category = ?');
+    $ins = $pdo->prepare('INSERT INTO menu_catalog (name, name_am, description, description_am, category, cuisine, packs, image_url, prep_time, status, sort_order) VALUES (?,?,?,?,?,?,?,?,?,?,?)');
+    $own = !$pdo->inTransaction();
+    if ($own) $pdo->beginTransaction();
+    try {
+        $seen = array();
+        foreach ($rows as $i => $raw) {
+            $line = (is_array($raw) && isset($raw['_line'])) ? (int)$raw['_line'] : $i + 2;
+            $c = etel_catalog_clean_admin_row($raw);
+            if (!$c[0]) { $res['invalid'][] = array('row' => $line, 'reason' => $c[1]); continue; }
+            $d = $c[1];
+            if ($d['photo_missing']) $res['photos_missing']++;
+            $key = $d['category'] . '|' . etel_catalog_norm($d['name']);
+            if (isset($seen[$key])) { $res['skipped']++; continue; }
+            $seen[$key] = true;
+            $find->execute(array($d['name'], $d['category']));
+            $id = $find->fetchColumn();
+            if ($id) {
+                if (!$update) { $res['skipped']++; continue; }
+                $set = array(); $vals = array();
+                foreach (array('name_am', 'description', 'description_am', 'cuisine', 'packs', 'image_url', 'prep_time', 'sort_order', 'status') as $col) {
+                    if ($d[$col] === null || $d[$col] === '') continue;
+                    $set[] = "$col = ?"; $vals[] = $d[$col];
+                }
+                if ($set) { $vals[] = (int)$id; $pdo->prepare('UPDATE menu_catalog SET ' . implode(', ', $set) . ' WHERE id = ?')->execute($vals); }
+                $res['updated']++;
+            } else {
+                $ins->execute(array($d['name'], $d['name_am'], $d['description'], $d['description_am'], $d['category'], $d['cuisine'], $d['packs'],
+                                    $d['image_url'], $d['prep_time'] !== null ? $d['prep_time'] : 20, $d['status'], $d['sort_order'] !== null ? $d['sort_order'] : 100));
+                $res['added']++;
+            }
+        }
+        if ($own) { if ($dry) $pdo->rollBack(); else $pdo->commit(); }
+    } catch (Throwable $e) {
+        if ($own && $pdo->inTransaction()) $pdo->rollBack();
+        throw $e;
+    }
+    return $res;
+}
