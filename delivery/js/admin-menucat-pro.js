@@ -3,7 +3,7 @@
    approval, active, hidden), category chips, search, a card per dish with photo, both names, group, prep time and how
    many shops sell it, one-tap Approve for shop suggestions, and a guided side-panel form to add or edit a dish (with a
    live photo preview). "Copy a shop's menu" is a guided panel too. Hiding or deleting asks first.
-   Data: admin_catalog_list, admin_catalog_save, admin_catalog_delete, admin_catalog_copy (boot.php), and
+   Data: admin_catalog_list, admin_catalog_save, admin_catalog_delete, admin_catalog_copy, admin_catalog_import (boot.php; the CSV panel is js/admin-csv-import.js), and
    admin_get_service_givers for the shop pickers. Standalone: replaces loadMenuCatalog() so admin.js is not edited.
    Every server value goes through AdminKit.esc; no inline handlers. */
 (function () {
@@ -58,7 +58,7 @@ function paint() {
   var h = '<div class="ak">' + K.hero('Menu catalog', 'Common dishes every shop can pick from, so restaurants only type their own price. Approve the dishes shops suggest to add them for everyone.', [
       ['Dishes', K.num(c.all)], ['Waiting for approval', K.num(c.pending)], ['Used by shops', K.num(onShops)]]) + K.kpis(kp, V.filter) +
     '<div class="ak-tools"><label class="ak-search"><u>🔎</u><input id="mcp-q" type="search" placeholder="Dish, Amharic name or group…" value="' + esc(V.q) + '" autocomplete="off"></label>' +
-    '<button type="button" class="ak-btn" data-act="refresh" aria-label="Refresh">🔄</button><button type="button" class="ak-btn" data-act="copy">📋 Copy a shop\'s menu</button><button type="button" class="ak-btn gold" data-act="new">➕ New dish</button></div>' +
+    '<button type="button" class="ak-btn" data-act="refresh" aria-label="Refresh">🔄</button><button type="button" class="ak-btn" data-act="copy">📋 Copy a shop\'s menu</button><button type="button" class="ak-btn" data-act="import">📥 Import CSV</button><button type="button" class="ak-btn gold" data-act="new">➕ New dish</button></div>' +
     K.seg('cat', cats, V.cat) + '<div class="ak-count" style="margin-top:10px">' + K.num(rows.length) + ' of ' + K.num(V.rows.length) + ' dishes</div>';
   h += rows.length ? '<div class="ak-grid">' + shown.map(card).join('') + '</div>' + (rows.length > shown.length ? '<div style="text-align:center;margin-top:14px"><button type="button" class="ak-btn" data-act="more">Show more (' + K.num(rows.length - shown.length) + ' left)</button></div>' : '')
     : K.empty('📚', V.rows.length ? 'No dishes match' : 'The catalog is empty', V.rows.length ? 'Try clearing the filters.' : 'Use "New dish" to add the first one.');
@@ -168,6 +168,7 @@ function wire(el) {
     if (t.closest('[data-act="more"]')) { V.more++; paint(); return; }
     if (t.closest('[data-act="new"]')) { openDish(null); return; }
     if (t.closest('[data-act="copy"]')) { openCopy(); return; }
+    if (t.closest('[data-act="import"]')) { if (window.EtelCsvImport) window.EtelCsvImport.openCatalog(function () { load(true); }); else K.toast('The import is not available here.', true); return; }
     if ((b = t.closest('[data-edit]'))) { var r = find(b.getAttribute('data-edit')); if (r) openDish(r); return; }
     if ((b = t.closest('[data-approve]'))) {
       var a = find(b.getAttribute('data-approve')); if (!a) return;

@@ -558,6 +558,37 @@ case 'admin_add_item': {
     }
     break;
 }
+case 'admin_items_import': {
+    // POST service_giver_id, rows:[{name, price, [name_am], [category], [quality], [portion]}] (max 300), [dry_run]
+    // Loads a shop's whole menu from a CSV. Dishes whose name matches the shared catalog are linked to it; the rest become
+    // custom items. Dishes the shop already sells are skipped. dry_run saves nothing and shows the same counts.
+    $pdo = db();
+    $admin = require_admin($pdo, 'items.manage');
+    require_once __DIR__ . '/../lib/menu_catalog.php';
+    $sg_id = isset($body['service_giver_id']) ? intval($body['service_giver_id']) : 0;
+    if ($sg_id <= 0) fail('Choose the shop first', 400);
+    $rows = isset($body['rows']) ? $body['rows'] : null;
+    if (!is_array($rows) || !count($rows)) fail('The file has no rows to import', 400);
+    if (count($rows) > 300) fail('Import up to 300 items at a time', 400);
+    try {
+        $chk = $pdo->prepare('SELECT business_name FROM service_givers WHERE id = ?');
+        $chk->execute(array($sg_id));
+        $shop = $chk->fetchColumn();
+        if ($shop === false) fail('Shop not found', 404);
+        $dry = !empty($body['dry_run']);
+        etel_ensure_catalog_schema($pdo);
+        $pdo->beginTransaction();
+        try {
+            $res = etel_catalog_import_rows($pdo, $sg_id, $rows, 0);
+            if ($dry) $pdo->rollBack(); else $pdo->commit();
+        } catch (Throwable $e) { if ($pdo->inTransaction()) $pdo->rollBack(); throw $e; }
+        $res['dry_run'] = $dry;
+        $res['shop'] = (string)$shop;
+        ok($res);
+    } catch (Exception $e) { fail_ex($e, 'Could not import the items', 500); }
+    catch (Throwable $e) { fail_ex($e, 'Could not import the items', 500); }
+    break;
+}
 case 'admin_get_all_items': {
     // GET: (requires admin auth)  ?category=food&service_giver_id=X
     // Admin views all items

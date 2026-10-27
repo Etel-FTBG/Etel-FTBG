@@ -1,14 +1,14 @@
 # ETEL Delivery & Ride API reference
 
-Generated from the source by `tools/gen_api_docs.py` (438 actions). Machine-readable: `openapi.json`.
+Generated from the source by `tools/gen_api_docs.py` (484 actions). Machine-readable: `openapi.json`.
 
 **Call:** `POST /delivery/api/boot.php` with JSON `{"action": "<name>", ...fields}`; header `Authorization: Bearer <token>` for everything except the *public* actions.
 **Reply:** `{success, data, message, v}`. **Login:** `login` / `etelid_login` (apps) or `admin_etelid_login` (admin; add `totp_code` when the reply says `requires_2fa`).
 
 | Who can call | Actions |
 |---|---|
-| admin | 207 |
-| any signed-in user | 178 |
+| admin | 241 |
+| any signed-in user | 190 |
 | courier | 18 |
 | public | 13 |
 | public (this call signs you in) | 6 |
@@ -56,6 +56,7 @@ Generated from the source by `tools/gen_api_docs.py` (438 actions). Machine-read
 | `admin_get_sos_alerts` | admin · sos.view | - | `status` |
 | `admin_get_support_thread` | admin · orders.view | `user_id` | `user_id` |
 | `admin_get_zones` | admin · settings.view | - | - |
+| `admin_items_import` | admin · items.manage | `dry_run`, `rows`, `service_giver_id` | - |
 | `admin_list_etelpay_overrides` | admin · owner.only | - | - |
 | `admin_list_release_channels` | admin · owner.only | - | - |
 | `admin_list_role_permissions` | admin · owner.only | - | - |
@@ -69,7 +70,7 @@ Generated from the source by `tools/gen_api_docs.py` (438 actions). Machine-read
 | `admin_resolve_ride_issue` | admin · rides.manage | `id` | - |
 | `admin_resolve_sos` | admin · sos.manage | `id` | - |
 | `admin_ride_growth` | admin · analytics.view | `date_from`, `date_to` | - |
-| `admin_ride_payments` | admin · finance.view | - | - |
+| `admin_ride_payments` | admin · finance.view | `days` | - |
 | `admin_rollback_stable` | admin · owner.only | `app` | - |
 | `admin_run_code_audit` | admin · owner.only | `provider` | - |
 | `admin_run_system_test` | admin · rides.manage | - | - |
@@ -93,6 +94,12 @@ Generated from the source by `tools/gen_api_docs.py` (438 actions). Machine-read
 | `admin_update_zone` | admin · settings.manage | `active`, `base_fare`, `est_minutes`, `id`, `name`, `sort_order` | - |
 | `get_feature_flags` | public | - | - |
 | `get_service_givers` | admin · service_givers.view | - | `limit`, `status` |
+
+## AdminAttention
+
+| Action | Auth | Fields | Query |
+|---|---|---|---|
+| `admin_attention` | admin | - | - |
 
 ## Agent
 
@@ -139,7 +146,7 @@ Generated from the source by `tools/gen_api_docs.py` (438 actions). Machine-read
 
 | Action | Auth | Fields | Query |
 |---|---|---|---|
-| `courier_add_fuel_log` | public | `cost_etb`, `liters`, `odometer_km` | - |
+| `courier_add_fuel_log` | public | `client_req_id`, `cost_etb`, `liters`, `odometer_km` | - |
 | `courier_delete_fuel_log` | public | `id` | - |
 | `courier_get_fuel_summary` | public | `period` | `period` |
 | `courier_list_fuel_logs` | public | - | - |
@@ -160,6 +167,7 @@ Generated from the source by `tools/gen_api_docs.py` (438 actions). Machine-read
 | Action | Auth | Fields | Query |
 |---|---|---|---|
 | `admin_customer_get` | admin · users.view | `id` | `id` |
+| `admin_customer_set_active` | admin · users.manage | `active`, `id`, `reason` | - |
 | `admin_customers_list` | admin · users.view | `limit`, `q`, `sort` | `limit`, `q`, `sort` |
 
 ## Dispatch
@@ -205,11 +213,12 @@ Generated from the source by `tools/gen_api_docs.py` (438 actions). Machine-read
 | `equb_admin_create_package` | admin · equb.manage | `contribution_amount`, `description`, `frequency`, `max_members`, `name`, `payout_order`, `tier` | - |
 | `equb_admin_force_process_round` | admin · equb.manage | `group_id` | - |
 | `equb_admin_grant_access` | admin · equb.manage | `phone` | - |
+| `equb_admin_group_detail` | admin · equb.view | `group_id` | `group_id` |
 | `equb_admin_list_groups` | admin · equb.view | - | - |
 | `equb_admin_list_packages` | admin · equb.view | - | - |
 | `equb_admin_list_participants` | admin · equb.view | - | - |
 | `equb_admin_revoke_access` | admin · equb.manage | `user_id` | - |
-| `equb_admin_update_package` | admin · equb.manage | `active`, `id` | - |
+| `equb_admin_update_package` | admin · equb.manage | `active`, `contribution_amount`, `description`, `frequency`, `id`, `max_members`, `name`, `payout_order`, `tier` | - |
 | `equb_am_i_permitted` | any signed-in user | - | - |
 | `equb_create_group` | admin · equb.manage | `contribution_amount`, `frequency`, `max_members`, `name`, `payout_order` | - |
 | `equb_get_group_detail` | any signed-in user | `group_id` | `group_id` |
@@ -242,6 +251,12 @@ Generated from the source by `tools/gen_api_docs.py` (438 actions). Machine-read
 | `investor_portal_am_i_investor` | any signed-in user | - | - |
 | `investor_portal_get_my_growth_planner_data` | any signed-in user | - | - |
 | `investor_portal_get_my_view` | any signed-in user | - | - |
+
+## GlobalSearch
+
+| Action | Auth | Fields | Query |
+|---|---|---|---|
+| `admin_global_search` | admin | `per`, `q` | - |
 
 ## Integration
 
@@ -292,12 +307,12 @@ Generated from the source by `tools/gen_api_docs.py` (438 actions). Machine-read
 
 | Action | Auth | Fields | Query |
 |---|---|---|---|
-| `admin_confirm_bank_payment` | any signed-in user | `decision`, `payment_id` | - |
-| `admin_confirm_telebirr_payment` | any signed-in user | `decision`, `payment_id` | - |
-| `admin_financial_report` | any signed-in user | `days` | `days` |
-| `admin_list_bank_payments` | any signed-in user | - | - |
-| `admin_list_telebirr_payments` | any signed-in user | - | - |
-| `admin_set_payment_logo` | any signed-in user | `logo_url`, `method_key` | - |
+| `admin_confirm_bank_payment` | admin · finance.manage | `decision`, `payment_id` | - |
+| `admin_confirm_telebirr_payment` | admin · finance.manage | `decision`, `payment_id` | - |
+| `admin_financial_report` | admin · finance.view | `days` | `days` |
+| `admin_list_bank_payments` | admin · finance.view | - | - |
+| `admin_list_telebirr_payments` | admin · finance.view | - | - |
+| `admin_set_payment_logo` | admin · finance.manage | `logo_url`, `method_key` | - |
 | `cancel_scheduled_order` | any signed-in user | `scheduled_id` | - |
 | `check_delivery_confirmation` | courier | `order_id` | `order_id` |
 | `check_pickup_confirmation` | courier | `order_id` | `order_id` |
@@ -314,7 +329,7 @@ Generated from the source by `tools/gen_api_docs.py` (438 actions). Machine-read
 | `courier_go_offline` | courier | - | - |
 | `courier_go_online` | courier | `lat`, `lng` | - |
 | `courier_update_location` | courier | `lat`, `lng` | - |
-| `courier_update_order_status` | courier | `order_id`, `status` | - |
+| `courier_update_order_status` | courier | `occurred_at`, `order_id`, `status` | - |
 | `customer_add_address` | any signed-in user | `address_line`, `is_default`, `label`, `lat`, `lng`, `zone` | - |
 | `customer_cancel_order` | any signed-in user | `confirm_fee`, `note`, `order_id`, `reason` | - |
 | `customer_confirm_delivery` | any signed-in user | `confirm_payment_method`, `order_id`, `payment_confirmed`, `wallet_tx_ref` | - |
@@ -348,6 +363,13 @@ Generated from the source by `tools/gen_api_docs.py` (438 actions). Machine-read
 | `submit_order_issue` | any signed-in user | `category`, `details`, `order_id` | - |
 | `track_order` | any signed-in user | `order_code`, `order_id` | `order_code`, `order_id` |
 
+## OrderAdmin
+
+| Action | Auth | Fields | Query |
+|---|---|---|---|
+| `admin_order_detail` | admin · orders.view | `id` | `id` |
+| `admin_orders_board` | admin · orders.view | `limit`, `period`, `q`, `status` | - |
+
 ## Package
 
 | Action | Auth | Fields | Query |
@@ -361,6 +383,15 @@ Generated from the source by `tools/gen_api_docs.py` (438 actions). Machine-read
 | `customer_package_create` | any signed-in user | `_allow_chapa` | - |
 | `customer_package_options` | any signed-in user | - | - |
 | `customer_package_quote` | any signed-in user | `drop`, `pickup` | - |
+
+## PartnerAdmin
+
+| Action | Auth | Fields | Query |
+|---|---|---|---|
+| `admin_courier_detail` | admin · users.view | `id` | `id` |
+| `admin_couriers_board` | admin · users.view | - | - |
+| `admin_service_giver_detail` | admin · service_givers.view | `id` | `id` |
+| `admin_service_givers_board` | admin · service_givers.view | - | - |
 
 ## Photo
 
@@ -417,6 +448,8 @@ Generated from the source by `tools/gen_api_docs.py` (438 actions). Machine-read
 | `admin_approve_vehicle_change` | admin · rides.manage | `request_id` | - |
 | `admin_backup_download` | admin · system.backup | - | - |
 | `admin_cancel_ride` | admin · rides.manage | `ride_id` | - |
+| `admin_client_errors` | admin · rides.view | `days` | - |
+| `admin_client_errors_clear` | admin · rides.manage | `id` | - |
 | `admin_get_2fa_rule` | admin · system.backup | - | - |
 | `admin_get_drivers` | admin · users.view | `q` | `q`, `search` |
 | `admin_get_flagged_identities` | admin · users.manage | - | - |
@@ -431,6 +464,11 @@ Generated from the source by `tools/gen_api_docs.py` (438 actions). Machine-read
 | `admin_reject_compliance_document` | admin · users.manage | `reason`, `request_id` | - |
 | `admin_reject_driver_identity` | admin · users.manage | `reason`, `user_id` | - |
 | `admin_reject_vehicle_change` | admin · rides.manage | `reason`, `request_id` | - |
+| `admin_ride_promo_list` | admin · rides.view | `status` | `status` |
+| `admin_ride_promo_review` | admin · rides.manage | `decision`, `expires_at`, `id`, `max_discount`, `max_uses`, `min_fare`, `note`, `per_rider_limit`, `value` | - |
+| `admin_ride_promo_save` | admin · rides.manage | `code`, `description`, `discount_type`, `max_discount`, `max_uses`, `min_fare`, `per_rider_limit`, `value` | - |
+| `admin_ride_tip_list` | admin · rides.view | `status` | - |
+| `admin_ride_tip_review` | admin · rides.manage | `decision`, `id`, `note` | - |
 | `admin_ride_watch` | admin · rides.view | - | - |
 | `admin_set_2fa_required` | admin · system.backup | `required` | - |
 | `admin_set_ride_pin_required` | admin · system.backup | `required` | - |
@@ -438,7 +476,7 @@ Generated from the source by `tools/gen_api_docs.py` (438 actions). Machine-read
 | `admin_system_health` | admin · rides.view | - | - |
 | `admin_unsuspend_driver` | admin · users.manage | `user_id` | - |
 | `admin_update_driver_compliance` | admin · users.manage | `user_id` | - |
-| `book_ride` | any signed-in user | `dropoff_addr`, `dropoff_lat`, `dropoff_lng`, `manual_km`, `payment_method`, `pickup_addr`, `pickup_lat`, `pickup_lng`, `quote_token`, `route_km`, `vehicle_type` | - |
+| `book_ride` | any signed-in user | `dropoff_addr`, `dropoff_lat`, `dropoff_lng`, `manual_km`, `offer_fare`, `payment_method`, `pickup_addr`, `pickup_lat`, `pickup_lng`, `promo_code`, `quote_token`, `route_km`, `vehicle_type` | - |
 | `cancel_ride` | any signed-in user | `id`, `reason`, `ride_id` | - |
 | `customer_confirm_arrival` | any signed-in user | `payment_method`, `ride_id`, `wallet_tx_ref` | - |
 | `driver_accept_ride` | any signed-in user | `request_id` | - |
@@ -447,6 +485,8 @@ Generated from the source by `tools/gen_api_docs.py` (438 actions). Machine-read
 | `driver_cancel_ride` | any signed-in user | `ride_id` | - |
 | `driver_cashout` | any signed-in user | `amount` | - |
 | `driver_complete_ride` | any signed-in user | `ride_id` | - |
+| `driver_counter_offer` | any signed-in user | `price`, `request_id` | - |
+| `driver_decline_ride` | any signed-in user | `request_id` | - |
 | `driver_get_announcements` | any signed-in user | `category` | `category` |
 | `driver_get_compliance_status` | any signed-in user | - | - |
 | `driver_get_demand` | any signed-in user | `lat`, `lng` | - |
@@ -458,6 +498,8 @@ Generated from the source by `tools/gen_api_docs.py` (438 actions). Machine-read
 | `driver_get_profile` | any signed-in user | - | - |
 | `driver_get_referral_info` | any signed-in user | - | - |
 | `driver_get_ride_history` | any signed-in user | - | - |
+| `driver_get_statement` | any signed-in user | `week_start` | - |
+| `driver_get_tips` | any signed-in user | - | - |
 | `driver_get_topup_history` | any signed-in user | - | - |
 | `driver_go_offline` | any signed-in user | - | - |
 | `driver_go_online` | any signed-in user | `lat`, `lng` | - |
@@ -468,11 +510,12 @@ Generated from the source by `tools/gen_api_docs.py` (438 actions). Machine-read
 | `driver_submit_manual_topup` | any signed-in user | `amount`, `note`, `receipt_image_url` | - |
 | `driver_toggle_wait` | any signed-in user | `ride_id` | - |
 | `driver_topup_etel_money` | any signed-in user | `amount`, `receipt_image_url`, `tx_ref` | - |
-| `driver_update_location` | any signed-in user | `accuracy`, `lat`, `lng`, `ride_id` | - |
+| `driver_update_location` | any signed-in user | `accuracy`, `lat`, `lng`, `ride_id`, `speed` | - |
 | `driver_update_profile` | any signed-in user | `license_dob`, `license_name`, `license_photo_url`, `selfie_url`, `vehicle_plate`, `vehicle_type` | - |
 | `get_etelpay_merchant` | any signed-in user | - | - |
 | `get_ride_messages` | any signed-in user | `ride_id`, `since_id` | `ride_id`, `since_id` |
 | `get_ride_path` | any signed-in user | `ride_id` | - |
+| `hub_counts` | any signed-in user | - | - |
 | `my_active_ride` | any signed-in user | - | - |
 | `passenger_get_nearby_drivers` | any signed-in user | `lat`, `lng`, `radius_km`, `vehicle_type` | `lat`, `lng`, `radius_km`, `vehicle_type` |
 | `passenger_get_ride_history` | any signed-in user | - | - |
@@ -482,20 +525,31 @@ Generated from the source by `tools/gen_api_docs.py` (438 actions). Machine-read
 | `ride_add_favorite_route` | any signed-in user | `dropoff_address`, `dropoff_lat`, `dropoff_lng`, `label`, `pickup_address`, `pickup_lat`, `pickup_lng` | - |
 | `ride_cancel_scheduled` | any signed-in user | `id` | - |
 | `ride_chat_unread` | any signed-in user | `ride_id` | `ride_id` |
+| `ride_counter_accept` | any signed-in user | `counter_id`, `ride_id` | - |
+| `ride_counter_decline` | any signed-in user | `counter_id`, `ride_id` | - |
+| `ride_counter_list` | any signed-in user | `ride_id` | - |
 | `ride_delete_favorite_route` | any signed-in user | `id` | - |
 | `ride_estimate_fare` | any signed-in user | `distance_km`, `open_trip`, `vehicle_type` | `distance_km`, `open_trip`, `vehicle_type` |
 | `ride_get_favorite_routes` | any signed-in user | - | - |
 | `ride_get_messages` | any signed-in user | - | - |
 | `ride_get_scheduled` | any signed-in user | - | - |
 | `ride_get_share_link` | any signed-in user | `ride_id` | `ride_id` |
-| `ride_get_vehicle_types` | any signed-in user | - | - |
+| `ride_get_vehicle_types` | any signed-in user | `pickup_lat`, `pickup_lng` | `pickup_lat`, `pickup_lng` |
 | `ride_history` | any signed-in user | - | - |
+| `ride_offer_bounds` | any signed-in user | `fare` | - |
 | `ride_pin_get` | any signed-in user | - | - |
+| `ride_promo_check` | any signed-in user | `code`, `fare` | - |
+| `ride_promo_mine` | any signed-in user | - | - |
+| `ride_promo_propose` | any signed-in user | `code`, `description`, `discount_type`, `expires_at`, `max_discount`, `max_uses`, `min_fare`, `per_rider_limit`, `value` | - |
+| `ride_raise_offer` | any signed-in user | `offer`, `ride_id` | - |
 | `ride_receipt` | any signed-in user | `id` | - |
 | `ride_safety_checkin_missed` | any signed-in user | `ride_id` | - |
 | `ride_schedule` | any signed-in user | `dropoff_addr`, `dropoff_lat`, `dropoff_lng`, `payment_method`, `pickup_addr`, `pickup_lat`, `pickup_lng`, `route_km`, `scheduled_at`, `vehicle_type` | - |
 | `ride_status` | any signed-in user | `id` | `id` |
 | `ride_stop_sharing` | any signed-in user | `ride_id` | - |
+| `ride_tip_chapa_init` | any signed-in user | `amount`, `ride_id` | - |
+| `ride_tip_give` | any signed-in user | `amount`, `bank_key`, `note`, `payment_ref`, `ride_id` | - |
+| `ride_tip_info` | any signed-in user | `ride_id` | - |
 | `rider_get_announcements` | any signed-in user | - | - |
 | `rider_mark_announcement_read` | any signed-in user | `announcement_id` | - |
 | `send_ride_message` | any signed-in user | `body`, `ride_id` | - |
@@ -506,11 +560,14 @@ Generated from the source by `tools/gen_api_docs.py` (438 actions). Machine-read
 
 | Action | Auth | Fields | Query |
 |---|---|---|---|
-| `admin_list_payout_requests` | any signed-in user | - | - |
-| `admin_review_payout_request` | any signed-in user | `decision`, `note`, `request_id` | - |
-| `sg_accept_order` | any signed-in user | `order_id` | - |
+| `admin_list_payout_requests` | admin · finance.view | - | - |
+| `admin_review_payout_request` | admin · finance.manage | `decision`, `note`, `request_id` | - |
+| `admin_sg_set_business_tools` | admin · service_givers.manage | `enabled`, `id` | - |
+| `sg_accept_order` | any signed-in user | `client_req_id`, `order_id` | - |
 | `sg_add_item` | any signed-in user | `category`, `description`, `description_am`, `image_url`, `name`, `name_am`, `original_price`, `portion`, `preparation_time`, `price`, `quality`, `stock_quantity`, `suggest_catalog` | - |
 | `sg_add_staff` | any signed-in user | `name`, `password`, `phone`, `role_id` | - |
+| `sg_business_report` | any signed-in user | `from`, `to` | - |
+| `sg_business_state` | any signed-in user | - | - |
 | `sg_catalog_add` | any signed-in user | `picks` | - |
 | `sg_catalog_import` | any signed-in user | `rows` | - |
 | `sg_catalog_list` | any signed-in user | - | `category`, `q` |
@@ -527,6 +584,7 @@ Generated from the source by `tools/gen_api_docs.py` (438 actions). Machine-read
 | `sg_notifications` | any signed-in user | - | - |
 | `sg_order_detail` | any signed-in user | - | `order_id` |
 | `sg_orders` | any signed-in user | - | `status` |
+| `sg_pos_sync` | any signed-in user | `events` | - |
 | `sg_profile` | any signed-in user | - | - |
 | `sg_reject_order` | any signed-in user | `note`, `order_id`, `reason` | - |
 | `sg_remove_staff` | any signed-in user | `active`, `staff_id` | - |
@@ -539,8 +597,9 @@ Generated from the source by `tools/gen_api_docs.py` (438 actions). Machine-read
 | `sg_set_online` | any signed-in user | `is_online` | - |
 | `sg_sold_out` | any signed-in user | `item_id`, `sold_out` | - |
 | `sg_stats` | any signed-in user | - | - |
+| `sg_stock_history` | any signed-in user | `item_id` | - |
 | `sg_update_item` | any signed-in user | `description`, `description_am`, `image_url`, `is_available`, `item_id`, `name`, `name_am`, `original_price`, `portion`, `preparation_time`, `price`, `quality`, `stock_quantity` | - |
-| `sg_update_order_status` | any signed-in user | `new_status`, `order_id` | - |
+| `sg_update_order_status` | any signed-in user | `client_req_id`, `new_status`, `order_id` | - |
 | `sg_update_profile` | any signed-in user | `abysinia_account`, `abysinia_account_name`, `address`, `bank_account`, `business_name`, `cbe_account`, `cbe_account_name`, `city`, `cover_url`, `lat`, `lng`, `logo_url`, `payout_bank`, `service_type`, `sg_id`, `telebirr_account_name`, `telebirr_number`, `vehicle_plate`, `vehicle_type`, `zone` | `sg_id` |
 | `sg_update_staff_role` | any signed-in user | `role_id`, `staff_id` | - |
 
@@ -552,12 +611,24 @@ Generated from the source by `tools/gen_api_docs.py` (438 actions). Machine-read
 | `system_reset_execute` | admin · system.reset | `backup_token`, `confirm_phrase`, `keep_phones` | - |
 | `system_reset_preview` | admin · system.reset | `keep_phones` | - |
 
+## UserAdmin
+
+| Action | Auth | Fields | Query |
+|---|---|---|---|
+| `admin_courier_approval_mode` | admin | `require` | - |
+| `admin_courier_set_approval` | admin · users.manage | `id`, `note`, `status` | - |
+| `admin_people_list` | admin · users.view | `limit`, `q`, `role`, `sort`, `status` | - |
+| `admin_person_force_logout` | admin · users.manage | `id` | - |
+| `admin_person_get` | admin · users.view | `id` | `id` |
+| `admin_person_set_active` | admin · users.manage | `active`, `id`, `reason` | - |
+
 ## boot
 
 | Action | Auth | Fields | Query |
 |---|---|---|---|
 | `admin_catalog_copy` | admin · items.manage | `from_sg`, `include_hidden`, `percent`, `to_sg` | - |
 | `admin_catalog_delete` | admin · items.manage | `id` | - |
+| `admin_catalog_import` | admin · items.manage | `dry_run`, `mode`, `rows` | - |
 | `admin_catalog_list` | admin · items.manage | - | `q`, `status` |
 | `admin_catalog_save` | admin · items.manage | `category`, `cuisine`, `description`, `description_am`, `id`, `image_url`, `name`, `name_am`, `packs`, `prep_time`, `status` | - |
 | `admin_chat_threads` | admin · orders.view | `filter`, `q` | `filter`, `q` |
@@ -575,10 +646,10 @@ Generated from the source by `tools/gen_api_docs.py` (438 actions). Machine-read
 | `admin_purge_cache` | admin | - | - |
 | `admin_save_courier_offers` | admin · orders.manage | `max_attempts`, `seconds` | - |
 | `admin_save_promo` | admin · owner.only | `code`, `description`, `discount_type`, `first_order_only`, `id`, `is_active`, `max_discount`, `max_uses`, `min_subtotal`, `per_user_limit`, `value` | - |
-| `admin_suspend_service_giver` | admin | `id` | - |
+| `admin_suspend_service_giver` | admin · service_givers.manage | `id` | - |
 | `admin_toggle_promo` | admin · owner.only | `id`, `is_active` | - |
-| `admin_update_courier` | admin | `active`, `courier_id`, `home_zone`, `plate_number`, `vehicle_type`, `zone` | `active`, `courier_id`, `home_zone`, `plate_number`, `vehicle_type`, `zone` |
-| `admin_verify_service_giver` | admin | `id` | - |
+| `admin_update_courier` | admin · users.manage | `active`, `courier_id`, `home_zone`, `plate_number`, `vehicle_type`, `zone` | `active`, `courier_id`, `home_zone`, `plate_number`, `vehicle_type`, `zone` |
+| `admin_verify_service_giver` | admin · service_givers.manage | `id` | - |
 | `customer_loyalty` | any signed-in user | - | - |
 | `customer_validate_promo` | any signed-in user | `code`, `delivery_fee`, `subtotal` | - |
 | `etelid_member_detail` | service key (X-Etel-Service-Key) | `id` | `id`, `key` |
@@ -596,9 +667,9 @@ Generated from the source by `tools/gen_api_docs.py` (438 actions). Machine-read
 | `order_chat_send` | any signed-in user | `body`, `order_id` | - |
 | `reset_password` | public (this call signs you in) | `new_password`, `otp`, `phone`, `reset_token` | - |
 | `set_user_language` | admin | `lang` | `limit`, `status` |
-| `sse_admin_delivery_system_test` | any signed-in user | - | `id` |
-| `sse_admin_system_test` | any signed-in user | - | `id` |
-| `sse_driver_stream` | any signed-in user | `otp`, `phone` | `radius_km` |
-| `sse_ride_status` | any signed-in user | - | `id` |
+| `sse_admin_delivery_system_test` | any signed-in user | - | `id`, `once` |
+| `sse_admin_system_test` | any signed-in user | - | `id`, `once` |
+| `sse_driver_stream` | any signed-in user | `otp`, `phone` | `once`, `radius_km` |
+| `sse_ride_status` | any signed-in user | - | `id`, `once` |
 | `version_check` | public | - | - |
 

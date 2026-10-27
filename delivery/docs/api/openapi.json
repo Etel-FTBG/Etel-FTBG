@@ -3,7 +3,7 @@
  "info": {
   "title": "ETEL Delivery & Ride API",
   "version": "generated",
-  "description": "Every action is a JSON POST to /api/boot.php with an `action` field (a few read-only actions also accept GET query parameters). Responses are JSON: {success: true|false, data: {...}, message: '...', v: '<app version>'}. Send the session token as `Authorization: Bearer <token>`; get one from `login`, `etelid_login` (Delivery/Ride apps) or `admin_etelid_login` (admin). Admin accounts with two-step sign-in answer {requires_2fa: true}: repeat the same login request with `totp_code`. Errors use HTTP 400/401/403/404/409/429/500/503 with the same JSON shape. Throttled actions answer 429. This file is generated from the source by tools/gen_api_docs.py: 438 actions. Parameter names come from the handlers; types and limits are in the handler code."
+  "description": "Every action is a JSON POST to /api/boot.php with an `action` field (a few read-only actions also accept GET query parameters). Responses are JSON: {success: true|false, data: {...}, message: '...', v: '<app version>'}. Send the session token as `Authorization: Bearer <token>`; get one from `login`, `etelid_login` (Delivery/Ride apps) or `admin_etelid_login` (admin). Admin accounts with two-step sign-in answer {requires_2fa: true}: repeat the same login request with `totp_code`. Errors use HTTP 400/401/403/404/409/429/500/503 with the same JSON shape. Throttled actions answer 429. This file is generated from the source by tools/gen_api_docs.py: 484 actions. Parameter names come from the handlers; types and limits are in the handler code."
  },
  "servers": [
   {
@@ -65,6 +65,9 @@
           "$ref": "#/components/schemas/admin_assign_service_giver"
          },
          {
+          "$ref": "#/components/schemas/admin_attention"
+         },
+         {
           "$ref": "#/components/schemas/admin_backfill_cash_commission"
          },
          {
@@ -89,6 +92,9 @@
           "$ref": "#/components/schemas/admin_catalog_delete"
          },
          {
+          "$ref": "#/components/schemas/admin_catalog_import"
+         },
+         {
           "$ref": "#/components/schemas/admin_catalog_list"
          },
          {
@@ -98,13 +104,31 @@
           "$ref": "#/components/schemas/admin_chat_threads"
          },
          {
+          "$ref": "#/components/schemas/admin_client_errors"
+         },
+         {
+          "$ref": "#/components/schemas/admin_client_errors_clear"
+         },
+         {
           "$ref": "#/components/schemas/admin_confirm_bank_payment"
          },
          {
           "$ref": "#/components/schemas/admin_confirm_telebirr_payment"
          },
          {
+          "$ref": "#/components/schemas/admin_courier_approval_mode"
+         },
+         {
           "$ref": "#/components/schemas/admin_courier_cash_report"
+         },
+         {
+          "$ref": "#/components/schemas/admin_courier_detail"
+         },
+         {
+          "$ref": "#/components/schemas/admin_courier_set_approval"
+         },
+         {
+          "$ref": "#/components/schemas/admin_couriers_board"
          },
          {
           "$ref": "#/components/schemas/admin_create_announcement"
@@ -117,6 +141,9 @@
          },
          {
           "$ref": "#/components/schemas/admin_customer_get"
+         },
+         {
+          "$ref": "#/components/schemas/admin_customer_set_active"
          },
          {
           "$ref": "#/components/schemas/admin_customers_list"
@@ -293,6 +320,9 @@
           "$ref": "#/components/schemas/admin_get_zones"
          },
          {
+          "$ref": "#/components/schemas/admin_global_search"
+         },
+         {
           "$ref": "#/components/schemas/admin_integrations_add"
          },
          {
@@ -306,6 +336,9 @@
          },
          {
           "$ref": "#/components/schemas/admin_integrations_test"
+         },
+         {
+          "$ref": "#/components/schemas/admin_items_import"
          },
          {
           "$ref": "#/components/schemas/admin_list_bank_payments"
@@ -344,6 +377,12 @@
           "$ref": "#/components/schemas/admin_mark_order_paid"
          },
          {
+          "$ref": "#/components/schemas/admin_order_detail"
+         },
+         {
+          "$ref": "#/components/schemas/admin_orders_board"
+         },
+         {
           "$ref": "#/components/schemas/admin_package_rates_get"
          },
          {
@@ -354,6 +393,18 @@
          },
          {
           "$ref": "#/components/schemas/admin_package_type_add"
+         },
+         {
+          "$ref": "#/components/schemas/admin_people_list"
+         },
+         {
+          "$ref": "#/components/schemas/admin_person_force_logout"
+         },
+         {
+          "$ref": "#/components/schemas/admin_person_get"
+         },
+         {
+          "$ref": "#/components/schemas/admin_person_set_active"
          },
          {
           "$ref": "#/components/schemas/admin_photo_coverage"
@@ -422,6 +473,21 @@
           "$ref": "#/components/schemas/admin_ride_payments"
          },
          {
+          "$ref": "#/components/schemas/admin_ride_promo_list"
+         },
+         {
+          "$ref": "#/components/schemas/admin_ride_promo_review"
+         },
+         {
+          "$ref": "#/components/schemas/admin_ride_promo_save"
+         },
+         {
+          "$ref": "#/components/schemas/admin_ride_tip_list"
+         },
+         {
+          "$ref": "#/components/schemas/admin_ride_tip_review"
+         },
+         {
           "$ref": "#/components/schemas/admin_ride_watch"
          },
          {
@@ -455,6 +521,12 @@
           "$ref": "#/components/schemas/admin_search_canary_candidates"
          },
          {
+          "$ref": "#/components/schemas/admin_service_giver_detail"
+         },
+         {
+          "$ref": "#/components/schemas/admin_service_givers_board"
+         },
+         {
           "$ref": "#/components/schemas/admin_set_2fa_required"
          },
          {
@@ -474,6 +546,9 @@
          },
          {
           "$ref": "#/components/schemas/admin_set_shop_branding"
+         },
+         {
+          "$ref": "#/components/schemas/admin_sg_set_business_tools"
          },
          {
           "$ref": "#/components/schemas/admin_suspend_driver"
@@ -752,6 +827,12 @@
           "$ref": "#/components/schemas/driver_complete_ride"
          },
          {
+          "$ref": "#/components/schemas/driver_counter_offer"
+         },
+         {
+          "$ref": "#/components/schemas/driver_decline_ride"
+         },
+         {
           "$ref": "#/components/schemas/driver_delete_fuel_log"
          },
          {
@@ -789,6 +870,12 @@
          },
          {
           "$ref": "#/components/schemas/driver_get_ride_history"
+         },
+         {
+          "$ref": "#/components/schemas/driver_get_statement"
+         },
+         {
+          "$ref": "#/components/schemas/driver_get_tips"
          },
          {
           "$ref": "#/components/schemas/driver_get_topup_history"
@@ -840,6 +927,9 @@
          },
          {
           "$ref": "#/components/schemas/equb_admin_grant_access"
+         },
+         {
+          "$ref": "#/components/schemas/equb_admin_group_detail"
          },
          {
           "$ref": "#/components/schemas/equb_admin_list_groups"
@@ -992,6 +1082,9 @@
           "$ref": "#/components/schemas/get_zones"
          },
          {
+          "$ref": "#/components/schemas/hub_counts"
+         },
+         {
           "$ref": "#/components/schemas/initiate_telebirr_payment"
          },
          {
@@ -1127,6 +1220,15 @@
           "$ref": "#/components/schemas/ride_chat_unread"
          },
          {
+          "$ref": "#/components/schemas/ride_counter_accept"
+         },
+         {
+          "$ref": "#/components/schemas/ride_counter_decline"
+         },
+         {
+          "$ref": "#/components/schemas/ride_counter_list"
+         },
+         {
           "$ref": "#/components/schemas/ride_delete_favorite_route"
          },
          {
@@ -1151,7 +1253,22 @@
           "$ref": "#/components/schemas/ride_history"
          },
          {
+          "$ref": "#/components/schemas/ride_offer_bounds"
+         },
+         {
           "$ref": "#/components/schemas/ride_pin_get"
+         },
+         {
+          "$ref": "#/components/schemas/ride_promo_check"
+         },
+         {
+          "$ref": "#/components/schemas/ride_promo_mine"
+         },
+         {
+          "$ref": "#/components/schemas/ride_promo_propose"
+         },
+         {
+          "$ref": "#/components/schemas/ride_raise_offer"
          },
          {
           "$ref": "#/components/schemas/ride_receipt"
@@ -1167,6 +1284,15 @@
          },
          {
           "$ref": "#/components/schemas/ride_stop_sharing"
+         },
+         {
+          "$ref": "#/components/schemas/ride_tip_chapa_init"
+         },
+         {
+          "$ref": "#/components/schemas/ride_tip_give"
+         },
+         {
+          "$ref": "#/components/schemas/ride_tip_info"
          },
          {
           "$ref": "#/components/schemas/rider_get_announcements"
@@ -1200,6 +1326,12 @@
          },
          {
           "$ref": "#/components/schemas/sg_add_staff"
+         },
+         {
+          "$ref": "#/components/schemas/sg_business_report"
+         },
+         {
+          "$ref": "#/components/schemas/sg_business_state"
          },
          {
           "$ref": "#/components/schemas/sg_catalog_add"
@@ -1259,6 +1391,9 @@
           "$ref": "#/components/schemas/sg_pending_confirmations"
          },
          {
+          "$ref": "#/components/schemas/sg_pos_sync"
+         },
+         {
           "$ref": "#/components/schemas/sg_profile"
          },
          {
@@ -1293,6 +1428,9 @@
          },
          {
           "$ref": "#/components/schemas/sg_stats"
+         },
+         {
+          "$ref": "#/components/schemas/sg_stock_history"
          },
          {
           "$ref": "#/components/schemas/sg_update_item"
@@ -1443,6 +1581,12 @@
           "service_giver_id": "<service_giver_id>"
          }
         },
+        "admin_attention": {
+         "summary": "admin_attention (admin)",
+         "value": {
+          "action": "admin_attention"
+         }
+        },
         "admin_backfill_cash_commission": {
          "summary": "admin_backfill_cash_commission (admin)",
          "value": {
@@ -1503,6 +1647,15 @@
           "id": "<id>"
          }
         },
+        "admin_catalog_import": {
+         "summary": "admin_catalog_import (admin)",
+         "value": {
+          "action": "admin_catalog_import",
+          "dry_run": "<dry_run>",
+          "mode": "<mode>",
+          "rows": "<rows>"
+         }
+        },
         "admin_catalog_list": {
          "summary": "admin_catalog_list (admin)",
          "value": {
@@ -1529,8 +1682,22 @@
           "q": "<q>"
          }
         },
+        "admin_client_errors": {
+         "summary": "admin_client_errors (admin)",
+         "value": {
+          "action": "admin_client_errors",
+          "days": "<days>"
+         }
+        },
+        "admin_client_errors_clear": {
+         "summary": "admin_client_errors_clear (admin)",
+         "value": {
+          "action": "admin_client_errors_clear",
+          "id": "<id>"
+         }
+        },
         "admin_confirm_bank_payment": {
-         "summary": "admin_confirm_bank_payment (any signed-in user)",
+         "summary": "admin_confirm_bank_payment (admin)",
          "value": {
           "action": "admin_confirm_bank_payment",
           "decision": "<decision>",
@@ -1538,17 +1705,46 @@
          }
         },
         "admin_confirm_telebirr_payment": {
-         "summary": "admin_confirm_telebirr_payment (any signed-in user)",
+         "summary": "admin_confirm_telebirr_payment (admin)",
          "value": {
           "action": "admin_confirm_telebirr_payment",
           "decision": "<decision>",
           "payment_id": "<payment_id>"
          }
         },
+        "admin_courier_approval_mode": {
+         "summary": "admin_courier_approval_mode (admin)",
+         "value": {
+          "action": "admin_courier_approval_mode",
+          "require": "<require>"
+         }
+        },
         "admin_courier_cash_report": {
          "summary": "admin_courier_cash_report (admin)",
          "value": {
           "action": "admin_courier_cash_report"
+         }
+        },
+        "admin_courier_detail": {
+         "summary": "admin_courier_detail (admin)",
+         "value": {
+          "action": "admin_courier_detail",
+          "id": "<id>"
+         }
+        },
+        "admin_courier_set_approval": {
+         "summary": "admin_courier_set_approval (admin)",
+         "value": {
+          "action": "admin_courier_set_approval",
+          "id": "<id>",
+          "note": "<note>",
+          "status": "<status>"
+         }
+        },
+        "admin_couriers_board": {
+         "summary": "admin_couriers_board (admin)",
+         "value": {
+          "action": "admin_couriers_board"
          }
         },
         "admin_create_announcement": {
@@ -1588,6 +1784,15 @@
          "value": {
           "action": "admin_customer_get",
           "id": "<id>"
+         }
+        },
+        "admin_customer_set_active": {
+         "summary": "admin_customer_set_active (admin)",
+         "value": {
+          "action": "admin_customer_set_active",
+          "active": "<active>",
+          "id": "<id>",
+          "reason": "<reason>"
          }
         },
         "admin_customers_list": {
@@ -1740,7 +1945,7 @@
          }
         },
         "admin_financial_report": {
-         "summary": "admin_financial_report (any signed-in user)",
+         "summary": "admin_financial_report (admin)",
          "value": {
           "action": "admin_financial_report",
           "days": "<days>"
@@ -1986,6 +2191,14 @@
           "action": "admin_get_zones"
          }
         },
+        "admin_global_search": {
+         "summary": "admin_global_search (admin)",
+         "value": {
+          "action": "admin_global_search",
+          "per": "<per>",
+          "q": "<q>"
+         }
+        },
         "admin_integrations_add": {
          "summary": "admin_integrations_add (admin)",
          "value": {
@@ -2022,8 +2235,17 @@
           "provider": "<provider>"
          }
         },
+        "admin_items_import": {
+         "summary": "admin_items_import (admin)",
+         "value": {
+          "action": "admin_items_import",
+          "dry_run": "<dry_run>",
+          "rows": "<rows>",
+          "service_giver_id": "<service_giver_id>"
+         }
+        },
         "admin_list_bank_payments": {
-         "summary": "admin_list_bank_payments (any signed-in user)",
+         "summary": "admin_list_bank_payments (admin)",
          "value": {
           "action": "admin_list_bank_payments"
          }
@@ -2048,7 +2270,7 @@
          }
         },
         "admin_list_payout_requests": {
-         "summary": "admin_list_payout_requests (any signed-in user)",
+         "summary": "admin_list_payout_requests (admin)",
          "value": {
           "action": "admin_list_payout_requests"
          }
@@ -2079,7 +2301,7 @@
          }
         },
         "admin_list_telebirr_payments": {
-         "summary": "admin_list_telebirr_payments (any signed-in user)",
+         "summary": "admin_list_telebirr_payments (admin)",
          "value": {
           "action": "admin_list_telebirr_payments"
          }
@@ -2102,6 +2324,23 @@
           "action": "admin_mark_order_paid",
           "note": "<note>",
           "order_ids": "<order_ids>"
+         }
+        },
+        "admin_order_detail": {
+         "summary": "admin_order_detail (admin)",
+         "value": {
+          "action": "admin_order_detail",
+          "id": "<id>"
+         }
+        },
+        "admin_orders_board": {
+         "summary": "admin_orders_board (admin)",
+         "value": {
+          "action": "admin_orders_board",
+          "limit": "<limit>",
+          "period": "<period>",
+          "q": "<q>",
+          "status": "<status>"
          }
         },
         "admin_package_rates_get": {
@@ -2129,6 +2368,40 @@
          "summary": "admin_package_type_add (admin)",
          "value": {
           "action": "admin_package_type_add"
+         }
+        },
+        "admin_people_list": {
+         "summary": "admin_people_list (admin)",
+         "value": {
+          "action": "admin_people_list",
+          "limit": "<limit>",
+          "q": "<q>",
+          "role": "<role>",
+          "sort": "<sort>",
+          "status": "<status>"
+         }
+        },
+        "admin_person_force_logout": {
+         "summary": "admin_person_force_logout (admin)",
+         "value": {
+          "action": "admin_person_force_logout",
+          "id": "<id>"
+         }
+        },
+        "admin_person_get": {
+         "summary": "admin_person_get (admin)",
+         "value": {
+          "action": "admin_person_get",
+          "id": "<id>"
+         }
+        },
+        "admin_person_set_active": {
+         "summary": "admin_person_set_active (admin)",
+         "value": {
+          "action": "admin_person_set_active",
+          "active": "<active>",
+          "id": "<id>",
+          "reason": "<reason>"
          }
         },
         "admin_photo_coverage": {
@@ -2277,7 +2550,7 @@
          }
         },
         "admin_review_payout_request": {
-         "summary": "admin_review_payout_request (any signed-in user)",
+         "summary": "admin_review_payout_request (admin)",
          "value": {
           "action": "admin_review_payout_request",
           "decision": "<decision>",
@@ -2296,7 +2569,55 @@
         "admin_ride_payments": {
          "summary": "admin_ride_payments (admin)",
          "value": {
-          "action": "admin_ride_payments"
+          "action": "admin_ride_payments",
+          "days": "<days>"
+         }
+        },
+        "admin_ride_promo_list": {
+         "summary": "admin_ride_promo_list (admin)",
+         "value": {
+          "action": "admin_ride_promo_list",
+          "status": "<status>"
+         }
+        },
+        "admin_ride_promo_review": {
+         "summary": "admin_ride_promo_review (admin)",
+         "value": {
+          "action": "admin_ride_promo_review",
+          "decision": "<decision>",
+          "expires_at": "<expires_at>",
+          "id": "<id>",
+          "max_discount": "<max_discount>",
+          "max_uses": "<max_uses>",
+          "min_fare": "<min_fare>"
+         }
+        },
+        "admin_ride_promo_save": {
+         "summary": "admin_ride_promo_save (admin)",
+         "value": {
+          "action": "admin_ride_promo_save",
+          "code": "<code>",
+          "description": "<description>",
+          "discount_type": "<discount_type>",
+          "max_discount": "<max_discount>",
+          "max_uses": "<max_uses>",
+          "min_fare": "<min_fare>"
+         }
+        },
+        "admin_ride_tip_list": {
+         "summary": "admin_ride_tip_list (admin)",
+         "value": {
+          "action": "admin_ride_tip_list",
+          "status": "<status>"
+         }
+        },
+        "admin_ride_tip_review": {
+         "summary": "admin_ride_tip_review (admin)",
+         "value": {
+          "action": "admin_ride_tip_review",
+          "decision": "<decision>",
+          "id": "<id>",
+          "note": "<note>"
          }
         },
         "admin_ride_watch": {
@@ -2388,6 +2709,19 @@
           "q": "<q>"
          }
         },
+        "admin_service_giver_detail": {
+         "summary": "admin_service_giver_detail (admin)",
+         "value": {
+          "action": "admin_service_giver_detail",
+          "id": "<id>"
+         }
+        },
+        "admin_service_givers_board": {
+         "summary": "admin_service_givers_board (admin)",
+         "value": {
+          "action": "admin_service_givers_board"
+         }
+        },
         "admin_set_2fa_required": {
          "summary": "admin_set_2fa_required (admin)",
          "value": {
@@ -2415,7 +2749,7 @@
          }
         },
         "admin_set_payment_logo": {
-         "summary": "admin_set_payment_logo (any signed-in user)",
+         "summary": "admin_set_payment_logo (admin)",
          "value": {
           "action": "admin_set_payment_logo",
           "logo_url": "<logo_url>",
@@ -2443,6 +2777,14 @@
          "value": {
           "action": "admin_set_shop_branding",
           "service_giver_id": "<service_giver_id>"
+         }
+        },
+        "admin_sg_set_business_tools": {
+         "summary": "admin_sg_set_business_tools (admin)",
+         "value": {
+          "action": "admin_sg_set_business_tools",
+          "enabled": "<enabled>",
+          "id": "<id>"
          }
         },
         "admin_suspend_driver": {
@@ -2722,8 +3064,8 @@
           "dropoff_lat": "<dropoff_lat>",
           "dropoff_lng": "<dropoff_lng>",
           "manual_km": "<manual_km>",
-          "payment_method": "<payment_method>",
-          "pickup_addr": "<pickup_addr>"
+          "offer_fare": "<offer_fare>",
+          "payment_method": "<payment_method>"
          }
         },
         "cancel_ride": {
@@ -2814,6 +3156,7 @@
          "summary": "courier_add_fuel_log (public)",
          "value": {
           "action": "courier_add_fuel_log",
+          "client_req_id": "<client_req_id>",
           "cost_etb": "<cost_etb>",
           "liters": "<liters>",
           "odometer_km": "<odometer_km>"
@@ -2919,6 +3262,7 @@
          "summary": "courier_update_order_status (courier)",
          "value": {
           "action": "courier_update_order_status",
+          "occurred_at": "<occurred_at>",
           "order_id": "<order_id>",
           "status": "<status>"
          }
@@ -3165,6 +3509,21 @@
           "ride_id": "<ride_id>"
          }
         },
+        "driver_counter_offer": {
+         "summary": "driver_counter_offer (any signed-in user)",
+         "value": {
+          "action": "driver_counter_offer",
+          "price": "<price>",
+          "request_id": "<request_id>"
+         }
+        },
+        "driver_decline_ride": {
+         "summary": "driver_decline_ride (any signed-in user)",
+         "value": {
+          "action": "driver_decline_ride",
+          "request_id": "<request_id>"
+         }
+        },
         "driver_delete_fuel_log": {
          "summary": "driver_delete_fuel_log (any signed-in user)",
          "value": {
@@ -3249,6 +3608,19 @@
          "summary": "driver_get_ride_history (any signed-in user)",
          "value": {
           "action": "driver_get_ride_history"
+         }
+        },
+        "driver_get_statement": {
+         "summary": "driver_get_statement (any signed-in user)",
+         "value": {
+          "action": "driver_get_statement",
+          "week_start": "<week_start>"
+         }
+        },
+        "driver_get_tips": {
+         "summary": "driver_get_tips (any signed-in user)",
+         "value": {
+          "action": "driver_get_tips"
          }
         },
         "driver_get_topup_history": {
@@ -3344,7 +3716,8 @@
           "accuracy": "<accuracy>",
           "lat": "<lat>",
           "lng": "<lng>",
-          "ride_id": "<ride_id>"
+          "ride_id": "<ride_id>",
+          "speed": "<speed>"
          }
         },
         "driver_update_profile": {
@@ -3393,6 +3766,13 @@
           "phone": "<phone>"
          }
         },
+        "equb_admin_group_detail": {
+         "summary": "equb_admin_group_detail (admin)",
+         "value": {
+          "action": "equb_admin_group_detail",
+          "group_id": "<group_id>"
+         }
+        },
         "equb_admin_list_groups": {
          "summary": "equb_admin_list_groups (admin)",
          "value": {
@@ -3423,7 +3803,11 @@
          "value": {
           "action": "equb_admin_update_package",
           "active": "<active>",
-          "id": "<id>"
+          "contribution_amount": "<contribution_amount>",
+          "description": "<description>",
+          "frequency": "<frequency>",
+          "id": "<id>",
+          "max_members": "<max_members>"
          }
         },
         "equb_am_i_permitted": {
@@ -3741,6 +4125,12 @@
          "summary": "get_zones (public)",
          "value": {
           "action": "get_zones"
+         }
+        },
+        "hub_counts": {
+         "summary": "hub_counts (any signed-in user)",
+         "value": {
+          "action": "hub_counts"
          }
         },
         "initiate_telebirr_payment": {
@@ -4104,6 +4494,29 @@
           "ride_id": "<ride_id>"
          }
         },
+        "ride_counter_accept": {
+         "summary": "ride_counter_accept (any signed-in user)",
+         "value": {
+          "action": "ride_counter_accept",
+          "counter_id": "<counter_id>",
+          "ride_id": "<ride_id>"
+         }
+        },
+        "ride_counter_decline": {
+         "summary": "ride_counter_decline (any signed-in user)",
+         "value": {
+          "action": "ride_counter_decline",
+          "counter_id": "<counter_id>",
+          "ride_id": "<ride_id>"
+         }
+        },
+        "ride_counter_list": {
+         "summary": "ride_counter_list (any signed-in user)",
+         "value": {
+          "action": "ride_counter_list",
+          "ride_id": "<ride_id>"
+         }
+        },
         "ride_delete_favorite_route": {
          "summary": "ride_delete_favorite_route (any signed-in user)",
          "value": {
@@ -4148,7 +4561,9 @@
         "ride_get_vehicle_types": {
          "summary": "ride_get_vehicle_types (any signed-in user)",
          "value": {
-          "action": "ride_get_vehicle_types"
+          "action": "ride_get_vehicle_types",
+          "pickup_lat": "<pickup_lat>",
+          "pickup_lng": "<pickup_lng>"
          }
         },
         "ride_history": {
@@ -4157,10 +4572,51 @@
           "action": "ride_history"
          }
         },
+        "ride_offer_bounds": {
+         "summary": "ride_offer_bounds (any signed-in user)",
+         "value": {
+          "action": "ride_offer_bounds",
+          "fare": "<fare>"
+         }
+        },
         "ride_pin_get": {
          "summary": "ride_pin_get (any signed-in user)",
          "value": {
           "action": "ride_pin_get"
+         }
+        },
+        "ride_promo_check": {
+         "summary": "ride_promo_check (any signed-in user)",
+         "value": {
+          "action": "ride_promo_check",
+          "code": "<code>",
+          "fare": "<fare>"
+         }
+        },
+        "ride_promo_mine": {
+         "summary": "ride_promo_mine (any signed-in user)",
+         "value": {
+          "action": "ride_promo_mine"
+         }
+        },
+        "ride_promo_propose": {
+         "summary": "ride_promo_propose (any signed-in user)",
+         "value": {
+          "action": "ride_promo_propose",
+          "code": "<code>",
+          "description": "<description>",
+          "discount_type": "<discount_type>",
+          "expires_at": "<expires_at>",
+          "max_discount": "<max_discount>",
+          "max_uses": "<max_uses>"
+         }
+        },
+        "ride_raise_offer": {
+         "summary": "ride_raise_offer (any signed-in user)",
+         "value": {
+          "action": "ride_raise_offer",
+          "offer": "<offer>",
+          "ride_id": "<ride_id>"
          }
         },
         "ride_receipt": {
@@ -4200,6 +4656,32 @@
          "summary": "ride_stop_sharing (any signed-in user)",
          "value": {
           "action": "ride_stop_sharing",
+          "ride_id": "<ride_id>"
+         }
+        },
+        "ride_tip_chapa_init": {
+         "summary": "ride_tip_chapa_init (any signed-in user)",
+         "value": {
+          "action": "ride_tip_chapa_init",
+          "amount": "<amount>",
+          "ride_id": "<ride_id>"
+         }
+        },
+        "ride_tip_give": {
+         "summary": "ride_tip_give (any signed-in user)",
+         "value": {
+          "action": "ride_tip_give",
+          "amount": "<amount>",
+          "bank_key": "<bank_key>",
+          "note": "<note>",
+          "payment_ref": "<payment_ref>",
+          "ride_id": "<ride_id>"
+         }
+        },
+        "ride_tip_info": {
+         "summary": "ride_tip_info (any signed-in user)",
+         "value": {
+          "action": "ride_tip_info",
           "ride_id": "<ride_id>"
          }
         },
@@ -4265,6 +4747,7 @@
          "summary": "sg_accept_order (any signed-in user)",
          "value": {
           "action": "sg_accept_order",
+          "client_req_id": "<client_req_id>",
           "order_id": "<order_id>"
          }
         },
@@ -4288,6 +4771,20 @@
           "password": "<password>",
           "phone": "<phone>",
           "role_id": "<role_id>"
+         }
+        },
+        "sg_business_report": {
+         "summary": "sg_business_report (any signed-in user)",
+         "value": {
+          "action": "sg_business_report",
+          "from": "<from>",
+          "to": "<to>"
+         }
+        },
+        "sg_business_state": {
+         "summary": "sg_business_state (any signed-in user)",
+         "value": {
+          "action": "sg_business_state"
          }
         },
         "sg_catalog_add": {
@@ -4417,6 +4914,13 @@
           "action": "sg_pending_confirmations"
          }
         },
+        "sg_pos_sync": {
+         "summary": "sg_pos_sync (any signed-in user)",
+         "value": {
+          "action": "sg_pos_sync",
+          "events": "<events>"
+         }
+        },
         "sg_profile": {
          "summary": "sg_profile (any signed-in user)",
          "value": {
@@ -4509,6 +5013,13 @@
           "action": "sg_stats"
          }
         },
+        "sg_stock_history": {
+         "summary": "sg_stock_history (any signed-in user)",
+         "value": {
+          "action": "sg_stock_history",
+          "item_id": "<item_id>"
+         }
+        },
         "sg_update_item": {
          "summary": "sg_update_item (any signed-in user)",
          "value": {
@@ -4525,6 +5036,7 @@
          "summary": "sg_update_order_status (any signed-in user)",
          "value": {
           "action": "sg_update_order_status",
+          "client_req_id": "<client_req_id>",
           "new_status": "<new_status>",
           "order_id": "<order_id>"
          }
@@ -4954,6 +5466,22 @@
     },
     "description": "Auth: admin (capability service_givers.manage). Source: api/controllers/AdminController.php."
    },
+   "admin_attention": {
+    "type": "object",
+    "title": "action: admin_attention",
+    "required": [
+     "action"
+    ],
+    "properties": {
+     "action": {
+      "type": "string",
+      "enum": [
+       "admin_attention"
+      ]
+     }
+    },
+    "description": "Auth: admin. Source: api/controllers/AdminAttentionController.php."
+   },
    "admin_backfill_cash_commission": {
     "type": "object",
     "title": "action: admin_backfill_cash_commission",
@@ -5118,6 +5646,31 @@
     },
     "description": "Auth: admin (capability items.manage). Source: api/boot.php."
    },
+   "admin_catalog_import": {
+    "type": "object",
+    "title": "action: admin_catalog_import",
+    "required": [
+     "action"
+    ],
+    "properties": {
+     "action": {
+      "type": "string",
+      "enum": [
+       "admin_catalog_import"
+      ]
+     },
+     "dry_run": {
+      "description": "request field (type not declared in code)"
+     },
+     "mode": {
+      "description": "request field (type not declared in code)"
+     },
+     "rows": {
+      "description": "request field (type not declared in code)"
+     }
+    },
+    "description": "Auth: admin (capability items.manage). Source: api/boot.php."
+   },
    "admin_catalog_list": {
     "type": "object",
     "title": "action: admin_catalog_list",
@@ -5205,6 +5758,44 @@
     },
     "description": "Auth: admin (capability orders.view). Source: api/boot.php."
    },
+   "admin_client_errors": {
+    "type": "object",
+    "title": "action: admin_client_errors",
+    "required": [
+     "action"
+    ],
+    "properties": {
+     "action": {
+      "type": "string",
+      "enum": [
+       "admin_client_errors"
+      ]
+     },
+     "days": {
+      "description": "request field (type not declared in code)"
+     }
+    },
+    "description": "Auth: admin (capability rides.view). Source: api/controllers/RideController.php."
+   },
+   "admin_client_errors_clear": {
+    "type": "object",
+    "title": "action: admin_client_errors_clear",
+    "required": [
+     "action"
+    ],
+    "properties": {
+     "action": {
+      "type": "string",
+      "enum": [
+       "admin_client_errors_clear"
+      ]
+     },
+     "id": {
+      "description": "request field (type not declared in code)"
+     }
+    },
+    "description": "Auth: admin (capability rides.manage). Source: api/controllers/RideController.php."
+   },
    "admin_confirm_bank_payment": {
     "type": "object",
     "title": "action: admin_confirm_bank_payment",
@@ -5225,7 +5816,7 @@
       "description": "request field (type not declared in code)"
      }
     },
-    "description": "Auth: any signed-in user. Source: api/controllers/OrderController.php."
+    "description": "Auth: admin (capability finance.manage). Source: api/controllers/OrderController.php."
    },
    "admin_confirm_telebirr_payment": {
     "type": "object",
@@ -5247,7 +5838,26 @@
       "description": "request field (type not declared in code)"
      }
     },
-    "description": "Auth: any signed-in user. Source: api/controllers/OrderController.php."
+    "description": "Auth: admin (capability finance.manage). Source: api/controllers/OrderController.php."
+   },
+   "admin_courier_approval_mode": {
+    "type": "object",
+    "title": "action: admin_courier_approval_mode",
+    "required": [
+     "action"
+    ],
+    "properties": {
+     "action": {
+      "type": "string",
+      "enum": [
+       "admin_courier_approval_mode"
+      ]
+     },
+     "require": {
+      "description": "request field (type not declared in code)"
+     }
+    },
+    "description": "Auth: admin. Source: api/controllers/UserAdminController.php."
    },
    "admin_courier_cash_report": {
     "type": "object",
@@ -5264,6 +5874,66 @@
      }
     },
     "description": "Auth: admin (capability finance.view). Source: api/controllers/MoneyLedgerController.php."
+   },
+   "admin_courier_detail": {
+    "type": "object",
+    "title": "action: admin_courier_detail",
+    "required": [
+     "action"
+    ],
+    "properties": {
+     "action": {
+      "type": "string",
+      "enum": [
+       "admin_courier_detail"
+      ]
+     },
+     "id": {
+      "description": "request field (type not declared in code)"
+     }
+    },
+    "description": "Auth: admin (capability users.view). Source: api/controllers/PartnerAdminController.php."
+   },
+   "admin_courier_set_approval": {
+    "type": "object",
+    "title": "action: admin_courier_set_approval",
+    "required": [
+     "action"
+    ],
+    "properties": {
+     "action": {
+      "type": "string",
+      "enum": [
+       "admin_courier_set_approval"
+      ]
+     },
+     "id": {
+      "description": "request field (type not declared in code)"
+     },
+     "note": {
+      "description": "request field (type not declared in code)"
+     },
+     "status": {
+      "description": "request field (type not declared in code)"
+     }
+    },
+    "description": "Auth: admin (capability users.manage). Source: api/controllers/UserAdminController.php."
+   },
+   "admin_couriers_board": {
+    "type": "object",
+    "title": "action: admin_couriers_board",
+    "required": [
+     "action"
+    ],
+    "properties": {
+     "action": {
+      "type": "string",
+      "enum": [
+       "admin_couriers_board"
+      ]
+     }
+    },
+    "description": "Auth: admin (capability users.view). Source: api/controllers/PartnerAdminController.php."
    },
    "admin_create_announcement": {
     "type": "object",
@@ -5388,6 +6058,31 @@
      }
     },
     "description": "Auth: admin (capability users.view). Source: api/controllers/CustomerAdminController.php."
+   },
+   "admin_customer_set_active": {
+    "type": "object",
+    "title": "action: admin_customer_set_active",
+    "required": [
+     "action"
+    ],
+    "properties": {
+     "action": {
+      "type": "string",
+      "enum": [
+       "admin_customer_set_active"
+      ]
+     },
+     "active": {
+      "description": "request field (type not declared in code)"
+     },
+     "id": {
+      "description": "request field (type not declared in code)"
+     },
+     "reason": {
+      "description": "request field (type not declared in code)"
+     }
+    },
+    "description": "Auth: admin (capability users.manage). Source: api/controllers/CustomerAdminController.php."
    },
    "admin_customers_list": {
     "type": "object",
@@ -5815,7 +6510,7 @@
       "description": "request field (type not declared in code)"
      }
     },
-    "description": "Auth: any signed-in user. Source: api/controllers/OrderController.php."
+    "description": "Auth: admin (capability finance.view). Source: api/controllers/OrderController.php."
    },
    "admin_force_confirm": {
     "type": "object",
@@ -6461,6 +7156,28 @@
     },
     "description": "Auth: admin (capability settings.view). Source: api/controllers/AdminController.php."
    },
+   "admin_global_search": {
+    "type": "object",
+    "title": "action: admin_global_search",
+    "required": [
+     "action"
+    ],
+    "properties": {
+     "action": {
+      "type": "string",
+      "enum": [
+       "admin_global_search"
+      ]
+     },
+     "per": {
+      "description": "request field (type not declared in code)"
+     },
+     "q": {
+      "description": "request field (type not declared in code)"
+     }
+    },
+    "description": "Auth: admin. Source: api/controllers/GlobalSearchController.php."
+   },
    "admin_integrations_add": {
     "type": "object",
     "title": "action: admin_integrations_add",
@@ -6559,6 +7276,31 @@
     },
     "description": "Auth: admin (capability integrations.manage). Source: api/controllers/IntegrationController.php."
    },
+   "admin_items_import": {
+    "type": "object",
+    "title": "action: admin_items_import",
+    "required": [
+     "action"
+    ],
+    "properties": {
+     "action": {
+      "type": "string",
+      "enum": [
+       "admin_items_import"
+      ]
+     },
+     "dry_run": {
+      "description": "request field (type not declared in code)"
+     },
+     "rows": {
+      "description": "request field (type not declared in code)"
+     },
+     "service_giver_id": {
+      "description": "request field (type not declared in code)"
+     }
+    },
+    "description": "Auth: admin (capability items.manage). Source: api/controllers/AdminController.php."
+   },
    "admin_list_bank_payments": {
     "type": "object",
     "title": "action: admin_list_bank_payments",
@@ -6573,7 +7315,7 @@
       ]
      }
     },
-    "description": "Auth: any signed-in user. Source: api/controllers/OrderController.php."
+    "description": "Auth: admin (capability finance.view). Source: api/controllers/OrderController.php."
    },
    "admin_list_chapa_payments": {
     "type": "object",
@@ -6640,7 +7382,7 @@
       ]
      }
     },
-    "description": "Auth: any signed-in user. Source: api/controllers/ServiceGiverController.php."
+    "description": "Auth: admin (capability finance.view). Source: api/controllers/ServiceGiverController.php."
    },
    "admin_list_promos": {
     "type": "object",
@@ -6723,7 +7465,7 @@
       ]
      }
     },
-    "description": "Auth: any signed-in user. Source: api/controllers/OrderController.php."
+    "description": "Auth: admin (capability finance.view). Source: api/controllers/OrderController.php."
    },
    "admin_manual_complete_ride": {
     "type": "object",
@@ -6792,6 +7534,53 @@
      }
     },
     "description": "Auth: admin (capability finance.manage). Source: api/controllers/CashController.php."
+   },
+   "admin_order_detail": {
+    "type": "object",
+    "title": "action: admin_order_detail",
+    "required": [
+     "action"
+    ],
+    "properties": {
+     "action": {
+      "type": "string",
+      "enum": [
+       "admin_order_detail"
+      ]
+     },
+     "id": {
+      "description": "request field (type not declared in code)"
+     }
+    },
+    "description": "Auth: admin (capability orders.view). Source: api/controllers/OrderAdminController.php."
+   },
+   "admin_orders_board": {
+    "type": "object",
+    "title": "action: admin_orders_board",
+    "required": [
+     "action"
+    ],
+    "properties": {
+     "action": {
+      "type": "string",
+      "enum": [
+       "admin_orders_board"
+      ]
+     },
+     "limit": {
+      "description": "request field (type not declared in code)"
+     },
+     "period": {
+      "description": "request field (type not declared in code)"
+     },
+     "q": {
+      "description": "request field (type not declared in code)"
+     },
+     "status": {
+      "description": "request field (type not declared in code)"
+     }
+    },
+    "description": "Auth: admin (capability orders.view). Source: api/controllers/OrderAdminController.php."
    },
    "admin_package_rates_get": {
     "type": "object",
@@ -6865,6 +7654,100 @@
      }
     },
     "description": "Auth: admin (capability orders.manage). Source: api/controllers/PackageController.php."
+   },
+   "admin_people_list": {
+    "type": "object",
+    "title": "action: admin_people_list",
+    "required": [
+     "action"
+    ],
+    "properties": {
+     "action": {
+      "type": "string",
+      "enum": [
+       "admin_people_list"
+      ]
+     },
+     "limit": {
+      "description": "request field (type not declared in code)"
+     },
+     "q": {
+      "description": "request field (type not declared in code)"
+     },
+     "role": {
+      "description": "request field (type not declared in code)"
+     },
+     "sort": {
+      "description": "request field (type not declared in code)"
+     },
+     "status": {
+      "description": "request field (type not declared in code)"
+     }
+    },
+    "description": "Auth: admin (capability users.view). Source: api/controllers/UserAdminController.php."
+   },
+   "admin_person_force_logout": {
+    "type": "object",
+    "title": "action: admin_person_force_logout",
+    "required": [
+     "action"
+    ],
+    "properties": {
+     "action": {
+      "type": "string",
+      "enum": [
+       "admin_person_force_logout"
+      ]
+     },
+     "id": {
+      "description": "request field (type not declared in code)"
+     }
+    },
+    "description": "Auth: admin (capability users.manage). Source: api/controllers/UserAdminController.php."
+   },
+   "admin_person_get": {
+    "type": "object",
+    "title": "action: admin_person_get",
+    "required": [
+     "action"
+    ],
+    "properties": {
+     "action": {
+      "type": "string",
+      "enum": [
+       "admin_person_get"
+      ]
+     },
+     "id": {
+      "description": "request field (type not declared in code)"
+     }
+    },
+    "description": "Auth: admin (capability users.view). Source: api/controllers/UserAdminController.php."
+   },
+   "admin_person_set_active": {
+    "type": "object",
+    "title": "action: admin_person_set_active",
+    "required": [
+     "action"
+    ],
+    "properties": {
+     "action": {
+      "type": "string",
+      "enum": [
+       "admin_person_set_active"
+      ]
+     },
+     "active": {
+      "description": "request field (type not declared in code)"
+     },
+     "id": {
+      "description": "request field (type not declared in code)"
+     },
+     "reason": {
+      "description": "request field (type not declared in code)"
+     }
+    },
+    "description": "Auth: admin (capability users.manage). Source: api/controllers/UserAdminController.php."
    },
    "admin_photo_coverage": {
     "type": "object",
@@ -7286,7 +8169,7 @@
       "description": "request field (type not declared in code)"
      }
     },
-    "description": "Auth: any signed-in user. Source: api/controllers/ServiceGiverController.php."
+    "description": "Auth: admin (capability finance.manage). Source: api/controllers/ServiceGiverController.php."
    },
    "admin_ride_growth": {
     "type": "object",
@@ -7322,9 +8205,158 @@
       "enum": [
        "admin_ride_payments"
       ]
+     },
+     "days": {
+      "description": "request field (type not declared in code)"
      }
     },
     "description": "Auth: admin (capability finance.view). Source: api/controllers/AdminController.php."
+   },
+   "admin_ride_promo_list": {
+    "type": "object",
+    "title": "action: admin_ride_promo_list",
+    "required": [
+     "action"
+    ],
+    "properties": {
+     "action": {
+      "type": "string",
+      "enum": [
+       "admin_ride_promo_list"
+      ]
+     },
+     "status": {
+      "description": "request field (type not declared in code)"
+     }
+    },
+    "description": "Auth: admin (capability rides.view). Source: api/controllers/RideController.php."
+   },
+   "admin_ride_promo_review": {
+    "type": "object",
+    "title": "action: admin_ride_promo_review",
+    "required": [
+     "action"
+    ],
+    "properties": {
+     "action": {
+      "type": "string",
+      "enum": [
+       "admin_ride_promo_review"
+      ]
+     },
+     "decision": {
+      "description": "request field (type not declared in code)"
+     },
+     "expires_at": {
+      "description": "request field (type not declared in code)"
+     },
+     "id": {
+      "description": "request field (type not declared in code)"
+     },
+     "max_discount": {
+      "description": "request field (type not declared in code)"
+     },
+     "max_uses": {
+      "description": "request field (type not declared in code)"
+     },
+     "min_fare": {
+      "description": "request field (type not declared in code)"
+     },
+     "note": {
+      "description": "request field (type not declared in code)"
+     },
+     "per_rider_limit": {
+      "description": "request field (type not declared in code)"
+     },
+     "value": {
+      "description": "request field (type not declared in code)"
+     }
+    },
+    "description": "Auth: admin (capability rides.manage). Source: api/controllers/RideController.php."
+   },
+   "admin_ride_promo_save": {
+    "type": "object",
+    "title": "action: admin_ride_promo_save",
+    "required": [
+     "action"
+    ],
+    "properties": {
+     "action": {
+      "type": "string",
+      "enum": [
+       "admin_ride_promo_save"
+      ]
+     },
+     "code": {
+      "description": "request field (type not declared in code)"
+     },
+     "description": {
+      "description": "request field (type not declared in code)"
+     },
+     "discount_type": {
+      "description": "request field (type not declared in code)"
+     },
+     "max_discount": {
+      "description": "request field (type not declared in code)"
+     },
+     "max_uses": {
+      "description": "request field (type not declared in code)"
+     },
+     "min_fare": {
+      "description": "request field (type not declared in code)"
+     },
+     "per_rider_limit": {
+      "description": "request field (type not declared in code)"
+     },
+     "value": {
+      "description": "request field (type not declared in code)"
+     }
+    },
+    "description": "Auth: admin (capability rides.manage). Source: api/controllers/RideController.php."
+   },
+   "admin_ride_tip_list": {
+    "type": "object",
+    "title": "action: admin_ride_tip_list",
+    "required": [
+     "action"
+    ],
+    "properties": {
+     "action": {
+      "type": "string",
+      "enum": [
+       "admin_ride_tip_list"
+      ]
+     },
+     "status": {
+      "description": "request field (type not declared in code)"
+     }
+    },
+    "description": "Auth: admin (capability rides.view). Source: api/controllers/RideController.php."
+   },
+   "admin_ride_tip_review": {
+    "type": "object",
+    "title": "action: admin_ride_tip_review",
+    "required": [
+     "action"
+    ],
+    "properties": {
+     "action": {
+      "type": "string",
+      "enum": [
+       "admin_ride_tip_review"
+      ]
+     },
+     "decision": {
+      "description": "request field (type not declared in code)"
+     },
+     "id": {
+      "description": "request field (type not declared in code)"
+     },
+     "note": {
+      "description": "request field (type not declared in code)"
+     }
+    },
+    "description": "Auth: admin (capability rides.manage). Source: api/controllers/RideController.php."
    },
    "admin_ride_watch": {
     "type": "object",
@@ -7586,6 +8618,41 @@
     },
     "description": "Auth: admin (capability owner.only). Source: api/controllers/AdminController.php."
    },
+   "admin_service_giver_detail": {
+    "type": "object",
+    "title": "action: admin_service_giver_detail",
+    "required": [
+     "action"
+    ],
+    "properties": {
+     "action": {
+      "type": "string",
+      "enum": [
+       "admin_service_giver_detail"
+      ]
+     },
+     "id": {
+      "description": "request field (type not declared in code)"
+     }
+    },
+    "description": "Auth: admin (capability service_givers.view). Source: api/controllers/PartnerAdminController.php."
+   },
+   "admin_service_givers_board": {
+    "type": "object",
+    "title": "action: admin_service_givers_board",
+    "required": [
+     "action"
+    ],
+    "properties": {
+     "action": {
+      "type": "string",
+      "enum": [
+       "admin_service_givers_board"
+      ]
+     }
+    },
+    "description": "Auth: admin (capability service_givers.view). Source: api/controllers/PartnerAdminController.php."
+   },
    "admin_set_2fa_required": {
     "type": "object",
     "title": "action: admin_set_2fa_required",
@@ -7678,7 +8745,7 @@
       "description": "request field (type not declared in code)"
      }
     },
-    "description": "Auth: any signed-in user. Source: api/controllers/OrderController.php."
+    "description": "Auth: admin (capability finance.manage). Source: api/controllers/OrderController.php."
    },
    "admin_set_release_channel": {
     "type": "object",
@@ -7743,6 +8810,28 @@
     },
     "description": "Auth: admin (capability items.manage). Source: api/controllers/PhotoController.php."
    },
+   "admin_sg_set_business_tools": {
+    "type": "object",
+    "title": "action: admin_sg_set_business_tools",
+    "required": [
+     "action"
+    ],
+    "properties": {
+     "action": {
+      "type": "string",
+      "enum": [
+       "admin_sg_set_business_tools"
+      ]
+     },
+     "enabled": {
+      "description": "request field (type not declared in code)"
+     },
+     "id": {
+      "description": "request field (type not declared in code)"
+     }
+    },
+    "description": "Auth: admin (capability service_givers.manage). Source: api/controllers/ServiceGiverController.php."
+   },
    "admin_suspend_driver": {
     "type": "object",
     "title": "action: admin_suspend_driver",
@@ -7782,7 +8871,7 @@
       "description": "request field (type not declared in code)"
      }
     },
-    "description": "Auth: admin. Source: api/boot.php."
+    "description": "Auth: admin (capability service_givers.manage). Source: api/boot.php."
    },
    "admin_system_health": {
     "type": "object",
@@ -8030,7 +9119,7 @@
       "description": "request field (type not declared in code)"
      }
     },
-    "description": "Auth: admin. Source: api/boot.php."
+    "description": "Auth: admin (capability users.manage). Source: api/boot.php."
    },
    "admin_update_delivery_tier": {
     "type": "object",
@@ -8262,7 +9351,7 @@
       "description": "request field (type not declared in code)"
      }
     },
-    "description": "Auth: admin. Source: api/boot.php."
+    "description": "Auth: admin (capability service_givers.manage). Source: api/boot.php."
    },
    "agent_book_ride": {
     "type": "object",
@@ -8523,6 +9612,9 @@
      "manual_km": {
       "description": "request field (type not declared in code)"
      },
+     "offer_fare": {
+      "description": "request field (type not declared in code)"
+     },
      "payment_method": {
       "description": "request field (type not declared in code)"
      },
@@ -8533,6 +9625,9 @@
       "description": "request field (type not declared in code)"
      },
      "pickup_lng": {
+      "description": "request field (type not declared in code)"
+     },
+     "promo_code": {
       "description": "request field (type not declared in code)"
      },
      "quote_token": {
@@ -8789,6 +9884,9 @@
       "enum": [
        "courier_add_fuel_log"
       ]
+     },
+     "client_req_id": {
+      "description": "request field (type not declared in code)"
      },
      "cost_etb": {
       "description": "request field (type not declared in code)"
@@ -9074,6 +10172,9 @@
       "enum": [
        "courier_update_order_status"
       ]
+     },
+     "occurred_at": {
+      "description": "request field (type not declared in code)"
      },
      "order_id": {
       "description": "request field (type not declared in code)"
@@ -9779,6 +10880,47 @@
     },
     "description": "Auth: any signed-in user. Source: api/controllers/RideController.php."
    },
+   "driver_counter_offer": {
+    "type": "object",
+    "title": "action: driver_counter_offer",
+    "required": [
+     "action"
+    ],
+    "properties": {
+     "action": {
+      "type": "string",
+      "enum": [
+       "driver_counter_offer"
+      ]
+     },
+     "price": {
+      "description": "request field (type not declared in code)"
+     },
+     "request_id": {
+      "description": "request field (type not declared in code)"
+     }
+    },
+    "description": "Auth: any signed-in user. Source: api/controllers/RideController.php."
+   },
+   "driver_decline_ride": {
+    "type": "object",
+    "title": "action: driver_decline_ride",
+    "required": [
+     "action"
+    ],
+    "properties": {
+     "action": {
+      "type": "string",
+      "enum": [
+       "driver_decline_ride"
+      ]
+     },
+     "request_id": {
+      "description": "request field (type not declared in code)"
+     }
+    },
+    "description": "Auth: any signed-in user. Source: api/controllers/RideController.php."
+   },
    "driver_delete_fuel_log": {
     "type": "object",
     "title": "action: driver_delete_fuel_log",
@@ -10006,6 +11148,41 @@
       "type": "string",
       "enum": [
        "driver_get_ride_history"
+      ]
+     }
+    },
+    "description": "Auth: any signed-in user. Source: api/controllers/RideController.php."
+   },
+   "driver_get_statement": {
+    "type": "object",
+    "title": "action: driver_get_statement",
+    "required": [
+     "action"
+    ],
+    "properties": {
+     "action": {
+      "type": "string",
+      "enum": [
+       "driver_get_statement"
+      ]
+     },
+     "week_start": {
+      "description": "request field (type not declared in code)"
+     }
+    },
+    "description": "Auth: any signed-in user. Source: api/controllers/RideController.php."
+   },
+   "driver_get_tips": {
+    "type": "object",
+    "title": "action: driver_get_tips",
+    "required": [
+     "action"
+    ],
+    "properties": {
+     "action": {
+      "type": "string",
+      "enum": [
+       "driver_get_tips"
       ]
      }
     },
@@ -10271,6 +11448,9 @@
      },
      "ride_id": {
       "description": "request field (type not declared in code)"
+     },
+     "speed": {
+      "description": "request field (type not declared in code)"
      }
     },
     "description": "Auth: any signed-in user. Source: api/controllers/RideController.php."
@@ -10406,6 +11586,25 @@
     },
     "description": "Auth: admin (capability equb.manage). Source: api/controllers/EqubController.php."
    },
+   "equb_admin_group_detail": {
+    "type": "object",
+    "title": "action: equb_admin_group_detail",
+    "required": [
+     "action"
+    ],
+    "properties": {
+     "action": {
+      "type": "string",
+      "enum": [
+       "equb_admin_group_detail"
+      ]
+     },
+     "group_id": {
+      "description": "request field (type not declared in code)"
+     }
+    },
+    "description": "Auth: admin (capability equb.view). Source: api/controllers/EqubController.php."
+   },
    "equb_admin_list_groups": {
     "type": "object",
     "title": "action: equb_admin_list_groups",
@@ -10489,7 +11688,28 @@
      "active": {
       "description": "request field (type not declared in code)"
      },
+     "contribution_amount": {
+      "description": "request field (type not declared in code)"
+     },
+     "description": {
+      "description": "request field (type not declared in code)"
+     },
+     "frequency": {
+      "description": "request field (type not declared in code)"
+     },
      "id": {
+      "description": "request field (type not declared in code)"
+     },
+     "max_members": {
+      "description": "request field (type not declared in code)"
+     },
+     "name": {
+      "description": "request field (type not declared in code)"
+     },
+     "payout_order": {
+      "description": "request field (type not declared in code)"
+     },
+     "tier": {
       "description": "request field (type not declared in code)"
      }
     },
@@ -11376,6 +12596,22 @@
      }
     },
     "description": "Auth: public. Source: api/boot.php."
+   },
+   "hub_counts": {
+    "type": "object",
+    "title": "action: hub_counts",
+    "required": [
+     "action"
+    ],
+    "properties": {
+     "action": {
+      "type": "string",
+      "enum": [
+       "hub_counts"
+      ]
+     }
+    },
+    "description": "Auth: any signed-in user. Source: api/controllers/RideController.php."
    },
    "initiate_telebirr_payment": {
     "type": "object",
@@ -12376,6 +13612,69 @@
     },
     "description": "Auth: any signed-in user. Source: api/controllers/RideController.php."
    },
+   "ride_counter_accept": {
+    "type": "object",
+    "title": "action: ride_counter_accept",
+    "required": [
+     "action"
+    ],
+    "properties": {
+     "action": {
+      "type": "string",
+      "enum": [
+       "ride_counter_accept"
+      ]
+     },
+     "counter_id": {
+      "description": "request field (type not declared in code)"
+     },
+     "ride_id": {
+      "description": "request field (type not declared in code)"
+     }
+    },
+    "description": "Auth: any signed-in user. Source: api/controllers/RideController.php."
+   },
+   "ride_counter_decline": {
+    "type": "object",
+    "title": "action: ride_counter_decline",
+    "required": [
+     "action"
+    ],
+    "properties": {
+     "action": {
+      "type": "string",
+      "enum": [
+       "ride_counter_decline"
+      ]
+     },
+     "counter_id": {
+      "description": "request field (type not declared in code)"
+     },
+     "ride_id": {
+      "description": "request field (type not declared in code)"
+     }
+    },
+    "description": "Auth: any signed-in user. Source: api/controllers/RideController.php."
+   },
+   "ride_counter_list": {
+    "type": "object",
+    "title": "action: ride_counter_list",
+    "required": [
+     "action"
+    ],
+    "properties": {
+     "action": {
+      "type": "string",
+      "enum": [
+       "ride_counter_list"
+      ]
+     },
+     "ride_id": {
+      "description": "request field (type not declared in code)"
+     }
+    },
+    "description": "Auth: any signed-in user. Source: api/controllers/RideController.php."
+   },
    "ride_delete_favorite_route": {
     "type": "object",
     "title": "action: ride_delete_favorite_route",
@@ -12499,6 +13798,12 @@
       "enum": [
        "ride_get_vehicle_types"
       ]
+     },
+     "pickup_lat": {
+      "description": "request field (type not declared in code)"
+     },
+     "pickup_lng": {
+      "description": "request field (type not declared in code)"
      }
     },
     "description": "Auth: any signed-in user. Source: api/controllers/RideController.php."
@@ -12519,6 +13824,25 @@
     },
     "description": "Auth: any signed-in user. Source: api/controllers/RideController.php."
    },
+   "ride_offer_bounds": {
+    "type": "object",
+    "title": "action: ride_offer_bounds",
+    "required": [
+     "action"
+    ],
+    "properties": {
+     "action": {
+      "type": "string",
+      "enum": [
+       "ride_offer_bounds"
+      ]
+     },
+     "fare": {
+      "description": "request field (type not declared in code)"
+     }
+    },
+    "description": "Auth: any signed-in user. Source: api/controllers/RideController.php."
+   },
    "ride_pin_get": {
     "type": "object",
     "title": "action: ride_pin_get",
@@ -12531,6 +13855,109 @@
       "enum": [
        "ride_pin_get"
       ]
+     }
+    },
+    "description": "Auth: any signed-in user. Source: api/controllers/RideController.php."
+   },
+   "ride_promo_check": {
+    "type": "object",
+    "title": "action: ride_promo_check",
+    "required": [
+     "action"
+    ],
+    "properties": {
+     "action": {
+      "type": "string",
+      "enum": [
+       "ride_promo_check"
+      ]
+     },
+     "code": {
+      "description": "request field (type not declared in code)"
+     },
+     "fare": {
+      "description": "request field (type not declared in code)"
+     }
+    },
+    "description": "Auth: any signed-in user. Source: api/controllers/RideController.php."
+   },
+   "ride_promo_mine": {
+    "type": "object",
+    "title": "action: ride_promo_mine",
+    "required": [
+     "action"
+    ],
+    "properties": {
+     "action": {
+      "type": "string",
+      "enum": [
+       "ride_promo_mine"
+      ]
+     }
+    },
+    "description": "Auth: any signed-in user. Source: api/controllers/RideController.php."
+   },
+   "ride_promo_propose": {
+    "type": "object",
+    "title": "action: ride_promo_propose",
+    "required": [
+     "action"
+    ],
+    "properties": {
+     "action": {
+      "type": "string",
+      "enum": [
+       "ride_promo_propose"
+      ]
+     },
+     "code": {
+      "description": "request field (type not declared in code)"
+     },
+     "description": {
+      "description": "request field (type not declared in code)"
+     },
+     "discount_type": {
+      "description": "request field (type not declared in code)"
+     },
+     "expires_at": {
+      "description": "request field (type not declared in code)"
+     },
+     "max_discount": {
+      "description": "request field (type not declared in code)"
+     },
+     "max_uses": {
+      "description": "request field (type not declared in code)"
+     },
+     "min_fare": {
+      "description": "request field (type not declared in code)"
+     },
+     "per_rider_limit": {
+      "description": "request field (type not declared in code)"
+     },
+     "value": {
+      "description": "request field (type not declared in code)"
+     }
+    },
+    "description": "Auth: any signed-in user. Source: api/controllers/RideController.php."
+   },
+   "ride_raise_offer": {
+    "type": "object",
+    "title": "action: ride_raise_offer",
+    "required": [
+     "action"
+    ],
+    "properties": {
+     "action": {
+      "type": "string",
+      "enum": [
+       "ride_raise_offer"
+      ]
+     },
+     "offer": {
+      "description": "request field (type not declared in code)"
+     },
+     "ride_id": {
+      "description": "request field (type not declared in code)"
      }
     },
     "description": "Auth: any signed-in user. Source: api/controllers/RideController.php."
@@ -12649,6 +14076,78 @@
       "type": "string",
       "enum": [
        "ride_stop_sharing"
+      ]
+     },
+     "ride_id": {
+      "description": "request field (type not declared in code)"
+     }
+    },
+    "description": "Auth: any signed-in user. Source: api/controllers/RideController.php."
+   },
+   "ride_tip_chapa_init": {
+    "type": "object",
+    "title": "action: ride_tip_chapa_init",
+    "required": [
+     "action"
+    ],
+    "properties": {
+     "action": {
+      "type": "string",
+      "enum": [
+       "ride_tip_chapa_init"
+      ]
+     },
+     "amount": {
+      "description": "request field (type not declared in code)"
+     },
+     "ride_id": {
+      "description": "request field (type not declared in code)"
+     }
+    },
+    "description": "Auth: any signed-in user. Source: api/controllers/RideController.php."
+   },
+   "ride_tip_give": {
+    "type": "object",
+    "title": "action: ride_tip_give",
+    "required": [
+     "action"
+    ],
+    "properties": {
+     "action": {
+      "type": "string",
+      "enum": [
+       "ride_tip_give"
+      ]
+     },
+     "amount": {
+      "description": "request field (type not declared in code)"
+     },
+     "bank_key": {
+      "description": "request field (type not declared in code)"
+     },
+     "note": {
+      "description": "request field (type not declared in code)"
+     },
+     "payment_ref": {
+      "description": "request field (type not declared in code)"
+     },
+     "ride_id": {
+      "description": "request field (type not declared in code)"
+     }
+    },
+    "description": "Auth: any signed-in user. Source: api/controllers/RideController.php."
+   },
+   "ride_tip_info": {
+    "type": "object",
+    "title": "action: ride_tip_info",
+    "required": [
+     "action"
+    ],
+    "properties": {
+     "action": {
+      "type": "string",
+      "enum": [
+       "ride_tip_info"
       ]
      },
      "ride_id": {
@@ -12828,6 +14327,9 @@
        "sg_accept_order"
       ]
      },
+     "client_req_id": {
+      "description": "request field (type not declared in code)"
+     },
      "order_id": {
       "description": "request field (type not declared in code)"
      }
@@ -12913,6 +14415,44 @@
      },
      "role_id": {
       "description": "request field (type not declared in code)"
+     }
+    },
+    "description": "Auth: any signed-in user. Source: api/controllers/ServiceGiverController.php."
+   },
+   "sg_business_report": {
+    "type": "object",
+    "title": "action: sg_business_report",
+    "required": [
+     "action"
+    ],
+    "properties": {
+     "action": {
+      "type": "string",
+      "enum": [
+       "sg_business_report"
+      ]
+     },
+     "from": {
+      "description": "request field (type not declared in code)"
+     },
+     "to": {
+      "description": "request field (type not declared in code)"
+     }
+    },
+    "description": "Auth: any signed-in user. Source: api/controllers/ServiceGiverController.php."
+   },
+   "sg_business_state": {
+    "type": "object",
+    "title": "action: sg_business_state",
+    "required": [
+     "action"
+    ],
+    "properties": {
+     "action": {
+      "type": "string",
+      "enum": [
+       "sg_business_state"
+      ]
      }
     },
     "description": "Auth: any signed-in user. Source: api/controllers/ServiceGiverController.php."
@@ -13260,6 +14800,25 @@
     },
     "description": "Auth: any signed-in user. Source: api/controllers/OrderController.php."
    },
+   "sg_pos_sync": {
+    "type": "object",
+    "title": "action: sg_pos_sync",
+    "required": [
+     "action"
+    ],
+    "properties": {
+     "action": {
+      "type": "string",
+      "enum": [
+       "sg_pos_sync"
+      ]
+     },
+     "events": {
+      "description": "request field (type not declared in code)"
+     }
+    },
+    "description": "Auth: any signed-in user. Source: api/controllers/ServiceGiverController.php."
+   },
    "sg_profile": {
     "type": "object",
     "title": "action: sg_profile",
@@ -13512,6 +15071,25 @@
     },
     "description": "Auth: any signed-in user. Source: api/controllers/ServiceGiverController.php."
    },
+   "sg_stock_history": {
+    "type": "object",
+    "title": "action: sg_stock_history",
+    "required": [
+     "action"
+    ],
+    "properties": {
+     "action": {
+      "type": "string",
+      "enum": [
+       "sg_stock_history"
+      ]
+     },
+     "item_id": {
+      "description": "request field (type not declared in code)"
+     }
+    },
+    "description": "Auth: any signed-in user. Source: api/controllers/ServiceGiverController.php."
+   },
    "sg_update_item": {
     "type": "object",
     "title": "action: sg_update_item",
@@ -13579,6 +15157,9 @@
       "enum": [
        "sg_update_order_status"
       ]
+     },
+     "client_req_id": {
+      "description": "request field (type not declared in code)"
      },
      "new_status": {
       "description": "request field (type not declared in code)"
@@ -14088,6 +15669,13 @@
    "query": [],
    "source": "api/controllers/AdminController.php"
   },
+  "admin_attention": {
+   "auth": "admin",
+   "capability": null,
+   "body": [],
+   "query": [],
+   "source": "api/controllers/AdminAttentionController.php"
+  },
   "admin_backfill_cash_commission": {
    "auth": "admin",
    "capability": "finance.manage",
@@ -14161,6 +15749,17 @@
    "query": [],
    "source": "api/boot.php"
   },
+  "admin_catalog_import": {
+   "auth": "admin",
+   "capability": "items.manage",
+   "body": [
+    "dry_run",
+    "mode",
+    "rows"
+   ],
+   "query": [],
+   "source": "api/boot.php"
+  },
   "admin_catalog_list": {
    "auth": "admin",
    "capability": "items.manage",
@@ -14203,9 +15802,27 @@
    ],
    "source": "api/boot.php"
   },
+  "admin_client_errors": {
+   "auth": "admin",
+   "capability": "rides.view",
+   "body": [
+    "days"
+   ],
+   "query": [],
+   "source": "api/controllers/RideController.php"
+  },
+  "admin_client_errors_clear": {
+   "auth": "admin",
+   "capability": "rides.manage",
+   "body": [
+    "id"
+   ],
+   "query": [],
+   "source": "api/controllers/RideController.php"
+  },
   "admin_confirm_bank_payment": {
-   "auth": "any signed-in user",
-   "capability": null,
+   "auth": "admin",
+   "capability": "finance.manage",
    "body": [
     "decision",
     "payment_id"
@@ -14214,8 +15831,8 @@
    "source": "api/controllers/OrderController.php"
   },
   "admin_confirm_telebirr_payment": {
-   "auth": "any signed-in user",
-   "capability": null,
+   "auth": "admin",
+   "capability": "finance.manage",
    "body": [
     "decision",
     "payment_id"
@@ -14223,12 +15840,50 @@
    "query": [],
    "source": "api/controllers/OrderController.php"
   },
+  "admin_courier_approval_mode": {
+   "auth": "admin",
+   "capability": null,
+   "body": [
+    "require"
+   ],
+   "query": [],
+   "source": "api/controllers/UserAdminController.php"
+  },
   "admin_courier_cash_report": {
    "auth": "admin",
    "capability": "finance.view",
    "body": [],
    "query": [],
    "source": "api/controllers/MoneyLedgerController.php"
+  },
+  "admin_courier_detail": {
+   "auth": "admin",
+   "capability": "users.view",
+   "body": [
+    "id"
+   ],
+   "query": [
+    "id"
+   ],
+   "source": "api/controllers/PartnerAdminController.php"
+  },
+  "admin_courier_set_approval": {
+   "auth": "admin",
+   "capability": "users.manage",
+   "body": [
+    "id",
+    "note",
+    "status"
+   ],
+   "query": [],
+   "source": "api/controllers/UserAdminController.php"
+  },
+  "admin_couriers_board": {
+   "auth": "admin",
+   "capability": "users.view",
+   "body": [],
+   "query": [],
+   "source": "api/controllers/PartnerAdminController.php"
   },
   "admin_create_announcement": {
    "auth": "admin",
@@ -14282,6 +15937,17 @@
    "query": [
     "id"
    ],
+   "source": "api/controllers/CustomerAdminController.php"
+  },
+  "admin_customer_set_active": {
+   "auth": "admin",
+   "capability": "users.manage",
+   "body": [
+    "active",
+    "id",
+    "reason"
+   ],
+   "query": [],
    "source": "api/controllers/CustomerAdminController.php"
   },
   "admin_customers_list": {
@@ -14478,8 +16144,8 @@
    "source": "api/controllers/AuthController.php"
   },
   "admin_financial_report": {
-   "auth": "any signed-in user",
-   "capability": null,
+   "auth": "admin",
+   "capability": "finance.view",
    "body": [
     "days"
    ],
@@ -14798,6 +16464,16 @@
    "query": [],
    "source": "api/controllers/AdminController.php"
   },
+  "admin_global_search": {
+   "auth": "admin",
+   "capability": null,
+   "body": [
+    "per",
+    "q"
+   ],
+   "query": [],
+   "source": "api/controllers/GlobalSearchController.php"
+  },
   "admin_integrations_add": {
    "auth": "admin",
    "capability": "integrations.manage",
@@ -14843,9 +16519,20 @@
    "query": [],
    "source": "api/controllers/IntegrationController.php"
   },
+  "admin_items_import": {
+   "auth": "admin",
+   "capability": "items.manage",
+   "body": [
+    "dry_run",
+    "rows",
+    "service_giver_id"
+   ],
+   "query": [],
+   "source": "api/controllers/AdminController.php"
+  },
   "admin_list_bank_payments": {
-   "auth": "any signed-in user",
-   "capability": null,
+   "auth": "admin",
+   "capability": "finance.view",
    "body": [],
    "query": [],
    "source": "api/controllers/OrderController.php"
@@ -14874,8 +16561,8 @@
    "source": "api/controllers/AdminController.php"
   },
   "admin_list_payout_requests": {
-   "auth": "any signed-in user",
-   "capability": null,
+   "auth": "admin",
+   "capability": "finance.view",
    "body": [],
    "query": [],
    "source": "api/controllers/ServiceGiverController.php"
@@ -14913,8 +16600,8 @@
    "source": "api/controllers/AdminController.php"
   },
   "admin_list_telebirr_payments": {
-   "auth": "any signed-in user",
-   "capability": null,
+   "auth": "admin",
+   "capability": "finance.view",
    "body": [],
    "query": [],
    "source": "api/controllers/OrderController.php"
@@ -14946,6 +16633,29 @@
    ],
    "query": [],
    "source": "api/controllers/CashController.php"
+  },
+  "admin_order_detail": {
+   "auth": "admin",
+   "capability": "orders.view",
+   "body": [
+    "id"
+   ],
+   "query": [
+    "id"
+   ],
+   "source": "api/controllers/OrderAdminController.php"
+  },
+  "admin_orders_board": {
+   "auth": "admin",
+   "capability": "orders.view",
+   "body": [
+    "limit",
+    "period",
+    "q",
+    "status"
+   ],
+   "query": [],
+   "source": "api/controllers/OrderAdminController.php"
   },
   "admin_package_rates_get": {
    "auth": "admin",
@@ -14979,6 +16689,50 @@
    "body": [],
    "query": [],
    "source": "api/controllers/PackageController.php"
+  },
+  "admin_people_list": {
+   "auth": "admin",
+   "capability": "users.view",
+   "body": [
+    "limit",
+    "q",
+    "role",
+    "sort",
+    "status"
+   ],
+   "query": [],
+   "source": "api/controllers/UserAdminController.php"
+  },
+  "admin_person_force_logout": {
+   "auth": "admin",
+   "capability": "users.manage",
+   "body": [
+    "id"
+   ],
+   "query": [],
+   "source": "api/controllers/UserAdminController.php"
+  },
+  "admin_person_get": {
+   "auth": "admin",
+   "capability": "users.view",
+   "body": [
+    "id"
+   ],
+   "query": [
+    "id"
+   ],
+   "source": "api/controllers/UserAdminController.php"
+  },
+  "admin_person_set_active": {
+   "auth": "admin",
+   "capability": "users.manage",
+   "body": [
+    "active",
+    "id",
+    "reason"
+   ],
+   "query": [],
+   "source": "api/controllers/UserAdminController.php"
   },
   "admin_photo_coverage": {
    "auth": "admin",
@@ -15168,8 +16922,8 @@
    "source": "api/controllers/AdminController.php"
   },
   "admin_review_payout_request": {
-   "auth": "any signed-in user",
-   "capability": null,
+   "auth": "admin",
+   "capability": "finance.manage",
    "body": [
     "decision",
     "note",
@@ -15191,9 +16945,75 @@
   "admin_ride_payments": {
    "auth": "admin",
    "capability": "finance.view",
-   "body": [],
+   "body": [
+    "days"
+   ],
    "query": [],
    "source": "api/controllers/AdminController.php"
+  },
+  "admin_ride_promo_list": {
+   "auth": "admin",
+   "capability": "rides.view",
+   "body": [
+    "status"
+   ],
+   "query": [
+    "status"
+   ],
+   "source": "api/controllers/RideController.php"
+  },
+  "admin_ride_promo_review": {
+   "auth": "admin",
+   "capability": "rides.manage",
+   "body": [
+    "decision",
+    "expires_at",
+    "id",
+    "max_discount",
+    "max_uses",
+    "min_fare",
+    "note",
+    "per_rider_limit",
+    "value"
+   ],
+   "query": [],
+   "source": "api/controllers/RideController.php"
+  },
+  "admin_ride_promo_save": {
+   "auth": "admin",
+   "capability": "rides.manage",
+   "body": [
+    "code",
+    "description",
+    "discount_type",
+    "max_discount",
+    "max_uses",
+    "min_fare",
+    "per_rider_limit",
+    "value"
+   ],
+   "query": [],
+   "source": "api/controllers/RideController.php"
+  },
+  "admin_ride_tip_list": {
+   "auth": "admin",
+   "capability": "rides.view",
+   "body": [
+    "status"
+   ],
+   "query": [],
+   "source": "api/controllers/RideController.php"
+  },
+  "admin_ride_tip_review": {
+   "auth": "admin",
+   "capability": "rides.manage",
+   "body": [
+    "decision",
+    "id",
+    "note"
+   ],
+   "query": [],
+   "source": "api/controllers/RideController.php"
   },
   "admin_ride_watch": {
    "auth": "admin",
@@ -15308,6 +17128,24 @@
    "query": [],
    "source": "api/controllers/AdminController.php"
   },
+  "admin_service_giver_detail": {
+   "auth": "admin",
+   "capability": "service_givers.view",
+   "body": [
+    "id"
+   ],
+   "query": [
+    "id"
+   ],
+   "source": "api/controllers/PartnerAdminController.php"
+  },
+  "admin_service_givers_board": {
+   "auth": "admin",
+   "capability": "service_givers.view",
+   "body": [],
+   "query": [],
+   "source": "api/controllers/PartnerAdminController.php"
+  },
   "admin_set_2fa_required": {
    "auth": "admin",
    "capability": "system.backup",
@@ -15341,8 +17179,8 @@
    "source": "api/controllers/CourierPayController.php"
   },
   "admin_set_payment_logo": {
-   "auth": "any signed-in user",
-   "capability": null,
+   "auth": "admin",
+   "capability": "finance.manage",
    "body": [
     "logo_url",
     "method_key"
@@ -15379,6 +17217,16 @@
    "query": [],
    "source": "api/controllers/PhotoController.php"
   },
+  "admin_sg_set_business_tools": {
+   "auth": "admin",
+   "capability": "service_givers.manage",
+   "body": [
+    "enabled",
+    "id"
+   ],
+   "query": [],
+   "source": "api/controllers/ServiceGiverController.php"
+  },
   "admin_suspend_driver": {
    "auth": "admin",
    "capability": "users.manage",
@@ -15391,7 +17239,7 @@
   },
   "admin_suspend_service_giver": {
    "auth": "admin",
-   "capability": null,
+   "capability": "service_givers.manage",
    "body": [
     "id"
    ],
@@ -15496,7 +17344,7 @@
   },
   "admin_update_courier": {
    "auth": "admin",
-   "capability": null,
+   "capability": "users.manage",
    "body": [
     "active",
     "courier_id",
@@ -15612,7 +17460,7 @@
   },
   "admin_verify_service_giver": {
    "auth": "admin",
-   "capability": null,
+   "capability": "service_givers.manage",
    "body": [
     "id"
    ],
@@ -15726,10 +17574,12 @@
     "dropoff_lat",
     "dropoff_lng",
     "manual_km",
+    "offer_fare",
     "payment_method",
     "pickup_addr",
     "pickup_lat",
     "pickup_lng",
+    "promo_code",
     "quote_token",
     "route_km",
     "vehicle_type"
@@ -15851,6 +17701,7 @@
    "auth": "public",
    "capability": null,
    "body": [
+    "client_req_id",
     "cost_etb",
     "liters",
     "odometer_km"
@@ -15990,6 +17841,7 @@
    "auth": "courier",
    "capability": null,
    "body": [
+    "occurred_at",
     "order_id",
     "status"
    ],
@@ -16305,6 +18157,25 @@
    "query": [],
    "source": "api/controllers/RideController.php"
   },
+  "driver_counter_offer": {
+   "auth": "any signed-in user",
+   "capability": null,
+   "body": [
+    "price",
+    "request_id"
+   ],
+   "query": [],
+   "source": "api/controllers/RideController.php"
+  },
+  "driver_decline_ride": {
+   "auth": "any signed-in user",
+   "capability": null,
+   "body": [
+    "request_id"
+   ],
+   "query": [],
+   "source": "api/controllers/RideController.php"
+  },
   "driver_delete_fuel_log": {
    "auth": "any signed-in user",
    "capability": null,
@@ -16407,6 +18278,22 @@
    "source": "api/controllers/RideController.php"
   },
   "driver_get_ride_history": {
+   "auth": "any signed-in user",
+   "capability": null,
+   "body": [],
+   "query": [],
+   "source": "api/controllers/RideController.php"
+  },
+  "driver_get_statement": {
+   "auth": "any signed-in user",
+   "capability": null,
+   "body": [
+    "week_start"
+   ],
+   "query": [],
+   "source": "api/controllers/RideController.php"
+  },
+  "driver_get_tips": {
    "auth": "any signed-in user",
    "capability": null,
    "body": [],
@@ -16525,7 +18412,8 @@
     "accuracy",
     "lat",
     "lng",
-    "ride_id"
+    "ride_id",
+    "speed"
    ],
    "query": [],
    "source": "api/controllers/RideController.php"
@@ -16587,6 +18475,17 @@
    "query": [],
    "source": "api/controllers/EqubController.php"
   },
+  "equb_admin_group_detail": {
+   "auth": "admin",
+   "capability": "equb.view",
+   "body": [
+    "group_id"
+   ],
+   "query": [
+    "group_id"
+   ],
+   "source": "api/controllers/EqubController.php"
+  },
   "equb_admin_list_groups": {
    "auth": "admin",
    "capability": "equb.view",
@@ -16622,7 +18521,14 @@
    "capability": "equb.manage",
    "body": [
     "active",
-    "id"
+    "contribution_amount",
+    "description",
+    "frequency",
+    "id",
+    "max_members",
+    "name",
+    "payout_order",
+    "tier"
    ],
    "query": [],
    "source": "api/controllers/EqubController.php"
@@ -17041,6 +18947,13 @@
    "body": [],
    "query": [],
    "source": "api/boot.php"
+  },
+  "hub_counts": {
+   "auth": "any signed-in user",
+   "capability": null,
+   "body": [],
+   "query": [],
+   "source": "api/controllers/RideController.php"
   },
   "initiate_telebirr_payment": {
    "auth": "any signed-in user",
@@ -17490,6 +19403,35 @@
    ],
    "source": "api/controllers/RideController.php"
   },
+  "ride_counter_accept": {
+   "auth": "any signed-in user",
+   "capability": null,
+   "body": [
+    "counter_id",
+    "ride_id"
+   ],
+   "query": [],
+   "source": "api/controllers/RideController.php"
+  },
+  "ride_counter_decline": {
+   "auth": "any signed-in user",
+   "capability": null,
+   "body": [
+    "counter_id",
+    "ride_id"
+   ],
+   "query": [],
+   "source": "api/controllers/RideController.php"
+  },
+  "ride_counter_list": {
+   "auth": "any signed-in user",
+   "capability": null,
+   "body": [
+    "ride_id"
+   ],
+   "query": [],
+   "source": "api/controllers/RideController.php"
+  },
   "ride_delete_favorite_route": {
    "auth": "any signed-in user",
    "capability": null,
@@ -17549,8 +19491,14 @@
   "ride_get_vehicle_types": {
    "auth": "any signed-in user",
    "capability": null,
-   "body": [],
-   "query": [],
+   "body": [
+    "pickup_lat",
+    "pickup_lng"
+   ],
+   "query": [
+    "pickup_lat",
+    "pickup_lng"
+   ],
    "source": "api/controllers/RideController.php"
   },
   "ride_history": {
@@ -17560,10 +19508,63 @@
    "query": [],
    "source": "api/controllers/RideController.php"
   },
+  "ride_offer_bounds": {
+   "auth": "any signed-in user",
+   "capability": null,
+   "body": [
+    "fare"
+   ],
+   "query": [],
+   "source": "api/controllers/RideController.php"
+  },
   "ride_pin_get": {
    "auth": "any signed-in user",
    "capability": null,
    "body": [],
+   "query": [],
+   "source": "api/controllers/RideController.php"
+  },
+  "ride_promo_check": {
+   "auth": "any signed-in user",
+   "capability": null,
+   "body": [
+    "code",
+    "fare"
+   ],
+   "query": [],
+   "source": "api/controllers/RideController.php"
+  },
+  "ride_promo_mine": {
+   "auth": "any signed-in user",
+   "capability": null,
+   "body": [],
+   "query": [],
+   "source": "api/controllers/RideController.php"
+  },
+  "ride_promo_propose": {
+   "auth": "any signed-in user",
+   "capability": null,
+   "body": [
+    "code",
+    "description",
+    "discount_type",
+    "expires_at",
+    "max_discount",
+    "max_uses",
+    "min_fare",
+    "per_rider_limit",
+    "value"
+   ],
+   "query": [],
+   "source": "api/controllers/RideController.php"
+  },
+  "ride_raise_offer": {
+   "auth": "any signed-in user",
+   "capability": null,
+   "body": [
+    "offer",
+    "ride_id"
+   ],
    "query": [],
    "source": "api/controllers/RideController.php"
   },
@@ -17615,6 +19616,38 @@
    "source": "api/controllers/RideController.php"
   },
   "ride_stop_sharing": {
+   "auth": "any signed-in user",
+   "capability": null,
+   "body": [
+    "ride_id"
+   ],
+   "query": [],
+   "source": "api/controllers/RideController.php"
+  },
+  "ride_tip_chapa_init": {
+   "auth": "any signed-in user",
+   "capability": null,
+   "body": [
+    "amount",
+    "ride_id"
+   ],
+   "query": [],
+   "source": "api/controllers/RideController.php"
+  },
+  "ride_tip_give": {
+   "auth": "any signed-in user",
+   "capability": null,
+   "body": [
+    "amount",
+    "bank_key",
+    "note",
+    "payment_ref",
+    "ride_id"
+   ],
+   "query": [],
+   "source": "api/controllers/RideController.php"
+  },
+  "ride_tip_info": {
    "auth": "any signed-in user",
    "capability": null,
    "body": [
@@ -17703,6 +19736,7 @@
    "auth": "any signed-in user",
    "capability": null,
    "body": [
+    "client_req_id",
     "order_id"
    ],
    "query": [],
@@ -17738,6 +19772,23 @@
     "phone",
     "role_id"
    ],
+   "query": [],
+   "source": "api/controllers/ServiceGiverController.php"
+  },
+  "sg_business_report": {
+   "auth": "any signed-in user",
+   "capability": null,
+   "body": [
+    "from",
+    "to"
+   ],
+   "query": [],
+   "source": "api/controllers/ServiceGiverController.php"
+  },
+  "sg_business_state": {
+   "auth": "any signed-in user",
+   "capability": null,
+   "body": [],
    "query": [],
    "source": "api/controllers/ServiceGiverController.php"
   },
@@ -17916,6 +19967,15 @@
    "query": [],
    "source": "api/controllers/OrderController.php"
   },
+  "sg_pos_sync": {
+   "auth": "any signed-in user",
+   "capability": null,
+   "body": [
+    "events"
+   ],
+   "query": [],
+   "source": "api/controllers/ServiceGiverController.php"
+  },
   "sg_profile": {
    "auth": "any signed-in user",
    "capability": null,
@@ -18035,6 +20095,15 @@
    "query": [],
    "source": "api/controllers/ServiceGiverController.php"
   },
+  "sg_stock_history": {
+   "auth": "any signed-in user",
+   "capability": null,
+   "body": [
+    "item_id"
+   ],
+   "query": [],
+   "source": "api/controllers/ServiceGiverController.php"
+  },
   "sg_update_item": {
    "auth": "any signed-in user",
    "capability": null,
@@ -18060,6 +20129,7 @@
    "auth": "any signed-in user",
    "capability": null,
    "body": [
+    "client_req_id",
     "new_status",
     "order_id"
    ],
@@ -18123,7 +20193,8 @@
    "capability": null,
    "body": [],
    "query": [
-    "id"
+    "id",
+    "once"
    ],
    "source": "api/boot.php"
   },
@@ -18132,7 +20203,8 @@
    "capability": null,
    "body": [],
    "query": [
-    "id"
+    "id",
+    "once"
    ],
    "source": "api/boot.php"
   },
@@ -18144,6 +20216,7 @@
     "phone"
    ],
    "query": [
+    "once",
     "radius_km"
    ],
    "source": "api/boot.php"
@@ -18153,7 +20226,8 @@
    "capability": null,
    "body": [],
    "query": [
-    "id"
+    "id",
+    "once"
    ],
    "source": "api/boot.php"
   },

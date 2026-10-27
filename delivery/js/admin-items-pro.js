@@ -81,7 +81,7 @@ function paint() {
     K.kpis(kp, V.filter) +
     '<div class="ak-tools"><label class="ak-search"><u>🔎</u><input id="itm-q" type="search" placeholder="Item, code or shop…" value="' + esc(V.q) + '" autocomplete="off"></label>' +
     '<select class="ak-sel" data-sel="shop" aria-label="Shop">' + shopOpts + '</select><select class="ak-sel" data-sel="sort" aria-label="Sort">' + sopts + '</select>' +
-    K.seg('mode', [['cards', '🎴 Cards'], ['table', '☰ Table']], V.mode) + '<button type="button" class="ak-btn" data-act="refresh" aria-label="Refresh">🔄</button><button type="button" class="ak-btn gold" data-act="add">➕ Add item</button></div>' +
+    K.seg('mode', [['cards', '🎴 Cards'], ['table', '☰ Table']], V.mode) + '<button type="button" class="ak-btn" data-act="refresh" aria-label="Refresh">🔄</button><button type="button" class="ak-btn" data-act="import">📥 Import a menu</button><button type="button" class="ak-btn gold" data-act="add">➕ Add item</button></div>' +
     K.seg('cat', cats, V.cat) +
     '<div class="ak-count" style="margin-top:10px">' + K.num(rows.length) + ' of ' + K.num(V.rows.length) + ' items</div>';
   if (!rows.length) h += K.empty('🏷️', V.rows.length ? 'No items match' : 'No items yet', V.rows.length ? 'Try clearing the filters.' : 'Items appear here when shops add them.');
@@ -134,6 +134,7 @@ function wire(el) {
     }
     if (t.closest('[data-act="refresh"]')) { load(true); return; }
     if (t.closest('[data-act="more"]')) { V.more++; paint(); return; }
+    if (t.closest('[data-act="import"]')) { if (window.EtelCsvImport) window.EtelCsvImport.openItems(function () { load(true); }); else K.toast('The import is not available here.', true); return; }
     if (t.closest('[data-act="add"]')) { if (typeof openAdminAddItem === 'function') openAdminAddItem(); else K.toast('The Add form is not available here.', true); return; }
     if ((b = t.closest('[data-edit]'))) { if (typeof openAdminEditItem === 'function') openAdminEditItem(b.getAttribute('data-edit')); return; }
     if ((b = t.closest('[data-del]'))) {
