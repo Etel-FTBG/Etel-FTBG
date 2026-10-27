@@ -45,6 +45,15 @@ for t in ('rides', 'orders', 'ride_requests', 'wallet_transactions', 'user_walle
         bad.append('activity table `%s` is missing from the reset wipe list' % t)
 if "role='admin' AND phone IN" not in src or 'at least one admin account' not in src:
     bad.append('the reset must refuse to run when no admin account is among the phones to keep')
+bk = src[src.index("case 'system_reset_backup'"):src.index("case 'system_reset_execute'")]
+if 'fetchAll' in bk:
+    bad.append('the backup must stream rows (fetch one at a time), not load whole tables into memory: a big live table made it fail with HTTP 500')
+for must in ("class_exists('ZipArchive')", 'fputcsv', 'MYSQL_ATTR_USE_BUFFERED_QUERY', 'catch (Throwable'):
+    if must not in bk:
+        bad.append('the backup lost: ' + must)
+ui_src = read(root + '/js/admin-danger-zone.js')
+if 'resp.json()' not in ui_src:
+    bad.append('admin-danger-zone.js must show the reason the backup failed, not just the HTTP status')
 for must in ('setup_warnings', 'admins_kept', 'equity_reset_placeholder_warnings'):
     if must not in src:
         bad.append('the preview lost: ' + must)

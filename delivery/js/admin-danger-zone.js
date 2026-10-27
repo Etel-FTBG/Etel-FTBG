@@ -86,7 +86,11 @@ async function dzRunBackup() {
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
       body: JSON.stringify({}),
     });
-    if (!resp.ok) throw new Error('Backup request failed (HTTP ' + resp.status + ')');
+    if (!resp.ok) {
+      let why = '';
+      try { why = (await resp.json()).message || ''; } catch (e2) { /* the server sent no JSON, e.g. a hard crash */ }
+      throw new Error(why || ('The server stopped without saying why (HTTP ' + resp.status + '). Likely out of memory or time on this server. Nothing was deleted.'));
+    }
     DZ_BACKUP_TOKEN = resp.headers.get('X-Backup-Token');
     const blob = await resp.blob();
     const url = URL.createObjectURL(blob);
