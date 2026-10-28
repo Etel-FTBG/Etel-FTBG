@@ -107,7 +107,7 @@ function sw(r) {
 function card(r) {
   var d = discount(r), cl = cat(r);
   return '<div class="ak-card' + (avail(r) ? '' : ' off') + '" style="cursor:default"><div class="ak-top">' + thumb(r) + '<div class="ak-nm"><b>' + esc(r.name) + '</b><small>' + esc(r.business_name || '—') + (r.item_code ? ' · ' + esc(r.item_code) : '') + '</small></div></div>' +
-    '<div class="ak-chips"><span class="ak-chip">' + esc(cl[0]) + ' ' + esc(cl[1]) + '</span>' + (r.menu_section ? '<span class="ak-chip">📑 ' + esc(r.menu_section) + '</span>' : '') + (parseInt(r.is_popular, 10) === 1 ? '<span class="ak-chip">⭐ Popular</span>' : '') + stockChip(r) + (d ? '<span class="ak-chip" style="color:var(--green)">−' + esc(d) + '%</span>' : '') + '</div>' +
+    '<div class="ak-chips"><span class="ak-chip">' + esc(cl[0]) + ' ' + esc(cl[1]) + '</span>' + (r.menu_section ? '<span class="ak-chip">📑 ' + esc(r.menu_section) + '</span>' : '') + (parseInt(r.is_popular, 10) === 1 ? '<span class="ak-chip">⭐ Popular</span>' : '') + (r.extras && r.extras.length ? '<span class="ak-chip">➕ ' + esc(r.extras.length) + ' extra' + (r.extras.length === 1 ? '' : 's') + '</span>' : '') + stockChip(r) + (d ? '<span class="ak-chip" style="color:var(--green)">−' + esc(d) + '%</span>' : '') + '</div>' +
     '<div class="ak-row"><span><b style="font-size:16px">' + esc(K.money(price(r))) + '</b>' + (d ? ' <s style="opacity:.6">' + esc(K.money(r.original_price)) + '</s>' : '') + '</span>' + sw(r) + '</div>' +
     '<div class="ak-acts" style="margin-top:10px"><button type="button" class="ak-btn" data-edit="' + esc(r.id) + '">✏ Edit</button><button type="button" class="ak-btn danger" data-del="' + esc(r.id) + '">🗑 Delete</button></div></div>';
 }

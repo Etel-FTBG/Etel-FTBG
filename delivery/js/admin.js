@@ -1832,6 +1832,53 @@
             else toast(res.message||'Delete failed','err');
         }
 
+        // Extras ("Mayonnaise +50") and more photos (the customer's carousel) for one item, shared by the Add and Edit item forms.
+        const XIN = 'padding:10px 12px;border:1.5px solid #e0e0e0;border-radius:8px;font-size:13px;font-family:\'Poppins\',sans-serif;box-sizing:border-box;width:100%';
+        function extraRowHtml(x) {
+            x = x || {};
+            return `<div class="xrow" data-id="${parseInt(x.id,10)||0}" style="display:grid;grid-template-columns:1fr 96px 34px;gap:8px;margin-bottom:6px">
+                <input class="x-name" maxlength="80" placeholder="e.g. Mayonnaise" value="${escapeHtml(x.name||'')}" style="${XIN}">
+                <input class="x-price" type="number" min="0" step="0.01" placeholder="Price" value="${x.price!=null?escapeHtml(String(x.price)):''}" style="${XIN}">
+                <button type="button" title="Remove" onclick="this.parentNode.remove()" style="border:1.5px solid #e0e0e0;border-radius:8px;background:transparent;color:#e74c3c;cursor:pointer">✕</button></div>`;
+        }
+        function addExtraRow(prefix) { const l = document.getElementById(prefix + '-xlist'); if (l) l.insertAdjacentHTML('beforeend', extraRowHtml({})); }
+        function galleryThumbHtml(u) {
+            return `<span class="gthumb" data-url="${escapeHtml(u)}" style="position:relative;display:inline-block;width:64px;height:64px;margin:0 6px 6px 0">
+                <img src="${escapeHtml(u)}" alt="" style="width:64px;height:64px;object-fit:cover;border-radius:8px;border:1px solid rgba(255,255,255,.2)">
+                <button type="button" title="Remove" onclick="this.parentNode.remove()" style="position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:50%;border:none;background:#e74c3c;color:#fff;cursor:pointer;font-size:11px;line-height:1">✕</button></span>`;
+        }
+        function extrasFields(prefix, extras, gallery) {
+            let g = []; try { g = Array.isArray(gallery) ? gallery : (gallery ? JSON.parse(gallery) : []); } catch (e) { g = []; }
+            return `<div class="modal-field"><label>Extras <span style="font-weight:400;text-transform:none;opacity:.7">(optional add-ons the customer can tick)</span></label>
+                    <div id="${prefix}-xlist">${(extras||[]).map(extraRowHtml).join('')}</div>
+                    <button type="button" class="act-btn act-gold" onclick="addExtraRow('${prefix}')" style="margin-top:4px">➕ Add extra</button></div>
+                <div class="modal-field"><label>More photos <span style="font-weight:400;text-transform:none;opacity:.7">(customers swipe through them)</span></label>
+                    <div id="${prefix}-glist">${g.map(galleryThumbHtml).join('')}</div>
+                    <input type="file" id="${prefix}-gfile" accept="image/*" multiple style="width:100%;padding:8px;border:1.5px dashed rgba(255,255,255,.2);border-radius:8px;background:rgba(255,255,255,.03);cursor:pointer;color:#e8e2d4"></div>`;
+        }
+        function readExtras(prefix) {
+            return Array.from(document.querySelectorAll('#' + prefix + '-xlist .xrow')).map(r => ({
+                id: parseInt(r.getAttribute('data-id'), 10) || 0,
+                name: (r.querySelector('.x-name').value || '').trim(),
+                price: r.querySelector('.x-price').value === '' ? 0 : r.querySelector('.x-price').value
+            })).filter(x => x.name);
+        }
+        async function readGallery(prefix) {
+            const urls = Array.from(document.querySelectorAll('#' + prefix + '-glist .gthumb')).map(t => t.getAttribute('data-url'));
+            const fi = document.getElementById(prefix + '-gfile');
+            const uploadUrl = ETEL.api.replace('boot.php','upload.php');
+            for (const f of (fi && fi.files ? Array.from(fi.files) : []).slice(0, 5)) {
+                const fd = new FormData(); fd.append('image', f);
+                const r = await fetch(uploadUrl, {method:'POST', headers:{'Authorization':'Bearer '+Auth.getToken()}, body:fd});
+                const j = await r.json();
+                if (j.success && j.data && j.data.url) urls.push(j.data.url);
+            }
+            return urls.slice(0, 5);
+        }
+        async function saveExtrasAndPhotos(prefix, itemId) {
+            return await adm('admin_item_extras_save', {item_id: itemId, extras: readExtras(prefix), gallery: await readGallery(prefix)});
+        }
+
         // Menu sections the customer sees as tabs (Burger, Drinks...): the names already used by any item, offered as suggestions.
         function sectionFields(prefix, section, popular) {
             const names = []; (itemsData || []).forEach(x => { if (x.menu_section && names.indexOf(x.menu_section) === -1) names.push(x.menu_section); });
@@ -1859,6 +1906,7 @@
                 </div>
                 <div class="modal-field"><label>Prep Time (min)</label><input id="ai-prep" type="number" value="30" min="0"></div>
                 ${sectionFields('ai','',false)}
+                ${extrasFields('ai', [], [])}
                 <div class="modal-field">
                     <label>Image</label>
                     <input type="file" id="ai-img-file" accept="image/*" style="width:100%;padding:8px;border:1.5px dashed rgba(255,255,255,.2);border-radius:8px;background:rgba(255,255,255,.03);cursor:pointer;margin-bottom:6px;color:#e8e2d4">
@@ -1887,6 +1935,7 @@
                 </div>
                 <div class="modal-field"><label>Prep Time (min)</label><input id="aei-prep" type="number" value="${it.preparation_time||30}"></div>
                 ${sectionFields('aei', it.menu_section, parseInt(it.is_popular,10)===1)}
+                ${extrasFields('aei', it.extras, it.gallery)}
                 <div class="modal-field">
                     <label>Image</label>
                     <input type="file" id="aei-img-file" accept="image/*" style="width:100%;padding:8px;border:1.5px dashed rgba(255,255,255,.2);border-radius:8px;background:rgba(255,255,255,.03);cursor:pointer;margin-bottom:6px;color:#e8e2d4">
@@ -1927,7 +1976,14 @@
                 is_popular:document.getElementById('ai-pop').checked ? 1 : 0,
                 image_url
             });
-            if (res.success) { msg.className='modal-msg ok'; msg.textContent='✓ Item added!'; setTimeout(()=>{ closeModal(); loadItems(); },1200); }
+            if (res.success) {
+                const newId = res.data && res.data.item_id;
+                if (newId && (readExtras('ai').length || (document.getElementById('ai-gfile').files||[]).length)) {
+                    const r2 = await saveExtrasAndPhotos('ai', parseInt(newId, 10));
+                    if (!r2.success) { msg.className='modal-msg err'; msg.textContent='Item added, but the extras were not saved: ' + (r2.message||'error'); loadItems(); return; }
+                }
+                msg.className='modal-msg ok'; msg.textContent='✓ Item added!'; setTimeout(()=>{ closeModal(); loadItems(); },1200);
+            }
             else { msg.className='modal-msg err'; msg.textContent=res.message||'Failed'; }
         }
 
@@ -1950,7 +2006,11 @@
                 is_popular:document.getElementById('aei-pop').checked ? 1 : 0,
                 image_url
             });
-            if (res.success) { msg.className='modal-msg ok'; msg.textContent='✓ Updated!'; setTimeout(()=>{ closeModal(); loadItems(); },1200); }
+            if (res.success) {
+                const r2 = await saveExtrasAndPhotos('aei', id);
+                if (!r2.success) { msg.className='modal-msg err'; msg.textContent='Item updated, but the extras/photos were not saved: ' + (r2.message||'error'); loadItems(); return; }
+                msg.className='modal-msg ok'; msg.textContent='✓ Updated!'; setTimeout(()=>{ closeModal(); loadItems(); },1200);
+            }
             else { msg.className='modal-msg err'; msg.textContent=res.message||'Failed'; }
         }
 

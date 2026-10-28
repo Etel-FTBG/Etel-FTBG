@@ -40,6 +40,7 @@ run python3 tests/package_smoke.py
 run python3 tests/csp_report_smoke.py
 run python3 tests/admin_import_smoke.py
 run python3 tests/sg_claim_smoke.py
+run python3 tests/item_extras_smoke.py
 run python3 tests/customers_admin_smoke.py
 run python3 tests/people_admin_smoke.py
 run python3 tests/courier_approval_smoke.py

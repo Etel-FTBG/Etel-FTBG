@@ -636,6 +636,11 @@ case 'admin_get_all_items': {
     } catch (Exception $e) {
         fail_ex($e, 'Query failed', 500);
     }
+    // Extras set up on each item (for the Edit form); the extra photos are already in the row as JSON text.
+    require_once __DIR__ . '/../lib/menu_catalog.php';
+    $xr = etel_item_extras_for($pdo, array_map(function ($i) { return $i['id']; }, $items));
+    foreach ($items as &$it) { $it['extras'] = isset($xr[(int)$it['id']]) ? $xr[(int)$it['id']] : array(); }
+    unset($it);
     
     ok(array('items' => $items, 'count' => count($items)));
     break;
@@ -663,6 +668,39 @@ case 'admin_update_item': {
         $pdo->prepare('UPDATE items SET '.implode(',',$updates).' WHERE id=?')->execute($params);
         ok(array('updated'=>true));
     } catch (Exception $e) { fail_ex($e, 'Update failed', 500); }
+    break;
+}
+case 'admin_item_extras_save': {
+    // POST: item_id, [extras: [{id?, name, name_am?, price}] - replaces the item's extras], [gallery: ["/delivery/img/menu/a.jpg", ...] - replaces the extra photos]
+    // The Edit item form's Extras and More photos sections. Admin only (items.manage).
+    $pdo = db();
+    require_admin($pdo, 'items.manage');
+    require_once __DIR__ . '/../lib/menu_catalog.php';
+    $item_id = isset($body['item_id']) ? intval($body['item_id']) : 0;
+    if (!$item_id) fail('item_id is required', 400);
+    $chk = $pdo->prepare('SELECT id FROM items WHERE id = ?');
+    $chk->execute(array($item_id));
+    if (!$chk->fetchColumn()) fail('Item not found', 404);
+    etel_ensure_catalog_schema($pdo);
+    try {
+        $saved = null;
+        if (array_key_exists('extras', $body)) {
+            $list = array();
+            foreach ((is_array($body['extras']) ? $body['extras'] : array()) as $e) {
+                if (!is_array($e)) continue;
+                $price = etel_validate_amount(isset($e['price']) && $e['price'] !== '' ? $e['price'] : 0, true);
+                if ($price === false) fail('Every extra needs a valid price (0 or more)', 400);
+                $list[] = array(isset($e['name']) ? $e['name'] : '', $price, isset($e['name_am']) ? $e['name_am'] : '', isset($e['id']) ? $e['id'] : 0);
+            }
+            $saved = etel_item_extras_save($pdo, $item_id, $list);
+        }
+        if (array_key_exists('gallery', $body)) {
+            $g = etel_item_gallery_from(is_array($body['gallery']) ? $body['gallery'] : array());
+            if ($g[2] !== null) fail($g[2], 400);
+            $pdo->prepare('UPDATE items SET gallery = ? WHERE id = ?')->execute(array($g[0] ? json_encode(array_values($g[0]), JSON_UNESCAPED_SLASHES) : null, $item_id));
+        }
+        ok(array('saved' => true, 'extras' => $saved));
+    } catch (Exception $e) { fail_ex($e, 'Could not save', 500); }
     break;
 }
 case 'admin_delete_item': {

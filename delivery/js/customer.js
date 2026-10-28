@@ -960,6 +960,12 @@ function itemPlaceholder(category, name) {
                : /pharm/.test(c) ? 'pharmacy' : /bever|drink|juice|coffee/.test(c) ? 'drink' : (c ? 'box' : 'food');
     return '<span class="ph-brand ph-v' + (etelHash(name) % 4) + '" aria-hidden="true"><svg class="ph-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">' + ITEM_ICON_PATHS[kind] + '</svg></span>';
 }
+// An item without its own photo shows its shop's logo (centred, never cropped, on the card's dark backdrop) until a photo is uploaded;
+// with neither, the dish icon. A logo that fails to load is hidden, so the icon behind it shows again.
+function itemLogoImg(item) {
+    if (item.image_url || !item.logo_url) return '';
+    return '<img class="item-logo-ph" loading="lazy" decoding="async" src="' + escUrl(item.logo_url) + '" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;padding:12%;box-sizing:border-box;background:linear-gradient(135deg,#120a14,#2a0f1c)" data-fallback="hide">';
+}
 const catEmoji = {food:'🍽️',grocery:'🛒',pharmacy:'💊',laundry:'👕',delivery:'📦'};
 function renderItemsGrid(items, targetId) {
     const grid = document.getElementById(targetId || 'items-grid');
@@ -975,7 +981,7 @@ function renderItemsGrid(items, targetId) {
         const imgHtml = item.image_url
             ? itemPlaceholder(item.category, item.name)
               + '<img loading="lazy" decoding="async" src="' + escUrl(item.image_url) + '" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover" data-fallback="hide">'
-            : itemPlaceholder(item.category, item.name);
+            : itemPlaceholder(item.category, item.name) + itemLogoImg(item);
         const displayName = (ETEL_I18N.current() === 'am' && item.name_am) ? item.name_am : (item.name || '');
         // Stripped (not just apostrophe-escaped): this string ends up both
         // inside a JS string literal AND inside an HTML attribute
@@ -994,7 +1000,9 @@ function renderItemsGrid(items, targetId) {
                     '<div class="offer-card-price">ETB ' + parseFloat(item.price).toFixed(0) + '</div>' +
                     ((item.is_available != 1 || parseInt(item.stock_quantity, 10) <= 0)
                         ? '<span class="sold-chip">' + escapeHtml(ETEL_I18N.t(item.sold_out ? 'sold_today' : 'item_unavail')) + '</span>'
-                        : '<button class="add-btn"' + _ea('addToCart', [Number(item.id), safeN, Number(item.price), Number(item.service_giver_id), safeB], {stop: true}) + '>+</button>') +
+                        : (item.extras && item.extras.length
+                            ? '<button class="add-btn"' + _ea('openItemDetail', [Number(item.id)], {stop: true}) + ' aria-label="Choose extras">+</button>'
+                            : '<button class="add-btn"' + _ea('addToCart', [Number(item.id), safeN, Number(item.price), Number(item.service_giver_id), safeB], {stop: true}) + '>+</button>')) +
                 '</div>' +
             '</div>' +
         '</div>';
@@ -1018,7 +1026,7 @@ function addToCart(itemId, name, price, sgId, sgName) {
         if (!confirm('Your cart has items from "' + cart[0].sg_name + '". Adding from "' + sgName + '" will clear it. Continue?')) return;
         cart = [];
     }
-    const existing = cart.find(function(c){ return c.item_id === itemId; });
+    const existing = cart.find(function(c){ return c.item_id === itemId && !(c.xkey || ''); });
     if (existing) { existing.quantity++; }
     else { cart.push({item_id:itemId, name:name, price:parseFloat(price), quantity:1, sg_id:sgId, sg_name:sgName}); }
     updateCartCount();
@@ -1028,7 +1036,7 @@ function addToCart(itemId, name, price, sgId, sgName) {
 // Same cart logic as addToCart, but adds a specific quantity in one go
 // with a single toast - used by the item detail modal's quantity
 // stepper so choosing "3" doesn't fire three separate "Added" toasts.
-function addToCartWithQty(itemId, name, price, sgId, sgName, qty) {
+function addToCartWithQty(itemId, name, price, sgId, sgName, qty, extras) {
     if (shopClosedByHours(sgId, sgName)) return;
     if (_sgOnline[sgId] === false && !_closedWarned[sgId]) {
         if (!confirm('"' + sgName + '" ' + ETEL_I18N.t('closed_warn'))) return;
@@ -1039,27 +1047,54 @@ function addToCartWithQty(itemId, name, price, sgId, sgName, qty) {
         if (!confirm('Your cart has items from "' + cart[0].sg_name + '". Adding from "' + sgName + '" will clear it. Continue?')) return;
         cart = [];
     }
-    const existing = cart.find(function(c){ return c.item_id === itemId; });
+    // The same item with different ticked extras is a different cart line (Burger vs Burger + Cheese).
+    const xs = (extras || []).map(function(x){ return {id: Number(x.id), name: String(x.name || ''), price: parseFloat(x.price) || 0}; });
+    const xkey = xs.map(function(x){ return x.id; }).sort(function(a, b){ return a - b; }).join(',');
+    const existing = cart.find(function(c){ return c.item_id === itemId && (c.xkey || '') === xkey; });
     if (existing) { existing.quantity += qty; }
-    else { cart.push({item_id:itemId, name:name, price:parseFloat(price), quantity:qty, sg_id:sgId, sg_name:sgName}); }
+    else { cart.push({item_id:itemId, name:name, price:parseFloat(price), quantity:qty, sg_id:sgId, sg_name:sgName, extras:xs, xkey:xkey}); }
     updateCartCount();
-    showToast('Added ' + qty + '× ' + name);
+    showToast('Added ' + qty + '× ' + name + (xs.length ? ' + ' + xs.map(function(x){ return x.name; }).join(', ') : ''));
 }
 
 // ── ITEM DETAIL MODAL ──────────────────────────────────────────
 let _detailQty = 1;
+let _detailItem = null, _detailSel = {};   // the open item and the extras ticked on it (id -> true)
 function openItemDetail(itemId) {
     const item = itemsCache.find(function(i){ return i.id === itemId; });
     if (!item) return;
-    _detailQty = 1;
+    _detailQty = 1; _detailItem = item; _detailSel = {};
 
     const displayName = (ETEL_I18N.current() === 'am' && item.name_am) ? item.name_am : (item.name || '');
     const displayDesc = (ETEL_I18N.current() === 'am' && item.description_am) ? item.description_am : (item.description || '');
     const discounted = item.original_price && parseFloat(item.original_price) > parseFloat(item.price);
     const ic = (catEmoji[item.category]) || '🍴';
-    const imgHtml = item.image_url
-        ? '<img loading="lazy" decoding="async" src="' + escUrl(item.image_url) + '" alt="" style="width:100%;height:100%;object-fit:cover" data-fallback="hide">'
-        : itemPlaceholder(item.category, item.name);
+    // The item's own photos (the main one first, then the extra ones): several become a swipeable carousel with arrows and dots.
+    const photos = [];
+    if (item.image_url) photos.push(item.image_url);
+    (item.gallery || []).forEach(function(u){ if (u && photos.indexOf(u) === -1) photos.push(u); });
+    const pic = function(u){ return '<img loading="lazy" decoding="async" src="' + escUrl(u) + '" alt="" style="width:100%;height:100%;object-fit:cover" data-fallback="hide">'; };
+    const arrowStyle = 'position:absolute;top:50%;transform:translateY(-50%);z-index:2;width:34px;height:34px;border-radius:50%;border:none;background:rgba(6,6,8,.6);color:#fff;font-size:20px;line-height:1;cursor:pointer;';
+    const imgHtml = photos.length > 1
+        ? '<div id="detail-carousel" style="display:flex;width:100%;height:100%;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;-webkit-overflow-scrolling:touch">' +
+              photos.map(function(u){ return '<div style="flex:0 0 100%;height:100%;scroll-snap-align:center;position:relative">' + pic(u) + '</div>'; }).join('') + '</div>' +
+          '<button' + _ea('detailCarouselGo', [-1]) + ' aria-label="Previous photo" style="' + arrowStyle + 'left:10px">‹</button>' +
+          '<button' + _ea('detailCarouselGo', [1]) + ' aria-label="Next photo" style="' + arrowStyle + 'right:10px">›</button>' +
+          '<div id="detail-dots" style="position:absolute;bottom:10px;left:0;right:0;display:flex;gap:6px;justify-content:center;z-index:2">' +
+              photos.map(function(u, k){ return '<span style="width:' + (k === 0 ? 18 : 7) + 'px;height:7px;border-radius:4px;background:' + (k === 0 ? '#D4AF37' : 'rgba(255,255,255,.55)') + ';transition:width .2s"></span>'; }).join('') + '</div>'
+        : photos.length === 1 ? pic(photos[0])
+        : itemPlaceholder(item.category, item.name) + itemLogoImg(item);
+    const xs = item.extras || [];
+    const extrasHtml = (available_ => (available_ && xs.length) ?
+        '<div style="margin-bottom:18px;"><div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px;">' +
+            '<span style="font-size:15px;font-weight:700;color:var(--text);">Extra</span><span style="font-size:11px;color:var(--text-dim);">Optional · pick any</span></div>' +
+        xs.map(function(x){
+            const nm = (ETEL_I18N.current() === 'am' && x.name_am) ? x.name_am : x.name;
+            return '<label style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid rgba(255,255,255,.07);cursor:pointer;">' +
+                '<span style="color:var(--text);font-size:14px;">' + escapeHtml(nm) + '</span>' +
+                '<span style="display:flex;align-items:center;gap:12px;"><span style="font-weight:700;color:var(--gold);font-size:13px;">' + (parseFloat(x.price) > 0 ? '+ ETB ' + Math.round(parseFloat(x.price)) : 'Free') + '</span>' +
+                '<input type="checkbox"' + _ea('detailToggleExtra', [Number(x.id), {$: 'checked'}], {event: 'change'}) + ' style="width:20px;height:20px;accent-color:#D4AF37;cursor:pointer;"></span></label>';
+        }).join('') + '</div>' : '');
     const stock = parseInt(item.stock_quantity, 10);
     const available = item.is_available == 1 && (isNaN(stock) || stock > 0);
     const safeN = displayName.replace(/[<>"'\\]/g, '');
@@ -1100,6 +1135,7 @@ function openItemDetail(itemId) {
                     (item.preparation_time ? '<div>⏱ ~' + item.preparation_time + ' min</div>' : '') +
                     (!available ? '<div style="color:var(--red);font-weight:600;">' + escapeHtml(ETEL_I18N.t(item.sold_out ? 'sold_today' : 'item_unavail')) + '</div>' : '') +
                 '</div>' +
+                extrasHtml(available) +
                 (available ?
                     '<div style="display:flex;align-items:center;gap:14px;margin-bottom:16px;">' +
                         '<button' + _ea('_detailQtyChange', [-1]) + ' style="width:36px;height:36px;border-radius:50%;border:1px solid var(--glass-border);' +
@@ -1110,12 +1146,43 @@ function openItemDetail(itemId) {
                     '</div>' +
                     '<button' + _ea('detailAddToCart', [Number(item.id), safeN, Number(item.price), Number(item.service_giver_id), safeB]) + ' ' +
                         'style="width:100%;padding:14px;border:none;border-radius:12px;background:var(--gold-grad);' +
-                        'color:var(--dark);font-weight:700;font-size:15px;cursor:pointer;">Add to Cart</button>'
+                        'color:var(--dark);font-weight:700;font-size:15px;cursor:pointer;"><span id="detail-add-label">Add to Cart</span> · <span id="detail-add-total">ETB ' + Math.round(parseFloat(item.price)) + '</span></button>'
                     : '') +
             '</div>' +
         '</div>';
 
     modal.style.display = 'flex';
+    const car = document.getElementById('detail-carousel');
+    if (car) car.addEventListener('scroll', _detailSyncDots, {passive: true});
+}
+// Carousel: the dots follow the swipe; the arrows move one photo.
+function _detailSyncDots() {
+    const car = document.getElementById('detail-carousel'), dots = document.getElementById('detail-dots');
+    if (!car || !dots || !car.clientWidth) return;
+    const at = Math.round(car.scrollLeft / car.clientWidth);
+    Array.prototype.forEach.call(dots.children, function(d, k){ d.style.width = (k === at ? 18 : 7) + 'px'; d.style.background = k === at ? '#D4AF37' : 'rgba(255,255,255,.55)'; });
+}
+function detailCarouselGo(dir) {
+    const car = document.getElementById('detail-carousel');
+    if (!car) return;
+    const n = car.children.length, at = Math.round(car.scrollLeft / (car.clientWidth || 1));
+    const to = (at + dir + n) % n;
+    car.scrollTo({left: to * car.clientWidth, behavior: 'smooth'});
+}
+// Extras: ticking one changes the price shown on the Add button right away; the server prices the order from its own list.
+function detailToggleExtra(id, on) {
+    if (on) _detailSel[id] = true; else delete _detailSel[id];
+    _detailRefreshTotal();
+}
+function _detailChosenExtras() {
+    return ((_detailItem && _detailItem.extras) || []).filter(function(x){ return _detailSel[x.id]; });
+}
+function _detailUnitPrice() {
+    return _detailChosenExtras().reduce(function(s, x){ return s + (parseFloat(x.price) || 0); }, _detailItem ? (parseFloat(_detailItem.price) || 0) : 0);
+}
+function _detailRefreshTotal() {
+    const el = document.getElementById('detail-add-total');
+    if (el) el.textContent = 'ETB ' + Math.round(_detailUnitPrice() * _detailQty);
 }
 // The shared scripts declare DiagPanel with const, which is not a property of window: make it reachable by name for the diagnostics buttons (data-act).
 try { if (typeof DiagPanel !== 'undefined' && !window.DiagPanel) window.DiagPanel = DiagPanel; } catch (e) { /* no diagnostics panel on this page */ }
@@ -1124,7 +1191,8 @@ try { if (typeof DiagPanel !== 'undefined' && !window.DiagPanel) window.DiagPane
 function _ea(name, args, opts) { return EtelActions.attrs(name, args, opts); }
 // Add from the item detail sheet: the chosen quantity, then close the sheet.
 function detailAddToCart(itemId, name, price, sgId, sgName) {
-    addToCartWithQty(itemId, name, price, sgId, sgName, _detailQty);
+    const chosen = _detailChosenExtras();
+    addToCartWithQty(itemId, name, _detailUnitPrice(), sgId, sgName, _detailQty, chosen);
     closeItemDetail();
 }
 // A button that opens a file picker or presses another control.
@@ -1133,6 +1201,7 @@ function _detailQtyChange(delta) {
     _detailQty = Math.max(1, _detailQty + delta);
     const el = document.getElementById('detail-qty');
     if (el) el.textContent = _detailQty;
+    _detailRefreshTotal();
 }
 function closeItemDetail() {
     const modal = document.getElementById('item-detail-overlay');
@@ -1504,6 +1573,7 @@ function renderCartDrawer() {
     document.getElementById('cart-items').innerHTML = cart.map(function(c, i) {
         return '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.06)">' +
             '<div style="flex:1"><div style="font-weight:600;font-size:13px;color:#F7F1DF">' + escapeHtml(c.name) + '</div>' +
+            ((c.extras && c.extras.length) ? '<div style="font-size:11.5px;color:#D4AF37;margin-top:2px">+ ' + escapeHtml(c.extras.map(function(x){ return x.name; }).join(', ')) + '</div>' : '') +
             '<div style="font-size:11px;color:rgba(247,241,223,.55)">ETB ' + c.price.toFixed(2) + ' each</div></div>' +
             '<div style="display:flex;align-items:center;gap:8px">' +
             '<button' + _ea('changeQty', [i, -1]) + ' style="width:26px;height:26px;border:1.5px solid #ddd;border-radius:50%;background:#fff;cursor:pointer;font-size:14px">-</button>' +
@@ -2007,7 +2077,7 @@ async function placeOrder(zone, name, phone, notes) {
         res = await api('customer_create_order', {
             promo_code: _promo ? _promo.code : '',
             use_points: _usePoints ? 1 : 0, tip: _tip,
-            items: cart.map(function(c){ return {item_id:c.item_id, quantity:c.quantity}; }),
+            items: cart.map(function(c){ return {item_id:c.item_id, quantity:c.quantity, extras:(c.extras || []).map(function(x){ return x.id; })}; }),
             to_zone: zone, recipient_name: name, recipient_phone: phone, notes: notes,
             payment_method: selectedPayment,
             delivery_tier: selectedTier,
@@ -2060,7 +2130,7 @@ async function scheduleOrderFromCart(zone, name, phone, notes, scheduledAt) {
     const btn = document.getElementById('checkout-btn');
     if (btn) btn.disabled = true;
     const template = {
-        items: cart.map(function(c){ return {item_id:c.item_id, quantity:c.quantity}; }),
+        items: cart.map(function(c){ return {item_id:c.item_id, quantity:c.quantity, extras:(c.extras || []).map(function(x){ return x.id; })}; }),
         to_zone: zone, recipient_name: name, recipient_phone: phone, notes: notes,
         payment_method: selectedPayment, delivery_tier: selectedTier,
         delivery_photo_url: _deliveryPhotoUrl, delivery_lat: _deliveryLat, delivery_lng: _deliveryLng
@@ -2086,7 +2156,7 @@ async function placeOrderThenPay(zone, name, phone, notes, tbPhone) {
     const orderRes = await api('customer_create_order', {
             promo_code: _promo ? _promo.code : '',
             use_points: _usePoints ? 1 : 0, tip: _tip,
-        items: cart.map(function(c){ return {item_id:c.item_id, quantity:c.quantity}; }),
+        items: cart.map(function(c){ return {item_id:c.item_id, quantity:c.quantity, extras:(c.extras || []).map(function(x){ return x.id; })}; }),
         to_zone: zone, recipient_name: name, recipient_phone: phone, notes: notes,
         payment_method: 'telebirr',
         delivery_tier: selectedTier,
@@ -2138,7 +2208,7 @@ async function placeOrderThenChapa(zone, name, phone, notes) {
     const orderRes = await api('customer_create_order', {
         promo_code: _promo ? _promo.code : '',
         use_points: _usePoints ? 1 : 0, tip: _tip,
-        items: cart.map(function(c){ return {item_id:c.item_id, quantity:c.quantity}; }),
+        items: cart.map(function(c){ return {item_id:c.item_id, quantity:c.quantity, extras:(c.extras || []).map(function(x){ return x.id; })}; }),
         to_zone: zone, recipient_name: name, recipient_phone: phone, notes: notes,
         payment_method: 'chapa',
         delivery_tier: selectedTier,
@@ -2203,7 +2273,7 @@ async function placeOrderThenBank(zone, name, phone, notes, reference) {
     const orderRes = await api('customer_create_order', {
             promo_code: _promo ? _promo.code : '',
             use_points: _usePoints ? 1 : 0, tip: _tip,
-        items: cart.map(function(c){ return {item_id:c.item_id, quantity:c.quantity}; }),
+        items: cart.map(function(c){ return {item_id:c.item_id, quantity:c.quantity, extras:(c.extras || []).map(function(x){ return x.id; })}; }),
         to_zone: zone, recipient_name: name, recipient_phone: phone, notes: notes,
         payment_method: selectedPayment,
         delivery_tier: selectedTier,

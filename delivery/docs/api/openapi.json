@@ -3,7 +3,7 @@
  "info": {
   "title": "ETEL Delivery & Ride API",
   "version": "generated",
-  "description": "Every action is a JSON POST to /api/boot.php with an `action` field (a few read-only actions also accept GET query parameters). Responses are JSON: {success: true|false, data: {...}, message: '...', v: '<app version>'}. Send the session token as `Authorization: Bearer <token>`; get one from `login`, `etelid_login` (Delivery/Ride apps) or `admin_etelid_login` (admin). Admin accounts with two-step sign-in answer {requires_2fa: true}: repeat the same login request with `totp_code`. Errors use HTTP 400/401/403/404/409/429/500/503 with the same JSON shape. Throttled actions answer 429. This file is generated from the source by tools/gen_api_docs.py: 488 actions. Parameter names come from the handlers; types and limits are in the handler code."
+  "description": "Every action is a JSON POST to /api/boot.php with an `action` field (a few read-only actions also accept GET query parameters). Responses are JSON: {success: true|false, data: {...}, message: '...', v: '<app version>'}. Send the session token as `Authorization: Bearer <token>`; get one from `login`, `etelid_login` (Delivery/Ride apps) or `admin_etelid_login` (admin). Admin accounts with two-step sign-in answer {requires_2fa: true}: repeat the same login request with `totp_code`. Errors use HTTP 400/401/403/404/409/429/500/503 with the same JSON shape. Throttled actions answer 429. This file is generated from the source by tools/gen_api_docs.py: 489 actions. Parameter names come from the handlers; types and limits are in the handler code."
  },
  "servers": [
   {
@@ -336,6 +336,9 @@
          },
          {
           "$ref": "#/components/schemas/admin_integrations_test"
+         },
+         {
+          "$ref": "#/components/schemas/admin_item_extras_save"
          },
          {
           "$ref": "#/components/schemas/admin_items_import"
@@ -2245,6 +2248,15 @@
          "value": {
           "action": "admin_integrations_test",
           "provider": "<provider>"
+         }
+        },
+        "admin_item_extras_save": {
+         "summary": "admin_item_extras_save (admin)",
+         "value": {
+          "action": "admin_item_extras_save",
+          "extras": "<extras>",
+          "gallery": "<gallery>",
+          "item_id": "<item_id>"
          }
         },
         "admin_items_import": {
@@ -7332,6 +7344,31 @@
      }
     },
     "description": "Auth: admin (capability integrations.manage). Source: api/controllers/IntegrationController.php."
+   },
+   "admin_item_extras_save": {
+    "type": "object",
+    "title": "action: admin_item_extras_save",
+    "required": [
+     "action"
+    ],
+    "properties": {
+     "action": {
+      "type": "string",
+      "enum": [
+       "admin_item_extras_save"
+      ]
+     },
+     "extras": {
+      "description": "request field (type not declared in code)"
+     },
+     "gallery": {
+      "description": "request field (type not declared in code)"
+     },
+     "item_id": {
+      "description": "request field (type not declared in code)"
+     }
+    },
+    "description": "Auth: admin (capability items.manage). Source: api/controllers/AdminController.php."
    },
    "admin_items_import": {
     "type": "object",
@@ -16678,6 +16715,17 @@
    ],
    "query": [],
    "source": "api/controllers/IntegrationController.php"
+  },
+  "admin_item_extras_save": {
+   "auth": "admin",
+   "capability": "items.manage",
+   "body": [
+    "extras",
+    "gallery",
+    "item_id"
+   ],
+   "query": [],
+   "source": "api/controllers/AdminController.php"
   },
   "admin_items_import": {
    "auth": "admin",

@@ -185,7 +185,7 @@ define('ETEL_WRITE_ACTIONS', array(
     'admin_create_user','admin_add_item','admin_update_item','admin_delete_item',
     'admin_toggle_item','admin_create_service_giver','admin_sg_update_owner','admin_sg_claim_invite','sg_claim_complete','admin_verify_service_giver',
     'admin_suspend_service_giver','admin_sg_set_business_tools','sg_pos_sync','sg_update_order_status','sg_complete_order',
-    'sg_add_item','sg_update_item','sg_delete_item','sg_catalog_add','sg_catalog_import','admin_catalog_copy','admin_catalog_import','admin_items_import','courier_accept_offer','courier_decline_offer','admin_save_courier_offers','admin_catalog_save','admin_catalog_delete','admin_purge_cache',
+    'sg_add_item','sg_update_item','sg_delete_item','sg_catalog_add','sg_catalog_import','admin_catalog_copy','admin_catalog_import','admin_items_import','admin_item_extras_save','courier_accept_offer','courier_decline_offer','admin_save_courier_offers','admin_catalog_save','admin_catalog_delete','admin_purge_cache',
     'admin_update_courier',
     'admin_backfill_order_service_giver_ids',
     'courier_update_location',
@@ -682,7 +682,7 @@ $ETEL_DELIVERY_ONLY_ACTIONS = array(
     'admin_get_service_givers','admin_get_service_givers_list','admin_get_service_giver','admin_get_service_giver_statistics',
     'admin_create_service_giver','admin_sg_update_owner','admin_sg_claim_invite','admin_verify_service_giver','admin_suspend_service_giver','admin_assign_service_giver',
     'admin_get_all_items','admin_add_item','admin_update_item','admin_delete_item','admin_toggle_item',
-    'admin_catalog_list','admin_catalog_save','admin_catalog_delete','admin_catalog_copy','admin_catalog_import','admin_items_import',
+    'admin_catalog_list','admin_catalog_save','admin_catalog_delete','admin_catalog_copy','admin_catalog_import','admin_items_import','admin_item_extras_save',
     'admin_list_promos','admin_save_promo','admin_toggle_promo','admin_chat_threads',
     'admin_get_order_issues','admin_resolve_order_issue','admin_get_order_receipt','admin_update_order',
     'admin_get_confirmations','admin_force_confirm','admin_list_telebirr_payments','admin_list_bank_payments',
@@ -1602,7 +1602,7 @@ switch ($action) {
         } catch(Exception $e) { $pdo->rollBack(); fail_ex($e, 'Creation failed', 500); }
         break;
     }
-    case 'admin_run_code_audit': case 'admin_get_audit_settings': case 'admin_save_audit_settings': case 'get_feature_flags': case 'admin_toggle_feature': case 'admin_list_etelpay_overrides': case 'admin_set_etelpay_override': case 'admin_remove_etelpay_override': case 'admin_list_support_threads': case 'admin_get_support_thread': case 'admin_reply_support_message': case 'admin_create_user': case 'admin_assign_service_giver': case 'admin_get_all_items': case 'admin_add_item': case 'admin_items_import': case 'admin_update_item': case 'admin_delete_item': case 'admin_toggle_item': case 'get_service_givers': case 'admin_get_service_giver': case 'admin_get_service_giver_statistics': case 'admin_get_confirmations': case 'admin_force_confirm': case 'admin_backfill_order_service_giver_ids': case 'admin_update_order': case 'admin_get_order_receipt': case 'admin_analytics': case 'admin_ride_growth': case 'admin_backfill_cash_commission': case 'admin_topup_etel_money': case 'admin_get_pending_etel_topups': case 'admin_ride_payments': case 'admin_approve_etel_topup': case 'admin_reject_etel_topup': case 'admin_get_ride_fare_rules': case 'admin_update_ride_fare_rule': case 'admin_add_vehicle_type': case 'admin_delete_vehicle_type': case 'admin_update_ride_surge_multiplier': case 'admin_get_ride_peak_windows': case 'admin_update_ride_peak_windows': case 'admin_get_zones': case 'admin_update_zone': case 'admin_add_zone': case 'admin_delete_zone': case 'admin_list_role_permissions': case 'admin_update_role_permissions': case 'admin_delete_role_permissions': case 'admin_get_my_capabilities':
+    case 'admin_run_code_audit': case 'admin_get_audit_settings': case 'admin_save_audit_settings': case 'get_feature_flags': case 'admin_toggle_feature': case 'admin_list_etelpay_overrides': case 'admin_set_etelpay_override': case 'admin_remove_etelpay_override': case 'admin_list_support_threads': case 'admin_get_support_thread': case 'admin_reply_support_message': case 'admin_create_user': case 'admin_assign_service_giver': case 'admin_get_all_items': case 'admin_add_item': case 'admin_item_extras_save': case 'admin_items_import': case 'admin_update_item': case 'admin_delete_item': case 'admin_toggle_item': case 'get_service_givers': case 'admin_get_service_giver': case 'admin_get_service_giver_statistics': case 'admin_get_confirmations': case 'admin_force_confirm': case 'admin_backfill_order_service_giver_ids': case 'admin_update_order': case 'admin_get_order_receipt': case 'admin_analytics': case 'admin_ride_growth': case 'admin_backfill_cash_commission': case 'admin_topup_etel_money': case 'admin_get_pending_etel_topups': case 'admin_ride_payments': case 'admin_approve_etel_topup': case 'admin_reject_etel_topup': case 'admin_get_ride_fare_rules': case 'admin_update_ride_fare_rule': case 'admin_add_vehicle_type': case 'admin_delete_vehicle_type': case 'admin_update_ride_surge_multiplier': case 'admin_get_ride_peak_windows': case 'admin_update_ride_peak_windows': case 'admin_get_zones': case 'admin_update_zone': case 'admin_add_zone': case 'admin_delete_zone': case 'admin_list_role_permissions': case 'admin_update_role_permissions': case 'admin_delete_role_permissions': case 'admin_get_my_capabilities':
     case 'admin_get_delivery_tiers': case 'admin_update_delivery_tier':
     case 'admin_get_bank_accounts': case 'admin_update_bank_account': case 'admin_create_announcement': case 'admin_get_announcements': case 'admin_delete_announcement': case 'admin_get_launch_checklist_state': case 'admin_toggle_launch_checklist_item': case 'admin_get_ride_issues': case 'admin_resolve_ride_issue': case 'admin_get_order_issues': case 'admin_resolve_order_issue': case 'admin_get_sos_alerts': case 'admin_resolve_sos': case 'admin_get_goal_tiers': case 'admin_save_goal_tier': case 'admin_delete_goal_tier': case 'admin_run_system_test':
     case 'admin_list_release_channels': case 'admin_set_release_channel': case 'admin_promote_canary_to_stable': case 'admin_rollback_stable': case 'admin_add_canary_tester': case 'admin_remove_canary_tester': case 'admin_search_canary_candidates':
@@ -1798,7 +1798,7 @@ switch ($action) {
                 COALESCE(i.original_price,i.price) AS original_price,i.image_url,
                 $x_stock AS stock_quantity,
                 $x_prep AS preparation_time,
-                $x_avail AS is_available, i.quality, i.`portion`, i.menu_section, i.is_popular,
+                $x_avail AS is_available, i.quality, i.`portion`, i.menu_section, i.is_popular, i.gallery,
                 i.service_giver_id,sg.business_name,COALESCE(sg.zone,'') AS zone,
                 $x_type AS service_type,
                 $x_rate AS rating,
@@ -1807,7 +1807,16 @@ switch ($action) {
                 (SELECT COALESCE(SUM(oi.quantity),0) FROM order_items oi WHERE oi.item_id=i.id) AS times_ordered
                 FROM items i JOIN service_givers sg ON i.service_giver_id=sg.id $w
                 ORDER BY rating DESC,i.id DESC LIMIT 200");
-            $st->execute($p); $feed = etel_shop_feed_apply($st->fetchAll(), date('H:i'), date('Y-m-d')); ok(array('items'=>$feed,'count'=>count($feed)));
+            $st->execute($p); $feed = etel_shop_feed_apply($st->fetchAll(), date('H:i'), date('Y-m-d'));
+            // Extras the customer can tick ("Mayonnaise +50") and the extra photos for the carousel, attached to each item.
+            $xr = etel_item_extras_for($pdo, array_map(function ($f) { return isset($f['id']) ? $f['id'] : 0; }, $feed));
+            foreach ($feed as &$fi) {
+                $fi['extras'] = isset($xr[(int)$fi['id']]) ? $xr[(int)$fi['id']] : array();
+                $g = isset($fi['gallery']) && $fi['gallery'] !== null && $fi['gallery'] !== '' ? json_decode($fi['gallery'], true) : null;
+                $fi['gallery'] = is_array($g) ? array_values($g) : array();
+            }
+            unset($fi);
+            ok(array('items'=>$feed,'count'=>count($feed)));
         } catch(PDOException $e) {
             try {
                 $fb=$pdo->prepare("SELECT i.id,i.name,i.description,i.category,i.price,

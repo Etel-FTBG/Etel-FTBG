@@ -1,13 +1,13 @@
 # ETEL Delivery & Ride API reference
 
-Generated from the source by `tools/gen_api_docs.py` (488 actions). Machine-readable: `openapi.json`.
+Generated from the source by `tools/gen_api_docs.py` (489 actions). Machine-readable: `openapi.json`.
 
 **Call:** `POST /delivery/api/boot.php` with JSON `{"action": "<name>", ...fields}`; header `Authorization: Bearer <token>` for everything except the *public* actions.
 **Reply:** `{success, data, message, v}`. **Login:** `login` / `etelid_login` (apps) or `admin_etelid_login` (admin; add `totp_code` when the reply says `requires_2fa`).
 
 | Who can call | Actions |
 |---|---|
-| admin | 243 |
+| admin | 244 |
 | any signed-in user | 190 |
 | courier | 18 |
 | public | 15 |
@@ -56,6 +56,7 @@ Generated from the source by `tools/gen_api_docs.py` (488 actions). Machine-read
 | `admin_get_sos_alerts` | admin · sos.view | - | `status` |
 | `admin_get_support_thread` | admin · orders.view | `user_id` | `user_id` |
 | `admin_get_zones` | admin · settings.view | - | - |
+| `admin_item_extras_save` | admin · items.manage | `extras`, `gallery`, `item_id` | - |
 | `admin_items_import` | admin · items.manage | `dry_run`, `mode`, `rows`, `service_giver_id` | - |
 | `admin_list_etelpay_overrides` | admin · owner.only | - | - |
 | `admin_list_release_channels` | admin · owner.only | - | - |
