@@ -59,3 +59,6 @@ delivery/api/.order_pay_columns_ok
 delivery/api/.price_offer_ok
 api/.order_pay_columns_ok
 api/.price_offer_ok
+
+# Photos uploaded while running the tests locally are not part of the app
+delivery/uploads/items/*
