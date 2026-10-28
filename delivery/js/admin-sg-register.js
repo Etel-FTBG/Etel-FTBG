@@ -2,7 +2,7 @@
    "Go live now": admin types the owner's phone and a password and the business is verified straight away.
    "Pre-register": only the business name is needed; the account waits (no sign-in, hidden from customers) and a one-time claim link lets the
    owner set their own phone and password later (see api/lib/sg_claim.php), after which admin verifies.
-   Sections: business, owner and sign-in, location (map pin + auto zone, reusing the picker in admin.js), extras. A progress bar shows what is
+   Sections: business, owner and sign-in, location (a Google Places search box, the map pin and the auto zone, reusing the picker in admin.js), extras. A progress bar shows what is
    still missing, fields are checked as you type, and the last screen holds the sign-in message or claim link ready to copy.
    Data: admin_create_service_giver. Built on AdminKit; every server value goes through AdminKit.esc; no inline handlers.
    Opens from "Register a business" on the Service givers page and from the old openModal('new-sg') entry points. */
@@ -54,6 +54,11 @@ function css() {
     '.ak-reg .rg-mapw #sg-map{width:100%;height:100%}',
     '.ak-reg .rg-loc{position:absolute;top:10px;left:50%;transform:translateX(-50%);z-index:5;padding:8px 16px;border:0;border-radius:99px;font:inherit;font-size:12.5px;font-weight:800;color:#1a1405;background:linear-gradient(135deg,#E8C14A,#b8902a);box-shadow:0 4px 14px rgba(0,0,0,.3);cursor:pointer;white-space:nowrap}',
     '.ak-reg .rg-zone{position:absolute;left:50%;bottom:10px;transform:translateX(-50%);z-index:5;display:none;padding:7px 16px;border-radius:99px;background:rgba(26,26,46,.92);color:#E8C14A;font-size:12.5px;font-weight:700;white-space:nowrap}',
+    '.pac-container{z-index:10050!important;border-radius:12px;margin-top:4px;font-family:inherit}',
+    '.ak-reg .rg-find{position:relative;margin-bottom:10px}',
+    '.ak-reg .rg-find input{padding-left:38px}',
+    '.ak-reg .rg-find u{position:absolute;left:12px;top:11px;text-decoration:none;font-size:16px;pointer-events:none}',
+    '.ak-reg .rg-find small{display:block;margin-top:4px;font-size:11.5px;color:var(--mute);text-transform:none;letter-spacing:0;font-family:inherit;font-weight:400;min-height:14px}',
     '.ak-reg .rg-done{text-align:center;padding:10px 0 4px}.ak-reg .rg-ok{width:64px;height:64px;margin:0 auto 10px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:30px;background:linear-gradient(135deg,#3ad08a,#1fa463);color:#fff}',
     '.ak-reg .rg-box{border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin:12px 0;text-align:left;background:var(--card)}',
     '.ak-reg .rg-box pre{white-space:pre-wrap;word-break:break-word;font:inherit;font-size:13px;margin:6px 0 10px}',
@@ -88,6 +93,7 @@ function form() {
         '<button type="button" class="ak-btn" data-pw-show aria-label="Show password">👁</button><button type="button" class="ak-btn" data-pw-gen>🎲 Generate</button></div><div class="rg-str" id="rg-str" data-s="0"><i></i><i></i><i></i><i></i></div>', '', true) + '</div></section>' +
 
     '<section class="rg-sec" data-sec="loc"><h4><span class="rg-n">3</span>Location</h4>' +
+      '<div class="rg-find"><u>🔎</u><input id="rg-find" class="ak-in" type="search" autocomplete="off" placeholder="Search a place, shop or area in Hawassa" aria-label="Search the map"><small id="rg-find-hint">Type a name like Google Maps, pick a result and the pin moves there. You can still tap the map to fine-tune.</small></div>' +
       '<div class="rg-mapw"><button type="button" class="rg-loc" data-locate>📡 Use my location</button><div id="sg-map"></div><div class="rg-zone" id="sg-zone-detected">📍 Zone: <span id="sg-zone-label">—</span></div></div>' +
       '<div class="rg-2">' + field('sg-zone-sel', 'Zone', inp('sg-zone-sel', 'type="text" autocomplete="off" placeholder="Tap the map to pick it"'), 'Filled from the pin. You can type over it.', live) +
       '<div class="rg-2" style="gap:8px">' + field('sg-lat', 'Latitude', inp('sg-lat', 'type="text" inputmode="decimal"'), '') + field('sg-lng', 'Longitude', inp('sg-lng', 'type="text" inputmode="decimal"'), '') + '</div></div></section>' +
@@ -199,6 +205,52 @@ function submit(btn) {
   });
 }
 
+/* ---------- place search (Google Places, with the geocoder as a fallback for Enter) ---------- */
+function hint(t, bad) { var h = $('rg-find-hint'); if (h) { h.textContent = t; h.style.color = bad ? 'var(--red,#d6364a)' : ''; } }
+function goTo(lat, lng, label, addr) {
+  try { if (typeof setSGCoords === 'function') setSGCoords(lat, lng); } catch (e) { /* the pin fields stay as they were */ }
+  try {
+    if (typeof sgMap !== 'undefined' && sgMap) { sgMap.setCenter({ lat: lat, lng: lng }); sgMap.setZoom(17); }
+    if (typeof sgMarker !== 'undefined' && sgMarker) { if (sgMarker.setPosition) sgMarker.setPosition({ lat: lat, lng: lng }); else sgMarker.position = { lat: lat, lng: lng }; }
+  } catch (e) { /* the map is still loading: the coordinates are set anyway */ }
+  var a = $('rg-addr'); if (a && !a.value.trim() && addr) a.value = addr;
+  hint('📍 ' + (label || 'Pinned') + (addr && label && addr.indexOf(label) !== 0 ? ' · ' + addr : ''), false);
+  refresh();
+}
+function geocodeSearch(q) {
+  if (!q || !window.google || !google.maps || !google.maps.Geocoder) { hint('The map is still loading. Try again in a moment.', true); return; }
+  new google.maps.Geocoder().geocode({ address: q + ', Hawassa, Ethiopia', region: 'ET' }, function (res, st) {
+    if (st === 'OK' && res && res[0]) { var l = res[0].geometry.location; goTo(l.lat(), l.lng(), q, res[0].formatted_address); }
+    else hint('No place found for "' + q + '". Try another spelling, or tap the map.', true);
+  });
+}
+function initSearch(dr, tries) {
+  var input = $('rg-find'); if (!input || S.dr !== dr) return;
+  if (!input._rgKeys) {
+    input._rgKeys = true;
+    input.addEventListener('input', function () { input._rgPicked = false; });
+    input.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); setTimeout(function () { if (!input._rgPicked) geocodeSearch(input.value.trim()); }, 300); } else input._rgPicked = false; });
+  }
+  if (window.google && google.maps && google.maps.places && google.maps.places.Autocomplete) {
+    try {
+      var ac = new google.maps.places.Autocomplete(input, {
+        componentRestrictions: { country: 'et' },
+        bounds: { north: 7.15, south: 6.95, east: 38.58, west: 38.40 },
+        fields: ['geometry', 'name', 'formatted_address']
+      });
+      ac.addListener('place_changed', function () {
+        var p = ac.getPlace();
+        if (!p || !p.geometry || !p.geometry.location) { geocodeSearch(input.value.trim()); return; }
+        input._rgPicked = true;
+        goTo(p.geometry.location.lat(), p.geometry.location.lng(), p.name || '', p.formatted_address || '');
+      });
+    } catch (e) { hint('Search suggestions are not available. Type a place and press Enter.', false); }
+    return;
+  }
+  if ((tries || 0) < 40 && !window.ETEL_MAPS_FAILED) setTimeout(function () { initSearch(dr, (tries || 0) + 1); }, 400);
+  else hint('Search needs the map, which did not load. Type the zone below instead.', true);
+}
+
 /* ---------- open ---------- */
 function open(opts) {
   css();
@@ -229,6 +281,7 @@ function open(opts) {
   // The map pin fills the zone and coordinates from admin.js by setting their values, which fires no event, so look again now and then.
   var zoneEl = $('sg-zone-sel'); if (zoneEl) { var tick = setInterval(function () { if (!S.dr || !document.body.contains(zoneEl)) { clearInterval(tick); return; } refresh(); }, 600); }
   setTimeout(function () { if (typeof initSGMap === 'function' && $('sg-map')) initSGMap(); }, 300);
+  initSearch(dr, 0);
   setTimeout(function () { var b = $('rg-biz'); if (b) b.focus(); }, 320);
 }
 
