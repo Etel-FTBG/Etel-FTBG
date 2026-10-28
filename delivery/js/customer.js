@@ -960,6 +960,12 @@ function itemPlaceholder(category, name) {
                : /pharm/.test(c) ? 'pharmacy' : /bever|drink|juice|coffee/.test(c) ? 'drink' : (c ? 'box' : 'food');
     return '<span class="ph-brand ph-v' + (etelHash(name) % 4) + '" aria-hidden="true"><svg class="ph-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">' + ITEM_ICON_PATHS[kind] + '</svg></span>';
 }
+// An item without its own photo shows its shop's logo (centred, never cropped, on the card's dark backdrop) until a photo is uploaded;
+// with neither, the dish icon. A logo that fails to load is hidden, so the icon behind it shows again.
+function itemLogoImg(item) {
+    if (item.image_url || !item.logo_url) return '';
+    return '<img class="item-logo-ph" loading="lazy" decoding="async" src="' + escUrl(item.logo_url) + '" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;padding:12%;box-sizing:border-box;background:linear-gradient(135deg,#120a14,#2a0f1c)" data-fallback="hide">';
+}
 const catEmoji = {food:'🍽️',grocery:'🛒',pharmacy:'💊',laundry:'👕',delivery:'📦'};
 function renderItemsGrid(items, targetId) {
     const grid = document.getElementById(targetId || 'items-grid');
@@ -975,7 +981,7 @@ function renderItemsGrid(items, targetId) {
         const imgHtml = item.image_url
             ? itemPlaceholder(item.category, item.name)
               + '<img loading="lazy" decoding="async" src="' + escUrl(item.image_url) + '" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover" data-fallback="hide">'
-            : itemPlaceholder(item.category, item.name);
+            : itemPlaceholder(item.category, item.name) + itemLogoImg(item);
         const displayName = (ETEL_I18N.current() === 'am' && item.name_am) ? item.name_am : (item.name || '');
         // Stripped (not just apostrophe-escaped): this string ends up both
         // inside a JS string literal AND inside an HTML attribute
@@ -1059,7 +1065,7 @@ function openItemDetail(itemId) {
     const ic = (catEmoji[item.category]) || '🍴';
     const imgHtml = item.image_url
         ? '<img loading="lazy" decoding="async" src="' + escUrl(item.image_url) + '" alt="" style="width:100%;height:100%;object-fit:cover" data-fallback="hide">'
-        : itemPlaceholder(item.category, item.name);
+        : itemPlaceholder(item.category, item.name) + itemLogoImg(item);
     const stock = parseInt(item.stock_quantity, 10);
     const available = item.is_available == 1 && (isNaN(stock) || stock > 0);
     const safeN = displayName.replace(/[<>"'\\]/g, '');
