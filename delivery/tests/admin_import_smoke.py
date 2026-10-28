@@ -161,10 +161,51 @@ check("an unknown shop is refused", res.get("success") is False, res)
 st, res = call("admin_items_import", {"service_giver_id": sg, "rows": irows}, cust)
 check("a customer cannot import items", st in (401, 403) or res.get("success") is False, (st, res))
 
-try:
-    os.remove(PHOTO_PATH)
-except OSError:
-    pass
+print("menu sections, popular and photos on a shop's items")
+SHOT = "zzitem%s.jpg" % SUFFIX
+SHOT_PATH = os.path.join(HERE, "..", "img", "menu", SHOT)
+open(SHOT_PATH, "wb").write(b"\xff\xd8\xff\xd9")
+S1, S2, S3 = "ZZ%s Special Burger" % SUFFIX, "ZZ%s Mojito" % SUFFIX, "ZZ%s Beef Chao" % SUFFIX
+srows = [{"name": S1, "price": "750", "section": "  Burger ", "popular": "yes", "image_file": SHOT},
+         {"name": S2, "price": "180", "section": "Drinks", "image_file": "late-%s.jpg" % SUFFIX},
+         {"name": S3, "price": "450", "popular": "no"},
+         {"name": "ZZ%s Bad pic" % SUFFIX, "price": "10", "image_file": "../x.jpg"}]
+st, res = call("admin_items_import", {"service_giver_id": sg, "rows": srows, "dry_run": 1}, admin)
+d = data(res)
+check("sections dry run counts items, sections, missing photos", d.get("custom") == 3 and d.get("sections") == 2 and d.get("photos_missing") == 1 and len(d.get("invalid", [])) == 1, d)
+st, res = call("admin_items_import", {"service_giver_id": sg, "rows": srows}, admin)
+check("sections real run adds them", data(res).get("custom") == 3, res)
+st, r = get("admin_get_all_items", {"service_giver_id": sg}, admin)
+by = dict((i["name"], i) for i in data(r).get("items") or [])
+check("section is tidied and saved", by.get(S1, {}).get("menu_section") == "Burger" and by.get(S2, {}).get("menu_section") == "Drinks" and by.get(S3, {}).get("menu_section") in (None, ""), by.get(S1))
+check("popular is saved only when asked", int(by.get(S1, {}).get("is_popular") or 0) == 1 and int(by.get(S3, {}).get("is_popular") or 0) == 0, (by.get(S1), by.get(S3)))
+check("a photo that exists is linked, one that does not is not", by.get(S1, {}).get("image_url") == "/delivery/img/menu/" + SHOT and not by.get(S2, {}).get("image_url"), (by.get(S1, {}).get("image_url"), by.get(S2, {}).get("image_url")))
+st, r = get("customer_get_items", {"service_giver_id": sg}, cust)
+cit = dict((i["name"], i) for i in data(r).get("items") or [])
+check("customers get the section and popular flag", cit.get(S1, {}).get("menu_section") == "Burger" and int(cit.get(S1, {}).get("is_popular") or 0) == 1, cit.get(S1))
+st, res = call("admin_items_import", {"service_giver_id": sg, "rows": [{"name": S3, "price": "500", "section": "Breakfast", "popular": "yes"}, {"name": S2, "price": "190"}]}, admin)
+check("without update mode existing items are left alone", data(res).get("skipped") == 2 and data(res).get("updated") == 0, data(res))
+st, res = call("admin_items_import", {"service_giver_id": sg, "mode": "update", "rows": [{"name": S3, "price": "500", "section": "Breakfast", "popular": "yes"}, {"name": S2, "price": "190"}]}, admin)
+st, r = get("admin_get_all_items", {"service_giver_id": sg}, admin)
+by = dict((i["name"], i) for i in data(r).get("items") or [])
+check("update mode changes only what the file filled in", data(res).get("updated") == 2 and by[S3]["menu_section"] == "Breakfast" and int(by[S3]["is_popular"]) == 1 and float(by[S3]["price"]) == 500 and by[S2]["menu_section"] == "Drinks" and float(by[S2]["price"]) == 190, (data(res), by[S3], by[S2]))
+item1 = by[S1]["id"]
+st, res = call("admin_update_item", {"item_id": item1, "menu_section": "", "is_popular": 0}, admin)
+st, r = get("admin_get_all_items", {"service_giver_id": sg}, admin)
+by = dict((i["name"], i) for i in data(r).get("items") or [])
+check("the edit form can clear a section and the popular flag", res.get("success") is True and by[S1]["menu_section"] in (None, "") and int(by[S1]["is_popular"]) == 0, (res, by[S1]))
+st, res = call("admin_add_item", {"service_giver_id": sg, "name": "ZZ%s Added" % SUFFIX, "category": "food", "price": 60, "menu_section": "Sides", "is_popular": 1}, admin)
+st, r = get("admin_get_all_items", {"service_giver_id": sg}, admin)
+added = [i for i in data(r).get("items") or [] if i["name"] == "ZZ%s Added" % SUFFIX]
+check("the add form saves a section and popular", res.get("success") is True and added and added[0]["menu_section"] == "Sides" and int(added[0]["is_popular"]) == 1, (res, added))
+st, res = call("admin_update_item", {"item_id": item1, "menu_section": "Hack"}, cust)
+check("a customer cannot set a section", st in (401, 403) or res.get("success") is False, (st, res))
+
+for pth in (PHOTO_PATH, SHOT_PATH):
+    try:
+        os.remove(pth)
+    except OSError:
+        pass
 if fails:
     print("\nFAILED: %d" % len(fails))
     sys.exit(1)

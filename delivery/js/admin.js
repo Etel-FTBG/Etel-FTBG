@@ -1832,6 +1832,15 @@
             else toast(res.message||'Delete failed','err');
         }
 
+        // Menu sections the customer sees as tabs (Burger, Drinks...): the names already used by any item, offered as suggestions.
+        function sectionFields(prefix, section, popular) {
+            const names = []; (itemsData || []).forEach(x => { if (x.menu_section && names.indexOf(x.menu_section) === -1) names.push(x.menu_section); });
+            return `<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+                    <div class="modal-field"><label>Menu section</label><input id="${prefix}-sec" list="${prefix}-sec-list" maxlength="60" placeholder="e.g. Burger, Drinks" value="${escapeHtml(section||'')}"><datalist id="${prefix}-sec-list">${names.map(n=>`<option value="${escapeHtml(n)}">`).join('')}</datalist></div>
+                    <div class="modal-field"><label>Popular</label><label style="display:flex;gap:8px;align-items:center;font-size:13px;margin-top:8px"><input id="${prefix}-pop" type="checkbox" ${popular?'checked':''}> Show under Popular</label></div>
+                </div>`;
+        }
+
         function openAdminAddItem() {
             if (!sgListCache.length) { toast('No service givers found. Add one first.','err'); return; }
             const sgOpts = sgListCache.map(sg=>`<option value="${sg.id}">${sg.business_name||sg.name}</option>`).join('');
@@ -1849,6 +1858,7 @@
                     <div class="modal-field"><label>Original Price</label><input id="ai-orig" type="number" step="0.01" min="0"></div>
                 </div>
                 <div class="modal-field"><label>Prep Time (min)</label><input id="ai-prep" type="number" value="30" min="0"></div>
+                ${sectionFields('ai','',false)}
                 <div class="modal-field">
                     <label>Image</label>
                     <input type="file" id="ai-img-file" accept="image/*" style="width:100%;padding:8px;border:1.5px dashed rgba(255,255,255,.2);border-radius:8px;background:rgba(255,255,255,.03);cursor:pointer;margin-bottom:6px;color:#e8e2d4">
@@ -1876,6 +1886,7 @@
                     <div class="modal-field"><label>Original Price</label><input id="aei-orig" type="number" step="0.01" value="${it.original_price||''}"></div>
                 </div>
                 <div class="modal-field"><label>Prep Time (min)</label><input id="aei-prep" type="number" value="${it.preparation_time||30}"></div>
+                ${sectionFields('aei', it.menu_section, parseInt(it.is_popular,10)===1)}
                 <div class="modal-field">
                     <label>Image</label>
                     <input type="file" id="aei-img-file" accept="image/*" style="width:100%;padding:8px;border:1.5px dashed rgba(255,255,255,.2);border-radius:8px;background:rgba(255,255,255,.03);cursor:pointer;margin-bottom:6px;color:#e8e2d4">
@@ -1912,6 +1923,8 @@
                 price, original_price:parseFloat(document.getElementById('ai-orig').value||0)||price,
                 stock_quantity:parseInt(document.getElementById('ai-stock').value||0),
                 preparation_time:parseInt(document.getElementById('ai-prep').value||30),
+                menu_section:(document.getElementById('ai-sec').value||'').trim(),
+                is_popular:document.getElementById('ai-pop').checked ? 1 : 0,
                 image_url
             });
             if (res.success) { msg.className='modal-msg ok'; msg.textContent='✓ Item added!'; setTimeout(()=>{ closeModal(); loadItems(); },1200); }
@@ -1933,6 +1946,8 @@
                 price, original_price:parseFloat(document.getElementById('aei-orig').value||0)||price,
                 stock_quantity:parseInt(document.getElementById('aei-stock').value||0),
                 preparation_time:parseInt(document.getElementById('aei-prep').value||30),
+                menu_section:(document.getElementById('aei-sec').value||'').trim(),
+                is_popular:document.getElementById('aei-pop').checked ? 1 : 0,
                 image_url
             });
             if (res.success) { msg.className='modal-msg ok'; msg.textContent='✓ Updated!'; setTimeout(()=>{ closeModal(); loadItems(); },1200); }

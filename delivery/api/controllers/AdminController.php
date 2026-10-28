@@ -547,7 +547,15 @@ case 'admin_add_item': {
         ));
         
         $item_id = $pdo->lastInsertId();
-        
+
+        // Menu section ("Burger", "Drinks"...) and "Most popular": columns made on first use by the menu catalog code.
+        if (isset($body['menu_section']) || !empty($body['is_popular'])) {
+            require_once __DIR__ . '/../lib/menu_catalog.php';
+            etel_ensure_catalog_schema($pdo);
+            $pdo->prepare('UPDATE items SET menu_section = ?, is_popular = ? WHERE id = ?')->execute(array(
+                etel_item_clean_section(isset($body['menu_section']) ? $body['menu_section'] : ''), etel_item_clean_popular(isset($body['is_popular']) ? $body['is_popular'] : 0), $item_id));
+        }
+
         ok(array(
             'item_id' => $item_id,
             'item_code' => $item_code,
@@ -559,7 +567,7 @@ case 'admin_add_item': {
     break;
 }
 case 'admin_items_import': {
-    // POST service_giver_id, rows:[{name, price, [name_am], [category], [quality], [portion]}] (max 300), [dry_run]
+    // POST service_giver_id, rows:[{name, price, [name_am], [category], [quality], [portion], [section], [popular], [image_file|image_url]}] (max 300), [mode: skip|update], [dry_run]
     // Loads a shop's whole menu from a CSV. Dishes whose name matches the shared catalog are linked to it; the rest become
     // custom items. Dishes the shop already sells are skipped. dry_run saves nothing and shows the same counts.
     $pdo = db();
@@ -579,7 +587,7 @@ case 'admin_items_import': {
         etel_ensure_catalog_schema($pdo);
         $pdo->beginTransaction();
         try {
-            $res = etel_catalog_import_rows($pdo, $sg_id, $rows, 0);
+            $res = etel_catalog_import_rows($pdo, $sg_id, $rows, 0, (isset($body['mode']) && $body['mode'] === 'update') ? 'update' : 'skip');
             if ($dry) $pdo->rollBack(); else $pdo->commit();
         } catch (Throwable $e) { if ($pdo->inTransaction()) $pdo->rollBack(); throw $e; }
         $res['dry_run'] = $dry;
@@ -641,6 +649,13 @@ case 'admin_update_item': {
     $updates = array(); $params = array();
     foreach ($allowed as $f) {
         if (isset($body[$f])) { $updates[] = "$f=?"; $params[] = $body[$f]; }
+    }
+    // Menu section and "Most popular" (an empty section clears it).
+    if (array_key_exists('menu_section', $body) || array_key_exists('is_popular', $body)) {
+        require_once __DIR__ . '/../lib/menu_catalog.php';
+        etel_ensure_catalog_schema($pdo);
+        if (array_key_exists('menu_section', $body)) { $updates[] = 'menu_section=?'; $params[] = etel_item_clean_section($body['menu_section']); }
+        if (array_key_exists('is_popular', $body)) { $updates[] = 'is_popular=?'; $params[] = etel_item_clean_popular($body['is_popular']); }
     }
     if (empty($updates)) fail('No fields to update', 400);
     $params[] = $item_id;

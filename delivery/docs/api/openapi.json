@@ -1516,9 +1516,9 @@
           "category": "<category>",
           "description": "<description>",
           "image_url": "<image_url>",
-          "name": "<name>",
-          "original_price": "<original_price>",
-          "preparation_time": "<preparation_time>"
+          "is_popular": "<is_popular>",
+          "menu_section": "<menu_section>",
+          "name": "<name>"
          }
         },
         "admin_add_vehicle_type": {
@@ -2252,6 +2252,7 @@
          "value": {
           "action": "admin_items_import",
           "dry_run": "<dry_run>",
+          "mode": "<mode>",
           "rows": "<rows>",
           "service_giver_id": "<service_giver_id>"
          }
@@ -2943,7 +2944,9 @@
          "summary": "admin_update_item (admin)",
          "value": {
           "action": "admin_update_item",
-          "item_id": "<item_id>"
+          "is_popular": "<is_popular>",
+          "item_id": "<item_id>",
+          "menu_section": "<menu_section>"
          }
         },
         "admin_update_order": {
@@ -5289,6 +5292,12 @@
      "image_url": {
       "description": "request field (type not declared in code)"
      },
+     "is_popular": {
+      "description": "request field (type not declared in code)"
+     },
+     "menu_section": {
+      "description": "request field (type not declared in code)"
+     },
      "name": {
       "description": "request field (type not declared in code)"
      },
@@ -7340,6 +7349,9 @@
      "dry_run": {
       "description": "request field (type not declared in code)"
      },
+     "mode": {
+      "description": "request field (type not declared in code)"
+     },
      "rows": {
       "description": "request field (type not declared in code)"
      },
@@ -9282,7 +9294,13 @@
        "admin_update_item"
       ]
      },
+     "is_popular": {
+      "description": "request field (type not declared in code)"
+     },
      "item_id": {
+      "description": "request field (type not declared in code)"
+     },
+     "menu_section": {
       "description": "request field (type not declared in code)"
      }
     },
@@ -15706,6 +15724,8 @@
     "category",
     "description",
     "image_url",
+    "is_popular",
+    "menu_section",
     "name",
     "original_price",
     "preparation_time",
@@ -16664,6 +16684,7 @@
    "capability": "items.manage",
    "body": [
     "dry_run",
+    "mode",
     "rows",
     "service_giver_id"
    ],
@@ -17551,7 +17572,9 @@
    "auth": "admin",
    "capability": "items.manage",
    "body": [
-    "item_id"
+    "is_popular",
+    "item_id",
+    "menu_section"
    ],
    "query": [],
    "source": "api/controllers/AdminController.php"

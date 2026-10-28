@@ -145,23 +145,28 @@ function openCatalog(onDone) {
 /* ---------- a shop's items ---------- */
 function openItems(onDone) {
   var shops = null;
+  function modeVal() { var c = document.querySelector('input[name="csvi-imode"]:checked'); return c ? c.value : 'skip'; }
   var dr = panel({
-    icon: '🏪', title: 'Import a shop\'s menu', sub: 'Load a shop\'s items and prices from a CSV file.',
-    intro: 'One item per line. Columns: <b>name</b> and <b>price</b> are required; also name_am, category, quality (regular, special, premium) and portion. Items whose name matches a dish in the menu catalog are linked to it. Items the shop already sells are skipped.',
+    icon: '🏪', title: 'Import a shop\'s menu', sub: 'Load a shop\'s items, sections, prices and photos from a CSV file.',
+    intro: 'One item per line. <b>name</b> and <b>price</b> are required. Optional: <b>section</b> (the heading the customer taps, like Burger, Chicken, Drinks), <b>popular</b> (yes = shown under Popular), <b>image_file</b> (a photo file name such as special-burger.jpg), name_am, category (food, grocery, pharmacy, package, flower), quality (regular, special, premium) and portion. Upload the photos to <b>delivery/img/menu/</b> first, or after and import again with "Update". Items whose name matches a dish in the menu catalog are linked to it.',
     templateName: 'shop-menu-template.csv',
-    templateCsv: 'name,price,quality,portion,category,name_am\r\nShiro,90,regular,,food,ሽሮ\r\nDoro Wot,220,special,Large,food,ዶሮ ወጥ\r\nMacchiato,35,,,food,ማኪያቶ\r\n',
-    aliases: { name: ['name', 'dish', 'item', 'title', 'ስም'], price: ['price', 'cost', 'amount', 'ዋጋ'], quality: ['quality'], portion: ['portion', 'size'], category: ['category', 'type'], name_am: ['name_am', 'amharic'] },
+    templateCsv: 'name,price,section,popular,image_file,category,quality,portion,name_am\r\nSpecial Burger,750,Burger,yes,special-burger.jpg,food,special,,\r\nChicken Shawarma,800,Shawarma,yes,chicken-shawarma.jpg,food,,,\r\nBeef Chao Fan,450,Breakfast,,,food,,,\r\nMojito,180,Drinks,,mojito.jpg,food,,Large,\r\nMacchiato,35,Hot Drinks,,,food,,,ማኪያቶ\r\n',
+    aliases: { name: ['name', 'dish', 'item', 'title', 'ስም'], price: ['price', 'cost', 'amount', 'ዋጋ'], quality: ['quality'], portion: ['portion', 'size'], category: ['category', 'type'], name_am: ['name_am', 'amharic'],
+               section: ['section', 'menu_section', 'group', 'menu', 'heading'], popular: ['popular', 'most_popular', 'star'], image_file: ['image_file', 'photo', 'photo_file', 'image'], image_url: ['image_url', 'photo_url'] },
     required: ['name', 'price'], limit: 300, action: 'admin_items_import',
     extraTitle: 'Which shop?',
-    extraHtml: '<div id="csvi-shop">' + K.skeleton(1) + '</div>',
+    extraHtml: '<div id="csvi-shop">' + K.skeleton(1) + '</div>' +
+               '<div style="margin-top:12px"><b style="font-size:13px">Items the shop already has</b>' +
+               '<label style="display:flex;gap:8px;align-items:flex-start;margin:6px 0;font-size:13.5px"><input type="radio" name="csvi-imode" value="skip" checked> <span>Skip them (safe: nothing already there is changed)</span></label>' +
+               '<label style="display:flex;gap:8px;align-items:flex-start;margin:6px 0;font-size:13.5px"><input type="radio" name="csvi-imode" value="update"> <span>Update them with what the file says (price, section, popular, photo)</span></label></div>',
     extraBody: function () {
       var s = document.getElementById('csvi-shopsel'), m = document.getElementById('csvi-msg');
       if (!s || !s.value) { if (m) m.textContent = 'Choose the shop first.'; return null; }
-      return { service_giver_id: parseInt(s.value, 10) };
+      return { service_giver_id: parseInt(s.value, 10), mode: modeVal() };
     },
-    bind: function (d, reset) { d.addEventListener('change', function (e) { if (e.target && e.target.id === 'csvi-shopsel') reset(); }); },
-    chips: function (d) { return [['Linked to the catalog', d.catalog || 0], ['New custom items', d.custom || 0], ['Already sold', d.skipped || 0]]; },
-    confirmTitle: 'Import this menu?', confirmText: function () { var s = document.getElementById('csvi-shopsel'); return 'The items are added to "' + (s && s.selectedOptions[0] ? s.selectedOptions[0].textContent : 'the shop') + '". Items it already sells are not changed.'; },
+    bind: function (d, reset) { d.addEventListener('change', function (e) { if (e.target && (e.target.id === 'csvi-shopsel' || e.target.name === 'csvi-imode')) reset(); }); },
+    chips: function (d) { return [['Linked to the catalog', d.catalog || 0], ['New custom items', d.custom || 0], ['Updated', d.updated || 0], ['Already sold', d.skipped || 0], ['Menu sections', d.sections || 0], ['Photos not uploaded yet', d.photos_missing || 0]]; },
+    confirmTitle: 'Import this menu?', confirmText: function () { var s = document.getElementById('csvi-shopsel'); return 'The items are added to "' + (s && s.selectedOptions[0] ? s.selectedOptions[0].textContent : 'the shop') + '"' + (modeVal() === 'update' ? ' and the ones it already has are updated.' : '. Items it already sells are left as they are.'); },
     onDone: onDone
   });
   K.api('admin_get_service_givers', {}).then(function (res) {
