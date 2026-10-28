@@ -19,7 +19,7 @@ Generated from the source by `tools/gen_api_docs.py` (488 actions). Machine-read
 | Action | Auth | Fields | Query |
 |---|---|---|---|
 | `admin_add_canary_tester` | admin · owner.only | `app`, `user_id` | - |
-| `admin_add_item` | admin · items.manage | `category`, `description`, `image_url`, `name`, `original_price`, `preparation_time`, `price`, `service_giver_id`, `stock_quantity` | - |
+| `admin_add_item` | admin · items.manage | `category`, `description`, `image_url`, `is_popular`, `menu_section`, `name`, `original_price`, `preparation_time`, `price`, `service_giver_id`, `stock_quantity` | - |
 | `admin_add_vehicle_type` | admin · pricing.manage | `base_fare`, `min_fare`, `min_fare_short_trip`, `per_km_rate`, `per_km_rate_open`, `vehicle_type`, `wait_rate_per_min` | - |
 | `admin_add_zone` | admin · settings.manage | `base_fare`, `est_minutes`, `name`, `sort_order` | - |
 | `admin_analytics` | admin · analytics.view | - | `period` |
@@ -56,7 +56,7 @@ Generated from the source by `tools/gen_api_docs.py` (488 actions). Machine-read
 | `admin_get_sos_alerts` | admin · sos.view | - | `status` |
 | `admin_get_support_thread` | admin · orders.view | `user_id` | `user_id` |
 | `admin_get_zones` | admin · settings.view | - | - |
-| `admin_items_import` | admin · items.manage | `dry_run`, `rows`, `service_giver_id` | - |
+| `admin_items_import` | admin · items.manage | `dry_run`, `mode`, `rows`, `service_giver_id` | - |
 | `admin_list_etelpay_overrides` | admin · owner.only | - | - |
 | `admin_list_release_channels` | admin · owner.only | - | - |
 | `admin_list_role_permissions` | admin · owner.only | - | - |
@@ -85,7 +85,7 @@ Generated from the source by `tools/gen_api_docs.py` (488 actions). Machine-read
 | `admin_topup_etel_money` | admin · finance.manage | `amount`, `driver_id`, `note` | - |
 | `admin_update_bank_account` | admin · finance.manage | `account_name`, `account_number`, `active`, `display_name`, `id` | - |
 | `admin_update_delivery_tier` | admin · settings.manage | `active`, `eta_delta_min`, `icon`, `id`, `label`, `multiplier`, `sort_order` | - |
-| `admin_update_item` | admin · items.manage | `item_id` | - |
+| `admin_update_item` | admin · items.manage | `is_popular`, `item_id`, `menu_section` | - |
 | `admin_update_order` | admin · orders.manage | `order_id`, `status` | - |
 | `admin_update_ride_fare_rule` | admin · pricing.manage | `active`, `vehicle_type` | - |
 | `admin_update_ride_peak_windows` | admin · pricing.manage | `windows` | - |

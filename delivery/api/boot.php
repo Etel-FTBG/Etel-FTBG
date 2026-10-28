@@ -1785,14 +1785,23 @@ switch ($action) {
         if ($sgid > 0) { $w .= ' AND i.service_giver_id = ?'; $p[] = $sgid; }
         if ($q !== '') { $w .= ' AND (i.name LIKE ? OR sg.business_name LIKE ?)'; $lk='%'.$q.'%'; $p[]=$lk; $p[]=$lk; }
         try {
+            // Older installs named a few columns differently (stock_qty, prep_time_min, active, rating, category). Only the ones the
+            // database really has are mentioned, so a missing legacy column can no longer make the whole query fail.
+            $ic = etel_table_columns($pdo, 'items'); $sc = etel_table_columns($pdo, 'service_givers');
+            $co = function ($alias, $names, $have, $tail) { $p = array(); foreach ($names as $n) { if (in_array($n, $have, true)) $p[] = $alias . '.' . $n; } $p[] = $tail; return count($p) > 1 ? 'COALESCE(' . implode(',', $p) . ')' : $tail; };
+            $x_stock = $co('i', array('stock_quantity', 'stock_qty'), $ic, '100');
+            $x_prep = $co('i', array('preparation_time', 'prep_time_min'), $ic, '15');
+            $x_avail = $co('i', array('is_available', 'active'), $ic, '1');
+            $x_type = $co('sg', array('service_type', 'category'), $sc, "'general'");
+            $x_rate = $co('sg', array('average_rating', 'rating'), $sc, '0');
             $st = $pdo->prepare("SELECT i.id,i.name,i.name_am,i.description,i.description_am,i.category,i.price,
                 COALESCE(i.original_price,i.price) AS original_price,i.image_url,
-                COALESCE(i.stock_quantity,i.stock_qty,100) AS stock_quantity,
-                COALESCE(i.preparation_time,i.prep_time_min,15) AS preparation_time,
-                COALESCE(i.is_available,i.active,1) AS is_available, i.quality, i.`portion`,
+                $x_stock AS stock_quantity,
+                $x_prep AS preparation_time,
+                $x_avail AS is_available, i.quality, i.`portion`, i.menu_section, i.is_popular,
                 i.service_giver_id,sg.business_name,COALESCE(sg.zone,'') AS zone,
-                COALESCE(sg.service_type,sg.category,'general') AS service_type,
-                COALESCE(sg.average_rating,sg.rating,0) AS rating,
+                $x_type AS service_type,
+                $x_rate AS rating,
                 COALESCE(sg.logo_url,'') AS logo_url, COALESCE(sg.cover_url,'') AS cover_url,
                 COALESCE(sg.is_online,0) AS is_online, sg.opens_at, sg.closes_at, i.sold_out_date,
                 (SELECT COALESCE(SUM(oi.quantity),0) FROM order_items oi WHERE oi.item_id=i.id) AS times_ordered

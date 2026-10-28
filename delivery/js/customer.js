@@ -555,7 +555,8 @@ function openShopDetail(sgId) {
 let _shopMenuItems = [], _shopMenuFilter = 'all';
 function _shopMenuMatch(i, key) {
     if (key === 'all') return true;
-    if (key === 'popular') return parseInt(i.times_ordered, 10) >= 3;
+    if (key === 'popular') return parseInt(i.is_popular, 10) === 1 || parseInt(i.times_ordered, 10) >= 3;
+    if (key.indexOf('sec:') === 0) return i.menu_section === key.slice(4);
     if (key === 'deals') return i.original_price && parseFloat(i.original_price) > parseFloat(i.price);
     if (key === 'quick') return parseInt(i.preparation_time, 10) > 0 && parseInt(i.preparation_time, 10) <= 20;
     if (key.indexOf('cat:') === 0) return i.category === key.slice(4);
@@ -565,6 +566,11 @@ function renderShopMenuChips() {
     const box = document.getElementById('shop-menu-chips');
     if (!box) return;
     const defs = [['all', ETEL_I18N.t('menu_all')], ['popular', ETEL_I18N.t('menu_popular')], ['deals', ETEL_I18N.t('menu_deals')], ['quick', ETEL_I18N.t('menu_quick')]];
+    // The shop's own menu sections (Burger, Drinks...), in the order its menu was loaded (lowest item id first).
+    const secFirst = {};
+    _shopMenuItems.forEach(function(i){ if (i.menu_section) { const id = parseInt(i.id, 10) || 0; if (!(i.menu_section in secFirst) || id < secFirst[i.menu_section]) secFirst[i.menu_section] = id; } });
+    const secDefs = Object.keys(secFirst).sort(function(a, b){ return secFirst[a] - secFirst[b]; }).map(function(n){ return ['sec:' + n, n]; });
+    defs.splice.apply(defs, [2, 0].concat(secDefs));
     const cats = [];
     _shopMenuItems.forEach(function(i){ if (i.category && cats.indexOf(i.category) === -1) cats.push(i.category); });
     if (cats.length > 1) cats.forEach(function(c){ defs.push(['cat:' + c, (catEmoji[c] || '🍴') + ' ' + c.charAt(0).toUpperCase() + c.slice(1)]); });

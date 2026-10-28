@@ -38,7 +38,8 @@ function etel_ensure_catalog_schema($pdo) {
         error_log('[ETEL] etel_ensure_catalog_schema (table): ' . $e->getMessage());
     }
     // One try per column so a failure on one never skips the others.
-    $adds = array('catalog_id' => 'INT NULL DEFAULT NULL', 'quality' => 'VARCHAR(12) NULL DEFAULT NULL', 'portion' => 'VARCHAR(40) NULL DEFAULT NULL');
+    $adds = array('catalog_id' => 'INT NULL DEFAULT NULL', 'quality' => 'VARCHAR(12) NULL DEFAULT NULL', 'portion' => 'VARCHAR(40) NULL DEFAULT NULL',
+                  'menu_section' => 'VARCHAR(60) NULL DEFAULT NULL', 'is_popular' => 'TINYINT(1) NOT NULL DEFAULT 0');
     try { $cols = etel_table_columns($pdo, 'items'); } catch (Exception $e) { $cols = array(); }
     if ($cols) {
         foreach ($adds as $col => $def) {
@@ -207,6 +208,32 @@ function etel_catalog_norm($s) {
 }
 
 // Pure: tidy one imported row into array(ok(bool), clean(array)|reason(string)). Needs name + a valid price.
+// Pure: a menu section name ("Burger", "Drinks", "Breakfast"): trimmed, spaces collapsed, 60 characters at most; '' -> null.
+function etel_item_clean_section($v) {
+    $v = trim(preg_replace('/\s+/u', ' ', (string)$v));
+    if ($v === '') return null;
+    return function_exists('mb_substr') ? mb_substr($v, 0, 60, 'UTF-8') : substr($v, 0, 60);
+}
+// Pure: "yes", "1", "true", "x", "popular", "star" mean yes; anything else (or nothing) means no.
+function etel_item_clean_popular($v) {
+    if ($v === true || $v === 1) return 1;
+    return in_array(strtolower(trim((string)$v)), array('1', 'y', 'yes', 'true', 'x', 'popular', 'star', '*'), true) ? 1 : 0;
+}
+// A shop item photo: a plain file name kept in /delivery/img/menu/ (linked only when the file is really there) or an address
+// starting with / or http. Returns array(url|null, missing(bool), error|null).
+function etel_item_photo_from_row($r) {
+    $u = isset($r['image_url']) ? trim((string)$r['image_url']) : '';
+    $f = isset($r['image_file']) ? trim((string)$r['image_file']) : '';
+    if ($u !== '') {
+        if (!preg_match('#^(https?://|/)#i', $u)) return array(null, false, 'photo address must start with / or http');
+        return array(substr($u, 0, 500), false, null);
+    }
+    if ($f === '') return array(null, false, null);
+    if (!preg_match('/^[A-Za-z0-9][A-Za-z0-9._-]{0,80}\.(jpe?g|png|webp)$/i', $f)) return array(null, false, 'bad photo file name "' . substr($f, 0, 40) . '"');
+    if (is_file(dirname(__DIR__, 2) . '/img/menu/' . $f)) return array('/delivery/img/menu/' . $f, false, null);
+    return array(null, true, null);
+}
+
 function etel_catalog_clean_import_row($r) {
     if (!is_array($r)) return array(false, 'not a row');
     $name = isset($r['name']) ? trim((string)$r['name']) : '';
@@ -218,22 +245,38 @@ function etel_catalog_clean_import_row($r) {
     if (!in_array($cat, etel_catalog_categories(), true)) $cat = 'food';
     $portion = isset($r['portion']) ? trim(substr((string)$r['portion'], 0, 40)) : '';
     $name_am = isset($r['name_am']) ? trim(substr((string)$r['name_am'], 0, 150)) : '';
+    $ph = etel_item_photo_from_row($r);
+    if ($ph[2] !== null) return array(false, $ph[2]);
     return array(true, array(
         'name' => $name, 'name_am' => $name_am, 'price' => $price, 'category' => $cat,
         'quality' => etel_catalog_clean_quality(isset($r['quality']) ? $r['quality'] : ''),
         'portion' => $portion !== '' ? $portion : null,
+        'section' => etel_item_clean_section(isset($r['section']) ? $r['section'] : ''),
+        'popular' => etel_item_clean_popular(isset($r['popular']) ? $r['popular'] : ''),
+        'image' => $ph[0], 'photo_missing' => $ph[1],
     ));
 }
 
 // Import a menu (rows from a CSV the shop uploaded). A row whose name (English or Amharic) matches an active
 // catalog dish becomes a catalog pick (so it is linked and gets the photo / descriptions); anything else is
-// created as a custom item. Dishes the shop already sells (same catalog dish or same name) are skipped.
-// Returns array('catalog'=>n,'custom'=>n,'skipped'=>n,'invalid'=>[{row,reason}],'failed'=>[{row,error}]).
-function etel_catalog_import_rows($pdo, $sg_id, $rows, $user_id = 0) {
+// created as a custom item. Dishes the shop already sells (same catalog dish or same name) are skipped, or, when
+// $mode is 'update', changed: only what the file filled in (price, quality, portion, Amharic name, section, popular, photo).
+// A row can also carry section (the menu heading the customer sees: Burger, Drinks...), popular (yes = "Most popular") and a
+// photo (image_file kept in /delivery/img/menu/, or image_url).
+// Returns array('catalog'=>n,'custom'=>n,'updated'=>n,'skipped'=>n,'photos_missing'=>n,'sections'=>n,'invalid'=>[{row,reason}],'failed'=>[{row,error}]).
+function etel_catalog_import_rows($pdo, $sg_id, $rows, $user_id = 0, $mode = 'skip') {
     etel_ensure_catalog_schema($pdo);
-    $res = array('catalog' => 0, 'custom' => 0, 'skipped' => 0, 'invalid' => array(), 'failed' => array());
+    $res = array('catalog' => 0, 'custom' => 0, 'updated' => 0, 'skipped' => 0, 'photos_missing' => 0, 'sections' => 0, 'invalid' => array(), 'failed' => array());
     if (!is_array($rows)) return $res;
     $rows = array_slice($rows, 0, 300);
+    $update = ($mode === 'update');
+    $icols = etel_table_columns($pdo, 'items');
+    // Asked of the database directly: etel_table_columns() remembers its first answer, which is stale right after the columns were added.
+    try {
+        $hs = $pdo->query("SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'items' AND COLUMN_NAME IN ('menu_section', 'is_popular')");
+        $hasSec = intval($hs->fetchColumn()) === 2;
+    } catch (Exception $e) { $hasSec = false; }
+    $seenSections = array();
 
     // lookup: normalised name (EN and AM) + category -> catalog id
     $byName = array();
@@ -241,13 +284,13 @@ function etel_catalog_import_rows($pdo, $sg_id, $rows, $user_id = 0) {
         $byName[$c['category'] . '|' . etel_catalog_norm($c['name'])] = (int)$c['id'];
         if ($c['name_am'] !== null && $c['name_am'] !== '') $byName[$c['category'] . '|' . etel_catalog_norm($c['name_am'])] = (int)$c['id'];
     }
-    // what the shop already sells
+    // what the shop already sells: name -> item id, catalog dish -> item id
     $haveCat = array(); $haveName = array();
-    $q = $pdo->prepare('SELECT name, catalog_id FROM items WHERE service_giver_id = ?');
+    $q = $pdo->prepare('SELECT id, name, catalog_id FROM items WHERE service_giver_id = ?');
     $q->execute(array((int)$sg_id));
     foreach ($q->fetchAll(PDO::FETCH_ASSOC) as $it) {
-        $haveName[etel_catalog_norm($it['name'])] = true;
-        if ($it['catalog_id'] !== null) $haveCat[(int)$it['catalog_id']] = true;
+        $haveName[etel_catalog_norm($it['name'])] = (int)$it['id'];
+        if ($it['catalog_id'] !== null) $haveCat[(int)$it['catalog_id']] = (int)$it['id'];
     }
 
     foreach ($rows as $i => $raw) {
@@ -258,24 +301,44 @@ function etel_catalog_import_rows($pdo, $sg_id, $rows, $user_id = 0) {
         $key = etel_catalog_norm($r['name']);
         $cid = isset($byName[$r['category'] . '|' . $key]) ? $byName[$r['category'] . '|' . $key]
              : (($r['name_am'] !== '' && isset($byName[$r['category'] . '|' . etel_catalog_norm($r['name_am'])])) ? $byName[$r['category'] . '|' . etel_catalog_norm($r['name_am'])] : 0);
-        if (($cid && isset($haveCat[$cid])) || isset($haveName[$key])) { $res['skipped']++; continue; }
+        $existing = isset($haveName[$key]) ? $haveName[$key] : (($cid && isset($haveCat[$cid])) ? $haveCat[$cid] : 0);
+        if ($r['photo_missing']) $res['photos_missing']++;
+        if ($r['section'] !== null) $seenSections[$r['section']] = true;
         try {
+            if ($existing) {
+                if (!$update) { $res['skipped']++; continue; }
+                $set = array('price = ?', 'original_price = ?'); $vals = array($r['price'], $r['price']);
+                if ($r['name_am'] !== '') { $set[] = 'name_am = ?'; $vals[] = $r['name_am']; }
+                if ($r['quality'] !== null && in_array('quality', $icols, true)) { $set[] = 'quality = ?'; $vals[] = $r['quality']; }
+                if ($r['portion'] !== null && in_array('portion', $icols, true)) { $set[] = '`portion` = ?'; $vals[] = $r['portion']; }
+                if ($hasSec && $r['section'] !== null) { $set[] = 'menu_section = ?'; $vals[] = $r['section']; }
+                if ($hasSec && isset($raw['popular']) && trim((string)$raw['popular']) !== '') { $set[] = 'is_popular = ?'; $vals[] = $r['popular']; }
+                if ($r['image'] !== null) { $set[] = 'image_url = ?'; $vals[] = $r['image']; }
+                $vals[] = $existing; $vals[] = (int)$sg_id;
+                $pdo->prepare('UPDATE items SET ' . implode(', ', $set) . ' WHERE id = ? AND service_giver_id = ?')->execute($vals);
+                $res['updated']++;
+                continue;
+            }
+            $newId = 0;
             if ($cid) {
-                $one = etel_catalog_add_picks($pdo, $sg_id, array(array($cid, $r['price'], $r['quality'], $r['portion'], null, null)));
-                if ($one['added']) { $res['catalog']++; $haveCat[$cid] = true; $haveName[$key] = true; }
-                elseif ($one['failed']) { $res['failed'][] = array('row' => $line, 'error' => $one['failed'][0]['error']); }
-                else { $res['skipped']++; }
+                $one = etel_catalog_add_picks($pdo, $sg_id, array(array($cid, $r['price'], $r['quality'], $r['portion'], $r['image'], null)));
+                if ($one['added']) { $res['catalog']++; $newId = (int)$pdo->lastInsertId(); $haveCat[$cid] = $newId; $haveName[$key] = $newId; }
+                elseif ($one['failed']) { $res['failed'][] = array('row' => $line, 'error' => $one['failed'][0]['error']); continue; }
+                else { $res['skipped']++; continue; }
             } else {
-                $cols = etel_table_columns($pdo, 'items');
-                $extra = in_array('quality', $cols, true) && in_array('portion', $cols, true);
+                $extra = in_array('quality', $icols, true) && in_array('portion', $icols, true);
                 $sql = 'INSERT INTO items (service_giver_id, item_code, name, name_am, description, category, price, original_price, stock_quantity, preparation_time, image_url, is_available'
                      . ($extra ? ', quality, `portion`' : '') . ') VALUES (?, ?, ?, ?, ?, ?, ?, ?, 100, 20, ?, 1' . ($extra ? ', ?, ?' : '') . ')';
                 $vals = array((int)$sg_id, etel_catalog_new_item_code($pdo, $r['category']), $r['name'], $r['name_am'] !== '' ? $r['name_am'] : null,
-                              '', $r['category'], $r['price'], $r['price'], '');
+                              '', $r['category'], $r['price'], $r['price'], $r['image'] !== null ? $r['image'] : '');
                 if ($extra) { $vals[] = $r['quality']; $vals[] = $r['portion']; }
                 $pdo->prepare($sql)->execute($vals);
-                $res['custom']++; $haveName[$key] = true;
+                $newId = (int)$pdo->lastInsertId();
+                $res['custom']++; $haveName[$key] = $newId;
                 if ($user_id) { try { etel_catalog_suggest($pdo, $user_id, $r['name'], $r['name_am'], $r['category']); } catch (Exception $e) {} }
+            }
+            if ($newId && $hasSec && ($r['section'] !== null || $r['popular'])) {
+                $pdo->prepare('UPDATE items SET menu_section = ?, is_popular = ? WHERE id = ? AND service_giver_id = ?')->execute(array($r['section'], $r['popular'], $newId, (int)$sg_id));
             }
         } catch (Exception $e) {
             error_log('[ETEL] etel_catalog_import_rows row ' . $line . ': ' . $e->getMessage());
@@ -285,6 +348,7 @@ function etel_catalog_import_rows($pdo, $sg_id, $rows, $user_id = 0) {
             $res['failed'][] = array('row' => $line, 'error' => substr($e->getMessage(), 0, 160));
         }
     }
+    $res['sections'] = count($seenSections);
     return $res;
 }
 
