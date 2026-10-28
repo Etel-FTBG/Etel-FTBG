@@ -6,6 +6,8 @@ function scrollToId(id) {
 }
 EtelActions.expose([
     "_detailQtyChange",
+    "detailCarouselGo",
+    "detailToggleExtra",
     "addToCart",
     "applyCuisineFilter",
     "applyPromo",

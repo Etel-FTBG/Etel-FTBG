@@ -39,7 +39,7 @@ function etel_ensure_catalog_schema($pdo) {
     }
     // One try per column so a failure on one never skips the others.
     $adds = array('catalog_id' => 'INT NULL DEFAULT NULL', 'quality' => 'VARCHAR(12) NULL DEFAULT NULL', 'portion' => 'VARCHAR(40) NULL DEFAULT NULL',
-                  'menu_section' => 'VARCHAR(60) NULL DEFAULT NULL', 'is_popular' => 'TINYINT(1) NOT NULL DEFAULT 0');
+                  'menu_section' => 'VARCHAR(60) NULL DEFAULT NULL', 'is_popular' => 'TINYINT(1) NOT NULL DEFAULT 0', 'gallery' => 'TEXT NULL');
     try { $cols = etel_table_columns($pdo, 'items'); } catch (Exception $e) { $cols = array(); }
     if ($cols) {
         foreach ($adds as $col => $def) {
@@ -48,6 +48,104 @@ function etel_ensure_catalog_schema($pdo) {
             catch (Exception $e) { error_log('[ETEL] etel_ensure_catalog_schema (' . $col . '): ' . $e->getMessage()); }
         }
     }
+    etel_ensure_item_extras_table($pdo);
+}
+
+// Optional extras a customer can tick on an item ("Mayonnaise +50"); the order adds their prices on the server.
+function etel_ensure_item_extras_table($pdo) {
+    static $done = false;
+    if ($done) return;
+    $done = true;
+    try {
+        $pdo->exec("CREATE TABLE IF NOT EXISTS item_extras (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            item_id INT NOT NULL,
+            name VARCHAR(80) NOT NULL,
+            name_am VARCHAR(80) NULL,
+            price DECIMAL(10,2) NOT NULL DEFAULT 0,
+            sort_order INT NOT NULL DEFAULT 0,
+            is_active TINYINT(1) NOT NULL DEFAULT 1,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            KEY idx_item_extras_item (item_id)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+    } catch (Exception $e) {
+        error_log('[ETEL] etel_ensure_item_extras_table: ' . $e->getMessage());
+    }
+}
+
+// Pure: "Mayonnaise:50|Cheese:100|Chili" -> [[name, price], ...]. A missing price is 0. Up to 12; bad entries are left out.
+function etel_item_extras_parse($text) {
+    $out = array();
+    foreach (preg_split('/[|\n]+/u', (string)$text) as $part) {
+        $part = trim($part);
+        if ($part === '') continue;
+        $price = 0.0; $name = $part;
+        if (preg_match('/^(.*?)\s*[:=]\s*([0-9]+(?:\.[0-9]{1,2})?)$/u', $part, $m)) { $name = trim($m[1]); $price = (float)$m[2]; }
+        $name = function_exists('mb_substr') ? mb_substr($name, 0, 80, 'UTF-8') : substr($name, 0, 80);
+        if ($name === '' || $price < 0 || $price > 100000) continue;
+        $out[] = array($name, $price);
+        if (count($out) >= 12) break;
+    }
+    return $out;
+}
+
+// Pure: more photos for one item, from an array or a "a.jpg|b.jpg" text; file names must exist in /delivery/img/menu/.
+// Returns array(urls (max 5), missing_count, error|null).
+function etel_item_gallery_from($v) {
+    $parts = is_array($v) ? $v : preg_split('/[|\n]+/', (string)$v);
+    $urls = array(); $missing = 0;
+    foreach ($parts as $p) {
+        $p = trim((string)$p);
+        if ($p === '') continue;
+        $ph = etel_item_photo_from_row(preg_match('#^(https?://|/)#i', $p) ? array('image_url' => $p) : array('image_file' => $p));
+        if ($ph[2] !== null) return array(array(), 0, $ph[2]);
+        if ($ph[1]) { $missing++; continue; }
+        if ($ph[0] !== null) $urls[] = $ph[0];
+        if (count($urls) >= 5) break;
+    }
+    return array($urls, $missing, null);
+}
+
+// Active extras for these items: item id => [{id, name, name_am, price}], in the order they were set up.
+function etel_item_extras_for($pdo, $item_ids) {
+    $out = array();
+    $ids = array_values(array_unique(array_filter(array_map('intval', (array)$item_ids))));
+    if (!$ids) return $out;
+    try {
+        $q = $pdo->prepare('SELECT id, item_id, name, name_am, price FROM item_extras WHERE is_active = 1 AND item_id IN (' . implode(',', array_fill(0, count($ids), '?')) . ') ORDER BY sort_order, id');
+        $q->execute($ids);
+        foreach ($q->fetchAll(PDO::FETCH_ASSOC) as $r) {
+            $out[(int)$r['item_id']][] = array('id' => (int)$r['id'], 'name' => $r['name'], 'name_am' => $r['name_am'], 'price' => round((float)$r['price'], 2));
+        }
+    } catch (Exception $e) { /* no extras table yet: nothing to offer */ }
+    return $out;
+}
+
+// Replace one item's extras with this list of [name, price, name_am?, id?]: kept ids are updated, new ones added, the rest removed.
+function etel_item_extras_save($pdo, $item_id, $list) {
+    etel_ensure_item_extras_table($pdo);
+    $keep = array(); $order = 0;
+    $have = array();
+    $q = $pdo->prepare('SELECT id FROM item_extras WHERE item_id = ?');
+    $q->execute(array((int)$item_id));
+    foreach ($q->fetchAll(PDO::FETCH_COLUMN) as $id) $have[(int)$id] = true;
+    $upd = $pdo->prepare('UPDATE item_extras SET name = ?, name_am = ?, price = ?, sort_order = ?, is_active = 1 WHERE id = ? AND item_id = ?');
+    $ins = $pdo->prepare('INSERT INTO item_extras (item_id, name, name_am, price, sort_order) VALUES (?, ?, ?, ?, ?)');
+    foreach (array_slice((array)$list, 0, 12) as $e) {
+        $name = isset($e[0]) ? trim((string)$e[0]) : '';
+        $price = isset($e[1]) ? (float)$e[1] : 0.0;
+        if ($name === '' || $price < 0 || $price > 100000) continue;
+        $name = function_exists('mb_substr') ? mb_substr($name, 0, 80, 'UTF-8') : substr($name, 0, 80);
+        $am = isset($e[2]) && trim((string)$e[2]) !== '' ? trim((string)$e[2]) : null;
+        $eid = isset($e[3]) ? (int)$e[3] : 0;
+        $order += 10;
+        if ($eid && isset($have[$eid])) { $upd->execute(array($name, $am, $price, $order, $eid, (int)$item_id)); $keep[$eid] = true; }
+        else { $ins->execute(array((int)$item_id, $name, $am, $price, $order)); $keep[(int)$pdo->lastInsertId()] = true; }
+    }
+    foreach ($have as $id => $_) {
+        if (!isset($keep[$id])) $pdo->prepare('DELETE FROM item_extras WHERE id = ? AND item_id = ?')->execute(array($id, (int)$item_id));
+    }
+    return count($keep);
 }
 
 // Pure: normalise a quality label; '' / unknown -> null.
@@ -247,6 +345,11 @@ function etel_catalog_clean_import_row($r) {
     $name_am = isset($r['name_am']) ? trim(substr((string)$r['name_am'], 0, 150)) : '';
     $ph = etel_item_photo_from_row($r);
     if ($ph[2] !== null) return array(false, $ph[2]);
+    $extrasTxt = isset($r['extras']) ? trim((string)$r['extras']) : '';
+    $extras = $extrasTxt !== '' ? etel_item_extras_parse($extrasTxt) : null;
+    $more = isset($r['more_photos']) ? trim((string)$r['more_photos']) : '';
+    $gal = array(array(), 0, null);
+    if ($more !== '') { $gal = etel_item_gallery_from($more); if ($gal[2] !== null) return array(false, $gal[2]); }
     return array(true, array(
         'name' => $name, 'name_am' => $name_am, 'price' => $price, 'category' => $cat,
         'quality' => etel_catalog_clean_quality(isset($r['quality']) ? $r['quality'] : ''),
@@ -254,7 +357,22 @@ function etel_catalog_clean_import_row($r) {
         'section' => etel_item_clean_section(isset($r['section']) ? $r['section'] : ''),
         'popular' => etel_item_clean_popular(isset($r['popular']) ? $r['popular'] : ''),
         'image' => $ph[0], 'photo_missing' => $ph[1],
+        'extras' => $extras,
+        'gallery' => $more !== '' ? $gal[0] : null, 'gallery_missing' => $gal[1],
     ));
+}
+
+// A cleaned import row may carry extras and more photos: write the ones the file filled in (a blank cell leaves them alone).
+function etel_item_apply_extras_gallery($pdo, $item_id, $r, $hasCols) {
+    if (!$hasCols) return;
+    if ($r['extras'] !== null) {
+        $list = array();
+        foreach ($r['extras'] as $e) $list[] = array($e[0], $e[1]);
+        etel_item_extras_save($pdo, $item_id, $list);
+    }
+    if ($r['gallery'] !== null) {
+        $pdo->prepare('UPDATE items SET gallery = ? WHERE id = ?')->execute(array($r['gallery'] ? json_encode(array_values($r['gallery']), JSON_UNESCAPED_SLASHES) : null, $item_id));
+    }
 }
 
 // Import a menu (rows from a CSV the shop uploaded). A row whose name (English or Amharic) matches an active
@@ -273,8 +391,8 @@ function etel_catalog_import_rows($pdo, $sg_id, $rows, $user_id = 0, $mode = 'sk
     $icols = etel_table_columns($pdo, 'items');
     // Asked of the database directly: etel_table_columns() remembers its first answer, which is stale right after the columns were added.
     try {
-        $hs = $pdo->query("SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'items' AND COLUMN_NAME IN ('menu_section', 'is_popular')");
-        $hasSec = intval($hs->fetchColumn()) === 2;
+        $hs = $pdo->query("SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'items' AND COLUMN_NAME IN ('menu_section', 'is_popular', 'gallery')");
+        $hasSec = intval($hs->fetchColumn()) === 3;
     } catch (Exception $e) { $hasSec = false; }
     $seenSections = array();
 
@@ -303,6 +421,7 @@ function etel_catalog_import_rows($pdo, $sg_id, $rows, $user_id = 0, $mode = 'sk
              : (($r['name_am'] !== '' && isset($byName[$r['category'] . '|' . etel_catalog_norm($r['name_am'])])) ? $byName[$r['category'] . '|' . etel_catalog_norm($r['name_am'])] : 0);
         $existing = isset($haveName[$key]) ? $haveName[$key] : (($cid && isset($haveCat[$cid])) ? $haveCat[$cid] : 0);
         if ($r['photo_missing']) $res['photos_missing']++;
+        $res['photos_missing'] += (int)$r['gallery_missing'];
         if ($r['section'] !== null) $seenSections[$r['section']] = true;
         try {
             if ($existing) {
@@ -316,6 +435,7 @@ function etel_catalog_import_rows($pdo, $sg_id, $rows, $user_id = 0, $mode = 'sk
                 if ($r['image'] !== null) { $set[] = 'image_url = ?'; $vals[] = $r['image']; }
                 $vals[] = $existing; $vals[] = (int)$sg_id;
                 $pdo->prepare('UPDATE items SET ' . implode(', ', $set) . ' WHERE id = ? AND service_giver_id = ?')->execute($vals);
+                etel_item_apply_extras_gallery($pdo, $existing, $r, $hasSec);
                 $res['updated']++;
                 continue;
             }
@@ -340,6 +460,7 @@ function etel_catalog_import_rows($pdo, $sg_id, $rows, $user_id = 0, $mode = 'sk
             if ($newId && $hasSec && ($r['section'] !== null || $r['popular'])) {
                 $pdo->prepare('UPDATE items SET menu_section = ?, is_popular = ? WHERE id = ? AND service_giver_id = ?')->execute(array($r['section'], $r['popular'], $newId, (int)$sg_id));
             }
+            if ($newId) etel_item_apply_extras_gallery($pdo, $newId, $r, $hasSec);
         } catch (Exception $e) {
             error_log('[ETEL] etel_catalog_import_rows row ' . $line . ': ' . $e->getMessage());
             $res['failed'][] = array('row' => $line, 'error' => substr($e->getMessage(), 0, 160));

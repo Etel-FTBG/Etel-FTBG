@@ -80,15 +80,22 @@ function delivery_execute_order_creation($pdo, $auth_user, $body) {
     // combined entry contributes the same total) - this is purely so the
     // resulting order shows one "item x5" line instead of two identical
     // "item x2" / "item x3" lines on the receipt.
+    // The same item with different ticked extras stays on separate lines ("Burger + Cheese" is not "Burger"); same item + same extras combine.
     $aggregated = array();
     foreach ($items as $cart_item) {
         if (!is_array($cart_item) || !isset($cart_item['item_id'])) continue;
         $iid = intval($cart_item['item_id']);
         $qty = isset($cart_item['quantity']) ? intval($cart_item['quantity']) : 1;
-        if (isset($aggregated[$iid])) {
-            $aggregated[$iid]['quantity'] += $qty;
+        $xs = array();
+        if (isset($cart_item['extras']) && is_array($cart_item['extras'])) {
+            foreach ($cart_item['extras'] as $xid) { $xid = intval($xid); if ($xid > 0) $xs[$xid] = $xid; }
+            ksort($xs);
+        }
+        $akey = $iid . '|' . implode(',', $xs);
+        if (isset($aggregated[$akey])) {
+            $aggregated[$akey]['quantity'] += $qty;
         } else {
-            $aggregated[$iid] = array('item_id' => $iid, 'quantity' => $qty);
+            $aggregated[$akey] = array('item_id' => $iid, 'quantity' => $qty, 'extras' => array_values($xs));
         }
     }
     $items = array_values($aggregated);
@@ -146,6 +153,22 @@ function delivery_execute_order_creation($pdo, $auth_user, $body) {
             $batch_q->execute($cart_item_ids);
             foreach ($batch_q->fetchAll() as $row) { $items_by_id[$row['id']] = $row; }
         }
+        // Extras the customer ticked ("Mayonnaise +50"): looked up here and priced on the server, never from the client's numbers.
+        $want_extra_ids = array();
+        foreach ($items as $cart_item) {
+            if (isset($cart_item['extras']) && is_array($cart_item['extras'])) {
+                foreach ($cart_item['extras'] as $xid) { $xid = intval($xid); if ($xid > 0) $want_extra_ids[$xid] = true; }
+            }
+        }
+        $extras_by_id = array();
+        if ($want_extra_ids) {
+            try {
+                $xids = array_keys($want_extra_ids);
+                $xq = $pdo->prepare('SELECT id, item_id, name, price FROM item_extras WHERE is_active = 1 AND id IN (' . implode(',', array_fill(0, count($xids), '?')) . ')');
+                $xq->execute($xids);
+                foreach ($xq->fetchAll() as $xr) { $extras_by_id[(int)$xr['id']] = $xr; }
+            } catch (Exception $e) { /* no extras table: any extra asked for is refused below */ }
+        }
 
         foreach ($items as $cart_item) {
             $item_id  = intval($cart_item['item_id']);
@@ -165,14 +188,34 @@ function delivery_execute_order_creation($pdo, $auth_user, $body) {
                 throw new Exception('All items must be from the same service giver');
             }
 
-            $subtotal = $item['price'] * $quantity;
+            // The price of one is the item's price plus its ticked extras; the extras' names go after the item's name so the
+            // receipt, the shop's kitchen ticket and every report show exactly what was ordered.
+            $unit_price = (float)$item['price'];
+            $line_name = $item['name'];
+            if (isset($cart_item['extras']) && is_array($cart_item['extras'])) {
+                $picked = array();
+                foreach ($cart_item['extras'] as $xid) { $xid = intval($xid); if ($xid > 0) $picked[$xid] = true; }
+                if (count($picked) > 12) throw new Exception('Too many extras on one item');
+                $xnames = array();
+                foreach (array_keys($picked) as $xid) {
+                    if (!isset($extras_by_id[$xid]) || intval($extras_by_id[$xid]['item_id']) !== $item_id) {
+                        throw new Exception('One of the extras you chose for "' . $item['name'] . '" is no longer available');
+                    }
+                    $unit_price += (float)$extras_by_id[$xid]['price'];
+                    $xnames[] = $extras_by_id[$xid]['name'];
+                }
+                if ($xnames) $line_name = function_exists('mb_substr') ? mb_substr($item['name'] . ' + ' . implode(', ', $xnames), 0, 250, 'UTF-8') : substr($item['name'] . ' + ' . implode(', ', $xnames), 0, 250);
+            }
+            $unit_price = round($unit_price, 2);
+
+            $subtotal = $unit_price * $quantity;
             $fare_total += $subtotal;
 
             $item_details[] = array(
                 'item_id' => $item_id,
-                'name' => $item['name'],
+                'name' => $line_name,
                 'quantity' => $quantity,
-                'unit_price' => $item['price'],
+                'unit_price' => $unit_price,
                 'subtotal' => $subtotal
             );
         }
