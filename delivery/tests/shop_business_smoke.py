@@ -18,6 +18,10 @@ import urllib.error
 import urllib.request
 from datetime import datetime, timedelta, timezone
 
+# The shop day is the Addis Ababa day (UTC+3, set in api/config.php). The runner is on UTC, so "today" taken from the runner clock is a day behind
+# between 21:00 and 24:00 UTC and the cash-up / report checks looked at the wrong day.
+ADDIS = timezone(timedelta(hours=3))
+
 import etel_test_db
 
 API_URL = "http://127.0.0.1:8765/api/boot.php"
@@ -49,7 +53,7 @@ def check(name, cond, detail=""):
 
 def sql(q):
     c = etel_test_db._cfg()
-    r = subprocess.run(["mysql", "-N", "-h", c["host"], "-u", c["user"], c["name"], "-e", q], capture_output=True, text=True,
+    r = subprocess.run(["mysql", "-N", "-h", c["host"], "-u", c["user"], c["name"], "-e", "SET time_zone = '+03:00'; " + q], capture_output=True, text=True,   # the app runs on Addis time (see ADDIS above)
                        env=dict(__import__("os").environ, MYSQL_PWD=c["pass"]), timeout=30)
     return r.stdout.strip()
 
@@ -159,7 +163,7 @@ def main():
     check("the ledger adds up to the change in stock", ledger == "3", ledger)
 
     print("5. Expenses and cash-up")
-    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    today = datetime.now(ADDIS).strftime("%Y-%m-%d")
     evs = [ev("expense", "e1" + SUFFIX, {"category": "supplies", "amount": 50, "paid_with": "cash", "note": "onions"}),
            ev("expense", "e2" + SUFFIX, {"category": "electricity", "amount": 70, "paid_with": "mobile"}),
            ev("expense", "e3" + SUFFIX, {"category": "snacks", "amount": 10}), ev("expense", "e4" + SUFFIX, {"category": "rent", "amount": 0})]
@@ -267,7 +271,7 @@ def main():
 
     print("10. The report")
     call("admin_sg_set_business_tools", {"id": sg_id, "enabled": 1}, token=admin)
-    today = datetime.now().strftime("%Y-%m-%d")
+    today = datetime.now(ADDIS).strftime("%Y-%m-%d")
     _, res = call("sg_business_report", {"from": today, "to": today}, token=tok)
     d = res.get("data") or {}
     t = d.get("totals") or {}
@@ -331,7 +335,7 @@ def main():
 
     print("12. Expense corrections")
     call("admin_sg_set_business_tools", {"id": sg_id, "enabled": 1}, token=admin)
-    day = (datetime.now() - timedelta(days=2)).strftime("%Y-%m-%d")
+    day = (datetime.now(ADDIS) - timedelta(days=2)).strftime("%Y-%m-%d")
     yest = iso(-3600 * 24 * 2)
     _, res = call("sg_pos_sync", {"events": [ev("expense", "xa" + SUFFIX, {"category": "supplies", "amount": 70, "paid_with": "cash"}, yest),
                                              ev("expense", "xb" + SUFFIX, {"category": "rent", "amount": 30, "paid_with": "mobile"}, yest)]}, token=tok)
