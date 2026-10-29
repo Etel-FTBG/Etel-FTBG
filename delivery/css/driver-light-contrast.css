@@ -74,3 +74,46 @@ body.light-mode .drv-ann-title{color:#1A1206 !important}
 body.light-mode .drv-ann-body{color:#4A443A !important}
 body.light-mode .drv-ann-date{color:#6B6558 !important}
 body.light-mode .drv-referral-code{color:#8A6500 !important;background:rgba(184,138,16,.1) !important;border-color:rgba(184,138,16,.5) !important}
+
+/* Driver self-registration wizard: it is a solid black screen by design (its own colours are hard-coded for black), but in the light theme
+   the page-wide light rules still reached it, so the titles, labels and vehicle names turned dark on black and the inputs turned white.
+   Inside the wizard everything keeps its dark look, whatever theme the rest of the app is in. */
+body.light-mode .reg-overlay{
+  --text:#FFFFFF;--dim:#C9BCA0;--gold-lt:#E9C767;--sheet:#111111;--sheet2:#111111;--surface-3:#1A1A1A;--line:rgba(255,255,255,.14);
+  color:#FFFFFF !important;background:#000000 !important;
+}
+body.light-mode .reg-overlay .reg-title,
+body.light-mode .reg-overlay .reg-step-title,
+body.light-mode .reg-overlay .reg-success-title,
+body.light-mode .reg-overlay .reg-option .ro-label,
+body.light-mode .reg-overlay .reg-step-text,
+body.light-mode .reg-overlay .reg-btn.outline{color:#FFFFFF !important}
+body.light-mode .reg-overlay .reg-option.selected .ro-label{color:#E9C767 !important}
+body.light-mode .reg-overlay .reg-sub,
+body.light-mode .reg-overlay .reg-step-sub,
+body.light-mode .reg-overlay .reg-success-sub,
+body.light-mode .reg-overlay .reg-field-label,
+body.light-mode .reg-overlay label{color:#D4AF37 !important}
+body.light-mode .reg-overlay .reg-option .ro-sub{color:#B8860B !important}
+body.light-mode .reg-overlay .reg-option{background:#111111 !important;border-color:#333333 !important}
+body.light-mode .reg-overlay .reg-option.selected{background:#1F1A0A !important;border-color:#D4AF37 !important}
+body.light-mode .reg-overlay .reg-topbar,
+body.light-mode .reg-overlay .reg-body{background:#000000 !important}
+body.light-mode .reg-overlay [style*="color:#fff" i],
+body.light-mode .reg-overlay [style*="color:#EDEDF5" i],
+body.light-mode .reg-overlay [style*="color:var(--text)"]{color:#FFFFFF !important}
+body.light-mode .reg-overlay [style*="color:#D4AF37" i],
+body.light-mode .reg-overlay [style*="color:#E5C76B" i],
+body.light-mode .reg-overlay [style*="color:#F0CA58" i],
+body.light-mode .reg-overlay [style*="color:#FFD700" i]{color:#D4AF37 !important}
+body.light-mode .reg-overlay [style*="color:var(--dim)"]{color:#C9BCA0 !important}
+body.light-mode .reg-overlay input:not([type=radio]):not([type=checkbox]):not([type=range]),
+body.light-mode .reg-overlay select,
+body.light-mode .reg-overlay textarea{background:#111111 !important;color:#FFFFFF !important;border-color:#4A4A4A !important}
+body.light-mode .reg-overlay select option{background:#111111;color:#FFFFFF}
+body.light-mode .reg-overlay input::placeholder,
+body.light-mode .reg-overlay textarea::placeholder{color:rgba(212,175,55,.7) !important}
+body.light-mode .reg-overlay input:focus,
+body.light-mode .reg-overlay select:focus,
+body.light-mode .reg-overlay textarea:focus{border-color:#D4AF37 !important}
+body.light-mode .reg-overlay .reg-steps-list{background:#111111 !important;border-color:#333333 !important}
