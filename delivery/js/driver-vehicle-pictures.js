@@ -26,4 +26,30 @@
     (function wait() {
         if (!patch() && ++tries < 200) setTimeout(wait, 300);
     })();
+
+    // The sign-up wizard's "Choose a service" tiles are built with emoji. Swap each for the real vehicle picture, as the hero above
+    // them and the Update Vehicle Info tiles already do. A type with no picture keeps its emoji.
+    function dress() {
+        var R = window.REG;
+        if (!R || !R.vtypeImages) return;
+        var tiles = document.querySelectorAll('.reg-option[data-vtype]:not([data-pic])');
+        for (var i = 0; i < tiles.length; i++) {
+            var t = tiles[i];
+            var url = R.vtypeImages[t.getAttribute('data-vtype')];
+            var box = t.querySelector('.ro-icon');
+            if (!url || !box) continue;
+            t.setAttribute('data-pic', '1');
+            box.innerHTML = '<img class="ro-icon-img" src="' + url + '" alt="" loading="lazy">';
+        }
+    }
+    // The wizard rebuilds its grid each time it opens, so watch for new tiles and dress them.
+    var queued = false;
+    if (window.MutationObserver) {
+        new MutationObserver(function () {
+            if (queued) return;
+            queued = true;
+            setTimeout(function () { queued = false; dress(); }, 0);
+        }).observe(document.body, { childList: true, subtree: true });
+    }
+    dress();
 })();
