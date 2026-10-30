@@ -47,6 +47,7 @@ run python3 tests/sg_claim_smoke.py
 run python3 tests/item_extras_smoke.py
 run python3 tests/sg_owner_menu_smoke.py
 run python3 tests/people_register_smoke.py
+run python3 tests/phone_book_ride_smoke.py
 run python3 tests/customers_admin_smoke.py
 run python3 tests/people_admin_smoke.py
 run python3 tests/courier_approval_smoke.py
