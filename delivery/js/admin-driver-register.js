@@ -302,7 +302,7 @@ function open() {
   return loadTypes().then(go0);
 }
 
-window.EtelDriverRegister = { open: open };
+window.EtelDriverRegister = { open: open, css: css };
 /* openModal('new-driver') opens the desk, and "Register a person" hands its Driver choice over to it. */
 (function hook() {
   var orig = window.openModal;

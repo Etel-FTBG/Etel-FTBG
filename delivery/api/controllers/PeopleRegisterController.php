@@ -4,6 +4,10 @@
 //   admin_register_person { role, name, phone, password,
 //       courier: vehicle_type?, zone?
 //       driver:  vehicle_type, vehicle_make?, vehicle_color?, vehicle_year?, vehicle_plate }      (users.manage)
+//   admin_register_courier { name, phone, password, vehicle_type, plate_number?, home_zone?, id_type, id_number, id_photo_url, selfie_url,
+//       licence_number?, licence_photo_url?, emergency_name, emergency_phone, address?, activate?, confirm_duplicate? }   (users.manage)
+//       The Courier desk: ID and selfie are kept in the private documents folder. With "activate" the courier is approved and can take jobs at once
+//       (staff checked the ID and face in person); without it they wait in the approval list like a self sign-up.
 //   admin_register_driver { name, phone, password, vehicle_type, vehicle_make?, vehicle_color?, vehicle_year?, vehicle_plate,
 //       license_name, license_number, license_dob, license_photo_url, selfie_url,
 //       docs?: { insurance|technical_inspection|road_fund: { expiry_date, receipt_url } }, activate?, confirm_mismatch? }   (users.manage)
@@ -244,6 +248,122 @@ case 'admin_register_driver': {
     ok(array('user_id' => $uid, 'role' => 'driver', 'name' => $name, 'phone' => $phone, 'activated' => $activate, 'identity_check' => $idCheck,
              'identity_match' => $identity, 'missing' => $missing, 'docs_saved' => array_keys($docs),
              'message' => $activate ? 'Driver registered and switched on' : 'Driver registered and waiting for review'));
+    break;
+}
+
+case 'admin_register_courier': {
+    $pdo = db();
+    $admin = require_admin($pdo, 'users.manage');
+    if (etel_is_ride_only($pdo, $admin)) fail('You can only register riders and drivers', 403);
+    require_once __DIR__ . '/../lib/courier_details.php';
+    require_once __DIR__ . '/../lib/courier_approval.php';
+
+    $T = function ($k, $max) use ($body) {
+        $v = isset($body[$k]) ? trim(preg_replace('/\s+/u', ' ', (string) $body[$k])) : '';
+        return function_exists('mb_substr') ? mb_substr($v, 0, $max, 'UTF-8') : substr($v, 0, $max);
+    };
+    $name = $T('name', 100);
+    if ((function_exists('mb_strlen') ? mb_strlen($name, 'UTF-8') : strlen($name)) < 2) fail('Enter the courier\'s full name', 400);
+    $phone = etel_validate_phone(isset($body['phone']) ? trim($body['phone']) : '');
+    if (!$phone) fail('Enter a valid Ethiopian mobile number, e.g. 0911234567', 400);
+    $pw = isset($body['password']) ? (string) $body['password'] : '';
+    if (strlen($pw) < 8) fail('Password must be at least 8 characters', 400);
+
+    $vt = strtolower(trim(isset($body['vehicle_type']) ? (string) $body['vehicle_type'] : ''));
+    if (!in_array($vt, array('motorcycle', 'bicycle', 'car', 'on_foot'), true)) fail('Choose how the courier travels', 400);
+    $plate = strtoupper($T('plate_number', 20));
+    if (etel_courier_vehicle_needs_plate($vt) && $plate === '') fail('Enter the plate number of the ' . ($vt === 'car' ? 'car' : 'motorcycle'), 400);
+    if (!etel_courier_vehicle_needs_plate($vt)) $plate = '';
+    $zone = $T('home_zone', 60);
+
+    $idType = isset($body['id_type']) ? trim((string) $body['id_type']) : '';
+    $idTypes = etel_courier_id_types();
+    if ($idType !== '' && !isset($idTypes[$idType])) fail('Choose the kind of ID', 400);
+    $idNumber = strtoupper($T('id_number', 60));
+    $licNum = strtoupper($T('licence_number', 60));
+    $emName = $T('emergency_name', 100);
+    $emPhoneRaw = isset($body['emergency_phone']) ? trim((string) $body['emergency_phone']) : '';
+    $emPhone = '';
+    if ($emPhoneRaw !== '') {
+        $emPhone = etel_validate_phone($emPhoneRaw);
+        if (!$emPhone) fail('Enter a valid phone number for the emergency contact', 400);
+        if (etel_phone_last9($emPhone) === etel_phone_last9($phone)) fail('The emergency contact must be someone else, not the courier', 400);
+    }
+    $address = $T('address', 200);
+
+    $photo = function ($key) use ($body) {
+        $u = isset($body[$key]) ? trim((string) $body[$key]) : '';
+        if ($u === '') return '';
+        $path = parse_url($u, PHP_URL_PATH);
+        if (!is_string($path) || strlen($u) > 500 || !preg_match('#/uploads/driver_documents/((?:cid|csel|clic)_[A-Za-z0-9_.-]+\.(?:jpg|png|gif|webp))$#', $path, $m)) fail('That picture is not valid. Upload it again.', 400);
+        if (!is_file(dirname(__DIR__, 2) . '/uploads/driver_documents/' . $m[1])) fail('A picture was not found on the server. Upload it again.', 400);
+        return $u;
+    };
+    $idPhoto = $photo('id_photo_url'); $selfie = $photo('selfie_url'); $licPhoto = $photo('licence_photo_url');
+
+    $activate = !empty($body['activate']);
+    if ($activate) {
+        if ($idType === '' || $idNumber === '' || $idPhoto === '') fail('To approve the courier now, add the ID kind, number and photo', 400);
+        if ($selfie === '') fail('To approve the courier now, add the selfie', 400);
+        if ($emName === '' || $emPhone === '') fail('To approve the courier now, add an emergency contact (name and phone)', 400);
+        if ($vt === 'motorcycle' && ($licNum === '' || $licPhoto === '')) fail('To approve a motorcycle courier now, add the driving licence number and photo', 400);
+    }
+
+    etel_courier_details_ensure($pdo);
+    etel_courier_approval_ready($pdo);
+    if ($idNumber !== '') {
+        $dup = $pdo->prepare('SELECT u.name FROM courier_details d JOIN users u ON u.id = d.user_id WHERE d.id_number = ? LIMIT 1');
+        $dup->execute(array($idNumber));
+        $other = $dup->fetchColumn();
+        if ($other && empty($body['confirm_duplicate'])) fail('This ID number is already registered to another courier (' . $other . '). Check the ID, or confirm that it is the same person on purpose.', 409, array('duplicate_id' => true));
+    }
+
+    if (!etel_phone_lock($pdo, $phone)) fail('Please try again in a moment', 429);
+    if (etel_phone_taken($pdo, $phone)) { etel_phone_unlock($pdo, $phone); fail('That phone number already has an ETEL account', 409); }
+
+    $userCols = etel_table_columns($pdo, 'users');
+    $fields = array('name', 'phone', 'password_hash', 'role'); $marks = array('?', '?', '?', '?');
+    $values = array($name, $phone, password_hash($pw, PASSWORD_DEFAULT), 'courier');
+    if (in_array('active', $userCols, true)) { $fields[] = 'active'; $marks[] = '1'; }
+    $fields[] = 'created_at'; $marks[] = 'NOW()';
+    $code = '';
+    try {
+        $pdo->beginTransaction();
+        $pdo->prepare('INSERT INTO users (' . implode(',', $fields) . ') VALUES (' . implode(',', $marks) . ')')->execute($values);
+        $uid = intval($pdo->lastInsertId());
+        if (!$uid) throw new Exception('no user id');
+        $code = 'C-' . str_pad($uid, 5, '0', STR_PAD_LEFT);
+        $cc = etel_table_columns($pdo, 'couriers');
+        $cf = array('user_id', 'courier_code'); $cm = array('?', '?'); $cv = array($uid, $code);
+        if (in_array('vehicle_type', $cc, true)) { $cf[] = 'vehicle_type'; $cm[] = '?'; $cv[] = $vt; }
+        if ($plate !== '' && in_array('plate_number', $cc, true)) { $cf[] = 'plate_number'; $cm[] = '?'; $cv[] = $plate; }
+        if ($zone !== '') {
+            if (in_array('home_zone', $cc, true)) { $cf[] = 'home_zone'; $cm[] = '?'; $cv[] = $zone; }
+            if (in_array('zone', $cc, true)) { $cf[] = 'zone'; $cm[] = '?'; $cv[] = $zone; }
+        }
+        $cf[] = 'status'; $cm[] = "'offline'";
+        if (in_array('rating', $cc, true)) { $cf[] = 'rating'; $cm[] = '0.00'; }
+        if (in_array('total_deliveries', $cc, true)) { $cf[] = 'total_deliveries'; $cm[] = '0'; }
+        if (in_array('active', $cc, true)) { $cf[] = 'active'; $cm[] = '1'; }
+        if (in_array('approval_status', $cc, true)) { $cf[] = 'approval_status'; $cm[] = $activate ? "'approved'" : "'pending'"; }
+        if (in_array('created_at', $cc, true)) { $cf[] = 'created_at'; $cm[] = 'NOW()'; }
+        $pdo->prepare('INSERT INTO couriers (' . implode(',', $cf) . ') VALUES (' . implode(',', $cm) . ')')->execute($cv);
+        $pdo->prepare('INSERT INTO courier_details (user_id, id_type, id_number, id_photo_url, selfie_url, licence_number, licence_photo_url, emergency_name, emergency_phone, address, created_by)
+                       VALUES (?,?,?,?,?,?,?,?,?,?,?)')->execute(array($uid, $idType, $idNumber, $idPhoto, $selfie, $licNum, $licPhoto, $emName, $emPhone, $address, intval($admin['id'])));
+        $pdo->commit();
+    } catch (Exception $e) {
+        if ($pdo->inTransaction()) $pdo->rollBack();
+        etel_phone_unlock($pdo, $phone);
+        fail_ex($e, 'Could not register this courier', 500);
+    }
+    etel_phone_unlock($pdo, $phone);
+    $missing = array();
+    if ($idNumber === '' || $idPhoto === '') $missing[] = 'ID';
+    if ($selfie === '') $missing[] = 'selfie';
+    if ($emName === '' || $emPhone === '') $missing[] = 'emergency contact';
+    if ($vt === 'motorcycle' && ($licNum === '' || $licPhoto === '')) $missing[] = 'driving licence';
+    ok(array('user_id' => $uid, 'role' => 'courier', 'name' => $name, 'phone' => $phone, 'code' => $code, 'activated' => $activate, 'missing' => $missing,
+             'message' => $activate ? 'Courier registered and approved' : 'Courier registered and waiting for approval'));
     break;
 }
 

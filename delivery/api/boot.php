@@ -182,7 +182,7 @@ function etel_purge_cache($tags = 'etel-html,etel-static') {
 /* Write actions that should trigger a cache purge */
 define('ETEL_WRITE_ACTIONS', array(
     'customer_create_order','customer_package_create','admin_package_rates_save','admin_package_type_add','admin_package_setting_save','courier_update_order_status','courier_package_pickup','courier_package_deliver','admin_update_order',
-    'admin_create_user','admin_register_person','admin_register_driver','admin_add_item','admin_update_item','admin_delete_item',
+    'admin_create_user','admin_register_person','admin_register_driver','admin_register_courier','admin_add_item','admin_update_item','admin_delete_item',
     'admin_toggle_item','admin_create_service_giver','admin_sg_update_owner','admin_sg_claim_invite','admin_sg_set_hours','admin_sg_doc_review','sg_doc_submit','sg_claim_complete','admin_verify_service_giver',
     'admin_suspend_service_giver','admin_sg_set_business_tools','sg_pos_sync','sg_update_order_status','sg_complete_order',
     'sg_add_item','sg_update_item','sg_delete_item','sg_catalog_add','sg_catalog_import','admin_catalog_copy','admin_catalog_import','admin_items_import','admin_item_extras_save','courier_accept_offer','courier_decline_offer','admin_save_courier_offers','admin_catalog_save','admin_catalog_delete','admin_purge_cache',
@@ -680,7 +680,7 @@ $ETEL_DELIVERY_ONLY_ACTIONS = array(
     'admin_dispatch_board','admin_assign_courier','admin_take_back_order','admin_cancel_order',
     'admin_package_rates_get','admin_package_rates_save','admin_package_type_add','admin_package_setting_save',
     'admin_get_service_givers','admin_get_service_givers_list','admin_get_service_giver','admin_get_service_giver_statistics',
-    'admin_create_service_giver','admin_sg_update_owner','admin_sg_claim_invite','admin_sg_set_hours','admin_sg_doc_review','admin_verify_service_giver','admin_suspend_service_giver','admin_assign_service_giver',
+    'admin_create_service_giver','admin_sg_update_owner','admin_sg_claim_invite','admin_sg_set_hours','admin_sg_doc_review','admin_register_courier','admin_verify_service_giver','admin_suspend_service_giver','admin_assign_service_giver',
     'admin_get_all_items','admin_add_item','admin_update_item','admin_delete_item','admin_toggle_item',
     'admin_catalog_list','admin_catalog_save','admin_catalog_delete','admin_catalog_copy','admin_catalog_import','admin_items_import','admin_item_extras_save',
     'admin_list_promos','admin_save_promo','admin_toggle_promo','admin_chat_threads',
@@ -1708,7 +1708,7 @@ switch ($action) {
     case 'sg_golive': case 'sg_docs_list': case 'sg_doc_submit': case 'admin_sg_doc_review':
         require __DIR__ . '/controllers/SgDocsController.php';
         break;
-    case 'admin_register_person': case 'admin_register_driver':
+    case 'admin_register_person': case 'admin_register_driver': case 'admin_register_courier':
         require __DIR__ . '/controllers/PeopleRegisterController.php';
         break;
     case 'admin_sg_update_owner': case 'admin_sg_claim_invite': case 'admin_sg_set_hours': case 'sg_claim_info': case 'sg_claim_complete':

@@ -23,6 +23,16 @@ function root() { return document.getElementById('cou-pro'); }
 function state(r) { return r.suspended ? 'off' : (r.approval_status === 'pending' ? 'pending' : (r.status || 'offline')); }
 /* the vehicle as a small real picture (js/etel-vehicle-pic.js), or its emoji when there is none */
 function vp(r, emoji, px) { return (window.EtelVehiclePic && EtelVehiclePic.key(r.vehicle_type)) ? EtelVehiclePic.html(r.vehicle_type, px, { fallback: emoji }) : esc(emoji); }
+/* ID, selfie, licence and emergency contact taken in the Courier desk. The photos come as signed, expiring links (private folder). */
+function idBox(d) {
+  var x = d.details, types = d.id_types || {};
+  if (!x) return '<div class="ak-sec"><h4>Identity and contact</h4><p class="ak-fh" style="margin:0">Nothing on file yet. Couriers registered in the Courier desk have their ID, selfie and an emergency contact here.</p></div>';
+  var link = function (u, label) { return u ? '<a class="ak-btn" href="' + esc(u) + '" target="_blank" rel="noopener">' + esc(label) + '</a>' : '<span class="ak-fh">Not added</span>'; };
+  return '<div class="ak-sec"><h4>Identity and contact</h4>' + K.kv([
+    [types[x.id_type] || 'ID', (x.id_number ? esc(x.id_number) : '<span class="ak-fh">Not added</span>'), true], ['ID photo', link(x.id_photo_url, 'View ID'), true], ['Selfie', link(x.selfie_url, 'View selfie'), true],
+    ['Driving licence', x.licence_number ? esc(x.licence_number) + ' ' + link(x.licence_photo_url, 'View') : '', true],
+    ['Emergency contact', x.emergency_name ? esc(x.emergency_name) + ' · <a href="tel:' + esc(x.emergency_phone) + '">' + esc(x.emergency_phone) + '</a>' : '', true], ['Address', x.address || '']]) + '</div>';
+}
 function veh(r) { return VEH[r.vehicle_type] || ['🛵', r.vehicle_type ? String(r.vehicle_type).replace(/_/g, ' ') : 'No vehicle']; }
 function pillFor(r) {
   if (r.suspended) return K.pill('Suspended', 'red');
@@ -139,6 +149,7 @@ function drawer(d, row, dr) {
     '<div><b>' + esc(s.live) + '</b><span>Live jobs now</span></div><div><b>' + esc(s.avg_minutes == null ? '—' : K.minutes(s.avg_minutes)) + '</b><span>Avg time (30 d)</span></div><div><b>' + esc(s.cancelled_30d) + '</b><span>Cancelled (30 d)</span></div></div></div>';
   h += '<div class="ak-sec"><h4>Profile</h4>' + K.kv([['Phone', '<a href="tel:' + esc(c.phone) + '">' + esc(c.phone) + '</a>', true], ['Vehicle', vp(r, v[0], 64) + ' ' + esc(v[1]), true], ['Plate', c.plate_number || ''], ['Zone', c.zone || c.home_zone || ''], ['Rating', stars(c.rating) + ' · ' + K.num(c.total_deliveries) + ' deliveries'],
     ['Last seen', c.last_seen ? K.ago(c.last_seen) : ''], ['Fees earned (30 d)', s.fees_30d == null ? '' : K.money(s.fees_30d)], ['Approval', c.approval_status ? String(c.approval_status) + (c.approval_note ? ' — ' + c.approval_note : '') : '']]) + '</div>';
+  h += idBox(d);
   var acts = '';
   if (c.approval_status === 'pending' || c.approval_status === 'rejected') acts += '<button type="button" class="ak-btn good" data-approve="approved">✓ Approve</button>';
   if (c.approval_status === 'pending' || c.approval_status === 'approved') acts += '<button type="button" class="ak-btn danger" data-approve="rejected">Not approve…</button>';
