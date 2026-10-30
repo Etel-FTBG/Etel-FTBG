@@ -4,6 +4,7 @@
    open orders, sales, staff logins, rating) and recent orders, with the controls: verify, suspend, restore, and
    "Full profile…" which opens the existing profile / staff / payout editor.
    "Register a business" opens js/admin-sg-register.js (go live now, or pre-register and hand over with a claim link). The drawer's
+   The drawer also shows a go-live checklist (logo, cover, hours, location, owner phone, payout, menu) with a quick action per row.
    "Hand-over" section edits owner name / phone and makes a new claim link (admin_sg_update_owner, admin_sg_claim_invite).
    Data: admin_service_givers_board, admin_service_giver_detail (api/controllers/PartnerAdminController.php); controls reuse
    admin_verify_service_giver / admin_suspend_service_giver (boot.php). Standalone: replaces loadServiceGivers() so
@@ -120,6 +121,33 @@ function claimBox(code, expires) {
     '<div class="ak-acts" style="margin-top:8px"><button type="button" class="ak-btn gold" data-copy="' + esc(link) + '">Copy link</button>' +
     '<button type="button" class="ak-btn" data-copy="' + esc(code) + '">Copy code ' + esc(code) + '</button></div></div>';
 }
+/* ---------- go-live checklist ---------- */
+function apiBase() { return (window.ETEL && window.ETEL.api) ? window.ETEL.api : '/delivery/api/boot.php'; }
+function uploadPhoto(file) {
+  var fd = new FormData(); fd.append('image', file); fd.append('type', 'shop_cover');
+  var tok = typeof Auth !== 'undefined' ? Auth.getToken() : '';
+  return fetch(apiBase().replace('boot.php', 'upload.php'), { method: 'POST', headers: { 'Authorization': 'Bearer ' + tok }, body: fd }).then(function (r) { return r.json(); });
+}
+function hhmm(v) { return v ? String(v).slice(0, 5) : ''; }
+function readinessBox(rd, g) {
+  if (!rd) return '';
+  var pct = rd.total ? Math.round(rd.done / rd.total * 100) : 0;
+  var rows = rd.items.map(function (it) {
+    var act = '';
+    if (!it.ok) {
+      if (it.key === 'logo' || it.key === 'cover') act = '<label class="ak-btn gold" style="cursor:pointer">Add ' + (it.key === 'logo' ? 'logo' : 'cover') + '<input type="file" accept="image/*" hidden data-brand="' + it.key + '_url"></label>';
+      else if (it.key === 'owner') act = '<button type="button" class="ak-btn" data-gl="owner">Enter phone</button>';
+      else if (it.key === 'menu') act = '<button type="button" class="ak-btn gold" data-gl="menu">Import menu</button>';
+      else if (it.key === 'location' || it.key === 'payout') act = '<button type="button" class="ak-btn" data-gl="full">Open profile</button>';
+    }
+    var hours = it.key === 'hours' ? '<div class="ak-acts" style="margin-top:6px"><input id="gl-open" class="ak-in" type="time" value="' + esc(hhmm(g.opens_at)) + '" aria-label="Opens" style="max-width:120px"><input id="gl-close" class="ak-in" type="time" value="' + esc(hhmm(g.closes_at)) + '" aria-label="Closes" style="max-width:120px"><button type="button" class="ak-btn" data-gl="hours">Save hours</button></div>' : '';
+    return '<div class="gl-row" style="display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-top:1px solid var(--line,rgba(128,128,128,.2))">' +
+      '<span aria-hidden="true" style="font-size:16px;line-height:1.3">' + (it.ok ? '✅' : '⬜') + '</span>' +
+      '<div style="flex:1;min-width:0"><b style="font-size:13.5px">' + esc(it.label) + '</b>' + (it.ok ? '' : '<div class="ak-fh" style="margin:2px 0 0">' + esc(it.hint) + '</div>') + hours + '</div>' + (act ? '<div>' + act + '</div>' : '') + '</div>';
+  }).join('');
+  return '<div class="ak-sec"><h4>Go-live checklist · ' + rd.done + ' of ' + rd.total + '</h4>' +
+    '<div style="height:8px;border-radius:6px;background:rgba(128,128,128,.25);margin:2px 0 8px"><div style="height:8px;border-radius:6px;width:' + pct + '%;background:' + (pct >= 100 ? '#2ecc71' : pct >= 50 ? '#D4AF37' : '#e74c3c') + '"></div></div>' + rows + '</div>';
+}
 /* ---------- drawer ---------- */
 function openSG(id) {
   V.openId = id;
@@ -146,7 +174,8 @@ function drawer(d, dr) {
     K.field('Owner name', '<input id="sgo-name" class="ak-in" type="text" value="' + esc(g.name || '') + '">') +
     K.field('Owner phone (sign-in)', '<input id="sgo-phone" class="ak-in" type="tel" value="' + esc(g.phone || '') + '">') +
     '<div class="ak-acts" style="margin-top:8px"><button type="button" class="ak-btn" data-owner-save>Save owner details</button><button type="button" class="ak-btn gold" data-claim-new>📨 New claim link</button></div><div id="sgo-claim"></div>';
-  h += '<div class="ak-sec"><h4>Hand-over to the owner</h4>' + hand + '</div>';
+  h += readinessBox(d.readiness, g);
+  h += '<div class="ak-sec" id="sgo-sec"><h4>Hand-over to the owner</h4>' + hand + '</div>';
   var acts = '';
   if (g.status === 'pending') acts += '<button type="button" class="ak-btn good" data-verify>✓ Verify business</button>';
   if (g.status === 'suspended') acts += '<button type="button" class="ak-btn good" data-verify>Restore (verify)</button>';
@@ -173,8 +202,9 @@ function act(action, id, msg, extra) {
     K.toast(K.failText(res), true); return false;
   });
 }
-function verify(id) {
-  return K.confirm({ title: 'Verify this business?', text: 'It will show to customers and can receive orders.', label: 'Verify' }).then(function (r) { if (r) return act('admin_verify_service_giver', id, 'Business verified'); });
+function verify(id, rd) {
+  var miss = rd ? rd.items.filter(function (i) { return !i.ok; }).map(function (i) { return i.label; }) : [];
+  return K.confirm({ title: 'Verify this business?', text: 'It will show to customers and can receive orders.' + (miss.length ? ' Still missing: ' + miss.join(', ') + '.' : ''), label: miss.length ? 'Verify anyway' : 'Verify' }).then(function (r) { if (r) return act('admin_verify_service_giver', id, 'Business verified'); });
 }
 function onDrawerClick(e) {
   var dr = K.drawerEl(); if (!dr || !dr.contains(e.target)) return;
@@ -196,7 +226,18 @@ function onDrawerClick(e) {
       });
     });
   }
-  else if (t.closest('[data-verify]')) verify(g.id);
+  else if (t.closest('[data-gl]')) {
+    var k = t.closest('[data-gl]').getAttribute('data-gl');
+    if (k === 'hours') {
+      K.api('admin_sg_set_hours', { id: g.id, opens_at: document.getElementById('gl-open').value, closes_at: document.getElementById('gl-close').value }).then(function (res) {
+        if (K.okRes(res)) { K.toast('Opening hours saved'); V.busy = false; load(true); openSG(g.id); } else K.toast(K.failText(res), true);
+      });
+    }
+    else if (k === 'owner') { var ph = document.getElementById('sgo-phone'); if (ph) { ph.scrollIntoView({ block: 'center' }); ph.focus(); ph.select(); } }
+    else if (k === 'menu') { if (window.EtelCsvImport) window.EtelCsvImport.openItems(function () { openSG(g.id); }); else K.toast('The import is not available here.', true); }
+    else if (k === 'full') { K.closeDrawer(); if (typeof openSGManageModal === 'function') openSGManageModal(g.id); else K.toast('The full profile editor is not available here.', true); }
+  }
+  else if (t.closest('[data-verify]')) verify(g.id, dr._d.readiness);
   else if (t.closest('[data-suspend]')) K.confirm({ title: 'Suspend ' + title(g) + '?', text: 'It is taken offline and stops receiving orders until you verify it again.', label: 'Suspend', danger: true }).then(function (r) { if (r) act('admin_suspend_service_giver', g.id, 'Business suspended'); });
   else if (t.closest('[data-biz]')) {
     var on = t.closest('[data-biz]').getAttribute('data-biz') === '1';
@@ -233,6 +274,20 @@ function wire(el) {
   });
 }
 document.addEventListener('click', onDrawerClick);
+document.addEventListener('change', function (e) {
+  var inp = e.target, kind = inp && inp.getAttribute && inp.getAttribute('data-brand'), dr = K.drawerEl();
+  if (!kind || !dr || !dr._d) return;
+  var f = inp.files && inp.files[0]; if (!f) return;
+  var id = dr._d.service_giver.id; K.toast('Uploading…');
+  uploadPhoto(f).then(function (u) {
+    if (!u || !u.success) throw new Error((u && u.message) || 'Upload failed');
+    var b = { service_giver_id: id }; b[kind] = u.data.url;
+    return K.api('admin_set_shop_branding', b);
+  }).then(function (res) {
+    if (!K.okRes(res)) throw new Error(K.failText(res));
+    K.toast('Saved'); V.busy = false; load(true); openSG(id);
+  }).catch(function (er) { K.toast(er.message, true); });
+});
 document.addEventListener('focusin', function (e) { if (e.target.matches && e.target.matches('[data-sel-all]')) e.target.select(); });
 document.addEventListener('admin:filter', function (e) {   // opened from the dashboard's "Needs your attention"
   var d = e.detail || {}; if (d.page !== 'servicegivers') return;

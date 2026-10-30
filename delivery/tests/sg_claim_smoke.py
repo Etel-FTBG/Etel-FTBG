@@ -120,6 +120,26 @@ for action, body in (("admin_sg_claim_invite", {"id": sg_id}), ("admin_sg_update
     st, res = call(action, body)
     check("signed out cannot " + action, st in (401, 403) or res.get("success") is False, (st, res))
 
+print("go-live checklist")
+st, res = call("admin_service_giver_detail", {"id": sg_id}, admin)
+rd = data(res).get("readiness") or {}
+keys = dict((i["key"], i["ok"]) for i in rd.get("items", []))
+check("the detail carries a 7-point readiness list", rd.get("total") == 7 and len(keys) == 7, rd)
+check("hours and menu start missing", keys.get("hours") is False and keys.get("menu") is False, keys)
+st, res = call("admin_sg_set_hours", {"id": sg_id, "opens_at": "08:00", "closes_at": "21:30"}, admin)
+check("admin can set opening hours", res.get("success") is True, (st, res))
+st, res = call("admin_service_giver_detail", {"id": sg_id}, admin)
+keys = dict((i["key"], i["ok"]) for i in (data(res).get("readiness") or {}).get("items", []))
+check("hours tick off once set", keys.get("hours") is True, keys)
+st, res = call("admin_sg_set_hours", {"id": sg_id, "opens_at": "8am", "closes_at": "21:30"}, admin)
+check("not a badly written time", res.get("success") is False, res)
+st, res = call("admin_sg_set_hours", {"id": sg_id, "opens_at": "09:00", "closes_at": "09:00"}, admin)
+check("not the same open and close time", res.get("success") is False, res)
+st, res = call("admin_sg_set_hours", {"id": sg_id, "opens_at": "", "closes_at": ""}, admin)
+check("empty hours clear them", res.get("success") is True, res)
+st, res = call("admin_sg_set_hours", {"id": sg_id, "opens_at": "08:00", "closes_at": "21:00"}, cust)
+check("a customer cannot set hours", st in (401, 403) or res.get("success") is False, (st, res))
+
 if fails:
     print("\nFAILED: %d" % len(fails))
     sys.exit(1)

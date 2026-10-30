@@ -191,7 +191,7 @@ function act(action, body, okMsg) {
 function onDrawerClick(e) {
   var dr = K.drawerEl(); if (!dr || !dr.contains(e.target)) return false;
   var t = e.target.closest ? e.target : null; if (!t) return true;
-  var d = dr._d; if (!d) return true;
+  var d = dr._d; if (!d || !d.order) return true;
   var oid = d.order.id, b;
   if ((b = t.closest('[data-assign]'))) {
     var sel = dr.querySelector('[data-courier]'); if (!sel) return true;
