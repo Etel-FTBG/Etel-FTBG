@@ -73,7 +73,9 @@ case 'admin_courier_detail': {
     foreach ($recent as &$r) { $r['fare_total'] = round(floatval($r['fare_total']), 2); }
     unset($r);
     $acc = $one('SELECT active FROM users WHERE id = ?', array($c['user_id']));
-    ok(array('courier' => $out, 'account_active' => $acc ? intval($acc['active']) !== 0 : true,
+    require_once __DIR__ . '/../lib/courier_details.php';
+    $details = etel_courier_details_get($pdo, $c['user_id']);   // photo addresses leave as signed, expiring links (private folder)
+    ok(array('courier' => $out, 'details' => $details, 'id_types' => etel_courier_id_types(), 'account_active' => $acc ? intval($acc['active']) !== 0 : true,
              'stats' => array('today' => intval($st['today']), 'd7' => intval($st['d7']), 'd30' => intval($st['d30']), 'cancelled_30d' => intval($st['x30']), 'live' => intval($st['live']),
                               'avg_minutes' => $st['avg_min'] === null ? null : round(floatval($st['avg_min'])), 'fees_30d' => $fees ? round(floatval($fees['f']), 2) : null),
              'recent' => $recent));

@@ -166,6 +166,47 @@ check("the same phone cannot be used twice", res.get("success") is False and st 
 st, res = call("admin_register_driver", dict(drv, phone="09280%s" % TAIL[-5:]), cust)
 check("a customer cannot use the driver desk", st in (401, 403) or res.get("success") is False, (st, res))
 
+print("courier desk (admin_register_courier)")
+cid = upload("courier_id", admin)
+csel = upload("courier_selfie", admin)
+clic = upload("courier_licence", admin)
+check("the admin can upload the courier's ID, selfie and licence photos", bool(cid and csel and clic), (cid, csel, clic))
+cd = {"name": "Desk Courier", "phone": "09310%s" % TAIL[-5:], "password": "courpass123", "vehicle_type": "motorcycle", "plate_number": "et 1234", "home_zone": "Tabor",
+      "id_type": "kebele_id", "id_number": "kb-%s" % TAIL, "id_photo_url": cid, "selfie_url": csel, "licence_number": "dl-%s" % TAIL, "licence_photo_url": clic,
+      "emergency_name": "Aster Bekele", "emergency_phone": "09320%s" % TAIL[-5:], "address": "Tabor, near the church"}
+st, res = call("admin_register_courier", dict(cd, activate=1), admin)
+check("admin registers and approves a full courier", res.get("success") is True and data(res).get("activated") is True and not data(res).get("missing") and data(res).get("code", "").startswith("C-"), (st, res))
+row = sql("SELECT CONCAT(c.vehicle_type, '|', c.plate_number, '|', IFNULL(c.home_zone, ''), '|', c.approval_status) FROM couriers c JOIN users u ON u.id = c.user_id WHERE u.phone LIKE '%%%s'" % cd["phone"][-9:])
+check("the courier row has the vehicle, a tidy plate, the zone and is approved", row == "motorcycle|ET 1234|Tabor|approved", row)
+row = sql("SELECT CONCAT(d.id_type, '|', d.id_number, '|', d.emergency_name, '|', d.licence_number) FROM courier_details d JOIN users u ON u.id = d.user_id WHERE u.phone LIKE '%%%s'" % cd["phone"][-9:])
+check("the ID, emergency contact and licence are kept", row == "kebele_id|KB-%s|Aster Bekele|DL-%s" % (TAIL, TAIL), row)
+st, res = call("login", {"phone": cd["phone"], "password": "courpass123"})
+check("the courier signs in", res.get("success") is True, (st, res))
+st, res = call("admin_courier_detail", {"id": sql("SELECT c.id FROM couriers c JOIN users u ON u.id = c.user_id WHERE u.phone LIKE '%%%s'" % cd["phone"][-9:])}, admin)
+dd = data(res).get("details") or {}
+check("the admin drawer gets the details, with the photos as signed private links", dd.get("emergency_name") == "Aster Bekele" and "private_file.php" in dd.get("id_photo_url", ""), dd)
+
+c2 = dict(cd, phone="09330%s" % TAIL[-5:], id_number="kb-x%s" % TAIL, id_photo_url="", selfie_url="", emergency_name="", emergency_phone="", licence_number="", licence_photo_url="")
+st, res = call("admin_register_courier", c2, admin)
+row = sql("SELECT c.approval_status FROM couriers c JOIN users u ON u.id = c.user_id WHERE u.phone LIKE '%%%s'" % c2["phone"][-9:])
+check("without approving, a courier is saved as pending with the missing parts listed", res.get("success") is True and data(res).get("activated") is False and "selfie" in data(res).get("missing", []) and row == "pending", (st, res, row))
+st, res = call("admin_register_courier", dict(c2, phone="09340%s" % TAIL[-5:], activate=1), admin)
+check("approving needs the ID, selfie and emergency contact", res.get("success") is False, res)
+st, res = call("admin_register_courier", dict(cd, phone="09350%s" % TAIL[-5:]), admin)
+check("the same ID number is not registered twice (409)", res.get("success") is False and st == 409 and res.get("duplicate_id") is True, (st, res))
+st, res = call("admin_register_courier", dict(cd, phone="09360%s" % TAIL[-5:], id_number="kb-y%s" % TAIL, emergency_phone="09360%s" % TAIL[-5:]), admin)
+check("the emergency contact cannot be the courier themselves", res.get("success") is False, res)
+st, res = call("admin_register_courier", dict(cd, phone="09370%s" % TAIL[-5:], id_number="kb-z%s" % TAIL, plate_number=""), admin)
+check("a motorcycle needs a plate", res.get("success") is False, res)
+st, res = call("admin_register_courier", dict(cd, phone="09380%s" % TAIL[-5:], id_number="kb-w%s" % TAIL, id_photo_url="http://x.test/uploads/items/a.png"), admin)
+check("a picture from the wrong folder is refused", res.get("success") is False, res)
+st, res = call("admin_register_courier", dict(cd, phone="09390%s" % TAIL[-5:], id_number="kb-v%s" % TAIL, vehicle_type="rocket"), admin)
+check("an unknown vehicle is refused", res.get("success") is False, res)
+st, res = call("admin_register_courier", dict(cd, phone="09400%s" % TAIL[-5:], id_number="kb-u%s" % TAIL, vehicle_type="bicycle", plate_number="", licence_number="", licence_photo_url="", activate=1), admin)
+check("a bicycle courier needs no plate or licence", res.get("success") is True and data(res).get("activated") is True, (st, res))
+st, res = call("admin_register_courier", dict(cd, phone="09410%s" % TAIL[-5:], id_number="kb-t%s" % TAIL), cust)
+check("a customer cannot use the courier desk", st in (401, 403) or res.get("success") is False, (st, res))
+
 if fails:
     print("\nFAILED: %d" % len(fails))
     sys.exit(1)
