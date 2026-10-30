@@ -182,7 +182,7 @@ function etel_purge_cache($tags = 'etel-html,etel-static') {
 /* Write actions that should trigger a cache purge */
 define('ETEL_WRITE_ACTIONS', array(
     'customer_create_order','customer_package_create','admin_package_rates_save','admin_package_type_add','admin_package_setting_save','courier_update_order_status','courier_package_pickup','courier_package_deliver','admin_update_order',
-    'admin_create_user','admin_add_item','admin_update_item','admin_delete_item',
+    'admin_create_user','admin_register_person','admin_add_item','admin_update_item','admin_delete_item',
     'admin_toggle_item','admin_create_service_giver','admin_sg_update_owner','admin_sg_claim_invite','admin_sg_set_hours','admin_sg_doc_review','sg_doc_submit','sg_claim_complete','admin_verify_service_giver',
     'admin_suspend_service_giver','admin_sg_set_business_tools','sg_pos_sync','sg_update_order_status','sg_complete_order',
     'sg_add_item','sg_update_item','sg_delete_item','sg_catalog_add','sg_catalog_import','admin_catalog_copy','admin_catalog_import','admin_items_import','admin_item_extras_save','courier_accept_offer','courier_decline_offer','admin_save_courier_offers','admin_catalog_save','admin_catalog_delete','admin_purge_cache',
@@ -1707,6 +1707,9 @@ switch ($action) {
         break;
     case 'sg_golive': case 'sg_docs_list': case 'sg_doc_submit': case 'admin_sg_doc_review':
         require __DIR__ . '/controllers/SgDocsController.php';
+        break;
+    case 'admin_register_person':
+        require __DIR__ . '/controllers/PeopleRegisterController.php';
         break;
     case 'admin_sg_update_owner': case 'admin_sg_claim_invite': case 'admin_sg_set_hours': case 'sg_claim_info': case 'sg_claim_complete':
         // The two sg_claim_* actions are public (the owner has no account yet): the one-time claim code is the credential. See lib/sg_claim.php.
