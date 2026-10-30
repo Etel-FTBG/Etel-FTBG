@@ -21,6 +21,8 @@ var ST = {
   completed:   { label: 'Completed',         short: 'Done',     tone: 'green',  icon: '✅' },
   cancelled:   { label: 'Cancelled',         short: 'Cancelled', tone: 'red',   icon: '✕' }
 };
+/* the vehicle as a small real picture (js/etel-vehicle-pic.js), or its emoji when there is none */
+function vp(type, emoji, px) { return (window.EtelVehiclePic && EtelVehiclePic.key(type)) ? EtelVehiclePic.html(type, px, { fallback: emoji }) : esc(emoji); }
 var VEH = { car: '🚗', sedan: '🚗', moto: '🏍️', motorcycle: '🏍️', bike: '🏍️', bajaj: '🛺', van: '🚐', minibus: '🚐' };
 var V = { status: 'all', q: '', mode: 'cards', rows: [], total: 0, stats: null, loaded: false, busy: false, openId: null, timer: null };
 try { var m = localStorage.getItem('rid-mode'); if (m === 'table' || m === 'cards') V.mode = m; } catch (e) { /* private window */ }
@@ -83,7 +85,7 @@ function card(r) {
   return '<div class="ak-card' + (r.status === 'cancelled' ? ' off' : '') + '" tabindex="0" role="button" data-open="' + esc(r.id) + '">' +
     '<div class="ak-top"><div class="ak-av" style="--a:#E8C14A;--b:#9a7a1c">' + esc(s.icon) + '</div><div class="ak-nm"><b>Ride #' + esc(r.id) + '</b><small>' + esc(K.ago(r.created_at)) + (r.open_trip == 1 ? ' · open trip' : '') + '</small></div>' + K.pill(s.short, s.tone) + '</div>' +
     '<div class="ak-route"><i>📍</i><span>' + esc(r.pickup_address || '—') + '</span></div><div class="ak-route"><i>🏁</i><span>' + esc(r.dropoff_address || '—') + '</span></div>' +
-    '<div class="ak-chips"><span class="ak-chip">🧍 ' + esc(r.passenger_name || '—') + '</span><span class="ak-chip">' + esc(v) + ' ' + esc(r.driver_name || 'No driver yet') + (r.vehicle_plate ? ' · ' + esc(r.vehicle_plate) : '') + '</span></div>' +
+    '<div class="ak-chips"><span class="ak-chip">🧍 ' + esc(r.passenger_name || '—') + '</span><span class="ak-chip">' + vp(r.vehicle_type, v, 34) + ' ' + esc(r.driver_name || 'No driver yet') + (r.vehicle_plate ? ' · ' + esc(r.vehicle_plate) : '') + '</span></div>' +
     '<div class="ak-row"><span>' + (live ? '<span class="ak-live"></span>Live' : esc(r.payment_method || 'cash')) + '</span><b style="font-size:15px">' + esc(fare(r)) + '</b></div></div>';
 }
 function table() {

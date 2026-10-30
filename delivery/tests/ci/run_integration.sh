@@ -31,6 +31,7 @@ for i in $(seq 1 30); do curl -s -o /dev/null "http://127.0.0.1:$PORT/api/list-z
 rc=0
 run() { echo; echo "=== $*"; "$@" || { echo "!!! FAILED: $*"; rc=1; }; }
 run python3 tests/ci/check_migrations.py
+run python3 tests/ci/check_vehicle_pic.py
 run python3 tests/ci/check_reserved_columns.py
 run python3 tests/ci/check_xss_sinks.py
 run python3 tests/security_regression_smoke.py

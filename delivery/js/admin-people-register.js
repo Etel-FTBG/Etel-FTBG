@@ -14,11 +14,11 @@ var esc = K.esc;
 
 var ROLES = {
   customer: { icon: '🧑', label: 'Customer', sub: 'Orders food and rides', app: 'customer.html', appName: 'the ETEL app' },
-  courier:  { icon: '🛵', label: 'Courier',  sub: 'Delivers orders. Starts approved', app: 'courier/', appName: 'the ETEL Courier app' },
-  driver:   { icon: '🚕', label: 'Driver',   sub: 'Gives rides. Finishes setup in the app', app: 'driver/', appName: 'the ETEL Driver app' }
+  courier:  { vehicle: 'moto', icon: '🛵', label: 'Courier',  sub: 'Delivers orders. Starts approved', app: 'courier/', appName: 'the ETEL Courier app' },
+  driver:   { vehicle: 'bajaj', icon: '🚕', label: 'Driver',   sub: 'Gives rides. Finishes setup in the app', app: 'driver/', appName: 'the ETEL Driver app' }
 };
 var COURIER_V = [['motorcycle', '🏍️', 'Motorcycle'], ['bicycle', '🚲', 'Bicycle'], ['car', '🚗', 'Car'], ['on_foot', '🚶', 'On foot']];
-var DRIVER_V = [['bajaj', '🛺', 'Bajaj'], ['moto', '🏍️', 'Moto'], ['car', '🚗', 'Car'], ['minibus', '🚐', 'Minibus'], ['qute', '🛺', 'Qute']];
+var DRIVER_V = [['bajaj', '🛺', 'Bajaj'], ['moto', '🏍️', 'Motorcycle'], ['car', '🚗', 'Car'], ['minibus', '🚐', 'Minibus'], ['qute', '🛺', 'Qute']];
 var S = { role: 'customer', cv: 'motorcycle', dv: 'bajaj', dr: null, msg: '' };
 
 function css() {
@@ -29,7 +29,7 @@ function css() {
     '.ak-preg .pr-top{position:sticky;top:-16px;z-index:3;margin:-16px -18px 14px;padding:12px 18px;background:var(--card);border-bottom:1px solid var(--line)}',
     '.ak-preg .pr-roles{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.ak-preg .pr-roles[data-n="2"]{grid-template-columns:repeat(2,1fr)}',
     '.ak-preg .pr-roles button{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;padding:10px 12px;border-radius:12px;border:1.5px solid var(--line);background:var(--card);color:var(--ink);font:inherit;cursor:pointer}',
-    '.ak-preg .pr-roles button u{text-decoration:none;font-size:22px;line-height:1.1}.ak-preg .pr-roles button b{font-size:13.5px}.ak-preg .pr-roles button span{font-size:11px;color:var(--mute);font-weight:400;line-height:1.3}',
+    '.ak-preg .pr-roles button u{text-decoration:none;font-size:22px;line-height:1.1;display:flex;align-items:center;height:42px}.ak-preg .pr-roles button b{font-size:13.5px}.ak-preg .pr-roles button span{font-size:11px;color:var(--mute);font-weight:400;line-height:1.3}',
     '.ak-preg .pr-roles button.on{border-color:var(--gold);box-shadow:0 0 0 3px rgba(212,175,55,.22);background:rgba(212,175,55,.09)}',
     '.ak-preg .pr-prog{display:flex;align-items:center;gap:10px;margin-top:10px;font-size:12px;color:var(--mute)}',
     '.ak-preg .pr-bar{flex:1;height:7px;border-radius:99px;background:var(--line);overflow:hidden}',
@@ -46,9 +46,9 @@ function css() {
     '.ak-preg .pr-f small{display:block;margin-top:4px;font-size:11.5px;color:var(--mute);min-height:14px;text-transform:none;letter-spacing:0;font-family:inherit;font-weight:400}',
     '.ak-preg .pr-f.bad small{color:var(--red,#d6364a)}',
     '.ak-preg .pr-2{display:grid;grid-template-columns:1fr 1fr;gap:10px}',
-    '.ak-preg .pr-tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px;margin-bottom:12px}',
+    '.ak-preg .pr-tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:8px;margin-bottom:12px}',
     '.ak-preg .pr-tiles button{display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 6px;border-radius:12px;border:1.5px solid var(--line);background:var(--card);color:var(--ink);font:inherit;font-size:12px;font-weight:600;cursor:pointer}',
-    '.ak-preg .pr-tiles button u{text-decoration:none;font-size:22px;line-height:1}',
+    '.ak-preg .pr-tiles button u{text-decoration:none;font-size:22px;line-height:1;display:flex;align-items:center;justify-content:center;height:54px;width:100%}.ak-preg .pr-tiles button u img,.ak-preg .pr-roles button u img{max-height:100%;width:auto}',
     '.ak-preg .pr-tiles button.on{border-color:var(--gold);background:rgba(212,175,55,.12);box-shadow:0 0 0 3px rgba(212,175,55,.2)}',
     '.ak-preg .pr-pw{display:flex;gap:6px}.ak-preg .pr-pw .ak-in{flex:1;min-width:0}',
     '.ak-preg .pr-str{display:flex;gap:4px;margin-top:6px}.ak-preg .pr-str i{flex:1;height:5px;border-radius:99px;background:var(--line)}',
@@ -68,8 +68,10 @@ function val(id) { var e = $(id); return e ? e.value.trim() : ''; }
 /* readonly until focused: keeps the browser from pouring the admin's own saved phone and password into these boxes */
 function inp(id, attrs) { return '<input id="' + id + '" name="' + id + '-' + Date.now().toString(36) + '" class="ak-in" readonly data-unlock ' + (attrs || '') + '>'; }
 function field(id, label, input, hint, req) { return '<label class="pr-f" data-f="' + id + '"><span>' + esc(label) + (req ? ' <em>*</em>' : '') + '</span>' + input + '<small data-h="' + esc(hint || '') + '">' + esc(hint || '') + '</small></label>'; }
+/* a real vehicle picture (js/etel-vehicle-pic.js) when there is one for it, else the emoji */
+function pic(type, emoji, px) { return (window.EtelVehiclePic && EtelVehiclePic.key(type)) ? EtelVehiclePic.html(type, px, { fallback: emoji }) : esc(emoji); }
 function tiles(list, cur, attr) {
-  return '<div class="pr-tiles" role="group">' + list.map(function (t) { return '<button type="button" ' + attr + '="' + t[0] + '" class="' + (cur === t[0] ? 'on' : '') + '" aria-pressed="' + (cur === t[0]) + '"><u>' + t[1] + '</u>' + esc(t[2]) + '</button>'; }).join('') + '</div>';
+  return '<div class="pr-tiles" role="group">' + list.map(function (t) { return '<button type="button" ' + attr + '="' + t[0] + '" class="' + (cur === t[0] ? 'on' : '') + '" aria-pressed="' + (cur === t[0]) + '"><u>' + pic(t[0], t[1], 72) + '</u>' + esc(t[2]) + '</button>'; }).join('') + '</div>';
 }
 function roleKeys() { return window.ETEL_RIDE_ONLY ? ['customer', 'driver'] : ['customer', 'courier', 'driver']; }
 
@@ -96,7 +98,7 @@ function details() {
 }
 function form() {
   var rk = roleKeys();
-  var roles = rk.map(function (k) { var r = ROLES[k]; return '<button type="button" data-role="' + k + '" class="' + (S.role === k ? 'on' : '') + '" aria-pressed="' + (S.role === k) + '"><u>' + r.icon + '</u><b>' + esc(r.label) + '</b><span>' + esc(r.sub) + '</span></button>'; }).join('');
+  var roles = rk.map(function (k) { var r = ROLES[k]; return '<button type="button" data-role="' + k + '" class="' + (S.role === k ? 'on' : '') + '" aria-pressed="' + (S.role === k) + '"><u>' + (r.vehicle ? pic(r.vehicle, r.icon, 64) : esc(r.icon)) + '</u><b>' + esc(r.label) + '</b><span>' + esc(r.sub) + '</span></button>'; }).join('');
   return '<div class="pr-top"><div class="pr-roles" role="group" aria-label="Who are you registering?" data-n="' + rk.length + '">' + roles + '</div>' +
     '<div class="pr-prog"><div class="pr-bar"><i id="pr-bar"></i></div><b id="pr-count"></b></div></div>' +
     '<section class="pr-sec" data-sec="who"><h4><span class="pr-n">1</span>Who they are</h4>' +
@@ -110,7 +112,7 @@ function form() {
 }
 function head() {
   var r = ROLES[S.role];
-  return '<div class="ak-av lg" style="--a:#E8C14A;--b:#9a7a1c" id="pr-av">' + r.icon + '</div><div class="ak-nm"><b>Register a person</b><small>Customers, couriers and drivers</small></div>';
+  return '<div class="ak-av lg" style="--a:#E8C14A;--b:#9a7a1c" id="pr-av">' + (r.vehicle ? pic(r.vehicle, r.icon, 44) : esc(r.icon)) + '</div><div class="ak-nm"><b>Register a person</b><small>Customers, couriers and drivers</small></div>';
 }
 function foot() {
   return '<span class="ak-err" id="pr-msg" role="status" aria-live="polite"></span><button type="button" class="ak-btn" data-close>Cancel</button><button type="button" class="ak-btn gold" data-submit></button>';
@@ -157,7 +159,7 @@ function applyRole() {
   S.dr.querySelectorAll('[data-role]').forEach(function (b) { var on = b.getAttribute('data-role') === S.role; b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on)); });
   $('pr-details').innerHTML = details();
   S.dr.querySelector('[data-submit]').textContent = '✓ Register ' + ROLES[S.role].label.toLowerCase();
-  var av = $('pr-av'); if (av) av.textContent = ROLES[S.role].icon;
+  var av = $('pr-av'); if (av) av.innerHTML = ROLES[S.role].vehicle ? pic(ROLES[S.role].vehicle, ROLES[S.role].icon, 44) : esc(ROLES[S.role].icon);
   S.dr.querySelectorAll('[data-unlock]').forEach(unlockOnFocus);
   refresh();
 }

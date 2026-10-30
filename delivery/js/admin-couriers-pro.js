@@ -21,6 +21,8 @@ try { var m = localStorage.getItem('cou-mode'); if (m === 'table' || m === 'card
 
 function root() { return document.getElementById('cou-pro'); }
 function state(r) { return r.suspended ? 'off' : (r.approval_status === 'pending' ? 'pending' : (r.status || 'offline')); }
+/* the vehicle as a small real picture (js/etel-vehicle-pic.js), or its emoji when there is none */
+function vp(r, emoji, px) { return (window.EtelVehiclePic && EtelVehiclePic.key(r.vehicle_type)) ? EtelVehiclePic.html(r.vehicle_type, px, { fallback: emoji }) : esc(emoji); }
 function veh(r) { return VEH[r.vehicle_type] || ['🛵', r.vehicle_type ? String(r.vehicle_type).replace(/_/g, ' ') : 'No vehicle']; }
 function pillFor(r) {
   if (r.suspended) return K.pill('Suspended', 'red');
@@ -103,7 +105,7 @@ function card(r) {
   var v = veh(r), pend = r.approval_status === 'pending';
   return '<div class="ak-card' + (r.suspended ? ' off' : '') + (pend ? ' alert' : '') + '" tabindex="0" role="button" data-open="' + esc(r.id) + '">' +
     '<div class="ak-top">' + avatar(r) + '<div class="ak-nm"><b>' + esc(r.name || 'Courier') + '</b><small>' + esc(r.courier_code || '') + ' · ' + esc(r.phone || '') + '</small></div>' + pillFor(r) + '</div>' +
-    '<div class="ak-chips"><span class="ak-chip">' + esc(v[0]) + ' ' + esc(v[1]) + '</span>' + (r.plate_number ? '<span class="ak-chip">' + esc(r.plate_number) + '</span>' : '') +
+    '<div class="ak-chips"><span class="ak-chip">' + vp(r, v[0], 34) + ' ' + esc(v[1]) + '</span>' + (r.plate_number ? '<span class="ak-chip">' + esc(r.plate_number) + '</span>' : '') +
     ((r.zone || r.home_zone) ? '<span class="ak-chip">📍 ' + esc(r.zone || r.home_zone) + '</span>' : '') + (r.live_jobs ? '<span class="ak-chip">🛵 ' + esc(r.live_jobs) + ' live job' + (r.live_jobs === 1 ? '' : 's') + '</span>' : '') + '</div>' +
     '<div class="ak-row"><span>' + esc(stars(r.rating)) + ' · ' + esc(K.num(r.total_deliveries)) + ' total</span><span><b>' + esc(r.today_deliveries) + '</b> today</span></div>' +
     (pend ? '<div class="ak-acts" style="margin-top:10px"><button type="button" class="ak-btn good" data-quick="approved" data-uid="' + esc(r.user_id) + '">✓ Approve</button><button type="button" class="ak-btn danger" data-quick="rejected" data-uid="' + esc(r.user_id) + '">Not approve</button></div>' : '') +
@@ -113,7 +115,7 @@ function table(rows) {
   return '<div class="ak-tblw"><table class="ak-tbl"><thead><tr><th>Courier</th><th>Status</th><th>Vehicle</th><th>Zone</th><th>Rating</th><th>Today</th><th>Total</th></tr></thead><tbody>' +
     rows.map(function (r) {
       var v = veh(r);
-      return '<tr data-open="' + esc(r.id) + '"><td><b>' + esc(r.name || 'Courier') + '</b><br><small>' + esc(r.courier_code || '') + ' · ' + esc(r.phone || '') + '</small></td><td>' + pillFor(r) + '</td><td>' + esc(v[0] + ' ' + v[1]) + '</td><td>' + esc(r.zone || r.home_zone || '—') +
+      return '<tr data-open="' + esc(r.id) + '"><td><b>' + esc(r.name || 'Courier') + '</b><br><small>' + esc(r.courier_code || '') + ' · ' + esc(r.phone || '') + '</small></td><td>' + pillFor(r) + '</td><td>' + vp(r, v[0], 34) + ' ' + esc(v[1]) + '</td><td>' + esc(r.zone || r.home_zone || '—') +
         '</td><td>' + esc(stars(r.rating)) + '</td><td>' + esc(r.today_deliveries) + '</td><td>' + esc(K.num(r.total_deliveries)) + '</td></tr>';
     }).join('') + '</tbody></table></div>';
 }
@@ -135,7 +137,7 @@ function drawer(d, row, dr) {
   var head = avatar(r, 'lg') + '<div class="ak-nm"><b>' + esc(c.name) + '</b><small>' + esc(c.courier_code || '') + ' · joined ' + esc(K.fullDate(c.created_at)) + '</small></div>' + pillFor(r);
   var h = '<div class="ak-sec"><div class="ak-stat3"><div><b>' + esc(s.today) + '</b><span>Delivered today</span></div><div><b>' + esc(s.d7) + '</b><span>Last 7 days</span></div><div><b>' + esc(s.d30) + '</b><span>Last 30 days</span></div>' +
     '<div><b>' + esc(s.live) + '</b><span>Live jobs now</span></div><div><b>' + esc(s.avg_minutes == null ? '—' : K.minutes(s.avg_minutes)) + '</b><span>Avg time (30 d)</span></div><div><b>' + esc(s.cancelled_30d) + '</b><span>Cancelled (30 d)</span></div></div></div>';
-  h += '<div class="ak-sec"><h4>Profile</h4>' + K.kv([['Phone', '<a href="tel:' + esc(c.phone) + '">' + esc(c.phone) + '</a>', true], ['Vehicle', v[0] + ' ' + v[1]], ['Plate', c.plate_number || ''], ['Zone', c.zone || c.home_zone || ''], ['Rating', stars(c.rating) + ' · ' + K.num(c.total_deliveries) + ' deliveries'],
+  h += '<div class="ak-sec"><h4>Profile</h4>' + K.kv([['Phone', '<a href="tel:' + esc(c.phone) + '">' + esc(c.phone) + '</a>', true], ['Vehicle', vp(r, v[0], 64) + ' ' + esc(v[1]), true], ['Plate', c.plate_number || ''], ['Zone', c.zone || c.home_zone || ''], ['Rating', stars(c.rating) + ' · ' + K.num(c.total_deliveries) + ' deliveries'],
     ['Last seen', c.last_seen ? K.ago(c.last_seen) : ''], ['Fees earned (30 d)', s.fees_30d == null ? '' : K.money(s.fees_30d)], ['Approval', c.approval_status ? String(c.approval_status) + (c.approval_note ? ' — ' + c.approval_note : '') : '']]) + '</div>';
   var acts = '';
   if (c.approval_status === 'pending' || c.approval_status === 'rejected') acts += '<button type="button" class="ak-btn good" data-approve="approved">✓ Approve</button>';

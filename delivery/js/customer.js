@@ -479,7 +479,7 @@ async function loadHomeTracker() {
         const pct = Math.round((step + 1) / (_TRK_STEPS.length + 1) * 100);
         const more = active.length > 1 ? ' · +' + (active.length - 1) + ' ' + ETEL_I18N.t('trk_more') : '';
         box.innerHTML =
-            '<div class="trk-top"><span class="trk-ico">🛵</span>' +
+            '<div class="trk-top"><span class="trk-ico">' + vpic('moto', 46, '🛵') + '</span>' +
             '<div class="trk-text"><div class="trk-title">' + escapeHtml(ETEL_I18N.t('trk_title')) + ' · ' + escapeHtml(o.order_code || '') + escapeHtml(more) + '</div>' +
             '<div class="trk-status">' + escapeHtml(ETEL_I18N.t('trk_' + o.status)) + '</div></div>' +
             '<button type="button" class="trk-btn"' + _ea('openTrackOrder', [parseInt(o.id, 10)]) + '>' + escapeHtml(ETEL_I18N.t('trk_track')) + '</button></div>' +
@@ -840,7 +840,14 @@ function updateTrackMap(o) {
     }
     if (hasCourier) {
         const pos = {lat: +o.courier_lat, lng: +o.courier_lng};
-        if (!_trackCourierMarker) _trackCourierMarker = new google.maps.Marker({map: _trackGMap, position: pos, label: {text: '🛵', fontSize: '18px'}});
+        if (!_trackCourierMarker) {
+            // The courier's own vehicle as a real picture on the map (motorcycle by default); the emoji only when there is no picture for it.
+            const vt = o.courier_vehicle || 'moto';
+            const vurl = (window.EtelVehiclePic && EtelVehiclePic.has(vt)) ? EtelVehiclePic.url(vt) : '';
+            _trackCourierMarker = new google.maps.Marker(vurl
+                ? {map: _trackGMap, position: pos, icon: {url: vurl, scaledSize: new google.maps.Size(56, 56), anchor: new google.maps.Point(28, 28)}}
+                : {map: _trackGMap, position: pos, label: {text: (window.EtelVehiclePic && EtelVehiclePic.emoji(vt)) || '🛵', fontSize: '18px'}});
+        }
         else _glideMarker(_trackCourierMarker, pos);
         bounds.extend(pos);
     } else if (_trackCourierMarker) {
@@ -1806,13 +1813,18 @@ function initDeliveryAutocomplete() {
     });
 }
 
+// A real vehicle picture (js/etel-vehicle-pic.js) for a vehicle name, or the emoji when there is no picture for it.
+function vpic(type, px, fallback) {
+    return (window.EtelVehiclePic && EtelVehiclePic.key(type)) ? EtelVehiclePic.html(type, px, {fallback: fallback}) : (fallback || '');
+}
+
 function tierOptionBtn(tier, zone) {
     const active = selectedTier === tier.tier_key;
     const fee = Math.round((HAWASSA_FEES[zone] ? HAWASSA_FEES[zone].fee : 50) * Number(tier.multiplier));
     const baseTime = HAWASSA_FEES[zone] ? HAWASSA_FEES[zone].time : 25;
     const eta = Math.max(3, baseTime + Number(tier.eta_delta_min));
     return '<button data-tier="'+tier.tier_key+'"' + _ea('selectTier', [String(tier.tier_key)]) + ' style="padding:10px 6px;border:2px solid '+(active?'#D4AF37':'rgba(212,175,55,.18)')+';border-radius:10px;background:'+(active?'linear-gradient(145deg,rgba(212,175,55,.22),rgba(212,175,55,.08))':'rgba(255,255,255,.03)')+';box-shadow:'+(active?'0 0 16px rgba(212,175,55,.35)':'none')+';cursor:pointer;text-align:center;transition:all .2s">' +
-        '<span style="display:block;font-size:20px;margin-bottom:2px">'+(tier.icon||'📦')+'</span>' +
+        '<span style="display:flex;justify-content:center;align-items:center;height:34px;font-size:20px;margin-bottom:2px">'+vpic(tier.tier_key, 52, tier.icon||'📦')+'</span>' +
         '<span style="display:block;font-weight:700;font-size:11px;color:'+(active?'#F0CA58':'#F7F1DF')+'">'+tier.label+'</span>' +
         '<span style="display:block;font-size:10px;color:rgba(247,241,223,.55);margin-top:2px">'+eta+' min · ETB '+fee+'</span>' +
         '</button>';
