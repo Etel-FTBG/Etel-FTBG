@@ -6,7 +6,7 @@
 //   admin_sg_set_hours     { id, opens_at, closes_at }    -> opening hours ('HH:MM'; both empty clears them)               (service_givers.manage)
 //   sg_claim_info      { code }                              -> which business this code opens (so the page can greet the owner)
 //   sg_claim_complete  { code, phone, password, name? }      -> the owner sets their own phone number and password
-// The business stays "pending": it cannot sign in or show to customers until admin presses Verify. Wrong codes are rate limited.
+// The business stays "pending": the owner can sign in to finish setting up, but it is hidden from customers and takes no orders until admin presses Verify. Wrong codes are rate limited.
 // ============================================================
 
 require_once __DIR__ . '/../lib/sg_claim.php';
@@ -83,7 +83,7 @@ case 'sg_claim_complete': {
     } catch (Exception $e) { if ($pdo->inTransaction()) $pdo->rollBack(); fail_ex($e, 'Could not save your details', 500); }
     etel_bump_token_version($pdo, intval($c['user_id']));
     rate_limit_clear($pdo, 'sg_claim');
-    ok(array('message' => 'Your details are saved. ETEL will check them and switch your business on; you can sign in after that.',
+    ok(array('message' => 'Your details are saved. You can sign in now to finish setting up your business. ETEL will check it and switch it on.',
              'business_name' => $c['business_name'], 'status' => $c['status']));
     break;
 }

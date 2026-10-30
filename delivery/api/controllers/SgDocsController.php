@@ -1,6 +1,7 @@
 <?php
 // ============================================================
 // ETEL Delivery - papers a business hands in before going live (see lib/sg_docs.php)
+//   sg_golive            { sg_id? }                          -> the business's status and its go-live checklist (same list admin sees)
 //   sg_docs_list         { sg_id? }                          -> the papers and their state (owner: their own business; admin: pass sg_id)
 //   sg_doc_submit        { doc_type, file_url, sg_id? }      -> hand in or replace one paper (owner, or admin for a business: service_givers.manage); goes back to "pending"
 //   admin_sg_doc_review  { id, decision, reason? }           -> approve, or reject with a reason (service_givers.manage)
@@ -10,6 +11,24 @@
 require_once __DIR__ . '/../lib/sg_docs.php';
 
 switch ($action) {
+
+case 'sg_golive': {
+    $pdo = db();
+    $au = require_auth($pdo);
+    $sg = sg_docs_target($pdo, $au, $body, false);
+    require_once __DIR__ . '/../lib/sg_claim.php';
+    $q = $pdo->prepare('SELECT sg.*, u.phone FROM service_givers sg JOIN users u ON u.id = sg.user_id WHERE sg.id = ?');
+    $q->execute(array($sg));
+    $g = $q->fetch(PDO::FETCH_ASSOC);
+    if (!$g) fail('Service giver not found', 404);
+    $n = $pdo->prepare('SELECT COUNT(*) FROM items WHERE service_giver_id = ?');
+    $n->execute(array($sg));
+    $claim = array();
+    try { $claim = etel_sg_claim_state($pdo, $sg); } catch (Exception $e) { $claim = array(); }
+    $rd = etel_sg_readiness($g, intval($n->fetchColumn()), $claim, etel_sg_docs_complete(etel_sg_docs_list($pdo, $sg)));
+    ok(array('sg_id' => $sg, 'business_name' => $g['business_name'], 'status' => $g['status'], 'readiness' => $rd));
+    break;
+}
 
 case 'sg_docs_list': {
     $pdo = db();
