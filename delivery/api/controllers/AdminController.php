@@ -533,7 +533,8 @@ case 'admin_add_item': {
     if ($original_price === false) fail('Original price must be a valid amount greater than 0', 400);
 
     try {
-        $item_code = strtoupper(substr($category, 0, 4)) . rand(1000, 9999);
+        require_once __DIR__ . '/../lib/menu_catalog.php';
+        $item_code = etel_catalog_new_item_code($pdo, $category);   // checked against existing codes (a random 4-digit one collided as menus grew)
 
         $ins = $pdo->prepare("
             INSERT INTO items (
@@ -554,6 +555,15 @@ case 'admin_add_item': {
             etel_ensure_catalog_schema($pdo);
             $pdo->prepare('UPDATE items SET menu_section = ?, is_popular = ? WHERE id = ?')->execute(array(
                 etel_item_clean_section(isset($body['menu_section']) ? $body['menu_section'] : ''), etel_item_clean_popular(isset($body['is_popular']) ? $body['is_popular'] : 0), $item_id));
+        }
+
+        // Amharic name, quality and portion (the Item studio form).
+        if (!empty($body['name_am']) || !empty($body['quality']) || !empty($body['portion'])) {
+            require_once __DIR__ . '/../lib/menu_catalog.php';
+            etel_ensure_catalog_schema($pdo);
+            $pt = isset($body['portion']) ? trim(substr((string)$body['portion'], 0, 40)) : '';
+            $pdo->prepare('UPDATE items SET name_am = ?, quality = ?, `portion` = ? WHERE id = ?')->execute(array(
+                !empty($body['name_am']) ? trim($body['name_am']) : null, etel_catalog_clean_quality(isset($body['quality']) ? $body['quality'] : ''), ($pt !== '' ? $pt : null), $item_id));
         }
 
         ok(array(
@@ -650,7 +660,7 @@ case 'admin_update_item': {
     require_admin($pdo, 'items.manage');
     $item_id = isset($body['item_id']) ? intval($body['item_id']) : 0;
     if (!$item_id) fail('item_id is required', 400);
-    $allowed = array('name','description','category','price','original_price','stock_quantity','preparation_time','image_url','is_available');
+    $allowed = array('name','name_am','description','category','price','original_price','stock_quantity','preparation_time','image_url','is_available');
     $updates = array(); $params = array();
     foreach ($allowed as $f) {
         if (isset($body[$f])) { $updates[] = "$f=?"; $params[] = $body[$f]; }
@@ -661,6 +671,12 @@ case 'admin_update_item': {
         etel_ensure_catalog_schema($pdo);
         if (array_key_exists('menu_section', $body)) { $updates[] = 'menu_section=?'; $params[] = etel_item_clean_section($body['menu_section']); }
         if (array_key_exists('is_popular', $body)) { $updates[] = 'is_popular=?'; $params[] = etel_item_clean_popular($body['is_popular']); }
+    }
+    if (array_key_exists('quality', $body) || array_key_exists('portion', $body)) {
+        require_once __DIR__ . '/../lib/menu_catalog.php';
+        etel_ensure_catalog_schema($pdo);
+        if (array_key_exists('quality', $body)) { $updates[] = 'quality=?'; $params[] = etel_catalog_clean_quality($body['quality']); }
+        if (array_key_exists('portion', $body)) { $pt = trim(substr((string)$body['portion'], 0, 40)); $updates[] = '`portion`=?'; $params[] = ($pt !== '' ? $pt : null); }
     }
     if (empty($updates)) fail('No fields to update', 400);
     $params[] = $item_id;
