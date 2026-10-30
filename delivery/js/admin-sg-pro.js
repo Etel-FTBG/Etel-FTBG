@@ -123,8 +123,8 @@ function claimBox(code, expires) {
 }
 /* ---------- go-live checklist ---------- */
 function apiBase() { return (window.ETEL && window.ETEL.api) ? window.ETEL.api : '/delivery/api/boot.php'; }
-function uploadPhoto(file) {
-  var fd = new FormData(); fd.append('image', file); fd.append('type', 'shop_cover');
+function uploadPhoto(file, type) {
+  var fd = new FormData(); fd.append('image', file); fd.append('type', type || 'shop_cover');
   var tok = typeof Auth !== 'undefined' ? Auth.getToken() : '';
   return fetch(apiBase().replace('boot.php', 'upload.php'), { method: 'POST', headers: { 'Authorization': 'Bearer ' + tok }, body: fd }).then(function (r) { return r.json(); });
 }
@@ -137,6 +137,7 @@ function readinessBox(rd, g) {
     if (!it.ok) {
       if (it.key === 'logo' || it.key === 'cover') act = '<label class="ak-btn gold" style="cursor:pointer">Add ' + (it.key === 'logo' ? 'logo' : 'cover') + '<input type="file" accept="image/*" hidden data-brand="' + it.key + '_url"></label>';
       else if (it.key === 'owner') act = '<button type="button" class="ak-btn" data-gl="owner">Enter phone</button>';
+      else if (it.key === 'documents') act = '<button type="button" class="ak-btn" data-gl="docs">See papers</button>';
       else if (it.key === 'menu') act = '<button type="button" class="ak-btn gold" data-gl="menu">Import menu</button>';
       else if (it.key === 'location' || it.key === 'payout') act = '<button type="button" class="ak-btn" data-gl="full">Open profile</button>';
     }
@@ -147,6 +148,26 @@ function readinessBox(rd, g) {
   }).join('');
   return '<div class="ak-sec"><h4>Go-live checklist · ' + rd.done + ' of ' + rd.total + '</h4>' +
     '<div style="height:8px;border-radius:6px;background:rgba(128,128,128,.25);margin:2px 0 8px"><div style="height:8px;border-radius:6px;width:' + pct + '%;background:' + (pct >= 100 ? '#2ecc71' : pct >= 50 ? '#D4AF37' : '#e74c3c') + '"></div></div>' + rows + '</div>';
+}
+/* ---------- papers (licence, ID) ---------- */
+var DOC_PILL = { pending: ['Waiting for your check', 'amber'], approved: ['Approved', 'green'], rejected: ['Sent back', 'red'] };
+function docsBox(d) {
+  var types = d.doc_types || {}, have = {};
+  (d.documents || []).forEach(function (x) { have[x.doc_type] = x; });
+  var rows = Object.keys(types).map(function (k) {
+    var t = types[k], x = have[k], pill = x ? K.pill(DOC_PILL[x.status][0], DOC_PILL[x.status][1]) : K.pill(t.required ? 'Not handed in' : 'Optional', 'grey');
+    var up = '<label class="ak-btn" style="cursor:pointer">' + (x ? 'Replace photo' : 'Upload photo') + '<input type="file" accept="image/*" hidden data-doc-up="' + esc(k) + '"></label>';
+    var view = x ? '<a class="ak-btn" href="' + esc(x.file_url) + '" target="_blank" rel="noopener">View</a>' : '';
+    var rev = '';
+    if (x && x.status === 'pending') {
+      rev = '<div class="ak-acts" style="margin-top:6px"><button type="button" class="ak-btn good" data-doc-ok="' + x.id + '">✓ Approve</button>' +
+        '<input class="ak-in" type="text" maxlength="200" placeholder="What is wrong? (to reject)" aria-label="Reason" data-doc-why="' + x.id + '" style="flex:1;min-width:140px">' +
+        '<button type="button" class="ak-btn danger" data-doc-no="' + x.id + '">Reject</button></div>';
+    }
+    return '<div style="padding:8px 0;border-top:1px solid var(--line,rgba(128,128,128,.2))"><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><b style="font-size:13.5px;flex:1">' + esc(t.label) + (t.required ? '' : ' <small>(optional)</small>') + '</b>' + pill + view + up + '</div>' +
+      (x && x.status === 'rejected' && x.reject_reason ? '<div class="ak-fh" style="margin:4px 0 0">Reason: ' + esc(x.reject_reason) + '</div>' : '') + rev + '</div>';
+  }).join('');
+  return '<div class="ak-sec"><h4>Papers</h4><p class="ak-fh" style="margin:0 0 4px">The owner hands these in (or you upload them for them). Only you can see the photos.</p>' + rows + '</div>';
 }
 /* ---------- drawer ---------- */
 function openSG(id) {
@@ -174,7 +195,7 @@ function drawer(d, dr) {
     K.field('Owner name', '<input id="sgo-name" class="ak-in" type="text" value="' + esc(g.name || '') + '">') +
     K.field('Owner phone (sign-in)', '<input id="sgo-phone" class="ak-in" type="tel" value="' + esc(g.phone || '') + '">') +
     '<div class="ak-acts" style="margin-top:8px"><button type="button" class="ak-btn" data-owner-save>Save owner details</button><button type="button" class="ak-btn gold" data-claim-new>📨 New claim link</button></div><div id="sgo-claim"></div>';
-  h += readinessBox(d.readiness, g);
+  h += readinessBox(d.readiness, g) + docsBox(d);
   h += '<div class="ak-sec" id="sgo-sec"><h4>Hand-over to the owner</h4>' + hand + '</div>';
   var acts = '';
   if (g.status === 'pending') acts += '<button type="button" class="ak-btn good" data-verify>✓ Verify business</button>';
@@ -206,6 +227,11 @@ function verify(id, rd) {
   var miss = rd ? rd.items.filter(function (i) { return !i.ok; }).map(function (i) { return i.label; }) : [];
   return K.confirm({ title: 'Verify this business?', text: 'It will show to customers and can receive orders.' + (miss.length ? ' Still missing: ' + miss.join(', ') + '.' : ''), label: miss.length ? 'Verify anyway' : 'Verify' }).then(function (r) { if (r) return act('admin_verify_service_giver', id, 'Business verified'); });
 }
+function docReview(sgId, id, decision, reason) {
+  K.api('admin_sg_doc_review', { id: id, decision: decision, reason: reason }).then(function (res) {
+    if (K.okRes(res)) { K.toast(K.data(res).message || 'Saved'); V.busy = false; load(true); openSG(sgId); } else K.toast(K.failText(res), true);
+  });
+}
 function onDrawerClick(e) {
   var dr = K.drawerEl(); if (!dr || !dr.contains(e.target)) return;
   var cp = e.target.closest('[data-copy]'); if (cp) { copyText(cp.getAttribute('data-copy')); return; }
@@ -226,6 +252,14 @@ function onDrawerClick(e) {
       });
     });
   }
+  else if (t.closest('[data-doc-ok]')) {
+    docReview(g.id, parseInt(t.closest('[data-doc-ok]').getAttribute('data-doc-ok'), 10), 'approve', '');
+  }
+  else if (t.closest('[data-doc-no]')) {
+    var did = parseInt(t.closest('[data-doc-no]').getAttribute('data-doc-no'), 10), why = dr.querySelector('[data-doc-why="' + did + '"]');
+    if (!why || !why.value.trim()) { K.toast('Write what is wrong first, so the owner can fix it', true); if (why) why.focus(); return; }
+    docReview(g.id, did, 'reject', why.value.trim());
+  }
   else if (t.closest('[data-gl]')) {
     var k = t.closest('[data-gl]').getAttribute('data-gl');
     if (k === 'hours') {
@@ -234,6 +268,7 @@ function onDrawerClick(e) {
       });
     }
     else if (k === 'owner') { var ph = document.getElementById('sgo-phone'); if (ph) { ph.scrollIntoView({ block: 'center' }); ph.focus(); ph.select(); } }
+    else if (k === 'docs') { var sec = dr.querySelector('[data-doc-up]'); if (sec) sec.closest('.ak-sec').scrollIntoView({ block: 'start' }); }
     else if (k === 'menu') { if (window.EtelCsvImport) window.EtelCsvImport.openItems(function () { openSG(g.id); }); else K.toast('The import is not available here.', true); }
     else if (k === 'full') { K.closeDrawer(); if (typeof openSGManageModal === 'function') openSGManageModal(g.id); else K.toast('The full profile editor is not available here.', true); }
   }
@@ -276,6 +311,18 @@ function wire(el) {
 document.addEventListener('click', onDrawerClick);
 document.addEventListener('change', function (e) {
   var inp = e.target, kind = inp && inp.getAttribute && inp.getAttribute('data-brand'), dr = K.drawerEl();
+  var dtype = inp && inp.getAttribute && inp.getAttribute('data-doc-up');
+  if (dtype && dr && dr._d && inp.files && inp.files[0]) {
+    var sid = dr._d.service_giver.id; K.toast('Uploading…');
+    uploadPhoto(inp.files[0], 'sg_document').then(function (u) {
+      if (!u || !u.success) throw new Error((u && u.message) || 'Upload failed');
+      return K.api('sg_doc_submit', { sg_id: sid, doc_type: dtype, file_url: u.data.url });
+    }).then(function (res) {
+      if (!K.okRes(res)) throw new Error(K.failText(res));
+      K.toast('Saved'); V.busy = false; load(true); openSG(sid);
+    }).catch(function (er) { K.toast(er.message, true); });
+    return;
+  }
   if (!kind || !dr || !dr._d) return;
   var f = inp.files && inp.files[0]; if (!f) return;
   var id = dr._d.service_giver.id; K.toast('Uploading…');

@@ -140,8 +140,10 @@ case 'admin_service_giver_detail': {
     require_once __DIR__ . '/../lib/sg_claim.php';
     try { $claim = etel_sg_claim_state($pdo, $id); } catch (Exception $e) { $claim = null; }
     $nitems = $one('SELECT COUNT(*) AS n FROM items WHERE service_giver_id = ?', array($id));
-    $readiness = etel_sg_readiness($g, $nitems ? intval($nitems['n']) : 0, $claim ? $claim : array());
-    ok(array('service_giver' => $out, 'claim' => $claim, 'readiness' => $readiness,
+    require_once __DIR__ . '/../lib/sg_docs.php';
+    $docs = etel_sg_docs_list($pdo, $id);
+    $readiness = etel_sg_readiness($g, $nitems ? intval($nitems['n']) : 0, $claim ? $claim : array(), etel_sg_docs_complete($docs));
+    ok(array('service_giver' => $out, 'claim' => $claim, 'readiness' => $readiness, 'documents' => $docs, 'doc_types' => etel_sg_doc_types(),
              'stats' => array('today' => intval($st['today']), 'd7' => intval($st['d7']), 'd30' => intval($st['d30']), 'cancelled_30d' => intval($st['x30']), 'open' => intval($st['open_orders']),
                               'sales_30d' => round(floatval($st['sales_30d']), 2), 'staff' => $staff ? intval($staff['n']) : null),
              'recent' => $recent));

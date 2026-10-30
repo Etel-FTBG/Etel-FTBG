@@ -87,7 +87,7 @@ function etel_sg_placeholder_phone($pdo) {
 
 /* What a business still needs before it should go live. $g is its service_givers row (with the owner's phone), $items how many menu items it has,
    $claim the hand-over state from etel_sg_claim_state(). Returns array('items' => [{key,label,ok,hint}], 'done' => n, 'total' => n). Pure. */
-function etel_sg_readiness($g, $items, $claim) {
+function etel_sg_readiness($g, $items, $claim, $docsDone = null) {
     $has = function ($k) use ($g) { return isset($g[$k]) && trim((string)$g[$k]) !== '' && trim((string)$g[$k]) !== '0'; };
     $pay = $has('bank_account') || $has('cbe_account') || $has('abysinia_account') || $has('telebirr_number') || $has('payout_bank');
     $rows = array(
@@ -97,6 +97,7 @@ function etel_sg_readiness($g, $items, $claim) {
         array('location', 'Address and map pin', $has('address') && $has('lat') && $has('lng'), 'Couriers and customers need to find the business.'),
         array('owner', 'Owner\'s own phone number', empty($claim['placeholder_phone']), 'A spare number is still in place: the owner claims the account, or you type theirs.'),
         array('payout', 'Payout details', $pay, 'Where the business is paid (bank or Telebirr).'),
+        array('documents', 'Papers approved (licence and owner\'s ID)', $docsDone === true, 'The owner hands in a photo of each; you check and approve it.'),
         array('menu', 'Menu (at least 3 items)', intval($items) >= 3, 'Import a menu or add items.'),
     );
     $out = array(); $done = 0;
