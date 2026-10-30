@@ -1079,7 +1079,7 @@ case 'sg_add_item': {
 
     try {
         // Generate item code
-        $item_code = strtoupper(substr($category, 0, 4)) . rand(1000, 9999);
+        $item_code = etel_catalog_new_item_code($pdo, $category);   // checked against existing codes (a random 4-digit one collided as menus grew)
         
         $ins = $pdo->prepare("
             INSERT INTO items (

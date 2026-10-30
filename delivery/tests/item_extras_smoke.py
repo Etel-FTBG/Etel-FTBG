@@ -168,6 +168,19 @@ st, r = get("admin_get_all_items", {"service_giver_id": sg}, admin)
 wrap = next(i for i in data(r).get("items") if i["name"] == "ZZ%s Wrap" % SUFFIX)
 check("update mode replaces the extras and leaves the photos when the cell is blank", [e["name"] for e in wrap["extras"]] == ["Egg"] and json.loads(wrap["gallery"]) == ["/delivery/img/menu/" + IMG1], wrap)
 
+print("item studio fields (admin add / edit)")
+st, res = call("admin_add_item", {"service_giver_id": sg, "name": "ZZ%s Studio" % SUFFIX, "name_am": "ስቱዲዮ", "category": "food", "price": 300, "original_price": 400,
+                                  "quality": "premium", "portion": "Large", "menu_section": "Specials", "is_popular": 1}, admin)
+sid = data(res).get("item_id")
+check("admin adds an item with Amharic name, quality and portion", res.get("success") is True and sid, (st, res))
+st, r = call("admin_get_all_items", {"service_giver_id": sg}, admin)
+it = next((i for i in data(r).get("items", []) if str(i["id"]) == str(sid)), {})
+check("they are saved on the item", it.get("name_am") == "ስቱዲዮ" and it.get("quality") == "premium" and it.get("portion") == "Large" and it.get("menu_section") == "Specials", it)
+st, res = call("admin_update_item", {"item_id": sid, "name_am": "", "quality": "", "portion": "", "is_available": 0}, admin)
+st, r = call("admin_get_all_items", {"service_giver_id": sg}, admin)
+it = next((i for i in data(r).get("items", []) if str(i["id"]) == str(sid)), {})
+check("and can be changed or cleared, with the item hidden", not it.get("quality") and not it.get("portion") and str(it.get("is_available")) == "0", it)
+
 for pth in (G1_PATH, IMG1_PATH):
     try:
         os.remove(pth)

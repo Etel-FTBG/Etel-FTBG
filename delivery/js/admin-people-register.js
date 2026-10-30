@@ -74,7 +74,7 @@ function tiles(list, cur, attr) {
 function roleKeys() { return window.ETEL_RIDE_ONLY ? ['customer', 'driver'] : ['customer', 'courier', 'driver']; }
 
 function zoneField() {
-  var z = window.ETEL && Array.isArray(window.ETEL.zones) ? window.ETEL.zones : null;
+  var z = (typeof ETEL !== 'undefined' && ETEL && Array.isArray(ETEL.zones)) ? ETEL.zones : null;
   if (z && z.length) return field('pr-zone', 'Home zone', '<select id="pr-zone" class="ak-in">' + z.map(function (x) { return '<option value="' + esc(x) + '">' + esc(x) + '</option>'; }).join('') + '</select>', 'Where they usually start work.');
   return field('pr-zone', 'Home zone', inp('pr-zone', 'type="text" autocomplete="off" placeholder="e.g. Tabor"'), 'Optional. Where they usually start work.');
 }

@@ -122,7 +122,7 @@ function claimBox(code, expires) {
     '<button type="button" class="ak-btn" data-copy="' + esc(code) + '">Copy code ' + esc(code) + '</button></div></div>';
 }
 /* ---------- go-live checklist ---------- */
-function apiBase() { return (window.ETEL && window.ETEL.api) ? window.ETEL.api : '/delivery/api/boot.php'; }
+function apiBase() { return (typeof ETEL !== 'undefined' && ETEL && ETEL.api) ? ETEL.api : '/delivery/api/boot.php'; }
 function uploadPhoto(file, type) {
   var fd = new FormData(); fd.append('image', file); fd.append('type', type || 'shop_cover');
   var tok = typeof Auth !== 'undefined' ? Auth.getToken() : '';
