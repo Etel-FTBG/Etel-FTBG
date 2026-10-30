@@ -1062,6 +1062,9 @@ case 'sg_add_item': {
     etel_ensure_catalog_schema($pdo);
     $quality = etel_catalog_clean_quality(isset($body['quality']) ? $body['quality'] : '');
     $portion = isset($body['portion']) ? trim(substr((string)$body['portion'], 0, 40)) : '';
+    $menu_section = etel_item_clean_section(isset($body['menu_section']) ? $body['menu_section'] : '');
+    $is_popular = etel_item_clean_popular(isset($body['is_popular']) ? $body['is_popular'] : 0);
+    $extras = isset($body['extras']) ? etel_item_extras_parse(is_array($body['extras']) ? implode('|', array_map('strval', $body['extras'])) : $body['extras']) : array();
 
     if (!$name) fail('Item name is required', 400);
     if (!$category || !in_array($category, array('food','grocery','package','pharmacy','flower'))) {
@@ -1090,6 +1093,10 @@ case 'sg_add_item': {
         ));
         
         $item_id = $pdo->lastInsertId();
+        try {
+            if ($menu_section !== null || $is_popular) $pdo->prepare('UPDATE items SET menu_section = ?, is_popular = ? WHERE id = ?')->execute(array($menu_section, $is_popular, $item_id));
+            if ($extras) etel_item_extras_save($pdo, $item_id, $extras);
+        } catch (Exception $e) { error_log('[ServiceGiverController] sg_add_item section/extras: ' . $e->getMessage()); }
         if (!empty($body['suggest_catalog'])) {
             try { etel_catalog_suggest($pdo, $auth_user['id'], $name, $name_am, $category, $description); } catch (Exception $e) { error_log('[ServiceGiverController] catalog suggest: ' . $e->getMessage()); }
         }
@@ -1139,7 +1146,7 @@ case 'sg_get_my_items': {
                 image_url, stock_quantity, preparation_time, is_available, created_at';
     try {
         try {
-            $s = $pdo->prepare("SELECT $base_cols, catalog_id, quality, `portion`, (sold_out_date IS NOT NULL AND sold_out_date = CURDATE()) AS sold_out FROM items $where ORDER BY created_at DESC");
+            $s = $pdo->prepare("SELECT $base_cols, catalog_id, quality, `portion`, menu_section, is_popular, (sold_out_date IS NOT NULL AND sold_out_date = CURDATE()) AS sold_out FROM items $where ORDER BY created_at DESC");
             $s->execute($params);
         } catch (Exception $e0) {
             error_log('[ServiceGiverController] sg_get_my_items: new columns unavailable: ' . $e0->getMessage());
@@ -1150,8 +1157,15 @@ case 'sg_get_my_items': {
     } catch (Exception $e) {
         fail_ex($e, 'Query failed', 500);
     }
+    $ex = etel_item_extras_for($pdo, array_map(function ($r) { return $r['id']; }, $items));
+    $sections = array();
+    foreach ($items as &$it) {
+        $it['extras'] = isset($ex[(int)$it['id']]) ? $ex[(int)$it['id']] : array();
+        if (!empty($it['menu_section'])) $sections[$it['menu_section']] = true;
+    }
+    unset($it);
     
-    ok(array('items' => $items, 'count' => count($items)));
+    ok(array('items' => $items, 'count' => count($items), 'sections' => array_keys($sections)));
     break;
 }
 case 'sg_catalog_list': {
@@ -1257,6 +1271,12 @@ case 'sg_update_item': {
         if (array_key_exists('quality', $body)) { $updates[] = 'quality = ?'; $params[] = etel_catalog_clean_quality($body['quality']); }
         if (array_key_exists('portion', $body)) { $pt = trim(substr((string)$body['portion'], 0, 40)); $updates[] = '`portion` = ?'; $params[] = ($pt !== '' ? $pt : null); }
     }
+    if (array_key_exists('menu_section', $body) || array_key_exists('is_popular', $body)) {
+        require_once __DIR__ . '/../lib/menu_catalog.php';
+        etel_ensure_catalog_schema($pdo);
+        if (array_key_exists('menu_section', $body)) { $updates[] = 'menu_section = ?'; $params[] = etel_item_clean_section($body['menu_section']); }
+        if (array_key_exists('is_popular', $body)) { $updates[] = 'is_popular = ?'; $params[] = etel_item_clean_popular($body['is_popular']); }
+    }
     if (isset($body['price'])) {
         $vp = etel_validate_amount($body['price']);
         if ($vp === false) fail('Price must be a valid amount greater than 0', 400);
@@ -1286,13 +1306,20 @@ case 'sg_update_item': {
         $params[] = trim($body['image_url']);
     }
     
-    if (empty($updates)) fail('No fields to update', 400);
+    $has_extras = array_key_exists('extras', $body);
+    if (empty($updates) && !$has_extras) fail('No fields to update', 400);
     
     $params[] = $item_id;
     
     try {
-        $upd = $pdo->prepare('UPDATE items SET ' . implode(', ', $updates) . ' WHERE id=?');
-        $upd->execute($params);
+        if ($updates) {
+            $upd = $pdo->prepare('UPDATE items SET ' . implode(', ', $updates) . ' WHERE id=?');
+            $upd->execute($params);
+        }
+        if ($has_extras) {
+            require_once __DIR__ . '/../lib/menu_catalog.php';
+            etel_item_extras_save($pdo, $item_id, etel_item_extras_parse(is_array($body['extras']) ? implode('|', array_map('strval', $body['extras'])) : $body['extras']));
+        }
         
         ok(array('message' => 'Item updated successfully'));
     } catch (Exception $e) {

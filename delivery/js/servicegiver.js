@@ -864,7 +864,7 @@
                         <td style="padding:10px 8px">
                             ${it.image_url ? `<img src="${escUrl(it.image_url)}" style="width:48px;height:48px;object-fit:cover;border-radius:8px;border:1px solid #e0e0e0">` : '<div style="width:48px;height:48px;background:rgba(255,255,255,.06);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:20px">🛍️</div>'}
                         </td>
-                        <td style="padding:10px 8px;font-weight:600;color:#1a1a2e">${escapeHtml(it.name)}${it.quality ? ' <span style="font-size:10px;font-weight:800;text-transform:uppercase;color:#D4AF37">' + escapeHtml(it.quality) + '</span>' : ''}${it.portion ? '<div style="font-size:11px;font-weight:500;color:#B8B0A0">' + escapeHtml(it.portion) + '</div>' : ''}</td>
+                        <td style="padding:10px 8px;font-weight:600;color:#1a1a2e">${escapeHtml(it.name)}${it.quality ? ' <span style="font-size:10px;font-weight:800;text-transform:uppercase;color:#D4AF37">' + escapeHtml(it.quality) + '</span>' : ''}${it.is_popular == 1 ? ' <span title="Most popular" style="color:#D4AF37">★</span>' : ''}${it.portion ? '<div style="font-size:11px;font-weight:500;color:#B8B0A0">' + escapeHtml(it.portion) + '</div>' : ''}${(it.menu_section || (it.extras || []).length) ? '<div style="font-size:11px;font-weight:500;color:#B8B0A0">' + [it.menu_section ? escapeHtml(it.menu_section) : '', (it.extras || []).length ? it.extras.length + ' extras' : ''].filter(Boolean).join(' · ') + '</div>' : ''}</td>
                         <td style="padding:10px 8px"><span style="background:rgba(212,175,55,.15);color:#D4AF37;border:1px solid rgba(212,175,55,.3);padding:3px 8px;border-radius:20px;font-size:11px;font-weight:700;text-transform:uppercase">${it.category}</span></td>
                         <td style="padding:10px 8px;font-weight:600">ETB ${parseFloat(it.price).toFixed(2)}</td>
                         <td style="padding:10px 8px">${it.stock_quantity}</td>
@@ -1098,6 +1098,13 @@
             loadServices();
         }
 
+        // Section names this shop already uses, offered as suggestions while typing a section.
+        function fillSectionList() {
+            const names = {};
+            servicesCache.forEach(x => { if (x.menu_section) names[x.menu_section] = 1; });
+            document.getElementById('item-section-list').innerHTML = Object.keys(names).map(n => '<option value="' + n.replace(/"/g, '&quot;') + '">').join('');
+        }
+
         function openAddItemModal() {
             document.getElementById('item-edit-id').value = '';
             document.getElementById('item-modal-title').textContent = sgT('sg_d_item_add');
@@ -1108,6 +1115,10 @@
             document.getElementById('item-category').value = 'food';
             document.getElementById('item-quality').value = '';
             document.getElementById('item-portion').value = '';
+            document.getElementById('item-section').value = '';
+            document.getElementById('item-popular').checked = false;
+            document.getElementById('item-extras').value = '';
+            fillSectionList();
             document.getElementById('item-suggest').checked = false;
             document.getElementById('item-suggest-row').style.display = '';
             document.getElementById('item-price').value = '';
@@ -1133,6 +1144,10 @@
             document.getElementById('item-category').value = it.category || 'food';
             document.getElementById('item-quality').value = it.quality || '';
             document.getElementById('item-portion').value = it.portion || '';
+            document.getElementById('item-section').value = it.menu_section || '';
+            document.getElementById('item-popular').checked = it.is_popular == 1 || it.is_popular === true;
+            document.getElementById('item-extras').value = (it.extras || []).map(e => e.name + ':' + e.price).join('\n');
+            fillSectionList();
             document.getElementById('item-suggest').checked = false;
             document.getElementById('item-suggest-row').style.display = 'none';
             document.getElementById('item-price').value = it.price || '';
@@ -1197,7 +1212,9 @@
             }
 
             const payload = { name, name_am:nameAm, description:desc, description_am:descAm, category, price, original_price:origP, stock_quantity:stock, preparation_time:prep, image_url,
-                             quality: document.getElementById('item-quality').value, portion: document.getElementById('item-portion').value.trim() };
+                             quality: document.getElementById('item-quality').value, portion: document.getElementById('item-portion').value.trim(),
+                             menu_section: document.getElementById('item-section').value.trim(), is_popular: document.getElementById('item-popular').checked ? 1 : 0,
+                             extras: document.getElementById('item-extras').value };
             if (!editId && document.getElementById('item-suggest').checked) payload.suggest_catalog = 1;
             let data;
             if (editId) {
