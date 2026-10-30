@@ -62,3 +62,6 @@ api/.price_offer_ok
 
 # Photos uploaded while running the tests locally are not part of the app
 delivery/uploads/items/*
+delivery/uploads/driver_documents/*
+delivery/uploads/driver_licenses/*
+delivery/uploads/driver_selfies/*
