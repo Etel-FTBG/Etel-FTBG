@@ -149,6 +149,20 @@ function readinessBox(rd, g) {
   return '<div class="ak-sec"><h4>Go-live checklist · ' + rd.done + ' of ' + rd.total + '</h4>' +
     '<div style="height:8px;border-radius:6px;background:rgba(128,128,128,.25);margin:2px 0 8px"><div style="height:8px;border-radius:6px;width:' + pct + '%;background:' + (pct >= 100 ? '#2ecc71' : pct >= 50 ? '#D4AF37' : '#e74c3c') + '"></div></div>' + rows + '</div>';
 }
+/* ---------- welcome message ---------- */
+function welcomeText(g) {
+  var link = location.origin + location.pathname.replace(/[^\/]*$/, '') + 'servicegiver.html';
+  return 'Welcome to ETEL, ' + (g.name || 'partner') + '! 🎉\n\n' + title(g) + ' is now live on ETEL and customers can order from you.\n\n' +
+    'Sign in: ' + link + '\nPhone: ' + (g.phone || '') + '\n\n' +
+    'Tips:\n• Keep your shop switched to Open while you can take orders.\n• Accept new orders quickly.\n• Mark an item hidden when it runs out.\n\nQuestions? Reply to this message.';
+}
+function welcomeBox(g) {
+  if (g.status !== 'verified') return '';
+  var t = welcomeText(g);
+  return '<div class="ak-sec"><h4>Welcome message</h4><p class="ak-fh" style="margin:0 0 8px">The business is live. Copy this and send it to the owner (SMS, Telegram or WhatsApp).</p>' +
+    '<textarea class="ak-in" rows="9" readonly data-sel-all aria-label="Welcome message">' + esc(t) + '</textarea>' +
+    '<div class="ak-acts" style="margin-top:8px"><button type="button" class="ak-btn gold" data-copy="' + esc(t) + '">Copy message</button></div></div>';
+}
 /* ---------- papers (licence, ID) ---------- */
 var DOC_PILL = { pending: ['Waiting for your check', 'amber'], approved: ['Approved', 'green'], rejected: ['Sent back', 'red'] };
 function docsBox(d) {
@@ -195,7 +209,7 @@ function drawer(d, dr) {
     K.field('Owner name', '<input id="sgo-name" class="ak-in" type="text" value="' + esc(g.name || '') + '">') +
     K.field('Owner phone (sign-in)', '<input id="sgo-phone" class="ak-in" type="tel" value="' + esc(g.phone || '') + '">') +
     '<div class="ak-acts" style="margin-top:8px"><button type="button" class="ak-btn" data-owner-save>Save owner details</button><button type="button" class="ak-btn gold" data-claim-new>📨 New claim link</button></div><div id="sgo-claim"></div>';
-  h += readinessBox(d.readiness, g) + docsBox(d);
+  h += welcomeBox(g) + readinessBox(d.readiness, g) + docsBox(d);
   h += '<div class="ak-sec" id="sgo-sec"><h4>Hand-over to the owner</h4>' + hand + '</div>';
   var acts = '';
   if (g.status === 'pending') acts += '<button type="button" class="ak-btn good" data-verify>✓ Verify business</button>';
@@ -225,7 +239,7 @@ function act(action, id, msg, extra) {
 }
 function verify(id, rd) {
   var miss = rd ? rd.items.filter(function (i) { return !i.ok; }).map(function (i) { return i.label; }) : [];
-  return K.confirm({ title: 'Verify this business?', text: 'It will show to customers and can receive orders.' + (miss.length ? ' Still missing: ' + miss.join(', ') + '.' : ''), label: miss.length ? 'Verify anyway' : 'Verify' }).then(function (r) { if (r) return act('admin_verify_service_giver', id, 'Business verified'); });
+  return K.confirm({ title: 'Verify this business?', text: 'It will show to customers and can receive orders.' + (miss.length ? ' Still missing: ' + miss.join(', ') + '.' : ''), label: miss.length ? 'Verify anyway' : 'Verify' }).then(function (r) { if (r) return act('admin_verify_service_giver', id, 'Business is live. Copy the welcome message below.'); });
 }
 function docReview(sgId, id, decision, reason) {
   K.api('admin_sg_doc_review', { id: id, decision: decision, reason: reason }).then(function (res) {

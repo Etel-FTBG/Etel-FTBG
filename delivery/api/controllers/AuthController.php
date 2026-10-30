@@ -353,7 +353,7 @@ case 'sg_login': {
 
     if (!$sg) fail('Service giver profile not found', 404);
     if ($sg['status'] === 'suspended') fail('Your account is suspended. Contact admin.', 403);
-    if ($sg['status'] === 'pending') fail('Your account is pending verification', 403);
+    // A business waiting for verification may sign in to finish setting up (papers, menu, hours). It stays hidden from customers and cannot take orders until admin verifies it.
     
     etel_assert_account_enabled($pdo, $u['id']);
     etel_2fa_gate($pdo, $u, $body);

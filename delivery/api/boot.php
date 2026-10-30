@@ -1705,7 +1705,7 @@ switch ($action) {
     case 'admin_couriers_board': case 'admin_courier_detail': case 'admin_service_givers_board': case 'admin_service_giver_detail':
         require __DIR__ . '/controllers/PartnerAdminController.php';
         break;
-    case 'sg_docs_list': case 'sg_doc_submit': case 'admin_sg_doc_review':
+    case 'sg_golive': case 'sg_docs_list': case 'sg_doc_submit': case 'admin_sg_doc_review':
         require __DIR__ . '/controllers/SgDocsController.php';
         break;
     case 'admin_sg_update_owner': case 'admin_sg_claim_invite': case 'admin_sg_set_hours': case 'sg_claim_info': case 'sg_claim_complete':
