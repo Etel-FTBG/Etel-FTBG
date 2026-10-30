@@ -1,8 +1,8 @@
 /* ETEL Admin - Register a person: one guided panel for a customer, a courier or a driver.
    Replaces the old narrow "New User" and "Register Courier" pop-ups. Pick who they are, type name, phone and a password (or generate one),
    fill the few details that role needs, and the last screen holds a sign-in message ready to copy and send.
-   Customer: name, phone, password. Courier: also how they travel and their home zone; starts approved. Driver: the vehicle (type, make, colour,
-   year, plate); they add their selfie and licence photo in the driver app, which is what lets them go online.
+   Customer: name, phone, password. Courier: also how they travel and their home zone; starts approved. Driver: opens the Driver desk (js/admin-driver-register.js) with
+   the full sign-up: service, vehicle, licence, selfie and papers.
    Data: admin_register_person (api/controllers/PeopleRegisterController.php). Built on AdminKit; every server value goes through AdminKit.esc;
    no inline handlers. Opens from "New User" and "Register Courier" (the old openModal('new-user') / ('new-courier') calls). Admin accounts and
    shops are still made from their own screens. */
@@ -204,6 +204,8 @@ function submit(btn) {
 
 /* ---------- open ---------- */
 function open(opts) {
+  // Drivers have the full Driver desk (vehicle, licence, selfie, papers), not this short form.
+  if (opts && opts.role === 'driver' && window.EtelDriverRegister) return window.EtelDriverRegister.open();
   css();
   var want = opts && opts.role, rk = roleKeys();
   S.role = rk.indexOf(want) >= 0 ? want : rk[0]; S.cv = 'motorcycle'; S.dv = 'bajaj';
@@ -211,7 +213,7 @@ function open(opts) {
   applyRole();
   dr.addEventListener('click', function (e) {
     var t = e.target, b;
-    if ((b = t.closest('[data-role]'))) { S.role = b.getAttribute('data-role'); applyRole(); }
+    if ((b = t.closest('[data-role]'))) { if (b.getAttribute('data-role') === 'driver' && window.EtelDriverRegister) { window.EtelDriverRegister.open(); return; } S.role = b.getAttribute('data-role'); applyRole(); }
     else if ((b = t.closest('[data-cv]'))) { S.cv = b.getAttribute('data-cv'); applyRole(); }
     else if ((b = t.closest('[data-dv]'))) { S.dv = b.getAttribute('data-dv'); applyRole(); }
     else if (t.closest('[data-pw-show]')) { var p = $('pr-pw'); p.type = p.type === 'password' ? 'text' : 'password'; }

@@ -107,6 +107,65 @@ for who, tok in (("a customer", cust), ("signed out", None)):
     st, res = call("admin_register_person", {"role": "customer", "name": "Nope", "phone": "09190%s" % TAIL[-5:], "password": "custpass123"}, tok)
     check(who + " cannot register people", st in (401, 403) or res.get("success") is False, (st, res))
 
+print("driver desk (admin_register_driver)")
+import struct, zlib
+
+
+def tiny_png():
+    raw = b"".join(b"\x00" + bytes([120, 80, 40]) * 8 for _ in range(8))
+    def ch(t, d):
+        c = struct.pack(">I", len(d)) + t + d
+        return c + struct.pack(">I", zlib.crc32(t + d) & 0xffffffff)
+    return b"\x89PNG\r\n\x1a\n" + ch(b"IHDR", struct.pack(">IIBBBBB", 8, 8, 8, 2, 0, 0, 0)) + ch(b"IDAT", zlib.compress(raw)) + ch(b"IEND", b"")
+
+
+def upload(kind, token):
+    boundary = "----etel" + SUFFIX
+    body = ("--%s\r\nContent-Disposition: form-data; name=\"type\"\r\n\r\n%s\r\n--%s\r\nContent-Disposition: form-data; name=\"image\"; filename=\"a.png\"\r\nContent-Type: image/png\r\n\r\n" % (boundary, kind, boundary)).encode() + tiny_png() + ("\r\n--%s--\r\n" % boundary).encode()
+    req = urllib.request.Request(API_URL.replace("boot.php", "upload.php"), data=body, headers={"Content-Type": "multipart/form-data; boundary=" + boundary, "Authorization": "Bearer " + token}, method="POST")
+    try:
+        with urllib.request.urlopen(req, timeout=30) as f:
+            return json.loads(f.read().decode()).get("data", {}).get("url", "")
+    except Exception:
+        return ""
+
+
+selfie = upload("driver_selfie", admin)
+licph = upload("driver_license", admin)
+ins = upload("driver_insurance_photo", admin)
+check("the admin can upload the selfie, licence and document photos", bool(selfie and licph and ins), (selfie, licph, ins))
+drv = {"name": "Full Driver", "phone": "09210%s" % TAIL[-5:], "password": "drivpass123", "vehicle_type": "bajaj", "vehicle_make": "TVS", "vehicle_color": "Blue", "vehicle_year": 2021, "vehicle_plate": "et 7788",
+       "license_name": "Full Driver", "license_number": "DL-99%s" % TAIL, "license_dob": "1990-05-17", "selfie_url": selfie, "license_photo_url": licph,
+       "docs": {"insurance": {"expiry_date": "2030-01-31", "receipt_url": ins}}}
+st, res = call("admin_register_driver", dict(drv, activate=1), admin)
+check("admin registers and activates a full driver", res.get("success") is True and data(res).get("activated") is True and not data(res).get("missing"), (st, res))
+row = sql("SELECT CONCAT(r.onboarded, '|', r.identity_match, '|', r.vehicle_plate, '|', r.license_number, '|', r.license_dob, '|', IFNULL(r.insurance_expiry_date, '')) FROM ride_drivers r JOIN users u ON u.id = r.user_id WHERE u.phone LIKE '%%%s'" % drv["phone"][-9:])
+check("the driver is onboarded with licence, plate and the insurance paper recorded", row == "1|matched|ET 7788|DL-99%s|1990-05-17|2030-01-31" % TAIL, row)
+st, res = call("login", {"phone": drv["phone"], "password": "drivpass123"})
+check("the driver signs in", res.get("success") is True, (st, res))
+role = sql("SELECT role FROM users WHERE phone LIKE '%%%s'" % drv["phone"][-9:])
+check("and has the driver role", role == "driver", role)
+
+d2 = dict(drv, phone="09220%s" % TAIL[-5:], license_number="", license_name="", license_dob="", license_photo_url="", selfie_url="", docs={})
+st, res = call("admin_register_driver", d2, admin)
+check("without activating, a driver can be saved for review with parts missing", res.get("success") is True and data(res).get("activated") is False and "selfie" in data(res).get("missing", []), (st, res))
+row = sql("SELECT onboarded FROM ride_drivers r JOIN users u ON u.id = r.user_id WHERE u.phone LIKE '%%%s'" % d2["phone"][-9:])
+check("and is not onboarded", row == "0", row)
+st, res = call("admin_register_driver", dict(d2, phone="09230%s" % TAIL[-5:], activate=1), admin)
+check("activating needs the licence and the selfie", res.get("success") is False, res)
+st, res = call("admin_register_driver", dict(drv, phone="09240%s" % TAIL[-5:], selfie_url="http://x.test/uploads/items/a.png"), admin)
+check("a picture from the wrong folder is refused", res.get("success") is False, res)
+st, res = call("admin_register_driver", dict(drv, phone="09250%s" % TAIL[-5:], license_dob="2015-01-01"), admin)
+check("a driver under 18 is refused", res.get("success") is False, res)
+st, res = call("admin_register_driver", dict(drv, phone="09260%s" % TAIL[-5:], vehicle_type="rocket"), admin)
+check("an unknown service is refused", res.get("success") is False, res)
+st, res = call("admin_register_driver", dict(drv, phone="09270%s" % TAIL[-5:], docs={"insurance": {"expiry_date": "soon", "receipt_url": ins}}), admin)
+check("a bad document date is refused", res.get("success") is False, res)
+st, res = call("admin_register_driver", dict(drv, phone=drv["phone"]), admin)
+check("the same phone cannot be used twice", res.get("success") is False and st == 409, (st, res))
+st, res = call("admin_register_driver", dict(drv, phone="09280%s" % TAIL[-5:]), cust)
+check("a customer cannot use the driver desk", st in (401, 403) or res.get("success") is False, (st, res))
+
 if fails:
     print("\nFAILED: %d" % len(fails))
     sys.exit(1)
