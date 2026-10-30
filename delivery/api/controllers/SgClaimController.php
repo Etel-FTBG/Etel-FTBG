@@ -3,6 +3,7 @@
 // ETEL Delivery - pre-registered businesses: admin hands one over, and its owner takes it over (public: the one-time claim code is the credential)
 //   admin_sg_update_owner  { id, name?, phone? }  -> change the owner's name / sign-in phone                       (service_givers.manage)
 //   admin_sg_claim_invite  { id }                 -> a new one-time claim code (shown once; older ones stop working) (service_givers.manage)
+//   admin_sg_set_hours     { id, opens_at, closes_at }    -> opening hours ('HH:MM'; both empty clears them)               (service_givers.manage)
 //   sg_claim_info      { code }                              -> which business this code opens (so the page can greet the owner)
 //   sg_claim_complete  { code, phone, password, name? }      -> the owner sets their own phone number and password
 // The business stays "pending": it cannot sign in or show to customers until admin presses Verify. Wrong codes are rate limited.
@@ -11,6 +12,31 @@
 require_once __DIR__ . '/../lib/sg_claim.php';
 
 switch ($action) {
+
+case 'admin_sg_set_hours': {
+    $pdo = db();
+    $u = require_admin($pdo, 'service_givers.manage');
+    if (etel_is_ride_only($pdo, $u)) fail('You can only change ride accounts', 403);
+    require_once __DIR__ . '/../lib/shop_hours.php';
+    $id = isset($body['id']) ? intval($body['id']) : 0;
+    if ($id <= 0) fail('id required', 400);
+    $o_raw = isset($body['opens_at']) ? trim($body['opens_at']) : '';
+    $c_raw = isset($body['closes_at']) ? trim($body['closes_at']) : '';
+    if ($o_raw === '' && $c_raw === '') { $o = null; $c = null; }
+    else {
+        $o = etel_hours_clean($o_raw); $c = etel_hours_clean($c_raw);
+        if ($o === null || $c === null) fail('Enter both times as HH:MM, for example 08:00 and 21:00', 400);
+        if ($o === $c) fail('Opening and closing time cannot be the same', 400);
+    }
+    $chk = $pdo->prepare('SELECT id FROM service_givers WHERE id = ?');
+    $chk->execute(array($id));
+    if (!$chk->fetchColumn()) fail('Service giver not found', 404);
+    etel_hours_ensure_columns($pdo);
+    try { $pdo->prepare('UPDATE service_givers SET opens_at = ?, closes_at = ? WHERE id = ?')->execute(array($o, $c, $id)); }
+    catch (Exception $e) { fail_ex($e, 'Update failed', 500); }
+    ok(array('opens_at' => $o, 'closes_at' => $c, 'message' => $o === null ? 'Opening hours cleared' : 'Opening hours saved'));
+    break;
+}
 
 case 'sg_claim_info': {
     $pdo = db();
