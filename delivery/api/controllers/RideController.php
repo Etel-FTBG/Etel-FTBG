@@ -1437,6 +1437,90 @@ case 'book_ride': {
     break;
 }
 
+case 'admin_phone_book_ride': {
+    /* An admin books a ride for someone who phoned in. The caller's account is found by phone (or created without a
+       password, so they can sign in later through the normal reset flow); the ride is then created exactly as
+       book_ride would, in 'searching', so nearby drivers see it. km > 0 = fixed distance; open = metered trip. */
+    if ($u['role'] !== 'admin' || !user_has_capability($pdo, $u, 'rides.manage')) fail('Admin only', 403);
+    $phoneRaw = isset($body['phone']) ? trim($body['phone']) : '';
+    $phone = etel_validate_phone($phoneRaw);
+    if (!$phone) fail('Enter a valid Ethiopian mobile number, e.g. 0911234567', 400);
+    $cname = isset($body['name']) ? trim(preg_replace('/\s+/u', ' ', (string) $body['name'])) : '';
+    $cname = function_exists('mb_substr') ? mb_substr($cname, 0, 100, 'UTF-8') : substr($cname, 0, 100);
+    $open = !empty($body['open']);
+    $km = isset($body['km']) ? floatval($body['km']) : 0;
+    if (!$open && $km <= 0) fail('Enter a distance, or choose Open Trip', 400);
+    $km = min(100, max(0, $km));
+    $vtype = rides_normalize_vehicle_type($pdo, isset($body['vehicle_type']) ? strtolower(trim($body['vehicle_type'])) : 'bajaj');
+    $note = isset($body['pickup_note']) ? trim((string) $body['pickup_note']) : '';
+    $note = function_exists('mb_substr') ? mb_substr($note, 0, 200, 'UTF-8') : substr($note, 0, 200);
+    $plat = isset($body['pickup_lat']) ? floatval($body['pickup_lat']) : 0;
+    $plng = isset($body['pickup_lng']) ? floatval($body['pickup_lng']) : 0;
+    $paddr = isset($body['pickup_addr']) ? mb_substr(trim((string) $body['pickup_addr']), 0, 200, 'UTF-8') : '';
+    if (!$plat || !$plng || abs($plat) > 90 || abs($plng) > 180) { $plat = 7.0621; $plng = 38.4763; }   // Hawassa centre when the caller was not placed on the map
+    if ($paddr === '') $paddr = $note !== '' ? $note : 'Phone booking';
+    elseif ($note !== '') $paddr = mb_substr($paddr . ' - ' . $note, 0, 255, 'UTF-8');
+
+    if (!etel_phone_lock($pdo, $phone)) fail('Please try again in a moment', 429);
+    $cust = etel_find_user_by_phone($pdo, $phone, 'id,phone,name,role');
+    if ($cust && $cust['role'] !== 'customer' && $cust['role'] !== 'passenger') {
+        etel_phone_unlock($pdo, $phone);
+        fail('That number belongs to a ' . $cust['role'] . ' account, not a rider', 409);
+    }
+    $newAcct = false;
+    if (!$cust) {
+        $newAcct = true;
+        $userCols = etel_table_columns($pdo, 'users');
+        $f = array('name', 'phone', 'password_hash', 'role'); $m = array('?', '?', '?', '?');
+        $v = array($cname !== '' ? $cname : 'Phone caller', $phone, password_hash(bin2hex(random_bytes(12)), PASSWORD_DEFAULT), 'customer');
+        if (in_array('active', $userCols, true)) { $f[] = 'active'; $m[] = '1'; }
+        $f[] = 'created_at'; $m[] = 'NOW()';
+        try {
+            $pdo->prepare('INSERT INTO users (' . implode(',', $f) . ') VALUES (' . implode(',', $m) . ')')->execute($v);
+        } catch (Exception $e) { etel_phone_unlock($pdo, $phone); fail_ex($e, 'Could not create the caller account', 500); }
+        $cust = array('id' => intval($pdo->lastInsertId()), 'phone' => $phone, 'name' => $cname, 'role' => 'customer');
+    }
+    etel_phone_unlock($pdo, $phone);
+    $cid = intval($cust['id']);
+    $q = $pdo->prepare("SELECT id FROM rides WHERE passenger_id=? AND status IN ('searching','accepted','in_progress','arrived') ORDER BY id DESC LIMIT 1");
+    $q->execute(array($cid));
+    $ex = $q->fetch();
+    if ($ex) fail('This caller already has an active ride (#' . intval($ex['id']) . '). Cancel it first.', 409, array('existing_ride_id' => intval($ex['id'])));
+
+    $fareRes = rides_calc_fare($pdo, $km, $vtype, $open);
+    $fare = $fareRes['fare'];
+    $have = array();
+    foreach ($pdo->query("SHOW COLUMNS FROM `rides`")->fetchAll() as $c) { $have[strtolower($c['Field'])] = true; }
+    $cols = 'passenger_id, pickup_lat, pickup_lng, dropoff_lat, dropoff_lng, pickup_address, dropoff_address, distance_km, fare_estimate, fare_final, payment_method, status, expires_at, created_at';
+    $ph = "?,?,?,NULL,NULL,?,?,?,?,?,'cash','searching', DATE_ADD(NOW(), INTERVAL 10 MINUTE), NOW()";
+    $vals = array($cid, $plat, $plng, $paddr, $open ? 'Open trip (driver directed on the way)' : 'By distance: ' . $km . ' km (driver directed on the way)', round($km, 2), $fare, $fare);
+    foreach (array('ride_code', 'request_code', 'code', 'tracking_code', 'order_code') as $cc) {
+        if (isset($have[$cc])) { $cols .= ", `$cc`"; $ph .= ', ?'; $vals[] = 'R' . date('ymdHis') . strtoupper(substr(md5(uniqid(mt_rand(), true)), 0, 5)); }
+    }
+    if (isset($have['vehicle_type'])) { $cols .= ', vehicle_type'; $ph .= ', ?'; $vals[] = $vtype; }
+    if (isset($have['open_trip'])) { $cols .= ', open_trip'; $ph .= ', ?'; $vals[] = $open ? 1 : 0; }
+    if (rides_has_surge_column($pdo)) { $cols .= ', surge_applied'; $ph .= ', ?'; $vals[] = $fareRes['surge'] ? 1 : 0; }
+    $pdo->prepare("INSERT INTO rides ($cols) VALUES ($ph)")->execute($vals);
+    $rid = intval($pdo->lastInsertId());
+
+    try {
+        $nd = $pdo->prepare("SELECT user_id, lat, lng FROM ride_drivers WHERE online = 1 AND lat IS NOT NULL AND lng IS NOT NULL AND last_seen >= DATE_SUB(NOW(), INTERVAL 30 MINUTE) AND (LOWER(vehicle_type) = LOWER(?) OR vehicle_type IS NULL)");
+        $nd->execute(array($vtype));
+        $inRange = array();
+        foreach ($nd->fetchAll() as $rd) {
+            $d = rides_haversine_km($plat, $plng, floatval($rd['lat']), floatval($rd['lng']));
+            if ($d <= 8) { $rd['km'] = $d; $inRange[] = $rd; }
+        }
+        foreach (rides_offer_first_push_targets($pdo, $inRange, $plat, $plng) as $rd) {
+            etel_push_send($pdo, intval($rd['user_id']), 'New ride request nearby!',
+                'ETB ' . number_format($fare, 0) . ' • ' . round($rd['km'], 1) . ' km away',
+                array('type' => 'new_ride_request', 'ride_id' => $rid, 'url' => '/delivery/driver/'));
+        }
+    } catch (Exception $e) { error_log('[ETEL][push] phone-booking push failed: ' . $e->getMessage()); }
+    ok(array('ride_id' => $rid, 'passenger_id' => $cid, 'fare' => $fare, 'open' => $open ? 1 : 0, 'new_account' => $newAcct ? 1 : 0));
+    break;
+}
+
 case 'get_etelpay_merchant': {
     // Requires login (same as every other action in this file), but the
     // phone number itself isn't sensitive -- equivalent to a business's

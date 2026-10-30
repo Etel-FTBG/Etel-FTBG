@@ -625,6 +625,8 @@ function phoneDispatchBook() {
             phone, name, vehicle_type: vtype,
             km: km || 0, open: _pdMode === 'open' ? 1 : 0,
             pickup_note: note,
+            pickup_lat: _pdLastPoint ? _pdLastPoint.lat : 0, pickup_lng: _pdLastPoint ? _pdLastPoint.lng : 0,
+            pickup_addr: (document.getElementById('pd-address') || {}).value || '',
         }),
     })
         .then(r => r.json())
