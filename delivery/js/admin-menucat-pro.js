@@ -40,6 +40,7 @@ function visibleRows() {
   return V.rows.filter(function (r) {
     if (V.filter && r.status !== V.filter) return false;
     if (V.cat && r.category !== V.cat) return false;
+    if (V.nopic && pic(r.image_url)) return false;
     if (q && (String(r.name || '') + ' ' + String(r.name_am || '') + ' ' + String(r.cuisine || '')).toLowerCase().indexOf(q) < 0) return false;
     return true;
   });
@@ -47,8 +48,9 @@ function visibleRows() {
 
 function paint() {
   var el = root(); if (!el) return;
-  var c = { all: V.rows.length, active: 0, pending: 0, hidden: 0 }, onShops = 0, focus = document.activeElement && document.activeElement.id === 'mcp-q';
-  V.rows.forEach(function (r) { if (c[r.status] != null) c[r.status]++; if (shops(r) > 0) onShops++; });
+  var c = { all: V.rows.length, active: 0, pending: 0, hidden: 0 }, onShops = 0, withPic = 0, focus = document.activeElement && document.activeElement.id === 'mcp-q';
+  V.rows.forEach(function (r) { if (c[r.status] != null) c[r.status]++; if (shops(r) > 0) onShops++; if (pic(r.image_url)) withPic++; });
+  var pct = c.all ? Math.round(withPic * 100 / c.all) : 0;
   var kp = [
     { key: '', icon: '📚', label: 'All dishes', value: K.num(c.all) }, { key: 'pending', icon: '⏳', label: 'Suggested by shops', value: K.num(c.pending), warn: true },
     { key: 'active', icon: '✅', label: 'Active', value: K.num(c.active) }, { key: 'hidden', icon: '🙈', label: 'Hidden', value: K.num(c.hidden) }
@@ -56,7 +58,8 @@ function paint() {
   var cats = [['', 'All']].concat(Object.keys(CATS).map(function (k) { return [k, CATS[k][0] + ' ' + CATS[k][1]]; }));
   var rows = visibleRows(), shown = rows.slice(0, SHOW * V.more);
   var h = '<div class="ak">' + K.hero('Menu catalog', 'Common dishes every shop can pick from, so restaurants only type their own price. Approve the dishes shops suggest to add them for everyone.', [
-      ['Dishes', K.num(c.all)], ['Waiting for approval', K.num(c.pending)], ['Used by shops', K.num(onShops)]]) + K.kpis(kp, V.filter) +
+      ['Dishes', K.num(c.all)], ['With a photo', K.num(withPic) + ' (' + pct + '%)'], ['Waiting for approval', K.num(c.pending)], ['Used by shops', K.num(onShops)]]) + K.kpis(kp, V.filter) +
+    '<div class="ak-sec" style="margin:12px 0"><div style="display:flex;justify-content:space-between;gap:10px;font-size:13px"><b>Photo coverage</b><span>' + K.num(withPic) + ' of ' + K.num(c.all) + ' dishes have a photo</span></div><div style="height:8px;border-radius:6px;background:rgba(128,128,128,.2);margin-top:8px;overflow:hidden"><div style="width:' + pct + '%;height:100%;background:linear-gradient(90deg,#E8C14A,#2ecc71)"></div></div>' + (c.all - withPic ? '<button type="button" class="ak-btn' + (V.nopic ? ' gold' : '') + '" data-act="nopic" style="margin-top:10px">📷 ' + (V.nopic ? 'Showing dishes without a photo - show all' : 'Show the ' + K.num(c.all - withPic) + ' dishes without a photo') + '</button>' : '<div style="margin-top:8px;font-size:12px">✅ Every dish has a photo.</div>') + '</div>' +
     '<div class="ak-tools"><label class="ak-search"><u>🔎</u><input id="mcp-q" type="search" placeholder="Dish, Amharic name or group…" value="' + esc(V.q) + '" autocomplete="off"></label>' +
     '<button type="button" class="ak-btn" data-act="refresh" aria-label="Refresh">🔄</button><button type="button" class="ak-btn" data-act="copy">📋 Copy a shop\'s menu</button><button type="button" class="ak-btn" data-act="import">📥 Import CSV</button><button type="button" class="ak-btn gold" data-act="new">➕ New dish</button></div>' +
     K.seg('cat', cats, V.cat) + '<div class="ak-count" style="margin-top:10px">' + K.num(rows.length) + ' of ' + K.num(V.rows.length) + ' dishes</div>';
@@ -79,11 +82,35 @@ function card(r) {
     (r.prep_time ? '<span class="ak-chip">⏱ ' + esc(r.prep_time) + ' min</span>' : '') + '</div>' +
     '<div class="ak-row"><span>Sold by <b>' + esc(n) + '</b> shop' + (n === 1 ? '' : 's') + '</span>' + (pend && r.suggested_by_name ? '<span>by ' + esc(r.suggested_by_name) + '</span>' : '') + '</div>' +
     '<div class="ak-acts" style="margin-top:10px">' + (pend ? '<button type="button" class="ak-btn good" data-approve="' + esc(r.id) + '">✓ Approve</button>' : '') +
-    '<button type="button" class="ak-btn" data-edit="' + esc(r.id) + '">✏ Edit</button><button type="button" class="ak-btn danger" data-del="' + esc(r.id) + '">' + (n > 0 ? 'Hide' : 'Delete') + '</button></div></div>';
+    (pic(r.image_url) ? '' : '<button type="button" class="ak-btn" data-addpic="' + esc(r.id) + '">📷 Add photo</button>') + '<button type="button" class="ak-btn" data-edit="' + esc(r.id) + '">✏ Edit</button><button type="button" class="ak-btn danger" data-del="' + esc(r.id) + '">' + (n > 0 ? 'Hide' : 'Delete') + '</button></div></div>';
 }
 
 function find(id) { var f = null; V.rows.forEach(function (r) { if (String(r.id) === String(id)) f = r; }); return f; }
 function val(id) { var e = document.getElementById(id); return e ? e.value.trim() : ''; }
+
+/* ---------- photo upload ---------- */
+function uploadPhoto(file) {
+  if (!file || !/^image\//.test(file.type)) return Promise.reject(new Error('Choose a picture file'));
+  var fd = new FormData(); fd.append('image', file);
+  return fetch(ETEL.api.replace('boot.php', 'upload.php'), { method: 'POST', headers: { 'Authorization': 'Bearer ' + Auth.getToken() }, body: fd })
+    .then(function (r) { return r.json(); }).then(function (j) { if (!j || !j.success || !j.data) throw new Error((j && j.message) || 'Upload failed'); return j.data.url; });
+}
+function pickFile(cb) {
+  var i = document.createElement('input'); i.type = 'file'; i.accept = 'image/*';
+  i.onchange = function () { if (i.files && i.files[0]) cb(i.files[0]); };
+  i.click();
+}
+/* Add a photo to a dish straight from its card: upload, then save the dish with the new picture. */
+function quickPhoto(id) {
+  var r = find(id); if (!r) return;
+  pickFile(function (file) {
+    K.toast('Uploading the photo…');
+    uploadPhoto(file).then(function (u) {
+      return K.api('admin_catalog_save', { id: parseInt(r.id, 10), name: r.name, name_am: r.name_am || '', description: r.description || '', description_am: r.description_am || '', category: r.category, cuisine: r.cuisine || '', packs: r.packs || '', image_url: u, prep_time: r.prep_time || 20, status: r.status || 'active' })
+        .then(function (res) { if (!K.okRes(res)) throw new Error(K.failText(res, 'Could not save the photo.')); K.toast('Photo added'); V.busy = false; load(true); });
+    }).catch(function (e) { K.toast(e.message, true); });
+  });
+}
 
 /* ---------- dish form ---------- */
 function openDish(r) {
@@ -97,7 +124,10 @@ function openDish(r) {
     '<div class="ak-fg" style="margin-top:12px">' + K.field('Group', '<input id="dsh-cuisine" class="ak-in" maxlength="80" placeholder="Ethiopian" value="' + esc(o.cuisine || '') + '">', 'For example Ethiopian, Pizza, Drinks.') +
     K.field('Starter packs', '<input id="dsh-packs" class="ak-in" maxlength="190" placeholder="ethiopian_restaurant, cafe" value="' + esc(o.packs || '') + '">', 'Comma separated.') +
     K.field('Prep time (min)', '<input id="dsh-prep" type="number" min="1" class="ak-in" value="' + esc(o.prep_time || 20) + '">') + '</div></div>' +
-    '<div class="ak-sec"><h4>Photo</h4><div style="display:flex;gap:12px;align-items:flex-start"><div id="dsh-pic" style="flex:none;width:84px;height:84px"></div><div style="flex:1">' + K.field('Photo address', '<input id="dsh-img" class="ak-in" placeholder="https://…" value="' + esc(o.image_url || '') + '">', 'A web address of the photo (https://…).') + '</div></div></div>' +
+    '<div class="ak-sec"><h4>Photo</h4><div style="display:flex;gap:12px;align-items:flex-start"><div id="dsh-pic" style="flex:none;width:84px;height:84px"></div><div style="flex:1">' +
+    '<div class="ak-acts"><button type="button" class="ak-btn gold" data-upload>📷 Upload a photo</button><button type="button" class="ak-btn" data-unpic>Remove</button></div>' +
+    '<div id="dsh-up" style="font-size:12px;margin-top:6px">Choose a picture from your phone or computer.</div>' +
+    '<input id="dsh-img" type="hidden" value="' + esc(o.image_url || '') + '"></div></div></div>' +
     '<div class="ak-sec"><h4>Status</h4>' + K.opts('dsh-status', [['active', '✅', 'Active', 'Shops can pick it'], ['pending', '⏳', 'Suggested', 'Waiting for approval'], ['hidden', '🙈', 'Hidden', 'Not offered']], status) + '</div></form>';
   var dr = K.openDrawer(head, body, '<span class="ak-err" id="dsh-err" role="alert"></span><button type="button" class="ak-btn" data-close>Cancel</button><button type="button" class="ak-btn gold" data-save>' + (edit ? 'Save dish' : 'Add dish') + '</button>');
   var cur = { cat: category, status: status };
@@ -107,12 +137,20 @@ function openDish(r) {
                     : '<div class="ak-av" style="width:84px;height:84px;border-radius:18px;font-size:30px;--a:#E8C14A;--b:#9a7a1c">' + esc((CATS[cur.cat] || ['🏷️'])[0]) + '</div>';
   }
   K.wireOpts(dr, function (n, v) { if (n === 'dsh-cat') cur.cat = v; else cur.status = v; preview(); });
-  dr.addEventListener('input', function (e) { if (e.target.id === 'dsh-img') preview(); });
+  dr.addEventListener('click', function (e) {
+    var up = e.target.closest && e.target.closest('[data-upload]'), rm = e.target.closest && e.target.closest('[data-unpic]'), msg = document.getElementById('dsh-up');
+    if (rm) { document.getElementById('dsh-img').value = ''; preview(); if (msg) msg.textContent = 'Photo removed. Save the dish to keep this.'; return; }
+    if (!up) return;
+    pickFile(function (file) {
+      up.disabled = true; if (msg) msg.textContent = 'Uploading…';
+      uploadPhoto(file).then(function (u) { document.getElementById('dsh-img').value = u; preview(); if (msg) msg.textContent = 'Photo ready. Save the dish to keep it.'; })
+        .catch(function (er) { if (msg) msg.textContent = er.message; }).then(function () { up.disabled = false; });
+    });
+  });
   dr.addEventListener('click', function (e) {
     if (!(e.target.closest && e.target.closest('[data-save]'))) return;
     var err = document.getElementById('dsh-err');
     if (!val('dsh-name')) { if (err) err.textContent = 'Give the dish a name.'; document.getElementById('dsh-name').focus(); return; }
-    if (val('dsh-img') && !pic(val('dsh-img'))) { if (err) err.textContent = 'The photo address must start with https://'; document.getElementById('dsh-img').focus(); return; }
     var btn = dr.querySelector('[data-save]'); btn.disabled = true; if (err) err.textContent = '';
     var body2 = { id: parseInt(val('dsh-id'), 10) || 0, name: val('dsh-name'), name_am: val('dsh-am'), description: val('dsh-desc'), description_am: o.description_am || '', category: cur.cat, cuisine: val('dsh-cuisine'),
       packs: val('dsh-packs'), image_url: val('dsh-img'), prep_time: parseInt(val('dsh-prep'), 10) || 20, status: cur.status };
@@ -165,6 +203,8 @@ function wire(el) {
     if ((b = t.closest('[data-kpi]'))) { var k = b.getAttribute('data-kpi'); V.filter = (V.filter === k ? '' : k); V.more = 1; paint(); return; }
     if ((b = t.closest('[data-seg]'))) { V.cat = b.getAttribute('data-val'); V.more = 1; paint(); return; }
     if (t.closest('[data-act="refresh"]')) { load(true); return; }
+    if (t.closest('[data-act="nopic"]')) { V.nopic = !V.nopic; V.more = 1; paint(); return; }
+    if ((b = t.closest('[data-addpic]'))) { quickPhoto(b.getAttribute('data-addpic')); return; }
     if (t.closest('[data-act="more"]')) { V.more++; paint(); return; }
     if (t.closest('[data-act="new"]')) { openDish(null); return; }
     if (t.closest('[data-act="copy"]')) { openCopy(); return; }

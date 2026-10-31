@@ -35,6 +35,7 @@ run python3 tests/ci/check_vehicle_pic.py
 run python3 tests/ci/check_courier_marker.py
 run python3 tests/ci/check_driver_desk.py
 run python3 tests/ci/check_courier_desk.py
+run python3 tests/ci/check_menucat_photo.py
 run python3 tests/ci/check_reserved_columns.py
 run python3 tests/ci/check_xss_sinks.py
 run python3 tests/security_regression_smoke.py
