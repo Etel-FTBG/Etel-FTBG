@@ -190,6 +190,8 @@ define('ETEL_WRITE_ACTIONS', array(
     'admin_backfill_order_service_giver_ids',
     'courier_update_location',
     'nfc_confirm_pickup','nfc_confirm_delivery',
+    'fa_claim_ref','fa_agent_apply','fa_agent_update_profile','fa_agent_notifications_read',
+    'admin_fa_settings_save','admin_fa_agent_decide','admin_fa_earning_decide','admin_fa_run_earnings','admin_fa_payout_create','admin_fa_payout_export','admin_fa_payout_mark_paid','admin_fa_payout_cancel',
 ));
 
 /*  READ INPUT  */
@@ -722,6 +724,8 @@ $ETEL_THROTTLED_ACTIONS = array(
     'order_chat_send' => array(60, 300), 'customer_reorder_items' => array(20, 600),
     'schedule_order' => array(20, 600), 'initiate_telebirr_payment' => array(15, 600),
     'confirm_bank_payment' => array(15, 600), 'rate_order' => array(30, 600),
+    // Field Agents: brute-forcing referral codes and mass-applying are both capped per IP / per user.
+    'fa_ref_lookup' => array(40, 600), 'fa_claim_ref' => array(20, 3600), 'fa_agent_apply' => array(6, 3600),
 );
 if (isset($ETEL_THROTTLED_ACTIONS[$action])) {
     try {
@@ -1765,6 +1769,12 @@ switch ($action) {
         break;
     case 'save_push_subscription': case 'remove_push_subscription': case 'get_vapid_public_key': case 'test_send_push': case 'save_push_token': case 'remove_push_token':
         require __DIR__ . '/controllers/PushController.php';
+        break;
+    case 'fa_ref_lookup': case 'fa_claim_ref': case 'fa_agent_apply': case 'fa_agent_me': case 'fa_agent_referrals': case 'fa_agent_payouts': case 'fa_agent_update_profile': case 'fa_agent_notifications': case 'fa_agent_notifications_read':
+        require __DIR__ . '/controllers/FieldAgentController.php';
+        break;
+    case 'admin_fa_settings_get': case 'admin_fa_settings_save': case 'admin_fa_agents_list': case 'admin_fa_agent_get': case 'admin_fa_agent_decide': case 'admin_fa_earnings_list': case 'admin_fa_earning_decide': case 'admin_fa_run_earnings': case 'admin_fa_stats': case 'admin_fa_payouts_list': case 'admin_fa_payout_create': case 'admin_fa_payout_export': case 'admin_fa_payout_mark_paid': case 'admin_fa_payout_cancel': case 'admin_fa_audit_list':
+        require __DIR__ . '/controllers/FieldAgentAdminController.php';
         break;
     case 'get_display_prefs': case 'save_display_prefs':
         require __DIR__ . '/controllers/DisplayPrefsController.php';

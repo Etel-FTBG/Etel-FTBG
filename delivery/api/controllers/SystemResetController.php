@@ -84,6 +84,8 @@ function equity_reset_table_plan() {
         // Push/session/security noise
         'push_subscriptions', 'push_tokens', 'login_attempts', 'password_resets', 'tg_chat_ids',
         'notifications', 'client_errors', 'csp_reports', 'user_display_prefs',
+        // Field agents (referral programme): activity data. fa_settings and fa_audit_log are KEPT (see tests/ci/check_reset_coverage.py).
+        'fa_payout_items', 'fa_payout_batches', 'fa_earnings', 'fa_notifications', 'fa_referrals', 'fa_agents',
         // Parents last
         'rides', 'orders', 'service_givers', 'couriers',
         // users handled specially (partial delete, not full truncate)
