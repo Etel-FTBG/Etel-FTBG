@@ -1,0 +1,254 @@
+<?php
+// ============================================================
+// ETEL Ride - Field Agents: admin actions. Capabilities (role_permissions): agents.view, agents.manage, agents.pay.
+// An unrestricted admin ('*') has all three. Every state change is written to the append-only fa_audit_log.
+//   admin_fa_settings_get / admin_fa_settings_save
+//   admin_fa_agents_list / admin_fa_agent_get / admin_fa_agent_decide
+//   admin_fa_earnings_list / admin_fa_earning_decide   (referral review, fraud queue, bulk release/reject)
+//   admin_fa_run_earnings / admin_fa_stats
+//   admin_fa_payouts_list / admin_fa_payout_create / admin_fa_payout_export / admin_fa_payout_mark_paid / admin_fa_payout_cancel
+//   admin_fa_audit_list
+// ============================================================
+require_once __DIR__ . '/../lib/fa_core.php';
+require_once __DIR__ . '/../lib/fa_risk.php';
+require_once __DIR__ . '/../lib/fa_earnings.php';
+require_once __DIR__ . '/../lib/fa_payouts.php';
+
+if (!function_exists('fa_adm_limit')) {
+function fa_adm_limit($v, $def, $max) { $n = intval($v); return ($n < 1) ? $def : min($n, $max); }
+function fa_adm_reason($body, $required) {
+    $r = trim(isset($body['reason']) ? (string) $body['reason'] : '');
+    if ($required && strlen($r) < 3) fail('Please write a short reason (it is recorded and the agent is told in simple words)');
+    return substr($r, 0, 255);
+}
+}
+
+switch ($action) {
+
+case 'admin_fa_settings_get': {
+    $pdo = db(); require_admin($pdo, 'agents.view');
+    $meta = array();
+    foreach (fa_defaults() as $k => $d) $meta[$k] = array('default' => $d[0], 'min' => $d[1], 'max' => $d[2]);
+    ok(array('settings' => fa_settings($pdo, true), 'meta' => $meta, 'budget' => fa_budget_status($pdo)));
+    break;
+}
+
+case 'admin_fa_settings_save': {
+    $pdo = db(); $adm = require_admin($pdo, 'agents.manage');
+    try { ok(array('settings' => fa_settings_save($pdo, isset($body['settings']) && is_array($body['settings']) ? $body['settings'] : array(), $adm['id']))); }
+    catch (Exception $e) { fail($e->getMessage(), 400); }
+    break;
+}
+
+case 'admin_fa_agents_list': {
+    $pdo = db(); require_admin($pdo, 'agents.view');
+    $w = array('1=1'); $p = array();
+    if (!empty($body['status']) && in_array($body['status'], array('pending', 'approved', 'suspended', 'rejected'), true)) { $w[] = 'a.status = ?'; $p[] = $body['status']; }
+    if (!empty($body['q'])) { $like = '%' . str_replace(array('%', '_'), array('', ''), trim($body['q'])) . '%'; $w[] = '(a.full_name LIKE ? OR a.phone LIKE ? OR a.venue_name LIKE ? OR a.code LIKE ?)'; array_push($p, $like, $like, $like, $like); }
+    $lim = fa_adm_limit(isset($body['limit']) ? $body['limit'] : 0, 100, 500);
+    $q = $pdo->prepare("SELECT a.id, a.full_name, a.phone, a.venue_name, a.venue_type, a.venue_zone, a.status, a.age_status, a.age_note, a.tier, a.code, a.risk_score, a.risk_reasons, a.last_referral_at, a.created_at,
+                               (SELECT COUNT(*) FROM fa_referrals r WHERE r.agent_id = a.id) AS referrals,
+                               (SELECT COALESCE(SUM(e.amount),0) FROM fa_earnings e WHERE e.agent_id = a.id AND e.status = 'payable') AS payable,
+                               (SELECT COALESCE(SUM(e.amount),0) FROM fa_earnings e WHERE e.agent_id = a.id AND e.status = 'held') AS held
+                        FROM fa_agents a WHERE " . implode(' AND ', $w) . " ORDER BY (a.status = 'pending') DESC, a.id DESC LIMIT " . $lim);
+    $q->execute($p);
+    $rows = $q->fetchAll(PDO::FETCH_ASSOC);
+    foreach ($rows as &$r) { $r['risk_reasons'] = json_decode((string) $r['risk_reasons'], true); }
+    unset($r);
+    ok(array('agents' => $rows));
+    break;
+}
+
+case 'admin_fa_agent_get': {
+    $pdo = db(); require_admin($pdo, 'agents.view');
+    $id = intval(isset($body['id']) ? $body['id'] : 0);
+    $q = $pdo->prepare('SELECT * FROM fa_agents WHERE id = ?'); $q->execute(array($id)); $a = $q->fetch(PDO::FETCH_ASSOC);
+    if (!$a) fail('Agent not found', 404);
+    unset($a['device_hash']);
+    $a['risk_reasons'] = json_decode((string) $a['risk_reasons'], true);
+    $rf = $pdo->prepare("SELECT r.id, r.claimed_at, r.status, r.reject_code, r.risk_score, r.risk_reasons, u.phone AS rider_phone FROM fa_referrals r LEFT JOIN users u ON u.id = r.rider_user_id WHERE r.agent_id = ? ORDER BY r.id DESC LIMIT 100");
+    $rf->execute(array($id));
+    $refs = $rf->fetchAll(PDO::FETCH_ASSOC);
+    foreach ($refs as &$r) { $r['rider_phone'] = fa_mask_phone($r['rider_phone']); $r['risk_reasons'] = json_decode((string) $r['risk_reasons'], true); }
+    unset($r);
+    $au = $pdo->prepare("SELECT created_at, actor_type, actor_id, action, reason, detail FROM fa_audit_log WHERE (entity = 'agent' AND entity_id = ?) ORDER BY id DESC LIMIT 30");
+    $au->execute(array($id));
+    ok(array('agent' => $a, 'referrals' => $refs, 'audit' => $au->fetchAll(PDO::FETCH_ASSOC)));
+    break;
+}
+
+case 'admin_fa_agent_decide': {
+    $pdo = db(); $adm = require_admin($pdo, 'agents.manage');
+    $id = intval(isset($body['id']) ? $body['id'] : 0);
+    $dec = isset($body['decision']) ? (string) $body['decision'] : '';
+    $q = $pdo->prepare('SELECT * FROM fa_agents WHERE id = ?'); $q->execute(array($id)); $a = $q->fetch(PDO::FETCH_ASSOC);
+    if (!$a) fail('Agent not found', 404);
+    if ($dec === 'approve') {
+        if ($a['status'] === 'approved') ok(array('status' => 'approved', 'code' => $a['code']));
+        // Age gate: verified automatically by EtelID (adult AND Fayda reviewed), or confirmed by an admin who checked the ID card.
+        if (!in_array($a['age_status'], array('auto_verified', 'manual_verified'), true)) {
+            if (empty($body['manual_age_ok'])) fail('Age is not verified. Check the agent\'s Fayda ID card, then approve with "I checked the ID: 18 or older".', 409, array('code' => 'age_unverified'));
+            $note = trim(isset($body['age_note']) ? (string) $body['age_note'] : '');
+            if (strlen($note) < 3) fail('Write what you checked (for example: Fayda card seen, born 1998).');
+            $pdo->prepare("UPDATE fa_agents SET age_status='manual_verified', age_note=?, age_checked_by=?, age_checked_at=NOW() WHERE id=?")->execute(array(substr($note, 0, 200), $adm['id'], $id));
+            fa_audit($pdo, 'admin', $adm['id'], 'age_manually_verified', 'agent', $id, $note, array());
+        }
+        $code = $a['code'] ? $a['code'] : fa_gen_code($pdo);
+        $pdo->prepare("UPDATE fa_agents SET status='approved', code=?, decided_by=?, decided_at=NOW(), decision_reason='', updated_at=NOW() WHERE id=?")->execute(array($code, $adm['id'], $id));
+        fa_audit($pdo, 'admin', $adm['id'], 'agent_approved', 'agent', $id, '', array('code' => $code));
+        fa_notify($pdo, $id, 'agent_approved', array());
+        ok(array('status' => 'approved', 'code' => $code));
+    }
+    if (in_array($dec, array('reject', 'suspend'), true)) {
+        $reason = fa_adm_reason($body, true);
+        $st = $dec === 'reject' ? 'rejected' : 'suspended';
+        $pdo->prepare("UPDATE fa_agents SET status=?, decided_by=?, decided_at=NOW(), decision_reason=?, updated_at=NOW() WHERE id=?")->execute(array($st, $adm['id'], $reason, $id));
+        fa_audit($pdo, 'admin', $adm['id'], 'agent_' . $st, 'agent', $id, $reason, array());
+        fa_notify($pdo, $id, 'agent_' . $st, array());
+        ok(array('status' => $st));
+    }
+    if ($dec === 'reinstate') {
+        if ($a['status'] !== 'suspended') fail('Only a suspended agent can be reinstated');
+        $reason = fa_adm_reason($body, true);
+        $pdo->prepare("UPDATE fa_agents SET status='approved', decided_by=?, decided_at=NOW(), decision_reason='', updated_at=NOW() WHERE id=?")->execute(array($adm['id'], $id));
+        fa_audit($pdo, 'admin', $adm['id'], 'agent_reinstated', 'agent', $id, $reason, array());
+        ok(array('status' => 'approved'));
+    }
+    fail('Unknown decision');
+    break;
+}
+
+case 'admin_fa_earnings_list': {
+    $pdo = db(); require_admin($pdo, 'agents.view');
+    $w = array('1=1'); $p = array();
+    foreach (array('status' => array('pending', 'payable', 'held', 'paid', 'rejected', 'clawed_back'), 'kind' => array('first_trip', 'repeat3', 'clawback')) as $f => $allowed) {
+        if (!empty($body[$f]) && in_array($body[$f], $allowed, true)) { $w[] = 'e.' . $f . ' = ?'; $p[] = $body[$f]; }
+    }
+    if (!empty($body['agent_id'])) { $w[] = 'e.agent_id = ?'; $p[] = intval($body['agent_id']); }
+    if (!empty($body['min_risk'])) { $w[] = 'e.risk_score >= ?'; $p[] = intval($body['min_risk']); }
+    $lim = fa_adm_limit(isset($body['limit']) ? $body['limit'] : 0, 100, 500);
+    $off = max(0, intval(isset($body['offset']) ? $body['offset'] : 0));
+    $q = $pdo->prepare("SELECT e.id, e.referral_id, e.agent_id, e.kind, e.amount, e.status, e.reason_code, e.reason_note, e.earned_at, e.payable_at, e.risk_score, e.risk_reasons, e.ride_id,
+                               a.full_name AS agent_name, a.venue_name, a.tier, u.phone AS rider_phone, rr.driver_id
+                        FROM fa_earnings e JOIN fa_agents a ON a.id = e.agent_id JOIN fa_referrals rr ON rr.id = e.referral_id LEFT JOIN users u ON u.id = rr.rider_user_id
+                        WHERE " . implode(' AND ', $w) . " ORDER BY (e.status = 'held') DESC, e.risk_score DESC, e.id DESC LIMIT $lim OFFSET $off");
+    $q->execute($p);
+    $rows = $q->fetchAll(PDO::FETCH_ASSOC);
+    foreach ($rows as &$r) { $r['rider_phone'] = fa_mask_phone($r['rider_phone']); $r['risk_reasons'] = json_decode((string) $r['risk_reasons'], true); $r['reason_text'] = fa_reason_text($r['reason_code']); }
+    unset($r);
+    ok(array('earnings' => $rows));
+    break;
+}
+
+case 'admin_fa_earning_decide': {
+    $pdo = db(); $adm = require_admin($pdo, 'agents.manage');
+    $dec = isset($body['decision']) ? (string) $body['decision'] : '';
+    $ids = isset($body['ids']) && is_array($body['ids']) ? $body['ids'] : array(isset($body['id']) ? $body['id'] : 0);
+    $ids = array_slice(array_values(array_unique(array_filter(array_map('intval', $ids)))), 0, 100);
+    if (!$ids) fail('Select at least one item');
+    if (!in_array($dec, array('release', 'reject'), true)) fail('Unknown decision');
+    $reason = fa_adm_reason($body, true);
+    $done = 0; $skipped = 0;
+    foreach ($ids as $id) {
+        $q = $pdo->prepare('SELECT * FROM fa_earnings WHERE id = ?'); $q->execute(array($id)); $e = $q->fetch(PDO::FETCH_ASSOC);
+        if (!$e) { $skipped++; continue; }
+        if ($dec === 'release') {
+            // Only a HELD item can be released; it re-enters the normal hold timer (original earned date + hold days).
+            $u = $pdo->prepare("UPDATE fa_earnings SET status='pending', reason_code='ADMIN_RELEASED', reason_note=?, decided_by=?, decided_at=NOW(), updated_at=NOW() WHERE id=? AND status='held'");
+            $u->execute(array($reason, $adm['id'], $id));
+        } else {
+            $u = $pdo->prepare("UPDATE fa_earnings SET status='rejected', reason_code='ADMIN_REJECTED', reason_note=?, decided_by=?, decided_at=NOW(), updated_at=NOW() WHERE id=? AND status IN ('pending','held') AND payout_item_id=0");
+            $u->execute(array($reason, $adm['id'], $id));
+        }
+        if ($u->rowCount() < 1) { $skipped++; continue; }
+        $done++;
+        fa_audit($pdo, 'admin', $adm['id'], 'earning_' . $dec, 'earning', $id, $reason, array('agent' => intval($e['agent_id']), 'amount' => $e['amount'], 'was' => $e['status'], 'score' => intval($e['risk_score'])));
+        fa_notify($pdo, $e['agent_id'], $dec === 'release' ? 'bonus_pending' : 'referral_rejected', array('earning' => $id, 'amount' => $e['amount'], 'reason' => $dec === 'release' ? '' : 'ADMIN_REJECTED'));
+    }
+    ok(array('done' => $done, 'skipped' => $skipped));
+    break;
+}
+
+case 'admin_fa_run_earnings': {
+    $pdo = db(); $adm = require_admin($pdo, 'agents.manage');
+    $res = fa_run_earnings($pdo);
+    fa_audit($pdo, 'admin', $adm['id'], 'earnings_job_run', 'job', 0, '', $res);
+    ok(array('result' => $res, 'budget' => fa_budget_status($pdo)));
+    break;
+}
+
+case 'admin_fa_stats': {
+    $pdo = db(); require_admin($pdo, 'agents.view');
+    $S = fa_settings($pdo);
+    $one = function ($sql) use ($pdo) { return $pdo->query($sql)->fetchColumn(); };
+    $acquired = intval($one("SELECT COUNT(*) FROM fa_referrals WHERE status = 'qualified' AND first_ride_at > DATE_SUB(NOW(), INTERVAL 30 DAY)"));
+    $repeat = intval($one("SELECT COUNT(*) FROM fa_referrals r WHERE r.status = 'qualified' AND r.first_ride_at > DATE_SUB(NOW(), INTERVAL 30 DAY) AND EXISTS (SELECT 1 FROM fa_earnings e WHERE e.referral_id = r.id AND e.kind = 'repeat3')"));
+    $cost = floatval($one("SELECT COALESCE(SUM(amount),0) FROM fa_earnings WHERE status IN ('pending','payable','held','paid') AND earned_at > DATE_SUB(NOW(), INTERVAL 30 DAY)"));
+    ok(array(
+        'programme_enabled' => !empty($S['program_enabled']),
+        'agents_active' => intval($one("SELECT COUNT(*) FROM fa_agents WHERE status = 'approved'")),
+        'agents_pending' => intval($one("SELECT COUNT(*) FROM fa_agents WHERE status = 'pending'")),
+        'riders_acquired_30d' => $acquired,
+        'repeat_rate_30d' => $acquired ? round($repeat / $acquired * 100, 1) : 0,
+        'cost_per_rider' => $acquired ? round($cost / $acquired, 2) : 0,
+        'owed_payable' => round(floatval($one("SELECT COALESCE(SUM(amount),0) FROM fa_earnings WHERE status = 'payable'")), 2),
+        'in_hold' => round(floatval($one("SELECT COALESCE(SUM(amount),0) FROM fa_earnings WHERE status = 'pending'")), 2),
+        'flagged' => intval($one("SELECT COUNT(*) FROM fa_earnings WHERE status = 'held'")),
+        'high_risk' => intval($one("SELECT COUNT(*) FROM fa_earnings WHERE status IN ('held','pending') AND risk_score >= " . intval($S['risk_high_threshold']))),
+        'budget' => fa_budget_status($pdo),
+    ));
+    break;
+}
+
+case 'admin_fa_payouts_list': {
+    $pdo = db(); require_admin($pdo, 'agents.view');
+    $b = $pdo->query('SELECT * FROM fa_payout_batches ORDER BY id DESC LIMIT 50')->fetchAll(PDO::FETCH_ASSOC);
+    ok(array('candidates' => fa_payout_candidates($pdo), 'batches' => $b));
+    break;
+}
+
+case 'admin_fa_payout_create': {
+    $pdo = db(); $adm = require_admin($pdo, 'agents.pay');
+    try { ok(array('batch_id' => fa_payout_create($pdo, $adm['id'], isset($body['agent_ids']) ? $body['agent_ids'] : array(), isset($body['note']) ? $body['note'] : ''))); }
+    catch (Exception $e) { fail($e->getMessage(), 409); }
+    break;
+}
+
+case 'admin_fa_payout_export': {
+    $pdo = db(); $adm = require_admin($pdo, 'agents.pay');
+    try { ok(fa_payout_export($pdo, $adm['id'], isset($body['batch_id']) ? $body['batch_id'] : 0)); }
+    catch (Exception $e) { fail($e->getMessage(), 409); }
+    break;
+}
+
+case 'admin_fa_payout_mark_paid': {
+    $pdo = db(); $adm = require_admin($pdo, 'agents.pay');
+    try { fa_payout_mark_paid($pdo, $adm['id'], isset($body['batch_id']) ? $body['batch_id'] : 0, isset($body['refs']) && is_array($body['refs']) ? $body['refs'] : array()); ok(array('paid' => true)); }
+    catch (Exception $e) { fail($e->getMessage(), 409); }
+    break;
+}
+
+case 'admin_fa_payout_cancel': {
+    $pdo = db(); $adm = require_admin($pdo, 'agents.pay');
+    try { fa_payout_cancel($pdo, $adm['id'], isset($body['batch_id']) ? $body['batch_id'] : 0, fa_adm_reason($body, true)); ok(array('cancelled' => true)); }
+    catch (Exception $e) { fail($e->getMessage(), 409); }
+    break;
+}
+
+case 'admin_fa_audit_list': {
+    $pdo = db(); require_admin($pdo, 'agents.view');
+    $w = array('1=1'); $p = array();
+    if (!empty($body['entity'])) { $w[] = 'entity = ?'; $p[] = substr((string) $body['entity'], 0, 30); }
+    if (!empty($body['entity_id'])) { $w[] = 'entity_id = ?'; $p[] = intval($body['entity_id']); }
+    if (!empty($body['action_name'])) { $w[] = 'action = ?'; $p[] = substr((string) $body['action_name'], 0, 60); }
+    $lim = fa_adm_limit(isset($body['limit']) ? $body['limit'] : 0, 100, 500);
+    $off = max(0, intval(isset($body['offset']) ? $body['offset'] : 0));
+    $q = $pdo->prepare('SELECT id, created_at, actor_type, actor_id, action, entity, entity_id, reason, detail FROM fa_audit_log WHERE ' . implode(' AND ', $w) . " ORDER BY id DESC LIMIT $lim OFFSET $off");
+    $q->execute($p);
+    $out = array('entries' => $q->fetchAll(PDO::FETCH_ASSOC));
+    if (!empty($body['verify'])) $out['chain'] = fa_audit_verify($pdo);
+    ok($out);
+    break;
+}
+
+}

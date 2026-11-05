@@ -40,6 +40,7 @@ class EtelID_Service_API {
      * only works on the routes listed in its "scopes". */
     private static $routes = array(
         'resolve'             => 'resolve',
+        'age_check'           => 'age_check',
         'authenticate'        => 'authenticate',
         'company_admin'       => 'company_admin',
         'check_role'          => 'check_role',
@@ -238,7 +239,7 @@ class EtelID_Service_API {
             'company'    => isset( $m->primary_company ) ? $m->primary_company : '',
             'role'       => isset( $m->role )            ? $m->role            : ( isset( $m->primary_role ) ? $m->primary_role : '' ),
             'expiry'     => isset( $m->expiry_date )     ? $m->expiry_date     : '',
-            /* Messaging channels — used by all Etel Group apps for free OTP delivery */
+            /* Messaging channels - used by all Etel Group apps for free OTP delivery */
             'tg_chat_id' => isset( $m->tg_chat_id )     ? $m->tg_chat_id      : '',
             'wa_phone'   => isset( $m->wa_phone )        ? $m->wa_phone        : '',
         );
@@ -254,6 +255,28 @@ class EtelID_Service_API {
 
         EtelID_DB::log( $m->id, $m->etel_id, 'service_resolve', 'Service API lookup (app: ' . self::caller_label() . ')' );
         return rest_ensure_response( array( 'ok' => true, 'member' => self::member_payload( $m ) ) );
+    }
+
+    /* ---- POST /service/age_check --------------------------------
+       Used by Etel Ride's Agents programme. Answers ONE question and
+       nothing else: is this member 18 or older, and has an admin
+       reviewed their Fayda ID photos (pass2_status = approved)? The
+       date of birth itself is never returned. PHP 5.6 compatible. */
+    public static function age_check( $request ) {
+        $ident = sanitize_text_field( (string) $request->get_param( 'identifier' ) );
+        if ( ! $ident ) return new WP_Error( 'bad_request', 'identifier is required.', array( 'status' => 400 ) );
+        $m = self::find_member( $ident );
+        if ( ! $m ) return new WP_Error( 'not_found', 'No EtelID member matches that identifier.', array( 'status' => 404 ) );
+        if ( $m->status !== 'active' ) return new WP_Error( 'inactive', 'This Etel ID is not active.', array( 'status' => 403 ) );
+        $adult = false;
+        $dob   = isset( $m->dob ) ? (string) $m->dob : '';
+        if ( preg_match( '/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/', $dob ) && $dob !== '0000-00-00' ) {
+            $limit = gmdate( 'Y-m-d', strtotime( '-18 years' ) );
+            $adult = ( $dob <= $limit );
+        }
+        $reviewed = ( isset( $m->pass2_status ) && $m->pass2_status === 'approved' );
+        EtelID_DB::log( $m->id, $m->etel_id, 'service_age_check', 'Age check (app: ' . self::caller_label() . ')' );
+        return rest_ensure_response( array( 'ok' => true, 'adult' => $adult, 'reviewed' => $reviewed ) );
     }
 
     /* ---- POST /service/authenticate (SSO) ------------------------
