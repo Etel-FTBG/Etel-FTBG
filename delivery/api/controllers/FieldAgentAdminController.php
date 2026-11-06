@@ -251,4 +251,64 @@ case 'admin_fa_audit_list': {
     break;
 }
 
+
+case 'admin_fa_reports': {
+    $pdo = db(); require_admin($pdo, 'agents.view');
+    $days = max(7, min(90, intval(isset($body['days']) ? $body['days'] : 30)));
+    $since = date('Y-m-d', time() - 86400 * $days);
+    $ok = "e.kind <> 'clawback' AND e.status IN ('pending','payable','held','paid')";
+    // Daily series (zero-filled so the chart has no gaps).
+    $series = array();
+    for ($i = $days; $i >= 0; $i--) $series[date('Y-m-d', time() - 86400 * $i)] = array('d' => date('Y-m-d', time() - 86400 * $i), 'claims' => 0, 'new_riders' => 0, 'repeat' => 0, 'cost' => 0);
+    $q = $pdo->prepare("SELECT DATE(claimed_at) d, COUNT(*) n FROM fa_referrals WHERE claimed_at >= ? GROUP BY d"); $q->execute(array($since));
+    foreach ($q->fetchAll(PDO::FETCH_ASSOC) as $r) if (isset($series[$r['d']])) $series[$r['d']]['claims'] = intval($r['n']);
+    $q = $pdo->prepare("SELECT DATE(first_ride_at) d, COUNT(*) n FROM fa_referrals WHERE status = 'qualified' AND first_ride_at >= ? GROUP BY d"); $q->execute(array($since));
+    foreach ($q->fetchAll(PDO::FETCH_ASSOC) as $r) if (isset($series[$r['d']])) $series[$r['d']]['new_riders'] = intval($r['n']);
+    $q = $pdo->prepare("SELECT DATE(e.earned_at) d, SUM(e.kind = 'repeat3') rep, COALESCE(SUM(e.amount),0) c FROM fa_earnings e WHERE $ok AND e.earned_at >= ? GROUP BY d"); $q->execute(array($since));
+    foreach ($q->fetchAll(PDO::FETCH_ASSOC) as $r) if (isset($series[$r['d']])) { $series[$r['d']]['repeat'] = intval($r['rep']); $series[$r['d']]['cost'] = round(floatval($r['c']), 2); }
+    // Per-agent performance.
+    $q = $pdo->prepare("SELECT a.id, a.full_name, a.venue_name, a.venue_type, a.tier, a.status, a.risk_score,
+        (SELECT COUNT(*) FROM fa_referrals r WHERE r.agent_id = a.id AND r.claimed_at >= ?) AS claims,
+        (SELECT COUNT(*) FROM fa_referrals r WHERE r.agent_id = a.id AND r.status = 'qualified' AND r.first_ride_at >= ?) AS acquired,
+        (SELECT COUNT(*) FROM fa_referrals r WHERE r.agent_id = a.id AND r.status = 'rejected' AND r.claimed_at >= ?) AS rejected,
+        (SELECT COUNT(*) FROM fa_referrals r WHERE r.agent_id = a.id AND r.status = 'qualified' AND r.first_ride_at >= ?
+            AND EXISTS (SELECT 1 FROM fa_earnings x WHERE x.referral_id = r.id AND x.kind = 'repeat3' AND x.status NOT IN ('rejected','clawed_back'))) AS repeaters,
+        (SELECT COALESCE(SUM(e.amount),0) FROM fa_earnings e WHERE e.agent_id = a.id AND $ok AND e.earned_at >= ?) AS cost,
+        (SELECT COALESCE(SUM(e.amount),0) FROM fa_earnings e WHERE e.agent_id = a.id AND e.status = 'held') AS held
+        FROM fa_agents a WHERE a.status IN ('approved','suspended') ORDER BY acquired DESC, claims DESC LIMIT 200");
+    $q->execute(array($since, $since, $since, $since, $since));
+    $agents = $q->fetchAll(PDO::FETCH_ASSOC);
+    $tot = array('claims' => 0, 'acquired' => 0, 'repeaters' => 0, 'rejected' => 0, 'cost' => 0); $byType = array();
+    foreach ($agents as &$a) {
+        foreach (array('claims', 'acquired', 'repeaters', 'rejected') as $k) { $a[$k] = intval($a[$k]); $tot[$k] += $a[$k]; }
+        $a['cost'] = round(floatval($a['cost']), 2); $a['held'] = round(floatval($a['held']), 2); $tot['cost'] += $a['cost'];
+        $a['repeat_rate'] = $a['acquired'] ? round($a['repeaters'] / $a['acquired'] * 100, 1) : 0;
+        $a['cost_per_rider'] = $a['acquired'] ? round($a['cost'] / $a['acquired'], 2) : 0;
+        $t = $a['venue_type']; if (!isset($byType[$t])) $byType[$t] = array('venue_type' => $t, 'agents' => 0, 'acquired' => 0, 'repeaters' => 0, 'cost' => 0);
+        $byType[$t]['agents']++; $byType[$t]['acquired'] += $a['acquired']; $byType[$t]['repeaters'] += $a['repeaters']; $byType[$t]['cost'] += $a['cost'];
+    }
+    unset($a);
+    foreach ($byType as &$b) { $b['repeat_rate'] = $b['acquired'] ? round($b['repeaters'] / $b['acquired'] * 100, 1) : 0; $b['cost_per_rider'] = $b['acquired'] ? round($b['cost'] / $b['acquired'], 2) : 0; $b['cost'] = round($b['cost'], 2); }
+    unset($b);
+    ok(array('days' => $days, 'since' => $since, 'daily' => array_values($series), 'agents' => $agents, 'by_venue_type' => array_values($byType),
+             'totals' => array('claims' => $tot['claims'], 'acquired' => $tot['acquired'], 'repeaters' => $tot['repeaters'], 'rejected' => $tot['rejected'], 'cost' => round($tot['cost'], 2),
+                               'repeat_rate' => $tot['acquired'] ? round($tot['repeaters'] / $tot['acquired'] * 100, 1) : 0,
+                               'cost_per_rider' => $tot['acquired'] ? round($tot['cost'] / $tot['acquired'], 2) : 0)));
+    break;
+}
+
+
+case 'admin_fa_payout_items': {
+    $pdo = db(); require_admin($pdo, 'agents.view');
+    $bid = intval(isset($body['batch_id']) ? $body['batch_id'] : 0);
+    $b = $pdo->prepare('SELECT * FROM fa_payout_batches WHERE id = ?'); $b->execute(array($bid)); $batch = $b->fetch(PDO::FETCH_ASSOC);
+    if (!$batch) fail('Batch not found', 404);
+    $q = $pdo->prepare('SELECT i.id, i.agent_id, i.amount, i.payout_phone, i.tx_ref, i.status, i.paid_at, a.full_name, a.venue_name,
+                               (SELECT COUNT(*) FROM fa_earnings e WHERE e.payout_item_id = i.id) AS earnings
+                        FROM fa_payout_items i JOIN fa_agents a ON a.id = i.agent_id WHERE i.batch_id = ? ORDER BY i.id');
+    $q->execute(array($bid));
+    ok(array('batch' => $batch, 'items' => $q->fetchAll(PDO::FETCH_ASSOC)));
+    break;
+}
+
 }

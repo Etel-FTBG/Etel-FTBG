@@ -1773,7 +1773,7 @@ switch ($action) {
     case 'fa_ref_lookup': case 'fa_claim_ref': case 'fa_agent_apply': case 'fa_agent_me': case 'fa_agent_referrals': case 'fa_agent_payouts': case 'fa_agent_update_profile': case 'fa_agent_notifications': case 'fa_agent_notifications_read':
         require __DIR__ . '/controllers/FieldAgentController.php';
         break;
-    case 'admin_fa_settings_get': case 'admin_fa_settings_save': case 'admin_fa_agents_list': case 'admin_fa_agent_get': case 'admin_fa_agent_decide': case 'admin_fa_earnings_list': case 'admin_fa_earning_decide': case 'admin_fa_run_earnings': case 'admin_fa_stats': case 'admin_fa_payouts_list': case 'admin_fa_payout_create': case 'admin_fa_payout_export': case 'admin_fa_payout_mark_paid': case 'admin_fa_payout_cancel': case 'admin_fa_audit_list':
+    case 'admin_fa_settings_get': case 'admin_fa_settings_save': case 'admin_fa_agents_list': case 'admin_fa_agent_get': case 'admin_fa_agent_decide': case 'admin_fa_earnings_list': case 'admin_fa_earning_decide': case 'admin_fa_run_earnings': case 'admin_fa_stats': case 'admin_fa_payouts_list': case 'admin_fa_payout_create': case 'admin_fa_payout_export': case 'admin_fa_payout_mark_paid': case 'admin_fa_payout_cancel': case 'admin_fa_audit_list': case 'admin_fa_reports': case 'admin_fa_payout_items':
         require __DIR__ . '/controllers/FieldAgentAdminController.php';
         break;
     case 'get_display_prefs': case 'save_display_prefs':
