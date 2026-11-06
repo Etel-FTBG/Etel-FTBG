@@ -4,7 +4,7 @@
 export const AM: Record<string, string> = {
   // Permission gate (first draft)
   'Allow what ETEL needs': 'ኢቴል የሚፈልጋቸውን ፈቃዶች ይፍቀዱ', 'Camera': 'ካሜራ', 'Location': 'አካባቢ', 'Location all the time': 'አካባቢ ሁልጊዜ',
-  'Notifications': 'ማሳወቂያዎች', 'Display over other apps': 'በሌሎች አፕሊኬሽኖች ላይ አሳይ', 'Allow': 'ፍቀድ', 'Settings': 'ቅንብሮች',
+  'Display over other apps': 'በሌሎች አፕሊኬሽኖች ላይ አሳይ', 'Allow': 'ፍቀድ',
   'Please wait…': 'እባክዎ ይጠብቁ…', "Open the phone's app settings": 'የስልኩን የአፕ ቅንብር ክፈት',
   // ETEL hub
   'A new version is ready': 'አዲስ ስሪት ዝግጁ ነው', 'Update': 'አዘምን',
