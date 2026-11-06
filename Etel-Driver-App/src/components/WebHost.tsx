@@ -88,6 +88,9 @@ function Page({ appKey, active, top, bottom, loading, failed }: { appKey: string
         sharedCookiesEnabled
         thirdPartyCookiesEnabled
         allowsInlineMediaPlayback
+        // The licence, ID and selfie photos open the camera / file picker from inside the page.
+        allowFileAccess
+        mediaCapturePermissionGrantType="grant"
         mediaPlaybackRequiresUserAction={false}
         setSupportMultipleWindows={false}
         // Pull-to-refresh is off: it fought the map and the scrolling sheets, and could reload a page in the middle of a trip. The bar has Reload.

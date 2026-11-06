@@ -2,6 +2,10 @@
 // Keys are the exact English text shown in the app. Leading/trailing emoji and arrows are ignored when matching,
 // so "🧭 Navigate" is found under 'Navigate'. Text with no entry stays English.
 export const AM: Record<string, string> = {
+  // Permission gate (first draft)
+  'Allow what ETEL needs': 'ኢቴል የሚፈልጋቸውን ፈቃዶች ይፍቀዱ', 'Camera': 'ካሜራ', 'Location': 'አካባቢ', 'Location all the time': 'አካባቢ ሁልጊዜ',
+  'Notifications': 'ማሳወቂያዎች', 'Display over other apps': 'በሌሎች አፕሊኬሽኖች ላይ አሳይ', 'Allow': 'ፍቀድ', 'Settings': 'ቅንብሮች',
+  'Please wait…': 'እባክዎ ይጠብቁ…', "Open the phone's app settings": 'የስልኩን የአፕ ቅንብር ክፈት',
   // ETEL hub
   'A new version is ready': 'አዲስ ስሪት ዝግጁ ነው', 'Update': 'አዘምን',
   'Good morning': 'እንደምን አደሩ', 'Good afternoon': 'እንደምን ዋሉ', 'Good evening': 'እንደምን አመሹ',
