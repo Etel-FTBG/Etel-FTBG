@@ -58,6 +58,7 @@ require_once __DIR__ . '/lib/fa_earnings.php';
 try {
     $res = fa_run_earnings($pdo);
     if (!empty($res['enabled'])) fa_audit($pdo, 'system', 0, 'earnings_job_run', 'job', 0, '', $res);
+    if (!empty($res['enabled'])) { try { require_once __DIR__ . '/lib/fa_insights.php'; $res['digest_id'] = fa_digest_store($pdo); } catch (Exception $e) { error_log('[ETEL][cron_field_agents] digest: ' . $e->getMessage()); } }
     fc_reply(array('success' => true, 'result' => $res));
 } catch (Exception $e) {
     error_log('[ETEL][cron_field_agents] ' . $e->getMessage());

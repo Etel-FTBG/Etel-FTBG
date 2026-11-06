@@ -15,6 +15,7 @@
 require_once __DIR__ . '/../lib/fa_core.php';
 require_once __DIR__ . '/../lib/fa_risk.php';
 require_once __DIR__ . '/../lib/fa_earnings.php';
+require_once __DIR__ . '/../lib/fa_insights.php';
 
 if (!function_exists('fa_agent_of')) {
 
@@ -191,6 +192,7 @@ case 'fa_agent_me': {
         'balances' => array('pending' => round($bal['pending'], 2), 'available' => round($bal['available'], 2), 'paid' => round($bal['paid'], 2),
                             'total' => round($bal['pending'] + $bal['available'] + $bal['paid'], 2)),
         'referral_counts' => $counts, 'progress' => $best, 'unread' => intval($un->fetchColumn()),
+        'tier_progress' => $a['status'] === 'approved' ? fa_tier_progress($pdo, $a) : null,
         'rules' => array('bonus_first' => $S['bonus_first_etb'], 'bonus_repeat' => $S['bonus_repeat_etb'], 'repeat_trips' => $S['repeat_trips_required'],
                          'repeat_days' => $S['repeat_window_days'], 'hold_days' => fa_hold_days($S, $a['tier']), 'min_payout' => $S['min_payout_etb'],
                          'min_km' => $S['min_trip_km'], 'min_minutes' => $S['min_trip_minutes']),

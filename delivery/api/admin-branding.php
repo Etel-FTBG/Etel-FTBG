@@ -206,6 +206,7 @@ $SLOTS = [
     'icon_courier'  => ['type' => 'icon',   'prefix' => 'courier-'],
     'icon_service'  => ['type' => 'icon',   'prefix' => 'service-'],
     'icon_admin'    => ['type' => 'icon',   'prefix' => 'admin-'],
+    'icon_agent'    => ['type' => 'icon',   'prefix' => 'agent-'],
     'icon_default'  => ['type' => 'icon',   'prefix' => ''],
     // Header logos shown on login.html (assets/images/logo-*.png + .webp)
     'logo_driver'   => ['type' => 'logo',   'file' => 'logo-driver'],

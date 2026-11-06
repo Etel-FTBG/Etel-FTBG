@@ -14,7 +14,7 @@ var MAX = 8 * 1024 * 1024, OK_TYPES = ['image/png', 'image/jpeg', 'image/webp', 
 var GROUPS = [
   { key: 'icons', title: 'App icons', note: 'The icon on the phone home screen. Use a square image, at least 512 × 512.', square: true, items: [
     ['icon_driver', '🚖', 'Driver', 'icons/driver-icon-192.png'], ['icon_ride', '🛺', 'Ride', 'icons/ride-icon-192.png'], ['icon_courier', '📦', 'Courier', 'icons/courier-icon-192.png'],
-    ['icon_service', '🏪', 'Service', 'icons/service-icon-192.png'], ['icon_admin', '🛡️', 'Admin', 'icons/admin-icon-192.png'], ['icon_default', '🛍️', 'Customer', 'icons/icon-192.png']] },
+    ['icon_service', '🏪', 'Service', 'icons/service-icon-192.png'], ['icon_admin', '🛡️', 'Admin', 'icons/admin-icon-192.png'], ['icon_agent', '🤝', 'Agent', 'icons/agent-icon-192.png'], ['icon_default', '🛍️', 'Customer', 'icons/icon-192.png']] },
   { key: 'logos', title: 'Login page logos', note: 'The logo above the sign in form. Any shape works; it is shown at most 200 pixels tall.', square: false, items: [
     ['logo_driver', '🚖', 'Driver', 'assets/images/logo-driver.png'], ['logo_ride', '🛺', 'Ride', 'assets/images/logo-ride.png'], ['logo_courier', '📦', 'Courier', 'assets/images/logo-courier.png'],
     ['logo_service', '🏪', 'Service', 'assets/images/logo-service.png'], ['logo_admin', '🛡️', 'Admin', 'assets/images/logo-admin.png'], ['logo_default', '🛍️', 'Customer', 'assets/images/logo.png']] },

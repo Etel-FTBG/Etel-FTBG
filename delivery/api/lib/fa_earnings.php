@@ -224,6 +224,8 @@ function fa_run_earnings($pdo) {
     }
 
     foreach (array_keys($touched) as $aid) { try { fa_agent_risk_rollup($pdo, $aid); } catch (Exception $e) {} }
+    // tiers are quality-based and cheap to recompute; a failure here must never undo the earnings work above
+    try { require_once __DIR__ . '/fa_insights.php'; $sum['tiers_changed'] = count(fa_recompute_tiers($pdo)['changed']); } catch (Exception $e) { error_log('[ETEL][fa_run] tiers: ' . $e->getMessage()); }
     try { $pdo->query("SELECT RELEASE_LOCK('fa_run_earnings')"); } catch (Exception $e) {}
     return $sum;
 }
