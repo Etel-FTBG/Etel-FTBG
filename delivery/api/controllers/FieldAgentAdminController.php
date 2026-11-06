@@ -13,6 +13,7 @@ require_once __DIR__ . '/../lib/fa_core.php';
 require_once __DIR__ . '/../lib/fa_risk.php';
 require_once __DIR__ . '/../lib/fa_earnings.php';
 require_once __DIR__ . '/../lib/fa_payouts.php';
+require_once __DIR__ . '/../lib/fa_risk.php';
 
 if (!function_exists('fa_adm_limit')) {
 function fa_adm_limit($v, $def, $max) { $n = intval($v); return ($n < 1) ? $def : min($n, $max); }
@@ -73,7 +74,7 @@ case 'admin_fa_agent_get': {
     unset($r);
     $au = $pdo->prepare("SELECT created_at, actor_type, actor_id, action, reason, detail FROM fa_audit_log WHERE (entity = 'agent' AND entity_id = ?) ORDER BY id DESC LIMIT 30");
     $au->execute(array($id));
-    ok(array('agent' => $a, 'referrals' => $refs, 'audit' => $au->fetchAll(PDO::FETCH_ASSOC)));
+    ok(array('agent' => $a, 'referrals' => $refs, 'audit' => $au->fetchAll(PDO::FETCH_ASSOC), 'shared_with' => fa_agent_shared_identity($pdo, $a)));
     break;
 }
 

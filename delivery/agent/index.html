@@ -6,15 +6,16 @@
 <title>Etel Agent</title>
 <meta name="description" content="Etel Ride agent portal">
 <meta name="theme-color" content="#0a0703">
+<script>(function(){var t=null;try{t=localStorage.getItem("theme")}catch(e){}if(t!=="light"&&t!=="dark"){t=window.matchMedia&&matchMedia("(prefers-color-scheme: light)").matches?"light":"dark"}document.documentElement.setAttribute("data-theme",t);var m=document.querySelector('meta[name=theme-color]');if(m)m.content=t==="light"?"#FFFBEF":"#0a0703"})();</script>
 <meta name="referrer" content="no-referrer-when-downgrade">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Etel Agent">
 <link rel="manifest" href="manifest.webmanifest">
-<link rel="icon" type="image/png" href="icons/agent-icon-192.png">
-<link rel="apple-touch-icon" href="icons/agent-apple-touch-icon.png">
+<link rel="icon" type="image/png" href="../icons/agent-icon-96.png">
+<link rel="apple-touch-icon" href="../icons/agent-apple-touch-icon.png">
 <link rel="preload" href="../fonts/noto-sans-ethiopic-400.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="app.css?v=1">
+<link rel="stylesheet" href="app.css?v=2">
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs>
@@ -38,11 +39,13 @@
 <symbol id="i-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></symbol>
 <symbol id="i-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6L6 18"/></symbol>
 <symbol id="i-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2.5"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></symbol>
+<symbol id="i-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2.5M12 19v2.5M2.5 12H5M19 12h2.5M5.3 5.3l1.8 1.8M16.9 16.9l1.8 1.8M5.3 18.7l1.8-1.8M16.9 7.1l1.8-1.8"/></symbol>
+<symbol id="i-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5z"/></symbol>
 <symbol id="i-refresh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-2.3-5.7M20 4v5h-5"/></symbol>
 </defs></svg>
 <div id="app"><div class="boot"><div class="logo" aria-hidden="true">&#4842;E</div></div></div>
 <noscript><p style="padding:24px;color:#F5E6A3">Please turn on JavaScript. / እባክዎ ጃቫስክሪፕትን ያብሩ።</p></noscript>
 <script src="qr.js?v=1"></script>
-<script src="app.js?v=1"></script>
+<script src="app.js?v=2"></script>
 </body>
 </html>

@@ -44,6 +44,21 @@ function fa_defaults() {
         'risk_short_trip_km'      => array(1.5, 0,    50),
         'risk_odd_hour_start'     => array(0,   0,    23),
         'risk_odd_hour_end'       => array(4,   0,    24),
+        'risk_w_shared_identity'  => array(25,  0,    100),
+        // Phase 4: tiers (quality, never a higher bonus), nudges, alerts, digest
+        'tier_window_days'        => array(90,  30,   365),
+        'tier_silver_min_riders'  => array(5,   1,    500),
+        'tier_silver_min_repeat_pct' => array(20, 0,  100),
+        'tier_gold_min_riders'    => array(15,  1,    1000),
+        'tier_gold_min_repeat_pct' => array(35, 0,    100),
+        'tier_max_reject_pct'     => array(20,  0,    100),
+        'tier_max_risk'           => array(40,  0,    100),
+        'dormant_days'            => array(14,  3,    90),
+        'nudge_cooldown_days'     => array(7,   1,    60),
+        'cap_alert_pct'           => array(80,  10,   100),
+        'digest_enabled'          => array(1,   0,    1),
+        // Fixed at 0 on purpose: EtelAI summaries are only a design hook (see lib/fa_insights.php). Nothing can switch it on from the screen.
+        'ai_summary_enabled'      => array(0,   0,    0),
     );
 }
 
@@ -89,6 +104,8 @@ function fa_settings_save($pdo, $input, $adminId) {
     if ($merged['weekly_cap_etb'] > 0 && $merged['daily_cap_etb'] > $merged['weekly_cap_etb']) {
         throw new Exception('The daily cap cannot be higher than the weekly cap');
     }
+    if ($merged['tier_gold_min_riders'] < $merged['tier_silver_min_riders']) throw new Exception('Gold needs at least as many riders as Silver');
+    if ($merged['tier_gold_min_repeat_pct'] < $merged['tier_silver_min_repeat_pct']) throw new Exception('Gold needs at least the repeat rate of Silver');
     foreach (array('hold_days_silver', 'hold_days_gold') as $hk) {
         if ($merged[$hk] > $merged['hold_days']) throw new Exception('Tier hold days cannot be longer than the standard hold');
     }
@@ -183,6 +200,10 @@ function fa_gen_code($pdo) {
     }
     throw new Exception('Could not generate a unique agent code');
 }
+
+/* Which channels may carry a notification. ONLY 'portal' is on. Telegram and SMS are designed for later (a sender would read rows
+   WHERE channel = 'telegram' / 'sms' AND delivered_at IS NULL) but nothing in this code base sends outside the portal. */
+function fa_channels_enabled() { return array('portal' => true, 'telegram' => false, 'sms' => false); }
 
 /* In-portal notification. Channels for Telegram / SMS are DESIGNED but OFF: a row is only ever created with
    channel 'portal'. A future sender would read rows WHERE channel = 'telegram' AND delivered_at IS NULL.

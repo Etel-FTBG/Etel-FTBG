@@ -43,6 +43,10 @@ function fa_risk_evaluate($pdo, $agent, $ref, $rider, $ride) {
         fa_risk_add($r, 'SAME_DEVICE', $S['risk_w_same_device'], 'The code was claimed from the same device the agent uses.');
     }
 
+    // ---- shared identity: this agent uses the same payout number or device as another agent ----
+    $shared = fa_agent_shared_identity($pdo, $agent);
+    if ($shared) fa_risk_add($r, 'SHARED_IDENTITY', $S['risk_w_shared_identity'], 'This agent shares a payout number or device with ' . count($shared) . ' other agent(s).');
+
     // ---- code reuse: one device/ip claiming several different riders' referrals, or several agents' codes ----
     try {
         if (!empty($ref['device_hash'])) {
@@ -106,6 +110,23 @@ function fa_risk_evaluate($pdo, $agent, $ref, $rider, $ride) {
     foreach ($r as $x) $score += $x['points'];
     $out['score'] = min(100, $score);
     $out['reasons'] = $r;
+    return $out;
+}
+
+/* Other agents that use the same Telebirr payout number (last 9 digits) or the same device. Returns list of array(id, name, why). */
+function fa_agent_shared_identity($pdo, $agent) {
+    $out = array();
+    try {
+        $last9 = fa_phone_last9(isset($agent['payout_phone']) ? $agent['payout_phone'] : '');
+        $q = $pdo->prepare("SELECT id, full_name, payout_phone, device_hash FROM fa_agents WHERE id <> ? AND status IN ('pending','approved','suspended')");
+        $q->execute(array(intval($agent['id'])));
+        foreach ($q->fetchAll(PDO::FETCH_ASSOC) as $o) {
+            $why = array();
+            if ($last9 !== '' && fa_phone_last9($o['payout_phone']) === $last9) $why[] = 'payout number';
+            if (!empty($agent['device_hash']) && !empty($o['device_hash']) && hash_equals($agent['device_hash'], $o['device_hash'])) $why[] = 'device';
+            if ($why) $out[] = array('id' => intval($o['id']), 'name' => $o['full_name'], 'why' => implode(' and ', $why));
+        }
+    } catch (Exception $e) { /* optional signal */ }
     return $out;
 }
 

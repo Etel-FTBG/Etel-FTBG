@@ -4,7 +4,7 @@
 (function () {
 'use strict';
 var API = new URL('../api/boot.php', location.href).pathname;
-var K = { tok: 'etel_token', user: 'etel_user', lang: 'etel_agent_lang', me: 'etel_agent_me', photo: 'etel_agent_photo', dev: 'etel_dev' };
+var K = { theme: 'theme', tok: 'etel_token', user: 'etel_user', lang: 'etel_agent_lang', me: 'etel_agent_me', photo: 'etel_agent_photo', dev: 'etel_dev' };
 var SUPPORT = { telegram: 'https://t.me/etelsupport', email: 'support@ethelmarket.com' };
 var ROUTES = ['home', 'code', 'badge', 'card', 'refs', 'pay', 'me', 'rules', 'support'];
 var S = { lang: 'am', dict: {}, fall: {}, me: null, view: 'boot', data: {}, offline: false, err: '', need2fa: false, installEv: null, sheet: null };
@@ -45,6 +45,15 @@ function api(action, body) {
 }
 function signOut(msg) { ls(K.tok, null); ls(K.user, null); ls(K.me, null); S.me = null; S.err = msg || ''; go('login'); }
 
+/* ---------- theme: the same 'theme' key and 'dark'/'light' values as the Ride, Driver and Admin pages, so one choice follows the person everywhere ---------- */
+function themeNow() { var a = document.documentElement.getAttribute('data-theme'); return a === 'light' ? 'light' : 'dark'; }
+function applyTheme(v, save) {
+  document.documentElement.setAttribute('data-theme', v);
+  var m = document.querySelector('meta[name=theme-color]'); if (m) m.content = v === 'light' ? '#FFFBEF' : '#0a0703';
+  if (save) ls(K.theme, v);
+}
+window.addEventListener('storage', function (e) { if (e.key === K.theme && (e.newValue === 'light' || e.newValue === 'dark')) { applyTheme(e.newValue, false); render(); } });
+
 /* ---------- language ---------- */
 function loadLang() {
   var get = function (c) { return fetch('lang/' + c + '.json').then(function (r) { return r.json(); }); };
@@ -82,11 +91,15 @@ function loadView() {
 }
 
 /* ---------- views ---------- */
+function themeBtn() {
+  var dark = themeNow() === 'dark';
+  return '<button class="tsw" role="switch" aria-checked="' + dark + '" data-act="theme" aria-label="' + esc(t('theme.dark')) + '">' + ic(dark ? 'moon' : 'sun') + '</button>';
+}
 function topbar(back) {
   var u = S.me && S.me.unread ? '<span class="dot">' + esc(S.me.unread) + '</span>' : '';
   return '<header class="top noprint"><div class="logo" aria-hidden="true">&#4842;E</div><div class="brand">ETEL<small>' + esc(t('app.name')) + '</small></div>' +
     (S.me && S.me.is_agent && S.me.agent.status === 'approved' ? '<button class="ib" data-act="bell" aria-label="' + esc((S.me.unread ? S.me.unread + ' - ' : '') + t('home.messages')) + '">' + ic('bell') + u + '</button>' : '') +
-    '<button class="ib" data-act="lang" aria-label="' + esc(t('c.langname') + ' - ' + t('c.lang')) + '">' + esc(t('c.langname')) + '</button></header>';
+    '<button class="ib" data-act="lang" aria-label="' + esc(t('c.langname') + ' - ' + t('c.lang')) + '">' + esc(t('c.langname')) + '</button>' + themeBtn() + '</header>';
 }
 function navbar() {
   var items = [['home', 'home', 'nav.home'], ['code', 'qr', 'nav.code'], ['refs', 'users', 'nav.refs'], ['pay', 'wallet', 'nav.pay'], ['me', 'user', 'nav.me']];
@@ -106,7 +119,7 @@ function vLogin() {
     (S.need2fa ? '<label class="fld"><span>' + esc(t('login.2fa')) + '</span><input class="in" name="totp" inputmode="numeric" autocomplete="one-time-code" maxlength="8"></label>' : '') +
     '<div style="margin-top:16px"><button class="btn primary" type="submit" id="lb">' + ic('lock') + esc(t('login.submit')) + '</button></div></form>' +
     '<p class="sub" style="margin-top:16px;text-align:center">' + esc(t('login.need')) + '</p>' +
-    '<div style="margin-top:16px;text-align:center"><button class="ib" data-act="lang">' + esc(t('c.langname')) + '</button></div></div>';
+    '<div style="margin-top:16px;text-align:center"><button class="ib" data-act="lang">' + esc(t('c.langname')) + '</button> ' + themeBtn() + '</div></div>';
 }
 function vLimited() { return plain('<div class="card"><p>' + esc(t('limited')) + '</p></div><div style="margin-top:16px"><button class="btn" data-act="signout">' + esc(t('me.signout')) + '</button></div>'); }
 function vFail() { return plain('<div class="err" role="alert">' + esc(S.err || t('c.error')) + '</div><div style="margin-top:16px"><button class="btn primary" data-act="retry">' + esc(t('c.retry')) + '</button></div>'); }
@@ -143,8 +156,20 @@ function vHome() {
     '<p class="sub" style="margin-top:12px">' + esc(t('home.pending_hint', { d: r.hold_days })) + '</p>' + (b.available < 0 ? '<p class="banner">' + esc(t('home.owed', { x: fmt(-b.available) })) + '</p>' : '') + '</section>' +
     '<div class="nudge">' + ic('star') + '<span><b>' + esc(t('home.next')) + '</b><br>' + esc(p ? t('home.next_text', { n: p.trips, t: need, d: p.days_left }) : t('home.next_none', { t: need, d: r.repeat_days, b: fmt(r.bonus_repeat) })) + '</span></div>' +
     '<div class="grid2"><a class="btn primary" href="#/code">' + ic('qr') + esc(t('home.show_code')) + '</a><a class="btn" href="#/badge">' + ic('badge') + esc(t('home.my_badge')) + '</a></div>' +
-    '<div style="margin-top:12px"><span class="chip gold">' + esc(t('tier.' + a.tier)) + '</span></div>';
+    '<div style="margin-top:12px"><span class="chip gold">' + esc(t('tier.' + a.tier)) + '</span></div>' + tierCard(m.tier_progress);
   return shell(h);
+}
+/* How far to the next level. Only riders and repeat rate are shown: never any fraud or risk limits. */
+function tierCard(tp) {
+  if (!tp) return '';
+  if (!tp.next) return '<section class="card tier-prog"><b>' + esc(t('tier.' + tp.tier)) + '</b><p class="sub">' + esc(t('tier.top')) + '</p></section>';
+  var nr = Number(tp.need_riders) || 0, np = Number(tp.need_repeat_pct) || 0, riders = Number(tp.riders) || 0, rp = Number(tp.repeat_pct) || 0;
+  var p1 = nr ? riders / (riders + nr) : 1, p2 = np ? rp / (rp + np) : 1, pct = Math.round(Math.min(p1, p2) * 100);
+  var lines = []; if (nr) lines.push(t('tier.need_riders', { n: nr })); if (np) lines.push(t('tier.need_repeat', { p: np }));
+  var perk = tp.next_hold_days != null && Number(tp.next_hold_days) < Number(tp.hold_days) ? '<p class="sub" style="margin-top:6px">' + esc(t('tier.perk_next', { tier: t('tier.' + tp.next), d: tp.next_hold_days, c: tp.hold_days })) + '</p>' : '';
+  return '<section class="card tier-prog" aria-label="' + esc(t('tier.next_title', { tier: t('tier.' + tp.next) })) + '"><b>' + esc(t('tier.next_title', { tier: t('tier.' + tp.next) })) + '</b>' +
+    '<div class="bar" role="progressbar" aria-label="' + esc(t('tier.next_title', { tier: t('tier.' + tp.next) })) + '" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + pct + '"><i style="width:' + pct + '%"></i></div>' +
+    '<p class="sub" style="margin-top:8px">' + esc(lines.join(' ')) + ' ' + esc(t('tier.window', { d: tp.window_days })) + '</p>' + perk + '</section>';
 }
 function rideLink() { return new URL('../ride/?ref=' + encodeURIComponent(S.me.agent.code || ''), location.href).href; }
 function qrSvg() {
@@ -271,7 +296,7 @@ function savePhoto(file) {
 
 /* ---------- messages sheet ---------- */
 function noteText(n) {
-  var p = n.params || {}, v = { amount: fmt(p.amount), rider: p.rider || '', reason: p.reason ? (t('why.' + p.reason) === 'why.' + p.reason ? t('why.default') : t('why.' + p.reason)) : '' };
+  var p = n.params || {}, v = { amount: fmt(p.amount), rider: p.rider || '', tier: p.tier ? t('tier.' + p.tier) : '', bonus: fmt(p.bonus), reason: p.reason ? (t('why.' + p.reason) === 'why.' + p.reason ? t('why.default') : t('why.' + p.reason)) : '' };
   var s = t('n.' + n.kind, v); return s === 'n.' + n.kind ? n.kind : s;
 }
 function openSheet() {
@@ -290,6 +315,7 @@ document.addEventListener('click', function (e) {
   var b = e.target.closest && e.target.closest('[data-act]'); if (!b) { if (e.target.id === 'ov') closeSheet(); return; }
   var act = b.getAttribute('data-act'), a = S.me && S.me.agent;
   if (act === 'lang') setLang(S.lang === 'am' ? 'en' : 'am');
+  else if (act === 'theme') { applyTheme(themeNow() === 'dark' ? 'light' : 'dark', true); render(); }
   else if (act === 'retry') { S.data = {}; S.err = ''; if (S.view === 'fail' || S.view === 'wait') { S.view = 'boot'; render(); } loadMe(); }
   else if (act === 'signout') signOut();
   else if (act === 'bell') openSheet(); else if (act === 'closesheet') closeSheet();

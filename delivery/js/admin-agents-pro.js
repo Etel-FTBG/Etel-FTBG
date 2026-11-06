@@ -14,7 +14,7 @@ var LS = 'etel_agents_admin_lang';
 
 /* ---------- English -> Amharic (labels only; anything not listed stays English). Please have a native speaker review. ---------- */
 var AM = {
-  'Dashboard': 'ዳሽቦርድ', 'Agents': 'ወኪሎች', 'Referrals': 'ሪፈራሎች', 'Fraud queue': 'የማጭበርበር ጥርጣሬ', 'Payouts': 'ክፍያዎች', 'Reports': 'ሪፖርቶች', 'Settings': 'ቅንብሮች', 'Audit log': 'የኦዲት መዝገብ',
+  'Dashboard': 'ዳሽቦርድ', 'Agents': 'ወኪሎች', 'Referrals': 'ሪፈራሎች', 'Fraud queue': 'የማጭበርበር ጥርጣሬ', 'Payouts': 'ክፍያዎች', 'Reports': 'ሪፖርቶች', 'Insights': 'ግንዛቤዎች', 'Settings': 'ቅንብሮች', 'Audit log': 'የኦዲት መዝገብ',
   'Agents control centre': 'የወኪሎች መቆጣጠሪያ ማዕከል', 'Etel Ride referral programme': 'የኢቴል ራይድ የሪፈራል ፕሮግራም',
   'Active agents': 'ንቁ ወኪሎች', 'Waiting for approval': 'ማረጋገጫ የሚጠብቁ', 'Riders acquired (30 days)': 'የተገኙ ተሳፋሪዎች (30 ቀን)', '30-day repeat rate': 'የ30 ቀን ተደጋጋሚ መጠን',
   'Cost per rider': 'በአንድ ተሳፋሪ ወጪ', 'Ready to pay': 'ለክፍያ ዝግጁ', 'On hold': 'በመያዣ ላይ', 'Needs a decision': 'ውሳኔ የሚፈልጉ', 'High risk': 'ከፍተኛ ስጋት',
@@ -53,7 +53,7 @@ function css() {
   var s = document.createElement('style'); s.id = 'ag-css';
   s.textContent = [
     '.ag-top{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin:2px 0 12px}',
-    '.ag-lang{min-height:40px}',
+    '.ag-lang,.ag-theme{min-height:40px}',
     '.ag-banner{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;border:1.5px solid var(--amber);background:var(--soft);border-radius:16px;padding:12px 16px;margin-bottom:12px;color:var(--ink)}',
     '.ag-banner.on{border-color:var(--green)}',
     '.ag-banner b{display:block}.ag-banner span{font-size:12.5px;color:var(--mute)}',
@@ -161,7 +161,7 @@ function barRows(items, valueKey, labelKey, fmt) {
 
 /* ---------- feed ---------- */
 var FEED = {
-  agent_applied: ['🆕', 'New agent application'], agent_approved: ['✅', 'Agent approved'], agent_rejected: ['⛔', 'Agent rejected'], agent_suspended: ['⏸️', 'Agent suspended'], agent_reinstated: ['▶️', 'Agent reinstated'],
+  agent_applied: ['🆕', 'New agent application'], tier_changed: ['🏅', 'An agent moved to a new tier'], nudge_sent: ['💬', 'A reminder was sent to an agent'], digest_created: ['🗞️', 'Weekly digest created'], tiers_recomputed: ['🏅', 'Tiers recalculated by an admin'], agent_approved: ['✅', 'Agent approved'], agent_rejected: ['⛔', 'Agent rejected'], agent_suspended: ['⏸️', 'Agent suspended'], agent_reinstated: ['▶️', 'Agent reinstated'],
   age_manually_verified: ['🪪', 'Age checked by an admin'], referral_claimed: ['📲', 'A rider used an agent code'], claim_blocked_self: ['🚫', 'A self-referral attempt was blocked'],
   earning_pending: ['⏳', 'Bonus earned, on hold'], earning_held: ['🛑', 'Bonus held for review'], earning_rejected: ['❌', 'Referral rejected'], earning_payable: ['💰', 'Bonus ready to pay'],
   earning_release: ['✅', 'Held bonus released by an admin'], earning_reject: ['❌', 'Bonus rejected by an admin'], earning_clawed_back: ['↩️', 'Bonus reversed (trip cancelled or refunded)'], clawback_created: ['↩️', 'Adjustment for a paid bonus'],
@@ -243,10 +243,10 @@ function stopPoll() { if (pollTimer) { clearInterval(pollTimer); pollTimer = nul
 
 /* ---------- shell ---------- */
 function register(key, def) { SCREENS[key] = def; if (ORDER.indexOf(key) === -1) ORDER.push(key); }
-var TAB_ORDER = ['dashboard', 'agents', 'referrals', 'fraud', 'payouts', 'reports', 'settings', 'audit'];
-var TAB_LABEL = { dashboard: 'Dashboard', agents: 'Agents', referrals: 'Referrals', fraud: 'Fraud queue', payouts: 'Payouts', reports: 'Reports', settings: 'Settings', audit: 'Audit log' };
-var TAB_ICON = { dashboard: '📊', agents: '🤝', referrals: '📲', fraud: '🛑', payouts: '💸', reports: '📈', settings: '⚙️', audit: '🧾' };
-var TAB_CAP = { dashboard: 'agents.view', agents: 'agents.view', referrals: 'agents.view', fraud: 'agents.view', payouts: 'agents.view', reports: 'agents.view', settings: 'agents.view', audit: 'agents.view' };
+var TAB_ORDER = ['dashboard', 'agents', 'referrals', 'fraud', 'payouts', 'reports', 'insights', 'settings', 'audit'];
+var TAB_LABEL = { dashboard: 'Dashboard', agents: 'Agents', referrals: 'Referrals', fraud: 'Fraud queue', payouts: 'Payouts', reports: 'Reports', insights: 'Insights', settings: 'Settings', audit: 'Audit log' };
+var TAB_ICON = { dashboard: '📊', agents: '🤝', referrals: '📲', fraud: '🛑', payouts: '💸', reports: '📈', insights: '💡', settings: '⚙️', audit: '🧾' };
+var TAB_CAP = { dashboard: 'agents.view', agents: 'agents.view', referrals: 'agents.view', fraud: 'agents.view', payouts: 'agents.view', reports: 'agents.view', insights: 'agents.view', settings: 'agents.view', audit: 'agents.view' };
 
 function tabs() {
   var list = TAB_ORDER.filter(function (k) { return k === 'dashboard' || SCREENS[k]; });
@@ -255,10 +255,22 @@ function tabs() {
     return '<button type="button" role="tab" aria-selected="' + on + '" class="' + (on ? 'on' : '') + '" data-ag-tab="' + k + '">' + TAB_ICON[k] + ' ' + esc(T(TAB_LABEL[k])) + (b ? ' <span class="ag-pill amber" style="margin-left:4px;padding:1px 7px">' + esc(b) + '</span>' : '') + '</button>';
   }).join('') + '</div>';
 }
+/* Light / dark switch. Uses the same 'theme' key and body.dark-theme class as every other Etel page, so the choice follows the admin everywhere. */
+function isDark() { return document.body.classList.contains('dark-theme'); }
+function themeSwitch() {
+  var d = isDark(), lbl = (S.lang === 'am' ? (d ? 'ጨለማ' : 'ብሩህ') : (d ? 'Dark' : 'Light'));
+  return '<button type="button" class="ak-btn ag-theme" role="switch" aria-checked="' + d + '" data-ag-theme aria-label="' + esc(S.lang === 'am' ? 'ገጽታ' : 'Theme') + ': ' + esc(lbl) + '">' + (d ? '🌙' : '☀️') + ' ' + esc(lbl) + '</button>';
+}
+function toggleTheme() {
+  var fab = document.getElementById('dark-theme-toggle');
+  if (fab) fab.click();
+  else { var nd = !isDark(); document.body.classList.toggle('dark-theme', nd); try { localStorage.setItem('theme', nd ? 'dark' : 'light'); } catch (e) { /* not remembered */ } }
+  var b = document.querySelector('[data-ag-theme]'); if (b) { var tmp = document.createElement('div'); tmp.innerHTML = themeSwitch(); b.parentNode.replaceChild(tmp.firstChild, b); }
+}
 function paint() {
   var el = root(); if (!el) return;
   css();
-  var h = '<div class="ak"><div class="ag-top">' + tabs() + '<button type="button" class="ak-btn ag-lang" data-ag-lang aria-label="' + esc(T('Language')) + '">🌐 ' + esc(S.lang === 'am' ? 'English' : 'አማርኛ') + '</button></div><div id="ag-screen"></div></div>';
+  var h = '<div class="ak"><div class="ag-top">' + tabs() + '<span style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="ak-btn ag-lang" data-ag-lang aria-label="' + esc(T('Language')) + '">🌐 ' + esc(S.lang === 'am' ? 'English' : 'አማርኛ') + '</button>' + themeSwitch() + '</span></div><div id="ag-screen"></div></div>';
   el.innerHTML = h; paintScreen();
 }
 function paintScreen() {
@@ -284,6 +296,7 @@ function onClick(e) {
     var key = b.getAttribute('data-kpi').split(':'); if (key[0] === 'dash') return;
     openTab(key[0], key[1]); return;
   }
+  if (t.closest('[data-ag-theme]')) { toggleTheme(); return; }
   if (t.closest('[data-ag-lang]')) { S.lang = S.lang === 'am' ? 'en' : 'am'; try { localStorage.setItem(LS, S.lang); } catch (x) { /* not remembered */ } paint(); var s2 = SCREENS[S.tab]; if (S.tab === 'dashboard') paintScreen(); else if (s2 && s2.open) s2.open(); return; }
   if ((b = t.closest('[data-ag-run]'))) {
     busy(b, function () { return run('admin_fa_run_earnings').then(function (r) {
