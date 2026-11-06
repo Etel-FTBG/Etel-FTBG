@@ -97,7 +97,7 @@ function themeBtn() {
 }
 function topbar(back) {
   var u = S.me && S.me.unread ? '<span class="dot">' + esc(S.me.unread) + '</span>' : '';
-  return '<header class="top noprint"><div class="logo" aria-hidden="true">&#4842;E</div><div class="brand">ETEL<small>' + esc(t('app.name')) + '</small></div>' +
+  return '<header class="top noprint"><img class="logo" src="logo-128.webp" width="44" height="44" alt=""><div class="brand">ETEL<small>' + esc(t('app.name')) + '</small></div>' +
     (S.me && S.me.is_agent && S.me.agent.status === 'approved' ? '<button class="ib" data-act="bell" aria-label="' + esc((S.me.unread ? S.me.unread + ' - ' : '') + t('home.messages')) + '">' + ic('bell') + u + '</button>' : '') +
     '<button class="ib" data-act="lang" aria-label="' + esc(t('c.langname') + ' - ' + t('c.lang')) + '">' + esc(t('c.langname')) + '</button>' + themeBtn() + '</header>';
 }
@@ -112,14 +112,21 @@ function emptyBox(icon, text) { return '<div class="empty">' + ic(icon) + '<p>' 
 function skel(n) { var h = '<div class="list" aria-busy="true">'; for (var i = 0; i < n; i++) h += '<div class="li"><div class="av" style="background:rgba(212,175,55,.15)"></div><div class="m"><div class="skel" style="width:55%"></div><div class="skel" style="width:35%;margin-top:8px"></div></div></div>'; return h + '</div>'; }
 
 function vLogin() {
-  return '<div class="app login"><div class="logo" aria-hidden="true">&#4842;E</div><h1>' + esc(t('login.title')) + '</h1><p class="sub">' + esc(t('login.sub')) + '</p>' +
-    (S.err ? '<div class="err" role="alert">' + esc(S.err) + '</div>' : '') +
-    '<form id="lf" autocomplete="on"><label class="fld"><span>' + esc(t('login.id')) + '</span><input class="in" name="ident" autocomplete="username" autocapitalize="off" required></label>' +
-    '<label class="fld"><span>' + esc(t('login.pw')) + '</span><input class="in" type="password" name="pw" autocomplete="current-password" required></label>' +
-    (S.need2fa ? '<label class="fld"><span>' + esc(t('login.2fa')) + '</span><input class="in" name="totp" inputmode="numeric" autocomplete="one-time-code" maxlength="8"></label>' : '') +
-    '<div style="margin-top:16px"><button class="btn primary" type="submit" id="lb">' + ic('lock') + esc(t('login.submit')) + '</button></div></form>' +
-    '<p class="sub" style="margin-top:16px;text-align:center">' + esc(t('login.need')) + '</p>' +
-    '<div style="margin-top:16px;text-align:center"><button class="ib" data-act="lang">' + esc(t('c.langname')) + '</button> ' + themeBtn() + '</div></div>';
+  var EID = 'https://ethelmarket.com/EtelId/';
+  return '<div class="lg"><div class="lg-bg" aria-hidden="true"></div><main class="lg-in">' +
+    '<div class="lg-tools"><button class="ib" data-act="lang" aria-label="' + esc(t('c.langname') + ' - ' + t('c.lang')) + '">' + esc(t('c.langname')) + '</button>' + themeBtn() + '</div>' +
+    '<div class="lg-hero"><div class="lg-halo" aria-hidden="true"></div><img class="lg-logo" src="logo-320.webp" width="160" height="160" alt="Etel" fetchpriority="high"></div>' +
+    '<p class="lg-eyebrow">' + esc(t('login.eyebrow')) + '</p><h1 class="lg-h1">' + esc(t('login.welcome')) + '</h1><p class="lg-tag">' + esc(t('login.tag')) + '</p>' +
+    '<section class="lg-card" aria-label="' + esc(t('login.title')) + '">' + (S.err ? '<div class="err" role="alert">' + esc(S.err) + '</div>' : '') +
+    '<form id="lf" autocomplete="on"><label class="lg-f"><span>' + esc(t('login.id')) + '</span><div class="lg-w">' + ic('user') + '<input class="lg-in2" name="ident" autocomplete="username" autocapitalize="off" inputmode="email" placeholder="' + esc(t('login.ph_id')) + '" required></div></label>' +
+    '<label class="lg-f"><span>' + esc(t('login.pw')) + '</span><div class="lg-w">' + ic('lock') + '<input class="lg-in2" type="password" name="pw" autocomplete="current-password" placeholder="' + esc(t('login.ph_pw')) + '" required><button type="button" class="lg-eye" data-act="eye" aria-label="' + esc(t('login.show')) + '" aria-pressed="false">' + ic('eye') + '</button></div></label>' +
+    (S.need2fa ? '<label class="lg-f"><span>' + esc(t('login.2fa')) + '</span><div class="lg-w">' + ic('shield') + '<input class="lg-in2" name="totp" inputmode="numeric" autocomplete="one-time-code" maxlength="8"></div></label>' : '') +
+    '<div class="lg-row"><a class="lg-link" href="' + EID + 'reset-password/" target="_blank" rel="noopener">' + esc(t('login.forgot')) + '</a></div>' +
+    '<button class="lg-go" type="submit" id="lb"><span class="lg-shine" aria-hidden="true"></span>' + ic('lock') + '<b>' + esc(t('login.submit')) + '</b></button></form>' +
+    '<div class="lg-or"><i></i><span>' + esc(t('login.need')) + '</span><i></i></div>' +
+    '<a class="lg-alt" href="' + EID + '" target="_blank" rel="noopener">' + esc(t('login.create')) + ' <span aria-hidden="true">&rarr;</span></a></section>' +
+    '<ul class="lg-trust"><li>' + ic('shield') + '<span>' + esc(t('trust.1')) + '</span></li><li>' + ic('check') + '<span>' + esc(t('trust.2')) + '</span></li><li>' + ic('wallet') + '<span>' + esc(t('trust.3')) + '</span></li></ul>' +
+    '<p class="lg-foot">' + esc(t('login.foot')) + '</p></main></div>';
 }
 function vLimited() { return plain('<div class="card"><p>' + esc(t('limited')) + '</p></div><div style="margin-top:16px"><button class="btn" data-act="signout">' + esc(t('me.signout')) + '</button></div>'); }
 function vFail() { return plain('<div class="err" role="alert">' + esc(S.err || t('c.error')) + '</div><div style="margin-top:16px"><button class="btn primary" data-act="retry">' + esc(t('c.retry')) + '</button></div>'); }
@@ -191,7 +198,7 @@ function vBadge() {
 function vCard() {
   var a = S.me.agent;
   return shell('<div class="noprint"><h1>' + esc(t('code.print')) + '</h1><p class="sub">A6 - 105 x 148 mm</p><div style="margin-top:12px"><button class="btn primary" data-act="print">' + ic('print') + esc(t('card.print')) + '</button></div></div>' +
-    '<div class="a6wrap"><div class="a6"><div><div class="mark" style="margin:0 auto">&#4842;E</div><h3>' + esc(S.cardAm.ride) + '</h3><h4>' + esc(S.cardEn.ride) + '</h4></div>' +
+    '<div class="a6wrap"><div class="a6"><div><img class="mark" src="logo-320.webp" width="60" height="60" alt="" style="margin:0 auto;display:block"><h3>' + esc(S.cardAm.ride) + '</h3><h4>' + esc(S.cardEn.ride) + '</h4></div>' +
     '<div class="qr">' + qrSvg() + '</div><div><div class="scan">' + esc(S.cardAm.scan) + '</div><small>' + esc(S.cardEn.scan) + '</small></div>' +
     '<div><small>' + esc(S.cardAm.code) + ' / ' + esc(S.cardEn.code) + '</small><div class="cd">' + esc(a.code) + '</div><small>' + esc(a.venue) + '</small></div></div></div>');
 }
@@ -240,7 +247,7 @@ var VIEWS = { login: vLogin, limited: vLimited, fail: vFail, apply: vApply, wait
 
 function render() {
   var f = VIEWS[S.view];
-  if (!f) { $('app').innerHTML = '<div class="boot"><div class="logo">&#4842;E</div></div>'; return; }
+  if (!f) { $('app').innerHTML = '<div class="boot"><img class="logo" src="logo-128.webp" width="76" height="76" alt=""></div>'; return; }
   if (S.view === 'card' && !S.cardAm) { Promise.all([fetch('lang/am.json').then(function (r) { return r.json(); }), fetch('lang/en.json').then(function (r) { return r.json(); })]).then(function (x) { S.cardAm = { ride: x[0]['card.ride'], scan: x[0]['card.scan'], code: x[0]['card.code'] }; S.cardEn = { ride: x[1]['card.ride'], scan: x[1]['card.scan'], code: x[1]['card.code'] }; render(); }); return; }
   var keep = document.activeElement && document.activeElement.name;
   $('app').innerHTML = f(); window.scrollTo(0, 0);
@@ -261,12 +268,12 @@ function qrOn(ctx, x, y, size, pad) {
 }
 function drawBadge(cv) {
   if (!cv) return; var a = S.me.agent, ctx = cv.getContext('2d'), W = 720, H = 1080;
+  var logo = null;
   var paint = function (img) {
     var g = ctx.createLinearGradient(0, 0, 0, H); g.addColorStop(0, '#1a1206'); g.addColorStop(1, '#0a0703'); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
     var gb = ctx.createLinearGradient(0, 0, W, 0); gb.addColorStop(0, '#8B6914'); gb.addColorStop(.5, '#F5E6A3'); gb.addColorStop(1, '#8B6914'); ctx.fillStyle = gb; ctx.fillRect(0, 0, W, 14);
     ctx.strokeStyle = '#D4AF37'; ctx.lineWidth = 6; ctx.strokeRect(14, 14, W - 28, H - 28);
-    ctx.beginPath(); ctx.arc(W / 2, 100, 46, 0, 7); ctx.fillStyle = '#0b2a7a'; ctx.fill(); ctx.lineWidth = 5; ctx.strokeStyle = '#D4AF37'; ctx.stroke();
-    ctx.fillStyle = '#F5E6A3'; ctx.textAlign = 'center'; ctx.font = '700 34px "Noto Sans Ethiopic",sans-serif'; ctx.fillText('ኢE', W / 2, 112);
+    if (logo) ctx.drawImage(logo, W / 2 - 64, 36, 128, 128);
     ctx.fillStyle = '#D4AF37'; ctx.font = '700 26px "Noto Sans Ethiopic",sans-serif'; spaced(ctx, t('badge.agent'), W / 2, 190, 4);
     var cy = 300, R = 100; ctx.save(); ctx.beginPath(); ctx.arc(W / 2, cy, R, 0, 7); ctx.clip();
     if (img) { var s = Math.min(img.width, img.height); ctx.drawImage(img, (img.width - s) / 2, (img.height - s) / 2, s, s, W / 2 - R, cy - R, 2 * R, 2 * R); }
@@ -280,7 +287,8 @@ function drawBadge(cv) {
     ctx.fillStyle = '#D4AF37'; ctx.font = '800 62px "Noto Sans Ethiopic",sans-serif'; spaced(ctx, a.code, W / 2, 1000, 14);
     ctx.fillStyle = 'rgba(245,230,163,.7)'; ctx.font = '400 22px "Noto Sans Ethiopic",sans-serif'; ctx.textAlign = 'center'; ctx.fillText('ethelmarket.com', W / 2, 1044);
   };
-  var go2 = function () { var p = ls(K.photo); if (!p) return paint(null); var im = new Image(); im.onload = function () { paint(im); }; im.onerror = function () { paint(null); }; im.src = p; };
+  var go2 = function () { var lg = new Image(); lg.onload = function () { logo = lg; go3(); }; lg.onerror = go3; lg.src = 'logo-320.webp'; };
+  var go3 = function () { var p = ls(K.photo); if (!p) return paint(null); var im = new Image(); im.onload = function () { paint(im); }; im.onerror = function () { paint(null); }; im.src = p; };
   (document.fonts && document.fonts.load ? Promise.all([document.fonts.load('700 30px "Noto Sans Ethiopic"'), document.fonts.load('400 22px "Noto Sans Ethiopic"')]).catch(function () {}) : Promise.resolve()).then(go2);
 }
 function saveBlob(blob, name) {
@@ -316,6 +324,7 @@ document.addEventListener('click', function (e) {
   var act = b.getAttribute('data-act'), a = S.me && S.me.agent;
   if (act === 'lang') setLang(S.lang === 'am' ? 'en' : 'am');
   else if (act === 'theme') { applyTheme(themeNow() === 'dark' ? 'light' : 'dark', true); render(); }
+  else if (act === 'eye') { var pw = document.querySelector('#lf [name=pw]'); if (pw) { var show = pw.type === 'password'; pw.type = show ? 'text' : 'password'; b.setAttribute('aria-pressed', String(show)); b.setAttribute('aria-label', t(show ? 'login.hide' : 'login.show')); } }
   else if (act === 'retry') { S.data = {}; S.err = ''; if (S.view === 'fail' || S.view === 'wait') { S.view = 'boot'; render(); } loadMe(); }
   else if (act === 'signout') signOut();
   else if (act === 'bell') openSheet(); else if (act === 'closesheet') closeSheet();
@@ -331,7 +340,7 @@ document.addEventListener('change', function (e) { if (e.target.id === 'ph' && e
 document.addEventListener('submit', function (e) {
   var f = e.target; e.preventDefault();
   if (f.id === 'lf') {
-    var btn = $('lb'); btn.disabled = true; btn.textContent = t('login.busy');
+    var btn = $('lb'); btn.disabled = true; btn.innerHTML = '<span class="spin" aria-hidden="true"></span><b>' + esc(t('login.busy')) + '</b>';
     api('etelid_login', { identifier: f.ident.value.trim(), password: f.pw.value, totp_code: f.totp ? f.totp.value.trim() : '' }).then(function (r) {
       if (r.ok && r.data.token) { S.need2fa = false; S.err = ''; ls(K.tok, r.data.token); ls(K.user, JSON.stringify(r.data.user || {})); S.view = 'boot'; render(); loadMe(); return; }
       if (r.j && r.j.requires_2fa) S.need2fa = true;

@@ -45,6 +45,9 @@ Do these in order; each has a screenshot to keep.
 8. **Digest** - Insights > Weekly digest > Build this week now; text shows in English and (with the language switch) Amharic. *(screenshot: digest)*
 9. **Cron** - run `api/cron_field_agents.php` once from the browser with the cron key; the JSON reply includes `tiers_changed` and `digest_id`.
 
+10. **Sign-in page (Phase 5)** - open `/delivery/agent/` signed out, on a phone: master logo with the gold ring, "Welcome, Agent", icon fields with the show-password eye, gold Sign in button, Create EtelID link, three trust tiles; works in Amharic, light and dark. Sign in with a real agent account. *(screenshots: sign-in dark and light)*
+11. **Master logo everywhere** - the portal header, the badge picture and the printed A6 card show the master logo; the phone home-screen icon after reinstalling the app.
+
 ## 4. Rollback
 
 The programme switch (`program_enabled`) stops all earning at once. Files can be restored from the previous zip; migration `102` only adds one table and settings rows, nothing is removed or altered.
