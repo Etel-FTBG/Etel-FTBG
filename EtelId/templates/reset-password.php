@@ -627,5 +627,6 @@ document.getElementById('rp-identifier').addEventListener('keydown', function(e)
 document.getElementById('rp-code').addEventListener('input', function(e) { e.target.value = e.target.value.replace(/[^0-9]/g, ''); });
 document.getElementById('rp-confirm-password').addEventListener('keydown', function(e) { if (e.key === 'Enter') rpSetNewPassword(); });
 </script>
+<script src="/delivery/js/etel-help-fab.js" data-app="id" defer></script>
 </body>
 </html>

@@ -264,5 +264,6 @@ a.back{color:var(--g4);font-size:12px;text-decoration:none;}
 <?php endif; ?>
 <!-- ETEL AI -- cross-company assistant widget -->
 <script src="https://ethelmarket.com/EtelAi/etel-ai-widget.js" data-project="etel-id"></script>
+<script src="/delivery/js/etel-help-fab.js" data-app="id" defer></script>
 </body>
 </html>

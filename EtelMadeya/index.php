@@ -96,5 +96,6 @@
     </script>
     <script src="assets/js/icons.js"></script>
     <script src="assets/js/driver-app.js"></script>
+<script src="/delivery/js/etel-help-fab.js" data-app="madeya" defer></script>
 </body>
 </html>

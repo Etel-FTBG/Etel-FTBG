@@ -241,7 +241,7 @@ function vRules() {
   return shell('<h1>' + esc(t('rules.title')) + '</h1>' + [1, 2, 3, 4, 5, 6].map(function (i) { return '<details' + (i === 1 ? ' open' : '') + '><summary>' + esc(t('rules.q' + i)) + '</summary><p>' + esc(t('rules.a' + i, v)) + '</p></details>'; }).join(''));
 }
 function vSupport() {
-  return shell('<h1>' + esc(t('sup.title')) + '</h1><p class="sub">' + esc(t('sup.text')) + '</p><div class="stack" style="margin-top:16px"><a class="btn primary" href="' + SUPPORT.telegram + '" rel="noopener">' + ic('chat') + esc(t('sup.telegram')) + '</a><a class="btn" href="mailto:' + SUPPORT.email + '">' + ic('mail') + esc(t('sup.email')) + '</a></div><p class="sub" style="margin-top:16px">' + esc(t('sup.note')) + '</p>');
+  return shell('<h1>' + esc(t('sup.title')) + '</h1><p class="sub">' + esc(t('sup.text')) + '</p><div class="stack" style="margin-top:16px"><a class="btn primary" href="../help/?app=agent">' + ic('chat') + esc(t('sup.ticket')) + '</a><a class="btn" href="' + SUPPORT.telegram + '" rel="noopener">' + ic('chat') + esc(t('sup.telegram')) + '</a><a class="btn" href="mailto:' + SUPPORT.email + '">' + ic('mail') + esc(t('sup.email')) + '</a></div><p class="sub" style="margin-top:16px">' + esc(t('sup.note')) + '</p>');
 }
 var VIEWS = { login: vLogin, limited: vLimited, fail: vFail, apply: vApply, wait: vWait, home: vHome, code: vCode, badge: vBadge, card: vCard, refs: vRefs, pay: vPay, me: vMe, rules: vRules, support: vSupport };
 
