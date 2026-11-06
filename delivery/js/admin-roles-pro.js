@@ -16,6 +16,8 @@ var esc = K.esc;
 var AREAS = [
   ['Orders', '🧾', 'Delivery orders, dispatch, cancellations', 'orders.view', 'orders.manage'],
   ['Rides', '🚕', 'Trips, the review desk, driver checks', 'rides.view', 'rides.manage'],
+  ['Agents', '🤝', 'Referral agents: see them, approve them, review bonuses and settings', 'agents.view', 'agents.manage'],
+  ['Agent payouts', '💸', 'Create and mark paid the Telebirr payout batches', 'agents.view', 'agents.pay'],
   ['Users & drivers', '👥', 'Accounts, couriers, drivers, approvals', 'users.view', 'users.manage'],
   ['Service givers', '🏪', 'Shops and businesses', 'service_givers.view', 'service_givers.manage'],
   ['Items & menus', '🏷️', 'Products, prices, menu catalog', 'items.view', 'items.manage'],
