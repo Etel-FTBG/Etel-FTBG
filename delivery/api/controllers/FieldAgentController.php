@@ -192,7 +192,8 @@ case 'fa_agent_me': {
                             'total' => round($bal['pending'] + $bal['available'] + $bal['paid'], 2)),
         'referral_counts' => $counts, 'progress' => $best, 'unread' => intval($un->fetchColumn()),
         'rules' => array('bonus_first' => $S['bonus_first_etb'], 'bonus_repeat' => $S['bonus_repeat_etb'], 'repeat_trips' => $S['repeat_trips_required'],
-                         'repeat_days' => $S['repeat_window_days'], 'hold_days' => fa_hold_days($S, $a['tier']), 'min_payout' => $S['min_payout_etb']),
+                         'repeat_days' => $S['repeat_window_days'], 'hold_days' => fa_hold_days($S, $a['tier']), 'min_payout' => $S['min_payout_etb'],
+                         'min_km' => $S['min_trip_km'], 'min_minutes' => $S['min_trip_minutes']),
     ));
     break;
 }

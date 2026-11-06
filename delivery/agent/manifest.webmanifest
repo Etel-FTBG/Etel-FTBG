@@ -1,0 +1,19 @@
+{
+  "name": "Etel Agent",
+  "short_name": "Etel Agent",
+  "description": "Etel Ride agent portal: your code, riders and earnings.",
+  "lang": "am",
+  "dir": "ltr",
+  "start_url": "./?source=pwa",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0a0703",
+  "theme_color": "#0a0703",
+  "icons": [
+    { "src": "icons/agent-icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/agent-icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/agent-icon-192-maskable.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "icons/agent-icon-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
