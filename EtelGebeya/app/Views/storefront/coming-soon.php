@@ -66,5 +66,6 @@
       Need help? Contact support@etelgebeya.com
     </p>
   </div>
+<script src="/delivery/js/etel-help-fab.js" data-app="gebeya" defer></script>
 </body>
 </html>

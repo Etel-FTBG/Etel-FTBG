@@ -157,5 +157,6 @@ document.querySelectorAll('.nav-item:not([data-etel-display-open])').forEach(el 
   });
 });
 </script>
+<script src="/delivery/js/etel-help-fab.js" data-app="gebeya" defer></script>
 </body>
 </html>

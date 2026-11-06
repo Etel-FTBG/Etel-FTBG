@@ -302,5 +302,6 @@ function egToggleWishlist(id, btn) {
 <script src="<?= View::url('/health-monitor.js') ?>?v=1" defer></script>
 <!-- ETEL AI -- cross-company assistant widget -->
 <script src="https://ethelmarket.com/EtelAi/etel-ai-widget.js" data-project="gebeya"></script>
+<script src="/delivery/js/etel-help-fab.js" data-app="gebeya" defer></script>
 </body>
 </html>

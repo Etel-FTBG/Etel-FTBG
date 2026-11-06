@@ -8,7 +8,7 @@
 const ROLE_CAP_LABELS = {
   'orders.view': 'View orders', 'orders.manage': 'Manage orders',
   'rides.view': 'View rides', 'rides.manage': 'Manage rides',
-  'agents.view': 'View agents and referrals', 'agents.manage': 'Approve agents, review and settings', 'agents.pay': 'Pay agents (payout batches)',
+  'agents.view': 'View agents and referrals', 'agents.manage': 'Approve agents, review and settings', 'agents.pay': 'Pay agents (payout batches)', 'support.view': 'See the support desk', 'support.manage': 'Reply to and manage support requests',
   'users.view': 'View users/drivers', 'users.manage': 'Create/manage users',
   'service_givers.view': 'View service givers', 'service_givers.manage': 'Manage service givers',
   'items.view': 'View items', 'items.manage': 'Manage items',
@@ -66,7 +66,7 @@ function editRolePermissions(index) {
   const roleName = existing ? existing.role_name : (document.getElementById('role-name-input').value.trim());
   if (!roleName) { alert('Enter a role name first (in the box above), or click Edit on an existing role.'); return; }
   const isWildcard = existing && existing.capabilities.includes('*');
-  const allCaps = ['orders.view','orders.manage','rides.view','rides.manage','agents.view','agents.manage','agents.pay','users.view','users.manage',
+  const allCaps = ['orders.view','orders.manage','rides.view','rides.manage','agents.view','agents.manage','agents.pay','support.view','support.manage','users.view','users.manage',
                     'service_givers.view','service_givers.manage','items.view','items.manage',
                     'settings.view','settings.manage','finance.view','finance.manage',
                     'sos.view','sos.manage','analytics.view','owner.only','equity.view','equity.manage','system.reset','platform_economics.view','platform_economics.manage','equb.view','equb.manage','planning.view','planning.manage','documents.view','documents.manage'];
