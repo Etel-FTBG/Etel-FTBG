@@ -83,6 +83,8 @@ export default function HubScreen({ navigation }: Props) {
     try {
       await goOfflineEverywhere();
       setWhere([]);
+    } catch (e) {
+      RNAlert.alert(translate('Could not go offline'), e instanceof Error ? translate(e.message) : translate('Please try again.'));
     } finally {
       setBusy(false);
     }
@@ -175,6 +177,7 @@ export default function HubScreen({ navigation }: Props) {
             <ActivityIndicator color={p.gold} />
           ) : online ? (
             <SlideToConfirm
+              key="offline"
               label={translate('Slide to go offline')}
               onConfirm={goOffline}
               trackColor={'rgba(229,72,77,0.22)'}
@@ -183,6 +186,7 @@ export default function HubScreen({ navigation }: Props) {
             />
           ) : (
             <SlideToConfirm
+              key="online"
               label={translate('Slide to go online')}
               onConfirm={goOnline}
               trackColor={p.surfaceAlt}

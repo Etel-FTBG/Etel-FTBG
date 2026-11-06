@@ -32,21 +32,27 @@ export default function SlideToConfirm({
   const confirmedRef = useRef(false);
 
   const maxDrag = Math.max(trackWidth - THUMB_SIZE - 8, 1);
+  // The PanResponder is created once, so it must read the latest props and width from here, not from the first render:
+  // the same slider is reused when the screen flips between "go online" and "go offline", and the first render's
+  // onConfirm (go online) kept running when someone slid to go offline.
+  const latest = useRef({ onConfirm, disabled, maxDrag });
+  latest.current = { onConfirm, disabled, maxDrag };
 
   const panResponder = useRef(
     PanResponder.create({
-      onStartShouldSetPanResponder: () => !disabled,
-      onMoveShouldSetPanResponder: () => !disabled,
+      onStartShouldSetPanResponder: () => !latest.current.disabled,
+      onMoveShouldSetPanResponder: () => !latest.current.disabled,
       onPanResponderMove: (_, gesture) => {
-        const x = Math.min(Math.max(gesture.dx, 0), maxDrag);
+        const x = Math.min(Math.max(gesture.dx, 0), latest.current.maxDrag);
         pan.setValue(x);
       },
       onPanResponderRelease: (_, gesture) => {
-        const x = Math.min(Math.max(gesture.dx, 0), maxDrag);
-        if (x >= maxDrag * THRESHOLD_RATIO && !confirmedRef.current) {
+        const max = latest.current.maxDrag;
+        const x = Math.min(Math.max(gesture.dx, 0), max);
+        if (x >= max * THRESHOLD_RATIO && !confirmedRef.current) {
           confirmedRef.current = true;
-          Animated.timing(pan, { toValue: maxDrag, duration: 120, useNativeDriver: false }).start(() => {
-            onConfirm();
+          Animated.timing(pan, { toValue: max, duration: 120, useNativeDriver: false }).start(() => {
+            latest.current.onConfirm();
             setTimeout(() => {
               confirmedRef.current = false;
               Animated.timing(pan, { toValue: 0, duration: 150, useNativeDriver: false }).start();
