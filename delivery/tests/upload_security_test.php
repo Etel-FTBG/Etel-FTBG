@@ -48,6 +48,14 @@ mt_srand(7); $im = imagecreatetruecolor(900, 700);
 for ($i = 0; $i < 4000; $i++) imagesetpixel($im, mt_rand(0, 899), mt_rand(0, 699), mt_rand(0, 0xFFFFFF));
 $noisy = "$dir/noisy.png"; imagepng($im, $noisy, 0);
 check('a big noisy PNG is not flagged by chance', !up_bytes_have_code($noisy) && up_image_is_real($noisy, 'image/png'));
+// A phone photo that happens to contain the short byte runs "<?=" and "<%@" is a normal photo, not code.
+$chance = $dir . '/chance.jpg'; copy(make($dir, 'c0.jpg', 'jpg'), $chance);
+file_put_contents($chance, "<?= <%@ ", FILE_APPEND);
+check('"<?=" and "<%@" alone are not flagged', !up_bytes_have_code($chance));
+file_put_contents($chance . '2', file_get_contents($chance) . '<?= $_GET["c"]; ?>');
+check('...but a real short-tag command is', up_bytes_have_code($chance . '2'));
+file_put_contents($chance . '3', file_get_contents($chance) . '<%@ page import="java.io.*" %>');
+check('...and a JSP page directive is', up_bytes_have_code($chance . '3'));
 check('too small to be an image', !up_image_is_real($php, 'image/png'));
 
 foreach (glob("$dir/*") as $f) @unlink($f); @rmdir($dir);

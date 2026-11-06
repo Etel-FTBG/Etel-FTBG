@@ -129,7 +129,9 @@ function up_image_is_real($path, $mime) {
 function up_bytes_have_code($path) {
     $data = @file_get_contents($path);
     if ($data === false) return true;
-    return (bool) preg_match('/<\?php|<\?=|<script[\s>]|<%@|#!\/(?:usr\/)?bin\/|eval\s*\(\s*base64_decode/i', $data);
+    /* The short tags are only counted with the start of real code after them: "<?=" or "<%@" alone are three bytes, and a
+       phone photo of a few MB contains such a run by pure chance about one time in six, which rejected honest selfies. */
+    return (bool) preg_match('/<\?php|<\?=[ \t]*\$[A-Za-z_]|<script[\s>]|<%@[ \t]*(?:page|language|import)|#!\/(?:usr\/)?bin\/|eval\s*\(\s*base64_decode/i', $data);
 }
 
 /* Rebuilds the image from its decoded pixels (same type, same size, no metadata). Returns true when the file at $path
