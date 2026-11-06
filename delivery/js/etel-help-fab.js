@@ -37,7 +37,8 @@ st.textContent = '#etel-help-fab{position:fixed;' + side + ':14px;bottom:calc(' 
   '@media print{#etel-help-fab{display:none!important}}';
 document.head.appendChild(st);
 var a = document.createElement('a');
-a.id = 'etel-help-fab'; a.href = '/delivery/help/?app=' + encodeURIComponent(app); a.setAttribute('aria-label', label); a.title = label;
+var base = '/delivery/help/'; try { if (me && me.src) base = new URL('../help/', me.src).pathname; } catch (e) { /* keep the default */ }
+a.id = 'etel-help-fab'; a.href = base + '?app=' + encodeURIComponent(app); a.setAttribute('aria-label', label); a.title = label;
 a.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 14v-2a8 8 0 0 1 16 0v2"/><rect x="3" y="14" width="4" height="6" rx="1.5"/><rect x="17" y="14" width="4" height="6" rx="1.5"/><path d="M19 20c0 1.5-2 2-4 2h-2"/></svg>';
 (document.body || document.documentElement).appendChild(a);
 })();
