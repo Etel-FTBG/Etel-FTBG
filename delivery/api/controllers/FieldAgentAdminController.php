@@ -89,6 +89,22 @@ case 'admin_fa_agent_get': {
     break;
 }
 
+case 'admin_fa_sms_test': {
+    // Send ONE short test text to a number the admin types, to check the SMS service before real customers are texted.
+    $pdo = db(); $adm = require_admin($pdo, 'agents.manage');
+    require_once __DIR__ . '/../lib/sms_send.php';
+    $ph = isset($body['phone']) ? (string) $body['phone'] : '';
+    if (etel_sms_msisdn($ph) === '') fail('Enter a valid phone number, for example 0911234567.');
+    $q = $pdo->prepare("SELECT COUNT(*) FROM fa_audit_log WHERE action = 'sms_test' AND actor_id = ? AND created_at > DATE_SUB(NOW(), INTERVAL 1 MINUTE)"); $q->execute(array($adm['id']));
+    if (intval($q->fetchColumn()) > 0) fail('A test text was just sent. Please wait a minute.', 429);
+    $st = etel_sms_send($ph, 'ETEL: this is a test text from Etel Admin. SMS is working.');
+    fa_audit($pdo, 'admin', $adm['id'], 'sms_test', 'setting', 0, '', array('result' => $st));
+    if ($st === 'off') fail('No SMS service is set up on the server yet (add SMSET_API_KEY to api/.env).', 409, array('reason' => 'SMS_OFF'));
+    if ($st !== 'sent') { $why = etel_sms_last_error(); fail('The test text was not sent. ' . ($why !== '' ? $why : ''), 502, array('reason' => 'SMS_FAILED', 'detail' => $why)); }
+    ok(array('sent' => true));
+    break;
+}
+
 case 'admin_fa_customer_message': {
     // Send a customer an agent booked for either the "set your password" message or the "complete your profile" reminder.
     $pdo = db(); $adm = require_admin($pdo, 'agents.manage');
@@ -102,7 +118,7 @@ case 'admin_fa_customer_message': {
     $st = fa_customer_message($bk['phone'], $kind);
     if ($st === 'off') fail('No SMS service is set up on the server yet (add SMSET_API_KEY to api/.env), so no text can be sent. Ask the customer to tap Forgot password in the Etel Ride app.', 409, array('reason' => 'SMS_OFF'));
     if ($st !== 'sent') { $why = function_exists('etel_sms_last_error') ? etel_sms_last_error() : '';
-        fail('The text was not sent.' . ($why !== '' ? ' ' . $why . '.' : '') . ' If your SMS package is the free test one, only numbers you verified in the SMS dashboard can receive texts.', 502, array('reason' => 'SMS_FAILED', 'detail' => $why)); }
+        fail('The text was not sent.' . ($why !== '' ? ' ' . $why : '') . ' (On the free test package only numbers you verified in the SMS dashboard can receive texts.)', 502, array('reason' => 'SMS_FAILED', 'detail' => $why)); }
     fa_audit($pdo, 'admin', $adm['id'], 'customer_message_' . $kind, 'booking', $bid, '', array('agent' => intval($bk['agent_id'])));
     ok(array('sent' => true, 'kind' => $kind));
     break;

@@ -36,7 +36,9 @@ function etel_sms_send_smsethiopia($phone, $text) {
     $bad = is_array($j) && ((isset($j['success']) && !$j['success']) || (isset($j['status']) && in_array(strtolower((string)$j['status']), array('error', 'failed', 'fail'), true)) || isset($j['error']) || isset($j['error_code']));
     if ($code >= 200 && $code < 300 && !$bad) return 'sent';
     // Only the HTTP code and the provider's own error code/text are logged (never the key, the number or the message).
-    $why = substr(is_array($j) ? json_encode(array_intersect_key($j, array_flip(array('code', 'error', 'error_code', 'message', 'status')))) : substr(trim(strip_tags((string)$resp)), 0, 120), 0, 200);
+    // The provider's own answer, shortened (it never contains our key or the message text).
+    $why = substr(trim(preg_replace('/\s+/', ' ', is_array($j) ? json_encode($j, JSON_UNESCAPED_UNICODE) : strip_tags((string)$resp))), 0, 240);
+    if ($why === '' || $why === '[]') $why = '(empty answer)';
     $GLOBALS['ETEL_SMS_LAST'] = 'SMSEthiopia answered HTTP ' . $code . ' ' . $why;
     error_log('[ETEL][sms] ' . $GLOBALS['ETEL_SMS_LAST']);
     return 'failed';

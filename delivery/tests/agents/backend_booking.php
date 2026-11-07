@@ -165,6 +165,10 @@ $r = calla('admin_fa_customer_message', array('booking_id' => 999999, 'kind' => 
 $r = calla('admin_fa_customer_message', array('booking_id' => $bk, 'kind' => 'reset'), $ADMIN); t('admin message: reset message says plainly the SMS service is not set up', !$r->ok && $r->data['reason'] === 'SMS_OFF', $r->ok ? 'sent?' : $r->getMessage());
 $r = calla('admin_fa_customer_message', array('booking_id' => $bk, 'kind' => 'verify'), $ADMIN); t('admin message: verify reminder says the same', !$r->ok && $r->data['reason'] === 'SMS_OFF');
 
+$r = calla('admin_fa_sms_test', array('phone' => '12'), $ADMIN); t('sms test: a bad number is refused', !$r->ok);
+$r = calla('admin_fa_sms_test', array('phone' => '0911234567'), $AU); t('sms test: a non-admin is refused', !$r->ok && $r->code2 == 403);
+$r = calla('admin_fa_sms_test', array('phone' => '0911234567'), $ADMIN); t('sms test: no SMS service -> plain SMS_OFF notice', !$r->ok && $r->data['reason'] === 'SMS_OFF', $r->ok ? 'sent?' : $r->getMessage());
+
 // ---- audit chain intact
 $v = fa_audit_verify($PDO); t('audit chain still valid', $v['ok'], json_encode($v));
 $PDO->exec("TRUNCATE TABLE fa_bookings"); 
