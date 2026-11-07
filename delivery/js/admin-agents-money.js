@@ -113,10 +113,32 @@ var GROUPS = [
   ['Agent booking', [['agent_booking_enabled', 'Agents can book rides for customers (turn off to pause it)', 'switch'], ['agent_booking_daily_cap', 'Most bookings per agent in 24 hours'], ['agent_booking_cash_counts', 'A cash trip can earn the bonus for a customer an agent booked', 'switch'], ['agent_booking_sms', 'Text a NEW customer automatically when an agent books their first ride (needs the SMS service to be set up)', 'switch'], ['agent_booking_review_trips', 'Review an agent\'s first booked customers: how many must pass before they are trusted (0 = never review)']]],
   ['Risk scoring', [['risk_hold_threshold', 'Hold for review from this score'], ['risk_high_threshold', 'Call it "high risk" from this score'], ['risk_w_same_device', 'Points: claimed from the agent\'s own device'], ['risk_w_repeat_pair', 'Points: same agent and driver again and again'], ['risk_w_sequential_phones', 'Points: booked customers with phone numbers right next to each other'], ['risk_w_burst', 'Points: burst of referrals'], ['risk_w_code_reuse', 'Points: one device, several referrals'], ['risk_w_short_trip', 'Points: very short trip'], ['risk_w_odd_hours', 'Points: trip at odd hours'], ['risk_w_agent_history', 'Points: agent with many rejections'], ['risk_burst_count', 'A burst is this many referrals...'], ['risk_burst_minutes', '...within this many minutes'], ['risk_pair_threshold', 'Same driver counts from this many riders'], ['risk_short_trip_km', 'A very short trip is under (km)'], ['risk_odd_hour_start', 'Odd hours start (0-23)'], ['risk_odd_hour_end', 'Odd hours end (0-24)']]]
 ];
+var GMETA = {
+  'Programme': ['⚡', 'The master switch for the whole referral programme.'],
+  'Bonuses': ['💰', 'What agents earn and the time limits that apply.'],
+  'Qualifying trips': ['✅', 'Which trips count towards a bonus.'],
+  'Hold and clawback': ['⏳', 'How long a bonus waits before it can be paid, and how long it can be taken back.'],
+  'Caps and budget': ['🛡️', 'Limits that protect your budget.'],
+  'Agent booking': ['🚕', 'Agents booking rides for their customers.'],
+  'Risk scoring': ['🔍', 'The points that decide when a bonus waits for your review.']
+};
+/* "Daily cap per agent (ETB, 0 = none)" -> title "Daily cap per agent", unit "ETB", note "0 = none". */
+function splitLabel(label) {
+  var m = /^(.*?)\s*\(([^)]*)\)\s*$/.exec(label), title = label, unit = '', note = '';
+  if (m) {
+    var inner = m[2].split(',').map(function (x) { return x.trim(); }), u = inner[0];
+    if (/^(ETB|days|km|minutes)$/i.test(u)) { title = m[1]; unit = u; note = inner.slice(1).join(', '); }
+  }
+  if (!unit && /%/.test(label)) unit = '%';
+  return { title: title.replace(/\s*[:]\s*$/, ''), unit: unit, note: note };
+}
 function fieldHtml(g, def, edit) {
-  var key = def[0], m = ST.meta[key] || {}, v = ST.vals[key], hint = 'Default ' + m.default + (m.min != null ? '. Allowed ' + m.min + ' to ' + m.max : '');
-  if (def[2] === 'switch') return '<label class="ak-sw"><input type="checkbox" data-set="' + key + '"' + (A.f(v) ? ' checked' : '') + (edit ? '' : ' disabled') + '><span>' + esc(def[1]) + '</span></label>';
-  return '<label class="ak-fl" data-fl="' + key + '">' + esc(def[1]) + '<input class="ak-in" type="number" inputmode="decimal" step="any" data-set="' + key + '" min="' + esc(m.min) + '" max="' + esc(m.max) + '" value="' + esc(v) + '"' + (edit ? '' : ' disabled') + '><div class="ak-fh">' + esc(hint) + '</div></label>';
+  var key = def[0], m = ST.meta[key] || {}, v = ST.vals[key];
+  var range = (m.min != null ? 'Default ' + m.default + '  ·  Allowed ' + m.min + ' to ' + m.max : 'Default ' + m.default);
+  if (def[2] === 'switch') return '<label class="ag-row ag-tgl" data-fl="' + key + '"><span class="ag-rt"><b>' + esc(def[1]) + '</b></span><span class="ag-sw2"><input type="checkbox" data-set="' + key + '"' + (A.f(v) ? ' checked' : '') + (edit ? '' : ' disabled') + '><i aria-hidden="true"></i></span></label>';
+  var sp = splitLabel(def[1]);
+  return '<label class="ag-row" data-fl="' + key + '"><span class="ag-rt"><b>' + esc(sp.title) + '</b><small>' + esc((sp.note ? sp.note + '  ·  ' : '') + range) + '</small></span>' +
+    '<span class="ag-num-in"><input class="ak-in" type="number" inputmode="decimal" step="any" data-set="' + key + '" min="' + esc(m.min) + '" max="' + esc(m.max) + '" value="' + esc(v) + '"' + (edit ? '' : ' disabled') + '>' + '<em>' + esc(sp.unit) + '</em>' + '</span></label>';
 }
 function settingsHtml() {
   if (ST.err) return '<div class="ak-empty"><b>⚠️</b><div>' + esc(ST.err) + '</div></div>';
@@ -125,11 +147,13 @@ function settingsHtml() {
   var h = edit ? '' : '<div class="ag-banner"><div><b>View only</b><span>You can see these numbers but not change them.</span></div></div>';
   h += '<div id="ag-set-msg" role="status" aria-live="polite" class="ag-sr"></div>';
   GROUPS.forEach(function (g, gi) {
-    h += '<section class="ag-box"><h3>' + esc(T(g[0])) + '</h3><div class="ag-set" style="margin-top:10px">' + g[1].map(function (d) { return fieldHtml(g, d, edit); }).join('') + '</div>' +
-      (g[0] === 'Risk scoring' ? '<p style="font-size:12.5px;color:var(--mute);margin:12px 0 0">How a score works: each signal adds its points (capped at 100). From the "hold" score the bonus waits for you in the Fraud queue. Same account, phone, Etel ID or payout number as the rider is always blocked, whatever these numbers are. Nothing is rejected or paid by the score alone.</p>' : '') +
-      (edit ? '<p style="margin:12px 0 0"><button type="button" class="ak-btn" data-reset="' + gi + '">' + esc(T('Reset section to defaults')) + '</button></p>' : '') + '</section>';
+    var gm = GMETA[g[0]] || ['⚙️', ''];
+    h += '<section class="ag-box ag-sec"><header class="ag-sh"><span class="ag-si" aria-hidden="true">' + gm[0] + '</span><span class="ag-st"><h3>' + esc(T(g[0])) + '</h3>' + (gm[1] ? '<p>' + esc(T(gm[1])) + '</p>' : '') + '</span>' +
+      (edit ? '<button type="button" class="ag-ghost" data-reset="' + gi + '">' + esc(T('Reset section to defaults')) + '</button>' : '') + '</header>' +
+      '<div class="ag-rows">' + g[1].map(function (d) { return fieldHtml(g, d, edit); }).join('') + '</div>' +
+      (g[0] === 'Risk scoring' ? '<p class="ag-note">How a score works: each signal adds its points (capped at 100). From the "hold" score the bonus waits for you in the Fraud queue. Same account, phone, Etel ID or payout number as the rider is always blocked, whatever these numbers are.</p>' : '') + '</section>';
   });
-  if (edit) h += '<div style="position:sticky;bottom:10px;display:flex;justify-content:flex-end"><button type="button" class="ak-btn gold" data-save-set style="box-shadow:var(--shadow)">' + esc(T('Save changes')) + '</button></div>';
+  if (edit) h += '<div class="ag-savebar"><span id="ag-chg-n" class="ag-chg-n" aria-live="polite"></span><button type="button" class="ak-btn gold" data-save-set>' + esc(T('Save changes')) + '</button></div>';
   return h;
 }
 function loadSettings() {
@@ -146,7 +170,9 @@ function changed() {
   return out;
 }
 function markChanged() {
-  Array.prototype.forEach.call(panel().querySelectorAll('[data-fl]'), function (l) { var el = l.querySelector('[data-set]'); l.classList.toggle('chg', String(A.f(el.value)) !== String(A.f(ST.vals[el.getAttribute('data-set')]))); });
+  var n = 0;
+  Array.prototype.forEach.call(panel().querySelectorAll('[data-fl]'), function (l) { var el = l.querySelector('[data-set]'), v = el.type === 'checkbox' ? (el.checked ? 1 : 0) : el.value, c = String(A.f(v)) !== String(A.f(ST.vals[el.getAttribute('data-set')])); if (c) n++; l.classList.toggle('chg', c); });
+  var c = document.getElementById('ag-chg-n'); if (c) c.textContent = n ? n + (n === 1 ? ' unsaved change' : ' unsaved changes') : '';
 }
 function saveSettings(btn) {
   var ch = changed(), keys = Object.keys(ch);
