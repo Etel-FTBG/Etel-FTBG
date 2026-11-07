@@ -89,6 +89,24 @@ case 'admin_fa_agent_get': {
     break;
 }
 
+case 'admin_fa_customer_message': {
+    // Send a customer an agent booked for either the "set your password" message or the "complete your profile" reminder.
+    $pdo = db(); $adm = require_admin($pdo, 'agents.manage');
+    $bid = intval(isset($body['booking_id']) ? $body['booking_id'] : 0);
+    $kind = isset($body['kind']) ? (string) $body['kind'] : '';
+    if (!in_array($kind, array('reset', 'verify'), true)) fail('Unknown message type');
+    $q = $pdo->prepare('SELECT b.id, b.agent_id, u.phone FROM fa_bookings b LEFT JOIN users u ON u.id = b.customer_user_id WHERE b.id = ?'); $q->execute(array($bid)); $bk = $q->fetch(PDO::FETCH_ASSOC);
+    if (!$bk || empty($bk['phone'])) fail('Booking not found', 404);
+    $q = $pdo->prepare("SELECT COUNT(*) FROM fa_audit_log WHERE entity = 'booking' AND entity_id = ? AND action = ? AND created_at > DATE_SUB(NOW(), INTERVAL 10 MINUTE)"); $q->execute(array($bid, 'customer_message_' . $kind));
+    if (intval($q->fetchColumn()) > 0) fail('This message was just sent. Please wait 10 minutes before sending it again.', 429);
+    $st = fa_customer_message($bk['phone'], $kind);
+    if ($st === 'off') fail('The SMS service is not set up yet, so no text can be sent. Ask the customer to tap Forgot password in the Etel Ride app.', 409, array('reason' => 'SMS_OFF'));
+    if ($st !== 'sent') fail('The text could not be sent. Please try again in a few minutes.', 502, array('reason' => 'SMS_FAILED'));
+    fa_audit($pdo, 'admin', $adm['id'], 'customer_message_' . $kind, 'booking', $bid, '', array('agent' => intval($bk['agent_id'])));
+    ok(array('sent' => true, 'kind' => $kind));
+    break;
+}
+
 case 'admin_fa_agent_decide': {
     $pdo = db(); $adm = require_admin($pdo, 'agents.manage');
     $id = intval(isset($body['id']) ? $body['id'] : 0);

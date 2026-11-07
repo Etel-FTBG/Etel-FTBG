@@ -144,6 +144,27 @@ $PDO->exec("UPDATE fa_earnings SET status = 'held' WHERE agent_id = $AID AND ref
 t('bookings list: phone masked', strpos(json_encode($r->data), '0955000001') === false);
 $r = call('fa_agent_bookings', array(), $A2U); t('another agent does not see them', $r->ok && count($r->data['bookings']) === 0);
 
+// ---- new-customer text + admin "reset message" / "verify reminder"
+function calla($action, $body, $user) {
+    $GLOBALS['CUR'] = $user; global $API;
+    $fn = function () use ($action, $body, $API) { require $API . '/controllers/FieldAgentAdminController.php'; throw new Exception('no response for ' . $action); };
+    try { $fn(); } catch (Resp $r) { return $r; }
+}
+list($A5U, $A5) = mkagent('Agent Five', '0911000005', '0911000005x');
+$PDO->exec("TRUNCATE TABLE rides"); $PDO->exec("TRUNCATE TABLE fa_bookings");
+$r = call('fa_agent_book_ride', array('phone' => '0955777001', 'name' => 'New Nia', 'vehicle_type' => 'bajaj', 'km' => 4), $A5U);
+t('new customer: booked, response says whether a text went out (off here: no SMS service)', $r->ok && $r->data['new_account'] === 1 && $r->data['sms'] === 'off', $r->ok ? json_encode($r->data) : $r->getMessage());
+$bk = intval(one('SELECT MAX(id) FROM fa_bookings'));
+$PDO->exec("UPDATE rides SET status = 'cancelled'");
+mkuser('Old Ola', '0955777002');
+$r = call('fa_agent_book_ride', array('phone' => '0955777002', 'vehicle_type' => 'bajaj', 'km' => 4), $A5U);
+t('existing customer: no automatic text', $r->ok && $r->data['new_account'] === 0 && $r->data['sms'] === 'off');
+$r = calla('admin_fa_customer_message', array('booking_id' => $bk, 'kind' => 'reset'), $AU); t('admin message: a non-admin is refused', !$r->ok && $r->code2 == 403);
+$r = calla('admin_fa_customer_message', array('booking_id' => $bk, 'kind' => 'hello'), $ADMIN); t('admin message: unknown type refused', !$r->ok);
+$r = calla('admin_fa_customer_message', array('booking_id' => 999999, 'kind' => 'reset'), $ADMIN); t('admin message: unknown booking -> 404', !$r->ok && $r->code2 == 404);
+$r = calla('admin_fa_customer_message', array('booking_id' => $bk, 'kind' => 'reset'), $ADMIN); t('admin message: reset message says plainly the SMS service is not set up', !$r->ok && $r->data['reason'] === 'SMS_OFF', $r->ok ? 'sent?' : $r->getMessage());
+$r = calla('admin_fa_customer_message', array('booking_id' => $bk, 'kind' => 'verify'), $ADMIN); t('admin message: verify reminder says the same', !$r->ok && $r->data['reason'] === 'SMS_OFF');
+
 // ---- audit chain intact
 $v = fa_audit_verify($PDO); t('audit chain still valid', $v['ok'], json_encode($v));
 $PDO->exec("TRUNCATE TABLE fa_bookings"); 

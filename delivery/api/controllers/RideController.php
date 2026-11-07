@@ -1750,24 +1750,16 @@ case 'cancel_ride': {
         if ($traveled > 0.1) {
             $km = $traveled;
             $fareResult = rides_calc_fare($pdo, $km, $vtype, $isOpenTrip, $waitMinutes);
-            $fare = $fareResult['fare'];
-            $finalSurge = $fareResult['surge'] ? 1 : 0;
-            $waitEtb = $fareResult['breakdown']['wait_etb'];
-            $breakdownForUi = rides_fare_breakdown_for_ui($fareResult);
         } else {
-            // Cancelled almost immediately after starting - essentially
-            // nothing was travelled, so this is a free cancel too rather
-            // than billing a minimum fare for a few metres.
-            if ($cancelReason !== '' && rides_has_cancel_reason_column($pdo)) {
-                $pdo->prepare("UPDATE rides SET status='cancelled', cancelled_at=NOW(), cancel_reason=? WHERE id=?")
-                    ->execute(array($cancelReason, $id));
-            } else {
-                $pdo->prepare("UPDATE rides SET status='cancelled', cancelled_at=NOW() WHERE id=?")->execute(array($id));
-            }
-            ok(array('cancelled' => true));
-            break;
+            // Ended without the customer moving: they pay the base fare (plus real waiting time) only.
+            $km = 0;
+            $fareResult = rides_calc_fare_no_move($pdo, $vtype, $isOpenTrip, $waitMinutes);
         }
-        $km = $traveled;
+        $fare = $fareResult['fare'];
+        $finalSurge = $fareResult['surge'] ? 1 : 0;
+        $waitEtb = $fareResult['breakdown']['wait_etb'];
+        $breakdownForUi = rides_fare_breakdown_for_ui($fareResult);
+        if ($traveled <= 0.1) $breakdownForUi['no_movement'] = true;
         $breakdownJson = json_encode($breakdownForUi);
         if ($finalSurge !== null && rides_has_surge_column($pdo)) {
             $pdo->prepare("UPDATE rides SET status='arrived', arrived_at=NOW(), distance_km=?, fare_final=?, surge_applied=?, fare_breakdown_json=? WHERE id=?")
@@ -1779,7 +1771,7 @@ case 'cancel_ride': {
         rides_flag_fare_review($pdo, $id, $u['id'], $fare, $km);
         $fare = rides_promo_apply_to_arrived($pdo, $id);
         ok(array('cancelled' => true, 'ended_early' => true, 'fare_final' => $fare,
-                 'message' => 'Trip ended early - billed for the ' . $km . ' km actually travelled (ETB ' . round($fare, 2) . '), not the full planned distance.'));
+                 'message' => ($km > 0 ? 'Trip ended early - billed for the ' . $km . ' km actually travelled (ETB ' . round($fare, 2) . '), not the full planned distance.' : 'Trip ended without moving - billed the base fare only (ETB ' . round($fare, 2) . ').')));
         break;
     }
 

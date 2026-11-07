@@ -19,7 +19,7 @@ var AM = {
   'Active agents': 'ንቁ ወኪሎች', 'Waiting for approval': 'ማረጋገጫ የሚጠብቁ', 'Riders acquired (30 days)': 'የተገኙ ተሳፋሪዎች (30 ቀን)', '30-day repeat rate': 'የ30 ቀን ተደጋጋሚ መጠን',
   'Cost per rider': 'በአንድ ተሳፋሪ ወጪ', 'Ready to pay': 'ለክፍያ ዝግጁ', 'On hold': 'በመያዣ ላይ', 'Needs a decision': 'ውሳኔ የሚፈልጉ', 'High risk': 'ከፍተኛ ስጋት',
   'Live referral feed': 'የቀጥታ ሪፈራል ዝርዝር', 'Budget and projection': 'በጀት እና ትንበያ', 'Referrals and repeat riders': 'ሪፈራሎች እና ተደጋጋሚ ተሳፋሪዎች', 'New riders': 'አዲስ ተሳፋሪዎች', 'Repeat riders': 'ተደጋጋሚ ተሳፋሪዎች',
-  'Approve': 'አጽድቅ', 'Reject': 'ውድቅ አድርግ', 'Suspend': 'አግድ', 'Reinstate': 'መልስ', 'Release': 'ፍቀድ', 'Keep on hold': 'በመያዣ አቆይ', 'Save changes': 'ለውጦችን አስቀምጥ', 'Cancel': 'ሰርዝ',
+  'Approve': 'አጽድቅ', 'Reject': 'ውድቅ አድርግ', 'Suspend': 'አግድ', 'Reinstate': 'መልስ', 'Send reset message': 'የይለፍ ቃል መልእክት ላክ', 'Remind to verify profile': 'መገለጫ እንዲያረጋግጡ አስታውስ', 'Send': 'ላክ', 'Release': 'ፍቀድ', 'Keep on hold': 'በመያዣ አቆይ', 'Save changes': 'ለውጦችን አስቀምጥ', 'Cancel': 'ሰርዝ',
   'Export CSV': 'CSV አውጣ', 'Refresh': 'አድስ', 'Run now': 'አሁን አስኪድ', 'Create payout batch': 'የክፍያ ቡድን ፍጠር', 'Mark paid': 'እንደተከፈለ ምልክት አድርግ', 'Verify chain': 'ሰንሰለቱን አረጋግጥ', 'Search': 'ፈልግ',
   'All': 'ሁሉም', 'Pending': 'በመጠባበቅ ላይ', 'Approved': 'ጸድቋል', 'Suspended': 'ታግዷል', 'Rejected': 'ውድቅ ሆኗል', 'Held': 'በመያዣ', 'Payable': 'ሊከፈል የሚችል', 'Paid': 'ተከፍሏል', 'Clawed back': 'ተመላሽ ተደርጓል',
   'Agent': 'ወኪል', 'Venue': 'ቦታ', 'Status': 'ሁኔታ', 'Risk': 'ስጋት', 'Amount': 'መጠን', 'Rider': 'ተሳፋሪ', 'Reason': 'ምክንያት', 'Tier': 'ደረጃ', 'Code': 'ኮድ', 'Age': 'ዕድሜ', 'Time': 'ጊዜ', 'Type': 'ዓይነት',
