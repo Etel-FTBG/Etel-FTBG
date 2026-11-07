@@ -43,7 +43,9 @@ function fa_partner_clean_url($v) {
     $v = trim((string) $v);
     if ($v === '') return '';
     if (strlen($v) > 500) return '';
-    if (preg_match('#^(https?:)?//#i', $v) && !preg_match('#^https://(www\.)?ethelmarket\.com/#i', $v)) return '';
+    // Only our own server: ethelmarket.com or the host this request came to (upload.php answers with that host).
+    $host = isset($_SERVER['HTTP_HOST']) ? preg_quote($_SERVER['HTTP_HOST'], '#') : 'ethelmarket\.com';
+    if (preg_match('#^(https?:)?//#i', $v) && !preg_match('#^https?://(www\.)?(ethelmarket\.com|' . $host . ')/#i', $v)) return '';
     if (preg_match('/^(javascript|data):/i', $v)) return '';
     return $v;
 }
@@ -100,7 +102,7 @@ function fa_partner_missing($pdo, $kind, $name, $phone, $d, $items) {
     if (etel_validate_phone($phone) === false) $m['phone'] = 'Enter a valid Ethiopian mobile number, e.g. 0911234567.';
     if ($d['id_photo_url'] === '') $m['id_photo_url'] = 'Add a clear photo of the ID card.';
     if ($d['selfie_url'] === '') $m['selfie_url'] = 'Add a selfie of the person.';
-    if ($d['emergency_phone'] === '' || etel_validate_phone($d['emergency_phone']) === false) $m['emergency_phone'] = 'Add a contact number of a relative or friend.';
+    if ($kind !== 'shop' && ($d['emergency_phone'] === '' || etel_validate_phone($d['emergency_phone']) === false)) $m['emergency_phone'] = 'Add a contact number of a relative or friend.';
     if ($kind === 'courier') {
         if ($d['vehicle_type'] === '') $m['vehicle_type'] = 'Choose the vehicle.';
     } elseif ($kind === 'driver') {

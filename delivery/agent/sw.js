@@ -2,8 +2,8 @@
    Keeps the app shell, fonts and language files on the phone so the code and QR open without internet.
    API calls (api/boot.php) are NEVER cached: money and status always come from the server.
    Bump CACHE whenever any file in SHELL changes. */
-var CACHE = 'etel-agent-v11';
-var SHELL = ['./', 'index.html', 'app.css?v=6', 'app.js?v=10', 'qr.js?v=1', '../js/etel-area.js?v=1', 'lang/am.json?v=10', 'lang/en.json?v=10', 'manifest.webmanifest', 'logo-128.webp', 'book.js?v=3', 'logo-320.webp',
+var CACHE = 'etel-agent-v12';
+var SHELL = ['./', 'index.html', 'app.css?v=7', 'app.js?v=11', 'qr.js?v=1', '../js/etel-area.js?v=1', 'lang/am.json?v=11', 'lang/en.json?v=11', 'manifest.webmanifest', 'logo-128.webp', 'book.js?v=3', 'partners.js?v=1', 'logo-320.webp',
   '../icons/agent-icon-96.png', '../icons/agent-icon-192.png', '../icons/agent-icon-512.png', '../icons/agent-apple-touch-icon.png',
   '../fonts/noto-sans-ethiopic-400.woff2', '../fonts/noto-sans-ethiopic-700.woff2', '../fonts/cormorant-garamond-normal-latin.woff2'];
 self.addEventListener('install', function (e) {
