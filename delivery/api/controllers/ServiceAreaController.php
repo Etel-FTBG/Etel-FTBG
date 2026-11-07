@@ -29,16 +29,16 @@ case 'admin_areas_list': {
         $a['shops'] = 0; $a['drivers_online'] = 0; $a['rides_7d'] = 0;
         try {
             $sc = etel_table_columns($pdo, 'service_givers');
-            list($sql, $par) = etel_area_shop_where($a, $sc, 'sg');
+            list($sql, $par) = etel_area_shop_where($a, $sc, 'sg', etel_areas_list($pdo, true));
             if ($sql !== '') { $q = $pdo->prepare("SELECT COUNT(*) FROM service_givers sg WHERE sg.status = 'verified'" . $sql); $q->execute($par); $a['shops'] = intval($q->fetchColumn()); }
         } catch (Exception $e) { /* no shops table */ }
         try {
             $q = $pdo->query("SELECT lat, lng FROM ride_drivers WHERE online = 1 AND lat IS NOT NULL AND lng IS NOT NULL AND last_seen >= DATE_SUB(NOW(), INTERVAL 3 MINUTE)");
-            foreach ($q->fetchAll(PDO::FETCH_ASSOC) as $d) { if (etel_area_contains($a, $d['lat'], $d['lng'])) $a['drivers_online']++; }
+            foreach ($q->fetchAll(PDO::FETCH_ASSOC) as $d) { $pa = etel_area_for_point($pdo, $d['lat'], $d['lng']); if ($pa && $pa['code'] === $a['code']) $a['drivers_online']++; }
         } catch (Exception $e) { /* no drivers table */ }
         try {
             $q = $pdo->query("SELECT pickup_lat, pickup_lng FROM rides WHERE created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY) AND pickup_lat IS NOT NULL LIMIT 5000");
-            foreach ($q->fetchAll(PDO::FETCH_ASSOC) as $r) { if (etel_area_contains($a, $r['pickup_lat'], $r['pickup_lng'])) $a['rides_7d']++; }
+            foreach ($q->fetchAll(PDO::FETCH_ASSOC) as $r) { $pa = etel_area_for_point($pdo, $r['pickup_lat'], $r['pickup_lng']); if ($pa && $pa['code'] === $a['code']) $a['rides_7d']++; }
         } catch (Exception $e) { /* no rides table */ }
     }
     unset($a);

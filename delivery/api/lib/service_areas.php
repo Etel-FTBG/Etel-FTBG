@@ -132,8 +132,8 @@ function etel_area_check_trip($pdo, $plat, $plng, $dlat, $dlng) {
     if (!$p['ok'] || !$p['area']) return $p;
     if (!floatval($dlat) && !floatval($dlng)) return $p;
     $a = $p['area'];
-    if (!etel_area_contains($a, $dlat, $dlng)) {
-        $other = etel_area_for_point($pdo, $dlat, $dlng);
+    $other = etel_area_for_point($pdo, $dlat, $dlng);
+    if (!$other || $other['code'] !== $a['code']) {
         $p['ok'] = false; $p['reason'] = $other ? 'CROSS_AREA' : 'DROPOFF_OUTSIDE';
         $p['message'] = $other
             ? 'Your pickup is in ' . $a['name'] . ', so the drop-off must also be in ' . $a['name'] . '. Please choose a place in ' . $a['name'] . '.'
@@ -146,11 +146,19 @@ function etel_area_check_trip($pdo, $plat, $plng, $dlat, $dlng) {
 
 /* WHERE-part limiting service givers (alias $alias) to one area: coordinates inside the circle, or - when the shop has no coordinates - its city text.
    Returns array(sql starting with " AND (", params). */
-function etel_area_shop_where($area, $have_cols, $alias = 'sg') {
+function etel_area_shop_where($area, $have_cols, $alias = 'sg', $others = array()) {
     $parts = array(); $params = array();
     if (in_array('lat', $have_cols, true) && in_array('lng', $have_cols, true)) {
-        $parts[] = "($alias.lat IS NOT NULL AND $alias.lng IS NOT NULL AND (6371 * ACOS(LEAST(1, GREATEST(-1, COS(RADIANS(?)) * COS(RADIANS($alias.lat)) * COS(RADIANS($alias.lng) - RADIANS(?)) + SIN(RADIANS(?)) * SIN(RADIANS($alias.lat)))))) <= ?)";
+        // inside this city's circle AND no other city's centre is nearer (circles may overlap; the nearest centre wins, as for a person's own position)
+        $dist = "(6371 * ACOS(LEAST(1, GREATEST(-1, COS(RADIANS(?)) * COS(RADIANS($alias.lat)) * COS(RADIANS($alias.lng) - RADIANS(?)) + SIN(RADIANS(?)) * SIN(RADIANS($alias.lat))))))";
+        $cond = "$alias.lat IS NOT NULL AND $alias.lng IS NOT NULL AND $dist <= ?";
         array_push($params, $area['lat'], $area['lng'], $area['lat'], $area['radius_km']);
+        foreach ($others as $o) {
+            if ($o['code'] === $area['code']) continue;
+            $cond .= " AND $dist <= $dist";
+            array_push($params, $area['lat'], $area['lng'], $area['lat'], $o['lat'], $o['lng'], $o['lat']);
+        }
+        $parts[] = "($cond)";
         $noCoord = "($alias.lat IS NULL OR $alias.lng IS NULL OR ($alias.lat = 0 AND $alias.lng = 0))";
     } else { $noCoord = '1 = 1'; }
     if (in_array('city', $have_cols, true)) {

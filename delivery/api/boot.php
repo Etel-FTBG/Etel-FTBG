@@ -1840,7 +1840,7 @@ switch ($action) {
                         $reqArea = etel_area_for_point($pdo, $alat, $alng);
                         if (!$reqArea) { $chk = etel_area_check_point($pdo, $alat, $alng, 'location'); ok(array('items' => array(), 'count' => 0, 'outside_area' => true, 'message' => $chk['message'], 'message_am' => $chk['message_am'])); }
                     }
-                    if ($reqArea) { $aw = etel_area_shop_where($reqArea, $sc, 'sg'); if ($aw[0] !== '') { $w .= $aw[0]; $p = array_merge($p, $aw[1]); } $areaOut = $reqArea['code']; }
+                    if ($reqArea) { $aw = etel_area_shop_where($reqArea, $sc, 'sg', etel_areas_list($pdo, true)); if ($aw[0] !== '') { $w .= $aw[0]; $p = array_merge($p, $aw[1]); } $areaOut = $reqArea['code']; }
                 }
             } catch (PDOException $e) { /* the area check never blocks the menu */ }
             $x_stock = $co('i', array('stock_quantity', 'stock_qty'), $ic, '100');
