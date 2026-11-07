@@ -40,10 +40,10 @@ window.addEventListener('storage', function (e) { if (e.key === K.theme && (e.ne
 function themeBtn() { var d = themeNow() === 'dark'; return '<button class="tsw" role="switch" aria-checked="' + d + '" data-act="theme" aria-label="' + esc(t('theme.dark')) + '">' + ic(d ? 'moon' : 'sun') + '</button>'; }
 function loadLang() {
   var l = ls(K.lang) || ls(K.alang); S.lang = (l === 'en' || l === 'am') ? l : 'am';
-  var get = function (c) { return fetch('lang/' + c + '.json').then(function (r) { return r.json(); }); };
+  var get = function (c) { return fetch('lang/' + c + '.json?v=2').then(function (r) { return r.json(); }); };
   return Promise.all([get(S.lang), get('en')]).then(function (r) { S.dict = r[0]; S.fall = r[1]; document.documentElement.lang = S.lang; });
 }
-function setLang(l) { S.lang = l; ls(K.lang, l); ls(K.alang, l); return fetch('lang/' + l + '.json').then(function (r) { return r.json(); }).then(function (d) { S.dict = d; document.documentElement.lang = l; render(); }); }
+function setLang(l) { S.lang = l; ls(K.lang, l); ls(K.alang, l); return fetch('lang/' + l + '.json?v=2').then(function (r) { return r.json(); }).then(function (d) { S.dict = d; document.documentElement.lang = l; render(); }); }
 
 /* ---------- views ---------- */
 function topbar(back) {
