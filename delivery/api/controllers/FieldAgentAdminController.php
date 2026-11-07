@@ -230,7 +230,7 @@ case 'admin_fa_earnings_list': {
     $off = max(0, intval(isset($body['offset']) ? $body['offset'] : 0));
     $q = $pdo->prepare("SELECT e.id, e.referral_id, e.agent_id, e.kind, e.amount, e.status, e.reason_code, e.reason_note, e.earned_at, e.payable_at, e.risk_score, e.risk_reasons, e.ride_id,
                                a.full_name AS agent_name, a.venue_name, a.tier, u.phone AS rider_phone, rr.driver_id
-                        FROM fa_earnings e JOIN fa_agents a ON a.id = e.agent_id JOIN fa_referrals rr ON rr.id = e.referral_id LEFT JOIN users u ON u.id = rr.rider_user_id
+                        FROM fa_earnings e JOIN fa_agents a ON a.id = e.agent_id LEFT JOIN fa_referrals rr ON rr.id = e.referral_id AND e.referral_id > 0 LEFT JOIN users u ON u.id = rr.rider_user_id
                         WHERE " . implode(' AND ', $w) . " ORDER BY (e.status = 'held') DESC, e.risk_score DESC, e.id DESC LIMIT $lim OFFSET $off");
     $q->execute($p);
     $rows = $q->fetchAll(PDO::FETCH_ASSOC);

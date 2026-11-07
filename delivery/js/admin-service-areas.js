@@ -20,7 +20,7 @@ function css() {
   var s = document.createElement('style'); s.id = 'sa-css';
   s.textContent = [
     '.sa-hero{display:flex;gap:14px;align-items:center;justify-content:space-between;flex-wrap:wrap;padding:18px;border-radius:18px;margin:0 0 14px;color:#f6e7b0;background:linear-gradient(135deg,#0b1a33,#13294d 60%,#1b3563);border:1px solid rgba(201,162,39,.5)}',
-    '.sa-hero h2{margin:0 0 4px;font-size:19px;color:#f6e7b0}.sa-hero p{margin:0;font-size:13px;color:#c9d3e8;max-width:56ch}',
+    '.sa-hero h2{margin:0 0 4px;font-size:19px;color:#f6e7b0!important;-webkit-text-fill-color:#f6e7b0!important;background:none!important}.sa-hero p{margin:0;font-size:13px;color:#c9d3e8!important;-webkit-text-fill-color:#c9d3e8!important;max-width:56ch}',
     '.sa-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}',
     '.sa-card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:10px}',
     '.sa-card.off{opacity:.65}.sa-card h3{margin:0;font-size:17px}.sa-card .am{font-size:13px;color:var(--mute)}',

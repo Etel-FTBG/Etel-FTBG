@@ -163,6 +163,25 @@ case 'admin_fa_partners_list': {
     break;
 }
 
+case 'admin_fa_partners_stats': {
+    $pdo = db(); require_admin($pdo, 'agents.view');
+    $counts = array('draft' => 0, 'submitted' => 0, 'changes' => 0, 'approved' => 0, 'rejected' => 0);
+    foreach ($pdo->query('SELECT status, COUNT(*) n FROM fa_partners GROUP BY status')->fetchAll(PDO::FETCH_ASSOC) as $c) $counts[$c['status']] = intval($c['n']);
+    $m = $pdo->query("SELECT COALESCE(SUM(status = 'approved'), 0) AS ok, COALESCE(SUM(status = 'rejected'), 0) AS bad, COALESCE(SUM(CASE WHEN status = 'approved' THEN fee_amount ELSE 0 END), 0) AS fees
+                      FROM fa_partners WHERE decided_at >= DATE_FORMAT(NOW(), '%Y-%m-01')")->fetch(PDO::FETCH_ASSOC);
+    $byKind = array();
+    foreach ($pdo->query("SELECT kind, COUNT(*) AS n FROM fa_partners WHERE status = 'approved' GROUP BY kind")->fetchAll(PDO::FETCH_ASSOC) as $k) $byKind[$k['kind']] = intval($k['n']);
+    $oldest = $pdo->query("SELECT TIMESTAMPDIFF(HOUR, MIN(submitted_at), NOW()) FROM fa_partners WHERE status = 'submitted'")->fetchColumn();
+    $top = $pdo->query("SELECT a.id, a.full_name, a.code, a.tier, COUNT(*) AS sent, SUM(p.status = 'approved') AS approved, SUM(p.status = 'rejected') AS rejected,
+                               COALESCE(SUM(CASE WHEN p.status = 'approved' THEN p.fee_amount ELSE 0 END), 0) AS fees, ROUND(AVG(p.risk_score)) AS avg_risk
+                        FROM fa_partners p JOIN fa_agents a ON a.id = p.agent_id WHERE p.status <> 'draft' AND p.submitted_at >= DATE_SUB(NOW(), INTERVAL 90 DAY)
+                        GROUP BY a.id, a.full_name, a.code, a.tier ORDER BY approved DESC, sent DESC LIMIT 20")->fetchAll(PDO::FETCH_ASSOC);
+    foreach ($top as &$t) { $t['sent'] = intval($t['sent']); $t['approved'] = intval($t['approved']); $t['rejected'] = intval($t['rejected']); $t['fees'] = floatval($t['fees']); $t['avg_risk'] = intval($t['avg_risk']); } unset($t);
+    ok(array('counts' => $counts, 'month' => array('approved' => intval($m['ok']), 'rejected' => intval($m['bad']), 'fees' => floatval($m['fees'])), 'by_kind' => $byKind,
+        'oldest_waiting_hours' => $oldest === null ? null : intval($oldest), 'agents' => $top));
+    break;
+}
+
 case 'admin_fa_partner_get': {
     $pdo = db(); require_admin($pdo, 'agents.view');
     $q = $pdo->prepare('SELECT p.*, a.full_name AS agent_name, a.code AS agent_code, a.phone AS agent_phone, a.tier AS agent_tier FROM fa_partners p JOIN fa_agents a ON a.id = p.agent_id WHERE p.id = ?');
