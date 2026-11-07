@@ -271,10 +271,10 @@ function stopPoll() { if (pollTimer) { clearInterval(pollTimer); pollTimer = nul
 
 /* ---------- shell ---------- */
 function register(key, def) { SCREENS[key] = def; if (ORDER.indexOf(key) === -1) ORDER.push(key); }
-var TAB_ORDER = ['dashboard', 'agents', 'referrals', 'fraud', 'payouts', 'reports', 'insights', 'messages', 'settings', 'audit'];
-var TAB_LABEL = { dashboard: 'Dashboard', agents: 'Agents', referrals: 'Referrals', fraud: 'Fraud queue', payouts: 'Payouts', reports: 'Reports', insights: 'Insights', messages: 'Messages', settings: 'Settings', audit: 'Audit log' };
-var TAB_ICON = { dashboard: '📊', agents: '🤝', referrals: '📲', fraud: '🛑', payouts: '💸', reports: '📈', insights: '💡', messages: '✉️', settings: '⚙️', audit: '🧾' };
-var TAB_CAP = { dashboard: 'agents.view', agents: 'agents.view', referrals: 'agents.view', fraud: 'agents.view', payouts: 'agents.view', reports: 'agents.view', insights: 'agents.view', messages: 'agents.view', settings: 'agents.view', audit: 'agents.view' };
+var TAB_ORDER = ['dashboard', 'agents', 'referrals', 'fraud', 'payouts', 'reports', 'insights', 'partners', 'messages', 'settings', 'audit'];
+var TAB_LABEL = { dashboard: 'Dashboard', agents: 'Agents', referrals: 'Referrals', fraud: 'Fraud queue', payouts: 'Payouts', reports: 'Reports', insights: 'Insights', partners: 'Partners', messages: 'Messages', settings: 'Settings', audit: 'Audit log' };
+var TAB_ICON = { dashboard: '📊', agents: '🤝', referrals: '📲', fraud: '🛑', payouts: '💸', reports: '📈', insights: '💡', partners: '🧩', messages: '✉️', settings: '⚙️', audit: '🧾' };
+var TAB_CAP = { dashboard: 'agents.view', agents: 'agents.view', referrals: 'agents.view', fraud: 'agents.view', payouts: 'agents.view', reports: 'agents.view', insights: 'agents.view', partners: 'agents.view', messages: 'agents.view', settings: 'agents.view', audit: 'agents.view' };
 
 function tabs() {
   var list = TAB_ORDER.filter(function (k) { return k === 'dashboard' || SCREENS[k]; });

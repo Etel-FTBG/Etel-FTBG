@@ -1785,7 +1785,7 @@ switch ($action) {
     case 'admin_fa_settings_get': case 'admin_fa_settings_save': case 'admin_fa_agents_list': case 'admin_fa_agent_get': case 'admin_fa_agent_decide': case 'admin_fa_customer_message': case 'admin_fa_sms_test': case 'admin_fa_sms_templates_get': case 'admin_fa_sms_template_save': case 'admin_fa_sms_mode_save': case 'admin_fa_earnings_list': case 'admin_fa_earning_decide': case 'admin_fa_run_earnings': case 'admin_fa_stats': case 'admin_fa_payouts_list': case 'admin_fa_payout_create': case 'admin_fa_payout_export': case 'admin_fa_payout_mark_paid': case 'admin_fa_payout_cancel': case 'admin_fa_audit_list': case 'admin_fa_reports': case 'admin_fa_payout_items':
         require __DIR__ . '/controllers/FieldAgentAdminController.php';
         break;
-    case 'fa_partner_list': case 'fa_partner_get': case 'fa_partner_save': case 'fa_partner_submit': case 'fa_partner_delete': case 'admin_fa_partners_list': case 'admin_fa_partner_get': case 'admin_fa_partner_decide':
+    case 'fa_partner_list': case 'fa_partner_get': case 'fa_partner_save': case 'fa_partner_submit': case 'fa_partner_delete': case 'admin_fa_partners_list': case 'admin_fa_partners_stats': case 'admin_fa_partner_get': case 'admin_fa_partner_decide':
         require __DIR__ . '/controllers/FieldAgentPartnerController.php';
         break;
     case 'fa_agent_vehicles': case 'fa_agent_quote': case 'fa_agent_book_ride': case 'fa_agent_bookings':

@@ -150,6 +150,18 @@ $r = calla('fa_partner_save', array('kind' => 'courier', 'name' => 'Third', 'pho
 $r = calla('fa_partner_submit', array('id' => $a3), $AU3); t('the daily limit stops a third submission', !$r->ok && $r->code2 == 429 && $r->data['reason'] === 'DAILY_CAP', $r->getMessage());
 $r = calla('fa_partner_delete', array('id' => $a3), $AU3); t('a draft can be deleted', $r->ok);
 
+// ---- the owner's numbers ----
+$r = calla('admin_fa_partners_stats', array(), $ADMIN);
+t('stats: waiting, approved and fees this month', $r->ok && $r->data['counts']['approved'] === 3 && $r->data['month']['approved'] === 3 && $r->data['month']['fees'] == 250 && $r->data['month']['rejected'] === 1, json_encode($r->data));
+$byAgent = array(); foreach ($r->data['agents'] as $ag) $byAgent[$ag['code']] = $ag;
+t('stats: the leaderboard counts each agent', count($r->data['agents']) === 2 && max(array_map(function ($x) { return $x['approved']; }, $r->data['agents'])) === 3, json_encode($r->data['agents']));
+t('stats: by kind', $r->data['by_kind']['courier'] == 1 && $r->data['by_kind']['driver'] == 1 && $r->data['by_kind']['shop'] == 1);
+$r = calla('admin_fa_partners_stats', array(), $AU); t('an agent cannot read the owner numbers', !$r->ok && $r->code2 == 403);
+// the owner's earnings list must still show a partner fee (no referral behind it)
+$_GET = array(); $body = array('status' => 'payable'); $action = 'admin_fa_earnings_list';
+$r = (function () use ($API, $ADMIN) { $GLOBALS['CUR'] = $ADMIN; global $PDO; $action = 'admin_fa_earnings_list'; $body = array('status' => 'payable'); try { require $API . '/controllers/FieldAgentAdminController.php'; } catch (Resp $x) { return $x; } })();
+t('the owner earnings list shows partner fees too', $r && $r->ok && count($r->data['earnings']) >= 3, $r ? json_encode(array_slice($r->data['earnings'], 0, 1)) . $r->getMessage() : 'none');
+
 // ---- the switch ----
 $PDO->exec("UPDATE fa_settings SET setting_value='0' WHERE setting_key='partners_enabled'"); fa_settings($PDO, true);
 $r = calla('fa_partner_list', array(), $AU); t('the owner can switch partners off', !$r->ok && $r->data['reason'] === 'PARTNERS_OFF');
