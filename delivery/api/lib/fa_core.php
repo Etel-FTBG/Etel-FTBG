@@ -257,30 +257,17 @@ function fa_reason_text($code) {
 }
 
 if (!function_exists('fa_customer_message')) {
+require_once __DIR__ . '/sms_send.php';
 /* Text a customer an agent booked for. kind: welcome (sent automatically to a NEW customer), reset (set your password), verify (complete your profile).
    Returns 'sent', 'failed' or 'off' (no SMS service set up). Never throws. ASCII only. */
 function fa_customer_message($phone, $kind) {
-    try {
-        $key = function_exists('etel_env') ? etel_env('AT_API_KEY', 'CFG_AT_API_KEY', '') : '';
-        if (!$key || $key === 'your_at_api_key' || !function_exists('curl_init')) return 'off';
-        $user = etel_env('AT_USERNAME', 'CFG_AT_USERNAME', 'sandbox');
-        $d = preg_replace('/\D/', '', (string)$phone);
-        if (strlen($d) < 9) return 'failed';
-        $to = '+251' . substr($d, -9);
-        $url = 'ethelmarket.com/delivery/ride/';
-        $texts = array(
-            'welcome' => 'ETEL Ride: an Etel agent booked a ride for you. The driver will call you; you can pay the driver in cash. To follow your ride or pay with EtelPay, open ' . $url . ', tap Forgot password and choose your password, then complete your profile to fully verify your account.',
-            'reset'   => 'ETEL Ride: to follow your rides or pay with EtelPay, open ' . $url . ', tap Forgot password and choose your password.',
-            'verify'  => 'ETEL Ride: please sign in at ' . $url . ' and complete your profile (name and phone) so your account is fully verified.',
-        );
-        if (!isset($texts[$kind])) return 'failed';
-        $ch = curl_init('https://api.africastalking.com/version1/messaging');
-        curl_setopt_array($ch, array(CURLOPT_RETURNTRANSFER => true, CURLOPT_POST => true, CURLOPT_TIMEOUT => 6,
-            CURLOPT_HTTPHEADER => array('apiKey: ' . $key, 'Accept: application/json', 'Content-Type: application/x-www-form-urlencoded'),
-            CURLOPT_POSTFIELDS => http_build_query(array('username' => $user, 'to' => $to, 'message' => $texts[$kind], 'from' => 'ETEL'))));
-        $resp = curl_exec($ch); curl_close($ch);
-        $j = $resp ? @json_decode($resp, true) : null;
-        return ($j && isset($j['SMSMessageData']['Recipients'][0]['status']) && $j['SMSMessageData']['Recipients'][0]['status'] === 'Success') ? 'sent' : 'failed';
-    } catch (Exception $e) { return 'failed'; }
+    $url = 'ethelmarket.com/delivery/ride/';
+    $texts = array(
+        'welcome' => 'ETEL Ride: an Etel agent booked a ride for you. The driver will call you; you can pay the driver in cash. To follow your ride or pay with EtelPay, open ' . $url . ', tap Forgot password and choose your password, then complete your profile to fully verify your account.',
+        'reset'   => 'ETEL Ride: to follow your rides or pay with EtelPay, open ' . $url . ', tap Forgot password and choose your password.',
+        'verify'  => 'ETEL Ride: please sign in at ' . $url . ' and complete your profile (name and phone) so your account is fully verified.',
+    );
+    if (!isset($texts[$kind])) return 'failed';
+    return etel_sms_send($phone, $texts[$kind]);
 }
 }
