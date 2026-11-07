@@ -63,6 +63,18 @@ t('shashemene shops = 2,4', $q->fetchColumn() === '2,4', $q->fetchColumn());
 t('shop area by coords', etel_area_of_shop($PDO, 7.2, 38.59, 'Hawassa')['code'] === 'shashemene');
 t('shop area by city text', etel_area_of_shop($PDO, 0, 0, 'Hawassa')['code'] === 'hawassa');
 
+// overlapping circles (radius 50 km each, as on the live site): the nearest centre wins; shop coordinates beat a wrong city text
+$PDO->exec("UPDATE service_areas SET radius_km = 50");
+$PDO->exec("INSERT INTO sgt VALUES (7,7.0397553,38.4828616,'Addis Ababa')");
+foreach (array('hawassa' => '1,3,6,7', 'shashemene' => '2,4') as $code => $want) {
+    list($sql, $par) = etel_area_shop_where(etel_area_by_code($PDO, $code), $sc, 'sgt', etel_areas_list($PDO, true));
+    $q = $PDO->prepare("SELECT GROUP_CONCAT(id ORDER BY id) FROM sgt sgt WHERE 1=1 $sql"); $q->execute($par); $got = $q->fetchColumn();
+    t("overlap: $code shops = $want", $got === $want, $got);
+}
+$c = etel_area_check_trip($PDO, $HAW[0], $HAW[1], $SHA[0], $SHA[1]);
+t('overlap: hawassa->shashemene still refused', !$c['ok'] && $c['reason'] === 'CROSS_AREA');
+$PDO->exec("UPDATE service_areas SET radius_km = 12 WHERE code='hawassa'"); $PDO->exec("UPDATE service_areas SET radius_km = 10 WHERE code='shashemene'");
+
 // enforcement switch
 $ADM = array('id' => 1, 'name' => 'A', 'phone' => '0900000000', 'is_admin' => true);
 $r = calla('admin_areas_settings_save', array('enforce' => false), $ADM);

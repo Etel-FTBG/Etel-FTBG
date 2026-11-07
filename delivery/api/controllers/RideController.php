@@ -1122,7 +1122,7 @@ case 'passenger_get_nearby_drivers': {
     $s->execute($params);
     $out = array();
     foreach ($s->fetchAll() as $r) {
-        if ($nearArea && !etel_area_contains($nearArea, $r['lat'], $r['lng'])) continue;
+        if ($nearArea) { $ra = etel_area_for_point($pdo, $r['lat'], $r['lng']); if (!$ra || $ra['code'] !== $nearArea['code']) continue; }
         // Exact distance check - the hex pre-filter above can include
         // a few extra candidates near its bounding-box corners (see
         // hexgrid_radius_where's docblock), so this is what actually
@@ -3433,7 +3433,7 @@ case 'driver_get_nearby_requests': {
     if ($areasOn && $me && $me['lat'] !== null && $me['lng'] !== null) { $myArea = etel_area_for_point($pdo, $me['lat'], $me['lng']); if (!$myArea) $rows = array(); }
     $out = array();
     foreach ($rows as $r) {
-        if ($myArea && $r['pickup_lat'] !== null && !etel_area_contains($myArea, $r['pickup_lat'], $r['pickup_lng'])) continue;
+        if ($myArea && $r['pickup_lat'] !== null) { $ra = etel_area_for_point($pdo, $r['pickup_lat'], $r['pickup_lng']); if (!$ra || $ra['code'] !== $myArea['code']) continue; }
         $dist = null;
         if ($me && $me['lat'] !== null && $r['pickup_lat'] !== null) {
             if ($myHexQ !== null) {
