@@ -32,6 +32,8 @@ jobs:
         run: php EtelId/tests/profile_phone_unit.php
       - name: Phone number verification (code by SMS or WhatsApp; unverified members cannot sign in to other apps)
         run: php EtelId/tests/phone_verify_unit.php
+      - name: Reset and verification codes by SMS through SMSEthiopia (local mock of the service)
+        run: php EtelId/tests/sms_provider_unit.php
 
   etelerp:
     runs-on: ubuntu-latest

@@ -369,10 +369,18 @@ body::before{
             <input type="radio" name="rp-channel" value="whatsapp" disabled>
             <i class="ti ti-brand-whatsapp"></i> WhatsApp <span class="af-soon">Coming soon 🔜</span>
           </label>
+          <?php $rp_sms_on = class_exists( 'EtelID_Phone_Verify' ) && in_array( 'sms', EtelID_Phone_Verify::channels(), true ); ?>
+          <?php if ( $rp_sms_on ) : ?>
+          <label class="af-channel-pill" style="grid-column:1 / -1">
+            <input type="radio" name="rp-channel" value="sms" onchange="rpChannelChanged()">
+            <i class="ti ti-message"></i> SMS to my phone
+          </label>
+          <?php else : ?>
           <label class="af-channel-pill pill-disabled" style="grid-column:1 / -1">
             <input type="radio" name="rp-channel" value="sms" disabled>
             <i class="ti ti-message"></i> SMS <span class="af-soon">Coming soon 🔜</span>
           </label>
+          <?php endif; ?>
         </div>
         <span class="af-hint">"Any available" tries email first, then Telegram, then WhatsApp/SMS to your phone — pick one directly if you know which you'd rather use.</span>
       </div>
