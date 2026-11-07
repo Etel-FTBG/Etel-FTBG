@@ -194,7 +194,7 @@ function fa_digest_build($pdo) {
 function fa_digest_am($cur, $delta, $held, $names, $date) {
     $u = function ($s) { return json_decode('"' . $s . '"'); };
     $sg = function ($n) { return ($n > 0 ? '+' : '') . $n; };
-    return $u('\u12e8\u12a2\u1274\u120d \u12c8\u12aa\u120e\u127d - \u12e8\u1233\u121d\u1295\u1271 \u121b\u1320\u1243\u1208\u12eb \u12a5\u1235\u12a8 ') . $date . "\n" .
+    return $u('\u12e8\u12a2\u1275\u12a4\u120d \u12c8\u12aa\u120e\u127d - \u12e8\u1233\u121d\u1295\u1271 \u121b\u1320\u1243\u1208\u12eb \u12a5\u1235\u12a8 ') . $date . "\n" .
         $u('\u12a0\u12f2\u1235 \u1270\u1233\u134b\u122a\u12ce\u127d\u1366 ') . $cur['acquired'] . ' (' . $sg($delta['acquired']) . ")\n" .
         $u('\u1270\u12f0\u130b\u130b\u121a \u1270\u1233\u134b\u122a\u12ce\u127d\u1366 ') . $cur['repeaters'] . ' (' . $sg($delta['repeaters']) . ")\n" .
         $u('\u12c8\u132a\u1366 \u1265\u122d ') . $cur['cost'] . $u('\u1363 \u1208\u12a0\u1295\u12f5 \u1270\u1233\u134b\u122a \u1265\u122d ') . $cur['cost_per_rider'] . "\n" .

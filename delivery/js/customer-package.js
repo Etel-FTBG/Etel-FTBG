@@ -56,7 +56,7 @@
             pkg_notes: 'ለመልእክተኛው ማስታወሻ (አማራጭ)', pkg_ack: 'በዚህ ጥቅል ውስጥ የጦር መሣሪያ፣ አደንዛዥ ዕፅ፣ አልኮል፣ ሕያው እንስሳ፣ ጥሬ ገንዘብ ወይም አደገኛ ዕቃ የለም።',
             pkg_choose_vehicle: 'ተሽከርካሪ ይምረጡ', pkg_trip: 'ወደ {km} ኪ.ሜ · ወደ {min} ደቂቃ', pkg_up_to: 'እስከ {kg} ኪ.ግ',
             pkg_pay_title: 'እንዴት ይከፍላሉ?', pkg_pay_cash: 'ጥሬ ገንዘብ', pkg_pay_cash_sub: 'መልእክተኛው ሲወስድ ይክፈሉ',
-            pkg_pay_wallet: 'የኢቴል ፔይ ዋሌት', pkg_pay_wallet_sub: 'ከዋሌትዎ ይክፈሉ', pkg_pay_chapa: 'በኦንላይን ይክፈሉ', pkg_pay_chapa_sub: 'ቴሌብር፣ ንግድ ባንክ፣ ባንክ ወይም ካርድ (Chapa)',
+            pkg_pay_wallet: 'የኢትኤል ፔይ ዋሌት', pkg_pay_wallet_sub: 'ከዋሌትዎ ይክፈሉ', pkg_pay_chapa: 'በኦንላይን ይክፈሉ', pkg_pay_chapa_sub: 'ቴሌብር፣ ንግድ ባንክ፣ ባንክ ወይም ካርድ (Chapa)',
             pkg_summary: 'ማጠቃለያ', pkg_total: 'ጠቅላላ', pkg_next: 'ቀጥል', pkg_back: 'ተመለስ', pkg_book: 'ጥቅሉን ያስይዙ', pkg_booking: 'በማስያዝ ላይ…', pkg_loading: 'ዋጋ በማምጣት ላይ…',
             pkg_done_title: 'ጥቅሉ ተይዟል!', pkg_done_sub: 'የመረጡት ተሽከርካሪ ያለው መልእክተኛ ይወስደዋል።', pkg_track: 'ጥቅሉን ተከታተል', pkg_done_btn: 'ተጠናቀቀ',
             pkg_retry: 'እንደገና ሞክር', pkg_load_fail: 'መጫን አልተቻለም። የበይነመረብ ግንኙነትዎን ይፈትሹ።',

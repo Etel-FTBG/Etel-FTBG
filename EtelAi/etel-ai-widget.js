@@ -319,7 +319,7 @@
         <div id="etelai-head"><span id="etelai-head-logo">ኢE</span> ETEL AI <small>${_project}</small></div>
         <div id="etelai-msgs"></div>
         <div id="etelai-inputrow">
-          <input id="etelai-input" type="text" placeholder="Ask ETEL AI… / ኢቴል AI ይጠይቁ…">
+          <input id="etelai-input" type="text" placeholder="Ask ETEL AI… / ኢትኤል AI ይጠይቁ…">
           <button id="etelai-mic" title="Voice input">🎤</button>
           <button id="etelai-send">➤</button>
         </div>`;
@@ -380,7 +380,7 @@
         <h3>ETEL AI</h3>
         <div class="etelai-soon-tag">Coming Soon</div>
         <p>Your smart ETEL assistant is on the way. We are putting the finishing touches on it.</p>
-        <p lang="am">ብልሁ የኢቴል ረዳትዎ በቅርቡ ይመጣል።</p>`;
+        <p lang="am">ብልሁ የኢትኤል ረዳትዎ በቅርቡ ይመጣል።</p>`;
       document.body.appendChild(card);
     }
     card.classList.toggle('open');

@@ -60,7 +60,7 @@ function sup_notify_user_reply($pdo, $t) {
     if ($chat === '') return false;
     $link = 'https://ethelmarket.com/delivery/help/';
     $txt = ($t['lang'] === 'en') ? ('You have a reply from Etel Support (' . $t['ref'] . '). Open Help to read it: ' . $link)
-                                 : (sup_u('\u12a8\u12a2\u1274\u120d \u12f5\u130b\u134d \u1218\u120d\u1235 \u12a0\u1208\u12ce\u1275\u1362 \u1208\u121b\u1295\u1260\u1265 \u12a5\u1308\u12db \u1308\u1339\u1295 \u12ed\u12ad\u1348\u1271\u1366 ') . $link . ' (' . $t['ref'] . ')');
+                                 : (sup_u('\u12a8\u12a2\u1275\u12a4\u120d \u12f5\u130b\u134d \u1218\u120d\u1235 \u12a0\u1208\u12ce\u1275\u1362 \u1208\u121b\u1295\u1260\u1265 \u12a5\u1308\u12db \u1308\u1339\u1295 \u12ed\u12ad\u1348\u1271\u1366 ') . $link . ' (' . $t['ref'] . ')');
     return sup_tg_send($chat, $txt);
 }
 

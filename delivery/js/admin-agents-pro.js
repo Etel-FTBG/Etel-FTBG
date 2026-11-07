@@ -15,7 +15,7 @@ var LS = 'etel_agents_admin_lang';
 /* ---------- English -> Amharic (labels only; anything not listed stays English). Please have a native speaker review. ---------- */
 var AM = {
   'Dashboard': 'ዳሽቦርድ', 'Agents': 'ወኪሎች', 'Referrals': 'ሪፈራሎች', 'Fraud queue': 'የማጭበርበር ጥርጣሬ', 'Payouts': 'ክፍያዎች', 'Reports': 'ሪፖርቶች', 'Insights': 'ግንዛቤዎች', 'Agent booking': 'የወኪል ቦታ ማስያዝ', 'Settings': 'ቅንብሮች', 'Audit log': 'የኦዲት መዝገብ',
-  'Agents control centre': 'የወኪሎች መቆጣጠሪያ ማዕከል', 'Etel Ride referral programme': 'የኢቴል ራይድ የሪፈራል ፕሮግራም',
+  'Agents control centre': 'የወኪሎች መቆጣጠሪያ ማዕከል', 'Etel Ride referral programme': 'የኢትኤል ራይድ የሪፈራል ፕሮግራም',
   'Active agents': 'ንቁ ወኪሎች', 'Waiting for approval': 'ማረጋገጫ የሚጠብቁ', 'Riders acquired (30 days)': 'የተገኙ ተሳፋሪዎች (30 ቀን)', '30-day repeat rate': 'የ30 ቀን ተደጋጋሚ መጠን',
   'Cost per rider': 'በአንድ ተሳፋሪ ወጪ', 'Ready to pay': 'ለክፍያ ዝግጁ', 'On hold': 'በመያዣ ላይ', 'Needs a decision': 'ውሳኔ የሚፈልጉ', 'High risk': 'ከፍተኛ ስጋት',
   'Live referral feed': 'የቀጥታ ሪፈራል ዝርዝር', 'Budget and projection': 'በጀት እና ትንበያ', 'Referrals and repeat riders': 'ሪፈራሎች እና ተደጋጋሚ ተሳፋሪዎች', 'New riders': 'አዲስ ተሳፋሪዎች', 'Repeat riders': 'ተደጋጋሚ ተሳፋሪዎች',
