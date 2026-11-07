@@ -6,6 +6,8 @@ These are the scripts used to verify the Agents programme (Phases 1-4). They are
 |---|---|
 | `backend_phase1_3.php` | 88 checks: settings validation, apply/approve, claim, risk, earnings job, holds, caps, clawback, payouts, audit chain, reports |
 | `backend_phase4.php` | 53 checks: tiers, tier progress, insights, nudges + cooldown, near-cap and budget alerts, shared-identity risk, weekly digest, EtelAI hook stays off |
+| `backend_booking.php` | 45 checks: agent-assisted booking: who may book, vehicle list and quote, own/payout number refused, new customer account + ride + automatic link, rode-before and already-linked customers (booked, no bonus), cash counts + review hold, device signals skipped, sequential phones, daily cap, bookings list |
+| `ui_agent_booking.js` | Portal "Book a ride": vehicle tiles, fares, confirm sheet, success card, list, plain error messages, Amharic, 320 px, light and dark, contrast |
 | `ui_admin_insights.js` | Admin Agents > Insights tab, light/dark switch, Amharic, 390 px and 1360 px |
 | `ui_portal_theme.js` | Portal light/dark, shared `theme` key, tap target, WCAG AA contrast in both themes, tier card, messages, 320 px |
 

@@ -14,7 +14,7 @@ var LS = 'etel_agents_admin_lang';
 
 /* ---------- English -> Amharic (labels only; anything not listed stays English). Please have a native speaker review. ---------- */
 var AM = {
-  'Dashboard': 'ዳሽቦርድ', 'Agents': 'ወኪሎች', 'Referrals': 'ሪፈራሎች', 'Fraud queue': 'የማጭበርበር ጥርጣሬ', 'Payouts': 'ክፍያዎች', 'Reports': 'ሪፖርቶች', 'Insights': 'ግንዛቤዎች', 'Settings': 'ቅንብሮች', 'Audit log': 'የኦዲት መዝገብ',
+  'Dashboard': 'ዳሽቦርድ', 'Agents': 'ወኪሎች', 'Referrals': 'ሪፈራሎች', 'Fraud queue': 'የማጭበርበር ጥርጣሬ', 'Payouts': 'ክፍያዎች', 'Reports': 'ሪፖርቶች', 'Insights': 'ግንዛቤዎች', 'Agent booking': 'የወኪል ቦታ ማስያዝ', 'Settings': 'ቅንብሮች', 'Audit log': 'የኦዲት መዝገብ',
   'Agents control centre': 'የወኪሎች መቆጣጠሪያ ማዕከል', 'Etel Ride referral programme': 'የኢቴል ራይድ የሪፈራል ፕሮግራም',
   'Active agents': 'ንቁ ወኪሎች', 'Waiting for approval': 'ማረጋገጫ የሚጠብቁ', 'Riders acquired (30 days)': 'የተገኙ ተሳፋሪዎች (30 ቀን)', '30-day repeat rate': 'የ30 ቀን ተደጋጋሚ መጠን',
   'Cost per rider': 'በአንድ ተሳፋሪ ወጪ', 'Ready to pay': 'ለክፍያ ዝግጁ', 'On hold': 'በመያዣ ላይ', 'Needs a decision': 'ውሳኔ የሚፈልጉ', 'High risk': 'ከፍተኛ ስጋት',
@@ -161,7 +161,7 @@ function barRows(items, valueKey, labelKey, fmt) {
 
 /* ---------- feed ---------- */
 var FEED = {
-  agent_applied: ['🆕', 'New agent application'], tier_changed: ['🏅', 'An agent moved to a new tier'], nudge_sent: ['💬', 'A reminder was sent to an agent'], digest_created: ['🗞️', 'Weekly digest created'], tiers_recomputed: ['🏅', 'Tiers recalculated by an admin'], agent_approved: ['✅', 'Agent approved'], agent_rejected: ['⛔', 'Agent rejected'], agent_suspended: ['⏸️', 'Agent suspended'], agent_reinstated: ['▶️', 'Agent reinstated'],
+  agent_applied: ['🆕', 'New agent application'], tier_changed: ['🏅', 'An agent moved to a new tier'], agent_booking_created: ['🚕', 'An agent booked a ride for a customer'], nudge_sent: ['💬', 'A reminder was sent to an agent'], digest_created: ['🗞️', 'Weekly digest created'], tiers_recomputed: ['🏅', 'Tiers recalculated by an admin'], agent_approved: ['✅', 'Agent approved'], agent_rejected: ['⛔', 'Agent rejected'], agent_suspended: ['⏸️', 'Agent suspended'], agent_reinstated: ['▶️', 'Agent reinstated'],
   age_manually_verified: ['🪪', 'Age checked by an admin'], referral_claimed: ['📲', 'A rider used an agent code'], claim_blocked_self: ['🚫', 'A self-referral attempt was blocked'],
   earning_pending: ['⏳', 'Bonus earned, on hold'], earning_held: ['🛑', 'Bonus held for review'], earning_rejected: ['❌', 'Referral rejected'], earning_payable: ['💰', 'Bonus ready to pay'],
   earning_release: ['✅', 'Held bonus released by an admin'], earning_reject: ['❌', 'Bonus rejected by an admin'], earning_clawed_back: ['↩️', 'Bonus reversed (trip cancelled or refunded)'], clawback_created: ['↩️', 'Adjustment for a paid bonus'],

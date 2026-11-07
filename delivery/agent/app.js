@@ -6,7 +6,7 @@
 var API = new URL('../api/boot.php', location.href).pathname;
 var K = { theme: 'theme', tok: 'etel_token', user: 'etel_user', lang: 'etel_agent_lang', me: 'etel_agent_me', photo: 'etel_agent_photo', dev: 'etel_dev' };
 var SUPPORT = { telegram: 'https://t.me/etelsupport', email: 'support@ethelmarket.com' };
-var ROUTES = ['home', 'code', 'badge', 'card', 'refs', 'pay', 'me', 'rules', 'support'];
+var ROUTES = ['home', 'code', 'badge', 'card', 'refs', 'pay', 'me', 'rules', 'support', 'book'];
 var S = { lang: 'am', dict: {}, fall: {}, me: null, view: 'boot', data: {}, offline: false, err: '', need2fa: false, installEv: null, sheet: null };
 
 function ls(k, v) { try { if (v === undefined) return localStorage.getItem(k); if (v === null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch (e) { /* private window: not remembered */ } return null; }
@@ -86,6 +86,7 @@ function settle() {
 }
 function loadView() {
   var v = S.view;
+  if (v === 'book' && window.ETELBook && window.ETELBook.open) window.ETELBook.open();
   if (v === 'refs' && !S.data.refs) api('fa_agent_referrals').then(function (r) { S.data.refs = r.ok ? r.data.referrals : (r.net ? [] : null); S.data.refsErr = !r.ok && !r.net; if (S.view === 'refs') render(); });
   if (v === 'pay' && !S.data.pays) api('fa_agent_payouts').then(function (r) { S.data.pays = r.ok ? r.data.payouts : (r.net ? [] : null); S.data.paysErr = !r.ok && !r.net; if (S.view === 'pay') render(); });
 }
@@ -103,7 +104,7 @@ function topbar(back) {
 }
 function navbar() {
   var items = [['home', 'home', 'nav.home'], ['code', 'qr', 'nav.code'], ['refs', 'users', 'nav.refs'], ['pay', 'wallet', 'nav.pay'], ['me', 'user', 'nav.me']];
-  var cur = S.view === 'badge' || S.view === 'card' ? 'code' : (S.view === 'rules' || S.view === 'support' ? 'me' : S.view);
+  var cur = S.view === 'badge' || S.view === 'card' || S.view === 'book' ? 'code' : (S.view === 'rules' || S.view === 'support' ? 'me' : S.view);
   return '<nav class="nav noprint" aria-label="Menu">' + items.map(function (i) { return '<a href="#/' + i[0] + '"' + (cur === i[0] ? ' aria-current="page"' : '') + '>' + ic(i[1]) + '<span>' + esc(t(i[2])) + '</span></a>'; }).join('') + '</nav>';
 }
 function shell(inner) { return '<div class="app">' + topbar() + (S.offline ? '<div class="banner" role="status">' + esc(t('c.offline')) + '</div>' : '') + inner + '</div>' + navbar(); }
@@ -163,6 +164,7 @@ function vHome() {
     '<p class="sub" style="margin-top:12px">' + esc(t('home.pending_hint', { d: r.hold_days })) + '</p>' + (b.available < 0 ? '<p class="banner">' + esc(t('home.owed', { x: fmt(-b.available) })) + '</p>' : '') + '</section>' +
     '<div class="nudge">' + ic('star') + '<span><b>' + esc(t('home.next')) + '</b><br>' + esc(p ? t('home.next_text', { n: p.trips, t: need, d: p.days_left }) : t('home.next_none', { t: need, d: r.repeat_days, b: fmt(r.bonus_repeat) })) + '</span></div>' +
     '<div class="grid2"><a class="btn primary" href="#/code">' + ic('qr') + esc(t('home.show_code')) + '</a><a class="btn" href="#/badge">' + ic('badge') + esc(t('home.my_badge')) + '</a></div>' +
+    '<a class="btn" href="#/book" style="margin-top:12px">' + ic('car') + esc(t('home.book')) + '</a>' +
     '<div style="margin-top:12px"><span class="chip gold">' + esc(t('tier.' + a.tier)) + '</span></div>' + tierCard(m.tier_progress);
   return shell(h);
 }
@@ -243,7 +245,20 @@ function vRules() {
 function vSupport() {
   return shell('<h1>' + esc(t('sup.title')) + '</h1><p class="sub">' + esc(t('sup.text')) + '</p><div class="stack" style="margin-top:16px"><a class="btn primary" href="../help/?app=agent">' + ic('chat') + esc(t('sup.ticket')) + '</a><a class="btn" href="' + SUPPORT.telegram + '" rel="noopener">' + ic('chat') + esc(t('sup.telegram')) + '</a><a class="btn" href="mailto:' + SUPPORT.email + '">' + ic('mail') + esc(t('sup.email')) + '</a></div><p class="sub" style="margin-top:16px">' + esc(t('sup.note')) + '</p>');
 }
-var VIEWS = { login: vLogin, limited: vLimited, fail: vFail, apply: vApply, wait: vWait, home: vHome, code: vCode, badge: vBadge, card: vCard, refs: vRefs, pay: vPay, me: vMe, rules: vRules, support: vSupport };
+/* "Book a ride for a customer": loaded on demand (book.js) so the first screen stays small. */
+function vBook() {
+  if (window.ETELBook) return window.ETELBook.view();
+  loadBook();
+  return shell('<div class="stack" style="margin-top:16px"><div class="skel" style="height:56px"></div><div class="skel" style="height:160px"></div></div>');
+}
+function loadBook() {
+  if (S.bookLoading) return; S.bookLoading = true;
+  var sc = document.createElement('script'); sc.src = 'book.js?v=1';
+  sc.onload = function () { S.bookLoading = false; if (S.view === 'book') { if (window.ETELBook.open) window.ETELBook.open(); render(); } };
+  sc.onerror = function () { S.bookLoading = false; toast(t('c.error')); };
+  document.body.appendChild(sc);
+}
+var VIEWS = { book: vBook, login: vLogin, limited: vLimited, fail: vFail, apply: vApply, wait: vWait, home: vHome, code: vCode, badge: vBadge, card: vCard, refs: vRefs, pay: vPay, me: vMe, rules: vRules, support: vSupport };
 
 function render() {
   var f = VIEWS[S.view];
@@ -328,6 +343,7 @@ document.addEventListener('click', function (e) {
   else if (act === 'retry') { S.data = {}; S.err = ''; if (S.view === 'fail' || S.view === 'wait') { S.view = 'boot'; render(); } loadMe(); }
   else if (act === 'signout') signOut();
   else if (act === 'bell') openSheet(); else if (act === 'closesheet') closeSheet();
+  else if (act.indexOf('bk-') === 0 && window.ETELBook) window.ETELBook.act(act, b);
   else if (act === 'copy') { var done = function () { toast(t('c.copied')); }; if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(a.code).then(done, done); else { var ta = document.createElement('textarea'); ta.value = a.code; document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); } catch (x) { /* manual */ } ta.remove(); done(); } }
   else if (act === 'share') { var text = t('code.share_text', { code: a.code, link: rideLink() }); if (navigator.share) navigator.share({ text: text }).catch(function () {}); else if (navigator.clipboard) navigator.clipboard.writeText(text).then(function () { toast(t('c.copied')); }); }
   else if (act === 'saveqr') { var c = document.createElement('canvas'); c.width = c.height = 800; var x2 = c.getContext('2d'); qrOn(x2, 0, 0, 800, 48); c.toBlob(function (bl) { saveBlob(bl, 'etel-qr-' + a.code + '.png'); }, 'image/png'); }
@@ -367,5 +383,6 @@ window.addEventListener('offline', function () { S.offline = true; if (S.me) ren
 window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); S.installEv = e; });
 if ('serviceWorker' in navigator) window.addEventListener('load', function () { navigator.serviceWorker.register('sw.js').catch(function () { /* works without it */ }); });
 
+window.ETELAP = { api: api, t: t, esc: esc, ic: ic, S: S, shell: shell, toast: toast, fmt: fmt, render: render, when: when, closeSheet: closeSheet };
 loadLang().then(function () { if (!ls(K.tok)) { S.view = 'login'; render(); } else loadMe(); }, function () { document.body.innerHTML = '<p style="padding:24px;color:#F5E6A3">Could not load. Please try again.</p>'; });
 })();

@@ -16,6 +16,17 @@ require_once __DIR__ . '/../lib/fa_payouts.php';
 require_once __DIR__ . '/../lib/fa_risk.php';
 
 if (!function_exists('fa_adm_limit')) {
+/* The agent's last 10 bookings for customers (phone masked), with the ride status. */
+function fa_adm_bookings($pdo, $agentId) {
+    try {
+        $q = $pdo->prepare('SELECT b.id, b.ride_id, b.vehicle_type, b.bonus_eligible, b.new_account, b.created_at, r.status AS ride_status, u.phone AS cust_phone FROM fa_bookings b LEFT JOIN rides r ON r.id = b.ride_id LEFT JOIN users u ON u.id = b.customer_user_id WHERE b.agent_id = ? ORDER BY b.id DESC LIMIT 10');
+        $q->execute(array(intval($agentId)));
+        $rows = $q->fetchAll(PDO::FETCH_ASSOC);
+        foreach ($rows as &$r) { $r['cust_phone'] = fa_mask_phone($r['cust_phone']); }
+        unset($r);
+        return $rows;
+    } catch (Exception $e) { return array(); }
+}
 function fa_adm_limit($v, $def, $max) { $n = intval($v); return ($n < 1) ? $def : min($n, $max); }
 function fa_adm_reason($body, $required) {
     $r = trim(isset($body['reason']) ? (string) $body['reason'] : '');
@@ -74,7 +85,7 @@ case 'admin_fa_agent_get': {
     unset($r);
     $au = $pdo->prepare("SELECT created_at, actor_type, actor_id, action, reason, detail FROM fa_audit_log WHERE (entity = 'agent' AND entity_id = ?) ORDER BY id DESC LIMIT 30");
     $au->execute(array($id));
-    ok(array('agent' => $a, 'referrals' => $refs, 'audit' => $au->fetchAll(PDO::FETCH_ASSOC), 'shared_with' => fa_agent_shared_identity($pdo, $a)));
+    ok(array('agent' => $a, 'referrals' => $refs, 'audit' => $au->fetchAll(PDO::FETCH_ASSOC), 'shared_with' => fa_agent_shared_identity($pdo, $a), 'bookings' => fa_adm_bookings($pdo, $id)));
     break;
 }
 
