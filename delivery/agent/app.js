@@ -270,7 +270,7 @@ function vPartners() {
 }
 function loadPartners() {
   if (S.partLoading) return; S.partLoading = true;
-  var sc = document.createElement('script'); sc.src = 'partners.js?v=1';
+  var sc = document.createElement('script'); sc.src = 'partners.js?v=2';
   sc.onload = function () { S.partLoading = false; if (S.view === 'partners') { if (window.ETELPartners.open) window.ETELPartners.open(); render(); } };
   sc.onerror = function () { S.partLoading = false; toast(t('c.error')); };
   document.body.appendChild(sc);

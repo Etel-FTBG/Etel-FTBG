@@ -288,6 +288,7 @@ case 'admin_fa_stats': {
         'programme_enabled' => !empty($S['program_enabled']),
         'agents_active' => intval($one("SELECT COUNT(*) FROM fa_agents WHERE status = 'approved'")),
         'agents_pending' => intval($one("SELECT COUNT(*) FROM fa_agents WHERE status = 'pending'")),
+        'partners_waiting' => (function ($pdo) { try { return intval($pdo->query("SELECT COUNT(*) FROM fa_partners WHERE status = 'submitted'")->fetchColumn()); } catch (Exception $e) { return 0; } })($pdo),
         'riders_acquired_30d' => $acquired,
         'repeat_rate_30d' => $acquired ? round($repeat / $acquired * 100, 1) : 0,
         'cost_per_rider' => $acquired ? round($cost / $acquired, 2) : 0,

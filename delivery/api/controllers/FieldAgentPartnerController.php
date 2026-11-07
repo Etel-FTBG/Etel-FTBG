@@ -52,8 +52,9 @@ function fa_partner_welcome_sms($row, $code) {
         if (!function_exists('etel_sms_send')) require_once __DIR__ . '/../lib/sms_send.php';
         $what = $row['kind'] === 'shop' ? 'shop' : $row['kind'];
         $text = 'ETEL: your ' . $what . ' account is ready. Open the ETEL app, tap Forgot password, and enter ' . $row['phone'] . ' to set your password.';
-        etel_sms_send($row['phone'], $text);
+        return etel_sms_send($row['phone'], $text) ? true : false;
     } catch (Exception $e) { /* the owner can send it again; an SMS fault never undoes an approval */ } catch (Throwable $e) { }
+    return false;
 }
 
 }
@@ -182,6 +183,17 @@ case 'admin_fa_partners_stats': {
     break;
 }
 
+case 'admin_fa_partner_resend_sms': {
+    $pdo = db(); $adm = require_admin($pdo, 'agents.manage');
+    $q = $pdo->prepare("SELECT * FROM fa_partners WHERE id = ? AND status = 'approved'"); $q->execute(array(intval(isset($body['id']) ? $body['id'] : 0)));
+    $r = $q->fetch(PDO::FETCH_ASSOC);
+    if (!$r) fail('Only an approved partner can be texted.', 404);
+    $sent = fa_partner_welcome_sms($r, '');
+    fa_audit($pdo, 'admin', $adm['id'], 'partner_sms_resent', 'partner', $r['id'], '', array('sent' => $sent ? 1 : 0));
+    ok(array('sent' => $sent));
+    break;
+}
+
 case 'admin_fa_partner_get': {
     $pdo = db(); require_admin($pdo, 'agents.view');
     $q = $pdo->prepare('SELECT p.*, a.full_name AS agent_name, a.code AS agent_code, a.phone AS agent_phone, a.tier AS agent_tier FROM fa_partners p JOIN fa_agents a ON a.id = p.agent_id WHERE p.id = ?');
@@ -217,8 +229,8 @@ case 'admin_fa_partner_decide': {
             ->execute(array($acc['user_id'], $acc['sg_id'] ?: null, $fee, $earnId ?: null, $note, $adm['id'], $r['id']));
         fa_audit($pdo, 'admin', $adm['id'], 'partner_approved', 'partner', $r['id'], '', array('kind' => $r['kind'], 'user' => $acc['user_id'], 'fee' => $fee));
         try { fa_notify($pdo, $r['agent_id'], 'partner_approved', array('partner' => intval($r['id']), 'name' => $r['name'], 'kind' => $r['kind'], 'amount' => $fee)); } catch (Exception $e) { }
-        fa_partner_welcome_sms($r, $acc['code']);
-        ok(array('approved' => true, 'user_id' => $acc['user_id'], 'code' => $acc['code'], 'fee' => $fee));
+        $sent = fa_partner_welcome_sms($r, $acc['code']);
+        ok(array('approved' => true, 'user_id' => $acc['user_id'], 'code' => $acc['code'], 'fee' => $fee, 'sms_sent' => $sent));
     }
     $new = $decision === 'reject' ? 'rejected' : 'changes';
     $pdo->prepare("UPDATE fa_partners SET status=?, decision_note=?, decided_by=?, decided_at=NOW(), updated_at=NOW() WHERE id=? AND status='submitted'")->execute(array($new, $note, $adm['id'], $r['id']));
