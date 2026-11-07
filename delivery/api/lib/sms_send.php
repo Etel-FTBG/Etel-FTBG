@@ -62,6 +62,15 @@ function etel_sms_send_at($phone, $text) {
 /* Why the last etel_sms_send() failed, in plain words for an admin (never contains the key, the number or the message). '' when nothing failed. */
 function etel_sms_last_error() { return isset($GLOBALS['ETEL_SMS_LAST']) ? (string)$GLOBALS['ETEL_SMS_LAST'] : ''; }
 
+/* Which SMS service is set up on this server: 'smsethiopia', 'africastalking' or '' (none). */
+function etel_sms_provider() {
+    $k = etel_sms_cfg('SMSET_API_KEY', 'CFG_SMSET_API_KEY');
+    if ($k && $k !== 'CHANGE_ME') return 'smsethiopia';
+    $a = etel_sms_cfg('AT_API_KEY', 'CFG_AT_API_KEY');
+    if ($a && $a !== 'your_at_api_key' && $a !== 'CHANGE_ME') return 'africastalking';
+    return '';
+}
+
 function etel_sms_send($phone, $text) {
     $GLOBALS['ETEL_SMS_LAST'] = '';
     try {

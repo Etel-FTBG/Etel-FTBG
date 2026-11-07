@@ -12,7 +12,7 @@ Do these in order. The programme stays **OFF** (Agents > Settings > Programme) u
 - [ ] The SMSEthiopia key in `delivery/api/.env` (`SMSET_API_KEY`) and in the EtelID `wp-config.php` (`ETELID_SMSET_API_KEY`) belong to the **paid** campaign (no "Test Message from smsethiopia.com" line on the texts).
 - [ ] A test text to a phone number that is NOT verified in the SMS dashboard arrives (Agents > Settings > Text messages > Send test).
 - [ ] Sender name registered in the SMS dashboard (Sender IDs) so customers see ETEL instead of a number.
-- [ ] Decide English or Amharic texts (Agents > Settings > Agent booking > "Send these texts in Amharic"). English costs 1 SMS credit, Amharic 2. Press "Test in Amharic" first and check the phone shows the letters correctly.
+- [ ] Open Agents > Messages: choose the language customers get (English, Amharic or both), read and edit each message, and use "Send to test phone" on each one. English costs 1 SMS credit, Amharic or both usually 2; the screen shows the credits for every message.
 - [ ] SMS balance is enough for the expected volume (new-customer text, password reset codes, verification codes).
 
 ## 3. Clean the test data
