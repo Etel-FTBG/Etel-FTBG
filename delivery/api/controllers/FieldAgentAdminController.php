@@ -90,19 +90,71 @@ case 'admin_fa_agent_get': {
 }
 
 case 'admin_fa_sms_test': {
-    // Send ONE short test text to a number the admin types, to check the SMS service before real customers are texted.
+    // Send ONE text to a number the admin types, to check the SMS service and the wording before real customers are texted.
+    // Optional: kind (default test), lang (en | am | both) and body (the draft being edited, not yet saved).
     $pdo = db(); $adm = require_admin($pdo, 'agents.manage');
-    require_once __DIR__ . '/../lib/sms_send.php';
+    require_once __DIR__ . '/../lib/fa_sms_templates.php';
     $ph = isset($body['phone']) ? (string) $body['phone'] : '';
     if (etel_sms_msisdn($ph) === '') fail('Enter a valid phone number, for example 0911234567.');
+    $kind = isset($body['kind']) ? (string) $body['kind'] : 'test';
+    $lang = isset($body['lang']) ? (string) $body['lang'] : 'en';
+    if (!array_key_exists($kind, fa_sms_kinds())) fail('Unknown message type');
+    if (!in_array($lang, fa_sms_langs(), true)) fail('Unknown language');
     $q = $pdo->prepare("SELECT COUNT(*) FROM fa_audit_log WHERE action = 'sms_test' AND actor_id = ? AND created_at > DATE_SUB(NOW(), INTERVAL 1 MINUTE)"); $q->execute(array($adm['id']));
     if (intval($q->fetchColumn()) > 0) fail('A test text was just sent. Please wait a minute.', 429);
-    $lang = (isset($body['lang']) && $body['lang'] === 'am') ? 'am' : 'en';
-    $st = fa_customer_message($ph, 'test', $lang);
-    fa_audit($pdo, 'admin', $adm['id'], 'sms_test', 'setting', 0, '', array('result' => $st));
+    if (isset($body['body']) && is_string($body['body']) && trim($body['body']) !== '') {
+        $draft = str_replace("\r\n", "\n", $body['body']);
+        $bad = fa_sms_validate($kind, $draft); if ($bad) fail($bad);
+        $text = str_replace('{link}', fa_sms_link(), $draft);
+    } else { $text = fa_sms_resolve($pdo, $kind, $lang); }
+    $st = etel_sms_send($ph, $text);
+    fa_audit($pdo, 'admin', $adm['id'], 'sms_test', 'setting', 0, '', array('result' => $st, 'kind' => $kind, 'lang' => $lang));
     if ($st === 'off') fail('No SMS service is set up on the server yet (add SMSET_API_KEY to api/.env).', 409, array('reason' => 'SMS_OFF'));
     if ($st !== 'sent') { $why = etel_sms_last_error(); fail('The test text was not sent. ' . ($why !== '' ? $why : ''), 502, array('reason' => 'SMS_FAILED', 'detail' => $why)); }
-    ok(array('sent' => true));
+    $c = fa_sms_cost($text);
+    ok(array('sent' => true, 'chars' => $c['chars'], 'segments' => $c['segments'], 'encoding' => $c['encoding']));
+    break;
+}
+
+case 'admin_fa_sms_templates_get': {
+    $pdo = db(); require_admin($pdo, 'agents.view');
+    require_once __DIR__ . '/../lib/fa_sms_templates.php';
+    ok(fa_sms_overview($pdo, fa_settings($pdo, true)));
+    break;
+}
+
+case 'admin_fa_sms_template_save': {
+    // Save the admin's wording for one message and one language variant. reset = true (or the default text) removes the edit.
+    $pdo = db(); $adm = require_admin($pdo, 'agents.manage');
+    require_once __DIR__ . '/../lib/fa_sms_templates.php';
+    $kind = isset($body['kind']) ? (string) $body['kind'] : ''; $lang = isset($body['lang']) ? (string) $body['lang'] : '';
+    if (!array_key_exists($kind, fa_sms_kinds())) fail('Unknown message type');
+    if (!in_array($lang, fa_sms_langs(), true)) fail('Unknown language');
+    if (!fa_sms_ensure_table($pdo)) fail('The message table could not be created. Run the database update (migration 105) and try again.', 500);
+    $def = fa_sms_defaults(); $text = isset($body['body']) ? rtrim(str_replace("\r\n", "\n", (string) $body['body'])) : '';
+    $reset = !empty($body['reset']) || $text === $def[$kind][$lang];
+    if ($reset) {
+        $pdo->prepare('DELETE FROM fa_sms_templates WHERE kind = ? AND lang = ?')->execute(array($kind, $lang));
+        fa_audit($pdo, 'admin', $adm['id'], 'sms_template_reset', 'setting', 0, $kind . '/' . $lang, array());
+    } else {
+        $bad = fa_sms_validate($kind, $text); if ($bad) fail($bad, 400);
+        $pdo->prepare('INSERT INTO fa_sms_templates (kind, lang, body, updated_by, updated_at) VALUES (?,?,?,?,NOW()) ON DUPLICATE KEY UPDATE body = VALUES(body), updated_by = VALUES(updated_by), updated_at = NOW()')->execute(array($kind, $lang, $text, intval($adm['id'])));
+        fa_audit($pdo, 'admin', $adm['id'], 'sms_template_saved', 'setting', 0, $kind . '/' . $lang, array('chars' => fa_sms_len($text)));
+    }
+    ok(fa_sms_overview($pdo, fa_settings($pdo, true)));
+    break;
+}
+
+case 'admin_fa_sms_mode_save': {
+    // Which language customers get: en | am | both.
+    $pdo = db(); $adm = require_admin($pdo, 'agents.manage');
+    require_once __DIR__ . '/../lib/fa_sms_templates.php';
+    $m = isset($body['mode']) ? (string) $body['mode'] : '';
+    $map = array('en' => 0, 'am' => 1, 'both' => 2);
+    if (!isset($map[$m])) fail('Unknown language choice');
+    try { fa_settings_save($pdo, array('agent_booking_sms_lang' => $map[$m], 'agent_booking_sms_am' => 0), $adm['id']); }
+    catch (Exception $e) { fail($e->getMessage(), 400); }
+    ok(fa_sms_overview($pdo, fa_settings($pdo, true)));
     break;
 }
 
@@ -116,7 +168,7 @@ case 'admin_fa_customer_message': {
     if (!$bk || empty($bk['phone'])) fail('Booking not found', 404);
     $q = $pdo->prepare("SELECT COUNT(*) FROM fa_audit_log WHERE entity = 'booking' AND entity_id = ? AND action = ? AND created_at > DATE_SUB(NOW(), INTERVAL 10 MINUTE)"); $q->execute(array($bid, 'customer_message_' . $kind));
     if (intval($q->fetchColumn()) > 0) fail('This message was just sent. Please wait 10 minutes before sending it again.', 429);
-    $S = fa_settings($pdo); $st = fa_customer_message($bk['phone'], $kind, !empty($S['agent_booking_sms_am']) ? 'am' : 'en');
+    $S = fa_settings($pdo); $st = fa_customer_message($bk['phone'], $kind, fa_sms_mode($S), $pdo);
     if ($st === 'off') fail('No SMS service is set up on the server yet (add SMSET_API_KEY to api/.env), so no text can be sent. Ask the customer to tap Forgot password in the Etel Ride app.', 409, array('reason' => 'SMS_OFF'));
     if ($st !== 'sent') { $why = function_exists('etel_sms_last_error') ? etel_sms_last_error() : '';
         fail('The text was not sent.' . ($why !== '' ? ' ' . $why : '') . ' (On the free test package only numbers you verified in the SMS dashboard can receive texts.)', 502, array('reason' => 'SMS_FAILED', 'detail' => $why)); }
