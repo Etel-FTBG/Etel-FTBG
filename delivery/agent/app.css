@@ -231,6 +231,18 @@ html[data-theme=light] .lg-alt{background:rgba(184,134,11,.08)}
 .bv-chip.on{background:linear-gradient(135deg,#C8960C,var(--gold) 55%,#E6C85A);border-color:transparent;color:#1a1206}
 .bv-sum{margin-top:var(--s3);min-height:24px;text-align:center;font:700 18px var(--body);color:var(--gold-t)}
 html[data-theme=light] .bv-veh.on{box-shadow:0 0 0 3px rgba(122,90,0,.25)}
+/* book: map, place search, vehicle rows with the real pictures */
+.bv-map{position:relative;height:230px;border-radius:16px;overflow:hidden;border:1px solid var(--line);background:rgba(212,175,55,.06)}
+.bv-map.off{display:none}.bv-mapbox{position:absolute;inset:0}.bv-skel{position:absolute;inset:0;border-radius:0}.bv-map.on .bv-skel{display:none}
+.bv-note{margin-top:6px;min-height:18px;font-size:13px}
+.bv-srch{display:flex;gap:var(--s2);align-items:center}.bv-srch .in{flex:1;min-width:0}.bv-srch .ib{flex:none;min-width:48px;padding:0}.ib.on{background:var(--gold-t);color:#1a1206;border-color:transparent}
+.bv-list{display:grid;gap:var(--s3);margin-top:var(--s2)}
+.bv-veh{display:grid;grid-template-columns:104px minmax(0,1fr) auto;gap:var(--s3);align-items:center;min-height:84px;padding:var(--s2) var(--s4) var(--s2) var(--s2);border-radius:18px;border:1.5px solid var(--line);background:var(--card);color:var(--ink);text-align:left;cursor:pointer;font:inherit}
+.bv-pic{display:flex;align-items:center;justify-content:center;width:104px;height:72px;overflow:hidden}.bv-img{display:block;max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain;filter:drop-shadow(0 4px 6px rgba(0,0,0,.35));pointer-events:none}
+.bv-pic svg{width:36px;height:36px;color:var(--gold-t)}
+.bv-txt{display:flex;flex-direction:column;min-width:0}.bv-txt b{font-size:16px}.bv-txt small{font-size:12.5px;color:var(--ink2)}
+.bv-veh .bv-fare{text-align:right;white-space:nowrap}
+.gm-style .gm-style-iw-c{color:#1a1206}.pac-container{z-index:2000;border-radius:12px;font-family:inherit}
 @media (prefers-reduced-motion:reduce){.count,.ring .fg,.skel,.boot .logo,.toast,.sheet{animation:none}.ring .fg{stroke-dashoffset:var(--off,264)}}
 @media (max-width:360px){.top{gap:6px}.top .logo{display:none}.ib{padding:0 var(--s2)}}
 @media (min-width:481px){.app{padding-top:var(--s4)}}

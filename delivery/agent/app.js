@@ -253,7 +253,7 @@ function vBook() {
 }
 function loadBook() {
   if (S.bookLoading) return; S.bookLoading = true;
-  var sc = document.createElement('script'); sc.src = 'book.js?v=1';
+  var sc = document.createElement('script'); sc.src = 'book.js?v=2';
   sc.onload = function () { S.bookLoading = false; if (S.view === 'book') { if (window.ETELBook.open) window.ETELBook.open(); render(); } };
   sc.onerror = function () { S.bookLoading = false; toast(t('c.error')); };
   document.body.appendChild(sc);
@@ -383,6 +383,6 @@ window.addEventListener('offline', function () { S.offline = true; if (S.me) ren
 window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); S.installEv = e; });
 if ('serviceWorker' in navigator) window.addEventListener('load', function () { navigator.serviceWorker.register('sw.js').catch(function () { /* works without it */ }); });
 
-window.ETELAP = { api: api, t: t, esc: esc, ic: ic, S: S, shell: shell, toast: toast, fmt: fmt, render: render, when: when, closeSheet: closeSheet };
+window.ETELAP = { API: API, api: api, t: t, esc: esc, ic: ic, S: S, shell: shell, toast: toast, fmt: fmt, render: render, when: when, closeSheet: closeSheet };
 loadLang().then(function () { if (!ls(K.tok)) { S.view = 'login'; render(); } else loadMe(); }, function () { document.body.innerHTML = '<p style="padding:24px;color:#F5E6A3">Could not load. Please try again.</p>'; });
 })();

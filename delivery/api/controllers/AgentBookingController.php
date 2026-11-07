@@ -87,6 +87,15 @@ case 'fa_agent_book_ride': {
     $plat = isset($body['pickup_lat']) ? floatval($body['pickup_lat']) : 0; $plng = isset($body['pickup_lng']) ? floatval($body['pickup_lng']) : 0;
     if (!$plat || !$plng || abs($plat) > 90 || abs($plng) > 180) { $plat = 7.0621; $plng = 38.4763; }          // Hawassa centre when the agent did not share a location
     $paddr = $pnote !== '' ? $pnote : ($agent['venue_name'] !== '' ? $agent['venue_name'] : 'Agent booking');
+    // Optional destination picked on the map. The distance is the route the agent's phone measured, but never trusted blindly:
+    // it must sit between the straight-line distance and three times that, otherwise 1.3 x straight line is used.
+    $dlat = isset($body['dropoff_lat']) ? floatval($body['dropoff_lat']) : 0; $dlng = isset($body['dropoff_lng']) ? floatval($body['dropoff_lng']) : 0;
+    $hasDrop = $dlat && $dlng && abs($dlat) <= 90 && abs($dlng) <= 180;
+    if ($hasDrop && !$open) {
+        $hav = rides_haversine_km($plat, $plng, $dlat, $dlng);
+        $km = ($km > 0 && $km >= $hav * 0.95 && $km <= $hav * 3) ? $km : round($hav * 1.3, 2);
+        $km = max(0.5, min(100, $km));
+    }
 
     $cap = intval($S['agent_booking_daily_cap']);
     $q = $pdo->prepare('SELECT COUNT(*) FROM fa_bookings WHERE agent_id = ? AND created_at > DATE_SUB(NOW(), INTERVAL 24 HOUR)'); $q->execute(array($agent['id']));
@@ -120,9 +129,9 @@ case 'fa_agent_book_ride': {
 
     $fr = rides_calc_fare($pdo, $km, $vtype, $open); $fare = $fr['fare'];
     $cols = 'passenger_id, pickup_lat, pickup_lng, dropoff_lat, dropoff_lng, pickup_address, dropoff_address, distance_km, fare_estimate, fare_final, payment_method, status, expires_at, created_at';
-    $ph = "?,?,?,NULL,NULL,?,?,?,?,?,'cash','searching', DATE_ADD(NOW(), INTERVAL 10 MINUTE), NOW()";
-    $dest = $dnote !== '' ? $dnote : ($open ? 'Open trip (driver directed on the way)' : 'By distance: ' . $km . ' km (driver directed on the way)');
-    $vals = array($cid, $plat, $plng, $paddr, $dest, round($km, 2), $fare, $fare);
+    $ph = "?,?,?,?,?,?,?,?,?,?,'cash','searching', DATE_ADD(NOW(), INTERVAL 10 MINUTE), NOW()";
+    $dest = $dnote !== '' ? $dnote : ($hasDrop ? 'Selected on the map' : ($open ? 'Open trip (driver directed on the way)' : 'By distance: ' . $km . ' km (driver directed on the way)'));
+    $vals = array($cid, $plat, $plng, $hasDrop ? $dlat : null, $hasDrop ? $dlng : null, $paddr, $dest, round($km, 2), $fare, $fare);
     foreach (array('ride_code', 'request_code', 'code', 'tracking_code', 'order_code') as $cc) { if (fa_bk_has_col($pdo, $cc)) { $cols .= ", `$cc`"; $ph .= ', ?'; $vals[] = 'R' . date('ymdHis') . strtoupper(substr(md5(uniqid(mt_rand(), true)), 0, 5)); } }
     if (fa_bk_has_col($pdo, 'vehicle_type')) { $cols .= ', vehicle_type'; $ph .= ', ?'; $vals[] = $vtype; }
     if (fa_bk_has_col($pdo, 'open_trip')) { $cols .= ', open_trip'; $ph .= ', ?'; $vals[] = $open ? 1 : 0; }
