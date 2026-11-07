@@ -66,6 +66,10 @@ $r = call('fa_agent_book_ride', array('phone' => '12345', 'vehicle_type' => 'baj
 $r = call('fa_agent_book_ride', array('phone' => '0911000001', 'vehicle_type' => 'bajaj', 'km' => 4), $AU); t('book: own number refused', !$r->ok && $r->data['reason'] === 'OWN_NUMBER');
 $r = call('fa_agent_book_ride', array('phone' => '+251911000009', 'vehicle_type' => 'bajaj', 'km' => 4), $AU); t('book: payout number refused (any phone format)', !$r->ok && $r->data['reason'] === 'OWN_NUMBER');
 $r = call('fa_agent_book_ride', array('phone' => '0955000001', 'vehicle_type' => 'bajaj'), $AU); t('book: needs a distance or open trip', !$r->ok);
+// City scope: a Hawassa pickup with a Shashemene drop-off is refused; far-away pickups are refused; same-city goes on.
+$PDO->exec("INSERT IGNORE INTO service_areas (code, name, name_am, center_lat, center_lng, radius_km, active, sort_order, created_at, updated_at) VALUES ('hawassa','Hawassa','',7.0621,38.4763,12,1,1,NOW(),NOW()),('shashemene','Shashemene','',7.2,38.59,10,1,2,NOW(),NOW())");
+$r = call('fa_agent_book_ride', array('phone' => '0955000002', 'vehicle_type' => 'bajaj', 'pickup_lat' => 7.0621, 'pickup_lng' => 38.4763, 'dropoff_lat' => 7.2, 'dropoff_lng' => 38.59, 'km' => 4), $AU); t('book: cross-city trip refused', !$r->ok && $r->data['reason'] === 'CROSS_AREA', json_encode($r->data));
+$r = call('fa_agent_book_ride', array('phone' => '0955000002', 'vehicle_type' => 'bajaj', 'pickup_lat' => 9.03, 'pickup_lng' => 38.74, 'km' => 4), $AU); t('book: pickup outside every city refused', !$r->ok && $r->data['reason'] === 'OUTSIDE_AREA', json_encode($r->data));
 mkuser('Driver Dan', '0966000001', null, 'driver'); $r = call('fa_agent_book_ride', array('phone' => '0966000001', 'vehicle_type' => 'bajaj', 'km' => 4), $AU); t('book: a driver number is refused', !$r->ok && $r->code2 == 409);
 
 // ---- a new customer

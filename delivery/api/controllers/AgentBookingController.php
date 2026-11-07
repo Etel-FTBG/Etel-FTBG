@@ -91,6 +91,10 @@ case 'fa_agent_book_ride': {
     // it must sit between the straight-line distance and three times that, otherwise 1.3 x straight line is used.
     $dlat = isset($body['dropoff_lat']) ? floatval($body['dropoff_lat']) : 0; $dlng = isset($body['dropoff_lng']) ? floatval($body['dropoff_lng']) : 0;
     $hasDrop = $dlat && $dlng && abs($dlat) <= 90 && abs($dlng) <= 180;
+    // Service areas: the pickup must be in a served city and the drop-off in the same one (api/lib/service_areas.php).
+    require_once __DIR__ . '/../lib/service_areas.php';
+    $areaChk = etel_area_check_trip($pdo, $plat, $plng, $hasDrop ? $dlat : 0, $hasDrop ? $dlng : 0);
+    if (!$areaChk['ok']) fail($areaChk['message'], 409, array('reason' => $areaChk['reason'], 'message_am' => $areaChk['message_am']));
     if ($hasDrop && !$open) {
         $hav = rides_haversine_km($plat, $plng, $dlat, $dlng);
         $km = ($km > 0 && $km >= $hav * 0.95 && $km <= $hav * 3) ? $km : round($hav * 1.3, 2);

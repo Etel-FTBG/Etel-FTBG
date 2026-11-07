@@ -16,10 +16,10 @@ var GROUPS = [
   { id: 'catalog', label: 'Catalog & pricing', icon: '🏷️', pages: ['items', 'menucat', 'pricing', 'promos'] },
   { id: 'money', label: 'Money', icon: '💰', pages: ['telebirr', 'finance', 'equb', 'reports'] },
   { id: 'support', label: 'Support & records', icon: '🛟', pages: ['supportdesk', 'support', 'documents', 'launch'] },
-  { id: 'system', label: 'System', icon: '⚙️', pages: ['settings', 'branding', 'roles', 'releases', 'updater', 'danger', '#2fa', '#display'] }
+  { id: 'system', label: 'System', icon: '⚙️', pages: ['settings', 'serviceareas', 'branding', 'roles', 'releases', 'updater', 'danger', '#2fa', '#display'] }
 ];
 /* Pages added by other scripts after the menu loads need a capability here (the rest are hidden by admin-roles.js). */
-var EXTRA_CAPS = { customers: 'users.view', packages: 'orders.view', agents: 'agents.view', supportdesk: 'support.view' };
+var EXTRA_CAPS = { customers: 'users.view', packages: 'orders.view', agents: 'agents.view', supportdesk: 'support.view', serviceareas: 'settings.view' };
 var OPEN_BY_DEFAULT = { overview: 1, ops: 1, people: 1 };
 var STORE = 'admin-nav-open';
 var state = {};

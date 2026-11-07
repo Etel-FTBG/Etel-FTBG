@@ -233,6 +233,11 @@ function etel_package_quote($pdo, $pickup_in, $drop_in, $details_in) {
     if (is_string($det)) return array('ok' => false, 'message' => $det);
     $km = etel_package_distance_km($p['lat'], $p['lng'], $d['lat'], $d['lng']);
     if ($km > 60) return array('ok' => false, 'message' => 'Packages go within Hawassa and nearby (up to 60 km). This trip is about ' . $km . ' km.');
+    try {
+        require_once __DIR__ . '/service_areas.php';
+        $ac = etel_area_check_trip($pdo, $p['lat'], $p['lng'], $d['lat'], $d['lng']);
+        if (!$ac['ok']) return array('ok' => false, 'message' => $ac['message'], 'message_am' => $ac['message_am'], 'reason' => $ac['reason']);
+    } catch (Exception $e) { /* area check never blocks on a fault */ }
     $classes = etel_package_classes($pdo);
     $sizes = etel_package_sizes();
     $minRank = $classes[$sizes[$det['size']]['min_class']];

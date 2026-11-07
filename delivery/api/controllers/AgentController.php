@@ -348,9 +348,9 @@ case 'agent_find_and_quote': {
         $priced = delivery_calc_fee($pdo, $toZone, 'moto');
         if ($priced === null) fail('"' . $toZone . '" is not a recognized delivery zone. Ask the member to share their current location instead.');
     } elseif (isset($body['pickup_lat'], $body['pickup_lng']) && $body['pickup_lat'] && $body['pickup_lng']) {
-        $distanceKm = delivery_distance_from_center(floatval($body['pickup_lat']), floatval($body['pickup_lng']));
+        $distanceKm = delivery_distance_from_center(floatval($body['pickup_lat']), floatval($body['pickup_lng']), $pdo);
         $priced = delivery_calc_fee_by_distance($pdo, $distanceKm);
-        $toZone = 'GPS location (' . $priced['distance_km'] . ' km from Hawassa center)';
+        $toZone = 'GPS location (' . $priced['distance_km'] . ' km from city center)';
         $autoResolvedZone = true;
     } else {
         fail('Please share your current location so I can calculate the delivery fee, or name the area you\'re in.');
@@ -436,9 +436,9 @@ case 'agent_order_quote': {
         $priced = delivery_calc_fee($pdo, $toZone, 'moto');
         if ($priced === null) fail('"' . $toZone . '" is not a recognized delivery zone. Ask the member to share their current location instead.');
     } elseif (isset($body['pickup_lat'], $body['pickup_lng']) && $body['pickup_lat'] && $body['pickup_lng']) {
-        $distanceKm = delivery_distance_from_center(floatval($body['pickup_lat']), floatval($body['pickup_lng']));
+        $distanceKm = delivery_distance_from_center(floatval($body['pickup_lat']), floatval($body['pickup_lng']), $pdo);
         $priced = delivery_calc_fee_by_distance($pdo, $distanceKm);
-        $toZone = 'GPS location (' . $priced['distance_km'] . ' km from Hawassa center)';
+        $toZone = 'GPS location (' . $priced['distance_km'] . ' km from city center)';
         $autoResolvedZone = true;
     } else {
         fail('Please share your current location so I can calculate the delivery fee, or name the area you\'re in.');

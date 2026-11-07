@@ -93,8 +93,15 @@ function delivery_calc_fee_by_distance($pdo, $distanceKm) {
 
 // Straight-line distance from Hawassa's own center point - used as the
 // reference for distance-based fee calc when no zone name is given.
-function delivery_distance_from_center($lat, $lng) {
+function delivery_distance_from_center($lat, $lng, $pdo = null) {
     $centerLat = 7.0504; $centerLng = 38.4955;
+    if ($pdo) {   // the centre of the city the point is in (Shashemene, ...); Hawassa when unknown
+        try {
+            require_once __DIR__ . '/service_areas.php';
+            $ar = etel_area_for_point($pdo, $lat, $lng);
+            if ($ar) { $centerLat = floatval($ar['lat']); $centerLng = floatval($ar['lng']); }
+        } catch (Exception $e) { /* keep the Hawassa centre */ }
+    }
     $R = 6371;
     $dLat = deg2rad($lat - $centerLat);
     $dLng = deg2rad($lng - $centerLng);
