@@ -161,7 +161,7 @@ case 'fa_agent_book_ride': {
 
     // New customers get a text automatically (only when the SMS service is set up and admin has it on); a failure never blocks the booking.
     $smsState = 'off';
-    if ($newAcct && !empty($S['agent_booking_sms'])) $smsState = fa_customer_message($phone, 'welcome');
+    if ($newAcct && !empty($S['agent_booking_sms'])) $smsState = fa_customer_message($phone, 'welcome', !empty($S['agent_booking_sms_am']) ? 'am' : 'en');
 
     $review = $eligible && intval($S['agent_booking_review_trips']) > 0 && fa_booking_clean_count($pdo, $agent['id']) < intval($S['agent_booking_review_trips']);
     $q = $pdo->prepare('SELECT COUNT(*) FROM fa_bookings WHERE agent_id = ? AND created_at > DATE_SUB(NOW(), INTERVAL 24 HOUR)'); $q->execute(array($agent['id']));
