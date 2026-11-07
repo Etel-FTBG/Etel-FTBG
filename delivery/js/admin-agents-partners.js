@@ -128,6 +128,7 @@ function sheetHtml(p, fee) {
   h += '<div class="pa-sec">Photos</div><div class="pa-ph">' + photoTile(d.id_photo_url, 'ID card') + photoTile(d.selfie_url, 'Selfie') + photoTile(d.licence_photo_url, 'Licence') + photoTile(d.license_photo_url, 'Licence') + photoTile(d.logo_url, 'Logo') + photoTile(d.cover_url, 'Cover') + '</div>';
   if (shop) h += '<div class="pa-sec">Products (' + p.items.length + ')</div>' + p.items.map(function (it) { return '<div class="pa-it">' + (it.image_url ? '<img src="' + esc(it.image_url) + '" alt="" loading="lazy">' : '<span class="pa-th"></span>') + '<div class="pa-m"><b>' + esc(it.name) + '</b><small>' + esc(it.category) + (it.description ? ' · ' + esc(it.description) : '') + '</small></div><b>' + esc(etb(it.price)) + ' ETB</b></div>'; }).join('');
   if (p.decision_note) h += '<div class="pa-sec">Last note</div><p>' + esc(p.decision_note) + '</p>';
+  if (st === 'approved' && manage()) h += '<div class="pa-acts"><button class="ak-btn" data-pa-sms="' + p.id + '">✉️ Send the sign-in text again</button></div>';
   if (st === 'approved') h += '<div class="pa-sec">Result</div><dl class="pa-kv">' + field('Fee paid to agent', etb(p.fee_amount)) + field('Account', p.user_id ? 'User #' + p.user_id : '') + '</dl>';
   if (deciding) {
     var list = CHECKS[shop ? 'shop' : 'person'];
@@ -168,7 +169,8 @@ function decide(kind) {
     run('admin_fa_partner_decide', { id: p.id, decision: kind, note: note }).then(function (r) {
       P.busy = false;
       if (!ok(r)) { K.toast(K.failText(r, 'Could not save the decision.'), true); return; }
-      K.toast(kind === 'approve' ? 'Approved. The account is ready and the agent is paid.' : (kind === 'reject' ? 'Rejected. The agent was told why.' : 'Sent back to the agent.'));
+      var sms = dat(r).sms_sent;
+      K.toast(kind === 'approve' ? (sms ? 'Approved. The account is ready, the agent is paid, and the person was texted.' : 'Approved and the agent is paid, but the text could not be sent. Open it and press "Send the sign-in text again", or tell the person to use Forgot password.') : (kind === 'reject' ? 'Rejected. The agent was told why.' : 'Sent back to the agent.'));
       closeSheet(); open(); if (A.paintTabsOnly) A.paintTabsOnly();
     });
   };
@@ -190,6 +192,7 @@ document.addEventListener('click', function (e) {
   if (sheet && sheet.contains(t)) {
     if (t.hasAttribute('data-pa-close') && (t.classList.contains('pa-ov') || t.tagName === 'BUTTON')) { closeSheet(); return; }
     if ((b = t.closest('[data-pa-decide]'))) { decide(b.getAttribute('data-pa-decide')); return; }
+    if ((b = t.closest('[data-pa-sms]'))) { run('admin_fa_partner_resend_sms', { id: b.getAttribute('data-pa-sms') }).then(function (r) { K.toast(ok(r) ? (dat(r).sent ? 'Text sent.' : 'The text could not be sent (is the SMS service set up?).') : K.failText(r, 'Could not send.'), !ok(r) || !dat(r).sent); }); return; }
     return;
   }
   var root = document.getElementById('ag-screen'); if (!root || !root.contains(t) || A.S.tab !== 'partners') return;

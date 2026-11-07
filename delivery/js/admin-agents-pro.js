@@ -258,7 +258,7 @@ function loadDashboard() {
     S.feed = ok(r[2]) ? dat(r[2]).entries || [] : [];
     S.lastRun = ok(r[3]) && (dat(r[3]).entries || []).length ? dat(r[3]).entries[0] : null;
     S.pending = ok(r[4]) ? dat(r[4]).agents || [] : [];
-    S.badges = { agents: S.stats.agents_pending, fraud: S.stats.flagged };
+    S.badges = { agents: S.stats.agents_pending, fraud: S.stats.flagged, partners: S.stats.partners_waiting };
   });
 }
 var pollTimer = null;

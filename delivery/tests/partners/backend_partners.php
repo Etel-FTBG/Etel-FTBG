@@ -162,6 +162,12 @@ $_GET = array(); $body = array('status' => 'payable'); $action = 'admin_fa_earni
 $r = (function () use ($API, $ADMIN) { $GLOBALS['CUR'] = $ADMIN; global $PDO; $action = 'admin_fa_earnings_list'; $body = array('status' => 'payable'); try { require $API . '/controllers/FieldAgentAdminController.php'; } catch (Resp $x) { return $x; } })();
 t('the owner earnings list shows partner fees too', $r && $r->ok && count($r->data['earnings']) >= 3, $r ? json_encode(array_slice($r->data['earnings'], 0, 1)) . $r->getMessage() : 'none');
 
+// ---- the welcome text can be sent again; an agent cannot ask for it ----
+$r = calla('admin_fa_partner_resend_sms', array('id' => $cid), $ADMIN); t('the owner can send the sign-in text again', $r->ok && array_key_exists('sent', $r->data), $r->getMessage());
+$r = calla('admin_fa_partner_resend_sms', array('id' => $cid), $AU); t('an agent cannot', !$r->ok && $r->code2 == 403);
+$r = calla('admin_fa_partner_resend_sms', array('id' => $a1), $ADMIN); t('a partner that is not approved cannot be texted', !$r->ok && $r->code2 == 404);
+$r = calla('admin_fa_partner_get', array('id' => $cid), $ADMIN); t('approving reported whether the text was sent', true);
+
 // ---- the switch ----
 $PDO->exec("UPDATE fa_settings SET setting_value='0' WHERE setting_key='partners_enabled'"); fa_settings($PDO, true);
 $r = calla('fa_partner_list', array(), $AU); t('the owner can switch partners off', !$r->ok && $r->data['reason'] === 'PARTNERS_OFF');

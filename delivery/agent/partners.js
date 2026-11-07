@@ -119,6 +119,7 @@ function stepKey() { return STEPS[Q.cur.kind][Q.step]; }
 
 /* ---------------- screens ---------------- */
 function hub() {
+  Q.domFor = null;
   var h = '<h1>' + esc(tx('title')) + '</h1><p class="sub">' + esc(tx('sub')) + '</p>';
   if (Q.err) h += '<div class="err" role="alert">' + esc(Q.err) + ' <button class="btn" style="margin-top:8px" data-act="pt-reload">' + esc(tx('retry')) + '</button></div>';
   h += '<div class="pt-kinds">' + ['courier', 'driver', 'shop'].map(function (k) {
@@ -207,6 +208,8 @@ function reviewStep() {
   return h;
 }
 function wizard() {
+  if (Q.domFor === Q.cur) sync();   // an async load (vehicles, cities) may redraw while the agent is typing: keep what was typed
+  Q.domFor = Q.cur;
   var c = Q.cur, k = stepKey(), steps = STEPS[c.kind], last = Q.step === steps.length - 1, h = '<button class="ib pt-back" data-act="pt-exit" aria-label="' + esc(tx('back')) + '">' + ic('x') + '</button><h1>' + esc(tx(c.kind)) + '</h1>' + bar();
   if (c.note && c.status === 'changes') h += '<div class="pt-changes" role="status"><b>' + esc(tx('note_title')) + '</b><p>' + esc(c.note) + '</p></div>';
   var body = '';
