@@ -101,7 +101,8 @@ case 'admin_fa_customer_message': {
     if (intval($q->fetchColumn()) > 0) fail('This message was just sent. Please wait 10 minutes before sending it again.', 429);
     $st = fa_customer_message($bk['phone'], $kind);
     if ($st === 'off') fail('No SMS service is set up on the server yet (add SMSET_API_KEY to api/.env), so no text can be sent. Ask the customer to tap Forgot password in the Etel Ride app.', 409, array('reason' => 'SMS_OFF'));
-    if ($st !== 'sent') fail('The SMS service did not accept the message. If your SMS package is the free test one, only numbers you verified in the SMS dashboard can receive texts. Otherwise try again in a few minutes.', 502, array('reason' => 'SMS_FAILED'));
+    if ($st !== 'sent') { $why = function_exists('etel_sms_last_error') ? etel_sms_last_error() : '';
+        fail('The text was not sent.' . ($why !== '' ? ' ' . $why . '.' : '') . ' If your SMS package is the free test one, only numbers you verified in the SMS dashboard can receive texts.', 502, array('reason' => 'SMS_FAILED', 'detail' => $why)); }
     fa_audit($pdo, 'admin', $adm['id'], 'customer_message_' . $kind, 'booking', $bid, '', array('agent' => intval($bk['agent_id'])));
     ok(array('sent' => true, 'kind' => $kind));
     break;

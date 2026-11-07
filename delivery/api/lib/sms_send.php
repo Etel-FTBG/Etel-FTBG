@@ -30,12 +30,15 @@ function etel_sms_send_smsethiopia($phone, $text) {
     curl_setopt_array($ch, array(CURLOPT_RETURNTRANSFER => true, CURLOPT_POST => true, CURLOPT_TIMEOUT => 8,
         CURLOPT_HTTPHEADER => array('KEY: ' . $key, 'API_KEY: ' . $key, 'Content-Type: application/json', 'Accept: application/json'),
         CURLOPT_POSTFIELDS => json_encode(array('msisdn' => $to, 'text' => (string)$text))));
-    $resp = curl_exec($ch); $code = intval(curl_getinfo($ch, CURLINFO_HTTP_CODE)); curl_close($ch);
+    $resp = curl_exec($ch); $code = intval(curl_getinfo($ch, CURLINFO_HTTP_CODE)); $cerr = curl_error($ch); curl_close($ch);
+    if ($resp === false) { $GLOBALS['ETEL_SMS_LAST'] = 'SMSEthiopia could not be reached from the server (' . substr($cerr, 0, 120) . ')'; return 'failed'; }
     $j = $resp ? @json_decode($resp, true) : null;
     $bad = is_array($j) && ((isset($j['success']) && !$j['success']) || (isset($j['status']) && in_array(strtolower((string)$j['status']), array('error', 'failed', 'fail'), true)) || isset($j['error']) || isset($j['error_code']));
     if ($code >= 200 && $code < 300 && !$bad) return 'sent';
     // Only the HTTP code and the provider's own error code/text are logged (never the key, the number or the message).
-    error_log('[ETEL][sms] SMSEthiopia refused: HTTP ' . $code . ' ' . substr(is_array($j) ? json_encode(array_intersect_key($j, array_flip(array('code', 'error', 'error_code', 'message', 'status')))) : '', 0, 200));
+    $why = substr(is_array($j) ? json_encode(array_intersect_key($j, array_flip(array('code', 'error', 'error_code', 'message', 'status')))) : substr(trim(strip_tags((string)$resp)), 0, 120), 0, 200);
+    $GLOBALS['ETEL_SMS_LAST'] = 'SMSEthiopia answered HTTP ' . $code . ' ' . $why;
+    error_log('[ETEL][sms] ' . $GLOBALS['ETEL_SMS_LAST']);
     return 'failed';
 }
 
@@ -54,7 +57,11 @@ function etel_sms_send_at($phone, $text) {
     return ($j && isset($j['SMSMessageData']['Recipients'][0]['status']) && $j['SMSMessageData']['Recipients'][0]['status'] === 'Success') ? 'sent' : 'failed';
 }
 
+/* Why the last etel_sms_send() failed, in plain words for an admin (never contains the key, the number or the message). '' when nothing failed. */
+function etel_sms_last_error() { return isset($GLOBALS['ETEL_SMS_LAST']) ? (string)$GLOBALS['ETEL_SMS_LAST'] : ''; }
+
 function etel_sms_send($phone, $text) {
+    $GLOBALS['ETEL_SMS_LAST'] = '';
     try {
         $r = etel_sms_send_smsethiopia($phone, $text);
         if ($r === 'sent') return 'sent';
