@@ -59,6 +59,13 @@ function fa_defaults() {
         'digest_enabled'          => array(1,   0,    1),
         // Fixed at 0 on purpose: EtelAI summaries are only a design hook (see lib/fa_insights.php). Nothing can switch it on from the screen.
         'ai_summary_enabled'      => array(0,   0,    0),
+        // Phase 6: agents booking a ride for a customer. cash_counts = a CASH trip may earn the bonus for an agent-booked customer;
+        // review_trips = how many of an agent's booked customers must have been released by an admin before new ones pay without review (0 = never review).
+        'agent_booking_enabled'    => array(1,  0,  1),
+        'agent_booking_daily_cap'  => array(10, 1,  100),
+        'agent_booking_cash_counts' => array(1, 0,  1),
+        'agent_booking_review_trips' => array(10, 0, 100),
+        'risk_w_sequential_phones' => array(25, 0,  100),
     );
 }
 
@@ -217,6 +224,15 @@ function fa_notify($pdo, $agentId, $kind, $params) {
 
 /* Plain-language English reason for a reason_code. The portal shows the translated version (lang JSON);
    this is the admin-facing text and the English fallback. Codes are stable: never rename one. */
+/* True when this referral came from an agent booking a ride for the customer (fa_bookings), not from the customer scanning a code. */
+function fa_ref_is_agent_booked($pdo, $ref) {
+    try {
+        $q = $pdo->prepare('SELECT 1 FROM fa_bookings WHERE agent_id = ? AND customer_user_id = ? LIMIT 1');
+        $q->execute(array(intval($ref['agent_id']), intval($ref['rider_user_id'])));
+        return (bool) $q->fetchColumn();
+    } catch (Exception $e) { return false; }
+}
+
 function fa_reason_text($code) {
     $m = array(
         'SELF_USER'        => 'The rider is the same person as the agent.',
@@ -229,6 +245,7 @@ function fa_reason_text($code) {
         'RISK_HOLD'        => 'Held for admin review because the risk score is high.',
         'CAP_DAILY'        => 'Held because the agent reached the daily earnings limit.',
         'CAP_WEEKLY'       => 'Held because the agent reached the weekly earnings limit.',
+        'AGENT_BOOKING_REVIEW' => 'Held for admin review: this agent booked the ride for the customer and has not yet built up enough checked bookings.',
         'ADMIN_RELEASED'   => 'Released by an admin after review.',
         'ADMIN_REJECTED'   => 'Rejected by an admin after review.',
         'PAID'             => 'Paid.',

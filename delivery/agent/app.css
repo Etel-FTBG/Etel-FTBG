@@ -220,6 +220,17 @@ html[data-theme=light] .lg-hero::before{background:radial-gradient(circle,rgba(2
 html[data-theme=light] .lg-alt{background:rgba(184,134,11,.08)}
 @media (max-width:360px){.lg-hero{width:160px;height:160px}.lg-logo{width:132px;height:132px}.lg-trust{gap:6px}.lg-trust li{font-size:11px}}
 @media (prefers-reduced-motion:reduce){.lg-halo,.lg-logo,.lg-shine,.spin{animation:none}.spin{border-top-color:#1a1206}.lg-w{transition:none}}
+/* book a ride for a customer */
+.bv-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:var(--s3);margin-top:var(--s2)}
+.bv-veh{display:flex;flex-direction:column;align-items:flex-start;gap:2px;min-height:112px;padding:var(--s3) var(--s4);border-radius:16px;border:1.5px solid var(--line);background:var(--card);color:var(--ink);text-align:left;cursor:pointer;font:inherit}
+.bv-veh svg{width:30px;height:30px;color:var(--gold-t);margin-bottom:4px}.bv-veh b{font-size:16px}.bv-veh small{font-size:12.5px;color:var(--ink2)}
+.bv-fare{font:700 15px var(--body);color:var(--gold-t);min-height:22px}
+.bv-veh.on{border-color:var(--gold-t);box-shadow:0 0 0 3px rgba(212,175,55,.28)}.bv-veh.off{opacity:.7}
+.bv-chips{display:flex;flex-wrap:wrap;gap:var(--s2)}
+.bv-chip{min-height:48px;padding:0 var(--s4);border-radius:24px;border:1.5px solid var(--line);background:transparent;color:var(--ink);font:600 14.5px var(--body);cursor:pointer}
+.bv-chip.on{background:linear-gradient(135deg,#C8960C,var(--gold) 55%,#E6C85A);border-color:transparent;color:#1a1206}
+.bv-sum{margin-top:var(--s3);min-height:24px;text-align:center;font:700 18px var(--body);color:var(--gold-t)}
+html[data-theme=light] .bv-veh.on{box-shadow:0 0 0 3px rgba(122,90,0,.25)}
 @media (prefers-reduced-motion:reduce){.count,.ring .fg,.skel,.boot .logo,.toast,.sheet{animation:none}.ring .fg{stroke-dashoffset:var(--off,264)}}
 @media (max-width:360px){.top{gap:6px}.top .logo{display:none}.ib{padding:0 var(--s2)}}
 @media (min-width:481px){.app{padding-top:var(--s4)}}

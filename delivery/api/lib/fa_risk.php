@@ -37,9 +37,12 @@ function fa_risk_evaluate($pdo, $agent, $ref, $rider, $ride) {
 
     $r = array();
     $claimedAt = !empty($ref['claimed_at']) ? $ref['claimed_at'] : date('Y-m-d H:i:s');
+    // Agent-booked customers are claimed from the AGENT's own phone, so the device-based signals would fire on every honest booking.
+    // They are replaced by the daily booking cap, the review hold (fa_create_earning) and the sequential-phones check below.
+    $booked = fa_ref_is_agent_booked($pdo, $ref);
 
     // ---- same device: the code was claimed from the agent's own device ----
-    if (!empty($ref['device_hash']) && !empty($agent['device_hash']) && hash_equals($agent['device_hash'], $ref['device_hash'])) {
+    if (!$booked && !empty($ref['device_hash']) && !empty($agent['device_hash']) && hash_equals($agent['device_hash'], $ref['device_hash'])) {
         fa_risk_add($r, 'SAME_DEVICE', $S['risk_w_same_device'], 'The code was claimed from the same device the agent uses.');
     }
 
@@ -49,7 +52,7 @@ function fa_risk_evaluate($pdo, $agent, $ref, $rider, $ride) {
 
     // ---- code reuse: one device/ip claiming several different riders' referrals, or several agents' codes ----
     try {
-        if (!empty($ref['device_hash'])) {
+        if (!$booked && !empty($ref['device_hash'])) {
             $q = $pdo->prepare("SELECT COUNT(*) FROM fa_referrals WHERE device_hash = ? AND id <> ? AND claimed_at > DATE_SUB(?, INTERVAL 24 HOUR)");
             $q->execute(array($ref['device_hash'], intval($ref['id']), $claimedAt));
             $n = intval($q->fetchColumn());
@@ -58,13 +61,27 @@ function fa_risk_evaluate($pdo, $agent, $ref, $rider, $ride) {
     } catch (Exception $e) {}
 
     // ---- burst: many claims for this agent in a short window ----
-    try {
+    if (!$booked) try {
         $q = $pdo->prepare("SELECT COUNT(*) FROM fa_referrals WHERE agent_id = ? AND claimed_at BETWEEN DATE_SUB(?, INTERVAL ? MINUTE) AND DATE_ADD(?, INTERVAL ? MINUTE)");
         $w = intval($S['risk_burst_minutes']);
         $q->execute(array(intval($agent['id']), $claimedAt, $w, $claimedAt, $w));
         $n = intval($q->fetchColumn());
         if ($n >= intval($S['risk_burst_count'])) fa_risk_add($r, 'BURST', $S['risk_w_burst'], $n . ' referrals for this agent within ' . $w . ' minutes.');
     } catch (Exception $e) {}
+
+    // ---- sequential phone numbers: an agent booking for numbers that sit next to each other (0911000001, 0911000002, ...) ----
+    if ($booked) {
+        try {
+            $mine = fa_phone_last9(isset($rider['phone']) ? $rider['phone'] : '');
+            if ($mine !== '') {
+                $q = $pdo->prepare('SELECT phone_last9 FROM fa_bookings WHERE agent_id = ? AND customer_user_id <> ? AND created_at > DATE_SUB(?, INTERVAL 24 HOUR)');
+                $q->execute(array(intval($agent['id']), intval($rider['id']), $claimedAt));
+                $near = 0;
+                foreach ($q->fetchAll(PDO::FETCH_COLUMN) as $o) { if ($o !== '' && abs(intval($o) - intval($mine)) <= 5) $near++; }
+                if ($near >= 2) fa_risk_add($r, 'SEQUENTIAL_PHONES', $S['risk_w_sequential_phones'], 'The agent booked for ' . ($near + 1) . ' customers with phone numbers right next to each other.');
+            }
+        } catch (Exception $e) {}
+    }
 
     if ($ride) {
         // ---- repeated agent + driver pair ----
@@ -147,10 +164,12 @@ function fa_ride_minutes($ride) {
 }
 
 /* Does this completed, paid trip count toward a bonus? Returns '' when it does, else a short reason. */
-function fa_ride_qualifies($pdo, $ride) {
+function fa_ride_qualifies($pdo, $ride, $agentBooked = false) {
     $S = fa_settings($pdo);
     if ($ride['status'] !== 'completed' || floatval($ride['fare_paid']) <= 0) return 'not completed and paid';
-    if (!empty($S['require_digital_payment']) && $ride['payment_method'] === 'cash') return 'cash payment not accepted';
+    // A customer an agent booked for may pay cash (new customers often have no wallet); those bonuses wait for admin review instead (fa_create_earning).
+    $cashOk = $agentBooked && !empty($S['agent_booking_cash_counts']);
+    if (!empty($S['require_digital_payment']) && $ride['payment_method'] === 'cash' && !$cashOk) return 'cash payment not accepted';
     if (fa_ride_km($ride) < floatval($S['min_trip_km'])) return 'trip too short (distance)';
     if (fa_ride_minutes($ride) < floatval($S['min_trip_minutes'])) return 'trip too short (time)';
     return '';

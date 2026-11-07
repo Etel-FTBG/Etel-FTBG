@@ -29,7 +29,8 @@ Scope: the Etel Ride "Agents" referral programme: agent portal (`/delivery/agent
 9. EtelAI summary is a design hook only: always disabled; the payload is totals only (no names, phones, codes, devices, venues).
 10. The audit log is append-only and hash-chained; an edited row is detected.
 11. Light and dark both meet WCAG AA text contrast; the switch uses the shared `theme` key, so the choice follows the person to Ride, Driver and Admin.
-12. The Agent app icon is managed from Admin > Branding > App icons > Agent.
+12. Agent-booked customers: a booking never earns a bonus unless the customer is new; device-based fraud signals are replaced by the daily cap, the admin review of the first bookings and the sequential-phone check; cash trips count only when `agent_booking_cash_counts` is on.
+13. The Agent app icon is managed from Admin > Branding > App icons > Agent.
 
 ## 3. Manual acceptance on the live site (after upload)
 
@@ -47,6 +48,10 @@ Do these in order; each has a screenshot to keep.
 
 10. **Sign-in page (Phase 5)** - open `/delivery/agent/` signed out, on a phone: master logo with the gold ring, "Welcome, Agent", icon fields with the show-password eye, gold Sign in button, Create EtelID link, three trust tiles; works in Amharic, light and dark. Sign in with a real agent account. *(screenshots: sign-in dark and light)*
 11. **Master logo everywhere** - the portal header, the badge picture and the printed A6 card show the master logo; the phone home-screen icon after reinstalling the app.
+
+12. **Agent books a ride for a customer (Phase 6)** - as an approved agent open the portal > Home > "Book a ride for a customer". Enter a test customer phone, choose a vehicle, a distance, confirm. Check: the success card, the ride in Admin > Rides, the customer in Admin > Users, the booking in Admin > Agents > (agent) > "Rides booked for customers". *(screenshots: the form with fares, the success card, the admin ride)*
+13. **Bonus for a booked customer** - complete that ride as a driver, run the earnings job (Admin > Agents > Dashboard > Run now): the bonus appears in the Fraud queue as "Held for admin review: this agent booked the ride..."; release it; after the 7-day hold it becomes payable. *(screenshot: the held bonus)*
+14. **Limits** - Admin > Agents > Settings > "Agent booking": daily cap, cash switch, review count. Try a booking with the agent's own phone (refused) and one above the cap (refused in plain words).
 
 ## 4. Rollback
 

@@ -50,6 +50,17 @@ function fa_cap_check($pdo, $agentId, $earnedAt, $amount) {
     return '';
 }
 
+/* How many agent-booked customers of this agent already earned a first-trip bonus that passed (released by an admin, or later). */
+function fa_booking_clean_count($pdo, $agentId) {
+    try {
+        $q = $pdo->prepare("SELECT COUNT(DISTINCT e.referral_id) FROM fa_earnings e JOIN fa_referrals r ON r.id = e.referral_id
+                            JOIN fa_bookings b ON b.agent_id = r.agent_id AND b.customer_user_id = r.rider_user_id
+                            WHERE e.agent_id = ? AND e.kind = 'first_trip' AND e.status IN ('pending','payable','paid')");
+        $q->execute(array(intval($agentId)));
+        return intval($q->fetchColumn());
+    } catch (Exception $e) { return 0; }
+}
+
 /* True while every trip behind this earning is still completed and paid. */
 function fa_earning_rides_ok($pdo, $e) {
     $ids = array();
@@ -72,6 +83,9 @@ function fa_create_earning($pdo, $agent, $ref, $rider, $ride, $kind, $amount, $r
     else {
         $cap = fa_cap_check($pdo, $agent['id'], $earnedAt, $amount);
         if ($cap !== '') { $status = 'held'; $reason = $cap; }
+        elseif (intval($S['agent_booking_review_trips']) > 0 && fa_ref_is_agent_booked($pdo, $ref) && fa_booking_clean_count($pdo, $agent['id']) < intval($S['agent_booking_review_trips'])) {
+            $status = 'held'; $reason = 'AGENT_BOOKING_REVIEW';     // an admin releases the first bookings; after enough clean ones the agent is trusted
+        }
     }
     $payableAt = date('Y-m-d H:i:s', strtotime($earnedAt) + 86400 * fa_hold_days($S, $agent['tier']));
     $ins = $pdo->prepare("INSERT IGNORE INTO fa_earnings
@@ -124,7 +138,8 @@ function fa_run_earnings($pdo) {
             $rq = $pdo->prepare("SELECT * FROM rides WHERE passenger_id = ? AND status = 'completed' AND completed_at >= ? ORDER BY completed_at ASC, id ASC LIMIT 20");
             $rq->execute(array(intval($rider['id']), $ref['claimed_at']));
             $ride = null;
-            foreach ($rq->fetchAll(PDO::FETCH_ASSOC) as $cand) { if (fa_ride_qualifies($pdo, $cand) === '') { $ride = $cand; break; } }
+            $bk = fa_ref_is_agent_booked($pdo, $ref);
+            foreach ($rq->fetchAll(PDO::FETCH_ASSOC) as $cand) { if (fa_ride_qualifies($pdo, $cand, $bk) === '') { $ride = $cand; break; } }
             if (!$ride) {
                 if (strtotime($ref['claimed_at']) < time() - 86400 * intval($S['qualify_window_days'])) {
                     $pdo->prepare("UPDATE fa_referrals SET status='expired', reject_code='CLAIM_EXPIRED', updated_at=NOW() WHERE id = ? AND status='claimed'")->execute(array($ref['id']));
@@ -162,7 +177,8 @@ function fa_run_earnings($pdo) {
                                      AND completed_at <= DATE_ADD(?, INTERVAL ? DAY) ORDER BY completed_at ASC, id ASC LIMIT 60");
                 $rq->execute(array(intval($rider['id']), $ref['first_ride_at'], $ref['first_ride_at'], intval($S['repeat_window_days'])));
                 $good = array();
-                foreach ($rq->fetchAll(PDO::FETCH_ASSOC) as $cand) { if (fa_ride_qualifies($pdo, $cand) === '') $good[] = $cand; if (count($good) >= $need) break; }
+                $bk = fa_ref_is_agent_booked($pdo, $ref);
+                foreach ($rq->fetchAll(PDO::FETCH_ASSOC) as $cand) { if (fa_ride_qualifies($pdo, $cand, $bk) === '') $good[] = $cand; if (count($good) >= $need) break; }
                 if (count($good) < $need) continue;
                 $touched[$agent['id']] = 1;
                 $ids = array(); foreach ($good as $g) $ids[] = intval($g['id']);
