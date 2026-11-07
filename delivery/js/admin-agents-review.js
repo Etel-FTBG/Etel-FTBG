@@ -49,7 +49,7 @@ function agentDrawer(id) {
       '<div class="ak-sec"><h4>Age check (must be 18 or older)</h4><p style="margin:0 0 6px">' + agePill(a.age_status) + '</p><p style="font-size:13px;color:var(--mute);margin:0">' + esc(a.age_note || '') + '</p></div>' +
       (d.shared_with && d.shared_with.length ? '<div class="ak-sec"><h4>Shared details</h4><ul class="ag-why">' + d.shared_with.map(function (x) { return '<li><b>!</b><span><b>' + esc(x.name) + '</b> uses the same ' + esc(x.why) + '</span></li>'; }).join('') + '</ul></div>' : '') +
       '<div class="ak-sec"><h4>Risk</h4><p style="margin:0 0 8px">' + A.riskBar(a.risk_score) + '</p>' + (top ? '<ul class="ag-why">' + top + '</ul>' : '<p style="font-size:13px;color:var(--mute);margin:0">No repeated risk signals.</p>') + '</div>' +
-      (d.bookings && d.bookings.length ? '<div class="ak-sec"><h4>Rides booked for customers (' + d.bookings.length + ')</h4><ul class="ag-feed">' + d.bookings.map(function (x) { return '<li><span class="ag-mono" style="min-width:110px">' + esc(x.cust_phone) + '</span><span style="flex:1">' + esc(x.vehicle_type) + ' · ' + esc(x.ride_status || '') + (+x.bonus_eligible ? '' : ' · no bonus') + '</span><small>' + esc(K.ago(x.created_at)) + '</small></li>'; }).join('') + '</ul></div>' : '') +
+      (d.bookings && d.bookings.length ? '<div class="ak-sec"><h4>Rides booked for customers (' + d.bookings.length + ')</h4><ul class="ag-feed">' + d.bookings.map(function (x) { return '<li><span class="ag-mono" style="min-width:110px">' + esc(x.cust_phone) + '</span><span style="flex:1">' + esc(x.vehicle_type) + ' · ' + esc(x.ride_status || '') + (+x.bonus_eligible ? '' : ' · no bonus') + '</span><small>' + esc(K.ago(x.created_at)) + '</small>' + (manage ? '<span style="display:flex;gap:6px;flex-wrap:wrap;width:100%"><button type="button" class="ak-btn" data-cm="reset" data-bk="' + esc(x.id) + '">' + esc(T('Send reset message')) + '</button><button type="button" class="ak-btn" data-cm="verify" data-bk="' + esc(x.id) + '">' + esc(T('Remind to verify profile')) + '</button></span>' : '') + '</li>'; }).join('') + '</ul></div>' : '') +
       '<div class="ak-sec"><h4>Referrals (' + d.referrals.length + ')</h4>' + (d.referrals.length ? '<ul class="ag-feed">' + d.referrals.slice(0, 15).map(function (x) { return '<li><span class="ag-mono" style="min-width:110px">' + esc(x.rider_phone) + '</span><span style="flex:1">' + A.statusPill(x.status === 'claimed' ? 'pending' : x.status) + '</span>' + (x.risk_score ? A.riskBar(x.risk_score) : '') + '<time>' + esc(A.when(x.claimed_at)) + '</time></li>'; }).join('') + '</ul>' : '<p style="font-size:13px;color:var(--mute);margin:0">None yet.</p>') + '</div>' +
       '<div class="ak-sec"><h4>History</h4>' + (d.audit.length ? '<ul class="ag-feed">' + d.audit.slice(0, 10).map(function (e) { var x = A.feedText(e); return '<li><i aria-hidden="true">' + x.icon + '</i><span style="flex:1;overflow-wrap:anywhere">' + esc(x.text) + (e.reason ? ' - ' + esc(e.reason) : '') + '</span><time>' + esc(A.when(e.created_at)) + '</time></li>'; }).join('') + '</ul>' : '<p style="font-size:13px;color:var(--mute);margin:0">No history.</p>') + '</div>';
     var foot = '';
@@ -61,6 +61,18 @@ function agentDrawer(id) {
     }
     var dr = K.openDrawer(head, body, foot);
     dr.addEventListener('click', function (e) {
+      var m = e.target.closest('[data-cm]');
+      if (m) {
+        var kind = m.getAttribute('data-cm');
+        K.confirm({ title: kind === 'reset' ? 'Send the reset message?' : 'Send the verify reminder?', text: kind === 'reset' ? 'The customer gets a text telling them how to choose their password (open the Ride app, tap Forgot password).' : 'The customer gets a text asking them to complete their profile so the account is fully verified.', label: T('Send') }).then(function (res) {
+          if (!res) return;
+          return A.busy(m, function () { return run('admin_fa_customer_message', { booking_id: +m.getAttribute('data-bk'), kind: kind }); }).then(function (r) {
+            if (!ok(r)) { K.toast(K.failText(r, 'Could not send the message.'), true); return; }
+            K.toast('Message sent');
+          });
+        });
+        return;
+      }
       var b = e.target.closest('[data-do]'); if (!b) return;
       decideAgent(a, b.getAttribute('data-do'), b);
     });
