@@ -193,6 +193,7 @@ define('ETEL_WRITE_ACTIONS', array(
     'fa_claim_ref','fa_agent_apply','fa_agent_update_profile','fa_agent_notifications_read',
     'admin_fa_settings_save','admin_fa_agent_decide','admin_fa_customer_message','admin_fa_sms_test','admin_fa_sms_template_save','admin_fa_sms_mode_save','admin_fa_earning_decide','admin_fa_run_earnings','admin_fa_payout_create','admin_fa_payout_export','admin_fa_payout_mark_paid','admin_fa_payout_cancel','admin_fa_nudge','admin_fa_digest_build','admin_fa_tiers_run',
     'fa_agent_book_ride',
+    'admin_area_save','admin_area_delete','admin_areas_settings_save',
     'sup_ticket_create','sup_ticket_reply','sup_ticket_close','sup_ticket_rate','admin_sup_reply','admin_sup_update','admin_sup_canned_save','admin_sup_canned_delete','admin_sup_settings_save',
 ));
 
@@ -849,6 +850,9 @@ switch ($action) {
                 'Stadium','Liqe Mender','University'
             );
         }
+        // The neighbourhood list is Hawassa's; other cities are priced by GPS distance, so they get no Hawassa names.
+        $zArea = isset($_GET['area']) ? strtolower(trim((string)$_GET['area'])) : '';
+        if ($zArea !== '' && $zArea !== 'hawassa') $zones = array();
         ok(array('zones' => $zones));
         break;
     }
@@ -1792,6 +1796,9 @@ switch ($action) {
     case 'admin_fa_insights': case 'admin_fa_nudge': case 'admin_fa_digest_list': case 'admin_fa_digest_build': case 'admin_fa_tiers_run':
         require __DIR__ . '/controllers/FieldAgentInsightsController.php';
         break;
+    case 'get_service_areas': case 'admin_areas_list': case 'admin_area_save': case 'admin_area_delete': case 'admin_areas_settings_save':
+        require __DIR__ . '/controllers/ServiceAreaController.php';
+        break;
     case 'get_display_prefs': case 'save_display_prefs':
         require __DIR__ . '/controllers/DisplayPrefsController.php';
         break;
@@ -1821,6 +1828,21 @@ switch ($action) {
             // database really has are mentioned, so a missing legacy column can no longer make the whole query fail.
             $ic = etel_table_columns($pdo, 'items'); $sc = etel_table_columns($pdo, 'service_givers');
             $co = function ($alias, $names, $have, $tail) { $p = array(); foreach ($names as $n) { if (in_array($n, $have, true)) $p[] = $alias . '.' . $n; } $p[] = $tail; return count($p) > 1 ? 'COALESCE(' . implode(',', $p) . ')' : $tail; };
+            // City scope: only shops in the customer's own area. The area comes from ?area=code or from ?lat=&lng=; with neither, nothing is filtered.
+            $areaOut = null;
+            try {
+                require_once __DIR__ . '/lib/service_areas.php';
+                if (etel_areas_enforced($pdo)) {
+                    $reqArea = null; $acode = isset($_GET['area']) ? trim((string)$_GET['area']) : '';
+                    $alat = isset($_GET['lat']) ? floatval($_GET['lat']) : 0; $alng = isset($_GET['lng']) ? floatval($_GET['lng']) : 0;
+                    if ($acode !== '') $reqArea = etel_area_by_code($pdo, $acode);
+                    elseif ($alat || $alng) {
+                        $reqArea = etel_area_for_point($pdo, $alat, $alng);
+                        if (!$reqArea) { $chk = etel_area_check_point($pdo, $alat, $alng, 'location'); ok(array('items' => array(), 'count' => 0, 'outside_area' => true, 'message' => $chk['message'], 'message_am' => $chk['message_am'])); }
+                    }
+                    if ($reqArea) { $aw = etel_area_shop_where($reqArea, $sc, 'sg'); if ($aw[0] !== '') { $w .= $aw[0]; $p = array_merge($p, $aw[1]); } $areaOut = $reqArea['code']; }
+                }
+            } catch (PDOException $e) { /* the area check never blocks the menu */ }
             $x_stock = $co('i', array('stock_quantity', 'stock_qty'), $ic, '100');
             $x_prep = $co('i', array('preparation_time', 'prep_time_min'), $ic, '15');
             $x_avail = $co('i', array('is_available', 'active'), $ic, '1');
@@ -1848,7 +1870,7 @@ switch ($action) {
                 $fi['gallery'] = is_array($g) ? array_values($g) : array();
             }
             unset($fi);
-            ok(array('items'=>$feed,'count'=>count($feed)));
+            ok(array('items'=>$feed,'count'=>count($feed),'area'=>$areaOut));
         } catch(PDOException $e) {
             try {
                 $fb=$pdo->prepare("SELECT i.id,i.name,i.description,i.category,i.price,

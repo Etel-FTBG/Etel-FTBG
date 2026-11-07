@@ -23,7 +23,7 @@ equb_groups equb_packages equity_investors equity_profit_distribution_items equi
 geocode_cache growth_goal_assumptions integration_changes integration_custom integration_settings item_extras items launch_checklist_state menu_catalog
 package_rates package_settings patch_log payment_method_logos platform_cost_assumptions pricing_rules promo_codes ride_fare_rules
 ride_promo_codes ride_safety_settings ride_sweeper_state role_permissions schema_migrations sg_roles system_reset_tokens updater_logs users
-rides_legacy_202606120827
+rides_legacy_202606120827 service_areas service_area_settings
 '''.split())
 
 created = set()

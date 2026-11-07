@@ -315,6 +315,28 @@ case 'courier_get_available_orders': {
             $orders = $s->fetchAll();
         } catch (Exception $e2) { fail_ex($e2, 'Query failed', 500); }
     }
+    // City scope: a courier sees only jobs in the city they are in (their last known position). Unknown position or unknown job place = shown.
+    try {
+        require_once __DIR__ . '/../lib/service_areas.php';
+        if (etel_areas_enforced($pdo) && $orders) {
+            $cl = $pdo->prepare('SELECT last_lat, last_lng FROM couriers WHERE id = ?'); $cl->execute(array($courier['id'])); $clr = $cl->fetch();
+            $myArea = ($clr && (floatval($clr['last_lat']) || floatval($clr['last_lng']))) ? etel_area_for_point($pdo, $clr['last_lat'], $clr['last_lng']) : null;
+            if ($myArea) {
+                $ids = array_map(function ($o) { return intval($o['id']); }, $orders);
+                $ph = implode(',', array_fill(0, count($ids), '?'));
+                $pl = $pdo->prepare("SELECT id, delivery_lat, delivery_lng, pickup_lat, pickup_lng FROM orders WHERE id IN ($ph)"); $pl->execute($ids);
+                $where = array(); foreach ($pl->fetchAll() as $r) { $where[intval($r['id'])] = $r; }
+                $orders = array_values(array_filter($orders, function ($o) use ($where, $pdo, $myArea) {
+                    $r = isset($where[intval($o['id'])]) ? $where[intval($o['id'])] : null;
+                    if (!$r) return true;
+                    foreach (array(array('pickup_lat', 'pickup_lng'), array('delivery_lat', 'delivery_lng')) as $k) {
+                        if (floatval($r[$k[0]]) || floatval($r[$k[1]])) { $a = etel_area_for_point($pdo, $r[$k[0]], $r[$k[1]]); return $a ? $a['code'] === $myArea['code'] : true; }
+                    }
+                    return true;
+                }));
+            }
+        }
+    } catch (Exception $e) { /* never hide jobs because of a fault */ }
     etel_mask_recipient_for_courier($orders);
     require_once __DIR__ . '/../lib/courier_earnings.php';
     etel_apply_courier_tip($pdo, $orders, $courier['id'], false);   // offers: an estimate from this courier's position, not saved

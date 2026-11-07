@@ -1114,10 +1114,15 @@ case 'passenger_get_nearby_drivers': {
         $params[] = '%' . $needle . '%';
     }
     $sql .= " LIMIT 200";
+    // Service areas: a rider only sees the drivers of their own city (api/lib/service_areas.php).
+    require_once __DIR__ . '/../lib/service_areas.php';
+    $nearArea = null;
+    if (etel_areas_enforced($pdo)) { $nearArea = etel_area_for_point($pdo, $lat, $lng); if (!$nearArea) ok(array('drivers' => array(), 'outside_area' => true)); }
     $s = $pdo->prepare($sql);
     $s->execute($params);
     $out = array();
     foreach ($s->fetchAll() as $r) {
+        if ($nearArea && !etel_area_contains($nearArea, $r['lat'], $r['lng'])) continue;
         // Exact distance check - the hex pre-filter above can include
         // a few extra candidates near its bounding-box corners (see
         // hexgrid_radius_where's docblock), so this is what actually
@@ -1174,6 +1179,10 @@ case 'book_ride': {
     $mkm  = isset($body['manual_km'])   ? floatval($body['manual_km'])   : 0;
     if (!$plat || !$plng) { $pdo->prepare('SELECT RELEASE_LOCK(?)')->execute(array($bookLockKey)); fail('Pickup location is required'); }
     if ((!$dlat || !$dlng) && $mkm <= 0) { $pdo->prepare('SELECT RELEASE_LOCK(?)')->execute(array($bookLockKey)); fail('Set a drop-off place, or choose a distance in km'); }
+    /* Service areas: the pickup must be in a served city and the drop-off in the same one (api/lib/service_areas.php). */
+    require_once __DIR__ . '/../lib/service_areas.php';
+    $areaChk = etel_area_check_trip($pdo, $plat, $plng, $dlat, $dlng);
+    if (!$areaChk['ok']) { $pdo->prepare('SELECT RELEASE_LOCK(?)')->execute(array($bookLockKey)); fail($areaChk['message'], 409, array('reason' => $areaChk['reason'], 'message_am' => $areaChk['message_am'])); }
     $paddr = isset($body['pickup_addr'])  ? mb_substr(trim($body['pickup_addr']), 0, 255)  : '';
     $daddr = isset($body['dropoff_addr']) ? mb_substr(trim($body['dropoff_addr']), 0, 255) : '';
     $pm    = isset($body['payment_method']) ? substr(preg_replace('/[^a-z_]/', '', strtolower($body['payment_method'])), 0, 20) : 'cash';
@@ -1458,6 +1467,9 @@ case 'admin_phone_book_ride': {
     $plng = isset($body['pickup_lng']) ? floatval($body['pickup_lng']) : 0;
     $paddr = isset($body['pickup_addr']) ? mb_substr(trim((string) $body['pickup_addr']), 0, 200, 'UTF-8') : '';
     if (!$plat || !$plng || abs($plat) > 90 || abs($plng) > 180) { $plat = 7.0621; $plng = 38.4763; }   // Hawassa centre when the caller was not placed on the map
+    require_once __DIR__ . '/../lib/service_areas.php';
+    $areaChk = etel_area_check_point($pdo, $plat, $plng, 'pickup location');
+    if (!$areaChk['ok']) fail($areaChk['message'], 409, array('reason' => $areaChk['reason'], 'message_am' => $areaChk['message_am']));
     if ($paddr === '') $paddr = $note !== '' ? $note : 'Phone booking';
     elseif ($note !== '') $paddr = mb_substr($paddr . ' - ' . $note, 0, 255, 'UTF-8');
 
@@ -3415,8 +3427,13 @@ case 'driver_get_nearby_requests': {
         $ringK = hexgrid_rings_for_radius($radius * 1000.0);
     }
 
+    // Service areas: a driver only sees the requests of the city they are in (api/lib/service_areas.php). No known position = no filtering.
+    require_once __DIR__ . '/../lib/service_areas.php';
+    $myArea = null; $areasOn = etel_areas_enforced($pdo);
+    if ($areasOn && $me && $me['lat'] !== null && $me['lng'] !== null) { $myArea = etel_area_for_point($pdo, $me['lat'], $me['lng']); if (!$myArea) $rows = array(); }
     $out = array();
     foreach ($rows as $r) {
+        if ($myArea && $r['pickup_lat'] !== null && !etel_area_contains($myArea, $r['pickup_lat'], $r['pickup_lng'])) continue;
         $dist = null;
         if ($me && $me['lat'] !== null && $r['pickup_lat'] !== null) {
             if ($myHexQ !== null) {

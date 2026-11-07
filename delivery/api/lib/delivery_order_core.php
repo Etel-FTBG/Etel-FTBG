@@ -125,6 +125,21 @@ function delivery_execute_order_creation($pdo, $auth_user, $body) {
         
         $from_zone = $first_item['from_zone'];
         $service_giver_id = $first_item['service_giver_id'];
+        // City scope: a shop only serves customers in its own area (checked here because the app cannot be trusted).
+        try {
+            require_once __DIR__ . '/service_areas.php';
+            if (etel_areas_enforced($pdo)) {
+                $sgr = $pdo->prepare('SELECT * FROM service_givers WHERE id = ?'); $sgr->execute(array($service_giver_id)); $sgrow = $sgr->fetch();
+                $shopArea = $sgrow ? etel_area_of_shop($pdo, isset($sgrow['lat']) ? $sgrow['lat'] : 0, isset($sgrow['lng']) ? $sgrow['lng'] : 0, isset($sgrow['city']) ? $sgrow['city'] : '') : null;
+                $cLat = $delivery_lat; $cLng = isset($body['delivery_lng']) && is_numeric($body['delivery_lng']) ? floatval($body['delivery_lng']) : 0;
+                if (!$cLat && isset($body['customer_lat'])) { $cLat = floatval($body['customer_lat']); $cLng = isset($body['customer_lng']) ? floatval($body['customer_lng']) : 0; }
+                if ($cLat || $cLng) {
+                    $custArea = etel_area_for_point($pdo, $cLat, $cLng);
+                    if (!$custArea) { $chk = etel_area_check_point($pdo, $cLat, $cLng, 'delivery location'); throw new Exception($chk['message']); }
+                    if ($shopArea && $shopArea['code'] !== $custArea['code']) throw new Exception('This shop is in ' . $shopArea['name'] . ' and cannot deliver to ' . $custArea['name'] . '. Please order from a shop in ' . $custArea['name'] . '.');
+                }
+            }
+        } catch (PDOException $e) { /* a database fault never blocks an order */ }
         require_once __DIR__ . '/own_shop.php';
         if (etel_user_runs_shop($pdo, $auth_user['id'], $service_giver_id)) throw new Exception('You cannot order from your own shop.');
         $package_type = $first_item['category'];
@@ -238,11 +253,11 @@ function delivery_execute_order_creation($pdo, $auth_user, $body) {
         $customerLat = isset($body['customer_lat']) ? floatval($body['customer_lat']) : 0;
         $customerLng = isset($body['customer_lng']) ? floatval($body['customer_lng']) : 0;
         if ($customerLat && $customerLng) {
-            $distanceKm = delivery_distance_from_center($customerLat, $customerLng);
+            $distanceKm = delivery_distance_from_center($customerLat, $customerLng, $pdo);
             $priced = delivery_calc_fee_by_distance($pdo, $distanceKm);
             $priced['tier_used'] = $delivery_tier;
             if (strpos($to_zone, 'GPS location') === false) {
-                $to_zone = 'GPS location (' . $priced['distance_km'] . ' km from Hawassa center)';
+                $to_zone = 'GPS location (' . $priced['distance_km'] . ' km from city center)';
             }
         } else {
             $priced = delivery_calc_fee($pdo, $to_zone, $delivery_tier);
