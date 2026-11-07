@@ -240,6 +240,8 @@ function resultCard(r) {
   var b = r.bonus || {}, lines = ['<p><b>' + esc(t('bk.done')) + '</b></p>'];
   lines.push('<p class="sub">' + esc(vname(r.vehicle_type)) + ' · ' + esc(fmt(r.fare)) + ' ' + esc(t('c.etb')) + ' · ' + esc(r.customer) + '</p>');
   if (r.new_account) lines.push('<p class="sub">' + esc(t('bk.done_new')) + '</p>');
+  lines.push('<p class="sub">' + esc(t('bk.pay_note')) + '</p>');
+  lines.push('<p class="sub">' + esc(t(r.sms === 'sent' ? 'bk.sms_sent' : 'bk.sms_none')) + '</p>');
   if (b.eligible) { lines.push('<p class="sub">' + esc(t('bk.bonus_yes')) + '</p>'); if (b.review) lines.push('<p class="sub">' + esc(t('bk.bonus_review')) + '</p>'); }
   else if (b.reason) lines.push('<p class="sub">' + esc(t('bk.bonus_' + b.reason)) + '</p>');
   lines.push('<p class="sub">' + esc(t('bk.left', { n: r.left_today })) + '</p>');

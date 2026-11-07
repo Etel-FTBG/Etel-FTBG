@@ -65,6 +65,7 @@ function fa_defaults() {
         'agent_booking_daily_cap'  => array(10, 1,  100),
         'agent_booking_cash_counts' => array(1, 0,  1),
         'agent_booking_review_trips' => array(10, 0, 100),
+        'agent_booking_sms'        => array(1,  0,  1),
         'risk_w_sequential_phones' => array(25, 0,  100),
     );
 }
