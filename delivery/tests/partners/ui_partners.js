@@ -41,6 +41,25 @@ const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAFElEQVR
       await p.click('#pt-send'); await p.waitForSelector('.pt-kind'); await p.waitForTimeout(1200);
       t('sent: it moves to With ETEL', q("SELECT status FROM fa_partners WHERE name='Chala Bekele'") === 'submitted');
       t('hub lists it as With ETEL', (await p.innerText('body')).includes('With ETEL'));
+      // ---- live duplicate check: warns while typing, before anything is sent ----
+      await p.click('[data-act="pt-new"][data-k="courier"]'); await p.waitForSelector('#pt-name');
+      await p.fill('#pt-phone', '0955123456'); await p.waitForSelector('.pt-dup.bad', { timeout: 8000 });
+      txt = await p.innerText('#pt-dups');
+      t('dup: typing a phone that is already with another registration shows a red warning', /Already on ETEL/.test(txt) && /already registered|already has/i.test(txt), txt);
+      t('dup: the warning shows only the kind and a short name, never the full number', !txt.includes('0955123456'));
+      t('dup: Next is locked while the same person is already registered', await p.evaluate(() => document.querySelector('[data-act="pt-next"]').disabled));
+      t('dup: the field itself is marked', (await p.getAttribute('#pt-phone', 'data-dup')) === 'block');
+      await p.screenshot({ path: 'pt-dup-block.png' });
+      await p.fill('#pt-phone', '0955999111'); await p.waitForFunction(() => !document.querySelector('.pt-dup.bad'), null, { timeout: 8000 });
+      t('dup: with a new number the warning goes away and Next opens', !(await p.evaluate(() => document.querySelector('[data-act="pt-next"]').disabled)));
+      await p.fill('#pt-name', 'Bekele Chala'); await p.waitForSelector('.pt-dup.warn', { timeout: 8000 });
+      txt = await p.innerText('#pt-dups');
+      t('dup: the same name in another word order is only a warning (Next stays open)', /Looks similar/.test(txt) && !(await p.evaluate(() => document.querySelector('[data-act="pt-next"]').disabled)), txt);
+      await p.screenshot({ path: 'pt-dup-warn.png' });
+      await p.fill('#pt-id_number', 'NID-778899'); await p.waitForSelector('.pt-dup.bad', { timeout: 8000 });
+      t('dup: the same ID number is a block', /ID number/i.test(await p.innerText('#pt-dups')));
+      await p.fill('#pt-name', ''); await p.fill('#pt-phone', ''); await p.fill('#pt-id_number', '');
+      await p.click('[data-act="pt-exit"]'); await p.waitForSelector('.pt-kind'); await p.waitForTimeout(800);
       // ---- an incomplete draft shows what is missing ----
       await p.click('[data-act="pt-new"][data-k="driver"]'); await p.waitForSelector('#pt-name');
       await p.fill('#pt-name', 'Half Done'); await p.fill('#pt-phone', '0966111222');

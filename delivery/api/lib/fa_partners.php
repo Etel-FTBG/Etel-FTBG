@@ -248,4 +248,122 @@ function fa_partner_pay_fee($pdo, $row) {
     return array(intval($pdo->lastInsertId()), $fee);
 }
 
+
+/* ---------- live duplicate check ----------
+   Looks in the live database (accounts, couriers, drivers, shops and other agents' submissions) for the same phone, ID number, licence, plate,
+   name, shop name and shop spot. level "block" = the same person is already on ETEL (cannot be sent); "warn" = looks similar, check it.
+   What the agent sees about the other record is limited to its kind and a short masked name: never a full phone number or ID. */
+function fa_partner_norm_name($n) {
+    $n = function_exists('mb_strtolower') ? mb_strtolower(trim((string) $n), 'UTF-8') : strtolower(trim((string) $n));
+    $n = preg_replace('/[^\p{L}\p{N}\s]/u', ' ', $n);
+    $w = array_values(array_filter(preg_split('/\s+/u', $n)));
+    sort($w);
+    return implode(' ', $w);
+}
+function fa_partner_mask_name($n) {
+    $w = array_values(array_filter(preg_split('/\s+/u', trim((string) $n))));
+    if (!$w) return '';
+    $first = $w[0]; $rest = '';
+    if (count($w) > 1) { $l = function_exists('mb_substr') ? mb_substr($w[count($w) - 1], 0, 1, 'UTF-8') : substr($w[count($w) - 1], 0, 1); $rest = ' ' . $l . '.'; }
+    return $first . $rest;
+}
+function fa_partner_dup_item($field, $level, $code, $who) {
+    $am = array(
+        'PHONE_ACCOUNT' => '\u12ed\u1205 \u1235\u120d\u12ad \u1241\u1325\u122d \u12a0\u1235\u1240\u12f5\u121e \u1260\u12a2\u1275\u12a4\u120d \u120b\u12ed \u12a0\u1208\u1362',
+        'PHONE_PARTNER' => '\u12ed\u1205 \u1235\u120d\u12ad \u1241\u1325\u122d \u12a0\u1235\u1240\u12f5\u121e \u1260\u120c\u120b \u12c8\u12aa\u120d \u1270\u1218\u12dd\u130d\u1267\u120d\u1362',
+        'PHONE_DRAFT' => '\u12ed\u1205 \u1235\u120d\u12ad \u1241\u1325\u122d \u1260\u12a5\u122d\u1235\u12ce \u1228\u1242\u1245 \u12cd\u1235\u1325 \u12a0\u1235\u1240\u12f5\u121e \u12a0\u1208\u1362',
+        'ID_REGISTERED' => '\u12ed\u1205 \u12e8\u1218\u1273\u12c8\u1242\u12eb \u1241\u1325\u122d \u12a0\u1235\u1240\u12f5\u121e \u1270\u1218\u12dd\u130d\u1267\u120d\u1362',
+        'LICENCE_REGISTERED' => '\u12ed\u1205 \u12e8\u1218\u1295\u1303 \u1348\u1243\u12f5 \u1241\u1325\u122d \u12a0\u1235\u1240\u12f5\u121e \u1270\u1218\u12dd\u130d\u1267\u120d\u1362',
+        'PLATE_REGISTERED' => '\u12ed\u1205 \u12e8\u1230\u120c\u12f3 \u1241\u1325\u122d \u12a0\u1235\u1240\u12f5\u121e \u1270\u1218\u12dd\u130d\u1267\u120d\u1362 \u12a5\u122d\u130d\u1320\u129b \u1290\u12ce\u1275?',
+        'NAME_SIMILAR' => '\u1270\u1218\u1233\u1233\u12ed \u1235\u121d \u12eb\u1208\u12cd \u1230\u12cd \u12a0\u1235\u1240\u12f5\u121e \u12a0\u1208\u1362 \u12a0\u1295\u12f5 \u1230\u12cd \u1218\u1206\u1291\u1295 \u12eb\u1228\u130b\u130d\u1321\u1362',
+        'SHOP_NAME' => '\u1260\u12da\u1205 \u1235\u121d \u1231\u1245 \u12a0\u1235\u1240\u12f5\u121e \u12a0\u1208\u1362',
+        'SHOP_SPOT' => '\u1260\u12da\u1205 \u1266\u1273 \u1231\u1245 \u12a0\u1235\u1240\u12f5\u121e \u1270\u1218\u12dd\u130d\u1267\u120d\u1362'
+    );
+    $en = array(
+        'PHONE_ACCOUNT' => 'This phone number already has an ETEL account.',
+        'PHONE_PARTNER' => 'This phone number was already registered by another agent.',
+        'PHONE_DRAFT' => 'You already have a draft with this phone number.',
+        'ID_REGISTERED' => 'This ID number is already registered on ETEL.',
+        'LICENCE_REGISTERED' => 'This licence number is already registered on ETEL.',
+        'PLATE_REGISTERED' => 'This plate number is already on ETEL. Are you sure it is a different vehicle?',
+        'NAME_SIMILAR' => 'Someone with the same name is already on ETEL. Make sure this is not the same person.',
+        'SHOP_NAME' => 'A shop with this name already exists in this city.',
+        'SHOP_SPOT' => 'A shop is already registered at this spot.'
+    );
+    $amText = isset($am[$code]) ? json_decode('"' . $am[$code] . '"') : '';
+    return array('field' => $field, 'level' => $level, 'code' => $code, 'message' => $en[$code], 'message_am' => $amText !== null ? $amText : '', 'who' => $who);
+}
+function fa_partner_role_label($role) {
+    $m = array('courier' => 'Courier', 'driver' => 'Driver', 'service_giver' => 'Shop', 'customer' => 'Customer', 'admin' => 'Staff');
+    return isset($m[$role]) ? $m[$role] : 'User';
+}
+
+/* $selfId = the draft's own id (never matches itself); $agent = the signed-in agent row. Returns array of items. */
+function fa_partner_duplicates($pdo, $agent, $kind, $name, $phone, $idNumber, $d, $selfId) {
+    $out = array(); $seen = array();
+    $add = function ($item) use (&$out, &$seen) { $k = $item['field'] . '|' . $item['code']; if (isset($seen[$k])) return; $seen[$k] = 1; $out[] = $item; };
+    $selfId = intval($selfId); $agentId = intval($agent['id']);
+    $last9 = fa_phone_last9($phone);
+    $idNumber = trim((string) $idNumber);
+    $plate = $kind === 'driver' ? trim((string) (isset($d['vehicle_plate']) ? $d['vehicle_plate'] : '')) : ($kind === 'courier' ? trim((string) (isset($d['plate_number']) ? $d['plate_number'] : '')) : '');
+    $lic = $kind === 'driver' ? trim((string) (isset($d['license_number']) ? $d['license_number'] : '')) : ($kind === 'courier' ? trim((string) (isset($d['licence_number']) ? $d['licence_number'] : '')) : '');
+    $q = function ($sql, $p) use ($pdo) { try { $s = $pdo->prepare($sql); $s->execute($p); return $s->fetchAll(PDO::FETCH_ASSOC); } catch (Exception $e) { return array(); } };
+    $has = function ($t, $c) use ($pdo) { try { return in_array($c, etel_table_columns($pdo, $t), true); } catch (Exception $e) { return false; } };
+    $who = function ($kindLabel, $nm) { return trim($kindLabel . ($nm !== '' ? ' - ' . fa_partner_mask_name($nm) : '')); };
+
+    // phone: an existing account
+    if (strlen($last9) === 9) {
+        foreach ($q("SELECT name, role FROM users WHERE RIGHT(REPLACE(REPLACE(REPLACE(REPLACE(phone, '+', ''), ' ', ''), '-', ''), '.', ''), 9) = ? LIMIT 1", array($last9)) as $r) $add(fa_partner_dup_item('phone', 'block', 'PHONE_ACCOUNT', $who(fa_partner_role_label($r['role']), $r['name'])));
+        foreach ($q("SELECT id, agent_id, status, name, kind FROM fa_partners WHERE phone_last9 = ? AND id <> ? AND status IN ('submitted','approved','changes','draft') LIMIT 5", array($last9, $selfId)) as $r) {
+            if (intval($r['agent_id']) === $agentId) { if ($r['status'] === 'draft') $add(fa_partner_dup_item('phone', 'warn', 'PHONE_DRAFT', $who(fa_partner_labels()[$r['kind']], $r['name']))); else $add(fa_partner_dup_item('phone', 'block', 'PHONE_PARTNER', $who(fa_partner_labels()[$r['kind']], $r['name']))); }
+            elseif ($r['status'] !== 'draft') $add(fa_partner_dup_item('phone', 'block', 'PHONE_PARTNER', $who(fa_partner_labels()[$r['kind']], $r['name'])));
+        }
+    }
+    // ID number
+    if (strlen($idNumber) >= 4) {
+        $norm = strtoupper(preg_replace('/[\s\-]/', '', $idNumber));
+        if ($has('courier_details', 'id_number')) foreach ($q("SELECT u.name, u.role FROM courier_details c LEFT JOIN users u ON u.id = c.user_id WHERE UPPER(REPLACE(REPLACE(c.id_number, ' ', ''), '-', '')) = ? LIMIT 1", array($norm)) as $r) $add(fa_partner_dup_item('id_number', 'block', 'ID_REGISTERED', $who('Courier', (string) $r['name'])));
+        if ($has('service_givers', 'identification_number')) foreach ($q("SELECT business_name FROM service_givers WHERE identification_number <> '' AND UPPER(REPLACE(REPLACE(identification_number, ' ', ''), '-', '')) = ? LIMIT 1", array($norm)) as $r) $add(fa_partner_dup_item('id_number', 'block', 'ID_REGISTERED', $who('Shop', (string) $r['business_name'])));
+        foreach ($q("SELECT name, kind, agent_id, status FROM fa_partners WHERE id <> ? AND UPPER(REPLACE(REPLACE(id_number, ' ', ''), '-', '')) = ? AND status IN ('submitted','approved','changes') LIMIT 3", array($selfId, $norm)) as $r) $add(fa_partner_dup_item('id_number', 'block', 'ID_REGISTERED', $who(fa_partner_labels()[$r['kind']], $r['name'])));
+    }
+    // driving licence
+    if (strlen($lic) >= 3) {
+        $ln = strtoupper(preg_replace('/[\s\-]/', '', $lic));
+        if ($has('ride_drivers', 'license_number')) foreach ($q("SELECT u.name FROM ride_drivers r LEFT JOIN users u ON u.id = r.user_id WHERE r.license_number <> '' AND UPPER(REPLACE(REPLACE(r.license_number, ' ', ''), '-', '')) = ? LIMIT 1", array($ln)) as $r) $add(fa_partner_dup_item($kind === 'driver' ? 'license_number' : 'licence_number', 'block', 'LICENCE_REGISTERED', $who('Driver', (string) $r['name'])));
+        if ($has('courier_details', 'licence_number')) foreach ($q("SELECT u.name FROM courier_details c LEFT JOIN users u ON u.id = c.user_id WHERE c.licence_number <> '' AND UPPER(REPLACE(REPLACE(c.licence_number, ' ', ''), '-', '')) = ? LIMIT 1", array($ln)) as $r) $add(fa_partner_dup_item($kind === 'driver' ? 'license_number' : 'licence_number', 'block', 'LICENCE_REGISTERED', $who('Courier', (string) $r['name'])));
+    }
+    // plate: a warning only (a vehicle can change hands)
+    if (strlen($plate) >= 3) {
+        $pn = strtoupper(preg_replace('/[\s\-]/', '', $plate)); $field = $kind === 'driver' ? 'vehicle_plate' : 'plate_number';
+        if ($has('ride_drivers', 'vehicle_plate')) foreach ($q("SELECT u.name FROM ride_drivers r LEFT JOIN users u ON u.id = r.user_id WHERE r.vehicle_plate <> '' AND UPPER(REPLACE(REPLACE(r.vehicle_plate, ' ', ''), '-', '')) = ? LIMIT 1", array($pn)) as $r) $add(fa_partner_dup_item($field, 'warn', 'PLATE_REGISTERED', $who('Driver', (string) $r['name'])));
+        if ($has('couriers', 'plate_number')) foreach ($q("SELECT u.name FROM couriers c LEFT JOIN users u ON u.id = c.user_id WHERE c.plate_number <> '' AND UPPER(REPLACE(REPLACE(c.plate_number, ' ', ''), '-', '')) = ? LIMIT 1", array($pn)) as $r) $add(fa_partner_dup_item($field, 'warn', 'PLATE_REGISTERED', $who('Courier', (string) $r['name'])));
+    }
+    // name: same words in any order, among accounts and other submissions (a warning: two people can share a name)
+    $nn = fa_partner_norm_name($name);
+    if (strlen($nn) >= 5 && count(explode(' ', $nn)) >= 2) {
+        $words = explode(' ', $nn); usort($words, function ($a, $b) { return strlen($b) - strlen($a); });
+        $like = '%' . $words[0] . '%';
+        foreach ($q("SELECT name, role FROM users WHERE role IN ('courier','driver','service_giver') AND LOWER(name) LIKE ? LIMIT 60", array($like)) as $r) { if (fa_partner_norm_name($r['name']) === $nn) { $add(fa_partner_dup_item('name', 'warn', 'NAME_SIMILAR', $who(fa_partner_role_label($r['role']), $r['name']))); break; } }
+        foreach ($q("SELECT name, kind FROM fa_partners WHERE id <> ? AND status IN ('submitted','approved','changes') AND LOWER(name) LIKE ? LIMIT 60", array($selfId, $like)) as $r) { if (fa_partner_norm_name($r['name']) === $nn) { $add(fa_partner_dup_item('name', 'warn', 'NAME_SIMILAR', $who(fa_partner_labels()[$r['kind']], $r['name']))); break; } }
+    }
+    // shop: same name in the same city, same spot
+    if ($kind === 'shop') {
+        $bn = fa_partner_norm_name(isset($d['business_name']) ? $d['business_name'] : ''); $city = strtolower(trim((string) (isset($d['city']) ? $d['city'] : '')));
+        if (strlen($bn) >= 3 && $has('service_givers', 'business_name')) {
+            $sc = $has('service_givers', 'city');
+            foreach ($q("SELECT business_name" . ($sc ? ', city' : '') . " FROM service_givers WHERE LOWER(business_name) LIKE ? LIMIT 40", array('%' . substr(strtolower(trim((string) $d['business_name'])), 0, 6) . '%')) as $r) {
+                if (fa_partner_norm_name($r['business_name']) !== $bn) continue;
+                if ($sc && $city !== '' && trim((string) $r['city']) !== '' && strtolower(trim($r['city'])) !== $city) continue;
+                $add(fa_partner_dup_item('business_name', 'warn', 'SHOP_NAME', $who('Shop', (string) $r['business_name']))); break;
+            }
+        }
+        $lat = isset($d['lat']) && $d['lat'] !== null && $d['lat'] !== '' ? floatval($d['lat']) : null; $lng = isset($d['lng']) && $d['lng'] !== null && $d['lng'] !== '' ? floatval($d['lng']) : null;
+        if ($lat !== null && $lng !== null && $has('service_givers', 'lat')) {
+            $dl = 0.0004; $dn = 0.0004 / max(0.2, cos(deg2rad($lat)));   // about 45 m
+            foreach ($q("SELECT business_name FROM service_givers WHERE lat BETWEEN ? AND ? AND lng BETWEEN ? AND ? LIMIT 1", array($lat - $dl, $lat + $dl, $lng - $dn, $lng + $dn)) as $r) $add(fa_partner_dup_item('location', 'warn', 'SHOP_SPOT', $who('Shop', (string) $r['business_name'])));
+        }
+    }
+    return $out;
+}
+
 }

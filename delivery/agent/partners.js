@@ -45,6 +45,11 @@ var TX = {
   phone_taken: ['This phone number already has an ETEL account.', '\u12ed\u1205 \u1235\u120d\u12ad \u1241\u1325\u122d \u12a0\u1235\u1240\u12f5\u121e \u12e8\u12a2\u1275\u12a4\u120d \u1218\u1208\u12eb \u12a0\u1208\u12cd\u1362'],
   off: ['Registering partners is switched off right now.', '\u12a0\u130b\u122d \u121b\u1235\u1218\u12dd\u1308\u1265 \u1208\u130a\u12dc\u12cd \u1270\u12d8\u130d\u1277\u120d\u1362'], daily: ['You reached the daily limit. Try again tomorrow.', '\u12e8\u12d5\u1208\u1275 \u1308\u12f0\u1265\u12ce \u12f0\u122d\u1237\u120d\u1362 \u1290\u1308 \u12ed\u121e\u12ad\u1229\u1362'],
   del_q: ['Delete this draft?', '\u12ed\u1205 \u1228\u1242\u1245 \u12ed\u1230\u1228\u12dd?'], yes: ['Yes, delete', '\u12a0\u12ce\u1363 \u1230\u122d\u12dd'], no: ['Keep it', '\u1270\u12c8\u12cd'], home_btn: ['Register a courier, driver or shop', '\u1270\u120b\u120b\u12aa\u1363 \u1239\u134c\u122d \u12c8\u12ed\u121d \u1231\u1245 \u12eb\u1235\u1218\u12dd\u130d\u1261'], retry: ['Try again', '\u12a5\u1295\u12f0\u1308\u1293 \u121e\u12ad\u122d'],
+  dup_block: ['Already on ETEL', '\u12a0\u1235\u1240\u12f5\u121e \u1260\u12a2\u1275\u12a4\u120d \u120b\u12ed \u12a0\u1208'],
+  dup_warn: ['Looks similar. Please check.', '\u1270\u1218\u1233\u1233\u12ed \u1290\u12cd\u1362 \u12a5\u1263\u12ad\u12ce \u12eb\u1228\u130b\u130d\u1321\u1362'],
+  dup_cant: ['You cannot send this one. Change the details or choose someone else.', '\u12ed\u1205\u1295 \u1218\u120b\u12ad \u12a0\u12ed\u127d\u1209\u121d\u1362 \u1218\u1228\u1303\u12cd\u1295 \u12ed\u1240\u12ed\u1229 \u12c8\u12ed\u121d \u120c\u120b \u1230\u12cd \u12ed\u121d\u1228\u1321\u1362'],
+  dup_ok: ['Not found on ETEL yet.', '\u1260\u12a2\u1275\u12a4\u120d \u120b\u12ed \u12a5\u1235\u12ab\u1201\u1295 \u12a0\u120d\u1270\u1308\u1298\u121d\u1362'],
+  dup_checking: ['Checking ETEL...', '\u12a2\u1275\u12a4\u120d\u1295 \u1260\u1218\u1348\u1270\u123d \u120b\u12ed...'],
   pay_wait: ['Payment arrives {d} days after approval.', '\u12ad\u134d\u12eb\u12cd \u12a8\u1338\u12f0\u1240 \u12a8{d} \u1240\u1293\u1275 \u1260\u128b\u120b \u12ed\u12f0\u122d\u1233\u120d\u1362']
 };
 function L() { return P.S.lang === 'en' ? 0 : 1; }
@@ -57,7 +62,7 @@ var SHOP_TYPES = ['restaurant', 'cafe', 'fastfood', 'grocery', 'pharmacy', 'laun
 var ITEM_CATS = ['food', 'grocery', 'pharmacy', 'flower', 'package'];
 var UPTYPE = { courier: { id_photo_url: 'courier_id', selfie_url: 'courier_selfie', licence_photo_url: 'courier_licence' }, driver: { id_photo_url: 'courier_id', selfie_url: 'driver_selfie', license_photo_url: 'driver_license' }, shop: { id_photo_url: 'courier_id', selfie_url: 'courier_selfie', logo_url: 'shop_cover', cover_url: 'shop_cover', item: 'items' } };
 
-var Q = { list: null, counts: {}, fees: {}, minItems: 5, payDays: 0, err: '', cur: null, step: 0, busy: false, missing: {}, prev: {}, up: 0, msg: '', vehicles: null, areas: null, item: null, geo: '', loaded: false };
+var Q = { list: null, counts: {}, fees: {}, minItems: 5, payDays: 0, err: '', cur: null, step: 0, busy: false, missing: {}, prev: {}, up: 0, msg: '', vehicles: null, areas: null, item: null, geo: '', loaded: false, dups: { matches: [], blocked: false, done: false }, dupKey: '', dupTimer: null, dupBusy: false };
 
 /* ---------------- data ---------------- */
 function reason(r) {
@@ -92,7 +97,7 @@ function openDraft(id) {
     Q.step = 0; Q.missing = {}; Q.prev = {}; Q.item = null; startKind(); P.render();
   });
 }
-function startKind() { if (Q.cur.kind === 'driver') loadVehicles(); if (Q.cur.kind === 'shop') loadAreas(); window.scrollTo(0, 0); }
+function startKind() { Q.dups = { matches: [], blocked: false, done: false }; Q.dupKey = ''; if (Q.cur.kind === 'driver') loadVehicles(); if (Q.cur.kind === 'shop') loadAreas(); window.scrollTo(0, 0); }
 
 /* ---------------- helpers ---------------- */
 function fld(label, id, val, extra, hint) {
@@ -116,6 +121,45 @@ function sync() {
   });
 }
 function stepKey() { return STEPS[Q.cur.kind][Q.step]; }
+
+/* ---------------- live "already on ETEL?" check ----------------
+   While the agent types, the name, phone, ID number, plate, licence and shop details are checked against the live database. Exact matches (same person)
+   block sending; similar ones are only a warning. Only the kind and a short masked name of the other record is shown. */
+var DUPF = ['pt-name', 'pt-phone', 'pt-id_number', 'pt-plate_number', 'pt-vehicle_plate', 'pt-licence_number', 'pt-license_number', 'pt-business_name'];
+function dupPayload() { var c = Q.cur; return { id: c.id || 0, kind: c.kind, name: c.name, phone: c.phone, id_number: c.id_number, data: c.data }; }
+function dupHtml() {
+  var d = Q.dups, h = '';
+  if (!Q.cur) return '';
+  var blocks = d.matches.filter(function (m) { return m.level === 'block'; }), warns = d.matches.filter(function (m) { return m.level !== 'block'; });
+  var line = function (m) { return '<li>' + esc(L() ? (m.message_am || m.message) : m.message) + (m.who ? ' <small>(' + esc(m.who) + ')</small>' : '') + '</li>'; };
+  if (blocks.length) h += '<div class="pt-dup bad" role="alert"><b>' + ic('x') + esc(tx('dup_block')) + '</b><ul>' + blocks.map(line).join('') + '</ul><p>' + esc(tx('dup_cant')) + '</p></div>';
+  if (warns.length) h += '<div class="pt-dup warn" role="status"><b>' + ic('info') + esc(tx('dup_warn')) + '</b><ul>' + warns.map(line).join('') + '</ul></div>';
+  if (!blocks.length && !warns.length && d.done) h += '<p class="pt-dupok">' + ic('check') + esc(tx('dup_ok')) + '</p>';
+  return h;
+}
+/* update only the panel, the field borders and the Next / Send buttons: never redraw (that would disturb typing) */
+function paintDups() {
+  var box = document.getElementById('pt-dups'); if (!box) return;
+  box.innerHTML = dupHtml();
+  var lv = {}; Q.dups.matches.forEach(function (m) { var id = ({ phone: 'pt-phone', id_number: 'pt-id_number', name: 'pt-name', plate_number: 'pt-plate_number', vehicle_plate: 'pt-vehicle_plate', licence_number: 'pt-licence_number', license_number: 'pt-license_number', business_name: 'pt-business_name' })[m.field]; if (id && lv[id] !== 'block') lv[id] = m.level; });
+  DUPF.forEach(function (id) { var e = document.getElementById(id); if (e) { if (lv[id]) e.setAttribute('data-dup', lv[id]); else e.removeAttribute('data-dup'); } });
+  var lock = !!Q.dups.blocked;
+  document.querySelectorAll('[data-act="pt-next"],#pt-send').forEach(function (b) { b.disabled = lock || (b.id === 'pt-send' && (Q.busy || Q.up > 0)) || (b.getAttribute('data-act') === 'pt-next' && Q.busy); });
+}
+function checkNow() {
+  if (!Q.cur || Q.dupBusy) return; sync();
+  var body = dupPayload(), key = JSON.stringify(body);
+  if (!(body.name || body.phone || body.id_number)) { Q.dups = { matches: [], blocked: false, done: false }; paintDups(); return; }
+  if (key === Q.dupKey) { paintDups(); return; }
+  Q.dupBusy = true; Q.dupKey = key;
+  api('fa_partner_check', body).then(function (r) {
+    Q.dupBusy = false;
+    if (r.ok && Q.cur) { Q.dups = { matches: r.data.matches || [], blocked: !!r.data.blocked, done: true }; paintDups(); }
+    if (JSON.stringify(dupPayload()) !== key) queueCheck(300);   // the agent kept typing while we asked
+  });
+}
+function queueCheck(ms) { clearTimeout(Q.dupTimer); Q.dupTimer = setTimeout(checkNow, ms == null ? 600 : ms); }
+document.addEventListener('input', function (e) { if (P.S.view === 'partners' && Q.cur && e.target && DUPF.indexOf(e.target.id) >= 0) queueCheck(); });
 
 /* ---------------- screens ---------------- */
 function hub() {
@@ -223,10 +267,11 @@ function wizard() {
   else if (k === 'shop') body = shopFields();
   else if (k === 'products') body = productsStep();
   else if (k === 'review') body = reviewStep();
-  h += '<section class="card" style="margin-top:12px">' + body + '</section>';
+  h += '<div id="pt-dups" aria-live="polite">' + dupHtml() + '</div><section class="card" style="margin-top:12px">' + body + '</section>';
   h += '<div class="pt-nav">' + (Q.step > 0 ? '<button class="btn" data-act="pt-prev">' + esc(tx('back')) + '</button>' : '<button class="btn ghost" data-act="pt-save">' + esc(tx('save')) + '</button>') +
-    (last ? '<button class="btn primary" id="pt-send" data-act="pt-send"' + (Q.busy || Q.up ? ' disabled' : '') + '>' + ic('check') + esc(tx('send')) + '</button>' : '<button class="btn primary" data-act="pt-next"' + (Q.busy ? ' disabled' : '') + '>' + esc(tx('next')) + '</button>') + '</div>';
+    (last ? '<button class="btn primary" id="pt-send" data-act="pt-send"' + (Q.busy || Q.up || Q.dups.blocked ? ' disabled' : '') + '>' + ic('check') + esc(tx('send')) + '</button>' : '<button class="btn primary" data-act="pt-next"' + (Q.busy || Q.dups.blocked ? ' disabled' : '') + '>' + esc(tx('next')) + '</button>') + '</div>';
   if (last) h += '<div style="margin-top:10px"><button class="btn ghost" data-act="pt-save">' + esc(tx('save')) + '</button></div>';
+  setTimeout(function () { paintDups(); queueCheck(150); }, 0);
   return P.shell(h);
 }
 function view() { return Q.cur ? wizard() : hub(); }
@@ -248,7 +293,7 @@ function submit() {
     Q.busy = true; P.render();
     api('fa_partner_submit', { id: Q.cur.id }).then(function (r) {
       Q.busy = false;
-      if (!r.ok) { if (r.j && r.j.missing) Q.missing = r.j.missing; P.toast(reason(r)); P.render(); return; }
+      if (!r.ok) { if (r.j && r.j.missing) Q.missing = r.j.missing; if (r.j && r.j.reason === 'DUPLICATE') Q.dups = { matches: r.j.matches || [], blocked: true, done: true }; P.toast(reason(r)); P.render(); return; }
       P.toast(tx('sent')); Q.cur = null; Q.list = null; load(); window.scrollTo(0, 0); P.render();
     });
   });

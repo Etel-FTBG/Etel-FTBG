@@ -113,6 +113,20 @@ case 'fa_partner_save': {
     break;
 }
 
+case 'fa_partner_check': {
+    // Live "is this person already on ETEL?" while the agent types. Read-only; shows only the kind and a short masked name of the other record.
+    $GLOBALS['ETEL_LIMITED_BLOCK'] = true;
+    $pdo = db(); $u = require_auth($pdo); $a = fa_partner_agent_or_fail($pdo, $u);
+    $kind = isset($body['kind']) ? (string) $body['kind'] : '';
+    if (!in_array($kind, fa_partner_kinds(), true)) fail('Choose courier, driver or shop.');
+    $d = fa_partner_clean_data($kind, isset($body['data']) ? $body['data'] : array());
+    $m = fa_partner_duplicates($pdo, $a, $kind, fa_partner_clean_str(isset($body['name']) ? $body['name'] : '', 120), isset($body['phone']) ? (string) $body['phone'] : '',
+        fa_partner_clean_str(isset($body['id_number']) ? $body['id_number'] : '', 60), $d, intval(isset($body['id']) ? $body['id'] : 0));
+    $blocked = false; foreach ($m as $x) { if ($x['level'] === 'block') $blocked = true; }
+    ok(array('matches' => $m, 'blocked' => $blocked));
+    break;
+}
+
 case 'fa_partner_submit': {
     $pdo = db(); $u = require_auth($pdo); $a = fa_partner_agent_or_fail($pdo, $u);
     require_once __DIR__ . '/../validate.php';
@@ -125,6 +139,9 @@ case 'fa_partner_submit': {
     if ($miss) fail('Some details are missing: ' . implode(' ', array_values($miss)), 422, array('reason' => 'INCOMPLETE', 'missing' => $miss));
     $phone = etel_validate_phone($r['phone']);
     if ($phone !== false && etel_phone_taken($pdo, $phone)) fail('This phone number already has an ETEL account.', 409, array('reason' => 'PHONE_TAKEN'));
+    // the same person (phone, ID, licence) is already on ETEL or with another agent: it cannot be sent
+    $dups = fa_partner_duplicates($pdo, $a, $r['kind'], $r['name'], $r['phone'], $r['id_number'], $d, $r['id']);
+    foreach ($dups as $x) { if ($x['level'] === 'block') fail($x['message'], 409, array('reason' => 'DUPLICATE', 'matches' => $dups)); }
     $cap = intval(fa_setting($pdo, 'partner_daily_cap'));
     $q = $pdo->prepare("SELECT COUNT(*) FROM fa_partners WHERE agent_id = ? AND submitted_at > DATE_SUB(NOW(), INTERVAL 24 HOUR)");
     $q->execute(array($a['id']));

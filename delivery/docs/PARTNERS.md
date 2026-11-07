@@ -37,6 +37,24 @@ Fees and rules > "Agents can register partners". Off means agents cannot save or
 
 Rules: the partner must be a real person with their own phone number. A phone number that already has an ETEL account cannot be registered again.
 
+## Live duplicate check (agents)
+
+While an agent types, the form checks the live database and warns straight away, before anything is sent to the owner.
+
+| Typed | Match | What happens |
+|---|---|---|
+| Phone number | already an ETEL account, or already registered by an agent (any way of writing the number) | **Blocked** |
+| ID number | on a courier, shop owner or another submission (spaces, dashes and case ignored) | **Blocked** |
+| Driving licence number | on a driver or courier | **Blocked** |
+| Plate number | on a driver or courier | Warning |
+| Name | same words in any order, on an account or another submission | Warning |
+| Shop name | same name in the same city | Warning |
+| Shop location | a shop within about 45 m | Warning |
+
+A blocked person cannot be sent (the server refuses too, so an old app cannot bypass it). A warning never blocks; it asks the agent to check. The agent only sees the kind and a short masked name of the other record (for example "Courier - Chala B."), never a full phone or ID number. Rejected submissions and the agent's own draft are ignored.
+
+Technical: `fa_partner_duplicates()` in `api/lib/fa_partners.php`, action `fa_partner_check` (rate limited), enforced again in `fa_partner_submit`.
+
 ## Technical notes
 - Tables: `fa_partners` (migration 107). Staged data only; nothing is a real account before approval.
 - Code: `api/lib/fa_partners.php`, `api/controllers/FieldAgentPartnerController.php`, agent screens `agent/partners.js`, admin board `js/admin-agents-partners.js`.
