@@ -730,7 +730,7 @@ $ETEL_THROTTLED_ACTIONS = array(
     'confirm_bank_payment' => array(15, 600), 'rate_order' => array(30, 600),
     // Field Agents: brute-forcing referral codes and mass-applying are both capped per IP / per user.
     'fa_ref_lookup' => array(40, 600), 'fa_claim_ref' => array(20, 3600), 'fa_agent_apply' => array(6, 3600),
-    'fa_agent_book_ride' => array(30, 3600), 'fa_agent_quote' => array(120, 3600), 'fa_partner_save' => array(200, 3600), 'fa_partner_submit' => array(30, 3600),
+    'fa_agent_book_ride' => array(30, 3600), 'fa_agent_quote' => array(120, 3600), 'fa_partner_save' => array(200, 3600), 'fa_partner_check' => array(600, 3600), 'fa_partner_submit' => array(30, 3600),
     'sup_ticket_create' => array(10, 3600), 'sup_ticket_reply' => array(60, 3600), 'sup_ticket_rate' => array(20, 3600),
 );
 if (isset($ETEL_THROTTLED_ACTIONS[$action])) {
@@ -1785,7 +1785,7 @@ switch ($action) {
     case 'admin_fa_settings_get': case 'admin_fa_settings_save': case 'admin_fa_agents_list': case 'admin_fa_agent_get': case 'admin_fa_agent_decide': case 'admin_fa_customer_message': case 'admin_fa_sms_test': case 'admin_fa_sms_templates_get': case 'admin_fa_sms_template_save': case 'admin_fa_sms_mode_save': case 'admin_fa_earnings_list': case 'admin_fa_earning_decide': case 'admin_fa_run_earnings': case 'admin_fa_stats': case 'admin_fa_payouts_list': case 'admin_fa_payout_create': case 'admin_fa_payout_export': case 'admin_fa_payout_mark_paid': case 'admin_fa_payout_cancel': case 'admin_fa_audit_list': case 'admin_fa_reports': case 'admin_fa_payout_items':
         require __DIR__ . '/controllers/FieldAgentAdminController.php';
         break;
-    case 'fa_partner_list': case 'fa_partner_get': case 'fa_partner_save': case 'fa_partner_submit': case 'fa_partner_delete': case 'admin_fa_partners_list': case 'admin_fa_partners_stats': case 'admin_fa_partner_resend_sms': case 'admin_fa_partner_get': case 'admin_fa_partner_decide':
+    case 'fa_partner_list': case 'fa_partner_check': case 'fa_partner_get': case 'fa_partner_save': case 'fa_partner_submit': case 'fa_partner_delete': case 'admin_fa_partners_list': case 'admin_fa_partners_stats': case 'admin_fa_partner_resend_sms': case 'admin_fa_partner_get': case 'admin_fa_partner_decide':
         require __DIR__ . '/controllers/FieldAgentPartnerController.php';
         break;
     case 'fa_agent_vehicles': case 'fa_agent_quote': case 'fa_agent_book_ride': case 'fa_agent_bookings':

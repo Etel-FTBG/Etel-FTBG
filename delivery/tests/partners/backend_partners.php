@@ -138,9 +138,16 @@ t('the agent now has 250 payable (50 + 50 + 150)', floatval(one("SELECT SUM(amou
 list($AU3, $AID3) = mkagent('Agent Cali', '0911000004', '0922000004');
 $d2 = $courierData; $r = calla('fa_partner_save', array('kind' => 'courier', 'name' => 'Same Id', 'phone' => '0955000009', 'id_number' => 'FAYDA-9', 'data' => $d2), $AU3); $a1 = $r->data['partner']['id'];
 $r = calla('fa_partner_save', array('kind' => 'courier', 'name' => 'Same Id Again', 'phone' => '0955000010', 'id_number' => 'FAYDA-9', 'data' => $d2), $AU3); $a2 = $r->data['partner']['id'];
-calla('fa_partner_submit', array('id' => $a1), $AU3); calla('fa_partner_submit', array('id' => $a2), $AU3);
-$r = calla('admin_fa_partner_get', array('id' => $a2), $ADMIN); $codes = array_map(function ($f) { return $f['code']; }, $r->data['partner']['risk_flags']);
-t('the owner is warned about a repeated ID number', in_array('ID_IN_OTHER_SUBMISSION', $codes), json_encode($codes));
+calla('fa_partner_submit', array('id' => $a1), $AU3);
+$r = calla('fa_partner_submit', array('id' => $a2), $AU3);
+t('the same ID sent by the same agent twice is refused (live duplicate rule)', !$r->ok && $r->data['reason'] === 'DUPLICATE', $r->getMessage());
+calla('fa_partner_save', array('id' => $a2, 'kind' => 'courier', 'name' => 'Same Id Again', 'phone' => '0955000010', 'id_number' => 'FAYDA-10', 'data' => $d2), $AU3);
+calla('fa_partner_submit', array('id' => $a2), $AU3);
+// the risk flags still work for a race (two sent at the same moment): ask the risk function directly
+$ag = $PDO->query("SELECT * FROM fa_agents WHERE id = $AID3")->fetch();
+list($sc, $fl) = fa_partner_risk($PDO, $ag, array('id' => 999999, 'phone' => '0955000077', 'id_number' => 'FAYDA-9'));
+$codes = array_map(function ($f) { return $f['code']; }, $fl);
+t('the owner is warned about a repeated ID number (risk flag, for a race)', in_array('ID_IN_OTHER_SUBMISSION', $codes), json_encode($codes));
 $r = calla('fa_partner_get', array('id' => $a2), $AU3); t('the agent never sees risk flags', $r->ok && !isset($r->data['partner']['risk_flags']) && !isset($r->data['partner']['risk_score']));
 $r = calla('admin_fa_partner_decide', array('id' => $a2, 'decision' => 'reject', 'note' => 'Same ID as another person'), $ADMIN); t('reject', $r->ok && $r->data['status'] === 'rejected');
 t('a rejection pays nothing', intval(one("SELECT COUNT(*) FROM fa_earnings WHERE agent_id = ?", array($AID3))) === 0);
@@ -149,6 +156,48 @@ fa_settings($PDO, true);
 $r = calla('fa_partner_save', array('kind' => 'courier', 'name' => 'Third', 'phone' => '0955000011', 'id_number' => 'FAYDA-11', 'data' => $d2), $AU3); $a3 = $r->data['partner']['id'];
 $r = calla('fa_partner_submit', array('id' => $a3), $AU3); t('the daily limit stops a third submission', !$r->ok && $r->code2 == 429 && $r->data['reason'] === 'DAILY_CAP', $r->getMessage());
 $r = calla('fa_partner_delete', array('id' => $a3), $AU3); t('a draft can be deleted', $r->ok);
+
+// ---- live duplicate check ----
+$PDO->exec("DELETE FROM fa_settings WHERE setting_key = 'partner_daily_cap'"); fa_settings($PDO, true);
+function chk($user, $body) { $r = calla('fa_partner_check', $body, $user); return $r->ok ? $r->data : array('matches' => array(), 'blocked' => null, 'err' => $r->getMessage()); }
+function codes($d) { return array_map(function ($m) { return $m['field'] . ':' . $m['level'] . ':' . $m['code']; }, $d['matches']); }
+$d = chk($AU, array('kind' => 'courier', 'phone' => '0955000001'));
+t('dup: a phone that already has an account is a block', $d['blocked'] === true && in_array('phone:block:PHONE_ACCOUNT', codes($d)), json_encode($d));
+t('dup: the agent sees only the kind and a short name, never the full phone', strpos(json_encode($d), '0955000001') === false && strpos($d['matches'][0]['who'], 'Courier') === 0);
+$d = chk($AU, array('kind' => 'courier', 'phone' => '+251955000009'));
+t('dup: the same number written another way, already with another agent, is a block', in_array('phone:block:PHONE_PARTNER', codes($d)), json_encode($d));
+$d = chk($AU, array('kind' => 'courier', 'phone' => '0933999888', 'id_number' => 'fayda 9'));
+t('dup: an ID number with another agent is a block (case and spaces ignored)', in_array('id_number:block:ID_REGISTERED', codes($d)), json_encode($d));
+$d = chk($AU, array('kind' => 'courier', 'phone' => '0933999888', 'id_number' => 'FAYDA-1'));
+t('dup: an ID number on an existing courier is a block', in_array('id_number:block:ID_REGISTERED', codes($d)), json_encode($d));
+$d = chk($AU, array('kind' => 'courier', 'phone' => '0933999888', 'name' => 'Chala Courier'));
+t('dup: the same name in a different word order is a warning, not a block', in_array('name:warn:NAME_SIMILAR', codes($d)) && $d['blocked'] === false, json_encode($d));
+$d = chk($AU, array('kind' => 'driver', 'phone' => '0933999888', 'data' => array('vehicle_plate' => 'aa 1234', 'license_number' => 'l-77')));
+t('dup: a used plate is a warning and a used licence is a block', in_array('vehicle_plate:warn:PLATE_REGISTERED', codes($d)) && in_array('license_number:block:LICENCE_REGISTERED', codes($d)), json_encode($d));
+$d = chk($AU, array('kind' => 'shop', 'phone' => '0933999888', 'data' => array('business_name' => 'hawassa  burger', 'city' => 'Hawassa', 'lat' => 7.0401, 'lng' => 38.4801)));
+t('dup: a shop with the same name and one at the same spot are warnings', in_array('business_name:warn:SHOP_NAME', codes($d)) && in_array('location:warn:SHOP_SPOT', codes($d)), json_encode($d));
+$d = chk($AU, array('kind' => 'shop', 'phone' => '0933999888', 'data' => array('business_name' => 'Hawassa Burger', 'city' => 'Shashemene')));
+t('dup: the same shop name in another city is fine', !in_array('business_name:warn:SHOP_NAME', codes($d)), json_encode($d));
+$d = chk($AU, array('kind' => 'courier', 'phone' => '0933999888', 'name' => 'Completely New Person', 'id_number' => 'NEW-ID-5'));
+t('dup: a brand new person has no matches', $d['matches'] === array() && $d['blocked'] === false, json_encode($d));
+$r = calla('fa_partner_save', array('kind' => 'courier', 'name' => 'Own Draft', 'phone' => '0933111222', 'data' => $courierData), $AU); $own = $r->data['partner']['id'];
+$d = chk($AU, array('id' => $own, 'kind' => 'courier', 'phone' => '0933111222'));
+t('dup: a draft never matches itself', $d['matches'] === array(), json_encode($d));
+$r = calla('fa_partner_save', array('kind' => 'courier', 'name' => 'Other Draft', 'phone' => '0933111222', 'data' => $courierData), $AU); $own2 = $r->data['partner']['id'];
+$d = chk($AU, array('id' => $own2, 'kind' => 'courier', 'phone' => '0933111222'));
+t('dup: two drafts of my own with one number is a warning', in_array('phone:warn:PHONE_DRAFT', codes($d)) && $d['blocked'] === false, json_encode($d));
+$d = chk($AU2, array('kind' => 'courier', 'phone' => '0933111222'));
+t('dup: another agent is not told about my draft', $d['matches'] === array(), json_encode($d));
+calla('fa_partner_delete', array('id' => $own2), $AU);
+$dupData = $courierData;
+$r = calla('fa_partner_save', array('id' => $own, 'kind' => 'courier', 'name' => 'Own Draft', 'phone' => '0933111222', 'id_number' => 'FAYDA-9', 'data' => $dupData), $AU);
+$r = calla('fa_partner_submit', array('id' => $own), $AU);
+t('dup: sending is refused when the ID is already on ETEL', !$r->ok && $r->code2 == 409 && $r->data['reason'] === 'DUPLICATE' && count($r->data['matches']) >= 1, $r->getMessage());
+t('dup: it stays a draft', one("SELECT status FROM fa_partners WHERE id = ?", array($own)) === 'draft');
+$r = calla('fa_partner_save', array('id' => $own, 'kind' => 'courier', 'name' => 'Own Draft', 'phone' => '0933111222', 'id_number' => 'BRAND-NEW-ID', 'data' => $dupData), $AU);
+$r = calla('fa_partner_submit', array('id' => $own), $AU);
+t('dup: with a new ID it goes through (a name or plate warning never blocks)', $r->ok === true, $r->getMessage());
+$r = calla('fa_partner_check', array('kind' => 'courier', 'phone' => '0955000001'), mkuser('Nobody2', '0933000002')); t('dup: only an approved agent may check', !$r->ok && $r->code2 == 403);
 
 // ---- the owner's numbers ----
 $r = calla('admin_fa_partners_stats', array(), $ADMIN);
