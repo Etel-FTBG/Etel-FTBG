@@ -25,4 +25,12 @@ putenv('SMSET_API_URL=http://127.0.0.1:1/none'); putenv('SMSET_API_KEY=GOODKEY')
 t('server cannot reach the service -> failed, with a plain reason', etel_sms_send('0911234567', 'x') === 'failed' && strpos(etel_sms_last_error(), 'could not be reached') !== false, etel_sms_last_error());
 putenv('SMSET_API_URL=' . $url);
 t('bad number -> failed', etel_sms_send('123', 'x') === 'failed');
+require_once __DIR__ . '/../../api/lib/fa_core.php';
+$en = fa_customer_texts('en'); $am = fa_customer_texts('am');
+foreach (array('welcome', 'reset', 'verify', 'test') as $k) {
+    t('English ' . $k . ' text fits one SMS credit (160 characters)', isset($en[$k]) && strlen($en[$k]) <= 160, isset($en[$k]) ? strlen($en[$k]) : 'missing');
+    t('Amharic ' . $k . ' text exists, is real Ethiopic text and costs at most 2 credits (134 characters)', isset($am[$k]) && preg_match('/[\x{1200}-\x{137F}]/u', $am[$k]) === 1 && mb_strlen($am[$k], 'UTF-8') <= 134, isset($am[$k]) ? mb_strlen($am[$k], 'UTF-8') : 'missing');
+}
+t('the booking and reset texts carry the sign-in address (en and am)', strpos($en['welcome'], 'ethelmarket.com/delivery/ride/') !== false && strpos($am['welcome'], 'ethelmarket.com/delivery/ride/') !== false && strpos($am['reset'], 'ethelmarket.com/delivery/ride/') !== false);
+t('an unknown text kind is not sent', fa_customer_message('0911234567', 'nope') === 'failed');
 echo 'PASSED: ' . $PASS . "\nFAILED: " . count($FAILS) . "\n"; foreach ($FAILS as $f) echo '  X ' . $f . "\n";

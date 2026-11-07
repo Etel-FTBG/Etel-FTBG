@@ -66,6 +66,7 @@ function fa_defaults() {
         'agent_booking_cash_counts' => array(1, 0,  1),
         'agent_booking_review_trips' => array(10, 0, 100),
         'agent_booking_sms'        => array(1,  0,  1),
+        'agent_booking_sms_am'     => array(0,  0,  1),
         'risk_w_sequential_phones' => array(25, 0,  100),
     );
 }
@@ -258,16 +259,33 @@ function fa_reason_text($code) {
 
 if (!function_exists('fa_customer_message')) {
 require_once __DIR__ . '/sms_send.php';
-/* Text a customer an agent booked for. kind: welcome (sent automatically to a NEW customer), reset (set your password), verify (complete your profile).
-   Returns 'sent', 'failed' or 'off' (no SMS service set up). Never throws. ASCII only. */
-function fa_customer_message($phone, $kind) {
-    $url = 'ethelmarket.com/delivery/ride/';
-    $texts = array(
-        'welcome' => 'ETEL Ride: an Etel agent booked a ride for you. The driver will call you; you can pay the driver in cash. To follow your ride or pay with EtelPay, open ' . $url . ', tap Forgot password and choose your password, then complete your profile to fully verify your account.',
-        'reset'   => 'ETEL Ride: to follow your rides or pay with EtelPay, open ' . $url . ', tap Forgot password and choose your password.',
-        'verify'  => 'ETEL Ride: please sign in at ' . $url . ' and complete your profile (name and phone) so your account is fully verified.',
+/* The texts a customer an agent booked for can get. English fits ONE SMS credit (160 characters). Amharic (Ethiopic script) is sent as Unicode,
+   which is limited to 70 characters per credit, so each Amharic text costs 2 credits - it is used only when admin turns on "Amharic texts".
+   The Amharic strings are stored as \\u escapes so this file stays pure ASCII. */
+function fa_customer_texts($lang) {
+    if ($lang === 'am') {
+        $j = array(
+            'welcome' => '"\\u12a2\\u1274\\u120d \\u122b\\u12ed\\u12f5\\u1366 \\u12c8\\u12aa\\u120d \\u1309\\u12de \\u12a0\\u12d8\\u12d8\\u120d\\u12ce\\u1362 \\u1239\\u134c\\u1229 \\u12ed\\u12f0\\u12cd\\u120b\\u120d\\u1363 \\u1260\\u1325\\u122c \\u12ed\\u12ad\\u1348\\u1209\\u1362 \\u1208\\u1218\\u12a8\\u1273\\u1270\\u120d ethelmarket.com/delivery/ride/ \\u1308\\u1265\\u1270\\u12cd \\"\\u12e8\\u12ed\\u1208\\u134d \\u1243\\u120d \\u1228\\u1231?\\" \\u12ed\\u132b\\u1291\\u1362"',
+            'reset' => '"\\u12a2\\u1274\\u120d \\u122b\\u12ed\\u12f5\\u1366 \\u1309\\u12de\\u12ce\\u1295 \\u1208\\u1218\\u12a8\\u1273\\u1270\\u120d \\u12c8\\u12ed\\u121d \\u1260\\u12a2\\u1274\\u120d \\u1354\\u12ed \\u1208\\u1218\\u12ad\\u1348\\u120d ethelmarket.com/delivery/ride/ \\u1308\\u1265\\u1270\\u12cd \\"\\u12e8\\u12ed\\u1208\\u134d \\u1243\\u120d \\u1228\\u1231?\\" \\u12ed\\u132b\\u1291\\u1362"',
+            'verify' => '"\\u12a2\\u1274\\u120d \\u122b\\u12ed\\u12f5\\u1366 ethelmarket.com/delivery/ride/ \\u1308\\u1265\\u1270\\u12cd \\u1218\\u1308\\u1208\\u132b\\u12ce\\u1295 \\u12eb\\u121f\\u1209\\u1364 \\u12a0\\u12ab\\u12cd\\u1295\\u1275\\u12ce \\u1219\\u1209 \\u1260\\u1219\\u1209 \\u12ed\\u1228\\u130b\\u1308\\u1323\\u120d\\u1362"',
+            'test' => '"\\u12a2\\u1274\\u120d\\u1366 \\u12e8\\u1219\\u12a8\\u122b \\u1218\\u120d\\u12a5\\u12ad\\u1275 \\u12a8\\u12a2\\u1274\\u120d \\u12a0\\u12f5\\u121a\\u1295\\u1362 \\u12a4\\u1235\\u12a4\\u121d\\u12a4\\u1235 \\u12a5\\u12e8\\u1230\\u122b \\u1290\\u12cd\\u1362"',
+        );
+        $o = array();
+        foreach ($j as $k => $v) $o[$k] = json_decode($v);
+        return $o;
+    }
+    return array(
+        'welcome' => 'ETEL Ride: an agent booked a ride for you. The driver will call; pay in cash. To follow it open ethelmarket.com/delivery/ride/ and tap Forgot password.',
+        'reset' => 'ETEL Ride: to follow your rides or pay with EtelPay open ethelmarket.com/delivery/ride/ and tap Forgot password.',
+        'verify' => 'ETEL Ride: sign in at ethelmarket.com/delivery/ride/ and complete your profile to fully verify your account.',
+        'test' => 'ETEL: test text from Etel Admin. SMS is working.',
     );
-    if (!isset($texts[$kind])) return 'failed';
+}
+/* kind: welcome (sent automatically to a NEW customer), reset (set your password), verify (complete your profile), test (admin test text).
+   lang: 'en' or 'am'. Returns 'sent', 'failed' or 'off' (no SMS service set up). Never throws. */
+function fa_customer_message($phone, $kind, $lang = 'en') {
+    $texts = fa_customer_texts($lang);
+    if (!isset($texts[$kind]) || $texts[$kind] === null) return 'failed';
     return etel_sms_send($phone, $texts[$kind]);
 }
 }
