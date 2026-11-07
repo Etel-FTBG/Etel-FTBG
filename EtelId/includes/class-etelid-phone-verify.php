@@ -44,7 +44,8 @@ class EtelID_Phone_Verify {
     public static function channels() {
         $out = array();
         $at = defined( 'ETELID_AT_API_KEY' ) ? ETELID_AT_API_KEY : getenv( 'ETELID_AT_API_KEY' );
-        if ( $at ) $out[] = 'sms';
+        $sm = defined( 'ETELID_SMSET_API_KEY' ) ? ETELID_SMSET_API_KEY : getenv( 'ETELID_SMSET_API_KEY' );
+        if ( $at || ( $sm && 'CHANGE_ME' !== $sm ) ) $out[] = 'sms';
         $wt = defined( 'ETELID_WA_ACCESS_TOKEN' ) ? ETELID_WA_ACCESS_TOKEN : getenv( 'ETELID_WA_ACCESS_TOKEN' );
         $wp = defined( 'ETELID_WA_PHONE_ID' )     ? ETELID_WA_PHONE_ID     : getenv( 'ETELID_WA_PHONE_ID' );
         if ( $wt && $wp ) $out[] = 'whatsapp';

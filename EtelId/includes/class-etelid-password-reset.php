@@ -372,19 +372,49 @@ class EtelID_Password_Reset {
      *    relies on - one integration, both carriers, no separate
      *    Ethio-Telecom-specific vs Safaricom-specific code path needed
      *    or available. ── */
+    /* SMSEthiopia (smsethiopia.com): POST /api/sms/send, key in the KEY header, JSON {msisdn, text}. The sender name and the
+     * SMS package come from the campaign the key was created under. Config (wp-config.php or server env):
+     *   define('ETELID_SMSET_API_KEY', '...');
+     * Returns true only when the service accepted the message (HTTP 2xx and no error field). */
+    public static function sms_provider_key() {
+        $k = defined( 'ETELID_SMSET_API_KEY' ) ? ETELID_SMSET_API_KEY : getenv( 'ETELID_SMSET_API_KEY' );
+        return ( $k && 'CHANGE_ME' !== $k ) ? $k : '';
+    }
+
+    public static function send_via_smsethiopia( $to_digits, $text ) {
+        $key = self::sms_provider_key();
+        if ( ! $key || ! $to_digits ) return false;
+        $url = defined( 'ETELID_SMSET_API_URL' ) ? ETELID_SMSET_API_URL : 'https://smsethiopia.com/api/sms/send';
+        $resp = wp_remote_post( $url, array(
+            'timeout' => 10,
+            'headers' => array( 'KEY' => $key, 'API_KEY' => $key, 'Content-Type' => 'application/json', 'Accept' => 'application/json' ),
+            'body'    => wp_json_encode( array( 'msisdn' => $to_digits, 'text' => (string) $text ) ),
+        ) );
+        if ( is_wp_error( $resp ) ) return false;
+        $code = (int) wp_remote_retrieve_response_code( $resp );
+        $j    = json_decode( wp_remote_retrieve_body( $resp ), true );
+        $bad  = is_array( $j ) && ( ( isset( $j['success'] ) && ! $j['success'] ) || isset( $j['error'] ) || isset( $j['error_code'] ) || isset( $j['error_message'] ) );
+        return $code >= 200 && $code < 300 && ! $bad;
+    }
+
     public static function send_via_sms( $member, $code, $what = 'password reset code', $minutes = 15 ) {
-        $at_key  = defined('ETELID_AT_API_KEY') ? ETELID_AT_API_KEY : getenv('ETELID_AT_API_KEY');
-        $at_user = defined('ETELID_AT_USERNAME') ? ETELID_AT_USERNAME : (getenv('ETELID_AT_USERNAME') ?: 'sandbox');
-        if ( ! $at_key || empty( $member->phone ) ) return false;
+        if ( empty( $member->phone ) ) return false;
         $to = self::to_e164_digits( $member->phone );
         if ( ! $to ) return false;
+        $text = "Your Etel-ID {$what} is: {$code} (expires in " . (int) $minutes . " minutes)";
+        /* 1. SMSEthiopia (preferred) */
+        if ( self::sms_provider_key() && self::send_via_smsethiopia( $to, $text ) ) return true;
+        /* 2. Africa's Talking (fallback) */
+        $at_key  = defined('ETELID_AT_API_KEY') ? ETELID_AT_API_KEY : getenv('ETELID_AT_API_KEY');
+        $at_user = defined('ETELID_AT_USERNAME') ? ETELID_AT_USERNAME : (getenv('ETELID_AT_USERNAME') ?: 'sandbox');
+        if ( ! $at_key ) return false;
         $resp = wp_remote_post( 'https://api.africastalking.com/version1/messaging', array(
             'timeout' => 10,
             'headers' => array( 'apiKey' => $at_key, 'Accept' => 'application/json' ),
             'body'    => array(
                 'username' => $at_user,
                 'to'       => '+' . $to,
-                'message'  => "Your Etel-ID {$what} is: {$code} (expires in " . (int) $minutes . " minutes)",
+                'message'  => $text,
                 'from'     => 'ETEL',
             ),
         ));
