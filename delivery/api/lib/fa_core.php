@@ -69,6 +69,14 @@ function fa_defaults() {
         'agent_booking_sms_am'     => array(0,  0,  1),
         'agent_booking_sms_lang'   => array(0,  0,  2),
         'risk_w_sequential_phones' => array(25, 0,  100),
+        // Partner onboarding: an agent registers a courier, a driver or a shop; the owner approves; a fixed fee is paid once, after approval.
+        'partners_enabled'        => array(1,   0,   1),
+        'partner_fee_courier'     => array(50,  0,   5000),
+        'partner_fee_driver'      => array(50,  0,   5000),
+        'partner_fee_shop'        => array(150, 0,   5000),
+        'partner_shop_min_items'  => array(5,   0,   200),
+        'partner_daily_cap'       => array(10,  1,   100),
+        'partner_pay_days'        => array(0,   0,   60),
     );
 }
 
