@@ -15,7 +15,7 @@ var B = { veh: null, vcap: 10, fares: {}, phone: '', name: '', vtype: '', km: ''
           geo: '', routeKm: 0, list: null, result: null, busy: false, err: '', qt: null, maps: null, mapOn: false, mapFail: false, drivers: 0, dpoll: null };
 var M = { map: null, el: null, pin: null, drop: null, line: null, drv: [], icons: {}, thumbs: {}, ac: [], dirs: null, geocoder: null };
 
-function vname(v) { var k = 'veh.' + v, s = t(k); return s === k ? (v.charAt(0).toUpperCase() + v.slice(1)) : s; }
+function vname(v) { var k = 'veh.' + v, s = t(k); v = String(v).replace(/_/g, ' '); return s === k ? (v.charAt(0).toUpperCase() + v.slice(1)) : s; }
 function vnorm(v) { v = String(v || '').toLowerCase(); if (ART[v]) return v; if (v.indexOf('moto') !== -1) return 'moto'; if (v.indexOf('mini') !== -1 || v.indexOf('bus') !== -1) return 'minibus'; if (v.indexOf('qute') !== -1) return 'qute'; if (v.indexOf('bajaj') !== -1 || v.indexOf('tuk') !== -1) return 'bajaj'; if (v.indexOf('car') !== -1 || v.indexOf('ev') === 0) return 'car'; return ''; }
 function vimg(v, w) { var n = vnorm(v); return n ? '<img class="bv-img" src="veh/' + n + '.webp" alt="" width="' + w + '" height="' + Math.round(w * 0.7) + '" decoding="async" draggable="false">' : ic(VICON[v] || 'car'); }
 function phoneOk() { var d = B.phone.replace(/\D/g, ''); return /^(251|0)?[79]\d{8}$/.test(d); }
@@ -240,6 +240,8 @@ function resultCard(r) {
   var b = r.bonus || {}, lines = ['<p><b>' + esc(t('bk.done')) + '</b></p>'];
   lines.push('<p class="sub">' + esc(vname(r.vehicle_type)) + ' · ' + esc(fmt(r.fare)) + ' ' + esc(t('c.etb')) + ' · ' + esc(r.customer) + '</p>');
   if (r.new_account) lines.push('<p class="sub">' + esc(t('bk.done_new')) + '</p>');
+  lines.push('<p class="sub">' + esc(t('bk.pay_note')) + '</p>');
+  lines.push('<p class="sub">' + esc(t(r.sms === 'sent' ? 'bk.sms_sent' : 'bk.sms_none')) + '</p>');
   if (b.eligible) { lines.push('<p class="sub">' + esc(t('bk.bonus_yes')) + '</p>'); if (b.review) lines.push('<p class="sub">' + esc(t('bk.bonus_review')) + '</p>'); }
   else if (b.reason) lines.push('<p class="sub">' + esc(t('bk.bonus_' + b.reason)) + '</p>');
   lines.push('<p class="sub">' + esc(t('bk.left', { n: r.left_today })) + '</p>');

@@ -259,6 +259,16 @@ function rides_calc_fare($pdo, $distKm, $vehicleType = 'bajaj', $openTrip = fals
         'vehicle_type'=>$vehicleType, 'surge_mult'=>$surge, 'floor'=>$floor, 'final'=>$final,
     ));
 }
+/* A trip that ended without the customer moving (meter at about 0 km) is billed the BASE FARE only
+   (plus any real waiting time), never the booked trip's price and never the minimum-fare floor.
+   Same result shape as rides_calc_fare(), so rides_fare_breakdown_for_ui() works on it. */
+function rides_calc_fare_no_move($pdo, $vehicleType = 'bajaj', $openTrip = false, $waitMinutes = 0) {
+    $r = rides_calc_fare($pdo, 0, $vehicleType, $openTrip, $waitMinutes);
+    $b = $r['breakdown'];
+    $fare = round(($b['base'] + $b['wait_etb']) * $b['surge_mult'], 2);
+    $b['floor'] = 0; $b['final'] = $fare; $b['no_movement'] = true;
+    return array('fare' => $fare, 'surge' => $r['surge'], 'breakdown' => $b);
+}
 function rides_calc_fare_simple($pdo, $distKm, $vehicleType='bajaj') {
     $r = rides_calc_fare($pdo, $distKm, $vehicleType);
     return $r['fare'];

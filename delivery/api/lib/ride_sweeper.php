@@ -168,15 +168,12 @@ function rides_sweep_stuck($pdo, $opts = array()) {
                     $fare = $fareCalc['fare'];
                     $breakdown = rides_fare_breakdown_for_ui($fareCalc);
                 } else {
-                    $km = floatval($r['distance_km']);
-                    $base = floatval($r['fare_final']) > 0 ? floatval($r['fare_final']) : rides_calc_fare_simple($pdo, $km, $vtype);
-                    $rule = rides_fare_rule($pdo, $vtype);
-                    $billable = ($capMin > 0) ? min($waitMin, $capMin) : $waitMin;
-                    $waitEtb = round($rule['wait_rate_per_min'] * $billable, 2);
-                    $fare = $base + $waitEtb;
-                    $breakdown = array('fare_base' => $base, 'fare_distance' => 0, 'fare_wait' => $waitEtb,
-                        'fare_subtotal' => round($base + $waitEtb, 2), 'fare_surge_mult' => 1.0,
-                        'fare_surge_etb' => 0, 'fare_floor_topup' => 0, 'fare_total' => $fare);
+                    // no movement: base fare (plus waiting) only, not the booked trip price
+                    $km = 0;
+                    $fareCalc = rides_calc_fare_no_move($pdo, $vtype, $isOpen, $waitMin);
+                    $fare = $fareCalc['fare'];
+                    $breakdown = rides_fare_breakdown_for_ui($fareCalc);
+                    $breakdown['no_movement'] = true;
                 }
                 $breakdown['auto_ended'] = true;
                 if ($shortfall['applied']) {

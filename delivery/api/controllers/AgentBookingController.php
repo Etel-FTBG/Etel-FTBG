@@ -18,6 +18,27 @@ require_once __DIR__ . '/../lib/ride_offer.php';
 
 if (!function_exists('fa_bk_agent')) {
 
+/* Text the customer after an agent books a ride. Returns 'sent', 'failed' or 'off' (no SMS service set up). Never throws. */
+function fa_bk_sms_customer($phone, $newAcct) {
+    try {
+        $key = function_exists('etel_env') ? etel_env('AT_API_KEY', 'CFG_AT_API_KEY', '') : '';
+        if (!$key || $key === 'your_at_api_key' || !function_exists('curl_init')) return 'off';
+        $user = etel_env('AT_USERNAME', 'CFG_AT_USERNAME', 'sandbox');
+        $d = preg_replace('/\D/', '', (string)$phone);
+        if (strlen($d) < 9) return 'failed';
+        $to = '+251' . substr($d, -9);
+        $msg = 'ETEL Ride: a ride was booked for you by an Etel agent. The driver will call you; you can pay the driver in cash.'
+             . ($newAcct ? ' To follow your ride or pay with EtelPay, open ethelmarket.com/delivery/ride/ and tap Forgot password to choose your password.' : ' Follow it in the Etel Ride app.');
+        $ch = curl_init('https://api.africastalking.com/version1/messaging');
+        curl_setopt_array($ch, array(CURLOPT_RETURNTRANSFER => true, CURLOPT_POST => true, CURLOPT_TIMEOUT => 6,
+            CURLOPT_HTTPHEADER => array('apiKey: ' . $key, 'Accept: application/json', 'Content-Type: application/x-www-form-urlencoded'),
+            CURLOPT_POSTFIELDS => http_build_query(array('username' => $user, 'to' => $to, 'message' => $msg, 'from' => 'ETEL'))));
+        $resp = curl_exec($ch); curl_close($ch);
+        $j = $resp ? @json_decode($resp, true) : null;
+        return ($j && isset($j['SMSMessageData']['Recipients'][0]['status']) && $j['SMSMessageData']['Recipients'][0]['status'] === 'Success') ? 'sent' : 'failed';
+    } catch (Exception $e) { return 'failed'; }
+}
+
 /* The signed-in user's APPROVED agent row, or a plain refusal. */
 function fa_bk_agent($pdo, $u) {
     $S = fa_settings($pdo);
@@ -159,9 +180,13 @@ case 'fa_agent_book_ride': {
         foreach ($targets as $rd) etel_push_send($pdo, intval($rd['user_id']), 'New ride request nearby!', 'ETB ' . number_format($fare, 0) . ' - ' . round($rd['km'], 1) . ' km away', array('type' => 'new_ride_request', 'ride_id' => $rid, 'url' => '/delivery/driver/'));
     } catch (Exception $e) { error_log('[ETEL][push] agent-booking push failed: ' . $e->getMessage()); }
 
+    // Text the customer (only when the SMS service is set up and admin has it on); a failure never blocks the booking.
+    $smsState = 'off';
+    if (!empty($S['agent_booking_sms'])) $smsState = fa_bk_sms_customer($phone, $newAcct);
+
     $review = $eligible && intval($S['agent_booking_review_trips']) > 0 && fa_booking_clean_count($pdo, $agent['id']) < intval($S['agent_booking_review_trips']);
     $q = $pdo->prepare('SELECT COUNT(*) FROM fa_bookings WHERE agent_id = ? AND created_at > DATE_SUB(NOW(), INTERVAL 24 HOUR)'); $q->execute(array($agent['id']));
-    ok(array('ride_id' => $rid, 'fare' => $fare, 'vehicle_type' => $vtype, 'new_account' => $newAcct ? 1 : 0, 'customer' => fa_mask_phone($phone),
+    ok(array('ride_id' => $rid, 'fare' => $fare, 'vehicle_type' => $vtype, 'new_account' => $newAcct ? 1 : 0, 'customer' => fa_mask_phone($phone), 'sms' => $smsState,
              'bonus' => array('eligible' => $eligible, 'reason' => $why, 'review' => $review), 'left_today' => max(0, $cap - intval($q->fetchColumn()))));
     break;
 }

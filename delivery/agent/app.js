@@ -4,6 +4,8 @@
 (function () {
 'use strict';
 var API = new URL('../api/boot.php', location.href).pathname;
+var VER = (function () { try { var m = /[?&]v=([^&]+)/.exec(document.currentScript.src); return m ? m[1] : '0'; } catch (e) { return '0'; } })();
+function langUrl(c) { return 'lang/' + c + '.json?v=' + VER; }
 var K = { theme: 'theme', tok: 'etel_token', user: 'etel_user', lang: 'etel_agent_lang', me: 'etel_agent_me', photo: 'etel_agent_photo', dev: 'etel_dev' };
 var SUPPORT = { telegram: 'https://t.me/etelsupport', email: 'support@ethelmarket.com' };
 var ROUTES = ['home', 'code', 'badge', 'card', 'refs', 'pay', 'me', 'rules', 'support', 'book'];
@@ -56,13 +58,13 @@ window.addEventListener('storage', function (e) { if (e.key === K.theme && (e.ne
 
 /* ---------- language ---------- */
 function loadLang() {
-  var get = function (c) { return fetch('lang/' + c + '.json').then(function (r) { return r.json(); }); };
+  var get = function (c) { return fetch(langUrl(c)).then(function (r) { return r.json(); }); };
   var l = ls(K.lang); S.lang = (l === 'en' || l === 'am') ? l : 'am';
   return Promise.all([get(S.lang), get('en')]).then(function (r) { S.dict = r[0]; S.fall = r[1]; document.documentElement.lang = S.lang; });
 }
 function setLang(l) {
   S.lang = l; ls(K.lang, l);
-  return Promise.all([fetch('lang/' + l + '.json').then(function (r) { return r.json(); })]).then(function (r) { S.dict = r[0]; document.documentElement.lang = l; render(); });
+  return Promise.all([fetch(langUrl(l)).then(function (r) { return r.json(); })]).then(function (r) { S.dict = r[0]; document.documentElement.lang = l; render(); });
 }
 
 /* ---------- state machine ---------- */
@@ -253,7 +255,7 @@ function vBook() {
 }
 function loadBook() {
   if (S.bookLoading) return; S.bookLoading = true;
-  var sc = document.createElement('script'); sc.src = 'book.js?v=2';
+  var sc = document.createElement('script'); sc.src = 'book.js?v=3';
   sc.onload = function () { S.bookLoading = false; if (S.view === 'book') { if (window.ETELBook.open) window.ETELBook.open(); render(); } };
   sc.onerror = function () { S.bookLoading = false; toast(t('c.error')); };
   document.body.appendChild(sc);
@@ -263,7 +265,7 @@ var VIEWS = { book: vBook, login: vLogin, limited: vLimited, fail: vFail, apply:
 function render() {
   var f = VIEWS[S.view];
   if (!f) { $('app').innerHTML = '<div class="boot"><img class="logo" src="logo-128.webp" width="76" height="76" alt=""></div>'; return; }
-  if (S.view === 'card' && !S.cardAm) { Promise.all([fetch('lang/am.json').then(function (r) { return r.json(); }), fetch('lang/en.json').then(function (r) { return r.json(); })]).then(function (x) { S.cardAm = { ride: x[0]['card.ride'], scan: x[0]['card.scan'], code: x[0]['card.code'] }; S.cardEn = { ride: x[1]['card.ride'], scan: x[1]['card.scan'], code: x[1]['card.code'] }; render(); }); return; }
+  if (S.view === 'card' && !S.cardAm) { Promise.all([fetch(langUrl('am')).then(function (r) { return r.json(); }), fetch(langUrl('en')).then(function (r) { return r.json(); })]).then(function (x) { S.cardAm = { ride: x[0]['card.ride'], scan: x[0]['card.scan'], code: x[0]['card.code'] }; S.cardEn = { ride: x[1]['card.ride'], scan: x[1]['card.scan'], code: x[1]['card.code'] }; render(); }); return; }
   var keep = document.activeElement && document.activeElement.name;
   $('app').innerHTML = f(); window.scrollTo(0, 0);
   if (S.view === 'badge') drawBadge($('bc'));

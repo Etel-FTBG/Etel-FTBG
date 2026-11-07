@@ -4647,21 +4647,15 @@ case 'driver_arrived': {
         // it never cleared the 5m jitter floor) - fall back to the
         // booking-time estimate rather than billing ETB 0. Waiting time is
         // still real even if distance tracking failed, so it's still added.
-        $km = floatval($r['distance_km']);
-        $baseFare = floatval($r['fare_final']) > 0 ? floatval($r['fare_final']) : rides_calc_fare_simple($pdo, $km);
-        $waitRule = rides_fare_rule($pdo, $vtype);
-        $waitCapMin = rides_wait_cap_minutes($pdo);
-        $billableWait = ($waitCapMin > 0) ? min($waitMinutes, $waitCapMin) : $waitMinutes;
-        $waitEtb = round($waitRule['wait_rate_per_min'] * $billableWait, 2);
-        $fare = $baseFare + $waitEtb;
-        // No live surge/base/distance split available in this fallback
-        // path (booking-time estimate already has surge baked in, if
-        // any) - still surface what we do know rather than nothing.
-        $breakdownForUi = array(
-            'fare_base' => $baseFare, 'fare_distance' => 0, 'fare_wait' => $waitEtb,
-            'fare_subtotal' => round($baseFare + $waitEtb, 2), 'fare_surge_mult' => 1.0,
-            'fare_surge_etb' => 0, 'fare_floor_topup' => 0, 'fare_total' => $fare,
-        );
+        // The customer did not move: they pay the BASE FARE (plus real waiting time) only,
+        // never the price of the trip that was booked.
+        $km = 0;
+        $fareResult = rides_calc_fare_no_move($pdo, $vtype, $isOpenTrip, $waitMinutes);
+        $fare = $fareResult['fare'];
+        $finalSurge = $fareResult['surge'] ? 1 : 0;
+        $waitEtb = $fareResult['breakdown']['wait_etb'];
+        $breakdownForUi = rides_fare_breakdown_for_ui($fareResult);
+        $breakdownForUi['no_movement'] = true;
     }
     // Persist the exact breakdown used to bill this ride, rather than
     // letting the customer's screen recompute it later - surge windows
