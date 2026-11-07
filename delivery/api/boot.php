@@ -2572,6 +2572,12 @@ switch ($action) {
             if ($resp && stripos($resp, 'Message queued') !== false) $sent_via = 'whatsapp';
         }
 
+        // Channel 2b: SMS via SMSEthiopia (SMSET_API_KEY in api/.env)
+        if (!$sent_via) {
+            require_once __DIR__ . '/lib/sms_send.php';
+            if (etel_sms_send_smsethiopia($phone, $otp_msg) === 'sent') $sent_via = 'sms';
+        }
+
         // Channel 3: SMS via Africa's Talking (paid)
         $at_key  = etel_env('AT_API_KEY',  'CFG_AT_API_KEY',  '');
         $at_user = etel_env('AT_USERNAME', 'CFG_AT_USERNAME', 'sandbox');
