@@ -17,6 +17,7 @@ const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAFElEQVR
     const p = await ctx.newPage(); p.on('pageerror', e => errs.push(theme + ': ' + e.message));
     await p.goto(BASE + '#/partners', { waitUntil: 'domcontentloaded' });
     await p.waitForSelector('.pt-kind', { timeout: 30000 }); await p.waitForTimeout(800);
+    t(theme + ': the start cards show real pictures', (await p.$$eval('.pt-kind .pt-ki img.pt-vimg', a => a.filter(i => i.complete && i.naturalWidth > 0).length)) >= 2);
     let txt = await p.innerText('body');
     t(theme + ': hub shows three kinds with fees', /Courier/.test(txt) && /Driver/.test(txt) && /Shop or service/.test(txt) && /50/.test(txt) && /150/.test(txt), txt.slice(0, 160));
     t(theme + ': no horizontal scroll', await p.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1));
@@ -28,13 +29,18 @@ const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAFElEQVR
       await p.fill('#pt-name', 'Chala Bekele'); await p.fill('#pt-phone', '0955123456'); await p.fill('#pt-id_number', 'NID-778899');
       await upl(p, 'id_photo_url'); await upl(p, 'selfie_url');
       await p.screenshot({ path: 'pt-courier-1.png' });
-      await p.click('[data-act="pt-next"]'); await p.waitForSelector('.pt-chip'); await p.waitForTimeout(600);
+      await p.click('[data-act="pt-next"]'); await p.waitForSelector('.pt-vt'); await p.waitForTimeout(900);
       t('step 2 shows the vehicles', (await p.innerText('body')).includes('Motorcycle'));
-      await p.click('.pt-chip:has-text("Bicycle")'); await p.waitForTimeout(300);
+      const loaded = await p.$$eval('.pt-vt img.pt-vimg', a => a.map(i => i.complete && i.naturalWidth > 0));
+      t('real vehicle pictures are shown for the vehicle choices (motorcycle and car)', loaded.length >= 2 && loaded.every(Boolean), JSON.stringify(loaded));
+      t('a vehicle with no picture file yet keeps a drawn icon, never a broken image', (await p.$$('.pt-vt .pt-vico')).length >= 1);
+      await p.screenshot({ path: 'pt-real-vehicles.png' });
+      await p.click('.pt-vt:has-text("Bicycle")'); await p.waitForTimeout(300);
       await p.click('[data-act="pt-next"]'); await p.waitForSelector('#pt-emergency_phone'); await p.waitForTimeout(500);
       await p.fill('#pt-emergency_name', 'Mother'); await p.fill('#pt-emergency_phone', '0944000099'); await p.fill('#pt-zone', 'Tabor');
       await p.click('[data-act="pt-next"]'); await p.waitForSelector('#pt-send'); await p.waitForTimeout(600);
       txt = await p.innerText('body');
+      t('the review shows the vehicle picture', (await p.$$('.pt-rpic img.pt-vimg')).length + (await p.$$('.pt-rpic .pt-vico')).length === 1);
       t('review says everything is filled in', txt.includes('Everything is filled in'), txt.slice(-300));
       t('the review shows the fee', txt.includes('50 ETB'));
       t('the draft is saved on the server', q("SELECT COUNT(*) FROM fa_partners WHERE name='Chala Bekele' AND status='draft'") === '1');

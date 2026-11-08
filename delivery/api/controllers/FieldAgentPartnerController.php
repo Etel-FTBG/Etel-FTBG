@@ -36,6 +36,9 @@ function fa_partner_agent_view($r, $full) {
     $out = array('id' => intval($r['id']), 'kind' => $r['kind'], 'status' => $r['status'], 'name' => $r['name'], 'phone' => $r['phone'],
         'item_count' => intval($r['item_count']), 'fee_amount' => floatval($r['fee_amount']), 'decision_note' => $r['decision_note'],
         'submitted_at' => $r['submitted_at'], 'decided_at' => $r['decided_at'], 'updated_at' => $r['updated_at']);
+    $dd = json_decode((string) $r['data'], true); if (!is_array($dd)) $dd = array();
+    $out['vehicle'] = isset($dd['vehicle_type']) ? (string) $dd['vehicle_type'] : '';   // for the real vehicle picture in the list
+    $out['logo'] = ($r['kind'] === 'shop' && isset($dd['logo_url'])) ? (string) $dd['logo_url'] : '';
     if ($full) {
         $d = json_decode((string) $r['data'], true); $it = json_decode((string) $r['items'], true);
         $out['id_number'] = $r['id_number']; $out['data'] = is_array($d) ? $d : array(); $out['items'] = is_array($it) ? $it : array();
