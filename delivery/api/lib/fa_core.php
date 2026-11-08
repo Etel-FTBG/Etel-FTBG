@@ -173,6 +173,40 @@ function fa_audit_verify($pdo) {
     return array('ok' => true, 'rows' => $n, 'first_bad_id' => 0);
 }
 
+
+/* ---------- agent roles ----------
+   What an agent may do is decided by the admin, per agent. Four roles:
+     ride     book rides for customers, the referral code / QR / badge / card, the riders list
+     courier  register couriers
+     driver   register drivers
+     shop     register shops and their products
+   An agent always has the basic pages (home, payouts, profile, rules, support). Missing or empty = ride only (how every agent worked before roles existed). */
+function fa_roles_all() { return array('ride', 'courier', 'driver', 'shop'); }
+function fa_roles_labels() { return array('ride' => 'Ride booking', 'courier' => 'Register couriers', 'driver' => 'Register drivers', 'shop' => 'Register shops'); }
+/* Adds fa_agents.roles on older installs (once per request). Idempotent. */
+function fa_roles_ensure($pdo) {
+    static $done = false;
+    if ($done) return;
+    $done = true;
+    try {
+        $c = $pdo->query("SHOW COLUMNS FROM fa_agents LIKE 'roles'")->fetch(PDO::FETCH_ASSOC);
+        if (!$c) $pdo->exec("ALTER TABLE fa_agents ADD COLUMN roles VARCHAR(40) NOT NULL DEFAULT 'ride'");
+    } catch (Exception $e) { error_log('[ETEL][roles] ' . $e->getMessage()); }
+}
+/* "ride,shop" or array -> clean list in a fixed order (unknown words dropped). */
+function fa_roles_clean($v) {
+    if (!is_array($v)) $v = explode(',', (string) $v);
+    $out = array();
+    foreach (fa_roles_all() as $r) { if (in_array($r, array_map('trim', array_map('strval', $v)), true)) $out[] = $r; }
+    return $out;
+}
+function fa_agent_roles($a) {
+    if (!is_array($a) || !array_key_exists('roles', $a)) return array('ride');
+    $r = fa_roles_clean($a['roles']);
+    return $a['roles'] === null || trim((string) $a['roles']) === '' ? array('ride') : $r;
+}
+function fa_agent_has_role($a, $role) { return in_array($role, fa_agent_roles($a), true); }
+
 /* ---------- small helpers ---------- */
 function fa_phone_last9($p) {
     $d = preg_replace('/[^0-9]/', '', (string) $p);

@@ -14,6 +14,27 @@ var KIND = { first_trip: 'First trip bonus', repeat3: 'Repeat bonus', clawback: 
 var RISKTXT = { SEQUENTIAL_PHONES: 'Booked for customers with phone numbers next to each other', SHARED_IDENTITY: 'Shares a payout number or device with another agent', SAME_DEVICE: 'Same device as the agent', CODE_REUSE: 'One device claimed several referrals', BURST: 'Many referrals in a short time', REPEAT_PAIR: 'Same driver again and again', SHORT_TRIP: 'Very short trips', ODD_HOURS: 'Trips at odd hours', AGENT_HISTORY: 'Many earlier referrals rejected' };
 function agePill(s) { var a = AGE[s] || [s, '']; return '<span class="ag-pill ' + a[1] + '">' + esc(T(a[0])) + '</span>'; }
 function kindLabel(k) { return T(KIND[k] || k); }
+/* ---- roles: what each agent may do (decided here by the owner) ---- */
+var ROLES = [['ride', '🚖', 'Ride booking', 'Book rides for customers, referral code, QR badge and card, riders list'], ['courier', '🛵', 'Register couriers', 'Can sign up couriers for you to approve'], ['driver', '🚕', 'Register drivers', 'Can sign up drivers for you to approve'], ['shop', '🏪', 'Register shops', 'Can sign up shops with their products for you to approve']];
+function roleChips(list) {
+  list = list || [];
+  if (!list.length) return '<span class="ag-pill">No role</span>';
+  return ROLES.filter(function (r) { return list.indexOf(r[0]) >= 0; }).map(function (r) { return '<span class="ag-pill" title="' + esc(T(r[2])) + '">' + r[1] + '</span>'; }).join(' ');
+}
+function roleSection(a, manage) {
+  var have = a.roles || ['ride'];
+  var h = '<div class="ak-sec" id="ag-roles"><h4>' + esc(T('What this agent can do')) + '</h4><p style="font-size:13px;color:var(--mute);margin:0 0 8px">' + esc(T('Switch on only what this agent should see and use. Everything else is hidden from them and refused by the server.')) + '</p>';
+  h += ROLES.map(function (r) {
+    return '<label class="ak-sw" style="display:flex;margin:6px 0"><input type="checkbox" data-role="' + r[0] + '"' + (have.indexOf(r[0]) >= 0 ? ' checked' : '') + (manage ? '' : ' disabled') + '><span><b>' + r[1] + ' ' + esc(T(r[2])) + '</b><br><small style="color:var(--mute)">' + esc(T(r[3])) + '</small></span></label>';
+  }).join('');
+  if (manage) {
+    h += '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px"><button type="button" class="ak-btn" data-roleset="all">' + esc(T('All four')) + '</button><button type="button" class="ak-btn" data-roleset="ride">' + esc(T('Ride booking only')) + '</button><button type="button" class="ak-btn" data-roleset="none">' + esc(T('No role')) + '</button>' +
+      (a.status === 'approved' || a.status === 'suspended' ? '<button type="button" class="ak-btn gold" data-roles-save>' + esc(T('Save roles')) + '</button>' : '') + '</div>' +
+      (a.status === 'pending' || a.status === 'rejected' ? '<p class="ak-fh" style="margin-top:6px">' + esc(T('These roles are saved when you approve.')) + '</p>' : '');
+  }
+  return h + '</div>';
+}
+function pickedRoles() { var o = []; document.querySelectorAll('#ag-roles [data-role]').forEach(function (c) { if (c.checked) o.push(c.getAttribute('data-role')); }); return o; }
 
 /* ======================= AGENTS ======================= */
 var G = { rows: [], status: '', q: '', loaded: false, err: '' };
@@ -23,7 +44,7 @@ function agentRows() {
   if (!G.rows.length) return K.empty('🤝', 'No agents here', G.q || G.status ? 'Try another filter or search.' : 'Agents appear here when they apply in the Agent portal.');
   return '<div class="ak-tblw"><table class="ak-tbl"><thead><tr><th scope="col">' + esc(T('Agent')) + '</th><th scope="col">' + esc(T('Venue')) + '</th><th scope="col">' + esc(T('Status')) + '</th><th scope="col">' + esc(T('Age')) + '</th><th scope="col">' + esc(T('Tier')) + '</th><th scope="col">' + esc(T('Code')) + '</th><th scope="col">' + esc(T('Risk')) + '</th><th scope="col" class="ag-num">' + esc(T('Referrals')) + '</th><th scope="col" class="ag-num">' + esc(T('Payable')) + ' / ' + esc(T('Held')) + '</th></tr></thead><tbody>' +
     G.rows.map(function (a) {
-      return '<tr data-open tabindex="0" data-agent-row="' + esc(a.id) + '"><td><b>' + esc(a.full_name) + '</b><br><small>' + esc(a.phone) + '</small></td><td>' + esc(a.venue_name) + '<br><small>' + esc(TYPE[a.venue_type] || a.venue_type) + (a.venue_zone ? ' - ' + esc(a.venue_zone) : '') + '</small></td><td>' + A.statusPill(a.status) + '</td><td>' + agePill(a.age_status) + '</td><td>' + esc(a.tier) + '</td><td class="ag-mono">' + esc(a.code || '-') + '</td><td>' + A.riskBar(a.risk_score) + '</td><td class="ag-num">' + esc(a.referrals) + '</td><td class="ag-num">' + esc(A.etb(a.payable)) + ' / ' + esc(A.etb(a.held)) + '</td></tr>';
+      return '<tr data-open tabindex="0" data-agent-row="' + esc(a.id) + '"><td><b>' + esc(a.full_name) + '</b><br><small>' + esc(a.phone) + '</small><br>' + roleChips(a.roles) + '</td><td>' + esc(a.venue_name) + '<br><small>' + esc(TYPE[a.venue_type] || a.venue_type) + (a.venue_zone ? ' - ' + esc(a.venue_zone) : '') + '</small></td><td>' + A.statusPill(a.status) + '</td><td>' + agePill(a.age_status) + '</td><td>' + esc(a.tier) + '</td><td class="ag-mono">' + esc(a.code || '-') + '</td><td>' + A.riskBar(a.risk_score) + '</td><td class="ag-num">' + esc(a.referrals) + '</td><td class="ag-num">' + esc(A.etb(a.payable)) + ' / ' + esc(A.etb(a.held)) + '</td></tr>';
     }).join('') + '</tbody></table></div>';
 }
 function agentsHtml() {
@@ -46,6 +67,7 @@ function agentDrawer(id) {
     var head = '<div class="ak-top"><div class="ak-av lg">' + esc(K.initials(a.full_name)) + '</div><div class="ak-nm"><b>' + esc(a.full_name) + '</b><small>' + esc(a.venue_name) + '</small></div></div>';
     var top = (a.risk_reasons || []).map(function (x) { return '<li><b>x' + esc(x.count) + '</b><span>' + esc(RISKTXT[x.code] || x.code) + '</span></li>'; }).join('');
     var body = '<div class="ak-sec"><h4>Profile</h4>' + K.kv([['Status', A.statusPill(a.status), true], ['Phone', a.phone], ['Etel ID', a.etel_id || '-'], ['Venue', a.venue_name + ' (' + (TYPE[a.venue_type] || a.venue_type) + ')'], ['Zone', a.venue_zone || '-'], ['Payout phone (Telebirr)', a.payout_phone], ['Code', a.code || 'Not issued yet'], ['Tier', a.tier], ['Applied', K.fullDate(a.created_at)]]) + '</div>' +
+      roleSection(a, manage) +
       '<div class="ak-sec"><h4>Age check (must be 18 or older)</h4><p style="margin:0 0 6px">' + agePill(a.age_status) + '</p><p style="font-size:13px;color:var(--mute);margin:0">' + esc(a.age_note || '') + '</p></div>' +
       (d.shared_with && d.shared_with.length ? '<div class="ak-sec"><h4>Shared details</h4><ul class="ag-why">' + d.shared_with.map(function (x) { return '<li><b>!</b><span><b>' + esc(x.name) + '</b> uses the same ' + esc(x.why) + '</span></li>'; }).join('') + '</ul></div>' : '') +
       '<div class="ak-sec"><h4>Risk</h4><p style="margin:0 0 8px">' + A.riskBar(a.risk_score) + '</p>' + (top ? '<ul class="ag-why">' + top + '</ul>' : '<p style="font-size:13px;color:var(--mute);margin:0">No repeated risk signals.</p>') + '</div>' +
@@ -73,6 +95,16 @@ function agentDrawer(id) {
         });
         return;
       }
+      var rs = e.target.closest('[data-roleset]');
+      if (rs) { var set = { all: ['ride', 'courier', 'driver', 'shop'], ride: ['ride'], none: [] }[rs.getAttribute('data-roleset')]; dr.querySelectorAll('[data-role]').forEach(function (c) { c.checked = set.indexOf(c.getAttribute('data-role')) >= 0; }); return; }
+      var rv = e.target.closest('[data-roles-save]');
+      if (rv) {
+        var picked = pickedRoles();
+        return A.busy(rv, function () { return run('admin_fa_agent_set_roles', { id: a.id, roles: picked }); }).then(function (r) {
+          if (!ok(r)) { K.toast(K.failText(r, 'Could not save the roles.'), true); return; }
+          K.toast(picked.length ? 'Roles saved. The agent sees the change at once.' : 'Roles saved: this agent now has only the basic pages.'); loadAgents();
+        });
+      }
       var b = e.target.closest('[data-do]'); if (!b) return;
       decideAgent(a, b.getAttribute('data-do'), b);
     });
@@ -91,6 +123,7 @@ function decideAgent(a, what, btn) {
   return p.then(function (res) {
     if (!res) return;
     var body = { id: a.id, decision: what };
+    if (what === 'approve') body.roles = pickedRoles();
     if (what === 'approve' && !verified) { body.manual_age_ok = true; body.age_note = res.reason; }
     else if (res.reason) body.reason = res.reason;
     return A.busy(btn, function () { return run('admin_fa_agent_decide', body); }).then(function (r) {

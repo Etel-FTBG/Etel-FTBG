@@ -7,6 +7,7 @@ let pass = 0; const fails = []; const t = (n, c, x) => { if (c) pass++; else fai
 const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAFElEQVR4nGP8z8Dwn4EIwDiqEF8oAA0uA/1o2wGeAAAAAElFTkSuQmCC', 'base64');
 
 (async () => {
+  q("ALTER TABLE fa_agents ADD COLUMN IF NOT EXISTS roles VARCHAR(40) NOT NULL DEFAULT 'ride'"); q("UPDATE fa_agents SET roles='ride,courier,driver,shop' WHERE phone='0911000001'");
   q("DELETE FROM fa_partners"); q("DELETE FROM fa_earnings");
   const b = await chromium.launch(); const errs = [];
   const upl = async (p, key, n) => { await p.setInputFiles(`[data-file="${key}"]`, D + '/p.jpg'); await p.waitForFunction(k => { const f = document.querySelector(`[data-file="${k}"]`); const u = f && f.previousElementSibling; return u && u.classList.contains('has') && !/Uploading/.test(u.innerText); }, key, { timeout: 20000 }); };

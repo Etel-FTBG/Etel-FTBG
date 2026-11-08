@@ -17,13 +17,17 @@ require_once __DIR__ . '/../lib/fa_partners.php';
 
 if (!function_exists('fa_partner_agent_or_fail')) {
 
-function fa_partner_agent_or_fail($pdo, $user) {
+function fa_partner_agent_or_fail($pdo, $user, $kind = null) {
+    fa_roles_ensure($pdo);
     $q = $pdo->prepare('SELECT * FROM fa_agents WHERE user_id = ? LIMIT 1');
     $q->execute(array(intval($user['id'])));
     $a = $q->fetch(PDO::FETCH_ASSOC);
     if (!$a) fail('You are not an agent yet.', 403);
     if ($a['status'] !== 'approved') fail('Your agent account is not approved yet.', 403);
     if (empty(fa_setting($pdo, 'program_enabled')) || empty(fa_setting($pdo, 'partners_enabled'))) fail('Registering partners is switched off right now.', 403, array('reason' => 'PARTNERS_OFF'));
+    $mine = array_values(array_intersect(fa_agent_roles($a), fa_partner_kinds()));
+    if (!$mine) fail('The ETEL team has not given you a role to register partners.', 403, array('reason' => 'ROLE_NONE'));
+    if ($kind !== null && !in_array($kind, $mine, true)) fail('The ETEL team has not given you the role to register this kind of partner.', 403, array('reason' => 'ROLE_' . strtoupper($kind)));
     return $a;
 }
 
@@ -68,7 +72,7 @@ case 'fa_partner_list': {
     $q->execute(array($a['id']));
     $rows = array(); $counts = array('draft' => 0, 'submitted' => 0, 'changes' => 0, 'approved' => 0, 'rejected' => 0); $earned = 0;
     foreach ($q->fetchAll(PDO::FETCH_ASSOC) as $r) { $rows[] = fa_partner_agent_view($r, false); $counts[$r['status']]++; if ($r['status'] === 'approved') $earned += floatval($r['fee_amount']); }
-    ok(array('partners' => $rows, 'counts' => $counts, 'earned' => $earned,
+    ok(array('partners' => $rows, 'counts' => $counts, 'earned' => $earned, 'allowed_kinds' => array_values(array_intersect(fa_agent_roles($a), fa_partner_kinds())),
         'fees' => array('courier' => fa_partner_fee($pdo, 'courier'), 'driver' => fa_partner_fee($pdo, 'driver'), 'shop' => fa_partner_fee($pdo, 'shop')),
         'shop_min_items' => intval(fa_setting($pdo, 'partner_shop_min_items')), 'pay_days' => intval(fa_setting($pdo, 'partner_pay_days'))));
     break;
@@ -89,6 +93,7 @@ case 'fa_partner_save': {
     $kind = isset($body['kind']) ? (string) $body['kind'] : '';
     if ($id > 0) { $cur = fa_partner_load_own($pdo, $a, $id); $kind = $cur['kind']; if (!in_array($cur['status'], array('draft', 'changes'), true)) fail('This one is already with the owner and cannot be edited.', 409); }
     if (!in_array($kind, fa_partner_kinds(), true)) fail('Choose courier, driver or shop.');
+    fa_partner_agent_or_fail($pdo, $u, $kind);   // the admin must have given this agent the role for this kind
     $name = fa_partner_clean_str(isset($body['name']) ? $body['name'] : '', 120);
     $phoneRaw = isset($body['phone']) ? trim((string) $body['phone']) : '';
     $phone = $phoneRaw === '' ? '' : etel_validate_phone($phoneRaw);
@@ -119,6 +124,7 @@ case 'fa_partner_check': {
     $pdo = db(); $u = require_auth($pdo); $a = fa_partner_agent_or_fail($pdo, $u);
     $kind = isset($body['kind']) ? (string) $body['kind'] : '';
     if (!in_array($kind, fa_partner_kinds(), true)) fail('Choose courier, driver or shop.');
+    fa_partner_agent_or_fail($pdo, $u, $kind);
     $d = fa_partner_clean_data($kind, isset($body['data']) ? $body['data'] : array());
     $m = fa_partner_duplicates($pdo, $a, $kind, fa_partner_clean_str(isset($body['name']) ? $body['name'] : '', 120), isset($body['phone']) ? (string) $body['phone'] : '',
         fa_partner_clean_str(isset($body['id_number']) ? $body['id_number'] : '', 60), $d, intval(isset($body['id']) ? $body['id'] : 0));
@@ -132,6 +138,7 @@ case 'fa_partner_submit': {
     require_once __DIR__ . '/../validate.php';
     $r = fa_partner_load_own($pdo, $a, isset($body['id']) ? $body['id'] : 0);
     if (!in_array($r['status'], array('draft', 'changes'), true)) fail('This one was already sent.', 409);
+    fa_partner_agent_or_fail($pdo, $u, $r['kind']);
     $d = json_decode((string) $r['data'], true); if (!is_array($d)) $d = array();
     $items = json_decode((string) $r['items'], true); if (!is_array($items)) $items = array();
     $d = fa_partner_clean_data($r['kind'], $d);

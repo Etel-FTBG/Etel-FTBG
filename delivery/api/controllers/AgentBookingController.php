@@ -23,10 +23,12 @@ function fa_bk_agent($pdo, $u) {
     $S = fa_settings($pdo);
     if (empty($S['program_enabled'])) fail('The agent programme is not open yet.', 403, array('reason' => 'PROGRAM_OFF'));
     if (empty($S['agent_booking_enabled'])) fail('Booking rides for customers is switched off right now.', 403, array('reason' => 'BOOKING_OFF'));
+    fa_roles_ensure($pdo);
     $q = $pdo->prepare("SELECT * FROM fa_agents WHERE user_id = ? AND status = 'approved' LIMIT 1");
     $q->execute(array(intval($u['id'])));
     $a = $q->fetch(PDO::FETCH_ASSOC);
     if (!$a) fail('Only approved agents can book rides.', 403, array('reason' => 'NOT_AGENT'));
+    if (!fa_agent_has_role($a, 'ride')) fail('The ETEL team has not given you the ride booking role.', 403, array('reason' => 'ROLE_RIDE'));
     return $a;
 }
 function fa_bk_has_col($pdo, $col) {

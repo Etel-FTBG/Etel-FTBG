@@ -37,7 +37,10 @@ function mkagent($name, $phone, $pay, $status = 'approved') {
     global $PDO; $u = mkuser($name, $phone, 'ET' . $phone, 'customer');
     $PDO->prepare("INSERT INTO fa_agents (user_id, etel_id, full_name, phone, venue_name, venue_type, venue_zone, payout_phone, code, status, age_status, tier, decided_at, created_at, updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,'manual_verified','bronze',NOW(),NOW(),NOW())")
         ->execute(array($u['id'], 'ET' . $phone, $name, $phone, 'Hilton Hawassa', 'hotel', 'Lake', $pay, strtoupper(substr(md5($name), 0, 6)), $status));
-    return array($u, intval($PDO->lastInsertId()));
+    $aid = intval($PDO->lastInsertId());
+    require_once __DIR__ . '/../../api/lib/fa_core.php'; fa_roles_ensure($PDO);
+    $PDO->exec("UPDATE fa_agents SET roles = 'ride,courier,driver,shop' WHERE id = $aid");   // these tests are about partners, so the owner has given every role
+    return array($u, $aid);
 }
 require_once $API . '/lib/fa_earnings.php'; require_once $API . '/lib/fa_risk.php';
 function calla($action, $body, $user) {

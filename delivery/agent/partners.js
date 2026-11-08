@@ -50,6 +50,7 @@ var TX = {
   dup_cant: ['You cannot send this one. Change the details or choose someone else.', '\u12ed\u1205\u1295 \u1218\u120b\u12ad \u12a0\u12ed\u127d\u1209\u121d\u1362 \u1218\u1228\u1303\u12cd\u1295 \u12ed\u1240\u12ed\u1229 \u12c8\u12ed\u121d \u120c\u120b \u1230\u12cd \u12ed\u121d\u1228\u1321\u1362'],
   dup_ok: ['Not found on ETEL yet.', '\u1260\u12a2\u1275\u12a4\u120d \u120b\u12ed \u12a5\u1235\u12ab\u1201\u1295 \u12a0\u120d\u1270\u1308\u1298\u121d\u1362'],
   dup_checking: ['Checking ETEL...', '\u12a2\u1275\u12a4\u120d\u1295 \u1260\u1218\u1348\u1270\u123d \u120b\u12ed...'],
+  role_no: ['ETEL has not given you this role. Ask the ETEL team.', '\u12a2\u1275\u12a4\u120d \u12ed\u1205\u1295 \u121a\u1293 \u12a0\u120d\u1230\u1320\u12ce\u1275\u121d\u1362 \u12e8\u12a2\u1275\u12a4\u120d\u1295 \u1261\u12f5\u1295 \u12ed\u1320\u12ed\u1241\u1362'],
   pay_wait: ['Payment arrives {d} days after approval.', '\u12ad\u134d\u12eb\u12cd \u12a8\u1338\u12f0\u1240 \u12a8{d} \u1240\u1293\u1275 \u1260\u128b\u120b \u12ed\u12f0\u122d\u1233\u120d\u1362']
 };
 function L() { return P.S.lang === 'en' ? 0 : 1; }
@@ -67,6 +68,7 @@ var Q = { list: null, counts: {}, fees: {}, minItems: 5, payDays: 0, err: '', cu
 /* ---------------- data ---------------- */
 function reason(r) {
   var c = r && r.j && r.j.reason ? r.j.reason : '';
+  if (c.indexOf('ROLE_') === 0) return tx('role_no');
   if (c === 'PHONE_TAKEN') return tx('phone_taken'); if (c === 'PARTNERS_OFF') return tx('off'); if (c === 'DAILY_CAP') return tx('daily');
   if (r && r.net) return P.t('c.offline');
   return (r && r.j && r.j.message) ? r.j.message : P.t('c.error');
@@ -74,7 +76,7 @@ function reason(r) {
 function load() {
   Q.err = '';
   return api('fa_partner_list').then(function (r) {
-    if (r.ok) { Q.list = r.data.partners; Q.counts = r.data.counts; Q.fees = r.data.fees; Q.minItems = r.data.shop_min_items; Q.payDays = r.data.pay_days; Q.earned = r.data.earned; }
+    if (r.ok) { Q.list = r.data.partners; Q.counts = r.data.counts; Q.fees = r.data.fees; Q.minItems = r.data.shop_min_items; Q.payDays = r.data.pay_days; Q.earned = r.data.earned; Q.allowed = r.data.allowed_kinds; }
     else { Q.list = r.net ? [] : null; Q.err = reason(r); }
     Q.loaded = true; if (P.S.view === 'partners') P.render();
   });
@@ -166,7 +168,7 @@ function hub() {
   Q.domFor = null;
   var h = '<h1>' + esc(tx('title')) + '</h1><p class="sub">' + esc(tx('sub')) + '</p>';
   if (Q.err) h += '<div class="err" role="alert">' + esc(Q.err) + ' <button class="btn" style="margin-top:8px" data-act="pt-reload">' + esc(tx('retry')) + '</button></div>';
-  h += '<div class="pt-kinds">' + ['courier', 'driver', 'shop'].map(function (k) {
+  h += '<div class="pt-kinds">' + ['courier', 'driver', 'shop'].filter(function (k) { return !Array.isArray(Q.allowed) || Q.allowed.indexOf(k) >= 0; }).map(function (k) {
     return '<section class="card pt-kind"><div class="pt-ki">' + ic(k === 'shop' ? 'badge' : (k === 'driver' ? 'car' : 'moto')) + '</div><div class="pt-kt"><b>' + esc(tx(k)) + '</b><small>' + esc(tx(k + '_d')) + '</small></div>' +
       '<div class="pt-fee"><small>' + esc(tx('you_earn')) + '</small><b class="num">' + esc(fmt(Q.fees[k] || 0)) + ' <i>' + esc(tx('etb')) + '</i></b></div>' +
       '<button class="btn primary" data-act="pt-new" data-k="' + k + '">' + ic('plus') + esc(tx('start')) + '</button></section>';

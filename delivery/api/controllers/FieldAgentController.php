@@ -20,6 +20,7 @@ require_once __DIR__ . '/../lib/fa_insights.php';
 if (!function_exists('fa_agent_of')) {
 
 function fa_agent_of($pdo, $userId) {
+    fa_roles_ensure($pdo);
     $q = $pdo->prepare('SELECT * FROM fa_agents WHERE user_id = ? LIMIT 1');
     $q->execute(array(intval($userId)));
     return $q->fetch(PDO::FETCH_ASSOC);
@@ -85,9 +86,11 @@ case 'fa_claim_ref': {
     rate_limit_check($pdo, 'fa_claim_u' . intval($u['id']), 8, 3600, 3600);
     $code = fa_normalize_code(isset($body['code']) ? $body['code'] : '');
     $dev  = isset($body['device']) ? substr(preg_replace('/[^A-Za-z0-9]/', '', (string) $body['device']), 0, 128) : '';
+    fa_roles_ensure($pdo);
     $q = $pdo->prepare("SELECT * FROM fa_agents WHERE code = ? AND status = 'approved' LIMIT 1");
     $q->execute(array($code));
     $agent = $q->fetch(PDO::FETCH_ASSOC);
+    if ($agent && !fa_agent_has_role($agent, 'ride')) $agent = false;   // an agent without the ride role has no working referral code
     if (!$agent) { rate_limit_fail($pdo, 'fa_claim_u' . intval($u['id'])); ok(array('applied' => false, 'reason' => 'BAD_CODE')); }
     $ex = $pdo->prepare('SELECT id FROM fa_referrals WHERE rider_user_id = ? LIMIT 1');
     $ex->execute(array(intval($u['id'])));
@@ -186,7 +189,7 @@ case 'fa_agent_me': {
     ok(array(
         'is_agent' => true, 'program_enabled' => !empty($S['program_enabled']),
         'agent' => array('id' => intval($a['id']), 'name' => $a['full_name'], 'venue' => $a['venue_name'], 'venue_type' => $a['venue_type'], 'venue_zone' => $a['venue_zone'],
-                         'status' => $a['status'], 'code' => $a['status'] === 'approved' ? $a['code'] : null, 'tier' => $a['tier'],
+                         'status' => $a['status'], 'code' => ($a['status'] === 'approved' && fa_agent_has_role($a, 'ride')) ? $a['code'] : null, 'tier' => $a['tier'], 'roles' => fa_agent_roles($a),
                          'age_verified' => in_array($a['age_status'], array('auto_verified', 'manual_verified'), true), 'payout_phone' => $a['payout_phone'],
                          'decision_reason' => $a['status'] === 'rejected' ? ($a['decision_reason'] !== '' ? 'NOT_APPROVED' : '') : ''),
         'balances' => array('pending' => round($bal['pending'], 2), 'available' => round($bal['available'], 2), 'paid' => round($bal['paid'], 2),
