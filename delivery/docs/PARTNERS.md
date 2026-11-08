@@ -55,6 +55,26 @@ A blocked person cannot be sent (the server refuses too, so an old app cannot by
 
 Technical: `fa_partner_duplicates()` in `api/lib/fa_partners.php`, action `fa_partner_check` (rate limited), enforced again in `fa_partner_submit`.
 
+## Agent roles (the owner decides what each agent can do)
+
+Every agent has any mix of four roles, chosen by the owner in Admin > Agents > open an agent > "What this agent can do":
+
+| Role | The agent can |
+|---|---|
+| Ride booking | book rides for customers, use the referral code, QR badge and card, see the riders list |
+| Register couriers | sign up couriers for the owner to approve |
+| Register drivers | sign up drivers |
+| Register shops | sign up shops with their products |
+
+- Switch any on or off, or use the quick buttons (All four, Ride booking only, No role), then **Save roles**. The agent sees the change at once and gets a notice. Roles can also be chosen while approving a new agent (default: ride booking only).
+- What is not given is **hidden** in the agent app and **refused by the server** (an old app cannot bypass it). A referral code stops working while the agent lacks the ride role (a rider typing it sees "wrong code").
+- An agent with no role still has the basic pages: home, payouts, profile, rules, support.
+- Agents that existed before roles keep working as ride-only. If you were testing partner registration with an agent, give that agent the roles again.
+- A draft of a kind the agent no longer has can still be read but not edited or sent.
+- Every change is in the audit log (Agents > Audit log: "Roles changed").
+
+Technical: column `fa_agents.roles` (added automatically, comma list, `none` = no role), `fa_roles_*` and `fa_agent_has_role()` in `api/lib/fa_core.php`, action `admin_fa_agent_set_roles` (agents.manage). Tests: `tests/partners/backend_roles.php`, `tests/partners/ui_roles.js`.
+
 ## Technical notes
 - Tables: `fa_partners` (migration 107). Staged data only; nothing is a real account before approval.
 - Code: `api/lib/fa_partners.php`, `api/controllers/FieldAgentPartnerController.php`, agent screens `agent/partners.js`, admin board `js/admin-agents-partners.js`.

@@ -78,12 +78,18 @@ function loadMe() {
     S.offline = false; S.me = r.data; ls(K.me, JSON.stringify(r.data)); settle();
   });
 }
+/* What this agent may use is set by the ETEL admin: roles ride, courier, driver, shop. An old server that sends no roles means ride only. */
+function roleList() { var r = S.me && S.me.agent && S.me.agent.roles; return Array.isArray(r) ? r : ['ride']; }
+function can(role) { var r = roleList(); return role === 'partner' ? (r.indexOf('courier') >= 0 || r.indexOf('driver') >= 0 || r.indexOf('shop') >= 0) : r.indexOf(role) >= 0; }
+var ROLE_VIEW = { code: 'ride', badge: 'ride', card: 'ride', refs: 'ride', book: 'ride', partners: 'partner' };
 function settle() {
   var m = S.me;
   if (!m || !m.is_agent) { S.view = 'apply'; return render(); }
   if (m.agent.status !== 'approved') { S.view = 'wait'; return render(); }
   var h = (location.hash || '').replace('#/', '');
-  S.view = ROUTES.indexOf(h) >= 0 ? h : 'home'; render(); if (S.view !== h) location.replace('#/' + S.view);
+  S.view = ROUTES.indexOf(h) >= 0 ? h : 'home';
+  if (ROLE_VIEW[S.view] && !can(ROLE_VIEW[S.view])) S.view = 'home';   // the admin has not given this agent that role
+  render(); if (S.view !== h) location.replace('#/' + S.view);
   loadView();
 }
 function loadView() {
@@ -106,8 +112,9 @@ function topbar(back) {
     '<button class="ib" data-act="lang" aria-label="' + esc(t('c.langname') + ' - ' + t('c.lang')) + '">' + esc(t('c.langname')) + '</button>' + themeBtn() + '</header>';
 }
 function navbar() {
-  var items = [['home', 'home', 'nav.home'], ['code', 'qr', 'nav.code'], ['refs', 'users', 'nav.refs'], ['pay', 'wallet', 'nav.pay'], ['me', 'user', 'nav.me']];
-  var cur = S.view === 'badge' || S.view === 'card' || S.view === 'book' || S.view === 'partners' ? 'code' : (S.view === 'rules' || S.view === 'support' ? 'me' : S.view);
+  var items = [['home', 'home', 'nav.home'], ['code', 'qr', 'nav.code'], ['refs', 'users', 'nav.refs'], ['pay', 'wallet', 'nav.pay'], ['me', 'user', 'nav.me']].filter(function (i) { return !ROLE_VIEW[i[0]] || can(ROLE_VIEW[i[0]]); });
+  if (!can('ride') && can('partner')) { if (!items.some(function (i) { return i[0] === 'partners'; })) items.splice(1, 0, ['partners', 'users', 'nav.partners']); }
+  var cur = S.view === 'partners' && items.some(function (i) { return i[0] === 'partners'; }) ? 'partners' : S.view === 'badge' || S.view === 'card' || S.view === 'book' || S.view === 'partners' ? 'code' : (S.view === 'rules' || S.view === 'support' ? 'me' : S.view);
   return '<nav class="nav noprint" aria-label="Menu">' + items.map(function (i) { return '<a href="#/' + i[0] + '"' + (cur === i[0] ? ' aria-current="page"' : '') + '>' + ic(i[1]) + '<span>' + esc(t(i[2])) + '</span></a>'; }).join('') + '</nav>';
 }
 function shell(inner) { return '<div class="app">' + topbar() + (S.offline ? '<div class="banner" role="status">' + esc(t('c.offline')) + '</div>' : '') + inner + '</div>' + navbar(); }
@@ -165,10 +172,11 @@ function vHome() {
     '<div class="bk"><span><i style="background:var(--ok)"></i>' + esc(t('home.available')) + '</span><b class="num">' + esc(fmt(Math.max(0, b.available))) + '</b></div>' +
     '<div class="bk"><span><i style="background:var(--gold)"></i>' + esc(t('home.paid')) + '</span><b class="num">' + esc(fmt(b.paid)) + '</b></div></div>' +
     '<p class="sub" style="margin-top:12px">' + esc(t('home.pending_hint', { d: r.hold_days })) + '</p>' + (b.available < 0 ? '<p class="banner">' + esc(t('home.owed', { x: fmt(-b.available) })) + '</p>' : '') + '</section>' +
-    '<div class="nudge">' + ic('star') + '<span><b>' + esc(t('home.next')) + '</b><br>' + esc(p ? t('home.next_text', { n: p.trips, t: need, d: p.days_left }) : t('home.next_none', { t: need, d: r.repeat_days, b: fmt(r.bonus_repeat) })) + '</span></div>' +
+    (can('ride') ? '<div class="nudge">' + ic('star') + '<span><b>' + esc(t('home.next')) + '</b><br>' + esc(p ? t('home.next_text', { n: p.trips, t: need, d: p.days_left }) : t('home.next_none', { t: need, d: r.repeat_days, b: fmt(r.bonus_repeat) })) + '</span></div>' +
     '<div class="grid2"><a class="btn primary" href="#/code">' + ic('qr') + esc(t('home.show_code')) + '</a><a class="btn" href="#/badge">' + ic('badge') + esc(t('home.my_badge')) + '</a></div>' +
-    '<a class="btn" href="#/book" style="margin-top:12px">' + ic('car') + esc(t('home.book')) + '</a>' +
-    '<a class="btn" href="#/partners" style="margin-top:12px">' + ic('users') + esc(t('home.partners')) + '</a>' +
+    '<a class="btn" href="#/book" style="margin-top:12px">' + ic('car') + esc(t('home.book')) + '</a>' : '') +
+    (can('partner') ? '<a class="btn' + (can('ride') ? '' : ' primary') + '" href="#/partners" style="margin-top:12px">' + ic('users') + esc(t('home.partners')) + '</a>' : '') +
+    (roleList().length ? '' : '<div class="card"><p style="margin:0"><b>' + esc(t('home.no_role')) + '</b></p><p class="sub" style="margin:6px 0 0">' + esc(t('home.no_role_x')) + '</p></div>') +
     '<div style="margin-top:12px"><span class="chip gold">' + esc(t('tier.' + a.tier)) + '</span></div>' + tierCard(m.tier_progress);
   return shell(h);
 }
@@ -270,7 +278,7 @@ function vPartners() {
 }
 function loadPartners() {
   if (S.partLoading) return; S.partLoading = true;
-  var sc = document.createElement('script'); sc.src = 'partners.js?v=3';
+  var sc = document.createElement('script'); sc.src = 'partners.js?v=4';
   sc.onload = function () { S.partLoading = false; if (S.view === 'partners') { if (window.ETELPartners.open) window.ETELPartners.open(); render(); } };
   sc.onerror = function () { S.partLoading = false; toast(t('c.error')); };
   document.body.appendChild(sc);
@@ -395,7 +403,7 @@ document.addEventListener('submit', function (e) {
     api('fa_agent_update_profile', { payout_phone: f.payout.value.replace(/[^0-9+]/g, '') }).then(function (r) { if (r.ok) { toast(t('me.saved')); loadMe(); } else toast(t('c.error')); });
   }
 });
-window.addEventListener('hashchange', function () { if (!S.me || !S.me.is_agent || S.me.agent.status !== 'approved') return; var h = location.hash.replace('#/', ''); if (ROUTES.indexOf(h) >= 0 && h !== S.view) { S.view = h; render(); loadView(); } });
+window.addEventListener('hashchange', function () { if (!S.me || !S.me.is_agent || S.me.agent.status !== 'approved') return; var h = location.hash.replace('#/', ''); if (ROLE_VIEW[h] && !can(ROLE_VIEW[h])) { location.replace('#/home'); return; } if (ROUTES.indexOf(h) >= 0 && h !== S.view) { S.view = h; render(); loadView(); } });
 window.addEventListener('online', function () { if (S.offline && ls(K.tok)) { S.data = {}; loadMe(); } });
 window.addEventListener('offline', function () { S.offline = true; if (S.me) render(); });
 window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); S.installEv = e; });

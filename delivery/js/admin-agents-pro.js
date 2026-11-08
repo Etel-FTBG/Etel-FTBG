@@ -188,7 +188,7 @@ function barRows(items, valueKey, labelKey, fmt) {
 }
 
 /* ---------- feed ---------- */
-var FEED = {
+var FEED = { agent_roles_set: ['🎛️', 'Roles changed'], partner_approved: ['✅', 'Partner approved'], partner_rejected: ['✖️', 'Partner rejected'], partner_changes: ['↩️', 'Changes asked for a partner'], partner_submitted: ['📨', 'Partner sent for review'], partner_sms_resent: ['✉️', 'Sign-in text sent again'],
   agent_applied: ['🆕', 'New agent application'], tier_changed: ['🏅', 'An agent moved to a new tier'], agent_booking_created: ['🚕', 'An agent booked a ride for a customer'], nudge_sent: ['💬', 'A reminder was sent to an agent'], digest_created: ['🗞️', 'Weekly digest created'], tiers_recomputed: ['🏅', 'Tiers recalculated by an admin'], agent_approved: ['✅', 'Agent approved'], agent_rejected: ['⛔', 'Agent rejected'], agent_suspended: ['⏸️', 'Agent suspended'], agent_reinstated: ['▶️', 'Agent reinstated'],
   age_manually_verified: ['🪪', 'Age checked by an admin'], referral_claimed: ['📲', 'A rider used an agent code'], claim_blocked_self: ['🚫', 'A self-referral attempt was blocked'],
   earning_pending: ['⏳', 'Bonus earned, on hold'], earning_held: ['🛑', 'Bonus held for review'], earning_rejected: ['❌', 'Referral rejected'], earning_payable: ['💰', 'Bonus ready to pay'],

@@ -53,30 +53,31 @@ case 'admin_fa_settings_save': {
 }
 
 case 'admin_fa_agents_list': {
-    $pdo = db(); require_admin($pdo, 'agents.view');
+    $pdo = db(); require_admin($pdo, 'agents.view'); fa_roles_ensure($pdo);
     $w = array('1=1'); $p = array();
     if (!empty($body['status']) && in_array($body['status'], array('pending', 'approved', 'suspended', 'rejected'), true)) { $w[] = 'a.status = ?'; $p[] = $body['status']; }
     if (!empty($body['q'])) { $like = '%' . str_replace(array('%', '_'), array('', ''), trim($body['q'])) . '%'; $w[] = '(a.full_name LIKE ? OR a.phone LIKE ? OR a.venue_name LIKE ? OR a.code LIKE ?)'; array_push($p, $like, $like, $like, $like); }
     $lim = fa_adm_limit(isset($body['limit']) ? $body['limit'] : 0, 100, 500);
-    $q = $pdo->prepare("SELECT a.id, a.full_name, a.phone, a.venue_name, a.venue_type, a.venue_zone, a.status, a.age_status, a.age_note, a.tier, a.code, a.risk_score, a.risk_reasons, a.last_referral_at, a.created_at,
+    $q = $pdo->prepare("SELECT a.id, a.full_name, a.phone, a.venue_name, a.venue_type, a.venue_zone, a.status, a.age_status, a.age_note, a.tier, a.code, a.risk_score, a.risk_reasons, a.last_referral_at, a.created_at, a.roles,
                                (SELECT COUNT(*) FROM fa_referrals r WHERE r.agent_id = a.id) AS referrals,
                                (SELECT COALESCE(SUM(e.amount),0) FROM fa_earnings e WHERE e.agent_id = a.id AND e.status = 'payable') AS payable,
                                (SELECT COALESCE(SUM(e.amount),0) FROM fa_earnings e WHERE e.agent_id = a.id AND e.status = 'held') AS held
                         FROM fa_agents a WHERE " . implode(' AND ', $w) . " ORDER BY (a.status = 'pending') DESC, a.id DESC LIMIT " . $lim);
     $q->execute($p);
     $rows = $q->fetchAll(PDO::FETCH_ASSOC);
-    foreach ($rows as &$r) { $r['risk_reasons'] = json_decode((string) $r['risk_reasons'], true); }
+    foreach ($rows as &$r) { $r['risk_reasons'] = json_decode((string) $r['risk_reasons'], true); $r['roles'] = fa_agent_roles($r); }
     unset($r);
-    ok(array('agents' => $rows));
+    ok(array('agents' => $rows, 'all_roles' => fa_roles_labels()));
     break;
 }
 
 case 'admin_fa_agent_get': {
-    $pdo = db(); require_admin($pdo, 'agents.view');
+    $pdo = db(); require_admin($pdo, 'agents.view'); fa_roles_ensure($pdo);
     $id = intval(isset($body['id']) ? $body['id'] : 0);
     $q = $pdo->prepare('SELECT * FROM fa_agents WHERE id = ?'); $q->execute(array($id)); $a = $q->fetch(PDO::FETCH_ASSOC);
     if (!$a) fail('Agent not found', 404);
     unset($a['device_hash']);
+    $a['roles'] = fa_agent_roles($a);
     $a['risk_reasons'] = json_decode((string) $a['risk_reasons'], true);
     $rf = $pdo->prepare("SELECT r.id, r.claimed_at, r.status, r.reject_code, r.risk_score, r.risk_reasons, u.phone AS rider_phone FROM fa_referrals r LEFT JOIN users u ON u.id = r.rider_user_id WHERE r.agent_id = ? ORDER BY r.id DESC LIMIT 100");
     $rf->execute(array($id));
@@ -85,7 +86,7 @@ case 'admin_fa_agent_get': {
     unset($r);
     $au = $pdo->prepare("SELECT created_at, actor_type, actor_id, action, reason, detail FROM fa_audit_log WHERE (entity = 'agent' AND entity_id = ?) ORDER BY id DESC LIMIT 30");
     $au->execute(array($id));
-    ok(array('agent' => $a, 'referrals' => $refs, 'audit' => $au->fetchAll(PDO::FETCH_ASSOC), 'shared_with' => fa_agent_shared_identity($pdo, $a), 'bookings' => fa_adm_bookings($pdo, $id)));
+    ok(array('agent' => $a, 'referrals' => $refs, 'audit' => $au->fetchAll(PDO::FETCH_ASSOC), 'shared_with' => fa_agent_shared_identity($pdo, $a), 'bookings' => fa_adm_bookings($pdo, $id), 'all_roles' => fa_roles_labels()));
     break;
 }
 
@@ -177,6 +178,21 @@ case 'admin_fa_customer_message': {
     break;
 }
 
+case 'admin_fa_agent_set_roles': {
+    // The owner decides what each agent may do: ride booking, registering couriers, drivers, shops. Any mix, or none (basic pages only).
+    $pdo = db(); $adm = require_admin($pdo, 'agents.manage'); fa_roles_ensure($pdo);
+    $id = intval(isset($body['id']) ? $body['id'] : 0);
+    if (!isset($body['roles']) || !is_array($body['roles'])) fail('Send the list of roles.');
+    $q = $pdo->prepare('SELECT * FROM fa_agents WHERE id = ?'); $q->execute(array($id)); $a = $q->fetch(PDO::FETCH_ASSOC);
+    if (!$a) fail('Agent not found', 404);
+    $old = fa_agent_roles($a); $new = fa_roles_clean($body['roles']);
+    $pdo->prepare('UPDATE fa_agents SET roles = ?, updated_at = NOW() WHERE id = ?')->execute(array($new ? implode(',', $new) : 'none', $id));
+    fa_audit($pdo, 'admin', $adm['id'], 'agent_roles_set', 'agent', $id, '', array('from' => $old, 'to' => $new));
+    if ($old !== $new) { try { fa_notify($pdo, $id, 'roles_changed', array('roles' => implode(',', $new))); } catch (Exception $e) { } }
+    ok(array('roles' => $new, 'all_roles' => fa_roles_labels()));
+    break;
+}
+
 case 'admin_fa_agent_decide': {
     $pdo = db(); $adm = require_admin($pdo, 'agents.manage');
     $id = intval(isset($body['id']) ? $body['id'] : 0);
@@ -195,6 +211,7 @@ case 'admin_fa_agent_decide': {
         }
         $code = $a['code'] ? $a['code'] : fa_gen_code($pdo);
         $pdo->prepare("UPDATE fa_agents SET status='approved', code=?, decided_by=?, decided_at=NOW(), decision_reason='', updated_at=NOW() WHERE id=?")->execute(array($code, $adm['id'], $id));
+        if (isset($body['roles']) && is_array($body['roles'])) { fa_roles_ensure($pdo); $rl = fa_roles_clean($body['roles']); $pdo->prepare('UPDATE fa_agents SET roles = ? WHERE id = ?')->execute(array($rl ? implode(',', $rl) : 'none', $id)); fa_audit($pdo, 'admin', $adm['id'], 'agent_roles_set', 'agent', $id, '', array('roles' => $rl)); }
         fa_audit($pdo, 'admin', $adm['id'], 'agent_approved', 'agent', $id, '', array('code' => $code));
         fa_notify($pdo, $id, 'agent_approved', array());
         ok(array('status' => 'approved', 'code' => $code));
