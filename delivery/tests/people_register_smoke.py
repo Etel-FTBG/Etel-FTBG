@@ -166,6 +166,8 @@ st, res = call("admin_register_driver", dict(drv, phone="09270%s" % TAIL[-5:], d
 check("a bad document date is refused", res.get("success") is False, res)
 st, res = call("admin_register_driver", dict(drv, phone=drv["phone"]), admin)
 check("the same phone cannot be used twice", res.get("success") is False and st == 409, (st, res))
+st, res = call("admin_register_driver", dict(drv, phone="09270%s" % TAIL[-5:], vehicle_other_label="Tuk Tuk", vehicle_make="Piaggio Ape", vehicle_plate="et 4141", license_number="DL-77%s" % TAIL), admin)
+check("an other vehicle driver is registered with its own name and details", res.get("success") is True, (st, res))
 st, res = call("admin_register_driver", dict(drv, phone="09280%s" % TAIL[-5:]), cust)
 check("a customer cannot use the driver desk", st in (401, 403) or res.get("success") is False, (st, res))
 

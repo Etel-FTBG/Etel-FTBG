@@ -70,6 +70,7 @@ check('300 kg: only the van', $opts('small', 300) === array('van'));
 check('2000 kg: nothing can carry it', is_string($opts('small', 999)) === false && is_string(etel_package_quote($pdo, $A, $B, array('size' => 'small', 'weight_kg' => 1000.5))['message']));
 $far = etel_package_quote($pdo, $A, array('address' => 'Addis Ababa', 'lat' => 9.03, 'lng' => 38.74), array('size' => 'small', 'weight_kg' => 1));
 check('a trip over 60 km is refused with the distance', $far['ok'] === false && strpos($far['message'], '60 km') !== false);
+etel_package_save_setting($pdo, 'tier_on', 0);   // the next checks are about each vehicle's own rates (the tiered price is tested at the end)
 $q = etel_package_quote($pdo, $A, $B, array('size' => 'small', 'weight_kg' => 2));
 check('each option has a price from the rates table', $q['ok'] && $q['options'][1]['vehicle_class'] === 'moto' && $q['options'][1]['price'] === etel_package_price(array('base_fee' => 60, 'per_km' => 12, 'free_kg' => 5, 'per_kg_over' => 6, 'min_fee' => 80), $q['distance_km'], 2));
 check('bigger vehicles cost more', $q['options'][0]['price'] < $q['options'][1]['price'] && $q['options'][1]['price'] < $q['options'][2]['price'] && $q['options'][2]['price'] < $q['options'][3]['price']);
@@ -258,6 +259,23 @@ $pdo->exec("DELETE FROM orders WHERE order_kind = 'package'");
 try { $pdo->exec("DELETE FROM notifications WHERE user_id IN (" . implode(',', $ids) . ")"); } catch (Exception $x) {}
 $pdo->exec("DELETE FROM couriers WHERE id IN ($cMoto, $cCar)"); $pdo->exec("DELETE FROM users WHERE id IN (" . implode(',', $ids) . ")");
 foreach (etel_package_default_rates() as $dr) { $pdo->prepare('UPDATE package_rates SET base_fee=?, per_km=?, free_kg=?, per_kg_over=?, min_fee=?, max_weight_kg=?, active=1 WHERE vehicle_class=?')->execute(array($dr[3], $dr[4], $dr[5], $dr[6], $dr[7], $dr[8], $dr[0])); }
+
+echo "tiered price (distance band + weight band)\n";
+$T = etel_package_setting_defaults();
+check('up to 5 km is 100 ETB (light parcel)', etel_package_tier_price($T, 4.9, 1) === 100 && etel_package_tier_price($T, 5, 5) === 100);
+check('up to 10 km is 200 ETB', etel_package_tier_price($T, 5.1, 1) === 200 && etel_package_tier_price($T, 10, 1) === 200);
+check('up to 25 km is 300 ETB', etel_package_tier_price($T, 10.1, 1) === 300 && etel_package_tier_price($T, 25, 1) === 300);
+check('each km beyond 25 adds the per-km fee', etel_package_tier_price($T, 26, 1) === 315 && etel_package_tier_price($T, 30, 1) === 375);
+check('weight bands add their fee (5 kg free, 10 kg +50, 20 kg +100, 50 kg +200)', etel_package_tier_price($T, 3, 5.5) === 150 && etel_package_tier_price($T, 3, 15) === 200 && etel_package_tier_price($T, 3, 30) === 300);
+check('beyond the last weight band each kg adds the per-kg fee', etel_package_tier_price($T, 3, 52) === 100 + 200 + 20);
+etel_package_save_setting($pdo, 'tier_on', 1);
+$qt = etel_package_quote($pdo, $A, $B, array('size' => 'small', 'weight_kg' => 2));
+$pt = array(); foreach ($qt['options'] as $o) $pt[] = $o['price'];
+check('a quote uses the tiered price for every vehicle', $qt['ok'] && count(array_unique($pt)) === 1 && in_array($pt[0], array(100, 200, 300), true), json_encode($pt));
+$sv = etel_package_save_settings($pdo, array('d1_fee' => 120, 'w2_fee' => 60));
+check('staff can change a band price', $sv['ok'] === true && etel_package_setting($pdo, 'd1_fee') == 120);
+check('bands that do not grow are refused', etel_package_save_settings($pdo, array('d1_km' => 30))['ok'] === false && etel_package_save_settings($pdo, array('d1_fee' => 400))['ok'] === false);
+$pdo->exec("DELETE FROM package_settings WHERE setting_key <> 'late_cancel_fee'");
 
 $done = true;
 echo $fails ? "FAILED: $fails\n" : "ALL PASSED\n";

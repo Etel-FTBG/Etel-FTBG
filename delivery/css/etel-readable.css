@@ -1,0 +1,75 @@
+/* ============================================================
+   ETEL - readable text (admin)
+   Loaded LAST on admin.html. The admin used tiny (9-11px) UPPERCASE monospace for labels, table heads, chips and badges, a thin serif in
+   the search box, and a light-on-gold button. This file raises every text to a comfortable size, uses the ETEL body font (Poppins) with
+   the gold/ink palette, and keeps Syne for headings only. Only font, size, spacing and text colour are changed: no layout or behaviour.
+   Floors: body text 14px, labels and table heads 12.5px, chips and badges 12px, nothing under 12px.
+   ============================================================ */
+:root {
+  --rd-body: 'Poppins', 'Noto Sans Ethiopic', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --rd-head: 'Syne', 'Poppins', 'Noto Sans Ethiopic', sans-serif;
+  --rd-ink: #1a1200;
+  --rd-ink2: #4a3f22;
+  --rd-gold: #b8860b;
+}
+:root[data-theme="dark"], body.dark, body[data-theme="dark"] { --rd-ink: #faf8ee; --rd-ink2: #d9d2c0; --rd-gold: #e8c84a; }
+
+body { font-family: var(--rd-body); font-size: 14.5px; line-height: 1.55; -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+
+/* ---- labels, hints, table heads: sentence case, readable size, no monospace ---- */
+body label, body .fld > span, body .dv-f > span, body .rg-f > span, body .ak-lbl, body .form-label, body .stat-label, body th {
+  font-family: var(--rd-body) !important; text-transform: none !important; letter-spacing: .01em !important; font-size: 13px !important; font-weight: 600 !important; line-height: 1.4;
+}
+body th { font-size: 12.5px !important; font-weight: 700 !important; }
+body .stat-label { font-size: 13px !important; color: var(--rd-ink2); }
+body small, body .ak-fh, body .dv-f small, body .rg-f small, body .pt-h, body .hint, body .sub, body .muted {
+  font-family: var(--rd-body) !important; font-size: 12.5px !important; line-height: 1.5 !important; letter-spacing: 0 !important; text-transform: none !important;
+}
+body .ak-fh, body .dv-f small, body .rg-f small { color: var(--rd-ink2); }
+
+/* ---- chips, pills, badges, kbd: never under 12px ---- */
+body .ak-chip, body .ak-chip b, body .ak-pill, body .badge-status, body .badge, body .pill, body .chip, body kbd {
+  font-family: var(--rd-body) !important; font-size: 12px !important; letter-spacing: .01em !important; text-transform: none !important; font-weight: 600;
+}
+body .badge-status { padding: 3px 10px; }
+
+/* ---- inputs: the ETEL body font, comfortable size ---- */
+body input, body select, body textarea, body .ak-in, body .in {
+  font-family: var(--rd-body) !important; font-size: 14.5px !important; letter-spacing: 0 !important;
+}
+body input::placeholder, body textarea::placeholder { font-size: 14px; opacity: .72; }
+
+/* ---- headings: Syne, normal tracking so words stay easy to read ---- */
+body h1, body h2, body h3, body .page-title, body #page-title { font-family: var(--rd-head); letter-spacing: -.005em !important; }
+body h1, body #page-title { line-height: 1.15; }
+body h4, body h5 { font-family: var(--rd-body); font-weight: 700; letter-spacing: 0; }
+
+/* ---- buttons: sentence case, readable, strong contrast on the gold ---- */
+body .btn, body .btn-primary, body .ak-btn, body .etel-btn, body .act-btn, body button.gold {
+  font-family: var(--rd-body) !important; text-transform: none !important; letter-spacing: .01em !important; font-size: 14px !important; font-weight: 700 !important;
+}
+body .btn-primary, body .ak-btn.gold, body .etel-btn-primary, body .act-gold, body button.gold {
+  background: linear-gradient(135deg, #f1d36b 0%, #d4af37 55%, #c19a20 100%) !important; color: #1a1200 !important; text-shadow: none !important; border: 1px solid rgba(120, 85, 0, .45);
+}
+body .btn-primary *, body .ak-btn.gold *, body .etel-btn-primary * { color: inherit !important; text-shadow: none !important; }
+body .act-btn { font-size: 12.5px !important; }
+
+/* ---- side navigation ---- */
+body .nav-item, body .anav-item { font-family: var(--rd-body); font-size: 14.5px; }
+body .anav-head { font-family: var(--rd-body) !important; font-size: 12.5px !important; font-weight: 700 !important; letter-spacing: .05em !important; }
+body .anav-caret { font-size: 12px !important; }
+
+/* ---- tables: room to read ---- */
+body td { font-size: 13.5px; line-height: 1.5; }
+body .ak-card b, body .ak-card strong { font-weight: 700; }
+
+/* ---- footer and status text ---- */
+body footer, body .footer, body .admin-footer { font-size: 12.5px; }
+
+/* ---- keep Ethiopic readable: a little more line height ---- */
+:lang(am) body, body:lang(am), [lang="am"] { line-height: 1.7; }
+
+@media (max-width: 560px) {
+  body { font-size: 15px; }
+  body input, body select, body textarea { font-size: 16px !important; }   /* phones zoom into smaller inputs */
+}

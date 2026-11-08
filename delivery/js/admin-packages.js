@@ -10,7 +10,7 @@ var K = window.AdminKit;
 if (!K) return;
 var esc = K.esc;
 var RATES = [];
-var SETTINGS = { late_cancel_fee: 30 };
+var SETTINGS = { late_cancel_fee: 30, tier_on: 1, d1_km: 5, d1_fee: 100, d2_km: 10, d2_fee: 200, d3_km: 25, d3_fee: 300, beyond_per_km: 15, w1_kg: 5, w1_fee: 0, w2_kg: 10, w2_fee: 50, w3_kg: 20, w3_fee: 100, w4_kg: 50, w4_fee: 200, w_beyond_per_kg: 10 };
 var CALC = { km: 5, kg: 3 };
 var BUILTIN = { bike: 1, moto: 1, car: 1, van: 1 };
 var LIKE = [['bike', 'a bicycle'], ['moto', 'a motorbike'], ['car', 'a car'], ['van', 'a van / pickup']];
@@ -19,7 +19,13 @@ var NUM = [['base_fee', 'Base fee (ETB)', 'Charged on every package'], ['per_km'
            ['per_kg_over', 'Per extra kg (ETB)', 'For every kg above the free weight'], ['min_fee', 'Minimum price (ETB)', 'Never charge less than this'], ['max_weight_kg', 'Maximum weight (kg)', 'Heavier packages are refused']];
 
 function panel() { return document.getElementById('panel-packages'); }
+function tierPrice(t, km, kg) {
+  var fee = km <= t.d1_km ? t.d1_fee : km <= t.d2_km ? t.d2_fee : km <= t.d3_km ? t.d3_fee : Number(t.d3_fee) + Number(t.beyond_per_km) * Math.ceil(km - t.d3_km);
+  fee = Number(fee) + (kg <= t.w1_kg ? Number(t.w1_fee) : kg <= t.w2_kg ? Number(t.w2_fee) : kg <= t.w3_kg ? Number(t.w3_fee) : kg <= t.w4_kg ? Number(t.w4_fee) : Number(t.w4_fee) + Number(t.w_beyond_per_kg) * Math.ceil(kg - t.w4_kg));
+  return Math.round(fee);
+}
 function price(r, km, kg) {
+  if (Number(SETTINGS.tier_on)) return tierPrice(SETTINGS, km, kg);
   var fee = Number(r.base_fee) + Number(r.per_km) * km, over = kg - Number(r.free_kg);
   if (over > 0) fee += Number(r.per_kg_over) * over;
   if (fee < Number(r.min_fee)) fee = Number(r.min_fee);
@@ -75,6 +81,7 @@ function render() {
     '<div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end"><label style="font-size:12px">Try a distance (km)<input id="pkg-calc-km" type="number" min="1" step="any" value="' + esc(CALC.km) + '" class="ak-in" style="width:130px"></label>' +
     '<label style="font-size:12px">Try a weight (kg)<input id="pkg-calc-kg" type="number" min="0" step="any" value="' + esc(CALC.kg) + '" class="ak-in" style="width:130px"></label>' +
     '<div style="font-size:12px;color:var(--mute);padding-bottom:10px">Each card shows the price a customer would see.</div></div></div>';
+  h += tierCard();
   h += '<form data-setting="late_cancel_fee" class="ak-card" style="cursor:default;margin-bottom:14px">' +
     '<div style="font-weight:800;margin-bottom:2px">↩️ Cancelling after a courier accepted</div>' +
     '<div style="font-size:12px;color:var(--mute);margin-bottom:10px">A sender can cancel for free until a courier accepts. After that, if they paid online, this fee is kept out of their refund to pay for the courier\'s trip. Cash packages are never charged. Put 0 to keep cancelling always free.</div>' +
@@ -86,6 +93,22 @@ function render() {
   el.innerHTML = h;
   refreshAll();
   wireOnce(el);
+}
+
+function nin(name, v, w) { return '<input name="' + name + '" type="number" inputmode="decimal" min="0" max="5000" step="any" value="' + esc(v) + '" class="ak-in" style="width:' + (w || 84) + 'px">'; }
+function tierCard() {
+  var t = SETTINGS, on = Number(t.tier_on) === 1;
+  return '<form data-tiers class="ak-card" style="cursor:default;margin-bottom:14px"><div style="font-weight:800;font-size:16px;margin-bottom:2px">\uD83D\uDCCD Delivery price by distance and weight</div>' +
+    '<div style="font-size:13px;color:var(--ink2,var(--mute));margin-bottom:12px">One simple price for every vehicle: the distance band plus the weight band. Customers see it before they book. Changes apply to new bookings at once.</div>' +
+    '<label style="display:flex;gap:8px;align-items:center;font-size:13.5px;font-weight:600;margin-bottom:12px"><input type="checkbox" name="tier_on"' + (on ? ' checked' : '') + '> Use these prices (switch off to charge each vehicle by its own base fee + per km below)</label>' +
+    '<div style="font-weight:700;margin:6px 0">Distance</div><div style="display:grid;gap:8px">' +
+    [['d1', 'Up to'], ['d2', 'Up to'], ['d3', 'Up to']].map(function (b) { return '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:13.5px">' + b[1] + ' ' + nin(b[0] + '_km', t[b[0] + '_km']) + ' km <span style="opacity:.6">costs</span> ' + nin(b[0] + '_fee', t[b[0] + '_fee']) + ' ETB</div>'; }).join('') +
+    '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:13.5px">Longer than that: add ' + nin('beyond_per_km', t.beyond_per_km) + ' ETB for every extra km</div></div>' +
+    '<div style="font-weight:700;margin:14px 0 6px">Weight (added to the distance price)</div><div style="display:grid;gap:8px">' +
+    [['w1', 'Up to'], ['w2', 'Up to'], ['w3', 'Up to'], ['w4', 'Up to']].map(function (b) { return '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:13.5px">' + b[1] + ' ' + nin(b[0] + '_kg', t[b[0] + '_kg']) + ' kg <span style="opacity:.6">adds</span> ' + nin(b[0] + '_fee', t[b[0] + '_fee']) + ' ETB</div>'; }).join('') +
+    '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:13.5px">Heavier than that: add ' + nin('w_beyond_per_kg', t.w_beyond_per_kg) + ' ETB for every extra kg (a vehicle still refuses what it cannot carry)</div></div>' +
+    '<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:14px"><button type="submit" class="ak-btn gold">Save prices</button><span style="font-size:12.5px;opacity:.75">Example: 8 km and 12 kg = ETB <b data-tier-eg>' + tierPrice(t, 8, 12) + '</b></span></div>' +
+    '<div data-note role="status" style="font-size:12.5px;min-height:18px;margin-top:6px"></div></form>';
 }
 
 function refreshAll() {
@@ -116,7 +139,15 @@ function wireOnce(el) {
   el.addEventListener('submit', function (e) {
     var f = e.target; e.preventDefault();
     var btn = f.querySelector('button[type=submit]');
-    if (f.hasAttribute('data-setting')) {
+    if (f.hasAttribute('data-tiers')) {
+      var vals = {}; Array.prototype.forEach.call(f.elements, function (el) { if (el.name === 'tier_on') vals.tier_on = el.checked ? 1 : 0; else if (el.name) vals[el.name] = el.value; });
+      btn.disabled = true; note(f, 'Saving\u2026');
+      K.api('admin_package_setting_save', { values: vals }).then(function (res) {
+        btn.disabled = false;
+        if (K.okRes(res)) { var d = K.data(res); if (d.settings) SETTINGS = d.settings; render(); K.toast(d.message || 'Saved.'); }
+        else note(f, K.failText(res, 'Could not save.'), true);
+      });
+    } else if (f.hasAttribute('data-setting')) {
       btn.disabled = true; note(f, 'Saving…');
       K.api('admin_package_setting_save', { key: f.getAttribute('data-setting'), value: f.elements.value.value }).then(function (res) {
         btn.disabled = false;

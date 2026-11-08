@@ -137,6 +137,8 @@ case 'admin_register_driver': {
     $yr = isset($body['vehicle_year']) && $body['vehicle_year'] !== '' ? intval($body['vehicle_year']) : 0;
     if ($yr !== 0 && ($yr < 1980 || $yr > intval(date('Y')) + 1)) fail('Enter the vehicle year as four digits, or leave it empty', 400);
     $make = $T('vehicle_make', 60); $color = $T('vehicle_color', 40);
+    $otherLabel = $T('vehicle_other_label', 30);   // an Other vehicle: its name leads the make, the service decides which trips it gets
+    if ($otherLabel !== '') $make = function_exists('mb_substr') ? mb_substr($otherLabel . ($make !== '' ? ' - ' . $make : ''), 0, 60, 'UTF-8') : substr($otherLabel . ($make !== '' ? ' - ' . $make : ''), 0, 60);
 
     $licName = $T('license_name', 100); $licNum = $T('license_number', 60);
     $licDob = isset($body['license_dob']) ? trim((string) $body['license_dob']) : '';

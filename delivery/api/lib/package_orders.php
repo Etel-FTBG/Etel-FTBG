@@ -172,8 +172,25 @@ function etel_package_rates($pdo, $only_active = true) {
     return $out;
 }
 
+// Pure. The tiered price staff set in Admin (Package prices): a fixed fee by distance band plus a fee by weight band, the same for every vehicle.
+// Default: up to 5 km 100 ETB, up to 10 km 200, up to 25 km 300 (each extra km after that costs beyond_per_km); weight: up to 5 kg +0, 10 kg +50, 20 kg +100, 50 kg +200.
+function etel_package_tier_price($s, $km, $kg) {
+    $km = floatval($km); $kg = floatval($kg);
+    if ($km <= $s['d1_km']) $fee = $s['d1_fee'];
+    elseif ($km <= $s['d2_km']) $fee = $s['d2_fee'];
+    elseif ($km <= $s['d3_km']) $fee = $s['d3_fee'];
+    else $fee = $s['d3_fee'] + $s['beyond_per_km'] * ceil($km - $s['d3_km']);
+    if ($kg <= $s['w1_kg']) $fee += $s['w1_fee'];
+    elseif ($kg <= $s['w2_kg']) $fee += $s['w2_fee'];
+    elseif ($kg <= $s['w3_kg']) $fee += $s['w3_fee'];
+    elseif ($kg <= $s['w4_kg']) $fee += $s['w4_fee'];
+    else $fee += $s['w4_fee'] + $s['w_beyond_per_kg'] * ceil($kg - $s['w4_kg']);
+    return (int) round($fee);
+}
+
 // Pure. Price in whole birr for one vehicle: base + per km, plus per kg above the free weight, never below the minimum.
-function etel_package_price($rate, $distance_km, $weight_kg) {
+function etel_package_price($rate, $distance_km, $weight_kg, $tiers = null) {
+    if (is_array($tiers) && !empty($tiers['tier_on'])) return etel_package_tier_price($tiers, $distance_km, $weight_kg);
     $fee = floatval($rate['base_fee']) + floatval($rate['per_km']) * floatval($distance_km);
     $over = floatval($weight_kg) - floatval($rate['free_kg']);
     if ($over > 0) $fee += floatval($rate['per_kg_over']) * $over;
@@ -242,11 +259,12 @@ function etel_package_quote($pdo, $pickup_in, $drop_in, $details_in) {
     $sizes = etel_package_sizes();
     $minRank = $classes[$sizes[$det['size']]['min_class']];
     $options = array();
+    $tiers = etel_package_settings($pdo);
     foreach (etel_package_rates($pdo, true) as $r) {
         if ($classes[$r['vehicle_class']] < $minRank) continue;
         if (floatval($r['max_weight_kg']) < $det['weight']) continue;
         $options[] = array('vehicle_class' => $r['vehicle_class'], 'label' => $r['label'], 'icon' => $r['icon'],
-            'price' => etel_package_price($r, $km, $det['weight']), 'max_weight_kg' => floatval($r['max_weight_kg']));
+            'price' => etel_package_price($r, $km, $det['weight'], $tiers), 'max_weight_kg' => floatval($r['max_weight_kg']));
     }
     if (!$options) return array('ok' => false, 'message' => 'No vehicle can carry this package. Check the weight and size, or contact support.');
     return array('ok' => true, 'distance_km' => $km, 'eta_min' => etel_package_eta_min($km), 'options' => $options, 'pickup' => $p, 'drop' => $d, 'details' => $det);
@@ -449,7 +467,12 @@ function etel_package_add_type($pdo, $r) {
 
 // Package settings staff can change. key => default. late_cancel_fee = ETB the sender pays for cancelling after a courier accepted
 // (only taken when the package was paid online: it is kept out of the refund). 0 = cancelling is always free.
-function etel_package_setting_defaults() { return array('late_cancel_fee' => 30); }
+function etel_package_setting_defaults() {
+    return array('late_cancel_fee' => 30,
+        'tier_on' => 1,   // 1 = price by distance band + weight band (below); 0 = each vehicle's own base + per km + per kg
+        'd1_km' => 5, 'd1_fee' => 100, 'd2_km' => 10, 'd2_fee' => 200, 'd3_km' => 25, 'd3_fee' => 300, 'beyond_per_km' => 15,
+        'w1_kg' => 5, 'w1_fee' => 0, 'w2_kg' => 10, 'w2_fee' => 50, 'w3_kg' => 20, 'w3_fee' => 100, 'w4_kg' => 50, 'w4_fee' => 200, 'w_beyond_per_kg' => 10);
+}
 
 function etel_package_setting($pdo, $key) {
     $def = etel_package_setting_defaults();
@@ -470,6 +493,29 @@ function etel_package_settings($pdo) {
 }
 
 // Admin: save one setting. Returns array(ok, message).
+// Several settings at once (the tier table): every value is checked first, and the distance and weight bands must grow.
+function etel_package_save_settings($pdo, $values) {
+    $def = etel_package_setting_defaults();
+    if (!is_array($values) || !$values) return array('ok' => false, 'message' => 'Nothing to save.');
+    $cur = etel_package_settings($pdo);
+    foreach ($values as $k => $v) {
+        $k = strtolower(trim((string) $k));
+        if (!isset($def[$k])) return array('ok' => false, 'message' => 'Unknown setting.');
+        if (!is_numeric($v) || floatval($v) < 0 || floatval($v) > 5000) return array('ok' => false, 'message' => 'Every number must be from 0 to 5000.');
+        $cur[$k] = round(floatval($v), 2);
+    }
+    if (!($cur['d1_km'] > 0 && $cur['d1_km'] < $cur['d2_km'] && $cur['d2_km'] < $cur['d3_km'])) return array('ok' => false, 'message' => 'The distance bands must grow: first less than second less than third.');
+    if (!($cur['w1_kg'] > 0 && $cur['w1_kg'] < $cur['w2_kg'] && $cur['w2_kg'] < $cur['w3_kg'] && $cur['w3_kg'] < $cur['w4_kg'])) return array('ok' => false, 'message' => 'The weight bands must grow: each limit higher than the one before.');
+    if (!($cur['d1_fee'] <= $cur['d2_fee'] && $cur['d2_fee'] <= $cur['d3_fee'])) return array('ok' => false, 'message' => 'A longer distance cannot cost less than a shorter one.');
+    if (!($cur['w1_fee'] <= $cur['w2_fee'] && $cur['w2_fee'] <= $cur['w3_fee'] && $cur['w3_fee'] <= $cur['w4_fee'])) return array('ok' => false, 'message' => 'A heavier package cannot cost less than a lighter one.');
+    try {
+        etel_package_ensure_schema($pdo);
+        $st = $pdo->prepare('INSERT INTO package_settings (setting_key, setting_value, updated_at) VALUES (?,?,NOW()) ON DUPLICATE KEY UPDATE setting_value=VALUES(setting_value), updated_at=NOW()');
+        foreach ($values as $k => $v) $st->execute(array(strtolower(trim((string) $k)), (string) round(floatval($v), 2)));
+    } catch (Exception $e) { error_log('[ETEL] package settings save: ' . $e->getMessage()); return array('ok' => false, 'message' => 'Could not save.'); }
+    return array('ok' => true, 'message' => 'Prices saved. New bookings use them at once.');
+}
+
 function etel_package_save_setting($pdo, $key, $value) {
     $def = etel_package_setting_defaults();
     if (!isset($def[$key])) return array('ok' => false, 'message' => 'Unknown setting.');

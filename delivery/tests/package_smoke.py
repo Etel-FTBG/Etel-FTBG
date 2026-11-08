@@ -212,11 +212,26 @@ def main():
     check("a customer cannot change prices", r.get("success") is False)
     s, r = call("admin_package_rates_save", dict(m, base_fee=-5), token=admin)
     check("admin gets a clear error for a bad number", r.get("success") is False and "Base fee" in r.get("message", ""), r)
+    s, r = call("admin_package_setting_save", {"key": "tier_on", "value": 0}, token=admin)
+    check("admin can switch the tiered price off", r.get("success") is True, r)
+    s, q1 = call("customer_package_quote", pkg, token=cust)
+    prices = [o["price"] for o in (q1.get("data") or {}).get("options", [])]
     s, r = call("admin_package_rates_save", dict(m, base_fee=old + 25), token=admin)
     s, q2 = call("customer_package_quote", pkg, token=cust)
     p2 = {o["vehicle_class"]: o["price"] for o in (q2.get("data") or {}).get("options", [])}
     check("a saved price shows in the next quote", r.get("success") and abs(p2["moto"] - (prices[1] + 25)) <= 1, (p2, prices))
     call("admin_package_rates_save", dict(m, base_fee=old), token=admin)
+    call("admin_package_setting_save", {"key": "tier_on", "value": 1}, token=admin)
+    s, q3 = call("customer_package_quote", pkg, token=cust)
+    p3 = sorted(set(o["price"] for o in (q3.get("data") or {}).get("options", [])))
+    dist = (q3.get("data") or {}).get("distance_km", 0)
+    want = 100 if dist <= 5 else 200 if dist <= 10 else 300 if dist <= 25 else None
+    check("the tiered price is one price by distance band for every vehicle", len(p3) == 1 and (want is None or p3[0] in (want, want + 50)), (dist, p3))
+    s, r = call("admin_package_setting_save", {"values": {"d1_km": 30}}, token=admin)
+    check("bands that do not grow are refused", r.get("success") is False, r)
+    s, r = call("admin_package_setting_save", {"values": {"d1_fee": 110}}, token=cust)
+    check("a customer cannot change the band prices", r.get("success") is False)
+    call("admin_package_setting_save", {"values": {"d1_fee": 100}}, token=admin)
 
     print("\n%d passed, %d failed" % (len(PASS), len(FAIL)))
     return 1 if FAIL else 0
