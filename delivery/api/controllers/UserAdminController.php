@@ -129,6 +129,19 @@ case 'admin_person_get': {
         $st = $one('SELECT staff_role, is_etelgroup_managed FROM users WHERE id = ? LIMIT 1', array($id));
         $detail = array('staff_role' => $st ? $st['staff_role'] : null, 'managed' => $st ? intval($st['is_etelgroup_managed']) === 1 : false);
     }
+    // the three vehicle pictures (courier, driver) and the two shop pictures (shop owner), for the account sheet
+    try {
+        if ($p['role'] === 'courier' || $p['role'] === 'driver') {
+            require_once __DIR__ . '/../lib/vehicle_photos.php';
+            $detail['vehicle_photos'] = etel_vp_get($pdo, $p['role'] === 'courier' ? 'courier' : 'driver', $id);
+        } elseif ($p['role'] === 'service_giver') {
+            $sgq = $pdo->prepare("SELECT d.doc_type, d.file_url FROM sg_documents d JOIN service_givers g ON g.id = d.sg_id WHERE g.user_id = ? AND d.doc_type IN ('place_photo','center_photo')");
+            $sgq->execute(array($id));
+            $sp = array('place_photo' => '', 'center_photo' => '');
+            foreach ($sgq->fetchAll(PDO::FETCH_ASSOC) as $sr) $sp[$sr['doc_type']] = (string) $sr['file_url'];
+            $detail['shop_photos'] = $sp;
+        }
+    } catch (Exception $e) { /* the pictures are an extra: the sheet still opens */ }
     $os = $one("SELECT COUNT(*) AS n, SUM(status = 'delivered') AS d, SUM(status = 'cancelled') AS x, IFNULL(SUM(CASE WHEN status = 'delivered' THEN fare_total ELSE 0 END), 0) AS spent, MAX(placed_at) AS last_at FROM orders WHERE customer_id = ?", array($id));
     $orders = $all('SELECT order_code, status, payment_method, fare_total, placed_at FROM orders WHERE customer_id = ? ORDER BY id DESC LIMIT 10', array($id));
     $rides = $all('SELECT id, status, fare_final, fare_estimate, created_at, passenger_id, driver_id FROM rides WHERE passenger_id = ? OR driver_id = ? ORDER BY id DESC LIMIT 10', array($id, $id));

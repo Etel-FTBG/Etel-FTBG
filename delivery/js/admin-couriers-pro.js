@@ -30,6 +30,7 @@ function idBox(d) {
   var link = function (u, label) { return u ? '<a class="ak-btn" href="' + esc(u) + '" target="_blank" rel="noopener">' + esc(label) + '</a>' : '<span class="ak-fh">Not added</span>'; };
   return '<div class="ak-sec"><h4>Identity and contact</h4>' + K.kv([
     [types[x.id_type] || 'ID', (x.id_number ? esc(x.id_number) : '<span class="ak-fh">Not added</span>'), true], ['ID photo', link(x.id_photo_url, 'View ID'), true], ['Selfie', link(x.selfie_url, 'View selfie'), true],
+    ['Vehicle photos', (x.vehicle_photo_front || x.vehicle_photo_side || x.vehicle_photo_back) ? [['Front', x.vehicle_photo_front], ['Side', x.vehicle_photo_side], ['Back', x.vehicle_photo_back]].map(function (v) { return link(v[1], v[0]); }).join(' ') : '<span class="ak-fh">Not added</span>', true],
     ['Driving licence', x.licence_number ? esc(x.licence_number) + ' ' + link(x.licence_photo_url, 'View') : '', true],
     ['Emergency contact', x.emergency_name ? esc(x.emergency_name) + ' · <a href="tel:' + esc(x.emergency_phone) + '">' + esc(x.emergency_phone) + '</a>' : '', true], ['Address', x.address || '']]) + '</div>';
 }

@@ -173,8 +173,11 @@ case 'admin_register_driver': {
         $docs[$dtp] = array($ex, $rc);
     }
 
+    require_once __DIR__ . '/../lib/vehicle_photos.php';
+    $vp = etel_vp_body_strict($body);
     $activate = !empty($body['activate']);
     if ($activate) {
+        if (!etel_vp_complete($vp)) fail('To activate the driver now, add the three vehicle photos (front, side and back)', 400);
         if ($licName === '' || $licNum === '' || $licDob === '') fail('To activate the driver now, fill in the licence name, number and date of birth', 400);
         if ($licPhoto === '') fail('To activate the driver now, add the licence photo', 400);
         if ($selfie === '') fail('To activate the driver now, add the selfie', 400);
@@ -213,6 +216,7 @@ case 'admin_register_driver': {
         'technical_inspection_expiry_date' => 'technical_inspection_expiry_date DATE NULL', 'technical_inspection_receipt_url' => "technical_inspection_receipt_url VARCHAR(500) DEFAULT ''",
         'road_fund_expiry_date' => 'road_fund_expiry_date DATE NULL', 'road_fund_receipt_url' => "road_fund_receipt_url VARCHAR(500) DEFAULT ''"));
 
+    etel_vp_ensure($pdo);   // adds the picture columns before the transaction (DDL ends transactions)
     if (!etel_phone_lock($pdo, $phone)) fail('Please try again in a moment', 429);
     if (etel_phone_taken($pdo, $phone)) { etel_phone_unlock($pdo, $phone); fail('That phone number already has an ETEL account', 409); }
 
@@ -234,6 +238,7 @@ case 'admin_register_driver': {
         $pdo->prepare('INSERT INTO ride_drivers (' . implode(',', $names) . ', last_seen) VALUES (' . implode(',', array_fill(0, count($names), '?')) . ', NOW())
                        ON DUPLICATE KEY UPDATE ' . implode(',', array_map(function ($n) { return "$n = VALUES($n)"; }, array_slice($names, 1))))
             ->execute(array_values($cols));
+        etel_vp_save($pdo, 'driver', $uid, $vp);
         $pdo->commit();
     } catch (Exception $e) {
         if ($pdo->inTransaction()) $pdo->rollBack();
@@ -245,6 +250,7 @@ case 'admin_register_driver': {
     if ($licName === '' || $licNum === '' || $licDob === '') $missing[] = 'licence details';
     if ($licPhoto === '') $missing[] = 'licence photo';
     if ($selfie === '') $missing[] = 'selfie';
+    if (!etel_vp_complete($vp)) $missing[] = 'vehicle photos';
     ok(array('user_id' => $uid, 'role' => 'driver', 'name' => $name, 'phone' => $phone, 'activated' => $activate, 'identity_check' => $idCheck,
              'identity_match' => $identity, 'missing' => $missing, 'docs_saved' => array_keys($docs),
              'message' => $activate ? 'Driver registered and switched on' : 'Driver registered and waiting for review'));
@@ -300,16 +306,20 @@ case 'admin_register_courier': {
         return $u;
     };
     $idPhoto = $photo('id_photo_url'); $selfie = $photo('selfie_url'); $licPhoto = $photo('licence_photo_url');
+    require_once __DIR__ . '/../lib/vehicle_photos.php';
+    $vp = etel_vp_body_strict($body);
 
     $activate = !empty($body['activate']);
     if ($activate) {
         if ($idType === '' || $idNumber === '' || $idPhoto === '') fail('To approve the courier now, add the ID kind, number and photo', 400);
         if ($selfie === '') fail('To approve the courier now, add the selfie', 400);
+        if ($vt !== 'on_foot' && !etel_vp_complete($vp)) fail('To approve the courier now, add the three vehicle photos (front, side and back)', 400);
         if ($emName === '' || $emPhone === '') fail('To approve the courier now, add an emergency contact (name and phone)', 400);
         if ($vt === 'motorcycle' && ($licNum === '' || $licPhoto === '')) fail('To approve a motorcycle courier now, add the driving licence number and photo', 400);
     }
 
     etel_courier_details_ensure($pdo);
+    etel_vp_ensure($pdo);
     etel_courier_approval_ready($pdo);
     if ($idNumber !== '') {
         $dup = $pdo->prepare('SELECT u.name FROM courier_details d JOIN users u ON u.id = d.user_id WHERE d.id_number = ? LIMIT 1');
@@ -350,6 +360,7 @@ case 'admin_register_courier': {
         $pdo->prepare('INSERT INTO couriers (' . implode(',', $cf) . ') VALUES (' . implode(',', $cm) . ')')->execute($cv);
         $pdo->prepare('INSERT INTO courier_details (user_id, id_type, id_number, id_photo_url, selfie_url, licence_number, licence_photo_url, emergency_name, emergency_phone, address, created_by)
                        VALUES (?,?,?,?,?,?,?,?,?,?,?)')->execute(array($uid, $idType, $idNumber, $idPhoto, $selfie, $licNum, $licPhoto, $emName, $emPhone, $address, intval($admin['id'])));
+        etel_vp_save($pdo, 'courier', $uid, $vp);
         $pdo->commit();
     } catch (Exception $e) {
         if ($pdo->inTransaction()) $pdo->rollBack();
@@ -361,6 +372,7 @@ case 'admin_register_courier': {
     if ($idNumber === '' || $idPhoto === '') $missing[] = 'ID';
     if ($selfie === '') $missing[] = 'selfie';
     if ($emName === '' || $emPhone === '') $missing[] = 'emergency contact';
+    if ($vt !== 'on_foot' && !etel_vp_complete($vp)) $missing[] = 'vehicle photos';
     if ($vt === 'motorcycle' && ($licNum === '' || $licPhoto === '')) $missing[] = 'driving licence';
     ok(array('user_id' => $uid, 'role' => 'courier', 'name' => $name, 'phone' => $phone, 'code' => $code, 'activated' => $activate, 'missing' => $missing,
              'message' => $activate ? 'Courier registered and approved' : 'Courier registered and waiting for approval'));

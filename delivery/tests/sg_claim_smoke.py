@@ -184,7 +184,13 @@ oid = [d for d in data(call("sg_docs_list", {"sg_id": sg_id}, admin)[1]).get("do
 call("admin_sg_doc_review", {"id": oid, "decision": "approve"}, admin)
 st, res = call("admin_service_giver_detail", {"id": sg_id}, admin)
 keys = dict((i["key"], i["ok"]) for i in (data(res).get("readiness") or {}).get("items", []))
-check("papers tick off once licence and ID are approved", keys.get("documents") is True, keys)
+for _dt in ("place_photo", "center_photo"):
+    call("sg_doc_submit", {"sg_id": sg_id, "doc_type": _dt, "file_url": DOC}, admin)
+    _id = [d for d in data(call("sg_docs_list", {"sg_id": sg_id}, admin)[1]).get("documents") if d["doc_type"] == _dt][0]["id"]
+    call("admin_sg_doc_review", {"id": _id, "decision": "approve"}, admin)
+st, res = call("admin_service_giver_detail", {"id": sg_id}, admin)
+keys = dict((i["key"], i["ok"]) for i in (data(res).get("readiness") or {}).get("items", []))
+check("papers tick off once licence, ID and the two shop pictures are approved", keys.get("documents") is True, keys)
 st, res = call("admin_sg_doc_review", {"id": oid, "decision": "approve"}, cust)
 check("a customer cannot review papers", st in (401, 403) or res.get("success") is False, (st, res))
 

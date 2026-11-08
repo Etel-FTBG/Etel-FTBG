@@ -14,7 +14,7 @@ var esc = K.esc;
 
 var TYPES = [['restaurant', '🍽️', 'Restaurant'], ['cafe', '☕', 'Cafe'], ['fastfood', '🍔', 'Fast food'], ['grocery', '🛒', 'Grocery'], ['pharmacy', '💊', 'Pharmacy'],
   ['laundry', '🧺', 'Laundry'], ['electronics', '🔌', 'Electronics'], ['retail', '🛍️', 'Shop'], ['delivery', '🚚', 'Delivery company'], ['custom', '✨', 'Other']];
-var S = { mode: 'live', type: 'restaurant', dr: null };
+var S = { mode: 'live', type: 'restaurant', dr: null, busy: 0, pics: { place: null, center: null } };
 
 function css() {
   if (document.getElementById('ak-reg-css')) return;
@@ -62,6 +62,7 @@ function css() {
     '.ak-reg .rg-done{text-align:center;padding:10px 0 4px}.ak-reg .rg-ok{width:64px;height:64px;margin:0 auto 10px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:30px;background:linear-gradient(135deg,#3ad08a,#1fa463);color:#fff}',
     '.ak-reg .rg-box{border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin:12px 0;text-align:left;background:var(--card)}',
     '.ak-reg .rg-box pre{white-space:pre-wrap;word-break:break-word;font:inherit;font-size:13px;margin:6px 0 10px}',
+    '.ak-reg .rg-pics{display:grid;grid-template-columns:1fr 1fr;gap:10px}.ak-reg .rg-up{min-height:120px;border-radius:14px;border:2px dashed var(--line);background:var(--card) center/cover no-repeat;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:8px;text-align:center;cursor:pointer;position:relative;overflow:hidden;font-size:12px;color:var(--mute)}.ak-reg .rg-up b{color:var(--ink);font-size:13px}.ak-reg .rg-up.has{border-style:solid;border-color:var(--gold)}.ak-reg .rg-up .chg{position:absolute;left:6px;bottom:6px;padding:3px 8px;border-radius:99px;background:rgba(0,0,0,.65);color:#fff;font-size:11px}',
     '@media(max-width:560px){.ak-reg .rg-2{grid-template-columns:1fr}.ak-reg .rg-mapw{height:220px}}'
   ].join('\n');
   document.head.appendChild(s);
@@ -71,6 +72,24 @@ function $(id) { return document.getElementById(id); }
 function val(id) { var e = $(id); return e ? e.value.trim() : ''; }
 function field(id, label, input, hint, req) { return '<label class="rg-f" data-f="' + id + '"><span>' + esc(label) + (req ? ' <em>*</em>' : '') + '</span>' + input + '<small data-h="' + esc(hint || '') + '">' + esc(hint || '') + '</small></label>'; }
 function inp(id, attrs) { return '<input id="' + id + '" class="ak-in" ' + (attrs || '') + '>'; }
+
+function picBox(kind, title, hint) {
+  var f = S.pics[kind], has = f && f.preview;
+  return '<div><div class="rg-up' + (has ? ' has' : '') + '" data-up="' + kind + '" tabindex="0" role="button" aria-label="' + esc(title) + '"' + (has ? ' style="background-image:url(\'' + esc(f.preview) + '\')"' : '') + '>' +
+    (has ? '<span class="chg">' + (f.url ? 'Change photo' : 'Uploading…') + '</span>' : '<div style="font-size:26px">📷</div><b>' + esc(title) + '</b><span>' + esc(hint) + '</span>') + '</div>' +
+    '<input type="file" accept="image/*" capture="environment" hidden data-file="' + kind + '"></div>';
+}
+function repaintPics() { var w = $('rg-pics'); if (!w) return; var g = w.querySelector('.rg-pics'); if (g) g.innerHTML = picBox('place', 'Shop place', 'The shop front and its street') + picBox('center', 'Shopping center', 'The shopping center or building'); }
+function upload(file) {
+  var fd = new FormData(); fd.append('image', file); fd.append('type', 'sg_document');
+  return fetch(ETEL.api.replace('boot.php', 'upload.php'), { method: 'POST', headers: { 'Authorization': 'Bearer ' + Auth.getToken() }, body: fd })
+    .then(function (r) { return r.json(); }).then(function (j) { if (!j || !j.success || !j.data) throw new Error((j && j.message) || 'Upload failed'); return j.data.url; });
+}
+function pickPic(kind, file) {
+  if (!file || !/^image\//.test(file.type)) { K.toast('Choose a picture file', true); return; }
+  var f = { url: '', preview: URL.createObjectURL(file) }; S.pics[kind] = f; S.busy++; repaintPics(); mark('rg-pics', '');
+  upload(file).then(function (u) { f.url = u; }).catch(function (e) { K.toast(e.message, true); S.pics[kind] = null; }).then(function () { S.busy--; repaintPics(); });
+}
 
 function form() {
   var live = S.mode === 'live';
@@ -98,7 +117,10 @@ function form() {
       '<div class="rg-2">' + field('sg-zone-sel', 'Zone', inp('sg-zone-sel', 'type="text" autocomplete="off" placeholder="Tap the map to pick it"'), 'Filled from the pin. You can type over it.', live) +
       '<div class="rg-2" style="gap:8px">' + field('sg-lat', 'Latitude', inp('sg-lat', 'type="text" inputmode="decimal"'), '') + field('sg-lng', 'Longitude', inp('sg-lng', 'type="text" inputmode="decimal"'), '') + '</div></div></section>' +
 
-    '<section class="rg-sec" data-sec="more"><h4><span class="rg-n">4</span>Extras <small style="font-weight:400;color:var(--mute)">(optional)</small></h4>' +
+    '<section class="rg-sec" data-sec="pics"><h4><span class="rg-n">4</span>Shop pictures <small style="font-weight:400;color:var(--mute)" data-only="draft">(optional while pre-registering)</small></h4>' +
+      '<div class="rg-f" data-f="rg-pics" id="rg-pics"><span>Where the shop is: the shop place, and the shopping center or building it is in</span><div class="rg-pics">' + picBox('place', 'Shop place', 'The shop front and its street') + picBox('center', 'Shopping center', 'The shopping center or building') + '</div><small data-h=""></small></div></section>' +
+
+    '<section class="rg-sec" data-sec="more"><h4><span class="rg-n">5</span>Extras <small style="font-weight:400;color:var(--mute)">(optional)</small></h4>' +
       field('rg-idn', 'ID or licence number', inp('rg-idn', 'type="text" autocomplete="off" placeholder="National ID or trade licence"'), '') + '</section>';
 }
 
@@ -156,6 +178,7 @@ function validate() {
     need('rg-phone', !phoneOk(val('rg-phone')), 'Enter the full phone number.');
     need('rg-pw', val('rg-pw').length < 8, 'The password needs at least 8 characters.');
     need('sg-zone-sel', !val('sg-zone-sel'), 'Tap the map to pin the location, or type the zone.');
+    need('rg-pics', !(S.pics.place && S.pics.place.url && S.pics.center && S.pics.center.url), 'Add both pictures: the shop place and the shopping center.');
   } else if (val('rg-phone')) need('rg-phone', !phoneOk(val('rg-phone')), 'Enter the full phone number, or leave it empty.');
   if (!ok && first) { var e = $(first); if (e) { e.scrollIntoView({ block: 'center', behavior: 'smooth' }); e.focus(); } }
   return ok;
@@ -189,6 +212,7 @@ function success(d, info) {
 
 /* ---------- submit ---------- */
 function submit(btn) {
+  if (S.busy) { $('rg-msg').textContent = 'Wait for the pictures to finish uploading.'; return; }
   if (!validate()) { $('rg-msg').textContent = 'Check the highlighted fields.'; return; }
   var live = S.mode === 'live', msg = $('rg-msg');
   var info = { biz: val('rg-biz'), phone: val('rg-phone'), pw: val('rg-pw') };
@@ -196,6 +220,8 @@ function submit(btn) {
   if (live) payload.password = info.pw; else payload.draft = 1;
   if (val('sg-zone-sel')) payload.zone = val('sg-zone-sel');
   if (val('sg-lat') && val('sg-lng')) { payload.lat = val('sg-lat'); payload.lng = val('sg-lng'); }
+  if (S.pics.place && S.pics.place.url) payload.place_photo_url = S.pics.place.url;
+  if (S.pics.center && S.pics.center.url) payload.center_photo_url = S.pics.center.url;
   btn.disabled = true; msg.textContent = 'Saving…';
   K.api('admin_create_service_giver', payload).then(function (res) {
     btn.disabled = false;
@@ -254,13 +280,14 @@ function initSearch(dr, tries) {
 /* ---------- open ---------- */
 function open(opts) {
   css();
-  S.mode = opts && opts.mode === 'draft' ? 'draft' : 'live'; S.type = 'restaurant';
+  S.mode = opts && opts.mode === 'draft' ? 'draft' : 'live'; S.type = 'restaurant'; S.busy = 0; S.pics = { place: null, center: null };
   var dr = K.openDrawer(head(), form(), foot()); S.dr = dr; dr.classList.add('ak-reg');
   applyMode();
   dr.addEventListener('click', function (e) {
     var t = e.target, b;
     if ((b = t.closest('[data-mode]'))) { S.mode = b.getAttribute('data-mode'); applyMode(); }
     else if ((b = t.closest('[data-type]'))) { S.type = b.getAttribute('data-type'); dr.querySelectorAll('[data-type]').forEach(function (x) { var on = x === b; x.classList.toggle('on', on); x.setAttribute('aria-pressed', String(on)); }); }
+    else if ((b = t.closest('[data-up]'))) { var f0 = dr.querySelector('[data-file="' + b.getAttribute('data-up') + '"]'); if (f0) f0.click(); }
     else if (t.closest('[data-pw-show]')) { var p = $('rg-pw'); p.type = p.type === 'password' ? 'text' : 'password'; }
     else if (t.closest('[data-pw-gen]')) {
       var a = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789', n = new Uint32Array(10), out = ''; (window.crypto || window.msCrypto).getRandomValues(n);
@@ -274,6 +301,7 @@ function open(opts) {
     else if (t.closest('[data-again]')) open({ mode: S.mode });
     else if ((b = t.closest('[data-view]'))) { var id = parseInt(b.getAttribute('data-view'), 10); K.closeDrawer(); if (typeof window.etelOpenServiceGiver === 'function') window.etelOpenServiceGiver(id); }
   });
+  dr.addEventListener('change', function (e) { var k = e.target.getAttribute && e.target.getAttribute('data-file'); if (k && e.target.files && e.target.files[0]) { pickPic(k, e.target.files[0]); e.target.value = ''; } });
   dr.addEventListener('input', function (e) {
     var f = e.target.closest && e.target.closest('[data-f]'); if (f && f.classList.contains('bad')) mark(f.getAttribute('data-f'), '');
     refresh();

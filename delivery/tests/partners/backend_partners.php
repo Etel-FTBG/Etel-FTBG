@@ -73,7 +73,9 @@ $r = calla('fa_partner_list', array(), $AU); t('an approved agent sees the fees 
 
 // ---- courier ----
 $img = 'https://ethelmarket.com/delivery/uploads/x.jpg';
-$courierData = array('vehicle_type' => 'Motorbike', 'id_type' => 'fayda', 'id_photo_url' => $img, 'selfie_url' => $img, 'emergency_name' => 'Mum', 'emergency_phone' => '0944000001', 'zone' => 'Tabor', 'address' => 'Tabor, Hawassa');
+$vimg = 'https://ethelmarket.com/delivery/uploads/vehicle_photos/veh_t.jpg'; $dimg = 'https://ethelmarket.com/delivery/uploads/driver_documents/sgdoc_t.jpg';
+$vph = array('vehicle_photo_front' => $vimg, 'vehicle_photo_side' => $vimg, 'vehicle_photo_back' => $vimg);
+$courierData = $vph + array('vehicle_type' => 'Motorbike', 'id_type' => 'fayda', 'id_photo_url' => $img, 'selfie_url' => $img, 'emergency_name' => 'Mum', 'emergency_phone' => '0944000001', 'zone' => 'Tabor', 'address' => 'Tabor, Hawassa');
 $r = calla('fa_partner_save', array('kind' => 'courier', 'name' => 'Courier Chala', 'phone' => '0955000001', 'id_number' => 'FAYDA-1', 'data' => $courierData), $AU);
 t('save a courier draft', $r->ok && $r->data['partner']['status'] === 'draft' && $r->data['ready'] === true, json_encode($r->data));
 $cid = $r->data['partner']['id'];
@@ -113,17 +115,25 @@ t('still one fee', intval(one("SELECT COUNT(*) FROM fa_earnings WHERE kind = 'pa
 $r = calla('fa_partner_save', array('kind' => 'courier', 'name' => 'Copy', 'phone' => '0955000001', 'data' => $courierData), $AU2); t('a phone that already has an account is refused at once', !$r->ok && $r->code2 == 409 && $r->data['reason'] === 'PHONE_TAKEN');
 
 // ---- driver ----
-$driverData = array('vehicle_type' => 'Bajaj', 'vehicle_plate' => 'AA-1234', 'vehicle_make' => 'TVS', 'license_number' => 'L-77', 'license_name' => 'Driver Dawit', 'license_photo_url' => $img, 'id_photo_url' => $img, 'selfie_url' => $img, 'emergency_phone' => '0944000002');
+$driverData = $vph + array('vehicle_type' => 'Bajaj', 'vehicle_plate' => 'AA-1234', 'vehicle_make' => 'TVS', 'license_number' => 'L-77', 'license_name' => 'Driver Dawit', 'license_photo_url' => $img, 'id_photo_url' => $img, 'selfie_url' => $img, 'emergency_phone' => '0944000002');
 $r = calla('fa_partner_save', array('kind' => 'driver', 'name' => 'Driver Dawit', 'phone' => '0966000001', 'id_number' => 'FAYDA-2', 'data' => $driverData), $AU); t('driver draft is ready', $r->ok && $r->data['ready'], json_encode($r->data['missing']));
 $did = $r->data['partner']['id'];
 $r = calla('fa_partner_submit', array('id' => $did), $AU); t('submit driver', $r->ok);
 $r = calla('admin_fa_partner_decide', array('id' => $did, 'decision' => 'approve'), $ADMIN); t('approve the driver', $r->ok && $r->data['fee'] == 50, $r->getMessage());
 t('driver profile exists and is onboarded', intval(one("SELECT COUNT(*) FROM ride_drivers rd JOIN users u ON u.id = rd.user_id WHERE u.phone = '0966000001' AND rd.vehicle_plate = 'AA-1234'")) === 1);
+t('the driver three vehicle pictures are saved on the driver row', one("SELECT COUNT(*) FROM ride_drivers rd JOIN users u ON u.id = rd.user_id WHERE u.phone = '0966000001' AND rd.vehicle_photo_front = '$vimg' AND rd.vehicle_photo_side = '$vimg' AND rd.vehicle_photo_back = '$vimg'") == 1);
+t('the courier three vehicle pictures are saved on the courier details', one("SELECT COUNT(*) FROM courier_details cd JOIN users u ON u.id = cd.user_id WHERE u.phone = '0955000001' AND cd.vehicle_photo_front = '$vimg' AND cd.vehicle_photo_back = '$vimg'") == 1);
+$r = calla('fa_partner_save', array('kind' => 'courier', 'name' => 'No Pics', 'phone' => '0955000077', 'data' => array_diff_key($courierData, $vph)), $AU);
+t('a courier on a vehicle needs the three photos', $r->ok && !$r->data['ready'] && isset($r->data['missing']['vehicle_photo_front']) && isset($r->data['missing']['vehicle_photo_back']), json_encode($r->data['missing']));
+$r = calla('fa_partner_save', array('kind' => 'courier', 'name' => 'Walker', 'phone' => '0955000078', 'data' => array_diff_key(array_merge($courierData, array('vehicle_type' => 'on_foot')), $vph)), $AU);
+t('a courier on foot needs no vehicle photos', $r->ok && !isset($r->data['missing']['vehicle_photo_front']), json_encode($r->data['missing']));
+$r = calla('fa_partner_save', array('kind' => 'driver', 'name' => 'Bad Link', 'phone' => '0966000078', 'data' => array_merge($driverData, array('vehicle_photo_side' => 'https://ethelmarket.com/delivery/uploads/driver_documents/x.jpg'))), $AU);
+t('a vehicle photo must come from the vehicle-pictures folder', $r->ok && isset($r->data['missing']['vehicle_photo_side']) || ($r->ok && $r->data['partner']['data']['vehicle_photo_side'] === ''), json_encode($r->data['missing']));
 
 // ---- shop with products ----
 $items = array();
 for ($i = 1; $i <= 4; $i++) $items[] = array('name' => "Burger $i", 'category' => 'food', 'price' => 100 + $i, 'image_url' => $img);
-$shopData = array('business_name' => 'Hawassa Burger', 'service_type' => 'restaurant', 'address' => 'Tabor', 'lat' => 7.04, 'lng' => 38.48, 'logo_url' => $img, 'city' => 'Hawassa', 'zone' => 'Tabor', 'id_photo_url' => $img, 'selfie_url' => $img, 'emergency_phone' => '0944000003');
+$shopData = array('place_photo_url' => $dimg, 'center_photo_url' => $dimg, 'business_name' => 'Hawassa Burger', 'service_type' => 'restaurant', 'address' => 'Tabor', 'lat' => 7.04, 'lng' => 38.48, 'logo_url' => $img, 'city' => 'Hawassa', 'zone' => 'Tabor', 'id_photo_url' => $img, 'selfie_url' => $img, 'emergency_phone' => '0944000003');
 $r = calla('fa_partner_save', array('kind' => 'shop', 'name' => 'Owner Sara', 'phone' => '0977000001', 'id_number' => 'FAYDA-3', 'data' => $shopData, 'items' => $items), $AU);
 t('a shop with too few products says how many are needed', $r->ok && !$r->data['ready'] && strpos($r->data['missing']['items'], 'at least 5') !== false, json_encode($r->data['missing']));
 $sid = $r->data['partner']['id'];
@@ -136,6 +146,7 @@ t('complete shop is ready', $r->ok && $r->data['ready'] && $r->data['partner']['
 $r = calla('fa_partner_submit', array('id' => $sid), $AU); t('submit shop', $r->ok, $r->getMessage());
 $r = calla('admin_fa_partner_get', array('id' => $sid), $ADMIN); t('the owner sees all 5 products', $r->ok && count($r->data['partner']['items']) === 5);
 $r = calla('admin_fa_partner_decide', array('id' => $sid, 'decision' => 'approve'), $ADMIN); t('approve the shop', $r->ok && $r->data['fee'] == 150 && strpos($r->data['code'], 'SG-') === 0, $r->getMessage());
+t('the shop two pictures became approved papers', intval(one("SELECT COUNT(*) FROM sg_documents WHERE doc_type IN ('place_photo','center_photo') AND status = 'approved'")) === 2);
 t('shop is verified with location and 5 items', intval(one("SELECT COUNT(*) FROM service_givers WHERE business_name = 'Hawassa Burger' AND status = 'verified' AND lat IS NOT NULL")) === 1 && intval(one("SELECT COUNT(*) FROM items")) === 5);
 t('the agent now has 250 payable (50 + 50 + 150)', floatval(one("SELECT SUM(amount) FROM fa_earnings WHERE agent_id = ? AND status = 'payable'", array($AID))) == 250);
 

@@ -76,21 +76,25 @@ function fa_partner_clean_data($kind, $d) {
     if (!is_array($d)) $d = array();
     $str = function ($k, $max) use ($d) { return fa_partner_clean_str(isset($d[$k]) ? $d[$k] : '', $max); };
     $url = function ($k) use ($d) { return fa_partner_clean_url(isset($d[$k]) ? $d[$k] : ''); };
+    require_once __DIR__ . '/vehicle_photos.php';
+    $vurl = function ($k) use ($url) { $u = $url($k); return etel_vp_url_ok($u) ? $u : ''; };   // vehicle pictures must sit in this system's vehicle-pictures folder
     $out = array('address' => $str('address', 200), 'zone' => $str('zone', 80), 'city' => $str('city', 60), 'notes' => $str('notes', 500),
         'id_type' => $str('id_type', 30), 'id_photo_url' => $url('id_photo_url'), 'selfie_url' => $url('selfie_url'),
         'emergency_name' => $str('emergency_name', 100), 'emergency_phone' => $str('emergency_phone', 20));
     if ($kind === 'courier') {
-        $out += array('vehicle_type' => $str('vehicle_type', 40), 'plate_number' => $str('plate_number', 30), 'licence_number' => $str('licence_number', 60), 'licence_photo_url' => $url('licence_photo_url'));
+        $out += array('vehicle_type' => $str('vehicle_type', 40), 'plate_number' => $str('plate_number', 30), 'licence_number' => $str('licence_number', 60), 'licence_photo_url' => $url('licence_photo_url')
+            , 'vehicle_photo_front' => $vurl('vehicle_photo_front'), 'vehicle_photo_side' => $vurl('vehicle_photo_side'), 'vehicle_photo_back' => $vurl('vehicle_photo_back'));
     } elseif ($kind === 'driver') {
         $out += array('vehicle_type' => $str('vehicle_type', 40), 'vehicle_make' => $str('vehicle_make', 60), 'vehicle_color' => $str('vehicle_color', 40),
             'vehicle_year' => isset($d['vehicle_year']) && is_numeric($d['vehicle_year']) ? intval($d['vehicle_year']) : 0, 'vehicle_plate' => $str('vehicle_plate', 30),
-            'license_name' => $str('license_name', 100), 'license_number' => $str('license_number', 60), 'license_dob' => $str('license_dob', 10), 'license_photo_url' => $url('license_photo_url'));
+            'license_name' => $str('license_name', 100), 'license_number' => $str('license_number', 60), 'license_dob' => $str('license_dob', 10), 'license_photo_url' => $url('license_photo_url')
+            , 'vehicle_photo_front' => $vurl('vehicle_photo_front'), 'vehicle_photo_side' => $vurl('vehicle_photo_side'), 'vehicle_photo_back' => $vurl('vehicle_photo_back'));
     } else {
         $lat = isset($d['lat']) && is_numeric($d['lat']) ? round(floatval($d['lat']), 7) : null;
         $lng = isset($d['lng']) && is_numeric($d['lng']) ? round(floatval($d['lng']), 7) : null;
         $out += array('business_name' => $str('business_name', 120), 'service_type' => $str('service_type', 40), 'description' => $str('description', 500),
             'logo_url' => $url('logo_url'), 'cover_url' => $url('cover_url'), 'opens_at' => $str('opens_at', 5), 'closes_at' => $str('closes_at', 5),
-            'business_licence' => $str('business_licence', 60), 'lat' => $lat, 'lng' => $lng);
+            'business_licence' => $str('business_licence', 60), 'lat' => $lat, 'lng' => $lng, 'place_photo_url' => $url('place_photo_url'), 'center_photo_url' => $url('center_photo_url'));
     }
     return $out;
 }
@@ -105,17 +109,21 @@ function fa_partner_missing($pdo, $kind, $name, $phone, $d, $items) {
     if ($kind !== 'shop' && ($d['emergency_phone'] === '' || etel_validate_phone($d['emergency_phone']) === false)) $m['emergency_phone'] = 'Add a contact number of a relative or friend.';
     if ($kind === 'courier') {
         if ($d['vehicle_type'] === '') $m['vehicle_type'] = 'Choose the vehicle.';
+        if ($d['vehicle_type'] !== 'on_foot') foreach (array('front' => 'the front', 'side' => 'the side', 'back' => 'the back') as $sd => $lbl) { if ($d['vehicle_photo_' . $sd] === '') $m['vehicle_photo_' . $sd] = 'Take a photo of ' . $lbl . ' of the vehicle.'; }
     } elseif ($kind === 'driver') {
         if ($d['vehicle_type'] === '') $m['vehicle_type'] = 'Choose the vehicle.';
         if ($d['vehicle_plate'] === '') $m['vehicle_plate'] = 'Write the plate number.';
         if ($d['license_number'] === '') $m['license_number'] = 'Write the driving licence number.';
         if ($d['license_photo_url'] === '') $m['license_photo_url'] = 'Add a photo of the driving licence.';
+        foreach (array('front' => 'the front', 'side' => 'the side', 'back' => 'the back') as $sd => $lbl) { if ($d['vehicle_photo_' . $sd] === '') $m['vehicle_photo_' . $sd] = 'Take a photo of ' . $lbl . ' of the vehicle.'; }
     } else {
         if ($d['business_name'] === '') $m['business_name'] = 'Write the shop name.';
         if ($d['service_type'] === '') $m['service_type'] = 'Choose what the shop sells.';
         if ($d['address'] === '') $m['address'] = 'Write the shop address.';
         if ($d['lat'] === null || $d['lng'] === null) $m['location'] = 'Stand at the shop and use "Use my location".';
         if ($d['logo_url'] === '') $m['logo_url'] = 'Add the shop logo or a photo of the front.';
+        if ($d['place_photo_url'] === '') $m['place_photo_url'] = 'Add a picture of the shop place (the shop front and its street).';
+        if ($d['center_photo_url'] === '') $m['center_photo_url'] = 'Add a picture of the shopping center or building the shop is in.';
         $need = intval(fa_setting($pdo, 'partner_shop_min_items'));
         if (count($items) < $need) $m['items'] = 'Add at least ' . $need . ' products with name, price and photo (you have ' . count($items) . ').';
         foreach ($items as $i => $it) { if ($it['price'] <= 0) { $m['items'] = 'Every product needs a price (check "' . $it['name'] . '").'; break; } }
@@ -164,6 +172,9 @@ function fa_partner_create_account($pdo, $row, $adminId) {
     $kind = $row['kind'];
     $result = array('user_id' => 0, 'sg_id' => 0, 'code' => '', 'claim' => null);
     try {
+        require_once __DIR__ . '/vehicle_photos.php'; require_once __DIR__ . '/sg_docs.php';
+        if ($kind === 'courier' || $kind === 'driver') etel_vp_ensure($pdo);   // adds columns: must happen before the transaction (DDL ends one)
+        if ($kind === 'shop') etel_sg_docs_ensure($pdo);
         if ($kind === 'courier') { require_once __DIR__ . '/courier_details.php'; require_once __DIR__ . '/courier_approval.php'; etel_courier_details_ensure($pdo); etel_courier_approval_ready($pdo); }
         if ($kind === 'driver') {
             rides_add_missing_cols($pdo, 'ride_drivers', array('vehicle_plate' => "vehicle_plate VARCHAR(30) DEFAULT ''", 'vehicle_type' => "vehicle_type VARCHAR(40) DEFAULT 'Bajaj'",
@@ -200,6 +211,7 @@ function fa_partner_create_account($pdo, $row, $adminId) {
             $pdo->prepare('INSERT INTO couriers (' . implode(',', $cf) . ') VALUES (' . implode(',', $cm) . ')')->execute($cv);
             $pdo->prepare('INSERT INTO courier_details (user_id, id_type, id_number, id_photo_url, selfie_url, licence_number, licence_photo_url, emergency_name, emergency_phone, address, created_by) VALUES (?,?,?,?,?,?,?,?,?,?,?)')
                 ->execute(array($uid, (array_key_exists($d['id_type'], etel_courier_id_types()) ? $d['id_type'] : 'national_id'), $row['id_number'], $d['id_photo_url'], $d['selfie_url'], $d['licence_number'], $d['licence_photo_url'], $d['emergency_name'], $d['emergency_phone'], $d['address'], intval($adminId)));
+            etel_vp_save($pdo, 'courier', $uid, etel_vp_clean($d));
         } elseif ($kind === 'driver') {
             $cols = array('user_id' => $uid, 'online' => 0, 'vehicle_type' => $d['vehicle_type'], 'vehicle_make' => $d['vehicle_make'], 'vehicle_color' => $d['vehicle_color'], 'vehicle_year' => $d['vehicle_year'],
                 'vehicle_plate' => $d['vehicle_plate'], 'license_number' => $d['license_number'], 'license_name' => $d['license_name'], 'license_dob' => ($d['license_dob'] !== '' ? $d['license_dob'] : null),
@@ -208,6 +220,7 @@ function fa_partner_create_account($pdo, $row, $adminId) {
             foreach (array_keys($cols) as $n) { if (!in_array($n, $have, true)) unset($cols[$n]); }
             $names = array_keys($cols);
             $pdo->prepare('INSERT INTO ride_drivers (' . implode(',', $names) . ', last_seen) VALUES (' . implode(',', array_fill(0, count($names), '?')) . ', NOW())')->execute(array_values($cols));
+            etel_vp_save($pdo, 'driver', $uid, etel_vp_clean($d));
         } else {
             $sgCode = 'SG-' . str_pad($uid, 5, '0', STR_PAD_LEFT); $result['code'] = $sgCode;
             $pdo->prepare("INSERT INTO service_givers (user_id, service_giver_code, business_name, service_type, zone, address, status, is_online, average_rating, total_deliveries, completed_deliveries, failed_deliveries, total_earnings, rating_count, created_at)
@@ -220,6 +233,12 @@ function fa_partner_create_account($pdo, $row, $adminId) {
                 if (in_array($col, $sc, true) && $x !== null && $x !== '') { $set[] = "$col = ?"; $val[] = $x; }
             }
             if ($set) { $val[] = $sgId; $pdo->prepare('UPDATE service_givers SET ' . implode(', ', $set) . ' WHERE id = ?')->execute($val); }
+            // the two shop pictures become papers, already approved (the owner checked them when approving the partner)
+            foreach (array('place_photo' => 'place_photo_url', 'center_photo' => 'center_photo_url') as $dt => $dk) {
+                if (!empty($d[$dk]) && etel_sg_doc_url_ok($d[$dk])) {
+                    $pdo->prepare("INSERT INTO sg_documents (sg_id, doc_type, file_url, status, uploaded_by, reviewed_at) VALUES (?,?,?, 'approved', ?, NOW()) ON DUPLICATE KEY UPDATE file_url = VALUES(file_url), status = 'approved', reviewed_at = NOW()")->execute(array($sgId, $dt, $d[$dk], intval($adminId)));
+                }
+            }
             $ins = $pdo->prepare('INSERT INTO items (service_giver_id, item_code, name, name_am, description, category, price, original_price, stock_quantity, preparation_time, image_url, is_available) VALUES (?,?,?,?,?,?,?,?,100,?,?,1)');
             foreach ($items as $it) {
                 $ins->execute(array($sgId, etel_catalog_new_item_code($pdo, $it['category']), $it['name'], ($it['name_am'] !== '' ? $it['name_am'] : null), $it['description'], $it['category'], $it['price'], $it['price'], $it['prep_time'], $it['image_url']));
