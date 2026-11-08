@@ -32,8 +32,10 @@ const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAFElEQVR
       await p.click('[data-act="pt-next"]'); await p.waitForSelector('.pt-vt'); await p.waitForTimeout(900);
       t('step 2 shows the vehicles', (await p.innerText('body')).includes('Motorcycle'));
       const loaded = await p.$$eval('.pt-vt img.pt-vimg', a => a.map(i => i.complete && i.naturalWidth > 0));
-      t('real vehicle pictures are shown for the vehicle choices (motorcycle and car)', loaded.length >= 2 && loaded.every(Boolean), JSON.stringify(loaded));
-      t('a vehicle with no picture file yet keeps a drawn icon, never a broken image', (await p.$$('.pt-vt .pt-vico')).length >= 1);
+      t('a courier can choose from seven vehicles, each with a real picture', loaded.length === 7 && loaded.every(Boolean) && (await p.$$('.pt-vt')).length === 7, JSON.stringify(loaded));
+      const names = await p.$$eval('.pt-vt b', a => a.map(x => x.textContent));
+      t('the courier choices are motorcycle, car, bicycle, bajaj, qute, minibus and the EV (no on foot)', ['Motorcycle', 'Car', 'Bicycle', 'Bajaj', 'Qute', 'Minibus'].every(n => names.includes(n)) && names.some(n => /Electric vehicle/.test(n)) && !names.some(n => /foot/i.test(n)), JSON.stringify(names));
+      t('the bicycle and the EV have their own pictures', await p.$$eval('.pt-vt img', a => a.some(i => /bicycle\.webp/.test(i.src)) && a.some(i => /ev_car\.webp/.test(i.src))));
       await p.screenshot({ path: 'pt-real-vehicles.png' });
       await p.click('.pt-vt:has-text("Bicycle")'); await p.waitForTimeout(300);
       await p.click('[data-act="pt-next"]'); await p.waitForSelector('#pt-emergency_phone'); await p.waitForTimeout(500);

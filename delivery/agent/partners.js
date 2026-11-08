@@ -29,6 +29,10 @@ var TX = {
   tap_photo: ['Tap to take or choose a photo', '\u134e\u1276 \u1208\u121b\u1295\u1233\u1275 \u12c8\u12ed\u121d \u1208\u1218\u121d\u1228\u1325 \u12ed\u1295\u12a9'], change_photo: ['Change photo', '\u134e\u1276 \u1240\u12ed\u122d'], uploading: ['Uploading...', '\u1260\u1218\u132b\u1295 \u120b\u12ed...'],
   national_id: ['National ID', '\u1265\u1214\u122b\u12ca \u1218\u1273\u12c8\u1242\u12eb'], kebele_id: ['Kebele ID', '\u12e8\u1240\u1260\u120c \u1218\u1273\u12c8\u1242\u12eb'], passport: ['Passport', '\u1353\u1235\u1356\u122d\u1275'], driving_licence: ['Driving licence', '\u1218\u1295\u1303 \u1348\u1243\u12f5'],
   vehicle: ['Vehicle', '\u1270\u123d\u12a8\u122d\u12ab\u122a'], plate: ['Plate number', '\u12e8\u1230\u120c\u12f3 \u1241\u1325\u122d'], make: ['Make (optional)', '\u121e\u12f4\u120d (\u12a0\u121b\u122b\u132d)'], color: ['Colour (optional)', '\u1240\u1208\u121d (\u12a0\u121b\u122b\u132d)'], year: ['Year (optional)', '\u12d3\u1218\u1275 (\u12a0\u121b\u122b\u132d)'],
+  v_bajaj: ['Bajaj', '\u1263\u1303\u1305'],
+  v_qute: ['Qute', '\u12a9\u1274'],
+  v_minibus: ['Minibus', '\u121a\u1292\u1263\u1235'],
+  v_ev_car: ['Electric vehicle (EV)', '\u12a4\u120c\u12ad\u1275\u122a\u12ad \u1270\u123d\u12a8\u122d\u12ab\u122a (EV)'],
   v_motorcycle: ['Motorcycle', '\u121e\u1270\u122d'], v_car: ['Car', '\u1218\u12aa\u1293'], v_bicycle: ['Bicycle', '\u1265\u1235\u12ad\u120c\u1275'], v_on_foot: ['On foot', '\u1260\u12a5\u130d\u122d'],
   lic_name: ['Name on the licence', '\u1260\u1218\u1295\u1303 \u1348\u1243\u12f1 \u120b\u12ed \u12eb\u1208 \u1235\u121d'], lic_num: ['Licence number', '\u12e8\u1218\u1295\u1303 \u1348\u1243\u12f5 \u1241\u1325\u122d'], lic_photo: ['Photo of the licence', '\u12e8\u1218\u1295\u1303 \u1348\u1243\u12f5 \u134e\u1276'], lic_opt: ['Licence number (optional)', '\u12e8\u1218\u1295\u1303 \u1348\u1243\u12f5 \u1241\u1325\u122d (\u12a0\u121b\u122b\u132d)'],
   em_name: ['Contact person (relative or friend)', '\u12e8\u12d8\u1218\u12f5 \u12c8\u12ed\u121d \u12e8\u1313\u12f0\u129b \u1235\u121d'], em_phone: ['Their phone number', '\u1235\u120d\u12ad \u1241\u1325\u122b\u1278\u12cd'], zone: ['Area or neighbourhood', '\u1230\u1348\u122d'], address: ['Address', '\u12a0\u12f5\u122b\u123b'],
@@ -57,14 +61,14 @@ function L() { return P.S.lang === 'en' ? 0 : 1; }
 function tx(k, v) { var e = TX[k]; var s = e ? e[L()] : k; if (v) for (var x in v) if (Object.prototype.hasOwnProperty.call(v, x)) s = s.split('{' + x + '}').join(v[x]); return s; }
 
 var STEPS = { courier: ['person', 'vehicle', 'contact', 'review'], driver: ['person', 'vehicle', 'licence', 'contact', 'review'], shop: ['owner', 'shop', 'products', 'review'] };
-var COURIER_VEH = ['motorcycle', 'car', 'bicycle', 'on_foot'];
+var COURIER_VEH = ['motorcycle', 'car', 'bicycle', 'bajaj', 'qute', 'minibus', 'ev_car'];
 var ID_TYPES = ['national_id', 'kebele_id', 'passport', 'driving_licence'];
 var SHOP_TYPES = ['restaurant', 'cafe', 'fastfood', 'grocery', 'pharmacy', 'laundry', 'electronics', 'retail', 'custom'];
 var ITEM_CATS = ['food', 'grocery', 'pharmacy', 'flower', 'package'];
 /* Real pictures, like the admin's registration screens: the same vehicle artwork as the Ride app (agent/veh/*.webp). A vehicle or shop with no picture
    file yet (bicycle, on foot, shop) keeps a drawn icon until the file is added: bicycle.webp, on_foot.webp, shop.webp in agent/veh/. */
-var VPIC = { bajaj: 'bajaj', qute: 'qute', moto: 'moto', motorcycle: 'moto', car: 'car', ev_car: 'car', minibus: 'minibus', van: 'minibus', bicycle: 'bicycle', on_foot: 'on_foot', shop: 'shop' };
-var VICON = { bicycle: 'moto', on_foot: 'users', shop: 'badge', moto: 'moto', motorcycle: 'moto', car: 'car', bajaj: 'bajaj', qute: 'bajaj', ev_car: 'car', minibus: 'bus', van: 'bus' };
+var VPIC = { bajaj: 'bajaj', qute: 'qute', moto: 'moto', motorcycle: 'moto', car: 'car', ev_car: 'ev_car', minibus: 'minibus', van: 'minibus', bicycle: 'bicycle', on_foot: 'on_foot', shop: 'shop' };
+var VICON = { bicycle: 'moto', on_foot: 'users', shop: 'badge', moto: 'moto', motorcycle: 'moto', car: 'car', bajaj: 'bajaj', qute: 'bajaj', ev_car: 'bajaj', minibus: 'bus', van: 'bus' };
 function vkey(v) {
   v = String(v || '').toLowerCase().replace(/[\s-]+/g, '_');
   if (VPIC[v]) return VPIC[v];
@@ -78,6 +82,7 @@ function vpic(v, w, cls) {
 }
 /* a picture file that is not there yet is swapped for the drawn icon: never a broken image */
 document.addEventListener('error', function (e) { var im = e.target; if (im && im.classList && im.classList.contains('pt-vimg')) { var s = document.createElement('span'); s.className = 'pt-vico'; s.innerHTML = ic(im.getAttribute('data-ico') || 'car'); im.replaceWith(s); } }, true);
+function vlabel(v) { var k = 'v_' + v; if (TX[k]) return tx(k); var s = P.t('veh.' + v); return s === 'veh.' + v ? v.charAt(0).toUpperCase() + v.slice(1).replace(/_/g, ' ') : s; }
 function vtiles(name, list, cur, labelFn) {
   return '<div class="pt-vts" role="radiogroup">' + list.map(function (v) { var on = cur === v; return '<button type="button" class="pt-vt' + (on ? ' on' : '') + '" role="radio" aria-checked="' + on + '" data-act="pt-set" data-n="' + name + '" data-v="' + esc(v) + '"><span class="pt-vpic">' + (vpic(v, 96) || ic('car')) + '</span><b>' + esc(labelFn(v)) + '</b></button>'; }).join('') + '</div>';
 }
@@ -283,9 +288,9 @@ function wizard() {
   if (c.note && c.status === 'changes') h += '<div class="pt-changes" role="status"><b>' + esc(tx('note_title')) + '</b><p>' + esc(c.note) + '</p></div>';
   var body = '';
   if (k === 'person' || k === 'owner') body = idFields();
-  else if (k === 'vehicle' && c.kind === 'courier') body = '<div class="fld"><span>' + esc(tx('vehicle')) + '</span>' + vtiles('vehicle_type', COURIER_VEH, c.data.vehicle_type || 'motorcycle', function (v) { return tx('v_' + v); }) + miss('vehicle_type') + '</div>' +
+  else if (k === 'vehicle' && c.kind === 'courier') body = '<div class="fld"><span>' + esc(tx('vehicle')) + '</span>' + vtiles('vehicle_type', COURIER_VEH, c.data.vehicle_type || 'motorcycle', vlabel) + miss('vehicle_type') + '</div>' +
     fld(tx('plate'), 'pt-plate_number', c.data.plate_number, 'maxlength="30"') + fld(tx('lic_opt'), 'pt-licence_number', c.data.licence_number, 'maxlength="60"') + photo('licence_photo_url', tx('lic_photo') + ' (' + (L() ? '\u12a0\u121b\u122b\u132d' : 'optional') + ')', 'environment');
-  else if (k === 'vehicle') body = '<div class="fld"><span>' + esc(tx('vehicle')) + '</span>' + (Q.vehicles ? vtiles('vehicle_type', Q.vehicles, c.data.vehicle_type || '', function (v) { var s = P.t('veh.' + v); return s === 'veh.' + v ? v.charAt(0).toUpperCase() + v.slice(1).replace(/_/g, ' ') : s; }) : '<div class="skel" style="height:52px"></div>') + miss('vehicle_type') + '</div>' +
+  else if (k === 'vehicle') body = '<div class="fld"><span>' + esc(tx('vehicle')) + '</span>' + (Q.vehicles ? vtiles('vehicle_type', Q.vehicles, c.data.vehicle_type || '', vlabel) : '<div class="skel" style="height:52px"></div>') + miss('vehicle_type') + '</div>' +
     fld(tx('plate'), 'pt-vehicle_plate', c.data.vehicle_plate, 'maxlength="30"') + miss('vehicle_plate') + fld(tx('make'), 'pt-vehicle_make', c.data.vehicle_make, 'maxlength="60"') + fld(tx('color'), 'pt-vehicle_color', c.data.vehicle_color, 'maxlength="40"') + fld(tx('year'), 'pt-vehicle_year', c.data.vehicle_year || '', 'type="number" inputmode="numeric" min="1980" max="2100"');
   else if (k === 'licence') body = fld(tx('lic_name'), 'pt-license_name', c.data.license_name, 'maxlength="100"') + fld(tx('lic_num'), 'pt-license_number', c.data.license_number, 'maxlength="60"') + miss('license_number') + photo('license_photo_url', tx('lic_photo'), 'environment');
   else if (k === 'contact') body = contactFields();
