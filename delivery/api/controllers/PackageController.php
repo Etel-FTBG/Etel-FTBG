@@ -85,6 +85,12 @@ case 'admin_package_type_add': {
 case 'admin_package_setting_save': {
     $pdo = db();
     require_admin($pdo, 'orders.manage');
+    if (isset($body['values']) && is_array($body['values'])) {
+        $r = etel_package_save_settings($pdo, $body['values']);
+        if (!$r['ok']) fail($r['message'], 400);
+        ok(array('message' => $r['message'], 'settings' => etel_package_settings($pdo)));
+        break;
+    }
     $key = isset($body['key']) ? strtolower(trim((string) $body['key'])) : '';
     $r = etel_package_save_setting($pdo, $key, isset($body['value']) ? $body['value'] : '');
     if (!$r['ok']) fail($r['message'], 400);
