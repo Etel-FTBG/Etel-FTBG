@@ -121,10 +121,11 @@ function etel_audit_get_config($pdo) {
 // budget on noise instead of actual project code.
 define('ETEL_AUDIT_EXCLUDE_DIRS', '.git,.claude,.vscode,.gstack,node_modules,vendor,storage,uploads,backups,cache,logs,dist,build,.svn');
 
-// Keep well under api.php's hard 45000-char server-side cap so nothing
-// gets silently cut off mid-request; leaves room for the file-tree/stats
-// header the same way the browser tool's 58000 client-side cap does.
-define('ETEL_AUDIT_MAX_CONTENT', 42000);
+// How much code the AI actually reads. The audit used to send only 42,000 characters (about 10 files, 4,500 characters each) of a project that
+// has 185,000 lines, so it could only ever say "no issues". The calls go straight to Gemini / OpenRouter now, which take far more, so the sample is
+// larger (roughly 60,000 tokens) and the files that matter most for risk (sign-in, tokens, money, uploads, admin actions) are sent FIRST.
+define('ETEL_AUDIT_MAX_CONTENT', 220000);
+define('ETEL_AUDIT_MAX_PER_FILE', 14000);
 
 /* Same system prompt the browser tool sends, verbatim, so the two
    report formats line up (same category keys, same JSON schema, same
@@ -229,6 +230,30 @@ ACCURACY RULE: Only report bugs and issues you can directly quote from the uploa
 PROMPT;
 }
 
+/* True for files that hold secrets: .env and .env.*, *.env, keys, certificates, password files, database dumps with credentials. */
+function etel_audit_is_secret_file($base) {
+    if ($base === '.env' || strpos($base, '.env.') === 0 || substr($base, -4) === '.env') return true;
+    if ($base === '.htpasswd' || $base === 'id_rsa' || $base === 'id_ed25519') return true;
+    return (bool) preg_match('/\.(pem|key|crt|cer|p12|pfx|jks|keystore|sqlite|db)$/', $base);
+}
+
+/* Blanks the value of anything that looks like a hard-coded secret (password = '...', 'api_key' => '...', TOKEN_SECRET: ...) so a
+   key that was pasted into a code file is never sent to the AI provider. The surrounding code is left as it was. */
+function etel_audit_redact($text) {
+    // define('SOME_SECRET', 'value')
+    $text = preg_replace('/(define\(\s*[\'"][A-Z0-9_]*(?:PASS|SECRET|TOKEN|KEY)[A-Z0-9_]*[\'"]\s*,\s*[\'"])[^\'"\r\n]{8,}([\'"])/i', '$1[redacted]$2', $text);
+    return preg_replace('/((?:pass(?:word)?|passwd|secret|token|api[_-]?key|apikey|private[_-]?key|auth[_-]?key|client[_-]?secret|bearer)[a-z0-9_]*[\'"]?\s*(?:=>|=|:)\s*[\'"])[^\'"\r\n]{8,}([\'"])/i', '$1[redacted]$2', $text);
+}
+
+/* Lower number = read first. Sign-in and tokens, money, uploads, permission checks and the router come before everything else. */
+function etel_audit_risk_rank($name) {
+    $n = strtolower($name);
+    $hot = array('boot.php', 'auth', 'token', 'login', 'upload', 'private_file', 'wallet', 'money', 'ledger', 'payment', 'pay', 'chapa', 'telebirr', 'payout', 'earning', 'cash', 'refund', 'admin', 'permission', 'capab', 'migrate', 'cron', 'webhook', 'callback', 'documents', 'equb', 'equity');
+    foreach ($hot as $i => $h) { if (strpos($n, $h) !== false) return ($i < 6 ? 0 : 1); }
+    if (strpos($n, 'api/') === 0 || strpos($n, '/controllers/') !== false || strpos($n, '/lib/') !== false) return 2;
+    return 3;
+}
+
 /* Walks $root and returns [relativePath => contents] for every text file,
    skipping the excluded directories. Mirrors the browser tool's JSZip
    loop closely enough that results are comparable. */
@@ -258,12 +283,15 @@ function etel_audit_collect_files($root) {
 
         $ext = strtolower(pathinfo($entry->getFilename(), PATHINFO_EXTENSION));
         $base = strtolower($entry->getFilename());
-        // .env / .htaccess have no "extension" by pathinfo's rules - match by filename too.
-        if (!isset($textExts[$ext]) && $base !== '.env' && $base !== '.htaccess' && $base !== '.gitignore') continue;
+        // Secrets never leave the server: environment files, keys, certificates and password files are skipped outright.
+        if (etel_audit_is_secret_file($base)) continue;
+        // .htaccess / .gitignore have no "extension" by pathinfo's rules - match by filename too.
+        if (!isset($textExts[$ext]) && $base !== '.htaccess' && $base !== '.gitignore') continue;
         if ($entry->getSize() > 400000) continue; // skip anything absurdly large (minified bundles etc.)
 
         $contents = @file_get_contents($entry->getPathname());
         if ($contents === false) continue;
+        $contents = etel_audit_redact($contents);
         $files[str_replace('\\', '/', $rel)] = $contents;
     }
     return $files;
@@ -276,6 +304,8 @@ function etel_audit_build_content($files) {
     $priority = array('php','sql','js','ts','json','css','html','md','txt','conf','yaml','ini');
     $names = array_keys($files);
     usort($names, function($a, $b) use ($priority) {
+        $ra = etel_audit_risk_rank($a); $rb = etel_audit_risk_rank($b);
+        if ($ra !== $rb) return $ra - $rb;
         $ea = strtolower(pathinfo($a, PATHINFO_EXTENSION));
         $eb = strtolower(pathinfo($b, PATHINFO_EXTENSION));
         $pa = array_search($ea, $priority); $pa = $pa === false ? 99 : $pa;
@@ -300,7 +330,7 @@ function etel_audit_build_content($files) {
     $content = ''; $totalLen = 0;
     foreach ($names as $i => $n) {
         $body = $files[$n];
-        $chunk = "\n\n=== FILE: $n ===\n" . substr($body, 0, 4500) . (strlen($body) > 4500 ? "\n[...truncated]" : '');
+        $chunk = "\n\n=== FILE: $n ===\n" . substr($body, 0, ETEL_AUDIT_MAX_PER_FILE) . (strlen($body) > ETEL_AUDIT_MAX_PER_FILE ? "\n[...truncated]" : '');
         if ($totalLen + strlen($chunk) > ETEL_AUDIT_MAX_CONTENT) {
             $content .= "\n\n[" . (count($names) - $i) . " remaining files omitted - size limit reached]";
             break;
