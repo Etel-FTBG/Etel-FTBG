@@ -20,7 +20,7 @@ function etel_vp_ensure($pdo) {
         etel_courier_details_ensure($pdo);
         $cols = array();
         foreach (etel_vp_sides() as $s) $cols['vehicle_photo_' . $s] = "vehicle_photo_$s VARCHAR(500) NOT NULL DEFAULT ''";
-        rides_add_missing_cols($pdo, 'courier_details', $cols);
+        rides_add_missing_cols($pdo, 'courier_details', $cols + array('vehicle_info' => "vehicle_info VARCHAR(255) NOT NULL DEFAULT ''"));
         try { rides_add_missing_cols($pdo, 'ride_drivers', $cols); } catch (Exception $e) { /* no drivers table on this install yet */ }
     } catch (Exception $e) { error_log('[ETEL][vehicle_photos] ' . $e->getMessage()); }
 }

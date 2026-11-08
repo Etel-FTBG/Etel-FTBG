@@ -30,13 +30,14 @@ function etel_courier_details_ensure($pdo) {
 function etel_courier_id_types() { return array('national_id' => 'National ID', 'kebele_id' => 'Kebele ID', 'passport' => 'Passport', 'driving_licence' => 'Driving licence'); }
 
 /* How a courier travels: the vehicles that need a plate (and, for the desk's checklist, a licence). */
-function etel_courier_vehicle_needs_plate($vehicle) { return $vehicle === 'motorcycle' || $vehicle === 'car'; }
+/* Every motor vehicle has a plate (motorcycle, car, bajaj, qute, minibus, EV, any other); a bicycle or walking does not. */
+function etel_courier_vehicle_needs_plate($vehicle) { return $vehicle !== '' && $vehicle !== 'bicycle' && $vehicle !== 'on_foot'; }
 
 /* The details row for one courier, or null. */
 function etel_courier_details_get($pdo, $user_id) {
     require_once __DIR__ . '/vehicle_photos.php'; etel_vp_ensure($pdo);   // the three vehicle picture columns
     try {   // read only: a missing table just means no details yet
-        $q = $pdo->prepare('SELECT id_type, id_number, id_photo_url, selfie_url, licence_number, licence_photo_url, emergency_name, emergency_phone, address, created_at, vehicle_photo_front, vehicle_photo_side, vehicle_photo_back FROM courier_details WHERE user_id = ?');
+        $q = $pdo->prepare('SELECT id_type, id_number, id_photo_url, selfie_url, licence_number, licence_photo_url, emergency_name, emergency_phone, address, created_at, vehicle_info, vehicle_photo_front, vehicle_photo_side, vehicle_photo_back FROM courier_details WHERE user_id = ?');
         $q->execute(array(intval($user_id)));
         $r = $q->fetch(PDO::FETCH_ASSOC);
         return $r ? $r : null;

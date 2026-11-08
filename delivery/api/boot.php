@@ -1289,7 +1289,7 @@ switch ($action) {
         $fields = array(); $params = array();
         $vtRaw = isset($body['vehicle_type']) ? $body['vehicle_type'] : (isset($_GET['vehicle_type']) ? $_GET['vehicle_type'] : null);
         if ($vtRaw !== null) {
-            if (!in_array($vtRaw, array('motorcycle', 'bicycle', 'car', 'on_foot'), true)) fail('Invalid vehicle_type', 400);
+            if (!is_string($vtRaw) || !preg_match('/^[a-z][a-z0-9_]{1,29}$/', $vtRaw)) fail('Invalid vehicle_type', 400);
             $fields[] = 'vehicle_type=?'; $params[] = $vtRaw;
         }
         $plateRaw = isset($body['plate_number']) ? $body['plate_number'] : (isset($_GET['plate_number']) ? $_GET['plate_number'] : null);
