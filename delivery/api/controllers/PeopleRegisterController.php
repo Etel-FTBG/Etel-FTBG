@@ -276,9 +276,22 @@ case 'admin_register_courier': {
     if (strlen($pw) < 8) fail('Password must be at least 8 characters', 400);
 
     $vt = strtolower(trim(isset($body['vehicle_type']) ? (string) $body['vehicle_type'] : ''));
-    if (!in_array($vt, array('motorcycle', 'bicycle', 'car', 'on_foot'), true)) fail('Choose how the courier travels', 400);
+    $otherLabel = $T('vehicle_other_label', 40);
+    $isOther = ($vt === 'other');
+    if ($vt === 'other') {   // a vehicle that is not in the list: the admin names it, and the name becomes its type
+        if ($otherLabel === '') fail('Enter the name of the vehicle, for example Tuk tuk', 400);
+        $vt = trim(preg_replace('/[^a-z0-9]+/', '_', strtolower($otherLabel)), '_');
+        if (strlen($vt) < 2) fail('Enter the vehicle name with letters or numbers', 400);
+        $vt = substr($vt, 0, 30);
+    }
+    $knownVeh = array('motorcycle', 'car', 'bicycle', 'bajaj', 'qute', 'minibus', 'ev_car');
+    if (!preg_match('/^[a-z][a-z0-9_]{1,29}$/', $vt) || $vt === 'on_foot' || (!$isOther && !in_array($vt, $knownVeh, true))) fail('Choose how the courier travels', 400);
+    $vInfo = array();
+    if ($otherLabel !== '') $vInfo[] = 'Type: ' . $otherLabel;
+    foreach (array('vehicle_make' => 'Make and model', 'vehicle_color' => 'Colour', 'vehicle_notes' => 'Notes') as $ik => $il) { $iv = $T($ik, 80); if ($iv !== '') $vInfo[] = $il . ': ' . $iv; }
+    $vInfo = substr(implode(' | ', $vInfo), 0, 255);
     $plate = strtoupper($T('plate_number', 20));
-    if (etel_courier_vehicle_needs_plate($vt) && $plate === '') fail('Enter the plate number of the ' . ($vt === 'car' ? 'car' : 'motorcycle'), 400);
+    if (etel_courier_vehicle_needs_plate($vt) && $plate === '') fail('Enter the plate number of the vehicle', 400);
     if (!etel_courier_vehicle_needs_plate($vt)) $plate = '';
     $zone = $T('home_zone', 60);
 
@@ -361,6 +374,7 @@ case 'admin_register_courier': {
         $pdo->prepare('INSERT INTO courier_details (user_id, id_type, id_number, id_photo_url, selfie_url, licence_number, licence_photo_url, emergency_name, emergency_phone, address, created_by)
                        VALUES (?,?,?,?,?,?,?,?,?,?,?)')->execute(array($uid, $idType, $idNumber, $idPhoto, $selfie, $licNum, $licPhoto, $emName, $emPhone, $address, intval($admin['id'])));
         etel_vp_save($pdo, 'courier', $uid, $vp);
+        if ($vInfo !== '') $pdo->prepare('UPDATE courier_details SET vehicle_info = ? WHERE user_id = ?')->execute(array($vInfo, $uid));
         $pdo->commit();
     } catch (Exception $e) {
         if ($pdo->inTransaction()) $pdo->rollBack();

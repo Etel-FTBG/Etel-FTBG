@@ -13,7 +13,7 @@ var K = window.AdminKit;
 if (!K) return;
 var esc = K.esc;
 
-var VEH = { motorcycle: ['🏍️', 'Motorcycle'], bicycle: ['🚲', 'Bicycle'], car: ['🚗', 'Car'], on_foot: ['🚶', 'On foot'] };
+var VEH = { motorcycle: ['🏍️', 'Motorcycle'], bicycle: ['🚲', 'Bicycle'], car: ['🚗', 'Car'], bajaj: ['🛺', 'Bajaj'], qute: ['🛺', 'Qute'], minibus: ['🚐', 'Minibus'], ev_car: ['🚗', 'Electric car (EV)'], on_foot: ['🚶', 'On foot'] };
 var STATUS = { online: ['Online', 'green'], busy: ['On a job', 'amber'], offline: ['Offline', 'grey'] };
 var GRAD = { online: ['#3ad08a', '#1fa463'], busy: ['#f0b429', '#d98e04'], offline: ['#9a95a8', '#6d6880'], pending: ['#a875d6', '#7b3fb0'], off: ['#d6364a', '#8f1f2e'] };
 var V = { filter: '', q: '', veh: '', sort: 'recent', mode: 'cards', rows: [], sum: null, loaded: false, busy: false, openId: null, needApproval: null, canManage: true };
@@ -30,6 +30,7 @@ function idBox(d) {
   var link = function (u, label) { return u ? '<a class="ak-btn" href="' + esc(u) + '" target="_blank" rel="noopener">' + esc(label) + '</a>' : '<span class="ak-fh">Not added</span>'; };
   return '<div class="ak-sec"><h4>Identity and contact</h4>' + K.kv([
     [types[x.id_type] || 'ID', (x.id_number ? esc(x.id_number) : '<span class="ak-fh">Not added</span>'), true], ['ID photo', link(x.id_photo_url, 'View ID'), true], ['Selfie', link(x.selfie_url, 'View selfie'), true],
+    ['Vehicle details', x.vehicle_info ? esc(x.vehicle_info) : '', true],
     ['Vehicle photos', (x.vehicle_photo_front || x.vehicle_photo_side || x.vehicle_photo_back) ? [['Front', x.vehicle_photo_front], ['Side', x.vehicle_photo_side], ['Back', x.vehicle_photo_back]].map(function (v) { return link(v[1], v[0]); }).join(' ') : '<span class="ak-fh">Not added</span>', true],
     ['Driving licence', x.licence_number ? esc(x.licence_number) + ' ' + link(x.licence_photo_url, 'View') : '', true],
     ['Emergency contact', x.emergency_name ? esc(x.emergency_name) + ' · <a href="tel:' + esc(x.emergency_phone) + '">' + esc(x.emergency_phone) + '</a>' : '', true], ['Address', x.address || '']]) + '</div>';
@@ -157,7 +158,7 @@ function drawer(d, row, dr) {
   acts += '<button type="button" class="ak-btn" data-slip>🖨 ID slip</button>';
   acts += r.suspended ? '<button type="button" class="ak-btn good" data-active="1">Restore courier</button>' : '<button type="button" class="ak-btn danger" data-active="0">Suspend courier…</button>';
   h += '<div class="ak-sec"><h4>Controls</h4><div class="ak-acts">' + acts + '</div></div>';
-  h += '<div class="ak-sec"><h4>Edit details</h4><div style="display:grid;gap:8px"><select class="ak-in" data-f="vehicle_type" aria-label="Vehicle type">' + Object.keys(VEH).map(function (k) { return '<option value="' + k + '"' + (c.vehicle_type === k ? ' selected' : '') + '>' + VEH[k][1] + '</option>'; }).join('') + '</select>' +
+  h += '<div class="ak-sec"><h4>Edit details</h4><div style="display:grid;gap:8px"><select class="ak-in" data-f="vehicle_type" aria-label="Vehicle type">' + ((!c.vehicle_type || VEH[c.vehicle_type]) ? '' : '<option value="' + esc(c.vehicle_type) + '" selected>' + esc(String(c.vehicle_type).replace(/_/g, ' ')) + '</option>') + Object.keys(VEH).map(function (k) { return '<option value="' + k + '"' + (c.vehicle_type === k ? ' selected' : '') + '>' + VEH[k][1] + '</option>'; }).join('') + '</select>' +
     '<input class="ak-in" data-f="plate_number" aria-label="Plate number" maxlength="30" placeholder="Plate number" value="' + esc(c.plate_number || '') + '"><input class="ak-in" data-f="zone" aria-label="Zone" maxlength="60" placeholder="Zone" value="' + esc(c.zone || c.home_zone || '') + '">' +
     '<div><button type="button" class="ak-btn gold" data-save>Save changes</button></div></div></div>';
   if (d.recent && d.recent.length) {

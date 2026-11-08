@@ -14,19 +14,19 @@ if (!K || window.EtelCourierRegister) return;
 var esc = K.esc;
 
 var STEPS = [['Sign-in', '🔐'], ['Travel', '🛵'], ['Identity', '🪪'], ['Selfie', '🤳'], ['Contact', '☎️'], ['Review', '✅']];
-var VEH = [['motorcycle', '🏍️', 'Motorcycle', 'Needs a plate and a licence'], ['car', '🚗', 'Car', 'Needs a plate'], ['bicycle', '🚲', 'Bicycle', 'No plate needed'], ['on_foot', '🚶', 'On foot', 'Short deliveries nearby']];
+var VEH = [['motorcycle', '🏍️', 'Motorcycle', 'Needs a plate and a licence'], ['car', '🚗', 'Car', 'Needs a plate'], ['bicycle', '🚲', 'Bicycle', 'No plate needed'], ['bajaj', '🛺', 'Bajaj', 'Needs a plate'], ['qute', '🛺', 'Qute', 'Needs a plate'], ['minibus', '🚐', 'Minibus', 'Needs a plate'], ['ev_car', '🚗', 'Electric car (EV)', 'Needs a plate'], ['other', '➕', 'Other vehicle', 'Add its name, plate and details']];
 var IDS = [['national_id', 'National ID'], ['kebele_id', 'Kebele ID'], ['passport', 'Passport'], ['driving_licence', 'Driving licence']];
 var S = { dr: null, step: 0, busy: 0, D: null, result: null, dup: false };
 
-function blank() { return { name: '', phone: '', pw: '', vt: 'motorcycle', plate: '', zone: '', idt: 'national_id', idn: '', idp: null, selfie: null, vf: null, vs: null, vb: null, lnum: '', lic: null, en: '', ep: '', addr: '', activate: false, confirm: false }; }
-function needsPlate() { return S.D.vt === 'motorcycle' || S.D.vt === 'car'; }
+function blank() { return { name: '', phone: '', pw: '', vt: 'motorcycle', plate: '', zone: '', idt: 'national_id', idn: '', oname: '', make: '', color: '', notes: '', idp: null, selfie: null, vf: null, vs: null, vb: null, lnum: '', lic: null, en: '', ep: '', addr: '', activate: false, confirm: false }; }
+function needsPlate() { return S.D.vt !== 'bicycle'; }
 
 function $(id) { return document.getElementById(id); }
 function val(id) { var e = $(id); return e ? e.value.trim() : ''; }
 function inp(id, v, attrs) { return '<input id="' + id + '" name="' + id + '-' + Date.now().toString(36) + '" class="ak-in" readonly data-unlock value="' + esc(v == null ? '' : v) + '" autocomplete="off" ' + (attrs || '') + '>'; }
 function field(id, label, input, hint, req) { return '<label class="dv-f" data-f="' + id + '"><span>' + esc(label) + (req ? ' <em>*</em>' : '') + '</span>' + input + '<small data-h="' + esc(hint || '') + '">' + esc(hint || '') + '</small></label>'; }
 function mark(id, msg) { var f = S.dr && S.dr.querySelector('[data-f="' + id + '"]'); if (!f) return; f.classList.toggle('bad', !!msg); var sm = f.querySelector('small'); if (sm) sm.textContent = msg || sm.getAttribute('data-h') || ''; }
-function pic(type, px, emoji) { return (window.EtelVehiclePic && EtelVehiclePic.key(type)) ? EtelVehiclePic.html(type, px, { fallback: emoji }) : esc(emoji); }
+function pic(type, px, emoji) { if (type === 'bicycle') return '<img src="agent/veh/bicycle.webp" alt="" width="' + px + '" style="max-width:100%;height:auto;object-fit:contain">'; return (window.EtelVehiclePic && EtelVehiclePic.key(type)) ? EtelVehiclePic.html(type, px, { fallback: emoji }) : esc(emoji); }
 function phoneOk(p) { return p.replace(/[^0-9]/g, '').length >= 9; }
 function last9(p) { return p.replace(/[^0-9]/g, '').slice(-9); }
 function strength(p) { var s = 0; if (p.length >= 8) s++; if (p.length >= 11) s++; if (/[A-Z]/.test(p) && /[a-z]/.test(p)) s++; if (/\d/.test(p) && /[A-Za-z]/.test(p)) s++; return p.length < 8 ? Math.min(s, 1) : Math.max(s, 2); }
@@ -66,7 +66,7 @@ function stepHtml() {
     field('cd-pw', 'Password', '<div class="dv-pw">' + inp('cd-pw', D.pw, 'type="password" autocomplete="new-password" placeholder="At least 8 characters"') + '<button type="button" class="ak-btn" data-pw-show aria-label="Show password">👁</button><button type="button" class="ak-btn" data-pw-gen>🎲 Generate</button></div><div class="dv-str" id="cd-str" data-s="' + (D.pw ? strength(D.pw) : 0) + '"><i></i><i></i><i></i><i></i></div>', 'Send it to them privately.', true);
   if (i === 1) return '<h3 class="dv-h">How will they travel?</h3><p class="dv-p">The vehicle decides which jobs they are offered.</p><div class="dv-svc" role="group" aria-label="Vehicle">' +
     VEH.map(function (v) { return '<button type="button" data-vt="' + v[0] + '" class="' + (D.vt === v[0] ? 'on' : '') + '" aria-pressed="' + (D.vt === v[0]) + '"><span class="pic">' + pic(v[0], 110, v[1]) + '</span><b>' + esc(v[2]) + '</b><small>' + esc(v[3]) + '</small></button>'; }).join('') + '</div>' +
-    '<div style="height:14px"></div>' + '<div class="dv-f"><span>Photos of the vehicle (3 sides)</span></div><div class="ak-fh" style="margin:0 0 8px">One clear photo of the front, the side and the back.</div><div class="dv-3">' + upBox('cd-vf', D.vf, 'Front', 'Whole front', 'vf', 'environment') + upBox('cd-vs', D.vs, 'Side', 'Whole side', 'vs', 'environment') + upBox('cd-vb', D.vb, 'Back', 'Whole back', 'vb', 'environment') + '</div><div style="height:10px"></div>' + (needsPlate() ? field('cd-plate', 'Plate number', inp('cd-plate', D.plate, 'type="text" placeholder="e.g. 3-12345 AA" style="font-family:ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase"'), '', true) : '') + zoneField(D);
+    '<div style="height:14px"></div>' + (D.vt === 'other' ? field('cd-oname', 'Name of the vehicle', inp('cd-oname', D.oname, 'type="text" maxlength="40" placeholder="e.g. Tuk tuk, Van, Pickup"'), 'This becomes the vehicle type.', true) : '') + '<div class="dv-f"><span>Vehicle details <small style="font-weight:400">(optional)</small></span></div><div class="dv-2">' + field('cd-make', 'Make and model', inp('cd-make', D.make, 'type="text" maxlength="80" placeholder="e.g. Bajaj RE, Toyota Hiace"'), '') + field('cd-color', 'Colour', inp('cd-color', D.color, 'type="text" maxlength="80" placeholder="e.g. Blue"'), '') + '</div>' + field('cd-notes', 'Notes', inp('cd-notes', D.notes, 'type="text" maxlength="80" placeholder="Anything else about the vehicle"'), '') + '<div class="dv-f"><span>Photos of the vehicle (3 sides)</span></div><div class="ak-fh" style="margin:0 0 8px">One clear photo of the front, the side and the back.</div><div class="dv-3">' + upBox('cd-vf', D.vf, 'Front', 'Whole front', 'vf', 'environment') + upBox('cd-vs', D.vs, 'Side', 'Whole side', 'vs', 'environment') + upBox('cd-vb', D.vb, 'Back', 'Whole back', 'vb', 'environment') + '</div><div style="height:10px"></div>' + (needsPlate() ? field('cd-plate', 'Plate number', inp('cd-plate', D.plate, 'type="text" placeholder="e.g. 3-12345 AA" style="font-family:ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase"'), '', true) : '') + zoneField(D);
   if (i === 2) return '<h3 class="dv-h">Identity</h3><p class="dv-p">ETEL hands orders and cash to its couriers, so every courier is identified. These are kept private: only signed, expiring links are shown, only to staff.</p>' +
     '<div class="dv-f"><span>Kind of ID</span></div><div class="dv-tabs" role="group" aria-label="Kind of ID">' + IDS.map(function (x) { return '<button type="button" data-idt="' + x[0] + '" class="' + (D.idt === x[0] ? 'on' : '') + '" aria-pressed="' + (D.idt === x[0]) + '">' + esc(x[1]) + '</button>'; }).join('') + '</div>' +
     field('cd-idn', 'ID number', inp('cd-idn', D.idn, 'type="text" placeholder="As printed on the ID" style="text-transform:uppercase"'), '', false) +
@@ -86,7 +86,7 @@ function checks() {
   var D = S.D;
   var rows = [
     ['Sign-in details', D.name.length >= 2 && phoneOk(D.phone) && D.pw.length >= 8, true, 0],
-    ['Vehicle' + (needsPlate() ? ' and plate number' : ''), !needsPlate() || !!D.plate, true, 1],
+    ['Vehicle' + (needsPlate() ? ' and plate number' : ''), (D.vt !== 'other' || !!D.oname) && (!needsPlate() || !!D.plate), true, 1],
     ['Vehicle photos: front, side and back', !!(D.vf && D.vf.url && D.vs && D.vs.url && D.vb && D.vb.url), false, 1],
     ['ID: kind, number and photo', !!(D.idn && D.idp && D.idp.url), false, 2]
   ];
@@ -100,7 +100,7 @@ function reviewHtml() {
   var D = S.D, ck = checks(), can = canActivate(), v = vehInfo();
   if (!can && D.activate) D.activate = false;
   var rows = ck.map(function (c) { return '<div class="dv-ck"><u>' + (c[1] ? '✅' : '⬜') + '</u><span>' + esc(c[0]) + '</span>' + (c[1] ? '' : '<button type="button" class="ak-btn" data-go="' + c[3] + '">Fix</button>') + '</div>'; }).join('');
-  return '<h3 class="dv-h">Review</h3><div class="dv-prev"><div class="pic">' + pic(D.vt, 120, v[1]) + '</div><div><div style="font-weight:800;font-size:16px">' + esc(D.name || 'Courier') + '</div><div class="ak-fh" style="margin:2px 0 6px">' + esc(v[2]) + (D.zone ? ' · ' + esc(D.zone) : '') + '</div>' + (D.plate ? '<span class="dv-plate">' + esc(D.plate.toUpperCase()) + '</span>' : '') + '</div></div>' +
+  return '<h3 class="dv-h">Review</h3><div class="dv-prev"><div class="pic">' + pic(D.vt, 120, v[1]) + '</div><div><div style="font-weight:800;font-size:16px">' + esc(D.name || 'Courier') + '</div><div class="ak-fh" style="margin:2px 0 6px">' + esc(D.vt === 'other' && D.oname ? D.oname : v[2]) + (D.zone ? ' · ' + esc(D.zone) : '') + '</div>' + (D.plate ? '<span class="dv-plate">' + esc(D.plate.toUpperCase()) + '</span>' : '') + '</div></div>' +
     '<div class="dv-box" style="margin-top:0">' + rows + '</div>' +
     '<div class="dv-opt' + (D.activate ? ' on' : '') + (can ? '' : ' off') + '" data-opt="activate" role="radio" aria-checked="' + (D.activate && can) + '" tabindex="0"><u style="text-decoration:none;font-size:22px">✅</u><div><b>Approve now</b><span>' + (can ? 'I checked the ID and the courier\'s face in person. They can take jobs as soon as they sign in.' : 'Needs everything in the list above.') + '</span></div></div>' +
     '<div class="dv-opt' + (!D.activate ? ' on' : '') + '" data-opt="review" role="radio" aria-checked="' + (!D.activate) + '" tabindex="0"><u style="text-decoration:none;font-size:22px">🕒</u><div><b>Save for review</b><span>The courier waits in the approval list and cannot take jobs until you approve them. Anything missing can be added later.</span></div></div>' +
@@ -112,6 +112,7 @@ function validateStep(i, silent) {
   var D = S.D, ok = true, first = null;
   function need(id, bad, msg) { if (!silent) mark(id, bad ? msg : ''); if (bad && ok) { ok = false; first = id; } else if (bad) ok = false; }
   if (i === 0) { need('cd-name', D.name.length < 2, 'Enter the full name.'); need('cd-phone', !phoneOk(D.phone), 'Enter the full phone number.'); need('cd-pw', D.pw.length < 8, 'The password needs at least 8 characters.'); }
+  if (i === 1 && D.vt === 'other') need('cd-oname', !D.oname, 'Enter the name of the vehicle.');
   if (i === 1 && needsPlate()) need('cd-plate', !D.plate, 'Enter the plate number.');
   if (i === 4 && (D.en || D.ep)) { need('cd-ep', D.ep && (!phoneOk(D.ep) || last9(D.ep) === last9(D.phone)), D.ep && last9(D.ep) === last9(D.phone) ? 'The emergency contact must be someone else.' : 'Enter the full phone number.'); need('cd-en', !D.en, 'Enter the contact\'s name.'); }
   if (!ok && first && !silent) { var el = $(first); if (el) { el.scrollIntoView({ block: 'center', behavior: 'smooth' }); el.focus(); } }
@@ -120,7 +121,7 @@ function validateStep(i, silent) {
 function readStep() {
   if (!S.dr) return; var D = S.D, i = S.step;
   if (i === 0) { D.name = val('cd-name'); D.phone = val('cd-phone').replace(/\s/g, ''); D.pw = val('cd-pw'); var st = $('cd-str'); if (st) st.setAttribute('data-s', String(D.pw ? strength(D.pw) : 0)); }
-  if (i === 1) { D.plate = val('cd-plate').toUpperCase(); D.zone = val('cd-zone'); }
+  if (i === 1) { D.plate = val('cd-plate').toUpperCase(); D.zone = val('cd-zone'); D.oname = val('cd-oname'); D.make = val('cd-make'); D.color = val('cd-color'); D.notes = val('cd-notes'); }
   if (i === 2) { D.idn = val('cd-idn').toUpperCase(); D.lnum = val('cd-lnum').toUpperCase(); }
   if (i === 4) { D.en = val('cd-en'); D.ep = val('cd-ep').replace(/\s/g, ''); D.addr = val('cd-addr'); }
   if (i === 5) { var cf = $('cd-confirm'); if (cf) D.confirm = cf.checked; }
@@ -168,7 +169,7 @@ function submit(btn) {
   readStep();
   for (var i = 0; i < STEPS.length - 1; i++) if (!validateStep(i, false)) { go(i); validateStep(i, false); $('cd-msg').textContent = 'Check the highlighted fields.'; return; }
   if (S.busy) { $('cd-msg').textContent = 'Wait for the photos to finish uploading.'; return; }
-  var D = S.D, p = { name: D.name, phone: D.phone, password: D.pw, vehicle_type: D.vt, plate_number: needsPlate() ? D.plate : '', home_zone: D.zone, id_type: D.idt, id_number: D.idn, id_photo_url: D.idp && D.idp.url || '',
+  var D = S.D, p = { name: D.name, phone: D.phone, password: D.pw, vehicle_type: D.vt, vehicle_other_label: D.vt === 'other' ? D.oname : '', vehicle_make: D.make, vehicle_color: D.color, vehicle_notes: D.notes, plate_number: needsPlate() ? D.plate : '', home_zone: D.zone, id_type: D.idt, id_number: D.idn, id_photo_url: D.idp && D.idp.url || '',
     selfie_url: D.selfie && D.selfie.url || '', vehicle_photo_front: D.vf && D.vf.url || '', vehicle_photo_side: D.vs && D.vs.url || '', vehicle_photo_back: D.vb && D.vb.url || '', licence_number: D.vt === 'motorcycle' ? D.lnum : '', licence_photo_url: D.vt === 'motorcycle' && D.lic && D.lic.url || '', emergency_name: D.en, emergency_phone: D.ep, address: D.addr,
     activate: D.activate ? 1 : 0, confirm_duplicate: D.confirm ? 1 : 0 };
   btn.disabled = true; $('cd-msg').textContent = 'Registering…';
