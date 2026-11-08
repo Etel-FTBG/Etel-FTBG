@@ -277,13 +277,15 @@ case 'admin_register_courier': {
 
     $vt = strtolower(trim(isset($body['vehicle_type']) ? (string) $body['vehicle_type'] : ''));
     $otherLabel = $T('vehicle_other_label', 40);
+    $isOther = ($vt === 'other');
     if ($vt === 'other') {   // a vehicle that is not in the list: the admin names it, and the name becomes its type
         if ($otherLabel === '') fail('Enter the name of the vehicle, for example Tuk tuk', 400);
         $vt = trim(preg_replace('/[^a-z0-9]+/', '_', strtolower($otherLabel)), '_');
         if (strlen($vt) < 2) fail('Enter the vehicle name with letters or numbers', 400);
         $vt = substr($vt, 0, 30);
     }
-    if (!preg_match('/^[a-z][a-z0-9_]{1,29}$/', $vt) || $vt === 'on_foot') fail('Choose how the courier travels', 400);
+    $knownVeh = array('motorcycle', 'car', 'bicycle', 'bajaj', 'qute', 'minibus', 'ev_car');
+    if (!preg_match('/^[a-z][a-z0-9_]{1,29}$/', $vt) || $vt === 'on_foot' || (!$isOther && !in_array($vt, $knownVeh, true))) fail('Choose how the courier travels', 400);
     $vInfo = array();
     if ($otherLabel !== '') $vInfo[] = 'Type: ' . $otherLabel;
     foreach (array('vehicle_make' => 'Make and model', 'vehicle_color' => 'Colour', 'vehicle_notes' => 'Notes') as $ik => $il) { $iv = $T($ik, 80); if ($iv !== '') $vInfo[] = $il . ': ' . $iv; }
