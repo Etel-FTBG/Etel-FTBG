@@ -85,6 +85,8 @@ $r = calla('fa_partner_save', array('kind' => 'courier', 'name' => 'Bad Phone', 
 $r = calla('fa_partner_save', array('kind' => 'courier', 'name' => 'Foreign Img', 'phone' => '0955000003', 'data' => array('id_photo_url' => 'http://evil.example/x.jpg', 'selfie_url' => 'javascript:alert(1)')), $AU);
 t('links to other servers and scripts are dropped', $r->ok && $r->data['partner']['data']['id_photo_url'] === '' && $r->data['partner']['data']['selfie_url'] === '');
 $r = calla('fa_partner_get', array('id' => $cid), $AU2); t('another agent cannot open it', !$r->ok && $r->code2 == 404);
+$r = calla('fa_partner_list', array(), $AU); $lrow = null; foreach ($r->data['partners'] as $x) if ($x['id'] == $cid) $lrow = $x;
+t('the list carries the vehicle so the app can show its real picture', $lrow && $lrow['vehicle'] === 'Motorbike' && array_key_exists('logo', $lrow), json_encode($lrow));
 $r = calla('fa_partner_submit', array('id' => $cid), $AU); t('submit the courier', $r->ok === true);
 $r = calla('fa_partner_save', array('id' => $cid, 'name' => 'Changed', 'phone' => '0955000001', 'data' => $courierData), $AU); t('a submitted one cannot be edited', !$r->ok && $r->code2 == 409);
 $r = calla('fa_partner_delete', array('id' => $cid), $AU); t('and cannot be deleted', !$r->ok);
