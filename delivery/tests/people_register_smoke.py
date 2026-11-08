@@ -133,10 +133,13 @@ def upload(kind, token):
 selfie = upload("driver_selfie", admin)
 licph = upload("driver_license", admin)
 ins = upload("driver_insurance_photo", admin)
+vph = dict(zip(("vehicle_photo_front", "vehicle_photo_side", "vehicle_photo_back"), (upload("vehicle_front", admin), upload("vehicle_side", admin), upload("vehicle_back", admin))))
+check("the admin can upload the three vehicle photos", all(vph.values()), vph)
 check("the admin can upload the selfie, licence and document photos", bool(selfie and licph and ins), (selfie, licph, ins))
 drv = {"name": "Full Driver", "phone": "09210%s" % TAIL[-5:], "password": "drivpass123", "vehicle_type": "bajaj", "vehicle_make": "TVS", "vehicle_color": "Blue", "vehicle_year": 2021, "vehicle_plate": "et 7788",
        "license_name": "Full Driver", "license_number": "DL-99%s" % TAIL, "license_dob": "1990-05-17", "selfie_url": selfie, "license_photo_url": licph,
        "docs": {"insurance": {"expiry_date": "2030-01-31", "receipt_url": ins}}}
+drv.update(vph)
 st, res = call("admin_register_driver", dict(drv, activate=1), admin)
 check("admin registers and activates a full driver", res.get("success") is True and data(res).get("activated") is True and not data(res).get("missing"), (st, res))
 row = sql("SELECT CONCAT(r.onboarded, '|', r.identity_match, '|', r.vehicle_plate, '|', r.license_number, '|', r.license_dob, '|', IFNULL(r.insurance_expiry_date, '')) FROM ride_drivers r JOIN users u ON u.id = r.user_id WHERE u.phone LIKE '%%%s'" % drv["phone"][-9:])
@@ -174,6 +177,7 @@ check("the admin can upload the courier's ID, selfie and licence photos", bool(c
 cd = {"name": "Desk Courier", "phone": "09310%s" % TAIL[-5:], "password": "courpass123", "vehicle_type": "motorcycle", "plate_number": "et 1234", "home_zone": "Tabor",
       "id_type": "kebele_id", "id_number": "kb-%s" % TAIL, "id_photo_url": cid, "selfie_url": csel, "licence_number": "dl-%s" % TAIL, "licence_photo_url": clic,
       "emergency_name": "Aster Bekele", "emergency_phone": "09320%s" % TAIL[-5:], "address": "Tabor, near the church"}
+cd.update(vph)
 st, res = call("admin_register_courier", dict(cd, activate=1), admin)
 check("admin registers and approves a full courier", res.get("success") is True and data(res).get("activated") is True and not data(res).get("missing") and data(res).get("code", "").startswith("C-"), (st, res))
 row = sql("SELECT CONCAT(c.vehicle_type, '|', c.plate_number, '|', IFNULL(c.home_zone, ''), '|', c.approval_status) FROM couriers c JOIN users u ON u.id = c.user_id WHERE u.phone LIKE '%%%s'" % cd["phone"][-9:])
