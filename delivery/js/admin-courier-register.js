@@ -18,7 +18,7 @@ var VEH = [['motorcycle', '🏍️', 'Motorcycle', 'Needs a plate and a licence'
 var IDS = [['national_id', 'National ID'], ['kebele_id', 'Kebele ID'], ['passport', 'Passport'], ['driving_licence', 'Driving licence']];
 var S = { dr: null, step: 0, busy: 0, D: null, result: null, dup: false };
 
-function blank() { return { name: '', phone: '', pw: '', vt: 'motorcycle', plate: '', zone: '', idt: 'national_id', idn: '', idp: null, selfie: null, lnum: '', lic: null, en: '', ep: '', addr: '', activate: false, confirm: false }; }
+function blank() { return { name: '', phone: '', pw: '', vt: 'motorcycle', plate: '', zone: '', idt: 'national_id', idn: '', idp: null, selfie: null, vf: null, vs: null, vb: null, lnum: '', lic: null, en: '', ep: '', addr: '', activate: false, confirm: false }; }
 function needsPlate() { return S.D.vt === 'motorcycle' || S.D.vt === 'car'; }
 
 function $(id) { return document.getElementById(id); }
@@ -44,7 +44,7 @@ function upload(file, type) {
   return fetch(ETEL.api.replace('boot.php', 'upload.php'), { method: 'POST', headers: { 'Authorization': 'Bearer ' + Auth.getToken() }, body: fd })
     .then(function (r) { return r.json(); }).then(function (j) { if (!j || !j.success || !j.data) throw new Error((j && j.message) || 'Upload failed'); return j.data.url; });
 }
-var KIND = { idp: ['courier_id', function (D, f) { D.idp = f; }], selfie: ['courier_selfie', function (D, f) { D.selfie = f; }], lic: ['courier_licence', function (D, f) { D.lic = f; }] };
+var KIND = { idp: ['courier_id', function (D, f) { D.idp = f; }], selfie: ['courier_selfie', function (D, f) { D.selfie = f; }], lic: ['courier_licence', function (D, f) { D.lic = f; }], vf: ['vehicle_front', function (D, f) { D.vf = f; }], vs: ['vehicle_side', function (D, f) { D.vs = f; }], vb: ['vehicle_back', function (D, f) { D.vb = f; }] };
 function pick(kind, file) {
   if (!file || !/^image\//.test(file.type)) { K.toast('Choose a picture file', true); return; }
   var f = { url: '', preview: URL.createObjectURL(file) }; KIND[kind][1](S.D, f); S.busy++; draw();
@@ -66,7 +66,7 @@ function stepHtml() {
     field('cd-pw', 'Password', '<div class="dv-pw">' + inp('cd-pw', D.pw, 'type="password" autocomplete="new-password" placeholder="At least 8 characters"') + '<button type="button" class="ak-btn" data-pw-show aria-label="Show password">👁</button><button type="button" class="ak-btn" data-pw-gen>🎲 Generate</button></div><div class="dv-str" id="cd-str" data-s="' + (D.pw ? strength(D.pw) : 0) + '"><i></i><i></i><i></i><i></i></div>', 'Send it to them privately.', true);
   if (i === 1) return '<h3 class="dv-h">How will they travel?</h3><p class="dv-p">The vehicle decides which jobs they are offered.</p><div class="dv-svc" role="group" aria-label="Vehicle">' +
     VEH.map(function (v) { return '<button type="button" data-vt="' + v[0] + '" class="' + (D.vt === v[0] ? 'on' : '') + '" aria-pressed="' + (D.vt === v[0]) + '"><span class="pic">' + pic(v[0], 110, v[1]) + '</span><b>' + esc(v[2]) + '</b><small>' + esc(v[3]) + '</small></button>'; }).join('') + '</div>' +
-    '<div style="height:14px"></div>' + (needsPlate() ? field('cd-plate', 'Plate number', inp('cd-plate', D.plate, 'type="text" placeholder="e.g. 3-12345 AA" style="font-family:ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase"'), '', true) : '') + zoneField(D);
+    '<div style="height:14px"></div>' + '<div class="dv-f"><span>Photos of the vehicle (3 sides)</span></div><div class="ak-fh" style="margin:0 0 8px">One clear photo of the front, the side and the back.</div><div class="dv-3">' + upBox('cd-vf', D.vf, 'Front', 'Whole front', 'vf', 'environment') + upBox('cd-vs', D.vs, 'Side', 'Whole side', 'vs', 'environment') + upBox('cd-vb', D.vb, 'Back', 'Whole back', 'vb', 'environment') + '</div><div style="height:10px"></div>' + (needsPlate() ? field('cd-plate', 'Plate number', inp('cd-plate', D.plate, 'type="text" placeholder="e.g. 3-12345 AA" style="font-family:ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase"'), '', true) : '') + zoneField(D);
   if (i === 2) return '<h3 class="dv-h">Identity</h3><p class="dv-p">ETEL hands orders and cash to its couriers, so every courier is identified. These are kept private: only signed, expiring links are shown, only to staff.</p>' +
     '<div class="dv-f"><span>Kind of ID</span></div><div class="dv-tabs" role="group" aria-label="Kind of ID">' + IDS.map(function (x) { return '<button type="button" data-idt="' + x[0] + '" class="' + (D.idt === x[0] ? 'on' : '') + '" aria-pressed="' + (D.idt === x[0]) + '">' + esc(x[1]) + '</button>'; }).join('') + '</div>' +
     field('cd-idn', 'ID number', inp('cd-idn', D.idn, 'type="text" placeholder="As printed on the ID" style="text-transform:uppercase"'), '', false) +
@@ -87,6 +87,7 @@ function checks() {
   var rows = [
     ['Sign-in details', D.name.length >= 2 && phoneOk(D.phone) && D.pw.length >= 8, true, 0],
     ['Vehicle' + (needsPlate() ? ' and plate number' : ''), !needsPlate() || !!D.plate, true, 1],
+    ['Vehicle photos: front, side and back', !!(D.vf && D.vf.url && D.vs && D.vs.url && D.vb && D.vb.url), false, 1],
     ['ID: kind, number and photo', !!(D.idn && D.idp && D.idp.url), false, 2]
   ];
   if (D.vt === 'motorcycle') rows.push(['Driving licence: number and photo', !!(D.lnum && D.lic && D.lic.url), false, 2]);
@@ -130,7 +131,7 @@ function head() { return '<div class="ak-av lg" style="--a:#E8C14A;--b:#9a7a1c">
 function foot() { return '<span class="ak-err" id="cd-msg" role="status" aria-live="polite"></span><button type="button" class="ak-btn" data-back>← Back</button><button type="button" class="ak-btn gold" data-next></button>'; }
 function paintChrome() {
   var ck = checks(), D = S.D;
-  var done = [ck[0][1], ck[1][1], ck.filter(function (c) { return c[3] === 2; }).every(function (c) { return c[1]; }), ck.filter(function (c) { return c[3] === 3; })[0][1], ck.filter(function (c) { return c[3] === 4; })[0][1], false];
+  var done = [ck[0][1], ck.filter(function (c) { return c[3] === 1; }).every(function (c) { return c[1]; }), ck.filter(function (c) { return c[3] === 2; }).every(function (c) { return c[1]; }), ck.filter(function (c) { return c[3] === 3; })[0][1], ck.filter(function (c) { return c[3] === 4; })[0][1], false];
   $('cd-bar').style.width = Math.round(S.step / (STEPS.length - 1) * 100) + '%';
   S.dr.querySelector('.dv-steps').innerHTML = STEPS.map(function (s, i) { return '<button type="button" data-step="' + i + '" class="' + (i === S.step ? 'on' : (done[i] ? 'ok' : '')) + '"' + (i === S.step ? ' aria-current="step"' : '') + '>' + (done[i] && i !== S.step ? '✓' : s[1]) + ' ' + esc(s[0]) + '</button>'; }).join('');
   S.dr.querySelector('[data-next]').textContent = S.step === STEPS.length - 1 ? (D.activate ? '✓ Register and approve' : '✓ Register courier') : 'Next →';
@@ -168,7 +169,7 @@ function submit(btn) {
   for (var i = 0; i < STEPS.length - 1; i++) if (!validateStep(i, false)) { go(i); validateStep(i, false); $('cd-msg').textContent = 'Check the highlighted fields.'; return; }
   if (S.busy) { $('cd-msg').textContent = 'Wait for the photos to finish uploading.'; return; }
   var D = S.D, p = { name: D.name, phone: D.phone, password: D.pw, vehicle_type: D.vt, plate_number: needsPlate() ? D.plate : '', home_zone: D.zone, id_type: D.idt, id_number: D.idn, id_photo_url: D.idp && D.idp.url || '',
-    selfie_url: D.selfie && D.selfie.url || '', licence_number: D.vt === 'motorcycle' ? D.lnum : '', licence_photo_url: D.vt === 'motorcycle' && D.lic && D.lic.url || '', emergency_name: D.en, emergency_phone: D.ep, address: D.addr,
+    selfie_url: D.selfie && D.selfie.url || '', vehicle_photo_front: D.vf && D.vf.url || '', vehicle_photo_side: D.vs && D.vs.url || '', vehicle_photo_back: D.vb && D.vb.url || '', licence_number: D.vt === 'motorcycle' ? D.lnum : '', licence_photo_url: D.vt === 'motorcycle' && D.lic && D.lic.url || '', emergency_name: D.en, emergency_phone: D.ep, address: D.addr,
     activate: D.activate ? 1 : 0, confirm_duplicate: D.confirm ? 1 : 0 };
   btn.disabled = true; $('cd-msg').textContent = 'Registering…';
   K.api('admin_register_courier', p).then(function (res) {
@@ -185,7 +186,7 @@ function open() {
   var dr = K.openDrawer(head(), '<div class="dv-top"><div class="dv-steps" role="group" aria-label="Steps"></div><div class="dv-bar"><i id="cd-bar"></i></div></div><div id="cd-body"></div>', foot());
   S.dr = dr; dr.classList.add('ak-drv'); draw();
   var tabCss = document.getElementById('ak-cd-css');
-  if (!tabCss) { tabCss = document.createElement('style'); tabCss.id = 'ak-cd-css'; tabCss.textContent = '.ak-drv .dv-tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}.ak-drv .dv-tabs button{padding:8px 14px;border-radius:99px;border:1.5px solid var(--line);background:var(--card);color:var(--ink);font:inherit;font-size:12.5px;font-weight:600;cursor:pointer}.ak-drv .dv-tabs button.on{border-color:var(--gold);background:rgba(212,175,55,.14);box-shadow:0 0 0 3px rgba(212,175,55,.18)}'; document.head.appendChild(tabCss); }
+  if (!tabCss) { tabCss = document.createElement('style'); tabCss.id = 'ak-cd-css'; tabCss.textContent = '.ak-drv .dv-3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.ak-drv .dv-3 .dv-up{min-height:96px;padding:6px}.ak-drv .dv-tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}.ak-drv .dv-tabs button{padding:8px 14px;border-radius:99px;border:1.5px solid var(--line);background:var(--card);color:var(--ink);font:inherit;font-size:12.5px;font-weight:600;cursor:pointer}.ak-drv .dv-tabs button.on{border-color:var(--gold);background:rgba(212,175,55,.14);box-shadow:0 0 0 3px rgba(212,175,55,.18)}'; document.head.appendChild(tabCss); }
   dr.addEventListener('click', function (e) {
     var t = e.target, b;
     if ((b = t.closest('[data-step]'))) go(parseInt(b.getAttribute('data-step'), 10));

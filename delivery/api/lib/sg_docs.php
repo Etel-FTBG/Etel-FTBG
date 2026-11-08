@@ -31,6 +31,8 @@ function etel_sg_doc_types() {
         'business_licence' => array('label' => 'Business licence', 'required' => true),
         'owner_id'         => array('label' => "Owner's ID", 'required' => true),
         'tax_certificate'  => array('label' => 'Tax (TIN) certificate', 'required' => false),
+        'place_photo'      => array('label' => 'Picture of the shop place (the shop front and its street)', 'required' => true),
+        'center_photo'     => array('label' => 'Picture of the shopping center or building the shop is in', 'required' => true),
     );
 }
 

@@ -2874,6 +2874,7 @@ case 'admin_get_drivers': {
     // since deploy (they're otherwise only lazily created inside
     // customer_confirm_arrival) - this query would throw "Unknown
     // column" on a fresh install/deploy without this.
+    require_once __DIR__ . '/../lib/vehicle_photos.php'; etel_vp_ensure($pdo);
     rides_add_missing_cols($pdo, 'ride_drivers', array(
         'commission_owed'    => "commission_owed DECIMAL(12,2) DEFAULT 0",
         'cash_fares_total'   => "cash_fares_total DECIMAL(12,2) DEFAULT 0",
@@ -2910,7 +2911,7 @@ case 'admin_get_drivers': {
     $stmt = $pdo->prepare("SELECT u.id, u.name, u.phone, u.created_at,
         rd.online, rd.vehicle_type, rd.vehicle_make, rd.vehicle_color, rd.vehicle_plate,
         rd.license_number, rd.license_name, rd.license_dob, rd.identity_match,
-        rd.selfie_url, rd.license_photo_url,
+        rd.selfie_url, rd.license_photo_url, rd.vehicle_photo_front, rd.vehicle_photo_side, rd.vehicle_photo_back,
         rd.onboarded, rd.total_earnings, rd.total_rides,
         rd.commission_owed, rd.etel_money_balance,
         rd.last_seen,
@@ -3506,6 +3507,7 @@ case 'driver_get_goal_tiers': {
 }
 
 case 'driver_get_profile': {
+    require_once __DIR__ . '/../lib/vehicle_photos.php'; etel_vp_ensure($pdo);
     // Close stuck trips (at most one sweep per 5 min across all requests; no cron needed).
     rides_sweep_maybe($pdo);
     $d = rides_driver_profile($pdo, $u['id']);

@@ -21,7 +21,7 @@ var DOCS = [['insurance', 'Insurance', 'Valid insurance certificate', 'driver_in
 var S = { dr: null, step: 0, types: FALLBACK.slice(), fares: {}, busy: 0, D: null, result: null, mismatch: false };
 
 function blank() {
-  return { name: '', phone: '', pw: '', vt: '', make: '', color: 'Blue', year: '', plate: '', lname: '', lnum: '', ldob: '', lic: null, selfie: null,
+  return { name: '', phone: '', pw: '', vt: '', make: '', color: 'Blue', year: '', plate: '', lname: '', lnum: '', ldob: '', lic: null, selfie: null, vf: null, vs: null, vb: null,
     docs: { insurance: { exp: '', f: null }, technical_inspection: { exp: '', f: null }, road_fund: { exp: '', f: null } }, activate: false, confirm: false };
 }
 function css() {
@@ -29,6 +29,7 @@ function css() {
   var s = document.createElement('style'); s.id = 'ak-drv-css';
   s.textContent = [
     '.ak-dr.ak-drv{width:min(700px,100vw)}',
+    '.ak-drv .dv-3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.ak-drv .dv-3 .dv-up{min-height:96px;padding:6px}',
     '.ak-drv .dv-top{position:sticky;top:-16px;z-index:3;margin:-16px -18px 14px;padding:12px 18px;background:var(--card);border-bottom:1px solid var(--line)}',
     '.ak-drv .dv-steps{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px}',
     '.ak-drv .dv-steps button{flex:none;display:flex;align-items:center;gap:6px;padding:6px 11px;border-radius:99px;border:1.5px solid var(--line);background:var(--card);color:var(--mute);font:inherit;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap}',
@@ -99,9 +100,9 @@ function upload(file, type) {
   return fetch(ETEL.api.replace('boot.php', 'upload.php'), { method: 'POST', headers: { 'Authorization': 'Bearer ' + Auth.getToken() }, body: fd })
     .then(function (r) { return r.json(); }).then(function (j) { if (!j || !j.success || !j.data) throw new Error((j && j.message) || 'Upload failed'); return j.data.url; });
 }
-var KIND = { lic: ['driver_license', function (D, f) { D.lic = f; }], selfie: ['driver_selfie', function (D, f) { D.selfie = f; }] };
+var KIND = { lic: ['driver_license', function (D, f) { D.lic = f; }], selfie: ['driver_selfie', function (D, f) { D.selfie = f; }], vf: ['vehicle_front', function (D, f) { D.vf = f; }], vs: ['vehicle_side', function (D, f) { D.vs = f; }], vb: ['vehicle_back', function (D, f) { D.vb = f; }] };
 DOCS.forEach(function (d) { KIND[d[0]] = [d[3], function (D, f) { D.docs[d[0]].f = f; }]; });
-function getFile(kind) { var D = S.D; return kind === 'lic' ? D.lic : kind === 'selfie' ? D.selfie : D.docs[kind].f; }
+function getFile(kind) { var D = S.D; return kind === 'lic' ? D.lic : kind === 'selfie' ? D.selfie : (kind === 'vf' || kind === 'vs' || kind === 'vb') ? D[kind] : D.docs[kind].f; }
 function pick(kind, file) {
   if (!file || !/^image\//.test(file.type)) { K.toast('Choose a picture file', true); return; }
   var f = { url: '', preview: URL.createObjectURL(file) }; KIND[kind][1](S.D, f); S.busy++; draw();
@@ -124,7 +125,8 @@ function stepHtml() {
     '<div class="dv-2">' + field('dv-make', 'Make / brand', inp('dv-make', D.make, 'type="text" placeholder="e.g. Bajaj, TVS, Toyota"'), 'Optional.') + field('dv-year', 'Manufacture year', inp('dv-year', D.year, 'type="text" inputmode="numeric" maxlength="4" placeholder="e.g. 2018"'), 'Optional.') + '</div>' +
     '<div class="dv-f"><span>Colour</span></div><div class="dv-sw" role="group" aria-label="Colour">' + COLORS.map(function (c) { return '<button type="button" data-color="' + esc(c[0]) + '" class="' + (D.color === c[0] ? 'on' : '') + '" style="background:' + c[1] + '" title="' + esc(c[0]) + '" aria-label="' + esc(c[0]) + '"></button>'; }).join('') + '</div>' +
     field('dv-color', 'Or type the colour', inp('dv-color', COLORS.some(function (c) { return c[0] === D.color; }) ? '' : D.color, 'type="text" placeholder="e.g. Orange"'), '') +
-    field('dv-plate', 'Plate number', inp('dv-plate', D.plate, 'type="text" placeholder="e.g. 3-12345 AA" style="font-family:ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase"'), '', true);
+    field('dv-plate', 'Plate number', inp('dv-plate', D.plate, 'type="text" placeholder="e.g. 3-12345 AA" style="font-family:ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase"'), '', true) +
+    '<div class="dv-f" style="margin-top:12px"><span>Photos of the vehicle (3 sides)</span></div><div class="ak-fh" style="margin:0 0 8px">One clear photo of the front, the side and the back.</div><div class="dv-3">' + upBox('dv-vf', D.vf, 'Front', 'Whole front', 'vf', 'environment') + upBox('dv-vs', D.vs, 'Side', 'Whole side', 'vs', 'environment') + upBox('dv-vb', D.vb, 'Back', 'Whole back', 'vb', 'environment') + '</div>';
   if (i === 3) return '<h3 class="dv-h">Driving licence</h3><p class="dv-p">Copy the details exactly as printed on the licence. They are checked against the driver\'s EtelID record.</p>' +
     field('dv-lcountry', 'Country', '<select id="dv-lcountry" class="ak-in"><option>Ethiopia</option></select>', '') +
     field('dv-lname', 'Full name (on the licence)', inp('dv-lname', D.lname, 'type="text" placeholder="First and last name"'), '', false) +
@@ -147,6 +149,7 @@ function checks() {
     ['Licence details (name, number, date of birth)', !!(D.lname && D.lnum && D.ldob), false, 3],
     ['Photo of the licence', !!(D.lic && D.lic.url), false, 3],
     ['Selfie', !!(D.selfie && D.selfie.url), false, 4],
+    ['Vehicle photos: front, side and back', !!(D.vf && D.vf.url && D.vs && D.vs.url && D.vb && D.vb.url), false, 2],
     ['Vehicle papers', DOCS.some(function (d) { return D.docs[d[0]].f && D.docs[d[0]].exp; }), null, 5]
   ];
 }
@@ -191,7 +194,7 @@ function head() { return '<div class="ak-av lg" style="--a:#E8C14A;--b:#9a7a1c">
 function foot() { return '<span class="ak-err" id="dv-msg" role="status" aria-live="polite"></span><button type="button" class="ak-btn" data-back>← Back</button><button type="button" class="ak-btn gold" data-next></button>'; }
 function paintChrome() {
   var D = S.D, ck = checks();
-  var done = [ck[0][1], ck[1][1], ck[2][1], ck[3][1] && ck[4][1], ck[5][1], ck[6][1], false];
+  var done = [ck[0][1], ck[1][1], ck[2][1] && ck[6][1], ck[3][1] && ck[4][1], ck[5][1], ck[7][1], false];
   var n = [ck[0][1], ck[1][1], ck[2][1], ck[3][1] && ck[4][1], ck[5][1]].filter(Boolean).length;
   $('dv-bar').style.width = Math.round((S.step) / (STEPS.length - 1) * 100) + '%';
   S.dr.querySelector('.dv-steps').innerHTML = STEPS.map(function (s, i) { return '<button type="button" data-step="' + i + '" class="' + (i === S.step ? 'on' : (done[i] ? 'ok' : '')) + '"' + (i === S.step ? ' aria-current="step"' : '') + '>' + (done[i] && i !== S.step ? '✓' : s[1]) + ' ' + esc(s[0]) + '</button>'; }).join('');
@@ -238,7 +241,7 @@ function submit(btn) {
   for (var i = 0; i < STEPS.length - 1; i++) if (!validateStep(i, false)) { go(i); $('dv-msg').textContent = 'Check the highlighted fields.'; validateStep(i, false); return; }
   if (S.busy) { $('dv-msg').textContent = 'Wait for the photos to finish uploading.'; return; }
   var D = S.D, p = { name: D.name, phone: D.phone, password: D.pw, vehicle_type: D.vt, vehicle_make: D.make, vehicle_color: D.color, vehicle_year: D.year, vehicle_plate: D.plate,
-    license_name: D.lname, license_number: D.lnum, license_dob: D.ldob, license_photo_url: D.lic && D.lic.url || '', selfie_url: D.selfie && D.selfie.url || '', activate: D.activate ? 1 : 0, confirm_mismatch: D.confirm ? 1 : 0, docs: {} };
+    license_name: D.lname, license_number: D.lnum, license_dob: D.ldob, license_photo_url: D.lic && D.lic.url || '', selfie_url: D.selfie && D.selfie.url || '', vehicle_photo_front: D.vf && D.vf.url || '', vehicle_photo_side: D.vs && D.vs.url || '', vehicle_photo_back: D.vb && D.vb.url || '', activate: D.activate ? 1 : 0, confirm_mismatch: D.confirm ? 1 : 0, docs: {} };
   DOCS.forEach(function (d) { var x = D.docs[d[0]]; if (x.f && x.f.url && x.exp) p.docs[d[0]] = { expiry_date: x.exp, receipt_url: x.f.url }; });
   btn.disabled = true; $('dv-msg').textContent = 'Registering…';
   K.api('admin_register_driver', p).then(function (res) {
@@ -273,7 +276,7 @@ function open() {
       else if ((b = t.closest('[data-go]'))) go(parseInt(b.getAttribute('data-go'), 10));
       else if ((b = t.closest('[data-vt]'))) { S.D.vt = b.getAttribute('data-vt'); draw(); var er = $('dv-vt-err'); if (er) er.textContent = ''; }
       else if ((b = t.closest('[data-color]'))) { S.D.color = b.getAttribute('data-color'); if ($('dv-color')) $('dv-color').value = ''; dr.querySelectorAll('[data-color]').forEach(function (x) { x.classList.toggle('on', x === b); }); preview(); }
-      else if ((b = t.closest('[data-opt]'))) { var act = b.getAttribute('data-opt') === 'activate'; if (act && !canActivate()) { K.toast('Add the licence details, the licence photo and the selfie first.', true); return; } S.D.activate = act; draw(); }
+      else if ((b = t.closest('[data-opt]'))) { var act = b.getAttribute('data-opt') === 'activate'; if (act && !canActivate()) { K.toast('Add the licence details, the licence photo, the selfie and the three vehicle photos first.', true); return; } S.D.activate = act; draw(); }
       else if ((b = t.closest('[data-up]'))) { var inp0 = dr.querySelector('[data-file="' + b.getAttribute('data-up') + '"]'); if (inp0) inp0.click(); }
       else if (t.closest('[data-pw-show]')) { var p = $('dv-pw'); p.type = p.type === 'password' ? 'text' : 'password'; }
       else if (t.closest('[data-pw-gen]')) {

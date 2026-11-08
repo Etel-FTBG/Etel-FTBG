@@ -195,6 +195,7 @@ define('ETEL_WRITE_ACTIONS', array(
     'fa_agent_book_ride',
     'admin_area_save','admin_area_delete','admin_areas_settings_save',
     'fa_partner_save','fa_partner_submit','fa_partner_delete','admin_fa_partner_decide','admin_fa_partner_resend_sms','admin_fa_agent_set_roles',
+    'vehicle_photos_save','admin_vehicle_photos_save',
     'sup_ticket_create','sup_ticket_reply','sup_ticket_close','sup_ticket_rate','admin_sup_reply','admin_sup_update','admin_sup_canned_save','admin_sup_canned_delete','admin_sup_settings_save',
 ));
 
@@ -730,7 +731,7 @@ $ETEL_THROTTLED_ACTIONS = array(
     'confirm_bank_payment' => array(15, 600), 'rate_order' => array(30, 600),
     // Field Agents: brute-forcing referral codes and mass-applying are both capped per IP / per user.
     'fa_ref_lookup' => array(40, 600), 'fa_claim_ref' => array(20, 3600), 'fa_agent_apply' => array(6, 3600),
-    'fa_agent_book_ride' => array(30, 3600), 'fa_agent_quote' => array(120, 3600), 'fa_partner_save' => array(200, 3600), 'fa_partner_check' => array(600, 3600), 'fa_partner_submit' => array(30, 3600),
+    'fa_agent_book_ride' => array(30, 3600), 'fa_agent_quote' => array(120, 3600), 'fa_partner_save' => array(200, 3600), 'vehicle_photos_save' => array(40, 3600), 'fa_partner_check' => array(600, 3600), 'fa_partner_submit' => array(30, 3600),
     'sup_ticket_create' => array(10, 3600), 'sup_ticket_reply' => array(60, 3600), 'sup_ticket_rate' => array(20, 3600),
 );
 if (isset($ETEL_THROTTLED_ACTIONS[$action])) {
@@ -1566,7 +1567,7 @@ switch ($action) {
         break;
     }
     case 'admin_create_service_giver': {
-        $pdo = db(); require_admin($pdo);
+        $pdo = db(); $sgAdmin = require_admin($pdo);
         $name = isset($body['name']) ? trim($body['name']) : '';
         $phone = isset($body['phone']) ? preg_replace('/[^0-9+]/','',trim($body['phone'])) : '';
         $pw = isset($body['password']) ? $body['password'] : '';
@@ -1582,6 +1583,15 @@ switch ($action) {
         // (status "pending", so it can neither sign in nor show to customers) until the owner claims it and admin verifies it.
         $draft = !empty($body['draft']);
         require_once __DIR__ . '/lib/sg_claim.php';
+        require_once __DIR__ . '/lib/sg_docs.php';
+        $sgPics = array();   // the shop place picture and the shopping center picture become approved papers (private documents folder)
+        foreach (array('place_photo' => 'place_photo_url', 'center_photo' => 'center_photo_url') as $pdt => $pk) {
+            $pu = isset($body[$pk]) ? trim((string) $body[$pk]) : '';
+            if ($pu === '') continue;
+            if (!etel_sg_doc_url_ok($pu)) fail('A shop picture is not valid. Upload it again.', 400);
+            $sgPics[$pdt] = $pu;
+        }
+        if ($sgPics) etel_sg_docs_ensure($pdo);   // creating a table commits, so it must not happen inside the transaction below
         $placeholder = false;
         if ($draft) {
             if (!$name) $name = $business_name;
@@ -1608,6 +1618,9 @@ switch ($action) {
             $isg->execute(array($user_id,$sg_code,$business_name,$service_type,$vehicle_type,$zone,$address,$id_number,$draft ? 'pending' : 'verified'));
             $sg_id = intval($pdo->lastInsertId());
             if ($lat!==null && $lng!==null) { try { $pdo->prepare('UPDATE service_givers SET lat=?,lng=? WHERE id=?')->execute(array($lat,$lng,$sg_id)); } catch(Exception $e){ error_log('[ETEL] admin_create_service_giver lat/lng update failed for sg_id=' . $sg_id . ': ' . $e->getMessage()); } }
+            foreach ($sgPics as $pdt => $pu) {
+                $pdo->prepare("INSERT INTO sg_documents (sg_id, doc_type, file_url, status, uploaded_by, reviewed_at) VALUES (?,?,?, 'approved', ?, NOW()) ON DUPLICATE KEY UPDATE file_url = VALUES(file_url), status = 'approved', reviewed_at = NOW()")->execute(array($sg_id, $pdt, $pu, intval($sgAdmin['id'])));
+            }
             $claim = $draft ? etel_sg_claim_issue($pdo, $sg_id, $user_id, $placeholder) : null;
             $pdo->commit();
             ok(array('message'=>$draft ? 'Business pre-registered' : 'Service giver created','user_id'=>$user_id,'service_giver_id'=>$sg_id,'code'=>$sg_code,
@@ -1787,6 +1800,9 @@ switch ($action) {
         break;
     case 'fa_partner_list': case 'fa_partner_check': case 'fa_partner_get': case 'fa_partner_save': case 'fa_partner_submit': case 'fa_partner_delete': case 'admin_fa_partners_list': case 'admin_fa_partners_stats': case 'admin_fa_partner_resend_sms': case 'admin_fa_partner_get': case 'admin_fa_partner_decide':
         require __DIR__ . '/controllers/FieldAgentPartnerController.php';
+        break;
+    case 'vehicle_photos_get': case 'vehicle_photos_save': case 'admin_vehicle_photos_save':
+        require __DIR__ . '/controllers/VehiclePhotosController.php';
         break;
     case 'fa_agent_vehicles': case 'fa_agent_quote': case 'fa_agent_book_ride': case 'fa_agent_bookings':
         require __DIR__ . '/controllers/AgentBookingController.php';

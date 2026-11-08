@@ -80,3 +80,15 @@ Technical: column `fa_agents.roles` (added automatically, comma list, `none` = n
 - Code: `api/lib/fa_partners.php`, `api/controllers/FieldAgentPartnerController.php`, agent screens `agent/partners.js`, admin board `js/admin-agents-partners.js`.
 - Actions: agent `fa_partner_list/get/save/submit/delete`; admin `admin_fa_partners_list/stats`, `admin_fa_partner_get/decide/resend_sms`.
 - Tests: `php tests/partners/backend_partners.php`, browser `tests/partners/ui_partners.js` (agent) and `ui_admin_partners.js` (admin).
+
+## Vehicle photos (3 sides) and shop pictures
+- **Couriers and drivers** must show their vehicle: one photo of the **front**, the **side** and the **back**. A courier who walks (on foot) is the only exception.
+- **Shops (service givers)** must add a picture of the **shop place** (the shop front and its street) and a picture of the **shopping center or building** it is in.
+- Where it is asked:
+  - Agent app, Register a partner: the vehicle step (courier, driver) and the shop step. The partner cannot be sent without them. The owner sees the pictures in the partner sheet.
+  - Admin, Courier desk and Driver desk: three picture boxes on the vehicle step; "Approve now" needs all three. Admin, Business desk: two picture boxes (required for "Go live now", optional while pre-registering).
+  - Self registration: a signed-in courier or driver who has no vehicle pictures yet sees one sheet "Photos of your vehicle" (courier app release v15, driver app release v27). "Later" hides it for a day. A shop owner adds the two pictures in the "Papers for going live" card of the Service Giver app.
+  - Account sheet (Admin > People): the three vehicle photos or the two shop pictures are shown as thumbnails.
+- Storage: columns `vehicle_photo_front/side/back` on `courier_details` and `ride_drivers` (added automatically). Shop pictures are papers `place_photo` and `center_photo` in `sg_documents` (private folder, signed links), so the existing paper review screen shows them.
+- Code: `api/lib/vehicle_photos.php`, `api/controllers/VehiclePhotosController.php` (`vehicle_photos_get/save`, `admin_vehicle_photos_save`), upload types `vehicle_front/side/back` in `api/upload.php`, add-on `js/vehicle-photos-prompt.js`.
+- Tests: `php tests/partners/backend_vehicle_photos.php`; the partner tests cover the agent flow.

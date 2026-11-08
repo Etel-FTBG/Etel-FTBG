@@ -38,6 +38,9 @@ const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAFElEQVR
       t('the bicycle and the EV have their own pictures', await p.$$eval('.pt-vt img', a => a.some(i => /bicycle\.webp/.test(i.src)) && a.some(i => /ev_car\.webp/.test(i.src))));
       await p.screenshot({ path: 'pt-real-vehicles.png' });
       await p.click('.pt-vt:has-text("Bicycle")'); await p.waitForTimeout(300);
+      t('the vehicle step asks for the front, side and back photos', (await p.$$('[data-file^="vehicle_photo_"]')).length === 3 && /Front/.test(await p.innerText('.pt-vps')) && /Back/.test(await p.innerText('.pt-vps')));
+      await upl(p, 'vehicle_photo_front'); await upl(p, 'vehicle_photo_side'); await upl(p, 'vehicle_photo_back');
+      await p.screenshot({ path: 'pt-vehicle-photos.png' });
       await p.click('[data-act="pt-next"]'); await p.waitForSelector('#pt-emergency_phone'); await p.waitForTimeout(500);
       await p.fill('#pt-emergency_name', 'Mother'); await p.fill('#pt-emergency_phone', '0944000099'); await p.fill('#pt-zone', 'Tabor');
       await p.click('[data-act="pt-next"]'); await p.waitForSelector('#pt-send'); await p.waitForTimeout(600);
@@ -87,6 +90,8 @@ const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAFElEQVR
       await p.fill('#pt-business_name', 'Lakeside Burger'); await p.click('.pt-chip:has-text("Restaurant")'); await p.fill('#pt-address', 'Tabor, Hawassa');
       await p.click('[data-act="pt-loc"]'); await p.waitForFunction(() => /Location saved/.test(document.body.innerText), null, { timeout: 15000 });
       await upl(p, 'logo_url');
+      await upl(p, 'place_photo_url'); await upl(p, 'center_photo_url');
+      t('the shop step asks for the shop place and the shopping center pictures', (await p.$$('[data-file="place_photo_url"],[data-file="center_photo_url"]')).length === 2);
       t('the city is picked from the location', (await p.innerText('body')).includes('Hawassa'));
       await p.screenshot({ path: 'pt-shop-2.png' });
       await p.click('[data-act="pt-next"]'); await p.waitForSelector('[data-act="pt-iadd"]'); await p.waitForTimeout(600);

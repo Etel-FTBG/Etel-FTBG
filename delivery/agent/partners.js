@@ -26,6 +26,9 @@ var TX = {
   st_person: ['Person', '\u1230\u12cd\u12ec\u12cd'], st_vehicle: ['Vehicle', '\u1270\u123d\u12a8\u122d\u12ab\u122a'], st_licence: ['Licence', '\u1218\u1295\u1303 \u1348\u1243\u12f5'], st_contact: ['Contact', '\u12a0\u12f5\u122b\u123b'], st_owner: ['Owner', '\u1263\u1208\u1264\u1275'], st_shop: ['Shop', '\u1231\u1241'], st_products: ['Products', '\u121d\u122d\u1276\u127d'], st_review: ['Review', '\u121b\u1228\u130b\u1308\u132b'],
   name: ['Full name', '\u1219\u1209 \u1235\u121d'], phone: ['Mobile number', '\u121e\u1263\u12ed\u120d \u1241\u1325\u122d'], phone_h: ['Must be their own number. They will use it to sign in.', '\u12e8\u122b\u1233\u1278\u12cd \u1241\u1325\u122d \u1218\u1206\u1295 \u12a0\u1208\u1260\u1275\u1362 \u1208\u1218\u130d\u1263\u1275 \u12ed\u1320\u1240\u1219\u1260\u1273\u120d\u1362'],
   idtype: ['Kind of ID', '\u12e8\u1218\u1273\u12c8\u1242\u12eb \u12a0\u12ed\u1290\u1275'], idnum: ['ID number', '\u12e8\u1218\u1273\u12c8\u1242\u12eb \u1241\u1325\u122d'], idphoto: ['Photo of the ID card', '\u12e8\u1218\u1273\u12c8\u1242\u12eb \u12ab\u122d\u12f5 \u134e\u1276'], selfie: ['Selfie of the person', '\u12e8\u1230\u12cd\u12ec\u12cd \u134e\u1276 (\u1230\u120d\u134a)'],
+  veh_photos: ['Photos of the vehicle (3 sides)', '\u12e8\u1270\u123d\u12a8\u122d\u12ab\u122a \u134e\u1276\u12ce\u127d (3 \u130e\u1295)'], veh_photos_h: ['Take one clear photo of the front, the side and the back of the vehicle.', '\u12e8\u1270\u123d\u12a8\u122d\u12ab\u122a\u12cd\u1295 \u134a\u1275\u1363 \u130e\u1295 \u12a5\u1293 \u1300\u122d\u1263 \u12a0\u1295\u12f5 \u12a0\u1295\u12f5 \u130d\u120d\u133d \u134e\u1276 \u12eb\u1295\u1231\u1362'],
+  vp_front: ['Front', '\u134a\u1275'], vp_side: ['Side', '\u130e\u1295'], vp_back: ['Back', '\u1300\u122d\u1263'],
+  place_photo: ['Picture of the shop place (the shop front and its street)', '\u12e8\u1231\u1241 \u1266\u1273 \u134e\u1276 (\u12e8\u1231\u1241 \u134a\u1275 \u12a5\u1293 \u1218\u1295\u1308\u12f1)'], center_photo: ['Picture of the shopping center or building', '\u12e8\u1308\u1260\u12eb \u121b\u12d5\u12a8\u1209 \u12c8\u12ed\u121d \u1215\u1295\u133b\u12cd \u134e\u1276'],
   tap_photo: ['Tap to take or choose a photo', '\u134e\u1276 \u1208\u121b\u1295\u1233\u1275 \u12c8\u12ed\u121d \u1208\u1218\u121d\u1228\u1325 \u12ed\u1295\u12a9'], change_photo: ['Change photo', '\u134e\u1276 \u1240\u12ed\u122d'], uploading: ['Uploading...', '\u1260\u1218\u132b\u1295 \u120b\u12ed...'],
   national_id: ['National ID', '\u1265\u1214\u122b\u12ca \u1218\u1273\u12c8\u1242\u12eb'], kebele_id: ['Kebele ID', '\u12e8\u1240\u1260\u120c \u1218\u1273\u12c8\u1242\u12eb'], passport: ['Passport', '\u1353\u1235\u1356\u122d\u1275'], driving_licence: ['Driving licence', '\u1218\u1295\u1303 \u1348\u1243\u12f5'],
   vehicle: ['Vehicle', '\u1270\u123d\u12a8\u122d\u12ab\u122a'], plate: ['Plate number', '\u12e8\u1230\u120c\u12f3 \u1241\u1325\u122d'], make: ['Make (optional)', '\u121e\u12f4\u120d (\u12a0\u121b\u122b\u132d)'], color: ['Colour (optional)', '\u1240\u1208\u121d (\u12a0\u121b\u122b\u132d)'], year: ['Year (optional)', '\u12d3\u1218\u1275 (\u12a0\u121b\u122b\u132d)'],
@@ -86,7 +89,8 @@ function vlabel(v) { var k = 'v_' + v; if (TX[k]) return tx(k); var s = P.t('veh
 function vtiles(name, list, cur, labelFn) {
   return '<div class="pt-vts" role="radiogroup">' + list.map(function (v) { var on = cur === v; return '<button type="button" class="pt-vt' + (on ? ' on' : '') + '" role="radio" aria-checked="' + on + '" data-act="pt-set" data-n="' + name + '" data-v="' + esc(v) + '"><span class="pt-vpic">' + (vpic(v, 96) || ic('car')) + '</span><b>' + esc(labelFn(v)) + '</b></button>'; }).join('') + '</div>';
 }
-var UPTYPE = { courier: { id_photo_url: 'courier_id', selfie_url: 'courier_selfie', licence_photo_url: 'courier_licence' }, driver: { id_photo_url: 'courier_id', selfie_url: 'driver_selfie', license_photo_url: 'driver_license' }, shop: { id_photo_url: 'courier_id', selfie_url: 'courier_selfie', logo_url: 'shop_cover', cover_url: 'shop_cover', item: 'items' } };
+var VPT = { vehicle_photo_front: 'vehicle_front', vehicle_photo_side: 'vehicle_side', vehicle_photo_back: 'vehicle_back' };
+var UPTYPE = { courier: { vehicle_photo_front: 'vehicle_front', vehicle_photo_side: 'vehicle_side', vehicle_photo_back: 'vehicle_back', id_photo_url: 'courier_id', selfie_url: 'courier_selfie', licence_photo_url: 'courier_licence' }, driver: { vehicle_photo_front: 'vehicle_front', vehicle_photo_side: 'vehicle_side', vehicle_photo_back: 'vehicle_back', id_photo_url: 'courier_id', selfie_url: 'driver_selfie', license_photo_url: 'driver_license' }, shop: { place_photo_url: 'sg_document', center_photo_url: 'sg_document', id_photo_url: 'courier_id', selfie_url: 'courier_selfie', logo_url: 'shop_cover', cover_url: 'shop_cover', item: 'items' } };
 
 var Q = { list: null, counts: {}, fees: {}, minItems: 5, payDays: 0, err: '', cur: null, step: 0, busy: false, missing: {}, prev: {}, up: 0, msg: '', vehicles: null, areas: null, item: null, geo: '', loaded: false, dups: { matches: [], blocked: false, done: false }, dupKey: '', dupTimer: null, dupBusy: false };
 
@@ -139,6 +143,10 @@ function photo(key, title, cap) {
   return '<div class="fld"><span>' + esc(title) + '</span><button type="button" class="pt-up' + (has ? ' has' : '') + '" data-act="pt-pick" data-k="' + key + '"' + (pv ? ' style="background-image:url(\'' + pv + '\')"' : '') + ' aria-label="' + esc(title) + '">' +
     (has ? '<span class="pt-chg">' + esc(url ? tx('change_photo') : tx('uploading')) + '</span>' : ic('image') + '<b>' + esc(tx('tap_photo')) + '</b>') + '</button>' +
     '<input type="file" accept="image/*"' + (cap ? ' capture="' + cap + '"' : '') + ' hidden data-file="' + key + '">' + miss(key) + '</div>';
+}
+function vphotos() {
+  return '<div class="fld"><span>' + esc(tx('veh_photos')) + '</span><small class="pt-h">' + esc(tx('veh_photos_h')) + '</small><div class="grid3 pt-vps">' +
+    ['front', 'side', 'back'].map(function (sd) { return photo('vehicle_photo_' + sd, tx('vp_' + sd), 'environment'); }).join('') + '</div></div>';
 }
 /* typed text lives in the inputs; copy it into the draft before any re-render */
 function sync() {
@@ -264,7 +272,7 @@ function shopFields() {
     (cities.length ? '<div class="fld"><span>' + esc(tx('city')) + '</span>' + chips('city', cities, d.city || '', function (v) { return v; }) + '</div>' : '') +
     fld(tx('zone'), 'pt-zone', d.zone, 'maxlength="80"') + fld(tx('address'), 'pt-address', d.address, 'maxlength="200"') + miss('address') +
     '<div class="fld"><span>' + esc(tx('loc')) + '</span><button type="button" class="btn' + (hasLoc ? '' : ' primary') + '" data-act="pt-loc">' + ic('pin') + esc(hasLoc ? tx('loc_ok') + ' \u00b7 ' + Number(d.lat).toFixed(4) + ', ' + Number(d.lng).toFixed(4) : tx('loc_btn')) + '</button>' + (Q.geo ? '<p class="sub">' + esc(Q.geo) + '</p>' : '') + miss('location') + '</div>' +
-    photo('logo_url', tx('logo'), 'environment') + photo('cover_url', tx('cover'), 'environment') +
+    photo('logo_url', tx('logo'), 'environment') + photo('cover_url', tx('cover'), 'environment') + photo('place_photo_url', tx('place_photo'), 'environment') + photo('center_photo_url', tx('center_photo'), 'environment') +
     '<div class="grid2"><label class="fld"><span>' + esc(tx('opens')) + '</span><input class="in" type="time" id="pt-opens_at" data-pf="opens_at" value="' + esc(d.opens_at || '') + '"></label><label class="fld"><span>' + esc(tx('closes')) + '</span><input class="in" type="time" id="pt-closes_at" data-pf="closes_at" value="' + esc(d.closes_at || '') + '"></label></div>' +
     fld(tx('desc'), 'pt-description', d.description, 'maxlength="500"');
 }
@@ -288,9 +296,9 @@ function wizard() {
   if (c.note && c.status === 'changes') h += '<div class="pt-changes" role="status"><b>' + esc(tx('note_title')) + '</b><p>' + esc(c.note) + '</p></div>';
   var body = '';
   if (k === 'person' || k === 'owner') body = idFields();
-  else if (k === 'vehicle' && c.kind === 'courier') body = '<div class="fld"><span>' + esc(tx('vehicle')) + '</span>' + vtiles('vehicle_type', COURIER_VEH, c.data.vehicle_type || 'motorcycle', vlabel) + miss('vehicle_type') + '</div>' +
+  else if (k === 'vehicle' && c.kind === 'courier') body = '<div class="fld"><span>' + esc(tx('vehicle')) + '</span>' + vtiles('vehicle_type', COURIER_VEH, c.data.vehicle_type || 'motorcycle', vlabel) + miss('vehicle_type') + '</div>' + (c.data.vehicle_type === 'on_foot' ? '' : vphotos()) +
     fld(tx('plate'), 'pt-plate_number', c.data.plate_number, 'maxlength="30"') + fld(tx('lic_opt'), 'pt-licence_number', c.data.licence_number, 'maxlength="60"') + photo('licence_photo_url', tx('lic_photo') + ' (' + (L() ? '\u12a0\u121b\u122b\u132d' : 'optional') + ')', 'environment');
-  else if (k === 'vehicle') body = '<div class="fld"><span>' + esc(tx('vehicle')) + '</span>' + (Q.vehicles ? vtiles('vehicle_type', Q.vehicles, c.data.vehicle_type || '', vlabel) : '<div class="skel" style="height:52px"></div>') + miss('vehicle_type') + '</div>' +
+  else if (k === 'vehicle') body = '<div class="fld"><span>' + esc(tx('vehicle')) + '</span>' + (Q.vehicles ? vtiles('vehicle_type', Q.vehicles, c.data.vehicle_type || '', vlabel) : '<div class="skel" style="height:52px"></div>') + miss('vehicle_type') + '</div>' + vphotos() +
     fld(tx('plate'), 'pt-vehicle_plate', c.data.vehicle_plate, 'maxlength="30"') + miss('vehicle_plate') + fld(tx('make'), 'pt-vehicle_make', c.data.vehicle_make, 'maxlength="60"') + fld(tx('color'), 'pt-vehicle_color', c.data.vehicle_color, 'maxlength="40"') + fld(tx('year'), 'pt-vehicle_year', c.data.vehicle_year || '', 'type="number" inputmode="numeric" min="1980" max="2100"');
   else if (k === 'licence') body = fld(tx('lic_name'), 'pt-license_name', c.data.license_name, 'maxlength="100"') + fld(tx('lic_num'), 'pt-license_number', c.data.license_number, 'maxlength="60"') + miss('license_number') + photo('license_photo_url', tx('lic_photo'), 'environment');
   else if (k === 'contact') body = contactFields();
