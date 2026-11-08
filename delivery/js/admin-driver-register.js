@@ -21,7 +21,7 @@ var DOCS = [['insurance', 'Insurance', 'Valid insurance certificate', 'driver_in
 var S = { dr: null, step: 0, types: FALLBACK.slice(), fares: {}, busy: 0, D: null, result: null, mismatch: false };
 
 function blank() {
-  return { name: '', phone: '', pw: '', vt: '', make: '', color: 'Blue', year: '', plate: '', lname: '', lnum: '', ldob: '', lic: null, selfie: null, vf: null, vs: null, vb: null,
+  return { name: '', phone: '', pw: '', vt: '', make: '', color: 'Blue', year: '', plate: '', lname: '', lnum: '', ldob: '', oname: '', serves: '', lic: null, selfie: null, vf: null, vs: null, vb: null,
     docs: { insurance: { exp: '', f: null }, technical_inspection: { exp: '', f: null }, road_fund: { exp: '', f: null } }, activate: false, confirm: false };
 }
 function css() {
@@ -29,6 +29,7 @@ function css() {
   var s = document.createElement('style'); s.id = 'ak-drv-css';
   s.textContent = [
     '.ak-dr.ak-drv{width:min(700px,100vw)}',
+    '.ak-drv .dv-tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}.ak-drv .dv-tabs button{padding:8px 14px;border-radius:99px;border:1.5px solid var(--line);background:var(--card);color:var(--ink);font:inherit;font-size:12.5px;font-weight:600;cursor:pointer}.ak-drv .dv-tabs button.on{border-color:var(--gold);background:rgba(212,175,55,.14);box-shadow:0 0 0 3px rgba(212,175,55,.18)}',
     '.ak-drv .dv-3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.ak-drv .dv-3 .dv-up{min-height:96px;padding:6px}',
     '.ak-drv .dv-top{position:sticky;top:-16px;z-index:3;margin:-16px -18px 14px;padding:12px 18px;background:var(--card);border-bottom:1px solid var(--line)}',
     '.ak-drv .dv-steps{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px}',
@@ -111,6 +112,7 @@ function pick(kind, file) {
 }
 
 /* ---------- steps ---------- */
+function eff() { return S.D.vt === 'other' ? (S.D.serves || S.types[0] || 'bajaj') : S.D.vt; }
 function stepHtml() {
   var D = S.D, i = S.step;
   if (i === 0) return '<h3 class="dv-h">Sign-in details</h3><p class="dv-p">The driver signs in to the Driver app with this phone and password.</p>' +
@@ -118,10 +120,14 @@ function stepHtml() {
     field('dv-phone', 'Phone', inp('dv-phone', D.phone, 'type="tel" inputmode="tel" placeholder="09XXXXXXXX"'), 'The number they sign in with.', true) +
     field('dv-pw', 'Password', '<div class="dv-pw">' + inp('dv-pw', D.pw, 'type="password" autocomplete="new-password" placeholder="At least 8 characters"') + '<button type="button" class="ak-btn" data-pw-show aria-label="Show password">👁</button><button type="button" class="ak-btn" data-pw-gen>🎲 Generate</button></div><div class="dv-str" id="dv-str" data-s="' + (D.pw ? strength(D.pw) : 0) + '"><i></i><i></i><i></i><i></i></div>', 'Send it to them privately.', true);
   if (i === 1) return '<h3 class="dv-h">Choose a service</h3><p class="dv-p">The kind of trips this driver will complete in Hawassa.</p><div class="dv-svc" role="group" aria-label="Service">' +
-    S.types.map(function (t) { var fare = S.fares[t]; return '<button type="button" data-vt="' + esc(t) + '" class="' + (D.vt === t ? 'on' : '') + '" aria-pressed="' + (D.vt === t) + '"><span class="pic">' + pic(t, 110) + '</span><b>' + esc(TITLE[t] || t) + '</b>' + (fare ? '<small>from ETB ' + esc(Math.round(fare)) + '</small>' : '') + '</button>'; }).join('') + '</div>' +
+    S.types.map(function (t) { var fare = S.fares[t]; return '<button type="button" data-vt="' + esc(t) + '" class="' + (D.vt === t ? 'on' : '') + '" aria-pressed="' + (D.vt === t) + '"><span class="pic">' + pic(t, 110) + '</span><b>' + esc(TITLE[t] || t) + '</b>' + (fare ? '<small>from ETB ' + esc(Math.round(fare)) + '</small>' : '') + '</button>'; }).join('') +
+    '<button type="button" data-vt="other" class="' + (D.vt === 'other' ? 'on' : '') + '" aria-pressed="' + (D.vt === 'other') + '"><span class="pic" style="font-size:44px">\u2795</span><b>Other vehicle</b><small>Add its name and details</small></button></div>' +
+    (D.vt === 'other' ? '<div class="dv-doc" style="margin-top:12px"><h5>Other vehicle</h5>' + field('dv-oname', 'Name of the vehicle', inp('dv-oname', D.oname, 'type="text" maxlength="40" placeholder="e.g. Tuk tuk, Pickup, Van"'), 'Shown to the admin team next to the make.', true) +
+      '<div class="dv-f"><span>It takes the same trips as</span></div><div class="dv-tabs" role="group" aria-label="Works as">' + S.types.map(function (t) { var on = eff() === t; return '<button type="button" data-serves="' + esc(t) + '" class="' + (on ? 'on' : '') + '" aria-pressed="' + on + '">' + esc(TITLE[t] || t) + '</button>'; }).join('') + '</div>' +
+      '<p class="ak-fh" style="margin:6px 0 0">Riders are matched by this service. Make, colour, year and plate come on the next step.</p></div>' : '') +
     '<p class="ak-fh" id="dv-vt-err" style="color:var(--red,#d6364a);min-height:16px;margin-top:8px"></p>';
   if (i === 2) return '<h3 class="dv-h">The vehicle</h3><p class="dv-p">Their own or rented vehicle. The plate number is what riders and traffic officers see.</p>' +
-    '<div class="dv-prev"><div class="pic" id="dv-pp">' + pic(D.vt, 120) + '</div><div><div style="font-weight:800;font-size:16px" id="dv-pt"></div><div style="margin-top:8px"><span class="dv-plate" id="dv-pl"></span></div></div></div>' +
+    '<div class="dv-prev"><div class="pic" id="dv-pp">' + pic(eff(), 120) + '</div><div><div style="font-weight:800;font-size:16px" id="dv-pt"></div><div style="margin-top:8px"><span class="dv-plate" id="dv-pl"></span></div></div></div>' +
     '<div class="dv-2">' + field('dv-make', 'Make / brand', inp('dv-make', D.make, 'type="text" placeholder="e.g. Bajaj, TVS, Toyota"'), 'Optional.') + field('dv-year', 'Manufacture year', inp('dv-year', D.year, 'type="text" inputmode="numeric" maxlength="4" placeholder="e.g. 2018"'), 'Optional.') + '</div>' +
     '<div class="dv-f"><span>Colour</span></div><div class="dv-sw" role="group" aria-label="Colour">' + COLORS.map(function (c) { return '<button type="button" data-color="' + esc(c[0]) + '" class="' + (D.color === c[0] ? 'on' : '') + '" style="background:' + c[1] + '" title="' + esc(c[0]) + '" aria-label="' + esc(c[0]) + '"></button>'; }).join('') + '</div>' +
     field('dv-color', 'Or type the colour', inp('dv-color', COLORS.some(function (c) { return c[0] === D.color; }) ? '' : D.color, 'type="text" placeholder="e.g. Orange"'), '') +
@@ -144,7 +150,7 @@ function checks() {
   var D = S.D;
   return [
     ['Sign-in details', D.name.length >= 2 && phoneOk(D.phone) && D.pw.length >= 8, true, 0],
-    ['Service', !!D.vt, true, 1],
+    ['Service', !!D.vt && (D.vt !== 'other' || !!D.oname), true, 1],
     ['Plate number', D.plate.length > 0, true, 2],
     ['Licence details (name, number, date of birth)', !!(D.lname && D.lnum && D.ldob), false, 3],
     ['Photo of the licence', !!(D.lic && D.lic.url), false, 3],
@@ -158,7 +164,7 @@ function reviewHtml() {
   var D = S.D, ck = checks(), can = canActivate();
   if (!can && D.activate) D.activate = false;
   var rows = ck.map(function (c) { var opt = c[2] === null; return '<div class="dv-ck"><u>' + (c[1] ? '✅' : (opt ? '➖' : '⬜')) + '</u><span>' + esc(c[0]) + (opt && !c[1] ? ' <small>(optional)</small>' : '') + '</span>' + (c[1] ? '' : '<button type="button" class="ak-btn" data-go="' + c[3] + '">Fix</button>') + '</div>'; }).join('');
-  return '<h3 class="dv-h">Review</h3><div class="dv-prev"><div class="pic">' + pic(D.vt, 120) + '</div><div><div style="font-weight:800;font-size:16px">' + esc(D.name || 'Driver') + '</div><div class="ak-fh" style="margin:2px 0 6px">' + esc(TITLE[D.vt] || D.vt || '') + (D.make ? ' · ' + esc(D.make) : '') + (D.color ? ' · ' + esc(D.color) : '') + (D.year ? ' · ' + esc(D.year) : '') + '</div><span class="dv-plate">' + esc(D.plate.toUpperCase() || '—') + '</span></div></div>' +
+  return '<h3 class="dv-h">Review</h3><div class="dv-prev"><div class="pic">' + pic(eff(), 120) + '</div><div><div style="font-weight:800;font-size:16px">' + esc(D.name || 'Driver') + '</div><div class="ak-fh" style="margin:2px 0 6px">' + esc(TITLE[D.vt] || D.vt || '') + (D.make ? ' · ' + esc(D.make) : '') + (D.color ? ' · ' + esc(D.color) : '') + (D.year ? ' · ' + esc(D.year) : '') + '</div><span class="dv-plate">' + esc(D.plate.toUpperCase() || '—') + '</span></div></div>' +
     '<div class="dv-box" style="margin-top:0">' + rows + '</div>' +
     '<div class="dv-opt' + (D.activate ? ' on' : '') + (can ? '' : ' off') + '" data-opt="activate" role="radio" aria-checked="' + (D.activate && can) + '" tabindex="0"><u style="text-decoration:none;font-size:22px">✅</u><div><b>Switch the driver on now</b><span>' + (can ? 'I checked the licence and the driver\'s face in person. They can go online straight away.' : 'Needs the licence details and photo and the selfie.') + '</span></div></div>' +
     '<div class="dv-opt' + (!D.activate ? ' on' : '') + '" data-opt="review" role="radio" aria-checked="' + (!D.activate) + '" tabindex="0"><u style="text-decoration:none;font-size:22px">🕒</u><div><b>Save for review</b><span>The driver is saved as pending. Anything missing can be added later, then you approve them.</span></div></div>' +
@@ -170,6 +176,7 @@ function validateStep(i, silent) {
   var D = S.D, ok = true, first = null;
   function need(id, bad, msg) { if (!silent) mark(id, bad ? msg : ''); if (bad && ok) { ok = false; first = id; } else if (bad) ok = false; }
   if (i === 0) { need('dv-name', D.name.length < 2, 'Enter the full name.'); need('dv-phone', !phoneOk(D.phone), 'Enter the full phone number.'); need('dv-pw', D.pw.length < 8, 'The password needs at least 8 characters.'); }
+  if (i === 1 && D.vt === 'other' && !D.oname) { ok = false; if (!silent) { var e2 = $('dv-vt-err'); if (e2) e2.textContent = 'Enter the name of the vehicle.'; } }
   if (i === 1) { if (!D.vt) { ok = false; if (!silent) { var e = $('dv-vt-err'); if (e) e.textContent = 'Choose a service.'; } } }
   if (i === 2) { need('dv-plate', !D.plate, 'Enter the plate number.'); need('dv-year', D.year !== '' && !/^(19[89]\d|20\d\d)$/.test(D.year), 'Four digits, like 2018, or leave it empty.'); }
   if (i === 3) {
@@ -183,6 +190,7 @@ function validateStep(i, silent) {
 function readStep() {
   if (!S.dr) return; var D = S.D, i = S.step;
   if (i === 0) { D.name = val('dv-name'); D.phone = val('dv-phone').replace(/\s/g, ''); D.pw = val('dv-pw'); var st = $('dv-str'); if (st) st.setAttribute('data-s', String(D.pw ? strength(D.pw) : 0)); }
+  if (i === 1) { D.oname = val('dv-oname'); }
   if (i === 2) { D.make = val('dv-make'); D.year = val('dv-year'); D.plate = val('dv-plate').toUpperCase(); var c = val('dv-color'); if (c) D.color = c; }
   if (i === 3) { D.lname = val('dv-lname'); D.lnum = val('dv-lnum'); D.ldob = val('dv-ldob'); }
   if (i === 5) DOCS.forEach(function (d) { D.docs[d[0]].exp = val('dv-exp-' + d[0]); });
@@ -211,7 +219,7 @@ function draw() {
 }
 function preview() {
   var D = S.D; if (!$('dv-pt')) return;
-  $('dv-pt').textContent = (TITLE[D.vt] || 'Vehicle') + (D.make ? ' · ' + D.make : '') + (D.color ? ' · ' + D.color : '') + (D.year ? ' · ' + D.year : '');
+  $('dv-pt').textContent = (D.vt === 'other' ? (D.oname || 'Other vehicle') : (TITLE[D.vt] || 'Vehicle')) + (D.make ? ' · ' + D.make : '') + (D.color ? ' · ' + D.color : '') + (D.year ? ' · ' + D.year : '');
   $('dv-pl').textContent = D.plate || 'PLATE';
 }
 function go(i) { readStep(); S.step = Math.max(0, Math.min(STEPS.length - 1, i)); $('dv-msg').textContent = ''; draw(); var b = $('dv-body'); if (b) b.scrollIntoView({ block: 'start' }); }
@@ -230,7 +238,7 @@ function success(d) {
     (d.activated ? '\nYou can go online now.' : '\nETEL is checking your details. We will tell you when you can go online.');
   var miss = (d.missing || []).length ? '<p class="ak-fh" style="color:var(--amber,#d98e04)">Still missing: ' + esc(d.missing.join(', ')) + '. Add them, then approve the driver in Rides &gt; Drivers.</p>' : '';
   S.dr.querySelector('.ak-dr-body').innerHTML = '<div class="dv-done"><div class="dv-ok">✓</div><h3 style="margin:0 0 4px">' + (d.activated ? 'Driver is switched on' : 'Driver saved for review') + '</h3>' +
-    '<div class="dv-prev" style="justify-content:center;margin-top:12px"><div class="pic">' + pic(D.vt, 120) + '</div><div style="text-align:left"><div style="font-weight:800">' + esc(D.name) + '</div><span class="dv-plate">' + esc(D.plate) + '</span></div></div></div>' +
+    '<div class="dv-prev" style="justify-content:center;margin-top:12px"><div class="pic">' + pic(eff(), 120) + '</div><div style="text-align:left"><div style="font-weight:800">' + esc(D.name) + '</div><span class="dv-plate">' + esc(D.plate) + '</span></div></div></div>' +
     (d.identity_check === 'mismatch' ? '<p class="ak-fh" style="color:var(--red,#d6364a)">The licence name or date of birth did not match the EtelID record.</p>' : d.identity_check === 'matched' ? '<p class="ak-fh" style="color:#2a9d63">The licence details match the driver\'s EtelID record.</p>' : '') + miss +
     '<div class="dv-box"><b>Sign-in message</b><pre>' + esc(S.msg) + '</pre><button type="button" class="ak-btn gold" data-copy-msg>Copy message</button></div>';
   S.dr.querySelector('.ak-dr-foot').innerHTML = '<button type="button" class="ak-btn" data-again>Register another driver</button><button type="button" class="ak-btn gold" data-close>Done</button>';
@@ -240,7 +248,7 @@ function submit(btn) {
   readStep();
   for (var i = 0; i < STEPS.length - 1; i++) if (!validateStep(i, false)) { go(i); $('dv-msg').textContent = 'Check the highlighted fields.'; validateStep(i, false); return; }
   if (S.busy) { $('dv-msg').textContent = 'Wait for the photos to finish uploading.'; return; }
-  var D = S.D, p = { name: D.name, phone: D.phone, password: D.pw, vehicle_type: D.vt, vehicle_make: D.make, vehicle_color: D.color, vehicle_year: D.year, vehicle_plate: D.plate,
+  var D = S.D, p = { name: D.name, phone: D.phone, password: D.pw, vehicle_type: eff(), vehicle_other_label: D.vt === 'other' ? D.oname : '', vehicle_make: D.make, vehicle_color: D.color, vehicle_year: D.year, vehicle_plate: D.plate,
     license_name: D.lname, license_number: D.lnum, license_dob: D.ldob, license_photo_url: D.lic && D.lic.url || '', selfie_url: D.selfie && D.selfie.url || '', vehicle_photo_front: D.vf && D.vf.url || '', vehicle_photo_side: D.vs && D.vs.url || '', vehicle_photo_back: D.vb && D.vb.url || '', activate: D.activate ? 1 : 0, confirm_mismatch: D.confirm ? 1 : 0, docs: {} };
   DOCS.forEach(function (d) { var x = D.docs[d[0]]; if (x.f && x.f.url && x.exp) p.docs[d[0]] = { expiry_date: x.exp, receipt_url: x.f.url }; });
   btn.disabled = true; $('dv-msg').textContent = 'Registering…';
@@ -274,7 +282,8 @@ function open() {
       else if (t.closest('[data-next]')) { readStep(); if (S.step === STEPS.length - 1) submit(t.closest('[data-next]')); else if (validateStep(S.step, false)) go(S.step + 1); else $('dv-msg').textContent = 'Check the highlighted fields.'; }
       else if (t.closest('[data-back]')) go(S.step - 1);
       else if ((b = t.closest('[data-go]'))) go(parseInt(b.getAttribute('data-go'), 10));
-      else if ((b = t.closest('[data-vt]'))) { S.D.vt = b.getAttribute('data-vt'); draw(); var er = $('dv-vt-err'); if (er) er.textContent = ''; }
+      else if ((b = t.closest('[data-serves]'))) { readStep(); S.D.serves = b.getAttribute('data-serves'); draw(); }
+      else if ((b = t.closest('[data-vt]'))) { readStep(); S.D.vt = b.getAttribute('data-vt'); draw(); var er = $('dv-vt-err'); if (er) er.textContent = ''; }
       else if ((b = t.closest('[data-color]'))) { S.D.color = b.getAttribute('data-color'); if ($('dv-color')) $('dv-color').value = ''; dr.querySelectorAll('[data-color]').forEach(function (x) { x.classList.toggle('on', x === b); }); preview(); }
       else if ((b = t.closest('[data-opt]'))) { var act = b.getAttribute('data-opt') === 'activate'; if (act && !canActivate()) { K.toast('Add the licence details, the licence photo, the selfie and the three vehicle photos first.', true); return; } S.D.activate = act; draw(); }
       else if ((b = t.closest('[data-up]'))) { var inp0 = dr.querySelector('[data-file="' + b.getAttribute('data-up') + '"]'); if (inp0) inp0.click(); }
