@@ -87,6 +87,7 @@ run php tests/ride_meter_floor_test.php
 run php tests/manual_dispatch_test.php
 run php tests/order_cancel_test.php
 run php tests/package_orders_test.php
+run php tests/audit_agent_test.php
 run php tests/own_shop_test.php
 run php tests/customer_suspend_test.php
 run php tests/cron_lock_test.php
