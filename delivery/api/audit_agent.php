@@ -24,6 +24,43 @@
  * admin-gated action.
  */
 
+if (!function_exists('etel_audit_clean_report')) {
+/* Keeps the AI honest: findings that name a file that is not in the project are dropped (made up), the invented grade S becomes A, and the
+   report says how much of the project the AI really read, so a high score on a small sample is not mistaken for a full review. */
+function etel_audit_clean_report($report, $files, $content) {
+    $known = array();
+    foreach ($files as $path => $_) { $known[strtolower($path)] = true; $known[strtolower(basename($path))] = true; }
+    $has = function ($ref) use ($known) { $ref = strtolower(trim((string) $ref)); if ($ref === '') return false; return isset($known[$ref]) || isset($known[strtolower(basename($ref))]); };
+    $dropped = 0;
+    if (isset($report['bugs']) && is_array($report['bugs'])) {
+        $keep = array();
+        foreach ($report['bugs'] as $b) { if (is_array($b) && $has(isset($b['file']) ? $b['file'] : '')) $keep[] = $b; else $dropped++; }
+        $report['bugs'] = $keep;
+    }
+    if (isset($report['categories']) && is_array($report['categories'])) {
+        foreach ($report['categories'] as $k => $c) {
+            if (!is_array($c)) continue;
+            if (isset($c['grade']) && strtoupper(trim((string) $c['grade'])) === 'S') $report['categories'][$k]['grade'] = 'A';
+            if (isset($c['score']) && is_numeric($c['score']) && $c['score'] > 97) $report['categories'][$k]['score'] = 97;
+            foreach (array('highlights', 'passed') as $lk) {   // a claim with no file in brackets is not evidence
+                if (!isset($c[$lk]) || !is_array($c[$lk])) continue;
+                $keep = array();
+                foreach ($c[$lk] as $line) { if (preg_match('/\[([^\]]+)\]\s*$/', (string) $line, $m) && $has($m[1])) $keep[] = $line; else $dropped++; }
+                $report['categories'][$k][$lk] = $keep;
+            }
+        }
+    }
+    if (isset($report['overall_grade']) && strtoupper(trim((string) $report['overall_grade'])) === 'S') $report['overall_grade'] = 'A';
+    $report['coverage'] = array(
+        'files_in_project' => count($files),
+        'files_read' => substr_count($content, "\n=== FILE: "),
+        'characters_read' => strlen($content),
+        'claims_removed' => $dropped,
+    );
+    return $report;
+}
+}
+
 if (!function_exists('etel_run_self_audit')) {
 
 // Fallback keys if the DB table below is empty/unreachable - set these
@@ -134,6 +171,14 @@ function etel_audit_system_prompt() {
     return <<<PROMPT
 You are EtelAudit Pro, the world's most advanced code review AI for Etel Group, Hawassa, Ethiopia. You analyze projects against global 2026 standards while understanding the Ethiopian context: mobile-first users, Telebirr/CBE Birr payments, Amharic/bilingual requirements, low bandwidth conditions, shared cPanel hosting with ModSecurity WAF constraints.
 
+== EVIDENCE RULES (these override everything below) ==
+E1. You only see a SAMPLE of the project: the first part of the files listed under FILE CONTENTS, plus a file tree. Never say a protection exists, or that something "passed", unless you can name the file you saw it in. If you cannot, leave it out. Do not praise anything from the file tree alone.
+E2. Every item in "passed" and "highlights" must end with the file in brackets, for example "password_hash() on sign-up [api/controllers/AuthController.php]". Items without a file will be deleted.
+E3. Every entry in "bugs" and every entry in an "issues" list must name a file from the sample and quote the exact line. Entries that name a file you were not given will be deleted. Do not invent file names, tools, frameworks or features. Do not mention React Native, Expo, WebSockets, cookies, sessions or CSRF unless you saw them in the sample.
+E4. A large real project always has weaknesses. Look for them in the sample: very long files, schema changes made while serving a request (ALTER TABLE or CREATE TABLE inside a controller), missing permission checks, unvalidated input, money maths without a transaction or lock, error messages that reveal internals, duplicated code. If you find none in the sample, say so in "limitations" instead of giving a high score.
+E5. Grades are only A, A-, B+, B, B-, C+, C, C-, D, F. Never use S. A category you could not check from the sample must score no higher than 75 and must say so.
+E6. Add a top-level "limitations" array of short sentences: what you could NOT check because it was outside the sample (payment flows, mobile apps, load behaviour, server settings, files you did not see).
+
 == CRITICAL PHP SECURITY ANALYSIS RULES (read carefully before scoring) ==
 
 RULE 1 - SQL INJECTION (PDO parameterized queries are SAFE):
@@ -176,11 +221,11 @@ Required JSON structure (ALL fields required):
     "security": {
       "score": 75,
       "grade": "C+",
-      "highlights": ["bcrypt password hashing implemented","CSRF tokens with hash_equals() timing-safe check"],
+      "highlights": ["<what is done well> [exact/file/path.php]"],
       "issues": [
         {"severity": "critical", "title": "Real SQL Injection", "detail": "file.php line N: \$db->query(\"SELECT ... WHERE id = \" . \$userId) -- user value directly concatenated, no ? placeholder"}
       ],
-      "passed": ["password_hash() with bcrypt","Session cookies httponly + secure + samesite","CSRF token on every form","session_regenerate_id() on login","Rate limiting on login attempts"]
+      "passed": ["<a check that passed> [exact/file/path.php]"]
     },
     "code_quality": {"score": 80,"grade": "B","highlights": [],"issues": [{"severity": "medium","title": "Issue title","detail": "Specific details with file and line"}],"passed": []},
     "frontend_design": {"score": 85,"grade": "B+","highlights": [],"issues": [],"passed": []},
@@ -200,6 +245,7 @@ Required JSON structure (ALL fields required):
       "fix": "Show the corrected code."
     }
   ],
+  "limitations": ["<one thing you could not check>"],
   "recommendations": [
     {
       "priority": "immediate",
@@ -514,6 +560,7 @@ function etel_run_self_audit($root, $projectName, $provider = 'gemini', $pdo = n
 
     if (isset($report['error'])) return $report;
 
+    $report = etel_audit_clean_report($report, $files, $content);
     $report['_project_name_override'] = $projectName;
     $report['_audited_at'] = date('c');
     return $report;
