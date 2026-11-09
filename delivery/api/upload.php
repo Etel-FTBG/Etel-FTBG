@@ -187,13 +187,15 @@ $prefix  = isset($type_map[$reqType]) ? $type_map[$reqType]['prefix'] : 'item_';
 /* Per-user upload budget (30 per 10 minutes, 150 for admins) so one account cannot fill the disk. Fails open if the table is missing. */
 try {
     $upKey = substr('upload:' . $uid . '|' . (isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : '0.0.0.0'), 0, 120);
-    $upc = $pdo->prepare('SELECT COUNT(*) FROM login_attempts WHERE identifier = ? AND attempted_at > ?');
-    $upc->execute([$upKey, date('Y-m-d H:i:s', time() - 600)]);
+    // The window is worked out by the database itself (NOW() minus 10 minutes): PHP's clock and MySQL's clock can be in different time zones.
+    $upc = $pdo->prepare('SELECT COUNT(*) FROM upload_attempts WHERE identifier = ? AND attempted_at > DATE_SUB(NOW(), INTERVAL 10 MINUTE)');
+    $upc->execute([$upKey]);
     // Admins add menu photos in bulk (Admin > Menu items > Add many photos at once), so they get a larger budget.
     $upMax = (isset($user['role']) && $user['role'] === 'admin') ? 150 : 30;
     if ((int) $upc->fetchColumn() >= $upMax) upfail('Too many uploads. Please wait a few minutes and try again.', 429);
-    $pdo->prepare('INSERT INTO login_attempts (identifier, attempted_at) VALUES (?, NOW())')->execute([$upKey]);
-} catch (Exception $e) { /* no throttle table - allow */ }
+    $pdo->prepare('INSERT INTO upload_attempts (identifier, attempted_at) VALUES (?, NOW())')->execute([$upKey]);
+    if (mt_rand(1, 50) === 1) $pdo->exec('DELETE FROM upload_attempts WHERE attempted_at < DATE_SUB(NOW(), INTERVAL 1 DAY)');   // keep the table small
+} catch (Exception $e) { /* no throttle table (migration 108 not run yet) - allow */ }
 
 $dir     = dirname(__DIR__) . '/uploads/' . $folder . '/';
 if (!is_dir($dir)) @mkdir($dir, 0755, true);
