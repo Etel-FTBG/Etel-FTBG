@@ -84,6 +84,7 @@ def upload(token):
     except urllib.error.HTTPError as e: return e.code
 etel_test_db.run_sql("DELETE FROM upload_attempts")
 phone = "09%08d" % (os.getpid() % 100000000)
+etel_test_db.run_sql("DELETE FROM login_attempts WHERE identifier LIKE 'register:%'")   # earlier smokes in the same run may have used up the sign-up limit
 rr = post("register", {"name": "Upload Tester", "phone": phone, "password": "uploadpass123", "role": "customer"})
 tok = (rr.get("data") or {}).get("token")
 if tok:
