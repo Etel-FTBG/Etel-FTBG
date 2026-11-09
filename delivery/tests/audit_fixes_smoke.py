@@ -59,6 +59,42 @@ for f in glob.glob(root + "/controllers/*.php") + glob.glob(root + "/lib/*.php")
         if re.search(r"^(case '[a-z0-9_]+'|function )", line.strip()): depth_open = None
 check("no CREATE/ALTER/DROP runs between beginTransaction and commit", not bad, ", ".join(bad[:8]))
 
+print("tables created by migration 108, not at request time")
+out1 = etel_test_db.query_text("SELECT COUNT(*) FROM driver_goal_tiers")
+check("the driver goal tiers table exists and holds the six default tiers", out1[0] and out1[1].strip() == "6", out1)
+out2 = etel_test_db.query_text("SELECT COUNT(*) FROM upload_attempts")
+check("the upload_attempts table exists", out2[0], out2)
+up_src = open(os.path.join(root, "upload.php"), encoding="utf-8").read()
+check("uploads no longer count in the login_attempts table", "login_attempts" not in up_src and "upload_attempts" in up_src)
+du_src = open(os.path.join(root, "documents_upload.php"), encoding="utf-8").read()
+check("documents_upload remembers the token_version column instead of asking every time", ".users_token_version_ok" in du_src)
+
+print("upload limit")
+import struct, zlib
+def png():
+    def ch(t, d): c = struct.pack(">I", len(d)) + t + d; return c + struct.pack(">I", zlib.crc32(t + d) & 0xffffffff)
+    raw = b"".join(b"\x00" + b"\xd4\xaf\x37" * 8 for _ in range(8))
+    return b"\x89PNG\r\n\x1a\n" + ch(b"IHDR", struct.pack(">IIBBBBB", 8, 8, 8, 2, 0, 0, 0)) + ch(b"IDAT", zlib.compress(raw)) + ch(b"IEND", b"")
+def upload(token):
+    b = "----t" + str(os.getpid())
+    body = ("--%s\r\nContent-Disposition: form-data; name=\"type\"\r\n\r\nitems\r\n--%s\r\nContent-Disposition: form-data; name=\"image\"; filename=\"a.png\"\r\nContent-Type: image/png\r\n\r\n" % (b, b)).encode() + png() + ("\r\n--%s--\r\n" % b).encode()
+    req = urllib.request.Request(BASE + "upload.php", data=body, headers={"Content-Type": "multipart/form-data; boundary=" + b, "Authorization": "Bearer " + token}, method="POST")
+    try:
+        with urllib.request.urlopen(req, timeout=30) as r: return r.status
+    except urllib.error.HTTPError as e: return e.code
+etel_test_db.run_sql("DELETE FROM upload_attempts")
+phone = "09%08d" % (os.getpid() % 100000000)
+rr = post("register", {"name": "Upload Tester", "phone": phone, "password": "uploadpass123", "role": "customer"})
+tok = (rr.get("data") or {}).get("token")
+if tok:
+    codes = [upload(tok) for _ in range(31)]
+    check("a customer can upload 30 pictures in ten minutes", all(c == 200 for c in codes[:30]), codes[:30])
+    check("the 31st is refused with 429", codes[30] == 429, codes[30])
+    out3 = etel_test_db.query_text("SELECT COUNT(*) FROM upload_attempts")
+    check("the attempts are counted in upload_attempts", out3[0] and int(out3[1].strip() or 0) >= 30, out3)
+else:
+    check("could not register a test customer for the upload limit", False, rr)
+
 print("file sizes")
 def lines(rel): return len(open(os.path.join(root, rel), encoding="utf-8", errors="replace").read().split("\n"))
 check("RideController.php stays under 4,500 lines (ride-desk admin actions live in RideAdminController.php)", lines("controllers/RideController.php") < 4500, lines("controllers/RideController.php"))

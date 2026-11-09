@@ -429,9 +429,13 @@ function rides_ensure_goal_tiers_table($pdo) {
     static $checked = false;
     if ($checked) return;
     $checked = true;
+    // Migration 108 creates this table. The marker file means "seen it": after that no request asks the database again.
+    $marker = __DIR__ . '/../.goal_tiers_ok';
+    if (is_file($marker)) return;
     try {
         $exists = $pdo->query("SHOW TABLES LIKE 'driver_goal_tiers'")->fetch();
-        if (!$exists) {
+        if ($exists) { @file_put_contents($marker, date('c')); }
+        if (!$exists) {   // fallback only for an install that has not run migration 108 yet
             $pdo->exec("CREATE TABLE driver_goal_tiers (
                 id INT AUTO_INCREMENT PRIMARY KEY,
                 trips_required INT NOT NULL,

@@ -124,11 +124,16 @@ try {
 } catch (Exception $e) { dufail('DB connection failed', 500); }
 
 $has_ver = false;
-try {
-    $c = $pdo->prepare("SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = 'token_version'");
-    $c->execute();
-    $has_ver = (bool) $c->fetch();
-} catch (Exception $e) { $has_ver = false; }
+$ver_marker = __DIR__ . '/.users_token_version_ok';   // once the column exists it never goes away: remember it instead of asking information_schema on every upload
+if (is_file($ver_marker)) { $has_ver = true; }
+else {
+    try {
+        $c = $pdo->prepare("SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = 'token_version'");
+        $c->execute();
+        $has_ver = (bool) $c->fetch();
+        if ($has_ver) @file_put_contents($ver_marker, date('c'));
+    } catch (Exception $e) { $has_ver = false; }
+}
 
 try {
     $s = $pdo->prepare('SELECT id, role' . ($has_ver ? ', token_version' : '') . ' FROM users WHERE id = ? LIMIT 1');
