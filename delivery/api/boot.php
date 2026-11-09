@@ -135,9 +135,9 @@ header('Content-Type: application/json; charset=utf-8');
 $_allowed_origins = array(
     'https://ethelmarket.com',
     'https://www.ethelmarket.com',
-    'http://localhost',
-    'http://127.0.0.1',
 );
+// Local test pages are only allowed outside production.
+if (etel_env('APP_ENV', 'CFG_APP_ENV', 'production') !== 'production') { $_allowed_origins[] = 'http://localhost'; $_allowed_origins[] = 'http://127.0.0.1'; }
 $_origin = isset($_SERVER['HTTP_ORIGIN']) ? $_SERVER['HTTP_ORIGIN'] : '';
 if (in_array($_origin, $_allowed_origins, true)) {
     header('Access-Control-Allow-Origin: ' . $_origin);

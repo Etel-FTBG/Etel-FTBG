@@ -14,7 +14,7 @@ if 'js/admin-ride-tips.js' not in read('admin.html'):
     bad.append('admin.html does not load js/admin-ride-tips.js')
 
 boot = read('api/boot.php')
-ctl = read('api/controllers/RideController.php')
+ctl = (read('api/controllers/RideController.php') + read('api/controllers/RideAdminController.php'))
 for action in ('ride_tip_info', 'ride_tip_give', 'driver_get_tips', 'admin_ride_tip_list', 'admin_ride_tip_review'):
     if "case '%s'" % action not in boot:
         bad.append('boot.php does not route ' + action)
