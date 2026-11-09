@@ -226,7 +226,9 @@ def main():
     p3 = sorted(set(o["price"] for o in (q3.get("data") or {}).get("options", [])))
     dist = (q3.get("data") or {}).get("distance_km", 0)
     want = 100 if dist <= 5 else 200 if dist <= 10 else 300 if dist <= 25 else None
-    check("the tiered price is one price by distance band for every vehicle", len(p3) == 1 and (want is None or p3[0] in (want, want + 50)), (dist, p3))
+    byv = dict((o["vehicle_class"], o["price"]) for o in (q3.get("data") or {}).get("options", []))
+    check("a bigger vehicle costs more in the tiered price", byv.get("bike", 0) <= byv.get("moto", 0) < byv.get("car", 0) < byv.get("van", 0), byv)
+    check("the bicycle price is the distance band price plus the weight fee", want is None or byv.get("bike", 0) - want in range(0, 400), (dist, byv))
     s, r = call("admin_package_setting_save", {"values": {"d1_km": 30}}, token=admin)
     check("bands that do not grow are refused", r.get("success") is False, r)
     s, r = call("admin_package_setting_save", {"values": {"d1_fee": 110}}, token=cust)

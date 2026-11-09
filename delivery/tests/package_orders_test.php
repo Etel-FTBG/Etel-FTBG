@@ -271,7 +271,13 @@ check('beyond the last weight band each kg adds the per-kg fee', etel_package_ti
 etel_package_save_setting($pdo, 'tier_on', 1);
 $qt = etel_package_quote($pdo, $A, $B, array('size' => 'small', 'weight_kg' => 2));
 $pt = array(); foreach ($qt['options'] as $o) $pt[] = $o['price'];
-check('a quote uses the tiered price for every vehicle', $qt['ok'] && count(array_unique($pt)) === 1 && in_array($pt[0], array(100, 200, 300), true), json_encode($pt));
+check('a bigger vehicle costs more in a tiered quote (bicycle, motorbike, car, van)', $qt['ok'] && count($pt) === 4 && $pt[0] <= $pt[1] && $pt[1] < $pt[2] && $pt[2] < $pt[3], json_encode($pt));
+check('the van costs 2.5 times the bicycle for the same distance and weight', $qt['ok'] && abs($pt[3] - round($pt[0] * 2.5)) <= 1 && in_array($pt[0], array(100, 200, 300), true), json_encode($pt));
+check('the vehicle multiplier scales only the distance fee, not the weight fee', etel_package_tier_price($T, 4.9, 1, 4) === 250 && etel_package_tier_price($T, 3, 5.5, 4) === 250 + 50 && etel_package_tier_price($T, 3, 5.5, 1) === 150);
+check('an unknown or missing size rank counts as 1', etel_package_tier_price($T, 4.9, 1, 0) === 100 && etel_package_tier_price($T, 4.9, 1, 9) === 100);
+check('a van multiplier below the car one is refused', etel_package_save_settings($pdo, array('mult_van' => 1.2))['ok'] === false);
+check('a multiplier outside 0.5 to 10 is refused', etel_package_save_settings($pdo, array('mult_van' => 11))['ok'] === false);
+check('staff can change the van multiplier', etel_package_save_settings($pdo, array('mult_van' => 3))['ok'] === true && etel_package_setting($pdo, 'mult_van') == 3);
 $sv = etel_package_save_settings($pdo, array('d1_fee' => 120, 'w2_fee' => 60));
 check('staff can change a band price', $sv['ok'] === true && etel_package_setting($pdo, 'd1_fee') == 120);
 check('bands that do not grow are refused', etel_package_save_settings($pdo, array('d1_km' => 30))['ok'] === false && etel_package_save_settings($pdo, array('d1_fee' => 400))['ok'] === false);
