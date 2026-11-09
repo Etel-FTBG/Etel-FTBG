@@ -37,6 +37,9 @@ st, _ = get("migrate.php"); check("the migrations list is refused without a sign
 st, _ = get("migrate.php?validate=1"); check("the migrations check is refused without a sign-in", st == 403, st)
 st, b = get("migrate.php", admin); check("an admin can read the migrations list", st == 200 and '"migrations"' in b, st)
 
+js = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "js", "admin-migrations.js"), encoding="utf-8").read()
+check("the admin Migrations panel sends the admin token when it checks the status", re.search(r"fetch\(migrateUrl\(\),\s*\{\s*headers:\s*\{\s*'Authorization'", js) is not None)
+
 print("public health page")
 st, b = get("health.php"); h = json.loads(b) if b.startswith("{") else {}
 check("health still answers for monitors", st == 200 and h.get("status") == "ok", b[:120])

@@ -1,9 +1,8 @@
 /* ETEL Admin — Database Migrations (Settings tab)
    migrate.php is a standalone endpoint (not part of boot.php's action
    router), so this calls it directly rather than through the usual
-   api(action, body) pattern the rest of admin.js uses. Status (GET, no
-   apply) is read-only and safe without auth; applying pending migrations
-   requires the admin's own bearer token, same as every other admin action. */
+   api(action, body) pattern the rest of admin.js uses. Status and applying
+   pending migrations both need the admin's own bearer token, same as every other admin action. */
 (function(){
 'use strict';
 
@@ -51,7 +50,8 @@ function renderMigrations(data){
 function checkMigrationStatus(silent){
   var wrap = document.getElementById('migrations-report');
   if (wrap && !silent) wrap.innerHTML = '<div style="padding:16px;color:#B8B0A0;text-align:center">Checking\u2026</div>';
-  fetch(migrateUrl())
+  /* The list needs the admin's own token now (the server refuses it to everyone else). */
+  fetch(migrateUrl(), { headers: { 'Authorization': 'Bearer ' + ((window.Auth && Auth.getToken && Auth.getToken()) || localStorage.getItem('etel_token') || '') } })
     .then(function(r){ return r.json(); })
     .then(renderMigrations)
     .catch(function(e){
