@@ -156,6 +156,8 @@ function renderReport(r){
         '<div style="font-size:11px;color:#B8B0A0">Audited ' + esc(r._audited_at || '') + '</div>' +
       '</div>' +
       '<p style="font-size:13px;color:#e8e2d4;margin-top:10px">' + esc(r.executive_summary) + '</p>' +
+      (r.coverage ? '<div style="margin-top:12px;padding:10px 12px;border-radius:10px;background:rgba(212,175,55,.10);font-size:13px;color:#e8e2d4"><b>How much was read:</b> ' + esc(r.coverage.files_read) + ' of ' + esc(r.coverage.files_in_project) + ' files (' + esc(Math.round((r.coverage.characters_read || 0) / 1000)) + ' thousand characters). A score from a sample is not a full review.' + (r.coverage.claims_removed ? ' ' + esc(r.coverage.claims_removed) + ' claim(s) with no file as proof were removed.' : '') + '</div>' : '') +
+      ((r.limitations || []).length ? '<div style="margin-top:10px;font-size:13px;color:#e8e2d4"><b>Not checked:</b><ul style="margin:4px 0 0 18px">' + r.limitations.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul></div>' : '') +
     '</div>' +
     '<div class="section-title" style="margin-bottom:10px">Categories</div>' + catCards +
     '<div class="section-title" style="margin:20px 0 10px">Bugs (' + (r.bugs||[]).length + ')</div>' + bugs +

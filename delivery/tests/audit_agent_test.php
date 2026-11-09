@@ -37,5 +37,20 @@ check('the sign-in file is listed before the style sheet', strpos($msg, '=== FIL
 check('the read budget is large enough to cover real code', ETEL_AUDIT_MAX_CONTENT >= 200000 && ETEL_AUDIT_MAX_PER_FILE >= 10000);
 @unlink($tmp . '/api/.env'); @unlink($tmp . '/api/controllers/AuthController.php'); @unlink($tmp . '/css/a.css'); @rmdir($tmp . '/api/controllers'); @rmdir($tmp . '/api'); @rmdir($tmp . '/css'); @rmdir($tmp);
 
+echo "keeping the AI honest\n";
+$known = array('api/boot.php' => '<?php', 'api/upload.php' => '<?php');
+$rep = array('overall_grade' => 'S', 'categories' => array('security' => array('score' => 99, 'grade' => 'S',
+    'highlights' => array('Tokens are signed [api/boot.php]', 'Session cookies are secure'),
+    'passed' => array('Uploads checked [api/upload.php]', 'CSRF tokens everywhere [api/made_up.php]'))),
+    'bugs' => array(array('file' => 'api/upload.php', 'title' => 'real'), array('file' => 'api/ghost.php', 'title' => 'invented')));
+$c = etel_audit_clean_report($rep, $known, "\n\n=== FILE: api/boot.php ===\nx\n\n=== FILE: api/upload.php ===\ny");
+check('an invented bug (unknown file) is dropped, a real one kept', count($c['bugs']) === 1 && $c['bugs'][0]['title'] === 'real');
+check('a claim with no file is dropped', $c['categories']['security']['highlights'] === array('Tokens are signed [api/boot.php]'));
+check('a claim naming a file that does not exist is dropped', $c['categories']['security']['passed'] === array('Uploads checked [api/upload.php]'));
+check('the invented grade S becomes A and the score is capped', $c['overall_grade'] === 'A' && $c['categories']['security']['grade'] === 'A' && $c['categories']['security']['score'] === 97);
+check('the report says how much was really read', $c['coverage']['files_in_project'] === 2 && $c['coverage']['files_read'] === 2 && $c['coverage']['claims_removed'] === 3, json_encode($c['coverage']));
+check('the prompt demands evidence and a limitations list', strpos(etel_audit_system_prompt(), 'EVIDENCE RULES') !== false && strpos(etel_audit_system_prompt(), '"limitations"') !== false);
+check('the example answer no longer teaches the model to praise cookies and CSRF', strpos(etel_audit_system_prompt(), 'CSRF token on every form') === false);
+
 echo $fails ? "FAILED: $fails\n" : "ALL PASSED\n";
 exit($fails ? 1 : 0);
