@@ -174,23 +174,34 @@ function etel_package_rates($pdo, $only_active = true) {
 
 // Pure. The tiered price staff set in Admin (Package prices): a fixed fee by distance band plus a fee by weight band, the same for every vehicle.
 // Default: up to 5 km 100 ETB, up to 10 km 200, up to 25 km 300 (each extra km after that costs beyond_per_km); weight: up to 5 kg +0, 10 kg +50, 20 kg +100, 50 kg +200.
-function etel_package_tier_price($s, $km, $kg) {
+function etel_package_tier_price($s, $km, $kg, $rank = 0) {
     $km = floatval($km); $kg = floatval($kg);
-    if ($km <= $s['d1_km']) $fee = $s['d1_fee'];
-    elseif ($km <= $s['d2_km']) $fee = $s['d2_fee'];
-    elseif ($km <= $s['d3_km']) $fee = $s['d3_fee'];
-    else $fee = $s['d3_fee'] + $s['beyond_per_km'] * ceil($km - $s['d3_km']);
-    if ($kg <= $s['w1_kg']) $fee += $s['w1_fee'];
-    elseif ($kg <= $s['w2_kg']) $fee += $s['w2_fee'];
-    elseif ($kg <= $s['w3_kg']) $fee += $s['w3_fee'];
-    elseif ($kg <= $s['w4_kg']) $fee += $s['w4_fee'];
-    else $fee += $s['w4_fee'] + $s['w_beyond_per_kg'] * ceil($kg - $s['w4_kg']);
-    return (int) round($fee);
+    if ($km <= $s['d1_km']) $dist = $s['d1_fee'];
+    elseif ($km <= $s['d2_km']) $dist = $s['d2_fee'];
+    elseif ($km <= $s['d3_km']) $dist = $s['d3_fee'];
+    else $dist = $s['d3_fee'] + $s['beyond_per_km'] * ceil($km - $s['d3_km']);
+    if ($kg <= $s['w1_kg']) $wt = $s['w1_fee'];
+    elseif ($kg <= $s['w2_kg']) $wt = $s['w2_fee'];
+    elseif ($kg <= $s['w3_kg']) $wt = $s['w3_fee'];
+    elseif ($kg <= $s['w4_kg']) $wt = $s['w4_fee'];
+    else $wt = $s['w4_fee'] + $s['w_beyond_per_kg'] * ceil($kg - $s['w4_kg']);
+    // A bigger vehicle costs more to run, so the DISTANCE fee is multiplied by the vehicle's size multiplier (Admin > Package prices).
+    // The weight fee is not multiplied: a heavy load is already paid for by weight.
+    return (int) round($dist * etel_package_vehicle_mult($s, $rank) + $wt);
+}
+
+// Pure. The multiplier for a vehicle of this size rank (1 bicycle, 2 motorbike, 3 car, 4 van; a vehicle type added by staff uses the rank of the
+// vehicle it was set closest to). Missing or silly values count as 1.
+function etel_package_vehicle_mult($s, $rank) {
+    $names = array(1 => 'mult_bike', 2 => 'mult_moto', 3 => 'mult_car', 4 => 'mult_van');
+    $k = isset($names[intval($rank)]) ? $names[intval($rank)] : '';
+    $m = ($k !== '' && isset($s[$k])) ? floatval($s[$k]) : 1.0;
+    return ($m >= 0.5 && $m <= 10) ? $m : 1.0;
 }
 
 // Pure. Price in whole birr for one vehicle: base + per km, plus per kg above the free weight, never below the minimum.
-function etel_package_price($rate, $distance_km, $weight_kg, $tiers = null) {
-    if (is_array($tiers) && !empty($tiers['tier_on'])) return etel_package_tier_price($tiers, $distance_km, $weight_kg);
+function etel_package_price($rate, $distance_km, $weight_kg, $tiers = null, $rank = 0) {
+    if (is_array($tiers) && !empty($tiers['tier_on'])) return etel_package_tier_price($tiers, $distance_km, $weight_kg, $rank);
     $fee = floatval($rate['base_fee']) + floatval($rate['per_km']) * floatval($distance_km);
     $over = floatval($weight_kg) - floatval($rate['free_kg']);
     if ($over > 0) $fee += floatval($rate['per_kg_over']) * $over;
@@ -264,7 +275,7 @@ function etel_package_quote($pdo, $pickup_in, $drop_in, $details_in) {
         if ($classes[$r['vehicle_class']] < $minRank) continue;
         if (floatval($r['max_weight_kg']) < $det['weight']) continue;
         $options[] = array('vehicle_class' => $r['vehicle_class'], 'label' => $r['label'], 'icon' => $r['icon'],
-            'price' => etel_package_price($r, $km, $det['weight'], $tiers), 'max_weight_kg' => floatval($r['max_weight_kg']));
+            'price' => etel_package_price($r, $km, $det['weight'], $tiers, $classes[$r['vehicle_class']]), 'max_weight_kg' => floatval($r['max_weight_kg']));
     }
     if (!$options) return array('ok' => false, 'message' => 'No vehicle can carry this package. Check the weight and size, or contact support.');
     return array('ok' => true, 'distance_km' => $km, 'eta_min' => etel_package_eta_min($km), 'options' => $options, 'pickup' => $p, 'drop' => $d, 'details' => $det);
@@ -471,7 +482,8 @@ function etel_package_setting_defaults() {
     return array('late_cancel_fee' => 30,
         'tier_on' => 1,   // 1 = price by distance band + weight band (below); 0 = each vehicle's own base + per km + per kg
         'd1_km' => 5, 'd1_fee' => 100, 'd2_km' => 10, 'd2_fee' => 200, 'd3_km' => 25, 'd3_fee' => 300, 'beyond_per_km' => 15,
-        'w1_kg' => 5, 'w1_fee' => 0, 'w2_kg' => 10, 'w2_fee' => 50, 'w3_kg' => 20, 'w3_fee' => 100, 'w4_kg' => 50, 'w4_fee' => 200, 'w_beyond_per_kg' => 10);
+        'w1_kg' => 5, 'w1_fee' => 0, 'w2_kg' => 10, 'w2_fee' => 50, 'w3_kg' => 20, 'w3_fee' => 100, 'w4_kg' => 50, 'w4_fee' => 200, 'w_beyond_per_kg' => 10,
+        'mult_bike' => 1, 'mult_moto' => 1, 'mult_car' => 1.5, 'mult_van' => 2.5);   // vehicle size multipliers on the distance fee
 }
 
 function etel_package_setting($pdo, $key) {
@@ -504,6 +516,8 @@ function etel_package_save_settings($pdo, $values) {
         if (!is_numeric($v) || floatval($v) < 0 || floatval($v) > 5000) return array('ok' => false, 'message' => 'Every number must be from 0 to 5000.');
         $cur[$k] = round(floatval($v), 2);
     }
+    foreach (array('mult_bike', 'mult_moto', 'mult_car', 'mult_van') as $mk) { if ($cur[$mk] < 0.5 || $cur[$mk] > 10) return array('ok' => false, 'message' => 'A vehicle multiplier must be from 0.5 to 10.'); }
+    if (!($cur['mult_bike'] <= $cur['mult_moto'] && $cur['mult_moto'] <= $cur['mult_car'] && $cur['mult_car'] <= $cur['mult_van'])) return array('ok' => false, 'message' => 'A bigger vehicle cannot have a lower multiplier than a smaller one.');
     if (!($cur['d1_km'] > 0 && $cur['d1_km'] < $cur['d2_km'] && $cur['d2_km'] < $cur['d3_km'])) return array('ok' => false, 'message' => 'The distance bands must grow: first less than second less than third.');
     if (!($cur['w1_kg'] > 0 && $cur['w1_kg'] < $cur['w2_kg'] && $cur['w2_kg'] < $cur['w3_kg'] && $cur['w3_kg'] < $cur['w4_kg'])) return array('ok' => false, 'message' => 'The weight bands must grow: each limit higher than the one before.');
     if (!($cur['d1_fee'] <= $cur['d2_fee'] && $cur['d2_fee'] <= $cur['d3_fee'])) return array('ok' => false, 'message' => 'A longer distance cannot cost less than a shorter one.');
