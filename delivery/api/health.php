@@ -63,7 +63,6 @@ $free = @disk_free_space(__DIR__);
 $total = @disk_total_space(__DIR__);
 if ($free !== false && $total) {
     $pct = round($free / $total * 100, 1);
-    $out['disk_free_pct'] = $pct;
     if ($free < 100 * 1024 * 1024 || $pct < 3) {
         $out['disk'] = 'low';
         if ($out['status'] === 'ok') $out['status'] = 'degraded';

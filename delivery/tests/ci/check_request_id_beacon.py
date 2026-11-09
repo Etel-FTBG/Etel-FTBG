@@ -14,7 +14,7 @@ for needle in ("define('ETEL_RID'", "header('X-Request-Id: ' . ETEL_RID)", "'rid
 for action in ('admin_client_errors', 'admin_client_errors_clear'):
     if "case '" + action + "'" not in boot:
         bad.append('boot.php does not route ' + action)
-    if "case '" + action + "': {" not in read('api/controllers/RideController.php'):
+    if "case '" + action + "': {" not in (read('api/controllers/RideController.php') + read('api/controllers/RideAdminController.php')):
         bad.append('RideController.php is missing ' + action)
 for page in ('ride/index.html', 'driver/index.html'):
     h = read(page)

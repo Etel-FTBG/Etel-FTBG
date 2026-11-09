@@ -38,7 +38,7 @@ if 'data-act="import"' not in read('js/admin-items-pro.js') or 'openItems' not i
     bad.append('Items lost its Import button')
 
 boot = read('api/boot.php')
-adm = read('api/controllers/AdminController.php')
+adm = (read('api/controllers/AdminController.php') + read('api/controllers/AdminPricingController.php') + read('api/controllers/AdminCatalogController.php') + read('api/controllers/AdminReleasesController.php'))
 lib = read('api/lib/menu_catalog.php')
 blk = boot[boot.index("case 'admin_catalog_import'"):boot.index("case 'admin_catalog_copy'")]
 if "require_admin($pdo, 'items.manage')" not in blk:

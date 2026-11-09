@@ -18,7 +18,7 @@ if 'refuse' not in lib.lower() and 'must be encrypted' not in lib:
     bad.append('the off-site push must refuse to send an unencrypted copy')
 if 'BACKUP_ENC_PASSPHRASE is not set' not in lib:
     bad.append('missing the passphrase guard in etel_backup_push_offsite')
-if "'backup_download'" not in read('api/controllers/RideController.php'):
+if "'backup_download'" not in (read('api/controllers/RideController.php') + read('api/controllers/RideAdminController.php')):
     bad.append('admin_backup_download must record that a copy was taken')
 health = read('api/lib/system_health.php')
 if 'etel_health_backup_copy($pdo)' not in health:

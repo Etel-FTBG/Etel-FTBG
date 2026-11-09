@@ -454,7 +454,6 @@ function mig_cli(): int {
 // ----------------------------------------------------------------
 function mig_web(): void {
     header('Content-Type: application/json; charset=utf-8');
-    header('Access-Control-Allow-Origin: *');
     header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
     header('Pragma: no-cache');
     if (($_SERVER['REQUEST_METHOD'] ?? '') === 'OPTIONS') {
@@ -487,12 +486,16 @@ function mig_web(): void {
             echo json_encode(mig_run());
             return;
         }
+        // The list and the check show every database change by name and date: admins only.
+        if (!$isAdmin) {
+            http_response_code(403);
+            echo json_encode(['ok' => false, 'error' => 'Admin auth required']);
+            return;
+        }
         if ($validate) {
-            // read-only, safe to expose
             echo json_encode(mig_validate());
             return;
         }
-        // GET without apply -> read-only status (safe to expose)
         echo json_encode(mig_status());
     } catch (Throwable $e) {
         http_response_code(500);
