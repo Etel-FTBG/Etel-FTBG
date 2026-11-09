@@ -155,3 +155,20 @@ file in this module is well under 20KB — the largest,
 `AdminController.php`, is about 17KB. Actions are grouped into three
 controllers (`SetupController`, `AdminController`, `PortalController`)
 specifically to keep each file small rather than one large monolith.
+
+## Investor Deal Sheet (digital, English and Amharic)
+
+`deal.html` is the one-page Investor Deal Sheet as a web form: the investor reads how the profit share works, picks how many Profit Shares to buy
+(amount and share of the pool are worked out live), and signs by drawing a signature and typing their name. No login is needed.
+Share `.../EtelGroup/investors/deal.html` (English) or `.../deal.html?lang=am` (Amharic).
+
+- Standard terms come from `DistributionEngine.php` (2,000 Profit Shares in the pool, ETB 1,000 each, 20 % pool, 2.5x boost) and the units still open
+  come from the unlocked tranches minus real purchases, so the form cannot oversell.
+- Each signed sheet is stored in `ir_deal_sheets` (self-healing; also `api/migrations/002_deal_sheets.sql`) with a reference code (`EG-INV-26-12345`),
+  the signature image, a SHA-256 fingerprint of the sheet, and a hashed connection id (limit: 5 sheets per hour per connection, plus a honeypot field).
+- Admin dashboard > **Deal Sheets**: open a sheet, print or save it as a PDF, **Accept** or **Reject** it (a note is required to reject), then **Enroll as investor**.
+  Enrolling creates the portal login (a one-time temporary password is shown to the admin) and, when "money received" is ticked, records the purchase.
+- Blank printable forms are in `forms/` (`ETEL_Investor_Deal_Sheet_EN.pdf`, `ETEL_Investor_Deal_Sheet_AM.pdf`).
+- The Amharic text is a first draft in `js/deal-sheet.js`: have a native speaker review it.
+- A drawn signature on a screen is evidence, not a replacement for the signed paper Agreement: keep signing the full Agreement in ink.
+- Manual smoke test: `tests/deal_sheet_smoke.py` (needs a throwaway MySQL database; see its header).

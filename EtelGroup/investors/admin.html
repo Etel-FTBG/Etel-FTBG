@@ -119,6 +119,15 @@
       </div>
 
       <div class="ir-card">
+        <h2>&#128221; Deal Sheets</h2>
+        <div class="desc">Investors fill in and sign the Investor Deal Sheet online, in English or Amharic. Review each one here: accept or reject it, then enroll the investor (this creates their portal login and, once the money is received, records their Profit Shares).</div>
+        <div id="deal-links" style="font-size:12.5px;margin-bottom:12px"></div>
+        <table class="ir-table" id="ir-deals-table"><thead><tr>
+          <th>Reference</th><th>Date</th><th>Investor</th><th class="ir-num">Profit Shares</th><th class="ir-num">Amount (ETB)</th><th>Lang</th><th>Status</th><th></th>
+        </tr></thead><tbody></tbody></table>
+      </div>
+
+      <div class="ir-card">
         <h2>👤 Investors</h2>
         <table class="ir-table" id="ir-investors-table"><thead><tr>
           <th>Name</th><th class="ir-num">Shares</th><th class="ir-num">Invested (ETB)</th>
@@ -233,6 +242,20 @@
   </div>
 </div>
 
+<!-- ---------- Deal sheet modal ---------- -->
+<div class="modal-bg" id="deal-modal-bg">
+  <div class="modal" style="max-width:820px">
+    <button class="modal-close btn btn-outline" onclick="irCloseModal('deal-modal-bg')">&#10005;</button>
+    <h2 id="deal-modal-title">Deal Sheet</h2>
+    <div id="deal-modal-body"></div>
+    <div id="deal-actions" style="margin-top:14px"></div>
+    <div id="deal-modal-err" style="color:#ff8a7a;font-size:12px;margin:8px 0"></div>
+  </div>
+</div>
+
+<link rel="stylesheet" href="css/deal.css">
+<script src="js/deal-sheet.js"></script>
 <script src="js/admin.js"></script>
+<script src="js/admin-deals.js"></script>
 </body>
 </html>

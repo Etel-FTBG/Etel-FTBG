@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Investor Deal Sheet - Etel Family Technology and Business Group</title>
+<meta name="robots" content="noindex">
+<link rel="stylesheet" href="css/deal.css">
+</head>
+<body class="dl-page">
+<div class="dl-wrap">
+  <header class="dl-band">
+    <img src="img/logo-etel.webp" alt="ETEL">
+    <div class="dl-bandtxt">
+      <div class="dl-e" id="t-company"></div>
+      <h1 id="t-title"></h1>
+      <div class="dl-s" id="t-sub"></div>
+      <div class="dl-lang" role="group" aria-label="Language"><button type="button" data-lang="en">EN</button><button type="button" data-lang="am">&#x12A0;&#x121B;</button></div>
+    </div>
+    <img src="img/logo-master.webp" alt="ETEL master seal">
+  </header>
+
+  <main id="dl-main">
+    <section class="dl-card" id="dl-how"></section>
+
+    <form class="dl-card" id="dl-form" autocomplete="off" novalidate>
+      <h2 id="t-h2"></h2>
+      <div class="dl-open" id="dl-open"></div>
+      <div class="dl-grid">
+        <label class="dl-f dl-span2"><span id="l-name"></span><input name="investor_name" maxlength="150" autocomplete="name" required></label>
+        <label class="dl-f"><span id="l-id"></span><input name="id_number" maxlength="80" required></label>
+        <label class="dl-f"><span id="l-phone"></span><input name="phone" inputmode="tel" maxlength="30" autocomplete="tel" required></label>
+        <label class="dl-f dl-span2"><span id="l-email"></span><input name="email" type="email" maxlength="190" autocomplete="email"></label>
+        <label class="dl-f"><span id="l-units"></span><input name="units" type="number" min="1" step="1" inputmode="numeric" required></label>
+        <div class="dl-f"><span id="l-amt"></span><output id="o-amt">ETB 0</output></div>
+        <div class="dl-f"><span id="l-pct"></span><output id="o-pct">0 %</output></div>
+        <label class="dl-f"><span id="l-close"></span><input name="closing_date" type="date"></label>
+        <div class="dl-f dl-span2"><span id="l-payout"></span>
+          <div class="dl-radios"><label><input type="radio" name="payout_period" value="monthly" checked> <i id="r-monthly"></i></label><label><input type="radio" name="payout_period" value="quarterly"> <i id="r-quarterly"></i></label><label><input type="radio" name="payout_period" value="other"> <i id="r-other"></i></label></div></div>
+        <label class="dl-f"><span id="l-days"></span><input name="payout_days" type="number" min="0" max="365" value="15"></label>
+        <label class="dl-f"><span id="l-bank"></span><input name="bank_account" maxlength="190"></label>
+      </div>
+      <div class="dl-calc" id="dl-calc"></div>
+
+      <h2 id="t-h5"></h2>
+      <label class="dl-check"><input type="checkbox" name="agree"> <span id="t-agree"></span></label>
+      <label class="dl-f"><span id="l-signame"></span><input name="signature_name" maxlength="150"></label>
+      <div class="dl-pad"><canvas id="dl-canvas" width="900" height="260"></canvas><div class="dl-padhint" id="t-draw"></div><button type="button" id="dl-clear" class="dl-link"></button></div>
+      <input class="dl-hp" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
+      <div class="dl-err" id="dl-err" role="alert"></div>
+      <button type="submit" class="dl-btn" id="dl-submit"></button>
+    </form>
+
+    <section class="dl-card" id="dl-done" hidden></section>
+  </main>
+  <footer class="dl-foot"><a id="dl-blank" href="forms/ETEL_Investor_Deal_Sheet_EN.pdf" target="_blank" rel="noopener"></a></footer>
+</div>
+<script src="js/deal-sheet.js"></script>
+<script src="js/deal.js"></script>
+</body>
+</html>

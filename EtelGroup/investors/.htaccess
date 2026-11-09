@@ -17,7 +17,7 @@ Options -Indexes
 
 # Block direct access to the lib/ and controllers/ folders' PHP files -
 # they're only ever require()'d by api/boot.php, never requested directly.
-<FilesMatch "^(Crypto|Settings|DeliveryReadonly|DistributionEngine|InvestorAuth|SetupController|AdminController|PortalController)\.php$">
+<FilesMatch "^(Crypto|Settings|DeliveryReadonly|DistributionEngine|InvestorAuth|SetupController|AdminController|PortalController|DealController|Deals)\.php$">
     Order allow,deny
     Deny from all
 </FilesMatch>

@@ -155,6 +155,7 @@ function irFinishWizard() { irBoot(); }
 
 // ---------- dashboard ----------
 async function irLoadDashboard() {
+  if (typeof irLoadDeals === 'function') irLoadDeals();
   const res = await irApi('admin_dashboard_summary');
   if (!res.ok) { alert(res.error); return; }
   const d = res.data;
