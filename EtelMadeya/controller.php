@@ -10,6 +10,8 @@
     <link rel="stylesheet" href="assets/css/controller-style.css">
     <link rel="stylesheet" href="assets/css/etel-premium.css">
     <link rel="stylesheet" href="assets/css/controller-mainpanel.css">
+    <link rel="stylesheet" href="assets/css/madeya-pro.css?v=1">
+    <script src="assets/js/madeya-pro.js?v=1"></script>
     <link rel="icon" href="assets/img/etel-logo.png">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 </head>

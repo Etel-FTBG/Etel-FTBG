@@ -12,6 +12,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Ethiopic:wght@300;400;500;600;700&family=Cormorant+Garamond:wght@500;600;700&family=Rajdhani:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="assets/css/driver-style.css">
     <link rel="stylesheet" href="assets/css/etel-premium.css">
+    <link rel="stylesheet" href="assets/css/madeya-pro.css?v=1">
+    <script src="assets/js/madeya-pro.js?v=1"></script>
     <link rel="icon" href="assets/img/etel-logo.png">
 </head>
 <body>
