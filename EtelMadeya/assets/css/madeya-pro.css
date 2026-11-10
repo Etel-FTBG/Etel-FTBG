@@ -163,3 +163,19 @@ html #mainPanel{--f:#D4AF37;--f2:#b8921f;--tx:var(--mp-ink);--mt:var(--mp-mute);
 #mainPanel .mc-plate-inp,#mainPanel .vip-plate-inp{font-family:'JetBrains Mono',monospace!important;letter-spacing:.12em!important}
 #mainPanel .parity-hint,#mainPanel .cfg-par-badge{font-family:var(--mp-fx)!important}
 .card p[style*="color"],.card div[style*="color:#"],.card strong[style*="color"]{color:var(--mp-goldd)!important}
+
+/* ---------- layout fixes + Station Console ---------- */
+#mainPanel::before,#mainContent::before,.main-content::before,#mainPanel:not(:has(.main-content))::before{display:none!important;content:none!important}
+.station-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:14px;padding:6px 20px 14px}
+.station-grid.compact{grid-template-columns:repeat(auto-fill,minmax(160px,1fr))}
+.station-card{display:flex;flex-direction:column;align-items:flex-start;gap:4px;text-align:left;padding:16px 18px;background:var(--mp-card);border:1.5px solid var(--mp-line);border-radius:18px;box-shadow:var(--mp-shadow);color:var(--mp-ink);font:500 13px var(--mp-fx);cursor:pointer;transition:transform .15s,border-color .15s}
+.station-card:hover:not(:disabled){transform:translateY(-2px);border-color:var(--mp-gold)}
+.station-card.on{border-color:var(--mp-gold);background:linear-gradient(135deg,color-mix(in srgb,var(--mp-gold) 16%,var(--mp-card)),var(--mp-card))}
+.station-card.off{opacity:.55;cursor:not-allowed}
+.station-card .sc-ic{font-size:22px;width:42px;height:42px;border-radius:12px;display:grid;place-items:center;background:linear-gradient(135deg,rgba(212,175,55,.28),rgba(212,175,55,.08))}
+.station-card b{font:700 14px var(--mp-fh);color:var(--mp-ink)}.station-card small{color:var(--mp-mute)}.station-card em{font-style:normal;font-weight:700;color:var(--mp-goldd);font-size:11.5px;margin-top:4px}
+.station-frame{display:block;width:calc(100% - 40px);margin:6px 20px 30px;height:calc(100vh - 220px);min-height:620px;border:1.5px solid var(--mp-line);border-radius:20px;background:var(--mp-bg);box-shadow:var(--mp-shadow)}
+.am-hdr-actions{display:flex;gap:8px;flex-wrap:wrap}
+body.mc-embed #mainPanel .mc-hdr,body.mc-embed .topbar{display:none!important}
+body.mc-embed{background:var(--mp-bg)!important}
+body.mc-embed #mainPanel .mc-tab-nav{top:0!important}
