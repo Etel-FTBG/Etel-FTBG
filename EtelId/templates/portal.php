@@ -929,9 +929,13 @@ if ( $etelid_pv && ! $etelid_pv['verified'] && ( $etelid_pv['channels'] || $etel
     <div class="p-admin-divider">
       <span class="p-admin-label">Admin consoles</span>
       <div class="p-admin-grid" style="margin-bottom:14px">
-        <a href="<?php echo esc_url(admin_url('admin.php?page=etel-id')); ?>" class="p-action admin console">
+        <a href="<?php echo esc_url(home_url('/console/')); ?>" class="p-action admin console">
           <div class="p-action-icon">🛡️</div>
-          <span class="p-action-lbl">Etel-ID Admin</span>
+          <span class="p-action-lbl">Etel-ID Console</span>
+        </a>
+        <a href="<?php echo esc_url(admin_url('admin.php?page=etel-id')); ?>" class="p-action admin console">
+          <div class="p-action-icon">🧱</div>
+          <span class="p-action-lbl">WordPress Admin</span>
         </a>
         <a href="<?php echo esc_url(home_url('/admin')); ?>" class="p-action admin console">
           <div class="p-action-icon">🏢</div>

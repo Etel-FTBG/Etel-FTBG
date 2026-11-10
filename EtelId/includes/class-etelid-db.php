@@ -889,6 +889,20 @@ class EtelID_DB {
         ));
     }
 
+    /** Site-wide audit log, newest first (optional Etel-ID filter) - used by the standalone admin console. */
+    public static function get_log_page( $limit = 25, $offset = 0, $etel_id = '' ) {
+        global $wpdb;
+        $t = self::t_log();
+        if ( $etel_id !== '' ) {
+            $where = $wpdb->prepare( ' WHERE etel_id LIKE %s', '%' . $wpdb->esc_like( $etel_id ) . '%' );
+        } else {
+            $where = '';
+        }
+        $total = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$t}" . $where );
+        $rows  = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM {$t}" . $where . " ORDER BY created_at DESC LIMIT %d OFFSET %d", (int) $limit, (int) $offset ) );
+        return array( 'rows' => $rows ? $rows : array(), 'total' => $total );
+    }
+
     /**
      * Get all members with optional search, pagination, and filters.
      */
