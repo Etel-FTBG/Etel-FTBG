@@ -137,7 +137,7 @@ html #mainPanel{--f:#D4AF37;--f2:#b8921f;--tx:var(--mp-ink);--mt:var(--mp-mute);
 .footer h4{color:#F2CC6B!important;font:700 12px var(--mp-fx)!important;letter-spacing:.1em!important}.footer a,.footer p{color:#cfc7b0!important}.footer-bottom{border-top:1px solid rgba(212,175,55,.16)!important;color:#9c94b3!important}
 
 @media (max-width:900px){
- #mainPanel:has(.am-tab-nav)[style*="block"]{grid-template-columns:1fr}
+ #mainPanel:has(.am-tab-nav)[style*="block"]{grid-template-columns:1fr;grid-template-rows:auto auto 1fr}
  #mainPanel .am-tab-nav{position:sticky!important;top:66px!important;height:auto;flex-direction:row!important;overflow-x:auto!important;padding:8px!important;z-index:40;border-right:0!important;border-bottom:1px solid rgba(212,175,55,.2)!important}
  #mainPanel .am-tab{white-space:nowrap}
  #mainPanel .am-hdr,#mainPanel .mc-hdr{padding:8px 12px!important}

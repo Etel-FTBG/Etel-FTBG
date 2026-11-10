@@ -111,3 +111,14 @@ AddCharset UTF-8 .html .css .js .xml .json .rss .atom
 # RewriteCond %{HTTP_REFERER} !^$
 # RewriteCond %{HTTP_REFERER} !^http(s)?://(www\.)?yourdomain.com [NC]
 # RewriteRule \.(jpg|jpeg|png|gif|webp)$ - [NC,F,L]
+
+
+# ─── Admin "Station Console" embeds controller.php?embed=1 in an iframe on the same site.
+# Allow same-origin framing for that one file even if the server sends a stricter header.
+<IfModule mod_headers.c>
+    <FilesMatch "^controller\.php$">
+        Header always unset X-Frame-Options
+        Header always set X-Frame-Options "SAMEORIGIN"
+        Header always edit* Content-Security-Policy "frame-ancestors [^;]+" "frame-ancestors 'self'"
+    </FilesMatch>
+</IfModule>

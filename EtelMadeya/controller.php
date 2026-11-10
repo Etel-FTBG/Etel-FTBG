@@ -1,4 +1,12 @@
 <?php require_once __DIR__ . '/includes/config.php'; ?>
+<?php
+/* Embedded inside the admin Station Console iframe (same origin): allow framing by this site only. */
+if ( isset( $_GET['embed'] ) && ! headers_sent() ) {
+    header_remove( 'X-Frame-Options' );
+    header( 'X-Frame-Options: SAMEORIGIN' );
+    header( "Content-Security-Policy: frame-ancestors 'self'" );
+}
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
