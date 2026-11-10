@@ -3,46 +3,63 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Investor Relations — Etel Delivery & Ride</title>
-<link rel="stylesheet" href="../css/admin.css">
-<link rel="stylesheet" href="css/investors.css">
+<title>Investor Relations - ETEL</title>
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/ir-pro.css?v=1">
+<script>/* theme before first paint: same key as the Delivery admin */
+try{var t=localStorage.getItem('theme');if(t!=='dark'&&t!=='light')t=window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';document.documentElement.setAttribute('data-theme',t);document.addEventListener('DOMContentLoaded',function(){document.body.classList.toggle('dark-theme',t==='dark')})}catch(e){}
+</script>
 </head>
 <body>
 
-<!-- Reuses EtelGroup's OWN admin login (EtelGroup/api/boot.php?action=admin_login,
-     the same EtelID owner/admin auth as the rest of EtelGroup admin) - not a
-     second admin credential to manage. Stores the token under the SAME
-     localStorage key ('ega_token') EtelGroup admin itself uses, so being
-     already signed in there in this browser is picked up automatically. -->
+<!-- EtelGroup admin sign-in (same login and token key 'ega_token' as EtelGroup admin). -->
 <div id="login-screen" class="ir-login-wrap">
   <div class="login-card">
-    <div class="login-mark">λE</div>
+    <button class="irx-theme" type="button" data-theme-toggle aria-label="Light or dark"></button>
+    <div class="login-logos"><img src="img/logo-etel.webp" alt="ETEL"><img src="img/logo-master.webp" alt="ETEL master seal"></div>
     <h1>Investor Relations</h1>
-    <div class="sub">Etel Delivery &amp; Ride — Admin</div>
+    <div class="sub">ETEL Family Technology and Business Group</div>
     <div class="login-err" id="login-err"></div>
-    <input type="text" id="login-identifier" placeholder="Phone or EtelID" autofocus>
-    <input type="password" id="login-password" placeholder="EtelID Password">
-    <button class="btn btn-primary" id="login-btn" style="width:100%" onclick="irDoLogin()">Sign In with EtelID</button>
+    <input type="text" id="login-identifier" placeholder="Phone or EtelID" autofocus autocomplete="username">
+    <input type="password" id="login-password" placeholder="EtelID password" autocomplete="current-password">
+    <button class="btn btn-primary" id="login-btn" onclick="irDoLogin()">Sign in with EtelID</button>
   </div>
 </div>
 
-<div id="shell" style="display:none">
-  <div class="ir-shell">
-    <div class="ir-topbar">
-      <div>
-        <h1>Investor Relations</h1>
-        <div class="sub">Etel Delivery &amp; Ride</div>
-      </div>
-      <div class="ir-spacer"></div>
-      <button class="btn btn-outline" id="demo-toggle-btn" onclick="irToggleDemo()">Loading…</button>
-      <button class="btn btn-danger" onclick="irLogout()">Sign Out</button>
-    </div>
+<div id="shell">
+ <div class="irx">
+  <aside class="irx-side" id="irx-side">
+    <div class="irx-brand"><div class="lg"><img src="img/logo-etel.webp" alt="ETEL"><img src="img/logo-master.webp" alt="ETEL master seal"></div><div><b>ETEL Investors</b><small>Profit-share desk</small></div></div>
+    <nav class="irx-nav" id="irx-nav">
+      <div class="irx-nav-h">Overview</div>
+      <a data-page="overview" class="on"><i>&#127968;</i>Dashboard</a>
+      <div class="irx-nav-h">Investors</div>
+      <a data-page="deals"><i>&#128221;</i>Deal sheets<span class="irx-badge" id="nav-deals-badge"></span></a>
+      <a data-page="investors"><i>&#128100;</i>Investors</a>
+      <div class="irx-nav-h">Money</div>
+      <a data-page="distributions"><i>&#129518;</i>Distributions</a>
+      <a data-page="costs"><i>&#128184;</i>Costs &amp; tranches</a>
+      <a data-page="planner"><i>&#128640;</i>Growth planner</a>
+      <div class="irx-nav-h">System</div>
+      <a id="nav-setup"><i>&#9881;&#65039;</i>Setup wizard</a>
+    </nav>
+    <div class="irx-side-foot"><b>Etel Delivery &amp; Ride</b>Profit-share investor relations<br>ethelmarket.com</div>
+  </aside>
+  <div class="irx-scrim" id="irx-scrim"></div>
+  <div class="irx-body">
+    <header class="irx-top">
+      <button class="irx-burger" id="irx-burger" aria-label="Menu">&#9776;</button>
+      <div><h1 id="irx-title">Dashboard</h1><div class="sub" id="irx-sub">Your investor desk at a glance</div></div>
+      <div class="irx-spacer"></div>
+      <button class="btn btn-outline btn-sm" id="demo-toggle-btn" onclick="irToggleDemo()">Loading…</button>
+      <button class="irx-theme" type="button" data-theme-toggle aria-label="Light or dark"></button>
+      <button class="btn btn-danger btn-sm" onclick="irLogout()">Sign out</button>
+    </header>
+    <main class="irx-main">
+      <div id="demo-banner" class="ir-demo-banner" style="display:none">&#9888; DEMO MODE is ON: the investors, purchases and the sample distribution period shown here are illustrative sample data, not real. Turn it off above when you go live.</div>
 
-    <div id="demo-banner" class="ir-demo-banner" style="display:none">
-      ⚠ DEMO MODE is ON — the investors, purchases and one sample distribution period shown below are illustrative sample data, not real. Turn it off above once you're ready to go live.
-    </div>
-
-    <!-- ===================== SETUP WIZARD ===================== -->
     <div id="wizard" style="display:none">
       <div class="ir-card">
         <h2>Get Started</h2>
@@ -96,46 +113,102 @@
       </div>
     </div>
 
-    <!-- ===================== DASHBOARD ===================== -->
-    <div id="dashboard" style="display:none">
-      <div class="stat-grid" id="ir-stats"></div>
 
-      <div class="ir-card">
-        <h2>📈 Tranche 2 Milestone</h2>
+      <!-- ===================== DASHBOARD ===================== -->
+      <div id="dashboard" style="display:none">
+
+        <section class="ir-page on" data-page="overview">
+          <div class="irx-hero"><div class="irx-hero-row">
+            <div class="logos"><img src="img/logo-etel.webp" alt="ETEL"><img src="img/logo-master.webp" alt="ETEL master seal"></div>
+            <div><div class="eyebrow">ETEL Family Technology and Business Group</div><h2>Investor Relations</h2><p>Profit shares, payouts and deal sheets in one place. Every number is calculated from real ride commission and your recorded costs.</p></div>
+            <div class="irx-hero-actions">
+              <button class="btn btn-primary" data-go="deals">&#128221; Deal sheets</button>
+              <button class="btn btn-outline" data-go="distributions">&#129518; Run distribution</button>
+              <button class="btn btn-outline" id="hero-copy">&#128279; Copy deal link</button>
+            </div>
+          </div></div>
+          <div class="stat-grid" id="ir-stats"></div>
+          <div class="ir-grid2">
+            <div class="ir-card flat"><h2>&#127919; Profit Share pool</h2><div class="desc">2,000 Profit Shares in the pool: how many are sold, open for sale now, and still locked.</div><div class="irx-donutwrap" id="irx-pool"></div></div>
+            <div class="ir-card flat"><h2>&#128276; Needs your attention</h2><div class="desc">What is waiting for you right now.</div><div class="irx-attn" id="irx-attn"></div></div>
+          </div>
+          <div class="ir-card" style="margin-top:18px"><h2>&#128200; Net profit and investor payouts</h2><div class="desc">The latest locked periods. Gold is the net profit, blue is paid to investors.</div><div id="irx-chart"></div></div>
+          <div class="ir-grid2">
+            <div class="ir-card flat">
+        <h2>&#128202; Tranche 2 milestone</h2>
         <div class="desc">Rolling 4-week average trips/day, from real Delivery &amp; Ride data. Tranche 2 unlock is always a manual decision — this is a progress indicator only.</div>
         <div id="ir-milestone"></div>
       </div>
 
-      <div class="ir-card">
-        <h2>🎟 Tranches</h2>
+            <div class="ir-card flat">
+        <h2>&#127903; Tranches</h2>
         <div id="ir-tranches"></div>
       </div>
 
-      <div class="ir-card">
-        <h2>💸 Monthly Costs</h2>
-        <div class="desc">Itemized operating costs — each category has its own editable amount and a full change history.</div>
-        <table class="ir-table" id="ir-costs-table"><thead><tr><th>Category</th><th class="ir-num">Monthly Amount (ETB)</th><th>Status</th><th></th></tr></thead><tbody></tbody></table>
-        <button class="btn btn-outline" onclick="irOpenCostModal(null)" style="margin-top:12px">+ Add Category</button>
-      </div>
+          </div>
+        </section>
 
+        <section class="ir-page" data-page="deals">
       <div class="ir-card">
         <h2>&#128221; Deal Sheets</h2>
         <div class="desc">Investors fill in and sign the Investor Deal Sheet online, in English or Amharic. Review each one here: accept or reject it, then enroll the investor (this creates their portal login and, once the money is received, records their Profit Shares).</div>
         <div id="deal-links" style="font-size:12.5px;margin-bottom:12px"></div>
-        <table class="ir-table" id="ir-deals-table"><thead><tr>
+        <div class="ir-tools"><div class="ir-seg" id="deal-filter"><button data-f="all" class="on">All</button><button data-f="submitted">New</button><button data-f="accepted">Accepted</button><button data-f="enrolled">Enrolled</button><button data-f="rejected">Rejected</button></div><input class="ir-search" data-filter="#ir-deals-table" placeholder="Search deal sheets…" aria-label="Search deal sheets"></div>
+        <div class="ir-tablewrap"><table class="ir-table" id="ir-deals-table"><thead><tr>
           <th>Reference</th><th>Date</th><th>Investor</th><th class="ir-num">Profit Shares</th><th class="ir-num">Amount (ETB)</th><th>Lang</th><th>Status</th><th></th>
-        </tr></thead><tbody></tbody></table>
+        </tr></thead><tbody></tbody></table></div>
       </div>
 
+
+        </section>
+
+        <section class="ir-page" data-page="investors">
       <div class="ir-card">
-        <h2>👤 Investors</h2>
-        <table class="ir-table" id="ir-investors-table"><thead><tr>
+        <div class="ir-card-head"><div><h2>👤 Investors</h2><div class="desc">Everyone holding Profit Shares. Manage a person to edit their details, reset a password or add a purchase.</div></div><button class="btn btn-primary" onclick="irOpenInvestorModal(null)">+ Add investor</button></div>
+        <div class="ir-tools"><input class="ir-search" data-filter="#ir-investors-table" placeholder="Search investors…" aria-label="Search investors"></div>
+        <div class="ir-tablewrap"><table class="ir-table" id="ir-investors-table"><thead><tr>
           <th>Name</th><th class="ir-num">Shares</th><th class="ir-num">Invested (ETB)</th>
           <th class="ir-num">Received (ETB)</th><th class="ir-num">Remaining</th><th>Rate</th><th></th>
-        </tr></thead><tbody></tbody></table>
-        <button class="btn btn-outline" onclick="irOpenInvestorModal(null)" style="margin-top:12px">+ Add Investor</button>
+        </tr></thead><tbody></tbody></table></div>
       </div>
 
+
+        </section>
+
+        <section class="ir-page" data-page="distributions">
+      <div class="ir-card">
+        <h2>🧮 Run Monthly Distribution</h2>
+        <div class="desc">Computes the period's payout using real commission revenue and current costs, then previews before locking. Locked periods are permanent historical records.</div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
+          <div class="cf-field"><label>Period Start</label><input type="date" id="dist-start"></div>
+          <div class="cf-field"><label>Period End</label><input type="date" id="dist-end"></div>
+          <button class="btn btn-outline" onclick="irPreviewDistribution()">Preview</button>
+        </div>
+        <div id="dist-preview" style="margin-top:16px"></div>
+      </div>
+
+
+      <div class="ir-card">
+        <h2>📜 Distribution History</h2>
+        <div class="ir-tablewrap"><table class="ir-table" id="ir-periods-table"><thead><tr>
+          <th>Period</th><th class="ir-num">Net Profit</th><th class="ir-num">Investor Payout</th><th class="ir-num">Founder</th><th></th>
+        </tr></thead><tbody></tbody></table></div>
+      </div>
+
+        </section>
+
+        <section class="ir-page" data-page="costs">
+      <div class="ir-card">
+        <h2>💸 Monthly costs</h2>
+        <div class="desc">Itemized operating costs — each category has its own editable amount and a full change history.</div>
+        <div class="ir-tablewrap"><table class="ir-table" id="ir-costs-table"><thead><tr><th>Category</th><th class="ir-num">Monthly Amount (ETB)</th><th>Status</th><th></th></tr></thead><tbody></tbody></table></div>
+        <button class="btn btn-outline" onclick="irOpenCostModal(null)" style="margin-top:12px">+ Add category</button>
+      </div>
+
+
+        </section>
+
+        <section class="ir-page" data-page="planner">
       <div class="ir-card">
         <h2>🚀 Growth &amp; Goal Planner</h2>
         <div class="desc">Assumption-based, not historical. Set an assumed trip volume and fare structure below to project day/week/month/year profit — through the exact same investor pool math (real commission rate, real entered costs, the 2.5x payback boost, unsold-share bounce) a real distribution run uses, not a simplified estimate. Use this to show prospective investors what their projected return looks like at a given scale.</div>
@@ -154,25 +227,12 @@
         <div id="gp-output" style="margin-top:16px"></div>
       </div>
 
-      <div class="ir-card">
-        <h2>🧮 Run Monthly Distribution</h2>
-        <div class="desc">Computes the period's payout using real commission revenue and current costs, then previews before locking. Locked periods are permanent historical records.</div>
-        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
-          <div class="cf-field"><label>Period Start</label><input type="date" id="dist-start"></div>
-          <div class="cf-field"><label>Period End</label><input type="date" id="dist-end"></div>
-          <button class="btn btn-outline" onclick="irPreviewDistribution()">Preview</button>
-        </div>
-        <div id="dist-preview" style="margin-top:16px"></div>
-      </div>
 
-      <div class="ir-card">
-        <h2>📜 Distribution History</h2>
-        <table class="ir-table" id="ir-periods-table"><thead><tr>
-          <th>Period</th><th class="ir-num">Net Profit</th><th class="ir-num">Investor Payout</th><th class="ir-num">Founder</th><th></th>
-        </tr></thead><tbody></tbody></table>
+        </section>
       </div>
-    </div>
+    </main>
   </div>
+ </div>
 </div>
 
 <!-- ---------- Cost category modal ---------- -->
@@ -255,7 +315,8 @@
 
 <link rel="stylesheet" href="css/deal.css">
 <script src="js/deal-sheet.js"></script>
-<script src="js/admin.js"></script>
-<script src="js/admin-deals.js"></script>
+<script src="js/admin.js?v=2"></script>
+<script src="js/admin-deals.js?v=2"></script>
+<script src="js/ir-shell.js?v=1"></script>
 </body>
 </html>
