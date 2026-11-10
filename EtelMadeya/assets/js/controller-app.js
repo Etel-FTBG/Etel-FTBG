@@ -189,7 +189,7 @@ function renderVtypeGrid() {
         const title = allowed ? '' : 'title="Not served at this station today"';
         return `
         <button type="button" class="${cls}" data-id="${t.id}" ${click} ${title}>
-            <span class="vt-ic">${escHtml(t.icon || '')}</span>${escHtml(t.name || '')}
+            <span class="vt-ic">${vehPic(t.icon, t.name, 30)}</span>${escHtml(t.name || '')}
         </button>
     `;
     }).join('');
@@ -523,7 +523,7 @@ function displayQueue(queue) {
         <tr class="qr">
             <td class="q-pos">#${escHtml(v.display_position || v.position)}</td>
             <td class="q-pl">${escHtml(v.plate_number)}</td>
-            <td class="q-tp">${escHtml(v.icon || '')} ${escHtml(v.vehicle_type_name)}</td>
+            <td class="q-tp">${vehPic(v.icon, v.vehicle_type_name, 26)} ${escHtml(v.vehicle_type_name)}</td>
             <td>${parityBadge(v.plate_parity)}</td>
             <td class="q-tk">${escHtml(v.token)}</td>
             <td class="q-tm">${new Date(v.registered_at).toLocaleTimeString()}</td>
@@ -563,7 +563,7 @@ async function loadWaitingQueue() {
             <tr class="qr waiting-row">
                 <td class="q-pos">#${i + 1}</td>
                 <td class="q-pl">${escHtml(v.plate_number)}</td>
-                <td class="q-tp">${escHtml(v.icon || '')} ${escHtml(v.vehicle_type_name)}</td>
+                <td class="q-tp">${vehPic(v.icon, v.vehicle_type_name, 26)} ${escHtml(v.vehicle_type_name)}</td>
                 <td>${parityBadge(v.plate_parity)}</td>
                 <td class="q-tk">${escHtml(v.token)}</td>
                 <td class="q-tm">${new Date(v.registered_at).toLocaleTimeString()}</td>
@@ -596,7 +596,7 @@ async function loadVipQueue() {
             <tr class="qr vip-row">
                 <td class="q-pos">#${i + 1}</td>
                 <td class="q-pl">${escHtml(v.plate_number)}</td>
-                <td class="q-tp">${escHtml(v.icon || '')} ${escHtml(v.vehicle_type_name)}</td>
+                <td class="q-tp">${vehPic(v.icon, v.vehicle_type_name, 26)} ${escHtml(v.vehicle_type_name)}</td>
                 <td>${parityBadge(v.plate_parity)}</td>
                 <td class="q-tk">${escHtml(v.token)}</td>
                 <td class="q-tm">${new Date(v.registered_at).toLocaleTimeString()}</td>

@@ -42,6 +42,7 @@
                 <nav class="nav-links">
                     <a href="#" onclick="navigate('home')" class="nav-link active" data-page="home" data-t="Home|መነሻ">Home</a>
                     <a href="#" onclick="navigate('check')" class="nav-link" data-page="check" data-t="Check Position|ቦታ ፈልግ">Check Position</a>
+                    <a href="#" onclick="navigate('stations')" class="nav-link" data-page="stations" data-t="Live Stations|ቀጥታ ማደያዎች">Live Stations</a>
                     <a href="#" onclick="navigate('about')" class="nav-link hide-mobile" data-page="about" data-t="About|ስለ እኛ">About</a>
                 </nav>
             </div>
@@ -96,7 +97,9 @@
     const API = 'index.php?route=api';
     const SITE_NAME = '<?= SITE_NAME ?>';
     </script>
+    <script src="assets/js/madeya-vehicles.js?v=1"></script>
     <script src="assets/js/icons.js"></script>
+    <script src="assets/js/driver-stations.js?v=1"></script>
     <script src="assets/js/driver-app.js"></script>
 <script src="/delivery/js/etel-help-fab.js" data-app="madeya" defer></script>
 </body>

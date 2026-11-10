@@ -4,6 +4,7 @@
 // ═══════════════════════════════════════════════════════════════════
 
 require_once __DIR__ . '/../includes/config.php';
+require_once __DIR__ . '/../includes/stations.php';
 
 header('Content-Type: application/json; charset=utf-8');
 
@@ -223,6 +224,7 @@ try {
         
         case 'get_controllers':
             requireAdminAuth();
+            ensureStationColumns();
 
             $controllers = db()->fetchAll(
                 "SELECT * FROM controllers ORDER BY created_at DESC"
@@ -270,13 +272,18 @@ try {
             // local password column is legacy/NOT NULL schema and is
             // never checked against on login, so it's filled with an
             // unusable random value rather than collected from the admin.
+            ensureStationColumns();
             $id = db()->insert('controllers', [
                 'username' => $username,
                 'password' => password_hash(bin2hex(random_bytes(24)), PASSWORD_DEFAULT),
                 'full_name' => $fullName,
                 'phone' => $phone,
                 'station_name' => $stationName ?: 'Etel Madeya Gas Station',
-                'odd_even_rule' => $oddEvenRule
+                'odd_even_rule' => $oddEvenRule,
+                'latitude' => parseCoord($_POST['latitude'] ?? null, -90, 90),
+                'longitude' => parseCoord($_POST['longitude'] ?? null, -180, 180),
+                'is_open' => isset($_POST['is_open']) ? (int)(bool)$_POST['is_open'] : 1,
+                'open_hours' => sanitize($_POST['open_hours'] ?? '')
             ]);
 
             foreach ($vehicleTypeIds as $vtId) {
@@ -343,12 +350,17 @@ try {
                 jsonResponse(['success' => false, 'message' => 'Missing required fields'], 400);
             }
 
+            ensureStationColumns();
             $data = [
                 'full_name' => $fullName,
                 'phone' => $phone,
                 'station_name' => $stationName,
                 'is_active' => $isActive,
-                'odd_even_rule' => $oddEvenRule
+                'odd_even_rule' => $oddEvenRule,
+                'latitude' => parseCoord($_POST['latitude'] ?? null, -90, 90),
+                'longitude' => parseCoord($_POST['longitude'] ?? null, -180, 180),
+                'is_open' => isset($_POST['is_open']) ? (int)(bool)$_POST['is_open'] : 1,
+                'open_hours' => sanitize($_POST['open_hours'] ?? '')
             ];
 
             // Local password is never checked at sign-in (EtelID-only,
@@ -412,6 +424,7 @@ try {
             
         case 'create_vehicle_type':
             requireAdminAuth();
+            ensureVehicleIconLen();
             
             $name = sanitize($_POST['name'] ?? '');
             $nameAm = sanitize($_POST['name_am'] ?? '');
@@ -442,6 +455,7 @@ try {
             
         case 'update_vehicle_type':
             requireAdminAuth();
+            ensureVehicleIconLen();
             
             $id = (int)($_POST['id'] ?? 0);
             $name = sanitize($_POST['name'] ?? '');

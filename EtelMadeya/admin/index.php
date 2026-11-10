@@ -193,7 +193,7 @@
                             <button id="stationClose" class="am-btn" style="display:none">Close station</button>
                         </div>
                     </div>
-                    <div class="am-notice">Work any station as its controller: register vehicles, serve the queue, move to VIP or waiting, run reports and bulk import. Everything you do is recorded against that station.</div>
+                    <div class="am-notice show">Work any station as its controller: register vehicles, serve the queue, move to VIP or waiting, run reports and bulk import. Everything you do is recorded against that station.</div>
                     <div id="stationPicker" class="station-grid"><p class="empty-state">Loading stations...</p></div>
                     <iframe id="stationFrame" class="station-frame" title="Station console" style="display:none"></iframe>
                 </div>
@@ -323,6 +323,7 @@
     const API = 'api.php';
     let currentAdmin = null;
     </script>
+    <script src="../assets/js/madeya-vehicles.js?v=1"></script>
     <script src="../assets/js/icons.js"></script>
     <script src="../assets/js/admin-app.js"></script>
     <script src="../assets/js/admin-station.js?v=1"></script>
