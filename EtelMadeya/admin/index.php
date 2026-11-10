@@ -10,6 +10,8 @@
     <link rel="stylesheet" href="../assets/css/admin-style.css">
     <link rel="stylesheet" href="../assets/css/etel-premium.css">
     <link rel="stylesheet" href="../assets/css/admin-mainpanel.css">
+    <link rel="stylesheet" href="../assets/css/madeya-pro.css?v=1">
+    <script src="../assets/js/madeya-pro.js?v=1"></script>
     <link rel="icon" href="../assets/img/etel-logo.png">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
