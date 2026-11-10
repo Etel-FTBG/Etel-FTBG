@@ -937,15 +937,15 @@ if ( $etelid_pv && ! $etelid_pv['verified'] && ( $etelid_pv['channels'] || $etel
           <div class="p-action-icon">🧱</div>
           <span class="p-action-lbl">WordPress Admin</span>
         </a>
-        <a href="<?php echo esc_url(home_url('/admin')); ?>" class="p-action admin console">
+        <a href="<?php echo esc_url('/admin'); ?>" class="p-action admin console">
           <div class="p-action-icon">🏢</div>
           <span class="p-action-lbl">Group Admin</span>
         </a>
-        <a href="<?php echo esc_url(home_url('/delivery/admin.html')); ?>" class="p-action admin console">
+        <a href="<?php echo esc_url('/delivery/admin.html'); ?>" class="p-action admin console">
           <div class="p-action-icon">🚚</div>
           <span class="p-action-lbl">Delivery Admin</span>
         </a>
-        <a href="<?php echo esc_url(home_url('/EtelGroup/investors/admin.html')); ?>" class="p-action admin console">
+        <a href="<?php echo esc_url('/EtelGroup/investors/admin.html'); ?>" class="p-action admin console">
           <div class="p-action-icon">🤝</div>
           <span class="p-action-lbl">Investor Admin</span>
         </a>
