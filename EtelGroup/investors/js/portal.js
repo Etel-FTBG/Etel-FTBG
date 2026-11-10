@@ -65,19 +65,27 @@ async function ipLoadAll() {
   const me = res.data;
   document.getElementById('p-name').textContent = 'Welcome, ' + me.name;
   document.getElementById('p-demo-banner').style.display = me.is_demo ? 'flex' : 'none';
+  const pct = me.total_invested > 0 ? Math.max(0, Math.min(100, me.cumulative_received / me.total_invested * 100)) : 0;
   document.getElementById('p-stats').innerHTML = `
-    <div class="stat-card"><div class="label">Shares Owned</div><div class="val">${me.shares_owned}</div></div>
-    <div class="stat-card"><div class="label">Total Invested</div><div class="val">${ipMoney(me.total_invested)}</div></div>
-    <div class="stat-card premium"><div class="label">Cumulative Received</div><div class="val">${ipMoney(me.cumulative_received)}</div></div>
-    <div class="stat-card"><div class="label">Remaining Principal</div><div class="val">${ipMoney(me.remaining_principal)}</div></div>
+    <div class="stat-card"><div class="ic">🪙</div><div class="label">Shares owned</div><div class="val">${ipEsc(me.shares_owned)}</div></div>
+    <div class="stat-card"><div class="ic">💼</div><div class="label">Total invested (ETB)</div><div class="val">${ipMoney(me.total_invested)}</div></div>
+    <div class="stat-card premium"><div class="ic">💰</div><div class="label">Cumulative received (ETB)</div><div class="val">${ipMoney(me.cumulative_received)}</div></div>
+    <div class="stat-card"><div class="ic">🏁</div><div class="label">Remaining principal (ETB)</div><div class="val">${ipMoney(me.remaining_principal)}</div></div>
   `;
+  document.getElementById('p-prog').style.width = pct.toFixed(1) + '%';
+  document.getElementById('p-prog-pct').textContent = pct.toFixed(1) + '%';
+  document.getElementById('p-prog-a').textContent = 'Received ' + ipMoney(me.cumulative_received);
+  document.getElementById('p-prog-b').textContent = 'of ' + ipMoney(me.total_invested);
+  const C = 2 * Math.PI * 44;
+  document.getElementById('p-ring').innerHTML = `<svg viewBox="0 0 104 104"><circle cx="52" cy="52" r="44" fill="none" stroke="rgba(255,255,255,.16)" stroke-width="9"/><circle cx="52" cy="52" r="44" fill="none" stroke="#F2CC6B" stroke-width="9" stroke-linecap="round" stroke-dasharray="${(C * pct / 100).toFixed(1)} ${C.toFixed(1)}" transform="rotate(-90 52 52)"/></svg><div class="t">${Math.round(pct)}%<small>recovered</small></div>`;
   document.getElementById('p-rate').innerHTML = me.payback_phase
-    ? `<span class="pill new">2.5x Boosted Rate</span> <span style="color:var(--text-dim);font-size:12.5px;margin-left:8px">You're still in payback phase — you receive a 2.5x multiplier on your pro-rata pool share until your cumulative distributions reach your invested principal.</span>`
-    : `<span class="pill replied">1.0x Standard Rate</span> <span style="color:var(--text-dim);font-size:12.5px;margin-left:8px">You've fully recovered your invested principal — you now receive the standard 1.0x rate on all future distributions.</span>`;
+    ? `<span class="pill warn">2.5x boosted rate</span><p style="color:var(--mute);font-size:12.5px;margin-top:10px;line-height:1.6">You're still in the payback phase — you receive a 2.5x multiplier on your pro-rata pool share until your cumulative distributions reach your invested principal.</p>`
+    : `<span class="pill replied">1.0x standard rate</span><p style="color:var(--mute);font-size:12.5px;margin-top:10px;line-height:1.6">You've fully recovered your invested principal — you now receive the standard 1.0x rate on all future distributions.</p>`;
 
   const hRes = await ipApi('investor_payout_history');
   const hBody = document.querySelector('#p-history-table tbody');
   if (hRes.ok) {
+    ipChart(hRes.data);
     hBody.innerHTML = hRes.data.map(l => `
       <tr>
         <td>${l.period_start} → ${l.period_end}${l.is_demo == 1 ? '<span class="ir-demo-tag">DEMO</span>' : ''}</td>
@@ -96,4 +104,19 @@ async function ipLoadAll() {
       <tr><td>${p.purchase_date}</td><td class="ir-num">${p.shares}</td><td>Tranche ${p.tranche_number}</td><td class="ir-num">${ipMoney(p.amount_paid)}</td></tr>
     `).join('') || '<tr><td colspan="4" style="color:var(--text-dim)">No purchases recorded yet.</td></tr>';
   }
+}
+
+function ipChart(rows) {
+  const el = document.getElementById('p-chart');
+  const d = (rows || []).slice().reverse().slice(-12);
+  if (!d.length) { el.innerHTML = '<p style="color:var(--mute);font-size:12.5px">Your payouts will appear here after the first distribution.</p>'; return; }
+  const W = 360, H = 150, pad = 18, max = Math.max(1, ...d.map(r => Number(r.total_payout) || 0));
+  const bw = (W - pad * 2) / d.length;
+  let g = '';
+  d.forEach((r, i) => {
+    const v = Number(r.total_payout) || 0, h = Math.round((H - 44) * v / max), x = pad + i * bw + bw * .18, y = H - 22 - h;
+    g += `<rect x="${x.toFixed(1)}" y="${y}" width="${(bw * .64).toFixed(1)}" height="${Math.max(h, 2)}" rx="4" fill="url(#pg)"><title>${ipEsc(r.period_start)}: ${ipMoney(v)}</title></rect>`;
+    g += `<text class="ax" x="${(x + bw * .32).toFixed(1)}" y="${H - 8}" text-anchor="middle">${ipEsc(String(r.period_start).slice(5, 7))}</text>`;
+  });
+  el.innerHTML = `<svg viewBox="0 0 ${W} ${H}"><defs><linearGradient id="pg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f1d36a"/><stop offset="1" stop-color="#b8921f"/></linearGradient></defs><line x1="${pad}" y1="${H - 22}" x2="${W - pad}" y2="${H - 22}" stroke="currentColor" opacity=".18"/>${g}</svg>`;
 }
