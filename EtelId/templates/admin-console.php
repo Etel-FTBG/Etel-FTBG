@@ -28,6 +28,7 @@ $cfg = array(
         'qr'        => admin_url( 'admin.php?page=etel-id-qr-pregen' ),
         'members'   => admin_url( 'admin.php?page=etel-id' ),
     ),
+    'patch_nonce' => wp_create_nonce( 'etelid_patch_upload' ),
     'name'   => $member->full_name,
     'id'     => $member->etel_id,
     'org'    => $org_name,
@@ -58,12 +59,21 @@ $asset = function ( $rel ) { return esc_url( ETELID_URL . $rel . '?v=' . (int) @
       <a data-view="overview" class="on"><i>🏠</i>Dashboard</a>
       <div class="ec-nav-h">Identity</div>
       <a data-view="members"><i>🪪</i>Members</a>
+      <a data-view="issue"><i>➕</i>Issue new ID</a>
+      <a data-view="fayda"><i>🆔</i>Fayda register</a>
       <a data-view="roles"><i>🏢</i>Company roles</a>
+      <a data-view="print"><i>🖨</i>Print cards</a>
+      <div class="ec-nav-h">Security</div>
+      <a data-view="biometric"><i>🔏</i>Biometric</a>
+      <a data-view="checkin"><i>📋</i>Check-in log</a>
       <a data-view="audit"><i>🧾</i>Audit log</a>
+      <a data-view="password"><i>🔐</i>Password reset</a>
       <div class="ec-nav-h">System</div>
-      <a data-view="tools"><i>🧰</i>Tools &amp; settings</a>
+      <a data-view="settings"><i>⚙️</i>Settings</a>
+      <a data-view="updater"><i>🔄</i>Updater</a>
+      <a data-view="qr"><i>🔳</i>QR cache</a>
+      <a data-view="tools"><i>🔗</i>Other consoles</a>
       <a href="<?php echo esc_url( home_url( '/portal/' ) ); ?>"><i>👤</i>My portal</a>
-      <a href="<?php echo esc_url( home_url( '/admin' ) ); ?>"><i>🏢</i>Group admin</a>
     </nav>
     <div class="ec-side-foot"><b><?php echo esc_html( $member->full_name ); ?></b><?php echo esc_html( $member->etel_id ); ?></div>
   </aside>
