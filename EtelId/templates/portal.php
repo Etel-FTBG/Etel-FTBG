@@ -607,6 +607,10 @@ body{margin:0;font-family:'Cormorant Garamond',serif;overflow-x:hidden;}
 }
 .p-link-type-btn.active{border-color:var(--g2);color:var(--g1);background:rgba(212,175,55,.12);}
 </style>
+<?php /* Premium ETEL overlay (light/dark theme) - separate files so a stale cached copy of the old portal cannot hide it. */ ?>
+<link rel="stylesheet" href="<?php echo esc_url( ETELID_URL . 'public/css/etelid-portal-pro.css?v=' . (int) @filemtime( ETELID_PATH . 'public/css/etelid-portal-pro.css' ) ); ?>">
+<script>window.EtelIDPortalPro=<?php echo wp_json_encode( array( 'url' => ETELID_URL, 'name' => $member->full_name, 'id' => $member->etel_id, 'initials' => $init, 'photo' => $member->photo_url ) ); ?>;</script>
+<script src="<?php echo esc_url( ETELID_URL . 'public/js/etelid-portal-pro.js?v=' . (int) @filemtime( ETELID_PATH . 'public/js/etelid-portal-pro.js' ) ); ?>"></script>
 </head>
 <body>
 <div class="p-page">
@@ -923,6 +927,25 @@ if ( $etelid_pv && ! $etelid_pv['verified'] && ( $etelid_pv['channels'] || $etel
 
     <?php if ($is_admin): ?>
     <div class="p-admin-divider">
+      <span class="p-admin-label">Admin consoles</span>
+      <div class="p-admin-grid" style="margin-bottom:14px">
+        <a href="<?php echo esc_url(admin_url('admin.php?page=etel-id')); ?>" class="p-action admin console">
+          <div class="p-action-icon">🛡️</div>
+          <span class="p-action-lbl">Etel-ID Admin</span>
+        </a>
+        <a href="<?php echo esc_url(home_url('/admin')); ?>" class="p-action admin console">
+          <div class="p-action-icon">🏢</div>
+          <span class="p-action-lbl">Group Admin</span>
+        </a>
+        <a href="<?php echo esc_url(home_url('/delivery/admin.html')); ?>" class="p-action admin console">
+          <div class="p-action-icon">🚚</div>
+          <span class="p-action-lbl">Delivery Admin</span>
+        </a>
+        <a href="<?php echo esc_url(home_url('/EtelGroup/investors/admin.html')); ?>" class="p-action admin console">
+          <div class="p-action-icon">🤝</div>
+          <span class="p-action-lbl">Investor Admin</span>
+        </a>
+      </div>
       <span class="p-admin-label">Admin Tools</span>
       <div class="p-admin-grid">
         <a href="#" onclick="openFaydaModal(event)" class="p-action admin">
