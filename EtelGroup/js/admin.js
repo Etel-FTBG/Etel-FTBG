@@ -87,7 +87,11 @@ async function loadDashboard() {
   loadMessages();
 }
 
+let EGA_DAYS = null;
+function egaCss(n, f) { const v = getComputedStyle(document.body).getPropertyValue(n).trim(); return v || f; }
 function renderTrendChart(days) {
+  EGA_DAYS = days;
+  if (typeof Chart === 'undefined') return; // chart library blocked/offline - the rest of the dashboard still loads
   const ctx = document.getElementById('trend-chart').getContext('2d');
   const labels = days.map(d => d.date.slice(5));
   const counts = days.map(d => d.count);
@@ -100,7 +104,8 @@ function renderTrendChart(days) {
         label: 'Messages',
         data: counts,
         borderColor: '#D4AF37',
-        backgroundColor: 'rgba(212,175,55,.15)',
+        backgroundColor: 'rgba(212,175,55,.18)',
+        pointBackgroundColor: '#D4AF37',
         fill: true,
         tension: 0.35,
         pointRadius: 2,
@@ -110,8 +115,8 @@ function renderTrendChart(days) {
       responsive: true,
       plugins: { legend: { display: false } },
       scales: {
-        x: { grid: { display: false }, ticks: { color: '#a89a7a', font: { size: 10 } } },
-        y: { beginAtZero: true, ticks: { color: '#a89a7a', font: { size: 10 }, precision: 0 }, grid: { color: 'rgba(212,175,55,.08)' } },
+        x: { grid: { display: false }, ticks: { color: egaCss('--mute', '#a89a7a'), font: { size: 10 } } },
+        y: { beginAtZero: true, ticks: { color: egaCss('--mute', '#a89a7a'), font: { size: 10 }, precision: 0 }, grid: { color: 'rgba(212,175,55,.14)' } },
       },
     },
   });
@@ -282,7 +287,15 @@ async function loadFinanceTab() {
     // later-loaded delivery rule (e.g. admin-finance-hub-triggered code)
     // re-asserting the same properties.
     var financeScrollFix = document.createElement('style');
-    financeScrollFix.textContent = 'html,body{height:auto!important;min-height:100%!important;overflow:auto!important}';
+    financeScrollFix.textContent = 'html,body{height:auto!important;min-height:100%!important;overflow:auto!important}' +
+      // keep the premium Etel Group shell (theme background, topbar, sidebar) when delivery's bundle loads
+      'body,body.dark-theme{background:var(--bg)!important;color:var(--ink)!important;background-image:none!important}' +
+      '.irx-top h1{background:none!important;-webkit-text-fill-color:var(--ink)!important;color:var(--ink)!important;font:700 18px/1.2 var(--f-head)!important;letter-spacing:normal!important;text-transform:none!important}' +
+      '.irx-top .sub{font:400 11.5px var(--f-body)!important;color:var(--mute)!important;letter-spacing:normal!important;text-transform:none!important}' +
+      '.irx-top{background:color-mix(in srgb,var(--bg) 82%,transparent)!important;box-shadow:none!important}' +
+      '.irx-brand b{font:800 14px var(--f-head)!important;letter-spacing:normal!important;text-transform:none!important;color:#F2CC6B!important}' +
+      '.irx-brand small,.irx-side-foot,.irx-nav a,.irx-nav-h{font-family:var(--f-body)!important;letter-spacing:normal!important}' +
+      '.irx-top .btn{font:600 12px var(--f-body)!important;text-transform:none!important;letter-spacing:normal!important}';
     document.head.appendChild(financeScrollFix);
     await egaLoadScript('../delivery/js/core.js');
     // core.js's ETEL.api auto-detects the API base from a "/delivery/"
@@ -724,3 +737,5 @@ function renderActivityPagination(page, totalPages) {
   html += `<button ${page >= totalPages ? 'disabled' : ''} onclick="loadActivityTab(${page + 1})">Next ›</button>`;
   el.innerHTML = html;
 }
+
+document.addEventListener('ir:theme', function () { if (EGA_DAYS && document.getElementById('trend-chart')) renderTrendChart(EGA_DAYS); });

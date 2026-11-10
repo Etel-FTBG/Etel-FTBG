@@ -3,62 +3,85 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#D4AF37">
 <title>Investor Portal — Etel Delivery & Ride</title>
-<link rel="stylesheet" href="../css/admin.css">
-<link rel="stylesheet" href="css/investors.css">
+<link rel="stylesheet" href="css/ir-pro.css?v=2">
 </head>
 <body>
 
 <div id="login-screen" class="ir-login-wrap">
   <div class="login-card">
-    <div class="login-mark">λE</div>
+    <button class="irx-theme" data-theme-toggle type="button" aria-label="Toggle theme">🌙</button>
+    <div class="login-logos"><img src="img/logo-etel.webp" alt="ETEL"><img src="img/logo-master.webp" alt="ETEL master seal"></div>
     <h1>Investor Portal</h1>
-    <div class="sub">Etel Delivery &amp; Ride</div>
+    <div class="sub">Etel Delivery &amp; Ride · Profit-share holders</div>
     <div class="login-err" id="login-err"></div>
-    <input type="text" id="login-identifier" placeholder="Your login identifier (email or phone)" autofocus>
-    <input type="password" id="login-password" placeholder="Password">
-    <button class="btn btn-primary" id="login-btn" style="width:100%" onclick="ipDoLogin()">Sign In</button>
+    <input type="text" id="login-identifier" placeholder="Your login (email or phone)" autocomplete="username" autofocus>
+    <input type="password" id="login-password" placeholder="Password" autocomplete="current-password">
+    <button class="btn btn-primary" id="login-btn" onclick="ipDoLogin()">Sign In</button>
   </div>
 </div>
 
-<div id="shell" style="display:none">
-  <div class="ir-shell">
-    <div class="ir-topbar">
-      <div>
-        <h1 id="p-name">Welcome</h1>
-        <div class="sub">Etel Delivery &amp; Ride — Your Holding</div>
-      </div>
-      <div class="ir-spacer"></div>
-      <button class="btn btn-danger" onclick="ipLogout()">Sign Out</button>
-    </div>
+<div id="shell">
+  <header class="ipx-top">
+    <div class="ipx-brand"><div class="lg"><img src="img/logo-etel.webp" alt="ETEL"><img src="img/logo-master.webp" alt="ETEL master seal"></div>
+      <div><b>ETEL Investors</b><small>Your holding</small></div></div>
+    <div class="irx-spacer"></div>
+    <button class="irx-theme" data-theme-toggle type="button" aria-label="Toggle theme">🌙</button>
+    <button class="btn btn-danger btn-sm" type="button" onclick="ipLogout()">Sign out</button>
+  </header>
 
-    <div id="p-demo-banner" class="ir-demo-banner" style="display:none">
-      ⚠ This is a DEMO account. Numbers shown are sample data for demonstration purposes only.
-    </div>
+  <main class="ipx-main">
+    <div id="p-demo-banner" class="ir-demo-banner" style="display:none">⚠ This is a DEMO account. Numbers shown are sample data for demonstration purposes only.</div>
+
+    <section class="irx-hero">
+      <div class="irx-hero-row">
+        <div class="logos"><img src="img/logo-etel.webp" alt="ETEL"><img src="img/logo-master.webp" alt="ETEL master seal"></div>
+        <div>
+          <div class="eyebrow">Profit-share investor</div>
+          <h2 id="p-name">Welcome</h2>
+          <p>Etel Delivery &amp; Ride — your holding, your payouts and your purchases, always up to date.</p>
+        </div>
+        <div class="ipx-ring" id="p-ring" title="Principal recovered"></div>
+      </div>
+    </section>
 
     <div class="stat-grid" id="p-stats"></div>
 
-    <div class="ir-card">
-      <h2>Current Rate</h2>
-      <div id="p-rate"></div>
+    <div class="ir-grid2">
+      <div class="ir-card">
+        <h2>🎯 Current rate</h2>
+        <div id="p-rate" style="margin-top:10px"></div>
+        <div style="margin-top:16px">
+          <div class="ipx-row"><span>Principal recovered</span><b id="p-prog-pct">0%</b></div>
+          <div class="ir-progress-track"><div class="ir-progress-fill" id="p-prog" style="width:0"></div></div>
+          <div class="ipx-row"><span id="p-prog-a"></span><span id="p-prog-b"></span></div>
+        </div>
+      </div>
+      <div class="ir-card">
+        <h2>📊 Payouts by period</h2>
+        <div id="p-chart" class="ipx-chart"></div>
+      </div>
     </div>
 
     <div class="ir-card">
-      <h2>📜 Payout History</h2>
-      <table class="ir-table" id="p-history-table"><thead><tr>
-        <th>Period</th><th class="ir-num">Shares</th><th>Rate</th><th class="ir-num">Payout</th><th class="ir-num">Cumulative After</th>
-      </tr></thead><tbody></tbody></table>
+      <h2>📜 Payout history</h2>
+      <div class="ir-tablewrap"><table class="ir-table" id="p-history-table"><thead><tr>
+        <th>Period</th><th class="ir-num">Shares</th><th>Rate</th><th class="ir-num">Payout</th><th class="ir-num">Cumulative after</th>
+      </tr></thead><tbody></tbody></table></div>
     </div>
 
     <div class="ir-card">
-      <h2>🧾 Share Purchases</h2>
-      <table class="ir-table" id="p-purchases-table"><thead><tr>
+      <h2>🧾 Share purchases</h2>
+      <div class="ir-tablewrap"><table class="ir-table" id="p-purchases-table"><thead><tr>
         <th>Date</th><th class="ir-num">Shares</th><th>Tranche</th><th class="ir-num">Amount</th>
-      </tr></thead><tbody></tbody></table>
+      </tr></thead><tbody></tbody></table></div>
     </div>
-  </div>
+    <p class="ipx-foot">Etel Delivery &amp; Ride · Profit-share investor relations · ethelmarket.com</p>
+  </main>
 </div>
 
-<script src="js/portal.js"></script>
+<script src="../js/eg-theme.js"></script>
+<script src="js/portal.js?v=2"></script>
 </body>
 </html>

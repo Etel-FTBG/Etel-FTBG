@@ -7,7 +7,7 @@
 <title>Etel Group — Admin</title>
 <link rel="apple-touch-icon" href="https://ethelmarket.com/EtelGroup/icons/icon-192.png" sizes="180x180">
 <link rel="manifest" href="EtelGroup/site.webmanifest">
-<link rel="stylesheet" href="EtelGroup/css/admin.css">
+<link rel="stylesheet" href="EtelGroup/investors/css/ir-pro.css?v=2">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
 <script>
   if ('serviceWorker' in navigator) {
@@ -22,7 +22,8 @@
 <!-- LOGIN -->
 <div id="login-screen">
   <div class="login-card">
-    <div class="login-mark">ኢE</div>
+    <button class="irx-theme" data-theme-toggle type="button" aria-label="Toggle theme">🌙</button>
+    <div class="login-logos"><img src="EtelGroup/icons/etelgroup-logo.png" alt="Etel Group"><img src="EtelGroup/investors/img/logo-master.webp" alt="ETEL master seal"></div>
     <h1>Etel Group Admin</h1>
     <div class="sub">Sign in with your EtelID</div>
     <div class="login-err" id="login-err"></div>
@@ -35,41 +36,63 @@
 
 <!-- SHELL -->
 <div id="shell">
-  <header class="topbar">
-    <div class="mark">ኢE</div>
-    <div>
-      <h1>Etel Group</h1>
-      <div class="sub">Admin Dashboard</div>
-    </div>
-    <div class="spacer"></div>
-    <div class="tabs" style="margin-right:8px">
-      <button class="tab active" id="tab-nav-dashboard" onclick="switchTab('dashboard')">Dashboard</button>
-      <button class="tab" id="tab-nav-companies" onclick="switchTab('companies')">Companies</button>
-      <button class="tab" id="tab-nav-employees" onclick="switchTab('employees')">Employees</button>
-      <button class="tab" id="tab-nav-activity" onclick="switchTab('activity')">Activity</button>
-      <button class="tab" id="tab-nav-finance" onclick="switchTab('finance')">Finance &amp; Planning</button>
-    </div>
-    <button class="btn btn-danger" onclick="doLogout()">Sign Out</button>
+ <div class="irx">
+  <aside class="irx-side" id="irx-side">
+    <div class="irx-brand"><div class="lg"><img src="EtelGroup/icons/etelgroup-logo.png" alt="Etel Group"><img src="EtelGroup/investors/img/logo-master.webp" alt="ETEL master seal"></div><div><b>ETEL Group</b><small>ኢትኤል ቡድን · Admin</small></div></div>
+    <nav class="irx-nav" id="irx-nav">
+      <div class="irx-nav-h">Overview</div>
+      <a class="on" data-tab="dashboard" id="tab-nav-dashboard" onclick="switchTab('dashboard')"><i>🏠</i>Dashboard</a>
+      <div class="irx-nav-h">Group</div>
+      <a data-tab="companies" id="tab-nav-companies" onclick="switchTab('companies')"><i>🏢</i>Companies</a>
+      <a data-tab="employees" id="tab-nav-employees" onclick="switchTab('employees')"><i>👥</i>Employees</a>
+      <a data-tab="activity" id="tab-nav-activity" onclick="switchTab('activity')"><i>🧾</i>Activity</a>
+      <div class="irx-nav-h">Money</div>
+      <a data-tab="finance" id="tab-nav-finance" onclick="switchTab('finance')"><i>📈</i>Finance &amp; Planning</a>
+      <div class="irx-nav-h">More</div>
+      <a href="EtelGroup/investors/admin.html"><i>🤝</i>Investor relations</a>
+      <a href="delivery/admin.html"><i>🚚</i>Delivery admin</a>
+    </nav>
+    <div class="irx-side-foot"><b>Etel Family Technology &amp; Business Group</b>Hawassa · ethelmarket.com</div>
+  </aside>
+  <div class="irx-scrim" id="irx-scrim"></div>
+  <div class="irx-body">
+  <header class="irx-top">
+    <button class="irx-burger" id="irx-burger" type="button" aria-label="Menu">☰</button>
+    <div><h1 id="irx-title">Dashboard</h1><div class="sub" id="irx-sub">Messages and enquiries at a glance</div></div>
+    <div class="irx-spacer"></div>
+    <button class="irx-theme" data-theme-toggle type="button" aria-label="Toggle theme">🌙</button>
+    <button class="btn btn-danger btn-sm" type="button" onclick="doLogout()">Sign out</button>
   </header>
+  <div class="irx-main">
 
   <main>
     <!-- DASHBOARD TAB -->
     <section id="panel-dashboard">
+      <section class="irx-hero">
+        <div class="irx-hero-row">
+          <div class="logos"><img src="EtelGroup/icons/etelgroup-logo.png" alt="Etel Group"><img src="EtelGroup/investors/img/logo-master.webp" alt="ETEL master seal"></div>
+          <div>
+            <div class="eyebrow">Etel Family Technology &amp; Business Group</div>
+            <h2>Welcome back</h2>
+            <p>Every company, employee and enquiry across the Etel Group, in one place.</p>
+          </div>
+        </div>
+      </section>
       <div class="stat-grid">
         <div class="stat-card premium">
-          <div class="label">Total Messages</div>
+          <div class="ic">✉️</div><div class="label">Total Messages</div>
           <div class="val" id="stat-total">—</div>
         </div>
         <div class="stat-card">
-          <div class="label">New</div>
+          <div class="ic">🔔</div><div class="label">New</div>
           <div class="val" id="stat-new">—</div>
         </div>
         <div class="stat-card">
-          <div class="label">Replied</div>
+          <div class="ic">✅</div><div class="label">Replied</div>
           <div class="val" id="stat-replied">—</div>
         </div>
         <div class="stat-card">
-          <div class="label">This Week</div>
+          <div class="ic">📅</div><div class="label">This Week</div>
           <div class="val" id="stat-week">—</div>
         </div>
       </div>
@@ -217,6 +240,9 @@
       </div>
     </section>
   </main>
+  </div>
+  </div>
+ </div>
 </div>
 
 <!-- MESSAGE DETAIL MODAL -->
@@ -297,6 +323,7 @@
   </div>
 </div>
 
-<script src="EtelGroup/js/admin.js"></script>
+<script src="EtelGroup/js/admin.js?v=2"></script>
+<script src="EtelGroup/js/eg-theme.js?v=1"></script>
 </body>
 </html>
