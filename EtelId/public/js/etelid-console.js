@@ -27,7 +27,10 @@ function err(res) { return (res && res.data && res.data.message) || 'Something w
 var tt; function toast(msg, bad) { var t = $('ec-toast'); t.textContent = msg; t.className = 'ec-toast show' + (bad ? ' err' : ''); clearTimeout(tt); tt = setTimeout(function () { t.className = 'ec-toast' + (bad ? ' err' : ''); }, 3200); }
 
 /* ---------- navigation ---------- */
-var TITLES = { overview: ['Dashboard', 'Your Etel-ID system at a glance'], members: ['Members', 'Search, review and manage every Etel-ID'], roles: ['Company roles', 'Who is admin or staff at each Etel company'], audit: ['Audit log', 'Every identity event, newest first'], tools: ['Tools & settings', 'Everything else, one tap away'] };
+var TITLES = { overview: ['Dashboard', 'Your Etel-ID system at a glance'], members: ['Members', 'Search, review and manage every Etel-ID'], roles: ['Company roles', 'Who is admin or staff at each Etel company'], audit: ['Audit log', 'Every identity event, newest first'], tools: ['Other consoles', 'Jump to the rest of the Etel system'],
+  issue: ['Issue new ID', 'Create a corporate Etel-ID card'], fayda: ['Fayda quick register', 'Register a person from their Fayda ID photos'], print: ['Print cards', 'Find a member and open the print-ready card'],
+  biometric: ['Biometric', 'Device biometrics, NFC cards and two-step sign-in'], checkin: ['Check-in log', 'Fingerprint, face, NFC and device scans'], password: ['Password reset', 'Set a new password for a member'],
+  settings: ['Settings', 'Organisation, ID rules, messaging and app links'], updater: ['Updater', 'Deploy a plugin patch (.zip)'], qr: ['QR cache', 'Pre-generate QR images so cards load instantly'] };
 var VIEWS = {};
 function show(name) {
   if (!VIEWS[name]) name = 'overview';
@@ -50,7 +53,7 @@ VIEWS.overview = function () {
     var tot = m.data.total || total;
     var h = '<section class="ec-hero"><div class="ec-hero-row"><div class="logos"><img src="' + esc(C.url) + 'public/images/etel-master-coin-128.webp" alt=""><img src="' + esc(C.url) + 'public/images/etel-delivery-coin.webp" alt=""></div>' +
       '<div><div class="eyebrow">Etel-ID · Corporate identity</div><h2>Welcome, ' + esc(C.name) + '</h2><p>' + num(tot) + ' Etel-IDs issued across every Etel company.</p></div>' +
-      '<div class="ec-hero-actions"><a class="btn btn-primary btn-sm" href="' + esc(C.wp.issue) + '">+ Issue new ID</a><a class="btn btn-outline btn-sm" data-view="members">Open members</a></div></div></section>';
+      '<div class="ec-hero-actions"><a class="btn btn-primary btn-sm" data-view="issue">+ Issue new ID</a><a class="btn btn-outline btn-sm" data-view="members">Open members</a></div></div></section>';
     h += '<div class="ec-stats">' +
       stat('gold', '🪪', 'Total issued', num(tot), 'All time') + stat('', '✅', 'Active', num(st.active), 'Valid IDs') + stat('', '⏸️', 'Suspended', num(st.suspended), 'Under review') +
       stat('', '🚫', 'Revoked', num(st.revoked), 'Cancelled') + stat('', '⌛', 'Expired', num(st.expired), 'Need renewal') + '</div>';
@@ -89,7 +92,7 @@ function membersTable(rows, compact) {
 VIEWS.members = function () {
   VIEW.innerHTML = '<div class="ec-card"><div class="ec-tools"><input class="ec-search" id="ms-q" placeholder="Search name, Etel-ID, phone, FIN…" value="' + esc(MS.q) + '">' +
     '<div class="ec-seg" id="ms-seg">' + ['', 'active', 'suspended', 'revoked', 'expired'].map(function (s) { return '<button data-s="' + s + '" class="' + (MS.status === s ? 'on' : '') + '">' + (s ? s.charAt(0).toUpperCase() + s.slice(1) : 'All') + '</button>'; }).join('') + '</div>' +
-    '<a class="btn btn-primary btn-sm" href="' + esc(C.wp.issue) + '">+ Issue ID</a></div><div id="ms-body"><div class="ec-loading">Loading…</div></div></div>';
+    '<a class="btn btn-primary btn-sm" data-view="issue">+ Issue ID</a></div><div id="ms-body"><div class="ec-loading">Loading…</div></div></div>';
   var t; $('ms-q').addEventListener('input', function (e) { clearTimeout(t); t = setTimeout(function () { MS.q = e.target.value.trim(); MS.page = 1; loadMembers(); }, 300); });
   $('ms-seg').addEventListener('click', function (e) { var b = e.target.closest('button'); if (!b) return; MS.status = b.getAttribute('data-s'); MS.page = 1; var bs = this.querySelectorAll('button'); for (var i = 0; i < bs.length; i++) bs[i].classList.toggle('on', bs[i] === b); loadMembers(); });
   loadMembers();
@@ -173,14 +176,194 @@ function loadAudit() {
   });
 }
 
-/* ---------- tools ---------- */
+/* ---------- other consoles ---------- */
 VIEWS.tools = function () {
-  var W = C.wp, T = function (ic, l, s, href) { return '<a class="ec-tile" href="' + esc(href) + '"><i>' + ic + '</i>' + l + '<small>' + s + '</small></a>'; };
-  VIEW.innerHTML = '<div class="ec-card"><h2>🧰 Identity tools</h2><div class="desc">These open the full Etel-ID tools in WordPress. The day-to-day work (members, roles, audit) is right here in the console.</div><div class="ec-tiles">' +
-    T('➕', 'Issue new ID', 'Create a card', W.issue) + T('🪪', 'Fayda quick register', 'Register with ID photos', W.fayda) + T('🖨', 'View & print', 'Card preview and print', W.print) +
-    T('🔏', 'Biometric', 'Face / fingerprint', W.biometric) + T('📋', 'Check-in log', 'Scan history', W.checkin) + T('🔐', 'Password reset', 'Bulk and manual', W.password) + '</div></div>' +
-    '<div class="ec-card"><h2>⚙️ System</h2><div class="ec-tiles" style="margin-top:12px">' + T('⚙️', 'Settings', 'Organisation, apps, SMTP', W.settings) + T('🔄', 'Updater', 'Plugin versions', W.updater) + T('🔳', 'QR cache', 'Backfill QR images', W.qr) + T('🧑‍💼', 'WordPress members', 'Classic member list', W.members) + '</div></div>' +
-    '<div class="ec-card"><h2>🔗 Other consoles</h2><div class="ec-tiles" style="margin-top:12px">' + T('👤', 'My portal', 'Member view', C.portal) + T('🏢', 'Group admin', 'Companies & messages', '/admin') + T('🚚', 'Delivery admin', 'Rides & deliveries', '/delivery/admin.html') + T('🤝', 'Investor admin', 'Profit-share desk', '/EtelGroup/investors/admin.html') + '</div></div>';
+  var T = function (ic, l, s, href) { return '<a class="ec-tile" href="' + esc(href) + '"><i>' + ic + '</i>' + l + '<small>' + s + '</small></a>'; };
+  VIEW.innerHTML = '<div class="ec-card"><h2>🔗 Other consoles</h2><div class="ec-tiles" style="margin-top:12px">' + T('👤', 'My portal', 'Member view', C.portal) + T('🏢', 'Group admin', 'Companies & messages', '/admin') + T('🚚', 'Delivery admin', 'Rides & deliveries', '/delivery/admin.html') + T('🤝', 'Investor admin', 'Profit-share desk', '/EtelGroup/investors/admin.html') + T('🧱', 'WordPress admin', 'Classic Etel-ID pages', C.wp.members) + '</div></div>';
+};
+
+/* ---------- shared form helpers ---------- */
+function fld(id, label, type, ph, extra) { return '<div class="ec-field"><label for="' + id + '">' + label + '</label><input class="ec-in" id="' + id + '" type="' + (type || 'text') + '" placeholder="' + esc(ph || '') + '" ' + (extra || '') + '></div>'; }
+function sel(id, label, opts, first) { return '<div class="ec-field"><label for="' + id + '">' + label + '</label><select class="ec-in" id="' + id + '">' + (first ? '<option value="">' + first + '</option>' : '') + opts.map(function (o) { return '<option value="' + esc(o[0]) + '">' + esc(o[1]) + '</option>'; }).join('') + '</select></div>'; }
+function val(id) { var e = $(id); return e ? e.value.trim() : ''; }
+function collect(ids) { var o = {}; ids.forEach(function (k) { o[k] = val('f-' + k); }); return o; }
+function busy(btn, on, txt) { if (!btn) return; btn.disabled = on; if (txt) btn.dataset.t = btn.dataset.t || btn.textContent; btn.textContent = on ? (txt || 'Working…') : (btn.dataset.t || btn.textContent); }
+
+/* ---------- issue new ID ---------- */
+VIEWS.issue = function () {
+  api('etelid_console_issue_options', {}).then(function (r) {
+    if (!r.success) { VIEW.innerHTML = '<div class="ec-empty">' + esc(err(r)) + '</div>'; return; }
+    var o = r.data;
+    VIEW.innerHTML = '<div class="ec-card"><h2>🪪 Member details</h2><div class="desc">Fields marked * are required. The number is marked verified because staff issue it face to face.</div>' +
+      '<div class="ec-sec">Personal</div><div class="ec-form">' + fld('f-full_name', 'Full name (Latin) *', 'text', 'e.g. Dagmawi Bekele') + fld('f-full_name_am', 'Full name (Amharic)', 'text', 'ዳግማዊ በቀለ') + fld('f-dob', 'Date of birth *', 'date') +
+      sel('f-sex', 'Sex', [['M', 'Male'], ['F', 'Female']], '—') + sel('f-blood_type', 'Blood type', o.blood.map(function (b) { return [b, b]; }), '—') + fld('f-nationality', 'Nationality', 'text', 'Ethiopian') + fld('f-phone', 'Phone *', 'tel', '+251 9XX XXX XXX') + fld('f-email', 'Email', 'email', 'member@etelgroup.com') + '</div>' +
+      '<div class="ec-sec">Address</div><div class="ec-form">' + sel('f-region', 'Region', o.regions.map(function (x) { return [x, x]; }), '—') + fld('f-zone', 'Zone / city') + fld('f-woreda', 'Woreda / sub-city') + '</div>' +
+      '<div class="ec-sec">Company &amp; access</div><div class="ec-form">' + sel('f-primary_company_slug', 'Primary company', o.companies.map(function (c) { return [c.slug, c.name]; }), '') + fld('f-role', 'Role', 'text', 'Dispatcher, Manager…') + fld('f-department', 'Department') + fld('f-employee_number', 'Employee number') + sel('f-tier', 'Tier', o.tiers.map(function (t) { return [t.slug, t.label]; }), '') + '</div>' +
+      '<div class="ec-field" style="margin-top:12px"><label for="f-notes">Notes</label><textarea class="ec-in" id="f-notes" rows="2"></textarea></div>' +
+      '<div class="ec-actions"><button class="btn btn-primary" id="is-go">Issue Etel-ID</button></div><div id="is-out"></div></div>';
+    $('f-nationality').value = 'Ethiopian';
+    $('is-go').addEventListener('click', function () {
+      var d = collect(['full_name', 'full_name_am', 'dob', 'sex', 'blood_type', 'nationality', 'phone', 'email', 'region', 'zone', 'woreda', 'primary_company_slug', 'role', 'department', 'employee_number', 'tier', 'notes']);
+      busy(this, true, 'Issuing…'); var btn = this;
+      api('etelid_console_issue', d).then(function (x) {
+        busy(btn, false);
+        if (!x.success) { toast(err(x), true); return; }
+        $('is-out').innerHTML = '<div class="ec-ok">✅ <b>' + esc(x.data.name) + '</b> now has <code>' + esc(x.data.etel_id) + '</code>. <a href="' + esc(C.print + encodeURIComponent(x.data.etel_id)) + '/" target="_blank">Open the card →</a> · <a data-open="' + x.data.id + '" style="cursor:pointer;text-decoration:underline">View profile</a></div>';
+        toast('Etel-ID issued'); ['full_name', 'full_name_am', 'dob', 'phone', 'email', 'zone', 'woreda', 'role', 'department', 'employee_number', 'notes'].forEach(function (k) { $('f-' + k).value = ''; });
+      });
+    });
+  });
+};
+
+/* ---------- Fayda quick register ---------- */
+var FY = { front: '', back: '' };
+function readImage(file, cb) {
+  var rd = new FileReader();
+  rd.onload = function () { var img = new Image(); img.onload = function () { var M = 1400, k = Math.min(1, M / Math.max(img.width, img.height)), c = document.createElement('canvas'); c.width = Math.round(img.width * k); c.height = Math.round(img.height * k); c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); cb(c.toDataURL('image/jpeg', 0.82)); }; img.onerror = function () { toast('Could not read that image', true); }; img.src = rd.result; };
+  rd.readAsDataURL(file);
+}
+VIEWS.fayda = function () {
+  FY = { front: '', back: '' };
+  api('etelid_console_issue_options', {}).then(function (r) {
+    var o = r.success ? r.data : { companies: [], regions: [] };
+    var shot = function (k, l) { return '<div class="ec-field"><label>' + l + '</label><label class="ec-shot" id="sh-' + k + '"><input type="file" accept="image/*" capture="environment" data-shot="' + k + '" hidden><span>📷 Tap to add photo</span></label></div>'; };
+    VIEW.innerHTML = '<div class="ec-card"><h2>🆔 Fayda ID photos</h2><div class="desc">Photograph both sides of the person’s Fayda ID. The front photo becomes their profile picture. Then confirm the details below.</div><div class="ec-form">' + shot('front', 'Front of ID') + shot('back', 'Back of ID') + '</div>' +
+      '<div class="ec-sec">Details</div><div class="ec-form">' + fld('f-full_name', 'Full name *') + fld('f-full_name_am', 'Full name (Amharic)') + fld('f-dob', 'Date of birth *', 'date') + sel('f-sex', 'Sex', [['M', 'Male'], ['F', 'Female']], '—') + fld('f-phone', 'Phone *', 'tel', '+251 9XX XXX XXX') + fld('f-email', 'Email', 'email') + fld('f-fayda_fin', 'Fayda FIN') + fld('f-nationality', 'Nationality', 'text', 'Ethiopian') +
+      sel('f-region', 'Region', (o.regions || []).map(function (x) { return [x, x]; }), '—') + fld('f-zone', 'Zone / city') + fld('f-woreda', 'Woreda') + sel('f-primary_company_slug', 'Primary company', (o.companies || []).map(function (c) { return [c.slug, c.name]; }), '') + fld('f-role', 'Role') + fld('f-department', 'Department') + fld('f-employee_number', 'Employee number') +
+      sel('f-notify_channel', 'Send login details by', [['auto', 'Automatic'], ['whatsapp', 'WhatsApp'], ['telegram', 'Telegram'], ['none', 'Do not send']], '') + '</div>' +
+      '<div class="ec-actions"><button class="btn btn-primary" id="fy-go">Register member</button></div><div id="fy-out"></div></div>';
+    $('f-nationality').value = 'Ethiopian';
+    VIEW.addEventListener('change', function onch(e) {
+      var inp = e.target; if (!inp || !inp.getAttribute || !inp.getAttribute('data-shot')) return;
+      var k = inp.getAttribute('data-shot'); if (!inp.files[0]) return;
+      readImage(inp.files[0], function (d) { FY[k] = d; $('sh-' + k).innerHTML = '<img src="' + d + '" alt=""><input type="file" accept="image/*" capture="environment" data-shot="' + k + '" hidden>'; });
+    });
+    $('fy-go').addEventListener('click', function () {
+      var d = collect(['full_name', 'full_name_am', 'dob', 'sex', 'phone', 'email', 'fayda_fin', 'nationality', 'region', 'zone', 'woreda', 'primary_company_slug', 'role', 'department', 'employee_number', 'notify_channel']);
+      if (!d.full_name || !d.dob || !d.phone) { toast('Name, date of birth and phone are required', true); return; }
+      d.fayda_front_image = FY.front; d.fayda_back_image = FY.back; d.notes = '';
+      busy(this, true, 'Registering…'); var btn = this;
+      api('etelid_fayda_quick_register', d).then(function (x) {
+        busy(btn, false);
+        if (!x.success) { toast(err(x), true); return; }
+        var n = x.data.notify || {}, h = '<div class="ec-ok">✅ <b>' + esc(x.data.etel_id) + '</b> registered.<br>Temporary password: <code>' + esc(x.data.temp_password) + '</code> (they must change it at first sign-in).';
+        if (n.auto_sent) h += '<br>Login details were sent automatically.'; else { if (n.whatsapp_link) h += '<br><a href="' + esc(n.whatsapp_link) + '" target="_blank">Send via WhatsApp →</a>'; if (n.telegram_link) h += '<br><a href="' + esc(n.telegram_link) + '" target="_blank">Send via Telegram →</a>'; if (n.auto_error) h += '<br><small>' + esc(n.auto_error) + '</small>'; }
+        $('fy-out').innerHTML = h + '</div>'; toast('Member registered');
+      });
+    });
+  });
+};
+
+/* ---------- find a member (print cards / password reset) ---------- */
+function picker(mode) {
+  VIEW.innerHTML = '<div class="ec-card"><div class="ec-tools"><input class="ec-search" id="pk-q" placeholder="Search name, Etel-ID or phone…"></div><div id="pk-body"><div class="ec-empty">Type a name, Etel-ID or phone to find a member.</div></div></div>';
+  var t; $('pk-q').addEventListener('input', function (e) { clearTimeout(t); var q = e.target.value.trim(); t = setTimeout(function () {
+    if (q.length < 2) { $('pk-body').innerHTML = '<div class="ec-empty">Type at least 2 characters.</div>'; return; }
+    api('etelid_panel_members_list', { page: 1, search: q }).then(function (r) {
+      if (!r.success) { $('pk-body').innerHTML = '<div class="ec-empty">' + esc(err(r)) + '</div>'; return; }
+      var rows = r.data.members || []; if (!rows.length) { $('pk-body').innerHTML = '<div class="ec-empty">No members found.</div>'; return; }
+      $('pk-body').innerHTML = '<div class="ec-tablewrap"><table class="ec-table"><thead><tr><th>Etel-ID</th><th>Name</th><th>Status</th><th></th></tr></thead><tbody>' + rows.map(function (m) { return '<tr><td><code>' + esc(m.etel_id) + '</code></td><td class="ec-name"><b>' + esc(m.name) + '</b><small>' + esc(m.phone) + '</small></td><td><span class="ec-pill ' + esc(m.status) + '">' + esc(m.status) + '</span></td><td>' + (mode === 'print' ? '<a class="btn btn-primary btn-sm" target="_blank" href="' + esc(C.print + encodeURIComponent(m.etel_id)) + '/">🖨 Open card</a>' : '<button class="btn btn-primary btn-sm" data-open="' + m.id + '">🔑 Reset password</button>') + '</td></tr>'; }).join('') + '</tbody></table></div>';
+    });
+  }, 300); });
+}
+VIEWS.print = function () { picker('print'); };
+VIEWS.password = function () { picker('password'); };
+
+/* ---------- biometric ---------- */
+VIEWS.biometric = function () {
+  VIEW.innerHTML = '<div class="ec-card"><h2>🔏 Find a member</h2><div class="ec-tools"><input class="ec-search" id="bm-q" placeholder="Search name, Etel-ID or phone…"></div><div id="bm-list"></div></div><div id="bm-detail"></div>';
+  var t; $('bm-q').addEventListener('input', function (e) { clearTimeout(t); var q = e.target.value.trim(); t = setTimeout(function () {
+    if (q.length < 2) { $('bm-list').innerHTML = ''; return; }
+    api('etelid_panel_biometric_search', { q: q }).then(function (r) {
+      var rows = r.success ? r.data.members : []; $('bm-list').innerHTML = rows.length ? '<div class="ec-tablewrap"><table class="ec-table"><tbody>' + rows.map(function (m) { return '<tr class="click" data-bio="' + m.id + '"><td><code>' + esc(m.etel_id) + '</code></td><td class="ec-name"><b>' + esc(m.full_name) + '</b></td><td class="mono">' + esc(m.phone) + '</td></tr>'; }).join('') + '</tbody></table></div>' : '<div class="ec-empty">No members found.</div>';
+    });
+  }, 300); });
+};
+function loadBio(id) {
+  var el = $('bm-detail'); if (!el) return; el.innerHTML = '<div class="ec-loading">Loading…</div>';
+  api('etelid_panel_biometric_get', { member_id: id }).then(function (r) {
+    if (!r.success) { el.innerHTML = '<div class="ec-empty">' + esc(err(r)) + '</div>'; return; }
+    var d = r.data, m = d.member, w = d.webauthn || {};
+    el.innerHTML = '<div class="ec-card"><h2>' + esc(m.full_name) + ' <code>' + esc(m.etel_id) + '</code></h2>' +
+      '<div class="ec-kv" style="margin-top:12px"><div><small>Device biometric</small><span>' + (w.enrolled ? '✅ Enrolled · ' + num(w.sign_count) + ' sign-ins' : 'Not enrolled') + '</span></div><div><small>NFC card</small><span>' + (d.nfc_uid ? esc(d.nfc_uid) : 'Not linked') + '</span></div></div>' +
+      '<div class="ec-actions">' + (w.enrolled ? '<button class="btn btn-danger btn-sm" data-wr="' + m.id + '">Revoke device biometric</button>' : '') + '<button class="btn btn-outline btn-sm" data-r2="' + m.id + '">Reset two-step sign-in</button></div>' +
+      '<div class="ec-sec">Link NFC card</div><div class="ec-form"><div class="ec-field"><input class="ec-in" id="bm-uid" placeholder="NFC card UID (e.g. 04:A2:3B:…)" value="' + esc(d.nfc_uid || '') + '"></div><div class="ec-field"><button class="btn btn-primary" data-nfc="' + m.id + '">Save card</button></div></div>' +
+      '<div class="ec-sec">Recent scans</div>' + (d.log && d.log.length ? '<div class="ec-tablewrap"><table class="ec-table"><thead><tr><th>Method</th><th>Result</th><th>Confidence</th><th>Where</th><th>Time</th></tr></thead><tbody>' + d.log.map(function (l) { return '<tr><td>' + esc(l.method) + '</td><td><span class="ec-pill ' + (l.result === 'success' ? 'active' : 'revoked') + '">' + esc(l.result) + '</span></td><td>' + esc(l.confidence) + '%</td><td>' + esc(l.location) + '</td><td class="mono">' + esc(l.created_at) + '</td></tr>'; }).join('') + '</tbody></table></div>' : '<div class="ec-empty" style="padding:14px">No scans yet.</div>') + '</div>';
+  });
+}
+document.addEventListener('click', function (e) {
+  var t = e.target.closest && e.target.closest('[data-bio],[data-wr],[data-r2],[data-nfc]'); if (!t) return;
+  var id = parseInt(t.getAttribute('data-bio') || t.getAttribute('data-wr') || t.getAttribute('data-r2') || t.getAttribute('data-nfc'), 10);
+  var done = function (x) { if (x.success) { toast(x.data.message || 'Done'); loadBio(id); } else toast(err(x), true); };
+  if (t.hasAttribute('data-bio')) loadBio(id);
+  else if (t.hasAttribute('data-wr')) { if (confirm('Revoke this member’s device biometric? They will need to register again.')) api('etelid_panel_biometric_webauthn_revoke', { member_id: id }).then(done); }
+  else if (t.hasAttribute('data-r2')) { if (confirm('Reset two-step sign-in for this member?')) api('etelid_panel_reset_2fa', { member_id: id }).then(done); }
+  else if (t.hasAttribute('data-nfc')) api('etelid_panel_biometric_nfc_save', { member_id: id, nfc_uid: val('bm-uid') }).then(done);
+});
+
+/* ---------- check-in log ---------- */
+VIEWS.checkin = function () {
+  api('etelid_console_checkin', {}).then(function (r) {
+    if (!r.success) { VIEW.innerHTML = '<div class="ec-empty">' + esc(err(r)) + '</div>'; return; }
+    var s = r.data.stats || {}, rows = r.data.rows || [];
+    VIEW.innerHTML = '<div class="ec-stats">' + stat('gold', '📅', 'Today', num(s.today), 'Scans') + stat('', '🗓️', 'This week', num(s.week), 'Scans') + stat('', '✅', 'Success', num(s.success), 'All time') + stat('', '❌', 'Failed', num(s.failed), 'All time') + stat('', '🔏', 'Fingerprint', num(s.fingerprint), '') + stat('', '👤', 'Face', num(s.face), '') + stat('', '📡', 'NFC', num(s.nfc), '') + stat('', '🔑', 'Device', num(s.webauthn), '') + '</div>' +
+      '<div class="ec-card"><h2>📋 Latest scans</h2><div style="margin-top:12px">' + (rows.length ? '<div class="ec-tablewrap"><table class="ec-table"><thead><tr><th>Etel-ID</th><th>Method</th><th>Result</th><th>Confidence</th><th>Time</th></tr></thead><tbody>' + rows.map(function (l) { return '<tr><td><code>' + esc(l.etel_id) + '</code></td><td>' + esc(l.method) + '</td><td><span class="ec-pill ' + (l.result === 'success' ? 'active' : 'revoked') + '">' + esc(l.result) + '</span></td><td>' + esc(l.confidence) + '%</td><td class="mono">' + esc(l.time) + '</td></tr>'; }).join('') + '</tbody></table></div>' : '<div class="ec-empty">No check-in events yet. Events appear here when members use NFC cards, fingerprint readers or the device terminal.</div>') + '</div></div>';
+  });
+};
+
+/* ---------- QR cache ---------- */
+VIEWS.qr = function () {
+  VIEW.innerHTML = '<div class="ec-card"><h2>🔳 QR cache backfill</h2><div class="desc">Generates and stores the QR image for every member, so cards and the portal never wait on an outside service. Safe to run again at any time.</div><div class="ec-prog"><div id="qr-bar"></div></div><div id="qr-msg" class="desc" style="margin-top:8px"></div><button class="btn btn-primary" id="qr-go">Start backfill</button></div>';
+  $('qr-go').addEventListener('click', function () {
+    var btn = this; busy(btn, true, 'Running…');
+    (function step(off, done) {
+      api('etelid_console_qr_batch', { offset: off }).then(function (r) {
+        if (!r.success) { toast(err(r), true); busy(btn, false); return; }
+        var d = r.data, total = d.total || 1, pc = Math.min(100, Math.round(d.next_offset / total * 100)); done += d.processed;
+        $('qr-bar').style.width = pc + '%'; $('qr-msg').textContent = pc + '% · ' + done + ' of ' + total + ' processed';
+        if (d.finished) { toast('QR cache complete'); busy(btn, false); } else step(d.next_offset, done);
+      });
+    })(0, 0);
+  });
+};
+
+/* ---------- settings ---------- */
+VIEWS.settings = function () {
+  api('etelid_console_settings_get', {}).then(function (r) {
+    if (!r.success) { VIEW.innerHTML = '<div class="ec-empty">' + esc(err(r)) + '</div>'; return; }
+    var s = r.data.settings;
+    VIEW.innerHTML = '<div class="ec-card"><h2>🏛 Organisation</h2><div class="ec-form" style="margin-top:12px">' + fld('f-org_name', 'Organisation name') + fld('f-org_website', 'Website', 'url') + fld('f-org_email', 'Contact email', 'email') + fld('f-admin_phone', 'Admin phone') + '</div></div>' +
+      '<div class="ec-card"><h2>🪪 ID rules</h2><div class="ec-form" style="margin-top:12px">' + fld('f-id_prefix', 'Etel-ID prefix', 'text', 'EG') + fld('f-expiry_years', 'Valid for (years)', 'number', '5', 'min="1"') + sel('f-require_approval', 'New applications', [['0', 'Approved automatically'], ['1', 'Need admin approval']], '') + '</div></div>' +
+      '<div class="ec-card"><h2>📨 Credential delivery</h2><div class="desc">Used to send new members their login details. Leave a secret blank to keep the current one.</div><div class="ec-form">' + fld('f-tg_bot_username', 'Telegram bot username') + fld('f-tg_bot_token', 'Telegram bot token' + (s.tg_bot_token_set ? ' (set)' : ''), 'password', '', 'autocomplete="new-password"') + fld('f-wa_phone_id', 'WhatsApp phone ID') + fld('f-wa_token', 'WhatsApp token' + (s.wa_token_set ? ' (set)' : ''), 'password', '', 'autocomplete="new-password"') + '</div></div>' +
+      '<div class="ec-card"><h2>🚀 Portal app links</h2><div class="ec-form" style="margin-top:12px">' + fld('f-driver_app_url', 'Driver app URL', 'url') + fld('f-ride_app_url', 'Rider app URL', 'url') + fld('f-customer_app_url', 'Customer app URL', 'url') + '</div></div>' +
+      '<div class="ec-actions"><button class="btn btn-primary" id="st-go">Save settings</button><span class="desc" style="margin:0">Plugin v' + esc(r.data.version) + '</span></div>';
+    ['org_name', 'org_website', 'org_email', 'admin_phone', 'id_prefix', 'expiry_years', 'tg_bot_username', 'wa_phone_id', 'driver_app_url', 'ride_app_url', 'customer_app_url'].forEach(function (k) { $('f-' + k).value = s[k] == null ? '' : s[k]; });
+    $('f-require_approval').value = String(parseInt(s.require_approval, 10) || 0);
+    $('st-go').addEventListener('click', function () {
+      var d = collect(['org_name', 'org_website', 'org_email', 'admin_phone', 'id_prefix', 'expiry_years', 'require_approval', 'tg_bot_username', 'tg_bot_token', 'wa_phone_id', 'wa_token', 'driver_app_url', 'ride_app_url', 'customer_app_url']);
+      busy(this, true, 'Saving…'); var btn = this;
+      api('etelid_console_settings_save', d).then(function (x) { busy(btn, false); if (x.success) toast(x.data.message || 'Saved'); else toast(err(x), true); });
+    });
+  });
+};
+
+/* ---------- updater ---------- */
+VIEWS.updater = function () {
+  VIEW.innerHTML = '<div class="ec-card"><h2>🔄 Deploy a plugin patch</h2><div class="desc">Upload a patch <b>.zip</b> prepared for the Etel-ID plugin. Its files are placed into the plugin folder. Only the site admin can do this.</div>' +
+    '<label class="ec-shot" id="up-drop" style="max-width:420px"><input type="file" id="up-file" accept=".zip,application/zip" hidden><span>📦 Choose patch .zip</span></label><div class="ec-actions"><button class="btn btn-primary" id="up-go" disabled>Deploy patch</button></div><div id="up-out"></div></div>';
+  $('up-file').addEventListener('change', function () { var f = this.files[0]; $('up-drop').querySelector('span').textContent = f ? '📦 ' + f.name + ' (' + Math.round(f.size / 1024) + ' KB)' : '📦 Choose patch .zip'; $('up-go').disabled = !f; });
+  $('up-go').addEventListener('click', function () {
+    var f = $('up-file').files[0]; if (!f) return; if (!confirm('Deploy ' + f.name + ' to the live plugin?')) return;
+    var btn = this; busy(btn, true, 'Deploying…');
+    var fd = new FormData(); fd.append('action', 'etelid_portal_patch'); fd.append('nonce', C.patch_nonce); fd.append('patch_zip', f, f.name);
+    var ck = document.cookie.split(';').map(function (c) { return c.trim(); }).filter(function (c) { return c.indexOf('etelid_session=') === 0; })[0];
+    if (ck) fd.append('eid_token', decodeURIComponent(ck.split('=').slice(1).join('=')));
+    fetch(C.ajax, { method: 'POST', body: fd, credentials: 'same-origin' }).then(function (r) { return r.json(); }).then(function (j) {
+      busy(btn, false); var o = $('up-out');
+      o.innerHTML = '<div class="' + (j.success ? 'ec-ok' : 'ec-bad') + '">' + (j.success ? '✅ ' : '⚠️ ') + esc((j.data && j.data.message) || (j.success ? 'Deployed.' : 'Deploy failed.')) + '</div>';
+      if (j.success) { toast('Patch deployed'); $('up-file').value = ''; btn.disabled = true; }
+    }).catch(function () { busy(btn, false); toast('Network error', true); });
+  });
 };
 
 /* boot */

@@ -40,6 +40,7 @@ $includes = array(
     'includes/class-etelid-2fa.php',           /* two-step sign-in (authenticator app) */
     'includes/class-etelid-auth.php',
     'includes/class-etelid-auth-ajax.php',
+    'includes/class-etelid-console-api.php',   /* standalone admin console: issue / check-in / QR / settings */
     'includes/class-etelid-admin-panels.php',  /* NEW v3.11.0 — in-portal Members/Pages/Media/Menus/Branding controller */
     'includes/class-etelid-service-api.php',   /* NEW v3.9.1 - SSO service endpoints */
     'includes/class-etelid-service-kyc.php',   /* v3.10.0 — fixed & wired up: EtelPay/Delivery/Ride eligibility */
@@ -81,6 +82,7 @@ function etelid_boot() {
     EtelID_Ajax::init();
     EtelID_Auth_Ajax::init();
     EtelID_Admin_Panels::init();
+    EtelID_Console_API::init();
     Etelid_Nfc::init();
     EtelID_Rewrite::init();
     EtelID_Updater::init();
