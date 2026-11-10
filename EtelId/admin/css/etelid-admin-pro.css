@@ -1,0 +1,160 @@
+/* ============================================================
+   Etel-ID admin - premium ETEL design overlay (light + dark)
+   Loaded AFTER etelid-admin.css. Re-maps the legacy gold tokens and restyles the
+   shared components. Theme: html[data-eid-theme] = light|dark, key 'theme' in
+   localStorage (shared with the Delivery admin, Investor admin and Group admin).
+   ============================================================ */
+.eid-admin-page,.etelid-wrap{
+  --ink:#1A1A2E;--ink2:#2c2c44;--ink3:#5f5f78;--faint:#8a8aa0;
+  --card:#ffffff;--soft:#faf6ea;--bgx:#f4efe0;--line:#e8dfc6;--line2:#d9c98f;
+  --gold:#D4AF37;--goldd:#8B7230;--okc:#0b6b3a;--badc:#b3203a;--warnc:#7a5300;--infoc:#1f55b0;
+  --shadow:0 6px 22px rgba(60,45,10,.09);--shadow2:0 18px 46px -14px rgba(60,45,10,.28);
+  /* legacy tokens re-mapped */
+  --surface:var(--card);--surface2:var(--soft);--surface3:#f3ead0;--surface-dk:#eadfbb;
+  --border:var(--line);--border-g:var(--line2);
+  --g1:#fff8dc;--g2:#F2CC6B;--g3:#e6c24f;--g4:#D4AF37;--g5:#a8841a;--g6:var(--ink3);--g7:#6d5413;--g8:#2b2147;--g9:#161226;
+  --green:#0b6b3a;--green-bg:rgba(31,164,99,.13);--red:#b3203a;--red-bg:rgba(214,54,74,.12);
+  --blue:#1f55b0;--blue-bg:rgba(31,85,176,.12);--purple:#5b3fb5;--purple-bg:rgba(110,80,220,.13);
+  --a-text:var(--ink);--a-text-2:var(--ink3);--a-text-3:var(--faint);--a-gold:#a8841a;
+  --fx:'Poppins','Noto Sans Ethiopic','Noto Sans',system-ui,-apple-system,'Segoe UI',sans-serif;--fh:'Syne','Poppins',system-ui,sans-serif;
+}
+html[data-eid-theme="dark"] .eid-admin-page,html[data-eid-theme="dark"] .etelid-wrap{
+  --ink:#f4efe0;--ink2:#e3dcc6;--ink3:#b4ae9a;--faint:#857f6d;
+  --card:#1b1b2a;--soft:#232337;--bgx:#10101a;--line:#34324a;--line2:#4a4666;
+  --goldd:#d4b75a;--okc:#4ad28c;--badc:#ff8a98;--warnc:#f2c14e;--infoc:#8fb4ff;
+  --shadow:0 8px 26px rgba(0,0,0,.45);--shadow2:0 20px 50px -14px rgba(0,0,0,.7);
+  --surface3:#2b2b42;--surface-dk:#2f2f48;
+  --g5:#d4b75a;--g6:var(--ink3);
+  --green:#4ad28c;--green-bg:rgba(74,210,140,.14);--red:#ff8a98;--red-bg:rgba(255,138,152,.13);
+  --blue:#8fb4ff;--blue-bg:rgba(143,180,255,.14);--purple:#b9a3ff;--purple-bg:rgba(185,163,255,.15);
+  --a-gold:#F2CC6B;color-scheme:dark;
+}
+/* WP chrome around the plugin pages follows the theme */
+html[data-eid-theme="dark"] body[class*="etel-id"] #wpcontent,html[data-eid-theme="dark"] body[class*="etel-id"] #wpbody,html[data-eid-theme="dark"] body[class*="etel-id"]{background:#10101a}
+html[data-eid-theme="dark"] body[class*="etel-id"] #wpfooter{color:#857f6d}
+html[data-eid-theme="dark"] body[class*="etel-id"] #wpbody-content>.notice,html[data-eid-theme="dark"] body[class*="etel-id"] .update-nag{background:#1b1b2a;color:#f4efe0;border-left-color:#D4AF37}
+
+.eid-admin-page{font-family:var(--fx);color:var(--ink);min-height:100vh;
+  background:radial-gradient(900px 480px at 8% -8%,rgba(212,175,55,.16),transparent 60%),radial-gradient(800px 460px at 108% 6%,rgba(80,70,180,.08),transparent 55%),var(--bgx)}
+.eid-admin-page::before{display:none}
+.eid-admin-page *{font-family:inherit}
+.eid-admin-page code,.eid-admin-page .eid-mono,.eid-admin-page .eid-cell-id,.eid-admin-page .eid-cell-fin{font-family:'JetBrains Mono',ui-monospace,monospace!important}
+.etelid-wrap{font-family:var(--fx);color:var(--ink)}
+
+/* ---------- top nav ---------- */
+.eid-topnav{height:auto;min-height:64px;flex-wrap:wrap;gap:10px 14px;padding:10px 26px;background:linear-gradient(180deg,#161226,#120d22);border-bottom:1px solid rgba(212,175,55,.28);box-shadow:0 6px 24px rgba(8,6,18,.35)}
+.eid-topnav::after{height:1px;opacity:.9}
+.eid-nav-brand img.eid-brand-coin{width:42px;height:42px;border-radius:50%;box-shadow:0 0 0 1.5px #161226,0 0 0 3px #D4AF37,0 8px 18px -6px rgba(212,175,55,.55)}
+.eid-nav-brand img.eid-brand-coin+img.eid-brand-coin{margin-left:-12px}
+.eid-nav-brand .eid-brand-logos{display:flex}
+.eid-nav-title-main{font-family:var(--fh)!important;font-size:15px;color:#F2CC6B;letter-spacing:.2px}
+.eid-nav-title-sub{font-family:var(--fx)!important;font-size:10px;letter-spacing:.06em;color:#9c94b3;text-transform:none}
+.eid-nav-links{flex-wrap:wrap;gap:4px;margin-left:auto}
+.eid-nav-link{font-family:var(--fx)!important;font-size:12.5px;font-weight:600;letter-spacing:0;text-transform:none;color:#e9e2cc;padding:8px 13px;border-radius:12px;border:1px solid transparent}
+.eid-nav-link:hover{background:rgba(212,175,55,.12);border-color:transparent;color:#fff}
+.eid-nav-link.active{background:linear-gradient(135deg,rgba(212,175,55,.28),rgba(212,175,55,.10));color:#fff;border-color:rgba(212,175,55,.4)}
+.eid-theme-btn{width:40px;height:40px;border-radius:12px;border:1.5px solid rgba(212,175,55,.4);background:rgba(255,255,255,.07);color:#fff;font-size:17px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:transform .12s,border-color .15s}
+.eid-theme-btn:hover{border-color:#D4AF37;transform:translateY(-1px)}
+
+/* ---------- content ---------- */
+.eid-content{padding:26px 28px 60px;max-width:1360px}
+.eid-page-title{font-family:var(--fh)!important;font-size:24px;font-weight:800;color:var(--ink);text-shadow:none}
+.eid-page-subtitle{font-family:var(--fx)!important;font-size:13px;color:var(--ink3);letter-spacing:0}
+.etelid-page-title{font-family:var(--fh)!important;color:var(--ink)}
+
+.eid-stats-grid{grid-template-columns:repeat(auto-fit,minmax(170px,1fr))}
+.eid-stat-card{background:var(--card);border:1.5px solid var(--line);border-radius:18px;padding:16px 18px;box-shadow:var(--shadow);transition:transform .15s,border-color .15s}
+.eid-stat-card:hover{transform:translateY(-2px);border-color:var(--gold);box-shadow:var(--shadow)}
+.eid-stat-card::after{display:none}
+.eid-stat-card::before{height:3px;border-radius:3px 3px 0 0}
+.eid-stat-label{font-family:var(--fx)!important;font-size:10px;font-weight:600;letter-spacing:.08em;color:var(--ink3)}
+.eid-stat-num{font-family:var(--fx)!important;font-size:28px;font-weight:700;letter-spacing:-.01em}
+.eid-stat-sub{font-size:11.5px;color:var(--ink3)}
+
+.eid-panel{background:var(--card);border:1.5px solid var(--line);border-radius:20px;box-shadow:var(--shadow);overflow:hidden}
+.eid-panel-header{background:var(--soft);border-bottom:1.5px solid var(--line);padding:14px 22px}
+.eid-panel-header h2,.eid-panel-header h3,.eid-panel-title{font-family:var(--fh)!important;font-size:15px;color:var(--ink);letter-spacing:0}
+.eid-panel-header .ti{color:var(--gold)}
+.eid-panel-body{padding:20px 22px}
+.eid-section-head{font-family:var(--fh)!important;color:var(--ink)}
+.eid-form-section h3{font-family:var(--fx)!important;font-size:11px;font-weight:700;color:var(--ink3);letter-spacing:.08em;border-bottom:1.5px solid var(--line)}
+
+.eid-filter-bar{background:var(--card);border:1.5px solid var(--line);border-radius:16px;box-shadow:var(--shadow);padding:14px 16px}
+.eid-search-wrap{position:relative;flex:1;min-width:200px}
+.eid-search-wrap .eid-search-ico{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--faint)}
+.eid-search-input{width:100%;padding-left:36px!important}
+
+/* ---------- forms ---------- */
+.eid-filter-bar input,.eid-filter-bar select,.eid-field input,.eid-field select,.eid-field textarea,.eid-input,.eid-select,.eid-textarea,.etelid-bio-input,.eid-filter-select{
+  background:var(--soft);border:1.5px solid var(--line);border-radius:12px;color:var(--ink);font:500 13.5px var(--fx);padding:10px 13px;box-shadow:none;transition:border-color .15s,box-shadow .15s}
+.eid-filter-bar input:focus,.eid-filter-bar select:focus,.eid-field input:focus,.eid-field select:focus,.eid-field textarea:focus,.eid-input:focus,.eid-select:focus,.eid-textarea:focus,.etelid-bio-input:focus{border-color:var(--gold);background:var(--card);outline:none;box-shadow:0 0 0 3px rgba(212,175,55,.22)}
+.eid-field label,.eid-field-label,.etelid-bio-label{font-family:var(--fx)!important;font-size:10.5px;font-weight:700;letter-spacing:.07em;color:var(--ink3)}
+.eid-field input::placeholder,.eid-input::placeholder,.eid-search-input::placeholder{color:var(--faint)}
+
+/* ---------- buttons ---------- */
+.eid-btn,.button,.button-primary,.button-secondary{font-family:var(--fx)!important;font-size:13px;font-weight:600;letter-spacing:0;border-radius:12px;padding:10px 18px;box-shadow:none;transition:transform .12s,filter .15s,border-color .15s,background .15s}
+.eid-btn-gold,.button-primary{background:linear-gradient(135deg,#e6c24f,#b8921f)!important;color:#1c1500!important;border:1.5px solid transparent!important;box-shadow:0 8px 18px -8px rgba(184,146,31,.65)!important;text-shadow:none!important}
+.eid-btn-gold:hover,.button-primary:hover{filter:brightness(1.06);transform:translateY(-1px);box-shadow:0 10px 20px -8px rgba(184,146,31,.7)!important}
+.eid-btn-outline,.button-secondary,.eid-btn-ghost{background:var(--card)!important;color:var(--ink)!important;border:1.5px solid var(--line2)!important;box-shadow:none!important}
+.eid-btn-outline:hover,.button-secondary:hover,.eid-btn-ghost:hover{border-color:var(--gold)!important;background:var(--soft)!important}
+.eid-btn-danger{background:transparent!important;color:var(--badc)!important;border:1.5px solid rgba(214,54,74,.5)!important}
+.eid-btn-danger:hover{background:rgba(214,54,74,.1)!important}
+.eid-btn-sm{padding:6px 12px;font-size:12px;border-radius:10px}
+
+/* ---------- tables ---------- */
+.eid-table-wrap{overflow-x:auto}
+.eid-table,.etelid-table{font-size:13px}
+.eid-table thead tr{background:var(--soft)}
+.eid-table th{font-family:var(--fx)!important;font-size:10.5px;font-weight:700;letter-spacing:.08em;color:var(--ink3);background:var(--soft);border-bottom:1.5px solid var(--line);padding:12px 16px}
+.eid-table td{color:var(--ink);border-bottom:1px solid var(--line);padding:12px 16px}
+.eid-table tbody tr:nth-child(even) td{background:transparent}
+.eid-table tbody tr:hover td{background:color-mix(in srgb,var(--gold) 8%,transparent)}
+.eid-cell-name{display:block;font-weight:600;color:var(--ink)}.eid-cell-name-am{display:block;font-size:12px;color:var(--ink3)}
+.eid-cell-id code{background:var(--soft);border:1px solid var(--line);border-radius:8px;padding:3px 8px;color:var(--ink);font-size:12px}
+.eid-no-data{color:var(--ink3);text-align:center;padding:36px 14px}
+
+/* ---------- badges / pills ---------- */
+.eid-badge,.eid-status-pill,.eid-tier,.eid-tier-badge,.eid-action-badge,.ebp-badge{display:inline-flex;align-items:center;padding:3px 10px;border-radius:20px;font:700 10.5px var(--fx)!important;letter-spacing:.03em;text-transform:none;border:1px solid transparent}
+.eid-badge-active,.eid-status-active{background:var(--green-bg);color:var(--green);border-color:rgba(31,164,99,.4)}
+.eid-badge-suspended,.eid-status-suspended{background:rgba(212,175,55,.16);color:var(--warnc);border-color:rgba(212,175,55,.5)}
+.eid-badge-revoked,.eid-status-revoked,.eid-badge-expired,.eid-status-expired{background:var(--red-bg);color:var(--red);border-color:rgba(214,54,74,.4)}
+.eid-badge-pending,.eid-status-pending{background:var(--blue-bg);color:var(--blue);border-color:rgba(31,85,176,.4)}
+.eid-tier-standard{background:var(--soft);color:var(--ink3);border-color:var(--line)}
+.eid-tier-staff{background:var(--blue-bg);color:var(--blue)}.eid-tier-manager{background:var(--purple-bg);color:var(--purple)}
+.eid-tier-executive,.eid-tier-vip{background:rgba(212,175,55,.16);color:var(--warnc);border-color:rgba(212,175,55,.5)}
+.eid-action-badge{background:var(--soft);color:var(--ink3);border-color:var(--line)}
+.eid-actions{white-space:nowrap}
+.eid-act{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:10px;border:1.5px solid var(--line);background:var(--card);color:var(--ink)!important;cursor:pointer;text-decoration:none;margin-right:4px;transition:border-color .15s,background .15s}
+.eid-act:hover{border-color:var(--gold);background:var(--soft)}
+.eid-act.danger{color:var(--badc)!important}.eid-act.danger:hover{border-color:rgba(214,54,74,.6);background:rgba(214,54,74,.08)}
+
+.eid-notice{border-radius:14px;font:500 13px var(--fx);padding:12px 16px}
+.eid-notice-ok{background:var(--green-bg);border-color:rgba(31,164,99,.4);color:var(--green)}
+.eid-notice-err{background:var(--red-bg);border-color:rgba(214,54,74,.4);color:var(--red)}
+.eid-notice-info{background:var(--blue-bg);border-color:rgba(31,85,176,.4);color:var(--blue)}
+.eid-success-banner{background:var(--card);border:1.5px solid var(--line2);border-radius:20px}
+.eid-success-id-val{font-family:'JetBrains Mono',monospace!important;color:var(--ink)}
+
+.eid-page-link{background:var(--card);border:1.5px solid var(--line);border-radius:10px;color:var(--ink3)}
+.eid-page-link:hover{border-color:var(--gold);color:var(--ink)}
+.eid-page-link.active{background:linear-gradient(135deg,#e6c24f,#b8921f);color:#1c1500!important;border-color:transparent}
+
+/* ---------- biometric / check-in ---------- */
+.etelid-stat,.etelid-bio-member-card,.etelid-token-box,.etelid-bio-panel,.etelid-card{background:var(--card);border:1.5px solid var(--line);border-radius:18px;box-shadow:var(--shadow);color:var(--ink)}
+.etelid-stat .s-val{font-family:var(--fx)!important;font-weight:700;color:var(--ink)}
+.etelid-stat .s-lbl,.etb-title,.ebmc-id{font-family:var(--fx)!important;color:var(--ink3)}
+.ebp-header{background:var(--soft);border-bottom:1.5px solid var(--line)}
+.ebp-title,.ebmc-name{font-family:var(--fh)!important;color:var(--ink)}
+.ebp-std,.ebp-desc,.etb-desc,.ebmc-company,.ebmc-am{color:var(--ink3)}
+.ebp-badge.enrolled{background:var(--green-bg);color:var(--green)}
+.ebp-badge.not-enrolled{background:var(--soft);color:var(--ink3);border-color:var(--line)}
+.etelid-btn,.etelid-btn-gold{border-radius:12px;font:600 13px var(--fx)}
+
+@media (max-width:782px){
+  .eid-topnav{padding:10px 14px}.eid-nav-links{margin-left:0;width:100%;overflow-x:auto;flex-wrap:nowrap}
+  .eid-nav-link{white-space:nowrap}.eid-content{padding:18px 14px 50px}.eid-page-title{font-size:20px}
+}
+.eid-admin-page input,.eid-admin-page select,.eid-admin-page textarea,.etelid-wrap input,.etelid-wrap select,.etelid-wrap textarea{box-sizing:border-box}
+.eid-filter-select{width:auto;min-width:130px;padding-right:30px}
+.eid-search-wrap{max-width:460px}
+.eid-pagination{align-items:center;color:var(--ink3);font-size:12.5px;padding:14px 18px;gap:8px}

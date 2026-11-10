@@ -143,6 +143,20 @@ function etelid_admin_assets( $hook ) {
         array(),
         ETELID_VERSION
     );
+    /* Premium ETEL overlay (light/dark theme) - separate files so a stale cached copy of the old ones cannot hide it. */
+    wp_enqueue_style(
+        'etelid-admin-pro',
+        ETELID_URL . 'admin/css/etelid-admin-pro.css',
+        array( 'etelid-admin' ),
+        ETELID_VERSION
+    );
+    wp_enqueue_script(
+        'etelid-admin-pro',
+        ETELID_URL . 'admin/js/etelid-admin-pro.js',
+        array(),
+        ETELID_VERSION,
+        false
+    );
     wp_enqueue_script(
         'etelid-admin',
         ETELID_URL . 'admin/js/etelid-admin.js',
@@ -153,6 +167,7 @@ function etelid_admin_assets( $hook ) {
     wp_localize_script( 'etelid-admin', 'EtelIDAdmin', array(
         'ajax'    => admin_url( 'admin-ajax.php' ),
         'nonce'   => wp_create_nonce( 'etelid_admin' ),
+        'url'     => ETELID_URL,
         'confirm_delete' => __( 'Permanently delete this Etel-ID? This cannot be undone.', 'etel-id' ),
     ));
 }
