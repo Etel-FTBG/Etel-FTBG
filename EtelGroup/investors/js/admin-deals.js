@@ -3,7 +3,7 @@
 (function () {
 'use strict';
 var D = window.EtelDeal, CFG = { pool_units: 2000, pool_percent: 20, boost: 2.5 }, SHEETS = [], CUR = null;
-var STATUS = { submitted: ['New', '#e5c76b'], accepted: ['Accepted', '#7ee8a8'], rejected: ['Rejected', '#ff8a7a'], enrolled: ['Enrolled', '#7fb8ff'] };
+var STATUS = { submitted: ['New', 'new'], accepted: ['Accepted', 'warn'], rejected: ['Rejected', 'read'], enrolled: ['Enrolled', 'replied'] };
 function $(id) { return document.getElementById(id); }
 function base() { return new URL('./', location.href).href; }
 
@@ -11,19 +11,24 @@ window.irLoadDeals = async function () {
   var res = await irApi('admin_deal_list');
   var tb = document.querySelector('#ir-deals-table tbody');
   if (!tb) return;
-  if (!res.ok) { tb.innerHTML = '<tr><td colspan="8" style="color:#ff8a7a">' + irEsc(res.error || 'Could not load deal sheets') + '</td></tr>'; return; }
+  if (!res.ok) { tb.innerHTML = '<tr><td colspan="8" style="color:var(--bad)">' + irEsc(res.error || 'Could not load deal sheets') + '</td></tr>'; return; }
   SHEETS = res.data.sheets || []; CFG = res.data.config || CFG;
   var en = base() + 'deal.html', am = base() + 'deal.html?lang=am';
-  $('deal-links').innerHTML = 'Share with investors: <a href="' + irEsc(en) + '" target="_blank" rel="noopener" style="color:#ffcf80">English link</a> &middot; <a href="' + irEsc(am) + '" target="_blank" rel="noopener" style="color:#ffcf80">&#x12A0;&#x121B;&#x122D;&#x129B; link</a> &middot; ' +
-    '<button class="btn btn-outline" style="padding:2px 10px" onclick="irCopyDealLink(\'' + irEsc(en) + '\')">Copy English</button> <button class="btn btn-outline" style="padding:2px 10px" onclick="irCopyDealLink(\'' + irEsc(am) + '\')">Copy Amharic</button> &middot; ' +
-    'Blank forms: <a href="forms/ETEL_Investor_Deal_Sheet_EN.pdf" target="_blank" style="color:#ffcf80">EN PDF</a> &middot; <a href="forms/ETEL_Investor_Deal_Sheet_AM.pdf" target="_blank" style="color:#ffcf80">AM PDF</a> &middot; ' +
+  $('deal-links').innerHTML = 'Share with investors: <a href="' + irEsc(en) + '" target="_blank" rel="noopener" style="color:var(--gold2)">English link</a> &middot; <a href="' + irEsc(am) + '" target="_blank" rel="noopener" style="color:var(--gold2)">&#x12A0;&#x121B;&#x122D;&#x129B; link</a> &middot; ' +
+    '<button class="btn btn-outline btn-sm" onclick="irCopyDealLink(\'' + irEsc(en) + '\')">Copy English</button> <button class="btn btn-outline btn-sm" onclick="irCopyDealLink(\'' + irEsc(am) + '\')">Copy Amharic</button> &middot; ' +
+    'Blank forms: <a href="forms/ETEL_Investor_Deal_Sheet_EN.pdf" target="_blank" style="color:var(--gold2)">EN PDF</a> &middot; <a href="forms/ETEL_Investor_Deal_Sheet_AM.pdf" target="_blank" style="color:var(--gold2)">AM PDF</a> &middot; ' +
     '<span style="color:var(--text-dim)">' + irEsc(CFG.available) + ' Profit Shares open</span>';
   tb.innerHTML = SHEETS.length ? SHEETS.map(function (r) {
-    var st = STATUS[r.status] || [r.status, '#ccc'];
-    return '<tr><td><code>' + irEsc(r.ref_code) + '</code></td><td>' + irEsc(String(r.created_at).slice(0, 16)) + '</td><td>' + irEsc(r.investor_name) + '<div style="font-size:11px;color:var(--text-dim)">' + irEsc(r.phone) + '</div></td>' +
-      '<td class="ir-num">' + irEsc(r.units) + '</td><td class="ir-num">' + irMoney(r.amount) + '</td><td>' + (r.lang === 'am' ? 'AM' : 'EN') + '</td><td style="color:' + st[1] + '">' + irEsc(st[0]) + '</td>' +
-      '<td><button class="btn btn-outline" onclick="irOpenDeal(' + Number(r.id) + ')">Open</button></td></tr>';
+    var st = STATUS[r.status] || [r.status, 'read'];
+    return '<tr data-status="' + irEsc(r.status) + '"><td><code>' + irEsc(r.ref_code) + '</code></td><td>' + irEsc(String(r.created_at).slice(0, 16)) + '</td><td>' + irEsc(r.investor_name) + '<div style="font-size:11px;color:var(--text-dim)">' + irEsc(r.phone) + '</div></td>' +
+      '<td class="ir-num">' + irEsc(r.units) + '</td><td class="ir-num">' + irMoney(r.amount) + '</td><td>' + (r.lang === 'am' ? 'AM' : 'EN') + '</td><td><span class="pill ' + st[1] + '">' + irEsc(st[0]) + '</span></td>' +
+      '<td><button class="btn btn-outline btn-sm" onclick="irOpenDeal(' + Number(r.id) + ')">Open</button></td></tr>';
   }).join('') : '<tr><td colspan="8" style="color:var(--text-dim)">No deal sheets yet. Share the link above with an investor.</td></tr>';
+  var fresh = SHEETS.filter(function (r) { return r.status === 'submitted'; }).length;
+  window.IR_DEALS_NEW = fresh;
+  var bd = $('nav-deals-badge'); if (bd) bd.textContent = fresh ? String(fresh) : '';
+  if (typeof window.irApplyDealFilter === 'function') window.irApplyDealFilter();
+  document.dispatchEvent(new CustomEvent('ir:deals'));
 };
 
 window.irCopyDealLink = function (u) {

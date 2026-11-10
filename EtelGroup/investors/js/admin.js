@@ -121,14 +121,14 @@ async function irSaveConnection() {
   const password = document.getElementById('w-pass').value;
   const msgEl = document.getElementById('w-conn-msg');
   const res = await irApi('setup_save_delivery_connection', { host, name, user, password });
-  msgEl.style.color = res.ok ? '#7ee8a8' : '#ff8a7a';
+  msgEl.style.color = res.ok ? 'var(--ok)' : 'var(--bad)';
   msgEl.textContent = res.ok ? '✓ Saved' : (res.error || 'Could not save');
 }
 async function irTestConnection() {
   const msgEl = document.getElementById('w-conn-msg');
-  msgEl.style.color = '#D4AF37'; msgEl.textContent = 'Testing…';
+  msgEl.style.color = 'var(--gold2)'; msgEl.textContent = 'Testing…';
   const res = await irApi('setup_test_delivery_connection');
-  msgEl.style.color = res.ok ? '#7ee8a8' : '#ff8a7a';
+  msgEl.style.color = res.ok ? 'var(--ok)' : 'var(--bad)';
   msgEl.textContent = res.ok ? `✓ Connected — ${res.data.completed_rides_total} completed rides found` : (res.error || 'Connection failed');
 }
 async function irSaveRate() {
@@ -161,16 +161,17 @@ async function irLoadDashboard() {
   const d = res.data;
   const statsEl = document.getElementById('ir-stats');
   statsEl.innerHTML = `
-    <div class="stat-card"><div class="label">Commission Rate</div><div class="val">${(d.commission_rate * 100).toFixed(2)}%</div></div>
-    <div class="stat-card"><div class="label">Monthly Costs</div><div class="val">${irMoney(d.monthly_cost_total)}</div></div>
-    <div class="stat-card"><div class="label">Investors</div><div class="val">${d.investor_count}</div></div>
-    <div class="stat-card"><div class="label">Shares Sold</div><div class="val">${d.sold_shares} / ${d.sold_shares + d.unsold_shares}</div></div>
-    <div class="stat-card"><div class="label">Total Invested</div><div class="val">${irMoney(d.invested_total)}</div></div>
+    <div class="stat-card"><div class="ic">\u{1F4B0}</div><div class="label">Total invested</div><div class="val">${irMoney(d.invested_total)}</div><div class="sub">ETB from ${d.investor_count} investor${d.investor_count == 1 ? '' : 's'}</div></div>
+    <div class="stat-card"><div class="ic">\u{1F3AF}</div><div class="label">Profit Shares sold</div><div class="val">${d.sold_shares} / ${d.sold_shares + d.unsold_shares}</div><div class="sub">${d.unsold_shares} still unsold</div></div>
+    <div class="stat-card"><div class="ic">\u{1F465}</div><div class="label">Investors</div><div class="val">${d.investor_count}</div><div class="sub">active holders</div></div>
+    <div class="stat-card"><div class="ic">\u{1F4B8}</div><div class="label">Monthly costs</div><div class="val">${irMoney(d.monthly_cost_total)}</div><div class="sub">ETB, reduces net profit</div></div>
+    <div class="stat-card premium"><div class="ic">%</div><div class="label">Commission rate</div><div class="val">${(d.commission_rate * 100).toFixed(2)}%</div><div class="sub">on ride and order fares</div></div>
   `;
+  document.dispatchEvent(new CustomEvent('ir:dashboard', { detail: d }));
 
   const milEl = document.getElementById('ir-milestone');
   if (!d.delivery.connected) {
-    milEl.innerHTML = `<div class="ir-not-connected">⚠ Not connected to Delivery &amp; Ride. <a href="#" onclick="irBackToWizard();return false" style="color:#ffcf80">Finish setup</a> to see real milestone data.</div>`;
+    milEl.innerHTML = `<div class="ir-not-connected">⚠ Not connected to Delivery &amp; Ride. <a href="#" onclick="irBackToWizard();return false" style="color:var(--gold2)">Finish setup</a> to see real milestone data.</div>`;
   } else if (d.delivery.error) {
     milEl.innerHTML = `<div class="ir-not-connected">⚠ Could not read live data: ${irEsc(d.delivery.error)}</div>`;
   } else {
@@ -227,7 +228,7 @@ async function irLoadCostCategories() {
       <td>${irEsc(c.name)}</td>
       <td class="ir-num">${irMoney(c.monthly_amount)}</td>
       <td>${c.is_active == 1 ? '<span class="pill replied">Active</span>' : '<span class="pill new">Inactive</span>'}</td>
-      <td><button class="btn btn-outline" onclick="irOpenCostModal(IR_COST_CACHE[${c.id}])">Edit</button></td>
+      <td><button class="btn btn-outline btn-sm" onclick="irOpenCostModal(IR_COST_CACHE[${c.id}])">Edit</button></td>
     </tr>`;
   }).join('') || '<tr><td colspan="4" style="color:var(--text-dim)">No cost categories yet.</td></tr>';
 }
@@ -292,7 +293,7 @@ async function irLoadInvestors() {
       <td class="ir-num">${irMoney(i.cumulative_received)}</td>
       <td class="ir-num">${irMoney(i.remaining_principal)}</td>
       <td>${i.payback_phase ? '<span class="pill new">2.5x (payback)</span>' : '<span class="pill replied">1.0x</span>'}</td>
-      <td><button class="btn btn-outline" onclick="irOpenInvestorModal(IR_INVESTOR_CACHE[${i.id}])">Manage</button></td>
+      <td><button class="btn btn-outline btn-sm" onclick="irOpenInvestorModal(IR_INVESTOR_CACHE[${i.id}])">Manage</button></td>
     </tr>`;
   }).join('') || '<tr><td colspan="7" style="color:var(--text-dim)">No investors yet.</td></tr>';
 }
@@ -460,7 +461,7 @@ async function irLockDistribution() {
   if (!confirm('This permanently locks this distribution period. Continue?')) return;
   const res = await irApi('admin_run_distribution', IR_LAST_PREVIEW);
   if (!res.ok) { alert(res.error); return; }
-  document.getElementById('dist-preview').innerHTML = '<div class="ir-not-connected" style="border-color:rgba(46,204,113,.4);color:#7ee8a8">✓ Period locked.</div>';
+  document.getElementById('dist-preview').innerHTML = '<div class="ir-not-connected" style="border-color:rgba(46,204,113,.4);color:var(--ok)">✓ Period locked.</div>';
   irLoadPeriods();
   irLoadInvestors();
 }
@@ -475,7 +476,7 @@ async function irLoadPeriods() {
       <td class="ir-num">${irMoney(p.net_profit)}</td>
       <td class="ir-num">${irMoney(p.total_investor_payout)}</td>
       <td class="ir-num">${irMoney(p.founder_amount)}</td>
-      <td><button class="btn btn-outline" onclick="irViewPeriod(${p.id})">View</button></td>
+      <td><button class="btn btn-outline btn-sm" onclick="irViewPeriod(${p.id})">View</button></td>
     </tr>
   `).join('') || '<tr><td colspan="5" style="color:var(--text-dim)">No locked periods yet.</td></tr>';
 }
