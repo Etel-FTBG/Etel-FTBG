@@ -37,6 +37,7 @@ class EtelID_Rewrite {
         add_rewrite_rule( '^etel-id/login/?$',   'index.php?etelid_page=login',   'top' );
         add_rewrite_rule( '^etel-id/signup/?$',  'index.php?etelid_page=signup',  'top' );
         add_rewrite_rule( '^etel-id/portal/?$',  'index.php?etelid_page=portal',  'top' );
+        add_rewrite_rule( '^console/?$',         'index.php?etelid_page=console', 'top' ); /* standalone admin console */
         add_rewrite_rule( '^etel-id/profile/?$', 'index.php?etelid_page=profile', 'top' );
         add_rewrite_rule( '^etel-id/logout/?$',  'index.php?etelid_page=logout',  'top' );
         add_rewrite_rule( '^etel-id/verify-pass2/?$', 'index.php?etelid_page=verify-pass2', 'top' );
@@ -153,6 +154,20 @@ class EtelID_Rewrite {
                 $tpl = ETELID_PATH . 'templates/portal.php';
                 return file_exists( $tpl ) ? $tpl : $template;
 
+            case 'console':
+                /* Standalone Etel-ID admin console - site admin only. */
+                if ( ! EtelID_Auth::is_logged_in() ) {
+                    wp_redirect( home_url( '/login/' ) );
+                    exit;
+                }
+                $viewer = EtelID_Auth::get_current_member();
+                if ( ! $viewer || ! EtelID_Auth::is_site_admin( $viewer ) ) {
+                    wp_redirect( home_url( '/portal/' ) );
+                    exit;
+                }
+                $tpl = ETELID_PATH . 'templates/admin-console.php';
+                return file_exists( $tpl ) ? $tpl : $template;
+
             case 'profile':
                 if ( ! EtelID_Auth::is_logged_in() ) {
                     wp_redirect( home_url( '/login/' ) );
@@ -206,7 +221,7 @@ class EtelID_Rewrite {
         /* CRITICAL: Never intercept real Etel-ID routes - both the
            original long form and the shorter canonical form */
         $uri = isset( $_SERVER['REQUEST_URI'] ) ? $_SERVER['REQUEST_URI'] : '';
-        if ( preg_match( '#/(etel-id/)?(profile|portal|login|signup|apply|logout|verify|print|verify-pass2|reset-password)(/|$|\?)#i', $uri ) ) {
+        if ( preg_match( '#/(etel-id/)?(profile|portal|console|login|signup|apply|logout|verify|print|verify-pass2|reset-password)(/|$|\?)#i', $uri ) ) {
             return;
         }
 
@@ -231,6 +246,11 @@ class EtelID_Rewrite {
 
     /* ── Flush rewrite rules once after plugin update ── */
     public static function maybe_flush() {
+        /* One-off flush so the new /console/ route works right after this update. */
+        if ( get_option( 'etelid_rules_ver' ) !== 'console1' ) {
+            update_option( 'etelid_rules_ver', 'console1' );
+            update_option( 'etelid_flush_needed', 1 );
+        }
         if ( get_option( 'etelid_flush_needed' ) ) {
             flush_rewrite_rules();
             delete_option( 'etelid_flush_needed' );

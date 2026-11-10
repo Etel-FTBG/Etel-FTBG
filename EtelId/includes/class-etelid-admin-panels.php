@@ -77,6 +77,7 @@ class EtelID_Admin_Panels {
             'etelid_panel_biometric_nfc_save'   => 'biometric_nfc_save',
             'etelid_panel_biometric_webauthn_revoke' => 'biometric_webauthn_revoke',
             'etelid_panel_reset_2fa'                 => 'admin_reset_2fa',
+            'etelid_panel_audit_list'                => 'audit_list',   /* standalone admin console */
         );
         foreach ( $map as $action => $method ) {
             add_action( 'wp_ajax_'        . $action, array( __CLASS__, $method ) );
@@ -94,6 +95,26 @@ class EtelID_Admin_Panels {
             wp_send_json_error( array( 'message' => 'Not authorized.' ) );
         }
         return $member;
+    }
+
+    /** Site-wide audit log for the standalone admin console. */
+    public static function audit_list() {
+        self::guard();
+        $page  = max( 1, (int) ( isset( $_POST['page'] ) ? $_POST['page'] : 1 ) );
+        $limit = max( 1, min( 100, (int) ( isset( $_POST['limit'] ) ? $_POST['limit'] : 25 ) ) );
+        $q     = isset( $_POST['q'] ) ? sanitize_text_field( wp_unslash( $_POST['q'] ) ) : '';
+        $res   = EtelID_DB::get_log_page( $limit, ( $page - 1 ) * $limit, $q );
+        $out   = array();
+        foreach ( $res['rows'] as $e ) {
+            $out[] = array(
+                'etel_id' => $e->etel_id,
+                'event'   => $e->event,
+                'ip'      => isset( $e->actor_ip ) ? $e->actor_ip : '',
+                'detail'  => isset( $e->detail ) ? $e->detail : '',
+                'time'    => $e->created_at,
+            );
+        }
+        wp_send_json_success( array( 'entries' => $out, 'total' => $res['total'], 'page' => $page, 'pages' => max( 1, (int) ceil( $res['total'] / $limit ) ) ) );
     }
 
     /* ================================================================
