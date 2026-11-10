@@ -85,6 +85,10 @@
                     <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="7" width="13" height="10" rx="1"/><path d="M14 10h4l3 3v4h-7z"/><circle cx="6" cy="19" r="1.6"/><circle cx="17.5" cy="19" r="1.6"/></svg>
                     <span>Vehicle Types</span>
                 </button>
+                <button class="am-tab" data-tab="station" onclick="showTab('station')">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 22V6a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v16"/><path d="M15 10h2a2 2 0 0 1 2 2v3a2 2 0 0 0 4 0V9l-3-3"/><path d="M3 22h12"/><rect x="6" y="8" width="6" height="4"/></svg>
+                    <span>Station Console</span>
+                </button>
                 <button class="am-tab" data-tab="queue" onclick="showTab('queue')">
                     <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/></svg>
                     <span>Queue Monitor</span>
@@ -178,6 +182,20 @@
                             </tbody>
                         </table>
                     </div>
+                </div>
+
+                <!-- Station Console Tab: the full controller screen, for any station -->
+                <div id="stationTab" class="tab-content">
+                    <div class="am-page-hdr">
+                        <h1>Station Console</h1>
+                        <div class="am-hdr-actions">
+                            <a id="stationFull" class="am-btn" href="../controller.php" target="_blank" rel="noopener" style="display:none">Open full screen</a>
+                            <button id="stationClose" class="am-btn" style="display:none">Close station</button>
+                        </div>
+                    </div>
+                    <div class="am-notice">Work any station as its controller: register vehicles, serve the queue, move to VIP or waiting, run reports and bulk import. Everything you do is recorded against that station.</div>
+                    <div id="stationPicker" class="station-grid"><p class="empty-state">Loading stations...</p></div>
+                    <iframe id="stationFrame" class="station-frame" title="Station console" style="display:none"></iframe>
                 </div>
 
                 <!-- Vehicle Types Tab -->
@@ -307,5 +325,6 @@
     </script>
     <script src="../assets/js/icons.js"></script>
     <script src="../assets/js/admin-app.js"></script>
+    <script src="../assets/js/admin-station.js?v=1"></script>
 </body>
 </html>

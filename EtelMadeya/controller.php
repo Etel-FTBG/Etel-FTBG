@@ -15,7 +15,7 @@
     <link rel="icon" href="assets/img/etel-logo.png">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 </head>
-<body>
+<body class="<?= isset($_GET['embed']) ? 'mc-embed' : '' ?>">
     <div id="app">
         <!-- Login Screen -->
         <div id="loginScreen" class="login-screen">

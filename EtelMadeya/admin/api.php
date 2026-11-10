@@ -296,6 +296,37 @@ try {
             jsonResponse(['success' => true, 'message' => 'Controller created successfully', 'id' => $id]);
             break;
             
+        case 'open_station':
+            /* Station Console: let the signed-in admin work a station exactly like its controller
+             * (register, serve, VIP/waiting, reports, bulk import). Sets the controller session
+             * for the chosen active controller; admin-only and logged. */
+            requireAdminAuth();
+            $cid = (int)($_POST['controller_id'] ?? 0);
+            $ctl = $cid ? db()->fetchOne("SELECT id, username, full_name, station_name, is_active FROM controllers WHERE id = ?", [$cid]) : null;
+            if (!$ctl) {
+                jsonResponse(['success' => false, 'message' => 'Controller not found'], 404);
+            }
+            if (!(int)$ctl['is_active']) {
+                jsonResponse(['success' => false, 'message' => 'This controller is inactive - activate it first'], 400);
+            }
+            $_SESSION['controller_id']       = $ctl['id'];
+            $_SESSION['controller_username'] = $ctl['username'];
+            $_SESSION['controller_name']     = $ctl['full_name'];
+            db()->insert('activity_log', [
+                'admin_id' => $_SESSION['admin_id'],
+                'action' => 'open_station',
+                'details' => 'Opened station console: ' . $ctl['username'],
+                'ip_address' => getClientIP()
+            ]);
+            jsonResponse(['success' => true, 'station' => $ctl['station_name'], 'name' => $ctl['full_name']]);
+            break;
+
+        case 'close_station':
+            requireAdminAuth();
+            unset($_SESSION['controller_id'], $_SESSION['controller_username'], $_SESSION['controller_name']);
+            jsonResponse(['success' => true]);
+            break;
+
         case 'update_controller':
             requireAdminAuth();
             
