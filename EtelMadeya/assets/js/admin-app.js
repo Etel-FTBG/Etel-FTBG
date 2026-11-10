@@ -338,7 +338,7 @@ function renderVehicleTypeCheckboxes(idPrefix, selectedIds) {
             ${vehicleTypesCache.map(t => `
                 <label class="am-check-label" for="${idPrefix}Vt${t.id}">
                     <input type="checkbox" id="${idPrefix}Vt${t.id}" value="${t.id}" class="${idPrefix}-vtype-cb" ${selected.has(Number(t.id)) ? 'checked' : ''}>
-                    ${escHtml(t.icon || '')} ${escHtml(t.name)}
+                    ${vehPic(t.icon, t.name, 26)} ${escHtml(t.name)}
                 </label>
             `).join('')}
         </div>
@@ -389,6 +389,7 @@ async function showAddController() {
                         <label>Vehicle Types Served at This Station</label>
                         ${renderVehicleTypeCheckboxes('ctrl', [])}
                     </div>
+                    ${stationGeoFields('ctrl', {})}
                     <div class="modal-actions">
                         <button type="button" onclick="closeModal()" class="btn-secondary">Cancel</button>
                         <button type="submit" class="btn-primary">Add Controller</button>
@@ -400,6 +401,44 @@ async function showAddController() {
 
     document.getElementById('modalContainer').innerHTML = modal;
     document.getElementById('modalOverlay').style.display = 'block';
+}
+
+
+function stationGeoFields(prefix, c) {
+    c = c || {};
+    const open = c.is_open === undefined || c.is_open === null ? 1 : Number(c.is_open);
+    return `
+        <div class="form-group">
+            <label class="am-check-label" for="${prefix}IsOpen">
+                <input type="checkbox" id="${prefix}IsOpen" ${open ? 'checked' : ''}>
+                Open today (shown to drivers on the live map)
+            </label>
+        </div>
+        <div class="form-group">
+            <label for="${prefix}Hours">Opening hours (optional, e.g. 06:00-22:00)</label>
+            <input type="text" id="${prefix}Hours" class="form-control" maxlength="60" value="${escHtml(c.open_hours || '')}">
+        </div>
+        <div class="form-group">
+            <label>Station location (for the drivers' live map)</label>
+            <div style="display:flex;gap:8px">
+                <input type="number" step="any" id="${prefix}Lat" class="form-control" placeholder="Latitude" value="${c.latitude != null ? escHtml(String(c.latitude)) : ''}">
+                <input type="number" step="any" id="${prefix}Lng" class="form-control" placeholder="Longitude" value="${c.longitude != null ? escHtml(String(c.longitude)) : ''}">
+            </div>
+            <button type="button" class="btn-secondary" style="margin-top:8px" onclick="useMyLocation('${prefix}')">Use my current location</button>
+        </div>`;
+}
+function useMyLocation(prefix) {
+    if (!navigator.geolocation) { alert('Location is not available on this device'); return; }
+    navigator.geolocation.getCurrentPosition(function (p) {
+        document.getElementById(prefix + 'Lat').value = p.coords.latitude.toFixed(6);
+        document.getElementById(prefix + 'Lng').value = p.coords.longitude.toFixed(6);
+    }, function () { alert('Could not get your location - allow location access or type the coordinates'); }, { enableHighAccuracy: true, timeout: 15000 });
+}
+function appendStationGeo(fd, prefix) {
+    fd.append('is_open', document.getElementById(prefix + 'IsOpen').checked ? 1 : 0);
+    fd.append('open_hours', document.getElementById(prefix + 'Hours').value);
+    fd.append('latitude', document.getElementById(prefix + 'Lat').value);
+    fd.append('longitude', document.getElementById(prefix + 'Lng').value);
 }
 
 async function handleAddController(event) {
@@ -415,6 +454,7 @@ async function handleAddController(event) {
     formData.append('phone', document.getElementById('ctrlPhone').value);
     formData.append('station_name', document.getElementById('ctrlStation').value);
     formData.append('odd_even_rule', document.getElementById('ctrlParity').value);
+    appendStationGeo(formData, 'ctrl');
     document.querySelectorAll('.ctrl-vtype-cb:checked').forEach(cb => formData.append('vehicle_type_ids[]', cb.value));
 
     submitBtn.disabled = true;
@@ -483,6 +523,7 @@ async function editController(id) {
                         <label>Vehicle Types Served at This Station</label>
                         ${renderVehicleTypeCheckboxes('editCtrl', c.vehicle_type_ids || [])}
                     </div>
+                    ${stationGeoFields('editCtrl', c)}
                     <div class="form-group">
                         <label class="am-check-label" for="editCtrlActive">
                             <input type="checkbox" id="editCtrlActive" ${c.is_active ? 'checked' : ''}>
@@ -516,6 +557,7 @@ async function handleEditController(event, id) {
     formData.append('station_name', document.getElementById('editCtrlStation').value);
     formData.append('is_active', document.getElementById('editCtrlActive').checked ? 1 : 0);
     formData.append('odd_even_rule', document.getElementById('editCtrlParity').value);
+    appendStationGeo(formData, 'editCtrl');
     document.querySelectorAll('.editCtrl-vtype-cb:checked').forEach(cb => formData.append('vehicle_type_ids[]', cb.value));
 
     submitBtn.disabled = true;
@@ -599,7 +641,7 @@ function displayVehicleTypes(types) {
     tbody.innerHTML = types.map(t => `
         <tr>
             <td>${t.id}</td>
-            <td style="font-size:22px">${escHtml(t.icon)}</td>
+            <td style="font-size:22px">${vehPic(t.icon, t.name, 40)}</td>
             <td><strong>${escHtml(t.name)}</strong></td>
             <td>${escHtml(t.name_am)}</td>
             <td>${t.sort_order}</td>
@@ -622,7 +664,7 @@ function showAddVehicleType() {
                 </div>
                 <form onsubmit="handleAddVehicleType(event)">
                     <div class="form-group">
-                        <label for="addVtIcon">Icon (emoji) *</label>
+                        <label for="addVtIcon">Icon (emoji, or a picture file like truck.png) *</label>
                         <input type="text" id="addVtIcon" class="form-control" placeholder="e.g. 🏍️" required>
                     </div>
                     <div class="form-group">
@@ -701,7 +743,7 @@ function editVehicleType(id) {
                 </div>
                 <form onsubmit="handleEditVehicleType(event, ${t.id})">
                     <div class="form-group">
-                        <label for="editVtIcon">Icon (emoji) *</label>
+                        <label for="editVtIcon">Icon (emoji, or a picture file like truck.png) *</label>
                         <input type="text" id="editVtIcon" class="form-control" value="${escHtml(t.icon)}" required>
                     </div>
                     <div class="form-group">
@@ -837,7 +879,7 @@ function displayQueueMonitor(queue) {
                 ${q.vehicles.map(v => `
                     <div class="vehicle-card">
                         <strong>${escHtml(v.plate_number)}</strong><br>
-                        ${escHtml(v.icon)} ${escHtml(v.vehicle_type_name)}<br>
+                        ${vehPic(v.icon, v.vehicle_type_name, 28)} ${escHtml(v.vehicle_type_name)}<br>
                         Position: #${v.position}
                     </div>
                 `).join('')}

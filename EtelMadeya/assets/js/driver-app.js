@@ -29,6 +29,10 @@ function navigate(page) {
         case 'check':
             content.innerHTML = getCheckPage();
             break;
+        case 'stations':
+            content.innerHTML = getStationsPage();
+            if (window.initStationsPage) initStationsPage();
+            break;
         case 'about':
             content.innerHTML = getAboutPage();
             break;
@@ -97,7 +101,23 @@ function getCheckPage() {
                 </div>
                 
                 <div id="positionResult"></div>
+                <div class="card" style="text-align:center">
+                    <p style="margin-bottom:10px" data-t="Find an open station near you|ከእርስዎ አቅራቢያ የተከፈተ ማደያ ያግኙ">Find an open station near you</p>
+                    <button type="button" class="btn btn-primary btn-block" onclick="navigate('stations')">🗺️ <span data-t="Live map: open stations and cars waiting|ቀጥታ ካርታ">Live map: open stations and cars waiting</span></button>
+                </div>
             </div>
+        </div>
+    `;
+}
+
+function getStationsPage() {
+    return `
+        <div class="container stn-wrap">
+            <h1 class="page-title" data-t="Live Stations|ቀጥታ ማደያዎች">Live Stations</h1>
+            <p class="page-subtitle" data-t="See which stations are open today, how many cars are waiting, and navigate to them|ዛሬ የተከፈቱ ማደያዎችን እና ወረፋ ይመልከቱ">See which stations are open today, how many cars are waiting, and navigate to them</p>
+            <div id="stnSummary" class="stn-bar">Loading...</div>
+            <div id="stnMap" class="stn-map"></div>
+            <div id="stnGrid" class="stn-grid"></div>
         </div>
     `;
 }
@@ -252,7 +272,7 @@ function renderDriverQueue(myPlate, station) {
         return `<tr ${rowClass}>
             <td>#${escHtml(v.display_position)}</td>
             <td>${escHtml(v.plate_number)}${marker}</td>
-            <td>${escHtml(v.icon)} ${escHtml(v.vehicle_type_name)}</td>
+            <td>${vehPic(v.icon, v.vehicle_type_name, 26)} ${escHtml(v.vehicle_type_name)}</td>
             <td>${escHtml(v.queue_type.toUpperCase())}</td>
         </tr>`;
     }).join('');

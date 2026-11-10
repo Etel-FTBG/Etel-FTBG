@@ -439,6 +439,7 @@ if ( isset( $_GET['embed'] ) && ! headers_sent() ) {
     let currentController = null;
     let vehicleTypes = [];
     </script>
+    <script src="assets/js/madeya-vehicles.js?v=1"></script>
     <script src="assets/js/icons.js"></script>
     <script src="assets/js/controller-app.js"></script>
 </body>

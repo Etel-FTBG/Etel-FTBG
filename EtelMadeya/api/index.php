@@ -5,6 +5,7 @@
 
 require_once __DIR__ . '/../includes/config.php';
 require_once __DIR__ . '/../includes/queue_logic.php';
+require_once __DIR__ . '/../includes/stations.php';
 
 header('Content-Type: application/json; charset=utf-8');
 
@@ -129,6 +130,52 @@ try {
             jsonResponse(['success' => true, 'controllers' => $controllers]);
             break;
             
+        case 'public_stations':
+            // Live board for drivers: every active station, whether it is open today, and how many vehicles are queued.
+            ensureStationColumns();
+            $stations = db()->fetchAll(
+                "SELECT id, station_name, station_address, latitude, longitude, is_open, open_hours
+                 FROM controllers WHERE is_active = 1 ORDER BY is_open DESC, station_name ASC"
+            );
+            $counts = db()->fetchAll(
+                "SELECT controller_id, vehicle_type_id, COUNT(*) AS n FROM queue WHERE status = 'queued' GROUP BY controller_id, vehicle_type_id"
+            );
+            $served = db()->fetchAll(
+                "SELECT controller_id, COUNT(*) AS n FROM report WHERE report_date = ? GROUP BY controller_id",
+                [date('Y-m-d')]
+            );
+            $vtypes = [];
+            foreach (db()->fetchAll("SELECT id, name, name_am, icon FROM vehicle_types") as $vt) $vtypes[(int)$vt['id']] = $vt;
+            $servedBy = [];
+            foreach ($served as $r) $servedBy[(int)$r['controller_id']] = (int)$r['n'];
+            $byStation = [];
+            foreach ($counts as $r) $byStation[(int)$r['controller_id']][] = ['vehicle_type_id' => (int)$r['vehicle_type_id'], 'count' => (int)$r['n']];
+            $out = [];
+            foreach ($stations as $st) {
+                $sid = (int)$st['id'];
+                $types = [];
+                $total = 0;
+                foreach (($byStation[$sid] ?? []) as $t) {
+                    $total += $t['count'];
+                    $vt = $vtypes[$t['vehicle_type_id']] ?? ['name' => '', 'name_am' => '', 'icon' => ''];
+                    $types[] = ['name' => $vt['name'], 'name_am' => $vt['name_am'], 'icon' => $vt['icon'], 'count' => $t['count']];
+                }
+                $out[] = [
+                    'id' => $sid,
+                    'name' => $st['station_name'],
+                    'address' => $st['station_address'],
+                    'lat' => $st['latitude'] !== null ? (float)$st['latitude'] : null,
+                    'lng' => $st['longitude'] !== null ? (float)$st['longitude'] : null,
+                    'is_open' => (int)$st['is_open'] === 1,
+                    'open_hours' => $st['open_hours'],
+                    'queued' => $total,
+                    'served_today' => $servedBy[$sid] ?? 0,
+                    'types' => $types,
+                ];
+            }
+            jsonResponse(['success' => true, 'stations' => $out, 'updated_at' => date('c')]);
+            break;
+
         case 'driver_active_queue':
             // Drivers view the active queue for the controller where their plate is registered
             $plate = sanitize($_GET['plate'] ?? '');
