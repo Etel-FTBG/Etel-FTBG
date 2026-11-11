@@ -3,7 +3,8 @@
 (function () {
     var engine = '';                       // 'google' | 'leaflet' | ''
     var map = null, markers = {}, meMarker = null, me = null, timer = null, watchId = null, fitted = false, lastData = [];
-    var selected = 0, dirSvc = null, dirRen = null, routeLine = null, infoWin = null, tryingGoogle = null;
+    var selected = 0, dirSvc = null, dirRen = null, routeLine = null, infoWin = null, tryingGoogle = null, routeRes = null, routeSt = null;
+    var nav = { on: false, st: null, steps: [], idx: 0, spoken: {}, off: 0, lastReroute: 0, muted: false, wake: null, poly: null, heading: null, first: true, lastPos: null };
 
     function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
     function km(a, b, c, d) {
@@ -84,8 +85,11 @@
     function setMe() {
         if (!me || !map) return;
         if (engine === 'google') {
-            if (meMarker) meMarker.setPosition(me);
-            else meMarker = new google.maps.Marker({ map: map, position: me, title: 'You are here', zIndex: 999, icon: { path: google.maps.SymbolPath.CIRCLE, scale: 9, fillColor: '#1a73e8', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 3 } });
+            var ico = (nav.on && nav.heading != null)
+                ? { path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW, scale: 7, rotation: nav.heading, fillColor: '#1a73e8', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 2.5 }
+                : { path: google.maps.SymbolPath.CIRCLE, scale: 9, fillColor: '#1a73e8', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 3 };
+            if (meMarker) { meMarker.setPosition(me); meMarker.setIcon(ico); }
+            else meMarker = new google.maps.Marker({ map: map, position: me, title: 'You are here', zIndex: 999, icon: ico });
         } else if (engine === 'leaflet') {
             if (meMarker) meMarker.setLatLng([me.lat, me.lng]);
             else meMarker = L.circleMarker([me.lat, me.lng], { radius: 9, color: '#fff', weight: 3, fillColor: '#1a73e8', fillOpacity: 1 }).addTo(map);
@@ -97,15 +101,17 @@
     }
     function showRouteInfo(s, text) {
         var el = document.getElementById('stnRoute'); if (!el) return;
-        el.innerHTML = '<div class="stn-route-in"><div><b>' + esc(s.name) + '</b><span>' + text + '</span></div><div class="stn-route-btns"><a class="stn-btn" target="_blank" rel="noopener" href="' + navUrl(s) + '">Start in Google Maps</a><button type="button" class="stn-btn ghost" onclick="stnClear()">Close</button></div></div>';
+        el.innerHTML = '<div class="stn-route-in"><div><b>' + esc(s.name) + '</b><span>' + text + '</span></div><div class="stn-route-btns"><button type="button" class="stn-btn" onclick="stnNavStart()">▶ Start navigation</button><button type="button" class="stn-btn ghost" onclick="stnClear()">Close</button></div></div>';
         el.style.display = 'block';
     }
     window.stnClear = function () {
-        selected = 0; clearRoute(); var el = document.getElementById('stnRoute'); if (el) el.style.display = 'none';
+        if (nav.on) endNav(false);
+        selected = 0; routeRes = null; clearRoute(); var el = document.getElementById('stnRoute'); if (el) el.style.display = 'none';
         lastData.forEach(setMarker); render(lastData, true);
     };
     window.stnSelect = function (id) {
         var s = byId(id); if (!s) return;
+        routeRes = null; routeSt = s;
         if (s.lat == null || s.lng == null) { alert('This station has no location on the map yet.'); return; }
         selected = s.id; lastData.forEach(setMarker); render(lastData, true);
         var mapEl = document.getElementById('stnMap'); if (mapEl) mapEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -115,6 +121,7 @@
             if (me && dirSvc) {
                 dirSvc.route({ origin: me, destination: { lat: s.lat, lng: s.lng }, travelMode: 'DRIVING' }, function (res, st) {
                     if (st === 'OK' && res.routes[0]) {
+                        routeRes = res; routeSt = s;
                         dirRen.setDirections(res);
                         var l = res.routes[0].legs[0];
                         showRouteInfo(s, '🚗 ' + esc(l.distance.text) + ' · ' + esc(l.duration.text) + ' &middot; ' + s.queued + ' cars waiting');
@@ -132,6 +139,120 @@
         }
     };
     window.stnFocus = window.stnSelect;
+
+    // ── in-app turn-by-turn navigation ──────────────────────────────
+    function strip(h) { var d = document.createElement('div'); d.innerHTML = String(h || ''); return (d.textContent || '').replace(/\s+/g, ' ').trim(); }
+    function fmtDist(m) { return m >= 1000 ? (m / 1000).toFixed(1) + ' km' : (Math.round(m / 10) * 10) + ' m'; }
+    function arrowFor(man, bearingDeg) {
+        if (bearingDeg != null) return '<span style="display:inline-block;transform:rotate(' + Math.round(bearingDeg) + 'deg)">↑</span>';
+        man = String(man || '');
+        if (/uturn/.test(man)) return '↩';
+        if (/roundabout/.test(man)) return '⟳';
+        if (/sharp-left|turn-left/.test(man)) return '↰';
+        if (/sharp-right|turn-right/.test(man)) return '↱';
+        if (/slight-left|fork-left|keep-left|ramp-left/.test(man)) return '↖';
+        if (/slight-right|fork-right|keep-right|ramp-right/.test(man)) return '↗';
+        return '↑';
+    }
+    function bearing(a, b) {
+        var t = Math.PI / 180, y = Math.sin((b.lng - a.lng) * t) * Math.cos(b.lat * t);
+        var x = Math.cos(a.lat * t) * Math.sin(b.lat * t) - Math.sin(a.lat * t) * Math.cos(b.lat * t) * Math.cos((b.lng - a.lng) * t);
+        return (Math.atan2(y, x) / t + 360) % 360;
+    }
+    function dm(a, b) { return km(a.lat, a.lng, b.lat, b.lng) * 1000; }
+    function say(text) {
+        if (nav.muted || !('speechSynthesis' in window)) return;
+        try { var u = new SpeechSynthesisUtterance(text); u.lang = 'en-US'; u.rate = 1; speechSynthesis.cancel(); speechSynthesis.speak(u); } catch (e) {}
+    }
+    function loadSteps(res) {
+        nav.steps = []; nav.idx = 0; nav.spoken = {};
+        if (!res || !res.routes[0]) return;
+        var leg = res.routes[0].legs[0];
+        leg.steps.forEach(function (st) {
+            nav.steps.push({ text: strip(st.instructions), man: st.maneuver || '', m: st.distance.value, sec: st.duration.value, end: { lat: st.end_location.lat(), lng: st.end_location.lng() } });
+        });
+        try { nav.poly = new google.maps.Polyline({ path: res.routes[0].overview_path }); } catch (e) { nav.poly = null; }
+    }
+    window.stnNavStart = function () {
+        var s = routeSt; if (!s) return;
+        if (!me) { alert('Turn on your phone location to start navigation.'); return; }
+        nav.on = true; nav.st = s; nav.muted = false; nav.off = 0; nav.first = true; nav.lastPos = null; nav.heading = null;
+        if (engine === 'google') loadSteps(routeRes);
+        var wrap = document.getElementById('stnMapWrap');
+        nav.ph = document.createComment('stn'); wrap.parentNode.insertBefore(nav.ph, wrap); document.body.appendChild(wrap); // escape page stacking contexts
+        wrap.classList.add('on');
+        document.body.classList.add('stn-nav-lock');
+        document.getElementById('stnNavTop').style.display = 'flex';
+        document.getElementById('stnNavBot').style.display = 'flex';
+        try { if (navigator.wakeLock) navigator.wakeLock.request('screen').then(function (w) { nav.wake = w; }).catch(function () {}); } catch (e) {}
+        setTimeout(function () {
+            if (engine === 'google') google.maps.event.trigger(map, 'resize'); else if (map && map.invalidateSize) map.invalidateSize();
+            say('Starting navigation to ' + s.name);
+            navTick();
+        }, 120);
+    };
+    function endNav(arrived) {
+        var s = nav.st; nav.on = false;
+        var wrap2 = document.getElementById('stnMapWrap');
+        wrap2.classList.remove('on');
+        if (nav.ph && nav.ph.parentNode) { nav.ph.parentNode.insertBefore(wrap2, nav.ph); nav.ph.parentNode.removeChild(nav.ph); } nav.ph = null;
+        document.body.classList.remove('stn-nav-lock');
+        document.getElementById('stnNavTop').style.display = 'none';
+        document.getElementById('stnNavBot').style.display = 'none';
+        try { if (nav.wake) nav.wake.release(); } catch (e) {} nav.wake = null;
+        try { if ('speechSynthesis' in window) speechSynthesis.cancel(); } catch (e) {}
+        if (engine === 'google') { if (map) { google.maps.event.trigger(map, 'resize'); } setMe(); }
+        if (arrived && s) { var el = document.getElementById('stnRoute'); if (el) { el.innerHTML = '<div class="stn-route-in"><div><b>🏁 You have arrived</b><span>' + esc(s.name) + ' &middot; ' + s.queued + ' cars waiting</span></div><div class="stn-route-btns"><button type="button" class="stn-btn ghost" onclick="stnClear()">Close</button></div></div>'; el.style.display = 'block'; } }
+    }
+    window.stnNavEnd = function () { endNav(false); };
+    window.stnNavMute = function () {
+        nav.muted = !nav.muted; if (nav.muted) { try { speechSynthesis.cancel(); } catch (e) {} }
+        var b = document.getElementById('stnMuteBtn'); if (b) b.textContent = nav.muted ? '🔇 Voice off' : '🔊 Voice on';
+    };
+    window.stnNavRecenter = function () { nav.first = true; navTick(); };
+    function reroute() {
+        if (engine !== 'google' || !dirSvc || !nav.st || Date.now() - nav.lastReroute < 15000) return;
+        nav.lastReroute = Date.now();
+        dirSvc.route({ origin: me, destination: { lat: nav.st.lat, lng: nav.st.lng }, travelMode: 'DRIVING' }, function (res, st) {
+            if (st === 'OK' && res.routes[0]) { routeRes = res; dirRen.setDirections(res); loadSteps(res); nav.off = 0; say('Rerouting'); }
+        });
+    }
+    function navTick() {
+        if (!nav.on || !me || !nav.st) return;
+        var dest = { lat: nav.st.lat, lng: nav.st.lng }, dDest = dm(me, dest);
+        if (dDest < 40) { say('You have arrived at ' + nav.st.name); endNav(true); return; }
+        var top = document.getElementById('stnNavTop'), bot = document.getElementById('stnNavBot');
+        var arrow, text, nextM, remM, remSec;
+        if (engine === 'google' && nav.steps.length) {
+            while (nav.idx < nav.steps.length - 1 && dm(me, nav.steps[nav.idx].end) < 25) nav.idx++;
+            var st = nav.steps[nav.idx];
+            nextM = dm(me, st.end);
+            remM = nextM; remSec = st.m ? st.sec * Math.min(1, nextM / st.m) : st.sec;
+            for (var i = nav.idx + 1; i < nav.steps.length; i++) { remM += nav.steps[i].m; remSec += nav.steps[i].sec; }
+            var nxt = nav.steps[nav.idx];
+            arrow = arrowFor(nxt.man); text = nxt.text || 'Continue';
+            if (nav.idx === nav.steps.length - 1) { text = 'Arrive at ' + nav.st.name; arrow = '🏁'; }
+            if (nextM <= 300 && !nav.spoken[nav.idx + 'a']) { nav.spoken[nav.idx + 'a'] = 1; say('In ' + fmtDist(nextM) + ', ' + text); }
+            if (nextM <= 45 && !nav.spoken[nav.idx + 'b']) { nav.spoken[nav.idx + 'b'] = 1; say(text); }
+            // off-route detection
+            try {
+                if (nav.poly && google.maps.geometry && !google.maps.geometry.poly.isLocationOnEdge(new google.maps.LatLng(me.lat, me.lng), nav.poly, 0.0004)) { nav.off++; if (nav.off >= 3) reroute(); }
+                else nav.off = 0;
+            } catch (e) {}
+        } else {
+            nextM = dDest; remM = dDest; remSec = dDest / 8.3; // ~30 km/h
+            arrow = arrowFor('', nav.heading != null ? (bearing(me, dest) - nav.heading + 360) % 360 : bearing(me, dest));
+            text = 'Head to ' + nav.st.name;
+        }
+        var eta = new Date(Date.now() + remSec * 1000);
+        top.innerHTML = '<div class="stn-nav-arrow">' + arrow + '</div><div class="stn-nav-txt"><b>' + fmtDist(nextM) + '</b><span>' + esc(text) + '</span></div>';
+        bot.innerHTML = '<div class="stn-nav-stat"><b>' + Math.max(1, Math.round(remSec / 60)) + ' min</b><span>' + fmtDist(remM) + ' &middot; ' + eta.getHours() + ':' + ('0' + eta.getMinutes()).slice(-2) + '</span></div>' +
+            '<div class="stn-nav-btns"><button type="button" class="stn-btn ghost" id="stnMuteBtn" onclick="stnNavMute()">' + (nav.muted ? '🔇 Voice off' : '🔊 Voice on') + '</button><button type="button" class="stn-btn ghost" onclick="stnNavRecenter()">◎</button><button type="button" class="stn-btn stn-end" onclick="stnNavEnd()">✕ End</button></div>';
+        // follow the driver
+        if (engine === 'google') { map.panTo(me); if (nav.first) { map.setZoom(17); nav.first = false; } }
+        else if (engine === 'leaflet') { map.setView([me.lat, me.lng], nav.first ? 17 : map.getZoom()); nav.first = false; }
+    }
+
 
     // ── list ────────────────────────────────────────────────────────
     function render(list, noFit) {
@@ -182,7 +303,8 @@
     function stop() {
         if (timer) clearInterval(timer); timer = null;
         if (watchId != null && navigator.geolocation) navigator.geolocation.clearWatch(watchId); watchId = null;
-        map = null; markers = {}; meMarker = null; fitted = false; selected = 0; engine = ''; dirSvc = dirRen = infoWin = routeLine = null;
+        if (nav.on) { try { endNav(false); } catch (e) {} }
+        map = null; markers = {}; meMarker = null; fitted = false; selected = 0; engine = ''; dirSvc = dirRen = infoWin = routeLine = null; routeRes = routeSt = null;
     }
 
     window.initStationsPage = function () {
@@ -202,8 +324,10 @@
         timer = setInterval(poll, 10000);
         if (navigator.geolocation) {
             watchId = navigator.geolocation.watchPosition(function (p) {
-                var first = !me; me = { lat: p.coords.latitude, lng: p.coords.longitude };
-                setMe(); if (first) { fitted = false; } render(lastData, !first);
+                var first = !me, prev = me; me = { lat: p.coords.latitude, lng: p.coords.longitude };
+                if (p.coords.heading != null && !isNaN(p.coords.heading) && (p.coords.speed || 0) > 1) nav.heading = p.coords.heading;
+                else if (prev && dm(prev, me) > 8) nav.heading = bearing(prev, me);
+                setMe(); if (nav.on) navTick(); else { if (first) { fitted = false; } render(lastData, !first); }
             }, function () {}, { enableHighAccuracy: true, maximumAge: 10000 });
         }
     };
