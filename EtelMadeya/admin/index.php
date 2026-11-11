@@ -10,8 +10,8 @@
     <link rel="stylesheet" href="../assets/css/admin-style.css">
     <link rel="stylesheet" href="../assets/css/etel-premium.css">
     <link rel="stylesheet" href="../assets/css/admin-mainpanel.css">
-    <link rel="stylesheet" href="../assets/css/madeya-pro.css?v=1">
-    <script src="../assets/js/madeya-pro.js?v=1"></script>
+    <link rel="stylesheet" href="../assets/css/madeya-pro-r2.css">
+    <script src="../assets/js/madeya-pro-r2.js"></script>
     <link rel="icon" href="../assets/img/etel-logo.png">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
@@ -323,9 +323,9 @@
     const API = 'api.php';
     let currentAdmin = null;
     </script>
-    <script src="../assets/js/madeya-vehicles.js?v=1"></script>
+    <script src="../assets/js/madeya-vehicles-r2.js"></script>
     <script src="../assets/js/icons.js"></script>
-    <script src="../assets/js/admin-app.js"></script>
-    <script src="../assets/js/admin-station.js?v=1"></script>
+    <script src="../assets/js/admin-app-r2.js"></script>
+    <script src="../assets/js/admin-station-r2.js"></script>
 </body>
 </html>
