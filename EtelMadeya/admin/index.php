@@ -386,7 +386,7 @@
     <script src="../assets/js/madeya-vehicles-r4.js"></script>
     <script src="../assets/js/madeya-plates-r2.js"></script>
     <script src="../assets/js/icons.js"></script>
-    <script src="../assets/js/admin-app-r8.js"></script>
+    <script src="../assets/js/admin-app-r9.js"></script>
     <script src="../assets/js/admin-station-r2.js"></script>
 </body>
 </html>
