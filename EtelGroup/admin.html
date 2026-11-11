@@ -145,6 +145,15 @@
           </tbody>
         </table>
       </div>
+      <div class="msg-table" style="padding:16px 18px;margin-top:16px">
+        <h3 style="font-size:14px;color:var(--gold-light);margin-bottom:6px">Telegram notify bot <span id="nb-state" style="font-weight:400;opacity:.7;font-size:12px"></span></h3>
+        <p style="color:var(--text-dim);font-size:13px;margin:0 0 12px">When a company is set to <b>Live</b>, everyone who signed up for it is told once: by <b>email</b>, and on <b>Telegram</b> if they opened the bot link from the pop-up. Create a bot with @BotFather, paste its token and username, then press "Save and connect". (Phone-number sign-ups stay in the CSV download.)</p>
+        <div class="cf-grid">
+          <div class="cf-field"><label>Bot token</label><input type="password" id="nb-token" autocomplete="off" placeholder="Paste the token (empty = keep the saved one)"></div>
+          <div class="cf-field"><label>Bot username</label><input type="text" id="nb-user" maxlength="64" placeholder="e.g. EtelGroupBot"></div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:12px"><button class="btn btn-outline" style="width:auto" onclick="saveNotifyBot(false)">Save</button><button class="btn btn-primary" style="width:auto" onclick="saveNotifyBot(true)">Save and connect</button></div>
+      </div>
     </section>
 
     <!-- EMPLOYEES TAB -->
@@ -339,7 +348,7 @@
   </div>
 </div>
 
-<script src="EtelGroup/js/admin-r3.js"></script>
+<script src="EtelGroup/js/admin-r4.js"></script>
 <script src="EtelGroup/js/eg-theme-r2.js"></script>
 </body>
 </html>

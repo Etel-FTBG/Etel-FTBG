@@ -237,7 +237,7 @@ function switchTab(name) {
   document.getElementById('tab-nav-employees').classList.toggle('active', name === 'employees');
   document.getElementById('tab-nav-activity').classList.toggle('active', name === 'activity');
   document.getElementById('tab-nav-finance').classList.toggle('active', name === 'finance');
-  if (name === 'companies') loadCompanies();
+  if (name === 'companies') { loadCompanies(); loadNotifyBot(); }
   if (name === 'employees') loadEmployeesTab();
   if (name === 'activity') loadActivityTab(1);
   if (name === 'sitecontent') loadSiteContent();
@@ -471,7 +471,7 @@ async function loadCompanies() {
       <td>${c.sort_order}</td>
       <td><strong>${egaEsc(c.name)}</strong><br><span style="color:var(--text-dim);font-size:11.5px">${egaEsc(c.tagline)}</span></td>
       <td style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${egaEsc(c.url) || '<span style="color:var(--text-faint)">—</span>'}</td>
-      <td><span class="pill ${c.status === 'live' ? 'replied' : 'new'}">${c.status === 'live' ? 'Live' : 'Coming Soon'}</span>${c.status !== 'live' && c.launch_text ? `<br><span style="color:var(--text-dim);font-size:11.5px">${egaEsc(c.launch_text)}</span>` : ''}${Number(c.notify_count) > 0 ? `<br><a href="#" style="font-size:11.5px;color:var(--gold-light)" onclick="exportNotifyCsv('${egaEsc(c.slug)}');return false">${c.notify_count} waiting &middot; download</a>` : ''}</td>
+      <td><span class="pill ${c.status === 'live' ? 'replied' : 'new'}">${c.status === 'live' ? 'Live' : 'Coming Soon'}</span>${c.status !== 'live' && c.launch_text ? `<br><span style="color:var(--text-dim);font-size:11.5px">${egaEsc(c.launch_text)}</span>` : ''}${Number(c.notify_count) > 0 ? `<br><a href="#" style="font-size:11.5px;color:var(--gold-light)" onclick="exportNotifyCsv('${egaEsc(c.slug)}');return false">${c.notify_count} signed up &middot; download</a>${c.status === 'live' ? ` &middot; <a href="#" style="font-size:11.5px;color:var(--gold-light)" onclick="sendLaunchNotify('${egaEsc(c.slug)}');return false">send launch message</a>` : ''}` : ''}</td>
       <td style="white-space:nowrap">
         <button class="btn btn-outline" style="padding:6px 10px;font-size:11.5px" onclick="openCompanyForm(${c.id})">Edit</button>
         <button class="btn btn-danger" style="padding:6px 10px;font-size:11.5px" onclick="deleteCompany(${c.id})">Delete</button>
@@ -625,6 +625,27 @@ async function saveCompany() {
   loadCompanies();
 }
 
+async function sendLaunchNotify(slug) {
+  if (!confirm('Send the launch message now to everyone on this list who has not been told yet?')) return;
+  const res = await egaApi('admin_send_launch_notify', { slug });
+  if (!res.ok) { alert(res.error || 'Could not send'); return; }
+  const d = res.data;
+  alert('Sent: ' + d.email + ' email, ' + d.telegram + ' Telegram.' + (d.failed ? '\n' + d.failed + ' could not be sent (they stay on the list for the next try).' : '') + (d.skipped ? '\n' + d.skipped + ' phone-number sign-up(s) have no channel - use the CSV download.' : ''));
+  loadCompanies();
+}
+async function loadNotifyBot() {
+  const res = await egaApi('admin_get_notify_bot'); if (!res.ok) return;
+  const st = document.getElementById('nb-state'); if (!st) return;
+  document.getElementById('nb-user').value = res.data.username || '';
+  st.textContent = res.data.connected ? 'Connected' : (res.data.token_set ? 'Token saved, not connected yet' : 'Not set up');
+}
+async function saveNotifyBot(connect) {
+  const res = await egaApi('admin_save_notify_bot', { token: document.getElementById('nb-token').value.trim(), username: document.getElementById('nb-user').value.trim(), connect: !!connect });
+  if (!res.ok) { alert(res.error || 'Could not save'); return; }
+  document.getElementById('nb-token').value = '';
+  alert(res.data.message); loadNotifyBot();
+}
+
 function exportNotifyCsv(slug) {
   window.open(EGA.apiBase + '?action=admin_export_notify_csv&slug=' + encodeURIComponent(slug) + '&token=' + encodeURIComponent(egaGetToken()), '_blank');
 }
@@ -713,6 +734,8 @@ const EGA_ACTIVITY_LABELS = {
   company_updated: 'Updated company',
   company_deleted: 'Deleted company',
   company_launch: 'Changed launch settings',
+  launch_notify: 'Sent launch messages',
+  notify_bot: 'Changed the Telegram notify bot',
   companies_reordered: 'Reordered companies',
   employee_role_set: 'Assigned employee role',
   employee_role_removed: 'Removed employee role',

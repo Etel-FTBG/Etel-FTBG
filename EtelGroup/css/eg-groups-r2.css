@@ -47,3 +47,6 @@
 html[data-theme="light"] .eg-notify { background: #fffaf0; color: #3a2608; border-color: rgba(176,135,15,.5); }
 html[data-theme="light"] .eg-notify input[name=contact] { background: #fff; border-color: rgba(176,135,15,.5); }
 html[data-theme="light"] .co-online-text.online { color: #15803d; } html[data-theme="light"] .co-online-text.offline { color: #b91c1c; }
+
+.eg-notify-or{display:flex;align-items:center;gap:10px;margin:14px 0 10px;font-size:12px;opacity:.7}.eg-notify-or::before,.eg-notify-or::after{content:"";flex:1;height:1px;background:rgba(212,175,55,.35)}
+.eg-notify-tg{display:block;text-align:center;padding:12px;border-radius:10px;border:1px solid rgba(212,175,55,.5);color:inherit;text-decoration:none;font-weight:700}.eg-notify-tg:hover{background:rgba(212,175,55,.12)}
