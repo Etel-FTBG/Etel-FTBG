@@ -8,6 +8,8 @@
 // ============================================================
 declare(strict_types=1);
 
+require_once __DIR__ . '/../site_content.php';
+
 switch ($action) {
 
 case 'admin_login': {
@@ -200,6 +202,45 @@ case 'list_companies': {
          FROM companies ORDER BY sort_order ASC, name ASC'
     )->fetchAll();
     ok(array('companies' => $rows));
+    break;
+}
+
+// ---------- editable page content (public read, admin write) ----------
+
+case 'get_site_content': {
+    // Public, no auth - the master page fetches this and replaces only the texts that have a saved value.
+    $pdo = eg_db();
+    ok(array('content' => (object)eg_site_content_load($pdo)));
+    break;
+}
+
+case 'admin_get_site_content': {
+    eg_require_admin();
+    $pdo = eg_db();
+    ok(array('schema' => eg_site_content_schema(), 'content' => (object)eg_site_content_load($pdo)));
+    break;
+}
+
+case 'admin_save_site_content': {
+    eg_require_admin();
+    $pdo = eg_db();
+    eg_ensure_site_content_table($pdo);
+    $fields = eg_site_content_fields();
+    $items = isset($body['items']) && is_array($body['items']) ? $body['items'] : array();
+    $saved = 0; $cleared = 0;
+    foreach ($items as $k => $v) {
+        if (!isset($fields[$k]) || !is_array($v)) continue;
+        $en = eg_site_content_clean((string)($v['en'] ?? ''), $fields[$k]['type']);
+        $am = !empty($fields[$k]['bi']) ? eg_site_content_clean((string)($v['am'] ?? ''), $fields[$k]['type']) : '';
+        if ($en === '' && $am === '') {
+            $pdo->prepare('DELETE FROM site_content WHERE k = ?')->execute(array($k)); $cleared++;
+        } else {
+            $pdo->prepare('INSERT INTO site_content (k, en, am, updated_at) VALUES (?,?,?,NOW()) ON DUPLICATE KEY UPDATE en = VALUES(en), am = VALUES(am), updated_at = NOW()')
+                ->execute(array($k, $en, $am)); $saved++;
+        }
+    }
+    eg_log_activity('site_content', "Saved page content: $saved set, $cleared reset to default");
+    ok(array('saved' => $saved, 'cleared' => $cleared, 'content' => (object)eg_site_content_load($pdo)));
     break;
 }
 
