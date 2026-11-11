@@ -13,6 +13,7 @@
     <link rel="stylesheet" href="../assets/css/madeya-pro-r2.css">
     <link rel="stylesheet" href="../assets/css/madeya-vehicles.css">
     <link rel="stylesheet" href="../assets/css/madeya-plates-r2.css">
+    <link rel="stylesheet" href="../assets/css/madeya-modals.css">
     <script src="../assets/js/madeya-pro-r2.js"></script>
     <link rel="icon" href="../assets/img/etel-logo.png">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
