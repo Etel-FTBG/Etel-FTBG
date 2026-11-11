@@ -316,7 +316,7 @@ function renderFuelCard(f) {
     el.style.display = 'block';
     if (!document.getElementById('fcStatus')) {
         el.innerHTML = '<div class="fc-top"><b>⛽ Fuel available at this station</b><span id="fcStatus"></span></div>' +
-            '<div class="fc-set"><input type="number" id="fcInput" min="0" step="any" inputmode="decimal" placeholder="Liters in the tank now"><button type="button" class="btn-primary" onclick="saveFuelAvailable()">Update</button></div>' +
+            '<div class="fc-set"><input type="number" id="fcInput" autocomplete="off" value="" min="0" step="any" inputmode="decimal" placeholder="Liters in the tank now"><button type="button" class="btn-primary" onclick="saveFuelAvailable()">Update</button></div>' +
             '<div id="fcAlert"></div>';
     }
     const st = document.getElementById('fcStatus'), al = document.getElementById('fcAlert');

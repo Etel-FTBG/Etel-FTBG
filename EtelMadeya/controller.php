@@ -20,7 +20,7 @@ if ( isset( $_GET['embed'] ) && ! headers_sent() ) {
     <link rel="stylesheet" href="assets/css/controller-mainpanel.css">
     <link rel="stylesheet" href="assets/css/madeya-pro-r2.css">
     <link rel="stylesheet" href="assets/css/madeya-vehicles.css">
-    <link rel="stylesheet" href="assets/css/madeya-plates-r2.css">
+    <link rel="stylesheet" href="assets/css/madeya-plates-r3.css">
     <link rel="stylesheet" href="assets/css/madeya-limits.css">
     <link rel="stylesheet" href="assets/css/madeya-liters.css">
     <link rel="stylesheet" href="assets/css/madeya-alerts-r4.css">
@@ -470,6 +470,6 @@ if ( isset( $_GET['embed'] ) && ! headers_sent() ) {
     <script src="assets/js/madeya-vehicles-r4.js"></script>
     <script src="assets/js/madeya-plates-r2.js"></script>
     <script src="assets/js/icons.js"></script>
-    <script src="assets/js/controller-app-r12.js"></script>
+    <script src="assets/js/controller-app-r13.js"></script>
 </body>
 </html>
