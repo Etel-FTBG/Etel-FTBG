@@ -15,6 +15,7 @@
     <link rel="stylesheet" href="../assets/css/madeya-plates-r2.css">
     <link rel="stylesheet" href="../assets/css/madeya-modals.css">
     <link rel="stylesheet" href="../assets/css/madeya-settings.css">
+    <link rel="stylesheet" href="../assets/css/madeya-liters.css">
     <script src="../assets/js/madeya-pro-r2.js"></script>
     <link rel="icon" href="../assets/img/etel-logo.png">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -123,6 +124,21 @@
                         <div class="am-sc purple"><b id="statVehicleTypes">0</b><span>Vehicle Types</span></div>
                     </div>
 
+                    <div class="pnl" style="margin:16px 20px 0;">
+                        <div class="pnl-h"><h3>Fuel estimate today</h3><small class="lit-hint">vehicles served &times; the tank size set on each vehicle type</small></div>
+                        <div class="pnl-b">
+                            <div class="lit-stats">
+                                <div class="lit-sc"><b id="litToday">0</b><span>Est. liters served</span></div>
+                                <div class="lit-sc"><b id="litAvg">0</b><span>Avg liters / vehicle</span></div>
+                                <div class="lit-sc"><b id="litQueue">0</b><span>Liters the queue needs</span></div>
+                            </div>
+                            <div class="lit-two">
+                                <div><h4 class="lit-h">By station</h4><div id="litStations"><p class="empty-state">Loading...</p></div></div>
+                                <div><h4 class="lit-h">By vehicle type</h4><div id="litTypes"><p class="empty-state">Loading...</p></div></div>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="am-grid-2">
                         <div class="pnl">
                             <div class="pnl-h"><h3>Vehicles Served -- Last 14 Days</h3></div>
@@ -219,6 +235,7 @@
                                     <th>Name (AM)</th>
                                     <th>Sort Order</th>
                                     <th>Fuel every</th>
+                                    <th>Tank</th>
                                     <th>Status</th>
                                     <th>Actions</th>
                                 </tr>
@@ -360,7 +377,7 @@
     <script src="../assets/js/madeya-vehicles-r4.js"></script>
     <script src="../assets/js/madeya-plates-r2.js"></script>
     <script src="../assets/js/icons.js"></script>
-    <script src="../assets/js/admin-app-r6.js"></script>
+    <script src="../assets/js/admin-app-r7.js"></script>
     <script src="../assets/js/admin-station-r2.js"></script>
 </body>
 </html>

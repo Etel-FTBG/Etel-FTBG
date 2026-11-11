@@ -171,6 +171,8 @@ async function loadDashboard() {
             document.getElementById('statServedToday').textContent = Number(data.stats.served_today).toLocaleString();
             document.getElementById('statVehicleTypes').textContent = Number(data.stats.vehicle_types).toLocaleString();
 
+            renderLiters(data);
+
             // Display recent activity
             const activityDiv = document.getElementById('recentActivity');
             if (data.activity.length === 0) {
@@ -204,6 +206,22 @@ async function loadDashboard() {
 
     loadServedTrend();
     loadFuelSnapshot();
+}
+
+function renderLiters(data) {
+    const L = (data.stats && data.stats.liters) || {};
+    const n = v => Number(v || 0).toLocaleString(undefined, { maximumFractionDigits: 1 });
+    const set = (id, v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
+    set('litToday', n(L.liters) + ' L'); set('litAvg', n(L.avg) + ' L'); set('litQueue', n(L.queue_liters) + ' L');
+    const st = document.getElementById('litStations');
+    if (st) st.innerHTML = (data.controllers || []).length ? '<table class="lit-tbl"><thead><tr><th>Station</th><th>Served</th><th>Est. liters</th><th>Avg / vehicle</th><th>Queue needs</th></tr></thead><tbody>' +
+        data.controllers.map(c => `<tr><td>${escHtml(c.station_name)}</td><td>${n(c.served_today)}</td><td><b>${n(c.est_liters)} L</b></td><td>${n(c.avg_liters)} L</td><td>${n(c.queue_liters)} L</td></tr>`).join('') + '</tbody></table>'
+        : '<p class="empty-state">No stations</p>';
+    const ty = document.getElementById('litTypes');
+    if (ty) ty.innerHTML = (L.by_type || []).length ? '<table class="lit-tbl"><thead><tr><th>Vehicle type</th><th>Tank</th><th>Served</th><th>Est. liters</th></tr></thead><tbody>' +
+        L.by_type.map(t => `<tr><td>${escHtml(t.name)}</td><td>${t.tank_liters === null ? '<span style="opacity:.5">not set</span>' : n(t.tank_liters) + ' L'}</td><td>${n(t.served)}</td><td><b>${n(t.liters)} L</b></td></tr>`).join('') + '</tbody></table>'
+        + (L.unknown ? `<p class="lit-hint">${n(L.unknown)} served vehicle(s) have no tank size set and are not counted.</p>` : '')
+        : '<p class="empty-state">No vehicles served yet today</p>';
 }
 
 let servedTrendChart = null;
@@ -634,7 +652,7 @@ function displayVehicleTypes(types) {
     const tbody = document.getElementById('vehiclesTableBody');
 
     if (types.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="8" class="empty-state">No vehicle types found</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="9" class="empty-state">No vehicle types found</td></tr>';
         return;
     }
 
@@ -646,6 +664,7 @@ function displayVehicleTypes(types) {
             <td>${escHtml(t.name_am)}</td>
             <td>${t.sort_order}</td>
             <td>${(t.cooldown_days === undefined || t.cooldown_days === null) ? 1 : Number(t.cooldown_days)} ${Number(t.cooldown_days) === 1 || t.cooldown_days === undefined || t.cooldown_days === null ? 'day' : (Number(t.cooldown_days) === 0 ? '(no limit)' : 'days')}</td>
+            <td>${t.tank_liters !== null && t.tank_liters !== undefined && t.tank_liters !== '' ? Number(t.tank_liters) + ' L' : '<span style="opacity:.5">not set</span>'}</td>
             <td><span class="status-badge status-${t.is_active ? 'active' : 'inactive'}">${t.is_active ? 'Active' : 'Inactive'}</span></td>
             <td>
                 <button onclick="editVehicleType(${t.id})" class="action-btn action-btn-serve">${ICONS.edit} Edit</button>
@@ -719,6 +738,11 @@ function showAddVehicleType() {
                         <small class="vt-up-hint">1 = once a day, 3 = a vehicle of this type can fuel again only after 3 days, 0 = no limit. If it comes earlier, the controller sees when, where and on which day it already fuelled and when it can fuel next.</small>
                     </div>
                     <div class="form-group">
+                        <label for="addVtTank">Tank holds (liters)</label>
+                        <input type="number" id="addVtTank" class="form-control" min="0" max="2000" step="0.5" placeholder="e.g. 40">
+                        <small class="vt-up-hint">Used to estimate the liters served per day and per station (vehicles served &times; tank size). Leave empty if unknown.</small>
+                    </div>
+                    <div class="form-group">
                         <label for="addVtSortOrder">Sort Order</label>
                         <input type="number" id="addVtSortOrder" class="form-control" value="0">
                     </div>
@@ -748,6 +772,7 @@ async function handleAddVehicleType(event) {
     formData.append('name_am', document.getElementById('addVtNameAm').value);
     formData.append('sort_order', document.getElementById('addVtSortOrder').value);
     formData.append('cooldown_days', document.getElementById('addVtCooldown').value);
+    formData.append('tank_liters', document.getElementById('addVtTank').value);
 
     submitBtn.disabled = true;
     submitBtn.textContent = 'Adding…';
@@ -801,6 +826,11 @@ function editVehicleType(id) {
                         <small class="vt-up-hint">1 = once a day, 3 = a vehicle of this type can fuel again only after 3 days, 0 = no limit. If it comes earlier, the controller sees when, where and on which day it already fuelled and when it can fuel next.</small>
                     </div>
                     <div class="form-group">
+                        <label for="editVtTank">Tank holds (liters)</label>
+                        <input type="number" id="editVtTank" class="form-control" min="0" max="2000" step="0.5" placeholder="e.g. 40" value="${t.tank_liters !== null && t.tank_liters !== undefined ? Number(t.tank_liters) : ''}">
+                        <small class="vt-up-hint">Used to estimate the liters served per day and per station (vehicles served &times; tank size). Leave empty if unknown.</small>
+                    </div>
+                    <div class="form-group">
                         <label for="editVtSortOrder">Sort Order</label>
                         <input type="number" id="editVtSortOrder" class="form-control" value="${t.sort_order}">
                     </div>
@@ -837,6 +867,7 @@ async function handleEditVehicleType(event, id) {
     formData.append('name_am', document.getElementById('editVtNameAm').value);
     formData.append('sort_order', document.getElementById('editVtSortOrder').value);
     formData.append('cooldown_days', document.getElementById('editVtCooldown').value);
+    formData.append('tank_liters', document.getElementById('editVtTank').value);
     formData.append('is_active', document.getElementById('editVtActive').checked ? 1 : 0);
 
     submitBtn.disabled = true;

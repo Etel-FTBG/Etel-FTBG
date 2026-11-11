@@ -22,6 +22,7 @@ if ( isset( $_GET['embed'] ) && ! headers_sent() ) {
     <link rel="stylesheet" href="assets/css/madeya-vehicles.css">
     <link rel="stylesheet" href="assets/css/madeya-plates-r2.css">
     <link rel="stylesheet" href="assets/css/madeya-limits.css">
+    <link rel="stylesheet" href="assets/css/madeya-liters.css">
     <script src="assets/js/madeya-pro-r2.js"></script>
     <link rel="icon" href="assets/img/etel-logo.png">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
@@ -104,6 +105,8 @@ if ( isset( $_GET['embed'] ) && ! headers_sent() ) {
                     <div class="sc-fuel-bottom"><span>Remaining</span><span id="statFuelPct">&mdash;%</span></div>
                 </div>
             </div>
+
+            <div class="lit-strip" id="litStrip" style="display:none"></div>
 
             <!-- Tab Navigation -->
             <nav class="mc-tab-nav">
@@ -287,6 +290,7 @@ if ( isset( $_GET['embed'] ) && ! headers_sent() ) {
                         <button type="button" class="clr-btn" onclick="clearReportSearch()">Clear</button>
                         <span class="rpt-count" id="reportCount"></span>
                     </div>
+                    <div id="reportLiters" class="lit-report" style="display:none"></div>
                     <div id="reportMatchAlert" class="rpt-match-alert" style="display:none">
                         <span id="reportMatchText"></span>
                     </div>
@@ -464,6 +468,6 @@ if ( isset( $_GET['embed'] ) && ! headers_sent() ) {
     <script src="assets/js/madeya-vehicles-r4.js"></script>
     <script src="assets/js/madeya-plates-r2.js"></script>
     <script src="assets/js/icons.js"></script>
-    <script src="assets/js/controller-app-r6.js"></script>
+    <script src="assets/js/controller-app-r7.js"></script>
 </body>
 </html>

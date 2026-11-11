@@ -302,6 +302,15 @@ function populateVehicleTypeSelects() {
     });
 }
 
+function fmtL(v) { return Number(v || 0).toLocaleString(undefined, { maximumFractionDigits: 1 }); }
+function renderLitersStrip(L) {
+    const el = document.getElementById('litStrip'); if (!el || !L) return;
+    el.style.display = 'flex';
+    el.innerHTML = '<span class="lit-i">⛽</span><span><b>' + fmtL(L.liters) + ' L</b> served today (est.)</span><span class="lit-sep"></span>' +
+        '<span><b>' + fmtL(L.avg) + ' L</b> average per vehicle</span><span class="lit-sep"></span>' +
+        '<span>Queue needs about <b>' + fmtL(L.queue_liters) + ' L</b></span>';
+}
+
 async function loadStats() {
     try {
         const response = await fetch(`${API}&action=get_stats`);
@@ -332,6 +341,7 @@ async function loadStats() {
         if (tabVip) tabVip.textContent = s.vip_count ? `(${s.vip_count})` : '';
 
         renderFuelGauge(s);
+        renderLitersStrip(s.liters);
     } catch (error) {
         console.error('Error loading stats:', error);
     }
@@ -966,10 +976,20 @@ async function loadReport() {
         if (!data.success) { tbody.innerHTML = '<tr><td colspan="6" class="eq"><p>Failed to load report.</p></td></tr>'; return; }
         reportRows = data.report || [];
         document.getElementById('reportCount').textContent = reportRows.length + ' served';
+        renderReportLiters(data.liters);
         renderReport(reportRows);
     } catch (e) {
         tbody.innerHTML = '<tr><td colspan="6" class="eq"><p>Error loading report.</p></td></tr>';
     }
+}
+
+function renderReportLiters(L) {
+    const el = document.getElementById('reportLiters'); if (!el) return;
+    if (!L || !L.served) { el.style.display = 'none'; return; }
+    el.style.display = 'block';
+    el.innerHTML = '<div class="lit-rep-top"><span><b>' + fmtL(L.liters) + ' L</b> served (est.)</span><span><b>' + fmtL(L.avg) + ' L</b> average per vehicle</span><span><b>' + fmtL(L.served) + '</b> vehicles</span></div>' +
+        '<div class="lit-rep-chips">' + (L.by_type || []).filter(t => t.served).map(t => '<span class="lit-chip">' + (window.vehPic ? vehPic('', t.name, 20) : '') + escHtml(t.name) + ' &times; ' + t.served + (t.tank_liters !== null ? ' &middot; ' + fmtL(t.tank_liters) + ' L each' : ' &middot; tank not set') + ' = <b>' + fmtL(t.liters) + ' L</b></span>').join('') + '</div>' +
+        (L.unknown ? '<small>' + L.unknown + ' vehicle(s) have no tank size set (ask the admin to set it on the vehicle type).</small>' : '');
 }
 
 function renderReport(rows) {
