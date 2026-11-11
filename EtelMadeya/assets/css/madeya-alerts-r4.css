@@ -27,3 +27,16 @@
 .pr-tag{display:inline-block;font-size:11px;font-weight:800;padding:2px 8px;border-radius:999px;background:#d4af37;color:#1a1400;margin-right:6px}.pr-tag.pr-release{background:#d93025;color:#fff}.pr-tag.pr-bulk{background:#1e6fe8;color:#fff}
 .lit-table{width:100%;font-size:13px}.lit-table th,.lit-table td{padding:6px 8px;text-align:left}
 .report-filters input[type=date],.pr-act input[type=date]{min-height:40px;border-radius:10px;padding:0 10px}
+
+.pr-logtop{display:flex;justify-content:space-between;align-items:center;gap:8px}.pr-undo{min-height:34px;padding:4px 12px}.pr-done{font-size:12px;opacity:.6;font-weight:700}
+.pr-tag.pr-undo{background:#6b7280;color:#fff;min-height:0;padding:2px 8px}
+.fb{display:inline-block;padding:2px 8px;border-radius:999px;font-size:12px;font-weight:800;white-space:nowrap}.fb-ok{background:#e1f3e7;color:#1d6b35}.fb-low{background:#fff1cc;color:#8a5a00}.fb-bad{background:#fdd9d5;color:#a3201a}
+/* controller fuel-available card */
+.fuel-card2{margin:10px 0;padding:12px 14px;border-radius:14px;border:1.5px solid rgba(212,175,55,.5);background:rgba(212,175,55,.07)}
+.fuel-card2 .fc-top{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.fuel-card2 .fc-set{display:flex;gap:8px;margin-top:8px}.fuel-card2 .fc-set input{flex:1;min-height:42px;border-radius:10px;padding:0 12px;border:1.5px solid var(--mp-line2,#d9c98f);background:var(--mp-soft,#faf6ea);color:inherit}
+.fuel-card2.bad{border-color:#d93025;background:rgba(217,48,37,.1)}.fuel-card2.warn{border-color:#f08a00;background:rgba(240,138,0,.1)}
+.fuel-alert{margin-top:8px;padding:10px 12px;border-radius:10px;font-weight:700;background:#d93025;color:#fff}.fuel-alert.amber{background:#f08a00}
+
+.tbl-scroll,#litStations,#litTypes{overflow-x:auto;-webkit-overflow-scrolling:touch}.tbl-scroll table,#litStations table{min-width:460px}
+.fuel-card2{box-sizing:border-box;width:calc(100% - 40px);margin:10px 20px}.fuel-card2 .fc-set button{flex:none;white-space:nowrap}.fuel-card2 .fc-set input{min-width:0}

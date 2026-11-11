@@ -274,6 +274,13 @@ async function bulkPlateRegistry() {
     if (d.success && d.skipped && d.skipped.length) alert('Skipped:\n' + d.skipped.join('\n'));
     if (d.success) { searchPlateRegistry(); loadPlateLog(true); }
 }
+async function undoPlateChange(id) {
+    if (!confirm('Undo this plate registry change?')) return;
+    const fd = new FormData(); fd.append('action', 'undo_plate_registry'); fd.append('log_id', id);
+    const d = await (await fetch(API, { method: 'POST', body: fd })).json();
+    showNotification((d.success ? ICONS.success : ICONS.error) + ' ' + escHtml(d.message || ''), d.success ? 'success' : 'error');
+    loadPlateLog(true); if (d.success && document.getElementById('prSearch').value.trim()) searchPlateRegistry();
+}
 async function loadPlateLog(force) {
     const list = document.getElementById('prLogList'); if (!list) return;
     const q = document.getElementById('prLogQ').value.trim();
@@ -281,12 +288,14 @@ async function loadPlateLog(force) {
     try {
         const d = await (await fetch(`${API}?action=get_plate_registry_log&q=${encodeURIComponent(q)}`)).json();
         if (!d.success || !d.rows.length) { list.innerHTML = '<p class="empty-state">No changes logged yet.</p>'; return; }
-        const label = { edit: 'Edited', bulk: 'Bulk fix', release: 'Released' };
+        const label = { edit: 'Edited', bulk: 'Bulk fix', release: 'Released', undo: 'Undone' };
         list.innerHTML = d.rows.map(r => {
             const when = new Date(String(r.created_at).replace(' ', 'T')).toLocaleString();
             const plate = r.action === 'release' ? plateHtml(r.old_plate) : (r.old_plate === r.new_plate ? plateHtml(r.new_plate) : plateHtml(r.old_plate) + ' &rarr; ' + plateHtml(r.new_plate));
             const type = r.action === 'release' ? (r.old_type ? 'was ' + escHtml(r.old_type) : '') : (r.old_type !== r.new_type ? escHtml(r.old_type || '-') + ' &rarr; ' + escHtml(r.new_type || '-') : escHtml(r.new_type || ''));
-            return `<div class="pr-logrow"><div><span class="pr-tag pr-${r.action}">${label[r.action] || r.action}</span> ${plate}</div><small>${type ? type + ' &middot; ' : ''}by ${escHtml(r.admin_name || 'admin')} &middot; ${escHtml(when)}</small></div>`;
+            const undo = r.action === 'undo' ? '' : (r.restored_at ? '<span class="pr-done">Undone</span>' : `<button type="button" class="am-btn ghost pr-undo" onclick="undoPlateChange(${r.id})">Undo</button>`);
+            const plateTxt = r.action === 'undo' ? (r.old_plate && r.new_plate && r.old_plate !== r.new_plate ? plateHtml(r.old_plate) + ' &rarr; ' + plateHtml(r.new_plate) : plateHtml(r.new_plate || r.old_plate)) : plate;
+            return `<div class="pr-logrow"><div class="pr-logtop"><div><span class="pr-tag pr-${r.action}">${label[r.action] || r.action}</span> ${plateTxt}</div>${undo}</div><small>${type ? type + ' &middot; ' : ''}by ${escHtml(r.admin_name || 'admin')} &middot; ${escHtml(when)}</small></div>`;
         }).join('');
     } catch (e) { list.innerHTML = '<p class="empty-state">Could not load the log</p>'; }
 }
@@ -298,14 +307,21 @@ async function releasePlateRegistry(plate) {
     if (d.success) { searchPlateRegistry(); loadPlateLog(true); }
 }
 
+function fuelBadge(f) {
+    if (!f || !f.set) return '<span style="opacity:.5">not entered</span>';
+    const n = v => Number(v || 0).toLocaleString(undefined, { maximumFractionDigits: 1 });
+    const cls = { ok: 'fb-ok', low: 'fb-low', short: 'fb-bad', out: 'fb-bad' }[f.status] || 'fb-ok';
+    const txt = { ok: 'OK', low: 'Low', short: 'Short by ' + n(f.short_by) + ' L', out: 'EMPTY' }[f.status] || '';
+    return `<span class="fb ${cls}">${n(f.remaining)} L &middot; ${txt}</span>`;
+}
 function renderLiters(data) {
     const L = (data.stats && data.stats.liters) || {};
     const n = v => Number(v || 0).toLocaleString(undefined, { maximumFractionDigits: 1 });
     const set = (id, v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
     set('litToday', n(L.liters) + ' L'); set('litAvg', n(L.avg) + ' L'); set('litQueue', n(L.queue_liters) + ' L');
     const st = document.getElementById('litStations');
-    if (st) st.innerHTML = (data.controllers || []).length ? '<table class="lit-tbl"><thead><tr><th>Station</th><th>Served</th><th>Est. liters</th><th>Avg / vehicle</th><th>Queue needs</th></tr></thead><tbody>' +
-        data.controllers.map(c => `<tr><td>${escHtml(c.station_name)}</td><td>${n(c.served_today)}</td><td><b>${n(c.est_liters)} L</b></td><td>${n(c.avg_liters)} L</td><td>${n(c.queue_liters)} L</td></tr>`).join('') + '</tbody></table>'
+    if (st) st.innerHTML = (data.controllers || []).length ? '<table class="lit-tbl"><thead><tr><th>Station</th><th>Served</th><th>Est. liters</th><th>Avg / vehicle</th><th>Queue needs</th><th>Fuel left</th></tr></thead><tbody>' +
+        data.controllers.map(c => `<tr><td>${escHtml(c.station_name)}${c.region ? '<br><small style="opacity:.65">' + escHtml(c.region) + '</small>' : ''}</td><td>${n(c.served_today)}</td><td><b>${n(c.est_liters)} L</b></td><td>${n(c.avg_liters)} L</td><td>${n(c.queue_liters)} L</td><td>${fuelBadge(c.fuel)}</td></tr>`).join('') + '</tbody></table>'
         : '<p class="empty-state">No stations</p>';
     const ty = document.getElementById('litTypes');
     if (ty) ty.innerHTML = (L.by_type || []).length ? '<table class="lit-tbl"><thead><tr><th>Vehicle type</th><th>Tank</th><th>Served</th><th>Est. liters</th></tr></thead><tbody>' +
@@ -517,6 +533,11 @@ function stationGeoFields(prefix, c) {
     const open = c.is_open === undefined || c.is_open === null ? 1 : Number(c.is_open);
     return `
         <div class="form-group">
+            <label for="${prefix}Region">Region / city (drivers pick it on Live Stations)</label>
+            <input type="text" id="${prefix}Region" class="form-control" maxlength="60" list="madRegionList" placeholder="e.g. Hawassa" value="${escHtml(c.region || '')}">
+            <datalist id="madRegionList">${['Addis Ababa','Hawassa','Shashemene','Adama','Bishoftu','Bahir Dar','Dire Dawa','Mekelle','Jimma','Gondar','Dessie','Arba Minch','Dilla','Wolaita Sodo','Hosaena','Harar','Jijiga','Nekemte','Assosa','Semera','Gambela'].map(r => `<option value="${r}">`).join('')}</datalist>
+        </div>
+        <div class="form-group">
             <label class="am-check-label" for="${prefix}IsOpen">
                 <input type="checkbox" id="${prefix}IsOpen" ${open ? 'checked' : ''}>
                 Open today (shown to drivers on the live map)
@@ -545,6 +566,7 @@ function useMyLocation(prefix) {
 function appendStationGeo(fd, prefix) {
     fd.append('is_open', document.getElementById(prefix + 'IsOpen').checked ? 1 : 0);
     fd.append('open_hours', document.getElementById(prefix + 'Hours').value);
+    fd.append('region', document.getElementById(prefix + 'Region').value);
     fd.append('latitude', document.getElementById(prefix + 'Lat').value);
     fd.append('longitude', document.getElementById(prefix + 'Lng').value);
 }
@@ -1263,9 +1285,9 @@ async function loadLitersReport() {
         d.rows.forEach(r => { const k = r.day + '|' + r.station; (groups[k] = groups[k] || { day: r.day, station: r.station, rows: [], served: 0, liters: 0 }); const g = groups[k]; g.rows.push(r); g.served += r.served; g.liters += r.liters; });
         box.innerHTML = `<p class="am-note"><b>${n(d.totals.liters)} L</b> across <b>${n(d.totals.served)}</b> vehicles (${escHtml(d.from)} to ${escHtml(d.to)})${d.totals.unknown ? ' &middot; ' + d.totals.unknown + ' with no tank size' : ''}</p>` +
             Object.keys(groups).map(k => { const g = groups[k]; return `<div class="pr-row"><div class="pr-top"><b>${escHtml(g.day)} &middot; ${escHtml(g.station)}</b><small>${n(g.served)} vehicles &middot; ${n(g.liters)} L</small></div>
-                <table class="data-table lit-table"><thead><tr><th>Vehicle type</th><th>Tank</th><th>Served</th><th>Liters</th><th>Avg</th></tr></thead><tbody>` +
+                <div class="tbl-scroll"><table class="data-table lit-table"><thead><tr><th>Vehicle type</th><th>Tank</th><th>Served</th><th>Liters</th><th>Avg</th></tr></thead><tbody>` +
                 g.rows.map(r => `<tr><td>${escHtml(r.vehicle_type)}</td><td>${r.tank_liters === null ? '-' : n(r.tank_liters) + ' L'}</td><td>${n(r.served)}</td><td>${n(r.liters)} L${r.unknown ? ' *' : ''}</td><td>${r.served > r.unknown ? n(r.liters / (r.served - r.unknown)) : '-'} L</td></tr>`).join('') +
-                `</tbody></table></div>`; }).join('') + (d.totals.unknown ? '<p class="am-note">* some vehicles have no tank size; set it in Vehicle Types so they are counted.</p>' : '');
+                `</tbody></table></div></div>`; }).join('') + (d.totals.unknown ? '<p class="am-note">* some vehicles have no tank size; set it in Vehicle Types so they are counted.</p>' : '');
     } catch (e) { box.innerHTML = '<p class="empty-state">Could not load the report</p>'; }
 }
 function exportLitersCsv() {
@@ -1276,4 +1298,10 @@ function exportLitersCsv() {
     const a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob(['﻿' + lines.join('\n')], { type: 'text/csv;charset=utf-8' }));
     a.download = 'liters-report.csv'; document.body.appendChild(a); a.click(); a.remove();
+}
+
+function openDailySummary() {
+    const date = document.getElementById('litTo').value || new Date().toISOString().slice(0, 10);
+    const st = document.getElementById('litStation').value;
+    window.open('summary.php?date=' + encodeURIComponent(date) + '&controller_id=' + encodeURIComponent(st), '_blank');
 }

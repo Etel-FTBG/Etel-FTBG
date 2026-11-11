@@ -118,6 +118,7 @@ function getStationsPage() {
         <div class="container stn-wrap">
             <h1 class="page-title" data-t="Live Stations|ቀጥታ ማደያዎች">Live Stations</h1>
             <p class="page-subtitle" data-t="See which stations are open today, how many cars are waiting, and navigate to them|ዛሬ የተከፈቱ ማደያዎችን እና ወረፋ ይመልከቱ">See which stations are open today, how many cars are waiting, and navigate to them</p>
+            <div class="stn-region"><label for="stnRegion" data-t="Region|ክልል / ከተማ">Region</label><select id="stnRegion" onchange="stnRegionPick(this.value)"><option value="">All regions</option></select></div>
             <div id="stnSummary" class="stn-bar">Loading...</div>
             <div id="stnMapWrap" class="stn-mapwrap">
                 <div id="stnMap" class="stn-map"></div>

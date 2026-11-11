@@ -146,7 +146,7 @@ try {
             // Live board for drivers: every active station, whether it is open today, and how many vehicles are queued.
             ensureStationColumns();
             $stations = db()->fetchAll(
-                "SELECT id, station_name, station_address, latitude, longitude, is_open, open_hours
+                "SELECT id, station_name, station_address, latitude, longitude, is_open, open_hours, region
                  FROM controllers WHERE is_active = 1 ORDER BY is_open DESC, station_name ASC"
             );
             $counts = db()->fetchAll(
@@ -180,6 +180,8 @@ try {
                     'lng' => $st['longitude'] !== null ? (float)$st['longitude'] : null,
                     'is_open' => (int)$st['is_open'] === 1,
                     'open_hours' => $st['open_hours'],
+                    'region' => $st['region'] ?: '',
+                    'fuel_status' => ($fs = madeyaFuelStatus($sid)) && $fs['set'] ? $fs['status'] : '',
                     'queued' => $total,
                     'served_today' => $servedBy[$sid] ?? 0,
                     'types' => $types,
@@ -748,7 +750,17 @@ try {
             }
 
             $stats['liters'] = madeyaLiterStats($controllerId, date('Y-m-d'));
+            $stats['fuel'] = madeyaFuelStatus($controllerId);
             jsonResponse(['success' => true, 'stats' => $stats]);
+            break;
+
+        case 'set_fuel_available':
+            requireControllerAuth();
+            ensureStationColumns();
+            $raw = trim((string)($_POST['liters'] ?? ''));
+            if ($raw === '' || !is_numeric($raw) || (float)$raw < 0 || (float)$raw > 10000000) jsonResponse(['success' => false, 'message' => 'Enter the liters available'], 400);
+            db()->query("UPDATE controllers SET fuel_available_liters = ?, fuel_updated_at = ? WHERE id = ?", [round((float)$raw, 1), date('Y-m-d H:i:s'), (int)$_SESSION['controller_id']]);
+            jsonResponse(['success' => true, 'message' => 'Fuel available updated', 'fuel' => madeyaFuelStatus((int)$_SESSION['controller_id'])]);
             break;
 
         case 'check_import':

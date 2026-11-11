@@ -186,6 +186,7 @@ try {
             $stationLit = madeyaStationLiters(date('Y-m-d'));
             foreach ($controllers as &$cRow) {
                 $sl = $stationLit[(int)$cRow['id']] ?? ['served' => 0, 'liters' => 0, 'avg' => 0, 'queue_liters' => 0];
+                $cRow['fuel'] = madeyaFuelStatus((int)$cRow['id']);
                 $cRow['served_today'] = $sl['served']; $cRow['est_liters'] = $sl['liters']; $cRow['avg_liters'] = $sl['avg']; $cRow['queue_liters'] = $sl['queue_liters'];
             }
             unset($cRow);
@@ -290,7 +291,8 @@ try {
                 'latitude' => parseCoord($_POST['latitude'] ?? null, -90, 90),
                 'longitude' => parseCoord($_POST['longitude'] ?? null, -180, 180),
                 'is_open' => isset($_POST['is_open']) ? (int)(bool)$_POST['is_open'] : 1,
-                'open_hours' => sanitize($_POST['open_hours'] ?? '')
+                'open_hours' => sanitize($_POST['open_hours'] ?? ''),
+                'region' => ($rg = trim(sanitize($_POST['region'] ?? ''))) !== '' ? mb_substr($rg, 0, 60) : null
             ]);
 
             foreach ($vehicleTypeIds as $vtId) {
@@ -367,7 +369,8 @@ try {
                 'latitude' => parseCoord($_POST['latitude'] ?? null, -90, 90),
                 'longitude' => parseCoord($_POST['longitude'] ?? null, -180, 180),
                 'is_open' => isset($_POST['is_open']) ? (int)(bool)$_POST['is_open'] : 1,
-                'open_hours' => sanitize($_POST['open_hours'] ?? '')
+                'open_hours' => sanitize($_POST['open_hours'] ?? ''),
+                'region' => ($rg = trim(sanitize($_POST['region'] ?? ''))) !== '' ? mb_substr($rg, 0, 60) : null
             ];
 
             // Local password is never checked at sign-in (EtelID-only,
@@ -637,7 +640,7 @@ try {
             }
             db()->query("INSERT INTO plate_registry (plate_number, vehicle_type_id, first_registered_at) VALUES (?,?,?) ON DUPLICATE KEY UPDATE vehicle_type_id = VALUES(vehicle_type_id)", [$newPlate, $typeId, date('Y-m-d H:i:s')]);
             db()->insert('activity_log', ['admin_id' => $_SESSION['admin_id'], 'action' => 'set_plate_registry', 'details' => "Plate $plate set to $newPlate, vehicle type $typeId", 'ip_address' => getClientIP()]);
-            madeyaPlateLog('edit', $plate, $newPlate, $before ? madeyaVehicleTypeName($before['vehicle_type_id']) : null, madeyaVehicleTypeName($typeId));
+            madeyaPlateLog('edit', $plate, $newPlate, $before ? madeyaVehicleTypeName($before['vehicle_type_id']) : null, madeyaVehicleTypeName($typeId), $before ? $before['vehicle_type_id'] : null, $typeId);
             jsonResponse(['success' => true, 'message' => 'Plate registry updated', 'plate_number' => $newPlate]);
             break;
 
@@ -669,7 +672,7 @@ try {
                 }
                 if ($nType) db()->query("UPDATE plate_registry SET vehicle_type_id = ? WHERE plate_number = ?", [$nType, $new]);
                 if ($new === $old && (!$nType || (int)$row['vehicle_type_id'] === $nType)) continue;
-                madeyaPlateLog('bulk', $old, $new, madeyaVehicleTypeName($row['vehicle_type_id']), $nType ? $newTypeName : madeyaVehicleTypeName($row['vehicle_type_id']));
+                madeyaPlateLog('bulk', $old, $new, madeyaVehicleTypeName($row['vehicle_type_id']), $nType ? $newTypeName : madeyaVehicleTypeName($row['vehicle_type_id']), $row['vehicle_type_id'], $nType ?: $row['vehicle_type_id']);
                 $done++;
             }
             db()->insert('activity_log', ['admin_id' => $_SESSION['admin_id'], 'action' => 'bulk_plate_registry', 'details' => "Bulk plate registry fix: $done changed, " . count($skipped) . " skipped", 'ip_address' => getClientIP()]);
@@ -684,7 +687,7 @@ try {
             $before = db()->fetchOne("SELECT vehicle_type_id FROM plate_registry WHERE plate_number = ?", [$plate]);
             db()->query("DELETE FROM plate_registry WHERE plate_number = ?", [$plate]);
             db()->insert('activity_log', ['admin_id' => $_SESSION['admin_id'], 'action' => 'delete_plate_registry', 'details' => "Plate $plate removed from the plate registry", 'ip_address' => getClientIP()]);
-            madeyaPlateLog('release', $plate, null, $before ? madeyaVehicleTypeName($before['vehicle_type_id']) : null, null);
+            madeyaPlateLog('release', $plate, null, $before ? madeyaVehicleTypeName($before['vehicle_type_id']) : null, null, $before ? $before['vehicle_type_id'] : null, null);
             jsonResponse(['success' => true, 'message' => 'Plate released - it can be registered under any vehicle type again']);
             break;
 
@@ -694,8 +697,42 @@ try {
             $q = strtoupper(trim(sanitize($_GET['q'] ?? '')));
             $w = ''; $par = [];
             if ($q !== '') { $w = " WHERE old_plate LIKE ? OR new_plate LIKE ? OR admin_name LIKE ?"; $l = '%' . str_replace(['%', '_'], ['\\%', '\\_'], $q) . '%'; $par = [$l, $l, $l]; }
-            $rows = db()->fetchAll("SELECT id, admin_name, action, old_plate, new_plate, old_type, new_type, created_at FROM plate_registry_log" . $w . " ORDER BY id DESC LIMIT 150", $par);
+            $rows = db()->fetchAll("SELECT id, admin_name, action, old_plate, new_plate, old_type, new_type, restored_at, created_at FROM plate_registry_log" . $w . " ORDER BY id DESC LIMIT 150", $par);
             jsonResponse(['success' => true, 'rows' => $rows ?: []]);
+            break;
+
+        case 'undo_plate_registry':
+            requireAdminAuth();
+            ensurePlateRegistry(); ensurePlateLog();
+            $logId = (int)($_POST['log_id'] ?? 0);
+            $L = db()->fetchOne("SELECT * FROM plate_registry_log WHERE id = ?", [$logId]);
+            if (!$L) jsonResponse(['success' => false, 'message' => 'Log entry not found'], 404);
+            if (!empty($L['restored_at']) || $L['action'] === 'undo') jsonResponse(['success' => false, 'message' => 'This change cannot be undone again'], 400);
+            $oldTypeId = (int)$L['old_type_id'];
+            if (!$oldTypeId && $L['old_type']) { $t = db()->fetchOne("SELECT id FROM vehicle_types WHERE name = ?", [$L['old_type']]); $oldTypeId = $t ? (int)$t['id'] : 0; }
+            if ($L['action'] === 'release') {
+                if (!$oldTypeId) jsonResponse(['success' => false, 'message' => 'The old vehicle type is unknown - set the plate by hand'], 400);
+                if (db()->fetchOne("SELECT plate_number FROM plate_registry WHERE plate_number = ?", [$L['old_plate']])) jsonResponse(['success' => false, 'message' => 'This plate is already in the registry'], 409);
+                db()->query("INSERT INTO plate_registry (plate_number, vehicle_type_id, first_registered_at) VALUES (?,?,?)", [$L['old_plate'], $oldTypeId, date('Y-m-d H:i:s')]);
+                madeyaPlateLog('undo', null, $L['old_plate'], null, $L['old_type'], null, $oldTypeId);
+            } else {
+                $cur = db()->fetchOne("SELECT plate_number, vehicle_type_id FROM plate_registry WHERE plate_number = ?", [$L['new_plate']]);
+                if (!$cur) jsonResponse(['success' => false, 'message' => 'Plate ' . $L['new_plate'] . ' is no longer in the registry'], 409);
+                if (!$oldTypeId && !$L['old_type']) {          // the plate was not registered before this change -> remove it again
+                    db()->query("DELETE FROM plate_registry WHERE plate_number = ?", [$L['new_plate']]);
+                    madeyaPlateLog('undo', $L['new_plate'], null, madeyaVehicleTypeName($cur['vehicle_type_id']), null, $cur['vehicle_type_id'], null);
+                } else {
+                    if ($L['old_plate'] !== $L['new_plate'] && db()->fetchOne("SELECT plate_number FROM plate_registry WHERE plate_number = ?", [$L['old_plate']])) {
+                        jsonResponse(['success' => false, 'message' => 'Plate ' . $L['old_plate'] . ' already exists in the registry'], 409);
+                    }
+                    if ($L['old_plate'] !== $L['new_plate']) db()->query("UPDATE plate_registry SET plate_number = ? WHERE plate_number = ?", [$L['old_plate'], $L['new_plate']]);
+                    if ($oldTypeId) db()->query("UPDATE plate_registry SET vehicle_type_id = ? WHERE plate_number = ?", [$oldTypeId, $L['old_plate']]);
+                    madeyaPlateLog('undo', $L['new_plate'], $L['old_plate'], madeyaVehicleTypeName($cur['vehicle_type_id']), $oldTypeId ? madeyaVehicleTypeName($oldTypeId) : $L['old_type'], $cur['vehicle_type_id'], $oldTypeId ?: null);
+                }
+            }
+            db()->query("UPDATE plate_registry_log SET restored_at = ? WHERE id = ?", [date('Y-m-d H:i:s'), $logId]);
+            db()->insert('activity_log', ['admin_id' => $_SESSION['admin_id'], 'action' => 'undo_plate_registry', 'details' => "Undid plate registry change #$logId", 'ip_address' => getClientIP()]);
+            jsonResponse(['success' => true, 'message' => 'Change undone']);
             break;
 
         case 'get_liters_report':

@@ -3,6 +3,7 @@
 (function () {
     var engine = '';                       // 'google' | 'leaflet' | ''
     var map = null, markers = {}, meMarker = null, me = null, timer = null, watchId = null, fitted = false, lastData = [];
+    var allData = [], region = (function () { try { return localStorage.getItem('mad_stn_region') || ''; } catch (e) { return ''; } })();
     var selected = 0, dirSvc = null, dirRen = null, routeLine = null, infoWin = null, tryingGoogle = null, routeRes = null, routeSt = null;
     var nav = { on: false, st: null, steps: [], idx: 0, spoken: {}, off: 0, lastReroute: 0, muted: false, wake: null, poly: null, heading: null, first: true, lastPos: null };
 
@@ -255,7 +256,34 @@
 
 
     // ── list ────────────────────────────────────────────────────────
+    function regionOf(s) { return s.region || '__other'; }
+    function fillRegions() {
+        var sel = document.getElementById('stnRegion'); if (!sel) return;
+        var counts = {}, order = [];
+        allData.forEach(function (s) { var r = regionOf(s); if (!counts[r]) { counts[r] = 0; order.push(r); } counts[r]++; });
+        order.sort(function (a, b) { if (a === '__other') return 1; if (b === '__other') return -1; return a.localeCompare(b); });
+        if (region && !counts[region]) region = '';
+        var html = '<option value="">All regions (' + allData.length + ')</option>' + order.map(function (r) {
+            return '<option value="' + esc(r) + '"' + (r === region ? ' selected' : '') + '>' + (r === '__other' ? 'Other' : esc(r)) + ' (' + counts[r] + ')</option>';
+        }).join('');
+        if (sel.getAttribute('data-sig') !== html) { sel.innerHTML = html; sel.setAttribute('data-sig', html); }
+        sel.value = region;
+    }
+    window.stnRegionPick = function (v) {
+        region = v || ''; try { localStorage.setItem('mad_stn_region', region); } catch (e) {}
+        if (nav.on) endNav(false);
+        selected = 0; routeRes = null; clearRoute(); var rt = document.getElementById('stnRoute'); if (rt) rt.style.display = 'none';
+        fitted = false; render(allData, false);
+    };
     function render(list, noFit) {
+        if (list !== lastData) allData = list;
+        fillRegions();
+        list = region ? allData.filter(function (s) { return regionOf(s) === region; }) : allData.slice();
+        Object.keys(markers).forEach(function (id) {
+            if (list.some(function (s) { return String(s.id) === id; })) return;
+            try { if (engine === 'google') markers[id].setMap(null); else if (engine === 'leaflet') map.removeLayer(markers[id]); } catch (e) {}
+            delete markers[id];
+        });
         lastData = list;
         var grid = document.getElementById('stnGrid'); if (!grid) return;
         var rows = list.slice();
@@ -267,7 +295,7 @@
         });
         var openN = rows.filter(function (s) { return s.is_open; }).length;
         var sum = document.getElementById('stnSummary');
-        if (sum) sum.innerHTML = '<span class="live-dot"></span> LIVE · <b>' + openN + '</b> open of ' + rows.length + ' stations · tap a station to see the route · updated ' + new Date().toLocaleTimeString();
+        if (sum) sum.innerHTML = '<span class="live-dot"></span> LIVE · <b>' + openN + '</b> open of ' + rows.length + ' stations' + (region ? ' in ' + (region === '__other' ? 'Other' : esc(region)) : '') + ' · tap a station to see the route · updated ' + new Date().toLocaleTimeString();
         grid.innerHTML = rows.length ? rows.map(function (s) {
             var chips = (s.types || []).map(function (t) {
                 return '<span class="stn-chip">' + (window.vehPic ? vehPic(t.icon, t.name, 22) : '') + esc(t.name) + ' <b>' + t.count + '</b></span>';
@@ -279,6 +307,7 @@
                 '<div class="stn-nums"><div class="stn-num"><b>' + s.queued + '</b><span>Cars waiting</span></div><div class="stn-num"><b>' + s.served_today + '</b><span>Served today</span></div>' +
                 (s._d != null ? '<div class="stn-num"><b>' + s._d.toFixed(1) + '</b><span>km away</span></div>' : '') + '</div>' +
                 (chips ? '<div class="stn-chips">' + chips + '</div>' : '') +
+                (s.fuel_status === 'short' || s.fuel_status === 'out' ? '<div class="stn-fuel bad">⛽ ' + (s.fuel_status === 'out' ? 'Fuel finished' : 'Fuel may run out before the queue is served') + '</div>' : (s.fuel_status === 'low' ? '<div class="stn-fuel low">⛽ Fuel is running low</div>' : '')) +
                 '<div class="stn-actions">' + (can ? '<button type="button" class="stn-btn" onclick="event.stopPropagation();stnSelect(' + s.id + ')">🧭 Navigate on map</button>' : '<span class="stn-dist">Location not set yet</span>') + '</div></div>';
         }).join('') : '<div class="card">No stations yet.</div>';
 

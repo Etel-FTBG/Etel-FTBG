@@ -16,7 +16,7 @@
     <link rel="stylesheet" href="../assets/css/madeya-modals.css">
     <link rel="stylesheet" href="../assets/css/madeya-settings.css">
     <link rel="stylesheet" href="../assets/css/madeya-liters.css">
-    <link rel="stylesheet" href="../assets/css/madeya-alerts-r3.css">
+    <link rel="stylesheet" href="../assets/css/madeya-alerts-r4.css">
     <script src="../assets/js/madeya-pro-r2.js"></script>
     <link rel="icon" href="../assets/img/etel-logo.png">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -281,6 +281,7 @@
                             <select id="litStation" aria-label="Station"><option value="">All stations</option></select>
                             <button type="button" class="am-btn" onclick="loadLitersReport()">Generate</button>
                             <button type="button" class="am-btn ghost" onclick="exportLitersCsv()">Download CSV</button>
+                            <button type="button" class="am-btn" onclick="openDailySummary()">Print daily summary</button>
                         </div>
                         <div id="litReport"></div>
                     </div>
@@ -408,7 +409,7 @@
     <script src="../assets/js/madeya-vehicles-r4.js"></script>
     <script src="../assets/js/madeya-plates-r2.js"></script>
     <script src="../assets/js/icons.js"></script>
-    <script src="../assets/js/admin-app-r10.js"></script>
+    <script src="../assets/js/admin-app-r11.js"></script>
     <script src="../assets/js/admin-station-r2.js"></script>
 </body>
 </html>
