@@ -20,6 +20,7 @@ $T = function ($pair) use ($E) { return '<span' . ($pair['am'] !== '' ? ' data-t
     <link rel="stylesheet" href="assets/css/madeya-plates-r3.css">
     <link rel="stylesheet" href="assets/css/madeya-stations-r4.css">
     <link rel="stylesheet" href="assets/css/madeya-access.css">
+    <link rel="stylesheet" href="assets/css/madeya-mine-r1.css">
     <script src="assets/js/madeya-pro-r2.js"></script>
     <link rel="icon" href="assets/img/etel-logo.png">
 </head>
@@ -58,6 +59,7 @@ $T = function ($pair) use ($E) { return '<span' . ($pair['am'] !== '' ? ' data-t
                     <a href="#" onclick="navigate('home')" class="nav-link active" data-page="home" data-t="Home|መነሻ">Home</a>
                     <a href="#" onclick="navigate('check')" class="nav-link" data-page="check" data-t="Check Position|ቦታ ፈልግ">Check Position</a>
                     <a href="#" onclick="navigate('stations')" class="nav-link" data-page="stations" data-t="Live Stations|ቀጥታ ማደያዎች">Live Stations</a>
+                    <a href="#" onclick="navigate('mine')" class="nav-link" data-page="mine" data-t="My Cars|መኪኖቼ">My Cars</a>
                     <a href="#" onclick="navigate('about')" class="nav-link hide-mobile" data-page="about" data-t="About|ስለ እኛ">About</a>
                 </nav>
             </div>
@@ -119,7 +121,8 @@ $T = function ($pair) use ($E) { return '<span' . ($pair['am'] !== '' ? ' data-t
     <script src="assets/js/madeya-plates-r2.js"></script>
     <script src="assets/js/icons.js"></script>
     <script src="assets/js/driver-stations-r8.js"></script>
-    <script src="assets/js/driver-app-r7.js"></script>
+    <script src="assets/js/driver-mine-r1.js"></script>
+    <script src="assets/js/driver-app-r8.js"></script>
 <script src="/delivery/js/etel-help-fab.js" data-app="madeya" defer></script>
 </body>
 </html>

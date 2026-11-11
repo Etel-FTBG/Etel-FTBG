@@ -6,6 +6,7 @@
 require_once __DIR__ . '/../includes/config.php';
 require_once __DIR__ . '/../includes/queue_logic.php';
 require_once __DIR__ . '/../includes/stations.php';
+require_once __DIR__ . '/../includes/driver_account.php';
 require_once __DIR__ . '/../includes/site_content.php';
 
 header('Content-Type: application/json; charset=utf-8');
@@ -285,6 +286,71 @@ try {
             if (session_status() === PHP_SESSION_ACTIVE) session_regenerate_id(true);
             $_SESSION['driver_member'] = ['name' => (string)($m['full_name'] ?? ''), 'phone' => (string)($m['phone'] ?? '')];
             jsonResponse(['success' => true, 'member' => ['name' => $_SESSION['driver_member']['name']]]);
+            break;
+
+        // ─── DRIVER ACCOUNT (EtelID): saved vehicles + own fuel history ──────
+        case 'driver_my_vehicles':
+            $key = madeyaMemberKey();
+            if ($key === '') jsonResponse(['success' => false, 'code' => 'NOT_SIGNED_IN', 'message' => 'Sign in with your EtelID to see your vehicles.'], 401);
+            ensureDriverVehicles();
+            $rows = db()->fetchAll("SELECT v.id, v.plate_number, v.vehicle_type_id, v.nickname, vt.name AS type_name, vt.name_am AS type_name_am, vt.icon
+                                    FROM driver_vehicles v JOIN vehicle_types vt ON vt.id = v.vehicle_type_id WHERE v.member_key = ? ORDER BY v.id ASC", [$key]);
+            foreach ($rows as &$v) {
+                $v['now'] = madeyaDriverQueueNow($v['plate_number']);
+                $v['status'] = madeyaDriverVehicleStatus($v['plate_number'], $v['vehicle_type_id']);
+            }
+            unset($v);
+            jsonResponse(['success' => true, 'vehicles' => $rows, 'max' => 5, 'name' => madeyaDriverMember()['name']]);
+            break;
+
+        case 'driver_add_vehicle':
+            $key = madeyaMemberKey();
+            if ($key === '') jsonResponse(['success' => false, 'code' => 'NOT_SIGNED_IN', 'message' => 'Sign in with your EtelID first.'], 401);
+            ensureDriverVehicles();
+            $plate = strtoupper(trim(sanitize($_POST['plate_number'] ?? '')));
+            $typeId = (int)($_POST['vehicle_type_id'] ?? 0);
+            $nick = mb_substr(trim(sanitize($_POST['nickname'] ?? '')), 0, 40);
+            if (!preg_match('/^[1-5]-[A-Z]{2}-\d{1,8}$/', $plate)) jsonResponse(['success' => false, 'message' => 'Choose the plate category, the region and type the plate number.'], 400);
+            if (!db()->fetchOne("SELECT id FROM vehicle_types WHERE id = ? AND is_active = 1", [$typeId])) jsonResponse(['success' => false, 'message' => 'Choose the vehicle type.'], 400);
+            if (db()->count('driver_vehicles', 'member_key = ?', [$key]) >= 5) jsonResponse(['success' => false, 'message' => 'You can save up to 5 vehicles. Remove one first.'], 400);
+            $owner = madeyaPlateOwner($plate);
+            if ($owner && (int)$owner['vehicle_type_id'] !== $typeId) jsonResponse(['success' => false, 'message' => 'This plate was first registered as ' . ($owner['vehicle_type_name'] ?: 'another vehicle type') . '. Choose that type, or ask an admin to correct it.'], 409);
+            $vars = madeyaPlateVariants($plate);
+            $ph = implode(',', array_fill(0, count($vars), '?'));
+            $taken = db()->fetchOne("SELECT member_key FROM driver_vehicles WHERE plate_number IN ($ph)", $vars);
+            if ($taken) jsonResponse(['success' => false, 'message' => $taken['member_key'] === $key ? 'You already saved this plate.' : 'This plate is already saved by another driver account. If it is yours, ask a station controller or an admin to unlink it.'], 409);
+            db()->query("INSERT INTO driver_vehicles (member_key, plate_number, vehicle_type_id, nickname, created_at) VALUES (?,?,?,?,?)", [$key, $plate, $typeId, $nick !== '' ? $nick : null, date('Y-m-d H:i:s')]);
+            jsonResponse(['success' => true, 'message' => 'Vehicle saved']);
+            break;
+
+        case 'driver_remove_vehicle':
+            $key = madeyaMemberKey();
+            if ($key === '') jsonResponse(['success' => false, 'code' => 'NOT_SIGNED_IN', 'message' => 'Sign in with your EtelID first.'], 401);
+            ensureDriverVehicles();
+            db()->query("DELETE FROM driver_vehicles WHERE id = ? AND member_key = ?", [(int)($_POST['id'] ?? 0), $key]);
+            jsonResponse(['success' => true, 'message' => 'Vehicle removed']);
+            break;
+
+        case 'driver_fuel_history':
+            $key = madeyaMemberKey();
+            if ($key === '') jsonResponse(['success' => false, 'code' => 'NOT_SIGNED_IN', 'message' => 'Sign in with your EtelID first.'], 401);
+            ensureDriverVehicles(); ensureTankColumn();
+            $one = (int)($_GET['id'] ?? 0);
+            $mine = db()->fetchAll("SELECT id, plate_number FROM driver_vehicles WHERE member_key = ?" . ($one ? " AND id = ?" : ""), $one ? [$key, $one] : [$key]);
+            $vars = [];
+            foreach ($mine as $m) foreach (madeyaPlateVariants($m['plate_number']) as $x) $vars[] = $x;
+            $rows = []; $tot = ['fills' => 0, 'liters' => 0.0, 'month_liters' => 0.0];
+            if ($vars) {
+                $ph = implode(',', array_fill(0, count($vars), '?'));
+                $rows = db()->fetchAll("SELECT r.report_date, r.served_at, UPPER(r.plate_number) AS plate_number, c.station_name, vt.name AS type_name,
+                                               COALESCE(NULLIF(r.fuel_amount_liters,0), vt.tank_liters) AS liters
+                                        FROM report r JOIN controllers c ON c.id = r.controller_id JOIN vehicle_types vt ON vt.id = r.vehicle_type_id
+                                        WHERE UPPER(r.plate_number) IN ($ph) ORDER BY r.report_date DESC, r.id DESC LIMIT 100", $vars);
+                $month = date('Y-m');
+                foreach ($rows as $r) { $tot['fills']++; $tot['liters'] += (float)$r['liters']; if (substr($r['report_date'], 0, 7) === $month) $tot['month_liters'] += (float)$r['liters']; }
+            }
+            $tot['liters'] = round($tot['liters'], 1); $tot['month_liters'] = round($tot['month_liters'], 1);
+            jsonResponse(['success' => true, 'history' => $rows, 'totals' => $tot]);
             break;
 
         case 'driver_logout':

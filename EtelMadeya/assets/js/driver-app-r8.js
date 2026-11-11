@@ -36,6 +36,10 @@ function navigate(page) {
             content.innerHTML = getStationsPage();
             if (window.initStationsPage) initStationsPage();
             break;
+        case 'mine':
+            content.innerHTML = '<div class="container"><div id="mineRoot" class="mine-wrap"><p class="mine-empty">Loading...</p></div></div>';
+            if (window.initMinePage) initMinePage();
+            break;
         case 'about':
             content.innerHTML = getAboutPage();
             break;

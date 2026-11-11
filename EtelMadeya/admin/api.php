@@ -5,6 +5,7 @@
 
 require_once __DIR__ . '/../includes/config.php';
 require_once __DIR__ . '/../includes/stations.php';
+require_once __DIR__ . '/../includes/driver_account.php';
 
 header('Content-Type: application/json; charset=utf-8');
 
@@ -619,6 +620,9 @@ try {
                 $o = madeyaPlateOwner($q);
                 if ($o) $rows = [$o];
             }
+            ensureDriverVehicles();
+            foreach ($rows as &$rr) { $pv = madeyaPlateVariants($rr['plate_number']); $pp = implode(',', array_fill(0, count($pv), '?')); $rr['claimed'] = (bool)db()->fetchOne("SELECT id FROM driver_vehicles WHERE plate_number IN ($pp)", $pv); }
+            unset($rr);
             jsonResponse(['success' => true, 'rows' => $rows]);
             break;
 
@@ -813,6 +817,18 @@ try {
                 $chats[(string)$ch['id']] = ['id' => (string)$ch['id'], 'name' => $nm ?: 'chat'];
             }
             jsonResponse(['success' => true, 'chats' => array_values($chats)]);
+            break;
+
+        case 'unlink_driver_vehicle':
+            requireAdminAuth();
+            ensureDriverVehicles();
+            $plate = strtoupper(trim(sanitize($_POST['plate_number'] ?? '')));
+            if ($plate === '') jsonResponse(['success' => false, 'message' => 'Plate required'], 400);
+            $vars = madeyaPlateVariants($plate);
+            $ph = implode(',', array_fill(0, count($vars), '?'));
+            db()->query("DELETE FROM driver_vehicles WHERE plate_number IN ($ph)", $vars);
+            db()->insert('activity_log', ['admin_id' => $_SESSION['admin_id'], 'action' => 'unlink_driver_vehicle', 'details' => "Plate $plate unlinked from its driver account", 'ip_address' => getClientIP()]);
+            jsonResponse(['success' => true, 'message' => 'Plate unlinked from the driver account']);
             break;
 
         case 'get_liters_report':

@@ -141,6 +141,7 @@
   }
 
   // ---- "Notify me" sign-up for coming-soon companies ----
+  var notifyBot = '';
   var notifyBox = null;
   function closeNotify() { if (notifyBox) { notifyBox.remove(); notifyBox = null; } }
   function openNotify(slug, name) {
@@ -153,7 +154,8 @@
       '<p>Leave your email or phone number and we will message you once, on launch day. No spam.</p>' +
       '<form novalidate><input type="text" name="contact" inputmode="email" autocomplete="email" placeholder="Email or phone number" maxlength="160" required>' +
       '<input type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;opacity:0;height:0">' +
-      '<button type="submit" class="btn btn-primary">Notify me</button><div class="eg-notify-msg" role="status"></div></form></div>';
+      '<button type="submit" class="btn btn-primary">Notify me</button><div class="eg-notify-msg" role="status"></div></form>' +
+      (notifyBot ? '<div class="eg-notify-or"><span>or</span></div><a class="eg-notify-tg" href="https://t.me/' + esc(notifyBot) + '?start=notify_' + esc(slug) + '" target="_blank" rel="noopener">Get it on Telegram</a>' : '') + '</div>';
     notifyBox.querySelector('h3 span').textContent = name;
     document.body.appendChild(notifyBox);
     var input = notifyBox.querySelector('input[name=contact]'); input.focus();
@@ -234,6 +236,7 @@
       res = await fetch(apiBase() + '?action=list_companies');
       var data = await res.json();
       if (!data.ok && !data.success) throw new Error('bad response');
+      notifyBot = data.data.notify_bot || '';
       var companies = data.data.companies.slice().sort(function (a, b) { return (b.status === 'live') - (a.status === 'live'); });   // live first (stable)
       renderNavDropdown(companies);
       renderMobileNav(companies);

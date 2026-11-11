@@ -208,7 +208,9 @@ case 'list_companies': {
         $r['notify_enabled'] = $l ? $l['notify_enabled'] : 0;
     }
     unset($r);
-    ok(array('companies' => $rows));
+    $bot = '';
+    try { $bot = eg_nget($pdo, 'tg_username'); } catch (Throwable $e) { /* optional */ }
+    ok(array('companies' => $rows, 'notify_bot' => $bot));
     break;
 }
 
@@ -288,6 +290,60 @@ case 'admin_save_company_launch': {
     break;
 }
 
+case 'admin_send_launch_notify': {
+    eg_require_admin();
+    $pdo = eg_db();
+    eg_ensure_companies_table($pdo); eg_ensure_launch_tables($pdo);
+    $slug = strtolower(trim((string)($body['slug'] ?? '')));
+    $chk = $pdo->prepare("SELECT name, status FROM companies WHERE slug = ?"); $chk->execute(array($slug));
+    $co = $chk->fetch();
+    if (!$co) fail('Company not found', 404);
+    if ($co['status'] !== 'live') fail('Set the company to Live first', 400);
+    $sent = eg_send_launch_messages($pdo, $slug);
+    eg_log_activity('launch_notify', $co['name'] . ': sent ' . $sent['email'] . ' email, ' . $sent['telegram'] . ' Telegram, ' . $sent['failed'] . ' failed, ' . $sent['skipped'] . ' without a channel');
+    ok($sent);
+    break;
+}
+
+case 'admin_get_notify_bot': {
+    eg_require_admin();
+    $pdo = eg_db();
+    eg_ensure_launch_tables($pdo);
+    ok(array('token_set' => eg_nget($pdo, 'tg_token') !== '', 'username' => eg_nget($pdo, 'tg_username'), 'connected' => eg_nget($pdo, 'tg_connected') === '1'));
+    break;
+}
+
+case 'admin_save_notify_bot': {
+    // Saves the bot token (write-only) and username, then points the bot's webhook at this site so "Start" presses are captured.
+    eg_require_admin();
+    $pdo = eg_db();
+    eg_ensure_launch_tables($pdo);
+    $tok = trim((string)($body['token'] ?? ''));
+    $user = ltrim(trim((string)($body['username'] ?? '')), '@');
+    if ($user !== '' && !preg_match('/^[A-Za-z0-9_]{4,64}$/', $user)) fail('The bot username looks wrong (letters, digits and underscore only)', 400);
+    if ($tok !== '') {
+        if (!preg_match('/^\d{6,12}:[A-Za-z0-9_-]{30,60}$/', $tok)) fail('That does not look like a Telegram bot token (from @BotFather)', 400);
+        eg_nset($pdo, 'tg_token', $tok);
+    }
+    if ($user !== '') eg_nset($pdo, 'tg_username', $user);
+    $token = eg_nget($pdo, 'tg_token');
+    $msg = 'Saved.';
+    if (!empty($body['connect'])) {
+        if ($token === '') fail('Paste the bot token first', 400);
+        $secret = eg_nget($pdo, 'tg_secret');
+        if ($secret === '') { $secret = bin2hex(random_bytes(16)); eg_nset($pdo, 'tg_secret', $secret); }
+        $host = $_SERVER['HTTP_HOST'] ?? 'ethelmarket.com';
+        $hook = 'https://' . $host . '/EtelGroup/api/telegram_notify.php';
+        $r = eg_tg_call($token, 'setWebhook', array('url' => $hook, 'secret_token' => $secret, 'allowed_updates' => array('message')));
+        if (!$r || empty($r['ok'])) { eg_nset($pdo, 'tg_connected', '0'); fail('Telegram refused the connection: ' . ($r['description'] ?? 'no answer') . '. Check the token and that ' . $host . ' uses https.', 502); }
+        eg_nset($pdo, 'tg_connected', '1');
+        $msg = 'Connected. People who open the bot link from a "Notify me" pop-up are now added to the list.';
+    }
+    eg_log_activity('notify_bot', 'Telegram notify bot settings saved' . (!empty($body['connect']) ? ' and connected' : ''));
+    ok(array('message' => $msg, 'token_set' => $token !== '', 'username' => eg_nget($pdo, 'tg_username'), 'connected' => eg_nget($pdo, 'tg_connected') === '1'));
+    break;
+}
+
 case 'admin_export_notify_csv': {
     eg_require_admin();
     $pdo = eg_db();
@@ -352,6 +408,8 @@ case 'admin_update_company': {
     if (!$id) fail('id required', 400);
     $d = eg_company_input($body);
     if ($d['slug'] === '' || $d['name'] === '') fail('Name and slug are required', 400);
+    $oldSt = $pdo->prepare('SELECT status FROM companies WHERE id = ?'); $oldSt->execute(array($id));
+    $wasLive = ($oldSt->fetchColumn() === 'live');
     try {
         $s = $pdo->prepare(
             'UPDATE companies SET slug=?, name=?, tagline=?, tagline_am=?, description_short=?, description_long=?,
@@ -366,7 +424,16 @@ case 'admin_update_company': {
         fail('Could not update company - is the slug already used?', 400);
     }
     eg_log_activity('company_updated', $d['name'] . ' (' . $d['slug'] . ')');
-    ok(array('message' => 'Company updated'));
+    $sent = null;
+    if (!$wasLive && $d['status'] === 'live') {          // it just went live: tell everyone who asked
+        try {
+            $sent = eg_send_launch_messages($pdo, $d['slug']);
+            if ($sent['telegram'] + $sent['email'] + $sent['failed'] + $sent['skipped'] > 0) {
+                eg_log_activity('launch_notify', $d['name'] . ': sent ' . $sent['email'] . ' email, ' . $sent['telegram'] . ' Telegram, ' . $sent['failed'] . ' failed, ' . $sent['skipped'] . ' without a channel');
+            }
+        } catch (Throwable $e) { error_log('[EtelGroup][launch_notify] ' . $e->getMessage()); $sent = null; }
+    }
+    ok(array('message' => 'Company updated', 'launch_messages' => $sent));
     break;
 }
 

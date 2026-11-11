@@ -45,6 +45,31 @@ function eg_site_content_schema(): array {
         array('k' => 'footer_tagline',  'label' => 'Footer tagline', 'type' => 'area', 'bi' => true),
         array('k' => 'footer_location', 'label' => 'Footer location line', 'type' => 'text', 'bi' => false),
     ));
+    $stat = array();
+    $statDefaults = array(1 => 'Subsidiaries', 2 => 'Live Services', 3 => 'Member Tiers', 4 => 'Ambition');
+    foreach ($statDefaults as $i => $d) {
+        $stat[] = array('k' => 'stat' . $i . '_value', 'label' => 'Number ' . $i . ' (digits, or a short text such as the infinity sign)', 'type' => 'text', 'bi' => false);
+        $stat[] = array('k' => 'stat' . $i . '_label', 'label' => 'Number ' . $i . ' label (built-in: ' . $d . ')', 'type' => 'text', 'bi' => true);
+    }
+    $stat[] = array('k' => 'member_label', 'label' => 'Registered members label', 'type' => 'text', 'bi' => true);
+    $g[] = array('id' => 'stats', 'title' => 'Numbers (the four big counters)', 'fields' => $stat);
+    $bars = array();
+    $barDefaults = array(1 => 'Etel Delivery', 2 => 'Etel Madeya', 3 => 'Etel Market', 4 => 'Etel Pay', 5 => 'Etel Transport', 6 => 'Etel LuxLine');
+    foreach ($barDefaults as $i => $d) {
+        $bars[] = array('k' => 'bar' . $i . '_name', 'label' => 'Bar ' . $i . ' name (built-in: ' . $d . ')', 'type' => 'text', 'bi' => false);
+        $bars[] = array('k' => 'bar' . $i . '_pct', 'label' => 'Bar ' . $i . ' progress, 0 to 100', 'type' => 'pct', 'bi' => false);
+        $bars[] = array('k' => 'bar' . $i . '_text', 'label' => 'Bar ' . $i . ' text shown instead of the percent (e.g. Live)', 'type' => 'text', 'bi' => false);
+        $bars[] = array('k' => 'bar' . $i . '_sub', 'label' => 'Bar ' . $i . ' description', 'type' => 'text', 'bi' => false);
+    }
+    $g[] = array('id' => 'bars', 'title' => 'Progress bars', 'fields' => $bars);
+    $g[] = array('id' => 'regions', 'title' => 'Regions (one name per line)', 'fields' => array(
+        array('k' => 'regions_active', 'label' => 'Where we operate now (lit up)', 'type' => 'area', 'bi' => false),
+        array('k' => 'regions_soon', 'label' => 'Where we are going next (dim)', 'type' => 'area', 'bi' => false),
+    ));
+    $gov = array();
+    for ($i = 1; $i <= 4; $i++) $gov[] = array('k' => 'gov' . $i, 'label' => 'Governance principle ' . $i, 'type' => 'text', 'bi' => true);
+    $gov[] = array('k' => 'press_body', 'label' => 'Press and media line', 'type' => 'area', 'bi' => false);
+    $g[] = array('id' => 'governance', 'title' => 'Governance principles and press line', 'fields' => $gov);
     $names = array(1 => 'Leader 1 (Founder & Group CEO card)', 2 => 'Leader 2 (COO card)', 3 => 'Leader 3 (CTO card)');
     foreach ($names as $i => $title) {
         $g[] = array('id' => 'leader' . $i, 'title' => $title . ' - fill in the name to replace the "Profile coming soon" card', 'fields' => array(
@@ -68,6 +93,10 @@ function eg_site_content_clean(string $v, string $type): string {
     $v = trim(strip_tags(str_replace(array("\r\n", "\r"), "\n", $v)));
     if ($type === 'area') return mb_substr($v, 0, 1000);
     $v = preg_replace('/\s+/u', ' ', $v);
+    if ($type === 'pct') {
+        $v = str_replace('%', '', $v);
+        return is_numeric($v) ? (string)max(0, min(100, (int)round((float)$v))) : '';
+    }
     if ($type === 'url') {
         $v = mb_substr($v, 0, 400);
         if ($v === '') return '';
@@ -112,6 +141,14 @@ function eg_ensure_launch_tables(PDO $pdo): void {
             KEY idx_ip_time (ip_hash, created_at)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
     );
+    $has = false;
+    foreach ($pdo->query('SHOW COLUMNS FROM launch_notify')->fetchAll() as $c) if ($c['Field'] === 'notified_at') $has = true;
+    if (!$has) $pdo->exec('ALTER TABLE launch_notify ADD COLUMN notified_at DATETIME NULL DEFAULT NULL');
+    $pdo->exec(
+        "CREATE TABLE IF NOT EXISTS eg_notify_settings (
+            k VARCHAR(40) NOT NULL, v TEXT NULL, PRIMARY KEY (k)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
+    );
 }
 
 /** slug => [launch_text, notify_enabled, notify_count?] */
@@ -137,4 +174,62 @@ function eg_clean_contact(string $v): string {
     $digits = preg_replace('/[^\d+]/', '', $v);
     if (preg_match('/^\+?\d{9,15}$/', $digits)) return $digits;
     return '';
+}
+
+
+// ============================================================
+// Launch messages: when a coming-soon company goes live, everyone who asked to be told gets one message.
+// Email sign-ups get an email; people who pressed Start on the Telegram bot (stored as "tg:<chat id>") get a Telegram message.
+// Phone-number sign-ups have no channel to send on from here - they stay in the CSV list.
+// ============================================================
+function eg_nset(PDO $pdo, string $k, string $v): void {
+    $pdo->prepare('INSERT INTO eg_notify_settings (k, v) VALUES (?,?) ON DUPLICATE KEY UPDATE v = VALUES(v)')->execute(array($k, $v));
+}
+function eg_nget(PDO $pdo, string $k): string {
+    $s = $pdo->prepare('SELECT v FROM eg_notify_settings WHERE k = ?'); $s->execute(array($k));
+    $v = $s->fetchColumn();
+    return $v === false ? '' : (string)$v;
+}
+function eg_tg_call(string $token, string $method, array $payload): ?array {
+    if ($token === '' || !function_exists('curl_init')) return null;
+    $ch = curl_init('https://api.telegram.org/bot' . $token . '/' . $method);
+    curl_setopt_array($ch, array(CURLOPT_POST => true, CURLOPT_POSTFIELDS => json_encode($payload), CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_TIMEOUT => 6, CURLOPT_CONNECTTIMEOUT => 3, CURLOPT_HTTPHEADER => array('Content-Type: application/json')));
+    $r = curl_exec($ch); curl_close($ch);
+    $j = $r ? json_decode($r, true) : null;
+    return is_array($j) ? $j : null;
+}
+function eg_tg_send(string $token, string $chatId, string $text): bool {
+    if (!empty($GLOBALS['EG_TG_SENDER']) && is_callable($GLOBALS['EG_TG_SENDER'])) return (bool)call_user_func($GLOBALS['EG_TG_SENDER'], $chatId, $text);   // tests
+    $j = eg_tg_call($token, 'sendMessage', array('chat_id' => $chatId, 'text' => $text, 'disable_web_page_preview' => false));
+    return is_array($j) && !empty($j['ok']);
+}
+function eg_send_mail(string $to, string $subject, string $body): bool {
+    if (!empty($GLOBALS['EG_MAIL_SENDER']) && is_callable($GLOBALS['EG_MAIL_SENDER'])) return (bool)call_user_func($GLOBALS['EG_MAIL_SENDER'], $to, $subject, $body);   // tests
+    $headers = "From: Etel Group <noreply@ethelmarket.com>\r\nContent-Type: text/plain; charset=UTF-8\r\nX-Mailer: EtelGroup";
+    return @mail($to, '=?UTF-8?B?' . base64_encode($subject) . '?=', $body, $headers);
+}
+
+/** Sends the launch message to everyone on this company's list who has not been told yet. */
+function eg_send_launch_messages(PDO $pdo, string $slug): array {
+    eg_ensure_launch_tables($pdo);
+    $c = $pdo->prepare('SELECT name, url FROM companies WHERE slug = ?'); $c->execute(array($slug));
+    $co = $c->fetch();
+    $out = array('telegram' => 0, 'email' => 0, 'skipped' => 0, 'failed' => 0);
+    if (!$co) return $out;
+    $token = eg_nget($pdo, 'tg_token');
+    $url = $co['url'] !== '' ? $co['url'] : 'https://ethelmarket.com/';
+    $text = $co['name'] . " is now live!\n" . $co['url'] . "\n\n" . $co['name'] . " \u{12A0}\u{1201}\u{1295} \u{1270}\u{12A8}\u{134D}\u{1277}\u{120D}!";
+    $rows = $pdo->prepare('SELECT id, contact FROM launch_notify WHERE slug = ? AND notified_at IS NULL');
+    $rows->execute(array($slug));
+    $done = $pdo->prepare('UPDATE launch_notify SET notified_at = NOW() WHERE id = ?');
+    foreach ($rows->fetchAll() as $r) {
+        $ct = $r['contact']; $ok = null;
+        if (strpos($ct, 'tg:') === 0) $ok = eg_tg_send($token, substr($ct, 3), $text);
+        elseif (filter_var($ct, FILTER_VALIDATE_EMAIL)) $ok = eg_send_mail($ct, $co['name'] . ' is now live', "Hello,\n\nYou asked us to tell you when " . $co['name'] . " launches. It is live now:\n" . $url . "\n\nThank you,\nEtel Group\nethelmarket.com");
+        if ($ok === null) { $out['skipped']++; continue; }
+        if ($ok) { $done->execute(array($r['id'])); strpos($ct, 'tg:') === 0 ? $out['telegram']++ : $out['email']++; }
+        else $out['failed']++;
+    }
+    return $out;
 }
