@@ -1,0 +1,127 @@
+/* Master page LIGHT theme (dark gold is the default and is not touched).
+   Rules below were generated from style.css wherever it uses the dark/gold palette; the hand-written part is at the bottom. */
+html[data-theme="light"] body{color:#3a2608;background-color:#faf6ea}
+html[data-theme="light"] body::before{background:radial-gradient(ellipse 180% 120% at 50% 0%, rgba(255,248,232,0.55) 0%, transparent 60%), radial-gradient(ellipse 100% 100% at 50% 50%, rgba(255,251,240,0.78) 0%, rgba(255,251,240,0.90) 100%)}
+html[data-theme="light"] #services,html[data-theme="light"] #about,html[data-theme="light"] #etel-id,html[data-theme="light"] #stats,html[data-theme="light"] #contact,html[data-theme="light"] footer{background:rgba(250,244,228,0.72) !important}
+html[data-theme="light"] #nav.scrolled{background:rgba(255,251,240,0.72)}
+html[data-theme="light"] .nav-logo-name{color:#3a2608}
+html[data-theme="light"] .nav-links li a{color:rgba(58,38,8,1.00)}
+html[data-theme="light"] .nav-links li a:hover{color:#3a2608}
+html[data-theme="light"] .nav-dropdown{background:rgba(255,251,240,0.95)}
+html[data-theme="light"] .nav-dropdown a{color:rgba(58,38,8,1.00)}
+html[data-theme="light"] .nav-dropdown a:hover{color:#3a2608}
+html[data-theme="light"] #mobile-menu{background:rgba(255,251,240,0.97)}
+html[data-theme="light"] .mob-nav-link{color:rgba(58,38,8,1.00)}
+html[data-theme="light"] .mob-company-name{color:rgba(58,38,8,1.00)}
+html[data-theme="light"] #hero::before{background:radial-gradient(ellipse 70% 60% at 50% 50%, transparent 0%, rgba(255,251,240,0.55) 65%, rgba(255,251,240,0.92) 100%)}
+html[data-theme="light"] .headline{color:#3a2608}
+html[data-theme="light"] .headline-eth{color:rgba(58,38,8,1.00)}
+html[data-theme="light"] .subhead{color:rgba(58,38,8,1.00)}
+html[data-theme="light"] .btn-secondary:hover{color:#3a2608}
+html[data-theme="light"] .sec-title{color:#3a2608}
+html[data-theme="light"] .sec-title-eth{color:rgba(58,38,8,0.69)}
+html[data-theme="light"] .co-card{background:rgba(255,251,240,0.6)}
+html[data-theme="light"] .co-name{color:#3a2608}
+html[data-theme="light"] .co-desc{color:rgba(58,38,8,0.88)}
+html[data-theme="light"] .co-card:hover .co-desc{color:rgba(58,38,8,1.00)}
+html[data-theme="light"] .services-footer p{color:rgba(58,38,8,0.69)}
+html[data-theme="light"] .about-origin{background:radial-gradient(ellipse 80% 60% at 50% 40%, rgba(255,248,232,0.9) 0%, rgba(255,251,240,1) 100%)}
+html[data-theme="light"] .about-legend{color:#3a2608}
+html[data-theme="light"] .about-legend-eth{color:rgba(58,38,8,0.69)}
+html[data-theme="light"] .myth-heading{color:#3a2608}
+html[data-theme="light"] .myth-body{color:rgba(58,38,8,1.00)}
+html[data-theme="light"] .myth-body-eth{color:rgba(58,38,8,0.62)}
+html[data-theme="light"] .pillar-en{color:#3a2608}
+html[data-theme="light"] .pillar-am{color:rgba(58,38,8,0.69)}
+html[data-theme="light"] .timeline-title{color:#3a2608}
+html[data-theme="light"] .tl-event{color:#3a2608}
+html[data-theme="light"] .tl-detail{color:rgba(58,38,8,0.81)}
+html[data-theme="light"] #leadership{background:rgba(250,244,228,0.72)}
+html[data-theme="light"] .ldr-card{background:rgba(255,251,240,0.6)}
+html[data-theme="light"] .ldr-card-lead{background:rgba(255,250,238,0.72)}
+html[data-theme="light"] .ldr-name{color:#3a2608}
+html[data-theme="light"] .ldr-bio{color:rgba(58,38,8,1.00)}
+html[data-theme="light"] .ldr-bio-eth{color:rgba(58,38,8,0.75)}
+html[data-theme="light"] .ldr-gov-title{color:#3a2608}
+html[data-theme="light"] .ldr-press-body{color:rgba(58,38,8,1.00)}
+html[data-theme="light"] #etel-id{background:linear-gradient(180deg, rgba(255,251,240,1) 0%, rgba(255,250,238,1) 50%, rgba(255,251,240,1) 100%)}
+html[data-theme="light"] .eid-info-title{color:#3a2608}
+html[data-theme="light"] .eid-info-title-eth{color:rgba(58,38,8,0.62)}
+html[data-theme="light"] .eid-desc{color:rgba(58,38,8,1.00)}
+html[data-theme="light"] .eid-benefit-title{color:#3a2608}
+html[data-theme="light"] .eid-benefit-sub{color:rgba(58,38,8,0.81)}
+html[data-theme="light"] .eid-stat{background:rgba(255,251,240,0.9)}
+html[data-theme="light"] .eid-stat:hover{background:rgba(255,250,238,1)}
+html[data-theme="light"] .eid-stat-label{color:rgba(58,38,8,0.75)}
+html[data-theme="light"] .eid-stat-eth{color:rgba(58,38,8,0.50)}
+html[data-theme="light"] #stats{background:linear-gradient(180deg, rgba(255,251,240,1) 0%, rgba(20,10,0,1) 40%, rgba(255,251,240,1) 100%)}
+html[data-theme="light"] .member-counter-label{color:rgba(58,38,8,0.75)}
+html[data-theme="light"] .member-counter-eth{color:rgba(58,38,8,0.50)}
+html[data-theme="light"] .stat-block{background:rgba(255,251,240,0.95)}
+html[data-theme="light"] .stat-block:hover{background:rgba(255,250,238,1)}
+html[data-theme="light"] .stat-label{color:rgba(58,38,8,0.81)}
+html[data-theme="light"] .stat-sub{color:rgba(58,38,8,0.47)}
+html[data-theme="light"] .bar-name{color:#3a2608}
+html[data-theme="light"] .bar-sub{color:rgba(58,38,8,0.62)}
+html[data-theme="light"] .region-chip{color:rgba(58,38,8,0.88)}
+html[data-theme="light"] .region-chip:hover{color:#3a2608}
+html[data-theme="light"] #contact{background:linear-gradient(180deg, rgba(255,251,240,1) 0%, rgba(22,12,0,1) 100%)}
+html[data-theme="light"] .contact-title{color:#3a2608}
+html[data-theme="light"] .contact-title-eth{color:rgba(58,38,8,0.60)}
+html[data-theme="light"] .contact-desc{color:rgba(58,38,8,0.94)}
+html[data-theme="light"] .contact-row-value{color:rgba(58,38,8,1.00)}
+html[data-theme="light"] .social-btn{color:rgba(58,38,8,0.88)}
+html[data-theme="light"] .contact-form-title{color:#3a2608}
+html[data-theme="light"] .contact-form-title-eth{color:rgba(58,38,8,0.56)}
+html[data-theme="light"] .cf-input,html[data-theme="light"] .cf-select,html[data-theme="light"] .cf-textarea{color:#3a2608}
+html[data-theme="light"] .cf-input::placeholder,html[data-theme="light"] .cf-textarea::placeholder{color:rgba(58,38,8,0.50)}
+html[data-theme="light"] .cf-note{color:rgba(58,38,8,0.56)}
+html[data-theme="light"] .footer-logo-name{color:#3a2608}
+html[data-theme="light"] .footer-tagline{color:rgba(58,38,8,0.75)}
+html[data-theme="light"] .footer-link{color:rgba(58,38,8,0.81)}
+html[data-theme="light"] .footer-link-eth{color:rgba(58,38,8,0.47)}
+html[data-theme="light"] .footer-copy{color:rgba(58,38,8,0.53)}
+html[data-theme="light"] .footer-legal a{color:rgba(58,38,8,0.53)}
+html[data-theme="light"] .launcher-card{background:rgba(255,251,240,0.6)}
+html[data-theme="light"] .launcher-card:hover{background:rgba(255,251,240,0.85)}
+html[data-theme="light"] .lc-name{color:#3a2608}
+html[data-theme="light"] .lc-desc{color:rgba(58,38,8,0.94)}
+
+/* ===== hand-written part ===== */
+html[data-theme="light"]{--gold:#b0870f;--gold-light:#3a2608;--gold-dim:#7a5a10;--carbon:#f4ecd6}
+html[data-theme="light"],html[data-theme="light"] body{background-image:none !important;background-color:#faf6ea !important;color:#3a2608}
+html[data-theme="light"] body::before{background:none !important}
+html[data-theme="light"] #hero::before{background:radial-gradient(ellipse 70% 60% at 50% 38%,rgba(255,251,240,.0),rgba(250,244,228,.55) 100%)}
+html[data-theme="light"] .co-card:hover .co-name{color:#1a0e00}
+html[data-theme="light"] .co-card{border-color:rgba(176,135,15,.28);box-shadow:0 2px 14px rgba(120,90,10,.07)}
+html[data-theme="light"] .co-card:hover{box-shadow:0 10px 30px rgba(120,90,10,.18)}
+html[data-theme="light"] .nav-dropdown{box-shadow:0 14px 34px rgba(80,60,10,.18)}
+/* theme toggle button (both themes) */
+.theme-toggle{width:38px;height:38px;border-radius:50%;border:1px solid rgba(212,175,55,.45);background:rgba(212,175,55,.1);color:inherit;font-size:17px;line-height:1;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;margin:0 10px;flex:none;transition:transform .15s,background .2s}
+.theme-toggle:hover{transform:rotate(18deg) scale(1.06);background:rgba(212,175,55,.22)}
+.theme-toggle-mob{position:absolute;top:18px;right:70px;margin:0}
+html[data-theme="light"] .theme-toggle{border-color:rgba(160,124,18,.55);background:rgba(212,175,55,.2)}
+
+/* pale gold text -> darker gold so small labels stay readable on cream */
+html[data-theme="light"] .dd-sub{color:rgba(122,90,16,0.78)}
+html[data-theme="light"] .lang-btn{color:rgba(122,90,16,0.78)}
+html[data-theme="light"] .mob-footer-info{color:rgba(122,90,16,0.78)}
+html[data-theme="light"] .scroll-hint span{color:rgba(122,90,16,0.78)}
+html[data-theme="light"] .location-badge{color:rgba(122,90,16,0.85)}
+html[data-theme="light"] .placeholder-section p{color:rgba(122,90,16,0.78)}
+html[data-theme="light"] .co-number{color:rgba(122,90,16,0.78)}
+html[data-theme="light"] .about-watermark{color:rgba(122,90,16,0.78)}
+html[data-theme="light"] .sigil-verse{color:rgba(122,90,16,0.78)}
+html[data-theme="light"] .footer-badge{color:rgba(122,90,16,0.80)}
+html[data-theme="light"] .footer-copy a{color:rgba(122,90,16,0.80)}
+html[data-theme="light"] .footer-legal a:hover{color:rgba(122,90,16,0.95)}
+html[data-theme="light"] .footer-eth-closing{color:rgba(122,90,16,0.78)}
+html[data-theme="light"] .platform-subtitle{color:rgba(122,90,16,0.90)}
+html[data-theme="light"] .lc-label{color:rgba(122,90,16,0.80)}
+html[data-theme="light"] .lc-num{color:rgba(122,90,16,0.78)}
+html[data-theme="light"] .lc-cat{color:rgba(122,90,16,0.78)}
+html[data-theme="light"] .platform-footer-text{color:rgba(122,90,16,0.78)}
+.contact-row-value a,.contact-row a{color:inherit;text-decoration:none}
+html[data-theme="light"] .platform-subtitle,html[data-theme="light"] .platform-footer-text,html[data-theme="light"] .contact-badge,html[data-theme="light"] .footer-location{color:rgba(90,66,10,.9)}
+a.contact-row{color:inherit;text-decoration:none}
+a.contact-row .contact-row-label{color:var(--gold)}
