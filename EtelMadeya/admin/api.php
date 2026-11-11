@@ -618,9 +618,18 @@ try {
             $plate = strtoupper(trim(sanitize($_POST['plate_number'] ?? '')));
             $typeId = (int)($_POST['vehicle_type_id'] ?? 0);
             if ($plate === '' || !$typeId) jsonResponse(['success' => false, 'message' => 'Plate and vehicle type required'], 400);
-            db()->query("INSERT INTO plate_registry (plate_number, vehicle_type_id, first_registered_at) VALUES (?,?,?) ON DUPLICATE KEY UPDATE vehicle_type_id = VALUES(vehicle_type_id)", [$plate, $typeId, date('Y-m-d H:i:s')]);
-            db()->insert('activity_log', ['admin_id' => $_SESSION['admin_id'], 'action' => 'set_plate_registry', 'details' => "Plate $plate set to vehicle type $typeId", 'ip_address' => getClientIP()]);
-            jsonResponse(['success' => true, 'message' => 'Plate vehicle type updated']);
+            $newPlate = strtoupper(trim(sanitize($_POST['new_plate'] ?? '')));
+            if ($newPlate === '') $newPlate = $plate;
+            if (!preg_match('/^([1-5]-)?([A-Z]{2}-)?[0-9A-Z]+$/', $newPlate)) jsonResponse(['success' => false, 'message' => 'Invalid plate'], 400);
+            if ($newPlate !== $plate) {
+                if (db()->fetchOne("SELECT plate_number FROM plate_registry WHERE plate_number = ?", [$newPlate])) {
+                    jsonResponse(['success' => false, 'message' => "Plate $newPlate already exists in the registry"], 409);
+                }
+                db()->query("UPDATE plate_registry SET plate_number = ? WHERE plate_number = ?", [$newPlate, $plate]);
+            }
+            db()->query("INSERT INTO plate_registry (plate_number, vehicle_type_id, first_registered_at) VALUES (?,?,?) ON DUPLICATE KEY UPDATE vehicle_type_id = VALUES(vehicle_type_id)", [$newPlate, $typeId, date('Y-m-d H:i:s')]);
+            db()->insert('activity_log', ['admin_id' => $_SESSION['admin_id'], 'action' => 'set_plate_registry', 'details' => "Plate $plate set to $newPlate, vehicle type $typeId", 'ip_address' => getClientIP()]);
+            jsonResponse(['success' => true, 'message' => 'Plate registry updated', 'plate_number' => $newPlate]);
             break;
 
         case 'delete_plate_registry':

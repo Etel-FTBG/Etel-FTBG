@@ -219,21 +219,30 @@ async function searchPlateRegistry() {
         if (!d.success || !d.rows.length) { box.innerHTML = '<p class="empty-state">No plate found - it has not been registered yet.</p>'; return; }
         if (!vehicleTypesCache.length) await loadVehicleTypes();
         box.innerHTML = d.rows.map(r => {
+            const key = escHtml(r.plate_number);
             const opts = vehicleTypesCache.map(t => `<option value="${t.id}" ${t.id == r.vehicle_type_id ? 'selected' : ''}>${escHtml(t.name)}</option>`).join('');
+            const cat = plateCode(r.plate_number), reg = plateRegion(r.plate_number);
+            const catOpts = '<option value="">No category</option>' + PLATE_CATS.map(c => `<option value="${c.c}" ${c.c == cat ? 'selected' : ''}>${c.c} - ${escHtml(c.name)}</option>`).join('');
+            const regOpts = '<option value="">No region</option>' + PLATE_REGIONS.map(g => `<option value="${g.c}" ${g.c == reg ? 'selected' : ''}>${g.c} - ${escHtml(g.name)}</option>`).join('');
             const when = r.first_registered_at ? new Date(r.first_registered_at.replace(' ', 'T')).toLocaleString() : '';
-            return `<div class="pr-row"><div class="pr-top"><b>${plateHtml(r.plate_number)}</b><small>First registered ${escHtml(when)}${r.station_name ? ' at ' + escHtml(r.station_name) : ''}</small></div>
-                <div class="pr-act"><select id="prType_${escHtml(r.plate_number)}">${opts}</select>
-                <button type="button" class="am-btn" onclick="savePlateRegistry('${escHtml(r.plate_number)}')">Save type</button>
-                <button type="button" class="am-btn ghost" onclick="releasePlateRegistry('${escHtml(r.plate_number)}')">Release</button></div></div>`;
+            return `<div class="pr-row" data-plate="${key}"><div class="pr-top"><b>${plateHtml(r.plate_number)}</b><small>First registered ${escHtml(when)}${r.station_name ? ' at ' + escHtml(r.station_name) : ''}</small></div>
+                <div class="pr-act"><select class="pr-cat" title="Plate category">${catOpts}</select><select class="pr-reg" title="Region">${regOpts}</select></div>
+                <div class="pr-act" style="margin-top:8px"><select class="pr-type" title="Vehicle type">${opts}</select>
+                <button type="button" class="am-btn" onclick="savePlateRegistry(this)">Save</button>
+                <button type="button" class="am-btn ghost" onclick="releasePlateRegistry('${key}')">Release</button></div></div>`;
         }).join('');
     } catch (e) { box.innerHTML = '<p class="empty-state">Search failed</p>'; }
 }
-async function savePlateRegistry(plate) {
+async function savePlateRegistry(btn) {
+    const row = btn.closest('.pr-row'), plate = row.getAttribute('data-plate');
+    const cat = row.querySelector('.pr-cat').value, reg = row.querySelector('.pr-reg').value;
+    const digits = String(plate).replace(/^[1-5]-/, '').replace(/^[A-Z]{2}-/, '');
     const fd = new FormData(); fd.append('action', 'set_plate_registry'); fd.append('plate_number', plate);
-    fd.append('vehicle_type_id', document.getElementById('prType_' + plate).value);
+    fd.append('new_plate', (cat ? cat + '-' : '') + (reg ? reg + '-' : '') + digits);
+    fd.append('vehicle_type_id', row.querySelector('.pr-type').value);
     const d = await (await fetch(API, { method: 'POST', body: fd })).json();
     showNotification((d.success ? ICONS.success : ICONS.error) + ' ' + escHtml(d.message || ''), d.success ? 'success' : 'error');
-    if (d.success) searchPlateRegistry();
+    if (d.success) { document.getElementById('prSearch').value = d.plate_number || plate; searchPlateRegistry(); }
 }
 async function releasePlateRegistry(plate) {
     if (!confirm('Release plate ' + plate + '? It can then be registered under any vehicle type again.')) return;
