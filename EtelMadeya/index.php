@@ -15,6 +15,7 @@
     <link rel="stylesheet" href="assets/css/madeya-pro-r2.css">
     <link rel="stylesheet" href="assets/css/madeya-vehicles.css">
     <link rel="stylesheet" href="assets/css/madeya-plates-r2.css">
+    <link rel="stylesheet" href="assets/css/madeya-stations.css">
     <script src="assets/js/madeya-pro-r2.js"></script>
     <link rel="icon" href="assets/img/etel-logo.png">
 </head>
@@ -102,8 +103,8 @@
     <script src="assets/js/madeya-vehicles-r4.js"></script>
     <script src="assets/js/madeya-plates-r2.js"></script>
     <script src="assets/js/icons.js"></script>
-    <script src="assets/js/driver-stations-r3.js"></script>
-    <script src="assets/js/driver-app-r3.js"></script>
+    <script src="assets/js/driver-stations-r4.js"></script>
+    <script src="assets/js/driver-app-r4.js"></script>
 <script src="/delivery/js/etel-help-fab.js" data-app="madeya" defer></script>
 </body>
 </html>

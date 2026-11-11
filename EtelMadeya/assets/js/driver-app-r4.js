@@ -118,6 +118,7 @@ function getStationsPage() {
             <p class="page-subtitle" data-t="See which stations are open today, how many cars are waiting, and navigate to them|ዛሬ የተከፈቱ ማደያዎችን እና ወረፋ ይመልከቱ">See which stations are open today, how many cars are waiting, and navigate to them</p>
             <div id="stnSummary" class="stn-bar">Loading...</div>
             <div id="stnMap" class="stn-map"></div>
+            <div id="stnRoute" class="stn-route" style="display:none"></div>
             <div id="stnGrid" class="stn-grid"></div>
         </div>
     `;
