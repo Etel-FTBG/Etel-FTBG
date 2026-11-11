@@ -735,6 +735,86 @@ try {
             jsonResponse(['success' => true, 'message' => 'Change undone']);
             break;
 
+        case 'get_fuel_deliveries_report':
+            requireAdminAuth();
+            ensureOpsTables(); ensureTankColumn();
+            $from = preg_match('/^\d{4}-\d{2}-\d{2}$/', $_GET['from'] ?? '') ? $_GET['from'] : date('Y-m-d', strtotime('-6 days'));
+            $to   = preg_match('/^\d{4}-\d{2}-\d{2}$/', $_GET['to'] ?? '') ? $_GET['to'] : date('Y-m-d');
+            if ($from > $to) { $t = $from; $from = $to; $to = $t; }
+            if (strtotime($to) - strtotime($from) > 92 * 86400) jsonResponse(['success' => false, 'message' => 'Choose at most 92 days'], 400);
+            $cid = (int)($_GET['controller_id'] ?? 0);
+            $cw = $cid ? ' AND c.id = ' . $cid : '';
+            $stations = db()->fetchAll("SELECT c.id, c.station_name, c.region FROM controllers c WHERE c.is_active = 1" . $cw . " ORDER BY c.region, c.station_name");
+            $out = [];
+            foreach ($stations as $st) {
+                $d = db()->fetchOne("SELECT COALESCE(SUM(liters),0) l, COUNT(*) n FROM fuel_deliveries WHERE controller_id = ? AND kind = 'delivery' AND DATE(created_at) BETWEEN ? AND ?", [(int)$st['id'], $from, $to]);
+                $sv = db()->fetchOne("SELECT COUNT(*) n, COALESCE(SUM(COALESCE(NULLIF(r.fuel_amount_liters,0), vt.tank_liters, 0)),0) l FROM report r JOIN vehicle_types vt ON vt.id = r.vehicle_type_id WHERE r.controller_id = ? AND r.report_date BETWEEN ? AND ?", [(int)$st['id'], $from, $to]);
+                $rows = db()->fetchAll("SELECT kind, liters, supplier, note, entered_by, created_at FROM fuel_deliveries WHERE controller_id = ? AND DATE(created_at) BETWEEN ? AND ? ORDER BY id DESC LIMIT 60", [(int)$st['id'], $from, $to]);
+                $out[] = ['id' => (int)$st['id'], 'station' => $st['station_name'], 'region' => $st['region'], 'delivered' => round((float)$d['l'], 1), 'deliveries' => (int)$d['n'],
+                          'served' => (int)$sv['n'], 'served_liters' => round((float)$sv['l'], 1), 'balance' => round((float)$d['l'] - (float)$sv['l'], 1), 'fuel' => madeyaFuelStatus((int)$st['id']), 'rows' => $rows ?: []];
+            }
+            jsonResponse(['success' => true, 'from' => $from, 'to' => $to, 'stations' => $out]);
+            break;
+
+        case 'get_day_closings':
+            requireAdminAuth();
+            ensureOpsTables();
+            $rows = db()->fetchAll("SELECT d.id, d.controller_id, c.station_name, d.close_date, d.closed_at, d.closed_by, d.served, d.liters, d.queued_left, d.fuel_remaining, d.note, d.reopened_at, d.reopened_by
+                                    FROM day_closings d JOIN controllers c ON c.id = d.controller_id ORDER BY d.close_date DESC, d.id DESC LIMIT 40");
+            jsonResponse(['success' => true, 'rows' => $rows ?: []]);
+            break;
+
+        case 'reopen_day':
+            requireAdminAuth();
+            ensureOpsTables();
+            $id = (int)($_POST['id'] ?? 0);
+            $row = db()->fetchOne("SELECT id, reopened_at FROM day_closings WHERE id = ?", [$id]);
+            if (!$row) jsonResponse(['success' => false, 'message' => 'Not found'], 404);
+            if ($row['reopened_at']) jsonResponse(['success' => false, 'message' => 'Already reopened'], 400);
+            db()->query("UPDATE day_closings SET reopened_at = ?, reopened_by = ? WHERE id = ?", [date('Y-m-d H:i:s'), $_SESSION['admin_name'] ?? 'admin', $id]);
+            db()->insert('activity_log', ['admin_id' => $_SESSION['admin_id'], 'action' => 'reopen_day', 'details' => "Reopened day closing #$id", 'ip_address' => getClientIP()]);
+            jsonResponse(['success' => true, 'message' => 'Day reopened - the station can register and serve again']);
+            break;
+
+        case 'get_fuel_alert_config':
+            requireAdminAuth();
+            jsonResponse(['success' => true, 'enabled' => madeyaSettingGet('fuel_alert_enabled', '0') === '1', 'chat_ids' => madeyaSettingGet('fuel_alert_chat_ids', ''), 'token_set' => madeyaTgToken() !== '']);
+            break;
+
+        case 'save_fuel_alert_config':
+            requireAdminAuth();
+            $ids = [];
+            foreach (preg_split('/[\s,;]+/', (string)($_POST['chat_ids'] ?? '')) as $c) if ($c !== '' && preg_match('/^-?\d{3,20}$/', $c)) $ids[] = $c;
+            madeyaSettingSet('fuel_alert_chat_ids', implode(',', array_unique($ids)));
+            $tok = trim((string)($_POST['bot_token'] ?? ''));
+            if ($tok !== '') { if (!preg_match('/^\d{6,12}:[A-Za-z0-9_-]{30,60}$/', $tok)) jsonResponse(['success' => false, 'message' => 'That does not look like a Telegram bot token (from @BotFather)'], 400); madeyaSettingSet('fuel_alert_bot_token', $tok); }
+            if (!empty($_POST['clear_token'])) madeyaSettingSet('fuel_alert_bot_token', '');
+            madeyaSettingSet('fuel_alert_enabled', !empty($_POST['enabled']) && $_POST['enabled'] !== '0' ? '1' : '0');
+            jsonResponse(['success' => true, 'message' => 'Fuel alert settings saved', 'chat_ids' => implode(',', array_unique($ids))]);
+            break;
+
+        case 'test_fuel_alert':
+            requireAdminAuth();
+            if (madeyaTgToken() === '') jsonResponse(['success' => false, 'message' => 'The Telegram bot token is not saved yet'], 400);
+            $ids = madeyaAlertChatIds();
+            if (!$ids) jsonResponse(['success' => false, 'message' => 'Add at least one Telegram chat ID and save first'], 400);
+            $ok = 0; foreach ($ids as $c) if (madeyaTgSend($c, "Etel Madeya test: fuel alerts will arrive here.\n" . date('d/m/Y H:i'))) $ok++;
+            jsonResponse(['success' => $ok > 0, 'message' => $ok ? "Test message sent to $ok chat(s)" : 'Telegram refused the message - check the chat ID, and that the person pressed Start on the bot']);
+            break;
+
+        case 'telegram_chats':
+            requireAdminAuth();
+            if (madeyaTgToken() === '') jsonResponse(['success' => false, 'message' => 'The Telegram bot token is not set on the server yet'], 400);
+            $j = madeyaTgCall('getUpdates', ['limit' => 50, 'timeout' => 0]);
+            $chats = [];
+            if ($j && !empty($j['ok'])) foreach ($j['result'] as $u) {
+                $m = $u['message'] ?? $u['channel_post'] ?? $u['my_chat_member'] ?? null; if (!$m || empty($m['chat']['id'])) continue;
+                $ch = $m['chat']; $nm = trim(($ch['title'] ?? '') . ' ' . ($ch['first_name'] ?? '') . ' ' . ($ch['last_name'] ?? '') . (isset($ch['username']) ? ' @' . $ch['username'] : ''));
+                $chats[(string)$ch['id']] = ['id' => (string)$ch['id'], 'name' => $nm ?: 'chat'];
+            }
+            jsonResponse(['success' => true, 'chats' => array_values($chats)]);
+            break;
+
         case 'get_liters_report':
             requireAdminAuth();
             ensureTankColumn();
@@ -769,6 +849,7 @@ try {
             
             $settingsArray = [];
             foreach ($settings as $setting) {
+                if ($setting['setting_key'] === 'fuel_alert_bot_token') continue; // never sent back to the browser
                 $settingsArray[$setting['setting_key']] = $setting['setting_value'];
             }
             

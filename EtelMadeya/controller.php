@@ -23,7 +23,7 @@ if ( isset( $_GET['embed'] ) && ! headers_sent() ) {
     <link rel="stylesheet" href="assets/css/madeya-plates-r3.css">
     <link rel="stylesheet" href="assets/css/madeya-limits.css">
     <link rel="stylesheet" href="assets/css/madeya-liters.css">
-    <link rel="stylesheet" href="assets/css/madeya-alerts-r4.css">
+    <link rel="stylesheet" href="assets/css/madeya-alerts-r5.css">
     <script src="assets/js/madeya-pro-r2.js"></script>
     <link rel="icon" href="assets/img/etel-logo.png">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
@@ -109,6 +109,7 @@ if ( isset( $_GET['embed'] ) && ! headers_sent() ) {
 
             <div class="lit-strip" id="litStrip" style="display:none"></div>
             <div class="fuel-card2" id="fuelCard" style="display:none"></div>
+            <div class="fuel-card2 day-card" id="dayCard" style="display:none"></div>
 
             <!-- Tab Navigation -->
             <nav class="mc-tab-nav">
@@ -470,6 +471,6 @@ if ( isset( $_GET['embed'] ) && ! headers_sent() ) {
     <script src="assets/js/madeya-vehicles-r4.js"></script>
     <script src="assets/js/madeya-plates-r2.js"></script>
     <script src="assets/js/icons.js"></script>
-    <script src="assets/js/controller-app-r13.js"></script>
+    <script src="assets/js/controller-app-r14.js"></script>
 </body>
 </html>

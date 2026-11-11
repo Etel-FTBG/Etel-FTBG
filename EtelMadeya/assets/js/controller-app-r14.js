@@ -315,29 +315,82 @@ function renderFuelCard(f) {
     const el = document.getElementById('fuelCard'); if (!el || !f) return;
     el.style.display = 'block';
     if (!document.getElementById('fcStatus')) {
-        el.innerHTML = '<div class="fc-top"><b>⛽ Fuel available at this station</b><span id="fcStatus"></span></div>' +
-            '<div class="fc-set"><input type="number" id="fcInput" autocomplete="off" value="" min="0" step="any" inputmode="decimal" placeholder="Liters in the tank now"><button type="button" class="btn-primary" onclick="saveFuelAvailable()">Update</button></div>' +
-            '<div id="fcAlert"></div>';
+        el.innerHTML = '<div class="fc-top"><b>⛽ Fuel at this station</b><span id="fcStatus"></span></div>' +
+            '<div class="fc-lbl">New delivery arrived</div>' +
+            '<div class="fc-set"><input type="number" id="fcDelL" autocomplete="off" value="" min="0" step="any" inputmode="decimal" placeholder="Delivered liters"><input type="text" id="fcSup" autocomplete="off" list="fcSupList" maxlength="120" placeholder="Supplier"><datalist id="fcSupList"></datalist><button type="button" class="btn-primary" onclick="saveFuelDelivery()">Record</button></div>' +
+            '<div class="fc-lbl">Measured the tank? Correct what is left</div>' +
+            '<div class="fc-set"><input type="number" id="fcInput" autocomplete="off" value="" min="0" step="any" inputmode="decimal" placeholder="Liters in the tank now"><button type="button" class="btn-primary" onclick="saveFuelAvailable()">Set</button></div>' +
+            '<div id="fcAlert"></div>' +
+            '<details class="fc-log"><summary>Recent deliveries</summary><div id="fcList"></div></details>';
+        loadFuelLog();
     }
     const st = document.getElementById('fcStatus'), al = document.getElementById('fcAlert');
     el.classList.remove('bad', 'warn');
-    if (!f.set) { st.textContent = 'Not entered yet - type the liters you have, so the system can warn you when the queue needs more.'; al.innerHTML = ''; return; }
-    st.innerHTML = '<b>' + fmtL(f.remaining) + ' L</b> left <small style="opacity:.7">(entered ' + fmtL(f.available) + ' L' + (f.updated_at ? ' at ' + escHtml(String(f.updated_at).slice(5, 16)) : '') + ')</small>';
+    if (!f.set) { st.textContent = 'Nothing entered yet - record a delivery or the tank reading so the system can warn you when the queue needs more.'; al.innerHTML = ''; return; }
+    st.innerHTML = '<b>' + fmtL(f.remaining) + ' L</b> left <small style="opacity:.7">(from ' + fmtL(f.available) + ' L' + (f.updated_at ? ' at ' + escHtml(String(f.updated_at).slice(5, 16)) : '') + ')</small>';
     if (f.status === 'out') { el.classList.add('bad'); al.innerHTML = '<div class="fuel-alert">⚠️ No fuel left. ' + f.queued + ' vehicle(s) are still waiting.</div>'; }
     else if (f.status === 'short') { el.classList.add('bad'); al.innerHTML = '<div class="fuel-alert">⚠️ Not enough fuel for the queue: ' + f.queued + ' waiting vehicles need about ' + fmtL(f.queue_liters) + ' L but only ' + fmtL(f.remaining) + ' L is left (short by about ' + fmtL(f.short_by) + ' L).</div>'; }
     else if (f.status === 'low') { el.classList.add('warn'); al.innerHTML = '<div class="fuel-alert amber">Fuel is running low: the queue needs about ' + fmtL(f.queue_liters) + ' L and ' + fmtL(f.remaining) + ' L is left.</div>'; }
     else al.innerHTML = f.queue_liters ? '<small style="opacity:.75">Queue needs about ' + fmtL(f.queue_liters) + ' L - enough fuel.</small>' : '';
     if (f.unknown) al.innerHTML += '<small style="display:block;opacity:.7;margin-top:4px">' + f.unknown + ' waiting vehicle(s) have no tank size set, so they are not counted.</small>';
 }
+async function loadFuelLog() {
+    try {
+        const d = await (await fetch(`${API}&action=get_fuel_deliveries`)).json();
+        if (!d.success) return;
+        const dl = document.getElementById('fcSupList'); if (dl) dl.innerHTML = (d.suppliers || []).map(x => '<option value="' + escHtml(x) + '">').join('');
+        const list = document.getElementById('fcList'); if (!list) return;
+        list.innerHTML = d.rows.length ? d.rows.map(r => '<div class="fc-row"><span>' + escHtml(String(r.created_at).slice(5, 16)) + '</span><span>' + (r.kind === 'delivery' ? '<b>+' + fmtL(r.liters) + ' L</b>' + (r.supplier ? ' from ' + escHtml(r.supplier) : '') : 'Tank set to <b>' + fmtL(r.liters) + ' L</b>') + '</span></div>').join('') : '<small style="opacity:.7">No deliveries recorded yet.</small>';
+    } catch (e) {}
+}
+async function saveFuelDelivery() {
+    const v = document.getElementById('fcDelL').value;
+    if (v === '' || Number(v) <= 0) { showNotification(ICONS.error + ' Enter the delivered liters', 'error'); return; }
+    const fd = new FormData(); fd.append('liters', v); fd.append('supplier', document.getElementById('fcSup').value);
+    try {
+        const d = await (await fetch(`${API}&action=add_fuel_delivery`, { method: 'POST', body: fd })).json();
+        showNotification((d.success ? ICONS.success : ICONS.error) + ' ' + escHtml(d.message || ''), d.success ? 'success' : 'error');
+        if (d.success) { document.getElementById('fcDelL').value = ''; document.getElementById('fcSup').value = ''; renderFuelCard(d.fuel); loadFuelLog(); }
+    } catch (e) { showNotification(ICONS.error + ' Could not save', 'error'); }
+}
 async function saveFuelAvailable() {
     const v = document.getElementById('fcInput').value;
-    if (v === '' || Number(v) < 0) { showNotification(ICONS.error + ' Enter the liters available', 'error'); return; }
+    if (v === '' || Number(v) < 0) { showNotification(ICONS.error + ' Enter the liters in the tank', 'error'); return; }
     const fd = new FormData(); fd.append('liters', v);
     try {
         const d = await (await fetch(`${API}&action=set_fuel_available`, { method: 'POST', body: fd })).json();
         showNotification((d.success ? ICONS.success : ICONS.error) + ' ' + escHtml(d.message || ''), d.success ? 'success' : 'error');
-        if (d.success) { document.getElementById('fcInput').value = ''; renderFuelCard(d.fuel); }
+        if (d.success) { document.getElementById('fcInput').value = ''; renderFuelCard(d.fuel); loadFuelLog(); }
     } catch (e) { showNotification(ICONS.error + ' Could not save', 'error'); }
+}
+
+// ─── CLOSE THE DAY ──────────────────────────────────────────────────
+let lastQueuedForClose = 0;
+function renderDayCard(day, litStats) {
+    const el = document.getElementById('dayCard'); if (!el || !day) return;
+    el.style.display = 'block';
+    lastQueuedForClose = litStats ? litStats.queued : 0;
+    if (day.closed) {
+        el.classList.add('bad');
+        el.innerHTML = '<div class="fc-top"><b>🔒 Day closed at ' + escHtml(String(day.closed_at).slice(11, 16)) + '</b><span>' + (day.closed_by ? 'by ' + escHtml(day.closed_by) : '') + '</span></div>' +
+            '<small style="display:block;margin-top:6px;opacity:.85">Registering and serving are locked for today. Ask an admin to reopen the day if this was a mistake.</small>' +
+            '<div class="fc-set"><a class="btn-primary" style="text-align:center;text-decoration:none;display:block;flex:1;padding:11px" href="station-summary.php?date=' + encodeURIComponent(day.date) + '" target="_blank">View / print the day summary</a></div>';
+        return;
+    }
+    el.classList.remove('bad');
+    if (!document.getElementById('dayBtn')) {
+        el.innerHTML = '<div class="fc-top"><b>🔒 End of day</b><span style="opacity:.75">Locks registering and serving for today and shows the day summary.</span></div>' +
+            '<div class="fc-set"><button type="button" id="dayBtn" class="btn-primary" style="flex:1" onclick="closeTheDay()">Close the day</button><a class="btn-secondary" style="text-decoration:none;display:flex;align-items:center;padding:0 14px;border-radius:10px" href="station-summary.php" target="_blank">Preview summary</a></div>';
+    }
+}
+async function closeTheDay() {
+    const q = lastQueuedForClose;
+    if (!confirm('Close the day for this station?\n\nNo more vehicles can be registered or served today until an admin reopens it.' + (q ? '\n\n' + q + ' vehicle(s) still waiting stay in the queue.' : ''))) return;
+    try {
+        const d = await (await fetch(`${API}&action=close_day`, { method: 'POST', body: new FormData() })).json();
+        showNotification((d.success ? ICONS.success : ICONS.error) + ' ' + escHtml(d.success ? 'Day closed: ' + d.served + ' vehicles, ' + fmtL(d.liters) + ' L' : (d.message || 'Failed')), d.success ? 'success' : 'error');
+        if (d.success) { loadStats(); window.open('station-summary.php?date=' + encodeURIComponent(d.date), '_blank'); }
+    } catch (e) { showNotification(ICONS.error + ' Could not close the day', 'error'); }
 }
 
 async function loadStats() {
@@ -372,6 +425,7 @@ async function loadStats() {
         renderFuelGauge(s);
         renderLitersStrip(s.liters);
         renderFuelCard(s.fuel);
+        renderDayCard(s.day, s.liters);
     } catch (error) {
         console.error('Error loading stats:', error);
     }
