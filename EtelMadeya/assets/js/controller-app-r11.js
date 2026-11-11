@@ -696,7 +696,7 @@ async function handleVipRegister() {
         const data = await res.json();
 
         if (!data.success) {
-            if (data.code === 'WRONG_VEHICLE_TYPE') { showWrongTypeAlert(data); showVipFb('Plate not accepted - it belongs to another vehicle type', 'err'); return; }
+            if (showBlockedPlate(data)) { showVipFb('Plate not accepted - see the warning', 'err'); return; }
             showVipFb(data.message || 'Failed to register vehicle', 'err'); return;
         }
 
@@ -773,7 +773,7 @@ async function handleRegisterVehicle() {
             loadStats();
             loadQueue();
         } else {
-            if (data.code === 'WRONG_VEHICLE_TYPE') { showWrongTypeAlert(data); showMcFb('Plate not accepted - it belongs to another vehicle type', 'err'); }
+            if (showBlockedPlate(data)) showMcFb('Plate not accepted - see the warning', 'err');
             else showMcFb(data.message || 'Failed to register vehicle', 'err');
         }
     } catch (error) {
@@ -784,20 +784,47 @@ async function handleRegisterVehicle() {
     }
 }
 
-function showWrongTypeAlert(d) {
+// Red full-screen warning used for blocked plates: {main, plate, rows:[[label, html]], hint}
+function showPlateAlert(o) {
     const old = document.getElementById('wrongTypeAlert'); if (old) old.remove();
     const el = document.createElement('div'); el.id = 'wrongTypeAlert'; el.className = 'wt-overlay';
-    el.innerHTML = '<div class="wt-box"><div class="wt-head"><span class="wt-ic">⚠️</span><b>Plate blocked</b></div>' +
-        '<p class="wt-main">This plate number does <u>not</u> belong to <b>' + escHtml(d.requested_type) + '</b>.</p>' +
-        '<div class="wt-plate">' + plateHtml(d.plate) + '</div>' +
-        '<table class="wt-tbl"><tr><td>First registered as</td><td><b>' + escHtml(d.owner_type) + '</b></td></tr>' +
-        (d.first_plate ? '<tr><td>First plate</td><td><b>' + plateHtml(d.first_plate) + '</b></td></tr>' : '') +
-        '<tr><td>Day</td><td><b>' + escHtml(d.first_day) + '</b></td></tr>' +
-        '<tr><td>Time</td><td><b>' + escHtml(d.first_time) + '</b></td></tr>' +
-        '<tr><td>Station</td><td><b>' + escHtml(d.first_station) + '</b></td></tr></table>' +
-        '<p class="wt-hint">Register it under <b>' + escHtml(d.owner_type) + '</b>, or ask an admin to correct the first registration if it was a mistake.</p>' +
+    el.innerHTML = '<div class="wt-box"><div class="wt-head"><span class="wt-ic">⚠️</span><b>' + escHtml(o.title || 'Plate blocked') + '</b></div>' +
+        '<p class="wt-main">' + o.main + '</p>' +
+        '<div class="wt-plate">' + plateHtml(o.plate) + '</div>' +
+        '<table class="wt-tbl">' + (o.rows || []).map(r => '<tr><td>' + escHtml(r[0]) + '</td><td><b>' + r[1] + '</b></td></tr>').join('') + '</table>' +
+        (o.hint ? '<p class="wt-hint">' + o.hint + '</p>' : '') +
         '<button type="button" class="wt-btn" onclick="document.getElementById(\'wrongTypeAlert\').remove()">OK</button></div>';
     document.body.appendChild(el);
+}
+
+// Returns true when the response was one of the blocked-plate cases and the red alert was shown.
+function showBlockedPlate(d) {
+    if (!d) return false;
+    if (d.code === 'WRONG_VEHICLE_TYPE') {
+        showPlateAlert({ title: 'Plate blocked', plate: d.plate,
+            main: 'This plate number does <u>not</u> belong to <b>' + escHtml(d.requested_type) + '</b>.',
+            rows: [['First registered as', escHtml(d.owner_type)], ['First plate', d.first_plate ? plateHtml(d.first_plate) : '--'], ['Day', escHtml(d.first_day)], ['Time', escHtml(d.first_time)], ['Station', escHtml(d.first_station)]],
+            hint: 'Only an admin can correct the first registration. If it was a mistake, ask an admin to fix it in <b>Admin &rarr; Settings &rarr; Plate registry</b>.' });
+        return true;
+    }
+    if (d.code === 'DUPLICATE_IN_QUEUE') {
+        const qt = ({ normal: 'Normal queue', vip: 'VIP queue', waiting: 'Waiting list' })[d.queue_type] || d.queue_type;
+        showPlateAlert({ title: 'Duplicate plate', plate: d.plate,
+            main: 'This plate is <b>already registered</b> and is waiting in the queue.',
+            rows: [['Vehicle type', escHtml(d.vehicle_type || '--')], ['Queue', escHtml(qt || '--')], ['Position', '#' + escHtml(d.position)], ['Token', escHtml(d.token)], ['Registered on', escHtml(d.first_day)], ['Time', escHtml(d.first_time)], ['Station', escHtml(d.first_station)]],
+            hint: 'The same vehicle cannot be registered twice. Use the existing token.' });
+        return true;
+    }
+    if (d.code === 'SERVED_TODAY' || d.code === 'FUEL_LIMIT') {
+        const nxt = d.next_date ? new Date(d.next_date + 'T00:00:00').toLocaleDateString('en-GB', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' }) : '--';
+        const last = d.last_date ? new Date(d.last_date + 'T00:00:00').toLocaleDateString('en-GB', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' }) : '--';
+        showPlateAlert({ title: 'Already fuelled', plate: d.plate || '',
+            main: 'This vehicle already received fuel and its <b>day limit has not ended</b>.',
+            rows: [['Vehicle type', escHtml(d.vehicle_type || '--')], ['Last fill', escHtml(last)], ['Time', escHtml(d.served_at || '--')], ['Station', escHtml(d.station_name || '--')], ['Fuel limit', d.cooldown_days > 1 ? 'Every ' + escHtml(d.cooldown_days) + ' days' : 'Once a day'], ['Can fuel again on', escHtml(nxt)]],
+            hint: d.days_left ? 'Allowed again in ' + escHtml(d.days_left) + ' day' + (d.days_left == 1 ? '' : 's') + '.' : '' });
+        return true;
+    }
+    return false;
 }
 
 function showMcFb(msg, type, token) {

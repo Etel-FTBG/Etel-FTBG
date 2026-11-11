@@ -111,12 +111,30 @@ function madeyaRegisterVehicle($controllerId, $vehicleTypeId, $plate, $driverNam
     db()->beginTransaction();
     try {
         $existing = db()->fetchOne(
-            "SELECT id FROM queue WHERE plate_number = ? AND status = 'queued' FOR UPDATE",
+            "SELECT q.id, q.queue_type, q.position, q.token, q.registered_at, vt.name AS vehicle_type_name, c.station_name
+             FROM queue q
+             LEFT JOIN vehicle_types vt ON vt.id = q.vehicle_type_id
+             LEFT JOIN controllers c ON c.id = q.controller_id
+             WHERE q.plate_number = ? AND q.status = 'queued' FOR UPDATE",
             [$plate]
         );
         if ($existing) {
             db()->commit();
-            return ['success' => false, 'message' => 'Vehicle already in queue', 'http_code' => 200];
+            $ts = strtotime($existing['registered_at']);
+            return [
+                'success'       => false,
+                'code'          => 'DUPLICATE_IN_QUEUE',
+                'message'       => 'Vehicle already in queue',
+                'plate'         => $plate,
+                'vehicle_type'  => $existing['vehicle_type_name'],
+                'queue_type'    => $existing['queue_type'],
+                'position'      => (int)$existing['position'],
+                'token'         => $existing['token'],
+                'first_day'     => date('D d M Y', $ts),
+                'first_time'    => date('H:i', $ts),
+                'first_station' => $existing['station_name'] ?: 'unknown station',
+                'http_code'     => 200,
+            ];
         }
 
         $servedToday = madeyaServedTodayConflict($plate, $vehicleTypeId);
@@ -142,6 +160,8 @@ function madeyaRegisterVehicle($controllerId, $vehicleTypeId, $plate, $driverNam
                 'next_date'     => $servedToday['next_date'],
                 'days_left'     => $servedToday['days_left'],
                 'cooldown_days' => $n,
+                'plate'         => $plate,
+                'vehicle_type'  => $tn,
                 'station_name'  => $servedToday['station_name'],
                 'http_code'     => 400,
             ];

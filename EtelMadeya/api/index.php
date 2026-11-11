@@ -528,21 +528,7 @@ try {
             }
             $who = $_SESSION['controller_name'] ?? 'controller';
             db()->update('queue', ['status' => 'cancelled', 'notes' => 'Removed by ' . $who . ' on ' . date('Y-m-d H:i')], 'id = ?', [$queueId]);
-            // A plate that was removed before ever being served should not stay bound to the vehicle type it was entered under
-            // (usually a wrong-type mistake), so release its first-registration record.
-            $released = false;
-            try {
-                ensurePlateRegistry();
-                $vars = madeyaPlateVariants($row['plate_number']);
-                $ph = implode(',', array_fill(0, count($vars), '?'));
-                $served = db()->fetchOne("SELECT id FROM report WHERE UPPER(plate_number) IN ($ph) LIMIT 1", $vars);
-                $other  = db()->fetchOne("SELECT id FROM queue WHERE UPPER(plate_number) IN ($ph) AND status IN ('queued','serving','served') LIMIT 1", $vars);
-                if (!$served && !$other) {
-                    db()->query("DELETE FROM plate_registry WHERE plate_number IN ($ph)", $vars);
-                    $released = true;
-                }
-            } catch (Exception $e) { error_log('remove_from_queue registry: ' . $e->getMessage()); }
-            jsonResponse(['success' => true, 'message' => 'Plate removed from the queue', 'plate_released' => $released]);
+            jsonResponse(['success' => true, 'message' => 'Plate removed from the queue']);
             break;
 
         case 'move_to_vip':
