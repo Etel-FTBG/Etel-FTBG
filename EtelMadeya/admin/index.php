@@ -14,6 +14,7 @@
     <link rel="stylesheet" href="../assets/css/madeya-vehicles.css">
     <link rel="stylesheet" href="../assets/css/madeya-plates-r2.css">
     <link rel="stylesheet" href="../assets/css/madeya-modals.css">
+    <link rel="stylesheet" href="../assets/css/madeya-settings.css">
     <script src="../assets/js/madeya-pro-r2.js"></script>
     <link rel="icon" href="../assets/img/etel-logo.png">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -284,6 +285,35 @@
                             </form>
                         </div>
                         <div class="settings-card">
+                            <h3>Header &amp; Footer (public driver page)</h3>
+                            <form id="siteSettingsForm" onsubmit="saveSettings(event, 'site')">
+                                <p class="am-note">What drivers see at the top and bottom of the public page. Leave a field empty to use the default. For two languages write <b>English | አማርኛ</b>.</p>
+                                <div class="am-field"><label for="siteSetPhone">Phone</label><input type="text" id="siteSetPhone" placeholder="+251-467-34-64-41"></div>
+                                <div class="am-field"><label for="siteSetEmail">Email</label><input type="text" id="siteSetEmail" placeholder="ethelmarket@gmail.com"></div>
+                                <div class="am-field"><label for="siteSetAddress">Address</label><input type="text" id="siteSetAddress" placeholder="Addis Ababa, Ethiopia"></div>
+                                <div class="am-field"><label for="siteSetHours">Opening hours</label><input type="text" id="siteSetHours" placeholder="Mon-Sun: 24/7"></div>
+                                <div class="am-field"><label for="siteSetTagline">Footer tagline</label><input type="text" id="siteSetTagline" placeholder="Modern gas station queue management for Ethiopia. | ለኢትዮጵያ ዘመናዊ የነዳጅ ወረፋ አስተዳደር።"></div>
+                                <div class="am-field"><label for="siteSetLinks">Quick links (one per line: Label | link)</label><textarea id="siteSetLinks" rows="4" placeholder="Check Position | #check&#10;Live Stations | #stations&#10;About | #about&#10;Etel Group | https://ethelmarket.com"></textarea></div>
+                                <div class="am-field"><label for="siteSetInfo">Station info lines (one per line)</label><textarea id="siteSetInfo" rows="4" placeholder="Real-time queue updates | የቅጽበታዊ ወረፋ ዝመናዎች&#10;Fair queue management | ፍትሃዊ ወረፋ አስተዳደር"></textarea></div>
+                                <div class="am-field"><label for="siteSetCopy">Copyright text</label><input type="text" id="siteSetCopy" placeholder="Etel Madeya. All rights reserved."></div>
+                                <div class="am-field"><label for="siteSetPowered">Bottom line</label><input type="text" id="siteSetPowered" placeholder="Powered by ETEL | በኢትል የተጎለበተ"></div>
+                                <button type="submit" class="am-btn">Save Changes</button>
+                            </form>
+                        </div>
+                        <div class="settings-card">
+                            <h3>Driver access</h3>
+                            <form id="accessSettingsForm" onsubmit="saveSettings(event, 'access')">
+                                <p class="am-note">Now Check Position and Live Stations are open to everyone. When you turn this on, drivers must sign in once with their EtelID (button in the page header) before they can use them. Controllers and admins are never blocked.</p>
+                                <div class="am-field">
+                                    <label class="am-check-label" for="siteSetRequireLogin">
+                                        <input type="checkbox" id="siteSetRequireLogin">
+                                        Require EtelID login for drivers
+                                    </label>
+                                </div>
+                                <button type="submit" class="am-btn">Save Changes</button>
+                            </form>
+                        </div>
+                        <div class="settings-card">
                             <h3>Queue Settings</h3>
                             <form id="queueSettingsForm" onsubmit="saveSettings(event, 'queue')">
                                 <div class="am-field">
@@ -329,7 +359,7 @@
     <script src="../assets/js/madeya-vehicles-r4.js"></script>
     <script src="../assets/js/madeya-plates-r2.js"></script>
     <script src="../assets/js/icons.js"></script>
-    <script src="../assets/js/admin-app-r4.js"></script>
+    <script src="../assets/js/admin-app-r5.js"></script>
     <script src="../assets/js/admin-station-r2.js"></script>
 </body>
 </html>

@@ -1004,6 +1004,11 @@ async function loadSettings() {
             document.getElementById('settingMaxQueueSize').value = s.max_queue_size || 500;
             document.getElementById('settingEnableVip').checked = s.enable_vip_queue == '1';
             document.getElementById('settingEnableWaiting').checked = s.enable_waiting_queue == '1';
+            const set = (id, v) => { const e = document.getElementById(id); if (e) e.value = v || ''; };
+            set('siteSetPhone', s.site_phone); set('siteSetEmail', s.site_email); set('siteSetAddress', s.site_address);
+            set('siteSetHours', s.site_hours); set('siteSetTagline', s.site_tagline); set('siteSetLinks', s.footer_links);
+            set('siteSetInfo', s.footer_info); set('siteSetCopy', s.site_copyright); set('siteSetPowered', s.site_powered);
+            const rl = document.getElementById('siteSetRequireLogin'); if (rl) rl.checked = s.require_etelid_drivers == '1';
         }
     } catch (error) {
         console.error('Error loading settings:', error);
@@ -1024,6 +1029,19 @@ async function saveSettings(event, type) {
         formData.append('settings[station_name_am]', document.getElementById('settingStationNameAm').value);
         formData.append('settings[phone]', document.getElementById('settingPhone').value);
         formData.append('settings[email]', document.getElementById('settingEmail').value);
+    } else if (type === 'site') {
+        const g = id => document.getElementById(id).value;
+        formData.append('settings[site_phone]', g('siteSetPhone'));
+        formData.append('settings[site_email]', g('siteSetEmail'));
+        formData.append('settings[site_address]', g('siteSetAddress'));
+        formData.append('settings[site_hours]', g('siteSetHours'));
+        formData.append('settings[site_tagline]', g('siteSetTagline'));
+        formData.append('settings[footer_links]', g('siteSetLinks'));
+        formData.append('settings[footer_info]', g('siteSetInfo'));
+        formData.append('settings[site_copyright]', g('siteSetCopy'));
+        formData.append('settings[site_powered]', g('siteSetPowered'));
+    } else if (type === 'access') {
+        formData.append('settings[require_etelid_drivers]', document.getElementById('siteSetRequireLogin').checked ? '1' : '0');
     } else if (type === 'queue') {
         formData.append('settings[alert_threshold]', document.getElementById('settingAlertThreshold').value);
         formData.append('settings[max_queue_size]', document.getElementById('settingMaxQueueSize').value);
