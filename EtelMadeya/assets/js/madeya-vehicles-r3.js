@@ -4,10 +4,12 @@
    that picture is used instead. No picture found -> falls back to the emoji icon, so nothing breaks. */
 (function () {
   'use strict';
-  var BASE = (function () {
+  var ROOT = (function () {
     var s = document.currentScript && document.currentScript.src || '';
-    return s ? s.replace(/assets\/js\/madeya-vehicles\.js.*$/, 'assets/images/vehicles/') : 'assets/images/vehicles/';
+    s = s.replace(/[?#].*$/, '');
+    return /assets\/js\//.test(s) ? s.replace(/assets\/js\/[^\/]*$/, '') : '';
   })();
+  var BASE = ROOT + 'assets/images/vehicles/';
   var FILES = { bajaj: 1, qute: 1, ev_car: 1, car: 1, minibus: 1, moto: 1, truck: 1 };
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   function key(name) {
@@ -22,8 +24,12 @@
     return '';
   }
   function isPath(v) { return /\.(png|webp|jpe?g|svg)(\?.*)?$/i.test(v || '') || /^(https?:)?\/\//.test(v || '') || /^\//.test(v || ''); }
+  window.vehIsPath = isPath;
   window.vehSrc = function (icon, name) {
-    if (isPath(icon)) return /^(https?:)?\/\/|^\//.test(icon) ? icon : BASE + icon;
+    if (isPath(icon)) {
+      if (/^(https?:)?\/\/|^\//.test(icon)) return icon;
+      return /^uploads\//.test(icon) ? ROOT + icon : BASE + icon;
+    }
     var k = key(name) || key(icon);
     return k ? BASE + k + '.png' : '';
   };

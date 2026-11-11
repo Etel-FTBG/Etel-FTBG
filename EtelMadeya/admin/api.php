@@ -434,6 +434,9 @@ try {
             if (empty($name)) {
                 jsonResponse(['success' => false, 'message' => 'Name required'], 400);
             }
+            $img = saveVehicleTypeImage('image');
+            if (!empty($img['error'])) jsonResponse(['success' => false, 'message' => $img['error']], 400);
+            if (!empty($img['path'])) $icon = $img['path'];
             
             $id = db()->insert('vehicle_types', [
                 'name' => $name,
@@ -467,6 +470,10 @@ try {
             if (!$id || empty($name)) {
                 jsonResponse(['success' => false, 'message' => 'Missing required fields'], 400);
             }
+            $img = saveVehicleTypeImage('image');
+            if (!empty($img['error'])) jsonResponse(['success' => false, 'message' => $img['error']], 400);
+            if (!empty($img['path'])) $icon = $img['path'];
+            elseif (!empty($_POST['remove_image'])) $icon = '';
             
             db()->update('vehicle_types', [
                 'name' => $name,

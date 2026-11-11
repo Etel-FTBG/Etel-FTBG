@@ -654,6 +654,46 @@ function displayVehicleTypes(types) {
     `).join('');
 }
 
+// Picture (upload) + optional emoji fallback for a vehicle type.
+function vtPictureField(prefix, icon) {
+    icon = icon || '';
+    const isImg = window.vehIsPath && vehIsPath(icon);
+    return `
+        <div class="form-group">
+            <label>Vehicle picture</label>
+            <div class="vt-up">
+                <div class="vt-up-prev" id="${prefix}Prev">${isImg ? vehPic(icon, '', 84) : '<span class="vt-up-empty">No picture<br><small>Upload a PNG / JPG / WEBP</small></span>'}</div>
+                <div class="vt-up-side">
+                    <input type="file" id="${prefix}Image" accept="image/png,image/jpeg,image/webp" onchange="vtPreview('${prefix}')">
+                    ${isImg ? `<label class="am-check-label"><input type="checkbox" id="${prefix}RemoveImg"> Remove current picture</label>` : ''}
+                    <small class="vt-up-hint">Tip: a transparent PNG, side view, about 600 px wide looks best.</small>
+                </div>
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="${prefix}Icon">Emoji (optional - used only when there is no picture)</label>
+            <input type="text" id="${prefix}Icon" class="form-control" placeholder="e.g. 🏍️" value="${isImg ? '' : escHtml(icon)}">
+            <input type="hidden" id="${prefix}IconCur" value="${escHtml(isImg ? icon : '')}">
+        </div>`;
+}
+function vtPreview(prefix) {
+    const f = document.getElementById(prefix + 'Image').files[0];
+    const box = document.getElementById(prefix + 'Prev');
+    if (!f || !box) return;
+    if (f.size > 4 * 1024 * 1024) { alert('Picture too large (max 4 MB)'); document.getElementById(prefix + 'Image').value = ''; return; }
+    const url = URL.createObjectURL(f);
+    box.innerHTML = '<img class="veh-pic" style="height:84px" src="' + url + '" alt="">';
+}
+function appendVtPicture(fd, prefix) {
+    const file = document.getElementById(prefix + 'Image').files[0];
+    const rm = document.getElementById(prefix + 'RemoveImg');
+    const emoji = document.getElementById(prefix + 'Icon').value.trim();
+    const cur = document.getElementById(prefix + 'IconCur').value;
+    if (file) fd.append('image', file);
+    if (rm && rm.checked) fd.append('remove_image', 1);
+    fd.append('icon', (cur && !(rm && rm.checked)) ? cur : emoji);
+}
+
 function showAddVehicleType() {
     const modal = `
         <div class="modal" style="display:block">
@@ -663,10 +703,7 @@ function showAddVehicleType() {
                     <button onclick="closeModal()" class="close-btn">${ICONS.close}</button>
                 </div>
                 <form onsubmit="handleAddVehicleType(event)">
-                    <div class="form-group">
-                        <label for="addVtIcon">Icon (emoji, or a picture file like truck.png) *</label>
-                        <input type="text" id="addVtIcon" class="form-control" placeholder="e.g. 🏍️" required>
-                    </div>
+                    ${vtPictureField('addVt', '')}
                     <div class="form-group">
                         <label for="addVtName">Name *</label>
                         <input type="text" id="addVtName" class="form-control" placeholder="e.g. Motorcycle" required>
@@ -700,7 +737,7 @@ async function handleAddVehicleType(event) {
 
     const formData = new FormData();
     formData.append('action', 'create_vehicle_type');
-    formData.append('icon', document.getElementById('addVtIcon').value);
+    appendVtPicture(formData, 'addVt');
     formData.append('name', document.getElementById('addVtName').value);
     formData.append('name_am', document.getElementById('addVtNameAm').value);
     formData.append('sort_order', document.getElementById('addVtSortOrder').value);
@@ -742,10 +779,7 @@ function editVehicleType(id) {
                     <button onclick="closeModal()" class="close-btn">${ICONS.close}</button>
                 </div>
                 <form onsubmit="handleEditVehicleType(event, ${t.id})">
-                    <div class="form-group">
-                        <label for="editVtIcon">Icon (emoji, or a picture file like truck.png) *</label>
-                        <input type="text" id="editVtIcon" class="form-control" value="${escHtml(t.icon)}" required>
-                    </div>
+                    ${vtPictureField('editVt', t.icon)}
                     <div class="form-group">
                         <label for="editVtName">Name *</label>
                         <input type="text" id="editVtName" class="form-control" value="${escHtml(t.name)}" required>
@@ -786,7 +820,7 @@ async function handleEditVehicleType(event, id) {
     const formData = new FormData();
     formData.append('action', 'update_vehicle_type');
     formData.append('id', id);
-    formData.append('icon', document.getElementById('editVtIcon').value);
+    appendVtPicture(formData, 'editVt');
     formData.append('name', document.getElementById('editVtName').value);
     formData.append('name_am', document.getElementById('editVtNameAm').value);
     formData.append('sort_order', document.getElementById('editVtSortOrder').value);
