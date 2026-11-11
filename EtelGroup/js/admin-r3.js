@@ -471,7 +471,7 @@ async function loadCompanies() {
       <td>${c.sort_order}</td>
       <td><strong>${egaEsc(c.name)}</strong><br><span style="color:var(--text-dim);font-size:11.5px">${egaEsc(c.tagline)}</span></td>
       <td style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${egaEsc(c.url) || '<span style="color:var(--text-faint)">—</span>'}</td>
-      <td><span class="pill ${c.status === 'live' ? 'replied' : 'new'}">${c.status === 'live' ? 'Live' : 'Coming Soon'}</span></td>
+      <td><span class="pill ${c.status === 'live' ? 'replied' : 'new'}">${c.status === 'live' ? 'Live' : 'Coming Soon'}</span>${c.status !== 'live' && c.launch_text ? `<br><span style="color:var(--text-dim);font-size:11.5px">${egaEsc(c.launch_text)}</span>` : ''}${Number(c.notify_count) > 0 ? `<br><a href="#" style="font-size:11.5px;color:var(--gold-light)" onclick="exportNotifyCsv('${egaEsc(c.slug)}');return false">${c.notify_count} waiting &middot; download</a>` : ''}</td>
       <td style="white-space:nowrap">
         <button class="btn btn-outline" style="padding:6px 10px;font-size:11.5px" onclick="openCompanyForm(${c.id})">Edit</button>
         <button class="btn btn-danger" style="padding:6px 10px;font-size:11.5px" onclick="deleteCompany(${c.id})">Delete</button>
@@ -529,6 +529,8 @@ async function openCompanyForm(id) {
   document.getElementById('cf-status').value = c ? c.status : 'coming_soon';
   document.getElementById('cf-sort').value = c ? c.sort_order : (EGA_COMPANIES.length + 1) * 10;
   document.getElementById('cf-tags').value = c ? c.tags : '';
+  document.getElementById('cf-launch').value = c ? (c.launch_text || '') : '';
+  document.getElementById('cf-notify').checked = !!(c && Number(c.notify_enabled) === 1);
   document.getElementById('cf-desc-short').value = c ? c.description_short : '';
   document.getElementById('cf-desc-long').value = c ? c.description_long : '';
   document.getElementById('cf-logo').value = c && c.logo_path ? c.logo_path : '';
@@ -615,8 +617,16 @@ async function saveCompany() {
     ? await egaApi('admin_update_company', Object.assign({ id: parseInt(id, 10) }, payload))
     : await egaApi('admin_create_company', payload);
   if (!res.ok) { alert(res.error || 'Could not save company'); return; }
+  // launch text + notify-me live in their own table, saved right after the company itself
+  const slug = payload.slug.toLowerCase().replace(/[^a-z0-9-]/g, '-');
+  const lres = await egaApi('admin_save_company_launch', { slug, launch_text: document.getElementById('cf-launch').value.trim(), notify_enabled: document.getElementById('cf-notify').checked });
+  if (!lres.ok) alert('Company saved, but the launch settings were not: ' + (lres.error || 'error'));
   closeCompanyForm();
   loadCompanies();
+}
+
+function exportNotifyCsv(slug) {
+  window.open(EGA.apiBase + '?action=admin_export_notify_csv&slug=' + encodeURIComponent(slug) + '&token=' + encodeURIComponent(egaGetToken()), '_blank');
 }
 
 async function deleteCompany(id) {
@@ -702,6 +712,7 @@ const EGA_ACTIVITY_LABELS = {
   company_created: 'Added company',
   company_updated: 'Updated company',
   company_deleted: 'Deleted company',
+  company_launch: 'Changed launch settings',
   companies_reordered: 'Reordered companies',
   employee_role_set: 'Assigned employee role',
   employee_role_removed: 'Removed employee role',
