@@ -15,3 +15,6 @@
 .pr-top small{opacity:.7}
 .pr-act{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .pr-act select{flex:1;min-width:120px;min-height:40px;border-radius:10px;border:1.5px solid var(--mp-line2,#d9c98f);background:var(--mp-soft,#faf6ea);color:inherit;padding:0 10px}
+/* remove-from-queue button */
+#mainPanel .action-btn-del{background:rgba(217,48,37,.12)!important;color:#d93025!important;border:1.5px solid rgba(217,48,37,.55)!important}
+#mainPanel .action-btn-del:hover{background:#d93025!important;color:#fff!important}

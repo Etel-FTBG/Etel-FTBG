@@ -515,6 +515,36 @@ try {
             }
             break;
             
+        case 'remove_from_queue':
+            requireControllerAuth();
+            $queueId = (int)($_POST['queue_id'] ?? 0);
+            if (!$queueId) {
+                jsonResponse(['success' => false, 'message' => 'Queue ID required'], 400);
+            }
+            // Own station only, and only vehicles still waiting (queue, waiting list or VIP).
+            $row = db()->fetchOne("SELECT id, plate_number FROM queue WHERE id = ? AND controller_id = ? AND status = 'queued'", [$queueId, $_SESSION['controller_id']]);
+            if (!$row) {
+                jsonResponse(['success' => false, 'message' => 'This vehicle is no longer in the queue'], 404);
+            }
+            $who = $_SESSION['controller_name'] ?? 'controller';
+            db()->update('queue', ['status' => 'cancelled', 'notes' => 'Removed by ' . $who . ' on ' . date('Y-m-d H:i')], 'id = ?', [$queueId]);
+            // A plate that was removed before ever being served should not stay bound to the vehicle type it was entered under
+            // (usually a wrong-type mistake), so release its first-registration record.
+            $released = false;
+            try {
+                ensurePlateRegistry();
+                $vars = madeyaPlateVariants($row['plate_number']);
+                $ph = implode(',', array_fill(0, count($vars), '?'));
+                $served = db()->fetchOne("SELECT id FROM report WHERE UPPER(plate_number) IN ($ph) LIMIT 1", $vars);
+                $other  = db()->fetchOne("SELECT id FROM queue WHERE UPPER(plate_number) IN ($ph) AND status IN ('queued','serving','served') LIMIT 1", $vars);
+                if (!$served && !$other) {
+                    db()->query("DELETE FROM plate_registry WHERE plate_number IN ($ph)", $vars);
+                    $released = true;
+                }
+            } catch (Exception $e) { error_log('remove_from_queue registry: ' . $e->getMessage()); }
+            jsonResponse(['success' => true, 'message' => 'Plate removed from the queue', 'plate_released' => $released]);
+            break;
+
         case 'move_to_vip':
             requireControllerAuth();
 
@@ -784,9 +814,16 @@ try {
             $wrongType = [];
             if ($impType) {
                 ensurePlateRegistry();
-                $uUp = array_map('strtoupper', $unique);
-                $phU = implode(',', array_fill(0, count($uUp), '?'));
-                foreach (db()->fetchAll("SELECT plate_number FROM plate_registry WHERE vehicle_type_id <> ? AND plate_number IN ($phU)", array_merge([$impType], $uUp)) as $wr) $wrongType[] = $wr['plate_number'];
+                $vmap = []; $allV = [];
+                foreach ($unique as $pl) { foreach (madeyaPlateVariants($pl) as $vv) { $vmap[$vv][] = $pl; $allV[$vv] = true; } }
+                $allV = array_keys($allV);
+                if ($allV) {
+                    $phV = implode(',', array_fill(0, count($allV), '?'));
+                    foreach (db()->fetchAll("SELECT plate_number FROM plate_registry WHERE vehicle_type_id <> ? AND plate_number IN ($phV)", array_merge([$impType], $allV)) as $wr) {
+                        foreach ($vmap[$wr['plate_number']] ?? [] as $pl) $wrongType[$pl] = $pl;
+                    }
+                }
+                $wrongType = array_values($wrongType);
             }
 
             // Clean = unique, not in queue, not in report
