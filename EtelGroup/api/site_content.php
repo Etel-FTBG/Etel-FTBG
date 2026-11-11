@@ -45,6 +45,31 @@ function eg_site_content_schema(): array {
         array('k' => 'footer_tagline',  'label' => 'Footer tagline', 'type' => 'area', 'bi' => true),
         array('k' => 'footer_location', 'label' => 'Footer location line', 'type' => 'text', 'bi' => false),
     ));
+    $stat = array();
+    $statDefaults = array(1 => 'Subsidiaries', 2 => 'Live Services', 3 => 'Member Tiers', 4 => 'Ambition');
+    foreach ($statDefaults as $i => $d) {
+        $stat[] = array('k' => 'stat' . $i . '_value', 'label' => 'Number ' . $i . ' (digits, or a short text such as the infinity sign)', 'type' => 'text', 'bi' => false);
+        $stat[] = array('k' => 'stat' . $i . '_label', 'label' => 'Number ' . $i . ' label (built-in: ' . $d . ')', 'type' => 'text', 'bi' => true);
+    }
+    $stat[] = array('k' => 'member_label', 'label' => 'Registered members label', 'type' => 'text', 'bi' => true);
+    $g[] = array('id' => 'stats', 'title' => 'Numbers (the four big counters)', 'fields' => $stat);
+    $bars = array();
+    $barDefaults = array(1 => 'Etel Delivery', 2 => 'Etel Madeya', 3 => 'Etel Market', 4 => 'Etel Pay', 5 => 'Etel Transport', 6 => 'Etel LuxLine');
+    foreach ($barDefaults as $i => $d) {
+        $bars[] = array('k' => 'bar' . $i . '_name', 'label' => 'Bar ' . $i . ' name (built-in: ' . $d . ')', 'type' => 'text', 'bi' => false);
+        $bars[] = array('k' => 'bar' . $i . '_pct', 'label' => 'Bar ' . $i . ' progress, 0 to 100', 'type' => 'pct', 'bi' => false);
+        $bars[] = array('k' => 'bar' . $i . '_text', 'label' => 'Bar ' . $i . ' text shown instead of the percent (e.g. Live)', 'type' => 'text', 'bi' => false);
+        $bars[] = array('k' => 'bar' . $i . '_sub', 'label' => 'Bar ' . $i . ' description', 'type' => 'text', 'bi' => false);
+    }
+    $g[] = array('id' => 'bars', 'title' => 'Progress bars', 'fields' => $bars);
+    $g[] = array('id' => 'regions', 'title' => 'Regions (one name per line)', 'fields' => array(
+        array('k' => 'regions_active', 'label' => 'Where we operate now (lit up)', 'type' => 'area', 'bi' => false),
+        array('k' => 'regions_soon', 'label' => 'Where we are going next (dim)', 'type' => 'area', 'bi' => false),
+    ));
+    $gov = array();
+    for ($i = 1; $i <= 4; $i++) $gov[] = array('k' => 'gov' . $i, 'label' => 'Governance principle ' . $i, 'type' => 'text', 'bi' => true);
+    $gov[] = array('k' => 'press_body', 'label' => 'Press and media line', 'type' => 'area', 'bi' => false);
+    $g[] = array('id' => 'governance', 'title' => 'Governance principles and press line', 'fields' => $gov);
     $names = array(1 => 'Leader 1 (Founder & Group CEO card)', 2 => 'Leader 2 (COO card)', 3 => 'Leader 3 (CTO card)');
     foreach ($names as $i => $title) {
         $g[] = array('id' => 'leader' . $i, 'title' => $title . ' - fill in the name to replace the "Profile coming soon" card', 'fields' => array(
@@ -68,6 +93,10 @@ function eg_site_content_clean(string $v, string $type): string {
     $v = trim(strip_tags(str_replace(array("\r\n", "\r"), "\n", $v)));
     if ($type === 'area') return mb_substr($v, 0, 1000);
     $v = preg_replace('/\s+/u', ' ', $v);
+    if ($type === 'pct') {
+        $v = str_replace('%', '', $v);
+        return is_numeric($v) ? (string)max(0, min(100, (int)round((float)$v))) : '';
+    }
     if ($type === 'url') {
         $v = mb_substr($v, 0, 400);
         if ($v === '') return '';
