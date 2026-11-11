@@ -18,8 +18,8 @@ if ( isset( $_GET['embed'] ) && ! headers_sent() ) {
     <link rel="stylesheet" href="assets/css/controller-style.css">
     <link rel="stylesheet" href="assets/css/etel-premium.css">
     <link rel="stylesheet" href="assets/css/controller-mainpanel.css">
-    <link rel="stylesheet" href="assets/css/madeya-pro.css?v=1">
-    <script src="assets/js/madeya-pro.js?v=1"></script>
+    <link rel="stylesheet" href="assets/css/madeya-pro-r2.css">
+    <script src="assets/js/madeya-pro-r2.js"></script>
     <link rel="icon" href="assets/img/etel-logo.png">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 </head>
@@ -439,8 +439,8 @@ if ( isset( $_GET['embed'] ) && ! headers_sent() ) {
     let currentController = null;
     let vehicleTypes = [];
     </script>
-    <script src="assets/js/madeya-vehicles.js?v=1"></script>
+    <script src="assets/js/madeya-vehicles-r2.js"></script>
     <script src="assets/js/icons.js"></script>
-    <script src="assets/js/controller-app.js"></script>
+    <script src="assets/js/controller-app-r2.js"></script>
 </body>
 </html>
