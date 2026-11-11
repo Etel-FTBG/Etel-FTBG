@@ -13,6 +13,7 @@
     <link rel="stylesheet" href="assets/css/driver-style.css">
     <link rel="stylesheet" href="assets/css/etel-premium.css">
     <link rel="stylesheet" href="assets/css/madeya-pro-r2.css">
+    <link rel="stylesheet" href="assets/css/madeya-vehicles.css">
     <script src="assets/js/madeya-pro-r2.js"></script>
     <link rel="icon" href="assets/img/etel-logo.png">
 </head>
@@ -97,7 +98,7 @@
     const API = 'index.php?route=api';
     const SITE_NAME = '<?= SITE_NAME ?>';
     </script>
-    <script src="assets/js/madeya-vehicles-r2.js"></script>
+    <script src="assets/js/madeya-vehicles-r3.js"></script>
     <script src="assets/js/icons.js"></script>
     <script src="assets/js/driver-stations-r2.js"></script>
     <script src="assets/js/driver-app-r2.js"></script>

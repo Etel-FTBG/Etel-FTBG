@@ -41,3 +41,23 @@ function ensureVehicleIconLen() {
         error_log('ensureVehicleIconLen: ' . $e->getMessage());
     }
 }
+
+/**
+ * Save an uploaded vehicle-type picture to uploads/vehicle-types/.
+ * Returns ['path' => 'uploads/vehicle-types/xxx.png'] or ['error' => '...'] or [] when no file was sent.
+ */
+function saveVehicleTypeImage($key = 'image') {
+    if (empty($_FILES[$key]) || ($_FILES[$key]['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_NO_FILE) return [];
+    $f = $_FILES[$key];
+    if ($f['error'] !== UPLOAD_ERR_OK) return ['error' => 'Upload failed - try a smaller picture'];
+    if ($f['size'] > 4 * 1024 * 1024) return ['error' => 'Picture too large (max 4 MB)'];
+    $info = @getimagesize($f['tmp_name']);
+    $map = [IMAGETYPE_PNG => 'png', IMAGETYPE_JPEG => 'jpg', IMAGETYPE_GIF => 'gif'];
+    if (defined('IMAGETYPE_WEBP')) $map[IMAGETYPE_WEBP] = 'webp';
+    if (!$info || !isset($map[$info[2]])) return ['error' => 'Use a PNG, JPG or WEBP picture'];
+    $dir = __DIR__ . '/../uploads/vehicle-types/';
+    if (!is_dir($dir) && !@mkdir($dir, 0755, true)) return ['error' => 'Cannot create uploads folder'];
+    $name = 'vt_' . date('ymd_His') . '_' . bin2hex(random_bytes(3)) . '.' . $map[$info[2]];
+    if (!move_uploaded_file($f['tmp_name'], $dir . $name)) return ['error' => 'Failed to save picture'];
+    return ['path' => 'uploads/vehicle-types/' . $name];
+}

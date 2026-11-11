@@ -188,11 +188,19 @@ function renderVtypeGrid() {
         const click = allowed ? `onclick="selectVehicleType(${t.id}, this)"` : '';
         const title = allowed ? '' : 'title="Not served at this station today"';
         return `
-        <button type="button" class="${cls}" data-id="${t.id}" ${click} ${title}>
-            <span class="vt-ic">${vehPic(t.icon, t.name, 30)}</span>${escHtml(t.name || '')}
+        <button type="button" class="${cls}" data-id="${t.id}" data-name="${escHtml(t.name || '')}" ${click} ${title}>
+            <span class="vt-ic">${vehPic(t.icon, t.name, 64)}</span>
+            <span class="vt-name">${escHtml(t.name || '')}</span>
+            ${t.name_am ? `<span class="vt-am">${escHtml(t.name_am)}</span>` : ''}
+            ${allowed ? '' : '<span class="vt-na">Not served today</span>'}
         </button>
     `;
     }).join('');
+    const ruleEl = document.getElementById('regRule');
+    if (ruleEl) {
+        const r = (currentController && currentController.odd_even_rule) || 'all';
+        ruleEl.textContent = r === 'odd' ? 'Odd plates today' : (r === 'even' ? 'Even plates today' : 'All plates');
+    }
     // Auto-select the first ALLOWED type so registration starts on a
     // usable type rather than one that will just get rejected server-side.
     if (!selectedVehicleTypeId) {
@@ -207,6 +215,25 @@ function selectVehicleType(id, btn) {
     selectedVehicleTypeId = id;
     document.querySelectorAll('#vtypeGrid .vt-btn').forEach(b => b.classList.remove('sel'));
     if (btn) btn.classList.add('sel');
+    updateRegSummary();
+}
+
+function updateRegSummary() {
+    const el = document.getElementById('regSummary');
+    if (!el) return;
+    const plate = (document.getElementById('regPlate').value || '').trim();
+    const t = vehicleTypes.find(x => x.id == selectedVehicleTypeId);
+    if (!plate || !t) { el.innerHTML = '<span class="rg-sum-empty">Enter a plate and choose a vehicle type</span>'; return; }
+    const par = platePartyFromString(plate);
+    el.innerHTML = '<span class="rg-sum-pic">' + vehPic(t.icon, t.name, 38) + '</span><span class="rg-sum-t"><b>' + escHtml(plate) +
+        '</b><small>' + escHtml(t.name || '') + (par ? ' &middot; ' + (par === 'odd' ? 'Odd' : 'Even') + ' plate' : '') + '</small></span><span class="rg-sum-ok">Ready</span>';
+}
+
+function clearRegForm() {
+    ['regPlate', 'regDriverName', 'regDriverPhone'].forEach(id => { const e = document.getElementById(id); if (e) e.value = ''; });
+    updateRegParityHint();
+    updateRegSummary();
+    const fb = document.getElementById('mcFb'); if (fb) fb.className = 'mc-fb';
 }
 
 // Client-side mirror of the server's isOddPlate() - last digit odd/even.
@@ -698,6 +725,8 @@ async function handleRegisterVehicle() {
             plateInput.value = '';
             document.getElementById('regDriverName').value = '';
             document.getElementById('regDriverPhone').value = '';
+            updateRegParityHint();
+            updateRegSummary();
             loadStats();
             loadQueue();
         } else {

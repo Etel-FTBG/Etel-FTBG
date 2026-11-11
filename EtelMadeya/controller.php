@@ -19,6 +19,7 @@ if ( isset( $_GET['embed'] ) && ! headers_sent() ) {
     <link rel="stylesheet" href="assets/css/etel-premium.css">
     <link rel="stylesheet" href="assets/css/controller-mainpanel.css">
     <link rel="stylesheet" href="assets/css/madeya-pro-r2.css">
+    <link rel="stylesheet" href="assets/css/madeya-vehicles.css">
     <script src="assets/js/madeya-pro-r2.js"></script>
     <link rel="icon" href="assets/img/etel-logo.png">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
@@ -131,27 +132,35 @@ if ( isset( $_GET['embed'] ) && ! headers_sent() ) {
                 <div class="mc-body">
                     <!-- Register panel -->
                     <div class="pnl">
-                        <div class="pnl-h"><h3>Register Vehicle</h3></div>
-                        <div class="pnl-b">
+                        <div class="pnl-h"><h3>Register Vehicle</h3><span class="rg-rule" id="regRule"></span></div>
+                        <div class="pnl-b rg-form">
+                            <div class="rg-step"><span class="rg-n">1</span> Plate number</div>
                             <div class="plate-wrap">
-                                <input type="text" id="regPlate" class="mc-plate-inp" placeholder="PLATE NUMBER" maxlength="20" autocomplete="off" oninput="updateRegParityHint()">
+                                <input type="text" id="regPlate" class="mc-plate-inp" placeholder="PLATE NUMBER" maxlength="20" autocomplete="off" autocapitalize="characters" oninput="this.value=this.value.toUpperCase();updateRegParityHint();updateRegSummary()">
                                 <div class="pc tl"></div><div class="pc tr"></div><div class="pc bl"></div><div class="pc br"></div>
                             </div>
                             <div class="parity-hint" id="regParHint">&nbsp;</div>
 
-                            <div class="vtype-label">Vehicle Type</div>
+                            <div class="rg-step"><span class="rg-n">2</span> Vehicle type</div>
                             <div id="vtypeGrid" class="vtypes"><!-- filled by JS --></div>
 
-                            <div class="mc-field">
-                                <label for="regDriverName">Driver Name (optional)</label>
-                                <input type="text" id="regDriverName" placeholder="Optional">
-                            </div>
-                            <div class="mc-field">
-                                <label for="regDriverPhone">Driver Phone (optional)</label>
-                                <input type="tel" id="regDriverPhone" placeholder="Optional">
+                            <div class="rg-step"><span class="rg-n">3</span> Driver details <small>(optional)</small></div>
+                            <div class="rg-two">
+                                <div class="mc-field">
+                                    <label for="regDriverName">Driver name</label>
+                                    <input type="text" id="regDriverName" placeholder="Full name" autocomplete="off">
+                                </div>
+                                <div class="mc-field">
+                                    <label for="regDriverPhone">Driver phone</label>
+                                    <input type="tel" id="regDriverPhone" placeholder="09XXXXXXXX" inputmode="tel" autocomplete="off">
+                                </div>
                             </div>
 
-                            <button type="button" id="mcRegBtn" class="mc-reg-btn" onclick="handleRegisterVehicle()">Register &amp; Assign Token</button>
+                            <div class="rg-sum" id="regSummary"><span class="rg-sum-empty">Enter a plate and choose a vehicle type</span></div>
+                            <div class="rg-actions">
+                                <button type="button" class="rg-clear" onclick="clearRegForm()">Clear</button>
+                                <button type="button" id="mcRegBtn" class="mc-reg-btn" onclick="handleRegisterVehicle()">Register &amp; Assign Token</button>
+                            </div>
                             <div id="mcFb" class="mc-fb"><span></span><div><span id="mcFbMsg"></span><span class="fb-tk" id="mcFbTk"></span></div></div>
 
                             <div class="mc-divider"></div>
@@ -439,8 +448,8 @@ if ( isset( $_GET['embed'] ) && ! headers_sent() ) {
     let currentController = null;
     let vehicleTypes = [];
     </script>
-    <script src="assets/js/madeya-vehicles-r2.js"></script>
+    <script src="assets/js/madeya-vehicles-r3.js"></script>
     <script src="assets/js/icons.js"></script>
-    <script src="assets/js/controller-app-r2.js"></script>
+    <script src="assets/js/controller-app-r3.js"></script>
 </body>
 </html>
