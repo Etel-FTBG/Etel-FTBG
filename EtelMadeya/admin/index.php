@@ -12,7 +12,7 @@
     <link rel="stylesheet" href="../assets/css/admin-mainpanel.css">
     <link rel="stylesheet" href="../assets/css/madeya-pro-r2.css">
     <link rel="stylesheet" href="../assets/css/madeya-vehicles.css">
-    <link rel="stylesheet" href="../assets/css/madeya-plates-r2.css">
+    <link rel="stylesheet" href="../assets/css/madeya-plates-r3.css">
     <link rel="stylesheet" href="../assets/css/madeya-modals.css">
     <link rel="stylesheet" href="../assets/css/madeya-settings.css">
     <link rel="stylesheet" href="../assets/css/madeya-liters.css">
