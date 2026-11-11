@@ -145,6 +145,8 @@
 
 <link rel="stylesheet" href="EtelGroup/css/style.css">
 <link rel="stylesheet" href="EtelGroup/css/eg-groups.css">
+<link rel="stylesheet" href="EtelGroup/css/eg-light.css">
+<script src="EtelGroup/js/eg-master-theme.js"></script>
 </head>
 <body>
 
@@ -195,6 +197,9 @@
     <button class="lang-btn"        id="btn-am" onclick="setLang('am')">አማ</button>
   </div>
 
+  <!-- Light / dark theme -->
+  <button type="button" class="theme-toggle" data-theme-toggle aria-label="Switch to light mode">☀️</button>
+
   <!-- Nav CTA -->
   <a href="https://ethelmarket.com/EtelId/etel-id/apply/" class="nav-cta">
     <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
@@ -218,6 +223,7 @@
 <div id="mobile-menu" role="dialog" aria-modal="true" aria-label="Mobile navigation">
 
   <p class="mob-section-label">Navigation</p>
+  <button type="button" class="theme-toggle theme-toggle-mob" data-theme-toggle aria-label="Switch to light mode">☀️</button>
   <a class="mob-nav-link" href="#hero"    onclick="closeMob()">Home <span class="mob-arrow">→</span></a>
   <a class="mob-nav-link" href="#about"   onclick="closeMob()">About <span class="mob-arrow">→</span></a>
   <a class="mob-nav-link" href="#leadership" onclick="closeMob()">Leadership <span class="mob-arrow">→</span></a>
