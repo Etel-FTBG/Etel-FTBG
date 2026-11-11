@@ -102,7 +102,7 @@
     <script src="assets/js/madeya-vehicles-r4.js"></script>
     <script src="assets/js/madeya-plates-r2.js"></script>
     <script src="assets/js/icons.js"></script>
-    <script src="assets/js/driver-stations-r2.js"></script>
+    <script src="assets/js/driver-stations-r3.js"></script>
     <script src="assets/js/driver-app-r3.js"></script>
 <script src="/delivery/js/etel-help-fab.js" data-app="madeya" defer></script>
 </body>
