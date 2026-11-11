@@ -297,6 +297,7 @@
     function poll() {
         if (!document.getElementById('stnGrid')) { stop(); return; }
         fetch(API + '&action=public_stations', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (d) {
+            if (window.madHandleAuth && madHandleAuth(d)) { stop(); var mc = document.getElementById('mainContent'); if (mc && window.madLockCard) mc.innerHTML = madLockCard(); return; }
             if (d && d.success) render(d.stations || [], true);
         }).catch(function () {});
     }

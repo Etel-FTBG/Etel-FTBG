@@ -6,6 +6,7 @@
 require_once __DIR__ . '/../includes/config.php';
 require_once __DIR__ . '/../includes/queue_logic.php';
 require_once __DIR__ . '/../includes/stations.php';
+require_once __DIR__ . '/../includes/site_content.php';
 
 header('Content-Type: application/json; charset=utf-8');
 
@@ -29,6 +30,9 @@ try {
         // ─── DRIVER ENDPOINTS ───────────────────────────────────────
         
         case 'check_position':
+            if (!madeyaDriverAuthorized()) {
+                jsonResponse(['success' => false, 'code' => 'LOGIN_REQUIRED', 'message' => 'Please sign in with your EtelID to use this feature.'], 401);
+            }
             $plate = sanitize($_GET['plate'] ?? '');
             if (empty($plate)) {
                 jsonResponse(['success' => false, 'message' => 'Plate number required'], 400);
@@ -134,6 +138,9 @@ try {
             break;
             
         case 'public_stations':
+            if (!madeyaDriverAuthorized()) {
+                jsonResponse(['success' => false, 'code' => 'LOGIN_REQUIRED', 'message' => 'Please sign in with your EtelID to use this feature.'], 401);
+            }
             // Live board for drivers: every active station, whether it is open today, and how many vehicles are queued.
             ensureStationColumns();
             $stations = db()->fetchAll(
@@ -180,6 +187,9 @@ try {
             break;
 
         case 'driver_active_queue':
+            if (!madeyaDriverAuthorized()) {
+                jsonResponse(['success' => false, 'code' => 'LOGIN_REQUIRED', 'message' => 'Please sign in with your EtelID to use this feature.'], 401);
+            }
             // Drivers view the active queue for the controller where their plate is registered
             $plate = sanitize($_GET['plate'] ?? '');
             $controllerId = (int)($_GET['controller_id'] ?? 0);
@@ -246,6 +256,39 @@ try {
             ]);
             break;
             
+        // ─── PUBLIC DRIVER SIGN-IN (EtelID) ─────────────────────────
+        // Any EtelID holder may sign in here; it only unlocks the driver tools when an admin turns on
+        // "Require EtelID for drivers" in Admin > Settings. It never grants controller or admin access.
+        case 'driver_etelid_login':
+            require_once __DIR__ . '/../includes/etelid_bridge.php';
+            $identifier = sanitize($_POST['identifier'] ?? '');
+            $password   = $_POST['password'] ?? '';
+            if (empty($identifier) || empty($password)) {
+                jsonResponse(['success' => false, 'message' => 'Enter your EtelID and password'], 400);
+            }
+            if (!checkRateLimit('madeya_driver_etelid_' . getClientIP(), 8, 900)) {
+                jsonResponse(['success' => false, 'message' => 'Too many attempts. Try again in 15 minutes.'], 429);
+            }
+            $auth = etelid_bridge_authenticate($identifier, $password);
+            if (isset($auth['error'])) {
+                jsonResponse(['success' => false, 'message' => $auth['error']], 401);
+            }
+            $m = $auth['member'];
+            if (session_status() === PHP_SESSION_ACTIVE) session_regenerate_id(true);
+            $_SESSION['driver_member'] = ['name' => (string)($m['full_name'] ?? ''), 'phone' => (string)($m['phone'] ?? '')];
+            jsonResponse(['success' => true, 'member' => ['name' => $_SESSION['driver_member']['name']]]);
+            break;
+
+        case 'driver_logout':
+            unset($_SESSION['driver_member']);
+            jsonResponse(['success' => true]);
+            break;
+
+        case 'driver_session':
+            $mem = madeyaDriverMember();
+            jsonResponse(['success' => true, 'logged_in' => (bool)$mem, 'name' => $mem ? $mem['name'] : '', 'require_login' => madeyaSite()['require_login'], 'authorized' => madeyaDriverAuthorized()]);
+            break;
+
         // ─── CONTROLLER ENDPOINTS ───────────────────────────────────
         
         case 'controller_login':

@@ -27,10 +27,12 @@ function navigate(page) {
             content.innerHTML = getHomePage();
             break;
         case 'check':
+            if (window.madLocked && madLocked()) { content.innerHTML = madLockCard(); break; }
             content.innerHTML = getCheckPage();
             if (window.plateNumeric) plateNumeric(document.getElementById('checkPlate'));
             break;
         case 'stations':
+            if (window.madLocked && madLocked()) { content.innerHTML = madLockCard(); break; }
             content.innerHTML = getStationsPage();
             if (window.initStationsPage) initStationsPage();
             break;
@@ -173,6 +175,7 @@ async function checkPosition(event) {
     try {
         const response = await fetch(`${API}&action=check_position&plate=${encodeURIComponent(plate)}`);
         const data = await response.json();
+        if (window.madHandleAuth && madHandleAuth(data)) { resultDiv.innerHTML = ''; return; }
         
         if (data.success) {
             const v = data.vehicle;
@@ -237,6 +240,7 @@ async function loadActiveQueue(controllerId, myPlate) {
     try {
         const response = await fetch(`${API}&action=driver_active_queue&controller_id=${controllerId}`);
         const data = await response.json();
+        if (window.madHandleAuth && madHandleAuth(data)) { return; }
         
         if (data.success && data.queue.length > 0) {
             driverQueuePages = data.pages || [data.queue];
