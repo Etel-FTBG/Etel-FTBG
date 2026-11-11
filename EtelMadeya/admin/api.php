@@ -183,6 +183,13 @@ try {
                  ORDER BY c.station_name"
             );
             
+            $stationLit = madeyaStationLiters(date('Y-m-d'));
+            foreach ($controllers as &$cRow) {
+                $sl = $stationLit[(int)$cRow['id']] ?? ['served' => 0, 'liters' => 0, 'avg' => 0, 'queue_liters' => 0];
+                $cRow['served_today'] = $sl['served']; $cRow['est_liters'] = $sl['liters']; $cRow['avg_liters'] = $sl['avg']; $cRow['queue_liters'] = $sl['queue_liters'];
+            }
+            unset($cRow);
+            $stats['liters'] = madeyaLiterStats(null, date('Y-m-d'));
             jsonResponse([
                 'success' => true,
                 'stats' => $stats,
@@ -416,6 +423,7 @@ try {
             requireAdminAuth();
             ensureExtraVehicleTypes();
             ensureCooldownColumn();
+            ensureTankColumn();
             
             $types = db()->fetchAll(
                 "SELECT * FROM vehicle_types ORDER BY sort_order, name"
@@ -434,6 +442,8 @@ try {
             $sortOrder = (int)($_POST['sort_order'] ?? 0);
             ensureCooldownColumn();
             $cooldown = max(0, min(365, (int)($_POST['cooldown_days'] ?? 1)));
+            ensureTankColumn();
+            $tank = (isset($_POST['tank_liters']) && trim($_POST['tank_liters']) !== '') ? max(0, min(2000, (float)$_POST['tank_liters'])) : null;
             
             if (empty($name)) {
                 jsonResponse(['success' => false, 'message' => 'Name required'], 400);
@@ -447,7 +457,8 @@ try {
                 'name_am' => $nameAm,
                 'icon' => $icon,
                 'sort_order' => $sortOrder,
-                'cooldown_days' => $cooldown
+                'cooldown_days' => $cooldown,
+                'tank_liters' => $tank
             ]);
             
             // Log activity
@@ -473,6 +484,8 @@ try {
             $isActive = (int)($_POST['is_active'] ?? 1);
             ensureCooldownColumn();
             $cooldown = isset($_POST['cooldown_days']) ? max(0, min(365, (int)$_POST['cooldown_days'])) : null;
+            ensureTankColumn();
+            $tank = array_key_exists('tank_liters', $_POST) ? ((trim($_POST['tank_liters']) !== '') ? max(0, min(2000, (float)$_POST['tank_liters'])) : false) : null; // false = clear, null = untouched
             
             if (!$id || empty($name)) {
                 jsonResponse(['success' => false, 'message' => 'Missing required fields'], 400);
@@ -488,7 +501,7 @@ try {
                 'icon' => $icon,
                 'sort_order' => $sortOrder,
                 'is_active' => $isActive
-            ] + ($cooldown !== null ? ['cooldown_days' => $cooldown] : []), 'id = ?', [$id]);
+            ] + ($cooldown !== null ? ['cooldown_days' => $cooldown] : []) + ($tank !== null ? ['tank_liters' => ($tank === false ? null : $tank)] : []), 'id = ?', [$id]);
             
             // Log activity
             db()->insert('activity_log', [

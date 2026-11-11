@@ -89,3 +89,65 @@ function ensureCooldownColumn() {
         if (!$has) db()->query("ALTER TABLE vehicle_types ADD COLUMN cooldown_days SMALLINT UNSIGNED NOT NULL DEFAULT 1");
     } catch (Exception $e) { error_log('ensureCooldownColumn: ' . $e->getMessage()); }
 }
+
+
+/** Self-heal: how many liters a vehicle type's tank holds (used to estimate liters served per day / station). */
+function ensureTankColumn() {
+    static $done = false; if ($done) return; $done = true;
+    try {
+        $has = db()->fetchOne("SHOW COLUMNS FROM vehicle_types LIKE 'tank_liters'");
+        if (!$has) db()->query("ALTER TABLE vehicle_types ADD COLUMN tank_liters DECIMAL(7,1) NULL DEFAULT NULL");
+    } catch (Exception $e) { error_log('ensureTankColumn: ' . $e->getMessage()); }
+}
+
+/**
+ * Estimated liters for a day. A served row counts its recorded fuel_amount_liters when the controller entered one,
+ * otherwise the vehicle type's tank size. $controllerId = null -> all stations.
+ * Returns served, liters, avg (liters per vehicle that has a known size), unknown (served vehicles with no size),
+ * queued, queue_liters (what the vehicles now waiting would take) and by_type rows.
+ */
+function madeyaLiterStats($controllerId = null, $date = null) {
+    ensureTankColumn();
+    $date = $date ?: date('Y-m-d');
+    $w = ' WHERE r.report_date = ?'; $p = [$date];
+    if ($controllerId) { $w .= ' AND r.controller_id = ?'; $p[] = (int)$controllerId; }
+    $rows = db()->fetchAll(
+        "SELECT vt.id, vt.name, vt.tank_liters, COUNT(*) n,
+                SUM(COALESCE(NULLIF(r.fuel_amount_liters,0), vt.tank_liters, 0)) l,
+                SUM(CASE WHEN COALESCE(NULLIF(r.fuel_amount_liters,0), vt.tank_liters) IS NULL THEN 1 ELSE 0 END) unk
+         FROM report r JOIN vehicle_types vt ON vt.id = r.vehicle_type_id" . $w . " GROUP BY vt.id, vt.name, vt.tank_liters ORDER BY n DESC", $p);
+    $served = 0; $liters = 0.0; $unknown = 0; $by = [];
+    foreach ($rows as $r) {
+        $served += (int)$r['n']; $liters += (float)$r['l']; $unknown += (int)$r['unk'];
+        $by[$r['id']] = ['id' => (int)$r['id'], 'name' => $r['name'], 'tank_liters' => $r['tank_liters'] === null ? null : (float)$r['tank_liters'], 'served' => (int)$r['n'], 'liters' => round((float)$r['l'], 1), 'queued' => 0, 'queue_liters' => 0.0];
+    }
+    $qw = " WHERE q.status = 'queued'"; $qp = [];
+    if ($controllerId) { $qw .= ' AND q.controller_id = ?'; $qp[] = (int)$controllerId; }
+    $queued = 0; $qLit = 0.0;
+    foreach (db()->fetchAll("SELECT vt.id, vt.name, vt.tank_liters, COUNT(*) n FROM queue q JOIN vehicle_types vt ON vt.id = q.vehicle_type_id" . $qw . " GROUP BY vt.id, vt.name, vt.tank_liters", $qp) as $r) {
+        $queued += (int)$r['n']; $lit = (float)$r['tank_liters'] * (int)$r['n']; $qLit += $lit;
+        if (!isset($by[$r['id']])) $by[$r['id']] = ['id' => (int)$r['id'], 'name' => $r['name'], 'tank_liters' => $r['tank_liters'] === null ? null : (float)$r['tank_liters'], 'served' => 0, 'liters' => 0.0, 'queued' => 0, 'queue_liters' => 0.0];
+        $by[$r['id']]['queued'] = (int)$r['n']; $by[$r['id']]['queue_liters'] = round($lit, 1);
+    }
+    $known = $served - $unknown;
+    return ['date' => $date, 'served' => $served, 'liters' => round($liters, 1), 'avg' => $known > 0 ? round($liters / $known, 1) : 0, 'unknown' => $unknown,
+            'queued' => $queued, 'queue_liters' => round($qLit, 1), 'by_type' => array_values($by)];
+}
+
+/** Per-station numbers for the admin dashboard. */
+function madeyaStationLiters($date = null) {
+    ensureTankColumn();
+    $date = $date ?: date('Y-m-d');
+    $out = [];
+    foreach (db()->fetchAll(
+        "SELECT r.controller_id cid, COUNT(*) n, SUM(COALESCE(NULLIF(r.fuel_amount_liters,0), vt.tank_liters, 0)) l,
+                SUM(CASE WHEN COALESCE(NULLIF(r.fuel_amount_liters,0), vt.tank_liters) IS NULL THEN 0 ELSE 1 END) k
+         FROM report r JOIN vehicle_types vt ON vt.id = r.vehicle_type_id WHERE r.report_date = ? GROUP BY r.controller_id", [$date]) as $r) {
+        $out[(int)$r['cid']] = ['served' => (int)$r['n'], 'liters' => round((float)$r['l'], 1), 'avg' => (int)$r['k'] > 0 ? round((float)$r['l'] / (int)$r['k'], 1) : 0, 'queue_liters' => 0.0];
+    }
+    foreach (db()->fetchAll("SELECT q.controller_id cid, SUM(vt.tank_liters) l FROM queue q JOIN vehicle_types vt ON vt.id = q.vehicle_type_id WHERE q.status = 'queued' GROUP BY q.controller_id") as $r) {
+        $c = (int)$r['cid']; if (!isset($out[$c])) $out[$c] = ['served' => 0, 'liters' => 0.0, 'avg' => 0, 'queue_liters' => 0.0];
+        $out[$c]['queue_liters'] = round((float)$r['l'], 1);
+    }
+    return $out;
+}

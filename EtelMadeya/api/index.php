@@ -103,6 +103,7 @@ try {
         case 'get_vehicle_types':
             ensureExtraVehicleTypes();
             ensureCooldownColumn();
+            ensureTankColumn();
             $types = db()->fetchAll(
                 "SELECT * FROM vehicle_types WHERE is_active = 1 ORDER BY sort_order"
             );
@@ -719,6 +720,7 @@ try {
                 $stats['liters_used'] = (float)$controllerRow['liters_used'];
             }
 
+            $stats['liters'] = madeyaLiterStats($controllerId, date('Y-m-d'));
             jsonResponse(['success' => true, 'stats' => $stats]);
             break;
 
@@ -794,7 +796,7 @@ try {
                  ORDER BY r.served_at ASC",
                 [$controllerId, $date]
             );
-            jsonResponse(['success' => true, 'report' => $rows ?: [], 'total' => count($rows ?: [])]);
+            jsonResponse(['success' => true, 'report' => $rows ?: [], 'total' => count($rows ?: []), 'liters' => madeyaLiterStats($controllerId, $date)]);
             break;
 
         default:
