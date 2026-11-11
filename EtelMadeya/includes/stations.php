@@ -79,3 +79,13 @@ function ensureExtraVehicleTypes() {
         @file_put_contents($flag, date('c'));
     } catch (Exception $e) { error_log('ensureExtraVehicleTypes: ' . $e->getMessage()); }
 }
+
+
+/** Self-heal: per-vehicle-type fuel limit = how many days must pass between two fills (1 = once a day, 0 = no limit). */
+function ensureCooldownColumn() {
+    static $done = false; if ($done) return; $done = true;
+    try {
+        $has = db()->fetchOne("SHOW COLUMNS FROM vehicle_types LIKE 'cooldown_days'");
+        if (!$has) db()->query("ALTER TABLE vehicle_types ADD COLUMN cooldown_days SMALLINT UNSIGNED NOT NULL DEFAULT 1");
+    } catch (Exception $e) { error_log('ensureCooldownColumn: ' . $e->getMessage()); }
+}

@@ -37,14 +37,34 @@ function madeyaParityViolation($controllerId, $plate) {
 }
 
 // Cross-station: no controller_id filter, by design.
+// Per-vehicle-type fuel limit: a plate+type that was served on day D may fuel again on D + cooldown_days.
+// cooldown_days = 1 (default) is the old "once per day" rule, 0 means no limit.
+// Returns null when the vehicle may register, otherwise the last fill (served_at, station_name) plus
+// last_date, next_date (Y-m-d), days_left and cooldown_days so the controller can be told exactly why.
+function madeyaFuelLimitDays($vehicleTypeId) {
+    ensureCooldownColumn();
+    $r = db()->fetchOne("SELECT cooldown_days FROM vehicle_types WHERE id = ?", [(int)$vehicleTypeId]);
+    return ($r && $r['cooldown_days'] !== null) ? max(0, (int)$r['cooldown_days']) : 1;
+}
+
 function madeyaServedTodayConflict($plate, $vehicleTypeId) {
-    return db()->fetchOne(
-        "SELECT r.served_at, c.station_name FROM report r
+    $n = madeyaFuelLimitDays($vehicleTypeId);
+    if ($n === 0) return null;
+    $today = date('Y-m-d');
+    $since = date('Y-m-d', strtotime("-" . ($n - 1) . " days"));
+    $row = db()->fetchOne(
+        "SELECT r.served_at, r.report_date, c.station_name FROM report r
          JOIN controllers c ON c.id = r.controller_id
-         WHERE r.plate_number = ? AND r.vehicle_type_id = ? AND r.report_date = ?
+         WHERE r.plate_number = ? AND r.vehicle_type_id = ? AND r.report_date >= ? AND r.report_date <= ?
          ORDER BY r.served_at DESC LIMIT 1",
-        [$plate, $vehicleTypeId, date('Y-m-d')]
+        [$plate, $vehicleTypeId, $since, $today]
     );
+    if (!$row) return null;
+    $row['last_date']     = $row['report_date'];
+    $row['next_date']     = date('Y-m-d', strtotime($row['report_date'] . " +$n days"));
+    $row['days_left']     = max(1, (int)round((strtotime($row['next_date']) - strtotime($today)) / 86400));
+    $row['cooldown_days'] = $n;
+    return $row;
 }
 
 /**
@@ -96,14 +116,28 @@ function madeyaRegisterVehicle($controllerId, $vehicleTypeId, $plate, $driverNam
         $servedToday = madeyaServedTodayConflict($plate, $vehicleTypeId);
         if ($servedToday) {
             db()->commit();
-            $t = date('H:i', strtotime($servedToday['served_at']));
+            $t   = date('H:i', strtotime($servedToday['served_at']));
+            $day = date('D d M', strtotime($servedToday['last_date']));
+            $nxt = date('D d M', strtotime($servedToday['next_date']));
+            $n   = (int)$servedToday['cooldown_days'];
+            $typeRow = db()->fetchOne("SELECT name FROM vehicle_types WHERE id = ?", [$vehicleTypeId]);
+            $tn  = $typeRow ? $typeRow['name'] : 'This vehicle type';
+            if ($n <= 1) {
+                $msg = "This vehicle already received fuel on {$day} at {$t} ({$servedToday['station_name']}). It can fuel again on {$nxt}.";
+            } else {
+                $msg = "This vehicle already received fuel on {$day} at {$t} ({$servedToday['station_name']}). {$tn} can fuel once every {$n} days - next fuel allowed on {$nxt} (in {$servedToday['days_left']} day" . ($servedToday['days_left'] == 1 ? '' : 's') . ").";
+            }
             return [
-                'success'      => false,
-                'message'      => "This vehicle already received fuel today at {$t} ({$servedToday['station_name']}).",
-                'code'         => 'SERVED_TODAY',
-                'served_at'    => $t,
-                'station_name' => $servedToday['station_name'],
-                'http_code'    => 400,
+                'success'       => false,
+                'message'       => $msg,
+                'code'          => $n <= 1 ? 'SERVED_TODAY' : 'FUEL_LIMIT',
+                'served_at'     => $t,
+                'last_date'     => $servedToday['last_date'],
+                'next_date'     => $servedToday['next_date'],
+                'days_left'     => $servedToday['days_left'],
+                'cooldown_days' => $n,
+                'station_name'  => $servedToday['station_name'],
+                'http_code'     => 400,
             ];
         }
 

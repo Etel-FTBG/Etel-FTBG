@@ -208,6 +208,7 @@ function renderVtypeGrid() {
             <span class="vt-ic">${vehPic(t.icon, t.name, 64)}</span>
             <span class="vt-name">${escHtml(t.name || '')}</span>
             ${t.name_am ? `<span class="vt-am">${escHtml(t.name_am)}</span>` : ''}
+            <span class="vt-lim">${Number(t.cooldown_days) === 0 ? 'No day limit' : (Number(t.cooldown_days) > 1 ? 'Fuel every ' + Number(t.cooldown_days) + ' days' : 'Fuel once a day')}</span>
             ${allowed ? '' : '<span class="vt-na">Not served today</span>'}
         </button>
     `;
@@ -1128,6 +1129,7 @@ async function runImportCheck() {
             showNotification(ICONS.error + ' Select the plate category and region first', 'error'); return;
         }
         fd.append('action', 'check_import');
+        fd.append('vehicle_type_id', vtype);
         fd.append('plates', built.join('\n'));
 
         const res = await fetch(API, { method: 'POST', body: fd });
@@ -1163,12 +1165,12 @@ function renderCheckResults(data) {
             const badges = reasons.map(r => {
                 if (r === 'infile')  return '<span class="imp-badge imp-badge-infile">Dup in File</span>';
                 if (r === 'inqueue') return '<span class="imp-badge imp-badge-inqueue">In Queue</span>';
-                return '<span class="imp-badge imp-badge-served">Served Today</span>';
+                return '<span class="imp-badge imp-badge-served">Fuel limit</span>';
             }).join(' ');
             const detail = reasons.map(r => {
                 if (r === 'infile')  return 'Appears more than once in the uploaded file(s)';
                 if (r === 'inqueue') return 'Already registered in the active queue';
-                return 'Already served today';
+                return 'Fuelled recently - the day limit for this vehicle type has not ended yet';
             }).join('; ');
             return `<tr>
                 <td style="color:var(--mt);font-size:12px;">${i++}</td>

@@ -218,6 +218,7 @@
                                     <th>Name (EN)</th>
                                     <th>Name (AM)</th>
                                     <th>Sort Order</th>
+                                    <th>Fuel every</th>
                                     <th>Status</th>
                                     <th>Actions</th>
                                 </tr>
@@ -359,7 +360,7 @@
     <script src="../assets/js/madeya-vehicles-r4.js"></script>
     <script src="../assets/js/madeya-plates-r2.js"></script>
     <script src="../assets/js/icons.js"></script>
-    <script src="../assets/js/admin-app-r5.js"></script>
+    <script src="../assets/js/admin-app-r6.js"></script>
     <script src="../assets/js/admin-station-r2.js"></script>
 </body>
 </html>
