@@ -21,6 +21,7 @@ if ( isset( $_GET['embed'] ) && ! headers_sent() ) {
     <link rel="stylesheet" href="assets/css/madeya-pro-r2.css">
     <link rel="stylesheet" href="assets/css/madeya-vehicles.css">
     <link rel="stylesheet" href="assets/css/madeya-plates-r2.css">
+    <link rel="stylesheet" href="assets/css/madeya-limits.css">
     <script src="assets/js/madeya-pro-r2.js"></script>
     <link rel="icon" href="assets/img/etel-logo.png">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
@@ -463,6 +464,6 @@ if ( isset( $_GET['embed'] ) && ! headers_sent() ) {
     <script src="assets/js/madeya-vehicles-r4.js"></script>
     <script src="assets/js/madeya-plates-r2.js"></script>
     <script src="assets/js/icons.js"></script>
-    <script src="assets/js/controller-app-r5.js"></script>
+    <script src="assets/js/controller-app-r6.js"></script>
 </body>
 </html>

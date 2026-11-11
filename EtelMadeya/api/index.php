@@ -102,6 +102,7 @@ try {
             
         case 'get_vehicle_types':
             ensureExtraVehicleTypes();
+            ensureCooldownColumn();
             $types = db()->fetchAll(
                 "SELECT * FROM vehicle_types WHERE is_active = 1 ORDER BY sort_order"
             );
@@ -753,12 +754,18 @@ try {
             );
             $inQueue = array_column($qRows, 'plate_number');
 
-            // Already served today
-            $rRows = db()->fetchAll(
-                "SELECT plate_number FROM report WHERE controller_id = ? AND report_date = ? AND UPPER(plate_number) IN ($ph)",
-                array_merge([$controllerId, date('Y-m-d')], $unique)
-            );
-            $inReport = array_column($rRows, 'plate_number');
+            // Fuelled recently: still inside the vehicle type's day limit (default 1 day = today only)
+            $impType = (int)($_POST['vehicle_type_id'] ?? 0);
+            $limitN  = $impType ? madeyaFuelLimitDays($impType) : 1;
+            $inReport = [];
+            if ($limitN > 0) {
+                $since = date('Y-m-d', strtotime('-' . ($limitN - 1) . ' days'));
+                $rRows = db()->fetchAll(
+                    "SELECT DISTINCT plate_number FROM report WHERE report_date >= ? AND report_date <= ?" . ($impType ? " AND vehicle_type_id = ?" : "") . " AND UPPER(plate_number) IN ($ph)",
+                    array_merge([$since, date('Y-m-d')], $impType ? [$impType] : [], $unique)
+                );
+                $inReport = array_column($rRows, 'plate_number');
+            }
 
             // Clean = unique, not in queue, not in report
             $blocked = array_unique(array_merge(array_map('strtoupper', $inQueue), array_map('strtoupper', $inReport), $inFileDups));

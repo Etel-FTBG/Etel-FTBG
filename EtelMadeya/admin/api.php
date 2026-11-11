@@ -415,6 +415,7 @@ try {
         case 'get_vehicle_types':
             requireAdminAuth();
             ensureExtraVehicleTypes();
+            ensureCooldownColumn();
             
             $types = db()->fetchAll(
                 "SELECT * FROM vehicle_types ORDER BY sort_order, name"
@@ -431,6 +432,8 @@ try {
             $nameAm = sanitize($_POST['name_am'] ?? '');
             $icon = sanitize($_POST['icon'] ?? '');
             $sortOrder = (int)($_POST['sort_order'] ?? 0);
+            ensureCooldownColumn();
+            $cooldown = max(0, min(365, (int)($_POST['cooldown_days'] ?? 1)));
             
             if (empty($name)) {
                 jsonResponse(['success' => false, 'message' => 'Name required'], 400);
@@ -443,7 +446,8 @@ try {
                 'name' => $name,
                 'name_am' => $nameAm,
                 'icon' => $icon,
-                'sort_order' => $sortOrder
+                'sort_order' => $sortOrder,
+                'cooldown_days' => $cooldown
             ]);
             
             // Log activity
@@ -467,6 +471,8 @@ try {
             $icon = sanitize($_POST['icon'] ?? '');
             $sortOrder = (int)($_POST['sort_order'] ?? 0);
             $isActive = (int)($_POST['is_active'] ?? 1);
+            ensureCooldownColumn();
+            $cooldown = isset($_POST['cooldown_days']) ? max(0, min(365, (int)$_POST['cooldown_days'])) : null;
             
             if (!$id || empty($name)) {
                 jsonResponse(['success' => false, 'message' => 'Missing required fields'], 400);
@@ -482,7 +488,7 @@ try {
                 'icon' => $icon,
                 'sort_order' => $sortOrder,
                 'is_active' => $isActive
-            ], 'id = ?', [$id]);
+            ] + ($cooldown !== null ? ['cooldown_days' => $cooldown] : []), 'id = ?', [$id]);
             
             // Log activity
             db()->insert('activity_log', [

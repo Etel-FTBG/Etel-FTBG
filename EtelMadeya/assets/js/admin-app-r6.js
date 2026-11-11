@@ -634,7 +634,7 @@ function displayVehicleTypes(types) {
     const tbody = document.getElementById('vehiclesTableBody');
 
     if (types.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7" class="empty-state">No vehicle types found</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="8" class="empty-state">No vehicle types found</td></tr>';
         return;
     }
 
@@ -645,6 +645,7 @@ function displayVehicleTypes(types) {
             <td><strong>${escHtml(t.name)}</strong></td>
             <td>${escHtml(t.name_am)}</td>
             <td>${t.sort_order}</td>
+            <td>${(t.cooldown_days === undefined || t.cooldown_days === null) ? 1 : Number(t.cooldown_days)} ${Number(t.cooldown_days) === 1 || t.cooldown_days === undefined || t.cooldown_days === null ? 'day' : (Number(t.cooldown_days) === 0 ? '(no limit)' : 'days')}</td>
             <td><span class="status-badge status-${t.is_active ? 'active' : 'inactive'}">${t.is_active ? 'Active' : 'Inactive'}</span></td>
             <td>
                 <button onclick="editVehicleType(${t.id})" class="action-btn action-btn-serve">${ICONS.edit} Edit</button>
@@ -713,6 +714,11 @@ function showAddVehicleType() {
                         <input type="text" id="addVtNameAm" class="form-control">
                     </div>
                     <div class="form-group">
+                        <label for="addVtCooldown">Fuel limit - days between two fills</label>
+                        <input type="number" id="addVtCooldown" class="form-control" min="0" max="365" value="1">
+                        <small class="vt-up-hint">1 = once a day, 3 = a vehicle of this type can fuel again only after 3 days, 0 = no limit. If it comes earlier, the controller sees when, where and on which day it already fuelled and when it can fuel next.</small>
+                    </div>
+                    <div class="form-group">
                         <label for="addVtSortOrder">Sort Order</label>
                         <input type="number" id="addVtSortOrder" class="form-control" value="0">
                     </div>
@@ -741,6 +747,7 @@ async function handleAddVehicleType(event) {
     formData.append('name', document.getElementById('addVtName').value);
     formData.append('name_am', document.getElementById('addVtNameAm').value);
     formData.append('sort_order', document.getElementById('addVtSortOrder').value);
+    formData.append('cooldown_days', document.getElementById('addVtCooldown').value);
 
     submitBtn.disabled = true;
     submitBtn.textContent = 'Adding…';
@@ -789,6 +796,11 @@ function editVehicleType(id) {
                         <input type="text" id="editVtNameAm" class="form-control" value="${escHtml(t.name_am || '')}">
                     </div>
                     <div class="form-group">
+                        <label for="editVtCooldown">Fuel limit - days between two fills</label>
+                        <input type="number" id="editVtCooldown" class="form-control" min="0" max="365" value="${t.cooldown_days === undefined || t.cooldown_days === null ? 1 : Number(t.cooldown_days)}">
+                        <small class="vt-up-hint">1 = once a day, 3 = a vehicle of this type can fuel again only after 3 days, 0 = no limit. If it comes earlier, the controller sees when, where and on which day it already fuelled and when it can fuel next.</small>
+                    </div>
+                    <div class="form-group">
                         <label for="editVtSortOrder">Sort Order</label>
                         <input type="number" id="editVtSortOrder" class="form-control" value="${t.sort_order}">
                     </div>
@@ -824,6 +836,7 @@ async function handleEditVehicleType(event, id) {
     formData.append('name', document.getElementById('editVtName').value);
     formData.append('name_am', document.getElementById('editVtNameAm').value);
     formData.append('sort_order', document.getElementById('editVtSortOrder').value);
+    formData.append('cooldown_days', document.getElementById('editVtCooldown').value);
     formData.append('is_active', document.getElementById('editVtActive').checked ? 1 : 0);
 
     submitBtn.disabled = true;
