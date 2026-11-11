@@ -90,29 +90,42 @@
     }).join('');
   }
 
+  function coCardHtml(c, i) {
+    var num = String(i + 1).padStart(2, '0');
+    var isLive = c.status === 'live';
+    var href = isLive ? esc(c.url) : '#';
+    var badgeClass = isLive ? 'co-badge-live' : 'co-badge-plan';
+    var badgeText = isLive ? 'Live' : 'Coming Soon';
+    var hasLogo = !!c.logo_path;
+    return (
+      '<a href="' + href + '" ' + (isLive ? 'target="_blank" rel="noopener"' : '') + ' class="co-card js-card' + (hasLogo ? ' co-card-has-logo' : '') + (isLive ? '' : ' co-card-soon') + '" style="--co-color:' + esc(c.dot_color) + logoBgDecl(c) + '" data-delay="' + Math.min(i, 9) + '">' +
+      '<div class="co-card-corner"></div>' +
+      '<span class="co-number">' + num + '</span>' +
+      (hasLogo ? '' : '<div class="co-icon">' + iconSvg(c.icon_key, c.dot_color) + '</div>') +
+      '<p class="co-name">' + esc(c.name) + '</p>' +
+      '<p class="co-category">' + esc(c.tagline) + '</p>' +
+      '<p class="co-desc">' + esc(c.description_short) + '</p>' +
+      '<span class="co-badge ' + badgeClass + '"><span class="co-badge-dot"></span>' + badgeText + '</span>' +
+      '<span class="co-arrow"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6h8M7 3l3 3-3 3" stroke="#D4AF37" stroke-width="1.5" stroke-linecap="round"/></svg></span>' +
+      '</a>'
+    );
+  }
+
+  // Two separate groups: the live companies first, then the ones that are still coming soon.
   function renderCoCardGrid(companies) {
-    var el = document.getElementById('companies-grid-list');
-    if (!el) return;
-    el.innerHTML = companies.map(function (c, i) {
-      var num = String(i + 1).padStart(2, '0');
-      var isLive = c.status === 'live';
-      var href = isLive ? esc(c.url) : '#';
-      var badgeClass = isLive ? 'co-badge-live' : 'co-badge-plan';
-      var badgeText = isLive ? 'Live' : 'Coming Soon';
-      var hasLogo = !!c.logo_path;
-      return (
-        '<a href="' + href + '" ' + (isLive ? 'target="_blank" rel="noopener"' : '') + ' class="co-card js-card' + (hasLogo ? ' co-card-has-logo' : '') + '" style="--co-color:' + esc(c.dot_color) + logoBgDecl(c) + '" data-delay="' + Math.min(i, 9) + '">' +
-        '<div class="co-card-corner"></div>' +
-        '<span class="co-number">' + num + '</span>' +
-        (hasLogo ? '' : '<div class="co-icon">' + iconSvg(c.icon_key, c.dot_color) + '</div>') +
-        '<p class="co-name">' + esc(c.name) + '</p>' +
-        '<p class="co-category">' + esc(c.tagline) + '</p>' +
-        '<p class="co-desc">' + esc(c.description_short) + '</p>' +
-        '<span class="co-badge ' + badgeClass + '"><span class="co-badge-dot"></span>' + badgeText + '</span>' +
-        '<span class="co-arrow"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6h8M7 3l3 3-3 3" stroke="#D4AF37" stroke-width="1.5" stroke-linecap="round"/></svg></span>' +
-        '</a>'
-      );
-    }).join('');
+    var liveEl = document.getElementById('companies-grid-live');
+    var soonEl = document.getElementById('companies-grid-soon');
+    if (!liveEl || !soonEl) return;
+    var live = companies.filter(function (c) { return c.status === 'live'; });
+    var soon = companies.filter(function (c) { return c.status !== 'live'; });
+    liveEl.innerHTML = live.map(coCardHtml).join('');
+    soonEl.innerHTML = soon.map(coCardHtml).join('');
+    var gl = document.getElementById('co-group-live'), gs = document.getElementById('co-group-soon');
+    if (gl) gl.style.display = live.length ? '' : 'none';
+    if (gs) gs.style.display = soon.length ? '' : 'none';
+    var cl = document.getElementById('co-count-live'), cs = document.getElementById('co-count-soon');
+    if (cl) cl.textContent = live.length;
+    if (cs) cs.textContent = soon.length;
   }
 
   function renderLauncherGrid(companies) {
@@ -172,7 +185,7 @@
       res = await fetch(apiBase() + '?action=list_companies');
       var data = await res.json();
       if (!data.ok && !data.success) throw new Error('bad response');
-      var companies = data.data.companies;
+      var companies = data.data.companies.slice().sort(function (a, b) { return (b.status === 'live') - (a.status === 'live'); });   // live first (stable)
       renderNavDropdown(companies);
       renderMobileNav(companies);
       renderCoCardGrid(companies);
