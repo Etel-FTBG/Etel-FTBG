@@ -239,3 +239,47 @@ function madeyaWrongTypeResult($plate, $owner, $requestedTypeId) {
         'http_code'      => 400,
     ];
 }
+
+
+/** Self-heal: audit log of every plate registry correction (who changed what). */
+function ensurePlateLog() {
+    static $done = false; if ($done) return; $done = true;
+    try {
+        db()->query("CREATE TABLE IF NOT EXISTS plate_registry_log (
+            id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            admin_id INT UNSIGNED NULL,
+            admin_name VARCHAR(120) NULL,
+            action VARCHAR(20) NOT NULL,
+            old_plate VARCHAR(40) NULL,
+            new_plate VARCHAR(40) NULL,
+            old_type VARCHAR(100) NULL,
+            new_type VARCHAR(100) NULL,
+            created_at DATETIME NOT NULL,
+            INDEX idx_prl_time (created_at),
+            INDEX idx_prl_plate (old_plate, new_plate)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+    } catch (Exception $e) { error_log('ensurePlateLog: ' . $e->getMessage()); }
+}
+
+function madeyaVehicleTypeName($id) {
+    if (!$id) return null;
+    $r = db()->fetchOne("SELECT name FROM vehicle_types WHERE id = ?", [(int)$id]);
+    return $r ? $r['name'] : null;
+}
+
+/** Write one audit row. action: edit | bulk | release */
+function madeyaPlateLog($action, $oldPlate, $newPlate, $oldType, $newType) {
+    ensurePlateLog();
+    try {
+        db()->query("INSERT INTO plate_registry_log (admin_id, admin_name, action, old_plate, new_plate, old_type, new_type, created_at) VALUES (?,?,?,?,?,?,?,?)",
+            [isset($_SESSION['admin_id']) ? (int)$_SESSION['admin_id'] : null, isset($_SESSION['admin_name']) ? $_SESSION['admin_name'] : null,
+             $action, $oldPlate, $newPlate, $oldType, $newType, date('Y-m-d H:i:s')]);
+    } catch (Exception $e) { error_log('madeyaPlateLog: ' . $e->getMessage()); }
+}
+
+/** Split a stored plate into [category, region, digits]. */
+function madeyaPlateParts($plate) {
+    $plate = strtoupper(trim((string)$plate));
+    preg_match('/^(?:([1-5])-)?(?:([A-Z]{2})-)?(.+)$/', $plate, $m);
+    return [isset($m[1]) ? $m[1] : '', isset($m[2]) ? $m[2] : '', isset($m[3]) ? $m[3] : $plate];
+}

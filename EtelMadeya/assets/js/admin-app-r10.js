@@ -149,7 +149,7 @@ function showTab(tabName) {
             loadQueueMonitor();
             break;
         case 'reports':
-            // Reports loaded on demand
+            initLitersReport();
             break;
         case 'settings':
             loadSettings();
@@ -208,29 +208,46 @@ async function loadDashboard() {
     loadFuelSnapshot();
 }
 
+function prFillSelects() {
+    const cats = (kept, none) => `<option value="">${kept}</option>` + (none ? '<option value="none">Remove category</option>' : '') + PLATE_CATS.map(c => `<option value="${c.c}">${c.c} - ${escHtml(c.name)}</option>`).join('');
+    const regs = (kept, none) => `<option value="">${kept}</option>` + (none ? '<option value="NONE">Remove region</option>' : '') + PLATE_REGIONS.map(g => `<option value="${g.c}">${g.c} - ${escHtml(g.name)}</option>`).join('');
+    const types = kept => `<option value="">${kept}</option>` + vehicleTypesCache.map(t => `<option value="${t.id}">${escHtml(t.name)}</option>`).join('');
+    const put = (id, html) => { const e = document.getElementById(id); if (e && !e.dataset.filled) { e.innerHTML = html; e.dataset.filled = '1'; } };
+    put('prFCat', cats('Any category', false)); put('prFReg', regs('Any region', false)); put('prFType', types('Any vehicle type'));
+    put('prBCat', cats('Keep category', true)); put('prBReg', regs('Keep region', true)); put('prBType', types('Keep vehicle type'));
+}
+function prSelected() { return Array.from(document.querySelectorAll('#prResults .pr-pick:checked')).map(c => c.value); }
+function prUpdateCount() { const e = document.getElementById('prSelCount'); if (e) e.textContent = '(' + prSelected().length + ')'; }
+function prToggleAll(on) { document.querySelectorAll('#prResults .pr-pick').forEach(c => { c.checked = on; }); prUpdateCount(); }
 async function searchPlateRegistry() {
     const q = document.getElementById('prSearch').value.trim();
     const box = document.getElementById('prResults');
-    if (!q) { box.innerHTML = ''; return; }
+    if (!vehicleTypesCache.length) await loadVehicleTypes();
+    prFillSelects();
+    const cat = document.getElementById('prFCat').value, reg = document.getElementById('prFReg').value, type = document.getElementById('prFType').value;
+    const bulk = document.getElementById('prBulk');
+    if (!q && !cat && !reg && !type) { box.innerHTML = ''; bulk.style.display = 'none'; return; }
     box.innerHTML = '<p class="empty-state">Searching...</p>';
     try {
-        const res = await fetch(`${API}?action=get_plate_registry&q=${encodeURIComponent(q)}`);
+        const res = await fetch(`${API}?action=get_plate_registry&q=${encodeURIComponent(q)}&cat=${cat}&reg=${reg}&type=${type}`);
         const d = await res.json();
-        if (!d.success || !d.rows.length) { box.innerHTML = '<p class="empty-state">No plate found - it has not been registered yet.</p>'; return; }
-        if (!vehicleTypesCache.length) await loadVehicleTypes();
-        box.innerHTML = d.rows.map(r => {
+        if (!d.success || !d.rows.length) { box.innerHTML = '<p class="empty-state">No plate found - it has not been registered yet.</p>'; bulk.style.display = 'none'; return; }
+        bulk.style.display = '';
+        document.getElementById('prAll').checked = false;
+        box.innerHTML = (d.rows.length >= 300 ? '<p class="am-note">Showing the newest 300 plates - narrow the search to see others.</p>' : '') + d.rows.map(r => {
             const key = escHtml(r.plate_number);
             const opts = vehicleTypesCache.map(t => `<option value="${t.id}" ${t.id == r.vehicle_type_id ? 'selected' : ''}>${escHtml(t.name)}</option>`).join('');
             const cat = plateCode(r.plate_number), reg = plateRegion(r.plate_number);
             const catOpts = '<option value="">No category</option>' + PLATE_CATS.map(c => `<option value="${c.c}" ${c.c == cat ? 'selected' : ''}>${c.c} - ${escHtml(c.name)}</option>`).join('');
             const regOpts = '<option value="">No region</option>' + PLATE_REGIONS.map(g => `<option value="${g.c}" ${g.c == reg ? 'selected' : ''}>${g.c} - ${escHtml(g.name)}</option>`).join('');
             const when = r.first_registered_at ? new Date(r.first_registered_at.replace(' ', 'T')).toLocaleString() : '';
-            return `<div class="pr-row" data-plate="${key}"><div class="pr-top"><b>${plateHtml(r.plate_number)}</b><small>First registered ${escHtml(when)}${r.station_name ? ' at ' + escHtml(r.station_name) : ''}</small></div>
+            return `<div class="pr-row" data-plate="${key}"><div class="pr-top"><label class="pr-pickl"><input type="checkbox" class="pr-pick" value="${key}" onchange="prUpdateCount()"><b>${plateHtml(r.plate_number)}</b></label><small>First registered ${escHtml(when)}${r.station_name ? ' at ' + escHtml(r.station_name) : ''}</small></div>
                 <div class="pr-act"><select class="pr-cat" title="Plate category">${catOpts}</select><select class="pr-reg" title="Region">${regOpts}</select></div>
                 <div class="pr-act" style="margin-top:8px"><select class="pr-type" title="Vehicle type">${opts}</select>
                 <button type="button" class="am-btn" onclick="savePlateRegistry(this)">Save</button>
                 <button type="button" class="am-btn ghost" onclick="releasePlateRegistry('${key}')">Release</button></div></div>`;
         }).join('');
+        prUpdateCount();
     } catch (e) { box.innerHTML = '<p class="empty-state">Search failed</p>'; }
 }
 async function savePlateRegistry(btn) {
@@ -242,14 +259,43 @@ async function savePlateRegistry(btn) {
     fd.append('vehicle_type_id', row.querySelector('.pr-type').value);
     const d = await (await fetch(API, { method: 'POST', body: fd })).json();
     showNotification((d.success ? ICONS.success : ICONS.error) + ' ' + escHtml(d.message || ''), d.success ? 'success' : 'error');
-    if (d.success) { document.getElementById('prSearch').value = d.plate_number || plate; searchPlateRegistry(); }
+    if (d.success) { document.getElementById('prSearch').value = d.plate_number || plate; searchPlateRegistry(); loadPlateLog(true); }
+}
+async function bulkPlateRegistry() {
+    const plates = prSelected();
+    if (!plates.length) { showNotification(ICONS.error + ' Select at least one plate', 'error'); return; }
+    const nc = document.getElementById('prBCat').value, ng = document.getElementById('prBReg').value, nt = document.getElementById('prBType').value;
+    if (!nc && !ng && !nt) { showNotification(ICONS.error + ' Choose a new category, region or vehicle type', 'error'); return; }
+    if (!confirm('Change ' + plates.length + ' plate(s)?')) return;
+    const fd = new FormData(); fd.append('action', 'bulk_plate_registry'); fd.append('plates', JSON.stringify(plates));
+    fd.append('new_cat', nc); fd.append('new_reg', ng); fd.append('vehicle_type_id', nt);
+    const d = await (await fetch(API, { method: 'POST', body: fd })).json();
+    showNotification((d.success ? ICONS.success : ICONS.error) + ' ' + escHtml(d.message || ''), d.success ? 'success' : 'error');
+    if (d.success && d.skipped && d.skipped.length) alert('Skipped:\n' + d.skipped.join('\n'));
+    if (d.success) { searchPlateRegistry(); loadPlateLog(true); }
+}
+async function loadPlateLog(force) {
+    const list = document.getElementById('prLogList'); if (!list) return;
+    const q = document.getElementById('prLogQ').value.trim();
+    list.innerHTML = '<p class="empty-state">Loading...</p>';
+    try {
+        const d = await (await fetch(`${API}?action=get_plate_registry_log&q=${encodeURIComponent(q)}`)).json();
+        if (!d.success || !d.rows.length) { list.innerHTML = '<p class="empty-state">No changes logged yet.</p>'; return; }
+        const label = { edit: 'Edited', bulk: 'Bulk fix', release: 'Released' };
+        list.innerHTML = d.rows.map(r => {
+            const when = new Date(String(r.created_at).replace(' ', 'T')).toLocaleString();
+            const plate = r.action === 'release' ? plateHtml(r.old_plate) : (r.old_plate === r.new_plate ? plateHtml(r.new_plate) : plateHtml(r.old_plate) + ' &rarr; ' + plateHtml(r.new_plate));
+            const type = r.action === 'release' ? (r.old_type ? 'was ' + escHtml(r.old_type) : '') : (r.old_type !== r.new_type ? escHtml(r.old_type || '-') + ' &rarr; ' + escHtml(r.new_type || '-') : escHtml(r.new_type || ''));
+            return `<div class="pr-logrow"><div><span class="pr-tag pr-${r.action}">${label[r.action] || r.action}</span> ${plate}</div><small>${type ? type + ' &middot; ' : ''}by ${escHtml(r.admin_name || 'admin')} &middot; ${escHtml(when)}</small></div>`;
+        }).join('');
+    } catch (e) { list.innerHTML = '<p class="empty-state">Could not load the log</p>'; }
 }
 async function releasePlateRegistry(plate) {
     if (!confirm('Release plate ' + plate + '? It can then be registered under any vehicle type again.')) return;
     const fd = new FormData(); fd.append('action', 'delete_plate_registry'); fd.append('plate_number', plate);
     const d = await (await fetch(API, { method: 'POST', body: fd })).json();
     showNotification((d.success ? ICONS.success : ICONS.error) + ' ' + escHtml(d.message || ''), d.success ? 'success' : 'error');
-    if (d.success) searchPlateRegistry();
+    if (d.success) { searchPlateRegistry(); loadPlateLog(true); }
 }
 
 function renderLiters(data) {
@@ -1188,4 +1234,46 @@ function showNotification(message, type = 'success') {
     setTimeout(() => {
         notification.style.display = 'none';
     }, 5000);
+}
+
+
+// ─── LITERS REPORT (per day, per station, per vehicle type) ──────────
+let litRowsCache = [];
+async function initLitersReport() {
+    const f = document.getElementById('litFrom'), t = document.getElementById('litTo'), sel = document.getElementById('litStation');
+    if (f && !f.value) { const d = new Date(); t.value = d.toISOString().slice(0, 10); d.setDate(d.getDate() - 6); f.value = d.toISOString().slice(0, 10); }
+    if (sel && sel.options.length <= 1) {
+        try {
+            const d = await (await fetch(`${API}?action=get_controllers`)).json();
+            if (d.success) { controllersCache = d.controllers; sel.innerHTML = '<option value="">All stations</option>' + d.controllers.map(c => `<option value="${c.id}">${escHtml(c.station_name || c.username)}</option>`).join(''); }
+        } catch (e) {}
+    }
+}
+async function loadLitersReport() {
+    const box = document.getElementById('litReport');
+    const from = document.getElementById('litFrom').value, to = document.getElementById('litTo').value, st = document.getElementById('litStation').value;
+    box.innerHTML = '<p class="empty-state">Loading...</p>';
+    try {
+        const d = await (await fetch(`${API}?action=get_liters_report&from=${from}&to=${to}&controller_id=${st}`)).json();
+        if (!d.success) { box.innerHTML = `<p class="empty-state">${escHtml(d.message || 'Failed')}</p>`; return; }
+        litRowsCache = d.rows;
+        if (!d.rows.length) { box.innerHTML = '<p class="empty-state">No vehicles served in this period.</p>'; return; }
+        const n = v => Number(v || 0).toLocaleString(undefined, { maximumFractionDigits: 1 });
+        const groups = {};
+        d.rows.forEach(r => { const k = r.day + '|' + r.station; (groups[k] = groups[k] || { day: r.day, station: r.station, rows: [], served: 0, liters: 0 }); const g = groups[k]; g.rows.push(r); g.served += r.served; g.liters += r.liters; });
+        box.innerHTML = `<p class="am-note"><b>${n(d.totals.liters)} L</b> across <b>${n(d.totals.served)}</b> vehicles (${escHtml(d.from)} to ${escHtml(d.to)})${d.totals.unknown ? ' &middot; ' + d.totals.unknown + ' with no tank size' : ''}</p>` +
+            Object.keys(groups).map(k => { const g = groups[k]; return `<div class="pr-row"><div class="pr-top"><b>${escHtml(g.day)} &middot; ${escHtml(g.station)}</b><small>${n(g.served)} vehicles &middot; ${n(g.liters)} L</small></div>
+                <table class="data-table lit-table"><thead><tr><th>Vehicle type</th><th>Tank</th><th>Served</th><th>Liters</th><th>Avg</th></tr></thead><tbody>` +
+                g.rows.map(r => `<tr><td>${escHtml(r.vehicle_type)}</td><td>${r.tank_liters === null ? '-' : n(r.tank_liters) + ' L'}</td><td>${n(r.served)}</td><td>${n(r.liters)} L${r.unknown ? ' *' : ''}</td><td>${r.served > r.unknown ? n(r.liters / (r.served - r.unknown)) : '-'} L</td></tr>`).join('') +
+                `</tbody></table></div>`; }).join('') + (d.totals.unknown ? '<p class="am-note">* some vehicles have no tank size; set it in Vehicle Types so they are counted.</p>' : '');
+    } catch (e) { box.innerHTML = '<p class="empty-state">Could not load the report</p>'; }
+}
+function exportLitersCsv() {
+    if (!litRowsCache.length) { showNotification(ICONS.error + ' Generate the report first', 'error'); return; }
+    const q = v => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
+    const lines = [['Date', 'Station', 'Vehicle type', 'Tank liters', 'Served', 'Liters', 'No tank size'].join(',')]
+        .concat(litRowsCache.map(r => [r.day, q(r.station), q(r.vehicle_type), r.tank_liters === null ? '' : r.tank_liters, r.served, r.liters, r.unknown].join(',')));
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob(['﻿' + lines.join('\n')], { type: 'text/csv;charset=utf-8' }));
+    a.download = 'liters-report.csv'; document.body.appendChild(a); a.click(); a.remove();
 }
