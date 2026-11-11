@@ -16,6 +16,7 @@
     <link rel="stylesheet" href="../assets/css/madeya-modals.css">
     <link rel="stylesheet" href="../assets/css/madeya-settings.css">
     <link rel="stylesheet" href="../assets/css/madeya-liters.css">
+    <link rel="stylesheet" href="../assets/css/madeya-alerts.css">
     <script src="../assets/js/madeya-pro-r2.js"></script>
     <link rel="icon" href="../assets/img/etel-logo.png">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -332,6 +333,14 @@
                             </form>
                         </div>
                         <div class="settings-card">
+                            <h3>Plate registry</h3>
+                            <p class="am-note">A plate belongs to the vehicle type it was <b>first</b> registered under. If a controller picked the wrong type by mistake, find the plate here and correct it or release it.</p>
+                            <div class="am-field"><label for="prSearch">Search plate</label>
+                                <div style="display:flex;gap:8px"><input type="text" id="prSearch" placeholder="e.g. 06369 or 1-SD-06369" onkeydown="if(event.key==='Enter'){event.preventDefault();searchPlateRegistry()}"><button type="button" class="am-btn" onclick="searchPlateRegistry()">Search</button></div>
+                            </div>
+                            <div id="prResults"></div>
+                        </div>
+                        <div class="settings-card">
                             <h3>Queue Settings</h3>
                             <form id="queueSettingsForm" onsubmit="saveSettings(event, 'queue')">
                                 <div class="am-field">
@@ -377,7 +386,7 @@
     <script src="../assets/js/madeya-vehicles-r4.js"></script>
     <script src="../assets/js/madeya-plates-r2.js"></script>
     <script src="../assets/js/icons.js"></script>
-    <script src="../assets/js/admin-app-r7.js"></script>
+    <script src="../assets/js/admin-app-r8.js"></script>
     <script src="../assets/js/admin-station-r2.js"></script>
 </body>
 </html>

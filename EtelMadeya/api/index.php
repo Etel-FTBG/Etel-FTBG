@@ -592,6 +592,7 @@ try {
             $skipped = 0;
             $skippedServed = 0;
             $skippedParity = 0;
+            $skippedWrongType = 0;
 
             // Fetched once here rather than per-plate inside the loop below.
             $controllerParityRow = db()->fetchOne("SELECT odd_even_rule FROM controllers WHERE id = ?", [$controllerId]);
@@ -627,6 +628,13 @@ try {
                         }
                     }
 
+                    $ownerRow = madeyaPlateOwner(strtoupper($plate));
+                    if ($ownerRow && (int)$ownerRow['vehicle_type_id'] !== (int)$vehicleTypeId) {
+                        $skipped++;
+                        $skippedWrongType++;
+                        continue;
+                    }
+
                     if (madeyaServedTodayConflict($plate, $vehicleTypeId)) {
                         $skipped++;
                         $skippedServed++;
@@ -649,6 +657,7 @@ try {
                         'status' => 'queued',
                         'batch_id' => $batchId
                     ]);
+                    madeyaPlateRemember(strtoupper($plate), $vehicleTypeId, $controllerId);
                     
                     $imported++;
                 }
@@ -658,6 +667,7 @@ try {
                 $skipDetail = [];
                 if ($skippedServed) $skipDetail[] = "$skippedServed already served today";
                 if ($skippedParity) $skipDetail[] = "$skippedParity wrong parity";
+                if ($skippedWrongType) $skipDetail[] = "$skippedWrongType plate(s) belong to another vehicle type";
                 $skipMsg = $skipDetail ? ' (' . implode(', ', $skipDetail) . ')' : '';
 
                 jsonResponse([
@@ -667,6 +677,7 @@ try {
                     'skipped' => $skipped,
                     'skipped_served_today' => $skippedServed,
                     'skipped_parity' => $skippedParity,
+                    'skipped_wrong_type' => $skippedWrongType,
                     'batch_id' => $batchId
                 ]);
                 
@@ -769,8 +780,17 @@ try {
                 $inReport = array_column($rRows, 'plate_number');
             }
 
+            // Plates whose first registration was under a DIFFERENT vehicle type
+            $wrongType = [];
+            if ($impType) {
+                ensurePlateRegistry();
+                $uUp = array_map('strtoupper', $unique);
+                $phU = implode(',', array_fill(0, count($uUp), '?'));
+                foreach (db()->fetchAll("SELECT plate_number FROM plate_registry WHERE vehicle_type_id <> ? AND plate_number IN ($phU)", array_merge([$impType], $uUp)) as $wr) $wrongType[] = $wr['plate_number'];
+            }
+
             // Clean = unique, not in queue, not in report
-            $blocked = array_unique(array_merge(array_map('strtoupper', $inQueue), array_map('strtoupper', $inReport), $inFileDups));
+            $blocked = array_unique(array_merge(array_map('strtoupper', $inQueue), array_map('strtoupper', $inReport), array_map('strtoupper', $wrongType), $inFileDups));
             $clean = array_values(array_filter($unique, fn($p) => !in_array(strtoupper($p), $blocked)));
 
             jsonResponse([
@@ -779,6 +799,7 @@ try {
                 'in_file'    => array_values($inFileDups),
                 'in_queue'   => array_values($inQueue),
                 'in_report'  => array_values($inReport),
+                'wrong_type' => array_values($wrongType),
                 'clean'      => $clean,
             ]);
             break;

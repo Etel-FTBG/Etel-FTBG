@@ -151,3 +151,77 @@ function madeyaStationLiters($date = null) {
     }
     return $out;
 }
+
+
+/** Self-heal: the plate registry = which vehicle type a plate (category + region + number) was FIRST registered under. */
+function ensurePlateRegistry() {
+    static $done = false; if ($done) return; $done = true;
+    try {
+        db()->query("CREATE TABLE IF NOT EXISTS plate_registry (
+            plate_number VARCHAR(40) NOT NULL PRIMARY KEY,
+            vehicle_type_id INT UNSIGNED NOT NULL,
+            controller_id INT UNSIGNED NULL,
+            station_name VARCHAR(120) NULL,
+            first_registered_at DATETIME NOT NULL,
+            INDEX idx_pr_type (vehicle_type_id)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+    } catch (Exception $e) { error_log('ensurePlateRegistry: ' . $e->getMessage()); }
+}
+
+/**
+ * The first registration of a plate, or null when the plate is new.
+ * Older plates (registered before this registry existed) are found from the report / queue history and saved.
+ */
+function madeyaPlateOwner($plate) {
+    ensurePlateRegistry();
+    $plate = strtoupper(trim((string)$plate));
+    if ($plate === '') return null;
+    $row = db()->fetchOne(
+        "SELECT pr.plate_number, pr.vehicle_type_id, pr.station_name, pr.first_registered_at, vt.name AS vehicle_type_name
+         FROM plate_registry pr LEFT JOIN vehicle_types vt ON vt.id = pr.vehicle_type_id WHERE pr.plate_number = ?", [$plate]);
+    if ($row) return $row;
+    $cands = [];
+    $r = db()->fetchOne("SELECT r.vehicle_type_id, r.controller_id, COALESCE(r.registered_at, r.served_at) AS t, c.station_name FROM report r LEFT JOIN controllers c ON c.id = r.controller_id WHERE UPPER(r.plate_number) = ? ORDER BY t ASC LIMIT 1", [$plate]);
+    if ($r) $cands[] = $r;
+    $q = db()->fetchOne("SELECT q.vehicle_type_id, q.controller_id, q.registered_at AS t, c.station_name FROM queue q LEFT JOIN controllers c ON c.id = q.controller_id WHERE UPPER(q.plate_number) = ? ORDER BY q.registered_at ASC LIMIT 1", [$plate]);
+    if ($q) $cands[] = $q;
+    if (!$cands) return null;
+    usort($cands, function ($a, $b) { return strcmp((string)$a['t'], (string)$b['t']); });
+    $f = $cands[0];
+    $when = $f['t'] ?: date('Y-m-d H:i:s');
+    db()->query("INSERT IGNORE INTO plate_registry (plate_number, vehicle_type_id, controller_id, station_name, first_registered_at) VALUES (?,?,?,?,?)",
+        [$plate, (int)$f['vehicle_type_id'], $f['controller_id'] ? (int)$f['controller_id'] : null, $f['station_name'], $when]);
+    return madeyaPlateOwner($plate);
+}
+
+/** Save the first registration of a plate (no-op if it already has one). */
+function madeyaPlateRemember($plate, $vehicleTypeId, $controllerId) {
+    ensurePlateRegistry();
+    $plate = strtoupper(trim((string)$plate));
+    if ($plate === '' || !$vehicleTypeId) return;
+    $st = db()->fetchOne("SELECT station_name FROM controllers WHERE id = ?", [(int)$controllerId]);
+    db()->query("INSERT IGNORE INTO plate_registry (plate_number, vehicle_type_id, controller_id, station_name, first_registered_at) VALUES (?,?,?,?,?)",
+        [$plate, (int)$vehicleTypeId, (int)$controllerId, $st ? $st['station_name'] : null, date('Y-m-d H:i:s')]);
+}
+
+/** The refusal payload shown to the controller when a plate is used under another vehicle type. */
+function madeyaWrongTypeResult($plate, $owner, $requestedTypeId) {
+    $req = db()->fetchOne("SELECT name FROM vehicle_types WHERE id = ?", [(int)$requestedTypeId]);
+    $reqName = $req ? $req['name'] : 'this vehicle type';
+    $ownName = $owner['vehicle_type_name'] ?: 'another vehicle type';
+    $ts  = strtotime($owner['first_registered_at']);
+    $day = date('D d M Y', $ts); $time = date('H:i', $ts);
+    $stn = $owner['station_name'] ?: 'unknown station';
+    return [
+        'success'        => false,
+        'code'           => 'WRONG_VEHICLE_TYPE',
+        'message'        => "WARNING: plate {$plate} does not belong to {$reqName}. It was first registered as {$ownName} on {$day} at {$time} at {$stn}.",
+        'plate'          => $plate,
+        'requested_type' => $reqName,
+        'owner_type'     => $ownName,
+        'first_day'      => $day,
+        'first_time'     => $time,
+        'first_station'  => $stn,
+        'http_code'      => 400,
+    ];
+}

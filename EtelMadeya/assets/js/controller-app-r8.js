@@ -694,7 +694,10 @@ async function handleVipRegister() {
         const res = await fetch(API, { method: 'POST', body: fd });
         const data = await res.json();
 
-        if (!data.success) { showVipFb(data.message || 'Failed to register vehicle', 'err'); return; }
+        if (!data.success) {
+            if (data.code === 'WRONG_VEHICLE_TYPE') { showWrongTypeAlert(data); showVipFb('Plate not accepted - it belongs to another vehicle type', 'err'); return; }
+            showVipFb(data.message || 'Failed to register vehicle', 'err'); return;
+        }
 
         const queueId = data.data && data.data.id;
         if (queueId) {
@@ -769,7 +772,8 @@ async function handleRegisterVehicle() {
             loadStats();
             loadQueue();
         } else {
-            showMcFb(data.message || 'Failed to register vehicle', 'err');
+            if (data.code === 'WRONG_VEHICLE_TYPE') { showWrongTypeAlert(data); showMcFb('Plate not accepted - it belongs to another vehicle type', 'err'); }
+            else showMcFb(data.message || 'Failed to register vehicle', 'err');
         }
     } catch (error) {
         showMcFb('Connection error while registering vehicle', 'err');
@@ -777,6 +781,21 @@ async function handleRegisterVehicle() {
         btn.disabled = false;
         btn.textContent = originalLabel;
     }
+}
+
+function showWrongTypeAlert(d) {
+    const old = document.getElementById('wrongTypeAlert'); if (old) old.remove();
+    const el = document.createElement('div'); el.id = 'wrongTypeAlert'; el.className = 'wt-overlay';
+    el.innerHTML = '<div class="wt-box"><div class="wt-head"><span class="wt-ic">⚠️</span><b>Plate blocked</b></div>' +
+        '<p class="wt-main">This plate number does <u>not</u> belong to <b>' + escHtml(d.requested_type) + '</b>.</p>' +
+        '<div class="wt-plate">' + plateHtml(d.plate) + '</div>' +
+        '<table class="wt-tbl"><tr><td>First registered as</td><td><b>' + escHtml(d.owner_type) + '</b></td></tr>' +
+        '<tr><td>Day</td><td><b>' + escHtml(d.first_day) + '</b></td></tr>' +
+        '<tr><td>Time</td><td><b>' + escHtml(d.first_time) + '</b></td></tr>' +
+        '<tr><td>Station</td><td><b>' + escHtml(d.first_station) + '</b></td></tr></table>' +
+        '<p class="wt-hint">Register it under <b>' + escHtml(d.owner_type) + '</b>, or ask an admin to correct the first registration if it was a mistake.</p>' +
+        '<button type="button" class="wt-btn" onclick="document.getElementById(\'wrongTypeAlert\').remove()">OK</button></div>';
+    document.body.appendChild(el);
 }
 
 function showMcFb(msg, type, token) {
@@ -1176,6 +1195,7 @@ function renderCheckResults(data) {
     data.in_file.forEach(p  => { const u = p.toUpperCase(); if (!flagged.has(u)) flagged.set(u, []); flagged.get(u).push('infile'); });
     data.in_queue.forEach(p => { const u = p.toUpperCase(); if (!flagged.has(u)) flagged.set(u, []); flagged.get(u).push('inqueue'); });
     data.in_report.forEach(p => { const u = p.toUpperCase(); if (!flagged.has(u)) flagged.set(u, []); flagged.get(u).push('served'); });
+    (data.wrong_type || []).forEach(p => { const u = p.toUpperCase(); if (!flagged.has(u)) flagged.set(u, []); flagged.get(u).push('wrongtype'); });
 
     const dupSection = document.getElementById('impDupSection');
     if (flagged.size) {
@@ -1185,11 +1205,13 @@ function renderCheckResults(data) {
             const badges = reasons.map(r => {
                 if (r === 'infile')  return '<span class="imp-badge imp-badge-infile">Dup in File</span>';
                 if (r === 'inqueue') return '<span class="imp-badge imp-badge-inqueue">In Queue</span>';
+                if (r === 'wrongtype') return '<span class="imp-badge imp-badge-inqueue" style="background:#d93025;color:#fff">Other vehicle type</span>';
                 return '<span class="imp-badge imp-badge-served">Fuel limit</span>';
             }).join(' ');
             const detail = reasons.map(r => {
                 if (r === 'infile')  return 'Appears more than once in the uploaded file(s)';
                 if (r === 'inqueue') return 'Already registered in the active queue';
+                if (r === 'wrongtype') return 'This plate was first registered under a different vehicle type';
                 return 'Fuelled recently - the day limit for this vehicle type has not ended yet';
             }).join('; ');
             return `<tr>

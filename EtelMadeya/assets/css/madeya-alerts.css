@@ -1,0 +1,17 @@
+/* wrong vehicle type warning + admin plate registry */
+.wt-overlay{position:fixed;inset:0;z-index:2147483000;background:rgba(40,0,0,.65);backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;padding:16px}
+.wt-box{width:100%;max-width:420px;background:#fff;color:#1a1a2e;border-radius:22px;overflow:hidden;border:3px solid #d93025;box-shadow:0 20px 60px rgba(0,0,0,.5);font-family:var(--mp-fx,'Poppins',sans-serif)}
+.wt-head{display:flex;align-items:center;gap:10px;background:#d93025;color:#fff;padding:14px 18px;font-size:20px}
+.wt-ic{font-size:26px}
+.wt-main{margin:16px 18px 8px;font-size:15px;line-height:1.5}
+.wt-plate{margin:4px 18px 10px;font:800 24px 'JetBrains Mono',monospace;text-align:center;padding:10px;border-radius:12px;background:#fdecea;border:1.5px solid #f3b4ae}
+.wt-tbl{width:calc(100% - 36px);margin:0 18px;border-collapse:collapse;font-size:14px}
+.wt-tbl td{padding:7px 4px;border-bottom:1px solid #f1d6d3}
+.wt-tbl td:first-child{opacity:.7;width:42%}
+.wt-hint{margin:12px 18px;font-size:12.5px;opacity:.8;line-height:1.5}
+.wt-btn{display:block;width:calc(100% - 36px);margin:0 18px 18px;padding:13px;border:0;border-radius:12px;background:#d93025;color:#fff;font:800 15px inherit;cursor:pointer}
+.pr-row{padding:12px;border-radius:14px;border:1.5px solid rgba(212,175,55,.4);background:rgba(212,175,55,.06);margin-top:10px}
+.pr-top{display:flex;flex-direction:column;gap:2px;margin-bottom:8px}
+.pr-top small{opacity:.7}
+.pr-act{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.pr-act select{flex:1;min-width:120px;min-height:40px;border-radius:10px;border:1.5px solid var(--mp-line2,#d9c98f);background:var(--mp-soft,#faf6ea);color:inherit;padding:0 10px}

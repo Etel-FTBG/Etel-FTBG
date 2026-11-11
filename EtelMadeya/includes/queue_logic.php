@@ -90,6 +90,12 @@ function madeyaRegisterVehicle($controllerId, $vehicleTypeId, $plate, $driverNam
         return ['success' => false, 'message' => "This station only accepts {$need} plates today.", 'code' => 'WRONG_PARITY', 'http_code' => 400];
     }
 
+    // A plate belongs to the vehicle type it was FIRST registered under (category + region + number).
+    $plateOwner = madeyaPlateOwner($plate);
+    if ($plateOwner && (int)$plateOwner['vehicle_type_id'] !== (int)$vehicleTypeId) {
+        return madeyaWrongTypeResult($plate, $plateOwner, $vehicleTypeId);
+    }
+
     // The duplicate-plate check below and the insert that follows it are
     // not atomic on their own - two concurrent registrations of the same
     // plate (e.g. two NFC taps of two different driver cards that happen
@@ -173,6 +179,8 @@ function madeyaRegisterVehicle($controllerId, $vehicleTypeId, $plate, $driverNam
             'status'          => 'queued',
             'batch_id'        => $batchId,
         ]);
+
+        madeyaPlateRemember($plate, $vehicleTypeId, $controllerId);
 
         db()->commit();
 
