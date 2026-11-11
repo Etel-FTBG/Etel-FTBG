@@ -1,0 +1,21 @@
+/* Admin add/edit popups (they live outside #mainPanel, so they need their own styling). */
+.modal-content.am-modal{max-height:92vh;overflow-y:auto;overscroll-behavior:contain}
+.modal-content.am-modal .modal-header{position:sticky;top:0;z-index:5;background:var(--mp-card,#fff)}
+.modal-content.am-modal,.modal-content.am-modal label,.modal-content.am-modal p,.modal-content.am-modal small{font-family:var(--mp-fx,'Poppins',system-ui,sans-serif)}
+.modal-content.am-modal .am-note,.modal-content.am-modal .am-hint{display:block;margin:0 0 16px;padding:11px 14px;border-radius:14px;border:1.5px solid rgba(212,175,55,.45);background:rgba(212,175,55,.12);font:500 13px/1.55 var(--mp-fx,'Poppins',system-ui,sans-serif);letter-spacing:0;text-transform:none;color:inherit}
+.modal-content.am-modal .am-hint{margin:6px 0 10px;padding:8px 12px;font-size:12.5px}
+.modal-content.am-modal .form-group>label:not(.am-check-label){display:block;margin-bottom:6px;font:800 11.5px var(--mp-fx,'Poppins',system-ui,sans-serif);letter-spacing:.08em;text-transform:uppercase;opacity:.8}
+.modal-content.am-modal .am-check-label{display:flex;align-items:center;gap:10px;font-size:14px;font-weight:600;text-transform:none;letter-spacing:0;opacity:1;cursor:pointer}
+.modal-content.am-modal .am-check-label input[type=checkbox]{width:20px;height:20px;flex:none;accent-color:#c9a227;margin:0}
+
+/* vehicle types served: selectable tiles */
+.modal-content.am-modal .am-vtype-checks{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:4px}
+@media (min-width:560px){.modal-content.am-modal .am-vtype-checks{grid-template-columns:repeat(3,1fr)}}
+.modal-content.am-modal .am-vtype-checks .am-check-label{position:relative;flex-direction:column;justify-content:center;gap:6px;min-height:96px;padding:12px 8px 10px;border-radius:16px;border:1.5px solid rgba(212,175,55,.4);background:rgba(212,175,55,.06);text-align:center;font-size:13px;font-weight:800;text-transform:capitalize;letter-spacing:.02em;transition:border-color .12s,background .12s,box-shadow .12s}
+.modal-content.am-modal .am-vtype-checks .am-check-label input[type=checkbox]{position:absolute;top:8px;left:8px}
+.modal-content.am-modal .am-vtype-checks .am-check-label .veh-pic{height:48px!important;max-width:100%;margin-top:6px}
+.modal-content.am-modal .am-vtype-checks .am-check-label .veh-fb{font-size:34px}
+.modal-content.am-modal .am-vtype-checks .am-check-label:has(input:checked){border-color:#c9a227;background:rgba(212,175,55,.2);box-shadow:0 0 0 3px rgba(212,175,55,.22)}
+.modal-content.am-modal .modal-actions{position:sticky;bottom:0;background:var(--mp-card,#fff);padding:12px 0 4px;margin-top:16px;border-top:1px solid rgba(212,175,55,.25)}
+.modal-content.am-modal .form-group .am-check-label{text-transform:none!important;letter-spacing:0!important;font-size:14px!important;font-weight:600!important;opacity:1!important}
+.modal-content.am-modal .form-group .am-vtype-checks .am-check-label{font-size:13px!important;font-weight:800!important;text-transform:capitalize!important}
