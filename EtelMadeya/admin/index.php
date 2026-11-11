@@ -16,7 +16,7 @@
     <link rel="stylesheet" href="../assets/css/madeya-modals.css">
     <link rel="stylesheet" href="../assets/css/madeya-settings.css">
     <link rel="stylesheet" href="../assets/css/madeya-liters.css">
-    <link rel="stylesheet" href="../assets/css/madeya-alerts.css">
+    <link rel="stylesheet" href="../assets/css/madeya-alerts-r2.css">
     <script src="../assets/js/madeya-pro-r2.js"></script>
     <link rel="icon" href="../assets/img/etel-logo.png">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>

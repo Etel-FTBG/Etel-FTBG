@@ -587,6 +587,7 @@ function displayQueue(queue) {
                 <button type="button" onclick="showServeModal(${v.id}, ${jsStr(v.plate_number)}, ${jsStr(v.vehicle_type_name)})" class="srv-btn">${ICONS.serve} Serve</button>
                 <button type="button" onclick="moveToVip(${v.id}, this)" class="action-btn action-btn-vip">${ICONS.vip} VIP</button>
                 <button type="button" onclick="moveToWaiting(${v.id}, this)" class="action-btn action-btn-wait">${ICONS.wait} Wait</button>
+                <button type="button" onclick="removeFromQueue(${v.id}, ${jsStr(v.plate_number)}, this)" class="action-btn action-btn-del"><svg class="icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M6 6l1 14h10l1-14"/></svg> Remove</button>
             </td>
         </tr>
     `).join('');
@@ -623,7 +624,7 @@ async function loadWaitingQueue() {
                 <td>${parityBadge(v.plate_parity)}</td>
                 <td class="q-tk">${escHtml(v.token)}</td>
                 <td class="q-tm">${new Date(v.registered_at).toLocaleTimeString()}</td>
-                <td><button type="button" onclick="showServeModal(${v.id}, ${jsStr(v.plate_number)}, ${jsStr(v.vehicle_type_name)})" class="srv-btn">${ICONS.serve} Serve</button></td>
+                <td><button type="button" onclick="showServeModal(${v.id}, ${jsStr(v.plate_number)}, ${jsStr(v.vehicle_type_name)})" class="srv-btn">${ICONS.serve} Serve</button> <button type="button" onclick="removeFromQueue(${v.id}, ${jsStr(v.plate_number)}, this)" class="action-btn action-btn-del"><svg class="icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M6 6l1 14h10l1-14"/></svg> Remove</button></td>
             </tr>
         `).join('');
     } catch (error) {
@@ -656,7 +657,7 @@ async function loadVipQueue() {
                 <td>${parityBadge(v.plate_parity)}</td>
                 <td class="q-tk">${escHtml(v.token)}</td>
                 <td class="q-tm">${new Date(v.registered_at).toLocaleTimeString()}</td>
-                <td><button type="button" onclick="showServeModal(${v.id}, ${jsStr(v.plate_number)}, ${jsStr(v.vehicle_type_name)})" class="srv-btn">${ICONS.serve} Serve</button></td>
+                <td><button type="button" onclick="showServeModal(${v.id}, ${jsStr(v.plate_number)}, ${jsStr(v.vehicle_type_name)})" class="srv-btn">${ICONS.serve} Serve</button> <button type="button" onclick="removeFromQueue(${v.id}, ${jsStr(v.plate_number)}, this)" class="action-btn action-btn-del"><svg class="icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M6 6l1 14h10l1-14"/></svg> Remove</button></td>
             </tr>
         `).join('');
     } catch (error) {
@@ -913,6 +914,31 @@ async function handleServe(event) {
     } finally {
         submitBtn.disabled = false;
         submitBtn.textContent = originalLabel;
+    }
+}
+
+async function removeFromQueue(queueId, plate, btn) {
+    const shown = String(plate || '').replace(/^[1-5]-/, '');
+    if (!confirm('Remove plate ' + shown + ' from the queue?\n\nThe vehicle loses its place and must be registered again.')) return;
+    const original = btn ? btn.innerHTML : null;
+    if (btn) { btn.disabled = true; btn.innerHTML = 'Removing…'; }
+    const fd = new FormData();
+    fd.append('action', 'remove_from_queue');
+    fd.append('queue_id', queueId);
+    try {
+        const res = await fetch(API, { method: 'POST', body: fd });
+        const data = await res.json();
+        if (data.success) {
+            showNotification(ICONS.success + ' Plate removed from the queue', 'success');
+            refreshActiveTabData();
+            if (typeof loadStats === 'function') loadStats();
+        } else {
+            showNotification(ICONS.error + ' ' + escHtml(data.message || 'Failed to remove plate'), 'error');
+        }
+    } catch (e) {
+        showNotification(ICONS.error + ' Error removing plate', 'error');
+    } finally {
+        if (btn) { btn.disabled = false; btn.innerHTML = original; }
     }
 }
 
