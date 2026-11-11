@@ -469,6 +469,6 @@ if ( isset( $_GET['embed'] ) && ! headers_sent() ) {
     <script src="assets/js/madeya-vehicles-r4.js"></script>
     <script src="assets/js/madeya-plates-r2.js"></script>
     <script src="assets/js/icons.js"></script>
-    <script src="assets/js/controller-app-r8.js"></script>
+    <script src="assets/js/controller-app-r9.js"></script>
 </body>
 </html>

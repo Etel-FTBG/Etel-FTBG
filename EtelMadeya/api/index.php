@@ -784,9 +784,16 @@ try {
             $wrongType = [];
             if ($impType) {
                 ensurePlateRegistry();
-                $uUp = array_map('strtoupper', $unique);
-                $phU = implode(',', array_fill(0, count($uUp), '?'));
-                foreach (db()->fetchAll("SELECT plate_number FROM plate_registry WHERE vehicle_type_id <> ? AND plate_number IN ($phU)", array_merge([$impType], $uUp)) as $wr) $wrongType[] = $wr['plate_number'];
+                $vmap = []; $allV = [];
+                foreach ($unique as $pl) { foreach (madeyaPlateVariants($pl) as $vv) { $vmap[$vv][] = $pl; $allV[$vv] = true; } }
+                $allV = array_keys($allV);
+                if ($allV) {
+                    $phV = implode(',', array_fill(0, count($allV), '?'));
+                    foreach (db()->fetchAll("SELECT plate_number FROM plate_registry WHERE vehicle_type_id <> ? AND plate_number IN ($phV)", array_merge([$impType], $allV)) as $wr) {
+                        foreach ($vmap[$wr['plate_number']] ?? [] as $pl) $wrongType[$pl] = $pl;
+                    }
+                }
+                $wrongType = array_values($wrongType);
             }
 
             // Clean = unique, not in queue, not in report

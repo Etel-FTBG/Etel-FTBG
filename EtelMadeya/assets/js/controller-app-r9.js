@@ -790,6 +790,7 @@ function showWrongTypeAlert(d) {
         '<p class="wt-main">This plate number does <u>not</u> belong to <b>' + escHtml(d.requested_type) + '</b>.</p>' +
         '<div class="wt-plate">' + plateHtml(d.plate) + '</div>' +
         '<table class="wt-tbl"><tr><td>First registered as</td><td><b>' + escHtml(d.owner_type) + '</b></td></tr>' +
+        (d.first_plate ? '<tr><td>First plate</td><td><b>' + plateHtml(d.first_plate) + '</b></td></tr>' : '') +
         '<tr><td>Day</td><td><b>' + escHtml(d.first_day) + '</b></td></tr>' +
         '<tr><td>Time</td><td><b>' + escHtml(d.first_time) + '</b></td></tr>' +
         '<tr><td>Station</td><td><b>' + escHtml(d.first_station) + '</b></td></tr></table>' +

@@ -168,29 +168,42 @@ function ensurePlateRegistry() {
     } catch (Exception $e) { error_log('ensurePlateRegistry: ' . $e->getMessage()); }
 }
 
+/** Every spelling of the same plate: with any category prefix (1-5) or none. "2-SD-10181" -> region+number "SD-10181". */
+function madeyaPlateVariants($plate) {
+    $core = preg_replace('/^[1-5]-/', '', strtoupper(trim((string)$plate)));
+    $v = [$core];
+    for ($i = 1; $i <= 5; $i++) $v[] = $i . '-' . $core;
+    return array_values(array_unique($v));
+}
+
 /**
  * The first registration of a plate, or null when the plate is new.
+ * The identity is region + number: using the same number with another plate category does not make it a new plate.
  * Older plates (registered before this registry existed) are found from the report / queue history and saved.
  */
 function madeyaPlateOwner($plate) {
     ensurePlateRegistry();
     $plate = strtoupper(trim((string)$plate));
     if ($plate === '') return null;
+    $vars = madeyaPlateVariants($plate);
+    $ph = implode(',', array_fill(0, count($vars), '?'));
     $row = db()->fetchOne(
         "SELECT pr.plate_number, pr.vehicle_type_id, pr.station_name, pr.first_registered_at, vt.name AS vehicle_type_name
-         FROM plate_registry pr LEFT JOIN vehicle_types vt ON vt.id = pr.vehicle_type_id WHERE pr.plate_number = ?", [$plate]);
+         FROM plate_registry pr LEFT JOIN vehicle_types vt ON vt.id = pr.vehicle_type_id
+         WHERE pr.plate_number IN ($ph) ORDER BY pr.first_registered_at ASC LIMIT 1", $vars);
     if ($row) return $row;
     $cands = [];
-    $r = db()->fetchOne("SELECT r.vehicle_type_id, r.controller_id, COALESCE(r.registered_at, r.served_at) AS t, c.station_name FROM report r LEFT JOIN controllers c ON c.id = r.controller_id WHERE UPPER(r.plate_number) = ? ORDER BY t ASC LIMIT 1", [$plate]);
+    $r = db()->fetchOne("SELECT r.plate_number, r.vehicle_type_id, r.controller_id, COALESCE(r.registered_at, r.served_at) AS t, c.station_name FROM report r LEFT JOIN controllers c ON c.id = r.controller_id WHERE UPPER(r.plate_number) IN ($ph) ORDER BY t ASC LIMIT 1", $vars);
     if ($r) $cands[] = $r;
-    $q = db()->fetchOne("SELECT q.vehicle_type_id, q.controller_id, q.registered_at AS t, c.station_name FROM queue q LEFT JOIN controllers c ON c.id = q.controller_id WHERE UPPER(q.plate_number) = ? ORDER BY q.registered_at ASC LIMIT 1", [$plate]);
+    $q = db()->fetchOne("SELECT q.plate_number, q.vehicle_type_id, q.controller_id, q.registered_at AS t, c.station_name FROM queue q LEFT JOIN controllers c ON c.id = q.controller_id WHERE UPPER(q.plate_number) IN ($ph) ORDER BY q.registered_at ASC LIMIT 1", $vars);
     if ($q) $cands[] = $q;
     if (!$cands) return null;
     usort($cands, function ($a, $b) { return strcmp((string)$a['t'], (string)$b['t']); });
     $f = $cands[0];
     $when = $f['t'] ?: date('Y-m-d H:i:s');
+    $key = strtoupper(trim($f['plate_number']));
     db()->query("INSERT IGNORE INTO plate_registry (plate_number, vehicle_type_id, controller_id, station_name, first_registered_at) VALUES (?,?,?,?,?)",
-        [$plate, (int)$f['vehicle_type_id'], $f['controller_id'] ? (int)$f['controller_id'] : null, $f['station_name'], $when]);
+        [$key, (int)$f['vehicle_type_id'], $f['controller_id'] ? (int)$f['controller_id'] : null, $f['station_name'], $when]);
     return madeyaPlateOwner($plate);
 }
 
@@ -215,8 +228,9 @@ function madeyaWrongTypeResult($plate, $owner, $requestedTypeId) {
     return [
         'success'        => false,
         'code'           => 'WRONG_VEHICLE_TYPE',
-        'message'        => "WARNING: plate {$plate} does not belong to {$reqName}. It was first registered as {$ownName} on {$day} at {$time} at {$stn}.",
+        'message'        => "WARNING: plate {$plate} does not belong to {$reqName}. It was first registered as {$ownName} (plate {$owner['plate_number']}) on {$day} at {$time} at {$stn}.",
         'plate'          => $plate,
+        'first_plate'    => $owner['plate_number'],
         'requested_type' => $reqName,
         'owner_type'     => $ownName,
         'first_day'      => $day,
