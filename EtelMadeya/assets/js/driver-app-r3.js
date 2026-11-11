@@ -28,6 +28,7 @@ function navigate(page) {
             break;
         case 'check':
             content.innerHTML = getCheckPage();
+            if (window.plateNumeric) plateNumeric(document.getElementById('checkPlate'));
             break;
         case 'stations':
             content.innerHTML = getStationsPage();
@@ -92,7 +93,7 @@ function getCheckPage() {
                     <form onsubmit="checkPosition(event)">
                         <div class="form-group">
                             <label for="checkPlate" data-t="Plate Number|የታርጋ ቁጥር">Plate Number</label>
-                            <input type="text" id="checkPlate" class="form-control" placeholder="AA-3-12345" required>
+                            <input type="text" id="checkPlate" class="form-control" placeholder="06369" inputmode="numeric" pattern="[0-9]*" maxlength="10" required>
                         </div>
                         <button type="submit" class="btn btn-primary btn-block">
                             ${ICONS.search} <span data-t="Check Position|ቦታ ፈልግ">Check Position</span>
@@ -180,7 +181,7 @@ async function checkPosition(event) {
                         ${v.alert ? '<div class="alert alert-warning">⚠️ Your turn is coming soon! Please be ready.</div>' : ''}
                         
                         <div class="vehicle-info">
-                            <p><strong>Plate:</strong> ${escHtml(v.plate_number)}</p>
+                            <p><strong>Plate:</strong> ${plateHtml(v.plate_number)}</p>
                             <p><strong>Vehicle Type:</strong> ${escHtml(v.vehicle_type_name)} (${escHtml(v.vehicle_type_name_am)})</p>
                             <p><strong>Queue Type:</strong> ${escHtml(v.queue_type.toUpperCase())}</p>
                             <p><strong>Token:</strong> ${escHtml(v.token)}</p>
@@ -271,7 +272,7 @@ function renderDriverQueue(myPlate, station) {
         const marker = isMe ? ' ← YOU' : '';
         return `<tr ${rowClass}>
             <td>#${escHtml(v.display_position)}</td>
-            <td>${escHtml(v.plate_number)}${marker}</td>
+            <td>${plateHtml(v.plate_number)}${marker}</td>
             <td>${vehPic(v.icon, v.vehicle_type_name, 26)} ${escHtml(v.vehicle_type_name)}</td>
             <td>${escHtml(v.queue_type.toUpperCase())}</td>
         </tr>`;

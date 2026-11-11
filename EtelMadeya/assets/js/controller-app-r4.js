@@ -171,7 +171,17 @@ async function loadVehicleTypes() {
     }
 }
 
+function initRegisterForm() {
+    if (window._regInit) return;
+    window._regInit = true;
+    plateCatButtons('regCats', 'mad_reg_cat', updateRegSummary);
+    plateCatButtons('vipCats', 'mad_vip_cat');
+    plateNumeric(document.getElementById('regPlate'), function () { updateRegParityHint(); updateRegSummary(); });
+    plateNumeric(document.getElementById('vipPlate'));
+}
+
 function renderVtypeGrid() {
+    initRegisterForm();
     const grid = document.getElementById('vtypeGrid');
     if (!grid) return;
     if (!vehicleTypes.length) {
@@ -221,12 +231,13 @@ function selectVehicleType(id, btn) {
 function updateRegSummary() {
     const el = document.getElementById('regSummary');
     if (!el) return;
-    const plate = (document.getElementById('regPlate').value || '').trim();
+    const digits = plateDigits(document.getElementById('regPlate').value);
+    const cat = plateCatSelected('regCats');
     const t = vehicleTypes.find(x => x.id == selectedVehicleTypeId);
-    if (!plate || !t) { el.innerHTML = '<span class="rg-sum-empty">Enter a plate and choose a vehicle type</span>'; return; }
-    const par = platePartyFromString(plate);
-    el.innerHTML = '<span class="rg-sum-pic">' + vehPic(t.icon, t.name, 38) + '</span><span class="rg-sum-t"><b>' + escHtml(plate) +
-        '</b><small>' + escHtml(t.name || '') + (par ? ' &middot; ' + (par === 'odd' ? 'Odd' : 'Even') + ' plate' : '') + '</small></span><span class="rg-sum-ok">Ready</span>';
+    if (!digits || !cat || !t) { el.innerHTML = '<span class="rg-sum-empty">Choose category, enter the plate number and pick a vehicle type</span>'; return; }
+    const par = platePartyFromString(digits);
+    el.innerHTML = '<span class="rg-sum-pic">' + vehPic(t.icon, t.name, 38) + '</span><span class="rg-sum-t"><b>' + plateHtml(plateBuild(cat, digits)) +
+        '</b><small>' + escHtml(plateCatName(cat)) + ' &middot; ' + escHtml(t.name || '') + (par ? ' &middot; ' + (par === 'odd' ? 'Odd' : 'Even') + ' plate' : '') + '</small></span><span class="rg-sum-ok">Ready</span>';
 }
 
 function clearRegForm() {
@@ -549,7 +560,7 @@ function displayQueue(queue) {
     tbody.innerHTML = queue.map(v => `
         <tr class="qr">
             <td class="q-pos">#${escHtml(v.display_position || v.position)}</td>
-            <td class="q-pl">${escHtml(v.plate_number)}</td>
+            <td class="q-pl">${plateHtml(v.plate_number)}</td>
             <td class="q-tp">${vehPic(v.icon, v.vehicle_type_name, 26)} ${escHtml(v.vehicle_type_name)}</td>
             <td>${parityBadge(v.plate_parity)}</td>
             <td class="q-tk">${escHtml(v.token)}</td>
@@ -589,7 +600,7 @@ async function loadWaitingQueue() {
         tbody.innerHTML = list.map((v, i) => `
             <tr class="qr waiting-row">
                 <td class="q-pos">#${i + 1}</td>
-                <td class="q-pl">${escHtml(v.plate_number)}</td>
+                <td class="q-pl">${plateHtml(v.plate_number)}</td>
                 <td class="q-tp">${vehPic(v.icon, v.vehicle_type_name, 26)} ${escHtml(v.vehicle_type_name)}</td>
                 <td>${parityBadge(v.plate_parity)}</td>
                 <td class="q-tk">${escHtml(v.token)}</td>
@@ -622,7 +633,7 @@ async function loadVipQueue() {
         tbody.innerHTML = list.map((v, i) => `
             <tr class="qr vip-row">
                 <td class="q-pos">#${i + 1}</td>
-                <td class="q-pl">${escHtml(v.plate_number)}</td>
+                <td class="q-pl">${plateHtml(v.plate_number)}</td>
                 <td class="q-tp">${vehPic(v.icon, v.vehicle_type_name, 26)} ${escHtml(v.vehicle_type_name)}</td>
                 <td>${parityBadge(v.plate_parity)}</td>
                 <td class="q-tk">${escHtml(v.token)}</td>
@@ -637,11 +648,14 @@ async function loadVipQueue() {
 
 async function handleVipRegister() {
     const plateInput = document.getElementById('vipPlate');
-    const plate = plateInput.value.trim();
+    const digits = plateDigits(plateInput.value);
+    const vcat = plateCatSelected('vipCats');
     const vtypeId = document.getElementById('vipVehicleType').value;
     const btn = document.getElementById('vipRegBtn');
 
-    if (!plate) { showVipFb('Enter a plate number', 'err'); return; }
+    if (!vcat) { showVipFb('Select the plate category (1-5)', 'err'); return; }
+    if (!digits) { showVipFb('Enter a plate number', 'err'); return; }
+    const plate = plateBuild(vcat, digits);
     if (!vtypeId) { showVipFb('Select a vehicle type', 'err'); return; }
 
     btn.disabled = true;
@@ -698,10 +712,13 @@ function showVipFb(msg, type) {
 // ─── REGISTER VEHICLE (Register tab) ────────────────────────────────
 async function handleRegisterVehicle() {
     const plateInput = document.getElementById('regPlate');
-    const plate = plateInput.value.trim();
+    const digits = plateDigits(plateInput.value);
+    const cat = plateCatSelected('regCats');
     const btn = document.getElementById('mcRegBtn');
 
-    if (!plate) { showMcFb('Enter a plate number', 'err'); return; }
+    if (!cat) { showMcFb('Select the plate category (1-5)', 'err'); return; }
+    if (!digits) { showMcFb('Enter the plate number', 'err'); return; }
+    const plate = plateBuild(cat, digits);
     if (!selectedVehicleTypeId) { showMcFb('Select a vehicle type', 'err'); return; }
 
     btn.disabled = true;
@@ -949,7 +966,7 @@ function renderReport(rows) {
         const typeName = (r.vehicle_type_icon ? r.vehicle_type_icon + ' ' : '') + (r.vehicle_type_name || r.vehicle_type_id || '--');
         return `<tr class="qr" data-plate="${escHtml((r.plate_number || '').toUpperCase())}">
             <td class="q-pos">${i + 1}</td>
-            <td class="q-pl">${escHtml(r.plate_number || '--')}</td>
+            <td class="q-pl">${r.plate_number ? plateHtml(r.plate_number) : '--'}</td>
             <td class="q-tp">${escHtml(typeName)}</td>
             <td>${parityBadge(r.plate_parity)}</td>
             <td class="q-tk">${escHtml(r.token || '--')}</td>

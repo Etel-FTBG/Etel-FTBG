@@ -46,10 +46,12 @@ try {
                     FROM queue q
                     JOIN vehicle_types vt ON q.vehicle_type_id = vt.id
                     JOIN controllers c ON q.controller_id = c.id
-                    WHERE q.plate_number = ? AND q.status = 'queued'
+                    WHERE (q.plate_number = ? OR q.plate_number LIKE ?) AND q.status = 'queued'
                     ORDER BY q.registered_at DESC LIMIT 1";
             
-            $vehicle = db()->fetchOne($sql, [$plate]);
+            // Plates are registered as "<category>-<digits>" (e.g. 1-06369); drivers type only the digits.
+            $like = ctype_digit($plate) ? ('%-' . $plate) : $plate;
+            $vehicle = db()->fetchOne($sql, [$plate, $like]);
             
             if (!$vehicle) {
                 jsonResponse(['success' => false, 'message' => 'Vehicle not found in queue']);
@@ -95,6 +97,7 @@ try {
             break;
             
         case 'get_vehicle_types':
+            ensureExtraVehicleTypes();
             $types = db()->fetchAll(
                 "SELECT * FROM vehicle_types WHERE is_active = 1 ORDER BY sort_order"
             );

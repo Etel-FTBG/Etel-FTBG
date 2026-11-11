@@ -414,6 +414,7 @@ try {
         
         case 'get_vehicle_types':
             requireAdminAuth();
+            ensureExtraVehicleTypes();
             
             $types = db()->fetchAll(
                 "SELECT * FROM vehicle_types ORDER BY sort_order, name"
