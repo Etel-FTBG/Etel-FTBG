@@ -86,3 +86,55 @@ function eg_site_content_load(PDO $pdo): array {
     }
     return $out;
 }
+
+// ============================================================
+// Coming-soon companies: launch text + "notify me" sign-ups. Kept in their own tables (keyed by company slug) so the
+// existing companies table and its admin form logic stay exactly as they were.
+// ============================================================
+function eg_ensure_launch_tables(PDO $pdo): void {
+    $pdo->exec(
+        "CREATE TABLE IF NOT EXISTS company_launch (
+            slug VARCHAR(60) NOT NULL,
+            launch_text VARCHAR(80) NOT NULL DEFAULT '',
+            notify_enabled TINYINT(1) NOT NULL DEFAULT 0,
+            PRIMARY KEY (slug)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
+    );
+    $pdo->exec(
+        "CREATE TABLE IF NOT EXISTS launch_notify (
+            id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+            slug VARCHAR(60) NOT NULL,
+            contact VARCHAR(160) NOT NULL,
+            ip_hash CHAR(16) NOT NULL DEFAULT '',
+            created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (id),
+            UNIQUE KEY uq_slug_contact (slug, contact),
+            KEY idx_ip_time (ip_hash, created_at)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
+    );
+}
+
+/** slug => [launch_text, notify_enabled, notify_count?] */
+function eg_launch_map(PDO $pdo, bool $withCounts = false): array {
+    eg_ensure_launch_tables($pdo);
+    $map = array();
+    foreach ($pdo->query('SELECT slug, launch_text, notify_enabled FROM company_launch')->fetchAll() as $r) {
+        $map[$r['slug']] = array('launch_text' => (string)$r['launch_text'], 'notify_enabled' => (int)$r['notify_enabled'], 'notify_count' => 0);
+    }
+    if ($withCounts) {
+        foreach ($pdo->query('SELECT slug, COUNT(*) n FROM launch_notify GROUP BY slug')->fetchAll() as $r) {
+            if (!isset($map[$r['slug']])) $map[$r['slug']] = array('launch_text' => '', 'notify_enabled' => 0, 'notify_count' => 0);
+            $map[$r['slug']]['notify_count'] = (int)$r['n'];
+        }
+    }
+    return $map;
+}
+
+/** "name@example.com" or a phone number (digits, 9-15) -> cleaned string, '' when it is neither. */
+function eg_clean_contact(string $v): string {
+    $v = trim($v);
+    if (filter_var($v, FILTER_VALIDATE_EMAIL) && mb_strlen($v) <= 160) return mb_strtolower($v);
+    $digits = preg_replace('/[^\d+]/', '', $v);
+    if (preg_match('/^\+?\d{9,15}$/', $digits)) return $digits;
+    return '';
+}

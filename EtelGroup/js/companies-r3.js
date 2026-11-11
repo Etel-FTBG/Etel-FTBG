@@ -97,17 +97,26 @@
     var badgeClass = isLive ? 'co-badge-live' : 'co-badge-plan';
     var badgeText = isLive ? 'Live' : 'Coming Soon';
     var hasLogo = !!c.logo_path;
+    // Live: a real online/offline dot (same check the Platform launcher uses). Coming soon: launch text + "Notify me".
+    var extra = '';
+    if (isLive) {
+      extra = '<span class="co-online" title="Checked from your browser"><span class="lc-dot" id="cs-' + esc(c.slug) + '"></span><span class="co-online-text" id="cl-' + esc(c.slug) + '">checking...</span></span>';
+    } else {
+      if (c.launch_text) extra += '<span class="co-launch"><svg width="11" height="11" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.2" stroke="currentColor" stroke-width="1.5"/><path d="M8 4.6V8l2.4 1.6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>' + esc(c.launch_text) + '</span>';
+      if (Number(c.notify_enabled) === 1) extra += '<button type="button" class="co-notify-btn" data-notify="' + esc(c.slug) + '" data-name="' + esc(c.name) + '">Notify me</button>';
+    }
+    var tag = isLive ? 'a' : 'div';
     return (
-      '<a href="' + href + '" ' + (isLive ? 'target="_blank" rel="noopener"' : '') + ' class="co-card js-card' + (hasLogo ? ' co-card-has-logo' : '') + (isLive ? '' : ' co-card-soon') + '" style="--co-color:' + esc(c.dot_color) + logoBgDecl(c) + '" data-delay="' + Math.min(i, 9) + '">' +
+      '<' + tag + (isLive ? ' href="' + href + '" target="_blank" rel="noopener"' : '') + ' class="co-card js-card' + (hasLogo ? ' co-card-has-logo' : '') + (isLive ? '' : ' co-card-soon') + '" style="--co-color:' + esc(c.dot_color) + logoBgDecl(c) + '" data-delay="' + Math.min(i, 9) + '">' +
       '<div class="co-card-corner"></div>' +
       '<span class="co-number">' + num + '</span>' +
       (hasLogo ? '' : '<div class="co-icon">' + iconSvg(c.icon_key, c.dot_color) + '</div>') +
       '<p class="co-name">' + esc(c.name) + '</p>' +
       '<p class="co-category">' + esc(c.tagline) + '</p>' +
       '<p class="co-desc">' + esc(c.description_short) + '</p>' +
-      '<span class="co-badge ' + badgeClass + '"><span class="co-badge-dot"></span>' + badgeText + '</span>' +
-      '<span class="co-arrow"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6h8M7 3l3 3-3 3" stroke="#D4AF37" stroke-width="1.5" stroke-linecap="round"/></svg></span>' +
-      '</a>'
+      '<div class="co-meta"><span class="co-badge ' + badgeClass + '"><span class="co-badge-dot"></span>' + badgeText + '</span>' + extra + '</div>' +
+      (isLive ? '<span class="co-arrow"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6h8M7 3l3 3-3 3" stroke="#D4AF37" stroke-width="1.5" stroke-linecap="round"/></svg></span>' : '') +
+      '</' + tag + '>'
     );
   }
 
@@ -126,7 +135,47 @@
     var cl = document.getElementById('co-count-live'), cs = document.getElementById('co-count-soon');
     if (cl) cl.textContent = live.length;
     if (cs) cs.textContent = soon.length;
+    if (typeof window.egRecheckLauncherStatus === 'function') {
+      window.egRecheckLauncherStatus(live.map(function (c) { return { url: c.url, dot: 'cs-' + c.slug, label: 'cl-' + c.slug }; }));
+    }
   }
+
+  // ---- "Notify me" sign-up for coming-soon companies ----
+  var notifyBox = null;
+  function closeNotify() { if (notifyBox) { notifyBox.remove(); notifyBox = null; } }
+  function openNotify(slug, name) {
+    closeNotify();
+    notifyBox = document.createElement('div');
+    notifyBox.className = 'eg-notify-bg';
+    notifyBox.innerHTML = '<div class="eg-notify" role="dialog" aria-modal="true" aria-label="Notify me">' +
+      '<button type="button" class="eg-notify-x" aria-label="Close">\u2715</button>' +
+      '<h3>Tell me when <span></span> launches</h3>' +
+      '<p>Leave your email or phone number and we will message you once, on launch day. No spam.</p>' +
+      '<form novalidate><input type="text" name="contact" inputmode="email" autocomplete="email" placeholder="Email or phone number" maxlength="160" required>' +
+      '<input type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;opacity:0;height:0">' +
+      '<button type="submit" class="btn btn-primary">Notify me</button><div class="eg-notify-msg" role="status"></div></form></div>';
+    notifyBox.querySelector('h3 span').textContent = name;
+    document.body.appendChild(notifyBox);
+    var input = notifyBox.querySelector('input[name=contact]'); input.focus();
+    notifyBox.addEventListener('click', function (e) { if (e.target === notifyBox || e.target.closest('.eg-notify-x')) closeNotify(); });
+    notifyBox.querySelector('form').addEventListener('submit', function (e) {
+      e.preventDefault();
+      var msg = notifyBox.querySelector('.eg-notify-msg'), btn = notifyBox.querySelector('button[type=submit]');
+      var contact = input.value.trim(); if (!contact) { msg.textContent = 'Enter your email or phone number.'; msg.className = 'eg-notify-msg err'; return; }
+      btn.disabled = true; msg.textContent = '';
+      fetch(apiBase() + '?action=notify_launch', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slug: slug, contact: contact, website: notifyBox.querySelector('input[name=website]').value }) })
+        .then(function (r) { return r.json(); }).then(function (d) {
+          if (d && (d.ok || d.success)) { notifyBox.querySelector('form').innerHTML = '<p class="eg-notify-ok">\u2713 Thank you! We will let you know when ' + esc(name) + ' launches.</p>'; setTimeout(closeNotify, 3500); }
+          else { msg.textContent = (d && (d.error || d.message)) || 'Could not save - try again.'; msg.className = 'eg-notify-msg err'; btn.disabled = false; }
+        }).catch(function () { msg.textContent = 'Network error - try again.'; msg.className = 'eg-notify-msg err'; btn.disabled = false; });
+    });
+  }
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest && e.target.closest('.co-notify-btn'); if (!b) return;
+    e.preventDefault(); e.stopPropagation(); openNotify(b.getAttribute('data-notify'), b.getAttribute('data-name') || '');
+  });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeNotify(); });
 
   function renderLauncherGrid(companies) {
     var el = document.getElementById('launcher-grid-list');

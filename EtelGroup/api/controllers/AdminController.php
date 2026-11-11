@@ -201,6 +201,13 @@ case 'list_companies': {
                 url, logo_path, icon_key, dot_color, tags, status, sort_order
          FROM companies ORDER BY sort_order ASC, name ASC'
     )->fetchAll();
+    $lm = eg_launch_map($pdo);
+    foreach ($rows as &$r) {
+        $l = $lm[$r['slug']] ?? null;
+        $r['launch_text'] = $l ? $l['launch_text'] : '';
+        $r['notify_enabled'] = $l ? $l['notify_enabled'] : 0;
+    }
+    unset($r);
     ok(array('companies' => $rows));
     break;
 }
@@ -244,11 +251,72 @@ case 'admin_save_site_content': {
     break;
 }
 
+case 'notify_launch': {
+    // Public: someone asks to be told when a coming-soon company launches. Email or phone only, a few per hour per visitor.
+    $pdo = eg_db();
+    eg_ensure_companies_table($pdo); eg_ensure_launch_tables($pdo);
+    $slug = strtolower(trim((string)($body['slug'] ?? '')));
+    $contact = eg_clean_contact((string)($body['contact'] ?? ''));
+    if (!empty($body['website'])) ok(array('saved' => true));            // honeypot field: bots fill it, people never see it
+    if ($contact === '') fail('Enter a valid email or phone number', 400);
+    $c = $pdo->prepare("SELECT c.slug FROM companies c JOIN company_launch l ON l.slug = c.slug WHERE c.slug = ? AND c.status = 'coming_soon' AND l.notify_enabled = 1");
+    $c->execute(array($slug));
+    if (!$c->fetch()) fail('Sign-ups are not open for this company', 400);
+    $ipHash = substr(hash('sha256', ($_SERVER['REMOTE_ADDR'] ?? '') . '|etel-notify'), 0, 16);
+    $n = $pdo->prepare('SELECT COUNT(*) FROM launch_notify WHERE ip_hash = ? AND created_at > DATE_SUB(NOW(), INTERVAL 1 HOUR)');
+    $n->execute(array($ipHash));
+    if ((int)$n->fetchColumn() >= 5) fail('Too many requests - please try again later', 429);
+    $pdo->prepare('INSERT IGNORE INTO launch_notify (slug, contact, ip_hash) VALUES (?,?,?)')->execute(array($slug, $contact, $ipHash));
+    ok(array('saved' => true));
+    break;
+}
+
+case 'admin_save_company_launch': {
+    eg_require_admin();
+    $pdo = eg_db();
+    eg_ensure_companies_table($pdo); eg_ensure_launch_tables($pdo);
+    $slug = strtolower(trim((string)($body['slug'] ?? '')));
+    $chk = $pdo->prepare('SELECT name FROM companies WHERE slug = ?'); $chk->execute(array($slug));
+    $co = $chk->fetch();
+    if (!$co) fail('Company not found', 404);
+    $text = mb_substr(trim(preg_replace('/\s+/u', ' ', strip_tags((string)($body['launch_text'] ?? '')))), 0, 80);
+    $notify = !empty($body['notify_enabled']) ? 1 : 0;
+    $pdo->prepare('INSERT INTO company_launch (slug, launch_text, notify_enabled) VALUES (?,?,?) ON DUPLICATE KEY UPDATE launch_text = VALUES(launch_text), notify_enabled = VALUES(notify_enabled)')
+        ->execute(array($slug, $text, $notify));
+    eg_log_activity('company_launch', $co['name'] . ': launch "' . $text . '", notify ' . ($notify ? 'on' : 'off'));
+    ok(array('saved' => true));
+    break;
+}
+
+case 'admin_export_notify_csv': {
+    eg_require_admin();
+    $pdo = eg_db();
+    eg_ensure_launch_tables($pdo);
+    $slug = strtolower(trim((string)($_GET['slug'] ?? '')));
+    $st = $pdo->prepare('SELECT n.slug, c.name, n.contact, n.created_at FROM launch_notify n LEFT JOIN companies c ON c.slug = n.slug' . ($slug !== '' ? ' WHERE n.slug = ?' : '') . ' ORDER BY n.created_at DESC');
+    $st->execute($slug !== '' ? array($slug) : array());
+    header('Content-Type: text/csv; charset=utf-8');
+    header('Content-Disposition: attachment; filename="etelgroup-launch-notify.csv"');
+    $out = fopen('php://output', 'w');
+    fputcsv($out, array('Company', 'Slug', 'Contact', 'Signed up'));
+    foreach ($st->fetchAll() as $r) fputcsv($out, array($r['name'], $r['slug'], $r['contact'], $r['created_at']));
+    fclose($out);
+    exit;
+}
+
 case 'admin_list_companies': {
     eg_require_admin();
     $pdo = eg_db();
     eg_ensure_companies_table($pdo);
     $rows = $pdo->query('SELECT * FROM companies ORDER BY sort_order ASC, name ASC')->fetchAll();
+    $lm = eg_launch_map($pdo, true);
+    foreach ($rows as &$r) {
+        $l = $lm[$r['slug']] ?? null;
+        $r['launch_text'] = $l ? $l['launch_text'] : '';
+        $r['notify_enabled'] = $l ? $l['notify_enabled'] : 0;
+        $r['notify_count'] = $l ? $l['notify_count'] : 0;
+    }
+    unset($r);
     ok(array('companies' => $rows));
     break;
 }

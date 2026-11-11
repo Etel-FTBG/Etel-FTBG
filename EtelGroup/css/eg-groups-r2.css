@@ -1,0 +1,49 @@
+/* Our Companies: "Live Now" and "Coming Soon" shown as two separate groups, live on top. */
+.co-group { max-width: 1300px; margin: 0 auto 46px; position: relative; z-index: 2; }
+.co-group-title {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  margin: 0 0 20px; padding-bottom: 12px;
+  font-family: var(--font-head, inherit); font-size: 15px; font-weight: 800;
+  letter-spacing: .22em; text-transform: uppercase; color: var(--gold, #d4af37);
+  border-bottom: 1px solid rgba(212,175,55,.22);
+}
+.co-group-eth { letter-spacing: .06em; text-transform: none; font-weight: 600; opacity: .8; }
+.co-group-count {
+  margin-left: auto; min-width: 28px; text-align: center; padding: 3px 10px; border-radius: 999px;
+  font-size: 12px; letter-spacing: 0; background: rgba(212,175,55,.14); border: 1px solid rgba(212,175,55,.3);
+}
+.co-group-dot { width: 10px; height: 10px; border-radius: 50%; background: currentColor; flex: none; }
+.co-group-live .co-group-title { color: #4ade80; border-bottom-color: rgba(34,197,94,.35); }
+.co-group-live .co-group-count { background: rgba(34,197,94,.12); border-color: rgba(34,197,94,.35); }
+.co-group-live .co-group-dot { box-shadow: 0 0 0 0 rgba(74,222,128,.6); animation: coLivePulse 2s infinite; }
+@keyframes coLivePulse { 0% { box-shadow: 0 0 0 0 rgba(74,222,128,.55); } 70% { box-shadow: 0 0 0 9px rgba(74,222,128,0); } 100% { box-shadow: 0 0 0 0 rgba(74,222,128,0); } }
+.co-group-soon .co-group-title { color: rgba(148,163,184,.85); border-bottom-color: rgba(148,163,184,.25); }
+.co-group-soon .co-group-count { background: rgba(148,163,184,.1); border-color: rgba(148,163,184,.3); }
+.co-card-soon { cursor: default; }
+.co-card-soon .co-name, .co-card-soon .co-icon { opacity: .8; }
+@media (prefers-reduced-motion: reduce) { .co-group-live .co-group-dot { animation: none; } }
+
+/* ---- live online dot + coming-soon launch text / notify button ---- */
+.co-meta { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; position: relative; z-index: 1; }
+.co-online { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; opacity: .85; }
+.co-online .lc-dot { flex: none; }
+.co-online-text.online { color: #4ade80; } .co-online-text.offline { color: #f87171; }
+.co-launch { display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 700; letter-spacing: .06em; color: var(--gold, #d4af37); }
+.co-notify-btn {
+  margin-left: auto; cursor: pointer; font: inherit; font-size: 11px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase;
+  padding: 7px 14px; border-radius: 999px; color: #1a0e00; background: linear-gradient(135deg, #e6c24f, #b8921f); border: 0;
+  transition: transform .15s, box-shadow .2s;
+}
+.co-notify-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(212,175,55,.35); }
+.eg-notify-bg { position: fixed; inset: 0; z-index: 10000; background: rgba(8,4,0,.72); display: flex; align-items: center; justify-content: center; padding: 18px; backdrop-filter: blur(3px); }
+.eg-notify { position: relative; width: 100%; max-width: 420px; padding: 28px 24px 24px; border-radius: 16px; background: #1e1204; color: #f5e6a3; border: 1px solid rgba(212,175,55,.45); box-shadow: 0 24px 60px rgba(0,0,0,.55); }
+.eg-notify h3 { margin: 0 0 8px; font-size: 19px; line-height: 1.25; } .eg-notify h3 span { color: #d4af37; }
+.eg-notify p { margin: 0 0 16px; font-size: 14px; opacity: .8; line-height: 1.5; }
+.eg-notify-x { position: absolute; top: 10px; right: 12px; width: 34px; height: 34px; border-radius: 50%; border: 1px solid rgba(212,175,55,.35); background: transparent; color: inherit; cursor: pointer; font-size: 15px; }
+.eg-notify form { display: flex; flex-direction: column; gap: 10px; }
+.eg-notify input[name=contact] { min-height: 46px; padding: 0 14px; border-radius: 10px; border: 1px solid rgba(212,175,55,.4); background: rgba(255,255,255,.06); color: inherit; font-size: 16px; }
+.eg-notify button[type=submit] { min-height: 46px; border-radius: 10px; cursor: pointer; }
+.eg-notify-msg { min-height: 18px; font-size: 13px; } .eg-notify-msg.err { color: #f87171; } .eg-notify-ok { color: #4ade80 !important; opacity: 1 !important; font-weight: 700; margin: 6px 0 0 !important; }
+html[data-theme="light"] .eg-notify { background: #fffaf0; color: #3a2608; border-color: rgba(176,135,15,.5); }
+html[data-theme="light"] .eg-notify input[name=contact] { background: #fff; border-color: rgba(176,135,15,.5); }
+html[data-theme="light"] .co-online-text.online { color: #15803d; } html[data-theme="light"] .co-online-text.offline { color: #b91c1c; }
