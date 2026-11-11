@@ -12,3 +12,18 @@
 .vip-cats .pcats{grid-template-columns:repeat(5,1fr)}
 .vip-cats .pcat span{display:none}
 .vip-cats .pcat{justify-content:center;min-height:42px;padding:6px}
+
+/* region buttons */
+.pregs{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:8px}
+@media (max-width:560px){.pregs{grid-template-columns:repeat(3,1fr)}}
+.preg{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;padding:7px 4px;min-height:50px;border-radius:12px;border:1.5px solid rgba(212,175,55,.45);background:rgba(212,175,55,.08);color:inherit;cursor:pointer;font-family:inherit;transition:transform .1s}
+.preg:hover{transform:translateY(-1px)}
+.preg b{font:800 18px 'Barlow Condensed',sans-serif;letter-spacing:.06em}
+.preg span{font:600 10.5px 'Barlow Condensed',sans-serif;opacity:.75;text-align:center;line-height:1.1}
+.preg.sel{background:linear-gradient(135deg,#e6c24f,#b8921f);border-color:#b8921f;color:#1a1405;box-shadow:0 0 0 3px rgba(212,175,55,.3)}
+.preg.sel span{opacity:.9}
+.pl-reg{display:inline-block;margin-right:6px;padding:1px 6px;border-radius:6px;background:rgba(212,175,55,.22);border:1px solid rgba(212,175,55,.55);font:800 12px 'Barlow Condensed',sans-serif;letter-spacing:.05em;vertical-align:middle}
+.vip-cats .pregs{grid-template-columns:repeat(5,1fr)}
+.vip-cats .preg span{display:none}
+.bulk-sec{margin-bottom:12px}
+.bulk-sec>label{display:block;font:800 12px 'Barlow Condensed',sans-serif;letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px;opacity:.85}

@@ -14,7 +14,7 @@
     <link rel="stylesheet" href="assets/css/etel-premium.css">
     <link rel="stylesheet" href="assets/css/madeya-pro-r2.css">
     <link rel="stylesheet" href="assets/css/madeya-vehicles.css">
-    <link rel="stylesheet" href="assets/css/madeya-plates.css">
+    <link rel="stylesheet" href="assets/css/madeya-plates-r2.css">
     <script src="assets/js/madeya-pro-r2.js"></script>
     <link rel="icon" href="assets/img/etel-logo.png">
 </head>
@@ -100,7 +100,7 @@
     const SITE_NAME = '<?= SITE_NAME ?>';
     </script>
     <script src="assets/js/madeya-vehicles-r4.js"></script>
-    <script src="assets/js/madeya-plates.js"></script>
+    <script src="assets/js/madeya-plates-r2.js"></script>
     <script src="assets/js/icons.js"></script>
     <script src="assets/js/driver-stations-r2.js"></script>
     <script src="assets/js/driver-app-r3.js"></script>
