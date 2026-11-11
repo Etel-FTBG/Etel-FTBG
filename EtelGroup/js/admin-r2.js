@@ -230,6 +230,7 @@ function switchTab(name) {
   document.getElementById('panel-companies').style.display = name === 'companies' ? 'block' : 'none';
   document.getElementById('panel-employees').style.display = name === 'employees' ? 'block' : 'none';
   document.getElementById('panel-activity').style.display = name === 'activity' ? 'block' : 'none';
+  document.getElementById('panel-sitecontent').style.display = name === 'sitecontent' ? 'block' : 'none';
   document.getElementById('tab-panel-finance').style.display = name === 'finance' ? 'block' : 'none';
   document.getElementById('tab-nav-dashboard').classList.toggle('active', name === 'dashboard');
   document.getElementById('tab-nav-companies').classList.toggle('active', name === 'companies');
@@ -239,6 +240,7 @@ function switchTab(name) {
   if (name === 'companies') loadCompanies();
   if (name === 'employees') loadEmployeesTab();
   if (name === 'activity') loadActivityTab(1);
+  if (name === 'sitecontent') loadSiteContent();
   if (name === 'finance') loadFinanceTab();
 }
 
@@ -703,6 +705,7 @@ const EGA_ACTIVITY_LABELS = {
   companies_reordered: 'Reordered companies',
   employee_role_set: 'Assigned employee role',
   employee_role_removed: 'Removed employee role',
+  site_content: 'Edited page content',
 };
 
 async function loadActivityTab(page) {
@@ -739,3 +742,36 @@ function renderActivityPagination(page, totalPages) {
 }
 
 document.addEventListener('ir:theme', function () { if (EGA_DAYS && document.getElementById('trend-chart')) renderTrendChart(EGA_DAYS); });
+
+
+// ---------- Site content (texts / links shown on the master page) ----------
+let EGA_SC_SCHEMA = [];
+async function loadSiteContent() {
+  const box = document.getElementById('sc-form');
+  box.innerHTML = '<p class="empty-row">Loading...</p>';
+  const res = await egaApi('admin_get_site_content');
+  if (!res.ok) { box.innerHTML = '<p class="empty-row">' + egaEsc(res.error || 'Could not load') + '</p>'; return; }
+  EGA_SC_SCHEMA = res.data.schema; const vals = res.data.content || {};
+  box.innerHTML = EGA_SC_SCHEMA.map(g => {
+    const rows = g.fields.map(f => {
+      const v = vals[f.k] || { en: '', am: '' };
+      const input = (id, val, ph) => f.type === 'area'
+        ? `<textarea id="${id}" rows="3" maxlength="1000" placeholder="${egaEsc(ph)}">${egaEsc(val)}</textarea>`
+        : `<input type="${f.type === 'url' ? 'url' : 'text'}" id="${id}" maxlength="${f.type === 'url' ? 400 : 250}" placeholder="${egaEsc(ph)}" value="${egaEsc(val)}">`;
+      return `<div class="cf-field" style="margin-bottom:12px"><label>${egaEsc(f.label)}</label>
+        <div class="cf-grid" style="${f.bi ? '' : 'grid-template-columns:1fr'}">${input('sc_' + f.k + '_en', v.en, f.bi ? 'English (empty = built-in text)' : 'Empty = built-in')}${f.bi ? input('sc_' + f.k + '_am', v.am, 'አማርኛ (empty = built-in)') : ''}</div></div>`;
+    }).join('');
+    return `<div class="msg-table" style="padding:16px 18px;margin-bottom:16px"><h3 style="font-size:14px;color:var(--gold-light);margin-bottom:12px">${egaEsc(g.title)}</h3>${rows}</div>`;
+  }).join('');
+}
+async function saveSiteContent() {
+  const items = {};
+  EGA_SC_SCHEMA.forEach(g => g.fields.forEach(f => {
+    const en = document.getElementById('sc_' + f.k + '_en'), am = document.getElementById('sc_' + f.k + '_am');
+    items[f.k] = { en: en ? en.value : '', am: am ? am.value : '' };
+  }));
+  const res = await egaApi('admin_save_site_content', { items });
+  if (!res.ok) { alert(res.error || 'Could not save'); return; }
+  alert('Saved: ' + res.data.saved + ' changed, ' + res.data.cleared + ' reset to the built-in text. Refresh the master page to see it.');
+  loadSiteContent();
+}

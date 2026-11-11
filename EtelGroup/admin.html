@@ -46,6 +46,7 @@
       <div class="irx-nav-h">Group</div>
       <a data-tab="companies" id="tab-nav-companies" onclick="switchTab('companies')"><i>🏢</i>Companies</a>
       <a data-tab="employees" id="tab-nav-employees" onclick="switchTab('employees')"><i>👥</i>Employees</a>
+      <a data-tab="sitecontent" id="tab-nav-sitecontent" onclick="switchTab('sitecontent')"><i>📝</i>Site content</a>
       <a data-tab="activity" id="tab-nav-activity" onclick="switchTab('activity')"><i>🧾</i>Activity</a>
       <div class="irx-nav-h">Money</div>
       <a data-tab="finance" id="tab-nav-finance" onclick="switchTab('finance')"><i>📈</i>Finance &amp; Planning</a>
@@ -193,6 +194,18 @@
       </div>
     </section>
 
+    <!-- SITE CONTENT TAB -->
+    <section id="panel-sitecontent" style="display:none">
+      <div class="toolbar">
+        <h2 style="font-size:15px;color:var(--gold-light)">Master page content</h2>
+        <div style="flex:1"></div>
+        <a class="btn btn-outline" style="width:auto;text-decoration:none" href="index.html" target="_blank">View page</a>
+        <button class="btn btn-primary" style="width:auto" onclick="saveSiteContent()">Save changes</button>
+      </div>
+      <p style="color:var(--text-dim);font-size:13px;margin:4px 2px 14px">Type a text to replace the one on the page. <b>Leave a box empty to keep the built-in text.</b> Fields with an Amharic box show on the page when a visitor switches to አማ.</p>
+      <div id="sc-form"><p class="empty-row">Loading...</p></div>
+    </section>
+
     <!-- ACTIVITY TAB -->
     <section id="panel-activity" style="display:none">
       <div class="toolbar">
@@ -324,7 +337,7 @@
   </div>
 </div>
 
-<script src="EtelGroup/js/admin.js?v=2"></script>
-<script src="EtelGroup/js/eg-theme.js?v=1"></script>
+<script src="EtelGroup/js/admin-r2.js"></script>
+<script src="EtelGroup/js/eg-theme-r2.js"></script>
 </body>
 </html>
