@@ -311,6 +311,35 @@ function renderLitersStrip(L) {
         '<span>Queue needs about <b>' + fmtL(L.queue_liters) + ' L</b></span>';
 }
 
+function renderFuelCard(f) {
+    const el = document.getElementById('fuelCard'); if (!el || !f) return;
+    el.style.display = 'block';
+    if (!document.getElementById('fcStatus')) {
+        el.innerHTML = '<div class="fc-top"><b>⛽ Fuel available at this station</b><span id="fcStatus"></span></div>' +
+            '<div class="fc-set"><input type="number" id="fcInput" min="0" step="any" inputmode="decimal" placeholder="Liters in the tank now"><button type="button" class="btn-primary" onclick="saveFuelAvailable()">Update</button></div>' +
+            '<div id="fcAlert"></div>';
+    }
+    const st = document.getElementById('fcStatus'), al = document.getElementById('fcAlert');
+    el.classList.remove('bad', 'warn');
+    if (!f.set) { st.textContent = 'Not entered yet - type the liters you have, so the system can warn you when the queue needs more.'; al.innerHTML = ''; return; }
+    st.innerHTML = '<b>' + fmtL(f.remaining) + ' L</b> left <small style="opacity:.7">(entered ' + fmtL(f.available) + ' L' + (f.updated_at ? ' at ' + escHtml(String(f.updated_at).slice(5, 16)) : '') + ')</small>';
+    if (f.status === 'out') { el.classList.add('bad'); al.innerHTML = '<div class="fuel-alert">⚠️ No fuel left. ' + f.queued + ' vehicle(s) are still waiting.</div>'; }
+    else if (f.status === 'short') { el.classList.add('bad'); al.innerHTML = '<div class="fuel-alert">⚠️ Not enough fuel for the queue: ' + f.queued + ' waiting vehicles need about ' + fmtL(f.queue_liters) + ' L but only ' + fmtL(f.remaining) + ' L is left (short by about ' + fmtL(f.short_by) + ' L).</div>'; }
+    else if (f.status === 'low') { el.classList.add('warn'); al.innerHTML = '<div class="fuel-alert amber">Fuel is running low: the queue needs about ' + fmtL(f.queue_liters) + ' L and ' + fmtL(f.remaining) + ' L is left.</div>'; }
+    else al.innerHTML = f.queue_liters ? '<small style="opacity:.75">Queue needs about ' + fmtL(f.queue_liters) + ' L - enough fuel.</small>' : '';
+    if (f.unknown) al.innerHTML += '<small style="display:block;opacity:.7;margin-top:4px">' + f.unknown + ' waiting vehicle(s) have no tank size set, so they are not counted.</small>';
+}
+async function saveFuelAvailable() {
+    const v = document.getElementById('fcInput').value;
+    if (v === '' || Number(v) < 0) { showNotification(ICONS.error + ' Enter the liters available', 'error'); return; }
+    const fd = new FormData(); fd.append('liters', v);
+    try {
+        const d = await (await fetch(`${API}&action=set_fuel_available`, { method: 'POST', body: fd })).json();
+        showNotification((d.success ? ICONS.success : ICONS.error) + ' ' + escHtml(d.message || ''), d.success ? 'success' : 'error');
+        if (d.success) { document.getElementById('fcInput').value = ''; renderFuelCard(d.fuel); }
+    } catch (e) { showNotification(ICONS.error + ' Could not save', 'error'); }
+}
+
 async function loadStats() {
     try {
         const response = await fetch(`${API}&action=get_stats`);
@@ -342,6 +371,7 @@ async function loadStats() {
 
         renderFuelGauge(s);
         renderLitersStrip(s.liters);
+        renderFuelCard(s.fuel);
     } catch (error) {
         console.error('Error loading stats:', error);
     }

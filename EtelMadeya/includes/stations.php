@@ -14,6 +14,15 @@ function ensureStationColumns() {
         if (empty($have['longitude']))  db()->query("ALTER TABLE controllers ADD COLUMN longitude DECIMAL(10,7) NULL");
         if (empty($have['is_open']))    db()->query("ALTER TABLE controllers ADD COLUMN is_open TINYINT(1) NOT NULL DEFAULT 1");
         if (empty($have['open_hours'])) db()->query("ALTER TABLE controllers ADD COLUMN open_hours VARCHAR(60) NULL");
+        if (empty($have['fuel_available_liters'])) db()->query("ALTER TABLE controllers ADD COLUMN fuel_available_liters DECIMAL(10,1) NULL DEFAULT NULL");
+        if (empty($have['fuel_updated_at'])) db()->query("ALTER TABLE controllers ADD COLUMN fuel_updated_at DATETIME NULL DEFAULT NULL");
+        if (empty($have['region'])) {
+            db()->query("ALTER TABLE controllers ADD COLUMN region VARCHAR(60) NULL DEFAULT NULL");
+            // first time: guess each station's region from its name / address
+            foreach (madeyaRegionList() as $city) {
+                db()->query("UPDATE controllers SET region = ? WHERE region IS NULL AND (station_address LIKE ? OR station_name LIKE ?)", [$city, '%' . $city . '%', '%' . $city . '%']);
+            }
+        }
     } catch (Exception $e) {
         error_log('ensureStationColumns: ' . $e->getMessage());
     }
@@ -258,6 +267,11 @@ function ensurePlateLog() {
             INDEX idx_prl_time (created_at),
             INDEX idx_prl_plate (old_plate, new_plate)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+        $have = [];
+        foreach (db()->fetchAll("SHOW COLUMNS FROM plate_registry_log") as $c) $have[$c['Field']] = true;
+        if (empty($have['old_type_id'])) db()->query("ALTER TABLE plate_registry_log ADD COLUMN old_type_id INT UNSIGNED NULL");
+        if (empty($have['new_type_id'])) db()->query("ALTER TABLE plate_registry_log ADD COLUMN new_type_id INT UNSIGNED NULL");
+        if (empty($have['restored_at'])) db()->query("ALTER TABLE plate_registry_log ADD COLUMN restored_at DATETIME NULL");
     } catch (Exception $e) { error_log('ensurePlateLog: ' . $e->getMessage()); }
 }
 
@@ -268,12 +282,12 @@ function madeyaVehicleTypeName($id) {
 }
 
 /** Write one audit row. action: edit | bulk | release */
-function madeyaPlateLog($action, $oldPlate, $newPlate, $oldType, $newType) {
+function madeyaPlateLog($action, $oldPlate, $newPlate, $oldType, $newType, $oldTypeId = null, $newTypeId = null) {
     ensurePlateLog();
     try {
-        db()->query("INSERT INTO plate_registry_log (admin_id, admin_name, action, old_plate, new_plate, old_type, new_type, created_at) VALUES (?,?,?,?,?,?,?,?)",
+        db()->query("INSERT INTO plate_registry_log (admin_id, admin_name, action, old_plate, new_plate, old_type, new_type, old_type_id, new_type_id, created_at) VALUES (?,?,?,?,?,?,?,?,?,?)",
             [isset($_SESSION['admin_id']) ? (int)$_SESSION['admin_id'] : null, isset($_SESSION['admin_name']) ? $_SESSION['admin_name'] : null,
-             $action, $oldPlate, $newPlate, $oldType, $newType, date('Y-m-d H:i:s')]);
+             $action, $oldPlate, $newPlate, $oldType, $newType, $oldTypeId ? (int)$oldTypeId : null, $newTypeId ? (int)$newTypeId : null, date('Y-m-d H:i:s')]);
     } catch (Exception $e) { error_log('madeyaPlateLog: ' . $e->getMessage()); }
 }
 
@@ -282,4 +296,40 @@ function madeyaPlateParts($plate) {
     $plate = strtoupper(trim((string)$plate));
     preg_match('/^(?:([1-5])-)?(?:([A-Z]{2})-)?(.+)$/', $plate, $m);
     return [isset($m[1]) ? $m[1] : '', isset($m[2]) ? $m[2] : '', isset($m[3]) ? $m[3] : $plate];
+}
+
+
+/** Cities / regions offered as suggestions when an admin sets a station's region (any text is accepted). */
+function madeyaRegionList() {
+    return ['Addis Ababa', 'Hawassa', 'Shashemene', 'Adama', 'Bishoftu', 'Bahir Dar', 'Dire Dawa', 'Mekelle', 'Jimma', 'Gondar', 'Dessie',
+            'Arba Minch', 'Dilla', 'Wolaita Sodo', 'Hosaena', 'Harar', 'Jijiga', 'Nekemte', 'Assosa', 'Semera', 'Gambela'];
+}
+
+/**
+ * Fuel left at a station and whether the waiting queue will outrun it.
+ * The controller enters "fuel available" (liters) whenever a delivery arrives; every vehicle served after that
+ * is subtracted (recorded liters, or the vehicle type's tank size). The queue need = waiting vehicles x tank size.
+ * status: unset | ok | low (queue needs > 80% of what is left) | short (queue needs more than is left) | out (nothing left)
+ */
+function madeyaFuelStatus($controllerId) {
+    ensureStationColumns(); ensureTankColumn();
+    $c = db()->fetchOne("SELECT fuel_available_liters, fuel_updated_at FROM controllers WHERE id = ?", [(int)$controllerId]);
+    $q = db()->fetchOne("SELECT COALESCE(SUM(vt.tank_liters),0) AS l, COUNT(*) AS n, SUM(CASE WHEN vt.tank_liters IS NULL THEN 1 ELSE 0 END) AS unk
+                         FROM queue q JOIN vehicle_types vt ON vt.id = q.vehicle_type_id WHERE q.controller_id = ? AND q.status = 'queued'", [(int)$controllerId]);
+    $need = $q ? (float)$q['l'] : 0.0;
+    $out = ['set' => false, 'status' => 'unset', 'available' => null, 'remaining' => null, 'served_since' => 0.0, 'updated_at' => null,
+            'queue_liters' => round($need, 1), 'queued' => $q ? (int)$q['n'] : 0, 'unknown' => $q ? (int)$q['unk'] : 0, 'short_by' => 0.0];
+    if (!$c || $c['fuel_available_liters'] === null) return $out;
+    $avail = (float)$c['fuel_available_liters'];
+    $since = $c['fuel_updated_at'] ?: '1970-01-01 00:00:00';
+    $r = db()->fetchOne("SELECT COALESCE(SUM(COALESCE(NULLIF(r.fuel_amount_liters,0), vt.tank_liters, 0)),0) AS l
+                         FROM report r JOIN vehicle_types vt ON vt.id = r.vehicle_type_id WHERE r.controller_id = ? AND r.served_at >= ?", [(int)$controllerId, $since]);
+    $served = $r ? (float)$r['l'] : 0.0;
+    $rem = max(0.0, $avail - $served);
+    $status = 'ok';
+    if ($rem <= 0) $status = 'out';
+    elseif ($need > $rem) $status = 'short';
+    elseif ($need > 0.8 * $rem) $status = 'low';
+    return array_merge($out, ['set' => true, 'status' => $status, 'available' => round($avail, 1), 'remaining' => round($rem, 1), 'served_since' => round($served, 1),
+        'updated_at' => $c['fuel_updated_at'], 'short_by' => round(max(0.0, $need - $rem), 1)]);
 }
