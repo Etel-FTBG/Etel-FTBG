@@ -208,6 +208,41 @@ async function loadDashboard() {
     loadFuelSnapshot();
 }
 
+async function searchPlateRegistry() {
+    const q = document.getElementById('prSearch').value.trim();
+    const box = document.getElementById('prResults');
+    if (!q) { box.innerHTML = ''; return; }
+    box.innerHTML = '<p class="empty-state">Searching...</p>';
+    try {
+        const res = await fetch(`${API}?action=get_plate_registry&q=${encodeURIComponent(q)}`);
+        const d = await res.json();
+        if (!d.success || !d.rows.length) { box.innerHTML = '<p class="empty-state">No plate found - it has not been registered yet.</p>'; return; }
+        if (!vehicleTypesCache.length) await loadVehicleTypes();
+        box.innerHTML = d.rows.map(r => {
+            const opts = vehicleTypesCache.map(t => `<option value="${t.id}" ${t.id == r.vehicle_type_id ? 'selected' : ''}>${escHtml(t.name)}</option>`).join('');
+            const when = r.first_registered_at ? new Date(r.first_registered_at.replace(' ', 'T')).toLocaleString() : '';
+            return `<div class="pr-row"><div class="pr-top"><b>${plateHtml(r.plate_number)}</b><small>First registered ${escHtml(when)}${r.station_name ? ' at ' + escHtml(r.station_name) : ''}</small></div>
+                <div class="pr-act"><select id="prType_${escHtml(r.plate_number)}">${opts}</select>
+                <button type="button" class="am-btn" onclick="savePlateRegistry('${escHtml(r.plate_number)}')">Save type</button>
+                <button type="button" class="am-btn ghost" onclick="releasePlateRegistry('${escHtml(r.plate_number)}')">Release</button></div></div>`;
+        }).join('');
+    } catch (e) { box.innerHTML = '<p class="empty-state">Search failed</p>'; }
+}
+async function savePlateRegistry(plate) {
+    const fd = new FormData(); fd.append('action', 'set_plate_registry'); fd.append('plate_number', plate);
+    fd.append('vehicle_type_id', document.getElementById('prType_' + plate).value);
+    const d = await (await fetch(API, { method: 'POST', body: fd })).json();
+    showNotification((d.success ? ICONS.success : ICONS.error) + ' ' + escHtml(d.message || ''), d.success ? 'success' : 'error');
+    if (d.success) searchPlateRegistry();
+}
+async function releasePlateRegistry(plate) {
+    if (!confirm('Release plate ' + plate + '? It can then be registered under any vehicle type again.')) return;
+    const fd = new FormData(); fd.append('action', 'delete_plate_registry'); fd.append('plate_number', plate);
+    const d = await (await fetch(API, { method: 'POST', body: fd })).json();
+    showNotification((d.success ? ICONS.success : ICONS.error) + ' ' + escHtml(d.message || ''), d.success ? 'success' : 'error');
+    if (d.success) searchPlateRegistry();
+}
+
 function renderLiters(data) {
     const L = (data.stats && data.stats.liters) || {};
     const n = v => Number(v || 0).toLocaleString(undefined, { maximumFractionDigits: 1 });

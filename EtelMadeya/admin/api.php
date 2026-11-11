@@ -594,6 +594,45 @@ try {
             jsonResponse(['success' => true, 'reports' => $reports, 'stats' => $stats]);
             break;
             
+        // ─── PLATE REGISTRY (first vehicle type of each plate) ──────
+        case 'get_plate_registry':
+            requireAdminAuth();
+            ensurePlateRegistry();
+            $q = strtoupper(trim(sanitize($_GET['q'] ?? $_POST['q'] ?? '')));
+            if ($q === '') jsonResponse(['success' => true, 'rows' => []]);
+            $like = '%' . str_replace(['%', '_'], ['\\%', '\\_'], $q) . '%';
+            $rows = db()->fetchAll(
+                "SELECT pr.plate_number, pr.vehicle_type_id, vt.name AS vehicle_type_name, pr.station_name, pr.first_registered_at
+                 FROM plate_registry pr LEFT JOIN vehicle_types vt ON vt.id = pr.vehicle_type_id
+                 WHERE pr.plate_number LIKE ? ORDER BY pr.first_registered_at DESC LIMIT 20", [$like]);
+            if (!$rows) { // maybe an older plate not in the registry yet
+                $o = madeyaPlateOwner($q);
+                if ($o) $rows = [$o];
+            }
+            jsonResponse(['success' => true, 'rows' => $rows]);
+            break;
+
+        case 'set_plate_registry':
+            requireAdminAuth();
+            ensurePlateRegistry();
+            $plate = strtoupper(trim(sanitize($_POST['plate_number'] ?? '')));
+            $typeId = (int)($_POST['vehicle_type_id'] ?? 0);
+            if ($plate === '' || !$typeId) jsonResponse(['success' => false, 'message' => 'Plate and vehicle type required'], 400);
+            db()->query("INSERT INTO plate_registry (plate_number, vehicle_type_id, first_registered_at) VALUES (?,?,?) ON DUPLICATE KEY UPDATE vehicle_type_id = VALUES(vehicle_type_id)", [$plate, $typeId, date('Y-m-d H:i:s')]);
+            db()->insert('activity_log', ['admin_id' => $_SESSION['admin_id'], 'action' => 'set_plate_registry', 'details' => "Plate $plate set to vehicle type $typeId", 'ip_address' => getClientIP()]);
+            jsonResponse(['success' => true, 'message' => 'Plate vehicle type updated']);
+            break;
+
+        case 'delete_plate_registry':
+            requireAdminAuth();
+            ensurePlateRegistry();
+            $plate = strtoupper(trim(sanitize($_POST['plate_number'] ?? '')));
+            if ($plate === '') jsonResponse(['success' => false, 'message' => 'Plate required'], 400);
+            db()->query("DELETE FROM plate_registry WHERE plate_number = ?", [$plate]);
+            db()->insert('activity_log', ['admin_id' => $_SESSION['admin_id'], 'action' => 'delete_plate_registry', 'details' => "Plate $plate removed from the plate registry", 'ip_address' => getClientIP()]);
+            jsonResponse(['success' => true, 'message' => 'Plate released - it can be registered under any vehicle type again']);
+            break;
+
         // ─── SETTINGS ───────────────────────────────────────────────
         
         case 'get_settings':
