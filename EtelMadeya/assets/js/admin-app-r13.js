@@ -245,7 +245,8 @@ async function searchPlateRegistry() {
                 <div class="pr-act"><select class="pr-cat" title="Plate category">${catOpts}</select><select class="pr-reg" title="Region">${regOpts}</select></div>
                 <div class="pr-act" style="margin-top:8px"><select class="pr-type" title="Vehicle type">${opts}</select>
                 <button type="button" class="am-btn" onclick="savePlateRegistry(this)">Save</button>
-                <button type="button" class="am-btn ghost" onclick="releasePlateRegistry('${key}')">Release</button></div></div>`;
+                <button type="button" class="am-btn ghost" onclick="releasePlateRegistry('${key}')">Release</button>
+                ${r.claimed ? `<button type="button" class="am-btn ghost" title="Saved in a driver's My Vehicles" onclick="unlinkDriverVehicle('${key}')">Unlink driver</button>` : ''}</div></div>`;
         }).join('');
         prUpdateCount();
     } catch (e) { box.innerHTML = '<p class="empty-state">Search failed</p>'; }
@@ -298,6 +299,13 @@ async function loadPlateLog(force) {
             return `<div class="pr-logrow"><div class="pr-logtop"><div><span class="pr-tag pr-${r.action}">${label[r.action] || r.action}</span> ${plateTxt}</div>${undo}</div><small>${type ? type + ' &middot; ' : ''}by ${escHtml(r.admin_name || 'admin')} &middot; ${escHtml(when)}</small></div>`;
         }).join('');
     } catch (e) { list.innerHTML = '<p class="empty-state">Could not load the log</p>'; }
+}
+async function unlinkDriverVehicle(plate) {
+    if (!confirm('Unlink ' + plate + ' from the driver account that saved it? That driver (or another) can then save it again.')) return;
+    const fd = new FormData(); fd.append('action', 'unlink_driver_vehicle'); fd.append('plate_number', plate);
+    const d = await (await fetch(API, { method: 'POST', body: fd })).json();
+    showNotification((d.success ? ICONS.success : ICONS.error) + ' ' + escHtml(d.message || ''), d.success ? 'success' : 'error');
+    if (d.success) searchPlateRegistry();
 }
 async function releasePlateRegistry(plate) {
     if (!confirm('Release plate ' + plate + '? It can then be registered under any vehicle type again.')) return;

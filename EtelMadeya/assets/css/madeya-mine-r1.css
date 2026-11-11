@@ -1,0 +1,15 @@
+/* My Vehicles (driver account) */
+.mine-wrap{max-width:900px;margin:0 auto;padding-bottom:30px}
+.mine-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;margin:14px 0 22px}
+.mine-card{padding:16px;border-radius:16px;border:1.5px solid rgba(212,175,55,.45);background:rgba(212,175,55,.06);display:flex;flex-direction:column;gap:6px}
+.mine-top{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}.mine-plate{font-size:20px}
+.mine-type{display:flex;align-items:center;gap:6px;font-weight:700;font-size:13px}.mine-nick{opacity:.75;font-size:13px}
+.mine-line{font-size:14px;line-height:1.4}.mine-muted{opacity:.65}.mine-ok{color:#15803d;font-weight:700}.mine-wait{color:#b45309;font-weight:700}.mine-now{font-weight:600}
+.mine-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}.mine-actions .btn{flex:1 1 auto;min-height:42px;padding:8px 12px;font-size:13px}
+.mine-del{border:1.5px solid rgba(217,48,37,.55)!important;color:#d93025!important;background:transparent!important}
+.mine-empty{text-align:center;padding:26px;opacity:.75}
+.mine-add{margin:18px 0}.mine-add h3{margin:0 0 6px}.mine-add label{display:block;margin:12px 0 6px;font-weight:700;font-size:13px}
+.mine-err{min-height:20px;color:#d93025;font-weight:600;margin:8px 0}
+.mine-h2{margin:26px 0 8px}
+.mine-kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px}.mine-kpis div{padding:10px;border-radius:12px;border:1.5px solid rgba(212,175,55,.4);background:rgba(212,175,55,.07)}.mine-kpis b{display:block;font-size:18px}.mine-kpis span{font-size:12px;opacity:.7}
+.mine-row{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:10px 12px;margin-top:8px;border-radius:12px;border:1px solid rgba(212,175,55,.3)}.mine-row>div:first-child span{display:block;font-size:13px;opacity:.75}.mine-row-r>span{display:inline-flex;align-items:center;gap:4px;margin-bottom:2px;opacity:1}.mine-row-r{text-align:right}.mine-row-r b{display:block}
