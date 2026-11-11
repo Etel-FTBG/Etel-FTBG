@@ -16,7 +16,7 @@
     <link rel="stylesheet" href="../assets/css/madeya-modals.css">
     <link rel="stylesheet" href="../assets/css/madeya-settings.css">
     <link rel="stylesheet" href="../assets/css/madeya-liters.css">
-    <link rel="stylesheet" href="../assets/css/madeya-alerts-r4.css">
+    <link rel="stylesheet" href="../assets/css/madeya-alerts-r5.css">
     <script src="../assets/js/madeya-pro-r2.js"></script>
     <link rel="icon" href="../assets/img/etel-logo.png">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -285,6 +285,21 @@
                         </div>
                         <div id="litReport"></div>
                     </div>
+                    <div class="settings-card" style="margin-top:16px">
+                        <h3>Fuel deliveries vs liters served</h3>
+                        <p class="am-note">Deliveries are recorded by the station controllers. Balance = delivered minus served (estimated) in the period.</p>
+                        <div class="pr-act">
+                            <input type="date" id="fdFrom" aria-label="From"><input type="date" id="fdTo" aria-label="To">
+                            <select id="fdStation" aria-label="Station"><option value="">All stations</option></select>
+                            <button type="button" class="am-btn" onclick="loadFuelDeliveries()">Show</button>
+                        </div>
+                        <div id="fdReport"></div>
+                    </div>
+                    <div class="settings-card" style="margin-top:16px">
+                        <h3>Day closings</h3>
+                        <p class="am-note">When a controller closes the day, that station cannot register or serve until you reopen it here.</p>
+                        <div id="dayClosings"></div>
+                    </div>
                 </div>
 
                 <!-- Settings Tab -->
@@ -364,6 +379,15 @@
                             </details>
                         </div>
                         <div class="settings-card">
+                            <h3>Fuel shortage alerts (Telegram)</h3>
+                            <p class="am-note">When a station's waiting queue needs more fuel than is left (or the fuel is finished), a Telegram message goes to the chats below - once, then again every 3 hours while it lasts. Create a bot with @BotFather, paste its token, press Start on the bot from each phone (or add it to a group), then use "Find chats".</p>
+                            <label class="am-check-label"><input type="checkbox" id="faEnabled"> Send fuel alerts</label>
+                            <div class="am-field"><label for="faToken">Bot token <span id="faTokenState" style="opacity:.7"></span></label><input type="password" id="faToken" autocomplete="off" placeholder="Paste the token from @BotFather (leave empty to keep the saved one)"></div>
+                            <div class="am-field"><label for="faChats">Telegram chat IDs (comma separated)</label><input type="text" id="faChats" autocomplete="off" placeholder="e.g. 123456789, -1001234567890"></div>
+                            <div id="faFound"></div>
+                            <div class="pr-act"><button type="button" class="am-btn ghost" onclick="findTelegramChats()">Find chats</button><button type="button" class="am-btn" onclick="saveFuelAlert()">Save</button><button type="button" class="am-btn ghost" onclick="testFuelAlert()">Send test message</button></div>
+                        </div>
+                        <div class="settings-card">
                             <h3>Queue Settings</h3>
                             <form id="queueSettingsForm" onsubmit="saveSettings(event, 'queue')">
                                 <div class="am-field">
@@ -409,7 +433,7 @@
     <script src="../assets/js/madeya-vehicles-r4.js"></script>
     <script src="../assets/js/madeya-plates-r2.js"></script>
     <script src="../assets/js/icons.js"></script>
-    <script src="../assets/js/admin-app-r11.js"></script>
+    <script src="../assets/js/admin-app-r12.js"></script>
     <script src="../assets/js/admin-station-r2.js"></script>
 </body>
 </html>

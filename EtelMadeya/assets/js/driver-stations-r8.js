@@ -256,6 +256,17 @@
 
 
     // ── list ────────────────────────────────────────────────────────
+    function waitNum(s) {
+        if (!s.is_open) return '';
+        var w = s.wait || {}, txt, cls = '';
+        if (s.fuel_status === 'out') { txt = 'No fuel'; cls = ' bad'; }
+        else if (w.minutes === 0) txt = 'No wait';
+        else if (w.minutes == null) txt = '-';
+        else if (w.minutes >= 90) { var h = Math.floor(w.minutes / 60), m = w.minutes % 60; txt = '~' + h + 'h' + (m ? ' ' + m + 'm' : ''); }
+        else txt = '~' + w.minutes + ' min';
+        var tip = w.basis === 'recent' ? 'Based on how fast this station served the last 90 minutes' : (w.basis === 'today' ? 'Based on how fast this station served today' : 'Not enough serving data yet');
+        return '<div class="stn-num stn-w' + cls + '" title="' + tip + '"><b>' + txt + '</b><span>Est. wait</span></div>';
+    }
     function regionOf(s) { return s.region || '__other'; }
     function fillRegions() {
         var sel = document.getElementById('stnRegion'); if (!sel) return;
@@ -303,8 +314,9 @@
             var can = s.lat != null && s.lng != null;
             return '<div class="stn-card ' + (s.is_open ? '' : 'closed') + (can ? ' tap' : '') + (selected == s.id ? ' sel' : '') + '"' + (can ? ' onclick="stnSelect(' + s.id + ')"' : '') + '>' +
                 '<div class="stn-top"><div><div class="stn-name">' + esc(s.name) + '</div><div class="stn-addr">' + esc(s.address || '') + (s.open_hours ? ' · ' + esc(s.open_hours) : '') + '</div></div>' +
-                '<span class="stn-pill ' + (s.is_open ? 'open' : 'closed') + '">' + (s.is_open ? 'OPEN TODAY' : 'CLOSED') + '</span></div>' +
+                '<span class="stn-pill ' + (s.is_open ? 'open' : 'closed') + '">' + (s.is_open ? 'OPEN TODAY' : (s.day_closed ? 'CLOSED FOR TODAY' : 'CLOSED')) + '</span></div>' +
                 '<div class="stn-nums"><div class="stn-num"><b>' + s.queued + '</b><span>Cars waiting</span></div><div class="stn-num"><b>' + s.served_today + '</b><span>Served today</span></div>' +
+                waitNum(s) +
                 (s._d != null ? '<div class="stn-num"><b>' + s._d.toFixed(1) + '</b><span>km away</span></div>' : '') + '</div>' +
                 (chips ? '<div class="stn-chips">' + chips + '</div>' : '') +
                 (s.fuel_status === 'short' || s.fuel_status === 'out' ? '<div class="stn-fuel bad">⛽ ' + (s.fuel_status === 'out' ? 'Fuel finished' : 'Fuel may run out before the queue is served') + '</div>' : (s.fuel_status === 'low' ? '<div class="stn-fuel low">⛽ Fuel is running low</div>' : '')) +

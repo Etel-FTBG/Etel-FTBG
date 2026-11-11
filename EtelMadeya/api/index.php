@@ -86,7 +86,9 @@ try {
             $driverPhone = sanitize($_POST['driver_phone'] ?? '');
             $controllerId = (int)($_POST['controller_id'] ?? 1);
 
-            $result = madeyaRegisterVehicle($controllerId, $vehicleTypeId, $plate, $driverName, $driverPhone);
+            $closed = madeyaDayClosed($controllerId);
+            $result = $closed ? madeyaDayClosedResult($closed) : madeyaRegisterVehicle($controllerId, $vehicleTypeId, $plate, $driverName, $driverPhone);
+            if (!empty($result['success'])) madeyaFuelAlertCheck($controllerId);
 
             // Remember this phone -> plate/type association so a future
             // NFC tap of this same driver's card can auto-register them
@@ -178,10 +180,12 @@ try {
                     'address' => $st['station_address'],
                     'lat' => $st['latitude'] !== null ? (float)$st['latitude'] : null,
                     'lng' => $st['longitude'] !== null ? (float)$st['longitude'] : null,
-                    'is_open' => (int)$st['is_open'] === 1,
+                    'is_open' => (int)$st['is_open'] === 1 && !madeyaDayClosed((int)$st['id']),
                     'open_hours' => $st['open_hours'],
                     'region' => $st['region'] ?: '',
                     'fuel_status' => ($fs = madeyaFuelStatus($sid)) && $fs['set'] ? $fs['status'] : '',
+                    'day_closed' => (bool)madeyaDayClosed($sid),
+                    'wait' => madeyaWaitEstimate($sid, $total),
                     'queued' => $total,
                     'served_today' => $servedBy[$sid] ?? 0,
                     'types' => $types,
@@ -460,6 +464,7 @@ try {
             if (!$queueId) {
                 jsonResponse(['success' => false, 'message' => 'Queue ID required'], 400);
             }
+            if ($dc = madeyaDayClosed($_SESSION['controller_id'])) { $r = madeyaDayClosedResult($dc); $hc = $r['http_code']; unset($r['http_code']); jsonResponse($r, $hc); }
 
             // Get vehicle from queue - scoped to this controller's own
             // station so one controller can't serve (and thereby delete
@@ -507,6 +512,7 @@ try {
                 }
                 
                 db()->commit();
+                madeyaFuelAlertCheck((int)$vehicle['controller_id']);
                 
                 jsonResponse(['success' => true, 'message' => 'Vehicle served successfully']);
                 
@@ -574,6 +580,7 @@ try {
             if (empty($plates) || !$vehicleTypeId) {
                 jsonResponse(['success' => false, 'message' => 'Missing required fields'], 400);
             }
+            if ($dc = madeyaDayClosed($controllerId)) { $r = madeyaDayClosedResult($dc); $hc = $r['http_code']; unset($r['http_code']); jsonResponse($r, $hc); }
 
             if (!madeyaVehicleTypeAllowed($controllerId, $vehicleTypeId)) {
                 jsonResponse(['success' => false, 'message' => 'This vehicle type is not served at this station today.', 'code' => 'TYPE_NOT_ALLOWED'], 400);
@@ -751,16 +758,44 @@ try {
 
             $stats['liters'] = madeyaLiterStats($controllerId, date('Y-m-d'));
             $stats['fuel'] = madeyaFuelStatus($controllerId);
+            $dcl = madeyaDayClosed($controllerId);
+            $stats['day'] = ['closed' => (bool)$dcl, 'closed_at' => $dcl ? $dcl['closed_at'] : null, 'closed_by' => $dcl ? $dcl['closed_by'] : null, 'date' => date('Y-m-d')];
             jsonResponse(['success' => true, 'stats' => $stats]);
             break;
 
         case 'set_fuel_available':
             requireControllerAuth();
-            ensureStationColumns();
             $raw = trim((string)($_POST['liters'] ?? ''));
-            if ($raw === '' || !is_numeric($raw) || (float)$raw < 0 || (float)$raw > 10000000) jsonResponse(['success' => false, 'message' => 'Enter the liters available'], 400);
-            db()->query("UPDATE controllers SET fuel_available_liters = ?, fuel_updated_at = ? WHERE id = ?", [round((float)$raw, 1), date('Y-m-d H:i:s'), (int)$_SESSION['controller_id']]);
-            jsonResponse(['success' => true, 'message' => 'Fuel available updated', 'fuel' => madeyaFuelStatus((int)$_SESSION['controller_id'])]);
+            if ($raw === '' || !is_numeric($raw) || (float)$raw < 0 || (float)$raw > 10000000) jsonResponse(['success' => false, 'message' => 'Enter the liters in the tank'], 400);
+            $f = madeyaSetFuelReading((int)$_SESSION['controller_id'], (float)$raw, $_SESSION['controller_name'] ?? 'controller');
+            madeyaFuelAlertCheck((int)$_SESSION['controller_id']);
+            jsonResponse(['success' => true, 'message' => 'Tank reading saved', 'fuel' => $f]);
+            break;
+
+        case 'add_fuel_delivery':
+            requireControllerAuth();
+            $raw = trim((string)($_POST['liters'] ?? ''));
+            if ($raw === '' || !is_numeric($raw) || (float)$raw <= 0 || (float)$raw > 10000000) jsonResponse(['success' => false, 'message' => 'Enter the delivered liters'], 400);
+            $supplier = mb_substr(trim(sanitize($_POST['supplier'] ?? '')), 0, 120);
+            $note = mb_substr(trim(sanitize($_POST['note'] ?? '')), 0, 200);
+            $f = madeyaAddFuelDelivery((int)$_SESSION['controller_id'], (float)$raw, $supplier, $note, $_SESSION['controller_name'] ?? 'controller');
+            madeyaFuelAlertCheck((int)$_SESSION['controller_id']);
+            jsonResponse(['success' => true, 'message' => 'Delivery recorded: ' . round((float)$raw, 1) . ' L', 'fuel' => $f]);
+            break;
+
+        case 'get_fuel_deliveries':
+            requireControllerAuth();
+            ensureOpsTables();
+            $rows = db()->fetchAll("SELECT id, kind, liters, supplier, note, tank_after, entered_by, created_at FROM fuel_deliveries WHERE controller_id = ? ORDER BY id DESC LIMIT 12", [(int)$_SESSION['controller_id']]);
+            $sup = db()->fetchAll("SELECT supplier, COUNT(*) n FROM fuel_deliveries WHERE controller_id = ? AND supplier IS NOT NULL GROUP BY supplier ORDER BY n DESC LIMIT 8", [(int)$_SESSION['controller_id']]);
+            jsonResponse(['success' => true, 'rows' => $rows ?: [], 'suppliers' => array_column($sup ?: [], 'supplier')]);
+            break;
+
+        case 'close_day':
+            requireControllerAuth();
+            $note = mb_substr(trim(sanitize($_POST['note'] ?? '')), 0, 200);
+            $res = madeyaCloseDay((int)$_SESSION['controller_id'], $_SESSION['controller_name'] ?? 'controller', $note);
+            jsonResponse($res, !empty($res['success']) ? 200 : 400);
             break;
 
         case 'check_import':

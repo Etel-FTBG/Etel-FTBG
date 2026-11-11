@@ -149,10 +149,10 @@ function showTab(tabName) {
             loadQueueMonitor();
             break;
         case 'reports':
-            initLitersReport();
+            initLitersReport(); initFuelDeliveries(); loadDayClosings();
             break;
         case 'settings':
-            loadSettings();
+            loadSettings(); loadFuelAlertConfig();
             break;
     }
 }
@@ -1304,4 +1304,91 @@ function openDailySummary() {
     const date = document.getElementById('litTo').value || new Date().toISOString().slice(0, 10);
     const st = document.getElementById('litStation').value;
     window.open('summary.php?date=' + encodeURIComponent(date) + '&controller_id=' + encodeURIComponent(st), '_blank');
+}
+
+
+// ─── FUEL DELIVERIES vs SERVED ───────────────────────────────────────
+async function initFuelDeliveries() {
+    const f = document.getElementById('fdFrom'), t = document.getElementById('fdTo'), sel = document.getElementById('fdStation');
+    if (f && !f.value) { const d = new Date(); t.value = d.toISOString().slice(0, 10); d.setDate(d.getDate() - 6); f.value = d.toISOString().slice(0, 10); }
+    if (sel && sel.options.length <= 1) {
+        try {
+            const d = await (await fetch(`${API}?action=get_controllers`)).json();
+            if (d.success) sel.innerHTML = '<option value="">All stations</option>' + d.controllers.map(c => `<option value="${c.id}">${escHtml(c.station_name || c.username)}</option>`).join('');
+        } catch (e) {}
+    }
+}
+async function loadFuelDeliveries() {
+    const box = document.getElementById('fdReport');
+    const from = document.getElementById('fdFrom').value, to = document.getElementById('fdTo').value, st = document.getElementById('fdStation').value;
+    box.innerHTML = '<p class="empty-state">Loading...</p>';
+    try {
+        const d = await (await fetch(`${API}?action=get_fuel_deliveries_report&from=${from}&to=${to}&controller_id=${st}`)).json();
+        if (!d.success) { box.innerHTML = `<p class="empty-state">${escHtml(d.message || 'Failed')}</p>`; return; }
+        const n = v => Number(v || 0).toLocaleString(undefined, { maximumFractionDigits: 1 });
+        if (!d.stations.length) { box.innerHTML = '<p class="empty-state">No stations</p>'; return; }
+        box.innerHTML = d.stations.map(s => {
+            const rows = s.rows.map(r => `<tr><td>${escHtml(String(r.created_at).slice(5, 16))}</td><td>${r.kind === 'delivery' ? 'Delivery' : 'Tank reading'}</td><td>${n(r.liters)} L</td><td>${escHtml(r.supplier || '-')}</td><td>${escHtml(r.entered_by || '')}</td></tr>`).join('');
+            return `<div class="pr-row"><div class="pr-top"><b>${escHtml(s.station)}${s.region ? ' &middot; ' + escHtml(s.region) : ''}</b><small>${fuelBadge(s.fuel)}</small></div>
+                <div class="fd-kpis"><div><b>${n(s.delivered)} L</b><span>delivered (${s.deliveries})</span></div><div><b>${n(s.served_liters)} L</b><span>served (${n(s.served)} vehicles)</span></div><div class="${s.balance < 0 ? 'neg' : ''}"><b>${n(s.balance)} L</b><span>balance</span></div></div>
+                ${rows ? `<div class="tbl-scroll"><table class="data-table lit-table"><thead><tr><th>When</th><th>Type</th><th>Liters</th><th>Supplier</th><th>By</th></tr></thead><tbody>${rows}</tbody></table></div>` : '<p class="am-note">No deliveries recorded in this period.</p>'}</div>`;
+        }).join('');
+    } catch (e) { box.innerHTML = '<p class="empty-state">Could not load</p>'; }
+}
+
+// ─── DAY CLOSINGS ───────────────────────────────────────────────────
+async function loadDayClosings() {
+    const box = document.getElementById('dayClosings'); if (!box) return;
+    try {
+        const d = await (await fetch(`${API}?action=get_day_closings`)).json();
+        if (!d.success || !d.rows.length) { box.innerHTML = '<p class="empty-state">No day has been closed yet.</p>'; return; }
+        const n = v => Number(v || 0).toLocaleString(undefined, { maximumFractionDigits: 1 });
+        box.innerHTML = d.rows.map(r => `<div class="pr-logrow"><div class="pr-logtop"><div><b>${escHtml(r.station_name)}</b> &middot; ${escHtml(r.close_date)}</div>
+            ${r.reopened_at ? '<span class="pr-done">Reopened</span>' : `<span><a class="am-btn ghost pr-undo" href="summary.php?date=${encodeURIComponent(r.close_date)}&controller_id=${r.controller_id}" target="_blank">Summary</a> <button type="button" class="am-btn ghost pr-undo" onclick="reopenDay(${r.id})">Reopen</button></span>`}</div>
+            <small>Closed ${escHtml(String(r.closed_at).slice(11, 16))} by ${escHtml(r.closed_by || 'controller')} &middot; ${n(r.served)} vehicles &middot; ${n(r.liters)} L${r.queued_left ? ' &middot; ' + r.queued_left + ' still waiting' : ''}</small></div>`).join('');
+    } catch (e) { box.innerHTML = '<p class="empty-state">Could not load</p>'; }
+}
+async function reopenDay(id) {
+    if (!confirm('Reopen this day? The station will be able to register and serve vehicles again.')) return;
+    const fd = new FormData(); fd.append('action', 'reopen_day'); fd.append('id', id);
+    const d = await (await fetch(API, { method: 'POST', body: fd })).json();
+    showNotification((d.success ? ICONS.success : ICONS.error) + ' ' + escHtml(d.message || ''), d.success ? 'success' : 'error');
+    loadDayClosings();
+}
+
+// ─── FUEL ALERTS (Telegram) ─────────────────────────────────────────
+async function loadFuelAlertConfig() {
+    try {
+        const d = await (await fetch(`${API}?action=get_fuel_alert_config`)).json();
+        if (!d.success) return;
+        document.getElementById('faEnabled').checked = !!d.enabled;
+        document.getElementById('faChats').value = d.chat_ids || '';
+        document.getElementById('faTokenState').textContent = d.token_set ? '(a token is saved)' : '(not set yet)';
+    } catch (e) {}
+}
+async function saveFuelAlert() {
+    const fd = new FormData(); fd.append('action', 'save_fuel_alert_config');
+    if (document.getElementById('faEnabled').checked) fd.append('enabled', '1');
+    fd.append('chat_ids', document.getElementById('faChats').value);
+    fd.append('bot_token', document.getElementById('faToken').value);
+    const d = await (await fetch(API, { method: 'POST', body: fd })).json();
+    showNotification((d.success ? ICONS.success : ICONS.error) + ' ' + escHtml(d.message || ''), d.success ? 'success' : 'error');
+    if (d.success) { document.getElementById('faToken').value = ''; loadFuelAlertConfig(); }
+}
+async function testFuelAlert() {
+    const d = await (await fetch(`${API}?action=test_fuel_alert`)).json();
+    showNotification((d.success ? ICONS.success : ICONS.error) + ' ' + escHtml(d.message || ''), d.success ? 'success' : 'error');
+}
+async function findTelegramChats() {
+    const box = document.getElementById('faFound'); box.innerHTML = '<p class="am-note">Looking...</p>';
+    try {
+        const d = await (await fetch(`${API}?action=telegram_chats`)).json();
+        if (!d.success) { box.innerHTML = `<p class="am-note">${escHtml(d.message || 'Failed')}</p>`; return; }
+        if (!d.chats.length) { box.innerHTML = '<p class="am-note">No chats yet. Open the bot in Telegram, press Start (or add it to a group and write a message), then try again.</p>'; return; }
+        box.innerHTML = '<p class="am-note">Tap a chat to add it:</p><div class="pr-act">' + d.chats.map(c => `<button type="button" class="am-btn ghost" onclick="addAlertChat('${escHtml(c.id)}')">${escHtml(c.name)} (${escHtml(c.id)})</button>`).join('') + '</div>';
+    } catch (e) { box.innerHTML = '<p class="am-note">Could not reach Telegram</p>'; }
+}
+function addAlertChat(id) {
+    const el = document.getElementById('faChats'); const cur = el.value.split(/[\s,;]+/).filter(Boolean);
+    if (cur.indexOf(id) < 0) cur.push(id); el.value = cur.join(', ');
 }

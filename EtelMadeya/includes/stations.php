@@ -321,7 +321,7 @@ function madeyaFuelStatus($controllerId) {
             'queue_liters' => round($need, 1), 'queued' => $q ? (int)$q['n'] : 0, 'unknown' => $q ? (int)$q['unk'] : 0, 'short_by' => 0.0];
     if (!$c || $c['fuel_available_liters'] === null) return $out;
     $avail = (float)$c['fuel_available_liters'];
-    $since = $c['fuel_updated_at'] ?: '1970-01-01 00:00:00';
+    $since = $c['fuel_updated_at'] ? madeyaToDbClock($c['fuel_updated_at']) : '1970-01-01 00:00:00';   // stored on the PHP clock, served_at is on the database clock
     $r = db()->fetchOne("SELECT COALESCE(SUM(COALESCE(NULLIF(r.fuel_amount_liters,0), vt.tank_liters, 0)),0) AS l
                          FROM report r JOIN vehicle_types vt ON vt.id = r.vehicle_type_id WHERE r.controller_id = ? AND r.served_at >= ?", [(int)$controllerId, $since]);
     $served = $r ? (float)$r['l'] : 0.0;
@@ -333,3 +333,6 @@ function madeyaFuelStatus($controllerId) {
     return array_merge($out, ['set' => true, 'status' => $status, 'available' => round($avail, 1), 'remaining' => round($rem, 1), 'served_since' => round($served, 1),
         'updated_at' => $c['fuel_updated_at'], 'short_by' => round(max(0.0, $need - $rem), 1)]);
 }
+
+
+require_once __DIR__ . '/ops.php';
