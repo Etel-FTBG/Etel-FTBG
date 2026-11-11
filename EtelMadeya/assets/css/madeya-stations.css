@@ -1,0 +1,11 @@
+/* Live Stations: tappable cards + route bar */
+.stn-card.tap{cursor:pointer;transition:transform .12s,box-shadow .15s,border-color .15s}
+.stn-card.tap:hover{transform:translateY(-2px)}
+.stn-card.sel{border-color:#1a73e8!important;box-shadow:0 0 0 3px rgba(26,115,232,.25),var(--mp-shadow)!important}
+.stn-map{height:380px}
+.stn-route{margin:-4px 0 14px}
+.stn-route-in{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:12px 14px;border-radius:16px;background:linear-gradient(135deg,rgba(26,115,232,.12),rgba(212,175,55,.12));border:1.5px solid rgba(26,115,232,.45);color:var(--mp-ink)}
+.stn-route-in b{display:block;font-size:15px}
+.stn-route-in span{font-size:13px;opacity:.85}
+.stn-route-btns{display:flex;gap:8px}
+.stn-route-btns .stn-btn{flex:none;padding:9px 14px}
