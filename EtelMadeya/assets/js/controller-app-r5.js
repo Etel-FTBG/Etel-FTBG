@@ -175,7 +175,13 @@ function initRegisterForm() {
     if (window._regInit) return;
     window._regInit = true;
     plateCatButtons('regCats', 'mad_reg_cat', updateRegSummary);
+    plateRegButtons('regRegs', 'mad_reg_reg', updateRegSummary);
     plateCatButtons('vipCats', 'mad_vip_cat');
+    plateRegButtons('vipRegs', 'mad_vip_reg');
+    plateCatButtons('bulkCats', 'mad_bulk_cat');
+    plateRegButtons('bulkRegs', 'mad_bulk_reg');
+    plateCatButtons('impCats', 'mad_imp_cat');
+    plateRegButtons('impRegs', 'mad_imp_reg');
     plateNumeric(document.getElementById('regPlate'), function () { updateRegParityHint(); updateRegSummary(); });
     plateNumeric(document.getElementById('vipPlate'));
 }
@@ -233,10 +239,11 @@ function updateRegSummary() {
     if (!el) return;
     const digits = plateDigits(document.getElementById('regPlate').value);
     const cat = plateCatSelected('regCats');
+    const reg = plateRegSelected('regRegs');
     const t = vehicleTypes.find(x => x.id == selectedVehicleTypeId);
-    if (!digits || !cat || !t) { el.innerHTML = '<span class="rg-sum-empty">Choose category, enter the plate number and pick a vehicle type</span>'; return; }
+    if (!digits || !cat || !reg || !t) { el.innerHTML = '<span class="rg-sum-empty">Choose category and region, enter the plate number and pick a vehicle type</span>'; return; }
     const par = platePartyFromString(digits);
-    el.innerHTML = '<span class="rg-sum-pic">' + vehPic(t.icon, t.name, 38) + '</span><span class="rg-sum-t"><b>' + plateHtml(plateBuild(cat, digits)) +
+    el.innerHTML = '<span class="rg-sum-pic">' + vehPic(t.icon, t.name, 38) + '</span><span class="rg-sum-t"><b>' + plateHtml(plateBuild(cat, reg, digits)) +
         '</b><small>' + escHtml(plateCatName(cat)) + ' &middot; ' + escHtml(t.name || '') + (par ? ' &middot; ' + (par === 'odd' ? 'Odd' : 'Even') + ' plate' : '') + '</small></span><span class="rg-sum-ok">Ready</span>';
 }
 
@@ -655,7 +662,9 @@ async function handleVipRegister() {
 
     if (!vcat) { showVipFb('Select the plate category (1-5)', 'err'); return; }
     if (!digits) { showVipFb('Enter a plate number', 'err'); return; }
-    const plate = plateBuild(vcat, digits);
+    const vreg = plateRegSelected('vipRegs');
+    if (!vreg) { showVipFb('Select the region (ET, AA, OR ...)', 'err'); return; }
+    const plate = plateBuild(vcat, vreg, digits);
     if (!vtypeId) { showVipFb('Select a vehicle type', 'err'); return; }
 
     btn.disabled = true;
@@ -717,8 +726,10 @@ async function handleRegisterVehicle() {
     const btn = document.getElementById('mcRegBtn');
 
     if (!cat) { showMcFb('Select the plate category (1-5)', 'err'); return; }
+    const reg = plateRegSelected('regRegs');
+    if (!reg) { showMcFb('Select the region (ET, AA, OR ...)', 'err'); return; }
     if (!digits) { showMcFb('Enter the plate number', 'err'); return; }
-    const plate = plateBuild(cat, digits);
+    const plate = plateBuild(cat, reg, digits);
     if (!selectedVehicleTypeId) { showMcFb('Select a vehicle type', 'err'); return; }
 
     btn.disabled = true;
@@ -793,9 +804,14 @@ async function handleBulkImport(event) {
     const submitBtn = event.target.querySelector('button[type="submit"]');
     const originalLabel = submitBtn.textContent;
 
+    const bcat = plateCatSelected('bulkCats'), breg = plateRegSelected('bulkRegs');
+    const lines = document.getElementById('bulkPlates').value.split(/[\r\n,;]+/).map(l => plateFromLine(l, bcat, breg));
+    const needCat = document.getElementById('bulkPlates').value.split(/[\r\n,;]+/).some(l => l.trim() && !/[A-Za-z]/.test(l) && !/^[1-5]-/.test(l.trim()));
+    if (needCat && (!bcat || !breg)) { showNotification(ICONS.error + ' Select the plate category and region first', 'error'); return; }
+
     const formData = new FormData();
     formData.append('action', 'bulk_import');
-    formData.append('plates', document.getElementById('bulkPlates').value);
+    formData.append('plates', lines.filter(Boolean).join('\n'));
     formData.append('vehicle_type_id', document.getElementById('bulkVehicleType').value);
 
     submitBtn.disabled = true;
@@ -1106,8 +1122,13 @@ async function runImportCheck() {
 
     try {
         const fd = new FormData();
+        const icat = plateCatSelected('impCats'), ireg = plateRegSelected('impRegs');
+        const built = impParsedPlates.map(l => plateFromLine(l, icat, ireg)).filter(Boolean);
+        if (impParsedPlates.some(l => !/[A-Za-z]/.test(l) && !/^[1-5]-/.test(l)) && (!icat || !ireg)) {
+            showNotification(ICONS.error + ' Select the plate category and region first', 'error'); return;
+        }
         fd.append('action', 'check_import');
-        fd.append('plates', impParsedPlates.join('\n'));
+        fd.append('plates', built.join('\n'));
 
         const res = await fetch(API, { method: 'POST', body: fd });
         const data = await res.json();

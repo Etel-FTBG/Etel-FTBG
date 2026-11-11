@@ -20,7 +20,7 @@ if ( isset( $_GET['embed'] ) && ! headers_sent() ) {
     <link rel="stylesheet" href="assets/css/controller-mainpanel.css">
     <link rel="stylesheet" href="assets/css/madeya-pro-r2.css">
     <link rel="stylesheet" href="assets/css/madeya-vehicles.css">
-    <link rel="stylesheet" href="assets/css/madeya-plates.css">
+    <link rel="stylesheet" href="assets/css/madeya-plates-r2.css">
     <script src="assets/js/madeya-pro-r2.js"></script>
     <link rel="icon" href="assets/img/etel-logo.png">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
@@ -138,17 +138,20 @@ if ( isset( $_GET['embed'] ) && ! headers_sent() ) {
                             <div class="rg-step"><span class="rg-n">1</span> Plate category</div>
                             <div class="pcats" id="regCats"></div>
 
-                            <div class="rg-step"><span class="rg-n">2</span> Plate number <small>(numbers only)</small></div>
+                            <div class="rg-step"><span class="rg-n">2</span> Region</div>
+                            <div class="pregs" id="regRegs"></div>
+
+                            <div class="rg-step"><span class="rg-n">3</span> Plate number <small>(numbers only)</small></div>
                             <div class="plate-wrap">
                                 <input type="text" id="regPlate" class="mc-plate-inp" placeholder="06369" maxlength="10" inputmode="numeric" pattern="[0-9]*" autocomplete="off">
                                 <div class="pc tl"></div><div class="pc tr"></div><div class="pc bl"></div><div class="pc br"></div>
                             </div>
                             <div class="parity-hint" id="regParHint">&nbsp;</div>
 
-                            <div class="rg-step"><span class="rg-n">3</span> Vehicle type</div>
+                            <div class="rg-step"><span class="rg-n">4</span> Vehicle type</div>
                             <div id="vtypeGrid" class="vtypes"><!-- filled by JS --></div>
 
-                            <div class="rg-step"><span class="rg-n">4</span> Driver details <small>(optional)</small></div>
+                            <div class="rg-step"><span class="rg-n">5</span> Driver details <small>(optional)</small></div>
                             <div class="rg-two">
                                 <div class="mc-field">
                                     <label for="regDriverName">Driver name</label>
@@ -246,7 +249,7 @@ if ( isset( $_GET['embed'] ) && ! headers_sent() ) {
                         <div class="vip-grid">
                             <div class="vip-grid-l">
                                 <div class="mc-subhead" style="color:#e74c3c;">Register VIP Vehicle</div>
-                                <div class="vip-cats"><div class="pcats" id="vipCats"></div></div>
+                                <div class="vip-cats"><div class="pcats" id="vipCats"></div><div class="pregs" id="vipRegs"></div></div>
                                 <input type="text" id="vipPlate" class="vip-plate-inp" placeholder="VIP PLATE (numbers)" maxlength="10" inputmode="numeric" pattern="[0-9]*" autocomplete="off">
                                 <div class="mc-field">
                                     <label for="vipVehicleType">Vehicle Type</label>
@@ -319,6 +322,8 @@ if ( isset( $_GET['embed'] ) && ! headers_sent() ) {
 
                         <!-- Vehicle Type + Check Button -->
                         <div class="imp-controls" id="impControls" style="display:none">
+                            <div class="bulk-sec"><label>Plate category (applies to number-only lines)</label><div class="pcats" id="impCats"></div></div>
+                            <div class="bulk-sec"><label>Region</label><div class="pregs" id="impRegs"></div></div>
                             <div class="imp-controls-row">
                                 <div class="imp-ctrl-group">
                                     <label for="impVehicleType">Vehicle Type</label>
@@ -403,9 +408,11 @@ if ( isset( $_GET['embed'] ) && ! headers_sent() ) {
                         <label for="bulkVehicleType">Vehicle Type *</label>
                         <select id="bulkVehicleType" required></select>
                     </div>
+                    <div class="bulk-sec"><label>Plate category</label><div class="pcats" id="bulkCats"></div></div>
+                    <div class="bulk-sec"><label>Region</label><div class="pregs" id="bulkRegs"></div></div>
                     <div class="form-group">
-                        <label for="bulkPlates">Plate Numbers (one per line) *</label>
-                        <textarea id="bulkPlates" rows="10" required placeholder="AA-3-12345&#10;AA-3-12346&#10;AA-3-12347"></textarea>
+                        <label for="bulkPlates">Plate Numbers (one per line, numbers only) *</label>
+                        <textarea id="bulkPlates" rows="10" required inputmode="numeric" placeholder="06369&#10;06370&#10;06371"></textarea>
                     </div>
                     <div class="modal-actions">
                         <button type="button" onclick="closeModal()" class="btn-secondary">Cancel</button>
@@ -454,8 +461,8 @@ if ( isset( $_GET['embed'] ) && ! headers_sent() ) {
     let vehicleTypes = [];
     </script>
     <script src="assets/js/madeya-vehicles-r4.js"></script>
-    <script src="assets/js/madeya-plates.js"></script>
+    <script src="assets/js/madeya-plates-r2.js"></script>
     <script src="assets/js/icons.js"></script>
-    <script src="assets/js/controller-app-r4.js"></script>
+    <script src="assets/js/controller-app-r5.js"></script>
 </body>
 </html>
