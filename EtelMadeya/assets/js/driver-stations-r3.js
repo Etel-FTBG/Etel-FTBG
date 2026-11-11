@@ -8,10 +8,15 @@
         var x = Math.sin(dLa / 2) * Math.sin(dLa / 2) + Math.cos(a * t) * Math.cos(c * t) * Math.sin(dLo / 2) * Math.sin(dLo / 2);
         return 2 * R * Math.asin(Math.sqrt(x));
     }
+    var ROOT = (function () {
+        var src = (document.currentScript && document.currentScript.src || '').replace(/[?#].*$/, '');
+        return /assets\/js\//.test(src) ? src.replace(/assets\/js\/[^\/]*$/, '') : '';
+    })();
+    // Leaflet is served from our own server (assets/vendor/leaflet) so the map never depends on a public CDN.
     function loadLeaflet(cb) {
         if (window.L) return cb();
-        var css = document.createElement('link'); css.rel = 'stylesheet'; css.href = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css'; document.head.appendChild(css);
-        var js = document.createElement('script'); js.src = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js'; js.onload = cb; js.onerror = function () { cb(true); }; document.head.appendChild(js);
+        var css = document.createElement('link'); css.rel = 'stylesheet'; css.href = ROOT + 'assets/vendor/leaflet/leaflet.css'; document.head.appendChild(css);
+        var js = document.createElement('script'); js.src = ROOT + 'assets/vendor/leaflet/leaflet.js'; js.onload = function () { cb(); }; js.onerror = function () { cb(true); }; document.head.appendChild(js);
     }
     function pin(open) {
         return L.divIcon({ className: '', iconSize: [34, 42], iconAnchor: [17, 40],
