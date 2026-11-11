@@ -109,19 +109,33 @@ html[data-theme="light"] .mob-footer-info{color:rgba(122,90,16,0.78)}
 html[data-theme="light"] .scroll-hint span{color:rgba(122,90,16,0.78)}
 html[data-theme="light"] .location-badge{color:rgba(122,90,16,0.85)}
 html[data-theme="light"] .placeholder-section p{color:rgba(122,90,16,0.78)}
-html[data-theme="light"] .co-number{color:rgba(122,90,16,0.78)}
-html[data-theme="light"] .about-watermark{color:rgba(122,90,16,0.78)}
-html[data-theme="light"] .sigil-verse{color:rgba(122,90,16,0.78)}
 html[data-theme="light"] .footer-badge{color:rgba(122,90,16,0.80)}
 html[data-theme="light"] .footer-copy a{color:rgba(122,90,16,0.80)}
 html[data-theme="light"] .footer-legal a:hover{color:rgba(122,90,16,0.95)}
 html[data-theme="light"] .footer-eth-closing{color:rgba(122,90,16,0.78)}
 html[data-theme="light"] .platform-subtitle{color:rgba(122,90,16,0.90)}
 html[data-theme="light"] .lc-label{color:rgba(122,90,16,0.80)}
-html[data-theme="light"] .lc-num{color:rgba(122,90,16,0.78)}
 html[data-theme="light"] .lc-cat{color:rgba(122,90,16,0.78)}
 html[data-theme="light"] .platform-footer-text{color:rgba(122,90,16,0.78)}
 .contact-row-value a,.contact-row a{color:inherit;text-decoration:none}
 html[data-theme="light"] .platform-subtitle,html[data-theme="light"] .platform-footer-text,html[data-theme="light"] .contact-badge,html[data-theme="light"] .footer-location{color:rgba(90,66,10,.9)}
 a.contact-row{color:inherit;text-decoration:none}
 a.contact-row .contact-row-label{color:var(--gold)}
+
+/* decorative faint text stays faint (it must not turn into solid gold) */
+html[data-theme="light"] .about-watermark{color:rgba(160,124,18,.07)}
+html[data-theme="light"] .sigil-verse{color:rgba(160,124,18,.35)}
+html[data-theme="light"] .co-number{color:rgba(122,90,16,.4)}
+html[data-theme="light"] .lc-num{color:rgba(122,90,16,.45)}
+/* cards that use a (dark) logo picture as their background keep light text in both themes */
+html[data-theme="light"] .co-card-has-logo .co-name,html[data-theme="light"] .co-card-has-logo:hover .co-name{color:#F5E6A3}
+html[data-theme="light"] .co-card-has-logo .co-desc{color:rgba(245,230,163,.85)}
+html[data-theme="light"] .co-card-has-logo .co-number{color:rgba(245,230,163,.6)}
+html[data-theme="light"] .co-card-has-logo .co-category{filter:brightness(1.35)}
+html[data-theme="light"] .co-card-has-logo .co-online-text.online{color:#4ade80}
+html[data-theme="light"] .co-card-has-logo .co-online-text.offline{color:#f87171}
+html[data-theme="light"] .co-card-has-logo .co-launch{color:#F5E6A3}
+html[data-theme="light"] .launcher-card.co-card-has-logo .lc-name,html[data-theme="light"] .launcher-card.co-card-has-logo .lc-desc,html[data-theme="light"] .launcher-card.co-card-has-logo .lc-cat,html[data-theme="light"] .launcher-card.co-card-has-logo .lc-num,html[data-theme="light"] .launcher-card.co-card-has-logo .lc-label{color:#F5E6A3}
+html[data-theme="light"] .launcher-card.co-card-has-logo .lc-desc{color:rgba(245,230,163,.85)}
+/* text with its colour written inline in the HTML (pale gold) */
+html[data-theme="light"] [style*="rgba(245,230,163"],html[data-theme="light"] [style*="color:var(--gold-light)"],html[data-theme="light"] [style*="color: var(--gold-light)"]{color:rgba(58,38,8,.72) !important}
