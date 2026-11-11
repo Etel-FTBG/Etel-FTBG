@@ -117,7 +117,11 @@ function getStationsPage() {
             <h1 class="page-title" data-t="Live Stations|ቀጥታ ማደያዎች">Live Stations</h1>
             <p class="page-subtitle" data-t="See which stations are open today, how many cars are waiting, and navigate to them|ዛሬ የተከፈቱ ማደያዎችን እና ወረፋ ይመልከቱ">See which stations are open today, how many cars are waiting, and navigate to them</p>
             <div id="stnSummary" class="stn-bar">Loading...</div>
-            <div id="stnMap" class="stn-map"></div>
+            <div id="stnMapWrap" class="stn-mapwrap">
+                <div id="stnMap" class="stn-map"></div>
+                <div id="stnNavTop" class="stn-navtop" style="display:none"></div>
+                <div id="stnNavBot" class="stn-navbot" style="display:none"></div>
+            </div>
             <div id="stnRoute" class="stn-route" style="display:none"></div>
             <div id="stnGrid" class="stn-grid"></div>
         </div>

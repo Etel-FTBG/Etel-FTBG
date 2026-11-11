@@ -1,0 +1,29 @@
+/* Live Stations: tappable cards + route bar */
+.stn-card.tap{cursor:pointer;transition:transform .12s,box-shadow .15s,border-color .15s}
+.stn-card.tap:hover{transform:translateY(-2px)}
+.stn-card.sel{border-color:#1a73e8!important;box-shadow:0 0 0 3px rgba(26,115,232,.25),var(--mp-shadow)!important}
+.stn-map{height:380px}
+.stn-route{margin:-4px 0 14px}
+.stn-route-in{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:12px 14px;border-radius:16px;background:linear-gradient(135deg,rgba(26,115,232,.12),rgba(212,175,55,.12));border:1.5px solid rgba(26,115,232,.45);color:var(--mp-ink)}
+.stn-route-in b{display:block;font-size:15px}
+.stn-route-in span{font-size:13px;opacity:.85}
+.stn-route-btns{display:flex;gap:8px}
+.stn-route-btns .stn-btn{flex:none;padding:9px 14px}
+
+/* in-app navigation */
+.stn-mapwrap{position:relative;margin-bottom:14px}
+.stn-mapwrap .stn-map{margin-bottom:0}
+.stn-mapwrap.on{position:fixed;inset:0;z-index:2147483000;margin:0;background:#111}
+.stn-mapwrap.on .stn-map{height:100%!important;border-radius:0;border:0;box-shadow:none}
+body.stn-nav-lock{overflow:hidden}
+.stn-navtop{position:absolute;top:0;left:0;right:0;z-index:5;align-items:center;gap:14px;padding:calc(env(safe-area-inset-top,0px) + 12px) 16px 14px;background:linear-gradient(180deg,#0f6b3d,#168a50);color:#fff;box-shadow:0 6px 18px rgba(0,0,0,.35)}
+.stn-nav-arrow{flex:none;width:58px;height:58px;border-radius:16px;background:rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;font-size:42px;line-height:1}
+.stn-nav-txt b{display:block;line-height:1.25;font:800 28px var(--mp-fh,'Syne',sans-serif)}
+.stn-nav-txt span{display:block;font-size:15px;font-weight:600;opacity:.95;line-height:1.25}
+.stn-navbot{position:absolute;left:0;right:0;bottom:0;z-index:5;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:12px 14px calc(env(safe-area-inset-bottom,0px) + 12px);background:#fff;color:#1a1a2e;border-radius:20px 20px 0 0;box-shadow:0 -6px 20px rgba(0,0,0,.3)}
+.stn-nav-stat b{display:block;line-height:1.25;font:800 24px var(--mp-fh,'Syne',sans-serif);color:#0f7b45}
+.stn-nav-stat span{font-size:13px;opacity:.75}
+.stn-nav-btns{display:flex;gap:8px;align-items:center}
+.stn-navbot .stn-btn{flex:none;padding:10px 14px}
+.stn-navbot .stn-btn.ghost{color:#1a1a2e;border-color:#c9c3a8}
+.stn-navbot .stn-end{background:#d93025;color:#fff}
