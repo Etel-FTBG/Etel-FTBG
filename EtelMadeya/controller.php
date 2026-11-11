@@ -23,7 +23,7 @@ if ( isset( $_GET['embed'] ) && ! headers_sent() ) {
     <link rel="stylesheet" href="assets/css/madeya-plates-r2.css">
     <link rel="stylesheet" href="assets/css/madeya-limits.css">
     <link rel="stylesheet" href="assets/css/madeya-liters.css">
-    <link rel="stylesheet" href="assets/css/madeya-alerts-r2.css">
+    <link rel="stylesheet" href="assets/css/madeya-alerts-r3.css">
     <script src="assets/js/madeya-pro-r2.js"></script>
     <link rel="icon" href="assets/img/etel-logo.png">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>

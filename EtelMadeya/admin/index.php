@@ -16,7 +16,7 @@
     <link rel="stylesheet" href="../assets/css/madeya-modals.css">
     <link rel="stylesheet" href="../assets/css/madeya-settings.css">
     <link rel="stylesheet" href="../assets/css/madeya-liters.css">
-    <link rel="stylesheet" href="../assets/css/madeya-alerts-r2.css">
+    <link rel="stylesheet" href="../assets/css/madeya-alerts-r3.css">
     <script src="../assets/js/madeya-pro-r2.js"></script>
     <link rel="icon" href="../assets/img/etel-logo.png">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -272,6 +272,18 @@
                     <div id="reportsContent">
                         <p class="empty-state">Select a date and click Generate Report</p>
                     </div>
+                    <div class="settings-card" style="margin-top:16px">
+                        <h3>Liters per vehicle type, per day, per station</h3>
+                        <p class="am-note">Uses the liters recorded for each fill, or the vehicle type's tank size when none was recorded. Vehicles with no tank size are counted but shown as "unknown".</p>
+                        <div class="pr-act">
+                            <input type="date" id="litFrom" aria-label="From">
+                            <input type="date" id="litTo" aria-label="To">
+                            <select id="litStation" aria-label="Station"><option value="">All stations</option></select>
+                            <button type="button" class="am-btn" onclick="loadLitersReport()">Generate</button>
+                            <button type="button" class="am-btn ghost" onclick="exportLitersCsv()">Download CSV</button>
+                        </div>
+                        <div id="litReport"></div>
+                    </div>
                 </div>
 
                 <!-- Settings Tab -->
@@ -338,7 +350,17 @@
                             <div class="am-field"><label for="prSearch">Search plate</label>
                                 <div style="display:flex;gap:8px"><input type="text" id="prSearch" placeholder="e.g. 06369 or 1-SD-06369" onkeydown="if(event.key==='Enter'){event.preventDefault();searchPlateRegistry()}"><button type="button" class="am-btn" onclick="searchPlateRegistry()">Search</button></div>
                             </div>
+                            <div class="pr-act pr-filters"><select id="prFCat" title="Category"></select><select id="prFReg" title="Region"></select><select id="prFType" title="Vehicle type"></select></div>
+                            <div id="prBulk" class="pr-bulk" style="display:none">
+                                <label class="am-check-label"><input type="checkbox" id="prAll" onchange="prToggleAll(this.checked)"> Select all <b id="prSelCount">0</b></label>
+                                <div class="pr-act"><select id="prBCat" title="New category"></select><select id="prBReg" title="New region"></select><select id="prBType" title="New vehicle type"></select></div>
+                                <button type="button" class="am-btn" onclick="bulkPlateRegistry()">Apply to selected plates</button>
+                            </div>
                             <div id="prResults"></div>
+                            <details class="pr-log"><summary onclick="loadPlateLog()">Change log (who changed what)</summary>
+                                <div class="pr-act" style="margin-top:8px"><input type="text" id="prLogQ" placeholder="Filter by plate or admin" onkeydown="if(event.key==='Enter'){event.preventDefault();loadPlateLog(true)}" style="flex:1;min-height:40px;border-radius:10px"><button type="button" class="am-btn" onclick="loadPlateLog(true)">Filter</button></div>
+                                <div id="prLogList"></div>
+                            </details>
                         </div>
                         <div class="settings-card">
                             <h3>Queue Settings</h3>
@@ -386,7 +408,7 @@
     <script src="../assets/js/madeya-vehicles-r4.js"></script>
     <script src="../assets/js/madeya-plates-r2.js"></script>
     <script src="../assets/js/icons.js"></script>
-    <script src="../assets/js/admin-app-r9.js"></script>
+    <script src="../assets/js/admin-app-r10.js"></script>
     <script src="../assets/js/admin-station-r2.js"></script>
 </body>
 </html>

@@ -599,13 +599,20 @@ try {
             requireAdminAuth();
             ensurePlateRegistry();
             $q = strtoupper(trim(sanitize($_GET['q'] ?? $_POST['q'] ?? '')));
-            if ($q === '') jsonResponse(['success' => true, 'rows' => []]);
-            $like = '%' . str_replace(['%', '_'], ['\\%', '\\_'], $q) . '%';
+            $fCat = preg_replace('/[^1-5]/', '', $_GET['cat'] ?? '');
+            $fReg = preg_replace('/[^A-Z]/', '', strtoupper($_GET['reg'] ?? ''));
+            $fType = (int)($_GET['type'] ?? 0);
+            if ($q === '' && $fCat === '' && $fReg === '' && !$fType) jsonResponse(['success' => true, 'rows' => []]);
+            $where = []; $par = [];
+            if ($q !== '') { $where[] = "pr.plate_number LIKE ?"; $par[] = '%' . str_replace(['%', '_'], ['\\%', '\\_'], $q) . '%'; }
+            if ($fCat !== '') { $where[] = "pr.plate_number LIKE ?"; $par[] = $fCat . '-%'; }
+            if ($fReg !== '') { $where[] = "(pr.plate_number LIKE ? OR pr.plate_number LIKE ?)"; $par[] = $fReg . '-%'; $par[] = '_-' . $fReg . '-%'; }
+            if ($fType) { $where[] = "pr.vehicle_type_id = ?"; $par[] = $fType; }
             $rows = db()->fetchAll(
                 "SELECT pr.plate_number, pr.vehicle_type_id, vt.name AS vehicle_type_name, pr.station_name, pr.first_registered_at
                  FROM plate_registry pr LEFT JOIN vehicle_types vt ON vt.id = pr.vehicle_type_id
-                 WHERE pr.plate_number LIKE ? ORDER BY pr.first_registered_at DESC LIMIT 20", [$like]);
-            if (!$rows) { // maybe an older plate not in the registry yet
+                 WHERE " . implode(' AND ', $where) . " ORDER BY pr.first_registered_at DESC LIMIT 300", $par);
+            if (!$rows && $q !== '' && $fCat === '' && $fReg === '' && !$fType) { // maybe an older plate not in the registry yet
                 $o = madeyaPlateOwner($q);
                 if ($o) $rows = [$o];
             }
@@ -621,6 +628,7 @@ try {
             $newPlate = strtoupper(trim(sanitize($_POST['new_plate'] ?? '')));
             if ($newPlate === '') $newPlate = $plate;
             if (!preg_match('/^([1-5]-)?([A-Z]{2}-)?[0-9A-Z]+$/', $newPlate)) jsonResponse(['success' => false, 'message' => 'Invalid plate'], 400);
+            $before = db()->fetchOne("SELECT vehicle_type_id FROM plate_registry WHERE plate_number = ?", [$plate]);
             if ($newPlate !== $plate) {
                 if (db()->fetchOne("SELECT plate_number FROM plate_registry WHERE plate_number = ?", [$newPlate])) {
                     jsonResponse(['success' => false, 'message' => "Plate $newPlate already exists in the registry"], 409);
@@ -629,7 +637,43 @@ try {
             }
             db()->query("INSERT INTO plate_registry (plate_number, vehicle_type_id, first_registered_at) VALUES (?,?,?) ON DUPLICATE KEY UPDATE vehicle_type_id = VALUES(vehicle_type_id)", [$newPlate, $typeId, date('Y-m-d H:i:s')]);
             db()->insert('activity_log', ['admin_id' => $_SESSION['admin_id'], 'action' => 'set_plate_registry', 'details' => "Plate $plate set to $newPlate, vehicle type $typeId", 'ip_address' => getClientIP()]);
+            madeyaPlateLog('edit', $plate, $newPlate, $before ? madeyaVehicleTypeName($before['vehicle_type_id']) : null, madeyaVehicleTypeName($typeId));
             jsonResponse(['success' => true, 'message' => 'Plate registry updated', 'plate_number' => $newPlate]);
+            break;
+
+        case 'bulk_plate_registry':
+            requireAdminAuth();
+            ensurePlateRegistry();
+            $plates = json_decode($_POST['plates'] ?? '[]', true);
+            if (!is_array($plates) || !$plates) jsonResponse(['success' => false, 'message' => 'Select at least one plate'], 400);
+            if (count($plates) > 300) jsonResponse(['success' => false, 'message' => 'Select at most 300 plates at a time'], 400);
+            $nCat = (string)($_POST['new_cat'] ?? '');   // '' keep, 'none' remove, 1-5 set
+            $nReg = strtoupper((string)($_POST['new_reg'] ?? '')); // '' keep, 'NONE' remove, XX set
+            $nType = (int)($_POST['vehicle_type_id'] ?? 0); // 0 keep
+            if ($nCat !== '' && $nCat !== 'none' && !preg_match('/^[1-5]$/', $nCat)) jsonResponse(['success' => false, 'message' => 'Invalid category'], 400);
+            if ($nReg !== '' && $nReg !== 'NONE' && !preg_match('/^[A-Z]{2}$/', $nReg)) jsonResponse(['success' => false, 'message' => 'Invalid region'], 400);
+            if ($nCat === '' && $nReg === '' && !$nType) jsonResponse(['success' => false, 'message' => 'Choose what to change'], 400);
+            $newTypeName = $nType ? madeyaVehicleTypeName($nType) : null;
+            $done = 0; $skipped = [];
+            foreach ($plates as $old) {
+                $old = strtoupper(trim((string)$old));
+                $row = db()->fetchOne("SELECT plate_number, vehicle_type_id FROM plate_registry WHERE plate_number = ?", [$old]);
+                if (!$row) { $skipped[] = "$old (not found)"; continue; }
+                list($c, $g, $d) = madeyaPlateParts($old);
+                if ($nCat === 'none') $c = ''; elseif ($nCat !== '') $c = $nCat;
+                if ($nReg === 'NONE') $g = ''; elseif ($nReg !== '') $g = $nReg;
+                $new = ($c !== '' ? $c . '-' : '') . ($g !== '' ? $g . '-' : '') . $d;
+                if ($new !== $old) {
+                    if (db()->fetchOne("SELECT plate_number FROM plate_registry WHERE plate_number = ?", [$new])) { $skipped[] = "$old -> $new (already exists)"; continue; }
+                    db()->query("UPDATE plate_registry SET plate_number = ? WHERE plate_number = ?", [$new, $old]);
+                }
+                if ($nType) db()->query("UPDATE plate_registry SET vehicle_type_id = ? WHERE plate_number = ?", [$nType, $new]);
+                if ($new === $old && (!$nType || (int)$row['vehicle_type_id'] === $nType)) continue;
+                madeyaPlateLog('bulk', $old, $new, madeyaVehicleTypeName($row['vehicle_type_id']), $nType ? $newTypeName : madeyaVehicleTypeName($row['vehicle_type_id']));
+                $done++;
+            }
+            db()->insert('activity_log', ['admin_id' => $_SESSION['admin_id'], 'action' => 'bulk_plate_registry', 'details' => "Bulk plate registry fix: $done changed, " . count($skipped) . " skipped", 'ip_address' => getClientIP()]);
+            jsonResponse(['success' => true, 'message' => "$done plate(s) updated" . ($skipped ? ', ' . count($skipped) . ' skipped' : ''), 'changed' => $done, 'skipped' => $skipped]);
             break;
 
         case 'delete_plate_registry':
@@ -637,9 +681,46 @@ try {
             ensurePlateRegistry();
             $plate = strtoupper(trim(sanitize($_POST['plate_number'] ?? '')));
             if ($plate === '') jsonResponse(['success' => false, 'message' => 'Plate required'], 400);
+            $before = db()->fetchOne("SELECT vehicle_type_id FROM plate_registry WHERE plate_number = ?", [$plate]);
             db()->query("DELETE FROM plate_registry WHERE plate_number = ?", [$plate]);
             db()->insert('activity_log', ['admin_id' => $_SESSION['admin_id'], 'action' => 'delete_plate_registry', 'details' => "Plate $plate removed from the plate registry", 'ip_address' => getClientIP()]);
+            madeyaPlateLog('release', $plate, null, $before ? madeyaVehicleTypeName($before['vehicle_type_id']) : null, null);
             jsonResponse(['success' => true, 'message' => 'Plate released - it can be registered under any vehicle type again']);
+            break;
+
+        case 'get_plate_registry_log':
+            requireAdminAuth();
+            ensurePlateLog();
+            $q = strtoupper(trim(sanitize($_GET['q'] ?? '')));
+            $w = ''; $par = [];
+            if ($q !== '') { $w = " WHERE old_plate LIKE ? OR new_plate LIKE ? OR admin_name LIKE ?"; $l = '%' . str_replace(['%', '_'], ['\\%', '\\_'], $q) . '%'; $par = [$l, $l, $l]; }
+            $rows = db()->fetchAll("SELECT id, admin_name, action, old_plate, new_plate, old_type, new_type, created_at FROM plate_registry_log" . $w . " ORDER BY id DESC LIMIT 150", $par);
+            jsonResponse(['success' => true, 'rows' => $rows ?: []]);
+            break;
+
+        case 'get_liters_report':
+            requireAdminAuth();
+            ensureTankColumn();
+            $from = preg_match('/^\d{4}-\d{2}-\d{2}$/', $_GET['from'] ?? '') ? $_GET['from'] : date('Y-m-d', strtotime('-6 days'));
+            $to   = preg_match('/^\d{4}-\d{2}-\d{2}$/', $_GET['to'] ?? '') ? $_GET['to'] : date('Y-m-d');
+            if ($from > $to) { $t = $from; $from = $to; $to = $t; }
+            if (strtotime($to) - strtotime($from) > 92 * 86400) jsonResponse(['success' => false, 'message' => 'Choose at most 92 days'], 400);
+            $cid = (int)($_GET['controller_id'] ?? 0);
+            $w = ' WHERE r.report_date BETWEEN ? AND ?'; $par = [$from, $to];
+            if ($cid) { $w .= ' AND r.controller_id = ?'; $par[] = $cid; }
+            $rows = db()->fetchAll(
+                "SELECT r.report_date AS day, c.id AS controller_id, c.station_name, vt.id AS vehicle_type_id, vt.name AS vehicle_type, vt.tank_liters,
+                        COUNT(*) AS served, SUM(COALESCE(NULLIF(r.fuel_amount_liters,0), vt.tank_liters, 0)) AS liters,
+                        SUM(CASE WHEN COALESCE(NULLIF(r.fuel_amount_liters,0), vt.tank_liters) IS NULL THEN 1 ELSE 0 END) AS unknown
+                 FROM report r JOIN controllers c ON c.id = r.controller_id JOIN vehicle_types vt ON vt.id = r.vehicle_type_id" . $w .
+                " GROUP BY r.report_date, c.id, c.station_name, vt.id, vt.name, vt.tank_liters ORDER BY r.report_date DESC, c.station_name ASC, served DESC", $par);
+            $out = []; $tServed = 0; $tLit = 0.0; $tUnk = 0;
+            foreach ($rows as $r) {
+                $out[] = ['day' => $r['day'], 'controller_id' => (int)$r['controller_id'], 'station' => $r['station_name'], 'vehicle_type' => $r['vehicle_type'],
+                          'tank_liters' => $r['tank_liters'] === null ? null : (float)$r['tank_liters'], 'served' => (int)$r['served'], 'liters' => round((float)$r['liters'], 1), 'unknown' => (int)$r['unknown']];
+                $tServed += (int)$r['served']; $tLit += (float)$r['liters']; $tUnk += (int)$r['unknown'];
+            }
+            jsonResponse(['success' => true, 'from' => $from, 'to' => $to, 'rows' => $out, 'totals' => ['served' => $tServed, 'liters' => round($tLit, 1), 'unknown' => $tUnk]]);
             break;
 
         // ─── SETTINGS ───────────────────────────────────────────────

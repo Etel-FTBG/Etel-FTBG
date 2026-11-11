@@ -18,3 +18,12 @@
 /* remove-from-queue button */
 #mainPanel .action-btn-del{background:rgba(217,48,37,.12)!important;color:#d93025!important;border:1.5px solid rgba(217,48,37,.55)!important}
 #mainPanel .action-btn-del:hover{background:#d93025!important;color:#fff!important}
+
+/* plate registry bulk fix + change log + liters report */
+.pr-filters{margin:4px 0 8px}.pr-bulk{padding:12px;margin:8px 0;border-radius:14px;border:1.5px dashed rgba(212,175,55,.6);background:rgba(212,175,55,.08);display:flex;flex-direction:column;gap:8px}
+.pr-pickl{display:flex;align-items:center;gap:8px;cursor:pointer}.pr-pickl input{width:20px;height:20px;flex:none}
+.pr-log{margin-top:14px}.pr-log summary{cursor:pointer;font-weight:700;padding:8px 0}
+.pr-logrow{padding:10px 12px;margin-top:8px;border-radius:12px;border:1px solid rgba(212,175,55,.35);background:rgba(212,175,55,.05);display:flex;flex-direction:column;gap:3px}.pr-logrow small{opacity:.75}
+.pr-tag{display:inline-block;font-size:11px;font-weight:800;padding:2px 8px;border-radius:999px;background:#d4af37;color:#1a1400;margin-right:6px}.pr-tag.pr-release{background:#d93025;color:#fff}.pr-tag.pr-bulk{background:#1e6fe8;color:#fff}
+.lit-table{width:100%;font-size:13px}.lit-table th,.lit-table td{padding:6px 8px;text-align:left}
+.report-filters input[type=date],.pr-act input[type=date]{min-height:40px;border-radius:10px;padding:0 10px}
