@@ -10,7 +10,7 @@
     return /assets\/js\//.test(s) ? s.replace(/assets\/js\/[^\/]*$/, '') : '';
   })();
   var BASE = ROOT + 'assets/images/vehicles/';
-  var FILES = { bajaj: 1, qute: 1, ev_car: 1, car: 1, minibus: 1, moto: 1, truck: 1 };
+  var FILES = { bajaj: 1, qute: 1, ev_car: 1, car: 1, minibus: 1, van: 1, bus: 1, moto: 1, truck: 1 };
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   function key(name) {
     var s = String(name || '').toLowerCase();
@@ -18,7 +18,9 @@
     if (/\bev\b|electric/.test(s)) return 'ev_car';
     if (/bajaj|tuk|three|3[- ]?wheel/.test(s)) return 'bajaj';
     if (/moto|bike|scooter/.test(s)) return 'moto';
-    if (/mini ?bus|van|bus|hiace/.test(s)) return 'minibus';
+    if (/mini ?bus|hiace|coaster/.test(s)) return 'minibus';
+    if (/\bvan\b|foton|panel/.test(s)) return 'van';
+    if (/bus|isuzu|anbessa/.test(s)) return 'bus';
     if (/truck|lorry|isuzu|cargo|load/.test(s)) return 'truck';
     if (/taxi|car|private|vehicle|sedan|suv|automobile/.test(s)) return 'car';
     return '';

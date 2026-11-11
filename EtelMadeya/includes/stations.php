@@ -61,3 +61,21 @@ function saveVehicleTypeImage($key = 'image') {
     if (!move_uploaded_file($f['tmp_name'], $dir . $name)) return ['error' => 'Failed to save picture'];
     return ['path' => 'uploads/vehicle-types/' . $name];
 }
+
+
+/** One-time: add the extra vehicle types (van, bus) the stations asked for. Marker file keeps deleted ones deleted. */
+function ensureExtraVehicleTypes() {
+    $flag = __DIR__ . '/../uploads/.extra_types_v1';
+    if (file_exists($flag)) return;
+    try {
+        $want = [['van', 'ቫን', 7], ['bus', 'አውቶቡስ', 8]];
+        foreach ($want as $w) {
+            $has = db()->fetchOne("SELECT id FROM vehicle_types WHERE LOWER(name) = ?", [$w[0]]);
+            if (!$has) {
+                db()->insert('vehicle_types', ['name' => $w[0], 'name_am' => $w[1], 'icon' => '', 'sort_order' => $w[2]]);
+            }
+        }
+        if (!is_dir(dirname($flag))) @mkdir(dirname($flag), 0755, true);
+        @file_put_contents($flag, date('c'));
+    } catch (Exception $e) { error_log('ensureExtraVehicleTypes: ' . $e->getMessage()); }
+}

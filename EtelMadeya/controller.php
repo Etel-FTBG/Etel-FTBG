@@ -20,6 +20,7 @@ if ( isset( $_GET['embed'] ) && ! headers_sent() ) {
     <link rel="stylesheet" href="assets/css/controller-mainpanel.css">
     <link rel="stylesheet" href="assets/css/madeya-pro-r2.css">
     <link rel="stylesheet" href="assets/css/madeya-vehicles.css">
+    <link rel="stylesheet" href="assets/css/madeya-plates.css">
     <script src="assets/js/madeya-pro-r2.js"></script>
     <link rel="icon" href="assets/img/etel-logo.png">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
@@ -134,17 +135,20 @@ if ( isset( $_GET['embed'] ) && ! headers_sent() ) {
                     <div class="pnl">
                         <div class="pnl-h"><h3>Register Vehicle</h3><span class="rg-rule" id="regRule"></span></div>
                         <div class="pnl-b rg-form">
-                            <div class="rg-step"><span class="rg-n">1</span> Plate number</div>
+                            <div class="rg-step"><span class="rg-n">1</span> Plate category</div>
+                            <div class="pcats" id="regCats"></div>
+
+                            <div class="rg-step"><span class="rg-n">2</span> Plate number <small>(numbers only)</small></div>
                             <div class="plate-wrap">
-                                <input type="text" id="regPlate" class="mc-plate-inp" placeholder="PLATE NUMBER" maxlength="20" autocomplete="off" autocapitalize="characters" oninput="this.value=this.value.toUpperCase();updateRegParityHint();updateRegSummary()">
+                                <input type="text" id="regPlate" class="mc-plate-inp" placeholder="06369" maxlength="10" inputmode="numeric" pattern="[0-9]*" autocomplete="off">
                                 <div class="pc tl"></div><div class="pc tr"></div><div class="pc bl"></div><div class="pc br"></div>
                             </div>
                             <div class="parity-hint" id="regParHint">&nbsp;</div>
 
-                            <div class="rg-step"><span class="rg-n">2</span> Vehicle type</div>
+                            <div class="rg-step"><span class="rg-n">3</span> Vehicle type</div>
                             <div id="vtypeGrid" class="vtypes"><!-- filled by JS --></div>
 
-                            <div class="rg-step"><span class="rg-n">3</span> Driver details <small>(optional)</small></div>
+                            <div class="rg-step"><span class="rg-n">4</span> Driver details <small>(optional)</small></div>
                             <div class="rg-two">
                                 <div class="mc-field">
                                     <label for="regDriverName">Driver name</label>
@@ -242,7 +246,8 @@ if ( isset( $_GET['embed'] ) && ! headers_sent() ) {
                         <div class="vip-grid">
                             <div class="vip-grid-l">
                                 <div class="mc-subhead" style="color:#e74c3c;">Register VIP Vehicle</div>
-                                <input type="text" id="vipPlate" class="vip-plate-inp" placeholder="VIP PLATE" maxlength="20" autocomplete="off">
+                                <div class="vip-cats"><div class="pcats" id="vipCats"></div></div>
+                                <input type="text" id="vipPlate" class="vip-plate-inp" placeholder="VIP PLATE (numbers)" maxlength="10" inputmode="numeric" pattern="[0-9]*" autocomplete="off">
                                 <div class="mc-field">
                                     <label for="vipVehicleType">Vehicle Type</label>
                                     <select id="vipVehicleType"><option value="">Select type...</option></select>
@@ -448,8 +453,9 @@ if ( isset( $_GET['embed'] ) && ! headers_sent() ) {
     let currentController = null;
     let vehicleTypes = [];
     </script>
-    <script src="assets/js/madeya-vehicles-r3.js"></script>
+    <script src="assets/js/madeya-vehicles-r4.js"></script>
+    <script src="assets/js/madeya-plates.js"></script>
     <script src="assets/js/icons.js"></script>
-    <script src="assets/js/controller-app-r3.js"></script>
+    <script src="assets/js/controller-app-r4.js"></script>
 </body>
 </html>

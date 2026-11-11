@@ -912,7 +912,7 @@ function displayQueueMonitor(queue) {
             <div class="queue-vehicles">
                 ${q.vehicles.map(v => `
                     <div class="vehicle-card">
-                        <strong>${escHtml(v.plate_number)}</strong><br>
+                        <strong>${plateHtml(v.plate_number)}</strong><br>
                         ${vehPic(v.icon, v.vehicle_type_name, 28)} ${escHtml(v.vehicle_type_name)}<br>
                         Position: #${v.position}
                     </div>
@@ -973,7 +973,7 @@ function displayReports(reports, stats) {
                     ${reports.length === 0 ? '<tr><td colspan="6" class="empty-state">No reports for this date</td></tr>' :
                         reports.map(r => `
                             <tr>
-                                <td><strong>${escHtml(r.plate_number)}</strong></td>
+                                <td><strong>${plateHtml(r.plate_number)}</strong></td>
                                 <td>${escHtml(r.vehicle_type_name)}</td>
                                 <td>${escHtml(r.station_name)}</td>
                                 <td>${r.fuel_amount_gallons}</td>
