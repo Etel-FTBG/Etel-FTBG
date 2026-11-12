@@ -100,3 +100,9 @@ html[data-theme="dark"] .dl-f input{color-scheme:dark}
 /* staged-raise table: the status column wraps instead of scrolling sideways on a phone */
 .dl-stg th,.dl-stg td{padding:9px 6px}
 .dl-stg th:last-child,.dl-stg td:last-child{white-space:normal;text-align:right;min-width:92px}
+
+/* phone fixes: date field full width, space above the Sign heading, highlight the company that is raising */
+.dl-f input{width:100%;min-width:0}
+.dl-f input[type=date]{height:46px;-webkit-appearance:none;appearance:none}
+#dl-form h2:not(:first-child){margin-top:24px}
+.dl-co.dl-this{border-color:var(--dl-gold);box-shadow:0 0 0 1px rgba(246,194,43,.35)}

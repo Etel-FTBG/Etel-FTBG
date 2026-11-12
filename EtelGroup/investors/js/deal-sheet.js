@@ -30,7 +30,7 @@ var TXT = {
     fine: 'Summary of the Profit-Share Investment Agreement · the full Agreement and Schedules apply', per_monthly: 'Monthly', per_quarterly: 'Quarterly', per_other: 'Other', days: 'days', none: '-',
     st_h: 'The raise in stages', st_p: 'The price per share rises as the business proves itself. Early investors take more risk and get the lowest price.',
     st_stage: 'Stage', st_price: 'Price per share', st_shares: 'Shares', st_status: 'Status', st_open: 'Open now', st_opens: 'Opens at {n} trips a day', st_sold: 'Sold out', st_locked: 'Opens later', st_your: 'You are buying in Stage',
-    next_h: 'Also in the Etel Group', next_p: 'Delivery & Ride is the first company to raise money. The other companies in the group are separate businesses and are not part of this deal.', live_word: 'Live', soon_word: 'Coming soon',
+    next_h: 'The Etel Group', live_this: 'Live · this deal', self_line: 'Rides and deliveries', next_p: 'Delivery & Ride is the first company to raise money. The other companies in the group are separate businesses and are not part of this deal.', live_word: 'Live', soon_word: 'Coming soon',
     demo_banner: 'DEMO · sample figures · nothing you enter here is saved', demo_ok: 'This was a preview in demo mode. Nothing was saved.', theme_btn: 'Light / dark',
     sigd: 'Signature & date', sh_status: 'Status', sh_electronic: 'Signed electronically. A signed printed copy may also be required.'
   },
@@ -128,7 +128,9 @@ var TXT = {
       "st_sold": "ተሽጧል",
       "st_locked": "በኋላ ይከፈታል",
       "st_your": "የሚገዙት በደረጃ",
-      "next_h": "በኢትኤል ግሩፕ ውስጥ ያሉ ሌሎች",
+      "next_h": "ኢትኤል ግሩፕ",
+      "live_this": "ሥራ ላይ · ይህ ስምምነት",
+      "self_line": "ጉዞና ዕቃ ማመላለሻ",
       "next_p": "ዴሊቨሪ እና ራይድ ገንዘብ የሚሰበስብ የመጀመሪያው ኩባንያ ነው። በግሩፑ ውስጥ ያሉ ሌሎች ኩባንያዎች የተለያዩ ንግዶች ናቸው፤ የዚህ ስምምነት አካል አይደሉም።",
       "live_word": "ሥራ ላይ",
       "soon_word": "በቅርቡ",
@@ -178,7 +180,7 @@ function renderSheet(d, lang, cfg) {
 function printSheet(html, lang) {
   var w = window.open('', '_blank');
   if (!w) { alert('Allow pop-ups to print.'); return; }
-  var css = new URL('css/deal-r2.css', location.href).href;
+  var css = new URL('css/deal-r3.css', location.href).href;
   w.document.write('<!doctype html><html lang="' + (lang || 'en') + '"><head><meta charset="utf-8"><title>ETEL Investor Deal Sheet</title><base href="' + new URL('./', location.href).href + '"><link rel="stylesheet" href="' + css + '"></head><body class="dl-printpage">' + html + '</body></html>');
   w.document.close();
   w.onload = function () { setTimeout(function () { w.focus(); w.print(); }, 350); };
