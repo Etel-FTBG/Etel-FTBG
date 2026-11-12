@@ -12,8 +12,8 @@
 var K = window.AdminKit;
 if (!K) return;
 var esc = K.esc;
-var S = { tab: '', caps: [], rules: [], surge: 1.3, windows: [], isDefault: false, goals: [], zones: [], tiers: [], banks: [], err: {}, cp: null, order: null, cpOut: '', loaded: false, calc: { vt: '', km: 5, wait: 0, open: false, peak: false } };
-var TABS = [['fares', 'Ride fares', 'pricing.manage'], ['peak', 'Peak hours', 'pricing.manage'], ['goals', 'Driver goals', 'pricing.manage'], ['delivery', 'Delivery', 'settings.view'], ['courier', 'Courier pay', ['pricing.manage', 'settings.view']], ['banks', 'Bank accounts', 'finance.view']];
+var S = { cm: null, tab: '', caps: [], rules: [], surge: 1.3, windows: [], isDefault: false, goals: [], zones: [], tiers: [], banks: [], err: {}, cp: null, order: null, cpOut: '', loaded: false, calc: { vt: '', km: 5, wait: 0, open: false, peak: false } };
+var TABS = [['fares', 'Ride fares', 'pricing.manage'], ['peak', 'Peak hours', 'pricing.manage'], ['goals', 'Driver goals', 'pricing.manage'], ['commission', 'Commission', 'pricing.manage'], ['delivery', 'Delivery', 'settings.view'], ['courier', 'Courier pay', ['pricing.manage', 'settings.view']], ['banks', 'Bank accounts', 'finance.view']];
 var BUILTIN = ['bajaj', 'moto', 'car', 'minibus'];
 var IMG_V = '2';    // same as IMG_V in etel-vehicle-art.js: bump both when the picture files change, so phones do not keep showing the old ones
 var ART = ['bajaj', 'qute', 'moto', 'car', 'ev_car', 'minibus'];
@@ -84,6 +84,7 @@ function loadAll() {
         S.windows = (d.windows || []).map(function (w) { return { label: w.label || '', days: (w.days || []).map(Number), start: w.start || '00:00', end: w.end || '00:00', multiplier: w.multiplier != null ? Number(w.multiplier) : null }; });
       });
       job('goals', 'admin_get_goal_tiers', function (d) { S.goals = d.tiers || []; });
+      job('commission', 'admin_get_commission_plan', function (d) { S.cm = d; });
     }
     if (can('settings.view')) { job('zones', 'admin_get_zones', function (d) { S.zones = d.zones || []; }); job('tiers', 'admin_get_delivery_tiers', function (d) { S.tiers = d.tiers || []; }); }
     if (can('finance.view')) job('banks', 'admin_get_bank_accounts', function (d) { S.banks = d.accounts || []; });
@@ -205,6 +206,21 @@ function goalsView() {
     '<div style="display:flex;gap:10px;align-items:flex-end;margin-top:12px;flex-wrap:wrap"><label class="ak-fl">New tier (trips)<input class="ak-in" id="ps-g-new" type="number" min="1" max="200" placeholder="15" style="width:140px"></label><button type="button" class="ak-btn gold" data-add-goal>➕ Add tier</button></div></div>';
 }
 
+function pct(r) { return Math.round(f(r) * 10000) / 100; }
+function commissionView() {
+  if (S.err.commission) return K.empty('⚠️', 'Could not load the commission plan', S.err.commission);
+  var p = (S.cm && S.cm.plan) || {}, n = (S.cm && S.cm.drivers_by_phase) || {};
+  function num(id, label, val, extra) { return '<label class="ak-fl">' + esc(label) + '<input class="ak-in" id="' + id + '" type="number" inputmode="decimal" step="' + (extra || '1') + '" min="0" value="' + esc(val) + '"></label>'; }
+  function day(id, label, val) { return '<label class="ak-fl">' + esc(label) + '<input class="ak-in" id="' + id + '" type="date" value="' + esc(val || '') + '"></label>'; }
+  return '<div class="ps-box"><h3>Commission plan</h3><div class="sub">What Etel takes from a driver on each trip. With the launch plan off, every driver pays the standard rate. With it on, each driver pays the launch rates from their own start day (the day their account was created, or the plan start day if later), then the standard rate. Trips already completed keep the rate they were charged.</div>' +
+    '<div class="ps-ins">' + num('cm-std', 'Standard rate (%)', pct(p.standard_rate), '0.1') +
+    '<label class="ak-fl" style="flex-direction:row;gap:8px;align-items:center"><input type="checkbox" id="cm-on"' + (p.holiday_on ? ' checked' : '') + '> Launch plan is ON</label></div>' +
+    '<div class="ps-ins" style="margin-top:10px">' + num('cm-d1', 'Phase 1: days', p.phase1_days) + num('cm-r1', 'Phase 1 rate (%)', pct(p.phase1_rate), '0.1') + num('cm-d2', 'Phase 2: days', p.phase2_days) + num('cm-r2', 'Phase 2 rate (%)', pct(p.phase2_rate), '0.1') + '</div>' +
+    '<div class="ps-ins" style="margin-top:10px">' + day('cm-start', 'Plan starts on', p.starts_on) + day('cm-enrol', 'Only drivers who start by (optional)', p.enroll_until) + '</div>' +
+    '<div class="ps-note">Today: <b>' + K.num(n.holiday || 0) + '</b> drivers in phase 1, <b>' + K.num(n.step || 0) + '</b> in phase 2, <b>' + K.num(n.standard || 0) + '</b> at the standard rate. Drivers see their own rate and the day it changes in the driver app. Leaving "Only drivers who start by" empty gives every driver the plan while it is ON.</div>' +
+    '<div style="margin-top:12px"><button type="button" class="ak-btn gold" data-save-commission>💾 Save commission plan</button></div></div>';
+}
+
 function deliveryView() {
   var h = '';
   if (S.err.zones) h += K.empty('⚠️', 'Could not load zones', S.err.zones + ' — has migration 007_ride_fare_rules.sql been applied?');
@@ -281,7 +297,7 @@ function paint() {
   var bigs = [];
   if (can('pricing.manage')) bigs.push(['Vehicle types on', K.num(act)], ['Default surge', '× ' + S.surge], ['Peak windows', K.num(S.windows.length)]);
   if (can('settings.view')) bigs.push(['Delivery zones', K.num(az)]);
-  var body = S.tab === 'peak' ? peakView() : S.tab === 'goals' ? goalsView() : S.tab === 'delivery' ? deliveryView() : S.tab === 'banks' ? banksView() : S.tab === 'courier' ? courierView() : faresView();
+  var body = S.tab === 'peak' ? peakView() : S.tab === 'goals' ? goalsView() : S.tab === 'commission' ? commissionView() : S.tab === 'delivery' ? deliveryView() : S.tab === 'banks' ? banksView() : S.tab === 'courier' ? courierView() : faresView();
   el.innerHTML = '<div class="ak">' + K.hero('Pricing', 'What riders, customers and drivers pay — fares, surge, delivery fees and the bank accounts shown at checkout. Changes apply to new trips and orders as soon as you save.', bigs) +
     '<div class="ps-tabs"><div class="ak-seg" role="group" aria-label="Section">' + vis.map(function (t) { return '<button type="button" data-tab="' + t[0] + '" aria-pressed="' + (S.tab === t[0]) + '" class="' + (S.tab === t[0] ? 'on' : '') + '">' + esc(t[1]) + '</button>'; }).join('') + '</div><span style="flex:1"></span><button type="button" class="ak-btn" data-refresh aria-label="Refresh">🔄</button></div>' + body + '</div>';
 }
@@ -337,6 +353,12 @@ function onClick(e) {
     var dv = b.getAttribute('data-del-vt');
     K.confirm({ title: 'Switch off ' + vlabel(dv) + '?', text: 'It stops being offered for new rides. Drivers already registered with it and past rides keep their history.', label: 'Switch off', danger: true })
       .then(function (r) { if (r) run('admin_delete_vehicle_type', { vehicle_type: dv }).then(function (res) { return done(res, vlabel(dv) + ' switched off'); }); }); return;
+  }
+  if (t.closest('[data-save-commission]')) {
+    function v(id) { return document.getElementById(id); }
+    run('admin_save_commission_plan', { standard_rate: f(v('cm-std').value) / 100, holiday_on: v('cm-on').checked ? 1 : 0, phase1_days: parseInt(v('cm-d1').value, 10) || 0, phase1_rate: f(v('cm-r1').value) / 100,
+      phase2_days: parseInt(v('cm-d2').value, 10) || 0, phase2_rate: f(v('cm-r2').value) / 100, starts_on: v('cm-start').value, enroll_until: v('cm-enrol').value })
+      .then(function (r) { return done(r, 'Commission plan saved'); }); return;
   }
   if (t.closest('[data-save-surge]')) { run('admin_update_ride_surge_multiplier', { value: f(document.getElementById('ps-surge').value) }).then(function (r) { return done(r, 'Surge multiplier saved'); }); return; }
   if ((b = t.closest('.ps-day'))) { b.setAttribute('aria-pressed', b.getAttribute('aria-pressed') === 'true' ? 'false' : 'true'); var w = S.windows[parseInt(b.closest('.ps-win').getAttribute('data-i'), 10)]; if (w) { var d = parseInt(b.getAttribute('data-day'), 10), ix = w.days.indexOf(d); if (ix < 0) w.days.push(d); else w.days.splice(ix, 1); } refreshMap(); return; }

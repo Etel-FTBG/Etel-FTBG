@@ -10,7 +10,7 @@ require_once __DIR__ . '/../lib/ride_fare.php';
 require_once __DIR__ . '/../lib/schema_helpers.php';
 require_once __DIR__ . '/../push.php';
 /* Admin: ride fares, vehicle types, goal tiers, peak windows, zones and delivery tiers live in AdminPricingController.php (same scope; any other action falls through to the switch below). */
-if (in_array($action, array('admin_get_ride_fare_rules', 'admin_update_ride_fare_rule', 'admin_add_vehicle_type', 'admin_delete_vehicle_type', 'admin_update_ride_surge_multiplier', 'admin_get_goal_tiers', 'admin_save_goal_tier', 'admin_delete_goal_tier', 'admin_get_ride_peak_windows', 'admin_update_ride_peak_windows', 'admin_get_zones', 'admin_update_zone', 'admin_add_zone', 'admin_get_delivery_tiers', 'admin_update_delivery_tier', 'admin_delete_zone'), true)) { require __DIR__ . '/AdminPricingController.php'; }
+if (in_array($action, array('admin_get_ride_fare_rules', 'admin_update_ride_fare_rule', 'admin_add_vehicle_type', 'admin_delete_vehicle_type', 'admin_update_ride_surge_multiplier', 'admin_get_commission_plan', 'admin_save_commission_plan', 'admin_get_goal_tiers', 'admin_save_goal_tier', 'admin_delete_goal_tier', 'admin_get_ride_peak_windows', 'admin_update_ride_peak_windows', 'admin_get_zones', 'admin_update_zone', 'admin_add_zone', 'admin_get_delivery_tiers', 'admin_update_delivery_tier', 'admin_delete_zone'), true)) { require __DIR__ . '/AdminPricingController.php'; }
 
 /* Admin: shop items (add, edit, import, extras, delete, show or hide) live in AdminCatalogController.php (same scope; any other action falls through to the switch below). */
 if (in_array($action, array('admin_add_item', 'admin_items_import', 'admin_get_all_items', 'admin_update_item', 'admin_item_extras_save', 'admin_delete_item', 'admin_toggle_item'), true)) { require __DIR__ . '/AdminCatalogController.php'; }
@@ -1145,11 +1145,15 @@ case 'admin_ride_growth': {
         // not as revenue actually collected, to avoid the dashboard
         // implying money that hasn't actually changed hands yet.
         $grossFares = floatval($pdo->query("SELECT COALESCE(SUM(fare_final),0) FROM rides WHERE status='completed'")->fetchColumn());
+        require_once __DIR__ . '/../lib/ride_commission.php';
+        $commissionReal = round($grossFares * 0.05, 2);
+        try { $commissionReal = round(floatval($pdo->query("SELECT COALESCE(SUM(" . rides_commission_sql($pdo) . "),0) FROM rides WHERE status='completed'")->fetchColumn()), 2); } catch (Exception $e) { /* keep the estimate */ }
         $result['totals'] = array(
             'trips_all_time'             => intval($pdo->query("SELECT COUNT(*) FROM rides WHERE status='completed'")->fetchColumn()),
             'drivers_all_time'           => intval($pdo->query("SELECT COUNT(*) FROM ride_drivers")->fetchColumn()),
             'gross_fares_all_time'       => round($grossFares, 2),
             'projected_commission_5pct'  => round($grossFares * 0.05, 2),
+            'commission_charged'         => $commissionReal,
         );
     } catch (Exception $e) {
         fail_ex($e, 'Growth stats query failed', 500);

@@ -80,6 +80,23 @@ check(not r['data']['state']['active'] and r['data']['state']['switch_on'], 'a l
 s, r = call('admin_run_distribution', {'period_start': '2026-10-01', 'period_end': '2026-10-31'})
 check(s == 200 and r['data'].get('id') and r['data']['net_profit'] == 75, 'the payout locks once the launch period is over', r)
 
+
+# commission really charged by Delivery & Ride (rides.commission_amt) counts as it was charged; older rides use the rate set here
+call('admin_orders_income_save', {'include_orders': False, 'order_commission_rate': ''})
+subprocess.check_call(['mysql', 'deltest', '-e', """
+ALTER TABLE rides ADD COLUMN commission_amt DECIMAL(10,2) NULL DEFAULT NULL;
+INSERT INTO rides (status,fare_paid,completed_at,commission_amt) VALUES
+ ('completed',2000,'2026-11-02 10:00:00',0),
+ ('completed',1000,'2026-11-03 10:00:00',30),
+ ('completed',500,'2026-11-04 10:00:00',NULL);
+"""])
+s, r = call('admin_preview_distribution', {'period_start': '2026-11-01', 'period_end': '2026-11-30'})
+x = r['data'] if s == 200 else {}
+check(x.get('gross_fare_total') == 3500 and x.get('rides_commission_actual') == 30 and x.get('commission_revenue') == 55 and x.get('net_profit') == -45,
+      'a free trip counts 0, a charged trip counts what was charged, an older trip uses the rate set here', r)
+s, r = call('admin_preview_distribution', {'period_start': '2026-10-01', 'period_end': '2026-10-31'})
+check(s == 200 and r['data']['commission_revenue'] == 75 and r['data']['rides_commission_actual'] == 0, 'a month with only older trips is unchanged', r)
+
 # budget tracker
 s, r = call('admin_launch_spend_add', {'category': 'marketing', 'amount': 1500, 'spent_on': '2026-11-01', 'note': 'posters'})
 m = [c for c in r['data']['summary']['categories'] if c['category'] == 'marketing'][0] if s == 200 else {}

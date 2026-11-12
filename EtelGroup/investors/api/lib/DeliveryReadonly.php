@@ -68,10 +68,18 @@ function ir_delivery_test_connection(PDO $pdo): array {
 // or zero data without saying so.
 function ir_delivery_fetch_daily(PDO $pdo, string $from, string $to): array {
     $dconn = ir_delivery_connect($pdo);
+    // Delivery & Ride stores the commission really charged on each completed ride (rides.commission_amt) once the commission
+    // plan is in place; trips completed before that have no amount and use the rate set here. Both are returned per day.
+    $hasCommission = false;
+    try { $hasCommission = (bool)$dconn->query("SHOW COLUMNS FROM rides LIKE 'commission_amt'")->fetch(); } catch (Exception $e) { $hasCommission = false; }
+    $extra = $hasCommission
+        ? ", COALESCE(SUM(CASE WHEN commission_amt IS NOT NULL THEN commission_amt ELSE 0 END), 0) AS commission_actual,
+           COALESCE(SUM(CASE WHEN commission_amt IS NULL THEN fare_paid ELSE 0 END), 0) AS gross_legacy"
+        : ", 0 AS commission_actual, COALESCE(SUM(fare_paid), 0) AS gross_legacy";
     $stmt = $dconn->prepare(
         "SELECT DATE(completed_at) AS trip_date,
                 COUNT(*) AS trip_count,
-                COALESCE(SUM(fare_paid), 0) AS gross_fare
+                COALESCE(SUM(fare_paid), 0) AS gross_fare" . $extra . "
          FROM rides
          WHERE status = 'completed'
            AND completed_at IS NOT NULL

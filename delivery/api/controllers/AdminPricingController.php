@@ -160,6 +160,59 @@ case 'admin_update_ride_surge_multiplier': {
 }
 
 
+// -- COMMISSION PLAN ------------------------------------------------
+// The standard commission rate and the per-driver launch schedule (commission-free days, then a reduced rate, then the
+// standard rate). See lib/ride_commission.php. Applies to trips completed after it is saved; completed trips keep the
+// rate they were charged.
+case 'admin_get_commission_plan': {
+    $pdo = db();
+    require_admin($pdo, 'pricing.manage');
+    require_once __DIR__ . '/../lib/ride_commission.php';
+    $plan = rides_commission_plan($pdo);
+    $phases = array('holiday' => 0, 'step' => 0, 'standard' => 0);
+    $sample = array();
+    try {
+        foreach ($pdo->query("SELECT u.id, u.created_at FROM users u JOIN ride_drivers d ON d.user_id=u.id")->fetchAll(PDO::FETCH_ASSOC) as $dr) {
+            $cm = rides_commission_rate_on($plan, substr((string)$dr['created_at'], 0, 10), date('Y-m-d'));
+            $phases[$cm['phase']]++;
+        }
+    } catch (Exception $e) { /* counts are optional */ }
+    ok(array('plan' => $plan, 'drivers_by_phase' => $phases, 'today' => date('Y-m-d')));
+    break;
+}
+
+case 'admin_save_commission_plan': {
+    $pdo = db();
+    require_admin($pdo, 'pricing.manage');
+    require_once __DIR__ . '/../lib/ride_commission.php';
+    $in = array(
+        'standard_rate' => isset($body['standard_rate']) ? floatval($body['standard_rate']) : 0.05,
+        'holiday_on'    => !empty($body['holiday_on']) ? 1 : 0,
+        'starts_on'     => isset($body['starts_on']) ? trim($body['starts_on']) : '',
+        'enroll_until'  => isset($body['enroll_until']) ? trim($body['enroll_until']) : '',
+        'phase1_days'   => isset($body['phase1_days']) ? intval($body['phase1_days']) : 60,
+        'phase1_rate'   => isset($body['phase1_rate']) ? floatval($body['phase1_rate']) : 0,
+        'phase2_days'   => isset($body['phase2_days']) ? intval($body['phase2_days']) : 30,
+        'phase2_rate'   => isset($body['phase2_rate']) ? floatval($body['phase2_rate']) : 0.02
+    );
+    if ($in['standard_rate'] < 0 || $in['standard_rate'] > 0.30) fail('The standard rate must be between 0 and 0.30 (0.05 = 5 percent).', 400);
+    if ($in['phase1_rate'] < 0 || $in['phase2_rate'] < 0) fail('Rates cannot be negative.', 400);
+    if ($in['phase1_rate'] > $in['standard_rate'] || $in['phase2_rate'] > $in['standard_rate']) fail('A launch rate cannot be higher than the standard rate.', 400);
+    if ($in['phase1_days'] < 0 || $in['phase1_days'] > 365 || $in['phase2_days'] < 0 || $in['phase2_days'] > 365) fail('Days must be between 0 and 365.', 400);
+    foreach (array('starts_on', 'enroll_until') as $k) {
+        if ($in[$k] !== '' && rides_commission_valid_day($in[$k]) === '') fail('Dates must look like 2026-12-31.', 400);
+    }
+    if ($in['holiday_on'] && $in['starts_on'] === '') $in['starts_on'] = date('Y-m-d'); // switched on without a start day: it starts today
+    try {
+        $saved = rides_commission_save_plan($pdo, $in);
+        ok(array('message' => 'Commission plan saved', 'plan' => $saved));
+    } catch (Exception $e) {
+        fail_ex($e, 'Could not save the commission plan', 500);
+    }
+    break;
+}
+
+
 // ── DRIVER DAILY-GOAL TIERS ──────────────────────────────────────────
 // Previously six values ("2 trips -> +ETB 250" etc.) hardcoded directly
 // into driver/index.html - an admin had no way to change the trip

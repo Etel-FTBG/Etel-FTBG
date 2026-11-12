@@ -541,8 +541,19 @@ function rides_complete_and_pay($pdo, $rideId, $driverId, $fare, $paymentMethod,
            commission is still 5% of the FULL fare and, for a cash trip, the discount is credited to the driver's
            Etel money balance (the rider handed over less cash). A platform-collected trip earns the full fare. */
         $grossFare = $fare + $promoDiscount;
-        $commissionRate = 0.05; // ETEL platform commission - activated 2026-08-18
+        /* Commission rate: 5% standard (ETEL platform commission - activated 2026-08-18), or the driver's launch rate
+           from the commission plan (lib/ride_commission.php). The rate and the amount are stored on the ride. */
+        require_once __DIR__ . '/ride_commission.php';
+        $cm = rides_commission_for_driver($pdo, $driverId);
+        $commissionRate = $cm['rate'];
         $commissionAmt = round($grossFare * $commissionRate, 2);
+        try {
+            rides_add_missing_cols($pdo, 'rides', array(
+                'commission_rate' => "commission_rate DECIMAL(6,4) NULL DEFAULT NULL",
+                'commission_amt'  => "commission_amt DECIMAL(10,2) NULL DEFAULT NULL"
+            ));
+            $pdo->prepare("UPDATE rides SET commission_rate=?, commission_amt=? WHERE id=?")->execute(array($commissionRate, $commissionAmt, $rideId));
+        } catch (Exception $e) { error_log('[ETEL][commission] could not store the rate on ride ' . $rideId . ': ' . $e->getMessage()); }
         $pdo->prepare("UPDATE ride_drivers SET etel_money_balance=etel_money_balance-? WHERE user_id=?")
             ->execute(array($commissionAmt, $driverId));
         // 'chapa' counts as platform-collected ONLY with a verified tx ref

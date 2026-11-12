@@ -17,7 +17,9 @@ function rides_trip_money($r) {
     $paid = round(floatval(isset($r['fare_paid']) ? $r['fare_paid'] : 0), 2);
     $promo = round(floatval(isset($r['promo_discount']) ? $r['promo_discount'] : 0), 2);
     $gross = round($paid + $promo, 2);
-    $commission = round($gross * rides_commission_rate(), 2);
+    // the rate that was really charged on this trip (stored when it completed); older trips used the standard rate
+    $rate = (isset($r['commission_rate']) && $r['commission_rate'] !== null && $r['commission_rate'] !== '') ? floatval($r['commission_rate']) : rides_commission_rate();
+    $commission = round($gross * $rate, 2);
     $method = isset($r['payment_method']) ? strtolower((string)$r['payment_method']) : 'cash';
     $etel = ($method === 'wallet') || ($method === 'chapa' && !empty($r['wallet_tx_ref']));
     return array(
@@ -28,6 +30,17 @@ function rides_trip_money($r) {
         'you_keep'      => round($gross - $commission, 2),
         'collected_by'  => $etel ? 'etel' : 'cash'
     );
+}
+
+// rides.commission_rate is added the first time a trip completes after the commission plan was introduced: select NULL until then.
+function rides_statement_rate_col($pdo) {
+    static $col = null;
+    if ($col !== null) return $col;
+    $col = 'NULL AS commission_rate';
+    try {
+        if ($pdo->query("SHOW COLUMNS FROM `rides` LIKE 'commission_rate'")->fetch()) $col = 'r.commission_rate';
+    } catch (Exception $e) { /* keep NULL */ }
+    return $col;
 }
 
 // rides.wallet_tx_ref is added the first time a platform-paid trip needs it, so an install can lack it: select NULL then.
@@ -55,7 +68,7 @@ function rides_statement_week($pdo, $driverId, $weekStart) {
     $end = date('Y-m-d', strtotime($weekStart . ' +7 days'));
     $q = $pdo->prepare(
         "SELECT r.id, r.pickup_address, r.dropoff_address, r.distance_km, r.traveled_km, r.open_trip, r.fare_paid, r.promo_code,
-                r.promo_discount, r.payment_method, " . rides_statement_ref_col($pdo) . ", r.completed_at, DATE(r.completed_at) AS day
+                r.promo_discount, r.payment_method, " . rides_statement_ref_col($pdo) . ", " . rides_statement_rate_col($pdo) . ", r.completed_at, DATE(r.completed_at) AS day
          FROM rides r
          WHERE r.driver_id=? AND r.status='completed' AND r.completed_at >= ? AND r.completed_at < ?
          ORDER BY r.completed_at DESC LIMIT 500");
