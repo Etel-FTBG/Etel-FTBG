@@ -1955,7 +1955,7 @@ case 'driver_get_ride_history': {
     $s = $pdo->prepare(
         "SELECT r.id, r.pickup_address, r.dropoff_address, r.distance_km, r.fare_paid, r.fare_final,
                 r.status, r.rating, r.created_at, r.completed_at, r.assigned_at,
-                r.payment_method, r.open_trip, r.traveled_km, r.promo_code, r.promo_discount, " . rides_statement_ref_col($pdo) . ",
+                r.payment_method, r.open_trip, r.traveled_km, r.promo_code, r.promo_discount, " . rides_statement_ref_col($pdo) . ", " . rides_statement_rate_col($pdo) . ",
                 p.name AS passenger_name, p.phone AS passenger_phone
          FROM rides r
          LEFT JOIN users p ON p.id = r.passenger_id
@@ -2569,6 +2569,14 @@ case 'driver_get_nearby_requests': {
     break;
 }
 
+case 'driver_get_commission': {
+    // What this driver pays Etel on each trip today, and until when (shown as a small note in the driver app).
+    require_once __DIR__ . '/../lib/ride_commission.php';
+    $cm = rides_commission_for_driver($pdo, $u['id']);
+    ok(array('rate' => $cm['rate'], 'phase' => $cm['phase'], 'ends_on' => $cm['ends_on'], 'standard_rate' => $cm['standard_rate']));
+    break;
+}
+
 case 'driver_get_goal_tiers': {
     rides_ensure_goal_tiers_table($pdo);
     // Real per-driver average fare, not a fixed admin-set bonus - "what
@@ -2685,7 +2693,14 @@ case 'driver_get_kpi_summary': {
     // driver_arrived case) - shown to the driver as a transparent
     // breakdown, not a separate/different number than what's actually
     // charged.
+    // (a driver in the launch period paid less: the commission really charged is summed from the trips)
+    require_once __DIR__ . '/../lib/ride_commission.php';
     $platformFee = round($gross * 0.05, 2);
+    try {
+        $cs = $pdo->prepare("SELECT COALESCE(SUM(" . rides_commission_sql($pdo) . "),0) FROM rides WHERE driver_id=? AND status='completed' AND completed_at >= $sinceExpr");
+        $cs->execute(array($u['id']));
+        $platformFee = round(floatval($cs->fetchColumn()), 2);
+    } catch (Exception $e) { /* keep the 5% estimate */ }
     $netEarnings = round($gross - $platformFee, 2);
 
     // Online seconds: closed shifts fully within the window, plus the

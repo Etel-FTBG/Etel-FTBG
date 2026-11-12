@@ -463,8 +463,12 @@ case 'admin_run_distribution': {
     } catch (Exception $e) {
         fail('Could not read real trip data from Delivery & Ride: ' . $e->getMessage(), 502);
     }
-    $grossFareTotal = 0.0;
-    foreach ($days as $d) $grossFareTotal += (float)$d['gross_fare'];
+    $grossFareTotal = 0.0; $commissionActual = 0.0; $grossLegacy = 0.0;
+    foreach ($days as $d) {
+        $grossFareTotal += (float)$d['gross_fare'];
+        $commissionActual += isset($d['commission_actual']) ? (float)$d['commission_actual'] : 0.0;
+        $grossLegacy += isset($d['gross_legacy']) ? (float)$d['gross_legacy'] : (float)$d['gross_fare'];
+    }
     try {
         $oi = ir_orders_income($pdo, $periodStart, $periodEnd);
     } catch (Exception $e) {
@@ -486,14 +490,16 @@ case 'admin_run_distribution': {
     }
 
     $result = ir_run_distribution(
-        $grossFareTotal, ir_commission_rate($pdo), $costCats, $periodStart, $periodEnd, $investorsForEngine, $oi['commission']
+        $grossLegacy, ir_commission_rate($pdo), $costCats, $periodStart, $periodEnd, $investorsForEngine, $oi['commission'] + $commissionActual
     );
+    // Rides charged under the commission plan count at the commission really taken; older rides at the rate set here.
+    // Gross and commission totals include delivered orders when order income is on.
+    $result['rides_commission_actual'] = round($commissionActual, 2);
+    $result['gross_fare_total'] = round($grossFareTotal + $oi['gross'], 2);
+    $result['commission_revenue'] = round($result['commission_revenue'] + $result['other_income'], 2);
     if ($oi['enabled']) {
-        // Show orders next to rides: gross and commission totals include delivered orders.
         $result['orders_count'] = $oi['count'];
         $result['orders_gross'] = $oi['gross'];
-        $result['gross_fare_total'] = round($result['gross_fare_total'] + $oi['gross'], 2);
-        $result['commission_revenue'] = round($result['commission_revenue'] + $result['other_income'], 2);
     }
 
     if (!$lock) {

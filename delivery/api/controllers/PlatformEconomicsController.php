@@ -136,10 +136,13 @@ case 'platform_economics_get_summary': {
 
     $completedRides = intval($r['n']);
     $grossFares = round(floatval($r['gross']), 2);
-    // Real 5% commission revenue - same rate as RideController's live
-    // commission logic, applied to real completed-ride fares in the
-    // window, not a projection.
+    // Real commission revenue: the commission each completed ride really paid (5% standard, less in a driver's launch
+    // period - see lib/ride_commission.php), summed over the window, not a projection.
+    require_once __DIR__ . '/../lib/ride_commission.php';
     $commissionRevenue = round($grossFares * 0.05, 2);
+    try {
+        $commissionRevenue = round(floatval($pdo->query("SELECT COALESCE(SUM(" . rides_commission_sql($pdo) . "),0) FROM rides WHERE status='completed' AND completed_at >= $sinceExpr")->fetchColumn()), 2);
+    } catch (Exception $e) { /* keep the 5% estimate */ }
     $paymentProcessingCost = round($grossFares * (floatval($costs['payment_processing_pct']) / 100), 2);
 
     // Monthly cost assumptions are prorated to the requested window.
