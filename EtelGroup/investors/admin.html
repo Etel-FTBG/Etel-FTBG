@@ -7,7 +7,7 @@
 <meta name="robots" content="noindex">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Syne:wght@700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/ir-pro.css?v=1">
+<link rel="stylesheet" href="css/ir-pro.css?v=2">
 <script>/* theme before first paint: same key as the Delivery admin */
 try{var t=localStorage.getItem('theme');if(t!=='dark'&&t!=='light')t=window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';document.documentElement.setAttribute('data-theme',t);document.addEventListener('DOMContentLoaded',function(){document.body.classList.toggle('dark-theme',t==='dark')})}catch(e){}
 </script>
@@ -40,7 +40,7 @@ try{var t=localStorage.getItem('theme');if(t!=='dark'&&t!=='light')t=window.matc
       <a data-page="investors"><i>&#128100;</i>Investors</a>
       <div class="irx-nav-h">Money</div>
       <a data-page="distributions"><i>&#129518;</i>Distributions</a>
-      <a data-page="costs"><i>&#128184;</i>Costs &amp; tranches</a>
+      <a data-page="costs"><i>&#128184;</i>Costs &amp; stages</a>
       <a data-page="planner"><i>&#128640;</i>Growth planner</a>
       <div class="irx-nav-h">System</div>
       <a id="nav-setup"><i>&#9881;&#65039;</i>Setup wizard</a>
@@ -132,16 +132,25 @@ try{var t=localStorage.getItem('theme');if(t!=='dark'&&t!=='light')t=window.matc
             <div class="ir-card flat"><h2>&#127919; Profit Share pool</h2><div class="desc">2,000 Profit Shares in the pool: how many are sold, open for sale now, and still locked.</div><div class="irx-donutwrap" id="irx-pool"></div></div>
             <div class="ir-card flat"><h2>&#128276; Needs your attention</h2><div class="desc">What is waiting for you right now.</div><div class="irx-attn" id="irx-attn"></div></div>
           </div>
+          <div class="ir-card" style="margin-top:18px">
+        <h2>&#127919; Investor pitch</h2>
+        <div class="desc">The investor presentation page (English and Amharic, prints to PDF). In demo mode it shows clearly labelled sample traction; in real mode the real trips-per-day number stays hidden until you switch it on here.</div>
+        <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+          <a class="btn btn-outline" href="pitch.html" target="_blank" rel="noopener">Open the pitch</a>
+          <label style="display:flex;gap:8px;align-items:center;font-size:13px"><input type="checkbox" id="pitch-traction" onchange="irSetPitchTraction(this.checked)"> Show real traction numbers on the pitch</label>
+        </div>
+      </div>
           <div class="ir-card" style="margin-top:18px"><h2>&#128200; Net profit and investor payouts</h2><div class="desc">The latest locked periods. Gold is the net profit, blue is paid to investors.</div><div id="irx-chart"></div></div>
           <div class="ir-grid2">
             <div class="ir-card flat">
-        <h2>&#128202; Tranche 2 milestone</h2>
-        <div class="desc">Rolling 4-week average trips/day, from real Delivery &amp; Ride data. Tranche 2 unlock is always a manual decision — this is a progress indicator only.</div>
+        <h2>&#128202; Next stage milestone</h2>
+        <div class="desc">Rolling 4-week average trips/day, from real Delivery &amp; Ride data, against the target of the next locked stage. Unlocking a stage is always a manual decision &mdash; this is a progress indicator only.</div>
         <div id="ir-milestone"></div>
       </div>
 
             <div class="ir-card flat">
-        <h2>&#127903; Tranches</h2>
+        <h2>&#127903; Staged raise</h2>
+        <div class="desc">Three stages, each with its own price per share. A stage opens when you unlock it; investors always buy in the first open stage that still has shares.</div>
         <div id="ir-tranches"></div>
       </div>
 
@@ -222,6 +231,8 @@ try{var t=localStorage.getItem('theme');if(t!=='dark'&&t!=='light')t=window.matc
           <div class="cf-field"><label>Wait Rate (ETB/min)</label><input type="number" id="gp-wait-rate" value="3" min="0"></div>
           <div class="cf-field"><label>% of Trips at Peak/Surge</label><input type="number" id="gp-pct-surge" value="25" min="0" max="100"></div>
           <div class="cf-field"><label>Surge Multiplier</label><input type="number" id="gp-surge-mult" value="1.2" min="1" step="0.1"></div>
+          <div class="cf-field"><label>Other income / month (ETB)</label><input type="number" id="gp-other-income" value="0" min="0" title="Delivery fees and other income the company keeps"></div>
+          <div class="cf-field"><label>Costs plan (% of listed costs)</label><select id="gp-cost-scale"><option value="50">Lean &ndash; 50%</option><option value="75">Growing &ndash; 75%</option><option value="100" selected>Full plan &ndash; 100%</option></select></div>
         </div>
         <button class="btn btn-outline" onclick="irRunGrowthPlanner()">Project</button>
         <div id="gp-output" style="margin-top:16px"></div>
@@ -270,11 +281,11 @@ try{var t=localStorage.getItem('theme');if(t!=='dark'&&t!=='light')t=window.matc
 
     <div id="inv-purchases-section" style="display:none;margin-top:18px;border-top:1px solid var(--line);padding-top:14px">
       <div class="field-label">Share Purchases</div>
-      <table class="ir-table" id="inv-purchases-table"><thead><tr><th>Date</th><th class="ir-num">Shares</th><th>Tranche</th><th class="ir-num">Amount</th></tr></thead><tbody></tbody></table>
+      <table class="ir-table" id="inv-purchases-table"><thead><tr><th>Date</th><th class="ir-num">Shares</th><th>Stage</th><th class="ir-num">Amount</th></tr></thead><tbody></tbody></table>
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
         <input type="date" id="p-date" style="flex:1;min-width:120px">
         <input type="number" id="p-shares" placeholder="Shares" style="flex:1;min-width:90px">
-        <select id="p-tranche" style="flex:1;min-width:90px"><option value="1">Tranche 1</option><option value="2">Tranche 2</option></select>
+        <select id="p-tranche" style="flex:1;min-width:90px"><option value="1">Stage 1</option><option value="2">Stage 2</option><option value="3">Stage 3</option></select>
         <input type="number" id="p-amount" placeholder="Amount ETB" style="flex:1;min-width:110px">
         <button class="btn btn-outline" onclick="irAddPurchase()">+ Add</button>
       </div>
@@ -282,14 +293,29 @@ try{var t=localStorage.getItem('theme');if(t!=='dark'&&t!=='light')t=window.matc
   </div>
 </div>
 
+<!-- ---------- Stage edit modal ---------- -->
+<div class="modal-bg" id="stage-modal-bg">
+  <div class="modal">
+    <button class="modal-close btn btn-outline" onclick="irCloseModal('stage-modal-bg')">&#10005;</button>
+    <h2 id="stage-modal-title">Edit stage</h2>
+    <input type="hidden" id="stage-n">
+    <div class="cf-field"><label>Shares in this stage</label><input type="number" id="stage-shares" min="1"></div>
+    <div class="cf-field"><label>Price per share (ETB)</label><input type="number" id="stage-price" min="1"></div>
+    <div class="cf-field" id="stage-trips-wrap"><label>Opens at this many trips per day (4-week average)</label><input type="number" id="stage-trips" min="0"></div>
+    <div id="stage-modal-err" style="color:#ff8a7a;font-size:12px;margin:8px 0"></div>
+    <div class="modal-actions"><button class="btn btn-primary" onclick="irSaveStage()">Save</button></div>
+  </div>
+</div>
+
 <!-- ---------- Tranche 2 unlock modal ---------- -->
 <div class="modal-bg" id="tranche-modal-bg">
   <div class="modal">
     <button class="modal-close btn btn-outline" onclick="irCloseModal('tranche-modal-bg')">✕</button>
-    <h2>Unlock Tranche 2</h2>
-    <div class="cf-field"><label>Why is Tranche 2 being unlocked?</label><textarea id="tranche-note" placeholder="e.g. hit 400 trips/day for 4 weeks on 2026-09-23"></textarea></div>
+    <h2 id="tranche-modal-title">Unlock stage</h2>
+    <input type="hidden" id="tranche-modal-n" value="2">
+    <div class="cf-field"><label>Why is this stage being unlocked?</label><textarea id="tranche-note" placeholder="e.g. hit 400 trips/day for 4 weeks on 2026-09-23"></textarea></div>
     <div id="tranche-modal-err" style="color:#ff8a7a;font-size:12px;margin:8px 0"></div>
-    <div class="modal-actions"><button class="btn btn-primary" onclick="irUnlockTranche2()">Unlock</button></div>
+    <div class="modal-actions"><button class="btn btn-primary" onclick="irUnlockTranche()">Unlock</button></div>
   </div>
 </div>
 
@@ -313,9 +339,9 @@ try{var t=localStorage.getItem('theme');if(t!=='dark'&&t!=='light')t=window.matc
   </div>
 </div>
 
-<link rel="stylesheet" href="css/deal.css">
+<link rel="stylesheet" href="css/deal-r2.css">
 <script src="js/deal-sheet.js"></script>
-<script src="js/admin.js?v=2"></script>
+<script src="js/admin.js?v=3"></script>
 <script src="js/admin-deals.js?v=2"></script>
 <script src="js/ir-shell.js?v=1"></script>
 </body>

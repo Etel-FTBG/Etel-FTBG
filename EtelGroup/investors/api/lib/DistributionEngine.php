@@ -91,14 +91,17 @@ function ir_project_growth(
     float $commissionRate,
     array $costCategories,
     array $investors,
-    string $label = ''
+    string $label = '',
+    float $otherMonthlyIncome = 0.0,
+    float $costScale = 1.0
 ): array {
     $grossFareTotal = $grossFarePerDay * $days;
     $totalCosts = 0.0;
     foreach ($costCategories as $cat) {
-        $totalCosts += (float)$cat['monthly_amount'] * ($days / 30.0);
+        $totalCosts += (float)$cat['monthly_amount'] * ($days / 30.0) * $costScale;
     }
-    return ir_distribution_core($grossFareTotal, $commissionRate, $totalCosts, $investors, $label, $label);
+    // Other income (e.g. delivery fees) is counted as company income before profit is shared.
+    return ir_distribution_core($grossFareTotal, $commissionRate, $totalCosts, $investors, $label, $label, $otherMonthlyIncome * ($days / 30.0));
 }
 
 /**
@@ -114,10 +117,11 @@ function ir_distribution_core(
     float $totalCosts,
     array $investors,
     string $periodStart,
-    string $periodEnd
+    string $periodEnd,
+    float $otherIncome = 0.0
 ): array {
     $commissionRevenue = $grossFareTotal * $commissionRate;
-    $netProfit = $commissionRevenue - $totalCosts;
+    $netProfit = $commissionRevenue + $otherIncome - $totalCosts;
 
     // Step 2: standard 20% investor pool entitlement. Floored at zero -
     // in a loss month (net_profit <= 0) there is no profit pool to
@@ -203,6 +207,7 @@ function ir_distribution_core(
         'commission_rate' => $commissionRate,
         'gross_fare_total' => round($grossFareTotal, 2),
         'commission_revenue' => round($commissionRevenue, 2),
+        'other_income' => round($otherIncome, 2),
         'total_costs' => round($totalCosts, 2),
         'net_profit' => round($netProfit, 2),
         'pool_entitlement' => round($poolEntitlement, 2),

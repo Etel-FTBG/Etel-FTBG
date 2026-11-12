@@ -5,9 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Investor Deal Sheet - Etel Family Technology and Business Group</title>
 <meta name="robots" content="noindex">
-<link rel="stylesheet" href="css/deal.css">
+<link rel="stylesheet" href="css/deal-r2.css">
 </head>
 <body class="dl-page">
+<div class="dl-demo" id="dl-demo" hidden></div>
 <div class="dl-wrap">
   <header class="dl-band">
     <img src="img/logo-etel.webp" alt="ETEL">
@@ -15,13 +16,14 @@
       <div class="dl-e" id="t-company"></div>
       <h1 id="t-title"></h1>
       <div class="dl-s" id="t-sub"></div>
-      <div class="dl-lang" role="group" aria-label="Language"><button type="button" data-lang="en">EN</button><button type="button" data-lang="am">&#x12A0;&#x121B;</button></div>
+      <div class="dl-tools"><div class="dl-lang" role="group" aria-label="Language"><button type="button" data-lang="en">EN</button><button type="button" data-lang="am">&#x12A0;&#x121B;</button></div><button type="button" class="dl-theme" id="dl-theme" aria-label="Light / dark">&#9680;</button></div>
     </div>
     <img src="img/logo-master.webp" alt="ETEL master seal">
   </header>
 
   <main id="dl-main">
     <section class="dl-card" id="dl-how"></section>
+    <section class="dl-card" id="dl-stages"></section>
 
     <form class="dl-card" id="dl-form" autocomplete="off" novalidate>
       <h2 id="t-h2"></h2>
@@ -52,10 +54,11 @@
     </form>
 
     <section class="dl-card" id="dl-done" hidden></section>
+    <section class="dl-card" id="dl-next"></section>
   </main>
   <footer class="dl-foot"><a id="dl-blank" href="forms/ETEL_Investor_Deal_Sheet_EN.pdf" target="_blank" rel="noopener"></a></footer>
 </div>
 <script src="js/deal-sheet.js"></script>
-<script src="js/deal.js"></script>
+<script src="js/deal-r2.js"></script>
 </body>
 </html>

@@ -10,11 +10,11 @@ var TXT = {
     company: 'Etel Family Technology and Business Group', title: 'Investor Deal Sheet', sub: 'Profit-share partnership · Hawassa · 2026',
     h1: 'How you earn', pe: 'Platform earns', pe_s: 'Commission on rides and orders', rc: 'Running costs', rc_s: 'Staff, rent, fees, contingency',
     np: 'Net profit', np_s: 'For each period', ip: 'Investor pool', ip_s: '20 % of net profit',
-    s1b: 'Profit Shares in the pool', s1s: 'ETB 1,000 each. Your part = your shares ÷ 2,000.',
+    s1b: 'Profit Shares in the pool', s1s: 'Your part = your shares ÷ 2,000. The price per share rises by stage.',
     s2b: 'Boost until paid back', s2s: 'Holding the whole pool then equals 50 % of net profit.',
     s3b: 'Then the standard share', s3s: 'You keep sharing after payback, to the end date.',
     h2: 'Your deal', f_name: 'Full legal name', f_id: 'ID / passport / registration no.', f_phone: 'Phone', f_email: 'Email (optional)',
-    f_units: 'Profit Shares you want to buy', f_amt: 'Amount (ETB) = units × 1,000', f_pct: 'Share of pool (%) = units ÷ 2,000', f_close: 'Preferred closing date',
+    f_units: 'Profit Shares you want to buy', f_amt: 'Amount (ETB) = units × price per share', f_pct: 'Share of pool (%) = units ÷ 2,000', f_close: 'Preferred closing date',
     f_payout: 'How often you want to be paid', monthly: 'Monthly', quarterly: 'Quarterly', other: 'Other', f_days: 'Paid within (days after the period)', f_bank: 'Bank account for payouts',
     open_now: 'Profit Shares open now', calc_h: 'What this could look like', calc_p: 'On a net profit of ETB 100,000 in one period you would receive',
     calc_std: 'standard', calc_boost: 'boosted, until you are paid back',
@@ -28,6 +28,10 @@ var TXT = {
     closed: 'No Profit Shares are open at the moment. Please contact the Company.', lang: 'EN',
     sh_deal: 'Deal', sh_investor: 'Investor', sh_company: 'For the Company', sh_signed: 'Signed', sh_hash: 'Document fingerprint', stamp: 'Official stamp', units_word: 'Profit Shares',
     fine: 'Summary of the Profit-Share Investment Agreement · the full Agreement and Schedules apply', per_monthly: 'Monthly', per_quarterly: 'Quarterly', per_other: 'Other', days: 'days', none: '-',
+    st_h: 'The raise in stages', st_p: 'The price per share rises as the business proves itself. Early investors take more risk and get the lowest price.',
+    st_stage: 'Stage', st_price: 'Price per share', st_shares: 'Shares', st_status: 'Status', st_open: 'Open now', st_opens: 'Opens at {n} trips a day', st_sold: 'Sold out', st_locked: 'Opens later', st_your: 'You are buying in Stage',
+    next_h: 'Also in the Etel Group', next_p: 'Delivery & Ride is the first company to raise money. The other companies in the group are separate businesses and are not part of this deal.', live_word: 'Live', soon_word: 'Coming soon',
+    demo_banner: 'DEMO · sample figures · nothing you enter here is saved', demo_ok: 'This was a preview in demo mode. Nothing was saved.', theme_btn: 'Light / dark',
     sigd: 'Signature & date', sh_status: 'Status', sh_electronic: 'Signed electronically. A signed printed copy may also be required.'
   },
   am: {
@@ -44,7 +48,7 @@ var TXT = {
       "ip": "የባለሀብቶች ድርሻ",
       "ip_s": "20 % የተጣራ ትርፍ",
       "s1b": "በጋራ ድርሻ ውስጥ ያሉ የትርፍ ድርሻዎች",
-      "s1s": "እያንዳንዳቸው ETB 1,000። ድርሻዎ = የድርሻዎ ብዛት ÷ 2,000።",
+      "s1s": "ድርሻዎ = የድርሻዎ ብዛት ÷ 2,000። የአንድ ድርሻ ዋጋ በደረጃ ይጨምራል።",
       "s2b": "እስኪመለስልዎ ድረስ ጭማሪ",
       "s2s": "ሙሉውን ድርሻ ቢይዙ ከተጣራ ትርፍ 50 % ይሆናል።",
       "s3b": "ከዚያ በኋላ መደበኛ ድርሻ",
@@ -55,7 +59,7 @@ var TXT = {
       "f_phone": "ስልክ",
       "f_email": "ኢሜይል (አማራጭ)",
       "f_units": "የሚገዙት የትርፍ ድርሻዎች ብዛት",
-      "f_amt": "መጠን (ብር) = ብዛት × 1,000",
+      "f_amt": "መጠን (ብር) = ብዛት × የአንድ ድርሻ ዋጋ",
       "f_pct": "የጋራ ድርሻው (%) = ብዛት ÷ 2,000",
       "f_close": "የሚፈልጉት የመዝጊያ ቀን",
       "f_payout": "የክፍያ ድግግሞሽ",
@@ -113,9 +117,28 @@ var TXT = {
       "none": "-",
       "sh_status": "ሁኔታ",
       "sh_electronic": "በኤሌክትሮኒክ ተፈርሟል። የታተመና የተፈረመ ቅጂም ሊያስፈልግ ይችላል።",
+      "st_h": "ገንዘቡ በደረጃ ይሰበሰባል",
+      "st_p": "ንግዱ እየተረጋገጠ ሲሄድ የአንድ ድርሻ ዋጋ ይጨምራል። ቀድመው የሚገቡ ባለሀብቶች ተጨማሪ አደጋ ይወስዳሉ፤ ዝቅተኛውንም ዋጋ ያገኛሉ።",
+      "st_stage": "ደረጃ",
+      "st_price": "የአንድ ድርሻ ዋጋ",
+      "st_shares": "ድርሻዎች",
+      "st_status": "ሁኔታ",
+      "st_open": "አሁን ክፍት",
+      "st_opens": "በቀን {n} ጉዞ ሲደርስ ይከፈታል",
+      "st_sold": "ተሽጧል",
+      "st_locked": "በኋላ ይከፈታል",
+      "st_your": "የሚገዙት በደረጃ",
+      "next_h": "በኢትኤል ግሩፕ ውስጥ ያሉ ሌሎች",
+      "next_p": "ዴሊቨሪ እና ራይድ ገንዘብ የሚሰበስብ የመጀመሪያው ኩባንያ ነው። በግሩፑ ውስጥ ያሉ ሌሎች ኩባንያዎች የተለያዩ ንግዶች ናቸው፤ የዚህ ስምምነት አካል አይደሉም።",
+      "live_word": "ሥራ ላይ",
+      "soon_word": "በቅርቡ",
+      "demo_banner": "ማሳያ · የናሙና ቁጥሮች · እዚህ የሚያስገቡት ምንም አይቀመጥም",
+      "demo_ok": "ይህ በማሳያ ሁኔታ የተደረገ ቅድመ እይታ ነበር። ምንም አልተቀመጠም።",
+      "theme_btn": "ብርሃን / ጨለማ",
       "sigd": "ፊርማ እና ቀን"
   }
 };
+function fmt(str, o) { return String(str).replace(/\{(\w+)\}/g, function (m, k) { return o && o[k] != null ? o[k] : m; }); }
 function T(lang) { return TXT[lang] || TXT.en; }
 function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
 function num(n) { return Number(n || 0).toLocaleString('en-US', { maximumFractionDigits: 2 }); }
@@ -138,7 +161,7 @@ function renderSheet(d, lang, cfg) {
     '<div class="dl-refline"><b>' + esc(t.ref) + ' ' + esc(d.ref_code) + '</b><span>' + esc(t.sh_signed) + ' ' + esc(d.signed_at) + '</span></div>' +
     '<section><h2>' + esc(t.h2) + '</h2><table class="dl-tbl">' +
       row(esc(t.f_name), esc(d.investor_name)) + row(esc(t.f_id), esc(d.id_number)) + row(esc(t.f_phone) + ' · ' + esc(t.f_email), esc(d.phone) + (d.email ? ' · ' + esc(d.email) : '')) +
-      row(esc(t.f_units), '<b>' + num(d.units) + '</b> ' + esc(t.units_word)) + row(esc(t.f_amt), '<b>ETB ' + num(d.amount) + '</b>') +
+      row(esc(t.f_units), '<b>' + num(d.units) + '</b> ' + esc(t.units_word)) + row(esc(t.f_amt) + (d.unit_price ? ' (ETB ' + num(d.unit_price) + ')' : ''), '<b>ETB ' + num(d.amount) + '</b>') +
       row(esc(t.f_pct), '<b>' + pct.toFixed(2) + ' %</b>') + row(esc(t.f_close), esc(d.closing_date || t.none)) +
       row(esc(t.f_payout), esc(period) + (Number(d.payout_days) ? ' · ' + esc(d.payout_days) + ' ' + esc(t.days) : '')) + row(esc(t.f_bank), esc(d.bank_account || t.none)) +
     '</table></section>' +
@@ -155,11 +178,11 @@ function renderSheet(d, lang, cfg) {
 function printSheet(html, lang) {
   var w = window.open('', '_blank');
   if (!w) { alert('Allow pop-ups to print.'); return; }
-  var css = new URL('css/deal.css', location.href).href;
+  var css = new URL('css/deal-r2.css', location.href).href;
   w.document.write('<!doctype html><html lang="' + (lang || 'en') + '"><head><meta charset="utf-8"><title>ETEL Investor Deal Sheet</title><base href="' + new URL('./', location.href).href + '"><link rel="stylesheet" href="' + css + '"></head><body class="dl-printpage">' + html + '</body></html>');
   w.document.close();
   w.onload = function () { setTimeout(function () { w.focus(); w.print(); }, 350); };
 }
 
-window.EtelDeal = { T: T, TXT: TXT, esc: esc, num: num, payout: payout, renderSheet: renderSheet, printSheet: printSheet };
+window.EtelDeal = { fmt: fmt, T: T, TXT: TXT, esc: esc, num: num, payout: payout, renderSheet: renderSheet, printSheet: printSheet };
 })();

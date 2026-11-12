@@ -172,3 +172,26 @@ Share `.../EtelGroup/investors/deal.html` (English) or `.../deal.html?lang=am` (
 - The Amharic text is a first draft in `js/deal-sheet.js`: have a native speaker review it.
 - A drawn signature on a screen is evidence, not a replacement for the signed paper Agreement: keep signing the full Agreement in ink.
 - Manual smoke test: `tests/deal_sheet_smoke.py` (needs a throwaway MySQL database; see its header).
+
+
+## Staged raise, investor pitch and demo mode (update)
+
+**Three stages.** The 2,000-share pool is sold in stages, each with its own price per share and a trips-per-day target
+(Admin > Dashboard > Staged raise). Defaults: Stage 1 = 400 shares at ETB 1,000 (open now); Stage 2 = 600 shares at ETB 1,500 (target 400 trips/day);
+Stage 3 = 1,000 shares at ETB 2,000 (target 1,000 trips/day). Unlocking a stage is a manual decision with a written note, and Stage 3 needs Stage 2 first.
+The deal sheet always charges the price of the first open stage that still has shares. A stage with real sales keeps its price and cannot shrink below what was sold.
+Older installs are upgraded automatically (price and target columns added, Stage 2 moved to ETB 1,500, Stage 3 added).
+
+**Growth planner scenarios.** The planner now takes "Other income / month" (delivery fees etc.) and a cost plan (lean 50 %, growing 75 %, full 100 % of the listed costs)
+and shows the break-even trips per day.
+
+**Demo / real switcher.** The existing Demo Mode switch now also drives the public pages: in demo mode the deal sheet and the pitch show a yellow
+"DEMO" banner, the deal sheet can be filled in and signed but nothing is saved (reference `DEMO-PREVIEW`), and the pitch shows labelled sample traction.
+Turning demo mode off removes all demo data and the banners.
+
+**Investor pitch** (`pitch.html`, English and Amharic, light and dark, "Save as PDF" prints one slide per A4 landscape page).
+Traction: demo = labelled sample; real = hidden until you tick "Show real traction numbers on the pitch" in the dashboard. The scenario slide uses assumed costs
+(ETB 75,000 lean / 150,000 full a month) and an assumed average fare of ETB 120 with the commission rate from setup: review those numbers before showing it.
+The Amharic text is a first draft and needs a native reviewer.
+
+Tests: `tests/deal_sheet_smoke.py` now also covers the stages, demo preview, pitch data and planner scenarios.

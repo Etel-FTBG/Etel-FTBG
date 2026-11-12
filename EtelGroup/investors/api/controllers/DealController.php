@@ -24,6 +24,41 @@ case 'deal_config': {
     break;
 }
 
+// The investor pitch deck (pitch.html). Public, aggregate numbers only.
+// Traction: demo mode shows labelled sample figures; real mode shows the real 4-week
+// average only after the admin switches "show real traction" on (default off).
+case 'deal_pitch': {
+    $pdo = eg_db();
+    ir_ensure_core_tables($pdo);
+    $cfg = ir_deal_config($pdo);
+    $traction = ['mode' => 'hidden'];
+    if (ir_is_demo_mode($pdo)) {
+        $traction = ['mode' => 'demo', 'avg_per_day' => 142, 'total_trips' => 3976, 'days' => 28];
+    } elseif (ir_get_setting($pdo, 'pitch_show_traction', '0') === '1') {
+        try {
+            $m = ir_delivery_rolling_4week_avg($pdo);
+            $traction = ['mode' => 'real', 'avg_per_day' => $m['avg_per_day'], 'total_trips' => $m['total_trips'], 'days' => 28, 'from' => $m['from'], 'to' => $m['to']];
+        } catch (Throwable $e) {
+            $traction = ['mode' => 'hidden'];
+        }
+    }
+    $cfg['traction'] = $traction;
+    $cfg['commission_rate'] = ir_commission_rate($pdo);
+    ok($cfg);
+    break;
+}
+
+case 'admin_deal_pitch_traction': {
+    eg_require_admin();
+    $pdo = eg_db();
+    ir_ensure_core_tables($pdo);
+    $on = !empty($body['show']);
+    ir_set_setting($pdo, 'pitch_show_traction', $on ? '1' : '0');
+    ir_log($pdo, eg_current_actor()['full_name'], 'pitch_traction_' . ($on ? 'on' : 'off'), '');
+    ok(['show' => $on]);
+    break;
+}
+
 case 'deal_submit': {
     $pdo = eg_db();
     ir_ensure_core_tables($pdo);
@@ -64,19 +99,24 @@ case 'deal_submit': {
     $pngSize = ir_deal_png_size($sigPng);
     if ($pngSize < 400 || $pngSize > 300000) fail('Please draw your signature in the box.', 400);
 
-    $avail = ir_deal_available_units($pdo);
+    $stage = ir_current_stage($pdo);
+    $avail = $stage ? $stage['remaining'] : 0;
     if ($units < 1) fail('Enter how many Profit Shares you want to buy.', 400);
-    if ($units > $avail) fail('Only ' . $avail . ' Profit Shares are open right now.', 409);
+    if (!$stage || $units > $avail) fail('Only ' . $avail . ' Profit Shares are open right now.', 409);
 
-    $price = (float)IR_SHARE_PRICE;
+    $price = (float)$stage['price'];
     $amount = $units * $price;
     $pct = $units / IR_INVESTOR_POOL_SHARES * 100;
     $now = date('Y-m-d H:i:s');
+    // Demo mode: let the visitor try the whole form, but never store a demo sheet as a real one.
+    if (ir_is_demo_mode($pdo)) {
+        ok(['ref_code' => 'DEMO-PREVIEW', 'signed_at' => $now, 'doc_hash' => str_repeat('0', 64), 'units' => $units, 'amount' => $amount, 'pool_share_pct' => $pct, 'demo' => true]);
+    }
     $ref = ir_deal_new_ref($pdo);
     $hash = hash('sha256', json_encode([$ref, $lang, $name, $idNo, $phone, $email, $units, $price, $period, $days, $closing, $bank, $sigName, hash('sha256', $sigPng), $now]));
     $ua = substr((string)($_SERVER['HTTP_USER_AGENT'] ?? ''), 0, 190);
-    $pdo->prepare('INSERT INTO ir_deal_sheets (ref_code, lang, investor_name, id_number, phone, email, units, unit_price, amount, pool_share_pct, payout_period, payout_days, closing_date, bank_account, signature_name, signature_png, signed_at, doc_hash, ip_hash, user_agent) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)')
-        ->execute([$ref, $lang, $name, $idNo, $phone, $email, $units, $price, $amount, $pct, $period, $days, $closing === '' ? null : $closing, $bank, $sigName, $sigPng, $now, $hash, $ipHash, $ua]);
+    $pdo->prepare('INSERT INTO ir_deal_sheets (ref_code, lang, stage, investor_name, id_number, phone, email, units, unit_price, amount, pool_share_pct, payout_period, payout_days, closing_date, bank_account, signature_name, signature_png, signed_at, doc_hash, ip_hash, user_agent) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)')
+        ->execute([$ref, $lang, (int)$stage['stage'], $name, $idNo, $phone, $email, $units, $price, $amount, $pct, $period, $days, $closing === '' ? null : $closing, $bank, $sigName, $sigPng, $now, $hash, $ipHash, $ua]);
     ir_log($pdo, 'public', 'deal_sheet_submitted', $ref . ': ' . $units . ' units');
     ok(['ref_code' => $ref, 'signed_at' => $now, 'doc_hash' => $hash, 'units' => $units, 'amount' => $amount, 'pool_share_pct' => $pct]);
     break;
@@ -87,7 +127,7 @@ case 'admin_deal_list': {
     $pdo = eg_db();
     ir_ensure_core_tables($pdo);
     ir_deal_ensure_table($pdo);
-    $rows = $pdo->query('SELECT id, ref_code, lang, status, investor_name, phone, email, units, amount, pool_share_pct, created_at, reviewed_by, investor_id FROM ir_deal_sheets ORDER BY id DESC LIMIT 500')->fetchAll();
+    $rows = $pdo->query('SELECT id, ref_code, lang, status, stage, investor_name, phone, email, units, unit_price, amount, pool_share_pct, created_at, reviewed_by, investor_id FROM ir_deal_sheets ORDER BY id DESC LIMIT 500')->fetchAll();
     ok(['sheets' => $rows, 'config' => ir_deal_config($pdo)]);
     break;
 }
@@ -142,18 +182,18 @@ case 'admin_deal_enroll': {
     $identifier = trim((string)($body['login_identifier'] ?? ''));
     if ($identifier === '') $identifier = $d['email'] !== '' ? $d['email'] : $d['phone'];
     $record = !empty($body['record_payment']);
-    $tranche = (int)($body['tranche_number'] ?? 1);
+    $tranche = (int)($body['tranche_number'] ?? ($d['stage'] ?? 1));
     $date = trim((string)($body['purchase_date'] ?? date('Y-m-d')));
     $amountPaid = isset($body['amount_paid']) && $body['amount_paid'] !== '' ? (float)$body['amount_paid'] : (float)$d['amount'];
     if ($record) {
-        if (!in_array($tranche, [1, 2], true)) fail('Tranche must be 1 or 2.', 400);
+        if (!in_array($tranche, [1, 2, 3], true)) fail('Stage must be 1, 2 or 3.', 400);
         $dt = DateTime::createFromFormat('Y-m-d', $date);
         if (!$dt || $dt->format('Y-m-d') !== $date) fail('Payment date must be a valid date.', 400);
         if ($amountPaid < 0) fail('Amount paid cannot be negative.', 400);
-        $tr = $pdo->prepare('SELECT is_unlocked FROM ir_tranches WHERE tranche_number = ?');
-        $tr->execute([$tranche]);
-        if (!$tr->fetchColumn()) fail('That tranche is not unlocked yet.', 409);
-        if ((int)$d['units'] > ir_deal_available_units($pdo)) fail('Not enough Profit Shares are open for this sheet any more.', 409);
+        $stageRow = null;
+        foreach (ir_stages($pdo) as $st) { if ($st['stage'] === $tranche) $stageRow = $st; }
+        if (!$stageRow || !$stageRow['unlocked']) fail('That stage is not unlocked yet.', 409);
+        if ((int)$d['units'] > $stageRow['remaining']) fail('Not enough Profit Shares are open in that stage for this sheet any more.', 409);
     }
     $password = ir_deal_random_password(10);
     try {

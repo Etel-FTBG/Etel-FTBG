@@ -55,6 +55,8 @@ case 'admin_dashboard_summary': {
         'unsold_shares' => IR_INVESTOR_POOL_SHARES - $soldShares,
         'invested_total' => $investedTotal,
         'tranches' => $tranches,
+        'pitch_show_traction' => ir_get_setting($pdo, 'pitch_show_traction', '0') === '1',
+        'stages' => (function () use ($pdo) { require_once __DIR__ . '/../lib/Deals.php'; return ir_stages($pdo); })(),
         'last_locked_period' => $lastPeriod ?: null,
         'demo_mode' => ir_is_demo_mode($pdo),
     ]);
@@ -66,11 +68,16 @@ case 'admin_get_milestone_progress': {
     $pdo = eg_db();
     try {
         $m = ir_delivery_rolling_4week_avg($pdo);
+        require_once __DIR__ . '/../lib/Deals.php';
+        $next = null;
+        foreach (ir_stages($pdo) as $st) { if (!$st['unlocked']) { $next = $st; break; } }
+        $target = $next && $next['unlock_trips'] > 0 ? $next['unlock_trips'] : 400;
         ok([
             'connected' => true,
             'avg_per_day' => $m['avg_per_day'],
-            'target' => 400,
-            'progress_pct' => min(100, round(($m['avg_per_day'] / 400) * 100, 1)),
+            'target' => $target,
+            'next_stage' => $next ? $next['stage'] : null,
+            'progress_pct' => min(100, round(($m['avg_per_day'] / $target) * 100, 1)),
             'window' => ['from' => $m['from'], 'to' => $m['to']],
             'daily' => $m['daily'],
         ]);
@@ -105,6 +112,12 @@ case 'admin_growth_planner': {
     $waitRatePerMin = (float)($body['wait_rate_per_min'] ?? 0);
     $pctPeakSurge = (float)($body['pct_peak_surge'] ?? 0); // 0-100
     $surgeMultiplier = (float)($body['surge_multiplier'] ?? 1);
+    // Scenario inputs: other monthly income (delivery fees etc.) and a lean-cost
+    // percentage (100 = the full cost list, 50 = half of every listed cost).
+    $otherMonthlyIncome = max(0.0, (float)($body['other_monthly_income'] ?? 0));
+    $costScalePct = (float)($body['cost_scale_pct'] ?? 100);
+    if ($costScalePct <= 0 || $costScalePct > 300) $costScalePct = 100;
+    $costScale = $costScalePct / 100;
 
     if ($registeredDrivers <= 0 || $tripsPerDriverPerDay <= 0) {
         fail('Registered drivers and trips/driver/day must both be greater than zero.', 400);
@@ -134,10 +147,15 @@ case 'admin_growth_planner': {
         ];
     }
 
+    $monthlyCosts = 0.0;
+    foreach ($costCats as $c) $monthlyCosts += (float)$c['monthly_amount'] * $costScale;
+    // Trips per day at which commission (plus other income) just covers the monthly costs.
+    $perTripCommission = $blendedAvgFare * $commissionRate;
+    $breakEven = $perTripCommission > 0 ? (int)ceil(max(0.0, $monthlyCosts - $otherMonthlyIncome) / ($perTripCommission * 30)) : null;
     $periods = ['day' => 1, 'week' => 7, 'month' => 30, 'year' => 365];
     $results = [];
     foreach ($periods as $key => $days) {
-        $r = ir_project_growth($grossFarePerDay, $days, $commissionRate, $costCats, $investorsForEngine, $key);
+        $r = ir_project_growth($grossFarePerDay, $days, $commissionRate, $costCats, $investorsForEngine, $key, $otherMonthlyIncome, $costScale);
         $r['trips'] = round($tripsPerDay * $days);
         // Attach investor names for display - ir_project_growth's lines
         // only carry investor_id, same as a real run's persisted record.
@@ -158,6 +176,12 @@ case 'admin_growth_planner': {
             'blended_avg_fare' => round($blendedAvgFare, 2),
         ],
         'trips_per_day' => round($tripsPerDay),
+        'scenario' => [
+            'other_monthly_income' => round($otherMonthlyIncome, 2),
+            'cost_scale_pct' => $costScalePct,
+            'monthly_costs' => round($monthlyCosts, 2),
+            'break_even_trips_per_day' => $breakEven,
+        ],
         'periods' => $results,
     ]);
     break;
@@ -317,13 +341,13 @@ case 'admin_add_share_purchase': {
     $tranche = (int)($body['tranche_number'] ?? 0);
     $amount = (float)($body['amount_paid'] ?? -1);
     $date = trim((string)($body['purchase_date'] ?? date('Y-m-d')));
-    if (!$investorId || $shares <= 0 || !in_array($tranche, [1, 2], true) || $amount < 0) {
-        fail('Investor, a positive share count, tranche (1 or 2), and amount are required.', 400);
+    if (!$investorId || $shares <= 0 || !in_array($tranche, [1, 2, 3], true) || $amount < 0) {
+        fail('Investor, a positive share count, stage (1, 2 or 3), and amount are required.', 400);
     }
     $tr = $pdo->prepare('SELECT is_unlocked FROM ir_tranches WHERE tranche_number = ?');
     $tr->execute([$tranche]);
     $unlocked = $tr->fetchColumn();
-    if ($tranche === 2 && !$unlocked) fail('Tranche 2 is not unlocked yet - unlock it first from Milestones.', 409);
+    if (!$unlocked) fail('Stage ' . $tranche . ' is not unlocked yet - unlock it first from Milestones.', 409);
 
     $pdo->prepare('INSERT INTO ir_share_purchases (investor_id, purchase_date, shares, tranche_number, amount_paid) VALUES (?,?,?,?,?)')
         ->execute([$investorId, $date, $shares, $tranche, $amount]);
@@ -352,16 +376,52 @@ case 'admin_get_tranches': {
     break;
 }
 
-case 'admin_unlock_tranche2': {
+case 'admin_unlock_tranche2':
+case 'admin_unlock_tranche': {
     eg_require_admin();
     $pdo = eg_db();
+    ir_ensure_core_tables($pdo);
+    $n = (int)($body['tranche_number'] ?? 2);
     $note = trim((string)($body['note'] ?? ''));
-    if ($note === '') fail('A note explaining why Tranche 2 is being unlocked is required.', 400);
+    if (!in_array($n, [2, 3], true)) fail('Only Stage 2 or Stage 3 can be unlocked (Stage 1 is open from the start).', 400);
+    if ($note === '') fail('A note explaining why Stage ' . $n . ' is being unlocked is required.', 400);
+    $prev = $pdo->prepare('SELECT is_unlocked FROM ir_tranches WHERE tranche_number = ?');
+    $prev->execute([$n - 1]);
+    if (!$prev->fetchColumn()) fail('Unlock Stage ' . ($n - 1) . ' first.', 409);
     $actor = eg_current_actor()['full_name'];
-    $pdo->prepare('UPDATE ir_tranches SET is_unlocked=1, unlocked_at=NOW(), unlocked_note=?, unlocked_by=? WHERE tranche_number=2')
-        ->execute([$note, $actor]);
-    ir_log($pdo, $actor, 'tranche2_unlocked', $note);
-    ok(['unlocked' => true]);
+    $pdo->prepare('UPDATE ir_tranches SET is_unlocked=1, unlocked_at=NOW(), unlocked_note=?, unlocked_by=? WHERE tranche_number=?')
+        ->execute([$note, $actor, $n]);
+    ir_log($pdo, $actor, 'stage' . $n . '_unlocked', $note);
+    ok(['unlocked' => true, 'stage' => $n]);
+    break;
+}
+
+// Edit a stage's size, price per share and trips/day target. A stage that already
+// has real sales keeps its price (investors were sold at it) and cannot shrink below what was sold.
+case 'admin_save_tranche': {
+    eg_require_admin();
+    $pdo = eg_db();
+    ir_ensure_core_tables($pdo);
+    require_once __DIR__ . '/../lib/Deals.php';
+    $n = (int)($body['tranche_number'] ?? 0);
+    $shares = (int)($body['shares_total'] ?? 0);
+    $price = round((float)($body['price_per_share'] ?? 0), 2);
+    $trips = (int)($body['unlock_trips'] ?? 0);
+    if (!in_array($n, [1, 2, 3], true)) fail('Stage must be 1, 2 or 3.', 400);
+    if ($shares < 1 || $shares > IR_INVESTOR_POOL_SHARES) fail('Shares must be between 1 and ' . IR_INVESTOR_POOL_SHARES . '.', 400);
+    if ($price < 1 || $price > 1000000) fail('Enter a price per share in ETB.', 400);
+    if ($trips < 0 || $trips > 100000) fail('Trips per day must be 0 or more.', 400);
+    $stages = ir_stages($pdo);
+    $cur = null; $others = 0;
+    foreach ($stages as $st) { if ($st['stage'] === $n) $cur = $st; else $others += $st['shares_total']; }
+    if (!$cur) fail('Stage not found.', 404);
+    if ($shares < $cur['sold']) fail('Shares cannot be below the ' . $cur['sold'] . ' already sold in this stage.', 409);
+    if ($cur['sold'] > 0 && abs($price - $cur['price']) > 0.001) fail('This stage already has sales, so its price cannot change.', 409);
+    if ($others + $shares > IR_INVESTOR_POOL_SHARES) fail('The three stages together cannot exceed the ' . IR_INVESTOR_POOL_SHARES . '-share pool.', 409);
+    $pdo->prepare('UPDATE ir_tranches SET shares_total=?, price_per_share=?, amount_total=?, unlock_trips=? WHERE tranche_number=?')
+        ->execute([$shares, $price, $shares * $price, $n === 1 ? 0 : $trips, $n]);
+    ir_log($pdo, eg_current_actor()['full_name'], 'stage_saved', "stage $n: $shares shares at $price ETB, target $trips trips/day");
+    ok(['stages' => ir_stages($pdo)]);
     break;
 }
 

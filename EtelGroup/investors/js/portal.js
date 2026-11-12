@@ -101,7 +101,7 @@ async function ipLoadAll() {
   const pBody = document.querySelector('#p-purchases-table tbody');
   if (pRes.ok) {
     pBody.innerHTML = pRes.data.map(p => `
-      <tr><td>${p.purchase_date}</td><td class="ir-num">${p.shares}</td><td>Tranche ${p.tranche_number}</td><td class="ir-num">${ipMoney(p.amount_paid)}</td></tr>
+      <tr><td>${p.purchase_date}</td><td class="ir-num">${p.shares}</td><td>Stage ${p.tranche_number}</td><td class="ir-num">${ipMoney(p.amount_paid)}</td></tr>
     `).join('') || '<tr><td colspan="4" style="color:var(--text-dim)">No purchases recorded yet.</td></tr>';
   }
 }

@@ -176,26 +176,35 @@ async function irLoadDashboard() {
     milEl.innerHTML = `<div class="ir-not-connected">⚠ Could not read live data: ${irEsc(d.delivery.error)}</div>`;
   } else {
     const m = d.delivery.milestone;
-    const pct = Math.min(100, Math.round((m.avg_per_day / 400) * 100));
+    const nextSt = (d.stages || []).find(x => !x.unlocked);
+    const target = nextSt && nextSt.unlock_trips > 0 ? nextSt.unlock_trips : 400;
+    const pct = Math.min(100, Math.round((m.avg_per_day / target) * 100));
     milEl.innerHTML = `
-      <div class="ir-progress-label"><span>${m.avg_per_day} trips/day avg</span><span>Target: 400/day</span></div>
+      <div class="ir-progress-label"><span>${m.avg_per_day} trips/day avg</span><span>${nextSt ? 'Stage ' + nextSt.stage + ' target' : 'All stages open'}: ${target}/day</span></div>
       <div class="ir-progress-track"><div class="ir-progress-fill" style="width:${pct}%"></div></div>
-      <div style="font-size:11.5px;color:var(--text-dim);margin-top:6px">Window: ${m.from} → ${m.to} (28 days, ${m.total_trips} total trips) — Tranche 2 unlock is still a manual decision below.</div>
+      <div style="font-size:11.5px;color:var(--text-dim);margin-top:6px">Window: ${m.from} → ${m.to} (28 days, ${m.total_trips} total trips) — unlocking a stage is still a manual decision below.</div>
     `;
   }
 
+  const pt = document.getElementById('pitch-traction'); if (pt) pt.checked = !!d.pitch_show_traction;
   const trEl = document.getElementById('ir-tranches');
-  trEl.innerHTML = d.tranches.map(t => `
+  const stages = d.stages || [];
+  IR_STAGES = stages;
+  const raiseAll = stages.reduce((n, x) => n + x.raise, 0);
+  const sharesAll = stages.reduce((n, x) => n + x.shares_total, 0);
+  trEl.innerHTML = stages.map(t => {
+    const prevOpen = t.stage === 1 || (stages.find(x => x.stage === t.stage - 1) || {}).unlocked;
+    const status = t.unlocked
+      ? (t.remaining > 0 ? `<span class="pill replied">Open &middot; ${t.remaining} left</span>` : `<span class="pill replied">Sold out</span>`)
+      : (t.stage > 1 && prevOpen ? `<button class="btn btn-outline" onclick="irOpenTrancheModal(${t.stage})">Unlock Stage ${t.stage}</button>` : `<span class="pill new">Locked</span>`);
+    return `
     <div class="ir-tranche-row">
-      <div class="name">Tranche ${t.tranche_number}</div>
-      <div class="meta">${t.shares_total} shares · ${irMoney(t.amount_total)} ETB</div>
-      ${t.is_unlocked
-        ? `<span class="pill replied">Unlocked${t.unlocked_note ? ' — ' + irEsc(t.unlocked_note) : ''}</span>`
-        : (t.tranche_number == 2
-            ? `<button class="btn btn-outline" onclick="irOpenTrancheModal()">Unlock Tranche 2</button>`
-            : `<span class="pill new">Locked</span>`)}
-    </div>
-  `).join('');
+      <div class="name">Stage ${t.stage}</div>
+      <div class="meta">${t.shares_total} shares &middot; ETB ${irInt(t.price)} each &middot; raises ETB ${irInt(t.raise)} &middot; ${t.company_pct}% of the company${t.unlock_trips ? ' &middot; opens at ' + t.unlock_trips + ' trips/day' : ''}</div>
+      ${status}
+      <button class="btn btn-outline" onclick="irOpenStageModal(${t.stage})">Edit</button>
+    </div>`;
+  }).join('') + `<div style="font-size:12px;color:var(--text-dim);margin-top:10px">All three stages: ${sharesAll} shares &middot; ETB ${irInt(raiseAll)} &middot; ${(sharesAll / 100).toFixed(1)}% of the company (the pool is 20%).</div>`;
 
   irLoadCostCategories();
   irLoadInvestors();
@@ -337,7 +346,7 @@ async function irLoadPurchases(investorId) {
   const tbody = document.querySelector('#inv-purchases-table tbody');
   if (!res.ok) { tbody.innerHTML = `<tr><td colspan="4">${irEsc(res.error)}</td></tr>`; return; }
   tbody.innerHTML = res.data.map(p => `
-    <tr><td>${p.purchase_date}</td><td class="ir-num">${p.shares}</td><td>Tranche ${p.tranche_number}</td><td class="ir-num">${irMoney(p.amount_paid)}</td></tr>
+    <tr><td>${p.purchase_date}</td><td class="ir-num">${p.shares}</td><td>Stage ${p.tranche_number}</td><td class="ir-num">${irMoney(p.amount_paid)}</td></tr>
   `).join('') || '<tr><td colspan="4" style="color:var(--text-dim)">No purchases yet.</td></tr>';
 }
 async function irAddPurchase() {
@@ -353,17 +362,51 @@ async function irAddPurchase() {
   irLoadDashboard();
 }
 
-// ---------- tranche 2 unlock ----------
-function irOpenTrancheModal() {
+async function irSetPitchTraction(show) {
+  const res = await irApi('admin_deal_pitch_traction', { show });
+  if (!res.ok) alert(res.error || 'Could not save');
+}
+
+function irInt(n) { return Number(n || 0).toLocaleString('en-US', { maximumFractionDigits: 0 }); }
+
+// ---------- stage unlock and edit ----------
+let IR_STAGES = [];
+function irOpenTrancheModal(n) {
+  document.getElementById('tranche-modal-n').value = n;
+  document.getElementById('tranche-modal-title').textContent = 'Unlock Stage ' + n;
   document.getElementById('tranche-note').value = '';
   document.getElementById('tranche-modal-err').textContent = '';
   document.getElementById('tranche-modal-bg').classList.add('open');
 }
-async function irUnlockTranche2() {
+async function irUnlockTranche() {
   const note = document.getElementById('tranche-note').value.trim();
-  const res = await irApi('admin_unlock_tranche2', { note });
+  const tranche_number = Number(document.getElementById('tranche-modal-n').value);
+  const res = await irApi('admin_unlock_tranche', { tranche_number, note });
   if (!res.ok) { document.getElementById('tranche-modal-err').textContent = res.error; return; }
   irCloseModal('tranche-modal-bg');
+  irLoadDashboard();
+}
+function irOpenStageModal(n) {
+  const t = IR_STAGES.find(x => x.stage === n); if (!t) return;
+  document.getElementById('stage-n').value = n;
+  document.getElementById('stage-modal-title').textContent = 'Edit Stage ' + n;
+  document.getElementById('stage-shares').value = t.shares_total;
+  document.getElementById('stage-price').value = t.price;
+  document.getElementById('stage-price').disabled = t.sold > 0;
+  document.getElementById('stage-trips').value = t.unlock_trips;
+  document.getElementById('stage-trips-wrap').style.display = n === 1 ? 'none' : '';
+  document.getElementById('stage-modal-err').textContent = t.sold > 0 ? t.sold + ' shares already sold at this price: the price is locked.' : '';
+  document.getElementById('stage-modal-bg').classList.add('open');
+}
+async function irSaveStage() {
+  const res = await irApi('admin_save_tranche', {
+    tranche_number: Number(document.getElementById('stage-n').value),
+    shares_total: Number(document.getElementById('stage-shares').value),
+    price_per_share: Number(document.getElementById('stage-price').value),
+    unlock_trips: Number(document.getElementById('stage-trips').value || 0),
+  });
+  if (!res.ok) { document.getElementById('stage-modal-err').textContent = res.error; return; }
+  irCloseModal('stage-modal-bg');
   irLoadDashboard();
 }
 
@@ -379,6 +422,8 @@ async function irRunGrowthPlanner() {
     wait_rate_per_min: Number(document.getElementById('gp-wait-rate').value || 0),
     pct_peak_surge: Number(document.getElementById('gp-pct-surge').value || 0),
     surge_multiplier: Number(document.getElementById('gp-surge-mult').value || 1),
+    other_monthly_income: Number(document.getElementById('gp-other-income').value || 0),
+    cost_scale_pct: Number(document.getElementById('gp-cost-scale').value || 100),
   };
   const el = document.getElementById('gp-output');
   el.innerHTML = 'Calculating…';
@@ -389,8 +434,10 @@ async function irRunGrowthPlanner() {
   const periodOrder = ['day', 'week', 'month', 'year'];
   const periodLabel = { day: 'Day', week: 'Week', month: 'Month', year: 'Year' };
 
+  const sc = d.scenario || {};
   let html = `
     <div class="stat-grid">
+      <div class="stat-card premium"><div class="label">Break-even trips / day</div><div class="val">${sc.break_even_trips_per_day == null ? '-' : Number(sc.break_even_trips_per_day).toLocaleString()}</div><div class="sub">to cover ETB ${irMoney(sc.monthly_costs || 0)} of monthly costs</div></div>
       <div class="stat-card"><div class="label">Ride Fare (base+km)</div><div class="val">${irMoney(fb.ride_fare)}</div></div>
       <div class="stat-card"><div class="label">Wait Charge</div><div class="val">${irMoney(fb.wait_charge)}</div></div>
       <div class="stat-card"><div class="label">Surge Uplift</div><div class="val">${irMoney(fb.surge_uplift)}</div></div>
