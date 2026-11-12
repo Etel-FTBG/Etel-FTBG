@@ -12,8 +12,8 @@
 var K = window.AdminKit;
 if (!K) return;
 var esc = K.esc;
-var S = { cm: null, tab: '', caps: [], rules: [], surge: 1.3, windows: [], isDefault: false, goals: [], zones: [], tiers: [], banks: [], err: {}, cp: null, order: null, cpOut: '', loaded: false, calc: { vt: '', km: 5, wait: 0, open: false, peak: false } };
-var TABS = [['fares', 'Ride fares', 'pricing.manage'], ['peak', 'Peak hours', 'pricing.manage'], ['goals', 'Driver goals', 'pricing.manage'], ['commission', 'Commission', 'pricing.manage'], ['delivery', 'Delivery', 'settings.view'], ['courier', 'Courier pay', ['pricing.manage', 'settings.view']], ['banks', 'Bank accounts', 'finance.view']];
+var S = { inc: null, cm: null, tab: '', caps: [], rules: [], surge: 1.3, windows: [], isDefault: false, goals: [], zones: [], tiers: [], banks: [], err: {}, cp: null, order: null, cpOut: '', loaded: false, calc: { vt: '', km: 5, wait: 0, open: false, peak: false } };
+var TABS = [['fares', 'Ride fares', 'pricing.manage'], ['peak', 'Peak hours', 'pricing.manage'], ['goals', 'Driver goals', 'pricing.manage'], ['commission', 'Commission', 'pricing.manage'], ['incentives', 'Incentives', 'pricing.manage'], ['delivery', 'Delivery', 'settings.view'], ['courier', 'Courier pay', ['pricing.manage', 'settings.view']], ['banks', 'Bank accounts', 'finance.view']];
 var BUILTIN = ['bajaj', 'moto', 'car', 'minibus'];
 var IMG_V = '2';    // same as IMG_V in etel-vehicle-art.js: bump both when the picture files change, so phones do not keep showing the old ones
 var ART = ['bajaj', 'qute', 'moto', 'car', 'ev_car', 'minibus'];
@@ -85,6 +85,7 @@ function loadAll() {
       });
       job('goals', 'admin_get_goal_tiers', function (d) { S.goals = d.tiers || []; });
       job('commission', 'admin_get_commission_plan', function (d) { S.cm = d; });
+      job('incentives', 'admin_get_incentive_plan', function (d) { S.inc = d; });
     }
     if (can('settings.view')) { job('zones', 'admin_get_zones', function (d) { S.zones = d.zones || []; }); job('tiers', 'admin_get_delivery_tiers', function (d) { S.tiers = d.tiers || []; }); }
     if (can('finance.view')) job('banks', 'admin_get_bank_accounts', function (d) { S.banks = d.accounts || []; });
@@ -221,6 +222,32 @@ function commissionView() {
     '<div style="margin-top:12px"><button type="button" class="ak-btn gold" data-save-commission>💾 Save commission plan</button></div></div>';
 }
 
+function incentivesView() {
+  if (S.err.incentives) return K.empty('⚠️', 'Could not load the incentive plan', S.err.incentives);
+  var p = (S.inc && S.inc.plan) || {}, m = (S.inc && S.inc.month) || {}, rec = (S.inc && S.inc.recent) || [];
+  function num(id, label, val, step) { return '<label class="ak-fl">' + esc(label) + '<input class="ak-in" id="' + id + '" type="number" inputmode="decimal" step="' + (step || '1') + '" min="0" value="' + esc(val) + '"></label>'; }
+  function chk(id, label, on) { return '<label class="ak-fl" style="flex-direction:row;gap:8px;align-items:center"><input type="checkbox" id="' + id + '"' + (on ? ' checked' : '') + '> ' + esc(label) + '</label>'; }
+  var tiers = (p.daily_tiers || []).slice(0, 6), rows = '';
+  for (var i = 0; i < 6; i++) rows += '<div class="ps-ins" style="margin-top:6px">' + num('in-t' + i, 'Trips in a day', tiers[i] ? tiers[i].trips : '') + num('in-b' + i, 'Bonus (ETB)', tiers[i] ? tiers[i].bonus : '', '0.5') + '</div>';
+  var list = rec.map(function (a) {
+    var voided = !!a.voided_at;
+    return '<tr' + (voided ? ' style="opacity:.55"' : '') + '><td>' + esc(String(a.created_at).slice(0, 16)) + '</td><td>' + esc(a.driver_name || ('#' + a.driver_id)) + '</td><td>' + esc(a.kind === 'referral' ? 'Referral' : 'Daily bonus') + '</td><td class="ps-r">' + etb(a.amount) + '</td><td>' + esc(a.note || '') + '</td><td class="ps-r">' +
+      (voided ? 'Voided' : '<button type="button" class="ak-btn danger" data-void-inc="' + esc(a.id) + '">Void</button>') + '</td></tr>';
+  }).join('');
+  return '<div class="ps-box"><h3>Launch incentives</h3><div class="sub">Daily trip bonuses and driver referral rewards, paid from a monthly budget. Nothing is paid unless this is ON and the budget is above 0. Money is added to the driver\'s Etel money balance. Only real trips count: paid at least the minimum fare, at least the minimum distance, and with a rider who is not the driver.</div>' +
+    '<div class="ps-ins">' + chk('in-on', 'Incentives are ON', p.on) + num('in-cap', 'Monthly budget for all incentives (ETB)', p.monthly_cap) + num('in-dmax', 'Most one driver can get in a month (ETB, 0 = no limit)', p.driver_month_max) + '</div>' +
+    '<div class="ps-note">This month: <b>' + etb(m.spent || 0) + '</b> paid of <b>' + etb(m.cap || 0) + '</b> (' + etb(m.left || 0) + ' left). Daily bonuses ' + etb((m.by_kind || {}).daily || 0) + ', referral rewards ' + etb((m.by_kind || {}).referral || 0) + '.</div></div>' +
+    '<div class="ps-box"><h3>Daily trip bonus</h3><div class="sub">When a driver completes this many qualifying trips in one day, the bonus is paid once for that day. Leave a row empty to skip it. Example: 5 trips = ETB 30, 8 trips = ETB 60.</div>' +
+    chk('in-daily', 'Daily bonuses are ON', p.daily_on) + rows +
+    '<div class="ps-ins" style="margin-top:10px">' + num('in-minfare', 'Minimum fare of a qualifying trip (ETB)', p.min_fare) + num('in-minkm', 'Minimum distance (km)', p.min_km, '0.1') + num('in-same', 'Most trips counted with the same rider in a day', p.max_same_rider) + '</div></div>' +
+    '<div class="ps-box"><h3>Driver referral reward</h3><div class="sub">A driver whose invite code brought in another driver is paid once, when the new driver has completed the number of qualifying trips below, from at least 3 different riders. The referrer\'s own rides do not count.</div>' +
+    chk('in-ref', 'Referral rewards are ON', p.referral_on) +
+    '<div class="ps-ins" style="margin-top:6px">' + num('in-rtrips', 'Qualifying trips needed', p.referral_trips) + num('in-rreward', 'Reward (ETB)', p.referral_reward) + num('in-rmax', 'Most rewards per referrer per month', p.referral_max_per_month) + '</div></div>' +
+    '<div style="margin:0 0 12px"><button type="button" class="ak-btn gold" data-save-incentives>💾 Save incentives</button></div>' +
+    '<div class="ps-box"><h3>Recent awards</h3><div class="sub">The last 60. Void an award if it was a mistake or looks like cheating: the money is taken back from the driver and it leaves the spending totals.</div>' +
+    (list ? '<div class="ak-tblw"><table class="ak-tbl ps-tbl"><thead><tr><th>When</th><th>Driver</th><th>Type</th><th class="ps-r">Amount</th><th>For</th><th></th></tr></thead><tbody>' + list + '</tbody></table></div>' : K.empty('🎁', 'No awards yet', 'Awards appear here as drivers earn them.')) + '</div>';
+}
+
 function deliveryView() {
   var h = '';
   if (S.err.zones) h += K.empty('⚠️', 'Could not load zones', S.err.zones + ' — has migration 007_ride_fare_rules.sql been applied?');
@@ -297,7 +324,7 @@ function paint() {
   var bigs = [];
   if (can('pricing.manage')) bigs.push(['Vehicle types on', K.num(act)], ['Default surge', '× ' + S.surge], ['Peak windows', K.num(S.windows.length)]);
   if (can('settings.view')) bigs.push(['Delivery zones', K.num(az)]);
-  var body = S.tab === 'peak' ? peakView() : S.tab === 'goals' ? goalsView() : S.tab === 'commission' ? commissionView() : S.tab === 'delivery' ? deliveryView() : S.tab === 'banks' ? banksView() : S.tab === 'courier' ? courierView() : faresView();
+  var body = S.tab === 'peak' ? peakView() : S.tab === 'goals' ? goalsView() : S.tab === 'commission' ? commissionView() : S.tab === 'incentives' ? incentivesView() : S.tab === 'delivery' ? deliveryView() : S.tab === 'banks' ? banksView() : S.tab === 'courier' ? courierView() : faresView();
   el.innerHTML = '<div class="ak">' + K.hero('Pricing', 'What riders, customers and drivers pay — fares, surge, delivery fees and the bank accounts shown at checkout. Changes apply to new trips and orders as soon as you save.', bigs) +
     '<div class="ps-tabs"><div class="ak-seg" role="group" aria-label="Section">' + vis.map(function (t) { return '<button type="button" data-tab="' + t[0] + '" aria-pressed="' + (S.tab === t[0]) + '" class="' + (S.tab === t[0] ? 'on' : '') + '">' + esc(t[1]) + '</button>'; }).join('') + '</div><span style="flex:1"></span><button type="button" class="ak-btn" data-refresh aria-label="Refresh">🔄</button></div>' + body + '</div>';
 }
@@ -353,6 +380,20 @@ function onClick(e) {
     var dv = b.getAttribute('data-del-vt');
     K.confirm({ title: 'Switch off ' + vlabel(dv) + '?', text: 'It stops being offered for new rides. Drivers already registered with it and past rides keep their history.', label: 'Switch off', danger: true })
       .then(function (r) { if (r) run('admin_delete_vehicle_type', { vehicle_type: dv }).then(function (res) { return done(res, vlabel(dv) + ' switched off'); }); }); return;
+  }
+  if (t.closest('[data-save-incentives]')) {
+    function g(id) { return document.getElementById(id); }
+    var tiers = [];
+    for (var ti = 0; ti < 6; ti++) { var tr = parseInt(g('in-t' + ti).value, 10) || 0, tb = f(g('in-b' + ti).value); if (tr > 0 && tb > 0) tiers.push({ trips: tr, bonus: tb }); }
+    run('admin_save_incentive_plan', { on: g('in-on').checked ? 1 : 0, monthly_cap: f(g('in-cap').value), driver_month_max: f(g('in-dmax').value), daily_on: g('in-daily').checked ? 1 : 0, daily_tiers: tiers,
+      min_fare: f(g('in-minfare').value), min_km: f(g('in-minkm').value), max_same_rider: parseInt(g('in-same').value, 10) || 1, referral_on: g('in-ref').checked ? 1 : 0,
+      referral_trips: parseInt(g('in-rtrips').value, 10) || 1, referral_reward: f(g('in-rreward').value), referral_max_per_month: parseInt(g('in-rmax').value, 10) || 1 })
+      .then(function (r) { return done(r, 'Incentives saved'); }); return;
+  }
+  if ((b = t.closest('[data-void-inc]'))) {
+    var vid = parseInt(b.getAttribute('data-void-inc'), 10);
+    K.confirm({ title: 'Void this award?', text: 'The money is taken back from the driver\'s Etel money balance and the award leaves the spending totals.', label: 'Void award', danger: true })
+      .then(function (r) { if (r) run('admin_void_incentive', { id: vid }).then(function (res) { return done(res, 'Award voided'); }); }); return;
   }
   if (t.closest('[data-save-commission]')) {
     function v(id) { return document.getElementById(id); }

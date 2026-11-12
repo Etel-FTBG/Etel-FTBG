@@ -23,3 +23,27 @@ What Etel takes from a driver on each completed ride, per driver and per day. On
 
 ## Tests
 `php tests/ride_commission_test.php` (pure rules plus a database part) and `python3 tests/ride_commission_smoke.py` (API). Both are in `tests/ci/run_integration.sh`.
+
+---
+
+# Launch incentives (daily trip bonuses and driver referral rewards)
+
+Edited in **Admin > Pricing > Incentives** (`admin_get_incentive_plan`, `admin_save_incentive_plan`, `admin_void_incentive`; JSON in
+`pricing_rules.incentive_plan`; code in `api/lib/ride_incentives.php`). **Nothing is paid** unless the plan is ON **and** has a monthly budget above 0.
+
+- **Monthly budget** is a hard ceiling for all incentives in a calendar month; an award that does not fit in what is left is skipped.
+  Optional per-driver monthly maximum.
+- **Daily trip bonus**: tiers `trips = bonus` in the plan (up to 8, e.g. 5 trips = ETB 30, 8 trips = ETB 60). Paid once per tier per day when the
+  driver has that many qualifying trips that day. The old `driver_goal_tiers.bonus_etb` column is not used (it holds legacy numbers).
+- **Referral reward**: the driver whose invite code (`couriers.referred_by`) brought in another driver is paid once when the new driver has the
+  required number of qualifying trips from at least 3 different riders (at most 3 trips per rider count; the referrer's own rides do not count).
+  Limit per referrer per month; a suspended referrer is not paid.
+- **Qualifying trip**: completed, fare plus promo at least the minimum fare, at least the minimum distance, rider is not the driver, and for the daily
+  bonus at most N trips per rider per day.
+- Money is added to the driver's Etel money balance. Each award is one row in `ride_incentive_awards` (unique per kind, driver and reference, so never
+  paid twice) and the amount is stored on the triggering ride (`rides.incentive_bonus`, `rides.incentive_referral`).
+- **Void** an award in the admin: the credit is taken back and it leaves the totals.
+- **Investor launch budget**: the investor module counts promo discounts (`rides.promo_discount`), bonuses and referral rewards automatically from
+  the rides table, from the "count from" date set in Admin > Launch period. No extra database access is needed.
+
+Tests: `php tests/ride_incentives_test.php` and `python3 tests/ride_incentives_smoke.py` (both in `tests/ci/run_integration.sh`).

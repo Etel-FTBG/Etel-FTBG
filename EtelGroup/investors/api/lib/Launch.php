@@ -54,7 +54,7 @@ function ir_launch_state(PDO $pdo): array {
     $until = (string)ir_get_setting($pdo, 'launch_until', '');
     $note = (string)ir_get_setting($pdo, 'launch_note', '');
     $active = $flag && ($until === '' || date('Y-m-d') <= $until);
-    return ['active' => $active, 'switch_on' => $flag, 'until' => $until, 'note' => $note];
+    return ['active' => $active, 'switch_on' => $flag, 'until' => $until, 'note' => $note, 'auto_from' => (string)ir_get_setting($pdo, 'launch_auto_from', '')];
 }
 
 function ir_launch_summary(PDO $pdo, int $recent = 40): array {
@@ -70,9 +70,28 @@ function ir_launch_summary(PDO $pdo, int $recent = 40): array {
         $cats[] = ['category' => $k, 'label' => $label, 'budget' => $b, 'spent' => $s, 'left' => $b - $s];
         $tb += $b; $ts += $s;
     }
+    // Promotion, bonus and referral spending is also counted automatically from Delivery & Ride, from the "count from" date on.
+    $autoFrom = (string)ir_get_setting($pdo, 'launch_auto_from', '');
+    $auto = ['from' => $autoFrom, 'ok' => false, 'error' => '', 'amounts' => []];
+    if ($autoFrom !== '') {
+        try {
+            $auto['amounts'] = ir_delivery_incentives($pdo, $autoFrom, date('Y-m-d'));
+            $auto['ok'] = true;
+        } catch (Exception $e) {
+            $auto['error'] = 'Could not read the platform spending: ' . $e->getMessage();
+        }
+    }
+    foreach ($cats as $i => $c) {
+        $a = ($auto['ok'] && isset($auto['amounts'][$c['category']])) ? (float)$auto['amounts'][$c['category']] : 0.0;
+        $cats[$i]['spent_manual'] = $c['spent'];
+        $cats[$i]['spent_auto'] = $a;
+        $cats[$i]['spent'] = $c['spent'] + $a;
+        $cats[$i]['left'] = $c['budget'] - $c['spent'] - $a;
+        $ts += $a;
+    }
     $list = $pdo->prepare('SELECT id, spent_on, category, amount, note FROM ir_launch_spend ORDER BY spent_on DESC, id DESC LIMIT ' . (int)$recent);
     $list->execute();
-    return ['categories' => $cats, 'total_budget' => $tb, 'total_spent' => $ts, 'total_left' => $tb - $ts, 'spend' => $list->fetchAll()];
+    return ['categories' => $cats, 'total_budget' => $tb, 'total_spent' => $ts, 'total_left' => $tb - $ts, 'auto' => $auto, 'spend' => $list->fetchAll()];
 }
 
 // Delivered Delivery orders in [from, to] counted as extra company income.

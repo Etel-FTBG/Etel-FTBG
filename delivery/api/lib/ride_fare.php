@@ -570,6 +570,14 @@ function rides_complete_and_pay($pdo, $rideId, $driverId, $fare, $paymentMethod,
             }
         }
     }
+    /* Launch incentives (lib/ride_incentives.php): a daily trip bonus or a referral reward may now be due. Off unless the admin
+       switched the incentive plan on and set a monthly budget; it never changes this trip's own payout and never throws. */
+    if ($driverId) {
+        try {
+            require_once __DIR__ . '/ride_incentives.php';
+            rides_incentives_after_complete($pdo, $rideId, $driverId);
+        } catch (Exception $e) { error_log('[ETEL][incentives] ride ' . $rideId . ': ' . $e->getMessage()); }
+    }
     return true;
 }
 }

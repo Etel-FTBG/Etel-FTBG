@@ -557,12 +557,15 @@ function irRenderLaunch(d) {
   document.getElementById('ln-active').checked = !!st.switch_on;
   document.getElementById('ln-until').value = st.until || '';
   document.getElementById('ln-note').value = st.note || '';
+  document.getElementById('ln-autofrom').value = st.auto_from || '';
   const sm = d.summary;
   document.querySelector('#ln-budget tbody').innerHTML = sm.categories.map(c => `
-    <tr><td>${irEsc(c.label)}</td><td class="ir-num">${irInt(c.budget)}</td><td class="ir-num">${irInt(c.spent)}</td>
+    <tr><td>${irEsc(c.label)}</td><td class="ir-num">${irInt(c.budget)}</td><td class="ir-num">${irInt(c.spent)}${c.spent_auto ? ` <small style="color:var(--text-dim)">(${irInt(c.spent_auto)} automatic)</small>` : ''}</td>
     <td class="ir-num" style="${c.left < 0 ? 'color:#ff8a7a' : ''}">${irInt(c.left)}</td>
     <td><button class="btn btn-outline btn-sm" onclick="irEditBudget('${c.category}')">Edit</button></td></tr>`).join('') +
     `<tr><td><b>Total</b></td><td class="ir-num"><b>${irInt(sm.total_budget)}</b></td><td class="ir-num"><b>${irInt(sm.total_spent)}</b></td><td class="ir-num"><b>${irInt(sm.total_left)}</b></td><td></td></tr>`;
+  const an = document.getElementById('ln-autonote');
+  if (sm.auto && sm.auto.error) { an.style.display = ''; an.textContent = sm.auto.error; } else { an.style.display = 'none'; }
   const sel = document.getElementById('sp-cat');
   if (!sel.options.length) sel.innerHTML = sm.categories.map(c => `<option value="${c.category}">${irEsc(c.label)}</option>`).join('');
   const lab = {}; sm.categories.forEach(c => { lab[c.category] = c.label; });
@@ -579,7 +582,7 @@ async function irLoadLaunch() {
   const d = document.getElementById('sp-date'); if (d && !d.value) d.value = new Date().toISOString().slice(0, 10);
 }
 async function irSaveLaunch() {
-  const res = await irApi('admin_launch_save', { active: document.getElementById('ln-active').checked, until: document.getElementById('ln-until').value, note: document.getElementById('ln-note').value.trim() });
+  const res = await irApi('admin_launch_save', { active: document.getElementById('ln-active').checked, until: document.getElementById('ln-until').value, auto_from: document.getElementById('ln-autofrom').value, note: document.getElementById('ln-note').value.trim() });
   const m = document.getElementById('ln-msg');
   if (!res.ok) { m.style.color = '#ff8a7a'; m.textContent = res.error; return; }
   m.style.color = ''; m.textContent = res.data.state.active ? 'Saved. Launch period is ON: payouts are paused.' : 'Saved. Launch period is off.';

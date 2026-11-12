@@ -213,7 +213,76 @@ case 'admin_save_commission_plan': {
 }
 
 
-// ── DRIVER DAILY-GOAL TIERS ──────────────────────────────────────────
+// -- INCENTIVES (launch bonuses and referral rewards) ---------------------
+// See lib/ride_incentives.php. Nothing is paid unless the plan is ON and has a monthly budget.
+case 'admin_get_incentive_plan': {
+    $pdo = db();
+    require_admin($pdo, 'pricing.manage');
+    require_once __DIR__ . '/../lib/ride_incentives.php';
+    rides_incentive_ensure($pdo);
+    $plan = rides_incentive_plan($pdo);
+    $byKind = array('daily' => 0, 'referral' => 0);
+    $recent = array();
+    try {
+        foreach ($pdo->query("SELECT kind, COALESCE(SUM(amount),0) s FROM ride_incentive_awards WHERE voided_at IS NULL AND created_at >= DATE_FORMAT(NOW(), '%Y-%m-01') GROUP BY kind")->fetchAll(PDO::FETCH_ASSOC) as $r) $byKind[$r['kind']] = round(floatval($r['s']), 2);
+        $recent = $pdo->query("SELECT a.id, a.kind, a.driver_id, u.name AS driver_name, a.amount, a.ride_id, a.note, a.voided_at, a.created_at
+                               FROM ride_incentive_awards a LEFT JOIN users u ON u.id = a.driver_id ORDER BY a.id DESC LIMIT 60")->fetchAll(PDO::FETCH_ASSOC);
+    } catch (Exception $e) { /* lists are optional */ }
+    $spent = rides_incentive_month_spent($pdo);
+    ok(array('plan' => $plan, 'month' => array('spent' => $spent, 'cap' => $plan['monthly_cap'], 'left' => max(0, round($plan['monthly_cap'] - $spent, 2)), 'by_kind' => $byKind), 'recent' => $recent));
+    break;
+}
+
+case 'admin_save_incentive_plan': {
+    $pdo = db();
+    require_admin($pdo, 'pricing.manage');
+    require_once __DIR__ . '/../lib/ride_incentives.php';
+    $in = array();
+    foreach (array('on', 'daily_on', 'referral_on') as $k) $in[$k] = !empty($body[$k]) ? 1 : 0;
+    foreach (array('monthly_cap', 'driver_month_max', 'min_fare', 'min_km', 'max_same_rider', 'referral_trips', 'referral_reward', 'referral_max_per_month') as $k) {
+        if (isset($body[$k]) && (!is_numeric($body[$k]) || floatval($body[$k]) < 0)) fail('Numbers cannot be negative or text (' . $k . ').', 400);
+        $in[$k] = isset($body[$k]) ? floatval($body[$k]) : 0;
+    }
+    $tiers = array();
+    if (isset($body['daily_tiers']) && is_array($body['daily_tiers'])) {
+        foreach ($body['daily_tiers'] as $t) {
+            if (!is_array($t)) continue;
+            $trips = isset($t['trips']) ? intval($t['trips']) : 0;
+            $bonus = isset($t['bonus']) ? floatval($t['bonus']) : 0;
+            if ($trips < 1 || $trips > 50 || $bonus < 0 || $bonus > 5000) fail('Each daily bonus needs 1 to 50 trips and a bonus of 0 to 5,000 ETB.', 400);
+            $tiers[] = array('trips' => $trips, 'bonus' => $bonus);
+        }
+    }
+    $in['daily_tiers'] = $tiers;
+    if ($in['on'] && $in['monthly_cap'] <= 0) fail('Set a monthly budget above 0 before switching incentives on (nothing is paid without one).', 400);
+    if ($in['monthly_cap'] > 10000000) fail('The monthly budget is too large.', 400);
+    if ($in['max_same_rider'] < 1) $in['max_same_rider'] = 1;
+    if ($in['referral_trips'] < 1) $in['referral_trips'] = 1;
+    if ($in['referral_max_per_month'] < 1) $in['referral_max_per_month'] = 1;
+    try {
+        $saved = rides_incentive_save_plan($pdo, $in);
+        ok(array('message' => 'Incentive plan saved', 'plan' => $saved));
+    } catch (Exception $e) {
+        fail_ex($e, 'Could not save the incentive plan', 500);
+    }
+    break;
+}
+
+case 'admin_void_incentive': {
+    $pdo = db();
+    $admin = require_admin($pdo, 'pricing.manage');
+    require_once __DIR__ . '/../lib/ride_incentives.php';
+    $id = isset($body['id']) ? intval($body['id']) : 0;
+    if ($id < 1) fail('id is required', 400);
+    $adminId = (is_array($admin) && isset($admin['id'])) ? intval($admin['id']) : 0;
+    $res = rides_incentive_void($pdo, $id, $adminId);
+    if (!$res[0]) fail($res[1], 409);
+    ok(array('message' => $res[1]));
+    break;
+}
+
+
+// -- DRIVER DAILY-GOAL TIERS --────────────────────────────────────────
 // Previously six values ("2 trips -> +ETB 250" etc.) hardcoded directly
 // into driver/index.html - an admin had no way to change the trip
 // counts or bonus amounts without editing code. Same self-healing/seed
@@ -246,6 +315,7 @@ case 'admin_save_goal_tier': {
     // driver_get_goal_tiers in RideController.php), not this column.
     // Kept in the schema in case a fixed-bonus mode is reintroduced
     // later, but the admin UI no longer exposes it, so default to 0.
+    // (The launch daily trip bonuses are NOT read from here: they live in the incentive plan, lib/ride_incentives.php.)
     $bonus = isset($body['bonus_etb']) ? etel_validate_amount($body['bonus_etb'], true) : 0;
     if ($bonus === false) $bonus = 0;
     $active = isset($body['active']) ? (intval($body['active']) ? 1 : 0) : 1;

@@ -38,6 +38,11 @@ case 'admin_launch_save': {
     $on = !empty($body['active']);
     $until = trim((string)($body['until'] ?? ''));
     $note = trim((string)($body['note'] ?? ''));
+    $autoFrom = trim((string)($body['auto_from'] ?? ''));
+    if ($autoFrom !== '') {
+        $d0 = DateTime::createFromFormat('Y-m-d', $autoFrom);
+        if (!$d0 || $d0->format('Y-m-d') !== $autoFrom) fail('The date to count platform spending from must be a valid date.', 400);
+    }
     if ($until !== '') {
         $d = DateTime::createFromFormat('Y-m-d', $until);
         if (!$d || $d->format('Y-m-d') !== $until) fail('The end date must be a valid date.', 400);
@@ -46,6 +51,7 @@ case 'admin_launch_save': {
     ir_set_setting($pdo, 'launch_active', $on ? '1' : '0');
     ir_set_setting($pdo, 'launch_until', $until);
     ir_set_setting($pdo, 'launch_note', $note);
+    ir_set_setting($pdo, 'launch_auto_from', $autoFrom);
     ir_log($pdo, eg_current_actor()['full_name'], 'launch_period_' . ($on ? 'on' : 'off'), $until !== '' ? ('until ' . $until) : 'no end date');
     ok(ir_launch_payload($pdo));
     break;
@@ -115,7 +121,9 @@ case 'investor_launch': {
     ir_require_investor();
     $pdo = eg_db();
     $p = ir_launch_payload($pdo);
-    ok(['state' => $p['state'], 'summary' => $p['summary']]);
+    // an investor sees whether the automatic counting works, never the technical reason
+    $p['summary']['auto'] = ['from' => $p['summary']['auto']['from'], 'ok' => $p['summary']['auto']['ok']];
+    ok(['state' => ['active' => $p['state']['active'], 'until' => $p['state']['until'], 'note' => $p['state']['note']], 'summary' => $p['summary']]);
     break;
 }
 

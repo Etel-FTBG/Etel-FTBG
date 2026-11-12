@@ -102,6 +102,24 @@ function ir_delivery_fetch_daily(PDO $pdo, string $from, string $to): array {
     return $rows;
 }
 
+// What Delivery & Ride spent on launch incentives on completed rides in [from, to] (Y-m-d): the promo discounts Etel funded,
+// the driver trip bonuses and the referral rewards. Delivery & Ride stores each on the ride that triggered it
+// (rides.promo_discount, rides.incentive_bonus, rides.incentive_referral), so this needs no access beyond the rides table.
+// A column that does not exist yet counts as 0. Throws if the connection fails (callers show that, never a made-up zero).
+function ir_delivery_incentives(PDO $pdo, string $from, string $to): array {
+    $dconn = ir_delivery_connect($pdo);
+    $have = [];
+    foreach ($dconn->query("SHOW COLUMNS FROM rides")->fetchAll() as $c) $have[strtolower($c['Field'])] = true;
+    $col = function (string $name) use ($have): string { return isset($have[$name]) ? "COALESCE(SUM(COALESCE($name, 0)), 0)" : "0"; };
+    $stmt = $dconn->prepare(
+        "SELECT " . $col('promo_discount') . " AS promo, " . $col('incentive_bonus') . " AS bonus, " . $col('incentive_referral') . " AS referral
+         FROM rides WHERE status = 'completed' AND completed_at IS NOT NULL AND DATE(completed_at) BETWEEN ? AND ?"
+    );
+    $stmt->execute([$from, $to]);
+    $r = $stmt->fetch();
+    return ['promotion' => round((float)$r['promo'], 2), 'bonus' => round((float)$r['bonus'], 2), 'referral' => round((float)$r['referral'], 2)];
+}
+
 // Rolling 4-week (28-day) average trips/day, ending today, for the
 // Tranche 2 milestone panel - real data only. Refreshes the cache for
 // that window first; throws (never fabricates) if the connection isn't

@@ -63,7 +63,7 @@ function equity_reset_table_plan() {
         'ride_messages', 'ride_typing', 'ride_path_points', 'ride_issues',
         'ride_favorite_routes', 'ride_drivers', 'ride_requests', 'order_ratings',
         'service_giver_ratings', 'ride_counter_offers', 'ride_driver_exclusions', 'ride_offer_log',
-        'ride_pin_fails', 'ride_tips', 'ride_promo_redemptions', 'ride_monitor_alerts', 'sos_alerts',
+        'ride_pin_fails', 'ride_incentive_awards', 'ride_tips', 'ride_promo_redemptions', 'ride_monitor_alerts', 'sos_alerts',
         // Order-related children
         'order_items', 'order_confirmations', 'order_assignments', 'scheduled_orders',
         'order_admin_actions', 'order_courier_offers', 'order_issues', 'order_message_reads', 'order_messages',

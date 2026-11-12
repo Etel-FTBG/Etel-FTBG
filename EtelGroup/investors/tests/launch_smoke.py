@@ -111,5 +111,25 @@ check(call('investor_launch', auth=False)[0] == 401, 'the investor view needs an
 s, r = call('deal_config', auth=False)
 check(s == 200 and 'launch' in r['data'], 'the deal sheet config tells about the launch period', r)
 
+# spending counted automatically from the platform (promo discounts, driver bonuses, referral rewards stored on the rides)
+subprocess.check_call(['mysql', 'deltest', '-e', """
+ALTER TABLE rides ADD COLUMN promo_discount DECIMAL(10,2) NULL, ADD COLUMN incentive_bonus DECIMAL(10,2) NULL, ADD COLUMN incentive_referral DECIMAL(10,2) NULL;
+UPDATE rides SET promo_discount = 20, incentive_bonus = 30 WHERE completed_at = '2026-11-02 10:00:00';
+UPDATE rides SET incentive_referral = 100 WHERE completed_at = '2026-11-03 10:00:00';
+UPDATE rides SET promo_discount = 999 WHERE completed_at = '2026-10-05 10:00:00';
+"""])
+s, r = call('admin_launch_save', {'active': False, 'until': '', 'note': '', 'auto_from': '2026-11-01'})
+cats = {c['category']: c for c in r['data']['summary']['categories']} if s == 200 else {}
+sm = r['data']['summary'] if s == 200 else {}
+check(cats.get('promotion', {}).get('spent_auto') == 20 and cats.get('bonus', {}).get('spent_auto') == 30 and cats.get('referral', {}).get('spent_auto') == 100,
+      'promo, bonus and referral spending is counted automatically from the platform', r)
+check(sm.get('total_spent') == 150 and cats.get('promotion', {}).get('left') == 60000 - 20, 'the totals and what is left include it', r)
+check(sm.get('auto', {}).get('ok') is True and r['data']['state']['auto_from'] == '2026-11-01', 'the count-from date is kept', r)
+s, r = call('admin_launch_spend_add', {'category': 'promotion', 'amount': 1000, 'spent_on': '2026-11-05', 'note': 'by hand'})
+cats = {c['category']: c for c in r['data']['summary']['categories']}
+check(cats['promotion']['spent'] == 1020 and cats['promotion']['spent_manual'] == 1000 and cats['promotion']['spent_auto'] == 20, 'a hand-entered spend and the automatic amount add up', r)
+call('admin_launch_spend_delete', {'id': r['data']['summary']['spend'][0]['id']})
+s, r = call('admin_launch_save', {'active': False, 'until': '', 'note': '', 'auto_from': ''})
+check(r['data']['summary']['total_spent'] == 0 and r['data']['summary']['auto']['ok'] is False, 'with no count-from date nothing is counted automatically', r)
 print('\n' + ('ALL PASS' if not fails else '%d FAILED' % len(fails)))
 sys.exit(1 if fails else 0)
