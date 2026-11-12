@@ -225,6 +225,7 @@ try{var t=localStorage.getItem('theme');if(t!=='dark'&&t!=='light')t=window.matc
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;align-items:end">
           <label style="display:flex;gap:8px;align-items:center;font-size:14px"><input type="checkbox" id="ln-active"> Launch period is on</label>
           <div class="cf-field"><label>Ends on (optional)</label><input type="date" id="ln-until"></div>
+          <div class="cf-field"><label>Count platform spending from (optional)</label><input type="date" id="ln-autofrom" title="Promo discounts, driver bonuses and referral rewards paid by Delivery &amp; Ride from this day are counted in the budget automatically"></div>
           <div class="cf-field" style="grid-column:1/-1"><label>Note for investors (optional)</label><input type="text" id="ln-note" maxlength="500" placeholder="e.g. No commission for drivers until 150 trips a day for 4 weeks"></div>
         </div>
         <button class="btn btn-primary" style="margin-top:10px" onclick="irSaveLaunch()">Save</button>
@@ -232,7 +233,8 @@ try{var t=localStorage.getItem('theme');if(t!=='dark'&&t!=='light')t=window.matc
       </div>
       <div class="ir-card">
         <h2>&#128176; Launch budget</h2>
-        <div class="desc">What the raise is spent on. Investors see the totals per line and the list of spends. Spending from this budget is not deducted from the profit that is shared.</div>
+        <div class="desc">What the raise is spent on. Investors see the totals per line and the list of spends. Spending from this budget is not deducted from the profit that is shared. Promotion, bonuses and referral rewards are also counted automatically from Delivery &amp; Ride (from the date set above), so you only record the rest by hand.</div>
+        <div id="ln-autonote" class="ir-not-connected" style="display:none"></div>
         <div class="ir-tablewrap"><table class="ir-table" id="ln-budget"><thead><tr><th>Line</th><th class="ir-num">Budget</th><th class="ir-num">Spent</th><th class="ir-num">Left</th><th></th></tr></thead><tbody></tbody></table></div>
         <h3 style="margin:18px 0 8px;font-size:14px">Add a spend</h3>
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px">
@@ -381,7 +383,7 @@ try{var t=localStorage.getItem('theme');if(t!=='dark'&&t!=='light')t=window.matc
 
 <link rel="stylesheet" href="css/deal-r3.css">
 <script src="js/deal-sheet.js?v=3"></script>
-<script src="js/admin.js?v=4"></script>
+<script src="js/admin.js?v=5"></script>
 <script src="js/admin-deals.js?v=2"></script>
 <script src="js/ir-shell.js?v=2"></script>
 </body>

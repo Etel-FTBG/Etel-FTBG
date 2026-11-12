@@ -143,6 +143,8 @@ async function ipLoadLaunch() {
     `<tr><td>${ipEsc(c.label)}</td><td class="ir-num">${money0(c.budget)}</td><td class="ir-num">${money0(c.spent)}</td><td class="ir-num">${money0(c.left)}</td></tr>`).join('') +
     `<tr><td><b>Total</b></td><td class="ir-num"><b>${money0(sm.total_budget)}</b></td><td class="ir-num"><b>${money0(sm.total_spent)}</b></td><td class="ir-num"><b>${money0(sm.total_left)}</b></td></tr>`;
   const lab = {}; sm.categories.forEach(c => { lab[c.category] = c.label; });
+  const note = document.getElementById('p-launch-desc');
+  if (note) note.textContent = 'How the raise is being spent on growth.' + (sm.auto && sm.auto.ok ? ' Promotion, bonuses and referral rewards are counted automatically from the platform.' : '');
   document.querySelector('#p-spend-table tbody').innerHTML = sm.spend.map(x =>
     `<tr><td>${ipEsc(x.spent_on)}</td><td>${ipEsc(lab[x.category] || x.category)}</td><td class="ir-num">${money0(x.amount)}</td><td>${ipEsc(x.note)}</td></tr>`).join('') ||
     '<tr><td colspan="4" style="color:var(--text-dim)">No spending recorded yet.</td></tr>';

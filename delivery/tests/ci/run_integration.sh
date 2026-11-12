@@ -59,6 +59,7 @@ run python3 tests/open_meter_smoke.py
 run python3 tests/ride_dispatch_smoke.py
 run python3 tests/ride_offer_smoke.py
 run python3 tests/ride_commission_smoke.py
+run python3 tests/ride_incentives_smoke.py
 run python3 tests/ride_vehicle_types_smoke.py
 run python3 tests/ride_wallet_soon_smoke.py
 run python3 tests/ride_promo_smoke.py
@@ -85,6 +86,7 @@ run php tests/shop_hours_test.php
 run php tests/money_ledger_test.php
 run php tests/ride_tip_chapa_test.php
 run php tests/ride_commission_test.php
+run php tests/ride_incentives_test.php
 run php tests/ride_meter_floor_test.php
 run php tests/manual_dispatch_test.php
 run php tests/order_cancel_test.php
