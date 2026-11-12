@@ -106,3 +106,5 @@ html[data-theme="dark"] .dl-f input{color-scheme:dark}
 .dl-f input[type=date]{height:46px;-webkit-appearance:none;appearance:none}
 #dl-form h2:not(:first-child){margin-top:24px}
 .dl-co.dl-this{border-color:var(--dl-gold);box-shadow:0 0 0 1px rgba(246,194,43,.35)}
+
+.dl-pill{display:inline-block;margin-left:8px;padding:2px 10px;border-radius:20px;background:var(--dl-gold);color:#061230;font:700 11px/1.6 "Inter","Segoe UI",system-ui,sans-serif;letter-spacing:.5px;vertical-align:middle}

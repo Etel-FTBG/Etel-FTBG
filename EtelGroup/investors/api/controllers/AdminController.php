@@ -438,6 +438,11 @@ case 'admin_run_distribution': {
     }
     $lock = $action === 'admin_run_distribution';
     $includeDemo = ir_is_demo_mode($pdo);
+    require_once __DIR__ . '/../lib/Launch.php';
+    if ($lock && !$includeDemo) {
+        $ls = ir_launch_state($pdo);
+        if ($ls['active']) fail('Launch period: payouts are paused' . ($ls['until'] !== '' ? ' until ' . $ls['until'] : '') . '. Turn the launch period off first (Launch period page).', 409);
+    }
 
     if ($lock) {
         $overlap = $pdo->prepare(
@@ -460,6 +465,11 @@ case 'admin_run_distribution': {
     }
     $grossFareTotal = 0.0;
     foreach ($days as $d) $grossFareTotal += (float)$d['gross_fare'];
+    try {
+        $oi = ir_orders_income($pdo, $periodStart, $periodEnd);
+    } catch (Exception $e) {
+        fail('Could not read delivery orders: ' . $e->getMessage() . ' (give the read-only user SELECT on the orders table, or turn order income off).', 502);
+    }
 
     $costCats = $pdo->query('SELECT monthly_amount FROM ir_cost_categories WHERE is_active = 1')->fetchAll();
 
@@ -476,8 +486,15 @@ case 'admin_run_distribution': {
     }
 
     $result = ir_run_distribution(
-        $grossFareTotal, ir_commission_rate($pdo), $costCats, $periodStart, $periodEnd, $investorsForEngine
+        $grossFareTotal, ir_commission_rate($pdo), $costCats, $periodStart, $periodEnd, $investorsForEngine, $oi['commission']
     );
+    if ($oi['enabled']) {
+        // Show orders next to rides: gross and commission totals include delivered orders.
+        $result['orders_count'] = $oi['count'];
+        $result['orders_gross'] = $oi['gross'];
+        $result['gross_fare_total'] = round($result['gross_fare_total'] + $oi['gross'], 2);
+        $result['commission_revenue'] = round($result['commission_revenue'] + $result['other_income'], 2);
+    }
 
     if (!$lock) {
         ok($result);

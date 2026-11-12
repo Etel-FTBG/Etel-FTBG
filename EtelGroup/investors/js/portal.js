@@ -97,6 +97,8 @@ async function ipLoadAll() {
     `).join('') || '<tr><td colspan="5" style="color:var(--text-dim)">No payouts recorded yet.</td></tr>';
   }
 
+  ipLoadLaunch();
+
   const pRes = await ipApi('investor_purchase_history');
   const pBody = document.querySelector('#p-purchases-table tbody');
   if (pRes.ok) {
@@ -119,4 +121,29 @@ function ipChart(rows) {
     g += `<text class="ax" x="${(x + bw * .32).toFixed(1)}" y="${H - 8}" text-anchor="middle">${ipEsc(String(r.period_start).slice(5, 7))}</text>`;
   });
   el.innerHTML = `<svg viewBox="0 0 ${W} ${H}"><defs><linearGradient id="pg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f1d36a"/><stop offset="1" stop-color="#b8921f"/></linearGradient></defs><line x1="${pad}" y1="${H - 22}" x2="${W - pad}" y2="${H - 22}" stroke="currentColor" opacity=".18"/>${g}</svg>`;
+}
+
+
+// Launch period banner and the launch budget (read only).
+async function ipLoadLaunch() {
+  const res = await ipApi('investor_launch');
+  if (!res.ok) return;
+  const st = res.data.state, sm = res.data.summary, ban = document.getElementById('p-launch');
+  if (st.active) {
+    ban.style.display = '';
+    ban.innerHTML = '<b>Launch period</b> &middot; ' + (st.until ? 'until ' + ipEsc(st.until) + '. ' : '') +
+      'The raise is being spent on growth, and no profit is paid during this time. ' + (st.note ? ipEsc(st.note) : 'Payouts start after the launch period, once there is profit.');
+  } else { ban.style.display = 'none'; }
+  const card = document.getElementById('p-launch-card');
+  const any = sm.total_budget > 0 || sm.spend.length;
+  card.style.display = any ? '' : 'none';
+  if (!any) return;
+  const money0 = n => Number(n || 0).toLocaleString('en-US', { maximumFractionDigits: 0 });
+  document.querySelector('#p-budget-table tbody').innerHTML = sm.categories.map(c =>
+    `<tr><td>${ipEsc(c.label)}</td><td class="ir-num">${money0(c.budget)}</td><td class="ir-num">${money0(c.spent)}</td><td class="ir-num">${money0(c.left)}</td></tr>`).join('') +
+    `<tr><td><b>Total</b></td><td class="ir-num"><b>${money0(sm.total_budget)}</b></td><td class="ir-num"><b>${money0(sm.total_spent)}</b></td><td class="ir-num"><b>${money0(sm.total_left)}</b></td></tr>`;
+  const lab = {}; sm.categories.forEach(c => { lab[c.category] = c.label; });
+  document.querySelector('#p-spend-table tbody').innerHTML = sm.spend.map(x =>
+    `<tr><td>${ipEsc(x.spent_on)}</td><td>${ipEsc(lab[x.category] || x.category)}</td><td class="ir-num">${money0(x.amount)}</td><td>${ipEsc(x.note)}</td></tr>`).join('') ||
+    '<tr><td colspan="4" style="color:var(--text-dim)">No spending recorded yet.</td></tr>';
 }

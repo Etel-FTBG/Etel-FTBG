@@ -31,7 +31,7 @@ function paint() {
     '<h3>' + D.esc(t.h3) + '</h3><div class="dl-scroll"><table class="dl-ex"><tr><th>' + D.esc(t.ex_h) + '</th><th>' + D.esc(t.std) + '</th><th>' + D.esc(t.boost) + '</th></tr>' +
     [100, 400, 2000].map(function (u, i) { var p = D.payout(u, 100000, cfg); return '<tr><td>' + D.esc(t['r' + (i + 1)]) + '</td><td>ETB ' + D.num(p.std) + '</td><td>ETB ' + D.num(p.boost) + '</td></tr>'; }).join('') + '</table></div>' +
     '<h3>' + D.esc(t.h4) + '</h3><div class="dl-pts"><div><b>' + D.esc(t.g1b) + '</b><span>' + D.esc(t.g1s) + '</span></div><div><b>' + D.esc(t.g2b) + '</b><span>' + D.esc(t.g2s) + '</span></div><div><b>' + D.esc(t.g3b) + '</b><span>' + D.esc(t.g3s) + '</span></div></div>';
-  stagesCard(); nextCard(); demoBar(); openLine(); calc();
+  stagesCard(); launchCard(); nextCard(); demoBar(); openLine(); calc();
 }
 function stagesCard() {
   var t = D.T(lang), box = $('dl-stages'), st = cfg.stages || [];
@@ -43,6 +43,11 @@ function stagesCard() {
       var cls = s.stage === cfg.stage ? ' class="dl-now"' : '';
       return '<tr' + cls + '><td>' + D.esc(s.stage) + '</td><td>ETB ' + D.num(s.price) + '</td><td>' + D.num(s.shares_total) + '</td><td>' + D.esc(status) + '</td></tr>';
     }).join('') + '</table></div>';
+}
+function launchCard() {
+  var t = D.T(lang), box = $('dl-launch');
+  var l = cfg.launch || {};
+  box.innerHTML = '<h2>' + D.esc(t.ln_h) + (l.active ? ' <small class="dl-pill">' + D.esc(t.ln_on) + '</small>' : '') + '</h2><p class="dl-note">' + D.esc(t.ln_p) + '</p>' + (l.active && l.until ? '<p class="dl-note"><b>' + D.esc(D.fmt(t.ln_until, { d: l.until })) + '</b></p>' : '');
 }
 function nextCard() {
   var t = D.T(lang), box = $('dl-next'), cs = cfg.companies || [];

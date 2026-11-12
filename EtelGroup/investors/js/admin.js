@@ -206,6 +206,7 @@ async function irLoadDashboard() {
     </div>`;
   }).join('') + `<div style="font-size:12px;color:var(--text-dim);margin-top:10px">All three stages: ${sharesAll} shares &middot; ETB ${irInt(raiseAll)} &middot; ${(sharesAll / 100).toFixed(1)}% of the company (the pool is 20%).</div>`;
 
+  irLoadLaunch();
   irLoadCostCategories();
   irLoadInvestors();
   irLoadPeriods();
@@ -546,3 +547,67 @@ async function irViewPeriod(id) {
 }
 
 function irCloseModal(id) { document.getElementById(id).classList.remove('open'); }
+
+
+// ---------- launch period, launch budget, order income ----------
+let IR_LAUNCH = null;
+function irRenderLaunch(d) {
+  IR_LAUNCH = d;
+  const st = d.state || {};
+  document.getElementById('ln-active').checked = !!st.switch_on;
+  document.getElementById('ln-until').value = st.until || '';
+  document.getElementById('ln-note').value = st.note || '';
+  const sm = d.summary;
+  document.querySelector('#ln-budget tbody').innerHTML = sm.categories.map(c => `
+    <tr><td>${irEsc(c.label)}</td><td class="ir-num">${irInt(c.budget)}</td><td class="ir-num">${irInt(c.spent)}</td>
+    <td class="ir-num" style="${c.left < 0 ? 'color:#ff8a7a' : ''}">${irInt(c.left)}</td>
+    <td><button class="btn btn-outline btn-sm" onclick="irEditBudget('${c.category}')">Edit</button></td></tr>`).join('') +
+    `<tr><td><b>Total</b></td><td class="ir-num"><b>${irInt(sm.total_budget)}</b></td><td class="ir-num"><b>${irInt(sm.total_spent)}</b></td><td class="ir-num"><b>${irInt(sm.total_left)}</b></td><td></td></tr>`;
+  const sel = document.getElementById('sp-cat');
+  if (!sel.options.length) sel.innerHTML = sm.categories.map(c => `<option value="${c.category}">${irEsc(c.label)}</option>`).join('');
+  const lab = {}; sm.categories.forEach(c => { lab[c.category] = c.label; });
+  document.querySelector('#ln-spend tbody').innerHTML = sm.spend.map(x => `
+    <tr><td>${irEsc(x.spent_on)}</td><td>${irEsc(lab[x.category] || x.category)}</td><td class="ir-num">${irInt(x.amount)}</td><td>${irEsc(x.note)}</td>
+    <td><button class="btn btn-outline btn-sm" onclick="irDeleteSpend(${Number(x.id)})">Remove</button></td></tr>`).join('') || '<tr><td colspan="5" style="color:var(--text-dim)">No spends recorded yet.</td></tr>';
+  const o = d.orders || {};
+  document.getElementById('oi-on').checked = !!o.include_orders;
+  document.getElementById('oi-rate').value = o.order_commission_rate || '';
+}
+async function irLoadLaunch() {
+  const res = await irApi('admin_launch_get');
+  if (res.ok) irRenderLaunch(res.data);
+  const d = document.getElementById('sp-date'); if (d && !d.value) d.value = new Date().toISOString().slice(0, 10);
+}
+async function irSaveLaunch() {
+  const res = await irApi('admin_launch_save', { active: document.getElementById('ln-active').checked, until: document.getElementById('ln-until').value, note: document.getElementById('ln-note').value.trim() });
+  const m = document.getElementById('ln-msg');
+  if (!res.ok) { m.style.color = '#ff8a7a'; m.textContent = res.error; return; }
+  m.style.color = ''; m.textContent = res.data.state.active ? 'Saved. Launch period is ON: payouts are paused.' : 'Saved. Launch period is off.';
+  irRenderLaunch(res.data);
+}
+async function irEditBudget(cat) {
+  const c = IR_LAUNCH.summary.categories.find(x => x.category === cat); if (!c) return;
+  const v = prompt('Budget for ' + c.label + ' (ETB)', String(c.budget));
+  if (v === null) return;
+  const res = await irApi('admin_launch_budget_save', { category: cat, budget: Number(v) });
+  if (!res.ok) { alert(res.error); return; }
+  irRenderLaunch(res.data);
+}
+async function irAddSpend() {
+  const res = await irApi('admin_launch_spend_add', { spent_on: document.getElementById('sp-date').value, category: document.getElementById('sp-cat').value, amount: Number(document.getElementById('sp-amount').value || 0), note: document.getElementById('sp-note').value.trim() });
+  const m = document.getElementById('sp-msg');
+  if (!res.ok) { m.textContent = res.error; return; }
+  m.textContent = ''; document.getElementById('sp-amount').value = ''; document.getElementById('sp-note').value = '';
+  irRenderLaunch(res.data);
+}
+async function irDeleteSpend(id) {
+  if (!confirm('Remove this spend?')) return;
+  const res = await irApi('admin_launch_spend_delete', { id });
+  if (res.ok) irRenderLaunch(res.data); else alert(res.error);
+}
+async function irSaveOrders() {
+  const res = await irApi('admin_orders_income_save', { include_orders: document.getElementById('oi-on').checked, order_commission_rate: document.getElementById('oi-rate').value.trim() });
+  const m = document.getElementById('oi-msg');
+  if (!res.ok) { m.style.color = '#ff8a7a'; m.textContent = res.error; return; }
+  m.style.color = ''; m.textContent = 'Saved.'; irRenderLaunch(res.data);
+}

@@ -195,3 +195,22 @@ Traction: demo = labelled sample; real = hidden until you tick "Show real tracti
 The Amharic text is a first draft and needs a native reviewer.
 
 Tests: `tests/deal_sheet_smoke.py` now also covers the stages, demo preview, pitch data and planner scenarios.
+
+
+## Launch period, launch budget and order income (update)
+
+**Launch period** (Admin > Launch period). While it is on, no payout can be locked (previews still work, demo mode is not affected).
+It ends by itself on the optional end date. Investors see a banner in their portal, a "launch period" card on the deal sheet (the declaration now also says
+no profit is paid during the launch period) and a "launch plan" slide in the pitch. The slide shows a proposed limit (3 months or 150 trips a day for 4 weeks):
+change the wording in `js/pitch-r3.js` if the final terms differ, and put the final terms in the signed agreement (have a lawyer review it).
+The blank printable PDFs in `forms/` do not include the new declaration sentence.
+
+**Launch budget** (same page). Six lines (reserve, marketing, promotion, bonuses, referral rewards, materials) start as the proposed split of the Stage 1 raise.
+Edit the budgets, record each spend (date, line, amount, what for) and remove mistakes. Investors see the totals per line and the recent spending in their portal.
+Spending from this budget is not deducted from the profit that is shared.
+
+**Delivery order income** (same page, off by default). When on, delivered Delivery orders (`orders.status = 'delivered'`, `fare_total`, by `delivered_at`) are counted
+as company income next to ride commission in every distribution, at the order commission rate (empty = the ride rate). The read-only database user needs
+`GRANT SELECT ON <delivery db>.orders`. If orders cannot be read, the distribution fails with a clear message instead of leaving them out.
+
+Tests: `tests/launch_smoke.py` (needs a second throwaway database `deltest`, see its header).
