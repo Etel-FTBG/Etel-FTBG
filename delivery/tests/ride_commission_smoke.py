@@ -4,7 +4,7 @@ ETEL Delivery -- commission plan over the real API (Admin > Pricing > Commission
     php -S 127.0.0.1:8765 -t . > /tmp/etel-php.log 2>&1 &
     python3 tests/ride_commission_smoke.py
 
-Needs the seeded demo admin (api/seeds/admin_demo_accounts.sql). Saves a plan and puts the default back: throwaway database only.
+Needs the seeded demo accounts (api/seeds/admin_demo_accounts.sql). Saves a plan and puts the default back: throwaway database only.
 """
 import json
 import sys
@@ -45,11 +45,14 @@ def main():
     if not admin:
         print("  SKIP no seeded demo admin")
         return 0
-    n = int(SUFFIX) % 1000000
-    s, r = call("register", {"name": "Comm Cust %s" % SUFFIX, "phone": "+251971%06d" % n, "password": "testpass123", "role": "customer"})
+    # the seeded demo customer and driver (no new sign-ups: registration is rate limited per address and other tests need it)
+    s, r = call("login", {"phone": "+251911000001", "password": "etel1234"})
     cust = (r.get("data") or {}).get("token")
-    s, r = call("register", {"name": "Comm Drv %s" % SUFFIX, "phone": "+251972%06d" % n, "password": "testpass123", "role": "courier"})
+    s, r = call("login", {"phone": "+251911000002", "password": "etel1234"})
     drv = (r.get("data") or {}).get("token")
+    if not (cust and drv):
+        print("  SKIP no seeded demo customer or driver")
+        return 0
 
     print("1. Who may read and save the plan")
     for act in ("admin_get_commission_plan", "admin_save_commission_plan"):
@@ -76,7 +79,7 @@ def main():
     print("3. The driver's own view")
     s, r = call("driver_get_commission", {}, drv)
     d = r.get("data") or {}
-    check("a new driver sees 0 percent in phase 1 with an end day", s == 200 and d.get("rate") == 0 and d.get("phase") == "holiday" and d.get("ends_on"), r)
+    check("a driver sees 0 percent in phase 1 with an end day", s == 200 and d.get("rate") == 0 and d.get("phase") == "holiday" and d.get("ends_on"), r)
     s, _ = call("driver_get_commission", {})
     check("driver_get_commission needs a login", s in (401, 403), s)
 
