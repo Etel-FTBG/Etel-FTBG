@@ -51,6 +51,15 @@ s, r = call('admin_launch_get')
 d = r['data']
 check(s == 200 and len(d['summary']['categories']) == 6 and d['summary']['total_budget'] == 400000, 'six budget lines add up to the Stage 1 raise', r)
 check(not d['state']['active'], 'launch period starts off')
+# demo data: cost lines, launch period and sample spending appear, and Clear demo removes them
+check(call('setup_seed_demo', {})[0] == 200, 'demo data can be created')
+s, r = call('admin_launch_get')
+d2 = r['data']
+check(d2['state']['active'] and d2['summary']['total_spent'] > 90000 and d2['summary']['total_spent'] < 200000, 'demo shows an active launch with sample spending', r)
+check(len(d2['summary']['spend']) == 14, 'demo adds the sample spending lines', r)
+call('setup_clear_demo', {})
+d3 = call('admin_launch_get')[1]['data']
+check(not d3['state']['active'] and d3['summary']['total_spent'] == 0, 'Clear demo removes the launch state and sample spending', d3)
 call('admin_save_cost_category', {'name': 'Rent', 'monthly_amount': 100, 'is_active': True})
 
 # distributions: preview works during the launch period, locking is refused

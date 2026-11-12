@@ -138,6 +138,9 @@ case 'setup_seed_demo': {
         ['month_index' => 5, 'name' => 'Mekdes Alemu (DEMO)', 'email' => 'demo.mekdes@example.com', 'phone' => '+251911000004', 'shares' => 150, 'tranche' => 2, 'amount' => 150000],
     ];
 
+    require_once __DIR__ . '/../lib/DemoLaunch.php';
+    ir_demo_launch_seed($pdo, $actor);
+
     $pdo->beginTransaction();
     try {
         $insInv = $pdo->prepare(
@@ -247,6 +250,8 @@ case 'setup_clear_demo': {
     eg_require_admin();
     $pdo = eg_db();
     ir_ensure_core_tables($pdo);
+    require_once __DIR__ . '/../lib/DemoLaunch.php';
+    ir_demo_launch_clear($pdo);
     $pdo->beginTransaction();
     try {
         $demoPeriodIds = $pdo->query('SELECT id FROM ir_distribution_periods WHERE is_demo = 1')->fetchAll(PDO::FETCH_COLUMN);
