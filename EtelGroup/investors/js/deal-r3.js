@@ -46,9 +46,9 @@ function stagesCard() {
 }
 function nextCard() {
   var t = D.T(lang), box = $('dl-next'), cs = cfg.companies || [];
-  if (!cs.length) { box.hidden = true; return; }
   box.hidden = false;
-  box.innerHTML = '<h2>' + D.esc(t.next_h) + '</h2><p class="dl-note">' + D.esc(t.next_p) + '</p><div class="dl-cos">' + cs.map(function (c) {
+  var me = '<div class="dl-co dl-live dl-this"><b>Etel Delivery &amp; Ride</b><span>' + D.esc(t.self_line) + '</span><i>' + D.esc(t.live_this) + '</i></div>';
+  box.innerHTML = '<h2>' + D.esc(t.next_h) + '</h2><p class="dl-note">' + D.esc(t.next_p) + '</p><div class="dl-cos">' + me + cs.map(function (c) {
     var line = c.tagline && c.tagline.toLowerCase() !== 'coming soon' ? c.tagline : '';
     return '<div class="dl-co' + (c.live ? ' dl-live' : '') + '"><b>' + D.esc(c.name) + '</b>' + (line ? '<span>' + D.esc(line) + '</span>' : '') + '<i>' + D.esc(c.live ? t.live_word : t.soon_word) + '</i></div>';
   }).join('') + '</div>';

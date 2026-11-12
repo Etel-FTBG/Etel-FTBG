@@ -191,7 +191,7 @@ Turning demo mode off removes all demo data and the banners.
 
 **Investor pitch** (`pitch.html`, English and Amharic, light and dark, "Save as PDF" prints one slide per A4 landscape page).
 Traction: demo = labelled sample; real = hidden until you tick "Show real traction numbers on the pitch" in the dashboard. The scenario slide uses assumed costs
-(ETB 75,000 lean / 150,000 full a month) and an assumed average fare of ETB 120 with the commission rate from setup: review those numbers before showing it.
+(today's costs ETB 17,667 a month: rent 6,000 + customer service 10,000 + 20,000 a year; full team ETB 150,000) and an assumed average fare of ETB 120 with the commission rate from setup: review those numbers before showing it.
 The Amharic text is a first draft and needs a native reviewer.
 
 Tests: `tests/deal_sheet_smoke.py` now also covers the stages, demo preview, pitch data and planner scenarios.
