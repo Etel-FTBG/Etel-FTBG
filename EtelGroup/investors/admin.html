@@ -7,7 +7,7 @@
 <meta name="robots" content="noindex">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Syne:wght@700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/ir-pro.css?v=2">
+<link rel="stylesheet" href="css/ir-pro.css?v=3">
 <script>/* theme before first paint: same key as the Delivery admin */
 try{var t=localStorage.getItem('theme');if(t!=='dark'&&t!=='light')t=window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';document.documentElement.setAttribute('data-theme',t);document.addEventListener('DOMContentLoaded',function(){document.body.classList.toggle('dark-theme',t==='dark')})}catch(e){}
 </script>
@@ -42,6 +42,7 @@ try{var t=localStorage.getItem('theme');if(t!=='dark'&&t!=='light')t=window.matc
       <a data-page="distributions"><i>&#129518;</i>Distributions</a>
       <a data-page="costs"><i>&#128184;</i>Costs &amp; stages</a>
       <a data-page="planner"><i>&#128640;</i>Growth planner</a>
+      <a data-page="launch"><i>&#128747;</i>Launch period</a>
       <div class="irx-nav-h">System</div>
       <a id="nav-setup"><i>&#9881;&#65039;</i>Setup wizard</a>
     </nav>
@@ -217,6 +218,45 @@ try{var t=localStorage.getItem('theme');if(t!=='dark'&&t!=='light')t=window.matc
 
         </section>
 
+        <section class="ir-page" data-page="launch">
+      <div class="ir-card">
+        <h2>&#128747; Launch period</h2>
+        <div class="desc">While the launch period is on, no payout can be locked: the platform may charge no commission and the raise is spent on growth. It ends by itself on the end date. Investors see the banner and the launch budget in their portal, on the deal sheet and in the pitch.</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;align-items:end">
+          <label style="display:flex;gap:8px;align-items:center;font-size:14px"><input type="checkbox" id="ln-active"> Launch period is on</label>
+          <div class="cf-field"><label>Ends on (optional)</label><input type="date" id="ln-until"></div>
+          <div class="cf-field" style="grid-column:1/-1"><label>Note for investors (optional)</label><input type="text" id="ln-note" maxlength="500" placeholder="e.g. No commission for drivers until 150 trips a day for 4 weeks"></div>
+        </div>
+        <button class="btn btn-primary" style="margin-top:10px" onclick="irSaveLaunch()">Save</button>
+        <span id="ln-msg" style="margin-left:10px;font-size:12.5px"></span>
+      </div>
+      <div class="ir-card">
+        <h2>&#128176; Launch budget</h2>
+        <div class="desc">What the raise is spent on. Investors see the totals per line and the list of spends. Spending from this budget is not deducted from the profit that is shared.</div>
+        <div class="ir-tablewrap"><table class="ir-table" id="ln-budget"><thead><tr><th>Line</th><th class="ir-num">Budget</th><th class="ir-num">Spent</th><th class="ir-num">Left</th><th></th></tr></thead><tbody></tbody></table></div>
+        <h3 style="margin:18px 0 8px;font-size:14px">Add a spend</h3>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px">
+          <div class="cf-field"><label>Date</label><input type="date" id="sp-date"></div>
+          <div class="cf-field"><label>Line</label><select id="sp-cat"></select></div>
+          <div class="cf-field"><label>Amount (ETB)</label><input type="number" id="sp-amount" min="1"></div>
+          <div class="cf-field" style="grid-column:1/-1"><label>What was it for</label><input type="text" id="sp-note" maxlength="300" placeholder="e.g. Launch posters, 200 copies"></div>
+        </div>
+        <button class="btn btn-outline" style="margin-top:10px" onclick="irAddSpend()">Add spend</button>
+        <span id="sp-msg" style="margin-left:10px;font-size:12.5px;color:#ff8a7a"></span>
+        <div class="ir-tablewrap" style="margin-top:14px"><table class="ir-table" id="ln-spend"><thead><tr><th>Date</th><th>Line</th><th class="ir-num">Amount</th><th>For</th><th></th></tr></thead><tbody></tbody></table></div>
+      </div>
+      <div class="ir-card">
+        <h2>&#128230; Delivery order income</h2>
+        <div class="desc">Count delivered Delivery orders as company income next to ride commission in every distribution. The read-only database user needs SELECT on the <b>orders</b> table too. Leave the rate empty to use the ride commission rate.</div>
+        <div style="display:flex;gap:14px;align-items:end;flex-wrap:wrap">
+          <label style="display:flex;gap:8px;align-items:center;font-size:14px"><input type="checkbox" id="oi-on"> Count delivery orders</label>
+          <div class="cf-field"><label>Order commission rate (0.05 = 5 %)</label><input type="text" id="oi-rate" placeholder="same as rides"></div>
+          <button class="btn btn-outline" onclick="irSaveOrders()">Save</button>
+          <span id="oi-msg" style="font-size:12.5px"></span>
+        </div>
+      </div>
+        </section>
+
         <section class="ir-page" data-page="planner">
       <div class="ir-card">
         <h2>🚀 Growth &amp; Goal Planner</h2>
@@ -340,9 +380,9 @@ try{var t=localStorage.getItem('theme');if(t!=='dark'&&t!=='light')t=window.matc
 </div>
 
 <link rel="stylesheet" href="css/deal-r3.css">
-<script src="js/deal-sheet.js"></script>
-<script src="js/admin.js?v=3"></script>
+<script src="js/deal-sheet.js?v=3"></script>
+<script src="js/admin.js?v=4"></script>
 <script src="js/admin-deals.js?v=2"></script>
-<script src="js/ir-shell.js?v=1"></script>
+<script src="js/ir-shell.js?v=2"></script>
 </body>
 </html>

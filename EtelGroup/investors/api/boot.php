@@ -54,7 +54,9 @@ if (!$action) fail('Missing action', 400);
 // switch($action){...} that calls ok()/fail() (which exit()) for every
 // case it owns, so only ONE controller file is ever loaded per request.
 try {
-    if (str_starts_with($action, 'deal_') || str_starts_with($action, 'admin_deal_')) {
+    if (str_starts_with($action, 'admin_launch') || $action === 'admin_orders_income_save' || $action === 'investor_launch') {
+        require __DIR__ . '/controllers/LaunchController.php';
+    } elseif (str_starts_with($action, 'deal_') || str_starts_with($action, 'admin_deal_')) {
         require __DIR__ . '/controllers/DealController.php';
     } elseif (str_starts_with($action, 'setup_')) {
         require __DIR__ . '/controllers/SetupController.php';

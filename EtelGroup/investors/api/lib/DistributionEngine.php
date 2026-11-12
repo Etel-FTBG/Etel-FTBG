@@ -60,13 +60,14 @@ function ir_run_distribution(
     array $activeCostCategories,
     string $periodStart,
     string $periodEnd,
-    array $investors
+    array $investors,
+    float $otherIncome = 0.0
 ): array {
     $totalCosts = 0.0;
     foreach ($activeCostCategories as $cat) {
         $totalCosts += ir_prorate_monthly((float)$cat['monthly_amount'], $periodStart, $periodEnd);
     }
-    return ir_distribution_core($grossFareTotal, $commissionRate, $totalCosts, $investors, $periodStart, $periodEnd);
+    return ir_distribution_core($grossFareTotal, $commissionRate, $totalCosts, $investors, $periodStart, $periodEnd, $otherIncome);
 }
 
 /**

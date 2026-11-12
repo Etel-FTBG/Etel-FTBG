@@ -195,3 +195,5 @@ input,select,textarea{font-family:var(--f-body)}
 /* staged raise rows: name and status on the first line, the details underneath */
 .ir-tranche-row .name{flex:1;min-width:0}
 .ir-tranche-row .meta{order:3;flex:1 1 100%}
+
+.ir-launch-banner{margin:0 0 14px;padding:12px 16px;border-radius:12px;border:1px solid rgba(246,194,43,.5);background:linear-gradient(135deg,rgba(246,194,43,.16),rgba(246,194,43,.05));font-size:13.5px;line-height:1.5}
