@@ -31,11 +31,35 @@ function paint() {
     '<h3>' + D.esc(t.h3) + '</h3><div class="dl-scroll"><table class="dl-ex"><tr><th>' + D.esc(t.ex_h) + '</th><th>' + D.esc(t.std) + '</th><th>' + D.esc(t.boost) + '</th></tr>' +
     [100, 400, 2000].map(function (u, i) { var p = D.payout(u, 100000, cfg); return '<tr><td>' + D.esc(t['r' + (i + 1)]) + '</td><td>ETB ' + D.num(p.std) + '</td><td>ETB ' + D.num(p.boost) + '</td></tr>'; }).join('') + '</table></div>' +
     '<h3>' + D.esc(t.h4) + '</h3><div class="dl-pts"><div><b>' + D.esc(t.g1b) + '</b><span>' + D.esc(t.g1s) + '</span></div><div><b>' + D.esc(t.g2b) + '</b><span>' + D.esc(t.g2s) + '</span></div><div><b>' + D.esc(t.g3b) + '</b><span>' + D.esc(t.g3s) + '</span></div></div>';
-  openLine(); calc();
+  stagesCard(); nextCard(); demoBar(); openLine(); calc();
+}
+function stagesCard() {
+  var t = D.T(lang), box = $('dl-stages'), st = cfg.stages || [];
+  if (!st.length) { box.hidden = true; return; }
+  box.hidden = false;
+  box.innerHTML = '<h2>' + D.esc(t.st_h) + '</h2><p class="dl-note">' + D.esc(t.st_p) + '</p><div class="dl-scroll"><table class="dl-ex dl-stg"><tr><th>' + D.esc(t.st_stage) + '</th><th>' + D.esc(t.st_price) + '</th><th>' + D.esc(t.st_shares) + '</th><th>' + D.esc(t.st_status) + '</th></tr>' +
+    st.map(function (s) {
+      var status = s.unlocked ? (s.remaining > 0 ? t.st_open : t.st_sold) : (s.unlock_trips ? D.fmt(t.st_opens, { n: D.num(s.unlock_trips) }) : t.st_locked);
+      var cls = s.stage === cfg.stage ? ' class="dl-now"' : '';
+      return '<tr' + cls + '><td>' + D.esc(s.stage) + '</td><td>ETB ' + D.num(s.price) + '</td><td>' + D.num(s.shares_total) + '</td><td>' + D.esc(status) + '</td></tr>';
+    }).join('') + '</table></div>';
+}
+function nextCard() {
+  var t = D.T(lang), box = $('dl-next'), cs = cfg.companies || [];
+  if (!cs.length) { box.hidden = true; return; }
+  box.hidden = false;
+  box.innerHTML = '<h2>' + D.esc(t.next_h) + '</h2><p class="dl-note">' + D.esc(t.next_p) + '</p><div class="dl-cos">' + cs.map(function (c) {
+    var line = c.tagline && c.tagline.toLowerCase() !== 'coming soon' ? c.tagline : '';
+    return '<div class="dl-co' + (c.live ? ' dl-live' : '') + '"><b>' + D.esc(c.name) + '</b>' + (line ? '<span>' + D.esc(line) + '</span>' : '') + '<i>' + D.esc(c.live ? t.live_word : t.soon_word) + '</i></div>';
+  }).join('') + '</div>';
+}
+function demoBar() {
+  var b = $('dl-demo'), t = D.T(lang);
+  b.hidden = !cfg.demo_mode; b.textContent = t.demo_banner;
 }
 function openLine() {
   var t = D.T(lang), e = $('dl-open');
-  e.innerHTML = cfg.available > 0 ? '<b>' + D.num(cfg.available) + '</b> ' + D.esc(t.open_now) : D.esc(t.closed);
+  e.innerHTML = cfg.available > 0 ? '<b>' + D.num(cfg.available) + '</b> ' + D.esc(t.open_now) + ' &middot; ' + D.esc(t.st_your) + ' <b>' + D.esc(cfg.stage) + '</b> &middot; ETB <b>' + D.num(cfg.unit_price) + '</b>' : D.esc(t.closed);
   $('dl-submit').disabled = cfg.available <= 0;
   form.units.max = cfg.available;
 }
@@ -77,18 +101,24 @@ form.addEventListener('submit', function (e) {
     last = { lang: lang, ref_code: res.data.ref_code, signed_at: res.data.signed_at, doc_hash: res.data.doc_hash, investor_name: f.investor_name.value, id_number: f.id_number.value, phone: f.phone.value, email: f.email.value,
       units: res.data.units, amount: res.data.amount, pool_share_pct: res.data.pool_share_pct, payout_period: (form.querySelector('input[name=payout_period]:checked') || {}).value || 'monthly',
       payout_days: parseInt(f.payout_days.value, 10) || 0, closing_date: f.closing_date.value, bank_account: f.bank_account.value, signature_name: f.signature_name.value, signature_png: cv.toDataURL('image/png') };
+    last.unit_price = cfg.unit_price; last.demo = !!res.data.demo;
     showDone();
   });
 });
 function showDone() {
   var t = D.T(lang), box = $('dl-done');
   $('dl-form').hidden = true; $('dl-how').hidden = true; box.hidden = false;
-  box.innerHTML = '<div class="dl-ok"><h2>' + D.esc(t.ok_h) + '</h2><p>' + D.esc(t.ok_p) + '</p><div class="dl-refbig">' + D.esc(t.ref) + ': <b>' + D.esc(last.ref_code) + '</b></div>' +
+  box.innerHTML = '<div class="dl-ok"><h2>' + D.esc(t.ok_h) + '</h2><p>' + D.esc(last.demo ? t.demo_ok : t.ok_p) + '</p><div class="dl-refbig">' + D.esc(t.ref) + ': <b>' + D.esc(last.ref_code) + '</b></div>' +
     '<div class="dl-actions"><button type="button" class="dl-btn" id="dl-print">' + D.esc(t.print) + '</button><button type="button" class="dl-link" id="dl-again">' + D.esc(t.another) + '</button></div></div>' + D.renderSheet(last, lang, cfg);
   $('dl-print').addEventListener('click', function () { D.printSheet(D.renderSheet(last, lang, cfg), lang); });
   $('dl-again').addEventListener('click', function () { location.reload(); });
   window.scrollTo(0, 0);
 }
+
+/* ---- light / dark (shared 'theme' key with the other Etel pages) ---- */
+function setTheme(m) { document.documentElement.setAttribute('data-theme', m); try { localStorage.setItem('theme', m); } catch (e) { /* not saved */ } }
+(function () { var m = 'dark'; try { m = localStorage.getItem('theme') === 'light' ? 'light' : 'dark'; } catch (e) { /* keep dark */ } document.documentElement.setAttribute('data-theme', m); })();
+$('dl-theme').addEventListener('click', function () { setTheme(document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light'); });
 
 resetPad(); paint();
 api('deal_config').then(function (res) { if (res.ok && res.data) { cfg = res.data; paint(); } });

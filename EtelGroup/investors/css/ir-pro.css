@@ -191,3 +191,7 @@ input,select,textarea{font-family:var(--f-body)}
 }
 @media (max-width:560px){.irx-hero{padding:18px}.irx-hero h2{font-size:19px}.irx-hero .logos img{width:58px;height:58px}.stat-grid{grid-template-columns:1fr 1fr}.stat-card .val{font-size:20px}.stat-card .ic{display:none}.stat-card .label{padding-right:0}}
 @media (max-width:560px){.stat-card.premium{grid-column:1/-1}.irx-top .sub{display:none}.irx-top h1{font-size:16px}#demo-toggle-btn{padding:6px 9px;font-size:11px}}
+
+/* staged raise rows: name and status on the first line, the details underneath */
+.ir-tranche-row .name{flex:1;min-width:0}
+.ir-tranche-row .meta{order:3;flex:1 1 100%}

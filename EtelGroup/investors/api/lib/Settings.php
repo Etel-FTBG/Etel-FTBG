@@ -24,14 +24,25 @@ function ir_ensure_core_tables(PDO $pdo): void {
         tranche_number TINYINT UNSIGNED NOT NULL,
         shares_total INT UNSIGNED NOT NULL,
         amount_total DECIMAL(14,2) NOT NULL,
+        price_per_share DECIMAL(14,2) NOT NULL DEFAULT 1000.00,
+        unlock_trips INT UNSIGNED NOT NULL DEFAULT 0,
         is_unlocked TINYINT(1) NOT NULL DEFAULT 0,
         unlocked_at DATETIME NULL,
         unlocked_note VARCHAR(500) NOT NULL DEFAULT '',
         unlocked_by VARCHAR(150) NOT NULL DEFAULT '',
         PRIMARY KEY (id), UNIQUE KEY uq_tranche_number (tranche_number)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
-    $pdo->exec("INSERT IGNORE INTO ir_tranches (tranche_number, shares_total, amount_total, is_unlocked)
-        VALUES (1, 400, 400000.00, 1), (2, 600, 600000.00, 0)");
+    // Older installs have only Stage 1 and 2 with one flat price: add the
+    // per-stage price and unlock target once, then move them to the staged plan.
+    $hasPrice = $pdo->query("SHOW COLUMNS FROM ir_tranches LIKE 'price_per_share'")->fetch();
+    if (!$hasPrice) {
+        $pdo->exec("ALTER TABLE ir_tranches ADD COLUMN price_per_share DECIMAL(14,2) NOT NULL DEFAULT 1000.00 AFTER amount_total, ADD COLUMN unlock_trips INT UNSIGNED NOT NULL DEFAULT 0 AFTER price_per_share");
+        $pdo->exec("UPDATE ir_tranches SET price_per_share = 1500.00, unlock_trips = 400, amount_total = 900000.00 WHERE tranche_number = 2 AND amount_total = 600000.00");
+        $pdo->exec("UPDATE ir_tranches SET unlock_trips = 400 WHERE tranche_number = 2 AND unlock_trips = 0");
+    }
+    // Staged raise: Stage 1 open now, Stage 2 at 400 trips/day, Stage 3 at 1,000 trips/day.
+    $pdo->exec("INSERT IGNORE INTO ir_tranches (tranche_number, shares_total, amount_total, price_per_share, unlock_trips, is_unlocked)
+        VALUES (1, 400, 400000.00, 1000.00, 0, 1), (2, 600, 900000.00, 1500.00, 400, 0), (3, 1000, 2000000.00, 2000.00, 1000, 0)");
 
     $pdo->exec("CREATE TABLE IF NOT EXISTS ir_cost_categories (
         id INT UNSIGNED NOT NULL AUTO_INCREMENT,
