@@ -95,7 +95,7 @@ function ir_deal_config(PDO $pdo): array {
         'boost'        => IR_BOOSTED_MULTIPLIER,
         'available'    => $st ? $st['remaining'] : 0,
         'companies'    => ir_group_companies($pdo),
-        'launch'       => (function () use ($pdo) { require_once __DIR__ . '/Launch.php'; $l = ir_launch_state($pdo); return ['active' => $l['active'], 'until' => $l['until']]; })(),
+        'launch'       => (function () use ($pdo) { require_once __DIR__ . '/Launch.php'; $l = ir_launch_state($pdo); return ['active' => $l['active'], 'until' => $l['until'], 'max_days' => $l['max_days'], 'trips_goal' => $l['trips_goal']]; })(),
     ];
 }
 

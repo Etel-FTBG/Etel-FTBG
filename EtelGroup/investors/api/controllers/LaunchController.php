@@ -14,6 +14,7 @@ function ir_launch_payload(PDO $pdo): array {
     return [
         'state' => ir_launch_state($pdo),
         'summary' => ir_launch_summary($pdo),
+        'goal' => ir_launch_goal_check($pdo),
         'orders' => [
             'include_orders' => ir_get_setting($pdo, 'include_orders', '0') === '1',
             'order_commission_rate' => (string)ir_get_setting($pdo, 'order_commission_rate', ''),
@@ -48,10 +49,28 @@ case 'admin_launch_save': {
         if (!$d || $d->format('Y-m-d') !== $until) fail('The end date must be a valid date.', 400);
     }
     if (mb_strlen($note) > 500) fail('The note is too long (500 characters at most).', 400);
+    $started = trim((string)($body['started_on'] ?? ''));
+    if ($started !== '') {
+        $d1 = DateTime::createFromFormat('Y-m-d', $started);
+        if (!$d1 || $d1->format('Y-m-d') !== $started) fail('The start date must be a valid date.', 400);
+    }
+    $maxDays = (int)($body['max_days'] ?? 90);
+    if ($maxDays < 1 || $maxDays > 365) fail('The longest launch period is between 1 and 365 days.', 400);
+    $goal = (int)($body['trips_goal'] ?? 150);
+    if ($goal < 0 || $goal > 100000) fail('The trips-a-day goal must be 0 (none) or a positive number.', 400);
+    if ($on && $started === '') fail('Enter the day the launch period started, so the end date follows the rule.', 400);
+    if ($started !== '' && $until !== '') {
+        $endsBy = date('Y-m-d', strtotime($started . ' +' . $maxDays . ' days'));
+        if ($until > $endsBy) fail('The end date cannot be later than ' . $maxDays . ' days after the start (' . $endsBy . '). Change the rule first if you need longer.', 400);
+        if ($until < $started) fail('The end date cannot be before the start date.', 400);
+    }
     ir_set_setting($pdo, 'launch_active', $on ? '1' : '0');
     ir_set_setting($pdo, 'launch_until', $until);
     ir_set_setting($pdo, 'launch_note', $note);
     ir_set_setting($pdo, 'launch_auto_from', $autoFrom);
+    ir_set_setting($pdo, 'launch_started_on', $started);
+    ir_set_setting($pdo, 'launch_max_days', (string)$maxDays);
+    ir_set_setting($pdo, 'launch_trips_goal', (string)$goal);
     ir_log($pdo, eg_current_actor()['full_name'], 'launch_period_' . ($on ? 'on' : 'off'), $until !== '' ? ('until ' . $until) : 'no end date');
     ok(ir_launch_payload($pdo));
     break;

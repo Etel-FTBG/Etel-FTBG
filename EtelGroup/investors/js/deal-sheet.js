@@ -30,7 +30,7 @@ var TXT = {
     fine: 'Summary of the Profit-Share Investment Agreement · the full Agreement and Schedules apply', per_monthly: 'Monthly', per_quarterly: 'Quarterly', per_other: 'Other', days: 'days', none: '-',
     st_h: 'The raise in stages', st_p: 'The price per share rises as the business proves itself. Early investors take more risk and get the lowest price.',
     st_stage: 'Stage', st_price: 'Price per share', st_shares: 'Shares', st_status: 'Status', st_open: 'Open now', st_opens: 'Opens at {n} trips a day', st_sold: 'Sold out', st_locked: 'Opens later', st_your: 'You are buying in Stage',
-    ln_h: 'The launch period', ln_p: 'First the raise pays to grow the business: more drivers, more riders and more awareness. During the launch period the platform may charge no commission, so there is no profit to share and no payouts are made. Payouts start after the launch period, once there is profit. You can follow how the launch budget is spent in your investor portal.', ln_until: 'The launch period runs until {d}.', ln_on: 'Launch period is on now',
+    ln_h: 'The launch period', ln_p: 'First the raise pays to grow the business: more drivers, more riders and more awareness. During the launch period the platform may charge no commission, so there is no profit to share and no payouts are made. Payouts start after the launch period, once there is profit. You can follow how the launch budget is spent in your investor portal.', ln_until: 'The launch period runs until {d}.', ln_on: 'Launch period is on now', ln_rule: 'It ends after at most {d} days, or earlier when {n} trips a day are reached over 4 weeks.', ln_rule_nogoal: 'It ends after at most {d} days.',
     next_h: 'The Etel Group', live_this: 'Live · this deal', self_line: 'Rides and deliveries', next_p: 'Delivery & Ride is the first company to raise money. The other companies in the group are separate businesses and are not part of this deal.', live_word: 'Live', soon_word: 'Coming soon',
     demo_banner: 'DEMO · sample figures · nothing you enter here is saved', demo_ok: 'This was a preview in demo mode. Nothing was saved.', theme_btn: 'Light / dark',
     sigd: 'Signature & date', sh_status: 'Status', sh_electronic: 'Signed electronically. A signed printed copy may also be required.'
@@ -133,6 +133,8 @@ var TXT = {
       "ln_p": "በመጀመሪያ የተሰበሰበው ገንዘብ ንግዱን ለማሳደግ ይውላል፤ ተጨማሪ አሽከርካሪዎች፣ ተጨማሪ ተሳፋሪዎችና የበለጠ ግንዛቤ። በማስጀመሪያ ወቅት መድረኩ ኮሚሽን ላያስከፍል ይችላል፤ ስለዚህ የሚካፈል ትርፍ የለም፤ ክፍያም አይፈጸምም። ክፍያ የሚጀምረው ከማስጀመሪያ ወቅት በኋላ ትርፍ ሲኖር ነው። የማስጀመሪያ በጀቱ እንዴት እንደሚወጣ በባለሀብት ፖርታልዎ ውስጥ መከታተል ይችላሉ።",
       "ln_until": "የማስጀመሪያ ወቅቱ እስከ {d} ይቆያል።",
       "ln_on": "የማስጀመሪያ ወቅት አሁን ላይ ነው",
+      "ln_rule": "ቢበዛ ከ{d} ቀናት በኋላ፣ ወይም በ4 ሳምንት አማካይ በቀን {n} ጉዞ ሲደርስ ያበቃል።",
+      "ln_rule_nogoal": "ቢበዛ ከ{d} ቀናት በኋላ ያበቃል።",
       "next_h": "ኢትኤል ግሩፕ",
       "live_this": "ሥራ ላይ · ይህ ስምምነት",
       "self_line": "ጉዞና ዕቃ ማመላለሻ",

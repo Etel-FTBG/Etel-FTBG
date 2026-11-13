@@ -558,6 +558,18 @@ function irRenderLaunch(d) {
   document.getElementById('ln-until').value = st.until || '';
   document.getElementById('ln-note').value = st.note || '';
   document.getElementById('ln-autofrom').value = st.auto_from || '';
+  document.getElementById('ln-started').value = st.started_on || '';
+  document.getElementById('ln-maxdays').value = st.max_days || 90;
+  document.getElementById('ln-goal-in').value = st.trips_goal == null ? 150 : st.trips_goal;
+  document.getElementById('ln-rule-days').textContent = st.max_days || 90;
+  document.getElementById('ln-rule-goal').textContent = st.trips_goal == null ? 150 : st.trips_goal;
+  const g = d.goal || {}, gb = document.getElementById('ln-goal');
+  if (st.switch_on && (g.avg_per_day != null || g.error)) {
+    gb.style.display = '';
+    if (g.error) gb.textContent = g.error;
+    else gb.innerHTML = `4-week average: <b>${irEsc(String(g.avg_per_day))}</b> trips a day` + (g.goal > 0 ? ` (goal ${irInt(g.goal)}). ` : '. ') +
+      (g.reached ? '<b style="color:#4caf50">The goal is reached: end the launch period now by unticking the switch and saving.</b>' : (st.ends_by ? `Latest end by the rule: <b>${irEsc(st.ends_by)}</b>.` : ''));
+  } else gb.style.display = 'none';
   const sm = d.summary;
   document.querySelector('#ln-budget tbody').innerHTML = sm.categories.map(c => `
     <tr><td>${irEsc(c.label)}</td><td class="ir-num">${irInt(c.budget)}</td><td class="ir-num">${irInt(c.spent)}${c.spent_auto ? ` <small style="color:var(--text-dim)">(${irInt(c.spent_auto)} automatic)</small>` : ''}</td>
@@ -582,10 +594,11 @@ async function irLoadLaunch() {
   const d = document.getElementById('sp-date'); if (d && !d.value) d.value = new Date().toISOString().slice(0, 10);
 }
 async function irSaveLaunch() {
-  const res = await irApi('admin_launch_save', { active: document.getElementById('ln-active').checked, until: document.getElementById('ln-until').value, auto_from: document.getElementById('ln-autofrom').value, note: document.getElementById('ln-note').value.trim() });
+  const res = await irApi('admin_launch_save', { active: document.getElementById('ln-active').checked, until: document.getElementById('ln-until').value, auto_from: document.getElementById('ln-autofrom').value, note: document.getElementById('ln-note').value.trim(),
+    started_on: document.getElementById('ln-started').value, max_days: Number(document.getElementById('ln-maxdays').value || 90), trips_goal: Number(document.getElementById('ln-goal-in').value || 0) });
   const m = document.getElementById('ln-msg');
   if (!res.ok) { m.style.color = '#ff8a7a'; m.textContent = res.error; return; }
-  m.style.color = ''; m.textContent = res.data.state.active ? 'Saved. Launch period is ON: payouts are paused.' : 'Saved. Launch period is off.';
+  m.style.color = ''; m.textContent = res.data.state.active ? 'Saved. Launch period is ON: payouts are paused' + (res.data.state.until ? ' until ' + res.data.state.until : '') + '.' : 'Saved. Launch period is off.';
   irRenderLaunch(res.data);
 }
 async function irEditBudget(cat) {

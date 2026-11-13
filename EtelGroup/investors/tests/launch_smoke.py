@@ -7,7 +7,9 @@ Same setup as deal_sheet_smoke.py, plus a second throwaway database 'deltest' th
   cd EtelGroup && source the same environment variables as deal_sheet_smoke.py, start php -S 127.0.0.1:8781 -t .
   python3 investors/tests/launch_smoke.py        # run from EtelGroup, on an empty etelgroup_test database
 """
-import json, subprocess, sys, urllib.request
+import datetime, json, subprocess, sys, urllib.request
+TODAY = datetime.date.today().isoformat()
+ENDS90 = (datetime.date.today() + datetime.timedelta(days=90)).isoformat()
 
 API = 'http://127.0.0.1:8781/investors/api/boot.php'
 tok = subprocess.check_output(['php', '-r', 'require "api/auth.php"; echo eg_issue_token("EG-1","Test Admin");']).decode()
@@ -63,8 +65,13 @@ check(not d3['state']['active'] and d3['summary']['total_spent'] == 0, 'Clear de
 call('admin_save_cost_category', {'name': 'Rent', 'monthly_amount': 100, 'is_active': True})
 
 # distributions: preview works during the launch period, locking is refused
-s, r = call('admin_launch_save', {'active': True, 'until': '2099-01-01', 'note': 'test'})
-check(s == 200 and r['data']['state']['active'], 'launch period can be switched on', r)
+check(call('admin_launch_save', {'active': True, 'note': 'test'})[0] == 400, 'switching on without a start date is refused')
+check(call('admin_launch_save', {'active': True, 'started_on': '2026-11-01', 'max_days': 90, 'until': '2027-03-01', 'note': 'test'})[0] == 400, 'an end date later than the rule is refused')
+s, r = call('admin_launch_save', {'active': True, 'started_on': TODAY, 'max_days': 90, 'trips_goal': 150, 'note': 'test'})
+check(s == 200 and r['data']['state']['active'] and r['data']['state']['until'] == ENDS90 and r['data']['state']['ends_by'] == ENDS90, 'launch period on: the end date follows the rule (start + 90 days)', r)
+check('goal' in r['data'] and r['data']['goal']['goal'] == 150, 'the admin payload carries the trips goal check', r)
+s, r = call('deal_config', auth=False)
+check(r['data']['launch']['max_days'] == 90 and r['data']['launch']['trips_goal'] == 150 and r['data']['launch']['until'] == ENDS90, 'the deal sheet and pitch read the same rule', r)
 s, r = call('admin_preview_distribution', {'period_start': '2026-10-01', 'period_end': '2026-10-31'})
 check(s == 200 and r['data']['gross_fare_total'] == 1500 and r['data']['commission_revenue'] == 75 and r['data']['net_profit'] == -25, 'preview counts rides only while orders are off', r)
 s, r = call('admin_run_distribution', {'period_start': '2026-10-01', 'period_end': '2026-10-31'})
@@ -83,7 +90,7 @@ check(s == 200 and r['data']['commission_revenue'] == 75 + 200, 'a separate orde
 call('admin_orders_income_save', {'include_orders': True, 'order_commission_rate': ''})
 
 # launch period over: the payout can be locked
-call('admin_launch_save', {'active': True, 'until': '2000-01-01', 'note': ''})
+call('admin_launch_save', {'active': True, 'started_on': '1999-12-01', 'until': '2000-01-01', 'note': ''})
 s, r = call('admin_launch_get')
 check(not r['data']['state']['active'] and r['data']['state']['switch_on'], 'a launch period ends by itself on its end date', r)
 s, r = call('admin_run_distribution', {'period_start': '2026-10-01', 'period_end': '2026-10-31'})

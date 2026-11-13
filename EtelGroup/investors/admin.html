@@ -221,12 +221,16 @@ try{var t=localStorage.getItem('theme');if(t!=='dark'&&t!=='light')t=window.matc
         <section class="ir-page" data-page="launch">
       <div class="ir-card">
         <h2>&#128747; Launch period</h2>
-        <div class="desc">While the launch period is on, no payout can be locked: the platform may charge no commission and the raise is spent on growth. It ends by itself on the end date. Investors see the banner and the launch budget in their portal, on the deal sheet and in the pitch.</div>
+        <div class="desc">While the launch period is on, no payout can be locked: the platform may charge no commission and the raise is spent on growth. <b>One rule, shown everywhere:</b> the launch period ends at most <span id="ln-rule-days">90</span> days after it started, or earlier when the 4-week average reaches <span id="ln-rule-goal">150</span> trips a day. The pitch, the deal sheet and the investor portal all read this rule from here, so change it here only.</div>
+        <div id="ln-goal" class="desc" style="display:none"></div>
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;align-items:end">
           <label style="display:flex;gap:8px;align-items:center;font-size:14px"><input type="checkbox" id="ln-active"> Launch period is on</label>
-          <div class="cf-field"><label>Ends on (optional)</label><input type="date" id="ln-until"></div>
+          <div class="cf-field"><label>Started on</label><input type="date" id="ln-started"></div>
+          <div class="cf-field"><label>Longest launch (days)</label><input type="number" id="ln-maxdays" min="1" max="365" value="90"></div>
+          <div class="cf-field"><label>Trips a day goal (4-week average, 0 = none)</label><input type="number" id="ln-goal-in" min="0" value="150"></div>
+          <div class="cf-field"><label>Ends on (optional, never later than the rule)</label><input type="date" id="ln-until"></div>
           <div class="cf-field"><label>Count platform spending from (optional)</label><input type="date" id="ln-autofrom" title="Promo discounts, driver bonuses and referral rewards paid by Delivery &amp; Ride from this day are counted in the budget automatically"></div>
-          <div class="cf-field" style="grid-column:1/-1"><label>Note for investors (optional)</label><input type="text" id="ln-note" maxlength="500" placeholder="e.g. No commission for drivers until 150 trips a day for 4 weeks"></div>
+          <div class="cf-field" style="grid-column:1/-1"><label>Note for investors (optional)</label><input type="text" id="ln-note" maxlength="500" placeholder="e.g. New drivers pay no commission for 60 days, then 2% for 30 days"></div>
         </div>
         <button class="btn btn-primary" style="margin-top:10px" onclick="irSaveLaunch()">Save</button>
         <span id="ln-msg" style="margin-left:10px;font-size:12.5px"></span>
@@ -383,7 +387,7 @@ try{var t=localStorage.getItem('theme');if(t!=='dark'&&t!=='light')t=window.matc
 
 <link rel="stylesheet" href="css/deal-r3.css">
 <script src="js/deal-sheet.js?v=3"></script>
-<script src="js/admin.js?v=5"></script>
+<script src="js/admin.js?v=6"></script>
 <script src="js/admin-deals.js?v=2"></script>
 <script src="js/ir-shell.js?v=2"></script>
 </body>

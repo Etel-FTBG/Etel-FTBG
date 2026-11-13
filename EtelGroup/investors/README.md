@@ -200,10 +200,12 @@ Tests: `tests/deal_sheet_smoke.py` now also covers the stages, demo preview, pit
 ## Launch period, launch budget and order income (update)
 
 **Launch period** (Admin > Launch period). While it is on, no payout can be locked (previews still work, demo mode is not affected).
-It ends by itself on the optional end date. Investors see a banner in their portal, a "launch period" card on the deal sheet (the declaration now also says
-no profit is paid during the launch period) and a "launch plan" slide in the pitch. The slide shows a proposed limit (3 months or 150 trips a day for 4 weeks):
-change the wording in `js/pitch-r3.js` if the final terms differ, and put the final terms in the signed agreement (have a lawyer review it).
-The blank printable PDFs in `forms/` do not include the new declaration sentence.
+One rule lives in the settings (`launch_started_on`, `launch_max_days` default 90, `launch_trips_goal` default 150) and every screen reads it:
+the period ends at most `max_days` after the start date (the end date is computed when none is entered, and an entered end date may not be later),
+or earlier when the 4-week average reaches the trips goal; the admin page shows that average against the goal and asks the admin to end the period
+when it is reached (it is not ended automatically, because ending it starts payouts). The pitch slide, the deal sheet card and the portal banner
+all print the rule from these settings, so it is changed in one place only. The per-driver commission plan in Delivery (60 days at 0%, then 30 days
+at 2%) adds up to the same 90 days.
 
 **Launch budget** (same page). Six lines (reserve, marketing, promotion, bonuses, referral rewards, materials) start as the proposed split of the Stage 1 raise.
 Edit the budgets, record each spend (date, line, amount, what for) and remove mistakes. Investors see the totals per line and the recent spending in their portal.
