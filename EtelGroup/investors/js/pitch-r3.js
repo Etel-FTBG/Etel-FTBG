@@ -21,6 +21,7 @@ var TX = {
     t_h: 'Traction', t_demo: 'Sample figures for demonstration', t_avg: 'trips a day, 4-week average', t_total: 'trips in 28 days', t_hidden: 'We share live traction numbers in the meeting.', t_real: 'Real figures, from the live platform', t_note: 'Updated automatically from the platform.',
     e_h: 'How investors earn', e1: 'Platform earns', e1s: 'Commission on rides and orders', e2: 'Running costs', e2s: 'Staff, rent, fees, contingency', e3: 'Net profit', e3s: 'For each period', e4: 'Investor pool', e4s: '20 % of net profit',
     e_b1: '2.5×', e_b1s: 'Boost until you are paid back', e_b2: '1×', e_b2s: 'Standard share after payback', e_b3: 'Profit only', e_b3s: 'No profit, no payout, nothing owed back',
+    e_unsold: 'While some Profit Shares are unsold, half of what they would have earned at the boosted rate is shared among the holders, and half stays with the Company. It ends when all 2,000 are sold.',
     e_ex: 'Example: net profit ETB 100,000 in a period', e_c1: 'Your shares', e_c2: 'Standard', e_c3: 'Boosted',
     r_h: 'The raise, in stages', r_lead: 'The price per share rises as the business proves itself. Early investors take more risk and get the lowest price.', r_stage: 'Stage', r_price: 'Price per share', r_shares: 'Shares', r_raise: 'Raises', r_pct: 'Of company', r_open: 'Opens', r_now: 'Open now', r_at: '{n} trips a day', r_sold: 'Sold out', r_total: 'All stages', r_note: 'Profit-share rights, not company ownership. The pool is 20 % of the company in total.',
     i_h: 'What it could look like', i_lead: 'Illustrations, not forecasts. Assumed average fare ETB {fare}; company revenue ETB {rev} per trip; two running-cost plans.', i_trips: 'Trips a day', i_rev: 'Company revenue / month', i_lean: "Net profit, today's costs", i_full: 'Net profit, full team', i_pay: 'Per {u} shares / month, boosted (full team)',
@@ -45,6 +46,7 @@ var TX = {
     t_h: 'እስካሁን የተገኘው', t_demo: 'ለማሳያ የተዘጋጁ የናሙና ቁጥሮች', t_avg: 'በቀን ጉዞ፣ የ4 ሳምንት አማካይ', t_total: 'በ28 ቀናት ጉዞ', t_hidden: 'ወቅታዊ ቁጥሮችን በስብሰባው ላይ እናካፍላለን።', t_real: 'እውነተኛ ቁጥሮች ከመድረኩ', t_note: 'ከመድረኩ በራስ-ሰር ይዘምናል።',
     e_h: 'ባለሀብቶች እንዴት ያገኛሉ', e1: 'መድረኩ የሚያገኘው', e1s: 'ከጉዞና ከትዕዛዝ የሚገኝ ኮሚሽን', e2: 'የሥራ ማስኬጃ ወጪ', e2s: 'ደመወዝ፣ ኪራይ፣ የክፍያ ክፍያዎች፣ ተጠባባቂ', e3: 'የተጣራ ትርፍ', e3s: 'ለእያንዳንዱ ወቅት', e4: 'የባለሀብቶች ድርሻ', e4s: '20 % የተጣራ ትርፍ',
     e_b1: '2.5×', e_b1s: 'እስኪመለስልዎ ድረስ ጭማሪ', e_b2: '1×', e_b2s: 'ከተመለሰ በኋላ መደበኛ ድርሻ', e_b3: 'ትርፍ ብቻ', e_b3s: 'ትርፍ ከሌለ ክፍያ የለም፤ የሚመለስም ዕዳ የለም',
+    e_unsold: 'ያልተሸጡ የትርፍ ድርሻዎች ሲኖሩ በጨመረ ተመን የሚያገኙት መጠን ግማሹ ለድርሻ ባለቤቶች ይካፈላል፤ ግማሹ ለኩባንያው ይቀራል። ሁሉም 2,000 ሲሸጡ ያበቃል።',
     e_ex: 'ምሳሌ፦ በአንድ ወቅት የተጣራ ትርፍ ETB 100,000', e_c1: 'ድርሻዎች', e_c2: 'መደበኛ', e_c3: 'ጭማሪ ያለው',
     r_h: 'ገንዘቡ በደረጃ ይሰበሰባል', r_lead: 'ንግዱ እየተረጋገጠ ሲሄድ የአንድ ድርሻ ዋጋ ይጨምራል። ቀድመው የሚገቡ ባለሀብቶች ተጨማሪ አደጋ ይወስዳሉ፤ ዝቅተኛውንም ዋጋ ያገኛሉ።', r_stage: 'ደረጃ', r_price: 'የአንድ ድርሻ ዋጋ', r_shares: 'ድርሻዎች', r_raise: 'የሚሰበሰብ', r_pct: 'ከኩባንያው', r_open: 'ሲከፈት', r_now: 'አሁን ክፍት', r_at: 'በቀን {n} ጉዞ', r_sold: 'ተሽጧል', r_total: 'ሁሉም ደረጃዎች', r_note: 'የትርፍ መብት እንጂ የኩባንያ ባለቤትነት አይደለም። ጠቅላላ የባለሀብቶች ድርሻ ከኩባንያው 20 % ነው።',
     i_h: 'ምን ሊመስል ይችላል', i_lead: 'ምሳሌዎች እንጂ ትንበያዎች አይደሉም። የተገመተ አማካይ ዋጋ ETB {fare}፤ የኩባንያ ገቢ በጉዞ ETB {rev}፤ ሁለት የወጪ እቅዶች።', i_trips: 'በቀን ጉዞ', i_rev: 'የኩባንያ ገቢ / ወር', i_lean: 'የተጣራ ትርፍ፣ የዛሬ ወጪ', i_full: 'የተጣራ ትርፍ፣ ሙሉ ቡድን', i_pay: 'ለ{u} ድርሻ / ወር፣ ጭማሪ ያለው (ሙሉ ቡድን)',
@@ -81,7 +83,7 @@ function sEarn() {
   var x = t(), rows = [100, 400, 2000].map(function (u) { var p = D.payout(u, 100000, cfg); return '<tr><td>' + D.num(u) + '</td><td>' + money(p.std) + '</td><td>' + money(p.boost) + '</td></tr>'; }).join('');
   return slide('', head('', x.e_h) + '<div class="pt-flow">' + [1, 2, 3, 4].map(function (i) { return '<div class="pt-b' + (i > 2 ? ' pt-key' : '') + '"><b>' + e(x['e' + i]) + '</b><span>' + e(x['e' + i + 's']) + '</span></div>' + (i < 4 ? '<i>' + (i === 1 ? '&minus;' : i === 2 ? '=' : '&rarr;') + '</i>' : ''); }).join('') + '</div>' +
     '<div class="pt-3">' + [1, 2, 3].map(function (i) { return '<div class="pt-card"><big>' + e(x['e_b' + i]) + '</big><span>' + e(x['e_b' + i + 's']) + '</span></div>'; }).join('') + '</div>' +
-    '<h3>' + e(x.e_ex) + '</h3><div class="pt-scroll"><table class="pt-tbl"><tr><th>' + e(x.e_c1) + '</th><th>' + e(x.e_c2) + '</th><th>' + e(x.e_c3) + '</th></tr>' + rows + '</table></div>');
+    '<h3>' + e(x.e_ex) + '</h3><div class="pt-scroll"><table class="pt-tbl"><tr><th>' + e(x.e_c1) + '</th><th>' + e(x.e_c2) + '</th><th>' + e(x.e_c3) + '</th></tr>' + rows + '</table></div><p class="pt-note">' + e(x.e_unsold) + '</p>');
 }
 function sRaise() {
   var x = t(), st = cfg.stages || [], sh = 0, rs = 0;

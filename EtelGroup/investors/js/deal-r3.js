@@ -30,7 +30,7 @@ function paint() {
     '<div class="dl-stats"><div><big>' + D.num(cfg.pool_units) + '</big><b>' + D.esc(t.s1b) + '</b><span>' + D.esc(t.s1s) + '</span></div><div><big>' + cfg.boost + '&times;</big><b>' + D.esc(t.s2b) + '</b><span>' + D.esc(t.s2s) + '</span></div><div><big>1&times;</big><b>' + D.esc(t.s3b) + '</b><span>' + D.esc(t.s3s) + '</span></div></div>' +
     '<h3>' + D.esc(t.h3) + '</h3><div class="dl-scroll"><table class="dl-ex"><tr><th>' + D.esc(t.ex_h) + '</th><th>' + D.esc(t.std) + '</th><th>' + D.esc(t.boost) + '</th></tr>' +
     [100, 400, 2000].map(function (u, i) { var p = D.payout(u, 100000, cfg); return '<tr><td>' + D.esc(t['r' + (i + 1)]) + '</td><td>ETB ' + D.num(p.std) + '</td><td>ETB ' + D.num(p.boost) + '</td></tr>'; }).join('') + '</table></div>' +
-    '<h3>' + D.esc(t.h4) + '</h3><div class="dl-pts"><div><b>' + D.esc(t.g1b) + '</b><span>' + D.esc(t.g1s) + '</span></div><div><b>' + D.esc(t.g2b) + '</b><span>' + D.esc(t.g2s) + '</span></div><div><b>' + D.esc(t.g3b) + '</b><span>' + D.esc(t.g3s) + '</span></div></div>';
+    '<h3>' + D.esc(t.h4) + '</h3><div class="dl-pts"><div><b>' + D.esc(t.g1b) + '</b><span>' + D.esc(t.g1s) + '</span></div><div><b>' + D.esc(t.g2b) + '</b><span>' + D.esc(t.g2s) + '</span></div><div><b>' + D.esc(t.g3b) + '</b><span>' + D.esc(t.g3s) + '</span></div><div><b>' + D.esc(t.g4b) + '</b><span>' + D.esc(t.g4s) + '</span></div></div>';
   stagesCard(); launchCard(); nextCard(); demoBar(); openLine(); calc();
 }
 function stagesCard() {
