@@ -47,7 +47,7 @@ function stagesCard() {
 function launchCard() {
   var t = D.T(lang), box = $('dl-launch');
   var l = cfg.launch || {};
-  box.innerHTML = '<h2>' + D.esc(t.ln_h) + (l.active ? ' <small class="dl-pill">' + D.esc(t.ln_on) + '</small>' : '') + '</h2><p class="dl-note">' + D.esc(t.ln_p) + '</p>' + (l.active && l.until ? '<p class="dl-note"><b>' + D.esc(D.fmt(t.ln_until, { d: l.until })) + '</b></p>' : '');
+  box.innerHTML = '<h2>' + D.esc(t.ln_h) + (l.active ? ' <small class="dl-pill">' + D.esc(t.ln_on) + '</small>' : '') + '</h2><p class="dl-note">' + D.esc(t.ln_p) + ' ' + D.esc(D.fmt((l.trips_goal == null || l.trips_goal > 0) ? t.ln_rule : t.ln_rule_nogoal, { d: l.max_days || 90, n: D.num(l.trips_goal == null ? 150 : l.trips_goal) })) + '</p>' + (l.active && l.until ? '<p class="dl-note"><b>' + D.esc(D.fmt(t.ln_until, { d: l.until })) + '</b></p>' : '');
 }
 function nextCard() {
   var t = D.T(lang), box = $('dl-next'), cs = cfg.companies || [];

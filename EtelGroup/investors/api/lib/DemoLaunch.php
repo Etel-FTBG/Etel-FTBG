@@ -32,8 +32,10 @@ function ir_demo_launch_seed(PDO $pdo, string $actor): void {
     // Launch period: only when the admin has not switched one on.
     if (ir_get_setting($pdo, 'launch_active', '0') !== '1') {
         ir_set_setting($pdo, 'launch_active', '1');
-        ir_set_setting($pdo, 'launch_until', date('Y-m-d', strtotime('+60 days')));
-        ir_set_setting($pdo, 'launch_note', 'DEMO: no commission for new drivers for 60 days, launch bonuses and referral rewards, no investor payouts until the platform covers its costs.');
+        // Started 30 days ago; the end date follows the rule (90 days, or 150 trips a day for 4 weeks).
+        ir_set_setting($pdo, 'launch_started_on', date('Y-m-d', strtotime('-30 days')));
+        ir_set_setting($pdo, 'launch_until', '');
+        ir_set_setting($pdo, 'launch_note', 'DEMO: new drivers pay no commission for 60 days, then 2% for 30 days. Launch bonuses, referral rewards and rider discounts are paid from the raise. No investor payouts until the launch period ends.');
         ir_set_setting($pdo, 'demo_launch_set', '1');
     }
 
@@ -68,6 +70,7 @@ function ir_demo_launch_clear(PDO $pdo): void {
     if (ir_get_setting($pdo, 'demo_launch_set', '0') === '1') {
         ir_set_setting($pdo, 'launch_active', '0');
         ir_set_setting($pdo, 'launch_until', '');
+        ir_set_setting($pdo, 'launch_started_on', '');
         ir_set_setting($pdo, 'launch_note', '');
         ir_set_setting($pdo, 'demo_launch_set', '0');
     }

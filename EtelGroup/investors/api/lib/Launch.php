@@ -48,13 +48,46 @@ function ir_launch_ensure(PDO $pdo): void {
     foreach ($split as $cat => $pc) $ins->execute([$cat, round($raise * $pc / 100, 2)]);
 }
 
-// The launch period is on while the switch is on and the end date (if any) has not passed.
+// The one launch-end rule, used by the admin page, the pitch, the deal sheet and the portal:
+// the launch period ends at most max_days after it started, or earlier when the 4-week average
+// reaches trips_goal trips a day (the admin then ends it with one click).
+function ir_launch_rule(PDO $pdo): array {
+    $maxDays = (int)ir_get_setting($pdo, 'launch_max_days', '90');
+    if ($maxDays < 1 || $maxDays > 365) $maxDays = 90;
+    $goal = (int)ir_get_setting($pdo, 'launch_trips_goal', '150');
+    if ($goal < 0) $goal = 150;
+    $started = (string)ir_get_setting($pdo, 'launch_started_on', '');
+    $endsBy = $started !== '' ? date('Y-m-d', strtotime($started . ' +' . $maxDays . ' days')) : '';
+    return ['started_on' => $started, 'max_days' => $maxDays, 'trips_goal' => $goal, 'ends_by' => $endsBy];
+}
+
+// The launch period is on while the switch is on and the end date has not passed.
+// The end date is the admin's date or, when none is set, the start date plus max_days.
 function ir_launch_state(PDO $pdo): array {
     $flag = ir_get_setting($pdo, 'launch_active', '0') === '1';
+    $rule = ir_launch_rule($pdo);
     $until = (string)ir_get_setting($pdo, 'launch_until', '');
+    if ($until === '' || ($rule['ends_by'] !== '' && $rule['ends_by'] < $until)) $until = $rule['ends_by'];
     $note = (string)ir_get_setting($pdo, 'launch_note', '');
     $active = $flag && ($until === '' || date('Y-m-d') <= $until);
-    return ['active' => $active, 'switch_on' => $flag, 'until' => $until, 'note' => $note, 'auto_from' => (string)ir_get_setting($pdo, 'launch_auto_from', '')];
+    return ['active' => $active, 'switch_on' => $flag, 'until' => $until, 'note' => $note,
+        'auto_from' => (string)ir_get_setting($pdo, 'launch_auto_from', ''),
+        'started_on' => $rule['started_on'], 'max_days' => $rule['max_days'], 'trips_goal' => $rule['trips_goal'], 'ends_by' => $rule['ends_by']];
+}
+
+// For the admin page: the 4-week average trips a day against the goal. Never throws.
+function ir_launch_goal_check(PDO $pdo): array {
+    $rule = ir_launch_rule($pdo);
+    $out = ['goal' => $rule['trips_goal'], 'avg_per_day' => null, 'reached' => false, 'error' => ''];
+    if ($rule['trips_goal'] <= 0) return $out;
+    try {
+        $a = ir_delivery_rolling_4week_avg($pdo);
+        $out['avg_per_day'] = $a['avg_per_day'];
+        $out['reached'] = $a['avg_per_day'] >= $rule['trips_goal'];
+    } catch (Exception $e) {
+        $out['error'] = 'Could not read the 4-week average from Delivery & Ride: ' . $e->getMessage();
+    }
+    return $out;
 }
 
 function ir_launch_summary(PDO $pdo, int $recent = 40): array {

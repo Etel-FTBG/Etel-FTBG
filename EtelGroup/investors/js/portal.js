@@ -132,7 +132,8 @@ async function ipLoadLaunch() {
   if (st.active) {
     ban.style.display = '';
     ban.innerHTML = '<b>Launch period</b> &middot; ' + (st.until ? 'until ' + ipEsc(st.until) + '. ' : '') +
-      'The raise is being spent on growth, and no profit is paid during this time. ' + (st.note ? ipEsc(st.note) : 'Payouts start after the launch period, once there is profit.');
+      'The raise is being spent on growth, and no profit is paid during this time. ' +
+      (st.max_days ? 'It ends after at most ' + Number(st.max_days) + ' days' + (st.trips_goal > 0 ? ', or earlier when ' + Number(st.trips_goal) + ' trips a day are reached over 4 weeks' : '') + '. ' : '') + (st.note ? ipEsc(st.note) : 'Payouts start after the launch period, once there is profit.');
   } else { ban.style.display = 'none'; }
   const card = document.getElementById('p-launch-card');
   const any = sm.total_budget > 0 || sm.spend.length;
