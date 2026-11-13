@@ -21,8 +21,8 @@ var TXT = {
     h3: 'A worked example', ex_h: 'Net profit ETB 100,000 · Pool (20 %) ETB 20,000', std: 'Standard', boost: 'Boosted',
     r1: '100 Profit Shares (5 % of pool)', r2: '400 Profit Shares (20 % of pool)', r3: '2,000 Profit Shares (whole pool)',
     h4: 'Good to know', g1b: 'Profit only, never losses', g1s: 'No profit, no payout, and nothing owed back.',
-    g2b: 'No ownership, no vote', g2s: 'A Profit Share is a right to profit, not a share in the Company.', g3b: 'See every number', g3s: 'A statement each period and your own portal login.',
-    h5: 'Sign', agree: 'I confirm that the details above are true, that the funds come from a lawful source, and that I have read the Profit-Share Investment Agreement. I understand that profit is not guaranteed, that I may receive less than I paid, and that no profit is paid during the launch period.',
+    g2b: 'No ownership, no vote', g2s: 'A Profit Share is a right to profit, not a share in the Company.', g3b: 'See every number', g3s: 'A statement each period and your own portal login.', g4b: 'Extra while shares are unsold', g4s: 'Profit Shares nobody has bought yet would have earned the boosted rate. Half of that amount is shared among the Profit Share holders in proportion to their shares, and half stays with the Company. It shrinks as more shares are sold and ends when all 2,000 are sold.',
+    h5: 'Sign', agree: 'I confirm that the details above are true, that the funds come from a lawful source, and that I have read the Profit-Share Investment Agreement. I understand that profit is not guaranteed, that I may receive less than I paid, and that no profit is paid during the launch period. I understand that while some Profit Shares are unsold, part of the amount they would have earned is shared among the holders as set out in the Agreement.',
     sig_name: 'Type your full name to sign', sig_draw: 'Draw your signature here', sig_clear: 'Clear', submit: 'Sign and submit', sending: 'Sending…',
     ok_h: 'Thank you. Your deal sheet is signed.', ok_p: 'The Company will review your sheet and contact you. Keep your reference.', ref: 'Reference', print: 'Print or save as PDF', blank: 'Download the blank form (PDF)', another: 'Fill another sheet',
     closed: 'No Profit Shares are open at the moment. Please contact the Company.', lang: 'EN',
@@ -88,8 +88,10 @@ var TXT = {
       "g2s": "የትርፍ ድርሻ የትርፍ መብት ነው እንጂ የኩባንያው ድርሻ አይደለም።",
       "g3b": "ሁሉንም ቁጥር ይመልከቱ",
       "g3s": "ለእያንዳንዱ ወቅት መግለጫ እና የራስዎ የፖርታል መግቢያ ያገኛሉ።",
+      "g4b": "ያልተሸጡ ድርሻዎች ሲኖሩ ተጨማሪ",
+      "g4s": "እስካሁን ማንም ያልገዛቸው የትርፍ ድርሻዎች በጨመረ ተመን የሚያገኙት መጠን ግማሹ ለድርሻ ባለቤቶች እንደ ድርሻቸው ይካፈላል፤ ግማሹ ለኩባንያው ይቀራል። ብዙ ድርሻ ሲሸጥ ይቀንሳል፤ ሁሉም 2,000 ሲሸጡ ያበቃል።",
       "h5": "ይፈርሙ",
-      "agree": "ከላይ የተጻፉት ዝርዝሮች እውነት መሆናቸውን፣ ገንዘቡ ከሕጋዊ ምንጭ መሆኑን፣ እንዲሁም የትርፍ ተካፋይነት ኢንቨስትመንት ስምምነቱን ማንበቤን አረጋግጣለሁ። ትርፍ እንደማይረጋገጥና ከከፈልኩት ያነሰ ልቀበል እንደምችል ተረድቻለሁ። በማስጀመሪያ ወቅት ምንም ትርፍ እንደማይከፈል ተረድቻለሁ።",
+      "agree": "ከላይ የተጻፉት ዝርዝሮች እውነት መሆናቸውን፣ ገንዘቡ ከሕጋዊ ምንጭ መሆኑን፣ እንዲሁም የትርፍ ተካፋይነት ኢንቨስትመንት ስምምነቱን ማንበቤን አረጋግጣለሁ። ትርፍ እንደማይረጋገጥና ከከፈልኩት ያነሰ ልቀበል እንደምችል ተረድቻለሁ። በማስጀመሪያ ወቅት ምንም ትርፍ እንደማይከፈል ተረድቻለሁ። ያልተሸጡ የትርፍ ድርሻዎች ሲኖሩ እነሱ ያገኙት ነበር የሚባለው መጠን ከፊሉ በስምምነቱ እንደተገለጸው ለድርሻ ባለቤቶች እንደሚካፈል ተረድቻለሁ።",
       "sig_name": "ለመፈረም ሙሉ ስምዎን ይተይቡ",
       "sig_draw": "ፊርማዎን እዚህ ይሳሉ",
       "sig_clear": "አጥፋ",
@@ -175,7 +177,7 @@ function renderSheet(d, lang, cfg) {
       row(esc(t.f_payout), esc(period) + (Number(d.payout_days) ? ' · ' + esc(d.payout_days) + ' ' + esc(t.days) : '')) + row(esc(t.f_bank), esc(d.bank_account || t.none)) +
     '</table></section>' +
     '<section><h2>' + esc(t.calc_h) + '</h2><p>' + esc(t.calc_p) + ': <b>ETB ' + num(p.std) + '</b> (' + esc(t.calc_std) + ') · <b>ETB ' + num(p.boost) + '</b> (' + esc(t.calc_boost) + ').</p>' +
-    '<ul class="dl-pts"><li><b>' + esc(t.g1b) + '.</b> ' + esc(t.g1s) + '</li><li><b>' + esc(t.g2b) + '.</b> ' + esc(t.g2s) + '</li><li><b>' + esc(t.g3b) + '.</b> ' + esc(t.g3s) + '</li></ul></section>' +
+    '<ul class="dl-pts"><li><b>' + esc(t.g1b) + '.</b> ' + esc(t.g1s) + '</li><li><b>' + esc(t.g2b) + '.</b> ' + esc(t.g2s) + '</li><li><b>' + esc(t.g3b) + '.</b> ' + esc(t.g3s) + '</li><li><b>' + esc(t.g4b) + '.</b> ' + esc(t.g4s) + '</li></ul></section>' +
     '<section class="dl-sign"><div class="dl-sbox"><div class="dl-r">' + esc(t.sh_investor) + '</div>' + (d.signature_png ? '<img class="dl-sigimg" src="' + esc(d.signature_png) + '" alt="">' : '<div class="dl-sigimg"></div>') +
       '<div class="dl-l"></div><div class="dl-n">' + esc(d.signature_name) + ' · ' + esc(d.signed_at) + '</div></div>' +
       '<div class="dl-sbox"><div class="dl-r">' + esc(t.sh_company) + '</div><div class="dl-sigimg"></div><div class="dl-l"></div><div class="dl-n">' + esc(t.sigd || '') + '</div><div class="dl-stamp">' + esc(t.stamp) + '</div></div></section>' +
