@@ -274,13 +274,15 @@ case 'ep_dispute_open': {
     // actually a party to it - anyone who obtained any transaction reference
     // (a shared receipt, a screenshot) could open a dispute against a
     // transaction they had no part in.
-    $tx = $pdo->prepare('SELECT sender_ep_id, receiver_ep_id FROM ' . EP_TBL_TX . ' WHERE tx_ref = ? LIMIT 1');
+    $tx = $pdo->prepare('SELECT sender_ep_id, receiver_ep_id, type FROM ' . EP_TBL_TX . ' WHERE tx_ref = ? LIMIT 1');
     $tx->execute(array($tx_ref));
     $t = $tx->fetch();
     if (!$t) ep_err('Transaction not found', 404);
     if ((int)$t['sender_ep_id'] !== $uid && (int)$t['receiver_ep_id'] !== $uid) {
         ep_err('You were not a party to this transaction', 403);
     }
+    if ($t['type'] === 'refund') ep_err('A refund cannot be reported again', 400);
+    $reason = substr($reason, 0, 500);
     $pdo->exec('CREATE TABLE IF NOT EXISTS ' . EP_TBL_DISPUTES . ' (
         id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
         user_id INT UNSIGNED NOT NULL,
@@ -291,6 +293,10 @@ case 'ep_dispute_open': {
         created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
         resolved_at DATETIME DEFAULT NULL
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4');
+    // One open report per person per payment (stops repeated reports).
+    $dup = $pdo->prepare('SELECT id FROM ' . EP_TBL_DISPUTES . ' WHERE user_id = ? AND tx_ref = ? AND status IN ("open","investigating") LIMIT 1');
+    $dup->execute(array($uid, $tx_ref));
+    if ($dup->fetch()) ep_err('You already reported this payment. We are reviewing it.', 409);
     $pdo->prepare('INSERT INTO ' . EP_TBL_DISPUTES . ' (user_id, tx_ref, reason) VALUES (?,?,?)')->execute(array($uid, $tx_ref, $reason));
     ep_ok(null, 'Dispute opened — we will review within 48hrs');
 }

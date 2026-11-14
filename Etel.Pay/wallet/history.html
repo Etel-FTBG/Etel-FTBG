@@ -177,6 +177,25 @@
 .receipt .co-chip.co-pay{ color:#8A6A10 !important; }
 .rcpt-actions{display:flex;gap:10px;margin-top:14px}
 .rcpt-actions .ep-btn{flex:1}
+/* Desktop: a wide two-column receipt with the buttons always in view.
+   Screen only, 1024px and up; phones and printing keep the original layout. */
+@media screen and (min-width:1024px){
+  #sheet-tx .ep-sheet{max-width:900px;width:92vw;max-height:92dvh;margin:16px;padding:0 30px 22px;display:flex;flex-direction:column;overflow:hidden}
+  #sheet-tx .ep-sheet-handle{display:none}
+  #sheet-tx .ep-sheet-title{flex:none;margin:24px 0 14px}
+  #tx-detail-body{flex:1 1 auto;min-height:0;overflow-y:auto;padding-right:6px}
+  #sheet-tx .rcpt-body{padding:22px 26px 8px}
+  #sheet-tx .rcpt-amt{font-size:32px}
+  #sheet-tx .rcpt-cols{display:grid;grid-template-columns:1fr 1.25fr;column-gap:36px;align-items:start}
+  #sheet-tx .rcpt-field{font-size:13px}
+  #sheet-tx .rcpt-table td{font-size:13.5px;padding:9px 2px}
+  #sheet-tx .rcpt-sec-title:first-child{margin-top:0}
+  #sheet-tx .rcpt-footer{flex:none;display:flex;gap:10px;align-items:stretch;margin-top:14px;padding-top:14px;border-top:1px solid var(--glass-brd)}
+  #sheet-tx .rcpt-footer .rcpt-actions{margin-top:0;flex:1 1 auto;min-width:0}
+  #sheet-tx .rcpt-footer .ep-btn{font-size:13px;letter-spacing:0;white-space:nowrap;padding-left:16px;padding-right:16px;width:auto}
+  #sheet-tx .rcpt-footer .rcpt-actions .ep-btn{flex:1 1 auto}
+  #sheet-tx .rcpt-footer > .ep-btn{margin-top:0!important;flex:0 0 auto}
+}
 
 @media print{
   body > *:not(#sheet-tx){display:none!important}
@@ -188,7 +207,7 @@
     box-shadow:none!important;max-width:none!important;width:100%!important;
     margin:0!important;border-radius:0!important;padding:0!important;
   }
-  #sheet-tx .ep-sheet-handle,#sheet-tx .ep-sheet-title,.rcpt-actions,#ep-toast{display:none!important}
+  #sheet-tx .ep-sheet-handle,#sheet-tx .ep-sheet-title,.rcpt-actions,#rcpt-report,.rcpt-footer,#ep-toast{display:none!important}
   .receipt{border:none;border-radius:0}
 }
 </style>
@@ -280,11 +299,14 @@
     <div class="ep-sheet-handle"></div>
     <div class="ep-sheet-title">Transaction details</div>
     <div id="tx-detail-body"></div>
-    <div class="rcpt-actions">
-      <button class="ep-btn ep-btn-ghost" onclick="printReceipt()">Print Receipt</button>
-      <button class="ep-btn ep-btn-ghost" onclick="downloadReceiptPdf()">Download PDF</button>
+    <div class="rcpt-footer">
+      <div class="rcpt-actions">
+        <button class="ep-btn ep-btn-ghost" onclick="printReceipt()">Print Receipt</button>
+        <button class="ep-btn ep-btn-ghost" onclick="downloadReceiptPdf()">Download PDF</button>
+      </div>
+      <button class="ep-btn ep-btn-ghost" id="rcpt-report" onclick="reportProblem()" style="margin-top:10px">Report a problem</button>
+      <button class="ep-btn ep-btn-ghost" onclick="EP_CORE.closeSheet('sheet-tx')" style="margin-top:10px">Close</button>
     </div>
-    <button class="ep-btn ep-btn-ghost" onclick="EP_CORE.closeSheet('sheet-tx')" style="margin-top:10px">Close</button>
   </div>
 </div>
 
@@ -524,6 +546,7 @@ function buildReceiptHtml(tx){
         <div class="rcpt-amt-dir">${dir==='in'?'Money Received':'Money Sent'}</div>
       </div>
 
+      <div class="rcpt-cols"><div class="rcpt-col">
       <div class="rcpt-sec-title">Company Information</div>
       <div class="rcpt-grid">
         <div class="rcpt-field"><b>Company</b>Etel Group</div>
@@ -538,6 +561,7 @@ function buildReceiptHtml(tx){
         <div class="rcpt-field"><b>Linked Service</b>${companyChip(tx)}</div>
       </div>
 
+      </div><div class="rcpt-col">
       <div class="rcpt-sec-title">Payment / Transaction Information</div>
       <table class="rcpt-table">
         <tr><td>Payer</td><td>${EP_CORE.esc(tx.sender_phone||(dir==='out'?me:'—'))}</td></tr>
@@ -558,6 +582,7 @@ function buildReceiptHtml(tx){
         <div class="rcpt-qr-box" id="rcpt-qr"></div>
         <div class="rcpt-qr-cap">Scan to verify this receipt</div>
       </div>
+      </div></div>
     </div>
     <div class="rcpt-foot">
       EtelPay — Etel Group's trusted digital wallet · ethelmarket.com<br>
@@ -568,6 +593,8 @@ function buildReceiptHtml(tx){
 
 function showDetail(tx){
   _rcptTx = tx;
+  // A payment can be reported when it has a reference and is not itself a refund.
+  document.getElementById('rcpt-report').style.display = (tx.tx_ref && tx.type !== 'refund') ? '' : 'none';
   document.getElementById('tx-detail-body').innerHTML = buildReceiptHtml(tx);
   const qrBox = document.getElementById('rcpt-qr');
   if(qrBox && typeof QRCode!=='undefined'){
@@ -579,6 +606,58 @@ function showDetail(tx){
     });
   }
   EP_CORE.openSheet('sheet-tx');
+}
+
+/* Report a problem with this payment: asks for a reason, then opens a dispute
+   (ep_dispute_open). Admin sees it under Disputes. Text only, built with DOM calls. */
+function askReportReason(){
+  return new Promise(function(resolve){
+    var ov = document.createElement('div');
+    ov.style.cssText = 'position:fixed;left:0;top:0;right:0;bottom:0;z-index:99999;background:rgba(0,0,0,.72);display:flex;align-items:center;justify-content:center;padding:16px';
+    var box = document.createElement('div');
+    box.style.cssText = 'background:#1a1408;border:1px solid #d4a843;border-radius:16px;padding:20px;width:100%;max-width:360px;color:#fff';
+    var h = document.createElement('div');
+    h.textContent = 'Report a problem with this payment';
+    h.style.cssText = 'font-weight:700;font-size:16px;margin-bottom:6px';
+    var sub = document.createElement('div');
+    sub.textContent = 'Tell us what went wrong. We review every report within 48 hours.';
+    sub.style.cssText = 'font-size:12px;opacity:.75;margin-bottom:10px';
+    var ta = document.createElement('textarea');
+    ta.maxLength = 500; ta.rows = 4; ta.placeholder = 'What happened?';
+    ta.style.cssText = 'width:100%;box-sizing:border-box;padding:10px;border-radius:10px;border:1px solid #d4a843;background:#0f0b04;color:#fff;font-size:15px;resize:vertical';
+    var msg = document.createElement('div');
+    msg.style.cssText = 'font-size:12px;color:#f87171;min-height:16px;margin-top:6px';
+    var row = document.createElement('div');
+    row.style.cssText = 'display:flex;gap:10px;margin-top:10px';
+    function done(v){ if (ov.parentNode) ov.parentNode.removeChild(ov); resolve(v); }
+    var cancel = document.createElement('button');
+    cancel.textContent = 'Cancel';
+    cancel.style.cssText = 'flex:1;padding:12px;border-radius:10px;border:1px solid #d4a843;background:transparent;color:#d4a843;font-size:15px';
+    cancel.onclick = function(){ done(null); };
+    var send = document.createElement('button');
+    send.textContent = 'Send report';
+    send.style.cssText = 'flex:1;padding:12px;border-radius:10px;border:0;background:#d4a843;color:#1a1408;font-weight:700;font-size:15px';
+    send.onclick = function(){
+      var v = ta.value.trim();
+      if (v.length < 5) { msg.textContent = 'Please write a few words about the problem.'; return; }
+      done(v);
+    };
+    row.appendChild(cancel); row.appendChild(send);
+    box.appendChild(h); box.appendChild(sub); box.appendChild(ta); box.appendChild(msg); box.appendChild(row);
+    ov.appendChild(box); document.body.appendChild(ov); ta.focus();
+  });
+}
+
+async function reportProblem(){
+  var tx = _rcptTx;
+  if (!tx || !tx.tx_ref) return;
+  var reason = await askReportReason();
+  if (!reason) return;
+  try {
+    var j = await EP_API.call('ep_dispute_open', { tx_ref: tx.tx_ref, reason: reason });
+    if (j && j.success) EP_CORE.toast('Report sent. We will review it within 48 hours.', 'ok');
+    else EP_CORE.toast((j && j.data && j.data.message) ? j.data.message : 'Could not send the report', 'err');
+  } catch (e) { EP_CORE.toast('Network error. Please try again.', 'err'); }
 }
 
 function printReceipt(){
