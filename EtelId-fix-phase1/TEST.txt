@@ -1,0 +1,24 @@
+EtelID Phase 1 (rows 1-3) - upload and test
+UPLOAD (paths relative to plugin root, via EtelID Updater, or the zip):
+  etel-api.php
+  etel-os.php
+  includes/class-etelid-auth-ajax.php
+  includes/class-etelid-ajax.php
+  templates/portal.php
+Back up first (Updater makes .bak files). Then in wp-config.php remove/change ETELID_UPDATER_SECRET.
+
+TEST 1 - sign-up cannot choose role/company
+ a) Open the register page, create a test member. In browser dev tools (Network),
+    resend the sign-up request adding role=super_admin and primary_company_slug=taxi (or edit the form fields).
+ b) Console > Company Roles: the new member must be role "Member" (or no company). Not admin/owner.
+ c) Profile page: change name/email still works; role/department no longer change.
+ d) Normal sign-up with a valid company still works.
+
+TEST 2 - no updater secret in portal
+ a) Sign in as a normal member, open /portal/, View Source, search "updater_secret": 0 hits.
+ b) Sign in as site admin, open the Updater in the portal, deploy a small ZIP: still works (session cookie auth).
+
+TEST 3 - old logins retired
+ a) POST to etel-api.php?action=login and etel-os.php?action=login (any phone/password):
+    expect HTTP 410 "This sign-in endpoint is retired".
+ b) Normal EtelID login and SSO from Delivery still work (they use verify_token, unchanged).
