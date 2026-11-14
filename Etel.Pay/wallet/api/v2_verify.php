@@ -283,8 +283,9 @@ function ep_normalize_phone($p) {
     return $p;
 }
 
-$action = in_str('action');
-if (!$action) $action = in_str('ep_action');
+/* ep_action is the route; a plain 'action' field may then carry a sub-action (approve/reject/refund) for the admin calls */
+$action = in_str('ep_action');
+if (!$action) $action = in_str('action');
 if (!$action) $action = isset($_GET['action']) ? trim($_GET['action']) : '';
 
 /* ── Token auth ──────────────────────────────────────────────── */
@@ -407,8 +408,9 @@ require_once __DIR__ . '/chapa_lib.php';
 require_once __DIR__ . '/ep_r1.php';
 require_once __DIR__ . '/ep_r2.php';
 require_once __DIR__ . '/ep_r3.php';
+require_once __DIR__ . '/ep_r4.php';
 
 /* ── Dispatch action ─────────────────────────────────────────── */
-if (!ep_route_part1($action) && !ep_route_part2($action) && !ep_route_part3($action)) {
+if (!ep_route_part4($action) && !ep_route_part1($action) && !ep_route_part2($action) && !ep_route_part3($action)) {
     ep_err('Unknown action: ' . htmlspecialchars($action), 404);
 }

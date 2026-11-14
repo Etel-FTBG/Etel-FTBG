@@ -22,3 +22,12 @@ html[data-theme="light"] #etelai-soon-card { color: #f3e7c0 !important; }
 html[data-theme="light"] #etelai-soon-card h3, html[data-theme="light"] #etelai-soon-card .etelai-soon-tag { color: #F2CC6B !important; }
 html[data-theme="light"] #etelai-soon-card p { color: rgba(243, 231, 192, .92) !important; }
 html[data-theme="light"] #etelai-soon-card .etelai-soon-x { color: rgba(242, 204, 107, .85) !important; }
+/* top-up result notices on the wallet home (js/pay-alerts.js) */
+.tu-alerts { padding: 0 20px; }
+.tu-alert { display: flex; align-items: center; gap: 12px; margin: 0 0 12px; padding: 12px 14px; border-radius: 14px; border: 1.5px solid; }
+.tu-alert.bad { border-color: rgba(239, 68, 68, .6); background: rgba(239, 68, 68, .1); }
+.tu-alert.good { border-color: rgba(47, 179, 107, .6); background: rgba(47, 179, 107, .1); }
+.tu-alert-body { flex: 1; min-width: 0; font-size: 14px; }
+.tu-alert-sub { font-size: 12.5px; opacity: .85; margin-top: 2px; overflow-wrap: anywhere; }
+.tu-alert-ok { min-width: 44px; min-height: 36px; border-radius: 10px; border: 1.5px solid currentColor; background: transparent; color: inherit; font-weight: 700; cursor: pointer; }
+@media (min-width: 1024px) { .tu-alerts { padding: 0; } }

@@ -39,7 +39,8 @@ const EP_API = (function() {
   async function call(action, extra = {}) {
     const nonce = await _getNonce();
     const token = EP_CORE.getToken();
-    const body  = Object.assign({ action, nonce, token: token || '' }, extra);
+    // ep_action is the route and cannot be overwritten by extra.action (used by KYC review, disputes)
+    const body  = Object.assign({ action, nonce, token: token || '' }, extra, { ep_action: action });
     let j = await _post(EP_CONFIG.ACTION, body);
 
     // Nonce expired — refresh and retry once
