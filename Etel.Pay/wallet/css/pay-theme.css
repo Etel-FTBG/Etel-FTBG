@@ -32,7 +32,12 @@
 }
 #ep-theme-pop .ep-tp-seg button + button { border-left: 1px solid rgba(212, 175, 55, .35); }
 #ep-theme-pop .ep-tp-seg button[aria-pressed="true"] { background: linear-gradient(135deg, #8A6500, #D4AF37); color: #1A0E00; }
-@media (min-width: 768px) { #ep-theme-fab { right: 22px; bottom: 84px; } }
+@media (min-width: 1024px) {
+  /* desktop shell: the free gutter between the sidebar and the phone frame, so the button never covers the info panel or the chat button */
+  #ep-theme-fab { right: auto; left: calc(var(--sb-w, 260px) + 14px); top: 14px; bottom: auto; align-items: flex-start; }
+  html.ep-admin #ep-theme-fab { left: auto; right: 22px; top: auto; bottom: 84px; align-items: flex-end; }
+}
+@media (min-width: 768px) and (max-width: 1023px) { #ep-theme-fab { right: 22px; bottom: 84px; } }
 
 /* ---- text sizes ---- */
 html[data-textsize="lg"] body { zoom: 1.12; }
@@ -215,3 +220,45 @@ html[data-theme="light"] .greeting-text h2, html[data-theme="light"] .greeting h
 /* scrollbars */
 html[data-theme="light"] * { scrollbar-color: rgba(138, 101, 0, .45) transparent !important; }
 html[data-theme="light"] *::-webkit-scrollbar-thumb { background: rgba(138, 101, 0, .45); }
+
+
+/* ============================================================================
+   DESKTOP SHELL FIXES (1024px and up)
+   - the bottom menu was stretched across the whole screen and covered the sidebar: it now sits inside the phone frame width
+   - the help button no longer covers the sidebar
+   ============================================================================ */
+@media (min-width: 1024px) {
+  html body .ep-nav, html body .bottom-nav, html body [class*="bottom-nav"] {
+    left: 50% !important; right: auto !important; width: 390px !important; transform: translateX(-50%) !important; border-radius: 0 0 28px 28px !important;
+  }
+  html.ep-admin body .ep-nav { left: 0 !important; width: auto !important; right: 0 !important; transform: none !important; }
+  body #etel-help-fab { left: calc(var(--sb-w, 260px) + 14px) !important; bottom: 18px !important; }
+  html.ep-admin body #etel-help-fab { left: 14px !important; }
+}
+@media (min-width: 1280px) { html body .ep-nav, html body .bottom-nav, html body [class*="bottom-nav"] { width: 410px !important; } html.ep-admin body .ep-nav { width: auto !important; } }
+@media (min-width: 1500px) { html body .ep-nav, html body .bottom-nav, html body [class*="bottom-nav"] { width: 430px !important; } html.ep-admin body .ep-nav { width: auto !important; } }
+
+/* ---- long balances shrink to fit the card (js/pay-theme.js sets the size) ---- */
+.ep-bal-amount { max-width: 100%; }
+
+/* ---- sign-in page on short screens: smaller medallion so the form is visible without scrolling ---- */
+@media (max-height: 820px) {
+  .ep-auth-page { padding-top: 26px; padding-bottom: 20px; }
+  .ep-medal { width: min(46vw, 190px) !important; height: min(46vw, 190px) !important; margin-bottom: -66px !important; }
+  .ep-auth-card { padding-top: 80px !important; }
+}
+@media (max-height: 700px) {
+  .ep-auth-trust { display: none !important; }
+  .ep-auth-tabs { margin-top: 8px !important; }
+  .ep-auth-body { padding-top: 14px !important; }
+}
+
+/* light theme: the desktop info panel (quick actions, live rates) was dark glass with dark text */
+html[data-theme="light"] .desk-info-card { background: rgba(255, 255, 255, .92) !important; border: 1.5px solid rgba(176, 130, 20, .34) !important; box-shadow: 0 8px 26px rgba(120, 80, 0, .13) !important; }
+html[data-theme="light"] .desk-info-label { color: #7A5500 !important; font-size: 12px !important; }
+html[data-theme="light"] .desk-quick-action { background: rgba(212, 175, 55, .08) !important; border-color: rgba(176, 130, 20, .3) !important; }
+html[data-theme="light"] .desk-quick-text { color: #1A1200 !important; font-size: 14px !important; }
+html[data-theme="light"] .desk-quick-sub { color: rgba(26, 18, 0, .62) !important; font-size: 12px !important; }
+html[data-theme="light"] .desk-rate-cur { color: rgba(26, 18, 0, .7) !important; }
+html[data-theme="light"] .desk-rate-val { color: #6B4A00 !important; }
+html[data-theme="light"] .desk-rate-item { border-color: rgba(26, 18, 0, .12) !important; }
