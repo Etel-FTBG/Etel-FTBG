@@ -39,6 +39,8 @@ $init_tab  = ( get_query_var('etelid_page') === 'signup' ) ? 'signup' : 'login';
 <link rel="stylesheet" href="<?php echo esc_url( ETELID_URL . 'public/css/etelid-fonts.css?v=' . (int) @filemtime( ETELID_PATH . 'public/css/etelid-fonts.css' ) ); ?>">
 <link rel="stylesheet" href="<?php echo esc_url( ETELID_URL . 'public/css/etelid-icons.css?v=' . (int) @filemtime( ETELID_PATH . 'public/css/etelid-icons.css' ) ); ?>">
 <style><?php echo file_get_contents(ETELID_PATH.'public/css/etelid-auth.css'); ?></style>
+<link rel="stylesheet" href="<?php echo esc_url( ETELID_URL . 'public/css/etelid-theme.css?v=' . (int) @filemtime( ETELID_PATH . 'public/css/etelid-theme.css' ) ); ?>">
+<script src="<?php echo esc_url( ETELID_URL . 'public/js/etelid-theme.js?v=' . (int) @filemtime( ETELID_PATH . 'public/js/etelid-theme.js' ) ); ?>" data-default="light"></script>
 </head>
 <body>
 

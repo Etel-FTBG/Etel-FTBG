@@ -1,0 +1,130 @@
+/* ============================================================================
+   EtelID public pages - theme layer (NFC card page, sign-in page).
+   html[data-eid-theme] = light | dark, three text sizes: html[data-eid-textsize] = md | lg | xl. Set by js/etelid-theme.js.
+   Loaded LAST so it can override the page's own inline styles. Only colours, sizes and the display button change.
+   ============================================================================ */
+
+/* ---- display settings button + panel (both themes) ---- */
+#eid-theme-fab { position: fixed; right: 12px; top: calc(12px + env(safe-area-inset-top, 0px)); z-index: 9990; display: flex; flex-direction: column; align-items: flex-end; gap: 10px; }
+#eid-theme-btn {
+  width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; padding: 0;
+  background: rgba(16, 8, 0, .88); color: #F2CC6B; border: 1.5px solid rgba(212, 175, 55, .6); box-shadow: 0 6px 18px rgba(0, 0, 0, .38);
+  transition: transform .15s, box-shadow .15s;
+}
+#eid-theme-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 24px rgba(0, 0, 0, .42); }
+#eid-theme-btn:focus-visible, #eid-theme-pop button:focus-visible { outline: 3px solid #F2CC6B; outline-offset: 2px; }
+#eid-theme-pop {
+  min-width: 230px; padding: 12px; border-radius: 16px; display: flex; flex-direction: column; gap: 12px;
+  background: rgba(16, 8, 0, .95); color: #F7EFD9; border: 1.5px solid rgba(212, 175, 55, .5); box-shadow: 0 14px 38px rgba(0, 0, 0, .5);
+}
+#eid-theme-pop[hidden] { display: none; }
+#eid-theme-pop .eid-tp-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+#eid-theme-pop .eid-tp-lbl { font: 600 12px/1.3 'Manrope', system-ui, sans-serif; letter-spacing: .3px; color: #F2CC6B; }
+#eid-theme-pop .eid-tp-seg { display: inline-flex; border: 1.5px solid rgba(212, 175, 55, .5); border-radius: 10px; overflow: hidden; }
+#eid-theme-pop .eid-tp-seg button { min-width: 44px; min-height: 36px; padding: 4px 10px; cursor: pointer; border: 0; background: transparent; color: #F7EFD9; font: 800 13px/1 'Syne', 'Manrope', sans-serif; }
+#eid-theme-pop .eid-tp-seg button + button { border-left: 1px solid rgba(212, 175, 55, .35); }
+#eid-theme-pop .eid-tp-seg button[aria-pressed="true"] { background: linear-gradient(135deg, #8A6500, #D4AF37); color: #1A0E00; }
+@media (min-width: 900px) { #eid-theme-fab { right: 22px; top: 18px; } }
+
+html[data-eid-theme="light"] #eid-theme-btn { background: rgba(255, 253, 246, .97); color: #6B4A00; border-color: rgba(138, 101, 0, .65); box-shadow: 0 6px 18px rgba(120, 80, 0, .24); }
+html[data-eid-theme="light"] #eid-theme-pop { background: rgba(255, 253, 246, .98); color: #1A1200; border-color: rgba(138, 101, 0, .5); box-shadow: 0 14px 38px rgba(120, 80, 0, .25); }
+html[data-eid-theme="light"] #eid-theme-pop .eid-tp-lbl { color: #6B4A00; }
+html[data-eid-theme="light"] #eid-theme-pop .eid-tp-seg { border-color: rgba(138, 101, 0, .55); }
+html[data-eid-theme="light"] #eid-theme-pop .eid-tp-seg button { color: #3A2A00; }
+html[data-eid-theme="light"] #eid-theme-pop .eid-tp-seg button + button { border-left-color: rgba(138, 101, 0, .35); }
+html[data-eid-theme="light"] #eid-theme-pop .eid-tp-seg button[aria-pressed="true"] { background: linear-gradient(135deg, #8A6500, #B8860B); color: #FFF8E1; }
+
+/* ---- text sizes ---- */
+html[data-eid-textsize="lg"] body { zoom: 1.12; }
+html[data-eid-textsize="xl"] body { zoom: 1.26; }
+html[data-eid-textsize="lg"] #eid-theme-fab { zoom: .893; }
+html[data-eid-textsize="xl"] #eid-theme-fab { zoom: .794; }
+@supports not (zoom: 1) { html[data-eid-textsize="lg"] { font-size: 112.5%; } html[data-eid-textsize="xl"] { font-size: 126%; } }
+
+/* ============================================================================
+   NFC CARD PAGE (body.eid-nfc)
+   ============================================================================ */
+/* readable text floors, both themes (kicker 10.5px, badge 11px, footer 10px, service labels were tiny) */
+body.eid-nfc .card-kicker { font-size: 12px; letter-spacing: 1.8px; opacity: 1; }
+body.eid-nfc .badge { font-size: 12px; }
+body.eid-nfc .footer { font-size: 12px; letter-spacing: 1px; color: rgba(242, 232, 208, .6); }
+body.eid-nfc .nfc-field label, body.eid-nfc .nfc-services h2, body.eid-nfc .nfc-svc-role { font-size: 12px; }
+body.eid-nfc .brand-hero-tag { font-size: 13px; }
+
+/* light */
+html[data-eid-theme="light"] body.eid-nfc {
+  --nfc-ink: #1A1200; --ink-dim: rgba(26, 18, 0, .76); --ink-faint: rgba(26, 18, 0, .60); --ok: #0A7A55; --bad: #B42318; --gold-3: #7A5500;
+  background:
+    radial-gradient(900px 620px at 50% -8%, rgba(255, 226, 110, .55), transparent 60%),
+    radial-gradient(1100px 800px at 50% 112%, rgba(212, 175, 55, .25), transparent 60%),
+    linear-gradient(160deg, #FFFDF6 0%, #F8F1DE 55%, #EEE2BF 100%);
+  background-attachment: fixed;
+  color-scheme: light;
+}
+html[data-eid-theme="light"] body.eid-nfc ::selection { background: rgba(212, 175, 55, .45); color: #1A1200; }
+html[data-eid-theme="light"] body.eid-nfc .brand-hero-word { color: #1A1200; text-shadow: none; }
+html[data-eid-theme="light"] body.eid-nfc .brand-hero-word span { color: #8A6500; }
+html[data-eid-theme="light"] body.eid-nfc .brand-hero-tag { color: rgba(26, 18, 0, .72); }
+html[data-eid-theme="light"] body.eid-nfc .brand-hero-logo { filter: drop-shadow(0 10px 22px rgba(120, 80, 0, .35)); }
+html[data-eid-theme="light"] body.eid-nfc .brand-hero-logo-wrap::before { background: radial-gradient(circle, rgba(255, 226, 110, .6) 0%, rgba(255, 226, 110, .18) 45%, transparent 72%); }
+html[data-eid-theme="light"] body.eid-nfc .card {
+  background: linear-gradient(165deg, #FFFFFF 0%, #FBF5E3 100%);
+  box-shadow: 0 2px 0 #fff inset, 0 30px 60px -28px rgba(120, 80, 0, .35), 0 10px 26px -12px rgba(120, 80, 0, .25);
+}
+html[data-eid-theme="light"] body.eid-nfc .card-kicker { color: #7A5500; }
+html[data-eid-theme="light"] body.eid-nfc .badge { color: #6B4A00; background: rgba(212, 175, 55, .2); border-color: rgba(138, 101, 0, .5); }
+html[data-eid-theme="light"] body.eid-nfc .invalid { color: #1A1200; }
+html[data-eid-theme="light"] body.eid-nfc .footer { color: rgba(26, 18, 0, .58); }
+html[data-eid-theme="light"] body.eid-nfc .nfc-services { border-top-color: rgba(138, 101, 0, .28); }
+html[data-eid-theme="light"] body.eid-nfc .nfc-btn { background: rgba(212, 175, 55, .14); border-color: rgba(138, 101, 0, .5); color: #5A3D00; }
+html[data-eid-theme="light"] body.eid-nfc .nfc-btn:hover { background: rgba(212, 175, 55, .26); }
+html[data-eid-theme="light"] body.eid-nfc .nfc-btn.primary { color: #1b1309; }
+html[data-eid-theme="light"] body.eid-nfc .nfc-field input,
+html[data-eid-theme="light"] body.eid-nfc .nfc-order-list select { background: #FFFFFF; border-color: rgba(138, 101, 0, .5); color: #1A1200; }
+html[data-eid-theme="light"] body.eid-nfc .nfc-field input::placeholder { color: rgba(26, 18, 0, .42); }
+html[data-eid-theme="light"] body.eid-nfc .nfc-field input:focus { background: #FFFFFF; border-color: #B8860B; box-shadow: 0 0 0 3px rgba(212, 175, 55, .3); }
+html[data-eid-theme="light"] body.eid-nfc .nfc-order { background: #FFFFFF; border-color: rgba(138, 101, 0, .4); color: #1A1200; }
+html[data-eid-theme="light"] body.eid-nfc .nfc-order:hover { background: #FFF9E6; border-color: #B8860B; }
+html[data-eid-theme="light"] body.eid-nfc .nfc-svc-row { background: rgba(255, 255, 255, .85); border-color: rgba(138, 101, 0, .35); }
+html[data-eid-theme="light"] body.eid-nfc .nfc-svc-title { color: #1A1200; }
+html[data-eid-theme="light"] body.eid-nfc .nfc-svc-role { color: #7A5500; }
+html[data-eid-theme="light"] body.eid-nfc .nfc-back { color: rgba(26, 18, 0, .65); }
+html[data-eid-theme="light"] body.eid-nfc .nfc-back:hover { color: #7A5500; }
+html[data-eid-theme="light"] body.eid-nfc .nfc-driver-row { border-bottom-color: rgba(26, 18, 0, .12); }
+html[data-eid-theme="light"] body.eid-nfc .nfc-license-photo { background: #FFFFFF; border-color: rgba(138, 101, 0, .4); }
+html[data-eid-theme="light"] body.eid-nfc .nfc-receipt-link { color: #0A6B66; }
+html[data-eid-theme="light"] body.eid-nfc ::-webkit-scrollbar-track { background: rgba(138, 101, 0, .1); }
+html[data-eid-theme="light"] body.eid-nfc .nfc-btn.primary { background: linear-gradient(135deg, #C8960C, #D4AF37); border: none; color: #1b1309; }
+html[data-eid-theme="light"] body.eid-nfc .nfc-btn.primary:hover { background: linear-gradient(135deg, #C8960C, #D4AF37); }
+
+/* ============================================================================
+   SIGN-IN / SIGN-UP PAGE (.eid-auth-page): readable text in both themes, plus a dark theme (the page was light only).
+   The green brand panel on the left stays the same in both themes.
+   ============================================================================ */
+.eid-auth-page .eid-af-label { font-size: 12px; letter-spacing: .8px; color: #7A5500; }
+.eid-auth-page .eid-auth-card-footer { font-size: 12px; letter-spacing: .5px; }
+.eid-auth-page .eid-auth-divider { font-size: 12px; color: rgba(26, 18, 0, .55); }
+.eid-auth-page .eid-af-input::placeholder { color: rgba(26, 18, 0, .48); }
+.eid-auth-page .eid-af-input-icon { color: #8A6500; opacity: .9; }
+.eid-auth-card a[href*="reset-password"] { color: #7A5500 !important; font-size: 13px !important; text-decoration: underline !important; }
+
+html[data-eid-theme="dark"] .eid-auth-page {
+  --card-bg: #1B1B2A; --card-bg2: #232337; --ab: rgba(212, 175, 55, .38);
+  --ink: #F4EFE0; --ink2: #D9D2C0; --ink3: #B4AE9A; --at2: #D9D2C0; --at3: #B4AE9A; color-scheme: dark;
+}
+html[data-eid-theme="dark"] .eid-auth-right { background: linear-gradient(170deg, #10101A 0%, #151524 55%, #1B1B2A 100%); }
+html[data-eid-theme="dark"] .eid-auth-right::before { background-image: repeating-linear-gradient(45deg, transparent 0, transparent 32px, rgba(212,175,55,.06) 32px, rgba(212,175,55,.06) 33px), repeating-linear-gradient(-45deg, transparent 0, transparent 32px, rgba(212,175,55,.06) 32px, rgba(212,175,55,.06) 33px); }
+html[data-eid-theme="dark"] .eid-auth-card { box-shadow: 0 20px 60px rgba(0, 0, 0, .6), 0 4px 16px rgba(0, 0, 0, .4), inset 0 1px 0 rgba(255, 255, 255, .05); }
+html[data-eid-theme="dark"] .eid-auth-page .eid-af-label { color: #E8C84A; }
+html[data-eid-theme="dark"] .eid-auth-page .eid-af-input-icon { color: #E8C84A; }
+html[data-eid-theme="dark"] .eid-auth-page .eid-af-input, html[data-eid-theme="dark"] .eid-auth-page .eid-af-select {
+  background: rgba(255, 255, 255, .06); border-color: rgba(212, 175, 55, .42); color: #F4EFE0;
+}
+html[data-eid-theme="dark"] .eid-auth-page .eid-af-input:focus, html[data-eid-theme="dark"] .eid-auth-page .eid-af-select:focus { background: rgba(255, 255, 255, .09); border-color: #E8C84A; box-shadow: 0 0 0 3px rgba(212, 175, 55, .22); }
+html[data-eid-theme="dark"] .eid-auth-page .eid-af-input::placeholder { color: rgba(244, 239, 224, .5); }
+html[data-eid-theme="dark"] .eid-auth-page .eid-auth-divider { color: rgba(244, 239, 224, .55); }
+html[data-eid-theme="dark"] .eid-auth-page .eid-auth-divider::before, html[data-eid-theme="dark"] .eid-auth-page .eid-auth-divider::after { background: rgba(212, 175, 55, .3); }
+html[data-eid-theme="dark"] .eid-auth-card a[href*="reset-password"] { color: #F2CC6B !important; }
+html[data-eid-theme="dark"] .eid-auth-page .eid-pw-toggle { color: #E8C84A; }
+html[data-eid-theme="dark"] .eid-auth-page input[type="checkbox"] { accent-color: #D4AF37; }
+html[data-eid-theme="dark"] .eid-auth-page .eid-step-back { color: #F4EFE0; background: rgba(212, 175, 55, .14); }
