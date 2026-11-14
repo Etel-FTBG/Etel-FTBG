@@ -134,20 +134,22 @@ if (ep_is_placeholder(EP_DB_PASS)) {
     exit;
 }
 
-/* ── Auto-generate EP_SECRET from server fingerprint if missing ──
-   Allows the wallet to operate without explicit config while
-   ensuring the secret is unique per server (not 'changeme').
-   Also triggers when EP_SECRET is still the literal placeholder from
-   config.php's shipped default - a known, guessable value is no safer
-   than an empty one for something used in hash_equals() auth checks
-   throughout ep_r1.php.
-   ALWAYS set EP_SECRET explicitly in .env for production.   */
+/* -- Guard: refuse to run without a real EP_SECRET ------------
+   No fallback key is derived from the host or database names: those
+   values are guessable. Set EP_SECRET in api/.env (or config.php). */
 if (ep_is_placeholder(EP_SECRET)) {
-    $auto = hash('sha256', php_uname('n') . EP_DB_NAME . EP_DB_USER . 'etelpay2026');
-    define('EP_SECRET_FINAL', $auto);
-} else {
-    define('EP_SECRET_FINAL', EP_SECRET);
+    while (ob_get_level()) { @ob_end_clean(); }
+    if (!headers_sent()) {
+        http_response_code(500);
+        header('Content-Type: application/json; charset=utf-8');
+    }
+    echo json_encode(array(
+        'success' => false,
+        'data'    => array('message' => 'EtelPay: EP_SECRET is not configured. Set EP_SECRET in api/.env'),
+    ));
+    exit;
 }
+define('EP_SECRET_FINAL', EP_SECRET);
 if (!defined('EP_SESSION_TTL')) define('EP_SESSION_TTL', 604800);
 if (!defined('EP_DAILY_LIMIT')) define('EP_DAILY_LIMIT', 0);
 if (!defined('EP_VER'))         define('EP_VER', '1.1.0');  /* bump on every deploy */

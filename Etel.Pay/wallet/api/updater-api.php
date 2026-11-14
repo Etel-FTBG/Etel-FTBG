@@ -76,7 +76,7 @@ function upd_sign_token($pass) {
 // anyone who tried that known placeholder.
 function upd_password_is_configured($pass) {
     $p = strtolower(trim((string)$pass));
-    return strlen($p) >= 4 && $p !== 'changeme' && $p !== 'change_this_updater_password' && $p !== 'change-me';
+    return strlen($p) >= 4 && $p !== 'changeme' && $p !== 'change_this_updater_password' && $p !== 'change-me' && $p !== 'change_me';
 }
 function upd_verify_token($token) {
     if (!$token) return false;
@@ -144,6 +144,42 @@ function upd_is_safe_rel_path($rel) {
         $parts[] = $seg;
     }
     return !empty($parts);
+}
+
+/* Canonical form of a relative path: collapses ".", "//" and ".."
+ * segments, so "api/./config.php" and "api//.env" compare equal to the
+ * protected entries. Returns false if the path escapes the base. */
+function upd_norm_rel($rel) {
+    $rel = str_replace('\\', '/', (string)$rel);
+    $parts = array();
+    foreach (explode('/', $rel) as $seg) {
+        if ($seg === '' || $seg === '.') continue;
+        if ($seg === '..') {
+            if (empty($parts)) return false;
+            array_pop($parts);
+            continue;
+        }
+        $parts[] = $seg;
+    }
+    return implode('/', $parts);
+}
+
+/* True if the path (after normalizing) is a protected file. Fails closed:
+ * an unparseable path counts as protected. Case-insensitive on purpose. */
+function upd_is_protected($rel, $PROTECTED_FILES) {
+    $n = upd_norm_rel($rel);
+    if ($n === false || $n === '') return true;
+    $n = strtolower($n);
+    foreach ($PROTECTED_FILES as $p) {
+        if ($n === strtolower($p)) return true;
+    }
+    return false;
+}
+
+/* A real backup name is YYYYMMDD_HHiiss_<rest>. Anything else (such as
+ * ".htaccess" in the backups folder) is not a backup and is refused. */
+function upd_valid_backup_name($name) {
+    return (bool)preg_match('/^\d{8}_\d{6}_[A-Za-z0-9._-]+$/', (string)$name);
 }
 
 /* ── Backup a file before overwriting ────────────────────────── */
@@ -301,7 +337,7 @@ function upd_do_zip_deploy($zf, $BASE_DIR, $BACKUP_DIR, $ALLOWED_EXT, $PROTECTED
 
         $ext = strtolower(pathinfo($rel, PATHINFO_EXTENSION));
         if (!in_array($ext, $ALLOWED_EXT, true)) { $skipped[] = $rel; continue; }
-        if (in_array($rel, $PROTECTED_FILES, true)) { $skipped[] = $rel . ' (protected)'; continue; }
+        if (upd_is_protected($rel, $PROTECTED_FILES)) { $skipped[] = $rel . ' (protected)'; continue; }
         // Same class of bug as update_file/upload_file: a raw string-prefix
         // check against realpath($BASE_DIR) . '/' . $rel never resolves the
         // ".." segments in $rel itself, so it doesn't actually catch traversal.
@@ -397,7 +433,7 @@ case 'list_files': {
 case 'read_file': {
     upd_require_auth();
     $rel  = isset($_body['path']) ? ltrim($_body['path'], '/') : '';
-    if (in_array($rel, $PROTECTED_FILES, true)) upd_err('File is protected', 403);
+    if (upd_is_protected($rel, $PROTECTED_FILES)) upd_err('File is protected', 403);
     $full = realpath($BASE_DIR . '/' . $rel);
     if (!$full || strpos($full, realpath($BASE_DIR)) !== 0) upd_err('Invalid path');
     if (!file_exists($full) || is_dir($full)) upd_err('File not found', 404);
@@ -412,7 +448,7 @@ case 'update_file': {
     $content = isset($_body['content']) ? $_body['content']          : null;
     if (!$rel || $content === null) upd_err('Path and content required');
     if (!upd_is_safe_rel_path($rel)) upd_err('Path traversal denied');
-    if (in_array($rel, $PROTECTED_FILES, true)) upd_err('File is protected');
+    if (upd_is_protected($rel, $PROTECTED_FILES)) upd_err('File is protected');
     $full = $BASE_DIR . '/' . $rel;
     if (!file_exists(dirname($full))) @mkdir(dirname($full), 0755, true);
     $backed = upd_backup($full, $BACKUP_DIR);
@@ -428,7 +464,7 @@ case 'upload_file': {
     $f    = $_FILES['file'];
     $tp   = isset($_POST['target_path']) ? ltrim(trim($_POST['target_path']), '/') : upd_detect_path($f['name']);
     if (!upd_is_safe_rel_path($tp)) upd_err('Path traversal denied');
-    if (in_array($tp, $PROTECTED_FILES, true)) upd_err('File is protected');
+    if (upd_is_protected($tp, $PROTECTED_FILES)) upd_err('File is protected');
     $ext  = strtolower(pathinfo($tp, PATHINFO_EXTENSION));
     if (!in_array($ext, array_merge($ALLOWED_EXT, array('png','jpg','jpeg','gif','ico','webp','zip')), true)) upd_err('File type not allowed');
     if ($ext === 'zip') {
@@ -460,7 +496,7 @@ case 'upload_multiple': {
         $name = $ff['name'][$i];
         $tmp  = $ff['tmp_name'][$i];
         $tp   = upd_detect_path($name);
-        if (in_array($tp, $PROTECTED_FILES, true)) { $errs[] = $name . ' (protected)'; continue; }
+        if (upd_is_protected($tp, $PROTECTED_FILES)) { $errs[] = $name . ' (protected)'; continue; }
         $ext  = strtolower(pathinfo($tp, PATHINFO_EXTENSION));
         if (!in_array($ext, $ALLOWED_EXT, true)) { $errs[] = $name . ' (type not allowed)'; continue; }
         $full = $BASE_DIR . '/' . $tp;
@@ -490,10 +526,11 @@ case 'restore_backup': {
     upd_require_auth();
     $name = basename(isset($_body['name']) ? $_body['name'] : '');
     $src  = $BACKUP_DIR . '/' . $name;
-    if (!$name || !file_exists($src)) upd_err('Backup not found', 404);
+    if (!$name || !upd_valid_backup_name($name) || !file_exists($src)) upd_err('Backup not found', 404);
     // Re-derive original path from backup filename: YYYYMMDD_HHiiss_rel_path
     $rel  = preg_replace('/^\d{8}_\d{6}_/', '', $name);
     $rel  = str_replace('_', '/', $rel);
+    if (upd_is_protected($rel, $PROTECTED_FILES)) upd_err('File is protected', 403);
     $full = $BASE_DIR . '/' . $rel;
     if (!file_exists(dirname($full))) @mkdir(dirname($full), 0755, true);
     if (!copy($src, $full)) upd_err('Restore failed', 500);
@@ -506,7 +543,7 @@ case 'delete_backup': {
     upd_require_auth();
     $name = basename(isset($_body['name']) ? $_body['name'] : '');
     $path = $BACKUP_DIR . '/' . $name;
-    if (!$name || !file_exists($path)) upd_err('Backup not found', 404);
+    if (!$name || !upd_valid_backup_name($name) || !file_exists($path)) upd_err('Backup not found', 404);
     unlink($path);
     upd_ok(null, 'Backup deleted');
 }
