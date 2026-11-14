@@ -6,7 +6,7 @@
  *   Navigation          → Network-first → offline.html fallback
  */
 
-const CACHE     = 'etelpay-v14';   // bumped so old cache clears on activate (adds the theme files)
+const CACHE     = 'etelpay-v15';   // bumped so old cache clears on activate (adds the theme files)
 const PRECACHE  = [
   './login',
   './wallet',
@@ -22,6 +22,7 @@ const PRECACHE  = [
   './css/pay-polish.css',
   './js/pay-icons.js',
   './js/pay-alerts.js',
+  './js/pay-balance.js',
   './js/pay-theme.js',
   './js/config.js',
   './js/api.js',
