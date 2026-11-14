@@ -156,68 +156,7 @@ case 'ep_admin_toggle_user': {
     ep_ok(array('new_status' => $new));
 }
 
-/* ── Admin: credit/debit ──────────────────────────────────────── */
-case 'ep_admin_credit': {
-    _ep_require_admin();
-    $uid    = in_int('user_id');
-    $amount = in_float('amount');
-    $note   = in_str('note');
-    if ($amount <= 0) ep_err('Amount must be > 0');
-    $pdo    = ep_db();
-    $pdo->prepare('UPDATE ' . EP_TBL_USERS . ' SET balance_etb = balance_etb + ? WHERE id = ?')->execute(array($amount, $uid));
-    $pdo->prepare('INSERT INTO ' . EP_TBL_TX . ' (tx_ref, type, receiver_ep_id, amount, currency, note, status, created_at) VALUES (?, "deposit", ?, ?, "ETB", ?, "completed", NOW())')->execute(array(ep_gen_ref(), $uid, $amount, 'Admin credit: ' . $note));
-    ep_ok(null, 'ETB ' . $amount . ' credited');
-}
-
-/* ── Admin: top up own balance ────────────────────────────────── */
-case 'ep_admin_self_topup': {
-    $admin_id = _ep_require_admin();   // returns admin's own user id
-    $amount   = in_float('amount');
-    $note     = in_str('note') ?: 'Self top-up';
-    if ($amount <= 0) ep_err('Amount must be > 0');
-    $pdo = ep_db();
-    $pdo->prepare('UPDATE ' . EP_TBL_USERS . ' SET balance_etb = balance_etb + ? WHERE id = ?')->execute(array($amount, $admin_id));
-    $pdo->prepare('INSERT INTO ' . EP_TBL_TX . ' (tx_ref, type, receiver_ep_id, amount, currency, note, status, created_at) VALUES (?, "deposit", ?, ?, "ETB", ?, "completed", NOW())')->execute(array(ep_gen_ref(), $admin_id, $amount, $note));
-    // Return new balance
-    $b = $pdo->prepare('SELECT balance_etb FROM ' . EP_TBL_USERS . ' WHERE id = ? LIMIT 1');
-    $b->execute(array($admin_id));
-    $row = $b->fetch();
-    ep_ok(array('new_balance' => (float)($row ? $row['balance_etb'] : 0)), 'ETB ' . $amount . ' added to your wallet');
-}
-case 'ep_admin_debit': {
-    _ep_require_admin();
-    $uid    = in_int('user_id');
-    $amount = round(in_float('amount'), 2);
-    $note   = in_str('note');
-    if ($amount <= 0) ep_err('Amount must be > 0');
-    if ($uid <= 0) ep_err('User required');
-    $pdo    = ep_db();
-    $err    = null;
-    $newbal = 0;
-    $pdo->beginTransaction();
-    try {
-        // Lock the row so a concurrent debit/payment cannot race this one.
-        $lk = $pdo->prepare('SELECT balance_etb FROM ' . EP_TBL_USERS . ' WHERE id = ? LIMIT 1 FOR UPDATE');
-        $lk->execute(array($uid));
-        $row = $lk->fetch();
-        if (!$row) {
-            $err = array('User not found', 404);
-        } elseif ($amount > (float)$row['balance_etb']) {
-            $err = array('Debit of ETB ' . $amount . ' exceeds the balance of ETB ' . (float)$row['balance_etb'], 400);
-        } else {
-            // Ledger row carries exactly the amount taken from the balance.
-            $pdo->prepare('UPDATE ' . EP_TBL_USERS . ' SET balance_etb = balance_etb - ? WHERE id = ?')->execute(array($amount, $uid));
-            $pdo->prepare('INSERT INTO ' . EP_TBL_TX . ' (tx_ref, type, sender_ep_id, amount, currency, note, status, created_at) VALUES (?, "withdraw", ?, ?, "ETB", ?, "completed", NOW())')->execute(array(ep_gen_ref(), $uid, $amount, 'Admin debit: ' . $note));
-            $newbal = round((float)$row['balance_etb'] - $amount, 2);
-        }
-        if ($err) $pdo->rollBack(); else $pdo->commit();
-    } catch (Exception $ex) {
-        $pdo->rollBack();
-        ep_err('Debit failed', 500);
-    }
-    if ($err) ep_err($err[0], $err[1]);
-    ep_ok(array('new_balance' => $newbal), 'ETB ' . $amount . ' debited');
-}
+/* Admin credit, self top-up and debit moved to ep_r4.php (capped, atomic, audited). */
 
 /* ── Admin: all transactions ──────────────────────────────────── */
 case 'ep_admin_txs': {
@@ -319,7 +258,7 @@ case 'ep_admin_settings': {
 case 'ep_admin_save_settings': {
     _ep_require_admin();
     $pdo  = ep_db();
-    $keys = array('platform_name', 'support_phone', 'support_email', 'daily_limit', 'platform_fee');
+    $keys = array('platform_name', 'support_phone', 'support_email', 'daily_limit', 'platform_fee', 'admin_action_cap');
     foreach ($keys as $k) {
         $v = in_str($k);
         if ($v === '') continue;
@@ -506,38 +445,7 @@ case 'ep_topup_confirm': {
     ep_ok(array('ref'=>$ref,'status'=>'processing'), 'Confirmation received — admin will verify and credit within minutes');
 }
 
-/* ── 1c. Admin: approve top-up ───────────────────────────────── */
-case 'ep_admin_topup_approve': {
-    _ep_require_admin();
-    $ref = in_str('ref');
-    $pdo = ep_db();
-    $stmt = $pdo->prepare('SELECT * FROM ' . EP_TBL_TOPUP . ' WHERE ref=? LIMIT 1');
-    $stmt->execute(array($ref));
-    $req  = $stmt->fetch();
-    if (!$req) ep_err('Top-up not found');
-    if ($req['status'] === 'completed') ep_err('Already completed');
-    $pdo->beginTransaction();
-    try {
-        // Same double-processing risk as ep_admin_reverse_tx above: gate on
-        // the actual row-count of a status flip that can only succeed once,
-        // before crediting any balance, instead of trusting the plain
-        // SELECT above (which two concurrent approve clicks could both
-        // pass while the request is still "pending").
-        $flip = $pdo->prepare('UPDATE ' . EP_TBL_TOPUP . ' SET status="completed" WHERE ref=? AND status != "completed"');
-        $flip->execute(array($ref));
-        if ($flip->rowCount() === 0) {
-            $pdo->rollBack();
-            ep_err('Already completed');
-        }
-
-        $pdo->prepare('UPDATE ' . EP_TBL_USERS . ' SET balance_etb = balance_etb + ? WHERE id = ?')
-            ->execute(array($req['amount'], $req['user_id']));
-        $pdo->prepare('INSERT INTO ' . EP_TBL_TX . ' (tx_ref, type, receiver_ep_id, amount, currency, note, status, created_at) VALUES (?,?,?,?,?,?,?,NOW())')
-            ->execute(array(ep_gen_ref(), 'deposit', $req['user_id'], $req['amount'], 'ETB', 'Top-up: '.$ref, 'completed'));
-        $pdo->commit();
-        ep_ok(array('ref'=>$ref,'credited'=>$req['amount']), 'ETB '.$req['amount'].' credited');
-    } catch (Exception $ex) { $pdo->rollBack(); ep_err('Failed: '.$ex->getMessage(), 500); }
-}
+/* Admin approve/reject top-up moved to ep_r4.php. */
 
 /* ── 1d. Admin: list pending top-ups ────────────────────────── */
 case 'ep_admin_topup_list': {

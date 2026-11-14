@@ -221,8 +221,8 @@
 <div id="ep-toast"></div>
 
 <script src="js/config.js?v=4.1"></script>
-<script src="js/api.js?v=4.1"></script>
-<script src="js/core.js?v=4.1"></script>
+<script src="js/api.js?v=4.2"></script>
+<script src="js/core.js?v=4.2"></script>
 <script>
 EP_CORE.onReady(async function(){
   EP_CORE.registerSW();
@@ -322,7 +322,7 @@ function renderTx(txs){
         <div class="ep-tx-sub">${EP_CORE.esc(tx.note||tx.type||'')}</div>
       </div>
       <div class="ep-tx-right">
-        <div class="ep-tx-amt ${dir}">${sign}${EP_CORE.numFmt(tx.amount||0)} ${tx.currency||'ETB'}</div>
+        <div class="ep-tx-amt ${dir}">${sign}${EP_CORE.numFmt(tx.amount||0)} ${EP_CORE.esc(tx.currency||'ETB')}</div>
         <div class="ep-tx-date">${EP_CORE.dateFmt(tx.created_at)}</div>
       </div>
     </div>`;
@@ -345,10 +345,10 @@ async function loadAvatar(){
     const j = await EP_API.getProfile();
     if(j.success){
       const btn=document.getElementById('avatar-btn');
-      if(j.data.avatar_url) btn.innerHTML=`<img src="${j.data.avatar_url}" alt="avatar">`;
+      if(j.data.avatar_url) btn.innerHTML=`<img src="${EP_CORE.esc(j.data.avatar_url)}" alt="avatar">`;
       var sbName=document.getElementById('sb-name'); if(sbName) sbName.textContent=j.data.full_name||'';
       var sbPhone=document.getElementById('sb-phone'); if(sbPhone) sbPhone.textContent=j.data.phone||'';
-      if(j.data.avatar_url){var sbAv=document.getElementById('sb-avatar');if(sbAv)sbAv.innerHTML='<img src="'+j.data.avatar_url+'" alt="">';}
+      if(j.data.avatar_url){var sbAv=document.getElementById('sb-avatar');if(sbAv)sbAv.innerHTML='<img src="'+EP_CORE.esc(j.data.avatar_url)+'" alt="">';}
     }
   }catch(e){}
 }
@@ -510,7 +510,7 @@ function renderTx(txs){
         <div class="ep-tx-sub">${EP_CORE.esc(tx.note||tx.type||'')}</div>
       </div>
       <div class="ep-tx-right">
-        <div class="ep-tx-amt ${dir}">${sign}${EP_CORE.numFmt(tx.amount||0)} ${tx.currency||'ETB'}</div>
+        <div class="ep-tx-amt ${dir}">${sign}${EP_CORE.numFmt(tx.amount||0)} ${EP_CORE.esc(tx.currency||'ETB')}</div>
         <div class="ep-tx-date">${EP_CORE.dateFmt(tx.created_at)}</div>
       </div>
     </div>`;
@@ -533,10 +533,10 @@ async function loadAvatar(){
     const j = await EP_API.getProfile();
     if(j.success){
       const btn=document.getElementById('avatar-btn');
-      if(j.data.avatar_url) btn.innerHTML=`<img src="${j.data.avatar_url}" alt="avatar">`;
+      if(j.data.avatar_url) btn.innerHTML=`<img src="${EP_CORE.esc(j.data.avatar_url)}" alt="avatar">`;
       var sbName=document.getElementById('sb-name'); if(sbName) sbName.textContent=j.data.full_name||'';
       var sbPhone=document.getElementById('sb-phone'); if(sbPhone) sbPhone.textContent=j.data.phone||'';
-      if(j.data.avatar_url){var sbAv=document.getElementById('sb-avatar');if(sbAv)sbAv.innerHTML='<img src="'+j.data.avatar_url+'" alt="">';}
+      if(j.data.avatar_url){var sbAv=document.getElementById('sb-avatar');if(sbAv)sbAv.innerHTML='<img src="'+EP_CORE.esc(j.data.avatar_url)+'" alt="">';}
     }
   }catch(e){}
 }

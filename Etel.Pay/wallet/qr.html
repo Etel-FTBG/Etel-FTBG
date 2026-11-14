@@ -161,8 +161,8 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="js/config.js?v=4.1"></script>
-<script src="js/api.js?v=4.1"></script>
-<script src="js/core.js?v=4.1"></script>
+<script src="js/api.js?v=4.2"></script>
+<script src="js/core.js?v=4.2"></script>
 <script>
 let _staticQRDone = false;
 let _dynQRData    = null;
@@ -248,7 +248,8 @@ async function doScan(){
   }
   const restore=EP_CORE.btnLoading(btn,'ep-spin-w');
   try{
-    const j=await EP_API.qrProcess(token,amt,'ETB');
+    const j=await EP_CORE.withPin(function(pin){ return EP_API.qrProcess(token,amt,'ETB',pin); });
+    if(!j){ restore(); return; }
     if(j.success){
       document.getElementById('scan-ok-sub').textContent='ETB '+EP_CORE.numFmt(j.data.amount||amt||0)+' paid successfully.';
       EP_CORE.openSheet('sheet-scan-ok');

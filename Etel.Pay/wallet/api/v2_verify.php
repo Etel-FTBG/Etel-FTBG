@@ -405,10 +405,11 @@ function ep_gen_ref() {
 /* ── Load route handlers ─────────────────────────────────────── */
 require_once __DIR__ . '/etelid_kyc.php';   // EtelID bridge (must load before ep_r3)
 require_once __DIR__ . '/chapa_lib.php';
+require_once __DIR__ . '/ep_pin.php';   // wallet PIN check + account lockout
 require_once __DIR__ . '/ep_r1.php';
 require_once __DIR__ . '/ep_r2.php';
 require_once __DIR__ . '/ep_r3.php';
-require_once __DIR__ . '/ep_r4.php';
+require_once __DIR__ . '/ep_r4.php';   // admin money tools + top-up reject (capped, atomic, audited)
 
 /* ── Dispatch action ─────────────────────────────────────────── */
 if (!ep_route_part4($action) && !ep_route_part1($action) && !ep_route_part2($action) && !ep_route_part3($action)) {

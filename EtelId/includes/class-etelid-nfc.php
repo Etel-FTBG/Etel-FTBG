@@ -818,6 +818,8 @@ class Etelid_Nfc {
                 'payer_phone'    => $confirmer->phone,  // operator's OWN wallet PAYS
                 'amount'         => $amount,
                 'note'           => $note,
+                // EtelPay wallet PIN of the payer (checked and counted by EtelPay).
+                'payer_pin'      => isset($_POST['payer_pin']) ? (string) wp_unslash($_POST['payer_pin']) : '',
             ));
             if (is_wp_error($result)) {
                 wp_send_json_error(array('message' => $result->get_error_message()));
@@ -935,7 +937,10 @@ class Etelid_Nfc {
         $action_token = isset($_POST['action_token']) ? sanitize_text_field(wp_unslash($_POST['action_token'])) : '';
         $identifier   = isset($_POST['payer_identifier']) ? sanitize_text_field(wp_unslash($_POST['payer_identifier'])) : '';
         $password     = isset($_POST['payer_password']) ? (string) $_POST['payer_password'] : '';
+        $wallet_pin   = isset($_POST['payer_pin']) ? (string) wp_unslash($_POST['payer_pin']) : '';
         if (!$action_token || !$identifier || !$password) wp_send_json_error(array('message' => 'Missing required fields.'));
+        // Checked before the single-use token is spent, so a forgotten PIN does not cost a new tap.
+        if ($wallet_pin === '') wp_send_json_error(array('message' => 'Enter your EtelPay wallet PIN.'));
 
         $key  = 'etelid_nfc_action_' . $action_token;
         $data = get_transient($key);
@@ -968,6 +973,7 @@ class Etelid_Nfc {
             'payer_phone'    => $data['courier_phone'],
             'amount'         => $data['amount'],
             'note'           => $data['note'],
+            'payer_pin'      => $wallet_pin,
         ));
 
         if (is_wp_error($result)) {

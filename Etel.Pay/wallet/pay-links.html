@@ -71,8 +71,8 @@
 </div>
 <div id="ep-toast"></div>
 <script src="js/config.js?v=4.1"></script>
-<script src="js/api.js"></script>
-<script src="js/core.js"></script>
+<script src="js/api.js?v=4.2"></script>
+<script src="js/core.js?v=4.2"></script>
 <script src="js/devpanel.js"></script>
 <script>
 EP_CORE.onReady(async function(){
@@ -93,18 +93,18 @@ async function loadLinks(){
       var url=EP_CONFIG.BASE.replace('/Etel.Pay/wallet/','/Etel.Pay/pay/')+l.code;
       return '<div class="pl-item">'+
         '<div class="pl-item-head"><strong style="font-size:14px;color:var(--text)">'+EP_CORE.esc(l.label)+'</strong>'+
-        '<span class="pl-code">'+l.code+'</span></div>'+
+        '<span class="pl-code">'+EP_CORE.esc(l.code)+'</span></div>'+
         (l.amount?'<div style="font-size:18px;font-family:var(--fm);color:var(--gold)">ETB '+EP_CORE.numFmt(l.amount)+'</div>':
           '<div style="font-size:12px;color:var(--text-3)">Open amount</div>')+
-        '<div class="pl-url">'+url+'</div>'+
+        '<div class="pl-url">'+EP_CORE.esc(url)+'</div>'+
         '<div class="pl-meta">'+
           '<span>Used: '+l.times_used+'×</span>'+
-          '<span>'+l.status+'</span>'+
+          '<span>'+EP_CORE.esc(l.status)+'</span>'+
           (l.expires_at?'<span>Expires: '+EP_CORE.dateFmt(l.expires_at)+'</span>':'<span>No expiry</span>')+
         '</div>'+
         '<div class="pl-actions">'+
-          '<button class="ep-btn ep-btn-ghost" onclick="copyLink(\''+url+'\')">📋 Copy</button>'+
-          '<button class="ep-btn ep-btn-ghost" onclick="shareLink(\''+url+'\',\''+EP_CORE.esc(l.label)+'\')">↗ Share</button>'+
+          '<button class="ep-btn ep-btn-ghost" data-url="'+EP_CORE.esc(url)+'" onclick="copyLink(this.dataset.url)">📋 Copy</button>'+
+          '<button class="ep-btn ep-btn-ghost" data-url="'+EP_CORE.esc(url)+'" data-label="'+EP_CORE.esc(l.label)+'" onclick="shareLink(this.dataset.url,this.dataset.label)">↗ Share</button>'+
         '</div>'+
       '</div>';
     }).join('');

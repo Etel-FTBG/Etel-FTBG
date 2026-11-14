@@ -63,6 +63,7 @@ case 'ep_paylink_info': {
 
 case 'ep_paylink_pay': {
     $payer_uid = ep_auth_id();
+    ep_require_pin($payer_uid, in_str('pin'));
     $code      = in_str('code');
     $amount    = in_float('amount');
     if (!$code) ep_err('Code required');
@@ -302,50 +303,7 @@ case 'ep_admin_dispute_list': {
     ep_ok(array('disputes'=>$rows->fetchAll()));
 }
 
-case 'ep_admin_dispute_resolve': {
-    _ep_require_admin();
-    $id  = in_int('dispute_id');
-    $act = in_str('action'); // resolve|reject|refund
-    $res = in_str('resolution');
-    $pdo = ep_db();
-    if ($act === 'refund') {
-        // Same double-processing risk ep_admin_reverse_tx/ep_admin_topup_approve
-        // already guard against, missing here: a double-click or retried
-        // request previously re-ran the credit/debit block every time,
-        // since nothing checked the dispute was still open before moving
-        // money. Gate on an atomic status flip (open/investigating -> a
-        // terminal status) first - only the request that actually wins
-        // that flip is allowed to touch any balance.
-        $flip = $pdo->prepare('UPDATE ' . EP_TBL_DISPUTES . ' SET status="resolved" WHERE id=? AND status IN ("open","investigating")');
-        $flip->execute(array($id));
-        if ($flip->rowCount() === 0) {
-            ep_err('Dispute already resolved/rejected');
-        }
-        $disp = $pdo->prepare('SELECT * FROM ' . EP_TBL_DISPUTES . ' WHERE id=? LIMIT 1');
-        $disp->execute(array($id)); $d = $disp->fetch();
-        if ($d) {
-            $tx = $pdo->prepare('SELECT * FROM ' . EP_TBL_TX . ' WHERE tx_ref=? LIMIT 1');
-            $tx->execute(array($d['tx_ref'])); $t = $tx->fetch();
-            // Defense in depth alongside the ownership check now enforced at
-            // ep_dispute_open: don't refund a transaction the disputer wasn't
-            // actually a party to (covers disputes opened before that check
-            // existed, or via any other path into this table).
-            if ($t && (int)$t['sender_ep_id'] !== (int)$d['user_id'] && (int)$t['receiver_ep_id'] !== (int)$d['user_id']) {
-                $t = false;
-            }
-            if ($t && $t['sender_ep_id']) {
-                $pdo->prepare('UPDATE ' . EP_TBL_USERS . ' SET balance_etb=balance_etb+? WHERE id=?')->execute(array($t['amount'],$t['sender_ep_id']));
-                $pdo->prepare('UPDATE ' . EP_TBL_USERS . ' SET balance_etb=GREATEST(0,balance_etb-?) WHERE id=?')->execute(array($t['amount'],$t['receiver_ep_id']));
-                $pdo->prepare('INSERT INTO ' . EP_TBL_TX . ' (tx_ref,type,sender_ep_id,receiver_ep_id,amount,currency,note,status,created_at) VALUES (?,?,?,?,?,?,?,?,NOW())')
-                    ->execute(array(ep_gen_ref(),'refund',$t['receiver_ep_id'],$t['sender_ep_id'],$t['amount'],'ETB','Refund: '.$d['tx_ref'],'completed'));
-            }
-        }
-        $pdo->prepare('UPDATE ' . EP_TBL_DISPUTES . ' SET resolution=?, resolved_at=NOW() WHERE id=?')->execute(array($res, $id));
-        ep_ok(null, 'Dispute resolved');
-    }
-    $pdo->prepare('UPDATE ' . EP_TBL_DISPUTES . ' SET status=?,resolution=?,resolved_at=NOW() WHERE id=?')->execute(array($act==='reject'?'rejected':'resolved',$res,$id));
-    ep_ok(null, 'Dispute ' . ($act==='reject'?'rejected':'resolved'));
-}
+/* ep_admin_dispute_resolve moved to ep_r4.php (atomic, guarded, capped, audited). */
 
 
 /* ── EtelID: sync KYC to wallet ─────────────────────────────── */
@@ -427,6 +385,38 @@ case 'ep_login_etelid': {
     $pdo->prepare('INSERT INTO ' . EP_TBL_SESSIONS . ' (ep_user_id,token,expires_at,created_at) VALUES (?,?,?,NOW())')
         ->execute(array((int)$user['id'], $token, $expires));
     ep_ok(array('token'=>$token,'expires_at'=>$expires,'phone'=>$user['phone'],'via'=>'etelid_sso'));
+}
+
+/* -- Set the first wallet PIN on a single sign-on wallet ---------
+   Needs the session AND the owner's Etel-ID password, so a stolen
+   session alone cannot set a PIN. Only works while pin_hash is the
+   ETELID_SSO marker; afterwards use ep_change_pin. */
+case 'ep_set_wallet_pin': {
+    $uid        = ep_auth_id();
+    $etelid_pin = in_str('etelid_pin');
+    $new_pin    = in_str('new_pin');
+    $confirm    = in_str('confirm_pin');
+    if ($etelid_pin === '' || $new_pin === '') ep_err('Your Etel-ID password and a new PIN are required');
+    if (!preg_match('/^\d{4}$/', $new_pin)) ep_err('PIN must be exactly 4 digits');
+    if ($new_pin !== $confirm) ep_err('PINs do not match');
+    if (!function_exists('etelid_authenticate')) ep_err('EtelID bridge not installed', 503);
+    $pdo = ep_db();
+    $s = $pdo->prepare('SELECT phone, pin_hash, status FROM ' . EP_TBL_USERS . ' WHERE id = ? LIMIT 1');
+    $s->execute(array($uid));
+    $row = $s->fetch();
+    if (!$row) ep_err('Account not found', 404);
+    if ($row['status'] !== 'active') ep_err('Account suspended', 403);
+    if ($row['pin_hash'] !== 'ETELID_SSO') ep_err('A wallet PIN is already set. Use Change PIN.');
+    $auth = etelid_authenticate($row['phone'], $etelid_pin);
+    if (!$auth['ok'] || empty($auth['data']['ok']) || empty($auth['data']['member'])) {
+        // Show EtelID's own reason (wrong password, 2FA needed, ...) like ep_login_etelid does.
+        $emsg = !empty($auth['data']['message']) ? $auth['data']['message'] : 'Etel-ID verification failed';
+        ep_err($emsg, 401);
+    }
+    $u = $pdo->prepare('UPDATE ' . EP_TBL_USERS . ' SET pin_hash = ? WHERE id = ? AND pin_hash = ?');
+    $u->execute(array(password_hash($new_pin, PASSWORD_DEFAULT), $uid, 'ETELID_SSO'));
+    if ($u->rowCount() !== 1) ep_err('A wallet PIN is already set.', 409);
+    ep_ok(null, 'Wallet PIN set');
 }
 
 /* ── Nonce (standalone PHP — return a session-based token) ───── */

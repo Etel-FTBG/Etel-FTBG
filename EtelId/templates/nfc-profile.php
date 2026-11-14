@@ -672,6 +672,10 @@ $logo_madeya   = $site_root . '/Etel-Madeya/assets/images/etel-madeya-logo-sm.we
               <label>Note (optional)</label>
               <input type="text" id="nfc-charge-note" placeholder="What is this for?">
             </div>
+            <div class="nfc-field" id="nfc-charge-pin-wrap" style="display:none">
+              <label>Your EtelPay wallet PIN</label>
+              <input type="password" id="nfc-charge-pin" placeholder="PIN" inputmode="numeric" maxlength="6" autocomplete="off">
+            </div>
             <button type="button" class="nfc-btn primary" id="nfc-charge-amount-next">Continue</button>
             <span class="nfc-back" data-back="menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>Cancel</span>
             <div id="nfc-charge-amount-msg" class="nfc-msg"></div>
@@ -686,6 +690,10 @@ $logo_madeya   = $site_root . '/Etel-Madeya/assets/images/etel-madeya-logo-sm.we
           <div class="nfc-field">
             <label>Cardholder: Your EtelID Password</label>
             <input type="password" id="nfc-cardholder-pay-pass" placeholder="Password" autocomplete="current-password">
+          </div>
+          <div class="nfc-field">
+            <label>Cardholder: Your EtelPay wallet PIN</label>
+            <input type="password" id="nfc-cardholder-pay-walletpin" placeholder="PIN" inputmode="numeric" maxlength="6" autocomplete="off">
           </div>
           <button type="button" class="nfc-btn primary" id="nfc-cardholder-pay-submit">Approve Payment</button>
           <span class="nfc-back" data-back="menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>Cancel</span>
@@ -917,6 +925,8 @@ $logo_madeya   = $site_root . '/Etel-Madeya/assets/images/etel-madeya-logo-sm.we
       document.getElementById('nfc-charge-amount-msg').textContent = '';
       document.getElementById('nfc-cardholder-pay-ident').value = '';
       document.getElementById('nfc-cardholder-pay-pass').value = '';
+      document.getElementById('nfc-cardholder-pay-walletpin').value = '';
+      document.getElementById('nfc-charge-pin').value = '';
       document.getElementById('nfc-cardholder-pay-msg').textContent = '';
       showStep('nfc-step-menu');
     });
@@ -932,6 +942,7 @@ $logo_madeya   = $site_root . '/Etel-Madeya/assets/images/etel-madeya-logo-sm.we
       // separate per-action login step anymore.
       var etelpayStages = (stage === 'etelpay_payout' || stage === 'etelpay_cardholder_pay');
       if (etelpayStages) {
+        document.getElementById('nfc-charge-pin-wrap').style.display = (stage === 'etelpay_payout') ? '' : 'none';
         showStep('nfc-step-charge-amount');
       } else {
         startFlow({});
@@ -947,9 +958,16 @@ $logo_madeya   = $site_root . '/Etel-Madeya/assets/images/etel-madeya-logo-sm.we
     if (!amt || amt <= 0) { msg.className = 'nfc-msg error'; msg.textContent = 'Enter an amount greater than zero.'; return; }
     chargeAmount = amt;
     chargeNote = document.getElementById('nfc-charge-note').value.trim();
+    var extra = { amount: chargeAmount, note: chargeNote };
+    if (stage === 'etelpay_payout') {
+      var pinEl = document.getElementById('nfc-charge-pin');
+      if (!pinEl.value) { msg.className = 'nfc-msg error'; msg.textContent = 'Enter your EtelPay wallet PIN.'; return; }
+      extra.payer_pin = pinEl.value;
+      pinEl.value = '';
+    }
     msg.className = 'nfc-msg';
     msg.textContent = '';
-    startFlow({ amount: chargeAmount, note: chargeNote });
+    startFlow(extra);
   });
 
   function startFlow(extra) {
@@ -1268,16 +1286,19 @@ $logo_madeya   = $site_root . '/Etel-Madeya/assets/images/etel-madeya-logo-sm.we
   document.getElementById('nfc-cardholder-pay-submit').addEventListener('click', function () {
     var ident = document.getElementById('nfc-cardholder-pay-ident').value.trim();
     var pass = document.getElementById('nfc-cardholder-pay-pass').value;
+    var walletPin = document.getElementById('nfc-cardholder-pay-walletpin').value;
     var msg = document.getElementById('nfc-cardholder-pay-msg');
     msg.className = 'nfc-msg';
     msg.textContent = '';
     if (!ident || !pass) { msg.className = 'nfc-msg error'; msg.textContent = 'Enter your phone/Etel-ID and password.'; return; }
+    if (!walletPin) { msg.className = 'nfc-msg error'; msg.textContent = 'Enter your EtelPay wallet PIN.'; return; }
 
     this.disabled = true;
     var self = this;
-    post('etelid_nfc_cardholder_pay_confirm', { action_token: actionToken, payer_identifier: ident, payer_password: pass })
+    post('etelid_nfc_cardholder_pay_confirm', { action_token: actionToken, payer_identifier: ident, payer_password: pass, payer_pin: walletPin })
       .then(function (res) {
         self.disabled = false;
+        document.getElementById('nfc-cardholder-pay-walletpin').value = '';
         var doneMsg = document.getElementById('nfc-done-msg');
         if (res.success) {
           doneMsg.className = 'nfc-msg ok';

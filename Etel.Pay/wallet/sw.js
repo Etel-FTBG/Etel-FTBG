@@ -6,7 +6,7 @@
  *   Navigation          → Network-first → offline.html fallback
  */
 
-const CACHE     = 'etelpay-v15';   // bumped so old cache clears on activate (adds the theme files)
+const CACHE     = 'etelpay-v16';   // bumped: PIN prompt + escaping in core.js/api.js, on top of the theme files
 const PRECACHE  = [
   './login',
   './wallet',
