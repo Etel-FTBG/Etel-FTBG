@@ -164,8 +164,8 @@
 <div id="ep-toast"></div>
 
 <script src="js/config.js?v=4.1"></script>
-<script src="js/api.js?v=4.1"></script>
-<script src="js/core.js?v=4.1"></script>
+<script src="js/api.js?v=4.2"></script>
+<script src="js/core.js?v=4.2"></script>
 <script>
 EP_CORE.onReady(function(){
   EP_CORE.initSheets();
@@ -244,7 +244,8 @@ async function doSend(){
 
   const restore = EP_CORE.btnLoading(btn,'ep-spin-w');
   try{
-    const j = await EP_API.send(phone, amount, 'ETB', note);
+    const j = await EP_CORE.withPin(function(pin){ return EP_API.send(phone, amount, 'ETB', note, pin); });
+    if(!j){ restore(); return; }
     if(j.success){
       EP_CORE.closeSheet('sheet-confirm');
       document.getElementById('success-sub').textContent =

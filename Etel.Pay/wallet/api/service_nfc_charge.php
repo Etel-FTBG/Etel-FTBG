@@ -127,6 +127,12 @@ if ($receiver['status'] !== 'active') snc_err('The receiving wallet is not activ
 if (!$payer) snc_err('This card has no EtelPay wallet.', 404);
 if ($payer['status'] !== 'active') snc_err('This wallet is not active.', 403);
 
+// The payer must also give their wallet PIN (EtelID sends it as payer_pin).
+// Wrong PINs are counted on the account and lock it (see ep_pin.php).
+require_once __DIR__ . '/ep_pin.php';
+$pinRes = ep_pin_check($pdo, $payer['id'], isset($body['payer_pin']) ? (string) $body['payer_pin'] : '');
+if (!$pinRes['ok']) snc_err($pinRes['message'], $pinRes['http']);
+
 if ((float) $payer['balance_etb'] < $amount) snc_err('Insufficient balance.', 402);
 
 if (function_exists('random_bytes')) $tx_ref = 'NFC' . strtoupper(bin2hex(random_bytes(6)));

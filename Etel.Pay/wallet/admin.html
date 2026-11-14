@@ -366,8 +366,8 @@
 <div id="ep-toast"></div>
 
 <script src="js/config.js?v=4.1"></script>
-<script src="js/api.js?v=4.1"></script>
-<script src="js/core.js?v=4.1"></script>
+<script src="js/api.js?v=4.2"></script>
+<script src="js/core.js?v=4.2"></script>
 <script>
 // ── Config ────────────────────────────────────────────────────
 const UPD_API = 'api/updater-api.php';
@@ -436,18 +436,18 @@ async function loadTopups(status='processing'){
         <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
           <div>
             <div style="font-weight:700;color:var(--text)">${EP_CORE.esc(r.full_name||r.phone)}</div>
-            <div style="font-size:12px;color:var(--text-3)">${r.phone} · ${(r.method ? r.method.toUpperCase() : 'N/A')}</div>
+            <div style="font-size:12px;color:var(--text-3)">${EP_CORE.esc(r.phone)} · ${EP_CORE.esc(r.method ? r.method.toUpperCase() : 'N/A')}</div>
           </div>
           <div style="text-align:right">
             <div style="font-family:var(--fm);font-size:18px;color:var(--gold)">ETB ${EP_CORE.numFmt(r.amount)}</div>
             <div style="font-size:11px;color:var(--text-3)">${EP_CORE.dateFmt(r.created_at)}</div>
           </div>
         </div>
-        <div style="font-family:var(--fm);font-size:11px;color:var(--text-3);margin-bottom:10px">Ref: <strong style="color:var(--gold)">${r.ref}</strong></div>
+        <div style="font-family:var(--fm);font-size:11px;color:var(--text-3);margin-bottom:10px">Ref: <strong style="color:var(--gold)">${EP_CORE.esc(r.ref)}</strong></div>
         ${r.status==='processing'?`
         <div style="display:flex;gap:8px">
-          <button class="ep-btn ep-btn-gold ep-btn-sm" style="flex:1" onclick="approveTopup('${r.ref}')">✅ Approve & Credit</button>
-          <button class="ep-btn ep-btn-ghost ep-btn-sm" onclick="rejectTopup('${r.ref}')">✕ Reject</button>
+          <button class="ep-btn ep-btn-gold ep-btn-sm" style="flex:1" data-ref="${EP_CORE.esc(r.ref)}" onclick="approveTopup(this.dataset.ref)">✅ Approve & Credit</button>
+          <button class="ep-btn ep-btn-ghost ep-btn-sm" data-ref="${EP_CORE.esc(r.ref)}" onclick="rejectTopup(this.dataset.ref)">✕ Reject</button>
         </div>`:(r.status==='failed'?`<span class="ep-badge" style="color:#f87171">Rejected${r.reject_reason?' - '+EP_CORE.esc(r.reject_reason):''}</span>`:`<span class="ep-badge ep-badge-ok">Completed</span>`)}
       </div>`).join('');
   }catch(e){ document.getElementById('topup-list').innerHTML='<div class="ep-empty">Error loading</div>'; }
@@ -486,7 +486,7 @@ async function loadKYC(status='submitted'){
           </div>
           <div style="font-size:11px;color:var(--text-3)">${EP_CORE.dateFmt(s.submitted_at)}</div>
         </div>
-        <span class="ep-badge" style="background:rgba(212,168,67,.1);color:var(--gold)">${s.status}</span>
+        <span class="ep-badge" style="background:rgba(212,168,67,.1);color:var(--gold)">${EP_CORE.esc(s.status)}</span>
         ${s.status==='submitted'||s.status==='reviewing'?`
         <div style="display:flex;gap:8px;margin-top:10px">
           <button class="ep-btn ep-btn-gold ep-btn-sm" style="flex:1" onclick="reviewKYC(${s.id},'approve')">✅ Approve</button>
@@ -517,14 +517,14 @@ async function loadDisputes(status='open'){
           <div style="font-weight:700">${EP_CORE.esc(d.full_name||d.phone)}</div>
           <div style="font-size:11px;color:var(--text-3)">${EP_CORE.dateFmt(d.created_at)}</div>
         </div>
-        <div style="font-size:12px;color:var(--text-3);margin-bottom:4px">TX: <strong style="color:var(--gold);font-family:var(--fm)">${d.tx_ref}</strong></div>
+        <div style="font-size:12px;color:var(--text-3);margin-bottom:4px">TX: <strong style="color:var(--gold);font-family:var(--fm)">${EP_CORE.esc(d.tx_ref)}</strong></div>
         <div style="font-size:13px;color:var(--text-2);margin-bottom:10px">${EP_CORE.esc(d.reason)}</div>
         ${d.status==='open'?`
         <div style="display:flex;gap:8px">
           <button class="ep-btn ep-btn-ghost ep-btn-sm" style="flex:1;color:var(--ok)" onclick="resolveDispute(${d.id},'refund')">💸 Refund</button>
           <button class="ep-btn ep-btn-ghost ep-btn-sm" style="flex:1" onclick="resolveDispute(${d.id},'resolve')">✅ Resolve</button>
           <button class="ep-btn ep-btn-ghost ep-btn-sm" style="flex:1;color:var(--err)" onclick="resolveDispute(${d.id},'reject')">✕ Reject</button>
-        </div>`:`<span class="ep-badge ep-badge-ok">${d.status}</span>${d.resolution?'<div style="font-size:12px;margin-top:6px;color:var(--text-3)">'+EP_CORE.esc(d.resolution)+'</div>':''}`}
+        </div>`:`<span class="ep-badge ep-badge-ok">${EP_CORE.esc(d.status)}</span>${d.resolution?'<div style="font-size:12px;margin-top:6px;color:var(--text-3)">'+EP_CORE.esc(d.resolution)+'</div>':''}`}
       </div>`).join('');
   }catch(e){ document.getElementById('disputes-list').innerHTML='<div class="ep-empty">Error</div>'; }
 }
@@ -563,7 +563,7 @@ async function loadAnalytics(period='30d'){
         const col=_typeColors[t.type]||'#888';
         html+=`<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--gold-brd)">
           <div style="width:10px;height:10px;border-radius:50%;background:${col};flex-shrink:0"></div>
-          <div style="flex:1;font-size:13px;color:var(--text-2)">${t.type}</div>
+          <div style="flex:1;font-size:13px;color:var(--text-2)">${EP_CORE.esc(t.type)}</div>
           <div style="text-align:right"><div style="color:var(--gold);font-size:13px">ETB ${EP_CORE.numFmt(t.vol)}</div><div style="font-size:11px;color:var(--text-3)">${t.cnt} txs</div></div>
         </div>`;
       });
@@ -616,14 +616,14 @@ function renderUsers(users){
   if(!users.length){ c.innerHTML='<div class="ep-empty">No users found.</div>'; return; }
   c.innerHTML=users.map(u=>`
     <div class="user-row" onclick="openUserDetail(${u.id||u.user_id})">
-      <div class="u-av">${u.avatar_url?`<img src="${u.avatar_url}">`:'👤'}</div>
+      <div class="u-av">${u.avatar_url?`<img src="${EP_CORE.esc(u.avatar_url)}">`:'👤'}</div>
       <div class="u-meta">
         <div class="u-name">${EP_CORE.esc(u.full_name||u.phone||'—')}</div>
         <div class="u-phone">${EP_CORE.esc(u.phone||'')}</div>
       </div>
       <div class="u-right">
         <div class="u-bal">${EP_CORE.numFmt(parseFloat(u.balance_etb||0))} ETB</div>
-        <span class="ep-badge ep-badge-${u.status==='active'?'ok':'err'}" style="margin-top:4px">${u.status||'active'}</span>
+        <span class="ep-badge ep-badge-${u.status==='active'?'ok':'err'}" style="margin-top:4px">${EP_CORE.esc(u.status||'active')}</span>
       </div>
     </div>`).join('');
 }
@@ -672,7 +672,7 @@ function renderTxList(id,txs,canRev){
   if(!txs||!txs.length){c.innerHTML='<div class="ep-empty">No transactions.</div>';return;}
   c.innerHTML=txs.map(tx=>{
     const dir=EP_CORE.txDirection(tx),sign=dir==='in'?'+':'-';
-    const rev=canRev&&tx.status==='completed'?`<button onclick="event.stopPropagation();openReverse('${tx.id||tx.tx_ref}')" style="background:none;border:none;cursor:pointer;color:var(--err);font-size:11px">↩Reverse</button>`:'';
+    const rev=canRev&&tx.status==='completed'?`<button data-tx="${EP_CORE.esc(tx.id||tx.tx_ref)}" onclick="event.stopPropagation();openReverse(this.dataset.tx)" style="background:none;border:none;cursor:pointer;color:var(--err);font-size:11px">↩Reverse</button>`:'';
     return `<div class="ep-tx"><div class="ep-tx-dot ${dir}">${EP_CORE.txIcon(tx)}</div><div class="ep-tx-meta"><div class="ep-tx-who">${EP_CORE.esc(EP_CORE.txLabel(tx))}</div><div class="ep-tx-sub">${EP_CORE.esc((tx.sender_phone||'')+'→'+(tx.receiver_phone||''))} ${rev}</div></div><div class="ep-tx-right"><div class="ep-tx-amt ${dir}">${sign}${EP_CORE.numFmt(tx.amount||0)} ${tx.currency||'ETB'}</div><div class="ep-tx-date">${EP_CORE.dateFmt(tx.created_at)}</div></div></div>`;
   }).join('');
 }
@@ -900,7 +900,7 @@ function renderFileList(){
   const icons={html:'📄',js:'📜',css:'🎨',php:'⚙️',json:'📋',md:'📝',sql:'🗄️',svg:'🖼️',htaccess:'🔒'};
   c.innerHTML=files.map(f=>{
     const ext=f.path.split('.').pop().toLowerCase();
-    return `<div class="upd-file" onclick="openFileInEditor('${f.path.replace(/'/g,"\\'")}')">
+    return `<div class="upd-file" data-path="${EP_CORE.esc(f.path)}" onclick="openFileInEditor(this.dataset.path)">
       <span class="upd-file-icon">${icons[ext]||'📄'}</span>
       <span class="upd-file-name">${EP_CORE.esc(f.path)}</span>
       <span class="upd-file-size">${f.size_kb}KB</span>
@@ -951,8 +951,8 @@ async function loadBackups(){
         <span class="backup-name">${EP_CORE.esc(b.name)}</span>
         <span class="backup-size">${b.size_kb}KB</span>
         <div class="backup-actions">
-          <button class="ep-btn ep-btn-ghost ep-btn-sm" onclick="restoreBackup('${b.name.replace(/'/g,"\\'")}')">Restore</button>
-          <button class="ep-btn ep-btn-ghost ep-btn-sm" style="color:var(--err)" onclick="deleteBackup('${b.name.replace(/'/g,"\\'")}')">Del</button>
+          <button class="ep-btn ep-btn-ghost ep-btn-sm" data-name="${EP_CORE.esc(b.name)}" onclick="restoreBackup(this.dataset.name)">Restore</button>
+          <button class="ep-btn ep-btn-ghost ep-btn-sm" style="color:var(--err)" data-name="${EP_CORE.esc(b.name)}" onclick="deleteBackup(this.dataset.name)">Del</button>
         </div>
       </div>`).join('');
   }catch(e){}

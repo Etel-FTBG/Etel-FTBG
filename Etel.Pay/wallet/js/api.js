@@ -74,16 +74,19 @@ const EP_API = (function() {
     getBalance()           { return call('etel_pay_get_balance'); },
     getHistory(limit=20, offset=0) { return call('etel_pay_get_history', { limit, offset }); },
     getRates()             { return call('etel_pay_get_rates'); },
-    send(receiver, amount, currency='ETB', note='') {
-      return call('etel_pay_send', { receiver, amount, currency, note });
+    send(receiver, amount, currency='ETB', note='', pin='') {
+      return call('etel_pay_send', { receiver, amount, currency, note, pin });
+    },
+    setWalletPin(etelid_pin, new_pin, confirm_pin) {
+      return call('ep_set_wallet_pin', { etelid_pin, new_pin, confirm_pin });
     },
 
     // QR
     qrGenerate(type='static', amount=null, currency='ETB', label='') {
       return call('etel_pay_qr_generate', { type, amount, currency, label });
     },
-    qrProcess(token, amount=null, currency='ETB') {
-      return call('etel_pay_qr_process', { token, amount, currency });
+    qrProcess(token, amount=null, currency='ETB', pin='') {
+      return call('etel_pay_qr_process', { token, amount, currency, pin });
     },
 
     // Profile (portal)

@@ -104,8 +104,8 @@
 </div>
 <div id="ep-toast"></div>
 <script src="js/config.js?v=2.0"></script>
-<script src="js/api.js"></script>
-<script src="js/core.js"></script>
+<script src="js/api.js?v=4.2"></script>
+<script src="js/core.js?v=4.2"></script>
 <script src="js/devpanel.js"></script>
 <script>
 var _link = null;
@@ -136,7 +136,7 @@ function renderLink(l) {
   // Avatar
   var av = document.getElementById('pay-av');
   if (l.recipient && l.recipient.avatar) {
-    av.innerHTML = '<img src="'+l.recipient.avatar+'" alt="">';
+    av.innerHTML = '<img src="'+EP_CORE.esc(l.recipient.avatar)+'" alt="">';
   }
   document.getElementById('pay-name').textContent  = l.recipient ? (l.recipient.name || l.recipient.phone) : '—';
   document.getElementById('pay-phone').textContent = l.recipient ? l.recipient.phone : '';
@@ -175,8 +175,9 @@ async function doPayNow() {
   var btn = document.getElementById('pay-now-btn');
   var restore = EP_CORE.btnLoading(btn);
   try {
-    var j = await EP_API.call('ep_paylink_pay', {code: _code, amount: amount});
+    var j = await EP_CORE.withPin(function(pin){ return EP_API.call('ep_paylink_pay', {code: _code, amount: amount, pin: pin}); });
     restore();
+    if (!j) return;
     if (j.success) {
       document.getElementById('result-title').textContent = 'Payment Sent! ✅';
       document.getElementById('result-msg').textContent =

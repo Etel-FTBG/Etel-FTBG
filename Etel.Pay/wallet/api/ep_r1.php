@@ -322,6 +322,7 @@ case 'etel_pay_get_rates': {
 case 'ep_send':
 case 'etel_pay_send': {
     $sender_uid = ep_auth_id();
+    ep_require_pin($sender_uid, in_str('pin'));
     $receiver   = ep_normalize_phone(in_str('receiver'));
     $amount     = in_float('amount');
     $currency   = in_str('currency') ?: 'ETB';
@@ -416,6 +417,7 @@ case 'etel_pay_send': {
    (or the platform's own release rules fire). */
 case 'ep_escrow_send': {
     $sender_uid = ep_auth_id();
+    ep_require_pin($sender_uid, in_str('pin'));
     $receiver   = ep_normalize_phone(in_str('receiver'));
     $amount     = in_float('amount');
     $note       = in_str('note');
@@ -697,6 +699,9 @@ case 'ep_platform_transfer': {
     $toPhone     = ep_normalize_phone(in_str('to_phone'));
     $amount      = in_float('amount');
     $partner     = in_str('partner') ?: 'partner';
+    // The name is only a label for the records: keep it plain.
+    $partner     = substr(preg_replace('/[^a-z0-9_-]/', '', strtolower($partner)), 0, 40);
+    if ($partner === '') $partner = 'partner';
     $partner_ref = in_str('partner_ref');
     $note        = in_str('note') ?: ($partner . ' transfer');
 
@@ -752,9 +757,11 @@ case 'ep_platform_transfer': {
 
     if ((float)$sender['balance_etb'] < $amount) ep_err('Insufficient balance in from_phone wallet', 402);
 
-    // Rolling 24h cap per partner (across all transfers).
-    $dsum = $pdo->prepare('SELECT COALESCE(SUM(amount),0) FROM ' . EP_TBL_PREFIX . 'ep_platform_transfers WHERE partner = ? AND status = "completed" AND created_at >= (NOW() - INTERVAL 1 DAY)');
-    $dsum->execute(array($partner));
+    // Rolling 24h cap per CREDENTIAL. Every caller of this endpoint proves itself
+    // with the same shared key, so the cap is one bucket for all of them; it
+    // must not depend on the 'partner' name the caller supplies.
+    $dsum = $pdo->prepare('SELECT COALESCE(SUM(amount),0) FROM ' . EP_TBL_PREFIX . 'ep_platform_transfers WHERE status = "completed" AND created_at >= (NOW() - INTERVAL 1 DAY)');
+    $dsum->execute(array());
     $todayTotal = (float)$dsum->fetchColumn();
     if ($todayTotal + $amount > EP_PLATFORM_TRANSFER_DAILY_MAX) {
         ep_err('Partner daily transfer limit reached (ETB ' . EP_PLATFORM_TRANSFER_DAILY_MAX . ' / 24h)', 429);
@@ -870,6 +877,7 @@ case 'etel_pay_qr_generate': {
 case 'ep_qr_process':
 case 'etel_pay_qr_process': {
     $payer_uid = ep_auth_id();
+    ep_require_pin($payer_uid, in_str('pin'));
     $token     = in_str('token');
     $amount    = in_float('amount');
     $currency  = in_str('currency') ?: 'ETB';
