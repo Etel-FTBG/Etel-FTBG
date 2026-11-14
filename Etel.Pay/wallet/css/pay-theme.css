@@ -1,0 +1,217 @@
+/* ============================================================================
+   ኢE PAY - theme layer: light / dark, three text sizes, readable text floors.
+   Loaded LAST on every page (after etel-design-v4.css). Dark stays the existing gold/carbon look;
+   html[data-theme="light"] is the new ivory/gold look. Set by js/pay-theme.js.
+   Only colours, sizes and the two display buttons are touched: no layout or money behaviour.
+   ============================================================================ */
+
+/* ---- display settings button + small panel (both themes) ---- */
+#ep-theme-fab {
+  position: fixed; right: 14px; bottom: calc(var(--nav-h, 66px) + 78px + env(safe-area-inset-bottom, 0px)); z-index: 90;
+  display: flex; flex-direction: column; align-items: flex-end; gap: 10px;
+}
+#ep-theme-btn {
+  width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; padding: 0;
+  background: rgba(16, 8, 0, .86); color: #F2CC6B; border: 1.5px solid rgba(212, 175, 55, .6);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, .38); transition: transform .15s, box-shadow .15s; -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+}
+#ep-theme-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 24px rgba(0, 0, 0, .42); }
+#ep-theme-btn:focus-visible, #ep-theme-pop button:focus-visible { outline: 3px solid #F2CC6B; outline-offset: 2px; }
+#ep-theme-pop {
+  order: -1; min-width: 230px; padding: 12px; border-radius: 16px; display: flex; flex-direction: column; gap: 12px;
+  background: rgba(16, 8, 0, .94); color: #F7EFD9; border: 1.5px solid rgba(212, 175, 55, .5); box-shadow: 0 14px 38px rgba(0, 0, 0, .5);
+  -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
+}
+#ep-theme-pop[hidden] { display: none; }
+#ep-theme-pop .ep-tp-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+#ep-theme-pop .ep-tp-lbl { font-family: var(--g-fm, 'JetBrains Mono', monospace); font-size: 12px; letter-spacing: .4px; color: #F2CC6B; }
+#ep-theme-pop .ep-tp-seg { display: inline-flex; border: 1.5px solid rgba(212, 175, 55, .5); border-radius: 10px; overflow: hidden; }
+#ep-theme-pop .ep-tp-seg button {
+  min-width: 44px; min-height: 36px; padding: 4px 10px; cursor: pointer; border: 0; background: transparent; color: #F7EFD9;
+  font-family: var(--g-fd, 'Syne', sans-serif); font-weight: 800; font-size: 13px; line-height: 1;
+}
+#ep-theme-pop .ep-tp-seg button + button { border-left: 1px solid rgba(212, 175, 55, .35); }
+#ep-theme-pop .ep-tp-seg button[aria-pressed="true"] { background: linear-gradient(135deg, #8A6500, #D4AF37); color: #1A0E00; }
+@media (min-width: 768px) { #ep-theme-fab { right: 22px; bottom: 22px; } }
+
+/* ---- text sizes ---- */
+html[data-textsize="lg"] body { zoom: 1.12; }
+html[data-textsize="xl"] body { zoom: 1.26; }
+html[data-textsize="lg"] #ep-theme-fab { zoom: .893; }
+html[data-textsize="xl"] #ep-theme-fab { zoom: .794; }
+@supports not (zoom: 1) {
+  html[data-textsize="lg"] { font-size: 112.5%; }
+  html[data-textsize="xl"] { font-size: 126%; }
+}
+
+/* ---- readable text floors, both themes (labels were 9-9.5px uppercase monospace) ---- */
+label, .ep-label, .ep-field-label, .ep-section-label, .ep-stat-label { font-size: 12px !important; letter-spacing: .6px !important; }
+.ep-nav-label, .nav-item-label, .nav-label { font-size: 11px !important; letter-spacing: .4px !important; }
+.ep-action-label { font-size: 11.5px !important; letter-spacing: .5px !important; }
+.ep-badge, .status-badge, [class*="-badge"], [class*="-status"], [class*="-chip"] { font-size: 11px !important; letter-spacing: .5px !important; }
+
+/* ============================================================================
+   LIGHT THEME
+   ============================================================================ */
+html[data-theme="light"] {
+  color-scheme: light;
+  --bg-0: transparent; --bg-1: transparent;
+  --bg-2: rgba(255, 255, 255, .90) !important; --bg-3: rgba(255, 252, 243, .94) !important; --bg-4: rgba(250, 244, 226, .96) !important;
+  --surface: rgba(255, 255, 255, .90) !important;
+  --glass: rgba(26, 18, 0, .035); --glass-b: rgba(26, 18, 0, .06); --glass-h: rgba(26, 18, 0, .09); --glass-brd: rgba(26, 18, 0, .12);
+  --t1: #1A1200; --t2: rgba(26, 18, 0, .74); --t3: rgba(26, 18, 0, .58); --t4: rgba(26, 18, 0, .34);
+  --gold: #9A7200; --gold-lt: #8A6500; --gold-pale: #6B4A00; --gold-brd: rgba(176, 130, 20, .30); --gold-brd-b: rgba(176, 130, 20, .55); --gold-bg: rgba(212, 175, 55, .14);
+  --sh: 0 12px 40px rgba(120, 80, 0, .16); --sh-sm: 0 4px 14px rgba(120, 80, 0, .12);
+  --sh-gld: 0 10px 40px rgba(176, 130, 20, .18), 0 2px 10px rgba(120, 80, 0, .10);
+  --g-glass: rgba(255, 255, 255, .92); --g-glass-border: rgba(176, 130, 20, .34);
+  background:
+    radial-gradient(ellipse at 14% 4%, rgba(255, 224, 110, .55) 0%, transparent 46%),
+    radial-gradient(ellipse at 92% 96%, rgba(212, 175, 55, .22) 0%, transparent 46%),
+    linear-gradient(160deg, #FFFDF6 0%, #F8F1DE 55%, #EEE2BF 100%) !important;
+}
+html[data-theme="light"] body { color: #1A1200 !important; }
+html[data-theme="light"] body::before, html[data-theme="light"] body::after {
+  background-image:
+    repeating-linear-gradient(30deg, transparent 0, transparent 24px, rgba(138, 101, 0, .045) 24px, rgba(138, 101, 0, .045) 25px),
+    repeating-linear-gradient(-30deg, transparent 0, transparent 24px, rgba(138, 101, 0, .045) 24px, rgba(138, 101, 0, .045) 25px) !important;
+}
+html[data-theme="light"] ::selection { background: rgba(212, 175, 55, .45); color: #1A1200; }
+
+/* cards, sheets, sidebar, panels */
+html[data-theme="light"] .ep-card, html[data-theme="light"] .ep-card-glow, html[data-theme="light"] .stat-card,
+html[data-theme="light"] .metric-card, html[data-theme="light"] .dashboard-card, html[data-theme="light"] .ep-section,
+html[data-theme="light"] .ep-sheet, html[data-theme="light"] .card, html[data-theme="light"] .glass-card,
+html[data-theme="light"] .modal-content, html[data-theme="light"] .sheet-content, html[data-theme="light"] .ep-surface,
+html[data-theme="light"] [class*="stat-card"], html[data-theme="light"] [class*="metric-card"] {
+  background: rgba(255, 255, 255, .93) !important; border-color: rgba(176, 130, 20, .34) !important; color: #1A1200 !important;
+  box-shadow: 0 8px 28px rgba(120, 80, 0, .13), inset 0 1px 0 rgba(255, 255, 255, .9) !important;
+}
+html[data-theme="light"] .ep-card:hover, html[data-theme="light"] .ep-card-glow:hover, html[data-theme="light"] .stat-card:hover {
+  border-color: rgba(176, 130, 20, .6) !important; box-shadow: 0 14px 38px rgba(120, 80, 0, .18), 0 0 0 1px rgba(176, 130, 20, .25) !important;
+}
+html[data-theme="light"] #ep-sidebar, html[data-theme="light"] .sidebar, html[data-theme="light"] .nav-sidebar {
+  background: rgba(255, 253, 246, .92) !important; border-right: 1px solid rgba(176, 130, 20, .30) !important; color: #1A1200 !important;
+}
+html[data-theme="light"] #ep-sidebar *, html[data-theme="light"] .sidebar * { color: #3A2A00 !important; }
+html[data-theme="light"] #ep-sidebar .active, html[data-theme="light"] #ep-sidebar [class*="active"], html[data-theme="light"] #ep-sidebar .active * { color: #6B4A00 !important; background-color: rgba(212, 175, 55, .20) !important; }
+
+/* the balance card is the hero: rich gold with dark ink */
+html[data-theme="light"] .balance-card {
+  background: linear-gradient(135deg, #F8E7A4 0%, #E6C45A 52%, #CFA02C 100%) !important; border-color: rgba(138, 101, 0, .55) !important; color: #1A0E00 !important;
+  box-shadow: 0 14px 40px rgba(176, 130, 20, .32), inset 0 1px 0 rgba(255, 255, 255, .6) !important;
+}
+html[data-theme="light"] .balance-card *, html[data-theme="light"] .ep-bal-label, html[data-theme="light"] .ep-bal-usd, html[data-theme="light"] .wallet-id { color: #2A1A00 !important; }
+html[data-theme="light"] .ep-bal-amount { background: none !important; -webkit-text-fill-color: #1A0E00 !important; color: #1A0E00 !important; }
+
+/* header bar: light gold with dark ink */
+html[data-theme="light"] .header, html[data-theme="light"] .ep-header, html[data-theme="light"] .topbar, html[data-theme="light"] .navbar,
+html[data-theme="light"] .admin-header, html[data-theme="light"] [class*="page-header"], html[data-theme="light"] [class*="-topbar"] {
+  background: linear-gradient(135deg, #F6E2A0 0%, #E3BE55 50%, #D3A435 100%) !important; border-bottom: 1.5px solid #B8860B !important; color: #1A0E00 !important;
+}
+html[data-theme="light"] .header *, html[data-theme="light"] .admin-header *, html[data-theme="light"] .ep-header *, html[data-theme="light"] .topbar * { color: #1A0E00 !important; }
+
+/* bottom nav */
+html[data-theme="light"] .ep-nav, html[data-theme="light"] .bottom-nav, html[data-theme="light"] [class*="bottom-nav"], html[data-theme="light"] [class*="tab-bar"] {
+  background: rgba(255, 253, 246, .96) !important; border-top: 1.5px solid #C9A227 !important; box-shadow: 0 -8px 26px rgba(120, 80, 0, .12) !important;
+}
+html[data-theme="light"] .ep-nav-btn, html[data-theme="light"] .nav-item { color: rgba(26, 18, 0, .62) !important; }
+html[data-theme="light"] .ep-nav-btn.active, html[data-theme="light"] .nav-item.active, html[data-theme="light"] .bottom-nav .active { color: #7A5500 !important; }
+
+/* action tiles and filter chips */
+html[data-theme="light"] .ep-action { background: rgba(255, 255, 255, .78) !important; border-color: rgba(176, 130, 20, .38) !important; }
+html[data-theme="light"] .ep-action:hover { background: #FFFFFF !important; box-shadow: 0 10px 26px rgba(120, 80, 0, .16) !important; }
+html[data-theme="light"] .ep-action-label { color: #5A3D00 !important; }
+html[data-theme="light"] .category-tab, html[data-theme="light"] .filter-pill, html[data-theme="light"] .quick-action,
+html[data-theme="light"] [class*="cat-tab"], html[data-theme="light"] [class*="filter-chip"], html[data-theme="light"] .ep-pill {
+  background: rgba(255, 255, 255, .8) !important; border-color: rgba(176, 130, 20, .38) !important; color: #5A3D00 !important;
+}
+html[data-theme="light"] .category-tab.active, html[data-theme="light"] .filter-pill.active, html[data-theme="light"] .ep-pill.active, html[data-theme="light"] [class*="cat-tab"].active {
+  background: linear-gradient(135deg, #8A6500, #B8860B, #D4AF37) !important; color: #FFF8E1 !important; border-color: #8A6500 !important;
+}
+
+/* typography and text colours that were hard-coded for dark */
+html[data-theme="light"] h1, html[data-theme="light"] h2, html[data-theme="light"] h3, html[data-theme="light"] h4,
+html[data-theme="light"] .ep-section-title, html[data-theme="light"] .ep-sheet-title, html[data-theme="light"] .auth-title,
+html[data-theme="light"] .page-title, html[data-theme="light"] .section-title, html[data-theme="light"] .card-title,
+html[data-theme="light"] .ep-heading-lg, html[data-theme="light"] .ep-heading-md, html[data-theme="light"] .ep-heading-sm { color: #4A3200 !important; }
+html[data-theme="light"] label, html[data-theme="light"] .ep-label, html[data-theme="light"] .ep-field-label, html[data-theme="light"] .ep-section-label { color: #7A5500 !important; }
+html[data-theme="light"] .text-muted, html[data-theme="light"] .subtitle, html[data-theme="light"] [class*="-sub"], html[data-theme="light"] [class*="-meta"],
+html[data-theme="light"] .ep-tx-date, html[data-theme="light"] .ep-caption, html[data-theme="light"] .ep-field-hint { color: rgba(26, 18, 0, .62) !important; }
+html[data-theme="light"] .stat-value, html[data-theme="light"] .metric-value, html[data-theme="light"] .ep-stat-value,
+html[data-theme="light"] [class*="-value"], html[data-theme="light"] [class*="-count"] { color: #5A3D00 !important; }
+html[data-theme="light"] .ep-tx-who, html[data-theme="light"] .ep-tx-sub { color: #1A1200 !important; }
+html[data-theme="light"] .rate-bar { background: rgba(255, 255, 255, .7); }
+html[data-theme="light"] .rate-val { color: #6B4A00; }
+html[data-theme="light"] .ep-link { color: #7A5500 !important; }
+
+/* inputs */
+html[data-theme="light"] input:not([type=radio]):not([type=checkbox]):not([type=range]), html[data-theme="light"] select,
+html[data-theme="light"] textarea, html[data-theme="light"] .ep-input {
+  background: #FFFFFF !important; border-color: rgba(176, 130, 20, .5) !important; color: #1A1200 !important;
+}
+html[data-theme="light"] input:focus, html[data-theme="light"] select:focus, html[data-theme="light"] textarea:focus, html[data-theme="light"] .ep-input:focus {
+  background: #FFFFFF !important; border-color: #B8860B !important; box-shadow: 0 0 0 3px rgba(212, 175, 55, .3) !important;
+}
+html[data-theme="light"] input::placeholder, html[data-theme="light"] textarea::placeholder { color: rgba(26, 18, 0, .42) !important; }
+html[data-theme="light"] .search-box, html[data-theme="light"] .search-bar, html[data-theme="light"] .ep-search, html[data-theme="light"] [class*="search-wrap"] {
+  background: #FFFFFF !important; border-color: rgba(176, 130, 20, .45) !important;
+}
+html[data-theme="light"] .search-box *, html[data-theme="light"] .search-bar * { color: #1A1200 !important; }
+
+/* buttons: secondary / ghost on light */
+html[data-theme="light"] .ep-btn-ghost, html[data-theme="light"] .btn.btn-secondary {
+  background: rgba(212, 175, 55, .14) !important; border-color: rgba(138, 101, 0, .5) !important; color: #5A3D00 !important;
+}
+html[data-theme="light"] .ep-icon-btn, html[data-theme="light"] .ep-header-back, html[data-theme="light"] .ep-header-action { color: #1A0E00 !important; background: rgba(255, 255, 255, .45) !important; }
+
+/* tables and lists */
+html[data-theme="light"] table, html[data-theme="light"] .ep-tx, html[data-theme="light"] .ep-tx-list { color: #1A1200 !important; }
+html[data-theme="light"] th { background: rgba(212, 175, 55, .20) !important; color: #4A3200 !important; }
+html[data-theme="light"] td, html[data-theme="light"] .ep-tx, html[data-theme="light"] .ep-divider { border-color: rgba(26, 18, 0, .10) !important; }
+html[data-theme="light"] .ep-overlay { background: rgba(60, 40, 0, .45) !important; }
+
+/* badges keep their meaning, darker text for contrast */
+html[data-theme="light"] .ep-badge-ok, html[data-theme="light"] [class*="verified"], html[data-theme="light"] .status-active, html[data-theme="light"] .status-online { background: rgba(16, 185, 129, .16) !important; color: #0A7A55 !important; border-color: rgba(16, 150, 105, .45) !important; }
+html[data-theme="light"] .ep-badge-err { background: rgba(239, 68, 68, .12) !important; color: #B42318 !important; }
+html[data-theme="light"] .ep-badge-warn { background: rgba(245, 158, 11, .16) !important; color: #8A5A00 !important; }
+html[data-theme="light"] .ep-badge-gold { background: rgba(212, 175, 55, .22) !important; color: #6B4A00 !important; }
+
+/* display settings in light */
+html[data-theme="light"] #ep-theme-btn { background: rgba(255, 253, 246, .97); color: #6B4A00; border-color: rgba(138, 101, 0, .65); box-shadow: 0 6px 18px rgba(120, 80, 0, .24); }
+html[data-theme="light"] #ep-theme-pop { background: rgba(255, 253, 246, .98); color: #1A1200; border-color: rgba(138, 101, 0, .5); box-shadow: 0 14px 38px rgba(120, 80, 0, .25); }
+html[data-theme="light"] #ep-theme-pop .ep-tp-lbl { color: #6B4A00 !important; }
+html[data-theme="light"] #ep-theme-pop .ep-tp-seg { border-color: rgba(138, 101, 0, .55); }
+html[data-theme="light"] #ep-theme-pop .ep-tp-seg button { color: #3A2A00; }
+html[data-theme="light"] #ep-theme-pop .ep-tp-seg button + button { border-left-color: rgba(138, 101, 0, .35); }
+html[data-theme="light"] #ep-theme-pop .ep-tp-seg button[aria-pressed="true"] { background: linear-gradient(135deg, #8A6500, #B8860B); color: #FFF8E1; }
+
+/* sign-in page (own card and tokens) */
+html[data-theme="light"] .ep-auth-page {
+  background: radial-gradient(ellipse 900px 700px at 50% -10%, rgba(255, 224, 110, .55), transparent 60%), linear-gradient(160deg, #FFFDF6 0%, #F8F1DE 55%, #EEE2BF 100%);
+}
+html[data-theme="light"] .ep-auth-card { background: linear-gradient(165deg, #FFFFFF 0%, #FBF5E3 100%); border-color: rgba(176, 130, 20, .5); box-shadow: 0 16px 44px rgba(120, 80, 0, .2), 0 4px 14px rgba(120, 80, 0, .12), inset 0 1px 0 #fff; }
+html[data-theme="light"] .ep-medal { filter: drop-shadow(0 12px 30px rgba(120, 80, 0, .35)); }
+html[data-theme="light"] .ep-auth-org { color: #7A5500; }
+html[data-theme="light"] .ep-auth-title { color: #1A1200; }
+html[data-theme="light"] .ep-auth-subtitle, html[data-theme="light"] .ep-etelid-sub { color: #4A3C14; }
+html[data-theme="light"] .ep-trust-item { color: #4A3C14; }
+html[data-theme="light"] .ep-trust-item svg { color: #8A6500; }
+html[data-theme="light"] .ep-auth-tabs { border-bottom-color: rgba(138, 101, 0, .3); }
+html[data-theme="light"] .ep-auth-tab { color: #6B5320; }
+html[data-theme="light"] .ep-auth-tab.active { color: #6B4A00; }
+html[data-theme="light"] .ep-af-label { color: #7A5500 !important; }
+html[data-theme="light"] .ep-af-icon { color: #8A6500; }
+html[data-theme="light"] .ep-af-input { background: #FFFFFF; border-color: rgba(138, 101, 0, .5); color: #1A1200; }
+html[data-theme="light"] .ep-af-input:focus { background: #FFFFFF; border-color: #B8860B; }
+html[data-theme="light"] .ep-af-input::placeholder { color: rgba(26, 18, 0, .45); }
+html[data-theme="light"] .ep-pw-toggle { color: #6B4A00; }
+html[data-theme="light"] .ep-auth-ghost { background: rgba(212, 175, 55, .12); border-color: rgba(138, 101, 0, .5); color: #5A3D00; }
+html[data-theme="light"] .ep-auth-foot { border-top-color: rgba(138, 101, 0, .22); color: #5A4A20; }
+html[data-theme="light"] .ep-lang-btn { background: rgba(255, 255, 255, .8); color: #5A3D00; border-color: rgba(138, 101, 0, .5); }
+html[data-theme="light"] .ep-notice-err { color: #B42318; background: rgba(239, 68, 68, .1); }
+html[data-theme="light"] .ep-notice-ok { color: #0A6B47; background: rgba(34, 197, 94, .12); }
+html[data-theme="light"] .greeting-text h2, html[data-theme="light"] .greeting h2 { color: #3A2A00 !important; }
+
+/* scrollbars */
+html[data-theme="light"] * { scrollbar-color: rgba(138, 101, 0, .45) transparent !important; }
+html[data-theme="light"] *::-webkit-scrollbar-thumb { background: rgba(138, 101, 0, .45); }
