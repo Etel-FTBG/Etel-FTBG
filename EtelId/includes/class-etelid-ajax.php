@@ -1,10 +1,10 @@
 <?php
 /**
- * Etel-ID Premium — AJAX Handlers
+ * Etel-ID Premium - AJAX Handlers
  *
  * @package    Etel-ID Premium
  * @version    2.0.0
- * @author     Etel Group · ኢትኤል ቡድን
+ * @author     Etel Group |  
  * @link       https://etelgroup.com
  * @since      2.0.0
  *
@@ -31,7 +31,7 @@ class EtelID_Ajax {
         add_action( 'wp_ajax_etelid_admin_pregenerate_qr', array( __CLASS__, 'admin_pregenerate_qr' ) );
     }
 
-    /* ── One-time QR cache backfill ───────────────────────────
+    /* -- One-time QR cache backfill ---------------------------
      * Walks existing members in small batches (avoids PHP execution
      * time limits on shared hosting for accounts with many members) and
      * calls EtelID_QR::img() for each - that call already does the
@@ -98,6 +98,12 @@ class EtelID_Ajax {
         foreach ( $fields as $f ) {
             $data[ $f ] = isset( $_POST[ $f ] ) ? sanitize_text_field( wp_unslash( $_POST[ $f ] ) ) : '';
         }
+        $data['role']            = 'Member';
+        $data['tier']            = 'standard';
+        $data['employee_number'] = '';
+        $data['notes']           = '';
+        $eid_co = EtelID_Generator::companies();
+        if ( ! isset( $eid_co[ $data['primary_company_slug'] ] ) ) $data['primary_company_slug'] = '';
         if ( empty( $data['full_name'] ) || empty( $data['phone'] ) || empty( $data['dob'] ) ) {
             wp_send_json_error( array( 'message' => 'Full name, phone, and date of birth are required.' ) );
         }

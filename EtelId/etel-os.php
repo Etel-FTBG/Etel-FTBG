@@ -1,7 +1,7 @@
 <?php
 // ============================================================
-// ETEL OS Connector â€” Etel-ID Premium v3.9.0
-// WordPress Plugin â€” Central Identity System
+// ETEL OS Connector - Etel-ID Premium v3.9.0
+// WordPress Plugin - Central Identity System
 //
 // Deploy as: wp-content/plugins/etel-id-v3/etel-os.php
 // Access at: https://yourdomain.com/wp-content/plugins/etel-id-v3/etel-os.php
@@ -13,14 +13,14 @@ header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type, X-Etel-Key');
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') { http_response_code(200); exit; }
 
-// REDACTED for the git repo — set ETEL_API_KEY in the server environment
+// REDACTED for the git repo - set ETEL_API_KEY in the server environment
 // (must match API_KEY in etel-api.php on this same deploy).
 define('ETEL_API_KEY', getenv('ETEL_API_KEY') ?: 'CHANGE_ME');
 define('PROJECT_ID',      'etel-id');
 define('PROJECT_VERSION', '3.9.0');
 
 // Bootstrap WordPress to use $wpdb and WP functions
-$wp_root = dirname(__FILE__, 5); // plugins/etel-id-v3/etel-os.php â†’ wp-root
+$wp_root = dirname(__FILE__, 5); // plugins/etel-id-v3/etel-os.php - wp-root
 if (file_exists($wp_root . '/wp-load.php')) {
     define('SHORTINIT', true); // load WP core but skip themes/plugins
     require_once $wp_root . '/wp-load.php';
@@ -68,7 +68,7 @@ $body   = json_decode(file_get_contents('php://input'), true) ?? [];
 
 switch ($action) {
 
-    // â”€â”€ Public â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // - Public -
     case 'status':
         ok([
             'project' => 'Etel-ID',
@@ -78,7 +78,7 @@ switch ($action) {
             'time'    => date('Y-m-d H:i:s'),
         ]);
 
-    // â”€â”€ Stats â€” dashboard card â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // - Stats - dashboard card -
     case 'stats':
         auth();
         ok([
@@ -88,7 +88,7 @@ switch ($action) {
             'ids_issued'      => (int)$wpdb->get_var("SELECT COUNT(*) FROM {$pfx}etelid_members WHERE etel_id IS NOT NULL"),
         ]);
 
-    // â”€â”€ Members list â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // - Members list -
     case 'get_members':
         auth();
         $limit  = (int)($_GET['limit'] ?? 20);
@@ -102,7 +102,7 @@ switch ($action) {
         $sql .= " ORDER BY created_at DESC LIMIT " . $limit;
         ok($wpdb->get_results($sql, ARRAY_A));
 
-    // â”€â”€ Single member by FIN or Etel-ID â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // - Single member by FIN or Etel-ID -
     case 'get_member':
         auth();
         $fin    = $body['fin']     ?? $_GET['fin']     ?? '';
@@ -124,88 +124,11 @@ switch ($action) {
         ), ARRAY_A);
         ok($row);
 
-    // â”€â”€ Login â€” cross-project auth entry point â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // - Login - cross-project auth entry point -
     case 'login':
-        $phone    = preg_replace('/\s+/', '', $body['phone'] ?? '');
-        $password = $body['password'] ?? '';
-        $project  = $body['project']  ?? 'api';
-        if (!$phone || !$password) err('phone and password required');
+        err('This sign-in endpoint is retired. Use EtelID SSO.', 410);
 
-        $ip = $_SERVER['REMOTE_ADDR'] ?? '';
-        // HARDENING: this was the one login path in the whole EtelID
-        // system with ZERO rate limiting - the WordPress portal login,
-        // the Service API's /service/authenticate, and even this file's
-        // own sibling etel-api.php all throttle by IP and by account.
-        // Anyone could brute-force any member's password through this
-        // endpoint with no throttling at all. Same two-tier shield as
-        // etel-api.php: a looser per-IP cap, then a tighter per-account
-        // cap once the member is found.
-        if (os_rate_limited($wpdb, $pfx, 'actor_ip', $ip, 30, 60)) {
-            err('Too many attempts. Try again in a minute.', 429);
-        }
-
-        $member = $wpdb->get_row($wpdb->prepare(
-            "SELECT * FROM {$pfx}etelid_members WHERE phone=%s LIMIT 1", $phone
-        ), ARRAY_A);
-
-        if (!$member) err('No account found with this phone number', 404);
-
-        if (os_rate_limited($wpdb, $pfx, 'member_id', $member['id'], 8, 900)) {
-            err('Too many attempts for this account. Please wait a few minutes, or reset your password.', 429);
-        }
-
-        if ($member['status'] === 'suspended') err('Account suspended. Contact support.', 403);
-        if ($member['status'] === 'revoked')   err('Account revoked.', 403);
-        if (empty($member['pin_hash']))        err('No password set. Reset your password.', 400);
-
-        // Verify bcrypt or legacy SHA-256
-        $valid = false;
-        if (function_exists('password_verify')) {
-            $valid = password_verify($password, $member['pin_hash']);
-            if (!$valid && strlen($member['pin_hash']) === 64) {
-                $valid = hash_equals($member['pin_hash'], hash('sha256', 'etelid_v2_' . $password . '_salt_9x'));
-            }
-        } else {
-            $valid = hash_equals($member['pin_hash'], hash('sha256', 'etelid_v2_' . $password . '_salt_9x'));
-        }
-
-        if (!$valid) {
-            $wpdb->insert("{$pfx}etelid_log", [
-                'member_id' => $member['id'], 'etel_id' => $member['etel_id'], 'actor_ip' => $ip,
-                'event' => 'login_failed', 'detail' => "Cross-project login failed from: $project",
-            ]);
-            err('Incorrect password', 401);
-        }
-
-        // Create session token. HARDENING: this used to store the raw
-        // token directly in the `token` column - the exact plaintext-
-        // session vulnerability class-etelid-auth.php::create_session()
-        // was deliberately hardened against (a DB dump/backup leak would
-        // otherwise hand over every valid session with no further
-        // authentication needed). Store a SHA-256 hash instead, same as
-        // the WordPress portal's own session creation, and keep the raw
-        // token only in the response handed to the caller.
-        $token = bin2hex(random_bytes(32));
-        $wpdb->insert("{$pfx}etelid_sessions", [
-            'member_id'  => $member['id'],
-            'token'      => hash('sha256', $token),
-            'ip'         => $_SERVER['REMOTE_ADDR'] ?? '',
-            'ua'         => $_SERVER['HTTP_USER_AGENT'] ?? '',
-            'expires_at' => date('Y-m-d H:i:s', strtotime('+30 days')),
-        ]);
-        $wpdb->insert("{$pfx}etelid_log", [
-            'member_id' => $member['id'], 'etel_id' => $member['etel_id'],
-            'event' => 'login', 'detail' => "Cross-project login from: $project",
-        ]);
-
-        unset($member['pin_hash'], $member['password']);
-        // Attach company links
-        $member['companies'] = $wpdb->get_results($wpdb->prepare(
-            "SELECT company_slug, company_name, role_at AS role FROM {$pfx}etelid_companies WHERE member_id=%d", $member['id']
-        ), ARRAY_A);
-        ok(['member' => $member, 'token' => $token, 'expires_in' => 2592000]);
-
-    // â”€â”€ Verify session token (called by other projects) â”€â”€â”€â”€â”€â”€â”€
+    // - Verify session token (called by other projects) -
     case 'verify_token':
         $token = $body['token'] ?? $_GET['token'] ?? $_SERVER['HTTP_X_ETEL_TOKEN'] ?? '';
         if (!$token) err('token required');
@@ -238,13 +161,13 @@ switch ($action) {
             'companies' => $companies,
         ]]);
 
-    // â”€â”€ Logout â€” invalidate token â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // - Logout - invalidate token -
     case 'logout':
         $token = $body['token'] ?? $_SERVER['HTTP_X_ETEL_TOKEN'] ?? '';
         if ($token) $wpdb->delete("{$pfx}etelid_sessions", ['token' => hash('sha256', $token)]);
         ok(['logged_out' => true]);
 
-    // â”€â”€ Verify QR / FIN (for cross-project auth) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // - Verify QR / FIN (for cross-project auth) -
     case 'verify':
         auth();
         $fin  = $body['fin']  ?? $_GET['fin']  ?? '';
@@ -263,7 +186,7 @@ switch ($action) {
         if ($member['status'] !== 'active') err('ID is ' . $member['status'], 403);
         ok(['valid' => true, 'member' => $member]);
 
-    // â”€â”€ Activity log â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // - Activity log -
     case 'get_log':
         auth();
         $limit = (int)($_GET['limit'] ?? 30);
@@ -272,7 +195,7 @@ switch ($action) {
             LEFT JOIN {$pfx}etelid_members m ON m.id = l.member_id
             ORDER BY l.created_at DESC LIMIT {$limit}", ARRAY_A));
 
-    // â”€â”€ Update member status â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // - Update member status -
     case 'set_status':
         auth();
         $id     = (int)($body['member_id'] ?? 0);

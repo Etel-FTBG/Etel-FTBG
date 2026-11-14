@@ -2174,7 +2174,6 @@ function updApply() {
   var _eidCookie = document.cookie.split(';').map(function(c){return c.trim();})
     .find(function(c){return c.startsWith('etelid_session=');});
   if(_eidCookie) fd.append('eid_token', decodeURIComponent(_eidCookie.split('=').slice(1).join('=')));
-  fd.append('updater_secret', '<?php echo esc_js(defined("ETELID_UPDATER_SECRET") ? ETELID_UPDATER_SECRET : ""); ?>');
 
   fetch(_updAjax,{method:'POST',body:fd})
     .then(function(r){return r.json();})
