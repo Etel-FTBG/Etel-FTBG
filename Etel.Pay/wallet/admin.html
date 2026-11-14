@@ -263,6 +263,7 @@
         <div style="display:flex;gap:8px">
           <button class="ep-btn ep-btn-ghost ep-btn-sm" onclick="loadTopups('processing')" id="tu-tab-processing" style="background:rgba(212,168,67,.1)">⏳ Pending</button>
           <button class="ep-btn ep-btn-ghost ep-btn-sm" onclick="loadTopups('completed')" id="tu-tab-completed">✅ Done</button>
+          <button class="ep-btn ep-btn-ghost ep-btn-sm" onclick="loadTopups('failed')" id="tu-tab-failed">✕ Rejected</button>
         </div>
       </div>
       <div id="topup-list"><div class="ep-empty"><div class="ep-dots"><span></span><span></span><span></span></div></div></div>
@@ -425,7 +426,7 @@ function renderStats(d){
 // ══ TOP-UPS ═══════════════════════════════════════════════════
 async function loadTopups(status='processing'){
   document.getElementById('topup-list').innerHTML='<div class="ep-empty"><div class="ep-dots"><span></span><span></span><span></span></div></div>';
-  ['processing','completed'].forEach(s=>{ const el=document.getElementById('tu-tab-'+s); if(el) el.style.background=s===status?'rgba(212,168,67,.1)':''; });
+  ['processing','completed','failed'].forEach(s=>{ const el=document.getElementById('tu-tab-'+s); if(el) el.style.background=s===status?'rgba(212,168,67,.1)':''; });
   try{
     const j=await EP_API.call('ep_admin_topup_list',{status});
     const reqs=j.success?(j.data.requests||[]):[];
@@ -447,7 +448,7 @@ async function loadTopups(status='processing'){
         <div style="display:flex;gap:8px">
           <button class="ep-btn ep-btn-gold ep-btn-sm" style="flex:1" onclick="approveTopup('${r.ref}')">✅ Approve & Credit</button>
           <button class="ep-btn ep-btn-ghost ep-btn-sm" onclick="rejectTopup('${r.ref}')">✕ Reject</button>
-        </div>`:`<span class="ep-badge ep-badge-ok">Completed</span>`}
+        </div>`:(r.status==='failed'?`<span class="ep-badge" style="color:#f87171">Rejected${r.reject_reason?' - '+EP_CORE.esc(r.reject_reason):''}</span>`:`<span class="ep-badge ep-badge-ok">Completed</span>`)}
       </div>`).join('');
   }catch(e){ document.getElementById('topup-list').innerHTML='<div class="ep-empty">Error loading</div>'; }
 }
@@ -460,10 +461,13 @@ async function approveTopup(ref){
   }catch(e){ EP_CORE.toast('Error','err'); }
 }
 async function rejectTopup(ref){
+  const reason = prompt('Reject top-up '+ref+'? No money is credited.\nReason shown to the user:','Payment not received');
+  if(reason===null) return;
   try{
-    const j=await EP_API.call('ep_admin_topup_approve',{ref,action:'reject'});
-    EP_CORE.toast('Rejected','ok'); loadTopups('processing');
-  }catch(e){}
+    const j=await EP_API.call('ep_admin_topup_reject',{ref,reason:reason.trim()});
+    if(j && j.success){ EP_CORE.toast('Rejected - the user will see the reason','ok'); loadTopups('processing'); }
+    else EP_CORE.toast((j && j.data && j.data.message ? j.data.message : '')||'Failed','err');
+  }catch(e){ EP_CORE.toast('Error','err'); }
 }
 
 // ══ KYC ═══════════════════════════════════════════════════════
