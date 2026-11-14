@@ -1,0 +1,663 @@
+diff --git a/EtelId/etel-api.php b/EtelId/etel-api.php
+index 3f18e56..20d07da 100644
+--- a/EtelId/etel-api.php
++++ b/EtelId/etel-api.php
+@@ -1,10 +1,10 @@
+ <?php
+ // ============================================================
+-// ETEL ID — Standalone API Gateway v1.0
++// ETEL ID - Standalone API Gateway v1.0
+ // Place at: public_html/EtelId/etel-api.php
+ // Access:   https://ethelmarket.com/EtelId/etel-api.php
+ //
+-// Connects directly to MySQL — no WordPress required.
++// Connects directly to MySQL - no WordPress required.
+ // Handles login, verify_token, logout from other Etel projects.
+ // ============================================================
+ 
+@@ -14,8 +14,8 @@ header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
+ header('Access-Control-Allow-Headers: Content-Type, X-Etel-Key, X-Etel-Token');
+ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') { http_response_code(200); exit; }
+ 
+-// ── Database config (matches wp-config.php) ───────────────────
+-// REDACTED for the git repo — the real values live only on the server,
++// - Database config (matches wp-config.php) -
++// REDACTED for the git repo - the real values live only on the server,
+ // set as environment variables (or edit these getenv() fallbacks
+ // locally on the box, never commit real credentials here again).
+ define('DB_HOST',   getenv('ETELID_DB_HOST') ?: 'localhost');
+@@ -24,11 +24,11 @@ define('DB_USER',   getenv('ETELID_DB_USER') ?: 'CHANGE_ME');
+ define('DB_PASS',   getenv('ETELID_DB_PASS') ?: 'CHANGE_ME');
+ define('DB_PREFIX', 'Etelid_');
+ 
+-// ── API key — must match ETELID_KEY in EtelAi/api/etel-os.php ─
+-// REDACTED for the git repo — set ETEL_API_KEY in the server environment.
++// - API key - must match ETELID_KEY in EtelAi/api/etel-os.php -
++// REDACTED for the git repo - set ETEL_API_KEY in the server environment.
+ define('API_KEY', getenv('ETEL_API_KEY') ?: 'CHANGE_ME');
+ 
+-// ── Helpers ───────────────────────────────────────────────────
++// - Helpers -
+ function ok($d)            { echo json_encode(['ok' => true,  'data' => $d]); exit; }
+ function err($m, $c = 400) { http_response_code($c); echo json_encode(['ok' => false, 'error' => $m]); exit; }
+ 
+@@ -111,102 +111,21 @@ function rate_limited(PDO $pdo, $column, $value, $max, $windowSeconds) {
+     return (int)$stmt->fetchColumn() >= $max;
+ }
+ 
+-// ── Route ─────────────────────────────────────────────────────
++// - Route -
+ $action = $_GET['action'] ?? 'status';
+ $body   = json_decode(file_get_contents('php://input'), true) ?? [];
+ 
+ switch ($action) {
+ 
+-    // ── Status ─────────────────────────────────────────────────
++    // - Status -
+     case 'status':
+         ok(['project' => 'Etel-ID', 'status' => 'online', 'time' => date('Y-m-d H:i:s')]);
+ 
+-    // ── Login ──────────────────────────────────────────────────
++    // - Login -
+     case 'login':
+-        $phone    = preg_replace('/\s+/', '', $body['phone'] ?? '');
+-        $password = $body['password'] ?? '';
+-        $project  = $body['project']  ?? 'api';
++        err('This sign-in endpoint is retired. Use EtelID SSO.', 410);
+ 
+-        if (!$phone || !$password) err('phone and password required');
+-
+-        $pdo = db();
+-        $ip  = client_ip();
+-
+-        // Mirror the Service API's brute-force limits (30/min per IP,
+-        // 8 per 15 min per account) since this gateway shares the same
+-        // members/sessions tables and is just as reachable.
+-        if (rate_limited($pdo, 'actor_ip', $ip, 30, 60)) {
+-            err('Too many attempts. Try again in a minute.', 429);
+-        }
+-
+-        $stmt = $pdo->prepare("SELECT * FROM " . pfx('members') . " WHERE phone = ? LIMIT 1");
+-        $stmt->execute([$phone]);
+-        $member = $stmt->fetch();
+-
+-        if (!$member)                          err('No account found with this phone number', 404);
+-
+-        if (rate_limited($pdo, 'member_id', $member['id'], 8, 900)) {
+-            err('Too many attempts for this account. Please wait a few minutes, or reset your password.', 429);
+-        }
+-
+-        if ($member['status'] === 'suspended') err('Account suspended. Contact support.', 403);
+-        if ($member['status'] === 'revoked')   err('Account revoked.', 403);
+-        if (empty($member['pin_hash']))        err('No password set. Reset your password.', 400);
+-
+-        // Verify bcrypt or legacy SHA-256
+-        $valid = false;
+-        if (function_exists('password_verify')) {
+-            $valid = password_verify($password, $member['pin_hash']);
+-        }
+-        if (!$valid && strlen($member['pin_hash']) === 64) {
+-            $valid = hash_equals($member['pin_hash'], hash('sha256', 'etelid_v2_' . $password . '_salt_9x'));
+-        }
+-
+-        if (!$valid) {
+-            $pdo->prepare("INSERT INTO " . pfx('log') . " (member_id, etel_id, actor_ip, event, detail) VALUES (?,?,?,?,?)")
+-                ->execute([$member['id'], $member['etel_id'], $ip, 'login_failed', "Failed login from: $project"]);
+-            err('Incorrect password', 401);
+-        }
+-
+-        // Limited (Ride-only) account from the simplified Quick Register:
+-        // only the Ride project may sign it in. Checked after the password is
+-        // verified so it never reveals account state to a stranger.
+-        if (!empty($member['profile_limited']) && strtolower($project) !== 'ride') {
+-            $pdo->prepare("INSERT INTO " . pfx('log') . " (member_id, etel_id, actor_ip, event, detail) VALUES (?,?,?,?,?)")
+-                ->execute([$member['id'], $member['etel_id'], $ip, 'limited_blocked', "Limited account refused by: $project"]);
+-            err('Your Etel-ID is limited to Ride. Add your profile photo and both sides of your Fayda ID in the EtelID portal to unlock all Etel services.', 403);
+-        }
+-
+-        // Create session token. HARDENING: this used to store the raw
+-        // token directly in the `token` column - the exact plaintext-
+-        // session vulnerability class-etelid-auth.php::create_session()
+-        // was deliberately hardened against (a DB dump/backup leak would
+-        // otherwise hand over every valid session with no further
+-        // authentication needed). Store a SHA-256 hash instead, same as
+-        // the WordPress portal's own session creation, and keep the raw
+-        // token only in the response handed to the caller.
+-        $token = bin2hex(random_bytes(32));
+-        $pdo->prepare("INSERT INTO " . pfx('sessions') . " (member_id, token, ip, ua, expires_at) VALUES (?,?,?,?,?)")
+-            ->execute([
+-                $member['id'], hash('sha256', $token),
+-                $_SERVER['REMOTE_ADDR'] ?? '',
+-                $_SERVER['HTTP_USER_AGENT'] ?? '',
+-                date('Y-m-d H:i:s', strtotime('+30 days')),
+-            ]);
+-        $pdo->prepare("INSERT INTO " . pfx('log') . " (member_id, etel_id, event, detail) VALUES (?,?,?,?)")
+-            ->execute([$member['id'], $member['etel_id'], 'login', "Cross-project login from: $project"]);
+-
+-        unset($member['pin_hash'], $member['password']);
+-
+-        ensure_company_link($pdo, $member['id'], $project);
+-
+-        $stmt2 = $pdo->prepare("SELECT company_slug, company_name, role_at AS role FROM " . pfx('companies') . " WHERE member_id = ?");
+-        $stmt2->execute([$member['id']]);
+-        $member['companies'] = $stmt2->fetchAll();
+-
+-        ok(['member' => $member, 'token' => $token, 'expires_in' => 2592000]);
+-
+-    // ── Verify token ───────────────────────────────────────────
++    // - Verify token -
+     case 'verify_token':
+         $token = $body['token'] ?? $_GET['token'] ?? $_SERVER['HTTP_X_ETEL_TOKEN'] ?? '';
+         if (!$token) err('token required');
+@@ -256,7 +175,7 @@ switch ($action) {
+             'companies' => $stmt3->fetchAll(),
+         ]]);
+ 
+-    // ── Logout ─────────────────────────────────────────────────
++    // - Logout -
+     case 'logout':
+         $token = $body['token'] ?? $_SERVER['HTTP_X_ETEL_TOKEN'] ?? '';
+         if ($token) {
+@@ -265,7 +184,7 @@ switch ($action) {
+         }
+         ok(['logged_out' => true]);
+ 
+-    // ── Stats (authenticated) ───────────────────────────────────
++    // - Stats (authenticated) -
+     case 'stats':
+         auth();
+         $pdo = db();
+diff --git a/EtelId/etel-os.php b/EtelId/etel-os.php
+index 9faf651..e93db56 100644
+--- a/EtelId/etel-os.php
++++ b/EtelId/etel-os.php
+@@ -1,7 +1,7 @@
+ <?php
+ // ============================================================
+-// ETEL OS Connector â€” Etel-ID Premium v3.9.0
+-// WordPress Plugin â€” Central Identity System
++// ETEL OS Connector - Etel-ID Premium v3.9.0
++// WordPress Plugin - Central Identity System
+ //
+ // Deploy as: wp-content/plugins/etel-id-v3/etel-os.php
+ // Access at: https://yourdomain.com/wp-content/plugins/etel-id-v3/etel-os.php
+@@ -13,14 +13,14 @@ header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
+ header('Access-Control-Allow-Headers: Content-Type, X-Etel-Key');
+ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') { http_response_code(200); exit; }
+ 
+-// REDACTED for the git repo — set ETEL_API_KEY in the server environment
++// REDACTED for the git repo - set ETEL_API_KEY in the server environment
+ // (must match API_KEY in etel-api.php on this same deploy).
+ define('ETEL_API_KEY', getenv('ETEL_API_KEY') ?: 'CHANGE_ME');
+ define('PROJECT_ID',      'etel-id');
+ define('PROJECT_VERSION', '3.9.0');
+ 
+ // Bootstrap WordPress to use $wpdb and WP functions
+-$wp_root = dirname(__FILE__, 5); // plugins/etel-id-v3/etel-os.php â†’ wp-root
++$wp_root = dirname(__FILE__, 5); // plugins/etel-id-v3/etel-os.php - wp-root
+ if (file_exists($wp_root . '/wp-load.php')) {
+     define('SHORTINIT', true); // load WP core but skip themes/plugins
+     require_once $wp_root . '/wp-load.php';
+@@ -68,7 +68,7 @@ $body   = json_decode(file_get_contents('php://input'), true) ?? [];
+ 
+ switch ($action) {
+ 
+-    // â”€â”€ Public â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
++    // - Public -
+     case 'status':
+         ok([
+             'project' => 'Etel-ID',
+@@ -78,7 +78,7 @@ switch ($action) {
+             'time'    => date('Y-m-d H:i:s'),
+         ]);
+ 
+-    // â”€â”€ Stats â€” dashboard card â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
++    // - Stats - dashboard card -
+     case 'stats':
+         auth();
+         ok([
+@@ -88,7 +88,7 @@ switch ($action) {
+             'ids_issued'      => (int)$wpdb->get_var("SELECT COUNT(*) FROM {$pfx}etelid_members WHERE etel_id IS NOT NULL"),
+         ]);
+ 
+-    // â”€â”€ Members list â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
++    // - Members list -
+     case 'get_members':
+         auth();
+         $limit  = (int)($_GET['limit'] ?? 20);
+@@ -102,7 +102,7 @@ switch ($action) {
+         $sql .= " ORDER BY created_at DESC LIMIT " . $limit;
+         ok($wpdb->get_results($sql, ARRAY_A));
+ 
+-    // â”€â”€ Single member by FIN or Etel-ID â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
++    // - Single member by FIN or Etel-ID -
+     case 'get_member':
+         auth();
+         $fin    = $body['fin']     ?? $_GET['fin']     ?? '';
+@@ -124,88 +124,11 @@ switch ($action) {
+         ), ARRAY_A);
+         ok($row);
+ 
+-    // â”€â”€ Login â€” cross-project auth entry point â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
++    // - Login - cross-project auth entry point -
+     case 'login':
+-        $phone    = preg_replace('/\s+/', '', $body['phone'] ?? '');
+-        $password = $body['password'] ?? '';
+-        $project  = $body['project']  ?? 'api';
+-        if (!$phone || !$password) err('phone and password required');
++        err('This sign-in endpoint is retired. Use EtelID SSO.', 410);
+ 
+-        $ip = $_SERVER['REMOTE_ADDR'] ?? '';
+-        // HARDENING: this was the one login path in the whole EtelID
+-        // system with ZERO rate limiting - the WordPress portal login,
+-        // the Service API's /service/authenticate, and even this file's
+-        // own sibling etel-api.php all throttle by IP and by account.
+-        // Anyone could brute-force any member's password through this
+-        // endpoint with no throttling at all. Same two-tier shield as
+-        // etel-api.php: a looser per-IP cap, then a tighter per-account
+-        // cap once the member is found.
+-        if (os_rate_limited($wpdb, $pfx, 'actor_ip', $ip, 30, 60)) {
+-            err('Too many attempts. Try again in a minute.', 429);
+-        }
+-
+-        $member = $wpdb->get_row($wpdb->prepare(
+-            "SELECT * FROM {$pfx}etelid_members WHERE phone=%s LIMIT 1", $phone
+-        ), ARRAY_A);
+-
+-        if (!$member) err('No account found with this phone number', 404);
+-
+-        if (os_rate_limited($wpdb, $pfx, 'member_id', $member['id'], 8, 900)) {
+-            err('Too many attempts for this account. Please wait a few minutes, or reset your password.', 429);
+-        }
+-
+-        if ($member['status'] === 'suspended') err('Account suspended. Contact support.', 403);
+-        if ($member['status'] === 'revoked')   err('Account revoked.', 403);
+-        if (empty($member['pin_hash']))        err('No password set. Reset your password.', 400);
+-
+-        // Verify bcrypt or legacy SHA-256
+-        $valid = false;
+-        if (function_exists('password_verify')) {
+-            $valid = password_verify($password, $member['pin_hash']);
+-            if (!$valid && strlen($member['pin_hash']) === 64) {
+-                $valid = hash_equals($member['pin_hash'], hash('sha256', 'etelid_v2_' . $password . '_salt_9x'));
+-            }
+-        } else {
+-            $valid = hash_equals($member['pin_hash'], hash('sha256', 'etelid_v2_' . $password . '_salt_9x'));
+-        }
+-
+-        if (!$valid) {
+-            $wpdb->insert("{$pfx}etelid_log", [
+-                'member_id' => $member['id'], 'etel_id' => $member['etel_id'], 'actor_ip' => $ip,
+-                'event' => 'login_failed', 'detail' => "Cross-project login failed from: $project",
+-            ]);
+-            err('Incorrect password', 401);
+-        }
+-
+-        // Create session token. HARDENING: this used to store the raw
+-        // token directly in the `token` column - the exact plaintext-
+-        // session vulnerability class-etelid-auth.php::create_session()
+-        // was deliberately hardened against (a DB dump/backup leak would
+-        // otherwise hand over every valid session with no further
+-        // authentication needed). Store a SHA-256 hash instead, same as
+-        // the WordPress portal's own session creation, and keep the raw
+-        // token only in the response handed to the caller.
+-        $token = bin2hex(random_bytes(32));
+-        $wpdb->insert("{$pfx}etelid_sessions", [
+-            'member_id'  => $member['id'],
+-            'token'      => hash('sha256', $token),
+-            'ip'         => $_SERVER['REMOTE_ADDR'] ?? '',
+-            'ua'         => $_SERVER['HTTP_USER_AGENT'] ?? '',
+-            'expires_at' => date('Y-m-d H:i:s', strtotime('+30 days')),
+-        ]);
+-        $wpdb->insert("{$pfx}etelid_log", [
+-            'member_id' => $member['id'], 'etel_id' => $member['etel_id'],
+-            'event' => 'login', 'detail' => "Cross-project login from: $project",
+-        ]);
+-
+-        unset($member['pin_hash'], $member['password']);
+-        // Attach company links
+-        $member['companies'] = $wpdb->get_results($wpdb->prepare(
+-            "SELECT company_slug, company_name, role_at AS role FROM {$pfx}etelid_companies WHERE member_id=%d", $member['id']
+-        ), ARRAY_A);
+-        ok(['member' => $member, 'token' => $token, 'expires_in' => 2592000]);
+-
+-    // â”€â”€ Verify session token (called by other projects) â”€â”€â”€â”€â”€â”€â”€
++    // - Verify session token (called by other projects) -
+     case 'verify_token':
+         $token = $body['token'] ?? $_GET['token'] ?? $_SERVER['HTTP_X_ETEL_TOKEN'] ?? '';
+         if (!$token) err('token required');
+@@ -238,13 +161,13 @@ switch ($action) {
+             'companies' => $companies,
+         ]]);
+ 
+-    // â”€â”€ Logout â€” invalidate token â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
++    // - Logout - invalidate token -
+     case 'logout':
+         $token = $body['token'] ?? $_SERVER['HTTP_X_ETEL_TOKEN'] ?? '';
+         if ($token) $wpdb->delete("{$pfx}etelid_sessions", ['token' => hash('sha256', $token)]);
+         ok(['logged_out' => true]);
+ 
+-    // â”€â”€ Verify QR / FIN (for cross-project auth) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
++    // - Verify QR / FIN (for cross-project auth) -
+     case 'verify':
+         auth();
+         $fin  = $body['fin']  ?? $_GET['fin']  ?? '';
+@@ -263,7 +186,7 @@ switch ($action) {
+         if ($member['status'] !== 'active') err('ID is ' . $member['status'], 403);
+         ok(['valid' => true, 'member' => $member]);
+ 
+-    // â”€â”€ Activity log â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
++    // - Activity log -
+     case 'get_log':
+         auth();
+         $limit = (int)($_GET['limit'] ?? 30);
+@@ -272,7 +195,7 @@ switch ($action) {
+             LEFT JOIN {$pfx}etelid_members m ON m.id = l.member_id
+             ORDER BY l.created_at DESC LIMIT {$limit}", ARRAY_A));
+ 
+-    // â”€â”€ Update member status â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
++    // - Update member status -
+     case 'set_status':
+         auth();
+         $id     = (int)($body['member_id'] ?? 0);
+diff --git a/EtelId/includes/class-etelid-ajax.php b/EtelId/includes/class-etelid-ajax.php
+index 58c00c1..d4bef8d 100644
+--- a/EtelId/includes/class-etelid-ajax.php
++++ b/EtelId/includes/class-etelid-ajax.php
+@@ -1,10 +1,10 @@
+ <?php
+ /**
+- * Etel-ID Premium — AJAX Handlers
++ * Etel-ID Premium - AJAX Handlers
+  *
+  * @package    Etel-ID Premium
+  * @version    2.0.0
+- * @author     Etel Group · ኢትኤል ቡድን
++ * @author     Etel Group |  
+  * @link       https://etelgroup.com
+  * @since      2.0.0
+  *
+@@ -31,7 +31,7 @@ class EtelID_Ajax {
+         add_action( 'wp_ajax_etelid_admin_pregenerate_qr', array( __CLASS__, 'admin_pregenerate_qr' ) );
+     }
+ 
+-    /* ── One-time QR cache backfill ───────────────────────────
++    /* -- One-time QR cache backfill ---------------------------
+      * Walks existing members in small batches (avoids PHP execution
+      * time limits on shared hosting for accounts with many members) and
+      * calls EtelID_QR::img() for each - that call already does the
+@@ -98,6 +98,12 @@ class EtelID_Ajax {
+         foreach ( $fields as $f ) {
+             $data[ $f ] = isset( $_POST[ $f ] ) ? sanitize_text_field( wp_unslash( $_POST[ $f ] ) ) : '';
+         }
++        $data['role']            = 'Member';
++        $data['tier']            = 'standard';
++        $data['employee_number'] = '';
++        $data['notes']           = '';
++        $eid_co = EtelID_Generator::companies();
++        if ( ! isset( $eid_co[ $data['primary_company_slug'] ] ) ) $data['primary_company_slug'] = '';
+         if ( empty( $data['full_name'] ) || empty( $data['phone'] ) || empty( $data['dob'] ) ) {
+             wp_send_json_error( array( 'message' => 'Full name, phone, and date of birth are required.' ) );
+         }
+diff --git a/EtelId/includes/class-etelid-auth-ajax.php b/EtelId/includes/class-etelid-auth-ajax.php
+index 3420660..ce65911 100644
+--- a/EtelId/includes/class-etelid-auth-ajax.php
++++ b/EtelId/includes/class-etelid-auth-ajax.php
+@@ -1,10 +1,10 @@
+ <?php
+ /**
+- * Etel-ID Premium — Auth AJAX Handlers
++ * Etel-ID Premium - Auth AJAX Handlers
+  *
+  * @package    Etel-ID Premium
+  * @version    2.1.0
+- * @author     Etel Group · ኢትኤል ቡድን
++ * @author     Etel Group |  
+  * @since      2.1.0
+  *
+  * Handles: etelid_auth_register, etelid_auth_login,
+@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) exit;
+ class EtelID_Auth_Ajax {
+ 
+     public static function init() {
+-        /* Explicit action → method map to avoid str_replace bugs */
++        /* Explicit action -> method map to avoid str_replace bugs */
+         $map = array(
+             'etelid_auth_register'        => 'register',
+             'etelid_quick_register'       => 'quick_register',
+@@ -49,7 +49,7 @@ class EtelID_Auth_Ajax {
+         }
+     }
+ 
+-    /* ── Register ───────────────────────────────────────── */
++    /* -- Register ----------------------------------------- */
+     public static function register() {
+         check_ajax_referer( 'etelid_auth', 'nonce' );
+ 
+@@ -67,6 +67,12 @@ class EtelID_Auth_Ajax {
+         foreach ( $fields as $f ) {
+             $data[ $f ] = isset( $_POST[ $f ] ) ? sanitize_text_field( wp_unslash( $_POST[ $f ] ) ) : '';
+         }
++        $data['role']            = 'Member';
++        $data['tier']            = 'standard';
++        $data['employee_number'] = '';
++        $data['notes']           = '';
++        $eid_co = EtelID_Generator::companies();
++        if ( ! isset( $eid_co[ $data['primary_company_slug'] ] ) ) $data['primary_company_slug'] = '';
+         /* Photo/Fayda fields were missing from the $fields whitelist above
+          * entirely - the registration wizard's new photo-and-ID step could
+          * submit them, but they'd get silently dropped right here before
+@@ -189,9 +195,9 @@ class EtelID_Auth_Ajax {
+         ));
+     }
+ 
+-    /* ── Live duplicate-name check (called from the registration wizard
++    /* -- Live duplicate-name check (called from the registration wizard
+      * while the user fills in Step 2, on blur of Full Name and again
+-     * right before advancing to Step 3) ──
++     * right before advancing to Step 3) --
+      * Matches on full_name + dob together (see
+      * EtelID_DB::find_duplicate_registration()'s own comment for why
+      * name alone isn't used) so two different people who happen to
+@@ -400,7 +406,7 @@ class EtelID_Auth_Ajax {
+         ) );
+     }
+ 
+-    /* ── Login ──────────────────────────────────────────── */
++    /* -- Login -------------------------------------------- */
+     public static function login() {
+         check_ajax_referer( 'etelid_auth', 'nonce' );
+ 
+@@ -430,7 +436,7 @@ class EtelID_Auth_Ajax {
+         self::finish_login( $result['member'], $phone, $result['token'] );
+     }
+ 
+-    /* ── Shared post-login handling (password login + WebAuthn login) ──
++    /* -- Shared post-login handling (password login + WebAuthn login) --
+        $token is the Etelid_sessions token created by EtelID_Auth::login()
+        or EtelID_WebAuthn::verify_login() - previously computed but never
+        actually passed through to the browser, meaning the EtelID portal's
+@@ -443,14 +449,14 @@ class EtelID_Auth_Ajax {
+         $redirect        = home_url( '/portal/' );
+         $is_admin_member = EtelID_Auth::is_site_admin( $member );
+ 
+-        /* If member tried to access wp-admin but is NOT admin → portal only */
++        /* If member tried to access wp-admin but is NOT admin -> portal only */
+         $wanted_admin = ( isset( $_COOKIE['etelid_wants_wpadmin'] ) &&
+                           $_COOKIE['etelid_wants_wpadmin'] === '1' ) ||
+                         ( isset( $_POST['redirect'] ) && $_POST['redirect'] === 'wpadmin' );
+         if ( $wanted_admin && ! $is_admin_member ) {
+             /* Clear intent cookie */
+             setcookie( 'etelid_wants_wpadmin', '', time() - 3600, COOKIEPATH, COOKIE_DOMAIN );
+-            /* Redirect to portal — non-admins never see wp-admin */
++            /* Redirect to portal - non-admins never see wp-admin */
+             $redirect = home_url( '/portal/' );
+         }
+ 
+@@ -492,9 +498,9 @@ class EtelID_Auth_Ajax {
+         ));
+     }
+ 
+-    /* ── Device biometric registration (Face ID / Touch ID / fingerprint) ──
++    /* -- Device biometric registration (Face ID / Touch ID / fingerprint) --
+        Member must already be logged in -- this enrolls THIS device's own
+-       platform authenticator against their existing account. ── */
++       platform authenticator against their existing account. -- */
+     public static function webauthn_register_options() {
+         check_ajax_referer( 'etelid_auth', 'nonce' );
+         $member = EtelID_Auth::get_current_member();
+@@ -516,7 +522,7 @@ class EtelID_Auth_Ajax {
+         wp_send_json_success( array( 'message' => 'Device biometric registered! You can now sign in with it.' ) );
+     }
+ 
+-    /* ── Device biometric login (no password) ──────────────────────── */
++    /* -- Device biometric login (no password) ------------------------ */
+     public static function webauthn_login_options() {
+         check_ajax_referer( 'etelid_auth', 'nonce' );
+         $identifier = isset( $_POST['identifier'] ) ? sanitize_text_field( wp_unslash( $_POST['identifier'] ) ) : '';
+@@ -569,7 +575,7 @@ class EtelID_Auth_Ajax {
+         self::finish_login( $result['member'], '', $result['token'] );
+     }
+ 
+-    /* ── My devices: list and remove (member must be signed in) ─────── */
++    /* -- My devices: list and remove (member must be signed in) ------- */
+     public static function webauthn_devices() {
+         check_ajax_referer( 'etelid_auth', 'nonce' );
+         $member = EtelID_Auth::get_current_member();
+@@ -599,7 +605,7 @@ class EtelID_Auth_Ajax {
+         wp_send_json_success( array( 'message' => 'Device removed.' ) );
+     }
+ 
+-    /* ── Two-step sign-in set-up (member must be signed in) ─────────── */
++    /* -- Two-step sign-in set-up (member must be signed in) ----------- */
+     private static function twofa_member() {
+         check_ajax_referer( 'etelid_auth', 'nonce' );
+         $member = EtelID_Auth::get_current_member();
+@@ -655,7 +661,7 @@ class EtelID_Auth_Ajax {
+         wp_send_json_success( array( 'backup_codes' => $r ) );
+     }
+ 
+-    /* ── Browser CSP violation reports (no login, no nonce: the browser sends them) ── */
++    /* -- Browser CSP violation reports (no login, no nonce: the browser sends them) -- */
+     public static function csp_report() {
+         $ip = EtelID_Security::get_ip();
+         if ( EtelID_Security::rate_limit( 'csp_report_' . $ip, 60, 600 ) ) {
+@@ -666,14 +672,14 @@ class EtelID_Auth_Ajax {
+         exit;
+     }
+ 
+-    /* ── Logout ─────────────────────────────────────────── */
++    /* -- Logout ------------------------------------------- */
+     public static function logout() {
+         check_ajax_referer( 'etelid_auth', 'nonce' );
+         EtelID_Auth::logout();
+         wp_send_json_success( array( 'redirect' => home_url( '/login/' ) ) );
+     }
+ 
+-    /* ── Portal data (member dashboard) ─────────────────── */
++    /* -- Portal data (member dashboard) ------------------- */
+     public static function portal_data() {
+         check_ajax_referer( 'etelid_auth', 'nonce' );
+         $member = EtelID_Auth::get_current_member();
+@@ -725,7 +731,7 @@ class EtelID_Auth_Ajax {
+         ));
+     }
+ 
+-    /* ── Change password ─────────────────────────────────── */
++    /* -- Change password ----------------------------------- */
+     public static function change_password() {
+         check_ajax_referer( 'etelid_auth', 'nonce' );
+         $member = EtelID_Auth::get_current_member();
+@@ -762,8 +768,8 @@ class EtelID_Auth_Ajax {
+         wp_send_json_success( array( 'message' => 'Password changed successfully.' ) );
+     }
+ 
+-    /* ── Pass 2: biometric + additional KYC info (unlocks EtelPay) ──
+-     * Self-service version of EtelID_Biometric::enroll() — authenticated
++    /* -- Pass 2: biometric + additional KYC info (unlocks EtelPay) --
++     * Self-service version of EtelID_Biometric::enroll() - authenticated
+      * by the member's own session cookie, not an admin/scanner-app token. */
+     public static function pass2_submit() {
+         check_ajax_referer( 'etelid_auth', 'nonce' );
+@@ -802,14 +808,14 @@ class EtelID_Auth_Ajax {
+             'next_of_kin_phone'  => $kin_phone,
+         ));
+ 
+-        EtelID_DB::log( $member->id, $member->etel_id, 'pass2_completed', 'Second verification pass completed — EtelPay unlocked' );
++        EtelID_DB::log( $member->id, $member->etel_id, 'pass2_completed', 'Second verification pass completed - EtelPay unlocked' );
+ 
+         wp_send_json_success( array( 'message' => 'Verification complete. Etel Pay is now unlocked.' ) );
+     }
+ 
+     /** Member self-service: upload Fayda ID front+back from their own profile page.
+      *  Unlike pass2_submit() above (face+info, instant), this goes into a pending
+-     *  review queue — an admin must approve it from the Members Controller before
++     *  review queue - an admin must approve it from the Members Controller before
+      *  kyc_level is bumped to 2. Trust boundary: this is the member attesting to
+      *  their own documents, so it needs a human check before it unlocks anything. */
+     public static function fayda_id_submit() {
+@@ -848,14 +854,14 @@ class EtelID_Auth_Ajax {
+         wp_send_json_success( array( 'message' => $msg, 'limited' => ! $now_unlimited ) );
+     }
+ 
+-    /* ── Fayda Quick Register — portal version ───────────────
++    /* -- Fayda Quick Register - portal version ---------------
+      * Same logic as EtelID_Admin::page_fayda_register(), but callable
+      * from the member portal itself (authenticated by the Etel-ID
+      * session, not a WordPress login) so the admin never has to leave
+      * the portal / touch wp-admin to register a new member. */
+     public static function fayda_quick_register() {
+         /* Passing $die=false converts a nonce failure into a normal
+-         * return value instead of a silent wp_die(-1) — without this,
++         * return value instead of a silent wp_die(-1) - without this,
+          * an expired/stale nonce produces a bare "-1" response body
+          * that the front-end can't show a useful message for. */
+         if ( ! check_ajax_referer( 'etelid_auth', 'nonce', false ) ) {
+@@ -882,7 +888,7 @@ class EtelID_Auth_Ajax {
+             foreach ( $fields as $f ) {
+                 $data[ $f ] = isset( $_POST[ $f ] ) ? sanitize_text_field( wp_unslash( $_POST[ $f ] ) ) : '';
+             }
+-            /* Large base64 image fields — not sanitize_text_field (would mangle base64). */
++            /* Large base64 image fields - not sanitize_text_field (would mangle base64). */
+             $data['fayda_front_image'] = isset( $_POST['fayda_front_image'] ) ? wp_unslash( $_POST['fayda_front_image'] ) : '';
+             $data['fayda_back_image']  = isset( $_POST['fayda_back_image']  ) ? wp_unslash( $_POST['fayda_back_image']  ) : '';
+             $data['fayda_ocr_raw']     = isset( $_POST['fayda_ocr_raw']     ) ? sanitize_textarea_field( wp_unslash( $_POST['fayda_ocr_raw'] ) ) : '';
+@@ -924,7 +930,7 @@ class EtelID_Auth_Ajax {
+         }
+     }
+ 
+-    /* ── Profile Update v3.3.1 ─────────────────────────────── */
++    /* -- Profile Update v3.3.1 ------------------------------- */
+     public static function profile_update() {
+         check_ajax_referer( 'etelid_profile_update', 'nonce' );
+ 
+@@ -938,7 +944,7 @@ class EtelID_Auth_Ajax {
+         $fields = array(
+             'full_name', 'full_name_am', 'dob', 'sex', 'blood_type',
+             'nationality', 'phone', 'email', 'region', 'zone', 'woreda',
+-            'role', 'department', 'photo_url',
++            'photo_url',
+         );
+ 
+         $data = array();
+@@ -1025,7 +1031,7 @@ class EtelID_Auth_Ajax {
+         wp_send_json_success( array( 'message' => $msg, 'limited' => ! $now_unlimited ) );
+     }
+ 
+-    /* ── Name validation helpers ───────────────────────────
++    /* -- Name validation helpers ---------------------------
+      * Mirror templates/auth-page.php's isRealFullName()/isRealAmharicName()
+      * (defense-in-depth for register(), same reasoning as the phone/dob/
+      * region/zone checks above). Requires at least two names (the standard
+diff --git a/EtelId/templates/portal.php b/EtelId/templates/portal.php
+index 51f8391..671562d 100644
+--- a/EtelId/templates/portal.php
++++ b/EtelId/templates/portal.php
+@@ -2174,7 +2174,6 @@ function updApply() {
+   var _eidCookie = document.cookie.split(';').map(function(c){return c.trim();})
+     .find(function(c){return c.startsWith('etelid_session=');});
+   if(_eidCookie) fd.append('eid_token', decodeURIComponent(_eidCookie.split('=').slice(1).join('=')));
+-  fd.append('updater_secret', '<?php echo esc_js(defined("ETELID_UPDATER_SECRET") ? ETELID_UPDATER_SECRET : ""); ?>');
+ 
+   fetch(_updAjax,{method:'POST',body:fd})
+     .then(function(r){return r.json();})

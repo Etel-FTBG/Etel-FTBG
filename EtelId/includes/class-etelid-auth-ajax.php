@@ -1,10 +1,10 @@
 <?php
 /**
- * Etel-ID Premium — Auth AJAX Handlers
+ * Etel-ID Premium - Auth AJAX Handlers
  *
  * @package    Etel-ID Premium
  * @version    2.1.0
- * @author     Etel Group · ኢትኤል ቡድን
+ * @author     Etel Group |  
  * @since      2.1.0
  *
  * Handles: etelid_auth_register, etelid_auth_login,
@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) exit;
 class EtelID_Auth_Ajax {
 
     public static function init() {
-        /* Explicit action → method map to avoid str_replace bugs */
+        /* Explicit action -> method map to avoid str_replace bugs */
         $map = array(
             'etelid_auth_register'        => 'register',
             'etelid_quick_register'       => 'quick_register',
@@ -49,7 +49,7 @@ class EtelID_Auth_Ajax {
         }
     }
 
-    /* ── Register ───────────────────────────────────────── */
+    /* -- Register ----------------------------------------- */
     public static function register() {
         check_ajax_referer( 'etelid_auth', 'nonce' );
 
@@ -67,6 +67,12 @@ class EtelID_Auth_Ajax {
         foreach ( $fields as $f ) {
             $data[ $f ] = isset( $_POST[ $f ] ) ? sanitize_text_field( wp_unslash( $_POST[ $f ] ) ) : '';
         }
+        $data['role']            = 'Member';
+        $data['tier']            = 'standard';
+        $data['employee_number'] = '';
+        $data['notes']           = '';
+        $eid_co = EtelID_Generator::companies();
+        if ( ! isset( $eid_co[ $data['primary_company_slug'] ] ) ) $data['primary_company_slug'] = '';
         /* Photo/Fayda fields were missing from the $fields whitelist above
          * entirely - the registration wizard's new photo-and-ID step could
          * submit them, but they'd get silently dropped right here before
@@ -189,9 +195,9 @@ class EtelID_Auth_Ajax {
         ));
     }
 
-    /* ── Live duplicate-name check (called from the registration wizard
+    /* -- Live duplicate-name check (called from the registration wizard
      * while the user fills in Step 2, on blur of Full Name and again
-     * right before advancing to Step 3) ──
+     * right before advancing to Step 3) --
      * Matches on full_name + dob together (see
      * EtelID_DB::find_duplicate_registration()'s own comment for why
      * name alone isn't used) so two different people who happen to
@@ -400,7 +406,7 @@ class EtelID_Auth_Ajax {
         ) );
     }
 
-    /* ── Login ──────────────────────────────────────────── */
+    /* -- Login -------------------------------------------- */
     public static function login() {
         check_ajax_referer( 'etelid_auth', 'nonce' );
 
@@ -430,7 +436,7 @@ class EtelID_Auth_Ajax {
         self::finish_login( $result['member'], $phone, $result['token'] );
     }
 
-    /* ── Shared post-login handling (password login + WebAuthn login) ──
+    /* -- Shared post-login handling (password login + WebAuthn login) --
        $token is the Etelid_sessions token created by EtelID_Auth::login()
        or EtelID_WebAuthn::verify_login() - previously computed but never
        actually passed through to the browser, meaning the EtelID portal's
@@ -443,14 +449,14 @@ class EtelID_Auth_Ajax {
         $redirect        = home_url( '/portal/' );
         $is_admin_member = EtelID_Auth::is_site_admin( $member );
 
-        /* If member tried to access wp-admin but is NOT admin → portal only */
+        /* If member tried to access wp-admin but is NOT admin -> portal only */
         $wanted_admin = ( isset( $_COOKIE['etelid_wants_wpadmin'] ) &&
                           $_COOKIE['etelid_wants_wpadmin'] === '1' ) ||
                         ( isset( $_POST['redirect'] ) && $_POST['redirect'] === 'wpadmin' );
         if ( $wanted_admin && ! $is_admin_member ) {
             /* Clear intent cookie */
             setcookie( 'etelid_wants_wpadmin', '', time() - 3600, COOKIEPATH, COOKIE_DOMAIN );
-            /* Redirect to portal — non-admins never see wp-admin */
+            /* Redirect to portal - non-admins never see wp-admin */
             $redirect = home_url( '/portal/' );
         }
 
@@ -492,9 +498,9 @@ class EtelID_Auth_Ajax {
         ));
     }
 
-    /* ── Device biometric registration (Face ID / Touch ID / fingerprint) ──
+    /* -- Device biometric registration (Face ID / Touch ID / fingerprint) --
        Member must already be logged in -- this enrolls THIS device's own
-       platform authenticator against their existing account. ── */
+       platform authenticator against their existing account. -- */
     public static function webauthn_register_options() {
         check_ajax_referer( 'etelid_auth', 'nonce' );
         $member = EtelID_Auth::get_current_member();
@@ -516,7 +522,7 @@ class EtelID_Auth_Ajax {
         wp_send_json_success( array( 'message' => 'Device biometric registered! You can now sign in with it.' ) );
     }
 
-    /* ── Device biometric login (no password) ──────────────────────── */
+    /* -- Device biometric login (no password) ------------------------ */
     public static function webauthn_login_options() {
         check_ajax_referer( 'etelid_auth', 'nonce' );
         $identifier = isset( $_POST['identifier'] ) ? sanitize_text_field( wp_unslash( $_POST['identifier'] ) ) : '';
@@ -569,7 +575,7 @@ class EtelID_Auth_Ajax {
         self::finish_login( $result['member'], '', $result['token'] );
     }
 
-    /* ── My devices: list and remove (member must be signed in) ─────── */
+    /* -- My devices: list and remove (member must be signed in) ------- */
     public static function webauthn_devices() {
         check_ajax_referer( 'etelid_auth', 'nonce' );
         $member = EtelID_Auth::get_current_member();
@@ -599,7 +605,7 @@ class EtelID_Auth_Ajax {
         wp_send_json_success( array( 'message' => 'Device removed.' ) );
     }
 
-    /* ── Two-step sign-in set-up (member must be signed in) ─────────── */
+    /* -- Two-step sign-in set-up (member must be signed in) ----------- */
     private static function twofa_member() {
         check_ajax_referer( 'etelid_auth', 'nonce' );
         $member = EtelID_Auth::get_current_member();
@@ -655,7 +661,7 @@ class EtelID_Auth_Ajax {
         wp_send_json_success( array( 'backup_codes' => $r ) );
     }
 
-    /* ── Browser CSP violation reports (no login, no nonce: the browser sends them) ── */
+    /* -- Browser CSP violation reports (no login, no nonce: the browser sends them) -- */
     public static function csp_report() {
         $ip = EtelID_Security::get_ip();
         if ( EtelID_Security::rate_limit( 'csp_report_' . $ip, 60, 600 ) ) {
@@ -666,14 +672,14 @@ class EtelID_Auth_Ajax {
         exit;
     }
 
-    /* ── Logout ─────────────────────────────────────────── */
+    /* -- Logout ------------------------------------------- */
     public static function logout() {
         check_ajax_referer( 'etelid_auth', 'nonce' );
         EtelID_Auth::logout();
         wp_send_json_success( array( 'redirect' => home_url( '/login/' ) ) );
     }
 
-    /* ── Portal data (member dashboard) ─────────────────── */
+    /* -- Portal data (member dashboard) ------------------- */
     public static function portal_data() {
         check_ajax_referer( 'etelid_auth', 'nonce' );
         $member = EtelID_Auth::get_current_member();
@@ -725,7 +731,7 @@ class EtelID_Auth_Ajax {
         ));
     }
 
-    /* ── Change password ─────────────────────────────────── */
+    /* -- Change password ----------------------------------- */
     public static function change_password() {
         check_ajax_referer( 'etelid_auth', 'nonce' );
         $member = EtelID_Auth::get_current_member();
@@ -762,8 +768,8 @@ class EtelID_Auth_Ajax {
         wp_send_json_success( array( 'message' => 'Password changed successfully.' ) );
     }
 
-    /* ── Pass 2: biometric + additional KYC info (unlocks EtelPay) ──
-     * Self-service version of EtelID_Biometric::enroll() — authenticated
+    /* -- Pass 2: biometric + additional KYC info (unlocks EtelPay) --
+     * Self-service version of EtelID_Biometric::enroll() - authenticated
      * by the member's own session cookie, not an admin/scanner-app token. */
     public static function pass2_submit() {
         check_ajax_referer( 'etelid_auth', 'nonce' );
@@ -802,14 +808,14 @@ class EtelID_Auth_Ajax {
             'next_of_kin_phone'  => $kin_phone,
         ));
 
-        EtelID_DB::log( $member->id, $member->etel_id, 'pass2_completed', 'Second verification pass completed — EtelPay unlocked' );
+        EtelID_DB::log( $member->id, $member->etel_id, 'pass2_completed', 'Second verification pass completed - EtelPay unlocked' );
 
         wp_send_json_success( array( 'message' => 'Verification complete. Etel Pay is now unlocked.' ) );
     }
 
     /** Member self-service: upload Fayda ID front+back from their own profile page.
      *  Unlike pass2_submit() above (face+info, instant), this goes into a pending
-     *  review queue — an admin must approve it from the Members Controller before
+     *  review queue - an admin must approve it from the Members Controller before
      *  kyc_level is bumped to 2. Trust boundary: this is the member attesting to
      *  their own documents, so it needs a human check before it unlocks anything. */
     public static function fayda_id_submit() {
@@ -848,14 +854,14 @@ class EtelID_Auth_Ajax {
         wp_send_json_success( array( 'message' => $msg, 'limited' => ! $now_unlimited ) );
     }
 
-    /* ── Fayda Quick Register — portal version ───────────────
+    /* -- Fayda Quick Register - portal version ---------------
      * Same logic as EtelID_Admin::page_fayda_register(), but callable
      * from the member portal itself (authenticated by the Etel-ID
      * session, not a WordPress login) so the admin never has to leave
      * the portal / touch wp-admin to register a new member. */
     public static function fayda_quick_register() {
         /* Passing $die=false converts a nonce failure into a normal
-         * return value instead of a silent wp_die(-1) — without this,
+         * return value instead of a silent wp_die(-1) - without this,
          * an expired/stale nonce produces a bare "-1" response body
          * that the front-end can't show a useful message for. */
         if ( ! check_ajax_referer( 'etelid_auth', 'nonce', false ) ) {
@@ -882,7 +888,7 @@ class EtelID_Auth_Ajax {
             foreach ( $fields as $f ) {
                 $data[ $f ] = isset( $_POST[ $f ] ) ? sanitize_text_field( wp_unslash( $_POST[ $f ] ) ) : '';
             }
-            /* Large base64 image fields — not sanitize_text_field (would mangle base64). */
+            /* Large base64 image fields - not sanitize_text_field (would mangle base64). */
             $data['fayda_front_image'] = isset( $_POST['fayda_front_image'] ) ? wp_unslash( $_POST['fayda_front_image'] ) : '';
             $data['fayda_back_image']  = isset( $_POST['fayda_back_image']  ) ? wp_unslash( $_POST['fayda_back_image']  ) : '';
             $data['fayda_ocr_raw']     = isset( $_POST['fayda_ocr_raw']     ) ? sanitize_textarea_field( wp_unslash( $_POST['fayda_ocr_raw'] ) ) : '';
@@ -924,7 +930,7 @@ class EtelID_Auth_Ajax {
         }
     }
 
-    /* ── Profile Update v3.3.1 ─────────────────────────────── */
+    /* -- Profile Update v3.3.1 ------------------------------- */
     public static function profile_update() {
         check_ajax_referer( 'etelid_profile_update', 'nonce' );
 
@@ -938,7 +944,7 @@ class EtelID_Auth_Ajax {
         $fields = array(
             'full_name', 'full_name_am', 'dob', 'sex', 'blood_type',
             'nationality', 'phone', 'email', 'region', 'zone', 'woreda',
-            'role', 'department', 'photo_url',
+            'photo_url',
         );
 
         $data = array();
@@ -1025,7 +1031,7 @@ class EtelID_Auth_Ajax {
         wp_send_json_success( array( 'message' => $msg, 'limited' => ! $now_unlimited ) );
     }
 
-    /* ── Name validation helpers ───────────────────────────
+    /* -- Name validation helpers ---------------------------
      * Mirror templates/auth-page.php's isRealFullName()/isRealAmharicName()
      * (defense-in-depth for register(), same reasoning as the phone/dob/
      * region/zone checks above). Requires at least two names (the standard

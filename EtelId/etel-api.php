@@ -1,10 +1,10 @@
 <?php
 // ============================================================
-// ETEL ID — Standalone API Gateway v1.0
+// ETEL ID - Standalone API Gateway v1.0
 // Place at: public_html/EtelId/etel-api.php
 // Access:   https://ethelmarket.com/EtelId/etel-api.php
 //
-// Connects directly to MySQL — no WordPress required.
+// Connects directly to MySQL - no WordPress required.
 // Handles login, verify_token, logout from other Etel projects.
 // ============================================================
 
@@ -14,8 +14,8 @@ header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type, X-Etel-Key, X-Etel-Token');
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') { http_response_code(200); exit; }
 
-// ── Database config (matches wp-config.php) ───────────────────
-// REDACTED for the git repo — the real values live only on the server,
+// - Database config (matches wp-config.php) -
+// REDACTED for the git repo - the real values live only on the server,
 // set as environment variables (or edit these getenv() fallbacks
 // locally on the box, never commit real credentials here again).
 define('DB_HOST',   getenv('ETELID_DB_HOST') ?: 'localhost');
@@ -24,11 +24,11 @@ define('DB_USER',   getenv('ETELID_DB_USER') ?: 'CHANGE_ME');
 define('DB_PASS',   getenv('ETELID_DB_PASS') ?: 'CHANGE_ME');
 define('DB_PREFIX', 'Etelid_');
 
-// ── API key — must match ETELID_KEY in EtelAi/api/etel-os.php ─
-// REDACTED for the git repo — set ETEL_API_KEY in the server environment.
+// - API key - must match ETELID_KEY in EtelAi/api/etel-os.php -
+// REDACTED for the git repo - set ETEL_API_KEY in the server environment.
 define('API_KEY', getenv('ETEL_API_KEY') ?: 'CHANGE_ME');
 
-// ── Helpers ───────────────────────────────────────────────────
+// - Helpers -
 function ok($d)            { echo json_encode(['ok' => true,  'data' => $d]); exit; }
 function err($m, $c = 400) { http_response_code($c); echo json_encode(['ok' => false, 'error' => $m]); exit; }
 
@@ -111,102 +111,21 @@ function rate_limited(PDO $pdo, $column, $value, $max, $windowSeconds) {
     return (int)$stmt->fetchColumn() >= $max;
 }
 
-// ── Route ─────────────────────────────────────────────────────
+// - Route -
 $action = $_GET['action'] ?? 'status';
 $body   = json_decode(file_get_contents('php://input'), true) ?? [];
 
 switch ($action) {
 
-    // ── Status ─────────────────────────────────────────────────
+    // - Status -
     case 'status':
         ok(['project' => 'Etel-ID', 'status' => 'online', 'time' => date('Y-m-d H:i:s')]);
 
-    // ── Login ──────────────────────────────────────────────────
+    // - Login -
     case 'login':
-        $phone    = preg_replace('/\s+/', '', $body['phone'] ?? '');
-        $password = $body['password'] ?? '';
-        $project  = $body['project']  ?? 'api';
+        err('This sign-in endpoint is retired. Use EtelID SSO.', 410);
 
-        if (!$phone || !$password) err('phone and password required');
-
-        $pdo = db();
-        $ip  = client_ip();
-
-        // Mirror the Service API's brute-force limits (30/min per IP,
-        // 8 per 15 min per account) since this gateway shares the same
-        // members/sessions tables and is just as reachable.
-        if (rate_limited($pdo, 'actor_ip', $ip, 30, 60)) {
-            err('Too many attempts. Try again in a minute.', 429);
-        }
-
-        $stmt = $pdo->prepare("SELECT * FROM " . pfx('members') . " WHERE phone = ? LIMIT 1");
-        $stmt->execute([$phone]);
-        $member = $stmt->fetch();
-
-        if (!$member)                          err('No account found with this phone number', 404);
-
-        if (rate_limited($pdo, 'member_id', $member['id'], 8, 900)) {
-            err('Too many attempts for this account. Please wait a few minutes, or reset your password.', 429);
-        }
-
-        if ($member['status'] === 'suspended') err('Account suspended. Contact support.', 403);
-        if ($member['status'] === 'revoked')   err('Account revoked.', 403);
-        if (empty($member['pin_hash']))        err('No password set. Reset your password.', 400);
-
-        // Verify bcrypt or legacy SHA-256
-        $valid = false;
-        if (function_exists('password_verify')) {
-            $valid = password_verify($password, $member['pin_hash']);
-        }
-        if (!$valid && strlen($member['pin_hash']) === 64) {
-            $valid = hash_equals($member['pin_hash'], hash('sha256', 'etelid_v2_' . $password . '_salt_9x'));
-        }
-
-        if (!$valid) {
-            $pdo->prepare("INSERT INTO " . pfx('log') . " (member_id, etel_id, actor_ip, event, detail) VALUES (?,?,?,?,?)")
-                ->execute([$member['id'], $member['etel_id'], $ip, 'login_failed', "Failed login from: $project"]);
-            err('Incorrect password', 401);
-        }
-
-        // Limited (Ride-only) account from the simplified Quick Register:
-        // only the Ride project may sign it in. Checked after the password is
-        // verified so it never reveals account state to a stranger.
-        if (!empty($member['profile_limited']) && strtolower($project) !== 'ride') {
-            $pdo->prepare("INSERT INTO " . pfx('log') . " (member_id, etel_id, actor_ip, event, detail) VALUES (?,?,?,?,?)")
-                ->execute([$member['id'], $member['etel_id'], $ip, 'limited_blocked', "Limited account refused by: $project"]);
-            err('Your Etel-ID is limited to Ride. Add your profile photo and both sides of your Fayda ID in the EtelID portal to unlock all Etel services.', 403);
-        }
-
-        // Create session token. HARDENING: this used to store the raw
-        // token directly in the `token` column - the exact plaintext-
-        // session vulnerability class-etelid-auth.php::create_session()
-        // was deliberately hardened against (a DB dump/backup leak would
-        // otherwise hand over every valid session with no further
-        // authentication needed). Store a SHA-256 hash instead, same as
-        // the WordPress portal's own session creation, and keep the raw
-        // token only in the response handed to the caller.
-        $token = bin2hex(random_bytes(32));
-        $pdo->prepare("INSERT INTO " . pfx('sessions') . " (member_id, token, ip, ua, expires_at) VALUES (?,?,?,?,?)")
-            ->execute([
-                $member['id'], hash('sha256', $token),
-                $_SERVER['REMOTE_ADDR'] ?? '',
-                $_SERVER['HTTP_USER_AGENT'] ?? '',
-                date('Y-m-d H:i:s', strtotime('+30 days')),
-            ]);
-        $pdo->prepare("INSERT INTO " . pfx('log') . " (member_id, etel_id, event, detail) VALUES (?,?,?,?)")
-            ->execute([$member['id'], $member['etel_id'], 'login', "Cross-project login from: $project"]);
-
-        unset($member['pin_hash'], $member['password']);
-
-        ensure_company_link($pdo, $member['id'], $project);
-
-        $stmt2 = $pdo->prepare("SELECT company_slug, company_name, role_at AS role FROM " . pfx('companies') . " WHERE member_id = ?");
-        $stmt2->execute([$member['id']]);
-        $member['companies'] = $stmt2->fetchAll();
-
-        ok(['member' => $member, 'token' => $token, 'expires_in' => 2592000]);
-
-    // ── Verify token ───────────────────────────────────────────
+    // - Verify token -
     case 'verify_token':
         $token = $body['token'] ?? $_GET['token'] ?? $_SERVER['HTTP_X_ETEL_TOKEN'] ?? '';
         if (!$token) err('token required');
@@ -256,7 +175,7 @@ switch ($action) {
             'companies' => $stmt3->fetchAll(),
         ]]);
 
-    // ── Logout ─────────────────────────────────────────────────
+    // - Logout -
     case 'logout':
         $token = $body['token'] ?? $_SERVER['HTTP_X_ETEL_TOKEN'] ?? '';
         if ($token) {
@@ -265,7 +184,7 @@ switch ($action) {
         }
         ok(['logged_out' => true]);
 
-    // ── Stats (authenticated) ───────────────────────────────────
+    // - Stats (authenticated) -
     case 'stats':
         auth();
         $pdo = db();
