@@ -91,7 +91,7 @@
       var total = parseFloat((($('st-users') || {}).textContent || '').replace(/,/g, '')) || 0;
       var act = parseFloat((($('st-active') || {}).textContent || '').replace(/,/g, '')) || 0;
       var txs = parseFloat((($('st-txs') || {}).textContent || '').replace(/,/g, '')) || 0;
-      var vol = parseFloat((($('st-vol') || {}).textContent || '').replace(/,/g, '')) || 0;
+      var vol = parseFloat(fullText($('st-vol')).replace(/,/g, '')) || 0;
       function put(id, text) {
         var el = $(id); if (!el || !el.parentNode) return;
         var s = el.parentNode.querySelector('.adm-sub');
@@ -103,7 +103,43 @@
       put('st-txs', 'all time');
       put('st-vol', txs > 0 ? 'average ETB ' + Math.round(vol / txs).toLocaleString('en-US') + ' per transaction' : 'all time');
     } catch (e) { /* cosmetic only */ }
+    fitStats();
   }
+  // a big number (e.g. volume in the billions) shrinks until it fits its card
+  function fullText(el) {
+    if (!el) return '';
+    if (el.getAttribute('data-compact') && el.textContent === el.getAttribute('data-compact') && el.getAttribute('data-full')) return el.getAttribute('data-full');
+    el.removeAttribute('data-compact'); el.removeAttribute('data-full'); el.removeAttribute('title');
+    return el.textContent || '';
+  }
+  function compact(n) {
+    var a = Math.abs(n), u = [[1e12, 'T'], [1e9, 'B'], [1e6, 'M'], [1e3, 'K']];
+    for (var i = 0; i < u.length; i++) if (a >= u[i][0]) return (n / u[i][0]).toFixed(2).replace(/\.?0+$/, '') + u[i][1];
+    return String(n);
+  }
+  function fitStats() {
+    try {
+      var els = document.querySelectorAll('html.ep-admin .ep-stat-value');
+      for (var i = 0; i < els.length; i++) {
+        var el = els[i];
+        var full = fullText(el);
+        if (el.getAttribute('data-compact')) el.textContent = full;
+        el.style.removeProperty('font-size');
+        var px = parseFloat(getComputedStyle(el).fontSize) || 28;
+        el.style.display = 'block'; el.style.overflow = 'hidden'; el.style.textOverflow = 'clip';
+        while (px > 20 && el.scrollWidth > el.clientWidth + 1) { px -= 1; el.style.setProperty('font-size', px + 'px', 'important'); }
+        if (el.scrollWidth > el.clientWidth + 1) {            // still too long: show 1.25B and keep the full figure in the tooltip
+          var n = parseFloat(full.replace(/,/g, ''));
+          if (!isNaN(n)) {
+            var c = compact(n);
+            el.setAttribute('data-full', full); el.setAttribute('data-compact', c); el.setAttribute('title', full); el.textContent = c;
+            el.style.removeProperty('font-size');
+          }
+        }
+      }
+    } catch (e) { /* cosmetic only */ }
+  }
+  window.addEventListener('resize', function () { clearTimeout(window.__epFit); window.__epFit = setTimeout(fitStats, 150); });
   var _rs = window.renderStats;
   if (typeof _rs === 'function') {
     window.renderStats = function (d) { _rs(d); subfigs(); stamp(); };
