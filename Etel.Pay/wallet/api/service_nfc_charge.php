@@ -38,6 +38,11 @@ require_once __DIR__ . '/config.php';
 
 if (!defined('EP_TBL_TX')) define('EP_TBL_TX', EP_TBL_PREFIX . 'ep_transactions');
 
+// Ledger type for NFC payments. Must be a value of the transactions.type
+// ENUM ("nfc_charge" is not, so MySQL blanked it). NFC rows stay
+// identifiable by their tx_ref prefix "NFC".
+if (!defined('SNC_TX_TYPE')) define('SNC_TX_TYPE', 'send');
+
 function snc_header($name) {
     $key = 'HTTP_' . str_replace('-', '_', strtoupper($name));
     if (isset($_SERVER[$key])) return $_SERVER[$key];
@@ -141,8 +146,8 @@ try {
         ->execute(array($amount, $receiver['id']));
     $pdo->prepare(
         'INSERT INTO ' . EP_TBL_TX . ' (tx_ref, type, sender_ep_id, receiver_ep_id, amount, currency, note, status, created_at)
-         VALUES (?, "nfc_charge", ?, ?, ?, "ETB", ?, "completed", NOW())'
-    )->execute(array($tx_ref, $payer['id'], $receiver['id'], $amount, $note !== '' ? $note : 'NFC tap-to-pay'));
+         VALUES (?, ?, ?, ?, ?, "ETB", ?, "completed", NOW())'
+    )->execute(array($tx_ref, SNC_TX_TYPE, $payer['id'], $receiver['id'], $amount, $note !== '' ? $note : 'NFC tap-to-pay'));
     $pdo->commit();
 } catch (Exception $ex) {
     $pdo->rollBack();

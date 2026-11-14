@@ -187,13 +187,36 @@ case 'ep_admin_self_topup': {
 case 'ep_admin_debit': {
     _ep_require_admin();
     $uid    = in_int('user_id');
-    $amount = in_float('amount');
+    $amount = round(in_float('amount'), 2);
     $note   = in_str('note');
     if ($amount <= 0) ep_err('Amount must be > 0');
+    if ($uid <= 0) ep_err('User required');
     $pdo    = ep_db();
-    $pdo->prepare('UPDATE ' . EP_TBL_USERS . ' SET balance_etb = GREATEST(0, balance_etb - ?) WHERE id = ?')->execute(array($amount, $uid));
-    $pdo->prepare('INSERT INTO ' . EP_TBL_TX . ' (tx_ref, type, sender_ep_id, amount, currency, note, status, created_at) VALUES (?, "withdraw", ?, ?, "ETB", ?, "completed", NOW())')->execute(array(ep_gen_ref(), $uid, $amount, 'Admin debit: ' . $note));
-    ep_ok(null, 'ETB ' . $amount . ' debited');
+    $err    = null;
+    $newbal = 0;
+    $pdo->beginTransaction();
+    try {
+        // Lock the row so a concurrent debit/payment cannot race this one.
+        $lk = $pdo->prepare('SELECT balance_etb FROM ' . EP_TBL_USERS . ' WHERE id = ? LIMIT 1 FOR UPDATE');
+        $lk->execute(array($uid));
+        $row = $lk->fetch();
+        if (!$row) {
+            $err = array('User not found', 404);
+        } elseif ($amount > (float)$row['balance_etb']) {
+            $err = array('Debit of ETB ' . $amount . ' exceeds the balance of ETB ' . (float)$row['balance_etb'], 400);
+        } else {
+            // Ledger row carries exactly the amount taken from the balance.
+            $pdo->prepare('UPDATE ' . EP_TBL_USERS . ' SET balance_etb = balance_etb - ? WHERE id = ?')->execute(array($amount, $uid));
+            $pdo->prepare('INSERT INTO ' . EP_TBL_TX . ' (tx_ref, type, sender_ep_id, amount, currency, note, status, created_at) VALUES (?, "withdraw", ?, ?, "ETB", ?, "completed", NOW())')->execute(array(ep_gen_ref(), $uid, $amount, 'Admin debit: ' . $note));
+            $newbal = round((float)$row['balance_etb'] - $amount, 2);
+        }
+        if ($err) $pdo->rollBack(); else $pdo->commit();
+    } catch (Exception $ex) {
+        $pdo->rollBack();
+        ep_err('Debit failed', 500);
+    }
+    if ($err) ep_err($err[0], $err[1]);
+    ep_ok(array('new_balance' => $newbal), 'ETB ' . $amount . ' debited');
 }
 
 /* ── Admin: all transactions ──────────────────────────────────── */
