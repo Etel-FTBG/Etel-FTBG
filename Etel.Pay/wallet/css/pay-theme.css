@@ -32,7 +32,7 @@
 }
 #ep-theme-pop .ep-tp-seg button + button { border-left: 1px solid rgba(212, 175, 55, .35); }
 #ep-theme-pop .ep-tp-seg button[aria-pressed="true"] { background: linear-gradient(135deg, #8A6500, #D4AF37); color: #1A0E00; }
-@media (min-width: 768px) { #ep-theme-fab { right: 22px; bottom: 22px; } }
+@media (min-width: 768px) { #ep-theme-fab { right: 22px; bottom: 84px; } }
 
 /* ---- text sizes ---- */
 html[data-textsize="lg"] body { zoom: 1.12; }
