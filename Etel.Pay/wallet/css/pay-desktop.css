@@ -69,6 +69,7 @@
   /* ---- content width per page ---- */
   html.ep-desk[data-page="send"] body #app, html.ep-desk[data-page="topup"] body #app, html.ep-desk[data-page="kyc"] body #app,
   html.ep-desk[data-page="qr"] body #app, html.ep-desk[data-page="profile"] body #app, html.ep-desk[data-page="pay-links"] body #app { max-width: 900px !important; }
+  html.ep-desk[data-page="updater"] body #app { max-width: 900px !important; }
   html.ep-desk[data-page="history"] body #app, html.ep-desk[data-page="analytics"] body #app { max-width: 1040px !important; }
 
   /* ---- WALLET dashboard: balance + actions, then activity ---- */

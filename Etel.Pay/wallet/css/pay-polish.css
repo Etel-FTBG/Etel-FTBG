@@ -17,3 +17,8 @@ button, [role="button"], .ep-action, .sidebar-nav-item { min-height: 40px; }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; } }
 /* developer panel keeps its dark surface in the light theme: keep its heading readable */
 html[data-theme="light"] #ep-dev h3, html[data-theme="light"] #ep-dev-bar h3 { color: #F2CC6B !important; }
+/* ETEL AI "coming soon" card: it has its own dark surface, so keep its text light in the light theme too */
+html[data-theme="light"] #etelai-soon-card { color: #f3e7c0 !important; }
+html[data-theme="light"] #etelai-soon-card h3, html[data-theme="light"] #etelai-soon-card .etelai-soon-tag { color: #F2CC6B !important; }
+html[data-theme="light"] #etelai-soon-card p { color: rgba(243, 231, 192, .92) !important; }
+html[data-theme="light"] #etelai-soon-card .etelai-soon-x { color: rgba(242, 204, 107, .85) !important; }
