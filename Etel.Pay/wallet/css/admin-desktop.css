@@ -1,0 +1,133 @@
+/* ============================================================================
+   ኢE Pay - admin console layout (admin.html only). Works with css/pay-theme.css (light / dark).
+   Phone: the existing tab strip, now with vector icons. Wide screens (1100px and up): tabs become a left rail,
+   the content uses the full width in grids, with section titles, KPI cards and a Refresh control.
+   No admin action or money logic is touched here.
+   ============================================================================ */
+.adm-ic { display: inline-flex; vertical-align: middle; margin-right: 8px; }
+.adm-ic svg { display: block; }
+.adm-title { display: none; }
+#adm-brand { display: none; }
+#adm-refresh { display: none; }
+.adm-sub { font: 500 12px/1.3 var(--g-fm, 'JetBrains Mono', monospace); letter-spacing: .3px; margin-top: 6px; opacity: .72; }
+
+/* phone: keep the strip, make the tabs comfortable */
+.admin-tab { display: inline-flex; align-items: center; font-size: 13px !important; }
+.admin-tab .adm-ic { margin-right: 6px; }
+.admin-tab .adm-ic svg { width: 17px; height: 17px; }
+
+@media (min-width: 1100px) {
+  html.ep-admin, html.ep-admin body { overflow: auto !important; height: auto !important; }
+  html.ep-admin #ep-sidebar, html.ep-admin #ep-desktop-info { display: none !important; }
+  html.ep-admin #ep-desktop-wrap { display: block !important; width: 100% !important; height: auto !important; min-height: 100vh !important; }
+  html.ep-admin #ep-desktop-main { display: block !important; overflow: visible !important; min-height: 100vh; }
+  html.ep-admin #app {
+    display: block !important; width: auto !important; max-width: none !important; height: auto !important; min-height: 100vh;
+    margin-left: 264px; border-radius: 0 !important; box-shadow: none !important; overflow: visible !important;
+  }
+
+  /* left rail */
+  html.ep-admin .admin-tabs {
+    position: fixed; left: 0; top: 0; bottom: 0; width: 264px; z-index: 60; flex-direction: column; align-items: stretch; gap: 4px;
+    padding: 92px 14px 24px; overflow-x: hidden; overflow-y: auto; border-bottom: 0; border-right: 1.5px solid rgba(212, 175, 55, .32);
+    background: linear-gradient(180deg, rgba(26, 14, 0, .94), rgba(16, 8, 0, .96)); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+  }
+  html.ep-admin .admin-tab {
+    width: 100%; justify-content: flex-start; padding: 12px 14px !important; border: 1.5px solid transparent !important; border-radius: 12px; font-size: 14.5px !important; font-weight: 600;
+    color: rgba(247, 239, 217, .78) !important; text-align: left; transition: background .15s, color .15s;
+  }
+  html.ep-admin .admin-tab .adm-ic { margin-right: 12px; }
+  html.ep-admin .admin-tab .adm-ic svg { width: 20px; height: 20px; }
+  html.ep-admin .admin-tab:hover { background: rgba(212, 175, 55, .12); color: #F7EFD9 !important; }
+  html.ep-admin .admin-tab.active { background: rgba(212, 175, 55, .2); border-color: rgba(212, 175, 55, .55) !important; color: #F2CC6B !important; }
+  html.ep-admin #adm-brand {
+    display: flex; position: fixed; left: 0; top: 0; width: 264px; height: 84px; z-index: 61; align-items: center; gap: 12px; padding: 0 20px;
+    color: #F2CC6B; border-right: 1.5px solid rgba(212, 175, 55, .32);
+    background: linear-gradient(180deg, rgba(26, 14, 0, .98), rgba(26, 14, 0, .94));
+  }
+  html.ep-admin #adm-brand img { border-radius: 50%; box-shadow: 0 0 0 1.5px #D4AF37; }
+  html.ep-admin #adm-brand b { display: block; font: 800 18px/1.1 var(--g-fd, 'Syne', sans-serif); }
+  html.ep-admin #adm-brand span { display: block; margin-top: 3px; font: 600 11.5px/1.2 var(--g-fm, 'JetBrains Mono', monospace); letter-spacing: .5px; color: rgba(247, 239, 217, .7); }
+
+  /* header bar */
+  html.ep-admin .ep-header { position: sticky; top: 0; z-index: 50; min-height: 64px; padding: 0 36px; }
+  html.ep-admin .ep-header-title { font-size: 20px; }
+  html.ep-admin #adm-refresh { display: flex; align-items: center; gap: 14px; margin-left: auto; margin-right: 18px; }
+  html.ep-admin #adm-updated { font: 600 12px/1 var(--g-fm, 'JetBrains Mono', monospace); letter-spacing: .3px; opacity: .85; }
+  html.ep-admin #adm-refresh-btn {
+    display: inline-flex; align-items: center; gap: 8px; height: 38px; padding: 0 14px; border-radius: 10px; cursor: pointer;
+    background: rgba(255, 255, 255, .1); color: inherit; border: 1.5px solid rgba(212, 175, 55, .55); font: 700 13px/1 var(--g-fd, 'Syne', sans-serif);
+  }
+  html.ep-admin #adm-refresh-btn:hover { background: rgba(212, 175, 55, .22); }
+
+  /* content */
+  html.ep-admin .ep-body { max-width: 1560px; margin: 0 auto; padding: 8px 12px 48px; }
+  html.ep-admin .admin-panel { padding: 28px 36px 80px; }
+  html.ep-admin .adm-title { display: flex; align-items: flex-end; flex-wrap: wrap; gap: 6px 20px; margin-bottom: 22px; }
+  html.ep-admin .adm-title h2 { font: 800 28px/1.1 var(--g-fd, 'Syne', sans-serif); margin: 0; }
+  html.ep-admin .adm-title p { flex: 1 1 260px; margin: 0; font-size: 15px; opacity: .78; }
+  html.ep-admin .adm-export {
+    display: inline-flex; align-items: center; gap: 8px; height: 38px; padding: 0 14px; border-radius: 10px; cursor: pointer; margin-left: auto;
+    background: rgba(212, 175, 55, .14); color: inherit; border: 1.5px solid rgba(212, 175, 55, .55); font: 700 13px/1 var(--g-fd, 'Syne', sans-serif);
+  }
+  html.ep-admin .adm-export:hover { background: rgba(212, 175, 55, .26); }
+
+  /* KPI cards */
+  html.ep-admin .ep-stat-grid { display: grid !important; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 20px; margin-bottom: 28px; }
+  html.ep-admin .ep-stat { padding: 24px 24px 20px; }
+  html.ep-admin .ep-stat-label { font-size: 12.5px; }
+  html.ep-admin .ep-stat-value { font-size: 36px !important; line-height: 1.15; margin-top: 8px; }
+
+  /* lists become grids of cards */
+  html.ep-admin #users-list, html.ep-admin #topup-list, html.ep-admin #kyc-list, html.ep-admin #disputes-list, html.ep-admin #rates-list {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(400px, 1fr)); gap: 16px; align-items: start;
+  }
+  html.ep-admin #users-list > .ep-empty, html.ep-admin #topup-list > .ep-empty, html.ep-admin #kyc-list > .ep-empty,
+  html.ep-admin #disputes-list > .ep-empty, html.ep-admin #rates-list > .ep-empty { grid-column: 1 / -1; }
+  html.ep-admin #users-list > *, html.ep-admin #topup-list > *, html.ep-admin #kyc-list > *, html.ep-admin #disputes-list > * { margin: 0 !important; }
+  html.ep-admin #dash-tx, html.ep-admin #admin-tx { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 28px; }
+  html.ep-admin #dash-tx > .ep-empty, html.ep-admin #admin-tx > .ep-empty { grid-column: 1 / -1; }
+  html.ep-admin .user-row { padding: 16px 18px; }
+  html.ep-admin .ep-search { max-width: 640px; }
+  html.ep-admin #users-more, html.ep-admin #tx-more { max-width: 260px; margin-left: auto; margin-right: auto; }
+}
+@media (min-width: 1500px) {
+  html.ep-admin #dash-tx, html.ep-admin #admin-tx { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+/* ---- light theme ---- */
+html[data-theme="light"].ep-admin .admin-tabs { background: linear-gradient(180deg, rgba(255, 253, 246, .97), rgba(250, 244, 226, .97)); border-right-color: rgba(176, 130, 20, .4); }
+html[data-theme="light"].ep-admin .admin-tab { color: rgba(26, 18, 0, .72) !important; }
+html[data-theme="light"].ep-admin .admin-tab:hover { background: rgba(212, 175, 55, .18); color: #1A1200 !important; }
+html[data-theme="light"].ep-admin .admin-tab.active { background: rgba(212, 175, 55, .3); border-color: rgba(138, 101, 0, .55) !important; color: #5A3D00 !important; }
+html[data-theme="light"].ep-admin #adm-brand { background: linear-gradient(180deg, #FFFDF6, rgba(255, 253, 246, .97)); border-right-color: rgba(176, 130, 20, .4); color: #6B4A00; }
+html[data-theme="light"].ep-admin #adm-brand span { color: rgba(26, 18, 0, .62); }
+html[data-theme="light"].ep-admin #adm-refresh-btn, html[data-theme="light"].ep-admin .adm-export { background: rgba(255, 255, 255, .6); border-color: rgba(138, 101, 0, .6); color: #3A2A00; }
+html[data-theme="light"].ep-admin .admin-tab.active .adm-ic, html[data-theme="light"].ep-admin .admin-tab:hover .adm-ic { color: #7A5500; }
+html[data-theme="light"] .adm-title h2 { color: #3A2A00; }
+
+/* ---- dark theme for the console: calm carbon page with gold accents (the gold gradient page is too busy for dense data) ---- */
+html[data-theme="dark"].ep-admin {
+  background:
+    radial-gradient(ellipse at 12% 0%, rgba(212, 175, 55, .16) 0%, transparent 45%),
+    radial-gradient(ellipse at 100% 100%, rgba(122, 85, 24, .22) 0%, transparent 50%),
+    linear-gradient(165deg, #130D05 0%, #0A0703 55%, #130D05 100%) !important;
+}
+html[data-theme="dark"].ep-admin body::before, html[data-theme="dark"].ep-admin body::after { opacity: .5; }
+html[data-theme="dark"].ep-admin .ep-header { background: linear-gradient(135deg, rgba(42, 26, 6, .96), rgba(26, 14, 0, .96)) !important; }
+html[data-theme="dark"].ep-admin .ep-stat, html[data-theme="dark"].ep-admin .ep-card, html[data-theme="dark"].ep-admin .user-row {
+  background: rgba(26, 18, 8, .88) !important; border-color: rgba(212, 175, 55, .3) !important;
+}
+html[data-theme="dark"].ep-admin .ep-section { background: transparent !important; box-shadow: none !important; border: 0 !important; border-bottom: 1px solid rgba(212, 175, 55, .25) !important; border-radius: 0 !important; }
+html[data-theme="dark"].ep-admin .ep-tx { border-bottom: 1px solid rgba(212, 175, 55, .14); }
+@media (min-width: 1100px) {
+  html.ep-admin .ep-stat-value { font-size: 32px !important; white-space: nowrap; }
+  html.ep-admin #st-vol { font-size: 28px !important; }
+  html.ep-admin .adm-sub { font-size: 12.5px; opacity: .85; }
+  html.ep-admin .ep-tx-sub, html.ep-admin .ep-tx-date { font-size: 12.5px !important; }
+  html.ep-admin .ep-tx-who { font-size: 15px; }
+}
+@media (max-width: 1099px) {
+  .ep-stat-value { font-size: clamp(18px, 5.6vw, 26px) !important; overflow-wrap: anywhere; line-height: 1.2; }
+  .adm-sub { font-size: 11.5px; }
+}
