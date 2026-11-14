@@ -72,6 +72,28 @@
     apply();
   }
 
+  // long balances: shrink the figure until it fits its card
+  function fitBalance() {
+    var els = document.querySelectorAll('.ep-bal-amount');
+    for (var i = 0; i < els.length; i++) {
+      var el = els[i], box = el.parentNode;
+      if (!box) continue;
+      el.style.removeProperty('font-size');
+      var size = parseFloat(getComputedStyle(el).fontSize) || 52, guard = 0;
+      while (box.scrollWidth > box.clientWidth + 1 && size > 20 && guard++ < 40) { size -= 2; el.style.setProperty('font-size', size + 'px', 'important'); }
+    }
+  }
+  function watchBalance() {
+    fitBalance();
+    var els = document.querySelectorAll('.ep-bal-amount');
+    if (!els.length || !window.MutationObserver) return;
+    var mo = new MutationObserver(function () { fitBalance(); });
+    for (var i = 0; i < els.length; i++) mo.observe(els[i], { childList: true, characterData: true, subtree: true });
+    window.addEventListener('resize', fitBalance);
+    window.addEventListener('etelpay:theme', function () { setTimeout(fitBalance, 60); });
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', watchBalance); else watchBalance();
+
   apply();
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', build); else build();
 

@@ -227,7 +227,7 @@
       var src = document.getElementById('r-' + k);
       var dst = document.getElementById('drv-' + k);
       if (src && dst && src.textContent && src.textContent !== '—') {
-        dst.textContent = src.textContent + ' ETB';
+        dst.textContent = src.textContent.replace(/\s*ETB\s*$/i, '') + ' ETB';
       }
     });
   }
