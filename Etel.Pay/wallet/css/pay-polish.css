@@ -1,0 +1,19 @@
+/* Etel Pay - polish: line icons, keyboard focus, reduced motion, touch targets. Presentation only. */
+.ep-ic { width: 1em; height: 1em; display: inline-block; vertical-align: -0.14em; flex: none; }
+.ep-ic-row { display: inline-flex; align-items: center; gap: .45em; }
+.pf-menu-icon .ep-ic, .tu-opt-icon .ep-ic, .eid-path-icon .ep-ic, .ep-nav-icon .ep-ic, .r-avatar .ep-ic, .eid-fin-av .ep-ic { width: 22px; height: 22px; vertical-align: middle; }
+.ep-nav-icon .ep-ic { width: 24px; height: 24px; }
+.ep-empty-icon .ep-ic { width: 44px; height: 44px; opacity: .8; }
+.success-icon .ep-ic { width: 64px; height: 64px; color: #2fb36b; }
+.ep-input-icon .ep-ic, .ep-input-action .ep-ic { width: 18px; height: 18px; vertical-align: middle; }
+.ep-badge .ep-ic { width: 12px; height: 12px; }
+div[style*="font-size:60px"] > .ep-ic, div[style*="font-size:64px"] > .ep-ic, div[style*="font-size:56px"] > .ep-ic { color: #2fb36b; }
+a:focus-visible, button:focus-visible, [role="button"]:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, [tabindex]:focus-visible {
+  outline: 3px solid #F2CC6B; outline-offset: 2px;
+}
+html[data-theme="light"] a:focus-visible, html[data-theme="light"] button:focus-visible, html[data-theme="light"] [role="button"]:focus-visible,
+html[data-theme="light"] input:focus-visible, html[data-theme="light"] select:focus-visible, html[data-theme="light"] textarea:focus-visible { outline-color: #8A6500; }
+button, [role="button"], .ep-action, .sidebar-nav-item { min-height: 40px; }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; } }
+/* developer panel keeps its dark surface in the light theme: keep its heading readable */
+html[data-theme="light"] #ep-dev h3, html[data-theme="light"] #ep-dev-bar h3 { color: #F2CC6B !important; }
