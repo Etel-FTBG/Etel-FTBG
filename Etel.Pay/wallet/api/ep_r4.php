@@ -39,7 +39,7 @@ function ep_route_part4($action) {
         $uid = ep_auth_id();
         $pdo = ep_db();
         ep_topup_reason_col();
-        $q = $pdo->prepare('SELECT ref, amount, method, status, reject_reason, created_at, updated_at FROM ' . EP_TBL_TOPUP . ' WHERE user_id=? AND status IN ("processing","completed","failed") ORDER BY created_at DESC LIMIT 10');
+        $q = $pdo->prepare('SELECT * FROM ' . EP_TBL_TOPUP . ' WHERE user_id=? AND status IN ("processing","completed","failed") ORDER BY created_at DESC LIMIT 10');
         $q->execute(array($uid));
         ep_ok(array('requests' => $q->fetchAll()));
         return true;
