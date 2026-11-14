@@ -1,0 +1,175 @@
+/* ============================================================================
+   ኢE Pay - DESKTOP WEB APP (screens 1024px and wider). Phones keep the existing layout.
+   Replaces the "phone inside a browser window" look with a real application layout:
+   full-height sidebar | page header + content grid. Works in light and dark (css/pay-theme.css).
+   Only presentation: no money logic, API call or form behaviour is changed.
+   ============================================================================ */
+@media (min-width: 1024px) {
+
+  /* ---- page background: calm, not the busy gold gradient ---- */
+  html.ep-desk[data-theme="dark"] {
+    background:
+      radial-gradient(ellipse at 14% 0%, rgba(212, 175, 55, .16) 0%, transparent 45%),
+      radial-gradient(ellipse at 100% 100%, rgba(122, 85, 24, .22) 0%, transparent 50%),
+      linear-gradient(165deg, #130D05 0%, #0A0703 55%, #130D05 100%) !important;
+  }
+  html.ep-desk body::before, html.ep-desk body::after { opacity: .4; }
+
+  /* ---- shell: sidebar + scrolling main, no phone frame ---- */
+  html.ep-desk, html.ep-desk body { height: 100% !important; overflow: hidden !important; }
+  html.ep-desk body #ep-desktop-wrap { display: grid !important; grid-template-columns: 272px minmax(0, 1fr); width: 100vw !important; height: 100vh !important; min-height: 0 !important; }
+  html.ep-desk body #ep-desktop-info { display: none !important; }
+  html.ep-desk body #ep-desktop-main { display: block !important; height: 100vh; overflow-y: auto !important; overflow-x: hidden; position: relative; padding: 0 !important; }
+  html.ep-desk body #ep-desktop-main::before { display: none; }
+  html.ep-desk body #app {
+    width: 100% !important; max-width: 1180px !important; height: auto !important; min-height: 100vh !important; margin: 0 auto !important;
+    border-radius: 0 !important; box-shadow: none !important; overflow: visible !important; display: flex !important; flex-direction: column; padding: 0 44px 56px !important;
+  }
+  html.ep-desk body .ep-nav, html.ep-desk body .bottom-nav { display: none !important; }
+
+  /* ---- sidebar ---- */
+  html.ep-desk body #ep-sidebar {
+    grid-column: 1; height: 100vh; overflow-y: auto; overflow-x: hidden;
+    background: linear-gradient(180deg, rgba(26, 14, 0, .96), rgba(16, 8, 0, .98)) !important; border-right: 1.5px solid rgba(212, 175, 55, .28) !important;
+  }
+  html.ep-desk .sidebar-logo { padding: 26px 22px 22px; border-bottom: 1px solid rgba(212, 175, 55, .18); }
+  html.ep-desk .sidebar-logo-name { font-size: 18px; color: #F2CC6B; }
+  html.ep-desk .sidebar-logo-sub { font-size: 12px; color: rgba(247, 239, 217, .7); letter-spacing: .3px; }
+  html.ep-desk .sidebar-section-label { font-size: 12px; color: rgba(212, 175, 55, .8); letter-spacing: 1.4px; padding: 20px 22px 8px; }
+  html.ep-desk .sidebar-nav-item { margin: 2px 12px; padding: 12px 14px; font-size: 15px; color: rgba(247, 239, 217, .82); border-radius: 12px; gap: 14px; }
+  html.ep-desk .sidebar-nav-item:hover { background: rgba(212, 175, 55, .12); color: #F7EFD9; }
+  html.ep-desk .sidebar-nav-item.active { background: rgba(212, 175, 55, .2); border-color: rgba(212, 175, 55, .55); color: #F2CC6B; }
+  html.ep-desk .sidebar-nav-icon { display: inline-flex; align-items: center; justify-content: center; width: 22px; font-size: 17px; }
+  html.ep-desk .sidebar-nav-icon svg { width: 20px; height: 20px; }
+  html.ep-desk .sidebar-user-card { background: rgba(212, 175, 55, .1); border-color: rgba(212, 175, 55, .3); }
+  html.ep-desk .sidebar-user-name { color: #F7EFD9; font-size: 14px; }
+  html.ep-desk .sidebar-user-phone { color: rgba(247, 239, 217, .72); font-size: 12px; }
+
+  /* ---- page headers: a title bar, not a phone toolbar ---- */
+  html.ep-desk body .ep-header, html.ep-desk body .greeting {
+    position: static !important; background: transparent !important; border: 0 !important; border-bottom: 1.5px solid rgba(212, 175, 55, .28) !important;
+    padding: 30px 0 18px !important; min-height: 0; box-shadow: none !important; color: inherit !important; margin: 0 !important;
+  }
+  html.ep-desk body .ep-header::after, html.ep-desk body .greeting::after { display: none !important; }
+  html.ep-desk body .ep-header * { color: inherit !important; }
+  html.ep-desk body .ep-header-title { font-size: 28px !important; text-align: left !important; flex: 1; font-weight: 800; }
+  html.ep-desk body .ep-header-back { order: 0; margin-right: 14px; }
+  html.ep-desk body .greeting-text h2 { font-size: 28px !important; }
+  html.ep-desk body .greeting-text p { font-size: 14px !important; }
+  html.ep-desk body .ep-body { padding: 26px 0 0 !important; overflow: visible !important; height: auto !important; flex: 1; }
+  html.ep-desk body .rate-bar { border: 1.5px solid rgba(212, 175, 55, .28); border-radius: 14px; margin: 20px 0 0; padding: 12px 20px; }
+
+  /* ---- cards: one consistent family ---- */
+  html.ep-desk body .ep-card, html.ep-desk body .ep-card-glow { border-radius: 20px !important; }
+  html.ep-desk[data-theme="dark"] body .ep-card, html.ep-desk[data-theme="dark"] body .ep-card-glow, html.ep-desk[data-theme="dark"] body .ep-stat {
+    background: rgba(26, 18, 8, .88) !important; border-color: rgba(212, 175, 55, .3) !important;
+  }
+  html.ep-desk[data-theme="dark"] body .balance-card { background: linear-gradient(135deg, rgba(58, 40, 12, .95), rgba(26, 18, 8, .95)) !important; }
+
+  /* ---- content width per page ---- */
+  html.ep-desk[data-page="send"] body #app, html.ep-desk[data-page="topup"] body #app, html.ep-desk[data-page="kyc"] body #app,
+  html.ep-desk[data-page="qr"] body #app, html.ep-desk[data-page="profile"] body #app, html.ep-desk[data-page="pay-links"] body #app { max-width: 900px !important; }
+  html.ep-desk[data-page="history"] body #app, html.ep-desk[data-page="analytics"] body #app { max-width: 1040px !important; }
+
+  /* ---- WALLET dashboard: balance + actions, then activity ---- */
+  html.ep-desk[data-page="wallet"] body .ep-body { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 24px; align-items: start; }
+  html.ep-desk[data-page="wallet"] body .balance-wrap, html.ep-desk[data-page="wallet"] body .actions-wrap, html.ep-desk[data-page="wallet"] body .recent-wrap { padding: 0 !important; }
+  html.ep-desk[data-page="wallet"] body .balance-wrap { grid-column: 1; grid-row: 1; }
+  html.ep-desk[data-page="wallet"] body .actions-wrap { grid-column: 2; grid-row: 1; }
+  html.ep-desk[data-page="wallet"] body .recent-wrap { grid-column: 1 / -1; grid-row: 2; }
+  html.ep-desk[data-page="wallet"] body .balance-card { padding: 32px 34px 28px; min-height: 220px; }
+  html.ep-desk[data-page="wallet"] body .ep-bal-amount { font-size: 58px !important; }
+  html.ep-desk[data-page="wallet"] body .ep-actions { display: grid !important; grid-template-columns: 1fr 1fr; gap: 16px; }
+  html.ep-desk[data-page="wallet"] body .ep-action {
+    flex-direction: row !important; justify-content: flex-start; gap: 16px; padding: 22px 22px !important; min-height: 100px; text-align: left;
+    border-radius: 18px !important;
+  }
+  html.ep-desk[data-page="wallet"] body .ep-action-icon { width: 52px !important; height: 52px !important; border-radius: 14px !important; flex-shrink: 0; }
+  html.ep-desk[data-page="wallet"] body .ep-action-icon svg { width: 24px; height: 24px; color: #F2CC6B; }
+  html.ep-desk[data-page="wallet"] body .ep-action-label { font-size: 15px !important; letter-spacing: .4px !important; }
+  html.ep-desk[data-page="wallet"] body .recent-wrap .ep-section { padding: 6px 0 12px; }
+  html.ep-desk body .ep-tx-list .ep-tx { padding: 16px 18px; border-radius: 14px; transition: background .15s; }
+  html.ep-desk body .ep-tx-list .ep-tx:hover { background: rgba(212, 175, 55, .1); }
+  html.ep-desk body .ep-tx-who { font-size: 16px; }
+  html.ep-desk body .ep-tx-sub, html.ep-desk body .ep-tx-date { font-size: 13px !important; }
+  html.ep-desk body .ep-tx-amt { font-size: 16px; }
+
+  /* ---- other pages: tidy forms ---- */
+  html.ep-desk[data-page="send"] body .ep-body, html.ep-desk[data-page="topup"] body .ep-body { max-width: 640px; width: 100%; margin: 0 auto; }
+  html.ep-desk[data-page="profile"] body .ep-body { max-width: 760px; width: 100%; margin: 0 auto; }
+
+  /* ---- SIGN-IN: split screen ---- */
+  html.ep-desk .ep-auth-page { display: grid !important; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); padding: 0 !important; min-height: 100vh; align-items: stretch !important; justify-content: stretch !important; }
+  html.ep-desk .ep-brand-side {
+    grid-column: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 48px 56px; position: relative; z-index: 2;
+    background:
+      radial-gradient(ellipse 700px 600px at 50% 30%, rgba(212, 175, 55, .18), transparent 65%),
+      linear-gradient(160deg, #1b1209 0%, #0a0703 100%);
+    border-right: 1.5px solid rgba(212, 175, 55, .3);
+  }
+  html.ep-desk .ep-brand-medal .ep-medal { width: min(30vw, 300px) !important; height: min(30vw, 300px) !important; margin: 0 auto !important; filter: drop-shadow(0 14px 40px rgba(0, 0, 0, .6)); position: static; }
+  html.ep-desk .ep-brand-name { margin-top: 26px; font: 800 38px/1.1 var(--g-fd, 'Syne', sans-serif); color: #F2CC6B; }
+  html.ep-desk .ep-brand-tag { margin-top: 8px; font-size: 18px; color: rgba(247, 239, 217, .82); }
+  html.ep-desk .ep-brand-trust .ep-auth-trust { flex-direction: column; align-items: flex-start; gap: 14px; margin-top: 34px; padding: 0; }
+  html.ep-desk .ep-brand-trust .ep-trust-item { font-size: 15px; color: rgba(247, 239, 217, .9); gap: 12px; }
+  html.ep-desk .ep-brand-trust .ep-trust-item svg { width: 20px; height: 20px; color: #F2CC6B; }
+  html.ep-desk .ep-brand-foot { margin-top: 40px; font: 600 12px/1 var(--g-fm, 'JetBrains Mono', monospace); letter-spacing: 1.2px; color: rgba(212, 175, 55, .75); text-transform: uppercase; }
+  html.ep-desk .ep-medal-wrap { grid-column: 2; max-width: none !important; width: 100%; align-items: center; justify-content: center; display: flex !important; padding: 40px 24px; }
+  html.ep-desk .ep-medal-wrap .ep-auth-card { max-width: 440px !important; padding-top: 0 !important; margin: 0 auto; }
+  html.ep-desk .ep-auth-head { padding-top: 34px !important; }
+  html.ep-desk .ep-glow { display: none; }
+  html.ep-desk .ep-lang-btn { z-index: 5; }
+}
+
+@media (min-width: 1024px) {
+  html.ep-desk body #ep-desktop-main { background: transparent !important; }
+  html.ep-desk body .ep-body { align-content: start; }
+  html.ep-desk body .ep-section { background: transparent !important; border: 0 !important; border-bottom: 1px solid rgba(212, 175, 55, .28) !important; box-shadow: none !important; border-radius: 0 !important; padding: 6px 0 12px !important; }
+  html.ep-desk body .ep-section-title { font-size: 20px !important; }
+
+  /* display button lives in the sidebar header (moved by js/pay-desktop.js); on the sign-in page it sits top-left */
+  html.ep-desk body #ep-sidebar { position: relative; }
+  html.ep-desk body #ep-sidebar #ep-theme-fab { position: absolute; right: 14px; left: auto; top: 22px; bottom: auto; align-items: flex-end; z-index: 95; }
+  html.ep-desk[data-page="login"] #ep-theme-fab { left: 18px; right: auto; top: 18px; align-items: flex-start; }
+  html.ep-desk[data-page="login"] body #etel-help-fab { left: 24px !important; bottom: 18px !important; }
+  html.ep-desk[data-page="login"], html.ep-desk[data-page="login"] body { overflow: auto !important; height: auto !important; }
+  html.ep-desk[data-page="login"] .ep-auth-page { min-height: 100vh; }
+}
+html[data-theme="light"].ep-desk #ep-sidebar #ep-theme-btn { box-shadow: 0 4px 12px rgba(120, 80, 0, .25); }
+
+/* ---- light theme: ivory sidebar, readable brand panel on the sign-in page ---- */
+@media (min-width: 1024px) {
+  html[data-theme="light"].ep-desk body #ep-sidebar { background: linear-gradient(180deg, #FFFDF6, #FAF3DE) !important; border-right-color: rgba(176, 130, 20, .4) !important; }
+  html[data-theme="light"].ep-desk .sidebar-logo { border-bottom-color: rgba(176, 130, 20, .3); }
+  html[data-theme="light"].ep-desk .sidebar-logo-name { color: #5A3D00 !important; }
+  html[data-theme="light"].ep-desk .sidebar-logo-sub { color: rgba(26, 18, 0, .65) !important; }
+  html[data-theme="light"].ep-desk .sidebar-section-label { color: #7A5500 !important; }
+  html[data-theme="light"].ep-desk .sidebar-nav-item { color: #3A2A00 !important; }
+  html[data-theme="light"].ep-desk .sidebar-nav-item:hover { background: rgba(212, 175, 55, .18) !important; }
+  html[data-theme="light"].ep-desk .sidebar-nav-item.active { background: rgba(212, 175, 55, .3) !important; border-color: rgba(138, 101, 0, .55) !important; color: #5A3D00 !important; }
+  html[data-theme="light"].ep-desk .sidebar-user-card { background: rgba(212, 175, 55, .14) !important; border-color: rgba(138, 101, 0, .4) !important; }
+  html[data-theme="light"].ep-desk .sidebar-user-name { color: #1A1200 !important; }
+  html[data-theme="light"].ep-desk .sidebar-user-phone { color: rgba(26, 18, 0, .68) !important; }
+  html[data-theme="light"].ep-desk body #ep-sidebar #ep-theme-btn { background: rgba(255, 255, 255, .95); }
+  html[data-theme="light"].ep-desk .ep-brand-name { color: #F2CC6B !important; }
+  html[data-theme="light"].ep-desk .ep-brand-tag { color: rgba(247, 239, 217, .85) !important; }
+  html[data-theme="light"].ep-desk .ep-brand-trust .ep-trust-item { color: rgba(247, 239, 217, .92) !important; }
+  html[data-theme="light"].ep-desk .ep-brand-trust .ep-trust-item svg { color: #F2CC6B !important; }
+  html[data-theme="light"].ep-desk .ep-brand-foot { color: rgba(242, 204, 107, .85) !important; }
+  html[data-theme="light"].ep-desk[data-page="login"] #ep-theme-btn { background: rgba(16, 8, 0, .88); color: #F2CC6B; border-color: rgba(212, 175, 55, .6); }
+  html[data-theme="light"].ep-desk .sidebar-nav-icon svg { color: inherit; }
+}
+
+/* narrow desktops / tablets landscape (1024-1279px): stack the balance and the four actions */
+@media (min-width: 1024px) and (max-width: 1279px) {
+  html.ep-desk body #ep-desktop-wrap { grid-template-columns: 244px minmax(0, 1fr); }
+  html.ep-desk body #app { padding: 0 30px 48px !important; }
+  html.ep-desk[data-page="wallet"] body .ep-body { grid-template-columns: minmax(0, 1fr); }
+  html.ep-desk[data-page="wallet"] body .balance-wrap { grid-column: 1; grid-row: 1; }
+  html.ep-desk[data-page="wallet"] body .actions-wrap { grid-column: 1; grid-row: 2; }
+  html.ep-desk[data-page="wallet"] body .recent-wrap { grid-row: 3; }
+  html.ep-desk[data-page="wallet"] body .ep-actions { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+  html.ep-desk[data-page="wallet"] body .ep-action { flex-direction: column !important; justify-content: center; text-align: center; gap: 10px; padding: 18px 8px !important; min-height: 0; }
+  html.ep-desk .ep-auth-page { grid-template-columns: minmax(0, .9fr) minmax(0, 1fr); }
+  html.ep-desk .ep-brand-side { padding: 32px 28px; }
+}
