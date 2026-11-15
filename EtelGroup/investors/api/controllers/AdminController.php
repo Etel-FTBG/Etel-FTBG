@@ -132,6 +132,12 @@ case 'admin_growth_planner': {
     $grossFarePerDay = $tripsPerDay * $blendedAvgFare;
 
     $commissionRate = ir_commission_rate($pdo);
+    // The admin can try another commission rate for the pitch (0, 2, 5, 10 % or a custom value).
+    if (isset($body['commission_rate_pct']) && $body['commission_rate_pct'] !== '' && $body['commission_rate_pct'] !== null) {
+        $pctTry = (float)$body['commission_rate_pct'];
+        if ($pctTry < 0 || $pctTry > 30) fail('Commission rate must be between 0 and 30 %.', 400);
+        $commissionRate = $pctTry / 100;
+    }
     $costCats = $pdo->query('SELECT monthly_amount FROM ir_cost_categories WHERE is_active = 1')->fetchAll();
     $includeDemo = ir_is_demo_mode($pdo);
     $holdings = ir_investor_holdings($pdo, $includeDemo);
@@ -168,7 +174,26 @@ case 'admin_growth_planner': {
         $results[$key] = $r;
     }
 
+    // Side-by-side: what each commission rate would mean for one month (0, 2, 5, 10 % and the rate in use).
+    $rates = [0.0, 2.0, 5.0, 10.0];
+    $inUsePct = round($commissionRate * 100, 2);
+    if (!in_array($inUsePct, $rates, true)) $rates[] = $inUsePct;
+    sort($rates);
+    $compare = [];
+    foreach ($rates as $rp) {
+        $m = ir_project_growth($grossFarePerDay, 30, $rp / 100, $costCats, $investorsForEngine, 'month', $otherMonthlyIncome, $costScale);
+        $perTrip = $blendedAvgFare * ($rp / 100);
+        $compare[] = [
+            'rate_pct' => $rp, 'in_use' => abs($rp - $inUsePct) < 0.001,
+            'commission_revenue' => round($m['commission_revenue'], 2), 'net_profit' => round($m['net_profit'], 2),
+            'pool_entitlement' => round($m['pool_entitlement'], 2), 'total_investor_payout' => round($m['total_investor_payout'], 2),
+            'break_even_trips_per_day' => $perTrip > 0 ? (int)ceil(max(0.0, $monthlyCosts - $otherMonthlyIncome) / ($perTrip * 30)) : null,
+        ];
+    }
+
     ok([
+        'commission_rate_pct' => $inUsePct,
+        'compare' => $compare,
         'fare_breakdown' => [
             'ride_fare' => round($rideFare, 2),
             'wait_charge' => round($waitCharge, 2),

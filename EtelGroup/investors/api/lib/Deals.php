@@ -100,6 +100,8 @@ function ir_deal_limits(PDO $pdo): array {
             'on'     => ir_get_setting($pdo, 'inv_collateral_on', '0') === '1',
             'pct'    => $i('inv_collateral_pct', 30, 1, 100),
             'months' => $i('inv_collateral_months', 24, 1, 240),
+            'until_repaid' => ir_get_setting($pdo, 'inv_collateral_until_repaid', '0') === '1',
+            'value'  => max(0, (int)ir_get_setting($pdo, 'inv_collateral_value', '0')),   // ETB value of the registered assets
         ],
     ];
 }

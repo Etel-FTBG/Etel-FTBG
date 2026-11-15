@@ -148,6 +148,11 @@ case 'admin_deal_limits_set': {
     ir_set_setting($pdo, 'inv_lock_months', (string)$num('lock_months', 0, 120));
     ir_set_setting($pdo, 'inv_collateral_pct', (string)$num('collateral_pct', 1, 100));
     ir_set_setting($pdo, 'inv_collateral_months', (string)$num('collateral_months', 1, 240));
+    $colValue = (int)($body['collateral_value'] ?? 0);
+    if ($colValue < 0 || $colValue > 100000000000) fail('collateral_value must be a value in ETB (0 or more).', 400);
+    if (!empty($body['collateral_on']) && $colValue < 1) fail('Enter the ETB value of the registered assets before switching the security on.', 400);
+    ir_set_setting($pdo, 'inv_collateral_value', (string)$colValue);
+    ir_set_setting($pdo, 'inv_collateral_until_repaid', !empty($body['collateral_until_repaid']) ? '1' : '0');
     ir_set_setting($pdo, 'inv_collateral_on', !empty($body['collateral_on']) ? '1' : '0');
     ir_log($pdo, eg_current_actor()['full_name'], 'deal_limits_set', json_encode(ir_deal_limits($pdo)));
     ok(ir_deal_limits($pdo));

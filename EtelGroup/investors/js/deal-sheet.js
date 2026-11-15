@@ -41,6 +41,9 @@ var TXT = {
     pt4b: 'Growth spending is capped', pt4s: 'Bonuses, referrals and promotions are paid only from the raise, within the budget lines.',
     pt5b: 'You see everything', pt5s: 'A statement each period, your own portal login, and a yearly review by an independent accountant.',
     pt6b: 'Registered security', pt6s: 'The founder has registered assets as security: {pct} % of your unrecovered capital for the first {months} months, and always against misuse of funds or breach of the Agreement.',
+    pt6a: 'The founder has registered assets as security: {pct} % of your unrecovered capital', pt6_months: ' for the first {months} months', pt6_until: ' until it is repaid',
+    pt6_value: ', up to a total secured value of ETB {value}', pt6_misuse: ', and always against misuse of funds or breach of the Agreement.',
+    g1s_sec: 'Payouts come only from profit. Your capital is protected by the registered security below, up to its value.',
     pt_note: 'These protections reduce risk. They do not guarantee profit or the return of your money.',
     lm_h: 'Who can invest, and limits', lm1: 'At least {min} Profit Shares per investor.', lm2: 'At most {max} Profit Shares for one investor, so no single investor dominates.',
     lm3: 'You cannot sell for {lock} months after you are enrolled.', lm4: 'After that you may sell to a person the Company approves. Approval is given unless there is a good reason. The Company has the first right to buy, at the price set by the formula in the Agreement.',
@@ -179,7 +182,13 @@ var TXT = {
       "lm3": "ከተመዘገቡ በኋላ ለ{lock} ወራት መሸጥ አይቻልም።",
       "lm4": "ከዚያ በኋላ ኩባንያው ለሚያፀድቀው ሰው መሸጥ ይችላሉ። በቂ ምክንያት ከሌለ ይፀድቃል። ኩባንያው በስምምነቱ ቀመር በሚወሰን ዋጋ የመጀመሪያ የመግዛት መብት አለው።",
       "lm5": "ውርስ ሁልጊዜ ይፈቀዳል።",
-      "lm_form_min": "ለአንድ ባለሀብት ቢያንስ {min}፣ ቢበዛ {max} የትርፍ ድርሻ።"
+      "lm_form_min": "ለአንድ ባለሀብት ቢያንስ {min}፣ ቢበዛ {max} የትርፍ ድርሻ።",
+      "pt6a": "መስራቹ ንብረቶችን በዋስትና አስመዝግቧል፦ ላልተመለሰ ካፒታልዎ {pct} %",
+      "pt6_months": " ለመጀመሪያዎቹ {months} ወራት",
+      "pt6_until": " ካፒታልዎ እስኪመለስ ድረስ",
+      "pt6_value": "፣ እስከ ጠቅላላ የዋስትና ዋጋ ETB {value}",
+      "pt6_misuse": "፤ ገንዘብ ያላግባብ ቢውል ወይም ስምምነት ቢጣስ ደግሞ ሁልጊዜ።",
+      "g1s_sec": "ክፍያ የሚመጣው ከትርፍ ብቻ ነው። ካፒታልዎ ከታች ባለው የተመዘገበ ዋስትና እስከ ዋጋው ድረስ ይጠበቃል።"
   }
 };
 function fmt(str, o) { return String(str).replace(/\{(\w+)\}/g, function (m, k) { return o && o[k] != null ? o[k] : m; }); }
@@ -195,12 +204,20 @@ function payout(units, profit, cfg) {
 
 // The filled-in sheet (one A4 page), used on screen, in the admin and for printing.
 
+// Sentence for the registered security, built from the Company's settings.
+function securityText(t, col) {
+  var s = fmt(t.pt6a, { pct: col.pct }) + (col.until_repaid ? t.pt6_until : fmt(t.pt6_months, { months: col.months }));
+  if (col.value > 0) s += fmt(t.pt6_value, { value: num(col.value) });
+  return s + t.pt6_misuse;
+}
+// The first "good to know" line: plainer when registered security is in place.
+function g1Text(t, lim) { return lim && lim.collateral && lim.collateral.on ? t.g1s_sec : t.g1s; }
 // The protections and limits block (investor-facing text; numbers come from the Company's settings).
 function protectHtml(t, lim, price) {
   lim = lim || { min_units: 10, max_units: 100, lock_months: 12, collateral: { on: false, pct: 30, months: 24 } };
   var col = lim.collateral || { on: false };
   var pts = [1, 2, 3, 4, 5].map(function (i) { return '<li><b>' + esc(t['pt' + i + 'b']) + '.</b> ' + esc(t['pt' + i + 's']) + '</li>'; });
-  if (col.on) pts.push('<li><b>' + esc(t.pt6b) + '.</b> ' + esc(fmt(t.pt6s, { pct: col.pct, months: col.months })) + '</li>');
+  if (col.on) pts.push('<li><b>' + esc(t.pt6b) + '.</b> ' + esc(securityText(t, col)) + '</li>');
   var lm = [fmt(t.lm1, { min: lim.min_units }), fmt(t.lm2, { max: lim.max_units }), fmt(t.lm3, { lock: lim.lock_months }), t.lm4, t.lm5].map(function (x) { return '<li>' + esc(x) + '</li>'; });
   return '<h2>' + esc(t.pt_h) + '</h2><p class="dl-note">' + esc(t.pt_lead) + '</p><ul class="dl-pts">' + pts.join('') + '</ul><p class="dl-note"><i>' + esc(t.pt_note) + '</i></p>' +
     '<h2>' + esc(t.lm_h) + '</h2><ul class="dl-pts">' + lm.join('') + '</ul>';
@@ -221,7 +238,7 @@ function renderSheet(d, lang, cfg) {
       row(esc(t.f_payout), esc(period) + (Number(d.payout_days) ? ' · ' + esc(d.payout_days) + ' ' + esc(t.days) : '')) + row(esc(t.f_bank), esc(d.bank_account || t.none)) +
     '</table></section>' +
     '<section><h2>' + esc(t.calc_h) + '</h2><p>' + esc(t.calc_p) + ': <b>ETB ' + num(p.std) + '</b> (' + esc(t.calc_std) + ') · <b>ETB ' + num(p.boost) + '</b> (' + esc(t.calc_boost) + ').</p>' +
-    '<ul class="dl-pts"><li><b>' + esc(t.g1b) + '.</b> ' + esc(t.g1s) + '</li><li><b>' + esc(t.g2b) + '.</b> ' + esc(t.g2s) + '</li><li><b>' + esc(t.g3b) + '.</b> ' + esc(t.g3s) + '</li><li><b>' + esc(t.g4b) + '.</b> ' + esc(t.g4s) + '</li></ul></section>' +
+    '<ul class="dl-pts"><li><b>' + esc(t.g1b) + '.</b> ' + esc(g1Text(t, c.limits)) + '</li><li><b>' + esc(t.g2b) + '.</b> ' + esc(t.g2s) + '</li><li><b>' + esc(t.g3b) + '.</b> ' + esc(t.g3s) + '</li><li><b>' + esc(t.g4b) + '.</b> ' + esc(t.g4s) + '</li></ul></section>' +
     '<section>' + protectHtml(t, c.limits) + '</section>' +
     '<section class="dl-sign"><div class="dl-sbox"><div class="dl-r">' + esc(t.sh_investor) + '</div>' + (d.signature_png ? '<img class="dl-sigimg" src="' + esc(d.signature_png) + '" alt="">' : '<div class="dl-sigimg"></div>') +
       '<div class="dl-l"></div><div class="dl-n">' + esc(d.signature_name) + ' · ' + esc(d.signed_at) + '</div></div>' +
@@ -240,5 +257,5 @@ function printSheet(html, lang) {
   w.onload = function () { setTimeout(function () { w.focus(); w.print(); }, 350); };
 }
 
-window.EtelDeal = { fmt: fmt, T: T, TXT: TXT, esc: esc, num: num, payout: payout, renderSheet: renderSheet, printSheet: printSheet, protectHtml: protectHtml };
+window.EtelDeal = { fmt: fmt, T: T, TXT: TXT, esc: esc, num: num, payout: payout, renderSheet: renderSheet, printSheet: printSheet, protectHtml: protectHtml, securityText: securityText, g1Text: g1Text };
 })();

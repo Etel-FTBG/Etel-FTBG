@@ -122,7 +122,7 @@ function sSafe() { var x = t(); return slide('', head('', x.f_h) + '<div class="
 function sWind() {
   var x = t(), d = D.T(lang), lim = cfg.limits || {}, col = lim.collateral || {};
   var ks = [1, 2, 3, 4, 5]; if (col.on) ks.push(6);
-  var cards = ks.map(function (i) { return '<div class="pt-card"><b>' + e(d['pt' + i + 'b']) + '</b><span>' + e(i === 6 ? f(d.pt6s, { pct: col.pct, months: col.months }) : d['pt' + i + 's']) + '</span></div>'; }).join('');
+  var cards = ks.map(function (i) { return '<div class="pt-card"><b>' + e(d['pt' + i + 'b']) + '</b><span>' + e(i === 6 ? D.securityText(d, col) : d['pt' + i + 's']) + '</span></div>'; }).join('');
   return slide('', head('', d.pt_h, d.pt_lead) + '<div class="pt-3">' + cards + '</div><div class="pt-note">' + e(d.pt_note) + '</div>');
 }
 function sLimits() {
