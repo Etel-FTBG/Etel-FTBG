@@ -2,8 +2,8 @@
    Additive and read-only: it only hides/reorders rows already on the page and downloads what you see. Nothing is sent to the server. */
 (function () {
   'use strict';
-  var IDS = ['drivers-table', 'pending-table', 'overdue-table', 'bank-table', 'associations-table', 'officers-table'];
-  var NAMES = { 'drivers-table': 'drivers', 'pending-table': 'pending-payments', 'overdue-table': 'overdue-drivers', 'bank-table': 'bank-accounts', 'associations-table': 'associations', 'officers-table': 'traffic-officers' };
+  var IDS = ['drivers-table', 'pending-table', 'overdue-table', 'bank-table', 'associations-table', 'officers-table', 'audit-table'];
+  var NAMES = { 'drivers-table': 'drivers', 'pending-table': 'pending-payments', 'overdue-table': 'overdue-drivers', 'bank-table': 'bank-accounts', 'associations-table': 'associations', 'officers-table': 'traffic-officers', 'audit-table': 'activity-log' };
   var state = {};                                   // per table: { q, status }
 
   function cellText(td) { return (td.textContent || '').replace(/\s+/g, ' ').trim(); }

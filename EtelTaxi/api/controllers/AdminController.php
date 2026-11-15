@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/../lib/taxi_payments.php';
 require_once __DIR__ . '/../lib/etelid_bridge.php';
+require_once __DIR__ . '/../lib/taxi_audit.php';
 
 switch ($action) {
 
@@ -152,7 +153,9 @@ case 'admin_create_association': {
         isset($body['penalty_amount']) ? floatval($body['penalty_amount']) : 100.00,
         isset($body['grace_period_days']) ? intval($body['grace_period_days']) : 5,
     ));
-    ok(array('id' => intval($pdo->lastInsertId())));
+    $newAssocId = intval($pdo->lastInsertId());
+    taxi_audit($pdo, $admin, 'association_created', 'association', $newAssocId, $nameAm);
+    ok(array('id' => $newAssocId));
     break;
 }
 
@@ -175,6 +178,7 @@ case 'admin_update_association': {
     if (!$fields) fail('No fields to update.');
     $vals[] = $id;
     $pdo->prepare('UPDATE ' . tbl('taxi_associations') . ' SET ' . implode(', ', $fields) . ' WHERE id = ?')->execute($vals);
+    taxi_audit($pdo, $admin, 'association_updated', 'association', $id, 'fields: ' . implode(', ', array_map(function ($x) { return trim(explode('=', $x)[0]); }, $fields)));
     ok(array('message' => 'Association updated.'));
     break;
 }
@@ -195,7 +199,7 @@ case 'admin_list_drivers': {
     foreach ($drivers as &$d) {
         $st = taxi_compute_driver_status($pdo, $d['id'], $d['association_id']);
         $d['permit_status'] = $st['status'];
-        unset($d['pin_hash']);
+        unset($d['pin_hash'], $d['push_subscription'], $d['fcm_token']);   // admins never need the raw push token
     }
     unset($d);
     ok(array('drivers' => $drivers));
@@ -234,7 +238,9 @@ case 'admin_register_driver': {
         isset($body['vehicle_type']) ? trim($body['vehicle_type']) : null,
         $licenseNum, $licenseName, $licenseDob, $identityMatch,
     ));
-    $resp = array('driver_id' => intval($pdo->lastInsertId()), 'starter_pin' => $starterPin,
+    $newDriverId = intval($pdo->lastInsertId());
+    taxi_audit($pdo, $admin, 'driver_registered', 'driver', $newDriverId, $fullName . ' / ' . $plate);
+    $resp = array('driver_id' => $newDriverId, 'starter_pin' => $starterPin,
               'message' => 'Driver registered. Give them this starter PIN to log in - they should change it.');
     if ($identityMatch !== 'matched') {
         $resp['identity_match'] = $identityMatch;
@@ -284,6 +290,7 @@ case 'admin_verify_payment': {
     $pdo->prepare('UPDATE ' . tbl('taxi_dues_payments') . '
         SET status = "verified", verified_by = ?, verified_at = NOW() WHERE id = ? AND status = "pending_verification"')
         ->execute(array($admin['id'], $id));
+    taxi_audit($pdo, $admin, 'payment_verified', 'payment', $id, '');
     ok(array('message' => 'Payment verified.'));
     break;
 }
@@ -305,6 +312,7 @@ case 'admin_reject_payment': {
     $pdo->prepare('UPDATE ' . tbl('taxi_dues_payments') . '
         SET status = "rejected", verified_by = ?, verified_at = NOW(), notes = ? WHERE id = ? AND status = "pending_verification"')
         ->execute(array($admin['id'], $reason ?: null, $id));
+    taxi_audit($pdo, $admin, 'payment_rejected', 'payment', $id, $reason);
     ok(array('message' => 'Payment rejected. The driver can resubmit.'));
     break;
 }
@@ -319,7 +327,7 @@ case 'admin_get_bank_accounts': {
 
 case 'admin_update_bank_account': {
     $pdo = db();
-    require_admin_auth($pdo, 'finance.manage');
+    $admin = require_admin_auth($pdo, 'finance.manage');
     $id = isset($body['id']) ? intval($body['id']) : 0;
     if (!$id) fail('id is required.');
     $displayName = isset($body['display_name']) ? trim($body['display_name']) : '';
@@ -333,6 +341,7 @@ case 'admin_update_bank_account': {
         isset($body['active']) ? (intval($body['active']) ? 1 : 0) : 1,
         $id,
     ));
+    taxi_audit($pdo, $admin, 'bank_account_updated', 'bank_account', $id, $displayName . ' (ends ' . substr(preg_replace('/\D/', '', $accountNumber), -4) . ')');
     ok(array('message' => 'Bank account saved.'));
     break;
 }
@@ -425,7 +434,7 @@ case 'admin_list_overdue': {
         $st = taxi_compute_driver_status($pdo, $d['id'], $d['assoc_id']);
         if ($st['status'] === 'overdue') {
             $overdue[] = array(
-                'full_name' => $d['full_name'], 'phone' => $d['phone'], 'vehicle_plate' => $d['vehicle_plate'],
+                'driver_id' => intval($d['id']), 'full_name' => $d['full_name'], 'phone' => $d['phone'], 'vehicle_plate' => $d['vehicle_plate'],
                 'association_name' => $d['association_name'], 'current_period' => $st['current_period'],
                 'penalty_owed' => $st['penalty_owed'],
             );
@@ -453,7 +462,9 @@ case 'admin_register_officer': {
 
     $pdo->prepare('INSERT INTO ' . tbl('taxi_officers') . ' (full_name, phone, created_at) VALUES (?, ?, NOW())')
         ->execute(array($fullName, $phone));
-    ok(array('id' => intval($pdo->lastInsertId())));
+    $newOfficerId = intval($pdo->lastInsertId());
+    taxi_audit($pdo, $admin, 'officer_registered', 'officer', $newOfficerId, $fullName);
+    ok(array('id' => $newOfficerId));
     break;
 }
 
@@ -480,7 +491,7 @@ case 'admin_list_role_permissions': {
 
 case 'admin_update_role_permissions': {
     $pdo = db();
-    require_admin_auth($pdo, 'owner.only');
+    $admin = require_admin_auth($pdo, 'owner.only');
     $role_name = isset($body['role_name']) ? trim($body['role_name']) : '';
     $caps = isset($body['capabilities']) && is_array($body['capabilities']) ? $body['capabilities'] : array();
     if ($role_name === '') fail('role_name is required', 400);
@@ -489,16 +500,18 @@ case 'admin_update_role_permissions': {
         'INSERT INTO ' . tbl('taxi_role_permissions') . ' (role_name, capabilities) VALUES (?, ?)
          ON DUPLICATE KEY UPDATE capabilities = VALUES(capabilities)'
     )->execute(array($role_name, json_encode($caps)));
+    taxi_audit($pdo, $admin, 'role_permissions_updated', 'role', null, $role_name . ': ' . implode(', ', $caps));
     ok(array('message' => "Permissions saved for \"$role_name\""));
     break;
 }
 
 case 'admin_delete_role_permissions': {
     $pdo = db();
-    require_admin_auth($pdo, 'owner.only');
+    $admin = require_admin_auth($pdo, 'owner.only');
     $id = isset($body['id']) ? intval($body['id']) : 0;
     if (!$id) fail('id is required', 400);
     $pdo->prepare('DELETE FROM ' . tbl('taxi_role_permissions') . ' WHERE id = ?')->execute(array($id));
+    taxi_audit($pdo, $admin, 'role_deleted', 'role', $id, '');
     ok(array('message' => 'Role deleted'));
     break;
 }
