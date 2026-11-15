@@ -33,7 +33,18 @@ var TXT = {
     ln_h: 'The launch period', ln_p: 'First the raise pays to grow the business: more drivers, more riders and more awareness. During the launch period the platform may charge no commission, so there is no profit to share and no payouts are made. Payouts start after the launch period, once there is profit. You can follow how the launch budget is spent in your investor portal.', ln_until: 'The launch period runs until {d}.', ln_on: 'Launch period is on now', ln_rule: 'It ends after at most {d} days, or earlier when {n} trips a day are reached over 4 weeks.', ln_rule_nogoal: 'It ends after at most {d} days.',
     next_h: 'The Etel Group', live_this: 'Live · this deal', self_line: 'Rides and deliveries', next_p: 'Delivery & Ride is the first company to raise money. The other companies in the group are separate businesses and are not part of this deal.', live_word: 'Live', soon_word: 'Coming soon',
     demo_banner: 'DEMO · sample figures · nothing you enter here is saved', demo_ok: 'This was a preview in demo mode. Nothing was saved.', theme_btn: 'Light / dark',
-    sigd: 'Signature & date', sh_status: 'Status', sh_electronic: 'Signed electronically. A signed printed copy may also be required.'
+    sigd: 'Signature & date', sh_status: 'Status', sh_electronic: 'Signed electronically. A signed printed copy may also be required.',
+    pt_h: 'If the business does not work out', pt_lead: 'We cannot promise profit. We promise how your money is handled.',
+    pt1b: 'Cash left comes back to you first', pt1s: 'If the business closes, the cash left after debts, staff and taxes goes to Profit Share holders first, in proportion, until their unrecovered capital is repaid.',
+    pt2b: 'Money released in stages', pt2s: 'Spending is released in steps tied to results. Money not yet spent stays in the account.',
+    pt3b: 'A separate reserve account', pt3s: 'The reserve is held in a separate bank account that needs two signatures.',
+    pt4b: 'Growth spending is capped', pt4s: 'Bonuses, referrals and promotions are paid only from the raise, within the budget lines.',
+    pt5b: 'You see everything', pt5s: 'A statement each period, your own portal login, and a yearly review by an independent accountant.',
+    pt6b: 'Registered security', pt6s: 'The founder has registered assets as security: {pct} % of your unrecovered capital for the first {months} months, and always against misuse of funds or breach of the Agreement.',
+    pt_note: 'These protections reduce risk. They do not guarantee profit or the return of your money.',
+    lm_h: 'Who can invest, and limits', lm1: 'At least {min} Profit Shares per investor.', lm2: 'At most {max} Profit Shares for one investor, so no single investor dominates.',
+    lm3: 'You cannot sell for {lock} months after you are enrolled.', lm4: 'After that you may sell to a person the Company approves. Approval is given unless there is a good reason. The Company has the first right to buy, at the price set by the formula in the Agreement.',
+    lm5: 'Inheritance is always allowed.', lm_form_min: 'Minimum {min}, maximum {max} Profit Shares per investor.'
   },
   am: {
       "company": "ኢትኤል ቤተሰብ ቴክኖሎጂ እና ቢዝነስ ግሩፕ",
@@ -146,7 +157,29 @@ var TXT = {
       "demo_banner": "ማሳያ · የናሙና ቁጥሮች · እዚህ የሚያስገቡት ምንም አይቀመጥም",
       "demo_ok": "ይህ በማሳያ ሁኔታ የተደረገ ቅድመ እይታ ነበር። ምንም አልተቀመጠም።",
       "theme_btn": "ብርሃን / ጨለማ",
-      "sigd": "ፊርማ እና ቀን"
+      "sigd": "ፊርማ እና ቀን",
+      "pt_h": "ንግዱ ባይሳካ",
+      "pt_lead": "ትርፍ ቃል መግባት አንችልም። ገንዘብዎ እንዴት እንደሚያዝ ግን ቃል እንገባለን።",
+      "pt1b": "የቀረው ገንዘብ መጀመሪያ ለእርስዎ ይመለሳል",
+      "pt1s": "ንግዱ ቢዘጋ፣ ዕዳ፣ ደመወዝና ግብር ከተከፈለ በኋላ የሚቀረው ገንዘብ መጀመሪያ ለትርፍ ድርሻ ባለቤቶች በድርሻቸው መጠን ይከፈላል፤ ያልተመለሰው ካፒታላቸው እስኪሸፈን ድረስ።",
+      "pt2b": "ገንዘብ በደረጃ ይለቀቃል",
+      "pt2s": "ወጪ ከውጤት ጋር በተያያዙ ደረጃዎች ይለቀቃል። ገና ያልተጠቀምንበት ገንዘብ በሒሳቡ ውስጥ ይቆያል።",
+      "pt3b": "የተለየ የተጠባባቂ ሒሳብ",
+      "pt3s": "ተጠባባቂው ገንዘብ ሁለት ፊርማ በሚፈልግ የተለየ የባንክ ሒሳብ ውስጥ ይቀመጣል።",
+      "pt4b": "የዕድገት ወጪ ገደብ አለው",
+      "pt4s": "ጉርሻ፣ ሪፈራልና ማስተዋወቂያ የሚከፈሉት ከተሰበሰበው ገንዘብ ብቻ፣ በበጀት መስመሮቹ ውስጥ ነው።",
+      "pt5b": "ሁሉንም ያያሉ",
+      "pt5s": "በየወቅቱ መግለጫ፣ የራስዎ የፖርታል መግቢያ፣ እና በየዓመቱ በገለልተኛ የሂሳብ ባለሙያ የሚደረግ ግምገማ።",
+      "pt6b": "የተመዘገበ ዋስትና",
+      "pt6s": "መስራቹ ንብረቶችን በዋስትና አስመዝግቧል፦ ላልተመለሰ ካፒታልዎ {pct} % ለመጀመሪያዎቹ {months} ወራት፤ ገንዘብ ያላግባብ ቢውል ወይም ስምምነት ቢጣስ ደግሞ ሁልጊዜ።",
+      "pt_note": "እነዚህ ጥበቃዎች አደጋን ይቀንሳሉ እንጂ ትርፍን ወይም የገንዘብዎን መመለስ አያረጋግጡም።",
+      "lm_h": "ማን ኢንቨስት ማድረግ ይችላል፣ እና ገደቦች",
+      "lm1": "ለአንድ ባለሀብት ቢያንስ {min} የትርፍ ድርሻ።",
+      "lm2": "ለአንድ ባለሀብት ቢበዛ {max} የትርፍ ድርሻ፤ አንድ ባለሀብት ብቻ እንዳይቆጣጠር።",
+      "lm3": "ከተመዘገቡ በኋላ ለ{lock} ወራት መሸጥ አይቻልም።",
+      "lm4": "ከዚያ በኋላ ኩባንያው ለሚያፀድቀው ሰው መሸጥ ይችላሉ። በቂ ምክንያት ከሌለ ይፀድቃል። ኩባንያው በስምምነቱ ቀመር በሚወሰን ዋጋ የመጀመሪያ የመግዛት መብት አለው።",
+      "lm5": "ውርስ ሁልጊዜ ይፈቀዳል።",
+      "lm_form_min": "ለአንድ ባለሀብት ቢያንስ {min}፣ ቢበዛ {max} የትርፍ ድርሻ።"
   }
 };
 function fmt(str, o) { return String(str).replace(/\{(\w+)\}/g, function (m, k) { return o && o[k] != null ? o[k] : m; }); }
@@ -161,6 +194,17 @@ function payout(units, profit, cfg) {
 }
 
 // The filled-in sheet (one A4 page), used on screen, in the admin and for printing.
+
+// The protections and limits block (investor-facing text; numbers come from the Company's settings).
+function protectHtml(t, lim, price) {
+  lim = lim || { min_units: 10, max_units: 100, lock_months: 12, collateral: { on: false, pct: 30, months: 24 } };
+  var col = lim.collateral || { on: false };
+  var pts = [1, 2, 3, 4, 5].map(function (i) { return '<li><b>' + esc(t['pt' + i + 'b']) + '.</b> ' + esc(t['pt' + i + 's']) + '</li>'; });
+  if (col.on) pts.push('<li><b>' + esc(t.pt6b) + '.</b> ' + esc(fmt(t.pt6s, { pct: col.pct, months: col.months })) + '</li>');
+  var lm = [fmt(t.lm1, { min: lim.min_units }), fmt(t.lm2, { max: lim.max_units }), fmt(t.lm3, { lock: lim.lock_months }), t.lm4, t.lm5].map(function (x) { return '<li>' + esc(x) + '</li>'; });
+  return '<h2>' + esc(t.pt_h) + '</h2><p class="dl-note">' + esc(t.pt_lead) + '</p><ul class="dl-pts">' + pts.join('') + '</ul><p class="dl-note"><i>' + esc(t.pt_note) + '</i></p>' +
+    '<h2>' + esc(t.lm_h) + '</h2><ul class="dl-pts">' + lm.join('') + '</ul>';
+}
 function renderSheet(d, lang, cfg) {
   var t = T(lang || d.lang), c = cfg || { pool_units: 2000, pool_percent: 20, boost: 2.5 };
   var p = payout(Number(d.units), 100000, c);
@@ -178,6 +222,7 @@ function renderSheet(d, lang, cfg) {
     '</table></section>' +
     '<section><h2>' + esc(t.calc_h) + '</h2><p>' + esc(t.calc_p) + ': <b>ETB ' + num(p.std) + '</b> (' + esc(t.calc_std) + ') · <b>ETB ' + num(p.boost) + '</b> (' + esc(t.calc_boost) + ').</p>' +
     '<ul class="dl-pts"><li><b>' + esc(t.g1b) + '.</b> ' + esc(t.g1s) + '</li><li><b>' + esc(t.g2b) + '.</b> ' + esc(t.g2s) + '</li><li><b>' + esc(t.g3b) + '.</b> ' + esc(t.g3s) + '</li><li><b>' + esc(t.g4b) + '.</b> ' + esc(t.g4s) + '</li></ul></section>' +
+    '<section>' + protectHtml(t, c.limits) + '</section>' +
     '<section class="dl-sign"><div class="dl-sbox"><div class="dl-r">' + esc(t.sh_investor) + '</div>' + (d.signature_png ? '<img class="dl-sigimg" src="' + esc(d.signature_png) + '" alt="">' : '<div class="dl-sigimg"></div>') +
       '<div class="dl-l"></div><div class="dl-n">' + esc(d.signature_name) + ' · ' + esc(d.signed_at) + '</div></div>' +
       '<div class="dl-sbox"><div class="dl-r">' + esc(t.sh_company) + '</div><div class="dl-sigimg"></div><div class="dl-l"></div><div class="dl-n">' + esc(t.sigd || '') + '</div><div class="dl-stamp">' + esc(t.stamp) + '</div></div></section>' +
@@ -195,5 +240,5 @@ function printSheet(html, lang) {
   w.onload = function () { setTimeout(function () { w.focus(); w.print(); }, 350); };
 }
 
-window.EtelDeal = { fmt: fmt, T: T, TXT: TXT, esc: esc, num: num, payout: payout, renderSheet: renderSheet, printSheet: printSheet };
+window.EtelDeal = { fmt: fmt, T: T, TXT: TXT, esc: esc, num: num, payout: payout, renderSheet: renderSheet, printSheet: printSheet, protectHtml: protectHtml };
 })();

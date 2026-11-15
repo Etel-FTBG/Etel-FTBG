@@ -103,6 +103,14 @@ case 'deal_submit': {
     $avail = $stage ? $stage['remaining'] : 0;
     if ($units < 1) fail('Enter how many Profit Shares you want to buy.', 400);
     if (!$stage || $units > $avail) fail('Only ' . $avail . ' Profit Shares are open right now.', 409);
+    $lim = ir_deal_limits($pdo);
+    $minNeeded = min($lim['min_units'], $avail);                       // the last few shares may be bought below the minimum
+    if ($units < $minNeeded) fail('The minimum is ' . $minNeeded . ' Profit Shares per investor.', 400);
+    $held = ir_deal_units_held($pdo, $idNo);
+    if ($held + $units > $lim['max_units']) {
+        $room = max(0, $lim['max_units'] - $held);
+        fail('One investor can hold at most ' . $lim['max_units'] . ' Profit Shares' . ($held > 0 ? ' (you already have ' . $held . ' on earlier sheets)' : '') . '. You can add ' . $room . ' more.', 409);
+    }
 
     $price = (float)$stage['price'];
     $amount = $units * $price;
@@ -119,6 +127,30 @@ case 'deal_submit': {
         ->execute([$ref, $lang, (int)$stage['stage'], $name, $idNo, $phone, $email, $units, $price, $amount, $pct, $period, $days, $closing === '' ? null : $closing, $bank, $sigName, $sigPng, $now, $hash, $ipHash, $ua]);
     ir_log($pdo, 'public', 'deal_sheet_submitted', $ref . ': ' . $units . ' units');
     ok(['ref_code' => $ref, 'signed_at' => $now, 'doc_hash' => $hash, 'units' => $units, 'amount' => $amount, 'pool_share_pct' => $pct]);
+    break;
+}
+
+// The Company sets the investor limits and the protection terms shown on the deal sheet and pitch.
+case 'admin_deal_limits_set': {
+    eg_require_admin();
+    $pdo = eg_db();
+    ir_ensure_core_tables($pdo);
+    $num = function (string $k, int $lo, int $hi) use ($body): int {
+        $v = (int)($body[$k] ?? 0);
+        if ($v < $lo || $v > $hi) fail($k . ' must be between ' . $lo . ' and ' . $hi . '.', 400);
+        return $v;
+    };
+    $min = $num('min_units', 1, 2000);
+    $max = $num('max_units', 1, 2000);
+    if ($max < $min) fail('The maximum cannot be below the minimum.', 400);
+    ir_set_setting($pdo, 'inv_min_units', (string)$min);
+    ir_set_setting($pdo, 'inv_max_units', (string)$max);
+    ir_set_setting($pdo, 'inv_lock_months', (string)$num('lock_months', 0, 120));
+    ir_set_setting($pdo, 'inv_collateral_pct', (string)$num('collateral_pct', 1, 100));
+    ir_set_setting($pdo, 'inv_collateral_months', (string)$num('collateral_months', 1, 240));
+    ir_set_setting($pdo, 'inv_collateral_on', !empty($body['collateral_on']) ? '1' : '0');
+    ir_log($pdo, eg_current_actor()['full_name'], 'deal_limits_set', json_encode(ir_deal_limits($pdo)));
+    ok(ir_deal_limits($pdo));
     break;
 }
 
