@@ -50,3 +50,17 @@ html[data-theme="light"] #sidebar .theme-toggle-btn.tx-disp-btn { color: var(--g
 html[data-theme="light"] #sidebar .tx-pop { --text: #000000; --gold-dim: #6b4e00; --line2: rgba(154, 112, 12, .3); background: #fff; }
 /* big gold figures on light cards */
 html[data-theme="light"] .stat-value { color: #8a6500; }
+
+/* line icons (js/taxi-icons.js) */
+.tx-ic { width: 1em; height: 1em; display: inline-block; vertical-align: -0.14em; flex: none; }
+.tx-ic-row { display: inline-flex; align-items: center; justify-content: center; gap: .5em; }
+.side-link .ic .tx-ic { width: 18px; height: 18px; vertical-align: middle; }
+.stat-icon .tx-ic, .hr-icon .tx-ic, .method-card .mi .tx-ic, .choice-icon .tx-ic { width: 22px; height: 22px; vertical-align: middle; }
+.tx-ic-ok { color: #2fb36b; } .tx-ic-bad { color: #e5484d; } .tx-ic-warn { color: #e0a100; }
+html[data-theme="light"] .tx-ic-warn { color: #a56a00; }
+
+/* tables and panels: calmer, more premium */
+thead th { background: var(--bg3); }
+html[data-theme="light"] thead th { background: #f0ece0; }
+[id$="-table"] { border-radius: 16px; }
+html[data-theme="light"] .method-card.sel { color: #6b4e00; }
