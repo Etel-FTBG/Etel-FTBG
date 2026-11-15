@@ -64,3 +64,14 @@ thead th { background: var(--bg3); }
 html[data-theme="light"] thead th { background: #f0ece0; }
 [id$="-table"] { border-radius: 16px; }
 html[data-theme="light"] .method-card.sel { color: #6b4e00; }
+
+/* admin list tools (js/admin-tools.js) */
+.tx-tools { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin: 0 0 12px; }
+.tx-tools .tx-search { width: auto; flex: 1 1 220px; min-width: 160px; max-width: 360px; }
+.tx-tools .tx-filter { width: auto; flex: 0 0 auto; min-width: 170px; max-width: 260px; }
+.tx-tools .tx-count { color: var(--text-dim); font-size: 12px; margin-left: auto; }
+.tx-tools .tx-csv { padding: 8px 14px; font-size: 12px; }
+th.tx-sortable { cursor: pointer; user-select: none; }
+th.tx-sortable:hover { color: var(--gold); }
+th[data-dir="asc"]::after { content: " \25B2"; font-size: 9px; }
+th[data-dir="desc"]::after { content: " \25BC"; font-size: 9px; }
