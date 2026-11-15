@@ -83,6 +83,34 @@ function ir_deal_available_units(PDO $pdo): int {
     return $st ? $st['remaining'] : 0;
 }
 
+// Limits and protections the Company sets (Admin > Deal Sheets). Defaults match the proposed terms.
+// Collateral stays OFF until the founder has really registered the assets and switches it on.
+function ir_deal_limits(PDO $pdo): array {
+    $i = function (string $k, int $d, int $lo, int $hi) use ($pdo): int {
+        $v = (int)ir_get_setting($pdo, $k, (string)$d);
+        return max($lo, min($hi, $v));
+    };
+    $min = $i('inv_min_units', 10, 1, 2000);
+    $max = max($min, $i('inv_max_units', 100, 1, 2000));
+    return [
+        'min_units'   => $min,
+        'max_units'   => $max,
+        'lock_months' => $i('inv_lock_months', 12, 0, 120),
+        'collateral'  => [
+            'on'     => ir_get_setting($pdo, 'inv_collateral_on', '0') === '1',
+            'pct'    => $i('inv_collateral_pct', 30, 1, 100),
+            'months' => $i('inv_collateral_months', 24, 1, 240),
+        ],
+    ];
+}
+
+// Shares this investor (matched by ID number) already has on active sheets.
+function ir_deal_units_held(PDO $pdo, string $idNo): int {
+    $s = $pdo->prepare("SELECT COALESCE(SUM(units),0) FROM ir_deal_sheets WHERE id_number = ? AND status IN ('submitted','accepted','enrolled')");
+    $s->execute([$idNo]);
+    return (int)$s->fetchColumn();
+}
+
 function ir_deal_config(PDO $pdo): array {
     $st = ir_current_stage($pdo);
     return [
@@ -94,6 +122,7 @@ function ir_deal_config(PDO $pdo): array {
         'pool_percent' => (IR_INVESTOR_POOL_SHARES / IR_TOTAL_SHARES) * 100,
         'boost'        => IR_BOOSTED_MULTIPLIER,
         'available'    => $st ? $st['remaining'] : 0,
+        'limits'       => ir_deal_limits($pdo),
         'companies'    => ir_group_companies($pdo),
         'launch'       => (function () use ($pdo) { require_once __DIR__ . '/Launch.php'; $l = ir_launch_state($pdo); return ['active' => $l['active'], 'until' => $l['until'], 'max_days' => $l['max_days'], 'trips_goal' => $l['trips_goal']]; })(),
     ];

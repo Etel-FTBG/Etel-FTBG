@@ -31,7 +31,7 @@ function paint() {
     '<h3>' + D.esc(t.h3) + '</h3><div class="dl-scroll"><table class="dl-ex"><tr><th>' + D.esc(t.ex_h) + '</th><th>' + D.esc(t.std) + '</th><th>' + D.esc(t.boost) + '</th></tr>' +
     [100, 400, 2000].map(function (u, i) { var p = D.payout(u, 100000, cfg); return '<tr><td>' + D.esc(t['r' + (i + 1)]) + '</td><td>ETB ' + D.num(p.std) + '</td><td>ETB ' + D.num(p.boost) + '</td></tr>'; }).join('') + '</table></div>' +
     '<h3>' + D.esc(t.h4) + '</h3><div class="dl-pts"><div><b>' + D.esc(t.g1b) + '</b><span>' + D.esc(t.g1s) + '</span></div><div><b>' + D.esc(t.g2b) + '</b><span>' + D.esc(t.g2s) + '</span></div><div><b>' + D.esc(t.g3b) + '</b><span>' + D.esc(t.g3s) + '</span></div><div><b>' + D.esc(t.g4b) + '</b><span>' + D.esc(t.g4s) + '</span></div></div>';
-  stagesCard(); launchCard(); nextCard(); demoBar(); openLine(); calc();
+  stagesCard(); launchCard(); protectCard(); nextCard(); demoBar(); openLine(); calc();
 }
 function stagesCard() {
   var t = D.T(lang), box = $('dl-stages'), st = cfg.stages || [];
@@ -48,6 +48,11 @@ function launchCard() {
   var t = D.T(lang), box = $('dl-launch');
   var l = cfg.launch || {};
   box.innerHTML = '<h2>' + D.esc(t.ln_h) + (l.active ? ' <small class="dl-pill">' + D.esc(t.ln_on) + '</small>' : '') + '</h2><p class="dl-note">' + D.esc(t.ln_p) + ' ' + D.esc(D.fmt((l.trips_goal == null || l.trips_goal > 0) ? t.ln_rule : t.ln_rule_nogoal, { d: l.max_days || 90, n: D.num(l.trips_goal == null ? 150 : l.trips_goal) })) + '</p>' + (l.active && l.until ? '<p class="dl-note"><b>' + D.esc(D.fmt(t.ln_until, { d: l.until })) + '</b></p>' : '');
+}
+function protectCard() {
+  var t = D.T(lang), box = $('dl-protect'); if (!box) return;
+  box.hidden = false;
+  box.innerHTML = D.protectHtml(t, cfg.limits);
 }
 function nextCard() {
   var t = D.T(lang), box = $('dl-next'), cs = cfg.companies || [];
@@ -66,7 +71,9 @@ function openLine() {
   var t = D.T(lang), e = $('dl-open');
   e.innerHTML = cfg.available > 0 ? '<b>' + D.num(cfg.available) + '</b> ' + D.esc(t.open_now) + ' &middot; ' + D.esc(t.st_your) + ' <b>' + D.esc(cfg.stage) + '</b> &middot; ETB <b>' + D.num(cfg.unit_price) + '</b>' : D.esc(t.closed);
   $('dl-submit').disabled = cfg.available <= 0;
-  form.units.max = cfg.available;
+  var lim = cfg.limits || {}, mx = Math.min(cfg.available, lim.max_units || cfg.available), mn = Math.min(lim.min_units || 1, cfg.available || 1);
+  form.units.max = mx; form.units.min = mn;
+  var hint = $('dl-limit-hint'); if (hint && lim.max_units) hint.textContent = D.fmt(t.lm_form_min, { min: mn, max: lim.max_units });
 }
 function calc() {
   var t = D.T(lang), u = parseInt(form.units.value, 10) || 0;

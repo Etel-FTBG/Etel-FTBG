@@ -119,6 +119,17 @@ function sGroup() {
   return slide('', head('', x.g_h, x.g_lead) + '<div class="pt-cos"><div class="pt-co pt-live pt-this"><b>Etel Delivery &amp; Ride</b><span>' + e(x.g_self) + '</span><i>' + e(x.g_this) + '</i></div>' + cs.map(function (c) { var line = c.tagline && c.tagline.toLowerCase() !== 'coming soon' ? c.tagline : ''; return '<div class="pt-co' + (c.live ? ' pt-live' : '') + '"><b>' + e(c.name) + '</b>' + (line ? '<span>' + e(line) + '</span>' : '') + '<i>' + e(c.live ? x.g_live : x.g_soon) + '</i></div>'; }).join('') + '</div>');
 }
 function sSafe() { var x = t(); return slide('', head('', x.f_h) + '<div class="pt-5">' + [1, 2, 3, 4, 5].map(function (i) { return '<div class="pt-card"><b>' + e(x['f' + i]) + '</b><span>' + e(x['f' + i + 's']) + '</span></div>'; }).join('') + '</div>'); }
+function sWind() {
+  var x = t(), d = D.T(lang), lim = cfg.limits || {}, col = lim.collateral || {};
+  var ks = [1, 2, 3, 4, 5]; if (col.on) ks.push(6);
+  var cards = ks.map(function (i) { return '<div class="pt-card"><b>' + e(d['pt' + i + 'b']) + '</b><span>' + e(i === 6 ? f(d.pt6s, { pct: col.pct, months: col.months }) : d['pt' + i + 's']) + '</span></div>'; }).join('');
+  return slide('', head('', d.pt_h, d.pt_lead) + '<div class="pt-3">' + cards + '</div><div class="pt-note">' + e(d.pt_note) + '</div>');
+}
+function sLimits() {
+  var d = D.T(lang), lim = cfg.limits || { min_units: 10, max_units: 100, lock_months: 12 };
+  var items = [f(d.lm1, { min: lim.min_units }), f(d.lm2, { max: lim.max_units }), f(d.lm3, { lock: lim.lock_months }), d.lm4, d.lm5];
+  return slide('', head('', d.lm_h) + '<div class="pt-3">' + items.slice(0, 3).map(function (x) { return '<div class="pt-card"><span>' + e(x) + '</span></div>'; }).join('') + '</div><div class="pt-2">' + items.slice(3).map(function (x) { return '<div class="pt-card"><span>' + e(x) + '</span></div>'; }).join('') + '</div>');
+}
 function sNext() { var x = t(); return slide('pt-cover', head('', x.n_h) + '<ol class="pt-steps">' + [1, 2, 3, 4].map(function (i) { return '<li>' + e(x['n' + i]) + '</li>'; }).join('') + '</ol><a class="pt-cta" href="deal.html?lang=' + lang + '">' + e(x.n_cta) + '</a><div class="pt-note">' + e(x.n_site) + '</div>'); }
 
 function paint() {
@@ -128,7 +139,7 @@ function paint() {
   $('pt-print').textContent = x.print;
   var d = $('pt-demo'); d.hidden = !cfg.demo_mode; d.textContent = x.demo;
   Array.prototype.forEach.call(document.querySelectorAll('.pt-lang button'), function (b) { b.classList.toggle('on', b.getAttribute('data-lang') === lang); });
-  $('pt-main').innerHTML = sCover() + sProblem() + sProduct() + sTraction() + sEarn() + sRaise() + sLaunch() + sScen() + sFunds() + sGroup() + sSafe() + sNext();
+  $('pt-main').innerHTML = sCover() + sProblem() + sProduct() + sTraction() + sEarn() + sRaise() + sLaunch() + sScen() + sFunds() + sGroup() + sSafe() + sWind() + sLimits() + sNext();
 }
 function setTheme(m) { document.documentElement.setAttribute('data-theme', m); try { localStorage.setItem('theme', m); } catch (er) { /* not saved */ } }
 (function () { var m = 'dark'; try { m = localStorage.getItem('theme') === 'light' ? 'light' : 'dark'; } catch (er) { /* keep dark */ } document.documentElement.setAttribute('data-theme', m); })();

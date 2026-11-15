@@ -162,6 +162,19 @@ try{var t=localStorage.getItem('theme');if(t!=='dark'&&t!=='light')t=window.matc
       <div class="ir-card">
         <h2>&#128221; Deal Sheets</h2>
         <div class="desc">Investors fill in and sign the Investor Deal Sheet online, in English or Amharic. Review each one here: accept or reject it, then enroll the investor (this creates their portal login and, once the money is received, records their Profit Shares).</div>
+        <details class="ir-limits" style="margin-bottom:14px"><summary style="cursor:pointer;font-weight:700">Limits and protections shown to investors</summary>
+          <div class="desc" style="margin:8px 0">These numbers appear on the deal sheet, the signed sheet and the pitch, and the sheet refuses amounts outside the limits. Switch the registered security on only after the assets are really registered.</div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
+            <label>Minimum shares<br><input type="number" id="lim-min" min="1" max="2000" style="width:110px"></label>
+            <label>Maximum per investor<br><input type="number" id="lim-max" min="1" max="2000" style="width:110px"></label>
+            <label>Lock-in (months)<br><input type="number" id="lim-lock" min="0" max="120" style="width:110px"></label>
+            <label>Security covers (%)<br><input type="number" id="lim-cpct" min="1" max="100" style="width:110px"></label>
+            <label>Security period (months)<br><input type="number" id="lim-cmon" min="1" max="240" style="width:110px"></label>
+            <label style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="lim-con"> Registered security is in place</label>
+            <button class="btn btn-gold btn-sm" type="button" onclick="irSaveLimits()">Save</button>
+          </div>
+          <div id="lim-msg" style="font-size:12.5px;margin-top:6px"></div>
+        </details>
         <div id="deal-links" style="font-size:12.5px;margin-bottom:12px"></div>
         <div class="ir-tools"><div class="ir-seg" id="deal-filter"><button data-f="all" class="on">All</button><button data-f="submitted">New</button><button data-f="accepted">Accepted</button><button data-f="enrolled">Enrolled</button><button data-f="rejected">Rejected</button></div><input class="ir-search" data-filter="#ir-deals-table" placeholder="Search deal sheets…" aria-label="Search deal sheets"></div>
         <div class="ir-tablewrap"><table class="ir-table" id="ir-deals-table"><thead><tr>
@@ -386,9 +399,9 @@ try{var t=localStorage.getItem('theme');if(t!=='dark'&&t!=='light')t=window.matc
 </div>
 
 <link rel="stylesheet" href="css/deal-r3.css">
-<script src="js/deal-sheet.js?v=4"></script>
+<script src="js/deal-sheet.js?v=6"></script>
 <script src="js/admin.js?v=6"></script>
-<script src="js/admin-deals.js?v=2"></script>
+<script src="js/admin-deals.js?v=3"></script>
 <script src="js/ir-shell.js?v=2"></script>
 </body>
 </html>
