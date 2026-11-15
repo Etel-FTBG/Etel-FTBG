@@ -39,7 +39,7 @@ function switchPanel(name, btn) {
   document.getElementById('panel-' + name).classList.add('active');
   document.querySelectorAll('.side-link').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
-  ({ dashboard: loadDashboard, drivers: loadDrivers, pending: loadPending, overdue: loadOverdue, bank: loadBank, associations: loadAssociations, officers: loadOfficers, roles: loadRolesPanel })[name]();
+  ({ dashboard: loadDashboard, drivers: loadDrivers, pending: loadPending, overdue: loadOverdue, bank: loadBank, associations: loadAssociations, officers: loadOfficers, audit: (typeof loadAudit === 'function' ? loadAudit : function () {}), roles: loadRolesPanel })[name]();
 }
 
 async function loadDashboard() {
@@ -118,11 +118,12 @@ async function loadDrivers() {
   const res = await taxiApi('admin_list_drivers', {}, 'admin');
   if (!res.ok) { el.innerHTML = res.error; return; }
   if (!res.data.drivers.length) { el.innerHTML = '<div class="card">No drivers registered yet.</div>'; return; }
-  el.innerHTML = `<table><thead><tr><th>Name</th><th>Phone</th><th>Plate</th><th>Association</th><th>Status</th><th>Identity</th></tr></thead><tbody>${
+  el.innerHTML = `<table><thead><tr><th>Name</th><th>Phone</th><th>Plate</th><th>Association</th><th>Status</th><th>Identity</th><th>Action</th></tr></thead><tbody>${
     res.data.drivers.map(d => `<tr${d.identity_match === 'mismatch' ? ' style="background:rgba(220,50,50,.08)"' : ''}>
       <td>${taxiEsc(d.full_name)}</td><td>${taxiEsc(d.phone)}</td><td>${taxiEsc(d.vehicle_plate)}</td><td>${taxiEsc(d.association_name)}</td>
       <td><span class="pill ${d.permit_status}">${taxiStatusLabel(d.permit_status)}</span></td>
       <td>${d.identity_match === 'matched' ? '✅ Matched' : d.identity_match === 'mismatch' ? '⚠️ Mismatch - review' : '— Unverified'}</td>
+      <td>${d.permit_status !== 'active' ? `<button type="button" class="btn btn-outline tx-remind" data-driver="${Number(d.id)}">Remind</button>` : ''}</td>
     </tr>`).join('')
   }</tbody></table>`;
 }
@@ -203,10 +204,11 @@ async function loadOverdue() {
   const res = await taxiApi('admin_list_overdue', {}, 'admin');
   if (!res.ok) { el.innerHTML = res.error; return; }
   if (!res.data.overdue.length) { el.innerHTML = '<div class="card">No overdue drivers right now.</div>'; return; }
-  el.innerHTML = `<table><thead><tr><th>Name</th><th>Phone</th><th>Plate</th><th>Association</th><th>Period</th><th>Penalty</th></tr></thead><tbody>${
+  el.innerHTML = `<table><thead><tr><th>Name</th><th>Phone</th><th>Plate</th><th>Association</th><th>Period</th><th>Penalty</th><th>Action</th></tr></thead><tbody>${
     res.data.overdue.map(d => `<tr>
       <td>${taxiEsc(d.full_name)}</td><td>${taxiEsc(d.phone)}</td><td>${taxiEsc(d.vehicle_plate)}</td><td>${taxiEsc(d.association_name)}</td>
       <td>${d.current_period}</td><td style="color:var(--red)">ETB ${Number(d.penalty_owed).toFixed(0)}</td>
+      <td><button type="button" class="btn btn-outline tx-remind" data-driver="${Number(d.driver_id)}">Remind</button></td>
     </tr>`).join('')
   }</tbody></table>`;
 }
