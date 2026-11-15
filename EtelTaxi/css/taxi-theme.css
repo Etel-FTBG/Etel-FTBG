@@ -1,0 +1,52 @@
+/* Etel Taxi - display settings button/panel, three text sizes, readable text floors, keyboard focus. Presentation only. */
+html[data-textsize="lg"] { zoom: 1.12; }
+html[data-textsize="xl"] { zoom: 1.25; }
+
+.tx-disp { position: relative; display: inline-flex; }
+.theme-toggle-btn.tx-disp-btn {
+  width: 44px; height: 44px; padding: 0; border-radius: 50%; justify-content: center; gap: 0;
+  background: rgba(212, 175, 55, .12); color: var(--gold); border: 1.5px solid var(--line2); box-shadow: none;
+}
+.theme-toggle-btn.tx-disp-btn:hover { background: rgba(212, 175, 55, .22); border-color: var(--gold); }
+html[data-theme="light"] .theme-toggle-btn.tx-disp-btn { background: rgba(154, 112, 12, .1); color: #6b4e00; border-color: rgba(107, 78, 0, .5); }
+.tx-pop {
+  position: absolute; top: calc(100% + 8px); right: 0; z-index: 9990; min-width: 230px; padding: 12px; border-radius: 16px;
+  display: flex; flex-direction: column; gap: 12px; background: var(--bg2); color: var(--text);
+  border: 1.5px solid var(--line2); box-shadow: 0 14px 38px rgba(0, 0, 0, .45);
+}
+.tx-pop.tx-left { right: auto; left: 0; }
+.tx-pop[hidden] { display: none; }
+.tx-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.tx-lbl { font-size: 12px; letter-spacing: .4px; color: var(--gold-dim); font-weight: 700; }
+.tx-seg { display: inline-flex; border: 1.5px solid var(--line2); border-radius: 10px; overflow: hidden; }
+.tx-seg button { min-width: 44px; min-height: 36px; padding: 4px 10px; cursor: pointer; border: 0; background: transparent; color: var(--text); font-weight: 800; font-size: 13px; line-height: 1; }
+.tx-seg button + button { border-left: 1px solid var(--line2); }
+.tx-seg button[aria-pressed="true"] { background: linear-gradient(135deg, #8A6500, #D4AF37); color: #1a0e00; }
+
+/* readable text floors */
+html[data-theme="dark"] { --gold-dim: #B38E1F; }
+html[data-theme="light"] { --text-faint: #666666; }
+html[data-theme="light"] .btn-outline, html[data-theme="light"] .back-btn { color: #6b4e00; }
+html[data-theme="light"] .back-btn { background: rgba(154, 112, 12, .1); border-color: rgba(107, 78, 0, .5); }
+
+/* keyboard focus + touch targets */
+a:focus-visible, button:focus-visible, [role="button"]:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 3px solid #F2CC6B; outline-offset: 2px; }
+html[data-theme="light"] a:focus-visible, html[data-theme="light"] button:focus-visible, html[data-theme="light"] input:focus-visible,
+html[data-theme="light"] select:focus-visible, html[data-theme="light"] textarea:focus-visible { outline-color: #8A6500; }
+.back-btn, .btn, .btn-outline { min-height: 40px; }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; } }
+
+/* light theme: the shimmering headline passed through near-white and vanished on a light page */
+html[data-theme="light"] .gradient-text { background-image: linear-gradient(100deg, #6b4e00, #9a700c 45%, #b8860b 55%, #9a700c); }
+
+/* the display panel inside the admin sidebar must fit the sidebar (it clips anything wider) */
+#sidebar .tx-pop { min-width: 0; width: 196px; left: 0; right: auto; }
+#sidebar .tx-row { flex-direction: column; align-items: flex-start; gap: 6px; }
+
+/* admin sidebar is dark in both themes: keep its text light in the light theme */
+html[data-theme="light"] #sidebar { color: #FFFFFF; --text: #FFFFFF; --text-dim: #d8d8d8; --text-faint: #b5b5b5; --gold-dim: #B38E1F; --line2: rgba(212, 175, 55, .32); }
+html[data-theme="light"] #sidebar .back-btn { color: var(--gold); background: rgba(212, 175, 55, .1); border-color: var(--line2); }
+html[data-theme="light"] #sidebar .theme-toggle-btn.tx-disp-btn { color: var(--gold); background: rgba(212, 175, 55, .12); border-color: var(--line2); }
+html[data-theme="light"] #sidebar .tx-pop { --text: #000000; --gold-dim: #6b4e00; --line2: rgba(154, 112, 12, .3); background: #fff; }
+/* big gold figures on light cards */
+html[data-theme="light"] .stat-value { color: #8a6500; }
