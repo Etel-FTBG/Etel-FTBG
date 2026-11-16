@@ -46,6 +46,8 @@ check(s == 200 and r['data']['unit_price'] == 1000 and r['data']['pool_units'] =
 open_units = r['data']['available']
 good = dict(lang='am', investor_name='Almaz Tesfaye', id_number='ET1234567', phone='0911223344', email='a@x.com', units=100, payout_period='monthly',
             payout_days=15, bank_account='CBE 1000', signature_name='Almaz Tesfaye', signature_png=png(), agree=True)
+# the older checks buy big blocks: open the investor limits wide for them, the limit checks come at the end
+call('admin_deal_limits_set', {'min_units': 1, 'max_units': 2000, 'lock_months': 12, 'collateral_pct': 30, 'collateral_months': 24, 'collateral_on': 0}, True)
 check(call('deal_submit', dict(good, agree=False))[0] == 400, 'the declaration is required')
 check(call('deal_submit', dict(good, units=open_units + 1))[0] == 409, 'cannot buy more than is open')
 check(call('deal_submit', dict(good, signature_png='data:image/png;base64,AAAA'))[0] == 400, 'a fake signature is refused')
@@ -117,6 +119,39 @@ sc = r['data']['scenario'] if s == 200 else {}
 check(s == 200 and sc.get('cost_scale_pct') == 50 and sc.get('monthly_costs') == 50000 and sc.get('break_even_trips_per_day', 0) > 0, 'planner returns break-even for a lean plan', r)
 s2, r2 = call('admin_growth_planner', {'registered_drivers': 20, 'trips_per_driver_per_day': 10, 'avg_distance_km': 5, 'base_fare': 60, 'per_km_rate': 20, 'other_monthly_income': 50000, 'cost_scale_pct': 50}, True)
 check(s2 == 200 and r2['data']['periods']['month']['other_income'] == 50000, 'other income is counted in the month', r2)
+# ---- investor limits and protections ----
+s, r = call('deal_config')
+lim = r['data'].get('limits', {})
+check(s == 200 and lim.get('min_units') == 1 and lim.get('max_units') == 2000 and lim.get('collateral', {}).get('on') is False, 'config carries the limits (collateral off by default)', r)
+check(call('admin_deal_limits_set', {'min_units': 10, 'max_units': 100, 'lock_months': 12, 'collateral_pct': 30, 'collateral_months': 24, 'collateral_on': 0})[0] == 401, 'setting limits needs an admin')
+check(call('admin_deal_limits_set', {'min_units': 50, 'max_units': 10, 'lock_months': 12, 'collateral_pct': 30, 'collateral_months': 24, 'collateral_on': 0}, True)[0] == 400, 'maximum below minimum is refused')
+check(call('admin_deal_limits_set', {'min_units': 10, 'max_units': 100, 'lock_months': 12, 'collateral_pct': 300, 'collateral_months': 24, 'collateral_on': 0}, True)[0] == 400, 'security percent above 100 is refused')
+check(call('admin_deal_limits_set', {'min_units': 10, 'max_units': 100, 'lock_months': 12, 'collateral_pct': 100, 'collateral_months': 24, 'collateral_on': 1}, True)[0] == 400, 'security cannot be switched on without the assets value')
+s, r = call('admin_deal_limits_set', {'min_units': 10, 'max_units': 100, 'lock_months': 12, 'collateral_pct': 100, 'collateral_months': 24, 'collateral_on': 1, 'collateral_value': 600000, 'collateral_until_repaid': 1}, True)
+check(s == 200 and r['data']['collateral']['on'] is True and r['data']['collateral']['value'] == 600000 and r['data']['collateral']['until_repaid'] is True and r['data']['max_units'] == 100, 'limits, assets value and the security switch are saved', r)
+s, r = call('deal_config')
+check(r['data']['limits']['collateral']['on'] is True and r['data']['limits']['min_units'] == 10, 'config shows the saved limits', r)
+lim_good = dict(good, id_number='LIM-TEST-1', signature_name='Limit Tester')
+check(call('deal_submit', dict(lim_good, units=5))[0] == 400, 'below the minimum is refused')
+check(call('deal_submit', dict(lim_good, units=101))[0] == 409, 'above the maximum is refused')
+s, r = call('deal_submit', dict(lim_good, units=60))
+check(s == 200 and r['data'].get('units') == 60, 'a sheet inside the limits is accepted', r)
+s, r = call('deal_submit', dict(lim_good, units=50))
+check(s == 409 and '60' in (r.get('error') or ''), 'the same investor cannot go above the maximum across sheets', r)
+s, r = call('deal_submit', dict(lim_good, units=40))
+check(s == 200, 'the same investor can top up to exactly the maximum', r)
+call('admin_deal_limits_set', {'min_units': 1, 'max_units': 2000, 'lock_months': 12, 'collateral_pct': 30, 'collateral_months': 24, 'collateral_on': 0}, True)
+# ---- growth planner: commission rate changer ----
+pb = {'registered_drivers': 20, 'trips_per_driver_per_day': 10, 'avg_distance_km': 5, 'base_fare': 60, 'per_km_rate': 20, 'other_monthly_income': 0, 'cost_scale_pct': 50}
+s, r = call('admin_growth_planner', pb, True)
+rows = r['data'].get('compare', []) if s == 200 else []
+check(s == 200 and [c['rate_pct'] for c in rows][:4] == [0.0, 2.0, 5.0, 10.0] or [c['rate_pct'] for c in rows] == [0.0, 2.0, 5.0, 10.0], 'planner compares 0, 2, 5 and 10 percent', r)
+check(all(rows[i]['commission_revenue'] <= rows[i + 1]['commission_revenue'] for i in range(len(rows) - 1)) and rows[0]['commission_revenue'] == 0, 'commission revenue rises with the rate and is zero at 0 percent', rows)
+s, r = call('admin_growth_planner', dict(pb, commission_rate_pct=10), True)
+check(s == 200 and r['data']['commission_rate_pct'] == 10 and any(c['in_use'] and c['rate_pct'] == 10 for c in r['data']['compare']), 'the chosen commission rate is used and marked', r)
+s, r = call('admin_growth_planner', dict(pb, commission_rate_pct=7.5), True)
+check(s == 200 and any(c['rate_pct'] == 7.5 and c['in_use'] for c in r['data']['compare']) and len(r['data']['compare']) == 5, 'a custom rate is added to the comparison', r)
+check(call('admin_growth_planner', dict(pb, commission_rate_pct=50), True)[0] == 400, 'a rate above 30 percent is refused')
 for _ in range(4):
     call('deal_submit', dict(good, units=1))
 check(call('deal_submit', dict(good, units=1))[0] == 429, 'rate limit: 5 sheets per hour per connection')

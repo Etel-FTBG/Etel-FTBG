@@ -5,6 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Etel Taxi - Admin</title>
 <link rel="stylesheet" href="css/core.css?v=3">
+<link rel="stylesheet" href="css/taxi-theme.css?v=1">
+<link rel="stylesheet" href="css/taxi-desktop.css?v=1">
+<script src="js/taxi-theme.js?v=1"></script>
+<script defer src="js/taxi-icons.js?v=1"></script>
 <link rel="stylesheet" href="css/etel-auth.css?v=1">
 <style>
   #shell{display:flex;min-height:100vh;position:relative;z-index:1;}
@@ -111,6 +115,7 @@
     <button class="side-link" data-panel="bank" onclick="switchPanel('bank',this)"><span class="ic">🏦</span>Bank Accounts</button>
     <button class="side-link" data-panel="associations" onclick="switchPanel('associations',this)"><span class="ic">🧾</span>Associations</button>
     <button class="side-link" data-panel="officers" onclick="switchPanel('officers',this)"><span class="ic">🚦</span>Traffic Officers</button>
+    <button class="side-link" data-panel="audit" id="nav-item-audit" onclick="switchPanel('audit',this)"><span class="ic">🧾</span>Activity Log</button>
     <button class="side-link" data-panel="roles" id="nav-item-roles" onclick="switchPanel('roles',this)"><span class="ic">🔐</span>Roles</button>
     <a href="verify.html" target="_blank" class="verify-link"><span>🔍</span> Open Traffic Verification Tool</a>
     <button class="side-link" style="margin-top:20px;color:var(--red)" onclick="adminLogout()"><span class="ic">🚪</span>Sign Out</button>
@@ -179,6 +184,12 @@
       <div id="officers-table">Loading...</div>
     </section>
 
+    <section class="panel" id="panel-audit">
+      <h1>Activity Log</h1>
+      <p style="color:var(--text-dim);font-size:13px;margin:-8px 0 16px">Who changed what in this console: payments, drivers, bank accounts, roles and reminders. Newest first.</p>
+      <div id="audit-table">Loading...</div>
+    </section>
+
     <section class="panel" id="panel-roles">
       <h1>Roles &amp; Permissions</h1>
       <p style="font-size:13px;color:var(--text-dim);margin-bottom:16px;max-width:640px">
@@ -205,6 +216,8 @@
 <script src="js/core.js?v=3"></script>
 <script src="js/etel-2fa.js?v=1"></script>
 <script src="js/admin.js?v=2"></script>
+<script src="js/admin-tools.js?v=2"></script>
+<script src="js/admin-audit.js?v=1"></script>
 <script src="js/admin-roles.js?v=1"></script>
 </body>
 </html>

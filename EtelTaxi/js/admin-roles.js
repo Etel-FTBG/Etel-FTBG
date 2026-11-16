@@ -114,6 +114,8 @@ async function hideRestrictedNavForCurrentTaxiUser() {
         else console.warn('[Roles] nav item not found for page:', page);
       }
     });
+    const auditNav = document.getElementById('nav-item-audit');
+    if (auditNav && !caps.includes('owner.only')) auditNav.style.display = 'none';
     const rolesNav = document.getElementById('nav-item-roles');
     if (rolesNav && !caps.includes('owner.only')) rolesNav.style.display = 'none';
   } catch (e) { console.error('[Roles] hideRestrictedNav failed:', e); }

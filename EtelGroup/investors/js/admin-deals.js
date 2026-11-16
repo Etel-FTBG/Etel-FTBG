@@ -13,6 +13,11 @@ window.irLoadDeals = async function () {
   if (!tb) return;
   if (!res.ok) { tb.innerHTML = '<tr><td colspan="8" style="color:var(--bad)">' + irEsc(res.error || 'Could not load deal sheets') + '</td></tr>'; return; }
   SHEETS = res.data.sheets || []; CFG = res.data.config || CFG;
+  var L = (CFG.limits || {}), C = L.collateral || {};
+  if ($('lim-min') && document.activeElement && !document.activeElement.closest('.ir-limits')) {
+    $('lim-min').value = L.min_units != null ? L.min_units : 10; $('lim-max').value = L.max_units != null ? L.max_units : 100; $('lim-lock').value = L.lock_months != null ? L.lock_months : 12;
+    $('lim-cpct').value = C.pct != null ? C.pct : 30; $('lim-cmon').value = C.months != null ? C.months : 24; $('lim-con').checked = !!C.on; $('lim-cval').value = C.value || ''; $('lim-cuntil').checked = !!C.until_repaid;
+  }
   var en = base() + 'deal.html', am = base() + 'deal.html?lang=am';
   $('deal-links').innerHTML = 'Share with investors: <a href="' + irEsc(en) + '" target="_blank" rel="noopener" style="color:var(--gold2)">English link</a> &middot; <a href="' + irEsc(am) + '" target="_blank" rel="noopener" style="color:var(--gold2)">&#x12A0;&#x121B;&#x122D;&#x129B; link</a> &middot; ' +
     '<button class="btn btn-outline btn-sm" onclick="irCopyDealLink(\'' + irEsc(en) + '\')">Copy English</button> <button class="btn btn-outline btn-sm" onclick="irCopyDealLink(\'' + irEsc(am) + '\')">Copy Amharic</button> &middot; ' +
@@ -27,8 +32,33 @@ window.irLoadDeals = async function () {
   var fresh = SHEETS.filter(function (r) { return r.status === 'submitted'; }).length;
   window.IR_DEALS_NEW = fresh;
   var bd = $('nav-deals-badge'); if (bd) bd.textContent = fresh ? String(fresh) : '';
+  window.irLimitsCover();
   if (typeof window.irApplyDealFilter === 'function') window.irApplyDealFilter();
   document.dispatchEvent(new CustomEvent('ir:deals'));
+};
+
+// Shows whether the registered assets cover the money raised in the current stage at the chosen percentage.
+window.irLimitsCover = function () {
+  var el = $('lim-cover'); if (!el) return;
+  var stages = CFG.stages || [], cur = CFG.stage || (stages[0] && stages[0].stage) || 1;
+  var raise = stages.filter(function (x) { return x.stage <= cur; }).reduce(function (a, x) { return a + x.raise; }, 0);   // everything raised or being raised up to the current stage
+  var val = +$('lim-cval').value || 0, pct = +$('lim-cpct').value || 0;
+  if (!raise) { el.textContent = ''; return; }
+  var need = raise * pct / 100, label = cur > 1 ? 'Stages 1-' + cur : 'Stage 1';
+  if (!val) { el.style.color = ''; el.textContent = label + ' raise: ETB ' + Number(raise).toLocaleString() + '. Enter the value of the registered assets (after any bank loan on them) to see if they cover ' + pct + '% of it.'; return; }
+  var ok = val >= need;
+  el.style.color = ok ? 'var(--ok, #2fb36b)' : 'var(--bad)';
+  el.textContent = (ok ? 'Covered: ' : 'NOT covered: ') + 'assets ETB ' + val.toLocaleString() + ' vs ' + pct + '% of the ' + label + ' raise (ETB ' + Number(need).toLocaleString() + '). ' + (ok ? 'Forced sales often fetch less than value, so keep a margin.' : 'Add assets or lower the percentage before switching security on.');
+};
+document.addEventListener('input', function (e) { if (e.target && /^lim-(cval|cpct)$/.test(e.target.id)) window.irLimitsCover(); });
+
+window.irSaveLimits = async function () {
+  var m = $('lim-msg'); m.style.color = ''; m.textContent = 'Saving...';
+  var res = await irApi('admin_deal_limits_set', { min_units: +$('lim-min').value, max_units: +$('lim-max').value, lock_months: +$('lim-lock').value,
+    collateral_pct: +$('lim-cpct').value, collateral_months: +$('lim-cmon').value, collateral_on: $('lim-con').checked ? 1 : 0,
+    collateral_value: +$('lim-cval').value || 0, collateral_until_repaid: $('lim-cuntil').checked ? 1 : 0 });
+  if (!res.ok) { m.style.color = 'var(--bad)'; m.textContent = res.error || 'Could not save'; return; }
+  m.style.color = 'var(--ok, #2fb36b)'; m.textContent = 'Saved. The deal sheet and pitch now show these numbers.';
 };
 
 window.irCopyDealLink = function (u) {

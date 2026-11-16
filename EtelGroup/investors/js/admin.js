@@ -412,7 +412,8 @@ async function irSaveStage() {
 }
 
 // ---------- growth & goal planner ----------
-async function irRunGrowthPlanner() {
+document.addEventListener('change', function (e) { if (e.target && e.target.id === 'gp-comm') document.getElementById('gp-comm-other-wrap').style.display = e.target.value === 'custom' ? '' : 'none'; });
+function irGrowthBody(incentiveMonthly) {
   const body = {
     registered_drivers: Number(document.getElementById('gp-drivers').value || 0),
     trips_per_driver_per_day: Number(document.getElementById('gp-trips-per-driver').value || 0),
@@ -426,6 +427,15 @@ async function irRunGrowthPlanner() {
     other_monthly_income: Number(document.getElementById('gp-other-income').value || 0),
     cost_scale_pct: Number(document.getElementById('gp-cost-scale').value || 100),
   };
+  const commSel = document.getElementById('gp-comm').value;
+  if (commSel === 'custom') { const o = document.getElementById('gp-comm-other').value; if (o !== '') body.commission_rate_pct = Number(o); }
+  else if (commSel !== '') body.commission_rate_pct = Number(commSel);
+  if (incentiveMonthly > 0) body.incentive_monthly_cost = incentiveMonthly;
+  return body;
+}
+async function irRunGrowthPlanner() {
+  const inc = (typeof window.irGrowthIncentive === 'function') ? window.irGrowthIncentive() : 0;
+  const body = irGrowthBody(inc);
   const el = document.getElementById('gp-output');
   el.innerHTML = 'Calculating…';
   const res = await irApi('admin_growth_planner', body);
@@ -455,6 +465,16 @@ async function irRunGrowthPlanner() {
       <tr><td>Founder Amount</td>${periodOrder.map(p => `<td class="ir-num">${irMoney(d.periods[p].founder_amount)}</td>`).join('')}</tr>
     </tbody></table>
   `;
+
+  if (d.compare && d.compare.length) {
+    html += `
+      <div class="section-title" style="font-size:14px;margin-top:18px">What the commission rate changes (one month)</div>
+      <div class="ir-tablewrap"><table class="ir-table"><thead><tr><th>Commission</th><th class="ir-num">Commission revenue</th><th class="ir-num">Net profit</th><th class="ir-num">Investor pool (20%)</th><th class="ir-num">Investor payout</th><th class="ir-num">Break-even trips / day</th></tr></thead><tbody>
+      ${d.compare.map(c => `<tr${c.in_use ? ' style="font-weight:700;background:rgba(212,175,55,.08)"' : ''}><td>${irEsc(c.rate_pct)} %${c.in_use ? ' (shown above)' : ''}</td><td class="ir-num">${irMoney(c.commission_revenue)}</td><td class="ir-num">${irMoney(c.net_profit)}</td><td class="ir-num">${irMoney(c.pool_entitlement)}</td><td class="ir-num">${irMoney(c.total_investor_payout)}</td><td class="ir-num">${c.break_even_trips_per_day == null ? '-' : Number(c.break_even_trips_per_day).toLocaleString()}</td></tr>`).join('')}
+      </tbody></table></div>
+      <div class="desc" style="margin-top:6px">A higher commission earns more for the company and the investors, but riders and drivers pay more. Use this to show investors how the launch commission-free period and later rates change the numbers.</div>
+    `;
+  }
 
   const monthLines = d.periods.month.lines;
   if (monthLines.length) {

@@ -291,6 +291,10 @@ switch ($action) {
         require __DIR__ . '/controllers/AdminController.php';
         break;
 
+    case 'admin_list_audit': case 'admin_send_reminder': case 'admin_send_reminders_unpaid':
+        require __DIR__ . '/controllers/AuditController.php';
+        break;
+
     case 'officer_etelid_login': case 'officer_verify_by_plate': case 'officer_logout':
         require __DIR__ . '/controllers/OfficerController.php';
         break;
