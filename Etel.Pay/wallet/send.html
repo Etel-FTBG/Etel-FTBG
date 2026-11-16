@@ -218,8 +218,8 @@ async function lookupRecipient(){
   try{
     if(_isCode(phone)){                            // Etel Code (E1616): ask the server who owns it, so the sender can confirm the name
       _resolved = { value:'', name:'' }; card.style.display='none'; _recipientConfirmed = false;
-      if(typeof EP_API.resolveRecipient !== 'function'){ errEl.textContent='Please refresh the page once (an update is loading).'; return; }
-      const j = await EP_API.resolveRecipient(phone);
+      // EP_API.call is the generic dispatch (present in every api.js version), so this works even if an older api.js is cached
+      const j = await EP_API.call('ep_resolve_recipient', { identifier: phone });
       if(j && j.success && j.data && j.data.name){
         _resolved = { value: phone.trim().toUpperCase(), name: j.data.name };
         document.getElementById('r-name').textContent  = j.data.name;
