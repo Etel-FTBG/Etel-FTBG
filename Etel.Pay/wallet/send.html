@@ -84,7 +84,7 @@
           <label class="ep-label" data-t="phone" for="s-phone">Phone number</label>
           <div class="ep-input-wrap">
             <span class="ep-input-icon">📞</span>
-            <input class="ep-input" id="s-phone" type="tel" placeholder="0911 234 567" inputmode="tel" autocomplete="tel">
+            <input class="ep-input" id="s-phone" type="text" placeholder="0911 234 567  or  E1616" autocapitalize="characters" autocomplete="off" spellcheck="false">
             <button class="ep-input-action" id="s-lookup-btn" onclick="lookupRecipient()" title="Lookup">🔍</button>
           </div>
         </div>
@@ -196,6 +196,8 @@ function numpad(key){
 
 // ── Recipient lookup ──────────────────────────────────────────
 let _recipientConfirmed = false;
+let _resolved = { value: '', name: '' };        // an Etel Code the server has resolved to a name
+function _isCode(v){ return /^[eE][A-Za-z0-9 _-]{3,14}$/.test((v||'').trim()); }
 async function lookupRecipient(){
   const phone = document.getElementById('s-phone').value.trim();
   const errEl = document.getElementById('s-lookup-err');
@@ -206,6 +208,19 @@ async function lookupRecipient(){
   const btn = document.getElementById('s-lookup-btn');
   const restore = EP_CORE.btnLoading(btn, 'ep-spin-w');
   try{
+    if(_isCode(phone)){                            // Etel Code (E1616): ask the server who owns it, so the sender can confirm the name
+      _resolved = { value:'', name:'' }; card.style.display='none'; _recipientConfirmed = false;
+      const j = await EP_API.resolveRecipient(phone);
+      if(j && j.success && j.data && j.data.name){
+        _resolved = { value: phone.trim().toUpperCase(), name: j.data.name };
+        document.getElementById('r-name').textContent  = j.data.name;
+        document.getElementById('r-phone').textContent = 'Etel Code ' + (j.data.code||phone.trim().toUpperCase());
+        card.style.display='flex'; _recipientConfirmed = true;
+      } else {
+        errEl.textContent = (j && j.data && j.data.message) || 'Etel Code not found.';
+      }
+      return;
+    }
     // Quick validation: try to send 0 amount to check if phone exists
     // (ETEL Pay doesn't have a dedicated lookup endpoint — we validate on send)
     // Display tentatively confirmed
@@ -223,11 +238,12 @@ function openConfirm(){
   const note   = document.getElementById('s-note').value.trim();
   const errEl  = document.getElementById('s-err');
   errEl.textContent='';
-  if(!phone)         { errEl.textContent='Enter recipient phone.'; return; }
+  if(!phone)         { errEl.textContent='Enter recipient phone or Etel Code.'; return; }
+  if(_isCode(phone) && _resolved.value !== phone.trim().toUpperCase()){ errEl.textContent='Tap the search button to check who owns this Etel Code first.'; return; }
   if(amount<=0)      { errEl.textContent='Enter an amount.'; return; }
   if(amount<1)       { errEl.textContent='Minimum transfer: 1 ETB.'; return; }
 
-  document.getElementById('c-to').textContent     = phone;
+  document.getElementById('c-to').textContent     = _isCode(phone) ? (_resolved.name + '  (' + phone.trim().toUpperCase() + ')') : phone;
   document.getElementById('c-amount').textContent = EP_CORE.numFmt(amount)+' ETB';
   document.getElementById('c-note').textContent   = note||'—';
   EP_CORE.openSheet('sheet-confirm');
@@ -249,7 +265,7 @@ async function doSend(){
     if(j.success){
       EP_CORE.closeSheet('sheet-confirm');
       document.getElementById('success-sub').textContent =
-        `ETB ${EP_CORE.numFmt(amount)} sent to ${phone}`;
+        `ETB ${EP_CORE.numFmt(amount)} sent to ${_isCode(phone) && _resolved.name ? _resolved.name : phone}`;
       document.getElementById('success-screen').style.display='flex';
     } else {
       errEl.textContent = (j.data&&j.data.message)||'Transfer failed.';

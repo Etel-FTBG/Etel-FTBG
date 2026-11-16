@@ -183,6 +183,12 @@ class EtelID_Service_API {
             $m = EtelID_DB::get_by_etel_id( $upper );
             if ( $m ) return $m;
         }
+        /* 1b) Etel Code (member-chosen short code like E1616): starts with a letter,
+           so it can never be confused with a phone, FIN or card number. */
+        if ( class_exists( 'Etelid_Code' ) && preg_match( '/^[Ee][A-Za-z0-9 _-]{3,14}$/', $raw ) ) {
+            $mc = Etelid_Code::member_by_code( $raw );
+            if ( $mc ) return $mc;
+        }
         /* 2) FIN (12 digits) or card number (16 digits), any formatting */
         if ( strlen( $digits ) >= 12 ) {
             $m = $wpdb->get_row( $wpdb->prepare(

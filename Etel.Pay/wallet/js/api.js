@@ -74,6 +74,9 @@ const EP_API = (function() {
     getBalance()           { return call('etel_pay_get_balance'); },
     getHistory(limit=20, offset=0) { return call('etel_pay_get_history', { limit, offset }); },
     getRates()             { return call('etel_pay_get_rates'); },
+    resolveRecipient(identifier) {
+      return call('ep_resolve_recipient', { identifier });
+    },
     send(receiver, amount, currency='ETB', note='', pin='') {
       return call('etel_pay_send', { receiver, amount, currency, note, pin });
     },
