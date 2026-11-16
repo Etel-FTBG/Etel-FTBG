@@ -149,7 +149,7 @@ function paint() {
     '<div class="desc" style="margin-top:8px">Estimate only. A month is counted as 30 days (a week as 7). "ETB" is a fixed amount, "% of fares" is a share of the fares of the trips it relates to (average fare ETB ' + money(v.avg_fare) + '), "ETB per trip" is paid for every one of those trips. "Cost to win" spreads agent pay between drivers and riders in proportion to how many each agent signs. Bonus and referral rules must also be switched on in Delivery &amp; Ride (Admin &gt; Pricing &gt; Incentives) before anything is paid there.</div>';
 }
 
-function select(id, opts, cur) { return '<select id="' + id + '">' + opts.map(function (o) { return '<option value="' + o[0] + '"' + (o[0] === cur ? ' selected' : '') + '>' + esc(o[1]) + '</option>'; }).join('') + '</select>'; }
+function select(id, opts, cur) { return '<select id="' + id + '" style="flex:0 0 auto;width:auto;max-width:48%">' + opts.map(function (o) { return '<option value="' + o[0] + '"' + (o[0] === cur ? ' selected' : '') + '>' + esc(o[1]) + '</option>'; }).join('') + '</select>'; }
 function build() {
   var host = $('ip-fields'); if (!host || host.getAttribute('data-built')) return;
   host.setAttribute('data-built', '1');
@@ -161,7 +161,7 @@ function build() {
         var f = FIELDS[k], ctl = '';
         if (f.kind === 'amt') ctl = select('ipu-' + k, UNITS, s.u[k]);
         else if (f.kind === 'vol') ctl = select('ipp-' + k, PERIODS, s.p[k]);
-        return '<div class="cf-field"><label>' + esc(f.label) + '</label><div style="display:flex;gap:6px"><input type="number" id="ip-' + k + '" min="0" step="any" value="' + esc(s.v[k]) + '"' + (f.hint ? ' title="' + esc(f.hint) + '"' : '') + ' style="flex:1;min-width:0">' + ctl + '</div></div>';
+        return '<div class="cf-field"><label>' + esc(f.label) + '</label><div style="display:flex;gap:6px"><input type="number" id="ip-' + k + '" min="0" step="any" value="' + esc(s.v[k]) + '"' + (f.hint ? ' title="' + esc(f.hint) + '"' : '') + ' style="flex:1 1 90px;min-width:80px;width:90px">' + ctl + '</div></div>';
       }).join('') + '</div>';
   }).join('');
   host.addEventListener('input', paint); host.addEventListener('change', paint);
