@@ -6,7 +6,8 @@
  *   Navigation          → Network-first → offline.html fallback
  */
 
-const CACHE     = 'etelpay-v16';   // bumped: PIN prompt + escaping in core.js/api.js, on top of the theme files
+const CACHE     = 'etelpay-v17';   // bumped: Etel Code recipient look-up in api.js / send.html
+//   // bumped: PIN prompt + escaping in core.js/api.js, on top of the theme files
 const PRECACHE  = [
   './login',
   './wallet',
