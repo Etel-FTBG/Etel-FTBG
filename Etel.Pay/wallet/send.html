@@ -164,7 +164,7 @@
 <div id="ep-toast"></div>
 
 <script src="js/config.js?v=4.1"></script>
-<script src="js/api.js?v=4.3"></script>
+<script src="js/api.js?v=4.4"></script>
 <script src="js/core.js?v=4.3"></script>
 <script>
 EP_CORE.onReady(function(){
@@ -177,6 +177,14 @@ EP_CORE.onReady(function(){
     lookupRecipient();
   }
   document.getElementById('s-phone').addEventListener('keydown', e=>{ if(e.key==='Enter') lookupRecipient(); });
+// Phone number or Etel Code: the box detects which one was typed. A code is looked up on its own (the owner's name shows up).
+let _autoTimer = null;
+document.getElementById('s-phone').addEventListener('input', function(){
+  clearTimeout(_autoTimer);
+  const v = this.value.trim();
+  _resolved = { value:'', name:'' };
+  if(_isCode(v)){ document.getElementById('recipient-card').style.display='none'; _autoTimer = setTimeout(lookupRecipient, 600); }
+});
 });
 
 // ── Numpad ────────────────────────────────────────────────────
@@ -210,6 +218,7 @@ async function lookupRecipient(){
   try{
     if(_isCode(phone)){                            // Etel Code (E1616): ask the server who owns it, so the sender can confirm the name
       _resolved = { value:'', name:'' }; card.style.display='none'; _recipientConfirmed = false;
+      if(typeof EP_API.resolveRecipient !== 'function'){ errEl.textContent='Please refresh the page once (an update is loading).'; return; }
       const j = await EP_API.resolveRecipient(phone);
       if(j && j.success && j.data && j.data.name){
         _resolved = { value: phone.trim().toUpperCase(), name: j.data.name };
@@ -232,14 +241,15 @@ async function lookupRecipient(){
 }
 
 // ── Confirm sheet ─────────────────────────────────────────────
-function openConfirm(){
-  const phone  = document.getElementById('s-phone').value.trim();
+async function openConfirm(){
+  let phone  = document.getElementById('s-phone').value.trim();
+  if(_isCode(phone) && _resolved.value !== phone.toUpperCase()){ await lookupRecipient(); phone = document.getElementById('s-phone').value.trim(); }   // an Etel Code is looked up automatically
   const amount = parseFloat(_rawAmt)||0;
   const note   = document.getElementById('s-note').value.trim();
   const errEl  = document.getElementById('s-err');
   errEl.textContent='';
   if(!phone)         { errEl.textContent='Enter recipient phone or Etel Code.'; return; }
-  if(_isCode(phone) && _resolved.value !== phone.trim().toUpperCase()){ errEl.textContent='Tap the search button to check who owns this Etel Code first.'; return; }
+  if(_isCode(phone) && _resolved.value !== phone.trim().toUpperCase()){ if(!errEl.textContent) errEl.textContent='Etel Code not found.'; return; }
   if(amount<=0)      { errEl.textContent='Enter an amount.'; return; }
   if(amount<1)       { errEl.textContent='Minimum transfer: 1 ETB.'; return; }
 
