@@ -260,6 +260,14 @@ function etelid_bridge_check_role($company_slug, $phone) {
  * verify URL, EG-... id, FIN (12 digits), card number (16 digits), or phone.
  * Returns assoc row (id, etel_id, full_name, phone, status, pin_hash) or null.
  */
+/* Etel Code (E1616) typed instead of a phone number: returns the member's phone, or '' when it is not a code / unknown. */
+function etelid_bridge_code_to_phone($typed) {
+    $typed = trim((string)$typed);
+    if (!preg_match('/^[Ee][A-Za-z0-9 _-]{3,14}$/', $typed)) return '';
+    $m = etelid_bridge_find($typed);
+    return ($m && !empty($m['phone'])) ? (string)$m['phone'] : '';
+}
+
 function etelid_bridge_find($identifier) {
     /* Service API only - see the fragility note on etelid_bridge_db()
        above. The old fallback parsed identifiers itself and queried the

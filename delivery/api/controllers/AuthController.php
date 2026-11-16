@@ -177,7 +177,13 @@ case 'change_password': {
 }
 case 'login': {
     $pdo   = db();
-    $phone = isset($body['phone']) ? preg_replace('/[^0-9+]/', '', trim($body['phone'])) : '';
+    $typed = isset($body['phone']) ? trim($body['phone']) : '';
+    if (preg_match('/^[Ee][A-Za-z0-9 _-]{3,14}$/', $typed)) {      // an Etel Code instead of a phone number
+        require_once __DIR__ . '/../etelid_bridge.php';
+        $typed = etelid_bridge_code_to_phone($typed);               // unknown code -> '' -> the same "incorrect" answer below
+        if ($typed === '') fail('Incorrect phone number or password', 401);
+    }
+    $phone = $typed !== '' ? preg_replace('/[^0-9+]/', '', $typed) : '';
     $pw    = isset($body['password']) ? $body['password'] : '';
     if (!$phone) fail('Phone is required');
     if (!$pw)    fail('Password is required');
@@ -296,7 +302,13 @@ case 'sg_login': {
     // POST: phone, password
     // Returns: token, user, service_giver
     $pdo   = db();
-    $phone = isset($body['phone'])    ? preg_replace('/[^0-9+]/', '', trim($body['phone'])) : '';
+    $typed = isset($body['phone']) ? trim($body['phone']) : '';
+    if (preg_match('/^[Ee][A-Za-z0-9 _-]{3,14}$/', $typed)) {      // an Etel Code instead of a phone number
+        require_once __DIR__ . '/../etelid_bridge.php';
+        $typed = etelid_bridge_code_to_phone($typed);
+        if ($typed === '') fail('Incorrect phone number or password', 401);
+    }
+    $phone = $typed !== '' ? preg_replace('/[^0-9+]/', '', $typed) : '';
     $pw    = isset($body['password']) ? $body['password'] : '';
     
     if (!$phone) fail('Phone number is required');
