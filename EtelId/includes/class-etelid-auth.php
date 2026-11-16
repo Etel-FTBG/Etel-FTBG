@@ -189,10 +189,15 @@ class EtelID_Auth {
             return new WP_Error( 'rate_limited', 'Too many attempts for this account. Please wait a few minutes, or use "Forgot password" to reset it.' );
         }
 
-        $member = EtelID_DB::find_by_phone( $phone );
+        /* An Etel Code (E1616) is accepted wherever a phone number is: it starts with a letter, so it is never a phone. */
+        $member = null;
+        if ( class_exists( 'Etelid_Code' ) && preg_match( '/^[Ee][A-Za-z0-9_-]{3,14}$/', $phone ) ) {
+            $member = Etelid_Code::member_by_code( $phone );
+        }
+        if ( ! $member ) $member = EtelID_DB::find_by_phone( $phone );
 
         if ( ! $member ) {
-            return new WP_Error( 'not_found', 'No account found with this phone number.' );
+            return new WP_Error( 'not_found', 'No account found with this phone number or Etel Code.' );
         }
         if ( $member->status === 'suspended' ) {
             return new WP_Error( 'suspended', 'This account has been suspended. Contact security@etelgroup.com.' );

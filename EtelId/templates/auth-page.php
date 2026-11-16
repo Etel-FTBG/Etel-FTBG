@@ -120,10 +120,10 @@ $features = array(
       <div id="panel-login" <?php echo $init_tab!=='login'?'style="display:none"':''; ?>>
         <div class="eid-af-row-1">
           <div class="eid-af-field">
-            <label class="eid-af-label"><i class="ti ti-phone"></i> Phone Number <span class="req">*</span></label>
+            <label class="eid-af-label"><i class="ti ti-phone"></i> Phone Number or Etel Code <span class="req">*</span></label>
             <div class="eid-af-input-wrap">
               <i class="ti ti-phone eid-af-input-icon"></i>
-              <input type="tel" id="login-phone" class="eid-af-input" placeholder="+251 9XX XXX XXX" autocomplete="tel">
+              <input type="text" id="login-phone" class="eid-af-input" placeholder="+251 9XX XXX XXX  or  E1616" autocomplete="username" autocapitalize="characters" spellcheck="false">
             </div>
           </div>
         </div>
@@ -460,7 +460,7 @@ function doLogin() {
   var phone = document.getElementById('login-phone').value.trim();
   var pw    = document.getElementById('login-password').value;
   var remember = document.getElementById('login-remember') && document.getElementById('login-remember').checked;
-  if (!phone||!pw) { showErr('Please enter your phone number and password.'); return; }
+  if (!phone||!pw) { showErr('Please enter your phone number (or Etel Code) and password.'); return; }
   var btn = document.getElementById('login-btn');
   btn.disabled=true; btn.innerHTML='<i class="ti ti-loader" style="margin-right:6px"></i> Signing in…';
   var _redirect = (typeof _WPADMIN_REDIRECT !== 'undefined' && _WPADMIN_REDIRECT) ? 'wpadmin' : '';

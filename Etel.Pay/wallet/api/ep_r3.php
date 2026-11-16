@@ -365,7 +365,8 @@ case 'ep_login_etelid': {
        (same convention as etelid_bridge.php in every other project) so a
        formatting difference can never silently spin up a second, empty
        wallet account for someone who already has one. */
-    $digits = preg_replace('/[^0-9]/', '', $phone);
+    // Use EtelID's phone for the wallet match: the typed text may be an Etel Code (E1616), FIN or card number, not a phone.
+    $digits = preg_replace('/[^0-9]/', '', !empty($mm['phone']) ? $mm['phone'] : $phone);
     $last9  = strlen($digits) >= 9 ? substr($digits, -9) : $digits;
     $canonical_phone = !empty($mm['phone']) ? $mm['phone'] : $phone;
 
