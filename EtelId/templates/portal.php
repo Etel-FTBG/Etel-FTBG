@@ -3169,5 +3169,9 @@ window.addEventListener('error',function(e){ _eidLog('er','JS: '+e.message+' ('+
 <!-- ETEL AI -- cross-company assistant widget -->
 <script src="https://ethelmarket.com/EtelAi/etel-ai-widget.js" data-project="etel-id"></script>
 <script src="/delivery/js/etel-help-fab.js" data-app="id" defer></script>
+<?php if (class_exists('Etelid_Code')) { /* this page has no wp_footer(), so load the Etel Code button here */ ?>
+<script>window.ETEL_CODE_API=<?php echo wp_json_encode(esc_url_raw(rest_url('etelid/v1/code/'))); ?>;</script>
+<script src="<?php echo esc_url(ETELID_URL . 'assets/etel-code-widget.js'); ?>?v=3" defer></script>
+<?php } ?>
 </body>
 </html>
