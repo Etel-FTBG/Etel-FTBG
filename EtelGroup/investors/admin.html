@@ -238,18 +238,19 @@ try{var t=localStorage.getItem('theme');if(t!=='dark'&&t!=='light')t=window.matc
         <section class="ir-page" data-page="incentives">
       <div class="ir-card">
         <h2>&#127919; Incentive &amp; marketing planner</h2>
-        <div class="desc">Assumption-based, like the Growth planner. Enter the number of marketing agents, driver bonuses, referral rewards and rider promotions. Give each amount in ETB, as a % of fares, or as ETB per trip, give each count per day, week or month, and show the results per day, week or month. It shows what each costs per month, who gets what, how long each launch budget line lasts, and what it costs to win one driver or one rider. Your numbers are kept in this browser; nothing is sent to the server.</div>
+        <div class="desc">Assumption-based, like the Growth planner. Enter the number of marketing agents at busy places, their fee per completed trip, the new-rider discount, and any driver bonuses or referral rewards. Give each amount in ETB, as a % of fares, or as ETB per trip, give each count per day, week or month, and show the results per day, week or month. It shows what each costs per month, who gets what, how long each launch budget line lasts, and what it costs to win one driver or one rider. Your numbers are kept in this browser; nothing is sent to the server.</div>
         <details class="ip-explain" style="margin:10px 0 14px;padding:10px 14px;border:1px solid var(--border,rgba(255,255,255,.12));border-radius:10px">
           <summary style="cursor:pointer;font-weight:700">How this planner works &ndash; and how to explain it to investors</summary>
           <div style="margin-top:10px;font-size:13px;line-height:1.6">
             <p><b>What it answers.</b> &ldquo;How much will it cost to win drivers and riders, how long does the launch budget last, and what do we get for it?&rdquo; It is a calculator: you type assumptions, it shows the cost. Nothing here is a promise or a real result.</p>
-            <p><b>1. Set the plan (the boxes).</b> Marketing agents and their pay; the bonus a driver earns for busy days (3 tiers); a reward for bringing another driver; a discount for a new rider&rsquo;s first rides. Every amount can be a fixed <b>ETB</b>, a <b>% of fares</b>, or <b>ETB per trip</b>. Every count can be per <b>day, week or month</b>. The top selector chooses how the answer is shown.</p>
-            <p><b>2. Read the results.</b> <i>Total spend</i> per day/week/month and for the whole plan. <i>Cost to win one driver / one rider</i> = all the money spent on signing people up, divided by the people won. <i>Who gets what</i> shows agents, drivers and customers separately. The table below it compares each line with the <b>Launch period</b> budget: <i>Lasts</i> is how many months that budget line runs out at this spend, and it says <i>Within budget</i> or <i>Over by</i>.</p>
+            <p><b>1. The plan it models.</b> At least 10 agents stand at busy places (hotels, parking areas, malls, markets). When a new user needs a ride, the agent calls a driver. When the trip is <b>completed</b>, the agent earns a fee (30 to 50 ETB). The new user gets a <b>% discount</b> on that trip. The driver still receives the <b>full fare</b>: the company pays the discount to the driver, who collects it from the company every day or every week.</p>
+            <p><b>2. Set the numbers (the boxes).</b> How many agents, how many new-user trips one agent orders, how many of them are completed, the agent fee, the discount %, and how often drivers collect the discount. Driver daily bonuses and driver referrals are optional extras. Every amount can be ETB, % of fares or ETB per trip, and every count can be per day, week or month. The top selector chooses how the answer is shown.</p>
+            <p><b>Read the results.</b> <i>Total spend</i>, <i>cost to win one new rider</i> (agent fee plus discount), what <i>one agent earns</i>, and the cash the company pays out every day or week (discounts to drivers, fees to agents). Two small tables show what changes at 30 / 40 / 50 ETB per trip and at different discounts. The table with the launch budget shows how many months each budget line lasts, and whether you are within budget.</p>
             <p><b>3. Link it to the Growth planner.</b> On the Growth planner page choose &ldquo;Include incentive spend&rdquo;. The spend becomes a monthly cost, and you see side by side: the trips a day needed to break even, the profit and the investor payout <i>with</i> and <i>without</i> the incentives, and how many months of profit repay the incentive money.</p>
             <p><b>What to tell investors.</b></p>
             <ul style="margin:4px 0 0 18px">
               <li>Incentives are a <b>growth cost with a cap</b>: it is paid from the launch budget (the raise), and the launch period ends after at most the number of days set on the Launch period page, or earlier when the trips-a-day goal is reached.</li>
-              <li>Bonuses and rewards are paid <b>only after a driver or rider is active</b> (qualifying trips), so money follows real use, not sign-ups on paper.</li>
+              <li>Agents are paid <b>only for completed trips</b>, so the money follows real rides, not sign-ups on paper. The driver always gets the full fare.</li>
               <li><b>Cost to win</b> is the number to judge: compare it with what one active driver brings in commission over time (see the Growth planner). If one driver repays their cost in a few months, the spend is worth it.</li>
               <li>Be open that the numbers are assumptions until real trips come in. Replace them with real results as soon as you have them, and show both the cheap and the expensive case.</li>
             </ul>
@@ -435,7 +436,7 @@ try{var t=localStorage.getItem('theme');if(t!=='dark'&&t!=='light')t=window.matc
 <script src="js/deal-sheet.js?v=7"></script>
 <script src="js/admin.js?v=8"></script>
 <script src="js/admin-deals.js?v=5"></script>
-<script src="js/admin-incentives.js?v=4"></script>
+<script src="js/admin-incentives.js?v=5"></script>
 <script src="js/admin-growth-link.js?v=1"></script>
 <script src="js/ir-shell.js?v=3"></script>
 </body>
