@@ -43,6 +43,7 @@ try{var t=localStorage.getItem('theme');if(t!=='dark'&&t!=='light')t=window.matc
       <a data-page="costs"><i>&#128184;</i>Costs &amp; stages</a>
       <a data-page="planner"><i>&#128640;</i>Growth planner</a>
       <a data-page="launch"><i>&#128747;</i>Launch period</a>
+      <a data-page="incentives"><i>&#127919;</i>Incentive planner</a>
       <div class="irx-nav-h">System</div>
       <a id="nav-setup"><i>&#9881;&#65039;</i>Setup wizard</a>
     </nav>
@@ -234,6 +235,16 @@ try{var t=localStorage.getItem('theme');if(t!=='dark'&&t!=='light')t=window.matc
 
         </section>
 
+        <section class="ir-page" data-page="incentives">
+      <div class="ir-card">
+        <h2>&#127919; Incentive &amp; marketing planner</h2>
+        <div class="desc">Assumption-based, like the Growth planner. Enter the number of marketing agents, driver bonuses, referral rewards and rider promotions. It shows what each costs per month, who gets what, how long each launch budget line lasts, and what it costs to win one driver or one rider. Your numbers are kept in this browser; nothing is sent to the server.</div>
+        <div id="ip-fields"></div>
+        <button class="btn btn-outline btn-sm" id="ip-reset" type="button" style="margin-top:8px">Reset to the suggested numbers</button>
+        <div id="ip-output" style="margin-top:16px"></div>
+      </div>
+        </section>
+
         <section class="ir-page" data-page="launch">
       <div class="ir-card">
         <h2>&#128747; Launch period</h2>
@@ -407,6 +418,7 @@ try{var t=localStorage.getItem('theme');if(t!=='dark'&&t!=='light')t=window.matc
 <script src="js/deal-sheet.js?v=7"></script>
 <script src="js/admin.js?v=7"></script>
 <script src="js/admin-deals.js?v=5"></script>
-<script src="js/ir-shell.js?v=2"></script>
+<script src="js/admin-incentives.js?v=1"></script>
+<script src="js/ir-shell.js?v=3"></script>
 </body>
 </html>

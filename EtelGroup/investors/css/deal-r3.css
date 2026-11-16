@@ -108,3 +108,16 @@ html[data-theme="dark"] .dl-f input{color-scheme:dark}
 .dl-co.dl-this{border-color:var(--dl-gold);box-shadow:0 0 0 1px rgba(246,194,43,.35)}
 
 .dl-pill{display:inline-block;margin-left:8px;padding:2px 10px;border-radius:20px;background:var(--dl-gold);color:#061230;font:700 11px/1.6 "Inter","Segoe UI",system-ui,sans-serif;letter-spacing:.5px;vertical-align:middle}
+
+/* ---- desktop (1100px and wider): information on the left, the form on the right (phones unchanged) ---- */
+@media (min-width: 1100px) {
+  .dl-wrap { max-width: 1280px; padding: 0 24px 40px; }
+  #dl-main { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(400px, .8fr); column-gap: 24px; align-items: start; padding: 24px 0 0; }
+  #dl-main > .dl-card { margin-bottom: 18px; }
+  #dl-main > #dl-how, #dl-main > #dl-stages, #dl-main > #dl-launch, #dl-main > #dl-protect, #dl-main > #dl-next { grid-column: 1; }
+  #dl-main > #dl-form, #dl-main > #dl-done { grid-column: 2; grid-row: 1 / span 6; position: sticky; top: 16px; max-height: calc(100vh - 32px); overflow-y: auto; }
+  #dl-main > #dl-done[hidden], #dl-main > .dl-card[hidden] { display: none; }
+  .dl-card { padding: 26px; }
+  .dl-card h2 { font-size: 24px; }
+}
+@media (min-width: 1500px) { .dl-wrap { max-width: 1400px; } }
