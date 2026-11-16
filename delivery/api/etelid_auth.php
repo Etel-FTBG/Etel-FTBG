@@ -170,7 +170,6 @@ class EtelID {
 
     private static function get($params) {
         if (!self::$url) return ['ok' => false, 'error' => 'EtelID not configured'];
-        $params['key'] = self::$key;
         $ctx = stream_context_create(['http' => [
             'method'        => 'GET',
             'header'        => "X-Etel-Key: " . self::$key . "\r\n",

@@ -1,19 +1,19 @@
 <?php
 /**
- * Etel-ID Premium — Rewrite Rules v3.8.0
+ * Etel-ID Premium - Rewrite Rules v3.8.0
  *
  * URL map:
- *   /apply/          → apply form
- *   /login/          → login
- *   /signup/         → signup
- *   /portal/         → member portal
- *   /profile/        → edit profile
- *   /logout/         → logout
- *   /verify/{ID}     → public verify page
- *   /print/{ID}      → print page
+ *   /apply/          -> apply form
+ *   /login/          -> login
+ *   /signup/         -> signup
+ *   /portal/         -> member portal
+ *   /profile/        -> edit profile
+ *   /logout/         -> logout
+ *   /verify/{ID}     -> public verify page
+ *   /print/{ID}      -> print page
  *
  * IMPORTANT: verify and print use [^/]+ to support Ethiopic characters
- * in the ID prefix (e.g. ኤ.E-2026-00002). DO NOT use [A-Z0-9\-]+.
+ * in the ID prefix (e.g. .E-2026-00002). DO NOT use [A-Z0-9\-]+.
  *
  * PHP 5.6 compatible.
  */
@@ -30,7 +30,7 @@ class EtelID_Rewrite {
         add_action( 'wp_loaded',              array( __CLASS__, 'maybe_flush'     ) );
     }
 
-    /* ── Add rewrite rules ── */
+    /* -- Add rewrite rules -- */
     public static function add_rules() {
         /* Static pages */
         add_rewrite_rule( '^etel-id/apply/?$',   'index.php?etelid_page=apply',   'top' );
@@ -59,14 +59,14 @@ class EtelID_Rewrite {
         add_rewrite_rule( '^verify-pass2/?$', 'index.php?etelid_page=verify-pass2', 'top' );
         add_rewrite_rule( '^reset-password/?$', 'index.php?etelid_page=reset-password', 'top' );
 
-        /* Dynamic pages — [^/]+ supports Ethiopic characters in ID prefix */
+        /* Dynamic pages - [^/]+ supports Ethiopic characters in ID prefix */
         add_rewrite_rule( '^etel-id/verify/([^/]+)/?$', 'index.php?etelid_verify=$matches[1]', 'top' );
         add_rewrite_rule( '^etel-id/print/([^/]+)/?$',  'index.php?etelid_print=$matches[1]',  'top' );
         add_rewrite_rule( '^verify/([^/]+)/?$', 'index.php?etelid_verify=$matches[1]', 'top' );
         add_rewrite_rule( '^print/([^/]+)/?$',  'index.php?etelid_print=$matches[1]',  'top' );
     }
 
-    /* ── Register query vars ── */
+    /* -- Register query vars -- */
     public static function add_vars( $vars ) {
         $vars[] = 'etelid_page';
         $vars[] = 'etelid_verify';
@@ -74,7 +74,7 @@ class EtelID_Rewrite {
         return $vars;
     }
 
-    /* ── Route requests to templates ── */
+    /* -- Route requests to templates -- */
     public static function route( $template ) {
         $page   = get_query_var( 'etelid_page' );
         $verify = get_query_var( 'etelid_verify' );
@@ -90,13 +90,13 @@ class EtelID_Rewrite {
             EtelID_Security::security_headers();
         }
 
-        /* ── Verify page ── */
+        /* -- Verify page -- */
         if ( $verify ) {
             $tpl = ETELID_PATH . 'templates/verify.php';
             return file_exists( $tpl ) ? $tpl : $template;
         }
 
-        /* ── Print page ── */
+        /* -- Print page -- */
         if ( $print ) {
             $etel_id = sanitize_text_field( urldecode( $print ) );
             $member  = EtelID_DB::get_by_etel_id( $etel_id );
@@ -121,6 +121,7 @@ class EtelID_Rewrite {
                 }
             }
             if ( $member ) {
+                EtelID_DB::log_kyc_access( $member->id, $is_owner ? 'self-print' : 'admin-print:' . ( $viewer ? $viewer->etel_id : 'wp-admin' ) );
                 /* Make member available to template */
                 $GLOBALS['etelid_print_member'] = $member;
                 $tpl = ETELID_PATH . 'templates/print-page.php';
@@ -129,7 +130,7 @@ class EtelID_Rewrite {
             return $template;
         }
 
-        /* ── Named pages ── */
+        /* -- Named pages -- */
         if ( ! $page ) return $template;
 
         switch ( $page ) {
@@ -193,12 +194,12 @@ class EtelID_Rewrite {
         return $template;
     }
 
-    /* ── Redirect the old /etel-id/xxx/ URLs to the shorter canonical
+    /* -- Redirect the old /etel-id/xxx/ URLs to the shorter canonical
        /xxx/ form, so the address bar always ends up showing the short
        version regardless of which link/bookmark someone used to get
        here. Runs before add_rules' own routing, so both old and new
        links still reach the right page - this just cleans up the URL
-       shown afterward. ── */
+       shown afterward. -- */
     public static function redirect_long_to_short() {
         $uri = isset( $_SERVER['REQUEST_URI'] ) ? $_SERVER['REQUEST_URI'] : '';
         if ( preg_match( '#^(.*?)/etel-id/(apply|login|signup|portal|profile|logout|verify-pass2|reset-password)/?(\?.*)?$#i', $uri, $m ) ) {
@@ -211,7 +212,7 @@ class EtelID_Rewrite {
         }
     }
 
-    /* ── Redirect WP pages with matching slugs ── */
+    /* -- Redirect WP pages with matching slugs -- */
     public static function redirect_wp_pages() {
         if ( ! is_page() && ! is_singular() ) return;
 
@@ -244,7 +245,7 @@ class EtelID_Rewrite {
         }
     }
 
-    /* ── Flush rewrite rules once after plugin update ── */
+    /* -- Flush rewrite rules once after plugin update -- */
     public static function maybe_flush() {
         /* One-off flush so the new /console/ route works right after this update. */
         if ( get_option( 'etelid_rules_ver' ) !== 'console1' ) {
@@ -257,7 +258,7 @@ class EtelID_Rewrite {
         }
     }
 
-    /* ── Called from admin to force flush ── */
+    /* -- Called from admin to force flush -- */
     public static function flush() {
         flush_rewrite_rules();
     }

@@ -6,7 +6,14 @@ async function adminEtelIdLogin() {
   const identifier = document.getElementById('admin-etelid-identifier').value.trim();
   const password = document.getElementById('admin-etelid-password').value.trim();
   if (!identifier || !password) return taxiToast('Enter your EtelID and password', 'err');
-  const res = await taxiApi('admin_etelid_login', { identifier, password }, 'admin');
+  const loginBody = { identifier, password };
+  let res = await taxiApi('admin_etelid_login', loginBody, 'admin');
+  while (res && res.requires_2fa && window.Etel2FA) {
+    const code = await window.Etel2FA.ask(res.error);
+    if (!code) { res = { ok: false, error: 'Sign-in cancelled.' }; break; }
+    loginBody.totp_code = code;
+    res = await taxiApi('admin_etelid_login', loginBody, 'admin');
+  }
   if (!res.ok) return taxiToast(res.error, 'err');
   taxiSetToken('admin', res.data.token);
   showAdminShell();

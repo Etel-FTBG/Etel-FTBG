@@ -31,7 +31,7 @@ function eg_etelid_post($path, $payload) {
     $url = 'https://' . eg_etelid_host() . '/EtelId/wp-json/etelid/v1/' . $path;
     $ctx = stream_context_create(array('http' => array(
         'method'  => 'POST',
-        'header'  => "Content-Type: application/json\r\nX-Etel-Service-Key: " . $key . "\r\n",
+        'header'  => "Content-Type: application/json\r\nX-Etel-Service-Key: " . $key . "\r\nX-Etel-App: EtelGebeya/1.0\r\n",
         'content' => json_encode($payload),
         'timeout' => 10,
         'ignore_errors' => true, // so a 4xx/5xx response body is still readable, not just false
@@ -52,12 +52,18 @@ function eg_etelid_post($path, $payload) {
  *  actual message EtelID's own API returned - e.g. wrong password) -
  *  never silently collapsed to a generic "incorrect" message that
  *  can't be told apart from a server misconfiguration. */
-function eg_etelid_authenticate($identifier, $password) {
-    $res = eg_etelid_post('service/authenticate', array(
+function eg_etelid_authenticate($identifier, $password, $totp = '') {
+    $req = array(
         'identifier' => $identifier, 'password' => $password, 'create_session' => true,
         'app' => 'gebeya', // a limited (Ride-only) EtelID is refused by EtelID itself
-    ));
+    );
+    if ($totp !== '') $req['totp_code'] = $totp;
+    $res = eg_etelid_post('service/authenticate', $req);
     if (isset($res['__error'])) return $res;
+    // EtelID wants the two-step code (or the code typed was wrong): the caller asks for it.
+    if (!empty($res['data']['requires_2fa']) || (isset($res['code']) && in_array($res['code'], array('requires_2fa', 'bad_2fa'), true))) {
+        return array('__2fa' => isset($res['message']) ? $res['message'] : 'Enter your two-step code.');
+    }
     if (empty($res['ok'])) return array('__error' => $res['message'] ?? 'Incorrect EtelID or password.');
     if (!empty($res['member']['profile_limited'])) {
         return array('__error' => 'Your Etel-ID is limited to Ride. Add your profile photo and both sides of your Fayda ID in the EtelID portal to unlock Etel Gebeya.');

@@ -25,30 +25,9 @@ switch ($action) {
 
 // AUTH
 case 'login':
-    // Master key still works (backward compatible), but per-admin
-    // login is now checked first if phone+password were sent instead
-    // of just the shared password field.
-    if (!empty($_POST['phone']) && isset($_POST['password']) && empty($_POST['master'])) {
-        $phone = trim((string)$_POST['phone']);
-        $pass  = (string)$_POST['password'];
-        $pdo = db();
-        if (!$pdo) err('Database unavailable', 500);
-        eg_ensure_admin_schema($pdo);
-        $s = $pdo->prepare('SELECT * FROM gebeya_admins WHERE phone = ? LIMIT 1');
-        $s->execute(array($phone));
-        $admin = $s->fetch();
-        if (!$admin || empty($admin['password_hash']) || !password_verify($pass, $admin['password_hash'])) {
-            err('Incorrect phone or password', 401);
-        }
-        $token = bin2hex(random_bytes(32));
-        $pdo->prepare('INSERT INTO gebeya_admin_sessions (admin_id, token, expires_at, created_at)
-                       VALUES (?, ?, DATE_ADD(NOW(), INTERVAL 30 DAY), NOW())')
-            ->execute(array($admin['id'], $token));
-        ok(['token' => $token, 'admin' => ['full_name' => $admin['full_name'], 'role' => $admin['role']]], 'Login OK');
-    }
-    $pass = $_POST['password'] ?? '';
-    if (!empty(ADMIN_SECRET) && hash_equals(ADMIN_SECRET, $pass)) ok(['token' => ADMIN_SECRET], 'Login OK');
-    err('Wrong password', 401);
+    // Retired: the shared master password and the separate phone+password sign-in
+    // both skip EtelID two-step. Use admin_etelid_login (Sign in with EtelID).
+    err('Password sign-in is retired. Use Sign in with EtelID.', 410);
 
 // Sign in with EtelID - recognizes an existing gebeya_admins account
 // (matched by etel_id or phone), or auto-provisions one if Etel Group's
@@ -62,7 +41,13 @@ case 'admin_etelid_login': {
     $password   = (string)($_POST['password'] ?? '');
     if (!$identifier || !$password) err('identifier and password are required.', 400);
 
-    $member = eg_etelid_authenticate($identifier, $password);
+    $member = eg_etelid_authenticate($identifier, $password, trim((string)($_POST['totp_code'] ?? '')));
+    if (isset($member['__2fa'])) {
+        ob_end_clean();
+        http_response_code(401);
+        echo json_encode(['ok'=>false,'requires_2fa'=>true,'error'=>$member['__2fa']]);
+        exit;
+    }
     if (isset($member['__error'])) err($member['__error'], 502);
     if (!$member) err('Incorrect EtelID or password.', 401);
 
@@ -131,28 +116,8 @@ case 'admin_etelid_login': {
 // Nonce format (base64): "<timestamp>:<uid>:<sha256_hmac>"
 // Valid for 90 seconds. No session sharing needed.
 case 'nonce_login': {
-    $raw = base64_decode($_POST['nonce'] ?? '', true);
-    if (!$raw) err('Missing or invalid nonce', 400);
-    $parts = explode(':', $raw, 3);
-    if (count($parts) !== 3) err('Malformed nonce', 400);
-    [$ts, $uid, $sig] = $parts;
-    if (abs(time() - (int)$ts) > 90) err('Nonce expired -- refresh the page and try again', 401);
-    $expected = hash_hmac('sha256', $ts . ':' . $uid, ADMIN_SECRET);
-    if (!hash_equals($expected, $sig)) err('Invalid nonce signature', 401);
-
-    // Single-use enforcement: reject if this exact signature was already redeemed
-    $spentDir = dirname(__DIR__) . '/storage/spent_nonces';
-    if (!is_dir($spentDir)) mkdir($spentDir, 0755, true);
-    $spentFile = $spentDir . '/' . hash('sha256', $sig) . '.used';
-    if (is_file($spentFile)) err('Nonce already used', 401);
-    touch($spentFile);
-
-    // Opportunistic cleanup of expired markers (older than the nonce window)
-    foreach (glob($spentDir . '/*.used') ?: [] as $f) {
-        if (time() - filemtime($f) > 90) @unlink($f);
-    }
-
-    ok(['token' => ADMIN_SECRET, 'uid' => (int)$uid, 'is_admin' => true], 'Admin access granted');
+    // Retired: it handed the master secret to the browser as a session token.
+    err('This admin shortcut is retired. Open the admin page and use Sign in with EtelID.', 410);
 }
 
 // Grant admin role to a user by phone (one-time setup, requires admin password)

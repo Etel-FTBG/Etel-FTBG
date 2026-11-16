@@ -109,7 +109,7 @@ async function taxiApi(action, body = {}, kind = 'driver') {
     // mistaken for "the internet is down" again.
     return { ok: false, error: 'The server had a problem processing that request (' + res.status + '). Please try again or contact support.' };
   }
-  if (!data.success) return { ok: false, error: data.message || ('Request failed (' + res.status + ')') };
+  if (!data.success) return { ok: false, error: data.message || ('Request failed (' + res.status + ')'), requires_2fa: !!data.requires_2fa };
   return { ok: true, data: data.data };
 }
 

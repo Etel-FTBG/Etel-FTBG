@@ -79,7 +79,7 @@ function auth() {
     if (!defined('API_KEY') || API_KEY === '' || API_KEY === 'CHANGE_ME') {
         err('Service key not configured on the server.', 503);
     }
-    $k = $_SERVER['HTTP_X_ETEL_KEY'] ?? $_GET['key'] ?? '';
+    $k = $_SERVER['HTTP_X_ETEL_KEY'] ?? '';
     if (!hash_equals(API_KEY, (string) $k)) err('Unauthorized', 401);
 }
 
@@ -101,6 +101,14 @@ function client_ip() {
 // Same shape as EtelID_Security::rate_limit() in the WordPress Service API,
 // reimplemented against etelid_log directly since this standalone gateway
 // has no WordPress transient store to share with it.
+/* One row per read of member data through this legacy gateway. Never fatal. */
+function api_kyc_log(PDO $pdo, $member_id, $app) {
+    try {
+        $q = $pdo->prepare("INSERT INTO " . pfx('kyc_access_log') . " (member_id, accessor_app, accessor_ip, accessed_at) VALUES (?, ?, ?, NOW())");
+        $q->execute([(int)$member_id, substr($app, 0, 60), isset($_SERVER['REMOTE_ADDR']) ? substr($_SERVER['REMOTE_ADDR'], 0, 45) : '']);
+    } catch (Exception $e) { /* table missing: ignore */ }
+}
+
 function rate_limited(PDO $pdo, $column, $value, $max, $windowSeconds) {
     if ($value === '') return false;
     $stmt = $pdo->prepare(
@@ -127,7 +135,7 @@ switch ($action) {
 
     // - Verify token -
     case 'verify_token':
-        $token = $body['token'] ?? $_GET['token'] ?? $_SERVER['HTTP_X_ETEL_TOKEN'] ?? '';
+        $token = $body['token'] ?? $_SERVER['HTTP_X_ETEL_TOKEN'] ?? '';
         if (!$token) err('token required');
 
         $pdo = db();
@@ -147,6 +155,7 @@ switch ($action) {
 
         if (!$session)                              err('Invalid or expired token', 401);
         if ($session['member_status'] !== 'active') err('Account ' . $session['member_status'], 403);
+        api_kyc_log($pdo, $session['member_id'], 'legacy-api:verify_token');
 
         // Limited (Ride-only) accounts - see EtelID_DB::refresh_limited(). The
         // column is added by the WordPress plugin's schema upgrade; if this
@@ -169,7 +178,6 @@ switch ($action) {
             'profile_limited' => $profileLimited,
             'id'        => $session['member_id'],
             'etel_id'   => $session['etel_id'],
-            'fin'       => $session['fin'],
             'full_name' => $session['full_name'],
             'phone'     => $session['phone'],
             'companies' => $stmt3->fetchAll(),

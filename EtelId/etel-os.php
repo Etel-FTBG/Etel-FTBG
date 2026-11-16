@@ -45,7 +45,7 @@ function auth()  {
     if (!defined('ETEL_API_KEY') || ETEL_API_KEY === '' || ETEL_API_KEY === 'CHANGE_ME') {
         err('Service key not configured on the server.', 503);
     }
-    $k = $_SERVER['HTTP_X_ETEL_KEY'] ?? $_GET['key'] ?? '';
+    $k = $_SERVER['HTTP_X_ETEL_KEY'] ?? '';
     if (!hash_equals(ETEL_API_KEY, (string) $k)) err('Unauthorized', 401);
 }
 
@@ -54,6 +54,18 @@ function auth()  {
 // EtelID_Security/transient-backed rate limiter isn't available here),
 // so it's reimplemented directly against etelid_log the same way
 // etel-api.php's standalone gateway already does.
+/* One row per read of member data through this legacy gateway. */
+function os_kyc_log($wpdb, $pfx, $member_id, $app) {
+    $wpdb->suppress_errors(true);
+    $wpdb->insert($pfx . 'etelid_kyc_access_log', array(
+        'member_id'    => (int)$member_id,
+        'accessor_app' => substr($app, 0, 60),
+        'accessor_ip'  => isset($_SERVER['REMOTE_ADDR']) ? substr($_SERVER['REMOTE_ADDR'], 0, 45) : '',
+        'accessed_at'  => current_time('mysql'),
+    ));
+    $wpdb->suppress_errors(false);
+}
+
 function os_rate_limited($wpdb, $pfx, $column, $value, $max, $windowSeconds) {
     if ($value === '' || $value === null) return false;
     $stmt = $wpdb->prepare(
@@ -108,16 +120,18 @@ switch ($action) {
         $fin    = $body['fin']     ?? $_GET['fin']     ?? '';
         $eid    = $body['etel_id'] ?? $_GET['etel_id'] ?? '';
         $phone  = $body['phone']   ?? $_GET['phone']   ?? '';
+        $cols = 'id, etel_id, full_name, phone, status, kyc_level';
         if ($fin) {
-            $row = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$pfx}etelid_members WHERE fin=%s LIMIT 1", $fin), ARRAY_A);
+            $row = $wpdb->get_row($wpdb->prepare("SELECT $cols FROM {$pfx}etelid_members WHERE fin=%s LIMIT 1", $fin), ARRAY_A);
         } elseif ($eid) {
-            $row = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$pfx}etelid_members WHERE etel_id=%s LIMIT 1", $eid), ARRAY_A);
+            $row = $wpdb->get_row($wpdb->prepare("SELECT $cols FROM {$pfx}etelid_members WHERE etel_id=%s LIMIT 1", $eid), ARRAY_A);
         } elseif ($phone) {
-            $row = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$pfx}etelid_members WHERE phone=%s LIMIT 1", $phone), ARRAY_A);
+            $row = $wpdb->get_row($wpdb->prepare("SELECT $cols FROM {$pfx}etelid_members WHERE phone=%s LIMIT 1", $phone), ARRAY_A);
         } else {
             err('Provide fin, etel_id, or phone');
         }
         if (!$row) err('Member not found', 404);
+        os_kyc_log($wpdb, $pfx, $row['id'], 'legacy-os:get_member');
         // Attach company links
         $row['companies'] = $wpdb->get_results($wpdb->prepare(
             "SELECT company_slug, company_name, role_at AS role FROM {$pfx}etelid_companies WHERE member_id=%d", $row['id']
@@ -130,7 +144,7 @@ switch ($action) {
 
     // - Verify session token (called by other projects) -
     case 'verify_token':
-        $token = $body['token'] ?? $_GET['token'] ?? $_SERVER['HTTP_X_ETEL_TOKEN'] ?? '';
+        $token = $body['token'] ?? $_SERVER['HTTP_X_ETEL_TOKEN'] ?? '';
         if (!$token) err('token required');
 
         // Hash the presented token the same way login (above) now hashes
@@ -147,6 +161,7 @@ switch ($action) {
 
         if (!$session)                              err('Invalid or expired token', 401);
         if ($session['member_status'] !== 'active') err('Account ' . $session['member_status'], 403);
+        os_kyc_log($wpdb, $pfx, $session['member_id'], 'legacy-os:verify_token');
 
         $companies = $wpdb->get_results($wpdb->prepare(
             "SELECT company_slug, company_name, role_at AS role FROM {$pfx}etelid_companies WHERE member_id=%d", $session['member_id']
@@ -155,7 +170,6 @@ switch ($action) {
         ok(['valid' => true, 'member' => [
             'id'        => $session['member_id'],
             'etel_id'   => $session['etel_id'],
-            'fin'       => $session['fin'],
             'full_name' => $session['full_name'],
             'phone'     => $session['phone'],
             'companies' => $companies,

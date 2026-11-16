@@ -1,19 +1,19 @@
 <?php
 /**
- * Etel-ID Premium — Database Layer
+ * Etel-ID Premium - Database Layer
  *
  * @package    Etel-ID Premium
  * @version    2.0.0
- * @author     Etel Group · ኢትኤል ቡድን
+ * @author     Etel Group |  
  * @link       https://etelgroup.com
  * @since      2.0.0
  *
  * Manages all database operations for the Etel-ID system.
  *
  * Tables:
- *   {prefix}etelid_members   — core identity records (35+ columns)
- *   {prefix}etelid_companies — member ↔ company links (many-to-many)
- *   {prefix}etelid_log       — full audit trail of all ID events
+ *   {prefix}etelid_members   - core identity records (35+ columns)
+ *   {prefix}etelid_companies - member <-> company links (many-to-many)
+ *   {prefix}etelid_log       - full audit trail of all ID events
  */
 if ( ! defined( 'ABSPATH' ) ) exit;
 
@@ -30,22 +30,22 @@ if ( ! class_exists( 'EtelID_Photos' ) && file_exists( dirname( __FILE__ ) . '/c
 
 class EtelID_DB {
 
-    /* ─── Table name helpers ──────────────────────────────── */
+    /* --- Table name helpers -------------------------------- */
     public static function t_members()   { global $wpdb; return $wpdb->prefix . 'etelid_members'; }
     public static function t_companies() { global $wpdb; return $wpdb->prefix . 'etelid_companies'; }
     public static function t_log()       { global $wpdb; return $wpdb->prefix . 'etelid_log'; }
     public static function t_biometric() { global $wpdb; return $wpdb->prefix . 'etelid_biometric'; }    /* v3.0.0 */
     public static function t_bio_log()   { global $wpdb; return $wpdb->prefix . 'etelid_bio_log'; }       /* v3.0.0 */
     public static function t_password_resets() { global $wpdb; return $wpdb->prefix . 'etelid_password_resets'; }
-    public static function t_links()     { global $wpdb; return $wpdb->prefix . 'etelid_member_links'; }  /* NEW — member's own social/bank accounts, shown on their NFC card after a scanner logs in */
+    public static function t_links()     { global $wpdb; return $wpdb->prefix . 'etelid_member_links'; }  /* NEW - member's own social/bank accounts, shown on their NFC card after a scanner logs in */
 
-    /* ─── Install / Activate ──────────────────────────────── */
-    /* ── Schema upgrades — runs on every boot, idempotent ── */
+    /* --- Install / Activate -------------------------------- */
+    /* -- Schema upgrades - runs on every boot, idempotent -- */
     public static function upgrade_schema() {
         global $wpdb;
         $c = $wpdb->get_charset_collate();
 
-        /* Upgrade 1: photo_url VARCHAR(500) → MEDIUMTEXT (supports base64 images) */
+        /* Upgrade 1: photo_url VARCHAR(500) -> MEDIUMTEXT (supports base64 images) */
         $col = $wpdb->get_row(
             "SELECT COLUMN_TYPE FROM INFORMATION_SCHEMA.COLUMNS
              WHERE TABLE_SCHEMA = DATABASE()
@@ -59,7 +59,7 @@ class EtelID_DB {
             );
         }
 
-        /* Upgrade 2: pin_hash VARCHAR(64) → VARCHAR(255)
+        /* Upgrade 2: pin_hash VARCHAR(64) -> VARCHAR(255)
          * bcrypt output is 60 chars today but PHP docs warn length may
          * grow in future versions. VARCHAR(255) is the officially recommended
          * column size for password_hash() output. This ALTER is idempotent. */
@@ -79,7 +79,7 @@ class EtelID_DB {
 
         /* Upgrade 3: Add Telegram chat_id + WhatsApp phone columns
          * Used for free OTP delivery across all Etel Group apps.
-         * Idempotent — checks column existence first. */
+         * Idempotent - checks column existence first. */
         $tg_col = $wpdb->get_row(
             "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
              WHERE TABLE_SCHEMA = DATABASE()
@@ -96,8 +96,8 @@ class EtelID_DB {
             );
         }
 
-        /* Upgrade 4 — FAYDA quick-register + two-pass KYC (v3.10.0)
-         * Idempotent — checks column existence first. */
+        /* Upgrade 4 - FAYDA quick-register + two-pass KYC (v3.10.0)
+         * Idempotent - checks column existence first. */
         $kyc_col = $wpdb->get_row(
             "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
              WHERE TABLE_SCHEMA = DATABASE()
@@ -125,7 +125,7 @@ class EtelID_DB {
             );
         }
 
-        /* Upgrade 5 — kyc_access_log table used by EtelID_Service_KYC for
+        /* Upgrade 5 - kyc_access_log table used by EtelID_Service_KYC for
          * cross-system audit (EtelPay/Delivery/Ride checking eligibility).
          * CREATE TABLE IF NOT EXISTS is naturally idempotent. */
         $wpdb->query(
@@ -141,7 +141,7 @@ class EtelID_DB {
             ) " . $c . ";"
         );
 
-        /* Upgrade 6 — Pass 2 review state for member-submitted Fayda ID
+        /* Upgrade 6 - Pass 2 review state for member-submitted Fayda ID
          * photos (v3.11.0). Reuses the existing fayda_front_image /
          * fayda_back_image / fayda_captured_at columns from Upgrade 4
          * as the storage; these new columns just track who submitted
@@ -157,7 +157,7 @@ class EtelID_DB {
         if ( ! $pass2_col ) {
             $wpdb->query(
                 "ALTER TABLE " . self::t_members() . "
-                 ADD COLUMN pass2_status       VARCHAR(20)  NOT NULL DEFAULT '' COMMENT 'empty|pending|approved|rejected — Fayda ID photo Pass 2 review state',
+                 ADD COLUMN pass2_status       VARCHAR(20)  NOT NULL DEFAULT '' COMMENT 'empty|pending|approved|rejected - Fayda ID photo Pass 2 review state',
                  ADD COLUMN pass2_submitted_at DATETIME     NULL COMMENT 'When the member submitted their own Fayda ID photos',
                  ADD COLUMN pass2_reviewed_by  BIGINT UNSIGNED NULL COMMENT 'Admin member id who approved/rejected',
                  ADD COLUMN pass2_review_note  VARCHAR(255) NOT NULL DEFAULT '',
@@ -165,7 +165,7 @@ class EtelID_DB {
             );
         }
 
-        /* Upgrade 7 — self-service password reset via OTP code
+        /* Upgrade 7 - self-service password reset via OTP code
          * (email now, Telegram once a member has tg_chat_id on file).
          * Previously the only way to give a member a working password
          * was an admin manually doing it in wp-admin
@@ -186,7 +186,7 @@ class EtelID_DB {
             ) $c2"
         );
 
-        /* Upgrade 8 — member-managed social/bank accounts, shown on the
+        /* Upgrade 8 - member-managed social/bank accounts, shown on the
          * member's own NFC card once a scanning person proves their own
          * EtelID login (see Etelid_Nfc::ajax_reveal()). CREATE TABLE IF
          * NOT EXISTS is naturally idempotent. */
@@ -315,7 +315,7 @@ class EtelID_DB {
         $c = $wpdb->get_charset_collate();
         require_once ABSPATH . 'wp-admin/includes/upgrade.php';
 
-        /* ── Members table ──────────────────────────────────── */
+        /* -- Members table ------------------------------------ */
         $sql_members = "CREATE TABLE IF NOT EXISTS " . self::t_members() . " (
             id               BIGINT UNSIGNED  NOT NULL AUTO_INCREMENT,
 
@@ -385,7 +385,7 @@ class EtelID_DB {
             KEY        idx_created     (created_at)
         ) $c;";
 
-        /* ── Company links table ───────────────────────────── */
+        /* -- Company links table ----------------------------- */
         $sql_companies = "CREATE TABLE IF NOT EXISTS " . self::t_companies() . " (
             id           BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
             member_id    BIGINT UNSIGNED NOT NULL,
@@ -400,7 +400,7 @@ class EtelID_DB {
             UNIQUE KEY uk_member_company (member_id, company_slug)
         ) $c;";
 
-        /* ── Audit log table ───────────────────────────────── */
+        /* -- Audit log table --------------------------------- */
         $sql_log = "CREATE TABLE IF NOT EXISTS " . self::t_log() . " (
             id         BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
             member_id  BIGINT UNSIGNED NOT NULL DEFAULT 0,
@@ -418,17 +418,17 @@ class EtelID_DB {
             KEY idx_created   (created_at)
         ) $c;";
 
-        /* ── Biometric data table (v3.0.0) ────────────────────── */
+        /* -- Biometric data table (v3.0.0) ---------------------- */
         $sql_biometric = "CREATE TABLE IF NOT EXISTS " . self::t_biometric() . " (
             id                  BIGINT UNSIGNED  NOT NULL AUTO_INCREMENT,
             member_id           BIGINT UNSIGNED  NOT NULL,
             etel_id             VARCHAR(24)      NOT NULL DEFAULT '',
 
-            -- Fingerprint (ISO/IEC 19794-2 WSQ template → SHA-256)
+            -- Fingerprint (ISO/IEC 19794-2 WSQ template -> SHA-256)
             fingerprint_hash    VARCHAR(64)      NOT NULL DEFAULT '',
             fingerprint_quality TINYINT UNSIGNED NOT NULL DEFAULT 0,
 
-            -- Face (FaceNet/DeepFace 128-D embedding → SHA-256)
+            -- Face (FaceNet/DeepFace 128-D embedding -> SHA-256)
             face_hash           VARCHAR(64)      NOT NULL DEFAULT '',
             face_quality        TINYINT UNSIGNED NOT NULL DEFAULT 0,
             face_photo_url      VARCHAR(500)     NOT NULL DEFAULT '',
@@ -437,11 +437,11 @@ class EtelID_DB {
             nfc_uid             VARCHAR(64)      NOT NULL DEFAULT '',
             nfc_card_type       VARCHAR(40)      NOT NULL DEFAULT '',
 
-            -- Iris (ISO/IEC 19794-6 IrisCode → SHA-256)
+            -- Iris (ISO/IEC 19794-6 IrisCode -> SHA-256)
             iris_hash           VARCHAR(64)      NOT NULL DEFAULT '',
             iris_quality        TINYINT UNSIGNED NOT NULL DEFAULT 0,
 
-            -- Voice print (MFCC vector → SHA-256)
+            -- Voice print (MFCC vector -> SHA-256)
             voice_hash          VARCHAR(64)      NOT NULL DEFAULT '',
             voice_quality       TINYINT UNSIGNED NOT NULL DEFAULT 0,
 
@@ -476,7 +476,7 @@ class EtelID_DB {
             KEY idx_nfc (nfc_uid)
         ) $c;";
 
-        /* ── Biometric check-in / access log (v3.0.0) ─────────── */
+        /* -- Biometric check-in / access log (v3.0.0) ----------- */
         $sql_bio_log = "CREATE TABLE IF NOT EXISTS " . self::t_bio_log() . " (
             id          BIGINT UNSIGNED  NOT NULL AUTO_INCREMENT,
             member_id   BIGINT UNSIGNED  NOT NULL DEFAULT 0,
@@ -504,7 +504,7 @@ class EtelID_DB {
         /* Default options */
         add_option( 'etelid_db_version',   ETELID_VERSION );
         add_option( 'etelid_counter',      0 );
-        add_option( 'etelid_org_name',     'Etel Group · ኢትኤል ቡድን' );
+        add_option( 'etelid_org_name',     "Etel Group \xC2\xB7 \xE1\x8A\xA2\xE1\x89\xB5\xE1\x8A\xA4\xE1\x88\x8D \xE1\x89\xA1\xE1\x8B\xB5\xE1\x8A\x95" );
         add_option( 'etelid_org_website',  'etelgroup.com' );
         add_option( 'etelid_org_email',    'security@etelgroup.com' );
         add_option( 'etelid_expiry_years', 5 );
@@ -533,14 +533,14 @@ class EtelID_DB {
         foreach ( $options as $o ) delete_option( $o );
     }
 
-    /* ─── Counter ─────────────────────────────────────────── */
+    /* --- Counter ------------------------------------------- */
     public static function next_counter() {
         $n = (int) get_option( 'etelid_counter', 0 ) + 1;
         update_option( 'etelid_counter', $n );
         return $n;
     }
 
-    /* ─── INSERT ──────────────────────────────────────────── */
+    /* --- INSERT -------------------------------------------- */
     public static function insert_member( $data ) {
         global $wpdb;
         if ( isset( $data['photo_url'] ) && class_exists( 'EtelID_Photos' ) ) $data['photo_url'] = EtelID_Photos::shrink( $data['photo_url'] );
@@ -574,7 +574,7 @@ class EtelID_DB {
         ));
     }
 
-    /* ─── SELECT ──────────────────────────────────────────── */
+    /* --- SELECT -------------------------------------------- */
     /* ---- Light member queries (performance) -------------------------
      * The members table stores the Fayda ID front/back photos (and the OCR
      * dump) as base64 text in the row itself - about 4 MB per member. A
@@ -980,7 +980,7 @@ class EtelID_DB {
         return $out;
     }
 
-    /* ─── UPDATE ──────────────────────────────────────────── */
+    /* --- UPDATE -------------------------------------------- */
     public static function update_member( $id, $data ) {
         global $wpdb;
         if ( isset( $data['photo_url'] ) && class_exists( 'EtelID_Photos' ) ) $data['photo_url'] = EtelID_Photos::shrink( $data['photo_url'] );
@@ -1002,7 +1002,7 @@ class EtelID_DB {
         ));
     }
 
-    /* ─── DELETE ──────────────────────────────────────────── */
+    /* --- DELETE -------------------------------------------- */
     public static function delete_member( $id ) {
         global $wpdb;
         $member = self::get_member( $id );
@@ -1014,7 +1014,22 @@ class EtelID_DB {
         return $deleted;
     }
 
-    /* ─── Helpers ─────────────────────────────────────────── */
+    /* --- Helpers ------------------------------------------- */
+    /* One row per read of sensitive KYC data. $app names WHO read it. */
+    public static function log_kyc_access( $member_id, $app ) {
+        global $wpdb;
+        $app = substr( preg_replace( '/[^A-Za-z0-9_.:\/-]/', '', (string) $app ), 0, 60 );
+        if ( $app === '' ) $app = 'unknown';
+        $wpdb->suppress_errors( true );
+        $wpdb->insert( $wpdb->prefix . 'etelid_kyc_access_log', array(
+            'member_id'    => (int) $member_id,
+            'accessor_app' => $app,
+            'accessor_ip'  => class_exists( 'EtelID_Security' ) ? EtelID_Security::get_ip() : '',
+            'accessed_at'  => current_time( 'mysql' ),
+        ) );
+        $wpdb->suppress_errors( false );
+    }
+
     private static function get_ip() {
         $keys = array( 'HTTP_CF_CONNECTING_IP','HTTP_X_FORWARDED_FOR','REMOTE_ADDR' );
         foreach ( $keys as $k ) {
@@ -1035,9 +1050,9 @@ class EtelID_DB {
         ));
     }
 
-    /* ════════════════════════════════════════════════════════
-       BIOMETRIC DATA — v3.0.0
-    ════════════════════════════════════════════════════════ */
+    /* ========================================================
+       BIOMETRIC DATA - v3.0.0
+    ======================================================== */
 
     public static function get_biometric( $member_id ) {
         global $wpdb;

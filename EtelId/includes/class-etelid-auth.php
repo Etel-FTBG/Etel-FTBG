@@ -1,10 +1,10 @@
 <?php
 /**
- * Etel-ID Premium — Member Authentication System
+ * Etel-ID Premium - Member Authentication System
  *
  * @package    Etel-ID Premium
  * @version    2.1.0
- * @author     Etel Group · ኢትኤል ቡድን
+ * @author     Etel Group |  
  * @link       https://etelgroup.com
  * @since      2.1.0
  *
@@ -23,7 +23,7 @@ class EtelID_Auth {
     const MAX_SESSIONS_PER_MEMBER = 15;
     const TABLE_SESSIONS  = 'etelid_sessions';
 
-    /* ─── Install session table ──────────────────────────── */
+    /* --- Install session table ---------------------------- */
     public static function install() {
         global $wpdb;
         $table = $wpdb->prefix . self::TABLE_SESSIONS;
@@ -45,7 +45,7 @@ class EtelID_Auth {
         dbDelta( $sql );
     }
 
-    /* ─── Password helpers ───────────────────────────────── */
+    /* --- Password helpers --------------------------------- */
     public static function hash_password( $plain ) {
         if ( function_exists( 'password_hash' ) ) {
             return password_hash( $plain, PASSWORD_BCRYPT );
@@ -64,7 +64,7 @@ class EtelID_Auth {
         return hash_equals( $hash, hash( 'sha256', 'etelid_v2_' . $plain . '_salt_9x' ) );
     }
 
-    /* ─── Registration ───────────────────────────────────── */
+    /* --- Registration ------------------------------------- */
     /**
      * Register a new member account.
      * @param  array          $data  Keys: phone, password, full_name, full_name_am, dob, sex,
@@ -163,14 +163,14 @@ class EtelID_Auth {
         return array( 'member_id' => $member_id, 'temp_password' => $temp_password );
     }
 
-    /* ─── Login ──────────────────────────────────────────── */
+    /* --- Login -------------------------------------------- */
     /**
      * Authenticate with phone + password. Returns member object or WP_Error.
      */
     public static function login( $phone, $password, $totp_code = '' ) {
         $phone  = preg_replace( '/\s+/', '', $phone );
 
-        /* BRUTE-FORCE PROTECTION — this endpoint previously had ZERO rate
+        /* BRUTE-FORCE PROTECTION - this endpoint previously had ZERO rate
          * limiting, unlike the password-reset flow (which already
          * rate-limits both per-IP and per-account). Anyone could try
          * unlimited phone+password combinations against any account with
@@ -213,11 +213,12 @@ class EtelID_Auth {
         if ( class_exists( 'EtelID_2FA' ) ) {
             $gate = EtelID_2FA::gate( $member, $totp_code );
             if ( is_wp_error( $gate ) ) return $gate;
+            EtelID_2FA::log_if_unenrolled( $member, 'portal sign-in' );
         }
 
         /* Transparent bcrypt upgrade: if the stored hash is still the legacy
          * SHA-256 format (exactly 64 hex chars), re-hash with bcrypt now that
-         * the password is confirmed correct. Zero user friction — happens silently. */
+         * the password is confirmed correct. Zero user friction - happens silently. */
         if ( strlen( $member->pin_hash ) === 64 ) {
             $new_hash = self::hash_password( $password );
             EtelID_DB::update_member( $member->id, array( 'pin_hash' => $new_hash ) );
@@ -231,7 +232,7 @@ class EtelID_Auth {
         return array( 'member' => $member, 'token' => $token );
     }
 
-    /* ─── Session management ─────────────────────────────── */
+    /* --- Session management ------------------------------- */
     public static function create_session( $member_id ) {
         global $wpdb;
         $table   = $wpdb->prefix . self::TABLE_SESSIONS;
@@ -423,7 +424,7 @@ class EtelID_Auth {
         }
     }
 
-    /* ─── Purge expired sessions (run on login) ──────────── */
+    /* --- Purge expired sessions (run on login) ------------ */
     public static function purge_expired() {
         global $wpdb;
         $table = $wpdb->prefix . self::TABLE_SESSIONS;
@@ -437,6 +438,14 @@ class EtelID_Auth {
      * Strict: only matches etelid_admin_member_id from Settings.
      */
     public static function is_site_admin( $member ) {
+        if ( ! self::is_site_admin_raw( $member ) ) return false;
+        /* Two-step sign-in is required for the admin (kill-switch: ETELID_REQUIRE_2FA false). */
+        if ( class_exists( 'EtelID_2FA' ) && EtelID_2FA::admin_required() ) return EtelID_2FA::is_enabled( $member->id );
+        return true;
+    }
+
+    /** The admin check WITHOUT the two-step requirement. */
+    public static function is_site_admin_raw( $member ) {
         if ( ! $member ) return false;
         $admin_mid = (int) get_option( 'etelid_admin_member_id', 0 );
         if ( $admin_mid > 0 ) {

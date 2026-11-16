@@ -266,6 +266,86 @@ class EtelID_2FA {
         return is_array( $c ) ? count( $c ) : 0;
     }
 
+    /* ---- Policy: who MUST have two-step sign-in -------------------------
+     * Kill-switch: define( 'ETELID_REQUIRE_2FA', false ); in wp-config.php
+     * turns every requirement off (admin and staff). Without that line the
+     * admin always needs it, and the staff mode is set from the console
+     * (Settings > Two-step sign-in): off | log (default) | enforce. */
+    const OPT_STAFF_MODE = 'etelid_2fa_staff_mode';
+
+    public static function killed() {
+        return defined( 'ETELID_REQUIRE_2FA' ) && ! ETELID_REQUIRE_2FA;
+    }
+
+    public static function admin_required() { return ! self::killed(); }
+
+    public static function staff_mode() {
+        if ( self::killed() ) return 'off';
+        $m = get_option( self::OPT_STAFF_MODE, 'log' );
+        return in_array( $m, array( 'off', 'log', 'enforce' ), true ) ? $m : 'log';
+    }
+
+    const OPT_STAFF_EXCLUDE = 'etelid_2fa_staff_exclude';
+
+    /** Roles an admin has marked "not staff" (drivers and the like). Editable in the Console. */
+    public static function excluded_roles() {
+        $raw = get_option( self::OPT_STAFF_EXCLUDE, 'driver,courier,rider,agent' );
+        $out = array();
+        foreach ( explode( ',', strtolower( (string) $raw ) ) as $r ) {
+            $r = trim( preg_replace( '/[^a-z0-9 _-]/', '', $r ) );
+            if ( $r !== '' ) $out[] = $r;
+        }
+        return array_values( array_unique( $out ) );
+    }
+
+    /** SQL list of role names that are NOT staff: blank, member, customer, plus the excluded roles. */
+    public static function plain_roles_sql() {
+        $list = array_merge( array( '', 'member', 'customer' ), self::excluded_roles() );
+        $q = array();
+        foreach ( array_unique( $list ) as $r ) $q[] = "'" . esc_sql( $r ) . "'";
+        return implode( ', ', $q );
+    }
+
+    /** True when the member has an active company link with a staff role. */
+    public static function is_staff( $member ) {
+        global $wpdb;
+        if ( ! $member ) return false;
+        $n = $wpdb->get_var( $wpdb->prepare(
+            'SELECT COUNT(*) FROM ' . EtelID_DB::t_companies() . ' WHERE member_id = %d AND active = 1 AND LOWER(role_at) NOT IN (' . self::plain_roles_sql() . ')',
+            (int) $member->id
+        ) );
+        return (int) $n > 0;
+    }
+
+    /** Staff member whose staff mode is "enforce" (used by the service API). */
+    public static function staff_enforced( $member ) {
+        return self::staff_mode() === 'enforce' && self::is_staff( $member );
+    }
+
+    /** True when this member must have two-step sign-in switched on. */
+    public static function required_for( $member ) {
+        if ( ! $member ) return false;
+        if ( self::admin_required() && class_exists( 'EtelID_Auth' ) && EtelID_Auth::is_site_admin_raw( $member ) ) return true;
+        return self::staff_enforced( $member );
+    }
+
+    /** Staff mode "log": note (at most once a day per member) a staff member who signs in without two-step. */
+    public static function log_if_unenrolled( $member, $where ) {
+        if ( ! $member || self::staff_mode() !== 'log' ) return;
+        if ( self::is_enabled( $member->id ) || ! self::is_staff( $member ) ) return;
+        $k = 'etelid_2fa_warn_' . (int) $member->id;
+        if ( get_transient( $k ) ) return;
+        set_transient( $k, 1, DAY_IN_SECONDS );
+        EtelID_DB::log( $member->id, $member->etel_id, 'twofa_staff_not_enrolled', 'Staff role without two-step sign-in at ' . substr( (string) $where, 0, 60 ) . ' (not enforced)' );
+    }
+
+    /** SQL fragment: a STAFF role needs two-step on (non-staff roles pass). Empty unless staff mode is "enforce". */
+    public static function enrolled_sql( $member_id_col, $role_col = 'c.role_at' ) {
+        global $wpdb;
+        if ( self::staff_mode() !== 'enforce' ) return '';
+        return ' AND ( LOWER(' . $role_col . ') IN (' . self::plain_roles_sql() . ') OR EXISTS (SELECT 1 FROM ' . $wpdb->prefix . self::TABLE . ' f2 WHERE f2.member_id = ' . $member_id_col . ' AND f2.enabled = 1) )';
+    }
+
     /** Admin reset for a member who lost the phone AND the backup codes. */
     public static function admin_reset( $member_id ) {
         global $wpdb;

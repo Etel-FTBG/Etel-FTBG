@@ -1,6 +1,6 @@
 <?php
 /**
- * EtelID Service API — KYC endpoint extension
+ * EtelID Service API - KYC endpoint extension
  * Add this file to: EtelId/wp-content/plugins/etel-id-v3/includes/
  * Then add to the plugin bootstrap: require_once 'includes/class-etelid-service-kyc.php';
  *
@@ -19,7 +19,9 @@ class EtelID_Service_KYC {
         register_rest_route('etelid/v1', '/service/kyc', array(
             'methods'             => 'POST',
             'callback'            => array(__CLASS__, 'handle'),
-            'permission_callback' => array('EtelID_Service_API', 'check_service_key'),
+            'permission_callback' => function ( $request ) {
+                return EtelID_Service_API::check_service_key( $request, 'kyc' );
+            },
         ));
     }
 
@@ -31,7 +33,7 @@ class EtelID_Service_KYC {
 
         $prefix = $wpdb->prefix . 'etelid_';
 
-        /* Resolve member — kyc_level/fayda_fin/pass2_completed_at live
+        /* Resolve member - kyc_level/fayda_fin/pass2_completed_at live
          * directly on the members table (see class-etelid-db.php
          * upgrade_schema "Upgrade 4"). There is no separate kyc table. */
         if ($type === 'fin') {
@@ -58,7 +60,7 @@ class EtelID_Service_KYC {
          * see EtelID_DB::refresh_limited(). */
         $limited   = !empty($member['profile_limited']);
 
-        /* Build response — never expose sensitive raw fields (no Fayda
+        /* Build response - never expose sensitive raw fields (no Fayda
          * images, no OCR text, no password hash). */
         $response = array(
             'member' => array(
@@ -97,18 +99,14 @@ class EtelID_Service_KYC {
             ),
         );
 
-        /* Log this cross-system KYC access (best-effort — table may not
+        /* Log this cross-system KYC access (best-effort - table may not
          * exist on older installs; fail silently rather than fatal). */
-        $headers = function_exists('getallheaders') ? getallheaders() : array();
-        $app     = isset($headers['X-Etel-App']) ? sanitize_text_field($headers['X-Etel-App']) : 'unknown';
-        $wpdb->suppress_errors(true);
-        $wpdb->insert($prefix.'kyc_access_log', array(
-            'member_id'   => (int)$member['id'],
-            'accessor_app'=> $app,
-            'accessor_ip' => isset($_SERVER['REMOTE_ADDR']) ? sanitize_text_field($_SERVER['REMOTE_ADDR']) : '',
-            'accessed_at' => current_time('mysql'),
-        ));
-        $wpdb->suppress_errors(false);
+        $app = EtelID_Service_API::caller_label();            /* the key that authenticated */
+        $hdr = sanitize_text_field( (string) $req->get_header( 'x_etel_app' ) );  /* case-insensitive */
+        if ( $app === 'master-key' || $app === 'master-key-old' || $app === 'unknown' ) {
+            $app = ( $hdr !== '' ) ? 'master:' . $hdr : $app;  /* self-declared, so marked as such */
+        }
+        EtelID_DB::log_kyc_access( (int) $member['id'], 'svc-kyc:' . $app );
 
         return rest_ensure_response(array('member' => $response['member'], 'kyc' => $response['kyc'], 'cross_system' => $response['cross_system']));
     }

@@ -44,7 +44,14 @@ async function doLogin() {
   errEl.textContent = '';
   if (!identifier || !password) { errEl.textContent = 'Enter your EtelID phone/identifier and password.'; return; }
   btn.disabled = true; btn.textContent = 'Signing in...';
-  const res = await egaApi('admin_login', { identifier, password });
+  const loginBody = { identifier, password };
+  let res = await egaApi('admin_login', loginBody);
+  while (res && res.requires_2fa && window.Etel2FA) {
+    const code = await window.Etel2FA.ask(res.message);
+    if (!code) { res = { ok: false, error: 'Sign-in cancelled.' }; break; }
+    loginBody.totp_code = code;
+    res = await egaApi('admin_login', loginBody);
+  }
   btn.disabled = false; btn.textContent = 'Sign In with EtelID';
   if (!res.ok) { errEl.textContent = res.error || 'Login failed'; return; }
   egaSetToken(res.data.token);

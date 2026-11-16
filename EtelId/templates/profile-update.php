@@ -500,6 +500,10 @@ body::before{
               value="<?php echo esc_attr($member->email); ?>"
               placeholder="you@example.com">
           </div>
+          <div class="pf-field" id="pf-curpw-wrap" style="display:none">
+            <label class="pf-label">Current password (needed to change your email)</label>
+            <input type="password" class="pf-input" name="current_password" autocomplete="current-password">
+          </div>
         </div>
       </div>
     </div>
@@ -729,6 +733,16 @@ function handlePhotoFile(input) {
   };
   reader.readAsDataURL(file);
 }
+
+/* Changing the email address asks for the current password. */
+(function () {
+  var em = document.querySelector('[name=email]'), wrap = document.getElementById('pf-curpw-wrap');
+  if (!em || !wrap) return;
+  var orig = (em.value || '').trim().toLowerCase();
+  em.addEventListener('input', function () {
+    wrap.style.display = ((em.value || '').trim().toLowerCase() !== orig) ? '' : 'none';
+  });
+})();
 
 /* ── Form submit ── */
 document.getElementById('pf-form').addEventListener('submit', function(e) {

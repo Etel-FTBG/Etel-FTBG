@@ -165,7 +165,13 @@ final class AuthController
         }
 
         $client = new EtelIDClient();
-        $member = $client->authenticate($identifier, $password);
+        $member = $client->authenticate($identifier, $password, trim((string)($_POST['etelid_totp'] ?? '')));
+
+        if (!$member && $client->needsTwoFactor()) {
+            // EtelID wants the two-step code: show the login form again with a code box.
+            $this->auth->flash('error', $client->lastError() ?? 'Enter your two-step code.');
+            redirect('/login?twofa=1&id=' . rawurlencode($identifier));
+        }
 
         if (!$member) {
             // lastError() distinguishes a real config/connectivity problem

@@ -125,7 +125,7 @@ function openMember(id) {
     var m = r.data.member || {}, init = String(m.full_name || '?').split(/\s+/).map(function (w) { return w.charAt(0); }).join('').slice(0, 2).toUpperCase();
     var kv = function (l, v) { return '<div><small>' + l + '</small><span>' + (v ? esc(v) : '—') + '</span></div>'; };
     drawer('<div class="ec-d-head"><div class="ec-av">' + (m.photo_url ? '<img src="' + esc(m.photo_url) + '" alt="">' : esc(init)) + '</div><div><h3>' + esc(m.full_name) + '</h3><div><code>' + esc(m.etel_id) + '</code> <span class="ec-pill ' + esc(m.status) + '">' + esc(m.status) + '</span></div></div><button class="btn btn-outline btn-sm ec-d-close" data-close>✕</button></div>' +
-      '<div class="ec-kv">' + kv('Amharic name', m.full_name_am) + kv('Tier', m.tier) + kv('Phone', m.phone) + kv('Email', m.email) + kv('Company', m.primary_company) + kv('Role', m.role) + kv('FIN', m.fayda_fin || m.fin) + kv('KYC level', m.kyc_level) + kv('Date of birth', m.dob) + kv('Region', m.region) + kv('Issued', m.created_at) + kv('Expires', m.expiry_date) + '</div>' +
+      '<div class="ec-kv">' + kv('Amharic name', m.full_name_am) + kv('Tier', m.tier) + kv('Phone', m.phone) + kv('Email', m.email) + kv('Company', m.primary_company) + kv('Role', m.role) + kv('FIN', m.fayda_fin || m.fin) + kv('KYC level', m.kyc_level) + kv('Date of birth', m.dob) + kv('Region', m.region) + kv('Issued', m.created_at) + kv('Expires', m.expiry_date) + kv('Pass 2', m.pass2_status) + kv('Occupation', m.occupation) + kv('Next of kin', m.next_of_kin_name) + '</div>' +
       '<div class="ec-sec">Status</div><div class="ec-actions">' + ['active', 'suspended', 'revoked'].map(function (s) { return '<button class="btn ' + (m.status === s ? 'btn-primary' : 'btn-outline') + ' btn-sm" data-st="' + s + '" data-id="' + id + '">' + s.charAt(0).toUpperCase() + s.slice(1) + '</button>'; }).join('') + '</div>' +
       '<div class="ec-sec">Quick actions</div><div class="ec-actions"><a class="btn btn-outline btn-sm" target="_blank" href="' + esc(C.print + encodeURIComponent(m.etel_id || '')) + '/">🖨 Open card</a><button class="btn btn-outline btn-sm" data-vp="' + id + '">📞 Mark phone verified</button></div>' +
       '<div class="ec-sec">Reset password</div><div class="ec-field"><input class="ec-in" id="rp1" type="password" placeholder="New password (8+ characters)" autocomplete="new-password"></div><div class="ec-field"><input class="ec-in" id="rp2" type="password" placeholder="Confirm password" autocomplete="new-password"></div><button class="btn btn-outline btn-sm" data-rp="' + id + '">🔑 Reset password</button>' +
@@ -344,8 +344,38 @@ VIEWS.settings = function () {
       busy(this, true, 'Saving…'); var btn = this;
       api('etelid_console_settings_save', d).then(function (x) { busy(btn, false); if (x.success) toast(x.data.message || 'Saved'); else toast(err(x), true); });
     });
+    twofaCard();
   });
 };
+
+/* Two-step sign-in policy card (admin GUI: no code edit needed to change it). */
+function twofaCard() {
+  api('etelid_console_2fa_get', {}).then(function (r) {
+    if (!r.success) return;
+    var d = r.data, card = document.createElement('div'); card.className = 'ec-card';
+    var rows = (d.staff || []).map(function (x) {
+      return '<tr><td>' + esc(x.name) + '</td><td><code>' + esc(x.etel_id) + '</code></td><td>' + esc(x.roles) + '</td><td>' + (x.enrolled ? 'Two-step ON' : '<b>Not set up</b>') + '</td></tr>';
+    }).join('');
+    card.innerHTML = '<h2>\uD83D\uDD10 Two-step sign-in</h2>' +
+      '<div class="desc">Admin: ' + (d.killed ? '<b>Requirement is switched OFF by the wp-config.php kill-switch.</b>' : 'always required. If you are ever locked out, add <code>define( \'ETELID_REQUIRE_2FA\', false );</code> to wp-config.php.') + '</div>' +
+      '<div class="desc">Staff roles (' + (d.staff || []).length + ' people, ' + d.enrolled + ' set up). Off = nothing. Log only = record who signs in without it (default). Enforce = staff without it cannot sign in to the other Etel apps or be found as staff. Turn Enforce on only after EtelTaxi, EtelGebeya, EtelGroup and EtelPay can ask for the code.</div>' +
+      '<div class="ec-form" style="margin-top:12px"><div><label for="tf-mode">Staff mode</label><select id="tf-mode"><option value="off">Off</option><option value="log">Log only</option><option value="enforce">Enforce</option></select></div><div><label for="tf-excl">Roles that are NOT staff (comma separated)</label><input id="tf-excl" type="text" placeholder="driver, courier, rider, agent"></div></div>' +
+      '<div class="ec-actions"><button class="btn btn-primary" id="tf-go">Save staff mode</button></div>' +
+      '<div style="overflow:auto;margin-top:12px"><table class="ec-table"><thead><tr><th>Name</th><th>Etel-ID</th><th>Roles</th><th>Two-step</th></tr></thead><tbody>' + (rows || '<tr><td colspan="4">No staff roles.</td></tr>') + '</tbody></table></div>';
+    VIEW.appendChild(card);
+    $('tf-mode').value = d.saved_mode;
+    $('tf-excl').value = d.exclude || '';
+    $('tf-go').addEventListener('click', function () {
+      var mode = $('tf-mode').value, btn = this, miss = (d.staff || []).length - d.enrolled, data = { mode: mode, exclude: $('tf-excl').value };
+      if (mode === 'enforce') {
+        if (!window.confirm(miss + ' staff member(s) have not set up two-step sign-in and will be refused by the other Etel apps. Switch Enforce on?')) return;
+        data.confirm = 1;
+      }
+      busy(btn, true, 'Saving...');
+      api('etelid_console_2fa_set', data).then(function (x) { busy(btn, false); if (x.success) toast(x.data.message || 'Saved'); else toast(err(x), true); });
+    });
+  });
+}
 
 /* ---------- updater ---------- */
 VIEWS.updater = function () {

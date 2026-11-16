@@ -29,6 +29,7 @@ async function doUnifiedLogin() {
   const identifier = document.getElementById('etelid-identifier').value.trim();
   const password = document.getElementById('etelid-password').value;
   loginErr('');
+  if (!identifier) { loginErr('Enter your Phone or EtelID.'); return; }
   if (!password) { loginErr('Enter a password.'); return; }
   const btn = document.getElementById('etelid-btn');
   btn.disabled = true; btn.classList.add('is-loading');
@@ -38,11 +39,19 @@ async function doUnifiedLogin() {
     // typed there = sign in with that specific EtelID/phone instead -
     // one field, one button, decided by what the person actually typed,
     // instead of two separate forms for the same "sign in" action.
-    const action = identifier ? 'admin_etelid_login' : 'login';
-    const body = identifier ? { identifier, password } : { password, master: '1' };
-    const r = await fetch(API + '?action=' + action, { method: 'POST', body: new URLSearchParams(body) });
+    const action = 'admin_etelid_login';
+    const body = { identifier, password };
+    let r = await fetch(API + '?action=' + action, { method: 'POST', body: new URLSearchParams(body) });
     raw = await r.text();
-    const d = JSON.parse(raw);
+    let d = JSON.parse(raw);
+    while (d && d.requires_2fa && window.Etel2FA) {
+      const code = await window.Etel2FA.ask(d.error);
+      if (!code) { d = { ok: false, error: 'Sign-in cancelled.' }; break; }
+      body.totp_code = code;
+      r = await fetch(API + '?action=' + action, { method: 'POST', body: new URLSearchParams(body) });
+      raw = await r.text();
+      d = JSON.parse(raw);
+    }
     btn.disabled = false; btn.classList.remove('is-loading');
     if (d.ok) {
       TOKEN = d.data.token;

@@ -217,7 +217,7 @@ function taxi_etelid_service_call($path, $payload) {
     $url = 'https://' . ETELID_HOST . '/EtelId/wp-json/etelid/v1/service/' . $path;
     $ctx = stream_context_create(array('http' => array(
         'method'  => 'POST',
-        'header'  => "Content-Type: application/json\r\nX-Etel-Service-Key: " . ETELID_SERVICE_KEY . "\r\n",
+        'header'  => "Content-Type: application/json\r\nX-Etel-Service-Key: " . ETELID_SERVICE_KEY . "\r\nX-Etel-App: EtelTaxi/1.0\r\n",
         'content' => json_encode($payload),
         'timeout' => 8,
         'ignore_errors' => true,

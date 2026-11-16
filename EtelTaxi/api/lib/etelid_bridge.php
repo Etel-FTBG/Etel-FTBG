@@ -1,6 +1,6 @@
 <?php
 // ============================================================
-// EtelTaxi — EtelID employee-role bridge
+// EtelTaxi - EtelID employee-role bridge
 // Calls EtelID's /service/check_role endpoint (added alongside the
 // EtelGroup Employees panel) so a phone number's Etel-Group-assigned
 // role at this company can grant access here too, without EtelTaxi
@@ -24,7 +24,7 @@ function taxi_egid_check_role(string $phone): ?array {
     $url = 'https://' . ETELID_HOST . '/EtelId/wp-json/etelid/v1/service/check_role';
     $ctx = stream_context_create(array('http' => array(
         'method'  => 'POST',
-        'header'  => "Content-Type: application/json\r\nX-Etel-Service-Key: " . ETELID_SERVICE_KEY . "\r\n",
+        'header'  => "Content-Type: application/json\r\nX-Etel-Service-Key: " . ETELID_SERVICE_KEY . "\r\nX-Etel-App: EtelTaxi/1.0\r\n",
         'content' => json_encode(array('company_slug' => ETELTAXI_COMPANY_SLUG, 'phone' => $phone)),
         'timeout' => 10,
         'ignore_errors' => true,

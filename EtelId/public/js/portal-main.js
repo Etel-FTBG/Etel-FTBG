@@ -32,10 +32,10 @@ async function eapNfcSearch(){
   }
   var html = '';
   res.data.members.forEach(function(m){
-    html += '<div class="eap-row" onclick=\'eapNfcSelect(' + JSON.stringify(m.id) + ',' + JSON.stringify(m.name) + ',' + JSON.stringify(m.etel_id) + ')\'>'
-      + '<div style="flex:1;"><div style="font-weight:700;color:#e8e2d4;">' + (m.name||'—') + '</div>'
-      + '<div style="font-size:11px;color:#998;">' + (m.etel_id||'') + '</div></div>'
-      + (m.status && m.status!=='active' ? '<span class="eap-pill ' + m.status + '">' + m.status + '</span>' : '')
+    html += '<div class="eap-row" onclick=\'eapNfcSelect(' + eapEsc(JSON.stringify(m.id)) + ',' + eapEsc(JSON.stringify(m.name)) + ',' + eapEsc(JSON.stringify(m.etel_id)) + ')\'>'
+      + '<div style="flex:1;"><div style="font-weight:700;color:#e8e2d4;">' + eapEsc(m.name||'—') + '</div>'
+      + '<div style="font-size:11px;color:#998;">' + eapEsc(m.etel_id||'') + '</div></div>'
+      + (m.status && m.status!=='active' ? '<span class="eap-pill ' + eapEsc(m.status) + '">' + eapEsc(m.status) + '</span>' : '')
       + '</div>';
   });
   if (res.data.total > res.data.members.length) {
@@ -273,8 +273,8 @@ async function eapBioSearch(){
   if (!res.success || !(res.data.members||[]).length) { resultsEl.innerHTML = '<div style="color:#888;font-size:13px;">No members found.</div>'; return; }
   resultsEl.innerHTML = res.data.members.map(function(m){
     return '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;border:1px solid rgba(212,175,55,.12);border-radius:8px;margin-bottom:6px;cursor:pointer;" onclick="eapBioLoad(' + m.id + ')">' +
-      '<span style="font-size:13px;color:#eee;">' + m.full_name + ' <span style="color:#888;font-family:monospace;font-size:11px;">' + m.etel_id + '</span></span>' +
-      '<span style="font-size:11px;color:#888;font-family:monospace;">' + m.phone + '</span>' +
+      '<span style="font-size:13px;color:#eee;">' + eapEsc(m.full_name) + ' <span style="color:#888;font-family:monospace;font-size:11px;">' + eapEsc(m.etel_id) + '</span></span>' +
+      '<span style="font-size:11px;color:#888;font-family:monospace;">' + eapEsc(m.phone) + '</span>' +
     '</div>';
   }).join('');
 }
@@ -283,7 +283,7 @@ async function eapBioLoad(memberId){
   var detailEl = document.getElementById('eap-bio-detail');
   detailEl.innerHTML = '<div style="color:#666;font-size:13px;padding:14px;">Loading…</div>';
   var res = await _eidPanel('etelid_panel_biometric_get', { member_id: memberId });
-  if (!res.success) { detailEl.innerHTML = '<div style="color:#f66;font-size:13px;padding:14px;">' + ((res.data && res.data.message) || 'Failed to load.') + '</div>'; return; }
+  if (!res.success) { detailEl.innerHTML = '<div style="color:#f66;font-size:13px;padding:14px;">' + eapEsc((res.data && res.data.message) || 'Failed to load.') + '</div>'; return; }
 
   var d = res.data;
   var wa = d.webauthn;
@@ -296,9 +296,9 @@ async function eapBioLoad(memberId){
     ? '<table style="width:100%;border-collapse:collapse;font-size:12px;margin-top:8px;">' +
         '<thead><tr style="text-align:left;color:#888;font-size:10px;text-transform:uppercase;"><th style="padding:4px 8px;">Method</th><th style="padding:4px 8px;">Result</th><th style="padding:4px 8px;">When</th></tr></thead>' +
         '<tbody>' + d.log.map(function(l){
-          return '<tr style="border-top:1px solid rgba(255,255,255,.06);"><td style="padding:4px 8px;color:#ddd;">' + l.method + '</td>' +
-            '<td style="padding:4px 8px;color:' + (l.result==='success'?'#6ee7a0':'#f66') + ';">' + l.result + '</td>' +
-            '<td style="padding:4px 8px;color:#888;">' + l.created_at + '</td></tr>';
+          return '<tr style="border-top:1px solid rgba(255,255,255,.06);"><td style="padding:4px 8px;color:#ddd;">' + eapEsc(l.method) + '</td>' +
+            '<td style="padding:4px 8px;color:' + (l.result==='success'?'#6ee7a0':'#f66') + ';">' + eapEsc(l.result) + '</td>' +
+            '<td style="padding:4px 8px;color:#888;">' + eapEsc(l.created_at) + '</td></tr>';
         }).join('') + '</tbody></table>'
     : '<div style="color:#888;font-size:12px;margin-top:8px;">No check-ins yet.</div>';
 
@@ -351,7 +351,7 @@ async function eapCrLoad(filterSlug){
   var listEl = document.getElementById('eap-cr-list');
   listEl.innerHTML = '<div style="color:#666;font-size:13px;padding:14px;">Loading…</div>';
   var res = await _eidPanel('etelid_panel_company_roles_list', { company_slug: filterSlug || '' });
-  if (!res.success) { listEl.innerHTML = '<div style="color:#f66;font-size:13px;padding:14px;">' + ((res.data && res.data.message) || 'Failed to load.') + '</div>'; return; }
+  if (!res.success) { listEl.innerHTML = '<div style="color:#f66;font-size:13px;padding:14px;">' + eapEsc((res.data && res.data.message) || 'Failed to load.') + '</div>'; return; }
 
   var dl = document.getElementById('eap-cr-known-slugs');
   dl.innerHTML = (res.data.known_slugs || []).map(function(s){ return '<option value="' + s + '">'; }).join('');
@@ -361,12 +361,12 @@ async function eapCrLoad(filterSlug){
 
   var rows = links.map(function(l){
     return '<tr style="border-bottom:1px solid rgba(255,255,255,.06);">' +
-      '<td style="padding:8px 10px;color:#eee;">' + l.full_name + '</td>' +
-      '<td style="padding:8px 10px;font-family:monospace;font-size:12px;color:#ddd;">' + l.etel_id + '</td>' +
-      '<td style="padding:8px 10px;font-family:monospace;font-size:12px;color:#ddd;">' + l.phone + '</td>' +
-      '<td style="padding:8px 10px;font-family:monospace;font-size:12px;color:#D4AF37;">' + l.company_slug + '</td>' +
+      '<td style="padding:8px 10px;color:#eee;">' + eapEsc(l.full_name) + '</td>' +
+      '<td style="padding:8px 10px;font-family:monospace;font-size:12px;color:#ddd;">' + eapEsc(l.etel_id) + '</td>' +
+      '<td style="padding:8px 10px;font-family:monospace;font-size:12px;color:#ddd;">' + eapEsc(l.phone) + '</td>' +
+      '<td style="padding:8px 10px;font-family:monospace;font-size:12px;color:#D4AF37;">' + eapEsc(l.company_slug) + '</td>' +
       '<td style="padding:8px 10px;">' + eapCrRoleBadge(l.role_at) + '</td>' +
-      '<td style="padding:8px 10px;font-size:11px;color:#888;">' + l.linked_at + '</td>' +
+      '<td style="padding:8px 10px;font-size:11px;color:#888;">' + eapEsc(l.linked_at) + '</td>' +
       '<td style="padding:8px 10px;"><button class="eap-btn-ghost" style="padding:4px 10px;font-size:11px;" onclick="eapCrRemove(' + l.id + ')">Remove</button></td>' +
     '</tr>';
   }).join('');
@@ -444,15 +444,15 @@ async function eapMemLoad(page){
     status: document.getElementById('eap-mem-status').value,
     role:   document.getElementById('eap-mem-role').value
   });
-  if (!res.success) { listEl.innerHTML = '<div style="color:#ef9a9a;font-size:13px;">' + (res.data && res.data.message || 'Failed to load.') + '</div>'; return; }
+  if (!res.success) { listEl.innerHTML = '<div style="color:#ef9a9a;font-size:13px;">' + eapEsc(res.data && res.data.message || 'Failed to load.') + '</div>'; return; }
   var d = res.data;
   if (d.configured === false) {
-    listEl.innerHTML = '<div style="color:#998;font-size:13px;padding:20px;text-align:center;">' + d.message + '</div>';
+    listEl.innerHTML = '<div style="color:#998;font-size:13px;padding:20px;text-align:center;">' + eapEsc(d.message) + '</div>';
     return;
   }
   if (!d.members.length) {
     if (d.message) {
-      listEl.innerHTML = '<div style="color:#ef9a9a;font-size:13px;padding:20px;text-align:center;">⚠️ ' + d.message + '</div>';
+      listEl.innerHTML = '<div style="color:#ef9a9a;font-size:13px;padding:20px;text-align:center;">⚠️ ' + eapEsc(d.message) + '</div>';
     } else {
       listEl.innerHTML = '<div style="color:#666;font-size:13px;padding:20px;text-align:center;">No members found.</div>';
     }
@@ -460,14 +460,14 @@ async function eapMemLoad(page){
   }
   var html = '';
   d.members.forEach(function(m, idx){
-    var statusPill = m.status ? '<span class="eap-pill ' + m.status + '">' + m.status + '</span>' : '';
+    var statusPill = m.status ? '<span class="eap-pill ' + eapEsc(m.status) + '">' + eapEsc(m.status) + '</span>' : '';
     var sub = '', verifyBadge = '';
     if (_eapMemSrc === 'etelid') {
-      sub = (m.etel_id||'') + ' · ' + (m.phone||'') + (m.company ? ' · ' + m.company : '');
+      sub = eapEsc(m.etel_id||'') + ' · ' + eapEsc(m.phone||'') + (m.company ? ' · ' + eapEsc(m.company) : '');
       if (m.fayda_fin) {
         verifyBadge = (m.kyc_level >= 2)
-          ? '<span class="eap-pill active" style="margin-left:6px;">✓ Pass 2 · FIN ' + m.fayda_fin + '</span>'
-          : '<span class="eap-pill suspended" style="margin-left:6px;">Pass 1 only · FIN ' + m.fayda_fin + '</span>';
+          ? '<span class="eap-pill active" style="margin-left:6px;">✓ Pass 2 · FIN ' + eapEsc(m.fayda_fin) + '</span>'
+          : '<span class="eap-pill suspended" style="margin-left:6px;">Pass 1 only · FIN ' + eapEsc(m.fayda_fin) + '</span>';
       }
       if (m.pass2_status === 'pending') {
         verifyBadge += '<span class="eap-pill suspended" style="margin-left:6px;background:rgba(212,175,55,.18);color:#F2CC6B;">⏳ Pass 2 review pending</span>';
@@ -475,21 +475,21 @@ async function eapMemLoad(page){
         verifyBadge += '<span class="eap-pill suspended" style="margin-left:6px;">Pass 2 rejected</span>';
       }
     } else if (_eapMemSrc === 'pay') {
-      sub = (m.phone||'') + (m.email ? ' · ' + m.email : '') + (m.balance_etb !== undefined ? ' · ' + parseFloat(m.balance_etb||0).toLocaleString() + ' ETB' : '');
-      statusPill = m.kyc_status ? '<span class="eap-pill ' + (m.kyc_status==='verified'?'active':'suspended') + '" style="font-size:9px;">' + m.kyc_status.toUpperCase() + '</span>' : statusPill;
+      sub = eapEsc(m.phone||'') + (m.email ? ' · ' + eapEsc(m.email) : '') + (m.balance_etb !== undefined ? ' · ' + parseFloat(m.balance_etb||0).toLocaleString() + ' ETB' : '');
+      statusPill = m.kyc_status ? '<span class="eap-pill ' + (m.kyc_status==='verified'?'active':'suspended') + '" style="font-size:9px;">' + eapEsc(m.kyc_status.toUpperCase()) + '</span>' : statusPill;
     } else {
-      sub = (m.phone||'') + (m.role ? ' · ' + m.role : '');
-      if (m.courier_code) sub += ' · ' + m.courier_code;
+      sub = eapEsc(m.phone||'') + (m.role ? ' · ' + eapEsc(m.role) : '');
+      if (m.courier_code) sub += ' · ' + eapEsc(m.courier_code);
       if (m.rating) sub += ' · ★' + m.rating;
       if (m.total_deliveries) sub += ' · ' + m.total_deliveries + ' trips';
       var roleColor = {customer:'#60B4FF',driver:'#F2CC6B',service_giver:'#6ee7a0',courier:'#F2A25C',admin:'#ef9a9a'}[m.role]||'#998';
-      verifyBadge = m.role ? '<span style="font-size:9px;padding:2px 7px;border-radius:10px;background:rgba(255,255,255,.06);color:' + roleColor + ';text-transform:uppercase;letter-spacing:.04em;margin-left:6px;">' + m.role + '</span>' : '';
+      verifyBadge = m.role ? '<span style="font-size:9px;padding:2px 7px;border-radius:10px;background:rgba(255,255,255,.06);color:' + roleColor + ';text-transform:uppercase;letter-spacing:.04em;margin-left:6px;">' + eapEsc(m.role) + '</span>' : '';
     }
-    var initials = (m.name||m.full_name||'?').split(' ').slice(0,2).map(function(w){return w[0]||'';}).join('').toUpperCase();
+    var initials = (m.name||m.full_name||'?').split(' ').slice(0,2).map(function(w){return eapEsc(w[0]||'');}).join('').toUpperCase();
     var avatarBg = _eapMemSrc==='pay' ? '#1a120a' : (_eapMemSrc==='delivery' ? '#0a1a10' : '#0a0d1a');
     html += '<div class="eap-row" onclick="eapMemOpenDetail(' + (m.id||0) + ')" style="gap:12px;">'
       + '<div style="width:36px;height:36px;border-radius:50%;background:' + avatarBg + ';border:1px solid rgba(212,175,55,.3);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#D4AF37;flex-shrink:0;">' + initials + '</div>'
-      + '<div style="flex:1;min-width:0;"><div style="font-weight:700;color:#e8e2d4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + (m.name||m.full_name||'—') + '</div>'
+      + '<div style="flex:1;min-width:0;"><div style="font-weight:700;color:#e8e2d4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + eapEsc(m.name||m.full_name||'—') + '</div>'
       + '<div style="font-size:11px;color:#998;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + sub + '</div></div>'
       + '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px;">' + statusPill + verifyBadge + '</div>'
       + '</div>';
@@ -507,7 +507,7 @@ async function eapMemOpenExternalDetail(id){
   var det = document.getElementById('eap-mem-detail');
   det.innerHTML = '<div style="color:#666;font-size:13px;">Loading…</div>';
   var res = await _eidPanel('etelid_panel_members_external_detail', { source: _eapMemSrc, id: id });
-  if (!res.success) { det.innerHTML = '<div style="color:#ef9a9a;font-size:13px;">⚠️ ' + (res.data && res.data.message || 'Failed to load.') + '</div>'; return; }
+  if (!res.success) { det.innerHTML = '<div style="color:#ef9a9a;font-size:13px;">⚠️ ' + eapEsc(res.data && res.data.message || 'Failed to load.') + '</div>'; return; }
   var d = res.data.detail || {};
   var html = '';
 
@@ -526,16 +526,16 @@ async function eapMemOpenExternalDetail(id){
   }
   function _statusPill(s) {
     var c={'active':'active','verified':'active','online':'active','approved':'active','suspended':'suspended','offline':'suspended','rejected':'suspended','pending':''}[s]||'';
-    return '<span class="eap-pill '+c+'">'+s+'</span>';
+    return '<span class="eap-pill '+c+'">'+eapEsc(s)+'</span>';
   }
 
   if (_eapMemSrc === 'pay') {
     var u = d.user || {};
-    var uName = u.full_name || u.name || '—';
+    var uName = eapEsc(u.full_name || u.name || '—');
     html += '<div style="display:flex;align-items:center;gap:14px;margin-bottom:18px;">'
       + _memAvatar(uName,'#1a0d05',52)
       + '<div><div style="font-size:16px;font-weight:700;color:#e8e2d4;">'+uName+'</div>'
-      + '<div style="font-size:12px;color:#998;margin-top:2px;">'+(u.phone||'—')+(u.email?' · '+u.email:'')+'</div>'
+      + '<div style="font-size:12px;color:#998;margin-top:2px;">'+eapEsc(u.phone||'—')+(u.email?' · '+eapEsc(u.email):'')+'</div>'
       + '<div style="margin-top:6px;">'+_statusPill(u.kyc_status||'none')+'</div></div>'
       + '<div style="margin-left:auto;text-align:right;">'
       + '<div style="font-size:22px;font-weight:800;color:#F2CC6B;">'+parseFloat(u.balance_etb||0).toLocaleString()+' <span style="font-size:13px;font-weight:400;">ETB</span></div>'
@@ -640,7 +640,7 @@ async function eapMemOpenExternalDetail(id){
           + '<div style="flex:1;"><div style="font-size:12px;color:#e8e2d4;">'+(o.order_code||'#'+o.id)+' · '+(o.from_zone||'—')+' → '+(o.to_zone||'—')+'</div>'
           + '<div style="font-size:10px;color:#666;">'+(o.placed_at||'').substring(0,10)+'</div></div>'
           + '<div style="text-align:right;"><div style="font-size:12px;font-weight:700;color:#e8e2d4;">'+parseFloat(o.fare_total||0).toLocaleString()+' ETB</div>'
-          + '<div style="font-size:10px;color:'+sc+';">'+o.status+'</div></div>'
+          + '<div style="font-size:10px;color:'+sc+';">'+eapEsc(o.status)+'</div></div>'
           + '</div>';
       });
       html += '</div>';
@@ -657,10 +657,10 @@ async function eapMemOpenExternalDetail(id){
         var sc = {completed:'#6ee7a0',cancelled:'#ef9a9a',in_progress:'#F2CC6B'}[r.status]||'#998';
         html += '<div style="display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:7px;background:rgba(255,255,255,.03);border:1px solid rgba(212,175,55,.07);">'
           + '<div style="font-size:18px;">🚖</div>'
-          + '<div style="flex:1;"><div style="font-size:12px;color:#e8e2d4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+(r.pickup_address||'—')+' → '+(r.dropoff_address||'—')+'</div>'
+          + '<div style="flex:1;"><div style="font-size:12px;color:#e8e2d4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+eapEsc(r.pickup_address||'—')+' → '+eapEsc(r.dropoff_address||'—')+'</div>'
           + '<div style="font-size:10px;color:#666;">'+(r.created_at||'').substring(0,10)+(r.distance_km?' · '+parseFloat(r.distance_km).toFixed(1)+'km':'')+'</div></div>'
           + '<div style="text-align:right;"><div style="font-size:12px;font-weight:700;color:#e8e2d4;">'+parseFloat(r.fare_final||0).toLocaleString()+' ETB'+(r.rating?' <span style="color:#F2CC6B;">★'+r.rating+'</span>':'')+'</div>'
-          + '<div style="font-size:10px;color:'+sc+';">'+r.status+'</div></div>'
+          + '<div style="font-size:10px;color:'+sc+';">'+eapEsc(r.status)+'</div></div>'
           + '</div>';
       });
       html += '</div>';
@@ -675,25 +675,25 @@ async function eapMemOpenDetail(id){
   det.style.display = 'block';
   det.innerHTML = '<div style="color:#666;font-size:13px;">Loading…</div>';
   var res = await _eidPanel('etelid_panel_members_get', { id: id });
-  if (!res.success) { det.innerHTML = '<div style="color:#ef9a9a;font-size:13px;">' + res.data.message + '</div>'; return; }
+  if (!res.success) { det.innerHTML = '<div style="color:#ef9a9a;font-size:13px;">' + eapEsc(res.data.message) + '</div>'; return; }
   var m = res.data.member;
   var kycLevel = parseInt(m.kyc_level || 0, 10);
   var verifyHtml = eapFaydaSectionHtml(m, id);
   det.innerHTML =
-    '<div class="eap-title" style="font-size:14px;margin-bottom:10px;">Editing ' + m.full_name + ' · ' + m.etel_id + '</div>'
+    '<div class="eap-title" style="font-size:14px;margin-bottom:10px;">Editing ' + eapEsc(m.full_name) + ' · ' + eapEsc(m.etel_id) + '</div>'
     + verifyHtml
     + '<div class="eap-grid2">'
-    + '<div class="eap-field"><label>Full Name</label><input class="eap-input" id="eap-em-name" value="' + (m.full_name||'').replace(/"/g,'&quot;') + '"></div>'
-    + '<div class="eap-field"><label>Full Name (Amharic)</label><input class="eap-input" id="eap-em-name-am" value="' + (m.full_name_am||'').replace(/"/g,'&quot;') + '"></div>'
-    + '<div class="eap-field"><label>Phone</label><input class="eap-input" id="eap-em-phone" value="' + (m.phone||'') + '"></div>'
-    + '<div class="eap-field"><label>Email</label><input class="eap-input" id="eap-em-email" value="' + (m.email||'') + '"></div>'
-    + '<div class="eap-field"><label>Company</label><input class="eap-input" id="eap-em-company" value="' + (m.primary_company||'') + '"></div>'
-    + '<div class="eap-field"><label>Role</label><input class="eap-input" id="eap-em-role" value="' + (m.role||'') + '"></div>'
-    + '<div class="eap-field"><label>Department</label><input class="eap-input" id="eap-em-dept" value="' + (m.department||'') + '"></div>'
+    + '<div class="eap-field"><label>Full Name</label><input class="eap-input" id="eap-em-name" value="' + eapEsc(m.full_name||'') + '"></div>'
+    + '<div class="eap-field"><label>Full Name (Amharic)</label><input class="eap-input" id="eap-em-name-am" value="' + eapEsc(m.full_name_am||'') + '"></div>'
+    + '<div class="eap-field"><label>Phone</label><input class="eap-input" id="eap-em-phone" value="' + eapEsc(m.phone||'') + '"></div>'
+    + '<div class="eap-field"><label>Email</label><input class="eap-input" id="eap-em-email" value="' + eapEsc(m.email||'') + '"></div>'
+    + '<div class="eap-field"><label>Company</label><input class="eap-input" id="eap-em-company" value="' + eapEsc(m.primary_company||'') + '"></div>'
+    + '<div class="eap-field"><label>Role</label><input class="eap-input" id="eap-em-role" value="' + eapEsc(m.role||'') + '"></div>'
+    + '<div class="eap-field"><label>Department</label><input class="eap-input" id="eap-em-dept" value="' + eapEsc(m.department||'') + '"></div>'
     + '<div class="eap-field"><label>Tier</label><select class="eap-input" id="eap-em-tier">'
     + ['standard','staff','manager','executive','vip'].map(function(t){ return '<option value="' + t + '"' + (m.tier===t?' selected':'') + '>' + t + '</option>'; }).join('')
     + '</select></div></div>'
-    + '<div class="eap-field"><label>Notes</label><textarea class="eap-input" id="eap-em-notes" rows="2">' + (m.notes||'') + '</textarea></div>'
+    + '<div class="eap-field"><label>Notes</label><textarea class="eap-input" id="eap-em-notes" rows="2">' + eapEsc(m.notes||'') + '</textarea></div>'
     + '<div style="display:flex;gap:8px;flex-wrap:wrap;">'
     + '<button class="eap-btn-gold" onclick="eapMemSave(' + id + ')">Save Changes</button>'
     + '<button class="eap-btn-ghost" onclick="eapMemStatus(' + id + ',\'active\')">Activate</button>'
@@ -701,7 +701,7 @@ async function eapMemOpenDetail(id){
     + (m.phone_verified_at && String(m.phone_verified_at).indexOf('0000') !== 0
         ? '<span class="eap-btn-ghost" style="cursor:default;opacity:.8">Phone verified</span>'
         : '<button class="eap-btn-ghost" onclick="eapMemVerifyPhone(' + id + ')">Verify phone</button>')
-    + '<button class="eap-btn-ghost" onclick="openResetPwModal(null,' + id + ',\'' + m.full_name.replace(/'/g,"\\'") + '\')">Reset Password</button>'
+    + '<button class="eap-btn-ghost" onclick="openResetPwModal(null,' + id + ',' + eapEsc(JSON.stringify(String(m.full_name))) + ')">Reset Password</button>'
     + '<button class="eap-btn-danger" onclick="eapMemDelete(' + id + ')">Delete</button>'
     + '</div><div id="eap-em-msg"></div>';
 }
@@ -715,9 +715,9 @@ function eapFaydaSectionHtml(m, id) {
     var levelLabel = kycLevel >= 2 ? 'Pass 2 complete - verified' : (kycLevel === 1 ? 'Pass 1 only - Fayda quick-register' : 'No verification');
     var levelClass = kycLevel >= 2 ? 'active' : 'suspended';
     html += '<div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center;margin-bottom:12px;">'
-      + (m.fayda_fin ? '<div><div style="font-size:10px;color:#998;text-transform:uppercase;">Fayda FIN</div><div style="font-family:monospace;color:#e8e2d4;">' + m.fayda_fin + '</div></div>' : '')
+      + (m.fayda_fin ? '<div><div style="font-size:10px;color:#998;text-transform:uppercase;">Fayda FIN</div><div style="font-family:monospace;color:#e8e2d4;">' + eapEsc(m.fayda_fin) + '</div></div>' : '')
       + '<div><div style="font-size:10px;color:#998;text-transform:uppercase;">Verification</div><span class="eap-pill ' + levelClass + '">' + levelLabel + '</span></div>'
-      + (m.pass2_completed_at ? '<div><div style="font-size:10px;color:#998;text-transform:uppercase;">Pass 2 Completed</div><div style="color:#e8e2d4;font-size:12px;">' + m.pass2_completed_at + '</div></div>' : '')
+      + (m.pass2_completed_at ? '<div><div style="font-size:10px;color:#998;text-transform:uppercase;">Pass 2 Completed</div><div style="color:#e8e2d4;font-size:12px;">' + eapEsc(m.pass2_completed_at) + '</div></div>' : '')
       + '</div>';
   } else {
     html += '<div style="font-size:12px;color:#998;margin-bottom:12px;">No Fayda ID on file for this member yet.</div>';
@@ -726,22 +726,27 @@ function eapFaydaSectionHtml(m, id) {
   /* Existing photos, if any */
   if (hasPhotos) {
     html += '<div style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap;">'
-      + '<div><div style="font-size:10px;color:#998;margin-bottom:4px;">FRONT</div><img src="' + m.fayda_front_image + '" style="max-width:160px;max-height:110px;border-radius:6px;border:1px solid rgba(212,175,55,.25);object-fit:cover;"></div>'
-      + '<div><div style="font-size:10px;color:#998;margin-bottom:4px;">BACK</div><img src="' + m.fayda_back_image + '" style="max-width:160px;max-height:110px;border-radius:6px;border:1px solid rgba(212,175,55,.25);object-fit:cover;"></div>'
+      + '<div><div style="font-size:10px;color:#998;margin-bottom:4px;">FRONT</div><img src="' + eapEsc(m.fayda_front_image) + '" style="max-width:160px;max-height:110px;border-radius:6px;border:1px solid rgba(212,175,55,.25);object-fit:cover;"></div>'
+      + '<div><div style="font-size:10px;color:#998;margin-bottom:4px;">BACK</div><img src="' + eapEsc(m.fayda_back_image) + '" style="max-width:160px;max-height:110px;border-radius:6px;border:1px solid rgba(212,175,55,.25);object-fit:cover;"></div>'
       + '</div>';
   }
 
   /* Pending member self-submission - approve/reject */
   if (m.pass2_status === 'pending') {
     html += '<div style="background:rgba(212,175,55,.1);border:1px solid rgba(212,175,55,.3);border-radius:8px;padding:10px 12px;margin-bottom:12px;">'
-      + '<div style="font-size:12px;color:#F2CC6B;margin-bottom:8px;">⏳ ' + m.full_name + ' submitted these photos themselves - awaiting your review.</div>'
+      + '<div style="font-size:12px;color:#F2CC6B;margin-bottom:8px;">⏳ ' + eapEsc(m.full_name) + ' submitted Pass 2 - check the Fayda ID photos above, then approve or reject.</div>'
+      + '<div style="font-size:12px;color:#d9d2c0;margin-bottom:8px;line-height:1.6;">'
+      + 'Occupation: ' + eapEsc(m.occupation || '-') + '<br>Income range: ' + eapEsc(m.income_range || '-')
+      + '<br>Source of funds: ' + eapEsc(m.source_of_funds || '-')
+      + '<br>Next of kin: ' + eapEsc(m.next_of_kin_name || '-') + ' / ' + eapEsc(m.next_of_kin_phone || '-')
+      + '<br>Submitted: ' + eapEsc(m.pass2_submitted_at || '-') + '</div>'
       + '<input type="text" class="eap-input" id="eap-fayda-note-' + id + '" placeholder="Optional note (shown to member if rejected)" style="margin-bottom:8px;">'
       + '<div style="display:flex;gap:8px;">'
       + '<button class="eap-btn-gold" onclick="eapMemFaydaReview(' + id + ',\'approve\')">✓ Approve - Pass 2</button>'
       + '<button class="eap-btn-danger" onclick="eapMemFaydaReview(' + id + ',\'reject\')">✕ Reject</button>'
       + '</div></div>';
   } else if (m.pass2_status === 'rejected' && m.pass2_review_note) {
-    html += '<div style="font-size:12px;color:#ef9a9a;margin-bottom:12px;">Last rejection note: ' + m.pass2_review_note + '</div>';
+    html += '<div style="font-size:12px;color:#ef9a9a;margin-bottom:12px;">Last rejection note: ' + eapEsc(m.pass2_review_note) + '</div>';
   }
 
   /* Admin capture/upload - always available, instant approve */
@@ -787,6 +792,8 @@ async function eapMemFaydaUpload(id) {
   if (res.success) { delete _eapFaydaData[id]; eapMemOpenDetail(id); eapMemLoad(_eapMemPage); }
   else btn.disabled = false;
 }
+function eapEsc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+
 async function eapMemFaydaReview(id, decision) {
   var noteEl = document.getElementById('eap-fayda-note-' + id);
   var res = await _eidPanel('etelid_panel_fayda_id_review', { id: id, decision: decision, note: noteEl ? noteEl.value : '' });
@@ -843,8 +850,8 @@ async function eapPagesLoad(){
   var html = '';
   res.data.pages.forEach(function(p){
     html += '<div class="eap-row">'
-      + '<div style="flex:1;cursor:pointer;" onclick="eapPageEdit(' + p.id + ')"><div style="font-weight:700;color:#e8e2d4;">' + p.title + '</div>'
-      + '<div style="font-size:11px;color:#998;">' + p.status + ' · modified ' + p.modified + '</div></div>'
+      + '<div style="flex:1;cursor:pointer;" onclick="eapPageEdit(' + p.id + ')"><div style="font-weight:700;color:#e8e2d4;">' + eapEsc(p.title) + '</div>'
+      + '<div style="font-size:11px;color:#998;">' + eapEsc(p.status) + ' · modified ' + eapEsc(p.modified) + '</div></div>'
       + '<button class="eap-btn-danger" style="padding:4px 10px;" onclick="event.stopPropagation();eapPageDelete(' + p.id + ')">Delete</button></div>';
   });
   el.innerHTML = html;
@@ -920,7 +927,7 @@ async function eapMenusLoad(){
   sel.innerHTML = '<option>Loading…</option>';
   var res = await _eidPanel('etelid_panel_menus_list', {});
   if (!res.success || !res.data.menus.length) { sel.innerHTML = '<option>No menus found</option>'; return; }
-  sel.innerHTML = res.data.menus.map(function(m){ return '<option value="' + m.id + '">' + m.name + ' (' + m.count + ' items)</option>'; }).join('');
+  sel.innerHTML = res.data.menus.map(function(m){ return '<option value="' + m.id + '">' + eapEsc(m.name) + ' (' + eapEsc(m.count) + ' items)</option>'; }).join('');
   eapMenuLoadItems();
 }
 async function eapMenuLoadItems(){
@@ -1023,7 +1030,7 @@ async function eapRpSearch(){
   var res = await _eidPanel('etelid_panel_members_list', { source: 'etelid', page: 1, search: q, status: '' });
   if (!res.success || !res.data.members.length) { el.innerHTML = '<div style="color:#666;font-size:12px;">No matches.</div>'; return; }
   el.innerHTML = res.data.members.slice(0,8).map(function(m){
-    return '<div class="eap-row" onclick="eapRpPick(' + m.id + ',\'' + m.name.replace(/'/g,"\\'") + ' · ' + m.etel_id + '\')">' + m.name + ' <span style="color:#998;font-size:11px;">' + m.etel_id + ' · ' + m.phone + '</span></div>';
+    return '<div class="eap-row" onclick="eapRpPick(' + m.id + ',' + eapEsc(JSON.stringify(String(m.name) + ' · ' + String(m.etel_id))) + ')">' + eapEsc(m.name) + ' <span style="color:#998;font-size:11px;">' + eapEsc(m.etel_id) + ' · ' + eapEsc(m.phone) + '</span></div>';
   }).join('');
 }
 function eapRpPick(id, label){
