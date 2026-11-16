@@ -56,6 +56,7 @@ $includes = array(
     'includes/class-etelid-phone-verify.php',     /* prove a new member owns their phone number (code by SMS / WhatsApp) */
     'includes/class-etelid-rewrite.php',
     'includes/class-etelid-rest-hardening.php',   /* audit Oct 2026: no public REST index / user list */
+    'includes/class-etelid-code.php',             /* Etel Code: member-chosen short login code (E1616) */
 );
 foreach ( $includes as $file ) {
     require_once ETELID_PATH . $file;
