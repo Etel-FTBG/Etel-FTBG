@@ -319,11 +319,33 @@ case 'etel_pay_get_rates': {
 }
 
 /* ── Send money ──────────────────────────────────────────────── */
+case 'ep_resolve_recipient': {
+    // Who owns this Etel Code? Shown to the sender to confirm before paying. The phone number is never returned.
+    $uid = ep_auth_id();
+    $in  = in_str('identifier');
+    if (!ep_looks_like_code($in)) { ep_ok(array('kind' => 'phone', 'phone' => ep_normalize_phone($in))); }
+    if (ep_resolve_throttled($uid)) ep_err('Too many look-ups. Wait a minute and try again.', 429);
+    $cm = ep_code_member($in);
+    if (!$cm) ep_err('Etel Code not found', 404);
+    $pdo = ep_db();
+    $q = $pdo->prepare('SELECT status FROM ' . EP_TBL_USERS . ' WHERE phone = ? LIMIT 1');
+    $q->execute(array(ep_normalize_phone($cm['phone'])));
+    $w = $q->fetch();
+    if (!$w || $w['status'] !== 'active') ep_err('This person has no active Etel Pay wallet yet', 404);
+    ep_ok(array('kind' => 'code', 'code' => strtoupper(preg_replace('/[\\s_-]+/', '', trim($in))), 'name' => isset($cm['full_name']) ? $cm['full_name'] : ''));
+}
 case 'ep_send':
 case 'etel_pay_send': {
     $sender_uid = ep_auth_id();
     ep_require_pin($sender_uid, in_str('pin'));
-    $receiver   = ep_normalize_phone(in_str('receiver'));
+    $receiver_in = in_str('receiver');
+    if (ep_looks_like_code($receiver_in)) {          // an Etel Code (E1616) instead of a phone number
+        $cm = ep_code_member($receiver_in);
+        if (!$cm) ep_err('Etel Code not found');
+        $receiver = ep_normalize_phone($cm['phone']);
+    } else {
+        $receiver = ep_normalize_phone($receiver_in);
+    }
     $amount     = in_float('amount');
     $currency   = in_str('currency') ?: 'ETB';
     $note       = in_str('note');

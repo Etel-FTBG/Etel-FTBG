@@ -31,6 +31,27 @@ function etelid_call($ep, $pl) {
     return $d ? array('ok'=>true,'data'=>$d,'http'=>$code) : array('ok'=>false,'error'=>'Bad JSON HTTP '.$code);
 }
 function etelid_resolve($id,$type='phone'){ return etelid_call('service/resolve',array('identifier'=>$id,'type'=>$type)); }
+/* Etel Code (member-chosen short code such as E1616): starts with a letter, so it is never a phone number. */
+function ep_looks_like_code($s){ return (bool)preg_match('/^[Ee][A-Za-z0-9 _-]{3,14}$/', trim((string)$s)); }
+/* Resolve an Etel Code to the EtelID member (active only, must have a phone). null when unknown. */
+function ep_code_member($code){
+    $r = etelid_resolve(trim((string)$code));
+    if (empty($r['ok']) || empty($r['data']['member']) || !is_array($r['data']['member'])) return null;
+    $m = $r['data']['member'];
+    if (empty($m['phone'])) return null;
+    if (isset($m['status']) && $m['status'] !== 'active') return null;
+    return $m;
+}
+/* At most 20 code look-ups a minute per member, so the code list cannot be walked. File-based: no schema. */
+function ep_resolve_throttled($uid){
+    $f = rtrim(sys_get_temp_dir(), '/\\') . '/ep_resolve_' . (int)$uid . '.txt';
+    $now = time(); $hits = array();
+    $old = @file_get_contents($f);
+    if ($old) { foreach (explode(',', $old) as $t) { if ((int)$t > $now - 60) $hits[] = (int)$t; } }
+    if (count($hits) >= 20) return true;
+    $hits[] = $now; @file_put_contents($f, implode(',', $hits), LOCK_EX);
+    return false;
+}
 function etelid_authenticate($phone,$pin,$totp=''){
     $req = array('identifier'=>$phone,'password'=>$pin,'app'=>'pay');
     if ($totp !== '') $req['totp_code'] = $totp;

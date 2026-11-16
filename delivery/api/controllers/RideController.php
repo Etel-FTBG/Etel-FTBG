@@ -3459,6 +3459,7 @@ case 'driver_hail_customer': {
     $digits_probe  = preg_replace('/[^0-9]/', '', $raw_id);
     $looks_etelid  = (stripos($raw_id, '/verify/') !== false)
                   || preg_match('/^[A-Za-z]{1,4}-/', trim($raw_id))
+                  || preg_match('/^[Ee][A-Za-z0-9]{3,11}$/', trim($raw_id))   /* Etel Code, e.g. E1616 */
                   || strlen($digits_probe) >= 12;
     if ($looks_etelid) {
         $etelid_member = rides_etelid_lookup($raw_id);
