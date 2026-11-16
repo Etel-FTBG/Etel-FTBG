@@ -413,7 +413,7 @@ async function irSaveStage() {
 
 // ---------- growth & goal planner ----------
 document.addEventListener('change', function (e) { if (e.target && e.target.id === 'gp-comm') document.getElementById('gp-comm-other-wrap').style.display = e.target.value === 'custom' ? '' : 'none'; });
-async function irRunGrowthPlanner() {
+function irGrowthBody(incentiveMonthly) {
   const body = {
     registered_drivers: Number(document.getElementById('gp-drivers').value || 0),
     trips_per_driver_per_day: Number(document.getElementById('gp-trips-per-driver').value || 0),
@@ -430,6 +430,12 @@ async function irRunGrowthPlanner() {
   const commSel = document.getElementById('gp-comm').value;
   if (commSel === 'custom') { const o = document.getElementById('gp-comm-other').value; if (o !== '') body.commission_rate_pct = Number(o); }
   else if (commSel !== '') body.commission_rate_pct = Number(commSel);
+  if (incentiveMonthly > 0) body.incentive_monthly_cost = incentiveMonthly;
+  return body;
+}
+async function irRunGrowthPlanner() {
+  const inc = (typeof window.irGrowthIncentive === 'function') ? window.irGrowthIncentive() : 0;
+  const body = irGrowthBody(inc);
   const el = document.getElementById('gp-output');
   el.innerHTML = 'Calculating…';
   const res = await irApi('admin_growth_planner', body);
