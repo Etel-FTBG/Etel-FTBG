@@ -29,7 +29,7 @@
     '#etel-code-box h3{margin:0 0 6px;font-size:18px;color:#D4AF37}#etel-code-box p{margin:4px 0 12px;font-size:13px;opacity:.85}' +
     '#etel-code-box input{width:100%;box-sizing:border-box;padding:12px;margin:6px 0;border-radius:8px;border:1px solid #5A3A08;' +
     'background:#0d0d0d;color:#F2CC6B;font-size:18px;letter-spacing:2px;text-transform:uppercase}' +
-    '#etel-code-box input[type=password]{letter-spacing:6px;text-transform:none;font-size:16px}' +
+    '#etel-code-box input[type=password]{letter-spacing:2px;text-transform:none;font-size:16px}' +
     '#etel-code-box button{width:100%;padding:12px;margin-top:8px;border:0;border-radius:8px;cursor:pointer;font-weight:700;' +
     'background:linear-gradient(135deg,#C8960C,#D4AF37);color:#0d0d0d}#etel-code-box button:disabled{opacity:.5}' +
     '#etel-code-box .ec-msg{min-height:20px;font-size:13px;margin:4px 0}.ec-ok{color:#6fd98a}.ec-bad{color:#ff8a7a}' +
@@ -42,10 +42,10 @@
   function html() { return '<button id="ec-x" type="button" style="display:none">&times;</button>' +
     FORM; }
   var FORM = '<h3>Your Etel Code</h3><div class="ec-cur" id="ec-cur">...</div>' +
-    '<p id="ec-hint">Choose a short code that starts with E (example: E1616). Use it instead of your phone or long ID.</p>' +
+    '<p id="ec-hint">Choose a short code that starts with E (example: E1616). Use it instead of your phone or long ID. To save it, type your EtelID password.</p>' +
     '<input id="ec-in" maxlength="12" placeholder="E1616" autocomplete="off">' +
     '<div class="ec-msg" id="ec-msg"></div><div class="ec-sug" id="ec-sug"></div>' +
-    '<input id="ec-pin" type="password" placeholder="Your PIN" autocomplete="off">' +
+    '<input id="ec-pin" type="password" placeholder="Your EtelID password" autocomplete="current-password">' +
     '<button id="ec-go" disabled>Save my code</button>';
   function msg(t, good) { var m = $('ec-msg'); m.textContent = t || ''; m.className = 'ec-msg ' + (good ? 'ec-ok' : 'ec-bad'); }
   function sugg(list) {

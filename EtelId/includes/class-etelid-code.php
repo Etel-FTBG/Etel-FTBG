@@ -387,14 +387,14 @@ class Etelid_Code {
 
     public static function rest_claim($request) {
         $mid = self::current_member_id($request);
-        // Throttle PIN guessing: 5 attempts / 10 min per member.
+        // Throttle password guessing: 5 attempts / 10 min per member.
         $key = 'etelid_rl_' . md5('codeclaim' . $mid);
         $n = (int)get_transient($key);
         if ($n >= 5) { return rest_ensure_response(array('success' => false, 'message' => 'Too many attempts. Try again in 10 minutes.')); }
         set_transient($key, $n + 1, 600);
 
         if (!self::pin_ok($mid, $request->get_param('pin'))) {
-            return rest_ensure_response(array('success' => false, 'message' => 'Wrong PIN.'));
+            return rest_ensure_response(array('success' => false, 'message' => 'Wrong password. Use your EtelID password.'));
         }
         $res = self::claim($mid, $request->get_param('code'));
         $out = array('success' => $res[0], 'message' => $res[1], 'code' => $res[2]);
