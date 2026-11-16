@@ -11,11 +11,14 @@ case 'officer_etelid_login': {
     if (!$identifier || !$password) fail('identifier and password are required.');
     if (!defined('ETELID_SERVICE_KEY') || ETELID_SERVICE_KEY === '') fail('EtelID sign-in is not configured on this server yet.', 503);
 
+    $totp = isset($body['totp_code']) ? trim((string) $body['totp_code']) : '';
+    $req  = array('identifier' => $identifier, 'password' => $password, 'create_session' => true, 'app' => 'taxi');
+    if ($totp !== '') $req['totp_code'] = $totp;
     $url = 'https://' . ETELID_HOST . '/EtelId/wp-json/etelid/v1/service/authenticate';
     $ctx = stream_context_create(array('http' => array(
         'method'  => 'POST',
-        'header'  => "Content-Type: application/json\r\nX-Etel-Service-Key: " . ETELID_SERVICE_KEY . "\r\n",
-        'content' => json_encode(array('identifier' => $identifier, 'password' => $password, 'create_session' => true, 'app' => 'taxi')),
+        'header'  => "Content-Type: application/json\r\nX-Etel-Service-Key: " . ETELID_SERVICE_KEY . "\r\nX-Etel-App: EtelTaxi/1.0\r\n",
+        'content' => json_encode($req),
         'timeout' => 15,
         'ignore_errors' => true,
     )));
@@ -23,6 +26,10 @@ case 'officer_etelid_login': {
     if ($resp === false) fail('Could not reach EtelID right now.', 503);
     $decoded = json_decode($resp, true);
     if (!is_array($decoded) || empty($decoded['ok']) || empty($decoded['session_token'])) {
+        // EtelID wants the two-step code (or the code typed was wrong): tell the page to ask for it.
+        if (is_array($decoded) && (!empty($decoded['data']['requires_2fa']) || (isset($decoded['code']) && in_array($decoded['code'], array('requires_2fa', 'bad_2fa'), true)))) {
+            fail(isset($decoded['message']) ? $decoded['message'] : 'Enter your two-step code.', 401, array('requires_2fa' => true));
+        }
         fail(isset($decoded['message']) ? $decoded['message'] : 'Incorrect EtelID or password.', 401);
     }
     $member = $decoded['member'];

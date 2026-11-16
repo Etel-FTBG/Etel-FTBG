@@ -19,6 +19,7 @@ final class EtelIDClient
     private string $url;
     private string $key;
     private ?string $lastError = null;
+    private bool $needs2fa = false;
 
     public function __construct()
     {
@@ -36,20 +37,28 @@ final class EtelIDClient
         return $this->lastError;
     }
 
+    /** True when the last call failed only because EtelID wants the two-step code (or the code was wrong). */
+    public function needsTwoFactor(): bool
+    {
+        return $this->needs2fa;
+    }
+
     /**
      * Authenticate by phone/EtelID + password.
      * Returns the full member array (includes role, is_admin, phone, full_name, etc.)
      * or null on failure -- check lastError() for the reason.
      */
-    public function authenticate(string $identifier, string $password): ?array
+    public function authenticate(string $identifier, string $password, string $totp = ''): ?array
     {
-        $r = $this->post('service/authenticate', [
+        $payload = [
             'identifier' => $identifier,
             'password'   => $password,
             'project'    => 'EtelGebeya',
             // Names this app to EtelID so a limited (Ride-only) account is refused there.
             'app'        => 'gebeya',
-        ]);
+        ];
+        if ($totp !== '') $payload['totp_code'] = $totp;
+        $r = $this->post('service/authenticate', $payload);
         // Response shape: { ok: true, member: { etel_id, full_name, phone, role, ... } }
         if (!$r) return null;
         $member = $r['member'] ?? (isset($r['etel_id']) ? $r : null);
@@ -82,6 +91,7 @@ final class EtelIDClient
     private function post(string $endpoint, array $payload): ?array
     {
         $this->lastError = null;
+        $this->needs2fa = false;
 
         if (!$this->url || !$this->key || $this->key === 'CHANGE_ME') {
             $this->lastError = 'EtelID is not configured on this server (missing service URL/key).';
@@ -117,6 +127,7 @@ final class EtelIDClient
         }
         if (!($data['ok'] ?? false)) {
             $this->lastError = $data['message'] ?? 'EtelID rejected the request.';
+            $this->needs2fa = !empty($data['data']['requires_2fa']) || in_array($data['code'] ?? '', ['requires_2fa', 'bad_2fa'], true);
             return null;
         }
         return $data['data'] ?? $data;

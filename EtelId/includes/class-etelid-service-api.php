@@ -254,6 +254,7 @@ class EtelID_Service_API {
         if ( ! $m ) return new WP_Error( 'not_found', 'No EtelID member matches that identifier.', array( 'status' => 404 ) );
 
         EtelID_DB::log( $m->id, $m->etel_id, 'service_resolve', 'Service API lookup (app: ' . self::caller_label() . ')' );
+        EtelID_DB::log_kyc_access( $m->id, 'svc-resolve:' . self::caller_label() );
         return rest_ensure_response( array( 'ok' => true, 'member' => self::member_payload( $m ) ) );
     }
 
@@ -276,6 +277,7 @@ class EtelID_Service_API {
         }
         $reviewed = ( isset( $m->pass2_status ) && $m->pass2_status === 'approved' );
         EtelID_DB::log( $m->id, $m->etel_id, 'service_age_check', 'Age check (app: ' . self::caller_label() . ')' );
+        EtelID_DB::log_kyc_access( $m->id, 'svc-age:' . self::caller_label() );
         return rest_ensure_response( array( 'ok' => true, 'adult' => $adult, 'reviewed' => $reviewed ) );
     }
 
@@ -382,6 +384,14 @@ class EtelID_Service_API {
             $g = EtelID_2FA::gate( $m, (string) $request->get_param( 'totp_code' ) );
             if ( is_wp_error( $g ) ) return $g;
         }
+        /* Staff two-step: "enforce" refuses a staff member who has not set it up; "log" only records it. */
+        if ( ! $twofa_on && class_exists( 'EtelID_2FA' ) ) {
+            if ( EtelID_2FA::staff_enforced( $m ) ) {
+                EtelID_DB::log( $m->id, $m->etel_id, 'twofa_setup_required', 'Staff sign-in refused: two-step not set up (app: ' . self::caller_label() . ')' );
+                return new WP_Error( 'twofa_setup_required', 'Set up two-step sign-in in the EtelID portal first, then sign in again.', array( 'status' => 403, 'twofa_setup_required' => true ) );
+            }
+            EtelID_2FA::log_if_unenrolled( $m, 'service sign-in (' . self::caller_label() . ')' );
+        }
 
         /* A number nobody has proved they own cannot be used to sign in to the other Etel apps: they find the person's account
          * by that number. Checked after the password (and two-step code), so it never tells a stranger anything. The member
@@ -405,7 +415,8 @@ class EtelID_Service_API {
         EtelID_DB::log( $m->id, $m->etel_id, 'login', 'Service API SSO (' . substr( $ip, 0, 45 ) . ', app: ' . self::caller_label() . ')' );
 
         self::$stage = 'member_payload';
-        $payload = array( 'ok' => true, 'member' => self::member_payload( $m ), 'twofa_verified' => $twofa_on );
+        $payload = array( 'ok' => true, 'member' => self::member_payload( $m ), 'twofa_verified' => $twofa_on,
+            'twofa_required' => class_exists( 'EtelID_2FA' ) ? EtelID_2FA::required_for( $m ) : false );
 
         $wantSession = filter_var( $request->get_param( 'create_session' ), FILTER_VALIDATE_BOOLEAN );
         if ( $wantSession ) {
@@ -433,7 +444,7 @@ class EtelID_Service_API {
                FROM {$companies_t} c
                JOIN {$members_t} m ON m.id = c.member_id
               WHERE c.company_slug = %s AND c.active = 1
-                AND LOWER(c.role_at) IN ('admin','owner','creator')
+                AND LOWER(c.role_at) IN ('admin','owner','creator')" . ( class_exists( 'EtelID_2FA' ) ? EtelID_2FA::enrolled_sql( 'm.id' ) : '' ) . "
               ORDER BY c.linked_at ASC LIMIT 1",
             $slug
         ) );
@@ -467,7 +478,7 @@ class EtelID_Service_API {
             "SELECT m.phone, m.full_name, m.etel_id, c.role_at
                FROM {$companies_t} c
                JOIN {$members_t} m ON m.id = c.member_id
-              WHERE c.company_slug = %s AND m.phone = %s AND c.active = 1
+              WHERE c.company_slug = %s AND m.phone = %s AND c.active = 1" . ( class_exists( 'EtelID_2FA' ) ? EtelID_2FA::enrolled_sql( 'm.id' ) : '' ) . "
               ORDER BY c.linked_at DESC LIMIT 1",
             $slug, $phone
         ) );

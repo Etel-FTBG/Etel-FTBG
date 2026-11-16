@@ -74,7 +74,14 @@ async function officerEtelIdLogin() {
   const identifier = document.getElementById('officer-identifier').value.trim();
   const password = document.getElementById('officer-password').value.trim();
   if (!identifier || !password) return taxiToast('Enter your EtelID and password', 'err');
-  const res = await taxiApi('officer_etelid_login', { identifier, password }, 'officer');
+  const loginBody = { identifier, password };
+  let res = await taxiApi('officer_etelid_login', loginBody, 'officer');
+  while (res && res.requires_2fa && window.Etel2FA) {
+    const code = await window.Etel2FA.ask(res.error);
+    if (!code) { res = { ok: false, error: 'Sign-in cancelled.' }; break; }
+    loginBody.totp_code = code;
+    res = await taxiApi('officer_etelid_login', loginBody, 'officer');
+  }
   if (!res.ok) return taxiToast(res.error, 'err');
   taxiSetToken('officer', res.data.token);
   taxiToast('Welcome, ' + res.data.officer.full_name, 'ok');

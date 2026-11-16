@@ -474,7 +474,7 @@ tbody tr:last-child td{border-bottom:none;}
     </div>
 
     <div class="login-field">
-      <label for="etelid-identifier">Phone or EtelID <span class="login-field-hint">(leave blank for master password)</span></label>
+      <label for="etelid-identifier">Phone or EtelID</label>
       <div class="login-input-wrap">
         <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
         <input type="text" id="etelid-identifier" placeholder="+2519... or EG-2026-00001" autocomplete="username">
@@ -497,7 +497,7 @@ tbody tr:last-child td{border-bottom:none;}
       <svg class="login-btn-label" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4" viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
       <span class="login-btn-label">Sign In</span>
     </button>
-    <p class="login-hint">Leave the phone field blank to sign in with the master password, or fill it in to sign in with your EtelID</p>
+    <p class="login-hint">Sign in with your EtelID. Two-step code is asked if it is switched on.</p>
     <div class="login-err" id="login-err"></div>
   </div>
 </div>
@@ -1052,7 +1052,8 @@ tbody tr:last-child td{border-bottom:none;}
 <!-- ═══ TOASTS ═══ -->
 <div class="toast-wrap" id="toast-wrap"></div>
 
-<script src="admin-panel.js?v=4"></script>
+<script src="public/assets/js/etel-2fa.js?v=1"></script>
+<script src="admin-panel.js?v=6"></script>
 <script>
 /* ──────────────────────────────────────────────────────────────
    All JavaScript lives in admin-panel.js

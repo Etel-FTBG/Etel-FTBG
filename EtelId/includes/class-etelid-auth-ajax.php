@@ -649,6 +649,9 @@ class EtelID_Auth_Ajax {
 
     public static function twofa_disable() {
         $member = self::twofa_member();
+        if ( EtelID_2FA::required_for( $member ) ) {
+            wp_send_json_error( array( 'message' => 'Two-step sign-in is required for your account and cannot be switched off.' ) );
+        }
         $r = EtelID_2FA::disable( $member, self::twofa_code() );
         if ( is_wp_error( $r ) ) wp_send_json_error( array( 'message' => $r->get_error_message() ) );
         wp_send_json_success( array( 'message' => 'Two-step sign-in is off.' ) );
@@ -797,10 +800,12 @@ class EtelID_Auth_Ajax {
             wp_send_json_error( array( 'message' => $result->get_error_message() ) );
         }
 
-        /* 2. Save additional KYC info + bump to kyc_level 2 (EtelPay unlocked). */
+        /* 2. Save additional KYC info and queue it for admin review. The level
+         *    is NOT raised here: only an admin approval (fayda_id_review or
+         *    fayda_id_upload in the admin panels) sets kyc_level 2. */
         EtelID_DB::update_member( $member->id, array(
-            'kyc_level'          => 2,
-            'pass2_completed_at' => current_time( 'mysql' ),
+            'pass2_status'       => 'pending',
+            'pass2_submitted_at' => current_time( 'mysql' ),
             'occupation'         => $occupation,
             'income_range'       => $income_range,
             'source_of_funds'    => $source_of_funds,
@@ -808,9 +813,9 @@ class EtelID_Auth_Ajax {
             'next_of_kin_phone'  => $kin_phone,
         ));
 
-        EtelID_DB::log( $member->id, $member->etel_id, 'pass2_completed', 'Second verification pass completed - EtelPay unlocked' );
+        EtelID_DB::log( $member->id, $member->etel_id, 'pass2_submitted', 'Second verification pass submitted - awaiting admin review' );
 
-        wp_send_json_success( array( 'message' => 'Verification complete. Etel Pay is now unlocked.' ) );
+        wp_send_json_success( array( 'message' => 'Submitted. An admin will review it. Etel Pay unlocks after approval.' ) );
     }
 
     /** Member self-service: upload Fayda ID front+back from their own profile page.
@@ -988,6 +993,36 @@ class EtelID_Auth_Ajax {
             $other = EtelID_DB::find_by_email( $data['email'] );
             if ( $other && (int) $other->id !== (int) $member->id ) {
                 wp_send_json_error( array( 'message' => 'This email is already used by another account. Please use a different email.' ) );
+                return;
+            }
+        }
+
+        /* Changing the email address needs the current password: the new address receives the password-reset codes,
+         * so a stolen session alone must not be able to move the account to an address the thief controls. */
+        if ( ! empty( $data['email'] ) && strtolower( $data['email'] ) !== strtolower( (string) $member->email ) ) {
+            $pwk = 'emailchg_' . (int) $member->id;
+            if ( EtelID_Security::fail_blocked( $pwk, 5, 900 ) ) {
+                wp_send_json_error( array( 'message' => 'Too many wrong passwords. Try again in 15 minutes.' ) );
+                return;
+            }
+            $cur = isset( $_POST['current_password'] ) ? (string) wp_unslash( $_POST['current_password'] ) : '';
+            if ( $cur === '' ) {
+                wp_send_json_error( array( 'message' => 'To change your email, enter your current password.', 'need_password' => true ) );
+                return;
+            }
+            if ( ! EtelID_Auth::verify_password( $cur, $member->pin_hash ) ) {
+                EtelID_Security::fail_hit( $pwk, 900 );
+                EtelID_DB::log( $member->id, $member->etel_id, 'login_failed', 'Wrong password when changing email' );
+                wp_send_json_error( array( 'message' => 'Your current password is not correct.' ) );
+                return;
+            }
+            EtelID_Security::fail_clear( $pwk );
+        }
+
+        /* Names are shown inside admin pages: no angle brackets. */
+        foreach ( array( 'full_name', 'full_name_am' ) as $nf ) {
+            if ( isset( $data[ $nf ] ) && preg_match( '/[<>]/', $data[ $nf ] ) ) {
+                wp_send_json_error( array( 'message' => 'Names cannot contain < or >.' ) );
                 return;
             }
         }

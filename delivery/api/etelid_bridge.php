@@ -24,6 +24,14 @@ if (!defined('APP_VER')) { http_response_code(403); exit; }
    If the key or endpoint is unavailable, the bridge falls back to
    direct database access automatically. */
 function etelid_bridge_service_key() {
+    /* Per-app OUTBOUND key (Part C): used first when set. ETELID_SERVICE_KEY is left alone because
+       other code in this app (boot.php) also uses it to check keys sent TO Delivery. */
+    if (function_exists('etel_env')) {
+        $a = etel_env('ETELID_APP_KEY', 'CFG_ETELID_APP_KEY', '');
+        if ($a) return $a;
+    }
+    $a = getenv('ETELID_APP_KEY');
+    if ($a) return $a;
     /* Priority: .env (via etel_env helper) > getenv > CFG_ETELID_SERVICE_KEY constant.
        etel_env() is defined in api.php and handles BOM, Amharic comments, quoted
        values  it is always available when called from within an api.php request.

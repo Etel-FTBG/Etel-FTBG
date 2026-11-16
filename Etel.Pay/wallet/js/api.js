@@ -77,8 +77,8 @@ const EP_API = (function() {
     send(receiver, amount, currency='ETB', note='', pin='') {
       return call('etel_pay_send', { receiver, amount, currency, note, pin });
     },
-    setWalletPin(etelid_pin, new_pin, confirm_pin) {
-      return call('ep_set_wallet_pin', { etelid_pin, new_pin, confirm_pin });
+    setWalletPin(etelid_pin, new_pin, confirm_pin, totp_code = '') {
+      return call('ep_set_wallet_pin', { etelid_pin, new_pin, confirm_pin, totp_code });
     },
 
     // QR

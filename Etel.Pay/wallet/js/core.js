@@ -232,6 +232,15 @@ const EP_CORE = (function() {
 
   // Run fn(pin) -> Promise of an API response. Handles the first-time PIN
   // for single sign-on wallets. Resolves to null if the user cancels.
+  /* Load the two-step code box on demand (pages do not all include it). */
+  function _ensure2FA() {
+    return new Promise(function (res) {
+      if (window.Etel2FA) return res();
+      var s = document.createElement('script');
+      s.src = 'js/etel-2fa.js?v=1'; s.onload = res; s.onerror = res;
+      document.head.appendChild(s);
+    });
+  }
   async function withPin(fn, title) {
     var pin = await askPin(title);
     if (!pin) return null;
@@ -244,6 +253,14 @@ const EP_CORE = (function() {
       ]);
       if (!v) return j;
       var r = await EP_API.setWalletPin(v.etelid_pin, v.new_pin, v.confirm_pin);
+      /* Two-step on this Etel-ID: ask for the code, then retry. */
+      while (r && !r.success && r.data && r.data.requires_2fa) {
+        await _ensure2FA();
+        if (!window.Etel2FA) break;
+        var code2 = await window.Etel2FA.ask(r.data.message);
+        if (!code2) return r;
+        r = await EP_API.setWalletPin(v.etelid_pin, v.new_pin, v.confirm_pin, code2);
+      }
       if (!r || !r.success) return r;
       j = await fn(v.new_pin);
     }

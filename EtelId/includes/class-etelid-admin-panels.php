@@ -178,10 +178,12 @@ class EtelID_Admin_Panels {
     }
 
     public static function members_get() {
-        self::guard();
+        $admin = self::guard();
         $id = absint( isset( $_POST['id'] ) ? $_POST['id'] : 0 );
         $m  = $id ? EtelID_DB::get_member_full( $id ) : null;
         if ( ! $m ) wp_send_json_error( array( 'message' => 'Member not found.' ) );
+        unset( $m->pin_hash );
+        EtelID_DB::log_kyc_access( $m->id, 'admin-console:' . $admin->etel_id );
         wp_send_json_success( array( 'member' => $m ) );
     }
 
@@ -204,7 +206,7 @@ class EtelID_Admin_Panels {
 
         if ( $source === 'pay' ) {
             $base = get_option( 'etelid_pay_api_base', $site_root . '/Etel.Pay/wallet' );
-            $url  = trailingslashit( $base ) . 'api/etelid_member_detail.php?id=' . $id . '&key=' . rawurlencode( $key );
+            $url  = trailingslashit( $base ) . 'api/etelid_member_detail.php?id=' . $id;
             $resp = wp_remote_get( $url, array( 'timeout' => 12, 'headers' => array( 'X-Etel-Service-Key' => $key ) ) );
         } else {
             $base = get_option( 'etelid_delivery_api_base', $site_root . '/delivery' );
@@ -375,6 +377,10 @@ class EtelID_Admin_Panels {
         if ( ! in_array( $action, array( 'approve', 'reject' ), true ) ) wp_send_json_error( array( 'message' => 'Invalid decision.' ) );
 
         if ( $action === 'approve' ) {
+            $full = EtelID_DB::get_member_full( $id );
+            if ( ! $full || ! EtelID_DB::row_has_fayda( $full, 'front' ) || ! EtelID_DB::row_has_fayda( $full, 'back' ) ) {
+                wp_send_json_error( array( 'message' => 'Cannot approve: this member has not uploaded both sides of the Fayda ID. Ask them to upload it first.' ) );
+            }
             EtelID_DB::update_member( $id, array(
                 'kyc_level'          => 2,
                 'pass2_completed_at' => current_time( 'mysql' ),
@@ -419,7 +425,7 @@ class EtelID_Admin_Panels {
 
         if ( $source === 'pay' ) {
             $base = get_option( 'etelid_pay_api_base', $site_root . '/Etel.Pay/wallet' );
-            $url  = trailingslashit( $base ) . 'api/etelid_members_list.php?key=' . rawurlencode( $key );
+            $url  = trailingslashit( $base ) . 'api/etelid_members_list.php';
             $resp = wp_remote_get( $url, array(
                 'timeout' => 12,
                 'headers' => array( 'X-Etel-Service-Key' => $key ),
@@ -820,12 +826,12 @@ class EtelID_Admin_Panels {
        two-step sign-in off so they can sign in with the password and set it
        up again. Logged in the audit log. */
     public static function admin_reset_2fa() {
-        self::guard();
+        $actor = self::guard();
         $mid = isset( $_POST['member_id'] ) ? (int) $_POST['member_id'] : 0;
         $m = $mid ? EtelID_DB::get_member( $mid ) : null;
         if ( ! $m ) wp_send_json_error( array( 'message' => 'Member not found.' ) );
         EtelID_2FA::admin_reset( $m->id );
-        EtelID_DB::log( $m->id, $m->etel_id, 'updated', 'Two-step sign-in reset by admin' );
+        EtelID_DB::log( $m->id, $m->etel_id, 'updated', 'Two-step sign-in reset by admin (' . $actor->etel_id . ')' );
         wp_send_json_success( array( 'message' => 'Two-step sign-in reset. They can sign in with their password and set it up again.' ) );
     }
 

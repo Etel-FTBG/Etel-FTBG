@@ -1,6 +1,6 @@
 <?php
 // ============================================================
-// Etel Group super-page — Admin auth
+// Etel Group super-page - Admin auth
 // Single super-admin account (this is a small marketing site, not a
 // multi-user system) - password hash + a signing secret both live in
 // .env, never in code or the database. Tokens are stateless: a
@@ -200,6 +200,9 @@ function egid_api_base(): string {
 }
 
 function egid_service_key(): string {
+    // Per-app outbound key (Part C) is used first; ETELID_SERVICE_KEY stays as the fallback.
+    $k = getenv('ETELID_APP_KEY') ?: '';
+    if ($k !== '') return $k;
     $k = getenv('ETELID_SERVICE_KEY') ?: '';
     if ($k === '') throw new Exception('ETELID_SERVICE_KEY is not configured in .env');
     return $k;
@@ -214,6 +217,7 @@ function egid_post(string $path, array $body): array {
         CURLOPT_HTTPHEADER => array(
             'Content-Type: application/json',
             'X-Etel-Service-Key: ' . egid_service_key(),
+            'X-Etel-App: EtelGroup/1.0',
         ),
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_TIMEOUT => 10,
@@ -232,15 +236,24 @@ function egid_post(string $path, array $body): array {
 // Authenticate identifier+password against EtelID itself (password
 // never touches or is checked by EtelGroup - EtelID verifies its own
 // pin_hash and just tells us yes/no plus the member record).
-function egid_authenticate(string $identifier, string $password): array {
-    $res = egid_post('/service/authenticate', array(
+// Thrown when EtelID wants the two-step code (or the code typed was wrong).
+class EgidTwoFactorRequired extends Exception {}
+
+function egid_authenticate(string $identifier, string $password, string $totp = ''): array {
+    $req = array(
         'identifier' => $identifier,
         'password' => $password,
         'create_session' => true,
         'app' => 'group', // a limited (Ride-only) EtelID is refused by EtelID itself
-    ));
+    );
+    if ($totp !== '') $req['totp_code'] = $totp;
+    $res = egid_post('/service/authenticate', $req);
     if ($res['status'] !== 200 || empty($res['body']['ok'])) {
         $msg = $res['body']['message'] ?? ($res['body']['code'] ?? 'EtelID sign-in failed');
+        $code = $res['body']['code'] ?? '';
+        if (!empty($res['body']['data']['requires_2fa']) || $code === 'requires_2fa' || $code === 'bad_2fa') {
+            throw new EgidTwoFactorRequired(is_string($msg) ? $msg : 'Enter your two-step code.');
+        }
         throw new Exception(is_string($msg) ? $msg : 'EtelID sign-in failed');
     }
     return $res['body']['member'];

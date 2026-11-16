@@ -342,7 +342,7 @@ $token  = Auth::getInstance()->csrfToken();
             <input type="text" id="etelid_identifier" name="etelid_identifier" class="form-input"
                    placeholder="+251 9X XXX XXXX  or  EG-2026-xxxxx"
                    required autofocus autocomplete="tel"
-                   value="<?= e($_POST['etelid_identifier'] ?? '') ?>">
+                   value="<?= e($_POST['etelid_identifier'] ?? ($_GET['id'] ?? '')) ?>">
           </div>
         </div>
 
@@ -357,6 +357,17 @@ $token  = Auth::getInstance()->csrfToken();
             </button>
           </div>
         </div>
+
+        <?php if (!empty($_GET['twofa'])): ?>
+        <div class="form-group">
+          <label class="form-label" for="etelid_totp">Two-step code (or backup code)</label>
+          <div class="input-wrap">
+            <i class="bi bi-shield-lock"></i>
+            <input type="text" id="etelid_totp" name="etelid_totp" class="form-input"
+                   inputmode="numeric" autocomplete="one-time-code" maxlength="12" placeholder="123456" required autofocus>
+          </div>
+        </div>
+        <?php endif; ?>
 
         <button type="submit" class="submit-btn">
           <span class="spin"></span>

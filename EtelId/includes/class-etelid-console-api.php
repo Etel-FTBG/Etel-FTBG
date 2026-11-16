@@ -20,6 +20,8 @@ class EtelID_Console_API {
             'etelid_console_qr_batch'      => 'qr_batch',
             'etelid_console_settings_get'  => 'settings_get',
             'etelid_console_settings_save' => 'settings_save',
+            'etelid_console_2fa_get'       => 'twofa_policy_get',
+            'etelid_console_2fa_set'       => 'twofa_policy_set',
         );
         foreach ( $map as $action => $method ) {
             add_action( 'wp_ajax_'        . $action, array( __CLASS__, $method ) );
@@ -175,5 +177,50 @@ class EtelID_Console_API {
         update_option( 'etelid_ride_app_url',     esc_url_raw( $g( 'ride_app_url' ) ) );
         update_option( 'etelid_customer_app_url', esc_url_raw( $g( 'customer_app_url' ) ) );
         wp_send_json_success( array( 'message' => 'Settings saved.' ) );
+    }
+
+    /* ---- Two-step sign-in policy (admin GUI) ---- */
+    public static function twofa_policy_get() {
+        global $wpdb;
+        self::guard();
+        $rows = $wpdb->get_results(
+            'SELECT m.id, m.etel_id, m.full_name, GROUP_CONCAT(DISTINCT LOWER(c.role_at) SEPARATOR ", ") AS roles
+               FROM ' . EtelID_DB::t_companies() . ' c JOIN ' . EtelID_DB::t_members() . ' m ON m.id = c.member_id
+              WHERE c.active = 1 AND LOWER(c.role_at) NOT IN (' . EtelID_2FA::plain_roles_sql() . ')
+              GROUP BY m.id ORDER BY m.full_name ASC LIMIT 300'
+        );
+        $staff = array(); $enrolled = 0;
+        foreach ( (array) $rows as $r ) {
+            $on = EtelID_2FA::is_enabled( $r->id );
+            if ( $on ) $enrolled++;
+            $staff[] = array( 'etel_id' => $r->etel_id, 'name' => $r->full_name, 'roles' => $r->roles, 'enrolled' => $on );
+        }
+        wp_send_json_success( array(
+            'killed'     => EtelID_2FA::killed(),
+            'staff_mode' => EtelID_2FA::staff_mode(),
+            'exclude'    => implode( ', ', EtelID_2FA::excluded_roles() ),
+            'saved_mode' => get_option( EtelID_2FA::OPT_STAFF_MODE, 'log' ),
+            'staff'      => $staff,
+            'enrolled'   => $enrolled,
+        ) );
+    }
+
+    public static function twofa_policy_set() {
+        $admin = self::guard();
+        $mode  = isset( $_POST['mode'] ) ? sanitize_key( wp_unslash( $_POST['mode'] ) ) : '';
+        if ( ! in_array( $mode, array( 'off', 'log', 'enforce' ), true ) ) wp_send_json_error( array( 'message' => 'Invalid mode.' ) );
+        if ( $mode === 'enforce' && empty( $_POST['confirm'] ) ) wp_send_json_error( array( 'message' => 'Please confirm to switch enforcement on.' ) );
+        $old = get_option( EtelID_2FA::OPT_STAFF_MODE, 'log' );
+        if ( isset( $_POST['exclude'] ) ) {
+            $roles = array();
+            foreach ( explode( ',', strtolower( wp_unslash( (string) $_POST['exclude'] ) ) ) as $r ) {
+                $r = trim( preg_replace( '/[^a-z0-9 _-]/', '', $r ) );
+                if ( $r !== '' ) $roles[] = $r;
+            }
+            update_option( EtelID_2FA::OPT_STAFF_EXCLUDE, implode( ',', array_slice( array_unique( $roles ), 0, 30 ) ) );
+        }
+        update_option( EtelID_2FA::OPT_STAFF_MODE, $mode );
+        EtelID_DB::log( $admin->id, $admin->etel_id, 'updated', 'Staff two-step mode changed: ' . $old . ' -> ' . $mode . ' by ' . $admin->etel_id );
+        wp_send_json_success( array( 'message' => 'Staff two-step mode is now: ' . $mode . '.' ) );
     }
 }

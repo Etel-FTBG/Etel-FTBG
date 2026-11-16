@@ -1,7 +1,7 @@
 <?php
 /**
- * EtelPay — EtelID KYC Bridge v1.0
- * PHP 5.6+ / cPanel — pure curl, zero WP dependency
+ * EtelPay - EtelID KYC Bridge v1.0
+ * PHP 5.6+ / cPanel - pure curl, zero WP dependency
  * Place at: Etel.Pay/wallet/api/etelid_kyc.php
  *
  * Config (add to config.php):
@@ -31,7 +31,24 @@ function etelid_call($ep, $pl) {
     return $d ? array('ok'=>true,'data'=>$d,'http'=>$code) : array('ok'=>false,'error'=>'Bad JSON HTTP '.$code);
 }
 function etelid_resolve($id,$type='phone'){ return etelid_call('service/resolve',array('identifier'=>$id,'type'=>$type)); }
-function etelid_authenticate($phone,$pin){ return etelid_call('service/authenticate',array('identifier'=>$phone,'password'=>$pin,'app'=>'pay')); }
+function etelid_authenticate($phone,$pin,$totp=''){
+    $req = array('identifier'=>$phone,'password'=>$pin,'app'=>'pay');
+    if ($totp !== '') $req['totp_code'] = $totp;
+    return etelid_call('service/authenticate',$req);
+}
+/* True when EtelID refused only because it wants the two-step code (or the code was wrong). */
+function etelid_needs_2fa($auth){
+    if (!is_array($auth) || empty($auth['data']) || !is_array($auth['data'])) return false;
+    $d = $auth['data'];
+    return !empty($d['data']['requires_2fa']) || (isset($d['code']) && in_array($d['code'], array('requires_2fa','bad_2fa'), true));
+}
+/* Answer the page with a "ask for the code" reply and stop. */
+function etelid_2fa_respond($auth){
+    $msg = !empty($auth['data']['message']) ? $auth['data']['message'] : 'Enter your two-step code.';
+    http_response_code(401);
+    echo json_encode(array('success'=>false,'data'=>array('message'=>$msg,'requires_2fa'=>true),'v'=>EP_VER));
+    exit;
+}
 
 function ep_sync_etelid_kyc($uid,$phone){
     $r=etelid_resolve($phone);
@@ -71,7 +88,7 @@ function ep_sync_etelid_kyc($uid,$phone){
             updated_at=NOW() WHERE id=?')
         ->execute(array($kyc,$fin,$lv,$name,$photo,$uid));
     } catch(Exception $ex){ return array('success'=>false,'message'=>$ex->getMessage()); }
-    $msgs=array('verified'=>'KYC complete via EtelID '.$fin.' (Level '.$lv.')','pending'=>'EtelID found — document verification pending','none'=>'EtelID found but not yet verified');
+    $msgs=array('verified'=>'KYC complete via EtelID '.$fin.' (Level '.$lv.')','pending'=>'EtelID found - document verification pending','none'=>'EtelID found but not yet verified');
     return array('success'=>true,'kyc_status'=>$kyc,'etelid_fin'=>$fin,'kyc_level'=>$lv,
         'full_name'=>$name,'photo_url'=>$photo,'message'=>$msgs[$kyc],
         'portal_url'=>'https://ethelmarket.com/EtelId/portal');

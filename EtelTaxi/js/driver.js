@@ -79,7 +79,14 @@ async function doEtelIdLogin() {
   const identifier = document.getElementById('etelid-identifier').value.trim();
   const password = document.getElementById('etelid-password').value.trim();
   if (!identifier || !password) return taxiToast('Enter your EtelID and password', 'err');
-  const res = await taxiApi('driver_etelid_login', { identifier, password });
+  const loginBody = { identifier, password };
+  let res = await taxiApi('driver_etelid_login', loginBody);
+  while (res && res.requires_2fa && window.Etel2FA) {
+    const code = await window.Etel2FA.ask(res.error);
+    if (!code) { res = { ok: false, error: 'Sign-in cancelled.' }; break; }
+    loginBody.totp_code = code;
+    res = await taxiApi('driver_etelid_login', loginBody);
+  }
   if (!res.ok) return taxiToast(res.error, 'err');
 
   if (res.data.needs_registration) {

@@ -1,5 +1,5 @@
 <?php
-/* ኢE Pay Route Functions - Part 3 */
+/* E Pay Route Functions - Part 3 */
 function ep_route_part3($action) {
   global $_body;
   switch($action) {
@@ -45,7 +45,7 @@ case 'ep_paylink_create': {
 }
 
 case 'ep_paylink_info': {
-    // Public — no auth needed
+    // Public - no auth needed
     $code = in_str('code') ?: (isset($_GET['code']) ? trim($_GET['code']) : '');
     if (!$code) ep_err('Code required');
     $pdo  = ep_db();
@@ -116,7 +116,7 @@ case 'ep_paylink_list': {
     ep_ok(array('links'=>$rows->fetchAll()));
 }
 
-/* ── 3. API KEYS (for merchants) ────────────────────────────── */
+/* -- 3. API KEYS (for merchants) ------------------------------ */
 case 'ep_apikey_create': {
     $uid = ep_auth_id();
     $pdo = ep_db();
@@ -139,7 +139,7 @@ case 'ep_apikey_create': {
     $pdo->prepare('INSERT INTO ' . EP_TBL_API_KEYS . ' (user_id, label, pub_key, secret_key, webhook_url) VALUES (?,?,?,?,?)')
         ->execute(array($uid, $label, $pub, $secret, $webhook));
     ep_ok(array('pub_key'=>$pub, 'secret_key'=>$secret, 'label'=>$label,
-        'warning'=>'Save your secret key — it will not be shown again'), 'API key created');
+        'warning'=>'Save your secret key - it will not be shown again'), 'API key created');
 }
 
 case 'ep_apikey_list': {
@@ -158,7 +158,7 @@ case 'ep_apikey_revoke': {
     ep_ok(null, 'API key revoked');
 }
 
-/* ── 4. KYC DOCUMENT UPLOAD ──────────────────────────────────── */
+/* -- 4. KYC DOCUMENT UPLOAD ------------------------------------ */
 case 'ep_kyc_submit': {
     $uid      = ep_auth_id();
     $doc_type = in_str('doc_type'); // national_id|passport|driving_license
@@ -189,7 +189,7 @@ case 'ep_kyc_submit': {
     $pdo->prepare('INSERT INTO ' . EP_TBL_KYC . ' (user_id, doc_type, doc_front, doc_back, selfie) VALUES (?,?,?,?,?) ON DUPLICATE KEY UPDATE doc_type=VALUES(doc_type), doc_front=VALUES(doc_front), doc_back=VALUES(doc_back), selfie=VALUES(selfie), status="submitted", submitted_at=NOW()')
         ->execute(array($uid, $doc_type, $doc_b64, $back_b64, $selfie));
     $pdo->prepare('UPDATE ' . EP_TBL_USERS . ' SET kyc_status="pending" WHERE id=?')->execute(array($uid));
-    ep_ok(null, 'KYC documents submitted — under review within 24hrs');
+    ep_ok(null, 'KYC documents submitted - under review within 24hrs');
 }
 
 case 'ep_admin_kyc_list': {
@@ -219,7 +219,7 @@ case 'ep_admin_kyc_review': {
     ep_ok(null, 'KYC ' . $new_status);
 }
 
-/* ── 5. ANALYTICS ────────────────────────────────────────────── */
+/* -- 5. ANALYTICS ---------------------------------------------- */
 case 'ep_analytics': {
     _ep_require_admin();
     $period = in_str('period') ?: '30d'; // 7d|30d|90d|all
@@ -249,7 +249,7 @@ case 'ep_analytics': {
     ));
 }
 
-/* ── 5b. User own analytics ──────────────────────────────────── */
+/* -- 5b. User own analytics ------------------------------------ */
 case 'ep_my_analytics': {
     $uid = ep_auth_id();
     $pdo = ep_db();
@@ -263,7 +263,7 @@ case 'ep_my_analytics': {
     ep_ok(array('period'=>'30d','sent'=>array('amount'=>(float)$sr[0],'count'=>(int)$sr[1]),'received'=>array('amount'=>(float)$rr[0],'count'=>(int)$rr[1]),'daily'=>$daily->fetchAll()));
 }
 
-/* ── 6. DISPUTES / REFUNDS ───────────────────────────────────── */
+/* -- 6. DISPUTES / REFUNDS ------------------------------------- */
 case 'ep_dispute_open': {
     $uid    = ep_auth_id();
     $tx_ref = in_str('tx_ref');
@@ -298,7 +298,7 @@ case 'ep_dispute_open': {
     $dup->execute(array($uid, $tx_ref));
     if ($dup->fetch()) ep_err('You already reported this payment. We are reviewing it.', 409);
     $pdo->prepare('INSERT INTO ' . EP_TBL_DISPUTES . ' (user_id, tx_ref, reason) VALUES (?,?,?)')->execute(array($uid, $tx_ref, $reason));
-    ep_ok(null, 'Dispute opened — we will review within 48hrs');
+    ep_ok(null, 'Dispute opened - we will review within 48hrs');
 }
 
 case 'ep_admin_dispute_list': {
@@ -312,7 +312,7 @@ case 'ep_admin_dispute_list': {
 /* ep_admin_dispute_resolve moved to ep_r4.php (atomic, guarded, capped, audited). */
 
 
-/* ── EtelID: sync KYC to wallet ─────────────────────────────── */
+/* -- EtelID: sync KYC to wallet ------------------------------- */
 case 'ep_etelid_kyc_sync':
 case 'etel_pay_etelid_kyc_sync': {
     $user   = ep_auth();
@@ -324,7 +324,7 @@ case 'etel_pay_etelid_kyc_sync': {
     ep_ok($result, $result['message']);
 }
 
-/* ── EtelID: resolve by FIN ─────────────────────────────────── */
+/* -- EtelID: resolve by FIN ----------------------------------- */
 case 'ep_etelid_resolve': {
     ep_auth();
     $fin = in_str('fin');
@@ -343,14 +343,15 @@ case 'ep_etelid_resolve': {
     ));
 }
 
-/* ── EtelID: SSO login for EtelPay ─────────────────────────── */
+/* -- EtelID: SSO login for EtelPay --------------------------- */
 case 'ep_login_etelid': {
     $phone = in_str('phone');
     $pin   = in_str('pin');
     if (!$phone || !$pin) ep_err('Phone and PIN required');
     if (!function_exists('etelid_authenticate')) ep_err('EtelID bridge not installed', 503);
-    $auth  = etelid_authenticate($phone, $pin);
+    $auth  = etelid_authenticate($phone, $pin, in_str('totp_code'));
     if (!$auth['ok'] || empty($auth['data']['ok']) || empty($auth['data']['member'])) {
+        if (etelid_needs_2fa($auth)) etelid_2fa_respond($auth);
         $msg = !empty($auth['data']['message']) ? $auth['data']['message'] : 'EtelID authentication failed';
         ep_err($msg, 401);
     }
@@ -413,8 +414,9 @@ case 'ep_set_wallet_pin': {
     if (!$row) ep_err('Account not found', 404);
     if ($row['status'] !== 'active') ep_err('Account suspended', 403);
     if ($row['pin_hash'] !== 'ETELID_SSO') ep_err('A wallet PIN is already set. Use Change PIN.');
-    $auth = etelid_authenticate($row['phone'], $etelid_pin);
+    $auth = etelid_authenticate($row['phone'], $etelid_pin, in_str('totp_code'));
     if (!$auth['ok'] || empty($auth['data']['ok']) || empty($auth['data']['member'])) {
+        if (etelid_needs_2fa($auth)) etelid_2fa_respond($auth);
         // Show EtelID's own reason (wrong password, 2FA needed, ...) like ep_login_etelid does.
         $emsg = !empty($auth['data']['message']) ? $auth['data']['message'] : 'Etel-ID verification failed';
         ep_err($emsg, 401);
@@ -425,7 +427,7 @@ case 'ep_set_wallet_pin': {
     ep_ok(null, 'Wallet PIN set');
 }
 
-/* ── Nonce (standalone PHP — return a session-based token) ───── */
+/* -- Nonce (standalone PHP - return a session-based token) ----- */
 case 'ep_nonce':
 case 'etel_pay_nonce': {
     // Standalone API doesn't use WP nonces.
@@ -440,12 +442,12 @@ default:
   return true;
 }
 
-/* ══════════════════════════════════════════════════════════════
+/* ==============================================================
    HELPER FUNCTIONS
-   ══════════════════════════════════════════════════════════════ */
+   ============================================================== */
 
 /**
- * Require admin — checks phone against admin_phones setting.
+ * Require admin - checks phone against admin_phones setting.
  * If admin_phones not set, any verified KYC user is admin (bootstrap).
  */
 function _ep_require_admin() {

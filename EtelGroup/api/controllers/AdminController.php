@@ -1,6 +1,6 @@
 <?php
 // ============================================================
-// Etel Group super-page — Admin controller
+// Etel Group super-page - Admin controller
 // Manages the one real dynamic data source this marketing site has:
 // contact form submissions (contact_messages table). Included by
 // api/boot.php inside a try/switch; each case calls ok()/fail() which
@@ -20,11 +20,15 @@ case 'admin_login': {
     }
     $token = null;
     try {
-        $member = egid_authenticate($identifier, $password);
+        $member = egid_authenticate($identifier, $password, trim((string)($body['totp_code'] ?? '')));
         if (!egid_is_company_admin($member['phone'])) {
             fail('This EtelID is not registered as the admin/owner for Etel Group. Ask an association admin to link your EtelID first.', 403);
         }
         $token = eg_issue_token($member['etel_id'], $member['full_name']);
+    } catch (EgidTwoFactorRequired $e) {
+        http_response_code(401);
+        echo json_encode(array('ok' => false, 'success' => false, 'requires_2fa' => true, 'error' => $e->getMessage(), 'message' => $e->getMessage()));
+        exit;
     } catch (Exception $e) {
         fail($e->getMessage(), 502);
     }
