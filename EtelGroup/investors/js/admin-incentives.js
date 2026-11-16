@@ -183,6 +183,11 @@ async function loadBudget() {
     }
   } catch (e) { /* the planner still works without the budget lines */ }
 }
+// Used by the Growth planner: the plan's spend per month and over the whole plan (works even if this page was never opened).
+window.irIncentivePlan = function () {
+  var host = $('ip-fields'), s = (host && host.getAttribute('data-built')) ? read() : load(), c = calc(s);
+  return { monthly: c.total, months: c.m, total: c.total * c.m, marketing: c.marketingMonthly, bonus: c.driverBonusMonthly, referral: c.refMonthly, promotion: c.promoMonthly, perDriver: c.costPerDriver, perRider: c.costPerRider };
+};
 document.addEventListener('click', function (e) {
   var a = e.target.closest && e.target.closest('#irx-nav a[data-page="incentives"]');
   if (a || (e.target.closest && e.target.closest('[data-go="incentives"]'))) { build(); loadBudget(); }

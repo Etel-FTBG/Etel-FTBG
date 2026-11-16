@@ -139,6 +139,9 @@ case 'admin_growth_planner': {
         $commissionRate = $pctTry / 100;
     }
     $costCats = $pdo->query('SELECT monthly_amount FROM ir_cost_categories WHERE is_active = 1')->fetchAll();
+    // Optional: the monthly spend of the Incentive & marketing plan, treated as one more cost (not reduced by the costs plan %).
+    $incentiveMonthly = min(1000000000.0, max(0.0, (float)($body['incentive_monthly_cost'] ?? 0)));
+    if ($incentiveMonthly > 0) $costCats[] = ['monthly_amount' => $incentiveMonthly / $costScale];
     $includeDemo = ir_is_demo_mode($pdo);
     $holdings = ir_investor_holdings($pdo, $includeDemo);
     $investorsForEngine = [];
@@ -203,6 +206,7 @@ case 'admin_growth_planner': {
         'trips_per_day' => round($tripsPerDay),
         'scenario' => [
             'other_monthly_income' => round($otherMonthlyIncome, 2),
+            'incentive_monthly_cost' => round($incentiveMonthly, 2),
             'cost_scale_pct' => $costScalePct,
             'monthly_costs' => round($monthlyCosts, 2),
             'break_even_trips_per_day' => $breakEven,
