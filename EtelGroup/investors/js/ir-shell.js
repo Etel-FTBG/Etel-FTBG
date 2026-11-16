@@ -7,7 +7,8 @@ var TITLES = {
   overview: ['Dashboard', 'Your investor desk at a glance'], deals: ['Deal sheets', 'Signed online by investors, reviewed by you'],
   investors: ['Investors', 'Everyone holding Profit Shares'], distributions: ['Distributions', 'Preview and lock each period’s payout'],
   costs: ['Costs & stages', 'What reduces net profit, and how shares are released'], planner: ['Growth planner', 'What the profit share could look like at scale'],
-  launch: ['Launch period', 'Pause payouts while the raise is spent on growth, and track that spending']
+  launch: ['Launch period', 'Pause payouts while the raise is spent on growth, and track that spending'],
+  incentives: ['Incentive planner', 'Marketing agents, driver bonuses and rider promotions: cost and runway']
 };
 
 /* ---------- theme ---------- */
