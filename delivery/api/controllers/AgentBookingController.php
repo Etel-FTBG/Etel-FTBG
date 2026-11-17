@@ -67,7 +67,16 @@ case 'fa_agent_quote': {
     $pdo = db(); $u = require_auth($pdo); fa_bk_agent($pdo, $u);
     $open = !empty($body['open']); $km = fa_bk_km(isset($body['km']) ? $body['km'] : 0);
     $fares = array();
-    foreach (fa_bk_vehicles($pdo) as $v) { $r = rides_calc_fare($pdo, $km, $v['type'], $open); $fares[$v['type']] = array('fare' => $r['fare'], 'surge' => !empty($r['surge'])); }
+    foreach (fa_bk_vehicles($pdo) as $v) {
+        if ($open) {
+            // Open trip: nothing to price yet, so show the plain BASE FARE of the vehicle (no peak surge, no minimum-fare top-up).
+            $rule = rides_fare_rule($pdo, $v['type']);
+            $fares[$v['type']] = array('fare' => round(floatval($rule['base_fare']), 2), 'surge' => false, 'base' => true);
+            continue;
+        }
+        $r = rides_calc_fare($pdo, $km, $v['type'], $open);
+        $fares[$v['type']] = array('fare' => $r['fare'], 'surge' => !empty($r['surge']));
+    }
     ok(array('km' => $km, 'open' => $open ? 1 : 0, 'fares' => $fares));
     break;
 }

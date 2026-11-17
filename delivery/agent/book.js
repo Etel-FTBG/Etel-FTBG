@@ -47,7 +47,7 @@ function quote() {
   B.qt = setTimeout(function () {
     api('fa_agent_quote', { km: parseFloat(B.km) || 0, open: B.open ? 1 : 0 }).then(function (r) {
       if (!r.ok) return; B.fares = r.data.fares;
-      document.querySelectorAll('[data-bkfare]').forEach(function (el) { var f = fareOf(el.getAttribute('data-bkfare')); el.textContent = f == null ? '' : (B.open ? t('bk.from', { f: money(f) }) : (money(f) + ' ' + t('c.etb'))); });
+      document.querySelectorAll('[data-bkfare]').forEach(function (el) { var f = fareOf(el.getAttribute('data-bkfare')); el.textContent = f == null ? '' : (B.open ? t('bk.base', { f: money(f) }) : (money(f) + ' ' + t('c.etb'))); });
       summary();
     });
   }, 250);
@@ -55,7 +55,7 @@ function quote() {
 function summary() {
   var el = document.getElementById('bk-sum'), btn = document.getElementById('bk-go'); if (!el) return;
   var f = fareOf(B.vtype);
-  el.textContent = B.vtype && f != null && tripOk() ? (B.open ? t('bk.from', { f: money(f) }) : t('bk.fare', { f: money(f) })) : '';
+  el.textContent = B.vtype && f != null && tripOk() ? (B.open ? t('bk.base', { f: money(f) }) : t('bk.fare', { f: money(f) })) : '';
   if (btn) btn.disabled = !ready();
 }
 
@@ -220,7 +220,7 @@ function view() {
     var on = B.vtype === v.type, f = fareOf(v.type);
     return '<button type="button" class="bv-veh' + (on ? ' on' : '') + (v.online ? '' : ' off') + '" role="radio" aria-checked="' + on + '" data-act="bk-veh" data-v="' + esc(v.type) + '"><span class="bv-pic">' + vimg(v.type, 104) + '</span>' +
       '<span class="bv-txt"><b>' + esc(vname(v.type)) + '</b><small>' + esc(v.online ? t('bk.online', { n: v.online }) : t('bk.none')) + '</small></span>' +
-      '<span class="bv-fare" data-bkfare="' + esc(v.type) + '">' + (f == null ? '' : esc(B.open ? t('bk.from', { f: money(f) }) : money(f) + ' ' + t('c.etb'))) + '</span></button>'; }).join('') + '</div>';
+      '<span class="bv-fare" data-bkfare="' + esc(v.type) + '">' + (f == null ? '' : esc(B.open ? t('bk.base', { f: money(f) }) : money(f) + ' ' + t('c.etb'))) + '</span></button>'; }).join('') + '</div>';
   h += '<p class="bv-sum" id="bk-sum" role="status" aria-live="polite"></p><div style="margin-top:12px"><button class="btn primary" id="bk-go" data-act="bk-go" disabled>' + ic('car') + esc(t('bk.book')) + '</button></div>';
   h += '<h2>' + esc(t('bk.list')) + ' <button type="button" class="ib" data-act="bk-refresh" style="min-height:40px;min-width:40px;vertical-align:middle" aria-label="' + esc(t('bk.refresh')) + '">' + ic('refresh') + '</button></h2>';
   if (B.list === null) h += '<div class="err" role="alert">' + esc(t('c.error')) + '</div>';
@@ -253,7 +253,7 @@ function confirm() {
   if (!ready()) return;
   var f = fareOf(B.vtype), ov = document.createElement('div'); ov.className = 'ov noprint'; ov.id = 'ov';
   ov.innerHTML = '<div class="sheet" role="dialog" aria-modal="true" aria-label="' + esc(t('bk.confirm_title')) + '"><h2 style="margin:0 0 8px">' + esc(t('bk.confirm_title')) + '</h2>' +
-    '<p>' + esc(t('bk.confirm_text', { v: vname(B.vtype), p: B.phone.trim(), f: (B.open ? t('bk.from', { f: money(f) }) : money(f)) })) + '</p>' +
+    '<p>' + esc(B.open ? t('bk.confirm_text_open', { v: vname(B.vtype), p: B.phone.trim(), f: money(f) }) : t('bk.confirm_text', { v: vname(B.vtype), p: B.phone.trim(), f: money(f) })) + '</p>' +
     (B.pickup || B.dest ? '<p class="sub">' + esc((B.pickup || '-') + ' → ' + (B.dest || '-')) + '</p>' : '') +
     '<div class="stack" style="margin-top:16px"><button class="btn primary" id="bk-yes" data-act="bk-yes">' + ic('check') + esc(t('bk.confirm_btn')) + '</button><button class="btn ghost" data-act="closesheet">' + esc(t('bk.cancel')) + '</button></div></div>';
   document.body.appendChild(ov); var y = document.getElementById('bk-yes'); if (y) y.focus();

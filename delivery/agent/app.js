@@ -265,7 +265,7 @@ function vBook() {
 }
 function loadBook() {
   if (S.bookLoading) return; S.bookLoading = true;
-  var sc = document.createElement('script'); sc.src = 'book.js?v=4';
+  var sc = document.createElement('script'); sc.src = 'book.js?v=5';
   sc.onload = function () { S.bookLoading = false; if (S.view === 'book') { if (window.ETELBook.open) window.ETELBook.open(); render(); } };
   sc.onerror = function () { S.bookLoading = false; toast(t('c.error')); };
   document.body.appendChild(sc);
