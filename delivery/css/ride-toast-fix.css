@@ -1,0 +1,7 @@
+/* ETEL Ride - messages (toasts) must sit ABOVE the SOS button (z-index 9500) and stay readable in light and dark.
+   Before: the toast had z-index 50, so the SOS button covered the start of the sentence. */
+#ride-toasts{z-index:99990;top:calc(env(safe-area-inset-top,0px) + 12px);max-width:94vw}
+#ride-toasts > div,#ride-toasts .toast{max-width:94vw;white-space:normal;line-height:1.4;font-size:14px;font-weight:700;color:#fff!important;
+  text-shadow:none;box-shadow:0 6px 24px rgba(0,0,0,.45);border:1px solid rgba(255,255,255,.35)}
+#ride-toasts .toast.err,#ride-toasts > div[style*="c62828"]{background:#B3261E!important}
+#ride-toasts .toast:not(.err){background:#1E7B3C}

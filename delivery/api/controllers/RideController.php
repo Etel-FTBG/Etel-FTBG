@@ -923,12 +923,12 @@ case 'ride_estimate_fare': {
        driver sees can differ from what the customer was shown. Signed
        with the same secret used for auth tokens so it can't be forged
        client-side to request a cheaper fare than what was actually
-       quoted. 90s expiry: long enough for a real confirm, short enough
+       quoted. 240s expiry (was 90s: riders who read the quote for a minute were refused): long enough for a real confirm, short enough
        that surge windows can't be gamed by holding a quote open.
        distance_km and vehicle_type are baked into the signature too,
        so the token can't be replayed against a different route or
        vehicle type than the one it was quoted for. */
-    $quoteExp = time() + 90;
+    $quoteExp = time() + 240;
     $quotePayload = round($km, 4) . '|' . $vtype . '|' . ($openTrip ? 1 : 0) . '|' . $result['fare'] . '|' . $quoteExp;
     $quoteSig = hash_hmac('sha256', $quotePayload, TOKEN_SECRET_FINAL);
     $quoteToken = base64_encode($quotePayload . '|' . $quoteSig);
@@ -939,7 +939,7 @@ case 'ride_estimate_fare': {
                 regardless of what's really active, which is wrong for
                 any admin-configured window using a different number. */
              'surge_mult' => $result['breakdown']['surge_mult'],
-             'quote_token' => $quoteToken, 'quote_expires_in' => 90));
+             'quote_token' => $quoteToken, 'quote_expires_in' => 240));
     break;
 }
 
@@ -1187,7 +1187,7 @@ case 'book_ride': {
        device is running an outdated ride-bundle.js that never sends a
        token - the one failure mode static client fixes can't cover. */
     if ($lockedFare === null && $fareResult['surge'] && ($mkm <= 0)) {
-        fail('Peak-hour pricing is now active. Please review the updated fare and confirm again.', 409);
+        fail('Peak-hour pricing is active. The fare is now ETB ' . round($fareResult['fare']) . '. Please check it, then slide to confirm again.', 409);
     }
 
     /* Legacy-table support: if the pre-existing rides table has unique
