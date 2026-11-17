@@ -11,7 +11,10 @@ export interface HubApp {
   key: string;
   title: string;
   subtitle: string;
-  logo: number; // the company's own logo (a bundled image)
+  logo?: number; // the company's own logo (a bundled image); programme apps without one use `icon`
+  icon?: string; // an Ionicons name drawn on a gold badge when there is no logo
+  // Programme apps are shown only to accounts that belong to the programme (investor, Equb member, field agent).
+  membership?: 'investor' | 'equb' | 'agent';
   url: string;
   status: 'live' | 'soon';
   // The web apps follow the shell's language and theme; EtelID is a separate site and keeps its own.
@@ -31,6 +34,12 @@ const mk = (a: Omit<HubApp, 'status' | 'syncPrefs'> & Partial<Pick<HubApp, 'stat
 
 export const HUB_GROUPS: HubGroup[] = [
   {
+    title: 'Identity',
+    apps: [
+      mk({ key: 'id', title: 'EtelID', subtitle: 'Your digital identity', logo: require('../../assets/apps/id.png'), url: ID_SITE + '/', syncPrefs: false }),
+    ],
+  },
+  {
     title: 'Mobility',
     apps: [
       mk({ key: 'ride', title: 'ETEL Ride', subtitle: 'Book a ride', logo: require('../../assets/apps/ride.png'), url: SITE + '/ride/?source=app' }),
@@ -46,9 +55,17 @@ export const HUB_GROUPS: HubGroup[] = [
     ],
   },
   {
-    title: 'Identity and finance',
+    title: 'My programmes',
     apps: [
-      mk({ key: 'id', title: 'EtelID', subtitle: 'Your digital identity', logo: require('../../assets/apps/id.png'), url: ID_SITE + '/', syncPrefs: false }),
+      mk({ key: 'investor', title: 'ETEL Investor', subtitle: 'Your investment', icon: 'trending-up', membership: 'investor', url: SITE + '/investor/?source=app' }),
+      mk({ key: 'equb', title: 'ETEL Equb', subtitle: 'Savings groups', icon: 'people', membership: 'equb', url: SITE + '/equb/?source=app' }),
+      mk({ key: 'agent', title: 'ETEL Agent', subtitle: 'Earn by referring', icon: 'ribbon', membership: 'agent', url: SITE + '/agent/?source=app' }),
+    ],
+  },
+  {
+    // Not open yet: kept here so they can be switched on later, but the hub does not show 'soon' apps.
+    title: 'Finance and trade',
+    apps: [
       mk({ key: 'pay', title: 'EtelPay', subtitle: 'Wallet and payments', logo: require('../../assets/apps/pay.png'), url: '', status: 'soon' }),
       mk({ key: 'madeya', title: 'EtelMadeya', subtitle: 'Marketplace', logo: require('../../assets/apps/madeya.png'), url: '', status: 'soon' }),
       mk({ key: 'gebeya', title: 'EtelGebeya', subtitle: 'Shops and trade', logo: require('../../assets/apps/gebeya.png'), url: '', status: 'soon' }),

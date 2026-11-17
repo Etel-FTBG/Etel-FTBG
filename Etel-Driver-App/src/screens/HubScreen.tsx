@@ -22,6 +22,7 @@ import ProfileCard from '../components/ProfileCard';
 import CompaniesCard from '../components/CompaniesCard';
 import { canGoOnline, canOpen, useSession } from '../hub/session';
 import { checkForUpdate } from '../updates/updater';
+import { useMemberships } from '../hub/memberships';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Hub'>;
 
@@ -44,6 +45,7 @@ export default function HubScreen({ navigation }: Props) {
   // Refresh: reloads the profile and company cards (new key = fresh fetch) and looks for a new app version.
   const [refreshing, setRefreshing] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const mem = useMemberships(session?.id, refreshKey);
   const spin = useRef(new Animated.Value(0)).current;
   const refresh = useCallback(async () => {
     if (refreshing) return;
@@ -96,7 +98,7 @@ export default function HubScreen({ navigation }: Props) {
       RNAlert.alert(translate('Sign in first'), translate('Sign in with your EtelID above to open this app.'));
       return;
     }
-    if (!canOpen(a.key, session?.role)) {
+    if (!a.membership && !canOpen(a.key, session?.role)) {
       RNAlert.alert(translate('Not for your account'), translate('This app is for a different role. Your EtelID opens the apps that match your role.'));
       return;
     }
@@ -205,7 +207,8 @@ export default function HubScreen({ navigation }: Props) {
         </Reveal>
       ) : null}
 
-      {/* Signed out: only the sign-in. Signed in: only the apps this account's role may open (plus the coming-soon ones). */}
+      {/* Signed out: only the sign-in. Signed in: EtelID first, then only the apps this account may open: its role's apps and the
+          programmes (investor, Equb, agent) it belongs to. Apps that are not open yet ('soon') are not shown. */}
       {!session ? (
         <Reveal delay={240} style={styles.trust}>
           <Ionicons name="lock-closed" size={13} color={p.textMuted} />
@@ -213,7 +216,10 @@ export default function HubScreen({ navigation }: Props) {
         </Reveal>
       ) : null}
       {(session ? HUB_GROUPS : [])
-        .map((g) => ({ ...g, apps: g.apps.filter((a) => a.status === 'soon' || a.key === 'id' || canOpen(a.key, session?.role)) }))
+        .map((g) => ({
+          ...g,
+          apps: g.apps.filter((a) => a.status === 'live' && (a.membership ? mem[a.membership] : a.key === 'id' || canOpen(a.key, session?.role))),
+        }))
         .filter((g) => g.apps.length > 0)
         .map((g, gi) => (
         <Reveal key={g.title} delay={260 + gi * 120} style={styles.group}>
@@ -221,7 +227,7 @@ export default function HubScreen({ navigation }: Props) {
           <View style={styles.grid}>
             {g.apps.map((a) => {
               const soon = a.status === 'soon';
-              const allowed = a.key === 'id' || (!!session && canOpen(a.key, session.role));
+              const allowed = !!a.membership || a.key === 'id' || (!!session && canOpen(a.key, session.role));
               const wrongRole = !soon && !!session && !allowed;
               return (
                 <Pressable
@@ -239,7 +245,13 @@ export default function HubScreen({ navigation }: Props) {
                   ]}
                 >
                   <View style={soon || wrongRole ? styles.dim : !allowed ? styles.faded : undefined}>
-                    <Image source={a.logo} style={styles.logo} />
+                    {a.logo ? (
+                      <Image source={a.logo} style={styles.logo} />
+                    ) : (
+                      <LinearGradient colors={['#F2CC6B', '#D4AF37', '#B8860B']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.badgeIcon}>
+                        <Ionicons name={(a.icon || 'apps') as any} size={38} color="#1A1206" />
+                      </LinearGradient>
+                    )}
                   </View>
                   <Text style={[styles.tileTitle, { color: soon ? p.textMuted : p.text }]}>{a.title}</Text>
                   {soon ? (
@@ -304,6 +316,7 @@ const styles = StyleSheet.create({
   faded: { opacity: 0.7 },
   shadow: { shadowColor: '#8A6508', shadowOpacity: 0.16, shadowRadius: 10, shadowOffset: { width: 0, height: 4 }, elevation: 3 },
   logo: { width: 78, height: 78, resizeMode: 'contain' },
+  badgeIcon: { width: 78, height: 78, borderRadius: 39, alignItems: 'center', justifyContent: 'center' },
   tileTitle: { fontSize: 15, marginTop: 8, textAlign: 'center', fontFamily: typography.h2.fontFamily },
   tileSub: { fontSize: 12, marginTop: 2, textAlign: 'center' },
   badge: {
