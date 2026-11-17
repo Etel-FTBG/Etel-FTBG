@@ -754,10 +754,26 @@ $etelCodeFields = array(
 );
 if (isset($etelCodeFields[$action]) && isset($body[$etelCodeFields[$action]]) && is_string($body[$etelCodeFields[$action]])
     && preg_match('/^[Ee][A-Za-z0-9 _-]{3,14}$/', trim($body[$etelCodeFields[$action]]))) {
-    require_once __DIR__ . '/etelid_bridge.php';
-    $codePhone = etelid_bridge_code_to_phone($body[$etelCodeFields[$action]]);
-    if ($codePhone === '') fail('Etel Code not found. Check it, or use the phone number.', 404);
-    $body[$etelCodeFields[$action]] = $codePhone;
+    /* Only for someone who may use this action (an admin, or an approved agent for agent booking). A stranger or a customer would
+       otherwise learn which codes exist from the answer ("Etel Code not found" against "Unauthorized"), at no cost. For them the value
+       is left as typed and the action's own sign-in check answers, saying nothing about codes. */
+    $codeAllowed = false;
+    try {
+        $codePdo = db(); $codeUser = get_auth_user($codePdo);
+        if ($codeUser && $action === 'fa_agent_book_ride') {
+            $cq = $codePdo->prepare("SELECT 1 FROM fa_agents WHERE user_id = ? AND status = 'approved' LIMIT 1");
+            $cq->execute(array(intval($codeUser['id'])));
+            $codeAllowed = (bool) $cq->fetchColumn();
+        } elseif ($codeUser) {
+            $codeAllowed = (isset($codeUser['role']) && $codeUser['role'] === 'admin');
+        }
+    } catch (Exception $e) { $codeAllowed = false; }
+    if ($codeAllowed) {
+        require_once __DIR__ . '/etelid_bridge.php';
+        $codePhone = etelid_bridge_code_to_phone($body[$etelCodeFields[$action]]);
+        if ($codePhone === '') fail('Etel Code not found. Check it, or use the phone number.', 404);
+        $body[$etelCodeFields[$action]] = $codePhone;
+    }
 }
 
 switch ($action) {
