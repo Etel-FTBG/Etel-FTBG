@@ -8,7 +8,8 @@ import { Text, translate, useLanguage } from '../i18n';
 import { typography } from '../theme/colors';
 import { useTheme } from '../theme/ThemeContext';
 import { RootStackParamList } from '../navigation/types';
-import { HUB_GROUPS, HubApp } from '../hub/apps';
+import { HUB_GROUPS, HubApp, hubVisible } from '../hub/apps';
+import { useHubConfig } from '../hub/appConfig';
 import { goOfflineEverywhere, goOnlineEverywhere, goOnlinePreview } from '../hub/masterOnline';
 import SlideToConfirm from '../components/SlideToConfirm';
 import PillSwitch from '../components/PillSwitch';
@@ -46,6 +47,7 @@ export default function HubScreen({ navigation }: Props) {
   const [refreshing, setRefreshing] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   const mem = useMemberships(session?.id, refreshKey);
+  useHubConfig(!!session, refreshKey); // the owner's show / hide choices (Admin > ETEL app); draws the hub again when they arrive
   const spin = useRef(new Animated.Value(0)).current;
   const refresh = useCallback(async () => {
     if (refreshing) return;
@@ -218,7 +220,7 @@ export default function HubScreen({ navigation }: Props) {
       {(session ? HUB_GROUPS : [])
         .map((g) => ({
           ...g,
-          apps: g.apps.filter((a) => a.status === 'live' && (a.membership ? mem[a.membership] : a.key === 'id' || canOpen(a.key, session?.role))),
+          apps: g.apps.filter((a) => a.status === 'live' && hubVisible(a, session?.role) && (a.membership ? mem[a.membership] : a.key === 'id' || canOpen(a.key, session?.role))),
         }))
         .filter((g) => g.apps.length > 0)
         .map((g, gi) => (

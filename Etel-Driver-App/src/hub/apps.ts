@@ -19,6 +19,9 @@ export interface HubApp {
   status: 'live' | 'soon';
   // The web apps follow the shell's language and theme; EtelID is a separate site and keeps its own.
   syncPrefs: boolean;
+  // What the owner chose in Admin > ETEL app (see appConfig.ts): on = visible to everyone who may open it, admins = visible to admin
+  // accounts only (a test before launch), off = hidden. Without a choice: live apps are 'on', coming-soon apps are 'off'.
+  mode: 'on' | 'admins' | 'off';
 }
 
 export interface HubGroup {
@@ -26,10 +29,11 @@ export interface HubGroup {
   apps: HubApp[];
 }
 
-const mk = (a: Omit<HubApp, 'status' | 'syncPrefs'> & Partial<Pick<HubApp, 'status' | 'syncPrefs'>>): HubApp => ({
+const mk = (a: Omit<HubApp, 'status' | 'syncPrefs' | 'mode'> & Partial<Pick<HubApp, 'status' | 'syncPrefs'>>): HubApp => ({
   status: 'live',
   syncPrefs: true,
   ...a,
+  mode: (a.status || 'live') === 'live' ? 'on' : 'off',
 });
 
 export const HUB_GROUPS: HubGroup[] = [
@@ -63,7 +67,14 @@ export const HUB_GROUPS: HubGroup[] = [
     ],
   },
   {
-    // Not open yet: kept here so they can be switched on later, but the hub does not show 'soon' apps.
+    // Staff. Hidden until the owner shows it (Admin > ETEL app); only admin accounts can open it even then.
+    title: 'Staff',
+    apps: [
+      mk({ key: 'admin', title: 'ETEL Admin', subtitle: 'Run the platform', icon: 'shield-checkmark', url: SITE + '/admin.html?source=app', status: 'soon' }),
+    ],
+  },
+  {
+    // Not open yet: kept here so they can be switched on later (the owner gives each its address in Admin > ETEL app), but the hub does not show 'soon' apps.
     title: 'Finance and trade',
     apps: [
       mk({ key: 'pay', title: 'EtelPay', subtitle: 'Wallet and payments', logo: require('../../assets/apps/pay.png'), url: '', status: 'soon' }),
@@ -78,3 +89,51 @@ export const HUB_APPS: HubApp[] = HUB_GROUPS.reduce<HubApp[]>((all, g) => all.co
 export const SITE_ORIGIN = SITE;
 // Pages the in-app browser may stay on (everything else opens outside the app).
 export const ALLOWED_ORIGINS: string[] = [SITE, ID_SITE];
+
+// ---- The owner's choices (Admin > ETEL app) ----
+export interface HubOverride {
+  mode: 'on' | 'admins' | 'off';
+  url?: string;
+}
+const BASE = HUB_APPS.map((a) => ({ key: a.key, url: a.url, status: a.status, mode: a.mode }));
+const BASE_ORIGINS = [...ALLOWED_ORIGINS];
+const SITE_HOST = (() => {
+  const m = /^https:\/\/([^/:?#]+)/i.exec(SITE);
+  return m ? m[1].toLowerCase().replace(/^www\./, '') : '';
+})();
+
+// An address from the server is used only when it is https on this site's own host (the server checks too; this is the second lock).
+function safeUrl(u: string | undefined): string {
+  const m = /^https:\/\/([^/:?#@\s]+)(\/[^\s"'<>]*)$/i.exec((u || '').trim());
+  if (!m || m[1].toLowerCase().replace(/^www\./, '') !== SITE_HOST) return '';
+  return (u || '').trim();
+}
+const withSource = (u: string) => u + (u.indexOf('?') < 0 ? '?source=app' : '&source=app');
+
+// Puts the built-in values back, then applies the owner's choices. The app objects stay the same objects, so every screen sees the change.
+export function applyHubConfig(cfg: Record<string, HubOverride> | null | undefined): void {
+  ALLOWED_ORIGINS.length = 0;
+  BASE_ORIGINS.forEach((o) => ALLOWED_ORIGINS.push(o));
+  for (const b of BASE) {
+    const a = HUB_APPS.find((x) => x.key === b.key);
+    if (!a) continue;
+    a.url = b.url;
+    a.status = b.status;
+    a.mode = b.mode;
+    const o = cfg && cfg[b.key];
+    if (!o || (o.mode !== 'on' && o.mode !== 'admins' && o.mode !== 'off')) continue;
+    const own = safeUrl(o.url);
+    if (own) {
+      a.url = withSource(own);
+      ALLOWED_ORIGINS.push(own.split('?')[0]);
+    }
+    a.mode = o.mode;
+    // An app is open when it is not 'off' and it has an address. 'off' keeps it in the list as 'soon' (never shown).
+    a.status = o.mode !== 'off' && a.url ? 'live' : 'soon';
+  }
+}
+
+// May this account see the app on the first screen? (Role and programme checks come after.)
+export function hubVisible(a: HubApp, role: string | undefined): boolean {
+  return a.mode === 'on' || (a.mode === 'admins' && role === 'admin');
+}

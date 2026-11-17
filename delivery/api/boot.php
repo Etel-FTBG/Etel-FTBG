@@ -192,7 +192,7 @@ define('ETEL_WRITE_ACTIONS', array(
     'nfc_confirm_pickup','nfc_confirm_delivery',
     'fa_claim_ref','fa_agent_apply','fa_agent_update_profile','fa_agent_notifications_read',
     'admin_fa_settings_save','admin_fa_agent_decide','admin_fa_customer_message','admin_fa_sms_test','admin_fa_sms_template_save','admin_fa_sms_mode_save','admin_fa_earning_decide','admin_fa_run_earnings','admin_fa_payout_create','admin_fa_payout_export','admin_fa_payout_mark_paid','admin_fa_payout_cancel','admin_fa_nudge','admin_fa_digest_build','admin_fa_tiers_run',
-    'fa_agent_book_ride', 'admin_fa_controls_save',
+    'fa_agent_book_ride', 'admin_fa_controls_save', 'admin_hub_apps_save',
     'admin_area_save','admin_area_delete','admin_areas_settings_save','admin_area_place_save','admin_area_place_delete',
     'fa_partner_save','fa_partner_submit','fa_partner_delete','admin_fa_partner_decide','admin_fa_partner_resend_sms','admin_fa_agent_set_roles',
     'vehicle_photos_save','admin_vehicle_photos_save',
@@ -1857,6 +1857,9 @@ switch ($action) {
         break;
     case 'admin_fa_controls_list': case 'admin_fa_controls_save':
         require __DIR__ . '/controllers/FieldAgentControlController.php';
+        break;
+    case 'get_hub_apps': case 'admin_hub_apps_get': case 'admin_hub_apps_save':
+        require __DIR__ . '/controllers/HubAppsController.php';
         break;
     case 'admin_fa_agent_set_roles': case 'admin_fa_settings_get': case 'admin_fa_settings_save': case 'admin_fa_agents_list': case 'admin_fa_agent_get': case 'admin_fa_agent_decide': case 'admin_fa_customer_message': case 'admin_fa_sms_test': case 'admin_fa_sms_templates_get': case 'admin_fa_sms_template_save': case 'admin_fa_sms_mode_save': case 'admin_fa_earnings_list': case 'admin_fa_earning_decide': case 'admin_fa_run_earnings': case 'admin_fa_stats': case 'admin_fa_payouts_list': case 'admin_fa_payout_create': case 'admin_fa_payout_export': case 'admin_fa_payout_mark_paid': case 'admin_fa_payout_cancel': case 'admin_fa_audit_list': case 'admin_fa_reports': case 'admin_fa_payout_items':
         require __DIR__ . '/controllers/FieldAgentAdminController.php';
