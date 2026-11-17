@@ -42,10 +42,9 @@ function card(a) {
     '<div class="ha-meta">Opens for: ' + esc(a.who) + (a.changed ? '' : ' - default setting') + '</div>' +
     '<div class="ak-seg" role="radiogroup" aria-label="' + esc(a.title) + ' visibility">' + MODES.map(function (m) {
       return '<button type="button" role="radio" aria-checked="' + (c.mode === m[0]) + '" class="' + (c.mode === m[0] ? 'on' : '') + '" data-mode="' + m[0] + '"' + (edit ? '' : ' disabled') + '>' + esc(m[1]) + '</button>'; }).join('') + '</div>';
-  if (a.needs_url || a.url) {
-    h += K.field('Address of the app (on ' + (D.host || 'this website') + ')', '<input class="ak-in" data-url inputmode="url" autocomplete="off" placeholder="https://' + esc(D.host || 'ethelmarket.com') + '/..." value="' + esc(c.url) + '"' + (edit ? '' : ' disabled') + '>',
-      a.needs_url ? 'This app has no built-in address yet. Type it here, then choose Visible or Admins only.' : 'Leave empty to use the built-in address.');
-  }
+  var builtIn = a.default_path ? 'https://' + (D.host || 'ethelmarket.com') + a.default_path : '';
+  h += K.field('Address of the app (on ' + (D.host || 'this website') + ')', '<input class="ak-in" data-url inputmode="url" autocomplete="off" placeholder="' + esc(builtIn || ('https://' + (D.host || 'ethelmarket.com') + '/...')) + '" value="' + esc(c.url) + '"' + (edit ? '' : ' disabled') + '>',
+    a.needs_url ? 'This app has no built-in address yet. Type it here, then choose Visible or Admins only.' : 'Leave empty to use the built-in address (' + builtIn + '). Type another address only to move the app.');
   if (edit) h += '<div class="ha-row"><span class="ha-note">' + (dirty(a) ? 'Not saved yet.' : '') + '</span><button type="button" class="ak-btn gold" data-save' + (dirty(a) ? '' : ' disabled') + '>Save</button></div>';
   return h + '</div>';
 }

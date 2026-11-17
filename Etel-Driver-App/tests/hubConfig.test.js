@@ -37,6 +37,10 @@ A.applyHubConfig({ pay: { mode: 'on', url: 'https://ethelmarket.com.evil.com/x/'
 t('look-alike host is ignored', app('pay').status === 'soon');
 A.applyHubConfig({ pay: { mode: 'on', url: 'https://user@ethelmarket.com/x/' } });
 t('address with a user name is ignored', app('pay').status === 'soon');
+A.applyHubConfig({ agent: { mode: 'on', url: 'https://ethelmarket.com/delivery/agent2/' } });
+t('an app with a built-in address can be moved to another address on this site', app('agent').url === 'https://ethelmarket.com/delivery/agent2/?source=app' && app('agent').status === 'live', app('agent').url);
+A.applyHubConfig({ agent: { mode: 'on', url: '' } });
+t('empty address = built-in address again', /delivery\/agent\/\?source=app/.test(app('agent').url), app('agent').url);
 A.applyHubConfig({ ride: { mode: 'sideways' } });
 t('an unknown mode is ignored: Ride keeps its default', app('ride').mode === 'on' && app('ride').status === 'live');
 A.applyHubConfig({ nope: { mode: 'on' } });

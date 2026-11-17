@@ -29,7 +29,8 @@ const cat = [['id', 'EtelID', 'Identity', 'on', 0, 'Everyone'], ['ride', 'ETEL R
     if (mode.n === 'notowner') { t('notowner: refused with a plain message', /Only the owner/.test(txt)); t('notowner: no switches shown', (await p.$('.ha-card')) === null); await ctx.close(); continue; }
     t(mode.n + ': all 5 apps shown in groups', (await p.locator('.ha-card').count()) === 5 && /Identity/i.test(txt) && /Finance and trade/i.test(txt));
     t(mode.n + ': defaults shown (Ride visible, Admin hidden)', (await p.locator('.ha-card[data-key=ride] .ha-pill').innerText()) === 'Visible' && (await p.locator('.ha-card[data-key=admin] .ha-pill').innerText()) === 'Hidden');
-    t(mode.n + ': only the app with no address shows an address box', (await p.locator('.ha-card[data-key=pay] [data-url]').count()) === 1 && (await p.locator('.ha-card[data-key=ride] [data-url]').count()) === 0);
+    t(mode.n + ': every app has an address box', (await p.locator('.ha-card [data-url]').count()) === 5);
+    t(mode.n + ': the box shows the built-in address as a hint for Ride', /\/x\//.test(await p.getAttribute('.ha-card[data-key=ride] [data-url]', 'placeholder')));
     t(mode.n + ': Save is disabled until something changes', await p.locator('.ha-card[data-key=agent] [data-save]').isDisabled());
     // hide Agent
     await p.click('.ha-card[data-key=agent] [data-mode=off]'); await p.waitForTimeout(200);
