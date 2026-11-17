@@ -727,6 +727,7 @@ $ETEL_THROTTLED_ACTIONS = array(
     'customer_validate_promo' => array(30, 600), 'submit_order_issue' => array(10, 600),
     'order_chat_send' => array(60, 300), 'customer_reorder_items' => array(20, 600),
     'schedule_order' => array(20, 600), 'initiate_telebirr_payment' => array(15, 600),
+    'etel_code_whois' => array(40, 600),
     'confirm_bank_payment' => array(15, 600), 'rate_order' => array(30, 600),
     // Field Agents: brute-forcing referral codes and mass-applying are both capped per IP / per user.
     'fa_ref_lookup' => array(40, 600), 'fa_claim_ref' => array(20, 3600), 'fa_agent_apply' => array(6, 3600),
@@ -781,6 +782,30 @@ switch ($action) {
         $pdo = db(); require_admin($pdo);
         etel_purge_cache('*');
         ok(array('purged' => true, 'ts' => time()));
+        break;
+    }
+    case 'etel_code_whois': {
+        /* Shows WHO owns an Etel Code before it is used, so an agent, driver or admin can see the name and catch a typo.
+           Only for staff who may already use a code (admin, approved agent, driver); anyone else gets the same plain
+           answer as a wrong code, so codes cannot be guessed. Throttled above. Read-only. */
+        $pdo = db(); $wu = get_auth_user($pdo);
+        $wOk = false;
+        if ($wu) {
+            $wr = isset($wu['role']) ? $wu['role'] : '';
+            if ($wr === 'admin' || $wr === 'driver') { $wOk = true; }
+            else {
+                $wq = $pdo->prepare("SELECT 1 FROM fa_agents WHERE user_id = ? AND status = 'approved' LIMIT 1");
+                $wq->execute(array(intval($wu['id'])));
+                $wOk = (bool) $wq->fetchColumn();
+            }
+        }
+        $wCode = isset($_GET['code']) ? trim((string)$_GET['code']) : (isset($body['code']) ? trim((string)$body['code']) : '');
+        if (!$wu) fail('Unauthorized', 401);
+        if (!$wOk || !preg_match('/^[Ee][A-Za-z0-9 _-]{3,14}$/', $wCode)) ok(array('found' => false));
+        require_once __DIR__ . '/etelid_bridge.php';
+        $wm = etelid_bridge_find($wCode);
+        if (!$wm || empty($wm['full_name'])) ok(array('found' => false));
+        ok(array('found' => true, 'name' => (string)$wm['full_name']));
         break;
     }
     case 'get_my_notifications': {
