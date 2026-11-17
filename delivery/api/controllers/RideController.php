@@ -218,6 +218,7 @@ require_once __DIR__ . '/../lib/ride_promo.php';
 require_once __DIR__ . '/../lib/ride_tip.php';
 require_once __DIR__ . '/../lib/ride_statement.php';
 require_once __DIR__ . '/../lib/ride_price_offer.php';
+require_once __DIR__ . '/../lib/ride_quote_cap.php';   // fare versus quote: warn the rider, cap the final fare
 
 /* True only if $url points at a file THIS user uploaded through upload.php for
    the given type: upload.php names files "<prefix><userId>_<time>_<hex>.<ext>"
@@ -1406,6 +1407,7 @@ case 'ride_status': {
             // shows, updated on every poll, not just a single opaque
             // number they have to trust.
             $r = array_merge($r, rides_fare_breakdown_for_ui($liveFareCalc));
+            $r = array_merge($r, rides_quote_cap_live($pdo, $r, $liveFareCalc['fare']));   // estimate, over-estimate warning, cap
             $r['wait_active'] = (bool) $r['wait_active'];
             $r['wait_minutes'] = round($waitMinutes, 2);
         } catch (Exception $e) { error_log('[ETEL][meter] ride_status fare calc: ' . $e->getMessage()); }
@@ -1454,6 +1456,7 @@ case 'my_active_ride': {
                 $r['meter_surge'] = $liveFareCalc['surge'];
             }
             $r = array_merge($r, rides_fare_breakdown_for_ui($liveFareCalc));
+            $r = array_merge($r, rides_quote_cap_live($pdo, $r, $liveFareCalc['fare']));   // estimate, over-estimate warning, cap
             $r['wait_active'] = (bool) $r['wait_active'];
             $r['wait_minutes'] = round($waitMinutes, 2);
         } catch (Exception $e) { error_log('[ETEL][meter] my_active_ride fare calc: ' . $e->getMessage()); }
@@ -1537,6 +1540,7 @@ case 'cancel_ride': {
             $pdo->prepare("UPDATE rides SET status='arrived', arrived_at=NOW(), distance_km=?, fare_final=?, fare_breakdown_json=? WHERE id=?")
                 ->execute(array($km, $fare, $breakdownJson, $id));
         }
+        $fare = rides_quote_cap_apply($pdo, $id, $fare);
         rides_flag_fare_review($pdo, $id, $u['id'], $fare, $km);
         $fare = rides_promo_apply_to_arrived($pdo, $id);
         ok(array('cancelled' => true, 'ended_early' => true, 'fare_final' => $fare,
@@ -1893,6 +1897,10 @@ case 'ride_receipt': {
     // a price agreed with the driver (offer / counter-offer): the trip is billed at that price, not the meter's
     if (isset($b['agreed_fare']) && isset($b['metered_fare'])) {
         $add('Price agreed with driver', floatval($b['agreed_fare']) - floatval($b['metered_fare']));
+    }
+    // the final fare was limited to the estimate plus the cap percent (lib/ride_quote_cap.php)
+    if (!empty($b['quote_capped']) && isset($b['quote_uncapped'])) {
+        $add('Fare limit (estimate ETB ' . number_format(floatval($b['quote_estimate']), 2) . ' + ' . floatval($b['quote_cap_pct']) . '%)', floatval($b['fare_total']) - floatval($b['quote_uncapped']));
     }
     $total = floatval($r['fare_paid']) > 0 ? floatval($r['fare_paid']) : floatval($r['fare_final']);
     $promo = rides_promo_info($pdo, $id);
@@ -3431,6 +3439,21 @@ case 'driver_hail_customer': {
     if ($raw_id === '') fail('Enter the customer phone number or scan their QR');
     if ($mkm > 100) $mkm = 100;
 
+    /* Service area: a street hail may only start inside a served city (api/lib/service_areas.php). Uses the position the
+       app sent, or the driver's last saved position. No position at all = allowed (the same rule as booking). */
+    require_once __DIR__ . '/../lib/service_areas.php';
+    $hailLat = $lat; $hailLng = $lng;
+    if (!$hailLat && !$hailLng) {
+        try {
+            $hq = $pdo->prepare("SELECT lat, lng FROM ride_drivers WHERE user_id=?");
+            $hq->execute(array($u['id']));
+            $hp = $hq->fetch();
+            if ($hp) { $hailLat = floatval($hp['lat']); $hailLng = floatval($hp['lng']); }
+        } catch (Exception $e) { /* no saved position: skip the check */ }
+    }
+    $hailArea = etel_area_check_point($pdo, $hailLat, $hailLng, 'pickup location');
+    if (!$hailArea['ok']) fail($hailArea['message'], 409, array('reason' => $hailArea['reason'], 'message_am' => $hailArea['message_am']));
+
     $etelid_member = null;
     $digits_probe  = preg_replace('/[^0-9]/', '', $raw_id);
     $looks_etelid  = (stripos($raw_id, '/verify/') !== false)
@@ -3714,6 +3737,7 @@ case 'driver_arrived': {
             ->execute(array($km, $fare, $breakdownJson, $rid));
     }
     $fare = rides_agreed_apply($pdo, $rid, $fare);   // a trip with an agreed price is billed at exactly that price
+    $fare = rides_quote_cap_apply($pdo, $rid, $fare);   // never more than the estimate plus the cap percent
     rides_flag_fare_review($pdo, $rid, $u['id'], $fare, $km);
     $fare = rides_promo_apply_to_arrived($pdo, $rid);
     ok(array_merge(array('arrived' => true, 'distance_km' => $km, 'fare' => $fare,
@@ -3839,6 +3863,7 @@ case 'driver_complete_ride': {
             ->execute(array($km, $fare, $breakdownJson2, $rid));
     }
     $fare = rides_agreed_apply($pdo, $rid, $fare);
+    $fare = rides_quote_cap_apply($pdo, $rid, $fare);
     rides_flag_fare_review($pdo, $rid, $u['id'], $fare, $km);
     $fare = rides_promo_apply_to_arrived($pdo, $rid);
     ok(array_merge(array('arrived' => true, 'distance_km' => $km, 'fare' => $fare,

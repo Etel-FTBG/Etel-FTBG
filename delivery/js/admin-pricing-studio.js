@@ -12,7 +12,7 @@
 var K = window.AdminKit;
 if (!K) return;
 var esc = K.esc;
-var S = { inc: null, cm: null, tab: '', caps: [], rules: [], surge: 1.3, windows: [], isDefault: false, goals: [], zones: [], tiers: [], banks: [], err: {}, cp: null, order: null, cpOut: '', loaded: false, calc: { vt: '', km: 5, wait: 0, open: false, peak: false } };
+var S = { warnings: [], inc: null, cm: null, tab: '', caps: [], rules: [], surge: 1.3, windows: [], isDefault: false, goals: [], zones: [], tiers: [], banks: [], err: {}, cp: null, order: null, cpOut: '', loaded: false, calc: { vt: '', km: 5, wait: 0, open: false, peak: false } };
 var TABS = [['fares', 'Ride fares', 'pricing.manage'], ['peak', 'Peak hours', 'pricing.manage'], ['goals', 'Driver goals', 'pricing.manage'], ['commission', 'Commission', 'pricing.manage'], ['incentives', 'Incentives', 'pricing.manage'], ['delivery', 'Delivery', 'settings.view'], ['courier', 'Courier pay', ['pricing.manage', 'settings.view']], ['banks', 'Bank accounts', 'finance.view']];
 var BUILTIN = ['bajaj', 'moto', 'car', 'minibus'];
 var IMG_V = '2';    // same as IMG_V in etel-vehicle-art.js: bump both when the picture files change, so phones do not keep showing the old ones
@@ -81,6 +81,7 @@ function loadAll() {
       job('fares', 'admin_get_ride_fare_rules', function (d) { S.rules = d.rules || []; S.surge = f(d.ride_surge_multiplier) || 1.3; });
       job('peak', 'admin_get_ride_peak_windows', function (d) {
         S.isDefault = !!d.is_default;
+        S.warnings = d.warnings || [];
         S.windows = (d.windows || []).map(function (w) { return { label: w.label || '', days: (w.days || []).map(Number), start: w.start || '00:00', end: w.end || '00:00', multiplier: w.multiplier != null ? Number(w.multiplier) : null }; });
       });
       job('goals', 'admin_get_goal_tiers', function (d) { S.goals = d.tiers || []; });
@@ -183,7 +184,8 @@ function peakView() {
       '<label class="ak-fl">Multiplier<input class="ak-in" type="number" data-f="multiplier" step="0.01" min="0.1" max="5" placeholder="' + esc(S.surge) + '" value="' + esc(w.multiplier != null ? w.multiplier : '') + '"></label>' +
       '<button type="button" class="ak-btn danger" data-rm-win="' + i + '" aria-label="Remove ' + esc(w.label || 'window') + '">🗑️</button></div>';
   }).join('');
-  return '<div class="ps-box"><h3>When surge applies</h3><div class="sub">' + (S.isDefault ? 'This is the built-in default — nothing has been saved yet, and it is what is running now. ' : '') + 'Times are Hawassa clock times (24-hour). A window that ends before it starts runs past midnight.</div>' + peakMap() + '</div>' +
+  var warnBox = S.warnings.length ? '<div class="ps-box" role="alert" style="border:1px solid #FFB74D;background:rgba(255,183,77,.08)"><h3>⚠️ Please check this schedule</h3><ul style="margin:6px 0 0 18px;padding:0">' + S.warnings.map(function (m) { return '<li style="margin:4px 0">' + esc(m) + '</li>'; }).join('') + '</ul><div class="sub" style="margin-top:8px">These are warnings only. You can still save.</div></div>' : '';
+  return warnBox + '<div class="ps-box"><h3>When surge applies</h3><div class="sub">' + (S.isDefault ? 'This is the built-in default — nothing has been saved yet, and it is what is running now. ' : '') + 'Times are Hawassa clock times (24-hour). A window that ends before it starts runs past midnight.</div>' + peakMap() + '</div>' +
     '<div class="ps-box"><h3>Windows</h3><div class="sub">If two windows overlap, the first one in the list wins.</div>' + (rows || K.empty('🕒', 'No windows', 'Without a window, surge never applies.')) +
     '<div class="ak-acts" style="margin-top:6px"><button type="button" class="ak-btn" data-add-win>➕ Add window</button><button type="button" class="ak-btn gold" data-save-win>💾 Save schedule</button></div></div>';
 }
