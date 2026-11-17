@@ -1107,18 +1107,9 @@ case 'book_ride': {
                     $lockedFare = floatval($qFare);
                     $lockedKm = floatval($qKm);
                 }
-                @file_put_contents(__DIR__ . '/../../pricelock_debug.log',
-                    date('c') . " TOKEN_PARSED sigOk=" . ($sigOk?1:0) .
-                    " notExpired=" . ($notExpired?1:0) . " vtypeMatch=" . ($vtypeMatches?1:0) .
-                    " qKm=$qKm qVtype=$qVtype bookVtype=$vtype qExp=$qExp now=" . time() . "\n",
-                    FILE_APPEND);
             } else {
-                @file_put_contents(__DIR__ . '/../../pricelock_debug.log',
-                    date('c') . " TOKEN_BAD_PARTS count=" . count($parts) . "\n", FILE_APPEND);
             }
         } else {
-            @file_put_contents(__DIR__ . '/../../pricelock_debug.log',
-                date('c') . " TOKEN_BASE64_DECODE_FAILED\n", FILE_APPEND);
         }
     }
 
@@ -1182,21 +1173,6 @@ case 'book_ride': {
         }
         rides_offer_price_ensure($pdo);
     }
-
-    /* TEMP DIAGNOSTIC v2 (remove once confirmed): full picture in one
-       line - was a token sent at all, did it validate, what route_km
-       arrived, what distance actually got used, and the final fare. */
-    @file_put_contents(__DIR__ . '/../../pricelock_debug.log',
-        date('c') .
-        " tokenInBody=" . (!empty($body['quote_token']) ? 1 : 0) .
-        " lockedKm=" . var_export($lockedKm, true) .
-        " lockedFare=" . var_export($lockedFare, true) .
-        " raw_route_km=" . var_export(isset($body['route_km']) ? $body['route_km'] : null, true) .
-        " manual_km=" . var_export($mkm, true) .
-        " finalDist=" . var_export($dist, true) .
-        " finalFare=" . var_export($fare, true) .
-        " vtype=$vtype\n",
-        FILE_APPEND);
 
     /* CACHE-PROOF SURGE GUARD: if a surge window is active but the client
        sent no valid price-lock token, the customer was almost certainly
