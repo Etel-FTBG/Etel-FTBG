@@ -193,7 +193,7 @@ define('ETEL_WRITE_ACTIONS', array(
     'fa_claim_ref','fa_agent_apply','fa_agent_update_profile','fa_agent_notifications_read',
     'admin_fa_settings_save','admin_fa_agent_decide','admin_fa_customer_message','admin_fa_sms_test','admin_fa_sms_template_save','admin_fa_sms_mode_save','admin_fa_earning_decide','admin_fa_run_earnings','admin_fa_payout_create','admin_fa_payout_export','admin_fa_payout_mark_paid','admin_fa_payout_cancel','admin_fa_nudge','admin_fa_digest_build','admin_fa_tiers_run',
     'fa_agent_book_ride',
-    'admin_area_save','admin_area_delete','admin_areas_settings_save',
+    'admin_area_save','admin_area_delete','admin_areas_settings_save','admin_area_place_save','admin_area_place_delete',
     'fa_partner_save','fa_partner_submit','fa_partner_delete','admin_fa_partner_decide','admin_fa_partner_resend_sms','admin_fa_agent_set_roles',
     'vehicle_photos_save','admin_vehicle_photos_save',
     'sup_ticket_create','sup_ticket_reply','sup_ticket_close','sup_ticket_rate','admin_sup_reply','admin_sup_update','admin_sup_canned_save','admin_sup_canned_delete','admin_sup_settings_save',
@@ -1833,7 +1833,7 @@ switch ($action) {
     case 'admin_fa_insights': case 'admin_fa_nudge': case 'admin_fa_digest_list': case 'admin_fa_digest_build': case 'admin_fa_tiers_run':
         require __DIR__ . '/controllers/FieldAgentInsightsController.php';
         break;
-    case 'get_service_areas': case 'admin_areas_list': case 'admin_area_save': case 'admin_area_delete': case 'admin_areas_settings_save':
+    case 'get_service_areas': case 'admin_areas_list': case 'admin_area_save': case 'admin_area_delete': case 'admin_areas_settings_save': case 'get_area_places': case 'admin_area_places': case 'admin_area_place_save': case 'admin_area_place_delete':
         require __DIR__ . '/controllers/ServiceAreaController.php';
         break;
     case 'get_display_prefs': case 'save_display_prefs':
