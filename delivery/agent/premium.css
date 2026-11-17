@@ -1,0 +1,68 @@
+/* ETEL Agent portal - premium layer (loaded after app.css): dashboard "Your numbers" and the desktop layout (side menu).
+   Only uses the variables of app.css, so dark and light (html[data-theme=light]) both work. Phone layout is unchanged. */
+
+/* ---------- Your numbers (dashboard) ---------- */
+.dash{padding:var(--s4)}
+.dash .ds-head{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:var(--s3)}
+.dash h2{margin:0;font-size:24px}
+.ds-seg{display:inline-flex;border:1px solid var(--line);border-radius:99px;padding:3px;background:rgba(212,175,55,.07)}
+.ds-seg button{min-height:40px;min-width:64px;padding:0 var(--s3);border:0;border-radius:99px;background:none;color:var(--ink2);font:600 13px var(--body);cursor:pointer}
+.ds-seg button[aria-pressed=true]{background:linear-gradient(135deg,var(--gold),var(--gold-deep));color:#1a1206;box-shadow:0 2px 8px rgba(0,0,0,.25)}
+.ds-grid{display:grid;grid-template-columns:1fr 1fr;gap:var(--s2);margin-top:var(--s3)}
+.ds-k{padding:var(--s3);border-radius:14px;border:1px solid var(--line);background:rgba(212,175,55,.06);min-width:0}
+.ds-v{font:700 26px/1.15 var(--body);color:var(--gold-t);margin-top:2px;overflow-wrap:anywhere}
+.ds-v small{font:600 13px var(--body);color:var(--ink);margin-left:4px}
+.ds-c{margin-top:6px;font-size:12px;color:var(--ink2);display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.ds-c .chip{padding:2px 9px;font-size:12px}
+.ds-facts{display:flex;flex-wrap:wrap;gap:var(--s2);margin-top:var(--s3)}
+.ds-charts{display:grid;grid-template-columns:1fr;gap:var(--s3);margin-top:var(--s3)}
+.ds-ch{padding:var(--s3);border-radius:14px;border:1px solid var(--line);background:rgba(212,175,55,.04);min-width:0}
+.ds-svg{display:block;width:100%;height:auto;margin-top:var(--s2)}
+.ds-bar{fill:var(--gold-t);opacity:.9;cursor:pointer;transition:opacity .15s}
+.ds-bar.z{fill:var(--line);opacity:1}
+.ds-bar:hover,.ds-bar.on{opacity:1;stroke:var(--ink);stroke-width:1}
+.ds-ax{fill:var(--ink2);font:11px var(--body)}
+.ds-sel{margin-top:6px;font-size:13px;color:var(--ink2)}
+.ds-empty{margin-top:var(--s2);padding:var(--s4);text-align:center;color:var(--ink2);font-size:14px}
+.ds-list{margin-top:var(--s3)}
+.ds-list summary{cursor:pointer;font-weight:600;color:var(--gold-t);min-height:44px;display:flex;align-items:center}
+.ds-tw{overflow-x:auto;margin-top:var(--s2)}
+.ds-tw table{width:100%;border-collapse:collapse;font-size:13px}
+.ds-tw th,.ds-tw td{padding:8px 10px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
+.ds-tw th{color:var(--ink2);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.05em}
+.ds-tw td.num,.ds-tw th:not(:first-child){text-align:right}
+@media (prefers-reduced-motion:reduce){.ds-bar{transition:none}}
+html[data-theme=light] .ds-seg{background:rgba(184,134,11,.1)}
+html[data-theme=light] .ds-seg button[aria-pressed=true]{color:#1B1606}
+html[data-theme=light] .ds-k{background:rgba(184,134,11,.08)}
+html[data-theme=light] .ds-ch{background:rgba(184,134,11,.05)}
+
+/* ---------- small polish on every screen ---------- */
+.card{transition:box-shadow .2s,transform .2s}
+.btn{transition:transform .12s,box-shadow .2s,border-color .2s}
+.btn:active{transform:scale(.985)}
+@media (hover:hover){.btn:hover{border-color:var(--gold);box-shadow:0 4px 16px rgba(212,175,55,.18)}}
+@media (prefers-reduced-motion:reduce){.card,.btn{transition:none}.btn:active{transform:none}}
+
+/* ---------- tablet and desktop: side menu, wider content ---------- */
+@media (min-width:700px){
+  .ds-grid{grid-template-columns:repeat(4,1fr)}
+  .ds-charts{grid-template-columns:1fr 1fr}
+}
+@media (min-width:1024px){
+  body{padding-left:256px}
+  .app{max-width:1120px;margin:0 auto;padding:0 32px 48px}
+  .top{margin:0 -32px;padding:var(--s3) 32px}
+  .nav{left:0;right:auto;top:0;bottom:0;width:256px;max-width:none;display:flex;flex-direction:column;justify-content:flex-start;gap:6px;
+       padding:96px 14px 24px;border-top:0;border-right:1px solid var(--line);overflow-y:auto}
+  .nav::before{content:"ETEL AGENT";position:absolute;top:26px;left:24px;font:600 22px/1 var(--disp);letter-spacing:.12em;color:var(--gold-t)}
+  .nav a{flex-direction:row;justify-content:flex-start;gap:14px;min-height:52px;padding:0 16px;font-size:15px;text-align:left;border-radius:12px}
+  .nav a svg{width:24px;height:24px;flex:none}
+  .nav a[aria-current=page]{box-shadow:inset 4px 0 0 var(--gold)}
+  html[data-theme=light] .nav a[aria-current=page]{box-shadow:inset 4px 0 0 #9A6F00}
+  h1{font-size:36px}
+  .dash{padding:var(--s5)}
+  .ds-v{font-size:30px}
+  .list,.app > .card,.app > form,.app > details,.stack{max-width:860px}
+  .app > .card.dash,.app > .card:first-of-type{max-width:none}
+}
