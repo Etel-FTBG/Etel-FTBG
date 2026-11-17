@@ -744,6 +744,23 @@ if (isset($ETEL_THROTTLED_ACTIONS[$action])) {
     } catch (Exception $e) { /* never block on a throttle error */ }
 }
 
+/* Etel Code (E1616) in place of a phone number. For the actions below the typed number names ANOTHER existing person (a
+   customer an agent books for, a member an admin adds to Equb or links as an investor), so an Etel Code is turned into that
+   member's phone here, once, before the action runs. A phone number starts with a digit or +, so a code can never be one.
+   Not applied to sign-up, profile or payout phone fields (those must stay what the person typed). */
+$etelCodeFields = array(
+    'fa_agent_book_ride' => 'phone', 'admin_phone_book_ride' => 'phone',
+    'equb_admin_add_member' => 'phone', 'equb_admin_grant_access' => 'phone',
+    'equity_link_investor_user' => 'phone', 'admin_set_etelpay_override' => 'phone',
+);
+if (isset($etelCodeFields[$action]) && isset($body[$etelCodeFields[$action]]) && is_string($body[$etelCodeFields[$action]])
+    && preg_match('/^[Ee][A-Za-z0-9 _-]{3,14}$/', trim($body[$etelCodeFields[$action]]))) {
+    require_once __DIR__ . '/etelid_bridge.php';
+    $codePhone = etelid_bridge_code_to_phone($body[$etelCodeFields[$action]]);
+    if ($codePhone === '') fail('Etel Code not found. Check it, or use the phone number.', 404);
+    $body[$etelCodeFields[$action]] = $codePhone;
+}
+
 switch ($action) {
     case 'admin_purge_cache': {
         $pdo = db(); require_admin($pdo);
