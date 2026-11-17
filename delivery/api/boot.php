@@ -423,7 +423,7 @@ function etel_admin_2fa_enforce($pdo, $u) {
     global $action;
     if (empty($u['role']) || $u['role'] !== 'admin') return;
     $a = isset($action) ? (string) $action : '';
-    if (strpos($a, 'admin_') !== 0 || strpos($a, 'admin_2fa_') === 0 || $a === 'admin_system_health' || $a === 'admin_set_2fa_required' || $a === 'admin_get_2fa_rule') return;
+    if (strpos($a, 'admin_') !== 0 || strpos($a, 'admin_2fa_') === 0 || $a === 'admin_system_health' || $a === 'admin_set_2fa_required' || $a === 'admin_get_2fa_rule' || $a === 'admin_get_my_capabilities') return;   // capabilities: the admin page asks it first; refusing it sent a not-yet-enrolled admin back to the login page
     try {
         require_once __DIR__ . '/lib/admin_2fa_policy.php';
         if (!etel_admin_2fa_required($pdo)) return;

@@ -72,6 +72,9 @@ def main():
         check("two-step set-up (admin_2fa_status) stays open", s == 200 and r.get("success") is not False, (s, r))
         s, r = call("admin_system_health", {}, tok)
         check("the health page stays open", s == 200 and r.get("success") is not False, (s, r))
+        s, r = call("admin_get_my_capabilities", {}, tok)
+        check("admin_get_my_capabilities stays open (admin.html asks it first; a 403 there sent the admin back to the login page)",
+              s == 200 and r.get("success") is not False and "capabilities" in (r.get("data") or {}), (s, r))
         s, r = call("admin_get_2fa_rule", {}, tok)
         check("the rule card stays open and says required/default",
               s == 200 and (r.get("data") or {}).get("required") == 1 and (r.get("data") or {}).get("source") == "default", (s, r))
