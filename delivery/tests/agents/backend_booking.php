@@ -60,6 +60,7 @@ t('vehicles: Ride types listed, online counts', $r->ok && in_array('bajaj', $vt)
 $r = call('fa_agent_quote', array('km' => 5), $AU); t('quote: a fare for every type, positive', $r->ok && count($r->data['fares']) >= 4 && $r->data['fares']['bajaj']['fare'] > 0, $r->ok ? '' : $r->getMessage());
 $r5 = $r->ok ? $r->data['fares']['bajaj']['fare'] : 0; $r = call('fa_agent_quote', array('km' => 15), $AU); t('quote: longer trip costs more', $r->ok && $r->data['fares']['bajaj']['fare'] > $r5);
 $r = call('fa_agent_quote', array('km' => 9999), $AU); t('quote: distance capped at 100 km', $r->ok && $r->data['km'] == 100);
+$r = call('fa_agent_quote', array('open' => 1), $AU); t('quote: open trip shows the plain base fare (no surge, no minimum top-up)', $r->ok && abs($r->data['fares']['bajaj']['fare'] - floatval(rides_fare_rule($PDO, 'bajaj')['base_fare'])) < 0.01 && empty($r->data['fares']['bajaj']['surge']));
 
 // ---- booking validation
 $r = call('fa_agent_book_ride', array('phone' => '12345', 'vehicle_type' => 'bajaj', 'km' => 4), $AU); t('book: bad phone refused', !$r->ok);

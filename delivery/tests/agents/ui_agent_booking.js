@@ -120,7 +120,7 @@ async function contrastReport(p) {
     ok('amharic: title and vehicle names in Amharic', (await text(p)).includes('ጉዞ ያስይዙ') && (await text(p)).includes('መኪና'));
     ok('320px: no horizontal scroll', await p.evaluate(() => document.documentElement.scrollWidth <= innerWidth), await p.evaluate(() => document.documentElement.scrollWidth + '/' + innerWidth));
     await p.fill('#bk-phone', '+251955111333'); await p.click('.bv-veh[data-v=bajaj]'); await p.click('[data-act=bk-open]'); await p.waitForTimeout(900);
-    ok('open trip: fare text says "from"', /ከ\d+ ብር ጀምሮ/.test(await p.innerText('.bv-veh[data-v=bajaj] .bv-fare')), await p.innerText('.bv-veh[data-v=bajaj] .bv-fare'));
+    ok('open trip: fare text shows the base fare', /የመነሻ ዋጋ \d+ ብር/.test(await p.innerText('.bv-veh[data-v=bajaj] .bv-fare')), await p.innerText('.bv-veh[data-v=bajaj] .bv-fare'));
     ok('open trip: km box disabled', await p.evaluate(() => document.getElementById('bk-km').disabled));
     await p.screenshot({ path: (process.env.ETEL_SHOTS || '.') + '/book-am-320.png', fullPage: true });
     await p.click('#bk-go'); await p.waitForTimeout(500); await p.click('#bk-yes'); await p.waitForTimeout(1800);

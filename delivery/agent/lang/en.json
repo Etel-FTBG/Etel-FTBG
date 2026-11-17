@@ -31,6 +31,8 @@
 "bk.cancel": "Not yet",
 "bk.confirm_btn": "Yes, book it",
 "bk.confirm_text": "{v} for {p}. {f} ETB, paid to the driver. The driver will call the customer.",
+"bk.base": "Base fare {f} ETB",
+"bk.confirm_text_open": "{v} for {p}. Base fare {f} ETB plus the distance travelled, paid to the driver. The driver will call the customer.",
 "bk.confirm_title": "Confirm the booking",
 "bk.dest": "Where to? (optional)",
 "bk.done": "Ride booked! We are finding a driver.",
