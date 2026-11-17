@@ -131,7 +131,7 @@ function mcp_system_health($which) {
         'delivery' => 'https://ethelmarket.com/delivery/',
         'eteltaxi' => 'https://ethelmarket.com/EtelTaxi/',
         'etelgebeya' => 'https://ethelmarket.com/EtelGebeya/',
-        'etelmadeya' => 'https://ethelmarket.com/EtelMadeya/',
+        'etelmadeya' => 'https://ethelmarket.com/Etel-Madeya/',
     );
 
     $targets = ($which === 'all' || !$which) ? array_keys($urls) : array($which);
