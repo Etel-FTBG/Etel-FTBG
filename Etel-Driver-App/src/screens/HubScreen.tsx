@@ -138,7 +138,7 @@ export default function HubScreen({ navigation }: Props) {
       </View>
 
       <Reveal delay={60} style={styles.brand}>
-        <View style={[styles.halo, { backgroundColor: p.glow }]}>
+        <View style={[styles.halo, { backgroundColor: p.glow, borderColor: p.border }]}>
           <Image source={require('../../assets/etel-master.png')} style={styles.master} accessibilityLabel="ETEL" />
         </View>
         <Text style={[styles.wordmark, { color: p.gold }]}>ETEL</Text>
@@ -205,7 +205,17 @@ export default function HubScreen({ navigation }: Props) {
         </Reveal>
       ) : null}
 
-      {HUB_GROUPS.map((g, gi) => (
+      {/* Signed out: only the sign-in. Signed in: only the apps this account's role may open (plus the coming-soon ones). */}
+      {!session ? (
+        <Reveal delay={240} style={styles.trust}>
+          <Ionicons name="lock-closed" size={13} color={p.textMuted} />
+          <Text style={[styles.trustText, { color: p.textMuted }]}>Secured by EtelID</Text>
+        </Reveal>
+      ) : null}
+      {(session ? HUB_GROUPS : [])
+        .map((g) => ({ ...g, apps: g.apps.filter((a) => a.status === 'soon' || a.key === 'id' || canOpen(a.key, session?.role)) }))
+        .filter((g) => g.apps.length > 0)
+        .map((g, gi) => (
         <Reveal key={g.title} delay={260 + gi * 120} style={styles.group}>
           <Text style={[styles.groupTitle, { color: p.goldStrong }]}>{g.title}</Text>
           <View style={styles.grid}>
@@ -264,7 +274,7 @@ const styles = StyleSheet.create({
   top: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   refresh: { width: 38, height: 38, borderRadius: 19, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
   brand: { alignItems: 'center', marginTop: 8, marginBottom: 20 },
-  halo: { width: 132, height: 132, borderRadius: 66, alignItems: 'center', justifyContent: 'center' },
+  halo: { width: 136, height: 136, borderRadius: 68, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
   master: { width: 112, height: 112, resizeMode: 'contain' },
   wordmark: { fontSize: 30, letterSpacing: 8, marginTop: 8, fontFamily: typography.h1.fontFamily },
   tagline: { fontSize: 13, marginTop: 4, letterSpacing: 0.4 },
@@ -275,6 +285,8 @@ const styles = StyleSheet.create({
   cardTitle: { fontSize: 17, fontFamily: typography.h2.fontFamily },
   cardSub: { marginTop: 6, marginBottom: 14, lineHeight: 19, fontSize: 13 },
   slider: { minHeight: 60, justifyContent: 'center' },
+  trust: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: 14 },
+  trustText: { fontSize: 12, marginLeft: 6, letterSpacing: 0.6 },
   group: { marginTop: 18 },
   groupTitle: { fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', marginBottom: 10, fontWeight: '700' },
   grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },

@@ -24,6 +24,8 @@ export const AM: Record<string, string> = {
   'Sign in with EtelID': 'በኢትኤል መታወቂያ ይግቡ', 'One sign-in opens every ETEL app that belongs to your account.': 'አንድ መግቢያ የአካውንትዎ የሆኑትን ሁሉንም የኢትኤል አፕሊኬሽኖች ይከፍታል።',
   'EtelID, FIN, card number or phone': 'የኢትኤል መታወቂያ፣ FIN፣ የካርድ ቁጥር ወይም ስልክ', 'Authenticator code': 'የአረጋጋጭ ኮድ',
   'Sign in': 'ግባ', 'Create an EtelID': 'የኢትኤል መታወቂያ ይፍጠሩ',
+  'Phone, Etel Code or EtelID': 'ስልክ፣ ኢትኤል ኮድ ወይም የኢትኤል መታወቂያ', 'Phone, Etel Code, EtelID, FIN or card number': 'ስልክ፣ ኢትኤል ኮድ፣ የኢትኤል መታወቂያ፣ FIN ወይም የካርድ ቁጥር',
+  'Secured by EtelID': 'በኢትኤል መታወቂያ የተጠበቀ',
   'Enter your EtelID and password.': 'የኢትኤል መታወቂያዎን እና የይለፍ ቃልዎን ያስገቡ።', 'Connection problem. Please try again.': 'የግንኙነት ችግር። እባክዎ እንደገና ይሞክሩ።',
   'Customer': 'ደንበኛ', 'Driver': 'ሾፌር', 'Courier': 'መልእክተኛ', 'Service giver': 'አገልግሎት ሰጪ', 'Admin': 'አስተዳዳሪ',
   'Sign in first': 'መጀመሪያ ይግቡ', 'Sign in with your EtelID above to open this app.': 'ይህን አፕሊኬሽን ለመክፈት ከላይ በኢትኤል መታወቂያዎ ይግቡ።', 'Sign in with your EtelID first.': 'መጀመሪያ በኢትኤል መታወቂያዎ ይግቡ።',
