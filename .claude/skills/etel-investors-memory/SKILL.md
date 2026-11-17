@@ -8,6 +8,7 @@ description: Project memory for the Etel investor-relations work (EtelGroup/inve
 Written from a long working session. It records what was built, what was decided, and what is still open, so a new chat does not have to ask again. Check `git log` on main for anything newer.
 
 ## 0. Who and how we work
+- The step-by-step working method (the loop for each change, how to talk to Dagi, standing rules, open launch items) is in `.claude/skills/etel-working-method/SKILL.md`: read it first.
 - Owner: Dagi (use they/them). Etel Family Technology and Business Group, Hawassa. Trial phase, no real customer money yet.
 - Delivery: ONE draft PR per change from branch `claude/admiring-fermi-8pcqlx` (create it from main, push, open a DRAFT PR, subscribe to PR activity). Dagi marks it ready and merges.
 - After each merge: `git fetch origin main && git checkout -B claude/admiring-fermi-8pcqlx origin/main && git push -f -u origin claude/admiring-fermi-8pcqlx`, then zip ONLY the changed runtime files (keep folder paths like `EtelGroup/investors/...` and `delivery/...`) plus a short `TEST.txt` into the scratchpad as `ETEL_mergeNNN.zip`, send it with SendUserFile (display attach), and give a short note: which folders to upload, old files to delete, what to check. Never include `includes/config.php` or `api/.env`.
@@ -157,3 +158,9 @@ Profit Share / share = ድርሻ (የትርፍ ድርሻ); investor pool = የ�
 - **Gotchas**: inline `<style>` in `admin.html` comes after linked CSS, so overrides need `#shell` specificity; core.css sets `input,select{width:100%}`; the admin sidebar is dark in both themes (light theme re-sets its text vars); gradient headline text vanished on light pages; `driver.html` sign-in is inside `#app` (use `:has(#view-login.active)` to widen).
 - **Testing recipe**: Playwright with `serviceWorkers:'block'` (a service worker hides routed requests from mocks), mocks keyed on `?action=` in the URL, token keys `taxi_admin_token` / `taxi_driver_token`; backend tests: private MariaDB (`mariadb-install-db --datadir=/tmp/mdb`, port 3306), run `php -S` on `EtelTaxi/api` with env `DB_HOST=127.0.0.1 DB_NAME DB_USER DB_PASS DB_PREFIX=` and apply migrations 001-005.
 - **Open**: decide the penalty rule and fix `overdue`; Amharic labels for the new buttons; EtelTaxi has no desktop layout for `verify.html` / `update-panel.html` (kept narrow on purpose).
+
+## 16. Later work (Nov 2026, PRs #793-#810)
+- **Investors:** protections, deal limits (min/max units, lock months, collateral with safeguards) and a desktop deal page (#793-#795); Growth planner commission selector 0/2/5/10 % (#793); Incentive planner with units (ETB, % of fares, ETB per trip) and periods (day, week, month) (#796-#797); planner linked to the Growth planner with a with/without table (#798); Incentive planner rebuilt for the real plan: at least 10 agents at busy places, 30 to 50 ETB per completed trip, new-rider % discount paid by the company to the driver daily or weekly (#799).
+- **Etel Code** (member-chosen login code E1616): #801-#807, #810 (see `etel-working-method` section 4 for where it works and where it does not yet).
+- **ETEL app hub:** sign-in only when signed out, premium sign-in card (#808); EtelID first, coming-soon apps hidden, Investor/Equb/Agent apps for members (#809).
+- **Review of EtelID and Delivery/Ride on 17 Nov 2026:** findings and open items are in `etel-working-method` section 8.

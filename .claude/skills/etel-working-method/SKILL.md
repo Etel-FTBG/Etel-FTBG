@@ -1,0 +1,75 @@
+---
+name: etel-working-method
+description: How Dagi (Etel Group, Hawassa) and Claude work together on every Etel system, so a NEW chat behaves like the long ones. Read FIRST at the start of any chat in this repo about Etel (EtelID, Delivery and Ride, EtelPay, EtelTaxi, EtelGebeya, the ETEL app, investors, agents, Etel Code), and whenever Dagi says continue, go, build all, check, update the memory, or sends a screenshot of a problem. Covers the step-by-step process for a change (one draft PR, test, merge, zip, upload), how to talk to Dagi, standing rules, the Etel Code system, the ETEL app, and the open launch-readiness items from the 17 Nov 2026 review.
+---
+
+# How we work on Etel (read this first)
+
+Written 2026-11-17 from the long working chats. It is the PROCESS. The project facts are in `etel-investors-memory` (investors, branding, EtelPay/EtelTaxi looks) and `etel-delivery-ride-memory` (Delivery and Ride). Check `git log origin/main` for anything newer than this file.
+
+## 1. Who Dagi is and how to talk to them
+- Dagi (they/them; never guess pronouns for anyone), founder of Etel Family Technology and Business Group, Hawassa. English is not their first language: use short, plain sentences, no jargon. Trial phase: no real customer money yet.
+- They say "go", "continue", "build all", "check", "update the memory". That means: do it, do not ask again. Ask a question only when the answer changes what you build and you cannot choose a sensible default; state the default you chose instead.
+- They report problems with phone screenshots. Read every screenshot closely: an old page title, a missing function, or a version number usually means an OLD FILE or an OLD CACHE on their server, not a code bug (see section 5).
+- Answers: lead with what changed in plain words (bold headings, short bullets), then what is NOT tested, then the next step for Dagi. Be honest: say "tested in a mock page" or "not run on a phone", never "works" for something not tried live. Say clearly when something is a decision for Dagi.
+- Their uploads and requests may arrive as zips or pasted text from other chats. Look before trusting (read the files), and tell them if something is unsafe or would overwrite live files.
+- Never put Dagi's name, email or project details in outside requests, commits or committed files.
+
+## 2. The loop for every change (do all steps, in this order)
+1. **Understand first.** Read the real code. Find the root cause; do not guess. When useful, check live data with the read-only tools (`delivery_query`, `etelid_query`, `system_health`; deferred tools: load with ToolSearch). Never write to live data.
+2. **Branch.** Work on `claude/admiring-fermi-8pcqlx`, created from `origin/main`. ONE change = ONE draft PR.
+3. **Build small.** Prefer additive scripts and small edits over rewrites. PHP is ASCII-only and each file stays under about 30KB (the host WAF corrupted non-ASCII before). Bump `?v=N` on changed script/css tags and the service-worker cache name (see section 5). Never commit `includes/config.php`, `api/.env` or any secret.
+4. **Test what you can.** `php -l` on every changed PHP file; parse changed JS with `node -e "new (require('vm').Script)(...)"`; headless Chromium (Playwright is installed; use `serviceWorkers:'block'`) with mocked API responses for screens; unit-test pure logic with node. A private MariaDB can run the Delivery smoke tests (restart it if it died; fresh datadir). Say what was NOT run.
+5. **Commit and push.** Commit message ends with the attribution lines the system gives. `git push -u origin claude/admiring-fermi-8pcqlx`; retry once if it fails.
+6. **Open a DRAFT PR** (load `mcp__github__create_pull_request` via ToolSearch). Body: Summary, Test (honest), Not included. Then `subscribe_pr_activity` with the number the PR call RETURNED (never guess it).
+7. **Tell Dagi** in plain words: what it does, what is untested, "mark it ready and merge it, then tell me".
+8. **Notifications are not messages from Dagi.** Call ReadNotifications. "subscription.created" and CI-complete need no action. "ready_for_review": wait. On "merged": go to step 9. CI red on your PR is yours to fix.
+9. **After a merge:** `git fetch origin main && git checkout -B claude/admiring-fermi-8pcqlx origin/main && git push -f -u origin claude/admiring-fermi-8pcqlx` (retry once). Then zip ONLY the changed runtime files, keeping folder paths (e.g. `delivery/api/boot.php`, `EtelId/includes/...`), plus a short `TEST.txt` (upload paths, earlier merges it depends on, 3-5 check steps), as `ETEL_mergeNNN.zip` in the scratchpad dir. Send with SendUserFile (display attach). Check the zip listing first (no stray files). Then a short note: upload paths and what to check.
+10. **App-only changes** in `Etel-Driver-App` (the ETEL app) go to phones over the air: no zip. Tell Dagi to restart the app, tap the gold "A new version is ready" bar, or run `publish-update.yml` on Expo by hand.
+11. **"Update the memory"** = edit these skills (`.claude/skills/*/SKILL.md`) in a PR like any other change.
+
+## 3. Standing rules
+- Hosting is shared cPanel, no SSH: Dagi uploads by hand, often only SOME of the files. Always send the COMPLETE set of dependent files and name the earlier merges they need.
+- Never overwrite EtelGroup root files. Never use destructive git on shared branches. No secrets in commits.
+- Do NOT show the "5% fee" in marketing or office material.
+- EtelID is the root: one account for every Etel system. Delivery, EtelPay, Taxi, Gebeya, Madeya call EtelID's Service API with a shared key.
+- Amharic text is Claude's first draft: flag it for native review every time.
+- The PHP in Delivery is PHP5-style (no fancy syntax) and every new API action must be added to the `case` lists in `delivery/api/boot.php`.
+- Choose safe defaults for money: show the recipient's name before paying, rate-limit lookups, answer "incorrect" for unknown accounts without revealing which part was wrong.
+
+## 4. The Etel Code (member-chosen short code, e.g. E1616)
+- Rules: starts with E, 4 to 12 letters/digits, unique, case-insensitive; one change per 30 days; a released code is held 90 days. Members claim it in the EtelID portal ("Etel Code" tile) with their EtelID PASSWORD (EtelID has no separate 4-digit PIN; the 4-digit PIN belongs to EtelPay).
+- Code: `EtelId/includes/class-etelid-code.php` (table `etelid_codes`), widget `EtelId/assets/etel-code-widget.js`, loaded by `etel-id.php` and the portal template. Central lookup: `service/resolve` and `service/authenticate` in `class-etelid-service-api.php` (`find_member`) understand codes, so any app that asks EtelID "who is this?" accepts codes.
+- Works now: EtelID portal login; Delivery/Ride/Driver/Courier/service giver phone login and EtelID button; EtelPay login and Send money (shows the owner's name first, `ep_resolve_recipient`); driver Street Hail; Agent app "Book a ride"; admin Equb/investor/EtelPay-override/phone-booking phone fields (central block in `delivery/api/boot.php`); the ETEL app sign-in.
+- NOT done yet: EtelTaxi, EtelGebeya, EtelGroup, Madeya logins and phone boxes; Delivery customer "order for someone else"; NFC flows. Do NOT apply codes to sign-up, profile, payout, emergency-contact or partner-registration phone fields (the text must stay what the person typed).
+- Phone boxes must be `type="text"` (a phone keypad has no letters). Driver app boxes made by `driver.js` are fixed by the add-on `delivery/js/etel-code-keyboard.js`.
+
+## 5. Gotchas that cost us time
+- **Stale cache.** The EtelPay service worker (`Etel.Pay/wallet/sw.js`) and the Agent app (`delivery/agent/sw.js`) serve cached files. After changing a file bump its `?v=` AND the cache name. A phone showing an OLD page or "X is not a function" usually has an old file.
+- **Partial uploads.** If a new page calls a function that is missing, the server still has the old JS/PHP. Prefer code that works with older files (e.g. `EP_API.call(...)` instead of a new wrapper) and send complete sets.
+- **EtelID sessions store a SHA-256 hash of the token**; use `EtelID_Auth::member_from_token()`, not a raw compare. `pin_hash` is the account password.
+- **Wallet match** must use the phone EtelID has on file, not the typed text.
+- **Local servers die between turns** (php -S, MariaDB): restart them before testing.
+- Wrong guesses of PR numbers: always use the number returned by the PR call.
+
+## 6. The ETEL app (`Etel-Driver-App`, Expo/React Native)
+- Signed out: only the sign-in card (premium look). Signed in: EtelID first, then only the apps the account's role may open; "My programmes" shows ETEL Investor / ETEL Equb / ETEL Agent only to members (checks `investor_portal_am_i_investor`, `equb_am_i_permitted`, `fa_agent_me`). Coming-soon apps are hidden.
+- Role to apps: customer = Ride, Delivery, EtelID; driver adds Driver; courier adds Driver and Courier; service giver adds Services; admin all. Files: `src/hub/apps.ts`, `session.ts`, `memberships.ts`, `src/screens/HubScreen.tsx`, `src/components/SignInCard.tsx`. Run `npx tsc --noEmit` before a PR.
+
+## 7. Investor tools (summary; details in etel-investors-memory)
+- Admin (EtelGroup/investors): Growth planner (commission 0/2/5/10 %, now also "Include the Incentive planner spend": with and without table) and Incentive planner (agent-dispatch plan: at least 10 agents at busy places, fee 30 to 50 ETB per COMPLETED trip, new-rider discount in % paid by the company to the driver daily or weekly, optional driver bonuses; every amount in ETB, % of fares or ETB per trip; every count per day, week or month). Numbers in it are assumptions until real trips exist.
+
+## 8. Launch-readiness review (17 Nov 2026): what is open
+Fix before going live (Dagi's decisions or cPanel needed marked D):
+1. **Backups not running (D: cPanel cron).** Heartbeats exist only for `dispatch_scheduled` and `ride_monitor`; `backup_download`/`backup_offsite` never reported. Add cron for `delivery/api/cron_backup_db.php?key=CRON_DISPATCH_KEY` and confirm the heartbeat.
+2. **Surge windows (D).** `ride_peak_windows` covers nearly all hours at 1.2x to 1.5x and the labels do not match the times (Ethiopian vs international clock mix-up). Re-enter them in Admin.
+3. **Fare far above quote (D).** Ride 372: quote 205.68, charged 527.41. Decide a cap or a warning to the rider.
+4. **Admin two-step sign-in not enforced (D).** Switch on the "require two-step for admins" setting in Delivery and make EtelID staff enroll.
+5. **Etel Code has no automated tests.** Add PHP tests (like `EtelId/tests/*_unit.php`) for code validation, resolve, login and EtelPay send; do live checks with a phone and a code in each app.
+Should fix soon: switch off `pricelock_debug.log` writes (RideController.php lines near 1110-1189); delete `login_diag.html`, `print-test.html`, `install.html`, `api/debug-geocode.php`, `api/seed-zone-coords.php`, `api/chat.php`, and the `EtelId-backups` folder from the SERVER (and repo where tracked); restrict the Google Maps key to the domain with a daily cap (D, Google Cloud); Chapa and wallet payments are unproven (zero live transactions); street hails started in Addis coordinates (decide whether to limit to the service area); EtelMadeya returned HTTP 500 on the health check.
+Good: no real secrets in the repo, 260 admin actions refused without sign-in (8 Nov audit), safe query parameters in the sampled code, EtelID accounts clean.
+Not done and code cannot supply: independent penetration test, load test, real users (live DB had 4 users and 7 rides).
+
+## 9. Starting a new chat
+Open the chat in the Etel repo and paste:
+"Read .claude/skills/etel-working-method/SKILL.md first and work exactly as it says. Today I want: <what you want>." Screenshots help; say which system the screenshot is from.
