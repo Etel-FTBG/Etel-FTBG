@@ -99,7 +99,7 @@ def test_updater():
 def test_retired():
     for name in ("debug-geocode.php", "seed-zone-coords.php", "list-zones.php"):
         st, _, _ = http(BASE + "/api/" + name)
-        check(name + " is retired (410)", st == 410, st)
+        check(name + " is retired (410 stub or file removed: 404)", st in (404, 410), st)
 
 
 def test_chapa_callback():

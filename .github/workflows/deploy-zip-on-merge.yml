@@ -1,7 +1,7 @@
 name: Deploy zip on merge
 
 # This repo hosts several independently-deployed systems (delivery/,
-# EtelGroup/, EtelGebeya/, EtelAi/, EtelId-backups/, etc.), each with its
+# EtelGroup/, EtelGebeya/, EtelAi/, etc.), each with its
 # own manual Admin Updater tool on shared cPanel hosting - there's no CD
 # pipeline, deploys are a person uploading a zip. This workflow saves that
 # person the "which files changed, zip them with the right relative
