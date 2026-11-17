@@ -6,7 +6,7 @@
 var K = window.AdminKit;
 if (!K || window.ETELAreas) return;
 var esc = K.esc;
-var D = { caps: [], areas: null, enforced: true, edit: null };
+var D = { caps: [], areas: null, enforced: true, edit: null, pl: null };
 function can(c) { return D.caps.indexOf('*') !== -1 || D.caps.indexOf(c) !== -1; }
 function root() { return document.getElementById('panel-serviceareas'); }
 function run(a, b) { return K.api(a, b || {}); }
@@ -42,7 +42,7 @@ function cardHtml(a) {
     (a.name_am ? '<div class="am">' + esc(a.name_am) + '</div>' : '') + '</div>' +
     '<div class="sa-stats"><div><b>' + a.shops + '</b><small>Shops</small></div><div><b>' + a.drivers_online + '</b><small>Drivers online</small></div><div><b>' + a.rides_7d + '</b><small>Rides, 7 days</small></div></div>' +
     '<div class="sa-meta">Centre ' + a.lat.toFixed(4) + ', ' + a.lng.toFixed(4) + ' &middot; radius ' + a.radius_km + ' km</div>' +
-    (can('settings.manage') ? '<div class="sa-acts"><button class="ak-btn" data-sa-edit="' + a.id + '">Edit</button><button class="ak-btn" data-sa-del="' + a.id + '">Delete</button></div>' : '') + '</div>';
+    '<div class="sa-acts"><button class="ak-btn" data-sa-places="' + a.id + '">Quick zones</button>' + (can('settings.manage') ? '<button class="ak-btn" data-sa-edit="' + a.id + '">Edit</button><button class="ak-btn" data-sa-del="' + a.id + '">Delete</button>' : '') + '</div></div>';
 }
 function formHtml(a) {
   var n = !a.id;
@@ -55,8 +55,43 @@ function formHtml(a) {
     '<div class="full">' + K.sw('sa-active', 'Serving this city', a.active !== false) + '</div></div>' +
     '<div class="sa-acts" style="margin-top:12px"><button class="ak-btn gold" data-sa-save="1">Save</button><button class="ak-btn" data-sa-here="1">Use my location as the centre</button><button class="ak-btn" data-sa-cancel="1">Cancel</button></div></div>';
 }
+
+function placeForm(p) {
+  var n = !p.id;
+  return '<div class="ak-box sa-card"><h3>' + (n ? 'Add a quick zone' : 'Edit ' + esc(p.name)) + '</h3><div class="sa-form">' +
+    K.field('Place name (English)', '<input id="sp-name" value="' + esc(p.name || '') + '" maxlength="80" placeholder="Bole">') +
+    K.field('Place name (Amharic)', '<input id="sp-nameam" value="' + esc(p.name_am || '') + '" maxlength="80">') +
+    K.field('Latitude', '<input id="sp-lat" inputmode="decimal" value="' + esc(p.lat != null ? p.lat : '') + '" placeholder="9.0100">') +
+    K.field('Longitude', '<input id="sp-lng" inputmode="decimal" value="' + esc(p.lng != null ? p.lng : '') + '" placeholder="38.7600">') +
+    K.field('Order', '<input id="sp-sort" inputmode="numeric" value="' + esc(p.sort_order != null ? p.sort_order : '') + '">', 'Smaller numbers come first. Leave empty to put it last.') +
+    '<div class="full">' + K.sw('sp-active', 'Show to riders', p.active !== false) + '</div></div>' +
+    '<div class="sa-acts" style="margin-top:12px"><button class="ak-btn gold" data-sp-save="1">Save</button><button class="ak-btn" data-sp-here="1">Use my location</button><button class="ak-btn" data-sp-cancel="1">Cancel</button></div></div>';
+}
+function placesHtml() {
+  var P = D.pl, a = P.area, h = '<div class="ak"><div class="sa-hero"><div><h2>Quick zones: ' + esc(a.name) + '</h2><p>The address shortcuts riders in ' + esc(a.name) + ' tap to set pickup or drop-off. Each point must be inside the city (centre ' + a.lat.toFixed(3) + ', ' + a.lng.toFixed(3) + ', radius ' + a.radius_km + ' km). Riders in other cities do not see these.</p></div>' +
+    '<button class="ak-btn" data-sp-back="1">&larr; All cities</button></div>';
+  if (P.edit) h += placeForm(P.edit);
+  if (!P.items.length) h += K.empty('📍', 'No quick zones yet', 'Riders in ' + a.name + ' see no shortcuts until you add some.');
+  else h += '<div class="sa-grid">' + P.items.map(function (p) {
+    return '<div class="sa-card' + (p.active ? '' : ' off') + '"><div><h3>' + esc(p.name) + ' <span class="sa-pill ' + (p.active ? 'on' : 'off') + '">' + (p.active ? 'Shown' : 'Hidden') + '</span></h3>' + (p.name_am ? '<div class="am">' + esc(p.name_am) + '</div>' : '') + '</div>' +
+      '<div class="sa-meta">' + p.lat.toFixed(4) + ', ' + p.lng.toFixed(4) + ' &middot; order ' + p.sort_order + '</div>' +
+      (can('settings.manage') ? '<div class="sa-acts"><button class="ak-btn" data-sp-edit="' + p.id + '">Edit</button><button class="ak-btn" data-sp-del="' + p.id + '">Delete</button></div>' : '') + '</div>';
+  }).join('') + '</div>';
+  if (can('settings.manage') && !P.edit) h += '<div style="margin-top:14px"><button class="ak-btn gold" data-sp-add="1">+ Add a quick zone</button></div>';
+  return h + '</div>';
+}
+function openPlaces(areaId) {
+  return run('admin_area_places', { area_id: areaId }).then(function (r) {
+    if (!ok(r)) { K.toast(K.failText(r, 'Could not load the quick zones.'), true); return; }
+    var d = dat(r), a = d.area;
+    a.lat = num(a.lat, 0); a.lng = num(a.lng, 0); a.radius_km = num(a.radius_km, 0);
+    D.pl = { area: a, items: (d.places || []).map(function (p) { p.lat = num(p.lat, 0); p.lng = num(p.lng, 0); return p; }), edit: null };
+    paint();
+  });
+}
 function paint() {
   var el = root(); if (!el) return;
+  if (D.pl) { el.innerHTML = placesHtml(); return; }
   var h = '<div class="ak"><div class="sa-hero"><div><h2>Service areas</h2><p>Each person only sees the shops, drivers and map results of the city they are in. Add a city here and it starts working at once.</p></div>' +
     (can('settings.manage') ? K.sw('sa-enforce', 'Keep people inside their city', D.enforced) : '') + '</div>';
   if (D.edit) h += formHtml(D.edit);
@@ -73,6 +108,31 @@ function reload() {
 }
 function onClick(e) {
   var t = e.target, b;
+  if ((b = t.closest('[data-sa-places]'))) { openPlaces(parseInt(b.getAttribute('data-sa-places'), 10)); return; }
+  if (t.closest('[data-sp-back]')) { D.pl = null; paint(); return; }
+  if (t.closest('[data-sp-add]')) { D.pl.edit = { active: true }; paint(); return; }
+  if ((b = t.closest('[data-sp-edit]'))) { var pid = parseInt(b.getAttribute('data-sp-edit'), 10); D.pl.edit = D.pl.items.filter(function (p) { return p.id === pid; })[0] || null; paint(); return; }
+  if (t.closest('[data-sp-cancel]')) { D.pl.edit = null; paint(); return; }
+  if ((b = t.closest('[data-sp-del]'))) {
+    var xid = parseInt(b.getAttribute('data-sp-del'), 10), areaId = D.pl.area.id;
+    K.confirm({ title: 'Delete this quick zone?', text: 'Riders will no longer see it as a shortcut.', label: 'Delete', danger: true }).then(function (res) {
+      if (res) run('admin_area_place_delete', { id: xid }).then(function (r) { K.toast(ok(r) ? 'Deleted' : K.failText(r, 'Could not delete.'), !ok(r)); openPlaces(areaId); });
+    });
+    return;
+  }
+  if (t.closest('[data-sp-here]')) {
+    if (!navigator.geolocation) { K.toast('This device cannot share its location.', true); return; }
+    navigator.geolocation.getCurrentPosition(function (p) { document.getElementById('sp-lat').value = p.coords.latitude.toFixed(5); document.getElementById('sp-lng').value = p.coords.longitude.toFixed(5); }, function () { K.toast('Allow location access to use this.', true); }, { timeout: 9000 });
+    return;
+  }
+  if (t.closest('[data-sp-save]')) {
+    var pb = { area_id: D.pl.area.id, id: D.pl.edit && D.pl.edit.id || 0, name: document.getElementById('sp-name').value, name_am: document.getElementById('sp-nameam').value,
+      lat: num(document.getElementById('sp-lat').value, 0), lng: num(document.getElementById('sp-lng').value, 0), sort_order: num(document.getElementById('sp-sort').value, 0),
+      active: document.getElementById('sp-active').checked ? 1 : 0 };
+    var aid2 = D.pl.area.id;
+    run('admin_area_place_save', pb).then(function (r) { if (!ok(r)) { K.toast(K.failText(r, 'Could not save.'), true); return; } K.toast('Saved'); openPlaces(aid2); });
+    return;
+  }
   if ((b = t.closest('[data-sa-add]'))) { D.edit = { active: true, radius_km: 10 }; paint(); return; }
   if ((b = t.closest('[data-sa-edit]'))) { var id = parseInt(b.getAttribute('data-sa-edit'), 10); D.edit = D.areas.filter(function (a) { return a.id === id; })[0] || null; paint(); return; }
   if (t.closest('[data-sa-cancel]')) { D.edit = null; paint(); return; }
@@ -109,7 +169,7 @@ function load() {
   caps.then(function (c) {
     D.caps = c || [];
     if (!can('settings.view')) { el.innerHTML = '<div class="ak">' + K.empty('🔒', 'You do not have access to Service areas', 'Ask the owner to give your role the "settings.view" permission.') + '</div>'; return; }
-    D.edit = null; return reload();
+    D.edit = null; D.pl = null; return reload();
   });
 }
 function hook() {

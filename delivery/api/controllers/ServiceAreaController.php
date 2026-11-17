@@ -2,9 +2,11 @@
 // ============================================================
 // ETEL - service areas (cities). Public: get_service_areas. Admin (settings.view / settings.manage):
 //   admin_areas_list / admin_area_save / admin_area_delete / admin_areas_settings_save
+//   Quick zones of a city (lib/service_area_places.php): public get_area_places; admin (settings.view / settings.manage) admin_area_places / admin_area_place_save / admin_area_place_delete
 // The rules live in api/lib/service_areas.php. ASCII only.
 // ============================================================
 require_once __DIR__ . '/../lib/service_areas.php';
+require_once __DIR__ . '/../lib/service_area_places.php';
 
 switch ($action) {
 
@@ -86,6 +88,68 @@ case 'admin_areas_settings_save': {
     etel_areas_set_enforced($pdo, !empty($body['enforce']));
     error_log('[ETEL][areas] admin #' . intval($adm['id']) . ' set enforcement ' . (!empty($body['enforce']) ? 'ON' : 'OFF'));
     ok(array('enforce' => !empty($body['enforce'])));
+    break;
+}
+
+
+case 'get_area_places': {
+    // Public (the rider app asks it): the active quick zones of one city, by city code.
+    $pdo = db();
+    $code = isset($_GET['area']) ? (string) $_GET['area'] : (isset($body['area']) ? (string) $body['area'] : '');
+    $code = strtolower(preg_replace('/[^a-z0-9-]/i', '', $code));
+    if ($code === '') ok(array('area' => '', 'places' => array()));
+    ok(array('area' => $code, 'places' => etel_area_places_list($pdo, $code, true)));
+    break;
+}
+
+case 'admin_area_places': {
+    $pdo = db(); require_admin($pdo, 'settings.view');
+    $aid = intval(isset($body['area_id']) ? $body['area_id'] : (isset($_GET['area_id']) ? $_GET['area_id'] : 0));
+    $area = null;
+    foreach (etel_areas_list($pdo, false) as $a) { if (intval($a['id']) === $aid) $area = $a; }
+    if (!$area) fail('City not found', 404);
+    ok(array('area' => $area, 'places' => etel_area_places_list($pdo, $area['code'], false)));
+    break;
+}
+
+case 'admin_area_place_save': {
+    $pdo = db(); $adm = require_admin($pdo, 'settings.manage');
+    if (!etel_area_places_ensure($pdo)) fail('The places table could not be created.', 500);
+    $aid = intval(isset($body['area_id']) ? $body['area_id'] : 0);
+    $area = null;
+    foreach (etel_areas_list($pdo, false) as $a) { if (intval($a['id']) === $aid) $area = $a; }
+    if (!$area) fail('City not found', 404);
+    $id = intval(isset($body['id']) ? $body['id'] : 0);
+    $name = trim(isset($body['name']) ? (string) $body['name'] : ''); $nameAm = trim(isset($body['name_am']) ? (string) $body['name_am'] : '');
+    $lat = isset($body['lat']) ? floatval($body['lat']) : 0; $lng = isset($body['lng']) ? floatval($body['lng']) : 0;
+    if (mb_strlen($name, 'UTF-8') < 2 || mb_strlen($name, 'UTF-8') > 80) fail('Write the place name (2 to 80 letters).');
+    if (mb_strlen($nameAm, 'UTF-8') > 80) fail('The Amharic name is too long.');
+    if ($lat < 3 || $lat > 15 || $lng < 32 || $lng > 48) fail('The point must be a place in Ethiopia: check the latitude and longitude.');
+    if (!etel_area_contains($area, $lat, $lng)) fail('This point is outside ' . $area['name'] . ' (centre and radius of the city). Check the latitude and longitude, or make the city radius bigger.');
+    $active = !empty($body['active']) ? 1 : 0; $sort = intval(isset($body['sort_order']) ? $body['sort_order'] : 0);
+    if ($id > 0) {
+        $q = $pdo->prepare('SELECT id FROM service_area_places WHERE id = ? AND area_code = ?'); $q->execute(array($id, $area['code']));
+        if (!$q->fetchColumn()) fail('Place not found', 404);
+        $pdo->prepare('UPDATE service_area_places SET name = ?, name_am = ?, lat = ?, lng = ?, active = ?, sort_order = ?, updated_at = NOW() WHERE id = ?')->execute(array($name, $nameAm, $lat, $lng, $active, $sort, $id));
+    } else {
+        $q = $pdo->prepare('SELECT COUNT(*) FROM service_area_places WHERE area_code = ?'); $q->execute(array($area['code']));
+        $n = intval($q->fetchColumn());
+        if ($n >= 100) fail('A city can have at most 100 quick zones.');
+        if ($sort <= 0) $sort = $n + 1;
+        $pdo->prepare('INSERT INTO service_area_places (area_code, name, name_am, lat, lng, active, sort_order, created_at, updated_at) VALUES (?,?,?,?,?,?,?,NOW(),NOW())')->execute(array($area['code'], $name, $nameAm, $lat, $lng, $active, $sort));
+    }
+    error_log('[ETEL][places] admin #' . intval($adm['id']) . ' saved place "' . $name . '" in ' . $area['code']);
+    ok(array('saved' => true));
+    break;
+}
+
+case 'admin_area_place_delete': {
+    $pdo = db(); $adm = require_admin($pdo, 'settings.manage');
+    if (!etel_area_places_ensure($pdo)) fail('The places table could not be created.', 500);
+    $id = intval(isset($body['id']) ? $body['id'] : 0);
+    $pdo->prepare('DELETE FROM service_area_places WHERE id = ?')->execute(array($id));
+    error_log('[ETEL][places] admin #' . intval($adm['id']) . ' deleted place #' . $id);
+    ok(array('deleted' => true));
     break;
 }
 
