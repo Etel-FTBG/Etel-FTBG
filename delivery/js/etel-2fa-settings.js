@@ -142,7 +142,13 @@
         $('done').onclick = load;
     }
 
-    function open() { build(); host.style.display = 'block'; load(); }
+    function isOpen() { return !!host && host.style.display === 'block'; }
+    function open() { if (isOpen()) return; build(); host.style.display = 'block'; load(); }   // already showing: never reload it (that wiped Step 1/2 half way)
+    /* The server answers 403 2fa_setup_required to EVERY admin call until two-step is on, and the dashboard makes many (and keeps polling).
+       Each one used to call open(), which reloaded the panel back to "Off / Turn on" every few seconds. Now: open it once per page load;
+       after that the Two-step sign-in menu item opens it again. */
+    var autoOpened = false;
+    function autoOpen() { if (autoOpened || isOpen()) return; autoOpened = true; open(); }
     function close() { if (host) host.style.display = 'none'; }
 
     window.Etel2FASettings = { open: open, close: close };
@@ -153,7 +159,7 @@
         window.fetch = function () {
             return realFetch.apply(this, arguments).then(function (r) {
                 try {
-                    if (r && r.status === 403) r.clone().json().then(function (d) { if (d && d.code === '2fa_setup_required') open(); }).catch(function () {});
+                    if (r && r.status === 403) r.clone().json().then(function (d) { if (d && d.code === '2fa_setup_required') autoOpen(); }).catch(function () {});
                 } catch (e) {}
                 return r;
             });
