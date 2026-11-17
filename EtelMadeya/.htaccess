@@ -50,21 +50,49 @@ Options -Indexes
 
 # ─── PHP SETTINGS ────────────────────────────────────────────────────
 
-# Upload limits
-php_value upload_max_filesize 10M
-php_value post_max_size 10M
-php_value max_execution_time 300
-php_value max_input_time 300
-php_value memory_limit 256M
-
-# Session settings
-php_value session.cookie_httponly 1
-php_value session.cookie_secure 0
-php_value session.use_strict_mode 1
-
-# Error handling (disable in production)
-php_flag display_errors On
-php_value error_reporting E_ALL
+# php_value / php_flag only exist when PHP runs as an Apache module (mod_php). On hosts that run PHP
+# through FPM or CGI (most cPanel servers) Apache does not know them and answers HTTP 500 for EVERY file in
+# this folder ("Invalid command 'php_value'"). So they are guarded here; the same settings for FPM/CGI hosts
+# are in .user.ini next to this file. Keep both in step.
+<IfModule mod_php.c>
+    php_value upload_max_filesize 10M
+    php_value post_max_size 10M
+    php_value max_execution_time 300
+    php_value max_input_time 300
+    php_value memory_limit 256M
+    php_value session.cookie_httponly 1
+    php_value session.cookie_secure 0
+    php_value session.use_strict_mode 1
+    php_flag display_errors Off
+    php_flag log_errors On
+    php_value error_reporting E_ALL
+</IfModule>
+<IfModule mod_php7.c>
+    php_value upload_max_filesize 10M
+    php_value post_max_size 10M
+    php_value max_execution_time 300
+    php_value max_input_time 300
+    php_value memory_limit 256M
+    php_value session.cookie_httponly 1
+    php_value session.cookie_secure 0
+    php_value session.use_strict_mode 1
+    php_flag display_errors Off
+    php_flag log_errors On
+    php_value error_reporting E_ALL
+</IfModule>
+<IfModule mod_php8.c>
+    php_value upload_max_filesize 10M
+    php_value post_max_size 10M
+    php_value max_execution_time 300
+    php_value max_input_time 300
+    php_value memory_limit 256M
+    php_value session.cookie_httponly 1
+    php_value session.cookie_secure 0
+    php_value session.use_strict_mode 1
+    php_flag display_errors Off
+    php_flag log_errors On
+    php_value error_reporting E_ALL
+</IfModule>
 
 # ─── COMPRESSION ─────────────────────────────────────────────────────
 
