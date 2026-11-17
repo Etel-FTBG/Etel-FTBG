@@ -44,6 +44,7 @@ run python3 tests/ci/check_xss_sinks.py
 run python3 tests/security_regression_smoke.py
 run python3 tests/authz_matrix_smoke.py
 run python3 tests/admin_2fa_required_smoke.py
+run python3 tests/etel_code_login_smoke.py
 run python3 tests/auditor_findings_smoke.py
 run python3 tests/package_smoke.py
 run python3 tests/csp_report_smoke.py
@@ -93,6 +94,7 @@ run php tests/ride_commission_test.php
 run php tests/ride_incentives_test.php
 run php tests/ride_meter_floor_test.php
 run php tests/phase3_unit.php
+run php tests/etel_code_agent_test.php
 run php tests/backup_watch_test.php
 run php tests/manual_dispatch_test.php
 run php tests/order_cancel_test.php
