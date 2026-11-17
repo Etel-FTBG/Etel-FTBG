@@ -22,6 +22,9 @@ fi
 # The other smokes sign couriers up and put them straight to work, so approval is off for the run;
 # tests/courier_approval_smoke.py switches it on for itself and puts it back.
 (cd tests && python3 -c "import etel_test_db as t; print(t.run_sql(\"INSERT INTO pricing_rules (rule_key, rule_value, description) VALUES ('courier_require_approval', 0, 'CI: couriers start work without approval') ON DUPLICATE KEY UPDATE rule_value = 0\"))") || true
+# Admins must have two-step sign-in (the launch default). The demo admin has none, so the other smokes run with the rule off;
+# tests/admin_2fa_required_smoke.py switches it on for itself and puts it back.
+(cd tests && python3 -c "import etel_test_db as t; print(t.run_sql(\"INSERT INTO pricing_rules (rule_key, rule_value, description) VALUES ('require_admin_2fa', 0, 'CI: demo admin has no two-step sign-in') ON DUPLICATE KEY UPDATE rule_value = 0\"))") || true
 
 PHP_CLI_SERVER_WORKERS=4 php -S 127.0.0.1:"$PORT" -t . >/tmp/etel-php.log 2>&1 &
 SRV=$!
@@ -40,6 +43,7 @@ run python3 tests/ci/check_reserved_columns.py
 run python3 tests/ci/check_xss_sinks.py
 run python3 tests/security_regression_smoke.py
 run python3 tests/authz_matrix_smoke.py
+run python3 tests/admin_2fa_required_smoke.py
 run python3 tests/auditor_findings_smoke.py
 run python3 tests/package_smoke.py
 run python3 tests/csp_report_smoke.py
@@ -88,6 +92,8 @@ run php tests/ride_tip_chapa_test.php
 run php tests/ride_commission_test.php
 run php tests/ride_incentives_test.php
 run php tests/ride_meter_floor_test.php
+run php tests/phase3_unit.php
+run php tests/backup_watch_test.php
 run php tests/manual_dispatch_test.php
 run php tests/order_cancel_test.php
 run php tests/package_orders_test.php

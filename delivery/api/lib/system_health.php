@@ -13,7 +13,7 @@
  *   Disk space     - free space where the API lives
  *   Admin 2FA      - whether the signed-in admin has two-step sign-in on
  * Overall = the worst of the above. The thresholds are plain numbers here
- * (backup older than 36 h = warn, 72 h = bad; cron silent 15 min = bad).
+ * (backup older than 26 h = bad and the admins get a push; cron silent 15 min = bad).
  *
  * Heartbeat: cron_ride_monitor.php calls etel_health_heartbeat() after each run,
  * so "the cron job is not set up / stopped" is visible instead of silent.
@@ -21,6 +21,9 @@
  */
 
 if (!function_exists('etel_system_health')) {
+
+/* A backup older than this many hours is a problem: the health page turns red and the admins get a push (cron_ride_monitor.php). */
+if (!defined('ETEL_BACKUP_ALERT_HOURS')) define('ETEL_BACKUP_ALERT_HOURS', 26);
 
 function etel_health_heartbeat($pdo, $name, $detail) {
     try {
@@ -51,7 +54,17 @@ function etel_health_ago($min) {
 function etel_health_backup_dirs() {
     $api = dirname(__DIR__); // .../delivery/api
     $dirs = array();
-    $set = function_exists('etel_env') ? etel_env('BACKUP_DIR', 'CFG_BACKUP_DIR', '') : (getenv('BACKUP_DIR') ? getenv('BACKUP_DIR') : '');
+    if (function_exists('etel_env')) {
+        $set = etel_env('BACKUP_DIR', 'CFG_BACKUP_DIR', '');
+    } else {
+        // cron scripts do not load boot.php: read api/.env directly, like cron_backup_db.php does
+        $set = getenv('BACKUP_DIR') ? getenv('BACKUP_DIR') : '';
+        if (!$set) {
+            if (!function_exists('etel_parse_env_file')) require_once dirname(__DIR__) . '/env_loader.php';
+            $envf = etel_parse_env_file($api . '/.env');
+            if (!empty($envf['BACKUP_DIR'])) $set = $envf['BACKUP_DIR'];
+        }
+    }
     if ($set) $dirs[] = $set;
     $dirs[] = dirname(dirname(dirname($api))) . '/etel_backups';
     $dirs[] = $api . '/_backups';
@@ -104,13 +117,26 @@ function etel_health_backup() {
             if ($t && (!$newest || $t > $newest['t'])) $newest = array('t' => $t, 'bytes' => isset($m['bytes']) ? intval($m['bytes']) : 0);
         }
     }
-    if (!$newest) return etel_health_item('Backups', 'warn', 'No backup found yet. Add the daily backup cron (cron_backup_db.php) - see the setup notes.');
+    if (!$newest) return etel_health_item('Backups', 'bad', 'No backup found. Add the daily backup cron (cron_backup_db.php) - see the setup notes.');
     $hours = (time() - $newest['t']) / 3600;
     $mb = round($newest['bytes'] / 1048576, 1);
     $txt = 'Newest backup ' . etel_health_ago(floor($hours * 60)) . ', ' . $mb . ' MB.';
-    if ($hours > 72) return etel_health_item('Backups', 'bad', $txt . ' No backup for over 3 days - check the daily cron.');
-    if ($hours > 36) return etel_health_item('Backups', 'warn', $txt . ' Older than a day and a half.');
+    if ($hours > ETEL_BACKUP_ALERT_HOURS) return etel_health_item('Backups', 'bad', $txt . ' Older than ' . ETEL_BACKUP_ALERT_HOURS . ' hours - the daily backup is not running. Check the cron job.');
     return etel_health_item('Backups', 'ok', $txt);
+}
+
+/* The daily backup job itself: cron_backup_db.php writes the heartbeat 'backup_db' after every run (ok or failed). */
+function etel_health_backup_job($pdo) {
+    try {
+        $s = $pdo->prepare("SELECT TIMESTAMPDIFF(MINUTE, last_run, NOW()) AS mins, detail FROM etel_heartbeat WHERE name='backup_db'");
+        $s->execute();
+        $r = $s->fetch();
+    } catch (Exception $e) { $r = false; }
+    if (!$r) return etel_health_item('Backup job', 'warn', 'The backup cron has not reported yet. It reports after every run (upload the new cron_backup_db.php, then run it once).');
+    $txt = 'Last run ' . etel_health_ago($r['mins']) . ': ' . $r['detail'] . '.';
+    if (strpos((string) $r['detail'], 'failed') === 0) return etel_health_item('Backup job', 'bad', $txt);
+    if (intval($r['mins']) > ETEL_BACKUP_ALERT_HOURS * 60) return etel_health_item('Backup job', 'bad', $txt . ' The cron job is not running every day.');
+    return etel_health_item('Backup job', 'ok', $txt);
 }
 
 /* Is there a copy of the backups somewhere other than this server? Either the automatic off-site push worked
@@ -261,6 +287,7 @@ function etel_system_health($pdo, $adminId = 0) {
     if (etel_backup_latest()) $bk['download'] = true; // the admin card shows a Download button
     $checks[] = $bk;
     $checks[] = etel_health_backup_copy($pdo);
+    $checks[] = etel_health_backup_job($pdo);
 
     // Disk
     if (function_exists('disk_free_space')) {
@@ -279,11 +306,25 @@ function etel_system_health($pdo, $adminId = 0) {
         } catch (Exception $e) {}
     }
 
-    // Is two-step sign-in required for every admin?
+    // Is two-step sign-in required for every admin and staff account? (lib/admin_2fa_policy.php)
     try {
-        $rq = $pdo->query("SELECT rule_value FROM pricing_rules WHERE rule_key='require_admin_2fa' LIMIT 1")->fetchColumn();
-        $req = intval($rq) === 1;
-        $checks[] = etel_health_item('Admin 2FA rule', $req ? 'ok' : 'info', $req ? 'Required: admins without two-step sign-in cannot open admin pages.' : 'Optional. Turn it on once every admin has saved their backup codes.', array('require_toggle' => $req ? 'on' : 'off'));
+        require_once __DIR__ . '/admin_2fa_policy.php';
+        $pol = etel_admin_2fa_policy($pdo);
+        if ($pol['source'] === 'env' && !$pol['required']) {
+            $checks[] = etel_health_item('Admin 2FA rule', 'bad', 'SWITCHED OFF by ADMIN_2FA_REQUIRED=0 in api/.env (the emergency switch). Sign in, fix the locked account, then delete that line.');
+        } elseif ($pol['required']) {
+            $checks[] = etel_health_item('Admin 2FA rule', 'ok', 'Required: every admin and staff account needs two-step sign-in to open admin pages.');
+        } else {
+            $checks[] = etel_health_item('Admin 2FA rule', 'warn', 'An owner switched the requirement off. Admins and staff are not forced to use two-step sign-in.');
+        }
+        $miss = etel_admin_2fa_missing($pdo);
+        if ($miss) {
+            $names = array();
+            foreach (array_slice($miss, 0, 5) as $m) $names[] = $m['name'] . ($m['staff_role'] !== '' ? ' (' . $m['staff_role'] . ')' : '');
+            $checks[] = etel_health_item('Admin and staff two-step', 'warn', count($miss) . ' account' . (count($miss) === 1 ? '' : 's') . ' without two-step sign-in: ' . implode(', ', $names) . (count($miss) > 5 ? ' and more' : '') . '.' . ($pol['required'] ? ' Until they turn it on they cannot use the admin pages.' : ''));
+        } else {
+            $checks[] = etel_health_item('Admin and staff two-step', 'ok', 'Every admin and staff account has two-step sign-in on.');
+        }
     } catch (Exception $e) {}
 
     // Trip start PIN

@@ -2,7 +2,9 @@
 /**
  * ETEL Delivery - database backup and backup check (cron entry point).
  *
- * cPanel -> Cron Jobs -> once a day (for example 02:30):
+ * cPanel -> Cron Jobs -> once a day (for example 02:30). The simplest command runs php directly and needs no key:
+ *   /usr/local/bin/php /home/ACCOUNT/public_html/delivery/api/cron_backup_db.php >/dev/null 2>&1
+ * or, over the web with the key:
  *   wget -q -O /dev/null "https://ethelmarket.com/delivery/api/cron_backup_db.php?key=YOUR_CRON_KEY"
  * It reuses CRON_DISPATCH_KEY from api/.env, like the other cron scripts.
  *
@@ -57,7 +59,9 @@ if (php_sapi_name() === 'cli' && isset($argv)) {
 }
 $expectedKey = bk_env('CRON_DISPATCH_KEY', '');
 $givenKey    = isset($params['key']) ? $params['key'] : '';
-if ($expectedKey === '' || !hash_equals($expectedKey, $givenKey)) {
+// From the command line (a cPanel cron running php directly) no key is needed: only the server itself can start it.
+// Over the web the key is still required (the same rule as cron_ride_monitor.php).
+if (php_sapi_name() !== 'cli' && ($expectedKey === '' || !hash_equals($expectedKey, $givenKey))) {
     bk_reply(array('success' => false, 'message' => 'Missing or wrong ?key= - set CRON_DISPATCH_KEY in api/.env first'), 403);
 }
 $action = isset($params['action']) ? $params['action'] : 'run';
@@ -69,6 +73,15 @@ function bk_connect() {
         array(PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
               PDO::MYSQL_ATTR_USE_BUFFERED_QUERY => false)
     );
+}
+
+/* Tells the health page how the last run went (etel_heartbeat 'backup_db'): 'ok: ...' or 'failed: ...'. Never stops the backup. */
+function bk_heartbeat($detail) {
+    try {
+        if (!defined('APP_VER')) define('APP_VER', 'cron-backup');
+        require_once __DIR__ . '/lib/system_health.php';
+        etel_health_heartbeat(bk_connect(), 'backup_db', $detail);
+    } catch (Exception $e) { error_log('[ETEL][backup] heartbeat failed: ' . $e->getMessage()); }
 }
 
 /* Folder for the backups; returns array(path, inWeb). */
@@ -144,7 +157,7 @@ function bk_list($dir) {
 }
 
 list($dir, $inWeb) = bk_dir();
-if (!$dir) bk_reply(array('success' => false, 'message' => 'No writable folder for backups. Set BACKUP_DIR in api/.env.'), 500);
+if (!$dir) { if ($action === 'run') bk_heartbeat('failed: no writable folder for backups'); bk_reply(array('success' => false, 'message' => 'No writable folder for backups. Set BACKUP_DIR in api/.env.'), 500); }
 
 try {
     if ($action === 'list') {
@@ -159,7 +172,7 @@ try {
         $path = $dir . '/' . $name . '.sql.gz';
         $tmp  = $path . '.part';
         $gz = gzopen($tmp, 'wb6');
-        if (!$gz) bk_reply(array('success' => false, 'message' => 'Could not create the backup file'), 500);
+        if (!$gz) { bk_heartbeat('failed: could not create the backup file'); bk_reply(array('success' => false, 'message' => 'Could not create the backup file'), 500); }
         gzwrite($gz, "-- ETEL Delivery database backup\n-- Created: " . date('Y-m-d H:i:s') . " (Africa/Addis_Ababa)\n-- Database: " . bk_env('DB_NAME', '') . "\n");
         gzwrite($gz, "SET NAMES utf8mb4;\nSET FOREIGN_KEY_CHECKS=0;\nSET UNIQUE_CHECKS=0;\nSET SQL_MODE='NO_AUTO_VALUE_ON_ZERO';\n");
         $tables = array();
@@ -173,11 +186,12 @@ try {
         }
         gzwrite($gz, "\nSET FOREIGN_KEY_CHECKS=1;\nSET UNIQUE_CHECKS=1;\n-- ETEL-BACKUP-COMPLETE tables=" . count($tables) . " rows=" . $total . "\n");
         gzclose($gz);
-        if (!rename($tmp, $path)) bk_reply(array('success' => false, 'message' => 'Could not finish the backup file'), 500);
+        if (!rename($tmp, $path)) { bk_heartbeat('failed: could not finish the backup file'); bk_reply(array('success' => false, 'message' => 'Could not finish the backup file'), 500); }
         @chmod($path, 0600);
         $manifest = array('file' => basename($path), 'created' => date('Y-m-d H:i:s'), 'bytes' => filesize($path),
             'sha256' => hash_file('sha256', $path), 'tables' => $counts, 'rows' => $total);
         file_put_contents($dir . '/' . $name . '.json', json_encode($manifest));
+        bk_heartbeat('ok: ' . round($manifest['bytes'] / 1048576, 1) . ' MB, ' . count($tables) . ' tables, ' . $total . ' rows');
         @chmod($dir . '/' . $name . '.json', 0600);
         // Retention
         $keep = max(1, intval(bk_env('BACKUP_KEEP', '7')));
@@ -257,5 +271,6 @@ try {
     bk_reply(array('success' => false, 'message' => 'Unknown action. Use run, verify or list.'), 400);
 } catch (Exception $e) {
     error_log('[ETEL][backup] ' . $e->getMessage());
+    if ($action === 'run') bk_heartbeat('failed: see the server error log');
     bk_reply(array('success' => false, 'message' => 'Backup failed - see the server error log'), 500);
 }

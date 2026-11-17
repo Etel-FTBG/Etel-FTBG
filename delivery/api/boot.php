@@ -415,23 +415,22 @@ function require_auth($pdo) {
     return $u;
 }
 
-/* Optional rule (pricing_rules 'require_admin_2fa' = 1, set from Admin > Rides > System health):
-   an admin who has not turned on two-step sign-in cannot use the admin_* actions until they do.
-   Everything else (sign-in, the 2FA set-up screens, the rider/driver apps) is untouched, so nobody
-   is locked out of setting it up. Fails open on any error. */
+/* Two-step sign-in is REQUIRED for every admin and staff account (lib/admin_2fa_policy.php: default on, owner can switch it off,
+   emergency switch ADMIN_2FA_REQUIRED=0 in api/.env). An admin who has not turned it on cannot use the admin_* actions until they do.
+   Everything else (sign-in, the 2FA set-up screens, the health page, the rider/driver apps) is untouched, so nobody is locked out of
+   setting it up. Fails open on any error. */
 function etel_admin_2fa_enforce($pdo, $u) {
     global $action;
     if (empty($u['role']) || $u['role'] !== 'admin') return;
     $a = isset($action) ? (string) $action : '';
-    if (strpos($a, 'admin_') !== 0 || strpos($a, 'admin_2fa_') === 0 || $a === 'admin_system_health' || $a === 'admin_set_2fa_required') return;
+    if (strpos($a, 'admin_') !== 0 || strpos($a, 'admin_2fa_') === 0 || $a === 'admin_system_health' || $a === 'admin_set_2fa_required' || $a === 'admin_get_2fa_rule') return;
     try {
-        $s = $pdo->prepare("SELECT rule_value FROM pricing_rules WHERE rule_key='require_admin_2fa' LIMIT 1");
-        $s->execute();
-        if (intval($s->fetchColumn()) !== 1) return;
+        require_once __DIR__ . '/lib/admin_2fa_policy.php';
+        if (!etel_admin_2fa_required($pdo)) return;
         require_once __DIR__ . '/lib/totp.php';
         if (etel_2fa_is_enabled($pdo, intval($u['id']))) return;
     } catch (Exception $e) { return; }
-    fail('Your organisation requires two-step sign-in for admins. Open the Two-step sign-in menu item and turn it on first.', 403, array('code' => '2fa_setup_required'));
+    fail('Two-step sign-in is required for admins and staff. Open the Two-step sign-in menu item and turn it on first.', 403, array('code' => '2fa_setup_required'));
 }
 
 // Loads the capability list for a user.

@@ -90,5 +90,8 @@ $noPush = $isCli ? (isset($argv) && in_array('push=0', $argv, true)) : (isset($_
 $watch = rides_monitor_run($pdo, !$noPush);
 // Expire courier job offers even when nobody's screen is polling (offers are lazy otherwise).
 try { require_once __DIR__ . '/lib/courier_offers.php'; etel_offers_sweep($pdo, true); } catch (Exception $e) {} catch (Throwable $e) {}
+// Backup alert: the newest backup is older than 26 hours (or missing) -> one push to the admins, then at most one per 12 hours.
+require_once __DIR__ . '/lib/backup_watch.php';
+$backup = etel_backup_watch($pdo, !$noPush);
 etel_health_heartbeat($pdo, 'ride_monitor', 'swept ' . count($swept['completed']) . ' closed, ' . $watch['findings'] . ' findings');
-cs_reply(array('success' => true, 'swept' => $swept, 'watch' => $watch));
+cs_reply(array('success' => true, 'swept' => $swept, 'watch' => $watch, 'backup' => $backup));
