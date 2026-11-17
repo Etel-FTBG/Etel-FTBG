@@ -9,6 +9,7 @@
 // ============================================================
 if (!defined('APP_VER') && PHP_SAPI !== 'cli') { http_response_code(403); exit; }
 require_once __DIR__ . '/fa_core.php';
+require_once __DIR__ . '/fa_controls.php';
 
 if (!function_exists('fa_payout_candidates')) {
 
@@ -16,9 +17,11 @@ if (!function_exists('fa_payout_candidates')) {
    min_payout_etb. Suspended or rejected agents are never paid out automatically. */
 function fa_payout_candidates($pdo) {
     $S = fa_settings($pdo);
+    $held = fa_controls_held_ids($pdo);                                            // agents an admin put on payout hold are skipped
+    $skip = $held ? ' AND a.id NOT IN (' . implode(',', array_map('intval', $held)) . ')' : '';
     $q = $pdo->query("SELECT a.id, a.full_name, a.payout_phone, a.phone, SUM(e.amount) AS net, COUNT(e.id) AS n
                       FROM fa_earnings e JOIN fa_agents a ON a.id = e.agent_id
-                      WHERE e.status = 'payable' AND e.payout_item_id = 0 AND a.status = 'approved' AND a.payout_phone <> ''
+                      WHERE e.status = 'payable' AND e.payout_item_id = 0 AND a.status = 'approved' AND a.payout_phone <> ''" . $skip . "
                       GROUP BY a.id, a.full_name, a.payout_phone, a.phone
                       HAVING SUM(e.amount) >= " . floatval($S['min_payout_etb']) . " AND SUM(e.amount) > 0
                       ORDER BY net DESC");

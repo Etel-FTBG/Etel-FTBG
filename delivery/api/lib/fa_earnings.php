@@ -23,6 +23,7 @@
 // ============================================================
 if (!defined('APP_VER') && PHP_SAPI !== 'cli') { http_response_code(403); exit; }
 require_once __DIR__ . '/fa_core.php';
+require_once __DIR__ . '/fa_controls.php';
 require_once __DIR__ . '/fa_risk.php';
 
 if (!function_exists('fa_run_earnings')) {
@@ -37,10 +38,11 @@ function fa_hold_days($S, $tier) {
 function fa_cap_check($pdo, $agentId, $earnedAt, $amount) {
     $S = fa_settings($pdo);
     $base = "SELECT COALESCE(SUM(amount),0) FROM fa_earnings WHERE agent_id = ? AND kind <> 'clawback' AND status IN ('pending','payable','paid')";
-    if ($S['daily_cap_etb'] > 0) {
+    $dailyCap = fa_controls_daily_cap($pdo, $agentId, $S['daily_cap_etb']);        // this agent's own limit when an admin set one
+    if ($dailyCap > 0) {
         $q = $pdo->prepare($base . ' AND DATE(earned_at) = DATE(?)');
         $q->execute(array(intval($agentId), $earnedAt));
-        if (floatval($q->fetchColumn()) + $amount > $S['daily_cap_etb']) return 'CAP_DAILY';
+        if (floatval($q->fetchColumn()) + $amount > $dailyCap) return 'CAP_DAILY';
     }
     if ($S['weekly_cap_etb'] > 0) {
         $q = $pdo->prepare($base . ' AND YEARWEEK(earned_at, 1) = YEARWEEK(?, 1)');
