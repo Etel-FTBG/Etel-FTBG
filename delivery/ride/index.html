@@ -384,20 +384,6 @@
       <div style="font-size:16px;color:var(--dim)">→</div>
     </a>
 
-    <!-- Ride by distance -->
-    <div class="loc-card" id="bykm-card" style="margin-top:10px;padding:12px 14px">
-      <div style="font-size:12px;color:var(--dim);margin-bottom:8px">🛣️ <b style="color:var(--gold-lt)">Open meter</b> — no destination? Tell the driver on the way</div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-        <button class="zchip" onclick="setManualKm(2)">2 km</button>
-        <button class="zchip" onclick="setManualKm(5)">5 km</button>
-        <button class="zchip" onclick="setManualKm(10)">10 km</button>
-        <input id="bykm-input" type="number" min="1" max="100" step="0.5" placeholder="km"
-               style="width:74px;padding:8px 10px;border-radius:10px;border:1px solid var(--line);background:var(--sheet2);color:var(--text);font-family:var(--f);font-size:13px"
-               oninput="setManualKm(this.value)"/>
-        <span id="bykm-rate" style="font-size:11px;color:var(--dim)">ETB 120 + 30/km</span>
-      </div>
-    </div>
-
     <!-- Fare card -->
     <div class="fare-card" id="fare-card" style="display:none">
       <div>
@@ -573,6 +559,21 @@
         3. The driver links your phone — the ride appears here automatically<br>
         4. Track your trip and pay at the end
       </div>
+    </div>
+
+    <!-- Open meter (ride by distance): moved here from the Book tab -->
+    <div class="loc-card" id="bykm-card" style="margin:0 0 14px;padding:12px 14px">
+      <div style="font-size:12px;color:var(--dim);margin-bottom:8px">🛣️ <b style="color:var(--gold-lt)">Open meter</b> — no destination? Tell the driver on the way</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+        <button class="zchip" onclick="setManualKm(2)">2 km</button>
+        <button class="zchip" onclick="setManualKm(5)">5 km</button>
+        <button class="zchip" onclick="setManualKm(10)">10 km</button>
+        <input id="bykm-input" type="number" min="1" max="100" step="0.5" placeholder="km"
+               style="width:74px;padding:8px 10px;border-radius:10px;border:1px solid var(--line);background:var(--sheet2);color:var(--text);font-family:var(--f);font-size:13px"
+               oninput="setManualKm(this.value)"/>
+        <span id="bykm-rate" style="font-size:11px;color:var(--dim)">ETB 120 + 30/km</span>
+      </div>
+      <button type="button" class="ride-book-btn" style="margin-top:12px" onclick="switchRideTab('book')">Continue: set pickup &rarr;</button>
     </div>
 
     <div id="hail-status" style="text-align:center;padding:20px">
@@ -1438,11 +1439,11 @@ function useMyCurrentLocationForPickup(btnEl) {
   var cont = document.createElement('button');
   cont.type = 'button'; cont.id = 'book-continue'; cont.className = 'ride-book-btn';
   cont.textContent = 'Choose vehicle →';
-  var anchor = document.getElementById('bykm-card') || view.querySelector('.loc-card');
+  var anchor = view.querySelector('.loc-card');   // the open-meter card now lives in the Street Hail tab
   view.insertBefore(cont, anchor ? anchor.nextSibling : null);
   cont.addEventListener('click', function () {
     if (!routeReady()) {
-      if (typeof _rideToast === 'function') _rideToast('Set your pickup and destination first (or pick an Open meter distance)', 'err');
+      if (typeof _rideToast === 'function') _rideToast('Set your pickup and destination first (or choose an Open meter distance in the Street Hail tab)', 'err');
       return;
     }
     setStep(2);
@@ -1488,6 +1489,7 @@ function useMyCurrentLocationForPickup(btnEl) {
 <script src="../js/ride-extra-features.js?v=1.1" defer></script>
 <script src="../js/ride-fare-self-heal.js?v=1.0" defer></script>
 <script src="../js/ride-quote-notice.js?v=1.0" defer></script>
+<script src="../js/ride-quickzones-toggle.js?v=1.0" defer></script>
 <script src="../js/sos-button.js?v=1.2" defer></script>
 <script src="../js/ride-safety.js?v=1" defer></script>
 <script src="../js/chapa-pay.js?v=1.0" defer></script>
