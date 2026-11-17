@@ -69,7 +69,15 @@
           headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + Auth.getToken() },
           body: JSON.stringify({ action: 'admin_get_my_capabilities' })
         }).then(function (r) {
-          if (r.status === 401 || r.status === 403) { throw new Error('not-admin'); }
+          if (r.status === 403) {
+            // "Two-step sign-in is required": a real admin who has not set it up yet. Keep the session and the page; the set-up panel
+            // (js/etel-2fa-settings.js) opens by itself on this same answer. Any other 403 = not an admin.
+            return r.clone().json().catch(function () { return null; }).then(function (b) {
+              if (b && b.code === '2fa_setup_required') return { success: true, twofa_setup_required: true };
+              throw new Error('not-admin');
+            });
+          }
+          if (r.status === 401) { throw new Error('not-admin'); }
           return r.json();
         }).then(function (j) {
           if (j && j.success === false) { throw new Error('not-admin'); }
