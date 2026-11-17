@@ -172,6 +172,7 @@ function vHome() {
     '<div class="bk"><span><i style="background:var(--ok)"></i>' + esc(t('home.available')) + '</span><b class="num">' + esc(fmt(Math.max(0, b.available))) + '</b></div>' +
     '<div class="bk"><span><i style="background:var(--gold)"></i>' + esc(t('home.paid')) + '</span><b class="num">' + esc(fmt(b.paid)) + '</b></div></div>' +
     '<p class="sub" style="margin-top:12px">' + esc(t('home.pending_hint', { d: r.hold_days })) + '</p>' + (b.available < 0 ? '<p class="banner">' + esc(t('home.owed', { x: fmt(-b.available) })) + '</p>' : '') + '</section>' +
+    '<section id="dash" class="card dash" aria-label="' + esc(t('ds.title')) + '"></section>' +
     (can('ride') ? '<div class="nudge">' + ic('star') + '<span><b>' + esc(t('home.next')) + '</b><br>' + esc(p ? t('home.next_text', { n: p.trips, t: need, d: p.days_left }) : t('home.next_none', { t: need, d: r.repeat_days, b: fmt(r.bonus_repeat) })) + '</span></div>' +
     '<div class="grid2"><a class="btn primary" href="#/code">' + ic('qr') + esc(t('home.show_code')) + '</a><a class="btn" href="#/badge">' + ic('badge') + esc(t('home.my_badge')) + '</a></div>' +
     '<a class="btn" href="#/book" style="margin-top:12px">' + ic('car') + esc(t('home.book')) + '</a>' : '') +
@@ -257,6 +258,16 @@ function vRules() {
 function vSupport() {
   return shell('<h1>' + esc(t('sup.title')) + '</h1><p class="sub">' + esc(t('sup.text')) + '</p><div class="stack" style="margin-top:16px"><a class="btn primary" href="../help/?app=agent">' + ic('chat') + esc(t('sup.ticket')) + '</a><a class="btn" href="' + SUPPORT.telegram + '" rel="noopener">' + ic('chat') + esc(t('sup.telegram')) + '</a><a class="btn" href="mailto:' + SUPPORT.email + '">' + ic('mail') + esc(t('sup.email')) + '</a></div><p class="sub" style="margin-top:16px">' + esc(t('sup.note')) + '</p>');
 }
+/* "Your numbers" on Home: loaded on demand (dash.js), only for an approved agent. */
+function mountDash() {
+  if (!S.me || !S.me.agent || S.me.agent.status !== 'approved' || S.offline) { var d0 = $('dash'); if (d0) d0.parentNode.removeChild(d0); return; }
+  if (window.ETELDash) return window.ETELDash.mount();
+  if (S.dashLoading) return; S.dashLoading = true;
+  var sc = document.createElement('script'); sc.src = 'dash.js?v=1';
+  sc.onload = function () { S.dashLoading = false; if (S.view === 'home' && window.ETELDash) window.ETELDash.mount(); };
+  sc.onerror = function () { S.dashLoading = false; var d1 = $('dash'); if (d1) d1.parentNode.removeChild(d1); };
+  document.body.appendChild(sc);
+}
 /* "Book a ride for a customer": loaded on demand (book.js) so the first screen stays small. */
 function vBook() {
   if (window.ETELBook) return window.ETELBook.view();
@@ -291,6 +302,7 @@ function render() {
   if (S.view === 'card' && !S.cardAm) { Promise.all([fetch(langUrl('am')).then(function (r) { return r.json(); }), fetch(langUrl('en')).then(function (r) { return r.json(); })]).then(function (x) { S.cardAm = { ride: x[0]['card.ride'], scan: x[0]['card.scan'], code: x[0]['card.code'] }; S.cardEn = { ride: x[1]['card.ride'], scan: x[1]['card.scan'], code: x[1]['card.code'] }; render(); }); return; }
   var keep = document.activeElement && document.activeElement.name;
   $('app').innerHTML = f(); window.scrollTo(0, 0);
+  if (S.view === 'home') mountDash();
   if (S.view === 'badge') drawBadge($('bc'));
   if (keep) { var el = document.querySelector('[name="' + keep + '"]'); if (el) el.focus(); }
 }
@@ -368,6 +380,7 @@ document.addEventListener('click', function (e) {
   else if (act === 'retry') { S.data = {}; S.err = ''; if (S.view === 'fail' || S.view === 'wait') { S.view = 'boot'; render(); } loadMe(); }
   else if (act === 'signout') signOut();
   else if (act === 'bell') openSheet(); else if (act === 'closesheet') closeSheet();
+  else if (act.indexOf('ds-') === 0 && window.ETELDash) window.ETELDash.act(act, b);
   else if (act.indexOf('bk-') === 0 && window.ETELBook) window.ETELBook.act(act, b);
   else if (act.indexOf('pt-') === 0 && window.ETELPartners) window.ETELPartners.act(act, b);
   else if (act === 'copy') { var done = function () { toast(t('c.copied')); }; if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(a.code).then(done, done); else { var ta = document.createElement('textarea'); ta.value = a.code; document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); } catch (x) { /* manual */ } ta.remove(); done(); } }
