@@ -18,7 +18,8 @@ var M = { map: null, el: null, pin: null, drop: null, line: null, drv: [], icons
 function vname(v) { var k = 'veh.' + v, s = t(k); v = String(v).replace(/_/g, ' '); return s === k ? (v.charAt(0).toUpperCase() + v.slice(1)) : s; }
 function vnorm(v) { v = String(v || '').toLowerCase(); if (ART[v]) return v; if (v.indexOf('moto') !== -1) return 'moto'; if (v.indexOf('mini') !== -1 || v.indexOf('bus') !== -1) return 'minibus'; if (v.indexOf('qute') !== -1) return 'qute'; if (v.indexOf('bajaj') !== -1 || v.indexOf('tuk') !== -1) return 'bajaj'; if (v.indexOf('car') !== -1 || v.indexOf('ev') === 0) return 'car'; return ''; }
 function vimg(v, w) { var n = vnorm(v); return n ? '<img class="bv-img" src="veh/' + n + '.webp" alt="" width="' + w + '" height="' + Math.round(w * 0.7) + '" decoding="async" draggable="false">' : ic(VICON[v] || 'car'); }
-function phoneOk() { var d = B.phone.replace(/\D/g, ''); return /^(251|0)?[79]\d{8}$/.test(d); }
+function codeOk() { return /^[Ee][A-Za-z0-9 _-]{3,14}$/.test(B.phone.trim()); }          // an Etel Code (E1616): the server finds the member
+function phoneOk() { var d = B.phone.replace(/\D/g, ''); return codeOk() || /^(251|0)?[79]\d{8}$/.test(d); }
 function tripOk() { return B.open || parseFloat(B.km) > 0; }
 function ready() { return phoneOk() && !!B.vtype && tripOk(); }
 function fareOf(v) { var f = B.fares[v]; return f ? f.fare : null; }
@@ -202,7 +203,7 @@ function view() {
   var h = '<h1>' + esc(t('bk.title')) + '</h1><p class="sub">' + esc(t('bk.sub')) + '</p>';
   if (B.err) h += '<div class="err" role="alert">' + esc(B.err) + '</div>';
   if (B.result) h += resultCard(B.result);
-  h += '<section class="card"><label class="fld" style="margin-top:0"><span>' + esc(t('bk.phone')) + '</span><input class="in ltr" id="bk-phone" type="tel" inputmode="tel" autocomplete="off" maxlength="16" placeholder="' + esc(t('bk.phone_ph')) + '" value="' + esc(B.phone) + '"></label>' +
+  h += '<section class="card"><label class="fld" style="margin-top:0"><span>' + esc(t('bk.phone')) + '</span><input class="in ltr" id="bk-phone" type="text" inputmode="text" autocapitalize="characters" spellcheck="false" autocomplete="off" maxlength="16" placeholder="' + esc(t('bk.phone_ph')) + '" value="' + esc(B.phone) + '"></label>' +
     '<label class="fld"><span>' + esc(t('bk.name')) + '</span><input class="in" id="bk-name" maxlength="60" autocomplete="off" value="' + esc(B.name) + '"></label></section>';
   h += '<h2>' + esc(t('bk.trip')) + '</h2><section class="card" style="margin-top:8px">' +
     '<div class="bv-map" id="bk-map" role="region" aria-label="' + esc(t('bk.map')) + '"><div class="bv-skel skel"></div></div><p class="sub bv-note" id="bk-mapnote" role="status"></p><p class="sub bv-note" id="bk-drv" role="status" aria-live="polite"></p>' +
