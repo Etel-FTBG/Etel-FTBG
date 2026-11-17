@@ -94,6 +94,8 @@ jobs:
         run: |
           find delivery -name '*.js' -not -path '*/releases/*' -not -path '*/backup*' \
             -not -name '*.min.js' -print0 | xargs -0 -n1 node --check
+      - name: Ride fare versus quote cap and peak-window check
+        run: php delivery/tests/ride_quote_cap_unit.php
       - name: Migration numbering and XSS ratchet
         run: |
           python3 delivery/tests/ci/check_migrations.py

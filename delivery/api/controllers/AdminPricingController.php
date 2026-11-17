@@ -376,7 +376,8 @@ case 'admin_get_ride_peak_windows': {
             if (is_array($decoded) && count($decoded) > 0) { $windows = $decoded; $isDefault = false; }
         }
     } catch (Exception $e) { /* table may not exist yet - default stands */ }
-    ok(array('windows' => $windows, 'is_default' => $isDefault));
+    require_once __DIR__ . '/../lib/ride_peak_check.php';
+    ok(array('windows' => $windows, 'is_default' => $isDefault, 'warnings' => rides_peak_windows_warnings($windows)));
     break;
 }
 
@@ -421,7 +422,9 @@ case 'admin_update_ride_peak_windows': {
             "INSERT INTO pricing_rules (rule_key, rule_value, description) VALUES ('ride_peak_windows', ?, 'JSON schedule of when ride peak-hour surge pricing applies, and how much, per window')
              ON DUPLICATE KEY UPDATE rule_value = VALUES(rule_value)"
         )->execute(array($json));
-        ok(array('message' => 'Peak-hour schedule updated', 'windows' => $clean));
+        require_once __DIR__ . '/../lib/ride_peak_check.php';
+        $pw = rides_peak_windows_warnings($clean);
+        ok(array('message' => 'Peak-hour schedule updated' . ($pw ? ' - but please read the warnings' : ''), 'windows' => $clean, 'warnings' => $pw));
     } catch (Exception $e) {
         fail_ex($e, 'Update failed - has migration 027_pricing_rules_widen_value.sql been applied?', 500);
     }
