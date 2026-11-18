@@ -6,6 +6,7 @@
 //   admin_hub_apps_save   { key, mode, url? }       owner admin         -> mode on | admins | off; url only for apps with no built-in address
 //   admin_hub_content_get {}                        owner admin         -> every app's names, descriptions, label, order, icon + the home texts and banner
 //   admin_hub_content_save { key, title_en?, title_am?, desc_en?, desc_am?, badge?, sort_order?, icon_url? }   owner admin
+//   app_status            { version }               public (no sign-in)  -> { maintenance: { on, text_en, text_am }, update: { required, min, text_en, text_am, url } }
 //   admin_hub_settings_save { settings: { welcome_title_en, tagline_en, support_phone, banner_enabled, ... } }  owner admin
 // Owner-only ('owner.only', like the release channels): it decides what every user's phone shows.
 // ============================================================
@@ -13,6 +14,12 @@ require_once __DIR__ . '/../lib/hub_apps.php';
 require_once __DIR__ . '/../lib/hub_content.php';
 
 switch ($action) {
+case 'app_status': {
+    // The phone asks this before showing anything (also when signed out). It never fails: with no setting it answers "all clear".
+    $pdo = db();
+    ok(hub_status_public($pdo, isset($body['version']) ? $body['version'] : ''));
+    break;
+}
 case 'get_hub_apps': {
     $pdo = db(); $ru = require_auth($pdo);
     $pub = hub_content_public($pdo, isset($ru['role']) ? $ru['role'] : '');
