@@ -70,6 +70,7 @@ run python3 tests/ride_wallet_soon_smoke.py
 run python3 tests/ride_promo_smoke.py
 run python3 tests/ride_tip_smoke.py
 run python3 tests/hub_counts_smoke.py
+run python3 tests/hub_content_smoke.py
 run python3 tests/ride_sse_once_smoke.py
 run python3 tests/ride_statement_smoke.py
 run python3 tests/ride_meter_smoke.py

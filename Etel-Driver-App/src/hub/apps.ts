@@ -103,7 +103,7 @@ const SITE_HOST = (() => {
 })();
 
 // An address from the server is used only when it is https on this site's own host (the server checks too; this is the second lock).
-function safeUrl(u: string | undefined): string {
+export function safeUrl(u: string | undefined): string {
   const m = /^https:\/\/([^/:?#@\s]+)(\/[^\s"'<>]*)$/i.exec((u || '').trim());
   if (!m || m[1].toLowerCase().replace(/^www\./, '') !== SITE_HOST) return '';
   return (u || '').trim();
