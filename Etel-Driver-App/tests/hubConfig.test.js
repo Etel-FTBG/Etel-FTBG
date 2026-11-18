@@ -58,4 +58,11 @@ t('an unknown feature mode is ignored (stays on)', A.featureOn('light', 'custome
 A.applyHubConfig({ light: { mode: 'off' } });
 A.applyHubConfig(null);
 t('clearing the choices puts the features back on', A.featureOn('light', 'customer'));
+A.applyHubConfig(null);
+t('forced permissions default to on', A.featureOn('force_permissions', 'driver') && A.featureOn('force_permissions', undefined));
+A.applyHubConfig({ force_permissions: { mode: 'off' } });
+t('owner switches the forcing off: nobody is forced', !A.featureOn('force_permissions', 'driver') && !A.featureOn('force_permissions', 'admin'));
+A.applyHubConfig({ force_permissions: { mode: 'admins' } });
+t('admins only: forced for an admin, not for a driver', A.featureOn('force_permissions', 'admin') && !A.featureOn('force_permissions', 'driver'));
+A.applyHubConfig(null);
 console.log('PASSED: ' + pass + ' FAILED: ' + fails.length); fails.forEach((f) => console.log(' - ' + f)); process.exit(fails.length ? 1 : 0);

@@ -4,7 +4,7 @@ const { chromium } = require('playwright');
 const HOST = process.env.ETEL_HOST || 'http://127.0.0.1:8098'; const SHOTS = process.env.ETEL_SHOTS || '/tmp';
 let pass = 0; const fails = []; const t = (n, c, x) => { if (c) pass++; else fails.push(n + (x ? ' -> ' + x : '')); };
 const cat = [['id', 'EtelID', 'Identity', 'on', 0, 'Everyone'], ['ride', 'ETEL Ride', 'Mobility', 'on', 0, 'Everyone'], ['agent', 'ETEL Agent', 'My programmes', 'on', 0, 'Approved agents only'],
-  ['admin', 'ETEL Admin', 'Staff', 'off', 0, 'Admin accounts only'], ['pay', 'EtelPay', 'Finance and trade', 'off', 1, 'Everyone'], ['light', 'Floating golden light', 'Features', 'on', 0, 'Everyone', 'feature'], ['light_alert', 'Sound and vibration for a new request or order', 'Features', 'on', 0, 'Everyone', 'feature']];
+  ['admin', 'ETEL Admin', 'Staff', 'off', 0, 'Admin accounts only'], ['pay', 'EtelPay', 'Finance and trade', 'off', 1, 'Everyone'], ['light', 'Floating golden light', 'Features', 'on', 0, 'Everyone', 'feature'], ['light_alert', 'Sound and vibration for a new request or order', 'Features', 'on', 0, 'Everyone', 'feature'], ['force_permissions', 'Force the phone permissions', 'Features', 'on', 0, 'Everyone', 'feature']];
 (async () => {
   const b = await chromium.launch();
   for (const mode of [{ n: 'desktop', w: 1360, h: 900, th: 'light', caps: ['*'] }, { n: 'mobile', w: 390, h: 844, th: 'dark', caps: ['*'] }, { n: 'notowner', w: 1360, h: 900, th: 'light', caps: ['orders.view'] }]) {
@@ -27,7 +27,7 @@ const cat = [['id', 'EtelID', 'Identity', 'on', 0, 'Everyone'], ['ride', 'ETEL R
     let txt = await p.innerText('#panel-etelapp');
     t(mode.n + ': nav item exists', (await p.$('.nav-item[data-page="etelapp"]')) !== null);
     if (mode.n === 'notowner') { t('notowner: refused with a plain message', /Only the owner/.test(txt)); t('notowner: no switches shown', (await p.$('.ha-card')) === null); await ctx.close(); continue; }
-    t(mode.n + ': all 5 apps shown in groups', (await p.locator('.ha-card').count()) === 7 && /Features/i.test(txt) && /Identity/i.test(txt) && /Finance and trade/i.test(txt));
+    t(mode.n + ': all 5 apps shown in groups', (await p.locator('.ha-card').count()) === 8 && /Features/i.test(txt) && /Identity/i.test(txt) && /Finance and trade/i.test(txt));
     t(mode.n + ': defaults shown (Ride visible, Admin hidden)', (await p.locator('.ha-card[data-key=ride] .ha-pill').innerText()) === 'Visible' && (await p.locator('.ha-card[data-key=admin] .ha-pill').innerText()) === 'Hidden');
     t(mode.n + ': every app has an address box, the feature switches do not', (await p.locator('.ha-card [data-url]').count()) === 5);
     t(mode.n + ': the box shows the built-in address as a hint for Ride', /\/x\//.test(await p.getAttribute('.ha-card[data-key=ride] [data-url]', 'placeholder')));

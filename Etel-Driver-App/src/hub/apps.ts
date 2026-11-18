@@ -114,7 +114,7 @@ const withSource = (u: string) => u + (u.indexOf('?') < 0 ? '?source=app' : '&so
 // 'light_alert' = its sound and vibration. Default 'on'.
 type Mode = 'on' | 'admins' | 'off';
 let features: Record<string, Mode> = {};
-export function featureOn(key: 'light' | 'light_alert', role: string | undefined): boolean {
+export function featureOn(key: 'light' | 'light_alert' | 'force_permissions', role: string | undefined): boolean {
   const m = features[key] || 'on';
   return m === 'on' || (m === 'admins' && role === 'admin');
 }
@@ -124,7 +124,7 @@ export function applyHubConfig(cfg: Record<string, HubOverride> | null | undefin
   ALLOWED_ORIGINS.length = 0;
   BASE_ORIGINS.forEach((o) => ALLOWED_ORIGINS.push(o));
   features = {};
-  for (const f of ['light', 'light_alert']) {
+  for (const f of ['light', 'light_alert', 'force_permissions']) {
     const o = cfg && cfg[f];
     if (o && (o.mode === 'on' || o.mode === 'admins' || o.mode === 'off')) features[f] = o.mode;
   }
