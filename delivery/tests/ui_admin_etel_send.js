@@ -37,6 +37,14 @@ let pass = 0; const fails = []; const t = (n, c, x) => { if (c) pass++; else fai
     t(mode.n + ': after confirming, the message is sent with audience, title and text', sends.length === 1 && sends[0].audience === 'customer' && sends[0].title === 'Rain tonight' && sends[0].body === 'Expect more rides after 6 PM', JSON.stringify(sends));
     txt = await p.innerText('#panel-etelapp');
     t(mode.n + ': the form is cleared and the history shows it with who was reached', (await p.inputValue('[data-hb-f=title]')) === '' && /reached 8 of 9/.test(txt) && /1 could not be reached/.test(txt) && /Customers/.test(txt), txt.slice(-300));
+    // a message that is still being sent finishes by itself: the list looks again without a click
+    list[0].status = 'sending'; list[0].reached = 0; list[0].failed = 0; await p.click('[data-hb-refresh]'); await p.waitForTimeout(700);
+    t(mode.n + ': a sending row shows "sending..."', /sending\.\.\. \(9 people\)/.test(await p.innerText('#panel-etelapp')));
+    list[0].status = 'sent'; list[0].reached = 8; list[0].failed = 1; await p.waitForTimeout(5200);
+    t(mode.n + ': it looks again by itself and shows the result without a click', /reached 8 of 9/.test(await p.innerText('#panel-etelapp')));
+    list[0].status = 'unfinished'; await p.click('[data-hb-refresh]'); await p.waitForTimeout(700);
+    t(mode.n + ': an unfinished row says so', /did not finish/.test(await p.innerText('#panel-etelapp')));
+    list[0].status = 'sent';
     // one person
     await p.selectOption('[data-hb-f=audience]', 'user'); await p.waitForTimeout(400);
     t(mode.n + ': choosing One person shows the phone box', (await p.locator('[data-hb-f=phone]').count()) === 1);
