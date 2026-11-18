@@ -171,12 +171,12 @@ export function markAllOffline(): void {
 
 // What the golden light should count for this account: new requests and orders only while online in that company,
 // and nothing for a company whose Alerts switch is off.
-export function applyAlertPrefs(c: LiveCounts, role: EtelRole | undefined): LiveCounts {
+export function applyAlertPrefs(c: LiveCounts, role: EtelRole | undefined, assumeOnline = false): LiveCounts {
   const keys = role ? ROLE_COMPANIES[role] : undefined;
   if (!keys) return c;
   const key = keys[0];
   const alerts = state.alerts[key];
-  const online = state.online[key];
+  const online = assumeOnline || state.online[key];   // a push only goes to drivers who are online, so a wake-up from a push counts as online
   let { trips, requests, orders, deliveries } = c;
   if (!alerts) {
     trips = 0;

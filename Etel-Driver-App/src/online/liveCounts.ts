@@ -1,4 +1,5 @@
 import { boot, getToken } from '../api/client';
+import { isOnline } from './onlineState';
 
 // What is going on for this account right now: live trips, new ride requests, new orders and deliveries in progress.
 // One small server call (hub_counts). It feeds the golden light's counts while the user is outside the app.
@@ -12,6 +13,8 @@ export interface LiveCounts {
 
 const ZERO: LiveCounts = { trips: 0, requests: 0, orders: 0, deliveries: 0, total: 0 };
 const MIN_GAP_MS = 12000;
+// A driver who is online waits for requests: ask again every few seconds (the background location tick comes every 5 s).
+const ONLINE_GAP_MS = 4000;
 
 let counts: LiveCounts = ZERO;
 let lastFetch = 0;
@@ -52,7 +55,7 @@ export function resetCounts(): void {
 // MIN_GAP_MS, and never overlaps itself.
 export async function refreshCounts(force = false): Promise<LiveCounts> {
   if (inflight) return counts;
-  if (!force && Date.now() - lastFetch < MIN_GAP_MS) return counts;
+  if (!force && Date.now() - lastFetch < (isOnline() ? ONLINE_GAP_MS : MIN_GAP_MS)) return counts;
   if (!(await getToken())) {
     set(ZERO);
     return counts;

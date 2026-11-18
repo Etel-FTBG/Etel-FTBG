@@ -171,7 +171,7 @@ case 'fa_agent_book_ride': {
         $nd->execute(array($vtype)); $inRange = array();
         foreach ($nd->fetchAll(PDO::FETCH_ASSOC) as $rd) { $d = rides_haversine_km($plat, $plng, floatval($rd['lat']), floatval($rd['lng'])); if ($d <= 8) { $rd['km'] = $d; $inRange[] = $rd; } }
         $targets = function_exists('rides_offer_first_push_targets') ? rides_offer_first_push_targets($pdo, $inRange, $plat, $plng) : $inRange;
-        foreach ($targets as $rd) etel_push_send($pdo, intval($rd['user_id']), 'New ride request nearby!', 'ETB ' . number_format($fare, 0) . ' - ' . round($rd['km'], 1) . ' km away', array('type' => 'new_ride_request', 'ride_id' => $rid, 'url' => '/delivery/driver/'));
+        foreach ($targets as $rd) etel_push_send_async($pdo, intval($rd['user_id']), 'New ride request nearby!', 'ETB ' . number_format($fare, 0) . ' - ' . round($rd['km'], 1) . ' km away', array('type' => 'new_ride_request', 'ride_id' => $rid, 'url' => '/delivery/driver/'));
     } catch (Exception $e) { error_log('[ETEL][push] agent-booking push failed: ' . $e->getMessage()); }
 
     // New customers get a text automatically (only when the SMS service is set up and admin has it on); a failure never blocks the booking.

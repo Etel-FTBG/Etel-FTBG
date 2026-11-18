@@ -108,6 +108,7 @@ run php tests/backup_offsite_test.php
 run php tests/integrations_test.php
 run php tests/health_backup_test.php
 run php tests/image_orient_test.php
+run php tests/expo_push_messages_test.php
 run php tests/etelid_role_verdict_test.php
 run php tests/etelid_phone_trust_test.php
 run python3 tests/courier_pay_smoke.py

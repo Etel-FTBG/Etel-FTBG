@@ -14,26 +14,16 @@ import {
   updateOverlayCounts,
   setOverlayAlerts,
   setOverlayLabels,
+  batteryExempt,
+  requestBatteryExemption,
 } from '../../modules/etel-overlay';
 import { featureOn } from '../hub/apps';
+import { labelsFor } from './overlayLabels';
 import { loadHubConfigCache, refreshHubConfig } from '../hub/appConfig';
 
-// The words on the pills depend on what the account does, so a customer sees "Your trip" and a driver sees "New request".
-function labelsFor(role: string | undefined): [string, string, string, string] {
-  switch (role) {
-    case 'driver':
-      return ['Trip', 'New request', 'Order', 'Delivery'];
-    case 'courier':
-      return ['Trip', 'New request', 'New order', 'Delivery'];
-    case 'service_giver':
-      return ['Trip', 'Request', 'New order', 'In progress'];
-    default:
-      return ['Your trip', 'Request', 'Order', 'Your order'];
-  }
-}
-
 const ASKED_KEY = 'etel_overlay_asked';
-const POLL_MS = 20000;
+const BATTERY_ASKED_KEY = 'etel_battery_asked';
+const POLL_MS = 5000;   // refreshCounts() keeps its own gap (4 s while online, 12 s otherwise), so this is only how often it is asked
 
 // When the user leaves the app, a golden blinking ETEL logo sits at the top-left of the screen (Android). It shows
 // while they are online, or while they have a live trip, a new ride request, a new order or a delivery in progress,
@@ -89,8 +79,25 @@ export default function BackgroundBadge() {
       );
     };
 
+    // Many phones (Tecno, Infinix, Xiaomi, Samsung...) stop an app in the background to save battery, which delays ride requests.
+    // Asked once, when the driver goes online: the phone's own screen then lets them choose "Unrestricted" / "Don't optimise".
+    const askBattery = async () => {
+      if (batteryExempt()) return;
+      const asked = await SecureStore.getItemAsync(BATTERY_ASKED_KEY).catch(() => null);
+      if (asked) return;
+      await SecureStore.setItemAsync(BATTERY_ASKED_KEY, '1').catch(() => {});
+      Alert.alert(
+        'Keep ETEL awake in the background?',
+        'To get ride requests fast while you use other apps, allow ETEL to run without battery limits. On the next screen choose Allow. Some phones also have an Auto-start or Background activity switch in Settings > Apps > ETEL: turn it on.',
+        [
+          { text: 'Not now', style: 'cancel' },
+          { text: 'Allow', onPress: () => requestBatteryExemption() },
+        ]
+      );
+    };
+
     const offOnline = subscribeOnline((on) => {
-      if (on) askOnce();
+      if (on) askOnce().then(askBattery).catch(() => {});
       sync();
     });
     const offCounts = subscribeCounts(sync);

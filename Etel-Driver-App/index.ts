@@ -1,5 +1,8 @@
 import { registerRootComponent } from 'expo';
 
+// Must be loaded first, in the module scope: it registers the task that wakes the golden light when a ride request is pushed.
+import './src/notifications/pushTask';
+
 import App from './App';
 
 // registerRootComponent calls AppRegistry.registerComponent('main', () => App);
