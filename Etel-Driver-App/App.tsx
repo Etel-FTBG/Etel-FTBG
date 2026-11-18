@@ -31,6 +31,7 @@ import ErrorBoundary from './src/components/ErrorBoundary';
 import OfflineBanner from './src/components/OfflineBanner';
 import AppLockGate from './src/security/AppLockGate';
 import PermissionGate from './src/permissions/PermissionGate';
+import StatusGate from './src/status/StatusGate';
 import './src/location/backgroundLocationTask'; // registers the TaskManager task
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -100,11 +101,13 @@ export default function App() {
       <AuthProvider>
         <NightModeProvider>
           <ThemeProvider>
-            <PermissionGate>
-              <AppLockGate>
-                <RootNavigator />
-              </AppLockGate>
-            </PermissionGate>
+            <StatusGate>
+              <PermissionGate>
+                <AppLockGate>
+                  <RootNavigator />
+                </AppLockGate>
+              </PermissionGate>
+            </StatusGate>
             <OfflineBanner />
             <BackgroundBadge />
             <UpdateBanner />

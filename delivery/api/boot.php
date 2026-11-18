@@ -1858,7 +1858,7 @@ switch ($action) {
     case 'admin_fa_controls_list': case 'admin_fa_controls_save':
         require __DIR__ . '/controllers/FieldAgentControlController.php';
         break;
-    case 'get_hub_apps': case 'admin_hub_apps_get': case 'admin_hub_apps_save': case 'admin_hub_content_get': case 'admin_hub_content_save': case 'admin_hub_settings_save':
+    case 'get_hub_apps': case 'app_status': case 'admin_hub_apps_get': case 'admin_hub_apps_save': case 'admin_hub_content_get': case 'admin_hub_content_save': case 'admin_hub_settings_save':
         require __DIR__ . '/controllers/HubAppsController.php';
         break;
     case 'get_legal_doc': case 'admin_legal_get': case 'admin_legal_save': case 'admin_deletion_list': case 'admin_deletion_decide':

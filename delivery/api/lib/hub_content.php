@@ -84,6 +84,8 @@ function hub_settings_rules() {
         'support_phone' => 'phone', 'support_telegram' => 'telegram', 'support_email' => 'email',
         'banner_enabled' => 'flag', 'banner_title_en' => 'text60', 'banner_title_am' => 'text60', 'banner_text_en' => 'text160', 'banner_text_am' => 'text160',
         'banner_image_url' => 'image', 'banner_link_app' => 'appkey', 'banner_audience' => 'audience', 'banner_starts_at' => 'date', 'banner_ends_at' => 'date',
+        'maint_enabled' => 'flag', 'maint_text_en' => 'text160', 'maint_text_am' => 'text160',
+        'min_version_android' => 'version', 'update_text_en' => 'text160', 'update_text_am' => 'text160', 'update_url_android' => 'storeurl',
     );
 }
 
@@ -106,9 +108,37 @@ function hub_settings_clean_one($rule, $v, $host) {
         case 'image': { $e = hub_content_icon_error($v, $host); return $e === '' ? array($v, '') : array('', $e); }
         case 'appkey': { require_once __DIR__ . '/hub_apps.php'; $cat = hub_apps_catalogue(); return (isset($cat[$v]) && $cat[$v][5] === 'app') ? array($v, '') : array('', 'The banner link must be one of the apps.'); }
         case 'audience': return in_array($v, array('all', 'driver', 'courier', 'service_giver', 'customer'), true) ? array($v, '') : array('', 'Choose who sees the banner.');
+        case 'version': return preg_match('/^[0-9]{1,3}(\.[0-9]{1,3}){1,2}$/', $v) ? array($v, '') : array('', 'The version must look like 1.7.0 (numbers and dots).');
+        case 'storeurl': { $e = hub_status_url_error($v, $host); return $e === '' ? array($v, '') : array('', $e); }
         case 'date': { $t = strtotime($v); return $t ? array(date('Y-m-d H:i', $t), '') : array('', 'The date looks wrong (for example 2026-12-01 08:00).'); }
     }
     return array('', 'Unknown setting.');
+}
+
+/* '' when fine. The update button opens this address on the phone: https only, and only the Play Store, this website or an Expo download page. */
+function hub_status_url_error($url, $host) {
+    $url = trim((string) $url);
+    if ($url === '') return '';
+    if (strlen($url) > 255) return 'The address is too long.';
+    if (preg_match('/[\s"\'<>\\\\]/', $url)) return 'The address has a character that is not allowed.';
+    $p = @parse_url($url);
+    if (!$p || empty($p['scheme']) || strtolower($p['scheme']) !== 'https' || empty($p['host']) || isset($p['user']) || isset($p['pass'])) return 'The update address must start with https://';
+    $h = strtolower($p['host']); $mine = strtolower(preg_replace('/^www\./', '', preg_replace('/:\d+$/', '', (string) $host)));
+    $okHost = ($h === 'play.google.com') || ($h === 'expo.dev') || (substr($h, -9) === '.expo.dev') || ($mine !== '' && preg_replace('/^www\./', '', $h) === $mine);
+    return $okHost ? '' : 'The update address must be a Google Play link (play.google.com), an Expo download link (expo.dev) or on this website (' . $mine . ').';
+}
+
+/* What a phone needs to know before it shows anything: is the app in maintenance, and is this version too old. $version is the phone's own version. */
+function hub_status_public($pdo, $version) {
+    $set = hub_settings_all($pdo);
+    $g = function ($k) use ($set) { return isset($set[$k]) ? (string) $set[$k] : ''; };
+    $min = $g('min_version_android');
+    $version = trim((string) $version);
+    $required = ($min !== '' && preg_match('/^[0-9]{1,3}(\.[0-9]{1,3}){0,2}$/', $version) && version_compare($version, $min, '<'));
+    return array(
+        'maintenance' => array('on' => $g('maint_enabled') === '1', 'text_en' => $g('maint_text_en'), 'text_am' => $g('maint_text_am')),
+        'update' => array('required' => $required, 'min' => $min, 'text_en' => $g('update_text_en'), 'text_am' => $g('update_text_am'), 'url' => $g('update_url_android')),
+    );
 }
 
 function hub_settings_all($pdo) {
