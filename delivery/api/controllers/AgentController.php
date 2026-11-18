@@ -623,7 +623,7 @@ case 'agent_book_ride': {
         $nearbyDrivers->execute();
         foreach ($nearbyDrivers->fetchAll() as $nd) {
             if (function_exists('etel_push_send')) {
-                etel_push_send($pdo, intval($nd['user_id']), 'New ride request nearby!',
+                etel_push_send_async($pdo, intval($nd['user_id']), 'New ride request nearby!',
                     'Booked via ETEL AI - ' . round($dist, 1) . ' km, ETB ' . number_format($fare, 0),
                     array('action' => 'new_ride', 'ride_id' => $new_ride_id, 'url' => '/delivery/ride/'));
             }

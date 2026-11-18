@@ -227,7 +227,7 @@ case 'admin_phone_book_ride': {
             if ($d <= 8) { $rd['km'] = $d; $inRange[] = $rd; }
         }
         foreach (rides_offer_first_push_targets($pdo, $inRange, $plat, $plng) as $rd) {
-            etel_push_send($pdo, intval($rd['user_id']), 'New ride request nearby!',
+            etel_push_send_async($pdo, intval($rd['user_id']), 'New ride request nearby!',
                 'ETB ' . number_format($fare, 0) . ' • ' . round($rd['km'], 1) . ' km away',
                 array('type' => 'new_ride_request', 'ride_id' => $rid, 'url' => '/delivery/driver/'));
         }

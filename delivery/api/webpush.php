@@ -270,16 +270,34 @@ function etel_send_web_push($subscription, $payload) {
  * "DeviceNotRegistered" error) to reuse the existing dead-subscription
  * cleanup path below.
  */
+/* The Expo messages for one device. Pure (no network), so it can be tested.
+   A time-critical push (a new ride request) expires after 60 seconds (a request nobody answered is not worth waking a phone for later),
+   and is followed by a second, data-only message: a data-only message is the kind Android hands to the app even when the app is in the
+   background, so the golden light can refresh and start ringing at once instead of waiting for its next check. */
+function etel_expo_messages($token, $payload) {
+    $data = isset($payload['data']) ? $payload['data'] : array();
+    $urgent = isset($data['type']) && in_array($data['type'], array('new_ride_request'), true);
+    $visible = array(
+        'to'        => $token,
+        'title'     => isset($payload['title']) ? $payload['title'] : '',
+        'body'      => isset($payload['body']) ? $payload['body'] : '',
+        'data'      => $data,
+        'sound'     => 'default',
+        'priority'  => 'high',
+        'channelId' => 'default',
+    );
+    if ($urgent) $visible['ttl'] = 60;
+    $out = array($visible);
+    if ($urgent) {
+        $out[] = array('to' => $token, 'data' => array_merge($data, array('wake' => 1)), 'priority' => 'high', 'ttl' => 60, '_contentAvailable' => true);
+    }
+    return $out;
+}
+
 function etel_send_expo_push($token, $payload) {
     if (!$token) return array('ok' => false, 'http_code' => 0, 'error' => 'Missing Expo push token');
-    $message = array(
-        'to'       => $token,
-        'title'    => isset($payload['title']) ? $payload['title'] : '',
-        'body'     => isset($payload['body']) ? $payload['body'] : '',
-        'data'     => isset($payload['data']) ? $payload['data'] : array(),
-        'sound'    => 'default',
-        'priority' => 'high',
-    );
+    $messages = etel_expo_messages($token, $payload);
+    $message = count($messages) === 1 ? $messages[0] : $messages;      // one message, or a batch of two in the same request
     $ch = curl_init('https://exp.host/--/api/v2/push/send');
     curl_setopt_array($ch, array(
         CURLOPT_POST           => true,
@@ -303,6 +321,9 @@ function etel_send_expo_push($token, $payload) {
         return array('ok' => false, 'http_code' => 0, 'error' => 'cURL: ' . $curlErr);
     }
     $decoded = json_decode($response, true);
+    if (isset($decoded['data']) && is_array($decoded['data']) && isset($decoded['data'][0]) && is_array($decoded['data'][0])) {
+        $decoded['data'] = $decoded['data'][0];            // a batch answers with a list: the first entry is the visible message
+    }
     $status  = isset($decoded['data']['status']) ? $decoded['data']['status'] : null;
     $ok      = ($httpCode >= 200 && $httpCode < 300) && $status === 'ok';
     $deadToken = ($status === 'error')

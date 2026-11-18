@@ -1278,7 +1278,9 @@ case 'book_ride': {
         // Offer waves: wake the nearest drivers now; the rest are woken once the ride has been open a wave length
         // (rides_offer_escalate, from the passenger's status poll).
         foreach (rides_offer_first_push_targets($pdo, $inRange, $plat, $plng) as $rd) {
-            etel_push_send($pdo, intval($rd['user_id']), 'New ride request nearby!',
+            /* Sent AFTER the answer has gone back to the rider's phone (etel_push_send_async), so booking is not held up by a slow push
+               service, and every driver's push starts at once instead of one after another. */
+            etel_push_send_async($pdo, intval($rd['user_id']), 'New ride request nearby!',
                 'ETB ' . number_format($fare, 0) . ' \u2022 ' . round($rd['km'], 1) . ' km away',
                 array('type' => 'new_ride_request', 'ride_id' => $new_ride_id, 'url' => '/delivery/driver/'));
         }

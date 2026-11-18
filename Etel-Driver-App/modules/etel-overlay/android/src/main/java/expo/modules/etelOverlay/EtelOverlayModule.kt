@@ -13,7 +13,9 @@ import android.graphics.Typeface
 import android.graphics.drawable.Drawable
 import android.graphics.drawable.GradientDrawable
 import android.graphics.drawable.LayerDrawable
+import android.media.Ringtone
 import android.media.RingtoneManager
+import android.os.PowerManager
 import android.net.Uri
 import android.os.Build
 import android.os.Handler
@@ -64,6 +66,9 @@ class EtelOverlayModule : Module() {
   // requests + orders at the last update; -1 = nothing shown yet, so the first numbers after the badge appears do not make a noise
   private var lastAttention = -1
   private var labels = arrayOf("Trip", "Request", "Order", "Delivery")
+  // The ring of a new request: it keeps ringing (like a call) until the driver taps the light, the request is gone, or 15 seconds pass.
+  private var ringtone: Ringtone? = null
+  private val stopRingLater = Runnable { stopRing() }
 
   private fun canDraw(): Boolean =
     Build.VERSION.SDK_INT < Build.VERSION_CODES.M || Settings.canDrawOverlays(context)
@@ -149,6 +154,7 @@ class EtelOverlayModule : Module() {
               }
             }
           } else {
+            stopRing()
             bringAppToFront()
           }
           true
@@ -320,14 +326,28 @@ class EtelOverlayModule : Module() {
         // no vibrator, or the permission was refused: the light still pulses
       }
     }
-    if (soundOn) {
-      try {
-        val uri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
-        RingtoneManager.getRingtone(context, uri)?.play()
-      } catch (e: Exception) {
-        // silent phone or no default sound
-      }
+    if (soundOn) startRing()
+  }
+
+  private fun startRing() {
+    stopRing()
+    try {
+      val uri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE)
+      val r = RingtoneManager.getRingtone(context, uri) ?: return
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) r.isLooping = true
+      r.play()
+      ringtone = r
+      main.postDelayed(stopRingLater, 15000L)
+    } catch (e: Exception) {
+      // silent phone or no default ringtone
     }
+  }
+
+  private fun stopRing() {
+    main.removeCallbacks(stopRingLater)
+    val r = ringtone
+    ringtone = null
+    try { r?.stop() } catch (e: Exception) { }
   }
 
   private fun applyCounts() {
@@ -349,6 +369,7 @@ class EtelOverlayModule : Module() {
     val attention = counts[1] + counts[2]
     val fresh = lastAttention >= 0 && attention > lastAttention
     lastAttention = attention
+    if (attention == 0) stopRing()          // the request was taken or cancelled: stop ringing
     if (fresh) attentionBurst() else if (burst?.isRunning != true) startBlink(total > 0)
     val v = badge
     val lp = params
@@ -398,6 +419,7 @@ class EtelOverlayModule : Module() {
   }
 
   private fun hide() {
+    stopRing()
     blink?.cancel()
     blink = null
     haloAnim?.cancel()
@@ -443,6 +465,32 @@ class EtelOverlayModule : Module() {
     Function("setAlerts") { sound: Boolean, vibrate: Boolean ->
       soundOn = sound
       vibrateOn = vibrate
+      true
+    }
+    // Rings and pulses the light now (a new request arrived while the light was not on screen).
+    Function("ring") {
+      main.post { if (badge != null) attentionBurst() }
+      true
+    }
+    // Android battery saver: ask the phone to leave this app alone in the background.
+    Function("isIgnoringBatteryOptimizations") {
+      if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) true
+      else (context.getSystemService(Context.POWER_SERVICE) as PowerManager).isIgnoringBatteryOptimizations(context.packageName)
+    }
+    Function("requestIgnoreBatteryOptimizations") {
+      try {
+        val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, Uri.parse("package:" + context.packageName))
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        context.startActivity(intent)
+      } catch (e: Exception) {
+        try {
+          val fallback = Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
+          fallback.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+          context.startActivity(fallback)
+        } catch (e2: Exception) {
+          // no such screen on this phone
+        }
+      }
       true
     }
     Function("setLabels") { trip: String, request: String, order: String, delivery: String ->

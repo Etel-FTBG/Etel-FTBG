@@ -167,7 +167,7 @@ function rides_offer_escalate($pdo, $rideId) {
         foreach ($all as $d) {
             if (isset($first[intval($d['user_id'])])) continue;
             if (function_exists('etel_push_send')) {
-                etel_push_send($pdo, intval($d['user_id']), 'New ride request nearby!',
+                etel_push_send_async($pdo, intval($d['user_id']), 'New ride request nearby!',
                     'ETB ' . number_format(floatval($r['fare_final']), 0) . ' - ' . round($d['km'], 1) . ' km away',
                     array('type' => 'new_ride_request', 'ride_id' => intval($rideId), 'url' => '/delivery/driver/'));
                 $sent++;

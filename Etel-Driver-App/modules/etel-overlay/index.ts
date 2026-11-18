@@ -12,6 +12,9 @@ type EtelOverlayNative = {
   // Newer builds only (a phone with an older install does not have them, so they are called with ?.).
   setAlerts?(sound: boolean, vibrate: boolean): void;
   setLabels?(trip: string, request: string, order: string, delivery: string): void;
+  ring?(): void;
+  isIgnoringBatteryOptimizations?(): boolean;
+  requestIgnoreBatteryOptimizations?(): void;
 };
 
 const native: EtelOverlayNative | null =
@@ -27,3 +30,9 @@ export function updateOverlayCounts(trips: number, requests: number, orders: num
 export function setOverlayAlerts(sound: boolean, vibrate: boolean): void { native?.setAlerts?.(sound, vibrate); }
 // The words on the small pills (for example "New request"). Ignored by an older install.
 export function setOverlayLabels(trip: string, request: string, order: string, delivery: string): void { native?.setLabels?.(trip, request, order, delivery); }
+export function overlayIsShowing(): boolean { return native ? native.isShowing() : false; }
+// Rings the light now (a new request that arrived while the light was not on screen). Ignored by an older install.
+export function overlayRingNow(): void { native?.ring?.(); }
+// Android battery saver: a phone that "optimises" the app stops it in the background and delays its messages. These ask to be left alone.
+export function batteryExempt(): boolean { return native?.isIgnoringBatteryOptimizations ? native.isIgnoringBatteryOptimizations() : true; }
+export function requestBatteryExemption(): void { native?.requestIgnoreBatteryOptimizations?.(); }
