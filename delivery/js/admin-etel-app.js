@@ -53,11 +53,15 @@ function card(a) {
 function view() {
   if (D.err) return '<div class="ak">' + K.empty('⚠️', D.err, '') + '</div>';
   if (!D.apps) return '<div class="ak">' + K.skeleton(4) + '</div>';
-  var tabBar = '<div class="ak-seg" role="tablist" style="margin:0 0 14px">' + [['apps', 'Switches'], ['look', 'Names, icons and texts'], ['legal', 'Privacy and accounts'], ['status', 'Maintenance and updates']].map(function (t) {
+  var tabBar = '<div class="ak-seg" role="tablist" style="margin:0 0 14px">' + [['apps', 'Switches'], ['look', 'Names, icons and texts'], ['legal', 'Privacy and accounts'], ['status', 'Maintenance and updates'], ['send', 'Send a message']].map(function (t) {
     return '<button type="button" role="tab" aria-selected="' + (D.tab === t[0]) + '" class="' + (D.tab === t[0] ? 'on' : '') + '" data-ha-tab="' + t[0] + '">' + esc(t[1]) + '</button>'; }).join('') + '</div>';
   if (D.tab === 'look') {
     return '<div class="ak"><div class="ha-hero"><div><h2>ETEL app</h2><p>Change the names, short descriptions, icons and home texts the phones show. Phones get the change when the app opens or is pulled down to refresh.</p></div></div>' + tabBar +
       (window.ETELHubLook ? window.ETELHubLook.view(D.apps) : K.skeleton(3)) + '</div>';
+  }
+  if (D.tab === 'send') {
+    return '<div class="ak"><div class="ha-hero"><div><h2>ETEL app</h2><p>Send a notification to everyone, to one group, or to one person, and see how many people it reached.</p></div></div>' + tabBar +
+      (window.ETELHubSend ? window.ETELHubSend.view() : K.skeleton(3)) + '</div>';
   }
   if (D.tab === 'status') {
     return '<div class="ak"><div class="ha-hero"><div><h2>ETEL app</h2><p>Put the phone app in maintenance, or require a minimum app version so old phones must update.</p></div></div>' + tabBar +
@@ -99,7 +103,7 @@ function save(a, btn) {
 }
 function onClick(e) {
   var tb = e.target.closest('[data-ha-tab]');
-  if (tb) { D.tab = tb.getAttribute('data-ha-tab'); if (D.tab === 'look' && window.ETELHubLook) window.ETELHubLook.open(); if (D.tab === 'legal' && window.ETELHubLegal) window.ETELHubLegal.open(); if (D.tab === 'status' && window.ETELHubStatus) window.ETELHubStatus.open(); paint(); return; }
+  if (tb) { D.tab = tb.getAttribute('data-ha-tab'); if (D.tab === 'look' && window.ETELHubLook) window.ETELHubLook.open(); if (D.tab === 'legal' && window.ETELHubLegal) window.ETELHubLegal.open(); if (D.tab === 'status' && window.ETELHubStatus) window.ETELHubStatus.open(); if (D.tab === 'send' && window.ETELHubSend) window.ETELHubSend.open(); paint(); return; }
   var cardEl = e.target.closest('.ha-card'); if (!cardEl) return;
   var a = byKey(cardEl.getAttribute('data-key')); if (!a) return;
   var m = e.target.closest('[data-mode]');
