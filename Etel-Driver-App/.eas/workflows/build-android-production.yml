@@ -1,0 +1,16 @@
+name: Android production bundle (Google Play)
+
+# MANUAL ONLY, for the Google Play release. Expo website > Workflows > Run workflow > "Android production bundle (Google Play)".
+# It builds the .aab (app bundle) with the `production` profile in eas.json: signed by Expo, build number goes up by itself,
+# updates come from the `production` channel. It does NOT upload to Google Play: download the .aab from the build page and
+# upload it in Play Console > Testing > Internal testing > Create release (the very first upload must be by hand anyway).
+# Run it once when all phases are finished, and again only when native code, permissions, name or icon change.
+# (No `on:` trigger = it never starts by itself.)
+
+jobs:
+  build_android_production:
+    name: Build Android app bundle (production)
+    type: build
+    params:
+      platform: android
+      profile: production

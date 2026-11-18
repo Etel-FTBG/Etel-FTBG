@@ -3,6 +3,9 @@
 The Play Store takes an **app bundle (.aab)**, not the APK. The `production` build profile already makes one, signed by
 Expo (EAS) with a key it keeps for you. Version codes go up by themselves (`autoIncrement`).
 
+## Building the bundle
+Expo website > Workflows > Run workflow > **Android production bundle (Google Play)**. It is manual only (it never starts by itself), so it uses build time only when you press it. Download the .aab from the build page, then upload it in Play Console. The same can be done from a computer with `npx eas-cli build -p android --profile production`.
+
 ## One time, by the account owner
 1. **Play Console account**: https://play.google.com/console, one-time fee of 25 USD, identity check (can take days).
 2. **Create the app**: name `ETEL`, default language English, App, Free. Package name is `com.etelgroup.driver`.
