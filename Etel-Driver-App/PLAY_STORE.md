@@ -25,6 +25,9 @@ Expo (EAS) with a key it keeps for you. Version codes go up by themselves (`auto
   the person is online so riders and dispatch can follow the trip, with a visible notification while it runs. Google
   asks for a short screen-recording video: sign in as a driver, slide online, press Home, show the notification.
   Expect a review of several days; submit it early.
+- **Background location disclosure**: before the system dialog the app shows its own screen (title "ETEL uses your location in the background", with Agree and Not now). Film this screen in the declaration video.
+- **Battery**: the restricted `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS` permission was removed. The app opens the phone's battery list and the person picks "Don't optimise" for ETEL. Do not declare that permission in the console.
+- **Account deletion**: in the app, Profile > Privacy and account > Delete my account (a request that reaches Admin Support); web page `delete-account.html`.
 - **"Display over other apps" (SYSTEM_ALERT_WINDOW)**: used for the golden ETEL light that shows while a driver is
   online inside other apps. If Google objects, remove the permission and the overlay module and ship without it.
 - **App access**: give reviewers a test driver login (phone and password), since most screens need an account.

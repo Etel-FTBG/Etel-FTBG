@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, StyleSheet, ActivityIndicator, Pressable, ScrollView, Switch } from 'react-native';
+import { View, StyleSheet, ActivityIndicator, Pressable, ScrollView, Switch, Linking } from 'react-native';
 import { Text, Alert, useLanguage } from '../i18n';
 import { isLockEnabled, isLockSupported, setLockEnabled } from '../security/appLock';
 import { useNavigation } from '@react-navigation/native';
@@ -10,6 +10,8 @@ import { useNightMode } from '../context/NightModeContext';
 import { getDriverProfile, DriverProfile } from '../api/driver';
 import { RootStackParamList } from '../navigation/types';
 import GoldBoxCard from '../components/GoldBoxCard';
+import { PRIVACY_URL, TERMS_URL, DELETE_ACCOUNT_URL } from '../legal/links';
+import { requestAccountDeletion } from '../api/account';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -32,6 +34,32 @@ export default function ProfileScreen() {
     const ok = await setLockEnabled(next);
     if (ok) setLockOn(next);
     else if (next) Alert.alert('Not enabled', 'Could not verify your fingerprint or screen lock, so the lock was left off.');
+  }
+
+  function openPage(url: string) {
+    Linking.openURL(url).catch(() => Alert.alert('Cannot open the page', url));
+  }
+
+  function askDelete() {
+    Alert.alert(
+      'Delete my account?',
+      'This sends a request to the ETEL team. After they confirm it is you, your account and personal data are deleted. Trip and payment records are kept only as long as the law requires. Finish active trips and spend your wallet balance first.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Send request',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await requestAccountDeletion({ name: driver?.name || user?.name, phone: driver?.phone || user?.phone, role: user?.role });
+              Alert.alert('Request sent', 'We will contact you within 5 business days to confirm it is you.');
+            } catch {
+              Alert.alert('Could not send', 'Check your connection and try again, or open the deletion page: ' + DELETE_ACCOUNT_URL);
+            }
+          },
+        },
+      ]
+    );
   }
 
   useEffect(() => {
@@ -101,6 +129,13 @@ export default function ProfileScreen() {
                 />
               </View>
             )}
+          </GoldBoxCard>
+
+          <GoldBoxCard style={styles.sectionWrap}>
+            <Text style={styles.sectionTitle}>Privacy and account</Text>
+            <MenuRow label="Privacy policy" onPress={() => openPage(PRIVACY_URL)} />
+            <MenuRow label="Terms of service" onPress={() => openPage(TERMS_URL)} />
+            <MenuRow label="Delete my account" onPress={askDelete} last />
           </GoldBoxCard>
         </>
       )}
