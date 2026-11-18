@@ -101,6 +101,11 @@ $r = call('admin_broadcast_list', array(), $OWNER);
 t('history lists the newest first with counts and the name for a single person', $r['ok'] && count($r['ok']['broadcasts']) >= 5 && $r['ok']['broadcasts'][0]['title'] !== '' && $r['ok']['broadcasts'][0]['id'] > $r['ok']['broadcasts'][1]['id'], json_encode(array_slice($r['ok']['broadcasts'], 0, 2)));
 $one = null; foreach ($r['ok']['broadcasts'] as $b) if ($b['audience'] === 'user') $one = $b;
 t('a single-person message shows the person name', $one && $one['target_name'] === 'Sara', json_encode($one));
+// a message stuck in "sending" is reported as unfinished after 5 minutes, and carries its age
+$PDO->exec("INSERT INTO push_broadcasts (title, body, audience, recipients, status, created_by, created_at) VALUES ('Old stuck', 'x', 'all', 3, 'sending', 1, DATE_SUB(NOW(), INTERVAL 20 MINUTE)), ('Fresh', 'x', 'all', 3, 'sending', 1, NOW())");
+$r = call('admin_broadcast_list', array(), $OWNER); $by = array(); foreach ($r['ok']['broadcasts'] as $b) $by[$b['title']] = $b;
+t('an old "sending" row is shown as unfinished, a fresh one stays sending', $by['Old stuck']['status'] === 'unfinished' && $by['Fresh']['status'] === 'sending', json_encode(array($by['Old stuck']['status'], $by['Fresh']['status'])));
+t('each row carries its age in seconds', $by['Old stuck']['age_s'] >= 1190 && $by['Fresh']['age_s'] < 30);
 // the cap
 $PDO->exec("INSERT INTO users (name, phone, role, active) SELECT CONCAT('bulk', n), CONCAT('+2519', LPAD(n, 8, '0')), 'courier', 1 FROM (SELECT a.N + b.N*10 + c.N*100 + d.N*1000 + 100 AS n FROM (SELECT 0 N UNION SELECT 1 UNION SELECT 2 UNION SELECT 3 UNION SELECT 4 UNION SELECT 5 UNION SELECT 6 UNION SELECT 7 UNION SELECT 8 UNION SELECT 9) a, (SELECT 0 N UNION SELECT 1 UNION SELECT 2 UNION SELECT 3 UNION SELECT 4 UNION SELECT 5 UNION SELECT 6 UNION SELECT 7 UNION SELECT 8 UNION SELECT 9) b, (SELECT 0 N UNION SELECT 1 UNION SELECT 2 UNION SELECT 3 UNION SELECT 4 UNION SELECT 5 UNION SELECT 6 UNION SELECT 7 UNION SELECT 8 UNION SELECT 9) c, (SELECT 0 N UNION SELECT 1 UNION SELECT 2 UNION SELECT 3 UNION SELECT 4 UNION SELECT 5 UNION SELECT 6 UNION SELECT 7 UNION SELECT 8 UNION SELECT 9) d) x");
 $PDO->exec("INSERT INTO push_subscriptions (user_id) SELECT id FROM users WHERE name LIKE 'bulk%'");

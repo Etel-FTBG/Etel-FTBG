@@ -7,7 +7,7 @@
 var K = window.AdminKit;
 if (!K || window.ETELHubSend) return;
 var esc = K.esc;
-var B = { list: null, err: '', f: { audience: 'customer', phone: '', title: '', body: '' }, busy: false };
+var B = { list: null, err: '', f: { audience: 'customer', phone: '', title: '', body: '' }, busy: false, tries: 0, timer: null };
 var AUD = [['customer', 'Customers'], ['driver', 'Drivers'], ['courier', 'Couriers'], ['service_giver', 'Service givers'], ['all', 'Everyone'], ['user', 'One person']];
 function audName(a, who) { if (a === 'user') return who ? who : 'One person'; var m = AUD.filter(function (x) { return x[0] === a; })[0]; return m ? m[1] : a; }
 function run(a, b) { return K.api(a, b || {}); }
@@ -29,10 +29,10 @@ function css() {
   document.head.appendChild(s);
 }
 function histCard(h) {
-  var done = h.status === 'sent';
+  var done = h.status === 'sent', lost = h.status === 'unfinished';
   return '<div class="hb-h"><div class="hb-row"><b>' + esc(h.title) + '</b><span class="hb-note">' + esc(String(h.created_at).substring(0, 16)) + '</span></div>' +
     '<p class="hb-note">' + esc(h.body) + '</p>' +
-    '<p class="hb-note">To: ' + esc(audName(h.audience, h.target_name)) + ' - ' + (done ? 'reached ' + h.reached + ' of ' + h.recipients + (h.failed ? ' (' + h.failed + ' could not be reached)' : '') : 'sending... (' + h.recipients + ' people)') + '</p></div>';
+    '<p class="hb-note">To: ' + esc(audName(h.audience, h.target_name)) + ' - ' + (done ? 'reached ' + h.reached + ' of ' + h.recipients + (h.failed ? ' (' + h.failed + ' could not be reached)' : '') : lost ? 'did not finish: the server stopped before it wrote the result (' + h.recipients + ' people)' : 'sending... (' + h.recipients + ' ' + (h.recipients === 1 ? 'person' : 'people') + ')') + '</p></div>';
 }
 function view() {
   css();
@@ -47,13 +47,17 @@ function view() {
     '<div><label class="hb-lbl">Message (<span data-hb-count="body">' + f.body.length + '</span>/240)</label><textarea class="hb-ta" data-hb-f="body" maxlength="240">' + esc(f.body) + '</textarea></div>' +
     '<div class="hb-prev" data-hb-prev><b>' + esc(f.title || 'Title') + '</b><span>' + esc(f.body || 'Your message') + '</span></div>' +
     '<div class="hb-row"><span class="hb-note">You will see how many people get it before it is sent.</span><button type="button" class="ak-btn gold" data-hb-send' + (B.busy || !f.title.trim() || !f.body.trim() ? ' disabled' : '') + '>Send</button></div></div>' +
-    '<div class="hb-sec">History</div><div class="hb-card">' + (B.list.length ? B.list.map(histCard).join('') : '<p class="hb-note">Nothing sent yet.</p>') + '</div>';
+    '<div class="hb-sec hb-row"><span>History</span><button type="button" class="ak-btn" data-hb-refresh>Refresh</button></div><div class="hb-card">' + (B.list.length ? B.list.map(histCard).join('') : '<p class="hb-note">Nothing sent yet.</p>') + '</div>';
 }
 function load() {
   return run('admin_broadcast_list', {}).then(function (r) {
     if (!ok(r)) { B.err = K.failText(r, 'Could not load. Run the database update (migration 114).'); B.list = null; }
     else { B.err = ''; B.list = dat(r).broadcasts || []; }
     repaint();
+    // A message that is still being sent finishes a few seconds later: look again by itself (up to about a minute).
+    clearTimeout(B.timer);
+    var pending = (B.list || []).some(function (h) { return h.status === 'sending'; });
+    if (pending && B.tries < 15) { B.tries++; B.timer = setTimeout(function () { if (document.querySelector('[data-hb-form]')) load(); }, 4000); } else if (!pending) B.tries = 0;
   });
 }
 function onInput(e) {
@@ -76,12 +80,15 @@ function send(btn) {
       if (!yes) { B.busy = false; btn.disabled = false; return; }
       return run('admin_broadcast_send', { audience: f.audience, phone: f.phone, title: f.title, body: f.body }).then(function (r2) {
         if (!ok(r2)) return fail(r2, 'Could not send.');
-        B.busy = false; B.f.title = ''; B.f.body = ''; K.toast('Sending to ' + dat(r2).recipients + ' ' + (dat(r2).recipients === 1 ? 'person' : 'people')); return load();
+        B.busy = false; B.tries = 0; B.f.title = ''; B.f.body = ''; K.toast('Sending to ' + dat(r2).recipients + ' ' + (dat(r2).recipients === 1 ? 'person' : 'people')); return load();
       });
     });
   });
 }
-function onClick(e) { var s = e.target.closest('[data-hb-send]'); if (s && !s.disabled) send(s); }
+function onClick(e) {
+  if (e.target.closest('[data-hb-refresh]')) { B.tries = 0; load(); return; }
+  var s = e.target.closest('[data-hb-send]'); if (s && !s.disabled) send(s);
+}
 function open() {
   var el = document.getElementById('panel-etelapp'); if (!el) return;
   if (!el._hb) { el._hb = true; el.addEventListener('click', onClick); el.addEventListener('input', onInput); el.addEventListener('change', onInput); }

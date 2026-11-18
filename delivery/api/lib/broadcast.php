@@ -94,13 +94,15 @@ function broadcast_deliver_later($pdo, $id, $ids, $title, $body) {
 }
 
 function broadcast_history($pdo) {
-    $s = $pdo->query("SELECT b.id, b.title, b.body, b.audience, b.recipients, b.reached, b.failed, b.status, b.created_at, b.sent_at, u.name AS target_name
+    $s = $pdo->query("SELECT b.id, b.title, b.body, b.audience, b.recipients, b.reached, b.failed, b.status, b.created_at, b.sent_at, TIMESTAMPDIFF(SECOND, b.created_at, NOW()) AS age_s, u.name AS target_name
                       FROM push_broadcasts b LEFT JOIN users u ON u.id = b.target_user_id AND b.audience = 'user' ORDER BY b.id DESC LIMIT 50");
     $out = array();
     foreach ($s->fetchAll(PDO::FETCH_ASSOC) as $r) {
+        // A message still "sending" after 5 minutes did not finish (the server stopped it): say so instead of showing "sending" for ever.
+        if ((string) $r['status'] === 'sending' && intval($r['age_s']) > 300) $r['status'] = 'unfinished';
         $out[] = array('id' => intval($r['id']), 'title' => (string) $r['title'], 'body' => (string) $r['body'], 'audience' => (string) $r['audience'], 'target_name' => (string) $r['target_name'],
                        'recipients' => intval($r['recipients']), 'reached' => intval($r['reached']), 'failed' => intval($r['failed']), 'status' => (string) $r['status'],
-                       'created_at' => (string) $r['created_at'], 'sent_at' => (string) $r['sent_at']);
+                       'created_at' => (string) $r['created_at'], 'sent_at' => (string) $r['sent_at'], 'age_s' => max(0, intval($r['age_s'])));
     }
     return $out;
 }
