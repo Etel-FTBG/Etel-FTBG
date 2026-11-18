@@ -10,6 +10,9 @@ import { useTheme } from '../theme/ThemeContext';
 import { RootStackParamList } from '../navigation/types';
 import { HUB_GROUPS, HubApp, hubVisible } from '../hub/apps';
 import { useHubConfig } from '../hub/appConfig';
+import { appBadge, appSubtitle, appTitle, sortApps, textFor } from '../hub/hubContent';
+import AppTileIcon from '../components/AppTileIcon';
+import HubBanner from '../components/HubBanner';
 import { goOfflineEverywhere, goOnlineEverywhere, goOnlinePreview } from '../hub/masterOnline';
 import SlideToConfirm from '../components/SlideToConfirm';
 import PillSwitch from '../components/PillSwitch';
@@ -108,6 +111,12 @@ export default function HubScreen({ navigation }: Props) {
     navigation.navigate('WebApp', { appKey: a.key });
   }
 
+  // The home banner can point at one of the apps: it opens only if that app is shown to this account.
+  function openByKey(key: string) {
+    const a = HUB_GROUPS.reduce<HubApp[]>((all, g) => all.concat(g.apps), []).find((x) => x.key === key);
+    if (a && a.status === 'live' && hubVisible(a, session?.role)) open(a);
+  }
+
   return (
     <ScrollView
       style={[styles.root, { backgroundColor: p.bg }]}
@@ -146,13 +155,14 @@ export default function HubScreen({ navigation }: Props) {
           <Image source={require('../../assets/etel-master.png')} style={styles.master} accessibilityLabel="ETEL" />
         </View>
         <Text style={[styles.wordmark, { color: p.gold }]}>ETEL</Text>
-        <Text style={[styles.tagline, { color: p.textSecondary }]}>One account. One ecosystem.</Text>
-        <Text style={[styles.greet, { color: p.goldStrong }]}>{greeting()}</Text>
+        <Text style={[styles.tagline, { color: p.textSecondary }]}>{textFor('tagline', lang) || 'One account. One ecosystem.'}</Text>
+        <Text style={[styles.greet, { color: p.goldStrong }]}>{textFor('welcome_title', lang) || greeting()}</Text>
       </Reveal>
 
       <Reveal delay={160}>
         <AppUpdateCard />
         {session ? <ProfileCard key={refreshKey} session={session} /> : <SignInCard />}
+        {session ? <HubBanner onOpenApp={openByKey} /> : null}
       </Reveal>
 
       {session ? (
@@ -220,7 +230,7 @@ export default function HubScreen({ navigation }: Props) {
       {(session ? HUB_GROUPS : [])
         .map((g) => ({
           ...g,
-          apps: g.apps.filter((a) => a.status === 'live' && hubVisible(a, session?.role) && (a.membership ? mem[a.membership] : a.key === 'id' || canOpen(a.key, session?.role))),
+          apps: sortApps(g.apps.filter((a) => a.status === 'live' && hubVisible(a, session?.role) && (a.membership ? mem[a.membership] : a.key === 'id' || canOpen(a.key, session?.role)))),
         }))
         .filter((g) => g.apps.length > 0)
         .map((g, gi) => (
@@ -238,7 +248,7 @@ export default function HubScreen({ navigation }: Props) {
                   onPress={() => open(a)}
                   accessibilityRole="button"
                   accessibilityState={{ disabled: soon }}
-                  accessibilityLabel={a.title + (soon ? ', coming soon' : '')}
+                  accessibilityLabel={appTitle(a, lang) + (soon ? ', coming soon' : '')}
                   style={({ pressed }) => [
                     styles.tile,
                     { backgroundColor: p.surface, borderColor: soon ? p.borderSoft : p.border },
@@ -247,15 +257,14 @@ export default function HubScreen({ navigation }: Props) {
                   ]}
                 >
                   <View style={soon || wrongRole ? styles.dim : !allowed ? styles.faded : undefined}>
-                    {a.logo ? (
-                      <Image source={a.logo} style={styles.logo} />
-                    ) : (
-                      <LinearGradient colors={['#F2CC6B', '#D4AF37', '#B8860B']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.badgeIcon}>
-                        <Ionicons name={(a.icon || 'apps') as any} size={38} color="#1A1206" />
-                      </LinearGradient>
-                    )}
+                    <AppTileIcon app={a} />
                   </View>
-                  <Text style={[styles.tileTitle, { color: soon ? p.textMuted : p.text }]}>{a.title}</Text>
+                  <Text style={[styles.tileTitle, { color: soon ? p.textMuted : p.text }]}>{appTitle(a, lang)}</Text>
+                  {appBadge(a) ? (
+                    <View style={[styles.badge, { borderColor: p.gold, backgroundColor: p.surfaceAlt, marginTop: 4 }]}>
+                      <Text style={[styles.badgeText, { color: p.goldStrong, marginLeft: 0 }]}>{appBadge(a)}</Text>
+                    </View>
+                  ) : null}
                   {soon ? (
                     <View style={[styles.badge, { borderColor: p.borderSoft, backgroundColor: p.surfaceAlt }]}>
                       <Ionicons name="lock-closed" size={11} color={p.textMuted} />
@@ -267,7 +276,7 @@ export default function HubScreen({ navigation }: Props) {
                       <Text style={[styles.badgeText, { color: p.textMuted }]}>Other role</Text>
                     </View>
                   ) : (
-                    <Text style={[styles.tileSub, { color: p.textMuted }]}>{a.subtitle}</Text>
+                    <Text style={[styles.tileSub, { color: p.textMuted }]}>{appSubtitle(a, lang)}</Text>
                   )}
                 </Pressable>
               );

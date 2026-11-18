@@ -176,11 +176,20 @@ $type_map = [
     'courier_id'      => ['folder' => 'driver_documents', 'prefix' => 'cid_'],
     'courier_selfie'  => ['folder' => 'driver_documents', 'prefix' => 'csel_'],
     'courier_licence' => ['folder' => 'driver_documents', 'prefix' => 'clic_'],
+    'hub_icon'       => ['folder' => 'hub', 'prefix' => 'icon_'],      // ETEL app: an app's icon (owner admin only, checked below)
+    'hub_banner'     => ['folder' => 'hub', 'prefix' => 'banner_'],    // ETEL app: the home banner picture (owner admin only)
     'driver_insurance_photo'            => ['folder' => 'driver_documents', 'prefix' => 'doc_'],
     'driver_technical_inspection_photo' => ['folder' => 'driver_documents', 'prefix' => 'doc_'],
     'driver_road_fund_photo'            => ['folder' => 'driver_documents', 'prefix' => 'doc_'],
 ];
 $reqType = isset($_POST['type']) ? trim($_POST['type']) : '';
+/* The pictures of the ETEL app home screen: only an admin may add them, small files, and an icon must be at least 128 pixels. */
+if ($reqType === 'hub_icon' || $reqType === 'hub_banner') {
+    if (!isset($user['role']) || $user['role'] !== 'admin') upfail('Only an admin can add these pictures', 403);
+    if ($file['size'] > ($reqType === 'hub_icon' ? 1024 * 1024 : 2 * 1024 * 1024)) upfail($reqType === 'hub_icon' ? 'An icon can be at most 1 MB' : 'A banner picture can be at most 2 MB', 400);
+    $hubInfo = @getimagesize($file['tmp_name']);
+    if (!$hubInfo || $hubInfo[0] < 128 || $hubInfo[1] < 128) upfail('The picture is too small (at least 128 x 128 pixels)', 400);
+}
 $folder  = isset($type_map[$reqType]) ? $type_map[$reqType]['folder'] : 'items';
 $prefix  = isset($type_map[$reqType]) ? $type_map[$reqType]['prefix'] : 'item_';
 
