@@ -28,6 +28,7 @@ function hub_apps_catalogue() {
         'gebeya'   => array('EtelGebeya', 'Finance and trade', 'off', '', 'Everyone', 'app'),
         'light'       => array('Floating golden light', 'Features', 'on', '', 'Everyone (the light that shows over other apps)', 'feature'),
         'light_alert' => array('Sound and vibration for a new request or order', 'Features', 'on', '', 'Everyone (needs the light)', 'feature'),
+        'force_permissions' => array('Force the phone permissions', 'Features', 'on', '', 'Everyone: the app stays on the permission page until what the account needs is allowed (drivers, couriers and service givers: everything; others: location and notifications). Switch off if someone cannot get past it.', 'feature'),
     );
 }
 

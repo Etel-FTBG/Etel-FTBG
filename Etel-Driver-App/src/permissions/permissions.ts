@@ -1,10 +1,11 @@
-import { Linking, Platform } from 'react-native';
+import { Alert, Linking, Platform } from 'react-native';
+import * as SecureStore from 'expo-secure-store';
 import Constants, { ExecutionEnvironment } from 'expo-constants';
 import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
-import { canDrawOverlays, overlaySupported, requestOverlayPermission } from '../../modules/etel-overlay';
+import { batteryExempt, canDrawOverlays, overlaySupported, requestBatteryExemption, requestOverlayPermission, batterySupported } from '../../modules/etel-overlay';
 
-export type PermKey = 'camera' | 'location' | 'locationAlways' | 'notifications' | 'overlay';
+export type PermKey = 'camera' | 'location' | 'locationAlways' | 'notifications' | 'overlay' | 'battery' | 'autostart';
 // granted = done; ask = can still be asked here; settings = refused for good, only the phone's Settings can change it; na = this phone/build has no such permission
 export type PermState = 'granted' | 'ask' | 'settings' | 'na';
 
@@ -14,7 +15,25 @@ export const PERMS: { key: PermKey; icon: string; title: string; why: string }[]
   { key: 'locationAlways', icon: 'navigate', title: 'Location all the time', why: 'So riders and dispatch can follow your trip while ETEL is in the background. Choose "Allow all the time".' },
   { key: 'notifications', icon: 'notifications', title: 'Notifications', why: 'So a new trip, order or message wakes your phone, even when ETEL is closed.' },
   { key: 'overlay', icon: 'layers', title: 'Display over other apps', why: 'Shows the golden ETEL light while you use other apps, so you never miss a request.' },
+  { key: 'battery', icon: 'battery-charging', title: 'No battery limits', why: 'Many phones stop an app in the background to save battery, which delays new trips and orders. Choose "Allow" so ETEL keeps running.' },
+  { key: 'autostart', icon: 'power', title: 'Auto-start and background activity', why: 'Some phones (Tecno, Infinix, Xiaomi, Huawei, Oppo) have a separate switch in Settings > Apps > ETEL. Turn it on, then tap Done here.' },
 ];
+
+// What each kind of account must allow. Someone who only books rides or orders needs less than someone who drives, delivers or serves
+// customers and must be reached in the background. Signed out (before login) asks only for what every account needs.
+export type PermRole = 'customer' | 'driver' | 'courier' | 'service_giver' | 'admin' | undefined;
+const EVERYONE: PermKey[] = ['location', 'notifications'];
+const WORKING: PermKey[] = ['camera', 'location', 'locationAlways', 'notifications', 'overlay', 'battery', 'autostart'];
+export function requiredFor(role: PermRole): PermKey[] {
+  if (role === 'driver' || role === 'courier' || role === 'service_giver') return WORKING;
+  return EVERYONE;
+}
+export function permsFor(role: PermRole) {
+  const need = requiredFor(role);
+  return PERMS.filter((p) => need.includes(p.key));
+}
+
+const AUTOSTART_KEY = 'etel_autostart_done';
 
 // Expo Go has no real notifications module (importing it there is fatal), so it is only loaded in a real build.
 const isExpoGo = Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
@@ -51,6 +70,14 @@ export async function checkPerm(key: PermKey): Promise<PermState> {
     if (key === 'overlay') {
       if (Platform.OS !== 'android' || !overlaySupported) return 'na';
       return canDrawOverlays() ? 'granted' : 'settings';
+    }
+    if (key === 'battery') {
+      if (Platform.OS !== 'android' || !batterySupported()) return 'na';   // an older install cannot ask: nothing to enforce
+      return batteryExempt() ? 'granted' : 'settings';
+    }
+    if (key === 'autostart') {
+      if (Platform.OS !== 'android') return 'na';
+      return (await SecureStore.getItemAsync(AUTOSTART_KEY).catch(() => null)) ? 'granted' : 'ask';   // cannot be read from the phone: the person confirms it
     }
   } catch {
     return 'na';
@@ -90,6 +117,20 @@ export async function askPerm(key: PermKey): Promise<void> {
       if (!r.granted && r.canAskAgain === false) await Linking.openSettings();
     } else if (key === 'overlay') {
       requestOverlayPermission();
+    } else if (key === 'battery') {
+      requestBatteryExemption();
+    } else if (key === 'autostart') {
+      await new Promise<void>((resolve) => {
+        Alert.alert(
+          'Auto-start and background activity',
+          'Open Settings > Apps > ETEL (or Battery / Auto-start) and turn ON "Auto-start", "Background activity" or "Allow background running". Then come back and tap Done.',
+          [
+            { text: 'Open Settings', onPress: () => { Linking.openSettings().catch(() => {}); resolve(); } },
+            { text: 'Done', onPress: () => { SecureStore.setItemAsync(AUTOSTART_KEY, '1').catch(() => {}); resolve(); } },
+          ],
+          { cancelable: true, onDismiss: () => resolve() }
+        );
+      });
     }
   } catch {
     await Linking.openSettings().catch(() => {});

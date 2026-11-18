@@ -36,3 +36,5 @@ export function overlayRingNow(): void { native?.ring?.(); }
 // Android battery saver: a phone that "optimises" the app stops it in the background and delays its messages. These ask to be left alone.
 export function batteryExempt(): boolean { return native?.isIgnoringBatteryOptimizations ? native.isIgnoringBatteryOptimizations() : true; }
 export function requestBatteryExemption(): void { native?.requestIgnoreBatteryOptimizations?.(); }
+// True when this install has the battery calls (a newer APK); an older install cannot ask, so nothing is enforced for it.
+export function batterySupported(): boolean { return !!native?.isIgnoringBatteryOptimizations; }

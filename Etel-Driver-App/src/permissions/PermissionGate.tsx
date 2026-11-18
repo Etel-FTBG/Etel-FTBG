@@ -4,12 +4,23 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Text } from '../i18n';
 import { colors, typography } from '../theme/colors';
-import { PERMS, PermKey, PermState, askPerm, checkAll } from './permissions';
+import { PermKey, PermState, askPerm, checkAll, permsFor } from './permissions';
+import { useSession } from '../hub/session';
+import { featureOn } from '../hub/apps';
+import { useHubConfig } from '../hub/appConfig';
 
-// ETEL cannot do its job without these, so the app stays on this page until every one is allowed. It re-checks each time the
-// person comes back from the phone's Settings, and goes away by itself once nothing is missing.
+// ETEL cannot do its job without these, so the app stays on this page until every one that THIS account needs is allowed: a driver, courier
+// or service giver must allow everything (camera, location all the time, notifications, display over other apps, no battery limits,
+// auto-start); everyone else only location and notifications. It re-checks each time the person comes back from the phone's Settings
+// (so a permission taken away later brings this page back), and goes away by itself once nothing is missing.
+// The owner can switch this off, or limit it to admins, in Admin > ETEL app > Features ("Force the phone permissions").
 export default function PermissionGate({ children }: { children: React.ReactNode }) {
   const insets = useSafeAreaInsets();
+  const session = useSession();
+  useHubConfig(!!session, 0);                 // loads the owner's switch (kept on the phone from the last time)
+  const role = session?.role;
+  const list = permsFor(role);
+  const force = featureOn('force_permissions', role);
   const [state, setState] = useState<Record<PermKey, PermState> | null>(null);
   const [busy, setBusy] = useState(false);
   const running = useRef(false);
@@ -23,7 +34,7 @@ export default function PermissionGate({ children }: { children: React.ReactNode
     return () => sub.remove();
   }, [refresh]);
 
-  const missing = state ? PERMS.filter((p) => state[p.key] === 'ask' || state[p.key] === 'settings') : [];
+  const missing = state ? list.filter((p) => state[p.key] === 'ask' || state[p.key] === 'settings') : [];
 
   // One at a time, in order: each system dialog (or Settings page) has to finish before the next one opens.
   const allowAll = async () => {
@@ -31,7 +42,7 @@ export default function PermissionGate({ children }: { children: React.ReactNode
     running.current = true;
     setBusy(true);
     try {
-      for (const p of PERMS) {
+      for (const p of list) {
         const cur = (await checkAll())[p.key];
         if (cur === 'ask' || cur === 'settings') await askPerm(p.key);
       }
@@ -49,7 +60,7 @@ export default function PermissionGate({ children }: { children: React.ReactNode
       </View>
     );
   }
-  if (!missing.length) return <>{children}</>;
+  if (!force || !missing.length) return <>{children}</>;
 
   return (
     <View style={[styles.root, { paddingTop: Math.max(insets.top, 24) + 8, paddingBottom: Math.max(insets.bottom, 12) }]}>
@@ -61,7 +72,7 @@ export default function PermissionGate({ children }: { children: React.ReactNode
         <Text style={styles.sub}>
           To take photos of your papers, find trips near you, follow a trip in the background and wake your phone for new requests, ETEL needs the permissions below. Photos and files from your gallery open through Android's own picker, so they need no permission.
         </Text>
-        {PERMS.map((p) => {
+        {list.map((p) => {
           const st = state[p.key];
           const ok = st === 'granted' || st === 'na';
           return (
@@ -75,7 +86,7 @@ export default function PermissionGate({ children }: { children: React.ReactNode
               </View>
               {!ok ? (
                 <Pressable style={styles.allow} onPress={() => askPerm(p.key).then(refresh)} accessibilityLabel={'Allow ' + p.title}>
-                  <Text style={styles.allowT}>{st === 'settings' ? 'Settings' : 'Allow'}</Text>
+                  <Text style={styles.allowT}>{p.key === 'autostart' ? 'Open' : st === 'settings' ? 'Settings' : 'Allow'}</Text>
                 </Pressable>
               ) : null}
             </View>
